@@ -361,15 +361,25 @@ static struct irq_info *add_one_irq_to_db(const char *devpath, struct irq_info *
 
 get_numa_node:
 	numa_node = NUMA_NO_NODE;
-	if (devpath != NULL && numa_avail) {
-		sprintf(path, "%s/numa_node", devpath);
-		process_one_line(path, get_int, &numa_node);
+	if (numa_avail) {
+		if (devpath != NULL) {
+			sprintf(path, "%s/numa_node", devpath);
+			process_one_line(path, get_int, &numa_node);
+		} else {
+			sprintf(path, "/proc/irq/%i/node", irq);
+			process_one_line(path, get_int, &numa_node);
+		}
 	}
 
 	if (pol->numa_node_set == 1)
 		new->numa_node = get_numa_node(pol->numa_node);
 	else
 		new->numa_node = get_numa_node(numa_node);
+
+	if (!new->numa_node) {
+		log(TO_CONSOLE, LOG_WARNING, "IRQ %d has an unknown node\n", irq);
+		new->numa_node = get_numa_node(NUMA_NO_NODE);
+	}
 
 	cpus_setall(new->cpumask);
 	if (devpath != NULL) {
@@ -619,7 +629,7 @@ static void add_new_irq(char *path, struct irq_info *hint, GList *proc_interrupt
 /*
  * Figures out which interrupt(s) relate to the device we"re looking at in dirname
  */
-static void build_one_dev_entry(const char *dirname, GList *tmp_irqs)
+static void build_one_dev_entry(const char *dirname, GList *tmp_irqs, int build_irq)
 {
 	struct dirent *entry;
 	DIR *msidir;
@@ -642,10 +652,15 @@ static void build_one_dev_entry(const char *dirname, GList *tmp_irqs)
 			if (!entry)
 				break;
 			irqnum = strtol(entry->d_name, NULL, 10);
-			if (irqnum) {
+			/* If build_irq is valid, only add irq when it's number equals to  build_irq */
+			if (irqnum && ((build_irq < 0) || (irqnum == build_irq))) {
 				hint.irq = irqnum;
 				hint.type = IRQ_TYPE_MSIX;
 				add_new_irq(devpath, &hint, tmp_irqs);
+				if (build_irq >= 0) {
+					log(TO_CONSOLE, LOG_INFO, "Hotplug dev irq: %d finished.\n", irqnum);
+					break;
+				}
 			}
 		} while (entry != NULL);
 		closedir(msidir);
@@ -665,9 +680,14 @@ static void build_one_dev_entry(const char *dirname, GList *tmp_irqs)
 #else
 	if (irqnum) {
 #endif
-		hint.irq = irqnum;
-		hint.type = IRQ_TYPE_LEGACY;
-		add_new_irq(devpath, &hint, tmp_irqs);
+		/* If build_irq is valid, only add irq when it's number equals to  build_irq */
+		if ((build_irq < 0) || (irqnum == build_irq)) {
+			hint.irq = irqnum;
+			hint.type = IRQ_TYPE_LEGACY;
+			add_new_irq(devpath, &hint, tmp_irqs);
+			if (build_irq >= 0)
+				log(TO_CONSOLE, LOG_INFO, "Hotplug dev irq: %d finished.\n", irqnum);
+		}
 	}
 
 done:
@@ -712,31 +732,60 @@ static void free_tmp_irqs(gpointer data)
 	free(info);
 }
 
-void rebuild_irq_db(void)
+static struct irq_info * build_dev_irqs(GList *tmp_irqs, int build_irq)
 {
 	DIR *devdir;
 	struct dirent *entry;
+	struct irq_info *new_irq = NULL;
+
+	devdir = opendir(SYSPCI_DIR);
+	if (devdir) {
+		do {
+			entry = readdir(devdir);
+			if (!entry)
+				break;
+			/* when hotplug irqs, we add one irq at one time */
+			build_one_dev_entry(entry->d_name, tmp_irqs, build_irq);
+			if (build_irq >= 0) {
+				new_irq = get_irq_info(build_irq);
+				if (new_irq)
+					break;
+			}
+		} while (entry != NULL);
+		closedir(devdir);
+	}
+	return new_irq;
+}
+
+int proc_irq_hotplug(char *savedline, int irq, struct irq_info **pinfo)
+{
+	struct irq_info tmp_info = {0};
+
+	/* firstly, init irq info by read device info */
+	*pinfo = build_dev_irqs(interrupts_db, irq);
+	if (*pinfo == NULL) {
+		/* secondly, init irq info by parse savedline */
+		init_irq_class_and_type(savedline, &tmp_info, irq);
+		add_new_irq(NULL, &tmp_info, interrupts_db);
+		*pinfo = get_irq_info(irq);
+	}
+	if (*pinfo == NULL) {
+		return -1;
+	}
+
+	force_rebalance_irq(*pinfo, NULL);
+	return 0;
+}
+
+void rebuild_irq_db(void)
+{
 	GList *tmp_irqs = NULL;
 
 	free_irq_db();
 
 	tmp_irqs = collect_full_irq_list();
-
-	devdir = opendir(SYSPCI_DIR);
-
-	if (devdir) {
-		do {
-			entry = readdir(devdir);
-
-			if (!entry)
-				break;
-
-			build_one_dev_entry(entry->d_name, tmp_irqs);
-
-		} while (entry != NULL);
-
-		closedir(devdir);
-	}
+	
+	build_dev_irqs(tmp_irqs, -1);
 
 	for_each_irq(tmp_irqs, add_missing_irq, interrupts_db);
 
@@ -813,3 +862,47 @@ void sort_irq_list(GList **list)
 {
 	*list = g_list_sort(*list, sort_irqs);
 }
+
+static void remove_no_existing_irq(struct irq_info *info, void *data __attribute__((unused)))
+{
+	GList *entry = NULL;
+
+	if (info->existing) {
+		/* clear existing flag for next detection */
+		info->existing = 0;
+		return;
+	}
+
+	entry = g_list_find_custom(interrupts_db, info, compare_ints);
+	if (entry) {
+		interrupts_db = g_list_delete_link(interrupts_db, entry);
+		log(TO_CONSOLE, LOG_INFO, "IRQ %d is removed from interrupts_db.\n", info->irq);
+	}
+
+	entry = g_list_find_custom(banned_irqs, info, compare_ints);
+	if (entry) {
+		banned_irqs = g_list_delete_link(banned_irqs, entry);
+		log(TO_CONSOLE, LOG_INFO, "IRQ %d is removed from banned_irqs.\n", info->irq);
+	}
+
+	entry = g_list_find_custom(rebalance_irq_list, info, compare_ints);
+	if (entry)
+		rebalance_irq_list = g_list_delete_link(rebalance_irq_list, entry);
+
+	if(info->assigned_obj) {
+		entry = g_list_find_custom(info->assigned_obj->interrupts, info, compare_ints);
+	    if (entry) {
+			info->assigned_obj->interrupts = g_list_delete_link(info->assigned_obj->interrupts, entry);
+		}
+	}
+	free_irq(info, NULL);
+}
+
+void clear_no_existing_irqs(void)
+{
+	for_each_irq(NULL, remove_no_existing_irq, NULL);
+	if (banned_irqs) {
+		for_each_irq(banned_irqs, remove_no_existing_irq, NULL);
+	}
+}
+

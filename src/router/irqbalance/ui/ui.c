@@ -1,4 +1,5 @@
 
+#include <inttypes.h>
 #include <string.h>
 #include "ui.h"
 
@@ -13,7 +14,7 @@ char *IRQ_CLASS_TO_STR[] = {
 			"Video",
 			"Ethernet",
 			"Gigabit Ethernet",
-			"10-Gigabit Ethernet,"
+			"10-Gigabit Ethernet",
 			"Virt Event"};
 
 void show_frame()
@@ -25,7 +26,7 @@ void show_frame()
 	while(strlen(top) != (size_t)COLS - 1) {
 		snprintf(top + strlen(top), COLS - strlen(top), " ");
 	}
-	mvprintw(0, 0, top);
+	mvprintw(0, 0, "%s", top);
 	for(i = 0; i < LINES; i++) {
 		mvprintw(i, 0, " ");
 		mvprintw(i, COLS - 1, " ");
@@ -41,7 +42,7 @@ void show_footer()
 		snprintf(footer + strlen(footer), COLS - strlen(footer), " ");
 	}
 	attrset(COLOR_PAIR(4));
-	mvprintw(LINES - 1, 0, footer);
+	mvprintw(LINES - 1, 0, "%s", footer);
 }
 
 char * check_control_in_sleep_input(int max_len, int column_offest, int line_offset)
@@ -230,7 +231,7 @@ void handle_cpu_banning()
 	move(6, 19);
 	curs_set(1);
 	refresh();
-	size_t position = 5;
+	size_t position = 6;
 	char processing = 1;
 	while(processing) {
 		int direction = getch();
@@ -330,7 +331,7 @@ void print_assigned_objects_string(irq_t *irq, int *line_offset)
 	char assigned_to[128] = "\0";
 	for_each_int(irq->assigned_to, copy_assigned_obj, assigned_to);
 	assigned_to[strlen(assigned_to) - 2] = '\0';
-	mvprintw(*line_offset, 36, assigned_to);
+	mvprintw(*line_offset, 36, "%s", assigned_to);
 }
 
 void print_irq_line(irq_t *irq, void *data)
@@ -432,7 +433,7 @@ void handle_irq_banning()
 	move(4, 19);
 	curs_set(1);
 	refresh();
-	size_t position = 3;
+	size_t position = 4;
 	char processing = 1;
 	while(processing) {
 		int direction = getch();
@@ -563,9 +564,9 @@ void settings()
 
 	char info[128] = "Current sleep interval between rebalancing: \0";
 	uint8_t sleep_input_offset = strlen(info) + 3;
-	snprintf(info + strlen(info), 128 - strlen(info), "%lu\n", setup.sleep);
+	snprintf(info + strlen(info), 128 - strlen(info), "%" PRIu64 "\n", setup.sleep);
 	attrset(COLOR_PAIR(1));
-	mvprintw(2, 3, info);
+	mvprintw(2, 3, "%s", info);
 	print_all_cpus();
 
 	int user_input = 1;
@@ -588,7 +589,7 @@ void settings()
 			if(new_sleep != setup.sleep) {
 				setup.sleep = new_sleep;
 				char settings_data[128];
-				snprintf(settings_data, 128, "%s %lu", SET_SLEEP, new_sleep);
+				snprintf(settings_data, 128, "%s %" PRIu64, SET_SLEEP, new_sleep);
 				send_settings(settings_data);
 			}
 			break;
@@ -663,7 +664,7 @@ void display_tree_node_irqs(irq_t *irq, void *data)
 	char indent[32] = "	   \0";
 	snprintf(indent + strlen(indent), 32 - strlen(indent), "%s", (char *)data);
 	attrset(COLOR_PAIR(3));
-	printw("%sIRQ %lu, IRQs since last rebalance %lu\n",
+	printw("%sIRQ %u, IRQs since last rebalance %lu\n",
 			indent, irq->vector, irq->diff);
 }
 
@@ -710,7 +711,7 @@ void display_tree_node(cpu_node_t *node, void *data)
 	default:
 		break;
 	}
-	printw(copy_to);
+	printw("%s", copy_to);
 	if(g_list_length(node->irqs) > 0) {
 		for_each_irq(node->irqs, display_tree_node_irqs, indent);
 	}
