@@ -6,7 +6,7 @@
 		<% dump_wiviz_data(""); %>
 		//]]>
 		</script>
-		<meta charset="UTF-8">
+		<meta http-equiv="refresh" content="1800" charset="utf-8">
 	</head>
 	<body></body>
 </html>
