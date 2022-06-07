@@ -116,9 +116,9 @@ input.button[disabled]:hover {
 	color: #00f;
 }
 select {
-  color: #000;
   background-color: #fff;
   border: 1px solid #ccc;
+  color: #000;
   box-shadow: 0 1px 1px rgba(0, 0, 0, .075) inset;
   transition: all .15s ease-in-out 0s;
 }

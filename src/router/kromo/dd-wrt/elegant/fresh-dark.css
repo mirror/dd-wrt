@@ -128,9 +128,9 @@ pre {
   border: 1px solid transparent;
 }
 select {
-  color: #e0e0e0;
   background-color: #333;
   border: 1px solid #454545;
+  color: #e0e0e0;
 }
 table tr th {
   background-color: #777674;

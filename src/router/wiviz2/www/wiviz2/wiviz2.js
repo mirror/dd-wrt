@@ -111,7 +111,7 @@ function updatePrefs(what) {
 			'checkbox') {
 			eval("prefs." + what.id + " = " + what.checked);
 		}
-		if (what.tagName == 'DIV' && what.className == 'slidingheader') {
+		if (what.tagName == 'DIV' && what.className == 'button') {
 			prefs.activetab = what.id;
 		}
 	} else {
@@ -824,7 +824,7 @@ function updateCenteredInfo() {
 				s += a + "<br>";
 			}
 			if (h.sta_state == 'unassoc') {
-				s += "Scanning<br>Last asked for: " + h.sta_lastssid + "<br>";
+				s += "Scanning<br>Last asked for: " + h.sta_lastssid + "<br><br>";
 			}
 		}
 		if (h.type == 'ap' || h.type == 'adhoc' || h.type == 'wds' || h.type == 'mesh') {
