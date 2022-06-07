@@ -349,7 +349,7 @@ table[summary='ports forwarding table'] input[size='10'] {
   text-decoration: none;
   text-transform: lowercase;
 }
-#help a:hover {
+#help a:hover, a[title='Geotool'] {
   text-decoration: underline;
 }
 .submitFooter {

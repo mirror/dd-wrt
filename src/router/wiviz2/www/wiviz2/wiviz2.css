@@ -24,7 +24,7 @@ div.expando {
   position: relative;
   z-index: 150;
 }
-div.slidingheader {
+div.button {
   background: #30519c;
   border: 1px solid #30519c;
   color: #fff;
@@ -34,7 +34,7 @@ div.slidingheader {
   cursor: pointer;
   border-radius: 4px;
 }
-div.slidingheader:hover {
+div.button:hover {
   background: #6384cf;
   border: 1px solid #6384cf;
   color: #fff;
@@ -144,8 +144,8 @@ img {
     color: #000;
   }
   div.slidingbodyshow center {
-    border-top: 1px solid #444;
-    border-bottom: 1px solid #444;
+    border-top: 1px solid #454545;
+    border-bottom: 1px solid #454545;
   }
   div.gridpoint {
     background-color: #111;
@@ -188,15 +188,15 @@ img {
     color: #fff;
   }
   div.slidingbodyshow center {
-    border-top: 1px solid #444;
-    border-bottom: 1px solid #444;
+    border-top: 1px solid #454545;
+    border-bottom: 1px solid #454545;
   }
   div.gridpoint {
     background-color: #eee;
   }
   div.slidingbody, div.slidingbodyshow {
     background-color: #1a1a1a;
-    border: 1px solid #333;
+    border: 1px solid #454545;
   }
   img.logo {
     filter: invert(.95) hue-rotate(180deg) contrast(1.6);

@@ -725,7 +725,7 @@ function initChannelProperties() {
 				  	<% show_wireless_advanced(); %>
 				  	
 				  	<div class="submitFooter">
-							<script type="text/javascript">
+				  		<script type="text/javascript">
 				  		//<![CDATA[
 				  		submitFooterButton(1,1);
 				  		//]]>

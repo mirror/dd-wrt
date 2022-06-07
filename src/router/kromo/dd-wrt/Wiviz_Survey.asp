@@ -5,9 +5,8 @@
 		<script type="text/javascript" src="js/wiviz2.js"></script>
 		<link type="text/css" rel="stylesheet" href="style/wiviz2.css" />
 		<!-- The proper way to deal with memory leaks -->
-		<meta http-equiv="refresh" content="1800" charset="UTF-8">
+		<meta http-equiv="refresh" content="1800" charset="utf-8">
 	</head>
-
 <body class="popup_bg">
 	<img class='logo' id='logo' src='images/wiviz/wiviz2logo-smaller.png' height=75 width=207>
 	<div class='mainarea' id='mainarea'></div>
@@ -20,7 +19,7 @@
 	</div>
 	<div class='rightmenu'>
 		<div class='expando'>
-		<div class='slidingheader' id='scanoptions' onClick='toggleExpando(this)'>
+		<div class='button' id='scanoptions' onClick='toggleExpando(this)'>
 			Scanning Options
 		</div>
 		<div class='slidingbodyshow'>
@@ -78,8 +77,8 @@
 			<center>Show / Hide</center>
 			<input type='checkbox' id='apunenc' onClick='updatePrefs(this)'> Unsecured AP<br>
 			<input type='checkbox' id='apenc' onClick='updatePrefs(this)'> Encrypted AP<br>
-			<input type='checkbox' id='clientass' onClick='updatePrefs(this)'> Clients Connected<br>
-			<input type='checkbox' id='clientdiss' onClick='updatePrefs(this)'> Clients Searching<br>
+			<input type='checkbox' id='clientass' onClick='updatePrefs(this)'> Clients - Connected<br>
+			<input type='checkbox' id='clientdiss' onClick='updatePrefs(this)'> Clients - Searching<br>
 			<center>Effects</center>
 			<input type='checkbox' id='rotate' onClick='updatePrefs(this)'> Rotate Slowly<br>
 			<input type='checkbox' id='grid' onClick='updatePrefs(this)'> Show Grid<br>
@@ -90,7 +89,7 @@
 		</div>
 	</div>
 	<div class='expando'>
-		<div class='slidingheader' id='details' onClick='toggleExpando(this)'>
+		<div class='button' id='details' onClick='toggleExpando(this)'>
 			 Details
 		</div>
 		<div class='slidingbody'>
@@ -134,7 +133,7 @@
 		</div>
 	</div> -->
 		<div class='expando'>
-			<div class='slidingheader' id='configuration' onClick="self.close()">
+			<div class='button' id='configuration' onClick="self.close()">
 				Close
 			</div>
 		</div>

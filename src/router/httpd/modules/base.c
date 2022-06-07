@@ -2566,7 +2566,7 @@ static int do_syslog(unsigned char method, struct mime_handler *handler, char *u
 			fclose(fp);
 		}
 	} else {
-		websWrite(stream, "<table><tr class=\"center\"><td>%s</td></tr></table>", _tran_string(buf, sizeof(buf), "share.syslogdisabled"));
+		websWrite(stream, "<table style=\"margin-bottom: 10px;\"><tr class=\"center\"><td style=\"padding-bottom: 4px;\">%s</td></tr></table>", _tran_string(buf, sizeof(buf), "share.syslogdisabled"));
 	}
 	websWrite(stream, "</fieldset></body>");
 	websWrite(stream, "</html>");
