@@ -70,7 +70,7 @@
 		</div>
 	</div>
 	<div class='expando'>
-		<div class='slidingheader' id='displayoptions' onClick='toggleExpando(this)'>
+		<div class='button' id='displayoptions' onClick='toggleExpando(this)'>
 			Display Options
 		</div>
 		<div class='slidingbody'>
@@ -125,7 +125,7 @@
 		</div>
 	</div>
 	<!--	<div class='expando' style='display:none'>
-		<div class='slidingheader' id='clientspy' onClick='toggleExpando(this)'>
+		<div class='button' id='clientspy' onClick='toggleExpando(this)'>
 			Client spy
 		</div>
 		<div class='slidingbody'>
