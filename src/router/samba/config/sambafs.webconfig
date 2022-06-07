@@ -1,8 +1,8 @@
 
 <fieldset>
-	<legend><% tran("nas.samba3_legend2"); %></legend>
+	<legend><% tran("management.samba_legend"); %></legend>
 	<div class="setting">
-		<div class="label"><% tran("nas.samba3_srv_label"); %></div>
+		<div class="label"><% tran("management.samba_srv"); %></div>
 		<input class="spaceradio" type="radio" value="1" name="samba_mount" <% nvc("samba_mount","1"); %> onclick="show_layer_ext(this, 'idsamba', true)" /><% tran("share.enable"); %>&nbsp;
 		<input class="spaceradio" type="radio" value="0" name="samba_mount" <% nvc("samba_mount","0"); %> onclick="show_layer_ext(this, 'idsamba', false)" /><% tran("share.disable"); %>
 	</div>
