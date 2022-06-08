@@ -556,10 +556,10 @@ alive.h2="Keep Alive";
 alive.legend="Schedule Reboot";
 alive.sevr1="Schedule Reboot";
 alive.hour="At a set Time";
-alive.legend2="WDS/Connection Watchdog";
+alive.legend2="WDS / Connection Watchdog";
 alive.sevr2="Enable Watchdog";
 alive.IP="IP Addresses";
-alive.legend3="Proxy/Connection Watchdog";
+alive.legend3="Proxy / Connection Watchdog";
 alive.sevr3="Enable Proxy Watchdog";
 alive.IP2="Proxy IP Address";
 alive.port="Proxy Port";
@@ -638,8 +638,8 @@ hddns.page6="<dd>The status of the DDNS service connection is displayed here.</d
 
 // ** Diagnostics.asp **//
 var diag=new Object();
-diag.titl="Diagnostics";
-diag.h2="Diagnostics";
+diag.titl="Diagnostics and Commands";
+diag.h2="Diagnostics and Commands";
 diag.legend="Command Shell";
 diag.cmd="Commands";
 diag.output="Output";
@@ -681,14 +681,14 @@ hdmz.page2="<dd>To expose one PC to the Internet, select <em>" + share.enable + 
 // ** Factory_Defaults.asp **//
 var factdef=new Object();
 factdef.titl="Factory Defaults";
-factdef.h2="Factory Defaults";
-factdef.legend="Reset router settings";
-factdef.restore="Restore Factory Defaults";
+factdef.h2="Configuration Management";
+factdef.legend="NVRAM Settings";
+factdef.restore="Restore to Factory_Defaults";
 factdef.mess1="Warning! By clicking the <em>OK</em> button, the device will be reset to the factory default settings and the current configuration will be erased.";
 
 //help container
 var hfactdef=new Object();
-hfactdef.right1="This will reset all settings back to the factory default values. <b>All of your current settings will be erased</b>.";
+hfactdef.right1="This will reset all current NVRAM settings back to the DD-WRT's default values. <b>All of your current settings will be erased</b>.";
 
 // help page
 hfactdef.page1="<dd>If you are having problems with your router (which might be the result of changing certain settings) you can restore the factory defaults.</dd>";
@@ -2488,11 +2488,11 @@ htrforward.page2="</a> Or <a href=\"Forward_range.asp\">Port Range Forwarding</a
 // ** Upgrade.asp **//
 var upgrad=new Object();
 upgrad.titl="Firmware Upgrade";
-upgrad.h2="Firmware Management";
-upgrad.legend="Firmware Upgrade";
+upgrad.h2="Firmware and Reset Management";
+upgrad.legend="Firmware Upgrade and Reset";
 upgrad.info1="After Flashing";
 upgrad.resetOff="Do not Reset";
-upgrad.resetOn="Reset to Default Settings";
+upgrad.resetOn="Reset to Factory Defaults";
 upgrad.file="Select a Firmware File";
 upgrad.warning="W A R N I N G";
 upgrad.mess1="Upgrading the firmware may take a few minutes.<br />Do not turn off the power or press the reset button!";
