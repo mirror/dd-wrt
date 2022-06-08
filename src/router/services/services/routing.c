@@ -725,9 +725,6 @@ static int bird_init(void)
  */
 void start_zebra(void)
 {
-	if (!nvram_matchi("zebra_enable", 1))
-		return;
-
 #ifdef HAVE_BIRD
 
 	if (bird_init() != 0)
