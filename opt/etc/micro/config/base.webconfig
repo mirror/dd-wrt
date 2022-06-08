@@ -266,15 +266,6 @@
 			</div>
 		</fieldset><br />
 		<fieldset>
-		<legend>Routing</legend>
-		<div class="setting">
-			<div class="label">
-				Routing</div>
-			<input type="radio" name="zebra_enable" value="1" <% nvram_selmatch("zebra_enable", "1", "checked"); %> />Enable
-			<input type="radio" name="zebra_enable" value="0" <% nvram_selmatch("zebra_enable", "0", "checked"); %> />Disable
-			</div>
-		</fieldset><br />
-		<fieldset>
 		<legend>SNMP</legend>
 		<div class="setting">
 			<div class="label">
