@@ -918,9 +918,9 @@ hprivoxy.page4="<dd><br /><ul><li>Umožňuje určit vlastní nastavení a cesty 
 
 //** Lighttpd.asp **//
 //
-lighttpd.titl="Webserver";
-lighttpd.server="Lighttpd";
-lighttpd.legend="Lighttpd Webserver";
+lighttpd.titl="Web Server";
+lighttpd.server="Enable Server";
+lighttpd.legend="Lighttpd Web Server";
 lighttpd.port="HTTP Port";
 lighttpd.sslport="HTTPS Port";
 lighttpd.wan="Přístup WAN";
@@ -1327,8 +1327,8 @@ management.wifi_legend="802.1x";
 management.wifi_srv="802.1x";
 management.rst_legend="Tlačítko reset";
 management.rst_srv="Tlačítko reset";
-management.routing_legend="Routování";
-management.routing_srv="Routování";
+//management.routing_legend="Routování";
+//management.routing_srv="Routování";
 management.ipv6_legend="IPv6 podpora";
 management.ipv6_srv="IPv6";
 management.ipv6_typ="Typ IPv6";
@@ -1600,7 +1600,7 @@ routetbl.not="Ne";
 routetbl.from="Od";
 routetbl.to="k";
 routetbl.priority="Priorita";
-routetbl.tos="Tos/Dsfield";
+routetbl.tos="ToS / DS Field";
 routetbl.fwmark="Fwmark";
 routetbl.realms="Realms";
 routetbl.table="Tabulka";
