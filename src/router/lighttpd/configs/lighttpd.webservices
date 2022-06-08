@@ -1,6 +1,6 @@
 <!-- <h2><% tran("lighttpd.legend"); %></h2> -->
 <fieldset>
-<legend><% tran("lighttpd.server"); %></legend>
+<legend><% tran("lighttpd.legend"); %></legend>
 <div class="setting">
   <div class="label"><% tran("lighttpd.server"); %></div>
   <input class="spaceradio" type="radio" name="lighttpd_enable" value="1" <% nvc("lighttpd_enable", "1"); %> onclick="show_layer_ext(this, 'lighttpdconfig', true)" /><% tran("share.enable"); %>&nbsp;
