@@ -1,8 +1,6 @@
 <% do_pagehead("status_conn.titl"); %>
 
 <style type="text/css">
-a:link {text-decoration: none; color: #000;}
-a:hover {text-decoration: underline; color: #000;}
 .iplookup {overflow-x: hidden;}
 </style>
 
