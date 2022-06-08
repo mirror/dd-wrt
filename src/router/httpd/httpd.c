@@ -1,6 +1,5 @@
 /* milli_httpd - pretty small HTTP server
 ** A combination of
-
 ** micro_httpd - really small HTTP server
 ** and
 ** mini_httpd - small HTTP server
