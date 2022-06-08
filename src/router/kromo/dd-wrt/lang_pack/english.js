@@ -525,7 +525,7 @@ bmenu.servicesHotspot="Hotspot";
 bmenu.servicesNintendo="Nintendo";
 bmenu.servicesMilkfish="SIP Proxy";
 bmenu.servicesPrivoxy="Adblocking";
-bmenu.servicesLighttpd="Web server";
+bmenu.servicesLighttpd="Web Server";
 bmenu.servicesSpeedchecker="SpeedChecker";
 //bmenu.servicesAnchorFree="My Ad Network";
 
@@ -891,7 +891,7 @@ var nas=new Object();
 nas.titl="NAS";
 nas.proftpd_legend="FTP Access";
 nas.proftpd_srv="ProFTPD Server";
-nas.proftpd_srv_label="Use Server";
+nas.proftpd_srv_label="Enable Server";
 nas.proftpd_port="Server Port";
 nas.proftpd_dir="Files Directory";
 nas.proftpd_passw="User Password List";
@@ -900,7 +900,7 @@ nas.proftpd_anon="Anonymous Login (Read-only)";
 nas.proftpd_anon_dir="Anonymous Home Directory";
 nas.samba3_legend="File Sharing";
 nas.samba3_legend2="Samba Configuration";
-nas.samba3_srv_label="Use Server";
+nas.samba3_srv_label="Enable Server";
 nas.samba3="Samba Server";
 nas.nfs="Network File System Server";
 nas.rsync="Remote Synchronisation";
@@ -908,7 +908,7 @@ nas.rsync="Remote Synchronisation";
 // ** DLNA **
 nas.dlna_legend="DLNA Server";
 nas.dlna_srv="MiniDLNA";
-nas.dlna_label="Use Server";
+nas.dlna_label="Enable Server";
 nas.dlna_merge="Merge Media Dirs";
 nas.dlna_no_art="Ignore Album Art";
 nas.dlna_subtitles="Enable Subtitles";
@@ -972,9 +972,9 @@ hprivoxy.page4="<dd><br /><ul><li>Allows you to specify custom settings and path
 
 //** Lighttpd.asp **//
 var lighttpd=new Object();
-lighttpd.titl="Webserver";
-lighttpd.server="Lighttpd";
-lighttpd.legend="Lighttpd Webserver";
+lighttpd.titl="Web Server";
+lighttpd.legend="Lighttpd Web Server";
+lighttpd.server="Enable Server";
 lighttpd.port="HTTP Port";
 lighttpd.sslport="HTTPS Port";
 lighttpd.wan="WAN Access";
@@ -1378,9 +1378,9 @@ management.loop_srv="Loopback";
 management.wifi_legend="802.1x";
 management.wifi_srv="802.1x";
 management.rst_legend="Reset Button";
-management.rst_srv="Reset Button";
-management.routing_legend="Routing";
-management.routing_srv="Routing";
+management.rst_srv="Enable Button";
+//management.routing_legend="Routing";
+//management.routing_srv="Routing";
 management.ipv6_legend="IPv6 Support";
 management.ipv6_srv="IPv6";
 management.ipv6_typ="IPv6 Type";
@@ -1502,8 +1502,7 @@ hmanagement.page7="<dd>The cron subsystem schedules execution of Linux commands.
 hmanagement.page8="<dd>Enable / disable the loopback interface. The loopback interface makes your internal clients appear as if they are external. This is useful for testing things like DynDNS names. The loopback is an option because enabling it will break PPTP and Windows machine browsing by wireless clients.</dd>";
 hmanagement.page9="<dd>A limited 802.1x server needed to fulfill WPA handshake requirements to allow Windows XP clients to work with WPA.</dd>";
 hmanagement.page10="<dd>This feature controls the resetbuttond process. The reset button initiates actions depending on how long you press it.<ul><li>Short press – Reset the router (reboot)</li><li>Long press (&gt;5s) – Reboot and restore the factory default configuration.</li></ul></dd>";
-hmanagement.page11="<dd>Routing enables the OSPF and RIP routing daemons if you have set up OSPF or RIP routing in the Advanced Routing page.</dd>";
-hmanagement.page12="<dd>If you have any peer-to-peer (P2P) applications running on your network please increase the maximum ports and lower the TCP/UDP timeouts. This is necessary to maintain router stability because peer-to-peer applications open many connections and do not close them properly. Consider using these for old low end routers:<ul><li>Maximum Ports: 4096</li><li>TCP Timeout: 300&nbsp;s</li><li>UDP Timeout: 60&nbsp;s</li></ul></dd><dd>Check all values and click the <em>" + sbutton.save +"</em> button to save your settings. Click the <em>" + sbutton.cancel + "</em> button to cancel your unsaved changes. Click the <em>" + sbutton.reboot + "</em> button to reboot your router immediately.</dd>";
+hmanagement.page11="<dd>If you have any peer-to-peer (P2P) applications running on your network please increase the maximum ports and lower the TCP/UDP timeouts. This is necessary to maintain router stability because peer-to-peer applications open many connections and do not close them properly. Consider using these for old low end routers:<ul><li>Maximum Ports: 4096</li><li>TCP Timeout: 300&nbsp;s</li><li>UDP Timeout: 60&nbsp;s</li></ul></dd><dd>Check all values and click the <em>" + sbutton.save +"</em> button to save your settings. Click the <em>" + sbutton.cancel + "</em> button to cancel your unsaved changes. Click the <em>" + sbutton.reboot + "</em> button to reboot your router immediately.</dd>";
 
 // ************ Port_Services.asp (used by Filters.asp and QoS.asp, QOSPort_Services.asp not used anymore) *****************************************//
 var portserv=new Object();
@@ -1660,7 +1659,7 @@ routetbl.not="Not";
 routetbl.from="From";
 routetbl.to="To";
 routetbl.priority="Priority";
-routetbl.tos="ToS/DS Field";
+routetbl.tos="ToS / DS Field";
 routetbl.fwmark="Fwmark";
 routetbl.realms="Realms";
 routetbl.table="Table";
@@ -1789,10 +1788,11 @@ service.dhcp_nvramlease="Use NVRAM for Client Lease DB";
 service.dhcp_domain="Used Domain";
 service.dhcp_landomain="LAN Domain";
 service.dhcp_option="Additional Options";
-service.dnsmasq_legend="Dnsmasq";
-service.dnsmasq_srv="Dnsmasq";
+service.dnsmasq_legend="Dnsmasq Infrastructure";
+service.dnsmasq_srv="Enable dnsmasq";
 service.dns_crypt="Encrypt DNS";
 service.dns_smartdns="SmartDNS Resolver";
+service.dns_smartdns_label="Enable Resolver";
 service.dns_smartdns_dualstack="Dualstack IP Selection";
 service.dns_smartdns_prefetch_domain="Prefetch Domain";
 service.dns_smartdns_serve_expired="Serve Expired";
@@ -1832,7 +1832,7 @@ service.syslog_ip="Remote Server";
 
 //telnet.webservices
 service.telnet_legend="Telnet";
-service.telnet_srv="Use Server";
+service.telnet_srv="Enable Server";
 
 service.mactelnetd_legend="Mikrotik MAC Telnet";
 service.mactelnetd="MAC Telnet";
@@ -1859,7 +1859,7 @@ service.rflow_srv2="MACupd";
 
 //pppoe-relay.webservices
 service.pppoe_legend="PPPoE Relay";
-service.pppoe_srv="Relay";
+service.pppoe_srv="Enable Relay";
 
 //pppoe-server.webservices
 service.pppoesrv_legend="PPPoE Server";
@@ -1888,8 +1888,8 @@ hpppoesrv.page1="<dd>This is a PPP over Ethernet redirector for PPPD.<br /><b>rp
 hpppoesrv.page2="<dd>Click the <em>" + sbutton.save + "</em> button to save your settings or click the <em>" + sbutton.cancel + "</em> button to cancel your unsaved changes.</dd>";
 
 //snmp.webservices
-service.snmp_legend="SNMP";
-service.snmp_srv="SNMP";
+service.snmp_legend="Simple Network Management Protocol";
+service.snmp_srv="Enable SNMP";
 service.snmp_loc="Location";
 service.snmp_contact="Contact";
 service.snmp_name="Name";
@@ -1897,7 +1897,7 @@ service.snmp_read="RO Community";
 service.snmp_write="RW Community";
 
 //openvpn.webvpn
-service.vpnd_legend="OpenVPN Server/Daemon";
+service.vpnd_legend="OpenVPN Server / Daemon";
 service.vpnd_srv="OpenVPN";
 service.vpnd_starttype="Start Type";
 service.vpnd_startWanup="WAN Up";
@@ -2170,13 +2170,13 @@ service.softether_config="Config";
 
 // Zabbix
 service.zabbix_legend="Zabbix";
-service.zabbix_cl="Client";
+service.zabbix_cl="Enable Client";
 service.zabbix_serverip="Zabbix Server IP";
 service.zabbix_usrpara="User Parameters";
 
 // mdns
-service.mdns_legend="mDNS/Avahi";
-service.mdns_domain="Domain name [local]";
+service.mdns_legend="mDNS / Avahi";
+service.mdns_domain="Domain Name [local]";
 service.mdns_reflector="Reflector";
 service.mdns_interfaces="Interfaces";
 
@@ -2189,8 +2189,8 @@ service.transmission_style="Web UI Style";
 service.transmission_rpc="Web UI Port";
 service.transmission_whitelist="Whitelist IPs";
 
-service.plex_legend="Media Server";
-service.plex_srv="Plex Media Server";
+service.plex_legend="Plex Media Server";
+service.plex_srv="Enable Server";
 service.plex_appdir="Plex Application Support Directory";
 
 // ** eop-tunnel.asp **//
@@ -3186,12 +3186,12 @@ hwl_basic.right4="Adjusts the ACK timing. 0 disables ACK timing completely on Br
 hwl_basic.right6="Click any hour to enable or disable the radio signal (<em>green</em> indicates allowed Wireless access, and <em>red</em> indicates blocked Wireless access)";
 
 //help page
-hwl_basic.page1="<dd>The wireless part of your router can run in different modes:<ul class=\"wide\"><li>AP mode – This is the default mode, also called Infrastructure mode. Your router acts as an central connection point, which wireless clients can connect to.</li><li>Client mode – The radio interface is used to connect the Internet-facing side of the router (i.e., the WAN) as a client to a remote access point. NAT or routing are performed between WAN and LAN, like in \"normal\" gateway or router mode. Use this mode, e.g., if your Internet connection is provided by a remote access point, and you want to connect a subnet of your own to it. </li><li>Client Bridged (Routed) mode – The radio interface is used to connect the LAN side of the router to a remote access point. The LAN and the remote AP will be in the same subnet (This is called a \"bridge\" between two network segments). The WAN side of the router is unused and can be disabled. Use this mode, e.g., to make the router act as a \"WLAN adapter\" for a device connected to one of the LAN Ethernet ports.</li><li>Ad-Hoc mode – This is for peer to peer wireless connections. Clients running in Ad-Hoc mode can connect to each other as required without involving central access points.</li></ul><br /><div class=\"note\"><h4>Note:</h4><div>Note that <a href=\"HWDS.asp\">WDS</a> is only available in AP mode.</div></div></dd>";
+hwl_basic.page1="<dd>The wireless part of your router can run in different modes:<ul class=\"wide\"><li>AP mode – This is the default mode, also called Infrastructure mode. Your router acts as an central connection point, which wireless clients can connect to.</li><li>Client mode – The radio interface is used to connect the Internet-facing side of the router (i.e., the WAN) as a client to a remote access point. NAT or routing are performed between WAN and LAN, like in \"normal\" gateway or router mode. Use this mode, e.g. if your Internet connection is provided by a remote access point, and you want to connect a subnet of your own to it. </li><li>Client Bridged (Routed) mode – The radio interface is used to connect the LAN side of the router to a remote access point. The LAN and the remote AP will be in the same subnet (This is called a \"bridge\" between two network segments). The WAN side of the router is unused and can be disabled. Use this mode, e.g., to make the router act as a \"WLAN adapter\" for a device connected to one of the LAN Ethernet ports.</li><li>Ad-Hoc mode – This is for peer to peer wireless connections. Clients running in Ad-Hoc mode can connect to each other as required without involving central access points.</li></ul><br /><div class=\"note\"><h4>Note:</h4><div>Note that <a href=\"HWDS.asp\">WDS</a> is only available in AP mode.</div></div></dd>";
 hwl_basic.page2="<dd>If you have mixed b/g/n devices on your network, then keep the default setting, <i>Mixed</i>. If you have only 802.11n devices, select <i>N-Only</i>. If you would like to limit your network to only 802.11g devices, then select <i>G-Only</i>. If you want to disable wireless networking, select <em>" + share.disable + "</em>. Note that <i>B-Only</i> mode is not supported under WDS.</dd>";
 hwl_basic.page3="<dd>The SSID is the network name shared among all devices in a wireless network. The SSID must be identical for all devices in the wireless network. It is case-sensitive and must not exceed 32 alphanumeric characters, which may be any keyboard character. Make sure this setting is the same for all devices in your wireless network.<br /><br /><div class=\"note\"><h4>Note:</h4><div>For added security, it is recommended to change the default SSID <tt>dd-wrt</tt> to a unique name of your choice.</div></div></dd>";
 hwl_basic.page4="<dd>Select the appropriate channel from the list provided to correspond with your network settings (in North America between channel 1 and 11, in Europe 1 and 13, in Japan all 14 channels). All devices in your wireless network must use the same channel in order to function correctly. Try to avoid conflicts with other wireless networks by choosing a channel where the upper and lower three channels are not in use.</dd>";
 hwl_basic.page5="<dd>When wireless clients survey the local area for wireless networks to associate with, they will detect the SSID broadcast by the router. To broadcast the router SSID, keep the default setting, <i>Enable</i>. If you do not want to broadcast the router SSID, then select <em>" + share.disable + "</em>.</dd>";
-hwl_basic.page6="<dd>Adjusts the ACK timing based on the maximum distance in meters<br /><div class=\"note\"><h4>Note:</h4><div>On earlier Atheros based DD-WRT firmwares, 0 will enable auto ACK mode instead of disable it.</div></div><ul class=\"wide\"><li> 0 disables ACK timing completely (0 = No-ACK mode)</li><li> 1 - 999999 adjusts ACK timing</li></ul></dd>";
+hwl_basic.page6="<dd>Adjusts the ACK timing based on the maximum distance in meters<br /><div class=\"note\"><h4>Note:</h4><div>On earlier Atheros based DD-WRT firmwares, 0 would enable auto ACK mode instead of disabling it.</div></div><ul class=\"wide\"><li> 0 disables ACK timing completely (0 = No-ACK mode)</li><li> 1 - 999999 adjusts ACK timing</li></ul></dd>";
 hwl_basic.page7="<dd>Check all values and click the <em>" + sbutton.save + "</em> button to save your settings. Click the <em>" + sbutton.cancel + "</em> button to cancel your unsaved changes.</dd>";
 
 hwl_basic.antaira="<dt class=\"term\"><b>AP mode</b></dt><dd class=\"definition\">This is the default mode, also called Infrastructure mode</dd><dt class=\"term\"><b>Client mode</b></dt><dd class=\"definition\">The radio is used to connect wirelessly to another AP</dd><dt class=\"term\"><b>Client bridged (Routed no NAT) mode</b></dt><dd class=\"definition\">The radio is used to connect wirelessly to another AP</dd><dt class=\"term\"><b>Ad-Hoc mode</b></dt><dd class=\"definition\">This is for peer to peer wireless connections.</dd><dt class=\"term\"><b>Wireless Channel</b></dt><dd class=\"definition\">Select the appropriate channel top operate on.</dd><dt class=\"term\"><b>Wireless SSID Broadcast</b></dt><dd class=\"definition\">When wireless clients survey the local area for wireless networks to associate with, they will detect the SSID broadcast by the router.</dd><dt class=\"term\"><b>Sensitivity Range (ACK Timing)</b></dt><dd class=\"definition\">Adjusts the ACK timing based on the maximum distance in meters.</dd> ";

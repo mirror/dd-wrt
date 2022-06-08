@@ -26,10 +26,8 @@
 				<% tran("hmanagement.page9"); %>
 				<dt><% tran("management.rst_legend"); %></dt>
 				<% tran("hmanagement.page10"); %>
-				<dt><% tran("management.routing_legend"); %></dt>
-				<% tran("hmanagement.page11"); %>
 				<dt><% tran("management.net_legend"); %></dt>
-				<% tran("hmanagement.page12"); %>
+				<% tran("hmanagement.page11"); %>
 			</dl>
 		</div>
 		<div class="also">
