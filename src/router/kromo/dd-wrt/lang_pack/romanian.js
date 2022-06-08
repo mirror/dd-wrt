@@ -733,9 +733,9 @@ hprivoxy.right2="Activați privoxy și configurați setările proxy pentru clien
 
 
 //** Lighttpd.asp **//
-lighttpd.titl="Server web";
-lighttpd.server="Lighttpd";
-lighttpd.legend="Server web Lighttpd";
+lighttpd.titl="Server Web";
+lighttpd.server="Activează Server";
+lighttpd.legend="Server Web Lighttpd";
 lighttpd.port="Port HTTP";
 lighttpd.sslport="Port HTTPS";
 lighttpd.custom="Configurație particulară";
@@ -1047,8 +1047,8 @@ management.wifi_legend="802.1x";
 management.wifi_srv="802.1x";
 management.rst_legend="Buton de resetare";
 management.rst_srv="Buton de resetare";
-management.routing_legend="Rutare";
-management.routing_srv="Rutare";
+//management.routing_legend="Rutare";
+//management.routing_srv="Rutare";
 management.ipv6_legend="Compatibilitate IPv6";
 management.ipv6_srv="IPv6";
 management.ipv6_rad="Radvd activat";
