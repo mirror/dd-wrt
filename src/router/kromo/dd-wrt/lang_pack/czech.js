@@ -918,9 +918,9 @@ hprivoxy.page4="<dd><br /><ul><li>Umožňuje určit vlastní nastavení a cesty 
 
 //** Lighttpd.asp **//
 //
-lighttpd.titl="Webserver";
-lighttpd.server="Lighttpd";
-lighttpd.legend="Lighttpd Webserver";
+lighttpd.titl="Web Server";
+lighttpd.server="Enable Server";
+lighttpd.legend="Lighttpd Web Server";
 lighttpd.port="HTTP Port";
 lighttpd.sslport="HTTPS Port";
 lighttpd.wan="Přístup WAN";

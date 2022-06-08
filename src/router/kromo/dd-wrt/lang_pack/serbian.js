@@ -759,9 +759,9 @@ hprivoxy.page2="<dd>Транспарентни мод : <br /><ul><li>Саобр
 hprivoxy.page3="<dd>Custom подешавања: <br /><ul><li>Дозвољава да прецизирате своја подешавања и путање до ваших филтера на спољним медијима нпр. usb стик</li></ul></dd>";
 
 //** Lighttpd.asp **//
-lighttpd.titl="Webserver";
-lighttpd.server="Lighttpd";
-lighttpd.legend="Lighttpd Webserver";
+lighttpd.titl="Web Server";
+lighttpd.server="Enable Server";
+lighttpd.legend="Lighttpd Web Server";
 lighttpd.port="HTTP порт";
 lighttpd.sslport="HTTPS порт";
 lighttpd.wan="WAN приступ";

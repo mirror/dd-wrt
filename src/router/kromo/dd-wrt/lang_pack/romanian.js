@@ -733,9 +733,9 @@ hprivoxy.right2="Activați privoxy și configurați setările proxy pentru clien
 
 
 //** Lighttpd.asp **//
-lighttpd.titl="Server web";
-lighttpd.server="Lighttpd";
-lighttpd.legend="Server web Lighttpd";
+lighttpd.titl="Server Web";
+lighttpd.server="Activează Server";
+lighttpd.legend="Server Web Lighttpd";
 lighttpd.port="Port HTTP";
 lighttpd.sslport="Port HTTPS";
 lighttpd.custom="Configurație particulară";

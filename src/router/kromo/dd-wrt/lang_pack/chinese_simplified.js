@@ -868,7 +868,7 @@ hprivoxy.page3="<dd><br /><ul><li>即使客户端未配置任何代理设置，P
 hprivoxy.page4="<dd><br /><ul><li>允许您指定自定义设置和外部媒体上自定义过滤器的路径 例如U盘</li></ul></dd>";
 
 //** Lighttpd.asp **//
-lighttpd.titl="Web服务器";
+lighttpd.titl="Web 服务器";
 lighttpd.server="Lighttpd";
 lighttpd.legend="Lighttpd服务器";
 lighttpd.port="HTTP端口";
