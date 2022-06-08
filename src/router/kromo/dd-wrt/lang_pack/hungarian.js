@@ -820,8 +820,8 @@ management.wifi_srv="802.1x";
 management.rst_legend="Reset gomb";
 management.rst_srv="Reset gomb";
 
-management.routing_legend="Routolás";
-management.routing_srv="Routolás";
+//management.routing_legend="Routolás";
+//management.routing_srv="Routolás";
 
 management.ipv6_legend="IPv6 Támogatás";
 management.ipv6_srv="IPv6";
