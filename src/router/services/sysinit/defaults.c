@@ -2711,7 +2711,6 @@ struct nvram_param srouter_defaults[] = {
 	{ "wshaper_nopriohostdst", "" },
 	{ "wshaper_noprioportsrc", "" },
 	{ "wshaper_noprioportdst", "" },
-	{ "zebra_enable", "1" },
 	{ "qos_type", "0" },
 	{ "svqos_svcs", "" },
 	{ "svqos_ips", "" },
