@@ -197,7 +197,6 @@
  "ospfd_copt"  "ospfd copt"  "CHOICE" "2"  "0"  "1"  "FALSE" "0"
  "ripd_copt"  "ripd copt"  "CHOICE" "2"  "0"  "1"  "FALSE" "0"
  "zebra_copt"  "Zebra copt"  "CHOICE" "2"  "0"  "1"  "FALSE" "0"
- "zebra_enable"  "Zebra"  "CHOICE" "2"  "0"  "1"  "FALSE" "0"
  "bird_ospf" "Routing"  "NULL"  "TRUE" "0"
  "ripd_conf"  "ripd conf"  "NULL" "TRUE" "0"
  "ospfd_conf"  "ospfd conf"  "NULL" "TRUE" "0"
