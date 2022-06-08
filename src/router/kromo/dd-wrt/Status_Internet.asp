@@ -139,7 +139,7 @@ addEvent(window, "unload", function() {
 										</script>
 										</div>
 										<div class="setting" id="wan_signal">
-											<div class="label">Signal Status</div>
+											<div class="label"><% tran("status_inet.sig_status"); %>Signal Status</div>
 											<span id="wan_3g_signal"><% nvram_status_get("wan_3g_signal"); %></span>
 										</div>
 										<div class="setting" id="wan_acname">
@@ -180,7 +180,6 @@ addEvent(window, "unload", function() {
 									</div>
 								</div>
 							</fieldset><br />
-							
 							<div id="wan_showtraff" style="display:none">
 							<h2><% tran("status_inet.traff"); %> <% nvg("ttraff_iface"); %></h2>
 								<fieldset>
@@ -212,16 +211,15 @@ addEvent(window, "unload", function() {
 								</fieldset><br />
 								<fieldset>
 								<legend><% tran("status_inet.dataadmin"); %></legend>
-											<script type="text/javascript">
-											//<![CDATA[
-											document.write("<input class=\"button\" type=\"button\" name=\"backup_button\" value=\"" + sbutton.backup + "\" onclick=\"window.location.href='/traffdata.bak';\" />");
-											document.write("<input class=\"button\" type=\"button\" name=\"restore_button\" value=\"" + sbutton.restore + "\" onclick=\"openWindow('Traff_admin.asp', 500, 180);\" />");
-											document.write("<input class=\"button\" type=\"button\" name=\"delete_button\" value=\"" + sbutton.del + "\" onclick=\"ttraff_remove_submit(this.form);\" />");
-											//]]>
-											</script>
+									<script type="text/javascript">
+									//<![CDATA[
+									document.write("<input class=\"button\" type=\"button\" name=\"backup_button\" value=\"" + sbutton.backup + "\" onclick=\"window.location.href='/traffdata.bak';\" />");
+									document.write("<input class=\"button\" type=\"button\" name=\"restore_button\" value=\"" + sbutton.restore + "\" onclick=\"openWindow('Traff_admin.asp', 500, 180);\" />");
+									document.write("<input class=\"button\" type=\"button\" name=\"delete_button\" value=\"" + sbutton.del + "\" onclick=\"ttraff_remove_submit(this.form);\" />");
+									//]]>
+									</script>
 								</fieldset><br />
 							</div>
-
 							<div class="submitFooter">
 								<script type="text/javascript">
 								//<![CDATA[
