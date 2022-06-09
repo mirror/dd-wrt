@@ -12,7 +12,7 @@ share.annex="Annex Type";
 share.apn="APN";
 share.pin="PIN";
 share.dial="Dial String";
-share.mode_3g="Connection type";
+share.mode_3g="Connection Type";
 share.mode_3g_auto="Auto LTE-4G/3G/2G";
 share.mode_3g_4g="Force LTE-4G";
 share.mode_3g_3g="Force 3G";
@@ -32,13 +32,13 @@ share.disabled="Disabled";
 share.usrname="Username";
 share.passwd="Password";
 share.hostname="Hostname";
-share.advanced="Advanced settings";
+share.advanced="Advanced Settings";
 share.vdsl="Advanced VLAN Tagging";
-share.vdslvlan7="T-Online VLAN 7 support";
-share.vdslvlan8="T-Online VLAN 8 support";
+share.vdslvlan7="T-Online VLAN 7 Support";
+share.vdslvlan8="T-Online VLAN 8 Support";
 share.vdslbng="T-Online BNG support";
 share.wan_vlantag="VLAN Tag ID";
-share.wan_dualaccess="Dual-Access mode";
+share.wan_dualaccess="Dual-Access Mode";
 share.compression="PPP Compression (MPPC)";
 share.mlppp="Single Line Multi Link";
 share.vpi_vci="VPI/VCI";
@@ -188,7 +188,7 @@ share.wireless="Wireless";
 share.dhcp="DHCP";
 share.styl="Select a Style";
 share.theme="Select a Theme";
-share.styl_dark="Use Dark Styles";
+share.styl_dark="Enable Dark Styles";
 share.err="error";
 share.errs="errors";
 share.meters="meters";
@@ -240,7 +240,7 @@ share.mbytes="MB";
 share.gbytes="GB";
 share.preempt="Preemption";
 share.acktiming="ACK Timing";
-share.broadcast="Broadcast support";
+share.broadcast="Broadcast Support";
 share.secondcharacter="s";
 share.change="User Password Change";
 share.copy="Copy";
@@ -666,8 +666,8 @@ hdiag.page5="<dd>A custom script is stored in <b>/tmp/.rc_custom</b>. You can ru
 var dmz=new Object();
 dmz.titl="DMZ";
 dmz.h2="Demilitarized Zone (DMZ)";
-dmz.legend="DMZ";
-dmz.serv="Use DMZ";
+dmz.legend="Perimeter Network";
+dmz.serv="Enable DMZ";
 dmz.host="DMZ Host IP Address";
 
 //help container
@@ -676,15 +676,15 @@ hdmz.right2="Enabling this option will expose the specified host to the Internet
 
 //help page
 hdmz.page1="<dd>The DMZ (Demilitarized Zone) hosting feature allows one local user to be exposed to the Internet for use of a special-purpose service such as Internet gaming or videoconferencing. DMZ hosting forwards all the ports at the same time to one PC. The Port Forwarding feature is more secure because it only opens the ports you want to have opened, while DMZ hosting opens all the ports of one computer, exposing the computer so the Internet can see it.<br /><br /><div class=\"note\"><h4>Note:</h4><div>Any computer whose port is being forwarded must have a new static IP address assigned to it because the IP address may change when using the DHCP function.</div></div></dd>";
-hdmz.page2="<dd>To expose one PC to the Internet, select <em>" + share.enable + "</em> and enter the computer's IP address in the <i>DMZ Host IP Address</i> field.<br /><br />To disable the DMZ, keep the default setting, <em>" + share.disable + "</em>.</dd><dd>Click the <em>" + sbutton.save + "</em> button to save your settings or click the <em>" + sbutton.cancel + "</em> button to cancel your unsaved changes.</dd>";
+hdmz.page2="<dd>To expose one device to the Internet, select <em>" + share.enable + "</em> and enter the computer's IP address in the <i>DMZ Host IP Address</i> field.<br /><br />To disable the DMZ, keep the default setting, <em>" + share.disable + "</em>.</dd><dd>Click the <em>" + sbutton.save + "</em> button to save your settings or click the <em>" + sbutton.cancel + "</em> button to cancel your unsaved changes.</dd>";
 
 // ** Factory_Defaults.asp **//
 var factdef=new Object();
 factdef.titl="Factory Defaults";
 factdef.h2="Configuration Management";
 factdef.legend="NVRAM Settings";
-factdef.restore="Restore to Factory_Defaults";
-factdef.mess1="Warning! By clicking the <em>OK</em> button, the device will be reset to the factory default settings and the current configuration will be erased.";
+factdef.restore="Restore to Factory Defaults";
+factdef.mess1="Warning! By clicking the <em>OK</em> button, the device will be reset to the factory default settings, erasing the current configuration.";
 
 //help container
 var hfactdef=new Object();
@@ -692,12 +692,12 @@ hfactdef.right1="This will reset all current NVRAM settings back to the DD-WRT's
 
 // help page
 hfactdef.page1="<dd>If you are having problems with your router (which might be the result of changing certain settings) you can restore the factory defaults.</dd>";
-hfactdef.page2="<dd>Click the <em>" + share.yes + "</em> button to reset all configuration settings to their default values. Then click the <em>" + sbutton.apply + "</em> button.<br /><br /><div class=\"note\"><h4>Note:</h4><div>Any settings you have saved will be lost when the default settings are restored. After resetting to defaults the router will reboot and will become accessible via the default IP address 192.168.1.1 and entering a new username and password is required before proceeding with configuration.</div></div></dd>";
+hfactdef.page2="<dd>Click the <em>" + share.yes + "</em> button to reset all configuration settings to their default values. Then click the <em>" + sbutton.apply + "</em> button.<br /><br /><div class=\"note\"><h4>Note:</h4><div>Any settings you have saved will be lost when the default settings are restored. After resetting to defaults the router will reboot and will become accessible via the default IP address 192.168.1.1 and entering a new username and password is required before proceeding to the Web interface.</div></div></dd>";
 
 // ** FilterIPMAC.asp **//
 var filterIP=new Object();
-filterIP.titl="List of clients";
-filterIP.h2="List of clients";
+filterIP.titl="List of Clients";
+filterIP.h2="List of Clients";
 filterIP.legend1="Enter MAC Address of the clients in this format: xx:xx:xx:xx:xx:xx";
 filterIP.legend2="Enter the IP Address of the clients";
 filterIP.legend3="Enter the IP Range of the clients";
@@ -1187,7 +1187,7 @@ idx_l.iptv="Receive IPTV";
 
 // ** index_pppoe.asp **//
 var idx_pppoe=new Object();
-idx_pppoe.use_rp="Use RP PPPoE";
+idx_pppoe.use_rp="Use RP-PPPoE";
 
 // ** index_pptp.asp **//
 var idx_pptp=new Object();
@@ -2754,8 +2754,8 @@ var wl_active=new Object();
 wl_active.titl="Wireless Active Client MAC List";
 wl_active.h2="Wireless Client MAC List";
 wl_active.h3="Enable MAC Filter";
-wl_active.active="Active clients";
-wl_active.inactive="Inactive clients";
+wl_active.active="Active Clients";
+wl_active.inactive="Inactive Clients";
 
 // ** Wireless_WDS.asp **//
 var wds=new Object();
@@ -2815,7 +2815,7 @@ var wl_mac=new Object();
 wl_mac.titl="MAC Filter";
 wl_mac.h2="Wireless MAC Filter";
 wl_mac.legend="MAC Filter";
-wl_mac.label="Use Filter";
+wl_mac.label="Enable Filter";
 wl_mac.label2="Filter Mode";
 wl_mac.deny="Prevent clients listed from accessing the wireless network";
 wl_mac.allow="Permit clients listed to access the wireless network";
