@@ -305,7 +305,6 @@ addEvent(window, "unload", function() {
 							<input type="hidden" name="filter_p2p" />
 							<input type="hidden" name="f_status" />
 							<h2><% tran("filter.h2"); %></h2>
-							
 							<fieldset>
 								<legend><% tran("filter.legend"); %></legend>
 								<div class="setting">
@@ -358,7 +357,6 @@ addEvent(window, "unload", function() {
 								</div>
 								<br />
 							</fieldset><br />
-							
 							<fieldset>
 								<legend><% tran("filter.legend2"); %></legend>
 								<div class="setting">
@@ -386,7 +384,6 @@ addEvent(window, "unload", function() {
 									</table>
 								</div>
 							</fieldset><br />
-							
 							<fieldset>
 								<legend><% tran("filter.time"); %></legend>
 								<div class="setting">
@@ -397,12 +394,11 @@ addEvent(window, "unload", function() {
 									<div class="label"><% tran("share.from"); %></div>
 									<input type="hidden" name="allday" />
 									<input class="spaceradio" type="radio" value="0" name="time_all" onclick="timeall(this.form,'1')" <% filter_tod_get("time_all_dis"); %> />
-									<select name="start_hour"><% filter_tod_get("start_hour_24"); %></select>:<select name="start_min"><% filter_tod_get("start_min_1"); %></select>&nbsp;&nbsp;&nbsp;
-									<% tran("share.to"); %>&nbsp;
-									<select name="end_hour"><% filter_tod_get("end_hour_24"); %></select>:<select name="end_min"><% filter_tod_get("end_min_1"); %></select>
+									<select name="start_hour"><% filter_tod_get("start_hour_24"); %></select>:<select name="start_min"><% filter_tod_get("start_min_1"); %></select>&nbsp;
+									<% tran("share.to"); %>
+									&nbsp;<select name="end_hour"><% filter_tod_get("end_hour_24"); %></select>:<select name="end_min"><% filter_tod_get("end_min_1"); %></select>
 								</div>
 							</fieldset><br />
-							
 							<fieldset>
 								<legend><% tran("filter.legend3"); %></legend>
 								<div class="setting">
@@ -430,7 +426,6 @@ addEvent(window, "unload", function() {
 									</script>
 								</div>
 							</fieldset><br />
-							
 							<fieldset>
 								<legend><% tran("filter.legend4"); %></legend>
 								<div class="setting center">
@@ -459,7 +454,6 @@ addEvent(window, "unload", function() {
 									<input size="30" maxlength="79" name="host14" onblur="valid_name(this,'URL')" value="<% filter_web_get("host","14"); %>" class="three_column three_column_last" />
 								</div>
 							</fieldset><br />
-							
 							<fieldset>
 								<legend><% tran("filter.legend5"); %></legend>
 								<div class="setting center">
@@ -487,7 +481,6 @@ addEvent(window, "unload", function() {
 									<input size="21" maxlength="79" name="url15" onblur="valid_name(this,'Keyword')" value="<% filter_web_get("url","15"); %>" class="four_column four_column_last" />
 								</div>
 							</fieldset><br />
-							
 							<div class="submitFooter">
 								<script type="text/javascript">
 								//<![CDATA[

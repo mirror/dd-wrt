@@ -1887,7 +1887,7 @@ service.zabbix_serverip="Zabbix Server IP";
 service.zabbix_usrpara="User Parameter";
 
 // mdns
-service.mdns_legend="mDNS/Avahi";
+service.mdns_legend="mDNS / Avahi";
 service.mdns_domain="Domainname [lokal]";
 service.mdns_reflector="Reflektor";
 service.mdns_interfaces="Schnittstellen";
