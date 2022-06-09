@@ -2995,6 +2995,7 @@ wl_basic.label="Radio Mode";
 wl_basic.label2="Network Mode";
 wl_basic.label3="Service Set Identifier (SSID)";
 wl_basic.label4="Channel";
+wl_basic.bssid="Basic Service Set Identifier (BSSID)";
 wl_basic.vht80p80chan="Wireless Channel 2 (VHT80+80)";
 wl_basic.label5="SSID Broadcast";
 wl_basic.label6="Sensitivity Range (ACK Timing)";
