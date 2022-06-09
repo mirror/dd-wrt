@@ -15,6 +15,6 @@
 	</div>
 	<div class="setting">
 		<div class="label"><% tran("alive.port"); %></div>
-		<input size="4" maxLength="4" class="num" name="squid_proxy_server_port" onblur="valid_range(this,0,9999,'Proxy Port')" value="<% nvram_get("squid_proxy_server_port"); %>" />
+		<input size="4" maxLength="4" class="num" name="squid_proxy_server_port" onblur="valid_range(this,0,9999,alive.port)" value="<% nvram_get("squid_proxy_server_port"); %>" />
 	</div>	
 </fieldset><br/>
