@@ -2564,8 +2564,8 @@ static int show_virtualssid(webs_t wp, char *prefix)
 		websWrite(wp, "]</legend>\n");
 		websWrite(wp, "<div class=\"setting\">\n");
 #if (!defined(HAVE_EASY_WIRELESS_CONFIG) || defined(HAVE_BCMMODERN)) && !defined(HAVE_BRCMFMAC)
-		show_caption(wp, "label", "wl_basic.label3", NULL);
-		websWrite(wp, "<input name=\"%s_ssid\" size=\"20\" maxlength=\"32\" onblur=\"valid_name(this,wl_basic.label3)\" value=\"", var);
+		show_caption(wp, "label", "wl_basic.ssid", NULL);
+		websWrite(wp, "<input name=\"%s_ssid\" size=\"20\" maxlength=\"32\" onblur=\"valid_name(this,wl_basic.ssid)\" value=\"", var);
 		tf_webWriteESCNV(wp, ssid);
 		websWrite(wp, "\" /></div>\n");
 
@@ -2634,9 +2634,9 @@ static int show_virtualssid(webs_t wp, char *prefix)
 		websWrite(wp, "</select>\n");
 		websWrite(wp, "</div>\n");
 
-		show_caption(wp, "label", "wl_basic.label3", NULL);
+		show_caption(wp, "label", "wl_basic.ssid", NULL);
 
-		websWrite(wp, "<input name=\"%s_ssid\" size=\"20\" maxlength=\"32\" onblur=\"valid_name(this,wl_basic.label3)\" value=\"", var);
+		websWrite(wp, "<input name=\"%s_ssid\" size=\"20\" maxlength=\"32\" onblur=\"valid_name(this,wl_basic.ssid)\" value=\"", var);
 		tf_webWriteESCNV(wp, ssid);
 		websWrite(wp, "\" /></div>\n");
 // broadcast wireless ssid
@@ -2853,8 +2853,8 @@ static int show_virtualssid(webs_t wp, char *prefix)
 				websWrite(wp, "] HWAddr [%s", nvram_safe_get(wl_macaddr));
 			websWrite(wp, "]</legend>\n");
 			websWrite(wp, "<div class=\"setting\">\n");
-			show_caption(wp, "label", "wl_basic.label3", NULL);
-			websWrite(wp, "<input name=\"%s_ssid\" size=\"20\" maxlength=\"32\" onblur=\"valid_name(this,wl_basic.label3)\" value=\"", var);
+			show_caption(wp, "label", "wl_basic.ssid", NULL);
+			websWrite(wp, "<input name=\"%s_ssid\" size=\"20\" maxlength=\"32\" onblur=\"valid_name(this,wl_basic.ssid)\" value=\"", var);
 			tf_webWriteESCNV(wp, ssid);
 			websWrite(wp, "\" /></div>\n");
 			websWrite(wp, "<div class=\"setting\">\n");
@@ -3641,8 +3641,8 @@ static void internal_ej_show_wireless_single(webs_t wp, char *prefix)
 		showRadio(wp, "wl_adv.label18", wmm);
 #endif
 	websWrite(wp, "<div class=\"setting\">\n");
-	show_caption(wp, "label", "wl_basic.label3", NULL);
-	websWrite(wp, "<input name=\"%s\" size=\"20\" maxlength=\"32\" onblur=\"valid_name(this,wl_basic.label3)\" value=\"", wl_ssid);
+	show_caption(wp, "label", "wl_basic.ssid", NULL);
+	websWrite(wp, "<input name=\"%s\" size=\"20\" maxlength=\"32\" onblur=\"valid_name(this,wl_basic.ssid)\" value=\"", wl_ssid);
 	tf_webWriteESCNV(wp, wl_ssid);
 	websWrite(wp, "\" /></div>\n");
 #ifdef HAVE_MADWIFI
@@ -4279,7 +4279,7 @@ static void internal_ej_show_wireless_single(webs_t wp, char *prefix)
 // wireless ssid
 	websWrite(wp, "<div class=\"setting\">\n");
 	websWrite(wp,
-		  "<div class=\"label\"><script type=\"text/javascript\">Capture(wl_basic.label3)</script></div><input name=\"%s\" size=\"20\" maxlength=\"32\" onblur=\"valid_name(this,wl_basic.label3)\" value=\"",
+		  "<div class=\"label\"><script type=\"text/javascript\">Capture(wl_basic.ssid)</script></div><input name=\"%s\" size=\"20\" maxlength=\"32\" onblur=\"valid_name(this,wl_basic.ssid)\" value=\"",
 		  wl_ssid);
 	tf_webWriteESCNV(wp, wl_ssid);
 	websWrite(wp, "\" /></div>\n");

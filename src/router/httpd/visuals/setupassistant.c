@@ -651,7 +651,7 @@ EJ_VISIBLE void ej_sas_show_wireless_single(webs_t wp, char *prefix)
 
 	websWrite(wp, "<div class=\"setting\">\n");
 	websWrite(wp,
-		  "<div class=\"label\"><script type=\"text/javascript\">Capture(wl_basic.label3)</script></div><input name=\"%s\" size=\"20\" maxlength=\"32\" onblur=\"valid_name(this,wl_basic.label3)\" value=\"%s\" /></div>\n",
+		  "<div class=\"label\"><script type=\"text/javascript\">Capture(wl_basic.ssid)</script></div><input name=\"%s\" size=\"20\" maxlength=\"32\" onblur=\"valid_name(this,wl_basic.ssid)\" value=\"%s\" /></div>\n",
 		  wl_ssid, nvram_selget(wp, wl_ssid));
 
 #ifdef HAVE_RT2880
