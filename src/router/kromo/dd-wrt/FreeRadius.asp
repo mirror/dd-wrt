@@ -170,7 +170,7 @@ addEvent(window, "unload", function() {
 							<legend><% tran("freeradius.settings"); %></legend>
 							<div class="setting">
 								<div class="label"><% tran("freeradius.port"); %></div>
-								<input class="num" maxlength="5" size="5" name="radius_port" onblur="valid_range(this,1,65535,'FreeRadius Port')" value="<% nvg("radius_port"); %>" />
+								<input class="num" maxlength="5" size="5" name="radius_port" onblur="valid_range(this,1,65535,freeradius.port)" value="<% nvg("radius_port"); %>" />
 								<span class="default">
 								<script type="text/javascript">
 								//<![CDATA[

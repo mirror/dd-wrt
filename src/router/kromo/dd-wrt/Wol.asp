@@ -275,7 +275,6 @@ addEvent(window, "unload", function() {
 	</head>
 
 	<body class="gui">
-		
 		<div id="wrapper"> 
 			<div id="content">
 				<div id="header">
@@ -305,7 +304,6 @@ addEvent(window, "unload", function() {
 									</tr>
 								</table>
 							</fieldset><br />
-
 							<fieldset>
 								<legend><% tran("wol.legend2"); %></legend>
 								<table class="table" cellspacing="5" id="wol_hosts_table" summary="wol hosts table">
@@ -329,7 +327,6 @@ addEvent(window, "unload", function() {
 									</tr>
 								</table>
 							</fieldset><br />
-							
 							<fieldset> 
 								<legend><% tran("wol.legend4"); %></legend>
 									<div class="setting">
@@ -350,7 +347,6 @@ addEvent(window, "unload", function() {
 										//]]>
 									</script>
 								</fieldset><br />
-							
 							<h2><% tran("wol.h22"); %></h2>
 							<fieldset>
 								<legend><% tran("wol.legend5"); %></legend>
@@ -362,7 +358,7 @@ addEvent(window, "unload", function() {
 								<div id="idwol">
 									<div class="setting">
 										<div class="label"><% tran("share.inter"); %></div>
-										<input class="num" maxlength="5" size="5" name="wol_interval" onblur="valid_range(this,1,86400,'WOL Interval')" value="<% nvg("wol_interval"); %>" />&nbsp;<% tran("share.seconds"); %>
+										<input class="num" maxlength="5" size="5" name="wol_interval" onblur="valid_range(this,1,86400,share.inter)" value="<% nvg("wol_interval"); %>" />&nbsp;<% tran("share.seconds"); %>
 										<span class="default"><script type="text/javascript">
 										//<![CDATA[
 											document.write("(" + share.deflt + ": 86400, " + share.range + ": 1 - 86400)");

@@ -19,7 +19,7 @@
 		</div>
 		<div class="setting">
 			<div class="label"><% tran("share.port"); %></div>
-			<input class="num" maxlength="5" size="5" name="sshd_port" onblur="valid_range(this,1,65535,'SHHd Port')" value="<% nvg("sshd_port"); %>" />
+			<input class="num" maxlength="5" size="5" name="sshd_port" onblur="valid_range(this,1,65535,share.port)" value="<% nvg("sshd_port"); %>" />
 			<span class="default">
 			<script type="text/javascript">
 			//<![CDATA[

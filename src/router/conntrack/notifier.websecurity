@@ -9,7 +9,7 @@
 	<div id="idwarn">
 		<div class="setting">
 			<div class="label"><% tran("service.warn_limit"); %></div>
-			<input class="num" maxlength="5" size="5" name="warn_connlimit" onblur="valid_range(this,1,65535,'Connection Limit')" value="<% nvram_get("warn_connlimit"); %>" />
+			<input class="num" maxlength="5" size="5" name="warn_connlimit" onblur="valid_range(this,1,65535,service.warn_limit)" value="<% nvram_get("warn_connlimit"); %>" />
 			<span class="default">
 			<script type="text/javascript">
 			//<![CDATA[
