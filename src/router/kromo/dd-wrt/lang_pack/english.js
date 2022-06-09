@@ -524,7 +524,7 @@ bmenu.servicesNAS="NAS";
 bmenu.servicesHotspot="Hotspot";
 bmenu.servicesNintendo="Nintendo";
 bmenu.servicesMilkfish="SIP Proxy";
-bmenu.servicesPrivoxy="Adblocking";
+bmenu.servicesPrivoxy="AdBlocking";
 bmenu.servicesLighttpd="Web Server";
 bmenu.servicesSpeedchecker="SpeedChecker";
 //bmenu.servicesAnchorFree="My Ad Network";
@@ -537,7 +537,7 @@ bmenu.statuSputnik="Sputnik Agent";
 bmenu.statuWLAN="Wireless";
 bmenu.statuVPN="OpenVPN";
 bmenu.statuBand="Bandwidth";
-bmenu.statuSysInfo="Sys-Info";
+bmenu.statuSysInfo="Sys Info";
 bmenu.statuActivate="Activate";
 bmenu.statuMyPage="My Page";
 bmenu.statuGpio="GPIO I/O";
@@ -711,17 +711,17 @@ filter.legend="Access Policy";
 filter.pol="Policy";
 filter.polname="Policy Name";
 filter.pcs="List of Clients";
-filter.polallow="Internet access during selected days and hours.";
-filter.legend2="Days";
-filter.time="Times";
-filter.h24="24 Hours";
+filter.polallow="Internet access on the selected day(s) or time period.";
+filter.legend2="Day(s)";
+filter.time="Time Period";
+filter.h24="24-Hour";
 filter.legend3="Blocked Services";
 filter.catchall="Catch all P2P Protocols";
-filter.legend4="Website Blocking by URL Address";
+filter.legend4="Website Blocking by URL";
 filter.legend5="Website Blocking by Keyword";
 filter.mess1="Delete the Policy?";
-filter.mess2="You must at least select a day.";
-filter.mess3="The end time must be greater than start time.";
+filter.mess2="You must select a day or days.";
+filter.mess3="The selected end time must be greater than the start time.";
 filter.nat="Filter WAN NAT Redirection";
 filter.port113="Filter IDENT (Port 113)";
 filter.snmp="Block WAN SNMP access";
@@ -761,7 +761,7 @@ firewall.cookies="Filter Cookies";
 firewall.applet="Filter Java Applets";
 firewall.activex="Filter ActiveX";
 firewall.legend3="Block WAN Requests";
-firewall.legend4="Impede WAN DoS/Bruteforce";
+firewall.legend4="Impede WAN DoS / Bruteforce";
 firewall.ping="Block Anonymous WAN Requests (ping)";
 firewall.muticast="Filter Multicast";
 firewall.ssh="Limit SSH Access";
@@ -769,7 +769,7 @@ firewall.telnet="Limit Telnet Access";
 firewall.pptp="Limit PPTP Server Access";
 firewall.ftp="Limit FTP Server Access";
 firewall.arp_spoofing="ARP Spoofing Protection";
-firewall.filter_tos="Filter ToS/DSCP";
+firewall.filter_tos="Filter ToS / DSCP";
 
 //help container
 var hfirewall=new Object();
@@ -952,8 +952,9 @@ hnas.page4="<dd><ul><li>Path: Path to mounted partition. See currently mounted d
 //** Privoxy.asp **//
 var privoxy=new Object();
 privoxy.titl="Adblocking";
-privoxy.server="Privoxy";
 privoxy.legend="Filtering Proxy Server";
+privoxy.server="Privoxy";
+privoxy.server_label="Enable Web Proxy"
 privoxy.pac="Provide Proxy Autoconfig";
 privoxy.transp="Transparent Mode";
 privoxy.exclude="Exclude IP";
@@ -968,7 +969,7 @@ hprivoxy.right2="Enable Privoxy and configure your clients proxy settings. <br /
 hprivoxy.page1="<dd><br />Enables you to filter common ads.<br /></dd>";
 hprivoxy.page2="<dd><br /><ul><li>Publishes a WPAD/PAC file that clients use to automatically setup proxy details.</li><li>On some clients you need to set the option to use automatic proxy config</li><li>If your client is part of a domain you need to setup dnsmasq to send the local domain via DHCP to the client</li></ul></dd>";
 hprivoxy.page3="<dd><br /><ul><li>Traffic to Port 80 is intercepted by Privoxy even if the client did not configure any proxy settings.</li><li>Thus you can enforce ad filtering.</li></ul></br /><div class=\"note\"><h4>Note:</h4>Transparent mode cannot intercept HTTPS connections. All HTTPS traffic will still bypass Privoxy unless the client uses the <b>proxy autoconfig</b> which pipes said HTTPS connections through the proxy</div></dd>";
-hprivoxy.page4="<dd><br /><ul><li>Allows you to specify custom settings and paths to filters on external media e.g. a USB disk</li></dd>";
+hprivoxy.page4="<dd><br /><ul><li>Allows you to specify custom settings and paths to filters stored on external media e.g. a USB disk</li></dd>";
 
 //** Lighttpd.asp **//
 var lighttpd=new Object();
@@ -982,6 +983,10 @@ lighttpd.url="URL";
 
 var hlighttpd=new Object();
 hlighttpd.right2="Enable lighttpd and configure the HTTP/HTTPS ports where lighttpd will listen for a request.<br /><br />The default web server root is located at /jffs/www where you can place your website's files.";
+
+var lltd=new Object();
+lltd.legend="Link Layer Topology Discovery (LLTD)";
+lltd.srv_label="Enable Discovery";
 
 // ** Hotspot.asp **//
 var hotspot=new Object();
@@ -1808,7 +1813,7 @@ service.dnsmasq_opt="Additional Options";
 service.dnsmasq_rc="RFC4039 Rapid Commit Support";
 service.dnsmasq_cachesize="Maximum Cached Entries";
 service.tor_legend="The Onion Router Project";
-service.tor_srv="Tor";
+service.tor_srv="Enable Tor";
 service.tor_address="DNS Name or External IP";
 service.tor_nickname="Nickname / ID";
 service.tor_relay="Relay Mode";
@@ -2005,8 +2010,8 @@ hstatus_vpn.page1="<dd>A VPN technology compatible with Microsoft and other remo
 hstatus_vpn.page2="<dd>A VPN Client that enables you to connect to VPN servers compatible with Microsoft and other remote access vendors. Configuring this allows the router to VPN into a remote network.<ul class=\"wide\"><li>Server IP or DNS Name – The IP address or DNS Name of the VPN server that you would like to connect to (Example: www.MyServer.com). </li><li>Remote Subnet – Remote Subnet of the network you are connecting to (Example: 192.168.2.0). </li><li>Remote Subnet Mask – Remote Subnet Mask of the network you are connecting to (Example: 255.255.255.0). </li><li>MPPE Encryption  – The type of security to use for the connection. If you are connecting to another DD-WRT router you need (Example: mppe required). But if you are connecting to a Windows VPN server you need (Example: mppe required,no40,no56,stateless) or (Example: mppe required,no40,no56,stateful) </li><li>MTU – Maximum Transmission Unit (Default: 1436) </li><li>MRU – Maximum Receiving Unit (Default: 1436) </li><li>NAT – Enabling this option will make outbound traffic from inside appear to be coming from router IP, instead of client IP. Enabling this can improve security, but can cause issues in some cases, i.e. when VoIP is used. </li><li>User Name – Enter the username that you will use to connect to the VPN server. If you are connecting to another Linux based PPTP server you just need to enter the username. But if you are connecting to a Windows VPN server you need to enter the servername and username (Example: DOMAIN\\username). </li><li>Password – Enter the password of the for the username </li><li>Additional PPTP Options – If default options are not working for your setup, you can use this field. If defined, they will replace the default internal options. The options above are still used. </li></ul></dd><dd>Check all values and click the <em>" + sbutton.save + "</em> button to save your settings. Click the <em>" + sbutton.cancel + "</em> button to cancel your unsaved changes.</dd>";
 
 //vnc.repeater
-service.vncrepeater_legend="VNC";
-service.vncrepeater="VNC Repeater";
+service.vncrepeater_legend="Virtual Network Computing (VNC)";
+service.vncrepeater="Enable Repeater";
 
 //sshd.webservices
 service.ssh_legend="Secure Shell";
@@ -2053,7 +2058,7 @@ service.ttraff_daemon="ttraff Daemon";
 
 //notifier.webservices
 service.warn_legend="Connection Warning Notifier";
-service.warn="Warning Notifier";
+service.warn="Enable Notifier";
 service.warn_limit="Connection Limit";
 service.warn_server="Email SMTP Server";
 service.warn_from="Senders Email Address";
@@ -2176,6 +2181,7 @@ service.zabbix_usrpara="User Parameters";
 
 // mdns
 service.mdns_legend="mDNS / Avahi";
+service.mdns_label="Enable Resolver";
 service.mdns_domain="Domain Name [local]";
 service.mdns_reflector="Reflector";
 service.mdns_interfaces="Interfaces";

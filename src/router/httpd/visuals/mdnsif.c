@@ -61,7 +61,7 @@ EJ_VISIBLE void ej_show_mdnsif(webs_t wp, int argc, char_t ** argv)
 	snprintf(temp, sizeof(temp), "mdns_enable");
 	websWrite(wp, "<div class=\"setting\">\n");
 	{
-		show_caption(wp, "label", "service.mdns_legend", NULL);
+		show_caption(wp, "label", "service.mdns_label", NULL);
 		websWrite(wp, "<input class=\"spaceradio\" type=\"radio\" onclick=\"show_layer_ext(this, 'idmdns', true)\" value=\"1\" name=\"%s\" %s />", temp,
 			  (nvram_default_matchi(temp, 1, 1) ? "checked=\"checked\"" : ""));
 		show_caption(wp, NULL, "share.enable", "&nbsp;");

@@ -890,7 +890,10 @@ ifeq ($(CONFIG_DNSCRYPT),y)
 #	-install $(TOP)/private/shownf/icons/shownf-dnscrypt.png $(INSTALLDIR)/www/images/sc_icon_32x32.png
 endif
 
-ifneq ($(CONFIG_WEBSERVER),y)
+# This was added on r22867 the 18th November 2013 and removed on r32130 the 23rd May 2017
+# Lighttpd.asp is blank upon direct call, and the HLighttpd.asp was updated to later transfer contents to the english.js file.
+# Since lighttpd and its lighttpd.webservices has been implemeted under Services.asp page We no longer need to install these files.
+ifeq ($(CONFIG_WEBSERVER),y)
 	-rm -f $(INSTALLDIR)/www/Lighttpd.asp
 	rm -f $(INSTALLDIR)/www/help/HLighttpd.asp
 endif
