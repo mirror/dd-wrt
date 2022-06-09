@@ -4679,6 +4679,7 @@ static void save_prefix(webs_t wp, char *prefix)
 #ifdef HAVE_MADWIFI
 	copytonv(wp, "rate_control");
 #endif
+	copytonv_prefix(wp, "bssid", prefix);
 	snprintf(n, sizeof(n), "%s_ssid", prefix);
 	copytonv(wp, n);
 	if (!strcmp(prefix, "wl0") || !strcmp(prefix, "wl1") || !strcmp(prefix, "wl2")) {
