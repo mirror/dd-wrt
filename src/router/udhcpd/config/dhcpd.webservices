@@ -49,7 +49,7 @@
 		//]]>
 		</script>
 	</div>
-	<table class="table" summary="static lease table">
+	<table class="table" id="static_leasetable" summary="static lease table">
 		<tr>
 			<th colspan="5"><% tran("share.static_lease"); %></th>
 		</tr>
@@ -61,7 +61,13 @@
 			<th width="12%" class="center"><% tran("share.actiontbl"); %></th>
 		</tr>
 			<% show_staticleases(); %>
-	</table><br />
+	</table>
+	<script type="text/javascript">
+	//<![CDATA[
+	var t = new SortableTable(document.getElementById('static_leasetable'), 1000);
+	//]]>
+	</script>
+	<br />
 	<div class="center">
 		<script type="text/javascript">
 		//<![CDATA[
