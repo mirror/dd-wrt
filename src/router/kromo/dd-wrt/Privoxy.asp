@@ -33,7 +33,6 @@ addEvent(window, "unload", function() {
 	</head>
 
 	<body class="gui">
-		
 		<div id="wrapper">
 			<div id="content">
 				<div id="header">
@@ -48,9 +47,7 @@ addEvent(window, "unload", function() {
 							<input type="hidden" name="change_action" />
 							<input type="hidden" name="submit_type" />
 							<input type="hidden" name="commit" value="1"/>
-							
-						<% show_modules(".webproxy"); %>
-
+							<% show_modules(".webproxy"); %>
 							<div class="submitFooter">
 								<script type="text/javascript">
 								//<![CDATA[

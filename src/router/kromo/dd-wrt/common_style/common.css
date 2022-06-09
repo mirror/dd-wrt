@@ -290,6 +290,9 @@ table {
   width: 100%;
   border-spacing: .1em;
 }
+table[summary='week days table'] {
+  margin-left: -1.3rem;
+}
 table#radio_table {
   border-spacing: .1666em
 }

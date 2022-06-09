@@ -575,9 +575,6 @@ table tr td[bgcolor='#FFFFFF'] {
   color: var(--v0-9);
   transition: all 0.2s cubic-bezier(0.3, 0, 0.5, 1);
 }
-[summary='week days table'] {
-  margin-left: -1.3rem;
-}
 [style*='background-color: rgb(34, 139, 34)'] {
   background-color: var(--v4-3) !important;
 }
