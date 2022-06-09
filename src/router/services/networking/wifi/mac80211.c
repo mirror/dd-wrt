@@ -1853,7 +1853,7 @@ void setupSupplicant_ath9k(char *prefix, char *ssidoverride, int isadhoc)
 			supplicant_common_mesh(fp, prefix, ssidoverride, isadhoc, ismesh);
 		} else {
 			char *bssid = nvram_nget("%s_bssid", prefix);
-			if (strlen(bssid) && strcmp(bssid, "00:00:00:00:00:00"))
+			if (strlen(bssid) == 17 && strcmp(bssid, "00:00:00:00:00:00"))
 				fprintf(fp, "\tbssid=%s\n", bssid);
 			fprintf(fp, "\tscan_ssid=1\n");
 		}
