@@ -1851,9 +1851,12 @@ void setupSupplicant_ath9k(char *prefix, char *ssidoverride, int isadhoc)
 		fprintf(fp, "\tssid=\"%s\"\n", ssidoverride);
 		if (isadhoc || ismesh) {
 			supplicant_common_mesh(fp, prefix, ssidoverride, isadhoc, ismesh);
-		} else
+		} else {
+			char *bssid = nvram_nget("%s_bssid", prefix);
+			if (strlen(bssid))
+				fprintf(fp, "\tbssid=%s\n", bssid);
 			fprintf(fp, "\tscan_ssid=1\n");
-
+		}
 		char scanlist[32];
 		sprintf(scanlist, "%s_scanlist", prefix);
 		char *sl = nvram_default_get(scanlist, "default");
