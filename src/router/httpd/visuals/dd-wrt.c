@@ -2635,10 +2635,10 @@ static int show_virtualssid(webs_t wp, char *prefix)
 		websWrite(wp, "</div>\n");
 
 		show_caption(wp, "label", "wl_basic.ssid", NULL);
-
 		websWrite(wp, "<input name=\"%s_ssid\" size=\"20\" maxlength=\"32\" onblur=\"valid_name(this,wl_basic.ssid)\" value=\"", var);
 		tf_webWriteESCNV(wp, ssid);
 		websWrite(wp, "\" /></div>\n");
+
 // broadcast wireless ssid
 		websWrite(wp, "<div class=\"setting\">\n");
 		show_caption(wp, "label", "wl_basic.label5", NULL);
@@ -3645,6 +3645,14 @@ static void internal_ej_show_wireless_single(webs_t wp, char *prefix)
 	websWrite(wp, "<input name=\"%s\" size=\"20\" maxlength=\"32\" onblur=\"valid_name(this,wl_basic.ssid)\" value=\"", wl_ssid);
 	tf_webWriteESCNV(wp, wl_ssid);
 	websWrite(wp, "\" /></div>\n");
+
+#ifdef HAVE_MADWIFI
+	websWrite(wp, "<div class=\"setting\">\n");
+	show_caption(wp, "label", "wl_basic.bssid", NULL);
+	websWrite(wp, "<input class=\"num\" size=\"20\" maxlength=\"17\" name=\"%s_bssid\" onblur=\"valid_macs_all(this)\" value=\"%s\" />", nvram_nget("%s_bssid", prefix));
+	websWrite(wp, "\" /></div>\n");
+#endif
+
 #ifdef HAVE_MADWIFI
 #ifndef HAVE_BUFFALO
 	if (has_5ghz(prefix)) {
@@ -4283,6 +4291,13 @@ static void internal_ej_show_wireless_single(webs_t wp, char *prefix)
 		  wl_ssid);
 	tf_webWriteESCNV(wp, wl_ssid);
 	websWrite(wp, "\" /></div>\n");
+
+#ifdef HAVE_MADWIFI
+	websWrite(wp, "<div class=\"setting\">\n");
+	show_caption(wp, "label", "wl_basic.bssid", NULL);
+	websWrite(wp, "<input class=\"num\" size=\"20\" maxlength=\"17\" name=\"%s_bssid\" onblur=\"valid_macs_all(this)\" value=\"%s\" />", nvram_nget("%s_bssid", prefix));
+	websWrite(wp, "\" /></div>\n");
+#endif
 #if defined(HAVE_RT2880) && !defined(HAVE_MT76)
 	if (is_ap(prefix)
 	    || nvram_match(wl_mode, "infra") || nvram_match(wl_mode, "apsta")
