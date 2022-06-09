@@ -94,11 +94,13 @@
 		<div class="setting" id="idtelnet">
 			<div class="label"><% tran("management.remote_telnetport"); %></div>
 			<input class="num" maxlength="5" size="5" name="telnet_wanport" onblur="valid_range(this,1,65535,management.remote_telnetport)" value="<% nvram_get("telnet_wanport"); %>" />
-			<span class="default"><script type="text/javascript">
-			//<![CDATA[
-			document.write("(" + share.deflt + ": 23, " + share.range + ": 1 - 65535)");
-			//]]>
-			</script></span>
+			<span class="default">
+				<script type="text/javascript">
+				//<![CDATA[
+				document.write("(" + share.deflt + ": 23, " + share.range + ": 1 - 65535)");
+				//]]>
+				</script>
+			</span>
 		</div>
 		<div class="setting">
 			<div class="label"><% tran("management.remote_allowanyip"); %></div>
