@@ -19,7 +19,7 @@
     </div>
     <div class="setting">
       <div class="label"><% tran("privoxy.maxclient"); %></div>
-      <input class="num" maxlength="5" size="5" name="privoxy_maxclient" onblur="valid_range(this,1,65535,'Max Client Connections')" value="<% nvg("privoxy_maxclient"); %>" />
+      <input class="num" maxlength="5" size="5" name="privoxy_maxclient" onblur="valid_range(this,1,65535,privoxy.maxclient)" value="<% nvg("privoxy_maxclient"); %>" />
       <span class="default">
       <script type="text/javascript">
       //<![CDATA[

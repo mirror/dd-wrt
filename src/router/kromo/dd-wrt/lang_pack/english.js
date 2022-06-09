@@ -954,7 +954,7 @@ var privoxy=new Object();
 privoxy.titl="Adblocking";
 privoxy.legend="Filtering Proxy Server";
 privoxy.server="Privoxy";
-privoxy.server_label="Enable Web Proxy"
+privoxy.server_label="Enable Web Proxy";
 privoxy.pac="Provide Proxy Autoconfig";
 privoxy.transp="Transparent Mode";
 privoxy.exclude="Exclude IP";
@@ -1335,7 +1335,7 @@ log_out.titl="Outgoing Log Table";
 log_out.h2="Outgoing Log Table";
 log_out.th_lanip="LAN IP";
 log_out.th_wanip="Destination URL/IP";
-log_out.th_port="Service/Port Number";
+log_out.th_port="Service / Port Number";
 
 // ** Log.asp **//
 var log=new Object();
@@ -1608,7 +1608,7 @@ qos.prio_p="Premium";
 qos.prio_e="Express";
 qos.prio_b="Bulk";
 qos.legend3="Netmask Priority";
-qos.ipmask="IP/Mask";
+qos.ipmask="IP / Mask";
 qos.maxrate_b="Max kbit/s";
 qos.maxuprate_b="WAN Max Up";
 qos.maxdownrate_b="WAN Max Down";
@@ -2870,7 +2870,7 @@ freeradius.passphrase="Passphrase";
 
 //freeradius.generate="Generate Certificate";
 freeradius.cert_status="Certificate Status";
-freeradius.port="RADIUS Port";
+freeradius.port="FreeRADIUS Port";
 freeradius.certtbl="Certificate";
 freeradius.gencertime="Generating %d%%, this may take a while to complete...";
 freeradius.gencerdone="Certicate generation completed!";
