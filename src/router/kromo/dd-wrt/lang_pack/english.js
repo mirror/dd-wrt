@@ -405,7 +405,7 @@ errmsg.err47="invalid SSID.";
 errmsg.err48="WDS is not compatible with the current configuration of the router. Please check the following points :\n * Wireless Mode must be set to AP \n * WPA2 is not supported under WDS \n * Wireless Network B-Only mode is not supported under WDS";
 
 //Wireless_radauth.asp error messages
-errmsg.err49="RADIUS is only available in AP mode.";
+errmsg.err49="RADIUS is only available when radio is in AP mode.";
 
 //Wireless_Basic.asp error messages
 errmsg.err50="You must input a SSID.";
@@ -524,8 +524,8 @@ bmenu.servicesNAS="NAS";
 bmenu.servicesHotspot="Hotspot";
 bmenu.servicesNintendo="Nintendo";
 bmenu.servicesMilkfish="SIP Proxy";
-bmenu.servicesPrivoxy="AdBlocking";
-bmenu.servicesLighttpd="Web Server";
+bmenu.servicesPrivoxy="Ad Blocking";
+//bmenu.servicesLighttpd="Web Server";
 bmenu.servicesSpeedchecker="SpeedChecker";
 //bmenu.servicesAnchorFree="My Ad Network";
 
@@ -890,6 +890,7 @@ husb.page6="<dd><ul><li>Displays disk info e.g. partition size, volume name if s
 // ** NAS.asp **//
 var nas=new Object();
 nas.titl="NAS";
+nas.h2="Network Attached Storage (NAS)";
 nas.proftpd_legend="FTP Access";
 nas.proftpd_srv="ProFTPD Server";
 nas.proftpd_srv_label="Enable Server";
@@ -947,9 +948,9 @@ var hnas=new Object();
 hnas.right2="In order to share resources add new shares by supplying a path and share name. Define users that can access the share through FTP or Samba.<br /><br /><b>MiniDLNA Warning:</b> Unless you mount a partition to /jffs the index DB will be stored in RAM. This can fill up your RAM and will initiate a DB reindex at every boot.";
 
 //help page
-hnas.page1="<dd>A FTP Server enables you to share files: <br /><ul><li>Over the Internet - WAN</li><li>On local network - LAN / WLAN</li></ul></dd>";
-hnas.page2="<dd>A DLNA Server enables you to share media: <br /><ul><li>You need a DLNA capable client e.g. a TV to view files served by the router.</li></ul></dd>";
-hnas.page3="<dd>A SAMBA Server enables you to access files: <br /><ul><li>Via file explorer on your client device the shares you have setup and have connected to the router's USB ports.</li></ul></dd>";
+hnas.page1="<dd>A FTP server enables you to share files: <br /><ul><li>Over the Internet - WAN</li><li>On local network - LAN / WLAN</li></ul></dd>";
+hnas.page2="<dd>A DLNA server enables you to share media: <br /><ul><li>You need a DLNA capable client e.g. a TV to view files served by the router.</li></ul></dd>";
+hnas.page3="<dd>A Samba server enables you to access files: <br /><ul><li>Via file explorer on your client device the shares you have setup and have connected to the router's USB ports.</li></ul></dd>";
 hnas.page4="<dd><ul><li>Path: Path to mounted partition. See currently mounted disks under <a href=\"../USB.asp\">Disk Info</a> </li><li>Subdir: Directory name on given partition e.g. public or folder/sub_folder/sub_sub_folder </li><li>Name: Share name displayed when browsing the network shares e.g. \\router\name </li><li>Public: Everyone can access this share. No user account required.</li></ul></dd><div class=\"note\"><h4>Note:</h4><div>For Windows users: a connected USB drive shows up in Windows under e.g. <b>D:</b> and contains two directories <i>public and secret</i>.<br />You want to share <i>D:\public</i>. To do this connect the USB drive and lookup or specify a mountpoint under <a href=\"../USB.asp\">USB Settings</a>.<br /><b>/dev/sdX</b> equals a mount point under Linux. In order to share <i>D:\public</i>, select current mount point and specify subdir <i>public</i> give it a name e.g. <i>Guest and setup access permissions</i>.</div></div><br />";
 
 //** Privoxy.asp **//
@@ -996,7 +997,7 @@ var hotspot=new Object();
 hotspot.titl="Hotspot";
 hotspot.h2="Hotspot Portal";
 hotspot.legend="CoovaChilli";
-hotspot.label="Enable ";
+hotspot.label="Enable Portal";
 hotspot.hotspot="CoovaChilli";
 hotspot.nowifibridge="Separate WiFi from the LAN Bridge";
 
@@ -1879,8 +1880,8 @@ service.pppoe_srv="Enable Relay";
 
 //pppoe-server.webservices
 service.pppoesrv_legend="PPPoE Server";
-service.pppoesrv_srv="RP-PPPoE Server Daemon";
-service.pppoesrv_interface="RP-PPPoE Server Interface";
+service.pppoesrv_srv="Enable RP-PPPoE Server";
+service.pppoesrv_interface="Server Interface";
 service.pppoesrv_srvopt="RP-PPPoE Server Options";
 service.pppoesrv_compr="Compression";
 service.pppoesrv_lcpei="LCP Echo Interval";
@@ -2013,7 +2014,7 @@ hservice.page9="<dd>Enable a telnet server to connect to the router with telnet.
 
 //help container
 var hstatus_vpn=new Object();
-hstatus_vpn.right1="Policy based Routing:<br /><i>Add IP's/NETs in the form 0.0.0.0/0 to force clients to use the tunnel as default gateway. One line per IP/NET.<br /><i>IP Address/Netmask:</i><br />Must be set when using DHCP-Proxy mode and local TAP is NOT bridged</i>";
+hstatus_vpn.right1="Policy based Routing:<br /><i>Add IP's/NETs in the form 0.0.0.0/0 to force clients to use the tunnel as default gateway. One line per IP / NET.<br /><i>IP Address/Netmask:</i><br />Must be set when using DHCP-Proxy mode and local TAP is NOT bridged</i>";
 hstatus_vpn.right2="Additional Config:<br /><i>To push routes to clients add 'push \"route IP mask gateway\"', to push DNS/WINS add 'push \"dhcp-option DNS (or WINS) IP\"' to the config.</i><br />client connect directory:<br /><i>When USB or JFFS is mounted to /jffs, scripts will be called from /jffs/etc/openvpn/ccd/</i>";
 hstatus_vpn.right3="General:<br /><i>3 auth methods are supported: pkcs12 (+dh on server), static, standard certs. Enable MSS only on one side of the link, fragment on both.</i>";
 
@@ -2793,34 +2794,34 @@ radius.titl="RADIUS";
 radius.h2="Remote Authentication Dial-In User Service";
 radius.legend="RADIUS";
 radius.retry="Primary Server Retry Limit";
-radius.label="MAC RADIUS Client";
+radius.label="Enable MAC Client";
 radius.label2="MAC Format";
-radius.label3="RADIUS Auth Server Address";
-radius.label4="RADIUS Auth Server Port";
-radius.label7="RADIUS Auth Shared Secret";
+radius.label3="Auth Server Address";
+radius.label4="Auth Server Port";
+radius.label7="Auth Shared Secret";
 
-radius.label23="RADIUS Auth Backup Server Address";
-radius.label24="RADIUS Auth Backup Server Port";
-radius.label27="RADIUS Auth Backup Shared Secret";
+radius.label23="Auth Backup Server Address";
+radius.label24="Auth Backup Server Port";
+radius.label27="Auth Backup Shared Secret";
 
 radius.label5="Maximum Unauthenticated Users";
 radius.label6="Password Format";
-radius.label8="Override RADIUS if Server is Unavailable";
-radius.label13="RADIUS Acct Server Address";
-radius.label14="RADIUS Acct Server Port";
-radius.label17="RADIUS Acct Shared Secret";
-radius.label18="RADIUS Accounting";
+radius.label8="Override if Server is Unavailable";
+radius.label13="Acct Server Address";
+radius.label14="Acct Server Port";
+radius.label17="Acct Shared Secret";
+radius.label18="Accounting";
 radius.local_ip="Force Client IP";
 
 // help page
 var hradauth=new Object();
-hradauth.page1="<dd>RADIUS (Remote Authentication Dial-In User Service) is a security service for authenticating and authorizing dial-up users. A typical enterprise network may have an access server attached to a modem pool, along with a RADIUS server to provide authentication services. Remote users dial into the access server, and the access server sends authentication requests to the RADIUS server. The RADIUS server authenticates users and authorizes access to internal network resources. Remote users are clients to the access server and the access server is a client to the RADIUS server.<br /><br /><div class=\"note\"><h4>Note:</h4><div>RADIUS is only available in <em>AP</em> mode.</div></div></dd>";
+hradauth.page1="<dd>RADIUS is a security service for authenticating and authorizing dial-up users. A typical enterprise network may have an access server attached to a modem pool, along with a RADIUS server to provide authentication services. Remote users dial into the access server, and the access server sends authentication requests to the RADIUS server. The RADIUS server authenticates users and authorizes access to internal network resources. Remote users are clients to the access server and the access server is a client to the RADIUS server.<br /><br /><div class=\"note\"><h4>Note:</h4><div>RADIUS is only available in <em>AP</em> mode.</div></div></dd>";
 hradauth.page2="<dd>When sending the authentication request to the RADIUS server, the wireless client use the MAC address as the username. This would be received by the RADIUS server in the following format :<ul class=\"wide\"><li>aabbcc-ddeeff</li><li>aabbccddeeff</li><li>aa-bb-cc-dd-ee-ff</li></ul></dd> ";
 hradauth.page3="<dd>The RADIUS server IP address and TCP port.</dd>";
 hradauth.page4="<dd>Sets a amount of users which ran access without any valid RADIUS authentication</dd>";
 hradauth.page5="<dd>Sets the property which RADIUS password should be used, the shared key or the mac address itself</dd>";
 hradauth.page6="<dd>Transactions between the client and RADIUS accounting server are authenticated through the use of a shared secret, which is never sent over the network.</dd>";
-hradauth.page7="<dd>If the RADIUS server becomes unavailable, the RADIUS authentication will be disabled until it becomes reachable again. This allows wireless remote administration of a Access Point in fail scenarios.</dd>";
+hradauth.page7="<dd>If the RADIUS server becomes unavailable then the authentication will be disabled until the server becomes available. This allows wireless remote administration of an Access Point in fail scenarios.</dd>";
 
 // ** Wireless_MAC.asp **//
 var wl_mac=new Object();

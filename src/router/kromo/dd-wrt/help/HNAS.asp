@@ -5,9 +5,9 @@
 			<div class="navig"><a href="index.asp">Index</a> | <a href="javascript:self.close();"><% tran("sbutton.clos"); %></a></div>
 		</div>
 		<div id="content">
-			<h2><% tran("nas.titl"); %></h2>
+			<h2><% tran("nas.h2"); %></h2>
 			<dl>
-				<dt><% tran("nas.proftpd_srv_label"); %></dt>
+				<dt><% tran("nas.proftpd_srv"); %></dt>
 				<% tran("hnas.page1"); %>
 				<dt><% tran("nas.dlna_legend"); %></dt>
 				<% tran("hnas.page2"); %>
