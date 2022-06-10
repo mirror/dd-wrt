@@ -674,7 +674,7 @@ addEvent(window, "unload", function() {
 					<div id="help">
 						<div><h2><% tran("share.help"); %></h2></div>
 						<dl>
-							<dt class="term"><% tran("ddns.srv"); %>:</dt>
+							<dt class="term"><% tran("ddns.hlp"); %>:</dt>
 							<dd class="definition"><% tran("hddns.right2"); %></dd>
 							<dt class="term"><% tran("ddns.forceupd"); %>:</dt>
 							<dd class="definition"><% tran("hddns.right4"); %></dd>

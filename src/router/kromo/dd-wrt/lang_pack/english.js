@@ -603,16 +603,17 @@ var ddns=new Object();
 ddns.titl="Dynamic DNS";
 ddns.h2="Dynamic Domain Name System (DDNS)";
 ddns.legend="DDNS";
-ddns.srv="DDNS Service";
+ddns.srv="Enable Service";
 ddns.emailaddr="E-mail Address";
 ddns.typ="Type";
 ddns.custom="Custom";
 ddns.wildcard="Wildcard";
-ddns.statu="DDNS Status";
+ddns.statu="Service Status";
 ddns.system="DYNDNS Server";
-ddns.options="Additional DDNS Options";
+ddns.options="Additional Options";
 ddns.forceupd="Force Update Interval";
 ddns.wanip="Use External IP Check";
+ddns.hlp="DDNS Service";
 
 var ddnsm=new Object();
 ddnsm.all_closed="DDNS server is currently closed";
@@ -1314,7 +1315,7 @@ hidx.force_dnsmasq="<dd>This setting causes all port 53 DNS requests from the LA
 hidx.page22="<dd>Select the time zone for your location, or desired location.</dd><dd>Check all values and click the <em>" + sbutton.save + "</em> button to save your settings. Click the <em>" + sbutton.cancel + "</em> button to cancel your unsaved changes. You can test the settings by connecting to the Internet.</dd>";
 
 var hipv6=new Object();
-hipv6.right2="Internet Protocol version 6 (IPv6) is a network layer IP standard used by electronic devices to exchange data across a packet-switched network. It follows IPv4 as the second version of the Internet Protocol to be formally adopted for general use.";
+hipv6.right2="IPv6 is a network layer IP standard used by electronic devices to exchange data across a packet-switched network. It follows IPv4 as the second version of the Internet Protocol to be formally adopted for general use.";
 
 // ** DSL ** //
 var dsl=new Object();
@@ -1395,9 +1396,9 @@ management.rst_legend="Reset Button";
 management.rst_srv="Enable Button";
 //management.routing_legend="Routing";
 //management.routing_srv="Routing";
-management.ipv6_legend="IPv6 Support";
-management.ipv6_srv="IPv6";
-management.ipv6_typ="IPv6 Type";
+management.ipv6_legend="Internet Protocol version 6 (IPv6)";
+management.ipv6_srv="Enable Support";
+management.ipv6_typ="Type";
 management.ipv6_pf_len="Prefix Length";
 management.ipv6_rad_enable="Radvd";
 management.ipv6_rad="Custom radvd Config";
