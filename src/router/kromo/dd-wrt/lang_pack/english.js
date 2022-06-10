@@ -898,11 +898,13 @@ nas.proftpd_passw="User Password List";
 nas.proftpd_writeen="Allow Write";
 nas.proftpd_anon="Anonymous Login (Read-only)";
 nas.proftpd_anon_dir="Anonymous Home Directory";
+
+nas.samba3="Samba Server";
 nas.samba3_legend="File Sharing";
+nas.samba3_legend1="Share Configuration";
 nas.samba3_legend2="Samba Configuration";
 nas.samba3_srv_label="Enable Server";
-nas.samba3="Samba Server";
-nas.nfs="Network File System Server";
+nas.nfs="Network File System Server (NFS)";
 nas.rsync="Remote Synchronisation";
 
 // ** DLNA **
@@ -993,10 +995,12 @@ var hotspot=new Object();
 hotspot.titl="Hotspot";
 hotspot.h2="Hotspot Portal";
 hotspot.legend="CoovaChilli";
-hotspot.nowifibridge="Separate WiFi from the LAN Bridge";
+hotspot.label="Enable ";
 hotspot.hotspot="CoovaChilli";
-hotspot.pserver="Primary RADIUS Server IP/DNS";
-hotspot.bserver="Backup RADIUS Server IP/DNS";
+hotspot.nowifibridge="Separate WiFi from the LAN Bridge";
+
+hotspot.pserver="Primary RADIUS Server IP / DNS";
+hotspot.bserver="Backup RADIUS Server IP / DNS";
 hotspot.dns="DNS Server IP";
 hotspot.url="Redirect URL";
 hotspot.dhcp="DHCP Interface";
@@ -1011,19 +1015,20 @@ hotspot.allowuad="UAM Domains (space separated)";
 hotspot.macauth="MAC Authentication";
 hotspot.macpasswd="MAC Password";
 hotspot.sec8021Xauth="802.1X Authentication (EAP)";
-hotspot.option="Additional CoovaChilli Options";
-hotspot.fon_chilli="CoovaChilli Local User Management";
+hotspot.option="Additional Options";
+hotspot.fon_chilli="Local User Management";
 hotspot.fon_user="User List";
 hotspot.http_legend="HTTP Redirect";
-hotspot.http_srv="HTTP Redirect";
-hotspot.http_ip="HTTP Destination IP";
-hotspot.http_port="HTTP Destination Port";
-hotspot.http_net="HTTP Source Network";
+hotspot.http_srv="Enable Redirect";
+hotspot.http_ip="Destination IP";
+hotspot.http_port="Destination Port";
+hotspot.http_net="Source Network";
+
 hotspot.nocat_legend="NoCatSplash";
-hotspot.nocat_srv="NoCatSplash";
+hotspot.nocat_srv="Enable Portal";
 hotspot.nocat_gateway="Gateway Name";
-hotspot.nocat_gatewayaddr="Gateway IP Addr";
-hotspot.nocat_home="Home Page";
+hotspot.nocat_gatewayaddr="Gateway IP";
+hotspot.nocat_home="Homepage";
 hotspot.nocat_extifname="External Interface";
 hotspot.nocat_ifname="Internal Interface";
 hotspot.nocat_redirect="Homepage Redirection";
@@ -1034,14 +1039,17 @@ hotspot.nocat_port="Exclude Ports";
 hotspot.nocat_timeout="Login Timeout";
 hotspot.nocat_verbose="Verbosity";
 hotspot.nocat_route="Route Only";
-hotspot.nocat_MAClist="MAC White List";
+hotspot.nocat_MAClist="MAC Whitelist";
+
 hotspot.smtp_legend="SMTP Redirect";
-hotspot.smtp_srv="SMTP Redirect";
-hotspot.smtp_ip="SMTP Destination IP";
-hotspot.smtp_net="SMTP Source Network";
+hotspot.smtp_srv="Enable Redirect";
+hotspot.smtp_ip="Destination IP";
+hotspot.smtp_net="Source Network";
+
 hotspot.shat_legend="Zero IP Config";
 hotspot.shat_srv="Zero IP Config";
-hotspot.shat_srv2="Zero IP Config enabled";
+hotspot.shat_srv2="Enable Zeroconf";
+
 hotspot.sputnik_legend="Sputnik";
 hotspot.sputnik_srv="Sputnik Agent";
 hotspot.sputnik_mode="Sputnik Mode";
@@ -1050,31 +1058,32 @@ hotspot.sputnik_instant="Use Sputnik Instant Setup";
 hotspot.sputnik_express="Use SputnikNet Express";
 hotspot.sputnik_about="about Sputnik";
 hotspot.sputnik_learn="Learn more";
+
 hotspot.wifidog_legend="WiFiDog";
-hotspot.wifidog_srv="WiFiDog Gateway";
+hotspot.wifidog_srv="Enable Gateway";
 hotspot.wifidog_id="Gateway ID";
-hotspot.wifidog_url="Portal's URL";
+hotspot.wifidog_url="Portal URL";
 hotspot.wifidog_port="Port";
-hotspot.wifidog_httpdname="Web Server Name";
+hotspot.wifidog_httpdname="Webserver Name";
 hotspot.wifidog_httpdconn="Max Users";
-hotspot.wifidog_checkinter="Check Interval (s)";
+hotspot.wifidog_checkinter="Check Interval(s)";
 hotspot.wifidog_checktimeout="Client Timeout";
 hotspot.wifidog_tmaclist="Trusted MAC List";
 hotspot.wifidog_authsrv="AuthServer Hostname";
-hotspot.wifidog_authsrvssl="AuthServer SSL Available";
+hotspot.wifidog_authsrvssl="Enable SSL AuthServer";
 hotspot.wifidog_authsrvsslport="AuthServer SSL Port";
 hotspot.wifidog_authsrvhttpport="AuthServer HTTP Port";
 hotspot.wifidog_authsrvpath="AuthServer Path";
 hotspot.wifidog_config="Firewall Ruleset";
-hotspot.wifidog_messagefile="HTML Message File for WiFiDog";
+hotspot.wifidog_messagefile="HTML Message File";
 hotspot.wifidog_realm="HTTP Server Realm";
 hotspot.wifidog_username="HTTP Server Username";
 hotspot.wifidog_password="HTTP Server Password";
-hotspot.wifidog_auth="HTTP Server Authentication Support";
+hotspot.wifidog_auth="Server Authentication Support";
 
 //help container
 var hstatus_hots=new Object();
-hstatus_hots.right1="conup/condown:<br /><i>When USB or JFFS is mounted to jffs, connection scripts can be used in /jffs/etc/chilli/</i><br />Local Users:<br /><i>When only local users are used set primary RADIUS to 127.0.0.1</i>";
+hstatus_hots.right1="conup/condown:<br /><i>When USB or JFFS is mounted to jffs, connection scripts are accessible at /jffs/etc/chilli/</i><br />Local Users:<br /><i>When only local users are used, set the primary RADIUS to 127.0.0.1</i>";
 
 // help page
 hstatus_hots.page1="<dd>You can use the router as an Hotspot gateway (CoovaChilli solution) with authentication, accounting (RADIUS). CoovaChilli is an open source captive portal or wireless LAN access point controller. It is used for authenticating users of a wireless LAN. It supports web based login which is today's standard for public HotSpots and it supports Wireless Protected Access (WPA) which is the standard of the future. Authentication, authorization and accounting (AAA) is handled by your favorite RADIUS server.</dd>";
@@ -1113,7 +1122,7 @@ var hotspotsys=new Object();
 hotspotsys.legend="Hotspot System";
 hotspotsys.nobridge="Separate WiFi from LAN Bridge";
 hotspotsys.uamenable="Special Settings";
-hotspotsys.loginonsplash="Login on splash page";
+hotspotsys.loginonsplash="Login on Splash Page";
 hotspotsys.allowuam="UAM Allowed";
 hotspotsys.allowuad="UAM Domains (space separated)";
 hotspotsys.whitelabelproto="White Label Protocol";
@@ -1520,7 +1529,7 @@ networking.h2="VLAN Tagging";
 networking.legend="Tagging";
 networking.h22="Bridging";
 networking.h2h="Generic Networking and VLAN";
-networking.legend2="Create Bridge";
+networking.legend2="Create a Bridge";
 networking.legend3="Assign to Bridge";
 networking.legend4="Current Bridging Table";
 networking.brname="Bridge Name";
@@ -1542,8 +1551,9 @@ networking.unicast="Multicast to Unicast";
 networking.assign="Assignment";
 networking.bridgeassign="Bridge Assignment";
 networking.bonding="Bonding";
-networking.bondtype="Bonding Type";
-networking.bondifaces="Bonding Interfaces";
+networking.bonding_legend="Bonding Configuration";
+networking.bondtype="Type";
+networking.bondifaces="Interfaces";
 networking.bond="Bond";
 networking.slave="Slave";
 networking.stp="STP";
@@ -1877,10 +1887,11 @@ service.pppoesrv_lcpef="LCP Echo Failure";
 service.pppoesrv_limit="Session Limit per MAC";
 service.pppoesrv_idlet="Client Idle Time";
 service.pppoesrv_auth="Authentication";
-service.pppoesrv_radip="RADIUS Server IP";
-service.pppoesrv_radauthport="RADIUS Authentication Port";
-service.pppoesrv_radaccport="RADIUS Accounting Port";
-service.pppoesrv_radkey="RADIUS Shared Key";
+service.pppoesrv_radauth="RADIUS Authentication";
+service.pppoesrv_radip="Server IP";
+service.pppoesrv_radauthport="Authentication Port";
+service.pppoesrv_radaccport="Accounting Port";
+service.pppoesrv_radkey="Shared Key";
 service.pppoesrv_chaps="Local User Management (CHAP Secrets)";
 
 //help container
@@ -1893,7 +1904,7 @@ hpppoesrv.page1="<dd>This is a PPP over Ethernet redirector for PPPD.<br /><b>rp
 hpppoesrv.page2="<dd>Click the <em>" + sbutton.save + "</em> button to save your settings or click the <em>" + sbutton.cancel + "</em> button to cancel your unsaved changes.</dd>";
 
 //snmp.webservices
-service.snmp_legend="Simple Network Management Protocol";
+service.snmp_legend="Simple Network Management Protocol (SNMP)";
 service.snmp_srv="Enable SNMP";
 service.snmp_loc="Location";
 service.snmp_contact="Contact";
@@ -2153,7 +2164,7 @@ service.samba3_user_shares="Access Shares";
 service.samba3_min_proto="Minimum Protocol Version";
 service.samba3_max_proto="Maximum Protocol Version";
 service.samba3_encryption="Encryption";
-service.samba3_guest="Access level";
+service.samba3_guest="Access Level";
 service.samba3_guest_baduser="Everyone";
 service.samba3_guest_never="Restricted";
 service.dlna_type_audio="Audio";
@@ -2176,7 +2187,7 @@ service.softether_config="Config";
 // Zabbix
 service.zabbix_legend="Zabbix";
 service.zabbix_cl="Enable Client";
-service.zabbix_serverip="Zabbix Server IP";
+service.zabbix_serverip="Server IP";
 service.zabbix_usrpara="User Parameters";
 
 // mdns
@@ -2187,17 +2198,17 @@ service.mdns_reflector="Reflector";
 service.mdns_interfaces="Interfaces";
 
 //TRansmission
-service.transmission_legend="BitTorrent";
-service.transmission_srv="Transmission Daemon";
-service.transmission_dir="Transmission Config Directory";
-service.transmission_download="Transmission Download Directory";
+service.transmission_legend="Torrent";
+service.transmission_srv="Enable Transmission";
+service.transmission_dir="Config Directory";
+service.transmission_download="Download Directory";
 service.transmission_style="Web UI Style";
 service.transmission_rpc="Web UI Port";
 service.transmission_whitelist="Whitelist IPs";
 
 service.plex_legend="Plex Media Server";
 service.plex_srv="Enable Server";
-service.plex_appdir="Plex Application Support Directory";
+service.plex_appdir="Application Support Directory";
 
 // ** eop-tunnel.asp **//
 var eoip=new Object();
@@ -2846,6 +2857,9 @@ gpio.iplegend="GPIO Inputs";
 var freeradius=new Object();
 freeradius.titl="FreeRADIUS";
 freeradius.h2="FreeRADIUS";
+freeradius.legend="FreeRADIUS Server";
+freeradius.srv="Enable Server";
+freeradius.port="Port";
 freeradius.certificate="Server Certificate";
 freeradius.cert="Generate Certificate";
 freeradius.certdown="Download";
@@ -2870,7 +2884,6 @@ freeradius.passphrase="Passphrase";
 
 //freeradius.generate="Generate Certificate";
 freeradius.cert_status="Certificate Status";
-freeradius.port="FreeRADIUS Port";
 freeradius.certtbl="Certificate";
 freeradius.gencertime="Generating %d%%, this may take a while to complete...";
 freeradius.gencerdone="Certicate generation completed!";

@@ -1,5 +1,4 @@
 
-
 <fieldset>
 	<legend><% tran("service.proftpd_legend"); %></legend>
 	<div class="setting">
