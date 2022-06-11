@@ -223,7 +223,7 @@ addEvent(window, "unload", function() {
 
 <div id="idpppoerad">
 	<fieldset>
-		<legend>Radius <% tran("service.pppoesrv_auth"); %></legend>
+		<legend><% tran("service.pppoesrv_radauth"); %></legend>
 			<div class="setting">
 				<div class="label"><% tran("service.pppoesrv_radip"); %></div>
 				<input maxlength="15" size="20" name="pppoeserver_authserverip" onblur="valid_ip_str(this, share.ip)" value="<% nvg("pppoeserver_authserverip"); %>" />
