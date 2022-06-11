@@ -2858,3 +2858,8 @@ dhcp.tclient="Client-Hostname";
 
 
 donate.mb="Sie können auch durch den Moneybookers-Account mb@dd-wrt.com spenden"; 
+
+reg.not_reg="Das System ist nicht aktiviert. Bitte Kontaktieren Sie ihren lokalen Händler um einen gültigen Lizenzschlüssel zu erhalten.";
+reg.sys_key="Systemschlüssel";
+reg.act_key="Lizenzschlüssel";
+reg.reg_aok="Aktivierung vollständig. Das System wird nun neu gestartet.";
