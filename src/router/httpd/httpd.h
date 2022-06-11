@@ -172,4 +172,13 @@ typedef char char_t;
 	old(wp, argc, argv); \
 	} \
 
+void show_caption_legend(webs_t wp, const char *caption);
+void show_caption_simple(webs_t wp, const char *caption);
+void show_ip_cidr(webs_t wp, char *prefix, char *var, int nm, char *type, char *nmname, char *nmtype);
+void show_caption_pp(webs_t wp, const char *class, const char *caption, const char *pre, const char *post);
+void show_caption(webs_t wp, const char *class, const char *caption, const char *ext);
+void show_caption_simple(webs_t wp, const char *caption);
+void show_ip(webs_t wp, char *prefix, char *var, int nm, char *type);
+
+
 #endif				/* _httpd_h_ */
