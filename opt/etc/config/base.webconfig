@@ -26,7 +26,7 @@
 		</div>
 	<!--	<div class="setting">
 			<div class="label"><% tran("management.web_authlimit"); %></div>
-			<input class="num" name="auth_limit" size="3" maxlength="3" value="<% nvram_get("auth_limit"); %>" />
+			<input class="num" name="auth_limit" size="3" maxlength="3" value="<% nvram_get("auth_limit"); %>" />&nbsp;<% tran("share.seconds"); %>
 		</div> -->
 		<div class="setting">
 			<div class="label"><% tran("management.web_sysinfo"); %></div>
