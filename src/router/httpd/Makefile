@@ -66,7 +66,7 @@ ifneq ($(wildcard $(SRCBASE)/cy_conf.mak),)
   include $(SRCBASE)/cy_conf.mak
 endif
 
-COPTS += $(MIPS16_OPT) -D_GNU_SOURCE -fvisibility=hidden $(LTO)
+COPTS += $(MIPS16_OPT) -D_GNU_SOURCE -fvisibility=hidden $(LTO) -Wno-unused-function -Wno-unused-variable
 
 cc-option = $(shell if $(CC) $(1) -S -o /dev/null -xc /dev/null \
              > /dev/null 2>&1; then echo "$(1)"; else echo "$(2)"; fi ;)

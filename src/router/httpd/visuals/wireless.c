@@ -955,6 +955,6 @@ EJ_VISIBLE void ej_get_status_curchannel(webs_t wp, int argc, char_t ** argv)
 	websWrite(wp, "<div class=\"setting\">\n");
 	websWrite(wp, "<div class=\"label\">%s</div>\n", tran_string(buf, sizeof(buf), "share.channel"));
 	websWrite(wp, "<span id=\"wl_channel\">");
-	ej_get_curchannel(wp, argc, argc);
+	ej_get_curchannel(wp, argc, argv);
 	websWrite(wp, "</span>&nbsp;</div>\n");
 }
