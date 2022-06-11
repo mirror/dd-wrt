@@ -2999,6 +2999,7 @@ static void internal_ej_show_wireless_single(webs_t wp, char *prefix)
 	char wl_shortgi[32];
 	char wl_subf[32];
 	char wl_mubf[32];
+	char wl_bssid[32];
 	char *chipset = getWifiDeviceName(prefix, NULL);
 
 #ifdef HAVE_MADWIFI
@@ -3647,9 +3648,10 @@ static void internal_ej_show_wireless_single(webs_t wp, char *prefix)
 	websWrite(wp, "\" /></div>\n");
 
 #ifdef HAVE_MADWIFI
+	sprintf(wl_bssid,"%s_bssid", prefix);
 	websWrite(wp, "<div class=\"setting\">\n");
 	show_caption(wp, "label", "wl_basic.bssid", NULL);
-	websWrite(wp, "<input size=\"20\" maxlength=\"17\" name=\"%s_bssid\" onblur=\"valid_macs_all(this)\" value=\"%s\" />", prefix, nvram_nget("%s_bssid", prefix));
+	websWrite(wp, "<input size=\"20\" maxlength=\"17\" name=\"%s_bssid\" onblur=\"valid_macs_all(this)\" value=\"%s\" />", prefix, nvram_safe_get(wl_bssid));
 	websWrite(wp, "</div>\n");
 #endif
 
@@ -4293,9 +4295,10 @@ static void internal_ej_show_wireless_single(webs_t wp, char *prefix)
 	websWrite(wp, "\" /></div>\n");
 
 #ifdef HAVE_MADWIFI
+	sprintf(wl_bssid,"%s_bssid", prefix);
 	websWrite(wp, "<div class=\"setting\">\n");
 	show_caption(wp, "label", "wl_basic.bssid", NULL);
-	websWrite(wp, "<input size=\"20\" maxlength=\"17\" name=\"%s_bssid\" onblur=\"valid_macs_all(this)\" value=\"%s\" />", prefix, nvram_nget("%s_bssid", prefix));
+	websWrite(wp, "<input size=\"20\" maxlength=\"17\" name=\"%s_bssid\" onblur=\"valid_macs_all(this)\" value=\"%s\" />", prefix, nvram_safe_get(wl_bssid));
 	websWrite(wp, "</div>\n");
 #endif
 #if defined(HAVE_RT2880) && !defined(HAVE_MT76)
