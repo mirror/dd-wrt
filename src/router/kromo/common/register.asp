@@ -46,54 +46,50 @@ function to_submit(F) {
 					</div>
 				</div>
 				<div id="main">
-                    		<form name="register" action="apply.cgi<% insertpageToken(); %>" method="post">
-                  			<input type="hidden" name="submit_button" value="Register" />
-                  			<input type="hidden" name="submit_type" />
-                  			<input type="hidden" name="change_action" />
-					<input type="hidden" name="action" value="Apply" />
-
-					<div id="contentsInfo">
-			<dl>
-				<dd>Your system is not activated. Please contact your local dealer for obtaining a valid Activation Key to the displayed System Key.<br></dd>
-			</dl>
-
-						<div class="setting">
-						    <div class="label">System Key</div>
-						<textarea cols="80" rows="5" id="sysvalue" name="sysvalue" readonly="true" > 
-						<% getregcode(); %>						
-						</textarea>
+					<form name="register" action="apply.cgi<% insertpageToken(); %>" method="post">
+						<input type="hidden" name="submit_button" value="Register" />
+						<input type="hidden" name="submit_type" />
+						<input type="hidden" name="change_action" />
+						<input type="hidden" name="action" value="Apply" />
+						<div id="contentsInfo">
+							<dl>
+								<dd><% tran("reg.not_reg"); %><br></dd>
+							</dl>
+							<div class="setting">
+								<div class="label"><% tran("reg.sys_key"); %></div>
+								<textarea cols="80" rows="5" id="sysvalue" name="sysvalue" readonly="true" ><% getregcode(); %></textarea>
+							</div>
+							<div class="setting">		
+								<div class="label"><% tran("reg.act_key"); %></div>
+								<textarea cols="80" rows="5" id="regvalue" name="regvalue"> </textarea>
+								<script type="text/javascript">
+								//<![CDATA[
+								var regvalue = fix_cr( '<% nvg("regvalue"); %>' );
+								document.getElementById("regvalue").value = regvalue;
+								//]]>
+								</script>
+							</div>
+							<div class="submitFooter">
+								<script type="text/javascript">
+								//<![CDATA[
+								document.write("<input class=\"button\" type=\"button\" name=\"register\" value=\"Activate\" onclick=\"to_submit(this.form)\" />");
+								//]]>
+								</script>
+							</div>
 						</div>
-						<div class="setting">		
-						<div class="label">Activation Key</div>
-						<textarea cols="80" rows="5" id="regvalue" name="regvalue"> </textarea>
-						<script type="text/javascript">
-						//<![CDATA[
-						var regvalue = fix_cr( '<% nvg("regvalue"); %>' );
-						document.getElementById("regvalue").value = regvalue;
-						//]]>
-						</script>
-						</div>
-						<div class="submitFooter">
-							<script type="text/javascript">
-							//<![CDATA[
-							document.write("<input class=\"button\" type=\"button\" name=\"register\" value=\"Activate\" onclick=\"to_submit(this.form)\" />");
-							//]]>
-							</script>
-						</div>
-					</div>
-				</form>
+					</form>
 				</div>
 				<div id="floatKiller"></div>
 				<div id="statusInfo">
-				<div class="info"><% tran("share.firmware"); %>: 
-					<script type="text/javascript">
-					//<![CDATA[
-					document.write("<a title=\"" + share.about + "\" href=\"javascript:openAboutWindow()\"><% get_firmware_version(); %></a>");
-					//]]>
-					</script>
-				</div>
-				<div class="info"><% tran("share.time"); %>:  <span id="uptime"><% get_uptime(); %></span></div>
-				<div class="info">WAN<span id="ipinfo"><% show_wanipinfo(); %></span></div>
+					<div class="info"><% tran("share.firmware"); %>: 
+						<script type="text/javascript">
+						//<![CDATA[
+						document.write("<a title=\"" + share.about + "\" href=\"javascript:openAboutWindow()\"><% get_firmware_version(); %></a>");
+						//]]>
+						</script>
+					</div>
+					<div class="info"><% tran("share.time"); %>:  <span id="uptime"><% get_uptime(); %></span></div>
+					<div class="info">WAN<span id="ipinfo"><% show_wanipinfo(); %></span></div>
 				</div>
 			</div>
 		</div>
