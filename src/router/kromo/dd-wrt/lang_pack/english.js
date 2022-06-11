@@ -405,7 +405,7 @@ errmsg.err47="invalid SSID.";
 errmsg.err48="WDS is not compatible with the current configuration of the router. Please check the following points :\n * Wireless Mode must be set to AP \n * WPA2 is not supported under WDS \n * Wireless Network B-Only mode is not supported under WDS";
 
 //Wireless_radauth.asp error messages
-errmsg.err49="RADIUS is only available in AP mode.";
+errmsg.err49="RADIUS is only available when radio is in AP mode.";
 
 //Wireless_Basic.asp error messages
 errmsg.err50="You must input a SSID.";
@@ -524,8 +524,8 @@ bmenu.servicesNAS="NAS";
 bmenu.servicesHotspot="Hotspot";
 bmenu.servicesNintendo="Nintendo";
 bmenu.servicesMilkfish="SIP Proxy";
-bmenu.servicesPrivoxy="AdBlocking";
-bmenu.servicesLighttpd="Web Server";
+bmenu.servicesPrivoxy="Ad Blocking";
+//bmenu.servicesLighttpd="Web Server";
 bmenu.servicesSpeedchecker="SpeedChecker";
 //bmenu.servicesAnchorFree="My Ad Network";
 
@@ -603,16 +603,17 @@ var ddns=new Object();
 ddns.titl="Dynamic DNS";
 ddns.h2="Dynamic Domain Name System (DDNS)";
 ddns.legend="DDNS";
-ddns.srv="DDNS Service";
+ddns.srv="Enable Service";
 ddns.emailaddr="E-mail Address";
 ddns.typ="Type";
 ddns.custom="Custom";
 ddns.wildcard="Wildcard";
-ddns.statu="DDNS Status";
+ddns.statu="Service Status";
 ddns.system="DYNDNS Server";
-ddns.options="Additional DDNS Options";
+ddns.options="Additional Options";
 ddns.forceupd="Force Update Interval";
 ddns.wanip="Use External IP Check";
+ddns.hlp="DDNS Service";
 
 var ddnsm=new Object();
 ddnsm.all_closed="DDNS server is currently closed";
@@ -889,6 +890,7 @@ husb.page6="<dd><ul><li>Displays disk info e.g. partition size, volume name if s
 // ** NAS.asp **//
 var nas=new Object();
 nas.titl="NAS";
+nas.h2="Network Attached Storage (NAS)";
 nas.proftpd_legend="FTP Access";
 nas.proftpd_srv="ProFTPD Server";
 nas.proftpd_srv_label="Enable Server";
@@ -898,11 +900,13 @@ nas.proftpd_passw="User Password List";
 nas.proftpd_writeen="Allow Write";
 nas.proftpd_anon="Anonymous Login (Read-only)";
 nas.proftpd_anon_dir="Anonymous Home Directory";
+
+nas.samba3="Samba Server";
 nas.samba3_legend="File Sharing";
+nas.samba3_legend1="Share Configuration";
 nas.samba3_legend2="Samba Configuration";
 nas.samba3_srv_label="Enable Server";
-nas.samba3="Samba Server";
-nas.nfs="Network File System Server";
+nas.nfs="Network File System Server (NFS)";
 nas.rsync="Remote Synchronisation";
 
 // ** DLNA **
@@ -944,9 +948,9 @@ var hnas=new Object();
 hnas.right2="In order to share resources add new shares by supplying a path and share name. Define users that can access the share through FTP or Samba.<br /><br /><b>MiniDLNA Warning:</b> Unless you mount a partition to /jffs the index DB will be stored in RAM. This can fill up your RAM and will initiate a DB reindex at every boot.";
 
 //help page
-hnas.page1="<dd>A FTP Server enables you to share files: <br /><ul><li>Over the Internet - WAN</li><li>On local network - LAN / WLAN</li></ul></dd>";
-hnas.page2="<dd>A DLNA Server enables you to share media: <br /><ul><li>You need a DLNA capable client e.g. a TV to view files served by the router.</li></ul></dd>";
-hnas.page3="<dd>A SAMBA Server enables you to access files: <br /><ul><li>Via file explorer on your client device the shares you have setup and have connected to the router's USB ports.</li></ul></dd>";
+hnas.page1="<dd>A FTP server enables you to share files: <br /><ul><li>Over the Internet - WAN</li><li>On local network - LAN / WLAN</li></ul></dd>";
+hnas.page2="<dd>A DLNA server enables you to share media: <br /><ul><li>You need a DLNA capable client e.g. a TV to view files served by the router.</li></ul></dd>";
+hnas.page3="<dd>A Samba server enables you to access files: <br /><ul><li>Via file explorer on your client device the shares you have setup and have connected to the router's USB ports.</li></ul></dd>";
 hnas.page4="<dd><ul><li>Path: Path to mounted partition. See currently mounted disks under <a href=\"../USB.asp\">Disk Info</a> </li><li>Subdir: Directory name on given partition e.g. public or folder/sub_folder/sub_sub_folder </li><li>Name: Share name displayed when browsing the network shares e.g. \\router\name </li><li>Public: Everyone can access this share. No user account required.</li></ul></dd><div class=\"note\"><h4>Note:</h4><div>For Windows users: a connected USB drive shows up in Windows under e.g. <b>D:</b> and contains two directories <i>public and secret</i>.<br />You want to share <i>D:\public</i>. To do this connect the USB drive and lookup or specify a mountpoint under <a href=\"../USB.asp\">USB Settings</a>.<br /><b>/dev/sdX</b> equals a mount point under Linux. In order to share <i>D:\public</i>, select current mount point and specify subdir <i>public</i> give it a name e.g. <i>Guest and setup access permissions</i>.</div></div><br />";
 
 //** Privoxy.asp **//
@@ -993,10 +997,12 @@ var hotspot=new Object();
 hotspot.titl="Hotspot";
 hotspot.h2="Hotspot Portal";
 hotspot.legend="CoovaChilli";
-hotspot.nowifibridge="Separate WiFi from the LAN Bridge";
+hotspot.label="Enable Portal";
 hotspot.hotspot="CoovaChilli";
-hotspot.pserver="Primary RADIUS Server IP/DNS";
-hotspot.bserver="Backup RADIUS Server IP/DNS";
+hotspot.nowifibridge="Separate WiFi from the LAN Bridge";
+
+hotspot.pserver="Primary RADIUS Server IP / DNS";
+hotspot.bserver="Backup RADIUS Server IP / DNS";
 hotspot.dns="DNS Server IP";
 hotspot.url="Redirect URL";
 hotspot.dhcp="DHCP Interface";
@@ -1011,19 +1017,20 @@ hotspot.allowuad="UAM Domains (space separated)";
 hotspot.macauth="MAC Authentication";
 hotspot.macpasswd="MAC Password";
 hotspot.sec8021Xauth="802.1X Authentication (EAP)";
-hotspot.option="Additional CoovaChilli Options";
-hotspot.fon_chilli="CoovaChilli Local User Management";
+hotspot.option="Additional Options";
+hotspot.fon_chilli="Local User Management";
 hotspot.fon_user="User List";
 hotspot.http_legend="HTTP Redirect";
-hotspot.http_srv="HTTP Redirect";
-hotspot.http_ip="HTTP Destination IP";
-hotspot.http_port="HTTP Destination Port";
-hotspot.http_net="HTTP Source Network";
+hotspot.http_srv="Enable Redirect";
+hotspot.http_ip="Destination IP";
+hotspot.http_port="Destination Port";
+hotspot.http_net="Source Network";
+
 hotspot.nocat_legend="NoCatSplash";
-hotspot.nocat_srv="NoCatSplash";
+hotspot.nocat_srv="Enable Portal";
 hotspot.nocat_gateway="Gateway Name";
-hotspot.nocat_gatewayaddr="Gateway IP Addr";
-hotspot.nocat_home="Home Page";
+hotspot.nocat_gatewayaddr="Gateway IP";
+hotspot.nocat_home="Homepage";
 hotspot.nocat_extifname="External Interface";
 hotspot.nocat_ifname="Internal Interface";
 hotspot.nocat_redirect="Homepage Redirection";
@@ -1034,14 +1041,17 @@ hotspot.nocat_port="Exclude Ports";
 hotspot.nocat_timeout="Login Timeout";
 hotspot.nocat_verbose="Verbosity";
 hotspot.nocat_route="Route Only";
-hotspot.nocat_MAClist="MAC White List";
+hotspot.nocat_MAClist="MAC Whitelist";
+
 hotspot.smtp_legend="SMTP Redirect";
-hotspot.smtp_srv="SMTP Redirect";
-hotspot.smtp_ip="SMTP Destination IP";
-hotspot.smtp_net="SMTP Source Network";
+hotspot.smtp_srv="Enable Redirect";
+hotspot.smtp_ip="Destination IP";
+hotspot.smtp_net="Source Network";
+
 hotspot.shat_legend="Zero IP Config";
 hotspot.shat_srv="Zero IP Config";
-hotspot.shat_srv2="Zero IP Config enabled";
+hotspot.shat_srv2="Enable Zeroconf";
+
 hotspot.sputnik_legend="Sputnik";
 hotspot.sputnik_srv="Sputnik Agent";
 hotspot.sputnik_mode="Sputnik Mode";
@@ -1050,31 +1060,32 @@ hotspot.sputnik_instant="Use Sputnik Instant Setup";
 hotspot.sputnik_express="Use SputnikNet Express";
 hotspot.sputnik_about="about Sputnik";
 hotspot.sputnik_learn="Learn more";
+
 hotspot.wifidog_legend="WiFiDog";
-hotspot.wifidog_srv="WiFiDog Gateway";
+hotspot.wifidog_srv="Enable Gateway";
 hotspot.wifidog_id="Gateway ID";
-hotspot.wifidog_url="Portal's URL";
+hotspot.wifidog_url="Portal URL";
 hotspot.wifidog_port="Port";
-hotspot.wifidog_httpdname="Web Server Name";
+hotspot.wifidog_httpdname="Webserver Name";
 hotspot.wifidog_httpdconn="Max Users";
-hotspot.wifidog_checkinter="Check Interval (s)";
+hotspot.wifidog_checkinter="Check Interval(s)";
 hotspot.wifidog_checktimeout="Client Timeout";
 hotspot.wifidog_tmaclist="Trusted MAC List";
 hotspot.wifidog_authsrv="AuthServer Hostname";
-hotspot.wifidog_authsrvssl="AuthServer SSL Available";
+hotspot.wifidog_authsrvssl="Enable SSL AuthServer";
 hotspot.wifidog_authsrvsslport="AuthServer SSL Port";
 hotspot.wifidog_authsrvhttpport="AuthServer HTTP Port";
 hotspot.wifidog_authsrvpath="AuthServer Path";
 hotspot.wifidog_config="Firewall Ruleset";
-hotspot.wifidog_messagefile="HTML Message File for WiFiDog";
+hotspot.wifidog_messagefile="HTML Message File";
 hotspot.wifidog_realm="HTTP Server Realm";
 hotspot.wifidog_username="HTTP Server Username";
 hotspot.wifidog_password="HTTP Server Password";
-hotspot.wifidog_auth="HTTP Server Authentication Support";
+hotspot.wifidog_auth="Server Authentication Support";
 
 //help container
 var hstatus_hots=new Object();
-hstatus_hots.right1="conup/condown:<br /><i>When USB or JFFS is mounted to jffs, connection scripts can be used in /jffs/etc/chilli/</i><br />Local Users:<br /><i>When only local users are used set primary RADIUS to 127.0.0.1</i>";
+hstatus_hots.right1="conup/condown:<br /><i>When USB or JFFS is mounted to jffs, connection scripts are accessible at /jffs/etc/chilli/</i><br />Local Users:<br /><i>When only local users are used, set the primary RADIUS to 127.0.0.1</i>";
 
 // help page
 hstatus_hots.page1="<dd>You can use the router as an Hotspot gateway (CoovaChilli solution) with authentication, accounting (RADIUS). CoovaChilli is an open source captive portal or wireless LAN access point controller. It is used for authenticating users of a wireless LAN. It supports web based login which is today's standard for public HotSpots and it supports Wireless Protected Access (WPA) which is the standard of the future. Authentication, authorization and accounting (AAA) is handled by your favorite RADIUS server.</dd>";
@@ -1113,7 +1124,7 @@ var hotspotsys=new Object();
 hotspotsys.legend="Hotspot System";
 hotspotsys.nobridge="Separate WiFi from LAN Bridge";
 hotspotsys.uamenable="Special Settings";
-hotspotsys.loginonsplash="Login on splash page";
+hotspotsys.loginonsplash="Login on Splash Page";
 hotspotsys.allowuam="UAM Allowed";
 hotspotsys.allowuad="UAM Domains (space separated)";
 hotspotsys.whitelabelproto="White Label Protocol";
@@ -1305,7 +1316,7 @@ hidx.force_dnsmasq="<dd>This setting causes all port 53 DNS requests from the LA
 hidx.page22="<dd>Select the time zone for your location, or desired location.</dd><dd>Check all values and click the <em>" + sbutton.save + "</em> button to save your settings. Click the <em>" + sbutton.cancel + "</em> button to cancel your unsaved changes. You can test the settings by connecting to the Internet.</dd>";
 
 var hipv6=new Object();
-hipv6.right2="Internet Protocol version 6 (IPv6) is a network layer IP standard used by electronic devices to exchange data across a packet-switched network. It follows IPv4 as the second version of the Internet Protocol to be formally adopted for general use.";
+hipv6.right2="IPv6 is a network layer IP standard used by electronic devices to exchange data across a packet-switched network. It follows IPv4 as the second version of the Internet Protocol to be formally adopted for general use.";
 
 // ** DSL ** //
 var dsl=new Object();
@@ -1386,9 +1397,9 @@ management.rst_legend="Reset Button";
 management.rst_srv="Enable Button";
 //management.routing_legend="Routing";
 //management.routing_srv="Routing";
-management.ipv6_legend="IPv6 Support";
-management.ipv6_srv="IPv6";
-management.ipv6_typ="IPv6 Type";
+management.ipv6_legend="Internet Protocol version 6 (IPv6)";
+management.ipv6_srv="Enable Support";
+management.ipv6_typ="Type";
 management.ipv6_pf_len="Prefix Length";
 management.ipv6_rad_enable="Radvd";
 management.ipv6_rad="Custom radvd Config";
@@ -1520,7 +1531,7 @@ networking.h2="VLAN Tagging";
 networking.legend="Tagging";
 networking.h22="Bridging";
 networking.h2h="Generic Networking and VLAN";
-networking.legend2="Create Bridge";
+networking.legend2="Create a Bridge";
 networking.legend3="Assign to Bridge";
 networking.legend4="Current Bridging Table";
 networking.brname="Bridge Name";
@@ -1542,8 +1553,9 @@ networking.unicast="Multicast to Unicast";
 networking.assign="Assignment";
 networking.bridgeassign="Bridge Assignment";
 networking.bonding="Bonding";
-networking.bondtype="Bonding Type";
-networking.bondifaces="Bonding Interfaces";
+networking.bonding_legend="Bonding Configuration";
+networking.bondtype="Type";
+networking.bondifaces="Interfaces";
 networking.bond="Bond";
 networking.slave="Slave";
 networking.stp="STP";
@@ -1868,8 +1880,8 @@ service.pppoe_srv="Enable Relay";
 
 //pppoe-server.webservices
 service.pppoesrv_legend="PPPoE Server";
-service.pppoesrv_srv="RP-PPPoE Server Daemon";
-service.pppoesrv_interface="RP-PPPoE Server Interface";
+service.pppoesrv_srv="Enable RP-PPPoE Server";
+service.pppoesrv_interface="Server Interface";
 service.pppoesrv_srvopt="RP-PPPoE Server Options";
 service.pppoesrv_compr="Compression";
 service.pppoesrv_lcpei="LCP Echo Interval";
@@ -1877,10 +1889,11 @@ service.pppoesrv_lcpef="LCP Echo Failure";
 service.pppoesrv_limit="Session Limit per MAC";
 service.pppoesrv_idlet="Client Idle Time";
 service.pppoesrv_auth="Authentication";
-service.pppoesrv_radip="RADIUS Server IP";
-service.pppoesrv_radauthport="RADIUS Authentication Port";
-service.pppoesrv_radaccport="RADIUS Accounting Port";
-service.pppoesrv_radkey="RADIUS Shared Key";
+service.pppoesrv_radauth="RADIUS Authentication";
+service.pppoesrv_radip="Server IP";
+service.pppoesrv_radauthport="Authentication Port";
+service.pppoesrv_radaccport="Accounting Port";
+service.pppoesrv_radkey="Shared Key";
 service.pppoesrv_chaps="Local User Management (CHAP Secrets)";
 
 //help container
@@ -1893,7 +1906,7 @@ hpppoesrv.page1="<dd>This is a PPP over Ethernet redirector for PPPD.<br /><b>rp
 hpppoesrv.page2="<dd>Click the <em>" + sbutton.save + "</em> button to save your settings or click the <em>" + sbutton.cancel + "</em> button to cancel your unsaved changes.</dd>";
 
 //snmp.webservices
-service.snmp_legend="Simple Network Management Protocol";
+service.snmp_legend="Simple Network Management Protocol (SNMP)";
 service.snmp_srv="Enable SNMP";
 service.snmp_loc="Location";
 service.snmp_contact="Contact";
@@ -2001,7 +2014,7 @@ hservice.page9="<dd>Enable a telnet server to connect to the router with telnet.
 
 //help container
 var hstatus_vpn=new Object();
-hstatus_vpn.right1="Policy based Routing:<br /><i>Add IP's/NETs in the form 0.0.0.0/0 to force clients to use the tunnel as default gateway. One line per IP/NET.<br /><i>IP Address/Netmask:</i><br />Must be set when using DHCP-Proxy mode and local TAP is NOT bridged</i>";
+hstatus_vpn.right1="Policy based Routing:<br /><i>Add IP's/NETs in the form 0.0.0.0/0 to force clients to use the tunnel as default gateway. One line per IP / NET.<br /><i>IP Address/Netmask:</i><br />Must be set when using DHCP-Proxy mode and local TAP is NOT bridged</i>";
 hstatus_vpn.right2="Additional Config:<br /><i>To push routes to clients add 'push \"route IP mask gateway\"', to push DNS/WINS add 'push \"dhcp-option DNS (or WINS) IP\"' to the config.</i><br />client connect directory:<br /><i>When USB or JFFS is mounted to /jffs, scripts will be called from /jffs/etc/openvpn/ccd/</i>";
 hstatus_vpn.right3="General:<br /><i>3 auth methods are supported: pkcs12 (+dh on server), static, standard certs. Enable MSS only on one side of the link, fragment on both.</i>";
 
@@ -2153,7 +2166,7 @@ service.samba3_user_shares="Access Shares";
 service.samba3_min_proto="Minimum Protocol Version";
 service.samba3_max_proto="Maximum Protocol Version";
 service.samba3_encryption="Encryption";
-service.samba3_guest="Access level";
+service.samba3_guest="Access Level";
 service.samba3_guest_baduser="Everyone";
 service.samba3_guest_never="Restricted";
 service.dlna_type_audio="Audio";
@@ -2176,7 +2189,7 @@ service.softether_config="Config";
 // Zabbix
 service.zabbix_legend="Zabbix";
 service.zabbix_cl="Enable Client";
-service.zabbix_serverip="Zabbix Server IP";
+service.zabbix_serverip="Server IP";
 service.zabbix_usrpara="User Parameters";
 
 // mdns
@@ -2187,17 +2200,17 @@ service.mdns_reflector="Reflector";
 service.mdns_interfaces="Interfaces";
 
 //TRansmission
-service.transmission_legend="BitTorrent";
-service.transmission_srv="Transmission Daemon";
-service.transmission_dir="Transmission Config Directory";
-service.transmission_download="Transmission Download Directory";
+service.transmission_legend="Torrent";
+service.transmission_srv="Enable Transmission";
+service.transmission_dir="Config Directory";
+service.transmission_download="Download Directory";
 service.transmission_style="Web UI Style";
 service.transmission_rpc="Web UI Port";
 service.transmission_whitelist="Whitelist IPs";
 
 service.plex_legend="Plex Media Server";
 service.plex_srv="Enable Server";
-service.plex_appdir="Plex Application Support Directory";
+service.plex_appdir="Application Support Directory";
 
 // ** eop-tunnel.asp **//
 var eoip=new Object();
@@ -2781,34 +2794,34 @@ radius.titl="RADIUS";
 radius.h2="Remote Authentication Dial-In User Service";
 radius.legend="RADIUS";
 radius.retry="Primary Server Retry Limit";
-radius.label="MAC RADIUS Client";
+radius.label="Enable MAC Client";
 radius.label2="MAC Format";
-radius.label3="RADIUS Auth Server Address";
-radius.label4="RADIUS Auth Server Port";
-radius.label7="RADIUS Auth Shared Secret";
+radius.label3="Auth Server Address";
+radius.label4="Auth Server Port";
+radius.label7="Auth Shared Secret";
 
-radius.label23="RADIUS Auth Backup Server Address";
-radius.label24="RADIUS Auth Backup Server Port";
-radius.label27="RADIUS Auth Backup Shared Secret";
+radius.label23="Auth Backup Server Address";
+radius.label24="Auth Backup Server Port";
+radius.label27="Auth Backup Shared Secret";
 
 radius.label5="Maximum Unauthenticated Users";
 radius.label6="Password Format";
-radius.label8="Override RADIUS if Server is Unavailable";
-radius.label13="RADIUS Acct Server Address";
-radius.label14="RADIUS Acct Server Port";
-radius.label17="RADIUS Acct Shared Secret";
-radius.label18="RADIUS Accounting";
+radius.label8="Override if Server is Unavailable";
+radius.label13="Acct Server Address";
+radius.label14="Acct Server Port";
+radius.label17="Acct Shared Secret";
+radius.label18="Accounting";
 radius.local_ip="Force Client IP";
 
 // help page
 var hradauth=new Object();
-hradauth.page1="<dd>RADIUS (Remote Authentication Dial-In User Service) is a security service for authenticating and authorizing dial-up users. A typical enterprise network may have an access server attached to a modem pool, along with a RADIUS server to provide authentication services. Remote users dial into the access server, and the access server sends authentication requests to the RADIUS server. The RADIUS server authenticates users and authorizes access to internal network resources. Remote users are clients to the access server and the access server is a client to the RADIUS server.<br /><br /><div class=\"note\"><h4>Note:</h4><div>RADIUS is only available in <em>AP</em> mode.</div></div></dd>";
+hradauth.page1="<dd>RADIUS is a security service for authenticating and authorizing dial-up users. A typical enterprise network may have an access server attached to a modem pool, along with a RADIUS server to provide authentication services. Remote users dial into the access server, and the access server sends authentication requests to the RADIUS server. The RADIUS server authenticates users and authorizes access to internal network resources. Remote users are clients to the access server and the access server is a client to the RADIUS server.<br /><br /><div class=\"note\"><h4>Note:</h4><div>RADIUS is only available in <em>AP</em> mode.</div></div></dd>";
 hradauth.page2="<dd>When sending the authentication request to the RADIUS server, the wireless client use the MAC address as the username. This would be received by the RADIUS server in the following format :<ul class=\"wide\"><li>aabbcc-ddeeff</li><li>aabbccddeeff</li><li>aa-bb-cc-dd-ee-ff</li></ul></dd> ";
 hradauth.page3="<dd>The RADIUS server IP address and TCP port.</dd>";
 hradauth.page4="<dd>Sets a amount of users which ran access without any valid RADIUS authentication</dd>";
 hradauth.page5="<dd>Sets the property which RADIUS password should be used, the shared key or the mac address itself</dd>";
 hradauth.page6="<dd>Transactions between the client and RADIUS accounting server are authenticated through the use of a shared secret, which is never sent over the network.</dd>";
-hradauth.page7="<dd>If the RADIUS server becomes unavailable, the RADIUS authentication will be disabled until it becomes reachable again. This allows wireless remote administration of a Access Point in fail scenarios.</dd>";
+hradauth.page7="<dd>If the RADIUS server becomes unavailable then the authentication will be disabled until the server becomes available. This allows wireless remote administration of an Access Point in fail scenarios.</dd>";
 
 // ** Wireless_MAC.asp **//
 var wl_mac=new Object();
@@ -2846,6 +2859,9 @@ gpio.iplegend="GPIO Inputs";
 var freeradius=new Object();
 freeradius.titl="FreeRADIUS";
 freeradius.h2="FreeRADIUS";
+freeradius.legend="FreeRADIUS Server";
+freeradius.srv="Enable Server";
+freeradius.port="Port";
 freeradius.certificate="Server Certificate";
 freeradius.cert="Generate Certificate";
 freeradius.certdown="Download";
@@ -2870,7 +2886,6 @@ freeradius.passphrase="Passphrase";
 
 //freeradius.generate="Generate Certificate";
 freeradius.cert_status="Certificate Status";
-freeradius.port="FreeRADIUS Port";
 freeradius.certtbl="Certificate";
 freeradius.gencertime="Generating %d%%, this may take a while to complete...";
 freeradius.gencerdone="Certicate generation completed!";

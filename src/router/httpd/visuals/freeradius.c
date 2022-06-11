@@ -165,7 +165,7 @@ EJ_VISIBLE void ej_show_radius_clients(webs_t wp, int argc, char_t ** argv)
 {
 	websWrite(wp, "<table class=\"table\" summary=\"Radius Clients\">\n");
 
-	websWrite(wp, "<tr>\n" "<th>IP/NET</th>\n" "<th><script type=\"text/javascript\">Capture(freeradius.sharedkey)</script></th>\n"
+	websWrite(wp, "<tr>\n" "<th>IP / NET</th>\n" "<th><script type=\"text/javascript\">Capture(freeradius.sharedkey)</script></th>\n"
 			  "<th width=\"10%%\" class=\"center\"><script type=\"text/javascript\">Capture(share.actiontbl)</script></th>\n" "</tr>\n");
 	unsigned int i;
 	struct radiusclientdb *db = loadradiusclientdb();
