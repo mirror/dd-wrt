@@ -3321,7 +3321,7 @@ features.legend="Display New Features";
 features.label="Show Features";
 
 var featureshead=new Object();
-featureshead.h2title="Please check out our new Features!&nbsp;&nbsp;";
+featureshead.h2title="Check out the new Features!&nbsp;&nbsp;";
 featureshead.hidebtn="Hide this Box";
 // ************		OLD PAGES 		*******************************//
 // *********************** DHCPTable.asp *****************************//
@@ -3333,3 +3333,9 @@ dhcp.tclient="Client Hostname";
 
 var donate=new Object();
 donate.mb="You may also donate through the Moneybookers account mb@dd-wrt.com";
+
+var reg=new Object();
+reg.not_reg="The system is not activated. Please contact your local dealer to obtain a valid Activation Key related to the displayed System Key.";
+reg.sys_key="System Key";
+reg.act_key="Activation Key";
+reg.reg_aok="Activation Completed, the system will now reboot.";
