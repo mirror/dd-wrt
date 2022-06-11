@@ -279,75 +279,70 @@ if (valid_password(F))
 					</div>
 				</div>
 				<div id="main">
-                    		<form name="changepassword" action="apply.cgi" method="post" autocomplete="new-password">
-                  			<input type="hidden" name="submit_button" value="index" />
-                  			<input type="hidden" name="submit_type" />
-                  			<input type="hidden" name="next_page" value="<% getsetuppage(); %>" />
-                  			<input type="hidden" name="change_action" />
-					<input type="hidden" name="action" value="Apply" />
-
-					<div id="contentsInfo">
-					
-			<h2><% tran("management.h2"); %></h2>
-			<div class="warning">
-				<div id="warning_text">
-                                    <p><b><% tran("management.changepassword"); %></script></b></p>
-                                </div>
-			</div>
-			<br />
-
-	<fieldset>
-		<legend><% tran("management.psswd_legend"); %></legend>
-        	<table id="tablePwdCheck" cellpadding="5" cellspacing="1" border="0">
-               <tr>
-                <tr>
-                    <th><% tran("management.psswd_user"); %></th>
-                    <td><input type="password" autocomplete="new-password" maxlength="63" value="d6nw5v1x2pc7st9m" name="http_username" onclick="this.select();" onblur="valid_name(this,management.psswd_user,SPACE_NO|CHECK)" /></td>
-                </tr>
-                <tr>
-                    <th><% tran("management.psswd_pass"); %></th>
-		    <td><input type="password" autocomplete="new-password" maxlength="63" value="d6nw5v1x2pc7st9m" name="http_passwd" onclick="this.select();" onblur="valid_name(this,management.psswd_pass,SPACE_NO|CHECK)" onkeyup="chkPass(this.value)" /></td>
-                </tr>
-                <tr>
-                    <th><% tran("management.pass_conf"); %></th>
-		    <td><input type="password" autocomplete="new-password" maxlength="63" value="d6nw5v1x2pc7st9m" name="http_passwdConfirm" onclick="this.select();" onblur="valid_name(this,management.pass_conf,SPACE_NO|CHECK)" /></td>
-                </tr>
-            	    <tr>
-                    <th><% tran("management.score"); %></th>
-                    <td>
-                        <div id="scorebarBorder">
-                        <div id="score">0%</div>
-                        <div id="scorebar">&nbsp;</div>
-                        </div>
-                    </td>
-                </tr>
-                <tr>
-                    <th><% tran("management.complexity"); %></th>
-                    <td><div id="complexity">Too Short</div></td>
-                </tr>
-                </table>
-	</fieldset><br />
-						<div class="submitFooter">
-							<script type="text/javascript">
-							//<![CDATA[
-							document.write("<input class=\"button\" type=\"button\" name=\"changepassword\" value=\"Change Password\" onclick=\"to_submit(this.form)\" />");
-							//]]>
-							</script>
+					<form name="changepassword" action="apply.cgi" method="post" autocomplete="new-password">
+						<input type="hidden" name="submit_button" value="index" />
+						<input type="hidden" name="submit_type" />
+						<input type="hidden" name="next_page" value="<% getsetuppage(); %>" />
+						<input type="hidden" name="change_action" />
+						<input type="hidden" name="action" value="Apply" />
+						<div id="contentsInfo">
+							<h2><% tran("management.h2"); %></h2>
+							<div class="warning">
+								<div id="warning_text">
+									<p><b><% tran("management.changepassword"); %></script></b></p>
+								</div>
+							</div><br />
+							<fieldset>
+								<legend><% tran("management.psswd_legend"); %></legend>
+								<table id="tablePwdCheck" cellpadding="5" cellspacing="1" border="0">
+									<tr>
+										<th><% tran("management.psswd_user"); %></th>
+										<td><input type="password" autocomplete="new-password" maxlength="63" value="d6nw5v1x2pc7st9m" name="http_username" onclick="this.select();" onblur="valid_name(this,management.psswd_user,SPACE_NO|CHECK)" /></td>
+									</tr>
+									<tr>
+										<th><% tran("management.psswd_pass"); %></th>
+										<td><input type="password" autocomplete="new-password" maxlength="63" value="d6nw5v1x2pc7st9m" name="http_passwd" onclick="this.select();" onblur="valid_name(this,management.psswd_pass,SPACE_NO|CHECK)" onkeyup="chkPass(this.value)" /></td>
+									</tr>
+									<tr>
+										<th><% tran("management.pass_conf"); %></th>
+										<td><input type="password" autocomplete="new-password" maxlength="63" value="d6nw5v1x2pc7st9m" name="http_passwdConfirm" onclick="this.select();" onblur="valid_name(this,management.pass_conf,SPACE_NO|CHECK)" /></td>
+									</tr>
+									<tr>
+										<th><% tran("management.score"); %></th>
+										<td>
+											<div id="scorebarBorder">
+												<div id="score">0%</div>
+												<div id="scorebar">&nbsp;</div>
+                      </div>
+										</td>
+									</tr>
+									<tr>
+										<th><% tran("management.complexity"); %></th>
+										<td><div id="complexity"><% tran("management.too_short"); %></div></td>
+									</tr>
+								</table>
+							</fieldset><br />
+							<div class="submitFooter">
+								<script type="text/javascript">
+								//<![CDATA[
+								document.write("<input class=\"button\" type=\"button\" name=\"changepassword\" value=\"" + management.cpbutton + "\" onclick=\"to_submit(this.form)\" />");
+								//]]>
+								</script>
+							</div>
 						</div>
-					</div>
-				</form>
+					</form>
 				</div>
 				<div id="floatKiller"></div>
 				<div id="statusInfo">
-				<div class="info"><% tran("share.firmware"); %>: 
-					<script type="text/javascript">
-					//<![CDATA[
-					document.write("<a title=\"" + share.about + "\" href=\"javascript:openAboutWindow()\"><% get_firmware_version(); %></a>");
-					//]]>
-					</script>
-				</div>
-				<div class="info"><% tran("share.time"); %>:  <span id="uptime"><% get_uptime(); %></span></div>
-				<div class="info">WAN<span id="ipinfo"><% show_wanipinfo(); %></span></div>
+					<div class="info"><% tran("share.firmware"); %>:&nbsp;
+						<script type="text/javascript">
+						//<![CDATA[
+						document.write("<a title=\"" + share.about + "\" href=\"javascript:openAboutWindow()\"><% get_firmware_version(); %></a>");
+						//]]>
+						</script>
+					</div>
+					<div class="info"><% tran("share.time"); %>:  <span id="uptime"><% get_uptime(); %></span></div>
+					<div class="info">WAN<span id="ipinfo"><% show_wanipinfo(); %></span></div>
 				</div>
 			</div>
 		</div>
