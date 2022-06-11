@@ -456,6 +456,9 @@ input[disabled], select[disabled] {
   cursor: default;
   opacity: .6
 }
+input[onclick*="bond_del"] {
+  vertical-align: top;
+}
 input.button[onclick*='add_peer'] {
   margin: 0 0 -6px -34.5%;
 }

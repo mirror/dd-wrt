@@ -1,75 +1,80 @@
 <h2><% tran("nas.proftpd_legend"); %></h2>
-		<fieldset>
-			<legend><% tran("nas.proftpd_srv"); %></legend>
-				<div class="setting">
-				<div class="label"><% tran("nas.proftpd_srv_label"); %></div>
-					<input class="spaceradio" type="radio" name="proftpd_enable" value="1" <% nvc("proftpd_enable", "1"); %> onclick="show_layer_ext(this, 'ftpen', true);show_layer_ext(this, 'ftpenext', true)" /><% tran("share.enable"); %>&nbsp;
-					<input class="spaceradio" type="radio" name="proftpd_enable" value="0" <% nvc("proftpd_enable", "0"); %> onclick="show_layer_ext(this, 'ftpen', false);show_layer_ext(this, 'ftpenext', false)" /><% tran("share.disable"); %>
-				</div>
-			<div id="ftpen">
-				<div class="setting">
-				<div class="label"><% tran("nas.proftpd_port"); %></div>
-					<input size="5" maxlength="5" class="num" name="proftpd_port" value="<% nvg("proftpd_port"); %>" />
-					<span class="default"><script type="text/javascript">
-					//<![CDATA[
-					document.write("(" + share.deflt + ": 21)");
-					//]]>
-					</script></span>
-				</div>
-				<div class="setting">					
-				<div class="label"><% tran("bmenu.webaccess"); %></div>
-					<input class="spaceradio" type="radio" name="proftpd_wan" value="1" <% nvc("proftpd_wan", "1"); %> /><% tran("share.enable"); %>&nbsp;
-					<input class="spaceradio" type="radio" name="proftpd_wan" value="0" <% nvc("proftpd_wan", "0"); %> /><% tran("share.disable"); %>
-				</div>
-				<div class="setting">					
-				<div class="label"><% tran("nas.proftpd_anon"); %></div>
-					<input class="spaceradio" type="radio" value="1" name="proftpd_anon" <% nvc("proftpd_anon","1"); %> onclick="show_layer_ext(this, 'ftpanon', true)" /><% tran("share.enable"); %>&nbsp;
-					<input class="spaceradio" type="radio" value="0" name="proftpd_anon" <% nvc("proftpd_anon","0"); %> onclick="show_layer_ext(this, 'ftpanon', false)" /><% tran("share.disable"); %>
-				</div>
-			<div id="ftpanon">
-				<div class="setting">
-				<div class="label"><% tran("nas.proftpd_anon_dir"); %></div>
-					<input maxlength="79" size="35" name="proftpd_anon_dir" value="<% nvg("proftpd_anon_dir"); %>" />
-				</div>
-			</div>	
+<fieldset>
+	<legend><% tran("nas.proftpd_srv"); %></legend>
+	<div class="setting">
+		<div class="label"><% tran("nas.proftpd_srv_label"); %></div>
+		<input class="spaceradio" type="radio" name="proftpd_enable" value="1" <% nvc("proftpd_enable", "1"); %> onclick="show_layer_ext(this, 'ftpen', true);show_layer_ext(this, 'ftpenext', true)" /><% tran("share.enable"); %>&nbsp;
+		<input class="spaceradio" type="radio" name="proftpd_enable" value="0" <% nvc("proftpd_enable", "0"); %> onclick="show_layer_ext(this, 'ftpen', false);show_layer_ext(this, 'ftpenext', false)" /><% tran("share.disable"); %>
+	</div>
+	<div id="ftpen">
+	<div class="setting">
+		<div class="label"><% tran("nas.proftpd_port"); %></div>
+		<input size="5" maxlength="5" class="num" name="proftpd_port" value="<% nvg("proftpd_port"); %>" />
+		<span class="default">
+			<script type="text/javascript">
+			//<![CDATA[
+			document.write("(" + share.deflt + ": 21)");
+			//]]>
+			</script>
+		</span>
+	</div>
+	<div class="setting">					
+		<div class="label"><% tran("bmenu.webaccess"); %></div>
+		<input class="spaceradio" type="radio" name="proftpd_wan" value="1" <% nvc("proftpd_wan", "1"); %> /><% tran("share.enable"); %>&nbsp;
+		<input class="spaceradio" type="radio" name="proftpd_wan" value="0" <% nvc("proftpd_wan", "0"); %> /><% tran("share.disable"); %>
+	</div>
+		<div class="setting">					
+			<div class="label"><% tran("nas.proftpd_anon"); %></div>
+			<input class="spaceradio" type="radio" value="1" name="proftpd_anon" <% nvc("proftpd_anon","1"); %> onclick="show_layer_ext(this, 'ftpanon', true)" /><% tran("share.enable"); %>&nbsp;
+			<input class="spaceradio" type="radio" value="0" name="proftpd_anon" <% nvc("proftpd_anon","0"); %> onclick="show_layer_ext(this, 'ftpanon', false)" /><% tran("share.disable"); %>
+		</div>
+		<div id="ftpanon">
 			<div class="setting">
-				<div class="label"><% tran("service.pppoesrv_auth"); %></div>
-				<input class="spaceradio" type="radio" name="proftpd_rad" value="1" <% nvc("proftpd_rad", "1"); %> onclick="show_layer_ext(this, 'idftprad', true)" /><% tran("radius.legend"); %>&nbsp;
-				<input class="spaceradio" type="radio" name="proftpd_rad" value="0" <% nvc("proftpd_rad", "0"); %> onclick="show_layer_ext(this, 'idftprad', false)" /><% tran("nas.proftpd_passw"); %>
+				<div class="label"><% tran("nas.proftpd_anon_dir"); %></div>
+				<input maxlength="79" size="35" name="proftpd_anon_dir" value="<% nvg("proftpd_anon_dir"); %>" />
 			</div>
-			</div>
-			</fieldset><br />
-
-			<div id="ftpenext">
+		</div>	
+		<div class="setting">
+			<div class="label"><% tran("service.pppoesrv_auth"); %></div>
+			<input class="spaceradio" type="radio" name="proftpd_rad" value="1" <% nvc("proftpd_rad", "1"); %> onclick="show_layer_ext(this, 'idftprad', true)" /><% tran("radius.legend"); %>&nbsp;
+			<input class="spaceradio" type="radio" name="proftpd_rad" value="0" <% nvc("proftpd_rad", "0"); %> onclick="show_layer_ext(this, 'idftprad', false)" /><% tran("nas.proftpd_passw"); %>
+		</div>
+		</div>
+		</fieldset><br />
+		<div id="ftpenext">
 			<div id="idftprad">
 				<fieldset>
-					<legend>Radius <% tran("service.pppoesrv_auth"); %></legend>
-						<div class="setting">
-							<div class="label"><% tran("service.pppoesrv_radip"); %></div>
-							<input maxlength="15" size="20" name="proftpd_authserverip" onblur="valid_ip_str(this, share.ip)" value="<% nvg("proftpd_authserverip"); %>" />
-						</div>
-						<div class="setting">
-							<div class="label"><% tran("service.pppoesrv_radauthport"); %></div>
-							<input size="5" maxlength="5" class="num" name="proftpd_authserverport" value="<% nvg("proftpd_authserverport"); %>" />
-							<span class="default"><script type="text/javascript">
+					<legend><% tran("service.pppoesrv_radauth"); %></legend>
+					<div class="setting">
+						<div class="label"><% tran("service.pppoesrv_radip"); %></div>
+						<input maxlength="15" size="20" name="proftpd_authserverip" onblur="valid_ip_str(this, share.ip)" value="<% nvg("proftpd_authserverip"); %>" />
+					</div>
+					<div class="setting">
+						<div class="label"><% tran("service.pppoesrv_radauthport"); %></div>
+						<input size="5" maxlength="5" class="num" name="proftpd_authserverport" value="<% nvg("proftpd_authserverport"); %>" />
+						<span class="default">
+							<script type="text/javascript">
 							//<![CDATA[
 							document.write("(" + share.deflt + ": 1812)");
 							//]]>
-							</script></span>
-						</div>			
-						<div class="setting">
-							<div class="label"><% tran("service.pppoesrv_radaccport"); %></div>
-							<input size="5" maxlength="5" class="num" name="proftpd_acctserverport" value="<% nvg("proftpd_acctserverport"); %>" />
-							<span class="default"><script type="text/javascript">
+							</script>
+						</span>
+					</div>			
+					<div class="setting">
+						<div class="label"><% tran("service.pppoesrv_radaccport"); %></div>
+						<input size="5" maxlength="5" class="num" name="proftpd_acctserverport" value="<% nvg("proftpd_acctserverport"); %>" />
+						<span class="default">
+							<script type="text/javascript">
 							//<![CDATA[
 							document.write("(" + share.deflt + ": 1813)");
 							//]]>
-							</script></span>
-						</div>
-						<div class="setting">
-							<div class="label"><% tran("service.pppoesrv_radkey"); %></div>
-							<input size="20" maxlength="63" type="password" autocomplete="new-password" name="proftpd_sharedkey" value="d6ew5v1x2pc7st9m" />
-						</div>
+							</script>
+						</span>
+					</div>
+					<div class="setting">
+						<div class="label"><% tran("service.pppoesrv_radkey"); %></div>
+						<input size="20" maxlength="63" type="password" autocomplete="new-password" name="proftpd_sharedkey" value="d6ew5v1x2pc7st9m" />
+					</div>
 				</fieldset><br />
 			</div>
 		</div>

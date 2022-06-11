@@ -5,10 +5,10 @@
 			<div class="navig"><a href="index.asp">Index</a> | <a href="javascript:self.close();"><% tran("sbutton.clos"); %></a></div>
 		</div>
 		<div id="content">
-			<h2><% tran("ddns.legend"); %></h2>
+			<h2><% tran("ddns.h2"); %></h2>
 			<dl>
 				<dt><% tran("hddns.page1"); %></dt>
-				<dt><% tran("ddns.srv"); %></dt>
+				<dt><% tran("ddns.hlp"); %></dt>
 				<dt><% tran("hddns.page2"); %></dt>
 				<dt><% tran("ddns.typ"); %></dt>
 				<dt><% tran("hddns.page3"); %></dt>
