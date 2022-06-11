@@ -453,6 +453,7 @@ static int rule_isvpn(char *name)
 	if (startswith(nvram_safe_get("dist_type"), "vpn")) {
 		return 1;
 	}
+	return 0;
 }
 
 static int rule_iswet(char *name)
