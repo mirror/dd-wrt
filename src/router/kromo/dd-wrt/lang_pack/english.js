@@ -1997,7 +1997,7 @@ service.vpn_randomsrv="Choose random Server";
 
 //help page
 var hservice=new Object();
-hservice.right1="Before enabling storage for Client Lease DB into JFFS2 flash storage, JFFS2 support <b>must be enabled</b>. JFFS2 Support is located on the Administration / Managent tab.";
+hservice.right1="Before enabling storage for Client Lease DB into JFFS2 flash storage, JFFS2 support <b>must be enabled</b>. JFFS2 Support is located on the Administration / Management tab.";
 
 hservice.page1="<dd>DHCPd assigns IP addresses to your local devices. While the main configuration is on the setup page you can program some nifty special functions here.<ul class=\"wide\"><li>Used domain – You can select here which domain the DHCP clients should get as their local domain. This can be the WAN domain set on the Setup screen or the LAN domain which can be set here.</li><li>LAN Domain – You can define here your local LAN domain which is used as local domain for dnsmasq and DHCP service if chosen above.</li><li>Static Leases – If you want to assign certain hosts a specific address then you can define them here. This is also the way to add hosts with a fixed address to the router's local DNS service (dnsmasq).</li></ul><br />There are some extra options you can set by entering them in <em>Additional Options</em>.</dd>";
 hservice.page2="<dd>dnsmasq is a local DNS and DHCP server. It will resolve all host names known to the router from DHCP (dynamic and static) as well as forwarding and caching DNS entries from remote DNS servers. dnsmasq will always appear enabled here if either <em>DHCP Server</em> or <em>Use dnsmasq for DNS</em> is enabled on the Basic Setup page.<br />There are some extra options you can set by entering them in <em>Additional Options</em>. For example:<br /><br /><ul class=\"wide\"><li>Static allocation: dhcp-host=AB:CD:EF:11:22:33,192.168.0.10,myhost,myhost.domain,12h</li><li>Max leases number: dhcp-lease-max=2</li><li>DHCP server IP range: dhcp-range=192.168.0.110,192.168.0.111,12h</li></ul><br /><div class=\"note\"><h4>Note:</h4><div>All options are saved in /tmp/dnsmasq.conf file. The format of this file consists of one option per line.<br />The complete list of available options : <a href=\"http:\/\/thekelleys.org.uk/dnsmasq/docs/dnsmasq-man.html\" target=\"_new\">DNSMasq man</a>.</div></div></dd>";
@@ -2876,8 +2876,8 @@ freeradius.users="Users";
 freeradius.clients="Clients";
 freeradius.username="Username";
 freeradius.password="Password";
-freeradius.downstream="&nbsp;&darr; Speed";
-freeradius.upstream="&nbsp;&uarr; Speed";
+freeradius.downstream="Down Speed";
+freeradius.upstream="Up Speed";
 freeradius.sharedkey="Shared Key";
 
 freeradius.countrycode="Country Code";
@@ -2897,7 +2897,7 @@ freeradius.gencerdone="Certicate generation completed!";
 
 //help container
 var hfreeradius=new Object();
-hfreeradius.right2="Before starting the FreeRADIUS Server, JFFS2 support <b>must be enabled</b>. JFFS2 Support is located on the Administration -> Managent tab.";
+hfreeradius.right2="Before starting the FreeRADIUS Server, JFFS2 support <b>must be enabled</b>. JFFS2 Support is located on the Administration / Management tab.";
 
 // ** Wireless_Advanced.asp **//
 var wl_adv=new Object();
