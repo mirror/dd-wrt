@@ -3,10 +3,10 @@
 	<legend><% tran("hotspot.shat_legend"); %></legend>
 		<div class="setting">
 			<div class="label"><% tran("hotspot.shat_srv2"); %></div>
-			<input class="spaceradio" type="radio" value="1" name="shat_enable" <% nvc("shat_enable","1"); %> /><% tran("share.enable"); %>&nbsp;
-			<input class="spaceradio" type="radio" value="0" name="shat_enable" <% nvc("shat_enable","0"); %> /><% tran("share.disable"); %>
+			<input class="spaceradio" type="radio" value="1" name="shat_enable" <% nvc("shat_enable","1"); %> onclick="show_layer_ext(this, 'idzeroip', true)" /><% tran("share.enable"); %>&nbsp;
+			<input class="spaceradio" type="radio" value="0" name="shat_enable" <% nvc("shat_enable","0"); %> onclick="show_layer_ext(this, 'idzeroip', false)"  /><% tran("share.disable"); %>
 		</div>
-		<div id="zeroip" class="setting">
+		<div id="idzeroip" class="setting">
 			<div class="label"><% tran("share.range"); %></div>
 			<input class="text" maxLength="100" size="25" name="shat_range" value="<% nvg("shat_range"); %>" />
 		</div>
