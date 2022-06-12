@@ -99,15 +99,18 @@ addEvent(window, "unload", function() {
 							</fieldset><br />
 							<div id="idradius">
 								<fieldset>
-								<div class="label"><% tran("freeradius.port"); %></div>
-								<input class="num" maxlength="5" size="5" name="radius_port" onblur="valid_range(this,1,65535,freeradius.port)" value="<% nvg("radius_port"); %>" />
-								<span class="default">
-									<script type="text/javascript">
-									//<![CDATA[
-									document.write("(" + share.deflt + ": 1812)");
-									//]]>
-									</script>
-								</span>
+									<legend><% tran("wl_basic.legend"); %></legend>
+									<div class="setting">
+										<div class="label"><% tran("freeradius.port"); %></div>
+										<input class="num" maxlength="5" size="5" name="radius_port" onblur="valid_range(this,1,65535,freeradius.port)" value="<% nvg("radius_port"); %>" />
+										<span class="default">
+											<script type="text/javascript">
+											//<![CDATA[
+											document.write("(" + share.deflt + ": 1812)");
+											//]]>
+											</script>
+										</span>
+									</div>
 								</fieldset><br />
 								<fieldset>
 									<legend><% tran("freeradius.certificate"); %></legend>
