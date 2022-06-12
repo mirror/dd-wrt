@@ -1048,9 +1048,9 @@ hotspot.smtp_srv="Enable Redirect";
 hotspot.smtp_ip="Destination IP";
 hotspot.smtp_net="Source Network";
 
-hotspot.shat_legend="Zero IP Config";
-hotspot.shat_srv="Zero IP Config";
-hotspot.shat_srv2="Enable Zeroconf";
+hotspot.shat_legend="Zero IP Configuration";
+hotspot.shat_srv="Zero IP";
+hotspot.shat_srv2="Enable Zero IP";
 
 hotspot.sputnik_legend="Sputnik";
 hotspot.sputnik_srv="Sputnik Agent";
@@ -2604,8 +2604,8 @@ wol.broadcast="Net Broadcast";
 wol.udp="UDP Port";
 wol.msg1="Click to remove WOL host";
 wol.h22="Automatic Wake-On-LAN";
-wol.legend5="Wake-On-LAN daemon";
-wol.srv="WOL daemon";
+wol.legend5="Wake-On-LAN Daemon";
+wol.srv="Enable WOL";
 wol.pass="SecureOn Password";
 
 //help container
