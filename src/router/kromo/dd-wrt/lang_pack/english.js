@@ -146,6 +146,7 @@ share.all="All";
 share.auto="Auto";
 share.desired="Desired";
 share.required="Required";
+share.requiremts="Requirements";
 share.right="Right";
 share.left="Left";
 share.share_key="Shared Key";
@@ -1085,7 +1086,7 @@ hotspot.wifidog_auth="Server Authentication Support";
 
 //help container
 var hstatus_hots=new Object();
-hstatus_hots.right1="conup/condown:<br /><i>When USB or JFFS is mounted to jffs, connection scripts are accessible at /jffs/etc/chilli/</i><br />Local Users:<br /><i>When only local users are used, set the primary RADIUS to 127.0.0.1</i>";
+hstatus_hots.right1="conup/condown:<br /><i>When USB or JFFS is mounted to /jffs, connection scripts are accessible at /jffs/etc/chilli/</i><br />Local Users:<br /><i>When only local users are used, set the primary RADIUS to 127.0.0.1</i>";
 
 // help page
 hstatus_hots.page1="<dd>You can use the router as an Hotspot gateway (CoovaChilli solution) with authentication, accounting (RADIUS). CoovaChilli is an open source captive portal or wireless LAN access point controller. It is used for authenticating users of a wireless LAN. It supports web based login which is today's standard for public HotSpots and it supports Wireless Protected Access (WPA) which is the standard of the future. Authentication, authorization and accounting (AAA) is handled by your favorite RADIUS server.</dd>";
@@ -1995,6 +1996,8 @@ service.vpn_randomsrv="Choose random Server";
 
 //help page
 var hservice=new Object();
+hservice.right1="Before enabling storage for Client Lease DB into JFFS2 flash storage, JFFS2 support <b>must be enabled</b>. JFFS2 Support is located on the Administration / Managent tab.";
+
 hservice.page1="<dd>DHCPd assigns IP addresses to your local devices. While the main configuration is on the setup page you can program some nifty special functions here.<ul class=\"wide\"><li>Used domain – You can select here which domain the DHCP clients should get as their local domain. This can be the WAN domain set on the Setup screen or the LAN domain which can be set here.</li><li>LAN Domain – You can define here your local LAN domain which is used as local domain for dnsmasq and DHCP service if chosen above.</li><li>Static Leases – If you want to assign certain hosts a specific address then you can define them here. This is also the way to add hosts with a fixed address to the router's local DNS service (dnsmasq).</li></ul><br />There are some extra options you can set by entering them in <em>Additional Options</em>.</dd>";
 hservice.page2="<dd>dnsmasq is a local DNS and DHCP server. It will resolve all host names known to the router from DHCP (dynamic and static) as well as forwarding and caching DNS entries from remote DNS servers. dnsmasq will always appear enabled here if either <em>DHCP Server</em> or <em>Use dnsmasq for DNS</em> is enabled on the Basic Setup page.<br />There are some extra options you can set by entering them in <em>Additional Options</em>. For example:<br /><br /><ul class=\"wide\"><li>Static allocation: dhcp-host=AB:CD:EF:11:22:33,192.168.0.10,myhost,myhost.domain,12h</li><li>Max leases number: dhcp-lease-max=2</li><li>DHCP server IP range: dhcp-range=192.168.0.110,192.168.0.111,12h</li></ul><br /><div class=\"note\"><h4>Note:</h4><div>All options are saved in /tmp/dnsmasq.conf file. The format of this file consists of one option per line.<br />The complete list of available options : <a href=\"http:\/\/thekelleys.org.uk/dnsmasq/docs/dnsmasq-man.html\" target=\"_new\">DNSMasq man</a>.</div></div></dd>";
 hservice.dnsmasq_dnssec="<dd>Requests and validates DNSSEC records for domains that provide them, if supported on your router model.</dd>";
@@ -2893,7 +2896,7 @@ freeradius.gencerdone="Certicate generation completed!";
 
 //help container
 var hfreeradius=new Object();
-hfreeradius.right2="You must enable JFFS before starting FreeRADIUS.";
+hfreeradius.right2="Before starting the FreeRADIUS Server, JFFS2 support <b>must be enabled</b>. JFFS2 Support is located on the Administration -> Managent tab.";
 
 // ** Wireless_Advanced.asp **//
 var wl_adv=new Object();

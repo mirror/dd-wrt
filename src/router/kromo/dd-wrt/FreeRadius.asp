@@ -188,6 +188,7 @@ addEvent(window, "unload", function() {
 					<div id="help">
 						<div><h2><% tran("share.help"); %></h2></div>
 						<dl>
+							<dt class="term"><% tran("freeradius.legend"); %>&nbsp;<% tran("share.requiremts"); %>:</dt>
 							<dd class="definition"><% tran("hfreeradius.right2"); %></dd>
 						</dl><br />
 						<!-- Hide more... there is no help page here https://svn.dd-wrt.com/ticket/7478
