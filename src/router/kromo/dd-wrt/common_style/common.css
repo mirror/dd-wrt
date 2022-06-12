@@ -65,6 +65,9 @@ input.num {
   text-align: center;
   vertical-align: middle;
 }
+input.num[name='openvpncl_remoteport'] {
+  vertical-align: unset;
+}
 select {
   padding: 4px 4px;
   font-size: 12px;
