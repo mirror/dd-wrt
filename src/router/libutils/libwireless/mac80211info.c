@@ -1436,7 +1436,7 @@ static struct wifi_channels ghz60channels[] = {
 	{.channel = -1,.freq = -1,.max_eirp = -1,.hw_eirp = -1 },
 };
 
-struct wifi_channels *mac80211_get_channels(struct unl *local_unl, const char *interface, const char *country, int max_bandwidth_khz, unsigned char checkband, int nocache)
+static struct wifi_channels *mac80211_get_channels(struct unl *local_unl, const char *interface, const char *country, int max_bandwidth_khz, unsigned char checkband, int nocache)
 {
 	struct nlattr *tb[NL80211_FREQUENCY_ATTR_MAX + 1];
 	struct nlattr *tb_band[NL80211_BAND_ATTR_MAX + 1];
@@ -1759,10 +1759,9 @@ nla_put_failure:
 
 struct wifi_channels *mac80211_get_channels_simple(const char *interface, const char *country, int max_bandwidth_khz, unsigned char checkband)
 {
-	struct unl local_unl;
-	unl_genl_init(&local_unl, "nl80211");
+	lock();
 	struct wifi_channels *chan = mac80211_get_channels(&unl, interface, country, max_bandwidth_khz, checkband, 1);
-	unl_free(&local_unl);
+	unlock();
 	return chan;
 }
 
