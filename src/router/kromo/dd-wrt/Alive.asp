@@ -82,10 +82,10 @@ addEvent(window, "unload", function() {
 							<% show_modules(".webalive"); %>
 							<div class="submitFooter">
 								<script type="text/javascript">
-							//<![CDATA[
-							submitFooterButton(1,1);
-							//]]>
-							</script>
+								//<![CDATA[
+								submitFooterButton(1,1);
+								//]]>
+								</script>
 							</div>
 						</form>
 					</div>
@@ -94,9 +94,9 @@ addEvent(window, "unload", function() {
 					<div id="help">
 						<div><h2><% tran("share.help"); %></h2></div>
 						<dl>
-							<dt class="term"><% tran("alive.hour"); %>:</dt>
+							<dt class="term"><% tran("alive.legend"); %>&nbsp;<% tran("alive.hour"); %>:</dt>
 							<dd class="definition"><% tran("halive.right2"); %></dd>
-							<dt class="term"><% tran("alive.IP"); %>:</dt>
+							<dt class="term"><% tran("alive.legend2"); %>:</dt>
 							<dd class="definition"><% tran("halive.right4"); %></dd>
 						</dl><br />
 						<a href="javascript:openHelpWindow<% ifdef("EXTHELP","Ext"); %>('HAlive.asp');"><% tran("share.more"); %></a>
