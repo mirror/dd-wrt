@@ -787,7 +787,7 @@ void internal_ej_show_wpa_setting(webs_t wp, int argc, char_t ** argv, char *pre
 		if (is_ap(prefix)) {
 			//only for madwifi, ath9k, ath10k, mwlwifi etc. right now.
 #ifdef HAVE_80211W
-			if (is_mac80211(prefix) && strstr(akm, "wpa2") || strstr(akm, "psk2")) {
+			if (is_mac80211(prefix) && (strstr(akm, "wpa2") || strstr(akm, "psk2"))) {
 				char mfp[64];
 				sprintf(mfp, "%s_mfp", prefix);
 				nvram_default_get(mfp, "0");
