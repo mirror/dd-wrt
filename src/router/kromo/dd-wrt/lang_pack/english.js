@@ -166,7 +166,7 @@ share.vintrface="Virtual Interfaces";
 share.router="Router";
 share.static_lease="Static Leases";
 share.srvip="Server IP";
-share.srvipname="Server IP/Name";
+share.srvipname="Server IP / Name";
 share.localdns="Local DNS";
 share.minutes="min";
 share.oui="OUI Search";
@@ -552,15 +552,15 @@ sysctl.titl="Sysctl Configuration";
 // ** Alive.asp **//
 var alive=new Object();
 alive.titl="Keep Alive";
-alive.h2="Keep Alive";
+alive.h2="Keep Alive Management";
 alive.legend="Schedule Reboot";
-alive.sevr1="Schedule Reboot";
+alive.sevr1="Enable Schedule";
 alive.hour="At a set Time";
 alive.legend2="WDS / Connection Watchdog";
 alive.sevr2="Enable Watchdog";
 alive.IP="IP Addresses";
 alive.legend3="Proxy / Connection Watchdog";
-alive.sevr3="Enable Proxy Watchdog";
+alive.sevr3="Enable Watchdog";
 alive.IP2="Proxy IP Address";
 alive.port="Proxy Port";
 alive.mode0="Any Dropped IPs for Reboot";
@@ -569,11 +569,11 @@ alive.timeout="Ping Timeout";
 
 //help container
 var halive=new Object();
-halive.right2="Choose when to reboot the router. Cron must be enabled in the management tab.";
-halive.right4="A maximum of three IP addresses separated by a <em>SPACE</em> are allowed.<br />The IP Format is xxx.xxx.xxx.xxx .";
+halive.right2="Choose a schedule when to reboot the router. Cron <b>must be enabled</b> in the management tab.";
+halive.right4=alive.IP" A maximum of three IP addresses separated by a <em>SPACE</em> are allowed.<br />The IP Format is xxx.xxx.xxx.xxx .";
 
 //help page
-halive.page1="<dd>You can schedule regular reboots for the router:<ul><li>Regularly after xxx seconds.</li><li>At a specific date time each week or everyday.</li></ul><br /><div class=\"note\"><h4>Note:</h4><div>For date based reboots Cron must be activated. See <a href=\"HManagement.asp\">Management</a> for Cron activation.</div></div></dd>";
+halive.page1="<dd>You can schedule regular reboots for the router:<ul><li>Regularly after the set ammount of seconds.</li><li>At a specific date time each week or everyday.</li></ul><br /><div class=\"note\"><h4>Note:</h4><div>For date based reboots Cron must be activated. See <a href=\"HManagement.asp\">Management</a> for Cron activation.</div></div></dd>";
 halive.page2="<dd></dd><dd>Check all values and click the <em>" + sbutton.save + "</em> button to save your settings. Click the <em>" + sbutton.cancel + "</em> button to cancel your unsaved changes. Click the <em>" + sbutton.reboot +"</em> button to reboot the router immediately.</dd>";
 
 // ** config.asp **//
@@ -1285,7 +1285,7 @@ hidx.right10="This is the subnet mask of the router.";
 hidx.right12="Allows the router to manage your IP addresses.";
 hidx.right14="The address you would like to start with.";
 hidx.right16="You may limit the number of addresses your router hands out. 0 means only predefined static leases will be handed out.";
-hidx.right18="Choose the time zone you are in. If the server IP/Name field is left blank, the internal IP address of the time server will be used instead (recommended)";
+hidx.right18="Choose the time zone you are in. If the server IP / Name field is left blank, the internal IP address of the time server will be used instead (recommended)";
 hidx.sas="The setup assistant guides you through the basic setup steps to configure your router.";
 
 //help page
@@ -1363,7 +1363,7 @@ var management=new Object();
 management.titl="Administration";
 management.h2="Router Management";
 management.changepassword="Your router is currently not protected and uses an unsafe default username and password combination; please change it using the following dialog!";
-management.psswd_legend="Credentials";
+management.psswd_legend="Login Credentials";
 management.psswd_user="Username";
 management.psswd_pass="Password";
 management.pass_conf="Re-enter to Confirm";
@@ -1396,7 +1396,7 @@ management.boot_legend="Boot Time Recovery";
 management.poeswitch="POE Switch";
 management.boot_srv="Boot Wait";
 management.cron_legend="Cron";
-management.cron_srvd="Cron";
+management.cron_srvd="Enable Cron";
 management.cron_jobs="Additional Jobs";
 management.loop_legend="Loopback";
 management.loop_srv="Loopback";
@@ -1989,7 +1989,7 @@ service.vpn_dc2="Second Data Cipher";
 service.vpn_dc3="Third Data Cipher";
 service.vpn_killswitch="Killswitch";
 service.vpn_splitdns="Split DNS";
-service.vpn_ipnameport="Server IP/Name : Port";
+service.vpn_ipnameport="Server IP / Name : Port";
 service.vpn_multiaddress="Set Multiple Servers";
 service.vpn_randomsrv="Choose random Server";
 
@@ -2872,8 +2872,8 @@ freeradius.users="Users";
 freeradius.clients="Clients";
 freeradius.username="Username";
 freeradius.password="Password";
-freeradius.downstream="&#11123; speed";
-freeradius.upstream="&#11121; speed";
+freeradius.downstream="&nbsp;&darr; Speed";
+freeradius.upstream="&nbsp;&uarr; Speed";
 freeradius.sharedkey="Shared Key";
 
 freeradius.countrycode="Country Code";
@@ -3037,7 +3037,7 @@ wl_basic.client="Client";
 wl_basic.repeater="Repeater";
 wl_basic.repeaterbridge="Repeater Bridge";
 wl_basic.clientBridge="Client Bridge";
-wl_basic.clientRelayd="Routed Client Bridge";
+wl_basic.clientRelayd="Client Bridge (Routed)";
 wl_basic.adhoc="Ad-Hoc";
 wl_basic.wdssta="WDS Station";
 wl_basic.wdssta_mtik="WDS Station (Mikrotik)";
