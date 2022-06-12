@@ -96,17 +96,6 @@ addEvent(window, "unload", function() {
 									<input class="spaceradio" type="radio" name="radius_enabled" value="1" <% nvc("radius_enabled", "1"); %> onclick="show_layer_ext(this, 'idradius', true)" /><% tran("share.enable"); %>&nbsp;
 									<input class="spaceradio" type="radio" name="radius_enabled" value="0" <% nvc("radius_enabled", "0"); %> onclick="show_layer_ext(this, 'idradius', false)" /><% tran("share.disable"); %>
 								</div>
-								<div id="idradius" class="setting">
-									<div class="label"><% tran("freeradius.port"); %></div>
-									<input class="num" maxlength="5" size="5" name="radius_port" onblur="valid_range(this,1,65535,freeradius.port)" value="<% nvg("radius_port"); %>" />
-									<span class="default">
-										<script type="text/javascript">
-										//<![CDATA[
-										document.write("(" + share.deflt + ": 1812)");
-										//]]>
-										</script>
-									</span>
-								</div>
 							</fieldset><br />
 							<div id="idradius">
 								<fieldset>
@@ -163,6 +152,17 @@ addEvent(window, "unload", function() {
 									<div class="setting">
 										<span id="certificate_status"><% show_certificate_status(); %></span>&nbsp;
 									</div>
+								</fieldset><br />
+								<fieldset>
+								<div class="label"><% tran("freeradius.port"); %></div>
+								<input class="num" maxlength="5" size="5" name="radius_port" onblur="valid_range(this,1,65535,freeradius.port)" value="<% nvg("radius_port"); %>" />
+								<span class="default">
+									<script type="text/javascript">
+									//<![CDATA[
+									document.write("(" + share.deflt + ": 1812)");
+									//]]>
+									</script>
+								</span>
 								</fieldset><br />
 								<fieldset>
 									<legend><% tran("freeradius.clients"); %></legend>
