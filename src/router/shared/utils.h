@@ -1240,10 +1240,17 @@ static inline int has_no_apmode(char *prefix)
 	return 0;
 }
 
+#ifdef HAVE_MADWIFI
+static inline int has_wdsap(char *prefix)
+{
+	return 1;
+}
+#else
 static inline int has_wdsap(char *prefix)
 {
 	return 0;
 }
+#endif
 
 static inline int has_nolivesurvey(char *prefix)
 {
