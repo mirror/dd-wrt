@@ -571,7 +571,7 @@ alive.timeout="Ping Timeout";
 //help container
 var halive=new Object();
 halive.right2="Choose a schedule when to reboot the router. Cron <b>must be enabled</b> in the management tab.";
-halive.right4=alive.IP" A maximum of three IP addresses separated by a <em>SPACE</em> are allowed.<br />The IP Format is xxx.xxx.xxx.xxx .";
+halive.right4="A maximum of three IP addresses separated by a <em>SPACE</em> are allowed.<br />The IP Format is xxx.xxx.xxx.xxx .";
 
 //help page
 halive.page1="<dd>You can schedule regular reboots for the router:<ul><li>Regularly after the set ammount of seconds.</li><li>At a specific date time each week or everyday.</li></ul><br /><div class=\"note\"><h4>Note:</h4><div>For date based reboots Cron must be activated. See <a href=\"HManagement.asp\">Management</a> for Cron activation.</div></div></dd>";
