@@ -552,7 +552,7 @@ alive.timeout="Ping timeout";
 //help container
 
 halive.right2="Wählen Sie aus, wann der Router neu starten soll. Cron muss hierfür auf dem Management-Tab, eingeschaltet sein.";
-halive.right4="Maximal 3 IP-Adressen (mit einem <em>Leerzeichen</em> getrennt) sind erlaubt.<br />IP-Format ist xxx.xxx.xxx.xxx.";
+halive.right4="<b>" + alive.IP + "</b>: Maximal 3 IP-Adressen (mit einem <em>Leerzeichen</em> getrennt) sind erlaubt.<br />IP-Format ist xxx.xxx.xxx.xxx.";
 
 
 // ** config.asp **//
