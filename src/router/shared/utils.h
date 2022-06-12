@@ -1186,6 +1186,7 @@ extern int has_channelsurvey(const char *prefix);
 extern int has_nolivesurvey(const char *prefix);
 extern int has_qboost(const char *prefix);
 extern int has_no_apmode(const char *prefix);
+extern int has_wdsap(const char *prefix);
 extern int has_qboost_tdma(const char *prefix);
 extern int has_beacon_limit(const char *prefix);
 extern int has_spectralscanning(const char *prefix);
@@ -1235,6 +1236,11 @@ static inline int has_dualband(char *prefix)
 }
 
 static inline int has_no_apmode(char *prefix)
+{
+	return 0;
+}
+
+static inline int has_wdsap(char *prefix)
 {
 	return 0;
 }
