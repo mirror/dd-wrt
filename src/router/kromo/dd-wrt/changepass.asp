@@ -232,15 +232,14 @@ function valid_password(F) {
 
 
 function to_submit(F) {
-if (valid_password(F))
-    {
-	F.change_action.value = "gozila_cgi";
-	F.submit_button.value = "index";
-	F.submit_type.value = "changepass";
-	F.changepassword.value = "Changing Password";
-	F.action.value = "Apply";
-	apply(F);
-    }
+	if (valid_password(F)) {
+		F.change_action.value = "gozila_cgi";
+		F.submit_button.value = "index";
+		F.submit_type.value = "changepass";
+		F.changepassword.value = "Changing Password";
+		F.action.value = "Apply";
+		apply(F);
+	}
 }
 
 
@@ -249,7 +248,6 @@ if (valid_password(F))
 	</head>
 
 	<body class="gui">
-		
 		<div id="wrapper">
 			<div id="content" class="infopage">
 				<div id="header">
@@ -313,7 +311,7 @@ if (valid_password(F))
 											<div id="scorebarBorder">
 												<div id="score">0%</div>
 												<div id="scorebar">&nbsp;</div>
-                      </div>
+											</div>
 										</td>
 									</tr>
 									<tr>
