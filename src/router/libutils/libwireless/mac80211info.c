@@ -2146,6 +2146,16 @@ int has_no_apmode(const char *prefix)
 	return ret;
 }
 
+int has_wdsap(const char *prefix)
+{
+	if (!is_mac80211(prefix))
+		return 0;
+	INITVALUECACHE();
+	ret = mac80211_has_iftype(prefix, NL80211_IFTYPE_AP_VLAN);
+	EXITVALUECACHE();
+	return ret;
+}
+
 #ifdef HAVE_MAC80211_MESH
 int has_mesh(const char *prefix)
 {
