@@ -2876,8 +2876,8 @@ freeradius.users="Users";
 freeradius.clients="Clients";
 freeradius.username="Username";
 freeradius.password="Password";
-freeradius.downstream="&nbsp;&darr; Speed";
-freeradius.upstream="&nbsp;&uarr; Speed";
+freeradius.downstream="Down Speed";
+freeradius.upstream="Up Speed";
 freeradius.sharedkey="Shared Key";
 
 freeradius.countrycode="Country Code";
@@ -2897,7 +2897,7 @@ freeradius.gencerdone="Certicate generation completed!";
 
 //help container
 var hfreeradius=new Object();
-hfreeradius.right2="Before starting the FreeRADIUS Server, JFFS2 support <b>must be enabled</b>. JFFS2 Support is located on the Administration -> Managent tab.";
+hfreeradius.right2="Before starting the FreeRADIUS Server, JFFS2 support <b>must be enabled</b>. JFFS2 Support is located on the Administration / Managent tab.";
 
 // ** Wireless_Advanced.asp **//
 var wl_adv=new Object();
