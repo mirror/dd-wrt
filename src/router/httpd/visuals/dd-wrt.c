@@ -3335,7 +3335,7 @@ static void internal_ej_show_wireless_single(webs_t wp, char *prefix)
 				show_caption(wp, "label", "wl_basic.sifs_trigger_time", NULL);
 				websWrite(wp, "<input class=\"num\" name=\"%s\" size=\"3\" maxlength=\"3\" onblur=\"valid_range(this,0,20,wl_basic.sifs_trigger_time)\" value=\"%s\" />\n", wl_sifs_trigger_time,
 					  nvram_default_get(wl_sifs_trigger_time, "0"));
-				websWrite(wp, "</div>\n");
+				websWrite(wp, "&nbsp;<script type=\"text/javascript\">Capture(share.msec)</script></div>\n");
 			} else
 				showRadio(wp, "wl_basic.qboost", wl_qboost);
 		}
@@ -4581,7 +4581,7 @@ static void internal_ej_show_wireless_single(webs_t wp, char *prefix)
 				show_caption(wp, "label", "wl_basic.sifs_trigger_time", NULL);
 				websWrite(wp, "<input class=\"num\" name=\"%s\" size=\"3\" maxlength=\"3\" onblur=\"valid_range(this,0,20,wl_basic.sifs_trigger_time)\" value=\"%s\" />\n", wl_sifs_trigger_time,
 					  nvram_default_get(wl_sifs_trigger_time, "0"));
-				websWrite(wp, "</div>\n");
+				websWrite(wp, "&nbsp;<script type=\"text/javascript\">Capture(share.msec)</script></div>\n");
 			} else
 				showRadio(wp, "wl_basic.qboost", wl_qboost);
 		}
