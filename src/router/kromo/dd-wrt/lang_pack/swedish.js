@@ -1170,8 +1170,9 @@ service.dnsmasq_srv="DNSMasq";
 service.dnsmasq_opt="Extra DNSMasq Alternativ";
 
 //pptp.webservices
+service.pptp_h2="PPTP Server / Client";
 service.pptp_legend="PPTP";
-service.pptp_srv="PPTP Server";
+service.pptp_srv="Enable Server";
 service.pptp_forcemppe="Tvinga MPPE Kryptering";
 service.pptp_client="Klient IP(s)";
 service.pptp_chap="CHAP-Hemlighet";
@@ -1187,7 +1188,7 @@ service.telnet_srv="Telnet";
 
 //pptpd_client.webservices
 service.pptpd_legend="PPTP Klient";
-service.pptpd_option="PPTP Klient Alternativ";
+service.pptpd_lblcli="Klient Alternativ";
 service.pptpd_ipdns="Server IP eller DNS namn";
 service.pptpd_subnet="Fjärr Subnet";
 service.pptpd_subnetmask="Fjärr Subnet Mask";

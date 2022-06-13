@@ -1645,8 +1645,8 @@ service.tor_transparent="Transparent Proxy";
 service.tor_bwrate="Bandwidth Rate";
 service.tor_bwburst="Bandwidth Burst";
 
-
 //pptp.webservices
+service.pptp_h2="PPTP Server / Client";
 service.pptp_legend="PPTP";
 service.pptp_srv="PPTP服务器";
 service.pptp_client="客户端IP";
@@ -1667,7 +1667,7 @@ service.mactelnetd="MAC Telnet";
 
 //pptpd_client.webservices
 service.pptpd_legend="PPTP客户端";
-service.pptpd_option="PPTP客户端选项";
+service.pptpd_lblcli="客户端选项";
 service.pptpd_ipdns="服务器IP或DNS名称";
 service.pptpd_subnet="远程子网";
 service.pptpd_subnetmask="远程子网掩码";

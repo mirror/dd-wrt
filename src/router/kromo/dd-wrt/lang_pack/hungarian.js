@@ -996,8 +996,9 @@ service.dnsmasq_srv="DNSMasq";
 service.dnsmasq_opt="Egyéb DNSMasq beállítások";
 
 //pptp.webservices
+service.pptp_h2="PPTP Server / Client";
 service.pptp_legend="PPTP";
-service.pptp_srv="PPTP Szerver";
+service.pptp_srv="Szerver";
 service.pptp_client="Klines IP(k)";
 service.pptp_chap="CHAP jelszavak";
 
@@ -1012,7 +1013,7 @@ service.telnet_srv="Telnet";
 
 //pptpd_client.webservices
 service.pptpd_legend="PPTP Kliens";
-service.pptpd_option="PPTP Kliens beállítások";
+service.pptpd_lblcli="Kliens";
 service.pptpd_ipdns="Szerver IP vagy DNS-név";
 service.pptpd_subnet="Távoli alhálózat";
 service.pptpd_subnetmask="Távoli alhálózati maszk";

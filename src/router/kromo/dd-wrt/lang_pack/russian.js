@@ -1271,8 +1271,9 @@ service.dnsmasq_add_mac="Добавить MAC к DNS запросу";
 service.dnsmasq_opt="Дополнительные опции DNSMasq";
 
 //pptp.webservices
+service.pptp_h2="PPTP Server / Client";
 service.pptp_legend="PPTP";
-service.pptp_srv="Сервер PPTP";
+service.pptp_srv="Сервер";
 service.pptp_client="IP-адрес(а) клиентов";
 service.pptp_chap="CHAP-Secrets";
 	
@@ -1287,7 +1288,7 @@ service.telnet_srv="Telnet";
 
 //pptpd_client.webservices
 service.pptpd_legend="Клиент PPTP";
-service.pptpd_option="Опции клиента PPTP";
+service.pptpd_lblcli="клиента";
 service.pptpd_ipdns="IP или имя DNS сервера";
 service.pptpd_subnet="Удаленная подсеть";
 service.pptpd_subnetmask="Маска удаленной подсети";

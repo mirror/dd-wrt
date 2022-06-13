@@ -1760,8 +1760,8 @@ service.tor_transparent="Transparentní proxy";
 service.tor_bwrate="Šířka Pásma";
 service.tor_bwburst="Šarže šířky pásma";
 
-
 //pptp.webservices
+service.pptp_h2="PPTP Server / Client";
 service.pptp_legend="PPTP";
 service.pptp_srv="PPTP Server";
 service.pptp_client="Klient IP(čka)";
@@ -1782,7 +1782,7 @@ service.mactelnetd="MAC Telnet";
 
 //pptpd_client.webservices
 service.pptpd_legend="PPTP Klient";
-service.pptpd_option="PPTP volby klienta";
+service.pptpd_lblcli="Povolit klienta";
 service.pptpd_ipdns="Server IP nebo DNS Jméno";
 service.pptpd_subnet="Vzdálená podsíť";
 service.pptpd_subnetmask="Maska vzdálené podsítě";

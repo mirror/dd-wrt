@@ -1531,8 +1531,9 @@ service.tor_bwburst="대역폭 버스트";
 
 
 //pptp.webservices
+service.pptp_h2="PPTP Server / Client";
 service.pptp_legend="PPTP";
-service.pptp_srv="PPTP 서버";
+service.pptp_srv="서버";
 service.pptp_client="클라이언트 IP(s)";
 service.pptp_chap="CHAP-Secrets";
 
@@ -1550,7 +1551,7 @@ service.mactelnetd="MAC 텔넷";
 
 //pptpd_client.webservices
 service.pptpd_legend="PPTP 클라이언트";
-service.pptpd_option="PPTP 클라이언트 옵션";
+service.pptpd_lblcli="클라이언트 옵션";
 service.pptpd_ipdns="서버 IP 또는 DNS 이름";
 service.pptpd_subnet="원격 서브넷";
 service.pptpd_subnetmask="원격 서브넷 마스크";

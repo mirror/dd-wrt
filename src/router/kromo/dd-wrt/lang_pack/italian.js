@@ -1558,8 +1558,9 @@ service.dnsmasq_no_dns_rebind="No DNS Rebind";
 service.dnsmasq_opt="Opzioni Aggiuntive DNSMasq";
 
 //pptp.webservices
+service.pptp_h2="PPTP Server / Client";
 service.pptp_legend="PPTP";
-service.pptp_srv="PPTP Server";
+service.pptp_srv="Server";
 service.pptp_client="Client IP(s)";
 service.pptp_chap="CHAP-Secrets";
 
@@ -1574,7 +1575,7 @@ service.telnet_srv="Telnet";
 
 //pptpd_client.webservices
 service.pptpd_legend="Client PPTP";
-service.pptpd_option="Opzioni Del Client PPTP";
+service.pptpd_lblcli="Client";
 service.pptpd_ipdns="IP del Server o Nome di DNS";
 service.pptpd_subnet="Subnet Remota";
 service.pptpd_subnetmask="Subnet Mask Remota";
