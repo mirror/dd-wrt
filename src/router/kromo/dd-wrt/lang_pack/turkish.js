@@ -1204,8 +1204,9 @@ service.dnsmasq_no_dns_rebind="DNS Yeniden Bağlantı Yok";
 service.dnsmasq_opt="Ek DNSMasq Seçenekleri";
 
 //pptp.webservices
+service.pptp_h2="PPTP Server / Client";
 service.pptp_legend="PPTP";
-service.pptp_srv="PPTP Sunucusu";
+service.pptp_srv="Sunucusu";
 service.pptp_forcemppe="MPPE Şifrelemeyi Zorla";
 service.pptp_client="İstemci IP(leri)";
 service.pptp_chap="CHAP-Secrets";
@@ -1221,7 +1222,7 @@ service.telnet_srv="Telnet";
 
 //pptpd_client.webservices
 service.pptpd_legend="PPTP İstemci";
-service.pptpd_option="PPTP İstemci Seçenekleri";
+service.pptpd_lblcli="İstemci Seçenekleri";
 service.pptpd_ipdns="Sunucu IP veya DNS Adı";
 service.pptpd_subnet="Uzak Alt Ağ";
 service.pptpd_subnetmask="Uzak Alt Ağ Maskesi";

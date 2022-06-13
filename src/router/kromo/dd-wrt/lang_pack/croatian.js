@@ -1292,6 +1292,7 @@ service.dnsmasq_no_dns_rebind="No DNS Rebind";
 service.dnsmasq_opt="Dodatne DNSMasq Opcije";
 
 //pptp.webservices
+service.pptp_h2="PPTP Server / Client";
 service.pptp_legend="PPTP";
 service.pptp_srv="PPTP Poslužitelj";
 service.pptp_client="IP(s) Klijenata";
@@ -1304,11 +1305,11 @@ service.syslog_ip="Udaljeni Poslužitelj";
 
 //telnet.webservices
 service.telnet_legend="Telnet";
-service.telnet_srv="Telnet";
+service.telnet_srv="Enable Server";
 
 //pptpd_client.webservices
 service.pptpd_legend="PPTP Klijent";
-service.pptpd_option="Opcije PPTP Klijenta";
+service.pptpd_lblcli="Omogući Klijenta";
 service.pptpd_ipdns="IP adresa ili DNS Ime";
 service.pptpd_subnet="Udaljena Podmreža";
 service.pptpd_subnetmask="Maska Udaljene Podmreže";
@@ -1332,7 +1333,7 @@ service.pppoe_srv="Relay";
 
 //pppoe-server.webservices
 service.pppoesrv_legend="PPPoE Poslužitelj";
-service.pppoesrv_srv="RP-PPPoE Server Daemon";
+service.pppoesrv_srv="Enable Server";
 service.pppoesrv_interface="RP-PPPoE Sučelje Poslužitelja";
 service.pppoesrv_srvopt="Opcije RP-PPPoE Poslužitelja";
 service.pppoesrv_compr="Sažimanje";

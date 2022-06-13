@@ -1,6 +1,6 @@
 <h2><% tran("service.vpnd_legend"); %></h2>
 <fieldset>
-	<legend><% tran("service.vpnd_legend"); %></legend>
+	<legend><% tran("service.vpnd_hlegend1"); %></legend>
 	<div class="setting">
 		<div class="label"><% tran("service.vpnd_srv"); %></div>
 		<input class="spaceradio" type="radio" name="openvpn_enable" value="1" <% nvc("openvpn_enable", "1"); %> onclick="show_layer_ext(this, 'idvpn', true)" /><% tran("share.enable"); %>&nbsp;
@@ -114,8 +114,8 @@
 				<option value="AES-256-CBC" <% nvram_selected("openvpn_cipher","AES-256-CBC"); %>>AES-256-CBC</option>
 				<option value="AES-192-CBC" <% nvram_selected("openvpn_cipher","AES-192-CBC"); %>>AES-192-CBC</option>
 				<option value="AES-128-CBC" <% nvram_selected("openvpn_cipher","AES-128-CBC"); %>>AES-128-CBC</option>
-				<option value="none" <% nvram_selected("openvpn_cipher","none"); %>>None</option>
-				<option value="" <% nvram_selected("openvpn_cipher",""); %>>Not set</option>
+				<option value="none" <% nvram_selected("openvpn_cipher","none"); %>><% tran("share.none"); %></option>
+				<option value="" <% nvram_selected("openvpn_cipher",""); %>><% tran("share.notset"); %></option>
 				</select>
 			</div>
 			<div class="setting">
@@ -126,8 +126,8 @@
 				<option value="sha1" <% nvram_selected("openvpn_auth","sha1"); %>>SHA1</option>
 				<option value="md5" <% nvram_selected("openvpn_auth","md5"); %>>MD5</option>
 				<option value="md4" <% nvram_selected("openvpn_auth","md4"); %>>MD4</option>
-				<option value="none" <% nvram_selected("openvpn_auth","none"); %>>None</option>
-				<option value="" <% nvram_selected("openvpn_auth",""); %>>Not set</option>
+				<option value="none" <% nvram_selected("openvpn_auth","none"); %>><% tran("share.none"); %></option>
+				<option value="" <% nvram_selected("openvpn_auth",""); %>><% tran("share.notset"); %></option>
 				</select>
 			</div>
 			<div class="setting">
@@ -140,8 +140,8 @@
 				<option value="AES-256-CBC" <% nvram_selected("openvpn_dc1","AES-256-CBC"); %>>AES-256-CBC</option>
 				<option value="AES-192-CBC" <% nvram_selected("openvpn_dc1","AES-192-CBC"); %>>AES-192-CBC</option>
 				<option value="AES-128-CBC" <% nvram_selected("openvpn_dc1","AES-128-CBC"); %>>AES-128-CBC</option>
-				<option value="none" <% nvram_selected("openvpn_dc1","none"); %>>None</option>
-				<option value="" <% nvram_selected("openvpn_dc1",""); %>>Not set</option>
+				<option value="none" <% nvram_selected("openvpn_dc1","none"); %>><% tran("share.none"); %></option>
+				<option value="" <% nvram_selected("openvpn_dc1",""); %>><% tran("share.notset"); %></option>
 				</select>
 			</div>
 			<div class="setting">
@@ -154,7 +154,7 @@
 				<option value="AES-256-CBC" <% nvram_selected("openvpn_dc2","AES-256-CBC"); %>>AES-256-CBC</option>
 				<option value="AES-192-CBC" <% nvram_selected("openvpn_dc2","AES-192-CBC"); %>>AES-192-CBC</option>
 				<option value="AES-128-CBC" <% nvram_selected("openvpn_dc2","AES-128-CBC"); %>>AES-128-CBC</option>
-				<option value="" <% nvram_selected("openvpn_dc2",""); %>>Not set</option>
+				<option value="" <% nvram_selected("openvpn_dc2",""); %>><% tran("share.notset"); %></option>
 				</select>
 			</div>
 			<div class="setting">
@@ -167,7 +167,7 @@
 				<option value="AES-256-CBC" <% nvram_selected("openvpn_dc3","AES-256-CBC"); %>>AES-256-CBC</option>
 				<option value="AES-192-CBC" <% nvram_selected("openvpn_dc3","AES-192-CBC"); %>>AES-192-CBC</option>
 				<option value="AES-128-CBC" <% nvram_selected("openvpn_dc3","AES-128-CBC"); %>>AES-128-CBC</option>
-				<option value="" <% nvram_selected("openvpn_dc3",""); %>>Not set</option>
+				<option value="" <% nvram_selected("openvpn_dc3",""); %>><% tran("share.notset"); %></option>
 				</select>
 			</div>
 			<div class="setting">
@@ -187,19 +187,19 @@
 					<option value="TLS-RSA-WITH-AES-256-GCM-SHA384" <% nvram_selected("openvpn_tlscip","TLS-RSA-WITH-AES-256-GCM-SHA384"); %>>TLS-RSA-WITH-AES-256-GCM-SHA384</option>
 					<option value="TLS-RSA-WITH-AES-256-CBC-SHA256" <% nvram_selected("openvpn_tlscip","TLS-RSA-WITH-AES-256-CBC-SHA256"); %>>TLS-RSA-WITH-AES-256-CBC-SHA256</option>
 					<option value="TLS-RSA-WITH-AES-128-CBC-SHA" <% nvram_selected("openvpn_tlscip","TLS-RSA-WITH-AES-128-CBC-SHA"); %>>TLS-RSA-WITH-AES-128-CBC-SHA</option>
-					<option value="0" <% nvram_selected("openvpn_tlscip","0"); %>>None</option>
+					<option value="0" <% nvram_selected("openvpn_tlscip","0"); %>><% tran("share.none"); %></option>
 					</select>
 				</div>
 				<div class="setting">
 					<div class="label"><% tran("service.vpn_compress"); %></div>
 					<select name="openvpn_lzo">
-					<option value="yes" <% nvram_selected("openvpn_lzo","yes"); %>>Yes</option>
-					<option value="adaptive" <% nvram_selected("openvpn_lzo","adaptive"); %>>Adaptive</option>
-					<option value="no" <% nvram_selected("openvpn_lzo","no"); %>>No</option>
-					<option value="compress" <% nvram_selected("openvpn_lzo","compress"); %>>Compress</option>
-					<option value="compress lz4" <% nvram_selected("openvpn_lzo","compress lz4"); %>>Compress lz4</option>
-					<option value="compress lz4-v2" <% nvram_selected("openvpn_lzo","compress lz4-v2"); %>>Compress lz4-v2</option>
-					<option value="off" <% nvram_selected("openvpn_lzo","off"); %>>Disabled</option>
+					<option value="yes" <% nvram_selected("openvpn_lzo","yes"); %>><% tran("service.vpnd_lzoyes"); %></option>
+					<option value="adaptive" <% nvram_selected("openvpn_lzo","adaptive"); %>><% tran("service.vpnd_lzoadaptive"); %></option>
+					<option value="no" <% nvram_selected("openvpn_lzo","no"); %>><% tran("service.vpnd_lzono"); %></option>
+					<option value="compress" <% nvram_selected("openvpn_lzo","compress"); %>><% tran("service.vpnd_lzocompress"); %></option>
+					<option value="compress lz4" <% nvram_selected("openvpn_lzo","compress lz4"); %>><% tran("service.vpnd_lzocompress"); %> lz4</option>
+					<option value="compress lz4-v2" <% nvram_selected("openvpn_lzo","compress lz4-v2"); %>><% tran("service.vpnd_lzocompress"); %> lz4-v2</option>
+					<option value="off" <% nvram_selected("openvpn_lzo","off"); %>><% tran("share.disabled"); %></option>
 					</select>
 				</div>
 				<div class="setting">
@@ -235,7 +235,7 @@
 					<input size="5" maxlength="5" class="num" name="openvpn_mtu" onblur="valid_range(this,0,65535,share.port)" value="<% nvg("openvpn_mtu"); %>" />
 					<span class="default"><script type="text/javascript">
 					//<![CDATA[
-					document.write("(" + share.deflt + ": 1400, 0 not set)");
+					document.write("(" + share.deflt + ": 1400, 0 " + share.notset + ")");
 					//]]>
 					</script></span>
 				</div>
@@ -244,7 +244,7 @@
 					<input size="5" maxlength="5" class="num" name="openvpn_fragment" value="<% nvg("openvpn_fragment"); %>" />
 					<span class="default"><script type="text/javascript">
 					//<![CDATA[
-					document.write("(" + share.deflt + ": Disable)");
+					document.write("(" + share.deflt + ": " + share.disable + ")");
 					//]]>
 					</script></span>
 				</div>

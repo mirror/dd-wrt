@@ -1317,8 +1317,9 @@ service.dnsmasq_no_dns_rebind="Brez DNS ponovnega vezanja";
 service.dnsmasq_opt="Dodatne DNSMasq možnosti";
 
 //pptp.webservices
+service.pptp_h2="PPTP Server / Client";
 service.pptp_legend="PPTP";
-service.pptp_srv="PPTP strežnik";
+service.pptp_srv="Strežnik";
 service.pptp_client="IPji odjemalcev";
 service.pptp_chap="CHAP-skrivnosti";
 
@@ -1333,7 +1334,7 @@ service.telnet_srv="Telnet";
 
 //pptpd_client.webservices
 service.pptpd_legend="PPTP odjemalec";
-service.pptpd_option="PPTP možnosti odjemalca";
+service.pptpd_lblcli="Odjemalca";
 service.pptpd_ipdns="Strežnikov IP ali ime DNS";
 service.pptpd_subnet="Oddaljena podmreža";
 service.pptpd_subnetmask="Oddaljena maska podmreže";
