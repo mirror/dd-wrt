@@ -1,3 +1,4 @@
+<h2><% tran("service.softether_h2"); %></h2>
 <fieldset>
 	<legend><% tran("service.softether_legend"); %></legend>
 	<div class="setting">
