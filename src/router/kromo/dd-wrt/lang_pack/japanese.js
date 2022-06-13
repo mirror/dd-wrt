@@ -1215,8 +1215,9 @@ service.dnsmasq_srv="DNSMasq";
 service.dnsmasq_opt="DNSMasqサービス 追加オプション";
 
 //pptp.webservices
+service.pptp_h2="PPTP Server / Client";
 service.pptp_legend="PPTP";
-service.pptp_srv="PPTP サーバー設定";
+service.pptp_srv="サーバー設定";
 service.pptp_client="クライアントIPアドレス";
 service.pptp_chap="CHAP-Secrets";
 
@@ -1231,7 +1232,7 @@ service.telnet_srv="Telnet サービス";
 
 //pptpd_client.webservices
 service.pptpd_legend="PPTP クライアント設定";
-service.pptpd_option="PPTP クライアント・オプション";
+service.pptpd_lblcli="クライアント・オプション";
 service.pptpd_ipdns="PPTPサーバー名";
 service.pptpd_subnet="接続先のネットワークアドレス";
 service.pptpd_subnetmask="接続先のサブネットマスク";

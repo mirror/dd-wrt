@@ -1329,8 +1329,9 @@ service.dnsmasq_add_mac="Додај MAC наручиоца у DNS упит";
 service.dnsmasq_opt="Додатне DNSMasq опције";
 
 //pptp.webservices
+service.pptp_h2="PPTP Server / Client";
 service.pptp_legend="PPTP";
-service.pptp_srv="PPTP Сервер";
+service.pptp_srv="Сервер";
 service.pptp_client="Клијент IP(s)";
 service.pptp_chap="CHAP-Secrets";
 
@@ -1345,7 +1346,7 @@ service.telnet_srv="Telnet";
 
 //pptpd_client.webservices
 service.pptpd_legend="PPTP клијент";
-service.pptpd_option="Опције PPTP клијента";
+service.pptpd_lblcli="клијента";
 service.pptpd_ipdns="IP сервера или име DNS-а";
 service.pptpd_subnet="Удаљена подмрежа";
 service.pptpd_subnetmask="Удаљена подмрежна маска";
