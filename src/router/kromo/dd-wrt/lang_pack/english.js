@@ -1,5 +1,5 @@
 /////////////////////////////////////////////////////////////////////////////////////
-//		English reference translation file - DD-WRT V3           03/JUNE/2022       //
+//		English reference translation file - DD-WRT V3           13/JUNE/2022       //
 ////////////////////////////////////////////////////////////////////////////////////
 
 // ** COMMON SHARE LABEL **//
@@ -572,10 +572,10 @@ alive.timeout="Ping Timeout";
 //help container
 var halive=new Object();
 halive.right2="Choose a schedule when to reboot the router. Cron <b>must be enabled</b> in the management tab.";
-halive.right4="<b>" + alive.IP + "</b>: A maximum of three IP addresses separated by a <em>SPACE</em> are allowed.<br />The IP Format is xxx.xxx.xxx.xxx .";
+halive.right4="<b>" + alive.IP + "</b>: Only a maximum of <b>three</b> IP addresses separated by a <em>SPACE</em> are allowed.";
 
 //help page
-halive.page1="<dd>You can schedule regular reboots for the router:<ul><li>Regularly after the set ammount of seconds.</li><li>At a specific date time each week or everyday.</li></ul><br /><div class=\"note\"><h4>Note:</h4><div>For date based reboots Cron must be activated. See <a href=\"HManagement.asp\">Management</a> for Cron activation.</div></div></dd>";
+halive.page1="<dd>You can schedule regular reboots for the router:<ul><li>Regularly after the set amount of seconds.</li><li>At a specific date time each week or everyday.</li></ul><br /><div class=\"note\"><h4>Note:</h4><div>For date based reboots Cron must be activated. See <a href=\"HManagement.asp\">Management</a> for Cron activation.</div></div></dd>";
 halive.page2="<dd></dd><dd>Check all values and click the <em>" + sbutton.save + "</em> button to save your settings. Click the <em>" + sbutton.cancel + "</em> button to cancel your unsaved changes. Click the <em>" + sbutton.reboot +"</em> button to reboot the router immediately.</dd>";
 
 // ** config.asp **//
@@ -618,7 +618,7 @@ ddns.wanip="Use External IP Check";
 ddns.hlp="DDNS Service";
 
 var ddnsm=new Object();
-ddnsm.all_closed="DDNS server is currently closed";
+ddnsm.all_closed="The DDNS server is currently closed";
 ddnsm.all_resolving="Resolving domain name";
 ddnsm.all_errresolv="Domain name resolve failed";
 ddnsm.all_connecting="Connecting to server";
@@ -628,11 +628,11 @@ ddnsm.all_noip="No WAN connection";
 
 //help container
 var hddns=new Object();
-hddns.right2="DDNS allows you to access your network using domain names instead of IP addresses. The service manager changing IP addresses and updates your domain information dynamically. You must sign up for services through DynDNS.org, freedns.affraid.org, ZoneEdit.com, No-IP.com, or other similar dynamic DNS service.";
+hddns.right2="DDNS allows you to access your network using domain names instead of IP addresses. The service manager changes IP addresses and updates your domain information dynamically. You must sign up for services through e.g. DynDNS.org, freedns.affraid.org or other similar dynamic DNS service.";
 hddns.right4="Type an integer number in the box to set the force update interval (in days). Updates should only be performed automatically when your IP address has changed. Be aware of your DNS provider's update abuse policy to avoid having your hostname or domain blocked.";
 
 //help page
-hddns.page1="<dd>The router offers a Dynamic Domain Name System (DDNS) feature. DDNS lets you assign a fixed host and domain name to a dynamic external IP address. It is useful when you are hosting your own website, FTP server, or other server behind the router. Before using this feature, you need to sign up for DDNS service at <a href=\"http:\/\/www.dyndns.org\" target=\"_new\">www.dyndns.org</a>, a DDNS service provider.</dd>";
+hddns.page1="<dd>The router offers a Dynamic Domain Name System (DDNS) feature. DDNS lets you assign a fixed host and domain name to a dynamic external IP address. It is useful when you are hosting your own website, or any other server behind the router which is accessible via the Internet. To use this feature, you need to sign up for DDNS service at e.g. <a href=\"http:\/\/www.dyndns.org\" target=\"_new\">www.dyndns.org</a>, one of the several DDNS service provider supported by DD-WRT.</dd>";
 hddns.page2="<dd>To disable DDNS service, keep the default setting, <em>" + share.disable + "</em>. To enable DDNS service, follow these instructions:<ol class=\"wide\"><li>Sign up for DDNS service at <a href=\"http:\/\/www.dyndns.org\" target=\"_new\">www.dyndns.org</a>, and write down your User Name, Password, and Host Name information.</li><li>On the DDNS screen, select the <i>DynDNS.org</i> option from the drop down menu.</li><li>Complete the <i>User Name</i>, <i>Password</i>, and <i>Host Name</i> fields.</li><li>Click the <em>" + sbutton.save + "</em> button to save your changes. Click the <em>" + sbutton.cancel + "</em> button to cancel unsaved changes.</li></ol><br />You can now access your router from the Internet with the domain you have chosen.</dd>";
 hddns.page3="<dd>The <em>Static</em> DNS service is similar to the <em>Dynamic</em> DNS service, in that it allows a hostname such as yourname.dyndns.org to point to your IP address. Unlike a <em>Dynamic</em> DNS host, a <em>Static</em> DNS host does not expire after 35 days without updates, but updates take longer to propagate though the DNS system.<br />DynDNS' <em>Custom</em> DNS service provides a managed primary DNS solution, giving you complete control over an entire domain name and providing a unified primary/secondary DNS service. A web-based interface provides two levels of control over your domain, catering to average or power users.</dd>";
 hddns.page4="<dd>Enabling the wildcard feature for your host causes *.yourhost.dyndns.org to be aliased to the same IP address as yourhost.dyndns.org. This feature is useful if you want to be able to use, for example, www.yourhost.dyndns.org and still reach your hostname.</dd>";
@@ -656,10 +656,10 @@ diag.stopped="Stopped";
 
 //help container
 var hdiag=new Object();
-hdiag.right2="You can run command lines via the web interface. Fill the input area with the desired command and click the <em>" + sbutton.runcmd + "</em> button to execute.";
+hdiag.right2="You can run commands via the web interface. Fill the input area with the desired command and click the <em>" + sbutton.runcmd + "</em> button to execute.<br/><b>Recommended</b>: a terminal connection via SSH/Telnet is a more suitable, flexible, faster and reliable for some commands.";
 
 //help page
-hdiag.page1="<dd>You can run commands directly via the web interface.</dd>";
+hdiag.page1="<dd><b>Recommended</b>: A terminal connection via SSH/Telnet is a more suitable, flexible, faster and reliable for some commands.</dd>";
 hdiag.page2="<dd>Fill the input area with the desired command and click the <em>" + sbutton.runcmd + "</em> button to execute command.</dd>";
 hdiag.page3="<dd>You can specify certain commands to be executed during router startup. Fill the input area with the desired commands (only one command per row) and click the <em>" + sbutton.startup + "</em> button.</dd>";
 hdiag.page4="<dd>Each time the firewall is started custom firewall rules can added to the chain. Fill the input area with additional iptables/ip6tables commands (only one command per row) and click the <em>" + sbutton.firewall + "</em> button.<br /><br />";
@@ -810,7 +810,7 @@ hprforward.page2="<dd>Enter the name of the application in the field provided.</
 hprforward.page3="<dd>Enter the number of the first port of the range you want to seen by users on the Internet and forwarded to your PC.</dd>";
 hprforward.page4="<dd>Enter the number of the last port of the range you want to seen by users on the Internet and forwarded to your PC.</dd>";
 hprforward.page5="<dd>Chose the right protocol <i>TCP</i>, <i>UDP</i> or <i>Both</i>. Set this to what the application requires.</dd>";
-hprforward.page6="<dd>Enter the IP Address of the PC running the application.</dd>";
+hprforward.page6="<dd>Enter the IP Address of the device running the application.</dd>";
 hprforward.page7="<dd>Click the <em>" + share.enable + "</em> checkbox to enable port forwarding for the application.</dd><dd>Check all values and click the <em>" + sbutton.save + "</em> button to save your settings. Click the <em>" + sbutton.cancel + "</em> button to cancel your unsaved changes.<br /><br /><div class=\"note\"><h4>Note:</h4><div>Remember to save your changes before adding another forwarding rule.</div></div></dd>";
 
 // ** P2P.asp **//
@@ -1209,7 +1209,7 @@ idx_pptp.wan_ip="WAN IP Address";
 idx_pptp.gateway="Gateway (PPTP Server)";
 //idx_pptp.encrypt="PPTP Encryption"; //should be needed anymore. del soon
 idx_pptp.reorder="Packet Reordering";
-idx_pptp.addopt="Additional PPTP Options";
+idx_pptp.addopt="Additional Options";
 idx_pptp.iptv="Receive IPTV";
 
 // ** index_static.asp **//
@@ -1838,12 +1838,6 @@ service.tor_transparent="Transparent Proxy";
 service.tor_bwrate="Bandwidth Rate";
 service.tor_bwburst="Bandwidth Burst";
 
-//pptp.webservices
-service.pptp_legend="PPTP";
-service.pptp_srv="PPTP Server";
-service.pptp_client="Client IP(s)";
-service.pptp_chap="CHAP-Secrets";
-
 //syslog.webservices
 service.syslog_legend="System Log";
 service.syslog_srv="Syslogd";
@@ -1857,9 +1851,17 @@ service.telnet_srv="Enable Server";
 service.mactelnetd_legend="Mikrotik MAC Telnet";
 service.mactelnetd="MAC Telnet";
 
+//pptp.webservices
+service.pptp_h2="PPTP Server / Client";
+service.pptp_legend="PPTP";
+service.pptp_srv="PPTP Server";
+service.pptp_option_srv="Enable Server";
+service.pptp_client="Client IP(s)";
+service.pptp_chap="CHAP-Secrets";
+
 //pptpd_client.webservices
 service.pptpd_legend="PPTP Client";
-service.pptpd_option="PPTP Client Options";
+service.pptpd_lblcli="Enable Client";
 service.pptpd_ipdns="Server IP or DNS Name";
 service.pptpd_subnet="Remote Subnet";
 service.pptpd_subnetmask="Remote Subnet Mask";
@@ -1882,8 +1884,8 @@ service.pppoe_legend="PPPoE Relay";
 service.pppoe_srv="Enable Relay";
 
 //pppoe-server.webservices
-service.pppoesrv_legend="PPPoE Server";
-service.pppoesrv_srv="Enable RP-PPPoE Server";
+service.pppoesrv_legend="RP-PPPoE Server";
+service.pppoesrv_srv="Enable Server";
 service.pppoesrv_interface="Server Interface";
 service.pppoesrv_srvopt="RP-PPPoE Server Options";
 service.pppoesrv_compr="Compression";
@@ -1918,12 +1920,13 @@ service.snmp_read="RO Community";
 service.snmp_write="RW Community";
 
 //openvpn.webvpn
-service.vpnd_legend="OpenVPN Server / Daemon";
-service.vpnd_srv="OpenVPN";
+service.vpnd_hlegend1="OpenVPN Server";
+service.vpnd_legend="OpenVPN Server / Client";
+service.vpnd_srv="Enable Server";
 service.vpnd_starttype="Start Type";
 service.vpnd_startWanup="WAN Up";
 service.vpnd_startSystem="System";
-service.vpnd_gui="GUI (server)";
+service.vpnd_gui="GUI (Server)";
 service.vpnd_text="Text";
 service.vpnd_crl="Certificate Revocation List";
 service.vpnd_config="Additional Config";
@@ -1932,31 +1935,31 @@ service.vpnd_tlsauth="TLS Key";
 service.vpnd_cert="Public Server Certificate";
 service.vpnd_key="Private Server Key";
 service.vpnd_pkcs="PKCS12 Key";
-service.vpnd_mode="Server mode";
+service.vpnd_mode="Server Mode";
 service.vpnd_net="Network";
 service.vpnd_mask="Netmask";
 service.vpnd_startip="Pool start IP";
 service.vpnd_endip="Pool end IP";
-service.vpnd_cl2cl="Client to Client connection allowed";
+service.vpnd_cl2cl="Client to Client Connection Allowed";
 service.vpnd_switch="Config as";
-service.vpnd_dupcn="Allow duplicate Clients";
-service.vpnd_allowcnwan="Allow Clients WAN access (internet)";
+service.vpnd_dupcn="Allow Duplicate Clients";
+service.vpnd_allowcnwan="Allow Clients WAN Access";
 service.vpnd_allowcnlan="Allow Clients full LAN access";
 service.vpnd_proxy="DHCP-Proxy mode";
-service.vpnd_clcon="Client connect script";
-service.vpnd_cldiscon="Client disconnect script";
-service.vpnd_ccddef="CCD-Dir DEFAULT file";
-service.vpnd_dhcpbl="Block DHCP across the tunnel";
-service.vpnd_blockmulticast="Block multicast across the tunnel";
-service.vpnd_dh="Use ECDH instead of DH.PEM";
+service.vpnd_clcon="Client Connect Script";
+service.vpnd_cldiscon="Client Disconnect Script";
+service.vpnd_ccddef="CCD-Dir DEFAULT File";
+service.vpnd_dhcpbl="Block DHCP Across the Tunnel";
+service.vpnd_blockmulticast="Block Multicast Across the Tunnel";
+service.vpnd_dh="Use ECDH Instead of DH.PEM";
 service.vpnd_static="Static Key";
-service.vpn_redirgate="Push Client route";
+service.vpn_redirgate="Push Client Route";
 service.vpn_defgateway="Default Gateway";
-service.vpn_srvroute="Servers subnet";
+service.vpn_srvroute="Servers Subnet";
 service.vpn_legend="OpenVPN Client";
 service.vpn_mit="CVE-2019-14899 Mitigation";
-service.vpn_srv="Start OpenVPN Client";
-service.vpn_mtu="Tunnel MTU setting";
+service.vpn_srv="Enable Client";
+service.vpn_mtu="Tunnel MTU Setting";
 service.vpn_mss="Tunnel UDP MSS Fix";
 service.vpn_fragment="Tunnel UDP Fragment";
 service.vpn_compress="Compression";
@@ -1983,7 +1986,7 @@ service.vpnd_deamon="Daemon";
 service.vpnd_lzoyes="Yes";
 service.vpnd_lzono="No";
 service.vpnd_lzoadaptive="Adaptive";
-service.vpn_tls_btn="TLS Key choice";
+service.vpn_tls_btn="TLS Key Choice";
 service.vpn_tls_crypt="TLS Crypt";
 service.vpn_tls_auth="TLS Auth";
 service.vpn_dc1="First Data Cipher";
@@ -1994,6 +1997,14 @@ service.vpn_splitdns="Split DNS";
 service.vpn_ipnameport="Server IP / Name : Port";
 service.vpn_multiaddress="Set Multiple Servers";
 service.vpn_randomsrv="Choose random Server";
+
+// SoftEther
+service.softether_h2="SoftEther VPN Server / Client";
+service.softether_legend="SoftEther VPN";
+service.softether_bridge="Enable Bridge";
+service.softether_client="Enable Client";
+service.softether_server="Enable Server";
+service.softether_config="Configuration";
 
 //help page
 var hservice=new Object();
@@ -2024,8 +2035,8 @@ hstatus_vpn.right2="Additional Config:<br /><i>To push routes to clients add 'pu
 hstatus_vpn.right3="General:<br /><i>3 auth methods are supported: pkcs12 (+dh on server), static, standard certs. Enable MSS only on one side of the link, fragment on both.</i>";
 
 //help page
-hstatus_vpn.page1="<dd>A VPN technology compatible with Microsoft and other remote access vendors, it is implemented in multiple desktop and mobile OS's. Configuring this allows you to access your LAN at home remotely.<ul class=\"wide\"><li>Server IP – The IP address of your router</li><li>Client IP – A list or range of IP addresses for remotely connected machines. This range should not overlap with the DHCP range (for example 192.168.0.2,192.168.0.3), a range (192.168.0.1-254 or 192.168.0-255.2) or some combination (192.168.0.2,192.168.0.5-8).</li><li>CHAP-Secrets – A list of usernames and passwords for the VPN login, one user per line (Example: joe * joespassword *). For more details look up the pppd main page.</li></ul></dd>";
-hstatus_vpn.page2="<dd>A VPN Client that enables you to connect to VPN servers compatible with Microsoft and other remote access vendors. Configuring this allows the router to VPN into a remote network.<ul class=\"wide\"><li>Server IP or DNS Name – The IP address or DNS Name of the VPN server that you would like to connect to (Example: www.MyServer.com). </li><li>Remote Subnet – Remote Subnet of the network you are connecting to (Example: 192.168.2.0). </li><li>Remote Subnet Mask – Remote Subnet Mask of the network you are connecting to (Example: 255.255.255.0). </li><li>MPPE Encryption  – The type of security to use for the connection. If you are connecting to another DD-WRT router you need (Example: mppe required). But if you are connecting to a Windows VPN server you need (Example: mppe required,no40,no56,stateless) or (Example: mppe required,no40,no56,stateful) </li><li>MTU – Maximum Transmission Unit (Default: 1436) </li><li>MRU – Maximum Receiving Unit (Default: 1436) </li><li>NAT – Enabling this option will make outbound traffic from inside appear to be coming from router IP, instead of client IP. Enabling this can improve security, but can cause issues in some cases, i.e. when VoIP is used. </li><li>User Name – Enter the username that you will use to connect to the VPN server. If you are connecting to another Linux based PPTP server you just need to enter the username. But if you are connecting to a Windows VPN server you need to enter the servername and username (Example: DOMAIN\\username). </li><li>Password – Enter the password of the for the username </li><li>Additional PPTP Options – If default options are not working for your setup, you can use this field. If defined, they will replace the default internal options. The options above are still used. </li></ul></dd><dd>Check all values and click the <em>" + sbutton.save + "</em> button to save your settings. Click the <em>" + sbutton.cancel + "</em> button to cancel your unsaved changes.</dd>";
+hstatus_vpn.page1="<dd>A VPN server technology compatible with Microsoft and other remote access vendors, it is implemented in multiple desktop and mobile OS's. Configuring this allows you to access your LAN at home remotely.<ul class=\"wide\"><li>Server IP – The IP address of your router</li><li>Client IP – A list or range of IP addresses for remotely connected machines. This range should not overlap with the DHCP range (for example 192.168.0.2,192.168.0.3), a range (192.168.0.1-254 or 192.168.0-255.2) or some combination (192.168.0.2,192.168.0.5-8).</li><li>CHAP-Secrets – A list of usernames and passwords for the VPN login, one user per line (Example: joe * joespassword *). For more details look up the pppd main page.</li></ul></dd>";
+hstatus_vpn.page2="<dd>A VPN client enables you to connect to VPN servers compatible with Microsoft and other remote access vendors. Configuring this allows the router to VPN into a remote network.<ul class=\"wide\"><li>Server IP or DNS Name – The IP address or DNS Name of the VPN server that you would like to connect to (Example: www.MyServer.com). </li><li>Remote Subnet – Remote Subnet of the network you are connecting to (Example: 192.168.2.0). </li><li>Remote Subnet Mask – Remote Subnet Mask of the network you are connecting to (Example: 255.255.255.0). </li><li>MPPE Encryption  – The type of security to use for the connection. If you are connecting to another DD-WRT router you need (Example: mppe required). But if you are connecting to a Windows VPN server you need (Example: mppe required,no40,no56,stateless) or (Example: mppe required,no40,no56,stateful) </li><li>MTU – Maximum Transmission Unit (Default: 1436) </li><li>MRU – Maximum Receiving Unit (Default: 1436) </li><li>NAT – Enabling this option will make outbound traffic from inside appear to be coming from router IP, instead of client IP. Enabling this can improve security, but can cause issues in some cases, i.e. when VoIP is used. </li><li>User Name – Enter the username that you will use to connect to the VPN server. If you are connecting to another Linux based PPTP server you just need to enter the username. But if you are connecting to a Windows VPN server you need to enter the servername and username (Example: DOMAIN\\username). </li><li>Password – Enter the password for the username </li><li>Additional Options – If default options are not working for your setup, you can use this field. If defined, they will replace the default internal options. The options above are still used. </li></ul></dd><dd>Check all values and click the <em>" + sbutton.save + "</em> button to save your settings. Click the <em>" + sbutton.cancel + "</em> button to cancel your unsaved changes.</dd>";
 
 //vnc.repeater
 service.vncrepeater_legend="Virtual Network Computing (VNC)";
@@ -2183,13 +2194,6 @@ service.nfs_srv="NFS Server";
 service.rsync="rsync";
 service.rsync_srv="rsync Daemon";
 service.rsync_allowed="Allowed Hosts";
-// SoftEther
-
-service.softether_legend="SoftEther VPN";
-service.softether_bridge="Bridge";
-service.softether_client="Client";
-service.softether_server="Server";
-service.softether_config="Config";
 
 // Zabbix
 service.zabbix_legend="Zabbix";
@@ -2531,7 +2535,7 @@ hupgrad.page1="<dd>New firmware versions are posted at <a href=\"https:\/\/dd-wr
 // ** UPnP.asp **//
 var upnp=new Object();
 upnp.titl="UPnP";
-upnp.h2="Universal Plug and Play";
+upnp.h2="Universal Plug and Play (UPnP)";
 upnp.legend="Forwards";
 upnp.legend2="UPnP Configuration";
 upnp.serv="UPnP Service";
@@ -2590,8 +2594,8 @@ vlan.gigabit="Gigabit";
 var wep=new Object();
 wep.defkey="Default Transmit Key";
 wep.passphrase="Passphrase";
-wep.opt_64="64 bits 10 hex digits";
-wep.opt_128="128 bits 26 hex digits";
+wep.opt_64="64-bit 10 Hex Digits";
+wep.opt_128="128-bit 26 Hex Digits";
 wep.generate="Generate";
 
 // ** WOL.asp **//
@@ -2679,8 +2683,8 @@ wpa.wpa="WPA Enterprise";
 wpa.wpa2="WPA2 Enterprise";
 wpa.wpa2_sha256="WPA2 Enterprise with SHA256";
 wpa.wpa3="WPA3 Enterprise";
-wpa.wpa3_128="WPA3 Enterprise Suite-B 128-Bit";
-wpa.wpa3_192="WPA3 Enterprise CNSA Suite-B 192-Bit";
+wpa.wpa3_128="WPA3 Enterprise Suite-B 128-bit";
+wpa.wpa3_192="WPA3 Enterprise CNSA Suite-B 192-bit";
 wpa.wep_8021x="802.1x / WEP";
 wpa.peap="EAP-PEAP";
 wpa.leap="EAP-LEAP";
@@ -2754,7 +2758,7 @@ hwpa.right2="You may choose from; Disabled, WEP, WPA Personal, WPA Enterprise or
 
 //help page
 hwpa.page1="<dd>The router supports different types of security settings for your network. WiFi Protected Access (WPA), WiFi Protected Access 2 (WPA2), Remote Access Dial In User Service (RADIUS), and Wired Equivalent Privacy (WEP), which can be selected from the list next to Security Mode. To disable security settings, keep the default setting, <i>Disabled</i>.</dd>";
-hwpa.page2="<dd>TKIP stands for Temporal Key Integrity Protocol, which utilizes a stronger encryption method than WEP, and incorporates Message Integrity Code (MIC) to provide protection against packet tampering. AES stands for Advanced Encryption System, which utilizes a symmetric 128-Bit block data encryption and MIC. You should choose AES if your wireless clients supports it.<br /><br />To use WPA Personal, enter a password in the <i>WPA Shared Key</i> field between 8 and 63 characters long. You may also enter a <i>Group Key Renewal Interval</i> time between 0 and 99,999 seconds.</dd>";
+hwpa.page2="<dd>TKIP stands for Temporal Key Integrity Protocol, which utilizes a stronger encryption method than WEP, and incorporates Message Integrity Code (MIC) to provide protection against packet tampering. AES stands for Advanced Encryption System, which utilizes a symmetric 128-bit block data encryption and MIC. You should choose AES if your wireless clients supports it.<br /><br />To use WPA Personal, enter a password in the <i>WPA Shared Key</i> field between 8 and 63 characters long. You may also enter a <i>Group Key Renewal Interval</i> time between 0 and 99,999 seconds.</dd>";
 hwpa.page3="<dd>WPA Enterprise uses an external RADIUS server to perform user authentication. To use WPA RADIUS, enter the IP address of the RADIUS server, the RADIUS Port (default is 1812) and the shared secret from the RADIUS server.</dd>";
 hwpa.page4="<dd>WPA2 uses 802.11i to provide additional security beyond what is provided in WPA. AES is required under WPA2, and you may need additional updates to your OS and/or wireless drivers for WPA2 support. Please note WPA2/TKIP is not a supported configuration. Aditionally the WPA2 security mode is not supported under WDS.</dd>";
 hwpa.page5="<dd>This mode allows for mixing WPA2 and WPA clients. If only some of your clients support WPA2 mode, then you should choose WPA2-PSK/WPA-PSK. For maximum interoperability, you should choose WPA2-PSK/WPA-PSK with TKIP+CCMP (AES).</dd>";
@@ -3033,7 +3037,7 @@ wl_basic.nitroqam="NitroQAM (QAM1024)";
 wl_basic.dwds="Dynamic WDS Mode";
 wl_basic.scanlist="ScanList";
 wl_basic.duallink="Dual Link";
-wl_basic.dualband="Dualband";
+wl_basic.dualband="Dual-Band";
 wl_basic.parent="Parent IP";
 wl_basic.masquerade="Masquerade / NAT";
 wl_basic.ap="AP";

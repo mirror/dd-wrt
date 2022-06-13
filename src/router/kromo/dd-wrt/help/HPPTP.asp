@@ -5,9 +5,9 @@
 			<div class="navig"><a href="index.asp">Index</a> | <a href="javascript:self.close();"><% tran("sbutton.clos"); %></a></div>
 		</div>
 		<div id="content">
-			<h2><% tran("service.pptp_legend"); %></h2>
+			<h2><% tran("service.pptp_h2"); %></h2>
 			<dl>
-				<dt><% tran("service.pptp_legend"); %> Server</dt>
+				<dt><% tran("service.pptp_srv"); %></dt>
 				<% tran("hstatus_vpn.page1"); %>
 				<dt><% tran("service.pptpd_legend"); %></dt>
 				<% tran("hstatus_vpn.page2"); %>

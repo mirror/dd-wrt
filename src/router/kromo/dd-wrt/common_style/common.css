@@ -65,7 +65,7 @@ input.num {
   text-align: center;
   vertical-align: middle;
 }
-input.num[name='openvpncl_remoteport'] {
+input.num[name*='openvpncl_remoteport'] {
   vertical-align: unset;
 }
 select {
