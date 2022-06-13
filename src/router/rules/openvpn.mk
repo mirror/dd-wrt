@@ -163,8 +163,8 @@ ifeq ($(CONFIG_AIRNET),y)
 else
 	install -D openvpn/config/openvpncl.nvramconfig $(INSTALLDIR)/openvpn/etc/config/openvpncl.nvramconfig
 	install -D openvpn/config/openvpncl.webvpn $(INSTALLDIR)/openvpn/etc/config/openvpncl.webvpn
-	install -D openvpn/config2/openvpn.nvramconfig $(INSTALLDIR)/openvpn/etc/config/openvpn.nvramconfig
-	install -D openvpn/config2/openvpn.webvpn $(INSTALLDIR)/openvpn/etc/config/openvpn.webvpn
+	install -D openvpn/config/openvpn.nvramconfig $(INSTALLDIR)/openvpn/etc/config/openvpn.nvramconfig
+	install -D openvpn/config/openvpn.webvpn $(INSTALLDIR)/openvpn/etc/config/openvpn.webvpn
 endif
 	cp -f openvpn/config/*.sh $(INSTALLDIR)/openvpn/etc
 	install -D -m 0755 openvpn/config/userscripts/*.sh -t $(INSTALLDIR)/openvpn/usr/bin
