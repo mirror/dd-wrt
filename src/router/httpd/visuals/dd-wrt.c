@@ -2594,7 +2594,9 @@ static int show_virtualssid(webs_t wp, char *prefix)
 		websWrite(wp, "<div class=\"setting\">\n<div class=\"label\"><script type=\"text/javascript\">Capture(wl_basic.label)</script></div><select name=\"%s\" >\n", wl_mode);
 		websWrite(wp, "<script type=\"text/javascript\">\n//<![CDATA[\n");
 		websWrite(wp, "document.write(\"<option value=\\\"ap\\\" %s >\" + wl_basic.ap + \"</option>\");\n", nvram_match(wl_mode, "ap") ? "selected=\\\"selected\\\"" : "");
-		websWrite(wp, "document.write(\"<option value=\\\"wdsap\\\" %s >\" + wl_basic.wdsap + \"</option>\");\n", nvram_match(wl_mode, "wdsap") ? "selected=\\\"selected\\\"" : "");
+		if (has_wdsap(var)) {
+			websWrite(wp, "document.write(\"<option value=\\\"wdsap\\\" %s >\" + wl_basic.wdsap + \"</option>\");\n", nvram_match(wl_mode, "wdsap") ? "selected=\\\"selected\\\"" : "");
+		}
 #if 0
 		if (has_mesh(var))
 			websWrite(wp, "document.write(\"<option value=\\\"mesh\\\" %s >\" + wl_basic.mesh + \"</option>\");\n", nvram_match(wl_mode, "mesh") ? "selected=\\\"selected\\\"" : "");
@@ -3227,7 +3229,7 @@ static void internal_ej_show_wireless_single(webs_t wp, char *prefix)
 				}
 			}
 #ifdef HAVE_MADWIFI
-			if (!has_no_apmode(prefix)) {
+			if (has_wdsap(prefix)) {
 				if (!cpeonly) {
 					websWrite(wp, "document.write(\"<option value=\\\"wdsap\\\" %s >\" + wl_basic.wdsap + \"</option>\");\n", nvram_match(wl_mode, "wdsap") ? "selected=\\\"selected\\\"" : "");
 				}
@@ -3980,7 +3982,7 @@ static void internal_ej_show_wireless_single(webs_t wp, char *prefix)
 				}
 			}
 #ifdef HAVE_MADWIFI
-			if (!has_no_apmode(prefix)) {
+			if (has_wdsap(prefix)) {
 				if (!cpeonly) {
 					websWrite(wp, "document.write(\"<option value=\\\"wdsap\\\" %s >\" + wl_basic.wdsap + \"</option>\");\n", nvram_match(wl_mode, "wdsap") ? "selected=\\\"selected\\\"" : "");
 				}

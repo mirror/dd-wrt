@@ -490,7 +490,7 @@ EJ_VISIBLE void ej_sas_show_wireless_single(webs_t wp, char *prefix)
 	}
 #else
 	websWrite(wp, "document.write(\"<option value=\\\"wdssta\\\" %s >\" + wl_basic.wdssta + \"</option>\");\n", nvram_selmatch(wp, wl_mode, "wdssta") ? "selected=\\\"selected\\\"" : "");
-	if (!cpeonly) {
+	if (!cpeonly && has_wdsap(prefix)) {
 		websWrite(wp, "document.write(\"<option value=\\\"wdsap\\\" %s >\" + wl_basic.wdsap + \"</option>\");\n", nvram_selmatch(wp, wl_mode, "wdsap") ? "selected=\\\"selected\\\"" : "");
 	}
 #endif
