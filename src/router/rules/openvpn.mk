@@ -112,7 +112,7 @@ ifeq ($(CONFIG_AIRNET),y)
 	install -D openvpn/config-airnet/openvpn.webvpn $(TOP)/httpd/ej_temp/openvpn.webvpn
 else
 	install -D openvpn/config/openvpncl.webvpn $(TOP)/httpd/ej_temp/openvpncl.webvpn
-	install -D openvpn/config2/openvpn.webvpn $(TOP)/httpd/ej_temp/openvpn.webvpn
+	install -D openvpn/config/openvpn.webvpn $(TOP)/httpd/ej_temp/openvpn.webvpn
 endif
 #ifeq ($(CONFIG_NEWMEDIA),y)
 #else
