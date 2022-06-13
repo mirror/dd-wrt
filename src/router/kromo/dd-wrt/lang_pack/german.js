@@ -1576,8 +1576,9 @@ service.dnsmasq_opt="Zusätzliche Dnsmasq-Optionen";
 service.dnsmasq_cachesize="Maximal gepufferte Einträge";
 
 //pptp.webservices
+service.pptp_h2="PPTP Server / Client";
 service.pptp_legend="PPTP";
-service.pptp_srv="PPTP-Server";
+service.pptp_srv="Enable Server";
 service.pptp_client="Client-IP(s)";
 service.pptp_chap="CHAP-Secrets";
 
@@ -1605,7 +1606,7 @@ service.tor_bwburst="Bandbreitenüberschreitung";
 
 //pptpd_client.webservices
 service.pptpd_legend="PPTP-Client";
-service.pptpd_option="PPTP-Client-Optionen";
+service.pptpd_lblcli="Client";
 service.pptpd_ipdns="Server-IP oder DNS-Name";
 service.pptpd_subnet="Entferntes Netz";
 service.pptpd_subnetmask="Entfernte Netzmaske";

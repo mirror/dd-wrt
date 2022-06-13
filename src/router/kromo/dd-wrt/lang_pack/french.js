@@ -1050,8 +1050,9 @@ service.dnsmasq_srv="DNSMasq";
 service.dnsmasq_opt="Options DNSMasq";
 
 //pptp.webservices
+service.pptp_h2="PPTP Server / Client";
 service.pptp_legend="PPTP";
-service.pptp_srv="Serveur PPTP";
+service.pptp_srv="Serveur";
 service.pptp_client="Client IP(s)";
 service.pptp_chap="CHAP-Secrets";
 
@@ -1066,7 +1067,7 @@ service.telnet_srv="Telnet";
 
 //pptpd_client.webservices
 service.pptpd_legend="Client PPTP";
-service.pptpd_option="Options du Client PPTP";
+service.pptpd_lblcli="Client";
 service.pptpd_ipdns="Serveur IP ou nom du DNS";
 service.pptpd_subnet="Sous-rèseau à distance";
 service.pptpd_subnetmask="Masque de sous-rèseau à distance";

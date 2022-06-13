@@ -1273,8 +1273,9 @@ service.dnsmasq_no_dns_rebind="Fără reatașare DNS";
 service.dnsmasq_opt="Opțiuni DNSMasq adiționale";
 
 //pptp.webservices
+service.pptp_h2="PPTP Server / Client";
 service.pptp_legend="PPTP";
-service.pptp_srv="Server PPTP";
+service.pptp_srv="Server";
 service.pptp_client="IP-uri clienți";
 service.pptp_chap="Secrete CHAP";
 
@@ -1289,7 +1290,7 @@ service.telnet_srv="Telnet";
 
 //pptpd_client.webservices
 service.pptpd_legend="Client PPTP";
-service.pptpd_option="Opțiuni client PPTP";
+service.pptpd_lblcli="Client";
 service.pptpd_ipdns="IP server sau nume DNS";
 service.pptpd_subnet="Rețea la distanță";
 service.pptpd_subnetmask="Mască de rețea la distanță";

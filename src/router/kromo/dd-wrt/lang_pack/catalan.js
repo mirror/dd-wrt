@@ -1266,6 +1266,7 @@ service.dnsmasq_no_dns_rebind="Cap tornament a ligar DNS";
 service.dnsmasq_opt="Opcions DNSMasq Adicionals";
 
 //pptp.webservices
+service.pptp_h2="PPTP Server / Client";
 service.pptp_legend="PPTP";
 service.pptp_srv="Servidor PPTP";
 service.pptp_client="IP de Client";
@@ -1282,7 +1283,7 @@ service.telnet_srv="Telnet";
 
 //pptpd_client.webservices
 service.pptpd_legend="Client PPTP";
-service.pptpd_option="Opcions de Client PPTP";
+service.pptpd_lblcli="Habilita Client";
 service.pptpd_ipdns="Nom DNS o IP de Servidor";
 service.pptpd_subnet="Subxarxa Remota";
 service.pptpd_subnetmask="Màscara de Subxarxa Remota";

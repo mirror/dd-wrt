@@ -1139,6 +1139,7 @@ service.dnsmasq_srv="DNSMasq";
 service.dnsmasq_opt="Additional DNSMasq Options";
 
 //pptp.webservices
+service.pptp_h2="PPTP Server / Client";
 service.pptp_legend="PPTP";
 service.pptp_srv="PPTP伺服器";
 service.pptp_client="用戶端 IP(s)";
@@ -1155,7 +1156,7 @@ service.telnet_srv="Telnet";
 
 //pptpd_client.webservices
 service.pptpd_legend="PPTP 用戶端";
-service.pptpd_option="PPTP 用戶端選項";
+service.pptpd_lblcli="用戶端選項";
 service.pptpd_ipdns="伺服器IP或DNS名稱";
 service.pptpd_subnet="遠端子網";
 service.pptpd_subnetmask="遠端子網路遮罩";

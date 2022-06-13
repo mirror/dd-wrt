@@ -1749,8 +1749,9 @@ service.tor_bwrate="Bandwidth Rate";
 service.tor_bwburst="Bandwidth Burst";
 
 //pptp.webservices
+service.pptp_h2="PPTP Server / Client";
 service.pptp_legend="PPTP";
-service.pptp_srv="Serwer PPTP";
+service.pptp_srv="Serwer";
 service.pptp_client="Adres(y) IP klientów";
 service.pptp_chap="CHAP-Secrets";
 
@@ -1769,7 +1770,7 @@ service.mactelnetd="MAC Telnet";
 
 //pptpd_client.webservices
 service.pptpd_legend="Klient PPTP";
-service.pptpd_option="Opcje klienta PPTP";
+service.pptpd_lblcli="klienta";
 service.pptpd_ipdns="Adres serwera IP or nazwa DNS";
 service.pptpd_subnet="Zdalna podsieć";
 service.pptpd_subnetmask="Zdalna maska podsieci";
