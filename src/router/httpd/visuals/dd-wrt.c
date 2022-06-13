@@ -3254,8 +3254,11 @@ static void internal_ej_show_wireless_single(webs_t wp, char *prefix)
 			}
 //#endif
 #else
-			websWrite(wp, "document.write(\"<option value=\\\"wdssta\\\" %s >\" + wl_basic.wdssta + \"</option>\");\n", nvram_match(wl_mode, "wdssta") ? "selected=\\\"selected\\\"" : "");
-			websWrite(wp, "document.write(\"<option value=\\\"wdssta_mtik\\\" %s >\" + wl_basic.wdssta_mtik + \"</option>\");\n", nvram_match(wl_mode, "wdssta_mtik") ? "selected=\\\"selected\\\"" : "");
+			if (has_wdsap(prefix)) {
+				websWrite(wp, "document.write(\"<option value=\\\"wdssta\\\" %s >\" + wl_basic.wdssta + \"</option>\");\n", nvram_match(wl_mode, "wdssta") ? "selected=\\\"selected\\\"" : "");
+				websWrite(wp, "document.write(\"<option value=\\\"wdssta_mtik\\\" %s >\" + wl_basic.wdssta_mtik + \"</option>\");\n",
+					  nvram_match(wl_mode, "wdssta_mtik") ? "selected=\\\"selected\\\"" : "");
+			}
 #endif
 			if (!cpeonly && has_ibss(prefix))
 				websWrite(wp, "document.write(\"<option value=\\\"infra\\\" %s >\" + wl_basic.adhoc + \"</option>\");\n", nvram_match(wl_mode, "infra") ? "selected=\\\"selected\\\"" : "");
@@ -3401,7 +3404,7 @@ static void internal_ej_show_wireless_single(webs_t wp, char *prefix)
 	if (is_mac80211(prefix) && has_dualband(prefix)) {
 		char dualband[32];
 		sprintf(dualband, "%s_dualband", prefix);
-		nvram_default_get(dualband,"0");
+		nvram_default_get(dualband, "0");
 		websWrite(wp, "<div class=\"setting\"><div class=\"label\"><script type=\"text/javascript\">Capture(wl_basic.dualband)</script></div><select name=\"%s\">\n", dualband);
 		websWrite(wp, "<script type=\"text/javascript\">\n//<![CDATA[\n");
 		websWrite(wp, "document.write(\"<option value=\\\"0\\\" %s >\" + share.deflt + \"</option>\");\n", nvram_matchi(dualband, 0) ? "selected=\\\"selected\\\"" : "");
@@ -3652,7 +3655,7 @@ static void internal_ej_show_wireless_single(webs_t wp, char *prefix)
 	websWrite(wp, "\" /></div>\n");
 
 #ifdef HAVE_MADWIFI
-	sprintf(wl_bssid,"%s_bssid", prefix);
+	sprintf(wl_bssid, "%s_bssid", prefix);
 	websWrite(wp, "<div class=\"setting\">\n");
 	show_caption(wp, "label", "wl_basic.bssid", NULL);
 	websWrite(wp, "<input size=\"20\" maxlength=\"17\" name=\"%s_bssid\" onblur=\"valid_macs_all(this)\" value=\"%s\" />", prefix, nvram_safe_get(wl_bssid));
@@ -4007,8 +4010,11 @@ static void internal_ej_show_wireless_single(webs_t wp, char *prefix)
 			}
 //#endif
 #else
-			websWrite(wp, "document.write(\"<option value=\\\"wdssta\\\" %s >\" + wl_basic.wdssta + \"</option>\");\n", nvram_match(wl_mode, "wdssta") ? "selected=\\\"selected\\\"" : "");
-			websWrite(wp, "document.write(\"<option value=\\\"wdssta_mtik\\\" %s >\" + wl_basic.wdssta_mtik + \"</option>\");\n", nvram_match(wl_mode, "wdssta_mtik") ? "selected=\\\"selected\\\"" : "");
+			if (has_wdsap(prefix)) {
+				websWrite(wp, "document.write(\"<option value=\\\"wdssta\\\" %s >\" + wl_basic.wdssta + \"</option>\");\n", nvram_match(wl_mode, "wdssta") ? "selected=\\\"selected\\\"" : "");
+				websWrite(wp, "document.write(\"<option value=\\\"wdssta_mtik\\\" %s >\" + wl_basic.wdssta_mtik + \"</option>\");\n",
+					  nvram_match(wl_mode, "wdssta_mtik") ? "selected=\\\"selected\\\"" : "");
+			}
 			if (has_mesh(prefix)) {
 				websWrite(wp, "document.write(\"<option value=\\\"mesh\\\" %s >\" + wl_basic.mesh + \"</option>\");\n", nvram_match(wl_mode, "mesh") ? "selected=\\\"selected\\\"" : "");
 			}
@@ -4086,7 +4092,7 @@ static void internal_ej_show_wireless_single(webs_t wp, char *prefix)
 	if (is_mac80211(prefix) && has_dualband(prefix)) {
 		char dualband[32];
 		sprintf(dualband, "%s_dualband", prefix);
-		nvram_default_get(dualband,"0");
+		nvram_default_get(dualband, "0");
 		websWrite(wp, "<div class=\"setting\"><div class=\"label\"><script type=\"text/javascript\">Capture(wl_basic.dualband)</script></div><select name=\"%s\">\n", dualband);
 		websWrite(wp, "<script type=\"text/javascript\">\n//<![CDATA[\n");
 		websWrite(wp, "document.write(\"<option value=\\\"0\\\" %s >\" + share.deflt + \"</option>\");\n", nvram_matchi(dualband, 0) ? "selected=\\\"selected\\\"" : "");
@@ -4295,13 +4301,12 @@ static void internal_ej_show_wireless_single(webs_t wp, char *prefix)
 // wireless ssid
 	websWrite(wp, "<div class=\"setting\">\n");
 	websWrite(wp,
-		  "<div class=\"label\"><script type=\"text/javascript\">Capture(wl_basic.ssid)</script></div><input name=\"%s\" size=\"20\" maxlength=\"32\" onblur=\"valid_name(this,wl_basic.ssid)\" value=\"",
-		  wl_ssid);
+		  "<div class=\"label\"><script type=\"text/javascript\">Capture(wl_basic.ssid)</script></div><input name=\"%s\" size=\"20\" maxlength=\"32\" onblur=\"valid_name(this,wl_basic.ssid)\" value=\"", wl_ssid);
 	tf_webWriteESCNV(wp, wl_ssid);
 	websWrite(wp, "\" /></div>\n");
 
 #ifdef HAVE_MADWIFI
-	sprintf(wl_bssid,"%s_bssid", prefix);
+	sprintf(wl_bssid, "%s_bssid", prefix);
 	websWrite(wp, "<div class=\"setting\">\n");
 	show_caption(wp, "label", "wl_basic.bssid", NULL);
 	websWrite(wp, "<input size=\"20\" maxlength=\"17\" name=\"%s_bssid\" onblur=\"valid_macs_all(this)\" value=\"%s\" />", prefix, nvram_safe_get(wl_bssid));
