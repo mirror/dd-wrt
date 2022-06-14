@@ -84,7 +84,6 @@
  "dnsmasq_enable"  "DNS Masq"  "CHOICE"  "2" "0"  "1"  "FALSE" "0"
  "dnsmasq_options"  "DNS Masq"  "NULL"  "TRUE" "0"
  "local_dns"  "Local DNS"  "CHOICE" "2" "0"  "1"  "FALSE" "0"
- "nas_enable"  "NAS"  "CHOICE" "2" "0"  "1"  "FALSE" "0"
  "ntp_enable"  "NTP Client"  "CHOICE" "2" "0"  "1"  "FALSE" "0"
  "pptpd_enable"  "PPTPD"  "CHOICE" "2" "0"  "1"  "FALSE" "0"
  "pptpd_bcrelay"  "PPTPD"  "CHOICE" "2" "0"  "1"  "FALSE" "0"
