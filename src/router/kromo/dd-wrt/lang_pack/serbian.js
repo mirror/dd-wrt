@@ -1303,12 +1303,12 @@ service.apserv_legend="APServ Конфигурација са Даљине";
 service.apserv="APServ";
 
 //kaid
-service.kaid_legend="XBOX Kaid";
-service.kaid_srv="Започни Kaid";
-service.kaid_locdevnum="Број локалних уређаја";
-service.kaid_uibind="UI порт на коме слуша";
-service.kaid_orbport="ORB Порт";
-service.kaid_orbdeepport="ORB Deep Порт";
+//service.kaid_legend="XBOX Kaid";
+//service.kaid_srv="Започни Kaid";
+//service.kaid_locdevnum="Број локалних уређаја";
+//service.kaid_uibind="UI порт на коме слуша";
+//service.kaid_orbport="ORB Порт";
+//service.kaid_orbdeepport="ORB Deep Порт";
 
 //DHCPd
 service.dhcp_legend="DHCP Клијент";

@@ -1532,12 +1532,12 @@ service.apserv_legend="Configurazione Remota APServ";
 service.apserv="APServ";
 
 //kaid
-service.kaid_legend="XBOX Kaid";
-service.kaid_srv="Avvio Kaid";
-service.kaid_locdevnum="Numero di Dispositivi Locali";
-service.kaid_uibind="Porta di ascolto UI";
-service.kaid_orbport="Porta ORB";
-service.kaid_orbdeepport="ORB Deep Port";
+//service.kaid_legend="XBOX Kaid";
+//service.kaid_srv="Avvio Kaid";
+//service.kaid_locdevnum="Numero di Dispositivi Locali";
+//service.kaid_uibind="Porta di ascolto UI";
+//service.kaid_orbport="Porta ORB";
+//service.kaid_orbdeepport="ORB Deep Port";
 
 //DHCPd
 service.dhcp_legend="Client DHCP";

@@ -1293,12 +1293,12 @@ service.apserv_legend="APServ oddaljeno upravljanje";
 service.apserv="APServ";
 
 //kaid
-service.kaid_legend="XBOX Kaid";
-service.kaid_srv="Začni Kaid";
-service.kaid_locdevnum="Število lokalnih naprav";
-service.kaid_uibind="Vrata upor. vmesnika";
-service.kaid_orbport="ORB vrata";
-service.kaid_orbdeepport="Vrata ORB \"Deep Port\"";
+//service.kaid_legend="XBOX Kaid";
+//service.kaid_srv="Začni Kaid";
+//service.kaid_locdevnum="Število lokalnih naprav";
+//service.kaid_uibind="Vrata upor. vmesnika";
+//service.kaid_orbport="ORB vrata";
+//service.kaid_orbdeepport="Vrata ORB \"Deep Port\"";
 
 //DHCPd
 service.dhcp_legend="DHCP odjemalec";

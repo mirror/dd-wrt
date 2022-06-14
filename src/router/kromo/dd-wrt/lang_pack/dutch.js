@@ -1202,12 +1202,12 @@ service.titl="Services";
 service.h2="Beheer Services";
 
 //kaid
-service.kaid_legend="XBOX Kaid";
-service.kaid_srv="Kaid Starten";
-service.kaid_locdevnum="Aantal Lokale Apparaten";
-service.kaid_uibind="UI Luister Poort";
-service.kaid_orbport="ORB Poort";
-service.kaid_orbdeepport="ORB Diepe Poort";
+//service.kaid_legend="XBOX Kaid";
+//service.kaid_srv="Kaid Starten";
+//service.kaid_locdevnum="Aantal Lokale Apparaten";
+//service.kaid_uibind="UI Luister Poort";
+//service.kaid_orbport="ORB Poort";
+//service.kaid_orbdeepport="ORB Diepe Poort";
 
 //DHCPd
 service.dhcp_legend="DHCP Cliënt";

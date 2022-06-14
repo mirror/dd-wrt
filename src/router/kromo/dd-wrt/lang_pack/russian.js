@@ -1244,12 +1244,12 @@ service.titl="Службы";
 service.h2="Управление службами";
 
 //kaid
-service.kaid_legend="XBOX Kaid";
-service.kaid_srv="Запустить Kaid";
-service.kaid_locdevnum="Число локальных устройств";
-service.kaid_uibind="Слушающий порт UI";
-service.kaid_orbport="Порт ORB";
-service.kaid_orbdeepport="Deep порт ORB";
+//service.kaid_legend="XBOX Kaid";
+//service.kaid_srv="Запустить Kaid";
+//service.kaid_locdevnum="Число локальных устройств";
+//service.kaid_uibind="Слушающий порт UI";
+//service.kaid_orbport="Порт ORB";
+//service.kaid_orbdeepport="Deep порт ORB";
 
 //DHCPd
 service.dhcp_legend="Клиент DHCP";

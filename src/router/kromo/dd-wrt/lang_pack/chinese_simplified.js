@@ -1596,12 +1596,12 @@ service.apserv_legend="APServ Remote Configuration";
 service.apserv="APServ";
 
 //kaid
-service.kaid_legend="Xbox Kaid";
-service.kaid_srv="开启Kaid";
-service.kaid_locdevnum="本地设备数量";
-service.kaid_uibind="UI监听端口";
-service.kaid_orbport="ORB端口";
-service.kaid_orbdeepport="ORB Deep Port";
+//service.kaid_legend="Xbox Kaid";
+//service.kaid_srv="开启Kaid";
+//service.kaid_locdevnum="本地设备数量";
+//service.kaid_uibind="UI监听端口";
+//service.kaid_orbport="ORB端口";
+//service.kaid_orbdeepport="ORB Deep Port";
 
 //DHCPd
 service.dhcp_legend="DHCP 客户端";
@@ -1794,9 +1794,10 @@ hservice.dnsmasq_strict="<dd>Query the upstream servers in the order entered man
 hservice.dnsmasq_add_mac="<dd>Adds the internal requestor's MAC address to the query sent to the upstream DNS server. This could be necessary if the upstream server filters requests by MAC.</dd>";
 hservice.dnsmasq_rc="<dd>DHCP Rapid Commit removes a round trip of network traffic by immediately returning an address lease in response to a DHCPDISCOVER from a client that also supports Rapid Commit.</dd>";
 hservice.dnsmasq_cachesize="<dd>How many names DNSmasq stores in its cache (default 150).</dd>";
-hservice.page3="<dd>Kai is a means of connecting platform games over the Internet. Enable the service and then add XBox MAC addresses separated with \";\".<ul class=\"wide\"><li>";
-hservice.page4=" – How many consoles to detect before the engine locks the pcap filter. Setting this to 0, means the engine will never lock - which means you can use any number of consoles, but you will notice a performance hit, if your network is busy with other traffic. The best thing to do here is to set the number to the number of consoles you own - that's why it defaults to 1 - because most people have just 1 console.</li><li>";
-hservice.page5=" – Specifies which ip/port kaid will use to listen for controller UIs.</li></ul><br /><div class=\"note\"><h4>Note</h4><div>Xbox must be connected directly via one of the Ethernet ports of the router.</div></div></dd>";
+// HServices.asp has these page3 through page5 Kaid entries commented out until it returns to DD-WRT 
+//hservice.page3="<dd>Kai is a means of connecting platform games over the Internet. Enable the service and then add XBox MAC addresses separated with \";\".<ul class=\"wide\"><li>";
+//hservice.page4=" – How many consoles to detect before the engine locks the pcap filter. Setting this to 0, means the engine will never lock - which means you can use any number of consoles, but you will notice a performance hit, if your network is busy with other traffic. The best thing to do here is to set the number to the number of consoles you own - that's why it defaults to 1 - because most people have just 1 console.</li><li>";
+//hservice.page5=" – Specifies which ip/port kaid will use to listen for controller UIs.</li></ul><br /><div class=\"note\"><h4>Note</h4><div>Xbox must be connected directly via one of the Ethernet ports of the router.</div></div></dd>";
 hservice.page6="<dd>RFlow Collector is a traffic monitoring and management tool that allows to watch a complete network of DD-WRT routers.<br /><ul class=\"wide\"><li>RFlow Default port is 2055</li><li>MACupd Default port is 2056</li><li>Interval = 10 seems messages will be sent to server each 10 seconds</li><li>Interface : choose which interface to monitor</li></ul><br /><div class=\"note\"><h4>Note</h4><div>For each RFlow and MACupd server IP : enter the IP address of the listening server (win32 PC with RFlow Collector).</div></div></dd>";
 hservice.page7="<dd>Enabling SSHd allows you to access the Linux OS of your router with an SSH client (Putty works well on Windows, for example).<ul class=\"wide\"><li>Password login – allow login with the router password (username is <tt>root</tt>)</li><li>SSHd Port – the port number for SSHd (default is 22)</li><li>Authorized Keys – here you paste your public keys to enable key-based login (more secure than a simple password)</li></ul></dd>";
 hservice.page8="<dd>Enable Syslogd to capture system messages. By default they will be collected in the local file \/var\/log\/messages. To send them to another system, enter the IP address of a remote syslog server.</dd>";

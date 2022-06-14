@@ -1184,12 +1184,12 @@ service.apserv_legend="Configuración Remota APServ";
 service.apserv="APServ";
 
 //kaid
-service.kaid_legend="XBOX Kaid";
-service.kaid_srv="Iniciar Kaid";
-service.kaid_locdevnum="Número de dispositivos locales";
-service.kaid_uibind="Puerto de escucha UI";
-service.kaid_orbport="Puerto ORB";
-service.kaid_orbdeepport="Puerto profundo ORB";
+//service.kaid_legend="XBOX Kaid";
+//service.kaid_srv="Iniciar Kaid";
+//service.kaid_locdevnum="Número de dispositivos locales";
+//service.kaid_uibind="Puerto de escucha UI";
+//service.kaid_orbport="Puerto ORB";
+//service.kaid_orbdeepport="Puerto profundo ORB";
 
 //DHCPd
 service.dhcp_legend="Cliente DHCP";

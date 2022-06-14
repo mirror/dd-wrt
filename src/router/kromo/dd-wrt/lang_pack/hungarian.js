@@ -975,10 +975,10 @@ service.titl="Szolgáltatások";
 service.h2="Szolgáltatások kezelése";
 
 //kaid
-service.kaid_legend="XBOX-Kaid";
-service.kaid_srv="Kaid indítása";
-service.kaid_locdevnum="Helyi eszközök száma";
-service.kaid_uibind="UI Port";
+//service.kaid_legend="XBOX-Kaid";
+//service.kaid_srv="Kaid indítása";
+//service.kaid_locdevnum="Helyi eszközök száma";
+//service.kaid_uibind="UI Port";
 
 //DHCPd
 service.dhcp_legend="DHCP kliens";

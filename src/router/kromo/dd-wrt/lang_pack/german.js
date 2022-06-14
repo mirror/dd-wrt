@@ -1537,12 +1537,12 @@ service.apserv_legend="APServ Fernwartung";
 service.apserv="APServ";
 
 //kaid
-service.kaid_legend="XBOX-Kaid";
-service.kaid_srv="Start Kaid";
-service.kaid_locdevnum="Anzahl lokaler Geräte";
-service.kaid_uibind="UI Port";
-service.kaid_orbport="ORB Port";
-service.kaid_orbdeepport="ORB Deep Port";
+//service.kaid_legend="XBOX-Kaid";
+//service.kaid_srv="Start Kaid";
+//service.kaid_locdevnum="Anzahl lokaler Geräte";
+//service.kaid_uibind="UI Port";
+//service.kaid_orbport="ORB Port";
+//service.kaid_orbdeepport="ORB Deep Port";
 
 //DHCPd
 service.dhcp_legend="DHCP-Client";

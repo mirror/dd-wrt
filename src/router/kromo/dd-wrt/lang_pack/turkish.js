@@ -1180,12 +1180,12 @@ service.apserv_legend="APServ Uzak Yapılandırma";
 service.apserv="APServ";
 
 //kaid
-service.kaid_legend="XBOX Kaid";
-service.kaid_srv="Kaid Başlat";
-service.kaid_locdevnum="Yerel Aygıt Sayısı";
-service.kaid_uibind="UI Dinleme Portu";
-service.kaid_orbport="ORB Portu";
-service.kaid_orbdeepport="ORB Deep Port";
+//service.kaid_legend="XBOX Kaid";
+//service.kaid_srv="Kaid Başlat";
+//service.kaid_locdevnum="Yerel Aygıt Sayısı";
+//service.kaid_uibind="UI Dinleme Portu";
+//service.kaid_orbport="ORB Portu";
+//service.kaid_orbdeepport="ORB Deep Port";
 
 //DHCPd
 service.dhcp_legend="DHCP İstemcisi";

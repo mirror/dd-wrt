@@ -1192,12 +1192,12 @@ service.titl="サーバー/サービス";
 service.h2="サーバー/サービス設定";
 
 //kaid
-service.kaid_legend="XBOX Kaid";
-service.kaid_srv="Kaid サービス";
-service.kaid_locdevnum="LAN側で使用するデバイスの数";
-service.kaid_uibind="UI 通信に使用するポート";
-service.kaid_orbport="ORB ポート";
-service.kaid_orbdeepport="ORB Deep ポート";
+//service.kaid_legend="XBOX Kaid";
+//service.kaid_srv="Kaid サービス";
+//service.kaid_locdevnum="LAN側で使用するデバイスの数";
+//service.kaid_uibind="UI 通信に使用するポート";
+//service.kaid_orbport="ORB ポート";
+//service.kaid_orbdeepport="ORB Deep ポート";
 
 //DHCPd
 service.dhcp_legend="DHCP クライアント";

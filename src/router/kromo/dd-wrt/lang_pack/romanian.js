@@ -1249,12 +1249,12 @@ service.apserv_legend="Configurare la distanță APServ";
 service.apserv="APServ";
 
 //kaid
-service.kaid_legend="Kaid XBOX";
-service.kaid_srv="Pornește Kaid";
-service.kaid_locdevnum="Număr de dispozitive locale";
-service.kaid_uibind="Port ascultare UI";
-service.kaid_orbport="Port ORB";
-service.kaid_orbdeepport="Port complex ORB";
+//service.kaid_legend="Kaid XBOX";
+//service.kaid_srv="Pornește Kaid";
+//service.kaid_locdevnum="Număr de dispozitive locale";
+//service.kaid_uibind="Port ascultare UI";
+//service.kaid_orbport="Port ORB";
+//service.kaid_orbdeepport="Port complex ORB";
 
 //DHCPd
 service.dhcp_legend="Client DHCP";

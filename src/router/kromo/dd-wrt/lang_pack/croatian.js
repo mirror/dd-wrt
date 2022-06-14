@@ -1268,12 +1268,12 @@ service.apserv_legend="APServ Remote Configuration";
 service.apserv="APServ";
 
 //kaid
-service.kaid_legend="XBOX Kaid";
-service.kaid_srv="Pokreni Kaid";
-service.kaid_locdevnum="Broj Lokalnih Uređaja";
-service.kaid_uibind="UI Osluškujuća Vrata";
-service.kaid_orbport="ORB Vrata";
-service.kaid_orbdeepport="ORB Duboka Vrata";
+//service.kaid_legend="XBOX Kaid";
+//service.kaid_srv="Pokreni Kaid";
+//service.kaid_locdevnum="Broj Lokalnih Uređaja";
+//service.kaid_uibind="UI Osluškujuća Vrata";
+//service.kaid_orbport="ORB Vrata";
+//service.kaid_orbdeepport="ORB Duboka Vrata";
 
 //DHCPd
 service.dhcp_legend="DHCP Klijent";

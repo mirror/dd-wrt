@@ -1027,12 +1027,12 @@ service.titl="Services";
 service.h2="Gestion des Services";
 
 //kaid
-service.kaid_legend="XBOX Kaid";
-service.kaid_srv="Dèmarrer Kaid";
-service.kaid_locdevnum="Nombre de console(s)";
-service.kaid_uibind="Port du dèmon";
-service.kaid_orbport="Port ORB";
-service.kaid_orbdeepport="ORB Deep Port";
+//service.kaid_legend="XBOX Kaid";
+//service.kaid_srv="Dèmarrer Kaid";
+//service.kaid_locdevnum="Nombre de console(s)";
+//service.kaid_uibind="Port du dèmon";
+//service.kaid_orbport="Port ORB";
+//service.kaid_orbdeepport="ORB Deep Port";
 
 //DHCPd
 service.dhcp_legend="Client DHCP";

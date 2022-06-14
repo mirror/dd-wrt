@@ -1242,12 +1242,12 @@ service.apserv_legend="Configuració Remota d'APServ";
 service.apserv="APServ";
 
 //kaid
-service.kaid_legend="XBOX Kaid";
-service.kaid_srv="Inicia Kaid";
-service.kaid_locdevnum="Nombre de Dispositius Locals";
-service.kaid_uibind="Port d'escolta de la UI";
-service.kaid_orbport="Port ORB";
-service.kaid_orbdeepport="Port ORB Profund";
+//service.kaid_legend="XBOX Kaid";
+//service.kaid_srv="Inicia Kaid";
+//service.kaid_locdevnum="Nombre de Dispositius Locals";
+//service.kaid_uibind="Port d'escolta de la UI";
+//service.kaid_orbport="Port ORB";
+//service.kaid_orbdeepport="Port ORB Profund";
 
 //DHCPd
 service.dhcp_legend="Client DHCP";
