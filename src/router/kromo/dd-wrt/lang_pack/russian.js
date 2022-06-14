@@ -1030,8 +1030,9 @@ management.cron_srvd="Cron";
 management.cron_jobs="Дополнительные задания Cron";
 management.loop_legend="Loopback интерфейс";
 management.loop_srv="Loopback интерфейс";
-management.wifi_legend="802.1x";
-management.wifi_srv="802.1x";
+//802.1x was removed in r49200 / r49201
+//management.wifi_legend="802.1x";
+//management.wifi_srv="802.1x";
 management.rst_legend="Кнопка сброса";
 management.rst_srv="Кнопка сброса";
 //management.routing_legend="Маршрутизация";
@@ -1244,12 +1245,12 @@ service.titl="Службы";
 service.h2="Управление службами";
 
 //kaid
-service.kaid_legend="XBOX Kaid";
-service.kaid_srv="Запустить Kaid";
-service.kaid_locdevnum="Число локальных устройств";
-service.kaid_uibind="Слушающий порт UI";
-service.kaid_orbport="Порт ORB";
-service.kaid_orbdeepport="Deep порт ORB";
+//service.kaid_legend="XBOX Kaid";
+//service.kaid_srv="Запустить Kaid";
+//service.kaid_locdevnum="Число локальных устройств";
+//service.kaid_uibind="Слушающий порт UI";
+//service.kaid_orbport="Порт ORB";
+//service.kaid_orbdeepport="Deep порт ORB";
 
 //DHCPd
 service.dhcp_legend="Клиент DHCP";

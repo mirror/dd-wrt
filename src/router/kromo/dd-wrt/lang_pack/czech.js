@@ -1323,8 +1323,9 @@ management.cron_srvd="Cron";
 management.cron_jobs="Rozšířené úlohy pro Cron";
 management.loop_legend="Loopback";
 management.loop_srv="Loopback";
-management.wifi_legend="802.1x";
-management.wifi_srv="802.1x";
+//802.1x was removed in r49200 / r49201
+//management.wifi_legend="802.1x";
+//management.wifi_srv="802.1x";
 management.rst_legend="Tlačítko reset";
 management.rst_srv="Tlačítko reset";
 //management.routing_legend="Routování";
@@ -1442,10 +1443,8 @@ hmanagement.page5="<dd>Tato funkce umožňuje spravovat Router pomocí protokolu
 hmanagement.page6="<dd>Boot Wait je funkce, kterou snad nikdy nebudete potřebovat. Zavádí krátké zpoždění při bootování (5 vteřin). Během tohoto zpoždění můžete zahájit nahrávání nového firmwaru, pokud je ten ve flash rom porušen. Je zřejmé, že je to nutné pouze v případě, že již nemůžete nahrát firmware pomocí webového rozhraní, protože nainstalovaný firmware bude poškozen a nebude spuštěn. Další informace naleznete v dokumentaci DD-WRT.<br /><br /><div class=\"note\"><h4>Poznámka</h4><div>Doporučujeme povolit funkci Boot Wait. To vám pomůže v budoucnu zotavit se, pokud Router nesprávně flešnete. A že se to občas stane.</div></div></dd>";
 hmanagement.page7="<dd>Subsystém Cron naplánuje provádění příkazů pro systém Linux. Abyste toho mohli skutečně použít, musíte použít příkazový řádek nebo spouštěcí skripty.</dd>";
 hmanagement.page8="<dd>Povolit / zakázat rozhraní loopback. Rozhraní zpětné smyčky (loopback) způsobí, že se vaši interní klienti budou jevit jako externí. To je užitečné pro testování věcí, jako jsou názvy DynDNS. Zpětná smyčka je možnost, protože aktivací dojde k přerušení PPTP a procházení počítačů Windows pomocí bezdrátových klientů.</dd>";
-hmanagement.page9="<dd>Omezený server 802.1x potřebný ke splnění požadavků handshake WPA, aby klienti Windows XP mohli pracovat s WPA.</dd>";
-hmanagement.page10="<dd>Tato funkce řídí proces resetbuttond. Tlačítko reset inicializuje akce v závislosti na tom, jak dlouho je stisknete. <ul><li>Krátké stisknutí – Reset Routeru (restartování)</li><li>Dlouhé stisknutí (*gt; 5s) – Restart a obnovení výchozí tovární konfigurace.</li></ul></dd>";
-hmanagement.page11="<dd>Routing umožňuje routování démonů OSPF a RIP, pokud jste nastavili routování OSPF, nebo RIP na stránce Pokorčilé Routování.</dd>";
-hmanagement.page12="<dd>Pokud máte ve vaší síti spuštěny nějaké aplikace typu peer-to-peer (P2P), zvyšte prosím maximální počet portů a zkraťte časové limity TCP/UDP. To je nutné k udržení stability routeru, protože peerové aplikace otevírají mnoho připojení a nezavírají je správně. Zvažte jejich použití ve starších Routerech nižší řady: <ul><li>Maximum portů: 4096</li><li>Časový limit TCP: 300&nbsp;s</li><li > UDP Časový limit: 60&nbsp;s</li></ul></dd><dd>Zkontrolujte všechny hodnoty a uložte nastavení kliknutím na <em>Uložit nastavení</em>. Klikněte na <em>Zrušit změny</em> a zrušíte neuložené změny. Kliknutím na <em>Restartovat Router</em> okamžitě restartujete Router.</dd>";
+hmanagement.page9="<dd>Tato funkce řídí proces resetbuttond. Tlačítko reset inicializuje akce v závislosti na tom, jak dlouho je stisknete. <ul><li>Krátké stisknutí – Reset Routeru (restartování)</li><li>Dlouhé stisknutí (*gt; 5s) – Restart a obnovení výchozí tovární konfigurace.</li></ul></dd>";
+hmanagement.page10="<dd>Pokud máte ve vaší síti spuštěny nějaké aplikace typu peer-to-peer (P2P), zvyšte prosím maximální počet portů a zkraťte časové limity TCP/UDP. To je nutné k udržení stability routeru, protože peerové aplikace otevírají mnoho připojení a nezavírají je správně. Zvažte jejich použití ve starších Routerech nižší řady: <ul><li>Maximum portů: 4096</li><li>Časový limit TCP: 300&nbsp;s</li><li > UDP Časový limit: 60&nbsp;s</li></ul></dd><dd>Zkontrolujte všechny hodnoty a uložte nastavení kliknutím na <em>Uložit nastavení</em>. Klikněte na <em>Zrušit změny</em> a zrušíte neuložené změny. Kliknutím na <em>Restartovat Router</em> okamžitě restartujete Router.</dd>";
 
 // ************ Port_Services.asp (used by Filters.asp and QoS.asp, QOSPort_Services.asp not used anymore) *****************************************//
 //
@@ -1713,12 +1712,12 @@ service.apserv_legend="APServ Vzdálená konfigurace";
 service.apserv="APServ";
 
 //kaid
-service.kaid_legend="XBOX Kaid";
-service.kaid_srv="Zahájení Kaid";
-service.kaid_locdevnum="Počet místních zařízení";
-service.kaid_uibind="UI naslouchá na portu";
-service.kaid_orbport="ORB Port";
-service.kaid_orbdeepport="ORB Hluboký port";
+//service.kaid_legend="XBOX Kaid";
+//service.kaid_srv="Zahájení Kaid";
+//service.kaid_locdevnum="Počet místních zařízení";
+//service.kaid_uibind="UI naslouchá na portu";
+//service.kaid_orbport="ORB Port";
+//service.kaid_orbdeepport="ORB Hluboký port";
 
 //DHCPd
 service.dhcp_legend="DHCP Klient";
@@ -1920,9 +1919,10 @@ hservice.dnsmasq_strict="<dd>Dotaz na upstream servery v pořadí zadaném ručn
 hservice.dnsmasq_add_mac="<dd>Přidá adresu MAC interního žadatele do dotazu odeslaného na server DNS proti proudu. To by mohlo být nezbytné, pokud server upstream filtruje požadavky MAC.</dd>";
 hservice.dnsmasq_rc="<dd>DHCP Rapid Commit odstraní okružní cestu síťového provozu tím, že okamžitě vrátí zapůjčení adresy v reakci na DHCPDISCOVER od klienta, který také podporuje Rapid Commit.</dd>";
 hservice.dnsmasq_cachesize="<dd>Kolik jmen DNSmasq ukládá do své mezipaměti (výchozí 150).</dd>";
-hservice.page3="<dd>KAID je prostředek pro připojení plošinových her přes internet. Povolte službu a poté přidejte MAC Adresy XBoxu oddělené\";\".<ul class=\"wide\"><li>";
-hservice.page4="– Kolik konzol detekovat, než Engine uzamkne PCAP filtr. Nastavení na 0 znamená, že Engine se nikdy nezamkne - což znamená, že můžete použít libovolný počet konzolí, ale všimnete si dopadu na výkonu , je-li vaše síť zaneprázdněna jiným provozem. Nejlepší je zde nastavit číslo na počet konzolí, které vlastníte - proto je výchozí 1, protože většina lidí má pouze jednu konzoli.</li><li>";
-hservice.page5="– Určuje, která IP/Port KAID použije k poslechu uživatelských rozhraní řadiče.</li></ul><br /><div class=\"note\"><h4>Poznámka</h4><div>Xbox musí být připojen přímo přes jeden z ethernetových portů Routeru. </div></div></dd>";
+// HServices.asp has these page3 through page5 Kaid entries commented out until it returns to DD-WRT 
+//hservice.page3="<dd>KAID je prostředek pro připojení plošinových her přes internet. Povolte službu a poté přidejte MAC Adresy XBoxu oddělené\";\".<ul class=\"wide\"><li>";
+//hservice.page4="– Kolik konzol detekovat, než Engine uzamkne PCAP filtr. Nastavení na 0 znamená, že Engine se nikdy nezamkne - což znamená, že můžete použít libovolný počet konzolí, ale všimnete si dopadu na výkonu , je-li vaše síť zaneprázdněna jiným provozem. Nejlepší je zde nastavit číslo na počet konzolí, které vlastníte - proto je výchozí 1, protože většina lidí má pouze jednu konzoli.</li><li>";
+//hservice.page5="– Určuje, která IP/Port KAID použije k poslechu uživatelských rozhraní řadiče.</li></ul><br /><div class=\"note\"><h4>Poznámka</h4><div>Xbox musí být připojen přímo přes jeden z ethernetových portů Routeru. </div></div></dd>";
 hservice.page6="<dd>RFlow Collector je nástroj pro monitorování a správu provozu, který umožňuje sledovat kompletní síť Routerů DD-WRT.<br /><ul class=\"wide\"><li>RFlow Výchozí port je 2055</li><li>MACupd Výchozí port je 2056</li><li>Interval = 10 Zdá se, že zprávy budou na server odesílány každých 10 vteřin</li><li>Rozhraní: zvolte, které rozhraní chcete sledovat </li></ul><br /><div class=\"note\"><h4>Poznámka</h4><div>Pro každý IP Server RFlow a MACupd: zadejte IP Adresu naslouchajícího serveru (win32 PC) s RFlow Collector).</div></div></dd>";
 hservice.page7="<dd>Povolit SSHd vám umožní přístup k operačnímu systému Linux vašeho Routeru pomocí klienta SSH (například Putty, Kitty funguje dobře na Windows). <ul class=\"wide\"><li>Přihlášení k heslu – povolit přihlášení pomocí hesla Routeru (uživatelské jméno je <tt>root</tt>)</li><li>SSHd Port – číslo portu pro SSHd (výchozí je 22)</li><li>Autorizované klíče – zde vložíte veřejné klíče, aby se umožnilo přihlášení pomocí klíče (bezpečnější než jednoduché heslo)</li></ul></dd>";
 hservice.page8="<dd>Povolit Syslogd pro zachycení systémových zpráv. Ve výchozím nastavení budou shromažďovány v místním souboru \/var\/log\/messages. Chcete-li je odeslat do jiného systému, zadejte IP Adresu vzdáleného syslogu serveru.</dd>";

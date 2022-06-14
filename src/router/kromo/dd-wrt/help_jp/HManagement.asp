@@ -55,9 +55,6 @@
 				
 				<dt><% tran("management.loop_legend"); %></dt>
 				<dd>Loopbackインターフェースの有無を変更することができます。Loopbackインターフェースは外部ネットワークとの通信と同様の手法で機器内のサービス間において通信を行うことができるようになります。この機能はDynDNSサービスの動作試験を行う場合などに利用することができます。Lookbackインターフェースを無効にすると、PPTPや無線デバイスに接続中のWindowsクライアントに影響を及ぼすことがあります。</dd>
-				
-				<dt><% tran("management.wifi_legend"); %></dt>
-				<dd>通常は「有効」のまま利用ください。WindowsXPにおいてWPA認証を行う場合、WPA Handshakeを成功させるために必要になる場合があります。</dd>
 
 				<dt><% tran("management.rst_legend"); %></dt>
 				<dd>INITスイッチの動作を変更することができます。「無効」にすることによって、リセット動作が行われなくなります。INITスイッチは押している時間によって次のように動作が変わります。

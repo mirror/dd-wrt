@@ -1075,8 +1075,9 @@ management.cron_srvd="Cron";
 management.cron_jobs="Dodatna opravila";
 management.loop_legend="Povratna zanka";
 management.loop_srv="Povratna zanka";
-management.wifi_legend="802.1x";
-management.wifi_srv="802.1x";
+//802.1x was removed in r49200 / r49201
+//management.wifi_legend="802.1x";
+//management.wifi_srv="802.1x";
 management.rst_legend="Gumb za ponastavitev";
 management.rst_srv="Gumb za ponastavitev";
 //management.routing_legend="Usmerjevanje";
@@ -1293,12 +1294,12 @@ service.apserv_legend="APServ oddaljeno upravljanje";
 service.apserv="APServ";
 
 //kaid
-service.kaid_legend="XBOX Kaid";
-service.kaid_srv="Začni Kaid";
-service.kaid_locdevnum="Število lokalnih naprav";
-service.kaid_uibind="Vrata upor. vmesnika";
-service.kaid_orbport="ORB vrata";
-service.kaid_orbdeepport="Vrata ORB \"Deep Port\"";
+//service.kaid_legend="XBOX Kaid";
+//service.kaid_srv="Začni Kaid";
+//service.kaid_locdevnum="Število lokalnih naprav";
+//service.kaid_uibind="Vrata upor. vmesnika";
+//service.kaid_orbport="ORB vrata";
+//service.kaid_orbdeepport="Vrata ORB \"Deep Port\"";
 
 //DHCPd
 service.dhcp_legend="DHCP odjemalec";
