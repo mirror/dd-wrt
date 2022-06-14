@@ -520,4 +520,7 @@ return false;
 
 #define CIPHER_LIST_SIZE 1000
 
+/* Use a dummy type for the provider */
+typedef void provider_t;
+
 #endif /* CRYPTO_WOLFSSL_H_ */
