@@ -199,15 +199,6 @@
 			</div>
 		</fieldset><br />
 		<fieldset>
-		<legend>802.1x</legend>
-		<div class="setting">
-			<div class="label">
-				802.1x</div>
-			<input type="radio" name="nas_enable" value="1" <% nvram_selmatch("nas_enable", "1", "checked"); %> />Enable
-			<input type="radio" name="nas_enable" value="0" <% nvram_selmatch("nas_enable", "0", "checked"); %> />Disable
-			</div>
-		</fieldset><br />
-		<fieldset>
 		<legend>NTP Client</legend>
 		<div class="setting">
 			<div class="label">NTP Client</div>
