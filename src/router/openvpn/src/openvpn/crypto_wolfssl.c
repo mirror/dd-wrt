@@ -2017,4 +2017,17 @@ void hmac_ctx_final(hmac_ctx_t *ctx, uint8_t *dst)
     }
 }
 
+provider_t *crypto_load_provider(const char *provider)
+{
+    if (provider)
+    {
+        msg(M_WARN, "Note: wolfssl TLS provider functionality is not available");
+    }
+    return NULL;
+}
+
+void crypto_unload_provider(const char *provname, provider_t *provider)
+{
+}
+
 #endif /* ENABLE_CRYPTO_WOLFSSL */
