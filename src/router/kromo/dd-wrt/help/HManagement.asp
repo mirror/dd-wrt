@@ -22,12 +22,10 @@
 				<% tran("hmanagement.page7"); %>
 				<dt><% tran("management.loop_legend"); %></dt>
 				<% tran("hmanagement.page8"); %>
-				<dt><% tran("management.wifi_legend"); %></dt>
-				<% tran("hmanagement.page9"); %>
 				<dt><% tran("management.rst_legend"); %></dt>
-				<% tran("hmanagement.page10"); %>
+				<% tran("hmanagement.page9"); %>
 				<dt><% tran("management.net_legend"); %></dt>
-				<% tran("hmanagement.page11"); %>
+				<% tran("hmanagement.page10"); %>
 			</dl>
 		</div>
 		<div class="also">

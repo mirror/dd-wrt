@@ -935,8 +935,9 @@ management.cron_srvd="Cron";
 management.cron_jobs="新增 Cron Jobs";
 management.loop_legend="Loopback";
 management.loop_srv="Loopback";
-management.wifi_legend="802.1x";
-management.wifi_srv="802.1x";
+//802.1x was removed in r49200 / r49201
+//management.wifi_legend="802.1x";
+//management.wifi_srv="802.1x";
 management.rst_legend="Reset 鍵";
 management.rst_srv="Reset 鍵";
 //management.routing_legend="Routing";
@@ -1116,12 +1117,12 @@ service.titl="伺服器";
 service.h2="伺服器管理";
 
 //kaid
-service.kaid_legend="XBOX Kaid";
-service.kaid_srv="開啟 Kaid";
-service.kaid_locdevnum="本地設備的數量";
-service.kaid_uibind="UI 監聽埠";
-service.kaid_orbport="ORB 埠";
-service.kaid_orbdeepport="ORB Deep Port";
+//service.kaid_legend="XBOX Kaid";
+//service.kaid_srv="開啟 Kaid";
+//service.kaid_locdevnum="本地設備的數量";
+//service.kaid_uibind="UI 監聽埠";
+//service.kaid_orbport="ORB 埠";
+//service.kaid_orbdeepport="ORB Deep Port";
 
 //DHCPd
 service.dhcp_legend="DHCP 用戶端";

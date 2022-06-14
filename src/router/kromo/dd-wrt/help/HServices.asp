@@ -27,12 +27,14 @@
 				<% tran("hservice.dnsmasq_rc"); %>
 				<dt><% tran("service.dnsmasq_cachesize"); %></dt>
 				<% tran("hservice.dnsmasq_cachesize"); %>
+				<!-- this is commented out until Kaid returns to DD-WRT
 				<dt><% tran("service.kaid_legend"); %></dt>
 				<% tran("hservice.page3"); %>
 				<% tran("service.kaid_locdevnum"); %>
 				<% tran("hservice.page4"); %>
 				<% tran("service.kaid_uibind"); %>
 				<% tran("hservice.page5"); %>
+				-->
 				<dt><% tran("service.rflow_legend"); %></dt>
 				<% tran("hservice.page6"); %>
 				<dt><% tran("service.ssh_legend"); %></dt>

@@ -999,8 +999,9 @@ management.cron_srvd="Cron サービス";
 management.cron_jobs="Cron エントリの追加";
 management.loop_legend="Loopback";
 management.loop_srv="Loopback";
-management.wifi_legend="802.1X";
-management.wifi_srv="802.1X";
+//802.1x was removed in r49200 / r49201
+//management.wifi_legend="802.1X";
+//management.wifi_srv="802.1X";
 management.rst_legend="リセットボタン";
 management.rst_srv="リセットボタン";
 //management.routing_legend="ルーティング";
@@ -1192,12 +1193,12 @@ service.titl="サーバー/サービス";
 service.h2="サーバー/サービス設定";
 
 //kaid
-service.kaid_legend="XBOX Kaid";
-service.kaid_srv="Kaid サービス";
-service.kaid_locdevnum="LAN側で使用するデバイスの数";
-service.kaid_uibind="UI 通信に使用するポート";
-service.kaid_orbport="ORB ポート";
-service.kaid_orbdeepport="ORB Deep ポート";
+//service.kaid_legend="XBOX Kaid";
+//service.kaid_srv="Kaid サービス";
+//service.kaid_locdevnum="LAN側で使用するデバイスの数";
+//service.kaid_uibind="UI 通信に使用するポート";
+//service.kaid_orbport="ORB ポート";
+//service.kaid_orbdeepport="ORB Deep ポート";
 
 //DHCPd
 service.dhcp_legend="DHCP クライアント";

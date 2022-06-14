@@ -960,8 +960,9 @@ management.cron_srvd="Crontab";
 management.cron_jobs="Extra Cron Jobb";
 management.loop_legend="Loopback";
 management.loop_srv="Loopback";
-management.wifi_legend="802.1x";
-management.wifi_srv="802.1x";
+//802.1x was removed in r49200 / r49201
+//management.wifi_legend="802.1x";
+//management.wifi_srv="802.1x";
 management.rst_legend="Reset Knapp";
 management.rst_srv="Reset Knapp";
 //management.routing_legend="Routing";
@@ -1147,12 +1148,12 @@ service.apserv_legend="APServ Fjärr Konfiguration";
 service.apserv="APServ";
 
 //kaid
-service.kaid_legend="XBOX Kaid";
-service.kaid_srv="Starta Kaid";
-service.kaid_locdevnum="Antal Lokala Enheter";
-service.kaid_uibind="UI Lyssnings Port";
-service.kaid_orbport="ORB Port";
-service.kaid_orbdeepport="ORB Deep Port";
+//service.kaid_legend="XBOX Kaid";
+//service.kaid_srv="Starta Kaid";
+//service.kaid_locdevnum="Antal Lokala Enheter";
+//service.kaid_uibind="UI Lyssnings Port";
+//service.kaid_orbport="ORB Port";
+//service.kaid_orbdeepport="ORB Deep Port";
 
 //DHCPd
 service.dhcp_legend="DHCP Klient";

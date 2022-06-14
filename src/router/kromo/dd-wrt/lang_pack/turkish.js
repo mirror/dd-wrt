@@ -987,8 +987,9 @@ management.cron_srvd="Cron";
 management.cron_jobs="Ek Cron İşleri";
 management.loop_legend="Geridöngü";
 management.loop_srv="Geridöngü";
-management.wifi_legend="802.1x";
-management.wifi_srv="802.1x";
+//802.1x was removed in r49200 / r49201
+//management.wifi_legend="802.1x";
+//management.wifi_srv="802.1x";
 management.rst_legend="Sıfırlama Düğmesi";
 management.rst_srv="Sıfırlama Düğmesi";
 //management.routing_legend="Yönlendirme";
@@ -1180,12 +1181,12 @@ service.apserv_legend="APServ Uzak Yapılandırma";
 service.apserv="APServ";
 
 //kaid
-service.kaid_legend="XBOX Kaid";
-service.kaid_srv="Kaid Başlat";
-service.kaid_locdevnum="Yerel Aygıt Sayısı";
-service.kaid_uibind="UI Dinleme Portu";
-service.kaid_orbport="ORB Portu";
-service.kaid_orbdeepport="ORB Deep Port";
+//service.kaid_legend="XBOX Kaid";
+//service.kaid_srv="Kaid Başlat";
+//service.kaid_locdevnum="Yerel Aygıt Sayısı";
+//service.kaid_uibind="UI Dinleme Portu";
+//service.kaid_orbport="ORB Portu";
+//service.kaid_orbdeepport="ORB Deep Port";
 
 //DHCPd
 service.dhcp_legend="DHCP İstemcisi";

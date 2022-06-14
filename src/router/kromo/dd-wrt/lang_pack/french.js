@@ -861,8 +861,9 @@ management.cron_srvd="Cron";
 management.cron_jobs="Jobs additionnels";
 management.loop_legend="Loopback";
 management.loop_srv="Loopback";
-management.wifi_legend="802.1x";
-management.wifi_srv="802.1x";
+//802.1x was removed in r49200 / r49201
+//management.wifi_legend="802.1x";
+//management.wifi_srv="802.1x";
 management.rst_legend="Bouton d'initialisation";
 management.rst_srv="Bouton d'initialisation";
 //management.routing_legend="Routage";
@@ -1027,12 +1028,12 @@ service.titl="Services";
 service.h2="Gestion des Services";
 
 //kaid
-service.kaid_legend="XBOX Kaid";
-service.kaid_srv="Dèmarrer Kaid";
-service.kaid_locdevnum="Nombre de console(s)";
-service.kaid_uibind="Port du dèmon";
-service.kaid_orbport="Port ORB";
-service.kaid_orbdeepport="ORB Deep Port";
+//service.kaid_legend="XBOX Kaid";
+//service.kaid_srv="Dèmarrer Kaid";
+//service.kaid_locdevnum="Nombre de console(s)";
+//service.kaid_uibind="Port du dèmon";
+//service.kaid_orbport="Port ORB";
+//service.kaid_orbdeepport="ORB Deep Port";
 
 //DHCPd
 service.dhcp_legend="Client DHCP";
