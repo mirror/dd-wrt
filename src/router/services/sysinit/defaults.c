@@ -2289,11 +2289,6 @@ struct nvram_param srouter_defaults[] = {
 	{ "dnsmasq_enable", "1" },
 #endif
 	{ "dnsmasq_options", "" },
-#ifdef HAVE_POWERNOC_WOAP54G
-	{ "nas_enable", "0" },
-#else
-	{ "nas_enable", "1" },
-#endif
 	// #ifdef HAVE_DDLAN
 	// {"ntp_enable", "0"},
 	// #else
