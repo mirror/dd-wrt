@@ -100,7 +100,7 @@ openvpn-conf-prep:
 openvpn-conf: openssl wolfssl
 	mkdir -p openvpn/openssl
 	mkdir -p openvpn/wolfssl
-	cd $(OVPN)/openssl && ../configure $(CONFIGURE_ARGS_OVPN)
+	-cd $(OVPN)/openssl && ../configure $(CONFIGURE_ARGS_OVPN)
 	cd $(OVPN)/wolfssl && ../configure $(CONFIGURE_ARGS_WOLFSSL)
 
 
@@ -137,7 +137,7 @@ endif
 endif
 endif
 endif
-	make -j 4 -C $(OVPN)/openssl clean
+	-make -j 4 -C $(OVPN)/openssl clean
 ifeq ($(CONFIG_OPENVPN_SSLSTATIC),y)
 	rm -f openssl/*.so*
 endif
