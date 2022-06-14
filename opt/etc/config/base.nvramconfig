@@ -133,7 +133,6 @@
  "dns_crypt"  "DNS Crypt"  "CHOICE" "2" "0"  "1"  "FALSE" "0"
  "dns_crypt_resolver" "DNS Crypt Resolver" "NULL"  "FALSE" "0"
  "local_dns"  "Local DNS"  "CHOICE" "2" "0"  "1"  "FALSE" "0"
- "nas_enable"  "NAS"  "CHOICE" "2" "0"  "1"  "FALSE" "0"
  "ntp_enable"  "NTP Client"  "CHOICE" "2" "0"  "1"  "FALSE" "0"
  "pptpd_enable"  "PPTPD"  "CHOICE" "2" "0"  "1"  "FALSE" "0"
  "pptpd_forcemppe"  "PPTPD"  "CHOICE" "2" "0"  "1"  "FALSE" "0"
