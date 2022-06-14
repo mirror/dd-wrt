@@ -310,7 +310,7 @@ addEvent(window, "unload", function() {
 									<tr>
 										<th width="25%"><% tran("share.mac"); %></th>
 										<th width="25%"><% tran("share.hostname"); %></th>
-										<th width="25%"><% tran("wol.broadcast"); %></th>
+										<th width="20%"><% tran("wol.broadcast"); %></th>
 										<th width="10%" class="center"><% tran("share.remove"); %></th>
 										<th width="10%" class="center"><% tran("share.actiontbl"); %></th>
 									</tr>

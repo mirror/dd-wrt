@@ -1404,10 +1404,12 @@ management.cron_srvd="Enable Cron";
 management.cron_jobs="Additional Jobs";
 management.loop_legend="Loopback";
 management.loop_srv="Loopback";
-management.wifi_legend="802.1x";
-management.wifi_srv="802.1x";
+//802.1x was removed in r49200 / r49201
+//management.wifi_legend="802.1x";
+//management.wifi_srv="802.1x";
 management.rst_legend="Reset Button";
 management.rst_srv="Enable Button";
+// Routing was removed as its obsolete
 //management.routing_legend="Routing";
 //management.routing_srv="Routing";
 management.ipv6_legend="Internet Protocol version 6 (IPv6)";
@@ -1521,9 +1523,8 @@ hmanagement.page5="<dd>This feature allows you to manage the router using either
 hmanagement.page6="<dd>Boot Wait introduces a short delay while booting (5 seconds). During this delay you can initiate a TFTP upload of a new firmware if the current flash ROM contents are damaged. This is only necessary if you can no longer reflash using the web interface when the installed firmware e.g. will not boot. Form more information see the relevant DD-WRT documentation for your router.<br /><br /><div class=\"note\"><h4>Note:</h4><div>It is recommended that you enable the Boot Wait feature. This will help you recover in the future should you flash your router improperly.</div></div></dd>";
 hmanagement.page7="<dd>The cron subsystem schedules execution of Linux commands. You will need to use the command line or startup scripts to actually use this.</dd>";
 hmanagement.page8="<dd>Enable / disable the loopback interface. The loopback interface makes your internal clients appear as if they are external. This is useful for testing things like DynDNS names. The loopback is an option because enabling it will break PPTP and Windows machine browsing by wireless clients.</dd>";
-hmanagement.page9="<dd>A limited 802.1x server needed to fulfill WPA handshake requirements to allow Windows XP clients to work with WPA.</dd>";
-hmanagement.page10="<dd>This feature controls the resetbuttond process. The reset button initiates actions depending on how long you press it.<ul><li>Short press – Reset the router (reboot)</li><li>Long press (&gt;5s) – Reboot and restore the factory default configuration.</li></ul></dd>";
-hmanagement.page11="<dd>If you have any peer-to-peer (P2P) applications running on your network please increase the maximum ports and lower the TCP/UDP timeouts. This is necessary to maintain router stability because peer-to-peer applications open many connections and do not close them properly. Consider using these for old low end routers:<ul><li>Maximum Ports: 4096</li><li>TCP Timeout: 300&nbsp;s</li><li>UDP Timeout: 60&nbsp;s</li></ul></dd><dd>Check all values and click the <em>" + sbutton.save +"</em> button to save your settings. Click the <em>" + sbutton.cancel + "</em> button to cancel your unsaved changes. Click the <em>" + sbutton.reboot + "</em> button to reboot your router immediately.</dd>";
+hmanagement.page9="<dd>This feature controls the resetbuttond process. The reset button initiates actions depending on how long you press it.<ul><li>Short press – Reset the router (reboot)</li><li>Long press (&gt;5s) – Reboot and restore the factory default configuration.</li></ul></dd>";
+hmanagement.page10="<dd>If you have any peer-to-peer (P2P) applications running on your network please increase the maximum ports and lower the TCP/UDP timeouts. This is necessary to maintain router stability because peer-to-peer applications open many connections and do not close them properly. Consider using these for old low end routers:<ul><li>Maximum Ports: 4096</li><li>TCP Timeout: 300&nbsp;s</li><li>UDP Timeout: 60&nbsp;s</li></ul></dd><dd>Check all values and click the <em>" + sbutton.save +"</em> button to save your settings. Click the <em>" + sbutton.cancel + "</em> button to cancel your unsaved changes. Click the <em>" + sbutton.reboot + "</em> button to reboot your router immediately.</dd>";
 
 // ************ Port_Services.asp (used by Filters.asp and QoS.asp, QOSPort_Services.asp not used anymore) *****************************************//
 var portserv=new Object();
@@ -2604,7 +2605,7 @@ wep.generate="Generate";
 // ** WOL.asp **//
 var wol=new Object();
 wol.titl="WOL";
-wol.h2="Wake-On-LAN";
+wol.h2="Wake-on-LAN (WOL)";
 wol.legend="Available Hosts";
 wol.legend2="WOL Addresses";
 wol.legend3="Output";
@@ -2614,25 +2615,25 @@ wol.mac="MAC Address(es)";
 wol.broadcast="Net Broadcast";
 wol.udp="UDP Port";
 wol.msg1="Click to remove WOL host";
-wol.h22="Automatic Wake-On-LAN";
-wol.legend5="Wake-On-LAN Daemon";
-wol.srv="Enable WOL";
+wol.h22="Automatic Wake-on-LAN";
+wol.legend5="WOL Daemon";
+wol.srv="Enable Daemon";
 wol.pass="SecureOn Password";
 
 //help container
 var hwol=new Object();
-hwol.right2="This page allows you to <em>Wake Up</em> hosts on your local network (for example locally connected to your router). You can manually wake up hosts by clicking the <em>"+sbutton.wol+"</em> or you can program an automatic schedule wake up thanks to the "+wol.srv+".";
-hwol.right4="MAC Address(es) are entered in the format xx:xx:xx:xx:xx:xx (for example 01:23:45:67:89:AB) and must be separated by a <em>SPACE</em>.";
-hwol.right6="IP Address is typically the broadcast address for the local network, but could be a remote address if the target host is not connected to the router's local network.";
+hwol.right2="This page allows you to <b><em>" + sbutton.wol + "</em></b> hosts on your local network. You can manually wake up hosts by clicking the <em>" + sbutton.wol + "</em> button or alternatively by programing an automatic wake up schedule provided by the " + wol.legend5 + ".";
+hwol.right4="MAC address(es) are entered in the format e.g. 01:23:45:67:89:AB and must be separated by a <em>SPACE</em>.";
+hwol.right6="The IP address is typically the broadcast address for the local network, it could also be a remote address when e.g. the target host is not a LAN client.";
 
 //help page
-hwol.page1="<dd>This page allows you to <em>Wake Up</em> hosts on your local network (i.e. locally connected to your WRT).</dd><dt class=\"term\">Available Hosts:</dt><dd class=\"definition\">The Available Hosts section provides a list of hosts to add/remove from the WOL Addresses list. The list is a combination of any defined static hosts or automatically discovered DHCP clients.<div class=\"note\"><h4>Note:</h4><div>This table uses the MAC address, &quot;guesses&quot; the network broadcast address by assuming the host's IP address has the same netmask as the local router (lan_netmask), and uses the UDP port specified in the UDP Port box (in the Manual WOL section -- default is 7 if nothing is specified).</div></div></dd>";
-hwol.page2="<dd class=\"definition\">The WOL Addresses section allows individual hosts in the WOL list (stored in the <b>wol_hosts</b> NVRAM variable) to be <em>Woken Up</em>.  The list is a combination of selected (enabled) Available Hosts and manually added WOL hosts.</dd>";
-hwol.page3="<dd class=\"definition\">The Manual WOL section allows individual or a list of hosts to be woken up by clicking <em>Wake Up</em> to send it the WOL <i>magic packet</i>.</dd>";
-hwol.page4="<dd class=\"definition\">Fill the MAC address(es) (either separated by spaces or one per line) of the computer(s) you would like to wake up.<div class=\"note\"><h4>Note:</h4><div>Each MAC address is written as xx:xx:xx:xx:xx:xx, where xx is a hexadecimal number between 00 and ff which represents one byte of the address, which is in network byte order (big endian).</div></div></dd>";
+hwol.page1="<dd>This page allows you to <em>" + sbutton.wol + "</em> hosts on your local network.</dd><dt class=\"term\">" + wol.legend + ":</dt><dd class=\"definition\">The " + wol.legend + " section provides a list of current hosts to add or remove from the WOL Addresses section. The " + wol.legend + " is a combination of any defined hosts with static leases or automatically discovered DHCP clients.<div class=\"note\"><h4>Note:</h4><div>This table uses the MAC address, &quot;guesses&quot; the network broadcast address by assuming the host's IP address has the same netmask as the local router (lan_netmask), and uses the " + wol.udp + " specified in the in the " + wol.legend4 + " section -- the default is <b>port 7</b> unless otherwise configured.</div></div></dd>";
+hwol.page2="<dd class=\"definition\">The WOL Addresses section allows individual hosts in the WOL list (stored in the <b>wol_hosts</b> NVRAM variable) to be <b>woken up</b>.  The list is a combination of selected (WOL enabled) available Hosts and/or manually added WOL target hosts.</dd>";
+hwol.page3="<dd class=\"definition\">The Manual WOL section allows individual or a list of hosts to be woken up by clicking <em>" + sbutton.wol + "</em> button to send it the WOL <i>magic packet</i>.</dd>";
+hwol.page4="<dd class=\"definition\">Fill the MAC address(es) (either separated by spaces or one per line) of the computer(s) you would like to wake up.<div class=\"note\"><h4>Note:</h4><div>Each MAC address entered as e.g. xx:xx:xx:xx:xx:xx, where xx is a hexadecimal number between 00 and FF which represents one byte of the address, and is in a network (big endian) byte order.</div></div></dd>";
 hwol.page5="<dd class=\"definition\">Broadcast to this IP address or hostname (typically you would want to make this your network's broadcast IP for locally waking up hosts.</dd>";
-hwol.page6="<dd class=\"definition\">Broadcast to this UDP port.</dd>";
-hwol.page7="<dd class=\"definition\">Besides attempting to <i>Wake Up</i> the manually specified host(s), clicking on the &quot;Wake Up&quot; button will save the MAC Address(es), Network Broadcast, and UDP Port values into the <b>manual_wol_mac</b>, <b>manual_wol_network</b>, and <b>manual_wol_port</b> NVRAM variables and commits them to memory.</dd>";
+hwol.page6="<dd class=\"definition\">Broadcast to this " + wol.udp + ".</dd>";
+hwol.page7="<dd class=\"definition\">Besides attempting to <b>" + sbutton.wol + "</b> the manually specified host(s), by clicking on the <em>" + sbutton.wol + "</em> button will save the MAC address(es), network broadcast, and " + wol.udp + " values into the respective <b>manual_wol_mac</b>, <b>manual_wol_network</b>, and <b>manual_wol_port</b> NVRAM variables and commits them to memory.</dd>";
 
 // ** WanMAC.asp **//
 var wanmac=new Object();
