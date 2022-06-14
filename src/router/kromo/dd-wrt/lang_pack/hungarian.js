@@ -814,8 +814,9 @@ management.cron_jobs="További Cron feladatok (Jobs)";
 management.loop_legend="Loopback";
 management.loop_srv="Loopback";
 
-management.wifi_legend="802.1x";
-management.wifi_srv="802.1x";
+//802.1x was removed in r49200 / r49201
+//management.wifi_legend="802.1x";
+//management.wifi_srv="802.1x";
 
 management.rst_legend="Reset gomb";
 management.rst_srv="Reset gomb";

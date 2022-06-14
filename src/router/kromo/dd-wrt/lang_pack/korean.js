@@ -1199,8 +1199,9 @@ management.cron_srvd="Cron 서비스";
 management.cron_jobs="추가 Cron Jobs";
 management.loop_legend="루프백";
 management.loop_srv="루프백";
-management.wifi_legend="802.1x";
-management.wifi_srv="802.1x";
+//802.1x was removed in r49200 / r49201
+//management.wifi_legend="802.1x";
+//management.wifi_srv="802.1x";
 management.rst_legend="리셋 버튼";
 management.rst_srv="리셋 버튼";
 //management.routing_legend="라우팅";

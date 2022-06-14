@@ -1253,8 +1253,9 @@ management.cron_srvd="Cron";
 management.cron_jobs="Cron 附加任务";
 management.loop_legend="Loopback";
 management.loop_srv="Loopback";
-management.wifi_legend="802.1x";
-management.wifi_srv="802.1x";
+//802.1x was removed in r49200 / r49201
+//management.wifi_legend="802.1x";
+//management.wifi_srv="802.1x";
 management.rst_legend="复位按钮";
 management.rst_srv="复位按钮";
 //management.routing_legend="路由";

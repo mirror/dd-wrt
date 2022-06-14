@@ -1043,8 +1043,9 @@ management.cron_srvd="Cron";
 management.cron_jobs="Sarcini Cron adiționale";
 management.loop_legend="Întoarcere în buclă";
 management.loop_srv="Întoarcere în buclă";
-management.wifi_legend="802.1x";
-management.wifi_srv="802.1x";
+//802.1x was removed in r49200 / r49201
+//management.wifi_legend="802.1x";
+//management.wifi_srv="802.1x";
 management.rst_legend="Buton de resetare";
 management.rst_srv="Buton de resetare";
 //management.routing_legend="Rutare";

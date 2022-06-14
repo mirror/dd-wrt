@@ -960,8 +960,9 @@ management.cron_srvd="Crontab";
 management.cron_jobs="Extra Cron Jobb";
 management.loop_legend="Loopback";
 management.loop_srv="Loopback";
-management.wifi_legend="802.1x";
-management.wifi_srv="802.1x";
+//802.1x was removed in r49200 / r49201
+//management.wifi_legend="802.1x";
+//management.wifi_srv="802.1x";
 management.rst_legend="Reset Knapp";
 management.rst_srv="Reset Knapp";
 //management.routing_legend="Routing";

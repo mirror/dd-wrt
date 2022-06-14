@@ -1323,8 +1323,9 @@ management.cron_srvd="Cron";
 management.cron_jobs="Rozšířené úlohy pro Cron";
 management.loop_legend="Loopback";
 management.loop_srv="Loopback";
-management.wifi_legend="802.1x";
-management.wifi_srv="802.1x";
+//802.1x was removed in r49200 / r49201
+//management.wifi_legend="802.1x";
+//management.wifi_srv="802.1x";
 management.rst_legend="Tlačítko reset";
 management.rst_srv="Tlačítko reset";
 //management.routing_legend="Routování";

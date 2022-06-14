@@ -1030,8 +1030,9 @@ management.cron_srvd="Cron";
 management.cron_jobs="Дополнительные задания Cron";
 management.loop_legend="Loopback интерфейс";
 management.loop_srv="Loopback интерфейс";
-management.wifi_legend="802.1x";
-management.wifi_srv="802.1x";
+//802.1x was removed in r49200 / r49201
+//management.wifi_legend="802.1x";
+//management.wifi_srv="802.1x";
 management.rst_legend="Кнопка сброса";
 management.rst_srv="Кнопка сброса";
 //management.routing_legend="Маршрутизация";
