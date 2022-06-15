@@ -1,4 +1,5 @@
-<h2><% tran("dmz.h2"); %></h2>
+
+<h2><% tran("management.ipv6_rad_legend"); %></h2>
 <fieldset>
 	<legend><% tran("management.ipv6_legend"); %></legend>
 	<div class="setting">
