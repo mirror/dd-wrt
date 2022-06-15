@@ -1,5 +1,5 @@
 
-<h2><% tran("management.ipv6_rad_legend"); %></h2>
+<h2><% tran("management.ipv6_h2"); %></h2>
 <fieldset>
 	<legend><% tran("management.ipv6_legend"); %></legend>
 	<div class="setting">
@@ -60,6 +60,7 @@
 				<input class="text" size="5" maxlength="4" type="number" min="1280" max="1480" name="ipv6_mtu" value="<% nvg("ipv6_mtu"); %>" />
 		</div><br />
 		<fieldset>
+		<legend><% tran("management.ipv6_dhcp6c_legend"); %></legend>
 		<div class="setting">
 			<div class="label"><% tran("management.ipv6_dhcp6c_norelease"); %></div>
 			<input class="spaceradio" type="radio" value="1" name="dhcp6c_norelease" <% nvc("dhcp6c_norelease","1"); %>/><% tran("share.enable"); %>&nbsp;
@@ -82,6 +83,7 @@
 		</div>
 		</fieldset><br />
 		<fieldset>
+		<legend><% tran("management.ipv6_dhcp6s_legend"); %></legend>
 		<div class="setting">
 			<div class="label"><% tran("management.ipv6_dhcp6s"); %></div>
 			<input class="spaceradio" type="radio" value="1" name="dhcp6s_enable" <% nvc("dhcp6s_enable","1"); %> onclick="show_layer_ext(this, 'iddhcp6s_enabled', true)" /><% tran("share.enable"); %>&nbsp;
