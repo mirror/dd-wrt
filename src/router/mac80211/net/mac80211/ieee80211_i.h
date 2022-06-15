@@ -687,6 +687,25 @@ struct mesh_table {
 	atomic_t entries;		/* Up to MAX_MESH_NEIGHBOURS */
 };
 
+/**
+ * struct mesh_hdr_cache
+ *
+ * @enabled: Flag to denote if Header caching is enabled.
+ * @rhead: the rhashtable containing struct mesh_cache_entry, keyed by addr_key which
+ *	For a 6addr format which is currently supported in the cache, the key
+ *	is the external destination address or a5
+ * @walk_head: linked list containing all mesh_cache_entry objects
+ * @walk_lock: lock protecting walk_head
+ * @size: number of entries in the cache
+ */
+struct mesh_hdr_cache {
+	bool enabled;
+	struct rhashtable rhead;
+	struct hlist_head walk_head;
+	spinlock_t walk_lock; /* protects cache entries */
+	u16 size;
+};
+
 struct ieee80211_if_mesh {
 	struct timer_list housekeeping_timer;
 	struct timer_list mesh_path_timer;
@@ -765,6 +784,7 @@ struct ieee80211_if_mesh {
 	struct mesh_table mpp_paths; /* Store paths for MPP&MAP */
 	int mesh_paths_generation;
 	int mpp_paths_generation;
+	struct mesh_hdr_cache hdr_cache;
 };
 
 #ifdef CPTCFG_MAC80211_MESH
@@ -1202,6 +1222,9 @@ struct tpt_led_trigger {
  *	a scan complete for an aborted scan.
  * @SCAN_HW_CANCELLED: Set for our scan work function when the scan is being
  *	cancelled.
+ * @SCAN_BEACON_WAIT: Set whenever we're passive scanning because of radar/no-IR
+ *	and could send a probe request after receiving a beacon.
+ * @SCAN_BEACON_DONE: Beacon received, we can now send a probe request
  */
 enum {
 	SCAN_SW_SCANNING,
@@ -1210,6 +1233,8 @@ enum {
 	SCAN_COMPLETED,
 	SCAN_ABORTED,
 	SCAN_HW_CANCELLED,
+	SCAN_BEACON_WAIT,
+	SCAN_BEACON_DONE,
 };
 
 /**
@@ -1750,7 +1775,6 @@ DECLARE_SKIPLIST_IMPL(airtime_sched, airtime_sched_cmp);
 
 static inline void airtime_weight_set(struct airtime_info *air_info, u32 weight)
 {
-	weight = min_t(u32, weight, BIT(IEEE80211_RECIPROCAL_SHIFT_STA));
 	if (air_info->weight == weight)
 		return;
 

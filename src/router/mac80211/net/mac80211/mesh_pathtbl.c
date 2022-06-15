@@ -14,6 +14,7 @@
 #include "wme.h"
 #include "ieee80211_i.h"
 #include "mesh.h"
+#include <linux/rhashtable.h>
 
 static void mesh_path_free_rcu(struct mesh_table *tbl, struct mesh_path *mpath);
 
@@ -31,6 +32,56 @@ static const struct rhashtable_params mesh_rht_params = {
 	.head_offset = offsetof(struct mesh_path, rhash),
 	.hashfn = mesh_table_hash,
 };
+
+static const struct rhashtable_params mesh_hdr_rht_params = {
+	.nelem_hint = 10,
+	.automatic_shrinking = true,
+	.key_len =  ETH_ALEN,
+	.key_offset = offsetof(struct mhdr_cache_entry, addr_key),
+	.head_offset = offsetof(struct mhdr_cache_entry, rhash),
+	.hashfn = mesh_table_hash,
+};
+
+static void mesh_hdr_cache_entry_free(void *ptr, void *tblptr)
+{
+	struct mhdr_cache_entry *mhdr = ptr;
+
+	kfree_rcu(mhdr, rcu);
+}
+
+static void mesh_hdr_cache_deinit(struct ieee80211_sub_if_data *sdata)
+{
+	struct mesh_hdr_cache *cache;
+
+	cache = &sdata->u.mesh.hdr_cache;
+
+	if (!cache->enabled)
+		return;
+
+	rhashtable_free_and_destroy(&cache->rhead,
+				    mesh_hdr_cache_entry_free, NULL);
+
+	cache->enabled = false;
+}
+
+static void mesh_hdr_cache_init(struct ieee80211_sub_if_data *sdata)
+{
+	struct ieee80211_local *local = sdata->local;
+	struct mesh_hdr_cache *cache;
+
+	cache = &sdata->u.mesh.hdr_cache;
+
+	cache->enabled = false;
+
+	if (!ieee80211_hw_check(&local->hw, SUPPORT_FAST_XMIT))
+		return;
+
+	rhashtable_init(&cache->rhead, &mesh_hdr_rht_params);
+	INIT_HLIST_HEAD(&cache->walk_head);
+	spin_lock_init(&cache->walk_lock);
+	cache->size = 0;
+	cache->enabled = true;
+}
 
 static inline bool mpath_expired(struct mesh_path *mpath)
 {
@@ -381,6 +432,343 @@ struct mesh_path *mesh_path_new(struct ieee80211_sub_if_data *sdata,
 	return new_mpath;
 }
 
+struct mhdr_cache_entry *mesh_fill_cached_hdr(struct ieee80211_sub_if_data *sdata,
+					      struct sk_buff *skb)
+{
+	struct mesh_hdr_cache *cache;
+	struct mhdr_cache_entry *entry;
+	struct mesh_path *mpath, *mppath;
+	struct ieee80211s_hdr *meshhdr;
+	struct ieee80211_hdr *hdr;
+	struct sta_info *new_nhop;
+	struct ieee80211_key *key;
+	struct ethhdr *eth;
+	u8 sa[ETH_ALEN];
+
+	u8 tid;
+
+	cache = &sdata->u.mesh.hdr_cache;
+
+	if (!cache->enabled)
+		return NULL;
+
+	entry = rhashtable_lookup(&cache->rhead, skb->data,
+				  mesh_hdr_rht_params);
+	if (!entry)
+		return NULL;
+
+	/* Avoid extra work in this path */
+	if (skb_headroom(skb) < (entry->hdrlen - ETH_HLEN + 2))
+		return NULL;
+
+	mpath = rcu_dereference(entry->mpath);
+	if (!mpath)
+		return NULL;
+
+	/* This check is with assumption that only 6addr frames are
+	 * supported currently for caching
+	 */
+	mppath = rcu_dereference(entry->mppath);
+	if (!mppath)
+		return NULL;
+
+	if (!(mpath->flags & MESH_PATH_ACTIVE))
+		return NULL;
+
+	if (mpath_expired(mpath))
+		return NULL;
+
+	/* If the skb is shared we need to obtain our own copy */
+	if (skb_shared(skb)) {
+		struct sk_buff *tmp_skb = skb;
+
+		skb = skb_clone(skb, GFP_ATOMIC);
+		kfree_skb(tmp_skb);
+
+		if (!skb)
+			return NULL;
+	}
+
+	/* In case there was a path refresh and update after we last used
+	 * update the next hop addr.
+	 */
+	spin_lock_bh(&mpath->state_lock);
+	if (entry->path_change_count != mpath->path_change_count) {
+		new_nhop = rcu_dereference(mpath->next_hop);
+		if (!new_nhop) {
+			spin_unlock_bh(&mpath->state_lock);
+			return NULL;
+		}
+		memcpy(&entry->hdr[4], new_nhop->sta.addr, ETH_ALEN);
+
+		/* update key. pn_offs will be same */
+		if (entry->key)	{
+			key = rcu_access_pointer(new_nhop->ptk[new_nhop->ptk_idx]);
+			if (!key)
+				key = rcu_access_pointer(sdata->default_unicast_key);
+			rcu_assign_pointer(entry->key, key);
+		}
+		entry->path_change_count = mpath->path_change_count;
+	}
+	spin_unlock_bh(&mpath->state_lock);
+
+	/* backup eth SA to copy as eaddr2/SA in the mesh header */
+	eth = (struct ethhdr *)skb->data;
+	ether_addr_copy(sa, eth->h_source);
+
+	/* Pull DA:SA */
+	skb_pull(skb, ETH_ALEN * 2);
+
+	memcpy(skb_push(skb, entry->hdrlen), entry->hdr, entry->hdrlen);
+
+	meshhdr = (struct ieee80211s_hdr *)(skb->data + entry->machdr_len);
+	hdr = (struct ieee80211_hdr *)skb->data;
+
+	/* Update mutables */
+	tid = skb->priority & IEEE80211_QOS_CTL_TAG1D_MASK;
+	*ieee80211_get_qos_ctl(hdr) = tid;
+
+	put_unaligned(cpu_to_le32(sdata->u.mesh.mesh_seqnum), &meshhdr->seqnum);
+	sdata->u.mesh.mesh_seqnum++;
+
+	memcpy(meshhdr->eaddr2, sa, ETH_ALEN);
+	meshhdr->ttl = sdata->u.mesh.mshcfg.dot11MeshTTL;
+
+	if (mpath->flags & (MESH_PATH_REQ_QUEUED | MESH_PATH_FIXED))
+		goto out;
+
+	/* Refresh the path, in case there is a change in nexthop after refresh
+	 * hdr will be updated on next lookup
+	 */
+	if (time_after(jiffies,
+		       mpath->exp_time -
+		       msecs_to_jiffies(sdata->u.mesh.mshcfg.path_refresh_time)) &&
+	    !(mpath->flags & MESH_PATH_RESOLVING) &&
+	    !(mpath->flags & MESH_PATH_FIXED)) {
+		mesh_queue_preq(mpath, PREQ_Q_F_START | PREQ_Q_F_REFRESH);
+	}
+
+out:
+	mppath->exp_time = jiffies;
+	entry->timestamp = jiffies;
+
+	return entry;
+}
+
+void mesh_cache_hdr(struct ieee80211_sub_if_data *sdata,
+		    struct sk_buff *skb, struct mesh_path *mpath)
+{
+	struct ieee80211_hdr *hdr = (struct ieee80211_hdr *)skb->data;
+	struct ieee80211_tx_info *info = IEEE80211_SKB_CB(skb);
+	struct mesh_hdr_cache *cache;
+	struct mhdr_cache_entry *mhdr, *old_mhdr;
+	struct ieee80211s_hdr *meshhdr;
+	struct sta_info *next_hop;
+	struct ieee80211_key *key;
+	u8 band, pn_offs = 0, crypto_len = 0;
+	struct mesh_path *mppath;
+	u16 mshhdr_len;
+	int hdrlen;
+
+	if (sdata->noack_map)
+		return;
+
+	cache = &sdata->u.mesh.hdr_cache;
+
+	if (!cache->enabled)
+		return;
+
+	hdrlen = ieee80211_hdrlen(hdr->frame_control);
+
+	meshhdr = (struct ieee80211s_hdr *)(skb->data + hdrlen);
+
+	/* Currently supporting only 6addr hdr */
+	if (!(meshhdr->flags & MESH_FLAGS_AE_A5_A6))
+		return;
+
+	mshhdr_len = ieee80211_get_mesh_hdrlen(meshhdr);
+
+	spin_lock_bh(&cache->walk_lock);
+	if (cache->size > sdata->u.mesh.mshcfg.hdr_cache_size) {
+		spin_unlock_bh(&cache->walk_lock);
+		return;
+	}
+	spin_unlock_bh(&cache->walk_lock);
+
+	next_hop = rcu_dereference(mpath->next_hop);
+	if (!next_hop)
+		return;
+
+	/* This is required to keep the mppath alive */
+	mppath = mpp_path_lookup(sdata, meshhdr->eaddr1);
+
+	if (!mppath)
+		return;
+
+	band = info->band;
+
+	pn_offs = 0;
+	key = rcu_access_pointer(next_hop->ptk[next_hop->ptk_idx]);
+	if (!key)
+		key = rcu_access_pointer(sdata->default_unicast_key);
+
+	if (key) {
+		bool gen_iv, iv_spc;
+
+		gen_iv = key->conf.flags & IEEE80211_KEY_FLAG_GENERATE_IV;
+		iv_spc = key->conf.flags & IEEE80211_KEY_FLAG_PUT_IV_SPACE;
+
+		if (!(key->flags & KEY_FLAG_UPLOADED_TO_HARDWARE))
+			return;
+
+		if (key->flags & KEY_FLAG_TAINTED)
+			return;
+
+		switch (key->conf.cipher) {
+		case WLAN_CIPHER_SUITE_CCMP:
+		case WLAN_CIPHER_SUITE_CCMP_256:
+			if (gen_iv)
+				pn_offs = hdrlen;
+			if (gen_iv || iv_spc)
+				crypto_len = IEEE80211_CCMP_HDR_LEN;
+			break;
+		default:
+			/* Limiting supported ciphers for testing */
+			return;
+		}
+		hdr->frame_control |= cpu_to_le16(IEEE80211_FCTL_PROTECTED);
+	}
+
+	if ((hdrlen + crypto_len + mshhdr_len + sizeof(rfc1042_header)) >
+		MESH_HDR_MAX_LEN) {
+		WARN_ON_ONCE(1);
+		return;
+	}
+
+	mhdr = kzalloc(sizeof(*mhdr), GFP_KERNEL);
+	if (!mhdr)
+		return;
+
+	memcpy(mhdr->addr_key, meshhdr->eaddr1, ETH_ALEN);
+
+	mhdr->machdr_len = hdrlen + crypto_len;
+	mhdr->hdrlen =  mhdr->machdr_len + mshhdr_len + sizeof(rfc1042_header);
+	rcu_assign_pointer(mhdr->mpath, mpath);
+	rcu_assign_pointer(mhdr->mppath, mppath);
+	rcu_assign_pointer(mhdr->key, key);
+	mhdr->timestamp = jiffies;
+	mhdr->band = band;
+	mhdr->pn_offs = pn_offs;
+
+	if (pn_offs) {
+		/* ignore the invalid data getting copied to pn location since it will
+		 * be overwritten during tx
+		 */
+		memcpy(mhdr->hdr, skb->data, mhdr->machdr_len);
+
+		/* copy remaining hdr */
+		memcpy(mhdr->hdr + mhdr->machdr_len,
+		       skb->data + mhdr->machdr_len - crypto_len,
+		       mhdr->hdrlen - mhdr->machdr_len);
+	} else {
+		memcpy(mhdr->hdr, skb->data, mhdr->hdrlen);
+	}
+
+	if (key) {
+		hdr = (struct ieee80211_hdr *)mhdr->hdr;
+		hdr->frame_control |= cpu_to_le16(IEEE80211_FCTL_PROTECTED);
+	}
+
+	spin_lock_bh(&cache->walk_lock);
+	old_mhdr = rhashtable_lookup_get_insert_fast(&cache->rhead,
+						     &mhdr->rhash,
+						     mesh_hdr_rht_params);
+	if (old_mhdr) {
+		spin_unlock_bh(&cache->walk_lock);
+		kfree(mhdr);
+		return;
+	}
+
+	hlist_add_head(&mhdr->walk_list, &cache->walk_head);
+
+	cache->size++;
+	spin_unlock_bh(&cache->walk_lock);
+}
+
+void mesh_hdr_cache_manage(struct ieee80211_sub_if_data *sdata)
+{
+	struct mesh_hdr_cache *cache;
+	struct mhdr_cache_entry *entry;
+	struct hlist_node *n;
+
+	cache = &sdata->u.mesh.hdr_cache;
+
+	if (!cache->enabled)
+		return;
+
+	spin_lock_bh(&cache->walk_lock);
+	if (cache->size < ((sdata->u.mesh.mshcfg.hdr_cache_size * 2) / 3)) {
+		spin_unlock_bh(&cache->walk_lock);
+		return;
+	}
+
+	hlist_for_each_entry_safe(entry, n, &cache->walk_head, walk_list) {
+		if (time_before(jiffies,
+				entry->timestamp +
+				msecs_to_jiffies(MESH_HDR_CACHE_TIMEOUT)))
+			continue;
+
+		hlist_del_rcu(&entry->walk_list);
+		rhashtable_remove_fast(&cache->rhead, &entry->rhash, mesh_hdr_rht_params);
+		kfree_rcu(entry, rcu);
+		cache->size--;
+	}
+	spin_unlock_bh(&cache->walk_lock);
+}
+
+void mesh_hdr_cache_flush(struct mesh_path *mpath, bool is_mpp)
+{
+	struct ieee80211_sub_if_data *sdata = mpath->sdata;
+	struct mesh_hdr_cache *cache;
+	struct mhdr_cache_entry *entry;
+	struct hlist_node *n;
+	struct mesh_path *entry_mpath;
+
+	cache = &sdata->u.mesh.hdr_cache;
+
+	if (!cache->enabled)
+		return;
+
+	spin_lock_bh(&cache->walk_lock);
+	/* Only one header per mpp address is expected in the header cache */
+	if (is_mpp) {
+		entry = rhashtable_lookup(&cache->rhead, mpath->dst, mesh_hdr_rht_params);
+		if (entry) {
+			hlist_del_rcu(&entry->walk_list);
+			rhashtable_remove_fast(&cache->rhead, &entry->rhash, mesh_hdr_rht_params);
+			kfree_rcu(entry, rcu);
+			cache->size--;
+		}
+		spin_unlock_bh(&cache->walk_lock);
+		return;
+	}
+
+	hlist_for_each_entry_safe(entry, n, &cache->walk_head, walk_list) {
+		entry_mpath = rcu_dereference(entry->mpath);
+
+		if (!entry_mpath)
+			continue;
+
+		if (ether_addr_equal(entry_mpath->dst, mpath->dst)) {
+			hlist_del_rcu(&entry->walk_list);
+			rhashtable_remove_fast(&cache->rhead, &entry->rhash, mesh_hdr_rht_params);
+			kfree_rcu(entry, rcu);
+			cache->size--;
+		}
+	}
+	spin_unlock_bh(&cache->walk_lock);
+}
+
 /**
  * mesh_path_add - allocate and add a new path to the mesh path table
  * @dst: destination address of the path (ETH_ALEN length)
@@ -521,6 +909,7 @@ static void mesh_path_free_rcu(struct mesh_table *tbl,
 
 static void __mesh_path_del(struct mesh_table *tbl, struct mesh_path *mpath)
 {
+	mesh_hdr_cache_flush(mpath, tbl == &mpath->sdata->u.mesh.mpp_paths);
 	hlist_del_rcu(&mpath->walk_list);
 	rhashtable_remove_fast(&tbl->rhead, &mpath->rhash, mesh_rht_params);
 	mesh_path_free_rcu(tbl, mpath);
@@ -739,7 +1128,10 @@ void mesh_path_flush_pending(struct mesh_path *mpath)
  */
 void mesh_path_fix_nexthop(struct mesh_path *mpath, struct sta_info *next_hop)
 {
+	struct sta_info *old_next_hop;
+
 	spin_lock_bh(&mpath->state_lock);
+	old_next_hop = rcu_dereference(mpath->next_hop);
 	mesh_path_assign_nexthop(mpath, next_hop);
 	mpath->sn = 0xffff;
 	mpath->metric = 0;
@@ -747,6 +1139,8 @@ void mesh_path_fix_nexthop(struct mesh_path *mpath, struct sta_info *next_hop)
 	mpath->exp_time = 0;
 	mpath->flags = MESH_PATH_FIXED | MESH_PATH_SN_VALID;
 	mesh_path_activate(mpath);
+	if (!old_next_hop || !ether_addr_equal(old_next_hop->addr, next_hop->addr))
+		mpath->path_change_count++;
 	spin_unlock_bh(&mpath->state_lock);
 	ewma_mesh_fail_avg_init(&next_hop->mesh->fail_avg);
 	/* init it at a low value - 0 start is tricky */
@@ -758,6 +1152,7 @@ void mesh_pathtbl_init(struct ieee80211_sub_if_data *sdata)
 {
 	mesh_table_init(&sdata->u.mesh.mesh_paths);
 	mesh_table_init(&sdata->u.mesh.mpp_paths);
+	mesh_hdr_cache_init(sdata);
 }
 
 static
@@ -785,6 +1180,7 @@ void mesh_path_expire(struct ieee80211_sub_if_data *sdata)
 
 void mesh_pathtbl_unregister(struct ieee80211_sub_if_data *sdata)
 {
+	mesh_hdr_cache_deinit(sdata);
 	mesh_table_free(&sdata->u.mesh.mesh_paths);
 	mesh_table_free(&sdata->u.mesh.mpp_paths);
 }

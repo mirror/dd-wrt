@@ -2768,6 +2768,7 @@ static struct sk_buff *ieee80211_build_hdr(struct ieee80211_sub_if_data *sdata,
 						skb->data + ETH_ALEN);
 
 		}
+
 		chanctx_conf = rcu_dereference(sdata->vif.chanctx_conf);
 		if (!chanctx_conf) {
 			ret = -ENOTCONN;
@@ -3611,6 +3612,91 @@ ieee80211_xmit_fast_finish(struct ieee80211_sub_if_data *sdata,
 	return TX_CONTINUE;
 }
 
+static bool ieee80211_mesh_xmit_fast(struct ieee80211_sub_if_data *sdata,
+				     struct sk_buff *skb, u32 ctrl_flags)
+{
+	struct ieee80211_local *local = sdata->local;
+	struct ieee80211_if_mesh *ifmsh = &sdata->u.mesh;
+	struct ieee80211_tx_data tx;
+	struct ieee80211_tx_info *info;
+	struct mhdr_cache_entry *entry;
+	u16 ethertype;
+	struct ieee80211_key *key;
+	struct sta_info *sta;
+
+	if (ctrl_flags & IEEE80211_TX_CTRL_SKIP_MPATH_LOOKUP)
+		return false;
+
+	if (ifmsh->mshcfg.dot11MeshNolearn)
+		return false;
+
+	if (!ieee80211_hw_check(&local->hw, SUPPORT_FAST_XMIT))
+		return false;
+
+	/* Add support for these cases later */
+	if (ifmsh->ps_peers_light_sleep || ifmsh->ps_peers_deep_sleep)
+		return false;
+
+	if (is_multicast_ether_addr(skb->data))
+		return false;
+
+	ethertype = (skb->data[12] << 8) | skb->data[13];
+
+	if (ethertype < ETH_P_802_3_MIN)
+		return false;
+
+	if (skb->sk && skb_shinfo(skb)->tx_flags & SKBTX_WIFI_STATUS)
+		return false;
+
+	if (skb->ip_summed == CHECKSUM_PARTIAL) {
+		skb_set_transport_header(skb,
+					 skb_checksum_start_offset(skb));
+		if (skb_checksum_help(skb))
+			return false;
+	}
+
+	/* Fill cached header for this eth data */
+	entry = mesh_fill_cached_hdr(sdata, skb);
+
+	if (!entry)
+		return false;
+
+	sk_pacing_shift_update(skb->sk, sdata->local->hw.tx_sk_pacing_shift);
+
+	info = IEEE80211_SKB_CB(skb);
+	memset(info, 0, sizeof(*info));
+	info->band = entry->band;
+	info->control.vif = &sdata->vif;
+	info->flags = IEEE80211_TX_CTL_FIRST_FRAGMENT |
+		      IEEE80211_TX_CTL_DONTFRAG;
+
+	info->control.flags = IEEE80211_TX_CTRL_FAST_XMIT;
+
+#ifdef CONFIG_MAC80211_DEBUGFS
+	if (local->force_tx_status)
+		info->flags |= IEEE80211_TX_CTL_REQ_TX_STATUS;
+#endif
+
+	sta = entry->mpath->next_hop;
+	key = entry->key;
+
+	__skb_queue_head_init(&tx.skbs);
+
+	tx.flags = IEEE80211_TX_UNICAST;
+	tx.local = local;
+	tx.sdata = sdata;
+	tx.sta = sta;
+	tx.key = key;
+	tx.skb = skb;
+
+	ieee80211_xmit_fast_finish(sdata, sta, entry->pn_offs,
+				   key, &tx);
+
+	__skb_queue_tail(&tx.skbs, skb);
+	ieee80211_tx_frags(local, &sdata->vif, sta, &tx.skbs, false);
+	return true;
+}
+
 static bool ieee80211_xmit_fast(struct ieee80211_sub_if_data *sdata,
 				struct sta_info *sta,
 				struct ieee80211_fast_tx *fast_tx,
@@ -3913,8 +3999,17 @@ encap_out:
 	airtime = ieee80211_calc_expected_tx_airtime(hw, vif, txq->sta,
 						     skb->len, ampdu);
 	if (!airtime)
-		return skb;
+		airtime = IEEE80211_TX_TIME_EST_UNIT;
 
+	/*
+	 * Tx queue scheduling always happens in airtime order and queues are
+	 * sorted by virtual time + pending AQL budget.
+	 * If AQL is not supported, pending AQL budget is always zero.
+	 * If airtime fairness is not supported, virtual time won't be directly
+	 * increased by driver tx completion.
+	 * Because of that, we register estimated tx time as airtime if either
+	 * AQL or ATF support is missing.
+	 */
 	if (!wiphy_ext_feature_isset(local->hw.wiphy, NL80211_EXT_FEATURE_AQL) ||
 	    !wiphy_ext_feature_isset(local->hw.wiphy,
 				     NL80211_EXT_FEATURE_AIRTIME_FAIRNESS))
@@ -3936,13 +4031,14 @@ out:
 }
 EXPORT_SYMBOL(ieee80211_tx_dequeue);
 
-static void
+static struct ieee80211_txq *
 airtime_info_next_txq_idx(struct airtime_info *air_info)
 {
 	air_info->txq_idx++;
 	if (air_info->txq_idx >= ARRAY_SIZE(air_info->txq) ||
 	    !air_info->txq[air_info->txq_idx])
 		air_info->txq_idx = 0;
+	return air_info->txq[air_info->txq_idx];
 }
 
 struct ieee80211_txq *ieee80211_next_txq(struct ieee80211_hw *hw, u8 ac)
@@ -3971,10 +4067,9 @@ begin:
 
 	air_info = container_of(node, struct airtime_info, schedule_order);
 
-	airtime_info_next_txq_idx(air_info);
+	txq = airtime_info_next_txq_idx(air_info);
 	txq_idx = air_info->txq_idx;
-	txq = air_info->txq[txq_idx];
-	if (!txq || !ieee80211_txq_airtime_check(hw, txq))
+	if (!ieee80211_txq_airtime_check(hw, txq))
 		goto begin;
 
 	while (1) {
@@ -3985,16 +4080,13 @@ begin:
 		if (txq_has_queue(txq))
 			break;
 
-		airtime_info_next_txq_idx(air_info);
-		txq = air_info->txq[air_info->txq_idx];
+		txq = airtime_info_next_txq_idx(air_info);
 		if (txq_idx == air_info->txq_idx)
 			goto begin;
 	}
 
-	if (air_info->v_t_cur > air_sched->v_t) {
-		if (node == airtime_sched_peek(&air_sched->active_txqs))
-			airtime_catchup_v_t(air_sched, air_info->v_t_cur, now);
-	}
+	if (air_info->v_t_cur > air_sched->v_t)
+		airtime_catchup_v_t(air_sched, air_info->v_t_cur, now);
 
 	air_sched->schedule_pos = node;
 	air_sched->last_schedule_activity = now;
@@ -4114,15 +4206,14 @@ static void __ieee80211_unschedule_txq(struct ieee80211_hw *hw,
 
 	lockdep_assert_held(&air_sched->lock);
 
+	airtime_sched_delete(&air_sched->active_txqs, &air_info->schedule_order);
 	if (purge) {
 		list_del_init(&air_info->list);
 		ieee80211_update_airtime_weight(local, air_sched, 0, true);
-	}
-
-	airtime_sched_delete(&air_sched->active_txqs, &air_info->schedule_order);
-	if (!purge)
+	} else {
 		airtime_set_active(air_sched, air_info,
 				   ktime_get_coarse_boottime_ns());
+	}
 }
 
 void ieee80211_unschedule_txq(struct ieee80211_hw *hw,
@@ -4152,10 +4243,8 @@ void ieee80211_return_txq(struct ieee80211_hw *hw,
 		set_bit(IEEE80211_TXQ_FORCE_ACTIVE, &txqi->flags);
 
 	spin_lock_bh(&air_sched->lock);
-	if (!ieee80211_txq_airtime_check(hw, &txqi->txq))
-	    airtime_sched_delete(&air_sched->active_txqs,
-				 &air_info->schedule_order);
-	else if (txq_has_queue(txq) || force)
+	if (force || (txq_has_queue(txq) &&
+		      ieee80211_txq_airtime_check(hw, &txqi->txq)))
 		__ieee80211_insert_txq(local, air_sched, txqi);
 	else
 		__ieee80211_unschedule_txq(hw, txq, false);
@@ -4206,13 +4295,11 @@ EXPORT_SYMBOL(ieee80211_txq_airtime_check);
 bool ieee80211_txq_may_transmit(struct ieee80211_hw *hw,
 				struct ieee80211_txq *txq)
 {
-	struct txq_info *txqi = to_txq_info(txq);
 	struct ieee80211_local *local = hw_to_local(hw);
+	struct txq_info *txqi = to_txq_info(txq);
 	struct airtime_sched_info *air_sched;
-	struct airtime_sched_node *node = NULL;
 	struct airtime_info *air_info;
 	bool ret = false;
-	u32 aql_slack;
 	u64 now;
 
 	if (!ieee80211_txq_airtime_check(hw, txq))
@@ -4223,27 +4310,8 @@ bool ieee80211_txq_may_transmit(struct ieee80211_hw *hw,
 
 	now = ktime_get_coarse_boottime_ns();
 
-	/* Like in ieee80211_next_txq(), make sure the first station in the
-	 * scheduling order is eligible for transmission to avoid starvation.
-	 */
-	node = airtime_sched_peek(&air_sched->active_txqs);
-	if (node) {
-		air_info = container_of(node, struct airtime_info,
-					schedule_order);
-
-		if (air_sched->v_t < air_info->v_t)
-			airtime_catchup_v_t(air_sched, air_info->v_t, now);
-	}
-
 	air_info = to_airtime_info(&txqi->txq);
-	aql_slack = air_info->aql_limit_low;
-	aql_slack *= air_info->weight_reciprocal;
-	aql_slack >>= IEEE80211_RECIPROCAL_SHIFT_STA - IEEE80211_WEIGHT_SHIFT;
-	/*
-	 * add extra slack of aql_limit_low in order to avoid queue
-	 * starvation when bypassing normal scheduling order
-	 */
-	if (air_info->v_t <= air_sched->v_t + aql_slack) {
+	if (air_info->v_t <= air_sched->v_t) {
 		air_sched->last_schedule_activity = now;
 		ret = true;
 	}
@@ -4280,6 +4348,10 @@ void __ieee80211_subif_start_xmit(struct sk_buff *skb,
 	}
 
 	rcu_read_lock();
+
+	if (ieee80211_vif_is_mesh(&sdata->vif) &&
+	    ieee80211_mesh_xmit_fast(sdata, skb, ctrl_flags))
+		goto out;
 
 	if (ieee80211_lookup_ra_sta(sdata, skb, &sta))
 		goto out_free;

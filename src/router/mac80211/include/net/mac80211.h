@@ -1118,20 +1118,24 @@ struct ieee80211_tx_info {
 	};
 };
 
+#define IEEE80211_TX_TIME_EST_UNIT 4
+
+static inline u16
+ieee80211_info_get_tx_time_est(struct ieee80211_tx_info *info)
+{
+	return info->tx_time_est * IEEE80211_TX_TIME_EST_UNIT;
+}
+
 static inline u16
 ieee80211_info_set_tx_time_est(struct ieee80211_tx_info *info, u16 tx_time_est)
 {
 	/* We only have 10 bits in tx_time_est, so store airtime
 	 * in increments of 4us and clamp the maximum to 2**12-1
 	 */
-	info->tx_time_est = min_t(u16, tx_time_est, 4095) >> 2;
-	return info->tx_time_est << 2;
-}
+	tx_time_est = DIV_ROUND_UP(tx_time_est, IEEE80211_TX_TIME_EST_UNIT);
+	info->tx_time_est = min_t(u16, tx_time_est, BIT(10) - 1);
 
-static inline u16
-ieee80211_info_get_tx_time_est(struct ieee80211_tx_info *info)
-{
-	return info->tx_time_est << 2;
+	return ieee80211_info_get_tx_time_est(info);
 }
 
 /**
@@ -6702,22 +6706,11 @@ void ieee80211_return_txq(struct ieee80211_hw *hw, struct ieee80211_txq *txq,
 /**
  * ieee80211_txq_may_transmit - check whether TXQ is allowed to transmit
  *
- * This function is used to check whether given txq is allowed to transmit by
- * the airtime scheduler, and can be used by drivers to access the airtime
- * fairness accounting without going using the scheduling order enfored by
- * next_txq().
+ * Returns %true if there is remaining AQL budget for the tx queue and %false
+ * if it should be throttled. It will also mark the queue as active for the
+ * airtime scheduler.
  *
- * Returns %true if the airtime scheduler thinks the TXQ should be allowed to
- * transmit, and %false if it should be throttled. This function can also have
- * the side effect of rotating the TXQ in the scheduler rotation, which will
- * eventually bring the deficit to positive and allow the station to transmit
- * again.
- *
- * The API ieee80211_txq_may_transmit() also ensures that TXQ list will be
- * aligned against driver's own round-robin scheduler list. i.e it rotates
- * the TXQ list till it makes the requested node becomes the first entry
- * in TXQ list. Thus both the TXQ list and driver's list are in sync. If this
- * function returns %true, the driver is expected to schedule packets
+ * If this function returns %true, the driver is expected to schedule packets
  * for transmission, and then return the TXQ through ieee80211_return_txq().
  *
  * @hw: pointer as obtained from ieee80211_alloc_hw()
