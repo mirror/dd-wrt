@@ -127,6 +127,44 @@ struct mesh_path {
 	u32 path_change_count;
 };
 
+#define MESH_HDR_CACHE_TIMEOUT		8000 /* msecs */
+
+#define MESH_HDR_MAX_LEN	68	/* mac+mesh+rfc1042 hdr */
+
+/**
+ * struct mhdr_cache_entry - Cached Mesh header entry
+ * @addr_key: The Ethernet DA which is the key for this entry
+ * @hdr: The cached header
+ * @machdr_len: Total length of the mac header
+ * @hdrlen: Length of this header entry
+ * @key: Key corresponding to the nexthop stored in the header
+ * @pn_offs: Offset to PN which is updated for every xmit
+ * @band:  band used for tx
+ * @walk_list: list containing all the cached header entries
+ * @rhash: rhashtable pointer
+ * @mpath: The Mesh path corresponding to the Mesh DA
+ * @mppath: The MPP entry corresponding to this DA
+ * @timestamp: Last used time of this entry
+ * @rcu: rcu to free this entry
+ * @path_change_count: Stored path change value corresponding to the mpath
+ */
+struct mhdr_cache_entry {
+	u8 addr_key[ETH_ALEN];
+	u8 hdr[MESH_HDR_MAX_LEN];
+	u16 machdr_len;
+	u16 hdrlen;
+	struct ieee80211_key *key;
+	u8 pn_offs;
+	u8 band;
+	struct hlist_node walk_list;
+	struct rhash_head rhash;
+	struct mesh_path *mpath;
+	struct mesh_path *mppath;
+	unsigned long timestamp;
+	struct rcu_head rcu;
+	u32 path_change_count;
+};
+
 /* Recent multicast cache */
 /* RMC_BUCKETS must be a power of 2, maximum 256 */
 #define RMC_BUCKETS		256
@@ -298,6 +336,14 @@ static void mesh_path_discard_frame(struct ieee80211_sub_if_data *sdata,
 static void mesh_path_tx_root_frame(struct ieee80211_sub_if_data *sdata);
 
 static bool mesh_action_is_path_sel(struct ieee80211_mgmt *mgmt);
+
+static struct mhdr_cache_entry *mesh_fill_cached_hdr(struct ieee80211_sub_if_data *sdata,
+					      struct sk_buff *skb);
+static void mesh_cache_hdr(struct ieee80211_sub_if_data *sdata,
+		    struct sk_buff *skb, struct mesh_path *mpath);
+static void mesh_hdr_cache_manage(struct ieee80211_sub_if_data *sdata);
+static void mesh_hdr_cache_flush(struct mesh_path *mpath, bool is_mpp);
+static void mesh_queue_preq(struct mesh_path *mpath, u8 flags);
 
 #ifdef CPTCFG_MAC80211_MESH
 static inline
