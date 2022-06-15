@@ -539,10 +539,10 @@ alive.legend="Geplanter Neustart";
 alive.sevr1="Reboot planen";
 alive.hour="Zu einem festen Zeitpunkt";
 alive.legend2="WDS/Verbindungsüberwachung";
-alive.sevr2="Überwachung einschalten";
+alive.sevr2="Überwachung Einschalten";
 alive.IP="IP-Adressen";
 alive.legend3="Proxy/Verbindungsüberwachung";
-alive.sevr3="Proxy-Überwachung einschalten";
+alive.sevr3="Proxy-Überwachung Einschalten";
 alive.IP2="Proxy-IP-Adresse";
 alive.port="Proxy-Port";
 alive.mode0="Reboot bei einer fehlgeschlagenen IP";
@@ -1186,7 +1186,7 @@ management.remote_allowanyip="Erlaube alle Remote-IPs";
 management.remote_ip="Erlaubter Remote-IP-Bereich";
 management.web_legend="Web-Zugriff";
 management.web_refresh="Auffrischen";
-management.web_sysinfo="Infoseite einschalten";
+management.web_sysinfo="Infoseite Einschalten";
 management.web_sysinfopass="Kennwortschutz Infoseite";
 management.web_sysinfomasq="MAC-Maskierung Infoseite";
 management.boot_legend="Beim Booten warten";
@@ -1204,13 +1204,13 @@ management.rst_legend="Resetknopf";
 management.rst_srv="Resetknopf";
 //management.routing_legend="Routing";
 //management.routing_srv="Routing";
-management.ipv6_h2="Internet Protocol version 6 (IPv6)";
+management.ipv6_h2="Internet Protokoll Version 6 (IPv6)";
 management.ipv6_legend="IPv6-Unterstützung";
-management.ipv6_srv="Einschalten IPv6";
+management.ipv6_srv="IPv6 Einschalten";
 management.ipv6_typ="IPv6 Type";
 management.ipv6_pf_len="Prefix Länge";
 management.ipv6_rad_legend="Router Advertisement Daemon (radvd)";
-management.ipv6_rad_enable="Einschalten Daemon";
+management.ipv6_rad_enable="Daemon Einschalten";
 management.ipv6_rad="Individuelle Konfiguration";
 management.ipv6_radconf="Radvd-Konfiguration";
 management.ipv6_dns="Statischer DNS";
@@ -2248,7 +2248,7 @@ wol.legend="Verfügbare Geräte";
 wol.legend2="WOL-Adressen";
 wol.legend3="Ausgabe";
 wol.legend4="Manuelles WOL";
-wol.enable="WOL einschalten?";
+wol.enable="WOL Einschalten?";
 wol.mac="MAC-Adresse(n)";
 wol.broadcast="Netz-Broadcast";
 wol.udp="UDP-Port";
@@ -2506,7 +2506,7 @@ freeradius.gencerdone="Zertifikat fertiggestellt!";
 
 //help container
 
-hfreeradius.right2="Bitte JFFS einschalten, bevor sie RADIUS nutzen.";
+hfreeradius.right2="Bitte JFFS Einschalten, bevor sie RADIUS nutzen.";
 
 // ** Wireless_Advanced.asp **//
 
