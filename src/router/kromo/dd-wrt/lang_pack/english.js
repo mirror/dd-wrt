@@ -1225,6 +1225,7 @@ idx.h2="WAN Setup";
 idx.h22="Wireless Setup";
 idx.legend="WAN Connection Type";
 idx.conn_type="Connection Type";
+idx.ignore_wan_dns="Ignore WAN DNS";
 idx.stp="STP";
 idx.sfe="Shortcut Forwarding Engine";
 idx.fa="Flow Acceleration";
@@ -1238,8 +1239,6 @@ idx.routerip="Router IP";
 idx.lanip="Local IP Address";
 idx.legend2="WAN Port";
 idx.wantoswitch="Assign WAN Port to Switch";
-idx.legend3="Time Settings";
-idx.timeset="Time Zone";
 idx.static_ip="Static IP";
 idx.dhcp="Automatic Configuration - DHCP";
 idx.dhcp_auth="DHCP Authentication";
@@ -1248,7 +1247,7 @@ idx.dhcp_userclass="DHCP Userclass";
 idx.dhcp6c_userclass="DHCP IPv6 Userclass";
 idx.dhcp_clientid="DHCP Client ID";
 idx.dhcp6c_clientid="DHCP IPv6 Client ID";
-idx.dhcp_legend="Network Server Settings (DHCP)";
+idx.dhcp_legend="Dynamic Host Configuration Protocol (DHCP)";
 idx.dhcp_type="DHCP Type";
 idx.dhcp_srv="DHCP Server";
 idx.dhcp_fwd="DHCP Forwarder";
@@ -1276,9 +1275,11 @@ idx.summt_opt9="first Sun Oct - first Sun Apr";
 idx.summt_opt10="3rd Sun Oct - 3rd Sun Feb";
 idx.portsetup="Port Setup";
 idx.wanport="WAN Port Assignment";
-idx.ntp_client="NTP Client";
+idx.legend3="NTP Client Settings";
+idx.timeset="Time Zone";
+idx.ntp_client="Enable Client";
 idx.ntp_timer="Update Interval";
-idx.ignore_wan_dns="Ignore WAN DNS";
+
 //help container
 var hidx=new Object();
 hidx.right2="This setting is most commonly used by cable operators.";
@@ -1289,38 +1290,38 @@ hidx.right10="This is the subnet mask of the router.";
 hidx.right12="Allows the router to manage your IP addresses.";
 hidx.right14="The address you would like to start with.";
 hidx.right16="You may limit the number of addresses your router hands out. 0 means only predefined static leases will be handed out.";
-hidx.right18="Choose the time zone you are in. If the server IP / Name field is left blank, the internal IP address of the time server will be used instead (recommended)";
+hidx.right18="Select your current time zone. If the " + share.srvipname + " is left blank, the internal IP address of the time server will be used instead (recommended)";
 hidx.sas="The setup assistant guides you through the basic setup steps to configure your router.";
 
 //help page
-hidx.page1="<dd>The Setup screen is the first screen you will see when accessing the router. Most users will be able to configure the router and get it working properly using only the settings on this screen. Some Internet Service Providers (ISPs) will require that you enter specific information, such as User Name, Password, IP Address, Default Gateway Address, or DNS IP Address. This information can be obtained from your ISP, if required.<br /><br /><div class=\"note\"><h4>Note:</h4><div>After you have configured these settings, you should set a new password for the router using the <a href=\"HManagement.asp\">Management</a> screen. This will increase security, protecting the router from unauthorized changes. All users that try to access the router's web-based interface or Setup Wizard will be prompted to enter the router's username and password.</div></div></dd>";
+hidx.page1="<dd>The Setup screen is the first screen you will see when accessing the router. For a basic working router configuration while using only the settings on this screen is possible. Some Internet Service Providers (ISPs) will require that you enter specific information, such as a username, password, IP address, default gateway address, or a DNS IP address. This information can be obtained from your ISP, if required.<br /><br /><div class=\"note\"><h4>Note:</h4><div>After you have configured these settings, you should set a new password for the router using the <a href=\"HManagement.asp\">Management</a> screen. This will increase security, protecting the router from unauthorized changes. All users that try to access the router's web interface or Setup Wizard will be prompted to enter the router's login credentials.</div></div></dd>";
 hidx.page2="<dd>This entry is necessary for some ISPs and can be provided by them.</dd>";
 hidx.page3="<dd>This entry is necessary for some ISPs and can be provided by them.</dd>";
-hidx.page4="<dd>The router supports four connection types:<ul><li>Automatic Configuration DHCP</li><li>Static IP</li><li>PPPoE (Point-to-Point Protocol over Ethernet)</li><li>PPTP (Point-to-Point Tunneling Protocol)</li></ul><br />These types can be selected from the drop-down menu next to <i>Internet Connection</i>. The information required and available features will differ depending on what kind of connection type you select.<br /><br /><div class=\"note\"><h4>Note:</h4><div>Some cable providers require a specific MAC address for connection to the Internet. To learn more about this, click the System tab. Then click the Help button, and read about the <a href=\"HWanMAC.asp\">MAC Address Cloning</a> feature.</div></div></dd>";
-hidx.page5="<dd>This is the router's IP Address and Subnet Mask as seen by external users on the Internet (including your ISP). If your Internet connection requires a static IP address, then your ISP will provide you with a Static IP Address and Subnet Mask.</dd>";
+hidx.page4="<dd>The router supports four connection types:<ul><li>Automatic Configuration DHCP</li><li>Static IP</li><li>PPPoE (Point-to-Point Protocol over Ethernet)</li><li>PPTP (Point-to-Point Tunneling Protocol)</li></ul><br />These types can be selected from the drop-down menu next to <i>Internet Connection</i>. The information required and available features will differ depending on what kind of connection type you select.<br /><br /><div class=\"note\"><h4>Note:</h4><div>Some cable providers require a specific MAC address for connection to the Internet. To learn more about this, click the System tab. Then click the Help more... link, and read about the <a href=\"HWanMAC.asp\">MAC Address Cloning</a> feature.</div></div></dd>";
+hidx.page5="<dd>This is the router's IP Address and Subnet Mask as seen by external users on the Internet (including your ISP). If your Internet connection requires a static IP address, then your ISP should provide you with a Static IP Address and a Subnet Mask.</dd>";
 hidx.page6="<dd>Your ISP will provide you with the Gateway IP Address.</dd>";
 hidx.page7="<dd>Your ISP will provide you with at least one DNS IP Address.</dd>";
 hidx.page8="<dd>Enter the User Name and Password you use when logging onto your ISP through a PPPoE or PPTP connection.</dd>";
-hidx.page9="<dd>The PPP Compression provides a method to negotiate and utilize compression protocols over PPP encapsulated links. It is based on the MPPC protocol (Microsoft Point-to-Point Compression). It is a protocol designed for transferring compressed datagrams over point-to-point links.</dd>";
-hidx.page10="<dd>MPPE stands for Microsoft Point-to-Point Encryption. It is a protocol designed for transferring encrypted datagrams over point-to-point links.</dd>";
-hidx.page11="<dd>This option schedules the PPPoE reconnection by killing the PPPD daemon and restart it.</dd>";
+hidx.page9="<dd>The PPP Compression provides a method to negotiate and utilize compression protocols over PPP encapsulated links. It is based on the Microsoft Point-to-Point Compression (MPPC) protocol. A protocol wich is designed for transferring compressed datagrams over point-to-point links.</dd>";
+hidx.page10="<dd>Microsoft Point-to-Point Encryption (MPPE). A protocol designed for transferring encrypted datagrams over point-to-point links.</dd>";
+hidx.page11="<dd>This option schedules the PPPoE reconnection by killing the PPPD daemon and restarting it.</dd>";
 hidx.page12="<dd>You can configure the router to disconnect your Internet connection after a specified period of inactivity (Max Idle Time). If your Internet connection has been terminated due to inactivity, Connect on Demand enables the router to automatically re-establish your connection as soon as you attempt to access the Internet again. If you wish to activate Connect on Demand, click the radio button. If you want your Internet connection to remain active at all times, enter 0 in the Max Idle Time field. Otherwise, enter the number of minutes you want to have elapsed before your Internet connection terminates.</dd>";
-hidx.page13="<dd>This option keeps you connected to the Internet indefinitely, even when your connection sits idle. To use this option, click the radio button next to <i>Keep Alive</i>. The default Redial Period is 30 seconds (in other words, the router will check the Internet connection every 30 seconds).</dd>";
-hidx.page14="<dd>MTU is the Maximum Transmission Unit. It specifies the largest packet size permitted for Internet transmission. Keep the default setting, <i>Auto</i>, to have the router select the best MTU for your Internet connection. To specify a MTU size, select <i>Manual</i>, and enter the value desired (default is 1400). You should leave this value in the 1200 to 1500 range.</dd>";
-hidx.page15="<dd>This is the router IP Address and Subnet Mask as seen on the internal LAN. The default value is 192.168.1.1 for IP Address and 255.255.255.0 for Subnet Mask.</dd>";
+hidx.page13="<dd>This option keeps you connected to the Internet indefinitely, even when your connection sits idle. To use this option, click the radio button next to <i>Keep Alive</i>. The default Redial Period is 30 seconds (i.e. the router will check the Internet connection every 30 seconds).</dd>";
+hidx.page14="<dd>Maximum Transmission Unit (MTU), specifies the largest packet size permitted for Internet transmission. Keep the default setting, <i>Auto</i>, to have the router select the best MTU for your Internet connection. To specify a MTU size, select <i>Manual</i>, and enter the value desired (default is 1400). You should leave this value in the 1200 to 1500 range.</dd>";
+hidx.page15="<dd>This is the router IP Address and Subnet Mask as seen by the LAN. The default value is 192.168.1.1 for IP Address and 255.255.255.0 for Subnet Mask.</dd>";
 hidx.page16="<dd>Keep the default, <em>" + share.enable + "</em>, to enable the router's DHCP server option. If you already have a DHCP server on your network or you do not want a DHCP server, then select <em>" + share.disable + "</em>.</dd>";
-hidx.page17="<dd>Enter a numerical value for the DHCP server to start with when issuing IP addresses. Do not start with 192.168.1.1 (the router's own IP address).</dd>";
+hidx.page17="<dd>Enter a numerical value for the DHCP server to start with when issuing IP addresses. Do not start with 192.168.1.1 as this is the router's own IP address.</dd>";
 hidx.page18="<dd>Enter the maximum number of computers that you want the DHCP server to assign IP addresses to. The absolute maximum is 253, possible if 192.168.1.2 is your starting IP address.</dd>";
-hidx.page19="<dd>The Client Lease Expiration is the amount of time a network user will be allowed connection to the router with their current dynamic IP address. Enter the amount of time, in minutes, that the user will be \"leased\" this dynamic IP address.</dd>";
-hidx.page20="<dd>The Domain Name System (DNS) is how the Internet translates domain or website names into Internet addresses or URLs. Your ISP will provide you with at least one DNS Server IP address. If you wish to utilize another, enter that IP address in one of these fields. You can enter up to three DNS Server IP addresses here. The router will utilize these for quicker access to functioning DNS servers. Additionally you can enable the <em>" + idx.ignore_wan_dns + "</em> checkbox to ensure the ISP's DNS is ignored.</dd>";
+hidx.page19="<dd>The client's Lease Expiration is the amount of time a network device will be allowed a connection to the router with their current dynamic/static IP address. Enter the amount of time, in minutes, that the device will be \"leased\" with this dynamic/static IP address.</dd>";
+hidx.page20="<dd>The Domain Name System (DNS) is how the Internet translates domain or website names into Internet addresses or URLs. Your ISP will provide you with at least one DNS Server IP address. If you wish to use another, enter that IP address in one of these fields. You can enter up to three DNS Server IP addresses here. The router will use these for quicker access to functioning DNS servers. Additionally you can enable the <em>" + idx.ignore_wan_dns + "</em> checkbox to ensure the ISP's DNS is ignored.</dd>";
 hidx.page21="<dd>The Windows Internet Naming Service (WINS) manages each PC's interaction with the Internet. If you use a WINS server, enter that server's IP address here. Otherwise, leave this blank.</dd>";
-hidx.dns_dnsmasq="<dd>dnsmasq's local DNS server resolves all host names known to the router from DHCP (dynamic and static) as well as forwarding and caching DNS entries from remote DNS servers. Enabling dnsmasq for DNS enables DHCP clients on the LAN to resolve local hostnames, including static and dynamic IP assignments.</dd>";
+hidx.dns_dnsmasq="<dd>The dnsmasq's local DNS server resolves all host names known to the router from DHCP (dynamic and static) as well as forwarding and caching DNS entries from remote DNS servers. Enabling dnsmasq for DNS enables DHCP clients on the LAN to resolve local hostnames, including static and dynamic IP assignments.</dd>";
 hidx.auth_dnsmasq="<dd>DHCP-Authoritative should be set when DD-WRT is the only DHCP server on the network segment (as in most common setups). The DHCP server will return a NAK response to clients that try to register using IP addresses from another netblock.</dd>";
 hidx.force_dnsmasq="<dd>This setting causes all port 53 DNS requests from the LAN to external DNS servers to be redirected to DD-WRT's internal dnsmasq server.</dd>";
 hidx.page22="<dd>Select the time zone for your location, or desired location.</dd><dd>Check all values and click the <em>" + sbutton.save + "</em> button to save your settings. Click the <em>" + sbutton.cancel + "</em> button to cancel your unsaved changes. You can test the settings by connecting to the Internet.</dd>";
 
 var hipv6=new Object();
-hipv6.right2="IPv6 is a the most recent Internet Protocol standard used by electronic devices to exchange data across a packet-switched network. It follows IPv4 as the second version of the Internet Protocol to be formally adopted for general use.";
+hipv6.right2="IPv6 is a the most recent Internet Protocol standard used by electronic devices to exchange data across a packet-switched network.<br /><br />Changes over IPv4 fall primarily under the following categories:<ul><li>Expanded addressing capabilities</li><li>Header format simplification</li><li>Improved support for extensions & options</li><li>Flow labeling capability</li><li>Authentication & privacy capabilities</li></ul>";
 
 // ** DSL ** //
 var dsl=new Object();
@@ -1349,7 +1350,7 @@ var log_out=new Object();
 log_out.titl="Outgoing Log Table";
 log_out.h2="Outgoing Log Table";
 log_out.th_lanip="LAN IP";
-log_out.th_wanip="Destination URL/IP";
+log_out.th_wanip="Destination URL / IP";
 log_out.th_port="Service / Port Number";
 
 // ** Log.asp **//
@@ -2315,9 +2316,9 @@ sipath.status_titl="Status";
 // ** Status_Lan.asp **//
 var status_lan=new Object();
 status_lan.titl="LAN Status";
-status_lan.h2="Local Network";
+status_lan.h2="Local Area Network (LAN)";
 status_lan.legend="LAN Status";
-status_lan.h22="Dynamic Host Configuration Protocol";
+status_lan.h22=idx.dhcp_legend;
 status_lan.legend2="DHCP Status";
 status_lan.legend3="DHCP Clients";
 status_lan.legend4="Active Clients";
@@ -2335,7 +2336,7 @@ hstatus_lan.right8="If you are using the router as a DHCP server, that will be d
 hstatus_lan.right10="By clicking on any MAC address, you will obtain the organizationally unique identifier of the network interface (IEEE Standards OUI database search).";
 
 //help page
-hstatus_lan.page1="<dd>This status screen displays the LAN status and configuration. All information is read-only.</dd><dt>MAC Address</dt><dd>The MAC Address of the LAN interface is displayed here.</dd><dt>IP Address and Subnet Mask</dt><dd>The current IP Address and Subnet Mask of the router, as seen by users on your local area network (LAN), are displayed here.</dd><dt>DHCP Server</dt><dd>The status of the router's DHCP server function is displayed here.</dd><dt>Start/End IP Address</dt><dd>The first and the last IP address the DHCP server can hand out to clients.</dd><dt>DHCP Client List</dt><dd>To show the current IP address leases by the DHCP server, click the <i>DHCP Clients Table</i> button.</dd>";
+hstatus_lan.page1="<dd>This page displays the LAN status and configuration. All information is read-only.</dd><dt>MAC Address</dt><dd>The MAC Address of the LAN interface is displayed here.</dd><dt>IP Address and Subnet Mask</dt><dd>The current IP Address and Subnet Mask of the router, as seen by users on your local area network (LAN), are displayed here.</dd><dt>DHCP Server</dt><dd>The status of the router's DHCP server function is displayed here.</dd><dt>Start/End IP Address</dt><dd>The first and the last IP address the DHCP server can hand out to clients.</dd><dt>DHCP Client List</dt><dd>To show the current IP address leases by the DHCP server, click the <i>DHCP Clients Table</i> button.</dd>";
 
 // ** Status_Bandwidth.asp **//
 var status_band=new Object();
@@ -2391,12 +2392,12 @@ status_router.cputemp="Temperatures";
 
 //help container
 var hstatus_router=new Object();
-hstatus_router.right2="This is the specific name for the router, you had input on the <i>Setup</i> tab under the <i>" + share.routername + "</i> field.";
+hstatus_router.right2="This is the specified router name, you had input on the <i>Setup</i> tab under the <i>" + share.routername + "</i> field.";
 hstatus_router.right4="This is the router's MAC Address, as seen by your ISP.";
 hstatus_router.right6="This is the router's current firmware.";
 hstatus_router.right8="This is time received from the NTP server set on the <em>" + bmenu.setup + " | " + bmenu.setupbasic + "</em> tab.";
-hstatus_router.right10="This is a measure of the time the router has been \"up\" and running.";
-hstatus_router.right12="This is given as three numbers that represent the system load during the last one, five, and fifteen minute periods.";
+hstatus_router.right10="This is the measure of the time the router has been \"up\" and running.";
+hstatus_router.right12="This is obtained from the three numbers that represent the system load during the last one, five, and fifteen minute periods.";
 
 //help page
 hstatus_router.page1="<dd>This status screen displays the router's current status and configuration. All information is read-only.</dd><dt>Firmware Version </dt><dd>The version number of the firmware currently installed is displayed here. Firmware should only be upgraded from the Administration Tab if you experience problems with the router. Visit <a href=\"https:\/\/dd-wrt.com/support/other-downloads/?path=betas\" target=\"_new\">https:\/\/dd-wrt.com/downloads/betas</a> to find updated firmware files.</dd><dt>Current Time</dt><dd>The current date and time is displayed here.</dd><dt>MAC Address </dt><dd>The MAC Address of the Internet interface is displayed here.</dd><dt>Router Name</dt><dd>Shows the configured name of the router.</dd><dt>Router Model</dt><dd>Shows the router vendor and model.</dd><dt>CPU</dt><dd>Shows the CPU type, revision, # of cores, clock speed, load average, & temperature if temp monitoring is supported.</dd><dt>Memory</dt><dd>Shows info on how much RAM is used, free, and allocated to where.,</dd><dt>Host Name</dt><dd>The Host Name is the name of the router.</dd><dt>Configuration Type</dt><dt>IP Address, Subnet Mask, and Default Gateway</dt><dd>The Internet IP Address, Subnet Mask, and Default Gateway IP Address of the router, as seen by external users on the Internet, are displayed here.</dd><dt>DNS</dt><dd>The DNS (Domain Name System) IP Addresses currently used by the router are shown here. Multiple DNS IP settings are common. In most cases, the first available DNS entry is used.</dd><dt>Traffic</dt><dd>This shows your router's Internet traffic (total since last reboot or by month).</dd>";
