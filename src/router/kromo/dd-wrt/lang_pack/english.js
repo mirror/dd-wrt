@@ -1320,7 +1320,7 @@ hidx.force_dnsmasq="<dd>This setting causes all port 53 DNS requests from the LA
 hidx.page22="<dd>Select the time zone for your location, or desired location.</dd><dd>Check all values and click the <em>" + sbutton.save + "</em> button to save your settings. Click the <em>" + sbutton.cancel + "</em> button to cancel your unsaved changes. You can test the settings by connecting to the Internet.</dd>";
 
 var hipv6=new Object();
-hipv6.right2="IPv6 is a network layer IP standard used by electronic devices to exchange data across a packet-switched network. It follows IPv4 as the second version of the Internet Protocol to be formally adopted for general use.";
+hipv6.right2="IPv6 is a the most recent Internet Protocol standard used by electronic devices to exchange data across a packet-switched network. It follows IPv4 as the second version of the Internet Protocol to be formally adopted for general use.";
 
 // ** DSL ** //
 var dsl=new Object();
@@ -1424,13 +1424,15 @@ management.ipv6_radconf="Configuration";
 management.ipv6_dns="Static DNS";
 management.ipv6_prefix="Assigned / Routed Prefix";
 management.ipv6_addr="Router IPv6 Address";
+management.ipv6_dhcp6c_legend="DHCPv6 Client Daemon";
 management.ipv6_dhcp6c_norelease="No Release on Reconnect";
-management.ipv6_dhcp6c_cust="Custom dhcp6c Config";
+management.ipv6_dhcp6c_cust="Custom Configuration";
 management.ipv6_dhcp6c_conf="Configuration";
-management.ipv6_dhcp6s="Enable dhcp6s";
+management.ipv6_dhcp6s_legend="DHCPv6 Server Daemon";
+management.ipv6_dhcp6s="Enable Daemon";
 management.ipv6_dhcp6s_seq_ips="Sequential IPs";
 management.ipv6_dhcp6s_hosts="Custom Hosts";
-management.ipv6_dhcp6s_cust="Custom dhcp6s Config";
+management.ipv6_dhcp6s_cust="Custom Configuration";
 management.ipv6_dhcp6s_conf="Configuration";
 management.ipv6_tun_end_ipv4="Tunnel Endpoint IPv4 Address";
 management.ipv6_tun_client_addr="Tunnel Client IPv6 Address";
