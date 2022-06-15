@@ -1462,7 +1462,9 @@ struct wifi_channels *mac80211_get_channels(struct unl *local_unl, const char *i
 		nooverlap = 0;
 
 	if (has_ad(interface)) {
-		return ghz60channels;
+		list = (struct wifi_channels *)calloc(sizeof(ghz60channels), 1);
+		memcpy(list, ghz60channels, sizeof(ghz60channels));
+		return list;
 	}
 	if (!nocache) {
 		list = getcache(interface, country);
