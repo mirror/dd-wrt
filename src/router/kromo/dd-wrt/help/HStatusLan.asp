@@ -5,7 +5,7 @@
 			<div class="navig"><a href="index.asp">Index</a> | <a href="javascript:self.close();"><% tran("sbutton.clos"); %></a></div>
 		</div>
 		<div id="content">
-			<h2><% tran("bmenu.statuLAN"); %></h2>
+			<h2><% tran("status_lan.h2"); %></h2>
 			<dl>
 				<% tran("hstatus_lan.page1"); %>
 			</dl>
