@@ -2895,6 +2895,7 @@ ieee80211_rx_h_mesh_fwding(struct ieee80211_rx_data *rx)
 		struct mesh_path *mppath;
 		char *proxied_addr;
 		char *mpp_addr;
+		bool update = false;
 
 		if (is_multicast_ether_addr(hdr->addr1)) {
 			mpp_addr = hdr->addr3;
@@ -2914,12 +2915,18 @@ ieee80211_rx_h_mesh_fwding(struct ieee80211_rx_data *rx)
 			mpp_path_add(sdata, proxied_addr, mpp_addr);
 		} else {
 			spin_lock_bh(&mppath->state_lock);
-			if (!ether_addr_equal(mppath->mpp, mpp_addr))
+			if (!ether_addr_equal(mppath->mpp, mpp_addr)) {
+				update = true;
 				memcpy(mppath->mpp, mpp_addr, ETH_ALEN);
+			}
 			mppath->exp_time = jiffies;
 			spin_unlock_bh(&mppath->state_lock);
 		}
 		rcu_read_unlock();
+
+		/* Flush any hdr, if external device moved to a new gate */
+		if (update)
+			mesh_hdr_cache_flush(mppath, true);
 	}
 
 	/* Frame has reached destination.  Don't forward */

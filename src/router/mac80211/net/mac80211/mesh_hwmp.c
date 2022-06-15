@@ -18,8 +18,6 @@
 
 #define MAX_PREQ_QUEUE_LEN	64
 
-static void mesh_queue_preq(struct mesh_path *, u8);
-
 static inline u32 u32_field_get(const u8 *preq_elem, int offset, bool ae)
 {
 	if (ae)
@@ -978,7 +976,7 @@ void mesh_rx_path_sel_frame(struct ieee80211_sub_if_data *sdata,
  * Locking: the function must be called from within a rcu read lock block.
  *
  */
-static void mesh_queue_preq(struct mesh_path *mpath, u8 flags)
+void mesh_queue_preq(struct mesh_path *mpath, u8 flags)
 {
 	struct ieee80211_sub_if_data *sdata = mpath->sdata;
 	struct ieee80211_if_mesh *ifmsh = &sdata->u.mesh;
@@ -1256,6 +1254,10 @@ int mesh_nexthop_lookup(struct ieee80211_sub_if_data *sdata,
 		memcpy(hdr->addr1, next_hop->sta.addr, ETH_ALEN);
 		memcpy(hdr->addr2, sdata->vif.addr, ETH_ALEN);
 		ieee80211_mps_set_frame_flags(sdata, next_hop, hdr);
+		/* Cache the whole header so as to use next time rather than resolving
+		 * and building it every time
+		 */
+		mesh_cache_hdr(sdata, skb, mpath);
 		return 0;
 	}
 
