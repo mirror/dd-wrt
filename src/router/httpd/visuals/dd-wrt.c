@@ -111,11 +111,18 @@ int is_ap(char *prefix)
 	return nvram_match(ap, "ap") || nvram_match(ap, "wdsap");
 }
 
+int is_station(char *prefix)
+{
+	char sta[16];
+	sprintf(sta, "%s_mode", prefix);
+	return nvram_match(sta, "sta") || nvram_match(sta, "wdssta") || nvram_match(sta, "wdssta_mtik");
+}
+
 int is_supplicant(char *prefix)
 {
 	char sta[16];
 	sprintf(sta, "%s_mode", prefix);
-	return nvram_match(sta, "sta") || nvram_match(sta, "wdssta") || nvram_match(sta, "wdssta_mtik") || nvram_match(sta, "mesh");
+	return is_station(prefix) || nvram_match(sta, "mesh");
 }
 
 void show_caption_pp(webs_t wp, const char *class, const char *caption, const char *pre, const char *post)
@@ -3655,11 +3662,13 @@ static void internal_ej_show_wireless_single(webs_t wp, char *prefix)
 	websWrite(wp, "\" /></div>\n");
 
 #ifdef HAVE_MADWIFI
-	sprintf(wl_bssid, "%s_bssid", prefix);
-	websWrite(wp, "<div class=\"setting\">\n");
-	show_caption(wp, "label", "wl_basic.bssid", NULL);
-	websWrite(wp, "<input size=\"20\" maxlength=\"17\" name=\"%s_bssid\" onblur=\"valid_macs_all(this)\" value=\"%s\" />", prefix, nvram_safe_get(wl_bssid));
-	websWrite(wp, "</div>\n");
+	if (is_station(prefix)) {
+		sprintf(wl_bssid, "%s_bssid", prefix);
+		websWrite(wp, "<div class=\"setting\">\n");
+		show_caption(wp, "label", "wl_basic.bssid", NULL);
+		websWrite(wp, "<input size=\"20\" maxlength=\"17\" name=\"%s_bssid\" onblur=\"valid_macs_all(this)\" value=\"%s\" />", prefix, nvram_safe_get(wl_bssid));
+		websWrite(wp, "</div>\n");
+	}
 #endif
 
 #ifdef HAVE_MADWIFI
@@ -4306,11 +4315,13 @@ static void internal_ej_show_wireless_single(webs_t wp, char *prefix)
 	websWrite(wp, "\" /></div>\n");
 
 #ifdef HAVE_MADWIFI
-	sprintf(wl_bssid, "%s_bssid", prefix);
-	websWrite(wp, "<div class=\"setting\">\n");
-	show_caption(wp, "label", "wl_basic.bssid", NULL);
-	websWrite(wp, "<input size=\"20\" maxlength=\"17\" name=\"%s_bssid\" onblur=\"valid_macs_all(this)\" value=\"%s\" />", prefix, nvram_safe_get(wl_bssid));
-	websWrite(wp, "</div>\n");
+	if (is_station(prefix)) {
+		sprintf(wl_bssid, "%s_bssid", prefix);
+		websWrite(wp, "<div class=\"setting\">\n");
+		show_caption(wp, "label", "wl_basic.bssid", NULL);
+		websWrite(wp, "<input size=\"20\" maxlength=\"17\" name=\"%s_bssid\" onblur=\"valid_macs_all(this)\" value=\"%s\" />", prefix, nvram_safe_get(wl_bssid));
+		websWrite(wp, "</div>\n");
+	}
 #endif
 #if defined(HAVE_RT2880) && !defined(HAVE_MT76)
 	if (is_ap(prefix)
