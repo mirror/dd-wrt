@@ -16,6 +16,7 @@ body a:hover,
 body a:link:hover,
 #ip_count:hover,
 [title*='Search']:hover,
+[title*='Chain']:hover,
 [title*='Monitoring']:hover {
   color: #5cb3ff;
 }

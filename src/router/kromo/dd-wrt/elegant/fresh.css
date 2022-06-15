@@ -112,6 +112,7 @@ input.button[disabled]:hover {
 }
 #ip_count:hover,
 [title*='Search']:hover,
+[title*='Chain']:hover,
 [title*='Monitoring']:hover {
 	color: #00f;
 }
