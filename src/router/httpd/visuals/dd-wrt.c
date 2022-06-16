@@ -4930,8 +4930,8 @@ static void internal_ej_show_wireless_single(webs_t wp, char *prefix)
 	websWrite(wp, "<div class=\"center\">\n");
 	websWrite(wp, "<script type=\"text/javascript\">\n");
 	websWrite(wp, "//<![CDATA[\n");
-	websWrite(wp, "	document.write(\"<input class=\\\"button\\\" type=\\\"button\\\" value=\\\"Always On\\\"  onclick=\\\"setWlTimer('all',true, %d);\\\" />\");\n", inst);
-	websWrite(wp, "	document.write(\"<input class=\\\"button\\\" type=\\\"button\\\" value=\\\"Always Off\\\" onclick=\\\"setWlTimer('all',false, %d);\\\" />\");\n", inst);
+	websWrite(wp, "	document.write(\"<input class=\\\"button\\\" type=\\\"button\\\" value=\\\"\" + sbutton.allways_on + \"\\\"  onclick=\\\"setWlTimer('all',true, %d);\\\" />\");\n", inst);
+	websWrite(wp, "	document.write(\"<input class=\\\"button\\\" type=\\\"button\\\" value=\\\"\" + sbutton.allways_off + \"\\\" onclick=\\\"setWlTimer('all',false, %d);\\\" />\");\n", inst);
 	websWrite(wp, "//]]>\n");
 	websWrite(wp, "</script>\n");
 	websWrite(wp, "</div>\n");
