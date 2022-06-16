@@ -1,10 +1,10 @@
 <div class="setting">
 	<div class="label"><% tran("share.usrname"); %></div>
-	<input name="ppp_username" size="40" maxlength="63" onblur="valid_name(this,share.usrname)" value="<% nvram_selget("ppp_username"); %>" />
+	<input name="ppp_username" size="30" maxlength="63" onblur="valid_name(this,share.usrname)" value="<% nvram_selget("ppp_username"); %>" />
 </div>
 <div class="setting">
 	<div class="label"><% tran("share.passwd"); %></div>
-	<input id="ppp_passwd" name="ppp_passwd" size="40" maxlength="63" onblur="valid_name(this,share.passwd)" type="password" autocomplete="new-password" value="<% nvram_selget("ppp_passwd"); %>" />&nbsp;&nbsp;&nbsp;
+	<input id="ppp_passwd" name="ppp_passwd" size="30" maxlength="63" onblur="valid_name(this,share.passwd)" type="password" autocomplete="new-password" value="<% nvram_selget("ppp_passwd"); %>" />&nbsp;&nbsp;&nbsp;
 	<input type="checkbox" name="_ppp_passwd_unmask" value="0" onclick="setElementMask('ppp_passwd', this.checked)" >&nbsp;<% tran("share.unmask"); %></input>
 </div>
 <div class="setting">

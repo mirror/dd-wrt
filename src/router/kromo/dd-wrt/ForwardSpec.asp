@@ -31,15 +31,12 @@ function to_apply(F) {
 var update;
 
 addEvent(window, "load", function() {
-	
 	update = new StatusbarUpdate();
 	update.start();
-
 });
 
 addEvent(window, "unload", function() {
 	update.stop();
-
 });
 	
 		//]]>
@@ -47,7 +44,6 @@ addEvent(window, "unload", function() {
 	</head>
 
 	<body class="gui">
-		
 		<div id="wrapper">
 			<div id="content">
 				<div id="header">
@@ -90,10 +86,10 @@ addEvent(window, "unload", function() {
 							</fieldset><br />
 							<div class="submitFooter">
 								<script type="text/javascript">
-					//<![CDATA[
-					submitFooterButton(1,1);
-					//]]>
-					</script>
+								//<![CDATA[
+								submitFooterButton(1,1);
+								//]]>
+								</script>
 							</div>
 						</form>
 					</div>

@@ -374,7 +374,7 @@ EJ_VISIBLE void ej_show_connectiontype(webs_t wp, int argc, char_t ** argv)
 	websWrite(wp, "<option value=\"heartbeat\" %s >HeartBeat Signal</option>\n", nvram_selmatch(wp, "wan_proto", "heartbeat") ? "selected=\"selected\"" : "");
 #endif
 #ifdef HAVE_IPETH
-	websWrite(wp, "<option value=\"iphone\" %s >IPhone Tethering</option>\n", nvram_selmatch(wp, "wan_proto", "iphone") ? "selected=\"selected\"" : "");
+	websWrite(wp, "<option value=\"iphone\" %s >iPhone Tethering</option>\n", nvram_selmatch(wp, "wan_proto", "iphone") ? "selected=\"selected\"" : "");
 #endif
 #ifdef HAVE_3G
 #ifdef HAVE_BUFFALO
