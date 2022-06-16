@@ -77,7 +77,7 @@ EJ_VISIBLE void ej_show_mdhcp(webs_t wp, int argc, char_t ** argv)
 		// on off
 		websWrite(wp, "<td>\n");
 		sprintf(vlan_name, "mdhcpon%d", count);
-		showOptions(wp, vlan_name, "On Off", dhcpon);
+		showOptions_trans(wp, vlan_name, "On Off", (char *[]) { "share.on", "share.off" }, dhcpon);
 		websWrite(wp, "</td>\n");
 		// start
 		websWrite(wp, "<td>\n");
@@ -119,7 +119,7 @@ EJ_VISIBLE void ej_show_mdhcp(webs_t wp, int argc, char_t ** argv)
 		// on off
 		websWrite(wp, "<td>\n");
 		sprintf(vlan_name, "mdhcpon%d", totalcount);
-		showOptions(wp, vlan_name, "On Off", "");
+		showOptions_trans(wp, vlan_name, "On Off", (char *[]) { "share.on", "share.off" }, "");
 		websWrite(wp, "</td>\n");
 		// start
 		websWrite(wp, "<td>\n");
