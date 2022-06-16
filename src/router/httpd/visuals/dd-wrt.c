@@ -1372,6 +1372,34 @@ static void showOptions(webs_t wp, char *propname, char *names, char *select)
 	websWrite(wp, "//]]>\n</script>\n</select>\n");
 }
 
+static void showOptions_trans(webs_t wp, char *propname, char *names, char **trans, char *select)
+{
+	char *next;
+	char var[80];
+	int cnt=0;
+
+	websWrite(wp, "<select name=\"%s\">\n", propname);
+	websWrite(wp, "<script type=\"text/javascript\">\n//<![CDATA[\n");
+	foreach(var, names, next) {
+		websWrite(wp, "document.write(\"<option value=\\\"%s\\\" %s >\" + %s + \"</option>\");\n", var, !strcmp(var, select) ? "selected=\\\"selected\\\"" : "", names[cnt++]);
+	}
+	websWrite(wp, "//]]>\n</script>\n</select>\n");
+}
+
+static void showOptions_ext_trans(webs_t wp, char *propname, char *names, char **trans, char *select, int disabled)
+{
+	char *next;
+	char var[80];
+	int cnt=0;
+
+	websWrite(wp, "<select name=\"%s\"%s>\n", propname, disabled ? " disabled=\"true\"" : "");
+	websWrite(wp, "<script type=\"text/javascript\">\n//<![CDATA[\n");
+	foreach(var, names, next) {
+		websWrite(wp, "document.write(\"<option value=\\\"%s\\\" %s >\" + %s + \"</option>\");\n", var, !strcmp(var, select) ? "selected=\\\"selected\\\"" : "",  names[cnt++]);
+	}
+	websWrite(wp, "//]]>\n</script>\n</select>\n");
+}
+
 static void showOptionsNames(webs_t wp, char *label, char *propname, char *valuenames, char **names, char *select)
 {
 	char *next;
