@@ -179,6 +179,20 @@ void show_caption_pp(webs_t wp, const char *class, const char *caption, const ch
 void show_caption(webs_t wp, const char *class, const char *caption, const char *ext);
 void show_caption_simple(webs_t wp, const char *caption);
 void show_ip(webs_t wp, char *prefix, char *var, int nm, char *type);
-
+void showRadioNoDef(webs_t wp, char *propname, char *nvname, int val);
+#ifdef HAVE_MADWIFI
+void showAutoOption(webs_t wp, char *propname, char *nvname, int nodisable);
+#endif
+static void showOptions(webs_t wp, char *propname, char *names, char *select);
+static void showOptions_trans(webs_t wp, char *propname, char *names, char **trans, char *select);
+static void showOptions_ext_trans(webs_t wp, char *propname, char *names, char **trans, char *select, int disabled);
+static void showOptionsNames(webs_t wp, char *label, char *propname, char *valuenames, char **names, char *select);
+static void showIfOptions_ext(webs_t wp, char *propname, char *names, char *select, int disabled);
+static void showIfOptions(webs_t wp, char *propname, char *names, char *select);
+static void showOptionsChoose(webs_t wp, char *propname, char *names, char *select);
+static void showOptionsLabel(webs_t wp, char *labelname, char *propname, char *names, char *select);
+void show_inputlabel(webs_t wp, char *labelname, char *propertyname, int propertysize, char *inputclassname, int inputmaxlength);
+void show_custominputlabel(webs_t wp, char *labelname, char *propertyname, char *property, int propertysize);
+void show_bgscan_options(webs_t wp, char *prefix);
 
 #endif				/* _httpd_h_ */
