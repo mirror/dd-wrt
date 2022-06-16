@@ -82,6 +82,9 @@ select[onchange*='ServiceTable'] {
   width: inherit;
   height: inherit;
 }
+select[name*='bondingif'], select[name*='bondingattach'] {
+  vertical-align: unset;
+}
 #score {
   color: #000;
   font-size: 85%;
