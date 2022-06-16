@@ -170,6 +170,7 @@ share.minutes="Minuten";
 share.oui="OUI Suche";
 share.sttic="Statisch";
 share.off="Aus";
+share.on="An";
 share.dynamic="Dynamisch";
 share.connecting="Verbinden";
 share.connect="Verbinden";
