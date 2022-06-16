@@ -49,10 +49,10 @@ EJ_VISIBLE void ej_show_bridgenames(webs_t wp, int argc, char_t ** argv)
 	show_caption_pp(wp, NULL, "networking.stp", "<th>", "</th>\n");
 #ifdef HAVE_MSTP
 	char *stpoptions = "STP RSTP MSTP Off";
-	char *stpoptions_trans[] = {"share.stp", "share.rstp", "share.mstp", "share.off"};
+	char *stpoptions_trans[] = { "share.stp", "share.rstp", "share.mstp", "share.off" };
 #else
 	char *stpoptions = "STP Off";
-	char *stpoptions_trans[] = {"share.stp", "share.off"};
+	char *stpoptions_trans[] = { "share.stp", "share.off" };
 #endif
 	show_caption_pp(wp, NULL, "networking.snooping", "<th>", "</th>\n");
 	show_caption_pp(wp, NULL, "networking.prio", "<th>", "</th>\n");
@@ -73,7 +73,7 @@ EJ_VISIBLE void ej_show_bridgenames(webs_t wp, int argc, char_t ** argv)
 		websWrite(wp, "</td>");
 		sprintf(bridge_name, "bridgemcastbr%d", count);
 		websWrite(wp, "<td>");
-		showOptions_trans(wp, bridge_name, "On Off", (char *[]){"share.on", "share.off"}, nvram_default_matchi("br0_mcast", 1, 0) ? "On" : "Off");
+		showOptions_trans(wp, bridge_name, "On Off", (char *[]) { "share.on", "share.off" }, nvram_default_matchi("br0_mcast", 1, 0) ? "On" : "Off");
 		websWrite(wp, "</td>");
 		sprintf(bridge_name, "bridgeprio%d", count);
 		websWrite(wp, "<td>");
@@ -130,7 +130,7 @@ EJ_VISIBLE void ej_show_bridgenames(webs_t wp, int argc, char_t ** argv)
 		char mcast[32];
 		sprintf(mcast, "%s_mcast", bridge);
 		websWrite(wp, "<td>");
-		showOptions_trans(wp, bridge_name, "On Off", (char *[]){"share.on", "share.off"}, nvram_default_matchi(mcast, 1, 0) ? "On" : "Off");
+		showOptions_trans(wp, bridge_name, "On Off", (char *[]) { "share.on", "share.off" }, nvram_default_matchi(mcast, 1, 0) ? "On" : "Off");
 		websWrite(wp, "</td>");
 		sprintf(bridge_name, "bridgeprio%d", count);
 		websWrite(wp, "<td>");
@@ -189,7 +189,7 @@ EJ_VISIBLE void ej_show_bridgenames(webs_t wp, int argc, char_t ** argv)
 		websWrite(wp, "</td>");
 		sprintf(bridge_name, "bridgemcastbr%d", count);
 		websWrite(wp, "<td>");
-		showOptions_trans(wp, bridge_name, "On Off", (char *[]){"share.on","share.off"}, "Off");
+		showOptions_trans(wp, bridge_name, "On Off", (char *[]) { "share.on", "share.off" }, "Off");
 		websWrite(wp, "</td>");
 		sprintf(bridge_name, "bridgeprio%d", i);
 		websWrite(wp, "<td>");
@@ -284,10 +284,11 @@ static void show_bridgeifname(webs_t wp, char *bridges, char *devs, int count, c
 		hasstp = 0;
 	websWrite(wp, "<td>");
 	sprintf(vlan_name, "bridgeifstp%d", count);
-	if (hasstp)
-		showOptions_trans(wp, vlan_name, "On Off", (char *[]){"share.on", "share.off"}, stp ? !strcmp(stp, "1") ? "On" : "Off" : "On");
-	else
-		showOptions_ext_trans(wp, vlan_name, "Off", (char *[]){"share.off"}, "Off", 1);
+	if (hasstp) {
+		showOptions_trans(wp, vlan_name, "On Off", (char *[]) { "share.on", "share.off" }, stp ? !strcmp(stp, "1") ? "On" : "Off" : "On");
+	} else {
+		showOptions_ext_trans(wp, vlan_name, "Off", (char *[]) { "share.off" }, "Off", 1);
+	}
 	websWrite(wp, "</td>");
 #endif
 	sprintf(vlan_name, "bridgeifprio%d", count);
