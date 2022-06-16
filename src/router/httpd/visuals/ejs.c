@@ -2222,8 +2222,7 @@ EJ_VISIBLE void ej_do_pagehead(webs_t wp, int argc, char_t ** argv)	// Eko
 #ifdef HAVE_FREECWMP
 	websWrite(wp, "<script type=\"text/javascript\" src=\"lang_pack/freecwmp-english.js\"></script>\n");
 #endif
-	websWrite(wp, "<link type=\"text/css\" rel=\"stylesheet\" href=\"style/%s/style.css\" />\n<!--[if IE]><link type=\"text/css\" rel=\"stylesheet\" href=\"style/common_style_ie.css\" /><![endif]-->\n",
-		  style);
+	websWrite(wp, "<link type=\"text/css\" rel=\"stylesheet\" href=\"style/%s/style.css\" />\n<!--[if IE]><link type=\"text/css\" rel=\"stylesheet\" href=\"style/common_style_ie.css\" /><![endif]-->\n", style);
 #ifdef HAVE_MICRO
 	websWrite(wp, "<link type=\"text/css\" rel=\"stylesheet\" href=\"style/elegant/fresh.css\" />\n");
 #else
