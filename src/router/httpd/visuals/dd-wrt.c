@@ -1376,7 +1376,7 @@ static void showOptions_trans(webs_t wp, char *propname, char *names, char **tra
 {
 	char *next;
 	char var[80];
-	int cnt=0;
+	int cnt = 0;
 
 	websWrite(wp, "<select name=\"%s\">\n", propname);
 	websWrite(wp, "<script type=\"text/javascript\">\n//<![CDATA[\n");
@@ -1390,12 +1390,12 @@ static void showOptions_ext_trans(webs_t wp, char *propname, char *names, char *
 {
 	char *next;
 	char var[80];
-	int cnt=0;
+	int cnt = 0;
 
 	websWrite(wp, "<select name=\"%s\"%s>\n", propname, disabled ? " disabled=\"true\"" : "");
 	websWrite(wp, "<script type=\"text/javascript\">\n//<![CDATA[\n");
 	foreach(var, names, next) {
-		websWrite(wp, "document.write(\"<option value=\\\"%s\\\" %s >\" + %s + \"</option>\");\n", var, !strcmp(var, select) ? "selected=\\\"selected\\\"" : "",  names[cnt++]);
+		websWrite(wp, "document.write(\"<option value=\\\"%s\\\" %s >\" + %s + \"</option>\");\n", var, !strcmp(var, select) ? "selected=\\\"selected\\\"" : "", names[cnt++]);
 	}
 	websWrite(wp, "//]]>\n</script>\n</select>\n");
 }
@@ -5016,7 +5016,7 @@ EJ_VISIBLE void ej_show_wireless(webs_t wp, int argc, char_t ** argv)
 		char *wl_regmode = nvram_default_get("wl_reg_mode", "off");
 		websWrite(wp, "<select name=\"wl_reg_mode\">\n");
 		websWrite(wp, "<script type=\"text/javascript\">\n//<![CDATA[\n");
-		websWrite(wp, "document.write(\"<option value=\\\"off\\\" %s >Off</option>\");\n", !strcmp(wl_regmode, "off") ? "selected=\\\"selected\\\"" : "");
+		websWrite(wp, "document.write(\"<option value=\\\"off\\\" %s > \" + share.off + \"</option>\");\n", !strcmp(wl_regmode, "off") ? "selected=\\\"selected\\\"" : "");
 		websWrite(wp, "document.write(\"<option value=\\\"h\\\" %s >802.11h Loose</option>\");\n", !strcmp(wl_regmode, "h") ? "selected=\\\"selected\\\"" : "");
 		websWrite(wp, "document.write(\"<option value=\\\"h_strict\\\" %s >802.11h Strict</option>\");\n", !strcmp(wl_regmode, "h_strict") ? "selected=\\\"selected\\\"" : "");
 		websWrite(wp, "document.write(\"<option value=\\\"d\\\" %s >802.11d</option>\");\n", !strcmp(wl_regmode, "d") ? "selected=\\\"selected\\\"" : "");
@@ -5026,7 +5026,7 @@ EJ_VISIBLE void ej_show_wireless(webs_t wp, int argc, char_t ** argv)
 		char *wl_tpcdb = nvram_default_get("wl_tpc_db", "off");
 		websWrite(wp, "<select name=\"wl_tpc_db\">\n");
 		websWrite(wp, "<script type=\"text/javascript\">\n//<![CDATA[\n");
-		websWrite(wp, "document.write(\"<option value=\\\"off\\\" %s >0 (Off)</option>\");\n", !strcmp(wl_tpcdb, "off") ? "selected=\\\"selected\\\"" : "");
+		websWrite(wp, "document.write(\"<option value=\\\"off\\\" %s >0 (\" + share.off + \")</option>\");\n", !strcmp(wl_tpcdb, "off") ? "selected=\\\"selected\\\"" : "");
 		websWrite(wp, "document.write(\"<option value=\\\"2\\\" %s >2</option>\");\n", !strcmp(wl_tpcdb, "2") ? "selected=\\\"selected\\\"" : "");
 		websWrite(wp, "document.write(\"<option value=\\\"3\\\" %s >3</option>\");\n", !strcmp(wl_tpcdb, "3") ? "selected=\\\"selected\\\"" : "");
 		websWrite(wp, "document.write(\"<option value=\\\"4\\\" %s >4\");\n", !strcmp(wl_tpcdb, "4") ? "selected=\\\"selected\\\"" : "");
