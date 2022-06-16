@@ -48,7 +48,6 @@ addEvent(window, "unload", function() {
 	</head>
 
 	<body class="gui">
-		
 		<div id="wrapper">
 			<div id="content">
 				<div id="header">
@@ -70,8 +69,8 @@ addEvent(window, "unload", function() {
 								<table class="table" cellspacing="5" summary="ports triggering table">
 									<tr>
 										<td></td>
-										<th colspan="2"><% tran("trforward.trrange"); %></th>
-										<th colspan="2"><% tran("trforward.fwdrange"); %></th>
+										<th class="center" colspan="2"><% tran("trforward.trrange"); %></th>
+										<th class="center" colspan="3"><% tran("trforward.fwdrange"); %></th>
 										<td></td>
 									</tr>
 									<tr>
@@ -81,7 +80,7 @@ addEvent(window, "unload", function() {
 										<th><% tran("share.proto"); %></th>
 										<th><% tran("share.start"); %></th>
 										<th><% tran("share.end"); %></th>
-										<th class="center"><% tran("share.enable"); %></th>
+										<th class="center" width="10%"><% tran("share.enable"); %></th>
 										<th class="center" width="10%"><% tran("share.actiontbl"); %></th>
 									</tr>
 									<% show_triggering(); %>
