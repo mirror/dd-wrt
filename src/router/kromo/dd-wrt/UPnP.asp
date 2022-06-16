@@ -137,7 +137,6 @@ addEvent(window, "unload", function() {
 	</head>
 
 	<body class="gui">
-		
 		<div id="wrapper">
 			<div id="content">
 				<div id="header">
@@ -152,22 +151,20 @@ addEvent(window, "unload", function() {
 							<input type="hidden" name="change_action" />
 							<input type="hidden" name="submit_type" />
 							<input type="hidden" name="commit" value="1" />
-							
 							<input type="hidden" name="remove" />
-							
+
 							<h2><% tran("upnp.h2"); %></h2>
-							
 							<fieldset>
 								<legend><% tran("upnp.legend"); %></legend>
 								<table class="table" cellspacing="6" id="upnp_table" summary="UPnP table">
 									<tr>
 										<th width="30%"><% tran("share.descr"); %></th>
-										<th><% tran("share.enabled"); %></th>
+										<th width="10%" class="center"><% tran("share.enabled"); %></th>
 										<th><% tran("share.from2"); %>&nbsp;(WAN)</th>
 										<th><% tran("share.to2"); %>&nbsp;(LAN)</th>
 										<th><% tran("share.ip"); %></th>
 										<th><% tran("share.proto"); %></th>
-										<th class="center"><% tran("share.del"); %></th>
+										<th width="10%" class="center"><% tran("share.del"); %></th>
 									</tr>
 								</table><br />
 								<div class="center">
@@ -179,7 +176,6 @@ addEvent(window, "unload", function() {
 									</script>
 								</div>
 							</fieldset><br />
-							
 							<fieldset>
 								<legend><% tran("upnp.legend2"); %></legend>
 								<div class="setting">
@@ -193,7 +189,6 @@ addEvent(window, "unload", function() {
 									<input class="spaceradio" type="radio" name="upnpcas" value="0" <% nvc("upnpcas","0"); %> /><% tran("share.disable"); %>
 								</div>
 							</fieldset><br />
-							
 							<div class="submitFooter">
 								<script type="text/javascript">
 								//<![CDATA[

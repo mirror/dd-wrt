@@ -7,12 +7,12 @@ function submitcheck(F) {
 }
 
 function to_submit(F) {
-    submitcheck(F);
-    apply(F);
+	submitcheck(F);
+	apply(F);
 }
 function to_apply(F) {
-    submitcheck(F);
-    applytake(F);
+	submitcheck(F);
+	applytake(F);
 }
 
 function setDMZ(val) {
@@ -26,12 +26,10 @@ addEvent(window, "load", function() {
 	
 	update = new StatusbarUpdate();
 	update.start();
-	
 });
 	
 addEvent(window, "unload", function() {
 	update.stop();
-
 });
 	
 		//]]>
@@ -39,12 +37,11 @@ addEvent(window, "unload", function() {
 	</head>
 
 	<body class="gui">
-		
 		<div id="wrapper">
 			<div id="content">
 				<div id="header">
 					<div id="logo"><h1><% show_control(); %></h1></div>
-				<% do_menu("ForwardSpec.asp","DMZ.asp"); %>
+						<% do_menu("ForwardSpec.asp","DMZ.asp"); %>
 				</div>
 				<div id="main">
 					<div id="contents">
@@ -53,31 +50,29 @@ addEvent(window, "unload", function() {
 							<input type="hidden" name="action" value="Apply" />
 							<input type="hidden" name="change_action" />
 							<input type="hidden" name="submit_type" />
-							
+
 							<h2><% tran("dmz.h2"); %></h2>
-							
 							<fieldset>
 								<legend><% tran("dmz.legend"); %></legend>
 								<div class="setting">
 									<div class="label"><% tran("dmz.serv"); %></div>
 									<input class="spaceradio" type="radio" value="1" name="dmz_enable" onclick="setDMZ(this.value)" <% nvc("dmz_enable", "1"); %> /><% tran("share.enable"); %>&nbsp;
-					<input class="spaceradio" type="radio" value="0" name="dmz_enable" onclick="setDMZ(this.value)" <% nvc("dmz_enable", "0"); %> /><% tran("share.disable"); %>
-				</div>
-				<div class="setting">
-					<div class="label"><% tran("dmz.host"); %></div>
-					<% prefix_ip_get("lan_ipaddr",1); %>
-					<input class="num" maxlength="3" size="3" name="dmz_ipaddr" value="<% nvg("dmz_ipaddr"); %>" onblur="valid_range(this,1,254,dmz.host)" />
-				</div>
-				</fieldset><br />
-
-			<div class="submitFooter">
-				<script type="text/javascript">
-				//<![CDATA[
-				submitFooterButton(1,1);
-				//]]>
-				</script>
-			</div>
-			</form>
+									<input class="spaceradio" type="radio" value="0" name="dmz_enable" onclick="setDMZ(this.value)" <% nvc("dmz_enable", "0"); %> /><% tran("share.disable"); %>
+								</div>
+								<div class="setting">
+									<div class="label"><% tran("dmz.host"); %></div>
+									<% prefix_ip_get("lan_ipaddr",1); %>
+									<input class="num" maxlength="3" size="3" name="dmz_ipaddr" value="<% nvg("dmz_ipaddr"); %>" onblur="valid_range(this,1,254,dmz.host)" />
+								</div>
+							</fieldset><br />
+							<div class="submitFooter">
+								<script type="text/javascript">
+								//<![CDATA[
+								submitFooterButton(1,1);
+								//]]>
+								</script>
+							</div>
+						</form>
 					</div>
 				</div>
 				<div id="helpContainer">

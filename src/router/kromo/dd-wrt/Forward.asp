@@ -48,7 +48,6 @@ addEvent(window, "unload", function() {
 	</head>
 
 	<body class="gui">
-		
 		<div id="wrapper">
 			<div id="content">
 				<div id="header">
@@ -65,7 +64,6 @@ addEvent(window, "unload", function() {
 							<input type="hidden" name="del_value" />
 							<input type="hidden" name="forward_port" value="13" />
 							<h2><% tran("prforward.h2"); %></h2>
-							
 							<fieldset>
 								<legend><% tran("prforward.legend"); %></legend>
 								<table class="table" cellspacing="5" summary="port forwarding table">
@@ -75,7 +73,7 @@ addEvent(window, "unload", function() {
 										<th><% tran("share.end"); %></th>
 										<th><% tran("share.proto"); %></th>
 										<th><% tran("share.ip"); %></th>
-										<th class="center"><% tran("share.enable"); %></th>
+										<th class="center" width="10%"><% tran("share.enable"); %></th>
 										<th class="center" width="10%"><% tran("share.actiontbl"); %></th>
 									</tr>
 									<% show_forward(); %>
