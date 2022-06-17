@@ -7,6 +7,9 @@ fieldset {
   background: #f6f6f6;
   border: 1px solid #ccc;
 }
+.dark_fs_bg {
+  background: #f6f6f6;
+}
 fieldset legend {
   background: transparent;
 }
@@ -110,10 +113,8 @@ input.button, input.button:hover {
 input.button[disabled]:hover {
   border-color: #ccc;
 }
-#ip_count:hover,
-[title*='Search']:hover,
-[title*='Chain']:hover,
-[title*='Monitoring']:hover {
+#ip_count:hover, [title*='Search']:hover,
+[title*='Chain']:hover, [title*='Monitoring']:hover {
 	color: #00f;
 }
 select {
