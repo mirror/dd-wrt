@@ -19,7 +19,7 @@ share.mode_3g_3g="Force 3G";
 share.mode_3g_2g="Force 2G";
 share.mode_3g_prefer_3g="Prefer 3G";
 share.mode_3g_prefer_2g="Prefer 2G";
-share.mode_3g_3g2g="3G first, on error 2G";
+share.mode_3g_3g2g="3G first, on Error 2G";
 share.firmware="Firmware";
 share.time="Time";
 share.interipaddr="WAN IP Address";
@@ -335,8 +335,8 @@ sbutton.wsurvey="Wiviz Survey";
 sbutton.upgrading="Upgrading";
 sbutton.upgrade="Upgrade";
 sbutton.preview="Preview";
-sbutton.allways_on="Always ON";
-sbutton.allways_off="Always OFF";
+sbutton.allways_on="Always On";
+sbutton.allways_off="Always Off";
 sbutton.download="Download";
 sbutton.next="Next »";
 sbutton.prev="« Previous";
@@ -1281,6 +1281,7 @@ idx.portsetup="Port Setup";
 idx.wanport="WAN Port Assignment";
 idx.legend3="NTP Client Settings";
 idx.timeset="Time Zone";
+idx.ntp_input_placeholder="Leave blank for automated resolution";
 idx.ntp_client="Enable Client";
 idx.ntp_timer="Update Interval";
 
@@ -1294,7 +1295,7 @@ hidx.right10="This is the subnet mask of the router.";
 hidx.right12="Allows the router to manage your IP addresses.";
 hidx.right14="The address you would like to start with.";
 hidx.right16="You may limit the number of addresses your router hands out. 0 means only predefined static leases will be handed out.";
-hidx.right18="Select your current time zone. If the " + share.srvipname + " is left blank, the internal IP address of the time server will be used instead (recommended)";
+hidx.right18="Select your current time zone. When the " + share.srvipname + " is left blank, an automated NTP server resolution address will be used.";
 hidx.sas="The setup assistant guides you through the basic setup steps to configure your router.";
 
 //help page
@@ -2066,10 +2067,10 @@ service.ssh_forwarding="SSH TCP Forwarding";
 //radiooff.webservices
 service.radiooff_legend="SES / AOSS / EZ-SETUP / WPS Button";
 service.radiooff_legend_aoss="AOSS Button Function";
-service.radiooff_srv="Turn OFF Radio";
+service.radiooff_srv="Turn Off Radio";
 service.radiooff_srv_aoss="AOSS";
 service.radiooff_srv_disabled="Unused";
-service.radiooff_bootoff="Turn Radio OFF at Boot";
+service.radiooff_bootoff="Turn Radio Off at Boot";
 
 //ses.webservices ====> might replace the above radiooff_button
 service.ses_legend="SES / AOSS / EZ-SETUP / WPS Button";
@@ -2079,13 +2080,13 @@ service.ses_script="Custom Script";
 
 //hwmon.webservices
 service.hwmon_legend="Hardware Monitoring";
-service.hwmon_critemp="High Temperature (FAN ON)";
-service.hwmon_hystemp="Normal Temperature (FAN OFF)";
+service.hwmon_critemp="High Temperature (FAN On)";
+service.hwmon_hystemp="Normal Temperature (FAN Off)";
 
 //rstat.webservices
 service.rstats_legend="Bandwidth Monitoring";
 service.rstats_srv="rstats Daemon";
-service.rstats_path="Save Bandwidth Data to";
+service.rstats_path="Save Bandwidth Data To";
 service.rstats_time="Saving Interval";
 service.rstats_usrdir="User Directory";
 
