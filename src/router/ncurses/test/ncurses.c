@@ -1,5 +1,6 @@
 /****************************************************************************
- * Copyright (c) 1998-2018,2019 Free Software Foundation, Inc.              *
+ * Copyright 2018-2020,2021 Thomas E. Dickey                                *
+ * Copyright 1998-2016,2017 Free Software Foundation, Inc.                  *
  *                                                                          *
  * Permission is hereby granted, free of charge, to any person obtaining a  *
  * copy of this software and associated documentation files (the            *
@@ -40,7 +41,7 @@ AUTHOR
    Author: Eric S. Raymond <esr@snark.thyrsus.com> 1993
            Thomas E. Dickey (beginning revision 1.27 in 1996).
 
-$Id: ncurses.c,v 1.521 2019/12/14 23:25:29 tom Exp $
+$Id: ncurses.c,v 1.527 2021/09/04 10:31:03 tom Exp $
 
 ***************************************************************************/
 
@@ -165,7 +166,7 @@ static RGB_DATA *all_colors;
 #endif
 
 static void main_menu(bool);
-static void failed(const char *s) GCC_NORETURN;
+static GCC_NORETURN void failed(const char *s);
 
 static void
 failed(const char *s)
@@ -489,7 +490,7 @@ ShellOut(bool message)
 	addstr("Shelling out...");
     def_prog_mode();
     endwin();
-#ifdef _WIN32
+#ifdef _NC_WINDOWS
     system("cmd.exe");
 #else
     IGNORE_RC(system("sh"));
@@ -854,7 +855,7 @@ wgetch_test(unsigned level, WINDOW *win, int delay)
 	    setup_getch(win, flags);
 	    wgetch_help(win, flags);
 	} else if (c == 'g') {
-	    waddstr(win, "getstr test: ");
+	    waddstr(win, "wgetnstr test: ");
 	    echo();
 	    c = wgetnstr(win, buf, sizeof(buf) - 1);
 	    noecho();
@@ -1112,7 +1113,7 @@ wget_wch_test(unsigned level, WINDOW *win, int delay)
 	    setup_getch(win, flags);
 	    wgetch_help(win, flags);
 	} else if (c == 'g') {
-	    waddstr(win, "getstr test: ");
+	    waddstr(win, "wgetn_str test: ");
 	    echo();
 	    code = wgetn_wstr(win, wint_buf, BUFSIZ - 1);
 	    noecho();
@@ -5530,7 +5531,7 @@ panner_legend(int line)
 	"Number repeats.  Toggle legend:? filler:a timer:t scrollmark:s."
     };
     int n = ((int) SIZEOF(legend) - (LINES - line));
-    if (n >= 0) {
+    if (n >= 0 && n < (int) SIZEOF(legend)) {
 	if (move(line, 0) != ERR) {
 	    if (show_panner_legend)
 		printw("%s", legend[n]);
@@ -6231,7 +6232,7 @@ tracetrace(unsigned tlevel)
     }
     _nc_SPRINTF(buf, _nc_SLIMIT(need) "0x%02x = {", tlevel);
     if (tlevel == 0) {
-	_nc_STRCAT(buf, t_tbl[0].name, need);
+	_nc_STRCAT(buf, t_tbl[0].name ? t_tbl[0].name : "", need);
 	_nc_STRCAT(buf, ", ", need);
     } else {
 	for (n = 1; t_tbl[n].name != 0; n++)
@@ -7235,11 +7236,11 @@ overlap_test(bool recur GCC_UNUSED)
 	    overlap_test_0(win2, win1);
 	    break;
 
-	case 'c':		/* fill window A so it's visible */
+	case 'c':		/* fill window A so it is visible */
 	    overlap_test_1(flavor[otBASE_fill], 0, win1, 'A');
 	    break;
 
-	case 'd':		/* fill window B so it's visible */
+	case 'd':		/* fill window B so it is visible */
 	    overlap_test_1(flavor[otBASE_fill], 1, win2, 'B');
 	    break;
 
@@ -7435,11 +7436,11 @@ x_overlap_test(bool recur GCC_UNUSED)
 	    overlap_test_0(win2, win1);
 	    break;
 
-	case 'c':		/* fill window A so it's visible */
+	case 'c':		/* fill window A so it is visible */
 	    x_overlap_test_1(flavor[otBASE_fill], 0, win1, WIDE_A);
 	    break;
 
-	case 'd':		/* fill window B so it's visible */
+	case 'd':		/* fill window B so it is visible */
 	    x_overlap_test_1(flavor[otBASE_fill], 1, win2, WIDE_B);
 	    break;
 
@@ -7617,6 +7618,10 @@ settings_test(bool recur GCC_UNUSED)
 #if HAVE_COLOR_CONTENT
     show_boolean_setting("can_change_color", can_change_color());
 #endif
+    show_setting_name("LINES");
+    printw("%d\n", LINES);
+    show_setting_name("COLS");
+    printw("%d\n", COLS);
     Pause();
     erase();
     stop_curses();
@@ -7658,7 +7663,7 @@ usage(void)
 #if USE_LIBPANEL
 	,"  -s msec  specify nominal time for panel-demo (default: 1, to hold)"
 #endif
-#if defined(NCURSES_VERSION_PATCH) && (NCURSES_VERSION_PATCH >= 20120714) && !defined(_WIN32)
+#if defined(NCURSES_VERSION_PATCH) && (NCURSES_VERSION_PATCH >= 20120714) && !defined(_NC_WINDOWS)
 	,"  -T       call use_tioctl(TRUE) to allow SIGWINCH to override environment"
 #endif
 #ifdef TRACE
@@ -7785,7 +7790,6 @@ main_menu(bool top)
     int (*doit) (bool);
     char command;
     unsigned n;
-
     do {
 	printf("This is the ncurses main menu (uppercase for wide-characters)\n");
 	for (n = 0; n < SIZEOF(cmds); ++n) {
@@ -7851,7 +7855,7 @@ main_menu(bool top)
 
 	if (doit != NULL && doit(FALSE) == OK) {
 	    /*
-	     * This may be overkill; it's intended to reset everything back
+	     * This may be overkill; it is intended to reset everything back
 	     * to the initial terminal modes so that tests don't get in
 	     * each other's way.
 	     */
@@ -7961,7 +7965,7 @@ main(int argc, char *argv[])
 	    nap_msec = (int) atol(optarg);
 	    break;
 #endif
-#if defined(NCURSES_VERSION_PATCH) && (NCURSES_VERSION_PATCH >= 20120714) && !defined(_WIN32)
+#if defined(NCURSES_VERSION_PATCH) && (NCURSES_VERSION_PATCH >= 20120714) && !defined(_NC_WINDOWS)
 	case 'T':
 	    use_tioctl(TRUE);
 	    break;

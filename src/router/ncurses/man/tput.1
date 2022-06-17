@@ -1,6 +1,7 @@
 '\" t
 .\"***************************************************************************
-.\" Copyright (c) 1998-2017,2018 Free Software Foundation, Inc.              *
+.\" Copyright 2018-2020,2021 Thomas E. Dickey                                *
+.\" Copyright 1998-2016,2017 Free Software Foundation, Inc.                  *
 .\"                                                                          *
 .\" Permission is hereby granted, free of charge, to any person obtaining a  *
 .\" copy of this software and associated documentation files (the            *
@@ -27,7 +28,7 @@
 .\" authorization.                                                           *
 .\"***************************************************************************
 .\"
-.\" $Id: tput.1,v 1.62 2018/09/30 20:31:59 Sven.Joachim Exp $
+.\" $Id: tput.1,v 1.72 2021/10/02 21:41:00 tom Exp $
 .TH @TPUT@ 1 ""
 .ds d @TERMINFO@
 .ds n 1
@@ -275,7 +276,7 @@ named \fBinit\fP has a more well-established use.
 .PP
 Besides the special commands (e.g., \fBclear\fP),
 @TPUT@ treats certain terminfo capabilities specially:
-\fBlines\fP and \fBcolumns\fP.
+\fBlines\fP and \fBcols\fP.
 @TPUT@ calls \fBsetupterm\fP(3X) to obtain the terminal size:
 .bP
 first, it gets the size from the terminal database
@@ -422,7 +423,7 @@ exit code	error message
 \fB0\fR	T{
 (\fIcapname\fR is a numeric variable that is not specified in the
 \fBterminfo\fR(5) database for this terminal type, e.g.
-\fB@TPUT@ \-T450 lines\fR and \fB@TPUT@ \-T2621 xmc\fR)
+\fB@TPUT@ \-T450 lines\fR and \fB@TPUT@ \-Thp2621 xmc\fR)
 T}
 \fB1\fR	no error message is printed, see the \fBEXIT CODES\fR section.
 \fB2\fR	usage error
@@ -435,10 +436,21 @@ T}
 The \fBtput\fP command was begun by Bill Joy in 1980.
 The initial version only cleared the screen.
 .PP
-AT&T System V provided a different \fBtput\fP command,
-whose \fBinit\fP and \fBreset\fP  subcommands
+AT&T System V provided a different \fBtput\fP command:
+.bP
+SVr2 provided a rudimentary \fBtput\fP
+which checked the parameter against each
+predefined capability and returned the corresponding value.
+This version of \fBtput\fP did not use \fBtparm\fP(3X) for
+the capabilities which are parameterized.
+.bP
+SVr3 replaced that, a year later, by a more extensive program
+whose \fBinit\fP and \fBreset\fP subcommands
 (more than half the program) were incorporated from
 the \fBreset\fP feature of BSD \fBtset\fP written by Eric Allman.
+.bP
+SVr4 added color initialization using the \fIorig_colors\fP and
+\fIorig_pairs\fP capabilities in the \fBinit\fP subcommand.
 .PP
 Keith Bostic replaced the BSD \fBtput\fP command in 1989
 with a new implementation
@@ -504,6 +516,15 @@ requiring \fB@TPUT@\fP to know which type to use.
 This implementation uses a table to determine the parameter types for
 the standard \fIcapname\fR operands, and an internal library
 function to analyze nonstandard \fIcapname\fR operands.
+.IP
+Besides providing more reliable operation than AT&T's utility,
+a portability problem is introduced by this analysis:
+An OpenBSD developer adapted the internal library function from ncurses
+to port NetBSD's termcap-based \fBtput\fP to terminfo.
+That had been modified to interpret multiple commands on a line.
+Portable applications should not rely upon this feature;
+ncurses provides it to support applications written
+specifically for OpenBSD.
 .PP
 This implementation (unlike others) can accept both \fItermcap\fP
 and \fIterminfo\fP names for the \fIcapname\fP feature,
@@ -529,7 +550,7 @@ features used in the \fBcup\fR example,
 were not supported in BSD curses before 4.3reno (1989) or in
 AT&T/USL curses before SVr4 (1988).
 .PP
-IEEE Std 1003.1/The Open Group  Base Specifications Issue 7 (POSIX.1-2008) 
+IEEE Std 1003.1/The Open Group  Base Specifications Issue 7 (POSIX.1-2008)
 documents only the operands for \fBclear\fP, \fBinit\fP and \fBreset\fP.
 There are a few interesting observations to make regarding that:
 .bP
@@ -546,6 +567,9 @@ A few platforms such as FreeBSD recognize termcap names rather
 than terminfo capability names in their respective \fBtput\fP commands.
 Since 2010, NetBSD's \fBtput\fP uses terminfo names.
 Before that, it (like FreeBSD) recognized termcap names.
+.IP
+Beginning in 2021, FreeBSD uses the ncurses \fBtput\fP,
+configured for both terminfo (tested first) and termcap (as a fallback).
 .PP
 Because (apparently) \fIall\fP of the certified Unix systems
 support the full set of capability names, the reasoning for documenting
@@ -589,8 +613,8 @@ to either ncurses or X/Open.
 \fBstty\fR(1),
 \fB@TABS@\fR(\*n),
 \fB@TSET@\fR(\*n),
-\fBterminfo\fR(5),
-\fBcurs_termcap\fR(3X).
+\fBcurs_termcap\fR(3X),
+\fBterminfo\fR(5).
 .PP
 This describes \fBncurses\fR
 version @NCURSES_MAJOR@.@NCURSES_MINOR@ (patch @NCURSES_PATCH@).

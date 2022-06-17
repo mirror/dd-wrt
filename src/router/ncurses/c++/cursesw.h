@@ -1,7 +1,8 @@
 // * This makes emacs happy -*-Mode: C++;-*-
 // vile:cppmode
 /****************************************************************************
- * Copyright (c) 1998-2017,2019 Free Software Foundation, Inc.              *
+ * Copyright 2019-2020,2021 Thomas E. Dickey                                *
+ * Copyright 1998-2014,2017 Free Software Foundation, Inc.                  *
  *                                                                          *
  * Permission is hereby granted, free of charge, to any person obtaining a  *
  * copy of this software and associated documentation files (the            *
@@ -31,11 +32,22 @@
 #ifndef NCURSES_CURSESW_H_incl
 #define NCURSES_CURSESW_H_incl 1
 
-// $Id: cursesw.h,v 1.54 2019/07/28 19:55:27 tom Exp $
+// $Id: cursesw.h,v 1.58 2021/04/17 18:11:08 tom Exp $
 
 extern "C" {
 #  include   <curses.h>
 }
+
+#if defined(BUILDING_NCURSES_CXX)
+# define NCURSES_CXX_IMPEXP NCURSES_EXPORT_GENERAL_EXPORT
+#else
+# define NCURSES_CXX_IMPEXP NCURSES_EXPORT_GENERAL_IMPORT
+#endif
+
+#define NCURSES_CXX_WRAPPED_VAR(type,name) extern NCURSES_CXX_IMPEXP type NCURSES_PUBLIC_VAR(name)(void)
+
+#define NCURSES_CXX_EXPORT(type) NCURSES_CXX_IMPEXP type NCURSES_API
+#define NCURSES_CXX_EXPORT_VAR(type) NCURSES_CXX_IMPEXP type
 
 #include <etip.h>
 
@@ -756,7 +768,7 @@ extern "C" int     _nc_ripoffline(int, int (*init)(WINDOW*, int));
 extern "C" int     _nc_xx_ripoff_init(WINDOW *, int);
 extern "C" int     _nc_has_mouse(void);
 
-class NCURSES_IMPEXP NCursesWindow
+class NCURSES_CXX_IMPEXP NCursesWindow
 {
   friend class NCursesMenu;
   friend class NCursesForm;
@@ -804,7 +816,7 @@ protected:
   NCursesWindow();
 
 public:
-  NCursesWindow(WINDOW* window);   // useful only for stdscr
+  explicit NCursesWindow(WINDOW* window);   // useful only for stdscr
 
   NCursesWindow(int nlines,        // number of lines
 		int ncols,         // number of columns
@@ -1255,7 +1267,7 @@ public:
   // Return TRUE if window is marked as changed, FALSE otherwise
 
   int            leaveok(bool bf) { return ::leaveok(w, bf); }
-  // If bf is TRUE, curses will leave the cursor after an update whereever
+  // If bf is TRUE, curses will leave the cursor after an update wherever
   // it is after the update.
 
   int            redrawln(int from, int n) { return ::wredrawln(w, from, n); }
@@ -1370,10 +1382,10 @@ public:
 // -------------------------------------------------------------------------
 // We leave this here for compatibility reasons.
 // -------------------------------------------------------------------------
-class NCURSES_IMPEXP NCursesColorWindow : public NCursesWindow
+class NCURSES_CXX_IMPEXP NCursesColorWindow : public NCursesWindow
 {
 public:
-  NCursesColorWindow(WINDOW* &window)   // useful only for stdscr
+  explicit NCursesColorWindow(WINDOW* &window)   // useful only for stdscr
     : NCursesWindow(window) {
       useColors(); }
 
@@ -1416,7 +1428,7 @@ public:
 // Pad Support. We allow an association of a pad with a "real" window
 // through which the pad may be viewed.
 // -------------------------------------------------------------------------
-class NCURSES_IMPEXP NCursesPad : public NCursesWindow
+class NCURSES_CXX_IMPEXP NCursesPad : public NCursesWindow
 {
 private:
   NCursesWindow* viewWin;       // the "viewport" window
@@ -1532,7 +1544,7 @@ public:
 // A FramedPad is constructed always with a viewport window. This viewport
 // will be framed (by a box() command) and the interior of the box is the
 // viewport subwindow. On the frame we display scrollbar sliders.
-class NCURSES_IMPEXP NCursesFramedPad : public NCursesPad
+class NCURSES_CXX_IMPEXP NCursesFramedPad : public NCursesPad
 {
 protected:
   virtual void OnOperation(int pad_req);

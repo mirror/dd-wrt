@@ -1,5 +1,6 @@
 /****************************************************************************
- * Copyright (c) 1998-2016,2017 Free Software Foundation, Inc.              *
+ * Copyright 2020 Thomas E. Dickey                                          *
+ * Copyright 1998-2016,2017 Free Software Foundation, Inc.                  *
  *                                                                          *
  * Permission is hereby granted, free of charge, to any person obtaining a  *
  * copy of this software and associated documentation files (the            *
@@ -38,8 +39,9 @@
 
 #include <curses.priv.h>
 #include <termcap.h>		/* ospeed */
+#include <tic.h>		/* VALID_STRING */
 
-MODULE_ID("$Id: lib_cur_term.c,v 1.41 2017/06/17 22:21:35 tom Exp $")
+MODULE_ID("$Id: lib_cur_term.c,v 1.43 2020/10/24 18:54:32 tom Exp $")
 
 #undef CUR
 #define CUR TerminalType(termp).
@@ -98,13 +100,13 @@ NCURSES_SP_NAME(set_curterm) (NCURSES_SP_DCLx TERMINAL *termp)
 	if (TCB->drv &&
 	    TCB->drv->isTerminfo &&
 	    TerminalType(termp).Strings) {
-	    PC = (char) ((pad_char != NULL) ? pad_char[0] : 0);
+	    PC = (char) (VALID_STRING(pad_char) ? pad_char[0] : 0);
 	}
 	TCB->csp = SP_PARM;
 #else
 	ospeed = (NCURSES_OSPEED) _nc_ospeed(termp->_baudrate);
 	if (TerminalType(termp).Strings) {
-	    PC = (char) ((pad_char != NULL) ? pad_char[0] : 0);
+	    PC = (char) (VALID_STRING(pad_char) ? pad_char[0] : 0);
 	}
 #endif
 #if !USE_REENTRANT

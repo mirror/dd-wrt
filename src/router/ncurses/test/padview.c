@@ -1,5 +1,6 @@
 /****************************************************************************
- * Copyright (c) 2017,2019 Free Software Foundation, Inc.                   *
+ * Copyright 2019-2020,2021 Thomas E. Dickey                                *
+ * Copyright 2017 Free Software Foundation, Inc.                            *
  *                                                                          *
  * Permission is hereby granted, free of charge, to any person obtaining a  *
  * copy of this software and associated documentation files (the            *
@@ -28,7 +29,7 @@
 /*
  * clone of view.c, using pads
  *
- * $Id: padview.c,v 1.15 2019/12/07 18:06:12 tom Exp $
+ * $Id: padview.c,v 1.18 2021/06/12 23:16:31 tom Exp $
  */
 
 #include <test.priv.h>
@@ -40,7 +41,7 @@
 
 #if HAVE_NEWPAD
 
-static void finish(int sig) GCC_NORETURN;
+static GCC_NORETURN void finish(int sig);
 
 #define my_pair 1
 
@@ -54,7 +55,7 @@ static int num_lines;
 static bool n_option = FALSE;
 #endif
 
-static void usage(void) GCC_NORETURN;
+static GCC_NORETURN void usage(void);
 
 static void
 failed(const char *msg)
@@ -143,8 +144,11 @@ read_file(const char *filename)
     }
 
     len = fread(my_blob, sizeof(char), (size_t) sb.st_size, fp);
-    my_blob[sb.st_size] = '\0';
     fclose(fp);
+
+    if (len > (size_t) sb.st_size)
+	len = (size_t) sb.st_size;
+    my_blob[len] = '\0';
 
     for (pass = 0; pass < 2; ++pass) {
 	char *base = my_blob;
@@ -159,12 +163,19 @@ read_file(const char *filename)
 		++k;
 	    }
 	}
+	if (base != (my_blob + j)) {
+	    if (pass)
+		my_vec[k] = base;
+	    ++k;
+	}
 	num_lines = k;
-	if (base != (my_blob + j))
-	    ++num_lines;
-	if (!pass &&
-	    ((my_vec = typeCalloc(char *, (size_t) k + 2)) == 0)) {
-	    failed("cannot allocate line-vector #1");
+	if (pass == 0) {
+	    if (((my_vec = typeCalloc(char *, (size_t) k + 2)) == 0)) {
+		failed("cannot allocate line-vector #1");
+	    }
+	} else {
+	    if (my_vec[0] == NULL)
+		my_vec[0] = my_blob;
 	}
     }
 

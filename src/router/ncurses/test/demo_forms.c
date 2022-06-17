@@ -1,5 +1,6 @@
 /****************************************************************************
- * Copyright (c) 2003-2018,2019 Free Software Foundation, Inc.              *
+ * Copyright 2018-2019,2020 Thomas E. Dickey                                *
+ * Copyright 2003-2016,2017 Free Software Foundation, Inc.                  *
  *                                                                          *
  * Permission is hereby granted, free of charge, to any person obtaining a  *
  * copy of this software and associated documentation files (the            *
@@ -26,41 +27,11 @@
  * authorization.                                                           *
  ****************************************************************************/
 /*
- * $Id: demo_forms.c,v 1.56 2019/08/17 21:49:19 tom Exp $
+ * $Id: demo_forms.c,v 1.58 2020/03/21 15:57:59 tom Exp $
  *
  * Demonstrate a variety of functions from the form library.
  * Thomas Dickey - 2003/4/26
  */
-/*
-dup_field			-
-field_init			-
-field_just			-
-field_term			-
-form_init			-
-form_opts			-
-form_opts_off			-
-form_opts_on			-
-form_request_by_name		-
-form_term			-
-form_userptr			-
-free_fieldtype			-
-link_field			-
-link_fieldtype			-
-move_field			-
-new_page			-
-pos_form_cursor			-
-set_field_init			-
-set_field_term			-
-set_fieldtype_arg		-
-set_fieldtype_choice		-
-set_form_fields			-
-set_form_init			-
-set_form_opts			-
-set_form_page			-
-set_form_term			-
-set_form_userptr		-
-set_max_field			-
-*/
 
 #include <test.priv.h>
 

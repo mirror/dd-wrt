@@ -92,7 +92,7 @@
 /******************************************************************************/
 
 /*
- * $Id: xmas.c,v 1.34 2019/12/14 23:25:29 tom Exp $
+ * $Id: xmas.c,v 1.36 2021/03/27 22:40:53 tom Exp $
  */
 #include <test.priv.h>
 
@@ -133,7 +133,7 @@ static WINDOW *w_holiday;
 static WINDOW *w_del_msg;
 static bool *my_pairs;
 
-static void done(int sig) GCC_NORETURN;
+static GCC_NORETURN void done(int sig);
 
 static void
 set_color(WINDOW *win, chtype color)
@@ -500,9 +500,6 @@ reindeer(void)
     y_pos = 0;
 
     for (x_pos = 70; x_pos > 62; x_pos--) {
-	if (x_pos < 62) {
-	    y_pos = 1;
-	}
 	for (looper = 0; looper < 4; looper++) {
 	    MvWAddCh(dotdeer0, y_pos, x_pos, (chtype) '.');
 	    wrefresh(dotdeer0);

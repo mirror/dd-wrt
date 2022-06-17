@@ -1,5 +1,6 @@
 ##############################################################################
-# Copyright (c) 2002-2016,2019 Free Software Foundation, Inc.                #
+# Copyright 2019-2020,2021 Thomas E. Dickey                                  #
+# Copyright 2002-2015,2016 Free Software Foundation, Inc.                    #
 #                                                                            #
 # Permission is hereby granted, free of charge, to any person obtaining a    #
 # copy of this software and associated documentation files (the "Software"), #
@@ -28,7 +29,7 @@
 #
 # Author: Thomas Dickey
 #
-# $Id: Caps.hpux11,v 1.14 2019/07/27 00:36:44 tom Exp $
+# $Id: Caps.hpux11,v 1.18 2021/10/08 07:55:48 tom Exp $
 #
 # This is an adaptation of ncurses' termcap/terminfo capability table, which
 # is designed to align with HPUX 11.x's terminfo.
@@ -57,7 +58,7 @@
 #
 # The codes following [Y-] in column 7 describe the versions of termcap which
 # use the given capability.  This information is not used by the curses library
-# proper; rather, it's there to help the terminfo maintainer avoid emitting
+# proper; rather, it is there to help the terminfo maintainer avoid emitting
 # termcap entry translations that are more than 1023 bytes long (and tank a
 # lot of old termcap-using programs).  The codes read as follows:
 #	B = mentioned in the BSD man page for 4.4BSD curses
@@ -97,8 +98,8 @@
 # 3. List it in the standard table.  You almost certainly do *not* want
 # to do this -- the capabilities in that one, and their order, have been
 # carefully chosen to be SVr4-binary-compatible when they're written out
-# as a terminfo object, and breaking this would be bad.  It's up to the ncurses
-# library what to do with the terminfo data after it's read in.
+# as a terminfo object, and breaking this would be bad.  It is up to the ncurses
+# library what to do with the terminfo data after it is read in.
 #
 # 4. List it in the aliases table with an IGNORE target field.  If you
 # do this, the capability will be ignored on input (though the user will
@@ -107,7 +108,7 @@
 # 5. List it in the extensions table. If you do this, the compiler will
 # silently accept the capability, but the curses library proper will never
 # see it (because it won't be written out as part of the terminfo object
-# format).  It's up to you what you have the compiler do with it.
+# format).  It is up to you what you have the compiler do with it.
 #
 # There are two opposite reasons to choose option 5.  One is when you want
 # to eat the capability silently and discard it when doing translations
@@ -188,8 +189,12 @@
 #%indicates that padding may be specified
 #%.TP
 #%#[1-9]
-#%in the description field indicates that the string is passed through tparm with
-#%parms as given (#\fIi\fP).
+#%in the description field indicates that the string is passed
+#%through \fBtparm\fP(3X) with parameters as given (#\fIi\fP).
+#%.IP
+#%If no parameters are listed in the description,
+#%passing the string through \fBtparm\fP(3X) may give unexpected results,
+#%e.g., if it contains percent (%%) signs.
 #%.TP
 #%(P*)
 #%indicates that padding may vary in proportion to the number of
@@ -604,7 +609,7 @@ key_sundo			kUND	str	!3	KEY_SUNDO	0626	-----	shifted undo key
 req_for_input			rfi	str	RF	-		-	-----	send next input char (for ptys)
 clr_bol				el1	str	cb	-		-	-----	Clear to beginning of line
 clear_margins			mgc	str	MC	-		-	-----	clear right and left soft margins
-set_left_margin			smgl	str	ML	-		-	-----	set left soft margin at current column.	 See smgl. (ML is not in BSD termcap).
+set_left_margin			smgl	str	ML	-		-	-----	set left soft margin at current column.	 (ML is not in BSD termcap).
 set_right_margin		smgr	str	MR	-		-	-----	set right soft margin at current column
 label_format			fln	str	Lf	-		-	-----	label format
 set_clock			sclk	str	SC	-		-	-----	set clock, #1 hrs #2 mins #3 secs
@@ -894,7 +899,7 @@ has_hardware_tabs		OTpt	bool	pt	-		-	YB---	has 8-char tabs invoked with ^I
 return_does_clr_eol		OTxr	bool	xr	-		-	YB---	return clears the line
 # tek_4025_insert_line		OTxx	bool	xx	-		-	-BC--	Tektronix 4025 insert-line glitch
 #
-# mytinfo described this as a termcap capability, but it's not listed in the
+# mytinfo described this as a termcap capability, but it is not listed in the
 # 4.4BSD man pages, and not found in the 4.4BSD termcap file.  The ncurses
 # package, like System V, behaves as though it is always true.
 #

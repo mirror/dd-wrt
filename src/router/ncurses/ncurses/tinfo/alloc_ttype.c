@@ -1,5 +1,6 @@
 /****************************************************************************
- * Copyright (c) 1999-2018,2019 Free Software Foundation, Inc.              *
+ * Copyright 2018-2020,2021 Thomas E. Dickey                                *
+ * Copyright 1999-2016,2017 Free Software Foundation, Inc.                  *
  *                                                                          *
  * Permission is hereby granted, free of charge, to any person obtaining a  *
  * copy of this software and associated documentation files (the            *
@@ -42,7 +43,7 @@
 
 #include <tic.h>
 
-MODULE_ID("$Id: alloc_ttype.c,v 1.31 2019/04/27 23:28:31 tom Exp $")
+MODULE_ID("$Id: alloc_ttype.c,v 1.35 2021/06/17 21:11:08 tom Exp $")
 
 #if NCURSES_XNAMES
 /*
@@ -428,7 +429,7 @@ _nc_align_termtype(TERMTYPE2 *to, TERMTYPE2 *from)
 	      na, to ? NonNull(to->term_names) : "?",
 	      nb, from ? NonNull(from->term_names) : "?"));
 
-    if (na != 0 || nb != 0) {
+    if (to != NULL && from != NULL && (na != 0 || nb != 0)) {
 	int ext_Booleans, ext_Numbers, ext_Strings;
 	bool used_ext_Names = FALSE;
 
@@ -449,7 +450,7 @@ _nc_align_termtype(TERMTYPE2 *to, TERMTYPE2 *from)
 		return;
 	}
 	/*
-	 * This is where we pay for having a simple extension representation. 
+	 * This is where we pay for having a simple extension representation.
 	 * Allocate a new ext_Names array and merge the two ext_Names arrays
 	 * into it, updating to's counts for booleans, etc.  Fortunately we do
 	 * this only for the terminfo compiler (tic) and comparer (infocmp).
@@ -598,7 +599,7 @@ copy_termtype(TERMTYPE2 *dst, const TERMTYPE2 *src, int mode)
 }
 
 /*
- * This entrypoint is used by tack.
+ * This entrypoint is used by tack 1.07
  */
 NCURSES_EXPORT(void)
 _nc_copy_termtype(TERMTYPE *dst, const TERMTYPE *src)

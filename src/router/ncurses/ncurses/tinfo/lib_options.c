@@ -1,5 +1,6 @@
 /****************************************************************************
- * Copyright (c) 1998-2014,2017 Free Software Foundation, Inc.              *
+ * Copyright 2020,2021 Thomas E. Dickey                                     *
+ * Copyright 1998-2014,2017 Free Software Foundation, Inc.                  *
  *                                                                          *
  * Permission is hereby granted, free of charge, to any person obtaining a  *
  * copy of this software and associated documentation files (the            *
@@ -46,7 +47,7 @@
 #define CUR SP_TERMTYPE
 #endif
 
-MODULE_ID("$Id: lib_options.c,v 1.80 2017/06/24 23:13:09 tom Exp $")
+MODULE_ID("$Id: lib_options.c,v 1.82 2021/02/14 00:17:35 tom Exp $")
 
 NCURSES_EXPORT(int)
 idlok(WINDOW *win, bool flag)
@@ -360,7 +361,7 @@ _nc_keypad(SCREEN *sp, int flag)
 #else
 	    if (flag) {
 		(void) NCURSES_PUTP2_FLUSH("keypad_xmit", keypad_xmit);
-	    } else if (!flag && keypad_local) {
+	    } else if (keypad_local) {
 		(void) NCURSES_PUTP2_FLUSH("keypad_local", keypad_local);
 	    }
 

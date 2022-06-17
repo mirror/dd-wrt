@@ -1,4 +1,4 @@
-/* $Id: tclock.c,v 1.40 2019/12/14 23:25:29 tom Exp $ */
+/* $Id: tclock.c,v 1.42 2020/12/26 17:56:36 tom Exp $ */
 
 #define NEED_TIME_H
 #include <test.priv.h>
@@ -48,7 +48,7 @@ plot(int x, int y, int col)
     MvAddCh(y, x, (chtype) col);
 }
 
-/* Draw a diagonal(arbitrary) line using Bresenham's alogrithm. */
+/* Draw a diagonal(arbitrary) line using Bresenham's algorithm. */
 static void
 dline(int pair, int from_x, int from_y, int x2, int y2, int ch)
 {
@@ -140,7 +140,7 @@ main(int argc, char *argv[])
     bool odd = FALSE;
     time_t tim;
     struct tm *t;
-    char szChar[10];
+    char szChar[20];
     char *text;
     short my_bg = COLOR_BLACK;
 #if HAVE_GETTIMEOFDAY

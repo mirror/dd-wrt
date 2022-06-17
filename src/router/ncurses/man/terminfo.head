@@ -1,5 +1,6 @@
 .\"***************************************************************************
-.\" Copyright (c) 1998-2018,2019 Free Software Foundation, Inc.              *
+.\" Copyright 2018-2020,2021 Thomas E. Dickey                                *
+.\" Copyright 1998-2016,2017 Free Software Foundation, Inc.                  *
 .\"                                                                          *
 .\" Permission is hereby granted, free of charge, to any person obtaining a  *
 .\" copy of this software and associated documentation files (the            *
@@ -26,7 +27,7 @@
 .\" authorization.                                                           *
 .\"***************************************************************************
 .\"
-.\" $Id: terminfo.head,v 1.38 2019/07/27 11:51:04 tom Exp $
+.\" $Id: terminfo.head,v 1.41 2021/08/15 19:32:53 tom Exp $
 .TH terminfo 5 "" "" "File Formats"
 .ds n 5
 .ds d @TERMINFO@
@@ -53,12 +54,12 @@
 .el    .in -2
 ..
 .SH NAME
-terminfo \- terminal capability data base
+terminfo \- terminal capability database
 .SH SYNOPSIS
 \*d/*/*
 .SH DESCRIPTION
 .I Terminfo
-is a data base describing terminals,
+is a database describing terminals,
 used by screen-oriented programs such as
 \fBnvi\fR(1),
 \fBlynx\fR(1),
@@ -82,7 +83,7 @@ Entries in
 .I terminfo
 consist of a sequence of fields:
 .bP
-Each field ends with a comma \*(``,\*('' 
+Each field ends with a comma \*(``,\*(''
 (embedded commas may be
 escaped with a backslash or written as \*(``\\054\*('').
 .bP

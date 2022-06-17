@@ -1,5 +1,6 @@
 /****************************************************************************
- * Copyright (c) 1998-2004,2010 Free Software Foundation, Inc.              *
+ * Copyright 2020,2021 Thomas E. Dickey                                     *
+ * Copyright 1998-2004,2010 Free Software Foundation, Inc.                  *
  *                                                                          *
  * Permission is hereby granted, free of charge, to any person obtaining a  *
  * copy of this software and associated documentation files (the            *
@@ -37,18 +38,18 @@
 
 #include "menu.priv.h"
 
-MODULE_ID("$Id: m_item_cur.c,v 1.18 2010/01/23 21:20:10 tom Exp $")
+MODULE_ID("$Id: m_item_cur.c,v 1.22 2021/06/17 21:20:30 tom Exp $")
 
 /*---------------------------------------------------------------------------
-|   Facility      :  libnmenu  
+|   Facility      :  libnmenu
 |   Function      :  int set_current_item(MENU *menu, const ITEM *item)
-|   
+|
 |   Description   :  Make the item the current item
 |
 |   Return Values :  E_OK                - success
 +--------------------------------------------------------------------------*/
-NCURSES_EXPORT(int)
-set_current_item(MENU * menu, ITEM * item)
+MENU_EXPORT(int)
+set_current_item(MENU *menu, ITEM *item)
 {
   T((T_CALLED("set_current_item(%p,%p)"), (void *)menu, (void *)item));
 
@@ -81,30 +82,30 @@ set_current_item(MENU * menu, ITEM * item)
 }
 
 /*---------------------------------------------------------------------------
-|   Facility      :  libnmenu  
+|   Facility      :  libnmenu
 |   Function      :  ITEM *current_item(const MENU *menu)
-|   
+|
 |   Description   :  Return the menus current item
 |
 |   Return Values :  Item pointer or NULL if failure
 +--------------------------------------------------------------------------*/
-NCURSES_EXPORT(ITEM *)
-current_item(const MENU * menu)
+MENU_EXPORT(ITEM *)
+current_item(const MENU *menu)
 {
   T((T_CALLED("current_item(%p)"), (const void *)menu));
-  returnItem((menu && menu->items) ? menu->curitem : (ITEM *) 0);
+  returnItem((menu && menu->items) ? menu->curitem : (ITEM *)0);
 }
 
 /*---------------------------------------------------------------------------
-|   Facility      :  libnmenu  
+|   Facility      :  libnmenu
 |   Function      :  int item_index(const ITEM *)
-|   
+|
 |   Description   :  Return the logical index of this item.
 |
 |   Return Values :  The index or ERR if this is an invalid item pointer
 +--------------------------------------------------------------------------*/
-NCURSES_EXPORT(int)
-item_index(const ITEM * item)
+MENU_EXPORT(int)
+item_index(const ITEM *item)
 {
   T((T_CALLED("item_index(%p)"), (const void *)item));
   returnCode((item && item->imenu) ? item->index : ERR);

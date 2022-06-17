@@ -1,5 +1,6 @@
 /****************************************************************************
- * Copyright (c) 1998-2018,2019 Free Software Foundation, Inc.              *
+ * Copyright 2018-2020,2021 Thomas E. Dickey                                *
+ * Copyright 1998-2013,2017 Free Software Foundation, Inc.                  *
  *                                                                          *
  * Permission is hereby granted, free of charge, to any person obtaining a  *
  * copy of this software and associated documentation files (the            *
@@ -33,7 +34,7 @@
  * Eric S. Raymond <esr@snark.thyrsus.com> July 22 1995.  Mouse support
  * added September 20th 1995.
  *
- * $Id: knight.c,v 1.46 2019/08/24 22:40:52 tom Exp $
+ * $Id: knight.c,v 1.49 2021/05/08 19:32:15 tom Exp $
  */
 
 #include <test.priv.h>
@@ -594,8 +595,8 @@ play(void)
 {
     bool keyhelp;		/* TRUE if keystroke help is up */
     int i, j, count;
-    int lastcol = 0;		/* last location visited */
-    int lastrow = 0;
+    int lastcol;		/* last location visited */
+    int lastrow;
     int ny = 0, nx = 0;
     int review = 0;		/* review history */
     int test_size;
@@ -620,10 +621,10 @@ play(void)
 
 	for (i = 0; i < ylimit; i++) {
 	    for (j = 0; j < xlimit; j++) {
-		squares[i][j] = FALSE;
 		unmarkcell(i, j);
 	    }
 	}
+	memset(squares, 0, sizeof(squares));
 	memset(history, 0, sizeof(history));
 	history[0].y = history[0].x = -1;
 	history[1].y = history[1].x = -1;

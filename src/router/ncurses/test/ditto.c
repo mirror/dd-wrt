@@ -1,5 +1,6 @@
 /****************************************************************************
- * Copyright (c) 1998-2017,2018 Free Software Foundation, Inc.              *
+ * Copyright 2018-2020,2021 Thomas E. Dickey                                *
+ * Copyright 1998-2016,2017 Free Software Foundation, Inc.                  *
  *                                                                          *
  * Permission is hereby granted, free of charge, to any person obtaining a  *
  * copy of this software and associated documentation files (the            *
@@ -29,7 +30,7 @@
 /*
  * Author: Thomas E. Dickey (1998-on)
  *
- * $Id: ditto.c,v 1.48 2018/05/20 19:19:10 tom Exp $
+ * $Id: ditto.c,v 1.52 2021/08/15 20:07:11 tom Exp $
  *
  * The program illustrates how to set up multiple screens from a single
  * program.
@@ -101,8 +102,8 @@ typedef struct {
     DITTO *ditto;		/* data for all screens */
 } DDATA;
 
-static void failed(const char *) GCC_NORETURN;
-static void usage(void) GCC_NORETURN;
+static GCC_NORETURN void failed(const char *);
+static GCC_NORETURN void usage(void);
 
 static void
 failed(const char *s)
@@ -181,7 +182,7 @@ open_tty(char *path)
 #else
     struct stat sb;
 
-    if (stat(path, &sb) < 0)
+    if (stat(path, &sb) == -1)
 	failed(path);
     if ((sb.st_mode & S_IFMT) != S_IFCHR) {
 	errno = ENOTTY;
@@ -352,7 +353,6 @@ static void *
 handle_screen(void *arg)
 {
     DDATA ddata;
-    int ch;
 
     memset(&ddata, 0, sizeof(ddata));
     ddata.ditto = (DITTO *) arg;
@@ -360,7 +360,7 @@ handle_screen(void *arg)
     ddata.ditto -= ddata.source;	/* -> base of array */
 
     for (;;) {
-	ch = read_screen(ddata.ditto->screen, &ddata);
+	int ch = read_screen(ddata.ditto->screen, &ddata);
 	if (ch == CTRL('D')) {
 	    int later = (ddata.source ? ddata.source : -1);
 	    int j;

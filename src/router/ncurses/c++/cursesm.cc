@@ -1,6 +1,7 @@
 // * this is for making emacs happy: -*-Mode: C++;-*-
 /****************************************************************************
- * Copyright (c) 1998-2017,2019 Free Software Foundation, Inc.              *
+ * Copyright 2019-2020,2021 Thomas E. Dickey                                *
+ * Copyright 1998-2011,2017 Free Software Foundation, Inc.                  *
  *                                                                          *
  * Permission is hereby granted, free of charge, to any person obtaining a  *
  * copy of this software and associated documentation files (the            *
@@ -35,7 +36,7 @@
 #include "cursesm.h"
 #include "cursesapp.h"
 
-MODULE_ID("$Id: cursesm.cc,v 1.25 2019/07/28 19:55:27 tom Exp $")
+MODULE_ID("$Id: cursesm.cc,v 1.27 2021/04/17 18:11:08 tom Exp $")
 
 NCursesMenuItem::~NCursesMenuItem() THROWS(NCursesException)
 {
@@ -300,7 +301,6 @@ NCursesMenuItem*
 NCursesMenu::operator()(void)
 {
   int drvCmnd;
-  int err;
   int c;
   bool b_action = FALSE;
 
@@ -308,9 +308,10 @@ NCursesMenu::operator()(void)
   show();
   refresh();
 
-  while (!b_action && ((drvCmnd = virtualize((c=getKey()))) != CMD_QUIT)) {
+  while (!b_action && ((drvCmnd = virtualize((c = getKey()))) != CMD_QUIT)) {
+    int err;
 
-    switch((err=driver(drvCmnd))) {
+    switch((err = driver(drvCmnd))) {
     case E_REQUEST_DENIED:
       On_Request_Denied(c);
       break;

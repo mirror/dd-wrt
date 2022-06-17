@@ -1,5 +1,6 @@
 /****************************************************************************
- * Copyright (c) 1998-2018,2019 Free Software Foundation, Inc.              *
+ * Copyright 2018-2020,2021 Thomas E. Dickey                                *
+ * Copyright 1998-2013,2017 Free Software Foundation, Inc.                  *
  *                                                                          *
  * Permission is hereby granted, free of charge, to any person obtaining a  *
  * copy of this software and associated documentation files (the            *
@@ -47,7 +48,7 @@
 
 #include <tic.h>
 
-MODULE_ID("$Id: alloc_entry.c,v 1.63 2019/06/08 14:29:28 tom Exp $")
+MODULE_ID("$Id: alloc_entry.c,v 1.66 2021/08/08 00:09:37 tom Exp $")
 
 #define ABSENT_OFFSET    -1
 #define CANCELLED_OFFSET -2
@@ -92,14 +93,14 @@ _nc_copy_entry(ENTRY * oldp)
 
 /* save a copy of string in the string buffer */
 NCURSES_EXPORT(char *)
-_nc_save_str(const char *const string)
+_nc_save_str(const char *string)
 {
     char *result = 0;
     size_t old_next_free = next_free;
     size_t len;
 
     if (!VALID_STRING(string))
-	return _nc_save_str("");
+	string = "";
     len = strlen(string) + 1;
 
     if (len == 1 && next_free != 0) {
@@ -241,7 +242,7 @@ _nc_merge_entry(ENTRY * const target, ENTRY * const source)
     _nc_align_termtype(to, from);
 #endif
     for_each_boolean(i, from) {
-	if (to->Booleans[i] != (char) CANCELLED_BOOLEAN) {
+	if (to->Booleans[i] != (NCURSES_SBOOL) CANCELLED_BOOLEAN) {
 	    int mergebool = from->Booleans[i];
 
 	    if (mergebool == CANCELLED_BOOLEAN)

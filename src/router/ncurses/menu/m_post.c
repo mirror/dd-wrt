@@ -1,5 +1,6 @@
 /****************************************************************************
- * Copyright (c) 1998-2010,2012 Free Software Foundation, Inc.              *
+ * Copyright 2020,2021 Thomas E. Dickey                                     *
+ * Copyright 1998-2010,2012 Free Software Foundation, Inc.                  *
  *                                                                          *
  * Permission is hereby granted, free of charge, to any person obtaining a  *
  * copy of this software and associated documentation files (the            *
@@ -37,7 +38,7 @@
 
 #include "menu.priv.h"
 
-MODULE_ID("$Id: m_post.c,v 1.31 2012/06/09 23:54:35 tom Exp $")
+MODULE_ID("$Id: m_post.c,v 1.36 2021/05/08 20:20:01 tom Exp $")
 
 /*---------------------------------------------------------------------------
 |   Facility      :  libnmenu
@@ -48,8 +49,8 @@ MODULE_ID("$Id: m_post.c,v 1.31 2012/06/09 23:54:35 tom Exp $")
 |
 |   Return Values :  -
 +--------------------------------------------------------------------------*/
-NCURSES_EXPORT(void)
-_nc_Post_Item(const MENU * menu, const ITEM * item)
+MENU_EXPORT(void)
+_nc_Post_Item(const MENU *menu, const ITEM *item)
 {
   int i;
   chtype ch;
@@ -57,7 +58,6 @@ _nc_Post_Item(const MENU * menu, const ITEM * item)
   int count = 0;
   bool isfore = FALSE, isback = FALSE, isgrey = FALSE;
   int name_len;
-  int desc_len;
 
   assert(menu->win);
 
@@ -131,6 +131,7 @@ _nc_Post_Item(const MENU * menu, const ITEM * item)
     {
       int m = menu->spc_desc / 2;
       int cy = -1, cx = -1;
+      int desc_len;
 
       for (ch = ' ', i = 0; i < menu->spc_desc; i++)
 	{
@@ -196,11 +197,11 @@ _nc_Post_Item(const MENU * menu, const ITEM * item)
 |
 |   Return Values :  -
 +--------------------------------------------------------------------------*/
-NCURSES_EXPORT(void)
-_nc_Draw_Menu(const MENU * menu)
+MENU_EXPORT(void)
+_nc_Draw_Menu(const MENU *menu)
 {
   ITEM *item = menu->items[0];
-  ITEM *lasthor, *lastvert;
+  ITEM *lastvert;
   ITEM *hitem;
   int y = 0;
   chtype s_bkgd;
@@ -212,45 +213,50 @@ _nc_Draw_Menu(const MENU * menu)
   werase(menu->win);
   wbkgdset(menu->win, s_bkgd);
 
-  lastvert = (menu->opt & O_NONCYCLIC) ? (ITEM *) 0 : item;
+  lastvert = (menu->opt & O_NONCYCLIC) ? (ITEM *)0 : item;
 
-  do
+  if (item != NULL)
     {
-      wmove(menu->win, y, 0);
-
-      hitem = item;
-      lasthor = (menu->opt & O_NONCYCLIC) ? (ITEM *) 0 : hitem;
-
       do
 	{
-	  _nc_Post_Item(menu, hitem);
+	  ITEM *lasthor;
 
-	  wattron(menu->win, (int)menu->back);
-	  if (((hitem = hitem->right) != lasthor) && hitem)
+	  wmove(menu->win, y, 0);
+
+	  hitem = item;
+	  lasthor = (menu->opt & O_NONCYCLIC) ? (ITEM *)0 : hitem;
+
+	  do
 	    {
-	      int i, j, cy, cx;
-	      chtype ch = ' ';
+	      _nc_Post_Item(menu, hitem);
 
-	      getyx(menu->win, cy, cx);
-	      for (j = 0; j < menu->spc_rows; j++)
+	      wattron(menu->win, (int)menu->back);
+	      if (((hitem = hitem->right) != lasthor) && hitem)
 		{
-		  wmove(menu->win, cy + j, cx);
-		  for (i = 0; i < menu->spc_cols; i++)
+		  int i, j, cy, cx;
+		  chtype ch = ' ';
+
+		  getyx(menu->win, cy, cx);
+		  for (j = 0; j < menu->spc_rows; j++)
 		    {
-		      waddch(menu->win, ch);
+		      wmove(menu->win, cy + j, cx);
+		      for (i = 0; i < menu->spc_cols; i++)
+			{
+			  waddch(menu->win, ch);
+			}
 		    }
+		  wmove(menu->win, cy, cx + menu->spc_cols);
 		}
-	      wmove(menu->win, cy, cx + menu->spc_cols);
 	    }
+	  while (hitem && (hitem != lasthor));
+	  wattroff(menu->win, (int)menu->back);
+
+	  item = item->down;
+	  y += menu->spc_rows;
+
 	}
-      while (hitem && (hitem != lasthor));
-      wattroff(menu->win, (int)menu->back);
-
-      item = item->down;
-      y += menu->spc_rows;
-
+      while (item && (item != lastvert));
     }
-  while (item && (item != lastvert));
 }
 
 /*---------------------------------------------------------------------------
@@ -266,8 +272,8 @@ _nc_Draw_Menu(const MENU * menu)
 |                    E_BAD_STATE         - Menu in userexit routine
 |                    E_POSTED            - Menu already posted
 +--------------------------------------------------------------------------*/
-NCURSES_EXPORT(int)
-post_menu(MENU * menu)
+MENU_EXPORT(int)
+post_menu(MENU *menu)
 {
   T((T_CALLED("post_menu(%p)"), (void *)menu));
 
@@ -282,7 +288,6 @@ post_menu(MENU * menu)
 
   if (menu->items && *(menu->items))
     {
-      int y;
       int h = 1 + menu->spc_rows * (menu->rows - 1);
 
       WINDOW *win = Get_Menu_Window(menu);
@@ -290,7 +295,8 @@ post_menu(MENU * menu)
 
       if ((menu->win = newpad(h, menu->width)))
 	{
-	  y = (maxy >= h) ? h : maxy;
+	  int y = (maxy >= h) ? h : maxy;
+
 	  if (y >= menu->height)
 	    y = menu->height;
 	  if (!(menu->sub = subpad(menu->win, y, menu->width, 0, 0)))
@@ -338,8 +344,8 @@ post_menu(MENU * menu)
 |                    E_BAD_STATE       - menu in userexit routine
 |                    E_NOT_POSTED      - menu is not posted
 +--------------------------------------------------------------------------*/
-NCURSES_EXPORT(int)
-unpost_menu(MENU * menu)
+MENU_EXPORT(int)
+unpost_menu(MENU *menu)
 {
   WINDOW *win;
 

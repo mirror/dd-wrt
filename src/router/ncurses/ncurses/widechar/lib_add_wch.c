@@ -1,5 +1,6 @@
 /****************************************************************************
- * Copyright (c) 2004-2016,2019 Free Software Foundation, Inc.              *
+ * Copyright 2019-2020,2021 Thomas E. Dickey                                *
+ * Copyright 2004-2011,2016 Free Software Foundation, Inc.                  *
  *                                                                          *
  * Permission is hereby granted, free of charge, to any person obtaining a  *
  * copy of this software and associated documentation files (the            *
@@ -39,7 +40,7 @@
 #include <wctype.h>
 #endif
 
-MODULE_ID("$Id: lib_add_wch.c,v 1.15 2019/05/04 20:31:31 tom Exp $")
+MODULE_ID("$Id: lib_add_wch.c,v 1.17 2021/06/17 21:26:02 tom Exp $")
 
 /* clone/adapt lib_addch.c */
 static const cchar_t blankchar = NewChar(BLANK_TEXT);
@@ -132,7 +133,7 @@ newline_forces_scroll(WINDOW *win, NCURSES_SIZE_T *ypos)
  * wrapped the cursor.  We don't do anything with this flag except set it when
  * wrapping, and clear it whenever we move the cursor.  If we try to wrap at
  * the lower-right corner of a window, we cannot move the cursor (since that
- * wouldn't be legal).  So we return an error (which is what SVr4 does). 
+ * wouldn't be legal).  So we return an error (which is what SVr4 does).
  * Unlike SVr4, we can successfully add a character to the lower-right corner
  * (Solaris 2.6 does this also, however).
  */

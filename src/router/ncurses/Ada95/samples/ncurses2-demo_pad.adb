@@ -7,7 +7,8 @@
 --                                 B O D Y                                  --
 --                                                                          --
 ------------------------------------------------------------------------------
--- Copyright (c) 2000-2011,2014 Free Software Foundation, Inc.              --
+-- Copyright 2020 Thomas E. Dickey                                          --
+-- Copyright 2000-2011,2014 Free Software Foundation, Inc.                  --
 --                                                                          --
 -- Permission is hereby granted, free of charge, to any person obtaining a  --
 -- copy of this software and associated documentation files (the            --
@@ -35,8 +36,8 @@
 ------------------------------------------------------------------------------
 --  Author: Eugene V. Melaragno <aldomel@ix.netcom.com> 2000
 --  Version Control
---  $Revision: 1.9 $
---  $Date: 2014/09/13 19:10:18 $
+--  $Revision: 1.11 $
+--  $Date: 2020/02/02 23:34:34 $
 --  Binding Version 01.00
 ------------------------------------------------------------------------------
 with ncurses2.util; use ncurses2.util;
@@ -488,7 +489,7 @@ procedure ncurses2.demo_pad is
          --  more writing off the screen.
          --  Interestingly, the exception is not handled if
          --  we put a block around this.
-         --  delcare --begin
+         --  declare --begin
          if top_y /= 0 and top_x /= 0 then
             Add (Line => top_y - 1, Column => top_x - 1,
                  Ch => ACS_Map (ACS_Upper_Left_Corner));
@@ -579,7 +580,7 @@ procedure ncurses2.demo_pad is
 
          declare
             --  the C version allows the panel to have a zero height
-            --  wich raise the exception
+            --  which raise the exception
          begin
             Refresh_Without_Update
               (

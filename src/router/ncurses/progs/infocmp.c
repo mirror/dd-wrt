@@ -1,5 +1,6 @@
 /****************************************************************************
- * Copyright (c) 1998-2016,2017 Free Software Foundation, Inc.              *
+ * Copyright 2020,2021 Thomas E. Dickey                                     *
+ * Copyright 1998-2016,2017 Free Software Foundation, Inc.                  *
  *                                                                          *
  * Permission is hereby granted, free of charge, to any person obtaining a  *
  * copy of this software and associated documentation files (the            *
@@ -42,7 +43,7 @@
 
 #include <dump_entry.h>
 
-MODULE_ID("$Id: infocmp.c,v 1.143 2017/04/05 09:27:51 tom Exp $")
+MODULE_ID("$Id: infocmp.c,v 1.151 2021/06/17 21:11:08 tom Exp $")
 
 #define MAX_STRING	1024	/* maximum formatted string */
 
@@ -93,7 +94,7 @@ typedef struct {
 static ENTERED *entered;
 
 #undef ExitProgram
-static void ExitProgram(int code) GCC_NORETURN;
+static GCC_NORETURN void ExitProgram(int code);
 /* prototype is to get gcc to accept the noreturn attribute */
 static void
 ExitProgram(int code)
@@ -321,16 +322,17 @@ static void
 print_uses(ENTRY * ep, FILE *fp)
 /* print an entry's use references */
 {
-    unsigned i;
-
-    if (!ep->nuses)
+    if (!ep->nuses) {
 	fputs("NULL", fp);
-    else
+    } else {
+	unsigned i;
+
 	for (i = 0; i < ep->nuses; i++) {
 	    fputs(ep->uses[i].name, fp);
 	    if (i < ep->nuses - 1)
 		fputs(" ", fp);
 	}
+    }
 }
 
 static const char *
@@ -417,7 +419,7 @@ show_comparing(char **names)
 
 /*
  * ncurses stores two types of non-standard capabilities:
- * a) capabilities listed past the "STOP-HERE" comment in the Caps file. 
+ * a) capabilities listed past the "STOP-HERE" comment in the Caps file.
  *    These are used in the terminfo source file to provide data for termcaps,
  *    e.g., when there is no equivalent capability in terminfo, as well as for
  *    widely-used non-standard capabilities.
@@ -834,6 +836,8 @@ analyze_string(const char *name, const char *cap, TERMTYPE2 *tp)
 	    char *cp = tp->Strings[i];
 
 	    /* don't use function-key capabilities */
+	    if (strnames[i] == NULL)
+		continue;
 	    if (strnames[i][0] == 'k' && strnames[i][1] == 'f')
 		continue;
 
@@ -1193,8 +1197,9 @@ usage(void)
 	DATA("Options:")
     };
 #undef DATA
+    /* length is given here so the compiler can make everything readonly */
 #define DATA(s) s
-    static const char options[][45] =
+    static const char options[][46] =
     {
 	"  -0    print single-row"
 	,"  -1    print single-column"
@@ -1303,9 +1308,9 @@ dump_initializers(TERMTYPE2 *term)
 	   name_initializer("alias"), entries->tterm.term_names);
 
     for_each_string(n, term) {
-	char buf[MAX_STRING], *sp, *tp;
-
 	if (VALID_STRING(term->Strings[n])) {
+	    char buf[MAX_STRING], *sp, *tp;
+
 	    tp = buf;
 #define TP_LIMIT	((MAX_STRING - 5) - (size_t)(tp - buf))
 	    *tp++ = '"';
@@ -1508,6 +1513,8 @@ show_databases(void)
 
 #if NO_LEAKS
 #define MAIN_LEAKS() \
+    _nc_free_termtype2(&entries[0].tterm); \
+    _nc_free_termtype2(&entries[1].tterm); \
     free(myargv); \
     free(tfile); \
     free(tname)
@@ -1527,7 +1534,7 @@ main(int argc, char *argv[])
     char **myargv;
 
     char *firstdir, *restdir;
-    int c, i, len;
+    int c;
     bool formatted = FALSE;
     bool filecompare = FALSE;
     int initdump = 0;
@@ -1834,8 +1841,8 @@ main(int argc, char *argv[])
 				   tname[termcount]);
 
 		status = _nc_read_entry2(tname[termcount],
-					tfile[termcount],
-					&entries[termcount].tterm);
+					 tfile[termcount],
+					 &entries[termcount].tterm);
 	    }
 
 	    if (status <= 0) {
@@ -1879,6 +1886,8 @@ main(int argc, char *argv[])
 	    analyze_string("rmkx", keypad_local, &entries[0].tterm);
 #undef CUR
 	} else {
+	    int i;
+	    int len;
 
 	    /*
 	     * Here's where the real work gets done

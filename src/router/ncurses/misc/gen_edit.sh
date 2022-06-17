@@ -1,6 +1,7 @@
 #!/bin/sh
 ##############################################################################
-# Copyright (c) 2004-2011,2012 Free Software Foundation, Inc.                #
+# Copyright 2020,2021 Thomas E. Dickey                                       #
+# Copyright 2004-2011,2012 Free Software Foundation, Inc.                    #
 #                                                                            #
 # Permission is hereby granted, free of charge, to any person obtaining a    #
 # copy of this software and associated documentation files (the "Software"), #
@@ -29,7 +30,7 @@
 #
 # Author: Thomas E. Dickey
 #
-# $Id: gen_edit.sh,v 1.5 2012/04/01 15:04:37 tom Exp $
+# $Id: gen_edit.sh,v 1.7 2021/09/04 15:55:29 tom Exp $
 # Generate a sed-script for converting the terminfo.src to the form which will
 # be installed.
 #
@@ -39,10 +40,10 @@
 
 linux_dft=linux2.2
 
-: ${datadir=/usr/share}
-: ${WHICH_LINUX=$linux_dft}
-: ${WHICH_XTERM=xterm-new}
-: ${XTERM_KBS=BS}
+: "${datadir=/usr/share}"
+: "${WHICH_LINUX=$linux_dft}"
+: "${WHICH_XTERM=xterm-new}"
+: "${XTERM_KBS=BS}"
 
 # If we're not installing into /usr/share/, we'll have to adjust the location
 # of the tabset files in terminfo.src (which are in a parallel directory).

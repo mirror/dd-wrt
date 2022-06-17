@@ -1,5 +1,6 @@
 /****************************************************************************
- * Copyright (c) 1998-2017,2018 Free Software Foundation, Inc.              *
+ * Copyright 2018-2020,2021 Thomas E. Dickey                                *
+ * Copyright 1998-2016,2017 Free Software Foundation, Inc.                  *
  *                                                                          *
  * Permission is hereby granted, free of charge, to any person obtaining a  *
  * copy of this software and associated documentation files (the            *
@@ -43,10 +44,17 @@
 #include <curses.priv.h>
 #include <tic.h>
 
+#if USE_GPM_SUPPORT
+#ifdef HAVE_LIBDL
+/* use dynamic loader to avoid linkage dependency */
+#include <dlfcn.h>
+#endif
+#endif
+
 #undef CUR
 #define CUR SP_TERMTYPE
 
-MODULE_ID("$Id: lib_set_term.c,v 1.168 2018/12/15 23:49:43 tom Exp $")
+MODULE_ID("$Id: lib_set_term.c,v 1.179 2021/05/08 21:48:34 tom Exp $")
 
 #ifdef USE_TERM_DRIVER
 #define MaxColors      InfoOf(sp).maxcolors
@@ -139,8 +147,8 @@ delscreen(SCREEN *sp)
     _nc_lock_global(curses);
     if (delink_screen(sp)) {
 #ifdef USE_SP_RIPOFF
-	ripoff_t *rop;
 	if (safe_ripoff_sp && safe_ripoff_sp != safe_ripoff_stack) {
+	    ripoff_t *rop;
 	    for (rop = safe_ripoff_stack;
 		 rop != safe_ripoff_sp && (rop - safe_ripoff_stack) < N_RIPS;
 		 rop++) {
@@ -196,6 +204,14 @@ delscreen(SCREEN *sp)
 	if (_nc_find_prescr() == sp) {
 	    _nc_forget_prescr();
 	}
+#if USE_GPM_SUPPORT
+#ifdef HAVE_LIBDL
+	if (sp->_dlopen_gpm != 0) {
+	    dlclose(sp->_dlopen_gpm);
+	    sp->_dlopen_gpm = 0;
+	}
+#endif
+#endif /* USE_GPM_SUPPORT */
 	free(sp);
 
 	/*
@@ -313,9 +329,14 @@ NCURSES_SP_NAME(_nc_setupscreen) (
 	T(("_nc_alloc_screen_sp %p", (void *) sp));
 	*spp = sp;
     }
-    if (!sp
-	|| ((sp->_acs_map = typeCalloc(chtype, ACS_LEN)) == 0)
-	|| ((sp->_screen_acs_map = typeCalloc(bool, ACS_LEN)) == 0)) {
+    if (sp == NULL) {
+	ReturnScreenError();
+    }
+    if ((sp->_acs_map = typeCalloc(chtype, ACS_LEN)) == NULL) {
+	ReturnScreenError();
+    }
+    if ((sp->_screen_acs_map = typeCalloc(bool, ACS_LEN)) == NULL) {
+	free(sp->_acs_map);
 	ReturnScreenError();
     }
 
@@ -339,8 +360,9 @@ NCURSES_SP_NAME(_nc_setupscreen) (
     sp->_next_screen = _nc_screen_chain;
     _nc_screen_chain = sp;
 
-    if ((sp->_current_attr = typeCalloc(NCURSES_CH_T, 1)) == 0)
+    if ((sp->_current_attr = typeCalloc(NCURSES_CH_T, 1)) == 0) {
 	returnCode(ERR);
+    }
 #endif
 
     /*
@@ -390,7 +412,11 @@ NCURSES_SP_NAME(_nc_setupscreen) (
     fflush(output);
     setmode(output, O_BINARY);
 #endif
-    NCURSES_SP_NAME(_nc_set_buffer) (NCURSES_SP_ARGx output, TRUE);
+#if defined(EXP_WIN32_DRIVER)
+    T(("setting output mode to binary"));
+    fflush(output);
+    _setmode(fileno(output), _O_BINARY);
+#endif
     sp->_lines = (NCURSES_SIZE_T) slines;
     sp->_lines_avail = (NCURSES_SIZE_T) slines;
     sp->_columns = (NCURSES_SIZE_T) scolumns;
@@ -398,6 +424,10 @@ NCURSES_SP_NAME(_nc_setupscreen) (
     fflush(output);
     sp->_ofd = output ? fileno(output) : -1;
     sp->_ofp = output;
+#if defined(EXP_WIN32_DRIVER)
+    if (output)
+	_setmode(fileno(output), _O_BINARY);
+#endif
     sp->out_limit = (size_t) ((2 + slines) * (6 + scolumns));
     if ((sp->out_buffer = malloc(sp->out_limit)) == 0)
 	sp->out_limit = 0;
@@ -469,7 +499,7 @@ NCURSES_SP_NAME(_nc_setupscreen) (
 	p = extract_fgbg(p, &(sp->_default_fg));
 	p = extract_fgbg(p, &(sp->_default_bg));
 	if (*p)			/* assume rxvt was compiled with xpm support */
-	    p = extract_fgbg(p, &(sp->_default_bg));
+	    extract_fgbg(p, &(sp->_default_bg));
 	TR(TRACE_CHARPUT | TRACE_MOVE, ("decoded fg=%d, bg=%d",
 					sp->_default_fg, sp->_default_bg));
 	if (sp->_default_fg >= MaxColors) {
@@ -666,6 +696,9 @@ NCURSES_SP_NAME(_nc_setupscreen) (
 	       formats (4-4 or 3-2-3) for which there may be some hardware
 	       support. */
 	    if (rop->hook == _nc_slk_initialize) {
+		if (!TerminalOf(sp)) {
+		    continue;
+		}
 		if (!(NumLabels <= 0 || !SLK_STDFMT(slk_format))) {
 		    continue;
 		}

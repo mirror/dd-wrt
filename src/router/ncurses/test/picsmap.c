@@ -1,5 +1,6 @@
 /****************************************************************************
- * Copyright (c) 2017-2018,2019 Free Software Foundation, Inc.              *
+ * Copyright 2018-2020,2021 Thomas E. Dickey                                *
+ * Copyright 2017,2018 Free Software Foundation, Inc.                       *
  *                                                                          *
  * Permission is hereby granted, free of charge, to any person obtaining a  *
  * copy of this software and associated documentation files (the            *
@@ -26,7 +27,7 @@
  * authorization.                                                           *
  ****************************************************************************/
 /*
- * $Id: picsmap.c,v 1.131 2019/12/14 23:51:39 tom Exp $
+ * $Id: picsmap.c,v 1.139 2021/05/08 15:56:05 tom Exp $
  *
  * Author: Thomas E. Dickey
  *
@@ -108,7 +109,7 @@ typedef struct {
 #define debugmsg if (debugging) logmsg
 #define debugmsg2 if (debugging) logmsg2
 
-static void cleanup(int) GCC_NORETURN;
+static GCC_NORETURN void cleanup(int);
 static void giveup(const char *fmt, ...) GCC_PRINTFLIKE(1, 2);
 static void logmsg(const char *fmt, ...) GCC_PRINTFLIKE(1, 2);
 static void logmsg2(const char *fmt, ...) GCC_PRINTFLIKE(1, 2);
@@ -603,7 +604,6 @@ read_palette(const char *filename)
 		    continue;
 		}
 	    }
-	    s += strlen(s);
 
 	    if (tries & 2) {
 		int len = (int) strlen(filename);
@@ -954,6 +954,20 @@ parse_rgb(char **data)
     return result;
 }
 
+#define LOWERCASE(c) ((isalpha(UChar(c)) && isupper(UChar(c))) ? tolower(UChar(c)) : (c))
+
+static int
+CaselessCmp(const char *a, const char *b)
+{				/* strcasecmp isn't portable */
+    while (*a && *b) {
+	int cmp = LOWERCASE(*a) - LOWERCASE(*b);
+	if (cmp != 0)
+	    break;
+	a++, b++;
+    }
+    return LOWERCASE(*a) - LOWERCASE(*b);
+}
+
 static RGB_NAME *
 lookup_rgb(const char *name)
 {
@@ -961,7 +975,7 @@ lookup_rgb(const char *name)
     if (rgb_table != 0) {
 	int n;
 	for (n = 0; rgb_table[n].name != 0; ++n) {
-	    if (!strcasecmp(name, rgb_table[n].name)) {
+	    if (!CaselessCmp(name, rgb_table[n].name)) {
 		result = &rgb_table[n];
 		break;
 	    }
@@ -975,7 +989,7 @@ parse_xbm(char **data)
 {
     int n;
     int state = 0;
-    char buf[BUFSIZ];
+    char buf[2048];
     int num;
     char ch;
     char *s;
@@ -1000,7 +1014,7 @@ parse_xbm(char **data)
 	case 0:
 	case 1:
 	case 2:
-	    if (sscanf(s, "#define %s %d%c", buf, &num, &ch) >= 2) {
+	    if (sscanf(s, "#define %1024s %d%c", buf, &num, &ch) >= 2) {
 		if ((t = strstr(buf, "_width")) != 0) {
 		    state |= 1;
 		    result->wide = (short) bytes_of(num);
@@ -1021,7 +1035,7 @@ parse_xbm(char **data)
 	    }
 	    break;
 	case 3:
-	    if (sscanf(s, "static char %[^_ ]_bits[]%c", buf, &ch) >= 1) {
+	    if (sscanf(s, "static char %1024[^_ ]_bits[]%c", buf, &ch) >= 1) {
 		if (strcmp(result->name, buf)) {
 		    goto finish;
 		}
@@ -1597,7 +1611,7 @@ report_colors(PICS_HEAD * pics)
 	    for (k = 0; k < wide; ++k) {
 		int n = j + (k * high);
 		size_t want = (sizeof(buffer) - (size_t) (s - buffer));
-		if (want < 100)
+		if (want < 100 || want >= sizeof(buffer))
 		    break;
 		if (n >= pics->colors)
 		    break;

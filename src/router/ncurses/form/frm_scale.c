@@ -1,5 +1,6 @@
 /****************************************************************************
- * Copyright (c) 1998-2004,2010 Free Software Foundation, Inc.              *
+ * Copyright 2020,2021 Thomas E. Dickey                                     *
+ * Copyright 1998-2004,2010 Free Software Foundation, Inc.                  *
  *                                                                          *
  * Permission is hereby granted, free of charge, to any person obtaining a  *
  * copy of this software and associated documentation files (the            *
@@ -32,19 +33,19 @@
 
 #include "form.priv.h"
 
-MODULE_ID("$Id: frm_scale.c,v 1.10 2010/01/23 21:14:36 tom Exp $")
+MODULE_ID("$Id: frm_scale.c,v 1.13 2021/06/17 21:20:30 tom Exp $")
 
 /*---------------------------------------------------------------------------
-|   Facility      :  libnform  
+|   Facility      :  libnform
 |   Function      :  int scale_form( const FORM *form, int *rows, int *cols )
-|   
+|
 |   Description   :  Retrieve size of form
 |
 |   Return Values :  E_OK              - no error
 |                    E_BAD_ARGUMENT    - invalid form pointer
 |                    E_NOT_CONNECTED   - no fields connected to form
 +--------------------------------------------------------------------------*/
-NCURSES_EXPORT(int)
+FORM_EXPORT(int)
 scale_form(const FORM *form, int *rows, int *cols)
 {
   T((T_CALLED("scale_form(%p,%p,%p)"),

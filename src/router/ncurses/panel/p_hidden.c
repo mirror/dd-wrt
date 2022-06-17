@@ -1,5 +1,6 @@
 /****************************************************************************
- * Copyright (c) 1998-2009,2010 Free Software Foundation, Inc.              *
+ * Copyright 2020 Thomas E. Dickey                                          *
+ * Copyright 1998-2009,2010 Free Software Foundation, Inc.                  *
  *                                                                          *
  * Permission is hereby granted, free of charge, to any person obtaining a  *
  * copy of this software and associated documentation files (the            *
@@ -37,9 +38,9 @@
  */
 #include "panel.priv.h"
 
-MODULE_ID("$Id: p_hidden.c,v 1.9 2010/01/23 21:22:15 tom Exp $")
+MODULE_ID("$Id: p_hidden.c,v 1.11 2020/05/24 01:40:20 anonymous.maarten Exp $")
 
-NCURSES_EXPORT(int)
+PANEL_EXPORT(int)
 panel_hidden(const PANEL * pan)
 {
   int rc = ERR;

@@ -1,6 +1,7 @@
-<!-- 
+<!--
   ****************************************************************************
-  * Copyright (c) 1999-2016,2018 Free Software Foundation, Inc.              *
+  * Copyright 2018-2020,2021 Thomas E. Dickey                                *
+  * Copyright 1999-2010,2016 Free Software Foundation, Inc.                  *
   *                                                                          *
   * Permission is hereby granted, free of charge, to any person obtaining a  *
   * copy of this software and associated documentation files (the            *
@@ -27,7 +28,7 @@
   * authorization.                                                           *
   ****************************************************************************
   * Author: Thomas E. Dickey 1999-on
-  * @Id: curs_extend.3x,v 1.22 2018/07/28 21:34:06 tom Exp @
+  * @Id: curs_extend.3x,v 1.26 2021/03/13 13:43:05 tom Exp @
 -->
 <!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01//EN">
 <HTML>
@@ -54,7 +55,7 @@
        <STRONG>#include</STRONG> <STRONG>&lt;curses.h&gt;</STRONG>
 
        <STRONG>const</STRONG> <STRONG>char</STRONG> <STRONG>*</STRONG> <STRONG>curses_version(void);</STRONG>
-       <STRONG>int</STRONG> <STRONG>use_extended_names(bool</STRONG> <STRONG>enable);</STRONG>
+       <STRONG>int</STRONG> <STRONG>use_extended_names(bool</STRONG> <EM>enable</EM><STRONG>);</STRONG>
 
 
 </PRE><H2><a name="h2-DESCRIPTION">DESCRIPTION</a></H2><PRE>
@@ -64,15 +65,17 @@
 
 </PRE><H3><a name="h3-curses_version">curses_version</a></H3><PRE>
        Use <STRONG>curses_version</STRONG> to get the version number, including patch level  of
-       the library, e.g., <STRONG>5.0.19991023</STRONG>
+       the library, prefixed by "ncurses", e.g.,
+
+              <STRONG>ncurses</STRONG> <STRONG>5.0.19991023</STRONG>
 
 
 </PRE><H3><a name="h3-use_extended_names">use_extended_names</a></H3><PRE>
-       The  <STRONG>use_extended_names</STRONG>  function controls whether the calling applica-
-       tion is able to use user-defined or nonstandard names which may be com-
-       piled  into the terminfo description, i.e., via the terminfo or termcap
-       interfaces.  Normally these names are  available  for  use,  since  the
-       essential  decision  is  made  by using the <STRONG>-x</STRONG> option of <STRONG>tic</STRONG> to compile
+       The   <STRONG>use_extended_names</STRONG>   function   controls   whether   the  calling
+       application is able to use user-defined or nonstandard names which  may
+       be  compiled  into  the terminfo description, i.e., via the terminfo or
+       termcap interfaces.  Normally these names are available for use,  since
+       the essential decision is made by using the <STRONG>-x</STRONG> option of <STRONG>tic</STRONG> to compile
        extended terminal definitions.  However you can disable this feature to
        ensure compatibility with other implementations of curses.
 
