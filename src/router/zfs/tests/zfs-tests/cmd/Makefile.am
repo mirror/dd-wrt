@@ -41,7 +41,7 @@ scripts_zfs_tests_bin_PROGRAMS += %D%/draid
 	libnvpair.la
 %C%_draid_LDADD += $(ZLIB_LIBS)
 
-EXTRA_DIST += $(addprefix %D%/,file/file_common.h)
+dist_noinst_DATA += %D%/file/file_common.h
 scripts_zfs_tests_bin_PROGRAMS += %D%/file_append %D%/file_check %D%/file_trunc %D%/file_write %D%/largest_file %D%/randwritecomp
 %C%_file_append_SOURCES   = %D%/file/file_append.c
 %C%_file_check_SOURCES    = %D%/file/file_check.c
@@ -98,15 +98,19 @@ scripts_zfs_tests_bin_PROGRAMS += %D%/ereports
 	libzfs.la
 
 
-scripts_zfs_tests_bin_PROGRAMS += %D%/edonr_test %D%/skein_test %D%/sha2_test
+scripts_zfs_tests_bin_PROGRAMS += %D%/edonr_test %D%/skein_test \
+	%D%/sha2_test %D%/blake3_test
 %C%_skein_test_SOURCES = %D%/checksum/skein_test.c
 %C%_sha2_test_SOURCES  = %D%/checksum/sha2_test.c
 %C%_edonr_test_SOURCES = %D%/checksum/edonr_test.c
+%C%_blake3_test_SOURCES = %D%/checksum/blake3_test.c
 %C%_skein_test_LDADD = \
 	libicp.la \
+	libspl.la \
 	libspl_assert.la
 %C%_sha2_test_LDADD  = $(%C%_skein_test_LDADD)
 %C%_edonr_test_LDADD = $(%C%_skein_test_LDADD)
+%C%_blake3_test_LDADD = $(%C%_skein_test_LDADD)
 
 
 if BUILD_LINUX
@@ -116,7 +120,7 @@ scripts_zfs_tests_bin_PROGRAMS += %D%/xattrtest
 scripts_zfs_tests_bin_PROGRAMS += %D%/zed_fd_spill-zedlet
 
 
-EXTRA_DIST += $(addprefix %D%/,linux_dos_attributes/dos_attributes.h)
+dist_noinst_DATA += %D%/linux_dos_attributes/dos_attributes.h
 scripts_zfs_tests_bin_PROGRAMS  += %D%/read_dos_attributes %D%/write_dos_attributes
 %C%_read_dos_attributes_SOURCES  = %D%/linux_dos_attributes/read_dos_attributes.c
 %C%_write_dos_attributes_SOURCES = %D%/linux_dos_attributes/write_dos_attributes.c

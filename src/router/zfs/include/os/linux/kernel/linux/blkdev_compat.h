@@ -34,6 +34,11 @@
 #include <linux/hdreg.h>
 #include <linux/major.h>
 #include <linux/msdos_fs.h>	/* for SECTOR_* */
+#include <linux/bio.h>
+
+#ifdef HAVE_BLK_MQ
+#include <linux/blk-mq.h>
+#endif
 
 #ifndef HAVE_BLK_QUEUE_FLAG_SET
 static inline void
@@ -495,21 +500,45 @@ blk_queue_discard_granularity(struct request_queue *q, unsigned int dg)
 }
 
 /*
+ * 5.19 API,
+ *   bdev_max_discard_sectors()
+ *
+ * 2.6.32 API,
+ *   blk_queue_discard()
+ */
+static inline boolean_t
+bdev_discard_supported(struct block_device *bdev)
+{
+#if defined(HAVE_BDEV_MAX_DISCARD_SECTORS)
+	return (!!bdev_max_discard_sectors(bdev));
+#elif defined(HAVE_BLK_QUEUE_DISCARD)
+	return (!!blk_queue_discard(bdev_get_queue(bdev)));
+#else
+#error "Unsupported kernel"
+#endif
+}
+
+/*
+ * 5.19 API,
+ *   bdev_max_secure_erase_sectors()
+ *
  * 4.8 API,
  *   blk_queue_secure_erase()
  *
  * 2.6.36 - 4.7 API,
  *   blk_queue_secdiscard()
  */
-static inline int
-blk_queue_discard_secure(struct request_queue *q)
+static inline boolean_t
+bdev_secure_discard_supported(struct block_device *bdev)
 {
-#if defined(HAVE_BLK_QUEUE_SECURE_ERASE)
-	return (blk_queue_secure_erase(q));
+#if defined(HAVE_BDEV_MAX_SECURE_ERASE_SECTORS)
+	return (!!bdev_max_secure_erase_sectors(bdev));
+#elif defined(HAVE_BLK_QUEUE_SECURE_ERASE)
+	return (!!blk_queue_secure_erase(bdev_get_queue(bdev)));
 #elif defined(HAVE_BLK_QUEUE_SECDISCARD)
-	return (blk_queue_secdiscard(q));
+	return (!!blk_queue_secdiscard(bdev_get_queue(bdev)));
 #else
-	return (0);
+#error "Unsupported kernel"
 #endif
 }
 
@@ -527,7 +556,10 @@ blk_generic_start_io_acct(struct request_queue *q __attribute__((unused)),
     struct gendisk *disk __attribute__((unused)),
     int rw __attribute__((unused)), struct bio *bio)
 {
-#if defined(HAVE_DISK_IO_ACCT)
+#if defined(HAVE_BDEV_IO_ACCT)
+	return (bdev_start_io_acct(bio->bi_bdev, bio_sectors(bio),
+	    bio_op(bio), jiffies));
+#elif defined(HAVE_DISK_IO_ACCT)
 	return (disk_start_io_acct(disk, bio_sectors(bio), bio_op(bio)));
 #elif defined(HAVE_BIO_IO_ACCT)
 	return (bio_start_io_acct(bio));
@@ -550,7 +582,9 @@ blk_generic_end_io_acct(struct request_queue *q __attribute__((unused)),
     struct gendisk *disk __attribute__((unused)),
     int rw __attribute__((unused)), struct bio *bio, unsigned long start_time)
 {
-#if defined(HAVE_DISK_IO_ACCT)
+#if defined(HAVE_BDEV_IO_ACCT)
+	bdev_end_io_acct(bio->bi_bdev, bio_op(bio), start_time);
+#elif defined(HAVE_DISK_IO_ACCT)
 	disk_end_io_acct(disk, bio_op(bio), start_time);
 #elif defined(HAVE_BIO_IO_ACCT)
 	bio_end_io_acct(bio, start_time);
@@ -579,4 +613,110 @@ blk_generic_alloc_queue(make_request_fn make_request, int node_id)
 }
 #endif /* !HAVE_SUBMIT_BIO_IN_BLOCK_DEVICE_OPERATIONS */
 
+/*
+ * All the io_*() helper functions below can operate on a bio, or a rq, but
+ * not both.  The older submit_bio() codepath will pass a bio, and the
+ * newer blk-mq codepath will pass a rq.
+ */
+static inline int
+io_data_dir(struct bio *bio, struct request *rq)
+{
+#ifdef HAVE_BLK_MQ
+	if (rq != NULL) {
+		if (op_is_write(req_op(rq))) {
+			return (WRITE);
+		} else {
+			return (READ);
+		}
+	}
+#else
+	ASSERT3P(rq, ==, NULL);
+#endif
+	return (bio_data_dir(bio));
+}
+
+static inline int
+io_is_flush(struct bio *bio, struct request *rq)
+{
+#ifdef HAVE_BLK_MQ
+	if (rq != NULL)
+		return (req_op(rq) == REQ_OP_FLUSH);
+#else
+	ASSERT3P(rq, ==, NULL);
+#endif
+	return (bio_is_flush(bio));
+}
+
+static inline int
+io_is_discard(struct bio *bio, struct request *rq)
+{
+#ifdef HAVE_BLK_MQ
+	if (rq != NULL)
+		return (req_op(rq) == REQ_OP_DISCARD);
+#else
+	ASSERT3P(rq, ==, NULL);
+#endif
+	return (bio_is_discard(bio));
+}
+
+static inline int
+io_is_secure_erase(struct bio *bio, struct request *rq)
+{
+#ifdef HAVE_BLK_MQ
+	if (rq != NULL)
+		return (req_op(rq) == REQ_OP_SECURE_ERASE);
+#else
+	ASSERT3P(rq, ==, NULL);
+#endif
+	return (bio_is_secure_erase(bio));
+}
+
+static inline int
+io_is_fua(struct bio *bio, struct request *rq)
+{
+#ifdef HAVE_BLK_MQ
+	if (rq != NULL)
+		return (rq->cmd_flags & REQ_FUA);
+#else
+	ASSERT3P(rq, ==, NULL);
+#endif
+	return (bio_is_fua(bio));
+}
+
+
+static inline uint64_t
+io_offset(struct bio *bio, struct request *rq)
+{
+#ifdef HAVE_BLK_MQ
+	if (rq != NULL)
+		return (blk_rq_pos(rq) << 9);
+#else
+	ASSERT3P(rq, ==, NULL);
+#endif
+	return (BIO_BI_SECTOR(bio) << 9);
+}
+
+static inline uint64_t
+io_size(struct bio *bio, struct request *rq)
+{
+#ifdef HAVE_BLK_MQ
+	if (rq != NULL)
+		return (blk_rq_bytes(rq));
+#else
+	ASSERT3P(rq, ==, NULL);
+#endif
+	return (BIO_BI_SIZE(bio));
+}
+
+static inline int
+io_has_data(struct bio *bio, struct request *rq)
+{
+#ifdef HAVE_BLK_MQ
+	if (rq != NULL)
+		return (bio_has_data(rq->bio));
+#else
+	ASSERT3P(rq, ==, NULL);
+#endif
+	return (bio_has_data(bio));
+}
 #endif /* _ZFS_BLKDEV_H */
