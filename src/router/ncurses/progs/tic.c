@@ -1,5 +1,6 @@
 /****************************************************************************
- * Copyright (c) 1998-2018,2019 Free Software Foundation, Inc.              *
+ * Copyright 2018-2020,2021 Thomas E. Dickey                                *
+ * Copyright 1998-2017,2018 Free Software Foundation, Inc.                  *
  *                                                                          *
  * Permission is hereby granted, free of charge, to any person obtaining a  *
  * copy of this software and associated documentation files (the            *
@@ -48,7 +49,7 @@
 #include <parametrized.h>
 #include <transform.h>
 
-MODULE_ID("$Id: tic.c,v 1.281 2019/11/09 18:51:36 tom Exp $")
+MODULE_ID("$Id: tic.c,v 1.307 2021/10/05 08:07:05 tom Exp $")
 
 #define STDIN_NAME "<stdin>"
 
@@ -115,8 +116,6 @@ free_namelist(char **src)
 static void
 cleanup(void)
 {
-    int rc;
-
 #if NO_LEAKS
     free_namelist(namelst);
     _nc_leaks_dump_entry();
@@ -124,6 +123,8 @@ cleanup(void)
     if (tmp_fp != 0)
 	fclose(tmp_fp);
     if (to_remove != 0) {
+	int rc;
+
 #if HAVE_REMOVE
 	rc = remove(to_remove);
 #else
@@ -303,15 +304,17 @@ put_translate(int c)
 /* emit a comment char, translating terminfo names to termcap names */
 {
     static bool in_name = FALSE;
-    static size_t have, used;
-    static char *namebuf, *suffix;
+    static size_t used;
 
     if (in_name) {
+	static size_t have;
+	static char *namebuf, *suffix;
+
 	if (used + 1 >= have) {
 	    have += 132;
-	    if ((namebuf = typeRealloc(char, have, namebuf)) == 0)
+	    if ((namebuf = typeRealloc(char, have, namebuf)) == NULL)
 		  failed("put_translate namebuf");
-	    if ((suffix = typeRealloc(char, have, suffix)) == 0)
+	    if ((suffix = typeRealloc(char, have, suffix)) == NULL)
 		  failed("put_translate suffix");
 	}
 	if (c == '\n' || c == '@') {
@@ -370,12 +373,10 @@ stripped(char *src)
 	src++;
 
     if (*src != '\0') {
-	size_t len;
-
 	if ((dst = strdup(src)) == NULL) {
 	    failed("strdup");
 	} else {
-	    len = strlen(dst);
+	    size_t len = strlen(dst);
 	    while (--len != 0 && isspace(UChar(dst[len])))
 		dst[len] = '\0';
 	}
@@ -399,7 +400,7 @@ open_tempfile(char *filename)
     }
 #else
     if (tmpnam(filename) != 0)
-	result = fopen(filename, "w");
+	result = safe_fopen(filename, "w");
 #endif
     return result;
 }
@@ -409,15 +410,15 @@ copy_input(FILE *source, const char *filename, char *alt_file)
 {
     char my_altfile[PATH_MAX];
     FILE *result = 0;
-    FILE *target = 0;
+    FILE *target;
     int ch;
 
-    if (alt_file == 0)
+    if (alt_file == NULL)
 	alt_file = my_altfile;
 
-    if (source == 0) {
+    if (source == NULL) {
 	failed("copy_input (source)");
-    } else if ((target = open_tempfile(alt_file)) == 0) {
+    } else if ((target = open_tempfile(alt_file)) == NULL) {
 	failed("copy_input (target)");
     } else {
 	clearerr(source);
@@ -441,7 +442,7 @@ copy_input(FILE *source, const char *filename, char *alt_file)
 	 * the one that we were writing on before starting to read from the
 	 * second stream.
 	 */
-	result = fopen(alt_file, "r+");
+	result = safe_fopen(alt_file, "r+");
 	fclose(target);
 	to_remove = strdup(alt_file);
     }
@@ -457,7 +458,7 @@ open_input(const char *filename, char *alt_file)
 
     if (!strcmp(filename, "-")) {
 	fp = copy_input(stdin, STDIN_NAME, alt_file);
-    } else if (stat(filename, &sb) < 0) {
+    } else if (stat(filename, &sb) == -1) {
 	fprintf(stderr, "%s: %s %s\n", _nc_progname, filename, strerror(errno));
 	ExitProgram(EXIT_FAILURE);
     } else if ((mode = (sb.st_mode & S_IFMT)) == S_IFDIR
@@ -465,9 +466,9 @@ open_input(const char *filename, char *alt_file)
 	fprintf(stderr, "%s: %s is not a file\n", _nc_progname, filename);
 	ExitProgram(EXIT_FAILURE);
     } else {
-	fp = fopen(filename, "r");
+	fp = safe_fopen(filename, "r");
 
-	if (fp == 0) {
+	if (fp == NULL) {
 	    fprintf(stderr, "%s: Can't open %s\n", _nc_progname, filename);
 	    ExitProgram(EXIT_FAILURE);
 	}
@@ -494,7 +495,7 @@ make_namelist(char *src)
     unsigned pass, n, nn;
     char buffer[BUFSIZ];
 
-    if (src == 0) {
+    if (src == NULL) {
 	/* EMPTY */ ;
     } else if (strchr(src, '/') != 0) {		/* a filename */
 	FILE *fp = open_input(src, (char *) 0);
@@ -511,7 +512,7 @@ make_namelist(char *src)
 		}
 	    }
 	    if (pass == 1) {
-		if ((dst = typeCalloc(char *, nn + 1)) == 0)
+		if ((dst = typeCalloc(char *, nn + 1)) == NULL)
 		      failed("make_namelist");
 		rewind(fp);
 	    }
@@ -535,7 +536,7 @@ make_namelist(char *src)
 		    break;
 	    }
 	    if (pass == 1) {
-		if ((dst = typeCalloc(char *, nn + 1)) == 0)
+		if ((dst = typeCalloc(char *, nn + 1)) == NULL)
 		      failed("make_namelist");
 	    }
 	}
@@ -553,9 +554,10 @@ matches(char **needle, const char *haystack)
 /* does entry in needle list match |-separated field in haystack? */
 {
     bool code = FALSE;
-    size_t n;
 
     if (needle != 0) {
+	size_t n;
+
 	for (n = 0; needle[n] != 0; n++) {
 	    if (_nc_name_match(haystack, needle[n], "|")) {
 		code = TRUE;
@@ -576,7 +578,7 @@ valid_db_path(const char *nominal)
     size_t need = strlen(nominal) + sizeof(suffix);
     char *result = malloc(need);
 
-    if (result == 0)
+    if (result == NULL)
 	failed("valid_db_path");
     _nc_STRCPY(result, nominal, need);
     if (strcmp(result + need - sizeof(suffix), suffix)) {
@@ -641,7 +643,7 @@ show_databases(const char *outdir)
     char *result;
     const char *tried = 0;
 
-    if (outdir == 0) {
+    if (outdir == NULL) {
 	outdir = _nc_tic_dir(0);
     }
     if ((result = valid_db_path(outdir)) != 0) {
@@ -876,7 +878,7 @@ main(int argc, char *argv[])
      * One problem with immedhook is it means we can't do -e.  Problem
      * is that we can't guarantee that for each terminal listed, all the
      * terminals it depends on will have been kept in core for reference
-     * resolution -- in fact it's certain the primitive types at the end
+     * resolution -- in fact it is certain the primitive types at the end
      * of reference chains *won't* be in core unless they were explicitly
      * in the select list themselves.
      */
@@ -930,7 +932,7 @@ main(int argc, char *argv[])
 	}
     }
 
-    if (tmp_fp == 0) {
+    if (tmp_fp == NULL) {
 	tmp_fp = open_input(source_file, my_altfile);
 	if (!strcmp(source_file, "-")) {
 	    source_file = STDIN_NAME;
@@ -1178,6 +1180,14 @@ check_acs(TERMTYPE2 *tp)
     }
 }
 
+static char *
+safe_strdup(const char *value)
+{
+    if (value == NULL)
+	value = "";
+    return strdup(value);
+}
+
 static bool
 same_color(NCURSES_CONST char *oldcap, NCURSES_CONST char *newcap, int limit)
 {
@@ -1188,8 +1198,8 @@ same_color(NCURSES_CONST char *oldcap, NCURSES_CONST char *newcap, int limit)
 	int n;
 	int same;
 	for (n = same = 0; n < limit; ++n) {
-	    char *oldvalue = strdup(TPARM_1(oldcap, n));
-	    char *newvalue = strdup(TPARM_1(newcap, n));
+	    char *oldvalue = safe_strdup(TIPARM_1(oldcap, n));
+	    char *newvalue = safe_strdup(TIPARM_1(newcap, n));
 	    same += !strcmp(oldvalue, newvalue);
 	    free(oldvalue);
 	    free(newvalue);
@@ -1208,7 +1218,7 @@ check_colors(TERMTYPE2 *tp)
     char *value;
 
     if ((max_colors > 0) != (max_pairs > 0)
-	|| ((max_colors > max_pairs) && (initialize_pair == 0)))
+	|| ((max_colors > max_pairs) && !VALID_STRING(initialize_pair)))
 	_nc_warning("inconsistent values for max_colors (%d) and max_pairs (%d)",
 		    max_colors, max_pairs);
 
@@ -1297,13 +1307,12 @@ keypad_final(const char *string)
 static long
 keypad_index(const char *string)
 {
-    char *test;
-    const char *list = "PQRSwxymtuvlqrsPpn";	/* app-keypad except "Enter" */
     int ch;
     long result = -1;
 
     if ((ch = keypad_final(string)) != '\0') {
-	test = (strchr) (list, ch);
+	const char *list = "PQRSwxymtuvlqrsPpn";	/* app-keypad except "Enter" */
+	char *test = (strchr) (list, ch);
 	if (test != 0)
 	    result = (long) (test - list);
     }
@@ -1320,8 +1329,6 @@ static void
 check_ansi_cursor(char *list[4])
 {
     int j, k;
-    int want;
-    size_t suffix;
     bool skip[4];
     bool repeated = FALSE;
 
@@ -1331,7 +1338,7 @@ check_ansi_cursor(char *list[4])
 	    if (j != k
 		&& !strcmp(list[j], list[k])) {
 		char *value = _nc_tic_expand(list[k], TRUE, 0);
-		_nc_warning("repeated cursor control %s\n", value);
+		_nc_warning("repeated cursor control %s", value);
 		repeated = TRUE;
 	    }
 	}
@@ -1339,6 +1346,7 @@ check_ansi_cursor(char *list[4])
     if (!repeated) {
 	char *up = list[1];
 	size_t prefix = (size_t) csi_length(up);
+	size_t suffix;
 
 	if (prefix) {
 	    suffix = prefix;
@@ -1353,23 +1361,25 @@ check_ansi_cursor(char *list[4])
 		skip[2] = TRUE;
 
 	    for (j = 0; j < 4; ++j) {
+		int want;
+
 		if (skip[j] || strlen(list[j]) == 1)
 		    continue;
 		if (memcmp(list[j], up, prefix)) {
 		    char *value = _nc_tic_expand(list[j], TRUE, 0);
-		    _nc_warning("inconsistent prefix for %s\n", value);
+		    _nc_warning("inconsistent prefix for %s", value);
 		    continue;
 		}
 		if (strlen(list[j]) < suffix) {
 		    char *value = _nc_tic_expand(list[j], TRUE, 0);
-		    _nc_warning("inconsistent length for %s, expected %d\n",
+		    _nc_warning("inconsistent length for %s, expected %d",
 				value, (int) suffix + 1);
 		    continue;
 		}
 		want = "BADC"[j];
 		if (list[j][suffix] != want) {
 		    char *value = _nc_tic_expand(list[j], TRUE, 0);
-		    _nc_warning("inconsistent suffix for %s, expected %c, have %c\n",
+		    _nc_warning("inconsistent suffix for %s, expected %c, have %c",
 				value, want, list[j][suffix]);
 		}
 	    }
@@ -1402,7 +1412,7 @@ check_cursor(TERMTYPE2 *tp)
 	check_noaddress(tp, "hard_copy");
     } else if (generic_type) {
 	check_noaddress(tp, "generic_type");
-    } else if (strchr(tp->term_names, '+') == 0) {
+    } else if (strchr(tp->term_names, '+') == NULL) {
 	int y = 0;
 	int x = 0;
 	if (PRESENT(column_address))
@@ -1524,9 +1534,7 @@ check_keypad(TERMTYPE2 *tp)
 	char final[MAX_KP + 1];
 	long list[MAX_KP];
 	int increase = 0;
-	int j, k, kk;
-	long last;
-	long test;
+	int j;
 
 	final[0] = keypad_final(key_a1);
 	final[1] = keypad_final(key_a3);
@@ -1559,10 +1567,17 @@ check_keypad(TERMTYPE2 *tp)
 		++increase;
 	    }
 	}
+
 	if (increase != (MAX_KP - 1)) {
+	    long last;
+
 	    show[0] = '\0';
 
 	    for (j = 0, last = -1; j < MAX_KP; ++j) {
+		int k;
+		int kk;
+		long test;
+
 		for (k = 0, kk = -1, test = 100; k < 5; ++k) {
 		    if (list[k] > last &&
 			list[k] < test) {
@@ -1654,20 +1669,10 @@ check_printer(TERMTYPE2 *tp)
     ANDMISSING(start_char_set_def, stop_char_set_def);
 #endif
 
-    /* if we have a parameterized form, then the non-parameterized is easy */
-#if defined(set_bottom_margin_parm) && defined(set_bottom_margin)
-    ANDMISSING(set_bottom_margin_parm, set_bottom_margin);
-#endif
-#if defined(set_left_margin_parm) && defined(set_left_margin)
-    ANDMISSING(set_left_margin_parm, set_left_margin);
-#endif
-#if defined(set_right_margin_parm) && defined(set_right_margin)
-    ANDMISSING(set_right_margin_parm, set_right_margin);
-#endif
-#if defined(set_top_margin_parm) && defined(set_top_margin)
-    ANDMISSING(set_top_margin_parm, set_top_margin);
-#endif
-
+    /*
+     * If we have a parameterized form, then the non-parameterized is easy.
+     * note: parameterized/non-parameterized margin settings are unrelated.
+     */
 #if defined(parm_down_micro) && defined(micro_down)
     ANDMISSING(parm_down_micro, micro_down);
 #endif
@@ -1702,10 +1707,11 @@ check_screen(TERMTYPE2 *tp)
 	int have_bce = back_color_erase;
 	bool have_kmouse = FALSE;
 	bool use_sgr_39_49 = FALSE;
+	const char *name_39_49 = "orig_pair or orig_colors";
 	char *name = _nc_first_name(tp->term_names);
 	bool is_screen = !strncmp(name, "screen", 6);
 	bool screen_base = (is_screen
-			    && strchr(name, '.') == 0);
+			    && strchr(name, '.') == NULL);
 
 	if (!VALID_BOOLEAN(have_bce)) {
 	    have_bce = FALSE;
@@ -1719,10 +1725,15 @@ check_screen(TERMTYPE2 *tp)
 	if (VALID_STRING(key_mouse)) {
 	    have_kmouse = !strcmp("\033[M", key_mouse);
 	}
-	if (VALID_STRING(orig_colors)) {
-	    use_sgr_39_49 = uses_SGR_39_49(orig_colors);
-	} else if (VALID_STRING(orig_pair)) {
-	    use_sgr_39_49 = uses_SGR_39_49(orig_pair);
+	if (have_bce) {
+	    if (VALID_STRING(orig_pair)) {
+		name_39_49 = "orig_pair";
+		use_sgr_39_49 = uses_SGR_39_49(orig_pair);
+	    }
+	    if (!use_sgr_39_49 && VALID_STRING(orig_colors)) {
+		name_39_49 = "orig_colors";
+		use_sgr_39_49 = uses_SGR_39_49(orig_colors);
+	    }
 	}
 
 	if (have_XM && have_XT) {
@@ -1737,16 +1748,20 @@ check_screen(TERMTYPE2 *tp)
 		    _nc_warning("expected kmous capability with XT");
 		}
 	    }
-	    if (!have_bce && max_colors > 0)
-		_nc_warning("expected bce capability with XT");
-	    if (!use_sgr_39_49 && have_bce && max_colors > 0)
-		_nc_warning("expected orig_colors capability with XT to have 39/49 parameters");
+	    if (max_colors > 0) {
+		if (!have_bce) {
+		    _nc_warning("expected bce capability with XT");
+		} else if (!use_sgr_39_49) {
+		    _nc_warning("expected %s capability with XT "
+				"to have 39/49 parameters", name_39_49);
+		}
+	    }
 	    if (VALID_STRING(to_status_line))
 		_nc_warning("\"tsl\" capability is redundant, given XT");
 	} else {
 	    if (have_kmouse
 		&& !have_XM
-		&& !screen_base && strchr(name, '+') == 0) {
+		&& !screen_base && strchr(name, '+') == NULL) {
 		_nc_warning("expected XT to be set, given kmous");
 	    }
 	}
@@ -1834,7 +1849,6 @@ expected_params(const char *name)
 	DATA( "wingo",		1 ),
     };
     /* *INDENT-ON* */
-
 #undef DATA
 
     unsigned n;
@@ -1898,27 +1912,86 @@ is_user_capability(const char *name)
     return result;
 }
 
+static bool
+line_capability(const char *name)
+{
+    bool result = FALSE;
+    static const char *table[] =
+    {
+	"csr",			/* change_scroll_region          */
+	"clear",		/* clear_screen                  */
+	"ed",			/* clr_eos                       */
+	"cwin",			/* create_window                 */
+	"cup",			/* cursor_address                */
+	"cud1",			/* cursor_down                   */
+	"home",			/* cursor_home                   */
+	"mrcup",		/* cursor_mem_address            */
+	"ll",			/* cursor_to_ll                  */
+	"cuu1",			/* cursor_up                     */
+	"dl1",			/* delete_line                   */
+	"hd",			/* down_half_line                */
+	"flash",		/* flash_screen                  */
+	"ff",			/* form_feed                     */
+	"il1",			/* insert_line                   */
+	"nel",			/* newline                       */
+	"dl",			/* parm_delete_line              */
+	"cud",			/* parm_down_cursor              */
+	"indn",			/* parm_index                    */
+	"il",			/* parm_insert_line              */
+	"rin",			/* parm_rindex                   */
+	"cuu",			/* parm_up_cursor                */
+	"mc0",			/* print_screen                  */
+	"vpa",			/* row_address                   */
+	"ind",			/* scroll_forward                */
+	"ri",			/* scroll_reverse                */
+	"hu",			/* up_half_line                  */
+    };
+    size_t n;
+    for (n = 0; n < SIZEOF(table); ++n) {
+	if (!strcmp(name, table[n])) {
+	    result = TRUE;
+	    break;
+	}
+    }
+    return result;
+}
+
 /*
  * Make a quick sanity check for the parameters which are used in the given
  * strings.  If there are no "%p" tokens, then there should be no other "%"
  * markers.
  */
 static void
-check_params(TERMTYPE2 *tp, const char *name, char *value, int extended)
+check_params(TERMTYPE2 *tp, const char *name, const char *value, int extended)
 {
     int expected = expected_params(name);
     int actual = 0;
     int n;
-    bool params[NUM_PARM];
-    char *s = value;
+    bool params[1 + NUM_PARM];
+    const char *s = value;
 
+#ifdef set_left_margin_parm
+    if (!strcmp(name, "smgrp")
+	&& !VALID_STRING(set_left_margin_parm))
+	expected = 2;
+#endif
+#ifdef set_right_margin_parm
+    if (!strcmp(name, "smglp")
+	&& !VALID_STRING(set_right_margin_parm))
+	expected = 2;
+#endif
 #ifdef set_top_margin_parm
     if (!strcmp(name, "smgbp")
-	&& set_top_margin_parm == 0)
+	&& !VALID_STRING(set_top_margin_parm))
+	expected = 2;
+#endif
+#ifdef set_bottom_margin_parm
+    if (!strcmp(name, "smgtp")
+	&& !VALID_STRING(set_bottom_margin_parm))
 	expected = 2;
 #endif
 
-    for (n = 0; n < NUM_PARM; n++)
+    for (n = 0; n <= NUM_PARM; n++)
 	params[n] = FALSE;
 
     while (*s != 0) {
@@ -1976,10 +2049,11 @@ check_params(TERMTYPE2 *tp, const char *name, char *value, int extended)
      * may not have been fully translated.  Also, tparm does its own analysis.
      * Report differences here.
      */
+    _nc_reset_tparm(NULL);
     if (actual >= 0) {
 	char *p_is_s[NUM_PARM];
 	int popcount;
-	int analyzed = _nc_tparm_analyze(value, p_is_s, &popcount);
+	int analyzed = _nc_tparm_analyze(NULL, value, p_is_s, &popcount);
 	if (analyzed < popcount) {
 	    analyzed = popcount;
 	}
@@ -1997,52 +2071,35 @@ check_params(TERMTYPE2 *tp, const char *name, char *value, int extended)
 		_nc_warning("tparm analyzed %d parameters for %s, expected %d",
 			    analyzed, name, actual);
 	    }
-	}
-    }
-}
+	} else if (expected > 0
+		   && actual == expected
+		   && guess_tparm_type(expected, p_is_s) == Numbers) {
+	    int limit = 1;
 
-static bool
-line_capability(const char *name)
-{
-    bool result = FALSE;
-    static const char *table[] =
-    {
-	"csr",			/* change_scroll_region          */
-	"clear",		/* clear_screen                  */
-	"ed",			/* clr_eos                       */
-	"cwin",			/* create_window                 */
-	"cup",			/* cursor_address                */
-	"cud1",			/* cursor_down                   */
-	"home",			/* cursor_home                   */
-	"mrcup",		/* cursor_mem_address            */
-	"ll",			/* cursor_to_ll                  */
-	"cuu1",			/* cursor_up                     */
-	"dl1",			/* delete_line                   */
-	"hd",			/* down_half_line                */
-	"flash",		/* flash_screen                  */
-	"ff",			/* form_feed                     */
-	"il1",			/* insert_line                   */
-	"nel",			/* newline                       */
-	"dl",			/* parm_delete_line              */
-	"cud",			/* parm_down_cursor              */
-	"indn",			/* parm_index                    */
-	"il",			/* parm_insert_line              */
-	"rin",			/* parm_rindex                   */
-	"cuu",			/* parm_up_cursor                */
-	"mc0",			/* print_screen                  */
-	"vpa",			/* row_address                   */
-	"ind",			/* scroll_forward                */
-	"ri",			/* scroll_reverse                */
-	"hu",			/* up_half_line                  */
-    };
-    size_t n;
-    for (n = 0; n < SIZEOF(table); ++n) {
-	if (!strcmp(name, table[n])) {
-	    result = TRUE;
-	    break;
+	    if (!strcmp(name, "setf")
+		|| !strcmp(name, "setb")
+		|| !strcmp(name, "setaf")
+		|| !strcmp(name, "setab")) {
+		if ((limit = max_colors) > 256)
+		    limit = 256;
+	    } else if (line_capability(name)) {
+		limit = 24;
+	    } else if (is_user_capability(name) < 0) {
+		limit = 80;
+	    }
+	    for (n = 0; n < limit; ++n) {
+		_nc_reset_tparm(NULL);
+		(void) TPARM_9(value, n, n, n, n, n, n, n, n, n);
+		if (_nc_tparm_err) {
+		    _nc_warning("problem%s in tparm(%s, %d, ...)",
+				(_nc_tparm_err == 1) ? "" : "s",
+				name, n);
+		    if (debug_level < 2)
+			break;
+		}
+	    }
 	}
     }
-    return result;
 }
 
 /*
@@ -2079,7 +2136,6 @@ check_delays(TERMTYPE2 *tp, const char *name, const char *value)
 	if (p[0] == '$' && p[1] == '<') {
 	    const char *base = p + 2;
 	    const char *mark = 0;
-	    bool maybe = TRUE;
 	    bool mixed = FALSE;
 	    int proportional = 0;
 	    int mandatory = 0;
@@ -2088,7 +2144,7 @@ check_delays(TERMTYPE2 *tp, const char *name, const char *value)
 
 	    for (q = base; *q != '\0'; ++q) {
 		if (*q == '>') {
-		    if (mark == 0)
+		    if (mark == NULL)
 			mark = q;
 		    break;
 		} else if (*q == '*' || *q == '/') {
@@ -2096,23 +2152,20 @@ check_delays(TERMTYPE2 *tp, const char *name, const char *value)
 			++proportional;
 		    if (*q == '/')
 			++mandatory;
-		    if (mark == 0)
+		    if (mark == NULL)
 			mark = q;
 		} else if (!(isalnum(UChar(*q)) || strchr("+-.", *q) != 0)) {
-		    maybe = FALSE;
 		    break;
 		} else if (proportional || mandatory) {
 		    mixed = TRUE;
 		}
 	    }
 	    last = *q ? (q + 1) : q;
-	    if (*q == '\0') {
-		maybe = FALSE;	/* just an isolated "$<" */
-	    } else if (maybe) {
+	    if (*q != '\0') {
 		float check_f;
 		char check_c;
 		int rc = sscanf(base, "%f%c", &check_f, &check_c);
-		if ((rc != 2) || (check_c != *mark) || mixed) {
+		if ((rc != 2) || (mark != NULL && (check_c != *mark)) || mixed) {
 		    _nc_warning("syntax error in %s delay '%.*s'", name,
 				(int) (q - base), base);
 		} else if (*name == 'k') {
@@ -2121,7 +2174,7 @@ check_delays(TERMTYPE2 *tp, const char *name, const char *value)
 		    _nc_warning("non-line capability using proportional delay: %s", name);
 		} else if (!xon_xoff &&
 			   !mandatory &&
-			   strchr(_nc_first_name(tp->term_names), '+') == 0) {
+			   strchr(_nc_first_name(tp->term_names), '+') == NULL) {
 		    _nc_warning("%s in %s is used since no xon/xoff",
 				(proportional
 				 ? "proportional delay"
@@ -2153,7 +2206,7 @@ check_delays(TERMTYPE2 *tp, const char *name, const char *value)
 	     */
 	    if ((p = skip_DECSCNM(value, &flag)) != 0 &&
 		flag > 0 &&
-		(q = skip_DECSCNM(p, &flag)) != 0 &&
+		skip_DECSCNM(p, &flag) != 0 &&
 		flag == 0) {
 		_nc_warning("expected a delay in %s", name);
 	    }
@@ -2172,6 +2225,9 @@ check_1_infotocap(const char *name, NCURSES_CONST char *value, int count)
     char *result;
     char blob[NUM_PARM * 10];
     char *next = blob;
+    TParams expect;
+    TParams actual;
+    int nparam;
 
     *next++ = '\0';
     for (k = 1; k <= NUM_PARM; k++) {
@@ -2183,7 +2239,18 @@ check_1_infotocap(const char *name, NCURSES_CONST char *value, int count)
 	next += strlen(next) + 1;
     }
 
-    switch (tparm_type(name)) {
+    _nc_reset_tparm(NULL);
+    expect = tparm_type(name);
+    nparam = _nc_tparm_analyze(NULL, value, p_is_s, &ignored);
+    actual = guess_tparm_type(nparam, p_is_s);
+
+    if (expect != actual) {
+	_nc_warning("%s has mismatched parameters", name);
+	actual = Other;
+    }
+
+    _nc_reset_tparm(NULL);
+    switch (actual) {
     case Num_Str:
 	result = TPARM_2(value, numbers[1], strings[2]);
 	break;
@@ -2191,8 +2258,21 @@ check_1_infotocap(const char *name, NCURSES_CONST char *value, int count)
 	result = TPARM_3(value, numbers[1], strings[2], strings[3]);
 	break;
     case Numbers:
+#define myParam(n) numbers[n]
+	result = TIPARM_9(value,
+			  myParam(1),
+			  myParam(2),
+			  myParam(3),
+			  myParam(4),
+			  myParam(5),
+			  myParam(6),
+			  myParam(7),
+			  myParam(8),
+			  myParam(9));
+#undef myParam
+	break;
+    case Other:
     default:
-	(void) _nc_tparm_analyze(value, p_is_s, &ignored);
 #define myParam(n) (p_is_s[n - 1] != 0 ? ((TPARM_ARG) strings[n]) : numbers[n])
 	result = TPARM_9(value,
 			 myParam(1),
@@ -2204,6 +2284,7 @@ check_1_infotocap(const char *name, NCURSES_CONST char *value, int count)
 			 myParam(7),
 			 myParam(8),
 			 myParam(9));
+#undef myParam
 	break;
     }
     return strdup(result);
@@ -2233,7 +2314,7 @@ parse_delay_value(const char *src, double *delays, int *always)
 	}
     }
     while (*src == '*' || *src == '/') {
-	if (always == 0 && *src == '/')
+	if (always == NULL && *src == '/')
 	    break;
 	if (*src++ == '*') {
 	    star = 1;
@@ -2338,14 +2419,13 @@ check_infotocap(TERMTYPE2 *tp, int i, const char *value)
 		  ? parametrized[i]
 		  : ((*value == 'k')
 		     ? 0
-		     : has_params(value)));
-    int to_char = 0;
-    char *ti_value;
+		     : has_params(value, FALSE)));
+    char *ti_value = NULL;
     char *tc_value;
     bool embedded;
 
     assert(SIZEOF(parametrized) == STRCOUNT);
-    if ((ti_value = _nc_tic_expand(value, TRUE, to_char)) == ABSENT_STRING) {
+    if (!VALID_STRING(value) || (ti_value = strdup(value)) == NULL) {
 	_nc_warning("tic-expansion of %s failed", name);
     } else if ((tc_value = _nc_infotocap(name, ti_value, params)) == ABSENT_STRING) {
 	_nc_warning("tic-conversion of %s failed", name);
@@ -2358,8 +2438,8 @@ check_infotocap(TERMTYPE2 *tp, int i, const char *value)
 	    || !strcmp(name, "setb")
 	    || !strcmp(name, "setaf")
 	    || !strcmp(name, "setab")) {
-	    if ((limit = max_colors) > 16)
-		limit = 16;
+	    if ((limit = max_colors) > 256)
+		limit = 256;
 	}
 	for (count = 0; count < limit; ++count) {
 	    char *ti_check = check_1_infotocap(name, ti_value, count);
@@ -2368,12 +2448,14 @@ check_infotocap(TERMTYPE2 *tp, int i, const char *value)
 	    if (strcmp(ti_check, tc_check)) {
 		if (first) {
 		    fprintf(stderr, "check_infotocap(%s)\n", name);
-		    fprintf(stderr, "...ti '%s'\n", ti_value);
-		    fprintf(stderr, "...tc '%s'\n", tc_value);
+		    fprintf(stderr, "...ti '%s'\n", _nc_visbuf2(0, ti_value));
+		    fprintf(stderr, "...tc '%s'\n", _nc_visbuf2(0, tc_value));
 		    first = FALSE;
 		}
 		_nc_warning("tparm-conversion of %s(%d) differs between\n\tterminfo %s\n\ttermcap  %s",
-			    name, count, ti_check, tc_check);
+			    name, count,
+			    _nc_visbuf2(0, ti_check),
+			    _nc_visbuf2(1, tc_check));
 	    }
 	    free(ti_check);
 	    free(tc_check);
@@ -2386,6 +2468,7 @@ check_infotocap(TERMTYPE2 *tp, int i, const char *value)
 			name, ti_value, tc_value);
 	}
     }
+    free(ti_value);
 }
 
 static char *
@@ -2508,22 +2591,29 @@ similar_sgr(int num, char *a, char *b)
     return ((num != 0) || (*a == 0));
 }
 
+static void
+check_tparm_err(int num)
+{
+    if (_nc_tparm_err)
+	_nc_warning("tparam error in sgr(%d): %s", num, sgr_names[num]);
+}
+
 static char *
 check_sgr(TERMTYPE2 *tp, char *zero, int num, char *cap, const char *name)
 {
     char *test;
 
     _nc_tparm_err = 0;
-    test = TPARM_9(set_attributes,
-		   num == 1,
-		   num == 2,
-		   num == 3,
-		   num == 4,
-		   num == 5,
-		   num == 6,
-		   num == 7,
-		   num == 8,
-		   num == 9);
+    test = TIPARM_9(set_attributes,
+		    num == 1,
+		    num == 2,
+		    num == 3,
+		    num == 4,
+		    num == 5,
+		    num == 6,
+		    num == 7,
+		    num == 8,
+		    num == 9);
     if (test != 0) {
 	if (PRESENT(cap)) {
 	    if (!similar_sgr(num, test, cap)) {
@@ -2538,8 +2628,7 @@ check_sgr(TERMTYPE2 *tp, char *zero, int num, char *cap, const char *name)
     } else if (PRESENT(cap)) {
 	_nc_warning("sgr(%d) missing, but %s present", num, name);
     }
-    if (_nc_tparm_err)
-	_nc_warning("stack error in sgr(%d) string", num);
+    check_tparm_err(num);
     return test;
 }
 
@@ -2582,7 +2671,7 @@ get_fkey_list(TERMTYPE2 *tp)
     int used = 0;
     unsigned j;
 
-    if (result == 0)
+    if (result == NULL)
 	failed("get_fkey_list");
 
     for (j = 0; all_fkeys[j].code; j++) {
@@ -2629,13 +2718,13 @@ static void
 check_conflict(TERMTYPE2 *tp)
 {
     bool conflict = FALSE;
-    unsigned j, k;
 
     if (!(_nc_syntax == SYN_TERMCAP && capdump)) {
 	char *check = calloc((size_t) (NUM_STRINGS(tp) + 1), sizeof(char));
 	NAME_VALUE *given = get_fkey_list(tp);
+	unsigned j, k;
 
-	if (check == 0)
+	if (check == NULL)
 	    failed("check_conflict");
 
 	for (j = 0; given[j].keycode; ++j) {
@@ -2694,7 +2783,6 @@ check_conflict(TERMTYPE2 *tp)
 		{ NULL,   NULL },
 	    };
 	    /* *INDENT-ON* */
-
 	    /*
 	     * SVr4 curses defines the "xcurses" names listed above except for
 	     * the special cases in the "shifted" column.  When using these
@@ -2972,10 +3060,9 @@ check_termtype(TERMTYPE2 *tp, bool literal)
 	if (PRESENT(exit_attribute_mode)) {
 	    zero = strdup(CHECK_SGR(0, exit_attribute_mode));
 	} else {
-	    zero = strdup(TPARM_9(set_attributes, 0, 0, 0, 0, 0, 0, 0, 0, 0));
+	    zero = strdup(TIPARM_9(set_attributes, 0, 0, 0, 0, 0, 0, 0, 0, 0));
 	}
-	if (_nc_tparm_err)
-	    _nc_warning("stack error in sgr(0) string");
+	check_tparm_err(0);
 
 	if (zero != 0) {
 	    CHECK_SGR(1, enter_standout_mode);
@@ -3000,7 +3087,7 @@ check_termtype(TERMTYPE2 *tp, bool literal)
     if (PRESENT(exit_attribute_mode)) {
 	char *check_sgr0 = _nc_trim_sgr0(tp);
 
-	if (check_sgr0 == 0 || *check_sgr0 == '\0') {
+	if (check_sgr0 == NULL || *check_sgr0 == '\0') {
 	    _nc_warning("trimmed sgr0 is empty");
 	} else {
 	    show_where(2);

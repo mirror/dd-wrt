@@ -1,6 +1,7 @@
 // * This makes emacs happy -*-Mode: C++;-*-
 /****************************************************************************
- * Copyright (c) 1998-2018,2019 Free Software Foundation, Inc.              *
+ * Copyright 2018-2020,2021 Thomas E. Dickey                                *
+ * Copyright 1998-2012,2017 Free Software Foundation, Inc.                  *
  *                                                                          *
  * Permission is hereby granted, free of charge, to any person obtaining a  *
  * copy of this software and associated documentation files (the            *
@@ -35,7 +36,7 @@
  *   Demo code for NCursesMenu and NCursesForm written by
  *   Juergen Pfeifer
  *
- * $Id: demo.cc,v 1.44 2019/07/28 19:55:27 tom Exp $
+ * $Id: demo.cc,v 1.50 2021/09/04 10:52:55 tom Exp $
  */
 
 #include "internal.h"
@@ -43,11 +44,10 @@
 #include "cursesm.h"
 #include "cursesf.h"
 
-#ifdef _WIN32
+#if (defined(_WIN32) || defined(_WIN64))
 #undef KEY_EVENT
-#endif
-
-#ifndef _WIN32
+#define sleep(n) Sleep(n)
+#else
 extern "C" unsigned int sleep(unsigned int);
 #endif
 
@@ -104,7 +104,7 @@ class SillyDemo
     }
 
     //  A refresh to any valid panel updates all panels and refreshes
-    //  the screen.  Using mystd is just convenient - We know it's always
+    //  the screen.  Using mystd is just convenient - We know it is always
     //  valid until the end of the program.
 
     mystd->refresh();
@@ -186,7 +186,7 @@ public:
 };
 
 template class MyAction<UserData>;
-template class NCURSES_IMPEXP NCursesUserItem<UserData>;
+template class NCURSES_CXX_IMPEXP NCursesUserItem<UserData>;
 
 class QuitItem : public NCursesMenuItem
 {
@@ -551,9 +551,9 @@ void TestApplication::title()
   const char * const titleText = "Simple C++ Binding Demo";
   const int len = ::strlen(titleText);
 
-  titleWindow->bkgd(screen_titles());
-  titleWindow->addstr(0, (titleWindow->cols() - len)/2, titleText);
-  titleWindow->noutrefresh();
+  getTitleWindow()->bkgd(screen_titles());
+  getTitleWindow()->addstr(0, (getTitleWindow()->cols() - len)/2, titleText);
+  getTitleWindow()->noutrefresh();
 }
 
 
@@ -568,3 +568,8 @@ int TestApplication::run()
 // -------------------------------------------------------------------------
 //
 static TestApplication *Demo = new TestApplication();
+
+#if (defined(_WIN32) || defined(_WIN64))
+// This is actually only needed when ncurses is a dll
+NCURSES_CXX_MAIN
+#endif

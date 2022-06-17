@@ -1,5 +1,6 @@
 /****************************************************************************
- * Copyright (c) 1998-2018,2019 Free Software Foundation, Inc.              *
+ * Copyright 2018-2020,2021 Thomas E. Dickey                                *
+ * Copyright 1998-2016,2017 Free Software Foundation, Inc.                  *
  *                                                                          *
  * Permission is hereby granted, free of charge, to any person obtaining a  *
  * copy of this software and associated documentation files (the            *
@@ -50,7 +51,7 @@
 #define TRACE_NUM(n)		/* nothing */
 #endif
 
-MODULE_ID("$Id: write_entry.c,v 1.114 2019/06/29 23:07:18 tom Exp $")
+MODULE_ID("$Id: write_entry.c,v 1.118 2021/08/15 20:07:11 tom Exp $")
 
 static int total_written;
 static int total_parts;
@@ -70,7 +71,7 @@ write_file(char *filename, TERMTYPE2 *tp)
 	_nc_warning("entry is larger than %u bytes", limit);
     } else {
 	FILE *fp = ((_nc_access(filename, W_OK) == 0)
-		    ? fopen(filename, BIN_W)
+		    ? safe_fopen(filename, BIN_W)
 		    : 0);
 	size_t actual;
 
@@ -189,9 +190,9 @@ make_db_root(const char *path)
 #else
 	struct stat statbuf;
 
-	if ((rc = stat(path, &statbuf)) < 0) {
+	if ((rc = stat(path, &statbuf)) == -1) {
 	    rc = mkdir(path
-#if !defined(_WIN32)
+#ifndef _NC_WINDOWS
 		       ,0777
 #endif
 		);
@@ -441,7 +442,7 @@ _nc_write_entry(TERMTYPE2 *const tp)
     write_file(filename, tp);
 
     if (start_time == 0) {
-	if (stat(filename, &statbuf) < 0
+	if (stat(filename, &statbuf) == -1
 	    || (start_time = statbuf.st_mtime) == 0) {
 	    _nc_syserr_abort("error obtaining time from %s/%s",
 			     _nc_tic_dir(0), filename);

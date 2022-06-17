@@ -1,5 +1,6 @@
 /****************************************************************************
- * Copyright (c) 1998-2010,2017 Free Software Foundation, Inc.              *
+ * Copyright 2020,2021 Thomas E. Dickey                                     *
+ * Copyright 1998-2010,2017 Free Software Foundation, Inc.                  *
  *                                                                          *
  * Permission is hereby granted, free of charge, to any person obtaining a  *
  * copy of this software and associated documentation files (the            *
@@ -42,7 +43,7 @@
 
 #include <curses.priv.h>
 
-MODULE_ID("$Id: lib_pad.c,v 1.47 2017/10/22 19:57:26 tom Exp $")
+MODULE_ID("$Id: lib_pad.c,v 1.49 2021/09/04 10:52:55 tom Exp $")
 
 NCURSES_EXPORT(WINDOW *)
 NCURSES_SP_NAME(newpad) (NCURSES_SP_DCLx int l, int c)
@@ -295,7 +296,7 @@ pnoutrefresh(WINDOW *win,
 
     /*
      * Use the pad's current position, if it will be visible.
-     * If not, don't do anything; it's not an error.
+     * If not, don't do anything; it is not an error.
      */
     if (win->_leaveok == FALSE
 	&& win->_cury >= pminrow

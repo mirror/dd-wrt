@@ -1,6 +1,7 @@
 // * this is for making emacs happy: -*-Mode: C++;-*-
 /****************************************************************************
- * Copyright (c) 1998-2011,2019 Free Software Foundation, Inc.              *
+ * Copyright 2019-2020,2021 Thomas E. Dickey                                *
+ * Copyright 1998-2005,2011 Free Software Foundation, Inc.                  *
  *                                                                          *
  * Permission is hereby granted, free of charge, to any person obtaining a  *
  * copy of this software and associated documentation files (the            *
@@ -35,7 +36,7 @@
 #include "cursesf.h"
 #include "cursesapp.h"
 
-MODULE_ID("$Id: cursesf.cc,v 1.23 2019/07/28 19:55:27 tom Exp $")
+MODULE_ID("$Id: cursesf.cc,v 1.26 2021/04/17 18:11:08 tom Exp $")
 
 NCursesFormField::~NCursesFormField () THROWS(NCursesException)
 {
@@ -284,15 +285,15 @@ NCursesFormField*
 NCursesForm::operator()(void)
 {
   int drvCmnd;
-  int err;
   int c;
 
   post();
   show();
   refresh();
 
-  while (((drvCmnd = virtualize((c=getKey()))) != CMD_QUIT)) {
-    switch((err=driver(drvCmnd))) {
+  while (((drvCmnd = virtualize((c = getKey()))) != CMD_QUIT)) {
+    int err;
+    switch((err = driver(drvCmnd))) {
     case E_REQUEST_DENIED:
       On_Request_Denied(c);
       break;
@@ -405,9 +406,18 @@ FIELDTYPE* UserDefinedFieldType::generic_fieldtype =
   ::new_fieldtype(_nc_xx_fld_fcheck,
 		  _nc_xx_fld_ccheck);
 
+
+UserDefinedFieldType::UserDefinedFieldType() : NCursesFieldType(generic_fieldtype) {
+}
+
 FIELDTYPE* UserDefinedFieldType_With_Choice::generic_fieldtype_with_choice =
   ::new_fieldtype(_nc_xx_fld_fcheck,
 		  _nc_xx_fld_ccheck);
+
+
+UserDefinedFieldType_With_Choice::UserDefinedFieldType_With_Choice() {
+  fieldtype = generic_fieldtype_with_choice;
+}
 
 bool _nc_xx_next_choice(FIELD *f, const void *u)
 {
@@ -460,3 +470,5 @@ public:
 };
 
 UDF_Init* UDF_Init::I = new UDF_Init();
+
+

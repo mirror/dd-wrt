@@ -1,5 +1,6 @@
 /****************************************************************************
- * Copyright (c) 1998-2010,2012 Free Software Foundation, Inc.              *
+ * Copyright 2020,2021 Thomas E. Dickey                                     *
+ * Copyright 1998-2010,2012 Free Software Foundation, Inc.                  *
  *                                                                          *
  * Permission is hereby granted, free of charge, to any person obtaining a  *
  * copy of this software and associated documentation files (the            *
@@ -37,7 +38,7 @@
 
 #include "menu.priv.h"
 
-MODULE_ID("$Id: m_format.c,v 1.18 2012/06/09 23:54:02 tom Exp $")
+MODULE_ID("$Id: m_format.c,v 1.22 2021/03/27 23:46:29 tom Exp $")
 
 #define minimum(a,b) ((a)<(b) ? (a): (b))
 
@@ -55,10 +56,9 @@ MODULE_ID("$Id: m_format.c,v 1.18 2012/06/09 23:54:02 tom Exp $")
 |                    E_NOT_CONNECTED        - there are no items connected
 |                    E_POSTED               - the menu is already posted
 +--------------------------------------------------------------------------*/
-NCURSES_EXPORT(int)
-set_menu_format(MENU * menu, int rows, int cols)
+MENU_EXPORT(int)
+set_menu_format(MENU *menu, int rows, int cols)
 {
-  int total_rows, total_cols;
 
   T((T_CALLED("set_menu_format(%p,%d,%d)"), (void *)menu, rows, cols));
 
@@ -67,6 +67,8 @@ set_menu_format(MENU * menu, int rows, int cols)
 
   if (menu)
     {
+      int total_rows, total_cols;
+
       if (menu->status & _POSTED)
 	RETURN(E_POSTED);
 
@@ -119,8 +121,8 @@ set_menu_format(MENU * menu, int rows, int cols)
 |
 |   Return Values :  -
 +--------------------------------------------------------------------------*/
-NCURSES_EXPORT(void)
-menu_format(const MENU * menu, int *rows, int *cols)
+MENU_EXPORT(void)
+menu_format(const MENU *menu, int *rows, int *cols)
 {
   if (rows)
     *rows = Normalize_Menu(menu)->frows;

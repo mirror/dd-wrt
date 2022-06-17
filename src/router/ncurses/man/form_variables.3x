@@ -1,5 +1,6 @@
 .\"***************************************************************************
-.\" Copyright (c) 2010-2013,2017 Free Software Foundation, Inc.              *
+.\" Copyright 2020 Thomas E. Dickey                                          *
+.\" Copyright 2010-2013,2017 Free Software Foundation, Inc.                  *
 .\"                                                                          *
 .\" Permission is hereby granted, free of charge, to any person obtaining a  *
 .\" copy of this software and associated documentation files (the            *
@@ -26,7 +27,7 @@
 .\" authorization.                                                           *
 .\"***************************************************************************
 .\"
-.\" $Id: form_variables.3x,v 1.5 2017/11/20 00:59:21 tom Exp $
+.\" $Id: form_variables.3x,v 1.7 2020/12/12 14:45:16 tom Exp $
 .TH form_variables 3X ""
 .na
 .hy 0
@@ -55,7 +56,8 @@
 .fi
 .SH DESCRIPTION
 These are building blocks for the form library,
-defining fields that can be created using \fBset_fieldtype\fP(3X).
+defining fields that can be created using
+the \fBform_fieldtype\fP(3X) functions.
 Each provides functions for field- and character-validation,
 according to the given datatype.
 .SS TYPE_ALNUM

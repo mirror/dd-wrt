@@ -1,5 +1,6 @@
 /****************************************************************************
- * Copyright (c) 1998-2018,2019 Free Software Foundation, Inc.              *
+ * Copyright 2019-2020,2021 Thomas E. Dickey                                *
+ * Copyright 1998-2017,2018 Free Software Foundation, Inc.                  *
  *                                                                          *
  * Permission is hereby granted, free of charge, to any person obtaining a  *
  * copy of this software and associated documentation files (the            *
@@ -41,7 +42,7 @@
 #define CUR SP_TERMTYPE
 #endif
 
-MODULE_ID("$Id: lib_screen.c,v 1.96 2019/07/20 20:23:21 tom Exp $")
+MODULE_ID("$Id: lib_screen.c,v 1.103 2021/10/18 22:40:48 tom Exp $")
 
 #define MAX_SIZE 0x3fff		/* 16k is big enough for a window or pad */
 
@@ -57,7 +58,7 @@ MODULE_ID("$Id: lib_screen.c,v 1.96 2019/07/20 20:23:21 tom Exp $")
 #define ARG_SLIMIT(name)	/* nothing */
 #endif
 
-#define CUR_SLIMIT _nc_SLIMIT(limit - (target - base))
+#define CUR_SLIMIT _nc_SLIMIT(limit - (size_t) (target - base))
 #define TOP_SLIMIT _nc_SLIMIT(sizeof(buffer))
 
 /*
@@ -66,7 +67,7 @@ MODULE_ID("$Id: lib_screen.c,v 1.96 2019/07/20 20:23:21 tom Exp $")
  * format.  It happens to be unused in the file 5.22 database (2015/03/07).
  */
 static const char my_magic[] =
-{'\210', '\210', '\210', '\210'};
+{'\210', '\210', '\210', '\210', 0};
 
 #if NCURSES_EXT_PUTWIN
 typedef enum {
@@ -199,7 +200,7 @@ read_txt(FILE *fp)
 
 	if (ch == '\n') {
 	    result[--used] = '\0';
-	    T(("READ:%s", result));
+	    TR(TRACE_IEVENT, ("READ:%s", result));
 	} else if (used == 0) {
 	    free(result);
 	    result = 0;
@@ -213,7 +214,7 @@ decode_attr(char *source, attr_t *target, int *color)
 {
     bool found = FALSE;
 
-    T(("decode_attr   '%s'", source));
+    TR(TRACE_IEVENT, ("decode_attr   '%s'", source));
 
     while (*source) {
 	if (source[0] == MARKER && source[1] == L_CURL) {
@@ -271,7 +272,7 @@ decode_char(char *source, int *target)
     int base = 16;
     const char digits[] = "0123456789abcdef";
 
-    T(("decode_char   '%s'", source));
+    TR(TRACE_IEVENT, ("decode_char   '%s'", source));
     *target = ' ';
     switch (*source) {
     case MARKER:
@@ -328,7 +329,7 @@ decode_chtype(char *source, chtype fillin, chtype *target)
     int color = PAIR_NUMBER((int) attr);
     int value;
 
-    T(("decode_chtype '%s'", source));
+    TR(TRACE_IEVENT, ("decode_chtype '%s'", source));
     source = decode_attr(source, &attr, &color);
     source = decode_char(source, &value);
     *target = (ChCharOf(value) | attr | (chtype) COLOR_PAIR(color));
@@ -346,7 +347,7 @@ decode_cchar(char *source, cchar_t *fillin, cchar_t *target)
     int append = 0;
     int value = 0;
 
-    T(("decode_cchar  '%s'", source));
+    TR(TRACE_IEVENT, ("decode_cchar  '%s'", source));
     *target = blank;
 #if NCURSES_EXT_COLORS
     color = fillin->ext_color;
@@ -440,7 +441,7 @@ read_win(WINDOW *win, FILE *fp)
 }
 
 static int
-read_row(char *source, NCURSES_CH_T * prior, NCURSES_CH_T * target, int length)
+read_row(char *source, NCURSES_CH_T *prior, NCURSES_CH_T *target, int length)
 {
     while (*source != '\0' && length > 0) {
 #if NCURSES_WIDECHAR
@@ -939,6 +940,31 @@ putwin(WINDOW *win, FILE *filep)
     returnCode(code);
 }
 
+/*
+ * Replace a window covering the whole screen, i.e., newscr or curscr.
+ */
+static WINDOW *
+replace_window(WINDOW *target, FILE *source)
+{
+    WINDOW *result = getwin(source);
+#if NCURSES_EXT_FUNCS
+    if (result != NULL) {
+	if (getmaxx(result) != getmaxx(target)
+	    || getmaxy(result) != getmaxy(target)) {
+	    int code = wresize(result,
+			       1 + getmaxy(target),
+			       1 + getmaxx(target));
+	    if (code != OK) {
+		delwin(result);
+		result = NULL;
+	    }
+	}
+    }
+#endif
+    delwin(target);
+    return result;
+}
+
 NCURSES_EXPORT(int)
 NCURSES_SP_NAME(scr_restore) (NCURSES_SP_DCLx const char *file)
 {
@@ -948,9 +974,8 @@ NCURSES_SP_NAME(scr_restore) (NCURSES_SP_DCLx const char *file)
     T((T_CALLED("scr_restore(%p,%s)"), (void *) SP_PARM, _nc_visbuf(file)));
 
     if (_nc_access(file, R_OK) >= 0
-	&& (fp = fopen(file, BIN_R)) != 0) {
-	delwin(NewScreen(SP_PARM));
-	NewScreen(SP_PARM) = getwin(fp);
+	&& (fp = safe_fopen(file, BIN_R)) != 0) {
+	NewScreen(SP_PARM) = replace_window(NewScreen(SP_PARM), fp);
 #if !USE_REENTRANT
 	newscr = NewScreen(SP_PARM);
 #endif
@@ -979,7 +1004,7 @@ scr_dump(const char *file)
     T((T_CALLED("scr_dump(%s)"), _nc_visbuf(file)));
 
     if (_nc_access(file, W_OK) < 0
-	|| (fp = fopen(file, BIN_W)) == 0) {
+	|| (fp = safe_fopen(file, BIN_W)) == 0) {
 	result = ERR;
     } else {
 	(void) putwin(newscr, fp);
@@ -1006,9 +1031,8 @@ NCURSES_SP_NAME(scr_init) (NCURSES_SP_DCLx const char *file)
 	FILE *fp = 0;
 
 	if (_nc_access(file, R_OK) >= 0
-	    && (fp = fopen(file, BIN_R)) != 0) {
-	    delwin(CurScreen(SP_PARM));
-	    CurScreen(SP_PARM) = getwin(fp);
+	    && (fp = safe_fopen(file, BIN_R)) != 0) {
+	    CurScreen(SP_PARM) = replace_window(CurScreen(SP_PARM), fp);
 #if !USE_REENTRANT
 	    curscr = CurScreen(SP_PARM);
 #endif

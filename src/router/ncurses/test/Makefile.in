@@ -1,6 +1,7 @@
-# $Id: Makefile.in,v 1.120 2018/01/15 19:28:45 tom Exp $
+# $Id: Makefile.in,v 1.129 2021/07/03 15:45:33 tom Exp $
 ##############################################################################
-# Copyright (c) 1998-2017,2018 Free Software Foundation, Inc.                #
+# Copyright 2020,2021 Thomas E. Dickey                                       #
+# Copyright 1998-2017,2018 Free Software Foundation, Inc.                    #
 #                                                                            #
 # Permission is hereby granted, free of charge, to any person obtaining a    #
 # copy of this software and associated documentation files (the "Software"), #
@@ -89,9 +90,9 @@ CPPFLAGS	= -I. -I$(srcdir) -I../test -DHAVE_CONFIG_H -DDATA_DIR=\"$(datadir)\" @
 CCFLAGS		= $(CPPFLAGS) $(CFLAGS)
 
 CFLAGS_LIBTOOL	= $(CCFLAGS)
-CFLAGS_NORMAL	= $(CCFLAGS)
-CFLAGS_DEBUG	= $(CCFLAGS) @CC_G_OPT@ -DTRACE
-CFLAGS_PROFILE	= $(CCFLAGS) -pg
+CFLAGS_NORMAL	= $(CCFLAGS) -DNCURSES_STATIC
+CFLAGS_DEBUG	= $(CCFLAGS) -DNCURSES_STATIC @CC_G_OPT@ -DTRACE
+CFLAGS_PROFILE	= $(CCFLAGS) -DNCURSES_STATIC -pg
 CFLAGS_SHARED	= $(CCFLAGS) @CC_SHARED_OPTS@
 
 CFLAGS_DEFAULT	= $(CFLAGS_@DFT_UPR_MODEL@)
@@ -117,27 +118,57 @@ LDFLAGS_SHARED	= $(LDFLAGS) $(CFLAGS_SHARED) @LD_SHARED_OPTS@
 TEST_ARGS	= @LDFLAGS_STATIC@ @TEST_ARGS@ @LDFLAGS_SHARED@
 
 # use these for linking with all of the libraries
-LIBS_DEFAULT	= $(TEST_ARGS) @LIBS@ $(TEST_LIBS) $(MATH_LIB)
+LIBS_DEFAULT	= $(TEST_ARGS) @LIBS@ $(TEST_LIBS)
 LDFLAGS_DEFAULT	= $(LDFLAGS_@DFT_UPR_MODEL@) $(LIBS_DEFAULT)
 
 # use these for linking with the (n)curses library and possibly pthreads
-LIBS_THREADS	= `echo "$(TEST_ARGS) @LIBS@" | sed -e 's/-lform.*-lpanel[^ ]*//'` $(TEST_LIBS) $(MATH_LIB) @PTHREAD@
+LIBS_THREADS	= `echo "$(TEST_ARGS) @LIBS@" | sed -e 's/-l@FORM_NAME@.*-l@PANEL_NAME@[^ ]*//'` $(TEST_LIBS) @PTHREAD@
 LDFLAGS_THREADS	= $(LDFLAGS_@DFT_UPR_MODEL@) $(LIBS_THREADS)
 
 # use these for linking with the (n)curses library
-LIBS_CURSES	= `echo "$(TEST_ARGS) @LIBS@" | sed -e 's/-lform.*-lpanel[^ ]*//'` $(TEST_LIBS) $(MATH_LIB)
+LIBS_CURSES	= `echo "$(TEST_ARGS) @LIBS@" | sed -e 's/-l@FORM_NAME@.*-l@PANEL_NAME@[^ ]*//'` $(TEST_LIBS)
 LDFLAGS_CURSES	= $(LDFLAGS_@DFT_UPR_MODEL@) $(LIBS_CURSES)
 
+# use these when we need the math library
+LDFLAGS_CURSES_M= $(LDFLAGS_CURSES) $(MATH_LIB)
+
 # use these for linking with the tinfo library if we have it, or curses library if not
-LIBS_TINFO	= @LDFLAGS_STATIC@ @TINFO_LIBS@ @LDFLAGS_SHARED@ @LIBS@ $(TEST_LIBS) $(MATH_LIB)
+LIBS_TINFO	= @LDFLAGS_STATIC@ @TINFO_LIBS@ @LDFLAGS_SHARED@ @LIBS@ $(TEST_LIBS)
 LDFLAGS_TINFO	= @TINFO_LDFLAGS@ $(LDFLAGS_@DFT_UPR_MODEL@) $(LIBS_TINFO)
 
 LINT		= @LINT@
 LINT_OPTS	= @LINT_OPTS@
 LINT_LIBS	= -lform -lmenu -lpanel -lncurses @LIBS@
 
+INCDIR		= $(top_srcdir)/include
+incdir		= ../include
+
 HEADER_DEPS	= \
-	../include/curses.h \
-	../include/term.h
+	$(incdir)/curses.h \
+	$(incdir)/term.h \
+	$(incdir)/ncurses_cfg.h \
+	$(incdir)/ncurses_def.h \
+	$(incdir)/ncurses_dll.h \
+	$(incdir)/term.h \
+	$(incdir)/unctrl.h \
+	$(INCDIR)/nc_alloc.h
+
+################################################################################
+
+@MAKE_PHONY@.PHONY :	all
+@MAKE_PHONY@.PHONY :	check
+
+all::
+
+# Verify that each header-file can be compiled without including another.
+check::
+	@$(SHELL) -c "for header in *.h;\
+		do \
+			echo \"** testing \$${header}\" ; \
+			echo \"#include <\$${header}>\" >headers.c; \
+			echo \"int main(void) { return 0; }\" >>headers.c; \
+			$(CC) -c $(CFLAGS) $(CPPFLAGS) headers.c; \
+		done"
+	-@rm -f headers.*
 
 # The rest is generated from the "programs" and "modules" files...

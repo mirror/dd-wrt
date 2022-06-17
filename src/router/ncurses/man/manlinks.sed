@@ -1,6 +1,7 @@
-# $Id: manlinks.sed,v 1.13 2008/01/19 23:31:17 tom Exp $
+# $Id: manlinks.sed,v 1.15 2021/01/05 20:30:00 tom Exp $
 ##############################################################################
-# Copyright (c) 2000-2003,2008 Free Software Foundation, Inc.                #
+# Copyright 2020,2021 Thomas E. Dickey                                       #
+# Copyright 2000-2003,2008 Free Software Foundation, Inc.                    #
 #                                                                            #
 # Permission is hereby granted, free of charge, to any person obtaining a    #
 # copy of this software and associated documentation files (the "Software"), #
@@ -40,10 +41,14 @@ s/^\.IX//
 s/\\f.//g
 s/[:,]/ /g
 #
+# ignore C-style comments
+s%/\*.*\*/%%
+#
 # eliminate unnecessary whitespace, convert multiple blanks to single space
 s/^[ 	][ 	]*//
 s/[ 	][ 	]*$//
 s/[ 	][ 	]*/ /g
+/^$/d
 #
 # convert ".SH" into a more manageable form
 s/\.SH[ 	][ 	]*/.SH_(/

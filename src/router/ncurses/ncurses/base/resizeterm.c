@@ -1,5 +1,6 @@
 /****************************************************************************
- * Copyright (c) 1998-2015,2016 Free Software Foundation, Inc.              *
+ * Copyright 2020,2021 Thomas E. Dickey                                     *
+ * Copyright 1998-2015,2016 Free Software Foundation, Inc.                  *
  *                                                                          *
  * Permission is hereby granted, free of charge, to any person obtaining a  *
  * copy of this software and associated documentation files (the            *
@@ -45,7 +46,7 @@
 #define CUR SP_TERMTYPE
 #endif
 
-MODULE_ID("$Id: resizeterm.c,v 1.49 2016/05/28 23:11:26 tom Exp $")
+MODULE_ID("$Id: resizeterm.c,v 1.51 2021/09/04 10:54:35 tom Exp $")
 
 /*
  * If we're trying to be reentrant, do not want any local statics.
@@ -209,7 +210,7 @@ parent_depth(WINDOW *cmp)
 }
 
 /*
- * FIXME: must adjust position so it's within the parent!
+ * FIXME: must adjust position so it is within the parent!
  */
 static int
 adjust_window(WINDOW *win, int ToLines, int ToCols, int stolen EXTRA_DCLS)

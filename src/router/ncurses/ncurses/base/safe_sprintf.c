@@ -1,5 +1,6 @@
 /****************************************************************************
- * Copyright (c) 1998-2013,2018 Free Software Foundation, Inc.              *
+ * Copyright 2018-2020,2021 Thomas E. Dickey                                *
+ * Copyright 1998-2012,2013 Free Software Foundation, Inc.                  *
  *                                                                          *
  * Permission is hereby granted, free of charge, to any person obtaining a  *
  * copy of this software and associated documentation files (the            *
@@ -33,7 +34,7 @@
 #include <curses.priv.h>
 #include <ctype.h>
 
-MODULE_ID("$Id: safe_sprintf.c,v 1.32 2018/12/15 22:26:38 tom Exp $")
+MODULE_ID("$Id: safe_sprintf.c,v 1.35 2021/10/03 00:25:09 tom Exp $")
 
 #if USE_SAFE_SPRINTF
 
@@ -222,9 +223,9 @@ NCURSES_SP_NAME(_nc_printf_string) (NCURSES_SP_DCLx
 				    const char *fmt,
 				    va_list ap)
 {
-    char *result = 0;
+    char *result = NULL;
 
-    if (SP_PARM != 0 && fmt != 0) {
+    if (SP_PARM != NULL && fmt != NULL) {
 #if USE_SAFE_SPRINTF
 	va_list ap2;
 	int len;
@@ -237,7 +238,7 @@ NCURSES_SP_NAME(_nc_printf_string) (NCURSES_SP_DCLx
 	    my_length = (size_t) (2 * (len + 1));
 	    my_buffer = typeRealloc(char, my_length, my_buffer);
 	}
-	if (my_buffer != 0) {
+	if (my_buffer != NULL) {
 	    *my_buffer = '\0';
 	    if (len >= 0) {
 		vsprintf(my_buffer, fmt, ap);
@@ -254,21 +255,30 @@ NCURSES_SP_NAME(_nc_printf_string) (NCURSES_SP_DCLx
 	    if (screen_columns(SP_PARM) > MyCols)
 		MyCols = screen_columns(SP_PARM);
 	    my_length = (size_t) (MyRows * (MyCols + 1)) + 1;
+	    if (my_length < 80)
+		my_length = 80;
 	    my_buffer = typeRealloc(char, my_length, my_buffer);
 	}
 
-	if (my_buffer != 0) {
+	if (my_buffer != NULL) {
 # if HAVE_VSNPRINTF
-	    vsnprintf(my_buffer, my_length, fmt, ap);	/* SUSv2, 1997 */
+	    /* SUSv2, 1997 */
+	    int used;
+	    while ((used = vsnprintf(my_buffer, my_length, fmt, ap))
+		   >= (int) my_length) {
+		my_length = (size_t) ((3 * used) / 2);
+		my_buffer = typeRealloc(char, my_length, my_buffer);
+	    }
 # else
-	    vsprintf(my_buffer, fmt, ap);	/* ISO/ANSI C, 1989 */
+	    /* ISO/ANSI C, 1989 */
+	    vsprintf(my_buffer, fmt, ap);
 # endif
 	    result = my_buffer;
 	}
 #endif
-    } else if (my_buffer != 0) {	/* see _nc_freeall() */
+    } else if (my_buffer != NULL) {	/* see _nc_freeall() */
 	free(my_buffer);
-	my_buffer = 0;
+	my_buffer = NULL;
 	my_length = 0;
     }
     return result;

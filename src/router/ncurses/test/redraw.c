@@ -1,5 +1,6 @@
 /****************************************************************************
- * Copyright (c) 2006-2012,2017 Free Software Foundation, Inc.              *
+ * Copyright 2020,2021 Thomas E. Dickey                                     *
+ * Copyright 2006-2012,2017 Free Software Foundation, Inc.                  *
  *                                                                          *
  * Permission is hereby granted, free of charge, to any person obtaining a  *
  * copy of this software and associated documentation files (the            *
@@ -26,7 +27,7 @@
  * authorization.                                                           *
  ****************************************************************************/
 /*
- * $Id: redraw.c,v 1.10 2017/06/24 14:04:57 tom Exp $
+ * $Id: redraw.c,v 1.13 2021/06/17 21:26:02 tom Exp $
  *
  * Demonstrate the redrawwin() and wredrawln() functions.
  * Thomas Dickey - 2006/11/4
@@ -81,7 +82,6 @@ test_redraw(WINDOW *win)
     WINDOW *win1;
     WINDOW *win2;
     bool done = FALSE;
-    int ch, y, x;
     int max_y, max_x;
     int beg_y, beg_x;
 
@@ -91,8 +91,11 @@ test_redraw(WINDOW *win)
     keypad(win, TRUE);
     getmaxyx(win, max_y, max_x);
     getbegyx(win, beg_y, beg_x);
+
     while (!done) {
-	ch = wgetch(win);
+	int ch = wgetch(win);
+	int y, x;
+
 	getyx(win, y, x);
 	switch (ch) {
 	case 'q':
@@ -132,7 +135,7 @@ test_redraw(WINDOW *win)
 	    /*
 	     * For a shell command, we can work around the problem noted above
 	     * using mvcur().  It is ifdef'd for NCURSES, since X/Open does
-	     * not define the case where the old location is unknown. 
+	     * not define the case where the old location is unknown.
 	     */
 	    IGNORE_RC(system("date"));
 	    mvcur(-1, -1, y, x);

@@ -1,5 +1,6 @@
 /****************************************************************************
- * Copyright (c) 1998-2004,2010 Free Software Foundation, Inc.              *
+ * Copyright 2020,2021 Thomas E. Dickey                                     *
+ * Copyright 1998-2004,2010 Free Software Foundation, Inc.                  *
  *                                                                          *
  * Permission is hereby granted, free of charge, to any person obtaining a  *
  * copy of this software and associated documentation files (the            *
@@ -37,21 +38,21 @@
 
 #include "menu.priv.h"
 
-MODULE_ID("$Id: m_scale.c,v 1.10 2010/01/23 21:20:10 tom Exp $")
+MODULE_ID("$Id: m_scale.c,v 1.14 2021/06/17 21:20:30 tom Exp $")
 
 /*---------------------------------------------------------------------------
-|   Facility      :  libnmenu  
+|   Facility      :  libnmenu
 |   Function      :  int scale_menu(const MENU *menu)
-|   
+|
 |   Description   :  Returns the minimum window size necessary for the
-|                    subwindow of menu.  
+|                    subwindow of menu.
 |
 |   Return Values :  E_OK                  - success
 |                    E_BAD_ARGUMENT        - invalid menu pointer
 |                    E_NOT_CONNECTED       - no items are connected to menu
 +--------------------------------------------------------------------------*/
-NCURSES_EXPORT(int)
-scale_menu(const MENU * menu, int *rows, int *cols)
+MENU_EXPORT(int)
+scale_menu(const MENU *menu, int *rows, int *cols)
 {
   T((T_CALLED("scale_menu(%p,%p,%p)"),
      (const void *)menu,

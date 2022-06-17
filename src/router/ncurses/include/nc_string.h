@@ -1,5 +1,6 @@
 /****************************************************************************
- * Copyright (c) 2012-2013,2016 Free Software Foundation, Inc.              *
+ * Copyright 2020,2021 Thomas E. Dickey                                     *
+ * Copyright 2012-2013,2016 Free Software Foundation, Inc.                  *
  *                                                                          *
  * Permission is hereby granted, free of charge, to any person obtaining a  *
  * copy of this software and associated documentation files (the            *
@@ -40,7 +41,7 @@
 #endif
 
 /*
- * $Id: nc_string.h,v 1.7 2016/09/10 19:57:15 tom Exp $
+ * $Id: nc_string.h,v 1.9 2021/04/25 00:10:43 tom Exp $
  *
  * String-hacks.  Use these macros to stifle warnings on (presumably) correct
  * uses of strcat, strcpy and sprintf.
@@ -75,7 +76,11 @@
 #endif
 
 #if USE_STRING_HACKS && HAVE_SNPRINTF
+#ifdef __cplusplus
 #define _nc_SPRINTF             NCURSES_VOID snprintf
+#else
+#define _nc_SPRINTF             NCURSES_VOID (snprintf)
+#endif
 #define _nc_SLIMIT(n)           NCURSES_CAST(size_t,n),
 #else
 #define _nc_SPRINTF             NCURSES_VOID sprintf

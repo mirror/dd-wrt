@@ -1,5 +1,6 @@
 /****************************************************************************
- * Copyright (c) 1998-2004,2010 Free Software Foundation, Inc.              *
+ * Copyright 2020 Thomas E. Dickey                                          *
+ * Copyright 1998-2004,2010 Free Software Foundation, Inc.                  *
  *                                                                          *
  * Permission is hereby granted, free of charge, to any person obtaining a  *
  * copy of this software and associated documentation files (the            *
@@ -37,19 +38,19 @@
 
 #include "menu.priv.h"
 
-MODULE_ID("$Id: m_userptr.c,v 1.17 2010/01/23 21:20:10 tom Exp $")
+MODULE_ID("$Id: m_userptr.c,v 1.21 2020/12/12 00:38:14 tom Exp $")
 
 /*---------------------------------------------------------------------------
-|   Facility      :  libnmenu  
+|   Facility      :  libnmenu
 |   Function      :  int set_menu_userptr(MENU *menu, void *userptr)
-|   
+|
 |   Description   :  Set the pointer that is reserved in any menu to store
-|                    application relevant informations.
+|                    application relevant information.
 |
 |   Return Values :  E_OK         - success
 +--------------------------------------------------------------------------*/
-NCURSES_EXPORT(int)
-set_menu_userptr(MENU * menu, void *userptr)
+MENU_EXPORT(int)
+set_menu_userptr(MENU *menu, void *userptr)
 {
   T((T_CALLED("set_menu_userptr(%p,%p)"), (void *)menu, (void *)userptr));
   Normalize_Menu(menu)->userptr = userptr;
@@ -57,17 +58,17 @@ set_menu_userptr(MENU * menu, void *userptr)
 }
 
 /*---------------------------------------------------------------------------
-|   Facility      :  libnmenu  
+|   Facility      :  libnmenu
 |   Function      :  void *menu_userptr(const MENU *menu)
-|   
+|
 |   Description   :  Return the pointer that is reserved in any menu to
-|                    store application relevant informations.
+|                    store application relevant information.
 |
 |   Return Values :  Value of the pointer. If no such pointer has been set,
 |                    NULL is returned
 +--------------------------------------------------------------------------*/
-NCURSES_EXPORT(void *)
-menu_userptr(const MENU * menu)
+MENU_EXPORT(void *)
+menu_userptr(const MENU *menu)
 {
   T((T_CALLED("menu_userptr(%p)"), (const void *)menu));
   returnVoidPtr(Normalize_Menu(menu)->userptr);

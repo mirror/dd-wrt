@@ -1,5 +1,6 @@
 /****************************************************************************
- * Copyright (c) 1998-2016,2019 Free Software Foundation, Inc.              *
+ * Copyright 2019,2020 Thomas E. Dickey                                     *
+ * Copyright 1998-2015,2016 Free Software Foundation, Inc.                  *
  *                                                                          *
  * Permission is hereby granted, free of charge, to any person obtaining a  *
  * copy of this software and associated documentation files (the            *
@@ -73,7 +74,7 @@ AUTHOR
 #define CUR SP_TERMTYPE
 #endif
 
-MODULE_ID("$Id: hashmap.c,v 1.67 2019/12/15 00:57:15 tom Exp $")
+MODULE_ID("$Id: hashmap.c,v 1.69 2020/05/31 17:50:48 tom Exp $")
 
 #ifdef HASHDEBUG
 
@@ -87,7 +88,7 @@ MODULE_ID("$Id: hashmap.c,v 1.67 2019/12/15 00:57:15 tom Exp $")
 # undef screen_lines
 # define screen_lines(sp) MAXLINES
 # define TEXTWIDTH(sp)	1
-int oldnums[MAXLINES], reallines[MAXLINES];
+static int oldnums[MAXLINES], reallines[MAXLINES];
 static NCURSES_CH_T oldtext[MAXLINES][TEXTWIDTH(sp)];
 static NCURSES_CH_T newtext[MAXLINES][TEXTWIDTH(sp)];
 # define OLDNUM(sp,n)	oldnums[n]

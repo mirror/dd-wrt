@@ -1,5 +1,6 @@
 /****************************************************************************
- * Copyright (c) 1998-2006,2010 Free Software Foundation, Inc.              *
+ * Copyright 2020,2021 Thomas E. Dickey                                     *
+ * Copyright 1998-2006,2010 Free Software Foundation, Inc.                  *
  *                                                                          *
  * Permission is hereby granted, free of charge, to any person obtaining a  *
  * copy of this software and associated documentation files (the            *
@@ -37,12 +38,12 @@
 
 #include "menu.priv.h"
 
-MODULE_ID("$Id: m_pattern.c,v 1.16 2010/01/23 21:20:10 tom Exp $")
+MODULE_ID("$Id: m_pattern.c,v 1.20 2021/06/17 21:20:30 tom Exp $")
 
 /*---------------------------------------------------------------------------
-|   Facility      :  libnmenu  
+|   Facility      :  libnmenu
 |   Function      :  char *menu_pattern(const MENU *menu)
-|   
+|
 |   Description   :  Return the value of the pattern buffer.
 |
 |   Return Values :  NULL          - if there is no pattern buffer allocated
@@ -50,8 +51,8 @@ MODULE_ID("$Id: m_pattern.c,v 1.16 2010/01/23 21:20:10 tom Exp $")
 |                                    pattern is stored
 |                    PatternString - as expected
 +--------------------------------------------------------------------------*/
-NCURSES_EXPORT(char *)
-menu_pattern(const MENU * menu)
+MENU_EXPORT(char *)
+menu_pattern(const MENU *menu)
 {
   static char empty[] = "";
 
@@ -60,9 +61,9 @@ menu_pattern(const MENU * menu)
 }
 
 /*---------------------------------------------------------------------------
-|   Facility      :  libnmenu  
+|   Facility      :  libnmenu
 |   Function      :  int set_menu_pattern(MENU *menu, const char *p)
-|   
+|
 |   Description   :  Set the match pattern for a menu and position to the
 |                    first item that matches.
 |
@@ -72,8 +73,8 @@ menu_pattern(const MENU * menu)
 |                    E_NOT_CONNECTED   - no items connected to menu
 |                    E_NO_MATCH        - no item matches pattern
 +--------------------------------------------------------------------------*/
-NCURSES_EXPORT(int)
-set_menu_pattern(MENU * menu, const char *p)
+MENU_EXPORT(int)
+set_menu_pattern(MENU *menu, const char *p)
 {
   ITEM *matchitem;
   int matchpos;

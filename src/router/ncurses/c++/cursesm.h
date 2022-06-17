@@ -1,6 +1,7 @@
 // * This makes emacs happy -*-Mode: C++;-*-
 /****************************************************************************
- * Copyright (c) 1998-2014,2019 Free Software Foundation, Inc.              *
+ * Copyright 2019,2020 Thomas E. Dickey                                     *
+ * Copyright 1998-2012,2014 Free Software Foundation, Inc.                  *
  *                                                                          *
  * Permission is hereby granted, free of charge, to any person obtaining a  *
  * copy of this software and associated documentation files (the            *
@@ -31,7 +32,7 @@
  *   Author: Juergen Pfeifer, 1997                                          *
  ****************************************************************************/
 
-// $Id: cursesm.h,v 1.31 2019/07/28 19:55:27 tom Exp $
+// $Id: cursesm.h,v 1.34 2020/05/24 01:40:20 anonymous.maarten Exp $
 
 #ifndef NCURSES_CURSESM_H_incl
 #define NCURSES_CURSESM_H_incl 1
@@ -46,7 +47,7 @@ extern "C" {
 // This wraps the ITEM type of <menu.h>
 // -------------------------------------------------------------------------
 //
-class NCURSES_IMPEXP NCursesMenuItem
+class NCURSES_CXX_IMPEXP NCursesMenuItem
 {
   friend class NCursesMenu;
 
@@ -152,7 +153,7 @@ typedef bool ITEMCALLBACK(NCursesMenuItem&);
 // If you don't like to create a child class for individual items to
 // overload action(), you may use this class and provide a callback
 // function pointer for items.
-class NCURSES_IMPEXP NCursesMenuCallbackItem : public NCursesMenuItem
+class NCURSES_CXX_IMPEXP NCursesMenuCallbackItem : public NCursesMenuItem
 {
 private:
   ITEMCALLBACK* p_fct;
@@ -199,7 +200,7 @@ extern "C" {
 // This wraps the MENU type of <menu.h>
 // -------------------------------------------------------------------------
 //
-class NCURSES_IMPEXP NCursesMenu : public NCursesPanel
+class NCURSES_CXX_IMPEXP NCursesMenu : public NCursesPanel
 {
 protected:
   MENU *menu;
@@ -358,7 +359,7 @@ public:
     flag ? OnError (::post_menu(menu)) : OnError (::unpost_menu (menu));
   }
 
-  // Get the numer of rows and columns for this menu
+  // Get the number of rows and columns for this menu
   inline void scale (int& mrows, int& mcols) const  {
     OnError (::scale_menu (menu, &mrows, &mcols));
   }
@@ -595,7 +596,7 @@ public:
 // to create a UserItem.
 // -------------------------------------------------------------------------
 //
-template<class T> class NCURSES_IMPEXP NCursesUserItem : public NCursesMenuItem
+template<class T> class NCURSES_CXX_IMPEXP NCursesUserItem : public NCursesMenuItem
 {
 public:
   NCursesUserItem (const char* p_name,
@@ -622,7 +623,7 @@ public:
 // The same mechanism is used to attach user data to a menu
 // -------------------------------------------------------------------------
 //
-template<class T> class NCURSES_IMPEXP NCursesUserMenu : public NCursesMenu
+template<class T> class NCURSES_CXX_IMPEXP NCursesUserMenu : public NCursesMenu
 {
 protected:
   NCursesUserMenu( int  nlines,

@@ -1,6 +1,7 @@
-# $Id: mk-test.awk,v 1.22 2019/01/06 00:35:28 tom Exp $
+# $Id: mk-test.awk,v 1.25 2021/04/24 23:10:40 tom Exp $
 ##############################################################################
-# Copyright (c) 2006-2018,2019 Free Software Foundation, Inc.                #
+# Copyright 2019-2020,2021 Thomas E. Dickey                                  #
+# Copyright 2006-2017,2018 Free Software Foundation, Inc.                    #
 #                                                                            #
 # Permission is hereby granted, free of charge, to any person obtaining a    #
 # copy of this software and associated documentation files (the "Software"), #
@@ -76,11 +77,11 @@ END	{
 	print	"	$(srcdir)/*.x* \\"
 	print	"	$(srcdir)/*.dat"
 	print	""
-	print	"all: $(TESTS)"
+	print	"all:: $(TESTS)"
 	print	""
 	print	"sources:"
 	print	""
-	print	"check:"
+	print	"check::"
 	print	"	@ echo The test-programs are interactive"
 	print	"tags:"
 	print	"	$(CTAGS) *.[ch]"

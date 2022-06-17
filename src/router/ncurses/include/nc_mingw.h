@@ -1,5 +1,6 @@
 /****************************************************************************
- * Copyright (c) 2008-2018,2019 Free Software Foundation, Inc.              *
+ * Copyright 2018-2019,2020 Thomas E. Dickey                                *
+ * Copyright 2008-2010,2017 Free Software Foundation, Inc.                  *
  *                                                                          *
  * Permission is hereby granted, free of charge, to any person obtaining a  *
  * copy of this software and associated documentation files (the            *
@@ -30,12 +31,13 @@
  * Author: Thomas Dickey, 2008-on                                           *
  ****************************************************************************/
 
-/* $Id: nc_mingw.h,v 1.6 2019/06/23 19:55:08 tom Exp $ */
+/* $Id: nc_mingw.h,v 1.9 2020/07/11 22:13:19 tom Exp $ */
 
 #ifndef NC_MINGW_H
 #define NC_MINGW_H 1
 
 #ifdef _WIN32
+
 #ifdef WINVER
 #  if WINVER < 0x0501
 #    error WINVER must at least be 0x0501
@@ -51,9 +53,21 @@
 #undef gettimeofday
 #define gettimeofday(tv,tz) _nc_gettimeofday(tv,tz)
 
+#if HAVE_SYS_TIME_H
 #include <sys/time.h>		/* for struct timeval */
+#endif
 
-extern int _nc_gettimeofday(struct timeval *, void *);
+#ifdef _MSC_VER
+#include <winsock2.h>		/* for struct timeval */
+#endif
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+#include <ncurses_dll.h>
+
+NCURSES_EXPORT(int) _nc_gettimeofday(struct timeval *, void *);
 
 #undef HAVE_GETTIMEOFDAY
 #define HAVE_GETTIMEOFDAY 1
@@ -64,7 +78,11 @@ extern int _nc_gettimeofday(struct timeval *, void *);
 
 #undef wcwidth
 #define wcwidth(ucs) _nc_wcwidth((wchar_t)(ucs))
-extern int _nc_wcwidth(wchar_t);
+NCURSES_EXPORT(int) _nc_wcwidth(wchar_t);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* _WIN32 */
 

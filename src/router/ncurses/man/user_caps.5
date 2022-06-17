@@ -1,5 +1,6 @@
 .\"***************************************************************************
-.\" Copyright (c) 2017-2018,2019 Free Software Foundation, Inc.              *
+.\" Copyright 2018-2020,2021 Thomas E. Dickey                                *
+.\" Copyright 2017 Free Software Foundation, Inc.                            *
 .\"                                                                          *
 .\" Permission is hereby granted, free of charge, to any person obtaining a  *
 .\" copy of this software and associated documentation files (the            *
@@ -26,7 +27,7 @@
 .\" authorization.                                                           *
 .\"***************************************************************************
 .\"
-.\" $Id: user_caps.5,v 1.10 2019/05/18 22:48:40 tom Exp $
+.\" $Id: user_caps.5,v 1.17 2021/06/17 21:30:22 tom Exp $
 .TH user_caps 5
 .ie \n(.g .ds `` \(lq
 .el       .ds `` ``
@@ -125,7 +126,7 @@ box characters primary set
 The memory lock/unlock capabilities were included because they were used
 in the X11R6 terminal description for \fBxterm\fP.
 The \fIbox1\fP capability is used in @TIC@ to help with terminal descriptions
-written for AIX. 
+written for AIX.
 .PP
 During the 1990s, some users were reluctant to use terminfo
 in spite of its performance advantages over termcap:
@@ -258,6 +259,84 @@ XM
 \fIstring\fP,
 override ncurses's built-in string which
 enables/disables \fBxterm\fP mouse mode.
+.IP
+ncurses sends a character sequence to the terminal to initialize mouse mode,
+and when the user clicks the mouse buttons or (in certain modes) moves the
+mouse, handles the characters sent back by the terminal to tell it what
+was done with the mouse.
+.IP
+The mouse protocol is enabled when
+the \fImask\fP passed in the \fBmousemask\fP function is nonzero.
+By default, ncurses handles the responses for the X11 xterm mouse protocol.
+It also knows about the \fISGR 1006\fP xterm mouse protocol,
+but must to be told to look for this specifically.
+It will not be able to guess which mode is used,
+because the responses are enough alike that only confusion would result.
+.IP
+The \fBXM\fP capability has a single parameter.
+If nonzero, the mouse protocol should be enabled.
+If zero, the mouse protocol should be disabled.
+ncurses inspects this capability if it is present,
+to see whether the 1006 protocol is used.
+If so, it expects the responses to use the \fISGR 1006\fP xterm mouse protocol.
+.IP
+The xterm mouse protocol is used by other terminal emulators.
+The terminal database uses building-blocks for the various xterm mouse
+protocols which can be used in customized terminal descriptions.
+.IP
+The terminal database building blocks for this mouse
+feature also have an experimental capability \fIxm\fP.
+The \*(``xm\*('' capability describes the mouse response.
+Currently there is no interpreter which would use this
+information to make the mouse support completely data-driven.
+.IP
+\fIxm\fP shows the format of the mouse responses.
+In this experimental capability, the parameters are
+.RS 5
+.TP 5
+.I p1
+y-ordinate
+.TP 5
+.I p2
+x-ordinate
+.TP 5
+.I p3
+button
+.TP 5
+.I p4
+state, e.g., pressed or released
+.TP 5
+.I p5
+y-ordinate starting region
+.TP 5
+.I p6
+x-ordinate starting region
+.TP 5
+.I p7
+y-ordinate ending region
+.TP 5
+.I p8
+x-ordinate ending region
+.RE
+.IP
+Here are examples from the terminal database for the most commonly used
+xterm mouse protocols:
+.IP
+.nf
+  xterm+x11mouse|X11 xterm mouse protocol,
+          kmous=\\E[M, XM=\\E[?1000%?%p1%{1}%=%th%el%;,
+          xm=\\E[M
+             %?%p4%t%p3%e%{3}%;%'\ '%+%c
+             %p2%'!'%+%c
+             %p1%'!'%+%c,
+
+  xterm+sm+1006|xterm SGR-mouse,
+          kmous=\\E[<, XM=\\E[?1006;1000%?%p1%{1}%=%th%el%;,
+          xm=\\E[<%i%p3%d;
+             %p1%d;
+             %p2%d;
+             %?%p4%tM%em%;,
+.fi
 .
 .SS Extended key-definitions
 .PP
@@ -330,16 +409,29 @@ given the list of values,
 ask \fBkey_defined\fP(3X) for the \fIkey-code\fP which
 would be returned for those keys by \fBwgetch\fP(3X).
 .PP
+.\"
 .SH PORTABILITY
 .PP
 The \*(``\-x\*('' extension feature of \fB@TIC@\fP and \fB@INFOCMP@\fP
 has been adopted in NetBSD curses.
 That implementation stores user-defined capabilities,
 but makes no use of these capabilities itself.
+.\"
 .SH SEE ALSO
 .PP
-\fB@TIC@\fR(1M),
-\fB@INFOCMP@\fR(1M).
+\fB@INFOCMP@\fR(1M),
+\fB@TIC@\fR(1M).
+.PP
+The terminal database section
+.I "NCURSES USER-DEFINABLE CAPABILITIES"
+summarizes commonly-used user-defined capabilities
+which are used in the terminal descriptions.
+Some of those features are mentioned in \fBscreen\fR(1) or \fBtmux\fR(1).
+.PP
+.I "XTerm Control Sequences"
+provides further information on the \fBxterm\fP features
+which are used in these extended capabilities.
+.\"
 .SH AUTHORS
 .PP
 Thomas E. Dickey

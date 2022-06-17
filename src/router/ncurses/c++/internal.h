@@ -1,6 +1,7 @@
 // * This makes emacs happy -*-Mode: C++;-*-
 /****************************************************************************
- * Copyright (c) 1998-2012,2018 Free Software Foundation, Inc.              *
+ * Copyright 2018,2020 Thomas E. Dickey                                     *
+ * Copyright 1998-2008,2012 Free Software Foundation, Inc.                  *
  *                                                                          *
  * Permission is hereby granted, free of charge, to any person obtaining a  *
  * copy of this software and associated documentation files (the            *
@@ -31,7 +32,7 @@
  *   Author: Juergen Pfeifer, 1997                                          *
  ****************************************************************************/
 
-// $Id: internal.h,v 1.19 2018/06/24 00:10:14 tom Exp $
+// $Id: internal.h,v 1.22 2020/08/29 23:06:41 tom Exp $
 
 #ifndef NCURSES_CPLUS_INTERNAL_H
 #define NCURSES_CPLUS_INTERNAL_H 1
@@ -44,8 +45,12 @@
 #define MODULE_ID(id)		/*nothing */
 #endif
 
-#ifdef _WIN32
+#if (defined(_WIN32) || defined(_WIN64))
+#if defined(EXP_WIN32_DRIVER)
+#include <nc_win32.h>
+#else
 #include <nc_mingw.h>
+#endif
 #undef KEY_EVENT
 #endif
 

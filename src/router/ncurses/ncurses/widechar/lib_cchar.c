@@ -1,5 +1,6 @@
 /****************************************************************************
- * Copyright (c) 2001-2017,2019 Free Software Foundation, Inc.              *
+ * Copyright 2019-2020,2021 Thomas E. Dickey                                *
+ * Copyright 2001-2016,2017 Free Software Foundation, Inc.                  *
  *                                                                          *
  * Permission is hereby granted, free of charge, to any person obtaining a  *
  * copy of this software and associated documentation files (the            *
@@ -34,10 +35,11 @@
 */
 
 #include <curses.priv.h>
+#include <wchar.h>
 
-MODULE_ID("$Id: lib_cchar.c,v 1.32 2019/05/04 20:46:24 tom Exp $")
+MODULE_ID("$Id: lib_cchar.c,v 1.37 2021/06/17 21:11:08 tom Exp $")
 
-/* 
+/*
  * The SuSv2 description leaves some room for interpretation.  We'll assume wch
  * points to a string which is L'\0' terminated, contains at least one
  * character with strictly positive width, which must be the first, and
@@ -54,7 +56,7 @@ setcchar(cchar_t *wcval,
     int color_pair = pair_arg;
     unsigned len;
 
-    TR(TRACE_CCALLS, (T_CALLED("setcchar(%p,%s,%lu,%d,%p)"),
+    TR(TRACE_CCALLS, (T_CALLED("setcchar(%p,%s,attrs=%lu,pair=%d,%p)"),
 		      (void *) wcval, _nc_viswbuf(wch),
 		      (unsigned long) attrs, color_pair, opts));
 
@@ -103,7 +105,6 @@ getcchar(const cchar_t *wcval,
 	 void *opts)
 {
     int code = ERR;
-    int color_pair;
 
     TR(TRACE_CCALLS, (T_CALLED("getcchar(%p,%p,%p,%p,%p)"),
 		      (const void *) wcval,
@@ -112,7 +113,12 @@ getcchar(const cchar_t *wcval,
 		      (void *) pair_arg,
 		      opts));
 
-    if (opts == NULL && wcval != NULL) {
+#if !NCURSES_EXT_COLORS
+    if (opts != NULL) {
+	;			/* empty */
+    } else
+#endif
+    if (wcval != NULL) {
 	wchar_t *wp;
 	int len;
 
@@ -129,6 +135,10 @@ getcchar(const cchar_t *wcval,
 	} else if (attrs == 0 || pair_arg == 0) {
 	    code = ERR;
 	} else if (len >= 0) {
+	    int color_pair;
+
+	    TR(TRACE_CCALLS, ("copy %d wchars, first is %s", len,
+			      _tracecchar_t(wcval)));
 	    *attrs = AttrOf(*wcval) & A_ATTRIBUTES;
 	    color_pair = GetPair(*wcval);
 	    get_extended_pair(opts, color_pair);

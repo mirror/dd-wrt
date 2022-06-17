@@ -1,5 +1,6 @@
 /****************************************************************************
- * Copyright (c) 1998-2000,2012 Free Software Foundation, Inc.              *
+ * Copyright 2020,2021 Thomas E. Dickey                                     *
+ * Copyright 1998-2002,2012 Free Software Foundation, Inc.                  *
  *                                                                          *
  * Permission is hereby granted, free of charge, to any person obtaining a  *
  * copy of this software and associated documentation files (the            *
@@ -39,15 +40,18 @@
 
 #include <curses.priv.h>
 
-MODULE_ID("$Id: doalloc.c,v 1.11 2012/11/03 19:27:41 tom Exp $")
+MODULE_ID("$Id: doalloc.c,v 1.14 2021/04/24 23:43:39 tom Exp $")
 
-NCURSES_EXPORT(void *)
+void *
 _nc_doalloc(void *oldp, size_t amount)
 {
     void *newp;
 
-    if (oldp != 0) {
-	if ((newp = realloc(oldp, amount)) == 0) {
+    if (oldp != NULL) {
+	if (amount == 0) {
+	    free(oldp);
+	    newp = NULL;
+	} else if ((newp = realloc(oldp, amount)) == 0) {
 	    free(oldp);
 	    errno = ENOMEM;	/* just in case 'free' reset */
 	}

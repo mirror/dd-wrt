@@ -1,5 +1,6 @@
 /****************************************************************************
- * Copyright (c) 1998-2009,2010 Free Software Foundation, Inc.              *
+ * Copyright 2020,2021 Thomas E. Dickey                                     *
+ * Copyright 1998-2009,2010 Free Software Foundation, Inc.                  *
  *                                                                          *
  * Permission is hereby granted, free of charge, to any person obtaining a  *
  * copy of this software and associated documentation files (the            *
@@ -37,12 +38,12 @@
 
 #include "menu.priv.h"
 
-MODULE_ID("$Id: m_new.c,v 1.21 2010/01/23 21:20:11 tom Exp $")
+MODULE_ID("$Id: m_new.c,v 1.27 2021/06/17 21:26:02 tom Exp $")
 
 /*---------------------------------------------------------------------------
-|   Facility      :  libnmenu  
+|   Facility      :  libnmenu
 |   Function      :  MENU* _nc_new_menu(SCREEN*, ITEM **items)
-|   
+|
 |   Description   :  Creates a new menu connected to the item pointer
 |                    array items and returns a pointer to the new menu.
 |                    The new menu is initialized with the values from the
@@ -50,8 +51,8 @@ MODULE_ID("$Id: m_new.c,v 1.21 2010/01/23 21:20:11 tom Exp $")
 |
 |   Return Values :  NULL on error
 +--------------------------------------------------------------------------*/
-NCURSES_EXPORT(MENU *)
-NCURSES_SP_NAME(new_menu) (NCURSES_SP_DCLx ITEM ** items)
+MENU_EXPORT(MENU *)
+NCURSES_SP_NAME(new_menu) (NCURSES_SP_DCLx ITEM **items)
 {
   int err = E_SYSTEM_ERROR;
   MENU *menu = typeCalloc(MENU, 1);
@@ -59,6 +60,7 @@ NCURSES_SP_NAME(new_menu) (NCURSES_SP_DCLx ITEM ** items)
   T((T_CALLED("new_menu(%p,%p)"), (void *)SP_PARM, (void *)items));
   if (menu)
     {
+      T((T_CREATE("menu %p"), (void *)menu));
       *menu = _nc_Default_Menu;
       menu->status = 0;
       menu->rows = menu->frows;
@@ -76,7 +78,7 @@ NCURSES_SP_NAME(new_menu) (NCURSES_SP_DCLx ITEM ** items)
 	    {
 	      err = E_NOT_CONNECTED;
 	      free(menu);
-	      menu = (MENU *) 0;
+	      menu = (MENU *)0;
 	    }
 	  else
 	    err = E_OK;
@@ -90,9 +92,9 @@ NCURSES_SP_NAME(new_menu) (NCURSES_SP_DCLx ITEM ** items)
 }
 
 /*---------------------------------------------------------------------------
-|   Facility      :  libnmenu  
+|   Facility      :  libnmenu
 |   Function      :  MENU *new_menu(ITEM **items)
-|   
+|
 |   Description   :  Creates a new menu connected to the item pointer
 |                    array items and returns a pointer to the new menu.
 |                    The new menu is initialized with the values from the
@@ -101,26 +103,26 @@ NCURSES_SP_NAME(new_menu) (NCURSES_SP_DCLx ITEM ** items)
 |   Return Values :  NULL on error
 +--------------------------------------------------------------------------*/
 #if NCURSES_SP_FUNCS
-NCURSES_EXPORT(MENU *)
-new_menu(ITEM ** items)
+MENU_EXPORT(MENU *)
+new_menu(ITEM **items)
 {
   return NCURSES_SP_NAME(new_menu) (CURRENT_SCREEN, items);
 }
 #endif
 
 /*---------------------------------------------------------------------------
-|   Facility      :  libnmenu  
-|   Function      :  int free_menu(MENU *menu)  
-|   
-|   Description   :  Disconnects menu from its associated item pointer 
+|   Facility      :  libnmenu
+|   Function      :  int free_menu(MENU *menu)
+|
+|   Description   :  Disconnects menu from its associated item pointer
 |                    array and frees the storage allocated for the menu.
 |
 |   Return Values :  E_OK               - success
 |                    E_BAD_ARGUMENT     - Invalid menu pointer passed
 |                    E_POSTED           - Menu is already posted
 +--------------------------------------------------------------------------*/
-NCURSES_EXPORT(int)
-free_menu(MENU * menu)
+MENU_EXPORT(int)
+free_menu(MENU *menu)
 {
   T((T_CALLED("free_menu(%p)"), (void *)menu));
   if (!menu)

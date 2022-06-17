@@ -1,5 +1,6 @@
 /****************************************************************************
- * Copyright (c) 2013-2014,2017 Free Software Foundation, Inc.              *
+ * Copyright 2020,2021 Thomas E. Dickey                                     *
+ * Copyright 2013-2014,2017 Free Software Foundation, Inc.                  *
  *                                                                          *
  * Permission is hereby granted, free of charge, to any person obtaining a  *
  * copy of this software and associated documentation files (the            *
@@ -26,7 +27,7 @@
  * authorization.                                                           *
  ****************************************************************************/
 /*
- * $Id: test_vidputs.c,v 1.9 2017/10/11 08:17:07 tom Exp $
+ * $Id: test_vidputs.c,v 1.11 2021/04/25 00:10:43 tom Exp $
  *
  * Demonstrate the vidputs and vidattr functions.
  * Thomas Dickey - 2013/01/12
@@ -43,7 +44,7 @@ static bool p_opt = FALSE;
 static
 TPUTS_PROTO(outc, c)
 {
-    int rc = c;
+    int rc;
 
     rc = putc(c, my_fp);
     TPUTS_RETURN(rc);

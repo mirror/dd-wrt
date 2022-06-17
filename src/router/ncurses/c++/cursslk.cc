@@ -1,6 +1,7 @@
 // * this is for making emacs happy: -*-Mode: C++;-*-
 /****************************************************************************
- * Copyright (c) 1998-2012,2019 Free Software Foundation, Inc.              *
+ * Copyright 2019,2020 Thomas E. Dickey                                     *
+ * Copyright 1998-2005,2012 Free Software Foundation, Inc.                  *
  *                                                                          *
  * Permission is hereby granted, free of charge, to any person obtaining a  *
  * copy of this software and associated documentation files (the            *
@@ -35,7 +36,7 @@
 #include "cursslk.h"
 #include "cursesapp.h"
 
-MODULE_ID("$Id: cursslk.cc,v 1.17 2019/07/28 19:55:27 tom Exp $")
+MODULE_ID("$Id: cursslk.cc,v 1.19 2020/07/18 19:57:11 anonymous.maarten Exp $")
 
 Soft_Label_Key_Set::Soft_Label_Key&
   Soft_Label_Key_Set::Soft_Label_Key::operator=(char *text)
@@ -99,6 +100,10 @@ Soft_Label_Key_Set::Soft_Label_Key& Soft_Label_Key_Set::operator[](int i) {
   if (i<1 || i>num_labels)
     Error("Invalid Label index");
   return slk_array[i-1];
+}
+
+int Soft_Label_Key_Set::labels() const {
+  return num_labels;
 }
 
 void Soft_Label_Key_Set::activate_label(int i, bool bf) {

@@ -1,5 +1,6 @@
 /****************************************************************************
- * Copyright (c) 1998-2017,2019 Free Software Foundation, Inc.              *
+ * Copyright 2019,2020 Thomas E. Dickey                                     *
+ * Copyright 1998-2016,2017 Free Software Foundation, Inc.                  *
  *                                                                          *
  * Permission is hereby granted, free of charge, to any person obtaining a  *
  * copy of this software and associated documentation files (the            *
@@ -45,7 +46,7 @@
 #include <sys/termio.h>		/* needed for ISC */
 #endif
 
-MODULE_ID("$Id: lib_initscr.c,v 1.44 2019/06/22 00:02:01 tom Exp $")
+MODULE_ID("$Id: lib_initscr.c,v 1.48 2020/09/07 14:26:48 tom Exp $")
 
 NCURSES_EXPORT(WINDOW *)
 initscr(void)
@@ -65,10 +66,9 @@ initscr(void)
 
 	_nc_globals.init_screen = TRUE;
 
-	if ((env = getenv("TERM")) == 0
-	    || *env == '\0') {
-	    env = "unknown";
-	}
+	env = getenv("TERM");
+	(void) VALID_TERM_ENV(env, "unknown");
+
 	if ((name = strdup(env)) == NULL) {
 	    fprintf(stderr, "Error opening allocating $TERM.\n");
 	    ExitProgram(EXIT_FAILURE);

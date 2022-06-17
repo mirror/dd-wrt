@@ -1,6 +1,7 @@
-<!-- 
+<!--
   ****************************************************************************
-  * Copyright (c) 2005-2016,2017 Free Software Foundation, Inc.              *
+  * Copyright 2020,2021 Thomas E. Dickey                                     *
+  * Copyright 2005-2016,2017 Free Software Foundation, Inc.                  *
   *                                                                          *
   * Permission is hereby granted, free of charge, to any person obtaining a  *
   * copy of this software and associated documentation files (the            *
@@ -27,7 +28,7 @@
   * authorization.                                                           *
   ****************************************************************************
   * Author: Thomas E. Dickey
-  * @Id: legacy_coding.3x,v 1.6 2017/03/15 08:14:25 tom Exp @
+  * @Id: legacy_coding.3x,v 1.9 2021/08/15 19:32:05 tom Exp @
 -->
 <!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01//EN">
 <HTML>
@@ -53,7 +54,7 @@
 </PRE><H2><a name="h2-SYNOPSIS">SYNOPSIS</a></H2><PRE>
        <STRONG>#include</STRONG> <STRONG>&lt;curses.h&gt;</STRONG>
 
-       <STRONG>int</STRONG> <STRONG>use_legacy_coding(int</STRONG> <STRONG>level);</STRONG>
+       <STRONG>int</STRONG> <STRONG>use_legacy_coding(int</STRONG> <EM>level</EM><STRONG>);</STRONG>
 
 
 </PRE><H2><a name="h2-DESCRIPTION">DESCRIPTION</a></H2><PRE>
@@ -65,8 +66,8 @@
 
        The <EM>level</EM> parameter controls the result:
 
-              0    the library functions normally, rendering nonprinting char-
-                   acters as described in <STRONG>unctrl</STRONG>.
+              0    the   library  functions  normally,  rendering  nonprinting
+                   characters as described in <STRONG>unctrl</STRONG>.
 
               1    the  library  ignores  <STRONG>isprintf</STRONG>  for  codes  in  the  range
                    160-255.
@@ -89,7 +90,7 @@
 
 
 </PRE><H2><a name="h2-SEE-ALSO">SEE ALSO</a></H2><PRE>
-       <STRONG>unctrl</STRONG>.
+       <STRONG><A HREF="unctrl.3x.html">unctrl(3x)</A></STRONG>.
 
 
 </PRE><H2><a name="h2-AUTHOR">AUTHOR</a></H2><PRE>

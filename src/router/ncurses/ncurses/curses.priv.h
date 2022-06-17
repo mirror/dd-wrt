@@ -1,5 +1,6 @@
 /****************************************************************************
- * Copyright (c) 1998-2018,2019 Free Software Foundation, Inc.              *
+ * Copyright 2018-2020,2021 Thomas E. Dickey                                *
+ * Copyright 1998-2017,2018 Free Software Foundation, Inc.                  *
  *                                                                          *
  * Permission is hereby granted, free of charge, to any person obtaining a  *
  * copy of this software and associated documentation files (the            *
@@ -34,7 +35,7 @@
  ****************************************************************************/
 
 /*
- * $Id: curses.priv.h,v 1.627 2019/12/14 22:36:12 tom Exp $
+ * $Id: curses.priv.h,v 1.646 2021/09/24 16:09:35 tom Exp $
  *
  *	curses.priv.h
  *
@@ -71,10 +72,6 @@ extern "C" {
 #include <unistd.h>
 #endif
 
-#if HAVE_SYS_BSDTYPES_H && !(defined(_WIN32) || defined(_WIN64))
-#include <sys/bsdtypes.h>	/* needed for ISC */
-#endif
-
 #if HAVE_LIMITS_H
 # include <limits.h>
 #elif HAVE_SYS_PARAM_H
@@ -104,6 +101,24 @@ extern "C" {
 
 #if DECL_ERRNO
 extern int errno;
+#endif
+
+/* Some Windows related defines */
+#undef _NC_WINDOWS
+#if (defined(_WIN32) || defined(_WIN64))
+#define _NC_WINDOWS
+#else
+#undef EXP_WIN32_DRIVER
+#endif
+
+#undef _NC_MINGW
+#if (defined(__MINGW32__) || defined(__MINGW64__))
+#define _NC_MINGW
+#endif
+
+#undef _NC_MSC
+#ifdef _MSC_VER
+#define _NC_MSC
 #endif
 
 /* Some systems have a broken 'select()', but workable 'poll()'.  Use that */
@@ -184,22 +199,11 @@ extern int errno;
  * the path separator in configure doesn't work properly. So, if building
  * for MinGW, we enforce the correct Windows PATH separator
  */
-#ifdef _WIN32
+#if defined(_NC_WINDOWS)
 #  ifdef NCURSES_PATHSEP
 #    undef NCURSES_PATHSEP
 #  endif
 #  define NCURSES_PATHSEP ';'
-#endif
-
-/*
- * If desired, one can configure this, disabling environment variables that
- * point to custom terminfo/termcap locations.
- */
-#ifdef USE_ROOT_ENVIRON
-#define use_terminfo_vars() 1
-#else
-#define use_terminfo_vars() _nc_env_access()
-extern NCURSES_EXPORT(int) _nc_env_access (void);
 #endif
 
 /*
@@ -274,10 +278,19 @@ extern NCURSES_EXPORT(void *) _nc_memmove (void *, const void *, size_t);
  * Options for terminal drivers, etc...
  */
 #ifdef USE_TERM_DRIVER
+#define NO_TERMINAL "unknown"
 #define USE_SP_RIPOFF     1
 #define USE_SP_TERMTYPE   1
 #define USE_SP_WINDOWLIST 1
+#else
+#define NO_TERMINAL 0
 #endif
+
+#define VALID_TERM_ENV(term_env, no_terminal) \
+	(term_env = (NonEmpty(term_env) \
+		     ? term_env \
+		     : no_terminal), \
+	 NonEmpty(term_env))
 
 /*
  * Note:  ht/cbt expansion flakes out randomly under Linux 1.1.47, but only
@@ -336,6 +349,10 @@ typedef TRIES {
 
 #include <curses.h>	/* we'll use -Ipath directive to get the right one! */
 
+#if !(defined(NCURSES_WGETCH_EVENTS) && defined(NEED_KEY_EVENT))
+#undef KEY_EVENT		/* reduce compiler-warnings with Visual C++ */
+#endif
+
 typedef struct
 {
     int red, green, blue;	/* what color_content() returns */
@@ -379,7 +396,7 @@ typedef union {
 
 #include <nc_panel.h>
 
-#include <term.h>
+#include <term.priv.h>
 #include <nc_termios.h>
 
 #define IsPreScreen(sp)      (((sp) != 0) && sp->_prescreen)
@@ -782,12 +799,6 @@ typedef struct _SLK {
 
 #endif	/* USE_TERMLIB */
 
-typedef	struct {
-	WINDOW *win;		/* the window used in the hook      */
-	int	line;		/* lines to take, < 0 => from bottom*/
-	int	(*hook)(WINDOW *, int); /* callback for user	    */
-} ripoff_t;
-
 #if USE_GPM_SUPPORT
 #undef buttons			/* term.h defines this, and gpm uses it! */
 #include <gpm.h>
@@ -815,16 +826,6 @@ typedef int (*TYPE_Gpm_GetEvent) (Gpm_Event *);
 #endif /* HAVE_LIBDL */
 #endif /* USE_GPM_SUPPORT */
 
-typedef struct {
-    long sequence;
-    bool last_used;
-    char *fix_sgr0;		/* this holds the filtered sgr0 string */
-    char *last_bufp;		/* help with fix_sgr0 leak */
-    TERMINAL *last_term;
-} TGETENT_CACHE;
-
-#define TGETENT_MAX 4
-
 /*
  * When converting from terminfo to termcap, check for cases where we can trim
  * octal escapes down to 2-character form.  It is useful for terminfo format
@@ -834,46 +835,6 @@ typedef struct {
 #define MIN_TC_FIXUPS	4
 
 #define isoctal(c) ((c) >= '0' && (c) <= '7')
-
-/*
- * State of tparm().
- */
-#define STACKSIZE 20
-
-typedef struct {
-	union {
-		int	num;
-		char	*str;
-	} data;
-	bool num_type;
-} STACK_FRAME;
-
-#define NUM_VARS 26
-
-typedef struct {
-	const char	*tparam_base;
-
-	STACK_FRAME	stack[STACKSIZE];
-	int		stack_ptr;
-
-	char		*out_buff;
-	size_t		out_size;
-	size_t		out_used;
-
-	char		*fmt_buff;
-	size_t		fmt_size;
-
-	int		dynamic_var[NUM_VARS];
-	int		static_vars[NUM_VARS];
-#ifdef TRACE
-	const char	*tname;
-#endif
-} TPARM_STATE;
-
-typedef struct {
-    char *text;
-    size_t size;
-} TRACEBUF;
 
 /*
  * The filesystem database normally uses a single-letter for the lower level
@@ -905,126 +866,7 @@ struct DriverTCB; /* Terminal Control Block forward declaration */
 #define INIT_TERM_DRIVER()	/* nothing */
 #endif
 
-typedef struct {
-    const char *name;
-    char *value;
-} ITERATOR_VARS;
-
-/*
- * Global data which is not specific to a screen.
- */
-typedef struct {
-	SIG_ATOMIC_T	have_sigtstp;
-	SIG_ATOMIC_T	have_sigwinch;
-	SIG_ATOMIC_T	cleanup_nested;
-
-	bool		init_signals;
-	bool		init_screen;
-
-	char		*comp_sourcename;
-	char		*comp_termtype;
-
-	bool		have_tic_directory;
-	bool		keep_tic_directory;
-	const char	*tic_directory;
-
-	char		*dbi_list;
-	int		dbi_size;
-
-	char		*first_name;
-	char		**keyname_table;
-	int		init_keyname;
-
-	int		slk_format;
-
-	int		getstr_limit;	/* getstr_limit based on POSIX LINE_MAX */
-
-	char		*safeprint_buf;
-	size_t		safeprint_used;
-
-	TGETENT_CACHE	tgetent_cache[TGETENT_MAX];
-	int		tgetent_index;
-	long		tgetent_sequence;
-
-	char		*dbd_blob;	/* string-heap for dbd_list[] */
-	char		**dbd_list;	/* distinct places to look for data */
-	int		dbd_size;	/* length of dbd_list[] */
-	time_t		dbd_time;	/* cache last updated */
-	ITERATOR_VARS	dbd_vars[dbdLAST];
-
-#ifdef USE_TERM_DRIVER
-	int		(*term_driver)(struct DriverTCB*, const char*, int*);
-#endif
-
-#ifndef USE_SP_WINDOWLIST
-	WINDOWLIST	*_nc_windowlist;
-#define WindowList(sp)	_nc_globals._nc_windowlist
-#endif
-
-#if USE_HOME_TERMINFO
-	char		*home_terminfo;
-#endif
-
-#if !USE_SAFE_SPRINTF
-	int		safeprint_cols;
-	int		safeprint_rows;
-#endif
-
-#ifdef USE_PTHREADS
-	pthread_mutex_t	mutex_curses;
-	pthread_mutex_t	mutex_prescreen;
-	pthread_mutex_t	mutex_screen;
-	pthread_mutex_t	mutex_update;
-	pthread_mutex_t	mutex_tst_tracef;
-	pthread_mutex_t	mutex_tracef;
-	int		nested_tracef;
-	int		use_pthreads;
-#define _nc_use_pthreads	_nc_globals.use_pthreads
-#if USE_PTHREADS_EINTR
-	pthread_t	read_thread;		/* The reading thread */
-#endif
-#endif
-#if USE_WIDEC_SUPPORT
-	char		key_name[MB_LEN_MAX + 1];
-#endif
-
-#ifdef TRACE
-	bool		trace_opened;
-	char		trace_fname[PATH_MAX];
-	int		trace_level;
-	FILE		*trace_fp;
-	int		trace_fd;
-
-	char		*tracearg_buf;
-	size_t		tracearg_used;
-
-	TRACEBUF	*tracebuf_ptr;
-	size_t		tracebuf_used;
-
-	char		tracechr_buf[40];
-
-	char		*tracedmp_buf;
-	size_t		tracedmp_used;
-
-	unsigned char	*tracetry_buf;
-	size_t		tracetry_used;
-
-	char		traceatr_color_buf[2][80];
-	int		traceatr_color_sel;
-	int		traceatr_color_last;
-#if !defined(USE_PTHREADS) && USE_REENTRANT
-	int		nested_tracef;
-#endif
-#endif	/* TRACE */
-
-#if NO_LEAKS
-	bool		leak_checking;
-#endif
-} NCURSES_GLOBALS;
-
 extern NCURSES_EXPORT_VAR(NCURSES_GLOBALS) _nc_globals;
-
-#define N_RIPS 5
 
 /* The limit reserves one byte for a terminating NUL */
 #define my_getstr_limit	(_nc_globals.getstr_limit - 1)
@@ -1034,54 +876,6 @@ extern NCURSES_EXPORT_VAR(NCURSES_GLOBALS) _nc_globals;
 	 : (((n) > my_getstr_limit) \
 	    ? my_getstr_limit \
 	    : (n)))
-
-#ifdef USE_PTHREADS
-typedef struct _prescreen_list {
-	struct _prescreen_list *next;
-	pthread_t id;
-	struct screen *sp;
-} PRESCREEN_LIST;
-#endif
-
-/*
- * Global data which can be swept up into a SCREEN when one is created.
- * It may be modified before the next SCREEN is created.
- */
-typedef struct {
-#ifdef USE_PTHREADS
-	PRESCREEN_LIST *allocated;
-#else
-	struct screen * allocated;
-#endif
-	bool		use_env;
-	bool		filter_mode;
-	attr_t		previous_attr;
-	TPARM_STATE	tparm_state;
-	TTY		*saved_tty;	/* savetty/resetty information	    */
-	bool		use_tioctl;
-	NCURSES_SP_OUTC	_outch;		/* output handler if not putc */
-#ifndef USE_SP_RIPOFF
-	ripoff_t	rippedoff[N_RIPS];
-	ripoff_t	*rsp;
-#endif
-#if NCURSES_NO_PADDING
-	bool		_no_padding;	/* flag to set if padding disabled  */
-#endif
-#if BROKEN_LINKER || USE_REENTRANT
-	chtype		*real_acs_map;
-	int		_LINES;
-	int		_COLS;
-	int		_TABSIZE;
-	int		_ESCDELAY;
-	TERMINAL	*_cur_term;
-#endif
-#ifdef TRACE
-#if BROKEN_LINKER || USE_REENTRANT
-	long		_outchars;
-	const char	*_tputs_trace;
-#endif
-#endif
-} NCURSES_PRESCREEN;
 
 /*
  * Use screen-specific ripoff data (for softkeys) rather than global.
@@ -1105,8 +899,7 @@ typedef enum {
 /*
  * The SCREEN structure.
  */
-
-struct screen {
+typedef struct screen {
 	int		_ifd;		/* input file descriptor for screen */
 	int		_ofd;		/* output file descriptor for screen */
 	FILE		*_ofp;		/* output file ptr for screen	    */
@@ -1333,7 +1126,7 @@ struct screen {
 	int		_sysmouse_new_buttons;
 #endif
 
-#ifdef USE_TERM_DRIVER
+#if defined(USE_TERM_DRIVER) || defined(EXP_WIN32_DRIVER)
 	MEVENT		_drv_mouse_fifo[FIFO_SIZE];
 	int		_drv_mouse_head;
 	int		_drv_mouse_tail;
@@ -1390,7 +1183,8 @@ struct screen {
 	const char	*_tputs_trace;
 #endif
 #endif
-};
+#undef SCREEN
+} SCREEN;
 
 extern NCURSES_EXPORT_VAR(SCREEN *) _nc_screen_chain;
 extern NCURSES_EXPORT_VAR(SIG_ATOMIC_T) _nc_have_sigwinch;
@@ -1516,7 +1310,7 @@ extern NCURSES_EXPORT_VAR(SIG_ATOMIC_T) _nc_have_sigwinch;
 #if USE_WIDEC_SUPPORT /* { */
 #define isEILSEQ(status) (((size_t)status == (size_t)-1) && (errno == EILSEQ))
 
-#define init_mb(state)	memset(&state, 0, sizeof(state))
+#define init_mb(state)	memset(&(state), 0, sizeof(state))
 
 #if NCURSES_EXT_COLORS
 #define NulColor	, 0
@@ -1550,14 +1344,14 @@ extern NCURSES_EXPORT_VAR(SIG_ATOMIC_T) _nc_have_sigwinch;
 #endif
 
 #define SetChar(ch,c,a) do {							    \
-			    NCURSES_CH_T *_cp = &ch;				    \
+			    NCURSES_CH_T *_cp = &(ch);				    \
 			    memset(_cp, 0, sizeof(ch));				    \
 			    _cp->chars[0] = (wchar_t) (c);			    \
 			    _cp->attr = (a);					    \
 			    if_EXT_COLORS(SetPair(ch, PairNumber(a)));		    \
 			} while (0)
-#define CHREF(wch)	(&wch)
-#define CHDEREF(wch)	(*wch)
+#define CHREF(wch)	(&(wch))
+#define CHDEREF(wch)	(*(wch))
 #define ARG_CH_T	NCURSES_CH_T *
 #define CARG_CH_T	const NCURSES_CH_T *
 #define PUTC_DATA	char PUTC_buf[MB_LEN_MAX]; int PUTC_i, PUTC_n; \
@@ -1695,6 +1489,7 @@ extern NCURSES_EXPORT_VAR(SIG_ATOMIC_T) _nc_have_sigwinch;
 #define FreeAndNull(p)   do { free(p); p = 0; } while (0)
 
 #include <nc_alloc.h>
+#include <nc_access.h>
 
 /*
  * Use these for tic/infocmp malloc failures.  Generally the ncurses library
@@ -1827,7 +1622,7 @@ extern NCURSES_EXPORT(SCREEN *)         _nc_retrace_sp (SCREEN *);
 extern NCURSES_EXPORT(WINDOW *)         _nc_retrace_win (WINDOW *);
 extern NCURSES_EXPORT(attr_t)           _nc_retrace_attr_t (attr_t);
 extern NCURSES_EXPORT(char *)           _nc_retrace_ptr (char *);
-extern NCURSES_EXPORT(char *)           _nc_trace_ttymode(TTY *tty);
+extern NCURSES_EXPORT(char *)           _nc_trace_ttymode(const TTY *tty);
 extern NCURSES_EXPORT(char *)           _nc_varargs (const char *, va_list);
 extern NCURSES_EXPORT(chtype)           _nc_retrace_chtype (chtype);
 extern NCURSES_EXPORT(const char *)     _nc_altcharset_name(attr_t, chtype);
@@ -2342,11 +2137,10 @@ extern NCURSES_EXPORT(int) _nc_eventlist_timeout(_nc_eventlist *);
  */
 #if USE_WIDEC_SUPPORT
 
-#if defined(_WIN32)
+#if defined(_NC_WINDOWS) && !defined(_NC_MSC) && !defined(EXP_WIN32_DRIVER)
 /*
  * MinGW has wide-character functions, but they do not work correctly.
  */
-
 extern int __MINGW_NOTHROW _nc_wctomb(char *, wchar_t);
 #define wctomb(s,wc) _nc_wctomb(s,wc)
 #define wcrtomb(s,wc,n) _nc_wctomb(s,wc)
@@ -2357,19 +2151,19 @@ extern int __MINGW_NOTHROW _nc_mbtowc(wchar_t *, const char *, size_t);
 extern int __MINGW_NOTHROW _nc_mblen(const char *, size_t);
 #define mblen(s,n) _nc_mblen(s, n)
 
-#endif /* _WIN32 */
+#endif /* _NC_WINDOWS && !_NC_MSC */
 
 #if HAVE_MBTOWC && HAVE_MBLEN
 #define reset_mbytes(state) IGNORE_RC(mblen(NULL, (size_t) 0)), IGNORE_RC(mbtowc(NULL, NULL, (size_t) 0))
 #define count_mbytes(buffer,length,state) mblen(buffer,length)
 #define check_mbytes(wch,buffer,length,state) \
-	(int) mbtowc(&wch, buffer, length)
+	(int) mbtowc(&(wch), buffer, length)
 #define state_unused
 #elif HAVE_MBRTOWC && HAVE_MBRLEN
 #define reset_mbytes(state) init_mb(state)
-#define count_mbytes(buffer,length,state) mbrlen(buffer,length,&state)
+#define count_mbytes(buffer,length,state) mbrlen(buffer,length,&(state))
 #define check_mbytes(wch,buffer,length,state) \
-	(int) mbrtowc(&wch, buffer, length, &state)
+	(int) mbrtowc(&(wch), buffer, length, &(state))
 #else
 make an error
 #endif
@@ -2418,7 +2212,7 @@ extern NCURSES_EXPORT_VAR(SCREEN *) SP;
 
 /*
  * We don't want to use the lines or columns capabilities internally, because
- * if the application is running multiple screens under X, it's quite possible
+ * if the application is running multiple screens under X, it is quite possible
  * they could all have type xterm but have different sizes!  So...
  */
 #define screen_lines(sp)        (sp)->_lines
@@ -2579,6 +2373,10 @@ extern NCURSES_EXPORT(int)      TINFO_MVCUR(SCREEN*, int, int, int, int);
 #define TINFO_MVCUR             NCURSES_SP_NAME(_nc_mvcur)
 #endif
 
+#if defined(EXP_WIN32_DRIVER)
+#include <nc_win32.h>
+#endif
+
 /*
  * Entrypoints using an extra parameter with the terminal driver.
  */
@@ -2601,6 +2399,9 @@ extern NCURSES_EXPORT(void)   _nc_get_screensize(SCREEN *, int *, int *);
 	_nc_setupterm(name, fd, err, reuse)
 #endif /* !USE_TERM_DRIVER */
 
+#ifdef EXP_WIN32_DRIVER
+extern NCURSES_EXPORT_VAR(TERM_DRIVER) _nc_TINFO_DRIVER;
+#else
 #ifdef USE_TERM_DRIVER
 #if defined(USE_WIN32CON_DRIVER)
 #include <nc_mingw.h>
@@ -2618,9 +2419,12 @@ extern NCURSES_EXPORT(int) _nc_mingw_testmouse(
 #else
 #endif
 extern NCURSES_EXPORT_VAR(TERM_DRIVER) _nc_TINFO_DRIVER;
-#endif
+#endif /* USE_TERM_DRIVER */
+#endif /* EXP_WIN32_DRIVER */
 
-#if defined(USE_TERM_DRIVER) && defined(USE_WIN32CON_DRIVER)
+#if defined(USE_TERM_DRIVER) && defined(EXP_WIN32_DRIVER)
+#define NC_ISATTY(fd) (0 != _nc_console_isatty(fd))
+#elif defined(USE_TERM_DRIVER) && defined(USE_WIN32CON_DRIVER)
 #define NC_ISATTY(fd) _nc_mingw_isatty(fd)
 #else
 #define NC_ISATTY(fd) isatty(fd)
@@ -2629,15 +2433,21 @@ extern NCURSES_EXPORT_VAR(TERM_DRIVER) _nc_TINFO_DRIVER;
 #ifdef USE_TERM_DRIVER
 #  define IsTermInfo(sp)       ((TCBOf(sp) != 0) && ((TCBOf(sp)->drv->isTerminfo)))
 #  define HasTInfoTerminal(sp) ((0 != TerminalOf(sp)) && IsTermInfo(sp))
-#  if defined(USE_WIN32CON_DRIVER)
-#    define IsTermInfoOnConsole(sp) (IsTermInfo(sp)&&_nc_mingw_isconsole(TerminalOf(sp)->Filedes))
-#else
+#  if defined(EXP_WIN32_DRIVER)
+#    define IsTermInfoOnConsole(sp) (IsTermInfo(sp) && _nc_console_test(TerminalOf(sp)->Filedes))
+#  elif defined(USE_WIN32CON_DRIVER)
+#    define IsTermInfoOnConsole(sp) (IsTermInfo(sp) && _nc_mingw_isconsole(TerminalOf(sp)->Filedes))
+#  else
 #    define IsTermInfoOnConsole(sp) FALSE
 #  endif
 #else
 #  define IsTermInfo(sp)       TRUE
 #  define HasTInfoTerminal(sp) (0 != TerminalOf(sp))
-#  define IsTermInfoOnConsole(sp) FALSE
+#  if defined(EXP_WIN32_DRIVER)
+#    define IsTermInfoOnConsole(sp) _nc_console_test(TerminalOf(sp)->Filedes)
+#  else
+#    define IsTermInfoOnConsole(sp) FALSE
+#  endif
 #endif
 
 #define IsValidTIScreen(sp)  (HasTInfoTerminal(sp))
@@ -2685,7 +2495,7 @@ extern NCURSES_EXPORT(int)      NCURSES_SP_NAME(_nc_tgetent)(SCREEN*,char*,const
 extern NCURSES_EXPORT(void)     NCURSES_SP_NAME(_nc_do_color)(SCREEN*, int, int, int, NCURSES_SP_OUTC);
 extern NCURSES_EXPORT(void)     NCURSES_SP_NAME(_nc_do_xmc_glitch)(SCREEN*, attr_t);
 extern NCURSES_EXPORT(void)     NCURSES_SP_NAME(_nc_flush)(SCREEN*);
-extern NCURSES_EXPORT(void)     NCURSES_SP_NAME(_nc_free_and_exit)(SCREEN*, int) GCC_NORETURN;
+extern GCC_NORETURN NCURSES_EXPORT(void) NCURSES_SP_NAME(_nc_free_and_exit)(SCREEN*, int);
 extern NCURSES_EXPORT(void)     NCURSES_SP_NAME(_nc_freeall)(SCREEN*);
 extern NCURSES_EXPORT(void)     NCURSES_SP_NAME(_nc_hash_map)(SCREEN*);
 extern NCURSES_EXPORT(void)     NCURSES_SP_NAME(_nc_init_acs)(SCREEN*);

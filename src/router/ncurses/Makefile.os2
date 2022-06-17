@@ -1,5 +1,6 @@
 ##############################################################################
-# Copyright (c) 1998-2000,2006 Free Software Foundation, Inc.                #
+# Copyright 2020,2021 Thomas E. Dickey                                       #
+# Copyright 1998-2000,2006 Free Software Foundation, Inc.                    #
 #                                                                            #
 # Permission is hereby granted, free of charge, to any person obtaining a    #
 # copy of this software and associated documentation files (the "Software"), #
@@ -25,7 +26,7 @@
 # use or other dealings in this Software without prior written               #
 # authorization.                                                             #
 ################################################################################
-# $Id: Makefile.os2,v 1.11 2006/04/22 21:46:17 tom Exp $
+# $Id: Makefile.os2,v 1.13 2021/06/17 21:20:30 tom Exp $
 #
 # Wrapper Makefile for ncurses library under OS/2.
 # Author:  Juan Jose Garcia Ripoll <worm@arrakis.es>.
@@ -69,7 +70,7 @@
 # disappear are not essential.
 #
 # I first thought about killing '_nc_*' symbols, but it seems that some of
-# them --_nc_panel_hook, _nc_ada*, etc-- are needed outside ncurses.dll. 
+# them --_nc_panel_hook, _nc_ada*, etc-- are needed outside ncurses.dll.
 # However, the whole size of the export table will not be larger than 1k or
 # so.
 #
