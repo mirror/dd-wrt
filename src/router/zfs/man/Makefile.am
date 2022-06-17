@@ -1,4 +1,4 @@
-EXTRA_DIST += \
+dist_noinst_man_MANS = \
 	%D%/man1/cstyle.1
 
 dist_man_MANS = \
@@ -59,9 +59,11 @@ dist_man_MANS = \
 	%D%/man8/zfs-unjail.8 \
 	%D%/man8/zfs-unload-key.8 \
 	%D%/man8/zfs-unmount.8 \
+	%D%/man8/zfs-unzone.8 \
 	%D%/man8/zfs-upgrade.8 \
 	%D%/man8/zfs-userspace.8 \
 	%D%/man8/zfs-wait.8 \
+	%D%/man8/zfs-zone.8 \
 	%D%/man8/zfs_ids_to_path.8 \
 	%D%/man8/zgenhostid.8 \
 	%D%/man8/zinject.8 \
@@ -105,8 +107,9 @@ nodist_man_MANS = \
 	%D%/man8/zed.8 \
 	%D%/man8/zfs-mount-generator.8
 
-SUBSTFILES += $(nodist_man_MANS)
+dist_noinst_DATA += $(dist_noinst_man_MANS) $(dist_man_MANS)
 
+SUBSTFILES += $(nodist_man_MANS)
 
 CHECKS += mancheck
 mancheck:
