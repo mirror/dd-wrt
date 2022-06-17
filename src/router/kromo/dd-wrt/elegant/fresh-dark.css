@@ -12,12 +12,9 @@ body a:visited {
 body a:link {
   color: #fff;
 }
-body a:hover,
-body a:link:hover,
-#ip_count:hover,
-[title*='Search']:hover,
-[title*='Chain']:hover,
-[title*='Monitoring']:hover {
+body a:hover, body a:link:hover,
+#ip_count:hover, [title*='Search']:hover,
+[title*='Chain']:hover, [title*='Monitoring']:hover {
   color: #5cb3ff;
 }
 body div.message {
@@ -41,10 +38,6 @@ body #content {
 body #content.infopage #main {
   background-color: #1a1a1a;
   border: 1px solid #333;
-}
-#header .logo {
-  filter: invert(.95) hue-rotate(180deg);
-  mix-blend-mode: lighten;
 }
 .dark_fs_bg {
   background: #111;
