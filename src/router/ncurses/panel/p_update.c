@@ -1,5 +1,6 @@
 /****************************************************************************
- * Copyright (c) 1998-2009,2010 Free Software Foundation, Inc.              *
+ * Copyright 2020 Thomas E. Dickey                                          *
+ * Copyright 1998-2009,2010 Free Software Foundation, Inc.                  *
  *                                                                          *
  * Permission is hereby granted, free of charge, to any person obtaining a  *
  * copy of this software and associated documentation files (the            *
@@ -37,9 +38,9 @@
  */
 #include "panel.priv.h"
 
-MODULE_ID("$Id: p_update.c,v 1.11 2010/01/23 21:22:16 tom Exp $")
+MODULE_ID("$Id: p_update.c,v 1.13 2020/05/24 01:40:20 anonymous.maarten Exp $")
 
-NCURSES_EXPORT(void)
+PANEL_EXPORT(void)
 NCURSES_SP_NAME(update_panels) (NCURSES_SP_DCL0)
 {
   PANEL *pan;
@@ -70,7 +71,7 @@ NCURSES_SP_NAME(update_panels) (NCURSES_SP_DCL0)
 }
 
 #if NCURSES_SP_FUNCS
-NCURSES_EXPORT(void)
+PANEL_EXPORT(void)
 update_panels(void)
 {
   NCURSES_SP_NAME(update_panels) (CURRENT_SCREEN);

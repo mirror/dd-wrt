@@ -1,5 +1,6 @@
 /****************************************************************************
- * Copyright (c) 1998-2018,2019 Free Software Foundation, Inc.              *
+ * Copyright 2018-2020,2021 Thomas E. Dickey                                *
+ * Copyright 1998-2016,2017 Free Software Foundation, Inc.                  *
  *                                                                          *
  * Permission is hereby granted, free of charge, to any person obtaining a  *
  * copy of this software and associated documentation files (the            *
@@ -25,7 +26,7 @@
  * sale, use or other dealings in this Software without prior written       *
  * authorization.                                                           *
  ****************************************************************************/
-/* 
+/*
  * bs.c - original author: Bruce Holloway
  *		salvo option by: Chuck A DeGaul
  * with improved user interface, autoconfiguration and code cleanup
@@ -34,7 +35,7 @@
  * v2.0 featuring strict ANSI/POSIX conformance, November 1993.
  * v2.1 with ncurses mouse support, September 1995
  *
- * $Id: bs.c,v 1.74 2019/08/17 21:49:19 tom Exp $
+ * $Id: bs.c,v 1.77 2021/06/17 21:11:08 tom Exp $
  */
 
 #include <test.priv.h>
@@ -180,7 +181,7 @@ static int salvo, blitz, closepack;
 
 #define	PR	(void)addstr
 
-static void uninitgame(int sig) GCC_NORETURN;
+static GCC_NORETURN void uninitgame(int sig);
 
 static void
 uninitgame(int sig GCC_UNUSED)

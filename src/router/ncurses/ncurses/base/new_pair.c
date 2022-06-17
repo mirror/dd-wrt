@@ -1,5 +1,6 @@
 /****************************************************************************
- * Copyright (c) 2017-2018,2019 Free Software Foundation, Inc.              *
+ * Copyright 2018-2020,2021 Thomas E. Dickey                                *
+ * Copyright 2017 Free Software Foundation, Inc.                            *
  *                                                                          *
  * Permission is hereby granted, free of charge, to any person obtaining a  *
  * copy of this software and associated documentation files (the            *
@@ -60,7 +61,7 @@
 
 #endif
 
-MODULE_ID("$Id: new_pair.c,v 1.18 2019/01/21 14:54:47 tom Exp $")
+MODULE_ID("$Id: new_pair.c,v 1.23 2021/08/16 22:11:26 tom Exp $")
 
 #if NCURSES_EXT_COLORS
 
@@ -105,7 +106,7 @@ dumpit(SCREEN *sp, int pair, const char *tag)
     size_t have = sizeof(bigbuf);
 
     _nc_STRCPY(p, tag, have);
-    for (n = 0; n < sp->_pair_limit; ++n) {
+    for (n = 0; n < sp->_pair_alloc; ++n) {
 	if (list[n].mode != cpFREE) {
 	    p += strlen(p);
 	    if ((size_t) (p - bigbuf) + 50 > have)
@@ -143,17 +144,16 @@ static int
 _nc_find_color_pair(SCREEN *sp, int fg, int bg)
 {
     colorpair_t find;
-    int result;
-    void *pp;
+    int result = -1;
 
     find.fg = fg;
     find.bg = bg;
-    if (sp != 0 &&
-	(pp = tfind(&find, &sp->_ordered_pairs, compare_data)) != 0) {
-	colorpair_t *temp = *(colorpair_t **) pp;
-	result = (int) (temp - sp->_color_pairs);
-    } else {
-	result = -1;
+    if (sp != 0) {
+	void *pp;
+	if ((pp = tfind(&find, &sp->_ordered_pairs, compare_data)) != 0) {
+	    colorpair_t *temp = *(colorpair_t **) pp;
+	    result = (int) (temp - sp->_color_pairs);
+	}
     }
     return result;
 }
@@ -196,7 +196,10 @@ NCURSES_EXPORT(void)
 _nc_reset_color_pair(SCREEN *sp, int pair, colorpair_t * next)
 {
     colorpair_t *last;
+
     if (ValidPair(sp, pair)) {
+	bool used;
+
 	ReservePairs(sp, pair);
 	last = &(sp->_color_pairs[pair]);
 	delink_color_pair(sp, pair);
@@ -204,6 +207,11 @@ _nc_reset_color_pair(SCREEN *sp, int pair, colorpair_t * next)
 	    (last->fg != next->fg || last->bg != next->bg)) {
 	    /* remove the old entry from fast index */
 	    tdelete(last, &sp->_ordered_pairs, compare_data);
+	    used = FALSE;
+	} else {
+	    used = (last->mode != cpFREE);
+	}
+	if (!used) {
 	    /* create a new entry in fast index */
 	    *last = *next;
 	    tsearch(last, &sp->_ordered_pairs, compare_data);
@@ -289,7 +297,7 @@ NCURSES_SP_NAME(alloc_pair) (NCURSES_SP_DCLx int fg, int bg)
 		    found = TRUE;
 		}
 	    }
-	    if (!found) {
+	    if (!found && SP_PARM->_color_pairs != NULL) {
 		for (pair = 1; pair <= hint; pair++) {
 		    if (SP_PARM->_color_pairs[pair].mode == cpFREE) {
 			T(("found gap %d", pair));

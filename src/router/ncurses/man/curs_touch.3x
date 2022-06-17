@@ -1,5 +1,6 @@
 .\"***************************************************************************
-.\" Copyright (c) 1998-2017,2018 Free Software Foundation, Inc.              *
+.\" Copyright 2018-2020,2021 Thomas E. Dickey                                *
+.\" Copyright 1998-2015,2017 Free Software Foundation, Inc.                  *
 .\"                                                                          *
 .\" Permission is hereby granted, free of charge, to any person obtaining a  *
 .\" copy of this software and associated documentation files (the            *
@@ -26,7 +27,7 @@
 .\" authorization.                                                           *
 .\"***************************************************************************
 .\"
-.\" $Id: curs_touch.3x,v 1.21 2018/07/28 21:34:56 tom Exp $
+.\" $Id: curs_touch.3x,v 1.24 2021/06/17 21:26:02 tom Exp $
 .TH curs_touch 3X ""
 .na
 .hy 0
@@ -41,18 +42,18 @@
 .hy
 .SH SYNOPSIS
 \fB#include <curses.h>\fR
+.sp
+\fBint touchline(WINDOW *\fP\fIwin\fP\fB, int \fP\fIstart\fP\fB, int \fP\fIcount\fP\fB);\fR
+.sp
+\fBint touchwin(WINDOW *\fP\fIwin\fP\fB);\fR
 .br
-\fBint touchwin(WINDOW *win);\fR
+\fBint wtouchln(WINDOW *\fP\fIwin\fP\fB, int \fP\fIy\fP\fB, int \fP\fIn\fP\fB, int \fP\fIchanged\fP\fB);\fR
+.sp
+\fBint untouchwin(WINDOW *\fP\fIwin\fP\fB);\fR
+.sp
+\fBbool is_linetouched(WINDOW *\fP\fIwin\fP\fB, int \fP\fIline\fP\fB);\fR
 .br
-\fBint touchline(WINDOW *win, int start, int count);\fR
-.br
-\fBint untouchwin(WINDOW *win);\fR
-.br
-\fBint wtouchln(WINDOW *win, int y, int n, int changed);\fR
-.br
-\fBbool is_linetouched(WINDOW *win, int line);\fR
-.br
-\fBbool is_wintouched(WINDOW *win);\fR
+\fBbool is_wintouched(WINDOW *\fP\fIwin\fP\fB);\fR
 .br
 .SH DESCRIPTION
 The \fBtouchwin\fR and \fBtouchline\fR routines throw away all
@@ -89,7 +90,7 @@ In this implementation
 .RS 3
 .TP 5
 \fBis_linetouched\fP
-returns an error 
+returns an error
 if the window pointer is null, or
 if the line number is outside the window.
 .IP
@@ -104,7 +105,7 @@ the \fBERR\fP is provided by a macro named \fBis_linetouched\fP.
 The actual function returns \fBFALSE\fP when it detects an error.
 .TP 5
 \fBwtouchln\fP
-returns an error 
+returns an error
 if the window pointer is null, or
 if the line number is outside the window.
 .RE

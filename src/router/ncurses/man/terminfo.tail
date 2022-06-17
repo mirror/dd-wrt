@@ -1,5 +1,6 @@
 .\"***************************************************************************
-.\" Copyright (c) 1998-2018,2019 Free Software Foundation, Inc.              *
+.\" Copyright 2018-2020,2021 Thomas E. Dickey                                *
+.\" Copyright 1998-2016,2017 Free Software Foundation, Inc.                  *
 .\"                                                                          *
 .\" Permission is hereby granted, free of charge, to any person obtaining a  *
 .\" copy of this software and associated documentation files (the            *
@@ -26,7 +27,7 @@
 .\" authorization.                                                           *
 .\"***************************************************************************
 .\"
-.\" $Id: terminfo.tail,v 1.98 2019/11/30 20:54:32 tom Exp $
+.\" $Id: terminfo.tail,v 1.108 2021/10/09 23:13:23 tom Exp $
 .ps +1
 .SS User-Defined Capabilities
 .
@@ -196,7 +197,7 @@ The reason for this quirk is to maintain binary compatibility of the
 compiled terminfo files with other implementations,
 e.g., the SVr4 systems, which document this.
 Compiled terminfo files use null-terminated strings, with no lengths.
-Modifying this would require a new binary format, 
+Modifying this would require a new binary format,
 which would not work with other implementations.
 .PP
 Finally, characters may be given as three octal digits after a \fB\e\fR.
@@ -441,8 +442,8 @@ The parameter mechanism uses a stack and special \fB%\fP codes
 to manipulate it.
 Typically a sequence will push one of the
 parameters onto the stack and then print it in some format.
-Print (e.g., "%d") is a special case.
-Other operations, including "%t" pop their operand from the stack.
+Print (e.g., \*(``%d\*('') is a special case.
+Other operations, including \*(``%t\*('' pop their operand from the stack.
 It is noted that more complex operations are often necessary,
 e.g., in the \fBsgr\fP string.
 .PP
@@ -482,9 +483,39 @@ The terms \*(``static\*('' and \*(``dynamic\*('' are misleading.
 Historically, these are simply two different sets of variables,
 whose values are not reset between calls to \fBtparm\fP(3X).
 However, that fact is not documented in other implementations.
-Relying on it will adversely impact portability to other implementations.
+Relying on it will adversely impact portability to other implementations:
+.RS
+.bP
+SVr2 curses supported \fIdynamic\fP variables.
+Those are set only by a \fB%P\fP operator.
+A \fB%g\fP for a given variable without first setting it with \fB%P\fP
+will give unpredictable results, because dynamic variables are
+an uninitialized local array on the stack in the \fBtparm\fP function.
+.bP
+SVr3.2 curses supported \fIstatic\fP variables.
+Those are an array in the \fBTERMINAL\fP
+structure (declared in \fBterm.h\fP),
+and are zeroed automatically when the \fBsetupterm\fP function
+allocates the data.
+.bP
+SVr4 curses made no further improvements
+to the \fIdynamic/static\fP variable feature.
+.bP
+Solaris XPG4 curses does not distinguish between \fIdynamic\fP and
+\fIstatic\fP variables.
+They are the same.
+Like SVr4 curses, XPG4 curses does not initialize these explicitly.
+.bP
+Before version 6.3, ncurses stores both \fIdynamic\fP and \fIstatic\fP
+variables in persistent storage, initialized to zeros.
+.bP
+Beginning with version 6.3, ncurses stores \fIstatic\fP and \fIdynamic\fP
+variables in the same manner as SVr4.
+Unlike other implementations, ncurses zeros dynamic variables 
+before the first \fB%g\fP or \fB%P\fP operator.
+.RE
 .TP
-\fB%'\fP\fIc\fP\fB'\fP
+\fB%\(aq\fP\fIc\fP\fB\(aq\fP
 char constant \fIc\fP
 .TP
 \fB%{\fP\fInn\fP\fB}\fP
@@ -532,7 +563,7 @@ on one line.
 The \fB\-f\fP option splits the string into lines with the parts indented.
 .PP
 Binary operations are in postfix form with the operands in the usual order.
-That is, to get x\-5 one would use "%gx%{5}%-".
+That is, to get x\-5 one would use \*(``%gx%{5}%\-\*(''.
 \fB%P\fP and \fB%g\fP variables are
 persistent across escape-string evaluations.
 .PP
@@ -556,7 +587,7 @@ tabs are never expanded, so \et is safe to send.
 This turns out to be essential for the Ann Arbor 4080.)
 .PP
 A final example is the \s-1LSI ADM\s0-3a, which uses row and column
-offset by a blank character, thus \*(``cup=\eE=%p1%' '%+%c%p2%' '%+%c\*(''.
+offset by a blank character, thus \*(``cup=\eE=%p1%\(aq \(aq%+%c%p2%\(aq \(aq%+%c\*(''.
 After sending \*(``\eE=\*('', this pushes the first parameter, pushes the
 ASCII value for a space (32), adds them (pushing the sum on the stack
 in place of the two previous values) and outputs that value as a character.
@@ -616,6 +647,131 @@ If the \fBsmcup\fP sequence will not restore the screen after an
 \fBrmcup\fP sequence is output (to the state prior to outputting
 \fBrmcup\fP), specify \fBnrrmc\fP.
 .PP
+.SS Margins
+SVr4 (and X/Open Curses)
+list several string capabilities for setting margins.
+Two were intended for use with terminals,
+and another six were intended for use with printers.
+.bP
+The two terminal capabilities assume that the terminal may have
+the capability of setting the left and/or right margin at the current
+cursor column position.
+.bP
+The printer capabilities assume that the printer may have
+two types of capability:
+.RS
+.bP
+the ability to set a top and/or bottom margin using the current
+line position, and
+.bP
+parameterized capabilities for setting the top, bottom, left, right margins
+given the number of rows or columns.
+.RE
+.RE
+.PP
+In practice, the categorization into \*(``terminal\*('' and \*(``printer\*(''
+is not suitable:
+.bP
+The AT&T SVr4 terminal database uses \fBsmgl\fP four times,
+for AT&T hardware.
+.IP
+Three of the four are printers.
+They lack the ability to set left/right margins by specifying the column.
+.bP
+Other (non-AT&T) terminals may support margins
+but using different assumptions from AT&T.
+.IP
+For instance, the DEC VT420 supports left/right margins,
+but only using a column parameter.
+As an added complication, the VT420 uses two settings to fully enable
+left/right margins (left/right margin mode, and origin mode).
+The former enables the margins, which causes printed text
+to wrap within margins, but the latter is needed to prevent
+cursor-addressing outside those margins.
+.bP
+Both DEC VT420 left/right margins are set with a single control sequence.
+If either is omitted, the corresponding margin is set to the left or
+right edge of the display (rather than leaving the margin unmodified).
+.PP
+These are the margin-related capabilities:
+.TS
+center;
+l l
+_ _
+lw8 lw18.
+\fBName	Description\fP
+smgl	Set left margin at current column
+smgr	Set right margin at current column
+smgb	Set bottom margin at current line
+smgt	Set top margin at current line
+smgbp	Set bottom margin at line \fIN\fP
+smglp	Set left margin at column \fIN\fP
+smgrp	Set right margin at column \fIN\fP
+smgtp	Set top margin at line \fIN\fP
+smglr	Set both left and right margins to \fIL\fP and \fIR\fP
+smgtb	Set both top and bottom margins to \fIT\fP and \fIB\fP
+.TE
+.PP
+When writing an application that
+uses these string capabilities,
+the pairs should be first checked to see
+if each capability in the pair is set or only one is set:
+.bP
+If both \fBsmglp\fP and \fBsmgrp\fP are set,
+each is used with a single argument, \fIN\fP,
+that gives the column number of the left and right margin, respectively.
+.bP
+If both \fBsmgtp\fP and \fBsmgbp\fP are set,
+each is used to set the top and bottom margin,
+respectively:
+.RS 4
+.bP
+\fBsmgtp\fP is used with a single argument, \fIN\fP,
+the line number of the top margin.
+.bP
+\fBsmgbp\fP is used with two arguments, \fIN\fP and \fIM\fP,
+that give the line number of the bottom margin,
+the first counting from the top of the
+page and the second counting from the bottom.
+This accommodates the two styles of specifying
+the bottom margin in different manufacturers' printers.
+.RE
+.IP
+When designing a terminfo entry for a
+printer that has a settable bottom margin,
+only the first or second argument should be used, depending on the printer.
+When developing an application that uses \fBsmgbp\fP to set the bottom margin,
+both arguments must be given.
+.PP
+Conversely, when only one capability in the pair is set:
+.bP 
+If only one of \fBsmglp\fP and \fBsmgrp\fP is set,
+then it is used with two arguments,
+the column number of the left and right margins, in that order.
+.bP
+Likewise, if only one of \fBsmgtp\fP and \fBsmgbp\fP is set, then it
+is used with two arguments that give the top and bottom margins,
+in that order, counting from the top of the page.
+.IP
+When designing a terminfo entry for a printer that requires setting both
+left and right or top and bottom margins simultaneously,
+only one capability in the pairs
+\fBsmglp\fP and \fBsmgrp\fP or
+\fBsmgtp\fP and \fBsmgbp\fP should be defined,
+leaving the other unset.
+.PP
+Except for very old terminal descriptions, e.g., those developed for SVr4,
+the scheme just described should be considered obsolete.
+An improved set of capabilities was added late in the SVr4 releases
+(\fBsmglr\fP and \fBsmgtb\fP),
+which explicitly use two parameters for setting the left/right or top/bottom
+margins.
+.PP
+When setting margins, the line- and column-values are zero-based.
+.PP
+The \fBmgc\fP string capability should be defined.
+Applications such as \fBtabs\fP(1) rely upon this to reset all margins.
+.\"
 .SS Area Clears
 .PP
 If the terminal can clear from the current position to the end of the
@@ -631,6 +787,7 @@ if a true
 .B ed
 is not available.)
 .PP
+.\"
 .SS Insert/delete line and vertical motions
 .PP
 If the terminal can open a new blank line before the line where the cursor
@@ -1237,7 +1394,7 @@ The \fB@RESET@\fP program writes strings including
 .BR iprog ,
 etc., in the same order as the
 .I init
-program, using 
+program, using
 .BR rs1 ,
 etc., instead of
 .BR is1 ,
@@ -1624,7 +1781,7 @@ this can be indicated with the parameterized string
 .BR rep .
 The first parameter is the character to be repeated and the second
 is the number of times to repeat it.
-Thus, tparm(repeat_char, 'x', 10) is the same as \*(``xxxxxxxxxx\*(''.
+Thus, tparm(repeat_char, \(aqx\(aq, 10) is the same as \*(``xxxxxxxxxx\*(''.
 .PP
 If the terminal has a settable command character, such as the \s-1TEKTRONIX\s+1 4025,
 this can be indicated with
@@ -1830,7 +1987,7 @@ binary format) collide with System V and XSI Curses extensions.
 .SH EXTENSIONS
 .PP
 Searching for terminal descriptions in
-\fB$HOME/.terminfo\fR and TERMINFO_DIRS 
+\fB$HOME/.terminfo\fR and TERMINFO_DIRS
 is not supported by older implementations.
 .PP
 Some SVr4 \fBcurses\fR implementations, and all previous to SVr4, do not
@@ -1904,15 +2061,15 @@ Supports both the SVr4 set and the AIX extensions.
 \*d/?/*
 files containing terminal descriptions
 .SH SEE ALSO
+\fB@INFOCMP@\fR(1M),
 \fB@TABS@\fR(1),
 \fB@TIC@\fR(1M),
-\fB@INFOCMP@\fR(1M),
 \fBcurses\fR(3X),
 \fBcurs_color\fR(3X),
 \fBcurs_variables\fR(3X),
 \fBprintf\fR(3),
-\fBterm\fR(\*n).
 \fBterm_variables\fR(3X).
+\fBterm\fR(\*n).
 \fBuser_caps\fR(5).
 .SH AUTHORS
 Zeyd M. Ben-Halim, Eric S. Raymond, Thomas E. Dickey.

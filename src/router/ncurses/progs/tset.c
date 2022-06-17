@@ -1,5 +1,6 @@
 /****************************************************************************
- * Copyright (c) 1998-2016,2017 Free Software Foundation, Inc.              *
+ * Copyright 2020,2021 Thomas E. Dickey                                     *
+ * Copyright 1998-2016,2017 Free Software Foundation, Inc.                  *
  *                                                                          *
  * Permission is hereby granted, free of charge, to any person obtaining a  *
  * copy of this software and associated documentation files (the            *
@@ -97,7 +98,7 @@
 char *ttyname(int fd);
 #endif
 
-MODULE_ID("$Id: tset.c,v 1.120 2017/10/08 00:01:29 tom Exp $")
+MODULE_ID("$Id: tset.c,v 1.130 2021/10/02 18:08:09 tom Exp $")
 
 #ifndef environ
 extern char **environ;
@@ -107,7 +108,7 @@ const char *_nc_progname = "tset";
 
 #define LOWERCASE(c) ((isalpha(UChar(c)) && isupper(UChar(c))) ? tolower(UChar(c)) : (c))
 
-static void exit_error(void) GCC_NORETURN;
+static GCC_NORETURN void exit_error(void);
 
 static int
 CaselessCmp(const char *a, const char *b)
@@ -121,7 +122,7 @@ CaselessCmp(const char *a, const char *b)
     return LOWERCASE(*a) - LOWERCASE(*b);
 }
 
-static void
+static GCC_NORETURN void
 exit_error(void)
 {
     restore_tty_settings();
@@ -131,8 +132,8 @@ exit_error(void)
     /* NOTREACHED */
 }
 
-static void
-err(const char *fmt,...)
+static GCC_NORETURN void
+err(const char *fmt, ...)
 {
     va_list ap;
     va_start(ap, fmt);
@@ -143,7 +144,7 @@ err(const char *fmt,...)
     /* NOTREACHED */
 }
 
-static void
+static GCC_NORETURN void
 failed(const char *msg)
 {
     char temp[BUFSIZ];
@@ -166,7 +167,6 @@ static const char *
 askuser(const char *dflt)
 {
     static char answer[256];
-    char *p;
 
     /* We can get recalled; if so, don't continue uselessly. */
     clearerr(stdin);
@@ -175,7 +175,10 @@ askuser(const char *dflt)
 	exit_error();
 	/* NOTREACHED */
     }
+
     for (;;) {
+	char *p;
+
 	if (dflt)
 	    (void) fprintf(stderr, "Terminal type? [%s] ", dflt);
 	else
@@ -226,10 +229,16 @@ static MAP *cur, *maplist;
 #define DATA(name,value) { { name }, value }
 
 typedef struct speeds {
-    const char string[7];
+    const char string[8];
     int speed;
 } SPEEDS;
 
+#if defined(EXP_WIN32_DRIVER)
+static const SPEEDS speeds[] =
+{
+    {"0", 0}
+};
+#else
 static const SPEEDS speeds[] =
 {
     DATA("0", B0),
@@ -330,6 +339,7 @@ static const SPEEDS speeds[] =
 #endif
 };
 #undef DATA
+#endif
 
 static int
 tbaudrate(char *rate)
@@ -765,7 +775,7 @@ main(int argc, char **argv)
     bool opt_w = FALSE;		/* set window-size */
     TTY mode, oldmode;
 
-    my_fd = STDERR_FILENO;
+    _nc_progname = _nc_rootname(*argv);
     obsolete(argv);
     noinit = noset = quiet = Sflag = sflag = showterm = 0;
     while ((ch = getopt(argc, argv, "a:cd:e:Ii:k:m:p:qQrSsVw")) != -1) {
@@ -824,7 +834,6 @@ main(int argc, char **argv)
 	}
     }
 
-    _nc_progname = _nc_rootname(*argv);
     argc -= optind;
     argv += optind;
 
@@ -838,13 +847,15 @@ main(int argc, char **argv)
     oldmode = mode;
 #ifdef TERMIOS
     ospeed = (NCURSES_OSPEED) cfgetospeed(&mode);
+#elif defined(EXP_WIN32_DRIVER)
+    ospeed = 0;
 #else
     ospeed = (NCURSES_OSPEED) mode.sg_ospeed;
 #endif
 
     if (same_program(_nc_progname, PROG_RESET)) {
 	reset_start(stderr, TRUE, FALSE);
-	reset_tty_settings(my_fd, &mode);
+	reset_tty_settings(my_fd, &mode, noset);
     } else {
 	reset_start(stderr, FALSE, TRUE);
     }

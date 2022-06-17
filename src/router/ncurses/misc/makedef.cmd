@@ -1,5 +1,6 @@
 /****************************************************************************
- * Copyright (c) 1998,2006 Free Software Foundation, Inc.                   *
+ * Copyright 2020,2021 Thomas E. Dickey                                     *
+ * Copyright 1998,2006 Free Software Foundation, Inc.                       *
  *                                                                          *
  * Permission is hereby granted, free of charge, to any person obtaining a  *
  * copy of this software and associated documentation files (the            *
@@ -27,7 +28,7 @@
  ****************************************************************************/
 
 /*
- * $Id: makedef.cmd,v 1.5 2006/04/22 23:14:50 tom Exp $
+ * $Id: makedef.cmd,v 1.7 2021/09/04 10:52:55 tom Exp $
  *
  * Author:  Juan Jose Garcia Ripoll <worm@arrakis.es>.
  * Webpage: http://www.arrakis.es/~worm/
@@ -118,12 +119,12 @@ do while queued() > 0
     *		it has a valid code that we store
     *		we mark that code as used
     *   ELIF (it has no number) THEN
-    *		(it's a new symbol)
+    *		(it is a new symbol)
     *		we increase the counter of defined symbols
     *		we assign it the special number 0
     *		(later on it'll be assigned an unused export code)
     *   ELSE
-    *		this symbol was in the old DLL and it's no longer
+    *		this symbol was in the old DLL and it is no longer
     *		here, so we skip it.
     */
    select

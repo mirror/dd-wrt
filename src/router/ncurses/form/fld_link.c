@@ -1,5 +1,6 @@
 /****************************************************************************
- * Copyright (c) 1998-2010,2012 Free Software Foundation, Inc.              *
+ * Copyright 2020,2021 Thomas E. Dickey                                     *
+ * Copyright 1998-2010,2012 Free Software Foundation, Inc.                  *
  *                                                                          *
  * Permission is hereby granted, free of charge, to any person obtaining a  *
  * copy of this software and associated documentation files (the            *
@@ -32,23 +33,23 @@
 
 #include "form.priv.h"
 
-MODULE_ID("$Id: fld_link.c,v 1.13 2012/03/11 00:37:16 tom Exp $")
+MODULE_ID("$Id: fld_link.c,v 1.17 2021/06/17 21:20:30 tom Exp $")
 
 /*---------------------------------------------------------------------------
-|   Facility      :  libnform  
-|   Function      :  FIELD *link_field(FIELD *field, int frow, int fcol)  
-|   
+|   Facility      :  libnform
+|   Function      :  FIELD *link_field(FIELD *field, int frow, int fcol)
+|
 |   Description   :  Duplicates the field at the specified position. The
 |                    new field shares its buffers with the original one,
 |                    the attributes are independent.
 |                    If an error occurs, errno is set to
-|                    
+|
 |                    E_BAD_ARGUMENT - invalid argument
 |                    E_SYSTEM_ERROR - system error
 |
 |   Return Values :  Pointer to the new field or NULL if failure
 +--------------------------------------------------------------------------*/
-NCURSES_EXPORT(FIELD *)
+FORM_EXPORT(FIELD *)
 link_field(FIELD *field, int frow, int fcol)
 {
   FIELD *New_Field = (FIELD *)0;
@@ -61,8 +62,8 @@ link_field(FIELD *field, int frow, int fcol)
     {
       T((T_CREATE("field %p"), (void *)New_Field));
       *New_Field = *_nc_Default_Field;
-      New_Field->frow = (short) frow;
-      New_Field->fcol = (short) fcol;
+      New_Field->frow = (short)frow;
+      New_Field->fcol = (short)fcol;
 
       New_Field->link = field->link;
       field->link = New_Field;

@@ -1,6 +1,7 @@
 '\" t
 .\"***************************************************************************
-.\" Copyright (c) 1998-2018,2019 Free Software Foundation, Inc.              *
+.\" Copyright 2018-2019,2020 Thomas E. Dickey                                *
+.\" Copyright 1998-2010,2015 Free Software Foundation, Inc.                  *
 .\"                                                                          *
 .\" Permission is hereby granted, free of charge, to any person obtaining a  *
 .\" copy of this software and associated documentation files (the            *
@@ -27,14 +28,14 @@
 .\" authorization.                                                           *
 .\"***************************************************************************
 .\"
-.\" $Id: form_cursor.3x,v 1.11 2019/01/20 20:31:42 tom Exp $
+.\" $Id: form_cursor.3x,v 1.14 2020/10/18 00:15:29 tom Exp $
 .TH form_cursor 3X ""
 .SH NAME
 \fBpos_form_cursor\fR \- position a form window cursor
 .SH SYNOPSIS
 \fB#include <form.h>\fR
-.br
-int pos_form_cursor(FORM *form);
+.sp
+\fBint pos_form_cursor(FORM *\fP\fIform\fP\fB);\fP
 .br
 .SH DESCRIPTION
 The function \fBpos_form_cursor\fR restores the cursor to the position required

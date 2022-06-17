@@ -1,5 +1,6 @@
 /****************************************************************************
- * Copyright (c) 1998-2018,2019 Free Software Foundation, Inc.              *
+ * Copyright 2018-2019,2020 Thomas E. Dickey                                *
+ * Copyright 1998-2014,2017 Free Software Foundation, Inc.                  *
  *                                                                          *
  * Permission is hereby granted, free of charge, to any person obtaining a  *
  * copy of this software and associated documentation files (the            *
@@ -69,7 +70,7 @@
 #define CUR SP_TERMTYPE
 #endif
 
-MODULE_ID("$Id: lib_vidattr.c,v 1.74 2019/04/13 22:40:54 tom Exp $")
+MODULE_ID("$Id: lib_vidattr.c,v 1.78 2020/05/27 23:56:32 tom Exp $")
 
 #define doPut(mode) \
 	TPUTS_TRACE(#mode); \
@@ -152,7 +153,11 @@ NCURSES_SP_NAME(vidputs) (NCURSES_SP_DCLx
 	};
 	unsigned n;
 	int used = 0;
+#ifdef max_attributes		/* not in U/Win */
 	int limit = (max_attributes <= 0) ? 1 : max_attributes;
+#else
+	int limit = 1;
+#endif
 	chtype retain = 0;
 
 	/*
@@ -253,16 +258,16 @@ NCURSES_SP_NAME(vidputs) (NCURSES_SP_DCLx
 	if (turn_on || turn_off) {
 	    TPUTS_TRACE("set_attributes");
 	    NCURSES_SP_NAME(tputs) (NCURSES_SP_ARGx
-				    tparm(set_attributes,
-					  (newmode & A_STANDOUT) != 0,
-					  (newmode & A_UNDERLINE) != 0,
-					  (newmode & A_REVERSE) != 0,
-					  (newmode & A_BLINK) != 0,
-					  (newmode & A_DIM) != 0,
-					  (newmode & A_BOLD) != 0,
-					  (newmode & A_INVIS) != 0,
-					  (newmode & A_PROTECT) != 0,
-					  (newmode & A_ALTCHARSET) != 0),
+				    TIPARM_9(set_attributes,
+					     (newmode & A_STANDOUT) != 0,
+					     (newmode & A_UNDERLINE) != 0,
+					     (newmode & A_REVERSE) != 0,
+					     (newmode & A_BLINK) != 0,
+					     (newmode & A_DIM) != 0,
+					     (newmode & A_BOLD) != 0,
+					     (newmode & A_INVIS) != 0,
+					     (newmode & A_PROTECT) != 0,
+					     (newmode & A_ALTCHARSET) != 0),
 				    1, outc);
 	    PreviousAttr &= ALL_BUT_COLOR;
 	}
@@ -324,7 +329,6 @@ NCURSES_SP_NAME(vidputs) (NCURSES_SP_DCLx
 	TurnOn(A_VERTICAL,	enter_vertical_hl_mode);
 #endif
 	/* *INDENT-ON* */
-
     }
 
     if (reverse)

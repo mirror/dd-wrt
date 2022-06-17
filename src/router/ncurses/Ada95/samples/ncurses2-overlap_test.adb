@@ -7,7 +7,8 @@
 --                                 B O D Y                                  --
 --                                                                          --
 ------------------------------------------------------------------------------
--- Copyright (c) 2000-2014,2015 Free Software Foundation, Inc.              --
+-- Copyright 2020,2021 Thomas E. Dickey                                     --
+-- Copyright 2000-2014,2015 Free Software Foundation, Inc.                  --
 --                                                                          --
 -- Permission is hereby granted, free of charge, to any person obtaining a  --
 -- copy of this software and associated documentation files (the            --
@@ -35,8 +36,8 @@
 ------------------------------------------------------------------------------
 --  Author: Eugene V. Melaragno <aldomel@ix.netcom.com> 2000
 --  Version Control
---  $Revision: 1.7 $
---  $Date: 2015/07/25 23:43:19 $
+--  $Revision: 1.9 $
+--  $Date: 2021/09/04 10:52:55 $
 --  Binding Version 01.00
 ------------------------------------------------------------------------------
 with ncurses2.util; use ncurses2.util;
@@ -129,9 +130,9 @@ begin
             Refresh_Without_Update (win2);
             Refresh_Without_Update (win1);
             Update_Screen;
-         when 'c' => --  fill window A so it's visible
+         when 'c' => --  fill window A so it is visible
             fillwin (win1, 'A');
-         when 'd' => --  fill window B so it's visible
+         when 'd' => --  fill window B so it is visible
             fillwin (win2, 'B');
          when 'e' => --  cross test pattern in window A
             crosswin (win1, 'A');

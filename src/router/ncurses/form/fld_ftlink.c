@@ -1,5 +1,6 @@
 /****************************************************************************
- * Copyright (c) 1998-2010,2012 Free Software Foundation, Inc.              *
+ * Copyright 2020,2021 Thomas E. Dickey                                     *
+ * Copyright 1998-2010,2012 Free Software Foundation, Inc.                  *
  *                                                                          *
  * Permission is hereby granted, free of charge, to any person obtaining a  *
  * copy of this software and associated documentation files (the            *
@@ -32,23 +33,23 @@
 
 #include "form.priv.h"
 
-MODULE_ID("$Id: fld_ftlink.c,v 1.15 2012/06/10 00:27:49 tom Exp $")
+MODULE_ID("$Id: fld_ftlink.c,v 1.18 2021/06/17 21:20:30 tom Exp $")
 
 /*---------------------------------------------------------------------------
-|   Facility      :  libnform  
+|   Facility      :  libnform
 |   Function      :  FIELDTYPE *link_fieldtype(
 |                                FIELDTYPE *type1,
 |                                FIELDTYPE *type2)
-|   
+|
 |   Description   :  Create a new fieldtype built from the two given types.
 |                    They are connected by an logical 'OR'.
-|                    If an error occurs, errno is set to                    
+|                    If an error occurs, errno is set to
 |                       E_BAD_ARGUMENT  - invalid arguments
 |                       E_SYSTEM_ERROR  - system error (no memory)
 |
 |   Return Values :  Fieldtype pointer or NULL if error occurred.
 +--------------------------------------------------------------------------*/
-NCURSES_EXPORT(FIELDTYPE *)
+FORM_EXPORT(FIELDTYPE *)
 link_fieldtype(FIELDTYPE *type1, FIELDTYPE *type2)
 {
   FIELDTYPE *nftyp = (FIELDTYPE *)0;

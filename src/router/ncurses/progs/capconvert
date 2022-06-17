@@ -1,6 +1,7 @@
 #!/bin/sh
 ##############################################################################
-# Copyright (c) 1998-2017,2019 Free Software Foundation, Inc.                #
+# Copyright 2019-2020,2021 Thomas E. Dickey                                  #
+# Copyright 1998-2011,2017 Free Software Foundation, Inc.                    #
 #                                                                            #
 # Permission is hereby granted, free of charge, to any person obtaining a    #
 # copy of this software and associated documentation files (the "Software"), #
@@ -26,7 +27,7 @@
 # use or other dealings in this Software without prior written               #
 # authorization.                                                             #
 ##############################################################################
-# $Id: capconvert,v 1.7 2019/03/02 22:51:42 tom Exp $
+# $Id: capconvert,v 1.10 2021/09/04 10:55:04 tom Exp $
 #
 # capconvert -- automated conversion from termcap to terminfo
 #
@@ -94,7 +95,7 @@ else
 fi
 echo "";
 
-# Check if test -x works (it's not portable, but useful)
+# Check if test -x works (it is not portable, but useful)
 OPT="-x"
 TMP=test$$; touch $TMP && chmod 755 $TMP
 if test $OPT $TMP ; then
@@ -179,7 +180,7 @@ else
 		echo "I am going to assume this is the terminfo source included with"
 		echo "the ncurses distribution.  If this assumption is wrong, please"
 		echo "interrupt me now!  OK to continue?"
-		read ans;
+		read answer;
 	;;
 	2)
 		echo "I see more than one possible terminfo source.  Here they are:"
@@ -226,7 +227,7 @@ fi
 
 # OK, here comes the nasty case...user has a TERMCAP.  Instead of
 # trying to follow all the convolutions of the relationship between
-# TERM and TERMCAP (partly because it's too painful, and partly because
+# TERM and TERMCAP (partly because it is too painful, and partly because
 # we don't actually know what TERM will be nor even if it always has
 # the same value for this user) we do the following three steps...
 
@@ -251,7 +252,7 @@ else
 	echo "Done."
 	echo "Note that editing TERMCAP will no longer change the data curses sees."
 fi
-echo "To do that, decompile the terminal decription you want with infocmp(1),"
+echo "To do that, decompile the terminal description you want with infocmp(1),"
 echo "edit to taste, and recompile using tic(1)."
 
 # capconvert ends here

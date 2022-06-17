@@ -1,7 +1,8 @@
 #!@SHELL@
-# $Id: ncurses-config.in,v 1.42 2019/12/25 00:54:55 tom Exp $
+# $Id: ncurses-config.in,v 1.50 2021/08/07 21:36:14 tom Exp $
 ##############################################################################
-# Copyright (c) 2006-2018,2019 Free Software Foundation, Inc.                #
+# Copyright 2018-2020,2021 Thomas E. Dickey                                  #
+# Copyright 2006-2015,2017 Free Software Foundation, Inc.                    #
 #                                                                            #
 # Permission is hereby granted, free of charge, to any person obtaining a    #
 # copy of this software and associated documentation files (the "Software"), #
@@ -97,10 +98,10 @@ fi
 # are standard library directories (i.e., the linker is supposed to search
 # those directories).
 #
-# There is no portable way to find the list of standard library directories. 
+# There is no portable way to find the list of standard library directories.
 # Require a POSIX shell anyway, to keep this simple.
 lib_flags=
-for opt in -L$libdir @LDFLAGS@ @EXTRA_LDFLAGS@ $LIBS
+for opt in -L$libdir @EXTRA_PKG_LDFLAGS@ $LIBS
 do
 	case $opt in
 	-specs*) # ignore linker specs-files which were used to build library
@@ -109,11 +110,47 @@ do
 	-Wl,-z,*) # ignore flags used to manipulate shared image
 		continue
 		;;
+	-Wl,--dynamic-linker*) # ignore ELF interpreter
+		continue
+		;;
 	-L*)
-		[ -d ${opt##-L} ] || continue
-		case ${opt##-L} in
+		lib_check=`echo "x$opt" | sed -e 's/^.-L//'`
+		[ -d "$lib_check" ] || continue
+		case "$lib_check" in
 		@LD_SEARCHPATH@) # skip standard libdir
-			continue
+			if [ "$lib_check" = "$libdir" ]
+			then
+				lib_first=yes
+				IFS_save="$IFS"
+				IFS='|'
+				LIBDIRS="@LD_SEARCHPATH@"
+				for lib_check in $LIBDIRS
+				do
+					if [ -d "$lib_check" ]
+					then
+						if [ "$lib_check" != "$libdir" ]
+						then
+							lib_first=no
+						fi
+						break
+					fi
+				done
+				IFS="$IFS_save"
+				[ $lib_first = yes ] && continue
+				found=no
+				for check in $lib_flags
+				do
+					if [ "x$check" = "x$opt" ]
+					then
+						found=yes
+						break
+					fi
+				done
+				[ $found = yes ] && continue
+				:
+			else
+				continue
+			fi
 			;;
 		*)
 			found=no

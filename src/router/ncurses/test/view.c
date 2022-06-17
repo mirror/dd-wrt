@@ -1,5 +1,6 @@
 /****************************************************************************
- * Copyright (c) 1998-2017,2019 Free Software Foundation, Inc.              *
+ * Copyright 2019-2020,2021 Thomas E. Dickey                                *
+ * Copyright 1998-2016,2017 Free Software Foundation, Inc.                  *
  *                                                                          *
  * Permission is hereby granted, free of charge, to any person obtaining a  *
  * copy of this software and associated documentation files (the            *
@@ -51,7 +52,7 @@
  * scroll operation worked, and the refresh() code only had to do a
  * partial repaint.
  *
- * $Id: view.c,v 1.137 2019/12/07 19:03:07 tom Exp $
+ * $Id: view.c,v 1.142 2021/06/12 23:16:31 tom Exp $
  */
 
 #include <test.priv.h>
@@ -61,7 +62,7 @@
 #include <sys/stat.h>
 #include <time.h>
 
-static void finish(int sig) GCC_NORETURN;
+static GCC_NORETURN void finish(int sig);
 
 #define my_pair 1
 
@@ -77,9 +78,7 @@ static int num_lines;
 static bool n_option = FALSE;
 #endif
 
-static void usage(void) GCC_NORETURN;
-
-static void
+static GCC_NORETURN void
 failed(const char *msg)
 {
     endwin();
@@ -91,12 +90,10 @@ static int
 ch_len(NCURSES_CH_T *src)
 {
     int result = 0;
-#if USE_WIDEC_SUPPORT
-    int count;
-#endif
 
 #if USE_WIDEC_SUPPORT
     for (;;) {
+	int count;
 	TEST_CCHAR(src, count, {
 	    int len = wcwidth(test_wch[0]);
 	    result += (len > 0) ? len : 1;
@@ -135,7 +132,6 @@ show_all(const char *tag)
     int i;
     int digits;
     char temp[BUFSIZ];
-    NCURSES_CH_T *s;
     time_t this_time;
 
     for (digits = 1, i = num_lines; i > 0; i /= 10) {
@@ -160,8 +156,10 @@ show_all(const char *tag)
 
     scrollok(stdscr, FALSE);	/* prevent screen from moving */
     for (i = 1; i < LINES; i++) {
+	NCURSES_CH_T *s;
 	int len;
 	int actual = (int) (lptr + i - vec_lines);
+
 	if (actual > num_lines) {
 	    if (i < LINES - 1) {
 		int y, x;
@@ -188,8 +186,11 @@ show_all(const char *tag)
 	     */
 	    {
 		int j;
-		int width = 1, count;
+		int width = 1;
+
 		for (j = actual = 0; j < shift; ++j) {
+		    int count;
+
 		    TEST_CCHAR(s + j, count, {
 			width = wcwidth(test_wch[0]);
 		    }
@@ -256,8 +257,11 @@ read_file(const char *filename)
     }
 
     len = fread(my_blob, sizeof(char), (size_t) sb.st_size, fp);
-    my_blob[sb.st_size] = '\0';
     fclose(fp);
+
+    if (len > (size_t) sb.st_size)
+	len = (size_t) sb.st_size;
+    my_blob[len] = '\0';
 
     for (pass = 0; pass < 2; ++pass) {
 	char *base = my_blob;
@@ -272,12 +276,19 @@ read_file(const char *filename)
 		++k;
 	    }
 	}
+	if (base != (my_blob + j)) {
+	    if (pass)
+		my_vec[k] = base;
+	    ++k;
+	}
 	num_lines = k;
-	if (base != (my_blob + j))
-	    ++num_lines;
-	if (!pass &&
-	    ((my_vec = typeCalloc(char *, (size_t) k + 2)) == 0)) {
-	    failed("cannot allocate line-vector #1");
+	if (pass == 0) {
+	    if (((my_vec = typeCalloc(char *, (size_t) k + 2)) == 0)) {
+		failed("cannot allocate line-vector #1");
+	    }
+	} else {
+	    if (my_vec[0] == NULL)
+		my_vec[0] = my_blob;
 	}
     }
 
@@ -365,7 +376,7 @@ read_file(const char *filename)
     free(my_blob);
 }
 
-static void
+static GCC_NORETURN void
 usage(void)
 {
     static const char *msg[] =

@@ -1,5 +1,6 @@
 /****************************************************************************
- * Copyright (c) 2016 Free Software Foundation, Inc.                        *
+ * Copyright 2020,2021 Thomas E. Dickey                                     *
+ * Copyright 2016 Free Software Foundation, Inc.                            *
  *                                                                          *
  * Permission is hereby granted, free of charge, to any person obtaining a  *
  * copy of this software and associated documentation files (the            *
@@ -31,7 +32,7 @@
  ****************************************************************************/
 
 /*
- * $Id: reset_cmd.h,v 1.7 2016/12/24 18:08:48 tom Exp $
+ * $Id: reset_cmd.h,v 1.9 2021/10/02 20:58:58 tom Exp $
  *
  * Utility functions for resetting terminal.
  */
@@ -50,7 +51,7 @@ extern bool send_init_strings(int /* fd */, TTY * /* old_settings */);
 extern void print_tty_chars(TTY * /* old_settings */, TTY * /* new_settings */);
 extern void reset_flush(void);
 extern void reset_start(FILE * /* fp */, bool /* is_reset */, bool /* is_init */ );
-extern void reset_tty_settings(int /* fd */, TTY * /* tty_settings */);
+extern void reset_tty_settings(int /* fd */, TTY * /* tty_settings */, int /* noset */);
 extern void set_control_chars(TTY * /* tty_settings */, int /* erase */, int /* intr */, int /* kill */);
 extern void set_conversions(TTY * /* tty_settings */);
 

@@ -1,5 +1,6 @@
 /****************************************************************************
- * Copyright (c) 1998-2010,2012 Free Software Foundation, Inc.              *
+ * Copyright 2020 Thomas E. Dickey                                          *
+ * Copyright 1998-2010,2012 Free Software Foundation, Inc.                  *
  *                                                                          *
  * Permission is hereby granted, free of charge, to any person obtaining a  *
  * copy of this software and associated documentation files (the            *
@@ -36,10 +37,10 @@
  */
 #include "panel.priv.h"
 
-MODULE_ID("$Id: p_below.c,v 1.9 2012/03/10 23:43:41 tom Exp $")
+MODULE_ID("$Id: p_below.c,v 1.11 2020/05/24 01:40:20 anonymous.maarten Exp $")
 
 #if NCURSES_SP_FUNCS
-NCURSES_EXPORT(PANEL *)
+PANEL_EXPORT(PANEL *)
 ceiling_panel(SCREEN * sp)
 {
   T((T_CALLED("ceiling_panel(%p)"), (void *)sp));
@@ -60,7 +61,7 @@ ceiling_panel(SCREEN * sp)
 }
 #endif
 
-NCURSES_EXPORT(PANEL *)
+PANEL_EXPORT(PANEL *)
 panel_below(const PANEL * pan)
 {
   PANEL *result;

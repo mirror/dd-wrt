@@ -1,5 +1,6 @@
 /****************************************************************************
- * Copyright (c) 1998-2004,2010 Free Software Foundation, Inc.              *
+ * Copyright 2020,2021 Thomas E. Dickey                                     *
+ * Copyright 1998-2004,2010 Free Software Foundation, Inc.                  *
  *                                                                          *
  * Permission is hereby granted, free of charge, to any person obtaining a  *
  * copy of this software and associated documentation files (the            *
@@ -32,21 +33,21 @@
 
 #include "form.priv.h"
 
-MODULE_ID("$Id: fld_info.c,v 1.11 2010/01/23 21:14:35 tom Exp $")
+MODULE_ID("$Id: fld_info.c,v 1.16 2021/06/17 21:20:30 tom Exp $")
 
 /*---------------------------------------------------------------------------
-|   Facility      :  libnform  
+|   Facility      :  libnform
 |   Function      :  int field_info(const FIELD *field,
 |                                   int *rows, int *cols,
 |                                   int *frow, int *fcol,
 |                                   int *nrow, int *nbuf)
-|   
-|   Description   :  Retrieve infos about the fields creation parameters.
+|
+|   Description   :  Retrieve information about the field's creation parameters.
 |
 |   Return Values :  E_OK           - success
 |                    E_BAD_ARGUMENT - invalid field pointer
 +--------------------------------------------------------------------------*/
-NCURSES_EXPORT(int)
+FORM_EXPORT(int)
 field_info(const FIELD *field,
 	   int *rows, int *cols,
 	   int *frow, int *fcol,
@@ -77,18 +78,18 @@ field_info(const FIELD *field,
 }
 
 /*---------------------------------------------------------------------------
-|   Facility      :  libnform  
+|   Facility      :  libnform
 |   Function      :  int dynamic_field_info(const FIELD *field,
 |                                           int *drows, int *dcols,
 |                                           int *maxgrow)
-|   
-|   Description   :  Retrieve informations about a dynamic fields current
+|
+|   Description   :  Retrieve information about a dynamic field's current
 |                    dynamic parameters.
 |
 |   Return Values :  E_OK           - success
 |                    E_BAD_ARGUMENT - invalid argument
 +--------------------------------------------------------------------------*/
-NCURSES_EXPORT(int)
+FORM_EXPORT(int)
 dynamic_field_info(const FIELD *field, int *drows, int *dcols, int *maxgrow)
 {
   T((T_CALLED("dynamic_field_info(%p,%p,%p,%p)"),

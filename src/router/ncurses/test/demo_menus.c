@@ -1,5 +1,6 @@
 /****************************************************************************
- * Copyright (c) 2005-2017,2019 Free Software Foundation, Inc.              *
+ * Copyright 2019-2020,2021 Thomas E. Dickey                                *
+ * Copyright 2003-2016,2017 Free Software Foundation, Inc.                  *
  *                                                                          *
  * Permission is hereby granted, free of charge, to any person obtaining a  *
  * copy of this software and associated documentation files (the            *
@@ -26,7 +27,7 @@
  * authorization.                                                           *
  ****************************************************************************/
 /*
- * $Id: demo_menus.c,v 1.70 2019/12/07 18:06:12 tom Exp $
+ * $Id: demo_menus.c,v 1.73 2021/05/08 19:41:08 tom Exp $
  *
  * Demonstrate a variety of functions from the menu library.
  * Thomas Dickey - 2005/4/9
@@ -112,7 +113,7 @@ static bool loaded_file = FALSE;
 static char empty[1];
 
 #ifdef TRACE
-static void failed(const char *s) GCC_NORETURN;
+static GCC_NORETURN void failed(const char *s);
 
 static void
 failed(const char *s)
@@ -564,7 +565,7 @@ tracetrace(unsigned tlevel)
     }
     _nc_SPRINTF(buf, _nc_SLIMIT(need) "0x%02x = {", tlevel);
     if (tlevel == 0) {
-	_nc_STRCAT(buf, t_tbl[0].name, need);
+	_nc_STRCAT(buf, t_tbl[0].name ? t_tbl[0].name : "", need);
 	_nc_STRCAT(buf, ", ", need);
     } else {
 	for (n = 1; t_tbl[n].name != 0; n++)

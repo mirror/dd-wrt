@@ -1,5 +1,6 @@
 /****************************************************************************
- * Copyright (c) 1998-2012,2013 Free Software Foundation, Inc.              *
+ * Copyright 2020,2021 Thomas E. Dickey                                     *
+ * Copyright 1998-2012,2013 Free Software Foundation, Inc.                  *
  *                                                                          *
  * Permission is hereby granted, free of charge, to any person obtaining a  *
  * copy of this software and associated documentation files (the            *
@@ -32,24 +33,24 @@
 
 #include "form.priv.h"
 
-MODULE_ID("$Id: frm_opts.c,v 1.17 2013/08/24 22:58:47 tom Exp $")
+MODULE_ID("$Id: frm_opts.c,v 1.21 2021/06/17 21:20:30 tom Exp $")
 
 /*---------------------------------------------------------------------------
-|   Facility      :  libnform  
+|   Facility      :  libnform
 |   Function      :  int set_form_opts(FORM *form, Form_Options opts)
-|   
+|
 |   Description   :  Turns on the named options and turns off all the
 |                    remaining options for that form.
 |
 |   Return Values :  E_OK              - success
 |                    E_BAD_ARGUMENT    - invalid options
 +--------------------------------------------------------------------------*/
-NCURSES_EXPORT(int)
+FORM_EXPORT(int)
 set_form_opts(FORM *form, Form_Options opts)
 {
   T((T_CALLED("set_form_opts(%p,%d)"), (void *)form, opts));
 
-  opts &= (Form_Options) ALL_FORM_OPTS;
+  opts &= (Form_Options)ALL_FORM_OPTS;
   if ((unsigned)opts & ~ALL_FORM_OPTS)
     RETURN(E_BAD_ARGUMENT);
   else
@@ -60,36 +61,36 @@ set_form_opts(FORM *form, Form_Options opts)
 }
 
 /*---------------------------------------------------------------------------
-|   Facility      :  libnform  
+|   Facility      :  libnform
 |   Function      :  Form_Options form_opts(const FORM *)
-|   
+|
 |   Description   :  Retrieves the current form options.
 |
 |   Return Values :  The option flags.
 +--------------------------------------------------------------------------*/
-NCURSES_EXPORT(Form_Options)
+FORM_EXPORT(Form_Options)
 form_opts(const FORM *form)
 {
   T((T_CALLED("form_opts(%p)"), (const void *)form));
-  returnCode((Form_Options) ((unsigned)Normalize_Form(form)->opts & ALL_FORM_OPTS));
+  returnCode((Form_Options)((unsigned)Normalize_Form(form)->opts & ALL_FORM_OPTS));
 }
 
 /*---------------------------------------------------------------------------
-|   Facility      :  libnform  
+|   Facility      :  libnform
 |   Function      :  int form_opts_on(FORM *form, Form_Options opts)
-|   
-|   Description   :  Turns on the named options; no other options are 
+|
+|   Description   :  Turns on the named options; no other options are
 |                    changed.
 |
-|   Return Values :  E_OK            - success 
+|   Return Values :  E_OK            - success
 |                    E_BAD_ARGUMENT  - invalid options
 +--------------------------------------------------------------------------*/
-NCURSES_EXPORT(int)
+FORM_EXPORT(int)
 form_opts_on(FORM *form, Form_Options opts)
 {
   T((T_CALLED("form_opts_on(%p,%d)"), (void *)form, opts));
 
-  opts &= (Form_Options) ALL_FORM_OPTS;
+  opts &= (Form_Options)ALL_FORM_OPTS;
   if ((unsigned)opts & ~ALL_FORM_OPTS)
     RETURN(E_BAD_ARGUMENT);
   else
@@ -100,21 +101,21 @@ form_opts_on(FORM *form, Form_Options opts)
 }
 
 /*---------------------------------------------------------------------------
-|   Facility      :  libnform  
+|   Facility      :  libnform
 |   Function      :  int form_opts_off(FORM *form, Form_Options opts)
-|   
-|   Description   :  Turns off the named options; no other options are 
+|
+|   Description   :  Turns off the named options; no other options are
 |                    changed.
 |
-|   Return Values :  E_OK            - success 
+|   Return Values :  E_OK            - success
 |                    E_BAD_ARGUMENT  - invalid options
 +--------------------------------------------------------------------------*/
-NCURSES_EXPORT(int)
+FORM_EXPORT(int)
 form_opts_off(FORM *form, Form_Options opts)
 {
   T((T_CALLED("form_opts_off(%p,%d)"), (void *)form, opts));
 
-  opts &= (Form_Options) ALL_FORM_OPTS;
+  opts &= (Form_Options)ALL_FORM_OPTS;
   if ((unsigned)opts & ~ALL_FORM_OPTS)
     RETURN(E_BAD_ARGUMENT);
   else

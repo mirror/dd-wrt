@@ -7,7 +7,8 @@
 --                                 B O D Y                                  --
 --                                                                          --
 ------------------------------------------------------------------------------
--- Copyright (c) 2000-2011,2014 Free Software Foundation, Inc.              --
+-- Copyright 2020,2021 Thomas E. Dickey                                     --
+-- Copyright 2000-2011,2014 Free Software Foundation, Inc.                  --
 --                                                                          --
 -- Permission is hereby granted, free of charge, to any person obtaining a  --
 -- copy of this software and associated documentation files (the            --
@@ -35,8 +36,8 @@
 ------------------------------------------------------------------------------
 --  Author: Eugene V. Melaragno <aldomel@ix.netcom.com> 2000
 --  Version Control
---  $Revision: 1.7 $
---  $Date: 2014/09/13 19:10:18 $
+--  $Revision: 1.9 $
+--  $Date: 2021/09/04 10:52:55 $
 --  Binding Version 01.00
 ------------------------------------------------------------------------------
 with ncurses2.util; use ncurses2.util;
@@ -380,7 +381,7 @@ procedure ncurses2.demo_forms is
          Set_KeyPad_Mode (w, True);
       end if;
 
-      --  TODO if Post(f) /= Form_Ok then it's a procedure
+      --  TODO if Post(f) /= Form_Ok then it is a procedure
       declare
       begin
          Post (f);

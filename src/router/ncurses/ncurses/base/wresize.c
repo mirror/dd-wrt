@@ -1,5 +1,6 @@
 /****************************************************************************
- * Copyright (c) 1998-2011,2019 Free Software Foundation, Inc.              *
+ * Copyright 2019,2020 Thomas E. Dickey                                     *
+ * Copyright 1998-2010,2011 Free Software Foundation, Inc.                  *
  *                                                                          *
  * Permission is hereby granted, free of charge, to any person obtaining a  *
  * copy of this software and associated documentation files (the            *
@@ -33,7 +34,7 @@
 
 #include <curses.priv.h>
 
-MODULE_ID("$Id: wresize.c,v 1.38 2019/05/11 20:15:15 tom Exp $")
+MODULE_ID("$Id: wresize.c,v 1.41 2020/04/18 21:01:00 tom Exp $")
 
 static int
 cleanup_lines(struct ldat *data, int length)
@@ -175,7 +176,15 @@ wresize(WINDOW *win, int ToLines, int ToCols)
 		    if (s == 0)
 			returnCode(cleanup_lines(new_lines, row));
 		    for (col = 0; col <= ToCols; ++col) {
-			s[col] = (col <= size_x
+			bool valid = (col <= size_x);
+			if_WIDEC({
+			    if (col == ToCols
+				&& col < size_x
+				&& isWidecBase(win->_line[row].text[col])) {
+				valid = FALSE;
+			    }
+			});
+			s[col] = (valid
 				  ? win->_line[row].text[col]
 				  : win->_nc_bkgd);
 		    }

@@ -1,5 +1,6 @@
 /****************************************************************************
- * Copyright (c) 1998-2017,2018 Free Software Foundation, Inc.              *
+ * Copyright 2018-2020,2021 Thomas E. Dickey                                *
+ * Copyright 1998-2016,2017 Free Software Foundation, Inc.                  *
  *                                                                          *
  * Permission is hereby granted, free of charge, to any person obtaining a  *
  * copy of this software and associated documentation files (the            *
@@ -42,7 +43,7 @@
 
 #include <curses.priv.h>
 
-MODULE_ID("$Id: lib_data.c,v 1.79 2018/09/01 19:36:39 tom Exp $")
+MODULE_ID("$Id: lib_data.c,v 1.85 2021/09/04 10:54:35 tom Exp $")
 
 /*
  * OS/2's native linker complains if we don't initialize public data when
@@ -154,6 +155,11 @@ NCURSES_EXPORT_VAR(NCURSES_GLOBALS) _nc_globals = {
     0,				/* dbd_time */
     { { 0, 0 } },		/* dbd_vars */
 
+#if HAVE_TSEARCH
+    NULL,			/* cached_tparm */
+    0,				/* count_tparm */
+#endif /* HAVE_TSEARCH */
+
 #ifdef USE_TERM_DRIVER
     0,				/* term_driver */
 #endif
@@ -245,7 +251,6 @@ NCURSES_EXPORT_VAR(NCURSES_PRESCREEN) _nc_prescreen = {
 	NULL,			/* fmt_buff */
 	0,			/* fmt_size */
 
-	NUM_VARS_0s,		/* dynamic_var */
 	NUM_VARS_0s,		/* static_vars */
 #ifdef TRACE
 	NULL,			/* tname */

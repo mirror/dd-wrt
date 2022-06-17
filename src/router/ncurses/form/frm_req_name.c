@@ -1,5 +1,6 @@
 /****************************************************************************
- * Copyright (c) 1998-2012,2015 Free Software Foundation, Inc.              *
+ * Copyright 2020,2021 Thomas E. Dickey                                     *
+ * Copyright 1998-2012,2015 Free Software Foundation, Inc.                  *
  *                                                                          *
  * Permission is hereby granted, free of charge, to any person obtaining a  *
  * copy of this software and associated documentation files (the            *
@@ -37,7 +38,7 @@
 
 #include "form.priv.h"
 
-MODULE_ID("$Id: frm_req_name.c,v 1.19 2015/04/04 17:11:46 tom Exp $")
+MODULE_ID("$Id: frm_req_name.c,v 1.23 2021/06/17 21:11:08 tom Exp $")
 
 #define DATA(s) { s }
 
@@ -111,15 +112,15 @@ static const char request_names[MAX_FORM_COMMAND - MIN_FORM_COMMAND + 1][13] =
 #define A_SIZE (sizeof(request_names)/sizeof(request_names[0]))
 
 /*---------------------------------------------------------------------------
-|   Facility      :  libnform  
+|   Facility      :  libnform
 |   Function      :  const char * form_request_name (int request);
-|   
+|
 |   Description   :  Get the external name of a form request.
 |
 |   Return Values :  Pointer to name      - on success
 |                    NULL                 - on invalid request code
 +--------------------------------------------------------------------------*/
-NCURSES_EXPORT(const char *)
+FORM_EXPORT(const char *)
 form_request_name(int request)
 {
   T((T_CALLED("form_request_name(%d)"), request));
@@ -134,27 +135,28 @@ form_request_name(int request)
 }
 
 /*---------------------------------------------------------------------------
-|   Facility      :  libnform  
+|   Facility      :  libnform
 |   Function      :  int form_request_by_name (const char *str);
-|   
+|
 |   Description   :  Search for a request with this name.
 |
 |   Return Values :  Request Id       - on success
 |                    E_NO_MATCH       - request not found
 +--------------------------------------------------------------------------*/
-NCURSES_EXPORT(int)
+FORM_EXPORT(int)
 form_request_by_name(const char *str)
 {
   /* because the table is so small, it doesn't really hurt
      to run sequentially through it.
    */
   size_t i = 0;
-  char buf[16];			/* longest name is 10 chars */
 
   T((T_CALLED("form_request_by_name(%s)"), _nc_visbuf(str)));
 
   if (str != 0 && (i = strlen(str)) != 0)
     {
+      char buf[16];		/* longest name is 10 chars */
+
       if (i > sizeof(buf) - 2)
 	i = sizeof(buf) - 2;
       memcpy(buf, str, i);

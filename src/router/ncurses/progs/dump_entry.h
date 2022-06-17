@@ -1,5 +1,6 @@
 /****************************************************************************
- * Copyright (c) 1998-2017,2018 Free Software Foundation, Inc.              *
+ * Copyright 2018-2020,2021 Thomas E. Dickey                                *
+ * Copyright 1998-2016,2017 Free Software Foundation, Inc.                  *
  *                                                                          *
  * Permission is hereby granted, free of charge, to any person obtaining a  *
  * copy of this software and associated documentation files (the            *
@@ -33,7 +34,7 @@
  ****************************************************************************/
 
 /*
- * $Id: dump_entry.h,v 1.41 2018/05/26 15:22:30 tom Exp $
+ * $Id: dump_entry.h,v 1.44 2021/04/18 19:56:09 tom Exp $
  *
  * Dump control definitions and variables
  */
@@ -66,13 +67,16 @@
 #define CMP_STRING	2	/* comparison on strings */
 #define CMP_USE		3	/* comparison on use capabilities */
 
+#ifndef _TERMSORT_H
 typedef unsigned PredType;
 typedef unsigned PredIdx;
+#endif
+
 typedef int (*PredFunc) (PredType, PredIdx);
 typedef void (*PredHook) (PredType, PredIdx, const char *);
 
 extern NCURSES_CONST char *nametrans(const char *);
-extern bool has_params(const char *src);
+extern bool has_params(const char *, bool);
 extern int fmt_entry(TERMTYPE2 *, PredFunc, int, int, int, int);
 extern int show_entry(void);
 extern void compare_entry(PredHook, TERMTYPE2 *, bool);

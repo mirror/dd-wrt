@@ -1,5 +1,6 @@
 /****************************************************************************
- * Copyright (c) 1998-2016,2017 Free Software Foundation, Inc.              *
+ * Copyright 2020,2021 Thomas E. Dickey                                     *
+ * Copyright 1998-2016,2017 Free Software Foundation, Inc.                  *
  *                                                                          *
  * Permission is hereby granted, free of charge, to any person obtaining a  *
  * copy of this software and associated documentation files (the            *
@@ -41,7 +42,7 @@
 
 #include <curses.priv.h>
 
-MODULE_ID("$Id: lib_instr.c,v 1.23 2017/04/29 21:16:20 tom Exp $")
+MODULE_ID("$Id: lib_instr.c,v 1.25 2021/04/03 22:24:18 tom Exp $")
 
 NCURSES_EXPORT(int)
 winnstr(WINDOW *win, char *str, int n)
@@ -65,7 +66,6 @@ winnstr(WINDOW *win, char *str, int n)
 	    cchar_t *cell = &(text[col]);
 	    attr_t attrs;
 	    NCURSES_PAIRS_T pair;
-	    mbstate_t state;
 	    char *tmp;
 
 	    if (!isWidecExt(*cell)) {
@@ -78,6 +78,7 @@ winnstr(WINDOW *win, char *str, int n)
 		    bool done = FALSE;
 
 		    if (getcchar(cell, wch, &attrs, &pair, 0) == OK) {
+			mbstate_t state;
 			size_t n3;
 
 			init_mb(state);

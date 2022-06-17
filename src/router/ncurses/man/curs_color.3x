@@ -1,5 +1,6 @@
 .\"***************************************************************************
-.\" Copyright (c) 1998-2018,2019 Free Software Foundation, Inc.              *
+.\" Copyright 2018-2020,2021 Thomas E. Dickey                                *
+.\" Copyright 1998-2016,2017 Free Software Foundation, Inc.                  *
 .\"                                                                          *
 .\" Permission is hereby granted, free of charge, to any person obtaining a  *
 .\" copy of this software and associated documentation files (the            *
@@ -26,7 +27,7 @@
 .\" authorization.                                                           *
 .\"***************************************************************************
 .\"
-.\" $Id: curs_color.3x,v 1.61 2019/01/20 17:04:08 tom Exp $
+.\" $Id: curs_color.3x,v 1.66 2021/09/04 19:42:20 tom Exp $
 .TH curs_color 3X ""
 .ie \n(.g .ds `` \(lq
 .el       .ds `` ``
@@ -65,31 +66,31 @@
 .br
 \fBbool can_change_color(void);\fR
 .sp
-\fBint init_pair(short pair, short f, short b);\fR
+\fBint init_pair(short \fP\fIpair\fP\fB, short \fP\fIf\fP\fB, short \fP\fIb\fP\fB);\fR
 .br
-\fBint init_color(short color, short r, short g, short b);\fR
+\fBint init_color(short \fP\fIcolor\fP\fB, short \fP\fIr\fP\fB, short \fP\fIg\fP\fB, short \fP\fIb\fP\fB);\fR
 .br
 /* extensions */
 .br
-\fBint init_extended_pair(int pair, int f, int b);\fR
+\fBint init_extended_pair(int \fP\fIpair\fP\fB, int \fP\fIf\fP\fB, int \fP\fIb\fP\fB);\fR
 .br
-\fBint init_extended_color(int color, int r, int g, int b);\fR
+\fBint init_extended_color(int \fP\fIcolor\fP\fB, int \fP\fIr\fP\fB, int \fP\fIg\fP\fB, int \fP\fIb\fP\fB);\fR
 .sp
-\fBint color_content(short color, short *r, short *g, short *b);\fR
+\fBint color_content(short \fP\fIcolor\fP\fB, short *\fP\fIr\fP\fB, short *\fP\fIg\fP\fB, short *\fP\fIb\fP\fB);\fR
 .br
-\fBint pair_content(short pair, short *f, short *b);\fR
+\fBint pair_content(short \fP\fIpair\fP\fB, short *\fP\fIf\fP\fB, short *\fP\fIb\fP\fB);\fR
 .br
 /* extensions */
 .br
-\fBint extended_color_content(int color, int *r, int *g, int *b);\fR
+\fBint extended_color_content(int \fP\fIcolor\fP\fB, int *\fP\fIr\fP\fB, int *\fP\fIg\fP\fB, int *\fP\fIb\fP\fB);\fR
 .br
-\fBint extended_pair_content(int pair, int *f, int *b);\fR
+\fBint extended_pair_content(int \fP\fIpair\fP\fB, int *\fP\fIf\fP\fB, int *\fP\fIb\fP\fB);\fR
 .sp
 /* extensions */
 .br
 \fBvoid reset_color_pairs(void);\fR
 .sp
-\fBint COLOR_PAIR(int n);\fR
+\fBint COLOR_PAIR(int \fP\fIn\fP\fB);\fR
 .br
 \fBPAIR_NUMBER(\fR\fIattrs\fR\fB);\fP
 .br
@@ -421,7 +422,7 @@ if \fBstart_color\fP was not called.
 SVr4 does much the same, except that
 it returns \fBERR\fP from \fBpair_content\fP if the pair was not initialized
 using \fBinit_pairs\fP
-and 
+and
 it returns \fBERR\fP from \fBcolor_content\fP
 if the terminal does not support changing colors.
 .IP
@@ -466,6 +467,54 @@ Paradise and compatibles) do the wrong thing when you try to set a bright
 \*(``yellow\*('' background (you get a blinking yellow foreground instead).
 .bP
 Color RGB values are not settable.
+.SH HISTORY
+.PP
+SVr3.2 introduced color support to curses in 1987.
+.PP
+SVr4 made internal changes,
+e.g., moving the storage for the color state
+from \fBSP\fP (the \fBSCREEN\fP structure)
+to \fBcur_term\fP (the \fBTERMINAL\fP structure),
+but provided the same set of library functions.
+.PP
+SVr4 curses limits the number of color pairs to 64,
+reserving color pair zero (0) as the terminal's initial uncolored state.
+This limit arises because the color pair information is a bitfield
+in the \fBchtype\fP data type (denoted by \fBA_COLOR\fP).
+.PP
+Other implementations of curses had different limits:
+.bP
+PCCurses (1987-1990) provided for only eight (8) colors.
+.bP
+PDCurses (1992-present) inherited the 8-color limitation from PCCurses,
+but changed this to 256 in version 2.5 (2001),
+along with changing \fBchtype\fP from 16-bits to 32-bits.
+.bP
+X/Open Curses (1992-present)
+added a new structure \fBcchar_t\fP to store the character,
+attributes and color-pair values, allowing increased range of color-pairs.
+Both color-pairs and color-values used a signed \fBshort\fP,
+limiting values to 15 bits.
+.bP
+ncurses (1992-present) uses eight bits for \fBA_COLOR\fP in \fBchtype\fP values.
+.IP
+Version 5.3 provided a wide-character interface (2002),
+but left color-pairs as part of the attributes-field.
+.IP
+Since version 6 (2015),
+ncurses uses a separate \fBint\fP for color-pairs in the \fBcchar_t\fP values.
+When those color-pair values fit in 8 bits,
+ncurses allows color-pairs to be manipulated
+via the functions using \fBchtype\fP values.
+.bP
+NetBSD curses used 6 bits from
+2000 (when colors were first supported) until 2004.
+At that point, NetBSD changed to use 10 bits.
+As of 2021, that size is unchanged.
+Like ncurses before version 6,
+the NetBSD color-pair information is stored in
+the attributes field of \fBcchar_t\fP, limiting the number of color-pairs
+by the size of the bitfield.
 .SH PORTABILITY
 This implementation satisfies XSI Curses's minimum maximums
 for \fBCOLORS\fR and \fBCOLOR_PAIRS\fR.

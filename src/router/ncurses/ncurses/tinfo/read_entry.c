@@ -1,5 +1,6 @@
 /****************************************************************************
- * Copyright (c) 1998-2018,2019 Free Software Foundation, Inc.              *
+ * Copyright 2018-2020,2021 Thomas E. Dickey                                *
+ * Copyright 1998-2016,2017 Free Software Foundation, Inc.                  *
  *                                                                          *
  * Permission is hereby granted, free of charge, to any person obtaining a  *
  * copy of this software and associated documentation files (the            *
@@ -41,7 +42,7 @@
 
 #include <tic.h>
 
-MODULE_ID("$Id: read_entry.c,v 1.155 2019/07/20 20:23:11 tom Exp $")
+MODULE_ID("$Id: read_entry.c,v 1.161 2021/06/26 19:43:17 tom Exp $")
 
 #define TYPE_CALLOC(type,elts) typeCalloc(type, (unsigned)(elts))
 
@@ -159,11 +160,11 @@ convert_strings(char *buf, char **Strings, int count, int size, char *table)
 
 	/* make sure all strings are NUL terminated */
 	if (VALID_STRING(Strings[i])) {
-	    for (p = Strings[i]; p <= table + size; p++)
+	    for (p = Strings[i]; p < table + size; p++)
 		if (*p == '\0')
 		    break;
 	    /* if there is no NUL, ignore the string */
-	    if (p > table + size)
+	    if (p >= table + size)
 		Strings[i] = ABSENT_STRING;
 	}
     }
@@ -256,7 +257,6 @@ _nc_read_termtype(TERMTYPE2 *ptr, char *buffer, int limit)
     char buf[MAX_ENTRY_SIZE + 2];
     char *string_table;
     unsigned want, have;
-    bool need_ints;
     size_t (*convert_numbers) (char *, NCURSES_INT2 *, int);
     int size_of_numbers;
     int max_entry_size = MAX_ENTRY_SIZE;
@@ -275,7 +275,7 @@ _nc_read_termtype(TERMTYPE2 *ptr, char *buffer, int limit)
 	returnDB(TGETENT_NO);
     }
 #if NCURSES_EXT_NUMBERS
-    if ((need_ints = (LOW_MSB(buf) == MAGIC2))) {
+    if (LOW_MSB(buf) == MAGIC2) {
 	convert_numbers = convert_32bits;
 	size_of_numbers = SIZEOF_INT2;
     } else {
@@ -284,7 +284,7 @@ _nc_read_termtype(TERMTYPE2 *ptr, char *buffer, int limit)
 	size_of_numbers = SIZEOF_SHORT;
     }
 #else
-    if ((need_ints = (LOW_MSB(buf) == MAGIC2))) {
+    if (LOW_MSB(buf) == MAGIC2) {
 	convert_numbers = convert_32bits;
 	size_of_numbers = SIZEOF_32BITS;
     } else {
@@ -552,7 +552,7 @@ _nc_read_file_entry(const char *const filename, TERMTYPE2 *ptr)
     int code;
 
     if (_nc_access(filename, R_OK) < 0
-	|| (fp = fopen(filename, BIN_R)) == 0) {
+	|| (fp = safe_fopen(filename, BIN_R)) == 0) {
 	TR(TRACE_DATABASE, ("cannot open terminfo %s (errno=%d)", filename, errno));
 	code = TGETENT_NO;
     } else {
@@ -665,11 +665,10 @@ decode_hex(const char **source)
 {
     int result = 0;
     int nibble;
-    int ch;
 
     for (nibble = 0; nibble < 2; ++nibble) {
+	int ch = UChar(**source);
 	result <<= 4;
-	ch = UChar(**source);
 	*source += 1;
 	if (ch >= '0' && ch <= '9') {
 	    ch -= '0';
@@ -775,7 +774,7 @@ _nc_read_tic_entry(char *filename,
 	 * looking for compiled (binary) terminfo data.
 	 *
 	 * cgetent uses a two-level lookup.  On the first it uses the given
-	 * name to return a record containing only the aliases for an entry. 
+	 * name to return a record containing only the aliases for an entry.
 	 * On the second (using that list of aliases as a key), it returns the
 	 * content of the terminal description.  We expect second lookup to
 	 * return data beginning with the same set of aliases.
@@ -832,7 +831,7 @@ _nc_read_tic_entry(char *filename,
 #endif /* NCURSES_USE_DATABASE */
 
 /*
- * Find and read the compiled entry for a given terminal type, if it exists. 
+ * Find and read the compiled entry for a given terminal type, if it exists.
  * We take pains here to make sure no combination of environment variables and
  * terminal type name can be used to overrun the file buffer.
  */
@@ -881,7 +880,7 @@ _nc_read_entry2(const char *const name, char *const filename, TERMTYPE2 *const t
 
 #if NCURSES_EXT_NUMBERS
 /*
- * This entrypoint is used by tack.
+ * This entrypoint is used by tack 1.07
  */
 NCURSES_EXPORT(int)
 _nc_read_entry(const char *const name, char *const filename, TERMTYPE *const tp)

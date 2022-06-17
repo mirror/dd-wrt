@@ -1,6 +1,7 @@
 // * This makes emacs happy -*-Mode: C++;-*-
 /****************************************************************************
- * Copyright (c) 1998-2017,2018 Free Software Foundation, Inc.              *
+ * Copyright 2018-2020,2021 Thomas E. Dickey                                *
+ * Copyright 1998-2012,2017 Free Software Foundation, Inc.                  *
  *                                                                          *
  * Permission is hereby granted, free of charge, to any person obtaining a  *
  * copy of this software and associated documentation files (the            *
@@ -31,7 +32,7 @@
  *   Author: Juergen Pfeifer, 1997                                          *
  ****************************************************************************/
 
-// $Id: etip.h.in,v 1.42 2018/05/26 14:47:47 tom Exp $
+// $Id: etip.h.in,v 1.48 2021/06/17 21:11:08 tom Exp $
 
 #ifndef NCURSES_ETIP_H_incl
 #define NCURSES_ETIP_H_incl 1
@@ -138,12 +139,16 @@ extern "C" {
 #define STATIC_CAST(s) (s)
 #endif
 
-// Forward Declarations
-class NCURSES_IMPEXP NCursesPanel;
-class NCURSES_IMPEXP NCursesMenu;
-class NCURSES_IMPEXP NCursesForm;
+#ifndef NCURSES_CXX_IMPEXP
+#define NCURSES_CXX_IMPEXP  /* nothing */
+#endif
 
-class NCURSES_IMPEXP NCursesException
+// Forward Declarations
+class NCURSES_CXX_IMPEXP NCursesPanel;
+class NCURSES_CXX_IMPEXP NCursesMenu;
+class NCURSES_CXX_IMPEXP NCursesForm;
+
+class NCURSES_CXX_IMPEXP NCursesException
 {
 public:
   const char *message;
@@ -153,12 +158,13 @@ public:
     : message(msg), errorno (err)
     {};
 
-  NCursesException (const char* msg)
+  explicit NCursesException (const char* msg)
     : message(msg), errorno (E_SYSTEM_ERROR)
     {};
 
   NCursesException& operator=(const NCursesException& rhs)
   {
+    message = rhs.message;
     errorno = rhs.errorno;
     return *this;
   }
@@ -177,7 +183,7 @@ public:
   }
 };
 
-class NCURSES_IMPEXP NCursesPanelException : public NCursesException
+class NCURSES_CXX_IMPEXP NCursesPanelException : public NCursesException
 {
 public:
   const NCursesPanel* p;
@@ -194,7 +200,7 @@ public:
     p (panel)
     {};
 
-  NCursesPanelException (int err) :
+  explicit NCursesPanelException (int err) :
     NCursesException ("panel library error", err),
     p (0)
     {};
@@ -228,7 +234,7 @@ public:
   }
 };
 
-class NCURSES_IMPEXP NCursesMenuException : public NCursesException
+class NCURSES_CXX_IMPEXP NCursesMenuException : public NCursesException
 {
 public:
   const NCursesMenu* m;
@@ -245,7 +251,7 @@ public:
     m (menu)
     {};
 
-  NCursesMenuException (int err) :
+  explicit NCursesMenuException (int err) :
     NCursesException ("menu library error", err),
     m (0)
     {};
@@ -279,7 +285,7 @@ public:
   }
 };
 
-class NCURSES_IMPEXP NCursesFormException : public NCursesException
+class NCURSES_CXX_IMPEXP NCursesFormException : public NCursesException
 {
 public:
   const NCursesForm* f;
@@ -296,7 +302,7 @@ public:
     f (form)
     {};
 
-  NCursesFormException (int err) :
+  explicit NCursesFormException (int err) :
     NCursesException ("form library error", err),
     f (0)
     {};
@@ -340,7 +346,6 @@ using std::endl;
 #  else
 #     include <iostream.h>
 #  endif
-   extern "C" void exit(int);
 #endif
 
 inline void THROW(const NCursesException *e) {

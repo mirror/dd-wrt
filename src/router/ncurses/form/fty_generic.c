@@ -1,5 +1,6 @@
 /****************************************************************************
- * Copyright (c) 2008-2016,2018 Free Software Foundation, Inc.              *
+ * Copyright 2018-2020,2021 Thomas E. Dickey                                *
+ * Copyright 2008-2012,2016 Free Software Foundation, Inc.                  *
  *                                                                          *
  * Permission is hereby granted, free of charge, to any person obtaining a  *
  * copy of this software and associated documentation files (the            *
@@ -34,36 +35,37 @@
 
 #include "form.priv.h"
 
-MODULE_ID("$Id: fty_generic.c,v 1.8 2018/12/16 00:14:02 tom Exp $")
+MODULE_ID("$Id: fty_generic.c,v 1.15 2021/03/27 23:49:53 tom Exp $")
 
 /*
  * This is not a full implementation of a field type, but adds some
  * support for higher level languages with some restrictions to interop
- * with C language. Especially the collection of arguments for the
+ * with C language. In particular, the collection of arguments for the
  * various fieldtypes is not based on the vararg C mechanism, but on a
- * iterator based callback mechanism that allowes the high level language
+ * iterator based callback mechanism that allows the high level language
  * to provide the arguments as a structure. Most languages have mechanisms
  * to layout structures so that they can be passed to C.
+ *
  * The languages can register a new generic fieldtype dynamically and store
  * a handle (key) to the calling object as an argument. Together with that
  * it can register a freearg callback, so that the high level language
  * remains in control of the memory management of the arguments they pass.
  * The design idea is, that the high-level language - typically a OO
- * language like C# or Java, uses it's own dispatching mechanisms
+ * language like C# or Java, uses its own dispatching mechanisms
  * (polymorphism) to call the proper check routines responsible for the
  * argument type. So these language implement typically only one generic
  * fieldtype they register with the forms library using this call.
  *
- * For that purpose we have extended the fieldtype struc by a new element
- * that gets the arguments from a single struct passed by the caller. 
- * 
+ * For that purpose we have extended the fieldtype structure by a new element
+ * that gets the arguments from a single struct passed by the caller.
+ *
  */
 #if NCURSES_INTEROP_FUNCS
 
 /*---------------------------------------------------------------------------
-|   Facility      :  libnform  
+|   Facility      :  libnform
 |   Function      :  static void *Generic_This_Type( void * arg )
-|   
+|
 |   Description   :  We interpret the passed arg just as a handle the
 |                    calling language uses to keep track of its allocated
 |                    argument structures. We can simply copy it back.
@@ -89,7 +91,7 @@ Generic_This_Type(void *arg)
 |                    write a field_check and a char_check function and give
 |                    them as input to this call. A callback to allow the
 |                    release of the allocated memory must also be provided.
-|                    For generic field types, we provide some more 
+|                    For generic field types, we provide some more
 |                    information about the field as parameters.
 |
 |                    If an error occurs, errno is set to
@@ -98,7 +100,7 @@ Generic_This_Type(void *arg)
 |
 |   Return Values :  Fieldtype pointer or NULL if error occurred
 +--------------------------------------------------------------------------*/
-NCURSES_EXPORT(FIELDTYPE *)
+FORM_EXPORT(FIELDTYPE *)
 _nc_generic_fieldtype(bool (*const field_check) (FORM *, FIELD *, const void *),
 		      bool (*const char_check) (int, FORM *, FIELD *, const
 						void *),
@@ -145,16 +147,16 @@ _nc_generic_fieldtype(bool (*const field_check) (FORM *, FIELD *, const void *),
 }
 
 /*---------------------------------------------------------------------------
-|   Facility      :  libnform  
+|   Facility      :  libnform
 |   Function      :  static TypeArgument *GenericArgument(
 |                      const FIELDTYPE* typ,
 |                      int (*argiterator)(void**),
 |                      int* err)
-|   
+|
 |   Description   :  The iterator callback must browse through all fieldtype
 |                    parameters that have an argument associated with the
 |                    type. The iterator returns 1 if the operation to get
-|                    the next element was successfull, 0 otherwise. If the
+|                    the next element was successful, 0 otherwise. If the
 |                    iterator could move to the next argument, it fills
 |                    the void* pointer representing the argument into the
 |                    location provided as argument to the iterator.
@@ -206,20 +208,20 @@ GenericArgument(const FIELDTYPE *typ,
 }
 
 /*---------------------------------------------------------------------------
-|   Facility      :  libnform  
+|   Facility      :  libnform
 |   Function      :  int _nc_set_generic_fieldtype(
 |                      FIELD* field,
 |                      FIELDTYPE* ftyp,
 |                      int (*argiterator)(void**))
-|   
+|
 |   Description   :  Assign the fieldtype to the field and use the iterator
-|                    mechanism to get the arguments when a check is 
+|                    mechanism to get the arguments when a check is
 |                    performed.
 |
 |   Return Values :  E_OK if all went well
 |                    E_SYSTEM_ERROR if an error occurred
 +--------------------------------------------------------------------------*/
-NCURSES_EXPORT(int)
+FORM_EXPORT(int)
 _nc_set_generic_fieldtype(FIELD *field,
 			  FIELDTYPE *ftyp,
 			  int (*argiterator) (void **))
@@ -264,23 +266,23 @@ _nc_set_generic_fieldtype(FIELD *field,
 }
 
 /*---------------------------------------------------------------------------
-|   Facility      :  libnform  
+|   Facility      :  libnform
 |   Function      :  WINDOW* _nc_form_cursor(
 |                      FORM* form,
 |                      int *pRow, int *pCol)
-|   
+|
 |   Description   :  Get the current position of the form cursor position
 |                    We also return the field window
 |
-|   Return Values :  The fields Window or NULL on error
+|   Return Values :  The field's Window or NULL on error
 +--------------------------------------------------------------------------*/
-NCURSES_EXPORT(WINDOW *)
+FORM_EXPORT(WINDOW *)
 _nc_form_cursor(const FORM *form, int *pRow, int *pCol)
 {
   int code = E_SYSTEM_ERROR;
   WINDOW *res = (WINDOW *)0;
 
-  if (!(form == 0 || pRow == 0 || pCol == 0))
+  if (form != 0 && pRow != 0 && pCol != 0)
     {
       *pRow = form->currow;
       *pCol = form->curcol;

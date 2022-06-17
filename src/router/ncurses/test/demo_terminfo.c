@@ -1,5 +1,6 @@
 /****************************************************************************
- * Copyright (c) 2009-2017,2019 Free Software Foundation, Inc.              *
+ * Copyright 2019-2020,2021 Thomas E. Dickey                                *
+ * Copyright 2009-2016,2017 Free Software Foundation, Inc.                  *
  *                                                                          *
  * Permission is hereby granted, free of charge, to any person obtaining a  *
  * copy of this software and associated documentation files (the            *
@@ -29,7 +30,7 @@
 /*
  * Author: Thomas E. Dickey
  *
- * $Id: demo_terminfo.c,v 1.49 2019/08/24 23:11:01 tom Exp $
+ * $Id: demo_terminfo.c,v 1.52 2021/03/20 16:07:29 tom Exp $
  *
  * A simple demo of the terminfo interface.
  */
@@ -46,7 +47,7 @@
 #endif
 #endif
 
-static void failed(const char *) GCC_NORETURN;
+static GCC_NORETURN void failed(const char *);
 
 static void
 failed(const char *msg)
@@ -841,10 +842,12 @@ main(int argc, char *argv[])
 	case 's':
 	    s_opt = TRUE;
 	    break;
-#ifdef NCURSES_VERSION
 	case 'x':
+#ifdef NCURSES_VERSION
 	    x_opt = TRUE;
+#endif
 	    break;
+#ifdef NCURSES_VERSION
 	case 'y':
 	    y_opt = TRUE;
 	    x_opt = TRUE;

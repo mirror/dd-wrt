@@ -1,5 +1,6 @@
 /****************************************************************************
- * Copyright (c) 1998-2018,2019 Free Software Foundation, Inc.              *
+ * Copyright 2018-2020,2021 Thomas E. Dickey                                *
+ * Copyright 1998-2016,2017 Free Software Foundation, Inc.                  *
  *                                                                          *
  * Permission is hereby granted, free of charge, to any person obtaining a  *
  * copy of this software and associated documentation files (the            *
@@ -97,7 +98,7 @@
 #include <ctype.h>
 #include <tic.h>
 
-MODULE_ID("$Id: captoinfo.c,v 1.97 2019/10/15 23:13:35 tom Exp $")
+MODULE_ID("$Id: captoinfo.c,v 1.102 2021/09/04 10:29:15 tom Exp $")
 
 #if 0
 #define DEBUG_THIS(p) DEBUG(9, p)
@@ -215,12 +216,15 @@ cvtchar(register const char *sp)
 	}
 	break;
     case '^':
-	c = UChar(*++sp);
-	if (c == '?')
-	    c = 127;
-	else
-	    c &= 0x1f;
 	len = 2;
+	c = UChar(*++sp);
+	if (c == '?') {
+	    c = 127;
+	} else if (c == '\0') {
+	    len = 1;
+	} else {
+	    c &= 0x1f;
+	}
 	break;
     default:
 	c = UChar(*sp);
@@ -630,12 +634,15 @@ _nc_infotocap(const char *cap GCC_UNUSED, const char *str, int const parameteriz
 	int offset;
     } fixups[MAX_TC_FIXUPS];
 
-    DEBUG_THIS(("_nc_infotocap params %d, %s", parameterized, str));
+    DEBUG_THIS(("_nc_infotocap %s params %d, %s",
+		_nc_strict_bsd ? "strict" : "loose",
+		parameterized,
+		_nc_visbuf(str)));
 
     /* we may have to move some trailing mandatory padding up front */
     padding = str + strlen(str) - 1;
     if (padding > str && *padding == '>') {
-	if (*--padding == '/')
+	if (padding > (str + 1) && *--padding == '/')
 	    --padding;
 	while (isdigit(UChar(*padding)) || *padding == '.' || *padding == '*')
 	    padding--;
@@ -669,6 +676,11 @@ _nc_infotocap(const char *cap GCC_UNUSED, const char *str, int const parameteriz
 		bufptr = save_char(bufptr, *str++);
 		bufptr = save_char(bufptr, *str);
 	    }
+	} else if (str[0] == ':') {
+	    bufptr = save_char(bufptr, '\\');
+	    bufptr = save_char(bufptr, '0');
+	    bufptr = save_char(bufptr, '7');
+	    bufptr = save_char(bufptr, '2');
 	} else if (str[0] == '\\') {
 	    if (str[1] == '\0' || (str + 1) == trimmed) {
 		bufptr = save_string(bufptr, "\\134");
@@ -928,7 +940,7 @@ _nc_infotocap(const char *cap GCC_UNUSED, const char *str, int const parameteriz
 		break;
 
 		/*
-		 * %s isn't in termcap, but it's convenient to pass it through
+		 * %s isn't in termcap, but it is convenient to pass it through
 		 * so we can represent things like terminfo pfkey strings in
 		 * termcap notation.
 		 */

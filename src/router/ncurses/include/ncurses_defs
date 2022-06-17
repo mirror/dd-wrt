@@ -1,6 +1,7 @@
-# $Id: ncurses_defs,v 1.91 2019/06/23 15:19:43 tom Exp $
+# $Id: ncurses_defs,v 1.97 2021/06/26 18:56:32 tom Exp $
 ##############################################################################
-# Copyright (c) 2000-2018,2019 Free Software Foundation, Inc.                #
+# Copyright 2018-2020,2021 Thomas E. Dickey                                  #
+# Copyright 2000-2016,2017 Free Software Foundation, Inc.                    #
 #                                                                            #
 # Permission is hereby granted, free of charge, to any person obtaining a    #
 # copy of this software and associated documentation files (the "Software"), #
@@ -47,7 +48,7 @@ HAVE_BIG_CORE
 HAVE_BSD_CGETENT
 HAVE_BSD_SIGNAL_H
 HAVE_BSD_STRING_H
-HAVE_BTOWC 
+HAVE_BTOWC
 HAVE_BUILTIN_H
 HAVE_CHGAT	1
 HAVE_COLOR_CONTENT	1
@@ -62,6 +63,8 @@ HAVE_DERWIN	1
 HAVE_DIRENT_H
 HAVE_DUPWIN	1
 HAVE_ERRNO
+HAVE_EXIT_CURSES	1
+HAVE_EXIT_TERMINFO	1
 HAVE_FCNTL_H
 HAVE_FILTER	1
 HAVE_FORM_H
@@ -119,13 +122,13 @@ HAVE_NANOSLEEP
 HAVE_NC_ALLOC_H
 HAVE_NEWPAD	1
 HAVE_PANEL_H
-HAVE_PCRE2_POSIX_H
+HAVE_PCRE2POSIX_H
 HAVE_PCREPOSIX_H
 HAVE_POLL
 HAVE_POLL_H
 HAVE_PURIFY
 HAVE_PUTENV
-HAVE_PUTWC 
+HAVE_PUTWC
 HAVE_PUTWIN	1
 HAVE_REGEXPR_H_FUNCS
 HAVE_REGEXP_H_FUNCS
@@ -140,6 +143,7 @@ HAVE_SCR_DUMP 1
 HAVE_SELECT
 HAVE_SETBUF
 HAVE_SETBUFFER
+HAVE_SETFSUID
 HAVE_SETENV
 HAVE_SETUPTERM	1
 HAVE_SETVBUF
@@ -204,7 +208,7 @@ HAVE_VW_PRINTW	1
 HAVE_WCHGAT	1
 HAVE_WCSRTOMBS
 HAVE_WCSTOMBS
-HAVE_WCTOB 
+HAVE_WCTOB
 HAVE_WCTOMB
 HAVE_WCTYPE_H
 HAVE_WINSDELLN	1

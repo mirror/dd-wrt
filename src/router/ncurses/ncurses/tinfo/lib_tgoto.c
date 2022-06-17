@@ -1,5 +1,6 @@
 /****************************************************************************
- * Copyright (c) 2000-2018,2019 Free Software Foundation, Inc.              *
+ * Copyright 2018-2019,2020 Thomas E. Dickey                                *
+ * Copyright 2000-2008,2012 Free Software Foundation, Inc.                  *
  *                                                                          *
  * Permission is hereby granted, free of charge, to any person obtaining a  *
  * copy of this software and associated documentation files (the            *
@@ -35,7 +36,7 @@
 #include <ctype.h>
 #include <termcap.h>
 
-MODULE_ID("$Id: lib_tgoto.c,v 1.18 2019/10/26 22:43:48 tom Exp $")
+MODULE_ID("$Id: lib_tgoto.c,v 1.21 2020/05/27 23:55:56 tom Exp $")
 
 #if !PURE_TERMINFO
 static bool
@@ -206,6 +207,6 @@ tgoto(const char *string, int x, int y)
 	result = tgoto_internal(string, x, y);
     else
 #endif
-	result = TPARM_2(string, y, x);
+	result = TIPARM_2(string, y, x);
     returnPtr(result);
 }

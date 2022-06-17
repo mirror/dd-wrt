@@ -1,5 +1,6 @@
 /****************************************************************************
- * Copyright (c) 1998-2004,2010 Free Software Foundation, Inc.              *
+ * Copyright 2020,2021 Thomas E. Dickey                                     *
+ * Copyright 1998-2004,2010 Free Software Foundation, Inc.                  *
  *                                                                          *
  * Permission is hereby granted, free of charge, to any person obtaining a  *
  * copy of this software and associated documentation files (the            *
@@ -32,12 +33,12 @@
 
 #include "form.priv.h"
 
-MODULE_ID("$Id: frm_cursor.c,v 1.10 2010/01/23 21:14:36 tom Exp $")
+MODULE_ID("$Id: frm_cursor.c,v 1.13 2021/06/17 21:20:30 tom Exp $")
 
 /*---------------------------------------------------------------------------
-|   Facility      :  libnform  
+|   Facility      :  libnform
 |   Function      :  int pos_form_cursor(FORM * form)
-|   
+|
 |   Description   :  Moves the form window cursor to the location required
 |                    by the form driver to resume form processing. This may
 |                    be needed after the application calls a curses library
@@ -48,7 +49,7 @@ MODULE_ID("$Id: frm_cursor.c,v 1.10 2010/01/23 21:14:36 tom Exp $")
 |                    E_BAD_ARGUMENT            - Invalid form pointer
 |                    E_NOT_POSTED              - Form is not posted
 +--------------------------------------------------------------------------*/
-NCURSES_EXPORT(int)
+FORM_EXPORT(int)
 pos_form_cursor(FORM *form)
 {
   int res;

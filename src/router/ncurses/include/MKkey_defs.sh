@@ -1,7 +1,8 @@
 #! /bin/sh
-# $Id: MKkey_defs.sh,v 1.18 2019/04/06 23:38:16 tom Exp $
+# $Id: MKkey_defs.sh,v 1.21 2020/08/17 10:45:33 tom Exp $
 ##############################################################################
-# Copyright (c) 2001-2017,2019 Free Software Foundation, Inc.                #
+# Copyright 2019,2020 Thomas E. Dickey                                       #
+# Copyright 2001-2013,2017 Free Software Foundation, Inc.                    #
 #                                                                            #
 # Permission is hereby granted, free of charge, to any person obtaining a    #
 # copy of this software and associated documentation files (the "Software"), #
@@ -62,8 +63,7 @@ fi
 
 # add keys that we generate automatically:
 cat >>$data <<EOF
-key_resize	kr1	str	R1	KEY_RESIZE	+	-----	Terminal resize event
-key_event	kv1	str	V1	KEY_EVENT	+	-----	We were interrupted by an event
+key_resize	kr1	str	R1	KEY_RESIZE	+	NCURSES_EXT_FUNCS 	Terminal resize event
 EOF
 
 THIS=./`basename $0`
@@ -141,6 +141,12 @@ $5 != "-" && $6 != "-" {
 			maxkey = thiskey;
 		if (pass == 2 || pass == 3) {
 			showkey=sprintf(octal_fmt, thiskey);
+			ifdef = 0;
+			if (index($7,"NCURSES_") == 1) {
+				ifdef = 1;
+				printf "\n";
+				printf "#ifdef %s\n", $7;
+			}
 			if ($5 == "KEY_F(0)" ) {
 				printf "#define "
 				print_cols("KEY_F0", 16);
@@ -158,6 +164,9 @@ $5 != "-" && $6 != "-" {
 				for (i = 8; i <= NF; i++)
 					printf " %s", $i
 				print " */"
+			}
+			if (ifdef != 0) {
+				printf "#endif\n";
 			}
 		}
 	}

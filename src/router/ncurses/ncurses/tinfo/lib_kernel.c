@@ -1,5 +1,6 @@
 /****************************************************************************
- * Copyright (c) 1998-2009,2010 Free Software Foundation, Inc.              *
+ * Copyright 2020 Thomas E. Dickey                                          *
+ * Copyright 1998-2009,2010 Free Software Foundation, Inc.                  *
  *                                                                          *
  * Permission is hereby granted, free of charge, to any person obtaining a  *
  * copy of this software and associated documentation files (the            *
@@ -48,8 +49,9 @@
 
 #include <curses.priv.h>
 
-MODULE_ID("$Id: lib_kernel.c,v 1.31 2010/12/19 01:21:19 tom Exp $")
+MODULE_ID("$Id: lib_kernel.c,v 1.34 2020/11/21 22:05:58 tom Exp $")
 
+#ifdef TERMIOS
 static int
 _nc_vdisable(void)
 {
@@ -70,6 +72,7 @@ _nc_vdisable(void)
 #endif
     return value;
 }
+#endif /* TERMIOS */
 
 /*
  *	erasechar()
@@ -91,6 +94,8 @@ NCURSES_SP_NAME(erasechar) (NCURSES_SP_DCL0)
 	result = termp->Ottyb.c_cc[VERASE];
 	if (result == _nc_vdisable())
 	    result = ERR;
+#elif defined(EXP_WIN32_DRIVER)
+	result = ERR;
 #else
 	result = termp->Ottyb.sg_erase;
 #endif
@@ -126,6 +131,8 @@ NCURSES_SP_NAME(killchar) (NCURSES_SP_DCL0)
 	result = termp->Ottyb.c_cc[VKILL];
 	if (result == _nc_vdisable())
 	    result = ERR;
+#elif defined(EXP_WIN32_DRIVER)
+	result = ERR;
 #else
 	result = termp->Ottyb.sg_kill;
 #endif
@@ -161,7 +168,11 @@ NCURSES_SP_NAME(flushinp) (NCURSES_SP_DCL0)
 #else
 	errno = 0;
 	do {
+#if defined(EXP_WIN32_DRIVER)
+	    _nc_console_flush(_nc_console_fd2handle(termp->Filedes));
+#else
 	    ioctl(termp->Filedes, TIOCFLUSH, 0);
+#endif
 	} while
 	    (errno == EINTR);
 #endif

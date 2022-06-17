@@ -1,5 +1,6 @@
 /****************************************************************************
- * Copyright (c) 1998-2017,2018 Free Software Foundation, Inc.              *
+ * Copyright 2018-2020,2021 Thomas E. Dickey                                *
+ * Copyright 1998-2011,2017 Free Software Foundation, Inc.                  *
  *                                                                          *
  * Permission is hereby granted, free of charge, to any person obtaining a  *
  * copy of this software and associated documentation files (the            *
@@ -38,9 +39,10 @@
 **
 */
 
+#define NEED_KEY_EVENT
 #include <curses.priv.h>
 
-MODULE_ID("$Id: lib_getstr.c,v 1.33 2018/09/01 20:18:09 tom Exp $")
+MODULE_ID("$Id: lib_getstr.c,v 1.37 2021/09/04 10:29:15 tom Exp $")
 
 /*
  * This wipes out the last character, no matter whether it was a tab, control
@@ -98,8 +100,7 @@ wgetnstr_events(WINDOW *win,
     oldcbreak = sp->_cbreak;
     NCURSES_SP_NAME(nl) (NCURSES_SP_ARG);
     NCURSES_SP_NAME(noecho) (NCURSES_SP_ARG);
-    NCURSES_SP_NAME(noraw) (NCURSES_SP_ARG);
-    NCURSES_SP_NAME(cbreak) (NCURSES_SP_ARG);
+    NCURSES_SP_NAME(raw) (NCURSES_SP_ARG);
 
     erasec = NCURSES_SP_NAME(erasechar) (NCURSES_SP_ARG);
     killc = NCURSES_SP_NAME(killchar) (NCURSES_SP_ARG);
@@ -113,7 +114,7 @@ wgetnstr_events(WINDOW *win,
     while ((ch = wgetch_events(win, evl)) != ERR) {
 	/*
 	 * Some terminals (the Wyse-50 is the most common) generate
-	 * a \n from the down-arrow key.  With this logic, it's the
+	 * a \n from the down-arrow key.  With this logic, it is the
 	 * user's choice whether to set kcud=\n for wgetch();
 	 * terminating *getstr() with \n should work either way.
 	 */

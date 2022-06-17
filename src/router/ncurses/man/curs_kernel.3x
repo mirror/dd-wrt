@@ -1,5 +1,6 @@
 .\"***************************************************************************
-.\" Copyright (c) 1998-2018,2019 Free Software Foundation, Inc.              *
+.\" Copyright 2018-2019,2020 Thomas E. Dickey                                *
+.\" Copyright 1998-2016,2017 Free Software Foundation, Inc.                  *
 .\"                                                                          *
 .\" Permission is hereby granted, free of charge, to any person obtaining a  *
 .\" copy of this software and associated documentation files (the            *
@@ -26,7 +27,7 @@
 .\" authorization.                                                           *
 .\"***************************************************************************
 .\"
-.\" $Id: curs_kernel.3x,v 1.27 2019/11/30 21:06:30 tom Exp $
+.\" $Id: curs_kernel.3x,v 1.29 2020/10/17 23:22:35 tom Exp $
 .ie \n(.g .ds `` \(lq
 .el       .ds `` ``
 .ie \n(.g .ds '' \(rq
@@ -58,19 +59,19 @@
 \fBint def_prog_mode(void);\fR
 .br
 \fBint def_shell_mode(void);\fR
-.br
+.sp
 \fBint reset_prog_mode(void);\fR
 .br
 \fBint reset_shell_mode(void);\fR
-.br
+.sp
 \fBint resetty(void);\fR
 .br
 \fBint savetty(void);\fR
-.br
+.sp
 \fBvoid getsyx(int \fP\fIy\fP\fB, int \fP\fIx\fP\fB);\fR
 .br
 \fBvoid setsyx(int \fP\fIy\fP\fB, int \fP\fIx\fP\fB);\fR
-.br
+.sp
 \fBint ripoffline(int \fP\fIline\fP\fB, int (*\fP\fIinit\fP\fB)(WINDOW *, int));\fR
 .br
 \fBint curs_set(int \fP\fIvisibility\fP\fB);\fR

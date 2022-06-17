@@ -1,6 +1,7 @@
 // * This makes emacs happy -*-Mode: C++;-*-
 /****************************************************************************
- * Copyright (c) 1998-2011,2019 Free Software Foundation, Inc.              *
+ * Copyright 2019-2020,2021 Thomas E. Dickey                                *
+ * Copyright 1998-2005,2011 Free Software Foundation, Inc.                  *
  *                                                                          *
  * Permission is hereby granted, free of charge, to any person obtaining a  *
  * copy of this software and associated documentation files (the            *
@@ -31,14 +32,25 @@
  *   Author: Juergen Pfeifer, 1997                                          *
  ****************************************************************************/
 
-// $Id: cursesapp.h,v 1.13 2019/07/28 19:55:27 tom Exp $
+// $Id: cursesapp.h,v 1.18 2021/06/17 21:26:02 tom Exp $
 
 #ifndef NCURSES_CURSESAPP_H_incl
 #define NCURSES_CURSESAPP_H_incl
 
 #include <cursslk.h>
 
-class NCURSES_IMPEXP NCursesApplication {
+#if (defined(_WIN32) || defined(_WIN64))
+# define NCURSES_CXX_MAIN_NAME cursespp_main
+# define NCURSES_CXX_MAIN \
+  int main(int argc, char *argv[]) { \
+  	return NCURSES_CXX_MAIN_NAME(argc, argv); \
+  }
+#else
+# define NCURSES_CXX_MAIN_NAME main
+#endif
+NCURSES_CXX_IMPEXP int NCURSES_CXX_MAIN_NAME(int argc, char *argv[]);
+
+class NCURSES_CXX_IMPEXP NCursesApplication {
 public:
   typedef struct _slk_link {          // This structure is used to maintain
     struct _slk_link* prev;           // a stack of SLKs
@@ -105,13 +117,13 @@ protected:
   {
   }
 
+  static NCursesWindow *&getTitleWindow();
+
 public:
   virtual ~NCursesApplication() THROWS(NCursesException);
 
   // Get a pointer to the current application object
-  static NCursesApplication* getApplication() {
-    return theApp;
-  }
+  static NCursesApplication* getApplication();
 
   // This method runs the application and returns its exit value
   int operator()(void);
@@ -175,5 +187,5 @@ public:
   }
 
 };
- 
+
 #endif /* NCURSES_CURSESAPP_H_incl */

@@ -1,5 +1,6 @@
 /****************************************************************************
- * Copyright (c) 1998-2012,2019 Free Software Foundation, Inc.              *
+ * Copyright 2019-2020,2021 Thomas E. Dickey                                *
+ * Copyright 1998-2011,2012 Free Software Foundation, Inc.                  *
  *                                                                          *
  * Permission is hereby granted, free of charge, to any person obtaining a  *
  * copy of this software and associated documentation files (the            *
@@ -34,11 +35,25 @@
 
 #include <ctype.h>
 
+#ifndef USE_ROOT_ACCESS
+#if HAVE_SETFSUID
+#include <sys/fsuid.h>
+#else
+#include <sys/stat.h>
+#endif
+#endif
+
 #include <tic.h>
 
-MODULE_ID("$Id: access.c,v 1.24 2019/01/19 15:38:07 tom Exp $")
+MODULE_ID("$Id: access.c,v 1.31 2021/08/29 10:35:17 tom Exp $")
 
 #define LOWERCASE(c) ((isalpha(UChar(c)) && isupper(UChar(c))) ? tolower(UChar(c)) : (c))
+
+#ifdef _NC_MSC
+# define ACCESS(FN, MODE) access((FN), (MODE)&(R_OK|W_OK))
+#else
+# define ACCESS access
+#endif
 
 NCURSES_EXPORT(char *)
 _nc_rootname(char *path)
@@ -111,7 +126,7 @@ _nc_access(const char *path, int mode)
 
     if (path == 0) {
 	result = -1;
-    } else if (access(path, mode) < 0) {
+    } else if (ACCESS(path, mode) < 0) {
 	if ((mode & W_OK) != 0
 	    && errno == ENOENT
 	    && strlen(path) < PATH_MAX) {
@@ -126,7 +141,7 @@ _nc_access(const char *path, int mode)
 	    if (head == leaf)
 		_nc_STRCPY(head, ".", sizeof(head));
 
-	    result = access(head, R_OK | W_OK | X_OK);
+	    result = ACCESS(head, R_OK | W_OK | X_OK);
 	} else {
 	    result = -1;
 	}
@@ -162,6 +177,32 @@ _nc_is_file_path(const char *path)
     return result;
 }
 
+#if HAVE_ISSETUGID
+#define is_elevated() issetugid()
+#elif HAVE_GETEUID && HAVE_GETEGID
+#define is_elevated() \
+	(getuid() != geteuid() \
+	 || getgid() != getegid())
+#else
+#define is_elevated() FALSE
+#endif
+
+#if HAVE_SETFSUID
+#define lower_privileges() \
+	    int save_err = errno; \
+	    setfsuid(getuid()); \
+	    setfsgid(getgid()); \
+	    errno = save_err
+#define resume_elevation() \
+	    save_err = errno; \
+	    setfsuid(geteuid()); \
+	    setfsgid(getegid()); \
+	    errno = save_err
+#else
+#define lower_privileges()	/* nothing */
+#define resume_elevation()	/* nothing */
+#endif
+
 #ifndef USE_ROOT_ENVIRON
 /*
  * Returns true if we allow application to use environment variables that are
@@ -170,15 +211,50 @@ _nc_is_file_path(const char *path)
 NCURSES_EXPORT(int)
 _nc_env_access(void)
 {
-#if HAVE_ISSETUGID
-    if (issetugid())
-	return FALSE;
-#elif HAVE_GETEUID && HAVE_GETEGID
-    if (getuid() != geteuid()
-	|| getgid() != getegid())
-	return FALSE;
-#endif
-    /* ...finally, disallow root */
-    return (getuid() != ROOT_UID) && (geteuid() != ROOT_UID);
+    int result = TRUE;
+
+    if (is_elevated()) {
+	result = FALSE;
+    } else if ((getuid() == ROOT_UID) || (geteuid() == ROOT_UID)) {
+	result = FALSE;
+    }
+    return result;
 }
+#endif /* USE_ROOT_ENVIRON */
+
+#ifndef USE_ROOT_ACCESS
+/*
+ * Limit privileges if possible; otherwise disallow access for updating files.
+ */
+NCURSES_EXPORT(FILE *)
+_nc_safe_fopen(const char *path, const char *mode)
+{
+    FILE *result = NULL;
+#if HAVE_SETFSUID
+    lower_privileges();
+    result = fopen(path, mode);
+    resume_elevation();
+#else
+    if (!is_elevated() || *mode == 'r') {
+	result = fopen(path, mode);
+    }
 #endif
+    return result;
+}
+
+NCURSES_EXPORT(int)
+_nc_safe_open3(const char *path, int flags, mode_t mode)
+{
+    int result = -1;
+#if HAVE_SETFSUID
+    lower_privileges();
+    result = open(path, flags, mode);
+    resume_elevation();
+#else
+    if (!is_elevated() || (flags & O_RDONLY)) {
+	result = open(path, flags, mode);
+    }
+#endif
+    return result;
+}
+#endif /* USE_ROOT_ENVIRON */

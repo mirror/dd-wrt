@@ -1,6 +1,7 @@
-<!-- 
+<!--
   ****************************************************************************
-  * Copyright (c) 1998-2017,2018 Free Software Foundation, Inc.              *
+  * Copyright 2018-2020,2021 Thomas E. Dickey                                *
+  * Copyright 1998-2016,2017 Free Software Foundation, Inc.                  *
   *                                                                          *
   * Permission is hereby granted, free of charge, to any person obtaining a  *
   * copy of this software and associated documentation files (the            *
@@ -26,7 +27,7 @@
   * sale, use or other dealings in this Software without prior written       *
   * authorization.                                                           *
   ****************************************************************************
-  * @Id: curs_slk.3x,v 1.34 2018/07/28 22:20:54 tom Exp @
+  * @Id: curs_slk.3x,v 1.38 2021/06/17 21:26:02 tom Exp @
 -->
 <!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01//EN">
 <HTML>
@@ -58,6 +59,7 @@
        <STRONG>int</STRONG> <STRONG>slk_init(int</STRONG> <EM>fmt</EM><STRONG>);</STRONG>
 
        <STRONG>int</STRONG> <STRONG>slk_set(int</STRONG> <EM>labnum</EM><STRONG>,</STRONG> <STRONG>const</STRONG> <STRONG>char</STRONG> <STRONG>*</STRONG><EM>label</EM><STRONG>,</STRONG> <STRONG>int</STRONG> <EM>fmt</EM><STRONG>);</STRONG>
+       /* extension */
        <STRONG>int</STRONG> <STRONG>slk_wset(int</STRONG> <EM>labnum</EM><STRONG>,</STRONG> <STRONG>const</STRONG> <STRONG>wchar_t</STRONG> <STRONG>*</STRONG><EM>label</EM><STRONG>,</STRONG> <STRONG>int</STRONG> <EM>fmt</EM><STRONG>);</STRONG>
 
        <STRONG>char</STRONG> <STRONG>*slk_label(int</STRONG> <EM>labnum</EM><STRONG>);</STRONG>
@@ -203,6 +205,31 @@
                or if memory for the labels cannot be allocated.
 
 
+</PRE><H2><a name="h2-HISTORY">HISTORY</a></H2><PRE>
+       SVr3 introduced these functions:
+         slk_clear
+         slk_init
+         slk_label
+         slk_noutrefresh
+         slk_refresh
+         slk_restore
+         slk_set
+         slk_touch
+
+       SVr4 added these functions:
+         slk_attroff
+         slk_attron
+         slk_attrset
+         slk_start
+
+       X/Open Curses added these:
+         slk_attr_off
+         slk_attr_on
+         slk_attr_set
+         slk_color
+         slk_wset
+
+
 </PRE><H2><a name="h2-EXTENSIONS">EXTENSIONS</a></H2><PRE>
        X/Open  Curses  documents the <EM>opts</EM> argument as reserved for future use,
        saying that it must be null.  This implementation uses  that  parameter
@@ -270,6 +297,7 @@
 </ul>
 </li>
 <li><a href="#h2-RETURN-VALUE">RETURN VALUE</a></li>
+<li><a href="#h2-HISTORY">HISTORY</a></li>
 <li><a href="#h2-EXTENSIONS">EXTENSIONS</a></li>
 <li><a href="#h2-NOTES">NOTES</a></li>
 <li><a href="#h2-PORTABILITY">PORTABILITY</a></li>
