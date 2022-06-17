@@ -1359,18 +1359,6 @@ void showAutoOption(webs_t wp, char *propname, char *nvname, int nodisable)
 }
 #endif
 
-static void showOptions(webs_t wp, char *propname, char *names, char *select)
-{
-	char *next;
-	char var[80];
-
-	websWrite(wp, "<select name=\"%s\">\n", propname);
-	websWrite(wp, "<script type=\"text/javascript\">\n//<![CDATA[\n");
-	foreach(var, names, next) {
-		websWrite(wp, "document.write(\"<option value=\\\"%s\\\" %s >%s</option>\");\n", var, !strcmp(var, select) ? "selected=\\\"selected\\\"" : "", var);
-	}
-	websWrite(wp, "//]]>\n</script>\n</select>\n");
-}
 
 static void showOptions_trans(webs_t wp, char *propname, char *names, char **trans, char *select)
 {
@@ -1381,9 +1369,14 @@ static void showOptions_trans(webs_t wp, char *propname, char *names, char **tra
 	websWrite(wp, "<select name=\"%s\">\n", propname);
 	websWrite(wp, "<script type=\"text/javascript\">\n//<![CDATA[\n");
 	foreach(var, names, next) {
-		websWrite(wp, "document.write(\"<option value=\\\"%s\\\" %s >\" + %s + \"</option>\");\n", var, !strcmp(var, select) ? "selected=\\\"selected\\\"" : "", trans[cnt++]);
+		websWrite(wp, "document.write(\"<option value=\\\"%s\\\" %s >\" + %s + \"</option>\");\n", var, !strcmp(var, select) ? "selected=\\\"selected\\\"" : "", trans ?  trans[cnt++] : var);
 	}
 	websWrite(wp, "//]]>\n</script>\n</select>\n");
+}
+
+static void showOptions(webs_t wp, char *propname, char *names, char *select)
+{
+	showOptions_trans(wp, propname, names, NULL, select);
 }
 
 static void showOptions_ext_trans(webs_t wp, char *propname, char *names, char **trans, char *select, int disabled)
@@ -1395,7 +1388,7 @@ static void showOptions_ext_trans(webs_t wp, char *propname, char *names, char *
 	websWrite(wp, "<select name=\"%s\"%s>\n", propname, disabled ? " disabled=\"true\"" : "");
 	websWrite(wp, "<script type=\"text/javascript\">\n//<![CDATA[\n");
 	foreach(var, names, next) {
-		websWrite(wp, "document.write(\"<option value=\\\"%s\\\" %s >\" + %s + \"</option>\");\n", var, !strcmp(var, select) ? "selected=\\\"selected\\\"" : "", trans[cnt++]);
+		websWrite(wp, "document.write(\"<option value=\\\"%s\\\" %s >\" + %s + \"</option>\");\n", var, !strcmp(var, select) ? "selected=\\\"selected\\\"" : "", trans ? trans[cnt++] : var);
 	}
 	websWrite(wp, "//]]>\n</script>\n</select>\n");
 }
