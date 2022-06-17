@@ -280,6 +280,7 @@ typedef struct scan_io {
 struct dsl_scan_io_queue {
 	dsl_scan_t	*q_scn; /* associated dsl_scan_t */
 	vdev_t		*q_vd; /* top-level vdev that this queue represents */
+	zio_t		*q_zio; /* scn_zio_root child for waiting on IO */
 
 	/* trees used for sorting I/Os and extents of I/Os */
 	range_tree_t	*q_exts_by_addr;
@@ -1276,9 +1277,12 @@ dsl_scan_should_clear(dsl_scan_t *scn)
 		mutex_enter(&tvd->vdev_scan_io_queue_lock);
 		queue = tvd->vdev_scan_io_queue;
 		if (queue != NULL) {
-			/* # extents in exts_by_size = # in exts_by_addr */
+			/*
+			 * # of extents in exts_by_size = # in exts_by_addr.
+			 * B-tree efficiency is ~75%, but can be as low as 50%.
+			 */
 			mused += zfs_btree_numnodes(&queue->q_exts_by_size) *
-			    sizeof (range_seg_gap_t) + queue->q_sio_memused;
+			    3 * sizeof (range_seg_gap_t) + queue->q_sio_memused;
 		}
 		mutex_exit(&tvd->vdev_scan_io_queue_lock);
 	}
@@ -1824,6 +1828,7 @@ dsl_scan_recurse(dsl_scan_t *scn, dsl_dataset_t *ds, dmu_objset_type_t ostype,
     const zbookmark_phys_t *zb, dmu_tx_t *tx)
 {
 	dsl_pool_t *dp = scn->scn_dp;
+	spa_t *spa = dp->dp_spa;
 	int zio_flags = ZIO_FLAG_CANFAIL | ZIO_FLAG_SCAN_THREAD;
 	int err;
 
@@ -1838,7 +1843,7 @@ dsl_scan_recurse(dsl_scan_t *scn, dsl_dataset_t *ds, dmu_objset_type_t ostype,
 	if (dnp != NULL &&
 	    dnp->dn_bonuslen > DN_MAX_BONUS_LEN(dnp)) {
 		scn->scn_phys.scn_errors++;
-		spa_log_error(dp->dp_spa, zb);
+		spa_log_error(spa, zb);
 		return (SET_ERROR(EINVAL));
 	}
 
@@ -1849,7 +1854,7 @@ dsl_scan_recurse(dsl_scan_t *scn, dsl_dataset_t *ds, dmu_objset_type_t ostype,
 		int epb = BP_GET_LSIZE(bp) >> SPA_BLKPTRSHIFT;
 		arc_buf_t *buf;
 
-		err = arc_read(NULL, dp->dp_spa, bp, arc_getbuf_func, &buf,
+		err = arc_read(NULL, spa, bp, arc_getbuf_func, &buf,
 		    ZIO_PRIORITY_SCRUB, zio_flags, &flags, zb);
 		if (err) {
 			scn->scn_phys.scn_errors++;
@@ -1877,7 +1882,7 @@ dsl_scan_recurse(dsl_scan_t *scn, dsl_dataset_t *ds, dmu_objset_type_t ostype,
 			zio_flags |= ZIO_FLAG_RAW;
 		}
 
-		err = arc_read(NULL, dp->dp_spa, bp, arc_getbuf_func, &buf,
+		err = arc_read(NULL, spa, bp, arc_getbuf_func, &buf,
 		    ZIO_PRIORITY_SCRUB, zio_flags, &flags, zb);
 		if (err) {
 			scn->scn_phys.scn_errors++;
@@ -1896,7 +1901,7 @@ dsl_scan_recurse(dsl_scan_t *scn, dsl_dataset_t *ds, dmu_objset_type_t ostype,
 		objset_phys_t *osp;
 		arc_buf_t *buf;
 
-		err = arc_read(NULL, dp->dp_spa, bp, arc_getbuf_func, &buf,
+		err = arc_read(NULL, spa, bp, arc_getbuf_func, &buf,
 		    ZIO_PRIORITY_SCRUB, zio_flags, &flags, zb);
 		if (err) {
 			scn->scn_phys.scn_errors++;
@@ -1927,6 +1932,14 @@ dsl_scan_recurse(dsl_scan_t *scn, dsl_dataset_t *ds, dmu_objset_type_t ostype,
 			    DMU_USERUSED_OBJECT, tx);
 		}
 		arc_buf_destroy(buf, &buf);
+	} else if (!zfs_blkptr_verify(spa, bp, B_FALSE, BLK_VERIFY_LOG)) {
+		/*
+		 * Sanity check the block pointer contents, this is handled
+		 * by arc_read() for the cases above.
+		 */
+		scn->scn_phys.scn_errors++;
+		spa_log_error(spa, zb);
+		return (SET_ERROR(EINVAL));
 	}
 
 	return (0);
@@ -1976,19 +1989,6 @@ dsl_scan_visitbp(blkptr_t *bp, const zbookmark_phys_t *zb,
 		return;
 
 	scn->scn_visited_this_txg++;
-
-	/*
-	 * This debugging is commented out to conserve stack space.  This
-	 * function is called recursively and the debugging adds several
-	 * bytes to the stack for each call.  It can be commented back in
-	 * if required to debug an issue in dsl_scan_visitbp().
-	 *
-	 * dprintf_bp(bp,
-	 *     "visiting ds=%p/%llu zb=%llx/%llx/%llx/%llx bp=%p",
-	 *     ds, ds ? ds->ds_object : 0,
-	 *     zb->zb_objset, zb->zb_object, zb->zb_level, zb->zb_blkid,
-	 *     bp);
-	 */
 
 	if (BP_IS_HOLE(bp)) {
 		scn->scn_holes_this_txg++;
@@ -3037,15 +3037,19 @@ scan_io_queues_run_one(void *arg)
 	dsl_scan_io_queue_t *queue = arg;
 	kmutex_t *q_lock = &queue->q_vd->vdev_scan_io_queue_lock;
 	boolean_t suspended = B_FALSE;
-	range_seg_t *rs = NULL;
-	scan_io_t *sio = NULL;
+	range_seg_t *rs;
+	scan_io_t *sio;
+	zio_t *zio;
 	list_t sio_list;
 
 	ASSERT(queue->q_scn->scn_is_sorted);
 
 	list_create(&sio_list, sizeof (scan_io_t),
 	    offsetof(scan_io_t, sio_nodes.sio_list_node));
+	zio = zio_null(queue->q_scn->scn_zio_root, queue->q_scn->scn_dp->dp_spa,
+	    NULL, NULL, NULL, ZIO_FLAG_CANFAIL);
 	mutex_enter(q_lock);
+	queue->q_zio = zio;
 
 	/* Calculate maximum in-flight bytes for this vdev. */
 	queue->q_maxinflight_bytes = MAX(1, zfs_scan_vdev_limit *
@@ -3112,7 +3116,9 @@ scan_io_queues_run_one(void *arg)
 		scan_io_queue_insert_impl(queue, sio);
 	}
 
+	queue->q_zio = NULL;
 	mutex_exit(q_lock);
+	zio_nowait(zio);
 	list_destroy(&sio_list);
 }
 
@@ -4077,6 +4083,7 @@ scan_exec_io(dsl_pool_t *dp, const blkptr_t *bp, int zio_flags,
 	dsl_scan_t *scn = dp->dp_scan;
 	size_t size = BP_GET_PSIZE(bp);
 	abd_t *data = abd_alloc_for_io(size, B_FALSE);
+	zio_t *pio;
 
 	if (queue == NULL) {
 		ASSERT3U(scn->scn_maxinflight_bytes, >, 0);
@@ -4085,6 +4092,7 @@ scan_exec_io(dsl_pool_t *dp, const blkptr_t *bp, int zio_flags,
 			cv_wait(&spa->spa_scrub_io_cv, &spa->spa_scrub_lock);
 		spa->spa_scrub_inflight += BP_GET_PSIZE(bp);
 		mutex_exit(&spa->spa_scrub_lock);
+		pio = scn->scn_zio_root;
 	} else {
 		kmutex_t *q_lock = &queue->q_vd->vdev_scan_io_queue_lock;
 
@@ -4093,12 +4101,14 @@ scan_exec_io(dsl_pool_t *dp, const blkptr_t *bp, int zio_flags,
 		while (queue->q_inflight_bytes >= queue->q_maxinflight_bytes)
 			cv_wait(&queue->q_zio_cv, q_lock);
 		queue->q_inflight_bytes += BP_GET_PSIZE(bp);
+		pio = queue->q_zio;
 		mutex_exit(q_lock);
 	}
 
+	ASSERT(pio != NULL);
 	count_block(scn, dp->dp_blkstats, bp);
-	zio_nowait(zio_read(scn->scn_zio_root, spa, bp, data, size,
-	    dsl_scan_scrub_done, queue, ZIO_PRIORITY_SCRUB, zio_flags, zb));
+	zio_nowait(zio_read(pio, spa, bp, data, size, dsl_scan_scrub_done,
+	    queue, ZIO_PRIORITY_SCRUB, zio_flags, zb));
 }
 
 /*
