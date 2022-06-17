@@ -2835,7 +2835,7 @@ EJ_VISIBLE void ej_getwirelessnetmode(webs_t wp, int argc, char_t ** argv)
 #ifdef HAVE_OPENVPN
 EJ_VISIBLE void ej_show_openvpn_status(webs_t wp, int argc, char_t ** argv)
 {
-	websWrite(wp, "<fieldset>\n<legend><script type=\"text/javascript\">Capture(share.state)</script></legend>\n");
+	websWrite(wp, "<fieldset class=\"dark_fs_bg\">\n<legend><script type=\"text/javascript\">Capture(share.state)</script></legend>\n");
 	char *buffer = malloc(4096);
 	int len;
 
@@ -2852,7 +2852,7 @@ EJ_VISIBLE void ej_show_openvpn_status(webs_t wp, int argc, char_t ** argv)
 
 	pclose(in);
 	websWrite(wp, "</fieldset><br />");
-	websWrite(wp, "<fieldset>\n<legend><script type=\"text/javascript\">Capture(share.statu)</script></legend>\n");
+	websWrite(wp, "<fieldset class=\"dark_fs_bg\">\n<legend><script type=\"text/javascript\">Capture(share.statu)</script></legend>\n");
 	in = popen("/etc/openvpnstatus.sh", "r");
 	while ((len = fread(buffer, 1, 4095, in)) == 4095) {
 		buffer[len] = 0;
@@ -2864,7 +2864,7 @@ EJ_VISIBLE void ej_show_openvpn_status(webs_t wp, int argc, char_t ** argv)
 	}
 	pclose(in);
 	websWrite(wp, "</fieldset><br />");
-	websWrite(wp, "<fieldset>\n<legend><script type=\"text/javascript\">Capture(log.legend)</script></legend>\n");
+	websWrite(wp, "<fieldset class=\"dark_fs_bg\">\n<legend><script type=\"text/javascript\">Capture(log.legend)</script></legend>\n");
 	in = popen("/etc/openvpnlog.sh", "r");
 	while ((len = fread(buffer, 1, 4095, in)) == 4095) {
 		buffer[len] = 0;

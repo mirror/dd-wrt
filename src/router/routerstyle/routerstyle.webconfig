@@ -114,7 +114,7 @@ document.forms[0].onreset = function() {
 	<div class="setting">
 		<div class="label"><% tran("share.styl"); %></div>
 		<select name="router_style">
-		    <% show_styles(); %>
+		<% show_styles(); %>
 		</select>&nbsp;
 		<script type="text/javascript">
 		//<![CDATA[
@@ -127,6 +127,5 @@ document.forms[0].onreset = function() {
 		<input class="spaceradio" type="radio" name="router_style_dark" value="1" <% nvc("router_style_dark", "1"); %> /><% tran("share.enable"); %>&nbsp;
 		<input class="spaceradio" type="radio" name="router_style_dark" value="0" <% nvc("router_style_dark", "0"); %> /><% tran("share.disable"); %>
 	</div>
-
 </fieldset><br />
 <% show_ddwrt_inspired_themes(); %>

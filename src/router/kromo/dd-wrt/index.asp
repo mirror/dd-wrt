@@ -486,7 +486,11 @@ addEvent(window, "unload", function() {
 									</div>
 									<div class="setting">
 										<div class="label"><% tran("share.srvipname"); %></div>
-										<input maxlength="32" size="25" name="ntp_server" value="<% nvg("ntp_server"); %>" />
+										<script type="text/javascript">
+											//<![CDATA[
+										  document.write("<input maxlength=\"32\" size=\"25\" name=\"ntp_server\" value=\""<% nvg("ntp_server"); %>"\" placeholder=\"" + idx.ntp_input_placeholder + "\" />");
+											//]]>
+										</script>
 									</div>
 									<div class="setting">
 										<div class="label"><% tran("idx.ntp_timer"); %></div>
@@ -501,7 +505,6 @@ addEvent(window, "unload", function() {
 									</div>
 								</div>
 							</fieldset><br />
-							
 							<div class="submitFooter">
 								<script type="text/javascript">
 								//<![CDATA[

@@ -31,15 +31,12 @@ function to_apply(F) {
 var update;
 
 addEvent(window, "load", function() {
-	
 	update = new StatusbarUpdate();
 	update.start();
-
 });
 
 addEvent(window, "unload", function() {
 	update.stop();
-
 });
 	
 		//]]>
@@ -47,7 +44,6 @@ addEvent(window, "unload", function() {
 	</head>
 
 	<body class="gui">
-		
 		<div id="wrapper">
 			<div id="content">
 				<div id="header">
@@ -71,7 +67,7 @@ addEvent(window, "unload", function() {
 										<th><% tran("pforwardip.name"); %></th>
 										<th><% tran("pforwardip.src"); %></th>
 										<th><% tran("pforwardip.dest"); %></th>
-										<th class="center"><% tran("share.enable"); %></th>
+										<th class="center" width="10%"><% tran("share.enable"); %></th>
 										<th class="center" width="10%"><% tran("share.actiontbl"); %></th>
 									</tr>
 									<% show_forward_ip(); %>
