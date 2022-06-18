@@ -92,6 +92,7 @@
 #ifndef _LINUX_REFCOUNT_H
 #define _LINUX_REFCOUNT_H
 
+#include <asm/barrier.h>
 #include <linux/atomic.h>
 #include <linux/bug.h>
 #include <linux/compiler.h>

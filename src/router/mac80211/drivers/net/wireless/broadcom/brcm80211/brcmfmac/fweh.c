@@ -305,9 +305,12 @@ void brcmf_fweh_detach(struct brcmf_pub *drvr)
 	struct brcmf_fweh_info *fweh = &drvr->fweh;
 
 	/* cancel the worker */
-	cancel_work_sync(&fweh->event_work);
-	WARN_ON(!list_empty(&fweh->event_q));
-	memset(fweh->evt_handler, 0, sizeof(fweh->evt_handler));
+	/* cancel the worker if initialized */
+	if (fweh->event_work.func) {
+		cancel_work_sync(&fweh->event_work);
+		WARN_ON(!list_empty(&fweh->event_q));
+		memset(fweh->evt_handler, 0, sizeof(fweh->evt_handler));
+	}
 }
 
 /**
@@ -387,12 +390,11 @@ int brcmf_fweh_activate_events(struct brcmf_if *ifp)
  */
 void brcmf_fweh_process_event(struct brcmf_pub *drvr,
 			      struct brcmf_event *event_packet,
-			      u32 packet_len)
+			      u32 packet_len, gfp_t alloc_flag)
 {
 	enum brcmf_fweh_event_code code;
 	struct brcmf_fweh_info *fweh = &drvr->fweh;
 	struct brcmf_fweh_queue_item *event;
-	gfp_t alloc_flag = GFP_KERNEL;
 	void *data;
 	u32 datalen;
 
@@ -410,9 +412,6 @@ void brcmf_fweh_process_event(struct brcmf_pub *drvr,
 	if (datalen > BRCMF_DCMD_MAXLEN ||
 	    datalen + sizeof(*event_packet) > packet_len)
 		return;
-
-	if (in_interrupt())
-		alloc_flag = GFP_ATOMIC;
 
 	event = kzalloc(sizeof(*event) + datalen, alloc_flag);
 	if (!event)

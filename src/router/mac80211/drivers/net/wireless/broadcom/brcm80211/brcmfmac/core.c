@@ -152,7 +152,7 @@ static void _brcmf_set_multicast_list(struct work_struct *work)
 	/* Send down the multicast list first. */
 	cnt = netdev_mc_count(ndev);
 	buflen = sizeof(cnt) + (cnt * ETH_ALEN);
-	buf = kmalloc(buflen, GFP_ATOMIC);
+	buf = kmalloc(buflen, GFP_KERNEL);
 	if (!buf)
 		return;
 	bufp = buf;
@@ -189,9 +189,14 @@ static void _brcmf_set_multicast_list(struct work_struct *work)
 	/*Finally, pick up the PROMISC flag */
 	cmd_value = (ndev->flags & IFF_PROMISC) ? true : false;
 	err = brcmf_fil_cmd_int_set(ifp, BRCMF_C_SET_PROMISC, cmd_value);
-	if (err < 0)
-		bphy_err(drvr, "Setting BRCMF_C_SET_PROMISC failed, %d\n",
-			 err);
+	if (err < 0) {
+		/* PROMISC unsupported by firmware of older chips */
+		if (err == -EBADE)
+			bphy_info_once(drvr, "BRCMF_C_SET_PROMISC unsupported\n");
+		else
+			bphy_err(drvr, "Setting BRCMF_C_SET_PROMISC failed, err=%d\n",
+				 err);
+	}
 	brcmf_configure_arp_nd_offload(ifp, !cmd_value);
 }
 
@@ -396,7 +401,7 @@ void brcmf_txflowblock_if(struct brcmf_if *ifp,
 	spin_unlock_irqrestore(&ifp->netif_stop_lock, flags);
 }
 
-void brcmf_netif_rx(struct brcmf_if *ifp, struct sk_buff *skb)
+void brcmf_netif_rx(struct brcmf_if *ifp, struct sk_buff *skb, bool inirq)
 {
 	/* Most of Broadcom's firmwares send 802.11f ADD frame every time a new
 	 * STA connects to the AP interface. This is an obsoleted standard most
@@ -419,14 +424,15 @@ void brcmf_netif_rx(struct brcmf_if *ifp, struct sk_buff *skb)
 	ifp->ndev->stats.rx_packets++;
 
 	brcmf_dbg(DATA, "rx proto=0x%X\n", ntohs(skb->protocol));
-	if (in_interrupt())
+	if (inirq) {
 		netif_rx(skb);
-	else
+	} else {
 		/* If the receive is not processed inside an ISR,
 		 * the softirqd must be woken explicitly to service
 		 * the NET_RX_SOFTIRQ.  This is handled by netif_rx_ni().
 		 */
 		netif_rx_ni(skb);
+	}
 }
 
 void brcmf_netif_mon_rx(struct brcmf_if *ifp, struct sk_buff *skb)
@@ -475,7 +481,7 @@ void brcmf_netif_mon_rx(struct brcmf_if *ifp, struct sk_buff *skb)
 	skb->pkt_type = PACKET_OTHERHOST;
 	skb->protocol = htons(ETH_P_802_2);
 
-	brcmf_netif_rx(ifp, skb);
+	brcmf_netif_rx(ifp, skb, false);
 }
 
 static int brcmf_rx_hdrpull(struct brcmf_pub *drvr, struct sk_buff *skb,
@@ -487,7 +493,7 @@ static int brcmf_rx_hdrpull(struct brcmf_pub *drvr, struct sk_buff *skb,
 	ret = brcmf_proto_hdrpull(drvr, true, skb, ifp);
 
 	if (ret || !(*ifp) || !(*ifp)->ndev) {
-		if (ret != -ENODATA && *ifp)
+		if (ret != -ENODATA && *ifp && (*ifp)->ndev)
 			(*ifp)->ndev->stats.rx_errors++;
 		brcmu_pkt_buf_free_skb(skb);
 		return -ENODATA;
@@ -497,7 +503,7 @@ static int brcmf_rx_hdrpull(struct brcmf_pub *drvr, struct sk_buff *skb,
 	return 0;
 }
 
-void brcmf_rx_frame(struct device *dev, struct sk_buff *skb, bool handle_event)
+void brcmf_rx_frame(struct device *dev, struct sk_buff *skb, bool handle_event, bool inirq)
 {
 	struct brcmf_if *ifp;
 	struct brcmf_bus *bus_if = dev_get_drvdata(dev);
@@ -509,14 +515,16 @@ void brcmf_rx_frame(struct device *dev, struct sk_buff *skb, bool handle_event)
 		return;
 
 	if (brcmf_proto_is_reorder_skb(skb)) {
-		brcmf_proto_rxreorder(ifp, skb);
+		brcmf_proto_rxreorder(ifp, skb, inirq);
 	} else {
 		/* Process special event packets */
-		if (handle_event)
+		if (handle_event) {
+			gfp_t gfp = inirq ? GFP_ATOMIC : GFP_KERNEL;
 			brcmf_fweh_process_skb(ifp->drvr, skb,
-					       BCMILCP_SUBTYPE_VENDOR_LONG);
+					       BCMILCP_SUBTYPE_VENDOR_LONG, gfp);
+		}
 
-		brcmf_netif_rx(ifp, skb);
+		brcmf_netif_rx(ifp, skb, inirq);
 	}
 }
 
@@ -531,7 +539,7 @@ void brcmf_rx_event(struct device *dev, struct sk_buff *skb)
 	if (brcmf_rx_hdrpull(drvr, skb, &ifp))
 		return;
 
-	brcmf_fweh_process_skb(ifp->drvr, skb, 0);
+	brcmf_fweh_process_skb(ifp->drvr, skb, 0, GFP_KERNEL);
 	brcmu_pkt_buf_free_skb(skb);
 }
 
@@ -630,15 +638,24 @@ static const struct net_device_ops brcmf_netdev_ops_pri = {
 	.ndo_set_rx_mode = brcmf_netdev_set_multicast_list
 };
 
+#undef netdev_set_priv_destructor
+#if LINUX_VERSION_IS_LESS(4,11,9)
+#define netdev_set_priv_destructor(_dev, _destructor) \
+	(_dev)->destructor = (_destructor)
+#else
+#define netdev_set_priv_destructor(_dev, _destructor) \
+	(_dev)->priv_destructor = (_destructor)
+#endif
+
 #if LINUX_VERSION_IS_LESS(4,12,0)
-void __brcmf_cfg80211_free_netdev(struct net_device *ndev)
+static void __brcmf_cfg80211_free_netdev(struct net_device *ndev)
 {
 	brcmf_cfg80211_free_netdev(ndev);
 	free_netdev(ndev);
 }
 #endif
 
-int brcmf_net_attach(struct brcmf_if *ifp, bool rtnl_locked)
+int brcmf_net_attach(struct brcmf_if *ifp, bool locked)
 {
 	struct brcmf_pub *drvr = ifp->drvr;
 	struct net_device *ndev;
@@ -661,8 +678,8 @@ int brcmf_net_attach(struct brcmf_if *ifp, bool rtnl_locked)
 	INIT_WORK(&ifp->multicast_work, _brcmf_set_multicast_list);
 	INIT_WORK(&ifp->ndoffload_work, _brcmf_update_ndtable);
 
-	if (rtnl_locked)
-		err = register_netdevice(ndev);
+	if (locked)
+		err = cfg80211_register_netdevice(ndev);
 	else
 		err = register_netdev(ndev);
 	if (err != 0) {
@@ -682,11 +699,11 @@ fail:
 	return -EBADE;
 }
 
-void brcmf_net_detach(struct net_device *ndev, bool rtnl_locked)
+void brcmf_net_detach(struct net_device *ndev, bool locked)
 {
 	if (ndev->reg_state == NETREG_REGISTERED) {
-		if (rtnl_locked)
-			unregister_netdevice(ndev);
+		if (locked)
+			cfg80211_unregister_netdevice(ndev);
 		else
 			unregister_netdev(ndev);
 	} else {
@@ -763,7 +780,7 @@ int brcmf_net_mon_attach(struct brcmf_if *ifp)
 	ndev = ifp->ndev;
 	ndev->netdev_ops = &brcmf_netdev_ops_mon;
 
-	err = register_netdevice(ndev);
+	err = cfg80211_register_netdevice(ndev);
 	if (err)
 		bphy_err(drvr, "Failed to register %s device\n", ndev->name);
 
@@ -918,7 +935,7 @@ struct brcmf_if *brcmf_add_if(struct brcmf_pub *drvr, s32 bsscfgidx, s32 ifidx,
 }
 
 static void brcmf_del_if(struct brcmf_pub *drvr, s32 bsscfgidx,
-			 bool rtnl_locked)
+			 bool locked)
 {
 	struct brcmf_if *ifp;
 	int ifidx;
@@ -947,7 +964,7 @@ static void brcmf_del_if(struct brcmf_pub *drvr, s32 bsscfgidx,
 			cancel_work_sync(&ifp->multicast_work);
 			cancel_work_sync(&ifp->ndoffload_work);
 		}
-		brcmf_net_detach(ifp->ndev, rtnl_locked);
+		brcmf_net_detach(ifp->ndev, locked);
 	} else {
 		/* Only p2p device interfaces which get dynamically created
 		 * end up here. In this case the p2p module should be informed
@@ -956,7 +973,7 @@ static void brcmf_del_if(struct brcmf_pub *drvr, s32 bsscfgidx,
 		 * serious troublesome side effects. The p2p module will clean
 		 * up the ifp if needed.
 		 */
-		brcmf_p2p_ifp_removed(ifp, rtnl_locked);
+		brcmf_p2p_ifp_removed(ifp, locked);
 		kfree(ifp);
 	}
 
@@ -965,14 +982,14 @@ static void brcmf_del_if(struct brcmf_pub *drvr, s32 bsscfgidx,
 		drvr->if2bss[ifidx] = BRCMF_BSSIDX_INVALID;
 }
 
-void brcmf_remove_interface(struct brcmf_if *ifp, bool rtnl_locked)
+void brcmf_remove_interface(struct brcmf_if *ifp, bool locked)
 {
 	if (!ifp || WARN_ON(ifp->drvr->iflist[ifp->bsscfgidx] != ifp))
 		return;
 	brcmf_dbg(TRACE, "Enter, bsscfgidx=%d, ifidx=%d\n", ifp->bsscfgidx,
 		  ifp->ifidx);
 	brcmf_proto_del_if(ifp->drvr, ifp);
-	brcmf_del_if(ifp->drvr, ifp->bsscfgidx, rtnl_locked);
+	brcmf_del_if(ifp->drvr, ifp->bsscfgidx, locked);
 }
 
 static int brcmf_psm_watchdog_notify(struct brcmf_if *ifp,
@@ -1217,7 +1234,6 @@ static ssize_t write_file_turboqam(struct file *file, const char __user *user_bu
 {
 	struct brcmf_pub *drvr = file->private_data;
 	unsigned long turboqam;
-	int ret;
 	char buf[32];
 	ssize_t len;
 
@@ -1494,6 +1510,11 @@ void brcmf_detach(struct device *dev)
 #endif
 
 	brcmf_bus_change_state(bus_if, BRCMF_BUS_DOWN);
+	/* make sure primary interface removed last */
+	for (i = BRCMF_MAX_IFS - 1; i > -1; i--) {
+		if (drvr->iflist[i])
+			brcmf_remove_interface(drvr->iflist[i], false);
+	}
 	brcmf_bus_stop(drvr->bus_if);
 
 	brcmf_fweh_detach(drvr);
@@ -1502,12 +1523,6 @@ void brcmf_detach(struct device *dev)
 	if (drvr->mon_if) {
 		brcmf_net_detach(drvr->mon_if->ndev, false);
 		drvr->mon_if = NULL;
-	}
-
-	/* make sure primary interface removed last */
-	for (i = BRCMF_MAX_IFS - 1; i > -1; i--) {
-		if (drvr->iflist[i])
-			brcmf_del_if(drvr, drvr->iflist[i]->bsscfgidx, false);
 	}
 
 	if (drvr->config) {

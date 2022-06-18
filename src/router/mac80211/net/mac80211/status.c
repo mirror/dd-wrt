@@ -1034,8 +1034,6 @@ static void __ieee80211_tx_status(struct ieee80211_hw *hw,
 								   NULL,
 								   skb->len,
 								   false);
-			if (!airtime)
-				airtime = IEEE80211_TX_TIME_EST_UNIT;
 
 			ieee80211_register_airtime(txq, airtime, 0);
 		}
