@@ -488,7 +488,7 @@ addEvent(window, "unload", function() {
 										<div class="label"><% tran("share.srvipname"); %></div>
 										<script type="text/javascript">
 											//<![CDATA[
-										  document.write("<input maxlength=\"32\" size=\"25\" name=\"ntp_server\" value=\""<% nvg("ntp_server"); %>"\" placeholder=\"" + idx.ntp_input_placeholder + "\" />");
+										  document.write("<input maxlength=\"32\" size=\"25\" name=\"ntp_server\" value=\"<% nvg("ntp_server"); %>\" placeholder=\"" + idx.ntp_input_placeholder + "\" />");
 											//]]>
 										</script>
 									</div>
