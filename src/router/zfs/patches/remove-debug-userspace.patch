@@ -1,0 +1,26 @@
+Index: cmd/zdb/zdb.c
+===================================================================
+--- cmd/zdb/zdb.c	(revision 49243)
++++ cmd/zdb/zdb.c	(working copy)
+@@ -8615,8 +8615,9 @@ main(int argc, char **argv)
+ 	/*
+ 	 * Disable reference tracking for better performance.
+ 	 */
++#ifdef ZFS_DEBUG
+ 	reference_tracking_enable = B_FALSE;
+-
++#endif
+ 	/*
+ 	 * Do not fail spa_load when spa_load_verify fails. This is needed
+ 	 * to load non-idle pools.
+Index: config/Rules.am
+===================================================================
+--- config/Rules.am	(revision 49243)
++++ config/Rules.am	(working copy)
+@@ -80,4 +80,5 @@ KERNEL_CFLAGS       = $(FRAME_LARGER_THAN)
+ LIBRARY_CFLAGS      = -no-suppress
+ 
+ # Forcibly enable asserts/debugging for libzpool &al.
+-FORCEDEBUG_CPPFLAGS = -DDEBUG -UNDEBUG -DZFS_DEBUG
++FORCEDEBUG_CPPFLAGS = 
++# -DDEBUG -UNDEBUG -DZFS_DEBUG
