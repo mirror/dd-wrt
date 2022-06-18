@@ -1,4 +1,4 @@
-zfs-configure: libtirpc-configure libtirpc libudev openssl zlib curl util-linux
+zfs-configure: libtirpc-configure libtirpc libudev openssl zlib curl ncurses util-linux
 	cd zfs && ./autogen.sh
 	cd zfs && autoreconf
 	cd zfs && ./configure \
@@ -15,7 +15,7 @@ zfs-configure: libtirpc-configure libtirpc libudev openssl zlib curl util-linux
 	touch $(TOP)/util-linux/libblkid/src/blkid.h
 	touch $(TOP)/openssl/include/openssl/opensslconf.h
 
-zfs: libtirpc libudev openssl zlib util-linux
+zfs: libtirpc libudev openssl zlib ncurses util-linux
 	cd zfs && find . -name "*.la" -exec sed -i 's/relink_command/# relink_command/g' {} +
 	cd zfs && find . -name "*.la" -exec touch {} +
 	touch $(TOP)/util-linux/libblkid/src/blkid.h
