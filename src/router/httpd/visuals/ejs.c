@@ -2495,8 +2495,7 @@ EJ_VISIBLE void ej_tran(webs_t wp, int argc, char_t ** argv)
 
 EJ_VISIBLE void ej_live_tran(webs_t wp, int argc, char_t ** argv)
 {
-	char buf[128];
-	websWrite(wp, "%s", live_translate(wp, argv[0]);
+	websWrite(wp, "%s", live_translate(wp, argv[0]));
 }
 
 /*
