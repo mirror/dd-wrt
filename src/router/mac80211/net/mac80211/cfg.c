@@ -1578,6 +1578,7 @@ static void sta_apply_airtime_params(struct ieee80211_local *local,
 	for (ac = 0; ac < IEEE80211_NUM_ACS; ac++) {
 		struct airtime_sched_info *air_sched = &local->airtime[ac];
 		struct airtime_info *air_info = &sta->airtime[ac];
+		struct txq_info *txqi;
 		u8 tid;
 
 		spin_lock_bh(&air_sched->lock);
@@ -1588,6 +1589,10 @@ static void sta_apply_airtime_params(struct ieee80211_local *local,
 				continue;
 
 			airtime_weight_set(air_info, params->airtime_weight);
+
+			txqi = to_txq_info(sta->sta.txq[tid]);
+			if (RB_EMPTY_NODE(&txqi->schedule_order))
+				continue;
 
 			ieee80211_update_airtime_weight(local, air_sched,
 							0, true);
@@ -1611,9 +1616,6 @@ static int sta_apply_parameters(struct ieee80211_local *local,
 
 	mask = params->sta_flags_mask;
 	set = params->sta_flags_set;
-
-	if (params->airtime_weight > BIT(IEEE80211_RECIPROCAL_SHIFT_STA))
-		return -EINVAL;
 
 	if (ieee80211_vif_is_mesh(&sdata->vif)) {
 		/*

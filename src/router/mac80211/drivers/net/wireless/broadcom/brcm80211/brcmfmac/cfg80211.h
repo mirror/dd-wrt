@@ -129,6 +129,19 @@ enum brcmf_profile_fwsup {
 };
 
 /**
+ * enum brcmf_profile_fwauth - firmware authenticator profile
+ *
+ * @BRCMF_PROFILE_FWAUTH_NONE: no firmware authenticator
+ * @BRCMF_PROFILE_FWAUTH_PSK: authenticator for WPA/WPA2-PSK
+ * @BRCMF_PROFILE_FWAUTH_SAE: authenticator for SAE
+ */
+enum brcmf_profile_fwauth {
+	BRCMF_PROFILE_FWAUTH_NONE,
+	BRCMF_PROFILE_FWAUTH_PSK,
+	BRCMF_PROFILE_FWAUTH_SAE
+};
+
+/**
  * struct brcmf_cfg80211_profile - profile information.
  *
  * @bssid: bssid of joined/joining ibss.
@@ -140,6 +153,7 @@ struct brcmf_cfg80211_profile {
 	struct brcmf_cfg80211_security sec;
 	struct brcmf_wsec_key key[BRCMF_MAX_DEFAULT_KEYS];
 	enum brcmf_profile_fwsup use_fwsup;
+	u16 use_fwauth;
 	bool is_ft;
 };
 
@@ -210,6 +224,9 @@ struct brcmf_cfg80211_vif {
 	u16 mgmt_rx_reg;
 	bool mbss;
 	int is_11d;
+	s32 cqm_rssi_low;
+	s32 cqm_rssi_high;
+	s32 cqm_rssi_last;
 };
 
 /* association inform */
@@ -415,15 +432,6 @@ brcmf_cfg80211_connect_info *cfg_to_conn(struct brcmf_cfg80211_info *cfg)
 	return &cfg->conn_info;
 }
 
-#undef netdev_set_priv_destructor
-#if LINUX_VERSION_IS_LESS(4,11,9)
-#define netdev_set_priv_destructor(_dev, _destructor) \
-	(_dev)->destructor = (_destructor)
-#else
-#define netdev_set_priv_destructor(_dev, _destructor) \
-	(_dev)->priv_destructor = (_destructor)
-#endif
-
 struct brcmf_cfg80211_info *brcmf_cfg80211_attach(struct brcmf_pub *drvr,
 						  struct cfg80211_ops *ops,
 						  bool p2pdev_forced);
@@ -455,6 +463,5 @@ s32 brcmf_notify_escan_complete(struct brcmf_cfg80211_info *cfg,
 void brcmf_set_mpc(struct brcmf_if *ndev, int mpc);
 void brcmf_abort_scanning(struct brcmf_cfg80211_info *cfg);
 void brcmf_cfg80211_free_netdev(struct net_device *ndev);
-void __brcmf_cfg80211_free_netdev(struct net_device *ndev);
 
 #endif /* BRCMFMAC_CFG80211_H */
