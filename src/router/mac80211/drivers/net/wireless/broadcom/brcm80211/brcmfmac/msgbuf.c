@@ -48,8 +48,8 @@
 #define MSGBUF_TYPE_LPBK_DMAXFER		0x13
 #define MSGBUF_TYPE_LPBK_DMAXFER_CMPLT		0x14
 
-#define NR_TX_PKTIDS				2048
-#define NR_RX_PKTIDS				1024
+#define NR_TX_PKTIDS				(2048 * 2)
+#define NR_RX_PKTIDS				(1024 * 2)
 
 #define BRCMF_IOCTL_REQ_PKTID			0xFFFE
 
