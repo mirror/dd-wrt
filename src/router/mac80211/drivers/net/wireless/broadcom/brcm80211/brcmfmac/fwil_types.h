@@ -19,7 +19,7 @@
 #define BRCMF_ARP_OL_PEER_AUTO_REPLY	0x00000008
 
 #define	BRCMF_BSS_INFO_VERSION	109 /* curr ver of brcmf_bss_info_le struct */
-#define BRCMF_BSS_RSSI_ON_CHANNEL	0x0002
+#define BRCMF_BSS_RSSI_ON_CHANNEL	0x0004
 
 #define BRCMF_STA_BRCM			0x00000001	/* Running a Broadcom driver */
 #define BRCMF_STA_WME			0x00000002	/* WMM association */
@@ -614,6 +614,27 @@ struct brcmf_sta_info_le {
 				__le16 vht_mcs[BRCMF_VHT_CAP_MCS_MAP_NSS_MAX];	/* supported mcs index bit map per nss */
 			} rateset_adv;
 		} v5;
+
+		struct {
+			__le32 rx_dur_total;	/* total user RX duration (estimated) */
+			__le16 chanspec;	/** chanspec this sta is on */
+			__le16 pad_1;
+			struct {
+				__le16 version;					/* version */
+				__le16 len;					/* length */
+				__le32 count;					/* # rates in this set */
+				u8 rates[BRCMF_MAXRATES_IN_SET];		/* rates in 500kbps units w/hi bit set if basic */
+				u8 mcs[BRCMF_MCSSET_LEN];			/* supported mcs index bit map */
+				__le16 vht_mcs[BRCMF_VHT_CAP_MCS_MAP_NSS_MAX];	/* supported mcs index bit map per nss */
+				__le16 he_mcs[BRCMF_HE_CAP_MCS_MAP_NSS_MAX];	/* supported he mcs index bit map per nss */
+			} rateset_adv;		/* rateset along with mcs index bitmap */
+			__le16 wpauth;		/* authentication type */
+			u8 algo;		/* crypto algorithm */
+			u8 pad_2;
+			__le32 tx_rspec;	/* Rate of last successful tx frame */
+			__le32 rx_rspec;	/* Rate of last successful rx frame */
+			__le32 wnm_cap;		/* wnm capabilities */
+		} v7;
 	};
 };
 
@@ -633,6 +654,34 @@ struct brcmf_rx_mgmt_data {
 	__be32	rssi;
 	__be32	mactime;
 	__be32	rate;
+};
+
+/**
+ * struct brcmf_rssi_be - RSSI threshold event format
+ *
+ * @rssi: receive signal strength (in dBm)
+ * @snr: signal-noise ratio
+ * @noise: noise (in dBm)
+ */
+struct brcmf_rssi_be {
+	__be32 rssi;
+	__be32 snr;
+	__be32 noise;
+};
+
+#define BRCMF_MAX_RSSI_LEVELS 8
+
+/**
+ * struct brcm_rssi_event_le - rssi_event IOVAR format
+ *
+ * @rate_limit_msec: RSSI event rate limit
+ * @rssi_level_num: number of supplied RSSI levels
+ * @rssi_levels: RSSI levels in ascending order
+ */
+struct brcmf_rssi_event_le {
+	__le32 rate_limit_msec;
+	s8 rssi_level_num;
+	s8 rssi_levels[BRCMF_MAX_RSSI_LEVELS];
 };
 
 /**
