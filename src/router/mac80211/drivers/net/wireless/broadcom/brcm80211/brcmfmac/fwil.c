@@ -21,7 +21,7 @@
 
 #define MAX_HEX_DUMP_LEN	64
 
-#ifdef DEBUG
+#if 1//def DEBUG
 static const char * const brcmf_fil_errstr[] = {
 	"BCME_OK",
 	"BCME_ERROR",
@@ -229,6 +229,8 @@ brcmf_fil_iovar_data_set(struct brcmf_if *ifp, char *name, const void *data,
 	if (buflen) {
 		err = brcmf_fil_cmd_data(ifp, BRCMF_C_SET_VAR, drvr->proto_buf,
 					 buflen, true);
+		if (err == -EBADE)
+			bphy_err(drvr, "fil_iovar_data_set was %s\n", name);
 	} else {
 		err = -EPERM;
 		bphy_err(drvr, "Creating iovar failed\n");
@@ -255,6 +257,8 @@ brcmf_fil_iovar_data_get(struct brcmf_if *ifp, char *name, void *data,
 					 buflen, false);
 		if (err == 0)
 			memcpy(data, drvr->proto_buf, len);
+		if (err == -EBADE)
+			bphy_err(drvr, "fil_iovar_data_get was %s\n", name);
 	} else {
 		err = -EPERM;
 		bphy_err(drvr, "Creating iovar failed\n");
@@ -353,6 +357,8 @@ brcmf_fil_bsscfg_data_set(struct brcmf_if *ifp, char *name,
 	if (buflen) {
 		err = brcmf_fil_cmd_data(ifp, BRCMF_C_SET_VAR, drvr->proto_buf,
 					 buflen, true);
+		if (err == -EBADE)
+			bphy_err(drvr, "fil_bsscfg_data_set was %s\n", name);
 	} else {
 		err = -EPERM;
 		bphy_err(drvr, "Creating bsscfg failed\n");
@@ -379,6 +385,8 @@ brcmf_fil_bsscfg_data_get(struct brcmf_if *ifp, char *name,
 					 buflen, false);
 		if (err == 0)
 			memcpy(data, drvr->proto_buf, len);
+		if (err == -EBADE)
+			bphy_err(drvr, "fil_bsscfg_data_get was %s\n", name);
 	} else {
 		err = -EPERM;
 		bphy_err(drvr, "Creating bsscfg failed\n");
