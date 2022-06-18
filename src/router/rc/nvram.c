@@ -86,7 +86,7 @@ static int nvram_main(int argc, char **argv)
 	++argv;
 
 	if (!*argv) {
-		fprintf(stderr, "usage: nvram [get name] [set name=value] [unset name] [show] [clear|erase] [commit] [backup filename] [restore filename]\n"	//
+		fprintf(stderr, "usage: nvram [get name] [set name=value] [unset name] [show|getall] [clear|erase] [commit] [backup filename] [restore filename]\n"	//
 			"\n"	//
 			"get name         : returns value for given name\n"	//
 			"set name=value   : set value for given name\n"	//
