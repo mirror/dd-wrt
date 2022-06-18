@@ -2493,6 +2493,12 @@ EJ_VISIBLE void ej_tran(webs_t wp, int argc, char_t ** argv)
 	websWrite(wp, "%s", tran_string(buf, sizeof(buf), argv[0]));
 }
 
+EJ_VISIBLE void ej_live_tran(webs_t wp, int argc, char_t ** argv)
+{
+	char buf[128];
+	websWrite(wp, "%s", live_translate(argv[0]);
+}
+
 /*
  * Example:
  * wan_proto=dhcp
