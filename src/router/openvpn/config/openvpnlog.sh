@@ -1,6 +1,6 @@
 #!/bin/sh
 if [ "$(nvram get openvpn_enable)" = "1" ]; then
-PORT=`grep "^management " /tmp/openvpn/openvpn.conf | awk '{print $3}'`
+PORT=`grep "^management " /tmp/openvpn/openvpn.conf | tail -1 | awk '{print $3}'`
 if [ x${PORT} = x ]
 then
 	PORT=14
@@ -19,7 +19,7 @@ fi
 /bin/echo -e "<br><br><br>"
 fi
 if [ "$(nvram get openvpncl_enable)" = "1" ]; then
-PORT=`grep "^management " /tmp/openvpncl/openvpn.conf | awk '{print $3}'`
+PORT=`grep "^management " /tmp/openvpncl/openvpn.conf | tail -1 | awk '{print $3}'`
 if [ x${PORT} = x ]
 then
 	PORT=16
