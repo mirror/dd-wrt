@@ -491,13 +491,7 @@ addEvent(window, "unload", function() {
 									<div class="setting">
 										<div class="label"><% tran("idx.ntp_timer"); %></div>
 										<input class="num" maxlength="6" size="6" name="ntp_timer" onblur="valid_range(this,3600,604800,idx.ntp_timer)" value="<% nvg("ntp_timer"); %>" />&nbsp;<% tran("share.seconds"); %>
-										<span class="default">
-											<script type="text/javascript">
-											//<![CDATA[
-											document.write("(" + share.deflt + ": 3600, " + share.range + ": 3600 - 604800)");
-											//]]>
-											</script>
-										</span>
+										<span class="default">(<% live_tran("share.deflt"): 3600, <% live_tran("share.range"); %>: 3600 - 604800)</span>
 									</div>
 								</div>
 							</fieldset><br />
