@@ -92,7 +92,7 @@ static int nvram_main(int argc, char **argv)
 			"set name=value   : set value for given name\n"	//
 			"unset name       : unset value for given name\n"	//
 			"commit           : writes current parameter set back to nvram storage (flashmemory or filesystem)\n" //
-			"show             : shows all stored nvram parameters with values\n"	//
+			"show|getall      : shows all stored nvram parameters with values\n"	//
 			"clear|erase      : deletes all nvram parameters, but keeps import system variables needed to keep the device in runable state\n"	//
 			"backup fileame   : backing up all nvram parameters to the given filename (uses same format as in webgui)\n"	//
 			"restore filename : restores all nvram parameters from backup file. it will not overwrite important system variables\n"	//
