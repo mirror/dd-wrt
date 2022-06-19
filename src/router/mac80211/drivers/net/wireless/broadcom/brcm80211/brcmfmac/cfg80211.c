@@ -4992,6 +4992,7 @@ brcmf_cfg80211_start_ap(struct wiphy *wiphy, struct net_device *ndev,
 			/* Firmware 10.x requires setting channel after enabling
 			 * AP and before bringing interface up.
 			 */
+			ifp->monitor_save = chanspec;
 			err = brcmf_fil_iovar_int_set(ifp, "chanspec", chanspec);
 			if (err < 0) {
 				bphy_err(drvr, "Set Channel failed: chspec=%X, %d\n",
@@ -5295,6 +5296,7 @@ brcmf_cfg80211_mgmt_tx(struct wiphy *wiphy, struct wireless_dev *wdev,
 	*cookie = 0;
 
 	mgmt = (const struct ieee80211_mgmt *)buf;
+
 
 	if (!ieee80211_is_mgmt(mgmt->frame_control)) {
 		bphy_err(drvr, "Driver only allows MGMT packet type\n");
@@ -5693,6 +5695,24 @@ static int brcmf_cfg80211_del_pmk(struct wiphy *wiphy, struct net_device *dev,
 	return brcmf_set_pmk(ifp, NULL, 0);
 }
 
+static int brcmf_cfg80211_set_monitor_channel(struct wiphy *wiphy,
+				       struct cfg80211_chan_def *chandef)
+{
+	struct brcmf_cfg80211_info *cfg = wiphy_to_cfg(wiphy);
+	struct brcmf_if *ifp = brcmf_get_ifp(cfg->pub, 0);
+	int err = 0;
+	int channel;
+
+	if (!chandef->chan)
+		return -EINVAL;
+	channel = ieee80211_frequency_to_channel(chandef->chan->center_freq);
+
+	brcmf_fil_cmd_int_set(ifp, BRCMF_C_SET_CHANNEL, channel);
+
+	return err;
+}
+
+
 static struct cfg80211_ops brcmf_cfg80211_ops = {
 	.add_virtual_intf = brcmf_cfg80211_add_iface,
 	.del_virtual_intf = brcmf_cfg80211_del_iface,
@@ -5741,6 +5761,7 @@ static struct cfg80211_ops brcmf_cfg80211_ops = {
 	.update_connect_params = brcmf_cfg80211_update_conn_params,
 	.set_pmk = brcmf_cfg80211_set_pmk,
 	.del_pmk = brcmf_cfg80211_del_pmk,
+	.set_monitor_channel = brcmf_cfg80211_set_monitor_channel,
 };
 
 struct cfg80211_ops *brcmf_cfg80211_get_ops(struct brcmf_mp_device *settings)
