@@ -258,7 +258,11 @@ static void *device_get_mac_addr(struct device *dev,
 #if LINUX_VERSION_IS_GEQ(3,18,0)
 	int ret = device_property_read_u8_array(dev, name, addr, alen);
 #else
+#ifdef CONFIG_OF
 	int ret = of_property_read_u8_array(dev->of_node, name, addr, alen);
+#else
+	int ret = -1;
+#endif
 #endif
 
 	if (ret == 0 && alen == ETH_ALEN && is_valid_ether_addr(addr))
