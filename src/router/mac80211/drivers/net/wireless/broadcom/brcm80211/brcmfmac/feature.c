@@ -114,6 +114,19 @@ static const struct brcmf_feat_fwfeat brcmf_feat_fwfeat_map[] = {
 	{ "01-801fb449", BIT(BRCMF_FEAT_MONITOR_FMT_HW_RX_HDR) },
 	/* brcmfmac4366c-pcie.bin from linux-firmware.git commit 211de1679a68 */
 	{ "01-d2cbb8fd", BIT(BRCMF_FEAT_MONITOR_FMT_HW_RX_HDR) },
+
+	{ "01-f458629d", BIT(BRCMF_FEAT_MONITOR) }, //dd-wrt firmware
+	/* brcmfmac43602-pcie.ap.bin from linux-firmware.git commit ea1178515b88 */
+	{ "01-f458629d", BIT(BRCMF_FEAT_MONITOR_FMT_RADIOTAP) }, //dd-wrt firmware
+	/* brcmfmac43602-pcie.ap.bin from linux-firmware.git commit ea1178515b88 */
+	{ "01-f8cf7fd7", BIT(BRCMF_FEAT_MONITOR) }, // dd-wrt firmware
+	/* brcmfmac4366b-pcie.bin from linux-firmware.git commit 211de1679a68 */
+	{ "01-f8cf7fd7", BIT(BRCMF_FEAT_MONITOR_FMT_RADIOTAP) }, // dd-wrt firmware
+	/* brcmfmac4366b-pcie.bin from linux-firmware.git commit 211de1679a68 */
+	{ "01-a794e9e8", BIT(BRCMF_FEAT_MONITOR) }, // dd-wrt firmware
+	/* brcmfmac4366c-pcie.bin from linux-firmware.git commit 211de1679a68 */
+	{ "01-a794e9e8", BIT(BRCMF_FEAT_MONITOR_FMT_RADIOTAP) }, // dd-wrt firmware
+	/* brcmfmac4366c-pcie.bin from linux-firmware.git commit 211de1679a68 */
 };
 
 static void brcmf_feat_firmware_overrides(struct brcmf_pub *drv)
