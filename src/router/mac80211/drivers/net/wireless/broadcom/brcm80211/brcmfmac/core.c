@@ -752,6 +752,11 @@ static int brcmf_net_mon_stop(struct net_device *ndev)
 	if (err)
 		bphy_err(drvr, "BRCMF_C_SET_MONITOR error (%d)\n", err);
 
+	err = brcmf_fil_iovar_int_set(ifp, "chanspec", ifp->monitor_save);
+
+	if (err)
+		bphy_err(drvr, "BRCMF_C_SET_VAR chanspec error (%d)\n", err);
+
 	return err;
 }
 
