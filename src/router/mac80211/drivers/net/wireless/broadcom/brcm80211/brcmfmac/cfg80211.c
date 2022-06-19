@@ -2825,7 +2825,9 @@ brcmf_cfg80211_get_station(struct wiphy *wiphy, struct net_device *ndev,
 
 	memset(&sta_info_le, 0, sizeof(sta_info_le));
 	memcpy(&sta_info_le, mac, ETH_ALEN);
-	err = brcmf_fil_iovar_data_get(ifp, "tdls_sta_info",
+	err = -1;
+	if (brcmf_feat_is_enabled(ifp, BRCMF_FEAT_TDLS))
+		err = brcmf_fil_iovar_data_get(ifp, "tdls_sta_info",
 				       &sta_info_le,
 				       sizeof(sta_info_le));
 	is_tdls_peer = !err;
@@ -2879,7 +2881,7 @@ brcmf_cfg80211_get_station(struct wiphy *wiphy, struct net_device *ndev,
 			sinfo->rx_bytes = le64_to_cpu(sta_info_le.rx_tot_bytes);
 		}
 		for (i = 0; i < BRCMF_ANT_MAX; i++) {
-			if (sta_info_le.rssi[i])
+			if (!sta_info_le.rssi[i])
 				continue;
 			sinfo->chains |= BIT(count_rssi);
 			sinfo->chain_signal[count_rssi] =
