@@ -2879,15 +2879,14 @@ brcmf_cfg80211_get_station(struct wiphy *wiphy, struct net_device *ndev,
 			sinfo->rx_bytes = le64_to_cpu(sta_info_le.rx_tot_bytes);
 		}
 		for (i = 0; i < BRCMF_ANT_MAX; i++) {
-			if (sta_info_le.rssi[i] == 0 ||
-			    sta_info_le.rx_lastpkt_rssi[i] == 0)
+			if (sta_info_le.rssi[i])
 				continue;
 			sinfo->chains |= BIT(count_rssi);
 			sinfo->chain_signal[count_rssi] =
-				sta_info_le.rx_lastpkt_rssi[i];
+				sta_info_le.rssi[i];
 			sinfo->chain_signal_avg[count_rssi] =
 				sta_info_le.rssi[i];
-			total_rssi += sta_info_le.rx_lastpkt_rssi[i];
+			total_rssi += sta_info_le.rssi[i];
 			total_rssi_avg += sta_info_le.rssi[i];
 			count_rssi++;
 		}
