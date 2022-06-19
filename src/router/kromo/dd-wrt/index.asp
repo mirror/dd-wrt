@@ -221,7 +221,6 @@ function SelDHCPFWD(num,F) {
 	F.submit();
 }
 
-
 function submitcheck(F) {
 	if(valid_value(F)) {
 		if(F._dns_dnsmasq) {
@@ -270,14 +269,13 @@ function toggle_layer(checkbox, label) {
 }
 
 function to_submit(F) {
-    submitcheck(F);
-    apply(F);
+	submitcheck(F);
+	apply(F);
 }
 function to_apply(F) {
-    submitcheck(F);
-    applytake(F);
+	submitcheck(F);
+	applytake(F);
 }
-
 
 var update;
 
@@ -312,7 +310,6 @@ addEvent(window, "load", function() {
 
 addEvent(window, "unload", function() {
 	update.stop();
-
 });
 
 		//]]>
@@ -321,7 +318,6 @@ addEvent(window, "unload", function() {
 	</head>
 
 	<body class="gui">
-	
 		<div id="wrapper">
 			<div id="content">
 				<div id="header">
@@ -364,15 +360,13 @@ addEvent(window, "unload", function() {
 							
 							<fieldset>
 								<legend><% tran("idx.legend"); %></legend>
-
-				<% ifndef("WET", "<!--"); %>
+								<% ifndef("WET", "<!--"); %>
 								<div class="setting">
 							    	<div class="label"><% tran("idx.conn_type"); %></div>
 							    	<% tran("share.disabled"); %>
 								</div>
-				<% ifndef("WET", "-->"); %>
-				
-				<% ifdef("WET", "<!--"); %>
+								<% ifndef("WET", "-->"); %>			
+								<% ifdef("WET", "<!--"); %>
 								<div class="setting">
 							    	<div class="label"><% tran("idx.conn_type"); %></div>
 							    	<select name="wan_proto" onchange="SelWAN(this.form.wan_proto.selectedIndex,this.form)">
@@ -380,18 +374,15 @@ addEvent(window, "unload", function() {
 									</select>
 								</div>
 								<% show_index_setting(); %>
-				<% ifdef("WET", "-->"); %>
-							</fieldset><br />
-				
-							
+								<% ifdef("WET", "-->"); %>
+							</fieldset><br />	
 							<fieldset>
 								<legend><% tran("idx.optional"); %></legend>
 								<div class="setting">
 									<div class="label"><% tran("share.routername"); %></div>
 									<input maxlength="39" name="router_name" size="20" onblur="valid_name(this,&#34;Router%20Name&#34;)" value="<% nvg("router_name"); %>"/>
 								</div>
-			
-				<% ifdef("WET", "<!--"); %>
+								<% ifdef("WET", "<!--"); %>
 								<div class="setting">
 									<div class="label"><% tran("share.hostname"); %></div>
 									<input maxlength="39" name="wan_hostname" size="20" onblur="valid_name(this,&#34;Host%20Name&#34;)" value="<% nvg("wan_hostname"); %>"/>
@@ -412,8 +403,8 @@ addEvent(window, "unload", function() {
 									</select>&nbsp;
 									<input class="num" maxlength="4" onblur="valid_mtu(this)" size="5" name="wan_mtu" value="<% nvg("wan_mtu"); %>" />
 								</div>
-				<% ifdef("WET", "-->"); %>
-				<% ifndef("CTF", "<!--"); %>
+								<% ifdef("WET", "-->"); %>
+								<% ifndef("CTF", "<!--"); %>
 								<div class="setting">
 									<div class="label"><% tran("idx.sfe"); %></div>
 									<select name="sfe">
@@ -422,8 +413,8 @@ addEvent(window, "unload", function() {
 										<option value="2" <% nvs("sfe", "2"); %>>CTF</option>
 									</select>
 								</div>
-				<% ifndef("CTF", "-->"); %>
-				<% ifndef("FA", "<!--"); %>
+								<% ifndef("CTF", "-->"); %>
+								<% ifndef("FA", "<!--"); %>
 								<div class="setting">
 									<div class="label"><% tran("idx.fa"); %></div>
 									<select name="ctf_fa_mode">
@@ -432,23 +423,22 @@ addEvent(window, "unload", function() {
 										<option value="2" <% nvs("ctf_fa_mode", "2"); %>>CTF & FA</option>
 									</select>
 								</div>
-				<% ifndef("FA", "-->"); %>
-				<% ifndef("SFE", "<!--"); %>
+								<% ifndef("FA", "-->"); %>
+								<% ifndef("SFE", "<!--"); %>
 								<div class="setting">
 									<div class="label"><% tran("idx.sfe"); %></div>
 									<input class="spaceradio" type="radio" value="1" name="sfe" <% nvc("sfe", "1"); %> /><% tran("share.enable"); %>&nbsp;
 									<input class="spaceradio" type="radio" value="0" name="sfe" <% nvc("sfe", "0"); %> /><% tran("share.disable"); %>
 								</div>
-				<% ifndef("SFE", "-->"); %>
-				<% ifdef("WET", "<!--"); %>
+								<% ifndef("SFE", "-->"); %>
+								<% ifdef("WET", "<!--"); %>
 								<div class="setting">
 									<div class="label"><% tran("idx.stp"); %></div>
 									<input class="spaceradio" type="radio" value="1" name="lan_stp" <% nvc("lan_stp", "1"); %> /><% tran("share.enable"); %>&nbsp;
 									<input class="spaceradio" type="radio" value="0" name="lan_stp" <% nvc("lan_stp", "0"); %> /><% tran("share.disable"); %>
 								</div>
-				<% ifdef("WET", "-->"); %>
+								<% ifdef("WET", "-->"); %>
 							</fieldset><br />
-							
 							<h2><% tran("idx.h23"); %></h2>
 							<fieldset>
 								<legend><% tran("idx.routerip"); %></legend>
@@ -466,10 +456,8 @@ addEvent(window, "unload", function() {
 									<input type="hidden" name="sv_localdns" value="4" />
 									<input class="num" maxlength="3" size="3" name="sv_localdns_0" onblur="valid_range(this,0,255,share.localdns)" value="<% get_single_ip("sv_localdns","0"); %>"/>.<input class="num" maxlength="3" size="3" name="sv_localdns_1" onblur="valid_range(this,0,255,share.localdns)" value="<% get_single_ip("sv_localdns","1"); %>"/>.<input class="num" maxlength="3" size="3" name="sv_localdns_2" onblur="valid_range(this,0,255,share.localdns)" value="<% get_single_ip("sv_localdns","2"); %>"/>.<input class="num" maxlength="3" size="3" name="sv_localdns_3" onblur="valid_range(this,0,255,share.localdns)" value="<% get_single_ip("sv_localdns","3"); %>"/>
 								</div>
-							</fieldset><br />
-							
-							<% show_dhcpd_settings(); %>
-							
+							</fieldset><br />	
+							<% show_dhcpd_settings(); %>						
 							<fieldset>
 								<legend><% tran("idx.legend3"); %></legend>
 								<div class="setting">
@@ -486,7 +474,7 @@ addEvent(window, "unload", function() {
 									</div>
 									<div class="setting">
 										<div class="label"><% tran("share.srvipname"); %></div>
-										<input maxlength="32" size="25" name="ntp_server" value="<% nvg("ntp_server"); %>" placeholder="<% live_tran("idx.ntp_input_placeholder"); %>" />
+										<input maxlength="32" size="33" name="ntp_server" value="<% nvg("ntp_server"); %>" placeholder="<% live_tran("idx.ntp_input_placeholder"); %>" />
 									</div>
 									<div class="setting">
 										<div class="label"><% tran("idx.ntp_timer"); %></div>
