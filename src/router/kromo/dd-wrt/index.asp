@@ -221,7 +221,6 @@ function SelDHCPFWD(num,F) {
 	F.submit();
 }
 
-
 function submitcheck(F) {
 	if(valid_value(F)) {
 		if(F._dns_dnsmasq) {
@@ -270,14 +269,13 @@ function toggle_layer(checkbox, label) {
 }
 
 function to_submit(F) {
-    submitcheck(F);
-    apply(F);
+	submitcheck(F);
+	apply(F);
 }
 function to_apply(F) {
-    submitcheck(F);
-    applytake(F);
+	submitcheck(F);
+	applytake(F);
 }
-
 
 var update;
 
@@ -312,7 +310,6 @@ addEvent(window, "load", function() {
 
 addEvent(window, "unload", function() {
 	update.stop();
-
 });
 
 		//]]>
@@ -321,7 +318,6 @@ addEvent(window, "unload", function() {
 	</head>
 
 	<body class="gui">
-	
 		<div id="wrapper">
 			<div id="content">
 				<div id="header">
