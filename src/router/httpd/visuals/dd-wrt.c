@@ -1359,7 +1359,6 @@ void showAutoOption(webs_t wp, char *propname, char *nvname, int nodisable)
 }
 #endif
 
-
 static void showOptions_trans(webs_t wp, char *propname, char *names, char **trans, char *select)
 {
 	char *next;
@@ -1391,7 +1390,10 @@ static void showOptions_ext_trans(webs_t wp, char *propname, char *names, char *
 	websWrite(wp, "<select name=\"%s\"%s>\n", propname, disabled ? " disabled=\"true\"" : "");
 	websWrite(wp, "<script type=\"text/javascript\">\n//<![CDATA[\n");
 	foreach(var, names, next) {
-		websWrite(wp, "document.write(\"<option value=\\\"%s\\\" %s >\" + %s + \"</option>\");\n", var, !strcmp(var, select) ? "selected=\\\"selected\\\"" : "", trans ? trans[cnt++] : var);
+		if (trans)
+			websWrite(wp, "document.write(\"<option value=\\\"%s\\\" %s >\" + %s + \"</option>\");\n", var, !strcmp(var, select) ? "selected=\\\"selected\\\"" : "", trans[cnt++]);
+		else
+			websWrite(wp, "document.write(\"<option value=\\\"%s\\\" %s >%s</option>\");\n", var, !strcmp(var, select) ? "selected=\\\"selected\\\"" : "", var);
 	}
 	websWrite(wp, "//]]>\n</script>\n</select>\n");
 }
