@@ -1,4 +1,8 @@
 ------------------------------------------------------------------------
+r6656 | brainslayer | 2022-06-21 13:35:10 +0700 (Tue, 21 Jun 2022) | 1 line
+
+revert virtual time scheduler to deficit scheduler + airtime enhancements by nbd
+------------------------------------------------------------------------
 r6655 | brainslayer | 2022-06-20 00:34:06 +0700 (Mon, 20 Jun 2022) | 1 line
 
 allow to set it anyway
