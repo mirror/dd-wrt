@@ -189,12 +189,12 @@ EJ_VISIBLE void ej_portsetup(webs_t wp, int argc, char_t ** argv)
 			char *next;
 
 			sprintf(nld_enable, "nld_%s_enable", var);
-			websWrite(wp, "<div class=\"setting\">\n<div class=\"label\">ZCM enable</div>\n");
+			websWrite(wp, "<div class=\"setting\">\n<div class=\"label\">ZCM&nbsp;<script type=\"text/javascript\">Capture(share.enable)</script></div>\n");
 			websWrite(wp, "<input class=\"spaceradio\" type=\"checkbox\" name=\"nld_%s_enable\" value=\"1\" %s /></div>\n", var, nvram_matchi(nld_enable, 1) ? "checked=\"checked\"" : "");
 
 			sprintf(nld_bridge, "nld_%s_bridge", var);
 			nvram_default_get(nld_bridge, "br0");
-			websWrite(wp, "<div class=\"setting\">\n<div class=\"label\"><script type=\"text/javascript\">/*Capture(idx.wanport)*/</script>ZCM Bridge</div>\n");
+			websWrite(wp, "<div class=\"setting\">\n<div class=\"label\">ZCM&nbsp;<script type=\"text/javascript\">Capture(networking.bridge)</script></div>\n");
 			websWrite(wp, "<select name=\"nld_%s_bridge\">\n", var);
 			websWrite(wp, "  <option value=\"\">none</option>\n");
 			foreach(word, bufferif, next) {
@@ -205,7 +205,7 @@ EJ_VISIBLE void ej_portsetup(webs_t wp, int argc, char_t ** argv)
 			websWrite(wp, "</select>\n</div>\n");
 			// NSMD
 			sprintf(nld_enable, "nsmd_%s_enable", var);
-			websWrite(wp, "<div class=\"setting\">\n<div class=\"label\">NSMD enable</div>\n");
+			websWrite(wp, "<div class=\"setting\">\n<div class=\"label\">NSMD&nbsp;<script type=\"text/javascript\">Capture(share.enable)</script></div>\n");
 			websWrite(wp, "<input class=\"spaceradio\" type=\"checkbox\" name=\"nsmd_%s_enable\" value=\"1\" %s /></div>\n", var, nvram_match(nld_enable, "1") ? "checked=\"checked\"" : "");
 
 		}
@@ -220,14 +220,14 @@ EJ_VISIBLE void ej_portsetup(webs_t wp, int argc, char_t ** argv)
 			char *next;
 
 			sprintf(bat_enable, "bat_%s_enable", var);
-			websWrite(wp, "<div class=\"setting\">\n<div class=\"label\">L2Mesh enable</div>\n");
+			websWrite(wp, "<div class=\"setting\">\n<div class=\"label\">L2Mesh&nbsp;<script type=\"text/javascript\">Capture(share.enable)</script></div>\n");
 			websWrite(wp, "<input class=\"spaceradio\" type=\"checkbox\" name=\"bat_%s_enable\" value=\"1\" %s /></div>\n", var, nvram_matchi(bat_enable, 1) ? "checked=\"checked\"" : "");
 
 			sprintf(bat_bridge, "bat_%s_bridge", var);
 			nvram_default_get(bat_bridge, "br0");
-			websWrite(wp, "<div class=\"setting\">\n<div class=\"label\"><script type=\"text/javascript\">/*Capture(idx.wanport)*/</script>L2Mesh Bridge</div>\n");
+			websWrite(wp, "<div class=\"setting\">\n<div class=\"label\">L2Mesh&nbsp;<script type=\"text/javascript\">Capture(networking.bridge)</script></div>\n");
 			websWrite(wp, "<select name=\"bat_%s_bridge\">\n", var);
-			websWrite(wp, "  <option value=\"\">none</option>\n");
+			websWrite(wp, "  <option value=\"\"><script type=\"text/javascript\">Capture(share.none)</script></option>\n");
 			foreach(word, bufferif, next) {
 				// if( strcmp( word, "br0" ) ) {
 				websWrite(wp, "<option value=\"%s\" %s >%s</option>\n", word, nvram_match(bat_bridge, word) ? "selected=\"selected\"" : "", word);
@@ -250,7 +250,7 @@ EJ_VISIBLE void ej_portsetup(webs_t wp, int argc, char_t ** argv)
 		char r1x_if[32];
 		sprintf(r1x_if, "%s_r1x", var);
 		nvram_default_get(r1x_if, "0");
-		websWrite(wp, "<div class=\"setting\">\n<div class=\"label\">Enable Wired 802.1x Server</div>\n");
+		websWrite(wp, "<div class=\"setting\">\n<div class=\"label\"><script type=\"text/javascript\">Capture(service.wired_8021x_server)</script</div>\n");
 		websWrite(wp, "<input class=\"spaceradio\" onclick=\"show_layer_ext(this, '%s_r1x_block', true);\" type=\"radio\" name=\"%s_r1x\" value=\"1\" %s />\n", var, var,
 			  nvram_match(r1x_if, "1") ? "checked=\"checked\"" : "");
 		websWrite(wp, "<script type=\"text/javascript\">Capture(share.enable)</script>&nbsp;\n");
@@ -260,31 +260,31 @@ EJ_VISIBLE void ej_portsetup(webs_t wp, int argc, char_t ** argv)
 		// showRadio(wp, "Use as primary Wan", wan_prim);
 		websWrite(wp, "<div id=\"%s_r1x_block\">\n", var);
 		websWrite(wp, "<div class=\"setting\">\n");
-		websWrite(wp, "<div class=\"label\">Radius Server address</div>\n");
+		websWrite(wp, "<div class=\"label\"><script type=\"text/javascript\">Capture(wpa.radius_ipaddr)</script></div>\n");
 		char *ipv = nvram_nget("%s_r1x_server", var);
 		websWrite(wp, "<input name=\"%s_r1x_server\" size=\"32\" maxlength=\"255\" value=\"%s\" />", var, ipv);
 		websWrite(wp, "</div>\n");
 
 		websWrite(wp, "<div class=\"setting\">\n");
-		websWrite(wp, "<div class=\"label\">Radius Server Port</div>\n");
+		websWrite(wp, "<div class=\"label\"><script type=\"text/javascript\">Capture(wpa.radius_port)</script></div>\n");
 		ipv = nvram_nget("%s_r1x_port", var);
 		websWrite(wp, "<input name=\"%s_r1x_port\" size=\"5\" maxlength=\"10\" value=\"%s\" />", var, ipv);
 		websWrite(wp, "</div>\n");
 
 		websWrite(wp, "<div class=\"setting\">\n");
-		websWrite(wp, "<div class=\"label\">Radius Shared Secret</div>\n");
+		websWrite(wp, "<div class=\"label\"><script type=\"text/javascript\">Capture(wpa.radius_shared_secret)</script></div>\n");
 		ipv = nvram_nget("%s_r1x_ss", var);
 		websWrite(wp, "<input name=\"%s_r1x_ss\" size=\"32\" maxlength=\"255\" value=\"%s\" />", var, ipv);
 		websWrite(wp, "</div>\n");
 
 		websWrite(wp, "<div class=\"setting\">\n");
-		websWrite(wp, "<div class=\"label\">Session Time (s)</div>\n");
+		websWrite(wp, "<div class=\"label\"><script type=\"text/javascript\">Capture(wpa.session_time)</script></div>\n");
 		ipv = nvram_nget("%s_r1x_st", var);
 		websWrite(wp, "<input name=\"%s_r1x_st\" size=\"5\" maxlength=\"20\" value=\"%s\" />", var, ipv);
-		websWrite(wp, "</div>\n");
+		websWrite(wp, "&nbps;<script type=\"text/javascript\">Capture(share.seconds)</script></div>\n");
 
 		websWrite(wp, "<div class=\"setting\">\n");
-		websWrite(wp, "<div class=\"label\">MAC Address Whitelist</div>\n");
+		websWrite(wp, "<div class=\"label\"><script type=\"text/javascript\">Capture(hotspot.nocat_MAClist)</script></div>\n");
 		ipv = nvram_nget("%s_r1x_wl", var);
 		websWrite(wp, "<input name=\"%s_r1x_wl\" size=\"32\" maxlength=\"255\" value=\"%s\" />", var, ipv);
 		websWrite(wp, "</div>\n");

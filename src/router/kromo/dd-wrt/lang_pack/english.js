@@ -1190,7 +1190,7 @@ info.ap="Access Point";
 
 // ** index_heartbeat.asp **//
 var idx_h=new Object();
-idx_h.srv="Heart Beat Server";
+idx_h.srv="Heartbeat Server";
 idx_h.con_strgy="Connection Strategy";
 idx_h.max_idle="Connect on Demand: Max Idle Time";
 idx_h.alive="Keep Alive: Redial Period";
@@ -1245,6 +1245,11 @@ idx.legend2="WAN Port";
 idx.wantoswitch="Assign WAN Port to Switch";
 idx.static_ip="Static IP";
 idx.dhcp="Automatic Configuration - DHCP";
+idx.dsl_mdm_bdg="DSL Modem Bridge";
+idx.ppoe_dual="PPoE Dualstack";
+idx.heartbeat_sig="Heartbeat Signal";
+idx.iphone_tether="iPhone Tethering";
+idx.mobile_bb="Mobile Broadband";
 idx.dhcp_auth="DHCP Authentication";
 idx.dhcp6c_auth="DHCP IPv6 Authentication";
 idx.dhcp_userclass="DHCP User Class";
@@ -1913,6 +1918,9 @@ service.pppoesrv_radauthport="Authentication Port";
 service.pppoesrv_radaccport="Accounting Port";
 service.pppoesrv_radkey="Shared Key";
 service.pppoesrv_chaps="Local User Management (CHAP-Secrets)";
+
+// portsetup.c line 253
+service.wired_8021x_server="Enable Wired 802.1X Server";
 
 //help container
 var hpppoesrv=new Object();
@@ -2597,7 +2605,7 @@ vlan.h2="Virtual Local Area Network (VLAN)";
 vlan.legend="VLAN";
 vlan.bridge="Assigned To<br />Bridge";
 vlan.tagged="Tagged";
-vlan.negociate="Auto-Negotiate";
+vlan.negociate="Autonegotiation";
 vlan.aggregation="Link Aggregation<br />on Ports 3 & 4";
 vlan.trunk="Trunk";
 vlan.linkstatus="Link Status";
@@ -2676,6 +2684,11 @@ wpa.gtk_rekey="WPA Group Rekey Interval";
 wpa.rekey="Key Renewal Interval";
 wpa.radius_ipaddr="RADIUS Server Address";
 wpa.radius_port="RADIUS Server Port";
+
+//portsetup.c line 275 and 
+wpa.radius_shared_secret="RADIUS Shared Secret";
+wpa.session_time="Session Time";
+
 wpa.radius_key="RADIUS Key";
 wpa.algorithms="WPA Algorithms";
 wpa.shared_key="WPA Shared Key";
@@ -2717,7 +2730,7 @@ aoss.start="Start AOSS negotiation";
 aoss.securitymodes="Security Modes";
 aoss.wpaaes="WPA AES";
 aoss.wpatkip="WPA TKIP";
-aoss.wep="WEP 64/128";
+aoss.wep="WEP 64 / 128";
 aoss.client_name="Client Name";
 aoss.security="Security";
 aoss.connectivity="Connectivity";
