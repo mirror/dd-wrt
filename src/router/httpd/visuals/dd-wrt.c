@@ -359,7 +359,7 @@ EJ_VISIBLE void ej_show_connectiontype(webs_t wp, int argc, char_t ** argv)
 	websWrite(wp, "<option value=\"pppoe\" %s >PPPoE</option>\n", nvram_selmatch(wp, "wan_proto", "pppoe") ? "selected=\"selected\"" : "");
 #endif
 #ifdef HAVE_PPPOEDUAL
-	websWrite(wp, "<option value=\"pppoe_dual\" %s><script type=\"text/javascript\">Capture(idx.ppoe_dual)</script></option>\n", nvram_selmatch(wp, "wan_proto", "pppoe_dual") ? "selected=\"selected\"" : "");
+	websWrite(wp, "<option value=\"pppoe_dual\" %s><script type=\"text/javascript\">Capture(idx.pppoe_dual)</script></option>\n", nvram_selmatch(wp, "wan_proto", "pppoe_dual") ? "selected=\"selected\"" : "");
 #endif
 #ifdef HAVE_PPPOATM
 	websWrite(wp, "<option value=\"pppoa\" %s >PPPoA</option>\n", nvram_selmatch(wp, "wan_proto", "pppoa") ? "selected=\"selected\"" : "");
