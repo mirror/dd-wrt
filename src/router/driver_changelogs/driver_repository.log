@@ -1,4 +1,8 @@
 ------------------------------------------------------------------------
+r6657 | brainslayer | 2022-06-21 14:14:24 +0700 (Tue, 21 Jun 2022) | 1 line
+
+disable powersave by default since its causing instabilities
+------------------------------------------------------------------------
 r6656 | brainslayer | 2022-06-21 13:35:10 +0700 (Tue, 21 Jun 2022) | 1 line
 
 revert virtual time scheduler to deficit scheduler + airtime enhancements by nbd
