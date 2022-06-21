@@ -26,7 +26,7 @@ function vlan_remove(F, I) {
 
 function SelSpeed(F,I) {
 	var vlancount = <% nvg("portvlan_count"); %>;
-	
+
 	if(eval("F."+I+"vlan21000") && eval("F."+I+"vlan21000").checked==false) {
 		for(i=0;i<vlancount;i++) {
 			if (eval("F."+I+"vlan"+i)) {
@@ -50,39 +50,38 @@ function SelSpeed(F,I) {
 
 		SelVLAN(F,I);
 		if (eval("F."+I+"vlan17000")) {
-		    if(eval("F."+I+"vlan17000").checked) {
-			    if (eval("F."+I+"vlan18000")) {
-		    	    eval("F."+I+"vlan18000").checked=true;
-			    choose_disable(eval("F."+I+"vlan18000"));
-		    	    }
-			    if (eval("F."+I+"vlan19000")) {
-			    eval("F."+I+"vlan19000").checked=true;
-			    choose_disable(eval("F."+I+"vlan19000"));
-			    }
-			    if (eval("F."+I+"vlan20000")) {
-			    eval("F."+I+"vlan20000").checked=true;
-			    choose_disable(eval("F."+I+"vlan20000"));
-			    }
-		    } else {
-			    if (eval("F."+I+"vlan18000")) {
-			    choose_enable(eval("F."+I+"vlan18000"));
-			    }
-			    if (eval("F."+I+"vlan19000")) {
-			    choose_enable(eval("F."+I+"vlan19000"));
-			    }
-			    if (eval("F."+I+"vlan20000")) {
-			    choose_enable(eval("F."+I+"vlan20000"));
-			    }
-		    }
-		    if (eval("F."+I+"vlan19000")) {
-		    if(eval("F."+I+"vlan18000").checked) {
-	    		    eval("F."+I+"vlan19000").checked=true;
-			    choose_disable(eval("F."+I+"vlan19000"));
-		    } else {
-			    choose_enable(eval("F."+I+"vlan19000"));
-		    }
-		    }
-	    }
+			if(eval("F."+I+"vlan17000").checked) {
+				if (eval("F."+I+"vlan18000")) {
+					eval("F."+I+"vlan18000").checked=true;
+					choose_disable(eval("F."+I+"vlan18000"));
+				}
+				if (eval("F."+I+"vlan19000")) {
+					eval("F."+I+"vlan19000").checked=true;
+					choose_disable(eval("F."+I+"vlan19000"));
+				}
+				if (eval("F."+I+"vlan20000")) {
+					eval("F."+I+"vlan20000").checked=true;
+					choose_disable(eval("F."+I+"vlan20000"));
+				}
+			} else {
+				if (eval("F."+I+"vlan18000"))
+					choose_enable(eval("F."+I+"vlan18000"));
+
+				if (eval("F."+I+"vlan19000"))
+					choose_enable(eval("F."+I+"vlan19000"));
+
+				if (eval("F."+I+"vlan20000"))
+					choose_enable(eval("F."+I+"vlan20000"));
+			}
+			if (eval("F."+I+"vlan19000")) {
+				if(eval("F."+I+"vlan18000").checked) {
+					eval("F."+I+"vlan19000").checked=true;
+					choose_disable(eval("F."+I+"vlan19000"));
+				} else {
+					choose_enable(eval("F."+I+"vlan19000"));
+				}
+			}
+		}
 	}
 }
 
@@ -135,15 +134,12 @@ function init() {
 var update;
 
 addEvent(window, "load", function() {
-	
 	update = new StatusbarUpdate();
 	update.start();
-
 });
 
 addEvent(window, "unload", function() {
 	update.stop();
-
 });
 	
 		//]]>
@@ -151,7 +147,6 @@ addEvent(window, "unload", function() {
 	</head>
 
 	<body class="gui" onload="init()">
-		
 		<div id="wrapper">
 			<div id="content">
 				<div id="header">
@@ -170,14 +165,13 @@ addEvent(window, "unload", function() {
 
 							<h2><% tran("vlan.h2"); %></h2>
 							<fieldset>
-							   <legend><% tran("vlan.legend"); %></legend>
-							   <table class="table vlan" summary="virtual lan table">
-								<tbody>
-									<% port_vlan_table(); %>
-								</tbody>
+								<legend><% tran("vlan.legend"); %></legend>
+								<table class="table vlan" summary="virtual lan table">
+									<tbody>
+										<% port_vlan_table(); %>
+									</tbody>
 							 </table>
-						</fieldset>
-							 <br/>
+						 </fieldset><br/>
 							<div class="submitFooter">
 								<script type="text/javascript">
 								//<![CDATA[

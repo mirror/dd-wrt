@@ -56,7 +56,6 @@ function valid_value(F) {
 						pptp_dhcp = "skip";
 					}
 
-			
 			if (!F.pptp_use_dhcp || F.pptp_use_dhcp.value == "0") {
 				if(pptp_dhcp != "skip" && F.wan_ipaddr && !valid_ip(F,"F.wan_ipaddr","IP",ZERO_NO|MASK_NO)) {
 					return false;
@@ -94,6 +93,7 @@ function valid_value(F) {
 			F.router_name.focus();
 			return false;
 		}
+
 	if(document.setup)
 		if(document.setup.now_proto) {
 			if(document.setup.now_proto.value == "pptp")
@@ -101,7 +101,6 @@ function valid_value(F) {
 			if(document.setup.now_proto.value == "l2tp")
 				l2tpUseDHCP(document.setup, '<% nvg("l2tp_use_dhcp"); %>');
 		}
-
 	return true;
 }
 
@@ -110,7 +109,6 @@ function valid_dhcp_server(F) {
 		return true;
 	if (F.lan_proto.selectedIndex == 0)
 		return true;
-
 
 	if (F.wan_dns0 != null)
 		if (!valid_ip(F,"F.wan_dns0","DNS",MASK_NO))
@@ -146,7 +144,7 @@ function dhcp_enable_disable(F,T) {
 		if(F.elements[i].name == "wan_wins_3")
 			end = i;
 	}
-	
+
 	if(start == '' || end == '')
 		return true;
 
@@ -232,27 +230,22 @@ function submitcheck(F) {
 		if(F._auth_dnsmasq) {
 			F.auth_dnsmasq.value = F._auth_dnsmasq.checked ? 1 : 0;
 		}
-
 		if(F._dns_redirect) {
 			F.dns_redirect.value = F._dns_redirect.checked ? 1 : 0;
 		}
-
 		if(F._dns_redirectdot) {
 			F.dns_redirectdot.value = F._dns_redirectdot.checked ? 1 : 0;
 		}
-
 		if(F._recursive_dns) {
 			F.recursive_dns.value = F._recursive_dns.checked ? 1 : 0;
 		}
-		
 		if(F._ppp_mlppp) {
 			F.ppp_mlppp.value = F._ppp_mlppp.checked ? 1 : 0;
 		}
-
 		if(F._ignore_wan_dns) {
 			F.ignore_wan_dns.value = F._ignore_wan_dns.checked ? 1 : 0;
 		}
-		
+
 		F.submit_type.value = "";
 		F.change_action.value = "";
 		F.save_button.value = sbutton.saving;
@@ -331,7 +324,7 @@ addEvent(window, "unload", function() {
 							<input type="hidden" name="action" value="Apply" />
 							<input type="hidden" name="change_action"/>
 							<input type="hidden" name="submit_type" />
-							
+
 							<input type="hidden" name="now_proto" value="<% nvram_gozila_get("wan_proto"); %>" />
 							<input type="hidden" name="dns_dnsmasq" value="0" />
 							<input type="hidden" name="wan_priority" value="0" />
@@ -343,7 +336,7 @@ addEvent(window, "unload", function() {
 							<input type="hidden" name="ignore_wan_dns" value="0" />
 							<input type="hidden" name="lan_ipaddr" value="4" />
 							<input type="hidden" name="dhcp_start" value="4" />
-						
+
 							<% show_sas(); %>
 							<% show_admincard(); %>
 							<% ifdef("WET", "<!--"); %>
@@ -357,19 +350,18 @@ addEvent(window, "unload", function() {
 							<% ifndef("STA", "<!--"); %>
 							<h2><script type="text/javascript">Capture(idx.h22);</script></h2>
 							<% ifndef("STA", "-->"); %>
-							
 							<fieldset>
 								<legend><% tran("idx.legend"); %></legend>
 								<% ifndef("WET", "<!--"); %>
 								<div class="setting">
-							    	<div class="label"><% tran("idx.conn_type"); %></div>
-							    	<% tran("share.disabled"); %>
+									<div class="label"><% tran("idx.conn_type"); %></div>
+									<% tran("share.disabled"); %>
 								</div>
 								<% ifndef("WET", "-->"); %>			
 								<% ifdef("WET", "<!--"); %>
 								<div class="setting">
-							    	<div class="label"><% tran("idx.conn_type"); %></div>
-							    	<select name="wan_proto" onchange="SelWAN(this.form.wan_proto.selectedIndex,this.form)">
+									<div class="label"><% tran("idx.conn_type"); %></div>
+									<select name="wan_proto" onchange="SelWAN(this.form.wan_proto.selectedIndex,this.form)">
 									<% show_connectiontype(); %>
 									</select>
 								</div>
