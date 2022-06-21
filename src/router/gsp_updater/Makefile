@@ -47,6 +47,9 @@ install: gsp_updater i2cset i2cget i2cdump
 	install -m 0644 -o $(INSTOWNER) -g $(INSTGROUP) gsc_630x_v61.txt $(INSTALLDIR)/etc/gsc_620x_v61.txt
 	install -m 0644 -o $(INSTOWNER) -g $(INSTGROUP) gsc_630x_v61.txt $(INSTALLDIR)/etc/gsc_630x_v61.txt
 	install -m 0644 -o $(INSTOWNER) -g $(INSTGROUP) gsc_630x_v61.txt $(INSTALLDIR)/etc/gsc_640x_v61.txt
+	install -m 0644 -o $(INSTOWNER) -g $(INSTGROUP) gsc_6903_v61.txt $(INSTALLDIR)/etc/gsc_6903_v61.txt
+	install -m 0644 -o $(INSTOWNER) -g $(INSTGROUP) gsc_6904_v61.txt $(INSTALLDIR)/etc/gsc_6904_v61.txt
+	install -m 0644 -o $(INSTOWNER) -g $(INSTGROUP) gsc_6905_v61.txt $(INSTALLDIR)/etc/gsc_6905_v61.txt
 
 clean:
 	rm -f gsp_updater i2cset *.o core
