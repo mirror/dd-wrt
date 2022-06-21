@@ -65,9 +65,6 @@ input.num {
   text-align: center;
   vertical-align: middle;
 }
-input.num[name*='openvpncl_remoteport'] {
-  vertical-align: unset;
-}
 select {
   padding: 4px 4px;
   font-size: 12px;
@@ -82,7 +79,9 @@ select[onchange*='ServiceTable'] {
   width: inherit;
   height: inherit;
 }
-select[name*='bondingif'], select[name*='bondingattach'] {
+select[name*='bondingif'], select[name*='bondingattach'],
+select[name*='schedule_'], input.num[name*='openvpncl_remoteport'],
+input.num[name='schedule_time'] {
   vertical-align: unset;
 }
 #score {

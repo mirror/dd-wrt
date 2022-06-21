@@ -353,13 +353,13 @@ EJ_VISIBLE void ej_show_connectiontype(webs_t wp, int argc, char_t ** argv)
 	websWrite(wp, "\n//]]>\n</script>\n");
 
 #ifdef HAVE_MODEMBRIDGE
-	websWrite(wp, "<option value=\"bridge\" %s >DSL Modem Bridge</option>\n", nvram_selmatch(wp, "wan_proto", "bridge") ? "selected=\"selected\"" : "");
+	websWrite(wp, "<option value=\"bridge\" %s ><script type=\"text/javascript\">Capture(idx.dsl_mdm_bdg)</script></option>\n", nvram_selmatch(wp, "wan_proto", "bridge") ? "selected=\"selected\"" : "");
 #endif
 #ifdef HAVE_PPPOE
 	websWrite(wp, "<option value=\"pppoe\" %s >PPPoE</option>\n", nvram_selmatch(wp, "wan_proto", "pppoe") ? "selected=\"selected\"" : "");
 #endif
 #ifdef HAVE_PPPOEDUAL
-	websWrite(wp, "<option value=\"pppoe_dual\" %s>PPPoE Dual</option>\n", nvram_selmatch(wp, "wan_proto", "pppoe_dual") ? "selected=\"selected\"" : "");
+	websWrite(wp, "<option value=\"pppoe_dual\" %s><script type=\"text/javascript\">Capture(idx.ppoe_dual)</script></option>\n", nvram_selmatch(wp, "wan_proto", "pppoe_dual") ? "selected=\"selected\"" : "");
 #endif
 #ifdef HAVE_PPPOATM
 	websWrite(wp, "<option value=\"pppoa\" %s >PPPoA</option>\n", nvram_selmatch(wp, "wan_proto", "pppoa") ? "selected=\"selected\"" : "");
@@ -371,10 +371,10 @@ EJ_VISIBLE void ej_show_connectiontype(webs_t wp, int argc, char_t ** argv)
 	websWrite(wp, "<option value=\"l2tp\" %s >L2TP</option>\n", nvram_selmatch(wp, "wan_proto", "l2tp") ? "selected=\"selected\"" : "");
 #endif
 #ifdef HAVE_HEARTBEAT
-	websWrite(wp, "<option value=\"heartbeat\" %s >HeartBeat Signal</option>\n", nvram_selmatch(wp, "wan_proto", "heartbeat") ? "selected=\"selected\"" : "");
+	websWrite(wp, "<option value=\"heartbeat\" %s ><script type=\"text/javascript\">Capture(idx.heartbeat_sig)</script></option>\n", nvram_selmatch(wp, "wan_proto", "heartbeat") ? "selected=\"selected\"" : "");
 #endif
 #ifdef HAVE_IPETH
-	websWrite(wp, "<option value=\"iphone\" %s >iPhone Tethering</option>\n", nvram_selmatch(wp, "wan_proto", "iphone") ? "selected=\"selected\"" : "");
+	websWrite(wp, "<option value=\"iphone\" %s ><script type=\"text/javascript\">Capture(idx.iphone_tether)</script></option>\n", nvram_selmatch(wp, "wan_proto", "iphone") ? "selected=\"selected\"" : "");
 #endif
 #ifdef HAVE_3G
 #ifdef HAVE_BUFFALO
@@ -385,7 +385,7 @@ EJ_VISIBLE void ej_show_connectiontype(webs_t wp, int argc, char_t ** argv)
 	if (!strcmp(region, "EU") || !strcmp(region, "DE")
 	    || nvram_matchi("umts_override", 1)) {
 #endif
-		websWrite(wp, "<option value=\"3g\" %s >Mobile Broadband</option>\n", nvram_selmatch(wp, "wan_proto", "3g") ? "selected=\"selected\"" : "");
+		websWrite(wp, "<option value=\"3g\" %s ><script type=\"text/javascript\">Capture(idx.mobile_bb)</script></option>\n", nvram_selmatch(wp, "wan_proto", "3g") ? "selected=\"selected\"" : "");
 #ifdef HAVE_BUFFALO
 	}
 #endif

@@ -120,8 +120,8 @@ EJ_VISIBLE void ej_port_vlan_table(webs_t wp, int argc, char_t ** argv)
 	nowan = nvram_match("sw_wan", "-1");
 	websWrite(wp, "<tr>\n");
 	websWrite(wp, "<th rowspan=\"2\"><script type=\"text/javascript\">Capture(vlan.legend)</script></th>\n");
-	websWrite(wp, "<th colspan=\"%d\"><script type=\"text/javascript\">Capture(share.port)</script></th>\n", lanports + !nowan);
-	websWrite(wp, "<th class=\"center\" width=\"10%%\" rowspan=\"2\"><script type=\"text/javascript\">Capture(share.actiontbl)</script></th>\n");
+	websWrite(wp, "<th colspan=\"%d\" class=\"center\"><script type=\"text/javascript\">Capture(share.port)</script></th>\n", lanports + !nowan);
+	websWrite(wp, "<th rowspan=\"2\" class=\"center\" width=\"10%%\"><script type=\"text/javascript\">Capture(share.actiontbl)</script></th>\n");
 	websWrite(wp, "</tr>\n");
 	websWrite(wp, "<tr>\n");
 	if (!nowan)
@@ -158,13 +158,13 @@ EJ_VISIBLE void ej_port_vlan_table(webs_t wp, int argc, char_t ** argv)
 	}
 
 	websWrite(wp, "<td></td>\n");
-	websWrite(wp, "              </tr>\n");
+	websWrite(wp, "</tr>\n");
 #else
 
 	websWrite(wp, "<tr>\n");
 	websWrite(wp, "<th rowspan=\"2\"><script type=\"text/javascript\">Capture(vlan.legend)</script></th>\n");
-	websWrite(wp, "<th colspan=\"5\"><script type=\"text/javascript\">Capture(share.port)</script></th>\n");
-	websWrite(wp, "<th class=\"center\" rowspan=\"2\"><script type=\"text/javascript\">Capture(share.actiontbl)</script></th>\n");
+	websWrite(wp, "<th colspan=\"5\" class=\"center\"><script type=\"text/javascript\">Capture(share.port)</script></th>\n");
+	websWrite(wp, "<th rowspan=\"2\" class=\"center\"><script type=\"text/javascript\">Capture(share.actiontbl)</script></th>\n");
 	websWrite(wp, "</tr>\n");
 	websWrite(wp, "<tr>\n");
 	websWrite(wp, "<th class=\"center\">WAN</th>\n");
@@ -190,7 +190,7 @@ EJ_VISIBLE void ej_port_vlan_table(webs_t wp, int argc, char_t ** argv)
 	if (fp) {
 		fclose(fp);
 
-		websWrite(wp, "              <tr>\n");
+		websWrite(wp, "<tr>\n");
 		websWrite(wp, "<td>&nbsp;</td>\n");
 
 		int vlanmap[6] = { 0, 1, 2, 3, 4, 5 };	// 0=wan; 1,2,3,4=lan; 5=internal 
@@ -229,7 +229,7 @@ EJ_VISIBLE void ej_port_vlan_table(webs_t wp, int argc, char_t ** argv)
 				websWrite(wp, "<td class=\"%s\">down</td>\n", status);
 		}
 		websWrite(wp, "<td></td>\n");
-		websWrite(wp, "              </tr>\n");
+		websWrite(wp, "</tr>\n");
 	}
 #endif
 	int len = blen;
@@ -242,7 +242,7 @@ EJ_VISIBLE void ej_port_vlan_table(webs_t wp, int argc, char_t ** argv)
 #endif
 	for (i = 0; i < len; i++) {
 
-		websWrite(wp, "              <tr>\n");
+		websWrite(wp, "<tr>\n");
 		websWrite(wp, "<td>");
 		int flag = i;
 		if (i >= blen) {
@@ -332,8 +332,8 @@ EJ_VISIBLE void ej_port_vlan_table(webs_t wp, int argc, char_t ** argv)
 
 		if (flag < 16000 && flag > 2) {
 			websWrite(wp,
-				  "<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<td class=\\\"center\\\" title=\\\"\" + sbutton.del + \"\\\"><input class=\\\"remove\\\" aria-label=\\\"\" + sbutton.del + \"\\\" type=\\\"button\\\" onclick=\\\"vlan_remove(this.form,'%d')\\\" />\");\n//]]>\n</script></td>\n",
-				  i);
+					"<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<td class=\\\"center\\\" title=\\\"\" + sbutton.del + \"\\\"><input class=\\\"remove\\\" aria-label=\\\"\" + sbutton.del + \"\\\" type=\\\"button\\\" onclick=\\\"vlan_remove(this.form,'%d')\\\" />\");\n//]]>\n</script></td>\n",
+					i);
 		} else {
 			websWrite(wp, "<td>&nbsp;</td>\n");
 		}
@@ -341,8 +341,8 @@ EJ_VISIBLE void ej_port_vlan_table(webs_t wp, int argc, char_t ** argv)
 		websWrite(wp, "</tr>\n");
 		if (i == (blen - 1)) {
 			websWrite(wp,
-				  "<tr><td><script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<input class=\\\"button\\\" type=\\\"button\\\" value=\\\"\" + sbutton.add + \"\\\" onclick=\\\"vlan_add(this.form,'%d')\\\" />\");\n//]]>\n</script></td></tr>\n",
-				  i);
+					"<tr><td><script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<input class=\\\"button\\\" type=\\\"button\\\" value=\\\"\" + sbutton.add + \"\\\" onclick=\\\"vlan_add(this.form,'%d')\\\" />\");\n//]]>\n</script></td></tr>\n",
+					i);
 
 		}
 		if (flag == 20000 || flag == 16000) {
@@ -379,7 +379,7 @@ EJ_VISIBLE void ej_port_vlan_table(webs_t wp, int argc, char_t ** argv)
 		websWrite(wp, " selected=\\\"selected\\\"");
 
 	websWrite(wp, ">\" + vlan.trunk + \"</option>\");\n//]]>\n</script></select></td>\n");
-	websWrite(wp, "              </tr>");
+	websWrite(wp, "</tr>");
 #endif
 	for (i = 0; i < 7; i++)
 		debug_free(vlans[i]);
