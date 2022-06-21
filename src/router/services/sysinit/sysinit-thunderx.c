@@ -111,13 +111,13 @@ void start_sysinit(void)
 
 	char *board = nvram_safe_get("DD_BOARD");
 	if (!strncmp(board, "Gateworks Newport GW64", 22))
-		eval("gsp_updater", "-f", "/etc/gsc_640x_v57.txt", "-r", "57");
+		eval("gsp_updater", "-f", "/etc/gsc_640x_v61.txt", "-r", "61");
 	if (!strncmp(board, "Gateworks Newport GW63", 22))
-		eval("gsp_updater", "-f", "/etc/gsc_630x_v57.txt", "-r", "57");
+		eval("gsp_updater", "-f", "/etc/gsc_630x_v61.txt", "-r", "61");
 	if (!strncmp(board, "Gateworks Newport GW62", 22))
-		eval("gsp_updater", "-f", "/etc/gsc_620x_v57.txt", "-r", "57");
+		eval("gsp_updater", "-f", "/etc/gsc_620x_v61.txt", "-r", "61");
 	if (!strncmp(board, "Gateworks Newport GW61", 22))
-		eval("gsp_updater", "-f", "/etc/gsc_610x_v57.txt", "-r", "57");
+		eval("gsp_updater", "-f", "/etc/gsc_610x_v61.txt", "-r", "61");
 
 	return;
 }
