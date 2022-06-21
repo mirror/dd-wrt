@@ -916,6 +916,10 @@ void start_dnsmasq(void)
 		add_ms_telemetry(fp);
 	if (nvram_matchi("dnsmasq_ubnt_telemetry", 1))
 		add_ubnt_telemetry(fp);
+	// write canarydomain to stop browsers from using DoH when DoT redirection is active
+	if (nvram_matchi("dns_redirectdot", 1)) {
+		fprintf(fp, "address=/use-application-dns.net/\n");
+	}
 	/*
 	 * Additional options 
 	 */
