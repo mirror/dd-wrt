@@ -3447,6 +3447,7 @@ EXPORT_SYMBOL(ZSTD_compressBound);
 
 EXPORT_SYMBOL(ZSTD_CCtxWorkspaceBound);
 EXPORT_SYMBOL(ZSTD_initCCtx);
+EXPORT_SYMBOL(ZSTD_freeCCtx);
 EXPORT_SYMBOL(ZSTD_compressCCtx);
 EXPORT_SYMBOL(ZSTD_compress_usingDict);
 
