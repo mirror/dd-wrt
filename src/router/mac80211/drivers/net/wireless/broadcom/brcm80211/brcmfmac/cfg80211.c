@@ -3082,7 +3082,7 @@ brcmf_cfg80211_set_power_mgmt(struct wiphy *wiphy, struct net_device *ndev,
 		brcmf_dbg(INFO, "Do not enable power save for P2P clients\n");
 		pm = PM_OFF;
 	}
-	brcmf_dbg(INFO, "power save %s\n", (pm ? "enabled" : "disabled"));
+	brcmf_info("power save %s\n", (pm ? "enabled" : "disabled"));
 
 	err = brcmf_fil_cmd_int_set(ifp, BRCMF_C_SET_PM, pm);
 	if (err) {
@@ -6635,7 +6635,7 @@ static s32 wl_init_priv(struct brcmf_cfg80211_info *cfg)
 	s32 err = 0;
 
 	cfg->scan_request = NULL;
-	cfg->pwr_save = true;
+	cfg->pwr_save = false;
 	cfg->dongle_up = false;		/* dongle is not up yet */
 	err = brcmf_init_priv_mem(cfg);
 	if (err)
@@ -7571,7 +7571,7 @@ static s32 brcmf_config_dongle(struct brcmf_cfg80211_info *cfg)
 	err = brcmf_fil_cmd_int_set(ifp, BRCMF_C_SET_PM, power_mode);
 	if (err)
 		goto default_conf_out;
-	brcmf_dbg(INFO, "power save set to %s\n",
+	brcmf_info("power save set to %s\n",
 		  (power_mode ? "enabled" : "disabled"));
 
 	err = brcmf_dongle_roam(ifp);
