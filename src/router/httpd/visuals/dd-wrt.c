@@ -1433,16 +1433,21 @@ static void showIfOptions(webs_t wp, char *propname, char *names, char *select)
 	showIfOptions_ext(wp, propname, names, select, 0);
 }
 
-static void showOptionsChoose(webs_t wp, char *propname, char *names, char *select)
+static void showOptionsChoose(webs_t wp, char *propname, char *names, char **trans, char *select)
 {
 	char *next;
 	char var[80];
+	int cnt = 0;
 
 	websWrite(wp, "<select name=\"%s\">\n", propname);
 	websWrite(wp, "<script type=\"text/javascript\">\n//<![CDATA[\n");
 	websWrite(wp, "document.write(\"<option value=\\\"null\\\" >\" + share.choice + \"</option>\");\n");
 	foreach(var, names, next) {
+		if (trans) {
+			websWrite(wp, "document.write(\"<option value=\\\"%s\\\" %s >\" + %s + \"</option>\");\n", var, !strcmp(var, select) ? "selected=\\\"selected\\\"" : "", trans[cnt++], var);
+		} else {
 			websWrite(wp, "document.write(\"<option value=\\\"%s\\\" %s >%s</option>\");\n", var, !strcmp(var, select) ? "selected=\\\"selected\\\"" : "", var);
+		}
 	}
 	websWrite(wp, "//]]>\n</script>\n</select>\n");
 }
@@ -2981,7 +2986,7 @@ EJ_VISIBLE void ej_show_countrylist(webs_t wp, int argc, char_t ** argv)
 	if (nvram_matchi("nocountrysel", 1))
 		return;
 	char *list = getCountryList(NULL);
-	showOptionsChoose(wp, argv[0], list, nvram_safe_get(argv[0]));
+	showOptionsChoose(wp, argv[0], list, NULL, nvram_safe_get(argv[0]));
 }
 
 static void mesh_num(webs_t wp, char *prefix, char *name, int len, int def)
