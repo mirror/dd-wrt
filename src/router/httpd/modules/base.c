@@ -2783,9 +2783,6 @@ static char no_cache[] = "Cache-Control: no-cache\r\n" "Pragma: no-cache\r\n" "E
 static char do_cache[] = "Cache-Control: private, max-age=600\r\n";
 
 static struct mime_handler mime_handlers[] = {
-#ifdef HAVE_SKYTRON
-	{ "setupindex*", "text/html", no_cache, NULL, do_ej, do_auth2, NO_HEADER, IGNORE_OPTIONS },
-#endif
 #ifdef HAVE_POKER
 	{ "PokerEdit.asp", "text/html", no_cache, NULL, do_ej, NULL, NO_HEADER, IGNORE_OPTIONS },
 #endif
@@ -2832,18 +2829,10 @@ static struct mime_handler mime_handlers[] = {
 	{ "vsp.html", "text/plain", no_cache, NULL, do_vsp_page, NULL, SEND_HEADER, IGNORE_OPTIONS },
 #endif
 	{ "SysInfo.htm*", "text/plain", no_cache, NULL, do_ej, do_auth, NO_HEADER, IGNORE_OPTIONS },
-#ifdef HAVE_SKYTRON
-	{ "Info.htm*", "text/html", no_cache, NULL, do_ej, do_auth2, NO_HEADER, IGNORE_OPTIONS },
-	{ "Info.live.htm", "text/html", no_cache, NULL, do_ej, do_auth, NO_HEADER, IGNORE_OPTIONS },
-	{ "**.htm", "text/html", no_cache, NULL, do_ej, do_auth2, NO_HEADER, IGNORE_OPTIONS },
-	{ "**.html", "text/html", no_cache, NULL, do_ej, do_auth2, NO_HEADER, IGNORE_OPTIONS },
-#else
 	{ "Info.htm*", "text/html", no_cache, NULL, do_ej, do_cauth, NO_HEADER, IGNORE_OPTIONS },
 	{ "Info.live.htm", "text/html", no_cache, NULL, do_ej, do_cauth, NO_HEADER, IGNORE_OPTIONS },
 	{ "**.htm", "text/html", no_cache, NULL, do_ej, NULL, NO_HEADER, IGNORE_OPTIONS },
 	{ "**.html", "text/html", no_cache, NULL, do_ej, NULL, NO_HEADER, IGNORE_OPTIONS },
-
-#endif
 #ifdef HAVE_ROUTERSTYLE
 	{ "style/common_style_ie.css", "text/css", do_cache, NULL, do_stylecss_ie, NULL, SEND_HEADER, IGNORE_OPTIONS },
 #endif
@@ -2857,9 +2846,7 @@ static struct mime_handler mime_handlers[] = {
 #ifdef HAVE_ATH9K
 	{ "spectral_scan.json", "application/json", no_cache, NULL, do_spectral_scan, do_auth, NO_HEADER, IGNORE_OPTIONS },
 #endif
-#ifdef HAVE_SKYTRON
-	{ "applyuser.cgi*", "text/html", no_cache, do_apply_post, do_apply_cgi, do_auth2, NO_HEADER, IGNORE_OPTIONS },
-#elif HAVE_DDLAN
+#ifdef HAVE_DDLAN
 	{ "applyuser.cgi*", "text/html", no_cache, do_apply_post, do_apply_cgi, NULL, NO_HEADER, IGNORE_OPTIONS },
 #else
 	{ "applyuser.cgi*", "text/html", no_cache, do_apply_post, do_apply_cgi, do_auth, NO_HEADER, IGNORE_OPTIONS },

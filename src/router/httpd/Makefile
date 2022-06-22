@@ -1117,11 +1117,6 @@ ifeq ($(CONFIG_IFL),y)
 CFLAGS += -DHAVE_IFL
 endif
 
-ifeq ($(CONFIG_SKYTRON),y)
-CFLAGS += -DHAVE_SKYTRON
-endif
-
-
 ifeq ($(CONFIG_DLS),y)
 CFLAGS += -DHAVE_DLS
 endif
