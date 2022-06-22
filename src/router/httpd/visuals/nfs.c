@@ -125,17 +125,13 @@ EJ_VISIBLE void ej_nfs_sharepaths(webs_t wp, int argc, char_t ** argv)
 			websWrite(wp, "<option value=\"%s\" rel='{\"fstype\":\"\",\"perms\":[\"%s\"],\"avail\":0}' selected>[not available!]</option>\n", cs->mp, cs->mp);
 		}
 		websWrite(wp, "</select></td>\n");
-		websWrite(wp,
-			  "<td style=\"width: 1%%;\"><input type=\"text\" name=\"nfsshare_subdir%s\" id=\"nfsshare_subdir%s\" value=\"%s\" style=\"width: 150px;\"/></td>\n",
-			  number, number, cs->sd);
+		websWrite(wp, "<td style=\"width: 1%%;\"><input type=\"text\" name=\"nfsshare_subdir%s\" id=\"nfsshare_subdir%s\" value=\"%s\" style=\"width: 150px;\"/></td>\n", number, number, cs->sd);
 
 		websWrite(wp,
 			  "<td style=\"width: 1%%;\"><input type=\"text\" name=\"nfsshare_allowed%s\" id=\"nfsshare_allowed%s\" size=\"20\" maxlength=\"18\" value=\"%s\" style=\"width: 150px;\"/></td>\n",
 			  number, number, cs->allowed);
 		websWrite(wp, "<td>\n");
-		websWrite(wp,
-			  "	<select name=\"nfsshare_access_perms%s\" id=\"nfsshare_access_perms%s\" style=\"width: 100%%;\"%s>\n",
-			  number, number, !strcmp(perms, "") ? " disabled" : "");
+		websWrite(wp, "	<select name=\"nfsshare_access_perms%s\" id=\"nfsshare_access_perms%s\" style=\"width: 100%%;\"%s>\n", number, number, !strcmp(perms, "") ? " disabled" : "");
 		if (rows == 0 || strcmp(perms, "")) {
 			websWrite(wp, "<option value=\"rw\"%s>", !strcmp(cs->access_perms, "rw") ? " selected" : "");
 			show_caption(wp, NULL, "nas.perm_rw", "</option>\n");
