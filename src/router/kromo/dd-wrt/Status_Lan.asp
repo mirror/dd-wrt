@@ -144,7 +144,7 @@ function setARPTable() {
 	cleanTable(table);
 	if(!val.length) {
 		var cell = table.insertRow(-1).insertCell(-1);
-		cell.colSpan = 4;
+		cell.colSpan = 9;
 		cell.align = "center";
 		cell.innerHTML = "- " + share.none + " -";
 		return;
@@ -314,7 +314,6 @@ addEvent(window, "unload", function() {
 								//]]>
 								</script>
 							</fieldset><br />
-							
 							<h2><% tran("status_lan.h22"); %></h2>
 							<fieldset>
 								<legend><% tran("status_lan.legend2"); %></legend>
@@ -337,7 +336,6 @@ addEvent(window, "unload", function() {
 									</div>
 								</div>
 							</fieldset><br />
-							
 							<div id="dhcp_2" style="display:none">
 								<fieldset>
 									<legend><% tran("status_lan.legend3"); %></legend>
@@ -347,8 +345,6 @@ addEvent(window, "unload", function() {
 											<th sortdir="up" width="17%"><% tran("share.ip"); %></th>
 											<th sortdir="up" width="16%"><% tran("share.mac"); %></th>
 											<th sortdir="up" width="18%"><% tran("idx.dhcp_lease"); %></th>
-											<!-- Try to display both delete/add icons under static lease th
-											<th sortdir="up" width="5%"><% tran("share.del"); %></th> -->
 											<th sortdir="up" width="12%" class="center" colspan="2"><% tran("share.static_lease"); %></th>
 										</tr>
 									</table>
@@ -359,8 +355,7 @@ addEvent(window, "unload", function() {
 									</script>
 								</fieldset><br />
 							</div>
-
-<% ifndef("PPTPD", "<!--"); %>
+							<% ifndef("PPTPD", "<!--"); %>
 							<div id="pptp" style="display:none">
 								<fieldset>
 									<legend><% tran("status_lan.legend5"); %></legend>
@@ -380,8 +375,8 @@ addEvent(window, "unload", function() {
 									</script>
 								</fieldset><br />
 							</div>
-<% ifndef("PPTPD", "-->"); %>
-<% ifndef("PPPOESERVER", "<!--"); %>
+							<% ifndef("PPTPD", "-->"); %>
+							<% ifndef("PPPOESERVER", "<!--"); %>
 							<div id="pppoe" style="display:none">
 								<fieldset>
 									<legend><% tran("status_lan.legend6"); %></legend>
@@ -400,8 +395,7 @@ addEvent(window, "unload", function() {
 									</script>
 								</fieldset><br />
 							</div>
-<% ifndef("PPPOESERVER", "-->"); %>
-
+							<% ifndef("PPPOESERVER", "-->"); %>
 							<div class="submitFooter">
 								<script type="text/javascript">
 								//<![CDATA[

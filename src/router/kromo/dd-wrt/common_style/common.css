@@ -251,7 +251,7 @@ li.current {
 h2, h3 {
   padding: 4px 12px;
   line-height: 1.42857;
-  letter-spacing: .09em;
+  letter-spacing: .123rem;
   margin: 0 0 .906em 0;
   border-radius: 4px;
 }
