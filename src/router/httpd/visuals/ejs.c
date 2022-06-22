@@ -2181,6 +2181,8 @@ EJ_VISIBLE void ej_get_radio_statejs(webs_t wp, int argc, char_t ** argv)
 	websWrite(wp, "<script type=\"text/javascript\">Capture(%s)</script>&nbsp;", buf);
 }
 
+#include "arp.c"
+
 #ifdef HAVE_PPPOESERVER
 
 EJ_VISIBLE void ej_dumppppoe(webs_t wp, int argc, char_t ** argv)
