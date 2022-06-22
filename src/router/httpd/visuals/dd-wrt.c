@@ -1441,14 +1441,15 @@ static void showOptionsChoose(webs_t wp, char *propname, char *names, char **tra
 
 	websWrite(wp, "<select name=\"%s\">\n", propname);
 	websWrite(wp, "<script type=\"text/javascript\">\n//<![CDATA[\n");
-	if (trans)
-		websWrite(wp, "document.write(\"<option value=\\\"null\\\" >\" + share.choice + \"</option>\");\n", trans[cnt++]);
-	else {
-		foreach(var, names, next) {
+	foreach(var, names, next) {
+		if (trans) {
+			websWrite(wp, "document.write(\"<option value=\\\"%s\\\" %s >\" + %s + \"</option>\");\n", var, !strcmp(var, select) ? "selected=\\\"selected\\\"" : "", trans[cnt++]);
+		} else {
 			websWrite(wp, "document.write(\"<option value=\\\"%s\\\" %s >%s</option>\");\n", var, !strcmp(var, select) ? "selected=\\\"selected\\\"" : "", var);
+
 		}
-		websWrite(wp, "//]]>\n</script>\n</select>\n");
 	}
+	websWrite(wp, "//]]>\n</script>\n</select>\n");
 }
 
 static void showOptionsLabel(webs_t wp, char *labelname, char *propname, char *names, char *select)
