@@ -744,7 +744,7 @@ static int do_radiuscert(unsigned char method, struct mime_handler *handler, cha
 	{
 
 		char expiration_days[64];
-		strcpy(expiration_days, nvram_safe_get("radius_expiration"));
+		strlcpy(expiration_days, nvram_safe_get("radius_expiration"), sizeof(expiration_days));
 		long expiration = 0;	//never
 		if (db->users[radiusindex].expiration) {
 			time_t tm;
@@ -938,7 +938,7 @@ static int do_activetable(unsigned char method, struct mime_handler *handler, ch
 	char *temp3 = websGetVar(stream, "ifname", NULL);
 	if (temp3 != NULL) {
 		if (*temp3) {
-			strcpy(ifname, temp3);
+			strlcpy(ifname, temp3, sizeof(ifname));
 		}
 	}
 	if (sanitize_ifname(ifname))
