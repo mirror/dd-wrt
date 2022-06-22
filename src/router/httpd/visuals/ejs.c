@@ -3357,25 +3357,33 @@ EJ_VISIBLE void ej_dumparptable(webs_t wp, int argc, char_t ** argv)
 		fclose(f);
 		readconntrack(table, tablelen);
 		readhosts(table, tablelen);
-		if ((arp = fopen("/proc/net/arp", "r")) != NULL) {
-			while (fgets(buf, sizeof(buf), arp)) {
-				if (sscanf(buf, "%15s %*s %*s %17s %*s %s", ip, mac, landev) != 3)
-					continue;
-				if ((strlen(mac) != 17)
-				    || (strcmp(mac, "00:00:00:00:00:00") == 0))
-					continue;
-				for (i = 0; i < tablelen; i++) {
-					if (!strncasecmp(mac, table[i].mac)) {
-						websWrite(wp, "%c'%s','%s','%s','%d', '%s','%lld','%lld','%lld'", (count ? ',' : ' '), table[i].hostname, table[i].ip, table[i].mac, table[i].conncount, table[i].ifname,
-							  table[i].in, table[i].out, table[i].total);
-						++count;
-						break;
+		if (nvram_match("arp_longdelay", "1")) {
+			for (i = 0; i < tablelen; i++) {
+				websWrite(wp, "%c'%s','%s','%s','%d', '%s','%lld','%lld','%lld'", (count ? ',' : ' '), table[i].hostname, table[i].ip, table[i].mac, table[i].conncount, table[i].ifname,
+					  table[i].in, table[i].out, table[i].total);
+				++count;
+			}
+		} else {
+			if ((arp = fopen("/proc/net/arp", "r")) != NULL) {
+				while (fgets(buf, sizeof(buf), arp)) {
+					if (sscanf(buf, "%15s %*s %*s %17s %*s %s", ip, mac, landev) != 3)
+						continue;
+					if ((strlen(mac) != 17)
+					    || (strcmp(mac, "00:00:00:00:00:00") == 0))
+						continue;
+					for (i = 0; i < tablelen; i++) {
+						if (!strncasecmp(mac, table[i].mac)) {
+							websWrite(wp, "%c'%s','%s','%s','%d', '%s','%lld','%lld','%lld'", (count ? ',' : ' '), table[i].hostname, table[i].ip, table[i].mac, table[i].conncount,
+								  table[i].ifname, table[i].in, table[i].out, table[i].total);
+							++count;
+							break;
+						}
 					}
-				}
 
+				}
+				fclose(arp);
 			}
 		}
-		fclose(arp);
 		for (i = 0; i < tablelen; i++) {
 			debug_free(table[i].hostname);
 			debug_free(table[i].ip);
