@@ -3372,7 +3372,7 @@ EJ_VISIBLE void ej_dumparptable(webs_t wp, int argc, char_t ** argv)
 					    || (strcmp(mac, "00:00:00:00:00:00") == 0))
 						continue;
 					for (i = 0; i < tablelen; i++) {
-						if (!strncasecmp(mac, table[i].mac)) {
+						if (!strcasecmp(mac, table[i].mac)) {
 							websWrite(wp, "%c'%s','%s','%s','%d', '%s','%lld','%lld','%lld'", (count ? ',' : ' '), table[i].hostname, table[i].ip, table[i].mac, table[i].conncount,
 								  table[i].ifname, table[i].in, table[i].out, table[i].total);
 							++count;
