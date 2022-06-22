@@ -1444,7 +1444,7 @@ static void showOptionsChoose(webs_t wp, char *propname, char *names, char **tra
 	websWrite(wp, "document.write(\"<option value=\\\"null\\\" >\" + share.choice + \"</option>\");\n");
 	foreach(var, names, next) {
 		if (trans) {
-			websWrite(wp, "document.write(\"<option value=\\\"%s\\\" %s >\" + %s + \"</option>\");\n", var, !strcmp(var, select) ? "selected=\\\"selected\\\"" : "", var, trans[cnt++]);
+			websWrite(wp, "document.write(\"<option value=\\\"%s\\\" %s >\" + %s + \"</option>\");\n", var, !strcmp(var, select) ? "selected=\\\"selected\\\"" : "", trans[cnt++]);
 		} else {
 			websWrite(wp, "document.write(\"<option value=\\\"%s\\\" %s >%s</option>\");\n", var, !strcmp(var, select) ? "selected=\\\"selected\\\"" : "", var);
 		}
