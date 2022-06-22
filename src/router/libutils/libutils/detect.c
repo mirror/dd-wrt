@@ -658,41 +658,42 @@ int internal_getRouterBrand()
 		fseek(file, 0x30, SEEK_SET);
 		fread(&gwid[0], 9, 1, file);
 		fclose(file);
-		if (!strncmp(gwid, "GW6300", 6)) {
-			setRouter("Gateworks Newport GW6300");
-		} else if (!strncmp(gwid, "GW6200", 6)) {
-			setRouter("Gateworks Newport GW6200");
-		} else if (!strncmp(gwid, "GW6204", 6)) {
-			setRouter("Gateworks Newport GW6204");
-		} else if (!strncmp(gwid, "GW6304", 6)) {
-			setRouter("Gateworks Newport GW6304");
-		} else if (!strncmp(gwid, "GW6100", 6)) {
+		if (!strncmp(gwid, "GW6100", 6)) {
 			setRouter("Gateworks Newport GW6100");
 			return ROUTER_BOARD_GW2380;
 		} else if (!strncmp(gwid, "GW6104", 6)) {
 			setRouter("Gateworks Newport GW6104");
 			return ROUTER_BOARD_GW2380;
-		} else if (!strncmp(gwid, "GW6903", 6)) {
-			setRouter("Gateworks Newport GW6903");
-			return ROUTER_BOARD_GW2380;
+		} else if (!strncmp(gwid, "GW6200", 6)) {
+			setRouter("Gateworks Newport GW6200");
+			return ROUTER_BOARD_GW6400;
+		} else if (!strncmp(gwid, "GW6204", 6)) {
+			setRouter("Gateworks Newport GW6204");
+			return ROUTER_BOARD_GW6400;
+		} else if (!strncmp(gwid, "GW6300", 6)) {
+			setRouter("Gateworks Newport GW6300");
+			return ROUTER_BOARD_GW6400;
+		} else if (!strncmp(gwid, "GW6304", 6)) {
+			setRouter("Gateworks Newport GW6304");
+			return ROUTER_BOARD_GW6400;
 		} else if (!strncmp(gwid, "GW6400", 6)) {
 			setRouter("Gateworks Newport GW6400");
-			return ROUTER_BOARD_GW6400;
-		} else if (!strncmp(gwid, "GW6500", 6)) {
-			setRouter("Gateworks Newport GW6500");
 			return ROUTER_BOARD_GW6400;
 		} else if (!strncmp(gwid, "GW6404", 6)) {
 			setRouter("Gateworks Newport GW6404");
 			return ROUTER_BOARD_GW6400;
+		} else if (!strncmp(gwid, "GW6500", 6)) {
+			setRouter("Gateworks Newport GW6500");
+			return ROUTER_BOARD_GW6400;
 		} else if (!strncmp(gwid, "GW6903", 6)) {
 			setRouter("Gateworks Newport GW6903");
-			return ROUTER_BOARD_GW6400;
+			return ROUTER_BOARD_GW2380;
 		} else if (!strncmp(gwid, "GW6904", 6)) {
 			setRouter("Gateworks Newport GW6904");
-			return ROUTER_BOARD_GW6400;
+			return ROUTER_BOARD_GW2380;
 		} else if (!strncmp(gwid, "GW6905", 6)) {
 			setRouter("Gateworks Newport GW6905");
-			return ROUTER_BOARD_GW6400;
+			return ROUTER_BOARD_GW2380;
 		} else
 			setRouter("Gateworks Newport GW6XXX");
 	}
