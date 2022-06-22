@@ -1443,11 +1443,7 @@ static void showOptionsChoose(webs_t wp, char *propname, char *names, char *sele
 	websWrite(wp, "<script type=\"text/javascript\">\n//<![CDATA[\n");
 	websWrite(wp, "document.write(\"<option value=\\\"null\\\" %s >\" + share.choice + \"</option>\");\n");
 	foreach(var, names, next) {
-		if (trans) {
-		} else {
 			websWrite(wp, "document.write(\"<option value=\\\"%s\\\" %s >%s</option>\");\n", var, !strcmp(var, select) ? "selected=\\\"selected\\\"" : "", var);
-
-		}
 	}
 	websWrite(wp, "//]]>\n</script>\n</select>\n");
 }
