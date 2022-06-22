@@ -628,13 +628,13 @@ static int do_filtertable(unsigned char method, struct mime_handler *handler, ch
 	char *idx = strchr(path, '-');
 	if (idx) {
 		temp2 = idx + 1;
-		strlcpy(ifname, temp2, sizeof(ifname) - 1);
+		strlcpy(ifname, temp2, sizeof(ifname));
 	}
 // and now the tricky part (more dirty as dirty)
 	char *temp3 = websGetVar(stream, "ifname", NULL);
 	if (temp3) {
 		if (*(temp3)) {
-			strcpy(ifname, temp3);
+			strlcpy(ifname, temp3, sizeof(ifname));
 		}
 	}
 	filteralphanum(ifname);
