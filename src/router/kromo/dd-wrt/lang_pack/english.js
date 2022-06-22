@@ -2496,7 +2496,7 @@ status_gpsi.lat="Latitude";
 status_gpsi.alt="Altitude";
 status_gpsi.sat="Visible Satellites";
 status_gpsi.ant_conn="Antenna Connected";
-status_gpsi.ant_disc="Antenna Diconnected";
+status_gpsi.ant_disc="Antenna Disconnected";
 status_gpsi.na="Unavailable";
 //help container
 var hstatus_wireless=new Object();
