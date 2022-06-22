@@ -249,10 +249,10 @@ EJ_VISIBLE void ej_portsetup(webs_t wp, int argc, char_t ** argv)
 		nvram_default_get(r1x_if, "0");
 		websWrite(wp, "<div class=\"setting\">\n<div class=\"label\"><script type=\"text/javascript\">Capture(service.wired_8021x_server)</script</div>\n");
 		websWrite(wp, "<input class=\"spaceradio\" onclick=\"show_layer_ext(this, '%s_r1x_block', true);\" type=\"radio\" name=\"%s_r1x\" value=\"1\" %s />\n", var, var,
-			nvram_match(r1x_if, "1") ? "checked=\"checked\"" : "");
+			  nvram_match(r1x_if, "1") ? "checked=\"checked\"" : "");
 		websWrite(wp, "<script type=\"text/javascript\">Capture(share.enable)</script>&nbsp;\n");
 		websWrite(wp, "<input class=\"spaceradio\" onclick=\"show_layer_ext(this, '%s_r1x_block', false);\" type=\"radio\" name=\"%s_r1x\" value=\"0\" %s />\n", var, var,
-			nvram_match(r1x_if, "0") ? "checked=\"checked\"" : "");
+			  nvram_match(r1x_if, "0") ? "checked=\"checked\"" : "");
 		websWrite(wp, "<script type=\"text/javascript\">Capture(share.disable)</script>&nbsp;</div>\n");
 		// showRadio(wp, "Use as primary Wan", wan_prim);
 		websWrite(wp, "<div id=\"%s_r1x_block\">\n", var);
@@ -293,7 +293,7 @@ EJ_VISIBLE void ej_portsetup(webs_t wp, int argc, char_t ** argv)
 #endif
 
 		websWrite(wp, "</fieldset><br />\n");
-			skip:;
+	      skip:;
 	}
 	websWrite(wp, "</fieldset><br />\n");
 }

@@ -1661,7 +1661,8 @@ static void show_channel(webs_t wp, char *dev, char *prefix, int type)
 							  fr, chan[i].lll, chan[i].llu, chan[i].lul, chan[i].luu, chan[i].ull, chan[i].ulu, chan[i].uul, chan[i].uuu, !strcmp(wlc, fr) ? " selected=\\\"selected\\\"" :
 							  "", cn, (freq + offset));
 					} else {
-						websWrite(wp, "document.write(\"<option value=\\\"%s\\\" %s>%s - %d \"+wl_basic.mhz+\"</option>\");\n", fr, !strcmp(wlc, fr) ? "selected=\\\"selected\\\"" : "", cn, (freq + offset));
+						websWrite(wp, "document.write(\"<option value=\\\"%s\\\" %s>%s - %d \"+wl_basic.mhz+\"</option>\");\n", fr, !strcmp(wlc, fr) ? "selected=\\\"selected\\\"" : "", cn,
+							  (freq + offset));
 					}
 				}
 				i++;
@@ -1824,7 +1825,7 @@ static void show_channel(webs_t wp, char *dev, char *prefix, int type)
 				sprintf(channelstring, "%d", chanlist[i]);
 				if (showit) {
 					websWrite(wp, "document.write(\"<option value=\\\"%d\\\" %s>%d - %d.%d \"+wl_basic.ghz+\"</option>\");\n",
-							chanlist[i], nvram_nmatch(channelstring, "%s_channel", prefix) ? "selected=\\\"selected\\\"" : "", chanlist[i], ofs / 1000, ofs % 1000);
+						  chanlist[i], nvram_nmatch(channelstring, "%s_channel", prefix) ? "selected=\\\"selected\\\"" : "", chanlist[i], ofs / 1000, ofs % 1000);
 				}
 			}
 		}
@@ -2690,7 +2691,8 @@ static int show_virtualssid(webs_t wp, char *prefix)
 				sprintf(signal, "%s_connect", var);
 				websWrite(wp, "<div class=\"setting\">\n");
 				show_caption(wp, "label", "wl_adv.connect", NULL);
-				websWrite(wp, "<input class=\"num\" name=\"%s\" size=\"4\" maxlength=\"4\" onblur=\"valid_range(this,-128,0,wl_adv.connect)\" value=\"%s\" />\n", signal, nvram_default_get(signal, "-128"));
+				websWrite(wp, "<input class=\"num\" name=\"%s\" size=\"4\" maxlength=\"4\" onblur=\"valid_range(this,-128,0,wl_adv.connect)\" value=\"%s\" />\n", signal,
+					  nvram_default_get(signal, "-128"));
 				websWrite(wp, "</div>\n");
 
 				sprintf(signal, "%s_stay", var);
@@ -2702,7 +2704,8 @@ static int show_virtualssid(webs_t wp, char *prefix)
 				sprintf(signal, "%s_poll_time", var);
 				websWrite(wp, "<div class=\"setting\">\n");
 				show_caption(wp, "label", "wl_adv.poll_time", NULL);
-				websWrite(wp, "<input class=\"num\" name=\"%s\" size=\"4\" maxlength=\"4\" onblur=\"valid_range(this,1,3600,wl_adv.poll_time)\" value=\"%s\" />\n", signal, nvram_default_get(signal, "10"));
+				websWrite(wp, "<input class=\"num\" name=\"%s\" size=\"4\" maxlength=\"4\" onblur=\"valid_range(this,1,3600,wl_adv.poll_time)\" value=\"%s\" />\n", signal,
+					  nvram_default_get(signal, "10"));
 				websWrite(wp, "</div>\n");
 
 				sprintf(signal, "%s_strikes", var);
@@ -2731,9 +2734,11 @@ static int show_virtualssid(webs_t wp, char *prefix)
 			  "<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<input class=\\\"button\\\" type=\\\"button\\\" value=\\\"\" + sbutton.remove + \"\\\" onclick=\\\"vifs_remove_submit(this.form,'%s','%d')\\\" />\");\n//]]>\n</script>\n",
 			  prefix, count - 1);
 		websWrite(wp,
-				"<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<input class=\\\"button\\\" type=\\\"button\\\" value=\\\"\" + share.copy + \"\\\" onclick=\\\"copy_submit(this.form,'%s')\\\" />\");\n//]]>\n</script>\n", var);
+			  "<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<input class=\\\"button\\\" type=\\\"button\\\" value=\\\"\" + share.copy + \"\\\" onclick=\\\"copy_submit(this.form,'%s')\\\" />\");\n//]]>\n</script>\n",
+			  var);
 		websWrite(wp,
-				"<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<input class=\\\"button\\\" type=\\\"button\\\" value=\\\"\" + share.paste + \"\\\" onclick=\\\"paste_submit(this.form,'%s')\\\" />\");\n//]]>\n</script>\n", var);
+			  "<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<input class=\\\"button\\\" type=\\\"button\\\" value=\\\"\" + share.paste + \"\\\" onclick=\\\"paste_submit(this.form,'%s')\\\" />\");\n//]]>\n</script>\n",
+			  var);
 		websWrite(wp, "</fieldset><br />\n");
 		count++;
 		if (is_ap8x(prefix) && count == 4) {
@@ -2946,11 +2951,13 @@ static void internal_ej_show_wireless_single(webs_t wp, char *prefix)
 	} else if (has_5ghz(prefix) && has_ac(prefix)) {
 		sprintf(frequencies, " <script type=\"text/javascript\">document.write(\"[5 \"+wl_basic.ghz+\"/802.11ac]%s%s - Max Vaps(%d)\");</script>", chipset ? " - " : "", chipset ? chipset : "", maxvaps);
 	} else if (has_5ghz(prefix) && has_2ghz(prefix)) {
-		sprintf(frequencies, " <script type=\"text/javascript\">document.write(\"[2.4 \"+wl_basic.ghz+\"/5 \"+wl_basic.ghz+\"]%s%s - Max Vaps(%d)\");</script>", chipset ? " - " : "", chipset ? chipset : "", maxvaps);
+		sprintf(frequencies, " <script type=\"text/javascript\">document.write(\"[2.4 \"+wl_basic.ghz+\"/5 \"+wl_basic.ghz+\"]%s%s - Max Vaps(%d)\");</script>", chipset ? " - " : "", chipset ? chipset : "",
+			maxvaps);
 	} else if (has_5ghz(prefix)) {
 		sprintf(frequencies, " <script type=\"text/javascript\">document.write(\"[5 \"+wl_basic.ghz+\"]%s%s - Max Vaps(%d)\")</script>", chipset ? " - " : "", chipset ? chipset : "", maxvaps);
 	} else if (has_2ghz(prefix) && has_ac(prefix)) {
-		sprintf(frequencies, " <script type=\"text/javascript\">document.write(\"[2.4 \"+wl_basic.ghz+\" \"+wl_basic.tbqam+\"]%s%s - Max Vaps(%d)\")</script>", chipset ? " - " : "", chipset ? chipset : "", maxvaps);
+		sprintf(frequencies, " <script type=\"text/javascript\">document.write(\"[2.4 \"+wl_basic.ghz+\" \"+wl_basic.tbqam+\"]%s%s - Max Vaps(%d)\")</script>", chipset ? " - " : "", chipset ? chipset : "",
+			maxvaps);
 	} else if (has_2ghz(prefix)) {
 		sprintf(frequencies, " <script type=\"text/javascript\">document.write(\"[2.4 \"+wl_basic.ghz+\"]%s%s - Max Vaps(%d)\")</script>", chipset ? " - " : "", chipset ? chipset : "", maxvaps);
 	} else {
@@ -3174,7 +3181,8 @@ static void internal_ej_show_wireless_single(webs_t wp, char *prefix)
 #else
 			if (has_wdsap(prefix)) {
 				websWrite(wp, "document.write(\"<option value=\\\"wdssta\\\" %s >\" + wl_basic.wdssta + \"</option>\");\n", nvram_match(wl_mode, "wdssta") ? "selected=\\\"selected\\\"" : "");
-				websWrite(wp, "document.write(\"<option value=\\\"wdssta_mtik\\\" %s >\" + wl_basic.wdssta_mtik + \"</option>\");\n", nvram_match(wl_mode, "wdssta_mtik") ? "selected=\\\"selected\\\"" : "");
+				websWrite(wp, "document.write(\"<option value=\\\"wdssta_mtik\\\" %s >\" + wl_basic.wdssta_mtik + \"</option>\");\n",
+					  nvram_match(wl_mode, "wdssta_mtik") ? "selected=\\\"selected\\\"" : "");
 			}
 #endif
 			if (!cpeonly && has_ibss(prefix))
@@ -3621,10 +3629,12 @@ static void internal_ej_show_wireless_single(webs_t wp, char *prefix)
 			    && (nvram_nmatch("mixed", "%s_net_mode", prefix) || nvram_nmatch("ac-only", "%s_net_mode", prefix) || nvram_nmatch("acn-mixed", "%s_net_mode", prefix))) {
 				websWrite(wp, "<option value=\"80\" %s><script type=\"text/javascript\">Capture(share.vht80);</script></option>\n", nvram_nmatch("80", "%s_nbw", prefix) ? "selected=\"selected\"" : "");
 				if (has_vht160(prefix)) {
-					websWrite(wp, "<option value=\"160\" %s><script type=\"text/javascript\">Capture(share.vht160);</script></option>\n", nvram_nmatch("160", "%s_nbw", prefix) ? "selected=\"selected\"" : "");
+					websWrite(wp, "<option value=\"160\" %s><script type=\"text/javascript\">Capture(share.vht160);</script></option>\n",
+						  nvram_nmatch("160", "%s_nbw", prefix) ? "selected=\"selected\"" : "");
 				}
 				if (has_vht80plus80(prefix)) {
-					websWrite(wp, "<option value=\"80+80\" %s><script type=\"text/javascript\">Capture(share.vht80plus80);</script></option>\n", nvram_nmatch("80+80", "%s_nbw", prefix) ? "selected=\"selected\"" : "");
+					websWrite(wp, "<option value=\"80+80\" %s><script type=\"text/javascript\">Capture(share.vht80plus80);</script></option>\n",
+						  nvram_nmatch("80+80", "%s_nbw", prefix) ? "selected=\"selected\"" : "");
 				}
 			}
 			websWrite(wp, "</select>\n");
@@ -3633,8 +3643,10 @@ static void internal_ej_show_wireless_single(webs_t wp, char *prefix)
 				websWrite(wp, "<div class=\"setting\">\n");
 				show_caption(wp, "label", "wl_basic.channel_wide", NULL);
 				websWrite(wp, "<select name=\"%s_nctrlsb\" >\n", prefix);
-				websWrite(wp, "<option value=\"upper\" %s><script type=\"text/javascript\">document.write(wl_basic.lower);</script></option>\n", nvram_nmatch("upper", "%s_nctrlsb", prefix) ? "selected=\"selected\"" : "");
-				websWrite(wp, "<option value=\"lower\" %s><script type=\"text/javascript\">document.write(wl_basic.upper);</script></option>\n", nvram_nmatch("lower", "%s_nctrlsb", prefix) ? "selected=\"selected\"" : "");
+				websWrite(wp, "<option value=\"upper\" %s><script type=\"text/javascript\">document.write(wl_basic.lower);</script></option>\n",
+					  nvram_nmatch("upper", "%s_nctrlsb", prefix) ? "selected=\"selected\"" : "");
+				websWrite(wp, "<option value=\"lower\" %s><script type=\"text/javascript\">document.write(wl_basic.upper);</script></option>\n",
+					  nvram_nmatch("lower", "%s_nctrlsb", prefix) ? "selected=\"selected\"" : "");
 				websWrite(wp, "</select>\n");
 				websWrite(wp, "</div>\n");
 			}
@@ -3927,7 +3939,8 @@ static void internal_ej_show_wireless_single(webs_t wp, char *prefix)
 #else
 			if (has_wdsap(prefix)) {
 				websWrite(wp, "document.write(\"<option value=\\\"wdssta\\\" %s >\" + wl_basic.wdssta + \"</option>\");\n", nvram_match(wl_mode, "wdssta") ? "selected=\\\"selected\\\"" : "");
-				websWrite(wp, "document.write(\"<option value=\\\"wdssta_mtik\\\" %s >\" + wl_basic.wdssta_mtik + \"</option>\");\n", nvram_match(wl_mode, "wdssta_mtik") ? "selected=\\\"selected\\\"" : "");
+				websWrite(wp, "document.write(\"<option value=\\\"wdssta_mtik\\\" %s >\" + wl_basic.wdssta_mtik + \"</option>\");\n",
+					  nvram_match(wl_mode, "wdssta_mtik") ? "selected=\\\"selected\\\"" : "");
 			}
 			if (has_mesh(prefix)) {
 				websWrite(wp, "document.write(\"<option value=\\\"mesh\\\" %s >\" + wl_basic.mesh + \"</option>\");\n", nvram_match(wl_mode, "mesh") ? "selected=\\\"selected\\\"" : "");
@@ -4110,10 +4123,12 @@ static void internal_ej_show_wireless_single(webs_t wp, char *prefix)
 			    && (nvram_nmatch("mixed", "%s_net_mode", prefix) || nvram_nmatch("ac-only", "%s_net_mode", prefix) || nvram_nmatch("acn-mixed", "%s_net_mode", prefix))) {
 				websWrite(wp, "<option value=\"80\" %s><script type=\"text/javascript\">Capture(share.vht80);</script></option>\n", nvram_nmatch("80", "%s_nbw", prefix) ? "selected=\"selected\"" : "");
 				if (has_vht160(prefix)) {
-					websWrite(wp, "<option value=\"160\" %s><script type=\"text/javascript\">Capture(share.vht160);</script></option>\n", nvram_nmatch("160", "%s_nbw", prefix) ? "selected=\"selected\"" : "");
+					websWrite(wp, "<option value=\"160\" %s><script type=\"text/javascript\">Capture(share.vht160);</script></option>\n",
+						  nvram_nmatch("160", "%s_nbw", prefix) ? "selected=\"selected\"" : "");
 				}
 				if (has_vht80plus80(prefix)) {
-					websWrite(wp, "<option value=\"80+80\" %s><script type=\"text/javascript\">Capture(share.vht80plus80);</script></option>\n",  nvram_nmatch("80+80", "%s_nbw", prefix) ? "selected=\"selected\"" : "");
+					websWrite(wp, "<option value=\"80+80\" %s><script type=\"text/javascript\">Capture(share.vht80plus80);</script></option>\n",
+						  nvram_nmatch("80+80", "%s_nbw", prefix) ? "selected=\"selected\"" : "");
 				}
 			}
 			websWrite(wp, "</select>\n");
@@ -4124,8 +4139,10 @@ static void internal_ej_show_wireless_single(webs_t wp, char *prefix)
 				websWrite(wp, "<select name=\"%s_nctrlsb\" >\n", prefix);
 				websWrite(wp, "</select>\n");
 				websWrite(wp, "</div>\n");
-				websWrite(wp, "<option value=\"upper\" %s><script type=\"text/javascript\">Capture(wl_basic.upper);</script></option>\n", nvram_nmatch("upper", "%s_nctrlsb", prefix) ? "selected=\"selected\"" : "");
-				websWrite(wp, "<option value=\"lower\" %s><script type=\"text/javascript\">Capture(wl_basic.lower);</script></option>\n", nvram_nmatch("lower", "%s_nctrlsb", prefix) ? "selected=\"selected\"" : "");
+				websWrite(wp, "<option value=\"upper\" %s><script type=\"text/javascript\">Capture(wl_basic.upper);</script></option>\n",
+					  nvram_nmatch("upper", "%s_nctrlsb", prefix) ? "selected=\"selected\"" : "");
+				websWrite(wp, "<option value=\"lower\" %s><script type=\"text/javascript\">Capture(wl_basic.lower);</script></option>\n",
+					  nvram_nmatch("lower", "%s_nctrlsb", prefix) ? "selected=\"selected\"" : "");
 			}
 			if (nvram_nmatch("80", "%s_nbw", prefix)) {	// 802.11ac
 				websWrite(wp, "<div class=\"setting\">\n");
@@ -4241,8 +4258,8 @@ static void internal_ej_show_wireless_single(webs_t wp, char *prefix)
 		websWrite(wp, "<div class=\"setting\">\n");
 		show_caption(wp, "label", "wl_basic.label5", NULL);
 		websWrite(wp,
-			 "<input class=\"spaceradio\" type=\"radio\" value=\"0\" name=\"%s\" %s><script type=\"text/javascript\">Capture(share.enable)</script></input>&nbsp;\n",
-			 wl_closed, nvram_matchi(wl_closed, 0) ? "checked=\"checked\"" : "");
+			  "<input class=\"spaceradio\" type=\"radio\" value=\"0\" name=\"%s\" %s><script type=\"text/javascript\">Capture(share.enable)</script></input>&nbsp;\n",
+			  wl_closed, nvram_matchi(wl_closed, 0) ? "checked=\"checked\"" : "");
 		websWrite(wp,
 			  "<input class=\"spaceradio\" type=\"radio\" value=\"1\" name=\"%s\" %s><script type=\"text/javascript\">Capture(share.disable)</script></input>\n",
 			  wl_closed, nvram_matchi(wl_closed, 1) ? "checked=\"checked\"" : "");

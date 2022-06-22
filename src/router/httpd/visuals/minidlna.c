@@ -124,9 +124,7 @@ EJ_VISIBLE void ej_dlna_sharepaths(webs_t wp, int argc, char_t ** argv)
 			websWrite(wp, "<option value=\"%s\" rel='{\"fstype\":\"\",\"perms\":[\"%s\"],\"avail\":0}' selected>[not available!]</option>\n", cs->mp, cs->mp);
 		}
 		websWrite(wp, "</select></td>\n");
-		websWrite(wp,
-			  "<td style=\"width: 1%%;\"><input type=\"text\" name=\"dlnashare_subdir%s\" id=\"dlnashare_subdir%s\" value=\"%s\" style=\"width: 150px;\"/></td>\n",
-			  number, number, cs->sd);
+		websWrite(wp, "<td style=\"width: 1%%;\"><input type=\"text\" name=\"dlnashare_subdir%s\" id=\"dlnashare_subdir%s\" value=\"%s\" style=\"width: 150px;\"/></td>\n", number, number, cs->sd);
 		websWrite(wp,
 			  "<td style=\"width: 25px; text-align: center;\"><input type=\"checkbox\" name=\"dlnashare_audio%s\" id=\"dlnashare_audio%s\" value=\"1\" %s></td>\n",
 			  number, number, cs->types & TYPE_AUDIO ? "checked" : "");
