@@ -1437,7 +1437,6 @@ static void showOptionsChoose(webs_t wp, char *propname, char *names, char *sele
 {
 	char *next;
 	char var[80];
-	int cnt = 0;
 
 	websWrite(wp, "<select name=\"%s\">\n", propname);
 	websWrite(wp, "<script type=\"text/javascript\">\n//<![CDATA[\n");
