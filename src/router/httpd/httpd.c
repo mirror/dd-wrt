@@ -1145,11 +1145,6 @@ static void *handle_request(void *arg)
 	// save the originally requested url
 	conn_fp->request_url = strdup(file);
 
-#ifdef HAVE_SKYTRON
-	if (file[0] == '\0' || file[len - 1] == '/') {
-		file = "setupindex.asp";
-	}
-#else
 #ifdef HAVE_BUFFALO
 #ifdef HAVE_IAS
 	int ias_startup = nvram_geti("ias_startup");
@@ -1234,7 +1229,6 @@ static void *handle_request(void *arg)
 			if (strcmp(file, "Info.htm") == 0)
 				file = "index.asp";
 	}
-#endif
 	int changepassword = 0;
 	if (!IS_REGISTERED_REAL(conn_fp)) {
 		if (endswith(file, "About.htm"))
