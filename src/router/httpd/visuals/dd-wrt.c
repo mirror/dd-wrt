@@ -3633,10 +3633,10 @@ static void internal_ej_show_wireless_single(webs_t wp, char *prefix)
 				websWrite(wp, "<div class=\"setting\">\n");
 				show_caption(wp, "label", "wl_basic.channel_wide", NULL);
 				websWrite(wp, "<select name=\"%s_nctrlsb\" >\n", prefix);
-				websWrite(wp, "</select>\n");
-				websWrite(wp, "</div>\n");
 				websWrite(wp, "<option value=\"upper\" %s><script type=\"text/javascript\">document.write(wl_basic.lower);</script></option>\n", nvram_nmatch("upper", "%s_nctrlsb", prefix) ? "selected=\"selected\"" : "");
 				websWrite(wp, "<option value=\"lower\" %s><script type=\"text/javascript\">document.write(wl_basic.upper);</script></option>\n", nvram_nmatch("lower", "%s_nctrlsb", prefix) ? "selected=\"selected\"" : "");
+				websWrite(wp, "</select>\n");
+				websWrite(wp, "</div>\n");
 			}
 			if (nvram_nmatch("80", "%s_nbw", prefix)) {	// 802.11ac
 				websWrite(wp, "<div class=\"setting\">\n");
