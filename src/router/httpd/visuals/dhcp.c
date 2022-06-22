@@ -139,8 +139,7 @@ EJ_VISIBLE void ej_dumpleases(webs_t wp, int argc, char_t ** argv)
 						++p;
 					if ((p = strrchr(ip, '.')) == NULL)
 						continue;
-					if (nvram_matchi("maskmac", 1)
-					    && macmask) {
+					if (nvram_matchi("maskmac", 1) && macmask) {
 						mac[0] = 'x';
 						mac[1] = 'x';
 						mac[3] = 'x';
@@ -216,7 +215,6 @@ EJ_VISIBLE void ej_dumpleases(webs_t wp, int argc, char_t ** argv)
 				if (!strcmp(mac, "00:00:00:00:00:00"))
 					continue;
 				if (nvram_matchi("maskmac", 1) && macmask) {
-
 					mac[0] = 'x';
 					mac[1] = 'x';
 					mac[3] = 'x';
@@ -275,7 +273,6 @@ EJ_VISIBLE void ej_dumpleases(webs_t wp, int argc, char_t ** argv)
 EJ_VISIBLE void ej_dhcp_remaining_time(webs_t wp, int argc, char_t ** argv)
 {
 	// tofu12
-
 	if (nvram_invmatch("wan_proto", "dhcp") && nvram_invmatch("wan_proto", "dhcp_auth"))
 		return;
 
