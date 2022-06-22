@@ -116,7 +116,7 @@ static void mt7921e_unregister_device(struct mt7921_dev *dev)
 	mt7921_mcu_drv_pmctrl(dev);
 	mt7921_dma_cleanup(dev);
 	mt7921_wfsys_reset(dev);
-	mt7921_mcu_exit(dev);
+	skb_queue_purge(&dev->mt76.mcu.res_q);
 
 	tasklet_disable(&dev->irq_tasklet);
 }
@@ -243,14 +243,14 @@ static int mt7921_pci_probe(struct pci_dev *pdev,
 	};
 	static const struct mt76_driver_ops drv_ops = {
 		/* txwi_size = txd size + txp size */
-		.txwi_size = MT_TXD_SIZE + sizeof(struct mt7921_txp_common),
+		.txwi_size = MT_TXD_SIZE + sizeof(struct mt76_connac_txp_common),
 		.drv_flags = MT_DRV_TXWI_NO_FREE | MT_DRV_HW_MGMT_TXQ,
 		.survey_flags = SURVEY_INFO_TIME_TX |
 				SURVEY_INFO_TIME_RX |
 				SURVEY_INFO_TIME_BSS_RX,
 		.token_size = MT7921_TOKEN_SIZE,
 		.tx_prepare_skb = mt7921e_tx_prepare_skb,
-		.tx_complete_skb = mt7921e_tx_complete_skb,
+		.tx_complete_skb = mt76_connac_tx_complete_skb,
 		.rx_check = mt7921e_rx_check,
 		.rx_skb = mt7921e_queue_rx_skb,
 		.rx_poll_complete = mt7921_rx_poll_complete,

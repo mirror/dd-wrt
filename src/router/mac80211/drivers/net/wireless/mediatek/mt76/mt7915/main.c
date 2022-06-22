@@ -622,8 +622,10 @@ static void mt7915_bss_info_changed(struct ieee80211_hw *hw,
 		mt7915_update_bss_color(hw, vif, &info->he_bss_color);
 
 	if (changed & (BSS_CHANGED_BEACON |
-		       BSS_CHANGED_BEACON_ENABLED))
-		mt7915_mcu_add_beacon(hw, vif, info->enable_beacon);
+		       BSS_CHANGED_BEACON_ENABLED |
+		       BSS_CHANGED_UNSOL_BCAST_PROBE_RESP |
+		       BSS_CHANGED_FILS_DISCOVERY))
+		mt7915_mcu_add_beacon(hw, vif, info->enable_beacon, changed);
 
 	mutex_unlock(&dev->mt76.mutex);
 }
@@ -636,7 +638,7 @@ mt7915_channel_switch_beacon(struct ieee80211_hw *hw,
 	struct mt7915_dev *dev = mt7915_hw_dev(hw);
 
 	mutex_lock(&dev->mt76.mutex);
-	mt7915_mcu_add_beacon(hw, vif, true);
+	mt7915_mcu_add_beacon(hw, vif, true, BSS_CHANGED_BEACON);
 	mutex_unlock(&dev->mt76.mutex);
 }
 
@@ -1144,8 +1146,15 @@ static const char mt7915_gstrings_stats[][ETH_GSTRING_LEN] = {
 	"rx_fifo_full_cnt",
 	"rx_mpdu_cnt",
 	"channel_idle_cnt",
+	"primary_cca_busy_time",
+	"secondary_cca_busy_time",
+	"primary_energy_detect_time",
+	"cck_mdrdy_time",
+	"ofdm_mdrdy_time",
+	"green_mdrdy_time",
 	"rx_vector_mismatch_cnt",
 	"rx_delimiter_fail_cnt",
+	"rx_mrdy_cnt",
 	"rx_len_mismatch_cnt",
 	"rx_ampdu_cnt",
 	"rx_ampdu_bytes_cnt",
@@ -1285,8 +1294,15 @@ void mt7915_get_et_stats(struct ieee80211_hw *hw,
 	data[ei++] = mib->rx_fifo_full_cnt;
 	data[ei++] = mib->rx_mpdu_cnt;
 	data[ei++] = mib->channel_idle_cnt;
+	data[ei++] = mib->primary_cca_busy_time;
+	data[ei++] = mib->secondary_cca_busy_time;
+	data[ei++] = mib->primary_energy_detect_time;
+	data[ei++] = mib->cck_mdrdy_time;
+	data[ei++] = mib->ofdm_mdrdy_time;
+	data[ei++] = mib->green_mdrdy_time;
 	data[ei++] = mib->rx_vector_mismatch_cnt;
 	data[ei++] = mib->rx_delimiter_fail_cnt;
+	data[ei++] = mib->rx_mrdy_cnt;
 	data[ei++] = mib->rx_len_mismatch_cnt;
 	data[ei++] = mib->rx_ampdu_cnt;
 	data[ei++] = mib->rx_ampdu_bytes_cnt;
