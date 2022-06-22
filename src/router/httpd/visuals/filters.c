@@ -702,7 +702,7 @@ EJ_VISIBLE void ej_filter_summary_show(webs_t wp, int argc, char_t ** argv)
 				snprintf(time_buf, sizeof(time_buf), "%02d:%02d - %02d:%02d", wp->p->start_hour, wp->p->start_min, wp->p->end_hour, wp->p->end_min);
 			}
 		}
-		websWrite(wp, "<td width=\"150\" ><font face=\"Arial\" size=\"2\" > %s </font></td>\n" "<td width=\"70\" ><input type=\"checkbox\" name=\"sum%d\" value=\"1\" ></td>\n" "</tr>\n", time_buf, i + 1);
+		websWrite(wp, "<td width=\"150\" > %s </td>\n" "<td width=\"70\" ><input type=\"checkbox\" name=\"sum%d\" value=\"1\" ></td>\n" "</tr>\n", time_buf, i + 1);
 	}
 	return;
 
