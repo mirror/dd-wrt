@@ -17,22 +17,21 @@
 			<input class="spaceradio" type="radio" value="1" name="usb_storage" <% nvc("usb_storage","1"); %> onclick="show_layer_ext(this, 'idusbstor', true)" /><% tran("share.enable"); %>&nbsp;
 			<input class="spaceradio" type="radio" value="0" name="usb_storage" <% nvc("usb_storage","0"); %> onclick="show_layer_ext(this, 'idusbstor', false)" /><% tran("share.disable"); %>
 		</div>
-<% ifndef("USBADV", "<!--"); %>
+		<% ifndef("USBADV", "<!--"); %>
 		<div class="setting">
 			<div class="label"><% tran("usb.drive_ra"); %></div>
 			<input class="num" maxlength="8" size="6" name="drive_ra" value="<% nvg("drive_ra"); %>" />&nbsp;<% tran("usb.drive_ra_sectors"); %>
 		</div>
-<% ifndef("USBADV", "-->"); %>
-<% ifndef("USBIP", "<!--"); %>
+		<% ifndef("USBADV", "-->"); %>
+		<% ifndef("USBIP", "<!--"); %>
 		<div class="setting">
 			<div class="label"><% tran("usb.usb_ip"); %></div>
 			<input class="spaceradio" type="radio" value="1" name="usb_ip" <% nvc("usb_ip","1"); %> /><% tran("share.enable"); %>&nbsp;
 			<input class="spaceradio" type="radio" value="0" name="usb_ip" <% nvc("usb_ip","0"); %> /><% tran("share.disable"); %>
 		</div>
-<% ifndef("USBIP", "-->"); %>
-
+		<% ifndef("USBIP", "-->"); %>
 			<div id="idusbstor">
-				<div class="setting">					
+				<div class="setting">
 					<div class="label"><% tran("usb.usb_automnt"); %></div>
 					<input class="spaceradio" type="radio" value="1" name="usb_automnt" <% nvc("usb_automnt","1"); %> onclick="show_layer_ext(this, 'idusbmnt', true)" /><% tran("share.enable"); %>&nbsp;
 					<input class="spaceradio" type="radio" value="0" name="usb_automnt" <% nvc("usb_automnt","0"); %> onclick="show_layer_ext(this, 'idusbmnt', false)" /><% tran("share.disable"); %>
@@ -44,11 +43,11 @@
 				</div>
 				<div class="setting">
 					<div class="label"><% tran("usb.usb_mntjffs"); %></div>
-					<input maxlength="79" size="35" name="usb_mntjffs" value="<% nvg("usb_mntjffs"); %>"> UUID</input>
+					<input maxlength="79" size="35" name="usb_mntjffs" value="<% nvg("usb_mntjffs"); %>">&nbsp;UUID</input>
 				</div>
 				<div class="setting">
 					<div class="label"><% tran("usb.usb_mntopt"); %></div>
-					<input maxlength="79" size="35" name="usb_mntopt" value="<% nvg("usb_mntopt"); %>"> UUID</input>
+					<input maxlength="79" size="35" name="usb_mntopt" value="<% nvg("usb_mntopt"); %>">&nbsp;UUID</input>
 				</div>
 				<div class="setting">
 					<div class="label"><% tran("usb.usb_ses_umount"); %></div>
@@ -56,10 +55,10 @@
 					<input class="spaceradio" type="radio" value="0" name="usb_ses_umount" <% nvc("usb_ses_umount","0"); %> /><% tran("share.disable"); %>
 				</div>
 				<fieldset class="dark_fs_bg" style="padding: 5px 10px;">
-				<legend><% tran("usb.usb_diskinfo"); %></legend>	
+				<legend><% tran("usb.usb_diskinfo"); %></legend>
 					<span id="disk_status"><% show_usb_diskinfo(); %></span>&nbsp;
 				</fieldset><br />
-			</div>	
 			</div>
+		</div>
 	</div>
 </fieldset><br/>
