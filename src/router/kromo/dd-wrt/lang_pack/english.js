@@ -120,6 +120,8 @@ share.ms="ms";
 share.routername="Router Name";
 share.manual="Manual";
 share.port="Port";
+// dd-wrt.c line 2873
+share.guest_port="Guest Port";
 share.ssid="SSID";
 share.channel="Channel";
 share.stations="Stations";
@@ -2493,7 +2495,9 @@ status_gpsi.lon="Longitude";
 status_gpsi.lat="Latitude";
 status_gpsi.alt="Altitude";
 status_gpsi.sat="Visible Satellites";
-
+status_gpsi.ant_conn="Antenna Connected";
+status_gpsi.ant_disc="Antenna Diconnected";
+status_gpsi.na="Unavailable";
 //help container
 var hstatus_wireless=new Object();
 hstatus_wireless.right2="This is the router's MAC address, as seen on your local, wireless network.";
@@ -2869,8 +2873,8 @@ wl_mac.h2="Wireless MAC Filter";
 wl_mac.legend="MAC Filter";
 wl_mac.label="Enable Filter";
 wl_mac.label2="Filter Mode";
-wl_mac.deny="Prevent clients listed from accessing the wireless network";
-wl_mac.allow="Permit clients listed to access the wireless network";
+wl_mac.deny="Blacklisted Network Client List";
+wl_mac.allow="Whitelisted Network Client List";
 
 //help page
 var hwl_mac=new Object();

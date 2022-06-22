@@ -57,16 +57,16 @@ EJ_VISIBLE void ej_dlna_sharepaths(webs_t wp, int argc, char_t ** argv)
 	rows = 0;
 
 	// table header
-	websWrite(wp, "	<table id=\"dlna_shares\" class=\"table\" summary=\"dlna share table\">\n");
+	websWrite(wp, "<table id=\"dlna_shares\" class=\"table\" summary=\"dlna share table\">\n");
 	show_caption_pp(wp, NULL, "service.samba3_shares", "<tr><th colspan=\"6\">", "</th></tr>\n");
-	websWrite(wp, "		<tr>\n");
+	websWrite(wp, "<tr>\n");
 	show_caption_pp(wp, NULL, "service.samba3_share_path", "<th>", "</th>\n");
 	show_caption_pp(wp, NULL, "service.samba3_share_subdir", "<th>", "</th>\n");
 	show_caption_pp(wp, NULL, "service.dlna_type_audio", "<th>", "</th>\n");
 	show_caption_pp(wp, NULL, "service.dlna_type_video", "<th>", "</th>\n");
 	show_caption_pp(wp, NULL, "service.dlna_type_images", "<th>", "</th>\n");
-	websWrite(wp, "			<th class=\"center\" width=\"10%%\"><script type=\"text/javascript\">Capture(share.actiontbl)</script></th>\n");
-	websWrite(wp, "		</tr>\n");
+	websWrite(wp, "<th class=\"center\" width=\"10%%\"><script type=\"text/javascript\">Capture(share.actiontbl)</script></th>\n");
+	websWrite(wp, "</tr>\n");
 
 	for (cs = dlnashares; cs; cs = csnext) {
 
@@ -80,14 +80,14 @@ EJ_VISIBLE void ej_dlna_sharepaths(webs_t wp, int argc, char_t ** argv)
 			sprintf(number, "_%d", rows);
 		}
 
-		websWrite(wp, "		<tr %s>\n", buffer);
+		websWrite(wp, "<tr %s>\n", buffer);
 
 		// display filesystems to mount
 		found = 0;
 		//sprintf( perms, "");
 		perms[0] = '\0';
-		websWrite(wp, "			<td id=\"n_dlna_mp%s\" style=\"width: 17.816em;\"><select name=\"dlnashare_mp%s\" id=\"dlnashare_mp%s\" style=\"width: 100%%;\" >\n", number, number, number);
-		websWrite(wp, "				<option value=\"\" rel=\"\">-</option>\n");
+		websWrite(wp, "<td id=\"n_dlna_mp%s\" style=\"width: 17.816em;\"><select name=\"dlnashare_mp%s\" id=\"dlnashare_mp%s\" style=\"width: 100%%;\" >\n", number, number, number);
+		websWrite(wp, "<option value=\"\" rel=\"\">-</option>\n");
 		//fprintf(stderr, "[SAMBA] FS %s:%s public:%d\n", cs->label, cs->mp, cs->public );
 		for (current = fs; current; current = current->next) {
 			if (strcmp(current->fstype, "squashfs")
@@ -115,41 +115,41 @@ EJ_VISIBLE void ej_dlna_sharepaths(webs_t wp, int argc, char_t ** argv)
 				}
 
 				websWrite(wp,
-					  "				<option value=\"%s\" rel='{\"fstype\":\"%s\",\"perms\":[%s],\"avail\":1}' %s>%s</option>\n",
+					  "<option value=\"%s\" rel='{\"fstype\":\"%s\",\"perms\":[%s],\"avail\":1}' %s>%s</option>\n",
 					  current->mp, current->fstype, buffer, strcmp(current->mp, cs->mp) ? "" : "selected=\"selected\"", current->mp);
 			}
 		}
 		// fs not available -> add stored entry for display
 		if (found == 0 && rows > 0) {
-			websWrite(wp, "				<option value=\"%s\" rel='{\"fstype\":\"\",\"perms\":[\"%s\"],\"avail\":0}' selected>[not available!]</option>\n", cs->mp, cs->mp);
+			websWrite(wp, "<option value=\"%s\" rel='{\"fstype\":\"\",\"perms\":[\"%s\"],\"avail\":0}' selected>[not available!]</option>\n", cs->mp, cs->mp);
 		}
-		websWrite(wp, "				</select></td>\n");
+		websWrite(wp, "</select></td>\n");
 		websWrite(wp,
-			  "				<td style=\"width: 1%%;\"><input type=\"text\" name=\"dlnashare_subdir%s\" id=\"dlnashare_subdir%s\" value=\"%s\" style=\"width: 150px;\"/></td>\n",
+			  "<td style=\"width: 1%%;\"><input type=\"text\" name=\"dlnashare_subdir%s\" id=\"dlnashare_subdir%s\" value=\"%s\" style=\"width: 150px;\"/></td>\n",
 			  number, number, cs->sd);
 		websWrite(wp,
-			  "				<td style=\"width: 25px; text-align: center;\"><input type=\"checkbox\" name=\"dlnashare_audio%s\" id=\"dlnashare_audio%s\" value=\"1\" %s></td>\n",
+			  "<td style=\"width: 25px; text-align: center;\"><input type=\"checkbox\" name=\"dlnashare_audio%s\" id=\"dlnashare_audio%s\" value=\"1\" %s></td>\n",
 			  number, number, cs->types & TYPE_AUDIO ? "checked" : "");
 		websWrite(wp,
-			  "				<td style=\"width: 25px; text-align: center;\"><input type=\"checkbox\" name=\"dlnashare_video%s\" id=\"dlnashare_video%s\" value=\"1\" %s></td>\n",
+			  "<td style=\"width: 25px; text-align: center;\"><input type=\"checkbox\" name=\"dlnashare_video%s\" id=\"dlnashare_video%s\" value=\"1\" %s></td>\n",
 			  number, number, cs->types & TYPE_VIDEO ? "checked" : "");
 		websWrite(wp,
-			  "				<td style=\"width: 25px; text-align: center;\"><input type=\"checkbox\" name=\"dlnashare_images%s\" id=\"dlnashare_images%s\" value=\"1\" %s></td>\n",
+			  "<td style=\"width: 25px; text-align: center;\"><input type=\"checkbox\" name=\"dlnashare_images%s\" id=\"dlnashare_images%s\" value=\"1\" %s></td>\n",
 			  number, number, cs->types & TYPE_IMAGES ? "checked" : "");
 
-		websWrite(wp, "				<td class=\"center\">\n");
+		websWrite(wp, "<td class=\"center\">\n");
 		websWrite(wp,
-			  "					<script type=\"text/javascript\">document.write(\"<input type=\\\"button\\\" class=\\\"remove\\\" name=\\\"dlnashare_del%s\\\" aria-label=\\\"\"+nas.sharedel+\"\\\"  style=\\\"width: 100%%;\\\" onclick=\\\"removeDlnaShare(this);\\\" />\")</script>\n",
+			  "	<script type=\"text/javascript\">document.write(\"<input type=\\\"button\\\" class=\\\"remove\\\" name=\\\"dlnashare_del%s\\\" aria-label=\\\"\"+nas.sharedel+\"\\\"  style=\\\"width: 100%%;\\\" onclick=\\\"removeDlnaShare(this);\\\" />\")</script>\n",
 			  number);
-		websWrite(wp, "				</td>\n");
-		websWrite(wp, "			</tr>\n");
+		websWrite(wp, "</td>\n");
+		websWrite(wp, "</tr>\n");
 
 		rows++;
 		csnext = cs->next;
 		debug_free(cs);
 	}
 
-	websWrite(wp, "		</table>\n<br/>");
+	websWrite(wp, "</table>\n<br/>");
 
 	// add button
 	websWrite(wp,
