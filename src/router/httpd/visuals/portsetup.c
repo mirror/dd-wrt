@@ -75,7 +75,6 @@ EJ_VISIBLE void ej_portsetup(webs_t wp, int argc, char_t ** argv)
 		websWrite(wp, "<fieldset>\n");
 		websWrite(wp, "<legend><script type=\"text/javascript\">Capture(wl_basic.network)</script> %s</legend>\n", getNetworkLabel(wp, var));
 		// mac address
-
 		if (!isb) {
 			unsigned char mac[20];
 			char *r = get_hwaddr(var, mac);
@@ -89,14 +88,12 @@ EJ_VISIBLE void ej_portsetup(webs_t wp, int argc, char_t ** argv)
 		websWrite(wp, "<div class=\"setting\">\n<div class=\"label\"><script type=\"text/javascript\">Capture(idx.label)</script></div>\n");
 		websWrite(wp, "<input maxlength=\"32\" size=\"25\" name=\"%s_label\" value=\"%s\" /></div>\n", var, nvram_nget("%s_label", var));
 		// qlen here
-
 		websWrite(wp, "<div class=\"setting\">\n");
 		websWrite(wp, "<div class=\"label\">%s</div>\n", tran_string(buf, sizeof(buf), "idx.txqlen"));
 		char txq[32];
 		sprintf(txq, "%s_txq", var);
 		websWrite(wp, "<input class=\"num\" maxlength=\"4\" onblur=\"valid_range(this,0,10000,idx.txqlen)\" size=\"5\" name=\"%s\" value=\"%s\" />\n", txq, nvram_default_get(txq, getTXQ(var)));
 		websWrite(wp, "</div>\n");
-
 		// qlen end
 		if (!isb) {
 			int iswds = 0;
@@ -111,11 +108,11 @@ EJ_VISIBLE void ej_portsetup(webs_t wp, int argc, char_t ** argv)
 			websWrite(wp, "<div class=\"setting\">\n");
 			show_caption(wp, "label", "networking.bridgeassign", NULL);
 			websWrite(wp,
-				  "<input class=\"spaceradio\" type=\"radio\" value=\"0\" onclick=\"show_layer_ext(this, '%s_idnet', true);\" name=\"%s_bridged\" %s /><script type=\"text/javascript\">Capture(wl_basic.unbridged)</script>&nbsp;\n",
-				  layer, var, nvram_default_matchi(ssid, 0, 1) ? "checked=\"checked\"" : "");
-			websWrite(wp,
 				  "<input class=\"spaceradio\" type=\"radio\" value=\"1\" onclick=\"show_layer_ext(this, '%s_idnet', false);\" name=\"%s_bridged\" %s /><script type=\"text/javascript\">Capture(share.deflt)</script>\n",
 				  layer, var, nvram_default_matchi(ssid, 1, 1) ? "checked=\"checked\"" : "");
+			websWrite(wp,
+				  "<input class=\"spaceradio\" type=\"radio\" value=\"0\" onclick=\"show_layer_ext(this, '%s_idnet', true);\" name=\"%s_bridged\" %s /><script type=\"text/javascript\">Capture(wl_basic.unbridged)</script>\n",
+				  layer, var, nvram_default_matchi(ssid, 0, 1) ? "checked=\"checked\"" : "");
 			websWrite(wp, "</div>\n");
 		}
 		if (!isb) {
@@ -227,7 +224,7 @@ EJ_VISIBLE void ej_portsetup(webs_t wp, int argc, char_t ** argv)
 			nvram_default_get(bat_bridge, "br0");
 			websWrite(wp, "<div class=\"setting\">\n<div class=\"label\">L2Mesh&nbsp;<script type=\"text/javascript\">Capture(networking.bridge)</script></div>\n");
 			websWrite(wp, "<select name=\"bat_%s_bridge\">\n", var);
-			websWrite(wp, "  <option value=\"\"><script type=\"text/javascript\">Capture(share.none)</script></option>\n");
+			websWrite(wp, "<option value=\"\"><script type=\"text/javascript\">Capture(share.none)</script></option>\n");
 			foreach(word, bufferif, next) {
 				// if( strcmp( word, "br0" ) ) {
 				websWrite(wp, "<option value=\"%s\" %s >%s</option>\n", word, nvram_match(bat_bridge, word) ? "selected=\"selected\"" : "", word);
@@ -236,7 +233,6 @@ EJ_VISIBLE void ej_portsetup(webs_t wp, int argc, char_t ** argv)
 			websWrite(wp, "</select>\n</div>\n");
 		}
 #endif
-		websWrite(wp, "<br />\n");
 		if (!isb) {
 			websWrite(wp, "</div>\n");
 		}
@@ -246,16 +242,17 @@ EJ_VISIBLE void ej_portsetup(webs_t wp, int argc, char_t ** argv)
 		websWrite(wp, "show_layer_ext(document.getElementsByName(\"%s_dns_redirect\"), \"%s_idredirect\", %s);\n", var, layer, nvram_matchi(redirect, 1) ? "true" : "false");
 		websWrite(wp, "//]]>\n</script>\n");
 #ifdef HAVE_TMK
+		websWrite(wp, "<br />\n");
 		websWrite(wp, "<fieldset>\n");
 		char r1x_if[32];
 		sprintf(r1x_if, "%s_r1x", var);
 		nvram_default_get(r1x_if, "0");
 		websWrite(wp, "<div class=\"setting\">\n<div class=\"label\"><script type=\"text/javascript\">Capture(service.wired_8021x_server)</script</div>\n");
 		websWrite(wp, "<input class=\"spaceradio\" onclick=\"show_layer_ext(this, '%s_r1x_block', true);\" type=\"radio\" name=\"%s_r1x\" value=\"1\" %s />\n", var, var,
-			  nvram_match(r1x_if, "1") ? "checked=\"checked\"" : "");
+			nvram_match(r1x_if, "1") ? "checked=\"checked\"" : "");
 		websWrite(wp, "<script type=\"text/javascript\">Capture(share.enable)</script>&nbsp;\n");
 		websWrite(wp, "<input class=\"spaceradio\" onclick=\"show_layer_ext(this, '%s_r1x_block', false);\" type=\"radio\" name=\"%s_r1x\" value=\"0\" %s />\n", var, var,
-			  nvram_match(r1x_if, "0") ? "checked=\"checked\"" : "");
+			nvram_match(r1x_if, "0") ? "checked=\"checked\"" : "");
 		websWrite(wp, "<script type=\"text/javascript\">Capture(share.disable)</script>&nbsp;</div>\n");
 		// showRadio(wp, "Use as primary Wan", wan_prim);
 		websWrite(wp, "<div id=\"%s_r1x_block\">\n", var);
@@ -296,7 +293,7 @@ EJ_VISIBLE void ej_portsetup(webs_t wp, int argc, char_t ** argv)
 #endif
 
 		websWrite(wp, "</fieldset><br />\n");
-	      skip:;
+			skip:;
 	}
 	websWrite(wp, "</fieldset><br />\n");
 }
