@@ -26,6 +26,7 @@ share.firmware="Firmware";
 share.time="Zeit";
 share.interipaddr="WAN-IP-Adresse";
 share.more="Mehr...";
+share.choice="Bitte Wählen...";
 share.help="Hilfe";
 share.enable="Einschalten";
 share.enabled="eingeschaltet";
