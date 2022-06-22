@@ -116,6 +116,7 @@ share.seconds="Sekunden";
 share.routername="Router Name";
 share.manual="Manuell";
 share.port="Port";
+share.guest_port="Gästenetz";
 share.ssid="SSID";
 share.channel="Kanal";
 share.frequency="Frequenz";
@@ -2142,6 +2143,9 @@ status_gpsi.lon="Längengrad";
 status_gpsi.lat="Breitengrad";
 status_gpsi.alt="Höhe";
 status_gpsi.sat="Sichtbare Satelliten";
+status_gpsi.ant_conn="Antenne verbunden";
+status_gpsi.ant_disc="Antenna getrennt";
+status_gpsi.na="Nicht Verfügbar";
 
 //help container
 
@@ -2450,8 +2454,8 @@ wl_mac.h2="WLAN-MAC-Filter";
 wl_mac.legend="MAC-Filter";
 wl_mac.label="Nutze Filter";
 wl_mac.label2="Liste enthält...";
-wl_mac.deny="WLAN-MAC-Adressen, die nicht auf das Netzwerk zugreifen dürfen";
-wl_mac.allow="WLAN-MAC-Adressen, die auf das Netzwerk zugreifen dürfen";
+wl_mac.deny="Blacklisted Netzwerkclients";
+wl_mac.allow="Whitelisted Netzwerkclients";
 
 // ** WiMAX**//
 
