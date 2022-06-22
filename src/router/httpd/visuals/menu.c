@@ -331,13 +331,13 @@ EJ_VISIBLE void ej_do_menu(webs_t wp, int argc, char_t ** argv)
 //fprintf(stderr,"%s->%d %d %d\n",__func__,__LINE__,i, j);
 #ifdef HAVE_MADWIFI
 				if (!wifi && !strncmp(m->menu[i][j], "Wireless_Basic.asp", 8))
-					j++;
+					goto skip;
 #ifndef HAVE_SUPERCHANNEL
 				if (!strcmp_pnt(m->menu[i][j], "SuperChannel.asp"))	// jump over
 					// PPTP in
 					// micro
 					// build
-					j++;
+					goto skip;
 #else
 				if (!strcmp_pnt(m->menu[i][j], "SuperChannel.asp") && (wp->issuperchannel || !wifi))	// jump
 					// over
@@ -345,34 +345,34 @@ EJ_VISIBLE void ej_do_menu(webs_t wp, int argc, char_t ** argv)
 					// in
 					// micro
 					// build
-					j++;
+					goto skip;
 #endif
 #else
 				if (!strcmp_pnt(m->menu[i][j], "SuperChannel.asp"))	// jump over
 					// PPTP in
 					// micro
 					// build
-					j++;
+					goto skip;
 #endif
 #ifndef HAVE_WAVESAT
 				if (!strcmp_pnt(m->menu[i][j], "WiMAX.asp"))	// jump over
 					// WiMAX
-					j++;
+					goto skip;
 #else
 				if (!wimaxwifi && !strcmp_pnt(m->menu[i][j], "WiMAX.asp"))	// jump
 					// over
 					// WiMAX
-					j++;
+					goto skip;
 #endif
 #if !defined(HAVE_AOSS) && !defined(HAVE_WPS)
 				if (!strcmp_pnt(m->menu[i][j], "AOSS.asp"))	// jump over
 					// AOSS
-					j++;
+					goto skip;
 #endif
 #if defined(HAVE_WPS) && !defined(HAVE_IDEXX)
 				if (!strcmp_pnt(m->menu[i][j], "AOSS.asp"))	// jump over
 					// AOSS
-					j++;
+					goto skip;
 #endif
 #ifdef HAVE_MADWIFI
 				if (!wifi && !strcmp_pnt(m->menu[i][j], "WL_WPATable.asp"))	// jump
@@ -381,18 +381,18 @@ EJ_VISIBLE void ej_do_menu(webs_t wp, int argc, char_t ** argv)
 					// in
 					// micro
 					// build
-					j++;
+					goto skip;
 				if (!strcmp_pnt(m->menu[i][j], "Wireless_radauth.asp"))
-					j++;
+					goto skip;
 				if (!wifi && !strncmp(m->menu[i][j], "Wireless_MAC.asp", 8))
-					j++;
+					goto skip;
 				if (!strncmp(m->menu[i][j], "Wireless_Advanced", 17))
-					j++;
+					goto skip;
 				if ((!wifi || cpeonly)
 				    && !strncmp(m->menu[i][j], "Wireless_WDS", 12))
-					j++;
+					goto skip;
 				if (!wifi && !strcmp_pnt(m->menu[i][j], "Status_Wireless.asp"))
-					j++;
+					goto skip;
 
 #endif
 				if ((!vlan_supp) && !strcmp_pnt(m->menu[i][j], "Vlan.asp"))	// jump
@@ -402,125 +402,123 @@ EJ_VISIBLE void ej_do_menu(webs_t wp, int argc, char_t ** argv)
 					// vlan
 					// not
 					// supported
-					j++;
+					goto skip;
 #ifndef HAVE_FREERADIUS
 				if (!strcmp_pnt(m->menu[i][j], "FreeRadius.asp"))
-					j++;
+					goto skip;
 #endif
 #ifndef HAVE_PPPOESERVER
 				if (!strcmp_pnt(m->menu[i][j], "PPPoE_Server.asp"))
-					j++;
+					goto skip;
 #endif
 #ifdef HAVE_MICRO
 				if (!strcmp_pnt(m->menu[i][j], "PPTP.asp"))	// jump over PPTP in
 					// micro build
-					j++;
+					goto skip;
 #endif
 #ifndef HAVE_USB
 				if (!strcmp_pnt(m->menu[i][j], "USB.asp"))	// jump over USB
-					j++;
+					goto skip;
 #endif
 #ifndef HAVE_SYSCTL_EDIT
 				if (!strcmp_pnt(m->menu[i][j], "Sysctl.asp"))	// jump over sysctl editor
-					j++;
+					goto skip;
 #endif
 #ifndef HAVE_NAS_SERVER
 				if (!strcmp_pnt(m->menu[i][j], "NAS.asp"))	// jump over NAS
-					j++;
+					goto skip;
 #endif
 #ifdef HAVE_GLAUCO
 				if (!strcmp_pnt(m->menu[i][j], "Factory_Defaults.asp"))
-					j++;
+					goto skip;
 				if (!strcmp_pnt(m->menu[i][j], "Upgrade.asp"))
-					j++;
+					goto skip;
 #endif
 #ifdef HAVE_SANSFIL
 				if (!strcmp_pnt(m->menu[i][j], "Hotspot.asp"))
-					j++;
+					goto skip;
 #endif
 #ifndef HAVE_SPOTPASS
 				if (!strcmp_pnt(m->menu[i][j], "Nintendo.asp"))	// jump over
 					// Nintendo
-					j++;
+					goto skip;
 #endif
 #ifndef HAVE_MILKFISH
 				if (!strcmp_pnt(m->menu[i][j], "Milkfish.asp"))
-					j++;
+					goto skip;
 #endif
 #ifndef HAVE_IPV6
 				if (!strcmp_pnt(m->menu[i][j], "IPV6.asp"))
-					j++;
+					goto skip;
 #endif
 //#ifdef HAVE_WIKINGS
 //                              if (!strcmp_pnt(m->menu[i][j], "AnchorFree.asp"))
-//                                      j++;
+//                                      goto skip;
 //#endif
 #ifndef HAVE_PRIVOXY
 				if (!strcmp_pnt(m->menu[i][j], "Privoxy.asp"))
-					j++;
+					goto skip;
 #endif
 #ifndef HAVE_SPEEDCHECKER
 				if (!strcmp_pnt(m->menu[i][j], "Speedchecker.asp"))
-					j++;
+					goto skip;
 #endif
 //#ifdef HAVE_ESPOD
 //                              if (!strcmp_pnt(m->menu[i][j], "AnchorFree.asp"))
-//                                      j++;
+//                                      goto skip;
 //#endif
 //#ifdef HAVE_CARLSONWIRELESS
 //                              if (!strcmp_pnt(m->menu[i][j], "AnchorFree.asp"))
-//                                      j++;
+//                                      goto skip;
 //#endif
 #ifndef HAVE_WOL
 				if (!strcmp_pnt(m->menu[i][j], "Wol.asp"))
-					j++;
+					goto skip;
 #endif
 #ifndef HAVE_EOP_TUNNEL
 				if (!strcmp_pnt(m->menu[i][j], "eop-tunnel.asp"))
-					j++;
+					goto skip;
 #endif
 #ifndef HAVE_VLANTAGGING
 				if (!strcmp_pnt(m->menu[i][j], "Networking.asp"))
-					j++;
+					goto skip;
 #endif
 #ifndef HAVE_CTORRENT
 				if (!strcmp_pnt(m->menu[i][j], "P2P.asp"))
-					j++;
+					goto skip;
 #endif
 				if ((!sputnik) && !strcmp_pnt(m->menu[i][j], "Status_SputnikAPD.asp"))	// jump
 					// over
 					// Sputnik
-					j++;
+					goto skip;
 				if ((!openvpn) && !strcmp_pnt(m->menu[i][j], "Status_OpenVPN.asp"))	// jump
 					// over
 					// OpenVPN
-					j++;
+					goto skip;
 				if ((!auth) && !strcmp_pnt(m->menu[i][j], "Info.htm"))	// jump
 					// over
 					// Sys-Info
-					j++;
+					goto skip;
 				if ((registered) && !cpeonly && !strcmp_pnt(m->menu[i][j], "register.asp"))	// jump
 					// over
 					// register.asp
-					j++;
+					goto skip;
 				if ((!*(nvram_safe_get("mypage_scripts"))) && !strcmp_pnt(m->menu[i][j], "MyPage.asp"))	// jump
 					// over
 					// MyPage.asp
-					j++;
+					goto skip;
 #ifndef HAVE_STATUS_GPIO
 				if (!strcmp_pnt(m->menu[i][j], "Gpio.asp"))
-					j++;
+					goto skip;
 #endif
 #ifndef HAVE_FREECWMP
 				if (!strcmp_pnt(m->menu[i][j], "Status_CWMP.asp"))
-					j++;
+					goto skip;
 #endif
 #ifndef HAVE_STATUS_SYSLOG
 				if (!strcmp_pnt(m->menu[i][j], "Syslog.asp"))
-					j++;
+					goto skip;OB
 #endif
-				if (j >= MAXSUBMENU)
-					break;
 #ifdef HAVE_MADWIFI
 				if (!strcmp(m->menu[i][j], submenu)
 				    && (*(m->menu[i][j])
@@ -554,6 +552,7 @@ EJ_VISIBLE void ej_do_menu(webs_t wp, int argc, char_t ** argv)
 				else if (*(m->menu[i][j])) {
 					websWrite(wp, "      <li><a href=\"%s\"><strong><script type=\"text/javascript\">Capture(bmenu.%s)</script></strong></a></li>\n", m->menu[i][j], m->menuname[i][j + 1]);
 				}
+				skip:;
 			}
 			websWrite(wp, "     </ul>\n");
 			websWrite(wp, "    </div>\n");
