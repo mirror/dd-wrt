@@ -1403,6 +1403,7 @@ static void showOptionsNames(webs_t wp, char *label, char *propname, char *value
 	char *next;
 	char var[80];
 	int idx = 0;
+
 	websWrite(wp, "<div class=\"setting\">\n");
 	show_caption(wp, "label", label, NULL);
 	websWrite(wp, "<select name=\"%s\">\n", propname);
@@ -1432,18 +1433,22 @@ static void showIfOptions(webs_t wp, char *propname, char *names, char *select)
 	showIfOptions_ext(wp, propname, names, select, 0);
 }
 
-static void showOptionsChoose(webs_t wp, char *propname, char *names, char *select)
+static void showOptionsChoose(webs_t wp, char *propname, char *names, char **trans, char *select)
 {
 	char *next;
 	char var[80];
+	int cnt = 0;
 
 	websWrite(wp, "<select name=\"%s\">\n", propname);
 	websWrite(wp, "<script type=\"text/javascript\">\n//<![CDATA[\n");
-	websWrite(wp, "document.write(\"<option value=\\\"null\\\" >Please choose...</option>\");\n");
-	foreach(var, names, next) {
-		websWrite(wp, "document.write(\"<option value=\\\"%s\\\" %s >%s</option>\");\n", var, !strcmp(var, select) ? "selected=\\\"selected\\\"" : "", var);
+	if (trans)
+		websWrite(wp, "document.write(\"<option value=\\\"null\\\" >\" + share.choice + \"</option>\");\n", trans[cnt++]);
+	else {
+		foreach(var, names, next) {
+			websWrite(wp, "document.write(\"<option value=\\\"%s\\\" %s >%s</option>\");\n", var, !strcmp(var, select) ? "selected=\\\"selected\\\"" : "", var);
+		}
+		websWrite(wp, "//]]>\n</script>\n</select>\n");
 	}
-	websWrite(wp, "//]]>\n</script>\n</select>\n");
 }
 
 static void showOptionsLabel(webs_t wp, char *labelname, char *propname, char *names, char *select)
