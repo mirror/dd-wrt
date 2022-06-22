@@ -133,6 +133,7 @@ struct arptable {
 	long long in;
 	long long out;
 	long long total;
+	int mark;
 };
 
 static int addtable(struct arptable **tbl, char *mac, char *ip, char *ifname, long long in, long long out, long long total, int *tablelen)
@@ -167,6 +168,7 @@ static int addtable(struct arptable **tbl, char *mac, char *ip, char *ifname, lo
 	table[i].out = out;
 	table[i].total = total;
 	table[i].conncount = 0;
+	table[i].mark = 0;
 	if (strlen(ip) < 16) {
 		table[i].proto = 1;
 		inet_aton(ip, (struct in_addr *)&table[i].v4);
@@ -242,6 +244,37 @@ static void readhosts(struct arptable *tbl, int tablelen)
 	for (i = 0; i < tablelen; i++) {
 		if (!tbl[i].hostname)
 			tbl[i].hostname = strdup("*");
+	}
+
+}
+
+static void filterarp(struct arptable *table, int tablelen)
+{
+	int i;
+	FILE *arp;
+	char buf[256];
+	char ip[64];
+	char mac[18];
+	char landev[16];
+	for (i = 0; i < tablelen; i++) {
+		table[i].mark = 1;
+	}
+
+	if ((arp = fopen("/proc/net/arp", "r")) != NULL) {
+		while (fgets(buf, sizeof(buf), arp)) {
+			if (sscanf(buf, "%15s %*s %*s %17s %*s %s", ip, mac, landev) != 3)
+				continue;
+			if ((strlen(mac) != 17)
+			    || (strcmp(mac, "00:00:00:00:00:00") == 0))
+				continue;
+			for (i = 0; i < tablelen; i++) {
+				if (!strcasecmp(mac, table[i].mac) && !strcmp(landev, table[i].ifname)) {
+					table[i].mark = 0;
+				}
+			}
+
+		}
+		fclose(arp);
 	}
 
 }
@@ -343,31 +376,14 @@ EJ_VISIBLE void ej_dumparptable(webs_t wp, int argc, char_t ** argv)
 		fclose(f);
 		readconntrack(table, tablelen);
 		readhosts(table, tablelen);
-		if (nvram_match("arp_longdelay", "1")) {
-			for (i = 0; i < tablelen; i++) {
+		if (!nvram_match("arp_longdelay", "1"))
+			filterarp(table, tablelen);
+
+		for (i = 0; i < tablelen; i++) {
+			if (!table[i].mark) {
 				websWrite(wp, "%c'%s','%s','%s','%d', '%s','%lld','%lld','%lld'", (count ? ',' : ' '), table[i].hostname, table[i].ip, table[i].mac, table[i].conncount, table[i].ifname,
 					  table[i].in, table[i].out, table[i].total);
 				++count;
-			}
-		} else {
-			if ((arp = fopen("/proc/net/arp", "r")) != NULL) {
-				while (fgets(buf, sizeof(buf), arp)) {
-					if (sscanf(buf, "%15s %*s %*s %17s %*s %s", ip, mac, landev) != 3)
-						continue;
-					if ((strlen(mac) != 17)
-					    || (strcmp(mac, "00:00:00:00:00:00") == 0))
-						continue;
-					for (i = 0; i < tablelen; i++) {
-						if (!strcasecmp(mac, table[i].mac)) {
-							websWrite(wp, "%c'%s','%s','%s','%d', '%s','%lld','%lld','%lld'", (count ? ',' : ' '), table[i].hostname, table[i].ip, table[i].mac, table[i].conncount,
-								  table[i].ifname, table[i].in, table[i].out, table[i].total);
-							++count;
-							break;
-						}
-					}
-
-				}
-				fclose(arp);
 			}
 		}
 		for (i = 0; i < tablelen; i++) {
@@ -381,4 +397,3 @@ EJ_VISIBLE void ej_dumparptable(webs_t wp, int argc, char_t ** argv)
 	}
 }
 #endif
-
