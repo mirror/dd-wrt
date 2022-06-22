@@ -3078,24 +3078,6 @@ EJ_VISIBLE void ej_dumparptable(webs_t wp, int argc, char_t ** argv)
 			}
 
 			/*
-			 * end count
-			 */
-
-			/*
-			 * do nslookup
-			 */
-
-			// struct servent *servp;
-			// char buf1[256];
-			//
-			// getHostName (buf1, ip);
-			// if (strcmp(buf1, "unknown"))
-			// strcpy (hostname, buf1);
-			/*
-			 * end nslookup
-			 */
-
-			/*
 			 * look into hosts file for hostnames (static leases)
 			 */
 			if ((host = fopen("/tmp/hosts", "r")) != NULL && !strcmp(hostname, "*")) {
@@ -3356,6 +3338,7 @@ EJ_VISIBLE void ej_dumparptable(webs_t wp, int argc, char_t ** argv)
 	int conn_count = 0;
 	struct arptable *table = NULL;
 	int tablelen = 0;
+	FILE *arp;
 
 	if ((f = fopen("/tmp/report.tmp", "r")) != NULL) {
 		while (fgets(buf, sizeof(buf), f)) {
@@ -3374,15 +3357,32 @@ EJ_VISIBLE void ej_dumparptable(webs_t wp, int argc, char_t ** argv)
 		fclose(f);
 		readconntrack(table, tablelen);
 		readhosts(table, tablelen);
+		if ((arp = fopen("/proc/net/arp", "r")) != NULL) {
+			while (fgets(buf, sizeof(buf), arp)) {
+				if (sscanf(buf, "%15s %*s %*s %17s %*s %s", ip, mac, landev) != 3)
+					continue;
+				if ((strlen(mac) != 17)
+				    || (strcmp(mac, "00:00:00:00:00:00") == 0))
+					continue;
+				for (i = 0; i < tablelen; i++) {
+					if (!strncasecmp(mac, table[i].mac)) {
+						websWrite(wp, "%c'%s','%s','%s','%d', '%s','%lld','%lld','%lld'", (count ? ',' : ' '), table[i].hostname, table[i].ip, table[i].mac, table[i].conncount, table[i].ifname,
+							  table[i].in, table[i].out, table[i].total);
+						++count;
+						break;
+					}
+				}
+
+			}
+		}
+		fclose(arp);
 		for (i = 0; i < tablelen; i++) {
-			websWrite(wp, "%c'%s','%s','%s','%d', '%s','%lld','%lld','%lld'", (count ? ',' : ' '), table[i].hostname, table[i].ip, table[i].mac, table[i].conncount, table[i].ifname, table[i].in, table[i].out,
-				  table[i].total);
 			debug_free(table[i].hostname);
 			debug_free(table[i].ip);
 			debug_free(table[i].mac);
 			debug_free(table[i].ifname);
-			++count;
 		}
+
 		debug_free(table);
 	}
 }
