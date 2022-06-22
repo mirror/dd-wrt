@@ -14,75 +14,6 @@
 #include "../dma.h"
 #include "mac.h"
 
-void mt7615_tx_complete_skb(struct mt76_dev *mdev, struct mt76_queue_entry *e)
-{
-	if (!e->txwi) {
-		dev_kfree_skb_any(e->skb);
-		return;
-	}
-
-	/* error path */
-	if (e->skb == DMA_DUMMY_DATA) {
-		struct mt76_txwi_cache *t;
-		struct mt7615_dev *dev;
-		struct mt7615_txp_common *txp;
-		u16 token;
-
-		dev = container_of(mdev, struct mt7615_dev, mt76);
-		txp = mt7615_txwi_to_txp(mdev, e->txwi);
-
-		if (is_mt7615(&dev->mt76))
-			token = le16_to_cpu(txp->fw.token);
-		else
-			token = le16_to_cpu(txp->hw.msdu_id[0]) &
-				~MT_MSDU_ID_VALID;
-
-		t = mt76_token_put(mdev, token);
-		e->skb = t ? t->skb : NULL;
-	}
-
-	if (e->skb)
-		mt76_tx_complete_skb(mdev, e->wcid, e->skb);
-}
-
-static void
-mt7615_write_hw_txp(struct mt7615_dev *dev, struct mt76_tx_info *tx_info,
-		    void *txp_ptr, u32 id)
-{
-	struct mt7615_hw_txp *txp = txp_ptr;
-	struct mt7615_txp_ptr *ptr = &txp->ptr[0];
-	int i, nbuf = tx_info->nbuf - 1;
-	u32 last_mask;
-
-	tx_info->buf[0].len = MT_TXD_SIZE + sizeof(*txp);
-	tx_info->nbuf = 1;
-
-	txp->msdu_id[0] = cpu_to_le16(id | MT_MSDU_ID_VALID);
-
-	if (is_mt7663(&dev->mt76))
-		last_mask = MT_TXD_LEN_LAST;
-	else
-		last_mask = MT_TXD_LEN_AMSDU_LAST |
-			    MT_TXD_LEN_MSDU_LAST;
-
-	for (i = 0; i < nbuf; i++) {
-		u16 len = tx_info->buf[i + 1].len & MT_TXD_LEN_MASK;
-		u32 addr = tx_info->buf[i + 1].addr;
-
-		if (i == nbuf - 1)
-			len |= last_mask;
-
-		if (i & 1) {
-			ptr->buf1 = cpu_to_le32(addr);
-			ptr->len1 = cpu_to_le16(len);
-			ptr++;
-		} else {
-			ptr->buf0 = cpu_to_le32(addr);
-			ptr->len0 = cpu_to_le16(len);
-		}
-	}
-}
-
 static void
 mt7615_write_fw_txp(struct mt7615_dev *dev, struct mt76_tx_info *tx_info,
 		    void *txp_ptr, u32 id)
@@ -91,7 +22,8 @@ mt7615_write_fw_txp(struct mt7615_dev *dev, struct mt76_tx_info *tx_info,
 	struct ieee80211_tx_info *info = IEEE80211_SKB_CB(tx_info->skb);
 	struct ieee80211_key_conf *key = info->control.hw_key;
 	struct ieee80211_vif *vif = info->control.vif;
-	struct mt7615_fw_txp *txp = txp_ptr;
+	struct mt76_connac_fw_txp *txp = txp_ptr;
+	u8 *rept_wds_wcid = (u8 *)&txp->rept_wds_wcid;
 	int nbuf = tx_info->nbuf - 1;
 	int i;
 
@@ -122,7 +54,7 @@ mt7615_write_fw_txp(struct mt7615_dev *dev, struct mt76_tx_info *tx_info,
 	}
 
 	txp->token = cpu_to_le16(id);
-	txp->rept_wds_wcid = 0xff;
+	*rept_wds_wcid = 0xff;
 }
 
 int mt7615_tx_prepare_skb(struct mt76_dev *mdev, void *txwi_ptr,
@@ -167,11 +99,11 @@ int mt7615_tx_prepare_skb(struct mt76_dev *mdev, void *txwi_ptr,
 			      pid, key, false);
 
 	txp = txwi + MT_TXD_SIZE;
-	memset(txp, 0, sizeof(struct mt7615_txp_common));
+	memset(txp, 0, sizeof(struct mt76_connac_txp_common));
 	if (is_mt7615(&dev->mt76))
 		mt7615_write_fw_txp(dev, tx_info, txp, id);
 	else
-		mt7615_write_hw_txp(dev, tx_info, txp, id);
+		mt76_connac_write_hw_txp(mdev, tx_info, txp, id);
 
 	tx_info->skb = DMA_DUMMY_DATA;
 
@@ -268,6 +200,7 @@ void mt7615_mac_reset_work(struct work_struct *work)
 	struct mt76_phy *ext_phy;
 	struct mt7615_dev *dev;
 	unsigned long timeout;
+	int i;
 
 	dev = container_of(work, struct mt7615_dev, reset_work);
 	ext_phy = dev->mt76.phy2;
@@ -299,8 +232,8 @@ void mt7615_mac_reset_work(struct work_struct *work)
 		mt76_txq_schedule_all(ext_phy);
 
 	mt76_worker_disable(&dev->mt76.tx_worker);
-	napi_disable(&dev->mt76.napi[0]);
-	napi_disable(&dev->mt76.napi[1]);
+	mt76_for_each_q_rx(&dev->mt76, i)
+		napi_disable(&dev->mt76.napi[i]);
 	napi_disable(&dev->mt76.tx_napi);
 
 	mt7615_mutex_acquire(dev);
@@ -330,11 +263,10 @@ void mt7615_mac_reset_work(struct work_struct *work)
 	napi_enable(&dev->mt76.tx_napi);
 	napi_schedule(&dev->mt76.tx_napi);
 
-	napi_enable(&dev->mt76.napi[0]);
-	napi_schedule(&dev->mt76.napi[0]);
-
-	napi_enable(&dev->mt76.napi[1]);
-	napi_schedule(&dev->mt76.napi[1]);
+	mt76_for_each_q_rx(&dev->mt76, i) {
+		napi_enable(&dev->mt76.napi[i]);
+		napi_schedule(&dev->mt76.napi[i]);
+	}
 	local_bh_enable();
 
 	ieee80211_wake_queues(mt76_hw(dev));
