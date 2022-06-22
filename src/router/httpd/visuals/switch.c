@@ -332,8 +332,8 @@ EJ_VISIBLE void ej_port_vlan_table(webs_t wp, int argc, char_t ** argv)
 
 		if (flag < 16000 && flag > 2) {
 			websWrite(wp,
-					"<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<td class=\\\"center\\\" title=\\\"\" + sbutton.del + \"\\\"><input class=\\\"remove\\\" aria-label=\\\"\" + sbutton.del + \"\\\" type=\\\"button\\\" onclick=\\\"vlan_remove(this.form,'%d')\\\" />\");\n//]]>\n</script></td>\n",
-					i);
+				  "<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<td class=\\\"center\\\" title=\\\"\" + sbutton.del + \"\\\"><input class=\\\"remove\\\" aria-label=\\\"\" + sbutton.del + \"\\\" type=\\\"button\\\" onclick=\\\"vlan_remove(this.form,'%d')\\\" />\");\n//]]>\n</script></td>\n",
+				  i);
 		} else {
 			websWrite(wp, "<td>&nbsp;</td>\n");
 		}
@@ -341,8 +341,8 @@ EJ_VISIBLE void ej_port_vlan_table(webs_t wp, int argc, char_t ** argv)
 		websWrite(wp, "</tr>\n");
 		if (i == (blen - 1)) {
 			websWrite(wp,
-					"<tr><td><script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<input class=\\\"button\\\" type=\\\"button\\\" value=\\\"\" + sbutton.add + \"\\\" onclick=\\\"vlan_add(this.form,'%d')\\\" />\");\n//]]>\n</script></td></tr>\n",
-					i);
+				  "<tr><td><script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<input class=\\\"button\\\" type=\\\"button\\\" value=\\\"\" + sbutton.add + \"\\\" onclick=\\\"vlan_add(this.form,'%d')\\\" />\");\n//]]>\n</script></td></tr>\n",
+				  i);
 
 		}
 		if (flag == 20000 || flag == 16000) {
