@@ -2986,7 +2986,7 @@ EJ_VISIBLE void ej_show_countrylist(webs_t wp, int argc, char_t ** argv)
 	if (nvram_matchi("nocountrysel", 1))
 		return;
 	char *list = getCountryList(NULL);
-	showOptionsChoose(wp, argv[0], list, nvram_safe_get(argv[0]));
+	showOptionsChoose(wp, argv[0], list, NULL, nvram_safe_get(argv[0]));
 }
 
 static void mesh_num(webs_t wp, char *prefix, char *name, int len, int def)
