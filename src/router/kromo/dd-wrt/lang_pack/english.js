@@ -23,6 +23,8 @@ share.mode_3g_3g2g="3G first, on Error 2G";
 share.firmware="Firmware";
 share.time="Time";
 share.interipaddr="WAN IP Address";
+// choice dd-wrt.c line 1442
+share.choice="Please Choose";
 share.more="More...";
 share.help="Help";
 share.enable="Enable";
