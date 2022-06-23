@@ -25,7 +25,7 @@ EJ_VISIBLE void ej_get_voltage(webs_t wp, int argc, char_t ** argv)
 #ifdef HAVE_LAGUNA
 	FILE *fp = fopen("/sys/bus/i2c/devices/0-0029/in0_input", "rb");
 #elif HAVE_NEWPORT
-	FILE *fp = fopen("/sys/class/hwmon/hwmon0/in2_input", "rb");
+	FILE *fp = fopen("/sys/class/hwmon/hwmon0/in1_input", "rb");
 #elif HAVE_VENTANA
 	FILE *fp = fopen("/sys/bus/i2c/devices/0-0029/in0_input", "rb");
 #else
