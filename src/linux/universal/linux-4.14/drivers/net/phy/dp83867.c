@@ -83,6 +83,9 @@
 
 #define DP83867_IO_MUX_CFG_IO_IMPEDANCE_MAX	0x0
 #define DP83867_IO_MUX_CFG_IO_IMPEDANCE_MIN	0x1f
+#define DP83867_IO_MUX_CFG_CLK_O_DISABLE	BIT(6)
+#define DP83867_IO_MUX_CFG_CLK_O_SEL_MASK	(0x1f << 8)
+#define DP83867_IO_MUX_CFG_CLK_O_SEL_SHIFT	8
 
 /* CFG3 bits */
 #define DP83867_CFG3_INT_OE			BIT(7)
@@ -104,6 +107,8 @@ struct dp83867_private {
 	int io_impedance;
 	int port_mirroring;
 	bool rxctrl_strap_quirk;
+	bool set_clk_output;
+	u32 clk_output_sel;
 };
 
 static int dp83867_ack_interrupt(struct phy_device *phydev)
@@ -172,6 +177,22 @@ static int dp83867_of_init(struct phy_device *phydev)
 	dp83867->io_impedance = -EINVAL;
 
 	/* Optional configuration */
+	ret = of_property_read_u32(of_node, "ti,clk-output-sel",
+				   &dp83867->clk_output_sel);
+	/* If not set, keep default */
+	if (!ret) {
+		dp83867->set_clk_output = true;
+		/* Valid values are 0 to DP83867_CLK_O_SEL_REF_CLK or
+		 * DP83867_CLK_O_SEL_OFF.
+		 */
+		if (dp83867->clk_output_sel > DP83867_CLK_O_SEL_REF_CLK &&
+		    dp83867->clk_output_sel != DP83867_CLK_O_SEL_OFF) {
+			phydev_err(phydev, "ti,clk-output-sel value %u out of range\n",
+				   dp83867->clk_output_sel);
+			return -EINVAL;
+		}
+	}
+
 	if (of_property_read_bool(of_node, "ti,max-output-impedance"))
 		dp83867->io_impedance = DP83867_IO_MUX_CFG_IO_IMPEDANCE_MAX;
 	else if (of_property_read_bool(of_node, "ti,min-output-impedance"))
@@ -265,6 +286,7 @@ static int dp83867_config_init(struct phy_device *phydev)
 		/* Set up RGMII delays */
 		val = phy_read_mmd(phydev, DP83867_DEVADDR, DP83867_RGMIICTL);
 
+		val &= ~(DP83867_RGMII_TX_CLK_DELAY_EN | DP83867_RGMII_RX_CLK_DELAY_EN);
 		if (phydev->interface == PHY_INTERFACE_MODE_RGMII_ID)
 			val |= (DP83867_RGMII_TX_CLK_DELAY_EN | DP83867_RGMII_RX_CLK_DELAY_EN);
 
@@ -334,6 +356,25 @@ static int dp83867_config_init(struct phy_device *phydev)
 
 	if (dp83867->port_mirroring != DP83867_PORT_MIRROING_KEEP)
 		dp83867_config_port_mirroring(phydev);
+
+	/* Clock output selection if muxing property is set */
+	if (dp83867->set_clk_output) {
+		u16 mask = DP83867_IO_MUX_CFG_CLK_O_DISABLE;
+		u16 set;
+
+		if (dp83867->clk_output_sel == DP83867_CLK_O_SEL_OFF) {
+			set = DP83867_IO_MUX_CFG_CLK_O_DISABLE;
+		} else {
+			mask |= DP83867_IO_MUX_CFG_CLK_O_SEL_MASK;
+			set = dp83867->clk_output_sel <<
+			      DP83867_IO_MUX_CFG_CLK_O_SEL_SHIFT;
+		}
+
+		val = phy_read_mmd(phydev, DP83867_DEVADDR, DP83867_IO_MUX_CFG);
+		val &= ~mask;
+		val |= set;
+		phy_write_mmd(phydev, DP83867_DEVADDR, DP83867_IO_MUX_CFG, val);
+	}
 
 	return 0;
 }
