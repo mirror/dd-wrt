@@ -325,7 +325,7 @@ FILE *_getWebsFile(webs_t wp, char *path2, size_t *len)
 		    found = !strcasecmp(websRomPageIndex[i].path, path);
 		else
 		    found = !strcmp(websRomPageIndex[i].path, path);
-		if (!found) {
+		if (found) {
 			/* to prevent stack overwrite problems */
 			web = fopen("/tmp/debug/www", "rb");
 			if (!web)
