@@ -121,7 +121,7 @@ much traffic. */
  * generally faster than AES256 on CPU w/o dedicated AES instructions,
  * having the same key size.
  * Compiling in will add ~5,5kB to binary size on x86-64 */
-#define DROPBEAR_CHACHA20POLY1305 0
+#define DROPBEAR_CHACHA20POLY1305 1
 
 /* Twofish counter mode is disabled by default because it 
 has not been tested for interoperability with other SSH implementations.
