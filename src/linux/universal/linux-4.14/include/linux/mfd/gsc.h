@@ -1,9 +1,11 @@
 /* SPDX-License-Identifier: GPL-2.0
  *
- * Copyright (C) 2018 Gateworks Corporation
+ * Copyright (C) 2020 Gateworks Corporation
  */
 #ifndef __LINUX_MFD_GSC_H_
 #define __LINUX_MFD_GSC_H_
+
+#include <linux/regmap.h>
 
 /* Device Addresses */
 #define GSC_MISC	0x20
@@ -17,15 +19,17 @@
 #define GSC_RTC		0x68
 
 /* Register offsets */
-#define GSC_CTRL_0	0x00
-#define GSC_CTRL_1	0x01
-#define GSC_TIME	0x02
-#define GSC_TIME_ADD	0x06
-#define GSC_IRQ_STATUS	0x0A
-#define GSC_IRQ_ENABLE	0x0B
-#define GSC_FW_CRC	0x0C
-#define GSC_FW_VER	0x0E
-#define GSC_WP		0x0F
+enum {
+	GSC_CTRL_0	= 0x00,
+	GSC_CTRL_1	= 0x01,
+	GSC_TIME	= 0x02,
+	GSC_TIME_ADD	= 0x06,
+	GSC_IRQ_STATUS	= 0x0A,
+	GSC_IRQ_ENABLE	= 0x0B,
+	GSC_FW_CRC	= 0x0C,
+	GSC_FW_VER	= 0x0E,
+	GSC_WP		= 0x0F,
+};
 
 /* Bit definitions */
 #define GSC_CTRL_0_PB_HARD_RESET	0
@@ -37,8 +41,8 @@
 #define GSC_CTRL_0_SWITCH_HOLD		6
 
 #define GSC_CTRL_1_SLEEP_ENABLE		0
-#define GSC_CTRL_1_ACTIVATE_SLEEP	1
-#define GSC_CTRL_1_LATCH_SLEEP_ADD	2
+#define GSC_CTRL_1_SLEEP_ACTIVATE	1
+#define GSC_CTRL_1_SLEEP_ADD		2
 #define GSC_CTRL_1_SLEEP_NOWAKEPB	3
 #define GSC_CTRL_1_WDT_TIME		4
 #define GSC_CTRL_1_WDT_ENABLE		5
@@ -54,11 +58,8 @@
 #define GSC_IRQ_WDT_TIMEOUT		6
 #define GSC_IRQ_SWITCH_HOLD		7
 
-enum gsc_type {
-	gsc_v1 = 1,
-	gsc_v2 = 2,
-	gsc_v3 = 3,
-};
+int gsc_read(void *context, unsigned int reg, unsigned int *val);
+int gsc_write(void *context, unsigned int reg, unsigned int val);
 
 struct gsc_dev {
 	struct device *dev;
@@ -67,11 +68,7 @@ struct gsc_dev {
 	struct i2c_client *i2c_hwmon;	/* 0x29: hwmon, fan controller */
 
 	struct regmap *regmap;
-	struct regmap *regmap_hwmon;
-	struct regmap_irq_chip_data *irq_chip_data;
 
-	int irq;
-	int type;
 	unsigned int fwver;
 	unsigned short fwcrc;
 };
