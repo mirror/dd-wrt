@@ -1991,8 +1991,8 @@ wds.label="Leni WDS";
 wds.label2="WDS podmreža";
 wds.wl_mac="Brezžični MAC";
 wds.lazy_default="Privzeto: onemogoči";
-wds.nat1="wLAN->WDS";
-wds.nat2="WDS->wLAN";
+wds.nat1="WLAN->WDS";
+wds.nat2="WDS->WLAN";
 wds.subnet="Podmreža";
 wds.legend2="Dodatne možnosti";
 

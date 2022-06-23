@@ -2265,8 +2265,8 @@ wds.label="Lazy WDS";
 wds.label2="WDS 서브넷";
 wds.wl_mac="무선 MAC";
 wds.lazy_default="초기설정: 사용안함";
-wds.nat1="wLAN->WDS";
-wds.nat2="WDS->wLAN";
+wds.nat1="WLAN->WDS";
+wds.nat2="WDS->WLAN";
 wds.subnet="서브넷";
 wds.legend2="상세 설정";
 
