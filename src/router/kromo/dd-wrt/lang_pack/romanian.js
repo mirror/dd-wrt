@@ -1910,8 +1910,8 @@ wds.label="WDS încet";
 wds.label2="Subrețea WDS";
 wds.wl_mac="MAC rețea fără fir";
 wds.lazy_default="Implicit: Dezactivează";
-wds.nat1="wLAN->WDS";
-wds.nat2="WDS->wLAN";
+wds.nat1="WLAN->WDS";
+wds.nat2="WDS->WLAN";
 wds.subnet="Subrețea";
 wds.legend2="Extraopțiuni";
 

@@ -1818,8 +1818,8 @@ wds.label="Lazy WDS";
 wds.label2="WDS Alt Ağı";
 wds.wl_mac="Kablosuz MAC";
 wds.lazy_default="Varsayılan: Devre Dışı Bırak";
-wds.nat1="wLAN->WDS";
-wds.nat2="WDS->wLAN";
+wds.nat1="WLAN->WDS";
+wds.nat2="WDS->WLAN";
 wds.subnet="Alt Ağ";
 wds.legend2="Ekstra Seçenekler";
 

@@ -1955,8 +1955,8 @@ wds.label="Lijeni WDS";
 wds.label2="WDS Podmreža";
 wds.wl_mac="Bežična MAC adresa";
 wds.lazy_default="Obično: Onemogući";
-wds.nat1="wLAN->WDS";
-wds.nat2="WDS->wLAN";
+wds.nat1="WLAN->WDS";
+wds.nat2="WDS->WLAN";
 wds.subnet="Podmreža";
 wds.legend2="Posebne Opcije";
 

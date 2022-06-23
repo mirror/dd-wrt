@@ -1700,8 +1700,8 @@ wds.label="Enkel WDS";
 wds.label2="WDS Subnät";
 wds.wl_mac="Trådlös MAC";
 wds.lazy_default="Standard: Inaktivera";
-wds.nat1="wLAN->WDS";
-wds.nat2="WDS->wLAN";
+wds.nat1="WLAN->WDS";
+wds.nat2="WDS->WLAN";
 wds.subnet="Subnät";
 wds.legend2="Extra Alternativ";
 

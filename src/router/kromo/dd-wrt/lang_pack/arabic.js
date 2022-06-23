@@ -1654,8 +1654,8 @@ wds.label="Lazy WDS";
 wds.label2="WDS Subnet";
 wds.wl_mac="Wireless MAC";
 wds.lazy_default="Default: Disable";
-wds.nat1="wLAN->WDS";
-wds.nat2="WDS->wLAN";
+wds.nat1="WLAN->WDS";
+wds.nat2="WDS->WLAN";
 wds.subnet="Subnet";
 wds.legend2="Extra Options";
 

@@ -60,28 +60,29 @@ input {
   border-radius: 4px;
 }
 input.num {
-  padding-left: 1px;
-  padding-right: 1px;
+  padding-left: 2px;
+  padding-right: 2px;
   text-align: center;
   vertical-align: middle;
 }
 select {
-  padding: 4px 4px;
+  padding: 4px;
   font-size: 12px;
   height: 1.6rem;
   border-radius: 4px;
   vertical-align: middle;
 }
-select[onchange*='blockedServices'] {
+select[onchange*='blockedServices'] { 
   margin-right: .362em;
+  height: 1.7rem
 }
 select[onchange*='ServiceTable'] {
   width: inherit;
   height: inherit;
 }
-select[name*='bondingif'], select[name*='bondingattach'],
-select[name*='schedule_'], input.num[name*='openvpncl_remoteport'],
-input.num[name='schedule_time'] {
+select[name*='bonding'], select[name*='schedule_'],
+.num[name*='openvpncl_remoteport'],
+.num[name='schedule_time'], .num[name='bonding_number'] {
   vertical-align: unset;
 }
 #score {
@@ -461,8 +462,9 @@ input[disabled], select[disabled] {
   cursor: default;
   opacity: .6
 }
-input[onclick*="bond_del"] {
-  vertical-align: top;
+input[onclick*='bond_del']{
+  margin-top: -.3rem;
+  margin-left: .325em;
 }
 input.button[onclick*='add_peer'] {
   margin: 0 0 -6px -34.5%;
@@ -493,7 +495,13 @@ input.four_column_last {
   margin-right: 0;
 }
 input.button[onclick*='delete'] {
-  margin: 0 .2rem 0 .3rem;
+  margin: -.1rem .2rem 0 .3rem;
+}
+input.button[onclick*='filter_remove'] {
+  margin: 0 .3em 0 .1em
+}
+input.button[onclick*='FilterSummary'] {
+  margin-top: -.1rem
 }
 input.button[name='preview_button'] {
   padding: 0 .6rem 0 .6rem;

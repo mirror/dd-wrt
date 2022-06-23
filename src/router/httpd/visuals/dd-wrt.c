@@ -3074,15 +3074,15 @@ static void internal_ej_show_wireless_single(webs_t wp, char *prefix)
 		char regulatory[32];
 		sprintf(regulatory, "%s_regulatory", prefix);
 		nvram_default_get(regulatory, "0");
-		websWrite(wp, " 	<div class=\"setting\">\n");
+		websWrite(wp, "<div class=\"setting\">\n");
 		show_caption(wp, "label", "wl_basic.regulatory", NULL);
 		websWrite(wp,
-			  " 		<input class=\"spaceradio\" type=\"radio\" value=\"0\" name=\"%s_regulatory\" %s /><script type=\"text/javascript\">Capture(share.enable)</script>&nbsp;\n",
+			  "<input class=\"spaceradio\" type=\"radio\" value=\"0\" name=\"%s_regulatory\" %s /><script type=\"text/javascript\">Capture(share.enable)</script>&nbsp;\n",
 			  prefix, nvram_matchi(regulatory, 0) ? "checked" : "");
 		websWrite(wp,
-			  " 		<input class=\"spaceradio\" type=\"radio\" value=\"1\" name=\"%s_regulatory\" %s /><script type=\"text/javascript\">Capture(share.disable)</script>\n",
+			  "<input class=\"spaceradio\" type=\"radio\" value=\"1\" name=\"%s_regulatory\" %s /><script type=\"text/javascript\">Capture(share.disable)</script>\n",
 			  prefix, nvram_matchi(regulatory, 1) ? "checked" : "");
-		websWrite(wp, " 	</div>\n");
+		websWrite(wp, "</div>\n");
 	}
 	int txpower = nvram_geti(power);
 #ifdef HAVE_ESPOD

@@ -1898,8 +1898,8 @@ wds.label="WDS Mandrós";
 wds.label2="Subxarxa WDS";
 wds.wl_mac="MAC Sense Fil";
 wds.lazy_default="Per Defecte: Deshabilitar";
-wds.nat1="wLAN->WDS";
-wds.nat2="WDS->wLAN";
+wds.nat1="WLAN->WDS";
+wds.nat2="WDS->WLAN";
 wds.subnet="Subxarxa";
 wds.legend2="Opcions Extres";
 
