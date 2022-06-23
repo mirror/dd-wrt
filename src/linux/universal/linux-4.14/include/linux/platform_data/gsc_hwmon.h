@@ -2,26 +2,28 @@
 #ifndef _GSC_HWMON_H
 #define _GSC_HWMON_H
 
-enum gsc_hwmon_type {
-	type_temperature,
-	type_voltage,
-	type_voltage_raw,
-	type_fan,
+enum gsc_hwmon_mode {
+	mode_temperature,
+	mode_voltage_24bit,
+	mode_voltage_raw,
+	mode_voltage_16bit,
+	mode_fan,
+	mode_max,
 };
 
 /**
  * struct gsc_hwmon_channel - configuration parameters
  * @reg:  I2C register offset
- * @type: channel type
+ * @mode: channel mode
  * @name: channel name
- * @voffset: voltage offset (mV)
- * @vdiv: voltage divider array (2 resistor values in ohms)
+ * @mvoffset: voltage offset
+ * @vdiv: voltage divider array (2 resistor values in milli-ohms)
  */
 struct gsc_hwmon_channel {
 	unsigned int reg;
-	unsigned int type;
+	unsigned int mode;
 	const char *name;
-	unsigned int voffset;
+	unsigned int mvoffset;
 	unsigned int vdiv[2];
 };
 
@@ -31,7 +33,7 @@ struct gsc_hwmon_channel {
  *		describing channels
  * @nchannels:	number of elements in @channels array
  * @vreference: voltage reference (mV)
- * @resolution: ADC resolution
+ * @resolution: ADC bit resolution
  * @fan_base: register base for FAN controller
  */
 struct gsc_hwmon_platform_data {
@@ -41,5 +43,4 @@ struct gsc_hwmon_platform_data {
 	unsigned int vreference;
 	unsigned int fan_base;
 };
-
 #endif
