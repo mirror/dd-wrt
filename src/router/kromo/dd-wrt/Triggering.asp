@@ -69,8 +69,8 @@ addEvent(window, "unload", function() {
 								<table class="table" cellspacing="5" summary="ports triggering table">
 									<tr>
 										<td></td>
-										<th class="center" colspan="2"><% tran("trforward.trrange"); %></th>
-										<th class="center" colspan="3"><% tran("trforward.fwdrange"); %></th>
+										<th class="center" colspan="2" width="30%"><% tran("trforward.trrange"); %></th>
+										<th class="center" colspan="3" width="30%"><% tran("trforward.fwdrange"); %></th>
 										<td></td>
 									</tr>
 									<tr>
