@@ -2660,8 +2660,8 @@ wds.label="Líné WDS";
 wds.label2="WDS Podsíť";
 wds.wl_mac="Bezdrátová MAC";
 wds.lazy_default="Výchozí: Zakázat";
-wds.nat1="wLAN->WDS";
-wds.nat2="WDS->wLAN";
+wds.nat1="WLAN->WDS";
+wds.nat2="WDS->WLAN";
 wds.subnet="PodSíť";
 wds.legend2="Extra možnosti";
 

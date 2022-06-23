@@ -388,7 +388,7 @@ addEvent(window, "unload", function() {
 									<select name="mtu_enable" onchange="SelMTU(this.form.mtu_enable.selectedIndex,this.form)">
 										<script type="text/javascript">
 										//<![CDATA[
-										document.write("<option value=\"0\" <% nvsm("mtu_enable", "0", "selected"); %> >" + wl_basic.ch_pos_auto + "</option>");
+										document.write("<option value=\"0\" <% nvsm("mtu_enable", "0", "selected"); %> >" + share.auto + "</option>");
 										document.write("<option value=\"1\" <% nvsm("mtu_enable", "1", "selected"); %> >" + share.manual + "</option>");
 										//]]>
 										</script>

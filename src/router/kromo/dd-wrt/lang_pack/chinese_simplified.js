@@ -2486,8 +2486,8 @@ wds.label="Lazy WDS";
 wds.label2="WDS子网";
 wds.wl_mac="无线MAC";
 wds.lazy_default="预设：禁用";
-wds.nat1="wLAN->WDS";
-wds.nat2="WDS->wLAN";
+wds.nat1="WLAN->WDS";
+wds.nat2="WDS->WLAN";
 wds.subnet="子网";
 wds.legend2="其它选项";
 

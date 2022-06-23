@@ -1754,8 +1754,8 @@ wds.legend="Configuración WDS";
 wds.label="Lazy WDS";
 wds.label2="Subred WDS";
 wds.wl_mac="MAC Inalámbrica";
-wds.nat1="wLAN->WDS";
-wds.nat2="WDS->wLAN";
+wds.nat1="WLAN->WDS";
+wds.nat2="WDS->WLAN";
 wds.subnet="Subred";
 wds.legend2="Opciones Extra";
 

@@ -1974,8 +1974,8 @@ wds.label="WDS 'Preguiçoso'";
 wds.label2="Sub-Rede WDS";
 wds.wl_mac="MAC Wireless";
 wds.lazy_default="Padrão: Desabilitar";
-wds.nat1="wLAN->WDS";
-wds.nat2="WDS->wLAN";
+wds.nat1="WLAN->WDS";
+wds.nat2="WDS->WLAN";
 wds.subnet="Sub-Rede";
 wds.legend2="Opções Extras";
 
