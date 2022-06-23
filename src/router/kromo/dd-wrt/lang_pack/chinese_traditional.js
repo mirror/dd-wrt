@@ -1659,8 +1659,8 @@ wds.label="Lazy WDS";
 wds.label2="WDS子網";
 wds.wl_mac="無線MAC";
 wds.lazy_default="預設: 關閉";
-wds.nat1="wLAN->WDS";
-wds.nat2="WDS->wLAN";
+wds.nat1="WLAN->WDS";
+wds.nat2="WDS->WLAN";
 wds.subnet="子網";
 wds.legend2="其它選項";
 

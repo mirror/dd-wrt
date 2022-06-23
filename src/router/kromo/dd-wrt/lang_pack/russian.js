@@ -1898,8 +1898,8 @@ wds.label="Lazy WDS";
 wds.label2="Подсеть WDS";
 wds.wl_mac="Беспроводной MAC";
 wds.lazy_default="По умолчанию: Отключено";
-wds.nat1="wLAN->WDS";
-wds.nat2="WDS->wLAN";
+wds.nat1="WLAN->WDS";
+wds.nat2="WDS->WLAN";
 wds.subnet="Подсеть";
 wds.legend2="Дополнительные опции";
 

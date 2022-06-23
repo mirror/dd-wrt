@@ -1965,8 +1965,8 @@ wds.label="Лењи WDS";
 wds.label2="WDS мрежни опсег";
 wds.wl_mac="Бежични MAC";
 wds.lazy_default="Подразумевано: Онеспособљено";
-wds.nat1="wLAN->WDS";
-wds.nat2="WDS->wLAN";
+wds.nat1="WLAN->WDS";
+wds.nat2="WDS->WLAN";
 wds.subnet="мрежни опсег";
 wds.legend2="Додатне опције";
 

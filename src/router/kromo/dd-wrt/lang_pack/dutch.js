@@ -1778,8 +1778,8 @@ wds.label="Lazy WDS";
 wds.label2="WDS Subnet";
 wds.wl_mac="Draadloos MAC";
 wds.lazy_default="Standaard: Gedeactiveerd";
-wds.nat1="wLAN->WDS";
-wds.nat2="WDS->wLAN";
+wds.nat1="WLAN->WDS";
+wds.nat2="WDS->WLAN";
 wds.subnet="Subnet";
 wds.legend2="Extra Opties"; 
 
