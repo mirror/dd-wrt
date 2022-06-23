@@ -350,8 +350,8 @@ static void detect_wireless_devices(int mask)
 			if (!dual)
 				dual = 0x05050505;
 			char dualband[32];
-//			sprintf(dualband, "dual_band=0x%08x", dual);
-			sprintf(dualband, "dual_band=0x02020202");
+			sprintf(dualband, "dual_band=0x%08x", dual);
+//			sprintf(dualband, "dual_band=0x02020202");
 			if (nvram_match("ath10k_encap", "1"))
 				eval("insmod", "ath10k", "ethernetmode=1", dualband);
 			else
