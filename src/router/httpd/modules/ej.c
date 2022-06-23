@@ -321,7 +321,7 @@ FILE *_getWebsFile(webs_t wp, char *path2, size_t *len)
 
 		*len = websRomPageIndex[i].size - WEBSOFFSET;
 		int found = 0;
-		if (endswidth(path, ".asp") || endswidth(path, ".htm") || endswidth(path, ".html"))
+		if (endswith(path, ".asp") || endswith(path, ".htm") || endswith(path, ".html"))
 		    found = !strcasecmp(websRomPageIndex[i].path, path);
 		else
 		    found = !strcmp(websRomPageIndex[i].path, path);
