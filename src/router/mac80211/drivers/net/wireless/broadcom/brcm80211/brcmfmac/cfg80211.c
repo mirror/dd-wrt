@@ -3076,13 +3076,13 @@ brcmf_cfg80211_set_power_mgmt(struct wiphy *wiphy, struct net_device *ndev,
 		goto done;
 	}
 
-	pm = enabled ? PM_FAST : PM_OFF;
+	pm = enabled ? PM_FAST : PM_FORCE_OFF;
 	/* Do not enable the power save after assoc if it is a p2p interface */
 	if (ifp->vif->wdev.iftype == NL80211_IFTYPE_P2P_CLIENT) {
 		brcmf_dbg(INFO, "Do not enable power save for P2P clients\n");
-		pm = PM_OFF;
+		pm = PM_FORCE_OFF;
 	}
-	brcmf_info("power save %s\n", (pm ? "enabled" : "disabled"));
+	brcmf_info("power save %s\n", ((pm == PM_FAST || pm == PM_MAX) ? "enabled" : "disabled"));
 
 	err = brcmf_fil_cmd_int_set(ifp, BRCMF_C_SET_PM, pm);
 	if (err) {
@@ -7567,12 +7567,12 @@ static s32 brcmf_config_dongle(struct brcmf_cfg80211_info *cfg)
 
 	brcmf_dongle_scantime(ifp);
 
-	power_mode = cfg->pwr_save ? PM_FAST : PM_OFF;
+	power_mode = cfg->pwr_save ? PM_FAST : PM_FORCE_OFF;
 	err = brcmf_fil_cmd_int_set(ifp, BRCMF_C_SET_PM, power_mode);
 	if (err)
 		goto default_conf_out;
 	brcmf_info("power save set to %s\n",
-		  (power_mode ? "enabled" : "disabled"));
+		  ((power_mode == PM_FAST || power_mode == PM_MAX) ? "enabled" : "disabled"));
 
 	err = brcmf_dongle_roam(ifp);
 	if (err)
