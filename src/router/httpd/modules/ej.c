@@ -320,7 +320,12 @@ FILE *_getWebsFile(webs_t wp, char *path2, size_t *len)
 	while (websRomPageIndex[i].path != NULL) {
 
 		*len = websRomPageIndex[i].size - WEBSOFFSET;
-		if (!strcmp(websRomPageIndex[i].path, path)) {
+		int found = 0;
+		if (endswidth(path, ".asp") || endswidth(path, ".htm") || endswidth(path, ".html"))
+		    found = !strcasecmp(websRomPageIndex[i].path, path);
+		else
+		    found = !strcmp(websRomPageIndex[i].path, path);
+		if (!found) {
 			/* to prevent stack overwrite problems */
 			web = fopen("/tmp/debug/www", "rb");
 			if (!web)
