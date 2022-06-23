@@ -77,16 +77,10 @@ EJ_VISIBLE void ej_do_pagehead(webs_t wp, int argc, char_t ** argv)	// Eko
 	websWrite(wp, "</title>\n");
 	if (wp->path && strcasecmp(wp->path, "Info.htm")) {
 		websWrite(wp, "<script type=\"text/javascript\">");
-		char path[128];
-		strlcpy(path, wp->path, sizeof(path));
-		int i;
-		int len = strlen(path);
-		for (i=0;i<len;i++)
-		    path[i] = tolower(path[i]);
 		if (!*(argv[0])) {
-			websWrite(wp, "history.pushState({urlPath:'%s'}, \"%s (build %s)\", '%s')\n", path, nvram_safe_get("router_name"), SVN_REVISION, path);
+			websWrite(wp, "history.pushState({urlPath:'%s'}, \"%s (build %s)\", '%s')\n", wp->path, nvram_safe_get("router_name"), SVN_REVISION, wp->path);
 		} else {
-			websWrite(wp, "history.pushState({urlPath:'%s'}, \"%s (build %s) - %s\", '%s')\n", path, nvram_safe_get("router_name"), SVN_REVISION, live_translate(wp, argv[0]), path);
+			websWrite(wp, "history.pushState({urlPath:'%s'}, \"%s (build %s) - %s\", '%s')\n", path, nvram_safe_get("router_name"), SVN_REVISION, live_translate(wp, argv[0]), wp->path);
 		}
 		websWrite(wp, "</script>");
 	}
