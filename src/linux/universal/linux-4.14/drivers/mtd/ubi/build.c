@@ -1201,7 +1201,7 @@ typedef struct {
 
 
 
-static int getbootdevice(void)
+static int __init getbootdevice(void)
 {
 	struct mtd_info *mtd;
 	size_t len;
