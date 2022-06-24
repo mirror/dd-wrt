@@ -61,14 +61,6 @@ void spl_dumpstack(void);
 #define	PANIC(fmt, a...)						\
 	spl_panic(__FILE__, __FUNCTION__, __LINE__, fmt, ## a)
 
-#ifdef NDEBUG
-#define	VERIFY(cond) do { } while(0)
-#define	VERIFY3B(LEFT, OP, RIGHT) do { } while(0)
-#define	VERIFY3S(LEFT, OP, RIGHT) do { } while(0)
-#define	VERIFY3U(LEFT, OP, RIGHT) do { } while(0)
-#define	VERIFY3P(LEFT, OP, RIGHT) do { } while(0)
-#define	VERIFY0(LEFT) do { } while(0)
-#else
 #define	VERIFY(cond)							\
 	(void) (unlikely(!(cond)) &&					\
 	    spl_panic(__FILE__, __FUNCTION__, __LINE__,			\
@@ -127,7 +119,7 @@ void spl_dumpstack(void);
 		    "failed (0 == %lld)\n",				\
 		    (long long) (_verify3_right));			\
 	} while (0)
-#endif
+
 /*
  * Debugging disabled (--disable-debug)
  */
