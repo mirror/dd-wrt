@@ -21,6 +21,7 @@ umount /oldroot/dev/pts
 umount /oldroot/proc
 umount -l /oldroot
 cd /tmp
+busybox ps
 if [ x$4 = x1 ]
 then
 	echo "relocate nvram"
