@@ -8615,9 +8615,8 @@ main(int argc, char **argv)
 	/*
 	 * Disable reference tracking for better performance.
 	 */
-#ifdef ZFS_DEBUG
 	reference_tracking_enable = B_FALSE;
-#endif
+
 	/*
 	 * Do not fail spa_load when spa_load_verify fails. This is needed
 	 * to load non-idle pools.
