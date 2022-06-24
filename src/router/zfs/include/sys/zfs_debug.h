@@ -78,11 +78,11 @@ extern void __dprintf(boolean_t dprint, const char *file, const char *func,
  * use zfs_dbgmsg in high-frequency routines is the potential impact
  * that it can have on performance.
  */
+
+#ifdef ZFS_DEBUG
 #define	zfs_dbgmsg(...) \
 	if (zfs_dbgmsg_enable) \
 		__dprintf(B_FALSE, __FILE__, __func__, __LINE__, __VA_ARGS__)
-
-#ifdef ZFS_DEBUG
 /*
  * To enable this:
  *
@@ -92,6 +92,7 @@ extern void __dprintf(boolean_t dprint, const char *file, const char *func,
 	if (zfs_flags & ZFS_DEBUG_DPRINTF) \
 		__dprintf(B_TRUE, __FILE__, __func__, __LINE__, __VA_ARGS__)
 #else
+#define	zfs_dbgmsg(...) do { } while(0)
 #define	dprintf(...) ((void)0)
 #endif /* ZFS_DEBUG */
 

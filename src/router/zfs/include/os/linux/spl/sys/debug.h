@@ -59,18 +59,50 @@ int spl_panic(const char *file, const char *func, int line,
 void spl_dumpstack(void);
 
 #define	PANIC(fmt, a...)						\
-	spl_panic(__FILE__, __FUNCTION__, __LINE__, fmt, ## a)
+	spl_panic("unknown", __FUNCTION__, __LINE__, fmt, ## a)
 
+#ifdef NDEBUG
+#define	VERIFY(cond) (void) ((!(cond)))
+
+#define	VERIFY3B(LEFT, OP, RIGHT)					\
+do {									\
+	const boolean_t __left __attribute__((unused)) = (boolean_t)(LEFT);			\
+	const boolean_t __right __attribute__((unused)) = (boolean_t)(RIGHT);			\
+} while (0)
+
+#define	VERIFY3S(LEFT, OP, RIGHT)					\
+do {									\
+	const int64_t __left __attribute__((unused)) = (int64_t)(LEFT);				\
+	const int64_t __right __attribute__((unused)) = (int64_t)(RIGHT);			\
+} while (0)
+
+#define	VERIFY3U(LEFT, OP, RIGHT)					\
+do {									\
+	const uint64_t __left __attribute__((unused)) = (uint64_t)(LEFT);			\
+	const uint64_t __right __attribute__((unused)) = (uint64_t)(RIGHT);			\
+} while (0)
+
+#define	VERIFY3P(LEFT, OP, RIGHT)					\
+do {									\
+	const uintptr_t __left __attribute__((unused)) = (uintptr_t)(LEFT);			\
+	const uintptr_t __right __attribute__((unused)) = (uintptr_t)(RIGHT);			\
+} while (0)
+
+#define	VERIFY0(LEFT)							\
+do {									\
+	const uint64_t __left __attribute__((unused)) = (uint64_t)(LEFT);			\
+} while (0)
+#else
 #define	VERIFY(cond)							\
 	(void) (unlikely(!(cond)) &&					\
-	    spl_panic(__FILE__, __FUNCTION__, __LINE__,			\
+	    spl_panic("unknown", __FUNCTION__, __LINE__,			\
 	    "%s", "VERIFY(" #cond ") failed\n"))
 
 #define	VERIFY3B(LEFT, OP, RIGHT)	do {				\
 		const boolean_t _verify3_left = (boolean_t)(LEFT);	\
 		const boolean_t _verify3_right = (boolean_t)(RIGHT);	\
 		if (unlikely(!(_verify3_left OP _verify3_right)))	\
-		    spl_panic(__FILE__, __FUNCTION__, __LINE__,		\
+		    spl_panic("unknown", __FUNCTION__, __LINE__,		\
 		    "VERIFY3(" #LEFT " "  #OP " "  #RIGHT ") "		\
 		    "failed (%d " #OP " %d)\n",				\
 		    (boolean_t)(_verify3_left),				\
@@ -81,7 +113,7 @@ void spl_dumpstack(void);
 		const int64_t _verify3_left = (int64_t)(LEFT);		\
 		const int64_t _verify3_right = (int64_t)(RIGHT);	\
 		if (unlikely(!(_verify3_left OP _verify3_right)))	\
-		    spl_panic(__FILE__, __FUNCTION__, __LINE__,		\
+		    spl_panic("unknown", __FUNCTION__, __LINE__,		\
 		    "VERIFY3(" #LEFT " "  #OP " "  #RIGHT ") "		\
 		    "failed (%lld " #OP " %lld)\n",			\
 		    (long long)(_verify3_left),				\
@@ -92,7 +124,7 @@ void spl_dumpstack(void);
 		const uint64_t _verify3_left = (uint64_t)(LEFT);	\
 		const uint64_t _verify3_right = (uint64_t)(RIGHT);	\
 		if (unlikely(!(_verify3_left OP _verify3_right)))	\
-		    spl_panic(__FILE__, __FUNCTION__, __LINE__,		\
+		    spl_panic("unknown", __FUNCTION__, __LINE__,		\
 		    "VERIFY3(" #LEFT " "  #OP " "  #RIGHT ") "		\
 		    "failed (%llu " #OP " %llu)\n",			\
 		    (unsigned long long)(_verify3_left),		\
@@ -103,7 +135,7 @@ void spl_dumpstack(void);
 		const uintptr_t _verify3_left = (uintptr_t)(LEFT);	\
 		const uintptr_t _verify3_right = (uintptr_t)(RIGHT);	\
 		if (unlikely(!(_verify3_left OP _verify3_right)))	\
-		    spl_panic(__FILE__, __FUNCTION__, __LINE__,		\
+		    spl_panic("unknown", __FUNCTION__, __LINE__,		\
 		    "VERIFY3(" #LEFT " "  #OP " "  #RIGHT ") "		\
 		    "failed (%px " #OP " %px)\n",			\
 		    (void *) (_verify3_left),				\
@@ -114,12 +146,12 @@ void spl_dumpstack(void);
 		const int64_t _verify3_left = (int64_t)(0);		\
 		const int64_t _verify3_right = (int64_t)(RIGHT);	\
 		if (unlikely(!(_verify3_left == _verify3_right)))	\
-		    spl_panic(__FILE__, __FUNCTION__, __LINE__,		\
+		    spl_panic("unknown", __FUNCTION__, __LINE__,		\
 		    "VERIFY3(0 == " #RIGHT ") "				\
 		    "failed (0 == %lld)\n",				\
 		    (long long) (_verify3_right));			\
 	} while (0)
-
+#endif
 /*
  * Debugging disabled (--disable-debug)
  */
@@ -153,11 +185,11 @@ void spl_dumpstack(void);
 #define	ASSERT		VERIFY
 #define	IMPLY(A, B) \
 	((void)(likely((!(A)) || (B)) || \
-	    spl_panic(__FILE__, __FUNCTION__, __LINE__, \
+	    spl_panic("unknown", __FUNCTION__, __LINE__, \
 	    "(" #A ") implies (" #B ")")))
 #define	EQUIV(A, B) \
 	((void)(likely(!!(A) == !!(B)) || \
-	    spl_panic(__FILE__, __FUNCTION__, __LINE__, \
+	    spl_panic("unknown", __FUNCTION__, __LINE__, \
 	    "(" #A ") is equivalent to (" #B ")")))
 
 #endif /* NDEBUG */
