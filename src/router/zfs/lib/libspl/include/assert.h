@@ -51,15 +51,7 @@ libspl_assert(const char *buf, const char *file, const char *func, int line)
 #ifdef verify
 #undef verify
 #endif
-#ifdef NDEBUG
-#define	VERIFY(cond) do { } while(0)
-#define	verify(cond) do { } while(0)
-#define	VERIFY3B(LEFT, OP, RIGHT) do { } while(0)
-#define	VERIFY3S(LEFT, OP, RIGHT) do { } while(0)
-#define	VERIFY3U(LEFT, OP, RIGHT) do { } while(0)
-#define	VERIFY3P(LEFT, OP, RIGHT) do { } while(0)
-#define	VERIFY0(LEFT) do { } while(0)
-#else
+
 #define	VERIFY(cond)							\
 	(void) ((!(cond)) &&						\
 	    libspl_assert(#cond, __FILE__, __FUNCTION__, __LINE__))
@@ -115,7 +107,7 @@ do {									\
 		    "%s == 0 (0x%llx == 0)", #LEFT,			\
 		    (u_longlong_t)__left);				\
 } while (0)
-#endif
+
 #ifdef assert
 #undef assert
 #endif
