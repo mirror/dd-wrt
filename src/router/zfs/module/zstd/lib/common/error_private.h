@@ -112,7 +112,7 @@ void _force_has_format_string(const char *format, ...) {
 #define RETURN_ERROR_IF(cond, err, ...) \
   if (cond) { \
     RAWLOG(3, "%s:%d: ERROR!: check %s failed, returning %s", \
-           __FILE__, __LINE__, ERR_QUOTE(cond), ERR_QUOTE(ERROR(err))); \
+           "unknown", __LINE__, ERR_QUOTE(cond), ERR_QUOTE(ERROR(err))); \
     _FORCE_HAS_FORMAT_STRING(__VA_ARGS__); \
     RAWLOG(3, ": " __VA_ARGS__); \
     RAWLOG(3, "\n"); \
@@ -127,7 +127,7 @@ void _force_has_format_string(const char *format, ...) {
 #define RETURN_ERROR(err, ...) \
   do { \
     RAWLOG(3, "%s:%d: ERROR!: unconditional check failed, returning %s", \
-           __FILE__, __LINE__, ERR_QUOTE(ERROR(err))); \
+           "unknown", __LINE__, ERR_QUOTE(ERROR(err))); \
     _FORCE_HAS_FORMAT_STRING(__VA_ARGS__); \
     RAWLOG(3, ": " __VA_ARGS__); \
     RAWLOG(3, "\n"); \
@@ -144,7 +144,7 @@ void _force_has_format_string(const char *format, ...) {
     size_t const err_code = (err); \
     if (ERR_isError(err_code)) { \
       RAWLOG(3, "%s:%d: ERROR!: forwarding error in %s: %s", \
-             __FILE__, __LINE__, ERR_QUOTE(err), ERR_getErrorName(err_code)); \
+             "unknown", __LINE__, ERR_QUOTE(err), ERR_getErrorName(err_code)); \
       _FORCE_HAS_FORMAT_STRING(__VA_ARGS__); \
       RAWLOG(3, ": " __VA_ARGS__); \
       RAWLOG(3, "\n"); \
