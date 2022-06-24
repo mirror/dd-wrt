@@ -61,38 +61,6 @@ void spl_dumpstack(void);
 #define	PANIC(fmt, a...)						\
 	spl_panic(__FILE__, __FUNCTION__, __LINE__, fmt, ## a)
 
-#ifdef NDEBUG
-#define	VERIFY(cond) (void) ((!(cond)))
-
-#define	VERIFY3B(LEFT, OP, RIGHT)					\
-do {									\
-	const boolean_t __left __attribute__((unused)) = (boolean_t)(LEFT);			\
-	const boolean_t __right __attribute__((unused)) = (boolean_t)(RIGHT);			\
-} while (0)
-
-#define	VERIFY3S(LEFT, OP, RIGHT)					\
-do {									\
-	const int64_t __left __attribute__((unused)) = (int64_t)(LEFT);				\
-	const int64_t __right __attribute__((unused)) = (int64_t)(RIGHT);			\
-} while (0)
-
-#define	VERIFY3U(LEFT, OP, RIGHT)					\
-do {									\
-	const uint64_t __left __attribute__((unused)) = (uint64_t)(LEFT);			\
-	const uint64_t __right __attribute__((unused)) = (uint64_t)(RIGHT);			\
-} while (0)
-
-#define	VERIFY3P(LEFT, OP, RIGHT)					\
-do {									\
-	const uintptr_t __left __attribute__((unused)) = (uintptr_t)(LEFT);			\
-	const uintptr_t __right __attribute__((unused)) = (uintptr_t)(RIGHT);			\
-} while (0)
-
-#define	VERIFY0(LEFT)							\
-do {									\
-	const uint64_t __left __attribute__((unused)) = (uint64_t)(LEFT);			\
-} while (0)
-#else
 #define	VERIFY(cond)							\
 	(void) (unlikely(!(cond)) &&					\
 	    spl_panic(__FILE__, __FUNCTION__, __LINE__,			\
@@ -151,7 +119,7 @@ do {									\
 		    "failed (0 == %lld)\n",				\
 		    (long long) (_verify3_right));			\
 	} while (0)
-#endif
+
 /*
  * Debugging disabled (--disable-debug)
  */
