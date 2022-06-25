@@ -517,7 +517,7 @@ EJ_VISIBLE void ej_do_menu(webs_t wp, int argc, char_t ** argv)
 #endif
 #ifndef HAVE_STATUS_SYSLOG
 				if (!strcmp_pnt(m->menu[i][j], "Syslog.asp"))
-					goto skip;OB
+					goto skip;
 #endif
 #ifdef HAVE_MADWIFI
 				if (!strcmp(m->menu[i][j], submenu)
