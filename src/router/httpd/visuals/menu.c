@@ -292,8 +292,8 @@ EJ_VISIBLE void ej_do_menu(webs_t wp, int argc, char_t ** argv)
 	int i, j;
 
 	websWrite(wp, "<div id=\"menu\">\n");
-	websWrite(wp, " <div id=\"menuMain\">\n");
-	websWrite(wp, "  <ul id=\"menuMainList\">\n");
+	websWrite(wp, "<div id=\"menuMain\">\n");
+	websWrite(wp, "<ul id=\"menuMainList\">\n");
 #ifdef HAVE_WAVESAT
 	wimaxwifi = 1;
 #endif
@@ -319,13 +319,13 @@ EJ_VISIBLE void ej_do_menu(webs_t wp, int argc, char_t ** argv)
 //fprintf(stderr,"%s->%d\n",__func__,__LINE__);
 #ifdef HAVE_MADWIFI
 			if (!wifi && wimaxwifi && !strcmp_pnt(m->menu[i][0], "Wireless_Basic.asp"))
-				websWrite(wp, "   <li class=\"current\"><span><strong><script type=\"text/javascript\">Capture(bmenu.wimax)</script></strong></span>\n");
+				websWrite(wp, "<li class=\"current\"><span><strong><script type=\"text/javascript\">Capture(bmenu.wimax)</script></strong></span>\n");
 			else
 #endif
-				websWrite(wp, "   <li class=\"current\"><span><strong><script type=\"text/javascript\">Capture(bmenu.%s)</script></strong></span>\n", m->menuname[i][0]);
+				websWrite(wp, "<li class=\"current\"><span><strong><script type=\"text/javascript\">Capture(bmenu.%s)</script></strong></span>\n", m->menuname[i][0]);
 //fprintf(stderr,"%s->%d\n",__func__,__LINE__);
-			websWrite(wp, "    <div id=\"menuSub\">\n");
-			websWrite(wp, "     <ul id=\"menuSubList\">\n");
+			websWrite(wp, "<div id=\"menuSub\">\n");
+			websWrite(wp, "<ul id=\"menuSubList\">\n");
 
 			for (j = 0; j < MAXSUBMENU; j++) {
 //fprintf(stderr,"%s->%d %d %d\n",__func__,__LINE__,i, j);
@@ -524,52 +524,51 @@ EJ_VISIBLE void ej_do_menu(webs_t wp, int argc, char_t ** argv)
 				    && (*(m->menu[i][j])
 					&& !strcmp_pnt(m->menu[i][j], "Wireless_Basic.asp")
 					&& !wifi && wimaxwifi)) {
-					websWrite(wp, "      <li><span><strong><script type=\"text/javascript\">Capture(bmenu.wimax)</script></strong></span></li>\n");
+					websWrite(wp, "<li><span><strong><script type=\"text/javascript\">Capture(bmenu.wimax)</script></strong></span></li>\n");
 				}
 #endif
 				else if (!strcmp(m->menu[i][j], submenu)
 					 && (*(m->menu[i][j]))) {
-					websWrite(wp, "      <li><span><strong><script type=\"text/javascript\">Capture(bmenu.%s)</script></strong></span></li>\n", m->menuname[i][j + 1]);
+					websWrite(wp, "<li><span><strong><script type=\"text/javascript\">Capture(bmenu.%s)</script></strong></span></li>\n", m->menuname[i][j + 1]);
 				}
 #ifdef HAVE_MATRIXSSL
 				else if (DO_SSL(wp) && (*(m->menu[i][j]) != 0)
 					 && ((!strcmp_pnt(m->menu[i][j], "Upgrade.asp")
 					      || (!strcmp_pnt(m->menu[i][j], "config.asp"))))) {
-					websWrite(wp, "      <script type=\"text/javascript\">\n//<![CDATA[\n");
+					websWrite(wp, "<script type=\"text/javascript\">\n//<![CDATA[\n");
 					websWrite(wp,
-						  "      document.write(\"<li><a style=\\\"cursor:pointer\\\" title=\\\"\" + errmsg.err46 + \"\\\" onclick=\\\"alert(errmsg.err45)\\\" ><em>\" + bmenu.%s + \"</em></a></li>\");\n",
+						  "document.write(\"<li><a style=\\\"cursor:pointer\\\" title=\\\"\" + errmsg.err46 + \"\\\" onclick=\\\"alert(errmsg.err45)\\\" ><em>\" + bmenu.%s + \"</em></a></li>\");\n",
 						  m->menuname[i][j + 1]);
-					websWrite(wp, "      \n//]]>\n</script>\n");
+					websWrite(wp, "\n//]]>\n</script>\n");
 				}
 #endif				/* < */
 #ifdef HAVE_MADWIFI
 				else if (*(m->menu[i][j])
 					 && !strcmp_pnt(m->menu[i][j], "Wireless_Basic.asp")
 					 && !wifi && wimaxwifi) {
-					websWrite(wp, "      <li><a href=\"WiMAX.asp\"><strong><script type=\"text/javascript\">Capture(bmenu.wimax)</script></strong></a></li>\n");
+					websWrite(wp, "<li><a href=\"WiMAX.asp\"><strong><script type=\"text/javascript\">Capture(bmenu.wimax)</script></strong></a></li>\n");
 				}
 #endif
 				else if (*(m->menu[i][j])) {
-					websWrite(wp, "      <li><a href=\"%s\"><strong><script type=\"text/javascript\">Capture(bmenu.%s)</script></strong></a></li>\n", m->menu[i][j], m->menuname[i][j + 1]);
+					websWrite(wp, "<li><a href=\"%s\"><strong><script type=\"text/javascript\">Capture(bmenu.%s)</script></strong></a></li>\n", m->menu[i][j], m->menuname[i][j + 1]);
 				}
 				skip:;
 			}
-			websWrite(wp, "     </ul>\n");
-			websWrite(wp, "    </div>\n");
-			websWrite(wp, "    </li>\n");
+			websWrite(wp, "</ul>\n");
+			websWrite(wp, "</div>\n");
+			websWrite(wp, "</li>\n");
 		}
 #ifdef HAVE_MADWIFI
 		else if (!strcmp_pnt(m->menu[i][0], "Wireless_Basic.asp") && !wifi && wimaxwifi) {
-			websWrite(wp, "      <li><a href=\"WiMAX.asp\"><strong><script type=\"text/javascript\">Capture(bmenu.wimax)</script></strong></a></li>\n");
+			websWrite(wp, "<li><a href=\"WiMAX.asp\"><strong><script type=\"text/javascript\">Capture(bmenu.wimax)</script></strong></a></li>\n");
 		}
 #endif
 		else {
-			websWrite(wp, "   <li><a href=\"%s\"><strong><script type=\"text/javascript\">Capture(bmenu.%s)</script></strong></a></li>\n", m->menu[i][0], m->menuname[i][0]);
+			websWrite(wp, "<li><a href=\"%s\"><strong><script type=\"text/javascript\">Capture(bmenu.%s)</script></strong></a></li>\n", m->menu[i][0], m->menuname[i][0]);
 		}
 	}
-	websWrite(wp, "  </ul>\n");
-	websWrite(wp, " </div>\n");
+	websWrite(wp, "</ul>\n");
+	websWrite(wp, "</div>\n");
 	websWrite(wp, "</div>\n");
 	return;
 }
-
