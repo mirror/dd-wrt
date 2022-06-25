@@ -37,9 +37,8 @@ table tr:not([bgcolor]):hover {
   background-color: transparent;
 }
 .submitFooter {
-  background-color: #ccc;
-  border-color: #999;
-  color: #000;
+  background-color: #f6f6f6;
+  border: 1px solid #ccc;
 }
 textarea {
   color: #000;
@@ -74,12 +73,12 @@ input[name='apply_button']:focus-visible {
   outline: 2px solid #199235;
 }
 input[name='reset_button'] {
-  background: none repeat scroll 0 0 #fff;
+  background: #fff;
   border-color: #ccc;
   color: #000;
 }
 input[name='reset_button']:hover {
-  background: none repeat scroll 0 0 #ffa500;
+  background: #ff8400;
   border-color: #ccc;
   color: #000;
 }
@@ -89,14 +88,14 @@ input[name='reset_button']:focus-visible {
 }
 input[name='reboot_button'],
 input[name='reboot_button']:disabled:hover {
-  background: none repeat scroll 0 0 #f00;
+  background: #c00;
   border-color: #ccc;
-  color: #000;
+  color: #f8f8f8;
 }
 input[name='reboot_button']:hover {
-  background: none repeat scroll 0 0 #ff7c7c;
-  border-color: #ccc;
-  color: #000;
+  background: #e00;
+  border-color: #d00;
+  color: #fff;
 }
 input[name='reboot_button']:focus-visible {
   box-shadow: 0 0 5px 1px #ff7c7c;
@@ -141,8 +140,8 @@ select {
   border: 1px solid #111;
 }
 .message {
-  background: #ccc;
-  border: 1px solid #ddd;
+  background: #f6f6f6;
+  border: 1px solid #ccc;
 }
 .meter {
   background: #aaa;
