@@ -5,8 +5,6 @@
 
 document.title = "<% nvg("router_name"); %> - Activation";
 
-
-
 //]]>
 </script>
 	</head>

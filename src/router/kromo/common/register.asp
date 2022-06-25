@@ -14,7 +14,6 @@ function to_submit(F) {
 	apply(F);
 }
 
-
 //]]>
 </script>
 	</head>
