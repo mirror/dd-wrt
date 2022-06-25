@@ -49,16 +49,16 @@
 				<dt><% tran("wl_adv.table2"); %></dt>
 				<% tran("hwl_adv.page21"); %>
 				<dt><% tran("wl_adv.row1"); %></dt>
-				<dd>Priority is low.<BR />
+				<dd>Priority is low.<br />
 				<% tran("hwl_adv.page22"); %>
 				<dt><% tran("wl_adv.row2"); %></dt>
-				<dd>Priority is Medium.<BR />
+				<dd>Priority is Medium.<br />
 				<% tran("hwl_adv.page23"); %>
 				<dt><% tran("wl_adv.row3"); %></dt>
-				<dd>Priority is High.<BR />
+				<dd>Priority is High.<br />
 				<% tran("hwl_adv.page24"); %>
 				<dt><% tran("wl_adv.row4"); %></dt>
-				<dd>Priority is High.<BR />
+				<dd>Priority is High.<br />
 				<% tran("hwl_adv.page24"); %>
 				<dt><% tran("wl_adv.col1"); %></dt>
 				<% tran("hwl_adv.page25"); %>
@@ -67,6 +67,7 @@
 				<dt><% tran("wl_adv.col3"); %></dt>
 				<% tran("hwl_adv.page27"); %>
 				<dt><% tran("wl_adv.col4"); %> &amp; <% tran("wl_adv.col5"); %></dt><br />
+				<% tran("hwl_adv.page28"); %>
 			</dl>
 		</div>
 		<div class="also">

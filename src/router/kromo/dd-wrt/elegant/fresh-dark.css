@@ -17,11 +17,11 @@ body a:hover, body a:link:hover,
 [title*='Chain']:hover, [title*='Monitoring']:hover {
   color: #5cb3ff;
 }
-body div.message {
+div.message {
   background-color: #1a1a1a;
   border: 1px solid #333;
 }
-body div.progressbar {
+div.progressbar {
   background-color: #333;
   border: 1px solid #333;
 }
@@ -63,22 +63,22 @@ body input {
   color: #e0e0e0;
 }
 body input[name='apply_button'] {
-  background: none repeat scroll 0 0 #166f2a;
+  background: #166f2a;
   border-color: #1a6d2d;
   color: #fff;
 }
 body input[name='apply_button']:hover {
-  background: none repeat scroll 0 0 #199235;
+  background: #199235;
   border-color: #199235;
   color: #fff;
 }
 body input[name='reset_button'] {
-  background: none repeat scroll 0 0 #595959;
+  background: #595959;
   border-color: #656565;
   color: #eee;
 }
 body input[name='reset_button']:hover {
-  background: none repeat scroll 0 0 #d6951e;
+  background: #ff8400;
   border-color: #d0911d;
   color: #fff;
 }
@@ -87,13 +87,13 @@ body input[name='reset_button']:focus-visible {
 }
 body input[name='reboot_button'],
 body input[name='reboot_button']:disabled:hover {
-  background: none repeat scroll 0 0 #c11616;
-  border-color: #c11616;
+  background #c00;
+  border-color: #c00;
   color: #f8f8f8;
 }
 body input[name='reboot_button']:hover {
-  background: none repeat scroll 0 0 #d82828;
-  border-color: #d82828;
+  background: #e00;
+  border-color: #d00;
   color: #fff;
 }
 /*! darken paypal logo */

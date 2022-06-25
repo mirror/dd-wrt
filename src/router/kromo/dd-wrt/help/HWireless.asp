@@ -11,6 +11,7 @@
 				<% tran("hwl_basic.page1"); %>
 				<dt><% tran("wl_basic.label2"); %></dt>
 				<% tran("hwl_basic.page2"); %>
+				<% tran("hwl_basic.page2_5g"); %>
 				<dt><% tran("wl_basic.ssid"); %></dt>
 				<% tran("hwl_basic.page3"); %>
 				<dt><% tran("wl_basic.label4"); %></dt>
