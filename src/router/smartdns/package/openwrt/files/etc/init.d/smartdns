@@ -289,7 +289,7 @@ load_service()
 		fi
 	}
 	config_get dualstack_ip_selection "$section" "dualstack_ip_selection" "0"
-	[ "$dualstack_ip_selection" = "1" ] && conf_append "dualstack-ip-selection" "yes"
+	[ "$dualstack_ip_selection" = "0" ] && conf_append "dualstack-ip-selection" "no"
 
 	config_get prefetch_domain "$section" "prefetch_domain" "0"
 	[ "$prefetch_domain" = "1" ] && conf_append "prefetch-domain" "yes"
@@ -310,6 +310,9 @@ load_service()
 
 	config_get rr_ttl_max "$section" "rr_ttl_max" ""
 	[ -z "$rr_ttl_max" ] || conf_append "rr-ttl-max" "$rr_ttl_max"
+
+	config_get rr_ttl_reply_max "$section" "rr_ttl_reply_max" ""
+	[ -z "$rr_ttl_reply_max" ] || conf_append "rr-ttl-reply-max" "$rr_ttl_reply_max"
 
 	config_get log_size "$section" "log_size" "64K"
 	[ -z "$log_size" ] || conf_append "log-size" "$log_size"
@@ -374,6 +377,7 @@ load_service()
 	procd_set_param command /usr/sbin/smartdns -f -c $SMARTDNS_CONF $args
 	[ "$RESPAWN" = "1" ] &&	procd_set_param respawn ${respawn_threshold:-3600} ${respawn_timeout:-5} ${respawn_retry:-5}
 	procd_set_param file "$SMARTDNS_CONF"
+	procd_set_param term_timeout 60
 	procd_close_instance
 }
 

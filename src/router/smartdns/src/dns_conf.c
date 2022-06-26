@@ -21,6 +21,7 @@
 #include "rbtree.h"
 #include "tlog.h"
 #include "util.h"
+#include <errno.h>
 #include <getopt.h>
 #include <libgen.h>
 #include <stdio.h>
@@ -30,6 +31,7 @@
 #include <unistd.h>
 
 #define DEFAULT_DNS_CACHE_SIZE 512
+#define DNS_MAX_REPLY_IP_NUM 8
 
 /* ipset */
 struct dns_ipset_table {
@@ -42,26 +44,41 @@ struct dns_qtype_soa_table dns_qtype_soa_table;
 /* dns groups */
 struct dns_group_table dns_group_table;
 
+struct dns_ptr_table dns_ptr_table;
+
+char dns_conf_dnsmasq_lease_file[DNS_MAX_PATH];
+time_t dns_conf_dnsmasq_lease_file_time;
+
+struct dns_hosts_table dns_hosts_table;
+int dns_hosts_record_num;
+
 /* server ip/port  */
 struct dns_bind_ip dns_conf_bind_ip[DNS_MAX_BIND_IP];
 int dns_conf_bind_ip_num = 0;
 int dns_conf_tcp_idle_time = 120;
 
+int dns_conf_max_reply_ip_num = DNS_MAX_REPLY_IP_NUM;
+
 /* cache */
 int dns_conf_cachesize = DEFAULT_DNS_CACHE_SIZE;
 int dns_conf_prefetch = 0;
-int dns_conf_serve_expired = 0;
-int dns_conf_serve_expired_ttl = 0;
-int dns_conf_serve_expired_reply_ttl = 5;
+int dns_conf_serve_expired = 1;
+int dns_conf_serve_expired_ttl = 24 * 3600; /* 1 day */
+int dns_conf_serve_expired_prefetch_time;
+int dns_conf_serve_expired_reply_ttl = 3;
 
 /* upstream servers */
 struct dns_servers dns_conf_servers[DNS_MAX_SERVERS];
 char dns_conf_server_name[DNS_MAX_SERVER_NAME_LEN];
 int dns_conf_server_num;
 
-struct dns_domain_check_order dns_conf_check_order = {
-	.order = {DOMAIN_CHECK_ICMP, DOMAIN_CHECK_TCP},
-	.tcp_port = 80,
+struct dns_domain_check_orders dns_conf_check_orders = {
+	.orders =
+		{
+			{.type = DOMAIN_CHECK_ICMP, .tcp_port = 0},
+			{.type = DOMAIN_CHECK_TCP, .tcp_port = 80},
+			{.type = DOMAIN_CHECK_TCP, .tcp_port = 443},
+		},
 };
 int dns_has_cap_ping = 0;
 
@@ -90,15 +107,16 @@ art_tree dns_conf_domain_rule;
 struct dns_conf_address_rule dns_conf_address_rule;
 
 /* dual-stack selection */
-int dns_conf_dualstack_ip_selection;
-int dns_conf_dualstack_ip_selection_threshold = 30;
+int dns_conf_dualstack_ip_selection = 1;
+int dns_conf_dualstack_ip_selection_threshold = 15;
 
 /* TTL */
 int dns_conf_rr_ttl;
-int dns_conf_rr_ttl_min;
+int dns_conf_rr_ttl_reply_max;
+int dns_conf_rr_ttl_min = 600;
 int dns_conf_rr_ttl_max;
 int dns_conf_force_AAAA_SOA;
-
+int dns_conf_force_no_cname;
 int dns_conf_ipset_timeout_enable;
 
 /* ECS */
@@ -824,7 +842,7 @@ errout:
 	return 0;
 }
 
-static int _config_speed_check_mode_parser(struct dns_domain_check_order *check_order, const char *mode)
+static int _config_speed_check_mode_parser(struct dns_domain_check_orders *check_orders, const char *mode)
 {
 	char tmpbuff[DNS_MAX_OPT_LEN];
 	char *field;
@@ -834,7 +852,7 @@ static int _config_speed_check_mode_parser(struct dns_domain_check_order *check_
 	int i = 0;
 
 	safe_strncpy(tmpbuff, mode, DNS_MAX_OPT_LEN);
-	memset(check_order, 0, sizeof(*check_order));
+	memset(check_orders, 0, sizeof(*check_orders));
 
 	ptr = tmpbuff;
 	do {
@@ -855,7 +873,8 @@ static int _config_speed_check_mode_parser(struct dns_domain_check_order *check_
 				}
 				continue;
 			}
-			check_order->order[order] = DOMAIN_CHECK_ICMP;
+			check_orders->orders[order].type = DOMAIN_CHECK_ICMP;
+			check_orders->orders[order].tcp_port = 0;
 		} else if (strstr(field, "tcp") == field) {
 			char *port_str = strstr(field, ":");
 			if (port_str) {
@@ -865,12 +884,12 @@ static int _config_speed_check_mode_parser(struct dns_domain_check_order *check_
 				}
 			}
 
-			check_order->order[order] = DOMAIN_CHECK_TCP;
-			check_order->tcp_port = port;
+			check_orders->orders[order].type = DOMAIN_CHECK_TCP;
+			check_orders->orders[order].tcp_port = port;
 		} else if (strncmp(field, "none", sizeof("none")) == 0) {
-			check_order->order[order] = DOMAIN_CHECK_NONE;
-			for (i = order + 1; i < DOMAIN_CHECK_NUM; i++) {
-				check_order->order[i] = DOMAIN_CHECK_NONE;
+			for (i = order; i < DOMAIN_CHECK_NUM; i++) {
+				check_orders->orders[i].type = DOMAIN_CHECK_NONE;
+				check_orders->orders[i].tcp_port = 0;
 			}
 
 			return 0;
@@ -894,7 +913,7 @@ static int _config_speed_check_mode(void *data, int argc, char *argv[])
 	}
 
 	safe_strncpy(mode, argv[1], sizeof(mode));
-	return _config_speed_check_mode_parser(&dns_conf_check_order, mode);
+	return _config_speed_check_mode_parser(&dns_conf_check_orders, mode);
 }
 
 static int _config_bind_ip(int argc, char *argv[], DNS_BIND_TYPE type)
@@ -906,6 +925,7 @@ static int _config_bind_ip(int argc, char *argv[], DNS_BIND_TYPE type)
 	char group_name[DNS_GROUP_NAME_LEN];
 	const char *group = NULL;
 	unsigned int server_flag = 0;
+	int i = 0;
 
 	/* clang-format off */
 	static struct option long_options[] = {
@@ -930,6 +950,20 @@ static int _config_bind_ip(int argc, char *argv[], DNS_BIND_TYPE type)
 	ip = argv[1];
 	if (index >= DNS_MAX_SERVERS) {
 		tlog(TLOG_WARN, "exceeds max server number, %s", ip);
+		return 0;
+	}
+
+	for (i = 0; i < dns_conf_bind_ip_num; i++) {
+		bind_ip = &dns_conf_bind_ip[i];
+		if (bind_ip->type != type) {
+			continue;
+		}
+
+		if (strncmp(bind_ip->ip, ip, DNS_MAX_IPLEN) != 0) {
+			continue;
+		}
+
+		tlog(TLOG_WARN, "Bind server %s, type %d, already configured, skip.", ip, type);
 		return 0;
 	}
 
@@ -1190,11 +1224,13 @@ static int _config_iplist_rule(char *subnet, enum address_rule rule)
 static int _config_qtype_soa(void *data, int argc, char *argv[])
 {
 	struct dns_qtype_soa_list *soa_list;
+	int i = 0;
+
 	if (argc <= 1) {
 		return -1;
 	}
 
-	for (int i = 1; i < argc; i++) {
+	for (i = 1; i < argc; i++) {
 		soa_list = malloc(sizeof(*soa_list));
 		if (soa_list == NULL) {
 			tlog(TLOG_ERROR, "cannot malloc memory");
@@ -1203,6 +1239,9 @@ static int _config_qtype_soa(void *data, int argc, char *argv[])
 
 		memset(soa_list, 0, sizeof(*soa_list));
 		soa_list->qtypeid = atol(argv[i]);
+		if (soa_list->qtypeid == DNS_T_AAAA) {
+			dns_conf_force_AAAA_SOA = 1;
+		}
 		uint32_t key = hash_32_generic(soa_list->qtypeid, 32);
 		hash_add(dns_qtype_soa_table.qtype, &soa_list->node, key);
 	}
@@ -1268,7 +1307,7 @@ static int _conf_edns_client_subnet(void *data, int argc, char *argv[])
 	struct sockaddr_storage addr;
 	socklen_t addr_len = sizeof(addr);
 
-	if (argc <= 1 || data == NULL) {
+	if (argc <= 1) {
 		return -1;
 	}
 
@@ -1311,25 +1350,26 @@ errout:
 
 static int _conf_domain_rule_speed_check(char *domain, const char *mode)
 {
-	struct dns_domain_check_order *check_order;
+	struct dns_domain_check_orders *check_orders = NULL;
 
-	check_order = malloc(sizeof(*check_order));
-	if (check_order == NULL) {
+	check_orders = malloc(sizeof(*check_orders) * DOMAIN_CHECK_NUM);
+	if (check_orders == NULL) {
+		goto errout;
+	}
+	memset(check_orders, 0, sizeof(*check_orders));
+
+	if (_config_speed_check_mode_parser(check_orders, mode) != 0) {
 		goto errout;
 	}
 
-	if (_config_speed_check_mode_parser(check_order, mode) != 0) {
-		goto errout;
-	}
-
-	if (_config_domain_rule_add(domain, DOMAIN_RULE_CHECKSPEED, check_order) != 0) {
+	if (_config_domain_rule_add(domain, DOMAIN_RULE_CHECKSPEED, check_orders) != 0) {
 		goto errout;
 	}
 
 	return 0;
 errout:
-	if (check_order) {
-		free(check_order);
+	if (check_orders) {
+		free(check_orders);
 	}
 	return 0;
 }
@@ -1440,6 +1480,342 @@ errout:
 	return -1;
 }
 
+static struct dns_ptr *_dns_conf_get_ptr(const char *ptr_domain)
+{
+	uint32_t key = 0;
+	struct dns_ptr *ptr = NULL;
+
+	key = hash_string(ptr_domain);
+	hash_for_each_possible(dns_ptr_table.ptr, ptr, node, key)
+	{
+		if (strncmp(ptr->ptr_domain, ptr_domain, DNS_MAX_PTR_LEN) != 0) {
+			continue;
+		}
+
+		return ptr;
+	}
+
+	ptr = malloc(sizeof(*ptr));
+	if (ptr == NULL) {
+		goto errout;
+	}
+
+	safe_strncpy(ptr->ptr_domain, ptr_domain, DNS_MAX_PTR_LEN);
+	hash_add(dns_ptr_table.ptr, &ptr->node, key);
+
+	return ptr;
+errout:
+	if (ptr) {
+		free(ptr);
+	}
+
+	return NULL;
+}
+
+static int _conf_ptr_add(const char *hostname, const char *ip)
+{
+	struct dns_ptr *ptr = NULL;
+	struct sockaddr_storage addr;
+	unsigned char *paddr;
+	socklen_t addr_len = sizeof(addr);
+	char ptr_domain[DNS_MAX_PTR_LEN];
+
+	if (getaddr_by_host(ip, (struct sockaddr *)&addr, &addr_len) != 0) {
+		goto errout;
+	}
+
+	switch (addr.ss_family) {
+	case AF_INET: {
+		struct sockaddr_in *addr_in;
+		addr_in = (struct sockaddr_in *)&addr;
+		paddr = (unsigned char *)&(addr_in->sin_addr.s_addr);
+		snprintf(ptr_domain, sizeof(ptr_domain), "%d.%d.%d.%d.in-addr.arpa", paddr[3], paddr[2], paddr[1], paddr[0]);
+	} break;
+	case AF_INET6: {
+		struct sockaddr_in6 *addr_in6;
+		addr_in6 = (struct sockaddr_in6 *)&addr;
+		if (IN6_IS_ADDR_V4MAPPED(&addr_in6->sin6_addr)) {
+			paddr = addr_in6->sin6_addr.s6_addr + 12;
+			snprintf(ptr_domain, sizeof(ptr_domain), "%d.%d.%d.%d.in-addr.arpa", paddr[3], paddr[2], paddr[1],
+					 paddr[0]);
+		} else {
+			paddr = addr_in6->sin6_addr.s6_addr;
+			snprintf(ptr_domain, sizeof(ptr_domain),
+					 "%x.%x.%x.%x.%x.%x.%x.%x.%x.%x.%x.%x.%x.%x.%x.%x.%x.%x.%x."
+					 "%x.%x.%x.%x.%x.%x.%x.%x.%x.%x.%x.%x."
+					 "%x.ip6.arpa",
+					 paddr[15] & 0xF, (paddr[15] >> 4) & 0xF, paddr[14] & 0xF, (paddr[14] >> 4) & 0xF, paddr[13] & 0xF,
+					 (paddr[13] >> 4) & 0xF, paddr[12] & 0xF, (paddr[12] >> 4) & 0xF, paddr[11] & 0xF,
+					 (paddr[11] >> 4) & 0xF, paddr[10] & 0xF, (paddr[10] >> 4) & 0xF, paddr[9] & 0xF,
+					 (paddr[9] >> 4) & 0xF, paddr[8] & 0xF, (paddr[8] >> 4) & 0xF, paddr[7] & 0xF,
+					 (paddr[7] >> 4) & 0xF, paddr[6] & 0xF, (paddr[6] >> 4) & 0xF, paddr[5] & 0xF,
+					 (paddr[5] >> 4) & 0xF, paddr[4] & 0xF, (paddr[4] >> 4) & 0xF, paddr[3] & 0xF,
+					 (paddr[3] >> 4) & 0xF, paddr[2] & 0xF, (paddr[2] >> 4) & 0xF, paddr[1] & 0xF,
+					 (paddr[1] >> 4) & 0xF, paddr[0] & 0xF, (paddr[0] >> 4) & 0xF);
+		}
+	} break;
+	default:
+		goto errout;
+		break;
+	}
+
+	ptr = _dns_conf_get_ptr(ptr_domain);
+	if (ptr == NULL) {
+		goto errout;
+	}
+
+	safe_strncpy(ptr->hostname, hostname, DNS_MAX_CNAME_LEN);
+
+	return 0;
+
+errout:
+	return -1;
+}
+
+static void _config_ptr_table_destroy(void)
+{
+	struct dns_ptr *ptr = NULL;
+	struct hlist_node *tmp = NULL;
+	int i;
+
+	hash_for_each_safe(dns_ptr_table.ptr, i, tmp, ptr, node)
+	{
+		hlist_del_init(&ptr->node);
+		free(ptr);
+	}
+}
+
+static struct dns_hosts *_dns_conf_get_hosts(const char *hostname, int dns_type)
+{
+	uint32_t key = 0;
+	struct dns_hosts *host = NULL;
+	char hostname_lower[DNS_MAX_CNAME_LEN];
+
+	key = hash_string(to_lower_case(hostname_lower, hostname, DNS_MAX_CNAME_LEN));
+	key = jhash(&dns_type, sizeof(dns_type), key);
+	hash_for_each_possible(dns_hosts_table.hosts, host, node, key)
+	{
+		if (host->dns_type != dns_type) {
+			continue;
+		}
+		if (strncmp(host->domain, hostname_lower, DNS_MAX_CNAME_LEN) != 0) {
+			continue;
+		}
+
+		return host;
+	}
+
+	host = malloc(sizeof(*host));
+	if (host == NULL) {
+		goto errout;
+	}
+
+	safe_strncpy(host->domain, hostname_lower, DNS_MAX_CNAME_LEN);
+	host->dns_type = dns_type;
+	host->is_soa = 1;
+	hash_add(dns_hosts_table.hosts, &host->node, key);
+
+	return host;
+errout:
+	if (host) {
+		free(host);
+	}
+
+	return NULL;
+}
+
+static int _conf_host_add(const char *hostname, const char *ip, dns_hosts_type host_type)
+{
+	struct dns_hosts *host = NULL;
+	struct dns_hosts *host_other __attribute__((unused));
+	;
+	struct sockaddr_storage addr;
+	socklen_t addr_len = sizeof(addr);
+	int dns_type = 0;
+	int dns_type_other = 0;
+
+	if (getaddr_by_host(ip, (struct sockaddr *)&addr, &addr_len) != 0) {
+		goto errout;
+	}
+
+	switch (addr.ss_family) {
+	case AF_INET:
+		dns_type = DNS_T_A;
+		dns_type_other = DNS_T_AAAA;
+		break;
+	case AF_INET6: {
+		struct sockaddr_in6 *addr_in6;
+		addr_in6 = (struct sockaddr_in6 *)&addr;
+		if (IN6_IS_ADDR_V4MAPPED(&addr_in6->sin6_addr)) {
+			dns_type = DNS_T_A;
+			dns_type_other = DNS_T_AAAA;
+		} else {
+			dns_type = DNS_T_AAAA;
+			dns_type_other = DNS_T_A;
+		}
+	} break;
+	default:
+		goto errout;
+		break;
+	}
+
+	host = _dns_conf_get_hosts(hostname, dns_type);
+	if (host == NULL) {
+		goto errout;
+	}
+
+	/* add this to return SOA when addr is not exist */
+	host_other = _dns_conf_get_hosts(hostname, dns_type_other);
+
+	host->host_type = host_type;
+
+	switch (addr.ss_family) {
+	case AF_INET: {
+		struct sockaddr_in *addr_in;
+		addr_in = (struct sockaddr_in *)&addr;
+		memcpy(host->ipv4_addr, &addr_in->sin_addr.s_addr, 4);
+		host->is_soa = 0;
+	} break;
+	case AF_INET6: {
+		struct sockaddr_in6 *addr_in6;
+		addr_in6 = (struct sockaddr_in6 *)&addr;
+		if (IN6_IS_ADDR_V4MAPPED(&addr_in6->sin6_addr)) {
+			memcpy(host->ipv4_addr, addr_in6->sin6_addr.s6_addr + 12, 4);
+		} else {
+			memcpy(host->ipv6_addr, addr_in6->sin6_addr.s6_addr, 16);
+		}
+		host->is_soa = 0;
+	} break;
+	default:
+		goto errout;
+	}
+
+	dns_hosts_record_num++;
+	return 0;
+
+errout:
+	return -1;
+}
+
+static int _conf_dhcp_lease_dnsmasq_add(const char *file)
+{
+	FILE *fp = NULL;
+	char line[MAX_LINE_LEN];
+	char ip[DNS_MAX_IPLEN];
+	char hostname[DNS_MAX_CNAME_LEN];
+	int ret = 0;
+	int line_no = 0;
+	int filed_num;
+
+	fp = fopen(file, "r");
+	if (fp == NULL) {
+		tlog(TLOG_WARN, "open file %s error, %s", file, strerror(errno));
+		return 0;
+	}
+
+	line_no = 0;
+	while (fgets(line, MAX_LINE_LEN, fp)) {
+		line_no++;
+		filed_num = sscanf(line, "%*s %*s %64s %256s %*s", ip, hostname);
+		if (filed_num <= 0) {
+			continue;
+		}
+
+		if (strncmp(hostname, "*", DNS_MAX_CNAME_LEN) == 0) {
+			continue;
+		}
+
+		ret = _conf_host_add(hostname, ip, DNS_HOST_TYPE_DNSMASQ);
+		if (ret != 0) {
+			tlog(TLOG_WARN, "add host %s/%s at %d failed", hostname, ip, line_no);
+		}
+
+		ret = _conf_ptr_add(hostname, ip);
+		if (ret != 0) {
+			tlog(TLOG_WARN, "add ptr %s/%s at %d failed.", hostname, ip, line_no);
+		}
+	}
+
+	fclose(fp);
+
+	return 0;
+}
+
+static int _conf_dhcp_lease_dnsmasq_file(void *data, int argc, char *argv[])
+{
+	struct stat statbuf;
+
+	if (argc < 1) {
+		return -1;
+	}
+
+	safe_strncpy(dns_conf_dnsmasq_lease_file, argv[1], DNS_MAX_PATH);
+	if (_conf_dhcp_lease_dnsmasq_add(argv[1]) != 0) {
+		return -1;
+	}
+
+	if (stat(dns_conf_dnsmasq_lease_file, &statbuf) != 0) {
+		return 0;
+	}
+
+	dns_conf_dnsmasq_lease_file_time = statbuf.st_mtime;
+	return 0;
+}
+
+static int _conf_hosts_file(void *data, int argc, char *argv[])
+{
+	return 0;
+}
+
+static void _config_host_table_destroy(void)
+{
+	struct dns_hosts *host = NULL;
+	struct hlist_node *tmp = NULL;
+	int i;
+
+	hash_for_each_safe(dns_hosts_table.hosts, i, tmp, host, node)
+	{
+		hlist_del_init(&host->node);
+		free(host);
+	}
+
+	dns_hosts_record_num = 0;
+}
+
+int dns_server_check_update_hosts(void)
+{
+	struct stat statbuf;
+	time_t now;
+
+	if (dns_conf_dnsmasq_lease_file[0] == '\0') {
+		return -1;
+	}
+
+	if (stat(dns_conf_dnsmasq_lease_file, &statbuf) != 0) {
+		return -1;
+	}
+
+	if (dns_conf_dnsmasq_lease_file_time == statbuf.st_mtime) {
+		return -1;
+	}
+
+	time(&now);
+
+	if (now - statbuf.st_mtime < 30) {
+		return -1;
+	}
+
+	_config_ptr_table_destroy();
+	_config_host_table_destroy();
+
+	if (_conf_dhcp_lease_dnsmasq_add(dns_conf_dnsmasq_lease_file) != 0) {
+		return -1;
+	}
+
+	dns_conf_dnsmasq_lease_file_time = statbuf.st_mtime;
+	return 0;
+}
+
 static int _config_log_level(void *data, int argc, char *argv[])
 {
 	/* read log level and set */
@@ -1462,6 +1838,35 @@ static int _config_log_level(void *data, int argc, char *argv[])
 	}
 
 	return 0;
+}
+
+static void _config_setup_smartdns_domain(void)
+{
+	char hostname[DNS_MAX_CNAME_LEN];
+	/* get local host name */
+	if (getdomainname(hostname, DNS_MAX_CNAME_LEN) != 0) {
+		gethostname(hostname, DNS_MAX_CNAME_LEN);
+	}
+
+	/* get host name again */
+	if (strncmp(hostname, "(none)", DNS_MAX_CNAME_LEN) == 0) {
+		gethostname(hostname, DNS_MAX_CNAME_LEN);
+	}
+
+	/* if hostname is (none), return smartdns */
+	if (strncmp(hostname, "(none)", DNS_MAX_CNAME_LEN) == 0) {
+		safe_strncpy(hostname, "smartdns", DNS_MAX_CNAME_LEN);
+	}
+
+	if (hostname[0] != '\0') {
+		_config_domain_rule_flag_set(hostname, DOMAIN_FLAG_SMARTDNS_DOMAIN, 0);
+	}
+
+	if (dns_conf_server_name[0] != '\0') {
+		_config_domain_rule_flag_set(dns_conf_server_name, DOMAIN_FLAG_SMARTDNS_DOMAIN, 0);
+	}
+
+	_config_domain_rule_flag_set("smartdns", DOMAIN_FLAG_SMARTDNS_DOMAIN, 0);
 }
 
 static struct config_item _config_item[] = {
@@ -1487,6 +1892,7 @@ static struct config_item _config_item[] = {
 	CONF_YESNO("serve-expired", &dns_conf_serve_expired),
 	CONF_INT("serve-expired-ttl", &dns_conf_serve_expired_ttl, 0, CONF_INT_MAX),
 	CONF_INT("serve-expired-reply-ttl", &dns_conf_serve_expired_reply_ttl, 0, CONF_INT_MAX),
+	CONF_INT("serve-expired-prefetch-time", &dns_conf_serve_expired_prefetch_time, 0, CONF_INT_MAX),
 	CONF_YESNO("dualstack-ip-selection", &dns_conf_dualstack_ip_selection),
 	CONF_INT("dualstack-ip-selection-threshold", &dns_conf_dualstack_ip_selection_threshold, 0, 1000),
 	CONF_CUSTOM("log-level", _config_log_level, NULL),
@@ -1501,7 +1907,10 @@ static struct config_item _config_item[] = {
 	CONF_INT("rr-ttl", &dns_conf_rr_ttl, 0, CONF_INT_MAX),
 	CONF_INT("rr-ttl-min", &dns_conf_rr_ttl_min, 0, CONF_INT_MAX),
 	CONF_INT("rr-ttl-max", &dns_conf_rr_ttl_max, 0, CONF_INT_MAX),
+	CONF_INT("rr-ttl-reply-max", &dns_conf_rr_ttl_reply_max, 0, CONF_INT_MAX),
+	CONF_INT("max-reply-ip-num", &dns_conf_max_reply_ip_num, 1, CONF_INT_MAX),
 	CONF_YESNO("force-AAAA-SOA", &dns_conf_force_AAAA_SOA),
+	CONF_YESNO("force-no-CNAME", &dns_conf_force_no_cname),
 	CONF_CUSTOM("force-qtype-SOA", _config_qtype_soa, NULL),
 	CONF_CUSTOM("blacklist-ip", _config_blacklist_ip, NULL),
 	CONF_CUSTOM("whitelist-ip", _conf_whitelist_ip, NULL),
@@ -1509,6 +1918,8 @@ static struct config_item _config_item[] = {
 	CONF_CUSTOM("ignore-ip", _conf_ip_ignore, NULL),
 	CONF_CUSTOM("edns-client-subnet", _conf_edns_client_subnet, NULL),
 	CONF_CUSTOM("domain-rules", _conf_domain_rules, NULL),
+	CONF_CUSTOM("dnsmasq-lease-file", _conf_dhcp_lease_dnsmasq_file, NULL),
+	CONF_CUSTOM("hosts-file", _conf_hosts_file, NULL),
 	CONF_STRING("ca-file", (char *)&dns_conf_ca_file, DNS_MAX_PATH),
 	CONF_STRING("ca-path", (char *)&dns_conf_ca_path, DNS_MAX_PATH),
 	CONF_CUSTOM("conf-file", config_addtional_file, NULL),
@@ -1532,10 +1943,15 @@ static int _conf_printf(const char *file, int lineno, int ret)
 
 int config_addtional_file(void *data, int argc, char *argv[])
 {
-	char *conf_file = argv[1];
+	char *conf_file;
 	char file_path[DNS_MAX_PATH];
 	char file_path_dir[DNS_MAX_PATH];
 
+	if (argc < 1) {
+		return -1;
+	}
+
+	conf_file = argv[1];
 	if (conf_file[0] != '/') {
 		safe_strncpy(file_path_dir, conf_get_conf_file(), DNS_MAX_PATH);
 		dirname(file_path_dir);
@@ -1575,6 +1991,10 @@ static int _dns_server_load_conf_init(void)
 	hash_init(dns_ipset_table.ipset);
 	hash_init(dns_qtype_soa_table.qtype);
 	hash_init(dns_group_table.group);
+	hash_init(dns_hosts_table.hosts);
+	hash_init(dns_ptr_table.ptr);
+
+	_config_setup_smartdns_domain();
 
 	return 0;
 }
@@ -1586,6 +2006,8 @@ void dns_server_load_exit(void)
 	Destroy_Radix(dns_conf_address_rule.ipv6, _config_address_destroy, NULL);
 	_config_ipset_table_destroy();
 	_config_group_table_destroy();
+	_config_ptr_table_destroy();
+	_config_host_table_destroy();
 	_config_qtype_soa_table_destroy();
 }
 
@@ -1599,11 +2021,13 @@ static int _dns_conf_speed_check_mode_verify(void)
 	}
 
 	for (i = 0; i < DOMAIN_CHECK_NUM; i++) {
-		if (dns_conf_check_order.order[i] == DOMAIN_CHECK_ICMP) {
+		if (dns_conf_check_orders.orders[i].type == DOMAIN_CHECK_ICMP) {
 			for (j = i + 1; j < DOMAIN_CHECK_NUM; j++) {
-				dns_conf_check_order.order[j - 1] = dns_conf_check_order.order[j];
+				dns_conf_check_orders.orders[j - 1].type = dns_conf_check_orders.orders[j].type;
+				dns_conf_check_orders.orders[j - 1].tcp_port = dns_conf_check_orders.orders[j].tcp_port;
 			}
-			dns_conf_check_order.order[j - 1] = DOMAIN_CHECK_NONE;
+			dns_conf_check_orders.orders[j - 1].type = DOMAIN_CHECK_NONE;
+			dns_conf_check_orders.orders[j - 1].tcp_port = 0;
 			print_log = 1;
 		}
 	}
