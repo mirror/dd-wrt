@@ -35,7 +35,7 @@ pre {
   overflow: auto;
   padding: 1em;
   margin: 0;
-  font-family: 'Courier New', Courier, monospace;
+  font-family: monospace;
   font-size: 12px;
   white-space: pre-wrap;
   border-radius: 4px;
@@ -386,7 +386,7 @@ table[summary='ports forwarding table'] input[size='10'] {
   text-align: center;
 }
 .message {
-  border-radius: 6px;
+  border-radius: 4px;
   max-width: 72.464em;
   margin: 0 auto;
   padding: 1.812em .906em .906em;
@@ -507,39 +507,11 @@ input.button[name='preview_button'] {
   padding: 0 .6rem 0 .6rem;
   margin-left: .362em;
 }
-div.bulle {
-  background-color: #eec900;
-  color: #000;
-  position: absolute;
-  visibility: hidden;
-  width: auto;
-  z-index: 2000;
-}
-table.bulle {
-  background-color: #eec900;
-  color: #000;
-  width: auto;
-  height: auto;
-  margin: 0;
-  padding: 0;
-  text-align: justify;
-}
-td.bulle {
-  background-color: #eec900;
-  color: #000;
-  width: auto;
-  height: auto;
-  padding: .09em;
-  border: 0;
-}
 .off {
   opacity: .6;
 }
-.odd {
-  border-radius: 2px;
-}
-/*! status is common to light/dark */
-/*! these colors pass all color contrast tests */
+/*! colors below are common to light/dark */
+/*! these colors conform to WCAG Standards */
 .status_red {
   background: #ff6666;
   color: #000;
@@ -572,9 +544,32 @@ body .value_error {
   border: 1px solid #ff6666;
 }
 body .value_error:hover {
-  border-color: #f00;
+  border-color: #c00;
 }
 body .value_error:focus {
-  border-color: #f00;
-  box-shadow: 0 0 10px 0 #f00;
+  border-color: #c00;
+  box-shadow: 0 0 10px 0 #c00;
+}
+div.bulle {
+  position: absolute;
+  visibility: hidden;
+  width: auto;
+  z-index: 2000;
+}
+table.bulle {
+  width: auto;
+  height: auto;
+  margin: 0;
+  padding: 0;
+  text-align: justify;
+}
+td.bulle {
+  width: auto;
+  height: auto;
+  padding: .09em;
+  border: 0;
+}
+div.bulle, table.bulle, td.bulle {
+  background-color: #eec900;
+  color: #000;
 }

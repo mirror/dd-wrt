@@ -1532,7 +1532,7 @@ var hmanagement=new Object();
 hmanagement.right1="Auto Refresh:";
 hmanagement.right2="Adjust the Web interface refresh interval. Enter a value of <b>0</b> to disable this feature.<br/>The default value is <b>3</b> seconds.";
 hmanagement.right3=management.jffs_legend + ":";
-hmanagement.right4="When you first enable <b>" + management.jffs_srv + "</b>, it is necessary to enable <b>" + management.jffs_clean + "</b> in order to prepare the flash file system for usage.";
+hmanagement.right4="When you first <b>" + management.jffs_srv + "</b>, it is necessary to enable <b>" + management.jffs_clean + "</b> in order to prepare the flash file system for usage.";
 //help page
 hmanagement.page1="<dd>On this page the router's secure and remote access can be configured as well as other base functions.</dd>";
 hmanagement.page2="<dd>The new password must not exceed 63 characters in length or include any spaces. Enter the new password a second time to confirm it.<br /><br /><div class=\"note\"><h4>Note:</h4><div>The default SSH/Telnet username is <tt>root</tt><br />It is strongly recommended that you change the factory default username and password of the router, which is <tt>admin</tt>. At each new session the router's Web interface or the <i>Setup Wizard</i> is accessed, you will be prompted to enter the router's credentials you have previously setup.</div></div></dd>";
