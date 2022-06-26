@@ -311,8 +311,6 @@ rtt min/avg/max/mdev = 5.954/6.133/6.313/0.195 ms
      
      * **检测上游服务是否配置成功**
        
-       * 方法一
-         
          执行
          
          ```shell
@@ -329,21 +327,23 @@ rtt min/avg/max/mdev = 5.954/6.133/6.313/0.195 ms
          Non-authoritative answer:
          smartdns        name = smartdns.
          ```
-       
-       * 方法二
-         
-         使用 `nslookup` 查询域名（例如 `www.baidu.com`），查看结果中 IP 地址是否**只有一个**，如有多个 IP 地址返回，则表示未生效，请多尝试几个域名检查。
-         
+
+         或执行
+
          ```shell
-         $ nslookup www.baidu.com 192.168.1.1
-         Server:         192.168.1.1
-         Address:        192.168.1.1#53
-         
-         Non-authoritative answer:
-         www.baidu.com   canonical name = www.a.shifen.com.
-         Name:   www.a.shifen.com
-         Address: 14.215.177.38
+         $ nslookup smartdns
          ```
+
+         查看命令结果是否有解析出路由器的IP地址，如果是则表示生效。
+
+         或执行
+
+         ```shell
+         ping smartdns.
+         ```
+
+         检测ping是否解析对应主机的IP地址。
+
 
 4. 启动服务
    
@@ -550,49 +550,52 @@ rtt min/avg/max/mdev = 5.954/6.133/6.313/0.195 ms
 
 | 键名 | 功能说明 | 默认值 | 可用值/要求 | 举例 |
 | :--- | :--- | :--- | :--- | :--- |
-| `server-name` | DNS 服务器名称 | 操作系统主机名 / `smartdns` | 符合主机名规格的字符串 | `server-name smartdns` |
-| `bind` | DNS 监听端口号  | `[::]:53` | 可绑定多个端口。<br>`IP:PORT`: 服务器 IP:端口号<br>[`-group`]: 请求时使用的 DNS 服务器组<br>[`-no-rule-addr`]：跳过 address 规则<br>[`-no-rule-nameserver`]：跳过 Nameserver 规则<br>[`-no-rule-ipset`]：跳过 ipset 规则<br>[`-no-rule-soa`]：跳过 SOA(#) 规则<br>[`-no-dualstack-selection`]：停用双栈测速<br>[`-no-speed-check`]：停用测速<br>[`-no-cache`]：停止缓存 | `bind :53` |
-| `bind-tcp` | DNS TCP 监听端口号 | `[::]:53` | 可绑定多个端口。<br>`IP:PORT`: 服务器 IP:端口号<br>[`-group`]: 请求时使用的 DNS 服务器组<br>[`-no-rule-addr`]：跳过 address 规则<br>[`-no-rule-nameserver`]：跳过 `nameserver` 规则<br>[`-no-rule-ipset`]：跳过 `ipset` 规则。<br>[`-no-rule-soa`]：跳过 SOA(#) 规则<br>[`-no-dualstack-selection`]：停用双栈测速<br>[`-no-speed-check`]：停用测速<br>[`-no-cache`]：停止缓存 | `bind-tcp :53` |
-| `cache-size` | 域名结果缓存个数 | `512` | 大于等于 `0` 的数字 | `cache-size 512` |
-| `cache-persist` | 是否持久化缓存 | 自动。<br>当 `cache-file` 所在的位置有超过 128 MB 的可用空间时启用，否则禁用。 | [`yes`\|`no`] | `cache-persist yes` |
-| `cache-file` | 缓存持久化文件路径 | `/tmp/smartdns.cache` | 合法路径字符串 | `cache-file /tmp/smartdns.cache` |
-| `tcp-idle-time` | TCP 链接空闲超时时间 | `120` | 大于等于 `0` 的数字 | `tcp-idle-time 120` |
-| `rr-ttl` | 域名结果 TTL | 远程查询结果 | 大于 `0` 的数字 | `rr-ttl 600` |
-| `rr-ttl-min` | 允许的最小 TTL 值 | 远程查询结果 | 大于 `0` 的数字 | `rr-ttl-min 60` |
-| `rr-ttl-max` | 允许的最大 TTL 值 | 远程查询结果 | 大于 `0` 的数字 | `rr-ttl-max 600` |
-| `log-level` | 设置日志级别 | `error` | `fatal`、`error`、`warn`、`notice`、`info` 或 `debug` | `log-level error` |
-| `log-file` | 日志文件路径 | `/var/log/smartdns.log` | 合法路径字符串 | `log-file /var/log/smartdns.log` |
-| `log-size` | 日志大小 | `128K` | 数字 + `K`、`M` 或 `G` | `log-size 128K` |
-| `log-num` | 日志归档个数 | `2` | 大于等于 `0` 的数字 | `log-num 2` |
-| `audit-enable` | 设置审计启用 | `no` | [`yes`\|`no`] | `audit-enable yes` |
-| `audit-file` | 审计文件路径 | `/var/log/smartdns-audit.log` | 合法路径字符串 | `audit-file /var/log/smartdns-audit.log` |
-| `audit-size` | 审计大小 | `128K` | 数字 + `K`、`M` 或 `G` | `audit-size 128K` |
-| `audit-num` | 审计归档个数 | `2` | 大于等于 `0` 的数字 | `audit-num 2` |
-| `conf-file` | 附加配置文件 | 无 | 合法路径字符串 | `conf-file /etc/smartdns/smartdns.more.conf` |
-| `server` | 上游 UDP DNS | 无 | 可重复。<br>[`ip`][`:port`]：服务器 IP:端口（可选）<br>[`-blacklist-ip`]：配置 IP 过滤结果。<br>[`-whitelist-ip`]：指定仅接受参数中配置的 IP 范围<br>[`-group` [`group`] ...]：DNS 服务器所属组，比如 `office` 和 `foreign`，和 `nameserver` 配套使用<br>[`-exclude-default-group`]：将 DNS 服务器从默认组中排除 | `server 8.8.8.8:53 -blacklist-ip -group g1` |
-| `server-tcp` | 上游 TCP DNS | 无 | 可重复。<br>[`ip`][`:port`]：服务器 IP:端口（可选）<br>[`-blacklist-ip`]：配置 IP 过滤结果<br>[`-whitelist-ip`]：指定仅接受参数中配置的 IP 范围。<br>[`-group` [`group`] ...]：DNS 服务器所属组，比如 `office` 和 `foreign`，和 `nameserver` 配套使用<br>[`-exclude-default-group`]：将 DNS 服务器从默认组中排除  | `server-tcp 8.8.8.8:53` |
-| `server-tls` | 上游 TLS DNS | 无 | 可重复。<br>[`ip`][`:port`]：服务器 IP:端口（可选)<br>[`-spki-pin` [`sha256-pin`]]：TLS 合法性校验 SPKI 值，base64 编码的 sha256 SPKI pin 值<br>[`-host-name`]：TLS SNI 名称<br>[`-tls-host-verify`]：TLS 证书主机名校验<br> [`-no-check-certificate`]：跳过证书校验<br>[`-blacklist-ip`]：配置 IP 过滤结果<br>[`-whitelist-ip`]：仅接受参数中配置的 IP 范围<br>[`-group` [`group`] ...]：DNS 服务器所属组，比如 `office` 和 `foreign`，和 `nameserver` 配套使用<br>[`-exclude-default-group`]：将 DNS 服务器从默认组中排除 | `server-tls 8.8.8.8:853` |
-| `server-https` | 上游 HTTPS DNS | 无 | 可重复。<br>`https://`[`host`][`:port`]`/path`：服务器 IP:端口（可选）<br>[`-spki-pin` [`sha256-pin`]]：TLS 合法性校验 SPKI 值，base64 编码的 sha256 SPKI pin 值<br>[`-host-name`]：TLS SNI 名称<br>[`-http-host`]：http 协议头主机名<br>[`-tls-host-verify`]：TLS 证书主机名校验<br> [`-no-check-certificate`]：跳过证书校验<br>[`-blacklist-ip`]：配置 IP 过滤结果<br>[`-whitelist-ip`]：仅接受参数中配置的 IP 范围。<br>[`-group` [`group`] ...]：DNS 服务器所属组，比如 office 和 foreign，和 nameserver 配套使用<br>[`-exclude-default-group`]：将 DNS 服务器从默认组中排除 | `server-https https://cloudflare-dns.com/dns-query` |
-| `speed-check-mode` | 测速模式选择 | 无 | [`ping`\|`tcp:`[`80`]\|`none`] | `speed-check-mode ping,tcp:80` |
-| `address` | 指定域名 IP 地址 | 无 | `address /domain/`[`ip`\|`-`\|`-4`\|`-6`\|`#`\|`#4`\|`#6`] <br>`-` 表示忽略 <br>`#` 表示返回 SOA <br>`4` 表示 IPv4 <br>`6` 表示 IPv6 | `address /www.example.com/1.2.3.4` |
-| `nameserver` | 指定域名使用 `server` 组解析 | 无 | `nameserver /domain/`[`group`\|`-`], `group` 为组名，`-` 表示忽略此规则，配套 `server` 中的 `-group` 参数使用 | `nameserver /www.example.com/office` |
-| `ipset` | 域名 ipset | 无 | `ipset /domain/`[`ipset`\|`-`\|`#`[`4`\|`6`]:[`ipset`\|`-`][`,#`[`4`\|`6`]`:`[`ipset`\|`-`]]]，`-`表示忽略 | `ipset /www.example.com/#4:dns4,#6:-` |
-| `ipset-timeout` | 设置 `ipset` 超时功能启用  | 自动 | [`yes`] | `ipset-timeout yes` |
-| `domain-rules` | 设置域名规则 | 无 | `domain-rules /domain/` [`-rules`...]<br>[`-c`\|`-speed-check-mode`]：测速模式，参考 `speed-check-mode` 配置<br>[`-a`\|`-address`]：参考 `address` 配置<br>[`-n`\|`-nameserver`]：参考 `nameserver` 配置<br>[`-p`\|`-ipset`]：参考`ipset`配置<br>[`-d`\|`-dualstack-ip-selection`]：参考 `dualstack-ip-selection`  | `domain-rules /www.example.com/ -speed-check-mode none` |
-| `bogus-nxdomain` | 假冒 IP 地址过滤 | 无 | [`ip/subnet`]，可重复 | `bogus-nxdomain 1.2.3.4/16` |
-| `ignore-ip` | 忽略 IP 地址 | 无 | [`ip/subnet`]，可重复 | `ignore-ip 1.2.3.4/16` |
-| `whitelist-ip` | 白名单 IP 地址 | 无 | [`ip/subnet`]，可重复 | `whitelist-ip 1.2.3.4/16` |
-| `blacklist-ip` | 黑名单 IP 地址 | 无 | [`ip/subnet`]，可重复 | `blacklist-ip 1.2.3.4/16` |
-| `force-AAAA-SOA` | 强制 AAAA 地址返回 SOA | `no` | [`yes`\|`no`] | `force-AAAA-SOA yes` |
-| `force-qtype-SOA` | 强制指定 qtype 返回 SOA | qtype id | [`<qtypeid>` \| ...] | `force-qtype-SOA 65 28`
-| `prefetch-domain` | 域名预先获取功能 | `no` | [`yes`\|`no`] | `prefetch-domain yes` |
-| `serve-expired` | 过期缓存服务功能 | `no` | [`yes`\|`no`]，开启此功能后，如果有请求时尝试回应 TTL 为 0 的过期记录，并发查询记录，以避免查询等待 |
-| `serve-expired-ttl` | 过期缓存服务最长超时时间 | `0` | 秒，`0` 表示停用超时，大于 `0` 表示指定的超时的秒数 | `serve-expired-ttl 0` |
-| `serve-expired-reply-ttl` | 回应的过期缓存 TTL | `5` | 秒，`0` 表示停用超时，大于 `0` 表示指定的超时的秒数 | `serve-expired-reply-ttl 30` |
-| `dualstack-ip-selection` | 双栈 IP 优选 | `no` | [`yes`\|`no`] | `dualstack-ip-selection yes` |
-| `dualstack-ip-selection-threshold` | 双栈 IP 优选阈值 | `30ms` | 单位为毫秒（`ms`） | `dualstack-ip-selection-threshold [0-1000]` |
-| `ca-file` | 证书文件 | `/etc/ssl/certs/ca-certificates.crt` | 合法路径字符串 | `ca-file /etc/ssl/certs/ca-certificates.crt` |
-| `ca-path` | 证书文件路径 | `/etc/ssl/certs` | 合法路径字符串 | `ca-path /etc/ssl/certs` |
+| server-name | DNS 服务器名称 | 操作系统主机名 / smartdns | 符合主机名规格的字符串 | server-name smartdns |
+| bind | DNS 监听端口号  | [::]:53 | 可绑定多个端口。<br>IP:PORT: 服务器 IP:端口号<br>[-group]: 请求时使用的 DNS 服务器组<br>[-no-rule-addr]：跳过 address 规则<br>[-no-rule-nameserver]：跳过 Nameserver 规则<br>[-no-rule-ipset]：跳过 ipset 规则<br>[-no-rule-soa]：跳过 SOA(#) 规则<br>[-no-dualstack-selection]：停用双栈测速<br>[-no-speed-check]：停用测速<br>[-no-cache]：停止缓存 | bind :53 |
+| bind-tcp | DNS TCP 监听端口号 | [::]:53 | 可绑定多个端口。<br>IP:PORT: 服务器 IP:端口号<br>[-group]: 请求时使用的 DNS 服务器组<br>[-no-rule-addr]：跳过 address 规则<br>[-no-rule-nameserver]：跳过 nameserver 规则<br>[-no-rule-ipset]：跳过 ipset 规则。<br>[-no-rule-soa]：跳过 SOA(#) 规则<br>[-no-dualstack-selection]：停用双栈测速<br>[-no-speed-check]：停用测速<br>[-no-cache]：停止缓存 | bind-tcp :53 |
+| cache-size | 域名结果缓存个数 | 512 | 大于等于 0 的数字 | cache-size 512 |
+| cache-persist | 是否持久化缓存 | 自动。<br>当 cache-file 所在的位置有超过 128 MB 的可用空间时启用，否则禁用。 | [yes\|no] | cache-persist yes |
+| cache-file | 缓存持久化文件路径 | /tmp/smartdns.cache | 合法路径字符串 | cache-file /tmp/smartdns.cache |
+| tcp-idle-time | TCP 链接空闲超时时间 | 120 | 大于等于 0 的数字 | tcp-idle-time 120 |
+| rr-ttl | 域名结果 TTL | 远程查询结果 | 大于 0 的数字 | rr-ttl 600 |
+| rr-ttl-min | 允许的最小 TTL 值 | 远程查询结果 | 大于 0 的数字 | rr-ttl-min 60 |
+| rr-ttl-max | 允许的最大 TTL 值 | 远程查询结果 | 大于 0 的数字 | rr-ttl-max 600 |
+| rr-ttl-reply-max | 允许返回给客户端的最大 TTL 值 | 远程查询结果 | 大于 0 的数字 | rr-ttl-reply-max 60 |
+| max-reply-ip-num | 允许返回给客户的最大IP数量 | IP数量 | 大于 0 的数字 | max-reply-ip-num 1 |
+| log-level | 设置日志级别 | error | fatal、error、warn、notice、info 或 debug | log-level error |
+| log-file | 日志文件路径 | /var/log/smartdns.log | 合法路径字符串 | log-file /var/log/smartdns.log |
+| log-size | 日志大小 | 128K | 数字 + K、M 或 G | log-size 128K |
+| log-num | 日志归档个数 | 2 | 大于等于 0 的数字 | log-num 2 |
+| audit-enable | 设置审计启用 | no | [yes\|no] | audit-enable yes |
+| audit-file | 审计文件路径 | /var/log/smartdns-audit.log | 合法路径字符串 | audit-file /var/log/smartdns-audit.log |
+| audit-size | 审计大小 | 128K | 数字 + K、M 或 G | audit-size 128K |
+| audit-num | 审计归档个数 | 2 | 大于等于 0 的数字 | audit-num 2 |
+| conf-file | 附加配置文件 | 无 | 合法路径字符串 | conf-file /etc/smartdns/smartdns.more.conf |
+| server | 上游 UDP DNS | 无 | 可重复。<br>[ip][:port]：服务器 IP:端口（可选）<br>[-blacklist-ip]：配置 IP 过滤结果。<br>[-whitelist-ip]：指定仅接受参数中配置的 IP 范围<br>[-group [group] ...]：DNS 服务器所属组，比如 office 和 foreign，和 nameserver 配套使用<br>[-exclude-default-group]：将 DNS 服务器从默认组中排除 | server 8.8.8.8:53 -blacklist-ip -group g1 |
+| server-tcp | 上游 TCP DNS | 无 | 可重复。<br>[ip][:port]：服务器 IP:端口（可选）<br>[-blacklist-ip]：配置 IP 过滤结果<br>[-whitelist-ip]：指定仅接受参数中配置的 IP 范围。<br>[-group [group] ...]：DNS 服务器所属组，比如 office 和 foreign，和 nameserver 配套使用<br>[-exclude-default-group]：将 DNS 服务器从默认组中排除  | server-tcp 8.8.8.8:53 |
+| server-tls | 上游 TLS DNS | 无 | 可重复。<br>[ip][:port]：服务器 IP:端口（可选)<br>[-spki-pin [sha256-pin]]：TLS 合法性校验 SPKI 值，base64 编码的 sha256 SPKI pin 值<br>[-host-name]：TLS SNI 名称<br>[-tls-host-verify]：TLS 证书主机名校验<br> [-no-check-certificate]：跳过证书校验<br>[-blacklist-ip]：配置 IP 过滤结果<br>[-whitelist-ip]：仅接受参数中配置的 IP 范围<br>[-group [group] ...]：DNS 服务器所属组，比如 office 和 foreign，和 nameserver 配套使用<br>[-exclude-default-group]：将 DNS 服务器从默认组中排除 | server-tls 8.8.8.8:853 |
+| server-https | 上游 HTTPS DNS | 无 | 可重复。<br>https://[host][:port]/path：服务器 IP:端口（可选）<br>[-spki-pin [sha256-pin]]：TLS 合法性校验 SPKI 值，base64 编码的 sha256 SPKI pin 值<br>[-host-name]：TLS SNI 名称<br>[-http-host]：http 协议头主机名<br>[-tls-host-verify]：TLS 证书主机名校验<br> [-no-check-certificate]：跳过证书校验<br>[-blacklist-ip]：配置 IP 过滤结果<br>[-whitelist-ip]：仅接受参数中配置的 IP 范围。<br>[-group [group] ...]：DNS 服务器所属组，比如 office 和 foreign，和 nameserver 配套使用<br>[-exclude-default-group]：将 DNS 服务器从默认组中排除 | server-https https://cloudflare-dns.com/dns-query |
+| speed-check-mode | 测速模式选择 | 无 | [ping\|tcp:[80]\|none] | speed-check-mode ping,tcp:80,tcp:443 |
+| address | 指定域名 IP 地址 | 无 | address /domain/[ip\|-\|-4\|-6\|#\|#4\|#6] <br>- 表示忽略 <br># 表示返回 SOA <br>4 表示 IPv4 <br>6 表示 IPv6 | address /www.example.com/1.2.3.4 |
+| nameserver | 指定域名使用 server 组解析 | 无 | nameserver /domain/[group\|-], group 为组名，- 表示忽略此规则，配套 server 中的 -group 参数使用 | nameserver /www.example.com/office |
+| ipset | 域名 ipset | 无 | ipset /domain/[ipset\|-\|#[4\|6]:[ipset\|-][,#[4\|6]:[ipset\|-]]]，-表示忽略 | ipset /www.example.com/#4:dns4,#6:- |
+| ipset-timeout | 设置 ipset 超时功能启用  | 自动 | [yes] | ipset-timeout yes |
+| domain-rules | 设置域名规则 | 无 | domain-rules /domain/ [-rules...]<br>[-c\|-speed-check-mode]：测速模式，参考 speed-check-mode 配置<br>[-a\|-address]：参考 address 配置<br>[-n\|-nameserver]：参考 nameserver 配置<br>[-p\|-ipset]：参考ipset配置<br>[-d\|-dualstack-ip-selection]：参考 dualstack-ip-selection  | domain-rules /www.example.com/ -speed-check-mode none |
+| bogus-nxdomain | 假冒 IP 地址过滤 | 无 | [ip/subnet]，可重复 | bogus-nxdomain 1.2.3.4/16 |
+| ignore-ip | 忽略 IP 地址 | 无 | [ip/subnet]，可重复 | ignore-ip 1.2.3.4/16 |
+| whitelist-ip | 白名单 IP 地址 | 无 | [ip/subnet]，可重复 | whitelist-ip 1.2.3.4/16 |
+| blacklist-ip | 黑名单 IP 地址 | 无 | [ip/subnet]，可重复 | blacklist-ip 1.2.3.4/16 |
+| force-AAAA-SOA | 强制 AAAA 地址返回 SOA | no | [yes\|no] | force-AAAA-SOA yes |
+| force-qtype-SOA | 强制指定 qtype 返回 SOA | qtype id | [<qtypeid> \| ...] | force-qtype-SOA 65 28
+| prefetch-domain | 域名预先获取功能 | no | [yes\|no] | prefetch-domain yes |
+| dnsmasq-lease-file | 支持读取dnsmasq dhcp文件解析本地主机名功能 | 无 | dnsmasq dhcp lease文件路径 | dnsmasq-lease-file /var/lib/misc/dnsmasq.leases |
+| serve-expired | 过期缓存服务功能 | yes | [yes\|no]，开启此功能后，如果有请求时尝试回应 TTL 为 0 的过期记录，并发查询记录，以避免查询等待 |
+| serve-expired-ttl | 过期缓存服务最长超时时间 | 0 | 秒，0 表示停用超时，大于 0 表示指定的超时的秒数 | serve-expired-ttl 0 |
+| serve-expired-reply-ttl | 回应的过期缓存 TTL | 5 | 秒，0 表示停用超时，大于 0 表示指定的超时的秒数 | serve-expired-reply-ttl 30 |
+| dualstack-ip-selection | 双栈 IP 优选 | yes | [yes\|no] | dualstack-ip-selection yes |
+| dualstack-ip-selection-threshold | 双栈 IP 优选阈值 | 15ms | 单位为毫秒（ms） | dualstack-ip-selection-threshold [0-1000] |
+| ca-file | 证书文件 | /etc/ssl/certs/ca-certificates.crt | 合法路径字符串 | ca-file /etc/ssl/certs/ca-certificates.crt |
+| ca-path | 证书文件路径 | /etc/ssl/certs | 合法路径字符串 | ca-path /etc/ssl/certs |
 
 ## 常见问题
 
@@ -726,6 +729,24 @@ rtt min/avg/max/mdev = 5.954/6.133/6.313/0.195 ms
     ```sh
     $ echo | openssl s_client -connect '1.0.0.1:853' 2>/dev/null | openssl x509 -pubkey -noout | openssl pkey -pubin -outform der | openssl dgst -sha256 -binary | openssl enc -base64
     ```
+
+11. iOS系统解析缓慢问题怎么解决？  
+    IOS14开始，苹果支持了DNS HTTPS(TYPE65)记录的解析，此功能用于快速DNS查询和解决HTTPS链接相关的问题，但当前还是草案，另外会导致广告屏蔽等功能失效，建议通过如下配置关闭TYPE65记录查询。
+
+    ```sh
+    force-qtype-SOA 65
+    ```
+
+12. 如何解析本地主机名称？  
+    smartdns可以配合DNSMASQ的dhcp lease文件支持本地主机名->IP地址的解析，可以配置smartdns读取dnsmasq的lease文件，并支持解析。具体配置参数如下，（注意，DNSMASQ lease文件每个系统可能不一样，需要按实际情况配置）
+
+    ```
+    dnsmasq-lease-file /var/lib/misc/dnsmasq.leases
+    ```
+
+    配置完成后，可以直接使用主机名连接对应的机器。但需要注意：
+
+    * Windows系统默认使用mDNS解析地址，如需要在windows下用使用smartdns解析，则需要在主机名后面增加`.`，表示使用DNS解析。如`ping smartdns.`
 
 ## 编译
 
