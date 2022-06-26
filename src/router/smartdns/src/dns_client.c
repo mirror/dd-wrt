@@ -181,9 +181,10 @@ struct dns_client {
 	struct list_head dns_server_list;
 	struct dns_server_group *default_group;
 
+#ifdef HAVE_OPENSSL
 	SSL_CTX *ssl_ctx;
 	int ssl_verify_skip;
-
+#endif
 	/* query list */
 	pthread_mutex_t dns_request_lock;
 	struct list_head dns_request_list;
@@ -873,7 +874,6 @@ static char *_dns_client_server_get_spki(struct dns_server_info *server_info, in
 
 	return spki;
 }
-#endif
 
 static int _dns_client_set_trusted_cert(SSL_CTX *ssl_ctx)
 {
@@ -953,9 +953,9 @@ errout:
 	if (ssl_ctx) {
 		SSL_CTX_free(ssl_ctx);
 	}
-
 	return NULL;
 }
+#endif
 
 /* add dns server information */
 static int _dns_client_server_add(char *server_ip, char *server_host, int port, dns_server_type_t server_type,
@@ -3577,8 +3577,10 @@ void dns_client_exit(void)
 
 	pthread_mutex_destroy(&client.server_list_lock);
 	pthread_mutex_destroy(&client.domain_map_lock);
+#ifdef HAVE_OPENSSL
 	if (client.ssl_ctx) {
 		SSL_CTX_free(client.ssl_ctx);
 		client.ssl_ctx = NULL;
 	}
+#endif
 }
