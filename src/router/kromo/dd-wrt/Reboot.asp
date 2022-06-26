@@ -50,7 +50,7 @@ addEvent(window, "unload", function() {
 </script>
 	</head>
 	
-	<body>
+	<body class="gui">
 		<div class="message">
 			<form>
 				<% tran("success.success_reboot"); %><br /><br />
