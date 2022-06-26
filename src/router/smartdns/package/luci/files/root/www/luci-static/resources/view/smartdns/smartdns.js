@@ -188,7 +188,7 @@ return L.view.extend({
 		o = s.taboption("settings", form.Flag, "dualstack_ip_selection", _("Dual-stack IP Selection"),
 			_("Enable IP selection between IPV4 and IPV6"));
 		o.rmempty = false;
-		o.default = o.disabled;
+		o.default = o.enabled;
 
 		// Domain prefetch load ;
 		o = s.taboption("settings", form.Flag, "prefetch_domain", _("Domain prefetch"),
@@ -200,7 +200,7 @@ return L.view.extend({
 		o = s.taboption("settings", form.Flag, "serve_expired", _("Serve expired"),
 			_("Attempts to serve old responses from cache with a TTL of 0 in the response without waiting for the actual resolution to finish."));
 		o.rmempty = false;
-		o.default = o.disabled;
+		o.default = o.enabled;
 
 		// Redirect;
 		o = s.taboption("settings", form.ListValue, "redirect", _("Redirect"), _("SmartDNS redirect mode"));
@@ -223,16 +223,21 @@ return L.view.extend({
 		o = s.taboption("settings", form.Value, "rr_ttl_min", _("Domain TTL Min"),
 			_("Minimum TTL for all domain result."));
 		o.rempty = true;
-		o.placeholder = "300";
-		o.default = 300;
+		o.placeholder = "600";
+		o.default = 600;
 		o.optional = true;
 
-		// second dns server;
 		// rr-ttl-max;
 		o = s.taboption("settings", form.Value, "rr_ttl_max", _("Domain TTL Max"),
-			_("Maximum TTL for all domain result."));
+		_("Maximum TTL for all domain result."));
 		o.rempty = true;
 
+		// rr-ttl-reply-max;
+		o = s.taboption("settings", form.Value, "rr_ttl_reply_max", _("Domain Reply TTL Max"),
+		_("Maximum Reply TTL for all domain result."));
+		o.rempty = true;
+		
+		// second dns server;
 		// Eanble;
 		o = s.taboption("seconddns", form.Flag, "seconddns_enabled", _("Enable"),
 			_("Enable or disable second DNS server."));

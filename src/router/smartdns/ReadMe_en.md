@@ -281,7 +281,7 @@ https://github.com/pymumu/smartdns/releases
 
     * **Check if the service is configured successfully**
 
-        * Method 1: Query domain name with `nslookup -querytype=ptr 0.0.0.1`
+        * Query domain name with `nslookup -querytype=ptr 0.0.0.1`
         See if the `name` item in the command result is displayed as `smartdns` or `hostname`, such as `smartdns`
 
         ```shell
@@ -293,18 +293,12 @@ https://github.com/pymumu/smartdns/releases
         smartdns         name = smartdns.
         ```
 
-        * Method 2: Use `nslookup` to query the `www.baidu.com` domain name to see if the IP address of Baidu in the result is `only one. If there are multiple IP addresses returned, it means that it is not valid. Please try to check several domain names.
+        * or Query doman name `smartdns `with `nslookup smartdns`
+         ```shell
+         $ nslookup smartdns
+         ```
 
-        ```shell
-        pi@raspberrypi:~ $ nslookup www.baidu.com 192.168.1.1
-        Server:         192.168.1.1
-        Address:        192.168.1.1#53
-
-        Non-authoritative answer:
-        www.baidu.com   canonical name = www.a.shifen.com.
-        Name:   www.a.shifen.com
-        Address: 14.215.177.38
-        ```
+        Check whether the command result resolves the IP address of the router, if so, it means it is working.
 
 1. Start Service
 
@@ -503,7 +497,9 @@ Note: Merlin firmware is derived from ASUS firmware and can theoretically be use
 |tcp-idle-time|TCP connection idle timeout|120|integer|tcp-idle-time 120
 |rr-ttl|Domain name TTL|Remote query result|number greater than 0|rr-ttl 600
 |rr-ttl-min|Domain name Minimum TTL|Remote query result|number greater than 0|rr-ttl-min 60
+|rr-ttl-reply-max|Domain name Minimum Reply TTL|Remote query result|number greater than 0|rr-ttl-reply-max 60
 |rr-ttl-max|Domain name Maximum TTL|Remote query result|number greater than 0|rr-ttl-max 600
+|max-reply-ip-num|Maximum number of IPs returned to the client|8|number of IPs, 1~16 |max-reply-ip-num 1
 |log-level|log level|error|fatal,error,warn,notice,info,debug|log-level error
 |log-file|log path|/var/log/smartdns.log|File Pah|log-file /var/log/smartdns.log
 |log-size|log size|128K|number+K,M,G|log-size 128K
@@ -517,7 +513,7 @@ Note: Merlin firmware is derived from ASUS firmware and can theoretically be use
 |server-tcp|Upstream TCP DNS server|None|Repeatable <br>`[ip][:port]`: Server IP, port optional. <br>`[-blacklist-ip]`: The "-blacklist-ip" parameter is to filtering IPs which is configured by "blacklist-ip". <br>`[-whitelist-ip]`: whitelist-ip parameter specifies that only the IP range configured in whitelist-ip is accepted. <br>`[-group [group] ...]`: The group to which the DNS server belongs, such as office, foreign, use with nameserver. <br>`[-exclude-default-group]`: Exclude DNS servers from the default group| server-tcp 8.8.8.8:53
 |server-tls|Upstream TLS DNS server|None|Repeatable <br>`[ip][:port]`: Server IP, port optional. <br>`[-spki-pin [sha256-pin]]`: TLS verify SPKI value, a base64 encoded SHA256 hash<br>`[-host-name]`:TLS Server name. <br>`[-tls-host-verify]`: TLS cert hostname to verify. <br>`-no-check-certificate:`: No check certificate. <br>`[-blacklist-ip]`: The "-blacklist-ip" parameter is to filtering IPs which is configured by "blacklist-ip". <br>`[-whitelist-ip]`: whitelist-ip parameter specifies that only the IP range configured in whitelist-ip is accepted. <br>`[-group [group] ...]`: The group to which the DNS server belongs, such as office, foreign, use with nameserver. <br>`[-exclude-default-group]`: Exclude DNS servers from the default group| server-tls 8.8.8.8:853
 |server-https|Upstream HTTPS DNS server|None|Repeatable <br>`https://[host][:port]/path`: Server IP, port optional. <br>`[-spki-pin [sha256-pin]]`: TLS verify SPKI value, a base64 encoded SHA256 hash<br>`[-host-name]`:TLS Server name<br>`[-http-host]`：http header host. <br>`[-tls-host-verify]`: TLS cert hostname to verify. <br>`-no-check-certificate:`: No check certificate. <br>`[-blacklist-ip]`: The "-blacklist-ip" parameter is to filtering IPs which is configured by "blacklist-ip". <br>`[-whitelist-ip]`: whitelist-ip parameter specifies that only the IP range configured in whitelist-ip is accepted. <br>`[-group [group] ...]`: The group to which the DNS server belongs, such as office, foreign, use with nameserver. <br>`[-exclude-default-group]`: Exclude DNS servers from the default group| server-https https://cloudflare-dns.com/dns-query
-|speed-check-mode|Speed ​​mode|None|[ping\|tcp:[80]\|none]|speed-check-mode ping,tcp:443
+|speed-check-mode|Speed ​​mode|None|[ping\|tcp:[80]\|none]|speed-check-mode ping,tcp:80,tcp:443
 |address|Domain IP address|None|address /domain/[ip\|-\|-4\|-6\|#\|#4\|#6], `-` for ignore, `#` for return SOA, `4` for IPV4, `6` for IPV6| address /www.example.com/1.2.3.4
 |nameserver|To query domain with specific server group|None|nameserver /domain/[group\|-], `group` is the group name, `-` means ignore this rule, use the `-group` parameter in the related server|nameserver /www.example.com/office
 |ipset|Domain IPSet|None|ipset /domain/[ipset\|-\|#[4\|6]:[ipset\|-][,#[4\|6]:[ipset\|-]]], `-` for ignore|ipset /www.example.com/#4:dns4,#6:-
@@ -530,11 +526,12 @@ Note: Merlin firmware is derived from ASUS firmware and can theoretically be use
 |force-AAAA-SOA|force AAAA query return SOA|no|[yes\|no]|force-AAAA-SOA yes
 |force-qtype-SOA|force specific qtype return SOA|qtype id|[qtypeid | ...]|force-qtype-SOA 65 28
 |prefetch-domain|domain prefetch feature|no|[yes\|no]|prefetch-domain yes
-|serve-expired|Cache serve expired feature|no|[yes\|no], Attempts to serve old responses from cache with a TTL of 0 in the response without waiting for the actual resolution to finish.|serve-expired yes
+|dnsmasq-lease-file|Support reading dnsmasq dhcp file to resolve local hostname|None|dnsmasq dhcp lease file| dnsmasq-lease-file /var/lib/misc/dnsmasq.leases
+|serve-expired|Cache serve expired feature|yes|[yes\|no], Attempts to serve old responses from cache with a TTL of 0 in the response without waiting for the actual resolution to finish.|serve-expired yes
 |serve-expired-ttl|Cache serve expired limite TTL|0|second，0：disable，> 0  seconds after expiration|serve-expired-ttl 0
 |serve-expired-reply-ttl|TTL value to use when replying with expired data|5|second，0：disable，> 0  seconds after expiration|serve-expired-reply-ttl 30
-|dualstack-ip-selection|Dualstack ip selection|no|[yes\|no]|dualstack-ip-selection yes
-|dualstack-ip-selection-threshold|Dualstack ip select threadhold|30ms|millisecond|dualstack-ip-selection-threshold [0-1000]
+|dualstack-ip-selection|Dualstack ip selection|yes|[yes\|no]|dualstack-ip-selection yes
+|dualstack-ip-selection-threshold|Dualstack ip select threadhold|15ms|millisecond|dualstack-ip-selection-threshold [0-1000]
 |ca-file|certificate file|/etc/ssl/certs/ca-certificates.crt|path|ca-file /etc/ssl/certs/ca-certificates.crt
 |ca-path|certificates path|/etc/ssl/certs|path|ca-path /etc/ssl/certs
 
@@ -650,9 +647,27 @@ Note: Merlin firmware is derived from ASUS firmware and can theoretically be use
 1. How to get SPKI of DOT  
     The SPKI can be obtained from the page published by the DNS service provider. If it is not published, it can be obtained by the following command, replace IP with your own IP.
 
-    ````sh
+    ```sh
     echo | openssl s_client -connect '1.0.0.1:853' 2>/dev/null | openssl x509 -pubkey -noout | openssl pkey -pubin -outform der | openssl dgst -sha256 -binary | openssl enc -base64
-    ````
+    ```
+
+1. How to solve the problem of slow DNS resolution in iOS system?  
+    Since iOS14, Apple has supported the resolution of DNS HTTPS (TYPE65) records. This function is used for solving problems related to HTTPS connections, but it is still a draft, and it will cause some functions such as adblocking fail. It is recommended to disable it through the following configuration.
+
+    ```sh
+    force-qtype-SOA 65
+    ```
+
+1. How to resolve localhost ip by hostname?
+    smartdns can cooperate with the dhcp server of DNSMASQ to support the resolution of local host name to IP address. You can configure smartdns to read the lease file of dnsmasq and support the resolution. The specific configuration parameters are as follows, (note that the DNSMASQ lease file may be different for each system and needs to be configured according to the actual situation)
+
+    ```sh
+    dnsmasq-lease-file /var/lib/misc/dnsmasq.leases
+    ````\
+
+    After the configuration is complete, you can directly use the host name to connect to the local machine. But need to pay attention:
+
+    * Windows system uses mDNS to resolve addresses by default. If you need to use smartdns to resolve addresses under Windows, you need to add `.` after the host name, indicating that DNS resolution is used. Such as `ping smartdns.`
 
 ## Compile
 

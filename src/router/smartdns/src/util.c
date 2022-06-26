@@ -133,7 +133,7 @@ errout:
 	return NULL;
 }
 
-int getaddr_by_host(char *host, struct sockaddr *addr, socklen_t *addr_len)
+int getaddr_by_host(const char *host, struct sockaddr *addr, socklen_t *addr_len)
 {
 	struct addrinfo hints;
 	struct addrinfo *result = NULL;
@@ -466,6 +466,31 @@ char *reverse_string(char *output, const char *input, int len, int to_lower_case
 		}
 		output++;
 		len--;
+	}
+
+	*output = 0;
+
+	return begin;
+}
+
+char *to_lower_case(char *output, const char *input, int len)
+{
+	char *begin = output;
+	int i = 0;
+	if (len <= 0) {
+		*output = 0;
+		return output;
+	}
+
+	len--;
+	while (i < len && *(input + i) != '\0') {
+		*output = *(input + i);
+		if (*output >= 'A' && *output <= 'Z') {
+			/* To lower case */
+			*output = *output + 32;
+		}
+		output++;
+		i++;
 	}
 
 	*output = 0;
@@ -1050,6 +1075,7 @@ void print_stack(void)
 {
 	const size_t max_buffer = 30;
 	void *buffer[max_buffer];
+	int idx = 0;
 
 	struct backtrace_state state = {buffer, buffer + max_buffer};
 	_Unwind_Backtrace(unwind_callback, &state);
@@ -1059,7 +1085,7 @@ void print_stack(void)
 	}
 	
 	tlog(TLOG_FATAL, "Stack:");
-	for (int idx = 0; idx < frame_num; ++idx) {
+	for (idx = 0; idx < frame_num; ++idx) {
 		const void *addr = buffer[idx];
 		const char *symbol = "";
 

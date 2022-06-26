@@ -35,6 +35,7 @@ extern "C" {
 #define DNS_MAX_BIND_IP 16
 #define DNS_MAX_SERVERS 64
 #define DNS_MAX_SERVER_NAME_LEN 128
+#define DNS_MAX_PTR_LEN 128
 #define DNS_MAX_IPSET_NAMELEN 32
 #define DNS_GROUP_NAME_LEN 32
 #define DNS_NAX_GROUP_NUMBER 16
@@ -72,7 +73,7 @@ typedef enum {
 #define DOMAIN_CHECK_NONE 0
 #define DOMAIN_CHECK_ICMP 1
 #define DOMAIN_CHECK_TCP 2
-#define DOMAIN_CHECK_NUM 2
+#define DOMAIN_CHECK_NUM 3
 
 #define DOMAIN_FLAG_ADDR_SOA (1 << 0)
 #define DOMAIN_FLAG_ADDR_IPV4_SOA (1 << 1)
@@ -85,6 +86,7 @@ typedef enum {
 #define DOMAIN_FLAG_IPSET_IPV6_IGN (1 << 8)
 #define DOMAIN_FLAG_NAMESERVER_IGNORE (1 << 9)
 #define DOMAIN_FLAG_DUALSTACK_SELECT (1 << 10)
+#define DOMAIN_FLAG_SMARTDNS_DOMAIN (1 << 11)
 
 #define SERVER_FLAG_EXCLUDE_DEFAULT (1 << 0)
 
@@ -136,14 +138,52 @@ struct dns_server_groups {
 };
 
 struct dns_domain_check_order {
-	char order[DOMAIN_CHECK_NUM];
+	char type;
 	unsigned short tcp_port;
+};
+
+struct dns_domain_check_orders {
+	struct dns_domain_check_order orders[DOMAIN_CHECK_NUM];
 };
 
 struct dns_group_table {
 	DECLARE_HASHTABLE(group, 8);
 };
 extern struct dns_group_table dns_group_table;
+
+struct dns_ptr {
+	struct hlist_node node;
+	char ptr_domain[DNS_MAX_PTR_LEN];
+	char hostname[DNS_MAX_CNAME_LEN];
+};
+
+struct dns_ptr_table {
+	DECLARE_HASHTABLE(ptr, 16);
+};
+extern struct dns_ptr_table dns_ptr_table;
+
+typedef enum dns_hosts_type {
+	DNS_HOST_TYPE_HOST = 0,
+	DNS_HOST_TYPE_DNSMASQ = 1,
+} dns_hosts_type;
+
+struct dns_hosts {
+	struct hlist_node node;
+	char domain[DNS_MAX_CNAME_LEN];
+	dns_hosts_type host_type;
+	int dns_type;
+	int is_soa;	
+	union {
+		unsigned char ipv4_addr[DNS_RR_A_LEN];
+		unsigned char ipv6_addr[DNS_RR_AAAA_LEN];
+	};
+};
+
+struct dns_hosts_table {
+	DECLARE_HASHTABLE(hosts, 16);
+};
+extern struct dns_hosts_table dns_hosts_table;
+extern int dns_hosts_record_num;
 
 struct dns_servers {
 	char server[DNS_MAX_IPLEN];
@@ -221,6 +261,7 @@ extern int dns_conf_cachesize;
 extern int dns_conf_prefetch;
 extern int dns_conf_serve_expired;
 extern int dns_conf_serve_expired_ttl;
+extern int dns_conf_serve_expired_prefetch_time;
 extern int dns_conf_serve_expired_reply_ttl;
 extern struct dns_servers dns_conf_servers[DNS_MAX_SERVERS];
 extern int dns_conf_server_num;
@@ -236,7 +277,7 @@ extern char dns_conf_ca_path[DNS_MAX_PATH];
 extern char dns_conf_cache_file[DNS_MAX_PATH];
 extern int dns_conf_cache_persist;
 
-extern struct dns_domain_check_order dns_conf_check_order;
+extern struct dns_domain_check_orders dns_conf_check_orders;
 
 extern struct dns_server_groups dns_conf_server_groups[DNS_NAX_GROUP_NUMBER];
 extern int dns_conf_server_group_num;
@@ -254,11 +295,16 @@ extern struct dns_conf_address_rule dns_conf_address_rule;
 extern int dns_conf_dualstack_ip_selection;
 extern int dns_conf_dualstack_ip_selection_threshold;
 
+extern int dns_conf_max_reply_ip_num;
+
 extern int dns_conf_rr_ttl;
+extern int dns_conf_rr_ttl_reply_max;
 extern int dns_conf_rr_ttl_min;
 extern int dns_conf_rr_ttl_max;
 extern int dns_conf_force_AAAA_SOA;
 extern int dns_conf_ipset_timeout_enable;
+
+extern int dns_conf_force_no_cname;
 
 extern struct dns_edns_client_subnet dns_conf_ipv4_ecs;
 extern struct dns_edns_client_subnet dns_conf_ipv6_ecs;
@@ -268,6 +314,8 @@ extern char dns_conf_sni_proxy_ip[DNS_MAX_IPLEN];
 void dns_server_load_exit(void);
 
 int dns_server_load_conf(const char *file);
+
+int dns_server_check_update_hosts(void);
 
 extern int config_addtional_file(void *data, int argc, char *argv[]);
 #ifdef __cpluscplus
