@@ -14,8 +14,8 @@ function service(id, name, port_start, port_end, protocol) {
 	this.modified = false;
 }
 
-services=new Array();
-services_length=0;
+services = new Array();
+services_length = 0;
 /* Init. services data structure */
 <% filter_port_services_get("user_list", "0"); %>
 
@@ -25,24 +25,24 @@ function setValue() {
 	document.PortServices.Add_Service_Name.value =
 		services[document.PortServices.ServiceTable.options[document.PortServices.ServiceTable.selectedIndex].value].name;
 	switch(services[document.PortServices.ServiceTable.options[
-		document.PortServices.ServiceTable.selectedIndex].value].protocol){
-	 case "icmp":
-	 case 1:
-		document.PortServices.Add_Service_Protocol.selectedIndex = 0;
-		break;
+		document.PortServices.ServiceTable.selectedIndex].value].protocol) {
+		case "icmp":
+		case 1:
+			document.PortServices.Add_Service_Protocol.selectedIndex = 0;
+			break;
 	 default:
-	 case "tcp":
-	 case 6:
-		document.PortServices.Add_Service_Protocol.selectedIndex = 1;
-		break;
-	 case "udp":
-	 case 17:
-		document.PortServices.Add_Service_Protocol.selectedIndex = 2;
-		break;
-	 case "both":
-	 case 23:
-	 	document.PortServices.Add_Service_Protocol.selectedIndex = 3;
-		break;
+		case "tcp":
+		case 6:
+			document.PortServices.Add_Service_Protocol.selectedIndex = 1;
+			break;
+		case "udp":
+		case 17:
+			document.PortServices.Add_Service_Protocol.selectedIndex = 2;
+			break;
+		case "both":
+		case 23:
+			document.PortServices.Add_Service_Protocol.selectedIndex = 3;
+			break;
 	}
 	document.PortServices.Add_Service_Port_S.value =
 		services[document.PortServices.ServiceTable.options[document.PortServices.ServiceTable.selectedIndex].value].start;
@@ -51,29 +51,29 @@ function setValue() {
 	onchange_Prot(document.PortServices.Add_Service_Protocol.options[document.PortServices.Add_Service_Protocol.selectedIndex].value);
 }
 
-function onchange_ServiceTable(index, name, protocol, start, end){
+function onchange_ServiceTable(index, name, protocol, start, end) {
 	name.value = services[index].name;
-	switch(services[index].protocol){
-	 case "icmp":
-	 case 1:
-	 case "1":
-		protocol.selectedIndex = 0;
-      break;
-	 case "tcp":
-	 case 6:
-	 case "6":
-		protocol.selectedIndex = 1;
-		break;
-	 case "udp":
-	 case 17:
-	 case "17":
-		protocol.selectedIndex = 2;
-		break;
-	 case "both":
-	 case 23:
-	 case "23":
-		protocol.selectedIndex = 3;
-		break;
+	switch(services[index].protocol) {
+		case "icmp":
+		case 1:
+		case "1":
+			protocol.selectedIndex = 0;
+			break;
+		case "tcp":
+		case 6:
+		case "6":
+			protocol.selectedIndex = 1;
+			break;
+		case "udp":
+		case 17:
+		case "17":
+			protocol.selectedIndex = 2;
+			break;
+		case "both":
+		case 23:
+		case "23":
+			protocol.selectedIndex = 3;
+			break;
 	}
 	
 	onchange_Prot(document.PortServices.Add_Service_Protocol.options[document.PortServices.Add_Service_Protocol.selectedIndex].value);
@@ -92,7 +92,7 @@ function onclick_Delete() {
 	setValue();
 }
 
-function onclick_Modify(){
+function onclick_Modify() {
 	if(!confirm(errmsg.err53))
 		return false;
 	var index1 = document.PortServices.ServiceTable.options[document.PortServices.ServiceTable.selectedIndex].value;
@@ -106,18 +106,17 @@ function onclick_Modify(){
 
 	document.PortServices.ServiceTable.options[index2].text = services[index1].name + " [ "+
 				services[index1].start+" ~ "+services[index1].end+" ]";
-
 }
 
-function onclick_Add(){
-	if(document.PortServices.Add_Service_Name.value == ""){
+function onclick_Add() {
+	if(document.PortServices.Add_Service_Name.value == "") {
 		alert(errmsg.err54);
 		document.PortServices.Add_Service_Name.focus();
 		return false;
 	}
- 	for(i=0 ; i<services.length ; i++){
+ 	for(i = 0 ; i < services.length ; i++) {
 		if(services[i].deleted == true)	continue;
-		if(document.PortServices.Add_Service_Name.value == services[i].name){
+		if(document.PortServices.Add_Service_Name.value == services[i].name) {
 			alert(errmsg.err55);
 			document.PortServices.Add_Service_Name.focus();
 			return false;
@@ -171,31 +170,28 @@ function submitcheck(F) {
 
  	for(i=0; i<services.length; i++) {
 
-		if(services[i].deleted == true){
+		if(services[i].deleted == true) {
 			continue;
 		}
  		svc = services[i].start+":"+services[i].end+":"+services[i].protocol+":"+services[i].name+"(&nbsp;)";
 		eval("svclen = F.services_array"+index+".value.length + svc.length");
 		if( svclen > 1024) {
-		   index = index + 1;
-		   svclen = 0;
+			index = index + 1;
+			svclen = 0;
 		}
  		eval("F.services_array"+index+".value += svc");
  	}
 	F.change_action.value="gozila_cgi";
-	
 }
 
-function to_submit(F)
-{
-submitcheck(F);
-apply(F);
+function to_submit(F) {
+	submitcheck(F);
+	apply(F);
 }
 
-function to_apply(F)
-{
-submitcheck(F);
-applytake(F);
+function to_apply(F) {
+	submitcheck(F);
+	applytake(F);
 }
 
 function onchange_Prot(I) {
@@ -220,7 +216,7 @@ addEvent(window, "load", function() {
 addEvent(window, "unload", function() {
 	top.opener.window.location.href =  ref_page;
 });
-		
+
 		//]]>
 		</script>
 	</head>
@@ -282,15 +278,13 @@ addEvent(window, "unload", function() {
 					<select name="ServiceTable" size="12" onchange="onchange_ServiceTable(ServiceTable.options[ServiceTable.selectedIndex].value,Add_Service_Name, Add_Service_Protocol, Add_Service_Port_S, Add_Service_Port_E)" >
 						<script type="text/javascript">
 						//<![CDATA[
-
-							var i=0;
-							for(i=0;i<services_length;i++)
-								document.write("<option value="+i+">"+services[i].name+ " [ "+
-								services[i].start+" ~ "+
-								services[i].end + " ]" + "</option>");
-							
-							//]]>
-							</script>
+						var i=0;
+						for(i=0;i<services_length;i++)
+							document.write("<option value="+i+">"+services[i].name+ " [ "+
+							services[i].start+" ~ "+
+							services[i].end + " ]" + "</option>");
+						//]]>
+						</script>
 					</select>
 				</div>
 			</fieldset><br />
