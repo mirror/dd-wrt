@@ -270,7 +270,6 @@ EJ_VISIBLE void ej_show_clocks(webs_t wp, int argc, char_t ** argv)
 	}
 
 	if (in_clock_array && nvram_exists("clkfreq")) {
-
 		show_caption(wp, "label", "management.clock_frq", NULL);
 		websWrite(wp, "<select name=\"overclocking\">\n");
 		i = 0;
@@ -280,7 +279,6 @@ EJ_VISIBLE void ej_show_clocks(webs_t wp, int argc, char_t ** argv)
 			i++;
 
 		}
-
 		websWrite(wp, "</select>\n</div>\n");
 	} else {
 		show_caption(wp, NULL, "management.clock_support", "</div>\n");
@@ -313,7 +311,6 @@ EJ_VISIBLE void ej_show_routing(webs_t wp, int argc, char_t ** argv)
 	websWrite(wp, "document.write(\"<option value=\\\"static\\\" %s >\" + share.router + \"</option>\");\n", nvram_selmatch(wp, "wk_mode", "static") ? "selected=\\\"selected\\\"" : "");
 	websWrite(wp, "//]]>\n</script>\n");
 	return;
-
 }
 
 EJ_VISIBLE void ej_has_routing(webs_t wp, int argc, char_t ** argv)
@@ -344,7 +341,6 @@ extern void *getUEnv(char *name);
 
 EJ_VISIBLE void ej_show_connectiontype(webs_t wp, int argc, char_t ** argv)
 {
-
 	websWrite(wp, "<script type=\"text/javascript\">\n//<![CDATA[\n");
 	websWrite(wp, "document.write(\"<option value=\\\"disabled\\\" %s >\" + share.disabled + \"</option>\");\n", nvram_selmatch(wp, "wan_proto", "disabled") ? "selected=\\\"selected\\\"" : "");
 	websWrite(wp, "document.write(\"<option value=\\\"static\\\" %s >\" + idx.static_ip + \"</option>\");\n", nvram_selmatch(wp, "wan_proto", "static") ? "selected=\\\"selected\\\"" : "");
@@ -484,7 +480,7 @@ EJ_VISIBLE void ej_show_paypal(webs_t wp, int argc, char_t ** argv)
 	websWrite(wp, "<input type=\"hidden\" name=\"currency_code\" value=\"EUR\" />");
 	websWrite(wp, "<input type=\"hidden\" name=\"lc\" value=\"en\" />");
 	websWrite(wp, "<input type=\"hidden\" name=\"tax\" value=\"0\" />");
-	websWrite(wp, "<input type=\"image\" src=\"images/paypal.png\" name=\"submit\" />");
+	websWrite(wp, "<input type=\"image\" alt=\"Paypal DD-WRT development support\" src=\"images/paypal.png\" name=\"submit\" />");
 	websWrite(wp, "</form>");
 	//websWrite(wp,
 	//        "<br /><script type=\"text/javascript\">Capture(donate.mb)</script><br />\n");

@@ -6,7 +6,7 @@ function setWirelessTable() {
 	var table = document.getElementById("wireless_table");
 	var val = arguments;
 	if (!table)
-	    return;
+		return;
 	cleanTable(table);
 	if(!val.length) {
 		var cell = table.insertRow(-1).insertCell(-1);
@@ -17,25 +17,25 @@ function setWirelessTable() {
 	}
 	for(var i = 0; i < val.length; i = i + 17) {
 		var row = table.insertRow(-1);
-		
+
 		var mac = val[i];
 		if ("<% nvg("maskmac"); %>" != "1") {
 		  var cellmac = row.insertCell(-1);
-		if (val[i + 11] == 0) {
-			cellmac.title = share.oui;
-		} else {
-			cellmac.title = status_wireless.chaininfo + " [" + val[i + 11];
-			if (val[i + 12] != 0) {
-			cellmac.title = cellmac.title + "," + val[i + 12];
+			if (val[i + 11] == 0) {
+				cellmac.title = share.oui;
+			} else {
+				cellmac.title = status_wireless.chaininfo + " [" + val[i + 11];
+				if (val[i + 12] != 0) {
+					cellmac.title = cellmac.title + "," + val[i + 12];
+				}
+				if (val[i + 13] != 0) {
+					cellmac.title = cellmac.title + "," + val[i + 13];
+				}
+				if (val[i + 14] != 0) {
+					cellmac.title = cellmac.title + "," + val[i + 14];
+				}
+				cellmac.title = cellmac.title + "]";
 			}
-			if (val[i + 13] != 0) {
-			cellmac.title = cellmac.title + "," + val[i + 13];
-			}
-			if (val[i + 14] != 0) {
-			cellmac.title = cellmac.title + "," + val[i + 14];
-			}
-			cellmac.title = cellmac.title + "]";
-		}
 		  cellmac.style.cursor = "pointer";
 		  cellmac.style.textDecoration = "underline";
 		  eval("addEvent(cellmac, 'click', function() { getOUIFromMAC('" + mac + "') })");
@@ -57,7 +57,7 @@ function setWirelessTable() {
 		} else {
 			iface.innerHTML = label;
 		}
-		
+
 		row.insertCell(-1).innerHTML = val[i + 3];
 		row.insertCell(-1).innerHTML = val[i + 4];		
 		row.insertCell(-1).innerHTML = val[i + 5];		
@@ -79,9 +79,10 @@ function setWDSTable() {
 		setElementVisible("wds", false);
 		return;
 	}
+
 	for(var i = 0; i < val.length; i = i + 6) {
 		var row = table.insertRow(-1);
-		
+
 		var mac = val[i];
 		if ("<% nvg("maskmac"); %>" != "1") {
 		  var cellmac = row.insertCell(-1);
@@ -101,7 +102,7 @@ function setWDSTable() {
 		iface.style.textDecoration = "none";
 		eval("addEvent(iface, 'click', function() { openBW('" + ifn + "') })");
 		iface.innerHTML = ifn;
-				
+
 		row.insertCell(-1).innerHTML = val[i + 2];
 		row.insertCell(-1).innerHTML = val[i + 3];
 		row.insertCell(-1).innerHTML = val[i + 4];
@@ -123,7 +124,6 @@ function setDHCPTable() {
 		return;
 	}
 	for(var i = 0; i < val.length; i = i + 7) {
-		
 		var row = table.insertRow(-1);
 		row.insertCell(-1).innerHTML = val[i];
 
@@ -140,7 +140,7 @@ function setDHCPTable() {
 			iface.innerHTML = label;
 		}
 		row.insertCell(-1).innerHTML = val[i + 1];
-		
+
 		var mac = val[i + 2];
 		if ("<% nvg("maskmac"); %>" != "1") {
 		  var cellmac = row.insertCell(-1);
@@ -152,7 +152,6 @@ function setDHCPTable() {
 		} else {
 		  row.insertCell(-1).innerHTML = mac;		 
 		}
-
 		row.insertCell(-1).innerHTML = val[i + 3];
 	}
 }
@@ -221,8 +220,7 @@ addEvent(window, "unload", function() {
 	update.stop();
 });
 
-function refresh(F)
-{
+function refresh(F) {
 	F.submit();
 }
 
@@ -264,7 +262,7 @@ function refresh(F)
 							<input type="hidden" name="next_page" value="Info.htm" />
 							<input type="hidden" name="change_action" value="gozila_cgi" />
 							<input type="hidden" name="submit_type" value="refresh" />
-							
+
 							<h2><% tran("info.h2"); %></h2>
 							<div class="col2l">
 								<fieldset>
@@ -322,8 +320,7 @@ function refresh(F)
 										<span id="lan_ip"><% nvg("lan_ipaddr"); %></span>&nbsp;
 									</div>
 								</fieldset><br />
-	<% ifndef("HASWIFI", "<!--"); %>
-								
+								<% ifndef("HASWIFI", "<!--"); %>
 								<fieldset>
 									<legend><% tran("share.wireless"); %></legend>
 									<% show_wifiselect(); %>
@@ -353,7 +350,6 @@ function refresh(F)
 										<span id="wl_rate"><% get_currate(); %></span>&nbsp;
 									</div>
 								</fieldset><br />
-								
 								<fieldset>
 									<legend><% tran("status_wireless.legend2"); %></legend>
 									<div class="setting">
@@ -365,18 +361,17 @@ function refresh(F)
 										<span id="packet_tx"></span>&nbsp;
 									</div>
 								</fieldset><br />
-	<% ifndef("HASWIFI", "-->"); %>
+							<% ifndef("HASWIFI", "-->"); %>
 							</div>
-	
 							<div class="col2r">
 								<fieldset>
 									<legend><% tran("info.srv"); %></legend>
 									<% get_service_state(); %>
-							<!--		<div class="setting">
+									<!--		<div class="setting">
 										<div class="label"><% tran("service.dhcp_legend2"); %></div>
 										<% nvm("lan_proto", "dhcp", "<script type="text/javascript">Capture(share.enabled)</script>"); %><% nvm("lan_proto", "static", "<script type="text/javascript">Capture(share.disabled)</script>"); %>&nbsp;
 									</div>
-							-->
+									-->
 									<div class="setting">
 										<div class="label"><% tran("radius.titl"); %></div>
 									<% nvim("wl0_mode", "ap", "<script type="text/javascript">Capture(wl_basic.ap)</script><!--"); %><% nvm("wl0_radauth","0","<script type="text/javascript">Capture(share.disabled)</script>"); %><% nvm("wl0_radauth","1","<script type="text/javascript">Capture(share.enabled)</script>"); %><% nvim("wl0_mode", "ap", "-->"); %>&nbsp;
@@ -410,7 +405,6 @@ function refresh(F)
 									</div>
 									<% ifndef("USB", "-->"); %>
 								</fieldset><br />
-								
 								<fieldset>
 									<legend><% tran("status_router.legend3"); %></legend>
 									<div class="setting">
@@ -442,14 +436,13 @@ function refresh(F)
 										<span id="mem_inactive"></span>&nbsp;
 									</div>
 								</fieldset><br />
-								
 								<fieldset>
 									<legend><% tran("status_router.legend6"); %></legend>
 										<div class="setting">
 											<div class="label">NVRAM</div>
 											<span id="nvram"><% statnv(); %></span>&nbsp;
 										</div>
-					<% ifndef("SAMBA", "<!--"); %>
+										<% ifndef("SAMBA", "<!--"); %>
 										<div class="setting">
 											<div class="label">CIFS</div>
 											<script type="text/javascript">
@@ -459,8 +452,8 @@ function refresh(F)
 											//]]>
 											</script>
 										</div>
-					<% ifndef("SAMBA", "-->"); %>
-					<% ifndef("JFFS2", "<!--"); %>
+										<% ifndef("SAMBA", "-->"); %>
+										<% ifndef("JFFS2", "<!--"); %>
 									<div class="setting">
 										<div class="label">JFFS2</div>
 										<script type="text/javascript">
@@ -470,8 +463,8 @@ function refresh(F)
 										//]]>
 										</script>
 									</div>
-					<% ifndef("JFFS2", "-->"); %>
-					<% ifndef("MMC", "<!--"); %>
+									<% ifndef("JFFS2", "-->"); %>
+									<% ifndef("MMC", "<!--"); %>
 									<div class="setting">
 										<div class="label">MMC</div>
 										<script type="text/javascript">
@@ -481,9 +474,9 @@ function refresh(F)
 										//]]>
 										</script>
 									</div>
-					<% ifndef("MMC", "-->"); %>
+									<% ifndef("MMC", "-->"); %>
 								</fieldset><br />
-					<% ifndef("GPSI", "<!--"); %>
+								<% ifndef("GPSI", "<!--"); %>
 								<fieldset>
 									<legend><% tran("status_gpsi.legend"); %></legend>
 									<div class="setting">
@@ -519,10 +512,9 @@ function refresh(F)
 										<span id="gps_link"><% getgpslink(); %></span>&nbsp;
 									</div>
 								</fieldset><br />
-					<% ifndef("GPSI", "-->"); %>
-								
+								<% ifndef("GPSI", "-->"); %>
 							</div><br clear="all" />
-	<% ifndef("HASWIFI", "<!--"); %>
+							<% ifndef("HASWIFI", "<!--"); %>
 							<h2><% tran("share.wireless"); %></h2>
 							<fieldset>
 								<legend><% getwirelessstatus(); %></legend>
@@ -547,7 +539,6 @@ function refresh(F)
 							//]]>
 							</script>
 							</fieldset><br />
-							
 							<div id="wds" style="display:none">
 								<fieldset>
 									<legend><% tran("status_wireless.wds"); %></legend>
@@ -568,10 +559,8 @@ function refresh(F)
 							//]]>
 							</script>
 								</fieldset><br />
-								
 							</div>
-	<% ifndef("HASWIFI", "-->"); %>
-	
+							<% ifndef("HASWIFI", "-->"); %>
 							<div id="dhcp" style="display:none">
 								<h2><% tran("share.dhcp"); %></h2>
 								<fieldset>
@@ -585,14 +574,13 @@ function refresh(F)
 											<th sortdir="up" width="25%"><% tran("idx.dhcp_lease"); %></th>
 										</tr>
 									</table>
-							<script type="text/javascript">
-							//<![CDATA[
-							var t = new SortableTable(document.getElementById('dhcp_leases_table'), 1000);
-							//]]>
-							</script>
+										<script type="text/javascript">
+										//<![CDATA[
+										var t = new SortableTable(document.getElementById('dhcp_leases_table'), 1000);
+										//]]>
+										</script>
 								</fieldset><br />
 							</div>
-	
 							<div class="submitFooter">
 								<script type="text/javascript">
 								 //<![CDATA[
