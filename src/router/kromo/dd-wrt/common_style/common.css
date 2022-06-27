@@ -300,7 +300,11 @@ table[summary='week days table'] {
   margin-left: -1.3rem;
 }
 table#radio_table {
-  border-spacing: .1666em
+  border-spacing: .1666em;
+  text-align: center;
+}
+table#radio_table tr td {
+  height: 18px;
 }
 table tr th {
   border-style: solid;
