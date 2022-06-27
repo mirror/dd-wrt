@@ -88,15 +88,15 @@ static int nvram_main(int argc, char **argv)
 	if (!*argv) {
 		fprintf(stderr, "usage: nvram [get name] [set name=value] [unset name] [show|getall] [clear|erase] [commit] [backup filename] [restore filename]\n"	//
 			"\n"	//
-			"get name         : returns value for given name\n"	//
-			"set name=value   : set value for given name\n"	//
-			"unset name       : unset value for given name\n"	//
-			"commit           : writes current parameter set back to nvram storage (flashmemory or filesystem)\n" //
-			"show|getall      : shows all stored nvram parameters with values\n"	//
-			"clear|erase      : deletes all nvram parameters, but keeps important system variables needed to keep the device in runnable state\n"	//
-			"backup fileame   : backing up all nvram parameters to the given filename (uses same format as in webgui)\n"	//
-			"restore filename : restores all nvram parameters from backup file. it will not overwrite important system variables\n"	//
-			"--force          : optional argument which overrides device name and compatiblity check for nvram restore operations. this maybe dangerous\n");
+			"get name         : Returns the value for a given name\n"	//
+			"set name=value   : Sets a value for the datavalue by its name.\n"	//
+			"unset name       : Unsets the nvram value pair by its name\n"	//
+			"commit           : Writes the pending data operations to nvram storage (flashmemory or filesystem)\n" //
+			"show|getall      : Shows all stored nvram names and values.\n"	//
+			"clear | erase    : Deletes all NVRAM names and values while keeping important system variables needed for the device to remain in runnable state\n"	//
+			"backup fileame   : Backup the NVRAM to the desired filename.\n"	//
+			"restore filename : Restores all NVRAM names and values from the desired backup filename. Important system variables are not overwritten\n"	//
+			"--force          : Warning: optional argument which overrides the device name and compatiblity check for nvram restore operations.\n");
 		exit(0);
 	}
 
