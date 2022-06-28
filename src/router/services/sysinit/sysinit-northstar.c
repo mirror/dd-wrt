@@ -5549,6 +5549,8 @@ void start_sysinit(void)
 			nvram_commit();
 			nvram_seti("0:ddwrt", 1);
 		}
+		nvram_set("1:sw_txchain_mask","0xf");
+		nvram_set("1:sw_rxchain_mask","0xf");
 		nvram_unset("et1macaddr");
 		nvram_unset("et2macaddr");
 		set_gpio(0, 1);	//USB
