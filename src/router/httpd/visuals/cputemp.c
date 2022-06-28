@@ -255,7 +255,7 @@ EJ_VISIBLE void ej_get_cputemp(webs_t wp, int argc, char_t ** argv)
 #ifdef HAVE_NEWPORT
 	if (!fpsys) {
 		SYSTEMP_MUL = 1000;
-		fpsys = fopen("/sys/class/hwmon/hwmon1/temp2_input", "rb");
+		fpsys = fopen("/sys/class/hwmon/hwmon0/temp2_input", "rb");
 	}
 #endif
 
