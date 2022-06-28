@@ -131,9 +131,11 @@ int check_arguments(int argc, char *argv[])
 		fprintf(stdout, "%s servicename start|stop|restart|main args... [-f]\n", argv[0]);
 		fprintf(stdout, "options:\n");
 		fprintf(stdout, "-f : force start of service, no matter if neccessary\n");
-		fprintf(stdout, "list of services:\n");
+		fprintf(stdout, "List of services:\n");
 		int i;
 		for (i = 0; i < sizeof(functiontable) / sizeof(struct fn); i++) {
+			if (!functiontable[i].start && !functiontable[i].stop)
+				continue;
 			char feature[128] = { 0 };
 			if (functiontable[i].start) {
 				strcat(feature, "[start] ");
@@ -144,9 +146,20 @@ int check_arguments(int argc, char *argv[])
 			if (functiontable[i].stop && functiontable[i].start) {
 				strcat(feature, "[restart] ");
 			}
-			if (functiontable[i].main) {
-				strcat(feature, "[main]");
-			}
+			if (strlen(functiontable[i].name) > 15)
+				fprintf(stdout, "\t%s\t%s\n", functiontable[i].name, feature);
+			else if (strlen(functiontable[i].name) > 7)
+				fprintf(stdout, "\t%s\t\t%s\n", functiontable[i].name, feature);
+			else
+				fprintf(stdout, "\t%s\t\t\t%s\n", functiontable[i].name, feature);
+		}
+
+		fprintf(stdout, "\nList of main routines:\n");
+		for (i = 0; i < sizeof(functiontable) / sizeof(struct fn); i++) {
+			if (!functiontable[i].main)
+				continue;
+			char feature[128] = { 0 };
+			strcat(feature, "[main]");
 			if (strlen(functiontable[i].name) > 15)
 				fprintf(stdout, "\t%s\t%s\n", functiontable[i].name, feature);
 			else if (strlen(functiontable[i].name) > 7)
