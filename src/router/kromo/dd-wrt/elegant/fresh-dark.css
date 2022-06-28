@@ -156,8 +156,9 @@ td[bgcolor='#C0C0C0']:hover {
   background-color: #1a1a1a;
 }
 .submitFooter {
-  background-color: #222;
-  border: 1px solid #333;
+  background-color: #ccc;
+  border-color: #999;
+  color: #000;
 }
 .meter {
   background-color: #777;
