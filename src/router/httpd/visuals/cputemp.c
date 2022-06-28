@@ -378,6 +378,8 @@ EJ_VISIBLE void ej_get_cputemp(webs_t wp, int argc, char_t ** argv)
 				int temp;
 				fscanf(fp2, "%d", &temp);
 				fclose(fp2);
+				if (temp < 0)
+				    goto exit_error;
 				if (cpufound) {
 					websWrite(wp, " / ");
 				}
@@ -388,6 +390,7 @@ EJ_VISIBLE void ej_get_cputemp(webs_t wp, int argc, char_t ** argv)
 					websWrite(wp, "wlan%d %d &#176;C", i, temp / 1000);
 				cpufound = 1;
 			}
+			exit_error:;
 		}
 	}
 #endif
