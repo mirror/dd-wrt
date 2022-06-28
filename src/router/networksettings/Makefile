@@ -42,6 +42,21 @@ endif
 ifeq ($(CONFIG_LSX),y)
 MODULE:=networksettings.rb532
 endif
+ifeq ($(CONFIG_PLATFORM),arm)
+MODULE:=networksettings.rb532
+endif
+ifeq ($(CONFIG_PLATFORM),armeb)
+MODULE:=networksettings.rb532
+endif
+ifeq ($(CONFIG_PLATFORM),powerpc)
+MODULE:=networksettings.rb532
+endif
+ifeq ($(CONFIG_PLATFORM),mips64)
+MODULE:=networksettings.rb532
+endif
+ifeq ($(CONFIG_PLATFORM),aarch64)
+MODULE:=networksettings.rb532
+endif
 #ifeq ($(CONFIG_BUFFALO),y)
 #MODULE:=networksettings.buffalo
 #endif
