@@ -471,13 +471,27 @@ static int write_main(int argc, char *argv[])
 	sysinfo(&info);
 	eval("umount", "-r", "-f", "/jffs");
 #ifndef HAVE_CAMBRIA
+#ifdef HAVE_SNMP
 	stop_service("snmp");
+#endif
+#ifdef HAVE_PPPOESERVER
 	stop_service("pppoeserver");
+#endif
+#ifdef HAVE_OLSRD
 	stop_service("olsrd");
+#endif
+#ifdef HAVE_UPNP
 	stop_service("upnp");
+#endif
+#ifdef HAVE_FREERADIUS
 	stop_service("freeradius");
+#endif
+#ifdef HAVE_TRANSMISSION
 	stop_service("transmission");
+#endif
+#ifdef HAVE_PLEX
 	stop_service("plex");
+#endif
 	killall("process_monitor", SIGTERM);
 	killall("wdswatchdog.sh", SIGTERM);
 	killall("schedulerb.sh", SIGTERM);
