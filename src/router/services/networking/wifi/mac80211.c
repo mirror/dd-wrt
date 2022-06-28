@@ -334,15 +334,15 @@ void configure_single_ath9k(int count)
 	if (!strcmp(netmode, "disabled"))
 		return;
 	MAC80211DEBUG();
-	if (is_ath10k(dev) && has_fwswitch(dev) ) {
+	if (is_ath10k(dev) && has_fwswitch(dev)) {
 		char fwtype[32];
 		char fwtype_use[32];
 		sprintf(fwtype, "%s_fwtype", dev);
 		sprintf(fwtype_use, "%s_fwtype_use", dev);
 		if (!nvram_default_match(fwtype, nvram_default_get(fwtype_use, "ddwrt"), "ddwrt")) {
 			nvram_set(fwtype_use, nvram_safe_get(fwtype));
-//			nvram_set(dualband_use, nvram_safe_get(dualband));
-//			sysprintf("echo %s > /sys/kernel/debug/ieee80211/%s/ath10k/dualband", nvram_safe_get(dualband), wif);
+//                      nvram_set(dualband_use, nvram_safe_get(dualband));
+//                      sysprintf("echo %s > /sys/kernel/debug/ieee80211/%s/ath10k/dualband", nvram_safe_get(dualband), wif);
 			if (nvram_match(fwtype, "vanilla"))
 				sysprintf("echo vanilla > /sys/kernel/debug/ieee80211/%s/ath10k/fw_post", wif);
 			else
@@ -1057,8 +1057,8 @@ void setupHostAP_generic_ath9k(char *prefix, FILE * fp, int isrepeater, int aoss
 	}
 	MAC80211DEBUG();
 	if (has_ac(prefix) && has_5ghz(prefix)) {
-		if ((!strcmp(netmode, "mixed") ||	//
-		     !strcmp(netmode, "ac-only") || !strcmp(netmode, "acn-mixed"))) {
+		if (freq >= 4000 && (!strcmp(netmode, "mixed") ||	//
+				     !strcmp(netmode, "ac-only") || !strcmp(netmode, "acn-mixed"))) {
 			char shortgi[32];
 			sprintf(shortgi, "%s_shortgi", prefix);
 			char mubf[32];
