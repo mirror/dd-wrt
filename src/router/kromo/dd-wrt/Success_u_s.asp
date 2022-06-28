@@ -40,31 +40,28 @@ addEvent(window, "unload", function() {
 		</script>
 	</head>
 	
-	<body>
+	<body class="gui">
 		<div class="message">
-			<div>
-				<form name="success">
-					<% tran("success.upgrade"); %><br /><br />
-					<div class="center">
-						<script type="text/javascript">
-						//<![CDATA[
-							var bar1 = createBar(500,15,100,15,<% getboottime(); %> / 5 - 3,"to_submit()");
-							bar1.togglePause();
-						//]]>
-						</script>
+			<form name="success">
+				<% tran("success.upgrade"); %><br /><br />
+				<div class="center">
+					<script type="text/javascript">
+					//<![CDATA[
+						var bar1 = createBar(500,15,100,15,<% getboottime(); %> / 5 - 3,"to_submit()");
+						bar1.togglePause();
+					//]]>
+					</script>
 				</div>
 				<div id="mess" style="display:none"><br /><br />
 					<div style="text-align:left">
 						<script type="text/javascript">
 						//<![CDATA[
-
-							if (rest_default == 1) {
-								Capture(success.alert_reset);
-							}
-							Capture(success.alert1);
-						
-										//]]>
-										</script>
+						if (rest_default == 1) {
+							Capture(success.alert_reset);
+						}
+						Capture(success.alert1);
+						//]]>
+						</script>
 						<ul>
 							<li><% tran("success.alert2"); %></li>
 							<li><% tran("success.alert3"); %></li>
@@ -72,15 +69,13 @@ addEvent(window, "unload", function() {
 					</div>
 					<script type="text/javascript">
 					//<![CDATA[
-
-							document.write("<input class=\"button\" type=\"button\" name=\"action\" value=\"" + sbutton.continu + "\" onclick=\"to_submit()\" />");
-							if (browserName == "Microsoft Internet Explorer")
-								document.write("<input class=\"button\" type=\"button\" value=\"" + sbutton.clos + "\" onclick=\"opener=self;self.close();\" />");
-						//]]>
-						</script>
+					document.write("<input class=\"button\" type=\"button\" name=\"action\" value=\"" + sbutton.continu + "\" onclick=\"to_submit()\" />");
+					if (browserName == "Microsoft Internet Explorer")
+						document.write("<input class=\"button\" type=\"button\" value=\"" + sbutton.clos + "\" onclick=\"opener=self;self.close();\" />");
+					//]]>
+					</script>
 				</div>
-				</form>
-			</div>
+			</form>
 		</div>
-   </body>
+	</body>
 </html>
