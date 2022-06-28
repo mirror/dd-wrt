@@ -1667,7 +1667,7 @@ int wlconf(char *name)
 	cprintf("get instance\n");
 	int offset = 0;
 #ifdef __CONFIG_DHDAP__
-	if (!strcmp(name, "eth2")) {
+	if (getRouterBrand() != ROUTER_NETGEAR_R7000P && !strcmp(name, "eth2")) {
 		if (!dhd_probe("eth1") && dhd_probe("eth2") && !wl_probe("eth2"))
 			offset = 1;
 		else if (!dhd_probe("eth2") && dhd_probe("eth1") && !wl_probe("eth1"))
@@ -3312,7 +3312,7 @@ int wlconf(char *name)
 		/* Set the MAC list */
 		maclist = (struct maclist *)buf;
 		maclist->count = 0;
-		if (!nvram_match(strcat_r(bsscfg->prefix, "macmode", tmp), "disabled")) {
+		if (nvram_match(strcat_r(bsscfg->prefix, "macmode", tmp), "allow") || nvram_match(strcat_r(bsscfg->prefix, "macmode", tmp), "deny")) {
 			ea = maclist->ea;
 			foreach(var, nvram_safe_get(strcat_r(bsscfg->prefix, "maclist", tmp)), next) {
 				if (((char *)((&ea[1])->octet)) > ((char *)(&buf[sizeof(buf)])))
