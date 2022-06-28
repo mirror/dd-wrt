@@ -91,6 +91,7 @@ void start_sysinit(void)
 	insmod("cptpf");	// crypto driver
 	insmod("cptvf");	// crypto driver
 
+	nvram_default_get("use_ath5k", "1");
 	detect_wireless_devices(RADIO_ALL);
 
 	char macaddr[32];
@@ -118,6 +119,13 @@ void start_sysinit(void)
 		eval("gsp_updater", "-f", "/etc/gsc_620x_v61.txt", "-r", "61");
 	if (!strncmp(board, "Gateworks Newport GW61", 22))
 		eval("gsp_updater", "-f", "/etc/gsc_610x_v61.txt", "-r", "61");
+
+	if (!strncmp(board, "Gateworks Newport GW6903", 24))
+		eval("gsp_updater", "-f", "/etc/gsc_6903_v61.txt", "-r", "61");
+	if (!strncmp(board, "Gateworks Newport GW6904", 24))
+		eval("gsp_updater", "-f", "/etc/gsc_6904_v61.txt", "-r", "61");
+	if (!strncmp(board, "Gateworks Newport GW6905", 24))
+		eval("gsp_updater", "-f", "/etc/gsc_6905_v61.txt", "-r", "61");
 
 	return;
 }
