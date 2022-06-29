@@ -508,8 +508,9 @@ input.button[onclick*='FilterSummary'] {
   margin-top: -.1rem
 }
 input.button[name='preview_button'] {
-  padding: 0 .6rem 0 .6rem;
+  padding: 0 .6rem .1rem .6rem;
   margin-left: .362em;
+  margin-top: -.11rem
 }
 .off {
   opacity: .6;
