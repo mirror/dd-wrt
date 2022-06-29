@@ -2449,7 +2449,7 @@ static struct nvram_param r7000p_1params[] = {
 	{ "tssiposslope5g", "1" },
 	{ "sb20in80and160lr5ghpo", "0" },
 	{ "maxp5gb3a3", "106" },
-	{ "disband5grp", "0x7" },
+	{ "disband5grp", "0" },
 	{ "boardflags", "0x10001000" },
 	{ "antswitch", "0" },
 	{ "tempsense_slope", "0xff" },
@@ -5551,6 +5551,7 @@ void start_sysinit(void)
 		}
 		nvram_set("1:sw_txchain_mask","0xf");
 		nvram_set("1:sw_rxchain_mask","0xf");
+		nvram_set("1:disband5grp","0");
 		nvram_unset("et1macaddr");
 		nvram_unset("et2macaddr");
 		set_gpio(0, 1);	//USB
