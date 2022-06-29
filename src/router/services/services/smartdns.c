@@ -66,10 +66,16 @@ void start_smartdns(void)
 		fprintf(fp, "prefetch-domain yes\n");
 	if (nvram_matchi("smartdns_serve_expired", 1))
 		fprintf(fp, "serve-expired yes\n");
-	fprintf(fp, "log-size 64K\n");
+	//fprintf(fp, "log-size 64K\n");
+	fprintf(fp, "log-size 32K\n");
 	fprintf(fp, "log-num 1\n");
 	fprintf(fp, "log-level error\n");
 	fprintf(fp, "log-file /tmp/smartdns.log\n");
+//egc: do we really need these certificates and if so are these the right ones?
+#ifdef HAVE_HTTPS
+	fprintf(fp, "ca-file /etc/ssl/ca-bundle.crt\n");
+	fprintf(fp, "ca-path /etc/ssl\n");
+#endif
 #ifdef HAVE_TOR
 	if (nvram_match("tor_enable", "1"))
 		fprintf(fp, "server %s:5353\n", nvram_safe_get("lan_ipaddr"));
