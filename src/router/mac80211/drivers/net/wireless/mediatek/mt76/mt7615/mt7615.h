@@ -141,6 +141,7 @@ struct mt7615_sta {
 struct mt7615_vif {
 	struct mt76_vif mt76; /* must be first */
 	struct mt7615_sta sta;
+	bool sta_added;
 };
 
 struct mib_stats {
@@ -177,7 +178,6 @@ struct mt7615_phy {
 
 	u8 chfreq;
 	u8 rdd_state;
-	int dfs_state;
 
 	u32 rx_ampdu_ts;
 	u32 ampdu_ref;
