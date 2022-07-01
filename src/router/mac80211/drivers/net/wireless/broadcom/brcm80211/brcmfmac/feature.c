@@ -127,6 +127,10 @@ static const struct brcmf_feat_fwfeat brcmf_feat_fwfeat_map[] = {
 	/* brcmfmac4366c-pcie.bin from linux-firmware.git commit 211de1679a68 */
 	{ "01-a794e9e8", BIT(BRCMF_FEAT_MONITOR_FMT_RADIOTAP) }, // dd-wrt firmware
 	/* brcmfmac4366c-pcie.bin from linux-firmware.git commit 211de1679a68 */
+	{ "01-f75020cb", BIT(BRCMF_FEAT_MONITOR) }, // dd-wrt firmware
+	/* brcmfmac4366c-pcie.bin from linux-firmware.git commit 211de1679a68 */
+	{ "01-f75020cb", BIT(BRCMF_FEAT_MONITOR_FMT_RADIOTAP) }, // dd-wrt firmware
+	/* brcmfmac4366c-pcie.bin from linux-firmware.git commit 211de1679a68 */
 };
 
 static void brcmf_feat_firmware_overrides(struct brcmf_pub *drv)
