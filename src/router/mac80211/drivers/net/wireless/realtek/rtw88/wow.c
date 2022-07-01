@@ -9,6 +9,7 @@
 #include "debug.h"
 #include "mac.h"
 #include "ps.h"
+#ifdef CONFIG_PM
 
 static void rtw_wow_show_wakeup_reason(struct rtw_dev *rtwdev)
 {
@@ -911,3 +912,4 @@ out:
 	rtw_wow_clear_wakeups(rtwdev);
 	return ret;
 }
+#endif
