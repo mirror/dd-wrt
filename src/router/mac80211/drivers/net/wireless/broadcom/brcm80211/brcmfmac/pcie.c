@@ -762,12 +762,12 @@ static void brcmf_pcie_bus_console_read(struct brcmf_pciedev_info *devinfo,
 		}
 		if (ch == '\n') {
 			console->log_str[console->log_idx] = 0;
-//			printk(KERN_INFO "%s: CONSOLE: %s", dev_name(bus->dev), console->log_str);
-			if (error)
+			printk(KERN_INFO "%s: CONSOLE: %s", dev_name(bus->dev), console->log_str);
+/*			if (error)
 				__brcmf_err(bus, __func__, "CONSOLE: %s",
 					    console->log_str);
 			else
-				pr_debug("CONSOLE: %s", console->log_str);
+				pr_debug("CONSOLE: %s", console->log_str);*/
 			console->log_idx = 0;
 		}
 	}
