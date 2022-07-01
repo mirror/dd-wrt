@@ -26,7 +26,7 @@ while sleep $SLEEP; do
 				[[ $wg_boot_delay -gt 100 ]] && wg_boot_delay=100
 				nvram set wg_boot_delay=$wg_boot_delay
 				sleep $(($wg_boot_delay*$SLEEP))
-				reboot
+				/sbin/reboot &
 			elif [[ $RESET -eq 1 && $FAILGRP -eq 1 ]]; then
 				logger -p user.warning "WireGuard watchdog: last tunnel failed, Resetting tunnel state, to reboot set wg_onfail_reboot=1"
 				tunnels=$(nvram get oet_tunnels)
