@@ -393,8 +393,8 @@ size_t dhcp_reply(struct dhcp_context *context, char *iface_name, int int_index,
 	  else
 	    safe_strncpy(daemon->addrbuff, iface_name, ADDRSTRLEN);
 	}
-      my_syslog(MS_DHCP | LOG_WARNING, _("no address range available for DHCP request %s %s"),
-		via, daemon->addrbuff);
+//      my_syslog(MS_DHCP | LOG_WARNING, _("no address range available for DHCP request %s %s"),
+//		via, daemon->addrbuff);
       return 0;
     }
 
