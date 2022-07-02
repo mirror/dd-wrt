@@ -853,8 +853,9 @@ management.lang_spanish="Spanyol";
 management.lang_swedish="Svéd";
 management.lang_japanese="Japán";
 management.lang_hungarian="Magyar";
-management.net_legend="IP szűrés beállításai (állítsa be P2Phez)";
-management.net_port="Maximum portok";
+management.net_legend="Hálózati verem hangolása";
+management.net_conctrl="TCP torlódások ellenőrzése";
+management.net_conn="Maximális kapcsolatok";
 management.net_tcptimeout="TCP Timeout";
 management.net_udptimeout="UDP Timeout";
 
