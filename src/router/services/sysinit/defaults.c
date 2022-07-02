@@ -19,10 +19,11 @@
  *
  * $Id:
  */
-
+#define FROM_NVRAM
 #include <epivers.h>
 #include <string.h>
 #include <bcmnvram.h>
+#include <shutils.h>
 #include <utils.h>
 #include <typedefs.h>
 #include <wlioctl.h>
@@ -3695,7 +3696,7 @@ struct nvram_param srouter_defaults[] = {
 	{ 0, 0 }
 };
 #else
-struct nvram_param *srouter_defaults = NULL;
+/*struct nvram_param *srouter_defaults = NULL;
 static unsigned char **values;
 static unsigned int defaultnum;
 static unsigned int stores;
@@ -3758,7 +3759,7 @@ void free_defaults(void)
 	}
 	free(values);
 
-}
+}*/
 #endif
 
 #ifdef HAVE_SKYTEL

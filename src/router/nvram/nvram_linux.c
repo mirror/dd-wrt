@@ -340,4 +340,71 @@ int nvram_used(int *space)
 	return used;
 }
 
+static unsigned char **values;
+static unsigned int defaultnum;
+static unsigned int stores;
+struct nvram_param *load_defaults(void)
+{
+	struct nvram_param *srouter_defaults = NULL;
+	FILE *in = fopen("/etc/defaults.bin", "rb");
+	if (in == NULL)
+		return;
+	unsigned int i;
+	defaultnum = (unsigned int)getc(in);
+	defaultnum |= (unsigned int)getc(in) << 8;
+	defaultnum |= (unsigned int)getc(in) << 16;
+	defaultnum |= (unsigned int)getc(in) << 24;
+	stores = getc(in);	// count of unique values
+
+	unsigned char *index;
+	index = malloc(sizeof(char) * defaultnum);
+	fread(index, defaultnum, 1, in);	// read string index table
+
+	values = malloc(sizeof(char *) * stores);
+	for (i = 0; i < stores; i++) {
+		char temp[4096];
+		int c;
+		int a = 0;
+		while ((c = getc(in)) != 0) {
+			temp[a++] = c;
+		}
+		temp[a] = 0;
+
+		values[i] = strdup(temp);
+	}
+	srouter_defaults = (struct nvram_param *)malloc(sizeof(struct nvram_param) * (defaultnum + 1));
+	memset(srouter_defaults, 0, sizeof(struct nvram_param) * (defaultnum + 1));
+	for (i = 0; i < defaultnum; i++) {
+		char temp[4096];
+		int c;
+		int a = 0;
+		while ((c = getc(in)) != 0) {
+			temp[a++] = c;
+		}
+		temp[a++] = 0;
+		srouter_defaults[i].name = strdup(temp);
+		srouter_defaults[i].value = values[index[i]];
+	}
+	free(index);
+	fclose(in);
+	return srouter_defaults;
+}
+
+void free_defaults(struct nvram_param *srouter_defaults)
+{
+	int i;
+	for (i = defaultnum - 1; i > -1; i--) {
+		if (srouter_defaults[i].name) {
+			free(srouter_defaults[i].name);
+		}
+	}
+	free(srouter_defaults);
+	for (i = stores - 1; i > -1; i--) {
+		free(values[i]);
+	}
+	free(values);
+
+}
+
+
 #include "nvram_generics.h"

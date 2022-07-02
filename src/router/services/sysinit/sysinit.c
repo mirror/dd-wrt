@@ -81,9 +81,8 @@ extern int check_pmon_nv(void);
 static void unset_nvram(void);
 void start_nvram(void);
 
-extern struct nvram_param *srouter_defaults;
-extern void load_defaults(void);
-extern void free_defaults(void);
+extern struct nvram_param * load_defaults(void);
+extern void free_defaults(struct nvram_param *);
 
 extern int f_exists(const char *path);
 
@@ -2142,7 +2141,8 @@ void start_restore_defaults(void)
 	// nvram_set ("il0macaddr", mac);
 	// }
 	// }
-	load_defaults();
+	struct nvram_param *srouter_defaults;
+	srouter_defaults = load_defaults();
 #ifdef HAVE_RB500
 	linux_overrides = generic;
 	int brand = getRouterBrand();
@@ -2392,7 +2392,7 @@ void start_restore_defaults(void)
 			}
 		}
 	}
-	free_defaults();
+	free_defaults(srouter_defaults);
 	if (!*(nvram_safe_get("http_username")) || nvram_match("http_username", "admin")) {
 		char passout[MD5_OUT_BUFSIZE];
 		nvram_set("http_username", DEFAULT_PASS);
