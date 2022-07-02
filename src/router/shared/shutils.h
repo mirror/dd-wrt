@@ -124,6 +124,14 @@ extern char *ether_etoa(const char *e, char *a);
 extern int nvifname_to_osifname(const char *nvifname, char *osifname_buf, int osifname_buf_len);
 extern int osifname_to_nvifname(const char *osifname, char *nvifname_buf, int nvifname_buf_len);
 
+struct nvram_param {
+	char *name;
+	char *value;
+};
+
+extern struct nvram_param * load_defaults(void);
+extern void free_defaults(struct nvram_param *);
+
 extern int dd_system(const char *command);
 extern int sysprintf(const char *fmt, ...);
 extern int f_exists(const char *path);	// note: anything but a directory
