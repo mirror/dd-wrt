@@ -179,6 +179,10 @@ static char *dhm_P =
 static char *dhm_G = "4";
 //unsigned char session_table[SSL_SESSION_TBL_LEN];
 #endif
+struct nvram_param *srouter_defaults;
+
+extern struct nvram_param * load_defaults(void);
+extern void free_defaults(struct nvram_param *);
 
 #ifdef HAVE_REGISTER
 static int registered = -1;
@@ -1378,6 +1382,7 @@ get_client_ip_mac(int conn_fd, webs_t conn_fp)
 static void handle_server_sig_int(int sig)
 {
 	dd_loginfo("httpd", "httpd server shutdown");
+	free_defaults(srouter_defaults);
 	exit(0);
 }
 
@@ -1488,6 +1493,7 @@ int main(int argc, char **argv)
 	fd_set lfdset;
 	int maxfd;
 	airbag_init();
+	srouter_defaults = load_defaults();
 #ifdef HAVE_HTTPS
 	int do_ssl = 0;
 #else
@@ -1970,6 +1976,7 @@ int main(int argc, char **argv)
 		close(ssl_listen6_fd);
 	}
 #endif
+	free_defaults(srouter_defaults);
 	return 0;
 }
 
