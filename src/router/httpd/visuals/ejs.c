@@ -156,7 +156,7 @@ EJ_VISIBLE void ej_nvram_default_get(webs_t wp, int argc, char_t ** argv)
 	struct nvram_param *t;
 	for (t = srouter_defaults; t->name; t++) {
 		if (!strcmp(t->name, argv[0]))
-			websWrite(wp, "%s", nvram_safe_get(t->value));
+			websWrite(wp, "%s", t->value);
 	}
 
 }
