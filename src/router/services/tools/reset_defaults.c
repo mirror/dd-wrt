@@ -25,27 +25,27 @@
 #include <string.h>
 #include <stdlib.h>
 #include <fcntl.h>
-#include <utils.h>
+#include <shutils.h>
 #include <wlutils.h>
 #include <bcmnvram.h>
 
-extern struct nvram_param *srouter_defaults;
 
-extern void load_defaults(void);
-extern void free_defaults(void);
+extern struct nvram_param * load_defaults(void);
+extern void free_defaults(struct nvram_param *);
 
 extern int nvram_critical(char *name);
 
 int nvram_size(void);
 void start_defaults(void)
 {
+	struct nvram_param *srouter_defaults;
 	struct nvram_param *t;
 	fprintf(stderr, "restore nvram to defaults\n");
 	nvram_clear();
-	load_defaults();
+	srouter_defaults = load_defaults();
 	for (t = srouter_defaults; t->name; t++) {
 		nvram_set(t->name, t->value);
 	}
-	free_defaults();
+	free_defaults(srouter_defaults);
 	nvram_commit();
 }
