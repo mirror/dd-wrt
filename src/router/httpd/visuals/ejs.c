@@ -148,8 +148,18 @@ EJ_VISIBLE void ej_nvram_get(webs_t wp, int argc, char_t ** argv)
 	return;
 }
 
-EJALIAS(ej_nvram_get, ej_nvg);
+extern struct nvram_param *srouter_defaults;
 
+EJ_VISIBLE void ej_nvram_default_get(webs_t wp, int argc, char_t ** argv)
+{
+	for (t = srouter_defaults; t->name; t++) {
+		if (!strcmp(t->name, argv[0]))
+			websWrite(wp, "%s", nvram_safe_get(t->value));
+	}
+
+}
+
+EJALIAS(ej_nvram_default_get, ej_nvdg);
 EJ_VISIBLE void ej_nvram_real_get(webs_t wp, int argc, char_t ** argv)
 {
 
