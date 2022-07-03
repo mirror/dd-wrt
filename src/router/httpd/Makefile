@@ -1021,15 +1021,22 @@ endif
 ifeq ($(ARCHITECTURE),broadcom)
 ifneq ($(CONFIG_MADWIFI),y)
 VISOBJS += wireless_broadcom.o
+CFLAGS += -DHAVE_BRCM
 endif
 endif
 ifeq ($(ARCHITECTURE),northstar)
 ifneq ($(CONFIG_MADWIFI),y)
 VISOBJS += wireless_broadcom.o
+CFLAGS += -DHAVE_BRCM
 endif
 endif
 
-
+ifeq ($(ARCHITECTURE),broadcom)
+CFLAGS += -DHAVE_BRCM
+endif
+ifeq ($(ARCHITECTURE),northstar)
+CFLAGS += -DHAVE_BRCM
+endif
 
 
 ifeq ($(CONFIG_ATH9K),y)
