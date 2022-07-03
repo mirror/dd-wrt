@@ -66,7 +66,10 @@ EJ_VISIBLE void ej_portsetup(webs_t wp, int argc, char_t ** argv)
 			if (isbridge(var))
 				isb = 1;
 		}
-
+#ifdef HAVE_BRCM
+		if (!strcmp("eth0", var) && ifexists("vlan1"))
+			continue;
+#endif
 		char layer[64];
 		strcpy(layer, var);
 		rep(layer, '.', 'X');
