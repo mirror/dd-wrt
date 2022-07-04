@@ -1286,6 +1286,7 @@ idx.summt_opt7="last Sun Sep - first Sun Apr";
 idx.summt_opt8="3rd Sun Oct - 3rd Sun Mar";
 idx.summt_opt9="first Sun Oct - first Sun Apr";
 idx.summt_opt10="3rd Sun Oct - 3rd Sun Feb";
+idx.interface_h2="Interface Setup";
 idx.portsetup="Port Setup";
 idx.wanport="WAN Port Assignment";
 idx.legend3="NTP Client Settings";
@@ -1543,7 +1544,8 @@ hmanagement.page6="<dd>Boot Wait introduces a short delay while booting (5 secon
 hmanagement.page7="<dd>The cron subsystem schedules execution of Linux commands. You will need to use the command line or startup scripts to actually use this.</dd>";
 hmanagement.page8="<dd>Enable / disable the loopback interface. The loopback interface makes your internal clients appear as if they are external. This is useful for testing things like DynDNS names. The loopback is an option because enabling it will break PPTP and Windows machine browsing by wireless clients.</dd>";
 hmanagement.page9="<dd>This feature controls the resetbuttond process. The reset button initiates actions depending on how long you press it.<ul><li>Short press – Reset the router (reboot)</li><li>Long press (&gt;5s) – Reboot and restore the factory default configuration.</li></ul></dd>";
-hmanagement.page10="<dd>If you have any peer-to-peer (P2P) applications running on your network please increase the maximum ports and lower the TCP/UDP timeouts. This is necessary to maintain router stability because peer-to-peer applications open many connections and do not close them properly. Consider using these for old low end routers:<ul><li>Maximum Ports: 4096</li><li>TCP Timeout: 300&nbsp;s</li><li>UDP Timeout: 60&nbsp;s</li></ul></dd><dd>Check all values and click the <em>" + sbutton.save +"</em> button to save your settings. Click the <em>" + sbutton.cancel + "</em> button to cancel your unsaved changes. Click the <em>" + sbutton.reboot + "</em> button to reboot your router immediately.</dd>";
+hmanagement.page10="<dd>The TCP Congestion Control algorithm availability is router dependant and provided by the kernel. When router is the endpoint, the Transmission Bitorrent client, Webserver (lighttpd) or VPN connections e.g. PPPoE etc..., can be affected by the selected congestion control algorithm</dd><br /><br /><div class=\"note\"><h4>Note:</h4><div>The selected congestion control algorithm will benefit mostly slow links or slower low end routers to prevent network congestion occuring in case of traffic overloading and it will <b>not</b> increase link speed.</div></div>";
+hmanagement.page11="<dd>For peer-to-peer (P2P) applications running on the network/router, dependant on your router hardware capabilities, either increase or decrease the maximum connections number and lower the TCP / UDP timeout. This may help maintain router stability since peer-to-peer applications open many connections and do not close them properly. Consider using these for old low end routers:<ul><li>Maximum Connections: 4096/32768</li><li>TCP Timeout: 300&nbsp;seconds</li><li>UDP Timeout: 60&nbsp;seconds</li></ul></dd><dd>Check all values and click the <em>" + sbutton.save +"</em> button to save your settings. Click the <em>" + sbutton.cancel + "</em> button to cancel your unsaved changes. Click the <em>" + sbutton.reboot + "</em> button to reboot your router immediately.</dd>";
 
 // ************ Port_Services.asp (used by Filters.asp and QoS.asp, QOSPort_Services.asp not used anymore) *****************************************//
 var portserv=new Object();
