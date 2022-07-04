@@ -31,7 +31,7 @@ EJ_VISIBLE void ej_portsetup(webs_t wp, int argc, char_t ** argv)
 	char bufferif[512];
 	char buf[128];
 
-	websWrite(wp, "<h2><script type=\"text/javascript\">Capture(idx.portsetup)</script></h2>\n");
+	websWrite(wp, "<h2><script type=\"text/javascript\">Capture(idx.interface_h2)</script></h2>\n");
 	websWrite(wp, "<fieldset>\n");
 
 	char *wanifname = nvram_safe_get("wan_ifname2");
@@ -41,7 +41,6 @@ EJ_VISIBLE void ej_portsetup(webs_t wp, int argc, char_t ** argv)
 	bzero(eths, 256);
 	getIfLists(eths, 256);
 	if (*(wanifname)) {
-
 		show_caption_legend(wp, "idx.portsetup");
 		websWrite(wp, "<div class=\"setting\">\n<div class=\"label\"><script type=\"text/javascript\">Capture(idx.wanport)</script></div>\n");
 		websWrite(wp, "<select name=\"wan_ifname\">\n");

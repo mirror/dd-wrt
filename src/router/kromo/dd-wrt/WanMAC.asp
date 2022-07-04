@@ -47,7 +47,6 @@ addEvent(window, "unload", function() {
    </head>
 
 	<body class="gui">
-		
 			<div id="wrapper">
 			<div id="content">
 				<div id="header">
@@ -61,9 +60,7 @@ addEvent(window, "unload", function() {
 							<input type="hidden" name="action" value="Apply"/>
 							<input type="hidden" name="change_action"/>
 							<input type="hidden" name="submit_type" />
-							
 							<h2><% tran("wanmac.h2"); %></h2>
-							
 							<fieldset>
 								<legend><% tran("wanmac.legend"); %></legend>
 								<div class="setting">
@@ -76,24 +73,22 @@ addEvent(window, "unload", function() {
 										<input type="hidden" name="def_hwaddr" value="6" />
 										<input class="num" size="2" maxlength="2" name="def_hwaddr_0" onblur="valid_mac(this,0)" value="<% get_clone_mac("0"); %>" />:<input class="num" size="2" maxlength="2" name="def_hwaddr_1" onblur="valid_mac(this,1)" value="<% get_clone_mac("1"); %>" />:<input class="num" size="2" maxlength="2" name="def_hwaddr_2" onblur="valid_mac(this,1)" value="<% get_clone_mac("2"); %>" />:<input class="num" size="2" maxlength="2" name="def_hwaddr_3" onblur="valid_mac(this,1)" value="<% get_clone_mac("3"); %>" />:<input class="num" size="2" maxlength="2" name="def_hwaddr_4" onblur="valid_mac(this,1)" value="<% get_clone_mac("4"); %>" />:<input class="num" size="2" maxlength="2" name="def_hwaddr_5" onblur="valid_mac(this,1)" value="<% get_clone_mac("5"); %>" />
 									</div>
-									<div class="setting">
+									<div class="cpu-feat">
 										<script type="text/javascript">
 										//<![CDATA[
 										document.write("<input class=\"button\" type=\"button\" name=\"clone_b\" value=\"" + sbutton.wanmac + "\" onclick=\"CloneMAC(this.form);\" />");
 										//]]>
 										</script>
 									</div>
-									
+									<!-- disable this as its buggy/doesnt work use Networking tab to modify wireless interfaces MAC
 									<hr width="90%" /><br />
-									
 									<div class="setting">
 										<div class="label"><% tran("wanmac.wlan"); %></div>
 										<input type="hidden" name="def_whwaddr" value="6" />
 										<input class="num" size="2" maxlength="2" name="def_whwaddr_0" onblur="valid_mac(this,0)" value="<% get_clone_wmac("0"); %>" />:<input class="num" size="2" maxlength="2" name="def_whwaddr_1" onblur="valid_mac(this,1)" value="<% get_clone_wmac("1"); %>" />:<input class="num" size="2" maxlength="2" name="def_whwaddr_2" onblur="valid_mac(this,1)" value="<% get_clone_wmac("2"); %>" />:<input class="num" size="2" maxlength="2" name="def_whwaddr_3" onblur="valid_mac(this,1)" value="<% get_clone_wmac("3"); %>" />:<input class="num" size="2" maxlength="2" name="def_whwaddr_4" onblur="valid_mac(this,1)" value="<% get_clone_wmac("4"); %>" />:<input class="num" size="2" maxlength="2" name="def_whwaddr_5" onblur="valid_mac(this,1)" value="<% get_clone_wmac("5"); %>" />
-									</div>
+									</div> -->
 								</div>
 							</fieldset><br />
-							
 							<div class="submitFooter">
 								<script type="text/javascript">
 								//<![CDATA[
