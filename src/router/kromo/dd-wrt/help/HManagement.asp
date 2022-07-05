@@ -26,7 +26,6 @@
 				<% tran("hmanagement.page9"); %>
 				<dt><% tran("management.net_legend"); %></dt>
 				<% tran("hmanagement.page10"); %>
-				<% tran("hmanagement.page11"); %>
 			</dl>
 		</div>
 		<div class="also">

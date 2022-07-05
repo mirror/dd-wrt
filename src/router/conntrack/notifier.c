@@ -126,7 +126,6 @@ void send_email(LINKEDLIST * list, char *source, int value)
 
 		unlink("/tmp/warn_mail");
 	}
-
 }
 
 static int notifier_loop(void)
@@ -196,32 +195,30 @@ static void notifier(void)
 		sleep(5 * 60);	// wait 5 minutes between each checks
 		notifier_loop();
 	}
-
 }
 
 int main(int argc, char *argv[])
 {
-
 	/* 
 	 * Run it under background 
 	 */
 	switch (fork()) {
-	case -1:
-		perror("fork failed");
-		exit(1);
-		break;
-	case 0:
-		/* 
-		 * child process 
-		 */
-		notifier();
-		exit(0);
-		break;
-	default:
-		/* 
-		 * parent process should just die 
-		 */
-		_exit(0);
+		case -1:
+			perror("fork failed");
+			exit(1);
+			break;
+		case 0:
+			/* 
+			 * child process 
+			 */
+			notifier();
+			exit(0);
+			break;
+		default:
+			/* 
+			 * parent process should just die 
+			 */
+			_exit(0);
 	}
 	return 0;
 }

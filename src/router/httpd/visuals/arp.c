@@ -91,7 +91,6 @@ EJ_VISIBLE void ej_dumparptable(webs_t wp, int argc, char_t ** argv)
 					host = fopen("/jffs/dnsmasq.leases", "r");
 
 				if (host) {
-
 					while (fgets(buf, sizeof(buf), host)) {
 						sscanf(buf, "%*s %*s %15s %*s", fullip);
 
@@ -225,7 +224,6 @@ static void readhosts(struct arptable *tbl, int tablelen)
 						}
 					}
 				}
-
 			}
 			fclose(host);
 		}
@@ -245,7 +243,6 @@ static void readhosts(struct arptable *tbl, int tablelen)
 		if (!tbl[i].hostname)
 			tbl[i].hostname = strdup("*");
 	}
-
 }
 
 static void filterarp(struct arptable *table, int tablelen)
@@ -276,7 +273,6 @@ static void filterarp(struct arptable *table, int tablelen)
 		}
 		fclose(arp);
 	}
-
 }
 
 static void readconntrack(struct arptable *tbl, int tablelen)
