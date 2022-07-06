@@ -177,7 +177,7 @@ void setRouter(char *name)
 #elif HAVE_IPR
 	nvram_set(NVROUTER_ALT, "IPR-DATKS-501");
 #elif defined(HAVE_ANTAIRA) && defined(HAVE_FMS2111)
-	nvram_set(NVROUTER_ALT, "FMS2111");
+	nvram_set(NVROUTER_ALT, "AMS2111");
 #elif HAVE_ANTAIRA
 #ifdef HAVE_ANTAIRA_MINI
 	nvram_set(NVROUTER_ALT, "Industrial Access Point");
