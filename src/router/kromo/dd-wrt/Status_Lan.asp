@@ -130,7 +130,12 @@ function getSize(size) {
 	while (size>base) {
 		size/=base; pos++;
 	}
-	if (pos > 2) precision=100; else precision = 1;
+	if (pos > 2) {
+		precision=100; 
+	} else {
+		precision = 1;
+	}
+	
 	return (Math.round(size*precision)/precision)+prefix[pos];
 }
 
