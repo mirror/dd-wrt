@@ -38,18 +38,17 @@ function setPPTPTable() {
 		return;
 	}
 	for(var i = 0; i < val.length; i = i + 5) {
-	
 		var row = table.insertRow(-1);
 		row.style.height = "15px";
-		
+
 		row.insertCell(-1).innerHTML = val[i]; // interface
-		
+
 		row.insertCell(-1).innerHTML = val[i+1]; // peer name
 
 		row.insertCell(-1).innerHTML = val[i+2]; // local ip
 
 		row.insertCell(-1).innerHTML = val[i+3]; // remote ip
-				
+
 		var cell = row.insertCell(-1);
 		cell.title = errmsg.err581;
 		cell.align = "center";
@@ -69,24 +68,21 @@ function setPPPOETable() {
 		return;
 	}
 	for(var i = 0; i < val.length; i = i + 4) {
-	
 		var row = table.insertRow(-1);
 		row.style.height = "15px";
-		
+
 		row.insertCell(-1).innerHTML = val[i]; // interface
-		
+
 		row.insertCell(-1).innerHTML = val[i+1]; // peer name
 
 		row.insertCell(-1).innerHTML = val[i+2]; // local ip
-				
+
 		var cell = row.insertCell(-1);
 		cell.title = errmsg.err581;
 		cell.align = "center";
 		cell.innerHTML = "<input class=\"remove\" type=\"button\" aria-label=\"" + sbutton.del + "\" onclick=\"deletepptp('" + val[i + 3] + "')\" />";
 	}
 }
-
-
 
 function setDHCPTable() {
 	var val = arguments;
@@ -100,14 +96,13 @@ function setDHCPTable() {
 		return;
 	}
 	for(var i = 0; i < val.length; i = i + 7) {
-	
 		var row = table.insertRow(-1);
 		row.style.height = "15px";
-		
+
 		row.insertCell(-1).innerHTML = val[i];
-		
+
 		row.insertCell(-1).innerHTML = val[i+1];
-		
+
 		var cellmac = row.insertCell(-1);
 		cellmac.title = share.oui;
 		cellmac.style.cursor = "pointer";
@@ -130,13 +125,14 @@ function setDHCPTable() {
 }
 
 function getSize(size) {
-    var prefix=new Array("","k","M","G","T","P","E","Z"); var base=1000;
-    var pos=0;
-    while (size>base) {
-        size/=base; pos++;
-    }
-    if (pos > 2) precision=100; else precision = 1;
-    return (Math.round(size*precision)/precision)+prefix[pos];}
+	var prefix=new Array("","k","M","G","T","P","E","Z"); var base=1000;
+	var pos=0;
+	while (size>base) {
+		size/=base; pos++;
+	}
+	if (pos > 2) precision=100; else precision = 1;
+	return (Math.round(size*precision)/precision)+prefix[pos];
+}
 
 function setARPTable() {
 	var table = document.getElementById("active_clients_table");
@@ -236,13 +232,12 @@ addEvent(window, "load", function() {
 addEvent(window, "unload", function() {
 	update.stop();
 });
-		
+
 		//]]>
 		</script>
 	 </head>
 
 	 <body class="gui">
-	 	
 		<div id="wrapper">
 			<div id="content">
 				<div id="header">
@@ -256,7 +251,7 @@ addEvent(window, "unload", function() {
 							<input type="hidden" name="action" />
 							<input type="hidden" name="change_action" />
 							<input type="hidden" name="submit_type" value="delete" />
-							
+
 							<input type="hidden" name="del_if" />
 							<input type="hidden" name="del_ip" />
 							<input type="hidden" name="del_mac" />
@@ -265,7 +260,7 @@ addEvent(window, "unload", function() {
 							<input type="hidden" name="hostname" />
 							<input type="hidden" name="ip" />
 							<input type="hidden" name="mac" />
-							
+
 							<h2><% tran("status_lan.h2"); %></h2>
 							<fieldset>
 								<legend><% tran("status_lan.legend"); %></legend>
@@ -292,7 +287,6 @@ addEvent(window, "unload", function() {
 									<span id="lan_dns"><% nvg("sv_localdns"); %></span>&nbsp;
 								</div>
 							</fieldset><br />
-							
 							<fieldset>
 								<legend><% tran("status_lan.legend4"); %></legend>
 								<table class="table" cellspacing="5" id="active_clients_table" summary="active clients in arp table">

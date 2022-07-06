@@ -87,7 +87,7 @@ body input[name='reset_button']:focus-visible {
 }
 body input[name='reboot_button'],
 body input[name='reboot_button']:disabled:hover {
-  background #c00;
+  background: #c00;
   border-color: #c00;
   color: #f8f8f8;
 }
