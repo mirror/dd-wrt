@@ -22,10 +22,9 @@ function port_enable_disable(F,I) {
 	if(F._http_enable.checked == false)
 	if(F._https_enable)
 	if(F._https_enable.checked == true) {
-		if (F._remote_mgt_https)
-		{
-		choose_disable(F._remote_mgt_https);
-		F._remote_mgt_https.checked = true;
+		if (F._remote_mgt_https) {
+			choose_disable(F._remote_mgt_https);
+			F._remote_mgt_https.checked = true;
 		}
 	}
 	if(F._https_enable)
@@ -60,16 +59,13 @@ function valid_password(F) {
 		F.http_passwdConfirm.select();
 		return false;
 	}
-
 	return true;
 }
 
-function handle_https(F)
-{
+function handle_https(F) {
 	if(F._https_enable.checked == true && F.remote_management[0].checked == true) {
 		choose_enable(F._remote_mgt_https);
-	}
-	else {
+	} else {
 		F._remote_mgt_https.checked = false;
 		choose_disable(F._remote_mgt_https);
 	}
@@ -168,12 +164,12 @@ function submitcheck(F) {
 	return true;
 }
 function to_submit(F) {
-    if (submitcheck(F))
-    apply(F);
+	if (submitcheck(F))
+	apply(F);
 }
 function to_apply(F) {
-    if (submitcheck(F))
-    applytake(F);
+	if (submitcheck(F))
+	applytake(F);
 }
 
 var update;
@@ -184,7 +180,7 @@ addEvent(window, "load", function() {
 		selSSH("<% nvg("sshd_enable"); %>", 1);
 	if (document.setup.remote_mgt_telnet)
 		selTelnet("<% nvg("telnetd_enable"); %>", 1);
-	
+
 	show_layer_ext(document.setup.remote_mgt_ssh, 'idssh', <% nvem("remote_mgt_ssh", "1", "1", "0"); %> == 1);
 	show_layer_ext(document.setup.remote_mgt_telnet, 'idtelnet', <% nvem("remote_mgt_telnet", "1", "1", "0"); %> == 1);
 	show_layer_ext(document.setup.remote_ip_any, 'idremip', <% nvem("remote_ip_any", "1", "0", "1"); %> == 1);
@@ -195,15 +191,13 @@ addEvent(window, "load", function() {
 	show_layer_ext(document.setup.enable_jffs2, 'idjffs2', <% nvem("enable_jffs2", "1", "1", "0"); %> == 1);
 	show_layer_ext(document.setup.mmc_enable0, 'idmmc', <% nvem("mmc_enable0", "1", "1", "0"); %> == 1);
 	show_layer_ext(document.setup.mmc_gpio, 'idmmcgpio', <% nvem("mmc_gpio", "1", "1", "0"); %> == 1);
-	
+
 	update = new StatusbarUpdate();
 	update.start();
-	
 });
 
 addEvent(window, "unload", function() {
 	update.stop();
-
 });
 		
 		//]]>
@@ -251,6 +245,8 @@ addEvent(window, "unload", function() {
 							<dd class="definition"><% tran("hmanagement.right2"); %></dd>
 							<dt class="term"><% tran("hmanagement.right3"); %></dt>
 							<dd class="definition"><% tran("hmanagement.right4"); %></dd>
+							<dt class="term"><% tran("hmanagement.right5"); %></dt>
+							<dd class="definition"><% tran("hmanagement.right6"); %></dd>
 						</dl><br />
 						<a href="javascript:openHelpWindow<% ifdef("EXTHELP","Ext"); %>('HManagement.asp');"><% tran("share.more"); %></a>
 					</div>
