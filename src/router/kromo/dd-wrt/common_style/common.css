@@ -392,7 +392,7 @@ table[summary='ports forwarding table'] input[size='10'] {
 .message {
   border-radius: 4px;
   max-width: 72.464em;
-  margin: 0 auto;
+  margin: 2em auto;
   padding: 1.812em .906em .906em;
   font-weight: bold;
   text-align: center;

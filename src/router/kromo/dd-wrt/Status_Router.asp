@@ -62,7 +62,6 @@ addEvent(window, "unload", function() {
 	</head>
 
 	<body class="gui">
-		
 		<div id="wrapper">
 			<div id="content">
 				<div id="header">
@@ -76,9 +75,7 @@ addEvent(window, "unload", function() {
 							<input type="hidden" name="action" value="Apply" />
 							<input type="hidden" name="change_action" />
 							<input type="hidden" name="submit_type" />
-							
 							<h2><% tran("status_router.h2"); %></h2>
-							
 							<fieldset>
 							<legend><% tran("status_router.legend"); %></legend>
 								<div class="setting">
@@ -129,7 +126,6 @@ addEvent(window, "unload", function() {
 								</div>
 								<% show_voltage(); %>
 							</fieldset><br />
-							
 							<fieldset>
 								<legend><% tran("status_router.legend2"); %></legend>
 								<div class="setting">
@@ -151,7 +147,6 @@ addEvent(window, "unload", function() {
 								</div>
 								<% show_cpu_temperature(); %>
 							</fieldset><br />
-							
 							<fieldset>
 								<legend><% tran("status_router.legend3"); %></legend>
 								<div class="setting">
@@ -183,7 +178,6 @@ addEvent(window, "unload", function() {
 									<span id="mem_inactive"></span>&nbsp;
 								</div>
 							</fieldset><br />
-							
 							<fieldset>
 								<legend><% tran("status_router.legend6"); %></legend>
 									<div class="setting">
@@ -224,7 +218,6 @@ addEvent(window, "unload", function() {
 								</div>
 				<% ifndef("MMC", "-->"); %>
 							</fieldset><br />
-							
 							<fieldset>
 								<legend><% tran("status_router.legend4"); %></legend>
 								<div class="setting">
@@ -241,7 +234,6 @@ addEvent(window, "unload", function() {
 									</script>&nbsp;
 								</div>
 							</fieldset><br />
-							
 							<div class="submitFooter">
 								<script type="text/javascript">
 								//<![CDATA[
