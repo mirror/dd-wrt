@@ -171,7 +171,7 @@ EJ_VISIBLE void ej_portsetup(webs_t wp, int argc, char_t ** argv)
 		websWrite(wp, "<div class=\"setting\">\n");
 		show_caption(wp, "label", "idx.dns_redirect", NULL);
 		websWrite(wp, "<input type=\"hidden\" name=\"%s_dns_ipaddr\" value=\"4\" />\n", var);
-		show_ip(wp, var, "dns_ipaddr", 0, "share.ip");
+		show_ip(wp, var, "dns_ipaddr", 0, 0, "share.ip");
 
 		websWrite(wp, "</div>\n");
 
