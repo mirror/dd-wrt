@@ -178,7 +178,7 @@ void show_ip_cidr(webs_t wp, char *prefix, char *var, int nm, char *type, char *
 void show_caption_pp(webs_t wp, const char *class, const char *caption, const char *pre, const char *post);
 void show_caption(webs_t wp, const char *class, const char *caption, const char *ext);
 void show_caption_simple(webs_t wp, const char *caption);
-void show_ip(webs_t wp, char *prefix, char *var, int nm, char *type);
+void show_ip(webs_t wp, char *prefix, char *var, int nm, int allow_invalid, char *type);
 void showRadioNoDef(webs_t wp, char *propname, char *nvname, int val);
 #ifdef HAVE_MADWIFI
 void showAutoOption(webs_t wp, char *propname, char *nvname, int nodisable);
