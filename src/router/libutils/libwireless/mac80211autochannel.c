@@ -90,7 +90,7 @@ static struct nla_policy freq_policy[NL80211_FREQUENCY_ATTR_MAX + 1] = {
 	[NL80211_FREQUENCY_ATTR_FREQ] = {.type = NLA_U32 },
 };
 
-static int freq_list(struct unl *unl, int phy, const char *freq_range, struct dd_list_head *frequencies, char *if)
+static int freq_list(struct unl *unl, int phy, const char *freq_range, struct dd_list_head *frequencies, char *interface)
 {
 	struct nlattr *tb[NL80211_FREQUENCY_ATTR_MAX + 1];
 	struct frequency *f;
