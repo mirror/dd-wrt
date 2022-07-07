@@ -90,7 +90,7 @@ static struct nla_policy freq_policy[NL80211_FREQUENCY_ATTR_MAX + 1] = {
 	[NL80211_FREQUENCY_ATTR_FREQ] = {.type = NLA_U32 },
 };
 
-static int freq_list(struct unl *unl, int phy, const char *freq_range, struct dd_list_head *frequencies)
+static int freq_list(struct unl *unl, int phy, const char *freq_range, struct dd_list_head *frequencies, char *if)
 {
 	struct nlattr *tb[NL80211_FREQUENCY_ATTR_MAX + 1];
 	struct frequency *f;
@@ -123,6 +123,21 @@ static int freq_list(struct unl *unl, int phy, const char *freq_range, struct dd
 			freq_mhz = nla_get_u32(tb[NL80211_FREQUENCY_ATTR_FREQ]);
 			if (!in_range(freq_mhz, freq_range))
 				continue;
+			if (freq_mhz >= 4000 && nvram_nmatch("ng-only", "%s_net_mode", interface)
+			    || nvram_nmatch("n2-only", "%s_net_mode", interface)
+			    || nvram_nmatch("bg-mixed", "%s_net_mode", interface)
+			    || nvram_nmatch("ng-mixed", "%s_net_mode", interface)
+			    || nvram_nmatch("b-only", "%s_net_mode", interface)
+			    || nvram_nmatch("g-only", "%s_net_mode", interface)) {
+				continue;
+			}
+			if (freq_mhz < 4000 && nvram_nmatch("a-only", "%s_net_mode", interface)
+			    || nvram_nmatch("na-only", "%s_net_mode", interface)
+			    || nvram_nmatch("ac-only", "%s_net_mode", interface)
+			    || nvram_nmatch("acn-mixed", "%s_net_mode", interface)
+			    || nvram_nmatch("n5-only", "%s_net_mode", interface)) {
+				continue;
+			}
 #if defined(HAVE_BUFFALO_SA) && defined(HAVE_ATH9K)
 			if ((!strcmp(getUEnv("region"), "AP") || !strcmp(getUEnv("region"), "US"))
 			    && ieee80211_mhz2ieee(freq_mhz) > 11 && ieee80211_mhz2ieee(freq_mhz) < 14 && nvram_default_match("region", "SA", ""))
@@ -421,7 +436,7 @@ int getsurveystats(struct dd_list_head *frequencies, struct wifi_channels **chan
 		ret = -1;
 		goto out;
 	}
-	freq_list(&unl, phy, freq_range, frequencies);
+	freq_list(&unl, phy, freq_range, frequencies, interface);
 	scan(&unl, wdev, frequencies);
 	survey(&unl, wdev, freq_add_stats, frequencies);
 
