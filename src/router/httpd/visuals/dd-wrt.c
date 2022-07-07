@@ -155,7 +155,7 @@ void show_caption_legend(webs_t wp, const char *caption)
 	show_caption_pp(wp, NULL, caption, "<legend>", "</legend>");
 }
 
-void show_ip(webs_t wp, char *prefix, char *var, int nm, char *type)
+void show_ip(webs_t wp, char *prefix, char *var, int nm, int invalid_allowed, char *type)
 {
 	char name[64];
 	if (prefix)
@@ -163,7 +163,7 @@ void show_ip(webs_t wp, char *prefix, char *var, int nm, char *type)
 	else
 		snprintf(name, 64, "%s", var);
 	char *ipv = nvram_default_get(name, "0.0.0.0");
-	websWrite(wp, "<input class=\"num\" maxlength=\"3\" size=\"3\" onblur=\"valid_range(this,%d,%d,%s)\" name=\"%s_0\" value=\"%d\" />.", nm ? 0 : 1, nm ? 255 : 254, type, name, get_single_ip(ipv, 0));
+	websWrite(wp, "<input class=\"num\" maxlength=\"3\" size=\"3\" onblur=\"valid_range(this,%d,%d,%s)\" name=\"%s_0\" value=\"%d\" />.", nm ? 0 : invalid_allowed ? 0 : 1, nm ? 255 : 254, type, name, get_single_ip(ipv, 0));
 	websWrite(wp, "<input class=\"num\" maxlength=\"3\" size=\"3\" onblur=\"valid_range(this,0,255,%s)\" name=\"%s_1\" value=\"%d\" />.", type, name, get_single_ip(ipv, 1));
 	websWrite(wp, "<input class=\"num\" maxlength=\"3\" size=\"3\" onblur=\"valid_range(this,0,255,%s)\" name=\"%s_2\" value=\"%d\" />.", type, name, get_single_ip(ipv, 2));
 	websWrite(wp, "<input class=\"num\" maxlength=\"3\" size=\"3\" onblur=\"valid_range(this,0,255,%s)\" name=\"%s_3\" value=\"%d\" />\n", type, name, get_single_ip(ipv, 3));
@@ -1043,7 +1043,7 @@ EJ_VISIBLE void ej_show_dhcpd_settings(webs_t wp, int argc, char_t ** argv)
 		websWrite(wp, "<div class=\"setting\">\n");
 		show_caption(wp, "label", "idx.dhcp_srv", NULL);
 		websWrite(wp, "<input type=\"hidden\" name=\"dhcpfwd_ip\" value=\"4\" />\n");
-		show_ip(wp, NULL, "dhcpfwd_ip", 0, "idx.dhcp_srv");
+		show_ip(wp, NULL, "dhcpfwd_ip", 0, 0, "idx.dhcp_srv");
 		websWrite(wp, "</div>\n");
 	} else {
 		websWrite(wp, "<div class=\"setting\">\n");
@@ -1098,7 +1098,7 @@ EJ_VISIBLE void ej_show_dhcpd_settings(webs_t wp, int argc, char_t ** argv)
 		websWrite(wp, "<div class=\"label\">WINS</div>\n");
 		websWrite(wp, "<input type=\"hidden\" name=\"wan_wins\" value=\"4\" />\n");
 
-		show_ip(wp, NULL, "wan_wins", 1, "&#34;WINS&#34;");
+		show_ip(wp, NULL, "wan_wins", 1, 0, "&#34;WINS&#34;");
 		websWrite(wp, "</div>\n<div class=\"setting\">\n");
 		show_caption(wp, "label", "idx.dns_dnsmasq", NULL);
 		websWrite(wp, "<input type=\"checkbox\" name=\"_dns_dnsmasq\" value=\"1\" %s />\n", nvram_matchi("dns_dnsmasq", 1) ? "checked=\"checked\"" : "");
@@ -2313,7 +2313,7 @@ static void showbridgesettings(webs_t wp, char *var, int mcast, int dual)
 	websWrite(wp, "<div class=\"setting\">\n");
 	show_caption(wp, "label", "idx.dns_redirect", NULL);
 	websWrite(wp, "<input type=\"hidden\" name=\"%s_dns_ipaddr\" value=\"4\" />\n", var);
-	show_ip(wp, var, "dns_ipaddr", 0, "share.ip");
+	show_ip(wp, var, "dns_ipaddr", 0, 0, "share.ip");
 	websWrite(wp, "</div>\n");
 
 	websWrite(wp, "</div>\n");
@@ -2792,11 +2792,11 @@ static int show_virtualssid(webs_t wp, char *prefix)
 			websWrite(wp, "</div>\n");
 			websWrite(wp, "<div class=\"setting\">\n");
 			show_caption(wp, "label", "share.ip", NULL);
-			show_ip(wp, var, "ipaddr", 0, "share.ip");
+			show_ip(wp, var, "ipaddr", 0, 0, "share.ip");
 			websWrite(wp, "</div>\n");
 			websWrite(wp, "<div class=\"setting\">\n");
 			show_caption(wp, "label", "share.subnet", NULL);
-			show_ip(wp, var, "ipaddr", 1, "share.subnet");
+			show_ip(wp, var, "ipaddr", 1, 0, "share.subnet");
 			websWrite(wp, "</div>\n");
 			sprintf(ssid, "%s_ap_isolate", var);
 			showRadio(wp, "wl_adv.label11", ssid);
@@ -5429,7 +5429,7 @@ void show_radius(webs_t wp, char *prefix, int showmacformat, int backup)
 	websWrite(wp, "<div class=\"setting\">\n");
 	show_caption(wp, "label", "radius.label3", NULL);
 	websWrite(wp, "<input type=\"hidden\" name=\"%s_radius_ipaddr\" value=\"4\" />\n", prefix);
-	show_ip(wp, prefix, "radius_ipaddr", 0, "radius.label3");
+	show_ip(wp, prefix, "radius_ipaddr", 0, 1, "radius.label3");
 	websWrite(wp, "</div>\n");
 	websWrite(wp, "<div class=\"setting\">\n");
 	show_caption(wp, "label", "radius.label4", NULL);
@@ -5461,7 +5461,7 @@ void show_radius(webs_t wp, char *prefix, int showmacformat, int backup)
 		websWrite(wp, "<div class=\"setting\">\n");
 		show_caption(wp, "label", "radius.label23", NULL);
 		websWrite(wp, "<input type=\"hidden\" name=\"%s_radius2_ipaddr\" value=\"4\" />\n", prefix);
-		show_ip(wp, prefix, "radius2_ipaddr", 0, "radius.label23");
+		show_ip(wp, prefix, "radius2_ipaddr", 0, 1, "radius.label23");
 		websWrite(wp, "</div>\n");
 		websWrite(wp, "<div class=\"setting\">\n");
 		show_caption(wp, "label", "radius.label24", NULL);
@@ -5498,7 +5498,7 @@ void show_radius(webs_t wp, char *prefix, int showmacformat, int backup)
 		websWrite(wp, "<div class=\"setting\">\n");
 		show_caption(wp, "label", "radius.label13", NULL);
 		websWrite(wp, "<input type=\"hidden\" name=\"%s_acct_ipaddr\" value=\"4\" />\n", prefix);
-		show_ip(wp, prefix, "acct_ipaddr", 0, "radius.label13");
+		show_ip(wp, prefix, "acct_ipaddr", 0, 1, "radius.label13");
 		websWrite(wp, "</div>\n");
 		websWrite(wp, "<div class=\"setting\">\n");
 		show_caption(wp, "label", "radius.label14", NULL);
@@ -5524,7 +5524,7 @@ void show_radius(webs_t wp, char *prefix, int showmacformat, int backup)
 	websWrite(wp, "<div class=\"setting\">\n");
 	show_caption(wp, "label", "radius.local_ip", NULL);
 	websWrite(wp, "<input type=\"hidden\" name=\"%s_local_ip\" value=\"4\" />\n", prefix);
-	show_ip(wp, prefix, "local_ip", 0, "radius.label3");
+	show_ip(wp, prefix, "local_ip", 0, 1, "radius.label3");
 	websWrite(wp, "</div>\n");
 #endif
 }
