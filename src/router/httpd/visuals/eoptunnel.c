@@ -32,7 +32,7 @@
 #include <broadcom.h>
 
 void show_cidr(webs_t wp, char *prefix, char *var, int nm, char *type, char *nmtype, char *nmname);
-void show_ip(webs_t wp, char *prefix, char *var, int nm, char *type);
+void show_ip(webs_t wp, char *prefix, char *var, int nm, int invalid, char *type);
 void show_caption(webs_t wp, const char *class, const char *cap, const char *ext);
 void show_caption_simple(webs_t wp, const char *cap);
 
@@ -445,7 +445,7 @@ EJ_VISIBLE void ej_show_eop_tunnels(webs_t wp, int argc, char_t ** argv)
 						websWrite(wp, "<input type=\"hidden\" name=\"oet%d_ip%d\" value=\"0.0.0.0\" />\n", tun, peer);
 						snprintf(temp, sizeof(temp), "oet%d_ip%d", tun, peer);
 						nvram_default_get(temp, "0.0.0.0");
-						show_ip(wp, NULL, temp, 1, "eoip.wireguard_peerip");
+						show_ip(wp, NULL, temp, 1, 0, "eoip.wireguard_peerip");
 					}
 					websWrite(wp, "</div>\n");
 
@@ -455,7 +455,7 @@ EJ_VISIBLE void ej_show_eop_tunnels(webs_t wp, int argc, char_t ** argv)
 						websWrite(wp, "<input type=\"hidden\" name=\"oet%d_cldns%d\" value=\"0.0.0.0\" />\n", tun, peer);
 						snprintf(temp, sizeof(temp), "oet%d_cldns%d", tun, peer);
 						nvram_default_get(temp, "0.0.0.0");
-						show_ip(wp, NULL, temp, 1, "eoip.wireguard_peerdns");
+						show_ip(wp, NULL, temp, 1, 0, "eoip.wireguard_peerdns");
 					}
 					websWrite(wp, "</div>\n");
 
@@ -694,7 +694,7 @@ EJ_VISIBLE void ej_show_eop_tunnels(webs_t wp, int argc, char_t ** argv)
 					show_caption(wp, "label", "eoip.localIP", NULL);
 					websWrite(wp, "<input type=\"hidden\" name=\"oet%d_local\" value=\"0.0.0.0\"/>\n", tun);
 					snprintf(temp, sizeof(temp), "oet%d_local", tun);
-					show_ip(wp, NULL, temp, 1, "eoip.localIP");
+					show_ip(wp, NULL, temp, 1, 0, "eoip.localIP");
 				}
 				websWrite(wp, "</div>\n");
 				websWrite(wp, "<div class=\"setting\">\n");
@@ -702,7 +702,7 @@ EJ_VISIBLE void ej_show_eop_tunnels(webs_t wp, int argc, char_t ** argv)
 					show_caption(wp, "label", "eoip.remoteIP", NULL);
 					websWrite(wp, "<input type=\"hidden\" name=\"oet%d_rem\" value=\"0.0.0.0\"/>\n", tun);
 					snprintf(temp, sizeof(temp), "oet%d_rem", tun);
-					show_ip(wp, NULL, temp, 0, "eoip.remoteIP");
+					show_ip(wp, NULL, temp, 0, 0, "eoip.remoteIP");
 				}
 				websWrite(wp, "</div>\n");
 			}
