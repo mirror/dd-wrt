@@ -329,6 +329,8 @@ EJ_VISIBLE void ej_do_menu(webs_t wp, int argc, char_t ** argv)
 
 			for (j = 0; j < MAXSUBMENU; j++) {
 //fprintf(stderr,"%s->%d %d %d\n",__func__,__LINE__,i, j);
+				if (!m->menu[i][j] || !(*m->menu[i][j]))
+					continue;
 #ifdef HAVE_MADWIFI
 				if (!wifi && !strncmp(m->menu[i][j], "Wireless_Basic.asp", 8))
 					goto skip;
