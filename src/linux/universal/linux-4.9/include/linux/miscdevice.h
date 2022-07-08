@@ -32,6 +32,7 @@
 #define SGI_MMTIMER		153
 #define STORE_QUEUE_MINOR	155
 #define I2O_MINOR		166
+#define HWRNG_MINOR		183
 #define MICROCODE_MINOR		184
 #define VFIO_MINOR		196
 #define TUN_MINOR		200
