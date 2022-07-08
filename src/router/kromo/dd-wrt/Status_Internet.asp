@@ -131,11 +131,11 @@ addEvent(window, "unload", function() {
 									<div id="wan_info" style="display:none">
 										<div class="setting" id="wan_connection">
 											<div class="label"><% tran("status_inet.www_loginstatus"); %></div>
-										<script type="text/javascript">
-										//<![CDATA[
-										document.write("<span id=\"wan_status\">" + <% nvram_status_get("status2","3"); %> + "&nbsp;<input class=\"button\" type=\"button\" value=\"" + <% nvram_status_get("button1","3"); %> + "\" onclick=\"connect(this.form, '<% nvram_status_get("button1","0"); %>_<% nvg("wan_proto"); %>');\"></span>");
-										//]]>
-										</script>
+												<script type="text/javascript">
+												//<![CDATA[
+												document.write("<span id=\"wan_status\">" + <% nvram_status_get("status2","3"); %> + "&nbsp;<input class=\"button\" type=\"button\" value=\"" + <% nvram_status_get("button1","3"); %> + "\" onclick=\"connect(this.form, '<% nvram_status_get("button1","0"); %>_<% nvg("wan_proto"); %>');\"></span>");
+												//]]>
+												</script>
 										</div>
 										<div class="setting" id="wan_signal">
 											<div class="label"><% tran("status_inet.sig_status"); %>Signal Status</div>
