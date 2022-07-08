@@ -2449,6 +2449,9 @@ hstatus_inet.right2="This shows the information required by your ISP for connect
 hstatus_inet.right4="This shows your router's Internet traffic since last reboot.";
 hstatus_inet.right6="This shows your router's Internet traffic by month. Drag the mouse over graph to see daily data. Data is stored in NVRAM.";
 
+
+hstatus_inet.page1="<dt>" + status_inet.conft + "</dt><dt>IP Address, Subnet Mask, and Default Gateway</dt><dd>The Internet IP address/subnetma ask, and Gateway IP address of the router, as seen by external users on the Internet, are displayed here.</dd><dt>DNS</dt><dd>The Domain Name System (DNS) IP Addresses currently used by the router are shown here. Multiple DNS IP settings are common. In most cases, the first available DNS entry is used.</dd><dt>" + status_inet.traff + "</dt><dd>This shows your router's Internet traffic (total since last reboot or by month).</dd>";
+
 // ** Status_Conntrack.asp **//
 var status_conn=new Object();
 status_conn.titl="Active IP Connections Table";
