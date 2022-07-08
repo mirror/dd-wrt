@@ -1,11 +1,11 @@
-aiccu-configure:
+antaira-agent-configure:
 	@true
 
-aiccu:
+antaira-agent:
 	make -C antaira-agent
 
-aiccu-clean:
+antaira-agent-clean:
 	make -C antaira-agent clean
 
-aiccu-install:
+antaira-agent-install:
 	make -C antaira-agent install
