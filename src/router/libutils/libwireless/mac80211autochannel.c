@@ -533,6 +533,7 @@ struct mac80211_ac *mac80211autochannel(const char *interface, char *freq_range,
 	}
 
 	dd_list_for_each_entry(f, &frequencies, list) {
+		dd_loginfo("autochannel", "%s: check %d passive[%d] enable_passive[%d]\n", interface, f->freq, f->passive, enable_passive);
 		if (f->passive && !enable_passive)
 			continue;
 		/* todo, implement algorithm for 80+80 */
@@ -541,7 +542,7 @@ struct mac80211_ac *mac80211autochannel(const char *interface, char *freq_range,
 			dd_loginfo("autochannel", "chan %d not found, curious\n", f->freq);
 			continue;
 		}
-
+		dd_loginfo("autochannel", "%s: chan is %d bw is %d\n", interface, chan->freq, bw);
 		if (chan->freq == -1)
 			continue;
 		switch (bw) {
