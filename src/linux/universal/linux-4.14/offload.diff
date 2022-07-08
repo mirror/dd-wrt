@@ -1,0 +1,847 @@
+Index: net/bridge/br_input.c
+===================================================================
+--- net/bridge/br_input.c	(revision 49056)
++++ net/bridge/br_input.c	(working copy)
+@@ -22,6 +22,7 @@
+ #include <linux/rculist.h>
+ #include "br_private.h"
+ #include "br_private_tunnel.h"
++#include "br_private_offload.h"
+ 
+ /* Hook for brouter */
+ br_should_route_hook_t __rcu *br_should_route_hook __read_mostly;
+@@ -219,6 +220,7 @@ int br_handle_frame_finish(struct net *net, struct
+ 			dst->used = now;
+ 		br_forward(dst->dst, skb, local_rcv, false);
+ 	} else {
++		br_offload_skb_disable(skb);
+ 		if (!mcast_hit)
+ 			br_flood(br, skb, pkt_type, local_rcv, false);
+ 		else
+@@ -295,6 +297,9 @@ rx_handler_result_t br_handle_frame(struct sk_buff
+ 		return RX_HANDLER_CONSUMED;
+ 
+ 	p = br_port_get_rcu(skb->dev);
++	if (br_offload_input(p, skb))
++		return RX_HANDLER_CONSUMED;
++
+ 	if (p->flags & BR_VLAN_TUNNEL) {
+ 		if (br_handle_ingress_vlan_tunnel(skb, p,
+ 						  nbp_vlan_group_rcu(p)))
+Index: net/bridge/br_if.c
+===================================================================
+--- net/bridge/br_if.c	(revision 49056)
++++ net/bridge/br_if.c	(working copy)
+@@ -28,6 +28,7 @@
+ #include <net/switchdev.h>
+ 
+ #include "br_private.h"
++#include "br_private_offload.h"
+ 
+ /*
+  * Determine initial path cost based on speed.
+@@ -364,7 +365,7 @@ static struct net_bridge_port *new_nbp(struct net_
+ 	p->path_cost = port_cost(dev);
+ 	p->priority = 0x8000 >> BR_PORT_BITS;
+ 	p->port_no = index;
+-	p->flags = BR_LEARNING | BR_FLOOD | BR_MCAST_FLOOD | BR_BCAST_FLOOD;
++	p->flags = BR_LEARNING | BR_FLOOD | BR_MCAST_FLOOD | BR_BCAST_FLOOD | BR_OFFLOAD;
+ 	br_init_port(p);
+ 	br_set_state(p, BR_STATE_DISABLED);
+ 	br_stp_port_timer_init(p);
+@@ -672,6 +673,9 @@ void br_port_flags_change(struct net_bridge_port *
+ 
+ 	if (mask & BR_AUTO_MASK)
+ 		nbp_update_port_count(br);
++
++	if (mask & BR_OFFLOAD)
++		br_offload_port_state(p);
+ }
+ 
+ /* Update bridge statistics for bridge packets processed by offload engines */
+Index: net/bridge/br_forward.c
+===================================================================
+--- net/bridge/br_forward.c	(revision 49056)
++++ net/bridge/br_forward.c	(working copy)
+@@ -20,6 +20,7 @@
+ #include <linux/if_vlan.h>
+ #include <linux/netfilter_bridge.h>
+ #include "br_private.h"
++#include "br_private_offload.h"
+ #include <linux/inetdevice.h>
+ #include <linux/if_arp.h>
+ #include <net/arp.h>
+@@ -38,6 +39,8 @@ static inline int should_deliver(const struct net_
+ 
+ int br_dev_queue_push_xmit(struct net *net, struct sock *sk, struct sk_buff *skb)
+ {
++	br_offload_output(skb);
++
+ 	skb_push(skb, ETH_HLEN);
+ 	if (!is_skb_forwardable(skb->dev, skb))
+ 		goto drop;
+Index: net/bridge/br_sysfs_if.c
+===================================================================
+--- net/bridge/br_sysfs_if.c	(revision 49056)
++++ net/bridge/br_sysfs_if.c	(working copy)
+@@ -179,6 +179,7 @@ BRPORT_ATTR_FLAG(multicast_flood, BR_MCAST_FLOOD);
+ BRPORT_ATTR_FLAG(broadcast_flood, BR_BCAST_FLOOD);
+ BRPORT_ATTR_FLAG(isolate_mode, BR_ISOLATE_MODE);
+ BRPORT_ATTR_FLAG(block_bpdu, BR_BLOCK_BPDU);
++BRPORT_ATTR_FLAG(offload, BR_OFFLOAD);
+ 
+ #ifdef CONFIG_BRIDGE_IGMP_SNOOPING
+ static ssize_t show_multicast_router(struct net_bridge_port *p, char *buf)
+@@ -230,6 +231,7 @@ static const struct brport_attribute *brport_attrs
+ 	&brport_attr_broadcast_flood,
+ 	&brport_attr_isolate_mode,
+ 	&brport_attr_block_bpdu,
++	&brport_attr_offload,
+ 	NULL
+ };
+ 
+Index: net/bridge/br_private.h
+===================================================================
+--- net/bridge/br_private.h	(revision 49056)
++++ net/bridge/br_private.h	(working copy)
+@@ -184,7 +184,13 @@ struct net_bridge_fdb_entry {
+ 	unsigned long			updated ____cacheline_aligned_in_smp;
+ 	unsigned long			used;
+ 
+-	struct rcu_head			rcu;
++	union {
++		struct {
++			struct hlist_head		offload_in;
++			struct hlist_head		offload_out;
++		};
++		struct rcu_head			rcu;
++	};
+ };
+ 
+ #define MDB_PG_FLAGS_PERMANENT		BIT(0)
+@@ -224,6 +230,12 @@ struct net_bridge_mdb_htable
+ 	u32				ver;
+ };
+ 
++struct net_bridge_port_offload {
++	struct rhashtable		rht;
++	struct work_struct		gc_work;
++	bool				enabled;
++};
++
+ struct net_bridge_port {
+ 	struct net_bridge		*br;
+ 	struct net_device		*dev;
+@@ -276,6 +288,7 @@ struct net_bridge_port {
+ #ifdef CONFIG_NET_SWITCHDEV
+ 	int				offload_fwd_mark;
+ #endif
++	struct net_bridge_port_offload	offload;
+ };
+ 
+ #define br_auto_port(p) ((p)->flags & BR_AUTO_MASK)
+@@ -402,6 +415,9 @@ struct net_bridge {
+ 	struct kobject			*ifobj;
+ 	u32				auto_cnt;
+ 
++	u32				offload_cache_size;
++	u32				offload_cache_reserved;
++
+ #ifdef CONFIG_NET_SWITCHDEV
+ 	int offload_fwd_mark;
+ #endif
+@@ -426,6 +442,10 @@ struct br_input_skb_cb {
+ #ifdef CONFIG_BRIDGE_VLAN_FILTERING
+ 	bool vlan_filtered;
+ #endif
++	u8 offload:1;
++	u8 input_vlan_present:1;
++	u16 input_vlan_tag;
++	int input_ifindex;
+ 
+ #ifdef CONFIG_NET_SWITCHDEV
+ 	int offload_fwd_mark;
+Index: net/bridge/br_vlan_tunnel.c
+===================================================================
+--- net/bridge/br_vlan_tunnel.c	(revision 49056)
++++ net/bridge/br_vlan_tunnel.c	(working copy)
+@@ -19,6 +19,7 @@
+ 
+ #include "br_private.h"
+ #include "br_private_tunnel.h"
++#include "br_private_offload.h"
+ 
+ static inline int br_vlan_tunid_cmp(struct rhashtable_compare_arg *arg,
+ 				    const void *ptr)
+@@ -184,6 +185,7 @@ int br_handle_ingress_vlan_tunnel(struct sk_buff *
+ 	skb_dst_drop(skb);
+ 
+ 	__vlan_hwaccel_put_tag(skb, p->br->vlan_proto, vlan->vid);
++	br_offload_skb_disable(skb);
+ 
+ 	return 0;
+ }
+@@ -207,6 +209,7 @@ int br_handle_egress_vlan_tunnel(struct sk_buff *s
+ 	if (err)
+ 		return err;
+ 
++	br_offload_skb_disable(skb);
+ 	tunnel_dst = rcu_dereference(vlan->tinfo.tunnel_dst);
+ 	if (tunnel_dst && dst_hold_safe(&tunnel_dst->dst))
+ 		skb_dst_set(skb, &tunnel_dst->dst);
+Index: net/bridge/Makefile
+===================================================================
+--- net/bridge/Makefile	(revision 49056)
++++ net/bridge/Makefile	(working copy)
+@@ -5,7 +5,7 @@
+ 
+ obj-$(CONFIG_BRIDGE) += bridge.o
+ 
+-bridge-y	:= br.o br_device.o br_fdb.o br_forward.o br_if.o br_input.o \
++bridge-y	:= br.o br_device.o br_fdb.o br_forward.o br_if.o br_input.o br_offload.o \
+ 			br_ioctl.o br_stp.o br_stp_bpdu.o \
+ 			br_stp_if.o br_stp_timer.o br_netlink.o \
+ 			br_netlink_tunnel.o
+Index: net/bridge/br_device.c
+===================================================================
+--- net/bridge/br_device.c	(revision 49056)
++++ net/bridge/br_device.c	(working copy)
+@@ -454,6 +454,8 @@ void br_dev_setup(struct net_device *dev)
+ 	br->bridge_hello_time = br->hello_time = 2 * HZ;
+ 	br->bridge_forward_delay = br->forward_delay = 15 * HZ;
+ 	br->bridge_ageing_time = br->ageing_time = BR_DEFAULT_AGEING_TIME;
++	br->offload_cache_size = 128;
++	br->offload_cache_reserved = 8;
+ 	dev->max_mtu = ETH_MAX_MTU;
+ 
+ 	br_netfilter_rtable_init(br);
+Index: net/bridge/br_stp.c
+===================================================================
+--- net/bridge/br_stp.c	(revision 49056)
++++ net/bridge/br_stp.c	(working copy)
+@@ -16,6 +16,7 @@
+ 
+ #include "br_private.h"
+ #include "br_private_stp.h"
++#include "br_private_offload.h"
+ 
+ /* since time values in bpdu are in jiffies and then scaled (1/256)
+  * before sending, make sure that is at least one STP tick.
+@@ -55,6 +56,8 @@ void br_set_state(struct net_bridge_port *p, unsig
+ 		br_info(p->br, "port %u(%s) entered %s state\n",
+ 				(unsigned int) p->port_no, p->dev->name,
+ 				br_port_state_names[p->state]);
++
++	br_offload_port_state(p);
+ }
+ 
+ /* called under bridge lock */
+Index: net/bridge/br_sysfs_br.c
+===================================================================
+--- net/bridge/br_sysfs_br.c	(revision 49056)
++++ net/bridge/br_sysfs_br.c	(working copy)
+@@ -22,6 +22,7 @@
+ #include <linux/sched/signal.h>
+ 
+ #include "br_private.h"
++#include "br_private_offload.h"
+ 
+ #define to_bridge(cd)	((struct net_bridge *)netdev_priv(to_net_dev(cd)))
+ 
+@@ -808,6 +809,38 @@ static ssize_t vlan_stats_enabled_store(struct dev
+ static DEVICE_ATTR_RW(vlan_stats_enabled);
+ #endif
+ 
++static ssize_t offload_cache_size_show(struct device *d,
++				       struct device_attribute *attr,
++				       char *buf)
++{
++	struct net_bridge *br = to_bridge(d);
++	return sprintf(buf, "%u\n", br->offload_cache_size);
++}
++
++static ssize_t offload_cache_size_store(struct device *d,
++					struct device_attribute *attr,
++					const char *buf, size_t len)
++{
++	return store_bridge_parm(d, buf, len, br_offload_set_cache_size);
++}
++static DEVICE_ATTR_RW(offload_cache_size);
++
++static ssize_t offload_cache_reserved_show(struct device *d,
++				       struct device_attribute *attr,
++				       char *buf)
++{
++	struct net_bridge *br = to_bridge(d);
++	return sprintf(buf, "%u\n", br->offload_cache_reserved);
++}
++
++static ssize_t offload_cache_reserved_store(struct device *d,
++					struct device_attribute *attr,
++					const char *buf, size_t len)
++{
++	return store_bridge_parm(d, buf, len, br_offload_set_cache_reserved);
++}
++static DEVICE_ATTR_RW(offload_cache_reserved);
++
+ static struct attribute *bridge_attrs[] = {
+ 	&dev_attr_forward_delay.attr,
+ 	&dev_attr_hello_time.attr,
+@@ -860,6 +893,8 @@ static struct attribute *bridge_attrs[] = {
+ 	&dev_attr_default_pvid.attr,
+ 	&dev_attr_vlan_stats_enabled.attr,
+ #endif
++	&dev_attr_offload_cache_size.attr,
++	&dev_attr_offload_cache_reserved.attr,
+ 	NULL
+ };
+ 
+Index: net/bridge/br.c
+===================================================================
+--- net/bridge/br.c	(revision 49056)
++++ net/bridge/br.c	(working copy)
+@@ -22,6 +22,7 @@
+ #include <net/switchdev.h>
+ 
+ #include "br_private.h"
++#include "br_private_offload.h"
+ 
+ /*
+  * Handle changes in state of network devices enslaved to a bridge.
+@@ -210,6 +211,10 @@ static int __init br_init(void)
+ 	if (err)
+ 		goto err_out;
+ 
++	err = br_offload_init();
++	if (err)
++		goto err_out0;
++
+ 	err = register_pernet_subsys(&br_net_ops);
+ 	if (err)
+ 		goto err_out1;
+@@ -253,6 +258,8 @@ err_out3:
+ err_out2:
+ 	unregister_pernet_subsys(&br_net_ops);
+ err_out1:
++	br_offload_fini();
++err_out0:
+ 	br_fdb_fini();
+ err_out:
+ 	stp_proto_unregister(&br_stp_proto);
+@@ -274,6 +281,7 @@ static void __exit br_deinit(void)
+ #if IS_ENABLED(CONFIG_ATM_LANE)
+ 	br_fdb_test_addr_hook = NULL;
+ #endif
++	br_offload_fini();
+ 	br_fdb_fini();
+ }
+ 
+Index: net/bridge/br_fdb.c
+===================================================================
+--- net/bridge/br_fdb.c	(revision 49056)
++++ net/bridge/br_fdb.c	(working copy)
+@@ -27,6 +27,7 @@
+ #include <net/switchdev.h>
+ #include <trace/events/bridge.h>
+ #include "br_private.h"
++#include "br_private_offload.h"
+ 
+ static struct kmem_cache *br_fdb_cache __read_mostly;
+ static int fdb_insert(struct net_bridge *br, struct net_bridge_port *source,
+@@ -499,6 +500,8 @@ static struct net_bridge_fdb_entry *fdb_create(str
+ 		fdb->offloaded = 0;
+ 		fdb->updated = fdb->used = jiffies;
+ 		hlist_add_head_rcu(&fdb->hlist, head);
++		INIT_HLIST_HEAD(&fdb->offload_in);
++		INIT_HLIST_HEAD(&fdb->offload_out);
+ 	}
+ 	return fdb;
+ }
+@@ -684,6 +687,8 @@ static void fdb_notify(struct net_bridge *br,
+ 	struct sk_buff *skb;
+ 	int err = -ENOBUFS;
+ 
++	br_offload_fdb_update(fdb);
++
+ 	br_switchdev_fdb_notify(fdb, type);
+ 
+ 	skb = nlmsg_new(fdb_nlmsg_size(), GFP_ATOMIC);
+Index: net/bridge/br_offload.c
+===================================================================
+--- net/bridge/br_offload.c	(nonexistent)
++++ net/bridge/br_offload.c	(revision 49058)
+@@ -0,0 +1,436 @@
++// SPDX-License-Identifier: GPL-2.0-only
++#include <linux/kernel.h>
++#include <linux/workqueue.h>
++#include "br_private.h"
++#include "br_private_offload.h"
++
++static DEFINE_SPINLOCK(offload_lock);
++
++struct bridge_flow_key {
++	u8 dest[ETH_ALEN];
++	u8 src[ETH_ALEN];
++#ifdef CONFIG_BRIDGE_VLAN_FILTERING
++	u16 vlan_tag;
++	bool vlan_present;
++#endif
++};
++
++struct bridge_flow {
++	struct net_bridge_port *port;
++	struct rhash_head node;
++	struct bridge_flow_key key;
++#ifdef CONFIG_BRIDGE_VLAN_FILTERING
++	bool vlan_out_present;
++	u16 vlan_out;
++#endif
++
++	unsigned long used;
++	struct net_bridge_fdb_entry *fdb_in, *fdb_out;
++	struct hlist_node fdb_list_in, fdb_list_out;
++
++	struct rcu_head rcu;
++};
++
++static const struct rhashtable_params flow_params = {
++	.automatic_shrinking = true,
++	.head_offset = offsetof(struct bridge_flow, node),
++	.key_len = sizeof(struct bridge_flow_key),
++	.key_offset = offsetof(struct bridge_flow, key),
++};
++
++static struct kmem_cache *offload_cache __read_mostly;
++
++static void
++flow_rcu_free(struct rcu_head *head)
++{
++	struct bridge_flow *flow;
++
++	flow = container_of(head, struct bridge_flow, rcu);
++	kmem_cache_free(offload_cache, flow);
++}
++
++static void
++__br_offload_flow_free(struct bridge_flow *flow)
++{
++	flow->used = 0;
++	hlist_del(&flow->fdb_list_in);
++	hlist_del(&flow->fdb_list_out);
++
++	call_rcu(&flow->rcu, flow_rcu_free);
++}
++
++static void
++br_offload_flow_free(struct bridge_flow *flow)
++{
++	if (rhashtable_remove_fast(&flow->port->offload.rht, &flow->node,
++				   flow_params) != 0)
++		return;
++
++	__br_offload_flow_free(flow);
++}
++
++static bool
++br_offload_flow_fdb_refresh_time(struct bridge_flow *flow,
++				 struct net_bridge_fdb_entry *fdb)
++{
++	if (!time_after(flow->used, fdb->updated))
++		return false;
++
++	fdb->updated = flow->used;
++
++	return true;
++}
++
++
++static void
++br_offload_flow_refresh_time(struct bridge_flow *flow)
++{
++	br_offload_flow_fdb_refresh_time(flow, flow->fdb_in);
++	br_offload_flow_fdb_refresh_time(flow, flow->fdb_out);
++}
++
++static void
++br_offload_destroy_cb(void *ptr, void *arg)
++{
++	struct bridge_flow *flow = ptr;
++
++	__br_offload_flow_free(flow);
++}
++
++static bool
++br_offload_need_gc(struct net_bridge_port *p)
++{
++	return (atomic_read(&p->offload.rht.nelems) +
++	        p->br->offload_cache_reserved) >= p->br->offload_cache_size;
++}
++
++static void
++br_offload_gc_work(struct work_struct *work)
++{
++	struct rhashtable_iter hti;
++	struct net_bridge_port *p;
++	struct bridge_flow *gc_flow = NULL;
++	struct bridge_flow *flow;
++	unsigned long gc_used;
++
++	p = container_of(work, struct net_bridge_port, offload.gc_work);
++
++	if (!br_offload_need_gc(p))
++		return;
++
++	rhashtable_walk_enter(&p->offload.rht, &hti);
++	rhashtable_walk_start(&hti);
++	while ((flow = rhashtable_walk_next(&hti)) != NULL) {
++		unsigned long used;
++
++		if (IS_ERR(flow))
++			continue;
++
++		used = READ_ONCE(flow->used);
++		if (!used)
++			continue;
++
++		if (gc_flow && !time_before(used, gc_used))
++			continue;
++
++		gc_flow = flow;
++		gc_used = used;
++	}
++	rhashtable_walk_stop(&hti);
++	rhashtable_walk_exit(&hti);
++
++	if (!gc_flow)
++		return;
++
++	spin_lock_bh(&offload_lock);
++	if (br_offload_need_gc(p) && gc_flow &&
++	    gc_flow->used == gc_used)
++		br_offload_flow_free(gc_flow);
++	if (p->offload.enabled && br_offload_need_gc(p))
++		queue_work(system_long_wq, work);
++	spin_unlock_bh(&offload_lock);
++
++}
++
++void br_offload_port_state(struct net_bridge_port *p)
++{
++	struct net_bridge_port_offload *o = &p->offload;
++	bool enabled = true;
++	bool flush = false;
++
++	if (p->state != BR_STATE_FORWARDING ||
++	    !(p->flags & BR_OFFLOAD))
++		enabled = false;
++
++	spin_lock_bh(&offload_lock);
++	if (o->enabled == enabled)
++		goto out;
++
++	if (enabled) {
++		if (!o->gc_work.func)
++			INIT_WORK(&o->gc_work, br_offload_gc_work);
++		rhashtable_init(&o->rht, &flow_params);
++	} else {
++		flush = true;
++		rhashtable_free_and_destroy(&o->rht, br_offload_destroy_cb, o);
++	}
++
++	o->enabled = enabled;
++
++out:
++	spin_unlock_bh(&offload_lock);
++
++	if (flush)
++		flush_work(&o->gc_work);
++}
++
++void br_offload_fdb_update(const struct net_bridge_fdb_entry *fdb)
++{
++	struct bridge_flow *f;
++	struct hlist_node *tmp;
++
++	spin_lock_bh(&offload_lock);
++
++	hlist_for_each_entry_safe(f, tmp, &fdb->offload_in, fdb_list_in)
++		br_offload_flow_free(f);
++
++	hlist_for_each_entry_safe(f, tmp, &fdb->offload_out, fdb_list_out)
++		br_offload_flow_free(f);
++
++	spin_unlock_bh(&offload_lock);
++}
++
++static void
++br_offload_prepare_key(struct net_bridge_port *p, struct bridge_flow_key *key,
++		       struct sk_buff *skb)
++{
++	memset(key, 0, sizeof(*key));
++	memcpy(key, eth_hdr(skb), 2 * ETH_ALEN);
++#ifdef CONFIG_BRIDGE_VLAN_FILTERING
++	if (!br_opt_get(p->br, BROPT_VLAN_ENABLED))
++		return;
++
++	if (!skb_vlan_tag_present(skb) || skb->vlan_proto != p->br->vlan_proto)
++		return;
++
++	key->vlan_present = true;
++	key->vlan_tag = skb_vlan_tag_get_id(skb);
++#endif
++}
++
++void br_offload_output(struct sk_buff *skb)
++{
++	struct net_bridge_port_offload *o;
++	struct br_input_skb_cb *cb = (struct br_input_skb_cb *)skb->cb;
++	struct net_bridge_port *p, *inp;
++	struct net_device *dev;
++	struct net_bridge_fdb_entry *fdb_in, *fdb_out;
++	struct net_bridge_vlan_group *vg;
++	struct bridge_flow_key key;
++	struct bridge_flow *flow;
++	u16 vlan;
++
++	if (!cb->offload)
++		return;
++
++	rcu_read_lock();
++
++	p = br_port_get_rcu(skb->dev);
++	if (!p)
++		goto out;
++
++	o = &p->offload;
++	if (!o->enabled)
++		goto out;
++
++	if (atomic_read(&p->offload.rht.nelems) >= p->br->offload_cache_size)
++		goto out;
++
++	dev = dev_get_by_index_rcu(dev_net(p->br->dev), cb->input_ifindex);
++	if (!dev)
++		goto out;
++
++	inp = br_port_get_rcu(dev);
++	if (!inp)
++		goto out;
++
++	vg = nbp_vlan_group_rcu(inp);
++	vlan = cb->input_vlan_present ? cb->input_vlan_tag : br_get_pvid(vg);
++	fdb_in = br_fdb_find_rcu(p->br, eth_hdr(skb)->h_source, vlan);
++	if (!fdb_in || !fdb_in->dst)
++		goto out;
++
++	vg = nbp_vlan_group_rcu(p);
++	vlan = skb_vlan_tag_present(skb) ? skb_vlan_tag_get_id(skb) : br_get_pvid(vg);
++	fdb_out = br_fdb_find_rcu(p->br, eth_hdr(skb)->h_dest, vlan);
++	if (!fdb_out || !fdb_out->dst)
++		goto out;
++
++	br_offload_prepare_key(p, &key, skb);
++#ifdef CONFIG_BRIDGE_VLAN_FILTERING
++	key.vlan_present = cb->input_vlan_present;
++	key.vlan_tag = cb->input_vlan_tag;
++#endif
++
++	flow = kmem_cache_alloc(offload_cache, GFP_ATOMIC);
++	flow->port = inp;
++	memcpy(&flow->key, &key, sizeof(key));
++
++#ifdef CONFIG_BRIDGE_VLAN_FILTERING
++	flow->vlan_out_present = skb_vlan_tag_present(skb);
++	flow->vlan_out = skb_vlan_tag_get(skb);
++#endif
++
++	flow->fdb_in = fdb_in;
++	flow->fdb_out = fdb_out;
++	flow->used = jiffies;
++
++	spin_lock_bh(&offload_lock);
++	if (!o->enabled ||
++	    atomic_read(&p->offload.rht.nelems) >= p->br->offload_cache_size ||
++	    rhashtable_insert_fast(&inp->offload.rht, &flow->node, flow_params)) {
++		kmem_cache_free(offload_cache, flow);
++		goto out_unlock;
++	}
++
++	hlist_add_head(&flow->fdb_list_in, &fdb_in->offload_in);
++	hlist_add_head(&flow->fdb_list_out, &fdb_out->offload_out);
++
++	if (br_offload_need_gc(p))
++		queue_work(system_long_wq, &p->offload.gc_work);
++
++out_unlock:
++	spin_unlock_bh(&offload_lock);
++
++out:
++	rcu_read_unlock();
++}
++
++bool br_offload_input(struct net_bridge_port *p, struct sk_buff *skb)
++{
++	struct net_bridge_port_offload *o = &p->offload;
++	struct br_input_skb_cb *cb = (struct br_input_skb_cb *)skb->cb;
++	struct bridge_flow_key key;
++	struct net_bridge_port *dst;
++	struct bridge_flow *flow;
++	unsigned long now = jiffies;
++	bool ret = false;
++
++	if (skb->len < sizeof(key))
++		return false;
++
++	if (!o->enabled)
++		return false;
++
++	if (is_multicast_ether_addr(eth_hdr(skb)->h_dest))
++		return false;
++
++	br_offload_prepare_key(p, &key, skb);
++
++	rcu_read_lock();
++	flow = rhashtable_lookup(&o->rht, &key, flow_params);
++	if (!flow) {
++		cb->offload = 1;
++#ifdef CONFIG_BRIDGE_VLAN_FILTERING
++		cb->input_vlan_present = key.vlan_present != 0;
++		cb->input_vlan_tag = key.vlan_tag;
++#endif
++		cb->input_ifindex = p->dev->ifindex;
++		goto out;
++	}
++
++	if (flow->fdb_in->dst != p)
++		goto out;
++
++	dst = flow->fdb_out->dst;
++	if (!dst)
++		goto out;
++
++	ret = true;
++#ifdef CONFIG_BRIDGE_VLAN_FILTERING
++	if (!flow->vlan_out_present && key.vlan_present) {
++		__vlan_hwaccel_clear_tag(skb);
++	} else if (flow->vlan_out_present) {
++		if (skb_vlan_tag_present(skb) &&
++		    skb->vlan_proto != p->br->vlan_proto) {
++			/* Protocol-mismatch, empty out vlan_tci for new tag */
++			skb_push(skb, ETH_HLEN);
++			skb = vlan_insert_tag_set_proto(skb, skb->vlan_proto,
++							skb_vlan_tag_get(skb));
++			if (unlikely(!skb))
++				goto out;
++
++			skb_pull(skb, ETH_HLEN);
++			skb_reset_mac_len(skb);
++		}
++
++		__vlan_hwaccel_put_tag(skb, p->br->vlan_proto,
++				       flow->vlan_out);
++	}
++#endif
++
++	skb->dev = dst->dev;
++	skb_push(skb, ETH_HLEN);
++
++	if (skb_warn_if_lro(skb) || !is_skb_forwardable(skb->dev, skb)) {
++		kfree_skb(skb);
++		goto out;
++	}
++
++	if (now - flow->used >= HZ) {
++		flow->used = now;
++		br_offload_flow_refresh_time(flow);
++	}
++
++	skb_forward_csum(skb);
++	dev_queue_xmit(skb);
++
++out:
++	rcu_read_unlock();
++	return ret;
++}
++
++static void
++br_offload_check_gc(struct net_bridge *br)
++{
++	struct net_bridge_port *p;
++
++	spin_lock_bh(&br->lock);
++	list_for_each_entry(p, &br->port_list, list)
++		if (br_offload_need_gc(p))
++			queue_work(system_long_wq, &p->offload.gc_work);
++	spin_unlock_bh(&br->lock);
++}
++
++
++int br_offload_set_cache_size(struct net_bridge *br, unsigned long val)
++{
++	br->offload_cache_size = val;
++	br_offload_check_gc(br);
++
++	return 0;
++}
++
++int br_offload_set_cache_reserved(struct net_bridge *br, unsigned long val)
++{
++	br->offload_cache_reserved = val;
++	br_offload_check_gc(br);
++
++	return 0;
++}
++
++int __init br_offload_init(void)
++{
++	offload_cache = kmem_cache_create("bridge_offload_cache",
++					  sizeof(struct bridge_flow),
++					  0, SLAB_HWCACHE_ALIGN, NULL);
++	if (!offload_cache)
++		return -ENOMEM;
++
++	return 0;
++}
++
++void br_offload_fini(void)
++{
++	kmem_cache_destroy(offload_cache);
++}
+Index: net/bridge/br_private_offload.h
+===================================================================
+--- net/bridge/br_private_offload.h	(nonexistent)
++++ net/bridge/br_private_offload.h	(revision 49058)
+@@ -0,0 +1,21 @@
++#ifndef __BR_OFFLOAD_H
++#define __BR_OFFLOAD_H
++
++bool br_offload_input(struct net_bridge_port *p, struct sk_buff *skb);
++void br_offload_output(struct sk_buff *skb);
++void br_offload_port_state(struct net_bridge_port *p);
++void br_offload_fdb_update(const struct net_bridge_fdb_entry *fdb);
++int br_offload_init(void);
++void br_offload_fini(void);
++int br_offload_set_cache_size(struct net_bridge *br, unsigned long val);
++int br_offload_set_cache_reserved(struct net_bridge *br, unsigned long val);
++
++static inline void br_offload_skb_disable(struct sk_buff *skb)
++{
++	struct br_input_skb_cb *cb = (struct br_input_skb_cb *)skb->cb;
++
++	if (cb->offload)
++		cb->offload = 0;
++}
++
++#endif
+Index: include/linux/if_bridge.h
+===================================================================
+--- include/linux/if_bridge.h	(revision 49056)
++++ include/linux/if_bridge.h	(working copy)
+@@ -54,6 +54,7 @@ struct br_ip_list {
+ #define BR_MRP_LOST_CONT	BIT(17)
+ #define BR_MRP_LOST_IN_CONT	BIT(18)
+ #define BR_BLOCK_BPDU		BIT(19)
++#define BR_OFFLOAD		BIT(20)
+ 
+ #define BR_DEFAULT_AGEING_TIME	(300 * HZ)
+ 
