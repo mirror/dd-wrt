@@ -389,6 +389,7 @@ obj-$(CONFIG_OCTEON) += lmsensors
 obj-$(CONFIG_P7ZIP) += p7zip
 obj-$(CONFIG_MEMTESTER) += memtester
 obj-$(CONFIG_PLEX) += plex
+obj-$(CONFIG_ANTAIRA_AGENT) += antaira-agent
 ifneq ($(CONFIG_DIST),"micro")
 obj-y+=wrtbwmon
 endif

@@ -351,6 +351,7 @@ include rules/libdaemon.mk
 include rules/avahi.mk
 include rules/prepare.mk
 include rules/libcares.mk
+include rules/antaira-agent.mk
 
 #
 # Generic rules
