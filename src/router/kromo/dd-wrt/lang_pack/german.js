@@ -1266,7 +1266,7 @@ management.lang_hungarian="Ungarisch";
 management.lang_latvian="Lettisch";
 management.net_legend="Network Stack Tuning";
 management.net_conctrl="TCP Staukontroll-Mechanismus";
-management.net_conn="Maximale Verbindungen";
+management.net_ipcontrkmax="Maximale Verbindungen";
 management.net_tcptimeout="TCP-Timeout";
 management.net_udptimeout="UDP-Timeout";
 management.clock_legend="Übertakten";
@@ -2050,7 +2050,7 @@ status_router.mem_active="Aktiv";
 status_router.mem_inactive="Inaktiv";
 
 status_router.legend4="Netzwerk";
-status_router.net_maxports="IP-Filter: maximale Ports";
+status_router.net_ipcontrkmax="IP-Filter: maximale Ports";
 status_router.net_conntrack="Aktive IP-Verbindungen";
 status_router.notavail="Nicht verfügbar";
 status_router.legend6="Verwendung";

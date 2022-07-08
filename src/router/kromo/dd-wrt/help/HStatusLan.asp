@@ -13,8 +13,8 @@
 		<div class="also">
 			<h4><% tran("share.seealso"); %></h4>
 			<ul>
-				<li><a href="HStatus.asp">Router Status</a></li>
-				<li><a href="HStatusWireless.asp">Wireless Status</a></li>
+				<li><a href="HStatus.asp"><% tran("status_router.titl"); %></a></li>
+				<li><a href="HStatusWireless.asp"><% tran("status_wireless.titl"); %></a></li>
 			</ul>
 		</div>
 	</body>
