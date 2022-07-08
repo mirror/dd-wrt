@@ -312,19 +312,21 @@ struct wifi_channels *get_chan(struct wifi_channels *wifi_channels, int freq, co
 			break;
 	}
 	if (chan) {
-		if (freq >= 4000 && nvram_nmatch("ng-only", "%s_net_mode", interface)
+		if (freq >= 4000 && (nvram_nmatch("ng-only", "%s_net_mode", interface)
 		    || nvram_nmatch("n2-only", "%s_net_mode", interface)
 		    || nvram_nmatch("bg-mixed", "%s_net_mode", interface)
 		    || nvram_nmatch("ng-mixed", "%s_net_mode", interface)
 		    || nvram_nmatch("b-only", "%s_net_mode", interface)
-		    || nvram_nmatch("g-only", "%s_net_mode", interface)) {
+		    || nvram_nmatch("g-only", "%s_net_mode", interface))) {
+			dd_loginfo("autochannel", "%s: %d not valid, ignore\n", interface, chan->freq);
 			chan->freq = -1;
 		}
-		if (freq < 4000 && nvram_nmatch("a-only", "%s_net_mode", interface)
+		if (freq < 4000 && (nvram_nmatch("a-only", "%s_net_mode", interface)
 		    || nvram_nmatch("na-only", "%s_net_mode", interface)
 		    || nvram_nmatch("ac-only", "%s_net_mode", interface)
 		    || nvram_nmatch("acn-mixed", "%s_net_mode", interface)
-		    || nvram_nmatch("n5-only", "%s_net_mode", interface)) {
+		    || nvram_nmatch("n5-only", "%s_net_mode", interface))) {
+			dd_loginfo("autochannel", "%s: %d not valid, ignore\n", interface, chan->freq);
 			chan->freq = -1;
 		}
 #if defined(HAVE_BUFFALO_SA) && defined(HAVE_ATH9K)
@@ -346,6 +348,12 @@ static int freq_quality(struct wifi_channels *wifi_channels, int _max_eirp, int 
 	int idx;
 	if (!f)
 		return 0;
+
+	struct wifi_channels *chan = get_chan(wifi_channels, f->freq, interface);
+	if (!chan || chan->freq == -1 || chan->freq == 2472) {
+		return -1;
+	}
+
 	if (f->active && f->active_count && f->busy_count) {
 
 		c = 100 - (uint32_t) (f->busy * 100 / f->active);
@@ -364,10 +372,6 @@ static int freq_quality(struct wifi_channels *wifi_channels, int _max_eirp, int 
 		c = 100;
 	}
 
-	struct wifi_channels *chan = get_chan(wifi_channels, f->freq, interface);
-	if (!chan || chan->freq == -1 || chan->freq == 2472) {
-		return 0;
-	}
 
 	/* if HT40, VHT80 or VHT160 auto channel is requested, check if desired channel is capabile of that operation mode, if not, move it to the bottom of the list */
 /*	if (!(_htflags & 8)) {
@@ -749,6 +753,7 @@ struct mac80211_ac *mac80211autochannel(const char *interface, char *freq_range,
 	}
 
 	dd_list_for_each_entry_safe(f, ftmp, &frequencies, list) {
+		dd_loginfo("autochannel", "%s: free %d\n", interface, f->freq);
 		dd_list_del(&f->list);
 		free(f);
 	}
