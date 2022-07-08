@@ -1,6 +1,7 @@
 define kernelfeatures
 	sed -i 's/\# CONFIG_PRINTK_TIME is not set/CONFIG_PRINTK_TIME=y/g' $(LINUXDIR)/.config
 	echo "CONFIG_INOTIFY_USER=y" >> $(LINUXDIR)/.config
+	echo "# CONFIG_RANDOM_TRUST_BOOTLOADER is not set" >> $(LINUXDIR)/.config
 	if [ "$(CONFIG_IPSET)" = "y" ]; then \
 		sed -i 's/\# CONFIG_NETFILTER_XT_SET is not set/CONFIG_NETFILTER_XT_SET=y/g' $(LINUXDIR)/.config; \
 		sed -i 's/\# CONFIG_IP_SET is not set/CONFIG_IP_SET=y/g' $(LINUXDIR)/.config; \
