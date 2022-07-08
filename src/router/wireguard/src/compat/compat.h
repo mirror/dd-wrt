@@ -326,7 +326,7 @@ static inline int wait_for_random_bytes(void)
 }
 #endif
 
-#if LINUX_VERSION_CODE < KERNEL_VERSION(4, 19, 0) && LINUX_VERSION_CODE >= KERNEL_VERSION(4, 2, 0) && !defined(ISRHEL8)
+#if LINUX_VERSION_CODE < KERNEL_VERSION(4, 9, 0) && LINUX_VERSION_CODE >= KERNEL_VERSION(4, 2, 0) && !defined(ISRHEL8)
 #include <linux/random.h>
 #include <linux/slab.h>
 struct rng_is_initialized_callback {
@@ -739,7 +739,7 @@ static inline int kref_read(const struct kref *kref)
 }
 #endif
 
-#if LINUX_VERSION_CODE < KERNEL_VERSION(4, 17, 0)
+#if LINUX_VERSION_CODE < KERNEL_VERSION(4, 9, 0)
 static inline void le32_to_cpu_array(u32 *buf, unsigned int words)
 {
 	while (words--) {
