@@ -125,13 +125,13 @@ function setDHCPTable() {
 }
 
 function getSize(size) {
-	var prefix=new Array("","k","M","G","T","P","E","Z"); var base=1000;
+	var prefix=new Array("","k","M","G","T","P","E","Z"); var base = 1000;
 	var pos=0;
 	while (size>base) {
 		size/=base; pos++;
 	}
 	if (pos > 2) {
-		precision=100; 
+		precision = 100; 
 	} else {
 		precision = 1;
 	}
