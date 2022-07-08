@@ -780,7 +780,8 @@ struct mac80211_ac *mac80211autochannel(const char *interface, char *freq_range,
 			free(acs);
 		acs = next;
 	}
-	racs->next = NULL;
+	if (racs)
+		racs->next = NULL;
 out:
 	if (wifi_channels)
 		free(wifi_channels);
