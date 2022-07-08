@@ -318,7 +318,7 @@ struct wifi_channels *get_chan(struct wifi_channels *wifi_channels, int freq, co
 		if (chan->freq == freq)
 			break;
 	}
-	if (chan) {
+	if (chan && chan->freq != -1) {
 		if (freq >= 4000 && (nvram_nmatch("ng-only", "%s_net_mode", interface)
 		    || nvram_nmatch("n2-only", "%s_net_mode", interface)
 		    || nvram_nmatch("bg-mixed", "%s_net_mode", interface)
