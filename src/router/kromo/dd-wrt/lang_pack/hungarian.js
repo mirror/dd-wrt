@@ -855,7 +855,7 @@ management.lang_japanese="Japán";
 management.lang_hungarian="Magyar";
 management.net_legend="Hálózati verem hangolása";
 management.net_conctrl="TCP torlódások ellenőrzése";
-management.net_conn="Maximális kapcsolatok";
+management.net_ipcontrkmax="Maximális kapcsolatok";
 management.net_tcptimeout="TCP Timeout";
 management.net_udptimeout="UDP Timeout";
 
@@ -1179,7 +1179,7 @@ status_router.mem_cached="Cache-elt";
 status_router.mem_active="Aktív";
 status_router.mem_inactive="Inaktív";
 status_router.legend4="Hálózat";
-status_router.net_maxports="IP-szűrő maximális portjai";
+status_router.net_ipcontrkmax="IP-szűrő maximális portjai";
 status_router.net_conntrack="Aktíve IP kapcsolatok";
 status_router.notavail="Nem elérhető";
 status_router.inpvolt="Alaplapi bemenő feszültség";

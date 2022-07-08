@@ -1309,7 +1309,7 @@ hidx.right18="Select your current time zone. When the " + share.srvipname + " is
 hidx.sas="The setup assistant guides you through the basic setup steps to configure your router.";
 
 //help page
-hidx.page1="<dd>The Setup screen is the first screen you will see when accessing the router. For a basic working router configuration while using only the settings on this screen is possible. Some Internet Service Providers (ISPs) will require that you enter specific information, such as a username, password, IP address, default gateway address, or a DNS IP address. This information can be obtained from your ISP, if required.<br /><br /><div class=\"note\"><h4>Note:</h4><div>After you have configured these settings, you should set a new password for the router using the <a href=\"HManagement.asp\">Management</a> screen. This will increase security, protecting the router from unauthorized changes. All users that try to access the router's Web interface or Setup Wizard will be prompted to enter the router's login credentials.</div></div></dd>";
+hidx.page1="<dd>The Setup screen is the first screen you will see when accessing the router. For a basic working router configuration while using only the settings on this screen is possible. Some Internet Service Providers (ISPs) will require that you enter specific information, such as a username, password, IP address, default gateway address, or a DNS IP address. This information can be obtained from your ISP, if required.<br /><br /><div class=\"note\"><h4>Note:</h4><div>After you have configured these settings, you should set a new password for the router using the <a href=\"HManagement.asp\">Management</a> screen. This will enhance security by protecting the router from unauthorized changes. All users that try to access the router's Web interface or Setup Wizard will be prompted to enter the router's login credentials.</div></div></dd>";
 hidx.page2="<dd>This entry is necessary for some ISPs and can be provided by them.</dd>";
 hidx.page3="<dd>This entry is necessary for some ISPs and can be provided by them.</dd>";
 hidx.page4="<dd>The router supports four connection types:<ul><li>Automatic Configuration DHCP</li><li>Static IP</li><li>PPPoE (Point-to-Point Protocol over Ethernet)</li><li>PPTP (Point-to-Point Tunneling Protocol)</li></ul><br />These types can be selected from the drop-down menu next to <i>Internet Connection</i>. The information required and available features will differ depending on what kind of connection type you select.<br /><br /><div class=\"note\"><h4>Note:</h4><div>Some cable providers require a specific MAC address for connection to the Internet. To learn more about this, click the System tab. Then click the Help more... link, and read about the <a href=\"HWanMAC.asp\">MAC Address Cloning</a> feature.</div></div></dd>";
@@ -1485,7 +1485,7 @@ management.lang_korean="Korean";
 management.lang_latvian="Latvian";
 management.net_legend="Network Stack Tuning";
 management.net_conctrl="TCP Congestion Control";
-management.net_conn="Maximum Connections";
+management.net_ipcontrkmax="Maximum Connections";
 management.net_tcptimeout="TCP Timeout";
 management.net_udptimeout="UDP Timeout";
 management.clock_legend="Overclocking";
@@ -2404,10 +2404,10 @@ status_router.mem_active="Active";
 status_router.mem_inactive="Inactive";
 status_router.mem_hidden="Hidden"; // do not translate this line, this is bogus (BrainSlayer)
 status_router.legend4="Network";
-status_router.net_maxports="IP Filter Maximum Ports";
+status_router.net_ipcontrkmax="Maximum IP Connections";
 status_router.net_conntrack="Active IP Connections";
 status_router.notavail="Not Available";
-status_router.legend6="Space Usage";
+status_router.legend6="NVRAM / CIFS / JFFS2 Usage";
 status_router.inpvolt="Board Input Voltage";
 status_router.cputemp="Temperatures";
 
@@ -2421,7 +2421,7 @@ hstatus_router.right10="This is the measure of the time the router has been \"up
 hstatus_router.right12="This is obtained from the three numbers that represent the system load during the last one, five, and fifteen minute periods.";
 
 //help page
-hstatus_router.page1="<dd>This status screen displays the router's current status and configuration. All information is read-only.</dd><dt>Firmware Version </dt><dd>The version number of the firmware currently installed is displayed here. Firmware should only be upgraded from the Administration Tab if you experience problems with the router. Visit <a href=\"https:\/\/dd-wrt.com/support/other-downloads/?path=betas\" target=\"_new\">https:\/\/dd-wrt.com/downloads/betas</a> to find updated firmware files.</dd><dt>Current Time</dt><dd>The current date and time is displayed here.</dd><dt>MAC Address </dt><dd>The MAC Address of the Internet interface is displayed here.</dd><dt>Router Name</dt><dd>Shows the configured name of the router.</dd><dt>Router Model</dt><dd>Shows the router vendor and model.</dd><dt>CPU</dt><dd>Shows the CPU type, revision, # of cores, clock speed, load average, & temperature if temp monitoring is supported.</dd><dt>Memory</dt><dd>Shows info on how much RAM is used, free, and allocated to where.,</dd><dt>Host Name</dt><dd>The Host Name is the name of the router.</dd><dt>Configuration Type</dt><dt>IP Address, Subnet Mask, and Default Gateway</dt><dd>The Internet IP Address, Subnet Mask, and Default Gateway IP Address of the router, as seen by external users on the Internet, are displayed here.</dd><dt>DNS</dt><dd>The DNS (Domain Name System) IP Addresses currently used by the router are shown here. Multiple DNS IP settings are common. In most cases, the first available DNS entry is used.</dd><dt>Traffic</dt><dd>This shows your router's Internet traffic (total since last reboot or by month).</dd>";
+hstatus_router.page1="<dd>This status screen displays the router's current status and configuration. All information is read-only.</dd><dt>" + share.routername + "</dt><dd>Shows the configured name of the router.</dd><dt>" + status_router.sys_model + "</dt><dd>Shows the router's vendor, model and other hardware revision details.</dd><dt>" + status_router.sys_firmver + "</dt><dd>The version / revision number and compilation date of the currently installed firmware. It is recommended to visit <a href=\"https:\/\/dd-wrt.com/support/other-downloads/?path=betas\" target=\"_new\">https:\/\/dd-wrt.com/downloads/betas</a> regularly to find updated firmware files.</dd><dt>" + status_router.sys_kernel + "</dt><dd>The current kernel version and build details is displayed here.</dd><dt>" + share.mac + "</dt><dd>The MAC Address of the WAN interface is displayed here.</dd><dt>" + share.hostname + "</dt><dd>The Hostname is the name of the router.</dd><dt>" + share.wandomainname + "</dt><dd>The currently configured WAN domain name is displayed here.</dd><dt>" + share.landomainname + "</dt><dd>The currently configured LAN domain name is displayed here.</dd><dt>" + status_router.sys_time + "</dt><dd>The current date and time is displayed here.</dd><dt>" + status_router.sys_up + "</dt><dd>The total uptime the router has been operating since last reboot is displayed here.</dd><dt>" + status_router.legend2 + "</dt><dd>This section shows various details about your CPU like its model, revision, number of cores, features supported, clock speed, load average and temperature(s) which may include the WiFi radios, if temperature monitoring is supported.</dd><dt>" + status_router.legend3 + "</dt><dd>Shows detailed RAM information starting with the available, free, used, buffer allocated, cached, active and inactive.</dd>";
 
 // ** Status_Internet.asp **//
 var status_inet=new Object();

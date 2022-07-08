@@ -221,7 +221,7 @@ addEvent(window, "unload", function() {
 							<fieldset>
 								<legend><% tran("status_router.legend4"); %></legend>
 								<div class="setting">
-									<div class="label"><% tran("status_router.net_maxports"); %></div>
+									<div class="label"><% tran("status_router.net_ipcontrkmax"); %></div>
 									<% nvg("ip_conntrack_max"); %>&nbsp;
 								</div>
 								<div class="setting">
