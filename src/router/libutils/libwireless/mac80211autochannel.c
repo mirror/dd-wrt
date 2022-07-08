@@ -758,7 +758,7 @@ struct mac80211_ac *mac80211autochannel(const char *interface, char *freq_range,
 		dd_list_del(&f->list);
 		free(f);
 	}
-	int lastq = 0;
+	int lastq = -1;
 	struct mac80211_ac *racs = NULL;
 	struct mac80211_ac *head = acs;
 	while (acs) {
