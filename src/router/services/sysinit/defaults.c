@@ -3668,6 +3668,7 @@ struct nvram_param srouter_defaults[] = {
 	{ "smartdns_dualstack_ip_selection", "0" },	// prefer ipv4 over ipv6 if ipv6 is significant slower
 	{ "smartdns_prefetch_domain", "1" },	// do cyclic background resolv and measurement
 	{ "smartdns_serve_expired", "1" },	// 
+	{ "smartdns_use_dns", "0" },	// 0 = use dns-list from router e.g. from WAN, Static DNS, WireGuard or VPN; 1 = use only SmartDNS servers from Addtional Options
 #endif
 #ifdef HAVE_MDNS
 	{ "mdns_enable", "0" },
