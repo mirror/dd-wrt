@@ -1278,6 +1278,7 @@ static ssize_t urandom_read_iter(struct kiocb *kiocb, struct iov_iter *iter)
 {
 	static int maxwarn = 10;
 
+#if 0
 	if (!crng_ready()) {
 		if (!ratelimit_disable && maxwarn <= 0)
 			++urandom_warning.missed;
@@ -1287,7 +1288,7 @@ static ssize_t urandom_read_iter(struct kiocb *kiocb, struct iov_iter *iter)
 				  current->comm, iov_iter_count(iter));
 		}
 	}
-
+#endif
 	return get_random_bytes_user(iter);
 }
 
