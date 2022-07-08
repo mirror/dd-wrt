@@ -274,6 +274,8 @@ static int get_max_eirp(struct wifi_channels *wifi_channels)
 	struct wifi_channels *chan = NULL;
 	while (1) {
 		chan = &wifi_channels[i++];
+		if (chan->freq == -2)
+			continue;
 		if (chan->freq == -1)
 			break;
 		int max_eirp = chan->hw_eirp;
@@ -290,6 +292,8 @@ static int get_eirp(struct wifi_channels *wifi_channels, int freq)
 	struct wifi_channels *chan = NULL;
 	while (1) {
 		chan = &wifi_channels[i++];
+		if (chan->freq == -2)
+			continue;
 		if (chan->freq == -1)
 			break;
 		if (chan->freq == freq) {
@@ -307,6 +311,8 @@ struct wifi_channels *get_chan(struct wifi_channels *wifi_channels, int freq, co
 
 	while (1) {
 		chan = &wifi_channels[i++];
+		if (chan->freq == -2)
+			continue;
 		if (chan->freq == -1)
 			break;
 		if (chan->freq == freq)
@@ -320,7 +326,7 @@ struct wifi_channels *get_chan(struct wifi_channels *wifi_channels, int freq, co
 		    || nvram_nmatch("b-only", "%s_net_mode", interface)
 		    || nvram_nmatch("g-only", "%s_net_mode", interface))) {
 			dd_loginfo("autochannel", "%s: %d not valid, ignore\n", interface, chan->freq);
-			chan->freq = -1;
+			chan->freq = -2;
 		}
 		if (freq < 4000 && (nvram_nmatch("a-only", "%s_net_mode", interface)
 		    || nvram_nmatch("na-only", "%s_net_mode", interface)
@@ -328,16 +334,16 @@ struct wifi_channels *get_chan(struct wifi_channels *wifi_channels, int freq, co
 		    || nvram_nmatch("acn-mixed", "%s_net_mode", interface)
 		    || nvram_nmatch("n5-only", "%s_net_mode", interface))) {
 			dd_loginfo("autochannel", "%s: %d not valid, ignore\n", interface, chan->freq);
-			chan->freq = -1;
+			chan->freq = -2;
 		}
 #if defined(HAVE_BUFFALO_SA) && defined(HAVE_ATH9K)
 		if ((!strcmp(getUEnv("region"), "AP") || !strcmp(getUEnv("region"), "US"))
 		    && ieee80211_mhz2ieee(freq) > 11 && ieee80211_mhz2ieee(freq) < 14 && nvram_default_match("region", "SA", ""))
-			chan->freq = -1;
+			chan->freq = -2;
 #endif
 #ifdef HAVE_IDEXX
 		if (ieee80211_mhz2ieee(freq) > 48)
-			chan->freq = -1;
+			chan->freq = -2;
 #endif
 	}
 	return chan;
@@ -351,7 +357,7 @@ static int freq_quality(struct wifi_channels *wifi_channels, int _max_eirp, int 
 		return 0;
 
 	struct wifi_channels *chan = get_chan(wifi_channels, f->freq, interface);
-	if (!chan || chan->freq == -1 || chan->freq == 2472) {
+	if (!chan || chan->freq < 0 || chan->freq == 2472) {
 		return -1;
 	}
 
@@ -544,7 +550,7 @@ struct mac80211_ac *mac80211autochannel(const char *interface, char *freq_range,
 			continue;
 		}
 		dd_loginfo("autochannel", "%s: chan is %d bw is %d\n", interface, chan->freq, bw);
-		if (chan->freq == -1)
+		if (chan->freq < 0)
 			continue;
 		switch (bw) {
 		case 40:
