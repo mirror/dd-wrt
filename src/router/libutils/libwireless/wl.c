@@ -3333,9 +3333,9 @@ int has_dualband(const char *prefix)
 	char str[64];
 	sprintf(str, "/sys/kernel/debug/ieee80211/phy%d/ath10k/bmi_board_id", phy);
 	FILE *fp = fopen(str, "rb");
-	if (!fp){
+	if (!fp) {
 		RETURNVALUE(0);
-	} else {		
+	} else {
 		int bmi;
 		fscanf(fp, "%d", &bmi);
 		fclose(fp);
