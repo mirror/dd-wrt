@@ -303,6 +303,7 @@ struct wifi_channels *get_chan(struct wifi_channels *wifi_channels, int freq, co
 {
 	struct wifi_channels *chan = NULL;
 	int i = 0;
+	dd_loginfo("autochannel", "%s: check freq %d\n", interface, freq);
 
 	while (1) {
 		chan = &wifi_channels[i++];
@@ -318,7 +319,7 @@ struct wifi_channels *get_chan(struct wifi_channels *wifi_channels, int freq, co
 		    || nvram_nmatch("ng-mixed", "%s_net_mode", interface)
 		    || nvram_nmatch("b-only", "%s_net_mode", interface)
 		    || nvram_nmatch("g-only", "%s_net_mode", interface))) {
-//			dd_loginfo("autochannel", "%s: %d not valid, ignore\n", interface, chan->freq);
+			dd_loginfo("autochannel", "%s: %d not valid, ignore\n", interface, chan->freq);
 			chan->freq = -1;
 		}
 		if (freq < 4000 && (nvram_nmatch("a-only", "%s_net_mode", interface)
@@ -326,7 +327,7 @@ struct wifi_channels *get_chan(struct wifi_channels *wifi_channels, int freq, co
 		    || nvram_nmatch("ac-only", "%s_net_mode", interface)
 		    || nvram_nmatch("acn-mixed", "%s_net_mode", interface)
 		    || nvram_nmatch("n5-only", "%s_net_mode", interface))) {
-//			dd_loginfo("autochannel", "%s: %d not valid, ignore\n", interface, chan->freq);
+			dd_loginfo("autochannel", "%s: %d not valid, ignore\n", interface, chan->freq);
 			chan->freq = -1;
 		}
 #if defined(HAVE_BUFFALO_SA) && defined(HAVE_ATH9K)
