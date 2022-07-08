@@ -83,7 +83,7 @@ void start_smartdns(void)
 	struct dns_lists *dns_list = NULL;
 	if (nvram_matchi("recursive_dns", 1)) {
 		fprintf(fp, "server 127.0.0.1:7053\n");
-	} else {
+	} else if (nvram_matchi("smartdns_use_dns", 0)) {
 		dns_list = get_dns_list(1);
 		if (dns_list && dns_list->num_servers > 0) {
 			int i;

@@ -1567,6 +1567,7 @@ service.dns_smartdns="SmartDNS Auflösung";
 service.dns_smartdns_dualstack="Dualstack IP Vorauswahl";
 service.dns_smartdns_prefetch_domain="Domain Vorabruf";
 service.dns_smartdns_serve_expired="Serve Expired";
+service.dns_smartdns_use_dns="Verwende nur SmartDNS Server";
 service.dns_smartdns_option="Zusätzliche SmartDNS-Optionen";
 
 service.dnsmasq_dnssec="Prüfe DNS Antworten (DNSSEC)";

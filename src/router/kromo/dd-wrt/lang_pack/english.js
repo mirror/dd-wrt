@@ -1842,6 +1842,7 @@ service.dns_smartdns_label="Enable Resolver";
 service.dns_smartdns_dualstack="Dualstack IP Selection";
 service.dns_smartdns_prefetch_domain="Prefetch Domain";
 service.dns_smartdns_serve_expired="Serve Expired";
+service.dns_smartdns_use_dns="Use only SmartDNS Servers";
 service.dns_smartdns_option="Additional Options";
 service.dns_crypt_resolv="DNSCrypt Resolver";
 service.dnsmasq_dnssec="Validate DNS Replies (DNSSEC)";
