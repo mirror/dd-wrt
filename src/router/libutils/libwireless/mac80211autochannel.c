@@ -33,6 +33,9 @@
 #define ARRAY_SIZE(a) (sizeof(a) / sizeof(a[0]))
 #endif
 
+#define CHANNEL_EOF -1
+#define CHANNEL_DISABLED -2 
+
 static struct mac80211_ac *add_to_mac80211_ac(struct mac80211_ac *list_root);
 void free_mac80211_ac(struct mac80211_ac *acs);
 
@@ -274,9 +277,9 @@ static int get_max_eirp(struct wifi_channels *wifi_channels)
 	struct wifi_channels *chan = NULL;
 	while (1) {
 		chan = &wifi_channels[i++];
-		if (chan->freq == -2)
+		if (chan->freq == CHANNEL_DISABLED)
 			continue;
-		if (chan->freq == -1)
+		if (chan->freq == CHANNEL_EOF)
 			break;
 		int max_eirp = chan->hw_eirp;
 		if (max_eirp > eirp) {
@@ -292,9 +295,9 @@ static int get_eirp(struct wifi_channels *wifi_channels, int freq)
 	struct wifi_channels *chan = NULL;
 	while (1) {
 		chan = &wifi_channels[i++];
-		if (chan->freq == -2)
+		if (chan->freq == CHANNEL_DISABLED)
 			continue;
-		if (chan->freq == -1)
+		if (chan->freq == CHANNEL_EOF)
 			break;
 		if (chan->freq == freq) {
 			return chan->hw_eirp;
@@ -311,14 +314,14 @@ struct wifi_channels *get_chan(struct wifi_channels *wifi_channels, int freq, co
 
 	while (1) {
 		chan = &wifi_channels[i++];
-		if (chan->freq == -2)
+		if (chan->freq == CHANNEL_DISABLED)
 			continue;
-		if (chan->freq == -1)
+		if (chan->freq == CHANNEL_EOF)
 			break;
 		if (chan->freq == freq)
 			break;
 	}
-	if (chan && chan->freq != -1) {
+	if (chan && chan->freq != CHANNEL_EOF) {
 		if (freq >= 4000 && (nvram_nmatch("ng-only", "%s_net_mode", interface)
 		    || nvram_nmatch("n2-only", "%s_net_mode", interface)
 		    || nvram_nmatch("bg-mixed", "%s_net_mode", interface)
@@ -326,7 +329,7 @@ struct wifi_channels *get_chan(struct wifi_channels *wifi_channels, int freq, co
 		    || nvram_nmatch("b-only", "%s_net_mode", interface)
 		    || nvram_nmatch("g-only", "%s_net_mode", interface))) {
 			dd_loginfo("autochannel", "%s: %d not valid, ignore\n", interface, chan->freq);
-			chan->freq = -2;
+			chan->freq = CHANNEL_DISABLED;
 		}
 		if (freq < 4000 && (nvram_nmatch("a-only", "%s_net_mode", interface)
 		    || nvram_nmatch("na-only", "%s_net_mode", interface)
@@ -334,16 +337,16 @@ struct wifi_channels *get_chan(struct wifi_channels *wifi_channels, int freq, co
 		    || nvram_nmatch("acn-mixed", "%s_net_mode", interface)
 		    || nvram_nmatch("n5-only", "%s_net_mode", interface))) {
 			dd_loginfo("autochannel", "%s: %d not valid, ignore\n", interface, chan->freq);
-			chan->freq = -2;
+			chan->freq = CHANNEL_DISABLED;
 		}
 #if defined(HAVE_BUFFALO_SA) && defined(HAVE_ATH9K)
 		if ((!strcmp(getUEnv("region"), "AP") || !strcmp(getUEnv("region"), "US"))
 		    && ieee80211_mhz2ieee(freq) > 11 && ieee80211_mhz2ieee(freq) < 14 && nvram_default_match("region", "SA", ""))
-			chan->freq = -2;
+			chan->freq = CHANNEL_DISABLED;
 #endif
 #ifdef HAVE_IDEXX
 		if (ieee80211_mhz2ieee(freq) > 48)
-			chan->freq = -2;
+			chan->freq = CHANNEL_DISABLED;
 #endif
 	}
 	return chan;
