@@ -1842,7 +1842,7 @@ service.dns_smartdns_label="Enable Resolver";
 service.dns_smartdns_dualstack="Dualstack IP Selection";
 service.dns_smartdns_prefetch_domain="Prefetch Domain";
 service.dns_smartdns_serve_expired="Serve Expired";
-service.dns_smartdns_use_dns="Use only SmartDNS Servers";
+service.dns_smartdns_use_dns="Provided Servers Only";
 service.dns_smartdns_option="Additional Options";
 service.dns_crypt_resolv="DNSCrypt Resolver";
 service.dnsmasq_dnssec="Validate DNS Replies (DNSSEC)";
@@ -2075,8 +2075,8 @@ service.vncrepeater_legend="Virtual Network Computing (VNC)";
 service.vncrepeater="Enable Repeater";
 
 //sshd.webservices
-service.ssh_legend="Secure Shell";
-service.ssh_srv="SSHd";
+service.ssh_legend="Secure Shell (SSH)";
+service.ssh_srv="Enable Daemon";
 service.ssh_password="Password Login";
 service.ssh_key="Authorized Keys";
 service.ssh_forwarding="SSH TCP Forwarding";
@@ -2450,7 +2450,7 @@ hstatus_inet.right2="This shows the information required by your ISP for connect
 hstatus_inet.right4="This shows your router's Internet traffic since last reboot.";
 hstatus_inet.right6="This shows your router's Internet traffic by month. Drag the mouse over graph to see daily data. Data is stored in NVRAM.";
 // help page
-hstatus_inet.page1="<dt>" + status_inet.conft + "</dt>:<br /><dt>" + idx.conn_type + "</dt><dd>Will display the selected type of connection:<ul><li>" + share.disabled + "</li><li>" + idx.static_ip + "</li><li>" + idx.dhcp + "</li><li>" + idx.dhcp_auth + "</li><li>PPPoE</li><li>" + idx.pppoe_dual + "</li><li>PPTP</li><li>L2TP</li><li>" + idx.heartbeat_sig + "</li><li>" + idx.iphone_tether + "</li><li>" + idx.mobile_bb + "</li></ul><dt>" + status_inet.wanuptime + "</dt><dd> Will show the current WAN uptime total.</dd><dt>" + share.ipv4 + "</dt> or <dt>" + share.ipv6 + "</dt><dd>will show your current WAN IP/subnet mask or prefix in case you have IPv6 enabled.</dd><dt>" + share.gateway + "</dt>Shows the router's IP address.</dt><dt>IPv4/6 DNS 0 / 1 / 2</dt><dd>The Domain Name System (DNS) IP Addresses currently setup and in use by the router are shown here. MultiSple DNS IPs are common. In most cases, the first available DNS entry is used.</dd><dt>" + status_inet.leasetime + "</dt><dd>Will display your remaining lease time Assigned to you by the ISP equipment.</dd><dt>" + status_inet.traff + "</dt><dd>This shows your router's Internet traffic (total since last reboot or by month).</dd>";
+hstatus_inet.page1="<dt>" + status_inet.conft + "</dt><br /><dt>" + idx.conn_type + "</dt><dd>Will display the selected type of connection:<ul><li>" + share.disabled + "</li><li>" + idx.static_ip + "</li><li>" + idx.dhcp + "</li><li>" + idx.dhcp_auth + "</li><li>PPPoE</li><li>" + idx.pppoe_dual + "</li><li>PPTP</li><li>L2TP</li><li>" + idx.heartbeat_sig + "</li><li>" + idx.iphone_tether + "</li><li>" + idx.mobile_bb + "</li></ul><dt>" + status_inet.wanuptime + "</dt><dd> Will show the current WAN uptime total.</dd><dt>" + share.ipv4 + " and / or " + share.ipv6 + "</dt><dd>The current WAN IP/subnet mask or prefix in case you have IPv6 enabled.</dd><dt>" + share.gateway + "</dt>Shows the router's current IP address.</dt><br /><dt>IPv4 and / or IPv6 DNS 0 / 1 / 2</dt><dd>The Domain Name System (DNS) IP Addresses currently setup and in use by the router are shown here. Up to three DNS IPs are allowed. In most cases, the first available DNS entry is used.</dd><dt>" + status_inet.leasetime + "</dt><dd>The router's remaining lease time assigned to you by the ISP equipment is displayed here.</dd><dt>" + status_inet.traff + "</dt><dd>The router's Internet traffic (total since last reboot or by month).</dd><br /><dt>" + status_inet.traffin + "</dt><dd> The current incoming traffic amount in MiB is displayed here.</dd><dt>" + status_inet.traffout + "</dt><dd> The current outgoing traffic amount in MiB is displayed ehere.</dd></br /><dt>" + status_inet.traff_mon + "</dt><dd>A graphical representation of incoming / outgoing traffic by month is displayed here, you can view the current or at your choice view the previous or follwoing months when and if this data has already been captured.</dd></br /><dt>" + status_inet.dataadmin + "</dt><dd>This section will allow you to backup / restore or delete the desired captured data.</dd>";
 
 // ** Status_Conntrack.asp **//
 var status_conn=new Object();
@@ -3116,7 +3116,7 @@ wl_basic.n5="N Only - 5 GHz";
 wl_basic.n2="N Only - 2.4 GHz";
 wl_basic.n="N Only";
 wl_basic.g="G Only";
-wl_basic.bg="BG Mixed";
+wl_basic.bg="B / G Mixed";
 wl_basic.rts="RTS Threshold";
 wl_basic.rtsvalue="Threshold";
 wl_basic.protmode="Protection Mode";
