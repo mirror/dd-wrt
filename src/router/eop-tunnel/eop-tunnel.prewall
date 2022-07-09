@@ -51,17 +51,23 @@ for i in $(seq 1 $tunnels); do
 		peers=$(($($nv get oet${i}_peers) - 1))
 		for p in $(seq 0 $peers); do
 			endp="$($nv get oet${i}_rem${p})"
-			if [[ ! -z $endp && $endp != 0.0.0.0 ]]; then
-				#if endpoint is url then parse from wg interface
-				if ! [[ $(echo $endp | grep -E "^[0-9,.]{1,}$") ]]; then
-					pk=$(nvram get oet${i}_peerkey${p})
-						endp=$(/usr/bin/wg | sed "/oet${i}/,/interface/!d;/interface/d" | sed "/${pk//\//\\\/}/,/peer/!d;/peer/d" | sed -n "/endpoint: /{s/.*endpoint: //;s/:.*//;p}" 2>/dev/null) >/dev/null 2>&1
-				fi
-				if [[ ! -z $endp ]]; then
-					ip route del $endp >/dev/null 2>&1
-					logger -p user.info "WireGuard: Deleted endpoint route to $endp"
+			if [[ ! -z $endp && $endp != 0.0.0.0 ]] >/dev/null 2>&1; then
+				#if endpoint is IPv6 do nothing yet otherwise parse endpoint from wg interface
+				if [ "$endp" != "${endp#*:[0-9a-fA-F]}" ]; then
+					logger -p user.warning "WireGuard: endpoint: $endp is IPv6, not yet implemented"
+					endpip=""
 				else
-					logger -p user.info "WireGuard: Could not delete endpoint route from oet${i} peer${p} to $endp"
+					pk=$($nv get oet${i}_peerkey${p})
+					#endpip=$(/usr/bin/wg | sed "/oet${i}/,/interface/!d;/interface/d" | sed "/${pk//\//\\\/}/,/peer/!d;/peer/d" | sed -n "/endpoint: /{s/.*endpoint: //;s/:.*//;p}" 2>/dev/null) >/dev/null 2>&1
+					endpip=$(/usr/bin/wg showconf oet${i} | sed "/${pk//\//\\\/}/,/Peer/!d;/Peer/d" | awk -F"Endpoint = " '/Endpoint = /{print $2}' 2>/dev/null) >/dev/null 2>&1
+					endpip="${endpip%:*}"
+				fi
+				#IPv6  if [[ ! -z $endpip ]] && [[ "$endpip" != "${endpip#*[0-9].*[0-9].*[0-9].*[0-9]}" || "$endpip" != "${endpip#*:[0-9a-fA-F]}" ]] >/dev/null 2>&1;then 
+				if [[ ! -z $endpip && "$endpip" != "${endpip#*[0-9].[0-9]}" ]] >/dev/null 2>&1; then
+					ip route del $endpip >/dev/null 2>&1
+					logger -p user.info "WireGuard: Deleted endpoint route to $endpip from $endp"
+				else
+					logger -p user.warning "WireGuard: Could not delete endpoint route from oet${i} peer${p} to $endpip from $endp"
 				fi
 			fi
 		done
