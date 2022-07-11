@@ -2098,8 +2098,10 @@ service.ses_script="Custom Script";
 
 //hwmon.webservices
 service.hwmon_legend="Hardware Monitoring";
-service.hwmon_critemp="High Temperature (FAN On)";
-service.hwmon_hystemp="Normal Temperature (FAN Off)";
+service.hwmon_critemp="High Temperature";
+service.hwmon_hystemp="Normal Temperature";
+service.hwmon_fanon="&nbsp;Fan On";
+service.hwmon_fanoff="&nbsp;Fan Off";
 
 //rstat.webservices
 service.rstats_legend="Bandwidth Monitoring";

@@ -1487,8 +1487,10 @@ service.ses_script="Script Personalizado";
 
 //hwmon.webservices
 service.hwmon_legend="Monitoramento de Hardware";
-service.hwmon_critemp="Temperatura Crítica (Ligar FAN)";
-service.hwmon_hystemp="Temperatura de Histerese (Desligar FAN)";
+service.hwmon_critemp="Temperatura Crítica";
+service.hwmon_hystemp="Temperatura de Histerese";
+service.hwmon_fanon="&nbsp;Ligar Fan";
+service.hwmon_fanoff="&nbsp;Desligar Fan";
 
 //rstat.webservices
 service.rstats_legend="Monitoramento de Largura de Banda";

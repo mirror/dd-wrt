@@ -1482,9 +1482,10 @@ service.ses_script="Корисничка Скрипта";
 
 //hwmon.webservices
 service.hwmon_legend="Надгледање HW-а";
-service.hwmon_critemp="Критична температура (FAN Укључи)";
-service.hwmon_hystemp="Радна температура (FAN Искључи)";
-
+service.hwmon_critemp="Критична температура";
+service.hwmon_hystemp="Радна температура";
+service.hwmon_fanon="&nbsp;Fan Укључи";
+service.hwmon_fanoff="&nbsp;Fan Искључи";
 //rstat.webservices
 service.rstats_legend="Праћење пропусне моћи";
 service.rstats_srv="rstats Daemon";

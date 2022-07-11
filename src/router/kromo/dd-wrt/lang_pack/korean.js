@@ -1713,8 +1713,10 @@ service.ses_script="커스텀 스크립트";
 
 //hwmon.webservices
 service.hwmon_legend="하드웨어 모니터링";
-service.hwmon_critemp="높은 온도 (FAN 켜기)";
-service.hwmon_hystemp="표준 온도 (FAN 끄기)";
+service.hwmon_critemp="높은 온도";
+service.hwmon_hystemp="표준 온도";
+service.hwmon_fanon="&nbsp;Fan 켜기";
+service.hwmon_fanoff="&nbsp;Fan 끄기";
 
 //rstat.webservices
 service.rstats_legend="대역폭 모니터링";

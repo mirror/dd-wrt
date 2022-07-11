@@ -1956,9 +1956,10 @@ service.ses_script="Skrypt niestandardowy";
 
 //hwmon.webservices
 service.hwmon_legend="Monitorowanie sprzętu";
-service.hwmon_critemp="Wysoka temperatura (Przełącznik wentylatora wł.)";
-service.hwmon_hystemp="Normalna temperatura (Przełącznik wentylatora wył.)";
-
+service.hwmon_critemp="Wysoka temperatura";
+service.hwmon_hystemp="Normalna temperatura";
+service.hwmon_fanon="&nbsp;Przełącznik wentylatora wł.";
+service.hwmon_fanoff="&nbsp;Przełącznik wentylatora wył.";
 //rstat.webservices
 service.rstats_legend="Monitorowanie przepustowości";
 service.rstats_srv="Demon rstats";
