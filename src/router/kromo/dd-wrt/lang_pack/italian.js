@@ -1712,8 +1712,10 @@ service.ses_script="Script Personalizzato";
 
 //hwmon.webservices
 service.hwmon_legend="Monitoraggio Hardware";
-service.hwmon_critemp="Temperatura Critica (FAN Accesa)";
-service.hwmon_hystemp="Temperatura Stabile (FAN Spenta)";
+service.hwmon_critemp="Temperatura Critica";
+service.hwmon_hystemp="Temperatura Stabile";
+service.hwmon_fanon="&nbsp;Fan Accesa";
+service.hwmon_fanoff="&nbsp;Fan Spenta";
 
 //rstat.webservices
 service.rstats_legend="Monitoraggio Bandwidth";

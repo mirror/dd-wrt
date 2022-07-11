@@ -1284,8 +1284,10 @@ service.ses_script="Eget Script";
 
 //hwmon.webservices
 service.hwmon_legend="Hårdvaru Monitor";
-service.hwmon_critemp="Kritisk Temp (Fläkt På)";
-service.hwmon_hystemp="Hysterisk Temp (Fläkt Av)";
+service.hwmon_critemp="Kritisk Temp";
+service.hwmon_hystemp="Hysterisk Temp";
+service.hwmon_fanon="&nbsp;Fläkt På";
+service.hwmon_fanoff="&nbsp;Fläkt Av";
 
 //rstat.webservices
 service.rstats_legend="Bandbredds Monitor";

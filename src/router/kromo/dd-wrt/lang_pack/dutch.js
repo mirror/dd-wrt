@@ -1328,8 +1328,10 @@ service.ses_script="Custom Script";
 
 //hwmon.webservices
 service.hwmon_legend="Hardware Monitor";
-service.hwmon_critemp="Kritieke Temperatuur (FAN Schakelaar Aan)";  
-service.hwmon_hystemp="Hysterese Temperatuur (FAN Schakelaar Uit)";
+service.hwmon_critemp="Kritieke Temperatuur";  
+service.hwmon_hystemp="Hysterese Temperatuur";
+service.hwmon_fanon="&nbsp;Fan Schakelaar Aan";
+service.hwmon_fanoff="&nbsp;Fan Schakelaar Uit";
 
 //rstat.webservices
 service.rstats_legend="Bandbreedte Monitor";

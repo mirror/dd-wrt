@@ -2,12 +2,12 @@
 	<legend><script type="text/javascript">Capture(service.hwmon_legend)</script></legend>
 		<div class="setting">
 			<div class="label"><script type="text/javascript">Capture(service.hwmon_critemp)</script></div>
-			<input class="num" maxlength="3" size="3" name="hwmon_temp_max" value="<% nvram_get("hwmon_temp_max"); %>" />
+			<input class="num" maxlength="3" size="2" name="hwmon_temp_max" value="<% nvram_get("hwmon_temp_max"); %>" /><% tran("service.hwmon_fanon"); %>
 			<span class="default"><script type="text/javascript">document.write("(" + share.deflt + ": 65 &#176;C)")</script></span>
 		</div>
 		<div class="setting">
 			<div class="label"><script type="text/javascript">Capture(service.hwmon_hystemp)</script></div>
-			<input class="num" maxlength="3" size="3" name="hwmon_temp_hyst" value="<% nvram_get("hwmon_temp_hyst"); %>" />
+			<input class="num" maxlength="3" size="2" name="hwmon_temp_hyst" value="<% nvram_get("hwmon_temp_hyst"); %>" /><% tran("service.hwmon_fanoff"); %>
 			<span class="default"><script type="text/javascript">document.write("(" + share.deflt + ": 60 &#176;C)")</script></span>
 		</div>
 </fieldset><br />

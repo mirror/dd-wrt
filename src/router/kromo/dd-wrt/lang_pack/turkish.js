@@ -1350,9 +1350,10 @@ service.ses_script="Özel Komut Dosyası";
 
 //hwmon.webservices
 service.hwmon_legend="Donanım İzleme";
-service.hwmon_critemp="Kritik Sıcaklık (FAN Açık)";
-service.hwmon_hystemp="Histerez Sıcaklığı (FAN Kapalı)";
-
+service.hwmon_critemp="Kritik Sıcaklık";
+service.hwmon_hystemp="Histerez Sıcaklığı";
+service.hwmon_fanon="&nbsp;Fan Açık";
+service.hwmon_fanoff="&nbsp;Fan Kapalı";
 //rstat.webservices
 service.rstats_legend="Bant Genişliği İzleme";
 service.rstats_srv="rstats Daemon";
