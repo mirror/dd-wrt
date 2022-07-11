@@ -1432,9 +1432,10 @@ service.ses_script="Скрипт пользователя";
 
 //hwmon.webservices
 service.hwmon_legend="Мониторинг оборудования";
-service.hwmon_critemp="Критич. температура (вкл. кулер)";
-service.hwmon_hystemp="Рабочая температура (откл. кулер)";
-
+service.hwmon_critemp="Критич. температура";
+service.hwmon_hystemp="Рабочая температура";
+service.hwmon_fanon="&nbsp;вкл. кулер";
+service.hwmon_fanoff="&nbsp;откл. кулер";
 //rstat.webservices
 service.rstats_legend="Мониторинг пропускной способности";
 service.rstats_srv="Демон rstats";

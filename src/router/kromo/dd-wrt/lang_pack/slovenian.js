@@ -1470,9 +1470,10 @@ service.ses_script="Prirejeni skript";
 
 //hwmon.webservices
 service.hwmon_legend="Nadzor strojne opreme";
-service.hwmon_critemp="Kritična temperatura (vključi ventilator)";
-service.hwmon_hystemp="Histerezna temperatura (izključi ventilator)";
-
+service.hwmon_critemp="Kritična temperatura";
+service.hwmon_hystemp="Histerezna temperatura";
+service.hwmon_fanon="&nbsp;vključi ventilator";
+service.hwmon_fanoff="&nbsp;izključi ventilator";
 //rstat.webservices
 service.rstats_legend="Nadzor pasovne širine";
 service.rstats_srv="Rstats demon";

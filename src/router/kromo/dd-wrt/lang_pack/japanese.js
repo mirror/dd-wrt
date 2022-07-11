@@ -1326,8 +1326,10 @@ service.ses_script="カスタムスクリプトを使用";
 
 //hwmon.webservices
 service.hwmon_legend="ハードウェアモニタ";
-service.hwmon_critemp="上限温度閾値(FANの動作を開始します)";
-service.hwmon_hystemp="下限温度閾値(FANが停止します)";
+service.hwmon_critemp="上限温度閾値";
+service.hwmon_hystemp="下限温度閾値";
+service.hwmon_fanon="&nbsp;Fanの動作を開始します";
+service.hwmon_fanoff="&nbsp;Fanが停止します";
 
 //rstat.webservices
 service.rstats_legend="帯域パフォーマンス";

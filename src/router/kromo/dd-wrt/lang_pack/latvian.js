@@ -1281,9 +1281,10 @@ service.ses_script="Custom Script";
 
 //hwmon.webservices
 service.hwmon_legend="Hardware Monitoring";
-service.hwmon_critemp="Critical Temperature (FAN Switch On)";
-service.hwmon_hystemp="Hysteresis Temperature (FAN Switch Off)";
-
+service.hwmon_critemp="Critical Temperature";
+service.hwmon_hystemp="Hysteresis Temperature";
+service.hwmon_fanon="&nbsp;Fan On";
+service.hwmon_fanoff="&nbsp;Fan Off";
 //rstat.webservices
 service.rstats_legend="Bandwidth Monitoring";
 service.rstats_srv="rstats Daemon";

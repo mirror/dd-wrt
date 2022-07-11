@@ -1444,8 +1444,10 @@ service.ses_script="Custom Script";
 
 //hwmon.webservices
 service.hwmon_legend="Nadzor Strojevine";
-service.hwmon_critemp="Kritična Temperatura (Upali Ventilator)";
-service.hwmon_hystemp="Temeraturna Histereza (Ugasi Ventilator)";
+service.hwmon_critemp="Kritična Temperatura";
+service.hwmon_hystemp="Temeraturna Histereza";
+service.hwmon_fanon="&nbsp;Upali Ventilator";
+service.hwmon_fanoff="&nbsp;Ugasi Ventilator";
 
 //rstat.webservices
 service.rstats_legend="Nadzor Pojasne Širine";

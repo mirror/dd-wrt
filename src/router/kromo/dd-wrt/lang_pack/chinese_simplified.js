@@ -1842,9 +1842,10 @@ service.ses_script="自定义脚本";
 
 //hwmon.webservices
 service.hwmon_legend="硬件监控中";
-service.hwmon_critemp="临界温度（风扇开启）";
-service.hwmon_hystemp="滞后温度（风扇关闭）";
-
+service.hwmon_critemp="临界温度";
+service.hwmon_hystemp="滞后温度";
+service.hwmon_fanon="&nbsp;风扇开启";
+service.hwmon_fanoff="&nbsp;风扇关闭";
 //rstat.webservices
 service.rstats_legend="带宽监控";
 service.rstats_srv="rstats守护进程";

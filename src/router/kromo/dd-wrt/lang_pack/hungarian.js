@@ -1085,8 +1085,10 @@ service.ssh_key="Azonosító kulcsok";
 
 //hwmon.webservices
 service.hwmon_legend="Hardware figyelés";
-service.hwmon_critemp="Kritikus hőmérséklet (Ventillátor be)";
-service.hwmon_hystemp="Hiszterézis hőmérséklet (Ventillátor ki)";
+service.hwmon_critemp="Kritikus hőmérséklet";
+service.hwmon_hystemp="Hiszterézis hőmérséklet";
+service.hwmon_fanon="&nbsp;Ventillátor be";
+service.hwmon_fanoff="&nbsp;Ventillátor ki";
 
 //rstat.webservices
 service.rstats_legend="Sávszélesség figyelés";

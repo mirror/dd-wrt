@@ -1967,8 +1967,10 @@ service.ses_script="Vlastní skript";
 
 //hwmon.webservices
 service.hwmon_legend="Monitorování Hardware";
-service.hwmon_critemp="Vysoká teplota (FAN Zapnutý)";
-service.hwmon_hystemp="Normální teplota (FAN Vypnutý)";
+service.hwmon_critemp="Vysoká teplota";
+service.hwmon_hystemp="Normální teplota";
+service.hwmon_fanon="&nbsp;Fan Zapnutý";
+service.hwmon_fanoff="&nbsp;Fan Vypnutý";
 
 //rstat.webservices
 service.rstats_legend="Monitorování šířky pásma";
