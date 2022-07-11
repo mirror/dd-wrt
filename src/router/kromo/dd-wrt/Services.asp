@@ -176,7 +176,7 @@ addEvent(window, "unload", function() {
 							
 							<h2><% tran("service.h2"); %></h2>
 							<% show_modules(".webservices"); %>
-							<!-- experimental by egc -->
+							//experimental by egc
 							<% show_mdnsif(); %>
 							<div class="submitFooter">
 								<script type="text/javascript">
