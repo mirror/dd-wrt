@@ -1572,7 +1572,7 @@ service.dns_smartdns_option="Zusätzliche SmartDNS-Optionen";
 
 //help page
 hservice.right1="Bevor Sie das Speichern der Clientzuweisungs-DB im JFFS2-Flashspeicher aktivieren, muss die JFFS2-Unterstützung <b>aktiviert</b> werden. Die JFFS2-Unterstützung befindet sich auf der Registerkarte Administration / Management.";
-hservice.right2="Es werden ausschließlich die Server verwendet, die Sie in den zusätzlichen SmartDNS-Optionen definieren."
+hservice.right2="Es werden ausschließlich die Server verwendet, die Sie in den zusätzlichen SmartDNS-Optionen definieren.";
 
 service.dnsmasq_dnssec="Prüfe DNS Antworten (DNSSEC)";
 service.dnsmasq_dnssec_proxy="DNSSEC Daten Cachen";
