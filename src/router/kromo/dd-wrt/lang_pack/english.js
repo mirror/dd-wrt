@@ -737,7 +737,7 @@ filter.mess2="You must select a day or days.";
 filter.mess3="The selected end time must be greater than the start time.";
 filter.nat="Filter WAN NAT Redirection";
 filter.port113="Filter IDENT (Port 113)";
-filter.snmp="Block WAN SNMP access";
+filter.snmp="Block WAN SNMP Access";
 filter.none="";
 filter.packetcount="Filtered Packets";
 
