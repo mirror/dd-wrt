@@ -18,12 +18,10 @@ function verify_unique_static_ip(F){
 			return false;
 		}
 	}
-
 	return true;
 }
 
 function checked(F) {
-	
 	if (F._dhcpd_usejffs) {
 		(F._dhcpd_usejffs.checked == true) ? F.dhcpd_usejffs.value = 1 : F.dhcpd_usejffs.value = 0;
 	}
@@ -31,11 +29,10 @@ function checked(F) {
 	if (F._dhcpd_usenvram) {
 		(F._dhcpd_usenvram.checked == true) ? F.dhcpd_usenvram.value = 1 : F.dhcpd_usenvram.value = 0;
 	}
-	
+
 	if (F._nstx_log) {
 		(F._nstx_log.checked == true) ? F.nstx_log.value = 1 : F.nstx_log.value = 0;
 	}
-	
 }
 
 function lease_add_submit(F) {
@@ -95,7 +92,6 @@ function to_apply(F) {
 var update;
 
 addEvent(window, "load", function() {
-
 		show_layer_ext(document.setup.tor_enable, 'idtor', <% nvem("tor_enable", "1", "1", "0"); %> == 1);
 		show_layer_ext(document.setup.zabbix_enable, 'idzabbix', <% nvem("zabbix_enable", "1", "1", "0"); %> == 1);
 		show_layer_ext(document.setup.mdns_enable, 'idmdns', <% nvem("mdns_enable", "1", "1", "0"); %> == 1);
@@ -145,12 +141,10 @@ addEvent(window, "load", function() {
 		
 	update = new StatusbarUpdate();
 	update.start();
-	
 });
 	
 addEvent(window, "unload", function() {
 	update.stop();
-
 });
 	
 		//]]>
@@ -182,7 +176,7 @@ addEvent(window, "unload", function() {
 							
 							<h2><% tran("service.h2"); %></h2>
 							<% show_modules(".webservices"); %>
-							//experimental by egc
+							<!-- experimental by egc -->
 							<% show_mdnsif(); %>
 							<div class="submitFooter">
 								<script type="text/javascript">
@@ -200,6 +194,9 @@ addEvent(window, "unload", function() {
 						<dl>
 							<dt class="term"><% tran("management.jffs_legend"); %>&nbsp;<% tran("share.requiremts"); %>:</dt>
 							<dd class="definition"><% tran("hservice.right1"); %></dd>
+							<dt class="term"><% tran("service.dns_smartdns"); %>:</dt>
+							<dt class="term"><% tran("service.dns_smartdns_use_dns"); %></dt>
+							<dd class="definition"><% tran("hservice.right2"); %></dd>
 						</dl><br />
 						<a href="javascript:openHelpWindow<% ifdef("EXTHELP","Ext"); %>('HServices.asp');"><% tran("share.more"); %></a>
 					</div>
