@@ -1424,9 +1424,10 @@ service.ses_script="Script particularizat";
 
 //hwmon.webservices
 service.hwmon_legend="Monitorizare Hardware";
-service.hwmon_critemp="Temperatură critică (ventilator comutat pe pornit)";
-service.hwmon_hystemp="Temperatură histereză (ventilator comutat pe oprit)";
-
+service.hwmon_critemp="Temperatură critică";
+service.hwmon_hystemp="Temperatură histereză";
+service.hwmon_fanon="&nbsp;ventilator comutat pe pornit";
+service.hwmon_fanoff="&nbsp;ventilator comutat pe oprit";
 //rstat.webservices
 service.rstats_legend="Monitorizare lățime de bandă";
 service.rstats_srv="Daemon rstats";

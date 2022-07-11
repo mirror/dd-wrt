@@ -1417,9 +1417,10 @@ service.ses_script="Script Personal";
 
 //hwmon.webservices
 service.hwmon_legend="Monitorització de Maquinari";
-service.hwmon_critemp="Temperatura Crítica (Interruptor FAN Activat)";
-service.hwmon_hystemp="Temperatura d'Histèresi (Interruptor FAN Desactivat)";
-
+service.hwmon_critemp="Temperatura Crítica";
+service.hwmon_hystemp="Temperatura d'Histèresi";
+service.hwmon_fanon="&nbsp;Fan Activat";
+service.hwmon_fanoff="&nbsp;Fan Desactivat";
 //rstat.webservices
 service.rstats_legend="Monitorització d'Ample de Banda";
 service.rstats_srv="Dimoni rstats";

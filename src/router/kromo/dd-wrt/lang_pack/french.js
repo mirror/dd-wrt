@@ -1148,8 +1148,10 @@ service.ses_script="Script à lancer";
 
 //hwmon.webservices
 service.hwmon_legend="Surveillance du Matèriel";
-service.hwmon_critemp="Tempèrature critique (Ventilateur On)";
-service.hwmon_hystemp="Tempèrature Hystérésis (Ventilateur Off)";
+service.hwmon_critemp="Tempèrature critique";
+service.hwmon_hystemp="Tempèrature Hystérésis";
+service.hwmon_fanon="&nbsp;Ventilateur On";
+service.hwmon_fanoff="&nbsp;Ventilateur Off";
 
 //rstat.webservices
 service.rstats_legend="Contrôle de la Bande passante";

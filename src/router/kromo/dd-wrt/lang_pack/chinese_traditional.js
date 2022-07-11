@@ -1236,8 +1236,10 @@ service.ses_script="自訂Script";
 
 //hwmon.webservices
 service.hwmon_legend="硬體監控";
-service.hwmon_critemp="溫度高於標準 (風扇開啟)";
-service.hwmon_hystemp="溫度低於標準 (風扇關閉)";
+service.hwmon_critemp="溫度高於標準";
+service.hwmon_hystemp="溫度低於標準";
+service.hwmon_fanon="&nbsp;風扇開啟";
+service.hwmon_fanoff="&nbsp;風扇關閉";
 
 //rstat.webservices
 service.rstats_legend="頻寬監控";

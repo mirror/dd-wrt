@@ -1326,9 +1326,10 @@ service.ses_script="Script personalizado";
 
 //hwmon.webservices
 service.hwmon_legend="Monitor de Hardware";
-service.hwmon_critemp="Temperatura crítica (ventilador encendido)";
-service.hwmon_hystemp="Temperatura de Histèresis (ventilador apagado)";
-
+service.hwmon_critemp="Temperatura crítica";
+service.hwmon_hystemp="Temperatura de Histèresis";
+service.hwmon_fanon="&nbsp;ventilador encendido";
+service.hwmon_fanoff="&nbsp;ventilador apagado";
 //rstat.webservices
 service.rstats_legend="Monitor de ancho de banda";
 service.rstats_srv="Demonio rstats";

@@ -1776,8 +1776,10 @@ service.ses_script="Benutzerdefiniertes Skript";
 
 //hwmon.webservices
 service.hwmon_legend="Hardware Überwachung";
-service.hwmon_critemp="Kritische Temperatur (Lüfter An)";
-service.hwmon_hystemp="Hysterese Temperatur (Lüfter Aus)";
+service.hwmon_critemp="Kritische Temperatur";
+service.hwmon_hystemp="Hysterese Temperatur";
+service.hwmon_fanon="&nbsp;Lüfter An";
+service.hwmon_fanoff="&nbsp;Lüfter Aus";
 
 //rstat.webservices
 service.rstats_legend="Bandbreiten Überwachung";
