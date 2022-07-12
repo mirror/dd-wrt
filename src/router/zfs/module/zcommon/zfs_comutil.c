@@ -6,7 +6,7 @@
  * You may not use this file except in compliance with the License.
  *
  * You can obtain a copy of the license at usr/src/OPENSOLARIS.LICENSE
- * or http://www.opensolaris.org/os/licensing.
+ * or https://opensource.org/licenses/CDDL-1.0.
  * See the License for the specific language governing permissions
  * and limitations under the License.
  *
@@ -68,7 +68,7 @@ zfs_allocatable_devs(nvlist_t *nv)
  * Are there special vdevs?
  */
 boolean_t
-zfs_special_devs(nvlist_t *nv, char *type)
+zfs_special_devs(nvlist_t *nv, const char *type)
 {
 	char *bias;
 	uint_t c;
@@ -84,11 +84,9 @@ zfs_special_devs(nvlist_t *nv, char *type)
 		    &bias) == 0) {
 			if (strcmp(bias, VDEV_ALLOC_BIAS_SPECIAL) == 0 ||
 			    strcmp(bias, VDEV_ALLOC_BIAS_DEDUP) == 0) {
-				if (type != NULL && strcmp(bias, type) == 0) {
+				if (type == NULL ||
+				    (type != NULL && strcmp(bias, type) == 0))
 					return (B_TRUE);
-				} else if (type == NULL) {
-					return (B_TRUE);
-				}
 			}
 		}
 	}

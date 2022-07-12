@@ -6,7 +6,7 @@
  * You may not use this file except in compliance with the License.
  *
  * You can obtain a copy of the license at usr/src/OPENSOLARIS.LICENSE
- * or http://www.opensolaris.org/os/licensing.
+ * or https://opensource.org/licenses/CDDL-1.0.
  * See the License for the specific language governing permissions
  * and limitations under the License.
  *
@@ -67,7 +67,7 @@ static uint64_t spa_config_generation = 1;
  * This can be overridden in userland to preserve an alternate namespace for
  * userland pools when doing testing.
  */
-char *spa_config_path = ZPOOL_CACHE;
+char *spa_config_path = (char *)ZPOOL_CACHE;
 #ifdef _KERNEL
 static int zfs_autoimport_disable = B_TRUE;
 #endif

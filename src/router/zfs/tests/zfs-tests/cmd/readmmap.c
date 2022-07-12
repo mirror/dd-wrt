@@ -6,7 +6,7 @@
  * You may not use this file except in compliance with the License.
  *
  * You can obtain a copy of the license at usr/src/OPENSOLARIS.LICENSE
- * or http://www.opensolaris.org/os/licensing.
+ * or https://opensource.org/licenses/CDDL-1.0.
  * See the License for the specific language governing permissions
  * and limitations under the License.
  *
@@ -49,7 +49,7 @@
 int
 main(int argc, char **argv)
 {
-	char *filename = "badfile";
+	const char *filename = "badfile";
 	size_t size = 4395;
 	size_t idx = 0;
 	char *buf = NULL;

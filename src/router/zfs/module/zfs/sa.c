@@ -6,7 +6,7 @@
  * You may not use this file except in compliance with the License.
  *
  * You can obtain a copy of the license at usr/src/OPENSOLARIS.LICENSE
- * or http://www.opensolaris.org/os/licensing.
+ * or https://opensource.org/licenses/CDDL-1.0.
  * See the License for the specific language governing permissions
  * and limitations under the License.
  *
@@ -1449,13 +1449,13 @@ sa_handle_get(objset_t *objset, uint64_t objid, void *userp,
 }
 
 int
-sa_buf_hold(objset_t *objset, uint64_t obj_num, void *tag, dmu_buf_t **db)
+sa_buf_hold(objset_t *objset, uint64_t obj_num, const void *tag, dmu_buf_t **db)
 {
 	return (dmu_bonus_hold(objset, obj_num, tag, db));
 }
 
 void
-sa_buf_rele(dmu_buf_t *db, void *tag)
+sa_buf_rele(dmu_buf_t *db, const void *tag)
 {
 	dmu_buf_rele(db, tag);
 }

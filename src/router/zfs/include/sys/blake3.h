@@ -6,7 +6,7 @@
  * You may not use this file except in compliance with the License.
  *
  * You can obtain a copy of the license at usr/src/OPENSOLARIS.LICENSE
- * or http://www.opensolaris.org/os/licensing.
+ * or https://opensource.org/licenses/CDDL-1.0.
  * See the License for the specific language governing permissions
  * and limitations under the License.
  *
@@ -91,6 +91,11 @@ void Blake3_Final(const BLAKE3_CTX *ctx, uint8_t *out);
 /* finalize the hash computation and output the result */
 void Blake3_FinalSeek(const BLAKE3_CTX *ctx, uint64_t seek, uint8_t *out,
     size_t out_len);
+
+/* these are pre-allocated contexts */
+extern void **blake3_per_cpu_ctx;
+extern void blake3_per_cpu_ctx_init(void);
+extern void blake3_per_cpu_ctx_fini(void);
 
 /* return number of supported implementations */
 extern int blake3_get_impl_count(void);

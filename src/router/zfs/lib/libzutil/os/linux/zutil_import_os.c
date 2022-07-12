@@ -6,7 +6,7 @@
  * You may not use this file except in compliance with the License.
  *
  * You can obtain a copy of the license at usr/src/OPENSOLARIS.LICENSE
- * or http://www.opensolaris.org/os/licensing.
+ * or https://opensource.org/licenses/CDDL-1.0.
  * See the License for the specific language governing permissions
  * and limitations under the License.
  *
@@ -328,7 +328,9 @@ zpool_find_import_blkid(libpc_handle_t *hdl, pthread_mutex_t *lock,
 		return (EINVAL);
 	}
 
-	error = blkid_dev_set_search(iter, "TYPE", "zfs_member");
+	/* Only const char *s since 2.32 */
+	error = blkid_dev_set_search(iter,
+	    (char *)"TYPE", (char *)"zfs_member");
 	if (error != 0) {
 		blkid_dev_iterate_end(iter);
 		blkid_put_cache(cache);

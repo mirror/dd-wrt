@@ -6,7 +6,7 @@
  * You may not use this file except in compliance with the License.
  *
  * You can obtain a copy of the license at usr/src/OPENSOLARIS.LICENSE
- * or http://www.opensolaris.org/os/licensing.
+ * or https://opensource.org/licenses/CDDL-1.0.
  * See the License for the specific language governing permissions
  * and limitations under the License.
  *
@@ -64,7 +64,8 @@ show_vdev_stats(const char *desc, const char *ctype, nvlist_t *nv, int indent)
 	}
 
 	if (desc != NULL) {
-		char *suffix = "", *bias = NULL;
+		const char *suffix = "";
+		char *bias = NULL;
 		char bias_suffix[32];
 
 		(void) nvlist_lookup_uint64(nv, ZPOOL_CONFIG_IS_LOG, &is_log);
@@ -117,7 +118,7 @@ show_vdev_stats(const char *desc, const char *ctype, nvlist_t *nv, int indent)
 		int len;
 		if (nvlist_lookup_string(cnv, ZPOOL_CONFIG_PATH, &cname) &&
 		    nvlist_lookup_string(cnv, ZPOOL_CONFIG_TYPE, &cname))
-			cname = "<unknown>";
+			cname = (char *)"<unknown>";
 		len = strlen(cname) + 2;
 		tname = umem_zalloc(len, UMEM_NOFAIL);
 		(void) strlcpy(tname, cname, len);

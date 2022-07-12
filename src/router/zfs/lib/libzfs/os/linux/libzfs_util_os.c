@@ -6,7 +6,7 @@
  * You may not use this file except in compliance with the License.
  *
  * You can obtain a copy of the license at usr/src/OPENSOLARIS.LICENSE
- * or http://www.opensolaris.org/os/licensing.
+ * or https://opensource.org/licenses/CDDL-1.0.
  * See the License for the specific language governing permissions
  * and limitations under the License.
  *
@@ -99,7 +99,7 @@ libzfs_load_module(void)
 		return (0);
 
 	if (access(ZFS_SYSFS_DIR, F_OK) != 0) {
-		char *argv[] = {"modprobe", "zfs", NULL};
+		char *argv[] = {(char *)"modprobe", (char *)"zfs", NULL};
 		if (libzfs_run_process("modprobe", argv, 0))
 			return (ENOEXEC);
 
@@ -259,7 +259,7 @@ zfs_userns(zfs_handle_t *zhp, const char *nspath, int attach)
 		    "pools can not be namespaced"));
 		return (zfs_error(hdl, EZFS_BADTYPE, errbuf));
 	case ZFS_TYPE_FILESYSTEM:
-		zfs_fallthrough;
+		break;
 	}
 	assert(zhp->zfs_type == ZFS_TYPE_FILESYSTEM);
 
