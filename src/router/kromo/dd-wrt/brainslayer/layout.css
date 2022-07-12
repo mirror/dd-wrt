@@ -28,6 +28,18 @@ input.num[name*="lease"][size="10"] {
   margin-right: 4px;
   width: 52%
 }
+input.three_column {
+  width: 150px;
+  margin-left: 0;
+  margin-right: 10px;
+}
+input.four_column {
+  margin-left: 0;
+  margin-right: 10px;
+}
+input.three_column_last, input.four_column_last {
+  margin-right: 0;
+}
 h1, h2, h3, h4, h5, h6, legend, label {
   margin: 1em 0 .5em 0;
 }
@@ -78,7 +90,7 @@ th {
 #main {
   height: 100%;
   margin: 0;
-  margin-left: 200px;
+  margin-left: 220px;
   padding: 1.5em;
   padding-top: 90px;
 }
@@ -90,19 +102,31 @@ th {
   display: none;
 }
 #statusInfo {
-  display: none;
+  position: absolute;
+  top: .908em;
+  right: 8em;
+  width: 32.609em;
+  text-align: right;
+  color: #222;
 }
-#main .submitFooter {
+#statusInfo a {
+  color: #222;
+  text-decoration: none;
+}
+#statusInfo a:hover {
+  text-decoration: underline;
+}
+.submitFooter {
   position: absolute;
   top: 85px;
   left: 0;
-  width: 200px;
+  width: 220px;
   text-align: center;
   display: block;
-  margin: 0;
+  margin: 0 auto;
   padding: 0;
 }
-#main .submitFooter input, .submitFooterCmd input {
+.submitFooter input {
   padding: 2px;
   margin: 2px;
   width: 90%;
@@ -123,26 +147,20 @@ div.setting {
   top: 228px;
   left: 10px;
   height: 2em;
-}
-#menu, #menuMain {
-  width: 180px;
-  max-width: 180px;
-}
-#menu {
   border-top: solid 2px;
   padding-top: 1em;
 }
-#menuMain {
-  border: solid 1px;
+#menu, #menuMain, #menuMainList {
+  width: 200px;
+  max-width: 200px;
 }
 #menu * {
-  margin: 0;
   padding: 0;
+  margin-top: 2em
 }
 #menuMainList li {
   list-style: none;
   margin: 0;
-  background-image: none;
   padding: 0 0 1px 0;
   line-height: 1;
 }
@@ -151,7 +169,6 @@ div.setting {
   line-height: 1;
   display: block;
   text-decoration: none;
-  background: transparent;
   border: solid 1px;
   margin: 0;
   padding: 5px 10px 5px .5em;
@@ -160,17 +177,14 @@ div.setting {
   border: solid 1px;
 }
 #menuMainList ul {
-  margin: 0;
+  margin: -1.8em 0 1rem;
   padding: 0;
-  border: solid 1px;
 }
 #menuMainList ul :link, #menuMainList ul :visited, #menuMainList ul span {
-  background-image: none;
   padding: 4px 10px 4px 1.5em;
   border: 0;
 }
 #menuMainList ul :link:hover, #menuMainList ul :visited:hover {
-  background-image: none;
   border: 0;
 }
 .warning {
@@ -246,13 +260,17 @@ input.spaceradio {
 td.center {
   text-align: center;
 }
+div.center .button {
+  margin-left: .3em;
+  margin-top: .9em
+}
 iframe[src*='/graph_if.svg'] {
   max-width: 700px;
 }
 iframe#syslog {
   left: 14rem;
   top: 7rem;
-  max-width: 72em;
+  max-width: 90%;
   position: fixed;
 }
 input.button[onclick*="do_show"] {
@@ -261,9 +279,29 @@ input.button[onclick*="do_show"] {
   right: 8rem;
   position: relative;
 }
-input.button[name="refresh_button"] {
-  top: 11.5em;
-  left: 1.5rem;
-  right: 8rem;
+.progressbar {
+  visibility: visible;
   position: relative;
+  overflow: hidden;
+  border-style: solid;
+  font-size: .09em;
+  border-width: 1px;
+  border-radius: 4px;
+}
+.progressbarblock {
+  position: absolute;
+  font-size: .09em;
+}
+.message {
+  max-width: 32.464em;
+  padding: .906em;
+  font-weight: bold;
+  text-align: center;
+}
+.message div input {
+  margin: 4em .362em;
+  margin-top: 1.449em;
+}
+.message .submitFooter {
+  margin: 1em 8.362em 0;
 }
