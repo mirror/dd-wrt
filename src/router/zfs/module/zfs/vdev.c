@@ -6,7 +6,7 @@
  * You may not use this file except in compliance with the License.
  *
  * You can obtain a copy of the license at usr/src/OPENSOLARIS.LICENSE
- * or http://www.opensolaris.org/os/licensing.
+ * or https://opensource.org/licenses/CDDL-1.0.
  * See the License for the specific language governing permissions
  * and limitations under the License.
  *
@@ -5233,7 +5233,7 @@ vdev_split(vdev_t *vd)
 }
 
 void
-vdev_deadman(vdev_t *vd, char *tag)
+vdev_deadman(vdev_t *vd, const char *tag)
 {
 	for (int c = 0; c < vd->vdev_children; c++) {
 		vdev_t *cvd = vd->vdev_child[c];
@@ -5790,7 +5790,7 @@ vdev_prop_get(vdev_t *vd, nvlist_t *innvl, nvlist_t *outnvl)
 					    KM_SLEEP);
 				for (uint64_t i = 0; i < vd->vdev_children;
 				    i++) {
-					char *vname;
+					const char *vname;
 
 					vname = vdev_name(vd->vdev_child[i],
 					    namebuf, sizeof (namebuf));

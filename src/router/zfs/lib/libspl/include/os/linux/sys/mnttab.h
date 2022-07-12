@@ -7,7 +7,7 @@
  * with the License.
  *
  * You can obtain a copy of the license at usr/src/OPENSOLARIS.LICENSE
- * or http://www.opensolaris.org/os/licensing.
+ * or https://opensource.org/licenses/CDDL-1.0.
  * See the License for the specific language governing permissions
  * and limitations under the License.
  *
@@ -74,7 +74,7 @@ extern int getmntany(FILE *fp, struct mnttab *mp, struct mnttab *mpref);
 extern int _sol_getmntent(FILE *fp, struct mnttab *mp);
 extern int getextmntent(const char *path, struct extmnttab *mp,
     struct stat64 *statbuf);
-static inline char *_sol_hasmntopt(struct mnttab *mnt, char *opt)
+static inline char *_sol_hasmntopt(struct mnttab *mnt, const char *opt)
 {
 	struct mntent mnt_new;
 

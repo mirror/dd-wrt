@@ -6,7 +6,7 @@
  * You may not use this file except in compliance with the License.
  *
  * You can obtain a copy of the license at usr/src/OPENSOLARIS.LICENSE
- * or http://www.opensolaris.org/os/licensing.
+ * or https://opensource.org/licenses/CDDL-1.0.
  * See the License for the specific language governing permissions
  * and limitations under the License.
  *
@@ -260,7 +260,7 @@ vdev_rebuild_initiate_sync(void *arg, dmu_tx_t *tx)
 }
 
 static void
-vdev_rebuild_log_notify(spa_t *spa, vdev_t *vd, char *name)
+vdev_rebuild_log_notify(spa_t *spa, vdev_t *vd, const char *name)
 {
 	nvlist_t *aux = fnvlist_alloc();
 

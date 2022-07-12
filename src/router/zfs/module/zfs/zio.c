@@ -6,7 +6,7 @@
  * You may not use this file except in compliance with the License.
  *
  * You can obtain a copy of the license at usr/src/OPENSOLARIS.LICENSE
- * or http://www.opensolaris.org/os/licensing.
+ * or https://opensource.org/licenses/CDDL-1.0.
  * See the License for the specific language governing permissions
  * and limitations under the License.
  *
@@ -2062,7 +2062,7 @@ zio_deadman_impl(zio_t *pio, int ziodepth)
  * using the zfs_dbgmsg() interface then post deadman event for the ZED.
  */
 void
-zio_deadman(zio_t *pio, char *tag)
+zio_deadman(zio_t *pio, const char *tag)
 {
 	spa_t *spa = pio->io_spa;
 	char *name = spa_name(spa);

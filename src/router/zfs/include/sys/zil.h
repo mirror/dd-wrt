@@ -6,7 +6,7 @@
  * You may not use this file except in compliance with the License.
  *
  * You can obtain a copy of the license at usr/src/OPENSOLARIS.LICENSE
- * or http://www.opensolaris.org/os/licensing.
+ * or https://opensource.org/licenses/CDDL-1.0.
  * See the License for the specific language governing permissions
  * and limitations under the License.
  *
@@ -224,6 +224,15 @@ typedef struct {
 } lr_ooo_t;
 
 /*
+ * Additional lr_attr_t fields.
+ */
+typedef struct {
+	uint64_t	lr_attr_attrs;		/* all of the attributes */
+	uint64_t	lr_attr_crtime[2];	/* create time */
+	uint8_t		lr_attr_scanstamp[32];
+} lr_attr_end_t;
+
+/*
  * Handle option extended vattr attributes.
  *
  * Whenever new attributes are added the version number
@@ -233,7 +242,7 @@ typedef struct {
 typedef struct {
 	uint32_t	lr_attr_masksize; /* number of elements in array */
 	uint32_t	lr_attr_bitmap; /* First entry of array */
-	/* remainder of array and any additional fields */
+	/* remainder of array and additional lr_attr_end_t fields */
 } lr_attr_t;
 
 /*

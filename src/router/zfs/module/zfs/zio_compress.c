@@ -6,7 +6,7 @@
  * You may not use this file except in compliance with the License.
  *
  * You can obtain a copy of the license at usr/src/OPENSOLARIS.LICENSE
- * or http://www.opensolaris.org/os/licensing.
+ * or https://opensource.org/licenses/CDDL-1.0.
  * See the License for the specific language governing permissions
  * and limitations under the License.
  *
@@ -49,7 +49,7 @@ unsigned long zio_decompress_fail_fraction = 0;
 /*
  * Compression vectors.
  */
-zio_compress_info_t zio_compress_table[ZIO_COMPRESS_FUNCTIONS] = {
+const zio_compress_info_t zio_compress_table[ZIO_COMPRESS_FUNCTIONS] = {
 	{"inherit",	0,	NULL,		NULL, NULL},
 	{"on",		0,	NULL,		NULL, NULL},
 	{"uncompressed", 0,	NULL,		NULL, NULL},

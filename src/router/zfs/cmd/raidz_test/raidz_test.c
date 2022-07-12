@@ -6,7 +6,7 @@
  * You may not use this file except in compliance with the License.
  *
  * You can obtain a copy of the license at usr/src/OPENSOLARIS.LICENSE
- * or http://www.opensolaris.org/os/licensing.
+ * or https://opensource.org/licenses/CDDL-1.0.
  * See the License for the specific language governing permissions
  * and limitations under the License.
  *
@@ -69,7 +69,7 @@ static void sig_handler(int signo)
 
 static void print_opts(raidz_test_opts_t *opts, boolean_t force)
 {
-	char *verbose;
+	const char *verbose;
 	switch (opts->rto_v) {
 		case D_ALL:
 			verbose = "no";

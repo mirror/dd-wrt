@@ -6,7 +6,7 @@
  * You may not use this file except in compliance with the License.
  *
  * You can obtain a copy of the license at usr/src/OPENSOLARIS.LICENSE
- * or http://www.opensolaris.org/os/licensing.
+ * or https://opensource.org/licenses/CDDL-1.0.
  * See the License for the specific language governing permissions
  * and limitations under the License.
  *
@@ -337,7 +337,7 @@ aes_impl_init(void)
 }
 
 static const struct {
-	char *name;
+	const char *name;
 	uint32_t sel;
 } aes_impl_opts[] = {
 		{ "cycle",	IMPL_CYCLE },

@@ -6,7 +6,7 @@
  * You may not use this file except in compliance with the License.
  *
  * You can obtain a copy of the license at usr/src/OPENSOLARIS.LICENSE
- * or http://www.opensolaris.org/os/licensing.
+ * or https://opensource.org/licenses/CDDL-1.0.
  * See the License for the specific language governing permissions
  * and limitations under the License.
  *
@@ -289,7 +289,7 @@ zfs_is_mountable(zfs_handle_t *zhp, char *buf, size_t buflen,
 
 static int
 zfs_add_option(zfs_handle_t *zhp, char *options, int len,
-    zfs_prop_t prop, char *on, char *off)
+    zfs_prop_t prop, const char *on, const char *off)
 {
 	char *source;
 	uint64_t value;

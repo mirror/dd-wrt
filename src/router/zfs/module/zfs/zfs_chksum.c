@@ -6,7 +6,7 @@
  * You may not use this file except in compliance with the License.
  *
  * You can obtain a copy of the license at usr/src/OPENSOLARIS.LICENSE
- * or http://www.opensolaris.org/os/licensing.
+ * or https://opensource.org/licenses/CDDL-1.0.
  * See the License for the specific language governing permissions
  * and limitations under the License.
  *
@@ -277,6 +277,9 @@ chksum_benchmark(void)
 void
 chksum_init(void)
 {
+#ifdef _KERNEL
+	blake3_per_cpu_ctx_init();
+#endif
 
 	/* Benchmark supported implementations */
 	chksum_benchmark();
@@ -313,4 +316,8 @@ chksum_fini(void)
 		chksum_stat_cnt = 0;
 		chksum_stat_data = 0;
 	}
+
+#ifdef _KERNEL
+	blake3_per_cpu_ctx_fini();
+#endif
 }

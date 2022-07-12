@@ -6,7 +6,7 @@
  * You may not use this file except in compliance with the License.
  *
  * You can obtain a copy of the license at usr/src/OPENSOLARIS.LICENSE
- * or http://www.opensolaris.org/os/licensing.
+ * or https://opensource.org/licenses/CDDL-1.0.
  * See the License for the specific language governing permissions
  * and limitations under the License.
  *
@@ -442,9 +442,8 @@ static void
 vdev_run_cmd(vdev_cmd_data_t *data, char *cmd)
 {
 	int rc;
-	char *argv[2] = {cmd, 0};
-	char *env[5] = {"PATH=/bin:/sbin:/usr/bin:/usr/sbin", NULL, NULL, NULL,
-	    NULL};
+	char *argv[2] = {cmd};
+	char *env[5] = {(char *)"PATH=/bin:/sbin:/usr/bin:/usr/sbin"};
 	char **lines = NULL;
 	int lines_cnt = 0;
 	int i;
