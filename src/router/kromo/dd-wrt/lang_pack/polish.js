@@ -1299,7 +1299,7 @@ management.web_legend="Dostęp z sieci Web";
 management.web_refresh="Automatyczne odświeżanie";
 management.web_authlimit="Limit czasu ponownego uwierzytelnienia (w sekundach)";
 management.web_sysinfo="Włącz stronę informacyjną";
-management.web_sysinfopass="Zabezpieczenie strony informacyjnej hasłem";
+management.web_sysinfopass="Ochrona hasłem witryny informacyjnej";
 management.web_sysinfomasq="Maskowanie adresów MAC";
 management.boot_legend="Oczekiwanie przy rozruchu";
 management.poeswitch="Przełącznik POE";
@@ -1946,7 +1946,7 @@ service.radiooff_legend_aoss="Funkcja przycisku AOSS";
 service.radiooff_srv="Wyłącz interfejs radiowy";
 service.radiooff_srv_aoss="AOSS";
 service.radiooff_srv_disabled="Nie używany";
-service.radiooff_bootoff="Wyłącz interfejs radiowy przy starcie";
+service.radiooff_bootoff="Wyłącz radio przy starcie";
 
 //ses.webservices ====> might replace the above radiooff_button
 service.ses_legend="Przycisk SES / AOSS / EZ-SETUP / WPS";
@@ -1958,8 +1958,8 @@ service.ses_script="Skrypt niestandardowy";
 service.hwmon_legend="Monitorowanie sprzętu";
 service.hwmon_critemp="Wysoka temperatura";
 service.hwmon_hystemp="Normalna temperatura";
-service.hwmon_fanon="&nbsp;Przełącznik wentylatora wł.";
-service.hwmon_fanoff="&nbsp;Przełącznik wentylatora wył.";
+service.hwmon_fanon="&nbsp;Wentylator włączony";
+service.hwmon_fanoff="&nbsp;Wentylator wyłączony";
 //rstat.webservices
 service.rstats_legend="Monitorowanie przepustowości";
 service.rstats_srv="Demon rstats";

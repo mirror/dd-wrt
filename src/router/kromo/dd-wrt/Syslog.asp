@@ -28,7 +28,6 @@ var update;
 addEvent(window, "load", function() {
 	if(document.getElementsByName("refresh_button").length) {
 		document.getElementsByName("refresh_button")[0].disabled = true;
-		//document.getElementsByName("refresh_button")[0].style.background = '#DADADA';
 		document.getElementsByName("refresh_button")[0].style.cursor = "default";
 	}
 
@@ -44,7 +43,6 @@ addEvent(window, "unload", function() {
 	</head>
 
 	<body class="gui">
-
 		<div id="wrapper">
 			<div id="content">
 				<div id="header">
@@ -64,8 +62,8 @@ addEvent(window, "unload", function() {
 							<div class="center" style="padding-bottom: 1.5em; margin-top: -1.1em">
 								<script type="text/javascript">
 								//<![CDATA[
-								document.write("<input class=\"button\" type=\"button\" value=\"&lsaquo; Prev\" onclick=\"do_show_prev();\">");
-								document.write("<input class=\"button\" type=\"button\" value=\"Next &rsaquo;\" onclick=\"do_show_next();\">");
+								document.write("<input class=\"button\" type=\"button\" value=\"" + sbutton.prev + "\" onclick=\"do_show_prev();\">");
+								document.write("<input class=\"button\" type=\"button\" value=\"" + sbutton.next + "\" onclick=\"do_show_next();\">");
 								//]]>
 								</script>
 							</div>

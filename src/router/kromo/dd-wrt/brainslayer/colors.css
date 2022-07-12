@@ -4,7 +4,7 @@ html {
 body {
   color: #000;
 }
-input, select, option, button {
+input, select, option {
   color: #a57b46;
 }
 h1 {
@@ -25,18 +25,6 @@ h3, label {
 :link:hover, :visited:hover {
   color: #5b52cb;
 }
-#mBody {
-  background-color: #eeeae4;
-}
-.nomenu #mBody {
-  background-color: #fff;
-}
-#side {
-  background: #eeeae4;
-}
-#buttons {
-  border-bottom-color: #f00;
-}
 #main {
   background-color: #fff;
 }
@@ -48,10 +36,13 @@ h3, label {
   float: left;
 }
 #menu {
-  border-top-color: #f00;
+  border-color: #f00;
 }
 #menuMain {
   border-color: #fff;
+}
+#menuSubList > li > span > strong, .current span strong {
+  color: #f00;
 }
 #menuMainList :link, #menuMainList :visited, #menuMainList span {
   color: #955322;
@@ -96,4 +87,7 @@ h3, label {
 }
 .textblink {
   text-decoration: blink;
+}
+.warning {
+  color: #f00;
 }
