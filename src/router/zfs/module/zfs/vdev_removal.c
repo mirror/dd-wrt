@@ -6,7 +6,7 @@
  * You may not use this file except in compliance with the License.
  *
  * You can obtain a copy of the license at usr/src/OPENSOLARIS.LICENSE
- * or http://www.opensolaris.org/os/licensing.
+ * or https://opensource.org/licenses/CDDL-1.0.
  * See the License for the specific language governing permissions
  * and limitations under the License.
  *
@@ -338,8 +338,8 @@ spa_vdev_alloc(spa_t *spa, uint64_t guid)
 }
 
 static void
-spa_vdev_remove_aux(nvlist_t *config, char *name, nvlist_t **dev, int count,
-    nvlist_t *dev_to_remove)
+spa_vdev_remove_aux(nvlist_t *config, const char *name, nvlist_t **dev,
+    int count, nvlist_t *dev_to_remove)
 {
 	nvlist_t **newdev = NULL;
 
@@ -2384,7 +2384,8 @@ spa_vdev_remove(spa_t *spa, uint64_t guid, boolean_t unspare)
 	int error = 0, error_log;
 	boolean_t locked = MUTEX_HELD(&spa_namespace_lock);
 	sysevent_t *ev = NULL;
-	char *vd_type = NULL, *vd_path = NULL;
+	const char *vd_type = NULL;
+	char *vd_path = NULL;
 
 	ASSERT(spa_writeable(spa));
 

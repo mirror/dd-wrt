@@ -6,7 +6,7 @@
  * You may not use this file except in compliance with the License.
  *
  * You can obtain a copy of the license at usr/src/OPENSOLARIS.LICENSE
- * or http://www.opensolaris.org/os/licensing.
+ * or https://opensource.org/licenses/CDDL-1.0.
  * See the License for the specific language governing permissions
  * and limitations under the License.
  *
@@ -3470,7 +3470,7 @@ zil_close(zilog_t *zilog)
 	mutex_exit(&zilog->zl_lock);
 }
 
-static char *suspend_tag = "zil suspending";
+static const char *suspend_tag = "zil suspending";
 
 /*
  * Suspend an intent log.  While in suspended mode, we still honor

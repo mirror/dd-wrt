@@ -6,7 +6,7 @@
  * You may not use this file except in compliance with the License.
  *
  * You can obtain a copy of the license at usr/src/OPENSOLARIS.LICENSE
- * or http://www.opensolaris.org/os/licensing.
+ * or https://opensource.org/licenses/CDDL-1.0.
  * See the License for the specific language governing permissions
  * and limitations under the License.
  *
@@ -1116,7 +1116,7 @@ zfs_blake3_hash_many_avx512:
         pop     r13
         pop     r14
         pop     r15
-        ret
+        RET
 .p2align 6
 3:
         test    esi, 0x8
@@ -2487,7 +2487,7 @@ zfs_blake3_compress_in_place_avx512:
         vpxor   xmm1, xmm1, xmm3
         vmovdqu xmmword ptr [rdi], xmm0
         vmovdqu xmmword ptr [rdi+0x10], xmm1
-        ret
+        RET
 
 .p2align 6
 zfs_blake3_compress_xof_avx512:
@@ -2573,7 +2573,7 @@ zfs_blake3_compress_xof_avx512:
         vmovdqu xmmword ptr [r9+0x10], xmm1
         vmovdqu xmmword ptr [r9+0x20], xmm2
         vmovdqu xmmword ptr [r9+0x30], xmm3
-        ret
+        RET
 
 .size zfs_blake3_hash_many_avx512, . - zfs_blake3_hash_many_avx512
 .size zfs_blake3_compress_in_place_avx512, . - zfs_blake3_compress_in_place_avx512

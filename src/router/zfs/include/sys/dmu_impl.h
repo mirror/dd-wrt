@@ -6,7 +6,7 @@
  * You may not use this file except in compliance with the License.
  *
  * You can obtain a copy of the license at usr/src/OPENSOLARIS.LICENSE
- * or http://www.opensolaris.org/os/licensing.
+ * or https://opensource.org/licenses/CDDL-1.0.
  * See the License for the specific language governing permissions
  * and limitations under the License.
  *
@@ -248,7 +248,7 @@ typedef struct dmu_sendstatus {
 void dmu_object_zapify(objset_t *, uint64_t, dmu_object_type_t, dmu_tx_t *);
 void dmu_object_free_zapified(objset_t *, uint64_t, dmu_tx_t *);
 int dmu_buf_hold_noread(objset_t *, uint64_t, uint64_t,
-    void *, dmu_buf_t **);
+    const void *, dmu_buf_t **);
 
 #ifdef	__cplusplus
 }

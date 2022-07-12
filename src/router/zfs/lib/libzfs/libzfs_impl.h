@@ -6,7 +6,7 @@
  * You may not use this file except in compliance with the License.
  *
  * You can obtain a copy of the license at usr/src/OPENSOLARIS.LICENSE
- * or http://www.opensolaris.org/os/licensing.
+ * or https://opensource.org/licenses/CDDL-1.0.
  * See the License for the specific language governing permissions
  * and limitations under the License.
  *
@@ -223,7 +223,7 @@ typedef struct differ_info {
 	int datafd;
 } differ_info_t;
 
-extern int do_mount(zfs_handle_t *zhp, const char *mntpt, char *opts,
+extern int do_mount(zfs_handle_t *zhp, const char *mntpt, const char *opts,
     int flags);
 extern int do_unmount(zfs_handle_t *zhp, const char *mntpt, int flags);
 extern int libzfs_load_module(void);
