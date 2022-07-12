@@ -87,6 +87,15 @@ th {
 #header div.logo {
   margin-left: 30px;
 }
+form[name="macfilter"] #main {
+  height: initial
+}
+form[name="macfilter"] .button[name="table_button"] {
+  margin-left: 1em;
+}
+form[name="macfilter"] td[align="left"] {
+  white-space: nowrap
+}
 #main {
   height: 100%;
   margin: 0;
@@ -131,6 +140,40 @@ th {
   margin: 2px;
   width: 90%;
 }
+body[onunload*="Filters.asp'"] .submitFooter, [name="ipfilter"] .submitFooter {
+  position: relative;
+  margin-top: -6rem;
+  white-space: nowrap;
+}
+form[name="Join"] .submitFooter {
+  margin: 4em .6em;
+  white-space: nowrap;
+}
+form[name="firmware"] .submitFooter {
+  margin: 2em .6em;
+  white-space: nowrap;
+}
+form[name="firmware"] .submitFooter input,
+form[name="Join"] .submitFooter input,
+body[onunload*="Filters.asp'"] .submitFooter input,
+[name="ipfilter"] .submitFooter input {
+  width: 50%;
+}
+form[name="Join"] .submitFooter input {
+  position: relative;
+  top: -7em;
+  left: 175%;
+}
+form[name="firmware"] fieldset, form[name="Join"] fieldset,
+body[onunload*="Filters.asp'"] {
+  margin: .906em;
+}
+form[name="firmware"] h2 {
+  margin: .2em .5em -1em
+}
+form[name="Join"] h2 {
+  margin-left: .5em
+}
 div.setting {
   margin: 1px;
   margin-top: 6px;
@@ -139,15 +182,20 @@ div.setting {
   clear: both;
 }
 .label {
-  width: 14em;
+  width: 20em;
   float: left;
+}
+.default {
+  position: absolute;
+  right: 0;
+  width: 24em;
 }
 #menu {
   position: absolute;
   top: 228px;
   left: 10px;
-  height: 2em;
-  border-top: solid 2px;
+  height: 2px;
+  border-bottom: solid 2px;
   padding-top: 1em;
 }
 #menu, #menuMain, #menuMainList {
@@ -186,10 +234,6 @@ div.setting {
 }
 #menuMainList ul :link:hover, #menuMainList ul :visited:hover {
   border: 0;
-}
-.warning {
-  color: #f00;
-  text-align: center;
 }
 .meter {
   float: right;
@@ -257,7 +301,7 @@ input.spaceradio {
   margin-top: -.4rem;
   margin-left: .6rem;
 }
-td.center {
+td.center, .warning {
   text-align: center;
 }
 div.center .button {
@@ -273,7 +317,7 @@ iframe#syslog {
   max-width: 90%;
   position: fixed;
 }
-input.button[onclick*="do_show"] {
+input.button[onclick*="do_show"]:not([value*="Month"]) {
   top: 12.5em;
   left: 2rem;
   right: 8rem;
@@ -304,4 +348,13 @@ input.button[onclick*="do_show"] {
 }
 .message .submitFooter {
   margin: 1em 8.362em 0;
+}
+textarea {
+  padding: 4px;
+  font-size: 12px;
+  line-height: 1.42857;
+  border-radius: 4px;
+  box-sizing: border-box;
+  width: 100%;
+  resize: vertical;
 }
