@@ -185,11 +185,11 @@ addEvent(window, "unload", function() {
 									<legend><% tran("status_inet.traff_tot"); %></legend>
 										 <div class="setting">
 											<div class="label"><% tran("status_inet.traffin"); %></div>
-											<span id="ttraff_in"><% get_totaltraff("in"); %>&nbsp;MiB</span>
+											<span id="ttraff_in"><% get_totaltraff("in"); %></span>&nbsp;MiB
 										</div>
 										<div class="setting">
 											<div class="label"><% tran("status_inet.traffout"); %></div>
-											<span id="ttraff_out"><% get_totaltraff("out"); %>&nbsp;MiB</span>
+											<span id="ttraff_out"><% get_totaltraff("out"); %></span>&nbsp;MiB
 										</div>
 								</fieldset><br />
 								<fieldset class="center">
