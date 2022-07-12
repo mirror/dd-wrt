@@ -376,10 +376,6 @@ table[summary='ports forwarding table'] input[size='10'] {
   margin: .362em;
   height: 1.533rem;
 }
-.message div input {
-  padding: .362em 1.087em;
-  margin: 0 .362em;
-}
 #floatKiller {
   clear: both;
   width: 1px;
@@ -398,6 +394,8 @@ table[summary='ports forwarding table'] input[size='10'] {
   text-align: center;
 }
 .message div input {
+  padding: .362em 1.087em;
+  margin: 0 .362em;
   margin-top: 1.449em;
   font-weight: normal;
 }

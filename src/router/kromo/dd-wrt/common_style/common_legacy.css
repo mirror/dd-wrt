@@ -61,3 +61,6 @@ input[disabled], select[disabled] {
   width: 100px;
   z-index: 0;
 }
+#help a:hover, a[title='Geotool'] {
+  text-decoration: underline;
+}

@@ -20,41 +20,24 @@ input, select {
   padding-top: 0em;
   padding-bottom: 0em;
 }
-div.message {
-  margin: 0;
-  padding: 0;
-  height: 100%;
-  width: 100%;
-}
 div.popup {
   margin: 3em;
 }
-div.message form {
-  display: inline;
-  margin: 0;
-  padding: 0;
+#mess div[style="text-align: left;"] {
+  text-align: center !important;
 }
-div.message div {
+.message {
+  border-radius: 4px;
+  margin: 2em auto;
+  padding: .906em;
+  font-weight: bold;
   text-align: center;
-  vertical-align: middle;
+  color: #fff;
 }
-div.message div {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  width: 700px;
-  height: 400px;
-  margin-left: -350px;
-  margin-top: -200px;
-}
-div.message div form {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  width: 400px;
-  height: 100px;
-  margin-left: -200px;
-  margin-top: -40px;
+.message div input {
+  padding: .162em 1.087em;
+  margin: 0 .362em;
+  font-weight: normal;
 }
 div.setting {
   margin: 0;
@@ -62,12 +45,25 @@ div.setting {
   padding-left: 0;
   clear: both;
 }
+.progressbar {
+  visibility: visible;
+  position: relative;
+  overflow: hidden;
+  border-style: solid;
+  border-width: 1px;
+  border-radius: 4px;
+  margin: 2em auto;
+}
+.progressbarblock {
+  position: absolute;
+  font-size: .09em;
+}
 fieldset {
   padding-left: 10px;
 }
 #main {
   clear: both;
-  margin-right: 13rem;
+  margin-right: 20rem;
   margin-bottom: 1em;
   padding-top: 1.7em;
 }
@@ -83,13 +79,20 @@ fieldset {
   position: absolute;
   top: 0;
   right: 10px;
-  width: 190px;
+  width: 300px;
   min-height: 100%;
   z-index: 3;
 }
 #help {
-  margin-top: 9.0em;
-  padding: 7px;
+  margin-top: 7em;
+  padding: .906em;
+}
+dt {
+  margin: .4em;
+}
+dd {
+  padding-bottom: .2em;
+  border-bottom: 1px dotted;
 }
 #help div#logo {
   text-align: center;
@@ -97,23 +100,19 @@ fieldset {
 }
 #statusInfo {
   position: absolute;
-  top: 5px;
+  top: 15px;
   right: 5px;
   height: 5em;
-  width: 25em;
+  width: 36em;
   margin: 0;
   padding: 0;
   z-index: 30;
 }
-.submitFooter, .submitFooterCmd {
+.submitFooter {
   margin: 1em;
   padding-top: 0.5em;
   padding-bottom: 0.5em;
   text-align: center;
-}
-#main {
-  clear: both;
-  padding-top: 1.7em;
 }
 #contents {
   padding: 1.3em;
@@ -141,8 +140,6 @@ fieldset {
   display: block;
   float: left;
   text-align: center;
-  font-family: AvantGarde, tahoma, verdana, sans-serif;
-  font-size: 85%;
 }
 #menuMain ul#menuMainList span, #menuMain ul#menuMainList a.current, #menuMain ul#menuMainList a.current:hover {
   margin-top: 0;
