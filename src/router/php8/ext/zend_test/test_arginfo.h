@@ -1,5 +1,5 @@
 /* This is a generated file, edit the .stub.php file instead.
- * Stub hash: 0a2826d081b33a542c1b2fc9a5812954fcc059f9 */
+ * Stub hash: 27df6a7b48574b5c6c9a54c618fce300c7a8bd13 */
 
 ZEND_BEGIN_ARG_WITH_RETURN_TYPE_INFO_EX(arginfo_zend_test_array_return, 0, 0, IS_ARRAY, 0)
 ZEND_END_ARG_INFO()
@@ -69,6 +69,16 @@ ZEND_BEGIN_ARG_WITH_RETURN_TYPE_INFO_EX(arginfo_zend_test_parameter_with_attribu
 	ZEND_ARG_TYPE_INFO(0, parameter, IS_STRING, 0)
 ZEND_END_ARG_INFO()
 
+ZEND_BEGIN_ARG_WITH_RETURN_TYPE_INFO_EX(arginfo_zend_get_current_func_name, 0, 0, IS_STRING, 0)
+ZEND_END_ARG_INFO()
+
+ZEND_BEGIN_ARG_WITH_RETURN_TYPE_INFO_EX(arginfo_zend_call_method, 0, 2, IS_MIXED, 0)
+	ZEND_ARG_TYPE_INFO(0, class, IS_STRING, 0)
+	ZEND_ARG_TYPE_INFO(0, method, IS_STRING, 0)
+	ZEND_ARG_TYPE_INFO(0, arg1, IS_MIXED, 0)
+	ZEND_ARG_TYPE_INFO(0, arg2, IS_MIXED, 0)
+ZEND_END_ARG_INFO()
+
 ZEND_BEGIN_ARG_WITH_RETURN_TYPE_INFO_EX(arginfo_ZendTestNS2_ZendSubNS_namespaced_func, 0, 0, _IS_BOOL, 0)
 ZEND_END_ARG_INFO()
 
@@ -124,6 +134,8 @@ static ZEND_FUNCTION(zend_weakmap_remove);
 static ZEND_FUNCTION(zend_weakmap_dump);
 static ZEND_FUNCTION(zend_get_unit_enum);
 static ZEND_FUNCTION(zend_test_parameter_with_attribute);
+static ZEND_FUNCTION(zend_get_current_func_name);
+static ZEND_FUNCTION(zend_call_method);
 static ZEND_FUNCTION(namespaced_func);
 static ZEND_METHOD(_ZendTestClass, is_object);
 static ZEND_METHOD(_ZendTestClass, __toString);
@@ -159,6 +171,8 @@ static const zend_function_entry ext_functions[] = {
 	ZEND_FE(zend_weakmap_dump, arginfo_zend_weakmap_dump)
 	ZEND_FE(zend_get_unit_enum, arginfo_zend_get_unit_enum)
 	ZEND_FE(zend_test_parameter_with_attribute, arginfo_zend_test_parameter_with_attribute)
+	ZEND_FE(zend_get_current_func_name, arginfo_zend_get_current_func_name)
+	ZEND_FE(zend_call_method, arginfo_zend_call_method)
 	ZEND_NS_FE("ZendTestNS2\\ZendSubNS", namespaced_func, arginfo_ZendTestNS2_ZendSubNS_namespaced_func)
 	ZEND_FE_END
 };
@@ -411,6 +425,11 @@ static zend_class_entry *register_class_ZendTestStringEnum(void)
 	zend_string *enum_case_Baz_value_str = zend_string_init("Test2\\a", sizeof("Test2\\a") - 1, 1);
 	ZVAL_STR(&enum_case_Baz_value, enum_case_Baz_value_str);
 	zend_enum_add_case_cstr(class_entry, "Baz", &enum_case_Baz_value);
+
+	zval enum_case_FortyTwo_value;
+	zend_string *enum_case_FortyTwo_value_str = zend_string_init("42", sizeof("42") - 1, 1);
+	ZVAL_STR(&enum_case_FortyTwo_value, enum_case_FortyTwo_value_str);
+	zend_enum_add_case_cstr(class_entry, "FortyTwo", &enum_case_FortyTwo_value);
 
 	return class_entry;
 }

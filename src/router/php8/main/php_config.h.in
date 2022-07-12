@@ -45,6 +45,9 @@
 /* Whether to build dba as dynamic module */
 #undef COMPILE_DL_DBA
 
+/* Whether to build dl_test as dynamic module */
+#undef COMPILE_DL_DL_TEST
+
 /* Whether to build dom as dynamic module */
 #undef COMPILE_DL_DOM
 
@@ -626,7 +629,7 @@
 /* Define to 1 if you have the `fork' function. */
 #undef HAVE_FORK
 
-/* POSIX Access Control List */
+/* do we have acl support? */
 #undef HAVE_FPM_ACL
 
 /* whether fpsetprec is present and usable */
