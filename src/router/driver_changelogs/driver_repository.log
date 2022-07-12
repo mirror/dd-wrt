@@ -1,4 +1,12 @@
 ------------------------------------------------------------------------
+r6682 | brainslayer | 2022-07-12 15:28:54 +0700 (Tue, 12 Jul 2022) | 1 line
+
+add comment
+------------------------------------------------------------------------
+r6681 | brainslayer | 2022-07-12 15:26:23 +0700 (Tue, 12 Jul 2022) | 1 line
+
+reset base mac address each time the vdev list is empty using the first created vdev
+------------------------------------------------------------------------
 r6680 | brainslayer | 2022-07-08 21:28:11 +0700 (Fri, 08 Jul 2022) | 1 line
 
 fix backport
