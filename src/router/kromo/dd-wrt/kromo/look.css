@@ -43,10 +43,6 @@ input[type='radio'], input[type='checkbox'] {
 input.num {
   text-align: right;
 }
-div.message div {
-  border-width: 1px;
-  border-style: solid;
-}
 .section {
   font-size: 2em;
   font-family: AvantGarde, Helvetica, Verdana, Arial, sans-serif;

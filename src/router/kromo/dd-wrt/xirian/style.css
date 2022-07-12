@@ -77,26 +77,18 @@ input.spaceradio {
 [summary="week days table"] {
   margin-left: -1.3rem;
 }
-div.message {
-  margin: 0;
-  padding: 0;
-  height: 100%;
-  width: 100%;
-}
 form {
   margin: 0;
   padding: 0;
 }
+div.message {
+  margin: 0;
+  padding: .906em;
+  text-align: center;
+  z-index: 99;
+  position: relative
+}
 div.message div {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  width: 700px;
-  height: 400px;
-  margin-left: -350px;
-  margin-top: -200px;
-  border-width: 1px;
-  border-style: solid;
   text-align: center;
 }
 div.message div form {
@@ -107,6 +99,20 @@ div.message div form {
   height: 100px;
   margin-left: -200px;
   margin-top: -40px;
+}
+.progressbar {
+  visibility: visible;
+  position: relative;
+  overflow: hidden;
+  border-style: solid;
+  font-size: .09em;
+  border-width: 1px;
+  border-radius: 4px;
+  margin: 0 auto;
+}
+.progressbarblock {
+  position: absolute;
+  font-size: .09em;
 }
 #header {
   height: 115px;
