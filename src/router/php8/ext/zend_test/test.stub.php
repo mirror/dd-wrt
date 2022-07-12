@@ -72,6 +72,7 @@ namespace {
         case Foo = "Test1";
         case Bar = "Test2";
         case Baz = "Test2\\a";
+        case FortyTwo = "42";
     }
 
     function zend_test_array_return(): array {}
@@ -110,6 +111,10 @@ namespace {
     function zend_get_unit_enum(): ZendTestUnitEnum {}
 
     function zend_test_parameter_with_attribute(string $parameter): int {}
+
+    function zend_get_current_func_name(): string {}
+
+    function zend_call_method(string $class, string $method, mixed $arg1 = UNKNOWN, mixed $arg2 = UNKNOWN): mixed {}
 }
 
 namespace ZendTestNS {

@@ -1052,6 +1052,9 @@ PHP_FUNCTION(strtotime)
 	}
 
 	tzi = get_timezone_info();
+	if (!tzi) {
+		return;
+	}
 
 	now = timelib_time_ctor();
 	now->tz_info = tzi;
@@ -1111,6 +1114,9 @@ PHPAPI void php_mktime(INTERNAL_FUNCTION_PARAMETERS, int gmt)
 		timelib_unixtime2gmt(now, (timelib_sll) php_time());
 	} else {
 		tzi = get_timezone_info();
+		if (!tzi) {
+			return;
+		}
 		now->tz_info = tzi;
 		now->zone_type = TIMELIB_ZONETYPE_ID;
 		timelib_unixtime2local(now, (timelib_sll) php_time());
@@ -1232,6 +1238,9 @@ PHPAPI void php_strftime(INTERNAL_FUNCTION_PARAMETERS, int gmt)
 		timelib_unixtime2gmt(ts, (timelib_sll) timestamp);
 	} else {
 		tzi = get_timezone_info();
+		if (!tzi) {
+			return;
+		}
 		ts->tz_info = tzi;
 		ts->zone_type = TIMELIB_ZONETYPE_ID;
 		timelib_unixtime2local(ts, (timelib_sll) timestamp);
@@ -1340,6 +1349,9 @@ PHP_FUNCTION(localtime)
 	}
 
 	tzi = get_timezone_info();
+	if (!tzi) {
+		RETURN_THROWS();
+	}
 	ts = timelib_time_ctor();
 	ts->tz_info = tzi;
 	ts->zone_type = TIMELIB_ZONETYPE_ID;
@@ -1391,6 +1403,9 @@ PHP_FUNCTION(getdate)
 	}
 
 	tzi = get_timezone_info();
+	if (!tzi) {
+		RETURN_THROWS();
+	}
 	ts = timelib_time_ctor();
 	ts->tz_info = tzi;
 	ts->zone_type = TIMELIB_ZONETYPE_ID;
@@ -1468,16 +1483,6 @@ static int date_period_it_has_more(zend_object_iterator *iter)
 {
 	date_period_it *iterator = (date_period_it *)iter;
 	php_period_obj *object   = Z_PHPPERIOD_P(&iterator->intern.data);
-	timelib_time   *it_time = object->current;
-
-	/* apply modification if it's not the first iteration */
-	if (!object->include_start_date || iterator->current_index > 0) {
-		it_time->have_relative = 1;
-		it_time->relative = *object->interval;
-		it_time->sse_uptodate = 0;
-		timelib_update_ts(it_time, NULL);
-		timelib_update_from_sse(it_time);
-	}
 
 	if (object->end) {
 		return object->current->sse < object->end->sse ? SUCCESS : FAILURE;
@@ -1519,10 +1524,23 @@ static void date_period_it_current_key(zend_object_iterator *iter, zval *key)
 }
 /* }}} */
 
+static void date_period_advance(timelib_time *it_time, timelib_rel_time *interval)
+{
+	it_time->have_relative = 1;
+	it_time->relative = *interval;
+	it_time->sse_uptodate = 0;
+	timelib_update_ts(it_time, NULL);
+	timelib_update_from_sse(it_time);
+}
+
 /* {{{ date_period_it_move_forward */
 static void date_period_it_move_forward(zend_object_iterator *iter)
 {
-	date_period_it   *iterator = (date_period_it *)iter;
+	date_period_it *iterator = (date_period_it *)iter;
+	php_period_obj *object   = Z_PHPPERIOD_P(&iterator->intern.data);
+	timelib_time   *it_time = object->current;
+
+	date_period_advance(it_time, object->interval);
 
 	iterator->current_index++;
 	date_period_it_invalidate_current(iter);
@@ -1542,7 +1560,13 @@ static void date_period_it_rewind(zend_object_iterator *iter)
 		zend_throw_error(NULL, "DatePeriod has not been initialized correctly");
 		return;
 	}
+
 	iterator->object->current = timelib_time_clone(iterator->object->start);
+
+	if (!iterator->object->include_start_date) {
+		date_period_advance(iterator->object->current, iterator->object->interval);
+	}
+
 	date_period_it_invalidate_current(iter);
 }
 /* }}} */
@@ -2273,6 +2297,9 @@ PHPAPI int php_date_initialize(php_date_obj *dateobj, const char *time_str, size
 		tzi = dateobj->time->tz_info;
 	} else {
 		tzi = get_timezone_info();
+		if (!tzi) {
+			return 0;
+		}
 	}
 
 	now = timelib_time_ctor();
@@ -2369,7 +2396,7 @@ PHP_FUNCTION(date_create_from_format)
 
 	ZEND_PARSE_PARAMETERS_START(2, 3)
 		Z_PARAM_STRING(format_str, format_str_len)
-		Z_PARAM_STRING(time_str, time_str_len)
+		Z_PARAM_PATH(time_str, time_str_len)
 		Z_PARAM_OPTIONAL
 		Z_PARAM_OBJECT_OF_CLASS_OR_NULL(timezone_object, date_ce_timezone)
 	ZEND_PARSE_PARAMETERS_END();
@@ -2391,7 +2418,7 @@ PHP_FUNCTION(date_create_immutable_from_format)
 
 	ZEND_PARSE_PARAMETERS_START(2, 3)
 		Z_PARAM_STRING(format_str, format_str_len)
-		Z_PARAM_STRING(time_str, time_str_len)
+		Z_PARAM_PATH(time_str, time_str_len)
 		Z_PARAM_OPTIONAL
 		Z_PARAM_OBJECT_OF_CLASS_OR_NULL(timezone_object, date_ce_timezone)
 	ZEND_PARSE_PARAMETERS_END();
@@ -2449,8 +2476,10 @@ PHP_METHOD(DateTime, createFromImmutable)
 		Z_PARAM_OBJECT_OF_CLASS(datetimeimmutable_object, date_ce_immutable)
 	ZEND_PARSE_PARAMETERS_END();
 
-	php_date_instantiate(execute_data->This.value.ce ? execute_data->This.value.ce : date_ce_date, return_value);
 	old_obj = Z_PHPDATE_P(datetimeimmutable_object);
+	DATE_CHECK_INITIALIZED(old_obj->time, DateTimeImmutable);
+
+	php_date_instantiate(execute_data->This.value.ce ? execute_data->This.value.ce : date_ce_date, return_value);
 	new_obj = Z_PHPDATE_P(return_value);
 
 	new_obj->time = timelib_time_clone(old_obj->time);
@@ -2468,8 +2497,10 @@ PHP_METHOD(DateTime, createFromInterface)
 		Z_PARAM_OBJECT_OF_CLASS(datetimeinterface_object, date_ce_interface)
 	ZEND_PARSE_PARAMETERS_END();
 
-	php_date_instantiate(execute_data->This.value.ce ? execute_data->This.value.ce : date_ce_date, return_value);
 	old_obj = Z_PHPDATE_P(datetimeinterface_object);
+	DATE_CHECK_INITIALIZED(old_obj->time, DateTimeInterface);
+
+	php_date_instantiate(execute_data->This.value.ce ? execute_data->This.value.ce : date_ce_date, return_value);
 	new_obj = Z_PHPDATE_P(return_value);
 
 	new_obj->time = timelib_time_clone(old_obj->time);
@@ -2487,8 +2518,10 @@ PHP_METHOD(DateTimeImmutable, createFromMutable)
 		Z_PARAM_OBJECT_OF_CLASS(datetime_object, date_ce_date)
 	ZEND_PARSE_PARAMETERS_END();
 
-	php_date_instantiate(execute_data->This.value.ce ? execute_data->This.value.ce : date_ce_immutable, return_value);
 	old_obj = Z_PHPDATE_P(datetime_object);
+	DATE_CHECK_INITIALIZED(old_obj->time, DateTime);
+
+	php_date_instantiate(execute_data->This.value.ce ? execute_data->This.value.ce : date_ce_immutable, return_value);
 	new_obj = Z_PHPDATE_P(return_value);
 
 	new_obj->time = timelib_time_clone(old_obj->time);
@@ -2506,8 +2539,10 @@ PHP_METHOD(DateTimeImmutable, createFromInterface)
 		Z_PARAM_OBJECT_OF_CLASS(datetimeinterface_object, date_ce_interface)
 	ZEND_PARSE_PARAMETERS_END();
 
-	php_date_instantiate(execute_data->This.value.ce ? execute_data->This.value.ce : date_ce_immutable, return_value);
 	old_obj = Z_PHPDATE_P(datetimeinterface_object);
+	DATE_CHECK_INITIALIZED(old_obj->time, DateTimeInterface);
+
+	php_date_instantiate(execute_data->This.value.ce ? execute_data->This.value.ce : date_ce_immutable, return_value);
 	new_obj = Z_PHPDATE_P(return_value);
 
 	new_obj->time = timelib_time_clone(old_obj->time);
@@ -2785,7 +2820,7 @@ PHP_FUNCTION(date_parse_from_format)
 
 	ZEND_PARSE_PARAMETERS_START(2, 2)
 		Z_PARAM_STR(format)
-		Z_PARAM_STR(date)
+		Z_PARAM_PATH_STR(date)
 	ZEND_PARSE_PARAMETERS_END();
 
 	parsed_time = timelib_parse_from_format(ZSTR_VAL(format), ZSTR_VAL(date), ZSTR_LEN(date), &error, DATE_TIMEZONEDB, php_date_parse_tzfile_wrapper);
@@ -3419,6 +3454,13 @@ static int timezone_initialize(php_timezone_obj *tzobj, const char *tz, size_t t
 	}
 
 	dummy_t->z = timelib_parse_zone(&tz, &dst, dummy_t, &not_found, DATE_TIMEZONEDB, php_date_parse_tzfile_wrapper);
+	dummy_t->dst = dst;
+	if (!not_found && (*tz != '\0')) {
+		php_error_docref(NULL, E_WARNING, "Unknown or bad timezone (%s)", orig_tz);
+		timelib_free(dummy_t->tz_abbr);
+		efree(dummy_t);
+		return FAILURE;
+	}
 	if (not_found) {
 		php_error_docref(NULL, E_WARNING, "Unknown or bad timezone (%s)", orig_tz);
 		efree(dummy_t);
@@ -3646,6 +3688,15 @@ PHP_FUNCTION(timezone_transitions_get)
 		add_assoc_string(&element, "abbr", &tzobj->tzi.tz->timezone_abbr[tzobj->tzi.tz->type[i].abbr_idx]); \
 		add_next_index_zval(return_value, &element);
 
+#define add_from_tto(to,ts) \
+		array_init(&element); \
+		add_assoc_long(&element, "ts",     ts); \
+		add_assoc_str(&element, "time", php_format_date(DATE_FORMAT_ISO8601, 13, ts, 0)); \
+		add_assoc_long(&element, "offset", (to)->offset); \
+		add_assoc_bool(&element, "isdst",  (to)->is_dst); \
+		add_assoc_string(&element, "abbr", (to)->abbr); \
+		add_next_index_zval(return_value, &element);
+
 #define add_last() add(tzobj->tzi.tz->bit64.timecnt - 1, timestamp_begin)
 
 	array_init(return_value);
@@ -3675,7 +3726,13 @@ PHP_FUNCTION(timezone_transitions_get)
 
 	if (!found) {
 		if (tzobj->tzi.tz->bit64.timecnt > 0) {
-			add_last();
+			if (tzobj->tzi.tz->posix_info && tzobj->tzi.tz->posix_info->dst_end) {
+				timelib_time_offset *tto = timelib_get_time_zone_info(timestamp_begin, tzobj->tzi.tz);
+				add_from_tto(tto, timestamp_begin);
+				timelib_time_offset_dtor(tto);
+			} else {
+				add_last();
+			}
 		} else {
 			add_nominal();
 		}
@@ -3688,31 +3745,34 @@ PHP_FUNCTION(timezone_transitions_get)
 				return;
 			}
 		}
-		if (tzobj->tzi.tz->posix_info && tzobj->tzi.tz->posix_info->dst_end) {
-			int i, j;
-			timelib_sll start_y, end_y, dummy_m, dummy_d;
-			timelib_sll last_transition_ts = tzobj->tzi.tz->trans[tzobj->tzi.tz->bit64.timecnt - 1];
+	}
+	if (tzobj->tzi.tz->posix_info && tzobj->tzi.tz->posix_info->dst_end) {
+		int i, j;
+		timelib_sll start_y, end_y, dummy_m, dummy_d;
+		timelib_sll last_transition_ts = tzobj->tzi.tz->trans[tzobj->tzi.tz->bit64.timecnt - 1];
 
-			/* Find out year for last transition */
-			timelib_unixtime2date(last_transition_ts, &start_y, &dummy_m, &dummy_d);
+		/* Find out year for last transition */
+		timelib_unixtime2date(last_transition_ts, &start_y, &dummy_m, &dummy_d);
 
-			/* Find out year for final boundary timestamp */
-			timelib_unixtime2date(timestamp_end, &end_y, &dummy_m, &dummy_d);
+		/* Find out year for final boundary timestamp */
+		timelib_unixtime2date(timestamp_end, &end_y, &dummy_m, &dummy_d);
 
-			for (i = start_y; i <= end_y; i++) {
-				timelib_posix_transitions transitions = { 0 };
+		for (i = start_y; i <= end_y; i++) {
+			timelib_posix_transitions transitions = { 0 };
 
-				timelib_get_transitions_for_year(tzobj->tzi.tz, i, &transitions);
+			timelib_get_transitions_for_year(tzobj->tzi.tz, i, &transitions);
 
-				for (j = 0; j < transitions.count; j++) {
-					if (transitions.times[j] <= last_transition_ts) {
-						continue;
-					}
-					if (transitions.times[j] > timestamp_end) {
-						return;
-					}
-					add_by_index(transitions.types[j], transitions.times[j]);
+			for (j = 0; j < transitions.count; j++) {
+				if (transitions.times[j] <= last_transition_ts) {
+					continue;
 				}
+				if (transitions.times[j] < timestamp_begin) {
+					continue;
+				}
+				if (transitions.times[j] > timestamp_end) {
+					return;
+				}
+				add_by_index(transitions.types[j], transitions.times[j]);
 			}
 		}
 	}
@@ -4526,6 +4586,9 @@ PHP_FUNCTION(date_default_timezone_get)
 	ZEND_PARSE_PARAMETERS_NONE();
 
 	default_tz = get_timezone_info();
+	if (!default_tz) {
+		RETURN_THROWS();
+	}
 	RETVAL_STRING(default_tz->name);
 }
 /* }}} */
@@ -4581,8 +4644,11 @@ static void php_do_date_sunrise_sunset(INTERNAL_FUNCTION_PARAMETERS, int calc_su
 	altitude = 90 - zenith;
 
 	/* Initialize time struct */
-	t = timelib_time_ctor();
 	tzi = get_timezone_info();
+	if (!tzi) {
+		RETURN_THROWS();
+	}
+	t = timelib_time_ctor();
 	t->tz_info = tzi;
 	t->zone_type = TIMELIB_ZONETYPE_ID;
 
@@ -4652,8 +4718,11 @@ PHP_FUNCTION(date_sun_info)
 	ZEND_PARSE_PARAMETERS_END();
 
 	/* Initialize time struct */
-	t = timelib_time_ctor();
 	tzi = get_timezone_info();
+	if (!tzi) {
+		RETURN_THROWS();
+	}
+	t = timelib_time_ctor();
 	t->tz_info = tzi;
 	t->zone_type = TIMELIB_ZONETYPE_ID;
 	timelib_unixtime2local(t, time);

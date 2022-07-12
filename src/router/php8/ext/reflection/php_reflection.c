@@ -638,6 +638,13 @@ static int format_default_value(smart_str *str, zval *value) {
 			format_default_value(str, zv);
 		} ZEND_HASH_FOREACH_END();
 		smart_str_appendc(str, ']');
+	} else if (Z_TYPE_P(value) == IS_OBJECT) {
+		zend_object *obj = Z_OBJ_P(value);
+		zend_class_entry *class = obj->ce;
+		ZEND_ASSERT(class->ce_flags & ZEND_ACC_ENUM);
+		smart_str_append(str, class->name);
+		smart_str_appends(str, "::");
+		smart_str_append(str, Z_STR_P(zend_enum_fetch_case_name(obj)));
 	} else {
 		ZEND_ASSERT(Z_TYPE_P(value) == IS_CONSTANT_AST);
 		zend_string *ast_str = zend_ast_export("", Z_ASTVAL_P(value), "");
@@ -1871,7 +1878,7 @@ ZEND_METHOD(ReflectionFunctionAbstract, getAttributes)
 
 	GET_REFLECTION_OBJECT_PTR(fptr);
 
-	if (fptr->common.scope) {
+	if (fptr->common.scope && !(fptr->common.fn_flags & ZEND_ACC_CLOSURE)) {
 		target = ZEND_ATTRIBUTE_TARGET_METHOD;
 	} else {
 		target = ZEND_ATTRIBUTE_TARGET_FUNCTION;
@@ -4370,17 +4377,19 @@ ZEND_METHOD(ReflectionClass, getMethod)
 /* }}} */
 
 /* {{{ _addmethod */
-static void _addmethod(zend_function *mptr, zend_class_entry *ce, HashTable *ht, zend_long filter)
+static bool _addmethod(zend_function *mptr, zend_class_entry *ce, HashTable *ht, zend_long filter)
 {
 	if ((mptr->common.fn_flags & ZEND_ACC_PRIVATE) && mptr->common.scope != ce) {
-		return;
+		return 0;
 	}
 
 	if (mptr->common.fn_flags & filter) {
 		zval method;
 		reflection_method_factory(ce, mptr, NULL, &method);
 		zend_hash_next_index_insert_new(ht, &method);
+		return 1;
 	}
+	return 0;
 }
 /* }}} */
 
@@ -4420,7 +4429,9 @@ ZEND_METHOD(ReflectionClass, getMethods)
 		}
 		zend_function *closure = zend_get_closure_invoke_method(obj);
 		if (closure) {
-			_addmethod(closure, ce, Z_ARRVAL_P(return_value), filter);
+			if (!_addmethod(closure, ce, Z_ARRVAL_P(return_value), filter)) {
+				_free_function(closure);
+			}
 		}
 		if (!has_obj) {
 			zval_ptr_dtor(&obj_tmp);

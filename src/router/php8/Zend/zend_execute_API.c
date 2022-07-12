@@ -553,7 +553,7 @@ ZEND_API zend_string *get_active_function_or_method_name(void) /* {{{ */
 
 ZEND_API zend_string *get_function_or_method_name(const zend_function *func) /* {{{ */
 {
-	if (func->common.scope) {
+	if (func->common.scope && func->common.function_name) {
 		return zend_create_member_string(func->common.scope->name, func->common.function_name);
 	}
 
@@ -921,11 +921,6 @@ cleanup_args:
 		} else {
 			zend_execute_internal(call, fci->retval);
 		}
-		EG(current_execute_data) = call->prev_execute_data;
-		zend_vm_stack_free_args(call);
-		if (UNEXPECTED(ZEND_CALL_INFO(call) & ZEND_CALL_HAS_EXTRA_NAMED_PARAMS)) {
-			zend_array_release(call->extra_named_params);
-		}
 
 #if ZEND_DEBUG
 		if (!EG(exception) && call->func) {
@@ -938,6 +933,11 @@ cleanup_args:
 				? Z_ISREF_P(fci->retval) : !Z_ISREF_P(fci->retval));
 		}
 #endif
+		EG(current_execute_data) = call->prev_execute_data;
+		zend_vm_stack_free_args(call);
+		if (UNEXPECTED(ZEND_CALL_INFO(call) & ZEND_CALL_HAS_EXTRA_NAMED_PARAMS)) {
+			zend_array_release(call->extra_named_params);
+		}
 
 		if (EG(exception)) {
 			zval_ptr_dtor(fci->retval);

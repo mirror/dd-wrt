@@ -17,6 +17,7 @@
    +----------------------------------------------------------------------+
 */
 
+#include "php.h"
 #include "zend_API.h"
 #include "zend_exceptions.h"
 #include "zend_ini.h"
@@ -908,6 +909,9 @@ static inline int ct_eval_func_call(
 
 			ini_entry = zend_hash_find_ptr(EG(ini_directives), Z_STR_P(args[0]));
 			if (!ini_entry) {
+				if (PG(enable_dl)) {
+					return FAILURE;
+				}
 				ZVAL_FALSE(result);
 			} else if (ini_entry->modifiable != ZEND_INI_SYSTEM) {
 				return FAILURE;
@@ -2210,8 +2214,39 @@ static int try_remove_definition(sccp_ctx *ctx, int var_num, zend_ssa_var *var, 
 				}
 				return 0;
 			}
-			if (ssa_op->op1_def >= 0
-					|| ssa_op->op2_def >= 0) {
+			if (ssa_op->op1_def >= 0 || ssa_op->op2_def >= 0) {
+				if (var->use_chain < 0 && var->phi_use_chain == NULL) {
+					switch (opline->opcode) {
+						case ZEND_ASSIGN:
+						case ZEND_ASSIGN_REF:
+						case ZEND_ASSIGN_DIM:
+						case ZEND_ASSIGN_OBJ:
+						case ZEND_ASSIGN_OBJ_REF:
+						case ZEND_ASSIGN_STATIC_PROP:
+						case ZEND_ASSIGN_STATIC_PROP_REF:
+						case ZEND_ASSIGN_OP:
+						case ZEND_ASSIGN_DIM_OP:
+						case ZEND_ASSIGN_OBJ_OP:
+						case ZEND_ASSIGN_STATIC_PROP_OP:
+						case ZEND_PRE_INC:
+						case ZEND_PRE_DEC:
+						case ZEND_PRE_INC_OBJ:
+						case ZEND_PRE_DEC_OBJ:
+						case ZEND_DO_ICALL:
+						case ZEND_DO_UCALL:
+						case ZEND_DO_FCALL_BY_NAME:
+						case ZEND_DO_FCALL:
+						case ZEND_INCLUDE_OR_EVAL:
+						case ZEND_YIELD:
+						case ZEND_YIELD_FROM:
+						case ZEND_ASSERT_CHECK:
+							opline->result_type = IS_UNUSED;
+							zend_ssa_remove_result_def(ssa, ssa_op);
+							break;
+						default:
+							break;
+					}	
+				}
 				/* we cannot remove instruction that defines other variables */
 				return 0;
 			} else if (opline->opcode == ZEND_JMPZ_EX
