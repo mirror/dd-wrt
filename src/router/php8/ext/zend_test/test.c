@@ -26,6 +26,7 @@
 #include "fiber.h"
 #include "zend_attributes.h"
 #include "zend_enum.h"
+#include "zend_interfaces.h"
 #include "zend_weakrefs.h"
 #include "Zend/Optimizer/zend_optimizer.h"
 #include "test_arginfo.h"
@@ -256,6 +257,15 @@ static ZEND_FUNCTION(zend_weakmap_dump)
 	RETURN_ARR(zend_array_dup(&ZT_G(global_weakmap)));
 }
 
+static ZEND_FUNCTION(zend_get_current_func_name)
+{
+    ZEND_PARSE_PARAMETERS_NONE();
+
+    zend_string *function_name = get_function_or_method_name(EG(current_execute_data)->prev_execute_data->func);
+
+    RETURN_STR(function_name);
+}
+
 /* TESTS Z_PARAM_ITERABLE and Z_PARAM_ITERABLE_OR_NULL */
 static ZEND_FUNCTION(zend_iterable)
 {
@@ -266,6 +276,25 @@ static ZEND_FUNCTION(zend_iterable)
 		Z_PARAM_OPTIONAL
 		Z_PARAM_ITERABLE_OR_NULL(arg2)
 	ZEND_PARSE_PARAMETERS_END();
+}
+
+/* Call a method on a class or object using zend_call_method() */
+static ZEND_FUNCTION(zend_call_method)
+{
+	zend_class_entry *ce = NULL;
+	zend_string *method_name = NULL;
+	zval *arg1 = NULL, *arg2 = NULL;
+	int argc = ZEND_NUM_ARGS();
+
+	ZEND_PARSE_PARAMETERS_START(2, 4)
+		Z_PARAM_CLASS(ce)
+		Z_PARAM_STR(method_name)
+		Z_PARAM_OPTIONAL
+		Z_PARAM_ZVAL(arg1)
+		Z_PARAM_ZVAL(arg2)
+	ZEND_PARSE_PARAMETERS_END();
+
+	zend_call_method(NULL, ce, NULL, ZSTR_VAL(method_name), ZSTR_LEN(method_name), return_value, argc - 2, arg1, arg2);
 }
 
 static ZEND_FUNCTION(zend_get_unit_enum)

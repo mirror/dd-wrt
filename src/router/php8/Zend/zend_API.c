@@ -357,7 +357,7 @@ ZEND_API ZEND_COLD void ZEND_FASTCALL zend_unexpected_extra_named_error(void)
 		class_name, space, get_active_function_name());
 }
 
-static ZEND_COLD void ZEND_FASTCALL zend_argument_error_variadic(zend_class_entry *error_ce, uint32_t arg_num, const char *format, va_list va) /* {{{ */
+ZEND_API ZEND_COLD void ZEND_FASTCALL zend_argument_error_variadic(zend_class_entry *error_ce, uint32_t arg_num, const char *format, va_list va) /* {{{ */
 {
 	zend_string *func_name;
 	const char *arg_name;
@@ -2948,8 +2948,17 @@ static void clean_module_classes(int module_number) /* {{{ */
 
 void module_destructor(zend_module_entry *module) /* {{{ */
 {
+#if ZEND_RC_DEBUG
+	bool orig_rc_debug = zend_rc_debug;
+#endif
 
 	if (module->type == MODULE_TEMPORARY) {
+#if ZEND_RC_DEBUG
+		/* FIXME: Loading extensions during the request breaks some invariants.
+		 * In particular, it will create persistent interned strings, which is
+		 * not allowed at this stage. */
+		zend_rc_debug = false;
+#endif
 		zend_clean_module_rsrc_dtors(module->module_number);
 		clean_module_constants(module->module_number);
 		clean_module_classes(module->module_number);
@@ -2965,7 +2974,7 @@ void module_destructor(zend_module_entry *module) /* {{{ */
 	if (module->module_started
 	 && !module->module_shutdown_func
 	 && module->type == MODULE_TEMPORARY) {
-		zend_unregister_ini_entries(module->module_number);
+		zend_unregister_ini_entries_ex(module->module_number, module->type);
 	}
 
 	/* Deinitialize module globals */
@@ -2990,6 +2999,10 @@ void module_destructor(zend_module_entry *module) /* {{{ */
 	if (module->handle && !getenv("ZEND_DONT_UNLOAD_MODULES")) {
 		DL_UNLOAD(module->handle);
 	}
+#endif
+
+#if ZEND_RC_DEBUG
+	zend_rc_debug = orig_rc_debug;
 #endif
 }
 /* }}} */

@@ -348,15 +348,15 @@ static void php_binary_init(void)
 {
 	char *binary_location = NULL;
 #ifdef PHP_WIN32
-	binary_location = (char *)malloc(MAXPATHLEN);
-	if (binary_location && GetModuleFileName(0, binary_location, MAXPATHLEN) == 0) {
-		free(binary_location);
-		PG(php_binary) = NULL;
+	binary_location = (char *)pemalloc(MAXPATHLEN, 1);
+	if (GetModuleFileName(0, binary_location, MAXPATHLEN) == 0) {
+		pefree(binary_location, 1);
+		binary_location = NULL;
 	}
 #else
 	if (sapi_module.executable_location) {
-		binary_location = (char *)malloc(MAXPATHLEN);
-		if (binary_location && !strchr(sapi_module.executable_location, '/')) {
+		binary_location = (char *)pemalloc(MAXPATHLEN, 1);
+		if (!strchr(sapi_module.executable_location, '/')) {
 			char *envpath, *path;
 			int found = 0;
 
@@ -379,11 +379,11 @@ static void php_binary_init(void)
 				efree(path);
 			}
 			if (!found) {
-				free(binary_location);
+				pefree(binary_location, 1);
 				binary_location = NULL;
 			}
 		} else if (!VCWD_REALPATH(sapi_module.executable_location, binary_location) || VCWD_ACCESS(binary_location, X_OK)) {
-			free(binary_location);
+			pefree(binary_location, 1);
 			binary_location = NULL;
 		}
 	}
@@ -2016,7 +2016,7 @@ int php_module_startup(sapi_module_struct *sf, zend_module_entry *additional_mod
 {
 	zend_utility_functions zuf;
 	zend_utility_values zuv;
-	int retval = SUCCESS, module_number=0;	/* for REGISTER_INI_ENTRIES() */
+	int retval = SUCCESS, module_number=0;
 	char *php_os;
 	zend_module_entry *module;
 
@@ -2194,7 +2194,7 @@ int php_module_startup(sapi_module_struct *sf, zend_module_entry *additional_mod
 	zend_stream_shutdown();
 
 	/* Register PHP core ini entries */
-	REGISTER_INI_ENTRIES();
+	zend_register_ini_entries_ex(ini_entries, module_number, MODULE_PERSISTENT);
 
 	/* Register Zend ini entries */
 	zend_register_standard_ini_entries();
@@ -2278,7 +2278,7 @@ int php_module_startup(sapi_module_struct *sf, zend_module_entry *additional_mod
 		module->version = PHP_VERSION;
 		module->info_func = PHP_MINFO(php_core);
 	}
-	
+
 	/* freeze the list of observer fcall_init handlers */
 	zend_observer_post_startup();
 
@@ -2389,7 +2389,7 @@ int php_module_shutdown_wrapper(sapi_module_struct *sapi_globals)
 /* {{{ php_module_shutdown */
 void php_module_shutdown(void)
 {
-	int module_number=0;	/* for UNREGISTER_INI_ENTRIES() */
+	int module_number=0;
 
 	module_shutdown = 1;
 
@@ -2420,7 +2420,7 @@ void php_module_shutdown(void)
 	/* Destroys filter & transport registries too */
 	php_shutdown_stream_wrappers(module_number);
 
-	UNREGISTER_INI_ENTRIES();
+	zend_unregister_ini_entries_ex(module_number, MODULE_PERSISTENT);
 
 	/* close down the ini config */
 	php_shutdown_config();
@@ -2489,7 +2489,7 @@ PHPAPI int php_execute_script(zend_file_handle *primary_file)
 
 #ifdef PHP_WIN32
 		if(primary_file->filename) {
-			UpdateIniFromRegistry((char*)primary_file->filename);
+			UpdateIniFromRegistry(ZSTR_VAL(primary_file->filename));
 		}
 #endif
 
@@ -2581,7 +2581,7 @@ PHPAPI int php_execute_simple_script(zend_file_handle *primary_file, zval *ret)
 	zend_try {
 #ifdef PHP_WIN32
 		if(primary_file->filename) {
-			UpdateIniFromRegistry((char*)primary_file->filename);
+			UpdateIniFromRegistry(ZSTR_VAL(primary_file->filename));
 		}
 #endif
 
