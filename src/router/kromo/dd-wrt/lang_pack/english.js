@@ -342,8 +342,8 @@ sbutton.preview="Preview";
 sbutton.allways_on="Always On";
 sbutton.allways_off="Always Off";
 sbutton.download="Download";
-sbutton.next="Next »";
-sbutton.prev="« Previous";
+sbutton.next="Next ›";
+sbutton.prev="‹ Previous";
 
 // ** COMMON ERROR MESSAGES  **//
 var errmsg=new Object();
