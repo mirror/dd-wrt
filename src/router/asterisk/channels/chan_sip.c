@@ -176,7 +176,9 @@
 /*** MODULEINFO
 	<use type="module">res_crypto</use>
 	<use type="module">res_http_websocket</use>
+	<defaultenabled>no</defaultenabled>
 	<support_level>deprecated</support_level>
+	<replacement>chan_pjsip</replacement>
 	<deprecated_in>17</deprecated_in>
 	<removed_in>21</removed_in>
  ***/
@@ -12441,9 +12443,8 @@ static int reqprep(struct sip_request *req, struct sip_pvt *p, int sipmethod, ui
 	 * Send UPDATE to the same destination as CANCEL, if call is not in final state.
 	 */
 	if (!sip_route_empty(&p->route) &&
-			!(sipmethod == SIP_CANCEL ||
-				(sipmethod == SIP_ACK && (p->invitestate == INV_COMPLETED || p->invitestate == INV_CANCELLED)) ||
-				(sipmethod == SIP_UPDATE && (p->invitestate == INV_PROCEEDING || p->invitestate == INV_EARLY_MEDIA)))) {
+		!(sipmethod == SIP_CANCEL ||
+			(sipmethod == SIP_ACK && (p->invitestate == INV_COMPLETED || p->invitestate == INV_CANCELLED)))) {
 		if (p->socket.type != AST_TRANSPORT_UDP && p->socket.tcptls_session) {
 			/* For TCP/TLS sockets that are connected we won't need
 			 * to do any hostname/IP lookups */
@@ -12451,6 +12452,11 @@ static int reqprep(struct sip_request *req, struct sip_pvt *p, int sipmethod, ui
 			/* For NATed traffic, we ignore the contact/route and
 			 * simply send to the received-from address. No need
 			 * for lookups. */
+		} else if (sipmethod == SIP_UPDATE && (p->invitestate == INV_PROCEEDING || p->invitestate == INV_EARLY_MEDIA)) {
+			/* Calling set_destination for an UPDATE in early dialog
+			 * will result in mangling of the target for a subsequent
+			 * CANCEL according to ASTERISK-24628 so do not do it.
+			 */
 		} else {
 			set_destination(p, sip_route_first_uri(&p->route));
 		}
@@ -12501,11 +12507,9 @@ static int reqprep(struct sip_request *req, struct sip_pvt *p, int sipmethod, ui
 	   An exception to this behavior is the ACK request. Since Asterisk never requires
 	   session-timers support from a remote end-point (UAS) in an INVITE, it must
 	   not send 'Require: timer' header in the ACK request.
-	   This should only be added in the INVITE transactions, not MESSAGE or REFER or other
-	   in-dialog messages.
 	*/
 	if (p->stimer && p->stimer->st_active == TRUE && p->stimer->st_active_peer_ua == TRUE
-	    && sipmethod == SIP_INVITE) {
+	    && (sipmethod == SIP_INVITE || sipmethod == SIP_UPDATE)) {
 		char se_hdr[256];
 		snprintf(se_hdr, sizeof(se_hdr), "%d;refresher=%s", p->stimer->st_interval,
 			p->stimer->st_ref == SESSION_TIMER_REFRESHER_US ? "uac" : "uas");
@@ -26605,7 +26609,14 @@ static int handle_request_invite(struct sip_pvt *p, struct sip_request *req, str
 		if (!error && ast_strlen_zero(pickup.exten) &&
 				ast_channel_state(replaces_chan) != AST_STATE_RINGING &&
 				ast_channel_state(replaces_chan) != AST_STATE_RING &&
-				ast_channel_state(replaces_chan) != AST_STATE_UP) {
+				ast_channel_state(replaces_chan) != AST_STATE_UP &&
+				/*
+				* Check the down state as well because some SIP devices do not
+				* give 180 ringing when they can just give 183 session progress
+				* instead. same fix the one in ast_can_pickup
+				* git show 0a8f9d2cf08
+				*/
+				ast_channel_state(replaces_chan) != AST_STATE_DOWN) {
 			ast_log(LOG_NOTICE, "Supervised transfer attempted to replace non-ringing or active call id (%s)!\n", replace_id);
 			transmit_response_reliable(p, "603 Declined (Replaces)", req);
 			error = 1;
@@ -35409,8 +35420,8 @@ AST_TEST_DEFINE(get_in_brackets_const_test)
 			ast_test_status_update(test, "Unexpected result: %d != %d\n", expected_res, res); \
 			return AST_TEST_FAIL;				\
 		}							\
-		if ((expected_start) != start) {			\
-			const char *e = expected_start ? expected_start : "(null)"; \
+		if ((void *)(expected_start) != (void *)start) {			\
+			const char *e = ((void *)expected_start != (void *)NULL) ? expected_start : "(null)"; \
 			const char *a = start ? start : "(null)";	\
 			ast_test_status_update(test, "Unexpected start: %s != %s\n", e, a); \
 			return AST_TEST_FAIL;				\

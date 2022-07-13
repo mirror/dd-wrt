@@ -1982,7 +1982,7 @@ YY_RULE_SETUP
 		   snprintf(fnamebuf2,sizeof(fnamebuf2), "%s/%s", (char *)ast_config_AST_CONFIG_DIR, fnamebuf);
 		   ast_copy_string(fnamebuf,fnamebuf2,sizeof(fnamebuf));
 		}
-#if !defined(HAVE_GLOB_NOMAGIC) || !defined(HAVE_GLOB_BRACE) || defined(DEBUG_NONGNU)
+#ifdef SOLARIS
 			glob_ret = glob(fnamebuf, GLOB_NOCHECK, NULL, &globbuf);
 #else
 			glob_ret = glob(fnamebuf, GLOB_NOMAGIC|GLOB_BRACE, NULL, &globbuf);
@@ -2990,7 +2990,7 @@ void ael_yyset_lineno (int  line_number , yyscan_t yyscanner)
 }
 
 /** Set the current column.
- * @param line_number
+ * @param column_no
  * @param yyscanner The scanner object.
  */
 void ael_yyset_column (int  column_no , yyscan_t yyscanner)

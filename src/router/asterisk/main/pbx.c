@@ -534,8 +534,6 @@ static char *parse_hint_device(struct ast_str *hint_args);
  * \brief Destroy the given hintdevice object.
  *
  * \param obj Hint device to destroy.
- *
- * \return Nothing
  */
 static void hintdevice_destroy(void *obj)
 {
@@ -1654,6 +1652,7 @@ static const char *get_pattern_node(struct pattern_node *node, const char *src, 
 #undef INC_DST_OVERFLOW_CHECK
 }
 
+#define MAX_EXTENBUF_SIZE 512
 static struct match_char *add_exten_to_pattern_tree(struct ast_context *con, struct ast_exten *e1, int findonly)
 {
 	struct match_char *m1 = NULL;
@@ -1664,11 +1663,13 @@ static struct match_char *add_exten_to_pattern_tree(struct ast_context *con, str
 	int pattern = 0;
 	int idx_cur;
 	int idx_next;
-	char extenbuf[512];
+	char extenbuf[MAX_EXTENBUF_SIZE];
+	volatile size_t required_space = strlen(e1->exten) + 1;
 	struct pattern_node pat_node[2];
 
 	if (e1->matchcid) {
-		if (sizeof(extenbuf) < strlen(e1->exten) + strlen(e1->cidmatch) + 2) {
+		required_space += (strlen(e1->cidmatch) + 2 /* '/' + NULL */);
+		if (required_space > MAX_EXTENBUF_SIZE) {
 			ast_log(LOG_ERROR,
 				"The pattern %s/%s is too big to deal with: it will be ignored! Disaster!\n",
 				e1->exten, e1->cidmatch);
@@ -1676,7 +1677,13 @@ static struct match_char *add_exten_to_pattern_tree(struct ast_context *con, str
 		}
 		sprintf(extenbuf, "%s/%s", e1->exten, e1->cidmatch);/* Safe.  We just checked. */
 	} else {
-		ast_copy_string(extenbuf, e1->exten, sizeof(extenbuf));
+		if (required_space > MAX_EXTENBUF_SIZE) {
+			ast_log(LOG_ERROR,
+				"The pattern %s/%s is too big to deal with: it will be ignored! Disaster!\n",
+				e1->exten, e1->cidmatch);
+			return NULL;
+		}
+		ast_copy_string(extenbuf, e1->exten, required_space);
 	}
 
 #ifdef NEED_DEBUG
@@ -2410,9 +2417,9 @@ static int extension_match_core(const char *pattern, const char *data, enum ext_
 	return i;
 }
 
-int ast_extension_match(const char *pattern, const char *data)
+int ast_extension_match(const char *pattern, const char *extension)
 {
-	return extension_match_core(pattern, data, E_MATCH);
+	return extension_match_core(pattern, extension, E_MATCH);
 }
 
 int ast_extension_close(const char *pattern, const char *data, int needmore)
@@ -2508,7 +2515,7 @@ struct ast_exten *pbx_find_extension(struct ast_channel *chan,
 		q->data = NULL;
 		q->foundcontext = NULL;
 	} else if (q->stacklen >= AST_PBX_MAX_STACK) {
-		ast_log(LOG_WARNING, "Maximum PBX stack exceeded\n");
+		ast_log(LOG_WARNING, "Maximum PBX stack (%d) exceeded. Too many includes?\n", AST_PBX_MAX_STACK);
 		return NULL;
 	}
 
@@ -3287,8 +3294,8 @@ static int execute_state_callback(ast_state_cb_type cb,
 }
 
 /*!
- * /internal
- * /brief Identify a channel for every device which is supposedly responsible for the device state.
+ * \internal
+ * \brief Identify a channel for every device which is supposedly responsible for the device state.
  *
  * Especially when the device is ringing, the oldest ringing channel is chosen.
  * For all other cases the first encountered channel in the specific state is chosen.
@@ -3710,8 +3717,6 @@ end:
  * \brief Destroy the given state callback object.
  *
  * \param doomed State callback to destroy.
- *
- * \return Nothing
  */
 static void destroy_state_cb(void *doomed)
 {
@@ -3901,8 +3906,6 @@ static int hint_id_cmp(void *obj, void *arg, int flags)
  * \brief Destroy the given hint object.
  *
  * \param obj Hint to destroy.
- *
- * \return Nothing
  */
 static void destroy_hint(void *obj)
 {
@@ -5157,14 +5160,13 @@ int ast_context_remove_extension_callerid2(struct ast_context *con, const char *
  * \note This function locks contexts list by &conlist, searches for the right context
  * structure, and locks the macrolock mutex in that context.
  * macrolock is used to limit a macro to be executed by one call at a time.
- * \param context The context
  */
-int ast_context_lockmacro(const char *context)
+int ast_context_lockmacro(const char *macrocontext)
 {
 	struct ast_context *c;
 	int ret = -1;
 
-	c = find_context_locked(context);
+	c = find_context_locked(macrocontext);
 	if (c) {
 		ast_unlock_contexts();
 
@@ -5179,14 +5181,13 @@ int ast_context_lockmacro(const char *context)
  * \note This function locks contexts list by &conlist, searches for the right context
  * structure, and unlocks the macrolock mutex in that context.
  * macrolock is used to limit a macro to be executed by one call at a time.
- * \param context The context
  */
-int ast_context_unlockmacro(const char *context)
+int ast_context_unlockmacro(const char *macrocontext)
 {
 	struct ast_context *c;
 	int ret = -1;
 
-	c = find_context_locked(context);
+	c = find_context_locked(macrocontext);
 	if (c) {
 		ast_unlock_contexts();
 
@@ -8610,6 +8611,27 @@ void *ast_get_extension_app_data(struct ast_exten *e)
 	return e ? e->data : NULL;
 }
 
+int ast_get_extension_data(char *buf, int bufsize, struct ast_channel *c,
+	const char *context, const char *exten, int priority)
+{
+	struct ast_exten *e;
+	struct pbx_find_info q = { .stacklen = 0 }; /* the rest is set in pbx_find_context */
+	ast_rdlock_contexts();
+	e = pbx_find_extension(c, NULL, &q, context, exten, priority, NULL, "", E_MATCH);
+	if (e) {
+		if (buf) {
+			const char *tmp = ast_get_extension_app_data(e);
+			if (tmp) {
+				ast_copy_string(buf, tmp, bufsize);
+			}
+		}
+		ast_unlock_contexts();
+		return 0;
+	}
+	ast_unlock_contexts();
+	return -1;
+}
+
 /*
  * Walking functions ...
  */
@@ -8758,8 +8780,14 @@ int ast_context_verify_includes(struct ast_context *con)
 {
 	int idx;
 	int res = 0;
+	int includecount = ast_context_includes_count(con);
 
-	for (idx = 0; idx < ast_context_includes_count(con); idx++) {
+	if (includecount >= AST_PBX_MAX_STACK) {
+		ast_log(LOG_WARNING, "Context %s contains too many includes (%d). Maximum is %d.\n",
+			ast_get_context_name(con), includecount, AST_PBX_MAX_STACK);
+	}
+
+	for (idx = 0; idx < includecount; idx++) {
 		const struct ast_include *inc = ast_context_includes_get(con, idx);
 
 		if (ast_context_find(include_rname(inc))) {
@@ -8807,6 +8835,47 @@ int ast_async_goto_if_exists(struct ast_channel *chan, const char * context, con
 	return __ast_goto_if_exists(chan, context, exten, priority, 1);
 }
 
+int pbx_parse_location(struct ast_channel *chan, char **contextp, char **extenp, char **prip, int *ipri, int *mode, char *rest)
+{
+	char *context, *exten, *pri;
+	/* do the strsep before here, so we don't have to alloc and free */
+	if (!*extenp) {
+		/* Only a priority in this one */
+		*prip = *contextp;
+		*extenp = NULL;
+		*contextp = NULL;
+	} else if (!*prip) {
+		/* Only an extension and priority in this one */
+		*prip = *extenp;
+		*extenp = *contextp;
+		*contextp = NULL;
+	}
+	context = *contextp;
+	exten = *extenp;
+	pri = *prip;
+	if (mode) {
+		if (*pri == '+') {
+			*mode = 1;
+			pri++;
+		} else if (*pri == '-') {
+			*mode = -1;
+			pri++;
+		}
+	}
+	if ((rest && sscanf(pri, "%30d%1s", ipri, rest) != 1) || sscanf(pri, "%30d", ipri) != 1) {
+		*ipri = ast_findlabel_extension(chan, context ? context : ast_channel_context(chan),
+			exten ? exten : ast_channel_exten(chan), pri,
+			S_COR(ast_channel_caller(chan)->id.number.valid, ast_channel_caller(chan)->id.number.str, NULL));
+		if (*ipri < 1) {
+			ast_log(LOG_WARNING, "Priority '%s' must be a number > 0, or valid label\n", pri);
+			return -1;
+		} else if (mode) {
+			*mode = 0;
+		}
+	}
+	return 0;
+}
+
 static int pbx_parseable_goto(struct ast_channel *chan, const char *goto_string, int async)
 {
 	char *exten, *pri, *context;
@@ -8823,31 +8892,9 @@ static int pbx_parseable_goto(struct ast_channel *chan, const char *goto_string,
 	context = strsep(&stringp, ",");	/* guaranteed non-null */
 	exten = strsep(&stringp, ",");
 	pri = strsep(&stringp, ",");
-	if (!exten) {	/* Only a priority in this one */
-		pri = context;
-		exten = NULL;
-		context = NULL;
-	} else if (!pri) {	/* Only an extension and priority in this one */
-		pri = exten;
-		exten = context;
-		context = NULL;
-	}
-	if (*pri == '+') {
-		mode = 1;
-		pri++;
-	} else if (*pri == '-') {
-		mode = -1;
-		pri++;
-	}
-	if (sscanf(pri, "%30d%1s", &ipri, rest) != 1) {
-		ipri = ast_findlabel_extension(chan, context ? context : ast_channel_context(chan),
-			exten ? exten : ast_channel_exten(chan), pri,
-			S_COR(ast_channel_caller(chan)->id.number.valid, ast_channel_caller(chan)->id.number.str, NULL));
-		if (ipri < 1) {
-			ast_log(LOG_WARNING, "Priority '%s' must be a number > 0, or valid label\n", pri);
-			return -1;
-		} else
-			mode = 0;
+
+	if (pbx_parse_location(chan, &context, &exten, &pri, &ipri, &mode, rest)) {
+		return -1;
 	}
 	/* At this point we have a priority and maybe an extension and a context */
 

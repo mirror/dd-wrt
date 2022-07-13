@@ -1,5 +1,5 @@
 [directories](!)
-astcachedir => /tmp
+astcachedir => /var/cache/asterisk
 astetcdir => /etc/asterisk
 astmoddir => /usr/lib/asterisk/modules
 astvarlibdir => /var/lib/asterisk

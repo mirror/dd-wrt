@@ -64,6 +64,11 @@
 		</description>
 	</function>
 	<function name="CHANNEL_EXISTS" language="en_US">
+		<since>
+			<version>16.22.0</version>
+			<version>18.8.0</version>
+			<version>19.0.0</version>
+		</since>
 		<synopsis>
 			Checks if the specified channel exists.
 		</synopsis>
@@ -234,6 +239,12 @@
 					<enum name="context">
 						<para>R/O returns the context for an outbound channel.</para>
 					</enum>
+					<enum name="lastexten">
+						<para>R/O returns the last unique extension for an outbound channel.</para>
+					</enum>
+					<enum name="lastcontext">
+						<para>R/O returns the last unique context for an outbound channel.</para>
+					</enum>
 					<enum name="channame">
 						<para>R/O returns the channel name for an outbound channel.</para>
 					</enum>
@@ -278,6 +289,41 @@
 				same => n,Log(NOTICE, This channel is: ${CHANNEL(state)})
 			</example>
 			<xi:include xpointer="xpointer(/docs/info[@name='CHANNEL_EXAMPLES'])" />
+			<para>The following channel variables are available as special built-in
+			dialplan channel variables. These variables cannot be set or modified
+			and are read-only.</para>
+			<variablelist>
+				<variable name="CALLINGPRES">
+					<para>Caller ID presentation for incoming calls (PRI channels)</para>
+				</variable>
+				<variable name="CALLINGANI2">
+					<para>Caller ANI2 (PRI channels)</para>
+				</variable>
+				<variable name="CALLINGTON">
+					<para>Caller Type of Number (PRI channels)</para>
+				</variable>
+				<variable name="CALLINGTNS">
+					<para>Transit Network Selector (PRI channels)</para>
+				</variable>
+				<variable name="EXTEN">
+					<para>Current extension</para>
+				</variable>
+				<variable name="CONTEXT">
+					<para>Current context</para>
+				</variable>
+				<variable name="PRIORITY">
+					<para>Current priority</para>
+				</variable>
+				<variable name="CHANNEL">
+					<para>Current channel name</para>
+				</variable>
+				<variable name="UNIQUEID">
+					<para>Current call unique identifier</para>
+				</variable>
+				<variable name="HANGUPCAUSE">
+					<para>Asterisk cause of hangup (inbound/outbound)</para>
+				</variable>
+			</variablelist>
 		</description>
 	</function>
  ***/
@@ -375,6 +421,10 @@ static int func_channel_read(struct ast_channel *chan, const char *function,
 		locked_copy_string(chan, buf, ast_channel_exten(chan), len);
 	else if (!strcasecmp(data, "context"))
 		locked_copy_string(chan, buf, ast_channel_context(chan), len);
+	else if (!strcasecmp(data, "lastexten"))
+		locked_copy_string(chan, buf, ast_channel_lastexten(chan), len);
+	else if (!strcasecmp(data, "lastcontext"))
+		locked_copy_string(chan, buf, ast_channel_lastcontext(chan), len);
 	else if (!strcasecmp(data, "userfield"))
 		locked_copy_string(chan, buf, ast_channel_userfield(chan), len);
 	else if (!strcasecmp(data, "channame"))

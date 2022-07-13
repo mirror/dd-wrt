@@ -34,6 +34,9 @@
 /* Define to 1 if using `alloca.c'. */
 #undef C_ALLOCA
 
+/* Define to 1 if anonymous semaphores work. */
+#undef HAS_WORKING_SEMAPHORE
+
 /* Define to 1 if you have the `acos' function. */
 #undef HAVE_ACOS
 
@@ -202,6 +205,10 @@
 
 /* Define DAHDI headers version */
 #undef HAVE_DAHDI_VERSION
+
+/* Define to 1 if you have the declaration of `gethostbyname_r', and to 0 if
+   you don't. */
+#undef HAVE_DECL_GETHOSTBYNAME_R
 
 /* Define to 1 if you have the <dirent.h> header file, and it defines `DIR'.
    */
@@ -401,9 +408,6 @@
 /* Define to 1 if you have the `isascii' function. */
 #undef HAVE_ISASCII
 
-/* Define to 1 if you have the ISDN4Linux library. */
-#undef HAVE_ISDNNET
-
 /* Define to 1 if you have the Jack Audio Connection Kit library. */
 #undef HAVE_JACK
 
@@ -434,7 +438,7 @@
 /* Define to 1 if you have the `m' library (-lm). */
 #undef HAVE_LIBM
 
-/* Define to 1 if you have the LibXML2 library. */
+/* Define if your system has the LIBXML2 libraries. */
 #undef HAVE_LIBXML2
 
 /* Define to 1 if you have the LibXSLT library. */
@@ -507,15 +511,6 @@
 /* Define to 1 if you have the `memset' function. */
 #undef HAVE_MEMSET
 
-/* Define to 1 if you have the mISDN user library. */
-#undef HAVE_MISDN
-
-/* Define if your system has the MISDN_FAC_ERROR headers. */
-#undef HAVE_MISDN_FAC_ERROR
-
-/* Define if your system has the MISDN_FAC_RESULT headers. */
-#undef HAVE_MISDN_FAC_RESULT
-
 /* Define to 1 if you have the `mkdir' function. */
 #undef HAVE_MKDIR
 
@@ -539,9 +534,6 @@
 
 /* Define to 1 if mysql/mysql.h has my_bool defined. */
 #undef HAVE_MYSQLCLIENT_MY_BOOL
-
-/* Define to 1 if you have the Network Broadcast Sound library. */
-#undef HAVE_NBS
 
 /* Define to 1 if you have the <ndir.h> header file, and it defines `DIR'. */
 #undef HAVE_NDIR_H
@@ -597,9 +589,6 @@
 /* Define this to indicate the ${OSPTK_DESCRIP} library */
 #undef HAVE_OSPTK
 
-/* Define to 1 if you have the Open Sound System library. */
-#undef HAVE_OSS
-
 /* Define to 1 if your system defines the file flag O_EVTONLY in fcntl.h */
 #undef HAVE_O_EVTONLY
 
@@ -623,6 +612,9 @@
 
 /* Define if your system has PJPROJECT_BUNDLED */
 #undef HAVE_PJPROJECT_BUNDLED
+
+/* Define if doing a bundled pjproject out-of-tree build. */
+#undef HAVE_PJPROJECT_BUNDLED_OOT
 
 /* Define to 1 if on_valid_pair callback is present. */
 #undef HAVE_PJPROJECT_ON_VALID_ICE_PAIR_CALLBACK
@@ -839,6 +831,9 @@
 /* Define to 1 if your system has the ndestroy resolver function. */
 #undef HAVE_RES_NDESTROY
 
+/* Define to 1 if your system has the re-entrant resolver functions. */
+#undef HAVE_RES_NINIT
+
 /* Define to 1 if you have the `re_comp' function. */
 #undef HAVE_RE_COMP
 
@@ -913,9 +908,6 @@
 
 /* Define to 1 if you have the speex_preprocess_ctl library. */
 #undef HAVE_SPEEX_PREPROCESS
-
-/* Define to 1 if you have the SQLite library. */
-#undef HAVE_SQLITE
 
 /* Define to 1 if you have the SQLite library. */
 #undef HAVE_SQLITE3
@@ -1066,9 +1058,6 @@
 
 /* Define to 1 if `_u._ext.nsaddrs' is a member of `struct __res_state'. */
 #undef HAVE_STRUCT___RES_STATE__U__EXT_NSADDRS
-
-/* Define to 1 if you have the mISDN Supplemental Services library. */
-#undef HAVE_SUPPSERV
 
 /* Define to 1 if you have the `swapctl' function. */
 #undef HAVE_SWAPCTL
@@ -1254,9 +1243,6 @@
 /* Define if your system has OV_CALLBACKS_NOCLOSE declared. */
 #undef HAVE_VORBIS_OPEN_CALLBACKS
 
-/* Define if your system has the VoiceTronix API libraries. */
-#undef HAVE_VPB
-
 /* Define to 1 if you have the `vprintf' function. */
 #undef HAVE_VPRINTF
 
@@ -1353,9 +1339,6 @@
 /* Define to 1 if `lstat' dereferences a symlink specified with a trailing
    slash. */
 #undef LSTAT_FOLLOWS_SLASHED_SYMLINK
-
-/* Build chan_misdn for mISDN 1.2 or later. */
-#undef MISDN_1_2
 
 /* Define to the address where bug reports for this package should be sent. */
 #undef PACKAGE_BUGREPORT

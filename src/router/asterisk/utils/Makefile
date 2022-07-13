@@ -38,15 +38,6 @@ include $(ASTTOPDIR)/Makefile.rules
 
 ifeq ($(OSARCH),SunOS)
   LIBS+=-lsocket -lnsl
-  UTILS:=$(filter-out muted,$(UTILS))
-endif
-
-ifeq ($(OSARCH),OpenBSD)
-  UTILS:=$(filter-out muted,$(UTILS))
-endif
-
-ifeq ($(OSARCH),cygwin)
-  UTILS:=$(filter-out muted,$(UTILS))
 endif
 
 ifeq ($(OSARCH),mingw32)
@@ -67,7 +58,6 @@ endif
 
 ifneq ($(filter pbx_ael,$(MENUSELECT_PBX)),)
   UTILS:=$(filter-out aelparse,$(UTILS))
-  UTILS:=$(filter-out conf2ael,$(UTILS))
 endif
 
 all: $(UTILS)
@@ -87,7 +77,7 @@ clean:
 	rm -f .*.d
 	rm -f *.s *.i
 	rm -f astmm.c md5.c strcompat.c ast_expr2.c ast_expr2.h ast_expr2f.c pbx_ael.c pval.c hashtab.c lock.c
-	rm -f aelparse.c aelbison.c conf2ael
+	rm -f aelparse.c aelbison.c
 	rm -f threadstorage.c
 	rm -f utils.c strings.c poll.c version.c sha1.c astobj2.c refcounter
 	rm -f db1-ast/.*.d
@@ -172,9 +162,6 @@ threadstorage.c: $(ASTTOPDIR)/main/threadstorage.c
 extconf.o: _ASTCFLAGS+=$(call get_menuselect_cflags,DETECT_DEADLOCKS)
 extconf.o: extconf.c
 
-conf2ael: LIBS+=$(AST_CLANG_BLOCKS_LIBS)
-conf2ael: conf2ael.o ast_expr2f.o ast_expr2.o hashtab.o lock.o aelbison.o aelparse.o pbx_ael.o pval.o extconf.o strcompat.o astmm.o
-
 check_expr2: $(ASTTOPDIR)/main/ast_expr2f.c $(ASTTOPDIR)/main/ast_expr2.c $(ASTTOPDIR)/main/ast_expr2.h astmm.o
 	$(ECHO_PREFIX) echo "   [CC] ast_expr2f.c -> ast_expr2fz.o"
 	$(CC) -g -c -I$(ASTTOPDIR)/include $(_ASTCFLAGS) -DYY_NO_INPUT $(ASTTOPDIR)/main/ast_expr2f.c -o ast_expr2fz.o
@@ -184,15 +171,14 @@ check_expr2: $(ASTTOPDIR)/main/ast_expr2f.c $(ASTTOPDIR)/main/ast_expr2.c $(ASTT
 	$(CC) -g -o check_expr2 ast_expr2fz.o ast_expr2z.o astmm.o -lm $(_ASTLDFLAGS)
 	$(ECHO_PREFIX) echo "   [RM] ast_expr2fz.o ast_expr2z.o"
 	rm ast_expr2z.o ast_expr2fz.o
+ifneq ($(CROSS_COMPILING),1)
+	./check_expr2 expr2.testinput
+endif
 
 smsq: smsq.o strcompat.o
 smsq: LIBS+=$(POPT_LIB)
 
 streamplayer: streamplayer.o
-
-muted: muted.o
-muted: LIBS+=$(AUDIO_LIBS)
-muted: _ASTCFLAGS:=$(filter-out -Werror,$(_ASTCFLAGS))
 
 CHECK_SUBDIR:	# do nothing, just make sure that we recurse in the subdir/
 db1-ast/libdb1.a: CHECK_SUBDIR
