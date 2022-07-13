@@ -92,7 +92,9 @@ ifeq ($(CONFIG_ATH10K),y)
   CPTCFG_ATH10K_PCI=y
   CPTCFG_ATH10K_DEBUGFS=y
 endif
-
+ifeq ($(CONFIG_MCPHERSON),y)
+  BUILDFLAGS += -DHAVE_MCPHERSON
+endif
 ifeq ($(CONFIG_MVEBU),y)
   CPTCFG_MWIFIEX=y
   CPTCFG_MWIFIEX_SDIO=y
@@ -366,6 +368,7 @@ ifeq ($(CONFIG_ATH10K),y)
 	-cp -av $(MAC80211_PATH)/ath10k-firmware*/ath10k $(INSTALLDIR)/ath9k/lib/firmware/
 	rm -f $(INSTALLDIR)/ath9k/lib/firmware/ath10k/QCA988X/hw2.0/firmware-2.bin
 	rm -f $(INSTALLDIR)/ath9k/lib/firmware/ath10k/QCA988X/hw2.0/firmware-4.bin
+	rm -rf $(INSTALLDIR)/ath9k/lib/firmware/ath10k/QCA988X/hw1.0
 ifneq ($(CONFIG_QCA99X0),y)
 	rm -rf $(INSTALLDIR)/ath9k/lib/firmware/ath10k/QCA99X0
 	rm -rf $(INSTALLDIR)/ath9k/lib/firmware/ath10k/QCA9984
