@@ -20,6 +20,8 @@ endif
 
 .PHONY: clean dist-clean distclean test ntest ctest gtest
 
+CC:=gcc
+
 # Basic set of sources and flags/libraries/includes
 OBJS:=menuselect.o strcompat.o
 # Adding -Wdeprecated-declarations to deal with internal deprecation warnings
@@ -71,7 +73,7 @@ ifdef NEWT_LIB
 endif
 
 M_OBJS += menuselect_stub.o
-M_LIBS += $(LIBXML2_LIB)
+M_LIBS += -lxml2 -lz -llzma -lm -ldl
 ALL_TGTS += menuselect
 
 all: $(ALL_TGTS)

@@ -74,7 +74,7 @@ ifeq ($(SPECIAL_TARGETS),)
             MALLOC_DEBUG_LDFLAGS = -L$(PJDIR)/pjsip-apps/lib -Wl,-whole-archive -lasterisk_malloc_debug -Wl,-no-whole-archive
         endif
         ifeq ($(findstring DONT_OPTIMIZE,$(MENUSELECT_CFLAGS)),)
-            CF += -O3
+#            CF += -O3
         endif
         export CFLAGS += $(CF) -g3
         export LDFLAGS += $(CC_LDFLAGS)
@@ -128,7 +128,7 @@ source/pjlib/include/pj/%.h: patches/%.h
 
 source/build.mak: Makefile.rules source/user.mak $(if $(PJPROJECT_BUNDLED_OOT),,.rebuild_needed) $(subst patches,source/pjlib/include/pj,$(wildcard patches/*.h))
 	$(ECHO_PREFIX) Configuring with $(PJPROJECT_CONFIG_OPTS) 
-	$(CMD_PREFIX) (cd source ; ./aconfigure $(QUIET_CONFIGURE) $(PJPROJECT_CONFIG_OPTS))
+	$(CMD_PREFIX) (cd source ; ./aconfigure $(QUIET_CONFIGURE) --host $(ARCH)-linux-uclibc $(PJPROJECT_CONFIG_OPTS))
 
 build.mak: source/build.mak
 	$(CMD_PREFIX) $(GREP) -v -e prefix -e "export PJ_SHARED_LIBRARIES" -e MACHINE_NAME \
@@ -212,7 +212,7 @@ $(ALL_LIB_FILES): source/build.mak source/pjlib/include/pj/config_site.h
 
 pjproject.symbols: $(ALL_LIB_FILES)
 	$(ECHO_PREFIX) Generating symbols
-	$(CMD_PREFIX) $(NM) -Pog $(ALL_LIB_FILES) | $(SED) -n -E -e "s/.+: ([_]?[pP][jJ][^ ]+) .+/\1/gp" | sort -u > pjproject.symbols
+	$(CMD_PREFIX) $(NM) -Pog $(ALL_LIB_FILES) | $(SED) -n -e "s/.+: ([_]?[pP][jJ][^ ]+) .+/\1/gp" | sort -u > pjproject.symbols
 
 source/pjsip-apps/src/asterisk_malloc_debug.c: patches/asterisk_malloc_debug.c
 	$(ECHO_PREFIX) Copying $< to $@

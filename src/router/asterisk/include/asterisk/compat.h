@@ -30,6 +30,7 @@
 #include <inttypes.h>
 #include <limits.h>
 #include <unistd.h>
+#include <pthread.h>
 
 #ifdef HAVE_STDDEF_H
 #include <stddef.h>
