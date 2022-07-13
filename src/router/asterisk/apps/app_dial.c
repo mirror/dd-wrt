@@ -86,6 +86,7 @@
 					<para>If you need more than one enter them as
 					Technology2/Resource2&amp;Technology3/Resource3&amp;.....</para>
 				</argument>
+				<xi:include xpointer="xpointer(/docs/info[@name='Dial_Resource'])" />
 			</parameter>
 			<parameter name="timeout" required="false">
 				<para>Specifies the number of seconds we attempt to dial the specified devices.</para>
@@ -156,6 +157,10 @@
 					<argument name="called" />
 					<argument name="calling" />
 					<argument name="progress" />
+					<argument name="mfprogress" />
+					<argument name="mfwink" />
+					<argument name="sfprogress" />
+					<argument name="sfwink" />
 					<para>Send the specified DTMF strings <emphasis>after</emphasis> the called
 					party has answered, but before the call gets bridged.  The
 					<replaceable>called</replaceable> DTMF string is sent to the called party, and the
@@ -163,6 +168,20 @@
 					can be used alone.  If <replaceable>progress</replaceable> is specified, its DTMF is sent
 					to the called party immediately after receiving a <literal>PROGRESS</literal> message.</para>
 					<para>See <literal>SendDTMF</literal> for valid digits.</para>
+					<para>If <replaceable>mfprogress</replaceable> is specified, its MF is sent
+					to the called party immediately after receiving a <literal>PROGRESS</literal> message.
+					If <replaceable>mfwink</replaceable> is specified, its MF is sent
+					to the called party immediately after receiving a <literal>WINK</literal> message.</para>
+					<para>See <literal>SendMF</literal> for valid digits.</para>
+					<para>If <replaceable>sfprogress</replaceable> is specified, its SF is sent
+					to the called party immediately after receiving a <literal>PROGRESS</literal> message.
+					If <replaceable>sfwink</replaceable> is specified, its SF is sent
+					to the called party immediately after receiving a <literal>WINK</literal> message.</para>
+					<para>See <literal>SendSF</literal> for valid digits.</para>
+				</option>
+				<option name="E">
+					<para>Enable echoing of sent MF or SF digits back to caller (e.g. "hearpulsing").
+					Used in conjunction with the D option.</para>
 				</option>
 				<option name="e">
 					<para>Execute the <literal>h</literal> extension for peer after the call ends</para>
@@ -499,7 +518,6 @@
 			answered, if it has not already been answered. These two channels will then
 			be active in a bridged call. All other channels that were requested will then
 			be hung up.</para>
-
 			<para>Unless there is a timeout specified, the Dial application will wait
 			indefinitely until one of the called channels answers, the user hangs up, or
 			if all of the called channels are busy or unavailable. Dialplan execution will
@@ -512,7 +530,6 @@
 			If the <variable>OUTBOUND_GROUP_ONCE</variable> variable is set, all peer channels created by this
 			application will be put into that group (as in <literal>Set(GROUP()=...</literal>). Unlike <variable>OUTBOUND_GROUP</variable>,
 			however, the variable will be unset after use.</para>
-
 			<example title="Dial with 30 second timeout">
 			 same => n,Dial(PJSIP/alice,30)
 			</example>
@@ -534,28 +551,22 @@
 			</example>
 			<example title="Dial with pre-dial subroutines">
 			[default]
-
 			exten => callee_channel,1,NoOp(ARG1=${ARG1} ARG2=${ARG2})
 			 same => n,Log(NOTICE, I'm called on channel ${CHANNEL} prior to it starting the dial attempt)
 			 same => n,Return()
-
 			exten => called_channel,1,NoOp(ARG1=${ARG1} ARG2=${ARG2})
 			 same => n,Log(NOTICE, I'm called on outbound channel ${CHANNEL} prior to it being used to dial someone)
 			 same => n,Return()
-
 			exten => _X.,1,NoOp()
 			 same => n,Dial(PJSIP/alice,,b(default^called_channel^1(my_gosub_arg1^my_gosub_arg2))B(default^callee_channel^1(my_gosub_arg1^my_gosub_arg2)))
 			 same => n,Hangup()
 			</example>
 			<example title="Dial with post-answer subroutine executed on outbound channel">
 			[my_gosub_routine]
-
 			exten => s,1,NoOp(ARG1=${ARG1} ARG2=${ARG2})
 			 same => n,Playback(hello)
 			 same => n,Return()
-
 			[default]
-
 			exten => _X.,1,NoOp()
 			 same => n,Dial(PJSIP/alice,,U(my_gosub_routine^my_gosub_arg1^my_gosub_arg2))
 			 same => n,Hangup()
@@ -603,12 +614,31 @@
 				</variable>
 				<variable name="DIALSTATUS">
 					<para>This is the status of the call</para>
-					<value name="CHANUNAVAIL" />
-					<value name="CONGESTION" />
-					<value name="NOANSWER" />
-					<value name="BUSY" />
-					<value name="ANSWER" />
-					<value name="CANCEL" />
+					<value name="CHANUNAVAIL">
+						Either the dialed peer exists but is not currently reachable, e.g.
+						endpoint is not registered, or an attempt was made to call a
+						nonexistent location, e.g. nonexistent DNS hostname.
+					</value>
+					<value name="CONGESTION">
+						Channel or switching congestion occured when routing the call.
+						This can occur if there is a slow or no response from the remote end.
+					</value>
+					<value name="NOANSWER">
+						Called party did not answer.
+					</value>
+					<value name="BUSY">
+						The called party was busy or indicated a busy status.
+						Note that some SIP devices will respond with 486 Busy if their Do Not Disturb
+						modes are active. In this case, you can use DEVICE_STATUS to check if the
+						endpoint is actually in use, if needed.
+					</value>
+					<value name="ANSWER">
+						The call was answered.
+						Any other result implicitly indicates the call was not answered.
+					</value>
+					<value name="CANCEL">
+						Dial was cancelled before call was answered or reached some other terminating event.
+					</value>
 					<value name="DONTCALL">
 						For the Privacy and Screening Modes.
 						Will be set if the called party chooses to send the calling party to the 'Go Away' script.
@@ -617,7 +647,9 @@
 						For the Privacy and Screening Modes.
 						Will be set if the called party chooses to send the calling party to the 'torture' script.
 					</value>
-					<value name="INVALIDARGS" />
+					<value name="INVALIDARGS">
+						Dial failed due to invalid syntax.
+					</value>
 				</variable>
 			</variablelist>
 		</description>
@@ -717,6 +749,7 @@ enum {
 #define OPT_PREDIAL_CALLER   (1LLU << 42)
 #define OPT_RING_WITH_EARLY_MEDIA (1LLU << 43)
 #define OPT_HANGUPCAUSE      (1LLU << 44)
+#define OPT_HEARPULSING      (1LLU << 45)
 
 enum {
 	OPT_ARG_ANNOUNCE = 0,
@@ -752,6 +785,7 @@ AST_APP_OPTIONS(dial_exec_options, BEGIN_OPTIONS
 	AST_APP_OPTION('c', OPT_CANCEL_ELSEWHERE),
 	AST_APP_OPTION('d', OPT_DTMF_EXIT),
 	AST_APP_OPTION_ARG('D', OPT_SENDDTMF, OPT_ARG_SENDDTMF),
+	AST_APP_OPTION('E', OPT_HEARPULSING),
 	AST_APP_OPTION('e', OPT_PEER_H),
 	AST_APP_OPTION_ARG('f', OPT_FORCECLID, OPT_ARG_FORCECLID),
 	AST_APP_OPTION_ARG('F', OPT_CALLEE_GO_ON, OPT_ARG_CALLEE_GO_ON),
@@ -1146,6 +1180,7 @@ struct privacy_args {
 	char privcid[256];
 	char privintro[1024];
 	char status[256];
+	int canceled;
 };
 
 static void publish_dial_end_event(struct ast_channel *in, struct dial_head *out_chans, struct ast_channel *exception, const char *status)
@@ -1207,6 +1242,9 @@ static struct ast_channel *wait_for_answer(struct ast_channel *in,
 	char *opt_args[],
 	struct privacy_args *pa,
 	const struct cause_args *num_in, int *result, char *dtmf_progress,
+	char *mf_progress, char *mf_wink,
+	char *sf_progress, char *sf_wink,
+	const int hearpulsing,
 	const int ignore_cc,
 	struct ast_party_id *forced_clid, struct ast_party_id *stored_clid,
 	struct ast_bridge_config *config)
@@ -1226,7 +1264,7 @@ static struct ast_channel *wait_for_answer(struct ast_channel *in,
 	int cc_frame_received = 0;
 	int num_ringing = 0;
 	int sent_ring = 0;
-	int sent_progress = 0;
+	int sent_progress = 0, sent_wink = 0;
 	struct timeval start = ast_tvnow();
 	SCOPE_ENTER(3, "%s\n", ast_channel_name(in));
 
@@ -1564,6 +1602,22 @@ static struct ast_channel *wait_for_answer(struct ast_channel *in,
 						ast_channel_unlock(in);
 						sent_progress = 1;
 
+						if (!ast_strlen_zero(mf_progress)) {
+							ast_verb(3,
+								"Sending MF '%s' to %s as result of "
+								"receiving a PROGRESS message.\n",
+								mf_progress, hearpulsing ? "parties" : "called party");
+							ast_mf_stream(c, (hearpulsing ? NULL : in),
+							(hearpulsing ? in : NULL), mf_progress, 50, 55, 120, 65, 0);
+						}
+						if (!ast_strlen_zero(sf_progress)) {
+							ast_verb(3,
+								"Sending SF '%s' to %s as result of "
+								"receiving a PROGRESS message.\n",
+								sf_progress, (hearpulsing ? "parties" : "called party"));
+							ast_sf_stream(c, (hearpulsing ? NULL : in),
+							(hearpulsing ? in : NULL), sf_progress, 0, 0);
+						}
 						if (!ast_strlen_zero(dtmf_progress)) {
 							ast_verb(3,
 								"Sending DTMF '%s' to the called party as result of "
@@ -1573,6 +1627,29 @@ static struct ast_channel *wait_for_answer(struct ast_channel *in,
 						}
 					}
 					ast_channel_publish_dial(in, c, NULL, "PROGRESS");
+					break;
+				case AST_CONTROL_WINK:
+					ast_verb(3, "%s winked, passing it to %s\n", ast_channel_name(c), ast_channel_name(in));
+					if (!sent_wink) {
+						sent_wink = 1;
+						if (!ast_strlen_zero(mf_wink)) {
+							ast_verb(3,
+								"Sending MF '%s' to %s as result of "
+								"receiving a WINK message.\n",
+								mf_wink, (hearpulsing ? "parties" : "called party"));
+							ast_mf_stream(c, (hearpulsing ? NULL : in),
+							(hearpulsing ? in : NULL), mf_wink, 50, 55, 120, 65, 0);
+						}
+						if (!ast_strlen_zero(sf_wink)) {
+							ast_verb(3,
+								"Sending SF '%s' to %s as result of "
+								"receiving a WINK message.\n",
+								sf_wink, (hearpulsing ? "parties" : "called party"));
+							ast_sf_stream(c, (hearpulsing ? NULL : in),
+							(hearpulsing ? in : NULL), sf_wink, 0, 0);
+						}
+					}
+					ast_indicate(in, AST_CONTROL_WINK);
 					break;
 				case AST_CONTROL_VIDUPDATE:
 				case AST_CONTROL_SRCUPDATE:
@@ -1718,6 +1795,7 @@ static struct ast_channel *wait_for_answer(struct ast_channel *in,
 				/* Got hung up */
 				*to = -1;
 				strcpy(pa->status, "CANCEL");
+				pa->canceled = 1;
 				publish_dial_end_event(in, out_chans, NULL, pa->status);
 				if (f) {
 					if (f->data.uint32) {
@@ -1742,6 +1820,7 @@ static struct ast_channel *wait_for_answer(struct ast_channel *in,
 						*to = 0;
 						*result = f->subclass.integer;
 						strcpy(pa->status, "CANCEL");
+						pa->canceled = 1;
 						publish_dial_end_event(in, out_chans, NULL, pa->status);
 						ast_frfree(f);
 						ast_channel_unlock(in);
@@ -1759,6 +1838,7 @@ static struct ast_channel *wait_for_answer(struct ast_channel *in,
 					ast_verb(3, "User requested call disconnect.\n");
 					*to = 0;
 					strcpy(pa->status, "CANCEL");
+					pa->canceled = 1;
 					publish_dial_end_event(in, out_chans, NULL, pa->status);
 					ast_frfree(f);
 					if (is_cc_recall) {
@@ -2128,9 +2208,7 @@ static int setup_privacy_args(struct privacy_args *pa,
 			/* the file doesn't exist yet. Let the caller submit his
 			   vocal intro for posterity */
 			/* priv-recordintro script:
-
 			   "At the tone, please say your name:"
-
 			*/
 			int silencethreshold = ast_dsp_get_threshold_from_settings(THRESHOLD_SILENCE);
 			ast_answer(chan);
@@ -2241,15 +2319,18 @@ static int dial_exec_full(struct ast_channel *chan, const char *data, struct ast
 	struct ast_channel *peer = NULL;
 	int to; /* timeout */
 	struct cause_args num = { chan, 0, 0, 0 };
-	int cause;
+	int cause, hanguptreecause = -1;
 
 	struct ast_bridge_config config = { { 0, } };
 	struct timeval calldurationlimit = { 0, };
-	char *dtmfcalled = NULL, *dtmfcalling = NULL, *dtmf_progress=NULL;
+	char *dtmfcalled = NULL, *dtmfcalling = NULL, *dtmf_progress = NULL;
+	char *mf_progress = NULL, *mf_wink = NULL;
+	char *sf_progress = NULL, *sf_wink = NULL;
 	struct privacy_args pa = {
 		.sentringing = 0,
 		.privdb_val = 0,
 		.status = "INVALIDARGS",
+		.canceled = 0,
 	};
 	int sentringing = 0, moh = 0;
 	const char *outbound_group = NULL;
@@ -2380,9 +2461,13 @@ static int dial_exec_full(struct ast_channel *chan, const char *data, struct ast
 	}
 
 	if (ast_test_flag64(&opts, OPT_SENDDTMF) && !ast_strlen_zero(opt_args[OPT_ARG_SENDDTMF])) {
-		dtmf_progress = opt_args[OPT_ARG_SENDDTMF];
-		dtmfcalled = strsep(&dtmf_progress, ":");
-		dtmfcalling = strsep(&dtmf_progress, ":");
+		sf_wink = opt_args[OPT_ARG_SENDDTMF];
+		dtmfcalled = strsep(&sf_wink, ":");
+		dtmfcalling = strsep(&sf_wink, ":");
+		dtmf_progress = strsep(&sf_wink, ":");
+		mf_progress = strsep(&sf_wink, ":");
+		mf_wink = strsep(&sf_wink, ":");
+		sf_progress = strsep(&sf_wink, ":");
 	}
 
 	if (ast_test_flag64(&opts, OPT_DURATION_LIMIT) && !ast_strlen_zero(opt_args[OPT_ARG_DURATION_LIMIT])) {
@@ -2523,9 +2608,11 @@ static int dial_exec_full(struct ast_channel *chan, const char *data, struct ast
 		struct ast_channel *tc; /* channel for this destination */
 		char *number;
 		char *tech;
+		int i;
 		size_t tech_len;
 		size_t number_len;
 		struct ast_stream_topology *topology;
+		struct ast_stream *stream;
 
 		cur = ast_strip(cur);
 		if (ast_strlen_zero(cur)) {
@@ -2590,6 +2677,21 @@ static int dial_exec_full(struct ast_channel *chan, const char *data, struct ast
 		topology = ast_stream_topology_clone(ast_channel_get_stream_topology(chan));
 
 		ast_channel_unlock(chan);
+
+		for (i = 0; i < ast_stream_topology_get_count(topology); ++i) {
+			stream = ast_stream_topology_get_stream(topology, i);
+			/* For both recvonly and sendonly the stream state reflects our state, that is we
+			 * are receiving only and we are sending only. Since we are requesting a
+			 * channel for the peer, we need to swap this to reflect what we will be doing.
+			 * That is, if we are receiving from Alice then we want to be sending to Bob,
+			 * so swap recvonly to sendonly and vice versa.
+			 */
+			if (ast_stream_get_state(stream) == AST_STREAM_STATE_RECVONLY) {
+				ast_stream_set_state(stream, AST_STREAM_STATE_SENDONLY);
+			} else if (ast_stream_get_state(stream) == AST_STREAM_STATE_SENDONLY) {
+				ast_stream_set_state(stream, AST_STREAM_STATE_RECVONLY);
+			}
+		}
 
 		tc = ast_request_with_stream_topology(tmp->tech, topology, NULL, chan, tmp->number, &cause);
 
@@ -2859,7 +2961,9 @@ static int dial_exec_full(struct ast_channel *chan, const char *data, struct ast
 	}
 
 	peer = wait_for_answer(chan, &out_chans, &to, peerflags, opt_args, &pa, &num, &result,
-		dtmf_progress, ignore_cc, &forced_clid, &stored_clid, &config);
+		dtmf_progress, mf_progress, mf_wink, sf_progress, sf_wink,
+		(ast_test_flag64(&opts, OPT_HEARPULSING) ? 1 : 0),
+		ignore_cc, &forced_clid, &stored_clid, &config);
 
 	if (!peer) {
 		if (result) {
@@ -3350,11 +3454,16 @@ out:
 	}
 
 	ast_channel_early_bridge(chan, NULL);
-	 /* forward 'answered elsewhere' if we received it */
-	hanguptree(&out_chans, NULL,
-		ast_channel_hangupcause(chan) == AST_CAUSE_ANSWERED_ELSEWHERE
-		|| ast_test_flag64(&opts, OPT_CANCEL_ELSEWHERE)
-		? AST_CAUSE_ANSWERED_ELSEWHERE : -1);
+	/* forward 'answered elsewhere' if we received it */
+	if (ast_channel_hangupcause(chan) == AST_CAUSE_ANSWERED_ELSEWHERE || ast_test_flag64(&opts, OPT_CANCEL_ELSEWHERE)) {
+		hanguptreecause = AST_CAUSE_ANSWERED_ELSEWHERE;
+	} else if (pa.canceled) { /* Caller canceled */
+		if (ast_channel_hangupcause(chan))
+			hanguptreecause = ast_channel_hangupcause(chan);
+		else
+			hanguptreecause = AST_CAUSE_NORMAL_CLEARING;
+	}
+	hanguptree(&out_chans, NULL, hanguptreecause);
 	pbx_builtin_setvar_helper(chan, "DIALSTATUS", pa.status);
 	ast_debug(1, "Exiting with DIALSTATUS=%s.\n", pa.status);
 

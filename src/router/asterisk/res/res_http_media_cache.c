@@ -42,8 +42,6 @@
 #include "asterisk/threadstorage.h"
 #include "asterisk/uri.h"
 
-#define GLOBAL_USERAGENT "asterisk-libcurl-agent/1.0"
-
 #define MAX_HEADER_LENGTH 1023
 
 /*! \brief Data passed to cURL callbacks */
@@ -118,7 +116,7 @@ static size_t curl_body_callback(void *ptr, size_t size, size_t nitems, void *da
 static void bucket_file_set_expiration(struct ast_bucket_file *bucket_file)
 {
 	struct ast_bucket_metadata *metadata;
-	char time_buf[32];
+	char time_buf[32], secs[AST_TIME_T_LEN];
 	struct timeval actual_expires = ast_tvnow();
 
 	metadata = ast_bucket_file_metadata_get(bucket_file, "cache-control");
@@ -152,7 +150,8 @@ static void bucket_file_set_expiration(struct ast_bucket_file *bucket_file)
 	}
 
 	/* Use 'now' if we didn't get an expiration time */
-	snprintf(time_buf, sizeof(time_buf), "%30lu", actual_expires.tv_sec);
+	ast_time_t_to_string(actual_expires.tv_sec, secs, sizeof(secs));
+	snprintf(time_buf, sizeof(time_buf), "%30s", secs);
 
 	ast_bucket_file_metadata_set(bucket_file, "__actual_expires", time_buf);
 }
@@ -169,11 +168,6 @@ static char *file_extension_from_string(const char *str, char *buffer, size_t ca
 	}
 
 	return NULL;
-}
-
-static char *file_extension_from_url(struct ast_bucket_file *bucket_file, char *buffer, size_t capacity)
-{
-	return file_extension_from_string(ast_sorcery_object_get_id(bucket_file), buffer, capacity);
 }
 
 /*!
@@ -263,18 +257,13 @@ static char *file_extension_from_url_path(struct ast_bucket_file *bucket_file, c
 
 static void bucket_file_set_extension(struct ast_bucket_file *bucket_file)
 {
-	/* We will attempt to determine an extension in the following order for backwards
-	 * compatibility:
-	 *
-	 * 1. Look at tail end of URL for extension
-	 * 2. Use the Content-Type header if present
-	 * 3. Parse the URL (assuming we can) and look at the tail of the path
-	 */
+	/* Using Content-Type first allows for the most flexibility for whomever
+	 * is serving up the audio file. If that doesn't turn up anything useful
+	 * we'll try to parse the URL and use the extension */
 
 	char buffer[64];
 
-	if (file_extension_from_url(bucket_file, buffer, sizeof(buffer))
-	   || file_extension_from_content_type(bucket_file, buffer, sizeof(buffer))
+	if (file_extension_from_content_type(bucket_file, buffer, sizeof(buffer))
 	   || file_extension_from_url_path(bucket_file, buffer, sizeof(buffer))) {
 		ast_bucket_file_metadata_set(bucket_file, "ext", buffer);
 	}
@@ -316,7 +305,7 @@ static int bucket_file_expired(struct ast_bucket_file *bucket_file)
 		return 1;
 	}
 
-	if (sscanf(metadata->value, "%lu", &expires.tv_sec) != 1) {
+	if ((expires.tv_sec = ast_string_to_time_t(metadata->value)) == -1) {
 		return 1;
 	}
 
@@ -338,7 +327,7 @@ static CURL *get_curl_instance(struct curl_bucket_file_data *cb_data)
 	curl_easy_setopt(curl, CURLOPT_NOSIGNAL, 1);
 	curl_easy_setopt(curl, CURLOPT_TIMEOUT, 180);
 	curl_easy_setopt(curl, CURLOPT_HEADERFUNCTION, curl_header_callback);
-	curl_easy_setopt(curl, CURLOPT_USERAGENT, GLOBAL_USERAGENT);
+	curl_easy_setopt(curl, CURLOPT_USERAGENT, AST_CURL_USER_AGENT);
 	curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, 1);
 	curl_easy_setopt(curl, CURLOPT_MAXREDIRS, 8);
 	curl_easy_setopt(curl, CURLOPT_URL, ast_sorcery_object_get_id(cb_data->bucket_file));

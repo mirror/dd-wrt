@@ -273,7 +273,7 @@ static struct ast_channel_snapshot_base *channel_snapshot_base_create(struct ast
 		return NULL;
 	}
 
-	if (ast_string_field_init(snapshot, 256)) {
+	if (ast_string_field_init(snapshot, 256) || ast_string_field_init_extended(snapshot, protocol_id)) {
 		ao2_ref(snapshot, -1);
 		return NULL;
 	}
@@ -287,6 +287,10 @@ static struct ast_channel_snapshot_base *channel_snapshot_base_create(struct ast
 
 	snapshot->creationtime = ast_channel_creationtime(chan);
 	snapshot->tech_properties = ast_channel_tech(chan)->properties;
+
+	if (ast_channel_tech(chan)->get_pvt_uniqueid) {
+		ast_string_field_set(snapshot, protocol_id, ast_channel_tech(chan)->get_pvt_uniqueid(chan));
+	}
 
 	return snapshot;
 }
@@ -1266,14 +1270,15 @@ struct ast_json *ast_channel_snapshot_to_json(
 	}
 
 	json_chan = ast_json_pack(
-		/* Broken up into groups of three for readability */
-		"{ s: s, s: s, s: s,"
+		/* Broken up into groups for readability */
+		"{ s: s, s: s, s: s, s: s,"
 		"  s: o, s: o, s: s,"
 		"  s: o, s: o, s: s }",
 		/* First line */
 		"id", snapshot->base->uniqueid,
 		"name", snapshot->base->name,
 		"state", ast_state2str(snapshot->state),
+		"protocol_id", snapshot->base->protocol_id,
 		/* Second line */
 		"caller", ast_json_name_number(
 			snapshot->caller->name, snapshot->caller->number),
@@ -1599,6 +1604,7 @@ STASIS_MESSAGE_TYPE_DEFN(ast_channel_unhold_type,
 	.to_json = unhold_to_json,
 	);
 STASIS_MESSAGE_TYPE_DEFN(ast_channel_flash_type);
+STASIS_MESSAGE_TYPE_DEFN(ast_channel_wink_type);
 STASIS_MESSAGE_TYPE_DEFN(ast_channel_chanspy_start_type);
 STASIS_MESSAGE_TYPE_DEFN(ast_channel_chanspy_stop_type);
 STASIS_MESSAGE_TYPE_DEFN(ast_channel_fax_type);
@@ -1644,6 +1650,7 @@ static void stasis_channels_cleanup(void)
 	STASIS_MESSAGE_TYPE_CLEANUP(ast_channel_dtmf_begin_type);
 	STASIS_MESSAGE_TYPE_CLEANUP(ast_channel_dtmf_end_type);
 	STASIS_MESSAGE_TYPE_CLEANUP(ast_channel_flash_type);
+	STASIS_MESSAGE_TYPE_CLEANUP(ast_channel_wink_type);
 	STASIS_MESSAGE_TYPE_CLEANUP(ast_channel_hold_type);
 	STASIS_MESSAGE_TYPE_CLEANUP(ast_channel_unhold_type);
 	STASIS_MESSAGE_TYPE_CLEANUP(ast_channel_chanspy_start_type);
@@ -1698,6 +1705,7 @@ int ast_stasis_channels_init(void)
 	res |= STASIS_MESSAGE_TYPE_INIT(ast_channel_dtmf_begin_type);
 	res |= STASIS_MESSAGE_TYPE_INIT(ast_channel_dtmf_end_type);
 	res |= STASIS_MESSAGE_TYPE_INIT(ast_channel_flash_type);
+	res |= STASIS_MESSAGE_TYPE_INIT(ast_channel_wink_type);
 	res |= STASIS_MESSAGE_TYPE_INIT(ast_channel_hold_type);
 	res |= STASIS_MESSAGE_TYPE_INIT(ast_channel_unhold_type);
 	res |= STASIS_MESSAGE_TYPE_INIT(ast_channel_chanspy_start_type);

@@ -3716,9 +3716,9 @@ static enum sip_get_destination_result get_destination(struct ast_sip_session *s
 	return SIP_GET_DEST_EXTEN_NOT_FOUND;
 }
 
-/*
- * /internal
- * /brief Process initial answer for an incoming invite
+/*!
+ * \internal
+ * \brief Process initial answer for an incoming invite
  *
  * This function should only be called during the setup, and handling of a
  * new incoming invite. Most, if not all of the time, this will be called
@@ -3766,10 +3766,10 @@ static int new_invite_initial_answer(pjsip_inv_session *inv_session, pjsip_rx_da
 	return res;
 }
 
-/*
- * /internal
- * /brief Create and initialize a pjsip invite session
-
+/*!
+ * \internal
+ * \brief Create and initialize a pjsip invite session
+ *
  * pjsip_inv_session adds, and maintains a reference to the dialog upon a successful
  * invite session creation until the session is destroyed. However, we'll wait to
  * remove the reference that was added for the dialog when it gets created since we're
@@ -3779,10 +3779,10 @@ static int new_invite_initial_answer(pjsip_inv_session *inv_session, pjsip_rx_da
  * created, and associated dialog locked and with two references (i.e. dialog's
  * reference count should be 2).
  *
- * \param endpoint A pointer to the endpoint
  * \param rdata The request that is starting the dialog
+ * \param endpoint A pointer to the endpoint
  *
- * \retval A pjsip invite session object
+ * \return A pjsip invite session object
  * \retval NULL on error
  */
 static pjsip_inv_session *pre_session_setup(pjsip_rx_data *rdata, const struct ast_sip_endpoint *endpoint)
@@ -3893,9 +3893,8 @@ static int check_content_disposition(pjsip_rx_data *rdata)
 	pjsip_ctype_hdr *ctype_hdr = rdata->msg_info.ctype;
 
 	if (body && ctype_hdr &&
-		!pj_stricmp2(&ctype_hdr->media.type, "multipart") &&
-		(!pj_stricmp2(&ctype_hdr->media.subtype, "mixed") ||
-		 !pj_stricmp2(&ctype_hdr->media.subtype, "alternative"))) {
+		ast_sip_is_media_type_in(&ctype_hdr->media, &pjsip_media_type_multipart_mixed,
+			&pjsip_media_type_multipart_alternative, SENTINEL)) {
 		pjsip_multipart_part *part = pjsip_multipart_get_first_part(body);
 		while (part != NULL) {
 			if (check_content_disposition_in_multipart(part)) {
@@ -5481,19 +5480,25 @@ static void session_outgoing_nat_hook(pjsip_tx_data *tdata, struct ast_sip_trans
 	RAII_VAR(struct ast_sip_transport_state *, transport_state, ast_sip_get_transport_state(ast_sorcery_object_get_id(transport)), ao2_cleanup);
 	struct ast_sip_nat_hook *hook = ast_sip_mod_data_get(
 		tdata->mod_data, session_module.id, MOD_DATA_NAT_HOOK);
-	struct pjmedia_sdp_session *sdp;
+	pjsip_sdp_info *sdp_info;
+	pjmedia_sdp_session *sdp;
 	pjsip_dialog *dlg = pjsip_tdata_get_dlg(tdata);
 	RAII_VAR(struct ast_sip_session *, session, dlg ? ast_sip_dialog_get_session(dlg) : NULL, ao2_cleanup);
 	int stream;
 
-	/* SDP produced by us directly will never be multipart */
-	if (!transport_state || hook || !tdata->msg->body ||
-		!ast_sip_is_content_type(&tdata->msg->body->content_type, "application", "sdp") ||
-		ast_strlen_zero(transport->external_media_address)) {
+	/*
+	 * If there's no transport_state or body, or the hook
+	 * has already been run, just return.
+	 */
+	if (ast_strlen_zero(transport->external_media_address) || !transport_state || hook || !tdata->msg->body) {
 		return;
 	}
 
-	sdp = tdata->msg->body->data;
+	sdp_info = pjsip_get_sdp_info(tdata->pool, tdata->msg->body, NULL, &pjsip_media_type_application_sdp);
+	if (sdp_info->sdp_err != PJ_SUCCESS || !sdp_info->sdp) {
+		return;
+	}
+	sdp = sdp_info->sdp;
 
 	if (sdp->conn) {
 		char host[NI_MAXHOST];

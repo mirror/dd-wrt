@@ -98,6 +98,7 @@
 			double-quotes from the right-hand side (value). If you need to put a separator
 			character (comma or vert-bar), you will need to escape them by inserting a backslash
 			before them. Avoid its use if possible.</para>
+			<para>This application allows up to 99 variables to be set at once.</para>
 		</description>
 		<see-also>
 			<ref type="application">Set</ref>
@@ -349,6 +350,8 @@ const char *ast_str_retrieve_variable(struct ast_str **str, ssize_t maxlen, stru
 			s = ast_config_AST_RUN_DIR;
 		} else if (!strcmp(var, "ASTLOGDIR")) {
 			s = ast_config_AST_LOG_DIR;
+		} else if (!strcmp(var, "ASTSBINDIR")) {
+			s = ast_config_AST_SBIN_DIR;
 		} else if (!strcmp(var, "ENTITYID")) {
 			ast_eid_to_str(workspace, sizeof(workspace), &ast_eid_default);
 			s = workspace;
@@ -625,6 +628,11 @@ void ast_str_substitute_variables_varshead(struct ast_str **buf, ssize_t maxlen,
 
 void pbx_substitute_variables_helper_full(struct ast_channel *c, struct varshead *headp, const char *cp1, char *cp2, int count, size_t *used)
 {
+	pbx_substitute_variables_helper_full_location(c, headp, cp1, cp2, count, used, NULL, NULL, 0);
+}
+
+void pbx_substitute_variables_helper_full_location(struct ast_channel *c, struct varshead *headp, const char *cp1, char *cp2, int count, size_t *used, char *context, char *exten, int pri)
+{
 	/* Substitutes variables into cp2, based on string cp1, cp2 NO LONGER NEEDS TO BE ZEROED OUT!!!!  */
 	const char *whereweare;
 	const char *orig_cp2 = cp2;
@@ -686,7 +694,7 @@ void pbx_substitute_variables_helper_full(struct ast_channel *c, struct varshead
 			int offset;
 			int offset2;
 			int isfunction;
-			char *cp4;
+			char *cp4 = NULL;
 			char workspace[VAR_BUF_SIZE] = "";
 
 			/* We have a variable.  Find the start and end, and determine
@@ -728,7 +736,7 @@ void pbx_substitute_variables_helper_full(struct ast_channel *c, struct varshead
 
 			/* Substitute if necessary */
 			if (needsub) {
-				pbx_substitute_variables_helper_full(c, headp, var, ltmp, VAR_BUF_SIZE - 1, NULL);
+				pbx_substitute_variables_helper_full_location(c, headp, var, ltmp, VAR_BUF_SIZE - 1, NULL, context, exten, pri);
 				vars = ltmp;
 			} else {
 				vars = var;
@@ -759,7 +767,19 @@ void pbx_substitute_variables_helper_full(struct ast_channel *c, struct varshead
 				ast_debug(2, "Function %s result is '%s'\n", vars, cp4 ? cp4 : "(null)");
 			} else {
 				/* Retrieve variable value */
-				pbx_retrieve_variable(c, vars, &cp4, workspace, VAR_BUF_SIZE, headp);
+				/* For dialplan location, if we were told what to substitute explicitly, use that instead */
+				if (exten && !strcmp(vars, "EXTEN")) {
+					ast_copy_string(workspace, exten, VAR_BUF_SIZE);
+					cp4 = workspace;
+				} else if (context && !strcmp(vars, "CONTEXT")) {
+					ast_copy_string(workspace, context, VAR_BUF_SIZE);
+					cp4 = workspace;
+				} else if (pri && !strcmp(vars, "PRIORITY")) {
+					snprintf(workspace, VAR_BUF_SIZE, "%d", pri);
+					cp4 = workspace;
+				} else {
+					pbx_retrieve_variable(c, vars, &cp4, workspace, VAR_BUF_SIZE, headp);
+				}
 			}
 			if (cp4) {
 				cp4 = substring(cp4, offset, offset2, workspace, VAR_BUF_SIZE);
@@ -812,7 +832,7 @@ void pbx_substitute_variables_helper_full(struct ast_channel *c, struct varshead
 
 			/* Substitute if necessary */
 			if (needsub) {
-				pbx_substitute_variables_helper_full(c, headp, var, ltmp, VAR_BUF_SIZE - 1, NULL);
+				pbx_substitute_variables_helper_full_location(c, headp, var, ltmp, VAR_BUF_SIZE - 1, NULL, context, exten, pri);
 				vars = ltmp;
 			} else {
 				vars = var;
@@ -904,6 +924,52 @@ static char *handle_show_chanvar(struct ast_cli_entry *e, int cmd, struct ast_cl
 	ast_channel_unlock(chan);
 
 	ast_channel_unref(chan);
+	return CLI_SUCCESS;
+}
+
+/*! \brief CLI support for executing function */
+static char *handle_eval_function(struct ast_cli_entry *e, int cmd, struct ast_cli_args *a)
+{
+	struct ast_channel *c = NULL;
+	char *fn, *substituted;
+	int ret;
+	char workspace[1024];
+
+	switch (cmd) {
+	case CLI_INIT:
+		e->command = "dialplan eval function";
+		e->usage =
+			"Usage: dialplan eval function <name(args)>\n"
+			"       Evaluate a dialplan function call\n"
+			"       A dummy channel is used to evaluate\n"
+			"       the function call, so only global\n"
+			"       variables should be used.\n";
+		return NULL;
+	case CLI_GENERATE:
+		return NULL;
+	}
+
+	if (a->argc != e->args + 1) {
+		return CLI_SHOWUSAGE;
+	}
+
+	c = ast_dummy_channel_alloc();
+	if (!c) {
+		ast_cli(a->fd, "Unable to allocate bogus channel for function evaluation.\n");
+		return CLI_FAILURE;
+	}
+
+	fn = (char *) a->argv[3];
+	pbx_substitute_variables_helper(c, fn, workspace, sizeof(workspace));
+	substituted = ast_strdupa(workspace);
+	workspace[0] = '\0';
+	ret = ast_func_read(c, substituted, workspace, sizeof(workspace));
+
+	c = ast_channel_unref(c);
+
+	ast_cli(a->fd, "Return Value: %s (%d)\n", ret ? "Failure" : "Success", ret);
+	ast_cli(a->fd, "Result: %s\n", workspace);
+
 	return CLI_SUCCESS;
 }
 
@@ -1157,7 +1223,7 @@ int pbx_builtin_setvar_multiple(struct ast_channel *chan, const char *vdata)
 	char *data;
 	int x;
 	AST_DECLARE_APP_ARGS(args,
-		AST_APP_ARG(pair)[24];
+		AST_APP_ARG(pair)[99]; /* parse up to 99 variables */
 	);
 	AST_DECLARE_APP_ARGS(pair,
 		AST_APP_ARG(name);
@@ -1201,6 +1267,7 @@ void pbx_builtin_clear_globals(void)
 static struct ast_cli_entry vars_cli[] = {
 	AST_CLI_DEFINE(handle_show_globals, "Show global dialplan variables"),
 	AST_CLI_DEFINE(handle_show_chanvar, "Show channel variables"),
+	AST_CLI_DEFINE(handle_eval_function, "Evaluate dialplan function"),
 	AST_CLI_DEFINE(handle_set_global, "Set global dialplan variable"),
 	AST_CLI_DEFINE(handle_set_chanvar, "Set a channel variable"),
 };
