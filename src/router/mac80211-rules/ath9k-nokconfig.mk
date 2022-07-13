@@ -90,6 +90,9 @@ endif
 endif
 endif
 endif
+ifeq ($(CONFIG_MCPHERSON),y)
+  BUILDFLAGS += -DHAVE_MCPHERSON
+endif
 ifeq ($(CONFIG_ATH10K),y)
   BUILDFLAGS += -DCONFIG_ATH10K=y
   BUILDFLAGS += -DCONFIG_ATH10K_PCI=y
