@@ -1982,7 +1982,7 @@ YY_RULE_SETUP
 		   snprintf(fnamebuf2,sizeof(fnamebuf2), "%s/%s", (char *)ast_config_AST_CONFIG_DIR, fnamebuf);
 		   ast_copy_string(fnamebuf,fnamebuf2,sizeof(fnamebuf));
 		}
-#ifdef SOLARIS
+#if !defined(HAVE_GLOB_NOMAGIC) || !defined(HAVE_GLOB_BRACE) || defined(DEBUG_NONGNU)
 			glob_ret = glob(fnamebuf, GLOB_NOCHECK, NULL, &globbuf);
 #else
 			glob_ret = glob(fnamebuf, GLOB_NOMAGIC|GLOB_BRACE, NULL, &globbuf);
