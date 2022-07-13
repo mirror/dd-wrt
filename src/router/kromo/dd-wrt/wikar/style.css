@@ -200,9 +200,6 @@ td .meter {
   position: absolute;
   font-size: .09em;
 }
-.textblink {
-  text-decoration: blink;
-}
 input.button {
   padding: .05em .5em;
   margin: 0 .4em 0 0;
