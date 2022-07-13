@@ -112,6 +112,7 @@ struct ast_channel_snapshot_base {
 	);
 	struct timeval creationtime; /*!< The time of channel creation */
 	int tech_properties;         /*!< Properties of the channel's technology */
+	AST_STRING_FIELD_EXTENDED(protocol_id); /*!< Channel driver protocol id (i.e. Call-ID for chan_sip/chan_pjsip) */
 };
 
 /*!
@@ -527,6 +528,13 @@ struct stasis_message_type *ast_channel_dtmf_end_type(void);
  * \return A stasis message type
  */
 struct stasis_message_type *ast_channel_flash_type(void);
+
+/*!
+ * \brief Message type for when a wink occurs on a channel.
+ *
+ * \return A stasis message type
+ */
+struct stasis_message_type *ast_channel_wink_type(void);
 
 /*!
  * \since 12

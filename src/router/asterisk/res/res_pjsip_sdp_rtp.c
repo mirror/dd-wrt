@@ -106,9 +106,10 @@ static int rtp_check_timeout(const void *data)
 {
 	struct ast_sip_session_media *session_media = (struct ast_sip_session_media *)data;
 	struct ast_rtp_instance *rtp = session_media->rtp;
-	int elapsed;
-	int timeout;
 	struct ast_channel *chan;
+	int elapsed;
+	int now;
+	int timeout;
 
 	if (!rtp) {
 		return 0;
@@ -119,41 +120,37 @@ static int rtp_check_timeout(const void *data)
 		return 0;
 	}
 
-	/* Get channel lock to make sure that we access a consistent set of values
-	 * (last_rx and direct_media_addr) - the lock is held when values are modified
-	 * (see send_direct_media_request()/check_for_rtp_changes() in chan_pjsip.c). We
-	 * are trying to avoid a situation where direct_media_addr has been reset but the
-	 * last-rx time was not set yet.
-	 */
-	ast_channel_lock(chan);
-
-	elapsed = time(NULL) - ast_rtp_instance_get_last_rx(rtp);
+	/* Store these values locally to avoid multiple function calls */
+	now = time(NULL);
 	timeout = ast_rtp_instance_get_timeout(rtp);
-	if (elapsed < timeout) {
-		ast_channel_unlock(chan);
+
+	/* If the channel is not in UP state or call is redirected
+	 * outside Asterisk return for later check.
+	 */
+	if (ast_channel_state(chan) != AST_STATE_UP || !ast_sockaddr_isnull(&session_media->direct_media_addr)) {
+		/* Avoiding immediately disconnect after channel up or direct media has been stopped */
+		ast_rtp_instance_set_last_rx(rtp, now);
 		ast_channel_unref(chan);
-		return (timeout - elapsed) * 1000;
+		/* Recheck after half timeout for avoiding possible races
+		* and faster reacting to cases while there is no an RTP at all.
+		*/
+		return timeout * 500;
 	}
 
-	/* Last RTP packet was received too long ago
-	 * - disconnect channel unless direct media is in use.
-	 */
-	if (!ast_sockaddr_isnull(&session_media->direct_media_addr)) {
-		ast_debug_rtp(3, "(%p) RTP not disconnecting channel '%s' for lack of %s RTP activity in %d seconds "
-			"since direct media is in use\n", rtp, ast_channel_name(chan),
-			ast_codec_media_type2str(session_media->type), elapsed);
-		ast_channel_unlock(chan);
+	elapsed = now - ast_rtp_instance_get_last_rx(rtp);
+	if (elapsed < timeout) {
 		ast_channel_unref(chan);
-		return timeout * 1000; /* recheck later, direct media may have ended then */
+		return (timeout - elapsed) * 1000;
 	}
 
 	ast_log(LOG_NOTICE, "Disconnecting channel '%s' for lack of %s RTP activity in %d seconds\n",
 		ast_channel_name(chan), ast_codec_media_type2str(session_media->type), elapsed);
 
+	ast_channel_lock(chan);
 	ast_channel_hangupcause_set(chan, AST_CAUSE_REQUESTED_CHAN_UNAVAIL);
-	ast_softhangup(chan, AST_SOFTHANGUP_DEV);
-
 	ast_channel_unlock(chan);
+
+	ast_softhangup(chan, AST_SOFTHANGUP_DEV);
 	ast_channel_unref(chan);
 
 	return 0;
@@ -313,7 +310,7 @@ static int create_rtp(struct ast_sip_session *session, struct ast_sip_session_me
 }
 
 static void get_codecs(struct ast_sip_session *session, const struct pjmedia_sdp_media *stream, struct ast_rtp_codecs *codecs,
-	struct ast_sip_session_media *session_media)
+	struct ast_sip_session_media *session_media, struct ast_format_cap *astformats)
 {
 	pjmedia_sdp_attr *attr;
 	pjmedia_sdp_rtpmap *rtpmap;
@@ -328,6 +325,8 @@ static void get_codecs(struct ast_sip_session *session, const struct pjmedia_sdp
 	SCOPE_ENTER(1, "%s\n", ast_sip_session_get_name(session));
 
 	ast_rtp_codecs_payloads_initialize(codecs);
+
+	ast_format_cap_remove_by_type(astformats, AST_MEDIA_TYPE_UNKNOWN);
 
 	/* Iterate through provided formats */
 	for (i = 0; i < stream->desc.fmt_count; ++i) {
@@ -372,11 +371,19 @@ static void get_codecs(struct ast_sip_session *session, const struct pjmedia_sdp
 					ast_rtp_codecs_payload_replace_format(codecs, num, format_parsed);
 					ao2_ref(format_parsed, -1);
 				}
-
 				ao2_ref(format, -1);
 			}
 		}
 	}
+
+	/* Parsing done, now fill the ast_format_cap struct in the correct order */
+	for (i = 0; i < stream->desc.fmt_count; ++i) {
+		if ((format = ast_rtp_codecs_get_payload_format(codecs, pj_strtoul(&stream->desc.fmt[i])))) {
+			ast_format_cap_append(astformats, format, 0);
+			ao2_ref(format, -1);
+		}
+	}
+
 	if (!tel_event && (session->dtmf == AST_SIP_DTMF_AUTO)) {
 		ast_rtp_instance_dtmf_mode_set(session_media->rtp, AST_RTP_DTMF_MODE_INBAND);
 		ast_rtp_instance_set_prop(session_media->rtp, AST_RTP_PROPERTY_DTMF, 0);
@@ -398,6 +405,7 @@ static void get_codecs(struct ast_sip_session *session, const struct pjmedia_sdp
 		unsigned long framing = pj_strtoul(pj_strltrim(&attr->value));
 		if (framing && session->endpoint->media.rtp.use_ptime) {
 			ast_rtp_codecs_set_framing(codecs, framing);
+			ast_format_cap_set_framing(astformats, framing);
 		}
 	}
 
@@ -442,7 +450,6 @@ static struct ast_format_cap *set_incoming_call_offer_cap(
 	struct ast_format_cap *incoming_call_offer_cap;
 	struct ast_format_cap *remote;
 	struct ast_rtp_codecs codecs = AST_RTP_CODECS_NULL_INIT;
-	int fmts = 0;
 	SCOPE_ENTER(1, "%s\n", ast_sip_session_get_name(session));
 
 
@@ -454,8 +461,7 @@ static struct ast_format_cap *set_incoming_call_offer_cap(
 	}
 
 	/* Get the peer's capabilities*/
-	get_codecs(session, stream, &codecs, session_media);
-	ast_rtp_codecs_payload_formats(&codecs, remote, &fmts);
+	get_codecs(session, stream, &codecs, session_media, remote);
 
 	incoming_call_offer_cap = ast_sip_session_create_joint_call_cap(
 		session, session_media->type, remote);
@@ -493,7 +499,6 @@ static int set_caps(struct ast_sip_session *session,
 	RAII_VAR(struct ast_format_cap *, joint, NULL, ao2_cleanup);
 	enum ast_media_type media_type = session_media->type;
 	struct ast_rtp_codecs codecs = AST_RTP_CODECS_NULL_INIT;
-	int fmts = 0;
 	int direct_media_enabled = !ast_sockaddr_isnull(&session_media->direct_media_addr) &&
 		ast_format_cap_count(session->direct_media_cap);
 	int dsp_features = 0;
@@ -516,8 +521,7 @@ static int set_caps(struct ast_sip_session *session,
 	}
 
 	/* get the capabilities on the peer */
-	get_codecs(session, stream, &codecs,  session_media);
-	ast_rtp_codecs_payload_formats(&codecs, peer, &fmts);
+	get_codecs(session, stream, &codecs, session_media, peer);
 
 	/* get the joint capabilities between peer and endpoint */
 	ast_format_cap_get_compatible(caps, peer, joint);
@@ -1144,7 +1148,7 @@ static int setup_sdes_srtp(struct ast_sip_session_media *session_media,
 			return 0;
 		}
 
-		ast_log(LOG_WARNING, "Ignoring crypto offer with unsupported parameters: %s\n", crypto_str);
+		ast_debug(1, "Ignoring crypto offer with unsupported parameters: %s\n", crypto_str);
 	}
 
 	/* no usable crypto attributes found */
@@ -2166,7 +2170,7 @@ static int apply_negotiated_sdp_stream(struct ast_sip_session *session,
 	ast_rtp_instance_activate(session_media->rtp);
 
 	/* audio stream handles music on hold */
-	if (media_type != AST_MEDIA_TYPE_AUDIO) {
+	if (media_type != AST_MEDIA_TYPE_AUDIO && media_type != AST_MEDIA_TYPE_VIDEO) {
 		if ((pjmedia_sdp_neg_was_answer_remote(session->inv_session->neg) == PJ_FALSE)
 			&& (session->inv_session->state == PJSIP_INV_STATE_CONFIRMED)) {
 			ast_queue_control(session->channel, AST_CONTROL_UPDATE_RTP_PEER);
@@ -2198,7 +2202,8 @@ static int apply_negotiated_sdp_stream(struct ast_sip_session *session,
 	session_media->encryption = session->endpoint->media.rtp.encryption;
 
 	if (session->endpoint->media.rtp.keepalive > 0 &&
-			session_media->type == AST_MEDIA_TYPE_AUDIO) {
+		(session_media->type == AST_MEDIA_TYPE_AUDIO ||
+			session_media->type == AST_MEDIA_TYPE_VIDEO)) {
 		ast_rtp_instance_set_keepalive(session_media->rtp, session->endpoint->media.rtp.keepalive);
 		/* Schedule the initial keepalive early in case this is being used to punch holes through
 		 * a NAT. This way there won't be an awkward delay before media starts flowing in some
@@ -2226,8 +2231,7 @@ static int apply_negotiated_sdp_stream(struct ast_sip_session *session,
 	}
 
 	if (ast_rtp_instance_get_timeout(session_media->rtp)) {
-		session_media->timeout_sched_id = ast_sched_add_variable(sched,
-			ast_rtp_instance_get_timeout(session_media->rtp) * 1000, rtp_check_timeout,
+		session_media->timeout_sched_id = ast_sched_add_variable(sched,	500, rtp_check_timeout,
 			session_media, 1);
 	}
 
@@ -2310,9 +2314,8 @@ static int video_info_incoming_request(struct ast_sip_session *session, struct p
 	pjsip_tx_data *tdata;
 
 	if (!session->channel
-		|| !ast_sip_is_content_type(&rdata->msg_info.msg->body->content_type,
-			"application",
-			"media_control+xml")) {
+		|| !ast_sip_are_media_types_equal(&rdata->msg_info.msg->body->content_type,
+			&pjsip_media_type_application_media_control_xml)) {
 		return 0;
 	}
 

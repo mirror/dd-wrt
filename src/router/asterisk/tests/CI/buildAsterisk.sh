@@ -17,6 +17,10 @@ if [ -z $BRANCH_NAME ]; then
 	BRANCH_NAME=$(git config -f .gitreview --get gerrit.defaultbranch)
 fi
 
+if [[ "$BRANCH_NAME" =~ devel(opment)?/([0-9]+)/.+ ]] ; then
+	export MAINLINE_BRANCH="${BASH_REMATCH[2]}"
+fi
+
 gen_cats() {
 	set +x
 	action=$1
@@ -91,6 +95,11 @@ MAKE=`which make`
 PKGCONFIG=`which pkg-config`
 _libdir=`${CIDIR}/findLibdir.sh`
 
+_version=$(./build_tools/make_version .)
+for var in BRANCH_NAME MAINLINE_BRANCH OUTPUT_DIR CACHE_DIR CCACHE_DISABLE CCACHE_DIR _libdir _version ; do
+	declare -p $var || :
+done
+
 common_config_args="--prefix=/usr ${_libdir:+--libdir=${_libdir}} --sysconfdir=/etc --with-pjproject-bundled"
 $PKGCONFIG 'jansson >= 2.11' || common_config_args+=" --with-jansson-bundled"
 common_config_args+=" ${CACHE_DIR:+--with-sounds-cache=${CACHE_DIR}/sounds --with-externals-cache=${CACHE_DIR}/externals}"
@@ -135,19 +144,19 @@ if [ $NO_MENUSELECT -eq 0 ] ; then
 	fi
 	runner menuselect/menuselect `gen_cats enable $cat_enables` menuselect.makeopts
 
-	mod_disables="res_digium_phone chan_vpb"
+	mod_disables="res_digium_phone"
 	if [ $TESTED_ONLY -eq 1 ] ; then
 		# These modules are not tested at all.  They are loaded but nothing is ever done
 		# with them, no testsuite tests depend on them.
 		mod_disables+=" app_adsiprog app_alarmreceiver app_celgenuserevent app_db app_dictate"
-		mod_disables+=" app_dumpchan app_externalivr app_festival app_getcpeid app_ices app_image"
-		mod_disables+=" app_jack app_milliwatt app_minivm app_morsecode app_mp3 app_nbscat app_privacy"
-		mod_disables+=" app_readexten app_sms app_speech_utils app_test app_url app_waitforring"
+		mod_disables+=" app_dumpchan app_externalivr app_festival app_getcpeid"
+		mod_disables+=" app_jack app_milliwatt app_minivm app_morsecode app_mp3 app_privacy"
+		mod_disables+=" app_readexten app_sms app_speech_utils app_test app_waitforring"
 		mod_disables+=" app_waitforsilence app_waituntil app_zapateller"
 		mod_disables+=" cdr_adaptive_odbc cdr_custom cdr_manager cdr_odbc cdr_pgsql cdr_radius"
-		mod_disables+=" cdr_syslog cdr_tds"
+		mod_disables+=" cdr_tds"
 		mod_disables+=" cel_odbc cel_pgsql cel_radius cel_sqlite3_custom cel_tds"
-		mod_disables+=" chan_alsa chan_console chan_mgcp chan_motif chan_oss chan_rtp chan_skinny chan_unistim"
+		mod_disables+=" chan_alsa chan_console chan_mgcp chan_motif chan_rtp chan_skinny chan_unistim"
 		mod_disables+=" func_frame_trace func_pitchshift func_speex func_volume func_dialgroup"
 		mod_disables+=" func_periodic_hook func_sprintf func_enum func_extstate func_sysinfo func_iconv"
 		mod_disables+=" func_callcompletion func_version func_rand func_sha1 func_module func_md5"

@@ -185,10 +185,6 @@
 					<option name="H">
 						<para>Allow <emphasis>caller</emphasis> to hang up by pressing <literal>*</literal>.</para>
 					</option>
-					<option name="n">
-						<para>No retries on the timeout; will exit this application and
-						go to the next step.</para>
-					</option>
 					<option name="i">
 						<para>Ignore call forward requests from queue members and do nothing
 						when they are requested.</para>
@@ -196,6 +192,23 @@
 					<option name="I">
 						<para>Asterisk will ignore any connected line update requests or any redirecting party
 						update requests it may receive on this dial attempt.</para>
+					</option>
+					<option name="k">
+						<para>Allow the <emphasis>called</emphasis> party to enable parking of the call by sending
+						the DTMF sequence defined for call parking in <filename>features.conf</filename>.</para>
+					</option>
+					<option name="K">
+						<para>Allow the <emphasis>calling</emphasis> party to enable parking of the call by sending
+						the DTMF sequence defined for call parking in <filename>features.conf</filename>.</para>
+					</option>
+					<option name="m">
+						<para>Custom music on hold class to use, which will override the music on hold class configured
+						in <filename>queues.conf</filename>, if specified.</para>
+						<para>Note that CHANNEL(musicclass), if set, will still override this option.</para>
+					</option>
+					<option name="n">
+						<para>No retries on the timeout; will exit this application and
+						go to the next step.</para>
 					</option>
 					<option name="r">
 						<para>Ring instead of playing MOH. Periodic Announcements are still made, if applicable.</para>
@@ -216,14 +229,6 @@
 					<option name="W">
 						<para>Allow the <emphasis>calling</emphasis> user to write the conversation to
 						disk via Monitor.</para>
-					</option>
-					<option name="k">
-						<para>Allow the <emphasis>called</emphasis> party to enable parking of the call by sending
-						the DTMF sequence defined for call parking in <filename>features.conf</filename>.</para>
-					</option>
-					<option name="K">
-						<para>Allow the <emphasis>calling</emphasis> party to enable parking of the call by sending
-						the DTMF sequence defined for call parking in <filename>features.conf</filename>.</para>
 					</option>
 					<option name="x">
 						<para>Allow the <emphasis>called</emphasis> user to write the conversation
@@ -290,10 +295,17 @@
 					<value name="JOINUNAVAIL" />
 					<value name="LEAVEUNAVAIL" />
 					<value name="CONTINUE" />
+					<value name="WITHDRAW" />
 				</variable>
 				<variable name="ABANDONED">
 					<para>If the call was not answered by an agent this variable will be TRUE.</para>
 					<value name="TRUE" />
+				</variable>
+				<variable name="DIALEDPEERNUMBER">
+					<para>Resource of the agent that was dialed set on the outbound channel.</para>
+				</variable>
+				<variable name="QUEUE_WITHDRAW_INFO">
+					<para>If the call was successfully withdrawn from the queue, and the withdraw request was provided with optional withdraw info, the withdraw info will be stored in this variable.</para>
 				</variable>
 			</variablelist>
 		</description>
@@ -1054,7 +1066,105 @@
 		<description>
 		</description>
 	</manager>
+	<manager name="QueueWithdrawCaller" language="en_US">
+		<synopsis>
+			Request to withdraw a caller from the queue back to the dialplan.
+		</synopsis>
+		<syntax>
+			<xi:include xpointer="xpointer(/docs/manager[@name='Login']/syntax/parameter[@name='ActionID'])" />
+			<parameter name="Queue" required="true">
+				<para>The name of the queue to take action on.</para>
+			</parameter>
+			<parameter name="Caller" required="true">
+				<para>The caller (channel) to withdraw from the queue.</para>
+			</parameter>
+			<parameter name="WithdrawInfo" required="false">
+				<para>Optional info to store. If the call is successfully withdrawn from the queue, this information will be available in the QUEUE_WITHDRAW_INFO variable.</para>
+			</parameter>
+		</syntax>
+		<description>
+		</description>
+	</manager>
 
+	<managerEvent language="en_US" name="QueueParams">
+		<managerEventInstance class="EVENT_FLAG_AGENT">
+			<synopsis>Raised in response to the QueueStatus action.</synopsis>
+			<syntax>
+				<parameter name="Max">
+					<para>The name of the queue.</para>
+				</parameter>
+				<parameter name="Strategy">
+					<para>The strategy of the queue.</para>
+				</parameter>
+				<parameter name="Calls">
+					<para>The queue member's channel technology or location.</para>
+				</parameter>
+				<parameter name="Holdtime">
+					<para>The queue's hold time.</para>
+				</parameter>
+				<parameter name="TalkTime">
+					<para>The queue's talk time.</para>
+				</parameter>
+				<parameter name="Completed">
+					<para>The queue's completion time.</para>
+				</parameter>
+				<parameter name="Abandoned">
+					<para>The queue's call abandonment metric.</para>
+				</parameter>
+				<parameter name="ServiceLevelPerf">
+					<para>Primary service level performance metric.</para>
+				</parameter>
+				<parameter name="ServiceLevelPerf2">
+					<para>Secondary service level performance metric.</para>
+				</parameter>
+			</syntax>
+			<see-also>
+				<ref type="managerEvent">QueueMember</ref>
+				<ref type="managerEvent">QueueEntry</ref>
+			</see-also>
+		</managerEventInstance>
+	</managerEvent>
+	<managerEvent language="en_US" name="QueueEntry">
+		<managerEventInstance class="EVENT_FLAG_AGENT">
+			<synopsis>Raised in response to the QueueStatus action.</synopsis>
+			<syntax>
+				<parameter name="Queue">
+					<para>The name of the queue.</para>
+				</parameter>
+				<parameter name="Position">
+					<para>The caller's position within the queue.</para>
+				</parameter>
+				<parameter name="Channel">
+					<para>The name of the caller's channel.</para>
+				</parameter>
+				<parameter name="Uniqueid">
+					<para>The unique ID of the channel.</para>
+				</parameter>
+				<parameter name="CallerIDNum">
+					<para>The Caller ID number.</para>
+				</parameter>
+				<parameter name="CallerIDName">
+					<para>The Caller ID name.</para>
+				</parameter>
+				<parameter name="ConnectedLineNum">
+					<para>The bridged party's number.</para>
+				</parameter>
+				<parameter name="ConnectedLineName">
+					<para>The bridged party's name.</para>
+				</parameter>
+				<parameter name="Wait">
+					<para>The caller's wait time.</para>
+				</parameter>
+				<parameter name="Priority">
+					<para>The caller's priority within the queue.</para>
+				</parameter>
+			</syntax>
+			<see-also>
+				<ref type="managerEvent">QueueParams</ref>
+				<ref type="managerEvent">QueueMember</ref>
+			</see-also>
+		</managerEventInstance>
+	</managerEvent>
 	<managerEvent language="en_US" name="QueueMemberStatus">
 		<managerEventInstance class="EVENT_FLAG_AGENT">
 			<synopsis>Raised when a Queue member's status has changed.</synopsis>
@@ -1363,12 +1473,14 @@ enum {
 	OPT_CALLER_AUTOMON =         (1 << 18),
 	OPT_PREDIAL_CALLEE =         (1 << 19),
 	OPT_PREDIAL_CALLER =         (1 << 20),
+	OPT_MUSICONHOLD_CLASS =      (1 << 21),
 };
 
 enum {
 	OPT_ARG_CALLEE_GO_ON = 0,
 	OPT_ARG_PREDIAL_CALLEE,
 	OPT_ARG_PREDIAL_CALLER,
+	OPT_ARG_MUSICONHOLD_CLASS,
 	/* note: this entry _MUST_ be the last one in the enum */
 	OPT_ARG_ARRAY_SIZE
 };
@@ -1386,6 +1498,7 @@ AST_APP_OPTIONS(queue_exec_options, BEGIN_OPTIONS
 	AST_APP_OPTION('I', OPT_IGNORE_CONNECTEDLINE),
 	AST_APP_OPTION('k', OPT_CALLEE_PARK),
 	AST_APP_OPTION('K', OPT_CALLER_PARK),
+	AST_APP_OPTION_ARG('m', OPT_MUSICONHOLD_CLASS, OPT_ARG_MUSICONHOLD_CLASS),
 	AST_APP_OPTION('n', OPT_NO_RETRY),
 	AST_APP_OPTION('r', OPT_RINGING),
 	AST_APP_OPTION('R', OPT_RING_WHEN_RINGING),
@@ -1520,6 +1633,7 @@ enum queue_result {
 	QUEUE_LEAVEUNAVAIL = 5,
 	QUEUE_FULL = 6,
 	QUEUE_CONTINUE = 7,
+	QUEUE_WITHDRAW = 8,
 };
 
 static const struct {
@@ -1534,6 +1648,7 @@ static const struct {
 	{ QUEUE_LEAVEUNAVAIL, "LEAVEUNAVAIL" },
 	{ QUEUE_FULL, "FULL" },
 	{ QUEUE_CONTINUE, "CONTINUE" },
+	{ QUEUE_WITHDRAW, "WITHDRAW" },
 };
 
 enum queue_timeout_priority {
@@ -1602,6 +1717,8 @@ struct queue_ent {
 	time_t start;                          /*!< When we started holding */
 	time_t expire;                         /*!< When this entry should expire (time out of queue) */
 	int cancel_answered_elsewhere;         /*!< Whether we should force the CAE flag on this call (C) option*/
+	unsigned int withdraw:1;               /*!< Should this call exit the queue at its next iteration? Used for QueueWithdrawCaller */
+	char *withdraw_info;                   /*!< Optional info passed by the caller of QueueWithdrawCaller */
 	struct ast_channel *chan;              /*!< Our channel */
 	AST_LIST_HEAD_NOLOCK(,penalty_rule) qe_rules; /*!< Local copy of the queue's penalty rules */
 	struct penalty_rule *pr;               /*!< Pointer to the next penalty rule to implement */
@@ -2705,16 +2822,11 @@ static int extension_state_cb(const char *context, const char *exten, struct ast
 
 		miter = ao2_iterator_init(q->members, 0);
 		for (; (m = ao2_iterator_next(&miter)); ao2_ref(m, -1)) {
-			if (!strcmp(m->state_context, context) && !strcmp(m->state_exten, exten)) {
-				found = 1;
-			} else if (!strcmp(m->state_exten, exten) && context_included(m->state_context, context)) {
+			if (!strcmp(m->state_exten, exten) &&
+				(!strcmp(m->state_context, context) || context_included(m->state_context, context))) {
 				/* context could be included in m->state_context. We need to check. */
 				found = 1;
-			}
-			if (found) {
 				update_status(q, m, device_state);
-				ao2_ref(m, -1);
-				break;
 			}
 		}
 		ao2_iterator_destroy(&miter);
@@ -3822,6 +3934,40 @@ static struct call_queue *find_load_queue_rt_friendly(const char *queuename)
 	return q;
 }
 
+/*!
+ * \internal
+ * \brief Load queues and members from realtime.
+ *
+ * \param queuename - name of the desired queue to load or empty if need to load all queues
+*/
+static void load_realtime_queues(const char *queuename)
+{
+	struct ast_config *cfg = NULL;
+	char *category = NULL;
+	const char *name = NULL;
+	struct call_queue *q = NULL;
+
+	if (!ast_check_realtime("queues")) {
+		return;
+	}
+
+	if (ast_strlen_zero(queuename)) {
+		if ((cfg = ast_load_realtime_multientry("queues", "name LIKE", "%", SENTINEL))) {
+			while ((category = ast_category_browse(cfg, category))) {
+				name = ast_variable_retrieve(cfg, category, "name");
+				if (!ast_strlen_zero(name) && (q = find_load_queue_rt_friendly(name))) {
+					queue_unref(q);
+				}
+			}
+			ast_config_destroy(cfg);
+		}
+	} else {
+		if ((q = find_load_queue_rt_friendly(queuename))) {
+			queue_unref(q);
+		}
+	}
+}
+
 static int update_realtime_member_field(struct member *mem, const char *queue_name, const char *field, const char *value)
 {
 	int ret = -1;
@@ -3830,7 +3976,7 @@ static int update_realtime_member_field(struct member *mem, const char *queue_na
  		return ret;
 	}
 
-	if ((ast_update_realtime("queue_members", "uniqueid", mem->rt_uniqueid, field, value, SENTINEL)) > 0) {
+	if ((ast_update_realtime("queue_members", "uniqueid", mem->rt_uniqueid, field, value, SENTINEL)) >= 0) {
 		ret = 0;
 	}
 
@@ -4047,9 +4193,8 @@ static int valid_exit(struct queue_ent *qe, char digit)
 
 static int say_position(struct queue_ent *qe, int ringing)
 {
-	int res = 0, announceposition = 0;
+	int res = 0, say_thanks = 0;
 	long avgholdmins, avgholdsecs;
-	int say_thanks = 1;
 	time_t now;
 
 	/* Let minannouncefrequency seconds pass between the start of each position announcement */
@@ -4078,11 +4223,7 @@ static int say_position(struct queue_ent *qe, int ringing)
 		qe->parent->announceposition == ANNOUNCEPOSITION_MORE_THAN ||
 		(qe->parent->announceposition == ANNOUNCEPOSITION_LIMIT &&
 		qe->pos <= qe->parent->announcepositionlimit)) {
-			announceposition = 1;
-	}
-
-
-	if (announceposition == 1) {
+		say_thanks = 1;
 		/* Say we're next, if we are */
 		if (qe->pos == 1) {
 			res = play_file(qe->chan, qe->parent->sound_next);
@@ -4101,7 +4242,7 @@ static int say_position(struct queue_ent *qe, int ringing)
 			res = (
 				play_file(qe->chan, qe->parent->sound_thereare) ||
 				ast_say_number(qe->chan, qe->pos, AST_DIGIT_ANY,
-						ast_channel_language(qe->chan), NULL) || /* Needs gender */
+						ast_channel_language(qe->chan), "n") || /* Needs gender */
 				play_file(qe->chan, qe->parent->sound_calls));
 		}
 		if (res) {
@@ -4126,13 +4267,14 @@ static int say_position(struct queue_ent *qe, int ringing)
 	if ((avgholdmins+avgholdsecs) > 0 && qe->parent->announceholdtime &&
 		((qe->parent->announceholdtime == ANNOUNCEHOLDTIME_ONCE && !qe->last_pos) ||
 		!(qe->parent->announceholdtime == ANNOUNCEHOLDTIME_ONCE))) {
+		say_thanks = 1;
 		res = play_file(qe->chan, qe->parent->sound_holdtime);
 		if (res) {
 			goto playout;
 		}
 
 		if (avgholdmins >= 1) {
-			res = ast_say_number(qe->chan, avgholdmins, AST_DIGIT_ANY, ast_channel_language(qe->chan), NULL);
+			res = ast_say_number(qe->chan, avgholdmins, AST_DIGIT_ANY, ast_channel_language(qe->chan), "n");
 			if (res) {
 				goto playout;
 			}
@@ -4150,7 +4292,7 @@ static int say_position(struct queue_ent *qe, int ringing)
 			}
 		}
 		if (avgholdsecs >= 1) {
-			res = ast_say_number(qe->chan, avgholdsecs, AST_DIGIT_ANY, ast_channel_language(qe->chan), NULL);
+			res = ast_say_number(qe->chan, avgholdsecs, AST_DIGIT_ANY, ast_channel_language(qe->chan), "n");
 			if (res) {
 				goto playout;
 			}
@@ -4160,8 +4302,6 @@ static int say_position(struct queue_ent *qe, int ringing)
 				goto playout;
 			}
 		}
-	} else if (qe->parent->announceholdtime && !qe->parent->announceposition) {
-		say_thanks = 0;
 	}
 
 posout:
@@ -4643,6 +4783,9 @@ static int ring_entry(struct queue_ent *qe, struct callattempt *tmp, int *busies
 
 	ast_channel_unlock(tmp->chan);
 	ast_channel_unlock(qe->chan);
+
+	/* location is tmp->interface where tech/ has been stripped, so it follow the same syntax as DIALEDPEERNUMBER in app_dial.c */
+	pbx_builtin_setvar_helper(tmp->chan, "DIALEDPEERNUMBER", strlen(location) ? location : tmp->interface);
 
 	/* PREDIAL: Run gosub on the callee's channel */
 	if (qe->predial_callee) {
@@ -5693,6 +5836,13 @@ static int wait_our_turn(struct queue_ent *qe, int ringing, enum queue_result *r
 
 	/* This is the holding pen for callers 2 through maxlen */
 	for (;;) {
+
+		/* A request to withdraw this call from the queue arrived */
+		if (qe->withdraw) {
+			*reason = QUEUE_WITHDRAW;
+			res = 1;
+			break;
+		}
 
 		if (is_our_turn(qe)) {
 			break;
@@ -7025,13 +7175,13 @@ static int try_calling(struct queue_ent *qe, struct ast_flags opts, char **opt_a
 						holdtime = labs((now - qe->start) / 60);
 						holdtimesecs = labs((now - qe->start) % 60);
 						if (holdtime > 0) {
-							ast_say_number(peer, holdtime, AST_DIGIT_ANY, ast_channel_language(peer), NULL);
+							ast_say_number(peer, holdtime, AST_DIGIT_ANY, ast_channel_language(peer), "n");
 							if (play_file(peer, qe->parent->sound_minutes) < 0) {
 								ast_log(LOG_ERROR, "play_file failed for '%s' on %s\n", qe->parent->sound_minutes, ast_channel_name(peer));
 							}
 						}
 						if (holdtimesecs > 1) {
-							ast_say_number(peer, holdtimesecs, AST_DIGIT_ANY, ast_channel_language(peer), NULL);
+							ast_say_number(peer, holdtimesecs, AST_DIGIT_ANY, ast_channel_language(peer), "n");
 							if (play_file(peer, qe->parent->sound_seconds) < 0) {
 								ast_log(LOG_ERROR, "play_file failed for '%s' on %s\n", qe->parent->sound_seconds, ast_channel_name(peer));
 							}
@@ -7514,6 +7664,51 @@ static int change_priority_caller_on_queue(const char *queuename, const char *ca
 }
 
 
+/*! \brief Request to withdraw a caller from a queue
+ * \retval RES_NOSUCHQUEUE queue does not exist
+ * \retval RES_OKAY withdraw request sent
+ * \retval RES_NOT_CALLER queue exists but no caller
+ * \retval RES_EXISTS a withdraw request was already sent for this caller (channel) and queue
+*/
+static int request_withdraw_caller_from_queue(const char *queuename, const char *caller, const char *withdraw_info)
+{
+	struct call_queue *q;
+	struct queue_ent *qe;
+	int res = RES_NOSUCHQUEUE;
+
+	/*! \note Ensure the appropriate realtime queue is loaded.  Note that this
+	 * short-circuits if the queue is already in memory. */
+	if (!(q = find_load_queue_rt_friendly(queuename))) {
+		return res;
+	}
+
+	ao2_lock(q);
+	res = RES_NOT_CALLER;
+	for (qe = q->head; qe; qe = qe->next) {
+		if (!strcmp(ast_channel_name(qe->chan), caller)) {
+			if (qe->withdraw) {
+				ast_debug(1, "Ignoring duplicate withdraw request of caller %s from queue %s\n", caller, queuename);
+				res = RES_EXISTS;
+			} else {
+				ast_debug(1, "Requested withdraw of caller %s from queue %s\n", caller, queuename);
+				/* It is not possible to change the withdraw info by further withdraw requests for this caller (channel)
+				   in this queue, so we do not need to worry about a memory leak here. */
+				if (withdraw_info) {
+					qe->withdraw_info = ast_strdup(withdraw_info);
+				}
+				qe->withdraw = 1;
+				res = RES_OKAY;
+			}
+			break;
+		}
+	}
+	ao2_unlock(q);
+	queue_unref(q);
+
+	return res;
+}
+
+
 static int publish_queue_member_pause(struct call_queue *q, struct member *member)
 {
 	struct ast_json *json_blob = queue_member_blob_create(q, member);
@@ -7588,6 +7783,10 @@ static int set_member_paused(const char *queuename, const char *interface, const
 	int found = 0;
 	struct call_queue *q;
 	struct ao2_iterator queue_iter;
+
+	if (ast_check_realtime("queues")) {
+		load_realtime_queues(queuename);
+	}
 
 	queue_iter = ao2_iterator_init(queues, 0);
 	while ((q = ao2_t_iterator_next(&queue_iter, "Iterate over queues"))) {
@@ -7760,6 +7959,8 @@ static int set_member_value(const char *queuename, const char *interface, int pr
 						queue_unref(q);
 					}
 				}
+
+				ast_config_destroy(queue_config);
 			}
 		}
 
@@ -8432,6 +8633,12 @@ static int queue_exec(struct ast_channel *chan, const char *data)
 		ast_app_exec_sub(NULL, chan, opt_args[OPT_ARG_PREDIAL_CALLER], 0);
 	}
 
+	/* Music on hold class override */
+	if (ast_test_flag(&opts, OPT_MUSICONHOLD_CLASS)
+		&& !ast_strlen_zero(opt_args[OPT_ARG_MUSICONHOLD_CLASS])) {
+		ast_copy_string(qe.moh, opt_args[OPT_ARG_MUSICONHOLD_CLASS], sizeof(qe.moh));
+	}
+
 	copy_rules(&qe, args.rule);
 	qe.pr = AST_LIST_FIRST(&qe.qe_rules);
 check_turns:
@@ -8454,6 +8661,13 @@ check_turns:
 		/* To exit, they may get their call answered; */
 		/* they may dial a digit from the queue context; */
 		/* or, they may timeout. */
+
+		/* A request to withdraw this call from the queue arrived */
+		if (qe.withdraw) {
+			reason = QUEUE_WITHDRAW;
+			res = 1;
+			break;
+		}
 
 		/* Leave if we have exceeded our queuetimeout */
 		if (qe.expire && (time(NULL) >= qe.expire)) {
@@ -8480,6 +8694,13 @@ check_turns:
 			if ((res = say_periodic_announcement(&qe, ringing))) {
 				goto stop;
 			}
+		}
+
+		/* A request to withdraw this call from the queue arrived */
+		if (qe.withdraw) {
+			reason = QUEUE_WITHDRAW;
+			res = 1;
+			break;
 		}
 
 		/* Leave if we have exceeded our queuetimeout */
@@ -8556,7 +8777,14 @@ check_turns:
 
 stop:
 	if (res) {
-		if (res < 0) {
+		if (reason == QUEUE_WITHDRAW) {
+			record_abandoned(&qe);
+			ast_queue_log(qe.parent->name, ast_channel_uniqueid(qe.chan), "NONE", "WITHDRAW", "%d|%d|%ld|%.40s", qe.pos, qe.opos, (long) (time(NULL) - qe.start), qe.withdraw_info ? qe.withdraw_info : "");
+			if (qe.withdraw_info) {
+				pbx_builtin_setvar_helper(qe.chan, "QUEUE_WITHDRAW_INFO", qe.withdraw_info);
+			}
+			res = 0;
+		} else if (res < 0) {
 			if (!qe.handled) {
 				record_abandoned(&qe);
 				ast_queue_log(args.queuename, ast_channel_uniqueid(chan), "NONE", "ABANDON",
@@ -8574,6 +8802,13 @@ stop:
 			ast_queue_log(args.queuename, ast_channel_uniqueid(chan), "NONE", "EXITWITHKEY",
 				"%s|%d|%d|%ld", qe.digits, qe.pos, qe.opos, (long) (time(NULL) - qe.start));
 		}
+	}
+
+	/* Free the optional withdraw info if present */
+	/* This is done here to catch all cases. e.g. if the call eventually wasn't withdrawn, e.g. answered */
+	if (qe.withdraw_info) {
+		ast_free(qe.withdraw_info);
+		qe.withdraw_info = NULL;
 	}
 
 	/* Don't allow return code > 0 */
@@ -10104,6 +10339,10 @@ static int manager_queues_summary(struct mansession *s, const struct message *m)
 	struct ao2_iterator queue_iter;
 	struct ao2_iterator mem_iter;
 
+	if (ast_check_realtime("queues")) {
+		load_realtime_queues(queuefilter);
+	}
+
 	astman_send_listack(s, m, "Queue summary will follow", "start");
 	time(&now);
 	idText[0] = '\0';
@@ -10181,6 +10420,10 @@ static int manager_queues_status(struct mansession *s, const struct message *m)
 	struct member *mem;
 	struct ao2_iterator queue_iter;
 	struct ao2_iterator mem_iter;
+
+	if (ast_check_realtime("queues")) {
+		load_realtime_queues(queuefilter);
+	}
 
 	astman_send_listack(s, m, "Queue status will follow", "start");
 	time(&now);
@@ -10621,6 +10864,41 @@ static int manager_change_priority_caller_on_queue(struct mansession *s, const s
 	return 0;
 }
 
+static int manager_request_withdraw_caller_from_queue(struct mansession *s, const struct message *m)
+{
+	const char *queuename, *caller, *withdraw_info;
+
+	queuename = astman_get_header(m, "Queue");
+	caller = astman_get_header(m, "Caller");
+	withdraw_info = astman_get_header(m, "WithdrawInfo");
+
+	if (ast_strlen_zero(queuename)) {
+		astman_send_error(s, m, "'Queue' not specified.");
+		return 0;
+	}
+
+	if (ast_strlen_zero(caller)) {
+		astman_send_error(s, m, "'Caller' not specified.");
+		return 0;
+	}
+
+	switch (request_withdraw_caller_from_queue(queuename, caller, withdraw_info)) {
+	case RES_OKAY:
+		astman_send_ack(s, m, "Withdraw requested successfully");
+		break;
+	case RES_NOSUCHQUEUE:
+		astman_send_error(s, m, "Unable to request withdraw from queue: No such queue");
+		break;
+	case RES_NOT_CALLER:
+		astman_send_error(s, m, "Unable to request withdraw from queue: No such caller");
+		break;
+	case RES_EXISTS:
+		astman_send_error(s, m, "Unable to request withdraw from queue: Already requested");
+		break;
+	}
+
+	return 0;
+}
 
 
 static char *handle_queue_add_member(struct ast_cli_entry *e, int cmd, struct ast_cli_args *a)
@@ -11350,6 +11628,7 @@ static int unload_module(void)
 	ast_manager_unregister("QueueReset");
 	ast_manager_unregister("QueueMemberRingInUse");
 	ast_manager_unregister("QueueChangePriorityCaller");
+	ast_manager_unregister("QueueWithdrawCaller");
 	ast_unregister_application(app_aqm);
 	ast_unregister_application(app_rqm);
 	ast_unregister_application(app_pqm);
@@ -11463,6 +11742,7 @@ static int load_module(void)
 	err |= ast_manager_register_xml("QueueReload", 0, manager_queue_reload);
 	err |= ast_manager_register_xml("QueueReset", 0, manager_queue_reset);
 	err |= ast_manager_register_xml("QueueChangePriorityCaller", 0,  manager_change_priority_caller_on_queue);
+	err |= ast_manager_register_xml("QueueWithdrawCaller", 0,  manager_request_withdraw_caller_from_queue);
 	err |= ast_custom_function_register(&queuevar_function);
 	err |= ast_custom_function_register(&queueexists_function);
 	err |= ast_custom_function_register(&queuemembercount_function);

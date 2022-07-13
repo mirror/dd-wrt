@@ -878,6 +878,8 @@ struct ast_sip_endpoint {
 		AST_STRING_FIELD(accountcode);
 		/*! If set, we'll push incoming MWI NOTIFYs to stasis using this mailbox */
 		AST_STRING_FIELD(incoming_mwi_mailbox);
+		/*! STIR/SHAKEN profile to use */
+		AST_STRING_FIELD(stir_shaken_profile);
 	);
 	/*! Configuration for extensions */
 	struct ast_sip_endpoint_extensions extensions;
@@ -952,6 +954,40 @@ struct ast_sip_endpoint {
 /*! URI parameter for symmetric transport */
 #define AST_SIP_X_AST_TXP "x-ast-txp"
 #define AST_SIP_X_AST_TXP_LEN 9
+
+/*! Common media types used throughout res_pjsip and pjproject */
+extern pjsip_media_type pjsip_media_type_application_json;
+extern pjsip_media_type pjsip_media_type_application_media_control_xml;
+extern pjsip_media_type pjsip_media_type_application_pidf_xml;
+extern pjsip_media_type pjsip_media_type_application_xpidf_xml;
+extern pjsip_media_type pjsip_media_type_application_cpim_xpidf_xml;
+extern pjsip_media_type pjsip_media_type_application_rlmi_xml;
+extern pjsip_media_type pjsip_media_type_application_simple_message_summary;
+extern pjsip_media_type pjsip_media_type_application_sdp;
+extern pjsip_media_type pjsip_media_type_multipart_alternative;
+extern pjsip_media_type pjsip_media_type_multipart_mixed;
+extern pjsip_media_type pjsip_media_type_multipart_related;
+extern pjsip_media_type pjsip_media_type_text_plain;
+
+/*!
+ * \brief Compare pjsip media types
+ *
+ * \param pjsip_media_type a
+ * \param pjsip_media_type b
+ * \retval 1 Media types are equal
+ * \retval 0 Media types are not equal
+ */
+int ast_sip_are_media_types_equal(pjsip_media_type *a, pjsip_media_type *b);
+
+/*!
+ * \brief Check if a media type is in a list of others
+ *
+ * \param a pjsip_media_type to search for
+ * \param ... one or more pointers to pjsip_media_types the last of which must be "SENTINEL"
+ * \retval 1 Media types are equal
+ * \retval 0 Media types are not equal
+ */
+int ast_sip_is_media_type_in(pjsip_media_type *a, ...) attribute_sentinel;
 
 /*!
  * \brief Initialize an auth vector with the configured values.
@@ -2481,9 +2517,9 @@ void ast_copy_pj_str(char *dest, const pj_str_t *src, size_t size);
  *
  * \note Caller is responsible for freeing the allocated memory.
  *
- * \param dest [out] The destination buffer
+ * \param[out] dest The destination buffer
  * \param src The pj_str_t to copy
- * \retval Number of characters copied or negative value on error
+ * \return Number of characters copied or negative value on error
  */
 int ast_copy_pj_str2(char **dest, const pj_str_t *src);
 
@@ -3028,6 +3064,13 @@ int ast_sip_get_mwi_tps_queue_low(void);
  * \retval non zero if disable.
  */
 unsigned int ast_sip_get_mwi_disable_initial_unsolicited(void);
+
+/*!
+ * \brief Retrieve the global setting 'allow_sending_180_after_183'.
+ *
+ * \retval non zero if disable.
+ */
+unsigned int ast_sip_get_allow_sending_180_after_183(void);
 
 /*!
  * \brief Retrieve the global setting 'use_callerid_contact'.

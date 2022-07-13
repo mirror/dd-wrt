@@ -47,6 +47,7 @@
 #include <math.h>
 
 #ifdef HAVE_OPENSSL
+#define OPENSSL_SUPPRESS_DEPRECATED 1
 #include <openssl/opensslconf.h>
 #include <openssl/opensslv.h>
 #if !defined(OPENSSL_NO_SRTP) && (OPENSSL_VERSION_NUMBER >= 0x10001000L)
@@ -3462,8 +3463,6 @@ static int rtp_learning_rtp_seq_update(struct rtp_learning_info *info, uint16_t 
  * \brief Start the strictrtp learning mode.
  *
  * \param rtp RTP session description
- *
- * \return Nothing
  */
 static void rtp_learning_start(struct ast_rtp *rtp)
 {
@@ -3480,8 +3479,6 @@ static void acl_change_stasis_cb(void *data, struct stasis_subscription *sub, st
 /*!
  * \internal
  * \brief Resets and ACL to empty state.
- *
- * \return Nothing
  */
 static void rtp_unload_acl(ast_rwlock_t *lock, struct ast_acl_list **acl)
 {
@@ -3847,7 +3844,7 @@ static int ice_create(struct ast_rtp_instance *instance, struct ast_sockaddr *ad
 
 static int rtp_allocate_transport(struct ast_rtp_instance *instance, struct ast_rtp *rtp)
 {
-	int x, startplace;
+	int x, startplace, i, maxloops;
 
 	rtp->strict_rtp_state = (strictrtp ? STRICT_RTP_CLOSED : STRICT_RTP_OPEN);
 
@@ -3861,11 +3858,14 @@ static int rtp_allocate_transport(struct ast_rtp_instance *instance, struct ast_
 	}
 
 	/* Now actually find a free RTP port to use */
-	x = (rtpend == rtpstart) ? rtpstart : (ast_random() % (rtpend - rtpstart)) + rtpstart;
+	x = (ast_random() % (rtpend - rtpstart)) + rtpstart;
 	x = x & ~1;
 	startplace = x;
 
-	for (;;) {
+	/* Protection against infinite loops in the case there is a potential case where the loop is not broken such as an odd
+	   start port sneaking in (even though this condition is checked at load.) */
+	maxloops = rtpend - rtpstart;
+	for (i = 0; i <= maxloops; i++) {
 		ast_sockaddr_set_port(&rtp->bind_address, x);
 		/* Try to bind, this will tell us whether the port is available or not */
 		if (!ast_bind(rtp->s, &rtp->bind_address)) {
@@ -4064,8 +4064,8 @@ static int ast_rtp_new(struct ast_rtp_instance *instance,
  * \param elem Element to compare against
  * \param value Value to compare with the vector element.
  *
- * \return 0 if element does not match.
- * \return Non-zero if element matches.
+ * \retval 0 if element does not match.
+ * \retval Non-zero if element matches.
  */
 #define SSRC_MAPPING_ELEM_CMP(elem, value) ((elem).instance == (value))
 
@@ -4359,6 +4359,9 @@ static int ast_rtp_dtmf_end_with_duration(struct ast_rtp_instance *instance, cha
 cleanup:
 	rtp->sending_digit = 0;
 	rtp->send_digit = 0;
+
+	/* Re-Learn expected seqno */
+	rtp->expectedseqno = -1;
 
 	return res;
 }
@@ -5758,7 +5761,7 @@ static struct ast_frame *process_cn_rfc3389(struct ast_rtp_instance *instance, u
 			ast_format_get_name(rtp->lastrxformat), len);
 	}
 
-	if (ast_test_flag(rtp, FLAG_3389_WARNING)) {
+	if (!ast_test_flag(rtp, FLAG_3389_WARNING)) {
 		struct ast_sockaddr remote_address = { {0,} };
 
 		ast_rtp_instance_get_remote_address(instance, &remote_address);
@@ -9706,6 +9709,13 @@ static int rtp_reload(int reload, int by_external_config)
 #endif
 
 	ast_config_destroy(cfg);
+
+	/* Choosing an odd start port casues issues (like a potential infinite loop) and as odd parts are not
+	   chosen anyway, we are going to round up and issue a warning */
+	if (rtpstart & 1) {
+		rtpstart++;
+		ast_log(LOG_WARNING, "Odd start value for RTP port in rtp.conf, rounding up to %d\n", rtpstart);
+	}
 
 	if (rtpstart >= rtpend) {
 		ast_log(LOG_WARNING, "Unreasonable values for RTP start/end port in rtp.conf\n");

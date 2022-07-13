@@ -318,8 +318,6 @@ struct ast_variable *_ast_variable_new(const char *name, const char *value, cons
  *
  * \param dst_var Destination variable node
  * \param src_var Source variable node
- *
- * \return Nothing
  */
 static void ast_variable_move(struct ast_variable *dst_var, struct ast_variable *src_var)
 {
@@ -588,13 +586,13 @@ struct ast_variable *ast_variables_reverse(struct ast_variable *var)
 	return var1;
 }
 
-void ast_variables_destroy(struct ast_variable *v)
+void ast_variables_destroy(struct ast_variable *var)
 {
 	struct ast_variable *vn;
 
-	while (v) {
-		vn = v;
-		v = v->next;
+	while (var) {
+		vn = var;
+		var = var->next;
 		ast_variable_destroy(vn);
 	}
 }
@@ -679,6 +677,82 @@ int ast_variable_list_replace(struct ast_variable **head, struct ast_variable *r
 	}
 
 	return -1;
+}
+
+int ast_variable_list_replace_variable(struct ast_variable **head, struct ast_variable *old,
+	struct ast_variable *new)
+{
+	struct ast_variable *v, **prev = head;
+
+	for (v = *head; v; prev = &v->next, v = v->next) {
+		if (v == old) {
+			new->next = v->next;
+			*prev = new;
+			ast_free(v);
+			return 0;
+		}
+	}
+
+	return -1;
+}
+
+struct ast_str *ast_variable_list_join(const struct ast_variable *head, const char *item_separator,
+	const char *name_value_separator, const char *quote_char, struct ast_str **str)
+{
+	struct ast_variable *var = (struct ast_variable *)head;
+	struct ast_str *local_str = NULL;
+
+	if (str == NULL || *str == NULL) {
+		local_str = ast_str_create(AST_MAX_USER_FIELD);
+		if (!local_str) {
+			return NULL;
+		}
+	} else {
+		local_str = *str;
+	}
+
+	for (; var; var = var->next) {
+		ast_str_append(&local_str, 0, "%s%s%s%s%s%s", var->name, name_value_separator, S_OR(quote_char, ""),
+			var->value, S_OR(quote_char, ""), var->next ? item_separator : "");
+	}
+
+	if (str != NULL) {
+		*str = local_str;
+	}
+	return local_str;
+}
+
+struct ast_variable *ast_variable_list_from_string(const char *input, const char *item_separator,
+	const char *name_value_separator)
+{
+	char item_sep;
+	char nv_sep;
+	struct ast_variable *new_list = NULL;
+	struct ast_variable *new_var = NULL;
+	char *item_string;
+	char *item;
+	char *item_name;
+	char *item_value;
+
+	if (ast_strlen_zero(input)) {
+		return NULL;
+	}
+
+	item_sep = ast_strlen_zero(item_separator) ? ',' : item_separator[0];
+	nv_sep = ast_strlen_zero(name_value_separator) ? '=' : name_value_separator[0];
+	item_string = ast_strip(ast_strdupa(input));
+
+	while ((item = ast_strsep(&item_string, item_sep, AST_STRSEP_ALL))) {
+		item_name = ast_strsep(&item, nv_sep, AST_STRSEP_ALL);
+		item_value = ast_strsep(&item, nv_sep, AST_STRSEP_ALL);
+		new_var = ast_variable_new(item_name, item_value, "");
+		if (!new_var) {
+			ast_variables_destroy(new_list);
+			return NULL;
+		}
+		ast_variable_list_append(&new_list, new_var);
+	}
+	return new_list;
 }
 
 const char *ast_config_option(struct ast_config *cfg, const char *cat, const char *var)
@@ -1286,14 +1360,14 @@ void ast_config_sort_categories(struct ast_config *config, int descending,
 
 }
 
-char *ast_category_browse(struct ast_config *config, const char *prev)
+char *ast_category_browse(struct ast_config *config, const char *prev_name)
 {
 	struct ast_category *cat;
 
-	if (!prev) {
+	if (!prev_name) {
 		/* First time browse. */
 		cat = config->root;
-	} else if (config->last_browse && (config->last_browse->name == prev)) {
+	} else if (config->last_browse && (config->last_browse->name == prev_name)) {
 		/* Simple last browse found. */
 		cat = config->last_browse->next;
 	} else {
@@ -1304,7 +1378,7 @@ char *ast_category_browse(struct ast_config *config, const char *prev)
 		 * previous category?)
 		 */
 		for (cat = config->root; cat; cat = cat->next) {
-			if (cat->name == prev) {
+			if (cat->name == prev_name) {
 				/* Found it. */
 				cat = cat->next;
 				break;
@@ -1316,7 +1390,7 @@ char *ast_category_browse(struct ast_config *config, const char *prev)
 			 * re-added?)
 			 */
 			for (cat = config->root; cat; cat = cat->next) {
-				if (!strcasecmp(cat->name, prev)) {
+				if (!strcasecmp(cat->name, prev_name)) {
 					/* Found it. */
 					cat = cat->next;
 					break;
@@ -1588,8 +1662,6 @@ enum config_cache_attribute_enum {
  *
  * \param cfmtime Cached file modtime.
  * \param statbuf Buffer filled in by stat().
- *
- * \return Nothing
  */
 static void cfmstat_save(struct cache_file_mtime *cfmtime, struct stat *statbuf)
 {
@@ -1633,8 +1705,6 @@ static int cfmstat_cmp(struct cache_file_mtime *cfmtime, struct stat *statbuf)
  * \param cfmtime Cached file modtime.
  *
  * \note cfmtime_head is assumed already locked.
- *
- * \return Nothing
  */
 static void config_cache_flush_includes(struct cache_file_mtime *cfmtime)
 {
@@ -1652,8 +1722,6 @@ static void config_cache_flush_includes(struct cache_file_mtime *cfmtime)
  * \param cfmtime Cached file modtime.
  *
  * \note cfmtime_head is assumed already locked.
- *
- * \return Nothing
  */
 static void config_cache_destroy_entry(struct cache_file_mtime *cfmtime)
 {
@@ -1667,8 +1735,6 @@ static void config_cache_destroy_entry(struct cache_file_mtime *cfmtime)
  *
  * \param filename Config filename.
  * \param who_asked Which module asked.
- *
- * \return Nothing
  */
 static void config_cache_remove(const char *filename, const char *who_asked)
 {
@@ -3873,8 +3939,7 @@ double_done:
 		/* default is either the supplied value or the result itself */
 		struct sockaddr_in *def = (flags & PARSE_DEFAULT) ?
 			va_arg(ap, struct sockaddr_in *) : sa;
-		struct hostent *hp;
-		struct ast_hostent ahp;
+		struct ast_sockaddr addr = { {0,} };
 
 		memset(&_sa_buf, '\0', sizeof(_sa_buf)); /* clear buffer */
 		/* duplicate the string to strip away the :port */
@@ -3900,12 +3965,13 @@ double_done:
 				error = 1;
 		}
 		/* Now deal with host part, even if we have errors before. */
-		hp = ast_gethostbyname(buf, &ahp);
-		if (hp)	/* resolved successfully */
-			memcpy(&sa->sin_addr, hp->h_addr, sizeof(sa->sin_addr));
-		else {
+		if (ast_sockaddr_resolve_first_af(&addr, buf, PARSE_PORT_FORBID, AF_INET)) {
 			error = 1;
 			sa->sin_addr = def->sin_addr;
+		} else {
+			struct sockaddr_in tmp;
+			ast_sockaddr_to_sin(&addr, &tmp);
+			sa->sin_addr = tmp.sin_addr;
 		}
 		ast_debug(3,
 			"extract inaddr from [%s] gives [%s:%d](%d)\n",

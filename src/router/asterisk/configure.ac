@@ -34,7 +34,7 @@ AC_USE_SYSTEM_EXTENSIONS	dnl note- does not work on FreeBSD
 
 # System default paths
 AC_SUBST([astsbindir],        ['${sbindir}'])dnl
-AC_SUBST([astcachedir],       ['/tmp'])dnl
+AC_SUBST([astcachedir],       ['${localstatedir}/cache/asterisk'])dnl
 AC_SUBST([astetcdir],         ['${sysconfdir}/asterisk'])dnl
 AC_SUBST([astheaderdir],      ['${includedir}/asterisk'])dnl
 AC_SUBST([astlibdir],         ['${libdir}'])dnl
@@ -99,7 +99,7 @@ case "${host_os}" in
      ;;
      solaris*)
      if test ${prefix} = 'NONE'; then
-        astcachedir=/tmp
+        astcachedir=/var/cache/asterisk
         astetcdir=/var/etc/asterisk
         astsbindir=/opt/asterisk/sbin
         astlibdir=/opt/asterisk/lib
@@ -254,9 +254,9 @@ AC_CHECK_TOOLS([STRIP], [strip gstrip], :)
 AC_CHECK_TOOLS([AR], [ar gar], :)
 
 GNU_LD=0
-#if test "x$with_gnu_ld" = "xyes" ; then
-#   GNU_LD=1
-#fi
+if test "x$with_gnu_ld" = "xyes" ; then
+   GNU_LD=1
+fi
 AC_SUBST(GNU_LD)
 
 AC_PATH_PROG([BISON], [bison], :)
@@ -285,6 +285,8 @@ AC_PATH_PROG([TAR], [tar], :)
 AC_PATH_PROG([PATCH], [patch], :)
 AC_PATH_PROG([SED], [sed], :)
 AC_PATH_PROG([NM], [nm], :)
+AC_PATH_PROG([REALPATH], [realpath], :)
+
 
 DOWNLOAD=":"
 DOWNLOAD_TO_STDOUT=
@@ -544,7 +546,6 @@ AST_EXT_LIB_SETUP([IKSEMEL], [Iksemel Jabber], [iksemel])
 AST_EXT_LIB_SETUP([IMAP_TK], [UW IMAP Toolkit], [imap])
 AST_EXT_LIB_SETUP([INOTIFY], [inotify support], [inotify])
 AST_EXT_LIB_SETUP([IODBC], [iODBC], [iodbc])
-AST_EXT_LIB_SETUP([ISDNNET], [ISDN4Linux], [isdnnet])
 AST_EXT_LIB_SETUP([JACK], [Jack Audio Connection Kit], [jack])
 AST_EXT_LIB_SETUP([JANSSON], [Jansson JSON library], [jansson])
 AST_EXT_LIB_SETUP([URIPARSER], [uriparser library], [uriparser])
@@ -558,9 +559,7 @@ AST_EXT_LIB_SETUP([LIBXSLT], [LibXSLT], [libxslt])
 AST_EXT_LIB_SETUP_OPTIONAL([LIBXSLT_CLEANUP], [LibXSLT Library Cleanup Function], [LIBXSLT], [libxslt])
 AST_EXT_LIB_SETUP([LUA], [Lua], [lua])
 AC_ARG_VAR([LUA_VERSIONS],[A space separated list of target lua versions to test.])
-AST_EXT_LIB_SETUP([MISDN], [mISDN user], [misdn])
 AST_EXT_LIB_SETUP([MYSQLCLIENT], [MySQL client], [mysqlclient])
-AST_EXT_LIB_SETUP([NBS], [Network Broadcast Sound], [nbs])
 AST_EXT_LIB_SETUP([NEON], [neon], [neon])
 AST_EXT_LIB_SETUP([NEON29], [neon29], [neon29])
 AST_EXT_LIB_SETUP([NETSNMP], [Net-SNMP], [netsnmp])
@@ -570,7 +569,6 @@ AST_EXT_LIB_SETUP([OPENR2], [MFR2], [openr2])
 AST_EXT_LIB_SETUP([OPUS], [Opus], [opus])
 AST_EXT_LIB_SETUP([OPUSFILE], [Opusfile], [opusfile])
 AST_EXT_LIB_SETUP([OSPTK], [OSP Toolkit], [osptk])
-AST_EXT_LIB_SETUP([OSS], [Open Sound System], [oss])
 AST_EXT_LIB_SETUP([PGSQL], [PostgreSQL], [postgres])
 AST_EXT_LIB_SETUP([BEANSTALK], [Beanstalk Job Queue], [beanstalk])
 
@@ -632,7 +630,6 @@ AST_EXT_LIB_SETUP([SPEEX], [Speex], [speex])
 AST_EXT_LIB_SETUP([SPEEX_PREPROCESS], [Speex preprocess routines], [speex])
 AST_EXT_LIB_SETUP([SPEEXDSP], [SpeexDSP], [speexdsp])
 AST_EXT_LIB_SETUP_DEPENDENT([SPEEX_PREPROCESS], [speex_preprocess_ctl], [], [speex])
-AST_EXT_LIB_SETUP([SQLITE], [SQLite], [sqlite])
 AST_EXT_LIB_SETUP([SQLITE3], [SQLite], [sqlite3])
 AST_EXT_LIB_SETUP([SRTP], [Secure RTP], [srtp])
 AST_EXT_LIB_SETUP_OPTIONAL([SRTP_256], [SRTP Library AES-256 (ICM)], [SRTP], [srtp])
@@ -641,14 +638,12 @@ AST_EXT_LIB_SETUP_OPTIONAL([SRTP_GCM], [SRTP Library AES-128 (GCM) and AES-256 (
 AST_EXT_LIB_SETUP_OPTIONAL([SRTP_SHUTDOWN], [SRTP Library Shutdown Function], [SRTP], [srtp])
 AST_EXT_LIB_SETUP_OPTIONAL([SRTP_GET_VERSION], [SRTP Library Version Function], [SRTP], [srtp])
 AST_EXT_LIB_SETUP_OPTIONAL([RT], [Realtime functions], [rt])
-AST_EXT_LIB_SETUP([SUPPSERV], [mISDN Supplemental Services], [suppserv])
 AST_EXT_LIB_SETUP([FREETDS], [FreeTDS], [tds])
 AST_EXT_LIB_SETUP([TIMERFD], [timerfd], [timerfd])
 AST_EXT_LIB_SETUP([TONEZONE], [tonezone], [tonezone])
 AST_EXT_LIB_SETUP([UNBOUND], [unbound], [unbound])
 AST_EXT_LIB_SETUP([UNIXODBC], [unixODBC], [unixodbc])
 AST_EXT_LIB_SETUP([VORBIS], [Vorbis], [vorbis])
-AST_EXT_LIB_SETUP([VPB], [Voicetronix API], [vpb])
 AST_EXT_LIB_SETUP([X11], [X11], [x11])
 AST_EXT_LIB_SETUP([ZLIB], [zlib compression], [z])
 
@@ -742,16 +737,17 @@ fi
 # See if clock_gettime is in librt
 AST_EXT_LIB_CHECK([RT], [rt], [clock_gettime], [])
 
-#AST_EXT_TOOL_CHECK([LIBXML2], [xml2-config], , ,
-#        [#include <libxml/tree.h>
-#        #include <libxml/parser.h>],
-#        [LIBXML_TEST_VERSION])
-#
-#if test "${PBX_LIBXML2}" != 1; then
-#	AC_MSG_NOTICE(*** The Asterisk menuselect tool requires the 'libxml2' development package.)
-#	AC_MSG_NOTICE(*** Please install the 'libxml2' development package.)
-#	exit 1
-#fi
+AST_PKG_CONFIG_CHECK([LIBXML2], [libxml-2.0])
+AST_EXT_TOOL_CHECK([LIBXML2], [xml2-config], , ,
+        [#include <libxml/tree.h>
+        #include <libxml/parser.h>],
+        [LIBXML_TEST_VERSION])
+
+if test "${PBX_LIBXML2}" != 1; then
+	AC_MSG_NOTICE(*** The Asterisk menuselect tool requires the 'libxml2' development package.)
+	AC_MSG_NOTICE(*** Please install the 'libxml2' development package.)
+	exit 1
+fi
 
 AST_EXT_LIB_CHECK([URIPARSER], [uriparser], [uriParseUriA], [uriparser/Uri.h])
 
@@ -768,10 +764,10 @@ AC_ARG_ENABLE([xmldoc],
 AC_SUBST([DISABLE_XMLDOC])
 if test "${DISABLE_XMLDOC}" != "yes"; then
         AC_DEFINE([AST_XML_DOCS], 1, [Define to enable XML documentation.])
-        AST_EXT_LIB_CHECK([LIBXSLT], [xslt], [xsltLoadStylesheetPI], [libxslt/xsltInternals.h], [${LIBXML2_LIB}], [${LIBXML2_INCLUDE}])
-        AST_EXT_LIB_CHECK([LIBXSLT_CLEANUP], [xslt], [xsltCleanupGlobals], [libxslt/xsltInternals.h], [${LIBXML2_LIB}], [${LIBXML2_INCLUDE}])
-
 fi
+
+AST_EXT_LIB_CHECK([LIBXSLT], [xslt], [xsltLoadStylesheetPI], [libxslt/xsltInternals.h], [${LIBXML2_LIB}], [${LIBXML2_INCLUDE}])
+AST_EXT_LIB_CHECK([LIBXSLT_CLEANUP], [xslt], [xsltCleanupGlobals], [libxslt/xsltInternals.h], [${LIBXML2_LIB}], [${LIBXML2_INCLUDE}])
 
 AC_ARG_ENABLE([permanent-dlopen],
 	[AS_HELP_STRING([--enable-permanent-dlopen],
@@ -950,28 +946,38 @@ AC_LINK_IFELSE(
 		AC_MSG_RESULT(no)
 )
 
-# some systems already have gethostbyname_r so we don't need to build ours in main/utils.c
-AC_SEARCH_LIBS(gethostbyname_r, [socket nsl])
-
-AC_MSG_CHECKING(for gethostbyname_r with 6 arguments)
-AC_LINK_IFELSE(
-        [AC_LANG_PROGRAM([#include <stdlib.h>
-                         #include <netdb.h>],
-                        [struct hostent *he = gethostbyname_r((const char *)NULL, (struct hostent *)NULL, (char *)NULL, (int)0, (struct hostent **)NULL, (int *)NULL);])],
-        AC_MSG_RESULT(yes)
-        AC_DEFINE([HAVE_GETHOSTBYNAME_R_6], 1, [Define to 1 if your system has gethostbyname_r with 6 arguments.]),
-        AC_MSG_RESULT(no)
+# NetBSD libc ships with an internal-only incompatible symbol gethostbyname_r
+AC_CHECK_DECLS([gethostbyname_r],
+        [have_gethostbyname_r_public_declaration=yes],
+        [have_gethostbyname_r_public_declaration=no],
+        [#include <stdlib.h>
+         #include <netdb.h>]
 )
 
-AC_MSG_CHECKING(for gethostbyname_r with 5 arguments)
-AC_LINK_IFELSE(
-        [AC_LANG_PROGRAM([#include <stdlib.h>
-	                 #include <netdb.h>],
-                        [struct hostent *he = gethostbyname_r((const char *)NULL, (struct hostent *)NULL, (char *)NULL, (int)0, (int *)NULL);])],
-        AC_MSG_RESULT(yes)
-        AC_DEFINE([HAVE_GETHOSTBYNAME_R_5], 1, [Define to 1 if your system has gethostbyname_r with 5 arguments.]),
-        AC_MSG_RESULT(no)
-)
+if test "x$have_gethostbyname_r_public_declaration" = "xyes"; then
+        # some systems already have gethostbyname_r so we don't need to build ours in main/utils.c
+        AC_SEARCH_LIBS(gethostbyname_r, [socket nsl])
+
+        AC_MSG_CHECKING(for gethostbyname_r with 6 arguments)
+        AC_LINK_IFELSE(
+                [AC_LANG_PROGRAM([#include <stdlib.h>
+                                 #include <netdb.h>],
+                                [struct hostent *he = gethostbyname_r((const char *)NULL, (struct hostent *)NULL, (char *)NULL, (int)0, (struct hostent **)NULL, (int *)NULL);])],
+                AC_MSG_RESULT(yes)
+                AC_DEFINE([HAVE_GETHOSTBYNAME_R_6], 1, [Define to 1 if your system has gethostbyname_r with 6 arguments.]),
+                AC_MSG_RESULT(no)
+        )
+
+        AC_MSG_CHECKING(for gethostbyname_r with 5 arguments)
+        AC_LINK_IFELSE(
+                [AC_LANG_PROGRAM([#include <stdlib.h>
+	                         #include <netdb.h>],
+                                [struct hostent *he = gethostbyname_r((const char *)NULL, (struct hostent *)NULL, (char *)NULL, (int)0, (int *)NULL);])],
+                AC_MSG_RESULT(yes)
+                AC_DEFINE([HAVE_GETHOSTBYNAME_R_5], 1, [Define to 1 if your system has gethostbyname_r with 5 arguments.]),
+                AC_MSG_RESULT(no)
+        )
+fi
 
 AC_CHECK_HEADER([byteswap.h], [AC_DEFINE_UNQUOTED([HAVE_BYTESWAP_H], 1, [Define to 1 if byteswap.h macros are available.])])
 
@@ -1077,20 +1083,17 @@ AC_LINK_IFELSE(
 )
 
 # Some platforms define sem_init(), but only support sem_open(). joyous.
-#AC_MSG_CHECKING(for working unnamed semaphores)
-#AC_LINK_IFELSE(
-#	[AC_LANG_PROGRAM(
-#	  [#include <semaphore.h>],
-#	  [#if defined(__UCLIBC__)
-#	   i_dont_exist sem;
-#	   #else
-#	   sem_t sem;
-#	   #endif
-#	   return sem_init(&sem, 0, 0);])],
-#	AC_MSG_RESULT(yes)
-#	AC_DEFINE([HAS_WORKING_SEMAPHORE], 1, [Define to 1 if anonymous semaphores work.]),
-#	AC_MSG_RESULT(no)
-#)
+AC_MSG_CHECKING(for working unnamed semaphores)
+AC_RUN_IFELSE(
+	[AC_LANG_PROGRAM([#include <semaphore.h>],
+		[sem_t sem; return sem_init(&sem, 0, 0);])],
+	AC_MSG_RESULT(yes)
+	AC_DEFINE([HAS_WORKING_SEMAPHORE], 1, [Define to 1 if anonymous semaphores work.]),
+	AC_MSG_RESULT(no),
+	AC_MSG_RESULT(cross-compile)
+	AC_MSG_NOTICE([WARNING: result yes guessed because of cross compilation])
+	AC_DEFINE([HAS_WORKING_SEMAPHORE], 1, [Define to 1 if anonymous semaphores work.])
+)
 
 LIBS="$save_LIBS"
 CFLAGS="$save_CFLAGS"
@@ -1251,7 +1254,7 @@ if test "${ac_cv_have_variable_fdset}x" = "0x"; then
 fi
 
 AC_MSG_CHECKING([if we have usable eventfd support])
-AC_LINK_IFELSE(
+AC_RUN_IFELSE(
   [AC_LANG_PROGRAM([#include <sys/eventfd.h>],
       [return eventfd(0, EFD_NONBLOCK | EFD_SEMAPHORE) == -1;])],
   AC_MSG_RESULT(yes)
@@ -1472,12 +1475,9 @@ AC_LINK_IFELSE(
 			#include <arpa/nameser.h>
 			#endif
 			#include <resolv.h>],
-			[
-				int foo;
-				foo = res_ninit(NULL);
-				foo = res_nsearch(NULL, NULL, 0, 0, NULL, 0);
-			])],
+			[int foo = res_ninit(NULL);])],
 	AC_MSG_RESULT(yes)
+	AC_DEFINE([HAVE_RES_NINIT], 1, [Define to 1 if your system has the re-entrant resolver functions.])
 	AC_SEARCH_LIBS(res_9_ndestroy, resolv)
 	AC_MSG_CHECKING(for res_ndestroy)
 	AC_LINK_IFELSE(
@@ -2318,18 +2318,6 @@ AC_CHECK_FUNCS([kevent64])
 
 AST_EXT_LIB_CHECK([LDAP], [ldap], [ldap_initialize], [ldap.h])
 
-AST_EXT_LIB_CHECK([MISDN], [mISDN], [mISDN_open], [mISDNuser/mISDNlib.h])
-
-if test "${PBX_MISDN}" = 1; then
-   AST_EXT_LIB_CHECK([ISDNNET], [isdnnet], [init_manager], [mISDNuser/isdn_net.h], [-lmISDN -lpthread])
-   AST_EXT_LIB_CHECK([SUPPSERV], [suppserv], [encodeFac], [mISDNuser/suppserv.h])
-   AST_C_DEFINE_CHECK([MISDN_FAC_RESULT], [Fac_RESULT], [mISDNuser/suppserv.h])
-   AST_C_DEFINE_CHECK([MISDN_FAC_ERROR], [Fac_ERROR], [mISDNuser/suppserv.h])
-   AC_CHECK_HEADER([linux/mISDNdsp.h], [AC_DEFINE_UNQUOTED([MISDN_1_2], 1, [Build chan_misdn for mISDN 1.2 or later.])])
-   AC_CHECK_MEMBER([Q931_info_t.redirect_dn], [], [PBX_MISDN=0], [#include <mISDNuser/mISDNlib.h>])
-fi
-
-
 AST_EXT_TOOL_CHECK([MYSQLCLIENT], [mysql_config])
 
 if test "${PBX_MYSQLCLIENT}" = 1; then
@@ -2350,8 +2338,6 @@ if test "${PBX_MYSQLCLIENT}" = 1; then
            AC_MSG_RESULT(no)
    )
 fi
-
-AST_EXT_LIB_CHECK([NBS], [nbs], [nbs_connect], [nbs.h])
 
 AST_EXT_TOOL_CHECK([NEON], [neon-config])
 
@@ -2394,11 +2380,6 @@ AST_EXT_LIB_CHECK([BKTR], [c], [backtrace], [execinfo.h])
 AST_EXT_LIB_CHECK([BLUETOOTH], [bluetooth], [ba2str], [bluetooth/bluetooth.h])
 
 AST_EXT_LIB_CHECK([BEANSTALK], [beanstalk], [bs_version], [beanstalk.h])
-
-# possible places for oss definitions
-AST_EXT_LIB_CHECK([OSS], [ossaudio], [], [linux/soundcard.h])
-AST_EXT_LIB_CHECK([OSS], [ossaudio], [], [sys/soundcard.h])
-AST_EXT_LIB_CHECK([OSS], [ossaudio], [oss_ioctl_mixer], [soundcard.h])
 
 PG_CONFIG=":"
 if test "${USE_PGSQL}" != "no"; then
@@ -2660,8 +2641,6 @@ fi
 
 AC_SUBST(PBX_SPEEX_PREPROCESS)
 
-AST_EXT_LIB_CHECK([SQLITE], [sqlite], [sqlite_exec], [sqlite.h])
-
 AST_EXT_LIB_CHECK([SQLITE3], [sqlite3], [sqlite3_open], [sqlite3.h], [${PTHREAD_LIBS}], [${PTHREAD_CFLAGS}])
 
 if test "${PBX_SQLITE3}" != 1; then
@@ -2782,51 +2761,6 @@ AST_EXT_LIB_CHECK([TONEZONE], [tonezone], [tone_zone_find], [dahdi/tonezone.h], 
 AST_EXT_LIB_CHECK([VORBIS], [vorbis], [vorbis_info_init], [vorbis/codec.h], [-lm -lvorbisenc -lvorbisfile])
 AST_C_DECLARE_CHECK([VORBIS_OPEN_CALLBACKS], [OV_CALLBACKS_NOCLOSE], [vorbis/vorbisfile.h])
 
-AC_LANG_PUSH(C++)
-
-if test "${USE_VPB}" != "no"; then
-   AC_MSG_CHECKING(for vpb_open in -lvpb)
-   saved_libs="${LIBS}"
-   saved_cppflags="${CPPFLAGS}"
-   if test "x${VPB_DIR}" != "x"; then
-      if test -d ${VPB_DIR}/lib; then
-         vpblibdir=${VPB_DIR}/lib
-      else
-         vpblibdir=${VPB_DIR}
-      fi
-      LIBS="${LIBS} -L${vpblibdir}"
-      CPPFLAGS="${CPPFLAGS} -I${VPB_DIR}/include"
-   fi
-   LIBS="${PTHREAD_LIBS} ${LIBS} -lvpb"
-   CPPFLAGS="${CPPFLAGS} ${PTHREAD_CFLAGS}"
-   AC_LINK_IFELSE(
-	[
-	AC_LANG_PROGRAM(
-	[#include <vpbapi.h>],
-	[int q = vpb_open(0,0);])
-	],
-	[	AC_MSG_RESULT(yes)
-		ac_cv_lib_vpb_vpb_open="yes"
-	],
-	[	AC_MSG_RESULT(no)
-		ac_cv_lib_vpb_vpb_open="no"
-	]
-	)
-   LIBS="${saved_libs}"
-   CPPFLAGS="${saved_cppflags}"
-   if test "${ac_cv_lib_vpb_vpb_open}" = "yes"; then
-	VPB_LIB="-lvpb"
-	if test "${VPB_DIR}" != ""; then
-	   VPB_LIB="-L${vpblibdir}  ${VPB_LIB}"
-	   VPB_INCLUDE="-I${VPB_DIR}/include"
-	fi
-	PBX_VPB=1
-	AC_DEFINE([HAVE_VPB], 1, [Define if your system has the VoiceTronix API libraries.])
-   fi
-fi
-
-AC_LANG_POP
-
 AST_EXT_LIB_CHECK([ZLIB], [z], [compress], [zlib.h])
 
 if test "x${PBX_UNIXODBC}" = "x1" -o "x${PBX_IODBC}" = "x1"; then
@@ -2845,14 +2779,6 @@ fi
 
 AC_CHECK_HEADER([linux/compiler.h],
                 [AC_DEFINE_UNQUOTED([HAVE_LINUX_COMPILER_H], 1, [Define to 1 if your system has linux/compiler.h.])])
-
-AC_CHECK_HEADER([linux/ixjuser.h], [PBX_IXJUSER=1], [PBX_IXJUSER=0], [
-				   #include <linux/version.h>
-				   #ifdef HAVE_LINUX_COMPILER_H
-				   #include <linux/compiler.h>
-				   #endif
-				   ])
-AC_SUBST(PBX_IXJUSER)
 
 # Used in res/res_pktccops
 AST_C_DEFINE_CHECK([MSG_NOSIGNAL], [MSG_NOSIGNAL], [sys/socket.h])

@@ -1328,3 +1328,21 @@ ALTER TABLE ps_endpoints ADD COLUMN t38_bind_udptl_to_media_address ENUM('0','1'
 
 UPDATE alembic_version SET version_num='a06d8f8462d9' WHERE alembic_version.version_num = 'f56d79a9f337';
 
+-- Running upgrade a06d8f8462d9 -> 8f72185e437f
+
+ALTER TABLE ps_resource_list ADD COLUMN resource_display_name ENUM('0','1','off','on','false','true','no','yes');
+
+UPDATE alembic_version SET version_num='8f72185e437f' WHERE alembic_version.version_num = 'a06d8f8462d9';
+
+-- Running upgrade 8f72185e437f -> 0bee61aa9425
+
+ALTER TABLE ps_globals ADD COLUMN allow_sending_180_after_183 ENUM('0','1','off','on','false','true','no','yes');
+
+UPDATE alembic_version SET version_num='0bee61aa9425' WHERE alembic_version.version_num = '8f72185e437f';
+
+-- Running upgrade 0bee61aa9425 -> 18e0805d367f
+
+ALTER TABLE ps_registrations ADD COLUMN max_random_initial_delay INTEGER;
+
+UPDATE alembic_version SET version_num='18e0805d367f' WHERE alembic_version.version_num = '0bee61aa9425';
+

@@ -101,6 +101,11 @@ export TAR
 export PATCH
 export SED
 export NM
+export FIND
+export BASENAME
+export DIRNAME
+export XMLLINT
+export XMLSTARLET
 
 # makeopts is required unless the goal is just {dist{-}}clean
 ifeq ($(MAKECMDGOALS),clean)
@@ -442,7 +447,7 @@ distclean: $(SUBDIRS_DIST_CLEAN) _clean
 	rm -f include/asterisk/autoconfig.h
 	rm -f include/asterisk/buildopts.h
 	rm -rf doc/api
-	rm -f doc/asterisk-ng-doxygen
+	rm -f doc/Doxyfile
 	rm -f build_tools/menuselect-deps
 
 datafiles: _all $(CORE_XMLDOC)
@@ -475,60 +480,24 @@ endif
 		$(INSTALL) -m 644 $$x "$(DESTDIR)$(ASTDATADIR)/rest-api" ; \
 	done
 
-ifeq ($(GREP),)
-else ifeq ($(GREP),:)
-else
-  XML_core_en_US = $(foreach dir,$(MOD_SUBDIRS),$(shell $(GREP) -l "language=\"en_US\"" $(dir)/*.c $(dir)/*.cc 2>/dev/null))
-endif
-
+DOC_MOD_SUBDIRS := $(filter-out third-party,$(MOD_SUBDIRS))
+XML_core_en_US := $(shell build_tools/make_xml_documentation --command=print_dependencies --source-tree=. --mod-subdirs="$(DOC_MOD_SUBDIRS)")
+# core-en_US.xml is the normal documentation created with asterisk builds.
 doc/core-en_US.xml: makeopts .lastclean $(XML_core_en_US)
-	@printf "Building Documentation For: "
-	@echo "<?xml version=\"1.0\" encoding=\"UTF-8\"?>" > $@
-	@echo "<!DOCTYPE docs SYSTEM \"appdocsxml.dtd\">" >> $@
-	@echo "<?xml-stylesheet type=\"text/xsl\" href=\"appdocsxml.xslt\"?>" >> $@
-	@echo "<docs xmlns:xi=\"http://www.w3.org/2001/XInclude\">" >> $@
-	@for x in $(MOD_SUBDIRS); do \
-		printf "$$x " ; \
-		for i in `find $$x -name '*.c' | LC_ALL=C sort`; do \
-			MODULEINFO=$$($(AWK) -f build_tools/get_moduleinfo $$i) ; \
-			if [ -n "$$MODULEINFO" ] ; \
-			then \
-				echo "<module language=\"en_US\" name=\"`$(BASENAME) $$i .c`\">" >> $@ ; \
-				echo "$$MODULEINFO" >> $@ ; \
-				echo "</module>" >> $@ ; \
-			fi ; \
-			$(AWK) -f build_tools/get_documentation $$i >> $@ ; \
-		done ; \
-	done
-	@echo
-	@echo "</docs>" >> $@
+	@build_tools/make_xml_documentation --command=create_xml --source-tree=. --mod-subdirs="$(DOC_MOD_SUBDIRS)" \
+		--with-moduleinfo --output-file=$@
 
-ifeq ($(GREP),)
-else ifeq ($(GREP),:)
-else
-  XML_full_en_US = $(foreach dir,$(MOD_SUBDIRS),$(shell $(GREP) -l "language=\"en_US\"" $(dir)/*.c $(dir)/*.cc 2>/dev/null))
-endif
-
-doc/full-en_US.xml: makeopts .lastclean $(XML_full_en_US)
+# The full-en_US.xml target is only called by the wiki documentation generation process
+# and does special post-processing in preparation for uploading to the wiki.
+# It creates full-en_US.xml but then re-creates core-en_US.xml as well.
+doc/full-en_US.xml: makeopts .lastclean $(XML_core_en_US)
 ifeq ($(PYTHON),:)
 	@echo "--------------------------------------------------------------------------"
 	@echo "---        Please install python to build full documentation           ---"
 	@echo "--------------------------------------------------------------------------"
 else
-	@printf "Building Documentation For: "
-	@echo "<?xml version=\"1.0\" encoding=\"UTF-8\"?>" > $@
-	@echo "<!DOCTYPE docs SYSTEM \"appdocsxml.dtd\">" >> $@
-	@echo "<?xml-stylesheet type=\"text/xsl\" href=\"appdocsxml.xslt\"?>" >> $@
-	@echo "<docs xmlns:xi=\"http://www.w3.org/2001/XInclude\">" >> $@
-	@for x in $(filter-out third-party,$(MOD_SUBDIRS)); do \
-		printf "$$x " ; \
-		for i in `find $$x -name '*.c'`; do \
-			$(PYTHON) build_tools/get_documentation.py < $$i >> $@ ; \
-		done ; \
-	done
-	@echo
-	@echo "</docs>" >> $@
-	@$(PYTHON) build_tools/post_process_documentation.py -i $@ -o "doc/core-en_US.xml"
+	@build_tools/make_xml_documentation --command=create_xml --source-tree=. --mod-subdirs="$(DOC_MOD_SUBDIRS)" \
+		--for-wiki --output-file=$@ --core-output-file=./doc/core-en_US.xml
 endif
 
 validate-docs: doc/core-en_US.xml
@@ -891,29 +860,30 @@ webvmail:
 	@echo " +-------------------------------------------+"
 
 progdocs:
-# Note, Makefile conditionals must not be tabbed out. Wasted hours with that.
-	@cp doc/asterisk-ng-doxygen.in doc/asterisk-ng-doxygen
 ifeq ($(DOXYGEN),:)
 	@echo "Doxygen is not installed.  Please install and re-run the configuration script."
 else
+	@cp doc/Doxyfile.in doc/Doxyfile
 ifeq ($(DOT),:)
 	@echo "DOT is not installed. Doxygen will not produce any diagrams. Please install and re-run the configuration script."
 else
-	# Enable DOT
-	@echo "HAVE_DOT = YES" >> doc/asterisk-ng-doxygen
+	@echo "HAVE_DOT = YES" >> doc/Doxyfile
 endif
-	# Set Doxygen PROJECT_NUMBER variable
-ifneq ($(ASTERISKVERSION),UNKNOWN__and_probably_unsupported)
-	@echo "PROJECT_NUMBER = $(ASTERISKVERSION)" >> doc/asterisk-ng-doxygen
+ifneq ($(NOISY_BUILD),yes)
+	@echo "EXTRACT_ALL = YES" >> doc/Doxyfile
+endif
+ifeq ($(AST_DEVMODE),yes)
+	@echo "INTERNAL_DOCS = YES" >> doc/Doxyfile
+	@echo "WARN_NO_PARAMDOC = YES" >> doc/Doxyfile
+endif
+ifeq ($(ASTERISKVERSION),UNKNOWN__and_probably_unsupported)
+	@echo "Asterisk Version is unknown, not configuring Doxygen PROJECT_NUMBER."
 else
-	echo "Asterisk Version is unknown, not configuring Doxygen PROJECT_NUMBER."
+	@echo "PROJECT_NUMBER = $(ASTERISKVERSION)" >> doc/Doxyfile
 endif
-	# Validate and auto-update local copy
-	@doxygen -u doc/asterisk-ng-doxygen
-	# Run Doxygen
-	@doxygen doc/asterisk-ng-doxygen
-	# Remove configuration backup file
-	@rm -f doc/asterisk-ng-doxygen.bak
+	@echo "Generating C-API documentation. This will take a while."
+	@doxygen doc/Doxyfile
+	@echo "Generation complete. Any warnings are in ./doxygen.log."
 endif
 
 install-logrotate:
@@ -1050,6 +1020,7 @@ uninstall-all: _uninstall uninstall-headers
 	rm -rf "$(DESTDIR)$(ASTSPOOLDIR)"
 	rm -rf "$(DESTDIR)$(ASTETCDIR)"
 	rm -rf "$(DESTDIR)$(ASTLOGDIR)"
+	rm -rf "$(DESTDIR)$(ASTCACHEDIR)"
 
 menuconfig: menuselect
 
@@ -1153,6 +1124,7 @@ check-alembic: makeopts
 .PHONY: uninstall-headers
 .PHONY: badshell
 .PHONY: installdirs
+.PHONY: progdocs
 .PHONY: validate-docs
 .PHONY: _clean
 .PHONY: ari-stubs

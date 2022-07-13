@@ -199,6 +199,26 @@ FILE *ast_file_mkftemp(char *template, mode_t mode)
 	return p;
 }
 
+int ast_file_fdtemp(const char *path, char **filename, const char *template_name)
+{
+	int fd;
+
+	if (ast_asprintf(filename, "%s/%s", path, template_name) < 0) {
+		ast_log(LOG_ERROR, "Failed to set up temporary file path\n");
+		return -1;
+	}
+
+	ast_mkdir(path, 0644);
+
+	if ((fd = mkstemp(*filename)) < 0) {
+		ast_log(LOG_NOTICE, "Failed to create temporary file\n");
+		ast_free(*filename);
+		return -1;
+	}
+
+	return fd;
+}
+
 int ast_stopstream(struct ast_channel *tmp)
 {
 	ast_channel_lock(tmp);
@@ -665,8 +685,8 @@ static int is_remote_path(const char *filename)
 /*!
  * \brief test if a file exists for a given format.
  * \note result_cap is OPTIONAL
- * \retval 1, true and result_cap represents format capabilities file exists in.
- * \retval 0, false
+ * \retval 1 true and result_cap represents format capabilities file exists in.
+ * \retval 0 false
  */
 static int fileexists_test(const char *filename, const char *fmt, const char *lang,
 			   char *buf, int buflen, struct ast_format_cap *result_cap)
@@ -715,8 +735,8 @@ static int fileexists_test(const char *filename, const char *fmt, const char *la
  * \param result_cap OPTIONAL format capabilities result structure
  *        returns what formats the file was found in.
  *
- * \retval 1, true. file exists and result format is set
- * \retval 0, false. file does not exist.
+ * \retval 1 true. file exists and result format is set
+ * \retval 0 false. file does not exist.
  */
 static int fileexists_core(const char *filename, const char *fmt, const char *preflang,
 			   char *buf, int buflen, struct ast_format_cap *result_cap)
@@ -1077,6 +1097,12 @@ int ast_stream_fastforward(struct ast_filestream *fs, off_t ms)
 
 int ast_stream_rewind(struct ast_filestream *fs, off_t ms)
 {
+	off_t offset = ast_tellstream(fs);
+	if (ms * DEFAULT_SAMPLES_PER_MS > offset) {
+		/* Don't even bother asking the file format to seek to a negative offset... */
+		ast_debug(1, "Restarting, rather than seeking to negative offset %ld\n", (long) (offset - (ms * DEFAULT_SAMPLES_PER_MS)));
+		return ast_seekstream(fs, 0, SEEK_SET);
+	}
 	return ast_seekstream(fs, -ms * DEFAULT_SAMPLES_PER_MS, SEEK_CUR);
 }
 

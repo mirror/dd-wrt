@@ -97,6 +97,11 @@ static int logger_queue_limit = 1000;
 static int logger_messages_discarded;
 static unsigned int high_water_alert;
 
+/* On some platforms, like those with MUSL as the runtime, BUFSIZ is
+ * unreasonably small (1024). Use a larger value in those environments.
+ */
+#define LOGMSG_SIZE		MAX(BUFSIZ, 8192)
+
 static enum rotatestrategy {
 	NONE = 0,                /* Do not rotate log files at all, instead rely on external mechanisms */
 	SEQUENTIAL = 1 << 0,     /* Original method - create a new file, in order */
@@ -713,7 +718,7 @@ void ast_init_logger_for_socket_console(void)
  * \brief Checks if level exists in array of level names
  * \param levels Array of level names
  * \param level Name to search for
- * \len Size of levels
+ * \param len Size of levels
  *
  * \retval 1 Found
  * \retval 0 Not Found
@@ -1222,14 +1227,16 @@ static int reload_logger(int rotate, const char *altconf)
 		if (f->disabled) {
 			f->disabled = 0;	/* Re-enable logging at reload */
 			/*** DOCUMENTATION
-				<managerEventInstance>
-					<synopsis>Raised when a logging channel is re-enabled after a reload operation.</synopsis>
-					<syntax>
-						<parameter name="Channel">
-							<para>The name of the logging channel.</para>
-						</parameter>
-					</syntax>
-				</managerEventInstance>
+				<managerEvent language="en_US" name="LogChannel">
+					<managerEventInstance class="EVENT_FLAG_SYSTEM">
+						<synopsis>Raised when a logging channel is re-enabled after a reload operation.</synopsis>
+						<syntax>
+							<parameter name="Channel">
+								<para>The name of the logging channel.</para>
+							</parameter>
+						</syntax>
+					</managerEventInstance>
+				</managerEvent>
 			***/
 			manager_event(EVENT_FLAG_SYSTEM, "LogChannel", "Channel: %s\r\nEnabled: Yes\r\n", f->filename);
 		}
@@ -1663,7 +1670,7 @@ static struct sigaction handle_SIGXFSZ = {
 static void logger_print_normal(struct logmsg *logmsg)
 {
 	struct logchannel *chan = NULL;
-	char buf[BUFSIZ];
+	char buf[LOGMSG_SIZE];
 	int level = 0;
 
 	AST_RWLIST_RDLOCK(&logchannels);
@@ -1696,13 +1703,13 @@ static void logger_print_normal(struct logmsg *logmsg)
 
 					/* Don't use LOG_MAKEPRI because it's broken in glibc<2.17 */
 					syslog_level = chan->facility | syslog_level; /* LOG_MAKEPRI(chan->facility, syslog_level); */
-					if (!chan->formatter.format_log(chan, logmsg, buf, BUFSIZ)) {
+					if (!chan->formatter.format_log(chan, logmsg, buf, sizeof(buf))) {
 						syslog(syslog_level, "%s", buf);
 					}
 				}
 				break;
 			case LOGTYPE_CONSOLE:
-				if (!chan->formatter.format_log(chan, logmsg, buf, BUFSIZ)) {
+				if (!chan->formatter.format_log(chan, logmsg, buf, sizeof(buf))) {
 					ast_console_puts_mutable_full(buf, logmsg->level, logmsg->sublevel);
 				}
 				break;
@@ -1714,7 +1721,7 @@ static void logger_print_normal(struct logmsg *logmsg)
 						continue;
 					}
 
-					if (chan->formatter.format_log(chan, logmsg, buf, BUFSIZ)) {
+					if (chan->formatter.format_log(chan, logmsg, buf, sizeof(buf))) {
 						continue;
 					}
 
@@ -1778,7 +1785,7 @@ static struct logmsg * __attribute__((format(printf, 7, 0))) format_log_message_
 	}
 
 	/* Build string */
-	res = ast_str_set_va(&buf, BUFSIZ, fmt, ap);
+	res = ast_str_set_va(&buf, LOGMSG_SIZE, fmt, ap);
 
 	/* If the build failed, then abort and free this structure */
 	if (res == AST_DYNSTR_BUILD_FAILED) {
@@ -1894,8 +1901,6 @@ static void *logger_thread(void *data)
  * \brief Initialize the logger queue.
  *
  * \note Assumes logchannels is write locked on entry.
- *
- * \return Nothing
  */
 static void logger_queue_init(void)
 {
@@ -1931,8 +1936,6 @@ int ast_is_logger_initialized(void)
  *
  * \note Called when the system is fully booted after startup
  * so preloaded realtime modules can get up.
- *
- * \return Nothing
  */
 void logger_queue_start(void)
 {
@@ -2352,8 +2355,6 @@ void ast_verb_update(void)
  * \brief Unregister a console verbose level.
  *
  * \param console Which console to unregister.
- *
- * \return Nothing
  */
 static void verb_console_unregister(struct verb_console *console)
 {
