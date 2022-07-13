@@ -171,9 +171,6 @@ check_expr2: $(ASTTOPDIR)/main/ast_expr2f.c $(ASTTOPDIR)/main/ast_expr2.c $(ASTT
 	$(CC) -g -o check_expr2 ast_expr2fz.o ast_expr2z.o astmm.o -lm $(_ASTLDFLAGS)
 	$(ECHO_PREFIX) echo "   [RM] ast_expr2fz.o ast_expr2z.o"
 	rm ast_expr2z.o ast_expr2fz.o
-ifneq ($(CROSS_COMPILING),1)
-	./check_expr2 expr2.testinput
-endif
 
 smsq: smsq.o strcompat.o
 smsq: LIBS+=$(POPT_LIB)

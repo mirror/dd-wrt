@@ -254,9 +254,9 @@ AC_CHECK_TOOLS([STRIP], [strip gstrip], :)
 AC_CHECK_TOOLS([AR], [ar gar], :)
 
 GNU_LD=0
-if test "x$with_gnu_ld" = "xyes" ; then
-   GNU_LD=1
-fi
+#if test "x$with_gnu_ld" = "xyes" ; then
+#   GNU_LD=1
+#fi
 AC_SUBST(GNU_LD)
 
 AC_PATH_PROG([BISON], [bison], :)
@@ -737,17 +737,17 @@ fi
 # See if clock_gettime is in librt
 AST_EXT_LIB_CHECK([RT], [rt], [clock_gettime], [])
 
-AST_PKG_CONFIG_CHECK([LIBXML2], [libxml-2.0])
-AST_EXT_TOOL_CHECK([LIBXML2], [xml2-config], , ,
-        [#include <libxml/tree.h>
-        #include <libxml/parser.h>],
-        [LIBXML_TEST_VERSION])
-
-if test "${PBX_LIBXML2}" != 1; then
-	AC_MSG_NOTICE(*** The Asterisk menuselect tool requires the 'libxml2' development package.)
-	AC_MSG_NOTICE(*** Please install the 'libxml2' development package.)
-	exit 1
-fi
+#AST_PKG_CONFIG_CHECK([LIBXML2], [libxml-2.0])
+#AST_EXT_TOOL_CHECK([LIBXML2], [xml2-config], , ,
+#        [#include <libxml/tree.h>
+#        #include <libxml/parser.h>],
+#        [LIBXML_TEST_VERSION])
+#
+#if test "${PBX_LIBXML2}" != 1; then
+#	AC_MSG_NOTICE(*** The Asterisk menuselect tool requires the 'libxml2' development package.)
+#	AC_MSG_NOTICE(*** Please install the 'libxml2' development package.)
+#	exit 1
+#fi
 
 AST_EXT_LIB_CHECK([URIPARSER], [uriparser], [uriParseUriA], [uriparser/Uri.h])
 
@@ -1083,17 +1083,20 @@ AC_LINK_IFELSE(
 )
 
 # Some platforms define sem_init(), but only support sem_open(). joyous.
-AC_MSG_CHECKING(for working unnamed semaphores)
-AC_RUN_IFELSE(
-	[AC_LANG_PROGRAM([#include <semaphore.h>],
-		[sem_t sem; return sem_init(&sem, 0, 0);])],
-	AC_MSG_RESULT(yes)
-	AC_DEFINE([HAS_WORKING_SEMAPHORE], 1, [Define to 1 if anonymous semaphores work.]),
-	AC_MSG_RESULT(no),
-	AC_MSG_RESULT(cross-compile)
-	AC_MSG_NOTICE([WARNING: result yes guessed because of cross compilation])
-	AC_DEFINE([HAS_WORKING_SEMAPHORE], 1, [Define to 1 if anonymous semaphores work.])
-)
+#AC_MSG_CHECKING(for working unnamed semaphores)
+#AC_LINK_IFELSE(
+#	[AC_LANG_PROGRAM(
+#	  [#include <semaphore.h>],
+#	  [#if defined(__UCLIBC__)
+#	   i_dont_exist sem;
+#	   #else
+#	   sem_t sem;
+#	   #endif
+#	   return sem_init(&sem, 0, 0);])],
+#	AC_MSG_RESULT(yes)
+#	AC_DEFINE([HAS_WORKING_SEMAPHORE], 1, [Define to 1 if anonymous semaphores work.]),
+#	AC_MSG_RESULT(no)
+#)
 
 LIBS="$save_LIBS"
 CFLAGS="$save_CFLAGS"
@@ -1254,7 +1257,7 @@ if test "${ac_cv_have_variable_fdset}x" = "0x"; then
 fi
 
 AC_MSG_CHECKING([if we have usable eventfd support])
-AC_RUN_IFELSE(
+AC_LINK_IFELSE(
   [AC_LANG_PROGRAM([#include <sys/eventfd.h>],
       [return eventfd(0, EFD_NONBLOCK | EFD_SEMAPHORE) == -1;])],
   AC_MSG_RESULT(yes)
@@ -1475,9 +1478,12 @@ AC_LINK_IFELSE(
 			#include <arpa/nameser.h>
 			#endif
 			#include <resolv.h>],
-			[int foo = res_ninit(NULL);])],
+			[
+				int foo;
+				foo = res_ninit(NULL);
+				foo = res_nsearch(NULL, NULL, 0, 0, NULL, 0);
+			])],
 	AC_MSG_RESULT(yes)
-	AC_DEFINE([HAVE_RES_NINIT], 1, [Define to 1 if your system has the re-entrant resolver functions.])
 	AC_SEARCH_LIBS(res_9_ndestroy, resolv)
 	AC_MSG_CHECKING(for res_ndestroy)
 	AC_LINK_IFELSE(
