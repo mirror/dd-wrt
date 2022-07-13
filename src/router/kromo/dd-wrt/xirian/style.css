@@ -13,7 +13,7 @@ body {
 #wrapper {
   position: relative;
   margin: 0 auto;
-  width: 900px;
+  width: 1000px;
   border: 1px solid #99b;
   background: #ccd;
 }
@@ -26,6 +26,7 @@ textarea {
   -webkit-box-sizing: border-box;
   -moz-box-sizing: border-box;
   box-sizing: border-box;
+  border: 1px solid #9292a0;
   width: 100%;
   resize: vertical;
 }
@@ -44,12 +45,15 @@ input.button {
   padding: .12rem .5rem;
   margin-right: .2rem
 }
+input.button:hover {
+  background-color: #d4d4db;
+}
+input.button[disabled]:hover {
+  background: #e9e9ed;
+}
 input.num[name*='lease'][size='10'] {
   margin-right: 4px;
   width: 65%
-}
-input[name*='hostname'] {
-  width: 80%;
 }
 input.three_column {
   width: 150px;
@@ -104,15 +108,14 @@ div.message div form {
   visibility: visible;
   position: relative;
   overflow: hidden;
-  border-style: solid;
-  font-size: .09em;
-  border-width: 1px;
   border-radius: 4px;
   margin: 0 auto;
+  background-color: #fff;
+  border-color: #999;
 }
 .progressbarblock {
   position: absolute;
-  font-size: .09em;
+  background: url(/style/xirian/header_bg.png) top left repeat-x;
 }
 #header {
   height: 115px;
@@ -147,7 +150,7 @@ div.infopage #header {
   height: 23px;
   margin: 0 auto;
   padding: 0;
-  background: url(/style/xirian/nav_bar.png) top left repeat-x;
+  background: linear-gradient(0deg, #f6f6f6, #d6d6d6 100%)
 }
 #menu li {
   display: inline;
@@ -164,10 +167,9 @@ div.infopage #header {
 }
 #menu li span {
   font-weight: bold;
-  background: url(/style/xirian/nav_bar_rev.png) top left repeat-x;
 }
-#menu li a:hover {
-  background: url(/style/xirian/nav_bar_rev.png) top left repeat-x;
+#menu li span, #menu li a:hover {
+  background: linear-gradient(0deg, #ededed, #fff 100%);
 }
 #contents {
   margin: 12px 192px 0 12px;
@@ -238,29 +240,23 @@ table th {
 #help a {
   display: block;
   position: absolute;
-  top: .8em;
+  top: .75em;
   right: 1.2em;
   text-align: right;
   text-transform: lowercase;
 }
-#help div#logo {
-  height: 54px;
-  width: 100%;
-  background: url(/style/xirian/help.png) top center no-repeat;
-}
-#help div#logo * {
-  display: none;
-}
-#help dl, #help dd {
+#help dl {
   margin: 0;
+}
+#help dd.definition {
+  padding-bottom: .908em;
+  margin: 0 0 .908em 0;
+  border-bottom: 1px dotted #115b80;
 }
 #help dt {
   font-weight: bold;
   margin-top: 14px;
   margin-bottom: 6px;
-}
-#help dd, #help dd * {
-  font-size: 10px;
 }
 #help a {
   text-decoration: none;
@@ -271,10 +267,10 @@ table th {
 }
 #statusInfo {
   position: absolute;
-  top: 12px;
-  left: 540px;
-  height: 65px;
-  width: 400px;
+  top: .908em;
+  left: 50em;
+  width: 32.609em;
+  text-align: right;
 }
 #statusInfo div.info {
   font-size: 10px;
@@ -288,15 +284,16 @@ table th {
   text-decoration: underline;
 }
 .submitFooter {
-  background: #ccd;
-  border: 1px ridge #a3a3a3;
+  border: 1px solid #a3a3a3;
   box-shadow: 1px 1px 0 1px #dde;
   text-align: center;
   border-radius: 4px;
   padding: 6px 0;
   margin: 0 3px;
   margin-bottom: 1rem;
-  filter: brightness(1.03);
+  background: repeating-linear-gradient(55deg,
+    #eee, #eee 2px,
+    #ccd 1px, #ccd 3px );
 }
 .submitFooter .button {
   padding: .2rem .5rem;
@@ -319,12 +316,12 @@ div.setting {
   width: 18.116em;
 }
 .setting .default {
-  color: #333;
+  opacity: .8;
   display: block;
   position: absolute;
   top: 0;
   right: 0;
-  width: 20em;
+  width: 23em;
 }
 .warning {
   padding: 10px;
@@ -346,7 +343,9 @@ div.setting {
   border-width: 1px;
 }
 .meter .bar {
-  background: url(/style/xirian/help_bg.png);
+  background: repeating-linear-gradient(55deg,
+    #eee, #eee 2px,
+    #ccd 1px, #ccd 3px );
   height: 14px;
 }
 .meter .text {
@@ -361,25 +360,6 @@ td .meter {
   float: none !important;
   margin-top: 0 !important;
   width: 99% !important;
-}
-.progressbar {
-  visibility: visible;
-  position: relative;
-  overflow: hidden;
-  border-style: solid;
-  background-color: #fff;
-  border-color: #999;
-  font-size: 1px;
-  border-width: 1px;
-  margin: 0 auto;
-}
-.progressbarblock {
-  position: absolute;
-  background-image: url(/style/xirian/help_bg.png);
-  font-size: 1px;
-}
-.textblink {
-  text-decoration: blink;
 }
 #score {
   color: #000;

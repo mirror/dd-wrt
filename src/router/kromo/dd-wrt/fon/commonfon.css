@@ -336,9 +336,6 @@ td .meter {
 .progressbarblock {
   position: absolute;
 }
-.textblink {
-  text-decoration: blink;
-}
 input.spaceradio {
   margin-right: .4em;
 }

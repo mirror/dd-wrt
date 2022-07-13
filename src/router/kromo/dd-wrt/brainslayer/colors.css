@@ -32,8 +32,8 @@ h3, label {
   color: #955322;
   background: #f1d496 url(../../images/dd-wrt.png) bottom right no-repeat;
 }
-.submitFooter {
-  float: left;
+th {
+  background-color: #e9e9ed;
 }
 #menu {
   border-color: #f00;
@@ -77,17 +77,14 @@ h3, label {
 }
 .progressbar {
   background-color: #fff;
-  border-color: #999;
-  font-size: .09em;
-  border-width: .09em;
+  border: 1px solid #999;
 }
 .progressbarblock {
   background-color: #e3ddd5;
-  font-size: .09em;
-}
-.textblink {
-  text-decoration: blink;
 }
 .warning {
   color: #f00;
+}
+textarea {
+  border: 1px solid #999;
 }

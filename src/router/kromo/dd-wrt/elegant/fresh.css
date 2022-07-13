@@ -47,7 +47,7 @@ textarea {
   box-shadow: 0 1px 1px rgba(0, 0, 0, .075) inset;
   transition: all .15s ease-in-out 0s;
 }
-textarea:focus, textarea.focus {
+textarea:focus {
   border: solid 1px #707070;
   box-shadow: 0 0 5px 1px #969696;
 }
@@ -125,7 +125,7 @@ select {
 }
 .progressbar {
   background-color: #fff;
-  border-color: #999;
+  border: 1px solid #999;
 }
 #content {
   background: #fafafa;
