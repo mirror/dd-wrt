@@ -89,7 +89,10 @@ EJ_VISIBLE void ej_do_pagehead(webs_t wp, int argc, char_t ** argv)	// Eko
 EJ_VISIBLE void ej_do_hpagehead(webs_t wp, int argc, char_t ** argv)	// Eko
 {
 	char *htitle = argv[0];
+	char *style = nvram_safe_get("router_style");
 	char *style_dark = nvram_safe_get("router_style_dark");
+	if (!*style)
+		style = "elegant";
 	websWrite(wp, "<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Strict//EN\" \"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd\">\n");
 	if (!strcmp(htitle, "doctype_only")) {
 		websWrite(wp, "<html>\n");
@@ -97,8 +100,10 @@ EJ_VISIBLE void ej_do_hpagehead(webs_t wp, int argc, char_t ** argv)	// Eko
 		websWrite(wp, "<title>About DD-WRT</title>\n");
 		websWrite(wp, "<meta http-equiv=\"Content-Type\" content=\"application/xhtml+xml; charset=iso-8859-1\" />\n");
 		websWrite(wp, "<link type=\"text/css\" rel=\"stylesheet\" href=\"help/help.css\">\n");
-		if (style_dark != NULL && !strcmp(style_dark, "1")) {
-			websWrite(wp, "<link type=\"text/css\" rel=\"stylesheet\" href=\"../style/elegant/help-about-dark.css\" />\n");
+		if (!strcmp(style, "blue") || !strcmp(style, "cyan") || !strcmp(style, "elegant") || !strcmp(style, "green") || !strcmp(style, "orange") || !strcmp(style, "red") || !strcmp(style, "yellow")) {
+			if (style_dark != NULL && !strcmp(style_dark, "1")) {
+				websWrite(wp, "<link type=\"text/css\" rel=\"stylesheet\" href=\"../style/elegant/help-about-dark.css\" />\n");
+			}
 		}
 		websWrite(wp, "<style type=\"text/css\">\n");
 		websWrite(wp, "* {\n");
