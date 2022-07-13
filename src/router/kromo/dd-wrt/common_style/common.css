@@ -431,18 +431,11 @@ td .meter {
   visibility: visible;
   position: relative;
   overflow: hidden;
-  border-style: solid;
-  font-size: .09em;
-  border-width: 1px;
   border-radius: 4px;
   margin: 0 auto;
 }
 .progressbarblock {
   position: absolute;
-  font-size: .09em;
-}
-.textblink {
-  text-decoration: blink;
 }
 /*! fix spacing between dd-wrt link above paypal and top*/
 .center a[href='http://www.dd-wrt.com/'] {
