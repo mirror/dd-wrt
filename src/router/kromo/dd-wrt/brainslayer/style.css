@@ -1,15 +1,10 @@
 @import url(colors.css);
-@import url(/style/common_legacy.css);
-@import url(/style/buttons.css);
-html {
-  height: 100%;
-  padding: 0;
-  margin: 0;
+* {
+  font-family: Tahoma, Arial, sans-serif;
+  font-size: 1em;
 }
 body {
-  height: 100%;
-  padding: 0;
-  font-family: Verdana, sans-serif;
+  margin: .906em;
   font-size: 75%;
 }
 form {
@@ -133,21 +128,16 @@ form[name="macfilter"] td[align="left"] {
   text-decoration: underline;
 }
 .submitFooter {
-  position: absolute;
-  top: 85px;
-  left: 0;
-  width: 220px;
+  padding: 4px 12px;
+  margin: 0;
   text-align: center;
-  display: block;
-  margin: 0 auto;
-  padding: 0;
+  border-radius: 4px;
 }
-.submitFooter input {
-  padding: 2px;
-  margin: 2px;
-  width: 90%;
+.submitFooter .button {
+  padding: 0 1rem;
+  height: 1.433rem;
 }
-body[onunload*="Filters.asp'"] .submitFooter,
+/*body[onunload*="Filters.asp'"] .submitFooter,
 [name="ipfilter"] .submitFooter,
 .iplookup .submitFooter {
   position: relative;
@@ -183,6 +173,10 @@ form[name="firmware"] h2 {
 form[name="Join"] h2 {
   margin-left: .5em
 }
+*/
+fieldset {
+  border-radius: 3px;
+}
 div.setting {
   margin: 1px;
   margin-top: 6px;
@@ -201,10 +195,9 @@ div.setting {
 }
 #menu {
   position: absolute;
-  top: 228px;
+  top: 60px;
   left: 10px;
   height: 2px;
-  border-bottom: solid 2px;
   padding-top: 1em;
 }
 #menu, #menuMain, #menuMainList {
@@ -226,12 +219,8 @@ div.setting {
   line-height: 1;
   display: block;
   text-decoration: none;
-  border: solid 1px;
   margin: 0;
   padding: 5px 10px 5px .5em;
-}
-#menuMainList :link:hover, #menuMainList :visited:hover {
-  border: solid 1px;
 }
 #menuMainList ul {
   margin: -1.8em 0 1rem;
@@ -239,10 +228,6 @@ div.setting {
 }
 #menuMainList ul :link, #menuMainList ul :visited, #menuMainList ul span {
   padding: 4px 10px 4px 1.5em;
-  border: 0;
-}
-#menuMainList ul :link:hover, #menuMainList ul :visited:hover {
-  border: 0;
 }
 .meter {
   float: right;
@@ -322,14 +307,14 @@ iframe[src*='/graph_if.svg'] {
 }
 iframe#syslog {
   left: 14rem;
-  top: 7rem;
-  max-width: 90%;
-  position: fixed;
+  top: 6rem;
+  max-width: 80%;
+  position: relative;
+  height: 820px;
 }
 input.button[onclick*="do_show"]:not([value*="Month"]) {
-  top: 14.5em;
+  top: 4.5em;
   left: 1.2rem;
-  right: 8rem;
   position: relative;
 }
 .progressbar {
