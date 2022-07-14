@@ -1,10 +1,12 @@
 @import url(/style/buttons.css);
 @import url(/style/common_legacy.css);
 * {
-  padding: 0;
-  margin: 0;
-  font-family: verdana, arial, helvetica, sans-serif;
-  font-size: 12px;
+ font-family: verdana, arial, helvetica, sans-serif;
+ font-size: 1em;
+}
+body {
+  margin: .906em;
+  font-size: 75%;
 }
 p {
   color: #000;
@@ -43,8 +45,8 @@ body, .gui {
   background-color: #fff;
 }
 #content {
-  background-color: #000;
-  height: 6rem;
+  height: 6.13rem;
+  background: #000;
 }
 #contentsInfo {
   position: relative;
@@ -53,15 +55,25 @@ body, .gui {
 }
 #header {
   height: 65px;
-  background-color: #000;
+  background-color: #2b226f;
+  margin: -.906em;
+  background: repeating-linear-gradient(55deg,
+    #2b226f, #2b226f 2px,
+    #483c9f  1px, #483c9f 3px);
 }
 #header #logo {
   background-color: #2b226f;
   color: #0f0;
-  padding: 0 5px 0 5px;
+  padding: 3px 0 0 14px;
+  margin-top: -1.3em;
+  background: repeating-linear-gradient(55deg,
+    #2b226f, #2b226f 2px,
+    #483c9f  1px, #483c9f 3px);
 }
 #header #menu {
-  background-color: #2b226f;
+  background: repeating-linear-gradient(55deg,
+    #2b226f, #2b226f 2px,
+    #483c9f  1px, #483c9f 3px);
   border-bottom: solid 1px #4336af;
   color: #fff;
   padding: 0 5px 0 5px;
@@ -71,7 +83,7 @@ body, .gui {
 }
 #header #menu li {
   display: inline;
-  padding: 0 3px 0 3px;
+  padding: 0 5px 0 5px;
 }
 #header #menu li a {
   color: #fff;
@@ -83,22 +95,23 @@ body, .gui {
 #header #menu #menuMain {
   width: 100%;
   padding: 2px 0 3px 0;
+  margin-left: -2rem
 }
 #header #menu .current {
-  border-bottom: solid 1px #0f0;
+  border-bottom: solid 2px #0f0;
 }
 #header #menu a.current {
   border-bottom: none;
 }
 #header #menu #menuSub {
-  width: 100%;
+  width: 106.4%;
   background-color: #000;
-  margin: 4px 0 0 0;
+  margin: 4px 0 0 -2.5rem;
   padding: 2px 0 3px 0;
   float: left;
 }
 #header #menu #menuSub span {
-  border-bottom: solid 1px #0f0;
+  border-bottom: solid 2px #0f0;
 }
 #main {
   background-color: #fff;
@@ -107,21 +120,31 @@ body, .gui {
   padding: 5px 5px 5px 5px;
 }
 #main fieldset {
-  margin: 0 150px 0 0;
+  margin: 0 499px 0 0;
   color: #2300af;
   padding: 5px 5px 5px 5px;
+}
+fieldset {
+  border-radius: 4px;
+}
+fieldset legend {
+  color: #2b226f;
+  background-color: transparent;
+  font-weight: 900;
 }
 #main .comment {
   font-style: italic;
   color: #000;
   padding: 0 0 5px 0;
 }
-#main .label {
-  width: 16em;
-  color: #000;
-  padding: 0 0 5px 0;
+.label {
   float: left;
-  clear: both;
+  width: 20em;
+}
+.default {
+  position: absolute;
+  right: 41em;
+  width: 24em;
 }
 #main .label input {
   float: left;
@@ -133,25 +156,78 @@ body, .gui {
 #main .setting input, #main .setting option {
   margin: 0 2px 0 0;
 }
-.submitFooter, .submitFooterCmd {
-  padding: 5px 5px 5px 5px;
+.submitFooter {
+  padding: 4px 12px;
+  margin: 0;
+  text-align: center;
+  border-radius: 4px;
+  background: repeating-linear-gradient(55deg,
+    #fff, #fff 2px,
+    #eee 1px, #eee 3px);
+  border: 1px solid #ccc;
+}
+.submitFooter .button {
+  padding: 0 1rem;
+  margin: .362em;
+  height: 1.533rem;
 }
 #statusInfo {
   position: absolute;
-  top: 100px;
-  right: 5px;
-  width: 130px;
-  padding: 5px 5px 5px 5px;
+  top: 2em;
+  right: 1em;
+  width: 32.609em;
+  text-align: right;
+  color: #fff;
+}
+#statusInfo a {
+  color: #fff;
+  text-decoration: none;
+}
+#statusInfo a:hover {
+  text-decoration: underline;
 }
 #helpContainer {
-  position: absolute;
-  top: 240px;
+  top: 113px;
   right: 5px;
-  width: 130px;
-  padding: 5px 5px 5px 5px;
+  position: absolute;
+}
+#help {
+  width: 40.5em;
+  padding: .906em 0;
+}
+#help dl {
+  padding: 0;
+  margin: 0;
+}
+#help dt.term {
+  margin: 0 0 .362em 0;
+  font-weight: bold;
+}
+#help dd.definition {
+  padding-bottom: .908em;
+  margin: 0 0 .908em 0;
+  border-bottom: 1px dotted #000;
+}
+#help a {
+  display: block;
+  position: absolute;
+  top: 1.378em;
+  right: .901em;
+  text-align: right;
+  text-decoration: none;
+  text-transform: lowercase;
+}
+#help a:hover, a[title='Geotool'] {
+  text-decoration: underline;
 }
 .warning {
+  padding: .725em;
+  border-radius: 4px;
+  background: #fcc;
+  border: 2px dashed #f99;
   font-weight: bold;
+  margin: 0 499px 0 0;
+  text-align: center;
 }
 .warning input {
   margin: 5px 0 5px 0;
@@ -192,8 +268,8 @@ td .meter {
   border-style: solid;
   background-color: #fff;
   border-color: #999;
-  font-size: .09em;
   border-width: .09em;
+  margin: 0 auto
 }
 .progressbarblock {
   background-color: #2b226f;
@@ -235,19 +311,11 @@ iframe[src*='/graph_if.svg'] {
   max-width: 700px;
 }
 iframe#syslog {
-  left: 1rem;
-  top: 3rem;
-  max-width: 90%;
+  left: 0;
+  top: 1rem;
   position: relative;
 }
-input.button[onclick*="do_show"] {
-  left: 18%;
-  top: 2.3rem;
-  position: relative;
-}
-input.button[name="refresh_button"] {
-  top: 11.5em;
-  left: 1.5rem;
-  right: 8rem;
+input.button[onclick*="do_show"]:not([value*="Month"]) {
+  margin: 1.5em -42% 0 43.7%;
   position: relative;
 }
