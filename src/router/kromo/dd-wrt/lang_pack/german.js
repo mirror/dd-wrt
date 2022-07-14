@@ -25,6 +25,7 @@ share.mode_3g_3g2g="UMTS zuerst, bei Fehler GPRS";
 share.firmware="Firmware";
 share.time="Zeit";
 share.interipaddr="WAN-IP-Adresse";
+// choice dd-wrt.c line 1442
 share.more="Mehr...";
 share.choice="Bitte Wählen...";
 share.help="Hilfe";
@@ -32,6 +33,8 @@ share.enable="Einschalten";
 share.enabled="eingeschaltet";
 share.disable="Abschalten";
 share.disabled="ausgeschaltet";
+//not set used in src/router/openvpn/config2/openvpn.webvpn
+share.notset="Nicht gesetzt";
 share.usrname="Benutzername";
 share.passwd="Kennwort";
 share.hostname="Hostname";
@@ -41,6 +44,7 @@ share.vdslvlan7="T-Online VLAN 7 Unterstützung";
 share.vdslvlan8="T-Online VLAN 8 Unterstützung";
 share.vdslbng="T-Online BNG Unterstützung";
 share.wan_vlantag="VLAN ID";
+share.wan_dualaccess="Dual-Access Mode";
 share.compression="PPP Komprimierung (MPPC)";
 share.mlppp="Single Line Multi Link";
 share.vpi_vci="VPI/VCI";
@@ -114,12 +118,15 @@ share.use="Nutze";
 share.mins="min";
 share.secs="s";
 share.seconds="Sekunden";
+share.ms="ms";
 share.routername="Router Name";
 share.manual="Manuell";
 share.port="Port";
+// dd-wrt.c line 2873
 share.guest_port="Gästenetz";
 share.ssid="SSID";
 share.channel="Kanal";
+share.stations="Stationen";
 share.frequency="Frequenz";
 share.rssi="Signal";
 share.signal="Signal";
@@ -158,9 +165,11 @@ share.port_range="Portbereich";
 share.priority="Priorität";
 share.gateway="Gateway";
 share.intrface="Schnittstelle";  //don't use share.interface, Mozilla problem!!!
+share.iftbl="IF";
 share.input="Rein";
 share.output="Raus";
 share.total="Total";
+share.radioname="Name";
 share.ccq="CCQ";
 share.pintrface="Physische Schnittstelle";
 share.vintrface="Virtuelle Schnittstellen";
@@ -174,6 +183,9 @@ share.oui="OUI Suche";
 share.sttic="Statisch";
 share.off="Aus";
 share.on="An";
+share.stp="STP";
+share.mstp="MSTP";
+share.rstp="RSTP";
 share.dynamic="Dynamisch";
 share.connecting="Verbinden";
 share.connect="Verbinden";
@@ -181,6 +193,7 @@ share.connected="Verbunden";
 share.disconnect="Trennen";
 share.disconnected="Getrennt";
 share.info="Information";
+share.infotbl="Info";
 share.state="Status";
 share.mode="Modus";
 share.encrypt="Verschlüsselung";
@@ -189,9 +202,13 @@ share.wireless="WLAN";
 share.dhcp="DHCP";
 share.styl="Aussehen";
 share.theme="Thema";
+share.styl_dark="Enable Dark Styles";
 share.err="Fehler";
 share.errs="Fehler";
 share.meters="Meter";
+share.vht80plus80="VHT80+80 (160 MHz)";
+share.vht160="VHT160 (160 MHz)";
+share.vht80="VHT80 (80 MHz)";
 share.ht40="Breite HT40 (20+20 MHz)";
 share.ht20="Volle  HT20 (20 MHz)";
 share.dynamicturbo="Dynamisch (20/40 MHz)";
@@ -261,10 +278,12 @@ share.threaten_fs=" Illegaler Dateiname. (Dateiname beeinflusst das lokale Datei
 share.cross_site=" Webseitenübergreifende Aktion erkannt!";
 share.cross_site_ref=" Webseitenübergreifende Aktion erkannt! (Verweis %s)";
 share.no_wifi_access=" Die drahtlose Schnittstelle kann nicht für den Zugriff auf die Oberfläche verwendet werden.";
+share.sysloglegend="System Log";
 share.syslogdisabled="Keine Nachrichten verfügbar! Syslogd ist nicht eingeschaltet!";
 share.actiontbl="Aktion";
 share.show="Zeige";
 share.hide="Verstecke";
+
 
 sbutton.save="Speichern";
 sbutton.download_config="Exportiere Partner Konfiguration";
@@ -277,6 +296,7 @@ sbutton.cancel="Einstellungen zurücknehmen";
 sbutton.canceltitle="Verwerfe Einstellungen dieser Maske";
 sbutton.refres="Auffrischen";
 sbutton.clos="Schließen";
+sbutton.scrub="Scrub";
 sbutton.del="Löschen";
 sbutton.continu="Fortfahren";
 sbutton.add="Hinzufügen";
@@ -326,7 +346,6 @@ sbutton.allways_off="Alles Aus";
 sbutton.download="Herunterladen";
 sbutton.next="Nächstes Äraquo;";
 sbutton.prev="Älaquo; Vorheriges";
-
 
 // ** COMMON ERROR MESSAGES  **//
 
@@ -446,6 +465,7 @@ errmsg.err103="Ungültiges Zeichen";
 
 bmenu.setup="Setup";
 bmenu.setupbasic="Basis-Setup";
+bmenu.setupipv6="IPv6";
 bmenu.setupddns="DDNS";
 bmenu.setupmacclone="MAC-Adresse klonen";
 bmenu.setuprouting="Erweitertes Routing";
@@ -461,6 +481,7 @@ bmenu.wimax="WiMAX";
 bmenu.wirelessSecurity="WLAN-Sicherheit";
 bmenu.wirelessAoss="AOSS";
 bmenu.wirelessAossWPS="AOSS / WPS";
+bmenu.wirelessWPS="WPS";
 bmenu.wirelessMac="MAC-Filter";
 bmenu.wirelessAdvanced="Erweiterte Einstellungen";
 bmenu.wirelessAdvancedwl0="wl0-Erweitert";
@@ -473,6 +494,7 @@ bmenu.wirelessWds2="wlan2-WDS";
 bmenu.wirelessWds3="wlan3-WDS";
 bmenu.wirelessWdswl0="wl0-WDS";
 bmenu.wirelessWdswl1="wl1-WDS";
+bmenu.wirelessWdswl2="wl2-WDS";
 
 bmenu.security="Sicherheit";
 bmenu.firwall="Firewall";
@@ -481,10 +503,10 @@ bmenu.vpn="VPN-Durchleitung";
 bmenu.accrestriction="Zugriffsbeschränkung";
 bmenu.webaccess="Internet-Zugriff";
 
-
 bmenu.applications="NAT / QoS";
 bmenu.applicationsprforwarding="Port-Bereichs-Weiterleitung";
 bmenu.applicationspforwarding="Port-Weiterleitung";
+bmenu.applicationsipforwarding="IP-Weiterleitung (1:1 NAT)";
 bmenu.applicationsptriggering="Port-Triggering";
 bmenu.applicationsUpnp="UPnP";
 bmenu.applicationsDMZ="DMZ";
@@ -499,6 +521,7 @@ bmenu.sipathstatus="Status";
 bmenu.admin="Administration";
 bmenu.adminManagement="Management";
 bmenu.adminAlive="Lebenserhaltung";
+bmenu.adminSysctl="Sysctl";
 bmenu.adminLog="Log";
 bmenu.adminDiag="Diagnose";
 bmenu.adminWol="WOL";
@@ -517,7 +540,9 @@ bmenu.servicesHotspot="Hotspot";
 bmenu.servicesNintendo="Nintendo";
 bmenu.servicesMilkfish="SIP Proxy";
 bmenu.servicesPrivoxy="Werbeblocker";
-
+//bmenu.servicesLighttpd="Web Server";
+bmenu.servicesSpeedchecker="SpeedChecker";
+//bmenu.servicesAnchorFree="My Ad Network";
 
 bmenu.statu="Status";
 bmenu.statuRouter="Router";
@@ -531,9 +556,13 @@ bmenu.statuSysInfo="Sys-Info";
 bmenu.statuActivate="Aktivieren";
 bmenu.statuMyPage="Meine Seite";
 bmenu.statuGpio="GPIO E/A";
-
+bmenu.statuSyslog="Syslog";
 bmenu.setupnetw="Netzwerk";
 bmenu.adminman="Verwaltung";
+
+// sysctl.asp
+
+sysctl.titl="Sysctl Konfiguration";
 
 // ** Alive.asp **//
 
@@ -558,6 +587,9 @@ alive.timeout="Ping timeout";
 halive.right2="Wählen Sie aus, wann der Router neu starten soll. Cron muss hierfür auf dem Management-Tab, eingeschaltet sein.";
 halive.right4="<b>" + alive.IP + "</b>: Maximal 3 IP-Adressen (mit einem <em>Leerzeichen</em> getrennt) sind erlaubt.<br />IP-Format ist xxx.xxx.xxx.xxx.";
 
+//help page
+halive.page1="<dd>Sie können regelmäßige Neustarts für den Router planen:<ul><li>Regelmäßig nach der eingestellten Anzahl von Sekunden.</li><li>Zu einem bestimmten Zeitpunkt in der Woche oder täglich.</li></ul><br /><div class=\"note\"><h4>Hinweis:</h4><div>Für Datums basierende Reboots muss Cron aktiviert sein. Siehe <a href=\"HManagement.asp\">Management</a> für die Cron Aktivierung.</div></div></dd>";
+halive.page2="<dd></dd><dd>Überprüfen Sie alle Werte und klicken Sie auf die Schaltfläche <em>" + sbutton.save + "</em> um Ihre Einstellungen zu speichern. Klicken Sie auf die Schaltfläche <em>" + sbutton.cancel + "</em> um Ihre nicht gespeicherten Änderungen zu verwerfen. Klicken Sie auf die Schaltfläche <em>" + sbutton.reboot +"</em> um den Router sofort neu zu starten.</dd>";
 
 // ** config.asp **//
 
