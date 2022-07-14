@@ -148,6 +148,7 @@ share.all="Alles";
 share.auto="Auto";
 share.desired="Erwünscht";
 share.required="Benötigt";
+share.requiremts="Anforderungen";
 share.right="Rechts";
 share.left="Links";
 share.share_key="Shared Key";
