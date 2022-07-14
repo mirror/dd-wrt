@@ -287,7 +287,6 @@ int nvram_commit(void)
 	u_int32_t offset;
 	static int waiting=0;
 	struct file *srcf;
-	printk(KERN_EMERG "commit\n");
 
 	if (in_interrupt()) {
 		printk("nvram_commit: not committing in interrupt\n");
@@ -339,7 +338,7 @@ int nvram_commit(void)
 		offs += len;
 		wr += PAGE_SIZE;
 	}
-	printk(KERN_EMERG "nvram_commit: %lld bytes written\n", offs);
+	printk(KERN_INFO "nvram_commit: %lld bytes written\n", offs);
 	filp_close(srcf, NULL);
 	set_fs(old_fs);
 done:
