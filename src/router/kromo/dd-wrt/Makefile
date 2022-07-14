@@ -825,7 +825,7 @@ endif
 
 ifeq ($(CONFIG_BRAINSLAYER),y)
 	cp -a brainslayer $(INSTALLDIR)/www/style
-#	cp common_style/common_legacy.css $(INSTALLDIR)/www/style
+	cp common_style/common_legacy.css $(INSTALLDIR)/www/style
 endif
 
 ifeq ($(CONFIG_XIRIAN),y)
