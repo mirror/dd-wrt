@@ -5,6 +5,9 @@ body {
 body.gui {
   background-color: #888;
 }
+h1 {
+  -webkit-text-stroke: 1px #ccd;
+}
 table.table {
   border-color: #999;
 }
@@ -20,28 +23,19 @@ table.table th {
   border-color: #111;
 }
 #statusInfo {
-  background: #ccccdd URL(../../images/dd-wrt.png) bottom right no-repeat;
+  background: #ccd URL(../../images/dd-wrt.png) bottom right no-repeat;
   border-color: #000;
-}
-input[type!="radio"] {
-  background-color: #eeeef3;
-  border-color: #003399;
-}
-input[type="radio"] {
-  background-color: #eeeef3;
-  border-color: #003399;
-}
-select {
-  background-color: #eeeef3;
-  border-color: #003399;
 }
 div.message div {
   background-color: #ddddee;
   background: url(images/message_bg.png);
   border-color: #eaeaea;
 }
-#footer {
-  background-image: url(images/footer.png);
+.submitFooter {
+  background: repeating-linear-gradient(55deg,
+    #ddd , #ddd  2px,
+    #ccf 1px, #ccf 3px);
+  border: 1px solid #aaa;
 }
 td, th {
   color: #115B80;
