@@ -26,8 +26,8 @@ share.firmware="Firmware";
 share.time="Zeit";
 share.interipaddr="WAN-IP-Adresse";
 // choice dd-wrt.c line 1442
-share.more="Mehr...";
 share.choice="Bitte Wählen...";
+share.more="Mehr...";
 share.help="Hilfe";
 share.enable="Einschalten";
 share.enabled="eingeschaltet";
@@ -202,7 +202,7 @@ share.wireless="WLAN";
 share.dhcp="DHCP";
 share.styl="Aussehen";
 share.theme="Thema";
-share.styl_dark="Enable Dark Styles";
+share.styl_dark="Dunkles Farbschema";
 share.err="Fehler";
 share.errs="Fehler";
 share.meters="Meter";
@@ -344,8 +344,8 @@ sbutton.preview="Vorschau";
 sbutton.allways_on="Alles An";
 sbutton.allways_off="Alles Aus";
 sbutton.download="Herunterladen";
-sbutton.next="Nächstes Äraquo;";
-sbutton.prev="Älaquo; Vorheriges";
+sbutton.next="Nächstes ›";
+sbutton.prev="‹ Vorheriges";
 
 // ** COMMON ERROR MESSAGES  **//
 
@@ -608,7 +608,10 @@ config.mess4="Laden Sie nur Dateien hoch, welche mit der selben Firmware auf dem
 hconfig.right2="Sie können hier Ihre aktuelle Konfiguration sichern für den Fall, dass Sie Ihren Router einmal zurücksetzen müssen.<br /><br />Klicken Sie den <em>Backup</em>-Button, um Ihre Konfiguration zu sichern.";
 hconfig.right4="Klicken Sie den <em>Durchsuchen...</em>-Button, um eine Konfigurationsdatei auszuwählen, die auf Ihrem PC gespeichert ist.<br /><br />Klicken Sie den <em>" + sbutton.restore + "</em>-Button, um alle aktuellen Konfigurationseinträge mit Ihrer neuen Konfiguration zu überschreiben.";
 
-
+// help page
+hconfig.page1="<dd>Sie können Ihre aktuelle Konfiguration sichern, falls Sie den Router auf die Werkseinstellungen zurücksetzen müssen.</dd><dt>";
+hconfig.page2="</dt><dd>Klicken Sie auf die Schaltfläche <em>" + sbutton.backup + "</em> um Ihre aktuelle Konfiguration in einer Datei auf der Festplatte zu sichern.<br /> Tipp: Geben Sie im Terminal <b>nvram show > /tmp/mybackup.txt</b> ein und speichern Sie diese Datei auf dem Desktop, um ein für Menschen lesbares Backup Ihrer aktuellen Konfiguration zu erhalten.</dd>";
+hconfig.page3="<dd>Klicken Sie auf die Schaltfläche <i>Datei auswählen...</i> um nach einer Sicherungsdatei zu suchen, die Sie zuvor auf der Festplatte gespeichert haben.<br>Klicken Sie auf die Schaltfläche <em>" + sbutton.restore + "</em> um <b>alle aktuellen Konfigurationseinstellungen</b> mit den Werten aus der Sicherungsdatei zu überschreiben.<br /><br /><div class=\"note\"><h4>Hinweis:</h4><div>Laden Sie nur Sicherungsdateien hoch, die mit der DD-WRT Firmware und dem selben Router-Modell erstellt wurden.</dd></div></dd>";
 
 // ** DDNS.asp **//
 
@@ -625,6 +628,7 @@ ddns.system="DYNDNS Server";
 ddns.options="Erweiterte DDNS Optionen";
 ddns.forceupd="Erzwinge Update Intervall";
 ddns.wanip="Externer IP Check";
+ddns.hlp="DDNS Service";
 
 
 ddnsm.all_closed="DDNS-Server ist aktuell geschlossen";
@@ -641,6 +645,14 @@ hddns.right2="DDNS erlaubt Ihnen den Zugriff auf Ihr Netzwerk unter Zuhilfenahme
 	Der Dienst verwaltet und ändert die IP-Adresse sowie die Domaininformation dynamisch.\
 	Sie müssen sich für den Dienst bei einem entsprechenden Provider (passend zur Auswahlbox links) anmelden.";
 hddns.right4="Geben Sie eine Zahl in der Box an um den Intervall für das erzwungene Update anzugeben (in Tagen). Updates sollten nur automatisch durchgeführt werden wenn sich Ihre IP ändert. Achten Sie darauf das Sie Updates nicht zu oft durchführen, da ihr DDNS Provider Sie sonst sperren könnte.";
+
+//help page
+hddns.page1="<dd>Der Router bietet eine DDNS (Dynamic Domain Name System) Funktion. Mit DDNS können Sie einer dynamischen öffentlichen IP-Adresse einen festen Host- und Domainname zuweisen. Dies ist nützlich, wenn Sie Ihre eigene Website hosten oder einen anderen Server hinter dem Router betreiben, der über das Internet zugänglich gemacht werden soll. Um die Funktion nutzen zukönnen, müssen Sie sich bei einem DDNS-Dienst registrieren, z. B. bei <a href=\"http:\/\/www.dyndns.org\" target=\"_new\">www.dyndns.org</a>, einer der verschiedenen DDNS-Anbieter, die von DD-WRT unterstützt werden.</dd>";
+hddns.page2="<dd>Um den DDNS-Dienst zu deaktivieren, behalten Sie die Standardeinstellung <em>" + share.disable + "</em> bei. Folgen Sie den Anweisungen um den DDNS-Dienst zu aktivieren:<ol class=\"wide\"><li>Melden Sie sich unter <a href=\"http:\/\/www.dyndns.org\" target=\"_new\">www.dyndns.org</a> für den DDNS-Dienst an, und notieren Sie sich Ihren Benutzernamen, Ihr Kennwort und Ihren Hostnamen.</li><li>Auf der Registerkarte DDNS wählen Sie <i>DynDNS.org</i> aus dem Dropdown-Menü aus.</li><li>Füllen Sie die Felder <i>Benutzername</i>, <i>Passwort</i> und <i>Hostname</i> aus.</li><li>Klicken Sie auf die Schaltfläche <em>" + sbutton.save + "</em> um Ihre Änderungen zu speichern. Klicken Sie auf die Schaltfläche <em>" + sbutton.cancel + "</em> um nicht gespeicherte Änderungen zu verwerfen.</li></ol><br />Sie können nun vom Internet aus mit der von Ihnen gewählten Domain auf Ihren Router zugreifen.</dd>";
+hddns.page3="<dd>Der <em>statische</em> DNS-Dienst ist dem <em>dynamischen</em> DNS-Dienst insoweit ähnlich, das er es ermöglicht, dass ein Hostname wie yourname.dyndns.org auf Ihre IP-Adresse verweist. Im Gegensatz zu einem <em>dynamischen</em> DNS-Host erlischt die Gültigkeit eines <em>statischen</em> DNS-Hosts nicht nach 35 Tagen ohne Aktualisierung, aber es dauert länger, bis sich Aktualisierungen im DNS-System verbreiten.<br />Der DynDNS Service bietet eine verwaltete primäre DNS-Lösung, die Ihnen die vollständige Kontrolle über einen gesamten Domainnamen gibt und einen einheitlichen primären/sekundären DNS-Service bietet. Eine webbasierte Schnittstelle bietet zwei Ebenen der Kontrolle über Ihre Domain, die sowohl für normale als auch für Power-User geeignet ist.</dd>";
+hddns.page4="<dd>Wenn Sie die Wildcard-Funktion für Ihren Host aktivieren, wird *.yourhost.dyndns.org als Alias für die gleiche IP-Adresse wie yourhost.dyndns.org verwendet. Diese Funktion ist nützlich, wenn Sie z. B. www.yourhost.dyndns.org verwenden und trotzdem Ihren Hostnamen erreichen möchten.</dd>";
+hddns.page5="<dd>Geben Sie eine ganze Zahl in das Feld ein, um das Intervall für die erzwungene Aktualisierung (in Tagen) festzulegen. Eine erzwungene Aktualisierung ist eine Aktualisierung, die durchgeführt wird, obwohl sich Ihre IP-Adresse nicht geändert hat. Eine erzwungene Aktualisierung ist insbesondere für Benutzer erforderlich, die keine Spender von dyndns.org sind, um die Löschung des Hostnamen zu verhindern.</dd>";
+hddns.page6="<dd>Hier wird der Status des DDNS-Dienst angezeigt.</dd>";
 
 // ** Diagnostics.asp **//
 
