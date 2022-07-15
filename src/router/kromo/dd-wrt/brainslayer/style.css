@@ -7,11 +7,15 @@ body {
   margin: .906em;
   font-size: 75%;
 }
+.popup_bg {
+  background-color: #fff
+}
 form {
   margin: 0;
   display: inline;
 }
-input, select, option, .button {
+input, select,
+option, .button {
   font-weight: bold;
 }
 input.button, select {
@@ -48,9 +52,6 @@ h1, h2, h3, h4, h5, h6, legend, label {
 legend, label {
   font-weight: bold;
 }
-sup {
-  font-size: 70%;
-}
 :link {
   font-weight: bold;
 }
@@ -65,6 +66,18 @@ hr {
 }
 table {
   border: 0;
+}
+#radio_table {
+  width: 100%;
+  text-align: center;
+}
+#radio_table td {
+  height: 18px;
+  border-radius: 2px;
+}
+[summary="edca ap parameters"], [summary="edca sta parameters"],
+[summary="WMM Tx retry limits"] {
+  width: 100%;
 }
 #wrapper {
   position: absolute;
@@ -105,6 +118,12 @@ form[name="macfilter"] td[align="left"] {
   padding: 1.5em;
   padding-top: 90px;
 }
+[name="macfilter"] #main {
+  margin-left: 0
+}
+[name="macfilter"] #contentsInfo {
+  margin-top: -5.5rem
+}
 #content, #contentInfo {
   margin: 0;
   padding: 0;
@@ -128,54 +147,21 @@ form[name="macfilter"] td[align="left"] {
   text-decoration: underline;
 }
 .submitFooter {
-  padding: 4px 12px;
-  margin: 0;
+  padding: 8px 12px;
+  margin-top: 0;
   text-align: center;
   border-radius: 4px;
+}
+#mainno .submitFooter {
+  margin: 2.5rem 280px 0 223px;
 }
 .submitFooter .button {
   padding: 0 1rem;
   height: 1.433rem;
 }
-/*body[onunload*="Filters.asp'"] .submitFooter,
-[name="ipfilter"] .submitFooter,
-.iplookup .submitFooter {
-  position: relative;
-  margin-top: -6rem;
-  white-space: nowrap;
-}
-form[name="Join"] .submitFooter {
-  margin: 2.2em .6em;
-  white-space: nowrap;
-}
-form[name="firmware"] .submitFooter {
-  margin: 3em .6em;
-  white-space: nowrap;
-}
-form[name="firmware"] .submitFooter input,
-form[name="Join"] .submitFooter input,
-body[onunload*="Filters.asp'"] .submitFooter input,
-[name="ipfilter"] .submitFooter input, .iplookup .submitFooter input {
-  width: 50%;
-}
-form[name="Join"] .submitFooter input {
-  position: relative;
-  top: -7em;
-  left: 175%;
-}
-form[name="firmware"] fieldset, form[name="Join"] fieldset,
-body[onunload*="Filters.asp'"] {
-  margin: .906em;
-}
-form[name="firmware"] h2 {
-  margin: .2em .5em -1em
-}
-form[name="Join"] h2 {
-  margin-left: .5em
-}
-*/
 fieldset {
   border-radius: 3px;
+  background-color: #f6f6f6;
 }
 div.setting {
   margin: 1px;
@@ -280,7 +266,7 @@ input.spaceradio {
   width: 100px;
   z-index: 10;
 }
-#score, #rating, #standards {
+#score, #rating {
   font-weight: bold;
 }
 #scorebarBorder {
@@ -307,13 +293,13 @@ iframe[src*='/graph_if.svg'] {
 }
 iframe#syslog {
   left: 14rem;
-  top: 6rem;
+  top: 4.5rem;
   max-width: 80%;
   position: relative;
-  height: 820px;
+  height: 811px;
 }
 input.button[onclick*="do_show"]:not([value*="Month"]) {
-  top: 4.5em;
+  top: 3.2em;
   left: 1.2rem;
   position: relative;
 }
