@@ -14,10 +14,11 @@ input, select {
 #wrapper {
   margin-left: 2px;
   margin-right: 2px;
+  margin-top: -.8rem
 }
 #content {
-  padding-top: 0em;
-  padding-bottom: 0em;
+  padding-top: 0;
+  padding-bottom: 0;
 }
 div.popup {
   margin: 3em;
@@ -62,21 +63,20 @@ fieldset {
 }
 #main {
   clear: both;
-  margin-right: 20rem;
+  margin-right: 19rem;
   margin-bottom: 1em;
   padding-top: 1.7em;
 }
 #header {
-  top: 0;
   margin: 0;
   padding: 0;
 }
 #header div#logo {
-  z-index: 30;
+  height: 7em
 }
 #helpContainer {
   position: absolute;
-  top: 0;
+  top: 2.9em;
   right: 10px;
   width: 300px;
   min-height: 100%;
@@ -93,29 +93,22 @@ dd {
   padding-bottom: .2em;
   border-bottom: 1px dotted;
 }
-#help div#logo {
-  text-align: center;
-  padding-right: 20px;
-}
 #statusInfo {
   position: absolute;
   top: 15px;
-  right: 5px;
+  right: 10px;
   height: 5em;
-  width: 36em;
-  margin: 0;
-  padding: 0;
-  z-index: 30;
+  width: 36.7em;
 }
 .submitFooter {
-  margin: 1em;
+  margin-bottom: 1em;
   padding-top: 0.5em;
   padding-bottom: 0.5em;
   text-align: center;
 }
 #contents {
   padding: 1.3em;
-  padding-bottom: 0.1em;
+  padding-bottom: .1em;
   min-height: 300px;
 }
 #menuMain {
@@ -231,18 +224,14 @@ iframe[src*='/graph_if.svg'] {
   max-width: 700px;
 }
 iframe#syslog {
-  left: 1rem;
-  top: 3rem;
-  max-width: 45%;
+  left: 0em;
+  top: 1rem;
+  width: 90%;
+  height: 821px;
   position: relative;
 }
-input.button[onclick*="do_show"] {
-  left: 18%;
-  top: 2.3rem;
-  position: relative;
-}
-input.button[name="refresh_button"] {
-  top: 0;
-  left: -30%;
+input.button[onclick*="do_show"]:not([value*="Month"]) {
+  left: 44%;
+  top: 0rem;
   position: relative;
 }
