@@ -134,9 +134,9 @@ ifeq ($(findstring DONT_OPTIMIZE,$(MENUSELECT_CFLAGS))$(AST_DEVMODE),)
 _ASTCFLAGS+=$(AST_FORTIFY_SOURCE)
 endif
 
-ifeq ($(findstring BUILD_NATIVE,$(MENUSELECT_CFLAGS)),BUILD_NATIVE)
-    _ASTCFLAGS+=-march=native
-endif
+#ifeq ($(findstring BUILD_NATIVE,$(MENUSELECT_CFLAGS)),BUILD_NATIVE)
+#    _ASTCFLAGS+=-march=native
+#endif
 
 %.o: %.s
 	$(ECHO_PREFIX) echo "   [AS] $< -> $@"
