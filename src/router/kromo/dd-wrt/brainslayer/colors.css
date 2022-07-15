@@ -1,10 +1,8 @@
 @import url(/style/common_legacy.css);
 @import url(/style/buttons.css);
-html {
-  background: #eeeae4;
-}
 body {
   color: #000;
+  background: #eeeae4;
 }
 input, select, option {
   color: #a57b46;
@@ -80,4 +78,10 @@ th {
 }
 textarea {
   border: 1px solid #999;
+}
+.submitFooter {
+  background: repeating-linear-gradient(55deg,
+    #eeeae4 , #eeeae4  2px,
+    #f1d496 1px, #f1d496 3px);
+  border: 1px solid #bb9273;
 }
