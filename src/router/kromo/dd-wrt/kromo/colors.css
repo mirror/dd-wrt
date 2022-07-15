@@ -1,119 +1,171 @@
-body {
-  background-color: #ccc;
+@import url(/style/buttons.css);
+body, .popup, .popup_bg {
+  background: #888888;
   color: #115b80;
 }
-body.gui {
-  background-color: #888;
+fieldset {
+  background: #eee;
+  border: 1px solid #ccc;
 }
-h1 {
-  -webkit-text-stroke: 1px #ccd;
+.dark_fs_bg {
+  background: #f6f6f6;
 }
-table.table {
-  border-color: #999;
+fieldset legend {
+  background: transparent;
 }
-table.table th {
-  border-color: #999;
-  background-color: #ddd;
+#help dd.definition {
+  border-bottom: 1px dotted #333;
 }
-#left {
-  background-color: #888;
+hr {
+  background: #eee;
+  color: #eee;
 }
-#help {
-  background-color: #fffec1;
-  border-color: #111;
+h2, h3 {
+  background-color: #fff3b3;
+  color: #115b80;
 }
-#statusInfo {
-  background: #ccd URL(../../images/dd-wrt.png) bottom right no-repeat;
-  border-color: #000;
+table tr th {
+  background-color: #fff3b3;
+  border-color: #fff3b3;
+  color: #115b80;
 }
-div.message div {
-  background-color: #ddddee;
-  background: url(images/message_bg.png);
-  border-color: #eaeaea;
+table tr:hover {
+  background-color: #f1f1f1;
+}
+table tr:not([bgcolor]):hover {
+  background-color: transparent;
 }
 .submitFooter {
   background: repeating-linear-gradient(55deg,
-    #ddd , #ddd  2px,
-    #ccf 1px, #ccf 3px);
-  border: 1px solid #aaa;
+    #ccc , #ccc  2px,
+    #aaa 1px, #aaa 3px);
+  border: 1px solid #ccc;
 }
-td, th {
-  color: #115B80;
-}
-input, select {
-  color: #115B80;
-}
-a:link {
-  color: #167daf;
-}
-a:visited {
-  color: #167daf;
-}
-a:hover {
-  color: #167daf;
-}
-a:active {
-  color: #167daf;
-}
-.section {
-  color: #9cccff;
-  border-color: #eaeaea;
-}
-.info {
-  color: #669;
-}
-div.warning {
-  color: #EE3333;
-}
-#main {
-  border-color: #666;
-  background: #fff3b3;
-}
-#contents {
-  background: #ddd;
-}
-#menuMain ul#menuMainList a, #menuMain ul#menuMainList span, #menuMain ul#menuMainList a.current {
-  color: #333;
-}
-#menuMain ul#menuMainList span, #menuMain ul#menuMainList a.current, #menuMain ul#menuMainList a.current:hover {
-  background: #fff3b3;
-  border-color: #666;
-}
-#menuMain ul#menuMainList a {
-  background: #fffae1;
-  border-color: #aaa;
-}
-#menuMain ul#menuMainList a:hover {
-  background-color: #fff7cd;
-}
-#menuMain ul#menuSubList li a, #menuMain ul#menuSubList li span {
-  border-right-color: #aaa;
-  background: none;
-}
-#menuMain ul#menuSubList li a {
-  color: #333399;
-}
-#menuMain ul#menuSubList li a:hover {
-  color: #333;
-  background: transparent;
-}
-#menuMain ul#menuSubList li a:active {
+textarea {
+  background-color: #fff;
+  border: 1px solid #ccc;
   color: #000;
-  background: transparent;
+  box-shadow: 0 1px 1px rgba(0, 0, 0, .075) inset;
+  transition: all .15s ease-in-out 0s;
 }
-.meter .bar {
-  background-color: #fff7cd;
+textarea:focus {
+  border: solid 1px #707070;
+  box-shadow: 0 0 5px 1px #969696;
 }
-.meter .text {
-  color: #115B80;
+input {
+  background-color: #fff;
+  border: 1px solid #ccc;
+  color: #000;
+  box-shadow: 0 1px 1px rgba(0, 0, 0, .075) inset;
+  transition: all .15s ease-in-out 0s;
+}
+input[name='apply_button'] {
+  background: #166f2a;
+  border-color: #1a6d2d;
+  color: #fff;
+}
+input[name='apply_button']:hover {
+  background: #199235;
+  border-color: #199235;
+  color: #fff;
+}
+input[name='apply_button']:focus-visible {
+  box-shadow: 0 0 5px 1px #199235;
+  outline: 2px solid #199235;
+}
+input[name='reset_button'] {
+  background: #fff;
+  border-color: #ccc;
+  color: #000;
+}
+input[name='reset_button']:hover {
+  background: #ff8400;
+  border-color: #ccc;
+  color: #000;
+}
+input[name='reset_button']:focus-visible {
+  box-shadow: 0 0 5px 1px #fff;
+  outline: 2px solid #fff;
+}
+input[name='reboot_button'],
+input[name='reboot_button']:disabled:hover {
+  background: #c00;
+  border-color: #ccc;
+  color: #f8f8f8;
+}
+input[name='reboot_button']:hover {
+  background: #e00;
+  border-color: #d00;
+  color: #fff;
+}
+input[name='reboot_button']:focus-visible {
+  box-shadow: 0 0 5px 1px #ff7c7c;
+  outline: 2px solid #ff7c7c;
+}
+input:focus, input.focus {
+  border: 1px solid #707070;
+  box-shadow: 0 0 5px 1px #969696;
+}
+input.button, input.button:hover {
+	border-color: #115b80;
+}
+input.button[disabled]:hover {
+  border-color: #115b80;
+}
+#ip_count:hover, [title*='Search']:hover,
+[title*='Chain']:hover, [title*='Monitoring']:hover {
+	color: #00f;
+}
+select {
+  background-color: #fff;
+  border: 1px solid #ccc;
+  color: #000;
+  box-shadow: 0 1px 1px rgba(0, 0, 0, .075) inset;
+  transition: all .15s ease-in-out 0s;
 }
 .progressbar {
   background-color: #fff;
-  border-color: #999;
-  font-size: .09em;
-  border-width: .09em;
+  border: 1px solid #999;
 }
-.progressbarblock {
-  background-color: #fff7cd;
-  font-size: .09em;
+#content {
+  background: #ddd;
+  border: 1px solid #aaa;
+}
+#content.infopage {
+  background-color: transparent;
+}
+#content.infopage #main {
+  background-color: #fafafa;
+  border-radius: 5px;
+  border: 1px solid #111;
+}
+.message {
+  background: #fafafa;
+  border: 1px solid #ccc;
+}
+.meter {
+  background: #aaa;
+  border: 1px solid #888;
+}
+.odd {
+  background-color: transparent;
+}
+.warning {
+  background: #fcc;
+  border: 2px dashed #f99;
+  font-weight: bold;
+}
+pre {
+  background-color: #fff;
+  border: 1px solid transparent;
+}
+.setting .default {
+  color: #666;
+}
+#scorebarBorder {
+  background: #f6f6f6;
+  border: 1px solid #f6f6f6;
+}
+#tablePwdCheck tr th {
+  color: #000;
 }
