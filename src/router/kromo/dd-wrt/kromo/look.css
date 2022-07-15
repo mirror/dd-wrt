@@ -1,6 +1,14 @@
-body, td, th, input, select {
+* {
   font-family: AvantGarde, Verdana, Arial, Helvetica, sans-serif;
-  font-size: .9em;
+  font-size: 1em;
+}
+body {
+  margin: .906em;
+  font-size: 75%;
+}
+h1 {
+  font-size: 3.5em;
+  letter-spacing: -3px;
 }
 a {
   text-decoration: none;
@@ -24,11 +32,6 @@ dd {
 #statusInfo {
   border: 1px solid;
 }
-#statusInfo .info {
-  height: 1.2em;
-  max-height: 1.2em;
-  overflow: hidden;
-}
 select {
   border: 1px solid;
 }
@@ -38,21 +41,22 @@ input {
   padding-left: 2px;
 }
 input[type='radio'], input[type='checkbox'] {
-  border: 0px;
+  border: 0;
 }
 input.num {
   text-align: right;
-}
-.section {
-  font-size: 2em;
-  font-family: AvantGarde, Helvetica, Verdana, Arial, sans-serif;
 }
 .term {
   font-weight: 900;
 }
 .label {
-  width: 16em;
+  width: 20em;
   float: left;
+}
+.default {
+  position: relative;
+  right: -15em;
+  width: 24em;
 }
 .info:first-child {
   margin-top: 0.7em;
@@ -63,7 +67,6 @@ input.num {
 }
 div.warning {
   margin: 30px;
-  text-size: 120%;
   text-align: center;
   font-weight: bolder;
 }
@@ -72,8 +75,6 @@ div.warning {
 }
 #menuMain ul#menuMainList a, #menuMain ul#menuMainList span, #menuMain ul#menuMainList a.current {
   text-align: center;
-  font-family: AvantGarde, tahoma, verdana, sans-serif;
-  font-size: 85%;
   text-decoration: none;
 }
 #menuMain ul#menuMainList span, #menuMain ul#menuMainList a.current, #menuMain ul#menuMainList a.current:hover {
@@ -87,6 +88,7 @@ div.warning {
 #menuMain ul#menuSubList li a, #menuMain ul#menuSubList li span {
   border: none;
   border-right: 1px dotted;
+  height: 1em
 }
 #menuMain ul#menuSubList li a {
   text-decoration: none;
