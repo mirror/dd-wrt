@@ -458,6 +458,7 @@ errmsg.err100="Processing...<br />Please wait.";
 errmsg.err101="Restoring configuration file...<br />Please wait.";
 errmsg.err102="Upgrading firmware...<br />Please wait.";
 errmsg.err103="Invalid Character";
+
 // **  COMMON MENU ENTRIES  **//
 var bmenu= new Object();
 bmenu.setup="Setup";
@@ -735,9 +736,6 @@ filter.legend5="Website Blocking by Keyword";
 filter.mess1="Delete the Policy?";
 filter.mess2="You must select a day or days.";
 filter.mess3="The selected end time must be greater than the start time.";
-filter.nat="Filter WAN NAT Redirection";
-filter.port113="Filter IDENT (Port 113)";
-filter.snmp="Block WAN SNMP Access";
 filter.none="";
 filter.packetcount="Filtered Packets";
 
@@ -783,6 +781,10 @@ firewall.pptp="Limit PPTP Server Access";
 firewall.ftp="Limit FTP Server Access";
 firewall.arp_spoofing="ARP Spoofing Protection";
 firewall.filter_tos="Filter ToS / DSCP";
+
+filter.nat="Filter WAN NAT Redirection";
+filter.port113="Filter IDENT (Port 113)";
+filter.snmp="Block WAN SNMP Access";
 
 //help container
 var hfirewall=new Object();
