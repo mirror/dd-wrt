@@ -692,6 +692,9 @@ dmz.host="IP-Adresse des DMZ-Hosts";
 
 hdmz.right2="Wenn Sie diese Option aktivieren wird der angegebene Host in das Internet durchgeschaltet. Alle Ports sind dann vom Internet aus erreichbar";
 
+//help page
+hdmz.page1="<dd>Mit der DMZ-Hosting-Funktion (Demilitarized Zone) kann ein lokales Gerät mit dem Internet verbunden werden, um einen speziellen Dienst wie Internetspiele oder Videokonferenzen zu nutzen. Beim DMZ-Hosting werden alle Ports gleichzeitig an ein Gerät weitergeleitet. Die Funktion Portweiterleitung ist sicherer, da sie nur die Ports öffnet, die Sie geöffnet haben möchten, während das DMZ-Hosting alle Ports eines Computers öffnet und das Gerät für das Internet sichtbar macht.<br /><br /><div class=\"note\"><h4>Hinweis:</h4><div>Jedem Gerät, dessen Port weitergeleitet wird, muss eine statische IP-Adresse zugewiesen werden, da sich die IP-Adresse bei Verwendung der DHCP-Funktion ändern kann.</div></div></dd>";
+hdmz.page2="<dd>Um ein Gerät für das Internet zugänglich zu machen, wählen Sie <em>" + share.enable + "</em> und geben Sie die IP-Adresse des Computers in das Feld <i>IP-Adresse des DMZ-Hosts</i> ein.<br /><br />Um die DMZ zu deaktivieren, behalten Sie die Standardeinstellung <em>" + share.disable + "</em> bei.</dd><dd>Klicken Sie auf die Schaltfläche <em>" + sbutton.save + "</em> um Ihre Einstellungen zu speichern, oder klicken Sie auf die Schaltfläche <em>" + sbutton.cancel + "</em> um Ihre nicht gespeicherten Änderungen zu verwerfen.</dd>";
 
 // ** Factory_Defaults.asp **//
 
