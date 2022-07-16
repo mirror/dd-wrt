@@ -721,7 +721,6 @@ filterIP.legend2="Geben Sie die IP-Adresse des PCs ein";
 filterIP.legend3="Geben Sie den IP-Bereich der PCs an";
 filterIP.ip_range="IP Bereich";
 
-
 // ** Filter.asp **//
 
 filter.titl="Zugriffsbeschränkung";
@@ -741,6 +740,7 @@ filter.legend5="Webseite mit Hilfe von Schlagworten blockieren";
 filter.mess1="Löschen der Richtlinie?";
 filter.mess2="Sie müssen mindestens einen Tag angeben.";
 filter.mess3="Die Endzeit muss nach der Startzeit liegen.";
+filter.none="";
 filter.packetcount="Gefilterte Pakete";
 
 //help container
@@ -763,7 +763,6 @@ filterSum.h2="Zusammenfassung Internetrichtlinie ";
 filterSum.polnum="Nr.";
 filterSum.polday="Uhrzeit";
 
-
 // ** Firewall.asp **//
 
 firewall.titl="Firewall";
@@ -785,7 +784,6 @@ firewall.pptp="PPTP Server Zugriff limitieren";
 firewall.ftp="FTP Server Zugriff limitieren";
 firewall.arp_spoofing="ARP Spoofing Schutz";
 firewall.filter_tos="Filtere ToS/DSCP";
-
 
 filter.nat="WAN-NAT-Umleitung filtern";
 filter.port113="IDENT (Port 113) filtern";
