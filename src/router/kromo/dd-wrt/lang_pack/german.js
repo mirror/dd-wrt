@@ -793,7 +793,20 @@ filter.snmp="Block WAN SNMP access";
 
 hfirewall.right2="Schaltet die SPI-Firewall ein oder aus.";
 
-
+// help page
+hfirewall.page1="<dd>Blockiert HTTP-Anfragen, die die Zeichenkette &quot;<i>Host:</i>&quot; enthalten.</dd>";
+hfirewall.page2="<dd>Erkennt HTTP-Anfragen, die die Zeichenfolge &quot;<i>Cookie:</i>&quot; enthalten, und verfälscht das Cookie. Versucht, die Verwendung von Cookies zu verhindern.</dd>";
+hfirewall.page3="<dd>Blockiert HTTP-Anfragen, die eine URL mit der Endung &quot;<i>.js</i>&quot; oder &quot;<i>.class</i>&quot; enthalten.</dd>";
+hfirewall.page4="<dd>Blockiert HTTP-Anfragen, die eine URL mit der Endung &quot;<i>.ocx</i>&quot; oder &quot;<i>.cab</i>&quot; enthalten.</dd>";
+hfirewall.page5="<dd>Verhindert, dass der Router auf &quot;Pings&quot; aus dem WAN antwortet.</dd>";
+hfirewall.page6="<dd>Verhindert, dass Multicast-Pakete das LAN erreichen.</dd>";
+hfirewall.page7="<dd>Verhindert, dass Hosts im LAN die WAN-Adresse des Routers verwenden, um Server (mit eingerichteter Port-Weiterleitung) im LAN zu kontaktieren.</dd>";
+hfirewall.page8="<dd>Verhindert den WAN-Zugriff auf Port 113.</dd>";
+hfirewall.page9="<dd>Der Router kann den gesamten eingehenden und ausgehenden Datenverkehr für Ihre Internetverbindung protokollieren.</dd>";
+hfirewall.page10="<dd>Um Aktivitätsprotokolle zu erstellen, wählen Sie  <em>" + share.enable + "</em>. Um die Protokollierung zu beenden, wählen Sie <em>" + share.disable + "</em>.</dd>";
+hfirewall.page11="<dd>Stellen Sie hier die gewünschte Informationsmenge ein. Setzen Sie den <i>Log Level</i> höher, um mehr Aktionen zu protokollieren.</dd>";
+hfirewall.page12="<dd>Klicken Sie auf die Schaltfläche <em>" + sbutton.log_in + "</em>, um sich ein temporäres Protokoll der letzten eingehenden Verbindungen des Routers anzeigen zulassen.</td>";
+hfirewall.page13="<dd>Klicken Sie auf die Schaltfläche <em>" + sbutton.log_out + "</em>, um sich ein temporäres Protokoll der letzten ausgehenden Verbindungen des Routers anzeigen zulassen.</dd><dd>Überprüfen Sie alle Werte und klicken Sie auf die Schaltfläche <em>" + sbutton.save + "</em>, um Ihre Einstellungen zu speichern. Klicken Sie auf die Schaltfläche <em>" + sbutton.cancel + "</em>, um Ihre nicht gespeicherten Änderungen zu verwerfen.</dd>";
 
 // ** Forward.asp **//
 
