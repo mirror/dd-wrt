@@ -708,6 +708,9 @@ factdef.mess1="Warnung! Wenn Sie OK klicken wird das Gerät auf die Werkseinstel
 
 hfactdef.right1="Diese Funktion setzt die Konfiguration auf den Auslieferungszustand zurück. Alle Ihre Einstellungen werden gelöscht.";
 
+// help page
+hfactdef.page1="<dd>Wenn Sie Probleme mit Ihrem Router haben (die möglicherweise auf eine Änderung bestimmter Einstellungen zurückzuführen sind) dann können Sie die Werkseinstellungen wiederherstellen.</dd>";
+hfactdef.page2="<dd>Klicken Sie auf die Schaltfläche <em>" + share.yes + "</em> um alle Konfigurationseinstellungen auf ihre Standardwerte zurückzusetzen. Klicken Sie anschließend auf die Schaltfläche <em>" + sbutton.apply + "</em>.<br /><br /><div class=\"note\"><h4>Hinweis:</h4><div>Alle von Ihnen gespeicherten Einstellungen gehen verloren, wenn die Werkseinstellungen wiederhergestellt werden. Nach dem Zurücksetzen auf die Werkseinstellungen wird der Router neu gestartet und ist über die Standard-IP-Adresse 192.168.1.1 erreichbar, und die Eingabe eines neuen Benutzernamens und Kennworts ist erforderlich, bevor Sie weitere Einstellungen vornehmen können.</div></div></dd>";
 
 // ** FilterIPMAC.asp **//
 
