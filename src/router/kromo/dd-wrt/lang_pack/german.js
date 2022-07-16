@@ -647,12 +647,12 @@ hddns.right2="DDNS erlaubt Ihnen den Zugriff auf Ihr Netzwerk unter Zuhilfenahme
 hddns.right4="Geben Sie eine Zahl in der Box an um den Intervall für das erzwungene Update anzugeben (in Tagen). Updates sollten nur automatisch durchgeführt werden wenn sich Ihre IP ändert. Achten Sie darauf das Sie Updates nicht zu oft durchführen, da ihr DDNS Provider Sie sonst sperren könnte.";
 
 //help page
-hddns.page1="<dd>Der Router bietet eine DDNS (Dynamic Domain Name System) Funktion. Mit DDNS können Sie einer dynamischen öffentlichen IP-Adresse einen festen Host- und Domainname zuweisen. Dies ist nützlich, wenn Sie Ihre eigene Website hosten oder einen anderen Server hinter dem Router betreiben, der über das Internet zugänglich gemacht werden soll. Um die Funktion nutzen zu können, müssen Sie sich bei einem DDNS-Dienst registrieren, z. B. bei <a href=\"http:\/\/www.dyndns.org\" target=\"_new\">www.dyndns.org</a>, einer der verschiedenen DDNS-Anbieter, die von DD-WRT unterstützt werden.</dd>";
+hddns.page1="<dd>Der Router bietet eine DDNS (Dynamic Domain Name System) Funktion. Mit DDNS können Sie einer dynamischen öffentlichen IP-Adresse einen festen Host- und Domainname zuweisen. Dies ist nützlich, wenn Sie Ihre eigene Website hosten oder einen anderen Server hinter dem Router betreiben, der über das Internet zugänglich gemacht werden soll. Um die Funktion nutzen zukönnen, müssen Sie sich bei einem DDNS-Dienst registrieren, z. B. bei <a href=\"http:\/\/www.dyndns.org\" target=\"_new\">www.dyndns.org</a>, einer der verschiedenen DDNS-Anbieter, die von DD-WRT unterstützt werden.</dd>";
 hddns.page2="<dd>Um den DDNS-Dienst zu deaktivieren, behalten Sie die Standardeinstellung <em>" + share.disable + "</em> bei. Folgen Sie den Anweisungen um den DDNS-Dienst zu aktivieren:<ol class=\"wide\"><li>Melden Sie sich unter <a href=\"http:\/\/www.dyndns.org\" target=\"_new\">www.dyndns.org</a> für den DDNS-Dienst an, und notieren Sie sich Ihren Benutzernamen, Ihr Kennwort und Ihren Hostnamen.</li><li>Auf der Registerkarte DDNS wählen Sie <i>DynDNS.org</i> aus dem Dropdown-Menü aus.</li><li>Füllen Sie die Felder <i>Benutzername</i>, <i>Passwort</i> und <i>Hostname</i> aus.</li><li>Klicken Sie auf die Schaltfläche <em>" + sbutton.save + "</em> um Ihre Änderungen zu speichern. Klicken Sie auf die Schaltfläche <em>" + sbutton.cancel + "</em> um nicht gespeicherte Änderungen zu verwerfen.</li></ol><br />Sie können nun vom Internet aus mit der von Ihnen gewählten Domain auf Ihren Router zugreifen.</dd>";
 hddns.page3="<dd>Der <em>statische</em> DNS-Dienst ist dem <em>dynamischen</em> DNS-Dienst insoweit ähnlich, das er es ermöglicht, dass ein Hostname wie yourname.dyndns.org auf Ihre IP-Adresse verweist. Im Gegensatz zu einem <em>dynamischen</em> DNS-Host erlischt die Gültigkeit eines <em>statischen</em> DNS-Hosts nicht nach 35 Tagen ohne Aktualisierung, aber es dauert länger, bis sich Aktualisierungen im DNS-System verbreiten.<br />Der DynDNS Service bietet eine verwaltete primäre DNS-Lösung, die Ihnen die vollständige Kontrolle über einen gesamten Domainnamen gibt und einen einheitlichen primären/sekundären DNS-Service bietet. Eine webbasierte Schnittstelle bietet zwei Ebenen der Kontrolle über Ihre Domain, die sowohl für normale als auch für Power-User geeignet ist.</dd>";
 hddns.page4="<dd>Wenn Sie die Wildcard-Funktion für Ihren Host aktivieren, wird *.yourhost.dyndns.org als Alias für die gleiche IP-Adresse wie yourhost.dyndns.org verwendet. Diese Funktion ist nützlich, wenn Sie z. B. www.yourhost.dyndns.org verwenden und trotzdem Ihren Hostnamen erreichen möchten.</dd>";
 hddns.page5="<dd>Geben Sie eine ganze Zahl in das Feld ein, um das Intervall für die erzwungene Aktualisierung (in Tagen) festzulegen. Eine erzwungene Aktualisierung ist eine Aktualisierung, die durchgeführt wird, obwohl sich Ihre IP-Adresse nicht geändert hat. Eine erzwungene Aktualisierung ist insbesondere für Benutzer erforderlich, die keine Spender von dyndns.org sind, um die Löschung des Hostnamen zu verhindern.</dd>";
-hddns.page6="<dd>Hier wird der Status des DDNS-Dienstes angezeigt.</dd>";
+hddns.page6="<dd>Hier wird der Status des DDNS-Dienst angezeigt.</dd>";
 
 // ** Diagnostics.asp **//
 
@@ -673,7 +673,12 @@ diag.stopped="gestoppt";
 
 hdiag.right2="Hier können Sie mit Hilfe des Web-GUI Kommandos auf der Kommandozeile starten. Geben Sie einfach Ihre Kommandos in das Textfeld ein und klicken Sie <em>" + sbutton.runcmd + "</em> um diese auszuführen.";
 
-
+//help page
+hdiag.page1="<dd><b>Empfohlen:</b> Eine Terminal-Verbindung über SSH/Telnet ist für einige Befehle besser geeignet, flexibler, schneller und zuverlässiger.</dd>";
+hdiag.page2="<dd>Geben Sie in das Eingabefeld den gewünschten Befehl ein und klicken Sie auf die Schaltfläche <em>" + sbutton.runcmd + "</em> um den Befehl auszuführen.</dd>";
+hdiag.page3="<dd>Sie können bestimmte Befehle angeben, die beim Start des Routers ausgeführt werden sollen. Geben Sie die gewünschten Befehle in das Eingabefeld ein (nur ein Befehl pro Zeile) und klicken Sie auf die Schaltfläche <em>" + sbutton.startup + "</em>.</dd>";
+hdiag.page4="<dd>Jedes Mal, wenn die Firewall gestartet wird, können benutzerdefinierte Firewall-Regeln zur Filterkette hinzugefügt werden. Füllen Sie das Eingabefeld mit zusätzlichen iptables/ip6tables Befehlen (nur ein Befehl pro Zeile) und klicken Sie auf die Schaltfläche <em>" + sbutton.firewall + "</em>.<br /><br />";
+hdiag.page5="<dd>Ein benutzerdefiniertes Skript wird in <b>/tmp/.rc_custom</b> gespeichert. Sie können es manuell ausführen oder Cron verwenden, um das Skript auszuführen. Füllen Sie das Eingabefeld mit den gewünschten Befehlen (nur ein Befehl pro Zeile) und klicken Sie auf die Schaltfläche <em>" + sbutton.custom + "</em>.<br /><br /><div class=\"note\"><h4>Hinweis:</h4><div><ul><li>Startup Befehle werden in der NVRAM-Variable rc_startup gespeichert</li><li>Firewall Befehle werden in der NVRAM-Variable rc_firewall gespeichert</li><li>Benutzerdefinierte Skripte werden in der NVRAM-Variable rc_custom gespeichert</li></ul></div></div></dd>";
 
 // ** DMZ.asp **//
 
@@ -686,7 +691,6 @@ dmz.host="IP-Adresse des DMZ-Hosts";
 //help container
 
 hdmz.right2="Wenn Sie diese Option aktivieren wird der angegebene Host in das Internet durchgeschaltet. Alle Ports sind dann vom Internet aus erreichbar";
-
 
 
 // ** Factory_Defaults.asp **//
