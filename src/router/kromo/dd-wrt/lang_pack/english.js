@@ -1318,7 +1318,7 @@ idx.portsetup="Port Setup";
 idx.wanport="WAN Port Assignment";
 idx.legend3="NTP Client Settings";
 idx.timeset="Time Zone";
-idx.ntp_input_placeholder="Leave blank for automated resolution";
+idx.ntp_input_placeholder="2.pool.ntp.org 212.18.3.19 88.99.174.22";
 idx.ntp_client="Enable Client";
 idx.ntp_timer="Update Interval";
 
