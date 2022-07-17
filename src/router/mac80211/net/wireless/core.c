@@ -40,15 +40,23 @@ MODULE_LICENSE("GPL");
 MODULE_DESCRIPTION("wireless configuration support");
 MODULE_ALIAS_GENL_FAMILY(NL80211_GENL_NAME);
 
+/*
+ * Central wireless core regulatory domains, we only need two,
+ * the current one and a world regulatory domain in case we have no
+ * information to give us an alpha2.
+ * (protected by RTNL, can be read under RCU)
+ */
+static const struct ieee80211_regdomain __rcu *cfg80211_regdomain;
+
 /* RCU-protected (and RTNL for writers) */
-LIST_HEAD(cfg80211_rdev_list);
-int cfg80211_rdev_list_generation;
+static struct list_head cfg80211_rdev_list = LIST_HEAD_INIT(cfg80211_rdev_list);
+static int cfg80211_rdev_list_generation;
 
 /* for debugfs */
 static struct dentry *ieee80211_debugfs_dir;
 
 /* for the cleanup, scan and event works */
-struct workqueue_struct *cfg80211_wq;
+static struct workqueue_struct *cfg80211_wq;
 
 static bool cfg80211_disable_40mhz_24ghz;
 module_param(cfg80211_disable_40mhz_24ghz, bool, 0644);

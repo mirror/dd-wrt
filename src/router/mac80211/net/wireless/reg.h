@@ -26,7 +26,7 @@ enum ieee80211_regd_source {
 	REGD_SOURCE_CACHED,
 };
 
-extern const struct ieee80211_regdomain __rcu *cfg80211_regdomain;
+//extern const struct ieee80211_regdomain __rcu *cfg80211_regdomain;
 
 static bool reg_is_valid_request(const char *alpha2);
 static bool is_world_regdom(const char *alpha2);

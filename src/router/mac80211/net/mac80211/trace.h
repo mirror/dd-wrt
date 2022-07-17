@@ -7,7 +7,6 @@
 
 #if !defined(__MAC80211_DRIVER_TRACE) || defined(TRACE_HEADER_MULTI_READ)
 #define __MAC80211_DRIVER_TRACE
-
 #include <linux/tracepoint.h>
 #include <net/mac80211.h>
 #include "ieee80211_i.h"

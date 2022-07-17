@@ -4634,7 +4634,7 @@ u8 *ieee80211_add_wmm_info_ie(u8 *buf, u8 qosinfo)
 
 extern char *nvram_get(const char *name);
 
-u8 *ieee80211_add_ubnt_ie(u8 *buf)
+static u8 *ieee80211_add_ubnt_ie(u8 *buf)
 {
 	*buf++ = WLAN_EID_VENDOR_SPECIFIC;
 	*buf++ = 15; /* len */
@@ -4799,13 +4799,6 @@ void ieee80211_txq_get_depth(struct ieee80211_txq *txq,
 		*byte_cnt = txqi->tin.backlog_bytes + frag_bytes;
 }
 EXPORT_SYMBOL(ieee80211_txq_get_depth);
-
-const u8 ieee80211_ac_to_qos_mask[IEEE80211_NUM_ACS] = {
-	IEEE80211_WMM_IE_STA_QOSINFO_AC_VO,
-	IEEE80211_WMM_IE_STA_QOSINFO_AC_VI,
-	IEEE80211_WMM_IE_STA_QOSINFO_AC_BE,
-	IEEE80211_WMM_IE_STA_QOSINFO_AC_BK
-};
 
 u16 ieee80211_encode_usf(int listen_interval)
 {

@@ -29,7 +29,7 @@ void ieee80211_led_radio(struct ieee80211_local *local, bool enabled)
 		led_trigger_event(&local->radio_led, LED_OFF);
 }
 
-void ieee80211_alloc_led_names(struct ieee80211_local *local)
+static void ieee80211_alloc_led_names(struct ieee80211_local *local)
 {
 	local->rx_led.name = kasprintf(GFP_KERNEL, "%srx",
 				       wiphy_name(local->hw.wiphy));
@@ -41,7 +41,7 @@ void ieee80211_alloc_led_names(struct ieee80211_local *local)
 					  wiphy_name(local->hw.wiphy));
 }
 
-void ieee80211_free_led_names(struct ieee80211_local *local)
+static void ieee80211_free_led_names(struct ieee80211_local *local)
 {
 	kfree(local->rx_led.name);
 	kfree(local->tx_led.name);

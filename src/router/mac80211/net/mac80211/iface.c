@@ -852,6 +852,9 @@ static const struct net_device_ops ieee80211_dataif_ops = {
 
 };
 
+static bool ieee80211_parse_tx_radiotap(struct sk_buff *skb,
+				 struct net_device *dev);
+
 #if LINUX_VERSION_IS_GEQ(5,2,0)
 static u16 ieee80211_monitor_select_queue(struct net_device *dev,
 					  struct sk_buff *skb,
