@@ -322,7 +322,7 @@ sbutton.filterIP="Liste der PCs editieren";
 sbutton.filterMac="MAC-Filterliste editieren";
 sbutton.filterSer="Dienst hinzufügen/editieren";
 sbutton.reboot="Router neu starten";
-sbutton.help="   Hilfe  ";
+//sbutton.help="   Hilfe  ";
 sbutton.wl_client_mac="MAC-Liste WLAN-Clients";
 sbutton.update_filter="Filterliste updaten";
 sbutton.join="Verbinden";
@@ -654,31 +654,6 @@ hddns.page4="<dd>Wenn Sie die Wildcard-Funktion für Ihren Host aktivieren, wird
 hddns.page5="<dd>Geben Sie eine ganze Zahl in das Feld ein, um das Intervall für die erzwungene Aktualisierung (in Tagen) festzulegen. Eine erzwungene Aktualisierung ist eine Aktualisierung, die durchgeführt wird, obwohl sich Ihre IP-Adresse nicht geändert hat. Eine erzwungene Aktualisierung ist insbesondere für Benutzer erforderlich, die keine Spender von dyndns.org sind, um die Löschung des Hostnamen zu verhindern.</dd>";
 hddns.page6="<dd>Hier wird der Status des DDNS-Dienst angezeigt.</dd>";
 
-// ** Log.asp **//
-
-log.label="Log";
-log.h2="Log-Verwaltung";
-log.legend="Log";
-log.lvl="Log-Level";
-log.drop="Abgewiesen";
-log.reject="Zurückgewiesen";
-log.accept="Akzeptiert";
-
-// ** Log_incoming.asp **//
-
-log_in.titl="Eingehende Log-Tabelle";
-log_in.h2="Eingehende Log-Tabelle";
-log_in.th_ip="Ursprungs-IP";
-log_in.th_port="Ziel-Port-Nummer";
-
-// ** Log_outgoing.asp **//
-
-log_out.titl="Ausgehende Log-Tabelle";
-log_out.h2="Ausgehende Log-Tabelle";
-log_out.th_lanip="LAN-IP";
-log_out.th_wanip="Ziel-URL/IP";
-log_out.th_port="Dienst-/Port-Nummer";
-
 // ** Diagnostics.asp **//
 
 diag.titl="Diagnose";
@@ -714,7 +689,6 @@ dmz.serv="DMZ verwenden";
 dmz.host="IP-Adresse des DMZ-Hosts";
 
 //help container
-
 hdmz.right2="Wenn Sie diese Option aktivieren wird der angegebene Host in das Internet durchgeschaltet. Alle Ports sind dann vom Internet aus erreichbar";
 
 //help page
@@ -815,8 +789,29 @@ filter.nat="WAN-NAT-Umleitung filtern";
 filter.port113="IDENT (Port 113) filtern";
 filter.snmp="Block WAN SNMP access";
 
-//help container
+// ** Log.asp **//
+log.label="Log";
+log.h2="Log-Verwaltung";
+log.legend="Log";
+log.lvl="Log-Level";
+log.drop="Abgewiesen";
+log.reject="Zurückgewiesen";
+log.accept="Akzeptiert";
 
+// ** Log_incoming.asp **//
+log_in.titl="Eingehende Log-Tabelle";
+log_in.h2="Eingehende Log-Tabelle";
+log_in.th_ip="Ursprungs-IP";
+log_in.th_port="Ziel-Port-Nummer";
+
+// ** Log_outgoing.asp **//
+log_out.titl="Ausgehende Log-Tabelle";
+log_out.h2="Ausgehende Log-Tabelle";
+log_out.th_lanip="LAN-IP";
+log_out.th_wanip="Ziel-URL/IP";
+log_out.th_port="Dienst-/Port-Nummer";
+
+//help container
 hfirewall.right2="Schaltet die SPI-Firewall ein oder aus.";
 
 // help page
@@ -1227,16 +1222,11 @@ dsl.snr="DSL Signal (up/down)";
 
 // ** Join.asp **//
 
-
 //sshd.webservices
 join.titl="Verbinden";
 join.mess1="Sie sind nun erfolgreich mit dem folgenden Netzwerk als Client verbunden: ";
 
-
-
-
 // ** Management.asp **//
-
 management.titl="Administration";
 management.h2="Router Management";
 management.changepassword="Ihr Router ist derzeit nicht gegen unbefugten Zugriff geschützt, bitte ändern Sie ihren Benutzernamen und ihr Kennwort mit Hilfe des folgenden Dialogs!";

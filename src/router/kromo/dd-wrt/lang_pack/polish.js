@@ -272,7 +272,7 @@ sbutton.filterIP="Edytuj listę klientów";
 sbutton.filterMac="Edytuj listę filtrowania MAC";
 sbutton.filterSer="Dodaj/Edytuj usługę";
 sbutton.reboot="Zrestartuj router";
-sbutton.help="   Pomoc  ";
+//sbutton.help="   Pomoc  ";
 sbutton.wl_client_mac="Lista adresów MAC klientów bezprzewodowych";
 sbutton.update_filter="Zaktualizuj listę filtrowania";
 sbutton.join="Dołącz";
@@ -706,7 +706,6 @@ filterSum.polnum="Nr";
 filterSum.polday="Pora dnia";
 
 // ** Firewall.asp **//
-
 firewall.titl="Zapora sieciowa";
 firewall.h2="Zabezpieczenia";
 firewall.legend="Zabezpieczenia zapory sieciowej";
@@ -727,8 +726,29 @@ firewall.ftp="Ogranicz dostęp do serwera FTP";
 firewall.arp_spoofing="Zebezpieczenie przed Spoofingiem ARP";
 firewall.filter_tos="Filtruj TOS/DSCP";
 
-//help container
+// ** Log.asp **//
+log.label="Log";
+log.h2="Log Management";
+log.legend="Log";
+log.lvl="Log Level";
+log.drop="Porzucone";
+log.reject="Odrzucone";
+log.accept="Zaakceptowane";
 
+// ** Log_incoming.asp **//
+log_in.titl="Tabela dziennika połączeń przychodzących";
+log_in.h2="Tabela dziennika połączeń przychodzących";
+log_in.th_ip="Źródłowy adres IP";
+log_in.th_port="Docelowy numer portu";
+
+// ** Log_outgoing.asp **//
+log_out.titl="Tabela dziennika połączeń wychodzących";
+log_out.h2="Tabela dziennika połączeń wychodzących";
+log_out.th_lanip="Adres IP LAN";
+log_out.th_wanip="Docelowy adres URL/IP";
+log_out.th_port="Usługa/numer portu";
+
+//help container
 hfirewall.right2="Włącz lub wyłącz SPI firewall.";
 
 // help page
@@ -1251,33 +1271,7 @@ dsl.snr="Sygnał DSL (up/down)";
 join.titl="Dołącz";
 join.mess1="Pomyślnie dołączono jako klient do następującej sieci: ";
 
-// ** Log_incoming.asp **//
-
-log_in.titl="Tabela dziennika połączeń przychodzących";
-log_in.h2="Tabela dziennika połączeń przychodzących";
-log_in.th_ip="Źródłowy adres IP";
-log_in.th_port="Docelowy numer portu";
-
-// ** Log_outgoing.asp **//
-
-log_out.titl="Tabela dziennika połączeń wychodzących";
-log_out.h2="Tabela dziennika połączeń wychodzących";
-log_out.th_lanip="Adres IP LAN";
-log_out.th_wanip="Docelowy adres URL/IP";
-log_out.th_port="Usługa/numer portu";
-
-// ** Log.asp **//
-
-log.label="Log";
-log.h2="Log Management";
-log.legend="Log";
-log.lvl="Log Level";
-log.drop="Porzucone";
-log.reject="Odrzucone";
-log.accept="Zaakceptowane";
-
 // ** Management.asp **//
-
 management.titl="Zarządzanie";
 management.h2="Zarządzenie routerem";
 management.changepassword="Router nie jest obecnie chroniony i używa niebezpiecznej domyślnej kombinacji nazwy użytkownika i hasła; zmień to za pomocą następującego okna dialogowego!";

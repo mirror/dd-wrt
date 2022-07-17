@@ -222,7 +222,7 @@ sbutton.filterIP="Modifier la liste de clients";
 sbutton.filterMac="Modifier liste de filtrage MAC";
 sbutton.filterSer="Ajouter/Éditer Service";
 sbutton.reboot="Redèmarrer";
-sbutton.help="Aide";
+//sbutton.help="Aide";
 sbutton.wl_client_mac="Liste des adresses MAC client";
 sbutton.update_filter="Mise à jour des filtres";
 sbutton.join="Rejoindre";
@@ -573,8 +573,31 @@ firewall.activex="Filtre ActiveX";
 firewall.legend3="Blocage des requêtes WAN";
 firewall.ping="Bloquer les requêtes WAN anonymes (ping)";
 firewall.muticast="Filtre Multidiffusion";
+
 filter.nat="Filtre de redirection NAT WAN";
 filter.port113="Filtre IDENT (port 113)";
+
+// ** Firewall.asp entries**//
+log.label="Journal";
+log.h2="Gestion du journal";
+log.legend="Journal";
+log.lvl="Niveau de dètail";
+log.drop="Ignorè";
+log.reject="Rejetè";
+log.accept="Acceptè";
+
+// ** Log_incoming.asp **//
+log_in.titl="Journal des connexions entrantes";
+log_in.h2="Journal des connexions entrantes";
+log_in.th_ip="Adresse IP source";
+log_in.th_port="Port de destination";
+
+// ** Log_outgoing.asp **//
+log_out.titl="Journal des connexions sortantes";
+log_out.h2="Journal des connexions sortantes";
+log_out.th_lanip="Adresse IP locale";
+log_out.th_wanip="URL/IP destination";
+log_out.th_port="Service/Port";
 
 //help container
 hfirewall.right2="Activez cette fonctionnalitè pour utiliser la technologie SPI (Stateful Packet Inspection) et procéder à une vérification plus poussée des paquets de données infiltrant votre environnement réseau.";
@@ -810,28 +833,6 @@ hidx.right18="Changez le fuseau horaire de votre rèseau à partir du menu déro
 // ** Join.asp **//
 join.titl="Rejoindre";
 join.mess1="Vous avez rejoint avec succès le rèseau sans fil : ";
-
-// ** Log_incoming.asp **//
-log_in.titl="Journal des connexions entrantes";
-log_in.h2="Journal des connexions entrantes";
-log_in.th_ip="Adresse IP source";
-log_in.th_port="Port de destination";
-
-// ** Log_outgoing.asp **//
-log_out.titl="Journal des connexions sortantes";
-log_out.h2="Journal des connexions sortantes";
-log_out.th_lanip="Adresse IP locale";
-log_out.th_wanip="URL/IP destination";
-log_out.th_port="Service/Port";
-
-// ** Log.asp **//
-log.label="Journal";
-log.h2="Gestion du journal";
-log.legend="Journal";
-log.lvl="Niveau de dètail";
-log.drop="Ignorè";
-log.reject="Rejetè";
-log.accept="Acceptè";
 
 // ** Management.asp **//
 management.titl="Administration";

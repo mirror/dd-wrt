@@ -247,7 +247,7 @@ sbutton.filterIP="Editar Lista de PCs";
 sbutton.filterMac="Editar Lista Filtrado MAC";
 sbutton.filterSer="Añadir/Editar Servicio";
 sbutton.reboot="Reiniciar Router";
-sbutton.help="   Ayuda  ";
+//sbutton.help="   Ayuda  ";
 sbutton.wl_client_mac="Listado Direc. MAC WIFI";
 sbutton.update_filter="Actualizar Lista de Filtros";
 sbutton.join="Unirse";
@@ -637,8 +637,31 @@ firewall.activex="Filtrado de ActiveX";
 firewall.legend3="Bloqueo de Peticiones WAN";
 firewall.ping="Bloqueo ping del exterior";
 firewall.muticast="Filtrado Multicast";
+
 filter.nat="Filtrado de Redirección NAT en Internet";
 filter.port113="Filtro IDENT (Puerto 113)";
+
+// ** Log.asp **//
+log.label="LOG";
+log.h2="Administración de LOG";
+log.legend="LOG";
+log.lvl="Nivel de LOG";
+log.drop="Caído";
+log.reject="Rechazado";
+log.accept="Aceptado";
+
+// ** Log_incoming.asp **//
+log_in.titl="Tabla LOG de Entrada";
+log_in.h2="Tabla LOG de Entrada";
+log_in.th_ip="IP Orígen";
+log_in.th_port="No. Puerto Destino";
+
+// ** Log_outgoing.asp **//
+log_out.titl="Tabla LOG de Salida";
+log_out.h2="Tabla LOG de Entrada";
+log_out.th_lanip="IP LAN";
+log_out.th_wanip="URL/IP de Destino";
+log_out.th_port="Servicio/Puerto";
 
 //help container
 hfirewall.right2="Activar o desactivar el Firewall SPI (Inspección de Paquete de Estado).";
@@ -930,33 +953,6 @@ hidx.sas="El asistente de configuración le guia a travès de unos pasos sencill
 //sshd.webservices
 join.titl="Unirse";
 join.mess1="Unido con èxito a la siguiente red como cliente: ";
-
-
-// ** Log_incoming.asp **//
-log_in.titl="Tabla LOG de Entrada";
-log_in.h2="Tabla LOG de Entrada";
-log_in.th_ip="IP Orígen";
-log_in.th_port="No. Puerto Destino";
-
-
-// ** Log_outgoing.asp **//
-
-log_out.titl="Tabla LOG de Salida";
-log_out.h2="Tabla LOG de Entrada";
-log_out.th_lanip="IP LAN";
-log_out.th_wanip="URL/IP de Destino";
-log_out.th_port="Servicio/Puerto";
-
-
-// ** Log.asp **//
-log.label="LOG";
-log.h2="Administración de LOG";
-log.legend="LOG";
-log.lvl="Nivel de LOG";
-log.drop="Caído";
-log.reject="Rechazado";
-log.accept="Aceptado";
-
 
 // ** Management.asp **//
 management.titl="Administración";

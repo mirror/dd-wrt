@@ -260,7 +260,7 @@ sbutton.filterIP="Редактировать список клиентов";
 sbutton.filterMac="Редактировать список MAC-фильтра";
 sbutton.filterSer="Добавить/редактировать службу";
 sbutton.reboot="Перезагрузить роутер";
-sbutton.help="   Помощь  ";
+//sbutton.help="   Помощь  ";
 sbutton.wl_client_mac="Список MAC беспроводных клиентов";
 sbutton.update_filter="Обновить список фильтра";
 sbutton.join="Присоединить";
@@ -632,9 +632,33 @@ firewall.ssh="Ограничить доступ к SSH";
 firewall.telnet="Ограничить доступ по Telnet";
 firewall.pptp="Ограничить доступ к PPTP серверу";
 firewall.ftp="Ограничить доступ к FTP серверу";
+
 filter.nat="Фильтрация NAT-перенаправления WAN";
 filter.port113="Фильтрация IDENT (порт 113)";
 filter.snmp="Блокировать SNMP со стороны WAN ";
+
+// ** Log.asp **//
+log.label="Журнал";
+log.h2="Журнал соединений";
+log.legend="Журнал";
+log.lvl="Уровень журнала";
+log.drop="Отброшенные пакеты";
+log.reject="Отклоненные пакеты";
+log.accept="Принятые пакеты";
+
+// ** Log_incoming.asp **//
+log_in.titl="Журнал входящих пакетов";
+log_in.h2="Журнал входящих пакетов";
+log_in.th_ip="IP отправителя";
+log_in.th_port="Номер порта получателя";
+
+// ** Log_outgoing.asp **//
+log_out.titl="Журнал исходящих пакетов";
+log_out.h2="Журнал исходящих пакетов";
+log_out.th_lanip="Локальный IP";
+log_out.th_wanip="URL/IP назначения";
+log_out.th_port="Служба/номер порта";
+
 //help container
 hfirewall.right2="Включение/отключение брандмауэра SPI.";
 
@@ -978,28 +1002,6 @@ dsl.snr="Сигнал DSL (отдача/прием)";
 //sshd.webservices
 join.titl="Соединение";
 join.mess1="Успешное соединение как клиента со следующей сетью: ";
-
-// ** Log_incoming.asp **//
-log_in.titl="Журнал входящих пакетов";
-log_in.h2="Журнал входящих пакетов";
-log_in.th_ip="IP отправителя";
-log_in.th_port="Номер порта получателя";
-
-// ** Log_outgoing.asp **//
-log_out.titl="Журнал исходящих пакетов";
-log_out.h2="Журнал исходящих пакетов";
-log_out.th_lanip="Локальный IP";
-log_out.th_wanip="URL/IP назначения";
-log_out.th_port="Служба/номер порта";
-
-// ** Log.asp **//
-log.label="Журнал";
-log.h2="Журнал соединений";
-log.legend="Журнал";
-log.lvl="Уровень журнала";
-log.drop="Отброшенные пакеты";
-log.reject="Отклоненные пакеты";
-log.accept="Принятые пакеты";
 
 // ** Management.asp **//
 management.titl="Администрирование";

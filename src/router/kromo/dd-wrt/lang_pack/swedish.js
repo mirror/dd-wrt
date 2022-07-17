@@ -235,7 +235,7 @@ sbutton.filterIP="Ändra Klientlistan";
 sbutton.filterMac="Ändra MAC Filter Listan";
 sbutton.filterSer="Lägg till/Editera Tjänst";
 sbutton.reboot="Starta om Routern";
-sbutton.help="   Hjälp  ";
+//sbutton.help="   Hjälp  ";
 sbutton.wl_client_mac="Trådlösa Klienter MAC Lista";
 sbutton.update_filter="Uppdatera Filter Listan";
 sbutton.join="Gå med";
@@ -612,8 +612,31 @@ firewall.activex="Filtrera ActiveX";
 firewall.legend3="Blockera WAN Förfrågningar";
 firewall.ping="Blockera Anonym WAN Trafik (ping)";
 firewall.muticast="Filtrera Multicast";
+
 filter.nat="Filter WAN NAT Omdirigering";
 filter.port113="Filtrera IDENT (Port 113)";
+
+// ** Log.asp **//
+log.label="Logg";
+log.h2="Logg Administration";
+log.legend="Logg";
+log.lvl="Logg Nivå";
+log.drop="Tappade";
+log.reject="Nekade";
+log.accept="Accepterade";
+
+// ** Log_incoming.asp **//
+log_in.titl="Inkommande Logg Tabell";
+log_in.h2="Inkommande Logg Tabell";
+log_in.th_ip="Käll IP";
+log_in.th_port="Destinations Port Nummer";
+
+// ** Log_outgoing.asp **//
+log_out.titl="Utgående Logg Tabell";
+log_out.h2="Utgående Logg Tabell";
+log_out.th_lanip="LAN IP";
+log_out.th_wanip="Destination URL/IP";
+log_out.th_port="Tjänst/Port Number";
 
 //help container
 hfirewall.right2="Aktivera eller Inaktivera SPI Brandväggen.";
@@ -903,32 +926,6 @@ hidx.sas="Inställningsguiden kan guida dig genom de mest grundläggande instäl
 //sshd.webTjänsts
 join.titl="Anslut";
 join.mess1="Lyckades att ansluta till nätet som klient: ";
-
-
-// ** Log_incoming.asp **//
-log_in.titl="Inkommande Logg Tabell";
-log_in.h2="Inkommande Logg Tabell";
-log_in.th_ip="Käll IP";
-log_in.th_port="Destinations Port Nummer";
-
-
-// ** Log_outgoing.asp **//
-log_out.titl="Utgående Logg Tabell";
-log_out.h2="Utgående Logg Tabell";
-log_out.th_lanip="LAN IP";
-log_out.th_wanip="Destination URL/IP";
-log_out.th_port="Tjänst/Port Number";
-
-
-// ** Log.asp **//
-log.label="Logg";
-log.h2="Logg Administration";
-log.legend="Logg";
-log.lvl="Logg Nivå";
-log.drop="Tappade";
-log.reject="Nekade";
-log.accept="Accepterade";
-
 
 // ** Management.asp **//
 management.titl="Administration";

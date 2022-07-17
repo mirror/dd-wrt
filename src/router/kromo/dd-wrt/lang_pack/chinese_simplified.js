@@ -270,7 +270,7 @@ sbutton.filterIP="编辑客户端列表";
 sbutton.filterMac="编辑MAC过滤列表";
 sbutton.filterSer="添加/编辑服务";
 sbutton.reboot="重启路由器";
-sbutton.help="   帮助  ";
+//sbutton.help="   帮助  ";
 sbutton.wl_client_mac="无线客户端MAC列表";
 sbutton.update_filter="更新过滤列表";
 sbutton.join="加入";
@@ -699,6 +699,27 @@ firewall.ftp="限制FTP服务器访问";
 firewall.arp_spoofing="ARP攻击保护";
 firewall.filter_tos="过滤TOS/DSCP";
 
+// ** Log.asp **//
+log.label="日志";
+log.h2="日志管理";
+log.legend="日志";
+log.lvl="日志等级";
+log.drop="丢弃的";
+log.reject="拒绝的";
+log.accept="已接受的";
+
+// ** Log_incoming.asp **//
+log_in.titl="连入日志表";
+log_in.h2="连入日志表";
+log_in.th_ip="来源IP";
+log_in.th_port="目的端口号";
+
+// ** Log_outgoing.asp **//
+log_out.titl="连出日志表";
+log_out.h2="连出日志表";
+log_out.th_lanip="LAN IP";
+log_out.th_wanip="目的 URL/IP";
+log_out.th_port="服务/端口号";
 
 //help container
 hfirewall.right2="启用或禁用SPI防火墙。";
@@ -1195,32 +1216,6 @@ dsl.snr="DSL信号 (上传/下载)";
 //sshd.webservices
 join.titl="加入";
 join.mess1="成功以客户端身份加入以下网络：";
-
-
-// ** Log_incoming.asp **//
-log_in.titl="连入日志表";
-log_in.h2="连入日志表";
-log_in.th_ip="来源IP";
-log_in.th_port="目的端口号";
-
-
-// ** Log_outgoing.asp **//
-log_out.titl="连出日志表";
-log_out.h2="连出日志表";
-log_out.th_lanip="LAN IP";
-log_out.th_wanip="目的 URL/IP";
-log_out.th_port="服务/端口号";
-
-
-// ** Log.asp **//
-log.label="日志";
-log.h2="日志管理";
-log.legend="日志";
-log.lvl="日志等级";
-log.drop="丢弃的";
-log.reject="拒绝的";
-log.accept="已接受的";
-
 
 // ** Management.asp **//
 management.titl="管理";

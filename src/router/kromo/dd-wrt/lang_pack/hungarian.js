@@ -170,7 +170,7 @@ sbutton.filterIP="Kliensek listájának szerkesztése";
 sbutton.filterMac="MAC filterek listájának szerkesztése";
 sbutton.filterSer="Szolgáltatás hozzáadása/szerkesztése";
 sbutton.reboot="Router újraindítás";
-sbutton.help="   Segítség  ";
+//sbutton.help="   Segítség  ";
 sbutton.wl_client_mac="Vezetéknélküli kliensek MAC listája";
 sbutton.update_filter="Filter listák frissítése";
 sbutton.join="Csatlakozás";
@@ -514,17 +514,12 @@ hfilter.right12="Választhatja bizonyos szolgáltatásokhoz való hozzáférés 
 hfilter.right14="Egyes weboldalak blokkolását URL-jük megadásával érheti el.";
 hfilter.right16="Egyes weboldalak blokkolását a weboldalban található kulcsszó megadásával érheti el.";
 
-
-
-
 // **************************************************************** FilterSummary.asp **********************************************************************//
 
 filterSum.titl="Hozzáférés-korlátozás összefoglalója";
 filterSum.h2="Internet házirend összefoglalója ";
 filterSum.polnum="Sorszám";
 filterSum.polday="Nap időpontja";
-
-
 
 // **************************************************************** Firewall.asp **********************************************************************//
 
@@ -540,11 +535,33 @@ firewall.activex="ActiveX szűrés";
 firewall.legend3="WAN kérések blokkolása";
 firewall.ping="Anonymous WAN kérések (ping) blokkolása";
 firewall.muticast="Multicast szűrés";
+
 filter.nat="WAN NAT átirányítás szűrés";
 filter.port113="IDENT (Port 113) szűrés";
 
-//help container
+// **************************************************************** Log.asp **********************************************************************//
+log.label="Naplózás";
+log.h2="Naplózás kezelése";
+log.legend="Naplózás";
+log.lvl="Naplózási szint";
+log.drop="Eldobva";
+log.reject="Elutasítva";
+log.accept="Elfogadva";
 
+// **************************************************************** Log_incoming.asp **********************************************************************//
+log_in.titl="Bejövő naplózási táblák";
+log_in.h2="Bejövő naplózási táblák";
+log_in.th_ip="Forrás IP";
+log_in.th_port="Cél port szám";
+
+// **************************************************************** Log_outgoing.asp **********************************************************************//
+log_out.titl="Kimenő naplózási táblák";
+log_out.h2="Kimenő naplózási táblák";
+log_out.th_lanip="LAN IP";
+log_out.th_wanip="Cél URL/IP";
+log_out.th_port="Szolgáltatás/Port szám";
+
+//help container
 hfirewall.right2="Kapcsolja be vagy ki az SPI tűzfalat.";
 
 
@@ -747,39 +764,6 @@ hidx.right18="Válassza ki azt az időzónát, amelyben él és a nyári idősz�
 //sshd.webservices
 join.titl="Csatlakozás";
 join.mess1="Sikeresen csatlakozott a következő hálózathoz mint kliens: ";
-
-
-
-// **************************************************************** Log_incoming.asp **********************************************************************//
-
-log_in.titl="Bejövő naplózási táblák";
-log_in.h2="Bejövő naplózási táblák";
-log_in.th_ip="Forrás IP";
-log_in.th_port="Cél port szám";
-
-
-
-// **************************************************************** Log_outgoing.asp **********************************************************************//
-
-log_out.titl="Kimenő naplózási táblák";
-log_out.h2="Kimenő naplózási táblák";
-log_out.th_lanip="LAN IP";
-log_out.th_wanip="Cél URL/IP";
-log_out.th_port="Szolgáltatás/Port szám";
-
-
-
-// **************************************************************** Log.asp **********************************************************************//
-
-log.label="Naplózás";
-log.h2="Naplózás kezelése";
-log.legend="Naplózás";
-log.lvl="Naplózási szint";
-log.drop="Eldobva";
-log.reject="Elutasítva";
-log.accept="Elfogadva";
-
-
 
 // **************************************************************** Management.asp **********************************************************************//
 

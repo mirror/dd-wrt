@@ -258,7 +258,7 @@ sbutton.filterIP="Editar Lista de Clientes";
 sbutton.filterMac="Editar Lista do Filtro de MAC";
 sbutton.filterSer="Adicionar/Editar Serviço";
 sbutton.reboot="Reiniciar Roteador";
-sbutton.help="  Ajuda  ";
+//sbutton.help="  Ajuda  ";
 sbutton.wl_client_mac="Lista de MAC dos Clientes Wireless Associados";
 sbutton.update_filter="Atualizar Lista do Filtro";
 sbutton.join="Ingressar";
@@ -678,6 +678,28 @@ firewall.telnet="Limitar Acesso Telnet";
 firewall.pptp="Limitar Acesso ao Servidor PPTP";
 //firewall.http="Limitar Acesso HTTP";
 
+// ** Log.asp **//
+log.label="Log";
+log.h2="Gerenciamento do Log";
+log.legend="Log";
+log.lvl="Nível do Log";
+log.drop="Pacotes Derrubados";
+log.reject="Pacotes Rejeitados";
+log.accept="Pacotes Aceitos";
+
+// ** Log_incoming.asp **//
+log_in.titl="Tabela do Log de Entrada";
+log_in.h2="Tabela do Log de Entrada";
+log_in.th_ip="IP de Origem";
+log_in.th_port="Número da Porta de Destino";
+
+// ** Log_outgoing.asp **//
+log_out.titl="Tabela do Log de Saída";
+log_out.h2="Tabela do Log de Saída";
+log_out.th_lanip="IP da LAN";
+log_out.th_wanip="URL/IP de Destino";
+log_out.th_port="Número do Serviço/Porta";
+
 //help container
 hfirewall.right2="Habilita ou desabilita o firewall SPI.";
 
@@ -1031,32 +1053,6 @@ dsl.snr="Sinal DSL (up/down)";
 //sshd.webservices
 join.titl="Ingressar";
 join.mess1="Ingresso como cliente realizado com sucesso à rede: ";
-
-
-// ** Log_incoming.asp **//
-log_in.titl="Tabela do Log de Entrada";
-log_in.h2="Tabela do Log de Entrada";
-log_in.th_ip="IP de Origem";
-log_in.th_port="Número da Porta de Destino";
-
-
-// ** Log_outgoing.asp **//
-log_out.titl="Tabela do Log de Saída";
-log_out.h2="Tabela do Log de Saída";
-log_out.th_lanip="IP da LAN";
-log_out.th_wanip="URL/IP de Destino";
-log_out.th_port="Número do Serviço/Porta";
-
-
-// ** Log.asp **//
-log.label="Log";
-log.h2="Gerenciamento do Log";
-log.legend="Log";
-log.lvl="Nível do Log";
-log.drop="Pacotes Derrubados";
-log.reject="Pacotes Rejeitados";
-log.accept="Pacotes Aceitos";
-
 
 // ** Management.asp **//
 management.titl="Administração";

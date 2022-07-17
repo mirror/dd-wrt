@@ -4,9 +4,6 @@
 // ** COMMON SHARE LABEL **//
 lang_charset.set="utf-8"; 
 
-
-
- 
 share.firmware="Firmware";
 share.time="Time";
 share.interipaddr="WAN IP 位址";
@@ -227,7 +224,7 @@ sbutton.filterIP="編輯PC清單";
 sbutton.filterMac="編輯MAC篩檢清單";
 sbutton.filterSer="新增/編輯";
 sbutton.reboot="重新啟動路由器";
-sbutton.help="   幫助  ";
+//sbutton.help="   幫助  ";
 sbutton.wl_client_mac="無線用戶端MAC清單";
 sbutton.update_filter="更新篩檢清單";
 sbutton.join="加入";
@@ -587,17 +584,13 @@ hfilter.right12="選擇停止特定的協定.按 <em>" + sbutton.filterSer + "</
 hfilter.right14="輸入特定Web網頁的URL來禁止對其連線.";
 hfilter.right16="輸入在特定Web網頁頁面中的關鍵字來禁止對其連線.";
 
-
 // ** FilterSummary.asp **//
-//
 filterSum.titl="連線限制總覽";
 filterSum.h2="Internet 計畫總覽";
 filterSum.polnum="序號";
 filterSum.polday="（每天的）時間";
 
-
 // ** Firewall.asp **//
-//
 firewall.titl="防火牆";
 firewall.h2="安全設定";
 firewall.legend="防火牆保護";
@@ -610,28 +603,46 @@ firewall.activex="過濾 ActiveX";
 firewall.legend3="禁止來自WAN端的請求";
 firewall.ping="不回應 Internet的 ping";
 firewall.muticast="過濾多點傳播";
+
 filter.nat="過濾WAN NAT Redirection";
 filter.port113="過濾IDENT (埠 113)";
 
+// ** Log.asp **//
+log.label="日誌";
+log.h2="日誌管理";
+log.legend="日誌";
+log.lvl="日誌等級";
+log.drop="丟棄的";
+log.reject="拒絕的";
+log.accept="接受的";
+
+// ** Log_incoming.asp **//
+log_in.titl="Incoming 日誌表";
+log_in.h2="Incoming 日誌表";
+log_in.th_ip="來源IP";
+log_in.th_port="目的地埠號";
+
+// ** Log_outgoing.asp **//
+log_out.titl="Outgoing 日誌表";
+log_out.h2="Outgoing 日誌表";
+log_out.th_lanip="LAN IP";
+log_out.th_wanip="目的 URL/IP";
+log_out.th_port="服務/埠號";
+
 //help container
-//
 hfirewall.right2="啟用或停用SPI防火牆.";
 
-
 // ** Forward.asp **//
-//
 prforward.titl="埠段轉發（映射）";
 prforward.h2="埠段轉發（映射）";
 prforward.legend="轉發（映射）";
 prforward.app="應用程式";
 
 //help container
-//
 hprforward.right2="某些應用程式可能需要打開特定埠才能正常工作. 舉例來說,這些應用程式包括伺服器軟體和一些線上遊戲.當從Internet接收到一個針對特定埠的請求時,路由器將會把這些資料路由到您指定的電腦.基於安全的考慮,您可能想只對您需要使用的埠設定通訊埠轉發（映射）,同時,在您完成之後,取消對 <em>" + share.enable +"</em> 核取方塊的選擇.";
 
 
 // ** P2P.asp **//
-//
 p2p.titl="Peer-to-Peer Apps";
 p2p.h2="BitTorrent 用戶";
 p2p.legend="CTorrent";
@@ -639,12 +650,10 @@ p2p.ctorrent_srv="Ctorrent 服務";
 
 
 //help container
-//
 //hpp2p.right2="某些應用程式可能會要求要開啟特定的連接埠以讓其正常運作. 這些應用程式的範例包括伺服器及某些線上遊戲. 來自網際網路特定連接埠的連線要求, 路由器將轉送資料到你指定的電腦. 基於安全性考量, 你可以限制連接埠轉送到你正在使用的連接埠, 在您完成之後,取消對 <em>" + share.enable +"</em> 核取方塊的選擇.";
 
 
 // ** ForwardSpec.asp **//
-//
 pforward.titl="通訊埠轉發（映射）";
 pforward.h2="通訊埠轉發（映射）";
 pforward.legend="轉發（映射）";
@@ -657,7 +666,6 @@ pforward.to="目的地埠";
 hpforward.right2="某些應用程式可能需要打開特定埠才能正常工作. 舉例來說,這些應用程式包括伺服器軟體和一些線上遊戲.當從Internet接收到一個針對特定埠的請求時,路由器將會把這些資料路由到您指定的電腦.基於安全的考慮,您可能想只對您需要使用的埠設定通訊埠轉發（映射）,同時,在您完成之後,取消對 <em>" + share.enable +"</em> 核取方塊的選擇.";
 
 // ** USB.asp **//
-//
 usb.titl="USB";
 usb.usb_legend="USB 驅動";
 usb.usb_core="USB 驅動核心";
@@ -668,7 +676,6 @@ usb.usb_storage="USB 儲存裝置驅動";
 usb.usb_printer="USB 印表機驅動";
 
 // ** Hotspot.asp **//
-//
 hotspot.titl="Hotspot";
 hotspot.h2="Hotspot 入口";
 hotspot.legend="CoovaChilli";
@@ -735,8 +742,8 @@ hotspot.wifidog_authsrvssl="AuthServer SSL 可用的";
 hotspot.wifidog_authsrvsslport="AuthServer SSL 埠";
 hotspot.wifidog_authsrvhttpport="AuthServer HTTP 埠";
 hotspot.wifidog_authsrvpath="AuthServer 路徑";
+
 //
-////
 //anchorfree.anchorfree="AnchorFree";
 //anchorfree.title="My Ad Network";
 //anchorfree.h2="AnchorFree Ad Network";
@@ -761,7 +768,7 @@ hotspot.wifidog_authsrvpath="AuthServer 路徑";
 //anchorfree.validcat="請選擇 hotspot 的廣告類別";
 //anchorfree.validcountry="你的 hotspot 所在地";
 //anchorfree.validterms="你必須同意條款和條件!";
-//
+
 //hanchorfree.right1="Join AnchorFree's hotspot advertising network";
 //hanchorfree.right2="AnchorFree operates a hotspot advertising network allowing DD-WRT customers to generate incremental revenues.";
 //hanchorfree.right3="Generate incremental revenue with advertising from AnchorFree";
@@ -771,8 +778,7 @@ hotspot.wifidog_authsrvpath="AuthServer 路徑";
 //hanchorfree.right7="Once you have activated, AnchorFree will send an email to the registered account owner with simple instructions on optimizing your hotspot, FAQs, and other pertinent information on earning money from your router. Through this configuration screen, AnchorFree inserts a thin, non-intrusive advertising frame directly into web browsers accessing the internet from this router.";
 //hanchorfree.right8="客戶支援";
 //hanchorfree.right9="有問題? 請與我們在連絡 boxhelp@anchorfree.com";
-//
-//
+
 //// ** Info.htm **//
 ////
 info.titl="資訊";
@@ -781,41 +787,32 @@ info.wlanmac="無線 MAC";
 info.srv="服務";
 info.ap="存取點";
 
-
 // ** index_heartbeat.asp **//
-//
 idx_h.srv="Heart Beat伺服器";
 idx_h.con_strgy="連接計畫";
 idx_h.max_idle="一經請求連結: 最大閒置時間";
 idx_h.alive="持續動作: 重撥間隔";
 idx_h.reconnect="強制 重撥";
 
-
 // ** index_l2tp.asp **//
-//
-idx_l.srv="L2TP 伺服器";
 
+idx_l.srv="L2TP 伺服器";
 
 // ** index_pppoe.asp **//
 //
 idx_pppoe.use_rp="使用RP PPPoE";
 
-
 // ** index_pptp.asp **//
-//
+
 idx_pptp.srv="使用 DHCP";
 idx_pptp.wan_ip="WAN IP位址";
 idx_pptp.gateway="閘道 (PPTP伺服器)";
 idx_pptp.encrypt="PPTP加密";
 
-
 // ** index_static.asp **//
-//
 idx_static.dns="靜態DNS";
 
-
 // ** index.asp **//
-//
 idx.titl="設定";
 idx.h2="WAN 設定";
 idx.h22="無線設定";
@@ -858,7 +855,6 @@ idx.wanport="WAN 埠的指派";
 idx.ntp_client="網路校時";
 
 //help container
-//
 hidx.right2="Cable使用者的常用選項.";
 hidx.right4="請輸入您的 ISP 提供的主機名.";
 hidx.right6="請輸入您的 ISP 提供的網域名稱.";
@@ -869,45 +865,13 @@ hidx.right14="DHCP開始分配的位址.";
 hidx.right16="限制 DHCP 分配的位址數.輸入 0 ,只分配預先設定的靜態位址";
 hidx.right18="請選擇您所在的時區和夏令時（DST）期間.本路由器可以使用本地時間或者UTC時間.";
 
-
 // ** Join.asp **//
-//
 
 //sshd.webservices
 join.titl="加入";
 join.mess1="已經以用戶端身份成功地加入了網路：";
 
-
-// ** Log_incoming.asp **//
-//
-log_in.titl="Incoming 日誌表";
-log_in.h2="Incoming 日誌表";
-log_in.th_ip="來源IP";
-log_in.th_port="目的地埠號";
-
-
-// ** Log_outgoing.asp **//
-//
-log_out.titl="Outgoing 日誌表";
-log_out.h2="Outgoing 日誌表";
-log_out.th_lanip="LAN IP";
-log_out.th_wanip="目的 URL/IP";
-log_out.th_port="服務/埠號";
-
-
-// ** Log.asp **//
-//
-log.label="日誌";
-log.h2="日誌管理";
-log.legend="日誌";
-log.lvl="日誌等級";
-log.drop="丟棄的";
-log.reject="拒絕的";
-log.accept="接受的";
-
-
 // ** Management.asp **//
-//
 management.titl="管理";
 management.h2="路由器管理";
 management.changepassword="路由器目前未受保護和使用不安全的預設帳號和密碼組合，請使用以下對話框改變它!";
@@ -991,18 +955,14 @@ management.SIPatH_domain="SIP 網域";
 management.gui_style="WEB介面風格";
 
 //help container
-//
 hmanagement.right1="畫面更新:";
 hmanagement.right2="調整 Web 介面自動更新時間.輸入 0 關閉更新.";
 
 // ************ Port_Services.asp (used by Filters.asp and QoS.asp, QOSPort_Services.asp not used anymor) *****************************************//
-//
 portserv.titl="埠服務";
 portserv.h2="埠服務";
 
-
 // ** Networking.asp **//
-//
 networking.h2="VLAN Tagging";
 networking.legend="Tagging";
 networking.h22="Bridging";
@@ -1018,7 +978,6 @@ networking.legend5="多台 DHCP 伺服器";
 
 
 // ** QoS.asp **//
-//
 qos.titl="頻寬管理器";
 qos.h2="頻寬管理器 (QoS)";
 qos.legend="QoS 設定";
@@ -1044,7 +1003,6 @@ qos.legend6="預設帶寬等級";
 qos.bandwidth="以 kbit/s 表示的帶寬";
 
 //help container
-//
 hqos.right1="上傳:";
 hqos.right2="將此設定為您的總上傳限制的80%-95%（最大）.";
 hqos.right3="下載:";
@@ -1056,14 +1014,11 @@ hqos.right12="你可以依據你的設備來插進哪個 LAN 埠控制數據傳�
 
 
 // ** RouteTable.asp **//
-//
 routetbl.titl="路由表";
 routetbl.h2="路由表項目清單";
 routetbl.th1="目的地 LAN IP";
 
-
 // ** Routing.asp **//
-//
 route.titl="路由器設定";
 route.h2="進階路由器設定";
 route.metric="路徑值";
@@ -1105,14 +1060,12 @@ hroute.right10="決定主機和網路分配.";
 
 
 // ** Site_Survey.asp **//
-//
 survey.titl="選址（Site Survey）";
 survey.h2="鄰近的無線網路";
 survey.thjoin="連接";
 
 
 // ** Services.asp **//
-//
 service.titl="伺服器";
 service.h2="伺服器管理";
 
@@ -1301,9 +1254,7 @@ service.hmilkfish_right24="not implemented yet - leave empty";
 service.hmilkfish_right26="not implemented yet - leave empty";
 //service.hmilkfish_="";//
 
-
 // ** eop-tunnel.asp **//
-//
 eoip.titl="EoIP 通道";
 eoip.tunnel="通道";
 eoip.legend="Ethernet Over IP 的通道";
@@ -1319,14 +1270,12 @@ eoip.bridging="橋接";
 
 
 // ** Sipath.asp + cgi **//
-//
 sipath.titl="SiPath 總覽";
 sipath.phone_titl="電話簿";
 sipath.status_titl="狀態";
 
 
 // ** Status_Lan.asp **//
-//
 status_lan.titl="LAN 資訊";
 status_lan.h2="本地網路";
 status_lan.legend="LAN 資訊";
@@ -1338,16 +1287,13 @@ status_lan.concount="連線數量";
 status_lan.conratio="比例";
 
 //help container
-//
 hstatus_lan.right2="這是您的本地乙太網路中看到的路由器的MAC位址.";
 hstatus_lan.right4="這是您的本地乙太網路中看到的路由器的IP位址.";
 hstatus_lan.right6="當路由器使用一個子網路遮罩的時候,它被顯示在這裏.";
 hstatus_lan.right8="如果您將您的路由器當作DHCP伺服器使用,那將被顯示在這裏.";
 hstatus_lan.right10="按任意MAC位址,您將能獲取該網路介面的「唯一組織識別碼」（IEEE標準OUI資料庫搜索）.";
 
-
 // ** Status_Bandwidth.asp **//
-//
 status_band.titl="頻寬監控";
 status_band.h2="頻寬監控中";
 status_band.chg_unit="SWITCH TO ";
@@ -1360,13 +1306,11 @@ status_band.follow="follow";
 status_band.up="up";
 
 //help container
-//
 hstatus_band.svg="顯示頻寬監控,需安裝 A browser that supports SVG .";
 hstatus_band.right1="按 SWITCH TO 選擇 (B/s 或 bit/s).";
 hstatus_band.right2="按 AUTOSCALE 調整顯示範圍.";
 
 // ** Status_Router.asp **//
-//
 status_router.titl="路由器資訊";
 status_router.h2="路由器資訊";
 status_router.legend="系統";
@@ -1396,7 +1340,6 @@ status_router.inpvolt="輸入電壓";
 status_router.cputemp="CPU 溫度";
 
 //help container
-//
 hstatus_router.right2="這是您在 <i>設定</i> 標籤中所指定的路由器的名稱.";
 hstatus_router.right4="這是您的ISP所看到的路由器的MAC位址.";
 hstatus_router.right6="這是路由器目前的韌體.";
@@ -1405,7 +1348,6 @@ hstatus_router.right10="這個數值表示路由器\"啟動\"並且運行的時�
 hstatus_router.right12="這裏給的三個數位表示系統在過去1、5、15分鐘時間內的系統負載.";
 
 // ** Status_Internet.asp **//
-//
 status_inet.titl="WAN 狀態";
 status_inet.h11="網際網路";
 status_inet.conft="連接類型";
@@ -1422,19 +1364,16 @@ status_inet.next="下一個月";
 status_inet.dataadmin="流量數據管理";
 status_inet.delete_confirm="請注意！這將會刪除所有的流量數據.繼續嗎？";
 
-
 //help container
 //
 hstatus_inet.right2="這裏顯示您的ISP所需要將您連接到Internet的資訊. 這些資訊被輸入在設定標籤中.通過按這裏的按鈕,您可以 <em>連接</em> 或者 <em>關閉</em> 您的連接.";
 hstatus_inet.right4="網際網路上傳下載的傳輸流量.";
 hstatus_inet.right6="顯示每個月網際網路上傳下載的傳輸流量. 圖形上移動鼠標,看看每天的數據.數據存儲於 nvram .";
 
-
 // ** Status_Conntrack.asp **//
 //
 status_conn.titl="使用中的IP連接表";
 status_conn.h2="使用中的IP連接";
-
 
 // ** Status_SputnikAPD.asp **//
 //
@@ -1444,7 +1383,6 @@ status_sputnik.manage="管理器";
 status_sputnik.license="SCC 授權編號";
 
 //help container
-//
 hstatus_sputnik.right1="Sputnik 代理資訊";
 hstatus_sputnik.right2="此螢幕顯示Sputnik代理操作的資訊.";
 hstatus_sputnik.right4="本連線點所連接到的Sputnik控制中心.";
@@ -1453,7 +1391,6 @@ hstatus_sputnik.right8="您的Sputnik控制中心的授權數.";
 
 
 // ** Status_Wireless.asp **//
-//
 status_wireless.titl="無線資訊";
 status_wireless.h2="無線網路";
 status_wireless.legend="無線資訊";
@@ -1468,7 +1405,6 @@ status_wireless.signal_qual="信號品質";
 status_wireless.wds="WDS節點";
 
 // ** GPS info **//
-//
 status_gpsi.legend="GPS 資訊";
 status_gpsi.status="狀態";
 status_gpsi.lon="經度";
@@ -1477,18 +1413,15 @@ status_gpsi.alt="高度";
 status_gpsi.sat="搜尋到的衛星";
 
 //help container
-//
 hstatus_wireless.right2="這是您在您的本地無線網路中看到的路由器的MAC位址.";
 hstatus_wireless.right4="正如您在在無線標籤裏所設定的,這裏將顯示網路所使用的無線模式（混合,僅G,僅B或者關閉）.";
 
 
 // ** Status_OpenVPN.asp **//
-//
 status_openvpn.titl="OpenVPN 資訊";
 
 
 // ** Triggering.asp **//
-//
 trforward.titl="通訊埠觸發";
 trforward.h2="通訊埠觸發";
 trforward.legend="虛擬伺服器（映射）";
@@ -1497,16 +1430,13 @@ trforward.fwdrange="已開啟虛擬伺服器（映射）的埠範圍";
 trforward.app="應用程式.";
 
 //help container
-//
 htrforward.right2="輸入通訊埠觸發的應用名稱.";
 htrforward.right4="為每一個應用程式列出被觸發的埠範圍.請參考Internet應用程式說明檔來查尋所需要的埠號.";
 htrforward.right6="為每一個應用程式列出虛擬伺服器（映射）的埠範圍.請參考Internet應用程式說明檔來查詢所需要的埠號.";
 htrforward.right8="輸入被觸發和虛擬伺服器（映射）埠範圍的開始埠號.";
 htrforward.right10="輸入通訊埠觸發和虛擬伺服器（映射）埠範圍的終止埠號.";
 
-
 // ** Upgrade.asp **//
-//
 upgrad.titl="韌體更新";
 upgrad.h2="韌體管理";
 upgrad.legend="韌體更新";
@@ -1518,12 +1448,10 @@ upgrad.warning="（請注意）";
 upgrad.mess1="韌體更新需要花費數分鐘的時間.<br />請不要關閉電源或者按Reset 鍵！";
 
 //help container
-//
 hupgrad.right2="按 <em>瀏覽...</em> 按鈕選擇要更新韌體檔.<br /><br /> 按 <em>更新</em> 按鈕開始進行韌體更新.更新過程中絕對不可以被打斷.";
 
 
 // ** UPnP.asp **//
-//
 upnp.titl="UPnP";
 upnp.h2="通用即插即用 (UPnP)";
 upnp.legend="虛擬伺服器（映射）";
@@ -1535,13 +1463,11 @@ upnp.msg1="刪除租用";
 upnp.msg2="刪除所有項目？";
 
 //help container
-//
 hupnp.right2="按垃圾桶刪除單一項目.";
 hupnp.right4="允許應用程式自動地設定通訊埠轉發（映射）";
 
 
 // ** VPN.asp **//
-//
 vpn.titl="VPN Passthrough";
 vpn.h2="虛擬專用網路（VPN）";
 vpn.legend="VPN Passthrough";
@@ -1550,12 +1476,10 @@ vpn.pptp="PPTP Passthrough";
 vpn.l2tp="L2TP Passthrough";
 
 //help container
-//
 hvpn.right1="您可以選擇啟用IPSec,PPTP , L2TP Passthrough,從而允許您的網路設備通過VPN進行通訊.";
 
 
 // ** Vlan.asp **//
-//
 vlan.titl="虛擬 LAN";
 vlan.h2="虛擬本地網路（VLAN）";
 vlan.legend="VLAN";
@@ -1567,13 +1491,10 @@ vlan.trunk="Trunk";
 
 
 // ** WEP.asp **//
-//
 wep.defkey="預設傳輸金鑰";
 wep.passphrase="通行碼";
 
-
 // ** WOL.asp **//
-//
 wol.titl="WOL";
 wol.h2="網路喚醒";
 wol.legend="可用主機";
@@ -1591,14 +1512,12 @@ wol.srv="WOL 背景程式";
 wol.pass="安全的密碼";
 
 //help container
-//
 hwol.right2="本頁面允許您 <em>喚醒</em> 在您本地網路上的主機 (例如. 本地連接你的路由器). 您可以手動喚醒主機 <em>"+sbutton.wol+"</em> 或是透過程式自動排程來喚醒 "+wol.srv+".";
 hwol.right4="MAC位址使用如下格式輸入 xx:xx:xx:xx:xx:xx (例如. 01:23:45:67:89:AB) 並且必須分開用 <em>空白</em>";
 hwol.right6="IP位址通常是本地網路的廣播位址,但是如果目標主機並為連接到路由器的本地網路,則應該設定為遠端位址.";
 
 
 // ** WanMAC.asp **//
-//
 wanmac.titl="複製 MAC 位址";
 wanmac.h2="複製 MAC 位址";
 wanmac.legend="複製 MAC";
@@ -1611,7 +1530,6 @@ hwanmac.right2="某些ISP可能要求您註冊您的MAC位址.如果您不想重
 
 
 // ** WL_WPATable.asp / WPA.asp / Radius.asp **//
-//
 wpa.titl="無線安全";
 wpa.h2="無線安全";
 wpa.secmode="加密模式";
@@ -1626,25 +1544,21 @@ wpa.radius_key="RADIUS金鑰";
 wpa.algorithms="WPA演算法";
 wpa.shared_key="WPA共用金鑰";
 
-//
 sec80211x.xsuptype="XSupplicant Type";
 sec80211x.servercertif="公用伺服器認證";
 sec80211x.clientcertif="用戶端認證";
 
 //help container
-//
 hwpa.right2="您可以從關閉、WEP、WPA預共用金鑰、WPA RADIUS或者RADIUS中選取一種.在你的網路上的全部設備必須使用相同的加密模式.";
 
 
 // ** WL_FilterTable.asp **//
-//
 wl_filter.titl="MAC位址過濾清單";
 wl_filter.h2="MAC位址過濾清單";
 wl_filter.h3="使用如下格式輸入MAC位址&nbsp;:&nbsp;&nbsp;&nbsp;xx:xx:xx:xx:xx:xx";
 
 
 // ** WL_ActiveTable.asp **//
-//
 wl_active.titl="連線中的無線用戶端MAC清單";
 wl_active.h2="無線用戶端MAC清單";
 wl_active.h3="啟用MAC過濾";
@@ -1653,7 +1567,6 @@ wl_active.inactive="未連線的用戶端";
 
 
 // ** Wireless_WDS.asp **//
-//
 wds.titl="WDS";
 wds.h2="WDS 系統";
 wds.legend="WDS設定";
@@ -1668,7 +1581,6 @@ wds.legend2="其它選項";
 
 
 // ** Wireless_radauth.asp **//
-//
 radius.titl="RADIUS";
 radius.h2="遠端授權撥入用戶伺服器（RADIUS）";
 radius.legend="RADIUS";
@@ -1686,7 +1598,6 @@ radius.label17="RADIUS Acct Shared Secret";
 radius.label18="RADIUS Accounting";
 
 // ** Wireless_MAC.asp **//
-//
 wl_mac.titl="MAC連線限制";
 wl_mac.h2="無線裝置 MAC 連線限制";
 wl_mac.legend="MAC連線限制";
@@ -1696,7 +1607,6 @@ wl_mac.deny="禁止所列的MAC連接無線網路";
 wl_mac.allow="允許所列的MAC連接無線網路";
 
 // ** WiMAX
-//
 wl_wimax.titl="WiMAX";
 wl_wimax.h2="Worldwide Interoperability for Microwave Access 縮寫 WiMAX";
 wl_wimax.downstream="下鏈頻率";
@@ -1707,7 +1617,6 @@ wl_wimax.mode="操作模式";
 wl_wimax.mac="用戶的 MAC 位址";
 
 // ** Wireless_Advanced.asp **//
-//
 wl_adv.titl="進階無線設定";
 wl_adv.h2="進階無線設定";
 wl_adv.legend="進階設定";
@@ -1765,11 +1674,9 @@ wl_adv.lng="長"; 				//************* don't use .long! *************
 wl_adv.shrt="短"; 				//************* don't use .short! **************
 
 //help container
-//
 hwl_adv.right2="您可以從自動或者共用金鑰中選擇一個.共用金鑰授權更加安全,但是所有在您網路中的設備必須支援共用金鑰授權.";
 
 // ** Wireless_Basic.asp **//
-//
 wl_basic.titl="無線";
 wl_basic.h2="無線";
 wl_basic.legend="基本設定";
@@ -1845,20 +1752,17 @@ wl_basic.ofdm_weak_det="OFDM Weak Detection";
 wl_basic.radar="雷達探測";
 
 //help container
-//
 hwl_basic.right2="如果您想排除無線-G用戶端,選擇 <em>B</em> 模式.如果您想關閉無線連線,選擇 <em>關閉</em>.";
 hwl_basic.right3="感度範圍: ";
 hwl_basic.right4="調整ACK. 輸入0 ,關閉ACK調整(broadcom 平台), 自動ACK調整(Atheros 平台)";
 hwl_basic.right6="按 時間表格 開啟或關閉無線網路 (<em>green</em> 無線網路開啟, and <em>red</em> 無線網路關閉)";
 
 // ** Fail_s.asp / Fail_u_s.asp / Fail.asp **//
-//
 fail.mess1="您所輸入的數值是無效的.請再試一次.";
 fail.mess2="更新失敗.";
 
 
 // ** Success*.asp / Reboot.asp  **//
-//
 success.saved="設定已儲存.";
 success.restore="設定已恢復.<br />正在重新啟動.請稍候...";
 success.upgrade="更新成功.<br />正在重新啟動.請稍候...";
@@ -1871,13 +1775,10 @@ success.alert2="如果您更改了您的路由器的IP位址,請注意您必須r
 success.alert3="如果您是通過WLAN連接的,請加入網路並且按 <em>繼續</em>.";
 
 // ** Logout.asp  **//
-//
 logout.message="您已成功登出.<br />感謝您使用 DD-WRT!";
-
 
 // **********		OLD PAGES 		*******************************//
 // *********************** DHCPTable.asp *****************************//
-//
 dhcp.titl="DHCP 連線中IP清單";
 dhcp.h2="DHCP 連線中IP清單";
 dhcp.server="DHCP 伺服器IP位址 :";

@@ -251,7 +251,7 @@ sbutton.filterIP="클라이언트 리스트 편집";
 sbutton.filterMac="MAC 필터 리스트 편집";
 sbutton.filterSer="서비스 추가/편집";
 sbutton.reboot="공유기 재부팅";
-sbutton.help="   도움말  ";
+//sbutton.help="   도움말  ";
 sbutton.wl_client_mac="무선 클라이언트 MAC 리스트";
 sbutton.update_filter="필터 리스트 업데이트";
 sbutton.join="연결";
@@ -678,6 +678,28 @@ firewall.ssh="SSH 접근 제한";
 firewall.telnet="텔넷 접근 제한";
 firewall.pptp="PPTP 서버 접근 제한";
 firewall.ftp="FTP 서버 접근 제한";
+
+// ** Log.asp **//
+log.label="로그";
+log.h2="로그 관리";
+log.legend="로그";
+log.lvl="로그 레벨";
+log.drop="드랍한 패킷 기록";
+log.reject="거부된 패킷 기록";
+log.accept="수신된 패킷 기록";
+
+// ** Log_incoming.asp **//
+log_in.titl="수신 로그 테이블";
+log_in.h2="수신 로그 테이블";
+log_in.th_ip="송신측 IP";
+log_in.th_port="수신측 포트 넘버";
+
+// ** Log_outgoing.asp **//
+log_out.titl="송신 로그 테이블";
+log_out.h2="송신 로그 테이블";
+log_out.th_lanip="LAN IP";
+log_out.th_wanip="목적지 URL/IP";
+log_out.th_port="서비스/포트 번호";
 
 //help container
 hfirewall.right2="SPI 방화벽 사용 여부를 변경 가능합니다.";
@@ -1141,32 +1163,6 @@ dsl.snr="DSL 신호 (업/다운)";
 //sshd.webservices
 join.titl="연결";
 join.mess1="네트워크에 연결 완료되었습니다: ";
-
-
-// ** Log_incoming.asp **//
-log_in.titl="수신 로그 테이블";
-log_in.h2="수신 로그 테이블";
-log_in.th_ip="송신측 IP";
-log_in.th_port="수신측 포트 넘버";
-
-
-// ** Log_outgoing.asp **//
-log_out.titl="송신 로그 테이블";
-log_out.h2="송신 로그 테이블";
-log_out.th_lanip="LAN IP";
-log_out.th_wanip="목적지 URL/IP";
-log_out.th_port="서비스/포트 번호";
-
-
-// ** Log.asp **//
-log.label="로그";
-log.h2="로그 관리";
-log.legend="로그";
-log.lvl="로그 레벨";
-log.drop="드랍한 패킷 기록";
-log.reject="거부된 패킷 기록";
-log.accept="수신된 패킷 기록";
-
 
 // ** Management.asp **//
 management.titl="관리";

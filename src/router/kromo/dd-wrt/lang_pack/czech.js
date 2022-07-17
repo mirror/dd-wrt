@@ -275,7 +275,7 @@ sbutton.filterIP="Upravit seznam klientů";
 sbutton.filterMac="Upravit seznam MAC filtrů";
 sbutton.filterSer="Přidat/Upravit službu";
 sbutton.reboot="Restartování routeru";
-sbutton.help="   Nápověda  ";
+//sbutton.help="   Nápověda  ";
 sbutton.wl_client_mac="Seznam bezdrátových klientů MAC";
 sbutton.update_filter="Aktualizovat seznam filtrů";
 sbutton.join="Připojit se";
@@ -734,8 +734,29 @@ firewall.ftp="Omezit přístupu FTP serveru";
 firewall.arp_spoofing="Ochrana ARP Spoofing";
 firewall.filter_tos="Filtrovat TOS/DSCP";
 
+// ** Log.asp **//
+log.label="Záznam";
+log.h2="Správa záznamu";
+log.legend="Záznam";
+log.lvl="Úroveň záznamu";
+log.drop="Zahozené";
+log.reject="Odmítnuté";
+log.accept="Přijaté";
+
+// ** Log_incoming.asp **//
+log_in.titl="Tabulka příchozího logu";
+log_in.h2="Tabulka příchozího logu";
+log_in.th_ip="Zdrojová IP";
+log_in.th_port="Číslo cílového portu";
+
+// ** Log_outgoing.asp **//
+log_out.titl="Tabulka odchozího záznamu";
+log_out.h2="Tabulka odchozího záznamu";
+log_out.th_lanip="LAN IP";
+log_out.th_wanip="Cílová URL/IP";
+log_out.th_port="Číslo Služby/Portu";
+
 //help container
-//
 hfirewall.right2="Povolte, nebo zakažte SPI Firewall.";
 
 // help page
@@ -1261,35 +1282,6 @@ dsl.snr="DSL Signál (nahoru/dolů)";
 //sshd.webservices
 join.titl="Připojit";
 join.mess1="Úspěšně se připojil k následující síti jako klient: ";
-
-
-// ** Log_incoming.asp **//
-//
-log_in.titl="Tabulka příchozího logu";
-log_in.h2="Tabulka příchozího logu";
-log_in.th_ip="Zdrojová IP";
-log_in.th_port="Číslo cílového portu";
-
-
-// ** Log_outgoing.asp **//
-//
-log_out.titl="Tabulka odchozího záznamu";
-log_out.h2="Tabulka odchozího záznamu";
-log_out.th_lanip="LAN IP";
-log_out.th_wanip="Cílová URL/IP";
-log_out.th_port="Číslo Služby/Portu";
-
-
-// ** Log.asp **//
-//
-log.label="Záznam";
-log.h2="Správa záznamu";
-log.legend="Záznam";
-log.lvl="Úroveň záznamu";
-log.drop="Zahozené";
-log.reject="Odmítnuté";
-log.accept="Přijaté";
-
 
 // ** Management.asp **//
 //

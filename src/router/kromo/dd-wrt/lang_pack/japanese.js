@@ -239,7 +239,7 @@ sbutton.filterIP="クライアントの指定";
 sbutton.filterMac="MACアドレスの編集";
 sbutton.filterSer="サービスの追加・編集";
 sbutton.reboot="再起動";
-sbutton.help="   Help  ";
+//sbutton.help="   Help  ";
 sbutton.wl_client_mac="無線LANクライアントリスト";
 sbutton.update_filter="リスト更新";
 sbutton.join="Join";
@@ -632,16 +632,36 @@ firewall.activex="ActiveXをフィルターする";
 firewall.legend3="インターネット側からのパケット遮断";
 firewall.ping="Pingに応答しない";
 firewall.muticast="マルチキャストをフィルターする";
+
 filter.nat="NATリダイレクションをフィルターする";
 filter.port113="IDENT (Port 113) をフィルターする";
 
-//help container
+// ** Log.asp **//
+log.label="Log";
+log.h2="Firewall Log 設定";
+log.legend="Log";
+log.lvl="Log 出力レベル";
+log.drop="Dropしたパケットを記録";
+log.reject="Rejectしたパケットを記録";
+log.accept="Acceptしたパケットを記録";
 
+// ** Log_incoming.asp **//
+log_in.titl="syslog(受信メッセージ)";
+log_in.h2="syslog(受信メッセージ)";
+log_in.th_ip="送信元IPアドレス";
+log_in.th_port="ポート番号";
+
+// ** Log_outgoing.asp **//
+log_out.titl="syslog(送信メッセージ)";
+log_out.h2="syslog(送信メッセージ)";
+log_out.th_lanip="LAN側 IP";
+log_out.th_wanip="送信先アドレス・ホスト名";
+log_out.th_port="ポート番号";
+
+//help container
 hfirewall.right2="SPI Firewall機能の有効/無効を切り替えることができます";
 
-
 // ** Forward.asp **//
-
 prforward.titl="アドレス変換(Port範囲指定)";
 prforward.h2="Port範囲指定のアドレス変換設定";
 prforward.legend="アドレス変換ルール";
@@ -940,37 +960,7 @@ hidx.sas="Setup Assistantは簡単なセットアップ手順でルーター設�
 join.titl="Join";
 join.mess1="アクセスポイントへの接続が完了しました。SSID： ";
 
-
-// ** Log_incoming.asp **//
-
-log_in.titl="syslog(受信メッセージ)";
-log_in.h2="syslog(受信メッセージ)";
-log_in.th_ip="送信元IPアドレス";
-log_in.th_port="ポート番号";
-
-
-// ** Log_outgoing.asp **//
-
-log_out.titl="syslog(送信メッセージ)";
-log_out.h2="syslog(送信メッセージ)";
-log_out.th_lanip="LAN側 IP";
-log_out.th_wanip="送信先アドレス・ホスト名";
-log_out.th_port="ポート番号";
-
-
-// ** Log.asp **//
-
-log.label="Log";
-log.h2="Firewall Log 設定";
-log.legend="Log";
-log.lvl="Log 出力レベル";
-log.drop="Dropしたパケットを記録";
-log.reject="Rejectしたパケットを記録";
-log.accept="Acceptしたパケットを記録";
-
-
 // ** Management.asp **//
-
 management.titl="管理";
 management.h2="管理設定";
 management.psswd_legend="管理ユーザー";

@@ -1,5 +1,5 @@
 /////////////////////////////////////////////////////////////////////////////////////
-//    English reference translation file - DD-WRT V3           23/JUNE/2022       //
+//    English reference translation file - DD-WRT V3 - Updated on 17/JULY/2022    //
 ////////////////////////////////////////////////////////////////////////////////////
 
 // ** COMMON SHARE LABEL **//
@@ -320,7 +320,7 @@ sbutton.filterIP="Edit Filter List";
 sbutton.filterMac="Edit MAC Filter List";
 sbutton.filterSer="Add/Edit Service";
 sbutton.reboot="Reboot Router";
-sbutton.help="   Help  ";
+//sbutton.help="   Help  ";
 sbutton.wl_client_mac="Wireless Client MAC List";
 sbutton.update_filter="Update Filter List";
 sbutton.join="Join";
@@ -650,31 +650,6 @@ hddns.page4="<dd>Enabling the wildcard feature for your host causes *.yourhost.d
 hddns.page5="<dd>Type an integer number in the box to set the force update interval (in days). Force update is an update which will be done although your IP address is still the same. Force update is required, especially for non donator of dyndns.org users, in order to avoid the host name of being deleted.</dd>";
 hddns.page6="<dd>The status of the DDNS service connection is displayed here.</dd>";
 
-// ** Log.asp **//
-var log=new Object();
-log.label="Firewall Log";
-log.h2="Log Management";
-log.legend="Log";
-log.lvl="Log Level";
-log.drop="Dropped";
-log.reject="Rejected";
-log.accept="Accepted";
-
-// ** Log_incoming.asp **//
-var log_in=new Object();
-log_in.titl="Incoming Log Table";
-log_in.h2="Incoming Log Table";
-log_in.th_ip="Source IP";
-log_in.th_port="Destination Port Number";
-
-// ** Log_outgoing.asp **//
-var log_out=new Object();
-log_out.titl="Outgoing Log Table";
-log_out.h2="Outgoing Log Table";
-log_out.th_lanip="LAN IP";
-log_out.th_wanip="Destination URL / IP";
-log_out.th_port="Service / Port Number";
-
 // ** Diagnostics.asp **//
 var diag=new Object();
 diag.titl="Diagnostics and Commands";
@@ -810,6 +785,31 @@ firewall.filter_tos="Filter ToS / DSCP";
 filter.nat="Filter WAN NAT Redirection";
 filter.port113="Filter IDENT (Port 113)";
 filter.snmp="Block WAN SNMP Access";
+
+// ** Firewall.asp **//
+var log=new Object();
+log.label="Firewall Log";
+log.h2="Log Management";
+log.legend="Log";
+log.lvl="Log Level";
+log.drop="Dropped";
+log.reject="Rejected";
+log.accept="Accepted";
+
+// ** Log_incoming.asp **//
+var log_in=new Object();
+log_in.titl="Incoming Log Table";
+log_in.h2="Incoming Log Table";
+log_in.th_ip="Source IP";
+log_in.th_port="Destination Port Number";
+
+// ** Log_outgoing.asp **//
+var log_out=new Object();
+log_out.titl="Outgoing Log Table";
+log_out.h2="Outgoing Log Table";
+log_out.th_lanip="LAN IP";
+log_out.th_wanip="Destination URL / IP";
+log_out.th_port="Service / Port Number";
 
 //help container
 var hfirewall=new Object();
@@ -1375,12 +1375,9 @@ dsl.snr="DSL Signal (up/down)";
 
 // ** Join.asp **//
 var join=new Object();
-
 //sshd.webservices
 join.titl="Join";
 join.mess1="Successfully joined the following network as a client: ";
-
-
 
 // ** Management.asp **//
 var management=new Object();
