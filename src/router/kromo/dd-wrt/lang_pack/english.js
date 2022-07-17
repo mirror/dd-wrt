@@ -801,7 +801,7 @@ hfirewall.page7="<dd>Prevents hosts on LAN from using WAN address of router to c
 hfirewall.page8="<dd>Prevents WAN access to port 113.</dd>";
 hfirewall.page9="<dd>The router can keep logs of all incoming or outgoing traffic for your Internet connection.</dd>";
 hfirewall.page10="<dd>To keep activity logs, select <em>" + share.enable + "</em>. To stop logging, select <em>" + share.disable + "</em>.</dd>";
-hfirewall.page11="<dd>Set this to the required amount of information. Set <em>" + log.lvl + "</em> higher to log more actions.</dd>";
+hfirewall.page11="<dd>Set this to the required amount of information. Set <em>" <i>Log Level</i> higher to log more actions.</dd>";
 hfirewall.page12="<dd>To see a temporary log of the router's most recent incoming traffic, click the <em>" + sbutton.log_in + "</em> button.</td>";
 hfirewall.page13="<dd>To see a temporary log of the router's most recent outgoing traffic, click the <em>" + sbutton.log_out + "</em> button.</dd><dd>Check all values and click the <em>" + sbutton.save + "</em> button to save your settings. Click the <em>" + sbutton.cancel + "</em> button to cancel your unsaved changes.</dd>";
 
