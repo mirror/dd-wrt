@@ -1,4 +1,7 @@
 @import url(/style/buttons.css);
+body.gui, #header {
+  background: #aaa;
+}
 #header #logo {
   filter: contrast(1.2) brightness(2);
   mix-blend-mode: exclusion;

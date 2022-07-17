@@ -255,7 +255,7 @@ sbutton.filterIP="Edita Llista de clients";
 sbutton.filterMac="Edita Liista de filtres MAC";
 sbutton.filterSer="Afegeix/Edita Servei";
 sbutton.reboot="Reinicia Encaminador";
-sbutton.help="  Ajuda  ";
+//sbutton.help="  Ajuda  ";
 sbutton.wl_client_mac="Llista de MAC de Clients Sense Fil";
 sbutton.update_filter="Actualitza Llista de Filtres";
 sbutton.join="Unir-se";
@@ -642,13 +642,35 @@ firewall.ssh="Limita el Accés SSH";
 firewall.telnet="Limita el Accés Telnet";
 firewall.pptp="Limita el Accés de Servidors PPTP";
 firewall.ftp="Limita el Accés de Servidors FTP";
+
 filter.nat="Filtra la Redirecció NAT WAN";
 filter.port113="Filtra el IDENT (Port 113)";
 filter.snmp="Bloqueja el accés SNMP WAN";
 
+// ** Log.asp **//
+log.label="Registre";
+log.h2="Administració de Registre";
+log.legend="Registre";
+log.lvl="Nivell de Registre";
+log.drop="Caiguts";
+log.reject="Rebutjats";
+log.accept="Acceptats";
+
+// ** Log_incoming.asp **//
+log_in.titl="Taula de Registre Entrant";
+log_in.h2="Taula de Registre Entrant";
+log_in.th_ip="IP d'Origen";
+log_in.th_port="Nombre de Port Destinari";
+
+// ** Log_outgoing.asp **//
+log_out.titl="Taula de Registre Sortint";
+log_out.h2="Taula de Registre Sortint";
+log_out.th_lanip="IP LAN";
+log_out.th_wanip="URL/IP Destinari";
+log_out.th_port="Nombre de Servei/Port";
+
 //help container
 hfirewall.right2="Habilitar o deshabilitar el tallafocs SPI.";
-
 
 // ** Forward.asp **//
 prforward.titl="Reenviament de Rang de Ports";
@@ -977,32 +999,6 @@ dsl.snr="Senyal DSL (a dalt/a baix)";
 //sshd.webservices
 join.titl="Uneix-te";
 join.mess1="Unit amb éxit amb la següent xarxa com client: ";
-
-
-// ** Log_incoming.asp **//
-log_in.titl="Taula de Registre Entrant";
-log_in.h2="Taula de Registre Entrant";
-log_in.th_ip="IP d'Origen";
-log_in.th_port="Nombre de Port Destinari";
-
-
-// ** Log_outgoing.asp **//
-log_out.titl="Taula de Registre Sortint";
-log_out.h2="Taula de Registre Sortint";
-log_out.th_lanip="IP LAN";
-log_out.th_wanip="URL/IP Destinari";
-log_out.th_port="Nombre de Servei/Port";
-
-
-// ** Log.asp **//
-log.label="Registre";
-log.h2="Administració de Registre";
-log.legend="Registre";
-log.lvl="Nivell de Registre";
-log.drop="Caiguts";
-log.reject="Rebutjats";
-log.accept="Acceptats";
-
 
 // ** Management.asp **//
 management.titl="Administració";

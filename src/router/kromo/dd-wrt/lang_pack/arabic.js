@@ -220,7 +220,7 @@ sbutton.filterIP="Edit List of clients";
 sbutton.filterMac="Edit MAC Filter List";
 sbutton.filterSer="Add/Edit Service";
 sbutton.reboot="Reboot Router";
-sbutton.help="   Help  ";
+//sbutton.help="   Help  ";
 sbutton.wl_client_mac="Wireless Client MAC List";
 sbutton.update_filter="Update Filter List";
 sbutton.join="Join";
@@ -598,13 +598,35 @@ firewall.activex="Filter ActiveX";
 firewall.legend3="Block WAN Requests";
 firewall.ping="Block Anonymous WAN Requests (ping)";
 firewall.muticast="Filter Multicast";
+
 filter.nat="Filter WAN NAT Redirection";
 filter.port113="Filter IDENT (Port 113)";
+
+// ** Firewall.asp **//
+log.label="Log";
+log.h2="Log Management";
+log.legend="Log";
+log.lvl="Log Level";
+log.drop="Dropped";
+log.reject="Rejected";
+log.accept="Accepted";
+
+// ** Log_incoming.asp **//
+log_in.titl="Incoming Log Table";
+log_in.h2="Incoming Log Table";
+log_in.th_ip="Source IP";
+log_in.th_port="Destination Port Number";
+
+// ** Log_outgoing.asp **//
+log_out.titl="Outgoing Log Table";
+log_out.h2="Outgoing Log Table";
+log_out.th_lanip="LAN IP";
+log_out.th_wanip="Destination URL/IP";
+log_out.th_port="Service/Port Number";
 
 //help container
 
 hfirewall.right2="Enable or disable the SPI firewall.";
-
 
 // ** Forward.asp **//
 
@@ -644,9 +666,7 @@ pforward.to="Port to";
 
 hpforward.right2="Certain applications may require to open specific ports in order for it to function correctly. Examples of these applications include servers and certain online games. When a request for a certain port comes in from the Internet, the router will route the data to the computer you specify. Due to security concerns, you may want to limit port forwarding to only those ports you are using, and uncheck the <em>Enable</em> checkbox after you are finished.";
 
-
 // ** Hotspot.asp **//
-
 hotspot.titl="Hotspot";
 hotspot.h2="Hotspot Portal";
 hotspot.legend="CoovaChilli";
@@ -855,35 +875,6 @@ hidx.right18="Choose the time zone you are in and Summer Time (DST) period. The 
 //sshd.webservices
 join.titl="Join";
 join.mess1="Successfully joined the following network as a client: ";
-
-
-// ** Log_incoming.asp **//
-
-log_in.titl="Incoming Log Table";
-log_in.h2="Incoming Log Table";
-log_in.th_ip="Source IP";
-log_in.th_port="Destination Port Number";
-
-
-// ** Log_outgoing.asp **//
-
-log_out.titl="Outgoing Log Table";
-log_out.h2="Outgoing Log Table";
-log_out.th_lanip="LAN IP";
-log_out.th_wanip="Destination URL/IP";
-log_out.th_port="Service/Port Number";
-
-
-// ** Log.asp **//
-
-log.label="Log";
-log.h2="Log Management";
-log.legend="Log";
-log.lvl="Log Level";
-log.drop="Dropped";
-log.reject="Rejected";
-log.accept="Accepted";
-
 
 // ** Management.asp **//
 

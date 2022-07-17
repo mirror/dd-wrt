@@ -255,7 +255,7 @@ sbutton.filterIP="Modifică lista de clienți";
 sbutton.filterMac="Modifică lista de filtrare MAC-uri";
 sbutton.filterSer="Adaugă / Modifică serviciu";
 sbutton.reboot="Repornește ruterul";
-sbutton.help="   Ajutor  ";
+//sbutton.help="   Ajutor  ";
 sbutton.wl_client_mac="Listă MAC-uri clienți fără fir";
 sbutton.update_filter="Actualizează lista de filtre";
 sbutton.join="Intră";
@@ -642,13 +642,35 @@ firewall.ssh="Limitează accesul prin SSH";
 firewall.telnet="Limitează accesul prin Telnet";
 firewall.pptp="Limitează acces server PPTP";
 firewall.ftp="Limitează acces server FTP";
+
 filter.nat="Filtrează redirecționare WAN NAT";
 filter.port113="Filtrează IDENT (Port 113)";
 filter.snmp="Blochează acces SNMP WAN";
 
+// ** Log.asp **//
+log.label="Istoric";
+log.h2="Administrare istoric";
+log.legend="Istoric";
+log.lvl="Nivel istoric";
+log.drop="Eliminate";
+log.reject="Refuzate";
+log.accept="Acceptate";
+
+// ** Log_incoming.asp **//
+log_in.titl="Tabel istoric intrare";
+log_in.h2="Tabel istoric intrare";
+log_in.th_ip="IP sursă";
+log_in.th_port="Număr port destinație";
+
+// ** Log_outgoing.asp **//
+log_out.titl="Tabel istoric ieșire";
+log_out.h2="Tabel istoric ieșire";
+log_out.th_lanip="IP LAN";
+log_out.th_wanip="URL / IP destinație";
+log_out.th_port="Număr serviciu / port";
+
 //help container
 hfirewall.right2="Activează sau dezactivează parafocul SPI.";
-
 
 // ** Forward.asp **//
 prforward.titl="Interval înaintare port";
@@ -986,32 +1008,6 @@ dsl.snr="Semnal DSL (sus/jos)";
 //sshd.webservices
 join.titl="Intră";
 join.mess1="Ați intrat cu succes, ca și client, în următoarea rețea: ";
-
-
-// ** Log_incoming.asp **//
-log_in.titl="Tabel istoric intrare";
-log_in.h2="Tabel istoric intrare";
-log_in.th_ip="IP sursă";
-log_in.th_port="Număr port destinație";
-
-
-// ** Log_outgoing.asp **//
-log_out.titl="Tabel istoric ieșire";
-log_out.h2="Tabel istoric ieșire";
-log_out.th_lanip="IP LAN";
-log_out.th_wanip="URL / IP destinație";
-log_out.th_port="Număr serviciu / port";
-
-
-// ** Log.asp **//
-log.label="Istoric";
-log.h2="Administrare istoric";
-log.legend="Istoric";
-log.lvl="Nivel istoric";
-log.drop="Eliminate";
-log.reject="Refuzate";
-log.accept="Acceptate";
-
 
 // ** Management.asp **//
 management.titl="Administrare";

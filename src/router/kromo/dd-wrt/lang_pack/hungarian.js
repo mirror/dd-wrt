@@ -170,7 +170,7 @@ sbutton.filterIP="Kliensek listájának szerkesztése";
 sbutton.filterMac="MAC filterek listájának szerkesztése";
 sbutton.filterSer="Szolgáltatás hozzáadása/szerkesztése";
 sbutton.reboot="Router újraindítás";
-sbutton.help="   Segítség  ";
+//sbutton.help="   Segítség  ";
 sbutton.wl_client_mac="Vezetéknélküli kliensek MAC listája";
 sbutton.update_filter="Filter listák frissítése";
 sbutton.join="Csatlakozás";
@@ -514,17 +514,12 @@ hfilter.right12="Választhatja bizonyos szolgáltatásokhoz való hozzáférés 
 hfilter.right14="Egyes weboldalak blokkolását URL-jük megadásával érheti el.";
 hfilter.right16="Egyes weboldalak blokkolását a weboldalban található kulcsszó megadásával érheti el.";
 
-
-
-
 // **************************************************************** FilterSummary.asp **********************************************************************//
 
 filterSum.titl="Hozzáférés-korlátozás összefoglalója";
 filterSum.h2="Internet házirend összefoglalója ";
 filterSum.polnum="Sorszám";
 filterSum.polday="Nap időpontja";
-
-
 
 // **************************************************************** Firewall.asp **********************************************************************//
 
@@ -540,11 +535,33 @@ firewall.activex="ActiveX szűrés";
 firewall.legend3="WAN kérések blokkolása";
 firewall.ping="Anonymous WAN kérések (ping) blokkolása";
 firewall.muticast="Multicast szűrés";
+
 filter.nat="WAN NAT átirányítás szűrés";
 filter.port113="IDENT (Port 113) szűrés";
 
-//help container
+// **************************************************************** Log.asp **********************************************************************//
+log.label="Naplózás";
+log.h2="Naplózás kezelése";
+log.legend="Naplózás";
+log.lvl="Naplózási szint";
+log.drop="Eldobva";
+log.reject="Elutasítva";
+log.accept="Elfogadva";
 
+// **************************************************************** Log_incoming.asp **********************************************************************//
+log_in.titl="Bejövő naplózási táblák";
+log_in.h2="Bejövő naplózási táblák";
+log_in.th_ip="Forrás IP";
+log_in.th_port="Cél port szám";
+
+// **************************************************************** Log_outgoing.asp **********************************************************************//
+log_out.titl="Kimenő naplózási táblák";
+log_out.h2="Kimenő naplózási táblák";
+log_out.th_lanip="LAN IP";
+log_out.th_wanip="Cél URL/IP";
+log_out.th_port="Szolgáltatás/Port szám";
+
+//help container
 hfirewall.right2="Kapcsolja be vagy ki az SPI tűzfalat.";
 
 
@@ -747,39 +764,6 @@ hidx.right18="Válassza ki azt az időzónát, amelyben él és a nyári idősz�
 //sshd.webservices
 join.titl="Csatlakozás";
 join.mess1="Sikeresen csatlakozott a következő hálózathoz mint kliens: ";
-
-
-
-// **************************************************************** Log_incoming.asp **********************************************************************//
-
-log_in.titl="Bejövő naplózási táblák";
-log_in.h2="Bejövő naplózási táblák";
-log_in.th_ip="Forrás IP";
-log_in.th_port="Cél port szám";
-
-
-
-// **************************************************************** Log_outgoing.asp **********************************************************************//
-
-log_out.titl="Kimenő naplózási táblák";
-log_out.h2="Kimenő naplózási táblák";
-log_out.th_lanip="LAN IP";
-log_out.th_wanip="Cél URL/IP";
-log_out.th_port="Szolgáltatás/Port szám";
-
-
-
-// **************************************************************** Log.asp **********************************************************************//
-
-log.label="Naplózás";
-log.h2="Naplózás kezelése";
-log.legend="Naplózás";
-log.lvl="Naplózási szint";
-log.drop="Eldobva";
-log.reject="Elutasítva";
-log.accept="Elfogadva";
-
-
 
 // **************************************************************** Management.asp **********************************************************************//
 
@@ -1218,9 +1202,9 @@ hstatus_inet.right2="Ezek azok az adatok, amelyek szükségesek az internet szol
 hstatus_inet.right4="This shows your router's Internet traffic.";
 
 // **************************************************************** Status_SputnikAPD.asp **********************************************************************//
-//    
+//
 //                    itt kezhetnéld Karesz, a szövegen kívül a formátumot ne változtasd meg, semmi pontot és beágyazásokat sem, csak a szöveget
-//                       nem muszály végig lefordítani, ha nincs kedved, ameddig eljutsz. Ha végeztél akkor küld el vissza lécci a fájlt 
+//                       nem muszály végig lefordítani, ha nincs kedved, ameddig eljutsz. Ha végeztél akkor küld el vissza lécci a fájlt
 //
 //
 //
@@ -1346,7 +1330,7 @@ vlan.legend="VLAN";
 vlan.bridge="A Bridge csatlakoztatva";
 vlan.tagged="Címkézett";
 vlan.negociate="Auto Negotiáció";
-vlan.aggregation="Kapcsolat egyesítése a 3-as és 4es portokon (Link Aggregation<br />"; 
+vlan.aggregation="Kapcsolat egyesítése a 3-as és 4es portokon (Link Aggregation<br />";
 vlan.trunk="Trönk";
 
 
@@ -1461,7 +1445,7 @@ wds.legend2="További beállítások";
 
 // **************************************************************** Wireless_radauth.asp ***************************************************************//
 
-radius.titl="RADIUS"; 
+radius.titl="RADIUS";
 radius.h2="Távoli hitelesítés Dial-In szolgáltatás";
 radius.legend="RADIUS";
 radius.label="RADIUS-kliens-MAC";

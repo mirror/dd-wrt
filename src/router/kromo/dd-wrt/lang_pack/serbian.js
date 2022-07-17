@@ -257,7 +257,7 @@ sbutton.filterIP="Уреди листу клијената";
 sbutton.filterMac="Уреди MAC Filter листу";
 sbutton.filterSer="Додај/Уреди услуге";
 sbutton.reboot="Ребутуј рутер";
-sbutton.help="   Помоћ  ";
+//sbutton.help="   Помоћ  ";
 sbutton.wl_client_mac="Листа MAC адреса бежичних клијената";
 sbutton.update_filter="Ажурирај листу филтрирања";
 sbutton.join="Придружи се";
@@ -644,13 +644,35 @@ firewall.ssh="Ограничи SSH приступ";
 firewall.telnet="Ограничи Telnet приступ";
 firewall.pptp="Ограничи PPTP приступ серверу";
 firewall.ftp="Ограничи FTP приступ серверу";
+
 filter.nat="Филтрирај WAN NAT преусмеравање";
 filter.port113="Филтрирај IDENT (Port 113)";
 filter.snmp="Блокирај WAN SNMP приступ";
 
+// ** Log.asp **//
+log.label="Запис";
+log.h2="Управљање Записом";
+log.legend="Запис";
+log.lvl="Ниво Записивања";
+log.drop="Дроповано";
+log.reject="Одбијено";
+log.accept="Прихваћено";
+
+// ** Log_incoming.asp **//
+log_in.titl="Табела Долазних Записа";
+log_in.h2="Табела Долазних Записа";
+log_in.th_ip="Изворна IP";
+log_in.th_port="Одредишни Порт Број";
+
+// ** Log_outgoing.asp **//
+log_out.titl="Табела Одлазних Записа";
+log_out.h2="Табела Одлазних Записа";
+log_out.th_lanip="LAN IP";
+log_out.th_wanip="Одредишна URL/IP";
+log_out.th_port="Сервис/Порт Број";
+
 //help container
 hfirewall.right2="Омогући или онемогући the SPI firewall.";
-
 
 // ** Forward.asp **//
 prforward.titl="Прослеђивање опсега портова";
@@ -1014,32 +1036,6 @@ dsl.snr="SNR Маргине (up/down)";
 //sshd.webservices
 join.titl="Придружи се";
 join.mess1="Успешно се придружио следећој мрежи као клијент: ";
-
-
-// ** Log_incoming.asp **//
-log_in.titl="Табела Долазних Записа";
-log_in.h2="Табела Долазних Записа";
-log_in.th_ip="Изворна IP";
-log_in.th_port="Одредишни Порт Број";
-
-
-// ** Log_outgoing.asp **//
-log_out.titl="Табела Одлазних Записа";
-log_out.h2="Табела Одлазних Записа";
-log_out.th_lanip="LAN IP";
-log_out.th_wanip="Одредишна URL/IP";
-log_out.th_port="Сервис/Порт Број";
-
-
-// ** Log.asp **//
-log.label="Запис";
-log.h2="Управљање Записом";
-log.legend="Запис";
-log.lvl="Ниво Записивања";
-log.drop="Дроповано";
-log.reject="Одбијено";
-log.accept="Прихваћено";
-
 
 // ** Management.asp **//
 management.titl="Администрација";

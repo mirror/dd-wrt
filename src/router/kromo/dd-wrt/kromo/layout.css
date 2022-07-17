@@ -10,7 +10,6 @@ body {
 /*! Common to light and dark for now */
 body.gui {
   text-align: center;
-  background: #aaa;
   margin: 0;
 }
 hr {
@@ -126,7 +125,6 @@ select[name*='bonding'], select[name*='schedule_'],
 #header {
   width: 100%;
   height: 9.24em;
-  background: #aaa;
   padding-top: .908em;
 }
 .infopage #header {
@@ -438,7 +436,7 @@ td .meter {
   line-height: 2.2;
 }
 input.button {
-  border: 1px solid;
+  border: 0;
   padding: .2em .6em;
   margin: 0 .3em 0 0;
   height: 1.6rem;
