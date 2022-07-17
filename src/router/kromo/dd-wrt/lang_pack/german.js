@@ -664,6 +664,24 @@ log.drop="Abgewiesen";
 log.reject="Zurückgewiesen";
 log.accept="Akzeptiert";
 
+
+// ** Log_incoming.asp **//
+
+log_in.titl="Eingehende Log-Tabelle";
+log_in.h2="Eingehende Log-Tabelle";
+log_in.th_ip="Ursprungs-IP";
+log_in.th_port="Ziel-Port-Nummer";
+
+
+// ** Log_outgoing.asp **//
+
+log_out.titl="Ausgehende Log-Tabelle";
+log_out.h2="Ausgehende Log-Tabelle";
+log_out.th_lanip="LAN-IP";
+log_out.th_wanip="Ziel-URL/IP";
+log_out.th_port="Dienst-/Port-Nummer";
+
+
 // ** Diagnostics.asp **//
 
 diag.titl="Diagnose";
@@ -1216,23 +1234,6 @@ dsl.snr="DSL Signal (up/down)";
 //sshd.webservices
 join.titl="Verbinden";
 join.mess1="Sie sind nun erfolgreich mit dem folgenden Netzwerk als Client verbunden: ";
-
-
-// ** Log_incoming.asp **//
-
-log_in.titl="Eingehende Log-Tabelle";
-log_in.h2="Eingehende Log-Tabelle";
-log_in.th_ip="Ursprungs-IP";
-log_in.th_port="Ziel-Port-Nummer";
-
-
-// ** Log_outgoing.asp **//
-
-log_out.titl="Ausgehende Log-Tabelle";
-log_out.h2="Ausgehende Log-Tabelle";
-log_out.th_lanip="LAN-IP";
-log_out.th_wanip="Ziel-URL/IP";
-log_out.th_port="Dienst-/Port-Nummer";
 
 
 

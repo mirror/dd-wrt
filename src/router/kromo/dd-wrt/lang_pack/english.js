@@ -661,6 +661,21 @@ log.drop="Dropped";
 log.reject="Rejected";
 log.accept="Accepted";
 
+// ** Log_incoming.asp **//
+var log_in=new Object();
+log_in.titl="Incoming Log Table";
+log_in.h2="Incoming Log Table";
+log_in.th_ip="Source IP";
+log_in.th_port="Destination Port Number";
+
+// ** Log_outgoing.asp **//
+var log_out=new Object();
+log_out.titl="Outgoing Log Table";
+log_out.h2="Outgoing Log Table";
+log_out.th_lanip="LAN IP";
+log_out.th_wanip="Destination URL / IP";
+log_out.th_port="Service / Port Number";
+
 // ** Diagnostics.asp **//
 var diag=new Object();
 diag.titl="Diagnostics and Commands";
@@ -1366,20 +1381,6 @@ var join=new Object();
 join.titl="Join";
 join.mess1="Successfully joined the following network as a client: ";
 
-// ** Log_incoming.asp **//
-var log_in=new Object();
-log_in.titl="Incoming Log Table";
-log_in.h2="Incoming Log Table";
-log_in.th_ip="Source IP";
-log_in.th_port="Destination Port Number";
-
-// ** Log_outgoing.asp **//
-var log_out=new Object();
-log_out.titl="Outgoing Log Table";
-log_out.h2="Outgoing Log Table";
-log_out.th_lanip="LAN IP";
-log_out.th_wanip="Destination URL / IP";
-log_out.th_port="Service / Port Number";
 
 
 // ** Management.asp **//
