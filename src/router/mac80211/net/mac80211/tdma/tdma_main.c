@@ -11,10 +11,10 @@
 #include "../driver-ops.h"
 #include "../wme.h"
 
-ieee80211_tx_result debug_noinline ieee80211_tx_h_rate_ctrl(struct ieee80211_tx_data *);
-ieee80211_tx_result debug_noinline ieee80211_tx_h_select_key(struct ieee80211_tx_data *);
-ieee80211_tx_result debug_noinline ieee80211_tx_h_encrypt(struct ieee80211_tx_data *);
-ieee80211_tx_result ieee80211_tx_h_michael_mic_add(struct ieee80211_tx_data *);
+static ieee80211_tx_result debug_noinline ieee80211_tx_h_rate_ctrl(struct ieee80211_tx_data *);
+static ieee80211_tx_result debug_noinline ieee80211_tx_h_select_key(struct ieee80211_tx_data *);
+static ieee80211_tx_result debug_noinline ieee80211_tx_h_encrypt(struct ieee80211_tx_data *);
+static ieee80211_tx_result ieee80211_tx_h_michael_mic_add(struct ieee80211_tx_data *);
 
 static unsigned long tdma_get_frame_duration(struct ieee80211_if_tdma *tdma, struct sk_buff *skb, struct sta_info **sta, bool do_all)
 {
@@ -853,7 +853,7 @@ out:
 	return HRTIMER_RESTART;
 }
 
-int ieee80211_join_tdma(struct wiphy *wiphy, struct net_device *dev, struct cfg80211_tdma_params *params)
+static int ieee80211_join_tdma(struct wiphy *wiphy, struct net_device *dev, struct cfg80211_tdma_params *params)
 {
 	struct ieee80211_sub_if_data *sdata = IEEE80211_DEV_TO_SUB_IF(dev);
 	int ret = -EBUSY, i;
@@ -1133,7 +1133,7 @@ void ieee80211_tdma_stop(struct ieee80211_sub_if_data *sdata)
 	RCU_INIT_POINTER(sdata->vif.chanctx_conf, NULL);
 }
 
-int ieee80211_leave_tdma(struct wiphy *wiphy, struct net_device *dev)
+static int ieee80211_leave_tdma(struct wiphy *wiphy, struct net_device *dev)
 {
 	struct ieee80211_sub_if_data *sdata = IEEE80211_DEV_TO_SUB_IF(dev);
 

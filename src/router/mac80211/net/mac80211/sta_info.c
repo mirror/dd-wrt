@@ -2647,7 +2647,7 @@ static void sta_update_codel_params(struct sta_info *sta, u32 thr)
 	}
 }
 
-void ieee80211_sta_set_expected_throughput(struct ieee80211_sta *pubsta,
+static void ieee80211_sta_set_expected_throughput(struct ieee80211_sta *pubsta,
 					   u32 thr)
 {
 	struct sta_info *sta = container_of(pubsta, struct sta_info, sta);

@@ -579,7 +579,7 @@ ieee80211_tx_h_check_control_port_protocol(struct ieee80211_tx_data *tx)
 	return TX_CONTINUE;
 }
 
-ieee80211_tx_result debug_noinline
+static ieee80211_tx_result debug_noinline
 ieee80211_tx_h_select_key(struct ieee80211_tx_data *tx)
 {
 	struct ieee80211_key *key;
@@ -661,7 +661,7 @@ ieee80211_tx_h_select_key(struct ieee80211_tx_data *tx)
 	return TX_CONTINUE;
 }
 
-ieee80211_tx_result debug_noinline
+static ieee80211_tx_result debug_noinline
 ieee80211_tx_h_rate_ctrl(struct ieee80211_tx_data *tx)
 {
 	struct ieee80211_tx_info *info = IEEE80211_SKB_CB(tx->skb);
@@ -1014,7 +1014,7 @@ ieee80211_tx_h_stats(struct ieee80211_tx_data *tx)
 	return TX_CONTINUE;
 }
 
-ieee80211_tx_result debug_noinline
+static ieee80211_tx_result debug_noinline
 ieee80211_tx_h_encrypt(struct ieee80211_tx_data *tx)
 {
 	if (!tx->key)
@@ -2112,7 +2112,7 @@ static bool ieee80211_validate_radiotap_len(struct sk_buff *skb)
 	return true;
 }
 
-bool ieee80211_parse_tx_radiotap(struct sk_buff *skb,
+static bool ieee80211_parse_tx_radiotap(struct sk_buff *skb,
 				 struct net_device *dev)
 {
 	struct ieee80211_local *local = wdev_priv(dev->ieee80211_ptr);

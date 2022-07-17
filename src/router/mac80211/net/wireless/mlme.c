@@ -643,9 +643,9 @@ void cfg80211_mlme_purge_registrations(struct wireless_dev *wdev)
 	cfg80211_mgmt_registrations_update(wdev);
 }
 
-void ieee80211_mgmt_mod_params(struct wiphy *wiphy, struct wireless_dev *wdev,
+static void ieee80211_mgmt_mod_params(struct wiphy *wiphy, struct wireless_dev *wdev,
 		      struct cfg80211_mgmt_tx_params *params, u64 *cookie);
-void ieee80211_mgmt_mod_params_release(struct wiphy *wiphy, struct wireless_dev *wdev,
+static void ieee80211_mgmt_mod_params_release(struct wiphy *wiphy, struct wireless_dev *wdev,
 		      struct cfg80211_mgmt_tx_params *params, u64 *cookie);
 
 int cfg80211_mlme_mgmt_tx(struct cfg80211_registered_device *rdev,

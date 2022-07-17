@@ -177,7 +177,7 @@ static const void *wiphy_namespace(struct device *d)
 	return wiphy_net(wiphy);
 }
 
-struct class ieee80211_class = {
+static struct class ieee80211_class = {
 	.name = "ieee80211",
 	.owner = THIS_MODULE,
 	.dev_release = wiphy_dev_release,

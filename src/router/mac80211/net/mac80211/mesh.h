@@ -153,9 +153,9 @@ struct mhdr_cache_entry {
 	u8 hdr[MESH_HDR_MAX_LEN];
 	u16 machdr_len;
 	u16 hdrlen;
-	struct ieee80211_key *key;
 	u8 pn_offs;
 	u8 band;
+	struct ieee80211_key *key;
 	struct hlist_node walk_list;
 	struct rhash_head rhash;
 	struct mesh_path *mpath;

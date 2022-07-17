@@ -104,9 +104,9 @@ struct mcs_group {
 	u16 duration[MCS_GROUP_RATES];
 };
 
-extern const s16 minstrel_cck_bitrates[4];
-extern const s16 minstrel_ofdm_bitrates[8];
-extern const struct mcs_group minstrel_mcs_groups[];
+//extern const s16 minstrel_cck_bitrates[4];
+//extern const s16 minstrel_ofdm_bitrates[8];
+//extern const struct mcs_group minstrel_mcs_groups[];
 
 struct minstrel_rate_stats {
 	/* current / last sampling period attempts/success counters */

@@ -150,9 +150,9 @@ static inline u64 cfg80211_assign_cookie(struct cfg80211_registered_device *rdev
 	return r;
 }
 
-extern struct workqueue_struct *cfg80211_wq;
-extern struct list_head cfg80211_rdev_list;
-extern int cfg80211_rdev_list_generation;
+//extern struct workqueue_struct *cfg80211_wq;
+//extern struct list_head cfg80211_rdev_list;
+//extern int cfg80211_rdev_list_generation;
 
 struct cfg80211_internal_bss {
 	struct list_head list;

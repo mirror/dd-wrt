@@ -148,7 +148,7 @@ struct airtime_info {
 	u32 aql_limit_high;
 };
 
-void ieee80211_sta_update_pending_airtime(struct ieee80211_local *local,
+static void ieee80211_sta_update_pending_airtime(struct ieee80211_local *local,
 					  struct sta_info *sta, u8 ac,
 					  u16 tx_airtime, bool tx_completed);
 

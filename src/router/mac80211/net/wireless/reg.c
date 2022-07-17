@@ -106,14 +106,6 @@ static struct regulatory_request __rcu *last_request =
 static struct platform_device *reg_pdev;
 
 /*
- * Central wireless core regulatory domains, we only need two,
- * the current one and a world regulatory domain in case we have no
- * information to give us an alpha2.
- * (protected by RTNL, can be read under RCU)
- */
-const struct ieee80211_regdomain __rcu *cfg80211_regdomain;
-
-/*
  * Number of devices that registered to the core
  * that support cellular base station regulatory hints
  * (protected by RTNL)

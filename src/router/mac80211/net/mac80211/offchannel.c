@@ -761,7 +761,7 @@ int ieee80211_cancel_remain_on_channel(struct wiphy *wiphy,
 	return ieee80211_cancel_roc(local, cookie, false);
 }
 
-void ieee80211_mgmt_mod_params(struct wiphy *wiphy, struct wireless_dev *wdev,
+static void ieee80211_mgmt_mod_params(struct wiphy *wiphy, struct wireless_dev *wdev,
 		      struct cfg80211_mgmt_tx_params *params, u64 *cookie) {
 
 	struct ieee80211_sub_if_data *sdata = IEEE80211_WDEV_TO_SUB_IF(wdev);
@@ -780,7 +780,7 @@ void ieee80211_mgmt_mod_params(struct wiphy *wiphy, struct wireless_dev *wdev,
 		params->len += extraie;
 	}
 }
-void ieee80211_mgmt_mod_params_release(struct wiphy *wiphy, struct wireless_dev *wdev,
+static void ieee80211_mgmt_mod_params_release(struct wiphy *wiphy, struct wireless_dev *wdev,
 		      struct cfg80211_mgmt_tx_params *params, u64 *cookie) {
 
 	struct ieee80211_sub_if_data *sdata = IEEE80211_WDEV_TO_SUB_IF(wdev);

@@ -41,7 +41,7 @@
 #include "tdma/pnwext.h"
 #endif
 
-extern const struct cfg80211_ops mac80211_config_ops;
+//extern const struct cfg80211_ops mac80211_config_ops;
 
 struct ieee80211_local;
 
@@ -84,7 +84,7 @@ struct ieee80211_local;
 #define IEEE80211_DEFAULT_MAX_SP_LEN		\
 	IEEE80211_WMM_IE_STA_QOSINFO_SP_ALL
 
-extern const u8 ieee80211_ac_to_qos_mask[IEEE80211_NUM_ACS];
+//extern const u8 ieee80211_ac_to_qos_mask[IEEE80211_NUM_ACS];
 
 #define IEEE80211_DEAUTH_FRAME_LEN	(24 /* hdr */ + 2 /* reason */)
 
@@ -2390,7 +2390,7 @@ ieee80211_cs_get(struct ieee80211_local *local, u32 cipher,
 static int ieee80211_cs_headroom(struct ieee80211_local *local,
 			  struct cfg80211_crypto_settings *crypto,
 			  enum nl80211_iftype iftype);
-void ieee80211_recalc_dtim(struct ieee80211_local *local,
+static void ieee80211_recalc_dtim(struct ieee80211_local *local,
 			   struct ieee80211_sub_if_data *sdata);
 static int ieee80211_check_combinations(struct ieee80211_sub_if_data *sdata,
 				 const struct cfg80211_chan_def *chandef,
