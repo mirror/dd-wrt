@@ -208,7 +208,7 @@ MODULE_PARM_DESC(minstrel_vht_only,
  * Sortorder has to be fixed for GROUP_IDX macro to be applicable:
  * BW -> SGI -> #streams
  */
-const struct mcs_group minstrel_mcs_groups[] = {
+static const struct mcs_group minstrel_mcs_groups[] = {
 	MCS_GROUP(1, 0, BW_20),
 	MCS_GROUP(2, 0, BW_20),
 	MCS_GROUP(3, 0, BW_20),
@@ -263,8 +263,8 @@ const struct mcs_group minstrel_mcs_groups[] = {
 	VHT_GROUP(4, 1, BW_80),
 };
 
-const s16 minstrel_cck_bitrates[4] = { 10, 20, 55, 110 };
-const s16 minstrel_ofdm_bitrates[8] = { 60, 90, 120, 180, 240, 360, 480, 540 };
+static const s16 minstrel_cck_bitrates[4] = { 10, 20, 55, 110 };
+static const s16 minstrel_ofdm_bitrates[8] = { 60, 90, 120, 180, 240, 360, 480, 540 };
 static u8 sample_table[SAMPLE_COLUMNS][MCS_GROUP_RATES] __read_mostly;
 static const u8 minstrel_sample_seq[] = {
 	MINSTREL_SAMPLE_TYPE_INC,

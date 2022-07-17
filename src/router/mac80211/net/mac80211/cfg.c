@@ -4489,7 +4489,12 @@ ieee80211_set_radar_background(struct wiphy *wiphy,
 	return local->ops->set_radar_background(&local->hw, chandef);
 }
 
-const struct cfg80211_ops mac80211_config_ops = {
+#ifdef CPTCFG_MAC80211_TDMA
+static int ieee80211_leave_tdma(struct wiphy *, struct net_device *);
+static int ieee80211_join_tdma(struct wiphy *, struct net_device *, struct cfg80211_tdma_params *);
+#endif
+
+static const struct cfg80211_ops mac80211_config_ops = {
 	.add_virtual_intf = ieee80211_add_iface,
 	.del_virtual_intf = ieee80211_del_iface,
 	.change_virtual_intf = ieee80211_change_iface,

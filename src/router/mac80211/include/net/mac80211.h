@@ -4774,21 +4774,6 @@ void ieee80211_get_tx_rates(struct ieee80211_vif *vif,
 			    struct ieee80211_tx_rate *dest,
 			    int max_rates);
 
-/**
- * ieee80211_sta_set_expected_throughput - set the expected tpt for a station
- *
- * Call this function to notify mac80211 about a change in expected throughput
- * to a station. A driver for a device that does rate control in firmware can
- * call this function when the expected throughput estimate towards a station
- * changes. The information is used to tune the CoDel AQM applied to traffic
- * going towards that station (which can otherwise be too aggressive and cause
- * slow stations to starve).
- *
- * @pubsta: the station to set throughput for.
- * @thr: the current expected throughput in kbps.
- */
-void ieee80211_sta_set_expected_throughput(struct ieee80211_sta *pubsta,
-					   u32 thr);
 
 /**
  * ieee80211_tx_rate_update - transmit rate update callback
@@ -6497,8 +6482,8 @@ bool ieee80211_tx_prepare_skb(struct ieee80211_hw *hw,
  * @skb: packet injected by userspace
  * @dev: the &struct device of this 802.11 device
  */
-bool ieee80211_parse_tx_radiotap(struct sk_buff *skb,
-				 struct net_device *dev);
+//bool ieee80211_parse_tx_radiotap(struct sk_buff *skb,
+//				 struct net_device *dev);
 
 /**
  * struct ieee80211_noa_data - holds temporary data for tracking P2P NoA state
@@ -6783,10 +6768,6 @@ void ieee80211_nan_func_match(struct ieee80211_vif *vif,
 			      struct cfg80211_nan_match_params *match,
 			      gfp_t gfp);
 
-#ifdef CPTCFG_MAC80211_TDMA
-int ieee80211_leave_tdma(struct wiphy *, struct net_device *);
-int ieee80211_join_tdma(struct wiphy *, struct net_device *, struct cfg80211_tdma_params *);
-#endif
 
 /**
  * ieee80211_calc_rx_airtime - calculate estimated transmission airtime for RX.

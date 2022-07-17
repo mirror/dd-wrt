@@ -80,7 +80,7 @@ static void __cfg80211_clear_tdma(struct net_device *dev, bool nowext)
 	memset(&wdev->chandef, 0, sizeof(wdev->chandef));
 }
 
-void cfg80211_clear_tdma(struct net_device *dev, bool nowext)
+static void cfg80211_clear_tdma(struct net_device *dev, bool nowext)
 {
 	struct wireless_dev *wdev = dev->ieee80211_ptr;
 

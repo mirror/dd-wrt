@@ -82,8 +82,8 @@ static inline int drv_get_et_sset_count(struct ieee80211_sub_if_data *sdata,
 	return rv;
 }
 
-int drv_start(struct ieee80211_local *local);
-void drv_stop(struct ieee80211_local *local);
+static int drv_start(struct ieee80211_local *local);
+static void drv_stop(struct ieee80211_local *local);
 
 #ifdef CONFIG_PM
 static inline int drv_suspend(struct ieee80211_local *local,
@@ -125,14 +125,14 @@ static inline void drv_set_wakeup(struct ieee80211_local *local,
 }
 #endif
 
-int drv_add_interface(struct ieee80211_local *local,
+static int drv_add_interface(struct ieee80211_local *local,
 		      struct ieee80211_sub_if_data *sdata);
 
-int drv_change_interface(struct ieee80211_local *local,
+static int drv_change_interface(struct ieee80211_local *local,
 			 struct ieee80211_sub_if_data *sdata,
 			 enum nl80211_iftype type, bool p2p);
 
-void drv_remove_interface(struct ieee80211_local *local,
+static void drv_remove_interface(struct ieee80211_local *local,
 			  struct ieee80211_sub_if_data *sdata);
 
 static inline int drv_config(struct ieee80211_local *local, u32 changed)
@@ -522,18 +522,18 @@ static inline void drv_sta_pre_rcu_remove(struct ieee80211_local *local,
 }
 
 __must_check
-int drv_sta_state(struct ieee80211_local *local,
+static int drv_sta_state(struct ieee80211_local *local,
 		  struct ieee80211_sub_if_data *sdata,
 		  struct sta_info *sta,
 		  enum ieee80211_sta_state old_state,
 		  enum ieee80211_sta_state new_state);
 
 __must_check
-int drv_sta_set_txpwr(struct ieee80211_local *local,
+static int drv_sta_set_txpwr(struct ieee80211_local *local,
 		      struct ieee80211_sub_if_data *sdata,
 		      struct sta_info *sta);
 
-void drv_sta_rc_update(struct ieee80211_local *local,
+static void drv_sta_rc_update(struct ieee80211_local *local,
 		       struct ieee80211_sub_if_data *sdata,
 		       struct ieee80211_sta *sta, u32 changed);
 
@@ -567,19 +567,19 @@ static inline void drv_sta_statistics(struct ieee80211_local *local,
 	trace_drv_return_void(local);
 }
 
-int drv_conf_tx(struct ieee80211_local *local,
+static int drv_conf_tx(struct ieee80211_local *local,
 		struct ieee80211_sub_if_data *sdata, u16 ac,
 		const struct ieee80211_tx_queue_params *params);
 
-u64 drv_get_tsf(struct ieee80211_local *local,
+static u64 drv_get_tsf(struct ieee80211_local *local,
 		struct ieee80211_sub_if_data *sdata);
-void drv_set_tsf(struct ieee80211_local *local,
+static void drv_set_tsf(struct ieee80211_local *local,
 		 struct ieee80211_sub_if_data *sdata,
 		 u64 tsf);
-void drv_offset_tsf(struct ieee80211_local *local,
+static void drv_offset_tsf(struct ieee80211_local *local,
 		    struct ieee80211_sub_if_data *sdata,
 		    s64 offset);
-void drv_reset_tsf(struct ieee80211_local *local,
+static void drv_reset_tsf(struct ieee80211_local *local,
 		   struct ieee80211_sub_if_data *sdata);
 
 static inline int drv_tx_last_beacon(struct ieee80211_local *local)
@@ -595,7 +595,7 @@ static inline int drv_tx_last_beacon(struct ieee80211_local *local)
 	return ret;
 }
 
-int drv_ampdu_action(struct ieee80211_local *local,
+static int drv_ampdu_action(struct ieee80211_local *local,
 		     struct ieee80211_sub_if_data *sdata,
 		     struct ieee80211_ampdu_params *params);
 
@@ -955,7 +955,7 @@ static inline void drv_unassign_vif_chanctx(struct ieee80211_local *local,
 	trace_drv_return_void(local);
 }
 
-int drv_switch_vif_chanctx(struct ieee80211_local *local,
+static int drv_switch_vif_chanctx(struct ieee80211_local *local,
 			   struct ieee80211_vif_chanctx_switch *vifs,
 			   int n_vifs, enum ieee80211_chanctx_switch_mode mode);
 

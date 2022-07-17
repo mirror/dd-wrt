@@ -21,7 +21,7 @@
 #define MESH_ROOT_CONFIRMATION_INTERVAL 2000
 #define MESH_DEFAULT_PLINK_TIMEOUT	1800 /* timeout in seconds */
 
-#define MESH_DEFAULT_HEADER_CACHE_SIZE		50
+#define MESH_DEFAULT_HEADER_CACHE_SIZE		512
 
 /*
  * Minimum interval between two consecutive PREQs originated by the same

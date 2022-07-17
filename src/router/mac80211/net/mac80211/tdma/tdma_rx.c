@@ -19,12 +19,10 @@
 
 /* See IEEE 802.1H for LLC/SNAP encapsulation/decapsulation */
 /* Ethernet-II snap header (RFC1042 for most EtherTypes) */
-const unsigned char s_rfc1042_header[] __aligned(2) = {
-0xaa, 0xaa, 0x03, 0x00, 0x00, 0x00};
+extern const unsigned char rfc1042_header[];
 
 /* Bridge-Tunnel header (for EtherTypes ETH_P_AARP and ETH_P_IPX) */
-const unsigned char s_bridge_tunnel_header[] __aligned(2) = {
-0xaa, 0xaa, 0x03, 0x00, 0x00, 0xf8};
+extern const unsigned char bridge_tunnel_header[];
 
 void tdma_amsdu_to_8023s(struct ieee80211_sub_if_data *sdata, struct sk_buff *skb, struct sk_buff_head *list, const unsigned int extra_headroom, __be16 len, u16 to_skip)
 {
@@ -151,7 +149,7 @@ void tdma_amsdu_to_8023s(struct ieee80211_sub_if_data *sdata, struct sk_buff *sk
 		payload = frame->data;
 		ethertype = (payload[6] << 8) | payload[7];
 
-		if (likely((ether_addr_equal(payload, s_rfc1042_header) && ethertype != ETH_P_AARP && ethertype != ETH_P_IPX) || ether_addr_equal(payload, s_bridge_tunnel_header))) {
+		if (likely((ether_addr_equal(payload, rfc1042_header) && ethertype != ETH_P_AARP && ethertype != ETH_P_IPX) || ether_addr_equal(payload, bridge_tunnel_header))) {
 			/* remove RFC1042 or Bridge-Tunnel
 			 * encapsulation and replace EtherType */
 			skb_pull(frame, 6);

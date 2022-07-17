@@ -9,6 +9,7 @@
 #include "compress/lz4_compress.c"
 #include "compress/lz4_decompress.c"
 #endif
+#include "cfg.c"
 #include "main.c"
 #include "tx.c"
 #include "status.c"
@@ -34,7 +35,6 @@
 #include "aes_gmac.c"
 #include "aead_api.c"
 #include "fils_aead.c"
-#include "cfg.c"
 #include "ethtool.c"
 #include "rx.c"
 #include "spectmgmt.c"
@@ -106,8 +106,8 @@
 //#include "../wireless/wext-priv.c"
 #endif
 
-#include "../wireless/core.c" 
 #include "../wireless/sysfs.c" 
+#include "../wireless/core.c" 
 #include "../wireless/radiotap.c" 
 #include "../wireless/util.c" 
 #include "../wireless/reg.c" 
