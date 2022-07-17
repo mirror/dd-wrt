@@ -1,3 +1,4 @@
+/*! kromo */
 * {
   font-family: Tahoma, Arial, sans-serif;
   font-size: 1em;
@@ -146,15 +147,6 @@ select[name*='bonding'], select[name*='schedule_'],
   right: 0;
   width: 32.609em;
   text-align: right;
-  color: #115b80;
-}
-#statusInfo a {
-  color: #115b80;
-  text-decoration: none;
-}
-#statusInfo a:hover {
-  color: #fff;
-  text-decoration: underline;
 }
 #menu {
   position: relative;
