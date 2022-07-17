@@ -664,14 +664,12 @@ log.drop="Abgewiesen";
 log.reject="Zurückgewiesen";
 log.accept="Akzeptiert";
 
-
 // ** Log_incoming.asp **//
 
 log_in.titl="Eingehende Log-Tabelle";
 log_in.h2="Eingehende Log-Tabelle";
 log_in.th_ip="Ursprungs-IP";
 log_in.th_port="Ziel-Port-Nummer";
-
 
 // ** Log_outgoing.asp **//
 
@@ -680,7 +678,6 @@ log_out.h2="Ausgehende Log-Tabelle";
 log_out.th_lanip="LAN-IP";
 log_out.th_wanip="Ziel-URL/IP";
 log_out.th_port="Dienst-/Port-Nummer";
-
 
 // ** Diagnostics.asp **//
 
@@ -715,7 +712,6 @@ dmz.h2="Demilitarisierte Zone (DMZ)";
 dmz.legend="DMZ";
 dmz.serv="DMZ verwenden";
 dmz.host="IP-Adresse des DMZ-Hosts";
-
 
 //help container
 
@@ -772,9 +768,16 @@ filter.mess3="Die Endzeit muss nach der Startzeit liegen.";
 filter.none="";
 filter.packetcount="Gefilterte Pakete";
 
+// ** FilterSummary.asp **//
+
+filterSum.titl="Zusammenfassung Zugriffsbeschränkung ";
+filterSum.h2="Zusammenfassung Internetrichtlinie ";
+filterSum.polnum="Nr.";
+filterSum.polday="Uhrzeit";
+
 //help container
 
-hfilter.right2="Sie können bis zu 10 Zugriffsregeln definieren. Klicken Sie <em>" + sbutton.del + "</em> um eine Richtlinie zu löschen, oder <em>" + sbutton.summary + "</em> um sich die Zusammenfassung der Richtlinie anzuschauen.";
+hfilter.right2="Sie können bis zu 20 Zugriffsregeln definieren. Klicken Sie <em>" + sbutton.del + "</em> um eine Richtlinie zu löschen, oder <em>" + sbutton.summary + "</em> um sich die Zusammenfassung der Richtlinie anzuschauen.";
 hfilter.right4="Hier können Sie eine Richtlinie ein- oder ausschalten.";
 hfilter.right6="Hier können Sie Ihrer Richtlinie einen Namen zuweisen.";
 hfilter.right8="Hier können Sie ein oder mehrere Tage auswählen, an denen die Richtlinie gelten soll.";
@@ -782,15 +785,9 @@ hfilter.right10="Hier können Sie die Tageszeit angeben, zu der die Richtlinie g
 hfilter.right12="Hier können Sie Dienste auswählen, welche blockiert werden sollen. Klicken Sie <em>" + sbutton.filterSer + "</em> um die Einstellungen zu ändern.";
 hfilter.right14="Hier können Sie diverse Webseiten mit Hilfe einer URL blockieren.";
 hfilter.right16="Hier können Sie mit Hilfe von Schlagworten Webseiten blockieren, die diese enthalten.";
-
-
-
-// ** FilterSummary.asp **//
-
-filterSum.titl="Zusammenfassung Zugriffsbeschränkung ";
-filterSum.h2="Zusammenfassung Internetrichtlinie ";
-filterSum.polnum="Nr.";
-filterSum.polday="Uhrzeit";
+hfilter.pageintro="<dd>Auf dieses Registerkarte können Sie bestimmte Arten der Internetnutzung sperren oder zulassen. Sie können Internet-Zugangsrichtlinien für bestimmte Computer einrichten und Filter mit Hilfe von Netzwerk-Portnummern einrichten.</dd>";
+hfilter.page1="<dd>Diese Funktion ermöglicht es Ihnen, bis zu 20 verschiedene Internet-Zugriffsrichtlinien für bestimmte Geräte festzulegen, die durch ihre IP- oder MAC-Adressen identifiziert werden. Für jedes in der Richtlinie genannte Gerät, während der angegebenen Tage und Zeiträume.<br /><br />Folgen Sie den Anweisungen, um eine Richtlinie zu erstellen oder zu bearbeiten:<ol class=\"wide\"><li>Wählen Sie eine Richtliniennummer (1-20) aus dem Dropdown-Menü aus.</li><li>Geben Sie einen Namen in das Feld <em>" + filter.polname + "</em> ein.</li><li>Klicken Sie auf die Schaltfläche <em>" + sbutton.filterIP + "</em>.</li><li>Geben Sie in dem Fenster <em>" + filterIP.titl + "</em> die gewünschten Computer anhand ihrer IP-Adresse oder MAC-Adresse an. Geben Sie die entsprechenden IP-Adressen in die <i>IP</i> Felder ein. Wenn Sie einen IP-Adressen-Bereich filtern möchten, dann füllen Sie die Felder <i>IP-Bereich</i> aus. Geben Sie die entsprechenden MAC-Adressen in die <i>MAC</i> Felder ein.</li><li>Klicken Sie auf die Schaltfläche <em>" + sbutton.apply + "</em>, um Ihre Änderungen zu übernehmen. Klicken Sie auf die Schaltfläche <em>" + sbutton.cancel + "</em>, um die nicht gespeicherten Änderungen zu verwerfen. Klicken Sie auf die Schaltfläche <em>" + sbutton.clos + "</em>, um zu der Registerkarte <b>"+ bmenu.accrestriction + "</b> zurückzukehren.</li><li>Wenn Sie den Internetzugang für die aufgelisteten Computer während der angegebenen Tage und Uhrzeiten sperren möchten, dann behalten Sie die Standardeinstellung <em>" + share.deny + "</em> bei. Wenn Sie möchten, dass die aufgelisteten Computer während der angegebenen Tage und Uhrzeiten gefiltert auf das Internet zugreifen können, dann klicken Sie auf das Optionsfeld neben <em>" + share.filter + "</em>.</li><li>Legen Sie die Tage fest, an denen der Zugriff gefiltert werden soll. Wählen Sie <em>" + share.everyday + "</em> oder die entsprechenden Wochentage.</li><li>Legen Sie die Zeit fest, zu der der Zugriff gefiltert werden soll. Wählen Sie <em>" + filter.h24 + "</em> oder aktivieren Sie das Kästchen neben <em>" + share.from + "</em> und verwenden Sie die Dropdown-Menüs, um einen bestimmten Zeitraum festzulegen.</li><li>Klicken Sie auf die Schaltfläche <em>" + sbutton.save + "</em>, um Ihre Änderungen zu speichern und zu aktivieren.</li><li>Um weitere Richtlinien zu erstellen oder zu bearbeiten, wiederholen Sie die Schritte 1-9.</li></ol><br />Um eine Internet-Zugangsrichtlinie zu löschen, wählen Sie die Richtlinien-Nummer aus, und klicken Sie auf die Schaltfläche <em>" + share.del + "</em>.</dd>";
+hfilter.page2="<dd>Um eine Zusammenfassung aller Richtlinien zu sehen, klicken Sie auf die Schaltfläche <em>" + sbutton.summary + "</em>. In dem Fenster <em>" + filterSum.titl + "</em> werden die einzelnen Richtlinien in einer geordneten Liste mit Richtlinien-Nummer, Name, Tagen und Tageszeit angezeigt. Um eine Richtlinie zu löschen, markieren Sie das entsprechende Kästchen, und klicken Sie dann auf die Schaltfläche <em>" + share.del + "</em>. Klicken Sie auf die Schaltfläche <em>" + sbutton.clos + "</em>, um zu der Registerkarte <b>"+ bmenu.accrestriction + "</b> zurückzukehren.</dd>";
 
 // ** Firewall.asp **//
 
