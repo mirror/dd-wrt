@@ -804,7 +804,7 @@ hfirewall.page7="<dd>Verhindert, dass Hosts im LAN die WAN-Adresse des Routers v
 hfirewall.page8="<dd>Verhindert den WAN-Zugriff auf Port 113.</dd>";
 hfirewall.page9="<dd>Der Router kann den gesamten eingehenden und ausgehenden Datenverkehr für Ihre Internetverbindung protokollieren.</dd>";
 hfirewall.page10="<dd>Um Aktivitätsprotokolle zu erstellen, wählen Sie <em>" + share.enable + "</em>. Um die Protokollierung zu beenden, wählen Sie <em>" + share.disable + "</em>.</dd>";
-hfirewall.page11="<dd>Stellen Sie hier die gewünschte Informationsmenge ein. Setzen Sie den <em>" + log.lvl + "</em> höher, um mehr Aktionen zu protokollieren.</dd>";
+hfirewall.page11="<dd>Stellen Sie hier die gewünschte Informationsmenge ein. Setzen Sie den <i>Log Level</i> höher, um mehr Aktionen zu protokollieren.</dd>";
 hfirewall.page12="<dd>Klicken Sie auf die Schaltfläche <em>" + sbutton.log_in + "</em>, um sich ein temporäres Protokoll der letzten eingehenden Verbindungen des Routers anzeigen zulassen.</td>";
 hfirewall.page13="<dd>Klicken Sie auf die Schaltfläche <em>" + sbutton.log_out + "</em>, um sich ein temporäres Protokoll der letzten ausgehenden Verbindungen des Routers anzeigen zulassen.</dd><dd>Überprüfen Sie alle Werte und klicken Sie auf die Schaltfläche <em>" + sbutton.save + "</em>, um Ihre Einstellungen zu speichern. Klicken Sie auf die Schaltfläche <em>" + sbutton.cancel + "</em>, um Ihre nicht gespeicherten Änderungen zu verwerfen.</dd>";
 
