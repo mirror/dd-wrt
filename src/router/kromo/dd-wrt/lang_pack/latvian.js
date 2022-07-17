@@ -7,7 +7,6 @@
 
 lang_charset.set="utf-8";
 
-
 share.apn="APN";
 share.pin="PIN kods";
 share.dial="Iezvanvirkne";
@@ -235,7 +234,7 @@ sbutton.filterIP="Rediget klienta sarakstu";
 sbutton.filterMac="Rediget MAC filtra sarakstu";
 sbutton.filterSer="Pievienot/Rediget pakalpojumu";
 sbutton.reboot="Atsaknet maršrutetaju";
-sbutton.help=" Palidziba ";
+//sbutton.help=" Palidziba ";
 sbutton.wl_client_mac="Bezvada klientu MAC saraksts";
 sbutton.update_filter="Atjauninat filtra sarakstu";
 sbutton.join="Saistit";
@@ -620,11 +619,33 @@ firewall.activex="Filter ActiveX";
 firewall.legend3="Block WAN Requests";
 firewall.ping="Block Anonymous WAN Requests (ping)";
 firewall.muticast="Filter Multicast";
+
 filter.nat="Filter WAN NAT Redirection";
 filter.port113="Filter IDENT (Port 113)";
 
-//help container
+// ** Log.asp **//
+log.label="Log";
+log.h2="Log Management";
+log.legend="Log";
+log.lvl="Log Level";
+log.drop="Dropped";
+log.reject="Rejected";
+log.accept="Accepted";
 
+// ** Log_incoming.asp **//
+log_in.titl="Incoming Log Table";
+log_in.h2="Incoming Log Table";
+log_in.th_ip="Source IP";
+log_in.th_port="Destination Port Number";
+
+// ** Log_outgoing.asp **//
+log_out.titl="Outgoing Log Table";
+log_out.h2="Outgoing Log Table";
+log_out.th_lanip="LAN IP";
+log_out.th_wanip="Destination URL/IP";
+log_out.th_port="Service/Port Number";
+
+//help container
 hfirewall.right2="Enable or disable the SPI firewall.";
 
 
@@ -914,37 +935,7 @@ hidx.right18="Choose the time zone you are in and Summer Time (DST) period. The 
 join.titl="Join";
 join.mess1="Successfully joined the following network as a client: ";
 
-
-// ** Log_incoming.asp **//
-
-log_in.titl="Incoming Log Table";
-log_in.h2="Incoming Log Table";
-log_in.th_ip="Source IP";
-log_in.th_port="Destination Port Number";
-
-
-// ** Log_outgoing.asp **//
-
-log_out.titl="Outgoing Log Table";
-log_out.h2="Outgoing Log Table";
-log_out.th_lanip="LAN IP";
-log_out.th_wanip="Destination URL/IP";
-log_out.th_port="Service/Port Number";
-
-
-// ** Log.asp **//
-
-log.label="Log";
-log.h2="Log Management";
-log.legend="Log";
-log.lvl="Log Level";
-log.drop="Dropped";
-log.reject="Rejected";
-log.accept="Accepted";
-
-
 // ** Management.asp **//
-
 management.titl="Administration";
 management.h2="Router Management";
 management.changepassword="Your Router is currently not protected and uses an unsafe default username and password combination, please change it using the following dialog!";

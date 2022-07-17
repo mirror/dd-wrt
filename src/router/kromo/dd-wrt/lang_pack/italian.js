@@ -1,6 +1,6 @@
 //////////////////////////////////////////////////////////////////////////////////////////////  
 //     Italian translation DD-WRT V24 by CoffeEbuyer Updated by MarkV92 08/2014 svn 24836   //
-//////////////////////////////////////////////////////////////////////////////////////////////  
+//////////////////////////////////////////////////////////////////////////////////////////////
 
 // ** COMMON SHARE LABEL **//
 //var lang_charset=new Object();
@@ -261,7 +261,7 @@ sbutton.filterIP="Modifica Lista PC";
 sbutton.filterMac="Modifica La Lista Filtro Dei MAC";
 sbutton.filterSer="Aggiungi/Modifica Servizi";
 sbutton.reboot="Riavvia Il Router";
-sbutton.help="   Aiuto  ";
+//sbutton.help="   Aiuto  ";
 sbutton.wl_client_mac="Lista MAC Dei Client Wireless";
 sbutton.update_filter="Aggiorna La Lista Filtro";
 sbutton.join="Collega";
@@ -677,15 +677,12 @@ hfilter.pageintro="<dd>This screen allows you to block or allow specific kinds o
 hfilter.page1="<dd>Questa funzione consente di personalizzare fino a dieci differenti politiche di accesso a Internet per particolari PC, che sono identificati dai loro indirizzi IP o MAC. Per ogni PC insrito nella lista, durante i giorni e periodi di tempo indicati.<br /><br />Per creare o modificare un criterio, seguire le seguenti istruzioni:<ol class=\"wide\"><li>Selezionare il numero della politica (1-10) nel menù a tendina.</li><li>Immettere il nome del profilo del campo Enter Name.</li><li>Clicca il bottone <i>Edit List of PCs</i>.</li><li>Nella scermata di <i>List of PCs</i>, specifica i PCs tramite l'indirizzo IP o l'indirizzo MAC. Inserisci gli indirizzi IP corretti nei campi <i>IP</i>. Se si deve filtrare un rage di indirizzi IP, completa i campi dell'<i>IP Range</i>. Inserisci gli indirizzi MAC corretti nei campi <i>MAC</i>.</li><li>Clicca il bottone <i>Apply</i> per salvare le modifiche. Clicca sul bottone <i>Cancel</i> per annullare le modifiche non salvate. Clicca sul bottone <i>Close</i> per ritornare alla schermata principale dei Filtri.</li><li>Se si desidera bloccare i PC elencati dall'accesso ad Internet durante i giorni e le ore indicate, mantenere l'impostazione predefinita, <i>Deny</i>. Se si desidera filtrare Internet ai PC in lista durante i giorni e le ore indicate, fare click sul pulsante <i>Filter</i>.</li><li>Impostare i giorni in cui sarà filtrato l'accesso. Selezionare <i>Everyday</i> oppure i giorni della settimana voluti.</li><li>Impostare il periodo di tempo in cui il filtro rimarrà acceso. Selezionare <i>24 Hours</i>, oppure utilizzare i menù a tendina in parte a <i>From</i> per settare il periodo voluto.</li><li>Clicca il bottone <i>Add to Policy</i> per salvare la politica appena fatta ed applicarla.</li><li>Per creare o modificare le politiche, ripetere i passaggi dal 1 al 9.</li></ol><br />Per cancellare una politica di accesso ad Internet, selezionare il numero di politica desiderato, e fare click sul pulsante <i>Delete</i>.</dd>";
 hfilter.page2="<dd>Per vedere un riepilogo di tutte le politiche, fare click sul bottone <i>Summary</i>. La schermata di riepilogo delle politiche di accesso ad Internet mostrerà il numero della politica, il suo nome, i giorni e le ore in cui sarà attiva. Per cancellare una politica, clicca il suo riquadro, e poi clicca il bottone <i>Delete</i>. Cliccare il bottone <i>Close</i> per ritornare alla schermata dei Filtri.</dd>";
 
-
-
 // ** FilterSummary.asp **//
 //var filterSum=new Object();
 filterSum.titl="Riepilogo Restrizioni D'Accesso";
 filterSum.h2="Riepilogo Politica Internet";
 filterSum.polnum="No.";
 filterSum.polday="Ora del Giorno";
-
 
 // ** Firewall.asp **//
 //var firewall=new Object();
@@ -706,6 +703,31 @@ firewall.ssh="Limita gli accessi SSH";
 firewall.telnet="Limita gli accessi Telnet";
 firewall.pptp="Limita gli accessi al Server PPTP";
 firewall.ftp="Limita gli accessi al Server FTP";
+
+// ** Log.asp **//
+//var log=new Object();
+log.label="Log";
+log.h2="Gestione Log";
+log.legend="Log";
+log.lvl="Livello Log";
+log.drop="Scartati";
+log.reject="Riggettati";
+log.accept="Accettati";
+
+// ** Log_incoming.asp **//
+//var log_in=new Object();
+log_in.titl="Tabella Di Log In Ingresso";
+log_in.h2="Tabella Di Log In Ingresso";
+log_in.th_ip="IP Sorgente";
+log_in.th_port="Numero Della Porta Destinazione";
+
+// ** Log_outgoing.asp **//
+//var log_out=new Object();
+log_out.titl="Tabella Di Log In Uscita";
+log_out.h2="Tabella Di Log In Uscita";
+log_out.th_lanip="LAN IP";
+log_out.th_wanip="URL/IP Di Destinazione";
+log_out.th_port="Servizio/Numero Di Porta";
 
 //help container
 //var hfirewall=new Object();
@@ -1197,35 +1219,6 @@ dsl.snr="DSL Signal (up/down)";
 //sshd.webservices
 join.titl="Collegamento";
 join.mess1="Collegato con successo alla seguente rete come client: ";
-
-
-// ** Log_incoming.asp **//
-//var log_in=new Object();
-log_in.titl="Tabella Di Log In Ingresso";
-log_in.h2="Tabella Di Log In Ingresso";
-log_in.th_ip="IP Sorgente";
-log_in.th_port="Numero Della Porta Destinazione";
-
-
-// ** Log_outgoing.asp **//
-//var log_out=new Object();
-log_out.titl="Tabella Di Log In Uscita";
-log_out.h2="Tabella Di Log In Uscita";
-log_out.th_lanip="LAN IP";
-log_out.th_wanip="URL/IP Di Destinazione";
-log_out.th_port="Servizio/Numero Di Porta";
-
-
-// ** Log.asp **//
-//var log=new Object();
-log.label="Log";
-log.h2="Gestione Log";
-log.legend="Log";
-log.lvl="Livello Log";
-log.drop="Scartati";
-log.reject="Riggettati";
-log.accept="Accettati";
-
 
 // ** Management.asp **//
 //var management=new Object();
@@ -2562,4 +2555,4 @@ dhcp.server="DHCP Server Indirizzo IP :";
 dhcp.tclient="Nome Host Client";
 
 //var donate=new Object();
-donate.mb="Puoi fare offerte tramite Moneybookers sull'account mb@dd-wrt.com"; 
+donate.mb="Puoi fare offerte tramite Moneybookers sull'account mb@dd-wrt.com";

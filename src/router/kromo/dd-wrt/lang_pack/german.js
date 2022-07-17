@@ -1,5 +1,5 @@
 //////////////////////////////////////////////////////////////////////////////////////////////
-//				German translation DD-WRT					
+//				German translation DD-WRT
 //	initial translation: Sebastian Gottschall <brainslayer@dd-wrt.com>
 //	additional works and fixes: sparksofinsanity <sparksofinsanity@users.noreply.github.com>
 //////////////////////////////////////////////////////////////////////////////////////////////
@@ -322,7 +322,7 @@ sbutton.filterIP="Liste der PCs editieren";
 sbutton.filterMac="MAC-Filterliste editieren";
 sbutton.filterSer="Dienst hinzufügen/editieren";
 sbutton.reboot="Router neu starten";
-sbutton.help="   Hilfe  ";
+//sbutton.help="   Hilfe  ";
 sbutton.wl_client_mac="MAC-Liste WLAN-Clients";
 sbutton.update_filter="Filterliste updaten";
 sbutton.join="Verbinden";
@@ -654,31 +654,6 @@ hddns.page4="<dd>Wenn Sie die Wildcard-Funktion für Ihren Host aktivieren, wird
 hddns.page5="<dd>Geben Sie eine ganze Zahl in das Feld ein, um das Intervall für die erzwungene Aktualisierung (in Tagen) festzulegen. Eine erzwungene Aktualisierung ist eine Aktualisierung, die durchgeführt wird, obwohl sich Ihre IP-Adresse nicht geändert hat. Eine erzwungene Aktualisierung ist insbesondere für Benutzer erforderlich, die keine Spender von dyndns.org sind, um die Löschung des Hostnamen zu verhindern.</dd>";
 hddns.page6="<dd>Hier wird der Status des DDNS-Dienst angezeigt.</dd>";
 
-// ** Log.asp **//
-
-log.label="Log";
-log.h2="Log-Verwaltung";
-log.legend="Log";
-log.lvl="Log-Level";
-log.drop="Abgewiesen";
-log.reject="Zurückgewiesen";
-log.accept="Akzeptiert";
-
-// ** Log_incoming.asp **//
-
-log_in.titl="Eingehende Log-Tabelle";
-log_in.h2="Eingehende Log-Tabelle";
-log_in.th_ip="Ursprungs-IP";
-log_in.th_port="Ziel-Port-Nummer";
-
-// ** Log_outgoing.asp **//
-
-log_out.titl="Ausgehende Log-Tabelle";
-log_out.h2="Ausgehende Log-Tabelle";
-log_out.th_lanip="LAN-IP";
-log_out.th_wanip="Ziel-URL/IP";
-log_out.th_port="Dienst-/Port-Nummer";
-
 // ** Diagnostics.asp **//
 
 diag.titl="Diagnose";
@@ -714,7 +689,6 @@ dmz.serv="DMZ verwenden";
 dmz.host="IP-Adresse des DMZ-Hosts";
 
 //help container
-
 hdmz.right2="Wenn Sie diese Option aktivieren wird der angegebene Host in das Internet durchgeschaltet. Alle Ports sind dann vom Internet aus erreichbar";
 
 //help page
@@ -815,8 +789,29 @@ filter.nat="WAN-NAT-Umleitung filtern";
 filter.port113="IDENT (Port 113) filtern";
 filter.snmp="Block WAN SNMP access";
 
-//help container
+// ** Log.asp **//
+log.label="Log";
+log.h2="Log-Verwaltung";
+log.legend="Log";
+log.lvl="Log-Level";
+log.drop="Abgewiesen";
+log.reject="Zurückgewiesen";
+log.accept="Akzeptiert";
 
+// ** Log_incoming.asp **//
+log_in.titl="Eingehende Log-Tabelle";
+log_in.h2="Eingehende Log-Tabelle";
+log_in.th_ip="Ursprungs-IP";
+log_in.th_port="Ziel-Port-Nummer";
+
+// ** Log_outgoing.asp **//
+log_out.titl="Ausgehende Log-Tabelle";
+log_out.h2="Ausgehende Log-Tabelle";
+log_out.th_lanip="LAN-IP";
+log_out.th_wanip="Ziel-URL/IP";
+log_out.th_port="Dienst-/Port-Nummer";
+
+//help container
 hfirewall.right2="Schaltet die SPI-Firewall ein oder aus.";
 
 // help page
@@ -1227,16 +1222,11 @@ dsl.snr="DSL Signal (up/down)";
 
 // ** Join.asp **//
 
-
 //sshd.webservices
 join.titl="Verbinden";
 join.mess1="Sie sind nun erfolgreich mit dem folgenden Netzwerk als Client verbunden: ";
 
-
-
-
 // ** Management.asp **//
-
 management.titl="Administration";
 management.h2="Router Management";
 management.changepassword="Ihr Router ist derzeit nicht gegen unbefugten Zugriff geschützt, bitte ändern Sie ihren Benutzernamen und ihr Kennwort mit Hilfe des folgenden Dialogs!";
@@ -1944,7 +1934,7 @@ service.samba3_share_access="Zugriff";
 service.samba3_users="Benutzer";
 service.samba3_username="Benutzer";
 service.samba3_password="Kennwort";
-service.samba3_user_shares="Zugang zu Freigaben"; 
+service.samba3_user_shares="Zugang zu Freigaben";
 service.samba3_min_proto="Minimale Protokoll Version";
 service.samba3_max_proto="Maximale Protokoll Version";
 service.sambe3_encrypt="Verschlüsselung";
@@ -2653,8 +2643,8 @@ wl_adv.lng="Lang"; 					//************* don't use .long! *************
 wl_adv.shrt="Kurz"; 				//************* don't use .short! **************
 
 wl_adv.droplowsignal="Clients mit niedrigem Signal verwerfen";
-wl_adv.connect="Minimum Signal für Authentifizierung"; 
-wl_adv.stay="Minimum Signal für Verbindung"; 
+wl_adv.connect="Minimum Signal für Authentifizierung";
+wl_adv.stay="Minimum Signal für Verbindung";
 wl_adv.poll_time="Intervall für Analyse";
 wl_adv.strikes="Anzahl erlaubter niedriger Signale";
 
@@ -2941,7 +2931,7 @@ dhcp.server="DHCP Server-IP-Adresse :";
 dhcp.tclient="Client-Hostname";
 
 
-donate.mb="Sie können auch durch den Moneybookers-Account mb@dd-wrt.com spenden"; 
+donate.mb="Sie können auch durch den Moneybookers-Account mb@dd-wrt.com spenden";
 
 reg.not_reg="Das System ist nicht aktiviert. Bitte Kontaktieren Sie ihren lokalen Händler um einen gültigen Lizenzschlüssel zu erhalten.";
 reg.sys_key="Systemschlüssel";

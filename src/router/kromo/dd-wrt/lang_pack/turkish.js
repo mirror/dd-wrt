@@ -248,7 +248,7 @@ sbutton.filterIP="İstemciler listesini düzenle";
 sbutton.filterMac="MAC Filtre Listesini Düzenle";
 sbutton.filterSer="Servis Ekle/Düzenle";
 sbutton.reboot="Yönlendiriciyi Yeniden Yükle";
-sbutton.help="   Yardım  ";
+//sbutton.help="   Yardım  ";
 sbutton.wl_client_mac="Kablosuz İstemci MAC Listesi";
 sbutton.update_filter="Filtre Listesini Güncelle";
 sbutton.join="Birleştir";
@@ -629,10 +629,33 @@ firewall.muticast="Çok Noktaya Yayını Filtrele";
 firewall.ssh="SSH Erişimini Sınırla";
 firewall.telnet="Telnet Erişimini Sınırla";
 firewall.pptp="PPTP Sunusucu Erişimini Sınırla";
+
 //firewall.http="HTTP Erişimini Sınırla";
 filter.nat="WAN NAT Yeniden Yönlendirmesini Filtrele";
 filter.port113="IDENT'i Filtrele (Port 113)";
 filter.snmp="WAN SNMP Erişimini Engelle";
+
+// ** Log.asp **//
+log.label="Günlük";
+log.h2="Günlük Yönetimi";
+log.legend="Günlük";
+log.lvl="Günlük Düzeyi";
+log.drop="Bırakılan";
+log.reject="Reddedilen";
+log.accept="Kabul Edilen";
+
+// ** Log_incoming.asp **//
+log_in.titl="Gelen Günlük Tablosu";
+log_in.h2="Gelen Günlük Tablosu";
+log_in.th_ip="Kaynak IP";
+log_in.th_port="Hedef Port Numarası";
+
+// ** Log_outgoing.asp **//
+log_out.titl="Giden Günlük Tablosu";
+log_out.h2="Giden Günlük Tablosu";
+log_out.th_lanip="LAN IP";
+log_out.th_wanip="Hedef URL/IP";
+log_out.th_port="Servis/Port Numarası";
 
 //help container
 hfirewall.right2="SPI güvenlik duvarını etkinleştir veya devre dışı bırak.";
@@ -930,32 +953,6 @@ hidx.sas="Kurulum Asistanı, yönlendiricinizi yapılandırmak için gereken tem
 //sshd.webservices
 join.titl="Birleştir";
 join.mess1="Aşağıdaki ağı istemci olarak birleştirme başarıyla tamamlandı: ";
-
-
-// ** Log_incoming.asp **//
-log_in.titl="Gelen Günlük Tablosu";
-log_in.h2="Gelen Günlük Tablosu";
-log_in.th_ip="Kaynak IP";
-log_in.th_port="Hedef Port Numarası";
-
-
-// ** Log_outgoing.asp **//
-log_out.titl="Giden Günlük Tablosu";
-log_out.h2="Giden Günlük Tablosu";
-log_out.th_lanip="LAN IP";
-log_out.th_wanip="Hedef URL/IP";
-log_out.th_port="Servis/Port Numarası";
-
-
-// ** Log.asp **//
-log.label="Günlük";
-log.h2="Günlük Yönetimi";
-log.legend="Günlük";
-log.lvl="Günlük Düzeyi";
-log.drop="Bırakılan";
-log.reject="Reddedilen";
-log.accept="Kabul Edilen";
-
 
 // ** Management.asp **//
 management.titl="Yönetim";
