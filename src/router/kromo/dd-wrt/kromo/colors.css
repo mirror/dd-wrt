@@ -1,6 +1,21 @@
 @import url(/style/buttons.css);
+#header #logo {
+  filter: contrast(1.2) brightness(2);
+  mix-blend-mode: exclusion;
+}
+#statusInfo {
+  font-weight: 900;
+}
+#statusInfo a {
+  color: #115b80;
+  text-decoration: none;
+}
+#statusInfo a:hover {
+  color: #115b80;
+  text-decoration: underline;
+}
 body, .popup, .popup_bg {
-  background: #888888;
+  background: #ddd;
   color: #115b80;
 }
 fieldset {
@@ -59,58 +74,9 @@ input {
   box-shadow: 0 1px 1px rgba(0, 0, 0, .075) inset;
   transition: all .15s ease-in-out 0s;
 }
-input[name='apply_button'] {
-  background: #166f2a;
-  border-color: #1a6d2d;
-  color: #fff;
-}
-input[name='apply_button']:hover {
-  background: #199235;
-  border-color: #199235;
-  color: #fff;
-}
-input[name='apply_button']:focus-visible {
-  box-shadow: 0 0 5px 1px #199235;
-  outline: 2px solid #199235;
-}
-input[name='reset_button'] {
-  background: #fff;
-  border-color: #ccc;
-  color: #000;
-}
-input[name='reset_button']:hover {
-  background: #ff8400;
-  border-color: #ccc;
-  color: #000;
-}
-input[name='reset_button']:focus-visible {
-  box-shadow: 0 0 5px 1px #fff;
-  outline: 2px solid #fff;
-}
-input[name='reboot_button'],
-input[name='reboot_button']:disabled:hover {
-  background: #c00;
-  border-color: #ccc;
-  color: #f8f8f8;
-}
-input[name='reboot_button']:hover {
-  background: #e00;
-  border-color: #d00;
-  color: #fff;
-}
-input[name='reboot_button']:focus-visible {
-  box-shadow: 0 0 5px 1px #ff7c7c;
-  outline: 2px solid #ff7c7c;
-}
 input:focus, input.focus {
   border: 1px solid #707070;
   box-shadow: 0 0 5px 1px #969696;
-}
-input.button, input.button:hover {
-	border-color: #115b80;
-}
-input.button[disabled]:hover {
-  border-color: #115b80;
 }
 #ip_count:hover, [title*='Search']:hover,
 [title*='Chain']:hover, [title*='Monitoring']:hover {
