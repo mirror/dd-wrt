@@ -21,7 +21,7 @@ textarea {
   padding: 4px;
   font-size: 12px;
   line-height: 1.42857;
-  border-radius: 4px;
+  border-radius: 2px;
   -webkit-box-sizing: border-box;
   -moz-box-sizing: border-box;
   box-sizing: border-box;
@@ -38,7 +38,7 @@ pre {
   font-family: monospace;
   font-size: 12px;
   white-space: pre-wrap;
-  border-radius: 4px;
+  border-radius: 2px;
 }
 form {
   margin: 0;
@@ -57,7 +57,7 @@ input {
   padding: 4px;
   font-size: 12px;
   line-height: 1.42857;
-  border-radius: 4px;
+  border-radius: 2px;
 }
 input.num {
   padding-left: 2px;
@@ -69,7 +69,7 @@ select {
   padding: 4px;
   font-size: 12px;
   height: 1.6rem;
-  border-radius: 4px;
+  border-radius: 2px;
   vertical-align: middle;
 }
 select[onchange*='blockedServices'] {
@@ -164,10 +164,9 @@ select[name*='bonding'], select[name*='schedule_'],
   position: absolute;
   top: 2.265em;
   left: 0;
-  width: 89.35em;
+  width: 89.34em;
   padding-top: .362em;
-  border-width: 0;
-  border-style: none;
+  border-top: 1px solid;
   border-radius: 2px 2px 0 0;
 }
 #menuMainList, #menuSubList {
@@ -182,16 +181,23 @@ select[name*='bonding'], select[name*='schedule_'],
 #menuMainList li a, #menuSubList li a {
   display: block;
   margin-left: .362em;
-  border-radius: 4px 4px 0 0;
+  border-radius: 2px 2px 0 0;
   border-style: solid solid none;
   border-width: 1px;
   text-decoration: none;
   padding: .453em .906em;
 }
+#menuMainList .current span {
+  position: relative;
+  z-index: 1;
+}
 #menuMainList li span {
   font-weight: bold;
   padding-bottom: .626em;
   margin-top: 0;
+}
+#menuMainList .current span {
+  padding: .453em .906em;
 }
 #menuSubList li span {
   background: #f9f9f9;
@@ -199,6 +205,7 @@ select[name*='bonding'], select[name*='schedule_'],
   border-color: #ccc;
   font-weight: normal;
   padding-bottom: .543em;
+  margin-top: .09em;
 }
 #menuMainList li a, #menuSubList li a {
   margin-top: .09em;
@@ -217,9 +224,7 @@ select[name*='bonding'], select[name*='schedule_'],
   padding-bottom: .543em;
 }
 #menuMainList li a:hover {
-  background: #115b80;
-  color: #fff;
-  border-color: #115b80;
+  filter: brightness(1.2)
 }
 li.current {
   margin-top: 2px;
@@ -229,7 +234,7 @@ li.current {
   float: left;
 }
 #content {
-  border-radius: 0 0 5px 5px;
+  border-radius: 0 0 2px 2px;
   margin-bottom: 1em;
 }
 #main #contents {
@@ -253,7 +258,7 @@ h2, h3 {
   line-height: 1.42857;
   letter-spacing: .123rem;
   margin: 0 0 .906em 0;
-  border-radius: 4px;
+  border-radius: 2px;
 }
 .setting {
   position: relative;
@@ -278,10 +283,10 @@ h2, h3 {
 .warning {
   padding: .725em;
   text-align: center;
-  border-radius: 4px;
+  border-radius: 2px;
 }
 fieldset {
-  border-radius: 4px;
+  border-radius: 2px;
   padding: .725em;
   margin: 0;
 }
@@ -308,7 +313,7 @@ table#radio_table tr td {
 table tr th {
   border-style: solid;
   border-width: 1px;
-  border-radius: 3px;
+  border-radius: 2px;
   font-weight: normal;
   padding: .09em .543em;
   text-align: left;
@@ -368,7 +373,7 @@ table[summary='ports forwarding table'] input[size='10'] {
   padding: 4px 12px;
   margin: 0;
   text-align: center;
-  border-radius: 4px;
+  border-radius: 2px;
 }
 .submitFooter .button {
   padding: 0 1rem;
@@ -385,7 +390,7 @@ table[summary='ports forwarding table'] input[size='10'] {
   text-align: center;
 }
 .message {
-  border-radius: 4px;
+  border-radius: 2px;
   max-width: 72.464em;
   margin: 2em auto;
   padding: 1.812em .906em .906em;
@@ -402,7 +407,7 @@ table[summary='ports forwarding table'] input[size='10'] {
   padding: .906em;
 }
 .meter {
-  border-radius: 3px;
+  border-radius: 2px;
   position: relative;
   float: right;
   margin-top: 1px;
@@ -430,7 +435,7 @@ td .meter {
   visibility: visible;
   position: relative;
   overflow: hidden;
-  border-radius: 4px;
+  border-radius: 2px;
   margin: 0 auto;
 }
 .progressbarblock {
