@@ -190,21 +190,12 @@ select[name*='bonding'], select[name*='schedule_'],
   padding: .453em .906em;
 }
 #menuSubList li span {
-  background: #f9f9f9;
-  color: #000;
-  border-color: #ccc;
-  font-weight: normal;
+  font-weight: bold;
   padding-bottom: .543em;
   margin-top: .09em;
 }
 #menuMainList li a, #menuSubList li a {
   margin-top: .09em;
-}
-#menuMainList li a {
-  background: #115b80;
-  color: #eee;
-  border-color: #115b80;
-  font-weight: bold;
 }
 #menuSubList li a {
   font-weight: normal;
@@ -212,9 +203,6 @@ select[name*='bonding'], select[name*='schedule_'],
 #menuMainList li a:hover, #menuSubList li a:hover {
   margin-top: 0;
   padding-bottom: .543em;
-}
-#menuMainList li a:hover {
-  filter: brightness(1.2)
 }
 li.current {
   margin-top: 2px;
@@ -249,6 +237,7 @@ h2, h3 {
   letter-spacing: .123rem;
   margin: 0 0 .906em 0;
   border-radius: 2px;
+  border: 1px solid;
 }
 .setting {
   position: relative;
@@ -301,8 +290,7 @@ table#radio_table tr td {
   height: 18px;
 }
 table tr th {
-  border-style: solid;
-  border-width: 1px;
+  border: 1px solid;
   border-radius: 2px;
   font-weight: normal;
   padding: .09em .543em;
@@ -432,7 +420,7 @@ td .meter {
   position: absolute;
 }
 /*! fix spacing between dd-wrt link above paypal and top*/
-.center a[href='http://www.dd-wrt.com/'] {
+.center a[href] {
   line-height: 2.2;
 }
 input.button {
@@ -500,46 +488,6 @@ input.button[name='preview_button'] {
 .off {
   opacity: .6;
 }
-/*! colors below are common to light/dark */
-/*! these colors conform to WCAG Standards */
-.status_red {
-  background: #ff6666;
-  color: #000;
-  text-align: center;
-  padding: 2px;
-  border-radius: 2px;
-}
-.status_green {
-  background: #35ee00;
-  color: #000;
-  text-align: center;
-  padding: 2px;
-  border-radius: 2px;
-}
-.status_yellow {
-  background: #eec900;
-  color: #000;
-  text-align: center;
-  padding: 2px;
-  border-radius: 2px;
-}
-.status_orange {
-  background: #fea543;
-  color: #000;
-  text-align: center;
-  padding: 2px;
-  border-radius: 2px;
-}
-body .value_error {
-  border: 1px solid #ff6666;
-}
-body .value_error:hover {
-  border-color: #c00;
-}
-body .value_error:focus {
-  border-color: #c00;
-  box-shadow: 0 0 10px 0 #c00;
-}
 div.bulle {
   position: absolute;
   visibility: hidden;
@@ -558,8 +506,4 @@ td.bulle {
   height: auto;
   padding: .09em;
   border: 0;
-}
-div.bulle, table.bulle, td.bulle {
-  background-color: #eec900;
-  color: #000;
 }
