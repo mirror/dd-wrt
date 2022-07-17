@@ -40,11 +40,12 @@ hr {
 }
 h2, h3 {
   background-color: #fff3b3;
+  border-color: #ccc28f;
   color: #115b80;
 }
 table tr th {
   background-color: #fff3b3;
-  border-color: #fff3b3;
+  border-color: #ccc28f;
   color: #115b80;
 }
 table tr:hover {
@@ -56,41 +57,27 @@ table tr:not([bgcolor]):hover {
 .submitFooter {
   background: repeating-linear-gradient(55deg,
     #fff3b3 , #fff3b3  2px,
-    #ccc 2px, #ccc 3px);
-  border: 1px solid #aaa;
+    #ccc28f 2px, #ccc28f 3px);
+  border: 1px solid #ccc28f;
 }
 textarea {
   background-color: #fff;
-  border: 1px solid #ccc;
-  color: #000;
+  border: 1px solid #aaa;
+  color: #115b80;
   box-shadow: 0 1px 1px rgba(0, 0, 0, .075) inset;
   transition: all .15s ease-in-out 0s;
 }
-textarea:focus {
-  border: solid 1px #707070;
-  box-shadow: 0 0 5px 1px #969696;
-}
-input {
+input, select {
   background-color: #fff;
-  border: 1px solid #ccc;
-  color: #000;
+  border: 1px solid #aaa;
+  color: #115b80;
   box-shadow: 0 1px 1px rgba(0, 0, 0, .075) inset;
   transition: all .15s ease-in-out 0s;
-}
-input:focus, input.focus {
-  border: 1px solid #707070;
-  box-shadow: 0 0 5px 1px #969696;
 }
 #ip_count:hover, [title*='Search']:hover,
-[title*='Chain']:hover, [title*='Monitoring']:hover {
-  color: #115b80;
-}
-select {
-  background-color: #fff;
-  border: 1px solid #ccc;
-  color: #000;
-  box-shadow: 0 1px 1px rgba(0, 0, 0, .075) inset;
-  transition: all .15s ease-in-out 0s;
+[title*='Chain']:hover, [title*='Monitoring']:hover,
+a[title='Geotool']:hover {
+  color: #1a89c0;
 }
 .progressbar {
   background-color: #ddd;
@@ -110,7 +97,7 @@ select {
 }
 .message {
   background: #fafafa;
-  border: 1px solid #ccc;
+  border: 1px solid #aaa;
 }
 .meter {
   background: #ddd;
@@ -132,9 +119,51 @@ pre {
   color: #666;
 }
 #scorebarBorder {
-  background: #f6f6f6;
-  border: 1px solid #f6f6f6;
+  background: #eee;
+  border: 1px solid #eee;
 }
 #tablePwdCheck tr th {
+  color: #115b80;
+}
+body .value_error {
+  border: 1px solid #ff6666;
+}
+body .value_error:hover {
+  border-color: #c00;
+}
+body .value_error:focus {
+  border-color: #c00;
+  box-shadow: 0 0 10px 0 #c00;
+}
+/*! these colors conform to WCAG Standards */
+.status_red {
+  background: #ff6666;
+  color: #115b80;
+  text-align: center;
+  padding: 2px;
+  border-radius: 2px;
+}
+.status_green {
+  background: #35ee00;
   color: #000;
+  text-align: center;
+  padding: 2px;
+  border-radius: 2px;
+}
+.status_yellow {
+  background: #eec900;
+  color: #115b80;
+  text-align: center;
+  padding: 2px;
+  border-radius: 2px;
+}
+.status_orange {
+  background: #fea543;
+  color: #115b80;
+  text-align: center;
+  padding: 2px;
+  border-radius: 2px;
+}
+.center a[href] {
+  color: #115b80;
 }

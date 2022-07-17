@@ -1,6 +1,10 @@
 @import url(layout.css);
 @import url(colors.css);
 /*! kromo */
+::selection {
+  background: #115b80;
+  color: #fff;
+}
 #menuSub, #menuMainList li span {
   background: #fff3b3;
   color: #115b80;
@@ -8,6 +12,15 @@
 }
 #menuSub li span {
   background: #ddd;
+}
+#menuMainList li a {
+  background: #115b80;
+  color: #eee;
+  border-color: #115b80;
+  font-weight: bold;
+}
+#menuMainList li a:hover {
+  filter: brightness(1.2)
 }
 #menuSubList li a {
   background: #115b80;
@@ -20,7 +33,7 @@
 fieldset legend, .syslog_legend {
   color: #115b80;
 }
-#help a, #help a:hover {
+#help a, #help a:hover, a[title='Geotool'] {
   color: #115b80;
 }
 @keyframes animate-progress {
@@ -37,7 +50,23 @@ fieldset legend, .syslog_legend {
   color: #115b80;
 }
 .progressbarblock {
-  background-color: #496fc7;
+  background-color: #115b80;
+}
+input:focus, textarea:focus,
+select:focus {
+  border: 1px solid #115b80;
+  box-shadow: 0 0 5px 1px #115b80;
+}
+input:focus-visible, textarea:focus-visible,
+select:focus-visible {
+  border: 1px solid #115b80;
+  box-shadow: 0 0 5px 1px #115b80;
+  outline: 0;
+}
+input.button:focus-visible {
+  border: 0;
+  box-shadow: 0 0 5px 1px #115b80;
+  outline: 0;
 }
 input.button, input.button[disabled]:hover {
   background: #115b80;
@@ -47,19 +76,12 @@ input.button, input.button[disabled]:hover {
 input.button:hover {
   filter: brightness(1.2)
 }
-input:focus-visible, textarea:focus-visible,
-select:focus-within {
-  box-shadow: 0 0 5px 1px #115b80;
-  outline: 2px solid #115b80;
-}
 input[name='apply_button'] {
   background: #166f2a;
-  border-color: #1a6d2d;
   color: #fff;
 }
 input[name='apply_button']:hover {
   background: #199235;
-  border-color: #199235;
   color: #fff;
 }
 input[name='apply_button']:focus-visible {
@@ -68,30 +90,30 @@ input[name='apply_button']:focus-visible {
 }
 input[name='reset_button'] {
   background: #fff;
-  border-color: #ccc;
   color: #000;
 }
 input[name='reset_button']:hover {
   background: #ff8400;
-  border-color: #ff8400;
   color: #000;
 }
 input[name='reset_button']:focus-visible {
-  box-shadow: 0 0 5px 1px #fff;
+  box-shadow: 0 0 5px 1px #aaa;
   outline: 0;
 }
 input[name='reboot_button'],
 input[name='reboot_button']:disabled:hover {
   background: #c00;
-  border-color: #f00;
   color: #f8f8f8;
 }
 input[name='reboot_button']:hover {
   background: #e00;
-  border-color: #d00;
   color: #fff;
 }
 input[name='reboot_button']:focus-visible {
   box-shadow: 0 0 5px 1px #ff7c7c;
   outline: 0;
+}
+div.bulle, table.bulle, td.bulle {
+  background-color: #fff3b3;
+  color: #000;
 }
