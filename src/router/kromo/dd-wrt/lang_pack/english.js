@@ -650,6 +650,17 @@ hddns.page4="<dd>Enabling the wildcard feature for your host causes *.yourhost.d
 hddns.page5="<dd>Type an integer number in the box to set the force update interval (in days). Force update is an update which will be done although your IP address is still the same. Force update is required, especially for non donator of dyndns.org users, in order to avoid the host name of being deleted.</dd>";
 hddns.page6="<dd>The status of the DDNS service connection is displayed here.</dd>";
 
+
+// ** Log.asp **//
+var log=new Object();
+log.label="Firewall Log";
+log.h2="Log Management";
+log.legend="Log";
+log.lvl="Log Level";
+log.drop="Dropped";
+log.reject="Rejected";
+log.accept="Accepted";
+
 // ** Diagnostics.asp **//
 var diag=new Object();
 diag.titl="Diagnostics and Commands";
@@ -1370,15 +1381,6 @@ log_out.th_lanip="LAN IP";
 log_out.th_wanip="Destination URL / IP";
 log_out.th_port="Service / Port Number";
 
-// ** Log.asp **//
-var log=new Object();
-log.label="Firewall Log";
-log.h2="Log Management";
-log.legend="Log";
-log.lvl="Log Level";
-log.drop="Dropped";
-log.reject="Rejected";
-log.accept="Accepted";
 
 // ** Management.asp **//
 var management=new Object();

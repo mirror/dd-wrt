@@ -654,6 +654,16 @@ hddns.page4="<dd>Wenn Sie die Wildcard-Funktion für Ihren Host aktivieren, wird
 hddns.page5="<dd>Geben Sie eine ganze Zahl in das Feld ein, um das Intervall für die erzwungene Aktualisierung (in Tagen) festzulegen. Eine erzwungene Aktualisierung ist eine Aktualisierung, die durchgeführt wird, obwohl sich Ihre IP-Adresse nicht geändert hat. Eine erzwungene Aktualisierung ist insbesondere für Benutzer erforderlich, die keine Spender von dyndns.org sind, um die Löschung des Hostnamen zu verhindern.</dd>";
 hddns.page6="<dd>Hier wird der Status des DDNS-Dienst angezeigt.</dd>";
 
+// ** Log.asp **//
+
+log.label="Log";
+log.h2="Log-Verwaltung";
+log.legend="Log";
+log.lvl="Log-Level";
+log.drop="Abgewiesen";
+log.reject="Zurückgewiesen";
+log.accept="Akzeptiert";
+
 // ** Diagnostics.asp **//
 
 diag.titl="Diagnose";
@@ -687,6 +697,7 @@ dmz.h2="Demilitarisierte Zone (DMZ)";
 dmz.legend="DMZ";
 dmz.serv="DMZ verwenden";
 dmz.host="IP-Adresse des DMZ-Hosts";
+
 
 //help container
 
@@ -1224,15 +1235,6 @@ log_out.th_wanip="Ziel-URL/IP";
 log_out.th_port="Dienst-/Port-Nummer";
 
 
-// ** Log.asp **//
-
-log.label="Log";
-log.h2="Log-Verwaltung";
-log.legend="Log";
-log.lvl="Log-Level";
-log.drop="Abgewiesen";
-log.reject="Zurückgewiesen";
-log.accept="Akzeptiert";
 
 
 // ** Management.asp **//
