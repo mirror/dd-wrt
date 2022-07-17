@@ -2,7 +2,7 @@
 //Chinese (Traditional) translation file - DD-WRT V23/V24 2008/11/08 UTF-8    //
 ////////////////////////////////////////////////////////////////////////////////
 // ** COMMON SHARE LABEL **//
-lang_charset.set="utf-8"; 
+lang_charset.set="utf-8";
 
 share.firmware="Firmware";
 share.time="Time";
@@ -1300,7 +1300,7 @@ status_band.chg_unit="SWITCH TO ";
 status_band.chg_scale="AUTOSCALE";
 status_band.chg_error="無法取得資料";
 status_band.chg_collect_initial="資料收集中, 請稍候...";
-status_band.strin="IN"; 
+status_band.strin="IN";
 status_band.strout="OUT";
 status_band.follow="follow";
 status_band.up="up";

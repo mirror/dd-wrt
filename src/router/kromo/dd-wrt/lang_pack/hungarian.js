@@ -1202,9 +1202,9 @@ hstatus_inet.right2="Ezek azok az adatok, amelyek szükségesek az internet szol
 hstatus_inet.right4="This shows your router's Internet traffic.";
 
 // **************************************************************** Status_SputnikAPD.asp **********************************************************************//
-//    
+//
 //                    itt kezhetnéld Karesz, a szövegen kívül a formátumot ne változtasd meg, semmi pontot és beágyazásokat sem, csak a szöveget
-//                       nem muszály végig lefordítani, ha nincs kedved, ameddig eljutsz. Ha végeztél akkor küld el vissza lécci a fájlt 
+//                       nem muszály végig lefordítani, ha nincs kedved, ameddig eljutsz. Ha végeztél akkor küld el vissza lécci a fájlt
 //
 //
 //
@@ -1330,7 +1330,7 @@ vlan.legend="VLAN";
 vlan.bridge="A Bridge csatlakoztatva";
 vlan.tagged="Címkézett";
 vlan.negociate="Auto Negotiáció";
-vlan.aggregation="Kapcsolat egyesítése a 3-as és 4es portokon (Link Aggregation<br />"; 
+vlan.aggregation="Kapcsolat egyesítése a 3-as és 4es portokon (Link Aggregation<br />";
 vlan.trunk="Trönk";
 
 
@@ -1445,7 +1445,7 @@ wds.legend2="További beállítások";
 
 // **************************************************************** Wireless_radauth.asp ***************************************************************//
 
-radius.titl="RADIUS"; 
+radius.titl="RADIUS";
 radius.h2="Távoli hitelesítés Dial-In szolgáltatás";
 radius.legend="RADIUS";
 radius.label="RADIUS-kliens-MAC";

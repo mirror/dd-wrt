@@ -1,5 +1,5 @@
 //////////////////////////////////////////////////////////////////////////////////////////////
-//				German translation DD-WRT					
+//				German translation DD-WRT
 //	initial translation: Sebastian Gottschall <brainslayer@dd-wrt.com>
 //	additional works and fixes: sparksofinsanity <sparksofinsanity@users.noreply.github.com>
 //////////////////////////////////////////////////////////////////////////////////////////////
@@ -1934,7 +1934,7 @@ service.samba3_share_access="Zugriff";
 service.samba3_users="Benutzer";
 service.samba3_username="Benutzer";
 service.samba3_password="Kennwort";
-service.samba3_user_shares="Zugang zu Freigaben"; 
+service.samba3_user_shares="Zugang zu Freigaben";
 service.samba3_min_proto="Minimale Protokoll Version";
 service.samba3_max_proto="Maximale Protokoll Version";
 service.sambe3_encrypt="Verschlüsselung";
@@ -2643,8 +2643,8 @@ wl_adv.lng="Lang"; 					//************* don't use .long! *************
 wl_adv.shrt="Kurz"; 				//************* don't use .short! **************
 
 wl_adv.droplowsignal="Clients mit niedrigem Signal verwerfen";
-wl_adv.connect="Minimum Signal für Authentifizierung"; 
-wl_adv.stay="Minimum Signal für Verbindung"; 
+wl_adv.connect="Minimum Signal für Authentifizierung";
+wl_adv.stay="Minimum Signal für Verbindung";
 wl_adv.poll_time="Intervall für Analyse";
 wl_adv.strikes="Anzahl erlaubter niedriger Signale";
 
@@ -2931,7 +2931,7 @@ dhcp.server="DHCP Server-IP-Adresse :";
 dhcp.tclient="Client-Hostname";
 
 
-donate.mb="Sie können auch durch den Moneybookers-Account mb@dd-wrt.com spenden"; 
+donate.mb="Sie können auch durch den Moneybookers-Account mb@dd-wrt.com spenden";
 
 reg.not_reg="Das System ist nicht aktiviert. Bitte Kontaktieren Sie ihren lokalen Händler um einen gültigen Lizenzschlüssel zu erhalten.";
 reg.sys_key="Systemschlüssel";

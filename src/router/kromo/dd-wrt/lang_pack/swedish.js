@@ -1962,4 +1962,4 @@ dhcp.h2="DHCP Aktiva IP Table";
 dhcp.server="DHCP Server IP Adress :";
 dhcp.tclient="Klient Host namn";
 
-donate.mb="Du kan också donera via Moneybookers konto mb@dd-wrt.com"; 
+donate.mb="Du kan också donera via Moneybookers konto mb@dd-wrt.com";

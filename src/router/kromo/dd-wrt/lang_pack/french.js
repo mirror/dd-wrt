@@ -1002,7 +1002,7 @@ route.olsrd_lqag="Qualitè de lien Aging";
 route.olsrd_lqdmin="Qualitè de lien minimum (Dijkstra)";
 route.olsrd_lqdmax="Qualitè de lien maximum (Dijkstra)";
 route.olsrd_lqlvl="Niveau de qualitè de lien";
-route.olsrd_hysteresis="Hystèrésis des liens"; 
+route.olsrd_hysteresis="Hystèrésis des liens";
 route.olsrd_newiface="Nouvelle interface";
 route.ospf_mod="Routage OSPF";
 route.ospf_legend="Routage OSPF";
@@ -1695,4 +1695,4 @@ dhcp.h2="Table IP DHCP Actif";
 dhcp.server="Adresse IP du serveur DHCP :";
 dhcp.tclient="Nom de l'hôte client";
 
-donate.mb="Vous pouvez ègalement faire un don sur le compte Moneybookers : mb@dd-wrt.com"; 
+donate.mb="Vous pouvez ègalement faire un don sur le compte Moneybookers : mb@dd-wrt.com";

@@ -2058,4 +2058,4 @@ dhcp.server="Dirección IP del Servidor DHCP :";
 dhcp.tclient="Nombre del Cliente Host";
 
 
-donate.mb="Puedes donar a travès de la cuenta Moneybookers - mb@dd-wrt.com"; 
+donate.mb="Puedes donar a travès de la cuenta Moneybookers - mb@dd-wrt.com";

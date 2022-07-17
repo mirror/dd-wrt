@@ -2053,7 +2053,7 @@ hservice.dnsmasq_strict="<dd>Query the upstream servers in the order entered man
 hservice.dnsmasq_add_mac="<dd>Adds the internal requestor's MAC address to the query sent to the upstream DNS server. This could be necessary if the upstream server filters requests by MAC.</dd>";
 hservice.dnsmasq_rc="<dd>DHCP Rapid Commit removes a round trip of network traffic by immediately returning an address lease in response to a DHCPDISCOVER from a client that also supports Rapid Commit.</dd>";
 hservice.dnsmasq_cachesize="<dd>Defines how many cached entries dnsmasq stores (default 1500).</dd>";
-// HServices.asp has these page3 through page5 Kaid entries commented out until it returns to DD-WRT 
+// HServices.asp has these page3 through page5 Kaid entries commented out until it returns to DD-WRT
 //hservice.page3="<dd>Kai is a means of connecting platform games over the Internet. Enable the service and then add Xbox MAC addresses separated with \";\".<ul class=\"wide\"><li>";
 //hservice.page4=" – How many consoles to detect before the engine locks the pcap filter. Setting this to 0, means the engine will never lock - which means you can use any number of consoles, but you will notice a performance hit, if your network is busy with other traffic. The best thing to do here is to set the number to the number of consoles you own - that is why it defaults to 1 - because most people have just 1 console.</li><li>";
 //hservice.page5=" – Specifies which IP/port kaid will use to listen for controller UIs.</li></ul><br /><div class=\"note\"><h4>Note:</h4><div>Xbox must be connected directly via one of the Ethernet ports of the router.</div></div></dd>";
@@ -2702,7 +2702,7 @@ wpa.rekey="Key Renewal Interval";
 wpa.radius_ipaddr="RADIUS Server Address";
 wpa.radius_port="RADIUS Server Port";
 
-//portsetup.c line 275 and 
+//portsetup.c line 275 and
 wpa.radius_shared_secret="RADIUS Shared Secret";
 wpa.session_time="Session Time";
 
@@ -2985,8 +2985,8 @@ wl_adv.txchainmask="TX Antenna Chains";
 wl_adv.rxchainmask="RX Antenna Chains";
 
 wl_adv.droplowsignal="Drop Clients with Low Signal";
-wl_adv.connect="Minimum Signal for authenticate"; 
-wl_adv.stay="Minimum Signal for connection"; 
+wl_adv.connect="Minimum Signal for authenticate";
+wl_adv.stay="Minimum Signal for connection";
 wl_adv.poll_time="Poll Time for signal lookup";
 wl_adv.strikes="Amount of allowed low signals";
 
@@ -3021,7 +3021,7 @@ wl_adv.row2="Best Effort";
 wl_adv.row3="Video";
 wl_adv.row4="Voice";
 wl_adv.table2="EDCA STA Parameters (Client to AP)";
-wl_adv.lng="Long"; 					//************* don't use .long! *************// 
+wl_adv.lng="Long"; 					//************* don't use .long! *************//
 wl_adv.shrt="Short"; 				//************* don't use .short! **************//
 wl_adv.mbps="Mbit/s";
 
@@ -3101,8 +3101,8 @@ wl_basic.tdma="TDMA";
 wl_basic.mixed="Mixed";
 wl_basic.bft="Explicit Beamforming";
 wl_basic.bfr="Implicit Beamforming";
-wl_basic.subf="Single User Beamforming";  
-wl_basic.mubf="Multi User Beamforming";  
+wl_basic.subf="Single User Beamforming";
+wl_basic.mubf="Multi User Beamforming";
 wl_basic.atf="Airtime Fairness";
 wl_basic.fc="Frame Compression";
 wl_basic.shortgi="Short GI";

@@ -150,7 +150,7 @@ share.priority="优先级";
 share.gateway="网关";
 share.intrface="接口";  //don't use share.interface, Mozilla problem!!!
 share.radioname="频段";
-share.ccq="CCQ"; 
+share.ccq="CCQ";
 share.pintrface="物理接口";
 share.vintrface="虚拟接口";
 share.router="路由器";
@@ -1283,7 +1283,7 @@ management.jffs_clean="清除内置存储";
 management.lang_legend="语言选择";
 management.lang_srv="语言";
 management.lang_bulgarian="保加利亚语（Bulgarian）";
-management.lang_chinese_traditional="繁体中文（Traditional Chinese）"; 
+management.lang_chinese_traditional="繁体中文（Traditional Chinese）";
 management.lang_chinese_simplified="简体中文（Simplified Chinese）";
 management.lang_catalan="加泰罗尼亚语（Catalan）";
 management.lang_croatian="克罗地亚（Croatian）";
@@ -1792,7 +1792,7 @@ hservice.dnsmasq_strict="<dd>Query the upstream servers in the order entered man
 hservice.dnsmasq_add_mac="<dd>Adds the internal requestor's MAC address to the query sent to the upstream DNS server. This could be necessary if the upstream server filters requests by MAC.</dd>";
 hservice.dnsmasq_rc="<dd>DHCP Rapid Commit removes a round trip of network traffic by immediately returning an address lease in response to a DHCPDISCOVER from a client that also supports Rapid Commit.</dd>";
 hservice.dnsmasq_cachesize="<dd>How many names DNSmasq stores in its cache (default 150).</dd>";
-// HServices.asp has these page3 through page5 Kaid entries commented out until it returns to DD-WRT 
+// HServices.asp has these page3 through page5 Kaid entries commented out until it returns to DD-WRT
 //hservice.page3="<dd>Kai is a means of connecting platform games over the Internet. Enable the service and then add XBox MAC addresses separated with \";\".<ul class=\"wide\"><li>";
 //hservice.page4=" – How many consoles to detect before the engine locks the pcap filter. Setting this to 0, means the engine will never lock - which means you can use any number of consoles, but you will notice a performance hit, if your network is busy with other traffic. The best thing to do here is to set the number to the number of consoles you own - that's why it defaults to 1 - because most people have just 1 console.</li><li>";
 //hservice.page5=" – Specifies which ip/port kaid will use to listen for controller UIs.</li></ul><br /><div class=\"note\"><h4>Note</h4><div>Xbox must be connected directly via one of the Ethernet ports of the router.</div></div></dd>";
@@ -2618,8 +2618,8 @@ wl_adv.txchainmask="TX 天线 Chains";
 wl_adv.rxchainmask="RX 天线 Chains";
 
 wl_adv.droplowsignal="低信号剔除";
-wl_adv.connect="验证的最小信号"; 
-wl_adv.stay="连接的最小信号"; 
+wl_adv.connect="验证的最小信号";
+wl_adv.stay="连接的最小信号";
 wl_adv.poll_time="查询信号的轮询时间";
 wl_adv.strikes="允许的低信号量";
 
@@ -2648,8 +2648,8 @@ wl_adv.row2="尽力达到";
 wl_adv.row3="视频";
 wl_adv.row4="语音";
 wl_adv.table2="EDCA STA参数（客户端到AP）";
-wl_adv.lng="长"; 					//************* don't use .long! *************// 
-wl_adv.shrt="短"; 				//************* don't use .short! **************// 
+wl_adv.lng="长"; 					//************* don't use .long! *************//
+wl_adv.shrt="短"; 				//************* don't use .short! **************//
 wl_adv.mbps="Mbit/s";
 
 //help container
@@ -2722,8 +2722,8 @@ wl_basic.tdma="TDMA";
 wl_basic.mixed="混合";
 wl_basic.bft="显式波束成形";
 wl_basic.bfr="隐式波束成形";
-wl_basic.subf="单用户波束成形";  
-wl_basic.mubf="多用户波束成形";  
+wl_basic.subf="单用户波束成形";
+wl_basic.mubf="多用户波束成形";
 wl_basic.atf="公平性";
 wl_basic.fc="帧压缩";
 wl_basic.shortgi="Short GI";

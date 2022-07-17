@@ -501,9 +501,9 @@ alive.port="Porta do Proxy";
 halive.right2="Escolha quando reiniciar o roteador. O Cron deve estar habilitado na aba Gerenciamento.";
 halive.right4="São permitidos no máximo 3 IPs, separados por um <em>ESPAÇO</em>.<br />Formato dos Endereços IPs: xxx.xxx.xxx.xxx.";
 
-//help page 
-halive.page1="<dd>Você pode agendar reinicializações regulares para o roteador :<ul><li>Regularmente depois de xxx segundos.</li><li>Na data e hora específicas semanalmente ou diariamente.</li></ul><br /><div class=\"note\"><h4>Nota</h4><div>Para reinicializações baseadas em data o Cron deve estar ativado. Veja <a href=\"HManagement.asp\">Gerenciamento</a> para ativação do Cron.</div></div></dd>"; 
-halive.page2="<dd></dd><dd>Cheque todos os valores e clique em <em>Salvar Configurações</em> para salvar suas configurações. Clique em <em>Cancelar Alterações</em> para cancelar suas alterações que não foram salvas. Clique em <em>Reiniciar roteador</em> para reiniciar seu roteador imediatamente.</dd>"; 
+//help page
+halive.page1="<dd>Você pode agendar reinicializações regulares para o roteador :<ul><li>Regularmente depois de xxx segundos.</li><li>Na data e hora específicas semanalmente ou diariamente.</li></ul><br /><div class=\"note\"><h4>Nota</h4><div>Para reinicializações baseadas em data o Cron deve estar ativado. Veja <a href=\"HManagement.asp\">Gerenciamento</a> para ativação do Cron.</div></div></dd>";
+halive.page2="<dd></dd><dd>Cheque todos os valores e clique em <em>Salvar Configurações</em> para salvar suas configurações. Clique em <em>Cancelar Alterações</em> para cancelar suas alterações que não foram salvas. Clique em <em>Reiniciar roteador</em> para reiniciar seu roteador imediatamente.</dd>";
 
 
 // ** config.asp **//
@@ -521,9 +521,9 @@ config.mess4="Envie somente cópias de segurança feitas usando este firmware e 
 hconfig.right2="Você pode fazer uma cópia de segurança das configurações atuais caso necessite restaurar o roteador aos padrões de fábrica.<br /><br />Clique em <em>Backup</em> para salvar as configurações atuais.";
 hconfig.right4="Clique em <em>Procurar...</em> para procurar por um arquivo de configuração salvo em seu computador.<br /><br />Clique em <em>" + sbutton.restore + "</em> para sobrescrever todas as configurações atuais pelo arquivo de configuração.";
 
-// help page 
-hconfig.page1="<dd>Você pode fazer o backup de sua configuração atual caso seja necessário reiniciar o roteador para as configurações padrão de fábrica.</dd><dt>"; 
-hconfig.page2="</dt><dd>Clique no botão <i>Backup</i> para fazer o download de sua configuração atual do roteador para o seu PC.</dd>"; 
+// help page
+hconfig.page1="<dd>Você pode fazer o backup de sua configuração atual caso seja necessário reiniciar o roteador para as configurações padrão de fábrica.</dd><dt>";
+hconfig.page2="</dt><dd>Clique no botão <i>Backup</i> para fazer o download de sua configuração atual do roteador para o seu PC.</dd>";
 hconfig.page3="<dd>Clique no botão <i>Browse</i> para procurar o arquivo de configuração que foi salvo em seu PC. Clique em <i>Restaurar</i> para substituir todas as configurações atuais pelas do arquivo de configuração.<br /><br /><div class=\"note\"><h4>Nota</h4><div>Somente restaure as configurações com arquivos de backup feitos usando o mesmo firmware e o mesmo modelo de roteador.</dd></div></dd>";
 
 // ** DDNS.asp **//
@@ -553,13 +553,13 @@ ddnsm.all_noip="Sem conexão à internet";
 hddns.right2="O DDNS permite-lhe acessar sua rede usando nomes de domínios ao invés de endereços IP. O serviço gerencia mudanças no endereço IP e atualiza as informações do seu domínio dinamicamente. Inscreva-se no serviço através de um dos sites: DynDNS.org, freedns.afraid.org, ZoneEdit.com, No-IP.com ou outro serviço de DNS dinâmico similar.";
 hddns.right4="Digite um número inteiro na caixa para selecionar o intervalo de atualização forçada (em dias). Atualizações só serão executadas automaticamente quando seu endereço IP for modificado. Observe a política de abuso de atualização de seu provedor DDNS para evitar que seu nome de host ou domínio sejam bloqueados.";
 
-//help page 
-hddns.page1="<dd>O roteador oferece um recurso de Sistema de Nome de Domínio Dinâmico (DDNS). O DDNS permite atribuir um host fixo e nome de domínio para um endereço IP de Internet dinâmico. Ele é útil quando você está hospedando seu próprio site, servidor FTP, ou outro servidor por trás do roteador. Antes de usar esse recurso, você precisa se inscrever num serviço DDNS como em <a href=\"http:\/\/www.dyndns.org\" target=\"_new\">www.dyndns.org</a>, um provedor de serviço DDNS.</dd>"; 
-hddns.page2="<dd>Para desativar o serviço DDNS, mantenha a configuração padrão, <i>Desabilitar</i>. Para ativar o serviço DDNS, siga estas instruções:<ol class=\"wide\"><li>Entrar para o serviço DDNS em <a href=\"http:\/\/www.dyndns.org\" target=\"_new\">www.dyndns.org</a>, e anote o seu nome de usuário, senha e nome do host.</li><li>Na tela DDNS, selecione <i>Habilitar</i>.</li><li>Preencha os campos <i>Nome de Usuário</i>, <i>Senha</i>, e <i>Nome do Host</i>.</li><li>Clique no botão <i>Salvar Configurações</i> para salvar suas alterações. Clique no botão <i>Cancelar Alterações</i> para cancelar as alterações não salvas.</li></ol><br />Você agora pode acessar o roteador da Internet com o domínio que você escolheu.</dd>"; 
-hddns.page3="<dd>O serviço de DNS <em>estático</em> é similar ao serviço de DNS <em>dinâmico</em>, na medida em que permite que um nome de host, como seunome.dyndns.org, aponte para seu endereço IP. Ao contrário de um host de DNS <em>dinâmico</em>, um host de DNS <em>estático</em> não expira após 35 dias sem atualizações, mas as atualizações demoram mais para propagar através do sistema de DNS.<br />O serviço DynDNS <em>personalizado</em> oferece uma solução de DNS primário gerenciado, dando a você o controle completo sobre o nome de domínio fornecido e provém um serviço unificado de DNS primário/secundário. Uma interface baseada na Web oferece dois níveis de controle sobre o seu domínio, atendendo a usuários médios ou avançados.</dd>"; 
-hddns.page4="<dd>Ativando o recurso de curinga para o seu host faz com que *.seuhost.dyndns.org seja direcionado para o mesmo endereço IP de seuhost.dyndns.org. Este recurso é útil se você quiser ser capaz de usar, por exemplo, www.seuhost.dyndns.org e alcançar seu host.</dd>"; 
-hddns.page5="<dd>Digite um número inteiro na caixa para definir o intervalo de atualização forçado (em dias). Forçar atualização é uma atualização que será feita, mesmo que o seu endereço IP ainda seja o mesmo. Forçar atualização é necessário a fim de evitar que o nome do host seja excluído por inatividade.</dd>"; 
-hddns.page6="<dd>O estatus da conexão com o serviço DDNS é exibido aqui.</dd>"; 
+//help page
+hddns.page1="<dd>O roteador oferece um recurso de Sistema de Nome de Domínio Dinâmico (DDNS). O DDNS permite atribuir um host fixo e nome de domínio para um endereço IP de Internet dinâmico. Ele é útil quando você está hospedando seu próprio site, servidor FTP, ou outro servidor por trás do roteador. Antes de usar esse recurso, você precisa se inscrever num serviço DDNS como em <a href=\"http:\/\/www.dyndns.org\" target=\"_new\">www.dyndns.org</a>, um provedor de serviço DDNS.</dd>";
+hddns.page2="<dd>Para desativar o serviço DDNS, mantenha a configuração padrão, <i>Desabilitar</i>. Para ativar o serviço DDNS, siga estas instruções:<ol class=\"wide\"><li>Entrar para o serviço DDNS em <a href=\"http:\/\/www.dyndns.org\" target=\"_new\">www.dyndns.org</a>, e anote o seu nome de usuário, senha e nome do host.</li><li>Na tela DDNS, selecione <i>Habilitar</i>.</li><li>Preencha os campos <i>Nome de Usuário</i>, <i>Senha</i>, e <i>Nome do Host</i>.</li><li>Clique no botão <i>Salvar Configurações</i> para salvar suas alterações. Clique no botão <i>Cancelar Alterações</i> para cancelar as alterações não salvas.</li></ol><br />Você agora pode acessar o roteador da Internet com o domínio que você escolheu.</dd>";
+hddns.page3="<dd>O serviço de DNS <em>estático</em> é similar ao serviço de DNS <em>dinâmico</em>, na medida em que permite que um nome de host, como seunome.dyndns.org, aponte para seu endereço IP. Ao contrário de um host de DNS <em>dinâmico</em>, um host de DNS <em>estático</em> não expira após 35 dias sem atualizações, mas as atualizações demoram mais para propagar através do sistema de DNS.<br />O serviço DynDNS <em>personalizado</em> oferece uma solução de DNS primário gerenciado, dando a você o controle completo sobre o nome de domínio fornecido e provém um serviço unificado de DNS primário/secundário. Uma interface baseada na Web oferece dois níveis de controle sobre o seu domínio, atendendo a usuários médios ou avançados.</dd>";
+hddns.page4="<dd>Ativando o recurso de curinga para o seu host faz com que *.seuhost.dyndns.org seja direcionado para o mesmo endereço IP de seuhost.dyndns.org. Este recurso é útil se você quiser ser capaz de usar, por exemplo, www.seuhost.dyndns.org e alcançar seu host.</dd>";
+hddns.page5="<dd>Digite um número inteiro na caixa para definir o intervalo de atualização forçado (em dias). Forçar atualização é uma atualização que será feita, mesmo que o seu endereço IP ainda seja o mesmo. Forçar atualização é necessário a fim de evitar que o nome do host seja excluído por inatividade.</dd>";
+hddns.page6="<dd>O estatus da conexão com o serviço DDNS é exibido aqui.</dd>";
 
 // ** Diagnostics.asp **//
 
@@ -575,12 +575,12 @@ diag.custom="Script Personalizado";
 //help container
 hdiag.right2="Você pode executar comandos via interface web. Preencha a caixa de texto com seus comandos e clique em <em>" + sbutton.runcmd + "</em> para enviar.";
 
-//help page 
-hdiag.page1="<dd>Você é capaz de executar linhas de comando diretamente através da interface Web.</dd>"; 
-hdiag.page2="<dd>Preencha a área de texto com o comando e clique em <em>Executar Comandos</em> para enviar.</dd>"; 
-hdiag.page3="<dd>Você pode salvar algumas linhas de comando a serem executados na inicialização do roteador. Preencha a área de texto com os comandos (apenas um comando por linha) e clique em <em>Salvar Inicialização</em>.</dd>"; 
-hdiag.page4="<dd>Cada vez que o firewall é iniciado, ele pode executar algumas instruções iptables personalizadas. Preencha a área de texto com as instruções do firewall (apenas um comando por linha) e clique em <em>Salvar Firewall</em>.<br /><br />"; 
-hdiag.page5="<dd>Um script personalizado é armazenado no arquivo /tmp/custom.sh. Você pode executá-lo manualmente ou usar o cron para chamá-lo. Preencha a área de texto com as instruções do script (apenas um comando por linha) e clique em <em>Salvar Script Personalizado</em>.<br /><br /><div class=\"note\"><h4>Nota</h4><div><ul class=\"wide\"><li>Comandos de inicialização são armazenados na variável nvram rc_startup.</li><li>Comandos de firewall são armazenados na variável nvram rc_firewall.</li><li>Scripts personalizados são armazenados na variável nvram rc_custom.</li></ul></div></div></dd>"; 
+//help page
+hdiag.page1="<dd>Você é capaz de executar linhas de comando diretamente através da interface Web.</dd>";
+hdiag.page2="<dd>Preencha a área de texto com o comando e clique em <em>Executar Comandos</em> para enviar.</dd>";
+hdiag.page3="<dd>Você pode salvar algumas linhas de comando a serem executados na inicialização do roteador. Preencha a área de texto com os comandos (apenas um comando por linha) e clique em <em>Salvar Inicialização</em>.</dd>";
+hdiag.page4="<dd>Cada vez que o firewall é iniciado, ele pode executar algumas instruções iptables personalizadas. Preencha a área de texto com as instruções do firewall (apenas um comando por linha) e clique em <em>Salvar Firewall</em>.<br /><br />";
+hdiag.page5="<dd>Um script personalizado é armazenado no arquivo /tmp/custom.sh. Você pode executá-lo manualmente ou usar o cron para chamá-lo. Preencha a área de texto com as instruções do script (apenas um comando por linha) e clique em <em>Salvar Script Personalizado</em>.<br /><br /><div class=\"note\"><h4>Nota</h4><div><ul class=\"wide\"><li>Comandos de inicialização são armazenados na variável nvram rc_startup.</li><li>Comandos de firewall são armazenados na variável nvram rc_firewall.</li><li>Scripts personalizados são armazenados na variável nvram rc_custom.</li></ul></div></div></dd>";
 
 // ** DMZ.asp **//
 dmz.titl="DMZ";
@@ -592,7 +592,7 @@ dmz.host="Endereço IP do Host DMZ";
 //help container
 hdmz.right2="Habilitar esta opção expõe o host especificado à Internet. Todas as portas estarão acessíveis a partir da Internet.";
 
-//help page 
+//help page
 hdmz.page1="<dd>A característica de hospedagem em DMZ (zona desmilitarizada) é permitir que um usuário local seja exposto à Internet para uso de um serviço de finalidade especial, como jogos pela Internet ou videoconferência. A hospedagem DMZ encaminha todas as portas ao mesmo tempo para um PC. O recurso de Encaminhamento de Portas é mais seguro porque ele só abre as portas que você deseja abrir, ao passo que a hospedagem DMZ abre todas as portas de um computador, expondo-o para que a Internet possa vê-lo.<br /><br /><div class=\"note\"><h4>Nota</h4><div>Qualquer PC cuja porta esteja sendo encaminhada deve ter um endereço IP estático atribuído a ele, porque o seu endereço de IP pode mudar quando se utiliza a função DHCP.</div></div></dd>";
 hdmz.page2="<dd>Para expor um PC à Internet, selecione <i>Habilitar</i> e digite o endereço IP do computador no campo <i>Endereço IP do Host DMZ</i>.<br /><br />Para desativar o DMZ, mantenha a configuração padrão, <i>Desabilitar</i>.</dd><dd>Clique em <i>Salvar Configurações</i> para guardar as definições ou clique em <i>Cancelar Alterações</i> para cancelar as alterações não salvas.</dd>";
 
@@ -766,11 +766,11 @@ nas.proftpd_writeen="Permitir Gravação";
 nas.proftpd_anon="Login Anônimo (Somente-Leitura)";
 nas.proftpd_anon_dir="Diretório Home Anônimo";
 nas.samba3_legend="Compartilhamento de Arquivos";
-nas.samba3="Servidor Samba"; 
+nas.samba3="Servidor Samba";
 
-// ** DLNA ** 
-nas.dlna_legend="Servidor DLNA"; 
-nas.dlna_srv="MiniDLNA"; 
+// ** DLNA **
+nas.dlna_legend="Servidor DLNA";
+nas.dlna_srv="MiniDLNA";
 nas.dlna_thumb="Incluir Arte da Capa";
 nas.dlna_dir="Pasta de Arquivos";
 nas.dlna_cleandb="Limpar Banco de Dados Agora";
@@ -788,24 +788,24 @@ nas.pwd="Senha";
 hnas.right2="Para compartilhar recursos adicione novos compartilhamentos fornecendo o caminho e o nome do compartilhamento. Defina os usuários que podem acessar o compartilhamento através de FTP ou Samba.";
 
 //** Privoxy.asp **//
-privoxy.titl="Bloqueio de Propaganda"; 
-privoxy.server="Privoxy"; 
-privoxy.legend="Servidor Proxy de Filtragem"; 
-privoxy.transp="Modo Transparente"; 
-privoxy.custom="Configuração Personalizada"; 
+privoxy.titl="Bloqueio de Propaganda";
+privoxy.server="Privoxy";
+privoxy.legend="Servidor Proxy de Filtragem";
+privoxy.transp="Modo Transparente";
+privoxy.custom="Configuração Personalizada";
 
-hprivoxy.right2="Habilita o Privoxy e ajusta as configurações de proxy de seus clientes. Endereço IP do Proxy = <b>Endereço IP do Roteador</b> Porta do Proxy = <b>8118</b>"; 
+hprivoxy.right2="Habilita o Privoxy e ajusta as configurações de proxy de seus clientes. Endereço IP do Proxy = <b>Endereço IP do Roteador</b> Porta do Proxy = <b>8118</b>";
 
 
-//** Lighttpd.asp **// 
-lighttpd.titl="Servidor Web"; 
-lighttpd.server="Lighttpd"; 
-lighttpd.legend="Servidor Web Lighttpd"; 
+//** Lighttpd.asp **//
+lighttpd.titl="Servidor Web";
+lighttpd.server="Lighttpd";
+lighttpd.legend="Servidor Web Lighttpd";
 lighttpd.port="Porta HTTP";
 lighttpd.sslport="Porta HTTPS";
-lighttpd.wan="Acesso WAN"; 
+lighttpd.wan="Acesso WAN";
  
-hlighttpd.right2="Habilita o lighttpd e configura as porta HTTP/HTTPS em que o lighttpd ouvirá as solicitações. O diretório raiz padrão do servidor web aonde você pode colocar seus sites é /jffs/www."; 
+hlighttpd.right2="Habilita o lighttpd e configura as porta HTTP/HTTPS em que o lighttpd ouvirá as solicitações. O diretório raiz padrão do servidor web aonde você pode colocar seus sites é /jffs/www.";
 
 // ** Hotspot.asp **//
 hotspot.titl="Hotspot";
@@ -825,10 +825,10 @@ hotspot.uamserver="Servidor UAM";
 hotspot.uamport="Porta UAM";
 hotspot.uamdns="Qualquer DNS UAM";
 hotspot.allowuam="UAM Permitidos (separados por vírgula)";
-hotspot.allowuad="Domínios UAM (separados por espaço)"; 
+hotspot.allowuad="Domínios UAM (separados por espaço)";
 hotspot.macauth="Autenticação MAC";
-hotspot.macpasswd="Senha MAC"; 
-hotspot.sec8021Xauth="Autenticação 802.1X (EAP)"; 
+hotspot.macpasswd="Senha MAC";
+hotspot.sec8021Xauth="Autenticação 802.1X (EAP)";
 hotspot.option="Opções Adicionais do CoovaChilli";
 hotspot.fon_chilli="Gerenciamento de Usuário Local CoovaChilli";
 hotspot.fon_user="Lista de Usuários";
@@ -890,7 +890,7 @@ hotspot.wifidog_username="Nome de Usuário do Servidor HTTP";
 hotspot.wifidog_password="Senha do Servidor HTTP";
 hotspot.wifidog_auth="Suporte Autenticação Servidor HTTP";
 
-//help container 
+//help container
 hstatus_hots.right1="ConUp/ConDown:<br />Quando USB ou JFFS são montados em /jffs, scripts de conexão podem ser usados em /jffs/etc/chilli/<br />Usuários Locais:<br />Quando só usuários locais forem usados configure o IP do RADIUS primário para 127.0.0.1";
 
 // ** Hotspotsystem **//
@@ -899,7 +899,7 @@ hotspotsys.nobridge="Separar Wi-Fi da Bridge LAN";
 hotspotsys.uamenable="Configurações Especiais";
 hotspotsys.loginonsplash="Login na Splash Page";
 hotspotsys.allowuam="UAM Permitido";
-hotspotsys.allowuad="Domínios UAM (separados por espaço)"; 
+hotspotsys.allowuad="Domínios UAM (separados por espaço)";
 hotspotsys.whitelabelproto="Protocolo White Label";
 hotspotsys.whitelabel="Domínio White Label";
 hotspotsys.operatorid="Nome do Usuário Operador";
@@ -975,7 +975,7 @@ idx_pppoe.use_rp="Usar RP PPPoE";
 idx_pptp.srv="Usar DHCP";
 idx_pptp.wan_ip="Endereço IP para Internet";
 idx_pptp.gateway="Gateway (Servidor PPTP)";
-//idx_pptp.encrypt="Criptografia PPTP"; //should be needed anymore. del soon 
+//idx_pptp.encrypt="Criptografia PPTP"; //should be needed anymore. del soon
 idx_pptp.reorder="Reordenamento de Pacotes";
 idx_pptp.addopt="Opções PPTP Adicionais";
 
@@ -1195,10 +1195,10 @@ qos.h2="Qualidade de Serviço (QoS)";
 qos.legend="Configurações de QoS";
 qos.srv="Iniciar QoS";
 qos.type="Agendador de Pacotes";
-qos.aqd="Disciplina de Enfileiramento"; 
-qos.aqd_sfq="SFQ"; 
-qos.aqd_codel="CODEL"; 
-qos.aqd_fqcodel="FQ_CODEL"; 
+qos.aqd="Disciplina de Enfileiramento";
+qos.aqd_sfq="SFQ";
+qos.aqd_codel="CODEL";
+qos.aqd_fqcodel="FQ_CODEL";
 qos.uplink="Uplink (kbit/s)";
 qos.dnlink="Downlink (kbit/s)";
 qos.legend2="Prioridade dos Serviços";
@@ -1434,7 +1434,7 @@ service.vpn_srv="Iniciar Cliente OpenVPN";
 service.vpn_ipname="IP/Nome do Servidor";
 service.vpn_mtu="Configuração MTU do túnel";
 service.vpn_mss="Unir MSS no túnel UDP";
-service.vpn_fragment="Fragmentar no túnel UDP"; 
+service.vpn_fragment="Fragmentar no túnel UDP";
 service.vpn_compress="Usar Compressão LZO";
 service.vpn_cl2cl="Permitir Cliente-a-Cliente";
 service.vpn_tunnel="Protocolo do Túnel";
@@ -1583,8 +1583,8 @@ service.samba3_users="Usuários";
 service.samba3_username="Nome de Usuário";
 service.samba3_password="Senha";
 service.samba3_user_shares="Acessos Compartilhados";
-service.dlna_type_audio="Áudio"; 
-service.dlna_type_video="Vídeo"; 
+service.dlna_type_audio="Áudio";
+service.dlna_type_video="Vídeo";
 service.dlna_type_images="Imagens";
 
 // Zabbix
@@ -1593,10 +1593,10 @@ service.zabbix_cl="Cliente";
 service.zabbix_serverip="Endereço IP do servidor Zabbix";
 service.zabbix_usrpara="Parâmetros do Usuário";
 
-// Transmission 
-service.transmission_legend="Bittorrent"; 
-service.transmission_srv="Daemon Transmission"; 
-service.transmission_dir="Diretório Transmission"; 
+// Transmission
+service.transmission_legend="Bittorrent";
+service.transmission_srv="Daemon Transmission";
+service.transmission_dir="Diretório Transmission";
 
 // ** eop-tunnel.asp **//
 eoip.titl="Túnel EoIP";
@@ -1838,7 +1838,7 @@ vlan.tagged="Rotular";
 vlan.negociate="Autonegociação";
 vlan.aggregation="Agregar Link<br />nas Portas 3 & 4";
 vlan.trunk="Tronco";
-vlan.linkstatus="Status do Link"; 
+vlan.linkstatus="Status do Link";
 
 // ** WEP.asp **//
 wep.defkey="Chave Padrão de Transmissão";
@@ -2150,8 +2150,8 @@ wl_basic.adhoc="Adhoc";
 wl_basic.wdssta="Estação (WDS)";
 wl_basic.wdsap="AP (WDS)";
 wl_basic.mixed="Misto";
-wl_basic.bft="Beamforming Explícito"; 
-wl_basic.bfr="Beamforming Implícito"; 
+wl_basic.bft="Beamforming Explícito";
+wl_basic.bfr="Beamforming Implícito";
 wl_basic.greenfield="Greenfield";
 wl_basic.preamble="Preâmbulo Curto";
 wl_basic.clientRelaydDefaultGwMode="Modo GW Padrão";
@@ -2286,9 +2286,9 @@ haoss.basic="O \"AirStation One-Touch Secure System\" (AOSS) permite a você con
 haoss.securitymodes="Os modos de segurança AOSS definem quais modos de segurança do cliente são aceitos na negociação AOSS. Se um cliente só suportar modos que estão desabilitados, ele não poderá se conectar.";
 haoss.wps="O WPS habilita o suporte para a Configuração Wi-Fi Protegida usando o botão em seu roteador ou o PIN que veio com seu dispositivo cliente.";
 
-ias.title="Configuração"; 
-ias.card_info="Cartão de Configuração"; 
-ias.edit_note="Clique em qualquer informação no Cartão de Configuração para editá-la."; 
+ias.title="Configuração";
+ias.card_info="Cartão de Configuração";
+ias.edit_note="Clique em qualquer informação no Cartão de Configuração para editá-la.";
 ias.assistant="Executar Assistente de Configuração";
 ias.assistant_iptv="Executar Configuração IPTV";
 ias.print_setup_card="Imprimir Cartão de Configuração";
@@ -2298,7 +2298,7 @@ ias.wlnetwork="Rede Wireless";
 ias.wlinfo_2_4_GHz="(2.4 Ghz) - Compatível com 802.11n/g/b";
 ias.wlinfo_5_GHz="(5 Ghz) - Compatível com 802.11n/a";
 ias.hl_setup_card="Cartão de Configuração";
-ias.hl_client_access="Para Acesso Cliente"; 
+ias.hl_client_access="Para Acesso Cliente";
 ias.hl_for_conf="Para Configuração";
 ias.hl_guest_card="Cartão de Convidado";
 

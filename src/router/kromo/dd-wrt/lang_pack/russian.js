@@ -273,7 +273,7 @@ sbutton.dhcprel="Высвободить DHCP";
 sbutton.dhcpren="Обновить DHCP";
 sbutton.survey="Обзор Wi-Fi сетей";
 sbutton.upgrading="Обновляется";
-sbutton.upgrade="Обновить";	
+sbutton.upgrade="Обновить";
 sbutton.preview="Предварительный просмотр";
 sbutton.allways_on="Всегда включено";
 sbutton.allways_off="Всегда выключено";
@@ -1685,7 +1685,7 @@ status_sputnik.license="Нр.лицензии SCC.";
 hstatus_sputnik.right1="Состояние агента Sputnik";
 hstatus_sputnik.right2="Это окно отображает состояние процессов агента Sputnik.";
 hstatus_sputnik.right4="Центр управления Sputnik к которому подключается эта точка доступа.";
-hstatus_sputnik.right6="Текущее состояние агента."; 
+hstatus_sputnik.right6="Текущее состояние агента.";
 hstatus_sputnik.right8="Номер лицензии вашего центра управления Sputnik.";
 
 // ** Status_Wireless.asp **//
@@ -1711,7 +1711,7 @@ status_gpsi.status="Статус";
 status_gpsi.lon="Долгота";
 status_gpsi.lat="Широта";
 status_gpsi.alt="Высота";
-status_gpsi.sat="Видимые спутники";	
+status_gpsi.sat="Видимые спутники";
 
 // ** Status_OpenVPN.asp **//
 status_openvpn.titl="Статус OpenVPN";

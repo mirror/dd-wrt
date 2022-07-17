@@ -1,6 +1,6 @@
 //////////////////////////////////////////////////////////////////////////////////////////////  
 //     Italian translation DD-WRT V24 by CoffeEbuyer Updated by MarkV92 08/2014 svn 24836   //
-//////////////////////////////////////////////////////////////////////////////////////////////  
+//////////////////////////////////////////////////////////////////////////////////////////////
 
 // ** COMMON SHARE LABEL **//
 //var lang_charset=new Object();
@@ -2555,4 +2555,4 @@ dhcp.server="DHCP Server Indirizzo IP :";
 dhcp.tclient="Nome Host Client";
 
 //var donate=new Object();
-donate.mb="Puoi fare offerte tramite Moneybookers sull'account mb@dd-wrt.com"; 
+donate.mb="Puoi fare offerte tramite Moneybookers sull'account mb@dd-wrt.com";
