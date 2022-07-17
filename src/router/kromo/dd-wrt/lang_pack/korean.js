@@ -251,7 +251,7 @@ sbutton.filterIP="클라이언트 리스트 편집";
 sbutton.filterMac="MAC 필터 리스트 편집";
 sbutton.filterSer="서비스 추가/편집";
 sbutton.reboot="공유기 재부팅";
-sbutton.help="   도움말  ";
+//sbutton.help="   도움말  ";
 sbutton.wl_client_mac="무선 클라이언트 MAC 리스트";
 sbutton.update_filter="필터 리스트 업데이트";
 sbutton.join="연결";
@@ -678,6 +678,28 @@ firewall.ssh="SSH 접근 제한";
 firewall.telnet="텔넷 접근 제한";
 firewall.pptp="PPTP 서버 접근 제한";
 firewall.ftp="FTP 서버 접근 제한";
+
+// ** Log.asp **//
+log.label="로그";
+log.h2="로그 관리";
+log.legend="로그";
+log.lvl="로그 레벨";
+log.drop="드랍한 패킷 기록";
+log.reject="거부된 패킷 기록";
+log.accept="수신된 패킷 기록";
+
+// ** Log_incoming.asp **//
+log_in.titl="수신 로그 테이블";
+log_in.h2="수신 로그 테이블";
+log_in.th_ip="송신측 IP";
+log_in.th_port="수신측 포트 넘버";
+
+// ** Log_outgoing.asp **//
+log_out.titl="송신 로그 테이블";
+log_out.h2="송신 로그 테이블";
+log_out.th_lanip="LAN IP";
+log_out.th_wanip="목적지 URL/IP";
+log_out.th_port="서비스/포트 번호";
 
 //help container
 hfirewall.right2="SPI 방화벽 사용 여부를 변경 가능합니다.";
@@ -1141,32 +1163,6 @@ dsl.snr="DSL 신호 (업/다운)";
 //sshd.webservices
 join.titl="연결";
 join.mess1="네트워크에 연결 완료되었습니다: ";
-
-
-// ** Log_incoming.asp **//
-log_in.titl="수신 로그 테이블";
-log_in.h2="수신 로그 테이블";
-log_in.th_ip="송신측 IP";
-log_in.th_port="수신측 포트 넘버";
-
-
-// ** Log_outgoing.asp **//
-log_out.titl="송신 로그 테이블";
-log_out.h2="송신 로그 테이블";
-log_out.th_lanip="LAN IP";
-log_out.th_wanip="목적지 URL/IP";
-log_out.th_port="서비스/포트 번호";
-
-
-// ** Log.asp **//
-log.label="로그";
-log.h2="로그 관리";
-log.legend="로그";
-log.lvl="로그 레벨";
-log.drop="드랍한 패킷 기록";
-log.reject="거부된 패킷 기록";
-log.accept="수신된 패킷 기록";
-
 
 // ** Management.asp **//
 management.titl="관리";
@@ -1668,7 +1664,7 @@ service.vpnd_lzoadaptive="적응";
 //help page
 hservice.page1="<dd>DHCPd assigns IP addresses to your local devices. While the main configuration is on the setup page you can program some nifty special functions here.<ul class=\"wide\"><li>Used domain – You can select here which domain the DHCP clients should get as their local domain. This can be the WAN domain set on the Setup screen or the LAN domain which can be set here.</li><li>LAN Domain – You can define here your local LAN domain which is used as local domain for DNSmasq and DHCP service if chosen above.</li><li>Static Leases – If you want to assign certain hosts a specific address then you can define them here. This is also the way to add hosts with a fixed address to the router's local DNS service (DNSmasq).</li></ul><br />There are some extra options you can set by entering them in <em>Additional DHCPD Options</em>.</dd>";
 hservice.page2="<dd>DNSmasq is a local DNS server. It will resolve all host names known to the router from DHCP (dynamic and static) as well as forwarding and caching DNS entries from remote DNS servers. <em>Local DNS</em> enables DHCP clients on the LAN to resolve static and dynamic DHCP hostnames.<br />There are some extra options you can set by entering them in <em>Additional DNS Options</em>. For example : <br /><ul><li>static allocation : dhcp-host=AB:CD:EF:11:22:33,192.168.0.10,myhost,myhost.domain,12h</li><li>max lease number : dhcp-lease-max=2</li><li>DHCP server IP range : dhcp-range=192.168.0.110,192.168.0.111,12h</li></ul><br /><br /><div class=\"note\"><h4>Note</h4><div>All options are saved in /tmp/dnsmasq.conf file. The format of this file consists of one option per line.<br />The complete list of available options : <a href=\"http:\/\/thekelleys.org.uk/dnsmasq/docs/dnsmasq-man.html\" target=\"_new\">DNSMasq man</a>.</div></div></dd>";
-// HServices.asp has these page3 through page5 Kaid entries commented out until it returns to DD-WRT 
+// HServices.asp has these page3 through page5 Kaid entries commented out until it returns to DD-WRT
 //hservice.page3="<dd>Kai is a means of connecting platform games over the internet. Enable the service and then add XBox MAC addresses separeted with \";\".<ul class=\"wide\"><li>";
 //hservice.page4=" – How many consoles to detect before the engine locks the pcap filter. Setting this to 0, means the engine will never lock - which means you can use any number of consoles, but you will notice a performance hit, if your network is busy with other traffic. The best thing to do here is to set the number to the number of consoles you own - that's why it defaults to 1 - because most people have just 1 console.</li><li>";
 //hservice.page5=" – Specifies which ip/port kaid will use to listen for controller UIs.</li></ul><br /><div class=\"note\"><h4>Note</h4><div>Xbox must be connected directly via one of the Ethernet ports of the router.</div></div></dd>";
@@ -2658,7 +2654,7 @@ ias.hl_for_conf="환경 설정";
 ias.hl_guest_card="게스트 카드";
 
 
-// ************		OLD PAGES 		*******************************//		
+// ************		OLD PAGES 		*******************************//
 // *********************** DHCPTable.asp *****************************//
 dhcp.titl="DHCP 활성 IP 테이블";
 dhcp.h2="DHCP 활성 IP 테이블";

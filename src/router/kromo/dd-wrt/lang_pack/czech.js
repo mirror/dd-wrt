@@ -275,7 +275,7 @@ sbutton.filterIP="Upravit seznam klientů";
 sbutton.filterMac="Upravit seznam MAC filtrů";
 sbutton.filterSer="Přidat/Upravit službu";
 sbutton.reboot="Restartování routeru";
-sbutton.help="   Nápověda  ";
+//sbutton.help="   Nápověda  ";
 sbutton.wl_client_mac="Seznam bezdrátových klientů MAC";
 sbutton.update_filter="Aktualizovat seznam filtrů";
 sbutton.join="Připojit se";
@@ -734,8 +734,29 @@ firewall.ftp="Omezit přístupu FTP serveru";
 firewall.arp_spoofing="Ochrana ARP Spoofing";
 firewall.filter_tos="Filtrovat TOS/DSCP";
 
+// ** Log.asp **//
+log.label="Záznam";
+log.h2="Správa záznamu";
+log.legend="Záznam";
+log.lvl="Úroveň záznamu";
+log.drop="Zahozené";
+log.reject="Odmítnuté";
+log.accept="Přijaté";
+
+// ** Log_incoming.asp **//
+log_in.titl="Tabulka příchozího logu";
+log_in.h2="Tabulka příchozího logu";
+log_in.th_ip="Zdrojová IP";
+log_in.th_port="Číslo cílového portu";
+
+// ** Log_outgoing.asp **//
+log_out.titl="Tabulka odchozího záznamu";
+log_out.h2="Tabulka odchozího záznamu";
+log_out.th_lanip="LAN IP";
+log_out.th_wanip="Cílová URL/IP";
+log_out.th_port="Číslo Služby/Portu";
+
 //help container
-//
 hfirewall.right2="Povolte, nebo zakažte SPI Firewall.";
 
 // help page
@@ -1261,35 +1282,6 @@ dsl.snr="DSL Signál (nahoru/dolů)";
 //sshd.webservices
 join.titl="Připojit";
 join.mess1="Úspěšně se připojil k následující síti jako klient: ";
-
-
-// ** Log_incoming.asp **//
-//
-log_in.titl="Tabulka příchozího logu";
-log_in.h2="Tabulka příchozího logu";
-log_in.th_ip="Zdrojová IP";
-log_in.th_port="Číslo cílového portu";
-
-
-// ** Log_outgoing.asp **//
-//
-log_out.titl="Tabulka odchozího záznamu";
-log_out.h2="Tabulka odchozího záznamu";
-log_out.th_lanip="LAN IP";
-log_out.th_wanip="Cílová URL/IP";
-log_out.th_port="Číslo Služby/Portu";
-
-
-// ** Log.asp **//
-//
-log.label="Záznam";
-log.h2="Správa záznamu";
-log.legend="Záznam";
-log.lvl="Úroveň záznamu";
-log.drop="Zahozené";
-log.reject="Odmítnuté";
-log.accept="Přijaté";
-
 
 // ** Management.asp **//
 //
@@ -1921,7 +1913,7 @@ hservice.dnsmasq_strict="<dd>Dotaz na upstream servery v pořadí zadaném ručn
 hservice.dnsmasq_add_mac="<dd>Přidá adresu MAC interního žadatele do dotazu odeslaného na server DNS proti proudu. To by mohlo být nezbytné, pokud server upstream filtruje požadavky MAC.</dd>";
 hservice.dnsmasq_rc="<dd>DHCP Rapid Commit odstraní okružní cestu síťového provozu tím, že okamžitě vrátí zapůjčení adresy v reakci na DHCPDISCOVER od klienta, který také podporuje Rapid Commit.</dd>";
 hservice.dnsmasq_cachesize="<dd>Kolik jmen DNSmasq ukládá do své mezipaměti (výchozí 150).</dd>";
-// HServices.asp has these page3 through page5 Kaid entries commented out until it returns to DD-WRT 
+// HServices.asp has these page3 through page5 Kaid entries commented out until it returns to DD-WRT
 //hservice.page3="<dd>KAID je prostředek pro připojení plošinových her přes internet. Povolte službu a poté přidejte MAC Adresy XBoxu oddělené\";\".<ul class=\"wide\"><li>";
 //hservice.page4="– Kolik konzol detekovat, než Engine uzamkne PCAP filtr. Nastavení na 0 znamená, že Engine se nikdy nezamkne - což znamená, že můžete použít libovolný počet konzolí, ale všimnete si dopadu na výkonu , je-li vaše síť zaneprázdněna jiným provozem. Nejlepší je zde nastavit číslo na počet konzolí, které vlastníte - proto je výchozí 1, protože většina lidí má pouze jednu konzoli.</li><li>";
 //hservice.page5="– Určuje, která IP/Port KAID použije k poslechu uživatelských rozhraní řadiče.</li></ul><br /><div class=\"note\"><h4>Poznámka</h4><div>Xbox musí být připojen přímo přes jeden z ethernetových portů Routeru. </div></div></dd>";

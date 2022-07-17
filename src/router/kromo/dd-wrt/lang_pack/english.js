@@ -1,5 +1,5 @@
-/////////////////////////////////////////////////////////////////////////////////////
-//    English reference translation file - DD-WRT V3           23/JUNE/2022       //
+////////////////////////////////////////////////////////////////////////////////////
+//    English reference translation file - DD-WRT V3 - Updated on 17/JULY/2022    //
 ////////////////////////////////////////////////////////////////////////////////////
 
 // ** COMMON SHARE LABEL **//
@@ -320,7 +320,7 @@ sbutton.filterIP="Edit Filter List";
 sbutton.filterMac="Edit MAC Filter List";
 sbutton.filterSer="Add/Edit Service";
 sbutton.reboot="Reboot Router";
-sbutton.help="   Help  ";
+//sbutton.help="   Help  ";
 sbutton.wl_client_mac="Wireless Client MAC List";
 sbutton.update_filter="Update Filter List";
 sbutton.join="Join";
@@ -650,31 +650,6 @@ hddns.page4="<dd>Enabling the wildcard feature for your host causes *.yourhost.d
 hddns.page5="<dd>Type an integer number in the box to set the force update interval (in days). Force update is an update which will be done although your IP address is still the same. Force update is required, especially for non donator of dyndns.org users, in order to avoid the host name of being deleted.</dd>";
 hddns.page6="<dd>The status of the DDNS service connection is displayed here.</dd>";
 
-// ** Log.asp **//
-var log=new Object();
-log.label="Firewall Log";
-log.h2="Log Management";
-log.legend="Log";
-log.lvl="Log Level";
-log.drop="Dropped";
-log.reject="Rejected";
-log.accept="Accepted";
-
-// ** Log_incoming.asp **//
-var log_in=new Object();
-log_in.titl="Incoming Log Table";
-log_in.h2="Incoming Log Table";
-log_in.th_ip="Source IP";
-log_in.th_port="Destination Port Number";
-
-// ** Log_outgoing.asp **//
-var log_out=new Object();
-log_out.titl="Outgoing Log Table";
-log_out.h2="Outgoing Log Table";
-log_out.th_lanip="LAN IP";
-log_out.th_wanip="Destination URL / IP";
-log_out.th_port="Service / Port Number";
-
 // ** Diagnostics.asp **//
 var diag=new Object();
 diag.titl="Diagnostics and Commands";
@@ -810,6 +785,31 @@ firewall.filter_tos="Filter ToS / DSCP";
 filter.nat="Filter WAN NAT Redirection";
 filter.port113="Filter IDENT (Port 113)";
 filter.snmp="Block WAN SNMP Access";
+
+// ** Firewall.asp **//
+var log=new Object();
+log.label="Firewall Log";
+log.h2="Log Management";
+log.legend="Log";
+log.lvl="Log Level";
+log.drop="Dropped";
+log.reject="Rejected";
+log.accept="Accepted";
+
+// ** Log_incoming.asp **//
+var log_in=new Object();
+log_in.titl="Incoming Log Table";
+log_in.h2="Incoming Log Table";
+log_in.th_ip="Source IP";
+log_in.th_port="Destination Port Number";
+
+// ** Log_outgoing.asp **//
+var log_out=new Object();
+log_out.titl="Outgoing Log Table";
+log_out.h2="Outgoing Log Table";
+log_out.th_lanip="LAN IP";
+log_out.th_wanip="Destination URL / IP";
+log_out.th_port="Service / Port Number";
 
 //help container
 var hfirewall=new Object();
@@ -1375,12 +1375,9 @@ dsl.snr="DSL Signal (up/down)";
 
 // ** Join.asp **//
 var join=new Object();
-
 //sshd.webservices
 join.titl="Join";
 join.mess1="Successfully joined the following network as a client: ";
-
-
 
 // ** Management.asp **//
 var management=new Object();
@@ -2056,7 +2053,7 @@ hservice.dnsmasq_strict="<dd>Query the upstream servers in the order entered man
 hservice.dnsmasq_add_mac="<dd>Adds the internal requestor's MAC address to the query sent to the upstream DNS server. This could be necessary if the upstream server filters requests by MAC.</dd>";
 hservice.dnsmasq_rc="<dd>DHCP Rapid Commit removes a round trip of network traffic by immediately returning an address lease in response to a DHCPDISCOVER from a client that also supports Rapid Commit.</dd>";
 hservice.dnsmasq_cachesize="<dd>Defines how many cached entries dnsmasq stores (default 1500).</dd>";
-// HServices.asp has these page3 through page5 Kaid entries commented out until it returns to DD-WRT 
+// HServices.asp has these page3 through page5 Kaid entries commented out until it returns to DD-WRT
 //hservice.page3="<dd>Kai is a means of connecting platform games over the Internet. Enable the service and then add Xbox MAC addresses separated with \";\".<ul class=\"wide\"><li>";
 //hservice.page4=" – How many consoles to detect before the engine locks the pcap filter. Setting this to 0, means the engine will never lock - which means you can use any number of consoles, but you will notice a performance hit, if your network is busy with other traffic. The best thing to do here is to set the number to the number of consoles you own - that is why it defaults to 1 - because most people have just 1 console.</li><li>";
 //hservice.page5=" – Specifies which IP/port kaid will use to listen for controller UIs.</li></ul><br /><div class=\"note\"><h4>Note:</h4><div>Xbox must be connected directly via one of the Ethernet ports of the router.</div></div></dd>";
@@ -2705,7 +2702,7 @@ wpa.rekey="Key Renewal Interval";
 wpa.radius_ipaddr="RADIUS Server Address";
 wpa.radius_port="RADIUS Server Port";
 
-//portsetup.c line 275 and 
+//portsetup.c line 275 and
 wpa.radius_shared_secret="RADIUS Shared Secret";
 wpa.session_time="Session Time";
 
@@ -2988,8 +2985,8 @@ wl_adv.txchainmask="TX Antenna Chains";
 wl_adv.rxchainmask="RX Antenna Chains";
 
 wl_adv.droplowsignal="Drop Clients with Low Signal";
-wl_adv.connect="Minimum Signal for authenticate"; 
-wl_adv.stay="Minimum Signal for connection"; 
+wl_adv.connect="Minimum Signal for authenticate";
+wl_adv.stay="Minimum Signal for connection";
 wl_adv.poll_time="Poll Time for signal lookup";
 wl_adv.strikes="Amount of allowed low signals";
 
@@ -3024,7 +3021,7 @@ wl_adv.row2="Best Effort";
 wl_adv.row3="Video";
 wl_adv.row4="Voice";
 wl_adv.table2="EDCA STA Parameters (Client to AP)";
-wl_adv.lng="Long"; 					//************* don't use .long! *************// 
+wl_adv.lng="Long"; 					//************* don't use .long! *************//
 wl_adv.shrt="Short"; 				//************* don't use .short! **************//
 wl_adv.mbps="Mbit/s";
 
@@ -3104,8 +3101,8 @@ wl_basic.tdma="TDMA";
 wl_basic.mixed="Mixed";
 wl_basic.bft="Explicit Beamforming";
 wl_basic.bfr="Implicit Beamforming";
-wl_basic.subf="Single User Beamforming";  
-wl_basic.mubf="Multi User Beamforming";  
+wl_basic.subf="Single User Beamforming";
+wl_basic.mubf="Multi User Beamforming";
 wl_basic.atf="Airtime Fairness";
 wl_basic.fc="Frame Compression";
 wl_basic.shortgi="Short GI";

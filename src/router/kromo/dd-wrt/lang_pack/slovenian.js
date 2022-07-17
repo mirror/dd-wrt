@@ -258,7 +258,7 @@ sbutton.filterIP="Uredi seznam odjemalcev";
 sbutton.filterMac="Uredi seznam filtra MAC";
 sbutton.filterSer="Dodaj/uredi storitev";
 sbutton.reboot="Ponovni zagon usmerjevalnika";
-sbutton.help="   Pomoč  ";
+//sbutton.help="   Pomoč  ";
 sbutton.wl_client_mac="Seznam MAC brezžičnih odjamalcev";
 sbutton.update_filter="Posodobi seznam filtra";
 sbutton.join="Poveži";
@@ -646,7 +646,6 @@ filterSum.polday="Čas dneva";
 
 
 // ** Firewall.asp **//
-
 firewall.titl="Požarni zid";
 firewall.h2="Varnost";
 firewall.legend="Zaščita s požarnim zidom";
@@ -663,13 +662,35 @@ firewall.muticast="Filter za multicast";
 firewall.ssh="Omeji SSH dostop";
 firewall.telnet="Omeji Telnet dostop";
 firewall.pptp="Omeji dostop PPTP strežnika";
-firewall.http="Omeji HTTP dostop";
+//firewall.http="Omeji HTTP dostop";
+
 filter.nat="Filter za NAT preusmeritev";
 filter.port113="Filter za IDENT (vrata 113)";
 filter.snmp="Block WAN SNMP access";
 
-//help container
+// ** Log.asp **//
+log.label="Dnevnik";
+log.h2="Upravljanje dnevnika";
+log.legend="Dnevnik";
+log.lvl="Nivo dnevnika";
+log.drop="Izvrženi";
+log.reject="Zavrnjeni";
+log.accept="Sprejeti";
 
+// ** Log_incoming.asp **//
+log_in.titl="Tabela vhodnega dnevnika";
+log_in.h2="Tabela vhodnega dnevnika";
+log_in.th_ip="Izvorni IP";
+log_in.th_port="Št. naslovnih vrat";
+
+// ** Log_outgoing.asp **//
+log_out.titl="Tabela izhodnega dnevnika";
+log_out.h2="Tabela izhodnega dnevnika";
+log_out.th_lanip="LAN IP";
+log_out.th_wanip="Naslovni URL/IP";
+log_out.th_port="Storitev/št. vrat";
+
+//help container
 hfirewall.right2="Omogoči ali onemogoči zaščito s SPI požarnim zidom.";
 
 
@@ -1015,37 +1036,7 @@ dsl.snr="DSL signal (gor/dol)";
 join.titl="Poveži";
 join.mess1="Kot odjemalec ste se uspešno povezali s sledečo mrežo: ";
 
-
-// ** Log_incoming.asp **//
-
-log_in.titl="Tabela vhodnega dnevnika";
-log_in.h2="Tabela vhodnega dnevnika";
-log_in.th_ip="Izvorni IP";
-log_in.th_port="Št. naslovnih vrat";
-
-
-// ** Log_outgoing.asp **//
-
-log_out.titl="Tabela izhodnega dnevnika";
-log_out.h2="Tabela izhodnega dnevnika";
-log_out.th_lanip="LAN IP";
-log_out.th_wanip="Naslovni URL/IP";
-log_out.th_port="Storitev/št. vrat";
-
-
-// ** Log.asp **//
-
-log.label="Dnevnik";
-log.h2="Upravljanje dnevnika";
-log.legend="Dnevnik";
-log.lvl="Nivo dnevnika";
-log.drop="Izvrženi";
-log.reject="Zavrnjeni";
-log.accept="Sprejeti";
-
-
 // ** Management.asp **//
-
 management.titl="Administracija";
 management.h2="Upravljanje usmerjevalnika";
 management.changepassword="Vaš usmerjevalnik trenutno uprablja privzeto uporabniško ime in geslo, kar ni varno. Prosimo, da ju čimprej spremenite!";

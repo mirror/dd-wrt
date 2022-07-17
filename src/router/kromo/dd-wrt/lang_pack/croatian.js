@@ -1,11 +1,10 @@
 ////////////////////////////////////////////////////////////////////////////////////
-// DD-WRT v24-sp2 / Croatian / updated from r19947 / by Silvio Peša / 2012-10-15 // 
+// DD-WRT v24-sp2 / Croatian / updated from r19947 / by Silvio Peša / 2012-10-15 //
 //////////////////////////////////////////////////////////////////////////////////
 
 // ** COMMON SHARE LABEL **//
 
 lang_charset.set="utf-8";
-
 
 share.annex="DSL Annex Tip";
 share.apn="APN";
@@ -257,7 +256,7 @@ sbutton.filterIP="Uredi Listu Klijenata";
 sbutton.filterMac="Uredi Listu MAC Filtera";
 sbutton.filterSer="Dodaj / Uredi Uslugu";
 sbutton.reboot="Ponovo Pokreni Usmjerivač";
-sbutton.help="   Pomoć  ";
+//sbutton.help="   Pomoć  ";
 sbutton.wl_client_mac="Lista MAC Bežičnih Klijenata";
 sbutton.update_filter="Osvježi Listu Filtera";
 sbutton.join="Pridruži";
@@ -663,14 +662,35 @@ firewall.ssh="Limit SSH Access";
 firewall.telnet="Limit Telnet Access";
 firewall.pptp="Limit PPTP Server Access";
 firewall.ftp="Limit FTP Server Access";
+
 filter.nat="Filter WAN NAT Redirekciju";
 filter.port113="Filter IDENT (Vrata 113)";
 filter.snmp="Block WAN SNMP access";
 
+// ** Log.asp **//
+log.label="Zapis";
+log.h2="Upravljanje Zapisom";
+log.legend="Zapis";
+log.lvl="Razina Zapisa";
+log.drop="Ispušteno";
+log.reject="Odbijeno";
+log.accept="Prihvaćeno";
+
+// ** Log_incoming.asp **//
+log_in.titl="Tablica Dolaznih Zapisa";
+log_in.h2="Tablica Dolaznih Zapisa";
+log_in.th_ip="Izvorni IP";
+log_in.th_port="Broj Odredišnih Vrata";
+
+// ** Log_outgoing.asp **//
+log_out.titl="Tablica Odlaznih Zapisa";
+log_out.h2="Tablica Odlaznih Zapisa";
+log_out.th_lanip="LAN IP";
+log_out.th_wanip="Odredišni URL / IP";
+log_out.th_port="Broj Usluge / Vrata";
+
 //help container
-
 hfirewall.right2="Omogući ili onemogući SPI Vatrozid.";
-
 
 // ** Forward.asp **//
 
@@ -1001,37 +1021,7 @@ dsl.snr="DSL Signal (odlazna/dolazna)";
 join.titl="Pridruži";
 join.mess1="Uspješno pridruženo mreži kao klijent: ";
 
-
-// ** Log_incoming.asp **//
-
-log_in.titl="Tablica Dolaznih Zapisa";
-log_in.h2="Tablica Dolaznih Zapisa";
-log_in.th_ip="Izvorni IP";
-log_in.th_port="Broj Odredišnih Vrata";
-
-
-// ** Log_outgoing.asp **//
-
-log_out.titl="Tablica Odlaznih Zapisa";
-log_out.h2="Tablica Odlaznih Zapisa";
-log_out.th_lanip="LAN IP";
-log_out.th_wanip="Odredišni URL / IP";
-log_out.th_port="Broj Usluge / Vrata";
-
-
-// ** Log.asp **//
-
-log.label="Zapis";
-log.h2="Upravljanje Zapisom";
-log.legend="Zapis";
-log.lvl="Razina Zapisa";
-log.drop="Ispušteno";
-log.reject="Odbijeno";
-log.accept="Prihvaćeno";
-
-
 // ** Management.asp **//
-
 management.titl="Administracija";
 management.h2="Upravljanje Usmjerivačem";
 management.changepassword="Vaš usmjerivač trenutno nije zaštićen i rabi nesigurnu zadanu kombinaciju korisničkog imena i zaporke - molimo promijenite ih u ovom dijalogu!";

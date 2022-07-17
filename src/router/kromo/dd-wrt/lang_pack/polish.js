@@ -272,7 +272,7 @@ sbutton.filterIP="Edytuj listę klientów";
 sbutton.filterMac="Edytuj listę filtrowania MAC";
 sbutton.filterSer="Dodaj/Edytuj usługę";
 sbutton.reboot="Zrestartuj router";
-sbutton.help="   Pomoc  ";
+//sbutton.help="   Pomoc  ";
 sbutton.wl_client_mac="Lista adresów MAC klientów bezprzewodowych";
 sbutton.update_filter="Zaktualizuj listę filtrowania";
 sbutton.join="Dołącz";
@@ -706,7 +706,6 @@ filterSum.polnum="Nr";
 filterSum.polday="Pora dnia";
 
 // ** Firewall.asp **//
-
 firewall.titl="Zapora sieciowa";
 firewall.h2="Zabezpieczenia";
 firewall.legend="Zabezpieczenia zapory sieciowej";
@@ -727,8 +726,29 @@ firewall.ftp="Ogranicz dostęp do serwera FTP";
 firewall.arp_spoofing="Zebezpieczenie przed Spoofingiem ARP";
 firewall.filter_tos="Filtruj TOS/DSCP";
 
-//help container
+// ** Log.asp **//
+log.label="Log";
+log.h2="Log Management";
+log.legend="Log";
+log.lvl="Log Level";
+log.drop="Porzucone";
+log.reject="Odrzucone";
+log.accept="Zaakceptowane";
 
+// ** Log_incoming.asp **//
+log_in.titl="Tabela dziennika połączeń przychodzących";
+log_in.h2="Tabela dziennika połączeń przychodzących";
+log_in.th_ip="Źródłowy adres IP";
+log_in.th_port="Docelowy numer portu";
+
+// ** Log_outgoing.asp **//
+log_out.titl="Tabela dziennika połączeń wychodzących";
+log_out.h2="Tabela dziennika połączeń wychodzących";
+log_out.th_lanip="Adres IP LAN";
+log_out.th_wanip="Docelowy adres URL/IP";
+log_out.th_port="Usługa/numer portu";
+
+//help container
 hfirewall.right2="Włącz lub wyłącz SPI firewall.";
 
 // help page
@@ -1251,33 +1271,7 @@ dsl.snr="Sygnał DSL (up/down)";
 join.titl="Dołącz";
 join.mess1="Pomyślnie dołączono jako klient do następującej sieci: ";
 
-// ** Log_incoming.asp **//
-
-log_in.titl="Tabela dziennika połączeń przychodzących";
-log_in.h2="Tabela dziennika połączeń przychodzących";
-log_in.th_ip="Źródłowy adres IP";
-log_in.th_port="Docelowy numer portu";
-
-// ** Log_outgoing.asp **//
-
-log_out.titl="Tabela dziennika połączeń wychodzących";
-log_out.h2="Tabela dziennika połączeń wychodzących";
-log_out.th_lanip="Adres IP LAN";
-log_out.th_wanip="Docelowy adres URL/IP";
-log_out.th_port="Usługa/numer portu";
-
-// ** Log.asp **//
-
-log.label="Log";
-log.h2="Log Management";
-log.legend="Log";
-log.lvl="Log Level";
-log.drop="Porzucone";
-log.reject="Odrzucone";
-log.accept="Zaakceptowane";
-
 // ** Management.asp **//
-
 management.titl="Zarządzanie";
 management.h2="Zarządzenie routerem";
 management.changepassword="Router nie jest obecnie chroniony i używa niebezpiecznej domyślnej kombinacji nazwy użytkownika i hasła; zmień to za pomocą następującego okna dialogowego!";
@@ -1910,7 +1904,7 @@ hservice.dnsmasq_strict="<dd>Query the upstream servers in the order entered man
 hservice.dnsmasq_add_mac="<dd>Adds the internal requestor's MAC address to the query sent to the upstream DNS server. This could be necessary if the upstream server filters requests by MAC.</dd>";
 hservice.dnsmasq_rc="<dd>DHCP Rapid Commit removes a round trip of network traffic by immediately returning an address lease in response to a DHCPDISCOVER from a client that also supports Rapid Commit.</dd>";
 hservice.dnsmasq_cachesize="<dd>How many names DNSmasq stores in its cache (default 150).</dd>";
-// HServices.asp has these page3 through page5 Kaid entries commented out until it returns to DD-WRT 
+// HServices.asp has these page3 through page5 Kaid entries commented out until it returns to DD-WRT
 //hservice.page3="<dd>Kai is a means of connecting platform games over the Internet. Enable the service and then add XBox MAC addresses separated with \";\".<ul class=\"wide\"><li>";
 //hservice.page4=" – How many consoles to detect before the engine locks the pcap filter. Setting this to 0, means the engine will never lock - which means you can use any number of consoles, but you will notice a performance hit, if your network is busy with other traffic. The best thing to do here is to set the number to the number of consoles you own - that's why it defaults to 1 - because most people have just 1 console.</li><li>";
 //hservice.page5=" – Specifies which ip/port kaid will use to listen for controller UIs.</li></ul><br /><div class=\"note\"><h4>Note</h4><div>Xbox must be connected directly via one of the Ethernet ports of the router.</div></div></dd>";
@@ -2792,8 +2786,8 @@ wl_adv.txchainmask="TX Antenna Chains";
 wl_adv.rxchainmask="RX Antenna Chains";
 
 wl_adv.droplowsignal="Drop Clients with Low Signal";
-wl_adv.connect="Minimum Signal for authenticate"; 
-wl_adv.stay="Minimum Signal for connection"; 
+wl_adv.connect="Minimum Signal for authenticate";
+wl_adv.stay="Minimum Signal for connection";
 wl_adv.poll_time="Poll Time for signal lookup";
 wl_adv.strikes="Amount of allowed low signals";
 
@@ -2828,7 +2822,7 @@ wl_adv.row2="Best Effort";
 wl_adv.row3="Video";
 wl_adv.row4="Voice";
 wl_adv.table2="EDCA STA Parameters (Client to AP)";
-wl_adv.lng="Long"; 					//************* don't use .long! *************// 
+wl_adv.lng="Long"; 					//************* don't use .long! *************//
 wl_adv.shrt="Short"; 				//************* don't use .short! **************//
 wl_adv.mbps="Mbit/s";
 
@@ -2905,8 +2899,8 @@ wl_basic.tdma="TDMA";
 wl_basic.mixed="Mieszany";
 wl_basic.bft="Explicit Beamforming";
 wl_basic.bfr="Implicit Beamforming";
-wl_basic.subf="Single User Beamforming";  
-wl_basic.mubf="Multi User Beamforming";  
+wl_basic.subf="Single User Beamforming";
+wl_basic.mubf="Multi User Beamforming";
 wl_basic.atf="Airtime Fairness";
 wl_basic.fc="Frame Compression";
 wl_basic.shortgi="Short GI";
