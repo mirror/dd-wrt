@@ -458,6 +458,7 @@ errmsg.err100="Processing...<br />Please wait.";
 errmsg.err101="Restoring configuration file...<br />Please wait.";
 errmsg.err102="Upgrading firmware...<br />Please wait.";
 errmsg.err103="Invalid Character";
+
 // **  COMMON MENU ENTRIES  **//
 var bmenu= new Object();
 bmenu.setup="Setup";
@@ -643,7 +644,7 @@ hddns.right4="Type an integer number in the box to set the force update interval
 
 //help page
 hddns.page1="<dd>The router offers a Dynamic Domain Name System (DDNS) feature. DDNS lets you assign a fixed host and domain name to a dynamic external IP address. It is useful when you are hosting your own website, or any other server behind the router which is accessible via the Internet. To use this feature, you need to sign up for DDNS service at e.g. <a href=\"http:\/\/www.dyndns.org\" target=\"_new\">www.dyndns.org</a>, one of the several DDNS service provider supported by DD-WRT.</dd>";
-hddns.page2="<dd>To disable DDNS service, keep the default setting, <em>" + share.disable + "</em>. To enable DDNS service, follow these instructions:<ol class=\"wide\"><li>Sign up for DDNS service at <a href=\"http:\/\/www.dyndns.org\" target=\"_new\">www.dyndns.org</a>, and write down your User Name, Password, and Host Name information.</li><li>On the DDNS screen, select the <i>DynDNS.org</i> option from the drop down menu.</li><li>Complete the <i>User Name</i>, <i>Password</i>, and <i>Host Name</i> fields.</li><li>Click the <em>" + sbutton.save + "</em> button to save your changes. Click the <em>" + sbutton.cancel + "</em> button to cancel unsaved changes.</li></ol><br />You can now access your router from the Internet with the domain you have chosen.</dd>";
+hddns.page2="<dd>To disable DDNS service, keep the default setting, <em>" + share.disable + "</em>. To enable DDNS service, follow these instructions:<ol class=\"wide\"><li>Sign up for DDNS service at <a href=\"http:\/\/www.dyndns.org\" target=\"_new\">www.dyndns.org</a>, and write down your User Name, Password, and Host Name information.</li><li>On the DDNS screen, select the <i>DynDNS.org</i> option from the drop down menu.</li><li>Complete the <em>" + share.usrname + "</em>, <em>" + share.passwd + "</em>, and <em>" + share.hostname + "</em> fields.</li><li>Click the <em>" + sbutton.save + "</em> button to save your changes. Click the <em>" + sbutton.cancel + "</em> button to cancel unsaved changes.</li></ol><br />You can now access your router from the Internet with the domain you have chosen.</dd>";
 hddns.page3="<dd>The <em>Static</em> DNS service is similar to the <em>Dynamic</em> DNS service, in that it allows a hostname such as yourname.dyndns.org to point to your IP address. Unlike a <em>Dynamic</em> DNS host, a <em>Static</em> DNS host does not expire after 35 days without updates, but updates take longer to propagate though the DNS system.<br />DynDNS' <em>Custom</em> DNS service provides a managed primary DNS solution, giving you complete control over an entire domain name and providing a unified primary/secondary DNS service. A web-based interface provides two levels of control over your domain, catering to average or power users.</dd>";
 hddns.page4="<dd>Enabling the wildcard feature for your host causes *.yourhost.dyndns.org to be aliased to the same IP address as yourhost.dyndns.org. This feature is useful if you want to be able to use, for example, www.yourhost.dyndns.org and still reach your hostname.</dd>";
 hddns.page5="<dd>Type an integer number in the box to set the force update interval (in days). Force update is an update which will be done although your IP address is still the same. Force update is required, especially for non donator of dyndns.org users, in order to avoid the host name of being deleted.</dd>";
@@ -689,7 +690,7 @@ hdmz.right2="Enabling this option will expose the specified host to the Internet
 
 //help page
 hdmz.page1="<dd>The DMZ (Demilitarized Zone) hosting feature allows one local user to be exposed to the Internet for use of a special-purpose service such as Internet gaming or videoconferencing. DMZ hosting forwards all the ports at the same time to one device. The Port Forwarding feature is more secure because it only opens the ports you want to have opened, while DMZ hosting opens all the ports of one computer, exposing the device so the Internet can see it.<br /><br /><div class=\"note\"><h4>Note:</h4><div>Any device whose port is being forwarded must have a new static IP address assigned to it because the IP address may change when using the DHCP function.</div></div></dd>";
-hdmz.page2="<dd>To expose one device to the Internet, select <em>" + share.enable + "</em> and enter the computer's IP address in the <i>DMZ Host IP Address</i> field.<br /><br />To disable the DMZ, keep the default setting, <em>" + share.disable + "</em>.</dd><dd>Click the <em>" + sbutton.save + "</em> button to save your settings or click the <em>" + sbutton.cancel + "</em> button to cancel your unsaved changes.</dd>";
+hdmz.page2="<dd>To expose one device to the Internet, select <em>" + share.enable + "</em> and enter the computer's IP address in the <em>" + dmz.host + "</em> field.<br /><br />To disable the DMZ, keep the default setting, <em>" + share.disable + "</em>.</dd><dd>Click the <em>" + sbutton.save + "</em> button to save your settings or click the <em>" + sbutton.cancel + "</em> button to cancel your unsaved changes.</dd>";
 
 // ** Factory_Defaults.asp **//
 var factdef=new Object();
@@ -735,9 +736,6 @@ filter.legend5="Website Blocking by Keyword";
 filter.mess1="Delete the Policy?";
 filter.mess2="You must select a day or days.";
 filter.mess3="The selected end time must be greater than the start time.";
-filter.nat="Filter WAN NAT Redirection";
-filter.port113="Filter IDENT (Port 113)";
-filter.snmp="Block WAN SNMP Access";
 filter.none="";
 filter.packetcount="Filtered Packets";
 
@@ -784,6 +782,10 @@ firewall.ftp="Limit FTP Server Access";
 firewall.arp_spoofing="ARP Spoofing Protection";
 firewall.filter_tos="Filter ToS / DSCP";
 
+filter.nat="Filter WAN NAT Redirection";
+filter.port113="Filter IDENT (Port 113)";
+filter.snmp="Block WAN SNMP Access";
+
 //help container
 var hfirewall=new Object();
 hfirewall.right2="Enable or disable the SPI firewall.";
@@ -799,9 +801,9 @@ hfirewall.page7="<dd>Prevents hosts on LAN from using WAN address of router to c
 hfirewall.page8="<dd>Prevents WAN access to port 113.</dd>";
 hfirewall.page9="<dd>The router can keep logs of all incoming or outgoing traffic for your Internet connection.</dd>";
 hfirewall.page10="<dd>To keep activity logs, select <em>" + share.enable + "</em>. To stop logging, select <em>" + share.disable + "</em>.</dd>";
-hfirewall.page11="<dd>Set this to the required amount of information. Set <i>Log Level</i> higher to log more actions.</dd>";
-hfirewall.page12="<dd>To see a temporary log of the router's most recent incoming traffic, click the <i>Incoming Log</i> button.</td>";
-hfirewall.page13="<dd>To see a temporary log of the router's most recent outgoing traffic, click the <i>Outgoing Log</i> button.</dd><dd>Check all values and click the <em>" + sbutton.save + "</em> button to save your settings. Click the <em>" + sbutton.cancel + "</em> button to cancel your unsaved changes.</dd>";
+hfirewall.page11="<dd>Set this to the required amount of information. Set <em>" + log.lvl + "</em> higher to log more actions.</dd>";
+hfirewall.page12="<dd>To see a temporary log of the router's most recent incoming traffic, click the <em>" + sbutton.log_in + "</em> button.</td>";
+hfirewall.page13="<dd>To see a temporary log of the router's most recent outgoing traffic, click the <em>" + sbutton.log_out + "</em> button.</dd><dd>Check all values and click the <em>" + sbutton.save + "</em> button to save your settings. Click the <em>" + sbutton.cancel + "</em> button to cancel your unsaved changes.</dd>";
 
 // ** Forward.asp **//
 var prforward=new Object();

@@ -5,7 +5,7 @@ body, .popup, .popup_bg {
 }
 fieldset {
   background: #eee;
-  border: 1px solid #ccc;
+  border: 1px solid #aaa;
 }
 .dark_fs_bg {
   background: #f6f6f6;
@@ -17,8 +17,8 @@ fieldset legend {
   border-bottom: 1px dotted #333;
 }
 hr {
-  background: #eee;
-  color: #eee;
+  background: #aaa;
+  color: #aaa;
 }
 h2, h3 {
   background-color: #fff3b3;
@@ -37,9 +37,9 @@ table tr:not([bgcolor]):hover {
 }
 .submitFooter {
   background: repeating-linear-gradient(55deg,
-    #ccc , #ccc  2px,
-    #aaa 1px, #aaa 3px);
-  border: 1px solid #ccc;
+    #fff3b3 , #fff3b3  2px,
+    #ccc 2px, #ccc 3px);
+  border: 1px solid #aaa;
 }
 textarea {
   background-color: #fff;
@@ -124,8 +124,8 @@ select {
   transition: all .15s ease-in-out 0s;
 }
 .progressbar {
-  background-color: #fff;
-  border: 1px solid #999;
+  background-color: #ddd;
+  border: 1px solid #aaa;
 }
 #content {
   background: #ddd;
@@ -136,16 +136,16 @@ select {
 }
 #content.infopage #main {
   background-color: #fafafa;
-  border-radius: 5px;
-  border: 1px solid #111;
+  border-radius: 2px;
+  border: 1px solid #aaa;
 }
 .message {
   background: #fafafa;
   border: 1px solid #ccc;
 }
 .meter {
-  background: #aaa;
-  border: 1px solid #888;
+  background: #ddd;
+  border: 1px solid #aaa;
 }
 .odd {
   background-color: transparent;
