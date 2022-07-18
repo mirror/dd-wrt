@@ -759,8 +759,8 @@ hfilter.right10="Hier können Sie die Tageszeit angeben, zu der die Richtlinie g
 hfilter.right12="Hier können Sie Dienste auswählen, welche blockiert werden sollen. Klicken Sie <em>" + sbutton.filterSer + "</em> um die Einstellungen zu ändern.";
 hfilter.right14="Hier können Sie diverse Webseiten mit Hilfe einer URL blockieren.";
 hfilter.right16="Hier können Sie mit Hilfe von Schlagworten Webseiten blockieren, die diese enthalten.";
-hfilter.pageintro="<dd>Auf dieses Registerkarte können Sie bestimmte Arten der Internetnutzung sperren oder zulassen. Sie können Internet-Zugangsrichtlinien für bestimmte Computer einrichten und Filter mit Hilfe von Netzwerk-Portnummern einrichten.</dd>";
-hfilter.page1="<dd>Diese Funktion ermöglicht es Ihnen, bis zu 20 verschiedene Internet-Zugriffsrichtlinien für bestimmte Geräte festzulegen, die durch ihre IP- oder MAC-Adressen identifiziert werden. Für jedes in der Richtlinie genannte Gerät, während der angegebenen Tage und Zeiträume.<br /><br />Folgen Sie den Anweisungen, um eine Richtlinie zu erstellen oder zu bearbeiten:<ol class=\"wide\"><li>Wählen Sie eine Richtliniennummer (1-20) aus dem Dropdown-Menü aus.</li><li>Geben Sie einen Namen in das Feld <em>" + filter.polname + "</em> ein.</li><li>Klicken Sie auf die Schaltfläche <em>" + sbutton.filterIP + "</em>.</li><li>Geben Sie in dem Fenster <em>" + filterIP.titl + "</em> die gewünschten Computer anhand ihrer IP-Adresse oder MAC-Adresse an. Geben Sie die entsprechenden IP-Adressen in die <i>IP</i> Felder ein. Wenn Sie einen IP-Adressen-Bereich filtern möchten, dann füllen Sie die Felder <i>IP-Bereich</i> aus. Geben Sie die entsprechenden MAC-Adressen in die <i>MAC</i> Felder ein.</li><li>Klicken Sie auf die Schaltfläche <em>" + sbutton.apply + "</em>, um Ihre Änderungen zu übernehmen. Klicken Sie auf die Schaltfläche <em>" + sbutton.cancel + "</em>, um die nicht gespeicherten Änderungen zu verwerfen. Klicken Sie auf die Schaltfläche <em>" + sbutton.clos + "</em>, um zu der Registerkarte <b>"+ bmenu.accrestriction + "</b> zurückzukehren.</li><li>Wenn Sie den Internetzugang für die aufgelisteten Computer während der angegebenen Tage und Uhrzeiten sperren möchten, dann behalten Sie die Standardeinstellung <em>" + share.deny + "</em> bei. Wenn Sie möchten, dass die aufgelisteten Computer während der angegebenen Tage und Uhrzeiten gefiltert auf das Internet zugreifen können, dann klicken Sie auf das Optionsfeld neben <em>" + share.filter + "</em>.</li><li>Legen Sie die Tage fest, an denen der Zugriff gefiltert werden soll. Wählen Sie <em>" + share.everyday + "</em> oder die entsprechenden Wochentage.</li><li>Legen Sie die Zeit fest, zu der der Zugriff gefiltert werden soll. Wählen Sie <em>" + filter.h24 + "</em> oder aktivieren Sie das Kästchen neben <em>" + share.from + "</em> und verwenden Sie die Dropdown-Menüs, um einen bestimmten Zeitraum festzulegen.</li><li>Klicken Sie auf die Schaltfläche <em>" + sbutton.save + "</em>, um Ihre Änderungen zu speichern und zu aktivieren.</li><li>Um weitere Richtlinien zu erstellen oder zu bearbeiten, wiederholen Sie die Schritte 1-9.</li></ol><br />Um eine Internet-Zugangsrichtlinie zu löschen, wählen Sie die Richtlinien-Nummer aus, und klicken Sie auf die Schaltfläche <em>" + share.del + "</em>.</dd>";
+hfilter.pageintro="<dd>Auf dieser Registerkarte können Sie bestimmte Arten der Internetnutzung sperren oder zulassen. Sie können Internet-Zugangsrichtlinien für bestimmte Computer einrichten und Filter mit Hilfe von Netzwerk-Portnummern einrichten.</dd>";
+hfilter.page1="<dd>Diese Funktion ermöglicht es Ihnen, bis zu 20 verschiedene Internet-Zugriffsrichtlinien für bestimmte Geräte festzulegen, die durch ihre IP- oder MAC-Adressen identifiziert werden. Für jedes in der Richtlinie genannte Gerät, während der angegebenen Tage und Zeiträume.<br /><br />Folgen Sie den Anweisungen, um eine Richtlinie zu erstellen oder zu bearbeiten:<ol class=\"wide\"><li>Wählen Sie eine Richtlinien-Nummer (1-20) aus dem Dropdown-Menü aus.</li><li>Geben Sie einen Namen in das Feld <em>" + filter.polname + "</em> ein.</li><li>Klicken Sie auf die Schaltfläche <em>" + sbutton.filterIP + "</em>.</li><li>Geben Sie in dem Fenster <em>" + filterIP.titl + "</em> die gewünschten Computer anhand ihrer IP-Adresse oder MAC-Adresse an. Geben Sie die entsprechenden IP-Adressen in die <i>IP</i> Felder ein. Wenn Sie einen IP-Adressen-Bereich filtern möchten, dann füllen Sie die Felder <i>IP-Bereich</i> aus. Geben Sie die entsprechenden MAC-Adressen in die <i>MAC</i> Felder ein.</li><li>Klicken Sie auf die Schaltfläche <em>" + sbutton.apply + "</em>, um Ihre Änderungen zu übernehmen. Klicken Sie auf die Schaltfläche <em>" + sbutton.cancel + "</em>, um die nicht gespeicherten Änderungen zu verwerfen. Klicken Sie auf die Schaltfläche <em>" + sbutton.clos + "</em>, um zu der Registerkarte <b>"+ bmenu.accrestriction + "</b> zurückzukehren.</li><li>Wenn Sie den Internetzugang für die aufgelisteten Computer während der angegebenen Tage und Uhrzeiten sperren möchten, dann behalten Sie die Standardeinstellung <em>" + share.deny + "</em> bei. Wenn Sie möchten, dass die aufgelisteten Computer während der angegebenen Tage und Uhrzeiten gefiltert auf das Internet zugreifen können, dann klicken Sie auf das Optionsfeld neben <em>" + share.filter + "</em>.</li><li>Legen Sie die Tage fest, an denen der Zugriff gefiltert werden soll. Wählen Sie <em>" + share.everyday + "</em> oder die entsprechenden Wochentage.</li><li>Legen Sie die Zeit fest, zu der der Zugriff gefiltert werden soll. Wählen Sie <em>" + filter.h24 + "</em> oder aktivieren Sie das Kästchen neben <em>" + share.from + "</em> und verwenden Sie die Dropdown-Menüs, um einen bestimmten Zeitraum festzulegen.</li><li>Klicken Sie auf die Schaltfläche <em>" + sbutton.save + "</em>, um Ihre Änderungen zu speichern und zu aktivieren.</li><li>Um weitere Richtlinien zu erstellen oder zu bearbeiten, wiederholen Sie die Schritte 1-9.</li></ol><br />Um eine Internet-Zugangsrichtlinie zu löschen, wählen Sie die Richtlinien-Nummer aus, und klicken Sie auf die Schaltfläche <em>" + share.del + "</em>.</dd>";
 hfilter.page2="<dd>Um eine Zusammenfassung aller Richtlinien zu sehen, klicken Sie auf die Schaltfläche <em>" + sbutton.summary + "</em>. In dem Fenster <em>" + filterSum.titl + "</em> werden die einzelnen Richtlinien in einer geordneten Liste mit Richtlinien-Nummer, Name, Tagen und Tageszeit angezeigt. Um eine Richtlinie zu löschen, markieren Sie das entsprechende Kästchen, und klicken Sie dann auf die Schaltfläche <em>" + share.del + "</em>. Klicken Sie auf die Schaltfläche <em>" + sbutton.clos + "</em>, um zu der Registerkarte <b>"+ bmenu.accrestriction + "</b> zurückzukehren.</dd>";
 
 // ** Firewall.asp **//
@@ -790,6 +790,7 @@ filter.port113="IDENT (Port 113) filtern";
 filter.snmp="Block WAN SNMP access";
 
 // ** Log.asp **//
+
 log.label="Log";
 log.h2="Log-Verwaltung";
 log.legend="Log";
@@ -799,12 +800,14 @@ log.reject="Zurückgewiesen";
 log.accept="Akzeptiert";
 
 // ** Log_incoming.asp **//
+
 log_in.titl="Eingehende Log-Tabelle";
 log_in.h2="Eingehende Log-Tabelle";
 log_in.th_ip="Ursprungs-IP";
 log_in.th_port="Ziel-Port-Nummer";
 
 // ** Log_outgoing.asp **//
+
 log_out.titl="Ausgehende Log-Tabelle";
 log_out.h2="Ausgehende Log-Tabelle";
 log_out.th_lanip="LAN-IP";
@@ -812,6 +815,7 @@ log_out.th_wanip="Ziel-URL/IP";
 log_out.th_port="Dienst-/Port-Nummer";
 
 //help container
+
 hfirewall.right2="Schaltet die SPI-Firewall ein oder aus.";
 
 // help page
@@ -837,10 +841,20 @@ prforward.legend="Weiterleitungen";
 prforward.app="Anwendung";
 
 //help container
+
 hprforward.right2="Einige Anwendungen benötigen offene Ports, damit sie korrekt funktionieren. \
 	Beispiele sind Server-Anwendungen oder einige Onlinespiele. \
 	Wenn eine Anfrage auf einem dieser Ports aus dem Internet kommt, wird der Router diese auf den entsprechend angegebenen Computer weiterleiten. \
 	Aus Sicherheitsgründen sollten Sie die Weiterleitung auf diejenigen Ports beschränken, die Sie benötigen.";
+
+//help page
+hprforward.page1="<dd>Die Port-Bereichs-Weiterleitung ermöglicht es Ihnen, öffentliche Dienste in Ihrem Netzwerk einzurichten, z. B. Webserver, FTP-Server, E-Mail-Server oder andere spezielle Internetanwendungen. Spezielle Internetanwendungen sind alle Anwendungen, die den Internetzugang nutzen, um Funktionen wie Videokonferenzen oder Online-Gaming bereitzustellen. Wenn diese Art von Anfragen über das Internet an das Netzwerk gesendet werden, leitet der Router diese Anfragen an das entsprechende Gerät weiter.<br /><br />Wenn Sie nur einen einzelnen Port weiterleiten möchten, lesen Sie bitte den Abschnitt <a href=\"HForward.asp\">Port-Weiterleitung</a>.<br /><br /><div class=\"note\"><h4>Hinweis:</h4><div>Jedem Gerät, dessen Port weitergeleitet wird, muss eine statische IP-Adresse zugewiesen werden, da sich die IP-Adresse bei Verwendung der DHCP-Funktion ändern kann.</div></div></dd><dd>Um eine neue Port-Bereichs-Weiterleitungs-Regel zu erstellen, klicken Sie auf die Schaltfläche <em>" + share.add + "</em>, und füllen Sie die unten stehenden Felder aus. Um Regeln zu entfernen, klicken Sie auf das Symbol <i>Löschen</i>.</dd>";
+hprforward.page2="<dd>Geben Sie den Namen der Anwendung in das vorgesehene Feld ein.</dd>";
+hprforward.page3="<dd>Geben Sie die erste Port-Nummer des Bereichs ein, der für Benutzer aus dem Internet sichtbar sein soll und an Ihre Geräte weitergeleitet werden soll.</dd>";
+hprforward.page4="<dd>Geben Sie die letzte Port-Nummer des Bereichs ein, der für Benutzer aus dem Internet sichtbar sein soll und an Ihre Geräte weitergeleitet werden soll.</dd>";
+hprforward.page5="<dd>Wählen Sie das richtige Protokoll <i>TCP</i>, <i>UDP</i> oder <i>Beides</i>. Stellen Sie hier ein, was die Anwendung erfordert.</dd>";
+hprforward.page6="<dd>Geben Sie die IP-Adresse des Geräts ein, auf dem die Anwendung läuft.</dd>";
+hprforward.page7="<dd>Klicken Sie auf das Kästchen <em>" + share.enable + "</em>, um die Portweiterleitung für die Anwendung zu aktivieren.</dd><dd>Überprüfen Sie alle Werte und klicken Sie auf die Schaltfläche <em>" + sbutton.save + "</em>, um Ihre Einstellungen zu speichern. Klicken Sie auf die Schaltfläche <em>" + sbutton.cancel + "</em>, um Ihre nicht gespeicherten Änderungen zu verwerfen.<br /><br /><div class=\"note\"><h4>Hinweis:</h4><div>Denken Sie daran, Ihre Änderungen zu speichern, bevor Sie eine weitere Weiterleitungs-Regel hinzufügen.</div></div></dd>";
 
 // ** P2P.asp **//
 
