@@ -92,7 +92,7 @@ a:hover {
   text-decoration: underline;
   color: #33f;
 }
-div.also, div#also, div.note {
+div.also, div.note {
   padding: .725em;
   border-radius: 4px;
 }
@@ -105,12 +105,18 @@ div.note {
   border: 1px solid #aaf;
   margin-top: .5rem;
 }
-div.note h4, div.also h4 {
+div.note h4 {
   float: left;
-  margin: 0;
+  margin-top: 0;
+  padding-right: .4em;
+}
+div.also h4 {
+  float: left;
+  margin-top: 0;
+  padding-right: 1.3em;
 }
 div.note div {
-  margin-left: 3.4em;
+  margin-left: 3.2em;
 }
 div.also ul {
   margin-left: 4.4em;
