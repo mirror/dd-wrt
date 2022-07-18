@@ -7,14 +7,14 @@ body.gui, #header {
   mix-blend-mode: exclusion;
 }
 #statusInfo {
-  font-weight: 900;
+  color: #0b3e57;
 }
 #statusInfo a {
-  color: #115b80;
+  color: #0b3e57;
   text-decoration: none;
 }
 #statusInfo a:hover {
-  color: #115b80;
+  color: #0b3e57;
   text-decoration: underline;
 }
 body, .popup, .popup_bg {
