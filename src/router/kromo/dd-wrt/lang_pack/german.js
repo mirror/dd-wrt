@@ -790,6 +790,7 @@ filter.port113="IDENT (Port 113) filtern";
 filter.snmp="Block WAN SNMP access";
 
 // ** Log.asp **//
+
 log.label="Log";
 log.h2="Log-Verwaltung";
 log.legend="Log";
@@ -799,12 +800,14 @@ log.reject="Zurückgewiesen";
 log.accept="Akzeptiert";
 
 // ** Log_incoming.asp **//
+
 log_in.titl="Eingehende Log-Tabelle";
 log_in.h2="Eingehende Log-Tabelle";
 log_in.th_ip="Ursprungs-IP";
 log_in.th_port="Ziel-Port-Nummer";
 
 // ** Log_outgoing.asp **//
+
 log_out.titl="Ausgehende Log-Tabelle";
 log_out.h2="Ausgehende Log-Tabelle";
 log_out.th_lanip="LAN-IP";
@@ -812,6 +815,7 @@ log_out.th_wanip="Ziel-URL/IP";
 log_out.th_port="Dienst-/Port-Nummer";
 
 //help container
+
 hfirewall.right2="Schaltet die SPI-Firewall ein oder aus.";
 
 // help page
@@ -837,10 +841,20 @@ prforward.legend="Weiterleitungen";
 prforward.app="Anwendung";
 
 //help container
+
 hprforward.right2="Einige Anwendungen benötigen offene Ports, damit sie korrekt funktionieren. \
 	Beispiele sind Server-Anwendungen oder einige Onlinespiele. \
 	Wenn eine Anfrage auf einem dieser Ports aus dem Internet kommt, wird der Router diese auf den entsprechend angegebenen Computer weiterleiten. \
 	Aus Sicherheitsgründen sollten Sie die Weiterleitung auf diejenigen Ports beschränken, die Sie benötigen.";
+
+//help page
+hprforward.page1="<dd>Die Port-Bereichs-Weiterleitung ermöglicht es Ihnen, öffentliche Dienste in Ihrem Netzwerk einzurichten, z. B. Webserver, FTP-Server, E-Mail-Server oder andere spezielle Internetanwendungen. Spezielle Internetanwendungen sind alle Anwendungen, die den Internetzugang nutzen, um Funktionen wie Videokonferenzen oder Online-Gaming bereitzustellen. Wenn diese Art von Anfragen über das Internet an das Netzwerk gesendet werden, leitet der Router diese Anfragen an das entsprechende Gerät weiter.<br /><br />Wenn Sie nur einen einzelnen Port weiterleiten möchten, lesen Sie bitte den Abschnitt <a href=\"HForward.asp\">Port-Weiterleitung</a>.<br /><br /><div class=\"note\"><h4>Hinweis:</h4><div>Jedem Gerät, dessen Port weitergeleitet wird, muss eine statische IP-Adresse zugewiesen werden, da sich die IP-Adresse bei Verwendung der DHCP-Funktion ändern kann.</div></div></dd><dd>Um eine neue Port-Bereichs-Weiterleitungs-Regel zu erstellen, klicken Sie auf die Schaltfläche <em>" + share.add + "</em>, und füllen Sie die unten stehenden Felder aus. Um Regeln zu entfernen, klicken Sie auf das Symbol <i>Löschen</i>.</dd>";
+hprforward.page2="<dd>Geben Sie den Namen der Anwendung in das vorgesehene Feld ein.</dd>";
+hprforward.page3="<dd>Geben Sie die erste Port-Nummer des Bereichs ein, der für Benutzer aus dem Internet sichtbar sein soll und an Ihre Geräte weitergeleitet werden soll.</dd>";
+hprforward.page4="<dd>Geben Sie die letzte Port-Nummer des Bereichs ein, der für Benutzer aus dem Internet sichtbar sein soll und an Ihre Geräte weitergeleitet werden soll.</dd>";
+hprforward.page5="<dd>Wählen Sie das richtige Protokoll <i>TCP</i>, <i>UDP</i> oder <i>Beides</i>. Stellen Sie hier ein, was die Anwendung erfordert.</dd>";
+hprforward.page6="<dd>Geben Sie die IP-Adresse des Geräts ein, auf dem die Anwendung läuft.</dd>";
+hprforward.page7="<dd>Klicken Sie auf das Kästchen <em>" + share.enable + "</em>, um die Portweiterleitung für die Anwendung zu aktivieren.</dd><dd>Überprüfen Sie alle Werte und klicken Sie auf die Schaltfläche <em>" + sbutton.save + "</em>, um Ihre Einstellungen zu speichern. Klicken Sie auf die Schaltfläche <em>" + sbutton.cancel + "</em>, um Ihre nicht gespeicherten Änderungen zu verwerfen.<br /><br /><div class=\"note\"><h4>Hinweis:</h4><div>Denken Sie daran, Ihre Änderungen zu speichern, bevor Sie eine weitere Weiterleitungs-Regel hinzufügen.</div></div></dd>";
 
 // ** P2P.asp **//
 
