@@ -284,6 +284,8 @@ table th {
   text-decoration: underline;
 }
 .submitFooter {
+  position: sticky;
+  bottom: 1em;
   border: 1px solid #a3a3a3;
   box-shadow: 1px 1px 0 1px #dde;
   text-align: center;
