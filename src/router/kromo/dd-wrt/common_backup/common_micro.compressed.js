@@ -977,7 +977,7 @@ var top=30;
 var _63=Math.floor(screen.availWidth*0.66)-10;
 var _64=555;
 var _65=275;
-var win=window.open("graph_if.svg?"+_62,"Bandwidth","top="+top+",left="+_63+",width="+_64+",height="+_65+",resizable=yes,scrollbars=yes,statusbar=no");
+var win=window.open("graph_if.svg?"+_62,"Bandwidth","top="+top+",left="+_63+",width="+_64+",height="+_65+",resizable=no,scrollbars=no,statusbar=no");
 addEvent(window,"unload",function(){
 if(!win.closed){
 win.close();

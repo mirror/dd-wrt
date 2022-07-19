@@ -149,6 +149,8 @@ fieldset legend {
   margin: 0 2px 0 0;
 }
 .submitFooter {
+  position: sticky;
+  bottom: 1em;
   padding: 4px 12px;
   margin: 0 499px 0 0;
   text-align: center;

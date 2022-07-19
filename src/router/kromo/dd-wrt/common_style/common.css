@@ -366,6 +366,8 @@ table[summary='ports forwarding table'] input[size='10'] {
   text-decoration: underline;
 }
 .submitFooter {
+  position: sticky;
+  bottom: 1em;
   padding: 4px 12px;
   margin: 0;
   text-align: center;
