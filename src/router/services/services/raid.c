@@ -302,6 +302,8 @@ void start_raid(void)
 		if (!strcmp(type, "zfs")) {
 			sysprintf("mkdir -p \"/tmp/mnt/%s\"", poolname);
 			sysprintf("zpool import -a -d /dev");
+			sysprintf("zpool upgrade %s",poolname);
+			sysprintf("zfs set checksum=blake3 %s", poolname);
 			sysprintf("zfs mount %s", poolname);
 			if (nvram_nmatch("zle", "raidlz%d", i))
 				sysprintf("zfs set compression=zle %s", poolname);
