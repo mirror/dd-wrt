@@ -171,7 +171,6 @@ addEvent(window, "unload", function() {
 									<script type="text/javascript">
 									//<![CDATA[
 									document.write("<input class=\"button\" type=\"button\" name=\"delete_button\" value=\"" + sbutton.delall + "\" onclick=\"deleteForward('all');\" />");
-									document.write("<input class=\"button\" type=\"button\" name=\"refresh_button\" value=\"" + <% nvem("refresh_time","0","sbutton.refres","sbutton.autorefresh"); %> + "\" onclick=\"window.location.reload();\" />");
 									//]]>
 									</script>
 								</div>
@@ -192,7 +191,8 @@ addEvent(window, "unload", function() {
 							<div class="submitFooter">
 								<script type="text/javascript">
 								//<![CDATA[
-								submitFooterButton(1,1);
+								var autoref = <% nvem("refresh_time","0","sbutton.refres","sbutton.autorefresh"); %>;
+								submitFooterButton(1,1,0,autoref);
 								//]]>
 								</script>
 							</div>
