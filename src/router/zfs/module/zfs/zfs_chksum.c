@@ -42,7 +42,7 @@ typedef struct {
 	uint64_t bs64k;
 	uint64_t bs256k;
 	uint64_t bs1m;
-	uint64_t bs4m;
+//	uint64_t bs4m;
 	zio_cksum_salt_t salt;
 	zio_checksum_t *(func);
 	zio_checksum_tmpl_init_t *(init);
@@ -84,8 +84,8 @@ chksum_stat_kstat_headers(char *buf, size_t size)
 	off += snprintf(buf + off, size - off, "%8s", "16k");
 	off += snprintf(buf + off, size - off, "%8s", "64k");
 	off += snprintf(buf + off, size - off, "%8s", "256k");
-	off += snprintf(buf + off, size - off, "%8s", "1m");
-	(void) snprintf(buf + off, size - off, "%8s\n", "4m");
+	off += snprintf(buf + off, size - off, "%8s\n", "1m");
+//	(void) snprintf(buf + off, size - off, "%8s\n", "4m");
 
 	return (0);
 }
@@ -112,8 +112,8 @@ chksum_stat_kstat_data(char *buf, size_t size, void *data)
 	    (u_longlong_t)cs->bs256k);
 	off += snprintf(buf + off, size - off, "%8llu",
 	    (u_longlong_t)cs->bs1m);
-	(void) snprintf(buf + off, size - off, "%8llu\n",
-	    (u_longlong_t)cs->bs4m);
+//	(void) snprintf(buf + off, size - off, "%8llu\n",
+//	    (u_longlong_t)cs->bs4m);
 
 	return (0);
 }
@@ -178,7 +178,7 @@ chksum_benchit(chksum_stat_t *cs)
 	void *salt = &cs->salt.zcs_bytes;
 
 	/* allocate test memory via default abd interface */
-	abd = abd_alloc_linear(1<<22, B_FALSE);
+	abd = abd_alloc_linear(1<<21, B_FALSE);
 	memset(salt, 0, sizeof (cs->salt.zcs_bytes));
 	if (cs->init) {
 		ctx = cs->init(&cs->salt);
@@ -190,7 +190,7 @@ chksum_benchit(chksum_stat_t *cs)
 	chksum_run(cs, abd, ctx, 4, &cs->bs64k);
 	chksum_run(cs, abd, ctx, 5, &cs->bs256k);
 	chksum_run(cs, abd, ctx, 6, &cs->bs1m);
-	chksum_run(cs, abd, ctx, 7, &cs->bs4m);
+//	chksum_run(cs, abd, ctx, 7, &cs->bs4m);
 
 	/* free up temp memory */
 	if (cs->free) {
