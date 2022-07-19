@@ -178,7 +178,7 @@ chksum_benchit(chksum_stat_t *cs)
 	void *salt = &cs->salt.zcs_bytes;
 
 	/* allocate test memory via default abd interface */
-	abd = abd_alloc_linear(1<<21, B_FALSE);
+	abd = abd_alloc_linear(1<<20, B_FALSE);
 	memset(salt, 0, sizeof (cs->salt.zcs_bytes));
 	if (cs->init) {
 		ctx = cs->init(&cs->salt);
