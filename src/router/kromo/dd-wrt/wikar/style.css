@@ -337,3 +337,18 @@ input.four_column {
 input.four_column_last {
   margin-right: 0;
 }
+.message {
+  background-color: #ddd;
+  max-width: 72.464em;
+  margin: 2em auto;
+  padding: 1.812em .906em .906em;
+  font-weight: bold;
+  text-align: center;
+  border-radius: 4px;
+}
+.message .submitFooter {
+   padding: 8px 12px;
+   margin: 0 auto;
+   text-align: center;
+   border-radius: 4px;
+ }
