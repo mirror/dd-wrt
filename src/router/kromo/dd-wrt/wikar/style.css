@@ -4,6 +4,10 @@
  font-family: verdana, arial, helvetica, sans-serif;
  font-size: 1em;
 }
+html {
+  width: 100%;
+  margin: 0;
+}
 body {
   margin: .906em;
   font-size: 75%;
@@ -56,58 +60,59 @@ body, .gui {
 }
 #header #logo {
   color: #0f0;
-  padding: 3px 0 0 14px;
+  padding: 3px 0 0 16px;
   margin-top: -1.3em;
   background: repeating-linear-gradient(55deg,
     #2b226f, #2b226f 2px,
     #483c9f  1px, #483c9f 3px);
 }
-#header #menu {
+#menu {
   background: repeating-linear-gradient(55deg,
     #2b226f, #2b226f 2px,
     #483c9f  1px, #483c9f 3px);
   border-bottom: solid 1px #4336af;
   color: #fff;
-  padding: 0 5px 0 5px;
+  height: 2.5rem
 }
-#header #menu ul {
+#menu ul {
   list-style-type: none;
 }
-#header #menu li {
+#menu li {
   display: inline;
   padding: 0 5px 0 5px;
   color: #fff;
 }
-#header #menu li a {
+#menu li a {
   color: #fff;
   text-decoration: none;
 }
-#header #menu li a:hover {
+#menu li a:hover {
   text-decoration: underline;
 }
-#header #menu #menuMain {
-  margin-left: -2rem
+#menuMain {
+  position: relative;
+  left: -4rem;
 }
-#header #menu .current {
+#menuMainList li:first-child {
+  margin-left: 3em
+}
+#menu .current {
   border-bottom: solid 2px #0f0;
 }
-#header #menu #menuSub {
+#menuSub {
   background-color: #000;
-  width: 100%;
+  width: 105%;
+  margin: .8em 0 .6em 0;
   float: left;
-  height: 20px;
+  height: 22px;
   padding: 6px 0 0 3px;
-  position: relative; 
-  left: -8px; 
-  min-width: 100.4%;
 }
-#header #menu #menuSub span {
+#menuSub span {
   border-bottom: solid 2px #0f0;
-  margin-left: -2.2rem;
+  margin-left: -2.6rem;
 }
 #main {
   background-color: #fff;
-  border-top: solid 1px #ddd;
   clear: both;
   padding: 5px 5px 5px 5px;
 }
