@@ -310,8 +310,6 @@ struct wifi_channels *get_chan(struct wifi_channels *wifi_channels, int freq, co
 {
 	struct wifi_channels *chan = NULL;
 	int i = 0;
-	dd_loginfo("autochannel", "%s: check freq %d\n", interface, freq);
-
 	while (1) {
 		chan = &wifi_channels[i++];
 		if (chan->freq == CHANNEL_DISABLED)
@@ -543,7 +541,6 @@ struct mac80211_ac *mac80211autochannel(const char *interface, char *freq_range,
 	}
 
 	dd_list_for_each_entry(f, &frequencies, list) {
-		dd_loginfo("autochannel", "%s: check %d passive[%d] enable_passive[%d]\n", interface, f->freq, f->passive, enable_passive);
 		if (f->passive && !enable_passive)
 			continue;
 		/* todo, implement algorithm for 80+80 */
@@ -552,7 +549,6 @@ struct mac80211_ac *mac80211autochannel(const char *interface, char *freq_range,
 			dd_loginfo("autochannel", "chan %d not found, curious\n", f->freq);
 			continue;
 		}
-		dd_loginfo("autochannel", "%s: chan is %d bw is %d\n", interface, chan->freq, bw);
 		if (chan->freq < 0)
 			continue;
 		switch (bw) {
