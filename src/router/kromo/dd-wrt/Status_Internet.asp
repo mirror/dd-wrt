@@ -219,7 +219,7 @@ addEvent(window, "unload", function() {
 									</script>
 								</fieldset><br />
 							</div>
-							<div class="submitFooter">
+							<div class="submitFooter nostick">
 								<script type="text/javascript">
 								//<![CDATA[
 								var autoref = <% nvem("refresh_time","0","sbutton.refres","sbutton.autorefresh"); %>;
