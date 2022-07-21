@@ -96,6 +96,9 @@ body, .gui {
 #menuMainList li:first-child {
   margin-left: 3em
 }
+#menuSubList li:first-child {
+  margin-left: -.5em
+}
 #menu .current {
   border-bottom: solid 2px #0f0;
 }
@@ -106,10 +109,6 @@ body, .gui {
   float: left;
   height: 22px;
   padding: 6px 0 0 3px;
-}
-#menuSub span {
-  border-bottom: solid 2px #0f0;
-  margin-left: -2.6rem;
 }
 #main {
   background-color: #fff;
