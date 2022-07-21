@@ -101,7 +101,7 @@ body, .gui {
 }
 #menuSub {
   background-color: #000;
-  width: 105%;
+  width: 106%;
   margin: .8em 0 .6em 0;
   float: left;
   height: 22px;
@@ -347,8 +347,8 @@ input.four_column_last {
   border-radius: 4px;
 }
 .message .submitFooter {
-   padding: 8px 12px;
-   margin: 0 auto;
-   text-align: center;
-   border-radius: 4px;
+  padding: 8px 12px;
+  margin: 0 auto;
+  text-align: center;
+  border-radius: 4px;
  }
