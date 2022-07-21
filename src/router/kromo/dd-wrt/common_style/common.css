@@ -373,6 +373,9 @@ table[summary='ports forwarding table'] input[size='10'] {
   text-align: center;
   border-radius: 4px;
 }
+.nostick {
+  position: unset;
+}
 .submitFooter .button {
   padding: 0 1rem;
   margin: .362em;

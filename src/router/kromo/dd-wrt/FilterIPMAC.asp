@@ -10,7 +10,6 @@ function to_apply(F) {
 	F.save_button.value = sbutton.saving;
 	applytake(F);
 }
-		
 		//]]>
 		</script>
 	</head>
@@ -115,7 +114,7 @@ function to_apply(F) {
 				</div>
 			</fieldset>
 			<br />
-			<div class="submitFooter">
+			<div class="submitFooter nostick">
 				<script type="text/javascript">
 				//<![CDATA[
 				submitFooterButton(1,1,0,0,0,1);

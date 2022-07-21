@@ -46,8 +46,15 @@ input.four_column {
 input.three_column_last, input.four_column_last {
   margin-right: 0;
 }
-h1, h2, h3, h4, h5, h6, legend, label {
+h1, h4, legend, label {
   margin: 1em 0 .5em 0;
+}
+h2, h3 {
+  padding: 4px 12px;
+  line-height: 1.42857;
+  letter-spacing: .123rem;
+  margin: 0 0 .906em 0;
+  border-radius: 3px;
 }
 legend, label {
   font-weight: bold;
@@ -65,7 +72,7 @@ hr {
   margin: 2em 0;
 }
 table {
-  border: 0;
+  width: 100%;
 }
 #radio_table {
   width: 100%;
@@ -134,36 +141,39 @@ form[name="macfilter"] td[align="left"] {
 #statusInfo {
   position: absolute;
   top: 1.4em;
-  right: 8em;
+  right: 2em;
   width: 32.609em;
-  text-align: right;
+  text-align: left;
   color: #222;
-}
-#statusInfo a {
-  color: #222;
-  text-decoration: none;
 }
 #statusInfo a:hover {
   text-decoration: underline;
 }
 .submitFooter {
-  position: sticky;
-  bottom: 1em;
-  padding: 8px 12px;
-  margin-top: 0;
-  text-align: center;
-  border-radius: 4px;
+   position: sticky;
+   bottom: 1em;
+   padding: 8px 12px;
+   margin-top: 0;
+   text-align: center;
+   border-radius: 4px;
+ }
+.nostick {
+  position: unset;
 }
 #mainno .submitFooter {
-  margin: 2.5rem 280px 0 223px;
+  position: unset;
+  margin: 2.5rem auto 0 223px;
+  width: 77%
 }
 .submitFooter .button {
   padding: 0 1rem;
   height: 1.433rem;
 }
 fieldset {
+  border-radius: 4px;
+  padding: 0 .725em .725em .725em;
+  margin: 0;
   border-radius: 3px;
-  background-color: #f6f6f6;
 }
 div.setting {
   margin: 1px;
@@ -222,11 +232,11 @@ div.setting {
   position: relative;
   height: 16px;
   width: 220px;
-  background: #999;
-  border: solid 1px #999;
+  border-radius: 2px
 }
 .meter .bar {
   height: 16px;
+  border-radius: 2px
 }
 .meter .text {
   position: absolute;
@@ -296,7 +306,7 @@ iframe[src*='/graph_if.svg'] {
 iframe#syslog {
   left: 14rem;
   top: 4.5rem;
-  max-width: 80%;
+  max-width: 77.888%;
   position: relative;
   height: 811px;
 }
@@ -316,17 +326,11 @@ input.button[onclick*="do_show"]:not([value*="Month"]) {
   position: absolute;
 }
 .message {
-  max-width: 32.464em;
+  width: 70%;
   padding: .906em;
   font-weight: bold;
   text-align: center;
-}
-.message div input {
-  margin: 4em .362em;
-  margin-top: 1.449em;
-}
-.message .submitFooter {
-  margin: 1em 8.362em 0;
+  margin: 0 auto;
 }
 textarea {
   padding: 4px;
