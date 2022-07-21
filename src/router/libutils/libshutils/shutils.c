@@ -1001,10 +1001,16 @@ static int _pidof(const char *name, pid_t ** pids)
 			if (*e != 0)
 				continue;
 			if (strcmp(name, psname(i, buf, sizeof(buf))) == 0) {
-				if ((*pids = realloc(*pids, sizeof(pid_t) * (count + 1))) == NULL) {
-					return -1;
+				if (pids) {
+					if ((*pids = realloc(*pids, sizeof(pid_t) * (count + 1))) == NULL) {
+						closedir(dir);
+						return -1;
+					}
+					(*pids)[count++] = i;
+				} else {
+					closedir(dir);
+					return i;
 				}
-				(*pids)[count++] = i;
 			}
 		}
 	}
@@ -1014,13 +1020,10 @@ static int _pidof(const char *name, pid_t ** pids)
 
 int pidof(const char *name)
 {
-	pid_t *pids;
 	pid_t p;
 	if (!name)
 		return -1;
-	if (_pidof(name, &pids) > 0) {
-		p = *pids;
-		free(pids);
+	if ((p = _pidof(name, NULL)) > 0) {
 		return p;
 	}
 	return -1;
@@ -1145,9 +1148,9 @@ static void strcpyto(char *dest, char *src, char *delim, size_t max)
 	char *to = strpbrk(src, delim);
 	if (to)
 		len = to - src;
-	if (max != sizeof(long) && max<len+1) {
-	    dd_logerror("internal", "foreach is used in a improper way, target word is too small");
-	    len = max-1;
+	if (max != sizeof(long) && max < len + 1) {
+		dd_logerror("internal", "foreach is used in a improper way, target word is too small");
+		len = max - 1;
 	}
 	memcpy(dest, src, len);
 	dest[len] = '\0';
