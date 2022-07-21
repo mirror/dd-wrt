@@ -85,7 +85,7 @@ chksum_stat_kstat_headers(char *buf, size_t size)
 	off += snprintf(buf + off, size - off, "%8s", "64k");
 	off += snprintf(buf + off, size - off, "%8s", "256k");
 	off += snprintf(buf + off, size - off, "%8s", "1m");
-	off += snprintf(buf + off, size - off, "%8s\n", "4m");
+	(void) snprintf(buf + off, size - off, "%8s\n", "4m");
 
 	return (0);
 }
@@ -112,7 +112,7 @@ chksum_stat_kstat_data(char *buf, size_t size, void *data)
 	    (u_longlong_t)cs->bs256k);
 	off += snprintf(buf + off, size - off, "%8llu",
 	    (u_longlong_t)cs->bs1m);
-	off += snprintf(buf + off, size - off, "%8llu\n",
+	(void) snprintf(buf + off, size - off, "%8llu\n",
 	    (u_longlong_t)cs->bs4m);
 
 	return (0);
@@ -185,17 +185,13 @@ chksum_benchit(chksum_stat_t *cs)
 	}
 
 	/* allocate test memory via abd linear interface */
-	abd = abd_alloc_linear(1<<20, B_FALSE);
+	abd = abd_alloc(1<<22, B_FALSE);
 	chksum_run(cs, abd, ctx, 1, &cs->bs1k);
 	chksum_run(cs, abd, ctx, 2, &cs->bs4k);
 	chksum_run(cs, abd, ctx, 3, &cs->bs16k);
 	chksum_run(cs, abd, ctx, 4, &cs->bs64k);
 	chksum_run(cs, abd, ctx, 5, &cs->bs256k);
 	chksum_run(cs, abd, ctx, 6, &cs->bs1m);
-	abd_free(abd);
-
-	/* allocate test memory via abd non linear interface */
-	abd = abd_alloc(1<<22, B_FALSE);
 	chksum_run(cs, abd, ctx, 7, &cs->bs4m);
 	abd_free(abd);
 
@@ -222,46 +218,9 @@ chksum_benchmark(void)
 	uint64_t max = 0;
 
 	/* space for the benchmark times */
-	chksum_stat_cnt = 4;
-	chksum_stat_cnt += blake3_get_impl_count();
+	chksum_stat_cnt = blake3_get_impl_count();
 	chksum_stat_data = (chksum_stat_t *)kmem_zalloc(
 	    sizeof (chksum_stat_t) * chksum_stat_cnt, KM_SLEEP);
-
-	/* edonr */
-	cs = &chksum_stat_data[cbid++];
-	cs->init = abd_checksum_edonr_tmpl_init;
-	cs->func = abd_checksum_edonr_native;
-	cs->free = abd_checksum_edonr_tmpl_free;
-	cs->name = "edonr";
-	cs->impl = "generic";
-	chksum_benchit(cs);
-
-	/* skein */
-	cs = &chksum_stat_data[cbid++];
-	cs->init = abd_checksum_skein_tmpl_init;
-	cs->func = abd_checksum_skein_native;
-	cs->free = abd_checksum_skein_tmpl_free;
-	cs->name = "skein";
-	cs->impl = "generic";
-	chksum_benchit(cs);
-
-	/* sha256 */
-	cs = &chksum_stat_data[cbid++];
-	cs->init = 0;
-	cs->func = abd_checksum_SHA256;
-	cs->free = 0;
-	cs->name = "sha256";
-	cs->impl = "generic";
-	chksum_benchit(cs);
-
-	/* sha512 */
-	cs = &chksum_stat_data[cbid++];
-	cs->init = 0;
-	cs->func = abd_checksum_SHA512_native;
-	cs->free = 0;
-	cs->name = "sha512";
-	cs->impl = "generic";
-	chksum_benchit(cs);
 
 	/* blake3 */
 	for (id = 0; id < blake3_get_impl_count(); id++) {
