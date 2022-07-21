@@ -16,6 +16,10 @@ h2, legend {
 h3, label {
   color: #b26c38;
 }
+h2, h3 {
+  background-color: #e3ddd5;
+  border: 1px solid #eeeae4;
+}
 :link {
   color: #554fa0;
 }
@@ -26,6 +30,7 @@ h3, label {
   color: #5b52cb;
 }
 fieldset {
+  background-color: #f6f6f6;
   border: 1px solid #8f8f9d;
 }
 #main {
@@ -37,6 +42,7 @@ fieldset {
 }
 th {
   background-color: #e9e9ed;
+  border: 1px solid #ccc;
 }
 #menuMain {
   border-color: #fff;
@@ -60,8 +66,12 @@ th {
   background-color: #f5f2ef;
   border-color: #fff;
 }
+.meter {
+  background: #e3ddd5;
+  border: solid 1px #999;
+}
 .meter .bar {
-  background-color: #e3ddd5;
+  background: #f5f2ef;
 }
 .meter .text {
   color: #955322;
@@ -84,4 +94,7 @@ textarea {
     #eeeae4 , #eeeae4  2px,
     #f1d496 1px, #f1d496 3px);
   border: 1px solid #bb9273;
+}
+.message {
+  background-color: #f6f6f6;
 }

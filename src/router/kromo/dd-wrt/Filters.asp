@@ -107,13 +107,13 @@ function service(id, name, port_start, port_end, protocol, servicename) {
 
 var sorton = function(x,y) {
 	if(x.name <  y.name) {
-	    return -1;
+		return -1;
 	} else { 
 		if (x.name == y.name) {
-		    return 0;
+			return 0;
 		} else {
-	          return 1;
-	        }
+			return 1;
+		}
 	}
 };
 
@@ -151,21 +151,21 @@ function setBlockedServicesValue() {
 	var index;
 
 	if (p2p_value) {
-	if (p2p_value == "1") {
-	    document.filters._filter_p2p.checked = true;
-	} else {
-	    document.filters._filter_p2p.checked = false;
-	}
+		if (p2p_value == "1") {
+			document.filters._filter_p2p.checked = true;
+		} else {
+			document.filters._filter_p2p.checked = false;
+		}
 	}
 
 	/* for service port 0 */
 	for (i=0;i<document.filters.numfilters.value;i++) {
-	index = search_service_index(eval("servport_name"+i));
-	if(index!=-1){
-		eval("document.filters.port"+i+"_start").value = services[index].start;
-		eval("document.filters.port"+i+"_end").value = services[index].end;
-		eval("document.filters.blocked_service"+i).selectedIndex = index+1; /* first will be none */
-	}
+		index = search_service_index(eval("servport_name"+i));
+		if(index!=-1) {
+			eval("document.filters.port"+i+"_start").value = services[index].start;
+			eval("document.filters.port"+i+"_end").value = services[index].end;
+			eval("document.filters.blocked_service"+i).selectedIndex = index+1; /* first will be none */
+		}
 	}
 }
 
@@ -201,8 +201,8 @@ function Status(F,I) {
 			choose_enable(F.elements[i]);
 		}
 		for(i = 0; i < F.numfilters.value; i++) {
-		    choose_disable(eval("document.filters.port"+i+"_start"));
-		    choose_disable(eval("document.filters.port"+i+"_end"));
+			choose_disable(eval("document.filters.port"+i+"_start"));
+			choose_disable(eval("document.filters.port"+i+"_end"));
 		}
 	}
 	return true;
@@ -219,7 +219,6 @@ function filter_remove_submit(F) {
 	F.submit_type.value = "remove_filter";
 	apply(F);
 }
-
 
 function SelFilter(num,F) {
 	F.change_action.value="gozila_cgi";
@@ -244,6 +243,7 @@ function to_submit(F) {
 		apply(F);
 	}
 }
+
 function to_apply(F) {
 	if(valid(F) == true) {
 		F.change_action.value = "";
@@ -255,8 +255,7 @@ function to_apply(F) {
 
 var update;
 
-addEvent(window, "load", function() {
-	
+addEvent(window, "load", function() {	
 	day_enable_disable(document.filters, "<% filter_tod_get("day_all_init"); %>");
 	time_enable_disable(document.filters, "<% filter_tod_get("time_all_init"); %>");
 	setBlockedServicesValue();
@@ -273,7 +272,6 @@ addEvent(window, "load", function() {
 
 addEvent(window, "unload", function() {
 	update.stop();
-
 });
 	
 		//]]>
@@ -281,7 +279,6 @@ addEvent(window, "unload", function() {
 	</head>
 
 	<body class="gui">
-		
 		<div id="wrapper">
 			<div id="content">
 				<div id="header">
