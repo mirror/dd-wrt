@@ -96,20 +96,19 @@ body, .gui {
 #menuMainList li:first-child {
   margin-left: 3em
 }
+#menuSubList li:first-child {
+  margin-left: -.5em
+}
 #menu .current {
   border-bottom: solid 2px #0f0;
 }
 #menuSub {
   background-color: #000;
-  width: 105%;
+  width: 106%;
   margin: .8em 0 .6em 0;
   float: left;
   height: 22px;
   padding: 6px 0 0 3px;
-}
-#menuSub span {
-  border-bottom: solid 2px #0f0;
-  margin-left: -2.6rem;
 }
 #main {
   background-color: #fff;
@@ -337,3 +336,18 @@ input.four_column {
 input.four_column_last {
   margin-right: 0;
 }
+.message {
+  background-color: #ddd;
+  max-width: 72.464em;
+  margin: 2em auto;
+  padding: 1.812em .906em .906em;
+  font-weight: bold;
+  text-align: center;
+  border-radius: 4px;
+}
+.message .submitFooter {
+  padding: 8px 12px;
+  margin: 0 auto;
+  text-align: center;
+  border-radius: 4px;
+ }
