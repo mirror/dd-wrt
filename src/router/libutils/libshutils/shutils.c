@@ -992,7 +992,8 @@ static int _pidof(const char *name, pid_t ** pids)
 	char buf[256];
 
 	count = 0;
-	*pids = NULL;
+	if (pids)
+		*pids = NULL;
 	if ((p = strchr(name, '/')) != NULL)
 		name = p + 1;
 	if ((dir = opendir("/proc")) != NULL) {
