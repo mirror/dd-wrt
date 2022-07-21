@@ -297,6 +297,9 @@ table th {
     #eee, #eee 2px,
     #ccd 1px, #ccd 3px );
 }
+.nostick {
+  position: unset;
+}
 .submitFooter .button {
   padding: .2rem .5rem;
   margin: .362em;

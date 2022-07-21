@@ -841,6 +841,8 @@ ifeq ($(CONFIG_ALFA_BRANDING2),y)
 	cp -f alfa/logo22.png $(INSTALLDIR)/www/style/xirian/logo.png
 endif
 ifeq ($(CONFIG_ANTAIRA),y)
+	mkdir $(INSTALLDIR)/www/style/elegant
+	cp elegant/fresh.css $(INSTALLDIR)/www/style/elegant
 	cp -f antaira/logo.png $(INSTALLDIR)/www/style
 	cp -f antaira/favicon.ico $(INSTALLDIR)/www/favicon.ico
 	cp -f antaira/logo-help.png $(INSTALLDIR)/www/help/logo-help.png

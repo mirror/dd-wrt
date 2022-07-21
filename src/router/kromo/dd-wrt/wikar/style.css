@@ -165,6 +165,9 @@ fieldset legend {
     #eee 1px, #eee 3px);
   border: 1px solid #ccc;
 }
+.nostick {
+  position: unset;
+}
 .submitFooter .button {
   padding: 0 1rem;
   margin: .362em;
