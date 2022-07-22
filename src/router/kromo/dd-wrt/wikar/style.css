@@ -167,6 +167,9 @@ fieldset legend {
 .nostick {
   position: unset;
 }
+#mainno .submitFooter {
+  margin: 0;
+}
 .submitFooter .button {
   padding: 0 1rem;
   margin: .362em;
