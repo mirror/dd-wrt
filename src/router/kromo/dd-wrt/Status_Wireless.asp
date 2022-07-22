@@ -6,8 +6,8 @@ function setWirelessTable() {
 	var table = document.getElementById("wireless_table");
 	var val = arguments;
 	if (table) {
-    		cleanTable(table);
-    	}
+		cleanTable(table);
+  }
 	if(!val.length) {
 		var cell = table.insertRow(-1).insertCell(-1);
 		cell.colSpan = 11;
@@ -25,13 +25,13 @@ function setWirelessTable() {
 		} else {
 			cellmac.title = status_wireless.chaininfo + " [" + val[i + 11];
 			if (val[i + 12] != 0) {
-			cellmac.title = cellmac.title + "," + val[i + 12];
+				cellmac.title = cellmac.title + "," + val[i + 12];
 			}
 			if (val[i + 13] != 0) {
-			cellmac.title = cellmac.title + "," + val[i + 13];
+				cellmac.title = cellmac.title + "," + val[i + 13];
 			}
 			if (val[i + 14] != 0) {
-			cellmac.title = cellmac.title + "," + val[i + 14];
+				cellmac.title = cellmac.title + "," + val[i + 14];
 			}
 			cellmac.title = cellmac.title + "]";
 		}
@@ -168,9 +168,8 @@ addEvent(window, "load", function() {
 
 });
 
-function refresh(F)
-{
-F.submit();
+function refresh(F) {
+	F.submit();
 }
 
 addEvent(window, "unload", function() {
@@ -182,14 +181,12 @@ addEvent(window, "unload", function() {
 	</head>
 
 	<body class="gui">
-		
 		<div id="wrapper">
 			<div id="content">
 				<div id="header">
 					<div id="logo"><h1><% show_control(); %></h1></div>
 					<% do_menu("Status_Router.asp","Status_Wireless.asp"); %>
 				</div>
-
 				<div id="main">
 					<div id="contents">
 						<form name="Status_Wireless" action="apply.cgi" method="post">
@@ -197,19 +194,19 @@ addEvent(window, "unload", function() {
 							<input type="hidden" name="change_action" value="gozila_cgi" />
 							<input type="hidden" name="submit_type" value="refresh" />
 							<h2><% tran("status_wireless.h2"); %></h2>
-							
+
 							<fieldset>
 								<legend><% tran("status_wireless.legend"); %></legend>
 								<% show_wifiselect(); %>
 								<div class="setting">
 									<div class="label"><% tran("share.mac"); %></div>
-									<script type="text/javascript">
-									//<![CDATA[
-									document.write("<span id=\"wl_mac\" style=\"cursor:pointer; text-decoration:underline;\" title=\"" + share.oui + "\" onclick=\"getOUIFromMAC('<% show_wl_mac(); %>')\" >");
-									document.write("<% show_wl_mac(); %>");
-									document.write("</span>");
-									//]]>
-									</script>&nbsp;
+										<script type="text/javascript">
+										//<![CDATA[
+										document.write("<span id=\"wl_mac\" style=\"cursor:pointer; text-decoration:underline;\" title=\"" + share.oui + "\" onclick=\"getOUIFromMAC('<% show_wl_mac(); %>')\" >");
+										document.write("<% show_wl_mac(); %>");
+										document.write("</span>");
+										//]]>
+										</script>&nbsp;
 								</div>
 								<% getchipset(); %>
 								<div class="setting">
@@ -281,7 +278,6 @@ addEvent(window, "unload", function() {
 								//]]>
 								</script>
 							</fieldset><br />
-							
 							<div id="wds" style="display:none">
 								<fieldset>
 									<legend><% tran("status_wireless.wds"); %></legend>
@@ -302,9 +298,14 @@ addEvent(window, "unload", function() {
 									//]]>
 									</script>
 								</fieldset><br />
-								
 							</div>
-							<div class="center">
+							<!--<div class="center">
+								<script type="text/javascript">
+								//<![CDATA[
+								//]]>
+								</script>
+							</div><br /> -->
+							<div class="submitFooter">
 								<script type="text/javascript">
 								//<![CDATA[
 								<% spectral_scan(); %>
@@ -312,12 +313,6 @@ addEvent(window, "unload", function() {
 								<% channel_survey(); %>
 								<% ifndef("WIVIZ","/"); %><% ifndef("WIVIZ","*"); %>document.write("<input class=\"button\" type=\"button\" name=\"wiviz_survey\" value=\"" + sbutton.wsurvey + "\" onclick=\"OpenWiwizSurvey()\" />");
 								<% ifndef("WIVIZ","*"); %><% ifndef("WIVIZ","/"); %>
-								//]]>
-								</script>
-							</div><br />
-							<div class="submitFooter nostick">
-								<script type="text/javascript">
-								//<![CDATA[
 								var autoref = <% nvem("refresh_time","0","sbutton.refres","sbutton.autorefresh"); %>;
 								submitFooterButton(0,0,0,autoref);
 								//]]>
