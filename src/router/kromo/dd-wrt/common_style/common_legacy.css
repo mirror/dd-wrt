@@ -64,3 +64,26 @@ input[disabled], select[disabled] {
 #help a:hover, a[title='Geotool'] {
   text-decoration: underline;
 }
+div.bulle {
+  position: absolute;
+  visibility: hidden;
+  width: auto;
+  z-index: 2000;
+}
+table.bulle {
+  width: auto;
+  height: auto;
+  margin: 0;
+  padding: 0;
+  text-align: justify;
+}
+td.bulle {
+  width: auto;
+  height: auto;
+  padding: .09em;
+  border: 0;
+}
+div.bulle, table.bulle, td.bulle {
+  background-color: #eec900;
+  color: #000;
+}
