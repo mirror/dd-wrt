@@ -5,42 +5,42 @@
  * Xirian 
  */
 .status_red {
- background: #ff6666;
- color: #000;
- text-align: center;
- padding: 2px;
- border-radius: 2px;
+  background: #ff6666;
+  color: #000;
+  text-align: center;
+  padding: 2px;
+  border-radius: 2px;
 }
 .status_green {
- background: #35ee00;
- color: #000;
- text-align: center;
- padding: 2px;
- border-radius: 2px;
+  background: #35ee00;
+  color: #000;
+  text-align: center;
+  padding: 2px;
+  border-radius: 2px;
 }
 .status_yellow {
- background: #eec900;
- color: #000;
- text-align: center;
- padding: 2px;
- border-radius: 2px;
+  background: #eec900;
+  color: #000;
+  text-align: center;
+  padding: 2px;
+  border-radius: 2px;
 }
 .status_orange {
- background: #fea543;
- color: #000;
- text-align: center;
- padding: 2px;
- border-radius: 2px;
+  background: #fea543;
+  color: #000;
+  text-align: center;
+  padding: 2px;
+  border-radius: 2px;
 }
 .value_error {
- border: 1px solid #ff6666;
+  border: 1px solid #ff6666;
 }
 .value_error:hover {
- border-color: #f00;
+  border-color: #f00;
 }
 .value_error:focus {
- border-color: #f00;
- box-shadow: 0 0 10px 0 #f00;
+  border-color: #f00;
+  box-shadow: 0 0 10px 0 #f00;
 }
 input.button {
   cursor: pointer;
@@ -86,4 +86,8 @@ td.bulle {
 div.bulle, table.bulle, td.bulle {
   background-color: #eec900;
   color: #000;
+}
+#ip_count:hover, [title*='Search']:hover,
+[title*='Chain']:hover, [title*='Monitoring']:hover {
+	color: #00f;
 }
