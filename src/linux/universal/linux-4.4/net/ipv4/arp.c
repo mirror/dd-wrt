@@ -787,7 +787,7 @@ static int arp_process(struct net *net, struct sock *sk, struct sk_buff *skb)
 		goto out;
 	}
 
-#if 0 //def HNDCTF
+#ifdef HNDCTF
 	/* Look up in the arp table for the source ip */
 	n = __neigh_lookup(&arp_tbl, &sip, dev, 0);
 
