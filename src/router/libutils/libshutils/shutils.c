@@ -28,6 +28,7 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <sys/statfs.h>
+#include <sys/prctl.h>
 #include <sys/wait.h>
 #include <termios.h>
 #include <sys/ioctl.h>
@@ -1001,7 +1002,7 @@ static int _pidof(const char *name, pid_t ** pids)
 			i = strtol(de->d_name, &e, 10);
 			if (*e != 0)
 				continue;
-			if (strcmp(name, psname(i, buf, sizeof(buf))) == 0) {
+			if (strncmp(name, psname(i, buf, sizeof(buf)), PR_SET_NAME) == 0) {
 				if (pids) {
 					if ((*pids = realloc(*pids, sizeof(pid_t) * (count + 1))) == NULL) {
 						closedir(dir);
