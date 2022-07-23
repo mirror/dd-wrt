@@ -499,7 +499,7 @@ static int rule_fa(char *name)
 
 static int rule_ctf(char *name)
 {
-	char *ctf = nvram_safe_get("ctf_disable");
+	char *ctf = nvram_safe_get("has_ctf");
 	return *ctf ? 1 : 0;
 }
 
