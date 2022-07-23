@@ -19,12 +19,28 @@ p {
 h1 {
   font-size: 24px;
 }
-h2, h3, dt {
-  padding: 0 0 5px 0;
-  font-weight: bold;
+h2, h3, th {
+  background: #e9e9ed;
+  border: 1px solid #8f8f9d;
+}
+h2, h3 {
+  padding: 4px 12px;
+  line-height: 1.42857;
+  letter-spacing: .123rem;
+  margin: 0 210px .906em 0;
+  border-radius: 4px;
+}
+#mainno h2, [name='ipfilter'] h2,
+body[onunload*="Filters.asp'"] h2,
+.iplookup h2, [name='Join'] h2 {
+  margin-right: .3em;
 }
 hr {
-  display: none;
+  background: #ccc;
+  color: #ccc;
+  border: none;
+  width: 100%;
+  height: .09em;
 }
 input.num {
   width: auto;
@@ -36,15 +52,13 @@ input.num[name*="lease"][size="10"] {
 table {
   width: 100%;
 }
-th {
-  background-color: #e9e9ed;
-  border: 1px solid #8f8f9d;
-}
-th, td {
-  padding: 0 10px 0 0;
-}
-dd {
-  padding: 0 0 5px 0;
+table tr th {
+  border-radius: 3px;
+  font-weight: normal;
+  padding: .09em .543em;
+  text-align: left;
+  line-height: normal;
+  vertical-align: bottom;
 }
 select, option {
   width: auto;
@@ -103,7 +117,7 @@ body, .gui {
 #menuSubList li:first-child {
   margin-left: -.5em
 }
-#menu .current {
+#menuMainList .current, #menuSubList span strong {
   border-bottom: solid 2px #0f0;
 }
 #menuSub {
@@ -171,8 +185,11 @@ fieldset legend {
 .nostick {
   position: unset;
 }
-#mainno .submitFooter {
-  margin: 0;
+#mainno .submitFooter, [name='ipfilter'] .submitFooter,
+body[onunload*="Filters.asp'"] .submitFooter,
+.iplookup .submitFooter, [name='Join'] .submitFooter {
+  margin-right: .201em;
+  margin-left: .191em;
 }
 .submitFooter .button {
   padding: 0 1rem;
@@ -220,10 +237,13 @@ fieldset legend {
   display: block;
   position: absolute;
   top: 1.378em;
-  right: .901em;
+  right: 1.3em;
   text-align: right;
   text-decoration: none;
   text-transform: lowercase;
+}
+#help h2 {
+  margin-right: .4em
 }
 #help a:hover, a[title='Geotool'] {
   text-decoration: underline;
@@ -325,7 +345,7 @@ iframe#syslog {
   position: relative;
 }
 input.button[onclick*="do_show"]:not([value*="Month"]) {
-  margin: 1.5em -42% 0 43.7%;
+  margin: 1.2em 0 0 .362em;
   position: relative;
 }
 input.three_column {
