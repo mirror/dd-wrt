@@ -262,9 +262,17 @@ h2, h3 {
   line-height: 1.993;
   width: 100%;
 }
+.setting input[type] {
+  margin-left: 0;
+  margin-right: .362em;
+}
 .setting .label {
   float: left;
-  width: 18.116em;
+  width: 19.444em;
+  /* temporary for polish extra long strings */
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 .setting .default {
   display: block;
