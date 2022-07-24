@@ -63,6 +63,7 @@ input[disabled], select[disabled] {
 }
 #help a:hover, a[title='Geotool'] {
   text-decoration: underline;
+  color: #04c;
 }
 div.bulle {
   position: absolute;
@@ -89,5 +90,5 @@ div.bulle, table.bulle, td.bulle {
 }
 #ip_count:hover, [title*='Search']:hover,
 [title*='Chain']:hover, [title*='Monitoring']:hover {
-	color: #00f;
+	color: #04c;
 }
