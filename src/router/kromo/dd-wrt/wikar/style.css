@@ -22,6 +22,7 @@ h1 {
 h2, h3, th {
   background: #e9e9ed;
   border: 1px solid #8f8f9d;
+  color: #2b226f;
 }
 h2, h3 {
   padding: 4px 12px;
@@ -74,21 +75,23 @@ body, .gui {
 }
 #header {
   margin: -.906em;
-  background: #2b226f repeating-linear-gradient(55deg, #2b226f, #2b226f 2px, #483c9f  1px, #483c9f 3px );
+  background: repeating-linear-gradient(55deg,
+    #2b226f, #2b226f 1px,
+    #483c9f  1px, #483c9f 3px);
 }
 #header #logo {
   color: #0f0;
   padding: 3px 0 0 16px;
   margin-top: -1.3em;
   background: repeating-linear-gradient(55deg,
-    #2b226f, #2b226f 2px,
+    #2b226f, #2b226f 1px,
     #483c9f  1px, #483c9f 3px);
 }
 #menu {
   background: repeating-linear-gradient(55deg,
-    #2b226f, #2b226f 2px,
+    #2b226f, #2b226f 1px,
     #483c9f  1px, #483c9f 3px);
-  border-bottom: solid 1px #4336af;
+  border-bottom: 1px solid #4336af;
   color: #fff;
   height: 2.5rem
 }
@@ -104,9 +107,6 @@ body, .gui {
   color: #fff;
   text-decoration: none;
 }
-#menu li a:hover {
-  text-decoration: underline;
-}
 #menuMain {
   position: relative;
   left: -4rem;
@@ -117,8 +117,18 @@ body, .gui {
 #menuSubList li:first-child {
   margin-left: -.5em
 }
-#menuMainList .current, #menuSubList span strong {
-  border-bottom: solid 2px #0f0;
+#menuMainList .current, #menuSubList span strong,
+#menu li a:hover {
+  border-bottom: 4px solid #0f0;
+  animation: wut .6s ease;
+}
+@keyframes wut {
+  0% {
+    padding-bottom: .362em;
+  }
+  50%, 100% {
+    padding-bottom: 0;
+  }
 }
 #menuSub {
   background-color: #000;
@@ -135,7 +145,7 @@ body, .gui {
 #main fieldset {
   margin: 0 210px 0 0;
   color: #000;
-  padding: 5px 5px 5px 5px;
+  padding: 5px 8px 5px 4px;
 }
 fieldset {
   background: #f9f9f9;
@@ -146,29 +156,28 @@ fieldset legend {
   background-color: transparent;
   font-weight: 900;
 }
-#main .comment {
-  font-style: italic;
-  color: #000;
-  padding: 0 0 5px 0;
-}
 .label {
   float: left;
-  width: 20em;
+  width: 22em;
 }
 .default {
   position: absolute;
   right: 41em;
   width: 24em;
 }
-#main .label input {
-  float: left;
+.setting {
+  padding: 0 0 5px 5px;
 }
-#main .setting {
-  color: #000;
-  padding: 0 0 5px 0;
+.setting input {
+  margin: 2px 4px 4px 0;
 }
-#main .setting input, #main .setting option {
-  margin: 0 2px 0 0;
+input.button {
+  margin: 2px 4px 4px 0;
+  padding: .06em .6em;
+  cursor: pointer;
+}
+input.button[onclick*="delete"] {
+	margin: -.1rem .3rem 0 .3rem;
 }
 .submitFooter {
   position: sticky;
@@ -245,9 +254,6 @@ body[onunload*="Filters.asp'"] .submitFooter,
 #help h2 {
   margin-right: .4em
 }
-#help a:hover, a[title='Geotool'] {
-  text-decoration: underline;
-}
 .warning {
   padding: .725em;
   border-radius: 4px;
@@ -265,24 +271,26 @@ body[onunload*="Filters.asp'"] .submitFooter,
   float: right;
   position: relative;
   top: -.09em;
-  height: 1.1em;
+  height: 1.3em;
   width: 14.49em;
   background: #999;
-  border-style: solid;
-  border-width: .09em;
-  border-color: #666 #ccc #ccc #666;
+  border: 1px solid aaa;
+  border-radius: 2px;
 }
 .meter .bar {
-  height: 1.1em;
-  background: #2b226f;
+  height: 1.3em;
+  background: repeating-linear-gradient(55deg,
+    #2b226f, #2b226f 1px,
+    #483c9f  1px, #483c9f 3px);
+  opacity: .8;
+  border-radius: 2px;
 }
 .meter .text {
   position: absolute;
   top: 0;
   width: 100%;
-  height: 1.1em;
   text-align: center;
-  line-height: 1.1em;
+  line-height: 1.4;
   color: #fff;
 }
 td .meter {
@@ -304,11 +312,6 @@ td .meter {
   background-color: #2b226f;
   position: absolute;
   font-size: .09em;
-}
-input.button {
-  padding: .05em .5em;
-  margin: 0 .4em 0 0;
-  cursor: pointer;
 }
 #tablePwdCheck tr th {
   background-color: transparent;
