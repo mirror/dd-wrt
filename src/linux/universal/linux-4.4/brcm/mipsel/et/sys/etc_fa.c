@@ -1345,6 +1345,7 @@ fa_attach(si_t *sih, void *et, char *vars, uint coreunit, void *robo)
 
 	if (!fa_capable) {
 		printk(KERN_INFO "not FA capable\n");
+		return NULL;
 	}
 	/* Create the FA proc for user application */
 	if (FA_FA_CORE(coreunit)) {
