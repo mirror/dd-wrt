@@ -91,7 +91,7 @@ body, .gui {
   background: repeating-linear-gradient(55deg,
     #2b226f, #2b226f 1px,
     #483c9f  1px, #483c9f 3px);
-  border-bottom: solid 1px #4336af;
+  border-bottom: 1px solid #4336af;
   color: #fff;
   height: 2.5rem
 }
@@ -117,8 +117,18 @@ body, .gui {
 #menuSubList li:first-child {
   margin-left: -.5em
 }
-#menuMainList .current, #menuSubList span strong {
-  border-bottom: solid 2px #0f0;
+#menuMainList .current, #menuSubList span strong,
+#menu li a:hover {
+  border-bottom: 4px solid #0f0;
+  animation: wut .6s ease;
+}
+@keyframes wut {
+  0% {
+    padding-bottom: .362em;
+  }
+  50%, 100% {
+    padding-bottom: 0;
+  }
 }
 #menuSub {
   background-color: #000;
@@ -207,7 +217,7 @@ body[onunload*="Filters.asp'"] .submitFooter,
   color: #fff;
   text-decoration: none;
 }
-#statusInfo a:hover, #menu li a:hover {
+#statusInfo a:hover {
   text-decoration: underline;
 }
 #helpContainer {
