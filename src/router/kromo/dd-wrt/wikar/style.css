@@ -177,7 +177,7 @@ input.button {
   cursor: pointer;
 }
 input.button[onclick*="delete"] {
-	margin: -.1rem .3rem 0 .3rem;
+  margin: -.1rem .3rem 0 .3rem;
 }
 .submitFooter {
   position: sticky;
