@@ -43,9 +43,6 @@ pre {
 form {
   margin: 0;
 }
-form[name='wds'] .label {
-  width: 19.444em;
-}
 form[name='wds'] select {
   margin-right: .562em;
   margin-top: .1rem;
@@ -282,7 +279,7 @@ h2, h3 {
   width: 19em;
 }
 .cpu-feat {
-  padding-left: 13.6rem;
+  padding-left: 14.6rem;
 }
 .warning {
   padding: .725em;
