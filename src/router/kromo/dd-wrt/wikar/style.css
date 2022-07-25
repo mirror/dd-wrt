@@ -140,7 +140,7 @@ body, .gui {
 }
 #main {
   clear: both;
-  padding: 5px 5px 5px 5px;
+  padding: 5px;
 }
 #main fieldset {
   margin: 0 210px 0 0;
