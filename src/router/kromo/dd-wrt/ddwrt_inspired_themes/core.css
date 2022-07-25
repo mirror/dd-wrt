@@ -248,9 +248,6 @@ body div.message {
   background: var(--bg-1);
   color: var(--v9-7);
 }
-form[name='wds'] .label {
-  width: 19.444em;
-}
 form[name='wds'] select {
   margin-right: 0.562em;
   margin-top: -0.1rem;

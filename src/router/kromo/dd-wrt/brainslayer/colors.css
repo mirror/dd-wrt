@@ -7,6 +7,10 @@ body {
 input, select, option {
   color: #a57b46;
 }
+pre {
+  background-color: #000;
+  color: #0f0;
+}
 h1 {
   color: #955322;
 }
