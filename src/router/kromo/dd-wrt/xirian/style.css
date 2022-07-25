@@ -196,13 +196,17 @@ h2 {
   border-radius: 4px;
 }
 pre {
-  background: #bbc;
+  background: #000;
+  color: #0f0;
   overflow: auto;
   padding: 1em;
   margin: 0;
   font-family: 'Courier New', Courier, monospace;
   white-space: pre-wrap;
   border-radius: 4px;
+}
+.pre_label {
+  margin-bottom: .3em;
 }
 fieldset {
   background-color: #ccd;
@@ -318,7 +322,7 @@ div.setting {
 }
 .setting .label {
   float: left;
-  width: 18.116em;
+  width: 19.444em;
 }
 .setting .default {
   opacity: .8;
