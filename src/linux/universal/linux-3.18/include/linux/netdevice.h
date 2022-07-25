@@ -129,7 +129,7 @@ static inline bool dev_xmit_complete(int rc)
  *	used.
  */
 
-#if defined(CONFIG_WLAN) || IS_ENABLED(CONFIG_AX25)
+#if defined(CONFIG_WLAN) || IS_ENABLED(CONFIG_AX25) || 1
 # if defined(CONFIG_MAC80211_MESH) || 1
 #  define LL_MAX_HEADER 128
 # else
