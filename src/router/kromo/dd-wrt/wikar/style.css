@@ -28,12 +28,13 @@ h2, h3 {
   padding: 4px 12px;
   line-height: 1.42857;
   letter-spacing: .123rem;
-  margin: 0 210px .906em 0;
+  margin: 0 300px .906em 0;
   border-radius: 4px;
 }
 #mainno h2, [name='ipfilter'] h2,
 body[onunload*="Filters.asp'"] h2,
-.iplookup h2, [name='Join'] h2 {
+.iplookup h2, [name='Join'] h2,
+[name="macfilter"] h2 {
   margin-right: .3em;
 }
 hr {
@@ -140,9 +141,12 @@ body, .gui {
   padding: 5px;
 }
 #main fieldset {
-  margin: 0 210px 0 0;
+  margin: 0 300px 0 0;
   color: #000;
   padding: 5px 8px 5px 4px;
+}
+[name="macfilter"] fieldset, [name="macfilter"] fieldset {
+  width: 98%;
 }
 fieldset {
   background: #f9f9f9;
@@ -180,20 +184,21 @@ input.button[onclick*="delete"] {
   position: sticky;
   bottom: 1em;
   padding: 4px 12px;
-  margin: 0 210px 0 0;
+  margin: 0 300px 0 0;
   text-align: center;
   border-radius: 4px;
   background: repeating-linear-gradient(55deg,
-    #fff, #fff 2px,
-    #eee 1px, #eee 3px);
-  border: 1px solid #ccc;
+    #2b226f, #2b226f 1px,
+    #483c9f  1px, #483c9f 3px);
+  border: 1px solid #2b226f;
 }
 .nostick {
   position: unset;
 }
 #mainno .submitFooter, [name='ipfilter'] .submitFooter,
 body[onunload*="Filters.asp'"] .submitFooter,
-.iplookup .submitFooter, [name='Join'] .submitFooter {
+.iplookup .submitFooter, [name='Join'] .submitFooter,
+[name="macfilter"] .submitFooter {
   margin-right: .201em;
   margin-left: .191em;
 }
@@ -223,7 +228,7 @@ body[onunload*="Filters.asp'"] .submitFooter,
   position: absolute;
 }
 #help {
-  width: 17.5em;
+  width: 25em;
   padding: .906em 0;
 }
 #help dl {
@@ -257,7 +262,7 @@ body[onunload*="Filters.asp'"] .submitFooter,
   background: #fcc;
   border: 2px dashed #f99;
   font-weight: bold;
-  margin: 0 210px 0 0;
+  margin: 0 300px 0 0;
   text-align: center;
 }
 .warning input {
@@ -396,5 +401,18 @@ textarea {
 }
 .center a[href], input[type='image'] {
   line-height: 2;
-  margin: 0 210px 0 0;
+  margin: 0 300px 0 0;
+}
+pre {
+  overflow: auto;
+  padding: .8em;
+  margin-top: .2em;
+  margin-left: .321em;
+  margin-right: .2em;
+  font-family: monospace;
+  font-size: 12px;
+  white-space: pre-wrap;
+  border-radius: 4px;
+  background-color: #fff;
+  border: 1px solid #8f8f9d;
 }
