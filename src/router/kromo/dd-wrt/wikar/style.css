@@ -43,9 +43,6 @@ hr {
   width: 100%;
   height: .09em;
 }
-input.num {
-  width: auto;
-}
 input.num[name*="lease"][size="10"] {
   margin-right: 4px;
   width: 52%
@@ -61,7 +58,7 @@ table tr th {
   line-height: normal;
   vertical-align: bottom;
 }
-select, option {
+select, option, input.num {
   width: auto;
   min-width: 30px;
 }
@@ -93,7 +90,7 @@ body, .gui {
     #483c9f  1px, #483c9f 3px);
   border-bottom: 1px solid #4336af;
   color: #fff;
-  height: 2.5rem
+  height: 2.5rem;
 }
 #menu ul {
   list-style-type: none;
@@ -112,10 +109,10 @@ body, .gui {
   left: -4rem;
 }
 #menuMainList li:first-child {
-  margin-left: 3em
+  margin-left: 3em;
 }
 #menuSubList li:first-child {
-  margin-left: -.5em
+  margin-left: -.5em;
 }
 #menuMainList .current, #menuSubList span strong,
 #menu li a:hover {
@@ -140,7 +137,7 @@ body, .gui {
 }
 #main {
   clear: both;
-  padding: 5px 5px 5px 5px;
+  padding: 5px;
 }
 #main fieldset {
   margin: 0 210px 0 0;
@@ -177,7 +174,7 @@ input.button {
   cursor: pointer;
 }
 input.button[onclick*="delete"] {
-	margin: -.1rem .3rem 0 .3rem;
+  margin: -.1rem .3rem 0 .3rem;
 }
 .submitFooter {
   position: sticky;
