@@ -47,10 +47,6 @@ textarea {
   box-shadow: 0 1px 1px rgba(0, 0, 0, .075) inset;
   transition: all .15s ease-in-out 0s;
 }
-textarea:focus {
-  border: solid 1px #707070;
-  box-shadow: 0 0 5px 1px #969696;
-}
 input {
   background-color: #fff;
   border: 1px solid #ccc;
@@ -100,10 +96,6 @@ input[name='reboot_button']:hover {
 input[name='reboot_button']:focus-visible {
   box-shadow: 0 0 5px 1px #ff7c7c;
   outline: 2px solid #ff7c7c;
-}
-input:focus, input.focus {
-  border: 1px solid #707070;
-  box-shadow: 0 0 5px 1px #969696;
 }
 input.button, input.button:hover {
 	box-shadow: 2px 2px 2px #808080;

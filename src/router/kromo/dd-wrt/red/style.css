@@ -1,5 +1,9 @@
 @import url(../common.css);
 /*! Red */
+::selection {
+  background: #c00;
+  color: #fff;
+}
 #menuSub, #menuMainList li span, #help h2 {
   background: #c00;
   color: #fff;
@@ -43,5 +47,10 @@ input.button:hover {
 input:focus-visible, textarea:focus-visible,
 select:focus-within {
   box-shadow: 0 0 5px 1px #e77;
-  outline: 2px solid #e77;
+  border: 1px solid #e77;
+  outline: 0;
+}
+input:focus, textarea:focus {
+  border: 1px solid #e77;
+  box-shadow: 0 0 5px 1px #e77;
 }

@@ -1,5 +1,9 @@
 @import url(../common.css);
 /*! Cyan */
+::selection {
+  background: #099;
+  color: #fff;
+}
 #menuSub, #menuMainList li span, #help h2 {
   background: #099;
   color: #fff;
@@ -40,11 +44,13 @@ input.button:hover {
   border: 1px solid #6cc;
   color: #000;
 }
-input[name*='refresh'][style*='background'] {
-  background: #3bb !important;
-}
 input:focus-visible, textarea:focus-visible,
 select:focus-within {
-  box-shadow: 0 0 5px 1px #6cc;
-  outline: 2px solid #6cc;
+  box-shadow: 0 0 5px 1px #6384cf;
+  border: 1px solid #6384cf;
+  outline: 0;
+}
+input:focus, textarea:focus {
+  border: 1px solid #6384cf;
+  box-shadow: 0 0 5px 1px #6384cf;
 }

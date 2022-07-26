@@ -1,5 +1,9 @@
 @import url(../common.css);
 /*! Elegant */
+::selection {
+  background: #30519c;
+  color: #fff;
+}
 #menuSub, #menuMainList li span, #help h2 {
   background: #30519c;
   color: #fff;
@@ -43,5 +47,10 @@ input.button:hover {
 input:focus-visible, textarea:focus-visible,
 select:focus-within {
   box-shadow: 0 0 5px 1px #6384cf;
-  outline: 2px solid #6384cf;
+  border: 1px solid #6384cf;
+  outline: 0;
+}
+input:focus, textarea:focus {
+  border: 1px solid #6384cf;
+  box-shadow: 0 0 5px 1px #6384cf;
 }

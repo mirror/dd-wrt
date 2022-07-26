@@ -1,5 +1,9 @@
 @import url(../common.css);
 /*! Orange */
+::selection {
+  background: #f26522;
+  color: #fff;
+}
 #menuSub, #menuMainList li span, #help h2 {
   background: #f26522;
   color: #fff;
@@ -46,5 +50,10 @@ input.button:hover {
 input:focus-visible, textarea:focus-visible,
 select:focus-within {
   box-shadow: 0 0 5px 1px #ff9000;
-  outline: 2px solid #ff9000;
+  border: 1px solid #ff9000;
+  outline: 0;
+}
+input:focus, textarea:focus {
+  border: 1px solid #ff9000;
+  box-shadow: 0 0 5px 1px #ff9000;
 }
