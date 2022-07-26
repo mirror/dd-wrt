@@ -1,34 +1,38 @@
 @import url(../common.css);
 /*! Green */
-#menuSub, #menuMainList li span, #help h2 {
+::selection {
   background: #090;
   color: #fff;
+}
+#menuSub, #menuMainList li span, #help h2 {
+  background: #090;
+  color: #000;
   border-color: #3b3;
 }
 #menuSubList li a {
   background: #3b3;
-  color: #cfc;
+  color: #000;
   border-color: #4c4;
 }
 #menuSubList li a:hover {
   background: #6c6;
-  color: #fff;
+  color: #000;
   border-color: #8d8;
 }
 fieldset legend, .syslog_legend {
   color: #090;
 }
 #help a, #help a:hover {
-  color: #fff;
+  color: #000;
 }
 .meter .bar {
-  background-color: #3b3;
+  background-color: #090;
 }
 .meter .text {
   color: #000;
 }
 .progressbarblock {
-  background-color: #3b3;
+  background-color: #090;
 }
 input.button, input.button[disabled]:hover {
   background: #3b3;
@@ -42,6 +46,11 @@ input.button:hover {
 }
 input:focus-visible, textarea:focus-visible,
 select:focus-within {
-  box-shadow: 0 0 5px 1px #6c6;
-  outline: 2px solid #6c6;
+  box-shadow: 0 0 5px 1px #6384cf;
+  border: 1px solid #6384cf;
+  outline: 0;
+}
+input:focus, textarea:focus {
+  border: 1px solid #6384cf;
+  box-shadow: 0 0 5px 1px #6384cf;
 }
