@@ -6,33 +6,33 @@
 }
 #menuSub, #menuMainList li span, #help h2 {
   background: #090;
-  color: #fff;
+  color: #000;
   border-color: #3b3;
 }
 #menuSubList li a {
   background: #3b3;
-  color: #cfc;
+  color: #000;
   border-color: #4c4;
 }
 #menuSubList li a:hover {
   background: #6c6;
-  color: #fff;
+  color: #000;
   border-color: #8d8;
 }
 fieldset legend, .syslog_legend {
   color: #090;
 }
 #help a, #help a:hover {
-  color: #fff;
+  color: #000;
 }
 .meter .bar {
-  background-color: #3b3;
+  background-color: #090;
 }
 .meter .text {
   color: #000;
 }
 .progressbarblock {
-  background-color: #3b3;
+  background-color: #090;
 }
 input.button, input.button[disabled]:hover {
   background: #3b3;

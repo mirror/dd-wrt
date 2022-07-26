@@ -26,13 +26,13 @@ fieldset legend, .syslog_legend {
   color: #fff;
 }
 .meter .bar {
-  background-color: #496fc7;
+  background-color: #30519c;
 }
 .meter .text {
   color: #fff;
 }
 .progressbarblock {
-  background-color: #496fc7;
+  background-color: #30519c;
 }
 input.button, input.button[disabled]:hover {
   background: #30519c;

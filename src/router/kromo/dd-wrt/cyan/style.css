@@ -2,37 +2,37 @@
 /*! Cyan */
 ::selection {
   background: #099;
-  color: #fff;
+  color: #000;
 }
 #menuSub, #menuMainList li span, #help h2 {
   background: #099;
-  color: #fff;
+  color: #000;
   border-color: #3bb;
 }
 #menuSubList li a {
   background: #3bb;
-  color: #cff;
+  color: #000;
   border-color: #4cc;
 }
 #menuSubList li a:hover {
   background: #6cc;
-  color: #fff;
+  color: #000;
   border-color: #8dd;
 }
 fieldset legend, .syslog_legend {
   color: #099;
 }
 #help a, #help a:hover {
-  color: #fff;
+  color: #000;
 }
 .meter .bar {
-  background-color: #3bb;
+  background-color: #099;
 }
 .meter .text {
   color: #000;
 }
 .progressbarblock {
-  background-color: #3bb;
+  background-color: #099;
 }
 input.button, input.button[disabled]:hover {
   background: #3bb;

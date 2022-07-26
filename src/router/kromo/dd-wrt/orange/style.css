@@ -2,16 +2,16 @@
 /*! Orange */
 ::selection {
   background: #f26522;
-  color: #fff;
+  color: #000;
 }
 #menuSub, #menuMainList li span, #help h2 {
   background: #f26522;
-  color: #fff;
+  color: #000;
   border-color: #ff8400;
 }
 #menuSubList li a {
   background: #ff8400;
-  color: #fff;
+  color: #000;
   border-color: #feb311;
 }
 #menuSubList li a:hover {
@@ -22,11 +22,8 @@
 fieldset legend, .syslog_legend {
   color: #f26522;
 }
-#help a {
-  color: #fff;
-}
-#help a:hover {
-  color: #fff;
+#help a, #help a:hover {
+  color: #000;
 }
 .meter .bar {
   background-color: #f26522;

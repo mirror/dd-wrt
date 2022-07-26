@@ -11,7 +11,7 @@
 }
 #menuSubList li a {
   background: #ffd700;
-  color: #660;
+  color: #000;
   border-color: #ee7;
 }
 #menuSubList li a:hover {
@@ -26,13 +26,13 @@ fieldset legend, .syslog_legend {
   color: #000;
 }
 .meter .bar {
-  background-color: #ee3;
+  background-color: #eec900;
 }
 .meter .text {
   color: #000;
 }
 .progressbarblock {
-  background-color: #ee3;
+  background-color: #eec900;
 }
 input.button, input.button[disabled]:hover {
   background: #eec900;
