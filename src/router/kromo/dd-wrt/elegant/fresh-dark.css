@@ -17,6 +17,11 @@ body a:hover, body a:link:hover,
 [title*='Chain']:hover, [title*='Monitoring']:hover {
   color: #5cb3ff;
 }
+#menuSubList li span {
+  background: #1a1a1a;
+  color: #fff;
+  border-color: #1a1a1a;
+}
 div.message {
   background-color: #1a1a1a;
   border: 1px solid #333;

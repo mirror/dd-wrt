@@ -1,14 +1,18 @@
 @import url(../common.css);
 /*! Blue */
+::selection {
+  background: #36f;
+  color: #fff;
+}
 #menuSub, #menuMainList li span, #help h2 {
   background: #36f;
   color: #fff;
   border-color: #68f;
 }
 #menuSubList li a {
-  background: #57f;
-  color: #ddd;
-  border-color: #78f;
+  background: #47f;
+  color: #fff;
+  border-color: #79f;
 }
 #menuSubList li a:hover {
   background: #5781ff;
@@ -43,5 +47,10 @@ input.button:hover {
 input:focus-visible, textarea:focus-visible,
 select:focus-within {
   box-shadow: 0 0 5px 1px #5781ff;
-  outline: 2px solid #5781ff;
+  border: 1px solid #5781ff;
+  outline: 0;
+}
+input:focus, textarea:focus {
+  border: 1px solid #5781ff;
+  box-shadow: 0 0 5px 1px #5781ff;
 }
