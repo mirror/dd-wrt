@@ -1,5 +1,9 @@
 @import url(../common.css);
 /*! Elegant */
+::selection {
+  background: #30519c;
+  color: #fff;
+}
 #menuSub, #menuMainList li span, #help h2 {
   background: #30519c;
   color: #fff;
@@ -22,13 +26,13 @@ fieldset legend, .syslog_legend {
   color: #fff;
 }
 .meter .bar {
-  background-color: #496fc7;
+  background-color: #30519c;
 }
 .meter .text {
   color: #fff;
 }
 .progressbarblock {
-  background-color: #496fc7;
+  background-color: #30519c;
 }
 input.button, input.button[disabled]:hover {
   background: #30519c;
@@ -43,5 +47,10 @@ input.button:hover {
 input:focus-visible, textarea:focus-visible,
 select:focus-within {
   box-shadow: 0 0 5px 1px #6384cf;
-  outline: 2px solid #6384cf;
+  border: 1px solid #6384cf;
+  outline: 0;
+}
+input:focus, textarea:focus {
+  border: 1px solid #6384cf;
+  box-shadow: 0 0 5px 1px #6384cf;
 }

@@ -192,11 +192,9 @@ select[name*='bonding'], select[name*='schedule_'],
   margin-top: 0;
 }
 #menuSubList li span {
-  background: #f9f9f9;
-  color: #000;
-  border-color: #ccc;
   font-weight: normal;
   padding-bottom: .543em;
+  margin-top: 2px;
 }
 #menuMainList li a, #menuSubList li a {
   margin-top: .09em;
@@ -218,6 +216,9 @@ select[name*='bonding'], select[name*='schedule_'],
   background: #666;
   color: #eee;
   border-color: #888;
+}
+#menuSubList li {
+  margin-bottom: -2px;
 }
 li.current {
   margin-top: 2px;
