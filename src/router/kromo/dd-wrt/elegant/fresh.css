@@ -139,6 +139,11 @@ select {
   border-radius: 5px;
   border: 1px solid #111;
 }
+#menuSubList li span {
+  background: #fafafa;
+  color: #000;
+  border-color: #fafafa;
+}
 .message {
   background: #fafafa;
   border: 1px solid #ccc;
