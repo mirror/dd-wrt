@@ -1385,6 +1385,7 @@ management.titl="Administration";
 management.h2="Router Management";
 management.changepassword="Your router is currently not protected and uses an unsafe default username and password combination; please change it using the following dialog!";
 management.psswd_legend="Login Credentials";
+management.pwd_ti_aria="Invalid symbols &#94; &#58; &#215; &#96; &#39; &#8220;"; // entities as follows ^:*`'"
 management.psswd_user="Username";
 management.psswd_pass="Password";
 management.pass_conf="Re-enter to Confirm";
