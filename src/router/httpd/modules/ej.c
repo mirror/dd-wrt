@@ -328,7 +328,7 @@ FILE *_getWebsFile(webs_t wp, char *path2, size_t *len)
 			found = !strcasecmp(websRomPageIndex[i].path, path);
 			if (found)
 				insensitive = curoffset;
-		} else if (!found2)
+		} else if (!found2) {
 			found2 = !strcmp(websRomPageIndex[i].path, path);
 			if (found2)
 				sensitive = curoffset;
