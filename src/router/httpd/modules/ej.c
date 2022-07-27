@@ -324,16 +324,18 @@ FILE *_getWebsFile(webs_t wp, char *path2, size_t *len)
 	int found = 0;
 	int found2 = 0;
 	while (websRomPageIndex[i].path != NULL) {
+		*len = websRomPageIndex[i].size - WEBSOFFSET;
 		if (!found && (endswith(path, ".asp") || endswith(path, ".htm") || endswith(path, ".html"))) {
 			found = !strcasecmp(websRomPageIndex[i].path, path);
 			if (found) {
-				insensitive_len = websRomPageIndex[i].size - WEBSOFFSET;
+				insensitive_len = *len;
 				insensitive = curoffset;
 			}
-		} else if (!found2) {
+		} 
+		if (!found2) {
 			found2 = !strcmp(websRomPageIndex[i].path, path);
 			if (found2) {
-				sensitive_len = websRomPageIndex[i].size - WEBSOFFSET;
+				sensitive_len = *len;
 				sensitive = curoffset;
 			}
 		}
