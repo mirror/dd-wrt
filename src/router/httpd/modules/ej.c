@@ -319,19 +319,23 @@ FILE *_getWebsFile(webs_t wp, char *path2, size_t *len)
 	size_t curoffset = 0;
 	size_t sensitive = -1;
 	size_t insensitive = -1;
+	size_t sensitive_len;
+	size_t insensitive_len;
 	int found = 0;
 	int found2 = 0;
 	while (websRomPageIndex[i].path != NULL) {
-
-		*len = websRomPageIndex[i].size - WEBSOFFSET;
 		if (!found && (endswith(path, ".asp") || endswith(path, ".htm") || endswith(path, ".html"))) {
 			found = !strcasecmp(websRomPageIndex[i].path, path);
-			if (found)
+			if (found) {
+				insensitive_len = websRomPageIndex[i].size - WEBSOFFSET;
 				insensitive = curoffset;
+			}
 		} else if (!found2) {
 			found2 = !strcmp(websRomPageIndex[i].path, path);
-			if (found2)
+			if (found2) {
+				sensitive_len = websRomPageIndex[i].size - WEBSOFFSET;
 				sensitive = curoffset;
+			}
 		}
 		curoffset += *len;
 		i++;
@@ -343,10 +347,13 @@ FILE *_getWebsFile(webs_t wp, char *path2, size_t *len)
 			web = fopen("/etc/www", "rb");
 		if (web == NULL)
 			goto err;
-		if (sensitive != -1)
+		if (sensitive != -1) {
 			fseek(web, sensitive, SEEK_SET);
-		else
+			*len = sensitive_len;
+		} else {
 			fseek(web, insensitive, SEEK_SET);
+			*len = insensitive_len;
+		}
 		debug_free(path);
 		return web;
 	}
