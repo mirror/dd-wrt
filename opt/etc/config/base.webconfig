@@ -8,7 +8,7 @@
 			<div class="label"><% tran("management.psswd_pass"); %></div>
 			<script type="text/javascript">
 			//<![CDATA[
-			document.write("<input title=\"" + management.pwd_ti_aria + "\" aria-label=\"" + management.pwd_ti_aria + "\" type=\"password\" autocomplete=\"new-password\" maxlength=\"63\" value=\"d6nw5v1x2pc7st9m\" name=\"http_passwd\" onclick=\"this.select();\" onblur=\"valid_name(this,management.psswd_pass,SPACE_NO|CHECK)\" onkeyup=\"chkPass(this.value)\" />");
+			document.write("<input title=\"" + management.pwd_ti_aria + "\" aria-label=\"" + management.pwd_ti_aria + "\" type=\"password\" autocomplete=\"new-password\" maxlength=\"63\" value=\"d6nw5v1x2pc7st9m\" name=\"http_passwd\" onclick=\"this.select();\" onblur=\"valid_name(this,management.psswd_pass,SPACE_NO|CHECK)\" />");
 			//]]>
 			</script>
 		</div>
