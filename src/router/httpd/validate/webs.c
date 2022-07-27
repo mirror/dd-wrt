@@ -1495,19 +1495,20 @@ void ping_wol(webs_t wp)
 		nvram_set("manual_wol_port", manual_wol_port);
 	}
 
-	if (manual_wol_mac && *manual_wol_mac) {
-		char wol_cmd[256] = { 0 };
-		snprintf(wol_cmd, sizeof(wol_cmd), "/usr/sbin/wol -v -i %s -p %s %s", manual_wol_network, manual_wol_port, manual_wol_mac);
-		nvram_set("wol_cmd", wol_cmd);
-	} else {
-		nvram_unset("wol_cmd");
-	}
-
-	// use Wol.asp as a debugging console
 #ifdef HAVE_REGISTER
 	if (!wp->isregistered_real)
 		return;
 #endif
+	char wol_cmd[256] = { 0 };
+	if (manual_wol_mac && *manual_wol_mac) {
+		snprintf(wol_cmd, sizeof(wol_cmd), "/usr/sbin/wol -v -i %s -p %s %s", manual_wol_network, manual_wol_port, manual_wol_mac);
+		nvram_set("wol_cmd", wol_cmd);
+	} else {
+		nvram_unset("wol_cmd");
+		return;
+	}
+
+	// use Wol.asp as a debugging console
 	FILE *fp = popen(wol_cmd, "rb");
 	FILE *out = fopen(PING_TMP, "wb");
 	if (!fp) {
