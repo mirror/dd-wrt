@@ -1,5 +1,5 @@
 /*
- * style-name: DD-WRT Inspired Themes v6.0.4
+ * style-name: DD-WRT Inspired Themes v6.0.5
  * copyright: (c) Style-it-themes: the-j0k3r
  * license: MIT https://git.io/JrzcO
  * home-url: https: //github.com/style-it-themes/dd-wrt-inspired-themes
@@ -262,14 +262,11 @@ form[name='changepassword'] p b {
   margin-bottom: -0.5rem;
 }
 form[name='nvramrestore'] .warning p {
-  margin-bottom: 1rem;
+  margin-bottom: 1.2rem;
 }
 pre {
   background-color: var(--bg-0);
-}
-pre[style*='height:530px'],
-pre[style*='height:413px'] {
-  border: 1px solid var(--bg-4);
+  border-color: var(--bg-4);
   cursor: copy;
 }
 #wrapper #content {
@@ -340,8 +337,8 @@ input.button[onclick*='add_peer'] {
   margin: 0 0 -6px -34.5%;
 }
 input.button[onclick*='previewStyle'] {
-  padding: 0 .6rem 0 .6rem;
-  vertical-align: -.1rem;
+  padding: 0 0.6rem 0 0.6rem;
+  vertical-align: -0.1rem;
   height: 1.56rem;
 }
 input.button[onclick*='vlan_add'],
@@ -408,20 +405,16 @@ select[onchange*='SelRoute'] {
   outline: 0;
 }
 #menu #menuMainList li.current span {
-  background: var(--bg-1);
+  background: var(--bg-3);
   transition: all 0.2s cubic-bezier(0.3, 0, 0.5, 1);
 }
-#menuSub {
-  background: var(--bg-3) !important;
-  border-color: var(--bg-5) !important;
+#menu #menuSub {
+  background: var(--bg-3);
+  border-color: var(--bg-5);
   outline: 0;
 }
-#menuSub {
-  background: var(--v0-4);
-  color: var(--fg-1);
-  border-color: var(--v0-6);
-  text-shadow: 0 1px 0 var(--bg-0);
-  outline: 0;
+#menu #menuSub #menuSubList li span {
+  background: var(--bg-1);
 }
 #help a {
   color: var(--fg-1);
@@ -438,58 +431,6 @@ select[onchange*='SelRoute'] {
 }
 #help dd.definition {
   border-bottom: 0.123rem dotted var(--bg-5);
-}
-#menuSubList li a {
-  background: var(--v0-6);
-  border-color: var(--v0-8);
-  color: var(--fg-1);
-}
-#menuSubList li a:hover {
-  background: var(--v0-8);
-  border-color: var(--v0-9);
-  color: var(--fg-0);
-}
-#menuSubList li spanhover,
-#menuSubList li span:focus-within {
-  background: var(--v0-6);
-  border-color: var(--v0-9);
-  color: var(--fg-1);
-}
-#menuMainList {
-  transition: all 0.2s cubic-bezier(0.3, 0, 0.5, 1);
-}
-#menuMainList li span {
-  background: var(--v0-4);
-  border-color: var(--v0-8);
-  color: var(--v9-9);
-  outline: 0;
-}
-#menuMainList li span strong {
-  text-shadow: 0 1px 0 var(--bg-0);
-}
-#menuMainList li spanhover,
-#menuMainList li span:focus-within {
-  background: var(--v0-6);
-  border-color: var(--v0-9);
-  color: var(--v9-8);
-}
-#menuMainList li a {
-  background: var(--bg-1);
-  border-color: var(--bg-5);
-  color: var(--v9-8);
-  text-shadow: 0 1px 0 var(--bg-0);
-  transition: all 0.2s cubic-bezier(0.3, 0, 0.5, 1);
-  outline: 0;
-}
-#menuMainList li a:hover {
-  background: var(--bg-2);
-  border-color: var(--bg-5);
-  color: var(--v9-8);
-}
-#menuMainList li a:focus-within {
-  background: var(--bg-3);
-  border-color: var(--bg-5);
-  color: var(--v9-8);
 }
 textarea {
   background-color: var(--bg-0);
@@ -627,7 +568,7 @@ td.bulle {
 }
 .value_error:focus {
   border-color: var(--v1-9) !important;
-  box-shadow: 0 0 10px 0 var(--v1-9) !important;
+  box-shadow: 0 0 10px 0 var(--v1-5) !important;
 }
 .odd {
   background-color: var(--bg-2);
@@ -700,12 +641,14 @@ div.slidingheader:hover {
 }
 div.slidingbodyshow {
   background-color: var(--bg-2);
+  border-color: var(--bg-5);
 }
 div.slidingbodyshow center {
   border-color: var(--bg-5);
 }
 div.slidingbody {
-  background-color: var(--bg-4);
+  background-color: var(--bg-2);
+  border-color: var(--bg-5);
 }
 span.title3d {
   background-color: var(--bg-0);
@@ -845,6 +788,19 @@ img[src*='hotspotsystem'] {
   filter: invert(0.95) hue-rotate(180deg) contrast(1.6) opacity(1);
   mix-blend-mode: lighten;
 }
+.rightmenu .button {
+  background: var(--v0-4);
+  border: 1px solid var(--v0-6);
+  box-shadow: 0 1px 0 var(--bg-0);
+  color: var(--v9-8);
+  text-shadow: 0 1px 0 var(--bg-0);
+}
+.rightmenu .button:hover {
+  background: var(--v0-7);
+  border-color: var(--v0-7);
+  box-shadow: 0 0 10px 0 var(--v0-4);
+  color: var(--v9-9);
+}
 svg {
   shape-rendering: geometricPrecision;
 }
@@ -947,8 +903,16 @@ svg {
 .ddwrt_progress {
   mix-blend-mode: lighten;
 }
+.ddwrt_message {
+  padding-top: 1.5rem;
+}
+.ddwrt_title,
+.ddwrt_window {
+  display: none;
+}
 .progressbarblock {
   background-color: var(--v0-9);
+  border-radius: 2px;
 }
 input {
   border: 1px solid var(--bg-4);
