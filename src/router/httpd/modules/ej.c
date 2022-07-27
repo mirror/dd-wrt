@@ -317,30 +317,36 @@ FILE *_getWebsFile(webs_t wp, char *path2, size_t *len)
 	cprintf("opening %s\n", path);
 	int i = 0;
 	size_t curoffset = 0;
+	size_t sensitive = -1;
+	size_t insensitive = -1;
 	while (websRomPageIndex[i].path != NULL) {
 
 		*len = websRomPageIndex[i].size - WEBSOFFSET;
 		int found = 0;
-		if (endswith(path, ".asp") || endswith(path, ".htm") || endswith(path, ".html"))
-		    found = !strcasecmp(websRomPageIndex[i].path, path);
-		else
-		    found = !strcmp(websRomPageIndex[i].path, path);
-		if (found) {
-			/* to prevent stack overwrite problems */
-			web = fopen("/tmp/debug/www", "rb");
-			if (!web)
-				web = fopen("/etc/www", "rb");
-			if (web == NULL)
-				goto err;
-			fseek(web, curoffset, SEEK_SET);
-			//      fprintf(stderr, "found %s\n", path);
-			debug_free(path);
-			return web;
+		if (endswith(path, ".asp") || endswith(path, ".htm") || endswith(path, ".html")) {
+			insensitive = curoffset;
+			found = !strcasecmp(websRomPageIndex[i].path, path);
+		} else {
+			sensitive = curoffset;
+			found = !strcmp(websRomPageIndex[i].path, path);
 		}
 		curoffset += *len;
 		i++;
 	}
-//      fprintf(stderr, "not found %s\n", path);
+	if (found) {
+		/* to prevent stack overwrite problems */
+		web = fopen("/tmp/debug/www", "rb");
+		if (!web)
+			web = fopen("/etc/www", "rb");
+		if (web == NULL)
+			goto err;
+		if (sensitive != -1)
+			fseek(web, sensitive, SEEK_SET);
+		else
+			fseek(web, insensitive, SEEK_SET);
+		debug_free(path);
+		return web;
+	}
 
 err:
 	*len = 0;
