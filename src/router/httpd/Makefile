@@ -614,6 +614,9 @@ ifeq ($(CONFIG_ANTAIRA),y)
 CFLAGS += -DHAVE_ANTAIRA
 #WEBSOBJS += wpa_passphrase.o
 endif
+ifeq ($(CONFIG_FMS2111),y)
+CFLAGS += -DHAVE_FMS2111
+endif
 ifeq ($(CONFIG_ANTAIRA_MINI),y)
 CFLAGS += -DHAVE_ANTAIRA_MINI
 endif
