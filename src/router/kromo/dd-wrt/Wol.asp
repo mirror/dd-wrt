@@ -146,11 +146,6 @@ function to_apply(F) {
 }
 
 function valid(F) {
-	if(F.manual_wol_mac.value == ""){
-		alert(errmsg.err35);
-		F.manual_wol_mac.focus();
-		return false;
-	}
 	if(F.manual_wol_network.value == ""){
 		alert(errmsg.err36);
 		F.manual_wol_network.focus();
