@@ -319,21 +319,24 @@ FILE *_getWebsFile(webs_t wp, char *path2, size_t *len)
 	size_t curoffset = 0;
 	size_t sensitive = -1;
 	size_t insensitive = -1;
+	int found = 0;
+	int found2 = 0;
 	while (websRomPageIndex[i].path != NULL) {
 
 		*len = websRomPageIndex[i].size - WEBSOFFSET;
-		int found = 0;
 		if (endswith(path, ".asp") || endswith(path, ".htm") || endswith(path, ".html")) {
-			insensitive = curoffset;
 			found = !strcasecmp(websRomPageIndex[i].path, path);
+			if (found)
+				insensitive = curoffset;
 		} else {
-			sensitive = curoffset;
-			found = !strcmp(websRomPageIndex[i].path, path);
+			found2 = !strcmp(websRomPageIndex[i].path, path);
+			if (found2)
+				sensitive = curoffset;
 		}
 		curoffset += *len;
 		i++;
 	}
-	if (found) {
+	if (found || found2) {
 		/* to prevent stack overwrite problems */
 		web = fopen("/tmp/debug/www", "rb");
 		if (!web)
