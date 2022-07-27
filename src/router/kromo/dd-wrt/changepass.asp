@@ -299,11 +299,23 @@ function to_submit(F) {
 									</tr>
 									<tr>
 										<th><% tran("management.psswd_pass"); %></th>
-										<td><input type="password" autocomplete="new-password" maxlength="63" value="d6nw5v1x2pc7st9m" name="http_passwd" onclick="this.select();" onblur="valid_name(this,management.psswd_pass,SPACE_NO|CHECK)" onkeyup="chkPass(this.value)" /></td>
+										<td>
+											<script type="text/javascript">
+											//<![CDATA[
+											document.write("<input title=\"" + management.pwd_ti_aria + "\" aria-label=\"" + management.pwd_ti_aria + "\" type=\"password\" autocomplete=\"new-password\" maxlength=\"63\" value=\"d6nw5v1x2pc7st9m\" name=\"http_passwd\" onclick=\"this.select();\" onblur=\"valid_name(this,management.psswd_pass,SPACE_NO|CHECK)\" onkeyup=\"chkPass(this.value)\" />");
+											//]]>
+											</script>
+										</td>
 									</tr>
 									<tr>
 										<th><% tran("management.pass_conf"); %></th>
-										<td><input type="password" autocomplete="new-password" maxlength="63" value="d6nw5v1x2pc7st9m" name="http_passwdConfirm" onclick="this.select();" onblur="valid_name(this,management.pass_conf,SPACE_NO|CHECK)" /></td>
+										<td>
+											<script type="text/javascript">
+											//<![CDATA[
+											document.write("<input title=\"" + management.pwd_ti_aria + "\" aria-label=\"" + management.pwd_ti_aria + "\" type=\"password\" autocomplete=\"new-password\" maxlength=\"63\" value=\"d6nw5v1x2pc7st9m\" name=\"http_passwdConfirm\" onclick=\"this.select();\" onblur=\"valid_name(this,management.pass_conf,SPACE_NO|CHECK)\" />");
+											//]]>
+											</script>
+										</td>
 									</tr>
 									<tr>
 										<th><% tran("management.score"); %></th>
