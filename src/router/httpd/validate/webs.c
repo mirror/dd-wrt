@@ -1495,9 +1495,13 @@ void ping_wol(webs_t wp)
 		nvram_set("manual_wol_port", manual_wol_port);
 	}
 
-	char wol_cmd[256] = { 0 };
-	snprintf(wol_cmd, sizeof(wol_cmd), "/usr/sbin/wol -v -i %s -p %s %s", manual_wol_network, manual_wol_port, manual_wol_mac);
-	nvram_set("wol_cmd", wol_cmd);
+	if (manual_wol_mac && *manual_wol_mac) {
+		char wol_cmd[256] = { 0 };
+		snprintf(wol_cmd, sizeof(wol_cmd), "/usr/sbin/wol -v -i %s -p %s %s", manual_wol_network, manual_wol_port, manual_wol_mac);
+		nvram_set("wol_cmd", wol_cmd);
+	} else {
+		nvram_unset("wol_cmd");
+	}
 
 	// use Wol.asp as a debugging console
 #ifdef HAVE_REGISTER
@@ -1537,11 +1541,11 @@ void diag_ping_start(webs_t wp)
 	snprintf(cmd, sizeof(cmd) - 1, "alias ping=\'ping -c 3\'; eval \"%s\" > %s 2>&1 &", ip, PING_TMP);
 	//FORK(system(cmd));
 
-	dd_logdebug("httpd","exec %s\n",cmd);
+	dd_logdebug("httpd", "exec %s\n", cmd);
 	FILE *fp = popen(cmd, "rb");
 	if (!fp)
 		return;
-	while (!feof(fp) && fgetc(fp)!=EOF) {
+	while (!feof(fp) && fgetc(fp) != EOF) {
 	}
 	pclose(fp);
 
@@ -1830,7 +1834,7 @@ void validate_avahi(webs_t wp, char *value, struct variable *v)
 	char mdnsif[128] = { 0 };
 	char word[32] = { 0 };
 	char *next;
-	int idx=0;
+	int idx = 0;
 	bzero(bufferif, 512);
 	getIfList(bufferif, NULL);
 	foreach(word, bufferif, next) {
@@ -1840,8 +1844,8 @@ void validate_avahi(webs_t wp, char *value, struct variable *v)
 			char *val = websGetVar(wp, temp, "0");
 			if (!strcmp(val, "1")) {
 				if (idx)
-					strcat (mdnsif, " ");
-				strcat (mdnsif, word);
+					strcat(mdnsif, " ");
+				strcat(mdnsif, word);
 				idx++;
 			}
 		}
@@ -2751,7 +2755,6 @@ void forward_add(webs_t wp)
 	macro_add("forward_entries");
 }
 
-
 void forward_del(webs_t wp)
 {
 	int todel = websGetVari(wp, "del_value", 0);
@@ -2806,8 +2809,6 @@ void delfrom(char *var, char *countvar, int todel)
 	nvram_set(var, target);
 	free(target);
 
-
-
 }
 
 void lease_del(webs_t wp)
@@ -2860,7 +2861,6 @@ void milkfish_alias_remove(webs_t wp)
 	macro_rem("milkfish_ddaliasesnum", "milkfish_ddaliases");
 }
 #endif
-
 
 void forwardspec_add(webs_t wp)
 {
@@ -3307,7 +3307,8 @@ static char *vapsettings[] = {
 	"mesh_auto_open_plinks", "mesh_hwmp_max_preq_retries", "mesh_path_refresh_time", "mesh_min_discovery_timeout", "mesh_hwmp_active_path_timeout", "mesh_hwmp_preq_min_interval",
 	"mesh_hwmp_net_diameter_traversal_time",
 	"mesh_hwmp_rootmode", "mesh_hwmp_rann_interval", "mesh_gate_announcements", "mesh_sync_offset_max_neighor", "mesh_rssi_threshold", "mesh_hwmp_active_path_to_root_timeout", "mesh_hwmp_root_interval",
-	"mesh_hwmp_confirmation_interval", "mesh_power_mode", "mesh_awake_window", "mesh_plink_timeout", "mesh_connected_to_gate", "mesh_connected_to_as", "mesh_header_cache_size", "bgscan_mode", "bgscan_short_int", "bgscan_threshold",
+	"mesh_hwmp_confirmation_interval", "mesh_power_mode", "mesh_awake_window", "mesh_plink_timeout", "mesh_connected_to_gate", "mesh_connected_to_as", "mesh_header_cache_size", "bgscan_mode", "bgscan_short_int",
+	    "bgscan_threshold",
 	"bgscan_long_int"
 };
 
