@@ -52,6 +52,12 @@ input[disabled], select[disabled] {
 .off {
   opacity: .6;
 }
+#tablePwdCheck tr th {
+  background-color: transparent;
+  border: 0;
+  text-align: right;
+  vertical-align: middle;
+}
 #scorebar {
   background-image: url(/images/gradient.svg);
   background-repeat: no-repeat;
