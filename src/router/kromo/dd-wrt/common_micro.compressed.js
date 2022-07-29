@@ -400,7 +400,7 @@ I.value=I.defaultValue;
 }
 };
 function valid_name(I,M,flag) {
-	var invalid = "^:*'\"";
+	var invalid = "^:*'\"`";
 	var len = invalid.length;
 	var i;
 	result = isascii(I,M);
