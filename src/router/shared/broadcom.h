@@ -717,7 +717,7 @@ extern int valid_wep_key(webs_t wp, char *value, struct variable *v);
 extern int valid_choice(webs_t wp, char *value, struct variable *v);
 #endif
 extern void validate_statics(webs_t wp, char *value, struct variable *v);
-extern int valid_name(webs_t wp, char *value, struct variable *v);
+extern int valid_name(webs_t wp, char *value, struct variable *v, int unwanted);
 extern int valid_merge_ipaddrs(webs_t wp, char *value, struct variable *v);
 
 extern int get_dns_ip(char *name, int which, int count);
@@ -756,7 +756,7 @@ extern int ISDIGIT(char *value, int flag);
  * checks whether value is a 7-bit unsigned char value that fits into the
  * ASCII character set set flag to 0 to ignore zero-length values 
  */
-extern int ISASCII(char *value, int flag);
+extern int ISASCII(char *value, int flag, int unwanted);
 extern int tf_webWriteJS(webs_t wp, const char *s);
 
 extern void do_setup_wizard(char *url, webs_t stream);

@@ -434,7 +434,7 @@ function valid_key(I,l){
 }
 
 function valid_name(I,M,flag) {
-	var invalid = "^:*'\"`";
+	var invalid = ":";
 	var len = invalid.length;
 	var i;
 	result = isascii(I,M);

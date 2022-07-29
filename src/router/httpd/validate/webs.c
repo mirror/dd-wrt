@@ -5269,13 +5269,15 @@ void ttraff_erase(webs_t wp)
 	nvram_async_commit();
 }
 
+int valid_name(webs_t wp, char *value, struct variable *v, int unwanted);
+
 void changepass(webs_t wp)
 {
 	char *value = websGetVar(wp, "http_username", NULL);
 	char *pass = websGetVar(wp, "http_passwd", NULL);
 
 	if (value && pass && strcmp(value, TMP_PASSWD)
-	    && valid_name(wp, value, NULL)) {
+	    && valid_name(wp, value, NULL, 0)) {
 		char passout[MD5_OUT_BUFSIZE];
 		nvram_set("http_username", zencrypt(value, passout));
 
@@ -5286,7 +5288,7 @@ void changepass(webs_t wp)
 	}
 
 	if (pass && value && strcmp(pass, TMP_PASSWD)
-	    && valid_name(wp, pass, NULL)) {
+	    && valid_name(wp, pass, NULL, 0)) {
 		char passout[MD5_OUT_BUFSIZE];
 		if (nvram_match("http_passwd", DEFAULT_PASS))
 			nvram_seti("unblock", 1);
