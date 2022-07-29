@@ -1523,7 +1523,7 @@ char *getUUID(char *buf)
 	return NULL;
 }
 
-char *zencrypt(char *passwd, char *passout)
+unsigned char *zencrypt(unsigned char *passwd, unsigned char *passout)
 {
 	char salt[sizeof("$N$XXXXXXXX")];	/* "$N$XXXXXXXX" or "XX" */
 
