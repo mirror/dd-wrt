@@ -22,10 +22,6 @@
 
 EJ_VISIBLE void ej_do_pagehead(webs_t wp, int argc, char_t ** argv)	// Eko
 {
-	char *style = nvram_safe_get("router_style");
-	char *style_dark = nvram_safe_get("router_style_dark");
-	if (!*style)
-		style = "elegant";
 	char *charset = live_translate(wp, "lang_charset.set");
 	char *translate = "";
 	if (!nvram_match("language", "english"))
@@ -44,6 +40,10 @@ EJ_VISIBLE void ej_do_pagehead(webs_t wp, int argc, char_t ** argv)	// Eko
 #ifdef HAVE_FREECWMP
 	websWrite(wp, "<script type=\"text/javascript\" src=\"lang_pack/freecwmp-english.js\"></script>\n");
 #endif
+	char *style = nvram_safe_get("router_style");
+	char *style_dark = nvram_safe_get("router_style_dark");
+	if (!*style)
+		style = "elegant";
 	websWrite(wp, "<link type=\"text/css\" rel=\"stylesheet\" href=\"style/%s/style.css\" />\n<!--[if IE]><link type=\"text/css\" rel=\"stylesheet\" href=\"style/common_style_ie.css\" /><![endif]-->\n", style);
 #ifdef HAVE_MICRO
 	websWrite(wp, "<link type=\"text/css\" rel=\"stylesheet\" href=\"style/elegant/fresh.css\" />\n");
