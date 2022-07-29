@@ -457,7 +457,7 @@ errmsg.err62=" is already defined as a static lease.";
 errmsg.err100="Processing...<br />Please wait.";
 errmsg.err101="Restoring configuration file...<br />Please wait.";
 errmsg.err102="Upgrading firmware...<br />Please wait.";
-errmsg.err103="Invalid Character";
+errmsg.err103="Invalid Character Detected";
 
 // **  COMMON MENU ENTRIES  **//
 var bmenu= new Object();
@@ -1385,7 +1385,7 @@ management.titl="Administration";
 management.h2="Router Management";
 management.changepassword="Your router is currently not protected and uses an unsafe default username and password combination; please change it using the following dialog!";
 management.psswd_legend="Login Credentials";
-management.pwd_ti_aria="Invalid symbols &#94; &#58; &#215; &#96; &#39; &#8220;"; // entities as follows ^:*`'"
+management.pwd_ti_aria="Invalid Characters &#94; &#58; &#42; &#96; &#39; &#34;"; // entities as follows ^:*`'"
 management.psswd_user="Username";
 management.psswd_pass="Password";
 management.pass_conf="Re-enter to Confirm";

@@ -35,7 +35,7 @@ h2, h3 {
 body[onunload*="Filters.asp'"] h2,
 .iplookup h2, [name='Join'] h2,
 [name="macfilter"] h2 {
-  margin-right: .3em;
+  margin-right: 0;
 }
 hr {
   background: #ccc;
@@ -146,7 +146,7 @@ body, .gui {
   padding: 5px 8px 5px 4px;
 }
 [name="macfilter"] fieldset, [name="macfilter"] fieldset {
-  width: 98%;
+  width: 97%;
 }
 fieldset {
   background: #f9f9f9;
@@ -191,16 +191,10 @@ input.button[onclick*="delete"] {
     #2b226f, #2b226f 1px,
     #483c9f  1px, #483c9f 3px);
   border: 1px solid #2b226f;
+  margin: 0;
 }
 .nostick {
   position: unset;
-}
-#mainno .submitFooter, [name='ipfilter'] .submitFooter,
-body[onunload*="Filters.asp'"] .submitFooter,
-.iplookup .submitFooter, [name='Join'] .submitFooter,
-[name="macfilter"] .submitFooter {
-  margin-right: .201em;
-  margin-left: .191em;
 }
 .submitFooter .button {
   padding: 0 1rem;
@@ -415,4 +409,12 @@ pre {
   border-radius: 4px;
   background-color: #fff;
   border: 1px solid #8f8f9d;
+}
+#main #contentsInfo div.col2l {
+  float: left;
+  width: 42.2em;
+}
+#main #contentsInfo div.col2r {
+  float: right;
+  width: 42.2em;
 }
