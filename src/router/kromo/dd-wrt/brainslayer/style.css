@@ -355,3 +355,11 @@ pre {
   margin-bottom: .2em;
   margin-left: .321em;
 }
+#main #contentsInfo div.col2l {
+  float: left;
+  width: 42.2em;
+}
+#main #contentsInfo div.col2r {
+  float: right;
+  width: 42.2em;
+}
