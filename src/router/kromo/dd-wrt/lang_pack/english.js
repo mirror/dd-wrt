@@ -1976,7 +1976,7 @@ service.vpnd_cl2cl="Client to Client Connection Allowed";
 service.vpnd_switch="Config as";
 service.vpnd_dupcn="Allow Duplicate Clients";
 service.vpnd_allowcnwan="Allow Clients WAN Access";
-service.vpnd_allowcnlan="Allow Clients full LAN access";
+service.vpnd_allowcnlan="Allow Clients LAN access";
 service.vpnd_proxy="DHCP-Proxy mode";
 service.vpnd_clcon="Client Connect Script";
 service.vpnd_cldiscon="Client Disconnect Script";
@@ -2332,7 +2332,7 @@ eoip.filepicker="Upload / Adapt & Apply";
 
 // help page
 var heoip=new Object();
-heoip.page1="<dd>Ethernet over IP (EoIP) Tunneling enable you to create an Ethernet tunnel between two routers on top of an IP connection. The EoIP interface appears as an Ethernet interface. When the bridging function of the router is enabled, all Ethernet traffic (all Ethernet protocols) will be bridged just as if there where a physical Ethernet interface and cable between the two routers (with bridging enabled).<br /><br />Network setups with EoIP interfaces : <br /><ul><li>Possibility to bridge LANs over the Internet</li><li>Possibility to bridge LANs over encrypted tunnels</li><li>Possibility to bridge LANs over 802.11b 'ad-hoc' wireless networks</li></ul></dd>";
+heoip.page1="<dd>Ethernet over IP (EoIP) Tunneling enables you to create an Ethernet tunnel between two routers on top of an IP connection. The EoIP interface appears as an Ethernet interface. When the bridging function of the router is enabled, all Ethernet traffic (all Ethernet protocols) will be bridged just as if there where a physical Ethernet interface and cable between the two routers (with bridging enabled).<br /><br />Network setups with EoIP interfaces : <br /><ul><li>Possibility to bridge LANs over the Internet</li><li>Possibility to bridge LANs over encrypted tunnels</li><li>Possibility to bridge LANs over 802.11b 'ad-hoc' wireless networks</li></ul></dd>";
 
 // ** Sipath.asp + cgi **//
 var sipath=new Object();
