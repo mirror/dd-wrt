@@ -11,7 +11,7 @@ function filter_del(F) {
 		</script>
 	</head>
 
-	<body onunload="top.opener.window.location.href='Filters.asp'">
+	<body class="popup_bg" onunload="top.opener.window.location.href='Filters.asp'">
 		<form action="apply.cgi" method="post">
 			<input type="hidden" name="submit_button" value="FilterSummary" />
 			<input type="hidden" name="submit_type" />
