@@ -451,15 +451,16 @@ struct crypt_data {
 
 static char *crypt_r(const char *authinfo, const char *authdata, struct crypt_data *data)
 {
+	CRYPT_MUTEX_LOCK(&crypt_mutex);
 	char *enc1 = crypt(authinfo, authdata);
 	strcpy(data->__buf, enc1);
+	CRYPT_MUTEX_UNLOCK(&crypt_mutex);
 	return data->__buf;
 }
 #endif
 
 static int auth_check(webs_t conn_fp)
 {
-	CRYPT_MUTEX_LOCK(&crypt_mutex);
 	char *authinfo;
 	char *authpass;
 	int l;
@@ -514,7 +515,6 @@ static int auth_check(webs_t conn_fp)
 	ret = 1;
       out:;
 	debug_free(authinfo);
-	CRYPT_MUTEX_UNLOCK(&crypt_mutex);
 
 	return ret;
 }
