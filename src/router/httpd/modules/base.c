@@ -2489,7 +2489,6 @@ static int do_syslog(unsigned char method, struct mime_handler *handler, char *u
 {
 
 	static const char filename[] = "/var/log/messages";
-	char *style = nvram_safe_get("router_style");
 	char *style_dark = nvram_safe_get("router_style_dark");
 	char buf[128];
 	char *charset = live_translate(stream, "lang_charset.set");
@@ -2510,6 +2509,7 @@ static int do_syslog(unsigned char method, struct mime_handler *handler, char *u
 		  "<script type=\"text/javascript\" src=\"lang_pack/language.js\"></script>\n"
 #endif
 		  , charset);
+	char *style = nvram_safe_get("router_style");
 	websWrite(stream, "<link type=\"text/css\" rel=\"stylesheet\" href=\"style/%s/style.css\" />\n<!--[if IE]><link type=\"text/css\" rel=\"stylesheet\" href=\"style/common_style_ie.css\" /><![endif]-->\n",
 		  style);
 #ifdef HAVE_MICRO
