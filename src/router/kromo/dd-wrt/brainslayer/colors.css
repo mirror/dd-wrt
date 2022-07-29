@@ -7,17 +7,24 @@ body {
 input, select, option {
   color: #a57b46;
 }
+.popup_bg {
+  background-color: #fff
+}
 pre {
   background-color: #000;
   color: #0f0;
 }
 h1 {
   color: #955322;
+  background-image: radial-gradient(#ffeabf, transparent);
+  background-size: 320px;
+  background-repeat: no-repeat;
+  background-position: left
 }
 h2, legend {
   color: #ec361d;
 }
-h3, label {
+h3 {
   color: #b26c38;
 }
 h2, h3 {
@@ -38,37 +45,31 @@ fieldset {
   border: 1px solid #8f8f9d;
 }
 #main {
-  background-color: #fff;
+  background-color: #f9f9f9;
 }
 #header {
-  color: #955322;
   background: #f1d496 url(../../images/dd-wrt.png) bottom right no-repeat;
 }
 th {
   background-color: #e9e9ed;
   border: 1px solid #ccc;
 }
-#menuMain {
-  border-color: #fff;
-}
-#menuSubList > li > span > strong, .current span strong {
-  color: #f00;
-}
 #menuMainList :link, #menuMainList :visited, #menuMainList span {
   color: #955322;
-  background: transparent;
-  border-color: #eeeae4;
+  border-left: 3px solid transparent;
+}
+.current span strong {
+  color: #f00;
+}
+.current span {
+  content: '';
+  border-left: 3px solid #955322 !important;
+  background-color: #f9f9e9;
 }
 #menuMainList :link:hover, #menuMainList :visited:hover {
   color: #ec361d;
-  background: #f4f4f4;
-}
-#menuMainList :link:active, #menuMainList :visited:active {
-  background: #fff;
-}
-#menuMainList ul {
-  background-color: #f5f2ef;
-  border-color: #fff;
+  background: #f9f9e9;
+  border-left: 3px solid #955322;
 }
 .meter {
   background: #e3ddd5;

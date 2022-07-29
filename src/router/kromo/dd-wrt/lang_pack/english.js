@@ -744,7 +744,7 @@ var filterSum=new Object();
 filterSum.titl="Access Restrictions Summary";
 filterSum.h2="Internet Policy Summary";
 filterSum.polnum="No.";
-filterSum.polday="Time of Day";
+filterSum.polday=filter.time;
 
 //help container
 var hfilter=new Object();

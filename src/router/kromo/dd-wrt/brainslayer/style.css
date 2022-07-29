@@ -34,20 +34,24 @@ input.num[name*="lease"][size="10"] {
   margin-right: 4px;
   width: 52%
 }
-input.three_column {
-  width: 150px;
-  margin-left: 0;
-  margin-right: 10px;
-}
-input.four_column {
+input.three_column, input.four_column {
+  width: 200px;
   margin-left: 0;
   margin-right: 10px;
 }
 input.three_column_last, input.four_column_last {
   margin-right: 0;
 }
-h1, h4, legend {
+legend {
+  font-weight: bold;
+  margin-left: -.362em;
+  padding: 0 .272em;
+}
+h1, h4 {
   margin: 1em 0 .5em 0;
+}
+h1 {
+  padding-left: .4em;
 }
 h2, h3 {
   padding: 4px 12px;
@@ -56,13 +60,7 @@ h2, h3 {
   margin: 0 0 .906em 0;
   border-radius: 3px;
 }
-legend {
-  font-weight: bold;
-}
-:link {
-  font-weight: bold;
-}
-:visited {
+legend, :link, :visited {
   font-weight: bold;
 }
 hr {
@@ -106,9 +104,6 @@ table {
 #header h1 {
   font-size: 2.3em
 }
-#header div.logo {
-  margin-left: 30px;
-}
 form[name="macfilter"] #main {
   height: initial
 }
@@ -121,7 +116,7 @@ form[name="macfilter"] td[align="left"] {
 #main {
   height: 100%;
   margin: 0;
-  margin-left: 220px;
+  margin-left: 230px;
   padding: 1.5em;
   padding-top: 90px;
 }
@@ -160,23 +155,18 @@ form[name="macfilter"] td[align="left"] {
 .nostick {
   position: unset;
 }
-#mainno .submitFooter {
-  position: unset;
-  margin: 2.5rem auto 0 223px;
-  width: 77%
-}
 .submitFooter .button {
   padding: 0 1rem;
   height: 1.433rem;
 }
 fieldset {
-  padding: 0 .725em .725em .725em;
+  padding: .725em;
   margin: 0;
   border-radius: 3px;
 }
 div.setting {
   margin: 1px;
-  margin-top: 6px;
+  margin-top: 3px;
   padding: 1px;
   padding-left: 0;
   clear: both;
@@ -193,38 +183,28 @@ div.setting {
 #menu {
   position: absolute;
   top: 60px;
-  left: 10px;
-  height: 2px;
+  left: 0;
   padding-top: 1em;
 }
-#menu, #menuMain, #menuMainList {
-  width: 200px;
-  max-width: 200px;
-}
-#menu * {
-  padding: 0;
-  margin-top: 2em
+#menu, #menuMain {
+  width: 215px;
+  max-width: 215px;
+  font-size: 14px;
 }
 #menuMainList li {
   list-style: none;
-  margin: 0;
-  padding: 0 0 1px 0;
-  line-height: 1;
 }
 #menuMainList :link, #menuMainList :visited, #menuMainList span {
-  font-weight: normal;
-  line-height: 1;
+  line-height: 1.2;
   display: block;
   text-decoration: none;
-  margin: 0;
-  padding: 5px 10px 5px .5em;
+  margin-left: -2em;
+  padding: 5px 0 4px .5em;
+  transition: all 0.2s cubic-bezier(0.3, 0, 0.5, 1);
 }
-#menuMainList ul {
-  margin: -1.8em 0 1rem;
-  padding: 0;
-}
-#menuMainList ul :link, #menuMainList ul :visited, #menuMainList ul span {
-  padding: 4px 10px 4px 1.5em;
+#menuSubList {
+  margin-left: -1.5rem;
+  margin-top: .5em;
 }
 .meter {
   float: right;
@@ -292,27 +272,36 @@ input.spaceradio {
   margin-top: -.4rem;
   margin-left: .6rem;
 }
-td.center, .warning {
-  text-align: center;
-}
-div.center .button {
+div.center .button, tr.center {
   margin-left: .3em;
-  margin-top: .9em
+  margin-top: .9em;
+  float: left;
+}
+.setting.center {
+  text-align: left;
+}
+.center, .warning {
+  text-align: center;
 }
 iframe[src*='/graph_if.svg'] {
   max-width: 700px;
 }
 iframe#syslog {
-  left: 14rem;
-  top: 4.5rem;
-  max-width: 77.888%;
+  left: 13.55rem;
+  top: 4.4rem;
+  max-width: 82%;
   position: relative;
   height: 811px;
 }
+#mainno .submitFooter {
+  margin: 4.2rem 18em;
+  min-width: 79.888%;
+  max-width: 80.999%;
+}
 input.button[onclick*="do_show"]:not([value*="Month"]) {
-  top: 3.2em;
-  left: 1.2rem;
+  margin: 4.1em .5em;
   position: relative;
+  left: 2em
 }
 .progressbar {
   visibility: visible;
