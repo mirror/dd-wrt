@@ -43,9 +43,6 @@ pre {
 form {
   margin: 0;
 }
-form[name='wds'] .label {
-  width: 19.444em;
-}
 form[name='wds'] select {
   margin-right: .562em;
   margin-top: .1rem;
@@ -247,7 +244,7 @@ h2, h3 {
 }
 .setting .label {
   float: left;
-  width: 18.116em;
+  width: 20em;
 }
 .setting .default {
   display: block;
@@ -449,10 +446,11 @@ input[onclick*='bond_del']{
   margin-left: .325em;
 }
 input.button[onclick*='add_peer'] {
-  margin: 0 0 -6px -34.5%;
+  margin: 0 0 -8px;
 }
-input.button[onclick*='gen_wg_key'] {
-  margin: 0 0 6px -31.5%;
+input.button[onclick*='gen_wg_key'],
+input.button[onclick*='gen_wg_psk'] {
+  margin: 0 0 6px;
 }
 [type='image'][src*='paypal'] {
   margin-bottom: -0.5rem;
