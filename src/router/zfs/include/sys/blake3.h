@@ -22,11 +22,11 @@
 /*
  * Based on BLAKE3 v1.3.1, https://github.com/BLAKE3-team/BLAKE3
  * Copyright (c) 2019-2020 Samuel Neves and Jack O'Connor
- * Copyright (c) 2021 Tino Reichardt <milky-zfs@mcmilk.de>
+ * Copyright (c) 2021-2022 Tino Reichardt <milky-zfs@mcmilk.de>
  */
 
-#ifndef BLAKE3_H
-#define	BLAKE3_H
+#ifndef	_SYS_BLAKE3_H
+#define	_SYS_BLAKE3_H
 
 #ifdef  _KERNEL
 #include <sys/types.h>
@@ -72,7 +72,7 @@ typedef struct {
 	 */
 	uint8_t cv_stack[(BLAKE3_MAX_DEPTH + 1) * BLAKE3_OUT_LEN];
 
-	/* const blake3_impl_ops_t *ops */
+	/* const blake3_ops_t *ops */
 	const void *ops;
 } BLAKE3_CTX;
 
@@ -97,29 +97,8 @@ extern void **blake3_per_cpu_ctx;
 extern void blake3_per_cpu_ctx_init(void);
 extern void blake3_per_cpu_ctx_fini(void);
 
-/* return number of supported implementations */
-extern int blake3_get_impl_count(void);
-
-/* return id of selected implementation */
-extern int blake3_get_impl_id(void);
-
-/* return name of selected implementation */
-extern const char *blake3_get_impl_name(void);
-
-/* setup id as fastest implementation */
-extern void blake3_set_impl_fastest(uint32_t id);
-
-/* set implementation by id */
-extern void blake3_set_impl_id(uint32_t id);
-
-/* set implementation by name */
-extern int blake3_set_impl_name(const char *name);
-
-/* set startup implementation */
-extern void blake3_setup_impl(void);
-
 #ifdef __cplusplus
 }
 #endif
 
-#endif	/* BLAKE3_H */
+#endif	/* _SYS_BLAKE3_H */

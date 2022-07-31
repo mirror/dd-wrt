@@ -1316,12 +1316,12 @@ zio_crypt_do_indirect_mac_checksum_impl(boolean_t generate, void *buf,
 	uint8_t digestbuf[SHA512_DIGEST_LENGTH];
 
 	/* checksum all of the MACs from the layer below */
-	SHA2Init(SHA512, &ctx);
+	SHA2Init(&ctx, SHA512);
 	for (i = 0, bp = buf; i < epb; i++, bp++) {
 		zio_crypt_bp_do_indrect_checksum_updates(&ctx, version,
 		    byteswap, bp);
 	}
-	SHA2Final(digestbuf, &ctx);
+	SHA2Final(&ctx, digestbuf);
 
 	if (generate) {
 		memcpy(cksum, digestbuf, ZIO_DATA_MAC_LEN);
