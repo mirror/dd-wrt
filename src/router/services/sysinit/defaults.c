@@ -3190,8 +3190,8 @@ struct nvram_param srouter_defaults[] = {
 	{ "openvpn_dc2", "AES-128-GCM" },
 	{ "openvpn_dc3", "AES-256-GCM" },
 	{ "openvpn_dh_btn", "1" },
-	{ "openvpn_allowcnwan", "0" },
-	{ "openvpn_allowcnlan", "0" },
+	{ "openvpn_allowcnwan", "1" },
+	{ "openvpn_allowcnlan", "1" },
 	{ "openvpn_blockmulticast", "0" },
 #endif
 #ifdef HAVE_KODATA
