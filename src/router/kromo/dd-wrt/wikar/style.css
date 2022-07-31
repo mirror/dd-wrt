@@ -193,6 +193,9 @@ input.button[onclick*="delete"] {
   border: 1px solid #2b226f;
   margin: 0;
 }
+.gui .submitFooter {
+  margin: 0 300px 0 0;
+}
 .nostick {
   position: unset;
 }
@@ -410,11 +413,34 @@ pre {
   background-color: #fff;
   border: 1px solid #8f8f9d;
 }
-#main #contentsInfo div.col2l {
+#contentsInfo[style] div.col2l {
   float: left;
   width: 42.2em;
 }
-#main #contentsInfo div.col2r {
+#contentsInfo[style] div.col2r {
   float: right;
   width: 42.2em;
+}
+#contentsInfo [name="Info"] div.col2l {
+  float: left;
+  width: 48.5%;
+  margin: 0;
+}
+#contentsInfo [name="Info"] div.col2r {
+  float: right;
+  width: 48.5%;
+  margin: 0;
+}
+#contentsInfo [name="Info"] h2 {
+  margin: 5px 0 .906em 0;
+}
+#contentsInfo [name="Info"] fieldset {
+  margin: 0 0 .906em 0;
+}
+[type='image'][src*='paypal'] {
+  margin: 0 0 .906em 0;
+}
+.center a[href='http://www.dd-wrt.com/'] {
+  margin: 0 0 .906em 0;
+  line-height: 2.2;
 }
