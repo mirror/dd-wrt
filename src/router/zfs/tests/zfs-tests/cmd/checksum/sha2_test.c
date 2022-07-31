@@ -34,6 +34,7 @@
 #include <string.h>
 #include <stdio.h>
 #include <sys/time.h>
+#define	_SHA2_IMPL
 #include <sys/sha2.h>
 #include <sys/stdtypes.h>
 
@@ -180,9 +181,9 @@ main(int argc, char *argv[])
 	do {								\
 		SHA2_CTX		ctx;				\
 		uint8_t			digest[diglen / 8];		\
-		SHA2Init(&ctx, mode);					\
+		SHA2Init(SHA ## mode ## _MECH_INFO_TYPE, &ctx);		\
 		SHA2Update(&ctx, _m, strlen(_m));			\
-		SHA2Final(&ctx, digest);				\
+		SHA2Final(digest, &ctx);				\
 		(void) printf("SHA%-9sMessage: " #_m			\
 		    "\tResult: ", #mode);				\
 		if (memcmp(digest, testdigest, diglen / 8) == 0) {	\
@@ -204,10 +205,10 @@ main(int argc, char *argv[])
 		struct timeval	start, end;				\
 		memset(block, 0, sizeof (block));			\
 		(void) gettimeofday(&start, NULL);			\
-		SHA2Init(&ctx, mode);					\
+		SHA2Init(SHA ## mode ## _MECH_INFO_TYPE, &ctx);		\
 		for (i = 0; i < 8192; i++)				\
 			SHA2Update(&ctx, block, sizeof (block));	\
-		SHA2Final(&ctx, digest);				\
+		SHA2Final(digest, &ctx);				\
 		(void) gettimeofday(&end, NULL);			\
 		delta = (end.tv_sec * 1000000llu + end.tv_usec) -	\
 		    (start.tv_sec * 1000000llu + start.tv_usec);	\
@@ -220,22 +221,24 @@ main(int argc, char *argv[])
 	} while (0)
 
 	(void) printf("Running algorithm correctness tests:\n");
-	SHA2_ALGO_TEST(test_msg0, SHA256, 256, sha256_test_digests[0]);
-	SHA2_ALGO_TEST(test_msg1, SHA256, 256, sha256_test_digests[1]);
-	SHA2_ALGO_TEST(test_msg0, SHA384, 384, sha384_test_digests[0]);
-	SHA2_ALGO_TEST(test_msg2, SHA384, 384, sha384_test_digests[2]);
-	SHA2_ALGO_TEST(test_msg0, SHA512, 512, sha512_test_digests[0]);
-	SHA2_ALGO_TEST(test_msg2, SHA512, 512, sha512_test_digests[2]);
-	SHA2_ALGO_TEST(test_msg0, SHA512_256, 256, sha512_256_test_digests[0]);
-	SHA2_ALGO_TEST(test_msg2, SHA512_256, 256, sha512_256_test_digests[2]);
+	SHA2_ALGO_TEST(test_msg0, 256, 256, sha256_test_digests[0]);
+	SHA2_ALGO_TEST(test_msg1, 256, 256, sha256_test_digests[1]);
+	SHA2_ALGO_TEST(test_msg0, 384, 384, sha384_test_digests[0]);
+	SHA2_ALGO_TEST(test_msg2, 384, 384, sha384_test_digests[2]);
+	SHA2_ALGO_TEST(test_msg0, 512, 512, sha512_test_digests[0]);
+	SHA2_ALGO_TEST(test_msg2, 512, 512, sha512_test_digests[2]);
+	SHA2_ALGO_TEST(test_msg0, 512_224, 224, sha512_224_test_digests[0]);
+	SHA2_ALGO_TEST(test_msg2, 512_224, 224, sha512_224_test_digests[2]);
+	SHA2_ALGO_TEST(test_msg0, 512_256, 256, sha512_256_test_digests[0]);
+	SHA2_ALGO_TEST(test_msg2, 512_256, 256, sha512_256_test_digests[2]);
 
 	if (failed)
 		return (1);
 
 	(void) printf("Running performance tests (hashing 1024 MiB of "
 	    "data):\n");
-	SHA2_PERF_TEST(SHA256, 256);
-	SHA2_PERF_TEST(SHA512, 512);
+	SHA2_PERF_TEST(256, 256);
+	SHA2_PERF_TEST(512, 512);
 
 	return (0);
 }
