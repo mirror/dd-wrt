@@ -313,6 +313,8 @@ struct fuse_req {
 	/** refcount */
 	atomic_t count;
 
+	bool user_pages;
+
 	/** Unique ID for the interrupt request */
 	u64 intr_unique;
 
