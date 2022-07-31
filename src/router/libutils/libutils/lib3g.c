@@ -1491,14 +1491,14 @@ static struct DEVICES devicelist[] = {
 	{ 0x23a2, 0x1234, acm, 0, 0, 0, NULL, "Titan 3.5G" },	//
 	
 /* Quectel */
-	{ 0x2c7c, 0x0121, option, 2, 3, 2 | QMI, NULL, "Quectel EC21" },	//
-	{ 0x2c7c, 0x0125, option, 2, 3, 2 | QMI, NULL, "Quectel EC25" },	//
-	{ 0x2c7c, 0x0191, option, 2, 3, 2 | QMI, NULL, "Quectel EG91" },	//
-	{ 0x2c7c, 0x0195, option, 2, 3, 2 | QMI, NULL, "Quectel EG95" },	//
-	{ 0x2c7c, 0x0296, option, 2, 3, 2 | QMI, NULL, "Quectel BG96" },	//
-	{ 0x2c7c, 0x0306, option, 2, 3, 2 | QMI, NULL, "Quectel Ex06" },	//
-	{ 0x2c7c, 0x030a, option, 2, 5, 2 | QMI, NULL, "Quectel EM05-G" },	//
-	{ 0x2c7c, 0x0512, option, 2, 3, 2 | QMI, NULL, "Quectel Ex12" },	//
+	{ 0x2c7c, 0x0121, option, 2, 3, 2 | QMIRAW, NULL, "Quectel EC21" },	//
+	{ 0x2c7c, 0x0125, option, 2, 3, 2 | QMIRAW, NULL, "Quectel EC25" },	//
+	{ 0x2c7c, 0x0191, option, 2, 3, 2 | QMIRAW, NULL, "Quectel EG91" },	//
+	{ 0x2c7c, 0x0195, option, 2, 3, 2 | QMIRAW, NULL, "Quectel EG95" },	//
+	{ 0x2c7c, 0x0296, option, 2, 3, 2 | QMIRAW, NULL, "Quectel BG96" },	//
+	{ 0x2c7c, 0x0306, option, 2, 3, 2 | QMIRAW, NULL, "Quectel Ex06" },	//
+	{ 0x2c7c, 0x030a, option, 2, 5, 2 | QMIRAW, NULL, "Quectel EM05-G" },	//
+	{ 0x2c7c, 0x0512, option, 2, 3, 2 | QMIRAW, NULL, "Quectel Ex12" },	//
 
 /* Dell */
 	{ 0x413c, 0x8114, option, 1, 0, 2, NULL, "Dell 5700" },	//
