@@ -16,7 +16,7 @@ pre {
 }
 h1 {
   color: #955322;
-  background-image: radial-gradient(#ffeabf, transparent);
+  background-image: radial-gradient(#ffeabfcc, transparent);
   background-size: 320px;
   background-repeat: no-repeat;
   background-position: left
@@ -48,7 +48,9 @@ fieldset {
   background-color: #f9f9f9;
 }
 #header {
-  background: #f1d496 url(../../images/dd-wrt.png) bottom right no-repeat;
+  background: url(../../images/dd-wrt.png) bottom right no-repeat,
+    repeating-linear-gradient(-45deg, #fed9ae, #fed9ae 1px, #f1d496 2px, #f1d496 3px);
+  border-bottom: 1px inset #bb9273;
 }
 th {
   background-color: #e9e9ed;
@@ -98,9 +100,9 @@ textarea {
   border: 1px solid #999;
 }
 .submitFooter {
-  background: repeating-linear-gradient(55deg,
-    #eeeae4 , #eeeae4  2px,
-    #f1d496 1px, #f1d496 3px);
+  background: repeating-linear-gradient(-45deg,
+    #fed9ae, #fed9ae 1px,
+    #f1d496 2px, #f1d496 3px);
   border: 1px solid #bb9273;
 }
 .message {
