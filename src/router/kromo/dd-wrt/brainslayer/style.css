@@ -352,3 +352,17 @@ pre {
   float: right;
   width: 42.2em;
 }
+#contentsInfo [name="Info"] div.col2l {
+  float: left;
+  min-width: 100%;
+}
+#contentsInfo [name="Info"] div.col2r {
+  float: left;
+  min-width: 100%;
+}
+[type='image'][src*='paypal'] {
+  margin-bottom: -0.5rem;
+}
+.center a[href='http://www.dd-wrt.com/'] {
+  line-height: 2.2;
+}
