@@ -108,7 +108,6 @@ void
 icp_fini(void)
 {
 	skein_mod_fini();
-	sha2_mod_fini();
 	aes_mod_fini();
 	kcf_sched_destroy();
 	kcf_prov_tab_destroy();
@@ -133,7 +132,6 @@ icp_init(void)
 
 	/* initialize algorithms */
 	aes_mod_init();
-	sha2_mod_init();
 	skein_mod_init();
 
 	return (0);
