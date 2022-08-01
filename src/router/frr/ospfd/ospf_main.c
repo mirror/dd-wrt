@@ -87,7 +87,7 @@ const struct option longopts[] = {
 /* Master of threads. */
 struct thread_master *master;
 
-#ifdef SUPPORT_OSPF_API
+#if 1 //def SUPPORT_OSPF_API
 extern int ospf_apiserver_enable;
 #endif /* SUPPORT_OSPF_API */
 
@@ -152,7 +152,7 @@ FRR_DAEMON_INFO(ospfd, OSPF, .vty_port = OSPF_VTY_PORT,
 /* OSPFd main routine. */
 int main(int argc, char **argv)
 {
-#ifdef SUPPORT_OSPF_API
+#if 1 //def SUPPORT_OSPF_API
 	/* OSPF apiserver is disabled by default. */
 	ospf_apiserver_enable = 0;
 #endif /* SUPPORT_OSPF_API */
@@ -178,7 +178,7 @@ int main(int argc, char **argv)
 			break;
 		case 0:
 			break;
-#ifdef SUPPORT_OSPF_API
+#if 1 //def SUPPORT_OSPF_API
 		case 'a':
 			ospf_apiserver_enable = 1;
 			break;
