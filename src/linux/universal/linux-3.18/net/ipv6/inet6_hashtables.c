@@ -307,7 +307,7 @@ not_unique:
 	return -EADDRNOTAVAIL;
 }
 
-static inline u32 inet6_sk_port_offset(const struct sock *sk)
+static inline u64 inet6_sk_port_offset(const struct sock *sk)
 {
 	const struct inet_sock *inet = inet_sk(sk);
 
