@@ -584,13 +584,11 @@ static void ospf_deferred_shutdown_finish(struct ospf *ospf)
 }
 
 /* Timer thread for G-R */
-static int ospf_deferred_shutdown_timer(struct thread *t)
+static void ospf_deferred_shutdown_timer(struct thread *t)
 {
 	struct ospf *ospf = THREAD_ARG(t);
 
 	ospf_deferred_shutdown_finish(ospf);
-
-	return 0;
 }
 
 /* Check whether deferred-shutdown must be scheduled, otherwise call
@@ -1089,7 +1087,7 @@ struct ospf_interface *add_ospf_interface(struct connected *co,
 	ospf_ldp_sync_if_init(oi);
 
 	/*
-	 * if router_id is not configured, dont bring up
+	 * if router_id is not configured, don't bring up
 	 * interfaces.
 	 * ospf_router_id_update() will call ospf_if_update
 	 * whenever r-id is configured instead.
@@ -2116,7 +2114,7 @@ int ospf_nbr_nbma_poll_interval_unset(struct ospf *ospf, struct in_addr addr)
 
 void ospf_master_init(struct thread_master *master)
 {
-	memset(&ospf_master, 0, sizeof(struct ospf_master));
+	memset(&ospf_master, 0, sizeof(ospf_master));
 
 	om = &ospf_master;
 	om->ospf = list_new();

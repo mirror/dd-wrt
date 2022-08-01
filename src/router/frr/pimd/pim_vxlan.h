@@ -22,6 +22,8 @@
 #ifndef PIM_VXLAN_H
 #define PIM_VXLAN_H
 
+#include "pim_instance.h"
+
 /* global timer used for miscellaneous staggered processing */
 #define PIM_VXLAN_WORK_TIME 1
 /* number of SG entries processed at one shot */
@@ -109,14 +111,14 @@ struct pim_vxlan {
  */
 static inline bool pim_vxlan_is_orig_mroute(struct pim_vxlan_sg *vxlan_sg)
 {
-	return (vxlan_sg->sg.src.s_addr != INADDR_ANY);
+	return !pim_addr_is_any(vxlan_sg->sg.src);
 }
 
 static inline bool pim_vxlan_is_local_sip(struct pim_upstream *up)
 {
-	return (up->sg.src.s_addr != INADDR_ANY) &&
-		up->rpf.source_nexthop.interface &&
-		if_is_loopback(up->rpf.source_nexthop.interface);
+	return !pim_addr_is_any(up->sg.src) &&
+	       up->rpf.source_nexthop.interface &&
+	       if_is_loopback(up->rpf.source_nexthop.interface);
 }
 
 static inline bool pim_vxlan_is_term_dev_cfg(struct pim_instance *pim,

@@ -1348,26 +1348,30 @@ void cli_show_isis_redistribute_ipv6(struct vty *vty,
 /*
  * XPath: /frr-isisd:isis/instance/multi-topology
  */
-DEFPY_YANG(isis_topology, isis_topology_cmd,
-      "[no] topology <ipv4-unicast|ipv4-mgmt|ipv6-unicast|ipv4-multicast|ipv6-multicast|ipv6-mgmt|ipv6-dstsrc>$topology [overload]$overload",
-      NO_STR
-      "Configure IS-IS topologies\n"
-      "IPv4 unicast topology\n"
-      "IPv4 management topology\n"
-      "IPv6 unicast topology\n"
-      "IPv4 multicast topology\n"
-      "IPv6 multicast topology\n"
-      "IPv6 management topology\n"
-      "IPv6 dst-src topology\n"
-      "Set overload bit for topology\n")
+DEFPY_YANG(
+	isis_topology, isis_topology_cmd,
+	"[no] topology <standard|ipv4-unicast|ipv4-mgmt|ipv6-unicast|ipv4-multicast|ipv6-multicast|ipv6-mgmt|ipv6-dstsrc>$topology [overload]$overload",
+	NO_STR
+	"Configure IS-IS topologies\n"
+	"standard topology\n"
+	"IPv4 unicast topology\n"
+	"IPv4 management topology\n"
+	"IPv6 unicast topology\n"
+	"IPv4 multicast topology\n"
+	"IPv6 multicast topology\n"
+	"IPv6 management topology\n"
+	"IPv6 dst-src topology\n"
+	"Set overload bit for topology\n")
 {
 	char base_xpath[XPATH_MAXLEN];
 
-	/* Since IPv4-unicast is not configurable it is not present in the
+	/* Since standard is not configurable it is not present in the
 	 * YANG model, so we need to validate it here
 	 */
-	if (strmatch(topology, "ipv4-unicast")) {
-		vty_out(vty, "Cannot configure IPv4 unicast topology\n");
+	if (strmatch(topology, "standard") ||
+	    strmatch(topology, "ipv4-unicast")) {
+		vty_out(vty,
+			"Cannot configure IPv4 unicast (Standard) topology\n");
 		return CMD_WARNING_CONFIG_FAILED;
 	}
 
@@ -1557,48 +1561,6 @@ void cli_show_isis_label_blocks(struct vty *vty, const struct lyd_node *dnode,
 			yang_dnode_get_string(dnode, "./srlb/lower-bound"),
 			yang_dnode_get_string(dnode, "./srlb/upper-bound"));
 	vty_out(vty, "\n");
-}
-
-/*
- * XPath: /frr-isisd:isis/instance/segment-routing/srlb
- */
-DEFPY_HIDDEN(
-	isis_sr_local_block_label_range, isis_sr_local_block_label_range_cmd,
-	"segment-routing local-block (16-1048575)$lower_bound (16-1048575)$upper_bound",
-	SR_STR
-	"Segment Routing Local Block label range\n"
-	"The lower bound of the block\n"
-	"The upper bound of the block (block size may not exceed 65535)\n")
-{
-#if CONFDATE > 20220217
-CPP_NOTICE("Use of the local-block command is deprecated")
-#endif
-	nb_cli_enqueue_change(vty,
-			      "./segment-routing/label-blocks/srlb/lower-bound",
-			      NB_OP_MODIFY, lower_bound_str);
-	nb_cli_enqueue_change(vty,
-			      "./segment-routing/label-blocks/srlb/upper-bound",
-			      NB_OP_MODIFY, upper_bound_str);
-
-	return nb_cli_apply_changes(vty, NULL);
-}
-
-DEFPY_HIDDEN(no_isis_sr_local_block_label_range,
-	     no_isis_sr_local_block_label_range_cmd,
-	     "no segment-routing local-block [(16-1048575) (16-1048575)]",
-	     NO_STR SR_STR
-	     "Segment Routing Local Block label range\n"
-	     "The lower bound of the block\n"
-	     "The upper bound of the block (block size may not exceed 65535)\n")
-{
-	nb_cli_enqueue_change(vty,
-			      "./segment-routing/label-blocks/srlb/lower-bound",
-			      NB_OP_MODIFY, NULL);
-	nb_cli_enqueue_change(vty,
-			      "./segment-routing/label-blocks/srlb/upper-bound",
-			      NB_OP_MODIFY, NULL);
-
-	return nb_cli_apply_changes(vty, NULL);
 }
 
 /*
@@ -2375,10 +2337,11 @@ void cli_show_ip_isis_psnp_interval(struct vty *vty,
  * XPath: /frr-interface:lib/interface/frr-isisd:isis/multi-topology
  */
 DEFPY_YANG(circuit_topology, circuit_topology_cmd,
-      "[no] isis topology<ipv4-unicast|ipv4-mgmt|ipv6-unicast|ipv4-multicast|ipv6-multicast|ipv6-mgmt|ipv6-dstsrc>$topology",
+      "[no] isis topology<standard|ipv4-unicast|ipv4-mgmt|ipv6-unicast|ipv4-multicast|ipv6-multicast|ipv6-mgmt|ipv6-dstsrc>$topology",
       NO_STR
       "IS-IS routing protocol\n"
       "Configure interface IS-IS topologies\n"
+      "Standard topology\n"
       "IPv4 unicast topology\n"
       "IPv4 management topology\n"
       "IPv6 unicast topology\n"
@@ -2395,18 +2358,20 @@ DEFPY_YANG(circuit_topology, circuit_topology_cmd,
 	else if (strmatch(topology, "ipv6-mgmt"))
 		return nb_cli_apply_changes(
 			vty, "./frr-isisd:isis/multi-topology/ipv6-management");
+	if (strmatch(topology, "ipv4-unicast"))
+		return nb_cli_apply_changes(
+			vty, "./frr-isisd:isis/multi-topology/standard");
 	else
 		return nb_cli_apply_changes(
 			vty, "./frr-isisd:isis/multi-topology/%s", topology);
 }
 
-void cli_show_ip_isis_mt_ipv4_unicast(struct vty *vty,
-				      const struct lyd_node *dnode,
-				      bool show_defaults)
+void cli_show_ip_isis_mt_standard(struct vty *vty, const struct lyd_node *dnode,
+				  bool show_defaults)
 {
 	if (!yang_dnode_get_bool(dnode, NULL))
 		vty_out(vty, " no");
-	vty_out(vty, " isis topology ipv4-unicast\n");
+	vty_out(vty, " isis topology standard\n");
 }
 
 void cli_show_ip_isis_mt_ipv4_multicast(struct vty *vty,
@@ -3189,8 +3154,6 @@ void isis_cli_init(void)
 	install_element(ISIS_NODE, &no_isis_sr_enable_cmd);
 	install_element(ISIS_NODE, &isis_sr_global_block_label_range_cmd);
 	install_element(ISIS_NODE, &no_isis_sr_global_block_label_range_cmd);
-	install_element(ISIS_NODE, &isis_sr_local_block_label_range_cmd);
-	install_element(ISIS_NODE, &no_isis_sr_local_block_label_range_cmd);
 	install_element(ISIS_NODE, &isis_sr_node_msd_cmd);
 	install_element(ISIS_NODE, &no_isis_sr_node_msd_cmd);
 	install_element(ISIS_NODE, &isis_sr_prefix_sid_cmd);

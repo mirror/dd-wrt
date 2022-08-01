@@ -55,7 +55,7 @@ int bgp_parse_fec_update(void)
 
 	s = zclient->ibuf;
 
-	memset(&p, 0, sizeof(struct prefix));
+	memset(&p, 0, sizeof(p));
 	p.family = stream_getw(s);
 	p.prefixlen = stream_getc(s);
 	stream_get(p.u.val, s, PSIZE(p.prefixlen));
@@ -313,14 +313,14 @@ static int bgp_nlri_get_labels(struct peer *peer, uint8_t *pnt, uint8_t plen,
 	/* If we RX multiple labels we will end up keeping only the last
 	 * one. We do not yet support a label stack greater than 1. */
 	if (label_depth > 1)
-		zlog_info("%s rcvd UPDATE with label stack %d deep", peer->host,
+		zlog_info("%pBP rcvd UPDATE with label stack %d deep", peer,
 			  label_depth);
 
 	if (!(bgp_is_withdraw_label(label) || label_bos(label)))
 		flog_warn(
 			EC_BGP_INVALID_LABEL_STACK,
-			"%s rcvd UPDATE with invalid label stack - no bottom of stack",
-			peer->host);
+			"%pBP rcvd UPDATE with invalid label stack - no bottom of stack",
+			peer);
 
 	return llen;
 }
@@ -350,7 +350,7 @@ int bgp_nlri_parse_label(struct peer *peer, struct attr *attr,
 
 	for (; pnt < lim; pnt += psize) {
 		/* Clear prefix structure. */
-		memset(&p, 0, sizeof(struct prefix));
+		memset(&p, 0, sizeof(p));
 
 		if (addpath_capable) {
 

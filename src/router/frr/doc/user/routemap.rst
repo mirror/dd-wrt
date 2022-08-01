@@ -205,6 +205,11 @@ Route Map Match Command
   interface name specified if the neighbor was specified
   in this manner.
 
+.. clicmd:: match peer PEER_GROUP_NAME
+
+  This is a BGP specific match command. Matches the peer
+  group name specified for the peer in question.
+
 .. clicmd:: match source-protocol PROTOCOL_NAME
 
   This is a ZEBRA specific match command.  Matches the
@@ -214,6 +219,18 @@ Route Map Match Command
 
   This is a ZEBRA specific match command.  The number is a range from (0-255).
   Matches the originating protocols instance specified.
+
+.. clicmd:: match evpn route-type ROUTE_TYPE_NAME
+
+  This is a BGP EVPN specific match command. It matches to EVPN route-type
+  from type-1 (EAD route-type) to type-5 (Prefix route-type).
+  User can provide in an integral form (1-5) or string form of route-type
+  (i.e ead, macip, multicast, es, prefix).
+
+.. clicmd:: match evpn vni NUMBER
+
+  This is a BGP EVPN specific match command which matches to EVPN VNI id.
+  The number is a range from (1-6777215).
 
 .. _route-map-set-command:
 

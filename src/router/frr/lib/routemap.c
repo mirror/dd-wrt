@@ -100,6 +100,7 @@ static void route_map_del_plist_entries(afi_t afi,
 					struct prefix_list_entry *entry);
 
 static struct hash *route_map_get_dep_hash(route_map_event_t event);
+static void route_map_free_map(struct route_map *map);
 
 struct route_map_match_set_hooks rmap_match_set_hook;
 
@@ -566,15 +567,8 @@ static bool route_map_hash_cmp(const void *p1, const void *p2)
 	const struct route_map *map1 = p1;
 	const struct route_map *map2 = p2;
 
-	if (map1->deleted == map2->deleted) {
-		if (map1->name && map2->name) {
-			if (!strcmp(map1->name, map2->name)) {
-				return true;
-			}
-		} else if (!map1->name && !map2->name) {
-			return true;
-		}
-	}
+	if (!strcmp(map1->name, map2->name))
+		return true;
 
 	return false;
 }
@@ -636,13 +630,25 @@ static struct route_map *route_map_new(const char *name)
 /* Add new name to route_map. */
 static struct route_map *route_map_add(const char *name)
 {
-	struct route_map *map;
+	struct route_map *map, *exist;
 	struct route_map_list *list;
 
 	map = route_map_new(name);
 	list = &route_map_master;
 
-	/* Add map to the hash */
+	/*
+	 * Add map to the hash
+	 *
+	 * If the map already exists in the hash, then we know that
+	 * FRR is now in a sequence of delete/create.
+	 * All FRR needs to do here is set the to_be_processed
+	 * bit (to inherit from the old one
+	 */
+	exist = hash_release(route_map_master_hash, map);
+	if (exist) {
+		map->to_be_processed = exist->to_be_processed;
+		route_map_free_map(exist);
+	}
 	hash_get(route_map_master_hash, map, hash_alloc_intern);
 
 	/* Add new entry to the head of the list to match how it is added in the
@@ -752,11 +758,15 @@ struct route_map *route_map_lookup_by_name(const char *name)
 	if (!name)
 		return NULL;
 
-	// map.deleted is 0 via memset
-	memset(&tmp_map, 0, sizeof(struct route_map));
+	// map.deleted is false via memset
+	memset(&tmp_map, 0, sizeof(tmp_map));
 	tmp_map.name = XSTRDUP(MTYPE_ROUTE_MAP_NAME, name);
 	map = hash_lookup(route_map_master_hash, &tmp_map);
 	XFREE(MTYPE_ROUTE_MAP_NAME, tmp_map.name);
+
+	if (map && map->deleted)
+		return NULL;
+
 	return map;
 }
 
@@ -787,7 +797,7 @@ int route_map_mark_updated(const char *name)
 	 * with deleted=true
 	 */
 	if (!map) {
-		memset(&tmp_map, 0, sizeof(struct route_map));
+		memset(&tmp_map, 0, sizeof(tmp_map));
 		tmp_map.name = XSTRDUP(MTYPE_ROUTE_MAP_NAME, name);
 		tmp_map.deleted = true;
 		map = hash_lookup(route_map_master_hash, &tmp_map);
@@ -1799,12 +1809,11 @@ static struct list *route_map_get_index_list(struct route_node **rn,
 /*
  * This function returns the route-map index that best matches the prefix.
  */
-static struct route_map_index *route_map_get_index(struct route_map *map,
-						   const struct prefix *prefix,
-						   void *object,
-						   uint8_t *match_ret)
+static struct route_map_index *
+route_map_get_index(struct route_map *map, const struct prefix *prefix,
+		    void *object, enum route_map_cmd_result_t *match_ret)
 {
-	int ret = 0;
+	enum route_map_cmd_result_t ret = RMAP_NOMATCH;
 	struct list *candidate_rmap_list = NULL;
 	struct route_node *rn = NULL;
 	struct listnode *ln = NULL, *nn = NULL;
@@ -2472,7 +2481,7 @@ void route_map_notify_pentry_dependencies(const char *affected_name,
 		if (!dep->this_hash)
 			dep->this_hash = upd8_hash;
 
-		memset(&pentry_dep, 0, sizeof(struct route_map_pentry_dep));
+		memset(&pentry_dep, 0, sizeof(pentry_dep));
 		pentry_dep.pentry = pentry;
 		pentry_dep.plist_name = affected_name;
 		pentry_dep.event = event;
@@ -2559,7 +2568,7 @@ route_map_result_t route_map_apply_ext(struct route_map *map,
 	if ((!map->optimization_disabled)
 	    && (map->ipv4_prefix_table || map->ipv6_prefix_table)) {
 		index = route_map_get_index(map, prefix, match_object,
-					    (uint8_t *)&match_ret);
+					    &match_ret);
 		if (index) {
 			index->applied++;
 			if (rmap_debug)
@@ -2751,7 +2760,7 @@ static void route_map_clear_reference(struct hash_bucket *bucket, void *arg)
 	struct route_map_dep *dep = bucket->data;
 	struct route_map_dep_data *dep_data = NULL, tmp_dep_data;
 
-	memset(&tmp_dep_data, 0, sizeof(struct route_map_dep_data));
+	memset(&tmp_dep_data, 0, sizeof(tmp_dep_data));
 	tmp_dep_data.rname = arg;
 	dep_data = hash_release(dep->dep_rmap_hash, &tmp_dep_data);
 	if (dep_data) {
@@ -2864,7 +2873,7 @@ static int route_map_dep_update(struct hash *dephash, const char *dep_name,
 		if (!dep->this_hash)
 			dep->this_hash = dephash;
 
-		memset(&tmp_dep_data, 0, sizeof(struct route_map_dep_data));
+		memset(&tmp_dep_data, 0, sizeof(tmp_dep_data));
 		tmp_dep_data.rname = rname;
 		dep_data = hash_lookup(dep->dep_rmap_hash, &tmp_dep_data);
 		if (!dep_data)
@@ -2888,7 +2897,7 @@ static int route_map_dep_update(struct hash *dephash, const char *dep_name,
 			goto out;
 		}
 
-		memset(&tmp_dep_data, 0, sizeof(struct route_map_dep_data));
+		memset(&tmp_dep_data, 0, sizeof(tmp_dep_data));
 		tmp_dep_data.rname = rname;
 		dep_data = hash_lookup(dep->dep_rmap_hash, &tmp_dep_data);
 		/*

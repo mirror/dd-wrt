@@ -188,8 +188,6 @@ static int lsp_install(struct zebra_vrf *zvrf, mpls_label_t label,
 	/* Locate or allocate LSP entry. */
 	tmp_ile.in_label = label;
 	lsp = hash_get(lsp_table, &tmp_ile, lsp_alloc);
-	if (!lsp)
-		return -1;
 
 	/* For each active nexthop, create NHLFE. Note that we deliberately skip
 	 * recursive nexthops right now, because intermediate hops won't
@@ -614,7 +612,7 @@ static int nhlfe_nexthop_active_ipv4(struct zebra_nhlfe *nhlfe,
 		return 0;
 
 	/* Lookup nexthop in IPv4 routing table. */
-	memset(&p, 0, sizeof(struct prefix_ipv4));
+	memset(&p, 0, sizeof(p));
 	p.family = AF_INET;
 	p.prefixlen = IPV4_MAX_BITLEN;
 	p.prefix = nexthop->gate.ipv4;
@@ -663,7 +661,7 @@ static int nhlfe_nexthop_active_ipv6(struct zebra_nhlfe *nhlfe,
 		return 0;
 
 	/* Lookup nexthop in IPv6 routing table. */
-	memset(&p, 0, sizeof(struct prefix_ipv6));
+	memset(&p, 0, sizeof(p));
 	p.family = AF_INET6;
 	p.prefixlen = IPV6_MAX_BITLEN;
 	p.prefix = nexthop->gate.ipv6;
@@ -2920,8 +2918,6 @@ int mpls_zapi_labels_process(bool add_p, struct zebra_vrf *zvrf,
 		/* Find or create LSP object */
 		tmp_ile.in_label = zl->local_label;
 		lsp = hash_get(lsp_table, &tmp_ile, lsp_alloc);
-		if (!lsp)
-			return -1;
 	}
 
 	/* Prep for route/FEC update if requested */
@@ -3199,8 +3195,6 @@ int mpls_lsp_install(struct zebra_vrf *zvrf, enum lsp_types_t type,
 	/* Find or create LSP object */
 	tmp_ile.in_label = in_label;
 	lsp = hash_get(lsp_table, &tmp_ile, lsp_alloc);
-	if (!lsp)
-		return -1;
 
 	nhlfe = lsp_add_nhlfe(lsp, type, num_out_labels, out_labels, gtype,
 			      gate, ifindex, false /*backup*/);
@@ -3562,8 +3556,6 @@ int zebra_mpls_static_lsp_add(struct zebra_vrf *zvrf, mpls_label_t in_label,
 	/* Find or create LSP. */
 	tmp_ile.in_label = in_label;
 	lsp = hash_get(slsp_table, &tmp_ile, lsp_alloc);
-	if (!lsp)
-		return -1;
 
 	nhlfe = nhlfe_find(&lsp->nhlfe_list, ZEBRA_LSP_STATIC, gtype, gate,
 			   ifindex);
@@ -4018,6 +4010,13 @@ void zebra_mpls_client_cleanup_vrf_label(uint8_t proto)
 	}
 }
 
+static void lsp_table_free(void *p)
+{
+	struct zebra_lsp *lsp = p;
+
+	XFREE(MTYPE_LSP, lsp);
+}
+
 /*
  * Called upon process exiting, need to delete LSP forwarding
  * entries from the kernel.
@@ -4026,9 +4025,9 @@ void zebra_mpls_client_cleanup_vrf_label(uint8_t proto)
 void zebra_mpls_close_tables(struct zebra_vrf *zvrf)
 {
 	hash_iterate(zvrf->lsp_table, lsp_uninstall_from_kernel, NULL);
-	hash_clean(zvrf->lsp_table, NULL);
+	hash_clean(zvrf->lsp_table, lsp_table_free);
 	hash_free(zvrf->lsp_table);
-	hash_clean(zvrf->slsp_table, NULL);
+	hash_clean(zvrf->slsp_table, lsp_table_free);
 	hash_free(zvrf->slsp_table);
 	route_table_finish(zvrf->fec_table[AFI_IP]);
 	route_table_finish(zvrf->fec_table[AFI_IP6]);

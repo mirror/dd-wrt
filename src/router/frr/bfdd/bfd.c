@@ -51,8 +51,6 @@ static void bs_admin_down_handler(struct bfd_session *bs, int nstate);
 static void bs_down_handler(struct bfd_session *bs, int nstate);
 static void bs_init_handler(struct bfd_session *bs, int nstate);
 static void bs_up_handler(struct bfd_session *bs, int nstate);
-static void bs_neighbour_admin_down_handler(struct bfd_session *bfd,
-					    uint8_t diag);
 
 /**
  * Remove BFD profile from all BFD sessions so we don't leave dangling
@@ -611,27 +609,23 @@ struct bfd_session *ptm_bfd_sess_find(struct bfd_pkt *cp,
 	return bfd_key_lookup(key);
 }
 
-int bfd_xmt_cb(struct thread *t)
+void bfd_xmt_cb(struct thread *t)
 {
 	struct bfd_session *bs = THREAD_ARG(t);
 
 	ptm_bfd_xmt_TO(bs, 0);
-
-	return 0;
 }
 
-int bfd_echo_xmt_cb(struct thread *t)
+void bfd_echo_xmt_cb(struct thread *t)
 {
 	struct bfd_session *bs = THREAD_ARG(t);
 
 	if (bs->echo_xmt_TO > 0)
 		ptm_bfd_echo_xmt_TO(bs);
-
-	return 0;
 }
 
 /* Was ptm_bfd_detect_TO() */
-int bfd_recvtimer_cb(struct thread *t)
+void bfd_recvtimer_cb(struct thread *t)
 {
 	struct bfd_session *bs = THREAD_ARG(t);
 
@@ -641,12 +635,10 @@ int bfd_recvtimer_cb(struct thread *t)
 		ptm_bfd_sess_dn(bs, BD_CONTROL_EXPIRED);
 		break;
 	}
-
-	return 0;
 }
 
 /* Was ptm_bfd_echo_detect_TO() */
-int bfd_echo_recvtimer_cb(struct thread *t)
+void bfd_echo_recvtimer_cb(struct thread *t)
 {
 	struct bfd_session *bs = THREAD_ARG(t);
 
@@ -656,8 +648,6 @@ int bfd_echo_recvtimer_cb(struct thread *t)
 		ptm_bfd_sess_dn(bs, BD_ECHO_FAILED);
 		break;
 	}
-
-	return 0;
 }
 
 struct bfd_session *bfd_session_new(void)
@@ -779,7 +769,7 @@ static void _bfd_session_update(struct bfd_session *bs,
 	 * Apply profile last: it also calls `bfd_set_shutdown`.
 	 *
 	 * There is no problem calling `shutdown` twice if the value doesn't
-	 * change or if it is overriden by peer specific configuration.
+	 * change or if it is overridden by peer specific configuration.
 	 */
 	if (bpc->bpc_has_profile)
 		bfd_profile_apply(bpc->bpc_profile, bs);
@@ -997,9 +987,18 @@ static void bs_down_handler(struct bfd_session *bs, int nstate)
 		 */
 		bs->ses_state = PTM_BFD_INIT;
 
-		/* Answer peer with INIT immediately in passive mode. */
+		/*
+		 * RFC 5880, Section 6.1.
+		 * A system taking the Passive role MUST NOT begin
+		 * sending BFD packets for a particular session until
+		 * it has received a BFD packet for that session, and thus
+		 * has learned the remote system's discriminator value.
+		 *
+		 * Now we can start transmission timer in passive mode.
+		 */
 		if (CHECK_FLAG(bs->flags, BFD_SESS_FLAG_PASSIVE))
-			ptm_bfd_snd(bs, 0);
+			ptm_bfd_xmt_TO(bs, 0);
+
 		break;
 
 	case PTM_BFD_INIT:
@@ -1026,7 +1025,7 @@ static void bs_init_handler(struct bfd_session *bs, int nstate)
 		 * Remote peer doesn't want to talk, so lets make the
 		 * connection down.
 		 */
-		bs->ses_state = PTM_BFD_DOWN;
+		ptm_bfd_sess_dn(bs, BD_NEIGHBOR_DOWN);
 		break;
 
 	case PTM_BFD_DOWN:
@@ -1047,46 +1046,10 @@ static void bs_init_handler(struct bfd_session *bs, int nstate)
 	}
 }
 
-static void bs_neighbour_admin_down_handler(struct bfd_session *bfd,
-					    uint8_t diag)
-{
-	int old_state = bfd->ses_state;
-
-	bfd->local_diag = diag;
-	bfd->discrs.remote_discr = 0;
-	bfd->ses_state = PTM_BFD_DOWN;
-	bfd->polling = 0;
-	bfd->demand_mode = 0;
-	monotime(&bfd->downtime);
-
-	/* Slow down the control packets, the connection is down. */
-	bs_set_slow_timers(bfd);
-
-	/* only signal clients when going from up->down state */
-	if (old_state == PTM_BFD_UP)
-		control_notify(bfd, PTM_BFD_ADM_DOWN);
-
-	/* Stop echo packet transmission if they are active */
-	if (CHECK_FLAG(bfd->flags, BFD_SESS_FLAG_ECHO_ACTIVE))
-		ptm_bfd_echo_stop(bfd);
-
-	if (old_state != bfd->ses_state) {
-		bfd->stats.session_down++;
-		if (bglobal.debug_peer_event)
-			zlog_debug("state-change: [%s] %s -> %s reason:%s",
-				   bs_to_string(bfd), state_list[old_state].str,
-				   state_list[bfd->ses_state].str,
-				   get_diag_str(bfd->local_diag));
-	}
-}
-
 static void bs_up_handler(struct bfd_session *bs, int nstate)
 {
 	switch (nstate) {
 	case PTM_BFD_ADM_DOWN:
-		bs_neighbour_admin_down_handler(bs, BD_ADMIN_DOWN);
-		break;
-
 	case PTM_BFD_DOWN:
 		/* Peer lost or asked to shutdown connection. */
 		ptm_bfd_sess_dn(bs, BD_NEIGHBOR_DOWN);

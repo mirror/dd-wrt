@@ -88,7 +88,7 @@ struct bgp_dump {
 };
 
 static int bgp_dump_unset(struct bgp_dump *bgp_dump);
-static int bgp_dump_interval_func(struct thread *);
+static void bgp_dump_interval_func(struct thread *);
 
 /* BGP packet dump output buffer. */
 struct stream *bgp_dump_obuf;
@@ -439,7 +439,7 @@ static unsigned int bgp_dump_routes_func(int afi, int first_run,
 	return seq;
 }
 
-static int bgp_dump_interval_func(struct thread *t)
+static void bgp_dump_interval_func(struct thread *t)
 {
 	struct bgp_dump *bgp_dump;
 	bgp_dump = THREAD_ARG(t);
@@ -462,8 +462,6 @@ static int bgp_dump_interval_func(struct thread *t)
 	/* if interval is set reschedule */
 	if (bgp_dump->interval > 0)
 		bgp_dump_interval_add(bgp_dump, bgp_dump->interval);
-
-	return 0;
 }
 
 /* Dump common information. */
@@ -853,9 +851,9 @@ static int config_write_bgp_dump(struct vty *vty)
 /* Initialize BGP packet dump functionality. */
 void bgp_dump_init(void)
 {
-	memset(&bgp_dump_all, 0, sizeof(struct bgp_dump));
-	memset(&bgp_dump_updates, 0, sizeof(struct bgp_dump));
-	memset(&bgp_dump_routes, 0, sizeof(struct bgp_dump));
+	memset(&bgp_dump_all, 0, sizeof(bgp_dump_all));
+	memset(&bgp_dump_updates, 0, sizeof(bgp_dump_updates));
+	memset(&bgp_dump_routes, 0, sizeof(bgp_dump_routes));
 
 	bgp_dump_obuf =
 		stream_new((BGP_STANDARD_MESSAGE_MAX_PACKET_SIZE * 2)

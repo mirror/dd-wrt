@@ -292,15 +292,6 @@ int zebra_check_addr(const struct prefix *p)
 	return 1;
 }
 
-/**
- * copy_nexthop - copy a nexthop to the rib structure.
- */
-void route_entry_copy_nexthops(struct route_entry *re, struct nexthop *nh)
-{
-	assert(!re->nhe->nhg.nexthop);
-	copy_nexthops(&re->nhe->nhg.nexthop, nh, NULL);
-}
-
 static void route_entry_attach_ref(struct route_entry *re,
 				   struct nhg_hash_entry *new)
 {
@@ -381,7 +372,7 @@ struct route_entry *rib_match(afi_t afi, safi_t safi, vrf_id_t vrf_id,
 	if (!table)
 		return 0;
 
-	memset(&p, 0, sizeof(struct prefix));
+	memset(&p, 0, sizeof(p));
 	p.family = afi;
 	if (afi == AFI_IP) {
 		p.u.prefix4 = addr->ipv4;
@@ -484,6 +475,62 @@ struct route_entry *rib_match_ipv4_multicast(vrf_id_t vrf_id,
 			       : ure ? "URIB" : "nothing",
 			   re == ure ? "URIB" : re == mre ? "MRIB" : "none");
 	}
+	return re;
+}
+
+struct route_entry *rib_match_ipv6_multicast(vrf_id_t vrf_id,
+					     struct in6_addr addr,
+					     struct route_node **rn_out)
+{
+	struct route_entry *re = NULL, *mre = NULL, *ure = NULL;
+	struct route_node *m_rn = NULL, *u_rn = NULL;
+	union g_addr gaddr = {.ipv6 = addr};
+
+	switch (zrouter.ipv4_multicast_mode) {
+	case MCAST_MRIB_ONLY:
+		return rib_match(AFI_IP6, SAFI_MULTICAST, vrf_id, &gaddr,
+				 rn_out);
+	case MCAST_URIB_ONLY:
+		return rib_match(AFI_IP6, SAFI_UNICAST, vrf_id, &gaddr, rn_out);
+	case MCAST_NO_CONFIG:
+	case MCAST_MIX_MRIB_FIRST:
+		re = mre = rib_match(AFI_IP6, SAFI_MULTICAST, vrf_id, &gaddr,
+				     &m_rn);
+		if (!mre)
+			re = ure = rib_match(AFI_IP6, SAFI_UNICAST, vrf_id,
+					     &gaddr, &u_rn);
+		break;
+	case MCAST_MIX_DISTANCE:
+		mre = rib_match(AFI_IP6, SAFI_MULTICAST, vrf_id, &gaddr, &m_rn);
+		ure = rib_match(AFI_IP6, SAFI_UNICAST, vrf_id, &gaddr, &u_rn);
+		if (mre && ure)
+			re = ure->distance < mre->distance ? ure : mre;
+		else if (mre)
+			re = mre;
+		else if (ure)
+			re = ure;
+		break;
+	case MCAST_MIX_PFXLEN:
+		mre = rib_match(AFI_IP6, SAFI_MULTICAST, vrf_id, &gaddr, &m_rn);
+		ure = rib_match(AFI_IP6, SAFI_UNICAST, vrf_id, &gaddr, &u_rn);
+		if (mre && ure)
+			re = u_rn->p.prefixlen > m_rn->p.prefixlen ? ure : mre;
+		else if (mre)
+			re = mre;
+		else if (ure)
+			re = ure;
+		break;
+	}
+
+	if (rn_out)
+		*rn_out = (re == mre) ? m_rn : u_rn;
+
+	if (IS_ZEBRA_DEBUG_RIB)
+		zlog_debug("%s: %pI6: vrf: %s(%u) found %s, using %s", __func__,
+			   &addr, vrf_id_to_name(vrf_id), vrf_id,
+			   mre ? (ure ? "MRIB+URIB" : "MRIB")
+			       : ure ? "URIB" : "nothing",
+			   re == ure ? "URIB" : re == mre ? "MRIB" : "none");
 	return re;
 }
 
@@ -3124,6 +3171,17 @@ static void rib_addnode(struct route_node *rn,
 	rib_link(rn, re, process);
 }
 
+static void rib_re_nhg_free(struct route_entry *re)
+{
+	if (re->nhe && re->nhe_id) {
+		assert(re->nhe->id == re->nhe_id);
+		route_entry_update_nhe(re, NULL);
+	} else if (re->nhe && re->nhe->nhg.nexthop)
+		nexthops_free(re->nhe->nhg.nexthop);
+
+	nexthops_free(re->fib_ng.nexthop);
+}
+
 /*
  * rib_unlink
  *
@@ -3150,16 +3208,9 @@ void rib_unlink(struct route_node *rn, struct route_entry *re)
 	if (dest->selected_fib == re)
 		dest->selected_fib = NULL;
 
-	if (re->nhe && re->nhe_id) {
-		assert(re->nhe->id == re->nhe_id);
+	rib_re_nhg_free(re);
 
-		route_entry_update_nhe(re, NULL);
-	} else if (re->nhe && re->nhe->nhg.nexthop)
-		nexthops_free(re->nhe->nhg.nexthop);
-
-	nexthops_free(re->fib_ng.nexthop);
-
-	zapi_opaque_free(re->opaque);
+	zapi_re_opaque_free(re->opaque);
 
 	XFREE(MTYPE_RE, re);
 }
@@ -3347,7 +3398,7 @@ void _route_entry_dump(const char *func, union prefixconstptr pp,
  */
 int rib_add_multipath_nhe(afi_t afi, safi_t safi, struct prefix *p,
 			  struct prefix_ipv6 *src_p, struct route_entry *re,
-			  struct nhg_hash_entry *re_nhe)
+			  struct nhg_hash_entry *re_nhe, bool startup)
 {
 	struct nhg_hash_entry *nhe = NULL;
 	struct route_table *table;
@@ -3439,6 +3490,26 @@ int rib_add_multipath_nhe(afi_t afi, safi_t safi, struct prefix *p,
 
 	same = first_same;
 
+	if (!startup &&
+	    (re->flags & ZEBRA_FLAG_SELFROUTE) && zrouter.asic_offloaded) {
+		if (!same) {
+			if (IS_ZEBRA_DEBUG_RIB)
+				zlog_debug("prefix: %pRN is a self route where we do not have an entry for it.  Dropping this update, it's useless", rn);
+			/*
+			 * We are not on startup, this is a self route
+			 * and we have asic offload.  Which means
+			 * we are getting a callback for a entry
+			 * that was already deleted to the kernel
+			 * but an earlier response was just handed
+			 * back.  Drop it on the floor
+			 */
+			rib_re_nhg_free(re);
+
+			XFREE(MTYPE_RE, re);
+			return ret;
+		}
+	}
+
 	/* If this route is kernel/connected route, notify the dataplane. */
 	if (RIB_SYSTEM_ROUTE(re)) {
 		/* Notify dataplane */
@@ -3492,7 +3563,7 @@ int rib_add_multipath_nhe(afi_t afi, safi_t safi, struct prefix *p,
  */
 int rib_add_multipath(afi_t afi, safi_t safi, struct prefix *p,
 		      struct prefix_ipv6 *src_p, struct route_entry *re,
-		      struct nexthop_group *ng)
+		      struct nexthop_group *ng, bool startup)
 {
 	int ret;
 	struct nhg_hash_entry nhe;
@@ -3513,7 +3584,7 @@ int rib_add_multipath(afi_t afi, safi_t safi, struct prefix *p,
 	else if (re->nhe_id > 0)
 		nhe.id = re->nhe_id;
 
-	ret = rib_add_multipath_nhe(afi, safi, p, src_p, re, &nhe);
+	ret = rib_add_multipath_nhe(afi, safi, p, src_p, re, &nhe, startup);
 
 	/* In this path, the callers expect memory to be freed. */
 	nexthop_group_delete(&ng);
@@ -3744,7 +3815,7 @@ int rib_add(afi_t afi, safi_t safi, vrf_id_t vrf_id, int type,
 	    unsigned short instance, uint32_t flags, struct prefix *p,
 	    struct prefix_ipv6 *src_p, const struct nexthop *nh,
 	    uint32_t nhe_id, uint32_t table_id, uint32_t metric, uint32_t mtu,
-	    uint8_t distance, route_tag_t tag)
+	    uint8_t distance, route_tag_t tag, bool startup)
 {
 	struct route_entry *re = NULL;
 	struct nexthop *nexthop = NULL;
@@ -3776,7 +3847,7 @@ int rib_add(afi_t afi, safi_t safi, vrf_id_t vrf_id, int type,
 		nexthop_group_add_sorted(ng, nexthop);
 	}
 
-	return rib_add_multipath(afi, safi, p, src_p, re, ng);
+	return rib_add_multipath(afi, safi, p, src_p, re, ng, startup);
 }
 
 static const char *rib_update_event2str(enum rib_update_event event)
@@ -3925,7 +3996,7 @@ static void rib_update_ctx_fini(struct rib_update_ctx **ctx)
 	XFREE(MTYPE_RIB_UPDATE_CTX, *ctx);
 }
 
-static int rib_update_handler(struct thread *thread)
+static void rib_update_handler(struct thread *thread)
 {
 	struct rib_update_ctx *ctx;
 
@@ -3937,8 +4008,6 @@ static int rib_update_handler(struct thread *thread)
 		rib_update_handle_vrf(ctx->vrf_id, ctx->event, ZEBRA_ROUTE_ALL);
 
 	rib_update_ctx_fini(&ctx);
-
-	return 0;
 }
 
 /*
@@ -4032,7 +4101,7 @@ void rib_sweep_table(struct route_table *table)
 }
 
 /* Sweep all RIB tables.  */
-int rib_sweep_route(struct thread *t)
+void rib_sweep_route(struct thread *t)
 {
 	struct vrf *vrf;
 	struct zebra_vrf *zvrf;
@@ -4047,8 +4116,6 @@ int rib_sweep_route(struct thread *t)
 
 	zebra_router_sweep_route();
 	zebra_router_sweep_nhgs();
-
-	return 0;
 }
 
 /* Remove specific by protocol routes from 'table'. */
@@ -4158,7 +4225,7 @@ done:
  * Handle results from the dataplane system. Dequeue update context
  * structs, dispatch to appropriate internal handlers.
  */
-static int rib_process_dplane_results(struct thread *thread)
+static void rib_process_dplane_results(struct thread *thread)
 {
 	struct zebra_dplane_ctx *ctx;
 	struct dplane_ctx_q ctxlist;
@@ -4298,7 +4365,11 @@ static int rib_process_dplane_results(struct thread *thread)
 
 			case DPLANE_OP_INTF_ADDR_ADD:
 			case DPLANE_OP_INTF_ADDR_DEL:
-				zebra_if_addr_update_ctx(ctx);
+			case DPLANE_OP_INTF_INSTALL:
+			case DPLANE_OP_INTF_UPDATE:
+			case DPLANE_OP_INTF_DELETE:
+			case DPLANE_OP_INTF_NETCONFIG:
+				zebra_if_dplane_result(ctx);
 				break;
 
 			/* Some op codes not handled here */
@@ -4326,8 +4397,6 @@ static int rib_process_dplane_results(struct thread *thread)
 		}
 
 	} while (1);
-
-	return 0;
 }
 
 /*
