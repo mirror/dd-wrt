@@ -1070,7 +1070,10 @@ DEFUN(show_sr_node, show_sr_node_cmd,
 		for (ALL_LIST_ELEMENTS_RO(isis->area_list, node, area)) {
 			vty_out(vty, "Area %s:\n",
 				area->area_tag ? area->area_tag : "null");
-
+			if (!area->srdb.enabled) {
+				vty_out(vty, " Segment Routing is disabled\n");
+				continue;
+			}
 			for (int level = ISIS_LEVEL1; level <= ISIS_LEVELS;
 			     level++)
 				show_node(vty, area, level);
@@ -1090,7 +1093,7 @@ DEFUN(show_sr_node, show_sr_node_cmd,
  *
  * @return		1 on success
  */
-static int sr_start_label_manager(struct thread *start)
+static void sr_start_label_manager(struct thread *start)
 {
 	struct isis_area *area;
 
@@ -1098,8 +1101,6 @@ static int sr_start_label_manager(struct thread *start)
 
 	/* re-attempt to start SR & Label Manager connection */
 	isis_sr_start(area);
-
-	return 1;
 }
 
 /**

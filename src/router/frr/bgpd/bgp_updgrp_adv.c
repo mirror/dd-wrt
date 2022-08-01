@@ -316,7 +316,7 @@ static void updgrp_show_adj(struct bgp *bgp, afi_t afi, safi_t safi,
 	update_group_af_walk(bgp, afi, safi, updgrp_show_adj_walkcb, &ctx);
 }
 
-static int subgroup_coalesce_timer(struct thread *thread)
+static void subgroup_coalesce_timer(struct thread *thread)
 {
 	struct update_subgroup *subgrp;
 	struct bgp *bgp;
@@ -351,8 +351,6 @@ static int subgroup_coalesce_timer(struct thread *thread)
 			BGP_TIMER_ON(peer->t_routeadv, bgp_routeadv_timer, 0);
 		}
 	}
-
-	return 0;
 }
 
 static int update_group_announce_walkcb(struct update_group *updgrp, void *arg)
@@ -814,12 +812,13 @@ void subgroup_default_originate(struct update_subgroup *subgrp, int withdraw)
 	bgp = peer->bgp;
 	from = bgp->peer_self;
 
-	bgp_attr_default_set(&attr, BGP_ORIGIN_IGP);
+	bgp_attr_default_set(&attr, bgp, BGP_ORIGIN_IGP);
 
 	/* make coverity happy */
 	assert(attr.aspath);
 
-	attr.local_pref = bgp->default_local_pref;
+	attr.med = 0;
+	attr.flag |= ATTR_FLAG_BIT(BGP_ATTR_MULTI_EXIT_DISC);
 
 	if ((afi == AFI_IP6) || peer_cap_enhe(peer, afi, safi)) {
 		/* IPv6 global nexthop must be included. */
@@ -859,7 +858,7 @@ void subgroup_default_originate(struct update_subgroup *subgrp, int withdraw)
 					bgp_dest_get_prefix(dest), pi, &tmp_pi);
 
 				if (ret == RMAP_DENYMATCH) {
-					bgp_attr_undup(&tmp_attr, &attr);
+					bgp_attr_flush(&tmp_attr);
 					continue;
 				} else {
 					new_attr = bgp_attr_intern(&tmp_attr);

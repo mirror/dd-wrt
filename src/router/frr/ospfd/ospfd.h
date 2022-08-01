@@ -234,6 +234,9 @@ struct ospf {
 	struct route_table *old_table; /* Old routing table. */
 	struct route_table *new_table; /* Current routing table. */
 
+	struct route_table *oall_rtrs; /* Old router RT. */
+	struct route_table *all_rtrs;  /* New routers RT. */
+
 	struct route_table *old_rtrs; /* Old ABR/ASBR RT. */
 	struct route_table *new_rtrs; /* New ABR/ASBR RT. */
 
@@ -337,7 +340,7 @@ struct ospf {
 	struct list *external[ZEBRA_ROUTE_MAX + 1];
 #define EXTERNAL_INFO(E) (E->external_info)
 
-	/* Gracefull restart Helper supported configs*/
+	/* Graceful restart Helper supported configs*/
 	/* Supported grace interval*/
 	uint32_t supported_grace_time;
 
@@ -377,7 +380,7 @@ struct ospf {
 	struct thread *t_external_aggr;
 
 	/* delay interval in seconds */
-	unsigned int aggr_delay_interval;
+	uint16_t aggr_delay_interval;
 
 	/* Table of configured Aggregate addresses */
 	struct route_table *rt_aggr_tbl;

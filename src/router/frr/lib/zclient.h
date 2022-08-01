@@ -143,7 +143,7 @@ typedef enum {
 	ZEBRA_BFD_CLIENT_DEREGISTER,
 	ZEBRA_INTERFACE_ENABLE_RADV,
 	ZEBRA_INTERFACE_DISABLE_RADV,
-	ZEBRA_IPV4_NEXTHOP_LOOKUP_MRIB,
+	ZEBRA_NEXTHOP_LOOKUP_MRIB,
 	ZEBRA_INTERFACE_LINK_PARAMS,
 	ZEBRA_MPLS_LABELS_ADD,
 	ZEBRA_MPLS_LABELS_DELETE,
@@ -618,7 +618,7 @@ struct zapi_sr_policy {
 };
 
 struct zapi_pw {
-	char ifname[IF_NAMESIZE];
+	char ifname[INTERFACE_NAMSIZ];
 	ifindex_t ifindex;
 	int type;
 	int af;
@@ -631,7 +631,7 @@ struct zapi_pw {
 };
 
 struct zapi_pw_status {
-	char ifname[IF_NAMESIZE];
+	char ifname[INTERFACE_NAMSIZ];
 	ifindex_t ifindex;
 	uint32_t status;
 };
@@ -1071,7 +1071,8 @@ extern enum zclient_send_status zclient_route_send(uint8_t, struct zclient *,
 						   struct zapi_route *);
 extern enum zclient_send_status
 zclient_send_rnh(struct zclient *zclient, int command, const struct prefix *p,
-		 bool connected, bool resolve_via_default, vrf_id_t vrf_id);
+		 safi_t safi, bool connected, bool resolve_via_default,
+		 vrf_id_t vrf_id);
 int zapi_nexthop_encode(struct stream *s, const struct zapi_nexthop *api_nh,
 			uint32_t api_flags, uint32_t api_message);
 extern int zapi_route_encode(uint8_t, struct stream *, struct zapi_route *);

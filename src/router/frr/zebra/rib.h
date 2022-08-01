@@ -86,7 +86,7 @@ struct rnh {
 
 PREDECL_LIST(re_list);
 
-struct opaque {
+struct re_opaque {
 	uint16_t length;
 	uint8_t data[];
 };
@@ -168,7 +168,7 @@ struct route_entry {
 	/* Distance. */
 	uint8_t distance;
 
-	struct opaque *opaque;
+	struct re_opaque *opaque;
 };
 
 #define RIB_SYSTEM_ROUTE(R) RSYSTEM_ROUTE((R)->type)
@@ -288,33 +288,6 @@ DECLARE_LIST(re_list, struct route_entry, next);
 
 #define RNODE_NEXT_RE(rn, re) RE_DEST_NEXT_ROUTE(rib_dest_from_rnode(rn), re)
 
-#if defined(HAVE_RTADV)
-PREDECL_SORTLIST_UNIQ(adv_if_list);
-/* Structure which hold status of router advertisement. */
-struct rtadv {
-	int sock;
-
-	struct adv_if_list_head adv_if;
-	struct adv_if_list_head adv_msec_if;
-
-	struct thread *ra_read;
-	struct thread *ra_timer;
-};
-
-/* adv list node */
-struct adv_if {
-	char name[INTERFACE_NAMSIZ];
-	struct adv_if_list_item list_item;
-};
-
-static int adv_if_cmp(const struct adv_if *a, const struct adv_if *b)
-{
-	return if_cmp_name_func(a->name, b->name);
-}
-
-DECLARE_SORTLIST_UNIQ(adv_if_list, struct adv_if, list_item, adv_if_cmp);
-#endif /* HAVE_RTADV */
-
 /*
  * rib_table_info_t
  *
@@ -357,8 +330,6 @@ enum rib_update_event {
 	RIB_UPDATE_MAX
 };
 
-extern void route_entry_copy_nexthops(struct route_entry *re,
-				      struct nexthop *nh);
 int route_entry_update_nhe(struct route_entry *re,
 			   struct nhg_hash_entry *new_nhghe);
 
@@ -393,13 +364,14 @@ extern int rib_add(afi_t afi, safi_t safi, vrf_id_t vrf_id, int type,
 		   unsigned short instance, uint32_t flags, struct prefix *p,
 		   struct prefix_ipv6 *src_p, const struct nexthop *nh,
 		   uint32_t nhe_id, uint32_t table_id, uint32_t metric,
-		   uint32_t mtu, uint8_t distance, route_tag_t tag);
+		   uint32_t mtu, uint8_t distance, route_tag_t tag,
+		   bool startup);
 /*
  * Multipath route apis.
  */
 extern int rib_add_multipath(afi_t afi, safi_t safi, struct prefix *p,
 			     struct prefix_ipv6 *src_p, struct route_entry *re,
-			     struct nexthop_group *ng);
+			     struct nexthop_group *ng, bool startup);
 /*
  * -1 -> some sort of error
  *  0 -> an add
@@ -408,7 +380,7 @@ extern int rib_add_multipath(afi_t afi, safi_t safi, struct prefix *p,
 extern int rib_add_multipath_nhe(afi_t afi, safi_t safi, struct prefix *p,
 				 struct prefix_ipv6 *src_p,
 				 struct route_entry *re,
-				 struct nhg_hash_entry *nhe);
+				 struct nhg_hash_entry *nhe, bool startup);
 
 extern void rib_delete(afi_t afi, safi_t safi, vrf_id_t vrf_id, int type,
 		       unsigned short instance, uint32_t flags,
@@ -423,6 +395,9 @@ extern struct route_entry *rib_match(afi_t afi, safi_t safi, vrf_id_t vrf_id,
 extern struct route_entry *rib_match_ipv4_multicast(vrf_id_t vrf_id,
 						    struct in_addr addr,
 						    struct route_node **rn_out);
+extern struct route_entry *rib_match_ipv6_multicast(vrf_id_t vrf_id,
+						    struct in6_addr addr,
+						    struct route_node **rn_out);
 
 extern struct route_entry *rib_lookup_ipv4(struct prefix_ipv4 *p,
 					   vrf_id_t vrf_id);
@@ -430,7 +405,7 @@ extern struct route_entry *rib_lookup_ipv4(struct prefix_ipv4 *p,
 extern void rib_update(enum rib_update_event event);
 extern void rib_update_table(struct route_table *table,
 			     enum rib_update_event event, int rtype);
-extern int rib_sweep_route(struct thread *t);
+extern void rib_sweep_route(struct thread *t);
 extern void rib_sweep_table(struct route_table *table);
 extern void rib_close_table(struct route_table *table);
 extern void rib_init(void);
