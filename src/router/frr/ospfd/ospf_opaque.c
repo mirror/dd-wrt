@@ -64,7 +64,7 @@ DEFINE_MTYPE_STATIC(OSPFD, OPAQUE_INFO_PER_ID, "OSPF opaque per-ID info");
  * Following are initialize/terminate functions for Opaque-LSAs handling.
  *------------------------------------------------------------------------*/
 
-#ifdef SUPPORT_OSPF_API
+#if 1 //def SUPPORT_OSPF_API
 int ospf_apiserver_init(void);
 void ospf_apiserver_term(void);
 /* Init apiserver? It's disabled by default. */
@@ -97,7 +97,7 @@ void ospf_opaque_init(void)
 	if (ospf_ext_init() != 0)
 		exit(1);
 
-#ifdef SUPPORT_OSPF_API
+#if 1 //def SUPPORT_OSPF_API
 	if ((ospf_apiserver_enable) && (ospf_apiserver_init() != 0))
 		exit(1);
 #endif /* SUPPORT_OSPF_API */
@@ -115,7 +115,7 @@ void ospf_opaque_term(void)
 
 	ospf_sr_term();
 
-#ifdef SUPPORT_OSPF_API
+#if 1 //def SUPPORT_OSPF_API
 	ospf_apiserver_term();
 #endif /* SUPPORT_OSPF_API */
 

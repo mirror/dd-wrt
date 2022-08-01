@@ -21,7 +21,7 @@
 
 #include <zebra.h>
 
-#ifdef SUPPORT_OSPF_API
+#if 1 //def SUPPORT_OSPF_API
 
 #include "linklist.h"
 #include "prefix.h"
