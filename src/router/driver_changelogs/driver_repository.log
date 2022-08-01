@@ -1,4 +1,12 @@
 ------------------------------------------------------------------------
+r6706 | brainslayer | 2022-08-01 14:22:59 +0700 (Mon, 01 Aug 2022) | 1 line
+
+rework mesh fast xmit support with latest version
+------------------------------------------------------------------------
+r6705 | brainslayer | 2022-08-01 14:22:52 +0700 (Mon, 01 Aug 2022) | 1 line
+
+rework mesh fast xmit support with latest version
+------------------------------------------------------------------------
 r6704 | brainslayer | 2022-07-29 18:52:49 +0700 (Fri, 29 Jul 2022) | 1 line
 
 max_mtu is 4.9 and not 4.10
