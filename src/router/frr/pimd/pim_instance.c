@@ -25,6 +25,7 @@
 #include "lib_errors.h"
 
 #include "pimd.h"
+#include "pim_instance.h"
 #include "pim_ssm.h"
 #include "pim_rpf.h"
 #include "pim_rp.h"
@@ -113,6 +114,8 @@ static struct pim_instance *pim_instance_init(struct vrf *vrf)
 	pim->static_routes->del = (void (*)(void *))pim_static_route_free;
 
 	pim->send_v6_secondary = 1;
+
+	pim->gm_socket = -1;
 
 	pim_rp_init(pim);
 
@@ -235,5 +238,20 @@ void pim_vrf_init(void)
 
 void pim_vrf_terminate(void)
 {
+	struct vrf *vrf;
+
+	RB_FOREACH (vrf, vrf_name_head, &vrfs_by_name) {
+		struct pim_instance *pim;
+
+		pim = vrf->info;
+		if (!pim)
+			continue;
+
+		pim_ssmpingd_destroy(pim);
+		pim_instance_terminate(pim);
+
+		vrf->info = NULL;
+	}
+
 	vrf_terminate();
 }

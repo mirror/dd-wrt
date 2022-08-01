@@ -97,7 +97,7 @@ static void bfd_handle_adj_up(struct isis_adjacency *adj)
 		family = AF_INET6;
 		dst_ip.ipv6 = adj->ll_ipv6_addrs[0];
 		local_ips = circuit->ipv6_link;
-		if (!local_ips || list_isempty(local_ips)) {
+		if (list_isempty(local_ips)) {
 			if (IS_DEBUG_BFD)
 				zlog_debug(
 					"ISIS-BFD: skipping BFD initialization: IPv6 enabled and no local IPv6 addresses");
@@ -168,6 +168,8 @@ void isis_bfd_circuit_cmd(struct isis_circuit *circuit)
 			struct listnode *node;
 			struct isis_adjacency *adj;
 
+			if (!adjdb)
+				continue;
 			for (ALL_LIST_ELEMENTS_RO(adjdb, node, adj))
 				bfd_adj_cmd(adj);
 		}

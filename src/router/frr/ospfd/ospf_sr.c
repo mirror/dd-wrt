@@ -470,7 +470,7 @@ int ospf_sr_local_block_release_label(mpls_label_t label)
  *
  * @return		1 on success
  */
-static int sr_start_label_manager(struct thread *start)
+static void sr_start_label_manager(struct thread *start)
 {
 	struct ospf *ospf;
 
@@ -478,8 +478,6 @@ static int sr_start_label_manager(struct thread *start)
 
 	/* re-attempt to start SR & Label Manager connection */
 	ospf_sr_start(ospf);
-
-	return 1;
 }
 
 /* Segment Routing starter function */
@@ -610,7 +608,7 @@ int ospf_sr_init(void)
 
 	osr_debug("SR (%s): Initialize SR Data Base", __func__);
 
-	memset(&OspfSR, 0, sizeof(struct ospf_sr_db));
+	memset(&OspfSR, 0, sizeof(OspfSR));
 	OspfSR.status = SR_OFF;
 	/* Only AREA flooding is supported in this release */
 	OspfSR.scope = OSPF_OPAQUE_AREA_LSA;
@@ -1465,14 +1463,6 @@ void ospf_sr_ri_lsa_update(struct ospf_lsa *lsa)
 		srn = (struct sr_node *)hash_get(OspfSR.neighbors,
 						 &lsah->adv_router,
 						 (void *)sr_node_new);
-		/* Sanity check */
-		if (srn == NULL) {
-			flog_err(
-				EC_OSPF_SR_NODE_CREATE,
-				"SR (%s): Abort! can't create SR node in hash table",
-				__func__);
-			return;
-		}
 		/* update LSA ID */
 		srn->instance = ntohl(lsah->id.s_addr);
 		/* Copy SRGB */
@@ -1583,14 +1573,6 @@ void ospf_sr_ext_link_lsa_update(struct ospf_lsa *lsa)
 	srn = (struct sr_node *)hash_get(OspfSR.neighbors,
 					 (void *)&(lsah->adv_router),
 					 (void *)sr_node_new);
-
-	/* Sanity check */
-	if (srn == NULL) {
-		flog_err(EC_OSPF_SR_NODE_CREATE,
-			 "SR (%s): Abort! can't create SR node in hash table",
-			 __func__);
-		return;
-	}
 
 	/* Initialize TLV browsing */
 	length = lsa->size - OSPF_LSA_HEADER_SIZE;
@@ -1816,15 +1798,6 @@ void ospf_sr_ext_prefix_lsa_update(struct ospf_lsa *lsa)
 	srn = (struct sr_node *)hash_get(OspfSR.neighbors,
 					 (void *)&(lsah->adv_router),
 					 (void *)sr_node_new);
-
-	/* Sanity check */
-	if (srn == NULL) {
-		flog_err(EC_OSPF_SR_NODE_CREATE,
-			 "SR (%s): Abort! can't create SR node in hash table",
-			 __func__);
-		return;
-	}
-
 	/* Initialize TLV browsing */
 	length = lsa->size - OSPF_LSA_HEADER_SIZE;
 	for (tlvh = TLV_HDR_TOP(lsah); length > 0 && tlvh;
@@ -2025,7 +1998,7 @@ void ospf_sr_update_task(struct ospf *ospf)
 
 /*
  * --------------------------------------
- * Followings are vty command functions.
+ * Following are vty command functions.
  * --------------------------------------
  */
 
@@ -2055,11 +2028,15 @@ void ospf_sr_config_write_router(struct vty *vty)
 		vty_out(vty, " segment-routing global-block %u %u",
 			OspfSR.srgb.start, upper);
 
-	if ((OspfSR.srlb.start != DEFAULT_SRLB_LABEL)
-	    || (OspfSR.srlb.end != DEFAULT_SRLB_END))
+	if ((OspfSR.srlb.start != DEFAULT_SRLB_LABEL) ||
+	    (OspfSR.srlb.end != DEFAULT_SRLB_END)) {
+		if ((OspfSR.srgb.start == DEFAULT_SRGB_LABEL) &&
+		    (OspfSR.srgb.size == DEFAULT_SRGB_SIZE))
+			vty_out(vty, " segment-routing global-block %u %u",
+				OspfSR.srgb.start, upper);
 		vty_out(vty, " local-block %u %u\n", OspfSR.srlb.start,
 			OspfSR.srlb.end);
-	else
+	} else
 		vty_out(vty, "\n");
 
 	if (OspfSR.msd != 0)
@@ -2319,84 +2296,6 @@ DEFUN(no_sr_global_label_range, no_sr_global_label_range_cmd,
 {
 	if (update_sr_blocks(DEFAULT_SRGB_LABEL, DEFAULT_SRGB_END,
 			     DEFAULT_SRLB_LABEL, DEFAULT_SRLB_END)
-	    < 0)
-		return CMD_WARNING_CONFIG_FAILED;
-	else
-		return CMD_SUCCESS;
-}
-
-#if CONFDATE > 20220528
-CPP_NOTICE(
-	"Use of the segment-routing local-block command is deprecated, use the combined global-block command instead")
-#endif
-
-DEFUN_HIDDEN(sr_local_label_range, sr_local_label_range_cmd,
-	     "segment-routing local-block (16-1048575) (16-1048575)",
-	     SR_STR
-	     "Segment Routing Local Block label range\n"
-	     "Lower-bound range in decimal (16-1048575)\n"
-	     "Upper-bound range in decimal (16-1048575)\n")
-{
-	uint32_t upper;
-	uint32_t lower;
-	uint32_t srgb_upper;
-	int idx_low = 2;
-	int idx_up = 3;
-
-	/* Get lower and upper bound */
-	lower = strtoul(argv[idx_low]->arg, NULL, 10);
-	upper = strtoul(argv[idx_up]->arg, NULL, 10);
-
-	/* check correctness of SRLB */
-	if (!sr_range_is_valid(lower, upper, MIN_SRLB_SIZE)) {
-		vty_out(vty, "Invalid SRLB range\n");
-		return CMD_WARNING_CONFIG_FAILED;
-	}
-
-	/* Check if values have changed */
-	if ((OspfSR.srlb.start == lower)
-	    && (OspfSR.srlb.end == upper))
-		return CMD_SUCCESS;
-
-	/* Validate SRLB against SRGB */
-	srgb_upper = OspfSR.srgb.start + OspfSR.srgb.size - 1;
-
-	if (ranges_overlap(OspfSR.srgb.start, srgb_upper, lower, upper)) {
-		vty_out(vty,
-			"New SR Local Block (%u/%u) conflicts with Global Block (%u/%u)\n",
-			lower, upper, OspfSR.srgb.start, srgb_upper);
-		return CMD_WARNING_CONFIG_FAILED;
-	}
-
-	if (update_sr_blocks(OspfSR.srgb.start, srgb_upper, lower, upper) < 0)
-		return CMD_WARNING_CONFIG_FAILED;
-	else
-		return CMD_SUCCESS;
-}
-
-DEFUN_HIDDEN(no_sr_local_label_range, no_sr_local_label_range_cmd,
-	     "no segment-routing local-block [(16-1048575) (16-1048575)]",
-	     NO_STR SR_STR
-	     "Segment Routing Local Block label range\n"
-	     "Lower-bound range in decimal (16-1048575)\n"
-	     "Upper-bound range in decimal (16-1048575)\n")
-{
-
-	uint32_t srgb_end;
-
-	/* Validate SRLB against SRGB */
-	srgb_end = OspfSR.srgb.start + OspfSR.srgb.size - 1;
-	if (ranges_overlap(OspfSR.srgb.start, srgb_end, DEFAULT_SRLB_LABEL,
-			   DEFAULT_SRLB_END)) {
-		vty_out(vty,
-			"New SR Local Block (%u/%u) conflicts with Global Block (%u/%u)\n",
-			DEFAULT_SRLB_LABEL, DEFAULT_SRLB_END, OspfSR.srgb.start,
-			srgb_end);
-		return CMD_WARNING_CONFIG_FAILED;
-	}
-
-	if (update_sr_blocks(OspfSR.srgb.start, srgb_end, DEFAULT_SRLB_LABEL,
-			     DEFAULT_SRLB_END)
 	    < 0)
 		return CMD_WARNING_CONFIG_FAILED;
 	else
@@ -2665,12 +2564,18 @@ DEFUN (no_sr_prefix_sid,
 		return CMD_WARNING_CONFIG_FAILED;
 	}
 
+	osr_debug("SR (%s): Remove Prefix %pFX with index %u", __func__,
+		  (struct prefix *)&srp->prefv4, srp->sid);
+
 	/* Get Interface */
 	ifp = if_lookup_by_index(srp->nhlfe.ifindex, VRF_DEFAULT);
 	if (ifp == NULL) {
 		vty_out(vty, "interface for prefix %s not found.\n",
 			argv[idx]->arg);
-		return CMD_WARNING_CONFIG_FAILED;
+		/* silently remove from list */
+		listnode_delete(OspfSR.self->ext_prefix, srp);
+		XFREE(MTYPE_OSPF_SR_PARAMS, srp);
+		return CMD_SUCCESS;
 	}
 
 	/* Update Extended Prefix LSA */
@@ -2678,9 +2583,6 @@ DEFUN (no_sr_prefix_sid,
 		vty_out(vty, "No corresponding loopback interface. Abort!\n");
 		return CMD_WARNING;
 	}
-
-	osr_debug("SR (%s): Remove Prefix %pFX with index %u", __func__,
-		  (struct prefix *)&srp->prefv4, srp->sid);
 
 	/* Delete NHLFE if NO-PHP is set and EXPLICIT NULL not set */
 	if (CHECK_FLAG(srp->flags, EXT_SUBTLV_PREFIX_SID_NPFLG)
@@ -3067,8 +2969,6 @@ void ospf_sr_register_vty(void)
 	install_element(OSPF_NODE, &no_ospf_sr_enable_cmd);
 	install_element(OSPF_NODE, &sr_global_label_range_cmd);
 	install_element(OSPF_NODE, &no_sr_global_label_range_cmd);
-	install_element(OSPF_NODE, &sr_local_label_range_cmd);
-	install_element(OSPF_NODE, &no_sr_local_label_range_cmd);
 	install_element(OSPF_NODE, &sr_node_msd_cmd);
 	install_element(OSPF_NODE, &no_sr_node_msd_cmd);
 	install_element(OSPF_NODE, &sr_prefix_sid_cmd);

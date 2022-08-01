@@ -33,6 +33,7 @@
 #include "routemap.h"
 #include "srcdest_table.h"
 #include "vxlan.h"
+#include "termtable.h"
 
 #include "zebra/zebra_router.h"
 #include "zebra/zserv.h"
@@ -59,8 +60,10 @@
 #include "northbound_cli.h"
 #include "zebra/zebra_nb.h"
 #include "zebra/kernel_netlink.h"
+#include "zebra/if_netlink.h"
 #include "zebra/table_manager.h"
 #include "zebra/zebra_script.h"
+#include "zebra/rtadv.h"
 
 extern int allow_delete;
 
@@ -443,6 +446,7 @@ static void zebra_show_ip_route_opaque(struct vty *vty, struct route_entry *re,
 			vty_out(vty, "    Opaque Data: %s",
 				(char *)re->opaque->data);
 		break;
+
 	case ZEBRA_ROUTE_BGP:
 		memcpy(&bzo, re->opaque->data, re->opaque->length);
 
@@ -1357,7 +1361,7 @@ static int do_show_ip_route(struct vty *vty, const char *vrf_name, afi_t afi,
 
 DEFPY (show_ip_nht,
        show_ip_nht_cmd,
-       "show <ip$ipv4|ipv6$ipv6> <nht|import-check>$type [<A.B.C.D|X:X::X:X>$addr|vrf NAME$vrf_name [<A.B.C.D|X:X::X:X>$addr]|vrf all$vrf_all]",
+       "show <ip$ipv4|ipv6$ipv6> <nht|import-check>$type [<A.B.C.D|X:X::X:X>$addr|vrf NAME$vrf_name [<A.B.C.D|X:X::X:X>$addr]|vrf all$vrf_all] [mrib$mrib]",
        SHOW_STR
        IP_STR
        IP6_STR
@@ -1368,11 +1372,13 @@ DEFPY (show_ip_nht,
        VRF_CMD_HELP_STR
        "IPv4 Address\n"
        "IPv6 Address\n"
-       VRF_ALL_CMD_HELP_STR)
+       VRF_ALL_CMD_HELP_STR
+       "Show Multicast (MRIB) NHT state\n")
 {
 	afi_t afi = ipv4 ? AFI_IP : AFI_IP6;
 	vrf_id_t vrf_id = VRF_DEFAULT;
 	struct prefix prefix, *p = NULL;
+	safi_t safi = mrib ? SAFI_MULTICAST : SAFI_UNICAST;
 
 	if (vrf_all) {
 		struct vrf *vrf;
@@ -1381,8 +1387,8 @@ DEFPY (show_ip_nht,
 		RB_FOREACH (vrf, vrf_name_head, &vrfs_by_name)
 			if ((zvrf = vrf->info) != NULL) {
 				vty_out(vty, "\nVRF %s:\n", zvrf_name(zvrf));
-				zebra_print_rnh_table(zvrf_id(zvrf), afi, vty,
-						      NULL);
+				zebra_print_rnh_table(zvrf_id(zvrf), afi, safi,
+						      vty, NULL);
 			}
 		return CMD_SUCCESS;
 	}
@@ -1396,7 +1402,7 @@ DEFPY (show_ip_nht,
 			return CMD_WARNING;
 	}
 
-	zebra_print_rnh_table(vrf_id, afi, vty, p);
+	zebra_print_rnh_table(vrf_id, afi, safi, vty, p);
 	return CMD_SUCCESS;
 }
 
@@ -1407,7 +1413,7 @@ DEFUN (ip_nht_default_route,
        "Filter Next Hop tracking route resolution\n"
        "Resolve via default route\n")
 {
-	ZEBRA_DECLVAR_CONTEXT(vrf, zvrf);
+	ZEBRA_DECLVAR_CONTEXT_VRF(vrf, zvrf);
 
 	if (!zvrf)
 		return CMD_WARNING;
@@ -1746,7 +1752,7 @@ DEFUN (no_ip_nht_default_route,
        "Filter Next Hop tracking route resolution\n"
        "Resolve via default route\n")
 {
-	ZEBRA_DECLVAR_CONTEXT(vrf, zvrf);
+	ZEBRA_DECLVAR_CONTEXT_VRF(vrf, zvrf);
 
 	if (!zvrf)
 		return CMD_WARNING;
@@ -1766,7 +1772,7 @@ DEFUN (ipv6_nht_default_route,
        "Filter Next Hop tracking route resolution\n"
        "Resolve via default route\n")
 {
-	ZEBRA_DECLVAR_CONTEXT(vrf, zvrf);
+	ZEBRA_DECLVAR_CONTEXT_VRF(vrf, zvrf);
 
 	if (!zvrf)
 		return CMD_WARNING;
@@ -1787,7 +1793,7 @@ DEFUN (no_ipv6_nht_default_route,
        "Filter Next Hop tracking route resolution\n"
        "Resolve via default route\n")
 {
-	ZEBRA_DECLVAR_CONTEXT(vrf, zvrf);
+	ZEBRA_DECLVAR_CONTEXT_VRF(vrf, zvrf);
 
 	if (!zvrf)
 		return CMD_WARNING;
@@ -2670,77 +2676,6 @@ static void vty_show_ip_route_summary_prefix(struct vty *vty,
 	}
 }
 
-/*
- * Show IPv6 mroute command.Used to dump
- * the Multicast routing table.
- */
-DEFUN (show_ipv6_mroute,
-       show_ipv6_mroute_cmd,
-       "show ipv6 mroute [vrf NAME]",
-       SHOW_STR
-       IP_STR
-       "IPv6 Multicast routing table\n"
-       VRF_CMD_HELP_STR)
-{
-	struct route_table *table;
-	struct route_node *rn;
-	struct route_entry *re;
-	int first = 1;
-	vrf_id_t vrf_id = VRF_DEFAULT;
-
-	if (argc == 5)
-		VRF_GET_ID(vrf_id, argv[4]->arg, false);
-
-	table = zebra_vrf_table(AFI_IP6, SAFI_MULTICAST, vrf_id);
-	if (!table)
-		return CMD_SUCCESS;
-
-	/* Show all IPv6 route. */
-	for (rn = route_top(table); rn; rn = srcdest_route_next(rn))
-		RNODE_FOREACH_RE (rn, re) {
-			if (first) {
-				vty_out(vty, SHOW_ROUTE_V6_HEADER);
-				first = 0;
-			}
-			vty_show_ip_route(vty, rn, re, NULL, false, false);
-		}
-	return CMD_SUCCESS;
-}
-
-DEFUN (show_ipv6_mroute_vrf_all,
-       show_ipv6_mroute_vrf_all_cmd,
-       "show ipv6 mroute vrf all",
-       SHOW_STR
-       IP_STR
-       "IPv6 Multicast routing table\n"
-       VRF_ALL_CMD_HELP_STR)
-{
-	struct route_table *table;
-	struct route_node *rn;
-	struct route_entry *re;
-	struct vrf *vrf;
-	struct zebra_vrf *zvrf;
-	int first = 1;
-
-	RB_FOREACH (vrf, vrf_name_head, &vrfs_by_name) {
-		if ((zvrf = vrf->info) == NULL
-		    || (table = zvrf->table[AFI_IP6][SAFI_MULTICAST]) == NULL)
-			continue;
-
-		/* Show all IPv6 route. */
-		for (rn = route_top(table); rn; rn = srcdest_route_next(rn))
-			RNODE_FOREACH_RE (rn, re) {
-				if (first) {
-					vty_out(vty, SHOW_ROUTE_V6_HEADER);
-					first = 0;
-				}
-				vty_show_ip_route(vty, rn, re, NULL, false,
-						  false);
-			}
-	}
-	return CMD_SUCCESS;
-}
-
 DEFUN (allow_external_route_update,
        allow_external_route_update_cmd,
        "allow-external-route-update",
@@ -2944,7 +2879,7 @@ DEFUN (vrf_vni_mapping,
 {
 	int filter = 0;
 
-	ZEBRA_DECLVAR_CONTEXT(vrf, zvrf);
+	ZEBRA_DECLVAR_CONTEXT_VRF(vrf, zvrf);
 
 	assert(vrf);
 	assert(zvrf);
@@ -2973,7 +2908,7 @@ DEFUN (no_vrf_vni_mapping,
 {
 	int filter = 0;
 
-	ZEBRA_DECLVAR_CONTEXT(vrf, zvrf);
+	ZEBRA_DECLVAR_CONTEXT_VRF(vrf, zvrf);
 	vni_t vni = strtoul(argv[2]->arg, NULL, 10);
 
 	assert(vrf);
@@ -3968,9 +3903,45 @@ DEFUN (show_zebra,
        ZEBRA_STR)
 {
 	struct vrf *vrf;
+	struct ttable *table = ttable_new(&ttable_styles[TTSTYLE_BLANK]);
+	char *out;
 
-	if (zrouter.asic_offloaded)
-		vty_out(vty, "Asic Offload is being used\n");
+	ttable_rowseps(table, 0, BOTTOM, true, '-');
+	ttable_add_row(table, "OS|%s(%s)", cmd_system_get(), cmd_release_get());
+	ttable_add_row(table, "ECMP Maximum|%d", zrouter.multipath_num);
+	ttable_add_row(table, "v4 Forwarding|%s", ipforward() ? "On" : "Off");
+	ttable_add_row(table, "v6 Forwarding|%s",
+		       ipforward_ipv6() ? "On" : "Off");
+	ttable_add_row(table, "MPLS|%s", mpls_enabled ? "On" : "Off");
+	ttable_add_row(table, "EVPN|%s", is_evpn_enabled() ? "On" : "Off");
+	ttable_add_row(table, "Kernel socket buffer size|%d", rcvbufsize);
+
+
+#ifdef GNU_LINUX
+	if (!vrf_is_backend_netns())
+		ttable_add_row(table, "VRF|l3mdev Available");
+	else
+		ttable_add_row(table, "VRF|Namespaces");
+#else
+	ttable_add_row(table, "VRF|Not Available");
+#endif
+
+	ttable_add_row(table, "ASIC offload|%s",
+		       zrouter.asic_offloaded ? "Used" : "Unavailable");
+
+	ttable_add_row(table, "RA|%s",
+		       rtadv_compiled_in() ? "Compiled in" : "Not Compiled in");
+	ttable_add_row(table, "RFC 5549|%s",
+		       rtadv_get_interfaces_configured_from_bgp()
+			       ? "BGP is using"
+			       : "BGP is not using");
+
+	ttable_add_row(table, "Kernel NHG|%s",
+		       zrouter.supports_nhgs ? "Available" : "Unavailable");
+
+	out = ttable_dump(table, "\n");
+	vty_out(vty, "%s\n", out);
+	XFREE(MTYPE_TMP, out);
 
 	vty_out(vty,
 		"                            Route      Route      Neighbor   LSP        LSP\n");
@@ -4319,6 +4290,31 @@ DEFUN_HIDDEN(no_zebra_kernel_netlink_batch_tx_buf,
 	return CMD_SUCCESS;
 }
 
+DEFPY (zebra_protodown_bit,
+       zebra_protodown_bit_cmd,
+       "zebra protodown reason-bit (0-31)$bit",
+       ZEBRA_STR
+       "Protodown Configuration\n"
+       "Reason Bit used in the kernel for application\n"
+       "Reason Bit range\n")
+{
+	if_netlink_set_frr_protodown_r_bit(bit);
+	return CMD_SUCCESS;
+}
+
+DEFPY (no_zebra_protodown_bit,
+       no_zebra_protodown_bit_cmd,
+       "no zebra protodown reason-bit [(0-31)$bit]",
+       NO_STR
+       ZEBRA_STR
+       "Protodown Configuration\n"
+       "Reason Bit used in the kernel for setting protodown\n"
+       "Reason Bit Range\n")
+{
+	if_netlink_unset_frr_protodown_r_bit();
+	return CMD_SUCCESS;
+}
+
 #endif /* HAVE_NETLINK */
 
 DEFUN(ip_table_range, ip_table_range_cmd,
@@ -4329,7 +4325,7 @@ DEFUN(ip_table_range, ip_table_range_cmd,
       "Start Routing Table\n"
       "End Routing Table\n")
 {
-	ZEBRA_DECLVAR_CONTEXT(vrf, zvrf);
+	ZEBRA_DECLVAR_CONTEXT_VRF(vrf, zvrf);
 
 	if (!zvrf)
 		return CMD_WARNING;
@@ -4463,11 +4459,6 @@ void zebra_vty_init(void)
 	install_element(VRF_NODE, &no_ipv6_nht_default_route_cmd);
 	install_element(CONFIG_NODE, &rnh_hide_backups_cmd);
 
-	install_element(VIEW_NODE, &show_ipv6_mroute_cmd);
-
-	/* Commands for VRF */
-	install_element(VIEW_NODE, &show_ipv6_mroute_vrf_all_cmd);
-
 	install_element(VIEW_NODE, &show_frr_cmd);
 	install_element(VIEW_NODE, &show_evpn_global_cmd);
 	install_element(VIEW_NODE, &show_evpn_vni_cmd);
@@ -4524,6 +4515,8 @@ void zebra_vty_init(void)
 #ifdef HAVE_NETLINK
 	install_element(CONFIG_NODE, &zebra_kernel_netlink_batch_tx_buf_cmd);
 	install_element(CONFIG_NODE, &no_zebra_kernel_netlink_batch_tx_buf_cmd);
+	install_element(CONFIG_NODE, &zebra_protodown_bit_cmd);
+	install_element(CONFIG_NODE, &no_zebra_protodown_bit_cmd);
 #endif /* HAVE_NETLINK */
 
 #ifdef HAVE_SCRIPTING

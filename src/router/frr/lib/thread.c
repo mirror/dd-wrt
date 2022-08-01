@@ -498,6 +498,41 @@ DEFUN (clear_thread_cpu,
 	return CMD_SUCCESS;
 }
 
+static void show_thread_timers_helper(struct vty *vty, struct thread_master *m)
+{
+	const char *name = m->name ? m->name : "main";
+	char underline[strlen(name) + 1];
+	struct thread *thread;
+
+	memset(underline, '-', sizeof(underline));
+	underline[sizeof(underline) - 1] = '\0';
+
+	vty_out(vty, "\nShowing timers for %s\n", name);
+	vty_out(vty, "-------------------%s\n", underline);
+
+	frr_each (thread_timer_list, &m->timer, thread) {
+		vty_out(vty, "  %-50s%pTH\n", thread->hist->funcname, thread);
+	}
+}
+
+DEFPY_NOSH (show_thread_timers,
+	    show_thread_timers_cmd,
+	    "show thread timers",
+	    SHOW_STR
+	    "Thread information\n"
+	    "Show all timers and how long they have in the system\n")
+{
+	struct listnode *node;
+	struct thread_master *m;
+
+	frr_with_mutex (&masters_mtx) {
+		for (ALL_LIST_ELEMENTS_RO(masters, node, m))
+			show_thread_timers_helper(vty, m);
+	}
+
+	return CMD_SUCCESS;
+}
+
 void thread_cmd_init(void)
 {
 	install_element(VIEW_NODE, &show_thread_cpu_cmd);
@@ -509,6 +544,8 @@ void thread_cmd_init(void)
 	install_element(CONFIG_NODE, &no_service_cputime_warning_cmd);
 	install_element(CONFIG_NODE, &service_walltime_warning_cmd);
 	install_element(CONFIG_NODE, &no_service_walltime_warning_cmd);
+
+	install_element(VIEW_NODE, &show_thread_timers_cmd);
 }
 /* CLI end ------------------------------------------------------------------ */
 
@@ -714,7 +751,7 @@ void thread_master_free(struct thread_master *m)
 	XFREE(MTYPE_THREAD_MASTER, m);
 }
 
-/* Return remain time in miliseconds. */
+/* Return remain time in milliseconds. */
 unsigned long thread_timer_remain_msec(struct thread *thread)
 {
 	int64_t remain;
@@ -773,7 +810,7 @@ char *thread_timer_to_hhmmss(char *buf, int buf_size,
 
 /* Get new thread.  */
 static struct thread *thread_get(struct thread_master *m, uint8_t type,
-				 int (*func)(struct thread *), void *arg,
+				 void (*func)(struct thread *), void *arg,
 				 const struct xref_threadsched *xref)
 {
 	struct thread *thread = thread_list_pop(&m->unuse);
@@ -883,7 +920,7 @@ static int fd_poll(struct thread_master *m, struct pollfd *pfds, nfds_t pfdsize,
 /* Add new read thread. */
 void _thread_add_read_write(const struct xref_threadsched *xref,
 			    struct thread_master *m,
-			    int (*func)(struct thread *), void *arg, int fd,
+			    void (*func)(struct thread *), void *arg, int fd,
 			    struct thread **t_ptr)
 {
 	int dir = xref->thread_type;
@@ -963,7 +1000,7 @@ void _thread_add_read_write(const struct xref_threadsched *xref,
 
 static void _thread_add_timer_timeval(const struct xref_threadsched *xref,
 				      struct thread_master *m,
-				      int (*func)(struct thread *), void *arg,
+				      void (*func)(struct thread *), void *arg,
 				      struct timeval *time_relative,
 				      struct thread **t_ptr)
 {
@@ -1005,12 +1042,18 @@ static void _thread_add_timer_timeval(const struct xref_threadsched *xref,
 		if (thread_timer_list_first(&m->timer) == thread)
 			AWAKEN(m);
 	}
+#define ONEYEAR2SEC (60 * 60 * 24 * 365)
+	if (time_relative->tv_sec > ONEYEAR2SEC)
+		flog_err(
+			EC_LIB_TIMER_TOO_LONG,
+			"Timer: %pTHD is created with an expiration that is greater than 1 year",
+			thread);
 }
 
 
 /* Add timer event thread. */
 void _thread_add_timer(const struct xref_threadsched *xref,
-		       struct thread_master *m, int (*func)(struct thread *),
+		       struct thread_master *m, void (*func)(struct thread *),
 		       void *arg, long timer, struct thread **t_ptr)
 {
 	struct timeval trel;
@@ -1026,8 +1069,8 @@ void _thread_add_timer(const struct xref_threadsched *xref,
 /* Add timer event thread with "millisecond" resolution */
 void _thread_add_timer_msec(const struct xref_threadsched *xref,
 			    struct thread_master *m,
-			    int (*func)(struct thread *), void *arg, long timer,
-			    struct thread **t_ptr)
+			    void (*func)(struct thread *), void *arg,
+			    long timer, struct thread **t_ptr)
 {
 	struct timeval trel;
 
@@ -1041,15 +1084,16 @@ void _thread_add_timer_msec(const struct xref_threadsched *xref,
 
 /* Add timer event thread with "timeval" resolution */
 void _thread_add_timer_tv(const struct xref_threadsched *xref,
-			  struct thread_master *m, int (*func)(struct thread *),
-			  void *arg, struct timeval *tv, struct thread **t_ptr)
+			  struct thread_master *m,
+			  void (*func)(struct thread *), void *arg,
+			  struct timeval *tv, struct thread **t_ptr)
 {
 	_thread_add_timer_timeval(xref, m, func, arg, tv, t_ptr);
 }
 
 /* Add simple event thread. */
 void _thread_add_event(const struct xref_threadsched *xref,
-		       struct thread_master *m, int (*func)(struct thread *),
+		       struct thread_master *m, void (*func)(struct thread *),
 		       void *arg, int val, struct thread **t_ptr)
 {
 	struct thread *thread = NULL;
@@ -1982,7 +2026,7 @@ void thread_call(struct thread *thread)
 
 /* Execute thread */
 void _thread_execute(const struct xref_threadsched *xref,
-		     struct thread_master *m, int (*func)(struct thread *),
+		     struct thread_master *m, void (*func)(struct thread *),
 		     void *arg, int val)
 {
 	struct thread *thread;
@@ -2050,14 +2094,6 @@ void debug_signals(const sigset_t *sigs)
 		snprintf(buf, sizeof(buf), "<none>");
 
 	zlog_debug("%s: %s", __func__, buf);
-}
-
-bool thread_is_scheduled(struct thread *thread)
-{
-	if (thread == NULL)
-		return false;
-
-	return true;
 }
 
 static ssize_t printfrr_thread_dbg(struct fbuf *buf, struct printfrr_eargs *ea,

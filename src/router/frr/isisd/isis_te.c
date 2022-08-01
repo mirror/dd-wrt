@@ -65,7 +65,7 @@
 #include "isisd/isis_zebra.h"
 
 /*------------------------------------------------------------------------*
- * Followings are control functions for MPLS-TE parameters management.
+ * Following are control functions for MPLS-TE parameters management.
  *------------------------------------------------------------------------*/
 
 /* Main initialization / update function of the MPLS TE Circuit context */
@@ -108,8 +108,7 @@ void isis_link_params_update(struct isis_circuit *circuit,
 			UNSET_SUBTLV(ext, EXT_ADM_GRP);
 
 		/* If known, register local IPv4 addr from ip_addr list */
-		if (circuit->ip_addrs != NULL
-		    && listcount(circuit->ip_addrs) != 0) {
+		if (listcount(circuit->ip_addrs) != 0) {
 			addr = (struct prefix_ipv4 *)listgetdata(
 				(struct listnode *)listhead(circuit->ip_addrs));
 			IPV4_ADDR_COPY(&ext->local_addr, &addr->prefix);
@@ -118,8 +117,7 @@ void isis_link_params_update(struct isis_circuit *circuit,
 			UNSET_SUBTLV(ext, EXT_LOCAL_ADDR);
 
 		/* If known, register local IPv6 addr from ip_addr list */
-		if (circuit->ipv6_non_link != NULL
-		    && listcount(circuit->ipv6_non_link) != 0) {
+		if (listcount(circuit->ipv6_non_link) != 0) {
 			addr6 = (struct prefix_ipv6 *)listgetdata(
 				(struct listnode *)listhead(
 					circuit->ipv6_non_link));
@@ -439,7 +437,7 @@ static struct ls_vertex *lsp_to_vertex(struct ls_ted *ted, struct isis_lsp *lsp)
 			SET_FLAG(lnode.flags, LS_NODE_ROUTER_ID6);
 		}
 		if (tlvs->hostname) {
-			memcpy(&lnode.name, tlvs->hostname, MAX_NAME_LENGTH);
+			strlcpy(lnode.name, tlvs->hostname, MAX_NAME_LENGTH);
 			SET_FLAG(lnode.flags, LS_NODE_NAME);
 		}
 		if (tlvs->router_cap) {
@@ -756,6 +754,7 @@ static int lsp_to_edge_cb(const uint8_t *id, uint32_t metric, bool old_metric,
 		return LSP_ITER_CONTINUE;
 
 	attr->metric = metric;
+	SET_FLAG(attr->flags, LS_ATTR_METRIC);
 
 	/* Get corresponding Edge from Link State Data Base */
 	edge = get_edge(args->ted, attr);
@@ -908,7 +907,7 @@ static int lsp_to_subnet_cb(const struct prefix *prefix, uint32_t metric,
 			p.u.prefix6 = std->local6;
 	}
 	if (!std)
-		p = *prefix;
+		prefix_copy(&p, prefix);
 	else
 		te_debug("   |- Adjust prefix %pFX with local address to: %pFX",
 			 prefix, &p);
@@ -1230,7 +1229,7 @@ void isis_te_init_ted(struct isis_area *area)
 			isis_te_parse_lsp(area->mta, lsp);
 }
 
-/* Followings are vty command functions */
+/* Following are vty command functions */
 #ifndef FABRICD
 
 static void show_router_id(struct vty *vty, struct isis_area *area)
@@ -1687,12 +1686,8 @@ static int show_ted(struct vty *vty, struct cmd_token *argv[], int argc,
 		ls_show_ted(ted, vty, json, detail);
 	}
 
-	if (uj) {
-		vty_out(vty, "%s\n",
-			json_object_to_json_string_ext(
-				json, JSON_C_TO_STRING_PRETTY));
-		json_object_free(json);
-	}
+	if (uj)
+		vty_json(vty, json);
 
 	return CMD_SUCCESS;
 }

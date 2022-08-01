@@ -54,6 +54,7 @@
 #include "ospf6_gr.h"
 #include "lib/json.h"
 #include "ospf6_nssa.h"
+#include "ospf6_auth_trailer.h"
 
 DEFINE_MTYPE_STATIC(OSPF6D, OSPF6_TOP, "OSPF6 top");
 
@@ -445,6 +446,17 @@ static struct ospf6 *ospf6_create(const char *name)
 	/* Make ospf protocol socket. */
 	ospf6_serv_sock(o);
 
+	/* If sequence number is stored in persistent storage, read it.
+	 */
+	if (ospf6_auth_nvm_file_exist() == OSPF6_AUTH_FILE_EXIST) {
+		ospf6_auth_seqno_nvm_read(o);
+		o->seqnum_h = o->seqnum_h + 1;
+		ospf6_auth_seqno_nvm_update(o);
+	} else {
+		o->seqnum_l = o->seqnum_h = 0;
+		ospf6_auth_seqno_nvm_update(o);
+	}
+
 	return o;
 }
 
@@ -567,14 +579,14 @@ static void ospf6_disable(struct ospf6 *o)
 
 void ospf6_master_init(struct thread_master *master)
 {
-	memset(&ospf6_master, 0, sizeof(struct ospf6_master));
+	memset(&ospf6_master, 0, sizeof(ospf6_master));
 
 	om6 = &ospf6_master;
 	om6->ospf6 = list_new();
 	om6->master = master;
 }
 
-static int ospf6_maxage_remover(struct thread *thread)
+static void ospf6_maxage_remover(struct thread *thread)
 {
 	struct ospf6 *o = (struct ospf6 *)THREAD_ARG(thread);
 	struct ospf6_area *oa;
@@ -591,7 +603,7 @@ static int ospf6_maxage_remover(struct thread *thread)
 					continue;
 
 				ospf6_maxage_remove(o);
-				return 0;
+				return;
 			}
 		}
 	}
@@ -615,8 +627,6 @@ static int ospf6_maxage_remover(struct thread *thread)
 	if (reschedule) {
 		ospf6_maxage_remove(o);
 	}
-
-	return 0;
 }
 
 void ospf6_maxage_remove(struct ospf6 *o)
@@ -970,8 +980,13 @@ DEFUN (ospf6_distance,
        "OSPF6 Administrative distance\n")
 {
 	VTY_DECLVAR_CONTEXT(ospf6, o);
+	uint8_t distance;
 
-	o->distance_all = atoi(argv[1]->arg);
+	distance = atoi(argv[1]->arg);
+	if (o->distance_all != distance) {
+		o->distance_all = distance;
+		ospf6_restart_spf(o);
+	}
 
 	return CMD_SUCCESS;
 }
@@ -985,8 +1000,10 @@ DEFUN (no_ospf6_distance,
 {
 	VTY_DECLVAR_CONTEXT(ospf6, o);
 
-	o->distance_all = 0;
-
+	if (o->distance_all) {
+		o->distance_all = 0;
+		ospf6_restart_spf(o);
+	}
 	return CMD_SUCCESS;
 }
 
@@ -1236,7 +1253,7 @@ DEFUN (no_ospf6_stub_router_admin,
 }
 
 /* Restart OSPF SPF algorithm*/
-static void ospf6_restart_spf(struct ospf6 *ospf6)
+void ospf6_restart_spf(struct ospf6 *ospf6)
 {
 	ospf6_route_remove_all(ospf6->route_table);
 	ospf6_route_remove_all(ospf6->brouter_table);
@@ -1329,6 +1346,10 @@ static void ospf6_show(struct vty *vty, struct ospf6 *o, json_object *json,
 				    o->spf_hold_multiplier);
 
 		json_object_int_add(json, "maximumPaths", o->max_multipath);
+		json_object_int_add(json, "preference",
+				    o->distance_all
+					    ? o->distance_all
+					    : ZEBRA_OSPF6_DISTANCE_DEFAULT);
 
 		if (o->ts_spf.tv_sec || o->ts_spf.tv_usec) {
 			timersub(&now, &o->ts_spf, &result);
@@ -1351,9 +1372,7 @@ static void ospf6_show(struct vty *vty, struct ospf6 *o, json_object *json,
 		} else
 			json_object_boolean_false_add(json, "spfHasRun");
 
-
-		threadtimer_string(now, o->t_spf_calc, buf, sizeof(buf));
-		if (o->t_spf_calc) {
+		if (thread_is_scheduled(o->t_spf_calc)) {
 			long time_store;
 
 			json_object_boolean_true_add(json, "spfTimerActive");
@@ -1374,6 +1393,10 @@ static void ospf6_show(struct vty *vty, struct ospf6 *o, json_object *json,
 		/* Areas */
 		json_object_int_add(json, "numberOfAreaInRouter",
 				    listcount(o->area_list));
+
+		json_object_int_add(json, "AuthTrailerHigherSeqNo",
+				    o->seqnum_h);
+		json_object_int_add(json, "AuthTrailerLowerSeqNo", o->seqnum_l);
 
 		if (CHECK_FLAG(o->config_flags, OSPF6_LOG_ADJACENCY_CHANGES)) {
 			if (CHECK_FLAG(o->config_flags,
@@ -1412,6 +1435,9 @@ static void ospf6_show(struct vty *vty, struct ospf6 *o, json_object *json,
 			o->lsa_minarrival);
 
 		vty_out(vty, " Maximum-paths %u\n", o->max_multipath);
+		vty_out(vty, " Administrative distance %u\n",
+			o->distance_all ? o->distance_all
+					: ZEBRA_OSPF6_DISTANCE_DEFAULT);
 
 		/* Show SPF parameters */
 		vty_out(vty,
@@ -1439,7 +1465,9 @@ static void ospf6_show(struct vty *vty, struct ospf6 *o, json_object *json,
 
 		threadtimer_string(now, o->t_spf_calc, buf, sizeof(buf));
 		vty_out(vty, " SPF timer %s%s\n",
-			(o->t_spf_calc ? "due in " : "is "), buf);
+			(thread_is_scheduled(o->t_spf_calc) ? "due in "
+							    : "is "),
+			buf);
 
 		if (CHECK_FLAG(o->flag, OSPF6_STUB_ROUTER))
 			vty_out(vty, " Router Is Stub Router\n");
@@ -1451,6 +1479,10 @@ static void ospf6_show(struct vty *vty, struct ospf6 *o, json_object *json,
 		/* Areas */
 		vty_out(vty, " Number of areas in this router is %u\n",
 			listcount(o->area_list));
+
+		vty_out(vty, " Authentication Sequence number info\n");
+		vty_out(vty, "  Higher sequence no %u, Lower sequence no %u\n",
+			o->seqnum_h, o->seqnum_l);
 
 		if (CHECK_FLAG(o->config_flags, OSPF6_LOG_ADJACENCY_CHANGES)) {
 			if (CHECK_FLAG(o->config_flags,
@@ -1724,14 +1756,10 @@ DEFUN(show_ipv6_ospf6_route_type_detail, show_ipv6_ospf6_route_type_detail_cmd,
 
 bool ospf6_is_valid_summary_addr(struct vty *vty, struct prefix *p)
 {
-	struct in6_addr addr_zero;
-
-	memset(&addr_zero, 0, sizeof(struct in6_addr));
-
-	 /* Default prefix validation*/
-	if ((is_default_prefix((struct prefix *)p))
-	   || (!memcmp(&p->u.prefix6, &addr_zero, sizeof(struct in6_addr)))) {
-		vty_out(vty, "Default address should not be configured as summary address.\n");
+	/* Default prefix validation*/
+	if (is_default_prefix(p)) {
+		vty_out(vty,
+			"Default address should not be configured as summary address.\n");
 		return false;
 	}
 
@@ -1770,7 +1798,7 @@ DEFPY (ospf6_external_route_aggregation,
 	}
 
 	/* Apply mask for given prefix. */
-	apply_mask((struct prefix *)&p);
+	apply_mask(&p);
 
 	if (!ospf6_is_valid_summary_addr(vty, &p))
 		return CMD_WARNING_CONFIG_FAILED;
@@ -1818,7 +1846,7 @@ DEFPY(no_ospf6_external_route_aggregation,
 	}
 
 	/* Apply mask for given prefix. */
-	apply_mask((struct prefix *)&p);
+	apply_mask(&p);
 
 	if (!ospf6_is_valid_summary_addr(vty, &p))
 		return CMD_WARNING_CONFIG_FAILED;
@@ -1849,7 +1877,7 @@ DEFPY (ospf6_external_route_aggregation_no_advertise,
 	}
 
 	/* Apply mask for given prefix. */
-	apply_mask((struct prefix *)&p);
+	apply_mask(&p);
 
 	if (!ospf6_is_valid_summary_addr(vty, &p))
 		return CMD_WARNING_CONFIG_FAILED;
@@ -1881,7 +1909,7 @@ DEFPY (no_ospf6_external_route_aggregation_no_advertise,
 	}
 
 	/* Apply mask for given prefix. */
-	apply_mask((struct prefix *)&p);
+	apply_mask(&p);
 
 	if (!ospf6_is_valid_summary_addr(vty, &p))
 		return CMD_WARNING_CONFIG_FAILED;
@@ -1985,6 +2013,9 @@ ospf6_show_vrf_name(struct vty *vty, struct ospf6 *ospf6,
 	}
 }
 
+#if CONFDATE > 20230131
+CPP_NOTICE("Remove JSON object commands with keys containing whitespaces")
+#endif
 static int
 ospf6_show_summary_address(struct vty *vty, struct ospf6 *ospf6,
 			json_object *json,
@@ -1996,8 +2027,8 @@ ospf6_show_summary_address(struct vty *vty, struct ospf6 *ospf6,
 
 	if (!uj) {
 		ospf6_show_vrf_name(vty, ospf6, json_vrf);
-		vty_out(vty, "aggregation delay interval :%d(in seconds)\n\n",
-				ospf6->aggr_delay_interval);
+		vty_out(vty, "aggregation delay interval :%u(in seconds)\n\n",
+			ospf6->aggr_delay_interval);
 		vty_out(vty, "%s\n", header);
 	} else {
 		json_vrf = json_object_new_object();
@@ -2005,7 +2036,9 @@ ospf6_show_summary_address(struct vty *vty, struct ospf6 *ospf6,
 		ospf6_show_vrf_name(vty, ospf6, json_vrf);
 
 		json_object_int_add(json_vrf, "aggregation delay interval",
-				ospf6->aggr_delay_interval);
+				    ospf6->aggr_delay_interval);
+		json_object_int_add(json_vrf, "aggregationDelayInterval",
+				    ospf6->aggr_delay_interval);
 	}
 
 
@@ -2030,12 +2063,18 @@ ospf6_show_summary_address(struct vty *vty, struct ospf6 *ospf6,
 			json_object_string_add(json_aggr,
 					"Summary address",
 					buf);
+			json_object_string_add(json_aggr, "summaryAddress",
+					       buf);
 
 			json_object_string_add(
 				json_aggr, "Metric-type",
 				(aggr->mtype == DEFAULT_METRIC_TYPE)
 					? "E2"
 					: "E1");
+			json_object_string_add(
+				json_aggr, "metricType",
+				(aggr->mtype == DEFAULT_METRIC_TYPE) ? "E2"
+								     : "E1");
 
 			json_object_int_add(json_aggr, "Metric",
 					   (aggr->metric != -1)
@@ -2048,6 +2087,8 @@ ospf6_show_summary_address(struct vty *vty, struct ospf6 *ospf6,
 			json_object_int_add(json_aggr,
 					"External route count",
 					OSPF6_EXTERNAL_RT_COUNT(aggr));
+			json_object_int_add(json_aggr, "externalRouteCount",
+					    OSPF6_EXTERNAL_RT_COUNT(aggr));
 
 			if (OSPF6_EXTERNAL_RT_COUNT(aggr) && detail) {
 				json_object_int_add(json_aggr, "ID",
@@ -2103,7 +2144,7 @@ DEFPY (show_ipv6_ospf6_external_aggregator,
        VRF_CMD_HELP_STR
        "All VRFs\n"
        "Show external summary addresses\n"
-       "detailed informtion\n"
+       "detailed information\n"
        JSON_STR)
 {
 	bool uj = use_json(argc, argv);
