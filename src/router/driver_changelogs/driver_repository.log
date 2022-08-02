@@ -1,4 +1,8 @@
 ------------------------------------------------------------------------
+r6719 | brainslayer | 2022-08-02 14:20:39 +0700 (Tue, 02 Aug 2022) | 1 line
+
+use hw flags instead of ops hack
+------------------------------------------------------------------------
 r6718 | brainslayer | 2022-08-02 14:12:14 +0700 (Tue, 02 Aug 2022) | 1 line
 
 handle offchannel return for scan cancel
