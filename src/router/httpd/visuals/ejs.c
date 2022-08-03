@@ -662,6 +662,9 @@ static struct defrule s_conditions[] = {
 #ifdef HAVE_HTTPS
 	{ "HTTPS", NULL },
 #endif
+#ifdef HAVE_ANTAIRA_AGENT
+	{ "ANTAIRA_AGENT", NULL },
+#endif
 	{ "MINI", rule_ismini },
 	{ "VPN", rule_isvpn },
 	{ "WET", rule_iswet },
