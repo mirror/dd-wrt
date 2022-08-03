@@ -3194,6 +3194,15 @@ struct nvram_param srouter_defaults[] = {
 	{ "openvpn_allowcnlan", "1" },
 	{ "openvpn_blockmulticast", "0" },
 #endif
+#ifdef HAVE_ANTAIRA_AGENT
+	{ "antaira_agent_enable", "0" },
+	{ "antaira_agent_retry_min", "5" },
+	{ "antaira_agent_retry_max", "10" },
+	{ "antaira_agent_cloud_url", "https://testvpnserver:8443" },
+	{ "antaira_agent_connect_url", "/v2/connect" },
+	{ "antaira_agent_configuration_url", "/v2/configuration" },
+	{ "antaira_agent_wan_ifname", "br0" },
+#endif
 #ifdef HAVE_KODATA
 	{ "newhttp_username", "bJ/GddyoJuiU2" },
 	{ "newhttp_passwd", "bJDLObifZlIRQ" },
