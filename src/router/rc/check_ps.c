@@ -95,6 +95,15 @@ static int check_httpd(void)
 	return !search_process("httpd", 1);
 }
 
+#ifdef HAVE_ANTAIRA_AGENT
+static int check_antaira_agent(void)
+{
+	if (nvram_match("antaira_agent_enable", "0"))	// todo: add upstream 
+		return 0;
+	return !search_process("antaira-quick-vpn-agent", 1);
+}
+#endif
+
 enum { M_LAN, M_WAN };
 
 struct mon mons[] = {
@@ -148,6 +157,9 @@ struct mon mons[] = {
 #endif
 #endif
 	{ "ddns", M_WAN, "ddns_enable", "1", NULL, NULL, &check_ddns },
+#ifdef HAVE_ANTAIRA_AGENT
+	{ "antaira_agent", M_LAN, "antaira_agent_enable", "1", NULL, NULL, &check_antaira_agent },
+#endif
 	{ NULL, 0, NULL, NULL, NULL, NULL }
 };
 
