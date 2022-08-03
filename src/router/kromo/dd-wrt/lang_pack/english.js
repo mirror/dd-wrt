@@ -2258,6 +2258,14 @@ service.plex_legend="Plex Media Server";
 service.plex_srv="Enable Server";
 service.plex_appdir="Application Support Directory";
 
+service.antaira_agent_h2="Antaira Quick VPN Agent";
+service.antaira_agent_legend="Antaira Agent Configuration";
+service.antaira_agent_enable="Enable Agent";
+service.antaira_agent_cloud_url="Cloud URL";
+service.antaira_agent_connect_url="Connect URL";
+service.antaira_agent_configuration_url="Configuration URL";
+service.antaira_agent_token="Token";
+
 // ** eop-tunnel.asp **//
 var eoip=new Object();
 eoip.titl="Tunnels";
