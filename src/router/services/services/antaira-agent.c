@@ -21,12 +21,15 @@ char *antaira_agent_proc(void)
 
 void start_antaira_agent(void)
 {
+	char wan_if_buffer[33];
 	char *antaira_agent_argv[] = { "antaira-quick-vpn-agent", NULL };
 
 	stop_antaira_agent();
 
 	if (!nvram_invmatchi("antaira_agent_enable", 0))
 		return;
+	if (nvram_match("wan_proto", "disabled") || !*(safe_get_wan_face(wan_if_buffer)))	// todo: add upstream 
+		return 0;
 
 	_evalpid(antaira_agent_argv, NULL, 0, NULL);
 	dd_loginfo("antaira_agent", "daemon successfully started\n");
