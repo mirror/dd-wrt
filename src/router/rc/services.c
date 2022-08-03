@@ -215,6 +215,9 @@ static int start_services_main(int argc, char **argv)
 	start_service_f("openvpnserversys");
 	start_service_f("openvpn");
 #endif
+#ifdef HAVE_ANTAIRA_AGENT
+	start_service_f("antaira_agent");
+#endif
 #ifdef HAVE_VNCREPEATER
 	start_service_f("vncrepeater");
 #endif
@@ -390,6 +393,9 @@ static int stop_services_main(int argc, char **argv)
 #ifdef HAVE_OPENVPN
 	stop_service_f("openvpnserversys");
 	stop_service_f("openvpn");
+#endif
+#ifdef HAVE_ANTAIRA_AGENT
+	stop_service_f("antaira_agent");
 #endif
 #ifdef HAVE_GPSI
 	stop_service_f("gps");
@@ -664,6 +670,9 @@ static void handle_pptp(void)
 	restart_f("openvpn");
 	restart("firewall");
 #endif
+#ifdef HAVE_ANTAIRA_AGENT
+	restart_f("antaira_agent");
+#endif
 }
 
 #ifdef HAVE_SPEEDCHECKER
@@ -764,6 +773,10 @@ static void handle_services(void)
 	start_service_f("openvpnserver");
 	start_service_f("openvpn");
 	restart("firewall");
+#endif
+#ifdef HAVE_ANTAIRA_AGENT
+	stop_service("antaira_agent");
+	start_service_f("antaira_agent");
 #endif
 #ifdef HAVE_NOCAT
 	restart_f("splashd");

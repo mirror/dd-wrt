@@ -1084,6 +1084,13 @@ ifeq ($(CONFIG_CHRONY),y)
 CFLAGS += -DHAVE_CHRONY
 endif
 
+ifeq ($(CONFIG_ANTAIRA),y)
+CFLAGS += -DHAVE_ANTAIRA
+ifeq ($(CONFIG_ANTAIRA_AGENT),y)
+CFLAGS += -DHAVE_ANTAIRA_AGENT
+endif
+endif
+
 include $(TOP)/rules/generic.mk
 
 CFLAGS += $(DD_CFLAGS)
