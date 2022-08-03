@@ -1599,6 +1599,13 @@ ifeq ($(CONFIG_DLS),y)
 CFLAGS_EXTRA += -DHAVE_DLS
 endif
 
+ifeq ($(CONFIG_ANTAIRA),y)
+ifeq ($(CONFIG_ANTAIRA_AGENT),y)
+CFLAGS_EXTRA += -DHAVE_ANTAIRA_AGENT
+OBJS += antaira-agent.o
+endif
+endif
+
 ifeq ($(CONFIG_TELNET),y)
 CFLAGS_EXTRA += -DHAVE_TELNET
 OBJS += telnet.o

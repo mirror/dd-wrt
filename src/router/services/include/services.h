@@ -9,6 +9,11 @@ extern void stop_chronyd(void);
 extern void start_chronyd(void);
 #endif
 
+#ifdef HAVE_ANTAIRA_AGENT
+extern void start_antaira_agent(void);
+extern void stop_antaira_agent(void);
+#endif
+
 #ifdef HAVE_TELNET
 extern void start_telnetd(void);
 extern void stop_telnetd(void);

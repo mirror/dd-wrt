@@ -4769,6 +4769,14 @@ void wan_done(char *wan_ifname)
 	cprintf("done\n");
 
 #endif
+
+#ifdef HAVE_ANTAIRA_AGENT
+	cprintf("starting antaira-agent\n");
+	stop_antaira_agent();
+	start_antaira_agent();
+	cprintf("done\n");
+#endif
+
 #ifdef HAVE_STRONGSWAN
 	stop_strongswan();
 	start_strongswan();
@@ -4882,6 +4890,9 @@ void stop_wan(void)
 #ifdef HAVE_OPENVPN
 	stop_openvpnserverwan();
 	stop_openvpn_wandone();
+#endif
+#ifdef HAVE_ANTAIRA_AGENT
+	stop_antaira_agent();
 #endif
 #ifdef HAVE_DHCPFORWARD
 	stop_dhcpfwd();
