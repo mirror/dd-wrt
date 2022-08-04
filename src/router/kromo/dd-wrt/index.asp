@@ -466,7 +466,7 @@ addEvent(window, "unload", function() {
 									</div>
 									<div class="setting">
 										<div class="label"><% tran("share.srvipname"); %></div>
-										<input maxlength="49" size="36" name="ntp_server" value="<% nvg("ntp_server"); %>" placeholder="<% live_tran("idx.ntp_input_placeholder"); %>" />
+										<input maxlength="128" size="36" name="ntp_server" value="<% nvg("ntp_server"); %>" placeholder="<% live_tran("idx.ntp_input_placeholder"); %>" />
 									</div>
 									<div class="setting">
 										<div class="label"><% tran("idx.ntp_timer"); %></div>
