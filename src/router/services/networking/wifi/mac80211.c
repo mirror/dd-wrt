@@ -237,7 +237,6 @@ void set_mesh_params(char *dev)
 	mesh_param(dev, "mesh_nolearn", "0");
 	mesh_param(dev, "mesh_connected_to_gate", "0");
 	mesh_param(dev, "mesh_connected_to_as", "0");
-	mesh_param(dev, "mesh_header_cache_size", "50");
 	LEAVE;
 }
 
