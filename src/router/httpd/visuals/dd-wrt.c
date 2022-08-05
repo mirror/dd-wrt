@@ -4434,7 +4434,6 @@ static void internal_ej_show_wireless_single(webs_t wp, char *prefix)
 			mesh_num(wp, prefix, "mesh_plink_timeout", 6, 0);
 			mesh_radio(wp, prefix, "mesh_connected_to_gate", 0);
 			mesh_radio(wp, prefix, "mesh_connected_to_as", 0);
-			mesh_num(wp, prefix, "mesh_header_cache_size", 4, 50);
 			websWrite(wp, "</fieldset><br/>\n");
 		}
 	}
