@@ -31,16 +31,16 @@ static int show_temp(webs_t wp, int mon, int input, char *fmt)
 		int cpu;
 		fscanf(tempfp, "%d", &cpu);
 		fclose(tempfp);
-		if (cpu > 0)
+		if (cpu > 0) {
 			websWrite(wp, fmt, cpu / 1000, (cpu % 1000) / 100);
-		else
-			return 0;
+			return 1;
+		}
 	}
-	return 1;
+	return 0;
 }
 
 #elif defined(HAVE_ALPINE)
-static void show_temp(webs_t wp, int mon, int input, char *fmt)
+static int show_temp(webs_t wp, int mon, int input, char *fmt)
 {
 	char sysfs[64];
 	snprintf(sysfs, 64, "/sys/class/hwmon/hwmon%d/temp%d_input", mon, input);
@@ -50,26 +50,34 @@ static void show_temp(webs_t wp, int mon, int input, char *fmt)
 		fscanf(tempfp, "%d", &cpu);
 		fclose(tempfp);
 		websWrite(wp, fmt, cpu, 0);
+		return 1;
 	}
+	return 0;
 }
 #elif defined(HAVE_IPQ806X)
-static void show_temp(webs_t wp, char *fmt)
+static int show_temp(webs_t wp, char *fmt)
 {
 	char sysfs[64];
 	int mon;
-	int temperature = 0;
+	int temperature = -255;
 	for (mon = 0; mon < 11; mon++) {
 		snprintf(sysfs, 64, "/sys/devices/virtual/thermal/thermal_zone%d/temp", mon);
 		FILE *tempfp = fopen(sysfs, "rb");
 		if (tempfp) {
+			if (temperature == -255)
+			    temperature = 0;
 			int cpu;
 			fscanf(tempfp, "%d", &cpu);
 			fclose(tempfp);
 			temperature += cpu;
 		}
 	}
-	temperature /= mon;
-	websWrite(wp, fmt, temperature / 1000, temperature % 1000);
+	if (temperature != -255) {
+		temperature /= mon;
+		websWrite(wp, fmt, temperature / 1000, temperature % 1000);
+		return 1;
+	}
+	return 0;
 }
 #endif
 
@@ -153,8 +161,7 @@ EJ_VISIBLE void ej_get_cputemp(webs_t wp, int argc, char_t ** argv)
 //              disable_wifitemp = 1;
 //      }
 	if (wifiname0) {
-		show_temp(wp, "CPU %d.%d &#176;C");
-		cpufound = 1;
+		cpufound = show_temp(wp, "CPU %d.%d &#176;C");
 	} else {
 		disable_wifitemp = 1;
 	}
