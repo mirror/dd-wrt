@@ -935,19 +935,18 @@ static void checkhostapd(char *ifname, int force)
 	int pid = 0;
 	int sup = 0;
 	char fname[32];
-	sprintf(fname, "/var/run/%s_hostapd.pid", ifname);
-	FILE *fp;
-	fp = fopen(fname, "rb");
-	if (!fp) {
-		sprintf(fname, "/var/run/%s_wpa_supplicant.pid", ifname);
-		fp = fopen(fname, "rb");
-		if (fp) {
-			sup = 1;
-		}
-	}
+	FILE *fp = NULL;
 	if (nvram_nmatch("mesh", "%s_mode", ifname) || nvram_nmatch("sta", "%s_mode", ifname) || nvram_nmatch("wdssta", "%s_mode", ifname) || nvram_nmatch("wdssta_mtik", "%s_mode", ifname)
 	    || nvram_nmatch("infra", "%s_mode", ifname))
 		sup = 1;
+	if (sup) {
+		sprintf(fname, "/var/run/%s_wpa_supplicant.pid", ifname);
+		fp = fopen(fname, "rb");
+	} else {
+		sprintf(fname, "/var/run/%s_hostapd.pid", ifname);
+		fp = fopen(fname, "rb");
+	}
+	
 	if (!fp && force == 2) {
 	    force = 1;
 	}
