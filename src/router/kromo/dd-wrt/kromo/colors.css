@@ -1,6 +1,6 @@
 @import url(/style/buttons.css);
 body.gui, #header {
-  background: #aaa;
+  background: #ccc;
 }
 #header #logo {
   filter: contrast(1.2) brightness(2);
@@ -85,7 +85,7 @@ a[title='Geotool']:hover {
 }
 #content {
   background: #ddd;
-  border: 1px solid #aaa;
+  border: 1px solid #ccc;
 }
 #content.infopage {
   background-color: transparent;
