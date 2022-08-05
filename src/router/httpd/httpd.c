@@ -1869,7 +1869,7 @@ int main(int argc, char **argv)
 #define SSL_OP_SAFARI_ECDHE_ECDSA_BUG 0
 #endif
 
-			SSL_CTX_set_options(ctx, SSL_OP_NO_TLSv1 | SSL_OP_NO_SSLv2 | SSL_OP_NO_SSLv3 | SSL_OP_CIPHER_SERVER_PREFERENCE | SSL_OP_SAFARI_ECDHE_ECDSA_BUG);
+			SSL_CTX_set_options(ctx, SSL_OP_NO_TLSv1 | SSL_OP_NO_TLSv1_1 | SSL_OP_NO_SSLv2 | SSL_OP_NO_SSLv3 | SSL_OP_CIPHER_SERVER_PREFERENCE | SSL_OP_SAFARI_ECDHE_ECDSA_BUG);
 
 			SSL_set_fd(conn_fp->ssl, conn_fp->conn_fd);
 			r = SSL_accept(conn_fp->ssl);
