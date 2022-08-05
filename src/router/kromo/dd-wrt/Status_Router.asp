@@ -190,7 +190,7 @@ addEvent(window, "unload", function() {
 										<script type="text/javascript">
 										//<![CDATA[
 										<% statfs("/tmp/mnt/smbshare", "samba"); %>
-										document.write( ((<% nvg("samba_mount"); %>) && (samba.size)) ? (scaleSize(samba.used) + ' / ' + scaleSize(samba.size)) : '<span style="color:#999999;"><em>(' + share.nmounted + ')</em></span>' );
+										document.write( ((<% nvg("samba_mount"); %>) && (samba.size)) ? (scaleSize(samba.used) + ' / ' + scaleSize(samba.size)) : '<span style="opacity: .8;"><em>(' + share.nmounted + ')</em></span>' );
 										//]]>
 										</script>
 									</div>
@@ -201,7 +201,7 @@ addEvent(window, "unload", function() {
 									<script type="text/javascript">
 									//<![CDATA[
 									<% statfs("/jffs", "my_jffs"); %>
-									document.write( ((<% nvg("enable_jffs2"); %>) && (my_jffs.size)) ? (scaleSize(my_jffs.used) + ' / ' + scaleSize(my_jffs.size)) : '<span style="color:#999999;"><em>(' + share.nmounted + ')</em></span>' );
+									document.write( ((<% nvg("enable_jffs2"); %>) && (my_jffs.size)) ? (scaleSize(my_jffs.used) + ' / ' + scaleSize(my_jffs.size)) : '<span style="opacity: .8;"><em>(' + share.nmounted + ')</em></span>' );
 									//]]>
 									</script>
 								</div>
@@ -212,7 +212,7 @@ addEvent(window, "unload", function() {
 									<script type="text/javascript">
 									//<![CDATA[
 									<% statfs("/mmc", "mmc"); %>
-									document.write( ((<% nvg("mmc_enable0"); %>) && (mmc.size)) ? (scaleSize(mmc.used) + ' / ' + scaleSize(mmc.size)) : '<span style="color:#999999;"><em>(' + share.nmounted + ')</em></span>' );
+									document.write( ((<% nvg("mmc_enable0"); %>) && (mmc.size)) ? (scaleSize(mmc.used) + ' / ' + scaleSize(mmc.size)) : '<span style="opacity: .8;"><em>(' + share.nmounted + ')</em></span>' );
 									//]]>
 									</script>
 								</div>

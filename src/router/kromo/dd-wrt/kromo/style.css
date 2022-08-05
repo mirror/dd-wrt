@@ -63,7 +63,7 @@ select:focus-visible {
   box-shadow: 0 0 5px 1px #115b80;
   outline: 0;
 }
-input.button:focus-visible {
+input.button:focus, input.button:focus-visible {
   border: 0;
   box-shadow: 0 0 5px 1px #115b80;
   outline: 0;
@@ -84,7 +84,7 @@ input[name='apply_button']:hover {
   background: #199235;
   color: #fff;
 }
-input[name='apply_button']:focus-visible {
+input[name='apply_button']:focus, input[name='apply_button']:focus-visible {
   box-shadow: 0 0 5px 1px #199235;
   outline: 0;
 }
@@ -96,7 +96,7 @@ input[name='reset_button']:hover {
   background: #ff8400;
   color: #000;
 }
-input[name='reset_button']:focus-visible {
+input[name='reset_button']:focus, input[name='reset_button']:focus-visible {
   box-shadow: 0 0 5px 1px #aaa;
   outline: 0;
 }
@@ -109,7 +109,7 @@ input[name='reboot_button']:hover {
   background: #e00;
   color: #fff;
 }
-input[name='reboot_button']:focus-visible {
+input[name='reboot_button']:focus, input[name='reboot_button']:focus-visible {
   box-shadow: 0 0 5px 1px #ff7c7c;
   outline: 0;
 }
