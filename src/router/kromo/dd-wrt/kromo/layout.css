@@ -253,7 +253,8 @@ h2, h3 {
   right: 0;
   width: 19em;
 }
-.cpu-feat {
+/* this applies to CPU Features label results and MAC Clone button */
+.padding-left {
   padding-left: 13.6rem;
 }
 .warning {

@@ -403,7 +403,7 @@ EJ_VISIBLE void ej_show_cpufeatures(webs_t wp, int argc, char_t ** argv)
 		char buf[128];
 		websWrite(wp, "<div class=\"setting\">\n");
 		websWrite(wp, "<div class=\"label\">%s</div>\n", tran_string(buf, sizeof(buf), "status_router.features"));
-		websWrite(wp, "<div class=\"cpu-feat\">%s&nbsp;\n</div>", result);
+		websWrite(wp, "<div class=\"padding-left\">%s&nbsp;\n</div>", result);
 		websWrite(wp, "</div>\n");
 	}
 	if (result)
