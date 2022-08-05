@@ -3308,7 +3308,7 @@ static char *vapsettings[] = {
 	"mesh_auto_open_plinks", "mesh_hwmp_max_preq_retries", "mesh_path_refresh_time", "mesh_min_discovery_timeout", "mesh_hwmp_active_path_timeout", "mesh_hwmp_preq_min_interval",
 	"mesh_hwmp_net_diameter_traversal_time",
 	"mesh_hwmp_rootmode", "mesh_hwmp_rann_interval", "mesh_gate_announcements", "mesh_sync_offset_max_neighor", "mesh_rssi_threshold", "mesh_hwmp_active_path_to_root_timeout", "mesh_hwmp_root_interval",
-	"mesh_hwmp_confirmation_interval", "mesh_power_mode", "mesh_awake_window", "mesh_plink_timeout", "mesh_connected_to_gate", "mesh_connected_to_as", "mesh_header_cache_size", "bgscan_mode", "bgscan_short_int",
+	"mesh_hwmp_confirmation_interval", "mesh_power_mode", "mesh_awake_window", "mesh_plink_timeout", "mesh_connected_to_gate", "mesh_connected_to_as", "bgscan_mode", "bgscan_short_int",
 	    "bgscan_threshold",
 	"bgscan_long_int"
 };
@@ -4826,7 +4826,6 @@ static void save_prefix(webs_t wp, char *prefix)
 		copytonv_prefix(wp, "mesh_plink_timeout", prefix);
 		copytonv_prefix(wp, "mesh_connected_to_gate", prefix);
 		copytonv_prefix(wp, "mesh_connected_to_as", prefix);
-		copytonv_prefix(wp, "mesh_header_cache_size", prefix);
 	}
 
 	copytonv_prefix(wp, "uapsd", prefix);
