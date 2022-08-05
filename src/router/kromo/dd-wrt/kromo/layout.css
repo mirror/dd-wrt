@@ -242,6 +242,10 @@ h2, h3 {
   line-height: 1.993;
   width: 100%;
 }
+.setting input[type] {
+  margin-left: 0;
+  margin-right: .362em;
+}
 .setting .label {
   float: left;
   width: 20em;
@@ -253,7 +257,8 @@ h2, h3 {
   right: 0;
   width: 19em;
 }
-.cpu-feat {
+/* this applies to CPU Features label results and MAC Clone button */
+.padding-left {
   padding-left: 13.6rem;
 }
 .warning {
@@ -335,7 +340,7 @@ table[summary='ports forwarding table'] input[size='10'] {
 #help a {
   display: block;
   position: absolute;
-  top: 1.378em;
+  top: 1.399em;
   right: .901em;
   text-align: right;
   text-decoration: none;
