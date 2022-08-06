@@ -361,7 +361,10 @@ pre {
   min-width: 100%;
 }
 [type='image'][src*='paypal'] {
-  margin-bottom: -0.5rem;
+  margin-bottom: -1.3rem;
+  margin-top: .2rem;
+  padding: 0;
+  border: 0
 }
 .center a[href='http://www.dd-wrt.com/'] {
   line-height: 2.2;

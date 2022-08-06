@@ -406,3 +406,13 @@ form[name='wds'] input[size='25'] {
   height: 1px;
   font-size: 1px;
 }
+.center a[href] {
+  line-height: 1;
+}
+[type='image'][src*='paypal'] {
+  margin-bottom: -1rem;
+  margin-top: .6rem;
+  padding: 0;
+  border: 0;
+  mix-blend-mode: darken;
+}

@@ -458,7 +458,10 @@ input.button[onclick*='gen_wg_psk'] {
   margin: 0 0 6px;
 }
 [type='image'][src*='paypal'] {
-  margin-bottom: -0.5rem;
+  margin-bottom: -1rem;
+  margin-top: .2rem;
+  padding: 0;
+  border: 0
 }
 input.spaceradio {
   margin-right: .4em;
