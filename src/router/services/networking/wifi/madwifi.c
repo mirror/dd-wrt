@@ -229,21 +229,33 @@ void get_pairwise(char *prefix, char *pwstring, char *grpstring, int isadhoc, in
 	}
 	if (nvram_nmatch("1", "%s_ccmp-256", prefix)) {
 		sprintf(pwstring, "%s %s", pwstring, "CCMP-256");
-		if (grpstring)
-			sprintf(temp_grpstring, "%s %s", temp_grpstring, "CCMP-256 GCMP-256 GCMP CCMP TKIP");
+		if (grpstring) {
+			if (ismesh)
+				sprintf(temp_grpstring, "%s %s", temp_grpstring, "CCMP-256 GCMP-256 GCMP CCMP");
+			else
+				sprintf(temp_grpstring, "%s %s", temp_grpstring, "CCMP-256 GCMP-256 GCMP CCMP TKIP");
+		}
 	}
 	if (nvram_nmatch("1", "%s_gcmp-256", prefix) || iswpa3_192) {
 		sprintf(pwstring, "%s %s", pwstring, "GCMP-256");
-		if (grpstring)
-			sprintf(temp_grpstring, "%s %s", temp_grpstring, "GCMP-256 GCMP CCMP TKIP");
+		if (grpstring) {
+			if (ismesh)
+				sprintf(temp_grpstring, "%s %s", temp_grpstring, "GCMP-256 GCMP CCMP");
+			else
+				sprintf(temp_grpstring, "%s %s", temp_grpstring, "GCMP-256 GCMP CCMP TKIP");
+		}
 	}
 	if (nvram_nmatch("1", "%s_gcmp", prefix) || iswpa3_128) {
 		sprintf(pwstring, "%s %s", pwstring, "GCMP");
 		if (grpstring) {
 			if (has_ad(prefix))
 				sprintf(temp_grpstring, "%s %s", temp_grpstring, "GCMP");
-			else
-				sprintf(temp_grpstring, "%s %s", temp_grpstring, "GCMP CCMP TKIP");
+			else {
+				if (ismesh)
+					sprintf(temp_grpstring, "%s %s", temp_grpstring, "GCMP CCMP");
+				else
+					sprintf(temp_grpstring, "%s %s", temp_grpstring, "GCMP CCMP TKIP");
+			}
 		}
 	}
 	/* remove duplicates and recreate group string */
@@ -946,9 +958,9 @@ static void checkhostapd(char *ifname, int force)
 		sprintf(fname, "/var/run/%s_hostapd.pid", ifname);
 		fp = fopen(fname, "rb");
 	}
-	
+
 	if (!fp && force == 2) {
-	    force = 1;
+		force = 1;
 	}
 	if (fp || force == 1) {
 		if (fp) {

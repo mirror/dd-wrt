@@ -249,12 +249,19 @@ void mesh_params_main(int argc, char *argv[])
 	int i;
 	for (i = 0; i < c; i++) {
 		sprintf(dev, "wlan%d", i);
+		if (nvram_nmatch("disabled", "%s_net_mode", dev))
+			continue;
+		if (nvram_nmatch("disabled", "%s_mode", dev))
+			continue;
+		sleep(3);
 		if (nvram_nmatch("mesh", "%s_mode", dev))
 			set_mesh_params(dev);
 		char vifs[32];
 		sprintf(vifs, "wlan%d_vifs", i);
 		char *vaps = nvram_safe_get(vifs);
 		foreach(var, vaps, next) {
+			if (nvram_nmatch("disabled", "%s_mode", var))
+				continue;
 			if (nvram_nmatch("mesh", "%s_mode", var))
 				set_mesh_params(var);
 		}
