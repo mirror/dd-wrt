@@ -234,7 +234,7 @@ static int wpas_mesh_complete(struct wpa_supplicant *wpa_s)
 
 	if (!ret)
 		wpa_supplicant_set_state(wpa_s, WPA_COMPLETED);
-	system("service mesh_params main");
+	system("service mesh_params main&");
 	return ret;
 }
 
