@@ -2163,7 +2163,7 @@ static int ieee80211_get_mesh_config(struct wiphy *wiphy,
 	return 0;
 }
 
-static inline bool _chg_mesh_attr(enum nl80211_meshconf_params parm, u64 mask)
+static inline bool _chg_mesh_attr(enum nl80211_meshconf_params parm, u32 mask)
 {
 	return (mask >> (parm-1)) & 0x1;
 }
@@ -2226,7 +2226,7 @@ static int copy_mesh_setup(struct ieee80211_if_mesh *ifmsh,
 }
 
 static int ieee80211_update_mesh_config(struct wiphy *wiphy,
-					struct net_device *dev, u64 mask,
+					struct net_device *dev, u32 mask,
 					const struct mesh_config *nconf)
 {
 	struct mesh_config *conf;
@@ -2340,8 +2340,6 @@ static int ieee80211_update_mesh_config(struct wiphy *wiphy,
 	if (_chg_mesh_attr(NL80211_MESHCONF_CONNECTED_TO_AS, mask))
 		conf->dot11MeshConnectedToAuthServer =
 			nconf->dot11MeshConnectedToAuthServer;
-	if (_chg_mesh_attr(NL80211_MESHCONF_HEADER_CACHE_SIZE, mask))
-		conf->hdr_cache_size = nconf->hdr_cache_size;
 	ieee80211_mbss_info_change_notify(sdata, BSS_CHANGED_BEACON);
 	return 0;
 }

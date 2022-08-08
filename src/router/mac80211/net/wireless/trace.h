@@ -1045,14 +1045,14 @@ TRACE_EVENT(rdev_return_int_mesh_config,
 );
 
 TRACE_EVENT(rdev_update_mesh_config,
-	TP_PROTO(struct wiphy *wiphy, struct net_device *netdev, u64 mask,
+	TP_PROTO(struct wiphy *wiphy, struct net_device *netdev, u32 mask,
 		 const struct mesh_config *conf),
 	TP_ARGS(wiphy, netdev, mask, conf),
 	TP_STRUCT__entry(
 		WIPHY_ENTRY
 		NETDEV_ENTRY
 		MESH_CFG_ENTRY
-		__field(u64, mask)
+		__field(u32, mask)
 	),
 	TP_fast_assign(
 		WIPHY_ASSIGN;
@@ -1060,7 +1060,7 @@ TRACE_EVENT(rdev_update_mesh_config,
 		MESH_CFG_ASSIGN;
 		__entry->mask = mask;
 	),
-	TP_printk(WIPHY_PR_FMT ", " NETDEV_PR_FMT ", mask: %llu",
+	TP_printk(WIPHY_PR_FMT ", " NETDEV_PR_FMT ", mask: %u",
 		  WIPHY_PR_ARG, NETDEV_PR_ARG, __entry->mask)
 );
 

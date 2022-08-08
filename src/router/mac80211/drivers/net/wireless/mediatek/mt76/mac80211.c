@@ -502,6 +502,7 @@ mt76_alloc_phy(struct mt76_dev *dev, unsigned int size,
 	phy = hw->priv;
 	phy->dev = dev;
 	phy->hw = hw;
+	hw->max_mtu = IEEE80211_MAX_DATA_LEN;
 	phy->priv = hw->priv + phy_size;
 
 	hw->wiphy->flags |= WIPHY_FLAG_IBSS_RSN;
@@ -599,6 +600,7 @@ mt76_alloc_device(struct device *pdev, unsigned int size,
 	phy = &dev->phy;
 	phy->dev = dev;
 	phy->hw = hw;
+	hw->max_mtu = IEEE80211_MAX_DATA_LEN;
 
 	spin_lock_init(&dev->rx_lock);
 	spin_lock_init(&dev->lock);

@@ -2079,8 +2079,6 @@ struct bss_parameters {
  *      not be the optimal decision as a multi-hop route might be better. So
  *      if using this setting you will likely also want to disable
  *      dot11MeshForwarding and use another mesh routing protocol on top.
- * @hdr_cache_size: Maximum number of entries the mesh header cache will
- *	hold before flushing old entries.
  */
 struct mesh_config {
 	u16 dot11MeshRetryTimeout;
@@ -2114,7 +2112,6 @@ struct mesh_config {
 	u16 dot11MeshAwakeWindowDuration;
 	u32 plink_timeout;
 	bool dot11MeshNolearn;
-	u16 hdr_cache_size;
 };
 
 /**
@@ -4184,7 +4181,7 @@ struct cfg80211_ops {
 				struct net_device *dev,
 				struct mesh_config *conf);
 	int	(*update_mesh_config)(struct wiphy *wiphy,
-				      struct net_device *dev, u64 mask,
+				      struct net_device *dev, u32 mask,
 				      const struct mesh_config *nconf);
 	int	(*join_mesh)(struct wiphy *wiphy, struct net_device *dev,
 			     const struct mesh_config *conf,

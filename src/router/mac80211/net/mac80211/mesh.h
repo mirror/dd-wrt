@@ -127,9 +127,10 @@ struct mesh_path {
 	u32 path_change_count;
 };
 
-#define MESH_HDR_CACHE_TIMEOUT		8000 /* msecs */
-
-#define MESH_HDR_MAX_LEN	68	/* mac+mesh+rfc1042 hdr */
+#define MESH_HEADER_CACHE_MAX_SIZE		512
+#define MESH_HEADER_CACHE_THRESHOLD_SIZE	384
+#define MESH_HEADER_CACHE_TIMEOUT		8000 /* msecs */
+#define MESH_HEADER_MAX_LEN			68   /* mac+mesh+rfc1042 hdr */
 
 /**
  * struct mhdr_cache_entry - Cached Mesh header entry
@@ -150,16 +151,16 @@ struct mesh_path {
  */
 struct mhdr_cache_entry {
 	u8 addr_key[ETH_ALEN];
-	u8 hdr[MESH_HDR_MAX_LEN];
+	u8 hdr[MESH_HEADER_MAX_LEN];
 	u16 machdr_len;
 	u16 hdrlen;
 	u8 pn_offs;
 	u8 band;
-	struct ieee80211_key *key;
+	struct ieee80211_key __rcu *key;
 	struct hlist_node walk_list;
 	struct rhash_head rhash;
-	struct mesh_path *mpath;
-	struct mesh_path *mppath;
+	struct mesh_path __rcu *mpath;
+	struct mesh_path __rcu *mppath;
 	unsigned long timestamp;
 	struct rcu_head rcu;
 	u32 path_change_count;
@@ -344,7 +345,6 @@ static void mesh_cache_hdr(struct ieee80211_sub_if_data *sdata,
 static void mesh_hdr_cache_manage(struct ieee80211_sub_if_data *sdata);
 static void mesh_hdr_cache_flush(struct mesh_path *mpath, bool is_mpp);
 static void mesh_queue_preq(struct mesh_path *mpath, u8 flags);
-
 #ifdef CPTCFG_MAC80211_MESH
 static inline
 u32 mesh_plink_inc_estab_count(struct ieee80211_sub_if_data *sdata)
