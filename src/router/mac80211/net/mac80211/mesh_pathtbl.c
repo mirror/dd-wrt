@@ -589,7 +589,7 @@ void mesh_cache_hdr(struct ieee80211_sub_if_data *sdata,
 	mshhdr_len = ieee80211_get_mesh_hdrlen(meshhdr);
 
 	spin_lock_bh(&cache->walk_lock);
-	if (cache->size > sdata->u.mesh.mshcfg.hdr_cache_size) {
+	if (cache->size > MESH_HEADER_CACHE_MAX_SIZE) {
 		spin_unlock_bh(&cache->walk_lock);
 		return;
 	}
@@ -640,12 +640,12 @@ void mesh_cache_hdr(struct ieee80211_sub_if_data *sdata,
 	}
 
 	if ((hdrlen + crypto_len + mshhdr_len + sizeof(rfc1042_header)) >
-		MESH_HDR_MAX_LEN) {
+		MESH_HEADER_MAX_LEN) {
 		WARN_ON_ONCE(1);
 		return;
 	}
 
-	mhdr = kzalloc(sizeof(*mhdr), GFP_KERNEL);
+	mhdr = kzalloc(sizeof(*mhdr), GFP_ATOMIC);
 	if (!mhdr)
 		return;
 
@@ -707,7 +707,7 @@ void mesh_hdr_cache_manage(struct ieee80211_sub_if_data *sdata)
 		return;
 
 	spin_lock_bh(&cache->walk_lock);
-	if (cache->size < ((sdata->u.mesh.mshcfg.hdr_cache_size * 2) / 3)) {
+	if (cache->size < MESH_HEADER_CACHE_THRESHOLD_SIZE) {
 		spin_unlock_bh(&cache->walk_lock);
 		return;
 	}
@@ -715,7 +715,7 @@ void mesh_hdr_cache_manage(struct ieee80211_sub_if_data *sdata)
 	hlist_for_each_entry_safe(entry, n, &cache->walk_head, walk_list) {
 		if (time_before(jiffies,
 				entry->timestamp +
-				msecs_to_jiffies(MESH_HDR_CACHE_TIMEOUT)))
+				msecs_to_jiffies(MESH_HEADER_CACHE_TIMEOUT)))
 			continue;
 
 		hlist_del_rcu(&entry->walk_list);
