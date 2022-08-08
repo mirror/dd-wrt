@@ -14,7 +14,7 @@
 		</div>
 		<div class="setting">
 			<div class="label"><% tran("service.vpn_ipnameport"); %></div>
-			<input size="27" maxlength="64" name="openvpncl_remoteip" value="<% nvg("openvpncl_remoteip"); %>" />&#58;
+			<input size="27" maxlength="96" name="openvpncl_remoteip" value="<% nvg("openvpncl_remoteip"); %>" />&#58;
 			<input size="5" maxlength="5" class="num" name="openvpncl_remoteport" onblur="valid_range(this,1,65535,share.port)" value="<% nvg("openvpncl_remoteport"); %>" />
 			<span class="default"><script type="text/javascript">
 			//<![CDATA[
@@ -30,22 +30,22 @@
 		<div id="idmultirem">
 			<div class="setting">
 				<div class="label"><% tran("service.vpn_ipnameport"); %></div>
-				<input size="27" maxlength="64" name="openvpncl_remoteip2" value="<% nvg("openvpncl_remoteip2"); %>" />&#58;
+				<input size="27" maxlength="96" name="openvpncl_remoteip2" value="<% nvg("openvpncl_remoteip2"); %>" />&#58;
 				<input size="5" maxlength="5" class="num" name="openvpncl_remoteport2" value="<% nvg("openvpncl_remoteport2"); %>" />
 			</div>
 			<div class="setting">
 				<div class="label"><% tran("service.vpn_ipnameport"); %></div>
-				<input size="27" maxlength="64" name="openvpncl_remoteip3" value="<% nvg("openvpncl_remoteip3"); %>" />&#58;
+				<input size="27" maxlength="96" name="openvpncl_remoteip3" value="<% nvg("openvpncl_remoteip3"); %>" />&#58;
 				<input size="5" maxlength="5" class="num" name="openvpncl_remoteport3" value="<% nvg("openvpncl_remoteport3"); %>" />
 			</div>
 			<div class="setting">
 				<div class="label"><% tran("service.vpn_ipnameport"); %></div>
-				<input size="27" maxlength="64" name="openvpncl_remoteip4" value="<% nvg("openvpncl_remoteip4"); %>" />&#58;
+				<input size="27" maxlength="96" name="openvpncl_remoteip4" value="<% nvg("openvpncl_remoteip4"); %>" />&#58;
 				<input size="5" maxlength="5" class="num" name="openvpncl_remoteport4" value="<% nvg("openvpncl_remoteport4"); %>" />
 			</div>
 			<div class="setting">
 				<div class="label"><% tran("service.vpn_ipnameport"); %></div>
-				<input size="27" maxlength="64" name="openvpncl_remoteip5" value="<% nvg("openvpncl_remoteip5"); %>" />&#58;
+				<input size="27" maxlength="96" name="openvpncl_remoteip5" value="<% nvg("openvpncl_remoteip5"); %>" />&#58;
 				<input size="5" maxlength="5" class="num" name="openvpncl_remoteport5" value="<% nvg("openvpncl_remoteport5"); %>" />
 			</div>
 			<div class="setting">
