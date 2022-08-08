@@ -244,7 +244,8 @@ body div.message {
   border-color: var(--bg-3);
   border-radius: 4px;
 }
-.popup_bg, .iplookup {
+.popup_bg,
+.iplookup {
   background: var(--bg-1);
   color: var(--v9-7);
 }
@@ -751,20 +752,14 @@ img[src*='hotspotsystem'] {
   width: 0;
 }
 [type='image'i][src*='paypal'] {
-  background: transparent !important;
-  border-color: transparent !important;
   filter: invert(0.9) hue-rotate(180deg);
-  margin-bottom: -0.5rem;
-  height: 54px;
-  width: 90px;
-  mix-blend-mode: lighten;
+  height: initial;
+  width: initial;
 }
 [type='image'i][src*='paypal']:hover,
 [type='image'i][src*='paypal']:focus,
 [type='image'i][src*='paypal']:focus-within,
 [type='image'i][src*='paypal']:focus-visible {
-  background-color: transparent !important;
-  border-color: transparent !important;
   box-shadow: none !important;
   mix-blend-mode: exclusion;
 }
