@@ -95,6 +95,7 @@ define kernelfeatures
 	fi
 	if [ "$(CONFIG_WPA3)" = "y" ]; then \
 		sed -i 's/\# CONFIG_CRYPTO_GCM is not set/CONFIG_CRYPTO_GCM=m/g' $(LINUXDIR)/.config; \
+		sed -i 's/\# CONFIG_CRYPTO_CCM is not set/CONFIG_CRYPTO_CCM=m/g' $(LINUXDIR)/.config; \
 		echo "# CONFIG_CRYPTO_DRBG_CTR is not set" >> $(LINUXDIR)/.config; \
 		echo "# CONFIG_CRYPTO_DRBG_HASH is not set" >> $(LINUXDIR)/.config; \
 	fi
