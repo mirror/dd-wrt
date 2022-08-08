@@ -10,8 +10,10 @@ MAXTIME=$($nv get wg_maxtime) #0 = no maxtime
 [[ -z $MAXTIME ]] && MAXTIME=90
 
 LOCK="/tmp/oet.lock"
-acquire_lock() { logger -p user.info "WireGuard set $LOCK"; while ! mkdir $LOCK >/dev/null 2>&1; do sleep 2; done; }
-release_lock() { rmdir $LOCK >/dev/null 2>&1; logger -p user.info "WireGuard released $LOCK"; }
+acquire_lock() { logger -p user.info "WireGuard acquiring $LOCK for $$"; while ! mkdir $LOCK >/dev/null 2>&1; do sleep 2; done; logger -p user.info "WireGuard $LOCK acquired for $$"; }
+release_lock() { rmdir $LOCK >/dev/null 2>&1; logger -p user.info "WireGuard released $LOCK for $$"; }
+
+trap '{ release_lock; logger -p user.info "WireGuard script $0 running on oet${i} fatal error"; exit 1; }' SIGHUP SIGINT SIGTERM
 
 waitfortime () {
 	#set lock to make sure earlier tunnels are finished
@@ -150,8 +152,8 @@ for i in $(seq 1 $tunnels); do
 				while [[ ! -f /tmp/resolv.dnsmasq ]]; do
 					SLEEPDNSCT=$((SLEEPDNSCT+2))
 					sleep 2
-					if [[ $SLEEPDNS -gt $MAXDNSTIME && $MAXDNSTIME -ne 0 ]]; then
-						logger -p user.err "WireGuard ERROR max. waiting $SLEEPDNSCT sec. for DNSMasq"
+					if [[ $SLEEPDNSCT -gt $MAXDNSTIME && $MAXDNSTIME -ne 0 ]]; then
+						logger -p user.err "WireGuard ERROR max. waiting $SLEEPDNSCT sec. for DNSMasq, check DNSMasq settings!"
 						break
 					fi
 				done
