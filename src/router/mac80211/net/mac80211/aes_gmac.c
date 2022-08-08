@@ -1,11 +1,7 @@
-#undef CONFIG_NOPRINTK
+// SPDX-License-Identifier: GPL-2.0-only
 /*
  * AES-GMAC for IEEE 802.11 BIP-GMAC-128 and BIP-GMAC-256
  * Copyright 2015, Qualcomm Atheros, Inc.
- *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License version 2 as
- * published by the Free Software Foundation.
  */
 
 #include <linux/kernel.h>
@@ -77,18 +73,14 @@ struct crypto_aead *ieee80211_aes_gmac_key_setup(const u8 key[],
 	int err;
 
 	tfm = crypto_alloc_aead("gcm(aes)", 0, CRYPTO_ALG_ASYNC);
-	if (IS_ERR(tfm)) {
-		printk(KERN_WARNING "%s: failed\n",__func__);
+	if (IS_ERR(tfm))
 		return tfm;
-	}
 
 	err = crypto_aead_setkey(tfm, key, key_len);
 	if (!err)
 		err = crypto_aead_setauthsize(tfm, GMAC_MIC_LEN);
 	if (!err)
 		return tfm;
-	else 
-	    printk(KERN_WARNING "%s: aes init failed\n",__func__);
 
 	crypto_free_aead(tfm);
 	return ERR_PTR(err);

@@ -441,6 +441,7 @@ struct mt7601u_dev *mt7601u_alloc_device(struct device *pdev)
 	dev = hw->priv;
 	dev->dev = pdev;
 	dev->hw = hw;
+	hw->max_mtu = IEEE80211_MAX_DATA_LEN;
 	mutex_init(&dev->vendor_req_mutex);
 	mutex_init(&dev->reg_atomic_mutex);
 	mutex_init(&dev->hw_atomic_mutex);

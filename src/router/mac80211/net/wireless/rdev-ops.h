@@ -330,7 +330,7 @@ rdev_get_mesh_config(struct cfg80211_registered_device *rdev,
 
 static inline int
 rdev_update_mesh_config(struct cfg80211_registered_device *rdev,
-			struct net_device *dev, u64 mask,
+			struct net_device *dev, u32 mask,
 			const struct mesh_config *nconf)
 {
 	int ret;

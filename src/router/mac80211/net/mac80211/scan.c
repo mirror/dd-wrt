@@ -537,6 +537,10 @@ static void __ieee80211_scan_completed(struct ieee80211_hw *hw, bool aborted)
 		ieee80211_configure_filter(local);
 		drv_sw_scan_complete(local, scan_sdata);
 		ieee80211_offchannel_return(local);
+	} else {
+		if (ieee80211_hw_check(&local->hw, NEEDS_OFFCHANNEL_NULLFUNC)) {
+			ieee80211_offchannel_return(local);
+		}
 	}
 
 	ieee80211_recalc_idle(local);
@@ -872,6 +876,11 @@ static int __ieee80211_start_scan(struct ieee80211_sub_if_data *sdata,
 
 	if (hw_scan) {
 		WARN_ON(!ieee80211_prep_hw_scan(sdata));
+		if (ieee80211_hw_check(&local->hw, NEEDS_OFFCHANNEL_NULLFUNC)) {
+			ieee80211_offchannel_stop_vifs(local);
+			/* ensure nullfunc is transmitted before leaving operating channel */
+			ieee80211_flush_queues(local, NULL, false);
+		}
 		rc = drv_hw_scan(local, sdata, local->hw_scan_req);
 	} else {
 		rc = ieee80211_start_sw_scan(local, sdata);
@@ -1338,10 +1347,14 @@ void ieee80211_scan_cancel(struct ieee80211_local *local)
 		 * scan on another band.
 		 */
 		set_bit(SCAN_HW_CANCELLED, &local->scanning);
-		if (local->ops->cancel_hw_scan)
+		if (local->ops->cancel_hw_scan) {
 			drv_cancel_hw_scan(local,
 				rcu_dereference_protected(local->scan_sdata,
 						lockdep_is_held(&local->mtx)));
+			if (ieee80211_hw_check(&local->hw, NEEDS_OFFCHANNEL_NULLFUNC)) {
+				ieee80211_offchannel_return(local);
+			}
+		}
 		goto out;
 	}
 

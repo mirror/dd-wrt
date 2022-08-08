@@ -21,8 +21,6 @@
 #define MESH_ROOT_CONFIRMATION_INTERVAL 2000
 #define MESH_DEFAULT_PLINK_TIMEOUT	1800 /* timeout in seconds */
 
-#define MESH_DEFAULT_HEADER_CACHE_SIZE		512
-
 /*
  * Minimum interval between two consecutive PREQs originated by the same
  * interface
@@ -81,7 +79,6 @@ const struct mesh_config default_mesh_config = {
 	.dot11MeshAwakeWindowDuration = MESH_DEFAULT_AWAKE_WINDOW,
 	.plink_timeout = MESH_DEFAULT_PLINK_TIMEOUT,
 	.dot11MeshNolearn = false,
-	.hdr_cache_size = MESH_DEFAULT_HEADER_CACHE_SIZE,
 };
 
 const struct mesh_setup default_mesh_setup = {

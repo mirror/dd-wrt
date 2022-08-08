@@ -7685,9 +7685,7 @@ static int nl80211_get_mesh_config(struct sk_buff *skb,
 	    nla_put_u8(msg, NL80211_MESHCONF_NOLEARN,
 		       cur_params.dot11MeshNolearn) ||
 	    nla_put_u8(msg, NL80211_MESHCONF_CONNECTED_TO_AS,
-		       cur_params.dot11MeshConnectedToAuthServer) ||
-	    nla_put_u16(msg, NL80211_MESHCONF_HEADER_CACHE_SIZE,
-			cur_params.hdr_cache_size))
+		       cur_params.dot11MeshConnectedToAuthServer))
 		goto nla_put_failure;
 	nla_nest_end(msg, pinfoattr);
 	genlmsg_end(msg, hdr);
@@ -7765,10 +7763,10 @@ static const struct nla_policy
 
 static int nl80211_parse_mesh_config(struct genl_info *info,
 				     struct mesh_config *cfg,
-				     u64 *mask_out)
+				     u32 *mask_out)
 {
 	struct nlattr *tb[NL80211_MESHCONF_ATTR_MAX + 1];
-	u64 mask = 0;
+	u32 mask = 0;
 	u16 ht_opmode;
 
 #define FILL_IN_MESH_PARAM_IF_SET(tb, cfg, param, mask, attr, fn)	\
@@ -7903,8 +7901,6 @@ do {									\
 				  NL80211_MESHCONF_PLINK_TIMEOUT, nla_get_u32);
 	FILL_IN_MESH_PARAM_IF_SET(tb, cfg, dot11MeshNolearn, mask,
 				  NL80211_MESHCONF_NOLEARN, nla_get_u8);
-	FILL_IN_MESH_PARAM_IF_SET(tb, cfg, hdr_cache_size, mask,
-				  NL80211_MESHCONF_HEADER_CACHE_SIZE, nla_get_u16);
 	if (mask_out)
 		*mask_out = mask;
 
@@ -7974,7 +7970,7 @@ static int nl80211_update_mesh_config(struct sk_buff *skb,
 	struct net_device *dev = info->user_ptr[1];
 	struct wireless_dev *wdev = dev->ieee80211_ptr;
 	struct mesh_config cfg;
-	u64 mask;
+	u32 mask;
 	int err;
 
 	if (wdev->iftype != NL80211_IFTYPE_MESH_POINT)

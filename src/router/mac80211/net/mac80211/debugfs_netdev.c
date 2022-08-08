@@ -677,8 +677,6 @@ IEEE80211_IF_FILE(dot11MeshConnectedToMeshGate,
 IEEE80211_IF_FILE(dot11MeshNolearn, u.mesh.mshcfg.dot11MeshNolearn, DEC);
 IEEE80211_IF_FILE(dot11MeshConnectedToAuthServer,
 		  u.mesh.mshcfg.dot11MeshConnectedToAuthServer, DEC);
-IEEE80211_IF_FILE(hdr_cache_size,
-		  u.mesh.mshcfg.hdr_cache_size, DEC);
 #endif
 
 #undef DEBUGFS_ADD
@@ -812,7 +810,6 @@ static void add_mesh_config(struct ieee80211_sub_if_data *sdata)
 	MESHPARAMS_ADD(dot11MeshConnectedToMeshGate);
 	MESHPARAMS_ADD(dot11MeshNolearn);
 	MESHPARAMS_ADD(dot11MeshConnectedToAuthServer);
-	MESHPARAMS_ADD(hdr_cache_size);
 #undef MESHPARAMS_ADD
 }
 #endif

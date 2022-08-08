@@ -30,7 +30,6 @@
 #include "rate.c"
 #include "michael.c"
 #include "tkip.c"
-#include "aes_ccm.c"
 #include "aes_cmac.c"
 #include "aes_gmac.c"
 #include "aead_api.c"

@@ -4463,9 +4463,6 @@ enum nl80211_mesh_power_mode {
  *	will advertise that it is connected to a authentication server
  *	in the mesh formation field.
  *
- * @NL80211_MESHCONF_HEADER_CACHE_SIZE: Maximum size of the header cache
- *	used for caching headers corresponding to an external destination.
- *
  * @__NL80211_MESHCONF_ATTR_AFTER_LAST: internal use
  */
 enum nl80211_meshconf_params {
@@ -4501,7 +4498,6 @@ enum nl80211_meshconf_params {
 	NL80211_MESHCONF_CONNECTED_TO_GATE,
 	NL80211_MESHCONF_NOLEARN,
 	NL80211_MESHCONF_CONNECTED_TO_AS,
-	NL80211_MESHCONF_HEADER_CACHE_SIZE,
 
 	/* keep last */
 	__NL80211_MESHCONF_ATTR_AFTER_LAST,
