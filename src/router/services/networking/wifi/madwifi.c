@@ -588,7 +588,7 @@ void check_cryptomod(char *prefix)
 		int w = nvram_default_geti(mfp, 0);
 
 		if (w == 1 || w == -1 || nvhas(akm, "psk3") || nvhas(akm, "owe") || nvhas(akm, "wpa3") || nvhas(akm, "wpa3-192") || nvhas(akm, "wpa3-128") || nvhas(akm, "wpa2-sha256") || nvhas(akm, "psk2-sha256"))
-			insmod("crypto_hash crypto_null aead gf128mul ctr ghash-generic gcm");
+			insmod("crypto_hash crypto_null aead gf128mul ctr ghash-generic gcm ccm");
 	}
 }
 
