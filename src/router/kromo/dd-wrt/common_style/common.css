@@ -66,8 +66,12 @@ select {
   padding: 4px;
   font-size: 12px;
   height: 1.6rem;
+  min-width: 5.6rem;
   border-radius: 4px;
   vertical-align: middle;
+}
+select[name='time_zone'] {
+  min-width: 15.3rem;
 }
 select[onchange*='blockedServices'] { 
   margin-right: .362em;

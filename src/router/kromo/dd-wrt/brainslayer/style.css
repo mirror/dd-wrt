@@ -18,6 +18,12 @@ input, select,
 option, .button {
   font-weight: bold;
 }
+select {
+  min-width: 6rem;
+}
+select[name='time_zone'] {
+  min-width: 17.7rem;
+}
 input.button, select {
   padding: .05em .5em;
   margin: 0 .4em 0 0;
