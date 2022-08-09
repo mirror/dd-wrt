@@ -94,9 +94,12 @@ define kernelfeatures
 		echo "# CONFIG_BIG_KEYS is not set" >> $(LINUXDIR)/.config; \
 	fi
 	if [ "$(CONFIG_ATH9K)" = "y" ]; then \
-		sed -i 's/\# CONFIG_CRYPTO_CCM is not set/CONFIG_CRYPTO_CCM=m/g' $(LINUXDIR)/.config; \
-		sed -i 's/\# CONFIG_CRYPTO_CTR is not set/CONFIG_CRYPTO_CTR=m/g' $(LINUXDIR)/.config; \
-		sed -i 's/\# CONFIG_CRYPTO_CMAC is not set/CONFIG_CRYPTO_CMAC=m/g' $(LINUXDIR)/.config; \
+		sed -i 's/\# CONFIG_CRYPTO_CCM is not set/CONFIG_CRYPTO_CCM=y/g' $(LINUXDIR)/.config; \
+		sed -i 's/\# CONFIG_CRYPTO_CTR is not set/CONFIG_CRYPTO_CTR=y/g' $(LINUXDIR)/.config; \
+		sed -i 's/\# CONFIG_CRYPTO_CMAC is not set/CONFIG_CRYPTO_CMAC=y/g' $(LINUXDIR)/.config; \
+		sed -i 's/\CONFIG_CRYPTO_CCM=m/CONFIG_CRYPTO_CCM=y/g' $(LINUXDIR)/.config; \
+		sed -i 's/\CONFIG_CRYPTO_CTR=m/CONFIG_CRYPTO_CTR=y/g' $(LINUXDIR)/.config; \
+		sed -i 's/\CONFIG_CRYPTO_CMAC=m/CONFIG_CRYPTO_CMAC=y/g' $(LINUXDIR)/.config; \
 		echo "# CONFIG_CRYPTO_DRBG_CTR is not set" >> $(LINUXDIR)/.config; \
 	fi
 	if [ "$(CONFIG_WPA3)" = "y" ]; then \
