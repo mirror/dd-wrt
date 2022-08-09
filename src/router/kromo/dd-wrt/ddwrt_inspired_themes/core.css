@@ -1,5 +1,5 @@
 /*
- * style-name: DD-WRT Inspired Themes v6.0.5
+ * style-name: DD-WRT Inspired Themes v6.0.7
  * copyright: (c) Style-it-themes: the-j0k3r
  * license: MIT https://git.io/JrzcO
  * home-url: https: //github.com/style-it-themes/dd-wrt-inspired-themes
@@ -301,6 +301,9 @@ div.center input.button[name='add_button'][onclick*='add_tunnel'] {
 }
 input.num {
   vertical-align: unset;
+}
+input.num[name='wan_mtu'] {
+  vertical-align: middle;
 }
 input.button[onclick*='copy'],
 input.button[onclick*='paste'] {
@@ -1073,7 +1076,7 @@ select {
   -moz-appearance: none;
   -webkit-appearance: none;
   appearance: none;
-  max-width: 100%;
+  min-width: 5.99rem;
   outline: 0;
   padding-right: 1.5rem;
   vertical-align: middle;
@@ -1082,12 +1085,10 @@ select > option {
   background-color: var(--bg-0) !important;
 }
 select > option:hover {
-  background: var(--v0-4) !important;
-  box-shadow: 0 0 10px 100px var(--v0-6) inset !important;
+  background-color: var(--v0-4) !important;
 }
-[selected] {
+select > option [selected] {
   background-color: var(--v0-6) !important;
-  box-shadow: 0 0 10px 100px var(--v0-6) inset !important;
 }
 select:focus,
 select:focus-within,
@@ -1104,11 +1105,13 @@ select:hover {
   transition: all 0.2s cubic-bezier(0.3, 0, 0.5, 1);
 }
 select[disabled] {
-  background: url('data:image/svg+xml;utf8,<svg width="14" height="14" viewBox="0 0 14 12" fill="\%236c6c6c" xmlns="http://www.w3.org/2000/svg"><path d="M6 9a1 1 0 0 1-.707-.293l-3-3a1 1 0 0 1 1.414-1.414L6 6.586l2.293-2.293a1 1 0 0 1 1.414 1.414l-3 3A1 1 0 0 1 6 9z"/></svg>') no-repeat right 3px center !important;
-  color: var(--v9-4) !important;
+  color: var(--v9-6) !important;
   border-color: var(--bg-4) !important;
   background-color: var(--bg-0) !important;
   opacity: 0.5;
+}
+select[name='time_zone'] {
+  min-width: 15.7rem;
 }
 select[name='ServiceTable'] {
   background: none !important;
