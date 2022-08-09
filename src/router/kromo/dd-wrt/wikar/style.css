@@ -59,7 +59,13 @@ table tr th {
   line-height: normal;
   vertical-align: bottom;
 }
-select, option, input.num {
+select {
+  min-width: 6.3rem;
+}
+select[name='time_zone'] {
+  min-width: 17.2rem;
+}
+option, input.num {
   width: auto;
   min-width: 30px;
 }

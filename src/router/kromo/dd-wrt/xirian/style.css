@@ -114,6 +114,12 @@ textarea {
   width: 100%;
   resize: vertical;
 }
+select {
+  min-width: 6.3rem;
+}
+select[name='time_zone'] {
+  min-width: 17.1rem;
+}
 select[onchange*="SelFilter"] {
   margin-right: .2rem
 }
