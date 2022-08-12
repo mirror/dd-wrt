@@ -28,10 +28,8 @@ ifeq ($(ARCH),aarch64)
 DNSMASQ_COPTS += -DNEED_PRINTF
 endif
 ifeq ($(ARCHITECTURE),broadcom)
-ifneq ($(CONFIG_BCMMODERN),y)
 ifneq ($(CONFIG_80211AC),y)
 DNSMASQ_COPTS += -DNO_INOTIFY
-endif
 endif
 endif
 ifeq ($(CONFIG_DNSSEC),y)
