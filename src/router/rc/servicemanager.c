@@ -109,8 +109,6 @@ static int handle_service(const int method, const char *name, int force)
 		fclose(ck);
 		return sysprintf("%s %s", service, method_name);
 	}
-	if (method == RESTART)
-		return -1;
 	char *args[] = { "/sbin/service", (char *)name, method_name, NULL };
 	char *args_f[] = { "/sbin/service", (char *)name, method_name, "-f", NULL };
 
