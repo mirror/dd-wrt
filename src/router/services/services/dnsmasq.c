@@ -938,12 +938,12 @@ void start_dnsmasq(void)
 		dd_loginfo("dnsmasq", "daemon successfully started\n");
 	}
 
-
 	cprintf("done\n");
 	return;
 }
 
-void restart_dnsmasq(void) {
+void restart_dnsmasq(void)
+{
 	start_dnsmasq();
 }
 

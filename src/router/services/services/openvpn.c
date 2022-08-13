@@ -774,7 +774,7 @@ void start_openvpn(void)
 #endif
 	fprintf(fp, "management-log-cache 100\n" "verb 3\n" "mute 3\n" "syslog\n" "writepid /var/run/openvpncl.pid\n" "resolv-retry infinite\n" "script-security 2\n");
 	if (!nvram_matchi("openvpncl_nobind", 0)) {
-		fprintf(fp, "nobind\n" );
+		fprintf(fp, "nobind\n");
 	}
 	if (!nvram_matchi("openvpncl_statickey", 1)) {
 		fprintf(fp, "client\n");
