@@ -35,7 +35,6 @@ static int _stop_process(char *name, char *desc, int hard, int maxtime)
 		dd_loginfo(name, "%s trying to stop\n", desc);
 
 	if (pidof(name) > 0) {
-		dd_loginfo(name, "%s successfully stopped\n", desc);
 		if (hard)
 			killall(name, SIGKILL);
 		else
@@ -48,6 +47,7 @@ static int _stop_process(char *name, char *desc, int hard, int maxtime)
 			dd_loginfo(name, "%s hanging, send SIGKILL\n", desc);
 			killall(name, SIGKILL);
 		}
+		dd_loginfo(name, "%s successfully stopped\n", desc);
 		return 1;
 	}
 	return 0;
