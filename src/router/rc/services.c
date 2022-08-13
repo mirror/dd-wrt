@@ -821,9 +821,6 @@ static void handle_nassrv(void)
 #ifdef HAVE_RAID
 	stop_service_f("raid");
 #endif
-#ifdef HAVE_MDNS
-	stop_service_f("mdns");
-#endif
 
 	stop_running_main(0, NULL);
 
@@ -852,7 +849,7 @@ static void handle_nassrv(void)
 	start_service_f("plex");
 #endif
 #ifdef HAVE_MDNS
-	start_service_f("mdns");
+	restart("mdns");
 #endif
 	restart("firewall");
 
