@@ -21,10 +21,19 @@
 
 #include "dns.h"
 #include <stdint.h>
+#include "dns_client.h"
 
 #ifdef __cpluscplus
 extern "C" {
 #endif
+
+struct dns_server_query_option {
+	uint32_t server_flags;
+	const char *dns_group_name;
+	unsigned long ecs_enable_flag;
+	struct dns_opt_ecs ecs_dns;
+	struct dns_query_ecs_ip ecs_ip;
+};
 
 int dns_server_init(void);
 
@@ -37,11 +46,12 @@ void dns_server_stop(void);
 void dns_server_exit(void);
 
 /* query result notify function */
-typedef int (*dns_result_callback)(char *domain, dns_rtcode_t rtcode, dns_type_t addr_type, char *ip,
+typedef int (*dns_result_callback)(const char *domain, dns_rtcode_t rtcode, dns_type_t addr_type, char *ip,
 								   unsigned int ping_time, void *user_ptr);
 
 /* query domain */
-int dns_server_query(char *domain, int qtype, uint32_t server_flags, dns_result_callback callback, void *user_ptr);
+int dns_server_query(const char *domain, int qtype, struct dns_server_query_option *server_query_option,
+					 dns_result_callback callback, void *user_ptr);
 
 #ifdef __cpluscplus
 }

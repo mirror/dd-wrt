@@ -45,6 +45,16 @@ extern "C" {
 #define PORT_NOT_DEFINED -1
 #define MAX_IP_LEN 64
 
+#ifndef BASE_FILE_NAME
+#define BASE_FILE_NAME                                                     \
+  (__builtin_strrchr(__FILE__, '/') ? __builtin_strrchr(__FILE__, '/') + 1 \
+                                    : __FILE__)
+#endif
+#define BUG(format, ...) bug_ext(BASE_FILE_NAME, __LINE__, __func__, format, ##__VA_ARGS__)
+
+void bug_ext(const char *file, int line, const char *func, const char *errfmt, ...)
+	__attribute__((format(printf, 4, 5))) __attribute__((nonnull(4)));
+
 unsigned long get_tick_count(void);
 
 char *gethost_by_addr(char *host, int maxsize, struct sockaddr *addr);
@@ -104,6 +114,8 @@ int is_numeric(const char *str);
 
 int has_network_raw_cap(void);
 
+int has_unprivileged_ping(void);
+
 int set_sock_keepalive(int fd, int keepidle, int keepinterval, int keepcnt);
 
 int set_sock_lingertime(int fd, int time);
@@ -111,6 +123,12 @@ int set_sock_lingertime(int fd, int time);
 uint64_t get_free_space(const char *path);
 
 void print_stack(void);
+
+int write_file(const char *filename, void *data, int data_len);
+
+int dns_packet_save(const char *dir, const char *type, const char *from, const void *packet, int packet_len);
+
+int dns_packet_debug(const char *packet_file);
 
 #ifdef __cplusplus
 }
