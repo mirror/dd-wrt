@@ -91,7 +91,7 @@ static int nvram_main(int argc, char **argv)
 			"get name         : Returns the value for a given name\n"	//
 			"set name=value   : Sets a value for the datavalue by its name.\n"	//
 			"unset name       : Unsets the nvram value pair by its name\n"	//
-			"commit           : Writes the pending data operations to nvram storage (flashmemory or filesystem)\n" //
+			"commit           : Writes the pending data operations to nvram storage (flashmemory or filesystem)\n"	//
 			"show|getall      : Shows all stored nvram names and values.\n"	//
 			"clear | erase    : Deletes all NVRAM names and values while keeping important system variables needed for the device to remain in runnable state\n"	//
 			"backup fileame   : Backup the NVRAM to the desired filename.\n"	//
