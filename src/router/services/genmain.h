@@ -145,7 +145,10 @@ int check_arguments(int argc, char *argv[])
 				strcat(feature, "[stop] ");
 			}
 			if ((functiontable[i].stop && functiontable[i].start) || functiontable[i].restart) {
-				strcat(feature, "[restart] ");
+				if (functiontable[i].restart)
+				strcat(feature, "[restart] (native) ");
+				else
+				strcat(feature, "[restart] (emulated) ");
 			}
 			if (strlen(functiontable[i].name) > 15)
 				fprintf(stdout, "\t%s\t%s\n", functiontable[i].name, feature);
