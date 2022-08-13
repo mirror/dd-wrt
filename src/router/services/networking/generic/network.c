@@ -4758,8 +4758,10 @@ void wan_done(char *wan_ifname)
 #ifdef HAVE_DNSMASQ
 	start_dnsmasq();
 #endif
+#ifdef HAVE_SMARTDNS
 	stop_smartdns();
 	start_smartdns();
+#endif
 
 #ifdef HAVE_OPENVPN
 	cprintf("starting openvpn\n");
