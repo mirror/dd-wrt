@@ -815,9 +815,6 @@ static void handle_nassrv(void)
 #ifdef HAVE_NFS
 	stop_service_f("nfs");
 #endif
-#ifdef HAVE_SAMBA3
-	stop_service_f("samba3");
-#endif
 #ifdef HAVE_RAID
 	stop_service_f("raid");
 #endif
@@ -826,9 +823,6 @@ static void handle_nassrv(void)
 
 #ifdef HAVE_RAID
 	start_service_f("raid");
-#endif
-#ifdef HAVE_SAMBA3
-	start_service_f("samba3");
 #endif
 #ifdef HAVE_NFS
 	start_service_f("nfs");
@@ -848,8 +842,11 @@ static void handle_nassrv(void)
 #ifdef HAVE_PLEX
 	start_service_f("plex");
 #endif
+#ifdef HAVE_SAMBA3
+	restart_f("samba3");
+#endif
 #ifdef HAVE_MDNS
-	restart("mdns");
+	restart_f("mdns");
 #endif
 	restart("firewall");
 
