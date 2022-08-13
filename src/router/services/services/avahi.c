@@ -249,9 +249,10 @@ void start_mdns(void)
 */
 	}
 #endif
-
-	if (pidof("avahi-daemon") > 0) {
-		dd_loginfo("avahi-daemon", "avahi-daemon already running\n");	//syslog(LOG_INFO, "Avahi-daemon : Avahi-daemon already running\n");
+	int p = pidof("avahi-daemon");
+	if (p > 0) {
+		kill(p, SIGHUP);
+		dd_loginfo("avahi-daemon", "config reloaded\n");	//syslog(LOG_INFO, "Avahi-daemon : Avahi-daemon already running\n");
 	} else {
 		snprintf(conffile, sizeof(conffile), getdefaultconfig(path, "mdns.conf"));
 		eval("/usr/sbin/avahi-daemon", "-D", "-f", conffile, "--no-drop-root");
