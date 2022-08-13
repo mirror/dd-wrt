@@ -466,8 +466,10 @@ int restart_dns_main(int argc, char *argv[])
 	stop_dnsmasq();
 	start_dnsmasq();
 #endif
+#ifdef HAVE_SMARTDNS
 	stop_smartdns();
 	start_smartdns();
+#endif
 	return 0;
 }
 
