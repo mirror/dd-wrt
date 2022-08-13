@@ -375,6 +375,7 @@ void start_init_start(void)
 	start_service(vlantagging);
 	start_service(bridgesif);
 #endif
+	start_service(dnsmasq);
 	start_service(wan_boot);
 	start_service(ttraff);
 
