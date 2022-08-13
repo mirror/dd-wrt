@@ -546,7 +546,7 @@ void start_dnsmasq(void)
 		nvram_async_commit();
 	}
 
-	if (!nvram_invmatchi("dnsmasq_enable", 0)) {
+	if (!nvram_matchi("dnsmasq_enable", 1)) {
 		stop_dnsmasq();
 		return;
 	}
