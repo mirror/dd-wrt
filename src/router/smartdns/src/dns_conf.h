@@ -40,6 +40,7 @@ extern "C" {
 #define DNS_GROUP_NAME_LEN 32
 #define DNS_NAX_GROUP_NUMBER 16
 #define DNS_MAX_IPLEN 64
+#define DNS_CONF_USRNAME_LEN 32
 #define DNS_MAX_SPKI_LEN 64
 #define DNS_MAX_URL_LEN 256
 #define DNS_MAX_PATH 1024
@@ -48,9 +49,10 @@ extern "C" {
 #define DEFAULT_DNS_HTTPS_PORT 443
 #define DNS_MAX_CONF_CNAME_LEN 256
 #define SMARTDNS_CONF_FILE "/etc/smartdns/smartdns.conf"
-#define SMARTDNS_LOG_FILE "/var/log/smartdns.log"
-#define SMARTDNS_AUDIT_FILE "/var/log/smartdns-audit.log"
+#define SMARTDNS_LOG_FILE "/var/log/smartdns/smartdns.log"
+#define SMARTDNS_AUDIT_FILE "/var/log/smartdns/smartdns-audit.log"
 #define SMARTDNS_CACHE_FILE "/tmp/smartdns.cache"
+#define SMARTDNS_DEBUG_DIR "/tmp/smartdns"
 
 enum domain_rule {
 	DOMAIN_RULE_FLAGS = 0,
@@ -293,9 +295,16 @@ extern art_tree dns_conf_domain_rule;
 extern struct dns_conf_address_rule dns_conf_address_rule;
 
 extern int dns_conf_dualstack_ip_selection;
+extern int dns_conf_dualstack_ip_allow_force_AAAA;
 extern int dns_conf_dualstack_ip_selection_threshold;
 
 extern int dns_conf_max_reply_ip_num;
+enum response_mode_type {
+	DNS_RESPONSE_MODE_FIRST_PING_IP = 0,
+	DNS_RESPONSE_MODE_FASTEST_IP,
+	DNS_RESPONSE_MODE_FASTEST_RESPONSE,
+};
+extern enum response_mode_type dns_conf_response_mode;
 
 extern int dns_conf_rr_ttl;
 extern int dns_conf_rr_ttl_reply_max;
@@ -306,10 +315,15 @@ extern int dns_conf_ipset_timeout_enable;
 
 extern int dns_conf_force_no_cname;
 
+extern char dns_conf_user[DNS_CONF_USRNAME_LEN];
+
 extern struct dns_edns_client_subnet dns_conf_ipv4_ecs;
 extern struct dns_edns_client_subnet dns_conf_ipv6_ecs;
 
 extern char dns_conf_sni_proxy_ip[DNS_MAX_IPLEN];
+
+extern int dns_save_fail_packet;
+extern char dns_save_fail_packet_dir[DNS_MAX_PATH];
 
 void dns_server_load_exit(void);
 

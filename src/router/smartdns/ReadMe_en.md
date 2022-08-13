@@ -501,11 +501,11 @@ Note: Merlin firmware is derived from ASUS firmware and can theoretically be use
 |rr-ttl-max|Domain name Maximum TTL|Remote query result|number greater than 0|rr-ttl-max 600
 |max-reply-ip-num|Maximum number of IPs returned to the client|8|number of IPs, 1~16 |max-reply-ip-num 1
 |log-level|log level|error|fatal,error,warn,notice,info,debug|log-level error
-|log-file|log path|/var/log/smartdns.log|File Pah|log-file /var/log/smartdns.log
+|log-file|log path|/var/log/smartdns/smartdns.log|File Pah|log-file /var/log/smartdns/smartdns.log
 |log-size|log size|128K|number+K,M,G|log-size 128K
 |log-num|archived log number|2|Integer|log-num 2
 |audit-enable|audit log enable|no|[yes\|no]|audit-enable yes
-|audit-file|audit log file|/var/log/smartdns-audit.log|File Path|audit-file /var/log/smartdns-audit.log
+|audit-file|audit log file|/var/log/smartdns/smartdns-audit.log|File Path|audit-file /var/log/smartdns/smartdns-audit.log
 |audit-size|audit log size|128K|number+K,M,G|audit-size 128K
 |audit-num|archived audit log number|2|Integer|audit-num 2
 |conf-file|additional conf file|None|File path|conf-file /etc/smartdns/smartdns.more.conf
@@ -514,6 +514,7 @@ Note: Merlin firmware is derived from ASUS firmware and can theoretically be use
 |server-tls|Upstream TLS DNS server|None|Repeatable <br>`[ip][:port]`: Server IP, port optional. <br>`[-spki-pin [sha256-pin]]`: TLS verify SPKI value, a base64 encoded SHA256 hash<br>`[-host-name]`:TLS Server name. <br>`[-tls-host-verify]`: TLS cert hostname to verify. <br>`-no-check-certificate:`: No check certificate. <br>`[-blacklist-ip]`: The "-blacklist-ip" parameter is to filtering IPs which is configured by "blacklist-ip". <br>`[-whitelist-ip]`: whitelist-ip parameter specifies that only the IP range configured in whitelist-ip is accepted. <br>`[-group [group] ...]`: The group to which the DNS server belongs, such as office, foreign, use with nameserver. <br>`[-exclude-default-group]`: Exclude DNS servers from the default group| server-tls 8.8.8.8:853
 |server-https|Upstream HTTPS DNS server|None|Repeatable <br>`https://[host][:port]/path`: Server IP, port optional. <br>`[-spki-pin [sha256-pin]]`: TLS verify SPKI value, a base64 encoded SHA256 hash<br>`[-host-name]`:TLS Server name<br>`[-http-host]`：http header host. <br>`[-tls-host-verify]`: TLS cert hostname to verify. <br>`-no-check-certificate:`: No check certificate. <br>`[-blacklist-ip]`: The "-blacklist-ip" parameter is to filtering IPs which is configured by "blacklist-ip". <br>`[-whitelist-ip]`: whitelist-ip parameter specifies that only the IP range configured in whitelist-ip is accepted. <br>`[-group [group] ...]`: The group to which the DNS server belongs, such as office, foreign, use with nameserver. <br>`[-exclude-default-group]`: Exclude DNS servers from the default group| server-https https://cloudflare-dns.com/dns-query
 |speed-check-mode|Speed ​​mode|None|[ping\|tcp:[80]\|none]|speed-check-mode ping,tcp:80,tcp:443
+|response-mode|First query response mode|first-ping|Mode: [fisrt-ping\|fastest-ip\|first-response]<br> [first-ping]: The fastest dns + ping response mode, DNS query delay + ping delay is the shortest;<br>[fastest-ip]: The fastest IP address mode, return the fastest ip address, may take some time to test speed. <br>[first-response]: The fastest response DNS result mode, the DNS query waiting time is the shortest. | response-mode first-ping |
 |address|Domain IP address|None|address /domain/[ip\|-\|-4\|-6\|#\|#4\|#6], `-` for ignore, `#` for return SOA, `4` for IPV4, `6` for IPV6| address /www.example.com/1.2.3.4
 |nameserver|To query domain with specific server group|None|nameserver /domain/[group\|-], `group` is the group name, `-` means ignore this rule, use the `-group` parameter in the related server|nameserver /www.example.com/office
 |ipset|Domain IPSet|None|ipset /domain/[ipset\|-\|#[4\|6]:[ipset\|-][,#[4\|6]:[ipset\|-]]], `-` for ignore|ipset /www.example.com/#4:dns4,#6:-
@@ -532,6 +533,7 @@ Note: Merlin firmware is derived from ASUS firmware and can theoretically be use
 |serve-expired-reply-ttl|TTL value to use when replying with expired data|5|second，0：disable，> 0  seconds after expiration|serve-expired-reply-ttl 30
 |dualstack-ip-selection|Dualstack ip selection|yes|[yes\|no]|dualstack-ip-selection yes
 |dualstack-ip-selection-threshold|Dualstack ip select threadhold|15ms|millisecond|dualstack-ip-selection-threshold [0-1000]
+|user|run as user|root|user [username]|user nobody
 |ca-file|certificate file|/etc/ssl/certs/ca-certificates.crt|path|ca-file /etc/ssl/certs/ca-certificates.crt
 |ca-path|certificates path|/etc/ssl/certs|path|ca-path /etc/ssl/certs
 
