@@ -44,7 +44,6 @@ void start_mdns(void)
 		stop_mdns();
 		return;
 	}
-
 	//char avahi-conffile[64]="/tmp/avahi/avahi-daemon.conf";
 	mkdir("/tmp/avahi", 0744);
 	mkdir("/tmp/avahi/services", 0744);

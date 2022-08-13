@@ -48,4 +48,4 @@ void stop_antaira_agent(void)
 	return;
 }
 
-#endif //HAVE_ANTAIRA_AGENT
+#endif				//HAVE_ANTAIRA_AGENT

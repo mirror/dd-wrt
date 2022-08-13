@@ -72,7 +72,6 @@ void start_freeradius(void)
 
 	char *radiusd_argv[] = { "radiusd", "-d", "/jffs/etc/freeradius", NULL };
 	FILE *fp = NULL;
-	stop_freeradius();
 	nvram_default_get("radius_country", "DE");
 	nvram_default_get("radius_state", "Saxony");
 	nvram_default_get("radius_locality", "none");
@@ -84,8 +83,10 @@ void start_freeradius(void)
 
 	nvram_default_get("radius_port", "1812");
 	nvram_default_get("radius_enabled", "0");
-	if (!nvram_matchi("radius_enabled", 1))
+	if (!nvram_matchi("radius_enabled", 1)) {
+		stop_freeradius();
 		return;
+	}
 
 	if (!jffs_mounted() && (freediskSpace("/jffs") < 8 * 1024 * 1024))
 		return;		//jffs is a requirement for radius and must be mounted at this point here
@@ -165,11 +166,22 @@ void start_freeradius(void)
 			freeradiusdb(db);
 		}
 	}
-	ret = _evalpid(radiusd_argv, NULL, 0, NULL);
+	int pid = pidof("dnsmasq");
+	if (pid > 0) {
+		kill(pid, SIGHUP);
+		dd_loginfo("freeradius", "config reloaded\n");
+	} else {
+		ret = _evalpid(radiusd_argv, NULL, 0, NULL);
 
-	dd_loginfo("freeradius", "daemon successfully started\n");
+		dd_loginfo("freeradius", "daemon successfully started\n");
+	}
 
 	return;
+}
+
+void restart_freeradius(void)
+{
+	start_freeradius();
 }
 
 void stop_freeradius(void)
