@@ -343,7 +343,7 @@ static void checkupgrade(void)
 		eval("mkdir", "-p", "/tmp/new_root");
 		eval("mount", "-n", "-t", "tmpfs", "none", "/tmp/new_root");
 		eval("mkdir", "-p", "/tmp/new_root/tmp");
-		eval("mv","/tmp/firmware.bin", "/tmp/new_root/tmp");
+		eval("mv", "/tmp/firmware.bin", "/tmp/new_root/tmp");
 		eval("update-prepare.sh", "/tmp/firmware.bin", "rootfs", "usefile", "reboot");
 #elif defined(HAVE_X86) || defined(HAVE_RB600) && !defined(HAVE_WDR4900)
 		eval("mkdir", "-p", "/tmp/new_root");
@@ -363,7 +363,7 @@ static void checkupgrade(void)
 static int do_mon(void)
 {
 	struct mon *v;
-	if (nvram_matchi("sysup",0)) {
+	if (nvram_matchi("sysup", 0)) {
 		// wait until wan_done has been processed to prevent double tap of some services like dnsmasq.
 		return 1;
 	}
