@@ -363,7 +363,7 @@ static void checkupgrade(void)
 static int do_mon(void)
 {
 	struct mon *v;
-	if (nvram_matchi("wanup",0)) {
+	if (nvram_matchi("sysup",0)) {
 		// wait until wan_done has been processed to prevent double tap of some services like dnsmasq.
 		return 1;
 	}
