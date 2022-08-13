@@ -139,12 +139,13 @@ void start_tor(void)
 #endif
 
 	fclose(fp);
-	if (reload_process("tor","tor"))
+	if (reload_process("tor", "tor"))
 		ret = _evalpid(tor_argv, NULL, 0, NULL);
 }
 
-void restart_tor(void) {
+void restart_tor(void)
+{
 	start_tor();
-	
+
 }
 #endif				/* HAVE_WOL */
