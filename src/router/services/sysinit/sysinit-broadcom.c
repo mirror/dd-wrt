@@ -3036,7 +3036,7 @@ void start_sysinit(void)
 	uname(&name);
 
 #ifdef HAVE_SWCONFIG
-	nvram_set("has_ctf","1");
+	nvram_set("has_ctf", "1");
 	if (nvram_match("sfe", "2"))
 		nvram_set("ctf_disable", "0");
 	else

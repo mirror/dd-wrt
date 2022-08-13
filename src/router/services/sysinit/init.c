@@ -47,7 +47,6 @@ extern int nvram2file(char *varname, char *filename);
 #define stop_service(a) stop_##a()
 #define restart_service(a) stop_##a(); start_##a()
 
-
 #define start_single_service() eval("start_single_service");
 #define stop_services() eval("stopservices");
 #define start_services() eval("startservices");
@@ -376,6 +375,7 @@ void start_init_start(void)
 	start_service(bridgesif);
 #endif
 	start_service(dnsmasq);
+	nvram_seti("sysup", 1);
 	start_service(wan_boot);
 	start_service(ttraff);
 
@@ -391,8 +391,7 @@ void start_init_start(void)
 		led_control(LED_SEC, LED_OFF);
 		led_control(LED_SEC0, LED_OFF);
 		led_control(LED_SEC1, LED_OFF);
-	} else
-	{
+	} else {
 		start_service(radio_on);
 	}
 #ifdef HAVE_EMF
