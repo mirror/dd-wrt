@@ -244,12 +244,7 @@ void start_samba3(void)
 
 #ifndef HAVE_SMBD
 	char conffile[64];
-	int pid = pidof("smbd");
-	if (pid > 0) {
-		kill(pid, SIGHUP);
-		dd_loginfo("smbd", "config reloaded\n");
-	} else {
-
+	if (reload_process("smbd", "smbd")) {
 #ifdef HAVE_SMP
 		if (eval("/usr/bin/taskset", "0x2", "/usr/sbin/smbd", "-D", "-s", getdefaultconfig(path, "smb.conf")))
 #endif
@@ -262,11 +257,7 @@ void start_samba3(void)
 				eval("/usr/sbin/smbd", "-D", "-s", getdefaultconfig(path, "smb.conf"));
 		}
 	}
-	int pid = pidof("nmbd");
-	if (pid > 0) {
-		kill(pid, SIGHUP);
-		dd_loginfo("nmbd", "config reloaded\n");
-	} else {
+	if (reload_process("nmbd", "nmbd")) {
 		eval("/usr/sbin/nmbd", "-D", "-s", getdefaultconfig(path, "smb.conf"));
 		if (pidof("nmbd") <= 0) {
 			eval("/usr/sbin/nmbd", "-D", "-s", getdefaultconfig(path, "smb.conf"));
@@ -300,11 +291,7 @@ void start_samba3(void)
 	}
 	char c1[64];
 	char c2[64];
-	int pid = pidof("ksmbd.mountd");
-	if (pid > 0) {
-		kill(pid, SIGHUP);
-		dd_loginfo("ksmbd.mountd", "config reloaded\n");
-	} else {
+	if (reload_process("ksmbd.mountd", "ksmbd.mountd")) {
 		eval("ksmbd.mountd", "-c", getdefaultconfig(c1, "smb.conf"), "-u", getdefaultconfig(c2, "smb.db"));
 	}
 #endif

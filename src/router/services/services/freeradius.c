@@ -166,11 +166,7 @@ void start_freeradius(void)
 			freeradiusdb(db);
 		}
 	}
-	int pid = pidof("dnsmasq");
-	if (pid > 0) {
-		kill(pid, SIGHUP);
-		dd_loginfo("freeradius", "config reloaded\n");
-	} else {
+	if (reload_config("dnsmasq", "dnsmasq")) {
 		ret = _evalpid(radiusd_argv, NULL, 0, NULL);
 
 		dd_loginfo("freeradius", "daemon successfully started\n");
