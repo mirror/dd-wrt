@@ -81,7 +81,7 @@ extern int check_pmon_nv(void);
 static void unset_nvram(void);
 void start_nvram(void);
 
-extern struct nvram_param * load_defaults(void);
+extern struct nvram_param *load_defaults(void);
 extern void free_defaults(struct nvram_param *);
 
 extern int f_exists(const char *path);
@@ -2373,12 +2373,12 @@ void start_restore_defaults(void)
 	// if (!nvram_match("default_init","1"))
 	{
 		for (t = srouter_defaults; t->name; t++) {
-		#ifdef HAVE_ANTAIRA
+#ifdef HAVE_ANTAIRA
 			if (restore_defaults) {
-		#else
+#else
 			if (restore_defaults || !nvram_exists(t->name)) {
-		#endif
-		
+#endif
+
 				for (u = linux_overrides; u && u->name; u++) {
 					if (!strcmp(t->name, u->name)) {
 						nvcnt++;
@@ -2979,6 +2979,7 @@ void start_restore_defaults(void)
 	nvram_seti("service_running", 0);
 	nvram_seti("ntp_success", 0);
 	nvram_seti("wanup", 0);
+	nvram_seti("sysup", 0);
 	nvram_unset("rc_opt_run");
 
 	nvram_unset("ipv6_get_dns");

@@ -87,7 +87,7 @@ void start_sysinit(void)
 		mount(drive, "/jffs", "btrfs", MS_MGC_VAL | MS_NOATIME, NULL);
 	}
 	eval("mount", "--bind", "/jffs", "/usr/local");
-	nvram_seti("enable_jffs2",1);
+	nvram_seti("enable_jffs2", 1);
 
 	int brand = getRouterBrand();
 

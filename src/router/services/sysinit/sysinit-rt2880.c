@@ -289,7 +289,7 @@ void start_sysinit(void)
 		insmod("rt2800lib");
 		insmod("rt2800mmio");
 		insmod("rt2800soc");
-//		insmod("rt2800pci");
+//              insmod("rt2800pci");
 		if (brand == ROUTER_DIR810L) {
 			insmod("mt76");
 			insmod("mt76x02-lib");

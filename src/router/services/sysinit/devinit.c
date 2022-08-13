@@ -220,7 +220,7 @@ void start_devinit(void)
 #ifndef HAVE_WDR4900
 #if defined(HAVE_X86) || defined(HAVE_NEWPORT) || defined(HAVE_RB600)
 	system("mount --bind /usr/local /jffs");
-	nvram_seti("enable_jffs2",1);
+	nvram_seti("enable_jffs2", 1);
 #elif HAVE_IPQ806X
 	eval("mount", "-t", "ubifs", "-o", "sync", "ubi0:rootfs_data", "/jffs");
 #else
