@@ -340,6 +340,20 @@ fieldset legend {
   text-align: center;
   border-radius: 4px;
 }
+.message {
+  border-radius: 4px;
+  max-width: 72.464em;
+  margin: 2em auto;
+  padding: 1.812em .906em .906em;
+  font-weight: bold;
+  text-align: center;
+}
+.message div input {
+  padding: .362em 1.087em;
+  margin: 0 .362em;
+  margin-top: 1.449em;
+  font-weight: normal;
+}
 .submitFooter {
   position: sticky;
   bottom: 1em;
@@ -559,7 +573,7 @@ div.bulle, table.bulle, td.bulle {
   width: 100px;
   z-index: 10;
 }
-#score, #rating, #standards {
+#score, #rating {
   font-weight: bold;
 }
 #scorebar {

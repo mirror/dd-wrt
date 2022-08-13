@@ -44,6 +44,9 @@ input.button:hover {
   border: 1px solid #ff9000;
   color: #000;
 }
+input.button:focus-visible {
+  box-shadow: 0 0 5px 1px #ff9000;
+}
 input:focus-visible, textarea:focus-visible,
 select:focus-within {
   box-shadow: 0 0 5px 1px #ff9000;
