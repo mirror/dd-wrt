@@ -12,117 +12,6 @@ body.gui {
   background: #111;
   margin: 0;
 }
-hr {
-  border: none;
-  width: 100%;
-  height: .09em;
-}
-textarea {
-  padding: 4px;
-  font-size: 12px;
-  line-height: 1.42857;
-  border-radius: 4px;
-  -webkit-box-sizing: border-box;
-  -moz-box-sizing: border-box;
-  box-sizing: border-box;
-  width: 100%;
-  resize: vertical;
-}
-.pre_label {
-  margin-bottom: .453em;
-}
-pre {
-  overflow: auto;
-  padding: 1em;
-  margin: 0;
-  font-family: monospace;
-  font-size: 12px;
-  white-space: pre-wrap;
-  border-radius: 4px;
-}
-form {
-  margin: 0;
-}
-form[name='wds'] select {
-  margin-right: .562em;
-  margin-top: .1rem;
-}
-form[name='wds'] input[size='25'] {
-  vertical-align: middle;
-}
-input {
-  padding: 4px;
-  font-size: 12px;
-  line-height: 1.42857;
-  border-radius: 4px;
-}
-input.num {
-  padding-left: 2px;
-  padding-right: 2px;
-  text-align: center;
-  vertical-align: middle;
-}
-select {
-  padding: 4px;
-  font-size: 12px;
-  height: 1.6rem;
-  min-width: 5.6rem;
-  border-radius: 4px;
-  vertical-align: middle;
-}
-select[name='time_zone'] {
-  min-width: 15.3rem;
-}
-select[onchange*='blockedServices'] { 
-  margin-right: .362em;
-  height: 1.7rem
-}
-select[onchange*='ServiceTable'] {
-  width: inherit;
-  height: inherit;
-}
-select[name*='bonding'], select[name*='schedule_'],
-.num[name*='openvpncl_remoteport'],
-.num[name='schedule_time'], .num[name='bonding_number'] {
-  vertical-align: unset;
-}
-#score {
-  color: #000;
-  font-size: 85%;
-  position: absolute;
-  text-align: center;
-  width: 100px;
-  z-index: 10;
-}
-#score, #rating, #standards {
-  font-weight: bold;
-}
-#scorebar {
-  background-image: url(/images/gradient.svg);
-  background-repeat: no-repeat;
-  border-radius: 2px;
-  position: absolute;
-  width: 100px;
-  z-index: 0;
-}
-#scorebarBorder {
-  border-radius: 2px;
-  height: 16px;
-  margin-bottom: 2px;
-  width: 100px;
-}
-#tablePwdCheck tr th {
-  background-color: transparent;
-  border: 0;
-  text-align: right;
-  vertical-align: middle;
-}
-#wrapper {
-  position: relative;
-  text-align: left;
-  width: 89.464em;
-  margin: 0 auto;
-}
 #header {
   width: 89.35em;
   height: 9.24em;
@@ -156,6 +45,12 @@ select[name*='bonding'], select[name*='schedule_'],
 #statusInfo a:hover {
   color: #fff;
   text-decoration: underline;
+}
+#wrapper {
+  position: relative;
+  text-align: left;
+  width: 89.464em;
+  margin: 0 auto;
 }
 #menu {
   position: relative;
@@ -251,56 +146,53 @@ li.current {
   float: right;
   width: 43em;
 }
-h2, h3 {
-  padding: 4px 12px;
-  line-height: 1.42857;
-  letter-spacing: .123rem;
-  margin: 0 0 .906em 0;
-  border-radius: 4px;
+#help {
+  width: 21em;
+  padding: .906em 0;
 }
-.setting {
-  position: relative;
-  margin-bottom: .453em;
-  line-height: 1.993;
-  width: 100%;
-}
-.setting input[type] {
-  margin-left: 0;
-  margin-right: .362em;
-}
-.setting .label {
-  float: left;
-  width: 19.444em;
-  /* temporary for polish extra long strings */
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-.setting .default {
-  display: block;
-  position: absolute;
-  top: 0;
-  right: 0;
-  width: 19em;
-}
-/* this applies to CPU Features label results and MAC Clone button */
-.padding-left {
-  padding-left: 14.6rem;
-}
-.warning {
-  padding: .725em;
-  text-align: center;
-  border-radius: 4px;
-}
-fieldset {
-  border-radius: 4px;
-  padding: .725em;
+#help dl {
+  padding: 0;
   margin: 0;
 }
-fieldset legend {
+#help dt.term {
+  margin: 0 0 .362em 0;
   font-weight: bold;
-  margin-left: -.362em;
-  padding: 0 .272em;
+}
+#help dd.definition {
+  padding-bottom: .908em;
+  margin: 0 0 .908em 0;
+}
+#help a {
+  display: block;
+  position: absolute;
+  top: 1.378em;
+  right: .901em;
+  text-align: right;
+  text-decoration: none;
+  text-transform: lowercase;
+}
+#help a:hover, a[title='Geotool'] {
+  text-decoration: underline;
+}
+textarea {
+  padding: 4px;
+  font-size: 12px;
+  line-height: 1.42857;
+  border-radius: 4px;
+  -webkit-box-sizing: border-box;
+  -moz-box-sizing: border-box;
+  box-sizing: border-box;
+  width: 100%;
+  resize: vertical;
+}
+pre {
+  overflow: auto;
+  padding: 1em;
+  margin: 0;
+  font-family: monospace;
+  font-size: 12px;
+  white-space: pre-wrap;
+  border-radius: 4px;
 }
 table {
   margin: 0 auto;
@@ -348,33 +240,105 @@ table[summary='ports forwarding table'] .num[size='5'] {
 table[summary='ports forwarding table'] input[size='10'] {
   max-width: 79px;
 }
-#help {
-  width: 21em;
-  padding: .906em 0;
-}
-#help dl {
-  padding: 0;
+form {
   margin: 0;
 }
-#help dt.term {
-  margin: 0 0 .362em 0;
+form[name='wds'] select {
+  margin-right: .562em;
+  margin-top: .1rem;
+}
+form[name='wds'] input[size='25'] {
+  vertical-align: middle;
+}
+form[name="wireless"] select {
+  min-width: 9.7rem
+}
+form[name="wireless"] input[name*="ssid"] {
+  min-width: 9.1rem
+}
+select {
+  padding: 4px;
+  font-size: 12px;
+  height: 1.6rem;
+  min-width: 5.6rem;
+  border-radius: 4px;
+  vertical-align: middle;
+}
+select[name='time_zone'] {
+  min-width: 15.3rem;
+}
+select[onchange*='blockedServices'] { 
+  margin-right: .362em;
+  height: 1.7rem
+}
+select[onchange*='ServiceTable'] {
+  width: inherit;
+  height: inherit;
+}
+select[name*='bonding'], select[name*='schedule_'],
+.num[name*='openvpncl_remoteport'],
+.num[name='schedule_time'], .num[name='bonding_number'] {
+  vertical-align: unset;
+}
+h2, h3 {
+  padding: 4px 12px;
+  line-height: 1.42857;
+  letter-spacing: .123rem;
+  margin: 0 0 .906em 0;
+  border-radius: 4px;
+}
+hr {
+  border: none;
+  width: 100%;
+  height: .09em;
+}
+fieldset {
+  border-radius: 4px;
+  padding: .725em;
+  margin: 0;
+}
+fieldset legend {
   font-weight: bold;
+  margin-left: -.362em;
+  padding: 0 .272em;
 }
-#help dd.definition {
-  padding-bottom: .908em;
-  margin: 0 0 .908em 0;
+.setting {
+  position: relative;
+  margin-bottom: .453em;
+  line-height: 1.993;
+  width: 100%;
 }
-#help a {
+.setting input[type] {
+  margin-left: 0;
+  margin-right: .362em;
+}
+.setting .label {
+  float: left;
+  width: 19.444em;
+  /* temporary for polish extra long strings */
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.setting .default {
   display: block;
   position: absolute;
-  top: 1.378em;
-  right: .901em;
-  text-align: right;
-  text-decoration: none;
-  text-transform: lowercase;
+  top: 0;
+  right: 0;
+  width: 19em;
 }
-#help a:hover, a[title='Geotool'] {
-  text-decoration: underline;
+/* this applies to CPU Features label results and MAC Clone button */
+.padding-left {
+  padding-left: 14.6rem;
+}
+/* commands tab, output box label */
+.pre_label {
+  margin-bottom: .453em;
+}
+.warning {
+  padding: .725em;
+  text-align: center;
+  border-radius: 4px;
 }
 .submitFooter {
   position: sticky;
@@ -400,20 +364,6 @@ table[summary='ports forwarding table'] input[size='10'] {
 }
 .center {
   text-align: center;
-}
-.message {
-  border-radius: 4px;
-  max-width: 72.464em;
-  margin: 2em auto;
-  padding: 1.812em .906em .906em;
-  font-weight: bold;
-  text-align: center;
-}
-.message div input {
-  padding: .362em 1.087em;
-  margin: 0 .362em;
-  margin-top: 1.449em;
-  font-weight: normal;
 }
 .popup {
   padding: .906em;
@@ -456,6 +406,18 @@ td .meter {
 /*! fix spacing between dd-wrt link above paypal and top*/
 .center a[href='http://www.dd-wrt.com/'] {
   line-height: 2.2;
+}
+input {
+  padding: 4px;
+  font-size: 12px;
+  line-height: 1.42857;
+  border-radius: 4px;
+}
+input.num {
+  padding-left: 2px;
+  padding-right: 2px;
+  text-align: center;
+  vertical-align: middle;
 }
 input.button {
   border: 1px solid;
@@ -588,4 +550,35 @@ td.bulle {
 div.bulle, table.bulle, td.bulle {
   background-color: #eec900;
   color: #000;
+}
+#score {
+  color: #000;
+  font-size: 85%;
+  position: absolute;
+  text-align: center;
+  width: 100px;
+  z-index: 10;
+}
+#score, #rating, #standards {
+  font-weight: bold;
+}
+#scorebar {
+  background-image: url(/images/gradient.svg);
+  background-repeat: no-repeat;
+  border-radius: 2px;
+  position: absolute;
+  width: 100px;
+  z-index: 0;
+}
+#scorebarBorder {
+  border-radius: 2px;
+  height: 16px;
+  margin-bottom: 2px;
+  width: 100px;
+}
+#tablePwdCheck tr th {
+  background-color: transparent;
+  border: 0;
+  text-align: right;
+  vertical-align: middle;
 }
