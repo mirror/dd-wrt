@@ -265,6 +265,9 @@ form[name='changepassword'] p b {
 form[name='nvramrestore'] .warning p {
   margin-bottom: 1.2rem;
 }
+form[name='wireless'] input[name*='ssid'] {
+  min-width: initial;
+}
 pre {
   background-color: var(--bg-0);
   border-color: var(--bg-4);
