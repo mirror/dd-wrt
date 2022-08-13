@@ -40,8 +40,10 @@ void start_mdns(void)
 {
 	char path[64];
 	char conffile[64];
-	if (!nvram_matchi("mdns_enable", 1))
+	if (!nvram_matchi("mdns_enable", 1)) {
+		stop_mdns();
 		return;
+	}
 
 	//char avahi-conffile[64]="/tmp/avahi/avahi-daemon.conf";
 	mkdir("/tmp/avahi", 0744);
@@ -259,6 +261,11 @@ void start_mdns(void)
 		dd_loginfo("avahi-daemon", "providing mdns services conf-file: %s\n", conffile);
 	}
 	return;
+}
+
+void restart_mdns(void)
+{
+	start_mdns();
 }
 
 void stop_mdns(void)
