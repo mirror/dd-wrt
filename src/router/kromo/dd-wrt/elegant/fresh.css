@@ -66,7 +66,7 @@ input[name='apply_button']:hover {
 }
 input[name='apply_button']:focus-visible {
   box-shadow: 0 0 5px 1px #199235;
-  outline: 2px solid #199235;
+  outline: 0;
 }
 input[name='reset_button'] {
   background: #fff;
@@ -79,8 +79,8 @@ input[name='reset_button']:hover {
   color: #000;
 }
 input[name='reset_button']:focus-visible {
-  box-shadow: 0 0 5px 1px #fff;
-  outline: 2px solid #fff;
+  box-shadow: 0 0 5px 1px #aaa;
+  outline: 0;
 }
 input[name='reboot_button'],
 input[name='reboot_button']:disabled:hover {
@@ -95,12 +95,9 @@ input[name='reboot_button']:hover {
 }
 input[name='reboot_button']:focus-visible {
   box-shadow: 0 0 5px 1px #ff7c7c;
-  outline: 2px solid #ff7c7c;
+  outline: 0;
 }
-input.button, input.button:hover {
-	box-shadow: 2px 2px 2px #808080;
-	border-color: #ccc;
-}
+input.button, input.button:hover,
 input.button[disabled]:hover {
   border-color: #ccc;
 }

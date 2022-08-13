@@ -44,13 +44,16 @@ input.button:hover {
   border: 1px solid #6c6;
   color: #000;
 }
+input.button:focus-visible {
+  box-shadow: 0 0 5px 1px #6c6;
+}
 input:focus-visible, textarea:focus-visible,
 select:focus-within {
-  box-shadow: 0 0 5px 1px #6384cf;
-  border: 1px solid #6384cf;
+  box-shadow: 0 0 5px 1px #6c6;
+  border: 1px solid #6c6;
   outline: 0;
 }
 input:focus, textarea:focus {
-  border: 1px solid #6384cf;
-  box-shadow: 0 0 5px 1px #6384cf;
+  border: 1px solid #6c6;
+  box-shadow: 0 0 5px 1px #6c6;
 }
