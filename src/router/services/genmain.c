@@ -28,14 +28,18 @@ char **syms;
 int strc(char *s1, char *s2)
 {
 	int i;
-	if (!strncmp(s1, "start_",6))
+	if (!strncmp(s1, "start_", 6))
 		s1 = s1 + 6;
-	if (!strncmp(s1, "stop_",5))
+	if (!strncmp(s1, "restart_", 8))
+		s1 = s1 + 8;
+	if (!strncmp(s1, "stop_", 5))
 		s1 = s1 + 5;
-	if (!strncmp(s2, "start_",6))
+	if (!strncmp(s2, "start_", 6))
 		s2 = s2 + 6;
-	if (!strncmp(s2, "stop_",5))
+	if (!strncmp(s2, "stop_", 5))
 		s2 = s2 + 5;
+	if (!strncmp(s2, "restart_", 8))
+		s2 = s2 + 8;
 
 	int len = strlen(s1);
 	int len2 = strlen(s2);
@@ -121,6 +125,9 @@ int main(int argc, char *argv[])
 	fprintf(out, "/* generated - do not edit */\n");
 	fprintf(out, "#include <string.h>\n");
 	while (syms[i]) {
+		char copy[256];
+		strcpy(copy, syms[i]);
+		char *p;
 		if (!strcmp(syms[i], "stop_process")) {
 			i++;
 			continue;
@@ -145,15 +152,12 @@ int main(int argc, char *argv[])
 
 		} else if (!strncmp(syms[i], "stop_", 5)) {
 			fprintf(out, "void stop_%s(void);\n", syms[i] + 5);
-		} else {
-			char copy[256];
-			strcpy(copy, syms[i]);
-			char *p = strstr(copy, "_main");
-			if (p) {
-				*p = 0;
-				if (sym(copy, NULL, "main"))
-					fprintf(out, "int %s_main(int argc,char *argv[]);\n", copy);
-			}
+		} else if ((p = strstr(copy, "_main"))) {
+			*p = 0;
+			if (sym(copy, NULL, "main"))
+				fprintf(out, "int %s_main(int argc,char *argv[]);\n", copy);
+		} else if (!strncmp(syms[i], "restart_", 8)) {
+			fprintf(out, "void restart_%s(void);\n", syms[i] + 8);
 		}
 		i++;
 	}
@@ -164,10 +168,14 @@ int main(int argc, char *argv[])
 	fprintf(out, "char  * (*proc)(void);\n");
 	fprintf(out, "void (*stop)(void);\n");
 	fprintf(out, "int  (*main)(int argc,char *argv[]);\n");
+	fprintf(out, "void (*restart)(void);\n");
 	fprintf(out, "};\n");
 	fprintf(out, "struct fn functiontable[]={\n");
 	i = 0;
 	while (syms[i]) {
+		char copy[256];
+		strcpy(copy, syms[i]);
+		char *p;
 		if (!strncmp(syms[i], "start_", 6)) {
 			if (inlist(syms[i] + 6) == -1) {
 				fprintf(out, "{\"%s\"", syms[i] + 6);
@@ -175,6 +183,7 @@ int main(int argc, char *argv[])
 				int main = sym(syms[i] + 6, NULL, "main");
 				int proc = sym(syms[i] + 6, NULL, "proc");
 				int deps = sym(syms[i] + 6, NULL, "deps");
+				int restart = sym(syms[i] + 6, "restart", NULL);
 				fprintf(out, ",\tstart_%s", syms[i] + 6);
 
 				if (deps)
@@ -191,6 +200,10 @@ int main(int argc, char *argv[])
 					fprintf(out, ",\tNULL");
 				if (main)
 					fprintf(out, ",\t%s_main", syms[i] + 6);
+				else
+					fprintf(out, ",\tNULL");
+				if (restart)
+					fprintf(out, ",\trestart_%s", syms[i] + 6);
 				else
 					fprintf(out, ",\tNULL");
 				fprintf(out, "},\n");
@@ -215,6 +228,7 @@ int main(int argc, char *argv[])
 				int main = sym(syms[i] + 5, NULL, "main");
 				int proc = sym(syms[i] + 5, NULL, "proc");
 				int deps = sym(syms[i] + 5, NULL, "deps");
+				int restart = sym(syms[i] + 5, "restart", NULL);
 				if (start)
 					fprintf(out, ",\tstart_%s", syms[i] + 5);
 				else
@@ -233,48 +247,97 @@ int main(int argc, char *argv[])
 					fprintf(out, ",\t%s_main", syms[i] + 5);
 				else
 					fprintf(out, ",\tNULL");
+
+				if (restart)
+					fprintf(out, ",\trestart_%s", syms[i] + 5);
+				else
+					fprintf(out, ",\tNULL");
 				fprintf(out, "},\n");
 			}
-		} else {
-			char copy[256];
-			strcpy(copy, syms[i]);
-			char *p = strstr(copy, "_main");
-			if (p) {
-				*p = 0;
-				if (sym(copy, NULL, "main")) {
-					if (inlist(copy) == -1) {
+		} else if ((p = strstr(copy, "_main"))) {
+			*p = 0;
+			if (sym(copy, NULL, "main")) {
+				if (inlist(copy) == -1) {
+					fprintf(out, "{\"%s\"", copy);
+					int start = sym(copy, "start", NULL);
+					int stop = sym(copy, "stop", NULL);
+					int main = sym(copy, NULL, "main");
+					int proc = sym(copy, NULL, "proc");
+					int deps = sym(copy, NULL, "deps");
+					int restart = sym(copy, "restart", NULL);
+					if (start)
+						fprintf(out, ",\tstart_%s", copy);
+					else
+						fprintf(out, ",\tNULL");
+					if (deps)
+						fprintf(out, ",\t%s_deps", copy);
+					else
+						fprintf(out, ",\tNULL");
+					if (proc)
+						fprintf(out, ",\t%s_proc", copy);
+					else
+						fprintf(out, ",\tNULL");
+					if (stop)
+						fprintf(out, ",\tstop_%s", copy);
+					else
+						fprintf(out, ",\tNULL");
+					if (main)
+						fprintf(out, ",\t%s_main", copy);
+					else
+						fprintf(out, ",\tNULL");
+					if (restart)
+						fprintf(out, ",\trestart_", copy);
+					else
+						fprintf(out, ",\tNULL");
+					fprintf(out, "},\n");
 
-						fprintf(out, "{\"%s\"", copy);
-
-						int start = sym(copy, "start", NULL);
-						int stop = sym(copy, "stop", NULL);
-						int main = sym(copy, NULL, "main");
-						int proc = sym(copy, NULL, "proc");
-						int deps = sym(copy, NULL, "deps");
-						if (start)
-							fprintf(out, ",\tstart_%s", copy);
-						else
-							fprintf(out, ",\tNULL");
-						if (deps)
-							fprintf(out, ",\t%s_deps", copy);
-						else
-							fprintf(out, ",\tNULL");
-						if (proc)
-							fprintf(out, ",\t%s_proc", copy);
-						else
-							fprintf(out, ",\tNULL");
-						if (stop)
-							fprintf(out, ",\tstop_%s", copy);
-						else
-							fprintf(out, ",\tNULL");
-						if (main)
-							fprintf(out, ",\t%s_main", copy);
-						else
-							fprintf(out, ",\tNULL");
-						fprintf(out, "},\n");
-
-					}
 				}
+			}
+		} else if (!strncmp(syms[i], "restart_", 8)) {
+			if (!strcmp(syms[i], "stop_process")) {
+				i++;
+				continue;
+			}
+			if (!strcmp(syms[i], "stop_process_timeout")) {
+				i++;
+				continue;
+			}
+			if (!strcmp(syms[i], "stop_process_hard")) {
+				i++;
+				continue;
+			}
+			if (inlist(syms[i] + 8) == -1) {
+				fprintf(out, "{\"%s\"", syms[i] + 8);
+
+				int start = sym(syms[i] + 8, "start", NULL);
+				int stop = sym(syms[i] + 8, "stop", NULL);
+				int main = sym(syms[i] + 8, NULL, "main");
+				int proc = sym(syms[i] + 8, NULL, "proc");
+				int deps = sym(syms[i] + 8, NULL, "deps");
+				if (start)
+					fprintf(out, ",\tstart_%s", syms[i] + 8);
+				else
+					fprintf(out, ",\tNULL");
+				if (deps)
+					fprintf(out, ",\t%s_deps", syms[i] + 8);
+				else
+					fprintf(out, ",\tNULL");
+				if (proc)
+					fprintf(out, ",\t%s_proc", syms[i] + 8);
+				else
+					fprintf(out, ",\tNULL");
+
+				if (stop)
+					fprintf(out, ",\tstop_%s", syms[i] + 8);
+				else
+					fprintf(out, ",\tNULL");
+				if (main)
+					fprintf(out, ",\t%s_main", syms[i] + 8);
+				else
+					fprintf(out, ",\tNULL");
+
+				fprintf(out, ",\trestart_%s", syms[i] + 8);
+				fprintf(out, "},\n");
 			}
 		}
 		i++;

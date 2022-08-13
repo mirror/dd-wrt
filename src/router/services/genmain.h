@@ -29,6 +29,7 @@ static char *(*deps_func)(void);
 static char *(*proc_func)(void);
 static void (*start)(void);
 static void (*stop)(void);
+static void (*restart)(void);
 static int function;
 static int force;
 static void handle_procdeps(void)
@@ -143,7 +144,7 @@ int check_arguments(int argc, char *argv[])
 			if (functiontable[i].stop) {
 				strcat(feature, "[stop] ");
 			}
-			if (functiontable[i].stop && functiontable[i].start) {
+			if ((functiontable[i].stop && functiontable[i].start) || functiontable[i].restart) {
 				strcat(feature, "[restart] ");
 			}
 			if (strlen(functiontable[i].name) > 15)
@@ -180,6 +181,7 @@ int check_arguments(int argc, char *argv[])
 			proc_func = functiontable[i].proc;
 			start = functiontable[i].start;
 			stop = functiontable[i].stop;
+			restart = functiontable[i].restart;
 			if (!strcmp(argv[2], "start") && start) {
 				dd_debug(DEBUG_SERVICE, "call start for %s\n", argv[1]);
 				if (deps_func || proc_func) {
@@ -193,10 +195,14 @@ int check_arguments(int argc, char *argv[])
 				stop();
 				return 0;
 			}
-			if (!strcmp(argv[2], "restart") && stop && start) {
+			if (!strcmp(argv[2], "restart") && ((stop && start) || restart)) {
 				dd_debug(DEBUG_SERVICE, "call restart for %s\n", argv[1]);
-				stop();
-				start();
+				if (restart)
+					restart();
+				else {
+					stop();
+					start();
+				}
 				return 0;
 			}
 			if (!strcmp(argv[2], "main") && functiontable[i].main) {
