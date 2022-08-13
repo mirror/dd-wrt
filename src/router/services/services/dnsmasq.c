@@ -943,6 +943,10 @@ void start_dnsmasq(void)
 	return;
 }
 
+void restart_dnsmasq(void) {
+	start_dnsmasq();
+}
+
 void stop_dnsmasq(void)
 {
 #ifdef HAVE_SMARTDNS
