@@ -366,16 +366,15 @@ void start_init_start(void)
 	start_service(stabridge);
 #endif
 
-	cprintf("start services\n");
-	start_services();
 
-	cprintf("start wan boot\n");
 #ifdef HAVE_VLANTAGGING
 	start_service(vlantagging);
 	start_service(bridgesif);
 #endif
-	start_service(dnsmasq);
+	cprintf("start services\n");
+	start_services();
 	nvram_seti("sysup", 1);
+	cprintf("start wan boot\n");
 	start_service(wan_boot);
 	start_service(ttraff);
 
