@@ -65,18 +65,21 @@ void start_chilli(void)
 	    && !nvram_matchi("hotss_enable", 1)) {
 		nvram_unset("chilli_def_enable");
 		nvram_seti("chilli_enable", 0);
+		stop_chilli();
 		return;
 	}
 
 	if (!nvram_matchi("chilli_enable", 1)
 	    && !nvram_matchi("hotss_enable", 1)) {
 		nvram_unset("chilli_def_enable");
+		stop_chilli();
 		return;
 	}
 #else
-	if (!nvram_matchi("chilli_enable", 1))
+	if (!nvram_matchi("chilli_enable", 1)) {
+		stop_chilli();
 		return;
-
+	}
 #endif
 	insmod("tun");
 	if ((nvram_matchi("usb_enable", 1)
@@ -85,8 +88,6 @@ void start_chilli(void)
 	     && nvram_match("usb_mntpoint", "jffs"))
 	    || nvram_matchi("jffs_mounted", 1))
 		jffs = 1;
-
-	stop_chilli();		//ensure that its stopped
 
 	if (!*(nvram_safe_get("chilli_interface")))
 		nvram_set("chilli_interface", get_wdev());
@@ -118,7 +119,11 @@ void start_chilli(void)
 
 #endif
 	stop_process("chilli", "daemon");
-	if (f_exists("/tmp/chilli/hotss.conf")) {
+	int p = pidof("chilli");
+	if (p > 0) {
+		kill(p, SIGHUP);
+		dd_loginfo("chillispot", "config reloaded\n");
+	} else if (f_exists("/tmp/chilli/hotss.conf")) {
 #ifdef HAVE_COOVA_CHILLI
 		putenv("CHILLISTATEDIR=/var/run/chilli1");
 		mkdir("/var/run/chilli1", 0700);
@@ -143,6 +148,11 @@ void start_chilli(void)
 
 	cprintf("done\n");
 	return;
+}
+
+void restart_chilli(void)
+{
+	start_chilli();
 }
 
 void stop_chilli(void)

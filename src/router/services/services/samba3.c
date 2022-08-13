@@ -73,7 +73,6 @@ void start_samba3(void)
 	struct samba3_share *samba3shares;
 	int uniqueuserid = 1000;
 	FILE *fp;
-	stop_samba3();
 /*#ifdef HAVE_NORTHSTAR
 	if (!nvram_matchi("samba3_enable", 1)) {	// not set txworkq 
 		set_smp_affinity(163, 2);
@@ -88,6 +87,7 @@ void start_samba3(void)
 			nvram_unset("txworkq");
 			nvram_async_commit();
 		}
+		stop_samba3();
 		return;
 
 	}
@@ -244,20 +244,33 @@ void start_samba3(void)
 
 #ifndef HAVE_SMBD
 	char conffile[64];
+	int pid = pidof("smbd");
+	if (pid > 0) {
+		kill(pid, SIGHUP);
+		dd_loginfo("smbd", "config reloaded\n");
+	} else {
 
-#ifdef HAVE_SMP
-	if (eval("/usr/bin/taskset", "0x2", "/usr/sbin/smbd", "-D", "-s", getdefaultconfig(path, "smb.conf")))
-#endif
-		eval("/usr/sbin/smbd", "-D", "-s", getdefaultconfig(path, "smb.conf"));
-	eval("/usr/sbin/nmbd", "-D", "-s", getdefaultconfig(path, "smb.conf"));
-	if (pidof("nmbd") <= 0) {
-		eval("/usr/sbin/nmbd", "-D", "-s", getdefaultconfig(path, "smb.conf"));
-	}
-	if (pidof("smbd") <= 0) {
 #ifdef HAVE_SMP
 		if (eval("/usr/bin/taskset", "0x2", "/usr/sbin/smbd", "-D", "-s", getdefaultconfig(path, "smb.conf")))
 #endif
 			eval("/usr/sbin/smbd", "-D", "-s", getdefaultconfig(path, "smb.conf"));
+
+		if (pidof("smbd") <= 0) {
+#ifdef HAVE_SMP
+			if (eval("/usr/bin/taskset", "0x2", "/usr/sbin/smbd", "-D", "-s", getdefaultconfig(path, "smb.conf")))
+#endif
+				eval("/usr/sbin/smbd", "-D", "-s", getdefaultconfig(path, "smb.conf"));
+		}
+	}
+	int pid = pidof("nmbd");
+	if (pid > 0) {
+		kill(pid, SIGHUP);
+		dd_loginfo("nmbd", "config reloaded\n");
+	} else {
+		eval("/usr/sbin/nmbd", "-D", "-s", getdefaultconfig(path, "smb.conf"));
+		if (pidof("nmbd") <= 0) {
+			eval("/usr/sbin/nmbd", "-D", "-s", getdefaultconfig(path, "smb.conf"));
+		}
 	}
 #ifdef HAVE_SAMBA4
 	eval("/usr/sbin/winbindd", "-D", "-s", getdefaultconfig(path, "smb.conf"));
@@ -287,11 +300,22 @@ void start_samba3(void)
 	}
 	char c1[64];
 	char c2[64];
-	eval("ksmbd.mountd", "-c", getdefaultconfig(c1, "smb.conf"), "-u", getdefaultconfig(c2, "smb.db"));
+	int pid = pidof("ksmbd.mountd");
+	if (pid > 0) {
+		kill(pid, SIGHUP);
+		dd_loginfo("ksmbd.mountd", "config reloaded\n");
+	} else {
+		eval("ksmbd.mountd", "-c", getdefaultconfig(c1, "smb.conf"), "-u", getdefaultconfig(c2, "smb.db"));
+	}
 #endif
 
 	dd_loginfo("smbd", "samba started\n");
 	return;
+}
+
+void restart_samba3(void)
+{
+	start_samba3();
 }
 
 void stop_samba3(void)
