@@ -2222,17 +2222,17 @@ static void add_bridges(char *wanface, char *chain, int forward)
 			} else {
 				eval("ifconfig", tag, "up");
 			}
-			if (forward && wanface && *wanface)
+			if (forward && wanface && *wanface) {
 				save2file_A_forward("-i %s -o %s -j %s", tag, wanface, log_accept);
-			else {
-				if (!strcmp(chain, "OUTPUT"))
+			} else {
+				if (!strcmp(chain, "OUTPUT")) {
 					save2file_A("%s -o %s -j %s", chain, tag, log_accept);
-				else
+				} else {
 					save2file_A("%s -i %s -j %s", chain, tag, log_accept);
+				}
 			}
 		}
 	}
-
 }
 
 #endif
@@ -2380,9 +2380,6 @@ static void filter_input(char *wanface, char *lanface, char *wanaddr, int remote
 	    && nvram_invmatchi("wl1_br1_nat", 1)
 	    && nvram_invmatchi("wl1_br1_nat", 2))
 		save2file_A_input("-i br1 -j %s", log_accept);
-#ifdef HAVE_VLANTAGGING
-	add_bridges(wanface, "INPUT", 0);
-#endif
 	/*
 	 * Remote Web GUI Management Use interface name, destination address, and 
 	 * port to make sure that it's redirected from WAN 
@@ -2513,6 +2510,9 @@ static void filter_input(char *wanface, char *lanface, char *wanaddr, int remote
 
 		}
 	}
+#ifdef HAVE_VLANTAGGING
+	add_bridges(wanface, "INPUT", 0);
+#endif
 
 	/*
 	 * end lonewolf mods 
@@ -2686,9 +2686,6 @@ static void filter_forward(char *wanface, char *lanface, char *lan_cclass, int d
 		if (wan && *wan)
 			save2file_A_forward("-i br1 -o %s -j %s", wan, log_accept);
 	}
-#ifdef HAVE_VLANTAGGING
-	add_bridges(wanface, "FORWARD", 1);
-#endif
 	if (nvram_states(vpn_modules_deps()))
 		start_vpn_modules();
 
@@ -2783,6 +2780,10 @@ static void filter_forward(char *wanface, char *lanface, char *lan_cclass, int d
 	 * Accept new connections 
 	 */
 	save2file_A_forward("-i %s -m state --state NEW -j %s", lanface, log_accept);
+
+#ifdef HAVE_VLANTAGGING
+	add_bridges(wanface, "FORWARD", 1);
+#endif
 	/*
 	 * ...otherwise drop if firewall on 
 	 */
