@@ -932,11 +932,12 @@ void start_dnsmasq(void)
 	int pid = pidof("dnsmasq");
 	if (pid > 0) {
 		kill(pid, SIGHUP);
+		dd_loginfo("dnsmasq", "config successfully reloaded\n");
 	} else {
 		eval("dnsmasq", "-u", "root", "-g", "root", "-C", getdefaultconfig(path, "dnsmasq.conf"));
+		dd_loginfo("dnsmasq", "daemon successfully started\n");
 	}
 
-	dd_loginfo("dnsmasq", "daemon successfully started\n");
 
 	cprintf("done\n");
 	return;
