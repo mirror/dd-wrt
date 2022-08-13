@@ -53,6 +53,18 @@ static int _stop_process(char *name, char *desc, int hard, int maxtime)
 	return 0;
 }
 
+int reload_process(char *name, char *desc)
+{
+
+	int pid = pidof(name);
+	if (pid > 0) {
+		kill(pid, SIGHUP);
+		dd_loginfo(desc, "config reloaded\n");
+		return 0;
+	}
+	return -1;
+}
+
 int stop_process(char *name, char *desc)
 {
 	return _stop_process(name, desc, 0, 2);
