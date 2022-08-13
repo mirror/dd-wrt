@@ -61,10 +61,10 @@ void start_tor(void)
 		NULL
 	};
 
-	stop_tor();
-
-	if (nvram_matchi("tor_enable", 0))
+	if (nvram_matchi("tor_enable", 0)) {
+		stop_tor();
 		return;
+	}
 
 	mkdir("/tmp/tor", 0700);
 	FILE *fp = fopen("/tmp/torrc", "wb");
@@ -139,7 +139,12 @@ void start_tor(void)
 #endif
 
 	fclose(fp);
-	ret = _evalpid(tor_argv, NULL, 0, NULL);
+	if (reload_process("tor","tor"))
+		ret = _evalpid(tor_argv, NULL, 0, NULL);
 }
 
+void restart_tor(void) {
+	start_tor();
+	
+}
 #endif				/* HAVE_WOL */
