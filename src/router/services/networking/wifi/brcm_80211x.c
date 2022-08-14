@@ -121,9 +121,9 @@ void setupSupplicant(char *prefix)
 			sprintf(psk, "-i%s", prefix);
 		char tmp[256];
 		if (nvram_match(wmode, "wdssta") || nvram_match(wmode, "wet"))
-			eval("wpa_supplicant", "-b", getBridge(prefix, tmp), "-B", "-Dwext", psk, "-c", fstr);
+			dd_logstart("wpa_supplicant", eval("wpa_supplicant", "-b", getBridge(prefix, tmp), "-B", "-Dwext", psk, "-c", fstr));
 		else
-			eval("wpa_supplicant", "-B", "-Dwext", psk, "-c", fstr);
+			dd_logstart("wpa_supplicant", eval("wpa_supplicant", "-B", "-Dwext", psk, "-c", fstr));
 	} else if (nvram_match(akm, "8021X")) {
 		char fstr[32];
 		char psk[64];
@@ -286,9 +286,9 @@ void setupSupplicant(char *prefix)
 		if (nvram_matchi(bvar, 1)
 		    && (nvram_match(wmode, "wdssta")
 			|| nvram_match(wmode, "wet")))
-			eval("wpa_supplicant", "-b", nvram_safe_get("lan_ifname"), "-B", "-Dwext", psk, "-c", fstr);
+			dd_logstart("wpa_supplicant", eval("wpa_supplicant", "-b", nvram_safe_get("lan_ifname"), "-B", "-Dwext", psk, "-c", fstr));
 		else
-			eval("wpa_supplicant", "-B", "-Dwext", psk, "-c", fstr);
+			dd_logstart("wpa_supplicant", eval("wpa_supplicant", "-B", "-Dwext", psk, "-c", fstr));
 	} else {
 		eval("iwconfig", prefix, "key", "off");
 		// eval ("iwpriv", prefix, "authmode", "0");
