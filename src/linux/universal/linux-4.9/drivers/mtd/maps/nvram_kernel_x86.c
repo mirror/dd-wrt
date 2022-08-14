@@ -289,12 +289,12 @@ int nvram_commit(void)
 	struct file *srcf;
 
 	if (in_interrupt()) {
-		printk("nvram_commit: not committing in interrupt\n");
+		printk(KERN_INFO "nvram_commit: not committing in interrupt\n");
 		return -EINVAL;
 	}
 
 	if (waiting > 1) {
-		printk("nvram_commit: commit still pending, cancle new one\n");
+		printk(KERN_INFO "nvram_commit: commit still pending, cancle new one\n");
 		return 0; // we can ignore it, since another commit is still waiting
 	}
 	waiting++;
@@ -302,7 +302,7 @@ int nvram_commit(void)
 	/* Backup sector blocks to be erased */
 	erasesize = NVRAM_SPACE;
 	if (!(buf = MALLOC(erasesize))) {
-		printk("nvram_commit: out of memory\n");
+		printk(KERN_ERR "nvram_commit: out of memory\n");
 		mutex_unlock(&nvram_sem);
 		waiting--;
 		return -ENOMEM;
