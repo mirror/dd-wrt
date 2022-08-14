@@ -268,7 +268,7 @@ ifeq ($(CONFIG_RED),y)
 #	cp common_style/common_style_ie.css $(INSTALLDIR)/www/style/red
 	touch $(INSTALLDIR)/www/style/red/style.css
 	cp common_style/common.css $(INSTALLDIR)/www/style
-	cp red/logo.png $(INSTALLDIR)/www/style
+#	cp red/logo.png $(INSTALLDIR)/www/style
 endif
 
 ifeq ($(CONFIG_FONSTYLE),y)
@@ -285,7 +285,7 @@ ifeq ($(CONFIG_BLUE),y)
 #	common_style/common_style_ie.css $(INSTALLDIR)/www/style/blue
 	touch $(INSTALLDIR)/www/style/blue/style.css
 	cp common_style/common.css $(INSTALLDIR)/www/style
-	cp blue/logo.png $(INSTALLDIR)/www/style
+#	cp blue/logo.png $(INSTALLDIR)/www/style
 endif
 
 ifeq ($(CONFIG_ELEGANT),y)
@@ -303,7 +303,7 @@ else
 endif
 	cp elegant/help-about-dark.css $(INSTALLDIR)/www/style/elegant
 	cp common_style/common.css $(INSTALLDIR)/www/style
-	cp elegant/logo.png $(INSTALLDIR)/www/style
+#	cp elegant/logo.png $(INSTALLDIR)/www/style
 	cp elegant/logo-trial.png $(INSTALLDIR)/www/style
 	cp elegant/logo-cpe.png $(INSTALLDIR)/www/style
 endif
@@ -314,7 +314,7 @@ ifeq ($(CONFIG_CYAN),y)
 #	cp common_style/common_style_ie.css $(INSTALLDIR)/www/style/cyan
 	touch $(INSTALLDIR)/www/style/cyan/style.css
 	cp common_style/common.css $(INSTALLDIR)/www/style
-	cp cyan/logo.png $(INSTALLDIR)/www/style
+#	cp cyan/logo.png $(INSTALLDIR)/www/style
 endif
 
 ifeq ($(CONFIG_CESAR),y)
@@ -339,7 +339,7 @@ ifeq ($(CONFIG_YELLOW),y)
 #	cp common_style/common_style_ie.css $(INSTALLDIR)/www/style/yellow
 	touch $(INSTALLDIR)/www/style/yellow/style.css
 	cp common_style/common.css $(INSTALLDIR)/www/style
-	cp yellow/logo.png $(INSTALLDIR)/www/style
+#	cp yellow/logo.png $(INSTALLDIR)/www/style
 endif
 
 ifeq ($(CONFIG_GREEN),y)
@@ -348,7 +348,7 @@ ifeq ($(CONFIG_GREEN),y)
 #	cp common_style/common_style_ie.css $(INSTALLDIR)/www/style/green
 	touch $(INSTALLDIR)/www/style/green/style.css
 	cp common_style/common.css $(INSTALLDIR)/www/style
-	cp green/logo.png $(INSTALLDIR)/www/style
+#	cp green/logo.png $(INSTALLDIR)/www/style
 endif
 ifeq ($(CONFIG_ORANGE),y)
 	mkdir $(INSTALLDIR)/www/style/orange
@@ -356,7 +356,7 @@ ifeq ($(CONFIG_ORANGE),y)
 #	cp common_style/common_style_ie.css $(INSTALLDIR)/www/style/orange
 	touch $(INSTALLDIR)/www/style/orange/style.css
 	cp common_style/common.css $(INSTALLDIR)/www/style
-	cp orange/logo.png $(INSTALLDIR)/www/style
+#	cp orange/logo.png $(INSTALLDIR)/www/style
 endif
 
 # dirty - fix missing orange for all builds - remove after .config files update!
@@ -372,7 +372,7 @@ ifeq ($(CONFIG_GREEN),y)
 #	cp common_style/common_style_ie.css $(INSTALLDIR)/www/style/orange
 	touch $(INSTALLDIR)/www/style/orange/style.css
 	cp common_style/common.css $(INSTALLDIR)/www/style
-	cp orange/logo.png $(INSTALLDIR)/www/style
+#	cp orange/logo.png $(INSTALLDIR)/www/style
 endif
 endif
 endif
