@@ -1,48 +1,45 @@
 @import url(../common.css);
 /*! Blue */
 ::selection {
-  background: #36f;
-  color: #fff;
+  background: #338cff;
+  color: #000;
 }
 #menuSub, #menuMainList li span, #help h2 {
-  background: #36f;
-  color: #fff;
-  border-color: #68f;
+  background: #338cff;
+  border-color: #669bff;
+  color: #000;
 }
 #menuSubList li a {
-  background: #47f;
-  color: #fff;
-  border-color: #79f;
+  background: #4496ff;
+  border-color: #77a6ff;
+  color: #000;
 }
 #menuSubList li a:hover {
-  background: #5781ff;
-  color: #fff;
-  border-color: #9af;
+  background: #57a1ff;
+  border-color: #99aeff;
+  color: #000;
 }
 fieldset legend, .syslog_legend {
   color: #36f;
 }
-#help a, #help a:hover {
-  color: #fff;
+#help a, #help a:hover, .meter .text {
+  color: #000;
 }
 .meter .bar {
-  background-color: #36f;
-}
-.meter .text {
-  color: #fff;
+  background-color: #338cff;
 }
 .progressbarblock {
-  background-color: #36f;
+  background-color: #338cff;
 }
 input.button, input.button[disabled]:hover {
-  background: #36f;
-  border: 1px solid #36f;
-  color: #fff;
+  background: #338cff;
+  border: 1px solid #338cff;
+  color: #000;
 }
 input.button:hover {
-  background: #5781ff;
-  border: 1px solid #5781ff;
-  color: #fff;
+  background: #57a1ff;
+  border: 1px solid #99aeff;
+  color: #000;
 }
 input.button:focus-visible {
   box-shadow: 0 0 5px 1px #5781ff;
