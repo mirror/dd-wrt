@@ -135,7 +135,7 @@ void start_resetbutton(void)
 {
 	int ret = 0;
 
-	dd_logstart("resetbutton", eval("resetbutton"));
+	log_eval("resetbutton");
 
 	cprintf("done\n");
 	return;
@@ -155,7 +155,7 @@ void start_iptqueue(void)
 	if (!nvram_invmatchi("iptqueue_enable", 0))
 		return;
 
-	dd_logstart("iptqueue", eval("iptqueue"));
+	log_eval("iptqueue");
 
 	cprintf("done\n");
 	return;

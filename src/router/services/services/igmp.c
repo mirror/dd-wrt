@@ -85,8 +85,7 @@ void start_igmprt(void)
 	fclose(fp);
 	if (ifcount) {
 		if (pidof("igmprt") < 1) {
-			ret = _evalpid(argv, NULL, 0, NULL);
-			dd_logstart("igmprt", ret);
+			_log_evalpid(argv, NULL, 0, NULL);
 		}
 	}
 

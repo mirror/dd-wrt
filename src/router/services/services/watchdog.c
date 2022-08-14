@@ -31,7 +31,7 @@
 void start_watchdog(void)
 {
 	if (!nvram_matchi("disable_watchdog", 1)) {
-		dd_logstart("watchdog", eval("watchdog"));	// system watchdog
+		log_eval("watchdog");	// system watchdog
 	}
 	return;
 }

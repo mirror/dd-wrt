@@ -44,7 +44,7 @@ void start_apserv(void)
 	 * Make sure its not running first 
 	 */
 	ret = killall("ap_serv", SIGUSR1);
-	dd_logstart("ap_serv", eval("ap_serv", "-i", nvram_safe_get("lan_ifname")));
+	log_eval("ap_serv", "-i", nvram_safe_get("lan_ifname"));
 	cprintf("done\n");
 	return;
 }

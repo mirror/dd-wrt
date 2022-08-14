@@ -314,7 +314,7 @@ void start_udhcpd(void)
 
 	dns_to_resolv();
 
-	dd_logstart("udhcpd", eval("udhcpd", "/tmp/udhcpd.conf"));
+	log_eval("udhcpd", "/tmp/udhcpd.conf");
 
 	cprintf("done\n");
 	return;

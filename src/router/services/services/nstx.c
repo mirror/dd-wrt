@@ -37,7 +37,7 @@ void start_nstxd(void)
 {
 	if (nvram_matchi("nstxd_enable", 1)) {
 		stop_nstxd();
-		dd_logstart("nstxd", eval("nstxd"));
+		log_eval("nstxd");
 	}
 }
 

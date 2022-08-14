@@ -77,7 +77,7 @@ void start_ttraff(void)
 		return;
 
 	char *argv[] = { "ttraff", NULL };
-	dd_logstart("ttraff", _evalpid(argv, NULL, 0, NULL));
+	_log_evalpid(argv, NULL, 0, NULL);
 
 	return;
 }

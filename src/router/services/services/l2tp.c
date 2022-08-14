@@ -242,7 +242,7 @@ void run_l2tp(int status)
 	// ifconfig(nvram_safe_get("wan_ifname"), IFUP,
 	// nvram_safe_get("wan_ipaddr"), nvram_safe_get("wan_netmask"));
 
-	_evalpid(l2tp_argv, NULL, 0, NULL);
+	_log_evalpid(l2tp_argv, NULL, 0, NULL);
 	sleep(1);
 
 	if (nvram_matchi("ppp_demand", 1)) {

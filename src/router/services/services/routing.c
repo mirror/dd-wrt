@@ -84,18 +84,18 @@ static int zebra_init(void)
 	}
 #ifdef HAVE_FRR
 	if (services) {
-		dd_logstart("zebra", eval("zebra", "-d"));
+		log_eval("zebra", "-d");
 		if (has_ospfd) {
-			dd_logstart("ospfd", eval("ospfd", "-d"));
+			log_eval("ospfd", "-d");
 		}
 		if (has_ospf6d) {
-			dd_logstart("ospf6d", eval("ospf6d", "-d"));
+			log_eval("ospf6d", "-d");
 		}
 		if (has_bgpd) {
-			dd_logstart("bgpd", eval("bgpd", "-d"));
+			log_eval("bgpd", "-d");
 		}
 		if (has_ripd) {
-			dd_logstart("ripd", eval("ripd", "-d"));
+			log_eval("ripd", "-d");
 		}
 	}
 #endif
@@ -712,7 +712,7 @@ static int bird_init(void)
 		}
 		fclose(fp);
 
-		dd_logstart("bird", eval("bird", "-c", "/tmp/bird/bird.conf"));
+		log_eval("bird", "-c", "/tmp/bird/bird.conf");
 	}
 	return 0;
 

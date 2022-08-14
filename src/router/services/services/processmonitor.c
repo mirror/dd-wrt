@@ -60,7 +60,7 @@ void start_process_monitor(void)
 		return;
 
 	char *argv[] = { "process_monitor", NULL };
-	dd_logstart("process_monitor", _evalpid(argv, NULL, 0, NULL));
+	_log_evalpid(argv, NULL, 0, NULL);
 
 	cprintf("done");
 

@@ -46,7 +46,7 @@ void start_udpxy(void)
 	if (!nicfrom || !listen_if || !listen_port)
 		return;
 
-	dd_logstart("udpxy", eval(cmd, "-m", nicfrom, "-a", listen_if, "-p", listen_port));
+	log_eval(cmd, "-m", nicfrom, "-a", listen_if, "-p", listen_port);
 
 	return;
 }

@@ -67,6 +67,6 @@ void start_wland(void)
 	};
 
 	stop_wland();
-	dd_logstart("wland", _evalpid(wland_argv, NULL, 0, NULL));
+	_log_evalpid(wland_argv, NULL, 0, NULL);
 	return;
 }

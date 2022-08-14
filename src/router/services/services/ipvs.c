@@ -145,7 +145,7 @@ void start_ipvs(void)
 		}
 	}
 	if (first) {
-		dd_logstart("ipvs", eval("ipvsadm", "--start-daemon", nvram_default_get("ipvs_role", "master"), "--mcast-interface", nvram_safe_get("lan_ifname")));
+		log_eval("ipvsadm", "--start-daemon", nvram_default_get("ipvs_role", "master"), "--mcast-interface", nvram_safe_get("lan_ifname"));
 	}
 	return;
 }

@@ -117,7 +117,7 @@ void run_nas_notify(char *ifname)
 	}
 	int pid;
 
-	_evalpid(argv, ">/dev/console", 0, &pid);
+	_log_evalpid(argv, ">/dev/console", 0, &pid);
 }
 
 static void start_radius(char *prefix)
@@ -558,12 +558,12 @@ static void start_nas_single(char *type, char *prefix)
 				"nas", "-P", pidfile, "-H", "34954", "-l", getBridge(iface, tmp), "-i", iface, mode, "-m", auth_mode, "-k", key, "-s", nvram_safe_get(ssid), "-w", sec_mode, "-g", nvram_safe_get(rekey),
 				NULL
 			};
-			_evalpid(argv, NULL, 0, &pid);
+			_log_evalpid(argv, NULL, 0, &pid);
 		} else {
 			char *const argv[] = {
 				"nas", "-P", pidfile, "-H", "34954", "-i", iface, mode, "-m", auth_mode, "-k", key, "-s", nvram_safe_get(ssid), "-w", sec_mode, "-g", nvram_safe_get(rekey), NULL
 			};
-			_evalpid(argv, NULL, 0, &pid);
+			_log_evalpid(argv, NULL, 0, &pid);
 
 		}
 
@@ -579,7 +579,7 @@ static void start_nas_single(char *type, char *prefix)
 				iface, mode, "-m",
 				auth_mode, "-r", key, "-s", nvram_safe_get(ssid), "-w", sec_mode, "-g", nvram_safe_get(rekey), "-h", nvram_safe_get(radius), "-p", nvram_safe_get(port), NULL
 			};
-			_evalpid(argv, NULL, 0, &pid);
+			_log_evalpid(argv, NULL, 0, &pid);
 
 		} else if (!strcmp(auth_mode, "32")) {
 			int idx = nvram_geti(index);
@@ -595,8 +595,7 @@ static void start_nas_single(char *type, char *prefix)
 				auth_mode, "-r", key,
 				"-s", nvram_safe_get(ssid), "-w", sec_mode, "-I", nvram_safe_get(index), "-k", nvram_safe_get(wepkey), "-h", nvram_safe_get(radius), "-p", nvram_safe_get(port), NULL
 			};
-			dd_logstart("nas", _evalpid(argv, NULL, 0, &pid));
-
+			_log_evalpid(argv, NULL, 0, &pid);
 		} else {
 			char *const argv[] = {
 				"nas", "-P", pidfile,
@@ -604,8 +603,7 @@ static void start_nas_single(char *type, char *prefix)
 				nvram_nmatch("0", "%s_bridged", iface) ? iface : getBridge(iface, tmp), "-i",
 				iface, mode, "-m", auth_mode, "-k", key, "-s", nvram_safe_get(ssid), "-w", sec_mode, "-g", nvram_safe_get(rekey), NULL
 			};
-			dd_logstart("nas", _evalpid(argv, NULL, 0, &pid));
-
+			_log_evalpid(argv, NULL, 0, &pid);
 		}
 
 	}

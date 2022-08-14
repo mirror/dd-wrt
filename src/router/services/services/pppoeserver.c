@@ -327,9 +327,9 @@ void start_pppoeserver(void)
 		}
 
 		start_pppmodules();
-		dd_logstart("rp-pppoe", eval("pppoe-server", "-k", "-I", nvram_safe_get("pppoeserver_interface"),
+		log_eval("pppoe-server", "-k", "-I", nvram_safe_get("pppoeserver_interface"),
 					     "-L", getifip(), "-i", "-x", nvram_safe_get("pppoeserver_sessionlimit"), "-N", nvram_safe_get("pppoeserver_clcount"), "-R", nvram_safe_get("pppoeserver_pool"), "-X",
-					     "/var/run/pppoeserver.pid"));
+					     "/var/run/pppoeserver.pid");
 	}
 }
 
