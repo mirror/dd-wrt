@@ -88,7 +88,7 @@ void start_sshd(void)
 	write_key_file("sshd_authorized_keys", AUTHORIZED_KEYS_FILE, 0600);
 	stop_sshd();
 	int a = 0;
-	char *sshd_argv[9];
+	char *sshd_argv[10];
 	sshd_argv[a++] = "dropbear";
 #ifndef HAVE_MAKSAT
 	sshd_argv[a++] = "-b";
@@ -96,6 +96,7 @@ void start_sshd(void)
 #endif
 	sshd_argv[a++] = "-r";
 	sshd_argv[a++] = RSA_HOST_KEY_FILE;
+	sshd_argv[a++] = "-p";
 	sshd_argv[a++] = nvram_safe_get("sshd_port");
 	if (!nvram_matchi("sshd_passwd_auth", 1))
 		sshd_argv[a++] = "-s";
