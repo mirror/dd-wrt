@@ -165,7 +165,7 @@ void start_unbound(void)
 	if (nvram_matchi("recursive_dns", 1)) {
 		update_timezone();
 		unbound_config();
-		if (reload_process("unbound") {
+		if (reload_process("unbound")) {
 			dd_logstart("unbound", eval("unbound", "-c", getdefaultconfig(path, "unbound.conf")));
 		}
 	} else {
