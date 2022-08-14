@@ -31,8 +31,7 @@ void start_antaira_agent(void)
 	if (nvram_match("wan_proto", "disabled") || !*(safe_get_wan_face(wan_if_buffer)))	// todo: add upstream 
 		return 0;
 
-	_evalpid(antaira_agent_argv, NULL, 0, NULL);
-	dd_loginfo("antaira_agent", "daemon successfully started\n");
+	dd_logstart("antaira_agent", _evalpid(antaira_agent_argv, NULL, 0, NULL));
 
 	cprintf("done\n");
 	return;

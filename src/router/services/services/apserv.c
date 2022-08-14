@@ -44,8 +44,7 @@ void start_apserv(void)
 	 * Make sure its not running first 
 	 */
 	ret = killall("ap_serv", SIGUSR1);
-	ret = eval("ap_serv", "-i", nvram_safe_get("lan_ifname"));
-	dd_loginfo("ap_serv", "daemon successfully started\n");
+	dd_logstart("ap_serv", eval("ap_serv", "-i", nvram_safe_get("lan_ifname")));
 	cprintf("done\n");
 	return;
 }

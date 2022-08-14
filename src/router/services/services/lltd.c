@@ -42,8 +42,7 @@ void start_lltd(void)
 	 * Make sure its not running first 
 	 */
 	stop_process("lld2d", "daemon");
-	ret = eval("lld2d", nvram_safe_get("lan_ifname"));
-	dd_loginfo("lld2d", "daemon successfully started\n");
+	dd_logstart("lld2d", eval("lld2d", nvram_safe_get("lan_ifname")));
 	return;
 }
 

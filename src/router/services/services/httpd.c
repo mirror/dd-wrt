@@ -68,14 +68,11 @@ void start_httpd(void)
 
 	if (!f_exists("/var/run/httpd.pid")) {
 		if (do_ssl && no_ssl) {
-			eval("httpd", "-n", "-S", args[0], args[1], args[2], args[3]);
-			dd_loginfo("httpd", "http/https daemon successfully started\n");
+			dd_logstart("httpd", eval("httpd", "-n", "-S", args[0], args[1], args[2], args[3]));
 		} else if (no_ssl) {
-			eval("httpd", "-n", args[0], args[1], args[2], args[3]);
-			dd_loginfo("httpd", "http daemon successfully started\n");
+			dd_logstart("httpd", eval("httpd", "-n", args[0], args[1], args[2], args[3]));
 		} else if (do_ssl) {
-			eval("httpd", "-S", args[0], args[1], args[2], args[3]);
-			dd_loginfo("httpd", "https daemon successfully started\n");
+			dd_logstart("httpd", eval("httpd", "-S", args[0], args[1], args[2], args[3]));
 		}
 	}
 	chdir("/");

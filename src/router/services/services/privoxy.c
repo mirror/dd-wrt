@@ -120,8 +120,7 @@ void start_privoxy(void)
 			"socket-timeout 60\n" "max-client-connections %d\n" "handle-as-empty-doc-returns-ok 1\n", whitelist ? "/tmp/user.action" : "user.action", ip, mode, nvram_geti("privoxy_maxclient"));
 	}
 	fclose(fp);
-	eval("privoxy", "/tmp/privoxy.conf");
-	dd_loginfo("privoxy", "successfully started\n");
+	dd_logstart("privoxy", eval("privoxy", "/tmp/privoxy.conf"));
 	return;
 }
 

@@ -81,8 +81,7 @@ void start_rsync(void)
 		}
 		fclose(fp);
 	}
-	eval("rsyncd", "--daemon", "--config=/tmp/rsyncd.conf");
-	dd_loginfo("rsyncd", "daemon successfully started\n");
+	dd_logstart("rsyncd", eval("rsyncd", "--daemon", "--config=/tmp/rsyncd.conf"));
 	return;
 }
 

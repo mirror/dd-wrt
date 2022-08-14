@@ -314,8 +314,7 @@ void start_udhcpd(void)
 
 	dns_to_resolv();
 
-	eval("udhcpd", "/tmp/udhcpd.conf");
-	dd_loginfo("udhcpd", "udhcp daemon successfully started\n");
+	dd_logstart("udhcpd", eval("udhcpd", "/tmp/udhcpd.conf"));
 
 	cprintf("done\n");
 	return;

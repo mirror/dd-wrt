@@ -31,8 +31,7 @@
 void start_watchdog(void)
 {
 	if (!nvram_matchi("disable_watchdog", 1)) {
-		eval("watchdog");	// system watchdog
-		dd_loginfo("watchdog", "daemon successfully started\n");
+		dd_logstart("watchdog", eval("watchdog"));	// system watchdog
 	}
 	return;
 }

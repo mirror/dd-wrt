@@ -119,8 +119,7 @@ void start_dlna(void)
 	fprintf(fp, "notify_interval=300\n");
 	fprintf(fp, "serial=12345678\nmodel_number=AllShare1.0\n");
 	fclose(fp);
-	eval("minidlna", "-f", getdefaultconfig(path, "minidlna.conf"));
-	dd_loginfo("minidlna", "DLNA Media Server successfully started\n");
+	dd_logstart("minidlna", eval("minidlna", "-f", getdefaultconfig(path, "minidlna.conf")));
 
 	return;
 }
