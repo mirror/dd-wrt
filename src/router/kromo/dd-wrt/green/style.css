@@ -22,14 +22,11 @@
 fieldset legend, .syslog_legend {
   color: #090;
 }
-#help a, #help a:hover {
+#help a, #help a:hover, .meter .text {
   color: #000;
 }
 .meter .bar {
   background-color: #090;
-}
-.meter .text {
-  color: #000;
 }
 .progressbarblock {
   background-color: #090;

@@ -1,59 +1,56 @@
 @import url(../common.css);
 /*! Red */
 ::selection {
-  background: #c00;
-  color: #fff;
+  background: #ff1f1f;
+  color: #000;
 }
 #menuSub, #menuMainList li span, #help h2 {
-  background: #c00;
-  color: #fff;
-  border-color: #e33;
+  background: #ff1f1f;
+  border-color: #ff4545;
+  color: #000;
 }
 #menuSubList li a {
-  background: #d55;
-  color: #fff;
-  border-color: #e77;
+  background: #fb4949;
+  border-color: #f66;
+  color: #000;
 }
 #menuSubList li a:hover {
-  background: #e77;
-  color: #fff;
-  border-color: #f99;
+  background: #ff5b5b;
+  border-color: #f77;
+  color: #000;
 }
 fieldset legend, .syslog_legend {
-  color: #c00;
+  color: #ff1f1f;
 }
-#help a, #help a:hover {
-  color: #fff;
+#help a, #help a:hover, .meter .text {
+  color: #000;
 }
 .meter .bar {
-  background-color: #c00;
-}
-.meter .text {
-  color: #fff;
+  background-color: #ff1f1f;
 }
 .progressbarblock {
-  background-color: #c00;
+  background-color: #ff1f1f;
 }
 input.button, input.button[disabled]:hover {
-  background: #c00;
-  border: 1px solid #c00;
-  color: #fff;
+  background: #ff1f1f;
+  border: 1px solid #ff4545;
+  color: #000;
 }
 input.button:hover {
-  background: #d55;
-  border: 1px solid #d55;
-  color: #fff;
+  background: #ff5b5b;
+  border-color: #ff9090;
+  color: #000;
 }
 input.button:focus-visible {
-  box-shadow: 0 0 5px 1px #e77;
+  box-shadow: 0 0 5px 1px #ff5b5b;
 }
 input:focus-visible, textarea:focus-visible,
 select:focus-within {
-  box-shadow: 0 0 5px 1px #e77;
-  border: 1px solid #e77;
+  box-shadow: 0 0 5px 1px #ff5b5b;
+  border: 1px solid #ff5b5b;
   outline: 0;
 }
 input:focus, textarea:focus {
-  border: 1px solid #e77;
-  box-shadow: 0 0 5px 1px #e77;
+  border: 1px solid #ff5b5b;
+  box-shadow: 0 0 5px 1px #ff5b5b;
 }
