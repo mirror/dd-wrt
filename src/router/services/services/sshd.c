@@ -88,7 +88,8 @@ void start_sshd(void)
 	write_key_file("sshd_authorized_keys", AUTHORIZED_KEYS_FILE, 0600);
 	stop_sshd();
 	int a = 0;
-	char *sshd_argv[8];
+	char *sshd_argv[9];
+	sshd_argv[a++] = "dropbear";
 #ifndef HAVE_MAKSAT
 	sshd_argv[a++] = "-b";
 	sshd_argv[a++] = "/tmp/loginprompt";
