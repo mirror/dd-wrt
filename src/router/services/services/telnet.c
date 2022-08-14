@@ -54,7 +54,7 @@ void start_telnetd(void)
 #ifdef HAVE_REGISTER
 	if (isregistered_real())
 #endif
-		dd_logstart("telnetd", evalpid(telnetd_argv, NULL, 0, NULL));
+		dd_logstart("telnetd", _evalpid(telnetd_argv, NULL, 0, NULL));
 #ifdef HAVE_REGISTER
 	else
 		return;
