@@ -201,17 +201,17 @@ int nvram_commit(void)
 	struct erase_info erase;
 
 	if (!nvram_mtd) {
-		printk("nvram_commit: NVRAM not found\n");
+		printk(KERN_ERR "nvram_commit: NVRAM not found\n");
 		return -ENODEV;
 	}
 
 	if (in_interrupt()) {
-		printk("nvram_commit: not committing in interrupt\n");
+		printk(KERN_INFO "nvram_commit: not committing in interrupt\n");
 		return -EINVAL;
 	}
 
 	if (waiting > 1) {
-		printk("nvram_commit: commit still pending, cancle new one\n");
+		printk(KERN_INFO "nvram_commit: commit still pending, cancle new one\n");
 		return 0; // we can ignore it, since another commit is still waiting
 	}
 	waiting++;
@@ -219,7 +219,7 @@ int nvram_commit(void)
 	mutex_lock(&nvram_sem);
 	erasesize = ROUNDUP(NVRAM_SPACE, nvram_mtd->erasesize);
 	if (!(buf = MALLOC(erasesize))) {
-		printk("nvram_commit: out of memory\n");
+		printk(KERN_ERR "nvram_commit: out of memory\n");
 		mutex_unlock(&nvram_sem);
 		waiting--;
 		return -ENOMEM;
@@ -234,7 +234,7 @@ int nvram_commit(void)
 		len = 0;
 		ret = mtd_read(nvram_mtd, offset, i, &len, buf);
 		if (ret || len != i) {
-			printk("nvram_commit: read error ret = %d, len = %zu/%d\n", ret, len, i);
+			printk(KERN_ERR "nvram_commit: read error ret = %d, len = %zu/%d\n", ret, len, i);
 			ret = -EIO;
 			goto done;
 		}
@@ -275,7 +275,7 @@ int nvram_commit(void)
 		if ((ret = mtd_erase(nvram_mtd, &erase))) {
 			set_current_state(TASK_RUNNING);
 			remove_wait_queue(&wait_q, &wait);
-			printk("nvram_commit: erase error offset %X, skipping\n", offset);
+			printk(KERN_ERR "nvram_commit: erase error offset %X, skipping\n", offset);
 			for (i = 0; i < counts; i++) {
 				if ((cnt + i) < 256)
 					bad[cnt + i] = offset;
@@ -311,7 +311,7 @@ int nvram_commit(void)
 	      next:;
 		if (bad[cnt] == offset) {
 			offset = alternate;
-			printk("nvram_commit: use alternate offset %X\n", offset);
+			printk(KERN_INFO "nvram_commit: use alternate offset %X\n", offset);
 			break;
 		}
 	}
@@ -324,7 +324,7 @@ int nvram_commit(void)
 	ret = mtd_write(nvram_mtd, offset, i, &len, buf);
 	if (ret || len != i) {
 	
-		printk("nvram_commit: write error (offset %d, size %d)\n", offset, i);
+		printk(KERN_ERR "nvram_commit: write error (offset %d, size %d)\n", offset, i);
 		ret = -EIO;
 		goto done;
 	}
