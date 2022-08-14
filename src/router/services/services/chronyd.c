@@ -80,7 +80,7 @@ void start_chronyd(void)
 	fclose(fp);
 
 	if (!ret)
-		ret = _evalpid(chronyd_argv, NULL, 0, NULL);
+		dd_logstart("chronyd", _evalpid(chronyd_argv, NULL, 0, NULL));
 }
 
 #endif

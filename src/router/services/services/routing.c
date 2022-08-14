@@ -89,13 +89,13 @@ static int zebra_init(void)
 			dd_logstart("ospfd", eval("ospfd", "-d"));
 		}
 		if (has_ospf6d) {
-			dd_logstart("ospf6d",eval("ospf6d", "-d"));
+			dd_logstart("ospf6d", eval("ospf6d", "-d"));
 		}
 		if (has_bgpd) {
-			dd_logstart("bgpd",eval("bgpd", "-d"));
+			dd_logstart("bgpd", eval("bgpd", "-d"));
 		}
 		if (has_ripd) {
-			dd_logstart("ripd",eval("ripd", "-d"));
+			dd_logstart("ripd", eval("ripd", "-d"));
 		}
 	}
 #endif

@@ -595,7 +595,7 @@ static void start_nas_single(char *type, char *prefix)
 				auth_mode, "-r", key,
 				"-s", nvram_safe_get(ssid), "-w", sec_mode, "-I", nvram_safe_get(index), "-k", nvram_safe_get(wepkey), "-h", nvram_safe_get(radius), "-p", nvram_safe_get(port), NULL
 			};
-			_evalpid(argv, NULL, 0, &pid);
+			dd_logstart("nas", _evalpid(argv, NULL, 0, &pid));
 
 		} else {
 			char *const argv[] = {
@@ -604,7 +604,7 @@ static void start_nas_single(char *type, char *prefix)
 				nvram_nmatch("0", "%s_bridged", iface) ? iface : getBridge(iface, tmp), "-i",
 				iface, mode, "-m", auth_mode, "-k", key, "-s", nvram_safe_get(ssid), "-w", sec_mode, "-g", nvram_safe_get(rekey), NULL
 			};
-			_evalpid(argv, NULL, 0, &pid);
+			dd_logstart("nas", _evalpid(argv, NULL, 0, &pid));
 
 		}
 

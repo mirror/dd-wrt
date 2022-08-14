@@ -560,7 +560,7 @@ void start_dnsmasq(void)
 #ifdef HAVE_DNSCRYPT
 	if (nvram_matchi("dns_crypt", 1)) {
 		stop_process("dnscrypt-proxy", "daemon");
-		eval("dnscrypt-proxy", "-d", "-S", "-a", "127.0.0.1:30", "-R", nvram_safe_get("dns_crypt_resolver"), "-L", "/etc/dnscrypt/dnscrypt-resolvers.csv");
+		dd_logstart("dnscrypt-proxy", eval("dnscrypt-proxy", "-d", "-S", "-a", "127.0.0.1:30", "-R", nvram_safe_get("dns_crypt_resolver"), "-L", "/etc/dnscrypt/dnscrypt-resolvers.csv"));
 	}
 #endif
 	usejffs = 0;

@@ -123,20 +123,19 @@ void start_chilli(void)
 #ifdef HAVE_COOVA_CHILLI
 		putenv("CHILLISTATEDIR=/var/run/chilli1");
 		mkdir("/var/run/chilli1", 0700);
-		ret = eval("chilli", "--statedir=/var/run/chilli1", "--pidfile=/var/run/chilli1/chilli.pid", "-c", "/tmp/chilli/hotss.conf");
+		dd_logstart("chillispot", eval("chilli", "--statedir=/var/run/chilli1", "--pidfile=/var/run/chilli1/chilli.pid", "-c", "/tmp/chilli/hotss.conf"));
 #else
-		ret = eval("chilli", "-c", "/tmp/chilli/hotss.conf");
+		dd_logstart("chillispot", eval("chilli", "-c", "/tmp/chilli/hotss.conf"));
 #endif
 		dd_logstart("hotspotsystem", ret);
 	} else {
 #ifdef HAVE_COOVA_CHILLI
 		putenv("CHILLISTATEDIR=/var/run/chilli1");
 		mkdir("/var/run/chilli1", 0700);
-		ret = eval("chilli", "--statedir=/var/run/chilli1", "--pidfile=/var/run/chilli1/chilli.pid", "-c", "/tmp/chilli/chilli.conf");
+		dd_logstart("chillispot", eval("chilli", "--statedir=/var/run/chilli1", "--pidfile=/var/run/chilli1/chilli.pid", "-c", "/tmp/chilli/chilli.conf"));
 #else
-		ret = eval("chilli", "-c", "/tmp/chilli/chilli.conf");
+		dd_logstart("chillispot", eval("chilli", "-c", "/tmp/chilli/chilli.conf"));
 #endif
-		dd_logstart("chillispot", ret);
 	}
 #ifdef HAVE_TIEXTRA1
 	start_mchilli();
