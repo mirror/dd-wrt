@@ -73,12 +73,16 @@ void start_nfs(void)
 	insmod("lockd");
 	insmod("exportfs");
 	insmod("nfsd");
-	dd_logstart("rpcbind", eval("rpcbind"));
-	dd_logstart("rpc.mountd", eval("rpc.mountd"));
+	if (pidof("rpcbind") <=0)
+		log_eval("rpcbind");
+	if (pidof("rpc.mountd") <=0)
+		log_eval("rpc.mountd");
 	char threads[32];
 	sprintf(threads, "%d", cpucount);
-	dd_logstart("rpc.nfsd", eval("rpc.nfsd", threads));
-	dd_logstart("rpc.statd", eval("rpc.statd"));
+	if (pidof("rpc.nfsd") <=0)
+		log_eval("rpc.nfsd", threads);
+	if (pidof("rpc.statd") <=0)
+		log_eval("rpc.statd");
 	eval("exportfs", "-a", "-r");
 	return;
 }

@@ -166,7 +166,7 @@ void start_unbound(void)
 		update_timezone();
 		unbound_config();
 		if (reload_process("unbound")) {
-			dd_logstart("unbound", eval("unbound", "-c", getdefaultconfig(path, "unbound.conf")));
+			log_eval("unbound", "-c", getdefaultconfig(path, "unbound.conf"));
 		}
 	} else {
 		stop_unbound();

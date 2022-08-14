@@ -63,8 +63,7 @@ void start_wol(void)
 	if (nvram_matchi("wol_enable", 0))
 		return;
 
-	dd_logstart("wol", _evalpid(wol_argv, NULL, 0, NULL));
-
+	_log_evalpid(wol_argv, NULL, 0, NULL);
 }
 
 #endif				/* HAVE_WOL */

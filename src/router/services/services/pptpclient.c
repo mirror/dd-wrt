@@ -252,7 +252,7 @@ void run_pptp(int status)
 		if (!nvram_match("pptp_wan_gateway", "0.0.0.0"))
 			route_add(wan_ifname, 0, nvram_safe_get("pptp_server_ip"), nvram_safe_get("pptp_wan_gateway"), "255.255.255.255");
 	}
-	dd_logstart("pptp", _evalpid(pptp_argv, NULL, 0, NULL));
+	_log_evalpid(pptp_argv, NULL, 0, NULL);
 
 	if (nvram_matchi("ppp_demand", 1)) {
 		/*

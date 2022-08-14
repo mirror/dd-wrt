@@ -248,23 +248,23 @@ void start_samba3(void)
 #ifdef HAVE_SMP
 		if (eval("/usr/bin/taskset", "0x2", "/usr/sbin/smbd", "-D", "-s", getdefaultconfig(path, "smb.conf")))
 #endif
-			eval("/usr/sbin/smbd", "-D", "-s", getdefaultconfig(path, "smb.conf"));
+			log_eval("smbd", "-D", "-s", getdefaultconfig(path, "smb.conf"));
 
 		if (pidof("smbd") <= 0) {
 #ifdef HAVE_SMP
 			if (eval("/usr/bin/taskset", "0x2", "/usr/sbin/smbd", "-D", "-s", getdefaultconfig(path, "smb.conf")))
 #endif
-				eval("/usr/sbin/smbd", "-D", "-s", getdefaultconfig(path, "smb.conf"));
+				log_eval("smbd", "-D", "-s", getdefaultconfig(path, "smb.conf"));
 		}
 	}
 	if (reload_process("nmbd")) {
-		dd_logstart("nmbd", eval("/usr/sbin/nmbd", "-D", "-s", getdefaultconfig(path, "smb.conf")));
+		log_eval("nmbd", "-D", "-s", getdefaultconfig(path, "smb.conf"));
 		if (pidof("nmbd") <= 0) {
-			dd_logstart("nmbd", eval("/usr/sbin/nmbd", "-D", "-s", getdefaultconfig(path, "smb.conf")));
+			log_eval("nmbd", "-D", "-s", getdefaultconfig(path, "smb.conf"));
 		}
 	}
 #ifdef HAVE_SAMBA4
-	eval("/usr/sbin/winbindd", "-D", "-s", getdefaultconfig(path, "smb.conf"));
+	log_eval("winbindd", "-D", "-s", getdefaultconfig(path, "smb.conf"));
 #endif
 #else
 	insmod("nls_base nls_utf8 crypto_hash crypto_null aead aead2 sha256_generic sha512_generic seqiv arc4 ecb"	//
@@ -287,12 +287,12 @@ void start_samba3(void)
 	if (*nbname) {
 		char parm[128];
 		sprintf(parm, "vendor:dd-wrt,model:%s,sku:%s", nvram_safe_get("DD_BOARD"), nvram_safe_get("os_version"));
-		dd_logstart("wsdd2", eval("wsdd2", "-d", "-N", nbname, "-G", wgname, "-b", parm));
+		log_eval("wsdd2", "-d", "-N", nbname, "-G", wgname, "-b", parm);
 	}
 	char c1[64];
 	char c2[64];
 	if (reload_process("ksmbd.mountd")) {
-		dd_logstart("smbd", eval("ksmbd.mountd", "-c", getdefaultconfig(c1, "smb.conf"), "-u", getdefaultconfig(c2, "smb.db")));
+		log_eval("ksmbd.mountd", "-c", getdefaultconfig(c1, "smb.conf"), "-u", getdefaultconfig(c2, "smb.db"));
 	}
 #endif
 	return;

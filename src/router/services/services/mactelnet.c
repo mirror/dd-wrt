@@ -59,12 +59,11 @@ void start_mactelnetd(void)
 #ifdef HAVE_REGISTER
 	if (isregistered_real())
 #endif
-		ret = _evalpid(telnetd_argv, NULL, 0, NULL);
+		_log_evalpid(telnetd_argv, NULL, 0, NULL);
 #ifdef HAVE_REGISTER
 	else
 		return;
 #endif
-	dd_logstart("mactelnetd", ret);
 
 	cprintf("done\n");
 	return;

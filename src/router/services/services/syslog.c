@@ -74,13 +74,13 @@ void start_syslog(void)
 		return;
 	update_timezone();
 	if (*(nvram_safe_get("syslogd_rem_ip")))
-		dd_logstart("syslogd", eval("syslogd", "-Z", "-L", "-R", nvram_safe_get("syslogd_rem_ip")));
+		log_eval("syslogd", "-Z", "-L", "-R", nvram_safe_get("syslogd_rem_ip"));
 	else
-		dd_logstart("syslogd", eval("syslogd", "-Z", "-L"));
+		log_eval("syslogd", "-Z", "-L");
 
 	if (!nvram_invmatchi("klogd_enable", 0))
 		return;
-	dd_logstart("klogd", eval("klogd"));
+	log_eval("klogd");
 
 	return;
 }

@@ -43,7 +43,7 @@ void start_rstats(void)
 
 	if (nvram_matchi("rstats_enable", 1)) {
 		stop_rstats();
-		dd_logstart("rstats", eval("rstats"));
+		log_eval("rstats");
 	}
 }
 

@@ -41,7 +41,7 @@ char *notifier_proc(void)
 void start_notifier(void)
 {
 	if (nvram_match("warn_enabled", "1")) {
-		dd_logstart("notifier", eval("notifier"));
+		log_eval("notifier");
 	}
 	return;
 }

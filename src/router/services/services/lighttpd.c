@@ -132,7 +132,7 @@ void start_lighttpd(void)
 		fclose(fp);
 	}
 
-	dd_logstart("lighttpd", eval("lighttpd", "-f", getdefaultconfig(path, "lighttpd.conf")));
+	log_eval("lighttpd", "-f", getdefaultconfig(path, "lighttpd.conf"));
 	return;
 }
 

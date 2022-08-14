@@ -77,7 +77,7 @@ void start_snmp(void)
 #endif
 	fclose(fp);
 	if (reload_process("snmpd")) {
-		dd_logstart("snmpd", _evalpid(snmpd_argv, NULL, 0, NULL));
+		_log_evalpid(snmpd_argv, NULL, 0, NULL);
 	}
 	return;
 }

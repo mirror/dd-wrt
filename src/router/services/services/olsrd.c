@@ -151,7 +151,7 @@ void start_olsrd(void)
 		}
 	}
 	fclose(fp);
-	dd_logstart("olsrd", eval("olsrd"));
+	log_eval("olsrd");
 }
 
 #endif

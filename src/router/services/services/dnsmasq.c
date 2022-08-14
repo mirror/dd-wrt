@@ -560,7 +560,7 @@ void start_dnsmasq(void)
 #ifdef HAVE_DNSCRYPT
 	if (nvram_matchi("dns_crypt", 1)) {
 		stop_process("dnscrypt-proxy", "daemon");
-		dd_logstart("dnscrypt-proxy", eval("dnscrypt-proxy", "-d", "-S", "-a", "127.0.0.1:30", "-R", nvram_safe_get("dns_crypt_resolver"), "-L", "/etc/dnscrypt/dnscrypt-resolvers.csv"));
+		log_eval("dnscrypt-proxy", "-d", "-S", "-a", "127.0.0.1:30", "-R", nvram_safe_get("dns_crypt_resolver"), "-L", "/etc/dnscrypt/dnscrypt-resolvers.csv");
 	}
 #endif
 	usejffs = 0;
@@ -930,7 +930,7 @@ void start_dnsmasq(void)
 
 	chmod("/etc/lease_update.sh", 0700);
 	if (reload_process("dnsmasq")) {
-		dd_logstart("dnsmasq", eval("dnsmasq", "-u", "root", "-g", "root", "-C", getdefaultconfig(path, "dnsmasq.conf")));
+		log_eval("dnsmasq", "-u", "root", "-g", "root", "-C", getdefaultconfig(path, "dnsmasq.conf"));
 	}
 
 	cprintf("done\n");
