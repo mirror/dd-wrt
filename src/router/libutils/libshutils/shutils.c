@@ -288,6 +288,16 @@ int eval_va(const char *cmd, ...)
 	return ret;
 }
 
+int log_eval_va(const char *cmd, ...)
+{
+	va_list args;
+	va_start(args, (char *)cmd);
+	int ret = internal_eval_va(0, 0, cmd, args);
+	va_end(args);
+	dd_logstart(cmd, ret);
+	return ret;
+}
+
 int eval_va_silence(const char *cmd, ...)
 {
 	va_list args;
@@ -312,6 +322,13 @@ int eval_va_silence_space(const char *cmd, ...)
 	va_start(args, (char *)cmd);
 	int ret = internal_eval_va(1, 1, cmd, args);
 	va_end(args);
+	return ret;
+}
+
+int _log_evalpid(char *const argv[], char *path, int timeout, int *ppid)
+{
+	int ret = _evalpid(argv, path, timeout, ppid);
+	dd_logstart(argv[0], ret);
 	return ret;
 }
 
