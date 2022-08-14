@@ -929,7 +929,7 @@ void start_dnsmasq(void)
 	dns_to_resolv();
 
 	chmod("/etc/lease_update.sh", 0700);
-	if (reload_process("dnsmasq", "dnsmasq")) {
+	if (reload_process("dnsmasq") {
 		dd_logstart("dnsmasq", eval("dnsmasq", "-u", "root", "-g", "root", "-C", getdefaultconfig(path, "dnsmasq.conf")));
 	}
 
