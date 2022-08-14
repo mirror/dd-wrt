@@ -49,19 +49,6 @@ void start_mdns(void)
 	mkdir("/tmp/avahi/services", 0744);
 	mkdir("/tmp/var/run/avahi-daemon", 0744);
 
-/*	
-	char mdnsreflector[4];
-	if (nvram_matchi("mdns_reflector", 1)) {
-		strcpy(mdnsreflector, "yes");
-	} else {
-		strcpy(mdnsreflector, "no");
-	}
-*/
-/*
-	char mdnshost[32]= nvram_safe_get("mdns_host");
-	if (mdnshost[0] == '\0') {
-		mdnshost = nvram safe_get("router_name");
-*/
 	FILE *fp;
 	fp = fopen("/tmp/mdns.conf", "wb");
 	fprintf(fp, "[server]\n"	//
@@ -128,63 +115,6 @@ void start_mdns(void)
 #endif
 
 #ifdef HAVE_MDNS_UTILS
-
-/*
-		mkdir("/tmp/var/run/dbus", 0744);
-		fp = fopen("/tmp/avahi-dbus.conf", "wb");
-		fprintf(fp, "<!DOCTYPE busconfig PUBLIC\n"
-			"\"-//freedesktop//DTD D-BUS Bus Configuration 1.0//EN\"\n"
-			"\"http://www.freedesktop.org/standards/dbus/1.0/busconfig.dtd\">\n"
-			"<busconfig>\n"
-			"\n"
-			"<!-- Only root or user nobody can own the Avahi service, this file needs serious overhaule-->\n"
-			"<policy user=\"nobody\">\n"
-				"<allow own=\"org.freedesktop.Avahi\"/>\n"
-				"<allow own=\"org.freedesktop.DBus\"/>\n"
-				"<allow own=\"*\"/>\n"
-			  "</policy>\n"
-			  "<policy user=\"root\">\n"
-				"<allow own=\"org.freedesktop.Avahi\"/>\n"
-				"<allow own=\"org.freedesktop.DBus\"/>\n"
-				"<allow own=\"*\"/>\n"
-			  "</policy>\n"
-			"\n"
-			  "<!-- Allow anyone to invoke methods on Avahi server, except SetHostName -->\n"
-			  "<policy context=\"default\">\n"
-				"<allow send_destination=\"org.freedesktop.Avahi\"/>\n"
-				"<allow receive_sender=\"org.freedesktop.Avahi\"/>\n"
-				"<allow send_destination=\"org.freedesktop.DBus\"/>\n"
-				"<allow receive_sender=\"org.freedesktop.DBus\"/>\n"
-				"<allow send_destination=\"*\"/>\n"
-				"<allow receive_sender=\"*\"/>\n"
-			"\n"
-				"<deny send_destination=\"org.freedesktop.Avahi\"\n"
-					  "send_interface=\"org.freedesktop.Avahi.Server\" send_member=\"SetHostName\"/>\n"
-			  "</policy>\n"
-			"\n"
-			  "<listen>unix:path=/tmp/var/run/dbus/system_bus_socket</listen>\n"
-			"\n"
-			  "<!-- Allow everything, including access to SetHostName to users of the group \"nobody\" -->\n"
-			  "<policy group=\"nobody\">\n"
-				"<allow send_destination=\"org.freedesktop.Avahi\"/>\n"
-				"<allow receive_sender=\"org.freedesktop.Avahi\"/>\n"
-				"<allow send_destination=\"org.freedesktop.DBus\"/>\n"
-				"<allow receive_sender=\"org.freedesktop.DBus\"/>\n"
-				"<allow send_destination=\"*\"/>\n"
-				"<allow receive_sender=\"*\"/>\n"
-			  "</policy>\n"
-			  "<policy user=\"root\">\n"
-				"<allow send_destination=\"org.freedesktop.Avahi\"/>\n"
-				"<allow receive_sender=\"org.freedesktop.Avahi\"/>\n"
-				"<allow send_destination=\"org.freedesktop.DBus\"/>\n"
-				"<allow receive_sender=\"org.freedesktop.DBus\"/>\n"
-				"<allow send_destination=\"*\"/>\n"
-				"<allow receive_sender=\"*\"/>\n"
-			  "</policy>\n"
-			"</busconfig>\n");
-		fclose(fp);
-*/
-// /*
 	mkdir("/tmp/var/run/dbus", 0744);
 	fp = fopen("/tmp/avahi-dbus.conf", "wb");
 	fprintf(fp, "<!DOCTYPE busconfig PUBLIC\n"	//
@@ -222,38 +152,17 @@ void start_mdns(void)
 		"</policy>\n"	//
 		"</busconfig>\n");
 	fclose(fp);
-// */
 
 	if (pidof("dbus-daemon") > 0) {
 		dd_loginfo("dbus-daemon", "dbus-daemon already running\n");
 	} else {
 		snprintf(conffile, sizeof(conffile), "--config-file=%s", getdefaultconfig(path, "avahi-dbus.conf"));
-		sysprintf("/usr/sbin/dbus-launch %s", conffile);
-		//sysprintf("/usr/sbin/dbus-daemon --syslog --fork --print-pid --print-address %s", conffile);
-		//eval("/usr/sbin/dbus-daemon", "--syslog", "--fork", "--print-pid", "print-address", conffile);  //does not work
-		dd_loginfo("dbus-launch", "dbus launched with conffile: %s \n", conffile);
-/*
-		FILE *pf;
-		char command[128];
-		char buffer[256]= { 0 };
-		//syslog(LOG_INFO, "dbus-launch : popen\n");
-		snprintf(command, sizeof(command), "/usr/sbin/dbus-launch --config-file=%s 2>&1", getdefaultconfig(path, "avahi-dbus.conf"));
-		dd_loginfo("dbus-launch", "dbus popen with command: %s \n", command);
-		pf = popen(command, "r");
-			if(!pf){
-				dd_loginfo("dbus-launch", "Could not open pipe for output executing \n");
-			} else {
-				fgets(buffer, 255, pf);
-				dd_loginfo("dbus-launch", "dbus launched with parameters: %s \n", buffer);
-			}
-		pclose(pf);
-*/
+		dd_logstart("dbus-daemon", eval("/usr/sbin/dbus-launch", conffile));
 	}
 #endif
 	if (reload_process("avahi-daemon")) {
 		snprintf(conffile, sizeof(conffile), getdefaultconfig(path, "mdns.conf"));
-		eval("/usr/sbin/avahi-daemon", "-D", "-f", conffile, "--no-drop-root");
-		dd_loginfo("avahi-daemon", "providing mdns services conf-file: %s\n", conffile);
+		dd_logstart("avahi-daemon", eval("/usr/sbin/avahi-daemon", "-D", "-f", conffile, "--no-drop-root"));
 	}
 	return;
 }
