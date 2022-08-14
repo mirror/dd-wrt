@@ -3174,7 +3174,7 @@ struct nvram_param srouter_defaults[] = {
 	{ "openvpn_onwan", "0" },
 	{ "openvpn_switch", "1" },	//switch between old/new style config
 	{ "openvpn_cipher", "" },
-	{ "openvpn_auth", "" },
+	{ "openvpn_auth", "none" },
 	{ "openvpn_redirgate", "1" },
 	{ "openvpn_adv", "0" },
 	{ "openvpn_tlscip", "0" },
