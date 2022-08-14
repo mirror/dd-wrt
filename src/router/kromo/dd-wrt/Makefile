@@ -18,7 +18,7 @@ installwebfiles:
 	
 ifeq ($(CONFIG_DIST),"micro")
 	rm -f $(INSTALLDIR)/www/favicon.ico
-	rm -f $(INSTALLDIR)/www/images/dd-logo.png
+#	rm -f $(INSTALLDIR)/www/images/dd-logo.png
 	rm -f $(INSTALLDIR)/www/images/valid-xhtml10.png
 ifneq ($(CONFIG_COMPRESSEDJS),y)
 	cp common_micro.js $(INSTALLDIR)/www/common.js
