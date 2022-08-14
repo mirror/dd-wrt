@@ -225,9 +225,9 @@ void setupSupplicant(char *prefix)
 		if (nvram_matchi(bvar, 1)
 		    && (nvram_match(wmode, "wdssta")
 			|| nvram_match(wmode, "wet")))
-			dd_logstart("wpa_supplicant", eval("wpa_supplicant", "-b", nvram_safe_get("lan_ifname"), "-B", "-Dralink", psk, "-c", fstr));
+			log_eval("wpa_supplicant", "-b", nvram_safe_get("lan_ifname"), "-B", "-Dralink", psk, "-c", fstr);
 		else
-			dd_logstart("wpa_supplicant", eval("wpa_supplicant", "-B", "-Dralink", psk, "-c", fstr));
+			log_eval("wpa_supplicant", "-B", "-Dralink", psk, "-c", fstr);
 	}
 
 }
@@ -1133,9 +1133,9 @@ void configure_wifi_single(int idx)	// madwifi implementation for atheros based
 			key = nvram_nget("wl%d_key%d", idx, keyidx);
 		}
 		if (idx == 0)
-			dd_logstart("ap_client", eval("ap_client", "ra0", "apcli0", essid, key));
+			log_eval("ap_client", "ra0", "apcli0", essid, key);
 		else
-			dd_logstart("ap_client", eval("ap_client", "ba0", "apcli1", essid, key));
+			log_eval("ap_client", "ba0", "apcli1", essid, key);
 	} else {
 		fprintf(fp, "ApCliEnable=0\n");
 	}
@@ -1374,9 +1374,9 @@ void init_network(int idx)
 
 		if (startradius[idx]) {
 			if (idx == 0)
-				dd_logstart("rt2860apd", eval("rt2860apd"));
+				log_eval("rt2860apd");
 			else
-				dd_logstart("rt2860apd", eval("rt2860apd", "-i", "ba"));
+				log_eval("rt2860apd", "-i", "ba");
 
 		}
 		setMacFilter(dev);
@@ -1479,9 +1479,9 @@ void start_hostapdwan(void)
 	for (idx = 0; idx < 2; idx++) {
 		if (!isSTA(idx) && startradius[idx]) {
 			if (idx == 0)
-				dd_logstart("rt2860apd", eval("rt2860apd"));
+				log_eval("rt2860apd");
 			else
-				dd_logstart("rt2860apd", eval("rt2860apd", "-i", "ba"));
+				log_eval("rt2860apd", "-i", "ba");
 
 		}
 	}
