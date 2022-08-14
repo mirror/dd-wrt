@@ -260,7 +260,7 @@ void reset_hwaddr(char *ifname);
 void start_force_to_dial(void);
 
 int stop_process(char *name, char *desc);
-int reload_process(char *name, char *desc);
+int reload_process(char *name);
 int stop_process_timeout(char *name, char *desc, int timeout);
 int stop_process_hard(char *name, char *desc);
 

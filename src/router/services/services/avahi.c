@@ -250,7 +250,7 @@ void start_mdns(void)
 */
 	}
 #endif
-	if (reload_process("avahi-daemon", "avahi-daemon")) {
+	if (reload_process("avahi-daemon")) {
 		snprintf(conffile, sizeof(conffile), getdefaultconfig(path, "mdns.conf"));
 		eval("/usr/sbin/avahi-daemon", "-D", "-f", conffile, "--no-drop-root");
 		dd_loginfo("avahi-daemon", "providing mdns services conf-file: %s\n", conffile);

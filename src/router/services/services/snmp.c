@@ -76,7 +76,7 @@ void start_snmp(void)
 	fprintf(fp, "pass_persist .1.3.6.1.4.1.2021.255 /etc/wl_snmpd.sh\n");
 #endif
 	fclose(fp);
-	if (reload_process("snmpd", "snmpd")) {
+	if (reload_process("snmpd")) {
 		dd_logstart("snmpd", _evalpid(snmpd_argv, NULL, 0, NULL));
 	}
 	return;
