@@ -103,7 +103,7 @@ void start_sshd(void)
 	if (nvram_matchi("sshd_forwarding", 1))
 		sshd_argv[a++] = "-a";
 	sshd_argv[a++] = NULL;
-	dd_logstart("dropbear", _evalpid(sshd_argv, NULL, 0, NULL));
+	_log_evalpid(sshd_argv, NULL, 0, NULL);
 	return;
 }
 

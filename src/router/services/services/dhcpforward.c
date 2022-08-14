@@ -126,13 +126,13 @@ void start_dhcpfwd(void)
 
 		fprintf(fp, "name	%s	ws-c\n" "server	ip	%s\n", nvram_safe_get("lan_ifname"), nvram_safe_get("dhcpfwd_ip"));
 		fclose(fp);
-		dd_logstart("dhcpfwd", eval("dhcpfwd", "-c", "/tmp/dhcp-fwd/dhcp-fwd.conf"));
+		log_eval("dhcpfwd", "-c", "/tmp/dhcp-fwd/dhcp-fwd.conf");
 		return;
 	}
 #endif
 #ifdef HAVE_DHCPRELAY
 	if (nvram_matchi("dhcpfwd_enable", 1)) {
-		dd_logstart("dhcrelay", eval("dhcrelay", "-i", nvram_safe_get("lan_ifname"), nvram_safe_get("dhcpfwd_ip")));
+		log_eval("dhcrelay", "-i", nvram_safe_get("lan_ifname"), nvram_safe_get("dhcpfwd_ip"));
 	}
 #endif
 	return;

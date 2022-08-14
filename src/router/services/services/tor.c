@@ -140,7 +140,7 @@ void start_tor(void)
 
 	fclose(fp);
 	if (reload_process("tor"))
-		dd_logstart("tor", _evalpid(tor_argv, NULL, 0, NULL));
+		_log_evalpid(tor_argv, NULL, 0, NULL);
 }
 
 void restart_tor(void)

@@ -47,7 +47,7 @@ void start_upnp(void)
 	 */
 	ret = killall("upnp", SIGUSR1);
 	if (ret != 0) {
-		dd_logstart("upnp", eval("upnp", "-D", "-W", wan_ifname));
+		log_eval("upnp", "-D", "-W", wan_ifname);
 	}
 
 	cprintf("done\n");

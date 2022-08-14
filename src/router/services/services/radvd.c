@@ -159,7 +159,7 @@ void start_radvd(void)
 		fclose(fp);
 	}
 	if (reload_process("radvd")) {
-		dd_logstart("radvd", eval("radvd", "-C", "/tmp/radvd.conf"));
+		log_eval("radvd", "-C", "/tmp/radvd.conf");
 	}
 	cprintf("done\n");
 	return;

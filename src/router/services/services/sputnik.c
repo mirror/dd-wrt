@@ -38,7 +38,7 @@ void start_sputnik(void)
 		return;
 	insmod("ipt_mark ipt_mac xt_mark xt_mac");
 
-	dd_logstart("sputnik", eval("sputnik"));
+	log_eval("sputnik");
 	cprintf("done\n");
 	return;
 }
