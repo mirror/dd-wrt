@@ -929,13 +929,8 @@ void start_dnsmasq(void)
 	dns_to_resolv();
 
 	chmod("/etc/lease_update.sh", 0700);
-	int pid = pidof("dnsmasq");
-	if (pid > 0) {
-		kill(pid, SIGHUP);
-		dd_loginfo("dnsmasq", "config reloaded\n");
-	} else {
-		eval("dnsmasq", "-u", "root", "-g", "root", "-C", getdefaultconfig(path, "dnsmasq.conf"));
-		dd_loginfo("dnsmasq", "daemon successfully started\n");
+	if (reload_process("dnsmasq", "dnsmasq")) {
+		dd_logstart("dnsmasq", eval("dnsmasq", "-u", "root", "-g", "root", "-C", getdefaultconfig(path, "dnsmasq.conf")));
 	}
 
 	cprintf("done\n");

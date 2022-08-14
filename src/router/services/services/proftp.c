@@ -73,9 +73,10 @@ void start_ftpsrv(void)
 	struct samba3_user *samba3users, *cu, *cunext;
 	struct samba3_share *samba3shares;
 
-	stop_ftpsrv();
-	if (!nvram_matchi("proftpd_enable", 1))
+	if (!nvram_matchi("proftpd_enable", 1)) {
+		stop_ftpsrv();
 		return;
+	}
 
 	FILE *fp, *tmp;
 
@@ -191,15 +192,22 @@ void start_ftpsrv(void)
 	}
 	fclose(fp);
 	chmod("/tmp/proftpd/etc/passwd", S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP);
+	if (reload_process("proftpd", "proftpd")) {
 #ifdef HAVE_SMP
-	if (eval("/usr/bin/taskset", "0x2", "proftpd"))
+		if (eval("/usr/bin/taskset", "0x2", "proftpd"))
 #endif
-		eval("proftpd");
-	dd_loginfo("proftpd", "server successfully started\n");
+			eval("proftpd");
+		dd_loginfo("proftpd", "server successfully started\n");
+	}
 	nvram_set("usb_reason", "proftp_start");
 	eval("service", "run_rc_usb", "start");
 
 	return;
+}
+
+void restart_ftpsrv(void)
+{
+	start_ftpsrv();
 }
 
 void stop_ftpsrv(void)

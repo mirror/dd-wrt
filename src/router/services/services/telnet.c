@@ -54,12 +54,11 @@ void start_telnetd(void)
 #ifdef HAVE_REGISTER
 	if (isregistered_real())
 #endif
-		_evalpid(telnetd_argv, NULL, 0, NULL);
+		dd_logstart("telnetd", evalpid(telnetd_argv, NULL, 0, NULL));
 #ifdef HAVE_REGISTER
 	else
 		return;
 #endif
-	dd_loginfo("telnetd", "daemon successfully started\n");
 
 	cprintf("done\n");
 	return;

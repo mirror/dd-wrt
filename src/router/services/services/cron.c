@@ -165,8 +165,7 @@ void start_cron(void)
 
 	cprintf("starting cron\n");
 
-	ret = eval("cron");
-	dd_loginfo("cron", "daemon successfully started\n");
+	dd_logstart("cron", eval("cron"));
 
 	cprintf("done\n");
 	return;

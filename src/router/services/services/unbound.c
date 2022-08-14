@@ -166,8 +166,7 @@ void start_unbound(void)
 		update_timezone();
 		unbound_config();
 		if (reload_process("unbound", "unbound")) {
-			eval("unbound", "-c", getdefaultconfig(path, "unbound.conf"));
-			dd_loginfo("unbound", "recursive dns resolver daemon successfully started\n");
+			dd_logstart("unbound", eval("unbound", "-c", getdefaultconfig(path, "unbound.conf")));
 		}
 	} else {
 		stop_unbound();

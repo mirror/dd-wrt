@@ -87,17 +87,20 @@ void start_sshd(void)
 		nvram_commit();
 	write_key_file("sshd_authorized_keys", AUTHORIZED_KEYS_FILE, 0600);
 	stop_sshd();
-	char *port = nvram_safe_get("sshd_port");
-	char *passwd_ok = nvram_matchi("sshd_passwd_auth", 1) ? "" : "-s";
-	char *forwarding_ok = nvram_matchi("sshd_forwarding", 1) ? "-a" : "";
-
-#ifdef HAVE_MAKSAT
-	sysprintf("dropbear -r %s -p %s %s %s", RSA_HOST_KEY_FILE, port, passwd_ok, forwarding_ok);
-#else
-	sysprintf("dropbear -b /tmp/loginprompt -r %s -p %s %s %s", RSA_HOST_KEY_FILE, port, passwd_ok, forwarding_ok);
+	int a = 0;
+	char *sshd_argv[8];
+#ifndef HAVE_MAKSAT
+	sshd_argv[a++] = "-b";
+	sshd_argv[a++] = "/tmp/loginprompt";
 #endif
-	dd_loginfo("dropbear", "ssh daemon successfully started\n");
-
+	sshd_argv[a++] = "-r";
+	sshd_argv[a++] = RSA_HOST_KEY_FILE;
+	sshd_argv[a++] = nvram_safe_get("sshd_port");
+	if (!nvram_matchi("sshd_passwd_auth", 1))
+		sshd_argv[a++] = "-s";
+	if (nvram_matchi("sshd_forwarding", 1))
+		sshd_argv[a++] = "-a";
+	sshd_argv[a++] = NULL dd_logstart("dropbear", _evalpid(sshd_argv, NULL, 0, NULL));
 	return;
 }
 

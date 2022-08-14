@@ -49,10 +49,11 @@ void start_snmp(void)
 	char path[64];
 	char *snmpd_argv[] = { "snmpd", "-c", getdefaultconfig(path, "snmpd.conf"), NULL };
 	FILE *fp = NULL;
-	stop_snmp();
 
-	if (!nvram_invmatchi("snmpd_enable", 0))
+	if (!nvram_invmatchi("snmpd_enable", 0)) {
+		stop_snmp();
 		return;
+	}
 
 	fp = fopen(getdefaultconfig(path, "snmpd.conf"), "w");
 	if (NULL == fp)
@@ -75,12 +76,15 @@ void start_snmp(void)
 	fprintf(fp, "pass_persist .1.3.6.1.4.1.2021.255 /etc/wl_snmpd.sh\n");
 #endif
 	fclose(fp);
-	_evalpid(snmpd_argv, NULL, 0, NULL);
-
-	cprintf("done\n");
-	dd_loginfo("snmpd", "SNMP daemon successfully started\n");
-
+	if (reload_process("snmpd", "snmpd")) {
+		dd_logstart("snmpd", _evalpid(snmpd_argv, NULL, 0, NULL));
+	}
 	return;
+}
+
+void restart_snmp(void)
+{
+	start_snmp();
 }
 
 void stop_snmp(void)

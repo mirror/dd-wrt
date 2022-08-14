@@ -47,8 +47,7 @@ void start_plex(void)
 	if (!nvram_invmatchi("plex_enable", 0))
 		return;
 
-	_evalpid(plex_argv, NULL, 0, NULL);
-	dd_loginfo("plex", "daemon successfully started\n");
+	dd_logstart("plex", _evalpid(plex_argv, NULL, 0, NULL));
 
 	cprintf("done\n");
 	return;

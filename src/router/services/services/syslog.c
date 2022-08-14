@@ -74,15 +74,13 @@ void start_syslog(void)
 		return;
 	update_timezone();
 	if (*(nvram_safe_get("syslogd_rem_ip")))
-		ret1 = eval("syslogd", "-Z", "-L", "-R", nvram_safe_get("syslogd_rem_ip"));
+		dd_logstart("syslogd", eval("syslogd", "-Z", "-L", "-R", nvram_safe_get("syslogd_rem_ip")));
 	else
-		ret1 = eval("syslogd", "-Z", "-L");
+		dd_logstart("syslogd", eval("syslogd", "-Z", "-L"));
 
-	dd_loginfo("syslogd", "daemon successfully started\n");
 	if (!nvram_invmatchi("klogd_enable", 0))
 		return;
-	ret2 = eval("klogd");
-	dd_loginfo("klogd", "daemon successfully started\n");
+	dd_logstart("klogd", eval("klogd"));
 
 	return;
 }

@@ -67,8 +67,10 @@ void start_radvd(void)
 	int do_mtu = 0, do_6to4 = 0, do_6rd = 0;
 	FILE *fp;
 
-	if (!nvram_matchi("ipv6_enable", 1) || !nvram_matchi("radvd_enable", 1))
+	if (!nvram_matchi("ipv6_enable", 1) || !nvram_matchi("radvd_enable", 1)) {
+		stop_radvd();
 		return;
+	}
 
 	if (nvram_matchi("dhcp6s_enable", 1) && (nvram_matchi("dhcp6s_seq_ips", 1) || nvram_invmatch("dhcp6s_hosts", "")))
 		manual = 1;
@@ -156,12 +158,16 @@ void start_radvd(void)
 		fprintf(fp, "};\n");
 		fclose(fp);
 	}
-
-	eval("radvd", "-C", "/tmp/radvd.conf");
-	dd_loginfo("radvd", "RADVD daemon successfully started\n");
-
+	if (reload_process("radvd", "radvd")) {
+		dd_logstart("radvd", eval("radvd", "-C", "/tmp/radvd.conf"));
+	}
 	cprintf("done\n");
 	return;
+}
+
+void restart_radvd(void)
+{
+	start_radvd();
 }
 
 void stop_radvd(void)
