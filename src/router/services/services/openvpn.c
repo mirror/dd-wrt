@@ -42,10 +42,10 @@ static void run_openvpn(char *prg, char *path)
 	asprintf(&conf, "/tmp/%s/openvpn.conf", path);
 	if (nvram_matchi("use_crypto", 1)) {
 		insmod("cryptodev");
-		eval(prg, "--config", conf, "--daemon", "--engine", "cryptodev");
+		dd_logstart("openvpn", eval(prg, "--config", conf, "--daemon", "--engine", "cryptodev"));
 	} else {
 		rmmod("cryptodev");
-		eval(prg, "--config", conf, "--daemon");
+		dd_logstart("openvpn", eval(prg, "--config", conf, "--daemon"));
 	}
 	free(conf);
 }

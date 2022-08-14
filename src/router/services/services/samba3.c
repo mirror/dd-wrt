@@ -258,9 +258,9 @@ void start_samba3(void)
 		}
 	}
 	if (reload_process("nmbd", "nmbd")) {
-		eval("/usr/sbin/nmbd", "-D", "-s", getdefaultconfig(path, "smb.conf"));
+		dd_logstart("nmbd", eval("/usr/sbin/nmbd", "-D", "-s", getdefaultconfig(path, "smb.conf")));
 		if (pidof("nmbd") <= 0) {
-			eval("/usr/sbin/nmbd", "-D", "-s", getdefaultconfig(path, "smb.conf"));
+			dd_logstart("nmbd", eval("/usr/sbin/nmbd", "-D", "-s", getdefaultconfig(path, "smb.conf")));
 		}
 	}
 #ifdef HAVE_SAMBA4
@@ -287,16 +287,14 @@ void start_samba3(void)
 	if (*nbname) {
 		char parm[128];
 		sprintf(parm, "vendor:dd-wrt,model:%s,sku:%s", nvram_safe_get("DD_BOARD"), nvram_safe_get("os_version"));
-		eval("wsdd2", "-d", "-N", nbname, "-G", wgname, "-b", parm);
+		dd_logstart("wsdd2", eval("wsdd2", "-d", "-N", nbname, "-G", wgname, "-b", parm));
 	}
 	char c1[64];
 	char c2[64];
 	if (reload_process("ksmbd.mountd", "ksmbd.mountd")) {
-		eval("ksmbd.mountd", "-c", getdefaultconfig(c1, "smb.conf"), "-u", getdefaultconfig(c2, "smb.db"));
+		dd_logstart("smbd", eval("ksmbd.mountd", "-c", getdefaultconfig(c1, "smb.conf"), "-u", getdefaultconfig(c2, "smb.db")));
 	}
 #endif
-
-	dd_loginfo("smbd", "samba started\n");
 	return;
 }
 

@@ -46,9 +46,7 @@ void start_udpxy(void)
 	if (!nicfrom || !listen_if || !listen_port)
 		return;
 
-	eval(cmd, "-m", nicfrom, "-a", listen_if, "-p", listen_port);
-
-	dd_loginfo("udpxy", "UDP-to-HTTP multicast traffic relay daemon started\n");
+	dd_logstart("udpxy", eval(cmd, "-m", nicfrom, "-a", listen_if, "-p", listen_port));
 
 	return;
 }
