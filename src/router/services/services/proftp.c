@@ -192,7 +192,7 @@ void start_ftpsrv(void)
 	}
 	fclose(fp);
 	chmod("/tmp/proftpd/etc/passwd", S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP);
-	if (reload_process("proftpd") {
+	if (reload_process("proftpd")) {
 #ifdef HAVE_SMP
 		if (eval("/usr/bin/taskset", "0x2", "proftpd"))
 #endif
