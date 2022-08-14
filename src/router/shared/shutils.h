@@ -71,7 +71,7 @@ extern int eval_va_silence(const char *cmd, ...);
 extern int eval_va_silence_space(const char *cmd, ...);
 
 #define eval(cmd, args...) eval_va(cmd, ## args, NULL)
-#define logeval(cmd, args...) log_eval_va(cmd, ## args, NULL)
+#define log_eval(cmd, args...) log_eval_va(cmd, ## args, NULL)
 #define eval_space(cmd, args...) eval_va_space(cmd, ## args, NULL)
 #define eval_silence(cmd, args...) eval_va_silence(cmd, ## args, NULL)
 
