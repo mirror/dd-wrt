@@ -112,10 +112,10 @@ static void start_heartbeat(int status)
 
 	mkdir("/tmp/ppp", 0777);
 	if ((fp = fopen("/tmp/hb_connect_success", "r"))) {
-		eval("bpalogin", "-c", "/tmp/bpalogin.conf", "-t");
+		dd_logstart("bpalogin", eval("bpalogin", "-c", "/tmp/bpalogin.conf", "-t"));
 		fclose(fp);
 	} else
-		eval("bpalogin", "-c", "/tmp/bpalogin.conf");
+		dd_logstart("bpalogin",eval("bpalogin", "-c", "/tmp/bpalogin.conf"));
 
 	if (nvram_invmatchi("ppp_demand", 1)) {
 		if (status != REDIAL)
