@@ -84,18 +84,18 @@ static int zebra_init(void)
 	}
 #ifdef HAVE_FRR
 	if (services) {
-		eval("zebra", "-d");
+		dd_logstart("zebra", eval("zebra", "-d"));
 		if (has_ospfd) {
-			eval("ospfd", "-d");
+			dd_logstart("ospfd", eval("ospfd", "-d"));
 		}
 		if (has_ospf6d) {
-			eval("ospf6d", "-d");
+			dd_logstart("ospf6d",eval("ospf6d", "-d"));
 		}
 		if (has_bgpd) {
-			eval("bgpd", "-d");
+			dd_logstart("bgpd",eval("bgpd", "-d"));
 		}
 		if (has_ripd) {
-			eval("ripd", "-d");
+			dd_logstart("ripd",eval("ripd", "-d"));
 		}
 	}
 #endif
