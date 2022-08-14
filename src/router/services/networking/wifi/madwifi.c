@@ -781,15 +781,15 @@ void setupSupplicant(char *prefix, char *ssidoverride)
 #ifdef HAVE_RELAYD
 		if ((nvram_match(wmode, "wdssta") || nvram_match(wmode, "mesh") || nvram_match(wmode, "wdssta_mtik"))
 		    && nvram_matchi(bridged, 1))
-			dd_logstart("wpa_supplicnt", eval("wpa_supplicant", "-P", pid, "-b", getBridge(prefix, tmp), background, driver, psk, "-c", fstr));
+			log_eval("wpa_supplicant", "-P", pid, "-b", getBridge(prefix, tmp), background, driver, psk, "-c", fstr);
 		else
-			dd_logstart("wpa_supplicnt", eval("wpa_supplicant", "-P", pid, background, driver, psk, "-c", fstr));
+			log_eval("wpa_supplicant", "-P", pid, background, driver, psk, "-c", fstr);
 #else
 		if ((nvram_match(wmode, "wdssta") || nvram_match(wmode, "wet") || nvram_match(wmode, "mesh") || nvram_match(wmode, "wdssta_mtik"))
 		    && nvram_matchi(bridged, 1))
-			dd_logstart("wpa_supplicnt", eval("wpa_supplicant", "-P", pid, "-b", getBridge(prefix, tmp), background, driver, psk, "-c", fstr));
+			log_eval("wpa_supplicant", "-P", pid, "-b", getBridge(prefix, tmp), background, driver, psk, "-c", fstr);
 		else
-			dd_logstart("wpa_supplicnt", eval("wpa_supplicant", "-P", pid, background, driver, psk, "-c", fstr));
+			log_eval("wpa_supplicant", "-P", pid, background, driver, psk, "-c", fstr);
 #endif
 	} else if (ispeap || isleap || istls || isttls) {
 		char fstr[32];
@@ -818,16 +818,16 @@ void setupSupplicant(char *prefix, char *ssidoverride)
 #ifdef HAVE_RELAYD
 		if (nvram_matchi(bridged, 1)
 		    && (nvram_match(wmode, "wdssta") || nvram_match(wmode, "mesh") || nvram_match(wmode, "wdssta_mtik")))
-			dd_logstart("wpa_supplicnt", eval("wpa_supplicant", "-P", pid, "-b", nvram_safe_get("lan_ifname"), background, driver, psk, "-c", fstr));
+			log_eval("wpa_supplicant", "-P", pid, "-b", nvram_safe_get("lan_ifname"), background, driver, psk, "-c", fstr);
 		else
-			dd_logstart("wpa_supplicnt", eval("wpa_supplicant", "-P", pid, background, driver, psk, "-c", fstr));
+			log_eval("wpa_supplicant", "-P", pid, background, driver, psk, "-c", fstr);
 #else
 		if (nvram_matchi(bridged, 1)
 		    && (nvram_match(wmode, "wdssta") || nvram_match(wmode, "mesh") || nvram_match(wmode, "wdssta_mtik")
 			|| nvram_match(wmode, "wet")))
-			dd_logstart("wpa_supplicnt", eval("wpa_supplicant", "-P", pid, "-b", nvram_safe_get("lan_ifname"), background, driver, psk, "-c", fstr));
+			log_eval("wpa_supplicant", "-P", pid, "-b", nvram_safe_get("lan_ifname"), background, driver, psk, "-c", fstr);
 		else
-			dd_logstart("wpa_supplicnt", eval("wpa_supplicant", "-P", pid, background, driver, psk, "-c", fstr));
+			log_eval("wpa_supplicant", "-P", pid, background, driver, psk, "-c", fstr);
 
 #endif
 	} else if (nvram_match(akm, "disabled") || nvram_match(akm, "wep")) {
@@ -884,15 +884,15 @@ void setupSupplicant(char *prefix, char *ssidoverride)
 #ifdef HAVE_RELAYD
 		if ((nvram_match(wmode, "wdssta") || nvram_match(wmode, "mesh") || nvram_match(wmode, "wdssta_mtik"))
 		    && nvram_matchi(bridged, 1))
-			dd_logstart("wpa_supplicnt", eval("wpa_supplicant", "-P", pid, "-b", getBridge(prefix, tmp), background, driver, psk, "-c", fstr));
+			log_eval("wpa_supplicant", "-P", pid, "-b", getBridge(prefix, tmp), background, driver, psk, "-c", fstr);
 		else
-			dd_logstart("wpa_supplicnt", eval("wpa_supplicant", "-P", pid, background, driver, psk, "-c", fstr));
+			log_eval("wpa_supplicant", "-P", pid, background, driver, psk, "-c", fstr);
 #else
 		if ((nvram_match(wmode, "wdssta") || nvram_match(wmode, "wet") || nvram_match(wmode, "mesh") || nvram_match(wmode, "wdssta_mtik"))
 		    && nvram_matchi(bridged, 1))
-			dd_logstart("wpa_supplicnt", eval("wpa_supplicant", "-P", pid, "-b", getBridge(prefix, tmp), background, driver, psk, "-c", fstr));
+			log_eval("wpa_supplicant", "-P", pid, "-b", getBridge(prefix, tmp), background, driver, psk, "-c", fstr);
 		else
-			dd_logstart("wpa_supplicnt", eval("wpa_supplicant", "-P", pid, background, driver, psk, "-c", fstr));
+			log_eval("wpa_supplicant", "-P", pid, background, driver, psk, "-c", fstr);
 #endif
 	}
 
@@ -940,7 +940,7 @@ void do_hostapd(char *fstr, char *prefix)
 
 	argv[argc++] = fstr;
 
-	dd_logstart("hostapd", _evalpid(argv, NULL, 0, NULL));
+	_log_evalpid(argv, NULL, 0, NULL);
 }
 
 static void checkhostapd(char *ifname, int force)

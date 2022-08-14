@@ -2191,15 +2191,15 @@ void ath9k_start_supplicant(int count, char *prefix)
 				if ((nvram_match(wmode, "wdssta") || nvram_match(wmode, "mesh") || nvram_match(wmode, "wdsta_mtik")
 				     || wet)
 				    && nvram_matchi(bridged, 1))
-					dd_logstart("wpa_supplicant", eval("wpa_supplicant", "-P", pid, "-b", getBridge(dev, tmp), background, "-Dnl80211", subinterface, "-H", ctrliface, "-c", fstr));
+					log_eval("wpa_supplicant", "-P", pid, "-b", getBridge(dev, tmp), background, "-Dnl80211", subinterface, "-H", ctrliface, "-c", fstr);
 				else
-					dd_logstart("wpa_supplicant", eval("wpa_supplicant", "-P", pid, background, "-Dnl80211", subinterface, "-H", ctrliface, "-c", fstr));
+					log_eval("wpa_supplicant", "-P", pid, background, "-Dnl80211", subinterface, "-H", ctrliface, "-c", fstr);
 			} else {
 				/* for mesh mode we dont need ctrl interface since it has a static channel configuration */
 				if (nvram_matchi(bridged, 1))
-					dd_logstart("wpa_supplicant", eval("wpa_supplicant", "-P", pid, "-b", getBridge(dev, tmp), background, "-Dnl80211", subinterface, "-c", fstr));
+					log_eval("wpa_supplicant", "-P", pid, "-b", getBridge(dev, tmp), background, "-Dnl80211", subinterface, "-c", fstr);
 				else
-					dd_logstart("wpa_supplicant", eval("wpa_supplicant", "-P", pid, background, "-Dnl80211", subinterface, "-c", fstr));
+					log_eval("wpa_supplicant", "-P", pid, background, "-Dnl80211", subinterface, "-c", fstr);
 			}
 			if (nvram_match(wmode, "mesh") || nvram_match(wmode, "infra")) {
 				/* now start hostapd once wpa_supplicant has been started */
@@ -2210,9 +2210,9 @@ void ath9k_start_supplicant(int count, char *prefix)
 			sprintf(fstr, "/tmp/%s_wpa_supplicant.conf", dev);
 			if (nvram_match(wmode, "sta") || nvram_match(wmode, "wdssta") || nvram_match(wmode, "wdssta_mtik") || wet || nvram_match(wmode, "infra") || nvram_match(wmode, "mesh")) {
 				if ((nvram_match(wmode, "wdssta") || nvram_match(wmode, "mesh") || nvram_match(wmode, "wdsta_mtik") || wet) && nvram_matchi(bridged, 1)) {
-					dd_logstart("wpa_supplicant", eval("wpa_supplicant", "-P", pid, "-b", getBridge(dev, tmp), background, "-Dnl80211", subinterface, "-c", fstr));
+					log_eval("wpa_supplicant", "-P", pid, "-b", getBridge(dev, tmp), background, "-Dnl80211", subinterface, "-c", fstr);
 				} else {
-					dd_logstart("wpa_supplicant", eval("wpa_supplicant", "-P", pid, background, "-Dnl80211", subinterface, "-c", fstr));
+					log_eval("wpa_supplicant", "-P", pid, background, "-Dnl80211", subinterface, "-c", fstr);
 				}
 
 			}
@@ -2265,10 +2265,10 @@ void ath9k_start_supplicant(int count, char *prefix)
 				sprintf(fstr, "/tmp/%s_wpa_supplicant.conf", var);
 				sprintf(subinterface, "-i%s", var);
 				if (nvram_matchi(bridged, 1))
-					dd_logstart("wpa_supplicant", eval("wpa_supplicant", "-b", getBridge(var, tmp), background, "-Dnl80211", subinterface, "-c", fstr));
+					log_eval("wpa_supplicant", "-b", getBridge(var, tmp), background, "-Dnl80211", subinterface, "-c", fstr);
 				else {
 					nvram_set("sfe", "0");
-					dd_logstart("wpa_supplicant", eval("wpa_supplicant", background, "-Dnl80211", subinterface, "-c", fstr));
+					log_eval("wpa_supplicant", background, "-Dnl80211", subinterface, "-c", fstr);
 				}
 			}
 
