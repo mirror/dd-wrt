@@ -139,7 +139,7 @@ void start_tor(void)
 #endif
 
 	fclose(fp);
-	if (reload_process("tor", "tor"))
+	if (reload_process("tor"))
 		ret = _evalpid(tor_argv, NULL, 0, NULL);
 }
 
