@@ -30,7 +30,7 @@
 
 void start_smartd(void)
 {
-	eval("smartd");
+	dd_logstart("smartd", eval("smartd"));
 	return;
 }
 

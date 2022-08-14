@@ -240,7 +240,7 @@ void run_pppoe(int pppoe_num)
 	unlink("/tmp/ppp/connect-errors");
 
 	start_pppmodules();
-	_evalpid(pppoe_argv, NULL, 0, &pid);
+	dd_logstart("pppd", _evalpid(pppoe_argv, NULL, 0, &pid));
 
 	if (nvram_matchi(ppp_demand[pppoe_num], 1)) {
 		// int timeout = 5;

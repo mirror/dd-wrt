@@ -204,7 +204,7 @@ void start_dhcp6c(void)
 
 	}
 #endif
-	eval("dhcp6c", "-c", "/tmp/dhcp6c.conf", "-T", "LL", wan_ifname);
+	dd_logstart("dhcp6c", eval("dhcp6c", "-c", "/tmp/dhcp6c.conf", "-T", "LL", wan_ifname));
 }
 
 void stop_dhcp6c(void)
@@ -293,7 +293,7 @@ void start_dhcp6s(void)
 		fclose(fp);
 	}
 
-	eval("dhcp6s", "-c", "/tmp/dhcp6s.conf", nvram_safe_get("lan_ifname"));
+	dd_logstart("dhcp6s", eval("dhcp6s", "-c", "/tmp/dhcp6s.conf", nvram_safe_get("lan_ifname")));
 }
 
 void stop_dhcp6s(void)
