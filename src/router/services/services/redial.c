@@ -75,8 +75,7 @@ void start_redial(void)
 	mkdir("/tmp/ppp", 0777);
 	symlink("/sbin/rc", "/tmp/ppp/redial");
 
-	ret = _evalpid(redial_argv, NULL, 0, NULL);
-	dd_loginfo("ppp_redial", "redial process successfully started\n");
+	dd_logstart("ppp_redial", _evalpid(redial_argv, NULL, 0, NULL));
 
 	cprintf("done\n");
 	return;

@@ -43,8 +43,7 @@ void start_rstats(void)
 
 	if (nvram_matchi("rstats_enable", 1)) {
 		stop_rstats();
-		eval("rstats");
-		dd_loginfo("rstats", "daemon successfully started\n");
+		dd_logstart("rstats", eval("rstats"));
 	}
 }
 

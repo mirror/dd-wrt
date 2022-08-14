@@ -41,8 +41,7 @@ char *notifier_proc(void)
 void start_notifier(void)
 {
 	if (nvram_match("warn_enabled", "1")) {
-		eval("notifier");
-		dd_loginfo("notifier", "daemon successfully started\n");
+		dd_logstart("notifier", eval("notifier"));
 	}
 	return;
 }

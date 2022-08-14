@@ -235,8 +235,7 @@ void start_aoss(void)
 	if (hasaoss) {
 		eval("iptables", "-I", "OUTPUT", "-o", "aoss", "-j", "ACCEPT");
 		eval("iptables", "-I", "INPUT", "-i", "aoss", "-j", "ACCEPT");
-		ret = eval("aoss", "-i", "aoss", "-m", "ap");
-		dd_loginfo("aoss", "daemon successfully started\n");
+		dd_logstart("aoss", eval("aoss", "-i", "aoss", "-m", "ap"));
 	} else
 		dd_loginfo("aoss", "daemon not started (operation mode is not AP or WDSAP)\n");
 

@@ -712,8 +712,7 @@ static int bird_init(void)
 		}
 		fclose(fp);
 
-		eval("bird", "-c", "/tmp/bird/bird.conf");
-		dd_loginfo("bird", "daemon successfully started\n");
+		dd_logstart("bird", eval("bird", "-c", "/tmp/bird/bird.conf"));
 	}
 	return 0;
 

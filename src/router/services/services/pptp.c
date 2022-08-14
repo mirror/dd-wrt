@@ -253,9 +253,8 @@ void start_pptpd(void)
 
 	start_pppmodules();
 	// Execute pptpd daemon
-	eval("pptpd", "-c", "/tmp/pptpd/pptpd.conf", "-o", "/tmp/pptpd/options.pptpd");
+	dd_logstart("pptpd", eval("pptpd", "-c", "/tmp/pptpd/pptpd.conf", "-o", "/tmp/pptpd/options.pptpd"));
 
-	dd_loginfo("pptpd", "daemon successfully started\n");
 	return;
 }
 

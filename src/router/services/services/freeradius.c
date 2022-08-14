@@ -167,9 +167,7 @@ void start_freeradius(void)
 		}
 	}
 	if (reload_process("dnsmasq", "dnsmasq")) {
-		ret = _evalpid(radiusd_argv, NULL, 0, NULL);
-
-		dd_loginfo("freeradius", "daemon successfully started\n");
+		dd_logstart("freeradius", _evalpid(radiusd_argv, NULL, 0, NULL));
 	}
 
 	return;

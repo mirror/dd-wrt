@@ -285,8 +285,7 @@ void start_ddns(void)
 	}
 	// call uname and pass directly, otherwise complex usernames (with # i.e.) does not work
 	// we are on a single user system.
-	ret = sysprintf("inadyn -u \'%s\' -p \'%s\' --input_file /tmp/ddns/inadyn.conf", nvram_safe_get(_username), nvram_safe_get(_passwd));
-	dd_loginfo("ddns", "inadyn daemon successfully started\n");
+	dd_logstart("ddns", eval("inadyn", "-u", nvram_safe_get(_username), "-p", nvram_safe_get(_passwd), "--input_file", "/tmp/ddns/inadyn.conf"));
 
 	cprintf("done\n");
 
