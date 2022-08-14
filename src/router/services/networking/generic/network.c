@@ -488,7 +488,7 @@ void run_dhcpc(char *wan_ifname, char *pidfile, char *script, int fork, int leas
 
 	}
 #endif
-	_evalpid(dhcp_argv, NULL, 0, &pid);
+	dd_logstart("udhcpc", _evalpid(dhcp_argv, NULL, 0, &pid));
 
 	if (s_auth)
 		free(s_auth);
@@ -610,7 +610,7 @@ static void do_portsetup(char *lan, char *ifname)
 	} else {
 		nvram_set("sfe", "0");
 		ifconfig(ifname, IFUP, nvram_nget("%s_ipaddr", IFMAP(ifname)), nvram_nget("%s_netmask", ifname));
-		eval("gratarp", ifname);
+		dd_logstart("gratarp", eval("gratarp", ifname));
 	}
 
 }
@@ -2374,7 +2374,7 @@ void start_lan(void)
 #ifdef HAVE_QTN
 	start_qtn();		//bootup quantenna firmware
 #endif
-	eval("gratarp", lan_ifname);
+	dd_logstart("gratarp", eval("gratarp", lan_ifname));
 
 	cprintf("%s %s\n", nvram_safe_get("lan_ipaddr"), nvram_safe_get("lan_netmask"));
 
@@ -3671,7 +3671,7 @@ void run_wan(int status)
 				fclose(fp);
 				start_pppmodules();
 
-				eval("pppd", "file", "/tmp/ppp/options.pppoe");
+				dd_logstart("pppd", eval("pppd", "file", "/tmp/ppp/options.pppoe"));
 
 				/*
 				 * Pretend that the WAN interface is up 
@@ -3964,7 +3964,7 @@ void run_wan(int status)
 #endif
 		stop_process("pppd", "PPP daemon");
 		start_pppmodules();
-		eval("pppd", "file", "/tmp/ppp/options.pppoe");
+		dd_logstart("pppd", eval("pppd", "file", "/tmp/ppp/options.pppoe"));
 
 		// This is horrible.
 		// What if pppoe recconects with ppp1?
@@ -4178,7 +4178,7 @@ void run_wan(int status)
 #endif
 		stop_process("pppd", "PPP daemon");
 		start_pppmodules();
-		eval("pppd", "file", "/tmp/ppp/options.pppoa");
+		dd_logstart("pppd", eval("pppd", "file", "/tmp/ppp/options.pppoa"));
 
 		/*
 		 * Pretend that the WAN interface is up 
@@ -4249,8 +4249,8 @@ void run_wan(int status)
 		stop_process("ipheth-loop", "IPhone Pairing daemon");
 		stop_process("usbmuxd", "IPhone Mux daemon");
 		stop_process("udhcpc", "DHCP Client");
-		eval("usbmuxd");
-		eval("ipheth-pair");
+		dd_logstart("usbmuxd", eval("usbmuxd"));
+		dd_logstart("ipheth-pair", eval("ipheth-pair"));
 		eval("ifconfig", "iph0", "up");
 		run_dhcpc("iph0", NULL, NULL, 1, 0, 0);
 		if (status != REDIAL) {
@@ -4296,7 +4296,7 @@ void run_wan(int status)
 	else {
 		ifconfig(wan_ifname, IFUP, nvram_safe_get("wan_ipaddr"), nvram_safe_get("wan_netmask"));
 		wan_done(wan_ifname);
-		eval("gratarp", wan_ifname);
+		dd_logstart("gratarp", eval("gratarp", wan_ifname));
 	}
 	cprintf("dhcp client ready\n");
 
