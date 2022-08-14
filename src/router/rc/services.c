@@ -740,7 +740,7 @@ static void handle_services(void)
 	start_service_force_f("mactelnetd");
 #endif
 #ifdef HAVE_SNMP
-	start_service_force_f("snmp");
+	restart_f("snmp");
 #endif
 #ifdef HAVE_LLTD
 	restart_f("lltd");
