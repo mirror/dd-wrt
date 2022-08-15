@@ -1191,6 +1191,8 @@ cleanup:
 	-cd $(INSTALLDIR)/www && rm -f *.asp *.svg *.htm *.html *.css *.js *.ico help/*.asp help/*.png help/*.css images/*.gif ddwrt_inspired_themes/*.css ddwrt_inspired_themes/*.stylus images/*.png images/*.jpg images/*.ico style/*.css style/*.png style/*.jpg style/*/* images/*/*.png images/*/*.gif js/* lang_pack/* intatstart/js/* intatstart/css/* intatstart/css/images/* intatstart/lang_pack/* intatstart/config/*
 	rm -rf $(INSTALLDIR)/www/images
 	rm -rf $(INSTALLDIR)/www/help
+	rm -rf $(INSTALLDIR)/www/style/syslogd
+	rm -rf $(INSTALLDIR)/www/ddwrt_inspired_themes
 	rm -rf $(INSTALLDIR)/www/js
 	rm -rf $(INSTALLDIR)/www/lang_pack
 	-rm -rf $(INSTALLDIR)/www/intatstart
