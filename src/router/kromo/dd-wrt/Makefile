@@ -43,7 +43,7 @@ endif
 
 ifeq ($(CONFIG_DIST),"micro-special")
 	rm -f $(INSTALLDIR)/www/favicon.ico
-	rm -f $(INSTALLDIR)/www/images/dd-logo.png
+#	rm -f $(INSTALLDIR)/www/images/dd-logo.png
 	rm -f $(INSTALLDIR)/www/images/valid-xhtml10.png
 ifneq ($(CONFIG_COMPRESSEDJS),y)
 	cp common_micro.js $(INSTALLDIR)/www/common.js
@@ -322,7 +322,7 @@ ifeq ($(CONFIG_CESAR),y)
 	cp cesar/style.css $(INSTALLDIR)/www/style/cesar
 	cp cesar/style_ie.css $(INSTALLDIR)/www/style/cesar
 	cp cesar/common.css $(INSTALLDIR)/www/style
-	cp cesar/logo.png $(INSTALLDIR)/www/style
+	cp cesar/logo.png $(INSTALLDIR)/www/images
 endif
 
 ifeq ($(CONFIG_ALEDR),y)
@@ -389,7 +389,7 @@ ifeq ($(CONFIG_34TELECOM),y)
 #	cp common_style/common_style_ie.css $(INSTALLDIR)/www/style/cyan
 	cp 34telecom/common.css $(INSTALLDIR)/www/style
 #	cp common_style/common_style_ie.css $(INSTALLDIR)/www/style
-	cp -f 34telecom/logo.png $(INSTALLDIR)/www/style/
+	cp -f 34telecom/logo.png $(INSTALLDIR)/www/images
 else
 
 ifeq ($(CONFIG_PWC),y)
@@ -416,10 +416,10 @@ ifeq ($(CONFIG_SKYTEL),y)
 endif
 
 ifeq ($(CONFIG_NEWMEDIA),y)
-	cp -f nmn/nmn_logo.png $(INSTALLDIR)/www/style/logo.png
+	cp -f nmn/nmn_logo.png $(INSTALLDIR)/www/images/logo.png
 endif
 ifeq ($(CONFIG_MYNETWAY),y)
-	cp -f mynetway/logo.png $(INSTALLDIR)/www/style/logo.png
+	cp -f mynetway/logo.png $(INSTALLDIR)/www/images/logo.png
 endif
 ifeq ($(CONFIG_WIKINGS),y)
 	mkdir $(INSTALLDIR)/www/style/wikings
@@ -464,10 +464,10 @@ ifeq ($(CONFIG_NEXTMEDIA),y)
 	rm -f $(INSTALLDIR)/www/favicon.ico
 endif
 ifeq ($(CONFIG_ALLNETWRT),y)
-	cp -f allnet/logo.png $(INSTALLDIR)/www/style/logo.png
+	cp -f allnet/logo.png $(INSTALLDIR)/www/images/logo.png
 endif
 ifeq ($(CONFIG_ALLNET),y)
-	cp -f allnet/logo.png $(INSTALLDIR)/www/style/logo.png
+	cp -f allnet/logo.png $(INSTALLDIR)/www/images/logo.png
 endif
 
 #ifeq ($(CONFIG_SPUTNIK),y)
@@ -559,15 +559,15 @@ ifeq ($(CONFIG_GLAUCO),y)
 endif
 
 ifeq ($(CONFIG_GGEW),y)
-	cp -f ggew/logo.png $(INSTALLDIR)/www/style/logo.png
+	cp -f ggew/logo.png $(INSTALLDIR)/www/images/logo.png
 endif
 ifeq ($(CONFIG_DDLAN),y)
-	cp -f ddlan/logo.png $(INSTALLDIR)/www/style/logo.png
+	cp -f ddlan/logo.png $(INSTALLDIR)/www/images/logo.png
 ifeq ($(CONFIG_NS5),y)
-	cp -f ddlan/logo_ns5.png $(INSTALLDIR)/www/style/logo.png
+	cp -f ddlan/logo_ns5.png $(INSTALLDIR)/www/images/logo.png
 endif
 ifeq ($(CONFIG_NS2),y)
-	cp -f ddlan/logo_ns2.png $(INSTALLDIR)/www/style/logo.png
+	cp -f ddlan/logo_ns2.png $(INSTALLDIR)/www/images/logo.png
 endif
 	cp -f ddlan/common.css $(INSTALLDIR)/www/style
 endif
@@ -586,18 +586,18 @@ ifeq ($(CONFIG_MAKSAT_CORAL_ELEGANT),y)
  endif
 endif
 ifeq ($(CONFIG_TRIMAX),y)
-	cp -f trimax/logo.png $(INSTALLDIR)/www/style/logo.png
+	cp -f trimax/logo.png $(INSTALLDIR)/www/images/logo.png
 	cp -f trimax/favicon.ico $(INSTALLDIR)/www/favicon.ico
 endif
 ifeq ($(CONFIG_CNC),y)
 	cp -f cnc/common.js $(INSTALLDIR)/www/common.js
-	cp -f cnc/logo.png $(INSTALLDIR)/www/style/logo.png
+	cp -f cnc/logo.png $(INSTALLDIR)/www/images/logo.png
 	cp -f cnc/logo.png $(INSTALLDIR)/www/images/logo.png
 endif
 ifeq ($(CONFIG_MAKSAT),y)
  ifeq ($(CONFIG_MAKSAT_BLANK),y)
 	cp -f maksat/blank/maksat_logo_help.png $(INSTALLDIR)/www/help/logo-help.png
-	cp -f maksat/blank/logo.png $(INSTALLDIR)/www/style/logo.png
+	cp -f maksat/blank/logo.png $(INSTALLDIR)/www/images/logo.png
 	cp -f maksat/blank/logo.png $(INSTALLDIR)/www/images/logo.png
 	cp -f maksat/SuperChannel.asp $(INSTALLDIR)/www
 	cp -f maksat/favicon.ico $(INSTALLDIR)/www/favicon.ico
@@ -609,7 +609,7 @@ ifeq ($(CONFIG_MAKSAT),y)
 	cp -f maksat/help/index.asp $(INSTALLDIR)/www/help/index.asp
  else
 	cp -f maksat/SuperChannel.asp $(INSTALLDIR)/www
-	cp -f maksat/logo.png $(INSTALLDIR)/www/style/logo.png
+	cp -f maksat/logo.png $(INSTALLDIR)/www/images/logo.png
 	cp -f maksat/logo.png $(INSTALLDIR)/www/images/logo.png
 	cp -f maksat/maksat_logo_help.png $(INSTALLDIR)/www/help/logo-help.png
 	cp -f maksat/favicon.ico $(INSTALLDIR)/www/favicon.ico
@@ -627,7 +627,7 @@ ifeq ($(CONFIG_MAKSAT),y)
  endif
 endif
 ifeq ($(CONFIG_TMK),y)
-	cp -f kmt/logo.png $(INSTALLDIR)/www/style/logo.png
+	cp -f kmt/logo.png $(INSTALLDIR)/www/images/logo.png
 	cp -f kmt/logo.png $(INSTALLDIR)/www/images/logo.png
 	cp -f kmt/kmt_logo_help.png $(INSTALLDIR)/www/help/logo-help.png
 	cp -f kmt/favicon.ico $(INSTALLDIR)/www/favicon.ico
@@ -653,7 +653,7 @@ endif
 ifeq ($(CONFIG_BKM),y)
 	cp -f bkm/SuperChannel.asp $(INSTALLDIR)/www
 	cp -f bkm/Wiviz_Survey.asp $(INSTALLDIR)/www
-	cp -f bkm/logo.png $(INSTALLDIR)/www/style/logo.png
+	cp -f bkm/logo.png $(INSTALLDIR)/www/images/logo.png
 	cp -f bkm/logo.png $(INSTALLDIR)/www/images/logo.png
 	cp -f bkm/bkm_logo_help.png $(INSTALLDIR)/www/help/logo-help.png
 	cp -f bkm/favicon.ico $(INSTALLDIR)/www/favicon.ico
@@ -738,15 +738,15 @@ endif
 
 
 ifeq ($(CONFIG_KODATA),y)
-	cp -f kodata/logo.png $(INSTALLDIR)/www/style/logo.png
+	cp -f kodata/logo.png $(INSTALLDIR)/www/images/logo.png
 endif
 
 ifeq ($(CONFIG_THOM),y)
-	cp -f thom/logo.png $(INSTALLDIR)/www/style/logo.png
+	cp -f thom/logo.png $(INSTALLDIR)/www/images/logo.png
 endif
 
 ifeq ($(CONFIG_CARLSONWIRELESS),y)
-	cp -f carlsonwireless/logo.png $(INSTALLDIR)/www/style/logo.png
+	cp -f carlsonwireless/logo.png $(INSTALLDIR)/www/images/logo.png
 	cp -f carlsonwireless/logo-help.png $(INSTALLDIR)/www/help/logo-help.png
 	cp -f carlsonwireless/dd-logo.png $(INSTALLDIR)/www/images/dd-logo.png
 	cp -f carlsonwireless/*.asp $(INSTALLDIR)/www
