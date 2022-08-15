@@ -8,7 +8,7 @@
           <th class="t-border thc">The <b>Mini</b></th>
         </tr>
         <tr>
-          <td>Includes the same features of the standard distribution, with the exception of chillispot, nocat, rflow, kaid, CIFS client, SNMP, IPv6, and MMC/SD card support.</td>
+          <td>Includes the same features of the standard distribution, with the exception of chillispot, nocat, rflow<!--, kaid-->, CIFS client, SNMP, IPv6, and MMC/SD card support.</td>
         </tr>
         <tr>
           <th class="t-border thc">The <b>Standard</b></th>
@@ -20,19 +20,19 @@
           <th class="t-border thc">The <b>Standard Nokaid</b></th>
         </tr>
         <tr>
-          <td>The (std-nokaid) includes the same features of the standard distribution, <i>with kaid removed</i> to free some flash space.</td>
+          <td>The (std-nokaid) includes the same features of the standard distribution,<!-- <i>without kaid</i>--> to free some flash space.</td>
         </tr>
         <tr>
           <th class="t-border thc">The <b>VOIP</b></th>
         </tr>
         <tr>
-          <td>This includes all features, <i>with kaid removed</i> to make room for Milkfish.</td>
+          <td>This includes all features<!--, except without<i>kaid</i>-->.</td>
         </tr>
         <tr>
           <th class="t-border thc">The <b>VPN</b></th>
         </tr>
         <tr>
-          <td>It includes OpenVPN but <i>does not</i> include IPv6, CIFS client, or kaid.</td>
+          <td>It includes OpenVPN but <i>does not</i> include IPv6, CIFS client<!--, or kaid-->.</td>
         </tr>
         <tr>
           <th class="t-border thc">The <b>Micro</b></th>
@@ -60,8 +60,9 @@
         <div>Spanish : <i>SuperWebon</i></div>
         <div>Swedish : <i>Joensson Joergen, Shervin Babavand</i></div>
       </p>
+      <% ifndef("MICRO", "<!--"); %>
       <p><a href="https://github.com/style-it-themes/dd-wrt-inspired-themes" target="_new"><b>DD-WRT Inspired Themes</b></a> &copy; 2021 Style-it-themes: the-j0k3r</p>
-
+      <% ifndef("MICRO", "-->"); %>
       <p><a href="https://www.dd-wrt.com" target="_new">DD-WRT Homepage</a> - <a href="https://forum.dd-wrt.com/phpBB2/" target="_new">Forum</a> - <a href="https://forum.dd-wrt.com/wiki/index.php/Main_Page" target="_new">Wiki</a> - <a href="https://svn.dd-wrt.com/" target="_new">Bugtracker</a><br /><br />
         <% ifdef("MICRO", "<!--"); %>
         <img src="images/valid-xhtml10.png" alt="Valid XHTML 1.0 Strict" />
