@@ -132,7 +132,7 @@ select[name*='bonding'], select[name*='schedule_'],
   height: 6.612em;
 }
 #header #logo {
-  background: url(logo.png) left center no-repeat;
+  background: url(/images/logo.png) left center no-repeat;
   height: 4.076em;
   width: 454px;
   margin-bottom: .272em;

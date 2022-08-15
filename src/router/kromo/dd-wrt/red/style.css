@@ -1,11 +1,11 @@
 @import url(../common.css);
 /*! Red */
 ::selection {
-  background: #ff1f1f;
+  background: #e90519;
   color: #000;
 }
 #menuSub, #menuMainList li span, #help h2 {
-  background: #ff1f1f;
+  background: #e90519;
   border-color: #ff4545;
   color: #000;
 }
@@ -20,19 +20,19 @@
   color: #000;
 }
 fieldset legend, .syslog_legend {
-  color: #ff1f1f;
+  color: #c00;
 }
 #help a, #help a:hover, .meter .text {
   color: #000;
 }
 .meter .bar {
-  background-color: #ff1f1f;
+  background-color: #e90519;
 }
 .progressbarblock {
-  background-color: #ff1f1f;
+  background-color: #e90519;
 }
 input.button, input.button[disabled]:hover {
-  background: #ff1f1f;
+  background: #e90519;
   border: 1px solid #ff4545;
   color: #000;
 }
