@@ -2,6 +2,8 @@ obj-y += time.o timer.o hrtimer.o itimer.o posix-timers.o posix-cpu-timers.o
 obj-y += timekeeping.o ntp.o clocksource.o jiffies.o timer_list.o
 obj-y += timeconv.o posix-clock.o alarmtimer.o
 
+CFLAGS_timer.o = $(DISABLE_LTO)
+
 obj-$(CONFIG_GENERIC_CLOCKEVENTS_BUILD)		+= clockevents.o
 obj-$(CONFIG_GENERIC_CLOCKEVENTS)		+= tick-common.o
 ifeq ($(CONFIG_GENERIC_CLOCKEVENTS_BROADCAST),y)

@@ -380,6 +380,9 @@ config PERU
 config RAMBUTAN
 	bool "support for 8devices Rambutan"
 	depends on WR841V8
+config DW02_412H
+	bool "support for DW02_412H"
+	depends on RAMBUTAN
 config FMS2111
 	bool "support for FMS2111"
 	depends on MACH_HORNET
