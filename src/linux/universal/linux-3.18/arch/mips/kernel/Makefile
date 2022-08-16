@@ -132,4 +132,4 @@ CFLAGS_branch.o			= $(CFLAGS_DSP)
 CFLAGS_ptrace.o			= $(CFLAGS_DSP)
 endif
 
-CPPFLAGS_vmlinux.lds		:= $(KBUILD_CFLAGS)
+CPPFLAGS_vmlinux.lds		:= $(KBUILD_CFLAGS) $(DISABLE_LTO)
