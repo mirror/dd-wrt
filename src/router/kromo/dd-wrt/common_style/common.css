@@ -194,7 +194,7 @@ pre {
   white-space: pre-wrap;
   border-radius: 4px;
 }
-table {
+table, .table {
   margin: 0 auto;
   width: 100%;
   border-spacing: .1em;
@@ -253,7 +253,7 @@ form[name='wds'] input[size='25'] {
 form[name="wireless"] select {
   min-width: 9.7rem
 }
-form[name="wireless"] input[name*="ssid"] {
+form[name="wireless"] input[name*='ssid'] {
   min-width: 9.1rem
 }
 select {
@@ -440,9 +440,6 @@ input.button {
   height: 1.6rem;
   vertical-align: middle;
   cursor: pointer;
-}
-input.button:hover, input.button:focus {
-  text-decoration: none;
 }
 input.button[disabled],
 input[disabled], select[disabled] {

@@ -1,5 +1,5 @@
 /*
- * style-name: DD-WRT Inspired Themes v6.0.7
+ * style-name: DD-WRT Inspired Themes v6.0.8
  * copyright: (c) Style-it-themes: the-j0k3r
  * license: MIT https://git.io/JrzcO
  * home-url: https: //github.com/style-it-themes/dd-wrt-inspired-themes
@@ -470,27 +470,30 @@ textarea:focus-visible {
   color: var(--v9-7);
   padding-top: 0.1rem;
 }
-.syslog_bg tr:not([bgcolor]):hover {
+.syslog_bg tr:not([class]):hover {
   background: var(--bg-2);
   color: var(--v9-9);
 }
-.syslog_bg tr[bgcolor='#eec900'] {
+.syslog_bg tr.syslog_bg_yellow {
   background-color: var(--v3-6);
 }
-.syslog_bg tr[bgcolor='#eec900']:hover {
+.syslog_bg tr.syslog_bg_yellow:hover {
   background-color: var(--v3-5);
 }
-.syslog_bg tr[bgcolor='#ff6666'] {
+.syslog_bg tr.syslog_bg_red {
   background-color: var(--v1-9);
 }
-.syslog_bg tr[bgcolor='#ff6666']:hover {
+.syslog_bg tr.syslog_bg_red:hover {
   background-color: var(--v1-8);
 }
-.syslog_bg tr[bgcolor='#35ee00'] {
+.syslog_bg tr.syslog_bg_green {
   background-color: var(--v4-6);
 }
-.syslog_bg tr[bgcolor='#35ee00']:hover {
+.syslog_bg tr.syslog_bg_green:hover {
   background-color: var(--v4-5);
+}
+.syslog_bg tr td.syslog_text_dark {
+  color: var(--v9-0);
 }
 table[bgcolor='#FFFFFF'] {
   background-color: var(--bg-0);
@@ -498,11 +501,11 @@ table[bgcolor='#FFFFFF'] {
 table[bordercolor='#000000'] {
   border-color: var(--bg-4);
 }
-table tr:not([bgcolor]):hover,
-table tr:not([bgcolor]):focus-within {
+table tr:not([bgcolor]):not([class]):hover,
+table tr:not([bgcolor]):not([class]):focus-within {
   background-color: transparent;
 }
-table tr:not([bgcolor]) th {
+table tr:not([bgcolor]):not([class]) th {
   background-color: var(--bg-5);
   border-color: var(--bg-5);
   color: var(--fg-1);
