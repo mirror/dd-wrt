@@ -94,7 +94,7 @@ void ap91_pci_init(u8 *cal_data, u8 *mac_addr)
 #endif
 #endif
 	ar71xx_pci_init();
-#ifdef CONFIG_MTD_NAND_ATH
+#if defined(CONFIG_MTD_NAND_ATH)
 	pcibios_init();
 #endif
 }

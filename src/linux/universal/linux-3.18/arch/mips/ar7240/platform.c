@@ -825,6 +825,7 @@ static struct mdio_board_info db120_mdio0_info[] = {
 };
 
 static struct ar8327_pad_cfg wdr4300_ar8327_pad0_cfg = {
+	.mac06_exchange_dis = true,
 	.mode = AR8327_PAD_MAC_RGMII,
 	.txclk_delay_en = true,
 	.rxclk_delay_en = true,
@@ -833,7 +834,11 @@ static struct ar8327_pad_cfg wdr4300_ar8327_pad0_cfg = {
 };
 
 static struct ar8327_led_cfg wdr4300_ar8327_led_cfg = {
+#ifdef CONFIG_DW02_412H
+	.led_ctrl0 = 0xcf37cf37,
+#else
 	.led_ctrl0 = 0xc737c737,
+#endif
 	.led_ctrl1 = 0x00000000,
 	.led_ctrl2 = 0x00000000,
 	.led_ctrl3 = 0x0030c300,
@@ -1275,7 +1280,9 @@ int __init ar7240_platform_init(void)
 #else
 	u8 *mac = NULL;		//(u8 *) KSEG1ADDR(0x1fff0000);
 #endif
-
+#if defined(CONFIG_DW02_412H)
+	mac = (u8 *)KSEG1ADDR(0x1fff0000);
+#endif
 #if defined(CONFIG_AR7242_RTL8309G_PHY) || defined(CONFIG_DIR615E)
 #ifdef CONFIG_DIR615E
 	const char *config = (char *)KSEG1ADDR(0x1f030000);
@@ -1348,6 +1355,8 @@ int __init ar7240_platform_init(void)
 	ee = (u8 *)KSEG1ADDR(0x1f051000);
     #elif defined(CONFIG_DIR825C1)
 	u8 *art = (u8 *)KSEG1ADDR(0x1fff1000);
+    #elif defined(CONFIG_DW02_412H)
+                u8 *art = (u8 *) KSEG1ADDR(0x1fff1000);
     #elif defined(CONFIG_WR841V8)
 //              u8 *art = (u8 *) KSEG1ADDR(0x1fff1000);
     #elif defined(CONFIG_WR810N)
@@ -1527,6 +1536,9 @@ int __init ar7240_platform_init(void)
 	__raw_writel(t, base + AR933X_GMAC_REG_ETH_CFG);
 	iounmap(base);
 	
+    #elif CONFIG_DW02_412H
+//    	ap136_gmac_setup(QCA955X_ETH_CFG_RGMII_EN | QCA955X_ETH_CFG_GE0_SGMII  | (3 << QCA955X_ETH_CFG_RXD_DELAY_SHIFT) | (3 << QCA955X_ETH_CFG_RDV_DELAY_SHIFT) | (QCA955X_ETH_CFG_TXE_DELAY_SHIFT << 3) | (QCA955X_ETH_CFG_TXD_DELAY_SHIFT << 3));
+    	ap136_gmac_setup(QCA955X_ETH_CFG_RGMII_EN);
     #elif CONFIG_RAMBUTAN
 //	ath79_setup_qca955x_eth_cfg(QCA955X_ETH_CFG_RGMII_EN);
     #elif CONFIG_LIMA
@@ -2001,6 +2013,19 @@ int __init ar7240_platform_init(void)
 	ar71xx_eth1_data.speed = SPEED_1000;
 	ar71xx_switch_data.phy_poll_mask |= BIT(4);
 	ar71xx_add_device_eth(1);
+    #elif CONFIG_DW02_412H
+	mdiobus_register_board_info(wdr4300_mdio0_info,
+				    ARRAY_SIZE(wdr4300_mdio0_info));
+	ar71xx_add_device_mdio(0, 0x0);
+
+	ar71xx_eth0_data.phy_if_mode = PHY_INTERFACE_MODE_RGMII;
+	ar71xx_eth0_data.phy_mask = BIT(0);
+	ar71xx_eth0_data.mii_bus_dev = &ar71xx_mdio0_device.dev;
+	ar71xx_eth0_pll_data.pll_1000 = 0xa6000000;
+	ar71xx_eth0_pll_data.pll_100 = 0x101;
+	ar71xx_eth0_pll_data.pll_10 = 0x1616;
+	ar71xx_add_device_eth(0);
+
     #elif CONFIG_RAMBUTAN
 	mdiobus_register_board_info(rambutan_mdio0_info,
 				    ARRAY_SIZE(rambutan_mdio0_info));
@@ -2334,7 +2359,7 @@ int __init ar7240_platform_init(void)
 	ee = (u8 *)KSEG1ADDR(0x1fff1000);
 	ar9xxx_add_device_wmac(ee, mac);
 #elif CONFIG_WASP_SUPPORT
-#if !defined(CONFIG_MTD_NAND_ATH)
+#if !defined(CONFIG_MTD_NAND_ATH) || defined(CONFIG_DW02_412H)
 	if (!ee)
 	    ee = (u8 *)KSEG1ADDR(0x1fff1000);
 #if defined(CONFIG_DIR862)
@@ -2370,6 +2395,8 @@ int __init ar7240_platform_init(void)
 	ap91_pci_init(ee + 0x4000, mac1);
 #elif defined(CONFIG_ARCHERC25)
 	ap91_pci_init(NULL, NULL);
+#elif defined(CONFIG_DW02_412H)
+	ap91_pci_init(NULL, NULL);
 #elif !defined(CONFIG_DIR615I) && !defined(CONFIG_WR841V8) || defined(CONFIG_LIMA)
 	ap91_pci_init(NULL, NULL);
 #endif
@@ -2394,11 +2421,12 @@ int __init ar7240_platform_init(void)
 #endif
 	return ret;
 }
+int pcibios_init(void);
 
 #if defined(CONFIG_MTD_NAND_ATH)
 void nand_postinit(struct mtd_info *mtd)
 {
-
+#ifndef CONFIG_DW02_412H
 	u8 *ee = (u8 *)kmalloc(0x9000, GFP_ATOMIC);
 	int i;
 	int mtdlen;
@@ -2410,6 +2438,7 @@ void nand_postinit(struct mtd_info *mtd)
 	mtd_read(mtd, 0x80000, 0x9000, &mtdlen, ee);
 	ar9xxx_add_device_wmac(ee + 0x1000, ee + 6);
 	ap91_pci_init(ee + 0x5000, ee + 12);
+#endif
 #endif
 }
 #endif
