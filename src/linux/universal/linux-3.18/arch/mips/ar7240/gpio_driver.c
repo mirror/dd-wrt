@@ -438,7 +438,7 @@ static struct gpio_led generic_leds_gpio[] __initdata = {
 #endif
 	 },
 #endif
-#ifndef CONFIG_RAMBUTAN
+#if !defined(CONFIG_RAMBUTAN) || defined(CONFIG_DW02_412H)
 #if defined(CONFIG_MACH_HORNET) && !defined(CONFIG_ERC)
 	{
 	 .name = "generic_17",
@@ -449,7 +449,7 @@ static struct gpio_led generic_leds_gpio[] __initdata = {
 	{
 	 .name = "generic_17",
 	 .gpio = 17,
-#if defined(CONFIG_DIR615E) || defined(CONFIG_ERC) || defined(CONFIG_ARCHERC7V5) || defined(CONFIG_XD9531)
+#if defined(CONFIG_DIR615E) || defined(CONFIG_ERC) || defined(CONFIG_ARCHERC7V5) || defined(CONFIG_XD9531) || defined(CONFIG_DW02_412H)
 	 .active_low = 1,
 #elif defined(CONFIG_CPE880)
 	 .active_low = 1,
