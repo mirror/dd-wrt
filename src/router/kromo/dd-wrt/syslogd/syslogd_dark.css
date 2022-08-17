@@ -8,21 +8,9 @@
   padding: .3rem;
   margin: -.8rem -.8rem 0 -.8rem;
 }
-.syslog_bg tr:not([bgcolor]):hover {
+.syslog_bg tr:not([class]):hover {
   background: #222;
   color: #eee;
-}
-.syslog_bg tr[bgcolor='#eec900']:hover {
-  background: #dbba02;
-}
-.syslog_bg tr[bgcolor='#ff6666']:hover {
-  background: #fc5a5a;
-}
-.syslog_bg tr[bgcolor='#ff6666']:hover {
-  background: #fc5a5a;
-}
-.syslog_bg tr[bgcolor='#35ee00']:hover {
-  background: #32e202;
 }
 .syslog_legend {
   background-color: transparent;
