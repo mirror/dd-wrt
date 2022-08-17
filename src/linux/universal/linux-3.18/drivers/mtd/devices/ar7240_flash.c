@@ -225,11 +225,11 @@ static int ar7240_flash_write(struct mtd_info *mtd, loff_t to, size_t len, size_
 }
 
 static struct mtd_partition dir_parts[] = {
-#ifdef CONFIG_MTD_FLASH_16MB
+#if defined(CONFIG_MTD_FLASH_16MB)
       { name: "RedBoot", offset: 0x30000, size:0x10000, },
 	//, mask_flags: MTD_WRITEABLE, },
       { name: "linux", offset: 0x50000, size:0xf90000, },
-#elif CONFIG_MTD_FLASH_8MB
+#elif defined(CONFIG_MTD_FLASH_8MB)
       { name: "RedBoot", offset: 0x30000, size:0x10000, },
 	//, mask_flags: MTD_WRITEABLE, },
       { name: "linux", offset: 0x50000, size:0x790000, },
@@ -250,6 +250,15 @@ static struct mtd_partition dir_parts[] = {
       { name:NULL, },
 };
 
+#define BOOT 0
+#define LINUX 1
+#define ROOTFS 2
+#define DDWRT 3
+#define NVRAM 4
+#define BOARD_CONFIG 5
+#define FULLFLASH 6
+#define FULLBOOT 7
+#define ENV 8
 struct fis_image_desc {
 	unsigned char name[16];	// Null terminated name
 	unsigned long flash_base;	// Address within FLASH of image
@@ -328,14 +337,15 @@ static int __init ar7240_flash_init(void)
 		guess = guessbootsize(buf, mtd->size);
 		if (guess > 0) {
 			printk(KERN_EMERG "guessed bootloader size = %X\n", guess);
-			dir_parts[0].offset = 0;
-			dir_parts[0].size = guess;
-			dir_parts[7].size = guess;
-			dir_parts[1].offset = guess;
-			dir_parts[1].size = 0;
-			dir_parts[8].offset = guess - mtd->erasesize;
-			dir_parts[8].size = mtd->erasesize;
+			dir_parts[BOOT].offset = 0;
+			dir_parts[BOOT].size = guess;
+			dir_parts[FULLBOOT].size = guess;
+			dir_parts[LINUX].offset = guess;
+			dir_parts[LINUX].size = 0;
+			dir_parts[ENV].offset = guess - mtd->erasesize;
+			dir_parts[ENV].size = mtd->erasesize;
 		}
+		int sqsfound = 0;
 		while ((offset + mtd->erasesize) < mtd->size) {
 //                      printk(KERN_EMERG "[0x%08X] = [0x%08X]!=[0x%08X]\n",offset,*((unsigned int *) buf),SQUASHFS_MAGIC);
 			__u32 *check2 = (__u32 *)&buf[0x60];
@@ -355,49 +365,59 @@ static int __init ar7240_flash_init(void)
 				sb = (struct squashfs_super_block *)buf;
 				if (le16_to_cpu(sb->compression) != 4) {
 					printk(KERN_EMERG "ignore compression type %d\n", le16_to_cpu(sb->compression));
+					offset += 4096;
+					buf += 4096;
 					continue;
 				}
-				dir_parts[2].offset = offset;
+				sqsfound = 1;
+				dir_parts[ROOTFS].offset = offset;
 
-				dir_parts[2].size = le64_to_cpu(sb->bytes_used);
-				origlen = dir_parts[2].offset + dir_parts[2].size;
+				dir_parts[ROOTFS].size = le64_to_cpu(sb->bytes_used);
+				origlen = dir_parts[ROOTFS].offset + dir_parts[ROOTFS].size;
 
-				len = dir_parts[2].offset + dir_parts[2].size;
+				len = dir_parts[ROOTFS].offset + dir_parts[ROOTFS].size;
 				len += (mtd->erasesize - 1);
 				len &= ~(mtd->erasesize - 1);
 				printk(KERN_INFO "adjusted length %X, original length %X\n", len, origlen);
 				if ((len - (inc + 4096)) < origlen)
 					len += mtd->erasesize;
-				dir_parts[2].size = (len & 0x1ffffff) - dir_parts[2].offset;
+				dir_parts[ROOTFS].size = (len & 0x1ffffff) - dir_parts[ROOTFS].offset;
 
-				dir_parts[3].offset = dir_parts[2].offset + dir_parts[2].size;
+				dir_parts[DDWRT].offset = dir_parts[ROOTFS].offset + dir_parts[ROOTFS].size;
 
-				dir_parts[5].offset = mtd->size - mtd->erasesize;	//fis config
-				dir_parts[5].size = mtd->erasesize;
+				dir_parts[BOARD_CONFIG].offset = mtd->size - mtd->erasesize;	//fis config
+				dir_parts[BOARD_CONFIG].size = mtd->erasesize;
 #if defined(CONFIG_ARCHERC25)
-				dir_parts[4].offset = dir_parts[5].offset - (mtd->erasesize * 3);	//nvram
-				dir_parts[4].size = mtd->erasesize;
+				dir_parts[NVRAM].offset = dir_parts[BOARD_CONFIG].offset - (mtd->erasesize * 3);	//nvram
+				dir_parts[NVRAM].size = mtd->erasesize;
 #elif defined(CONFIG_ARCHERC7V4) || defined(CONFIG_WR1043V4) || defined(CONFIG_WR1043V5)
-				dir_parts[4].offset = dir_parts[5].offset - (mtd->erasesize * 16);	//nvram
-				dir_parts[4].size = mtd->erasesize;
+				dir_parts[NVRAM].offset = dir_parts[BOARD_CONFIG].offset - (mtd->erasesize * 16);	//nvram
+				dir_parts[NVRAM].size = mtd->erasesize;
 #elif (defined(CONFIG_DIR825C1) && !defined(CONFIG_WDR4300) && !defined(CONFIG_WR1043V2) && !defined(CONFIG_WR841V8) && !defined(CONFIG_UBNTXW)) || defined(CONFIG_DIR862)
-				dir_parts[4].offset = dir_parts[5].offset - (mtd->erasesize * 2);	//nvram
-				dir_parts[4].size = mtd->erasesize;
+				dir_parts[NVRAM].offset = dir_parts[BOARD_CONFIG].offset - (mtd->erasesize * 2);	//nvram
+				dir_parts[NVRAM].size = mtd->erasesize;
 #else
-				dir_parts[4].offset = dir_parts[5].offset - (mtd->erasesize - (nocalibration * mtd->erasesize));	//nvram
-				dir_parts[4].size = mtd->erasesize;
+				dir_parts[NVRAM].offset = dir_parts[BOARD_CONFIG].offset - (mtd->erasesize - (nocalibration * mtd->erasesize));	//nvram
+				dir_parts[NVRAM].size = mtd->erasesize;
 #endif
-				dir_parts[3].size = dir_parts[4].offset - dir_parts[3].offset;
-				rootsize = dir_parts[4].offset - offset;	//size of rootfs aligned to nvram offset
-				dir_parts[1].size = (dir_parts[2].offset - dir_parts[1].offset) + rootsize;
+				dir_parts[DDWRT].size = dir_parts[NVRAM].offset - dir_parts[DDWRT].offset;
+				rootsize = dir_parts[NVRAM].offset - offset;	//size of rootfs aligned to nvram offset
+				dir_parts[LINUX].size = (dir_parts[ROOTFS].offset - dir_parts[LINUX].offset) + rootsize;
 				//now scan for linux offset
 				break;
 			}
 			offset += 4096;
 			buf += 4096;
 		}
-		dir_parts[6].offset = 0;	// linux + nvram = phy size
-		dir_parts[6].size = mtd->size;	// linux + nvram = phy size
+		dir_parts[FULLFLASH].offset = 0;	// linux + nvram = phy size
+		dir_parts[FULLFLASH].size = mtd->size;	// linux + nvram = phy size
+		if (!sqsfound) {
+		dir_parts[LINUX].name = "dummy";
+		dir_parts[NVRAM].offset = mtd->size - (mtd->erasesize * 3);
+		dir_parts[NVRAM].size = mtd->erasesize*2;
+		dir_parts[BOARD_CONFIG].offset = mtd->size - mtd->erasesize;
+		dir_parts[BOARD_CONFIG].size = mtd->erasesize;
+		}
 		result = add_mtd_partitions(mtd, dir_parts, 9);
 	}
 
