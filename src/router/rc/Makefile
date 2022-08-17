@@ -172,6 +172,9 @@ endif
 ifeq ($(CONFIG_RAMBUTAN),y)
 CFLAGS += -DHAVE_RAMBUTAN
 endif
+ifeq ($(CONFIG_DW02_412H),y)
+CFLAGS += -DHAVE_DW02_412H
+endif
 ifeq ($(CONFIG_SOLO51),y)
 CFLAGS += -DHAVE_SOLO51
 endif

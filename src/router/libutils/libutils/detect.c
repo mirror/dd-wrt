@@ -1753,6 +1753,11 @@ int internal_getRouterBrand()
 	nvram_default_get("wlan0_rxantenna", "3");
 	nvram_default_get("wlan0_txantenna", "3");
 	return ROUTER_BOARD_WHRHPGN;
+#elif HAVE_DW02_412H
+	setRouter("Dongwong DW02-412H");
+	nvram_default_get("wlan0_rxantenna", "3");
+	nvram_default_get("wlan0_txantenna", "3");
+	return ROUTER_BOARD_WHRHPGN;
 #elif HAVE_RAMBUTAN
 	setRouter("8devices Rambutan");
 	nvram_default_get("wlan0_rxantenna", "3");
@@ -2356,6 +2361,11 @@ int internal_getRouterBrand()
 	nvram_default_get("wlan0_rxantenna", "3");
 	nvram_default_get("wlan0_txantenna", "3");
 	setRouter("8devices Lima");
+	return ROUTER_BOARD_PB42;
+#elif HAVE_DW02_412H
+	nvram_default_get("wlan0_rxantenna", "3");
+	nvram_default_get("wlan0_txantenna", "3");
+	setRouter("Dongwong DW02-412H");
 	return ROUTER_BOARD_PB42;
 #elif HAVE_RAMBUTAN
 	nvram_default_get("wlan0_rxantenna", "3");
