@@ -191,6 +191,20 @@ void start_sysinit(void)
 #elif defined (HAVE_WR615N)
 #elif defined (HAVE_AP120C)
 #elif defined (HAVE_E380AC)
+#elif defined (HAVE_DW02_412H)
+	eval("swconfig", "dev", "eth0", "set", "reset", "1");
+	eval("swconfig", "dev", "eth0", "set", "enable_vlan", "1");
+	eval("swconfig", "dev", "eth0", "set", "igmp_snooping", "0");
+	eval("swconfig", "dev", "eth0", "set", "igmp_v3", "1");
+	eval("swconfig", "dev", "eth0", "vlan", "1", "set", "ports", "0t 2 3 4 5");
+	eval("swconfig", "dev", "eth0", "vlan", "2", "set", "ports", "0t 1");
+	nvram_seti("sw_lancpuport", 0);
+	nvram_seti("sw_wancpuport", 0);
+	nvram_seti("sw_wan", 1);
+	nvram_seti("sw_lan1", 2);
+	nvram_seti("sw_lan2", 3);
+	nvram_seti("sw_lan3", 4);
+	nvram_seti("sw_lan4", 5);
 #elif defined (HAVE_RAMBUTAN)
 #elif defined (HAVE_WR650AC)
 	eval("swconfig", "dev", "eth0", "set", "reset", "1");
@@ -366,7 +380,22 @@ void start_sysinit(void)
 #endif
 #endif
 	eval("swconfig", "dev", "eth0", "set", "apply");
-#if defined(HAVE_RAMBUTAN)
+#if defined(HAVE_DW02_412H)
+	fp = fopen("/dev/mtdblock/5", "rb");
+	if (fp) {
+		unsigned char buf2[256];
+		fread(buf2, 256, 1, fp);
+		fclose(fp);
+		unsigned int copy[256];
+		int i;
+		for (i = 0; i < 256; i++)
+			copy[i] = buf2[i] & 0xff;
+		sprintf(mac, "%02x:%02x:%02x:%02x:%02x:%02x", copy[0], copy[1], copy[2], copy[3], copy[4], copy[5]);
+		fprintf(stderr, "configure eth0 to %s\n", mac);
+		set_hwaddr("eth0", mac);
+
+	}
+#elif defined(HAVE_RAMBUTAN)
 	fp = fopen("/dev/mtdblock/0", "rb");
 	if (fp) {
 		fseek(fp, 0x500000, SEEK_SET);
@@ -462,11 +491,10 @@ void start_sysinit(void)
 #if defined(HAVE_ONNET) || defined(HAVE_RAYTRONIK)
 	runStartup(".onnet");
 #endif
-
 #if !defined(HAVE_WR650AC) && !defined(HAVE_E355AC) && !defined(HAVE_E325N) && !defined(HAVE_E380AC) && !defined(HAVE_WR615N)  && !defined(HAVE_AP120C) && !defined(HAVE_WILLY) && !defined(HAVE_WR810N)
 #ifndef HAVE_JWAP606
 	eval("ifconfig", "eth0", "up");
-#if (defined(HAVE_CPE880) || defined(HAVE_MMS344) || defined(HAVE_XD3200) || defined(HAVE_ARCHERC7V4)) && !defined(HAVE_DIR862)
+#if (defined(HAVE_CPE880) || defined(HAVE_MMS344) || defined(HAVE_XD3200) || defined(HAVE_ARCHERC7V4) || defined(HAVE_DW02_412H)) && !defined(HAVE_DIR862)
 	eval("vconfig", "set_name_type", "VLAN_PLUS_VID_NO_PAD");
 	eval("vconfig", "add", "eth0", "1");
 	eval("vconfig", "add", "eth0", "2");
@@ -648,6 +676,26 @@ void start_sysinit(void)
 		for (i = 0; i < 6; i++)
 			putc(mac[i], out);
 		fseek(fp, 12, SEEK_SET);
+		for (i = 0; i < 2104; i++)
+			putc(getc(fp), out);
+		fclose(fp);
+		eval("rm", "-f", "/tmp/ath10k-board.bin");
+		eval("ln", "-s", "/tmp/archerc7-board.bin", "/tmp/ath10k-board.bin");
+	}
+	fclose(out);
+#elif defined(HAVE_DW02_412H)
+	fp = fopen("/dev/mtdblock5", "rb");
+	FILE *out = fopen("/tmp/archerc7-board.bin", "wb");
+	if (fp) {
+		fseek(fp, 0x5000, SEEK_SET);
+		int i;
+		for (i = 0; i < 6; i++)
+			putc(getc(fp), out);
+		memcpy(mac, "\x00\x01\x02\x03\x04\x05", 6);
+		get_ether_hwaddr("eth0", mac);
+		for (i = 0; i < 6; i++)
+			putc(mac[i], out);
+		fseek(fp, 0x5000 + 12, SEEK_SET);
 		for (i = 0; i < 2104; i++)
 			putc(getc(fp), out);
 		fclose(fp);

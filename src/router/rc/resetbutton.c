@@ -305,6 +305,11 @@ static int getbuttonstate()
 {
 	return !get_gpio(16);
 }
+#elif defined(HAVE_DW02_412H)
+static int getbuttonstate()
+{
+	return !get_gpio(17);
+}
 #elif defined(HAVE_RAMBUTAN)
 static int getbuttonstate()
 {
