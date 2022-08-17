@@ -303,6 +303,7 @@ ath_nand_vend_data_t ath_nand_arr[] = {
 	{ 0xad, 0xda, 0x10, 5, 3, 1, 1 },	// HY2g2b
 	{ 0xec, 0xf1, 0x00, 4, 3, 1, 1 },	// Samsung 3,3V 8-bit [128MB]
 	{ 0x98, 0xd1, 0x90, 4, 3, 1, 1 },	// Toshiba
+	{ 0xc8, 0xd1, 0x80, 5, 3, 1, 1 },	// Toshiba
 	//{ 0x2c, 0x48, 0x04, 5, 4, 3, 1 },	// Micron 16GBit MLC
 };
 
@@ -896,7 +897,7 @@ ath_nand_rw_oob(struct mtd_info *mtd, int rd, loff_t addr,
 			 * page to write. We don't read the page and
 			 * update the changed portions alone.
 			 *
-			 * Hence, not checking for len < or > pgsz etc...
+			 * Hence, not checking for len < or > [5~pgsz etc...
 			 * XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX
 			 */
 			memcpy(buf, ops->datbuf, ops->len);
@@ -1143,7 +1144,7 @@ ath_parse_read_id(ath_nand_sc_t *sc)
 	extern struct nand_manufacturers nand_manuf_ids[];
 	extern struct nand_flash_dev nand_flash_ids[];
 
-	iodbg(	"____ %s _____\n"
+	printk(KERN_INFO 	"____ %s _____\n"
 		"  vid did wc  ilp nsp ct  dp  sa1 org bs  sa0 ss  "
 		"ps  res1 pls pn  res2\n"
 		"0x%3x %3x %3x %3x %3x %3x %3x %3x %3x %3x %3x %3x "
@@ -1153,7 +1154,6 @@ ath_parse_read_id(ath_nand_sc_t *sc)
 			sc->nid.org, sc->nid.bs, sc->nid.sa0, sc->nid.ss,
 			sc->nid.ps, sc->nid.res1, sc->nid.pls, sc->nid.pn,
 			sc->nid.res2);
-
 	for (i = 0; i < nand_manuf_ids[i].id; i++) {
 		if (nand_manuf_ids[i].id == sc->nid.vid) {
 			printk(nand_manuf_ids[i].name);
@@ -1161,9 +1161,17 @@ ath_parse_read_id(ath_nand_sc_t *sc)
 		}
 	}
 
-	for (i = 0; i < nand_flash_ids[i].id; i++) {
+	for (i = 0; nand_flash_ids[i].name != NULL; i++) {
 		if (nand_flash_ids[i].id == sc->nid.did) {
-			printk(" %s [%luMB]\n", nand_flash_ids[i].name,
+			printk(" %s [%uMB]\n", nand_flash_ids[i].name,
+				nand_flash_ids[i].chipsize);
+			return nand_flash_ids[i].chipsize;
+		}
+	}
+
+	for (i = 0;  nand_flash_ids[i].name != NULL; i++) {
+		if (nand_flash_ids[i].dev_id == sc->nid.did) {
+			printk(" %s [%uMB]\n", nand_flash_ids[i].name,
 				nand_flash_ids[i].chipsize);
 			return nand_flash_ids[i].chipsize;
 		}
@@ -1381,6 +1389,15 @@ ath_nand_ecc_init(struct mtd_info *mtd)
 #endif
 }
 
+#ifdef CONFIG_DW02_412H
+static struct mtd_partition dir_parts[] = {
+      {name: "linux", offset: 0x0, size:0x40000,},
+      {name: "rootfs", offset: 0x0, size:0x2b0000,},
+      {name: "ddwrt", offset: 0x0, size:0x2b0000,},
+      {name: "fullflash", offset: 0x0, size:0x10000,},
+      {name:NULL,},
+};
+#else
 static struct mtd_partition dir_parts[] = {
       {name: "RedBoot", offset: 0x0, size:0x80000,},
       {name: "linux", offset: 0x6c0000, size:0x40000,},
@@ -1391,7 +1408,7 @@ static struct mtd_partition dir_parts[] = {
       {name: "fullflash", offset: 0x0, size:0x10000,},
       {name:NULL,},
 };
-
+#endif
 static struct mtd_partition ubi_parts[] = {
       {name: "RedBoot", offset: 0x0, size:0x80000,},
       {name: "linux", offset: 0x6c0000, size:0x40000,},
@@ -1409,19 +1426,22 @@ static int ath_nand_add_partition(ath_nand_sc_t *sc)
 	struct mtd_info *mtd = &sc->mtd;
 #ifdef CONFIG_MTD
 	struct squashfs_super_block *sb;
-	uint64_t offset;
+	uint64_t offset=0;
 	char buf[512];
 	char *bbuf = NULL;
 	char *ubi = NULL;
 	int retlen;
 	unsigned int rootsize,len;
 	uint64_t base = offset + mtd->erasesize;
+//	printk(KERN_INFO "mtd size %lld\n", mtd->size);
+//	printk(KERN_INFO "mtd erasesize %d\n", mtd->erasesize);
 	while (base < mtd->size) {
-		mtd_read(mtd,offset,512,&retlen,&buf[0]);		
-		if (*((__u32 *)buf) == SQUASHFS_MAGIC_SWAP)
+		mtd_read(mtd,offset,512,&retlen,&buf[0]);
+//		printk(KERN_INFO "base 0x%16llX id %X\n", base, *((__u32 *)buf));
+		if (*((__u32 *)buf) == SQUASHFS_MAGIC_SWAP || *((__u32 *)buf) == SQUASHFS_MAGIC)
 		    bbuf = buf;
 		else
-		if (*((__u32 *)&buf[128]) == SQUASHFS_MAGIC_SWAP)
+		if (*((__u32 *)&buf[128]) == SQUASHFS_MAGIC_SWAP || *((__u32 *)buf) == SQUASHFS_MAGIC)
 		{
 		    bbuf = &buf[128];
 		    offset+=128;
@@ -1434,6 +1454,23 @@ static int ath_nand_add_partition(ath_nand_sc_t *sc)
 		    ubi = NULL;
 		}
 				    
+#ifdef CONFIG_DW02_412H
+		if (bbuf) {
+				printk(KERN_EMERG "\nfound squashfs at 0x%llX\n",offset);
+				sb = (struct squashfs_super_block *)buf;
+				dir_parts[1].offset = offset;
+				dir_parts[1].size = le64_to_cpu(sb->bytes_used);
+				len = dir_parts[1].offset + dir_parts[1].size;
+				len += (mtd->erasesize - 1);
+				len &= ~(mtd->erasesize - 1);
+				dir_parts[1].size = (len & 0x1ffffff) - dir_parts[1].offset;
+				dir_parts[2].offset = dir_parts[2].offset + dir_parts[1].size;
+				dir_parts[2].size = mtd->size - dir_parts[2].offset;
+				dir_parts[0].size = dir_parts[2].offset + dir_parts[2].size - dir_parts[0].offset; 
+				dir_parts[3].size = mtd->size;
+				break;
+		}
+#else
 		if (bbuf) {
 				printk(KERN_EMERG "\nfound squashfs at 0x%llX\n",offset);
 				sb = (struct squashfs_super_block *)buf;
@@ -1449,7 +1486,7 @@ static int ath_nand_add_partition(ath_nand_sc_t *sc)
 				dir_parts[6].size = mtd->size;
 				break;
 		}
-
+#endif
 		if (ubi) {
 				printk(KERN_EMERG "\nfound ubifs at 0x%llX\n",offset);
 				ubi_parts[0].size = offset;
@@ -1464,8 +1501,8 @@ static int ath_nand_add_partition(ath_nand_sc_t *sc)
 				ubi_parts[3].size = mtd->size;
 				break;
 		}
-	offset += mtd->erasesize;
-	base += mtd->erasesize;
+	offset += 4096;
+	base += 4096;
 	}
 	if (bbuf)
 		return add_mtd_partitions(mtd, dir_parts, 7);
@@ -1539,7 +1576,6 @@ static int ath_nand_probe(void)
 	/* initialise mtd sc data struct */
 	mtd = &sc->mtd;
 	mtd->size = ath_parse_read_id(sc) << 20;
-
 	mtd->name		= DRV_NAME;
 	mtd->owner		= THIS_MODULE;
 	if (mtd->size == 0) {

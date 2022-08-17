@@ -180,6 +180,7 @@ struct nand_manufacturers nand_manuf_ids[] = {
 	{NAND_MFR_TOSHIBA, "Toshiba"},
 	{NAND_MFR_SAMSUNG, "Samsung"},
 	{NAND_MFR_FUJITSU, "Fujitsu"},
+	{NAND_MFR_ESMT, "ESMT"},
 	{NAND_MFR_NATIONAL, "National"},
 	{NAND_MFR_RENESAS, "Renesas"},
 	{NAND_MFR_STMICRO, "ST Micro"},
