@@ -142,7 +142,7 @@ table tr[bgcolor='#CCCCCC']:hover {
 table tr:hover {
   background: #1a1a1a;
 }
-table tr:not([bgcolor]):hover {
+table tr:not([bgcolor]):not([class]):hover {
   background-color: transparent;
 }
 [bgcolor='#FFFFFF'] {

@@ -9,19 +9,28 @@
   padding: .3rem;
   margin: -.8rem -.8rem 0 -.8rem;
 }
-.syslog_bg tr:not([bgcolor]):hover {
-  background: #ccc;
+.syslog_bg tr:not([class]):hover {
+  background-color: #ccc;
   color: #000;
 }
-.syslog_bg tr[bgcolor='#eec900']:hover {
-  background: #dbba02;
+.syslog_bg_yellow {
+  background-color: #eec900;
 }
-.syslog_bg tr[bgcolor='#ff6666']:hover {
-  background: #fc5a5a;
+.syslog_bg_yellow:hover {
+  background-color: #dbba02;
 }
-.syslog_bg tr[bgcolor='#ff6666']:hover {
-  background: #fc5a5a;
+.syslog_bg_red {
+  background-color: #ff6666;
 }
-.syslog_bg tr[bgcolor='#35ee00']:hover {
-  background: #32e202;
+.slbg_red:hover {
+  background-color: #fc5a5a;
+}
+.syslog_bg_green {
+  background-color: #31dd00;
+}
+.syslog_bg_green:hover {
+  background-color: #32e202;
+}
+.syslog_text_dark {
+  color: #000;
 }
