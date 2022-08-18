@@ -305,6 +305,9 @@ static void getledconfig(struct ledconfig *cfg)
 //              cfg->disconnected_gpio = 0xf;
 //              cfg->power_gpio = GPIO_LOW | 0x5;
 //              cfg->diag_gpio = 0x5;
+#elif HAVE_DW02_412H
+//              cfg->disconnected_gpio = 22;
+//              cfg->connected_gpio = GPIO_LOW | 22;
 #elif HAVE_RAMBUTAN
 //              cfg->disconnected_gpio = 0xf;
 //              cfg->power_gpio = GPIO_LOW | 0x5;
