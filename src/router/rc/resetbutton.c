@@ -1194,6 +1194,9 @@ static void resetbtn_period_check(int sig)
 #elif defined(HAVE_WZRG450)
 	sesgpio = 0x108;
 	val |= get_gpio(8) << 8;	//aoss pushbutton
+#elif defined(HAVE_DW02_412H)
+	sesgpio = 0x110;
+	val |= get_gpio(16) << 16;	//aoss pushbutton
 #elif defined(HAVE_MVEBU)
 	sesgpio = 0x101;
 	if (brand == ROUTER_WRT_1900AC)
