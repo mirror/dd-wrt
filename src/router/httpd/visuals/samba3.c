@@ -135,7 +135,7 @@ EJ_VISIBLE void ej_samba3_sharepaths(webs_t wp, int argc, char_t ** argv)
 			  "<td style=\"width: 1%%;\"><input type=\"text\" name=\"smbshare_label%s\" id=\"smbshare_label%s\" value=\"%s\" style=\"width: 100px;\" onChange=\"updateSambaUserShare(this);\" /></td>\n",
 			  number, number, cs->label);
 		websWrite(wp,
-			  "<td style=\"width: 25px;\"> class=\"center\"><input type=\"checkbox\" name=\"smbshare_public%s\" id=\"smbshare_public%s\" value=\"1\" %s></td>\n",
+			  "<td style=\"width: 25px; vertical-align: bottom;\" class=\"center\"><input type=\"checkbox\" name=\"smbshare_public%s\" id=\"smbshare_public%s\" value=\"1\" %s></td>\n",
 			  number, number, cs->public == 1 ? "checked" : "");
 		websWrite(wp, "<td>\n");
 		websWrite(wp,
@@ -224,11 +224,11 @@ EJ_VISIBLE void ej_samba3_users(webs_t wp, int argc, char_t ** argv)
 
 		websWrite(wp, "<tr %s>\n", buffer);
 
-		websWrite(wp, "<td id=\"n_smbuser_user\" valign=\"top\" width=\"1%%\" class=\"center\">\n");
+		websWrite(wp, "<td id=\"n_smbuser_user\" width=\"1%%\" class=\"center\">\n");
 		websWrite(wp, "<input type=\"text\" name=\"smbuser_username%s\" autocomplete=\"new-password\" value=\"%s\" size=\"20\">\n", number, cu->username);
 		websWrite(wp, "</td>\n");
 
-		websWrite(wp, "<td id=\"n_smbuser_pass\" valign=\"top\" align=\"left\">\n");
+		websWrite(wp, "<td id=\"n_smbuser_pass\" align=\"left\">\n");
 		websWrite(wp, "<input type=\"password\" autocomplete=\"new-password\" name=\"smbuser_password%s\" id=\"smbuser_password%s\" value=\"%s\" size=\"20\">&nbsp;\n", number, number,
 			  cu->password);
 		//websWrite(wp, "                               <div style=\"float: left;padding-top: 2px;\">\n");
@@ -244,10 +244,10 @@ EJ_VISIBLE void ej_samba3_users(webs_t wp, int argc, char_t ** argv)
 			websWrite(wp, "<td id=\"n_smbuser_shareaccess\">\n");
 			websWrite(wp, "<div id=\"n_smbuser_share\"><input type=\"checkbox\" value=\"1\">&nbsp;<span>&nbsp;</span></div>\n");
 			websWrite(wp, "</td>\n");
-			websWrite(wp, "<td style=\"width: 25px;\"> class=\"center\">\n");
+			websWrite(wp, "<td style=\"width: 25px;\" class=\"center\">\n");
 			websWrite(wp, "<input type=\"checkbox\" name=\"smbuser_samba%s\" value=\"1\">\n", number);
 			websWrite(wp, "</td>\n");
-			websWrite(wp, "<td style=\"width: 25px;\"> class=\"center\">\n");
+			websWrite(wp, "<td style=\"width: 25px;\" class=\"center\">\n");
 			websWrite(wp, "<input type=\"checkbox\" name=\"smbuser_ftp%s\" value=\"1\">\n", number);
 			websWrite(wp, "</td>\n");
 		} else {
@@ -269,11 +269,11 @@ EJ_VISIBLE void ej_samba3_users(webs_t wp, int argc, char_t ** argv)
 				usershares++;
 			}
 			websWrite(wp, "</td>\n");
-			websWrite(wp, "<td style=\"width: 25px;\"> class=\"center\">\n");
+			websWrite(wp, "<td style=\"width: 25px;\" class=\"center\">\n");
 			websWrite(wp, "<input type=\"checkbox\" name=\"smbuser_samba%s\" value=\"1\" %s>\n", number, cu->sharetype & SHARETYPE_SAMBA ? "checked" : "");
 			websWrite(wp, "</td>\n");
 
-			websWrite(wp, "<td style=\"width: 25px;\"> class=\"center\">\n");
+			websWrite(wp, "<td style=\"width: 25px;\" class=\"center\">\n");
 			websWrite(wp, "<input type=\"checkbox\" name=\"smbuser_ftp%s\" value=\"1\" %s>\n", number, cu->sharetype & SHARETYPE_FTP ? "checked" : "");
 			websWrite(wp, "</td>\n");
 		}
