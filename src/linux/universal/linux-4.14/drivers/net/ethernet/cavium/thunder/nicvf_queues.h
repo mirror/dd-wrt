@@ -1,9 +1,6 @@
+/* SPDX-License-Identifier: GPL-2.0-only */
 /*
  * Copyright (C) 2015 Cavium, Inc.
- *
- * This program is free software; you can redistribute it and/or modify it
- * under the terms of version 2 of the GNU General Public License
- * as published by the Free Software Foundation.
  */
 
 #ifndef NICVF_QUEUES_H
@@ -208,7 +205,7 @@ struct rx_tx_queue_stats {
 struct q_desc_mem {
 	dma_addr_t	dma;
 	u64		size;
-	u16		q_len;
+	u32		q_len;
 	dma_addr_t	phys_base;
 	void		*base;
 	void		*unalign_base;
