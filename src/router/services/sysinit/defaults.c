@@ -3120,7 +3120,7 @@ struct nvram_param srouter_defaults[] = {
 	{ "openvpncl_config", "" },
 	{ "openvpncl_tlsauth", "" },
 	{ "openvpncl_cipher", "" },
-	{ "openvpncl_auth", "" },
+	{ "openvpncl_auth", "none" },
 	{ "openvpncl_adv", "0" },
 	{ "openvpncl_bridge", "0" },
 	{ "openvpncl_tlscip", "0" },
