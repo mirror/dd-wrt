@@ -1,9 +1,6 @@
+// SPDX-License-Identifier: GPL-2.0-only
 /*
  * Copyright (C) 2016 Cavium, Inc.
- *
- * This program is free software; you can redistribute it and/or modify it
- * under the terms of version 2 of the GNU General Public License
- * as published by the Free Software Foundation.
  */
 
 #include <linux/acpi.h>
@@ -20,7 +17,7 @@
 #include "nic.h"
 #include "thunder_bgx.h"
 
-#define DRV_NAME	"thunder-xcv"
+#define DRV_NAME	"thunder_xcv"
 #define DRV_VERSION	"1.0"
 
 /* Register offsets */
@@ -65,7 +62,7 @@ MODULE_LICENSE("GPL v2");
 MODULE_VERSION(DRV_VERSION);
 MODULE_DEVICE_TABLE(pci, xcv_id_table);
 
-void xcv_init_hw(int phy_mode)
+void xcv_init_hw(void)
 {
 	u64  cfg;
 
@@ -81,31 +78,12 @@ void xcv_init_hw(int phy_mode)
 	/* Wait for DLL to lock */
 	msleep(1);
 
-	/* enable/bypass DLL providing MAC based internal TX/RX delays */
+	/* Configure DLL - enable or bypass
+	 * TX no bypass, RX bypass
+	 */
 	cfg = readq_relaxed(xcv->reg_base + XCV_DLL_CTL);
-	cfg &= ~0xffff00;
-	switch (phy_mode) {
-	/* RX and TX delays are added by the MAC */
-	case PHY_INTERFACE_MODE_RGMII:
-		break;
-	/* internal RX and TX delays provided by the PHY */
-	case PHY_INTERFACE_MODE_RGMII_ID:
-		cfg |= CLKRX_BYP;
-		cfg |= CLKTX_BYP;
-		break;
-	/* internal RX delay provided by the PHY, the MAC
-	 * should not add an RX delay in this case
-	 */
-	case PHY_INTERFACE_MODE_RGMII_RXID:
-		cfg |= CLKRX_BYP;
-		break;
-	/* internal TX delay provided by the PHY, the MAC
-	 * should not add an TX delay in this case
-	 */
-	case PHY_INTERFACE_MODE_RGMII_TXID:
-		cfg |= CLKRX_BYP;
-		break;
-	}
+	cfg &= ~0xFF03;
+	cfg |= CLKRX_BYP;
 	writeq_relaxed(cfg, xcv->reg_base + XCV_DLL_CTL);
 
 	/* Enable compensation controller and force the

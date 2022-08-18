@@ -1,9 +1,6 @@
+/* SPDX-License-Identifier: GPL-2.0-only */
 /*
  * Copyright (C) 2015 Cavium, Inc.
- *
- * This program is free software; you can redistribute it and/or modify it
- * under the terms of version 2 of the GNU General Public License
- * as published by the Free Software Foundation.
  */
 
 #ifndef NIC_H
@@ -263,6 +260,19 @@ struct nicvf_drv_stats {
 	struct u64_stats_sync   syncp;
 };
 
+struct cavium_ptp;
+
+struct xcast_addr_list {
+	int              count;
+	u64              mc[];
+};
+
+struct nicvf_work {
+	struct work_struct     work;
+	u8                     mode;
+	struct xcast_addr_list *mc;
+};
+
 struct nicvf {
 	struct nicvf		*pnicvf;
 	struct net_device	*netdev;
@@ -311,6 +321,40 @@ struct nicvf {
 	struct nicvf_pfc	pfc;
 	struct tasklet_struct	qs_err_task;
 	struct work_struct	reset_task;
+	struct nicvf_work       rx_mode_work;
+	/* spinlock to protect workqueue arguments from concurrent access */
+	spinlock_t              rx_mode_wq_lock;
+	/* workqueue for handling kernel ndo_set_rx_mode() calls */
+	struct workqueue_struct *nicvf_rx_mode_wq;
+	/* mutex to protect VF's mailbox contents from concurrent access */
+	struct mutex            rx_mode_mtx;
+	struct delayed_work	link_change_work;
+	/* PTP timestamp */
+	struct cavium_ptp	*ptp_clock;
+	/* Inbound timestamping is on */
+	bool			hw_rx_tstamp;
+	/* When the packet that requires timestamping is sent, hardware inserts
+	 * two entries to the completion queue.  First is the regular
+	 * CQE_TYPE_SEND entry that signals that the packet was sent.
+	 * The second is CQE_TYPE_SEND_PTP that contains the actual timestamp
+	 * for that packet.
+	 * `ptp_skb` is initialized in the handler for the CQE_TYPE_SEND
+	 * entry and is used and zeroed in the handler for the CQE_TYPE_SEND_PTP
+	 * entry.
+	 * So `ptp_skb` is used to hold the pointer to the packet between
+	 * the calls to CQE_TYPE_SEND and CQE_TYPE_SEND_PTP handlers.
+	 */
+	struct sk_buff		*ptp_skb;
+	/* `tx_ptp_skbs` is set when the hardware is sending a packet that
+	 * requires timestamping.  Cavium hardware can not process more than one
+	 * such packet at once so this is set each time the driver submits
+	 * a packet that requires timestamping to the send queue and clears
+	 * each time it receives the entry on the completion queue saying
+	 * that such packet was sent.
+	 * So `tx_ptp_skbs` prevents driver from submitting more than one
+	 * packet that requires timestamping to the hardware for transmitting.
+	 */
+	atomic_t		tx_ptp_skbs;
 
 	/* Interrupt coalescing settings */
 	u32			cq_coalesce_usecs;
@@ -371,8 +415,12 @@ struct nicvf {
 #define	NIC_MBOX_MSG_LOOPBACK		0x16	/* Set interface in loopback */
 #define	NIC_MBOX_MSG_RESET_STAT_COUNTER 0x17	/* Reset statistics counters */
 #define	NIC_MBOX_MSG_PFC		0x18	/* Pause frame control */
+#define	NIC_MBOX_MSG_PTP_CFG		0x19	/* HW packet timestamp */
 #define	NIC_MBOX_MSG_CFG_DONE		0xF0	/* VF configuration done */
 #define	NIC_MBOX_MSG_SHUTDOWN		0xF1	/* VF is being shutdown */
+#define	NIC_MBOX_MSG_RESET_XCAST	0xF2    /* Reset DCAM filtering mode */
+#define	NIC_MBOX_MSG_ADD_MCAST		0xF3    /* Add MAC to DCAM filters */
+#define	NIC_MBOX_MSG_SET_XCAST		0xF4    /* Set MCAST/BCAST RX mode */
 
 struct nic_cfg_msg {
 	u8    msg;
@@ -521,6 +569,17 @@ struct pfc {
 	u8    fc_tx;
 };
 
+struct set_ptp {
+	u8    msg;
+	bool  enable;
+};
+
+struct xcast {
+	u8    msg;
+	u8    mode;
+	u64   mac:48;
+};
+
 /* 128 bit shared memory between PF and each VF */
 union nic_mbx {
 	struct { u8 msg; }	msg;
@@ -540,6 +599,8 @@ union nic_mbx {
 	struct set_loopback	lbk;
 	struct reset_stat_cfg	reset_stat;
 	struct pfc		pfc;
+	struct set_ptp		ptp;
+	struct xcast            xcast;
 };
 
 #define NIC_NODE_ID_MASK	0x03
