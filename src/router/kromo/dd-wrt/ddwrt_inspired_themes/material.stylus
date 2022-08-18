@@ -121,5 +121,5 @@
   --rgba-bg-05: rgba(38, 50, 56, 0.5);
   --rgba-bg-075: rgba(38, 50, 56, 0.075);
   --rgba-ac-06: rgba(130, 170, 255, 0.6);
-  --syslog-bd: #1d252a;
+  --syslog-bg: #1d252a;
 }
