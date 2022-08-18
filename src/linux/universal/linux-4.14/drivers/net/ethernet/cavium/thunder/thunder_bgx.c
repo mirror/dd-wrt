@@ -1,9 +1,6 @@
+// SPDX-License-Identifier: GPL-2.0-only
 /*
  * Copyright (C) 2015 Cavium, Inc.
- *
- * This program is free software; you can redistribute it and/or modify it
- * under the terms of version 2 of the GNU General Public License
- * as published by the Free Software Foundation.
  */
 
 #include <linux/acpi.h>
@@ -21,12 +18,34 @@
 #include "nic.h"
 #include "thunder_bgx.h"
 
-#define DRV_NAME	"thunder-BGX"
+#define DRV_NAME	"thunder_bgx"
 #define DRV_VERSION	"1.0"
+
+/* RX_DMAC_CTL configuration */
+enum MCAST_MODE {
+		MCAST_MODE_REJECT = 0x0,
+		MCAST_MODE_ACCEPT = 0x1,
+		MCAST_MODE_CAM_FILTER = 0x2,
+		RSVD = 0x3
+};
+
+#define BCAST_ACCEPT      BIT(0)
+#define CAM_ACCEPT        BIT(3)
+#define MCAST_MODE_MASK   0x3
+#define BGX_MCAST_MODE(x) (x << 1)
+
+struct dmac_map {
+	u64                     vf_map;
+	u64                     dmac;
+};
 
 struct lmac {
 	struct bgx		*bgx;
-	int			dmac;
+	/* actual number of DMACs configured */
+	u8			dmacs_cfg;
+	/* overal number of possible DMACs could be configured per LMAC */
+	u8                      dmacs_count;
+	struct dmac_map         *dmacs; /* DMAC:VFs tracking filter array */
 	u8			mac[ETH_ALEN];
 	u8                      lmac_type;
 	u8                      lane_to_sds;
@@ -55,7 +74,6 @@ struct bgx {
 	struct pci_dev		*pdev;
 	bool                    is_dlm;
 	bool                    is_rgx;
-	int			phy_mode;
 };
 
 static struct bgx *bgx_vnic[MAX_BGX_THUNDER];
@@ -224,6 +242,163 @@ void bgx_set_lmac_mac(int node, int bgx_idx, int lmacid, const u8 *mac)
 }
 EXPORT_SYMBOL(bgx_set_lmac_mac);
 
+static void bgx_flush_dmac_cam_filter(struct bgx *bgx, int lmacid)
+{
+	struct lmac *lmac = NULL;
+	u8  idx = 0;
+
+	lmac = &bgx->lmac[lmacid];
+	/* reset CAM filters */
+	for (idx = 0; idx < lmac->dmacs_count; idx++)
+		bgx_reg_write(bgx, 0, BGX_CMR_RX_DMACX_CAM +
+			      ((lmacid * lmac->dmacs_count) + idx) *
+			      sizeof(u64), 0);
+}
+
+static void bgx_lmac_remove_filters(struct lmac *lmac, u8 vf_id)
+{
+	int i = 0;
+
+	if (!lmac)
+		return;
+
+	/* We've got reset filters request from some of attached VF, while the
+	 * others might want to keep their configuration. So in this case lets
+	 * iterate over all of configured filters and decrease number of
+	 * referencies. if some addresses get zero refs remove them from list
+	 */
+	for (i = lmac->dmacs_cfg - 1; i >= 0; i--) {
+		lmac->dmacs[i].vf_map &= ~BIT_ULL(vf_id);
+		if (!lmac->dmacs[i].vf_map) {
+			lmac->dmacs_cfg--;
+			lmac->dmacs[i].dmac = 0;
+			lmac->dmacs[i].vf_map = 0;
+		}
+	}
+}
+
+static int bgx_lmac_save_filter(struct lmac *lmac, u64 dmac, u8 vf_id)
+{
+	u8 i = 0;
+
+	if (!lmac)
+		return -1;
+
+	/* At the same time we could have several VFs 'attached' to some
+	 * particular LMAC, and each VF is represented as network interface
+	 * for kernel. So from user perspective it should be possible to
+	 * manipulate with its' (VF) receive modes. However from PF
+	 * driver perspective we need to keep track of filter configurations
+	 * for different VFs to prevent filter values dupes
+	 */
+	for (i = 0; i < lmac->dmacs_cfg; i++) {
+		if (lmac->dmacs[i].dmac == dmac) {
+			lmac->dmacs[i].vf_map |= BIT_ULL(vf_id);
+			return -1;
+		}
+	}
+
+	if (!(lmac->dmacs_cfg < lmac->dmacs_count))
+		return -1;
+
+	/* keep it for further tracking */
+	lmac->dmacs[lmac->dmacs_cfg].dmac = dmac;
+	lmac->dmacs[lmac->dmacs_cfg].vf_map = BIT_ULL(vf_id);
+	lmac->dmacs_cfg++;
+	return 0;
+}
+
+static int bgx_set_dmac_cam_filter_mac(struct bgx *bgx, int lmacid,
+				       u64 cam_dmac, u8 idx)
+{
+	struct lmac *lmac = NULL;
+	u64 cfg = 0;
+
+	/* skip zero addresses as meaningless */
+	if (!cam_dmac || !bgx)
+		return -1;
+
+	lmac = &bgx->lmac[lmacid];
+
+	/* configure DCAM filtering for designated LMAC */
+	cfg = RX_DMACX_CAM_LMACID(lmacid & LMAC_ID_MASK) |
+		RX_DMACX_CAM_EN | cam_dmac;
+	bgx_reg_write(bgx, 0, BGX_CMR_RX_DMACX_CAM +
+		      ((lmacid * lmac->dmacs_count) + idx) * sizeof(u64), cfg);
+	return 0;
+}
+
+void bgx_set_dmac_cam_filter(int node, int bgx_idx, int lmacid,
+			     u64 cam_dmac, u8 vf_id)
+{
+	struct bgx *bgx = get_bgx(node, bgx_idx);
+	struct lmac *lmac = NULL;
+
+	if (!bgx)
+		return;
+
+	lmac = &bgx->lmac[lmacid];
+
+	if (!cam_dmac)
+		cam_dmac = ether_addr_to_u64(lmac->mac);
+
+	/* since we might have several VFs attached to particular LMAC
+	 * and kernel could call mcast config for each of them with the
+	 * same MAC, check if requested MAC is already in filtering list and
+	 * updare/prepare list of MACs to be applied later to HW filters
+	 */
+	bgx_lmac_save_filter(lmac, cam_dmac, vf_id);
+}
+EXPORT_SYMBOL(bgx_set_dmac_cam_filter);
+
+void bgx_set_xcast_mode(int node, int bgx_idx, int lmacid, u8 mode)
+{
+	struct bgx *bgx = get_bgx(node, bgx_idx);
+	struct lmac *lmac = NULL;
+	u64 cfg = 0;
+	u8 i = 0;
+
+	if (!bgx)
+		return;
+
+	lmac = &bgx->lmac[lmacid];
+
+	cfg = bgx_reg_read(bgx, lmacid, BGX_CMRX_RX_DMAC_CTL);
+	if (mode & BGX_XCAST_BCAST_ACCEPT)
+		cfg |= BCAST_ACCEPT;
+	else
+		cfg &= ~BCAST_ACCEPT;
+
+	/* disable all MCASTs and DMAC filtering */
+	cfg &= ~(CAM_ACCEPT | BGX_MCAST_MODE(MCAST_MODE_MASK));
+
+	/* check requested bits and set filtergin mode appropriately */
+	if (mode & (BGX_XCAST_MCAST_ACCEPT)) {
+		cfg |= (BGX_MCAST_MODE(MCAST_MODE_ACCEPT));
+	} else if (mode & BGX_XCAST_MCAST_FILTER) {
+		cfg |= (BGX_MCAST_MODE(MCAST_MODE_CAM_FILTER) | CAM_ACCEPT);
+		for (i = 0; i < lmac->dmacs_cfg; i++)
+			bgx_set_dmac_cam_filter_mac(bgx, lmacid,
+						    lmac->dmacs[i].dmac, i);
+	}
+	bgx_reg_write(bgx, lmacid, BGX_CMRX_RX_DMAC_CTL, cfg);
+}
+EXPORT_SYMBOL(bgx_set_xcast_mode);
+
+void bgx_reset_xcast_mode(int node, int bgx_idx, int lmacid, u8 vf_id)
+{
+	struct bgx *bgx = get_bgx(node, bgx_idx);
+
+	if (!bgx)
+		return;
+
+	bgx_lmac_remove_filters(&bgx->lmac[lmacid], vf_id);
+	bgx_flush_dmac_cam_filter(bgx, lmacid);
+	bgx_set_xcast_mode(node, bgx_idx, lmacid,
+			   (BGX_XCAST_BCAST_ACCEPT | BGX_XCAST_MCAST_ACCEPT));
+}
+EXPORT_SYMBOL(bgx_reset_xcast_mode);
+
 void bgx_lmac_rx_tx_enable(int node, int bgx_idx, int lmacid, bool enable)
 {
 	struct bgx *bgx = get_bgx(node, bgx_idx);
@@ -254,6 +429,35 @@ void bgx_lmac_rx_tx_enable(int node, int bgx_idx, int lmacid, bool enable)
 		xcv_setup_link(enable ? lmac->link_up : 0, lmac->last_speed);
 }
 EXPORT_SYMBOL(bgx_lmac_rx_tx_enable);
+
+/* Enables or disables timestamp insertion by BGX for Rx packets */
+void bgx_config_timestamping(int node, int bgx_idx, int lmacid, bool enable)
+{
+	struct bgx *bgx = get_bgx(node, bgx_idx);
+	struct lmac *lmac;
+	u64 csr_offset, cfg;
+
+	if (!bgx)
+		return;
+
+	lmac = &bgx->lmac[lmacid];
+
+	if (lmac->lmac_type == BGX_MODE_SGMII ||
+	    lmac->lmac_type == BGX_MODE_QSGMII ||
+	    lmac->lmac_type == BGX_MODE_RGMII)
+		csr_offset = BGX_GMP_GMI_RXX_FRM_CTL;
+	else
+		csr_offset = BGX_SMUX_RX_FRM_CTL;
+
+	cfg = bgx_reg_read(bgx, lmacid, csr_offset);
+
+	if (enable)
+		cfg |= BGX_PKT_RX_PTP_EN;
+	else
+		cfg &= ~BGX_PKT_RX_PTP_EN;
+	bgx_reg_write(bgx, lmacid, csr_offset, cfg);
+}
+EXPORT_SYMBOL(bgx_config_timestamping);
 
 void bgx_lmac_get_pfc(int node, int bgx_idx, int lmacid, void *pause)
 {
@@ -448,18 +652,6 @@ u64 bgx_get_tx_stats(int node, int bgx_idx, int lmac, int idx)
 	return bgx_reg_read(bgx, lmac, BGX_CMRX_TX_STAT0 + (idx * 8));
 }
 EXPORT_SYMBOL(bgx_get_tx_stats);
-
-static void bgx_flush_dmac_addrs(struct bgx *bgx, int lmac)
-{
-	u64 offset;
-
-	while (bgx->lmac[lmac].dmac > 0) {
-		offset = ((bgx->lmac[lmac].dmac - 1) * sizeof(u64)) +
-			(lmac * MAX_DMAC_PER_LMAC * sizeof(u64));
-		bgx_reg_write(bgx, 0, BGX_CMR_RX_DMACX_CAM + offset, 0);
-		bgx->lmac[lmac].dmac--;
-	}
-}
 
 /* Configure BGX LMAC in internal loopback mode */
 void bgx_lmac_internal_loopback(int node, int bgx_idx,
@@ -776,13 +968,13 @@ static void bgx_poll_for_sgmii_link(struct lmac *lmac)
 	lmac->last_duplex = (an_result >> 1) & 0x1;
 	switch (speed) {
 	case 0:
-		lmac->last_speed = 10;
+		lmac->last_speed = SPEED_10;
 		break;
 	case 1:
-		lmac->last_speed = 100;
+		lmac->last_speed = SPEED_100;
 		break;
 	case 2:
-		lmac->last_speed = 1000;
+		lmac->last_speed = SPEED_1000;
 		break;
 	default:
 		lmac->link_up = false;
@@ -826,10 +1018,10 @@ static void bgx_poll_for_link(struct work_struct *work)
 	    !(smu_link & SMU_RX_CTL_STATUS)) {
 		lmac->link_up = 1;
 		if (lmac->lmac_type == BGX_MODE_XLAUI)
-			lmac->last_speed = 40000;
+			lmac->last_speed = SPEED_40000;
 		else
-			lmac->last_speed = 10000;
-		lmac->last_duplex = 1;
+			lmac->last_speed = SPEED_10000;
+		lmac->last_duplex = DUPLEX_FULL;
 	} else {
 		lmac->link_up = 0;
 		lmac->last_speed = SPEED_UNKNOWN;
@@ -851,12 +1043,12 @@ static void bgx_poll_for_link(struct work_struct *work)
 	queue_delayed_work(lmac->check_link, &lmac->dwork, HZ * 2);
 }
 
-static int phy_interface_mode(struct bgx *bgx, u8 lmac_type)
+static int phy_interface_mode(u8 lmac_type)
 {
 	if (lmac_type == BGX_MODE_QSGMII)
 		return PHY_INTERFACE_MODE_QSGMII;
 	if (lmac_type == BGX_MODE_RGMII)
-		return bgx->phy_mode;
+		return PHY_INTERFACE_MODE_RGMII_RXID;
 
 	return PHY_INTERFACE_MODE_SGMII;
 }
@@ -893,6 +1085,13 @@ static int bgx_lmac_enable(struct bgx *bgx, u8 lmacid)
 		bgx_reg_write(bgx, lmacid, BGX_SMUX_TX_MIN_PKT, 60 + 4);
 	}
 
+	/* actual number of filters available to exact LMAC */
+	lmac->dmacs_count = (RX_DMAC_COUNT / bgx->lmac_count);
+	lmac->dmacs = kcalloc(lmac->dmacs_count, sizeof(*lmac->dmacs),
+			      GFP_KERNEL);
+	if (!lmac->dmacs)
+		return -ENOMEM;
+
 	/* Enable lmac */
 	bgx_reg_modify(bgx, lmacid, BGX_CMRX_CFG, CMR_EN);
 
@@ -912,8 +1111,8 @@ static int bgx_lmac_enable(struct bgx *bgx, u8 lmacid)
 			} else {
 				/* Default to below link speed and duplex */
 				lmac->link_up = true;
-				lmac->last_speed = 1000;
-				lmac->last_duplex = 1;
+				lmac->last_speed = SPEED_1000;
+				lmac->last_duplex = DUPLEX_FULL;
 				bgx_sgmii_change_link_state(lmac);
 				return 0;
 			}
@@ -922,8 +1121,7 @@ static int bgx_lmac_enable(struct bgx *bgx, u8 lmacid)
 
 		if (phy_connect_direct(&lmac->netdev, lmac->phydev,
 				       bgx_lmac_handler,
-				       phy_interface_mode(bgx,
-							  lmac->lmac_type)))
+				       phy_interface_mode(lmac->lmac_type)))
 			return -ENODEV;
 
 		phy_start(lmac->phydev);
@@ -980,7 +1178,8 @@ static void bgx_lmac_disable(struct bgx *bgx, u8 lmacid)
 	cfg &= ~CMR_EN;
 	bgx_reg_write(bgx, lmacid, BGX_CMRX_CFG, cfg);
 
-	bgx_flush_dmac_addrs(bgx, lmacid);
+	bgx_flush_dmac_cam_filter(bgx, lmacid);
+	kfree(lmac->dmacs);
 
 	if ((lmac->lmac_type != BGX_MODE_XFI) &&
 	    (lmac->lmac_type != BGX_MODE_XLAUI) &&
@@ -1024,7 +1223,7 @@ static void bgx_init_hw(struct bgx *bgx)
 
 	/* Disable MAC steering (NCSI traffic) */
 	for (i = 0; i < RX_TRAFFIC_STEER_RULE_COUNT; i++)
-		bgx_reg_write(bgx, 0, BGX_CMR_RX_STREERING + (i * 8), 0x00);
+		bgx_reg_write(bgx, 0, BGX_CMR_RX_STEERING + (i * 8), 0x00);
 }
 
 static u8 bgx_get_lane2sds_cfg(struct bgx *bgx, struct lmac *lmac)
@@ -1191,24 +1390,18 @@ static int acpi_get_mac_address(struct device *dev, struct acpi_device *adev,
 				u8 *dst)
 {
 	u8 mac[ETH_ALEN];
-	int ret;
+	u8 *addr;
 
-	ret = fwnode_property_read_u8_array(acpi_fwnode_handle(adev),
-					    "mac-address", mac, ETH_ALEN);
-	if (ret)
-		goto out;
-
-	if (!is_valid_ether_addr(mac)) {
+	addr = fwnode_get_mac_address(acpi_fwnode_handle(adev), mac, ETH_ALEN);
+	if (!addr) {
 		dev_err(dev, "MAC address invalid: %pM\n", mac);
-		ret = -EINVAL;
-		goto out;
+		return -EINVAL;
 	}
 
 	dev_info(dev, "MAC address set to: %pM\n", mac);
 
-	memcpy(dst, mac, ETH_ALEN);
-out:
-	return ret;
+	ether_addr_copy(dst, mac);
+	return 0;
 }
 
 /* Currently only sets the MAC address. */
@@ -1291,15 +1484,13 @@ static int bgx_init_of_phy(struct bgx *bgx)
 			break;
 
 		mac = of_get_mac_address(node);
-		if (mac)
+		if (!IS_ERR(mac))
 			ether_addr_copy(bgx->lmac[lmac].mac, mac);
 
 		SET_NETDEV_DEV(&bgx->lmac[lmac].netdev, &bgx->pdev->dev);
 		bgx->lmac[lmac].lmacid = lmac;
 
 		phy_np = of_parse_phandle(node, "phy-handle", 0);
-		if (phy_np)
-			bgx->phy_mode = of_get_phy_mode(phy_np);
 		/* If there is no phy or defective firmware presents
 		 * this cortina phy, for which there is no driver
 		 * support, ignore it.
@@ -1356,15 +1547,14 @@ static int bgx_init_phy(struct bgx *bgx)
 static irqreturn_t bgx_intr_handler(int irq, void *data)
 {
 	struct bgx *bgx = (struct bgx *)data;
-	struct device *dev = &bgx->pdev->dev;
 	u64 status, val;
 	int lmac;
 
 	for (lmac = 0; lmac < bgx->lmac_count; lmac++) {
 		status = bgx_reg_read(bgx, lmac, BGX_GMP_GMI_TXX_INT);
 		if (status & GMI_TXX_INT_UNDFLW) {
-			dev_err(dev, "BGX%d lmac%d UNDFLW\n", bgx->bgx_id,
-				lmac);
+			pci_err(bgx->pdev, "BGX%d lmac%d UNDFLW\n",
+				bgx->bgx_id, lmac);
 			val = bgx_reg_read(bgx, lmac, BGX_CMRX_CFG);
 			val &= ~CMR_EN;
 			bgx_reg_write(bgx, lmac, BGX_CMRX_CFG, val);
@@ -1378,27 +1568,22 @@ static irqreturn_t bgx_intr_handler(int irq, void *data)
 	return IRQ_HANDLED;
 }
 
-static int bgx_register_intr(struct pci_dev *pdev)
+static void bgx_register_intr(struct pci_dev *pdev)
 {
 	struct bgx *bgx = pci_get_drvdata(pdev);
-	struct device *dev = &pdev->dev;
-	int num_vec, ret;
-	char irq_name[32];
+	int ret;
 
-	/* Enable MSI-X */
-	num_vec = pci_msix_vec_count(pdev);
-	ret = pci_alloc_irq_vectors(pdev, num_vec, num_vec, PCI_IRQ_MSIX);
+	ret = pci_alloc_irq_vectors(pdev, BGX_LMAC_VEC_OFFSET,
+				    BGX_LMAC_VEC_OFFSET, PCI_IRQ_ALL_TYPES);
 	if (ret < 0) {
-		dev_err(dev, "Req for #%d msix vectors failed\n", num_vec);
-		return 1;
+		pci_err(pdev, "Req for #%d msix vectors failed\n",
+			BGX_LMAC_VEC_OFFSET);
+		return;
 	}
-	sprintf(irq_name, "BGX%d", bgx->bgx_id);
-	ret = request_irq(pci_irq_vector(pdev, GMPX_GMI_TX_INT),
-		bgx_intr_handler, 0, irq_name, bgx);
+	ret = pci_request_irq(pdev, GMPX_GMI_TX_INT, bgx_intr_handler, NULL,
+			      bgx, "BGX%d", bgx->bgx_id);
 	if (ret)
-		return 1;
-
-	return 0;
+		pci_free_irq(pdev, GMPX_GMI_TX_INT, bgx);
 }
 
 static int bgx_probe(struct pci_dev *pdev, const struct pci_device_id *ent)
@@ -1451,6 +1636,7 @@ static int bgx_probe(struct pci_dev *pdev, const struct pci_device_id *ent)
 		bgx->max_lmac = 1;
 		bgx->bgx_id = MAX_BGX_PER_CN81XX - 1;
 		bgx_vnic[bgx->bgx_id] = bgx;
+		xcv_init_hw();
 	}
 
 	/* On 81xx all are DLMs and on 83xx there are 3 BGX QLMs and one
@@ -1467,8 +1653,6 @@ static int bgx_probe(struct pci_dev *pdev, const struct pci_device_id *ent)
 	if (err)
 		goto err_enable;
 
-	if (bgx->is_rgx)
-		xcv_init_hw(bgx->phy_mode);
 	bgx_init_hw(bgx);
 
 	bgx_register_intr(pdev);
@@ -1483,10 +1667,6 @@ static int bgx_probe(struct pci_dev *pdev, const struct pci_device_id *ent)
 				bgx_lmac_disable(bgx, --lmac);
 			goto err_enable;
 		}
-
-		/* enable TX FIFO Underflow interrupt */
-		bgx_reg_modify(bgx, lmac, BGX_GMP_GMI_TXX_INT_ENA_W1S,
-			       GMI_TXX_INT_UNDFLW);
 	}
 
 	return 0;

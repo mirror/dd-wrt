@@ -1,9 +1,6 @@
+// SPDX-License-Identifier: GPL-2.0-only
 /*
  * Copyright (C) 2015 Cavium, Inc.
- *
- * This program is free software; you can redistribute it and/or modify it
- * under the terms of version 2 of the GNU General Public License
- * as published by the Free Software Foundation.
  */
 
 #include <linux/pci.h>
@@ -59,7 +56,7 @@ static int nicvf_alloc_q_desc_mem(struct nicvf *nic, struct q_desc_mem *dmem,
 	dmem->q_len = q_len;
 	dmem->size = (desc_size * q_len) + align_bytes;
 	/* Save address, need it while freeing */
-	dmem->unalign_base = dma_zalloc_coherent(&nic->pdev->dev, dmem->size,
+	dmem->unalign_base = dma_alloc_coherent(&nic->pdev->dev, dmem->size,
 						&dmem->dma, GFP_KERNEL);
 	if (!dmem->unalign_base)
 		return -ENOMEM;
@@ -291,8 +288,8 @@ static int  nicvf_init_rbdr(struct nicvf *nic, struct rbdr *rbdr,
 		rbdr->is_xdp = true;
 	}
 	rbdr->pgcnt = roundup_pow_of_two(rbdr->pgcnt);
-	rbdr->pgcache = kzalloc(sizeof(*rbdr->pgcache) *
-				rbdr->pgcnt, GFP_KERNEL);
+	rbdr->pgcache = kcalloc(rbdr->pgcnt, sizeof(*rbdr->pgcache),
+				GFP_KERNEL);
 	if (!rbdr->pgcache)
 		return -ENOMEM;
 	rbdr->pgidx = 0;
@@ -977,6 +974,9 @@ void nicvf_qset_config(struct nicvf *nic, bool enable)
 		qs_cfg->be = 1;
 #endif
 		qs_cfg->vnic = qs->vnic_id;
+		/* Enable Tx timestamping capability */
+		if (nic->ptp_clock)
+			qs_cfg->send_tstmp_ena = 1;
 	}
 	nicvf_send_msg_to_pf(nic, &mbx);
 }
@@ -1384,6 +1384,29 @@ nicvf_sq_add_hdr_subdesc(struct nicvf *nic, struct snd_queue *sq, int qentry,
 		hdr->inner_l3_offset = skb_network_offset(skb) - 2;
 		this_cpu_inc(nic->pnicvf->drv_stats->tx_tso);
 	}
+
+	/* Check if timestamp is requested */
+	if (!(skb_shinfo(skb)->tx_flags & SKBTX_HW_TSTAMP)) {
+		skb_tx_timestamp(skb);
+		return;
+	}
+
+	/* Tx timestamping not supported along with TSO, so ignore request */
+	if (skb_shinfo(skb)->gso_size)
+		return;
+
+	/* HW supports only a single outstanding packet to timestamp */
+	if (!atomic_add_unless(&nic->pnicvf->tx_ptp_skbs, 1, 1))
+		return;
+
+	/* Mark the SKB for later reference */
+	skb_shinfo(skb)->tx_flags |= SKBTX_IN_PROGRESS;
+
+	/* Finally enable timestamp generation
+	 * Since 'post_cqe' is also set, two CQEs will be posted
+	 * for this packet i.e CQE_TYPE_SEND and CQE_TYPE_SEND_PTP.
+	 */
+	hdr->tstmp = 1;
 }
 
 /* SQ GATHER subdescriptor
@@ -1561,15 +1584,13 @@ int nicvf_sq_append_skb(struct nicvf *nic, struct snd_queue *sq,
 		goto doorbell;
 
 	for (i = 0; i < skb_shinfo(skb)->nr_frags; i++) {
-		const struct skb_frag_struct *frag;
-
-		frag = &skb_shinfo(skb)->frags[i];
+		const skb_frag_t *frag = &skb_shinfo(skb)->frags[i];
 
 		qentry = nicvf_get_nxt_sqentry(sq, qentry);
 		size = skb_frag_size(frag);
 		dma_addr = dma_map_page_attrs(&nic->pdev->dev,
 					      skb_frag_page(frag),
-					      frag->page_offset, size,
+					      skb_frag_off(frag), size,
 					      DMA_TO_DEVICE,
 					      DMA_ATTR_SKIP_CPU_SYNC);
 		if (dma_mapping_error(&nic->pdev->dev, dma_addr)) {
