@@ -31,7 +31,7 @@ static char *convert_to_unix_name(struct ksmbd_share_config *share, const char *
 
 #define KSMBD_DIR_INFO_ALIGNMENT	8
 
-static struct ksmbd_dir_info;
+struct ksmbd_dir_info;
 static char *ksmbd_convert_dir_info_name(struct ksmbd_dir_info *d_info,
 				  const struct nls_table *local_nls,
 				  int *conv_len);

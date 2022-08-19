@@ -495,7 +495,7 @@ static int ksmbd_init_smb_server(struct ksmbd_work *work);
 
 static bool ksmbd_pdu_size_has_room(unsigned int pdu);
 
-static struct ksmbd_kstat;
+struct ksmbd_kstat;
 static int ksmbd_populate_dot_dotdot_entries(struct ksmbd_work *work,
 				      int info_level,
 				      struct ksmbd_file *dir,
