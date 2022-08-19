@@ -5,8 +5,8 @@
 }
 .syslog_bg {
   background: #f6f6f6;
-  padding-top: .1rem;
   padding: .3rem;
+  padding-top: .1rem;
   margin: -.8rem -.8rem 0 -.8rem;
 }
 .syslog_legend {
