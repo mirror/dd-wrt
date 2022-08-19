@@ -255,7 +255,7 @@ static int ksmbd_vfs_rename_slowpath(struct ksmbd_work *work,
 		char *oldname, char *newname);
 static int ksmbd_vfs_truncate(struct ksmbd_work *work,
 		struct ksmbd_file *fp, loff_t size);
-static struct srv_copychunk;
+struct srv_copychunk;
 static int ksmbd_vfs_copy_file_ranges(struct ksmbd_work *work,
 		struct ksmbd_file *src_fp, struct ksmbd_file *dst_fp,
 		struct srv_copychunk *chunks, unsigned int chunk_count,
@@ -294,7 +294,7 @@ static int ksmbd_vfs_empty_dir(struct ksmbd_file *fp);
 static void ksmbd_vfs_set_fadvise(struct file *filp, __le32 option);
 static int ksmbd_vfs_zero_data(struct ksmbd_work *work, struct ksmbd_file *fp,
 		loff_t off, loff_t len);
-static struct file_allocated_range_buffer;
+struct file_allocated_range_buffer;
 static int ksmbd_vfs_fqar_lseek(struct ksmbd_file *fp, loff_t start, loff_t length,
 		struct file_allocated_range_buffer *ranges,
 		unsigned int in_count, unsigned int *out_count);
