@@ -298,10 +298,10 @@ struct ksmbd_rpc_pipe {
 						   int i);
 };
 
-__u8 ndr_read_int8(struct ksmbd_dcerpc *dce);
-__u16 ndr_read_int16(struct ksmbd_dcerpc *dce);
-__u32 ndr_read_int32(struct ksmbd_dcerpc *dce);
-__u64 ndr_read_int64(struct ksmbd_dcerpc *dce);
+int ndr_read_int8(struct ksmbd_dcerpc *dce, __u8 *value);
+int ndr_read_int16(struct ksmbd_dcerpc *dce, __u16 *value);
+int ndr_read_int32(struct ksmbd_dcerpc *dce, __u32 *value);
+int ndr_read_int64(struct ksmbd_dcerpc *dce, __u64 *value);
 
 int ndr_write_int8(struct ksmbd_dcerpc *dce, __u8 value);
 int ndr_write_int16(struct ksmbd_dcerpc *dce, __u16 value);
@@ -310,7 +310,7 @@ int ndr_write_int64(struct ksmbd_dcerpc *dce, __u64 value);
 
 int ndr_write_union_int16(struct ksmbd_dcerpc *dce, __u16 value);
 int ndr_write_union_int32(struct ksmbd_dcerpc *dce, __u32 value);
-__u32 ndr_read_union_int32(struct ksmbd_dcerpc *dce);
+int ndr_read_union_int32(struct ksmbd_dcerpc *dce, __u32 *value);
 
 int ndr_write_bytes(struct ksmbd_dcerpc *dce, void *value, size_t sz);
 int ndr_read_bytes(struct ksmbd_dcerpc *dce, void *value, size_t sz);
@@ -318,13 +318,13 @@ int ndr_write_vstring(struct ksmbd_dcerpc *dce, void *value);
 int ndr_write_string(struct ksmbd_dcerpc *dce, char *str);
 int ndr_write_lsa_string(struct ksmbd_dcerpc *dce, char *str);
 char *ndr_read_vstring(struct ksmbd_dcerpc *dce);
-void ndr_read_vstring_ptr(struct ksmbd_dcerpc *dce, struct ndr_char_ptr *ctr);
-void ndr_read_uniq_vsting_ptr(struct ksmbd_dcerpc *dce,
+int ndr_read_vstring_ptr(struct ksmbd_dcerpc *dce, struct ndr_char_ptr *ctr);
+int ndr_read_uniq_vstring_ptr(struct ksmbd_dcerpc *dce,
 			      struct ndr_uniq_char_ptr *ctr);
 void ndr_free_vstring_ptr(struct ndr_char_ptr *ctr);
-void ndr_free_uniq_vsting_ptr(struct ndr_uniq_char_ptr *ctr);
-void ndr_read_ptr(struct ksmbd_dcerpc *dce, struct ndr_ptr *ctr);
-void ndr_read_uniq_ptr(struct ksmbd_dcerpc *dce, struct ndr_uniq_ptr *ctr);
+void ndr_free_uniq_vstring_ptr(struct ndr_uniq_char_ptr *ctr);
+int ndr_read_ptr(struct ksmbd_dcerpc *dce, struct ndr_ptr *ctr);
+int ndr_read_uniq_ptr(struct ksmbd_dcerpc *dce, struct ndr_uniq_ptr *ctr);
 int __ndr_write_array_of_structs(struct ksmbd_rpc_pipe *pipe, int max_entry_nr);
 int ndr_write_array_of_structs(struct ksmbd_rpc_pipe *pipe);
 

@@ -34,26 +34,57 @@ enum {
 	COMMAND_UPDATE_USER,
 };
 
-static void usage(void)
+static void usage(int status)
 {
-	fprintf(stderr, "Usage: smbuseradd\n");
+	fprintf(stderr,
+		"Usage: ksmbd.adduser {-a USER | -u USER} [-p PWD] [-i PWDDB] [-v]\n"
+		"       ksmbd.adduser {-d USER} [-i PWDDB] [-v]\n"
+		"       ksmbd.adduser {-V | -h}\n");
 
-	fprintf(stderr, "\t-a | --add-user=login\n");
-	fprintf(stderr, "\t-d | --del-user=login\n");
-	fprintf(stderr, "\t-u | --update-user=login\n");
-	fprintf(stderr, "\t-p | --password=pass\n");
-
-	fprintf(stderr, "\t-i smbpwd.db | --import-users=smbpwd.db\n");
-	fprintf(stderr, "\t-V | --version\n");
-	fprintf(stderr, "\t-v | --verbose\n");
-
-	exit(EXIT_FAILURE);
+	if (status != EXIT_SUCCESS)
+		fprintf(stderr, "Try 'ksmbd.adduser --help' for more information.\n");
+	else
+		fprintf(stderr,
+			"Configure users for user database of ksmbd.mountd user mode daemon.\n"
+			"\n"
+			"Mandatory arguments to long options are mandatory for short options too.\n"
+			"  -a, --add-user=USER         add USER to user database;\n"
+			"                              USER is 1 to " STR(KSMBD_REQ_MAX_ACCOUNT_NAME_SZ) " characters;\n"
+			"                              USER cannot contain ':' or '\\n';\n"
+			"                              USER cannot be 'root'\n"
+			"  -d, --del-user=USER         delete USER from user database;\n"
+			"                              you must restart ksmbd for changes to take effect\n"
+			"  -u, --update-user=USER      update USER in user database;\n"
+			"                              you must restart ksmbd for changes to take effect\n"
+			"  -p, --password=PWD          provide PWD for user;\n"
+			"                              PWD is 0 to " STR(MAX_NT_PWD_LEN) " characters;\n"
+			"                              PWD cannot contain '\\n'\n"
+			"  -i, --import-users=PWDDB    use PWDDB as user database instead of\n"
+			"                              '" PATH_PWDDB "';\n"
+			"                              this option does nothing by itself\n"
+			"  -v, --verbose               be more verbose; unimplemented\n"
+			"  -V, --version               output version information and exit\n"
+			"  -h, --help                  display this help and exit\n"
+			"\n"
+			"ksmbd-tools home page: <https://github.com/cifsd-team/ksmbd-tools>\n");
 }
 
-static void show_version(void)
+static const struct option opts[] = {
+	{"add-user",		required_argument,	NULL,	'a' },
+	{"del-user",		required_argument,	NULL,	'd' },
+	{"update-user",		required_argument,	NULL,	'u' },
+	{"password",		required_argument,	NULL,	'p' },
+	{"import-users",	required_argument,	NULL,	'i' },
+	{"version",		no_argument,		NULL,	'V' },
+	{"verbose",		no_argument,		NULL,	'v' },
+	{"help",		no_argument,		NULL,	'h' },
+	{NULL,			0,			NULL,	 0  }
+};
+
+static int show_version(void)
 {
 	printf("ksmbd-tools version : %s\n", KSMBD_TOOLS_VERSION);
-	exit(EXIT_FAILURE);
+	return EXIT_SUCCESS;
 }
 
 static int parse_configs(char *pwddb)
@@ -105,8 +136,7 @@ int main(int argc, char *argv[])
 
 	set_logger_app_name("smbuseradd");
 
-	opterr = 0;
-	while ((c = getopt(argc, argv, "c:i:a:d:u:p:Vvh")) != EOF)
+	while ((c = getopt_long(argc, argv, "c:i:a:d:u:p:Vvh", opts, NULL)) != EOF)
 		switch (c) {
 		case 'a':
 			arg_account = g_strdup(optarg);
@@ -127,14 +157,27 @@ int main(int argc, char *argv[])
 			pwddb = g_strdup(optarg);
 			break;
 		case 'V':
-			show_version();
-			break;
+			ret = show_version();
+			goto out;
 		case 'v':
 			break;
-		case '?':
 		case 'h':
+			ret = EXIT_SUCCESS;
+			/* Fall through */
+		case '?':
 		default:
-			usage();
+			usage(ret);
+			goto out;
+		}
+
+	if (argc < 2 || argc > optind) {
+		usage(ret);
+		goto out;
+	}
+
+	if (!arg_account) {
+		pr_err("No option with user name given\n");
+		goto out;
 	}
 
 	if (sanity_check_user_name_simple(arg_account)) {

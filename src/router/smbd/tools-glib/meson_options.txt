@@ -1,0 +1,9 @@
+option('krb5', type : 'feature',
+  description : 'Build with Kerberos support',
+  value : 'disabled',
+)
+
+option('krb5_name', type : 'string',
+  description : 'Dependency name used when checking Kerberos support',
+  value : 'krb5',
+)

@@ -187,7 +187,7 @@ static struct ksmbd_share *new_ksmbd_share(void)
 	struct ksmbd_share *share;
 	int i;
 
-	share = calloc(1, sizeof(struct ksmbd_share));
+	share = g_try_malloc0(sizeof(struct ksmbd_share));
 	if (!share)
 		return NULL;
 
@@ -678,7 +678,7 @@ int shm_lookup_hosts_map(struct ksmbd_share *share,
 			  enum share_hosts map,
 			  char *host)
 {
-	GHashTable *lookup_map;
+	GHashTable *lookup_map = NULL;
 	int ret = -ENOENT;
 
 	if (map >= KSMBD_SHARE_HOSTS_MAX) {

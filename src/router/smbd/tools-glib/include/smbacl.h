@@ -72,7 +72,7 @@ struct smb_ace {
 };
 
 void smb_init_domain_sid(struct smb_sid *sid);
-void smb_read_sid(struct ksmbd_dcerpc *dce, struct smb_sid *sid);
+int smb_read_sid(struct ksmbd_dcerpc *dce, struct smb_sid *sid);
 void smb_write_sid(struct ksmbd_dcerpc *dce, const struct smb_sid *src);
 void smb_copy_sid(struct smb_sid *dst, const struct smb_sid *src);
 int smb_compare_sids(const struct smb_sid *ctsid, const struct smb_sid *cwsid);

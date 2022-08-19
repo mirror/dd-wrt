@@ -272,32 +272,45 @@ static int srvsvc_share_get_info_return(struct ksmbd_rpc_pipe *pipe)
 static int srvsvc_parse_share_info_req(struct ksmbd_dcerpc *dce,
 				       struct srvsvc_share_info_request *hdr)
 {
-	ndr_read_uniq_vsting_ptr(dce, &hdr->server_name);
+	if (ndr_read_uniq_vstring_ptr(dce, &hdr->server_name))
+		return -EINVAL;
 
 	if (dce->req_hdr.opnum == SRVSVC_OPNUM_SHARE_ENUM_ALL) {
 		int ptr;
+		__u32 val;
 
 		/* Read union switch selector */
-		hdr->level = ndr_read_union_int32(dce);
-		if (hdr->level == -EINVAL)
+		if (ndr_read_union_int32(dce, &val))
 			return -EINVAL;
-		ndr_read_int32(dce); // read container pointer ref id
-		ndr_read_int32(dce); // read container array size
-		ptr = ndr_read_int32(dce); // read container array pointer
-					   // it should be null
+		hdr->level = val;
+		// read container pointer ref id
+		if (ndr_read_int32(dce, NULL))
+			return -EINVAL;
+		// read container array size
+		if (ndr_read_int32(dce, NULL))
+			return -EINVAL;
+		// read container array pointer
+		if (ndr_read_int32(dce, &ptr))
+			return -EINVAL;
+		// it should be null
 		if (ptr != 0x00) {
 			pr_err("SRVSVC: container array pointer is %x\n",
 				ptr);
 			return -EINVAL;
 		}
-		hdr->max_size = ndr_read_int32(dce);
-		ndr_read_uniq_ptr(dce, &hdr->payload_handle);
+		if (ndr_read_int32(dce, &val))
+			return -EINVAL;
+		hdr->max_size = val;
+		if (ndr_read_uniq_ptr(dce, &hdr->payload_handle))
+			return -EINVAL;
 		return 0;
 	}
 
 	if (dce->req_hdr.opnum == SRVSVC_OPNUM_GET_SHARE_INFO) {
-		ndr_read_vstring_ptr(dce, &hdr->share_name);
-		hdr->level = ndr_read_int32(dce);
+		if (ndr_read_vstring_ptr(dce, &hdr->share_name))
+			return -EINVAL;
+		if (ndr_read_int32(dce, &hdr->level))
+			return -EINVAL;
 		return 0;
 	}
 
@@ -330,7 +343,7 @@ static int srvsvc_clear_headers(struct ksmbd_rpc_pipe *pipe,
 	if (status == KSMBD_RPC_EMORE_DATA)
 		return 0;
 
-	ndr_free_uniq_vsting_ptr(&pipe->dce->si_req.server_name);
+	ndr_free_uniq_vstring_ptr(&pipe->dce->si_req.server_name);
 	if (pipe->dce->req_hdr.opnum == SRVSVC_OPNUM_GET_SHARE_INFO)
 		ndr_free_vstring_ptr(&pipe->dce->si_req.share_name);
 

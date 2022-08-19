@@ -29,25 +29,15 @@ static size_t wsz;
 
 static char *new_group_name(char *name)
 {
-	char *gn;
-
 	if (strchr(name, '['))
 		return name;
 
-	gn = g_malloc(strlen(name) + 3);
-	if (gn)
-		sprintf(gn, "[%s]", name);
-	return gn;
+	return g_strdup_printf("[%s]", name);
 }
 
 static char *aux_group_name(char *name)
 {
-	char *gn;
-
-	gn = g_malloc(strlen(name) + 3 + strlen(AUX_GROUP_PREFIX));
-	if (gn)
-		sprintf(gn, "[%s%s]", AUX_GROUP_PREFIX, name);
-	return gn;
+	return g_strdup_printf("[%s%s]", AUX_GROUP_PREFIX, name);
 }
 
 static int __open_smbconf(char *smbconf)

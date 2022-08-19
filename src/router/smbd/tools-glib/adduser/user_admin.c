@@ -24,8 +24,6 @@
 
 #include <linux/ksmbd_server.h>
 
-#define MAX_NT_PWD_LEN 129
-
 static char *arg_account = NULL;
 static char *arg_password = NULL;
 static int conf_fd = -1;
@@ -64,8 +62,8 @@ static void term_toggle_echo(int on_off)
 
 static char *__prompt_password_stdin(size_t *sz)
 {
-	char *pswd1 = calloc(1, MAX_NT_PWD_LEN + 1);
-	char *pswd2 = calloc(1, MAX_NT_PWD_LEN + 1);
+	char *pswd1 = g_try_malloc0(MAX_NT_PWD_LEN + 1);
+	char *pswd2 = g_try_malloc0(MAX_NT_PWD_LEN + 1);
 	size_t len = 0;
 	int i;
 
@@ -77,9 +75,16 @@ static char *__prompt_password_stdin(size_t *sz)
 	}
 
 again:
+	memset(pswd1, 0, MAX_NT_PWD_LEN + 1);
+	memset(pswd2, 0, MAX_NT_PWD_LEN + 1);
+
 	printf("New password:\n");
 	term_toggle_echo(0);
 	if (fgets(pswd1, MAX_NT_PWD_LEN, stdin) == NULL) {
+		if (feof(stdin)) {
+			clearerr(stdin);
+			goto skip;
+		}
 		term_toggle_echo(1);
 		pr_err("Fatal error: %s\n", strerr(errno));
 		free(pswd1);
@@ -89,12 +94,18 @@ again:
 
 	printf("Retype new password:\n");
 	if (fgets(pswd2, MAX_NT_PWD_LEN, stdin) == NULL) {
+		if (feof(stdin)) {
+			clearerr(stdin);
+			goto skip;
+		}
 		term_toggle_echo(1);
 		pr_err("Fatal error: %s\n", strerr(errno));
 		free(pswd1);
 		free(pswd2);
 		return NULL;
 	}
+
+skip:
 	term_toggle_echo(1);
 
 	len = strlen(pswd1);
@@ -113,10 +124,8 @@ again:
 	}
 
 	len = strlen(pswd1);
-	if (len <= 1) {
-		pr_err("No password was provided\n");
-		goto again;
-	}
+	if (!len)
+		pr_info("No password was provided\n");
 
 	*sz = len;
 	free(pswd2);
@@ -186,7 +195,7 @@ static char *get_hashed_b64_password(void)
 	if (!pswd_plain)
 		return NULL;
 
-	pswd_hash = calloc(1, sizeof(mctx.hash) + 1);
+	pswd_hash = g_try_malloc0(sizeof(mctx.hash) + 1);
 	if (!pswd_hash) {
 		free(pswd_plain);
 		pr_err("Out of memory\n");
