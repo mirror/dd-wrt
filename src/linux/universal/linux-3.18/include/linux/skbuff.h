@@ -168,6 +168,8 @@ struct nf_bridge_info {
 };
 #endif
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Warray-bounds"
 struct sk_buff_head {
 	/* These two members must be first. */
 	struct sk_buff	*next;
@@ -176,6 +178,7 @@ struct sk_buff_head {
 	__u32		qlen;
 	spinlock_t	lock;
 };
+#pragma GCC diagnostic pop
 
 struct sk_buff;
 
@@ -507,6 +510,8 @@ static inline u32 skb_mstamp_us_delta(const struct skb_mstamp *t1,
  *	@truesize: Buffer size
  *	@users: User count - see {datagram,tcp}.c
  */
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Warray-bounds"
 
 struct sk_buff {
 	/* These two members must be first. */
@@ -672,6 +677,7 @@ struct sk_buff {
 	unsigned int		truesize;
 	atomic_t		users;
 };
+#pragma GCC diagnostic pop
 
 #ifdef __KERNEL__
 /*
@@ -1017,6 +1023,8 @@ static inline struct skb_shared_hwtstamps *skb_hwtstamps(struct sk_buff *skb)
 	return &skb_shinfo(skb)->hwtstamps;
 }
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Warray-bounds"
 /**
  *	skb_queue_empty - check if a queue is empty
  *	@list: queue head
@@ -1089,6 +1097,7 @@ static inline struct sk_buff *skb_queue_prev(const struct sk_buff_head *list,
 	BUG_ON(skb_queue_is_first(list, skb));
 	return skb->prev;
 }
+#pragma GCC diagnostic pop
 
 /**
  *	skb_get - reference buffer
@@ -1271,6 +1280,8 @@ static inline struct sk_buff *skb_unshare(struct sk_buff *skb,
  *	The reference count is not incremented and the reference is therefore
  *	volatile. Use with caution.
  */
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Warray-bounds"
 static inline struct sk_buff *skb_peek(const struct sk_buff_head *list_)
 {
 	struct sk_buff *skb = list_->next;
@@ -1353,6 +1364,7 @@ static inline void __skb_queue_head_init(struct sk_buff_head *list)
 	list->prev = list->next = (struct sk_buff *)list;
 	list->qlen = 0;
 }
+#pragma GCC diagnostic pop
 
 /*
  * This function creates a split out lock class for each invocation;
@@ -1381,6 +1393,8 @@ static inline void skb_queue_head_init_class(struct sk_buff_head *list,
  *	The "__skb_xxxx()" functions are the non-atomic ones that
  *	can only be called with interrupts disabled.
  */
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Warray-bounds"
 void skb_insert(struct sk_buff *old, struct sk_buff *newsk,
 		struct sk_buff_head *list);
 static inline void __skb_insert(struct sk_buff *newsk,
@@ -1583,6 +1597,7 @@ static inline struct sk_buff *__skb_dequeue_tail(struct sk_buff_head *list)
 	return skb;
 }
 
+#pragma GCC diagnostic pop
 
 static inline bool skb_is_nonlinear(const struct sk_buff *skb)
 {
