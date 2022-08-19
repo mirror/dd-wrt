@@ -41,7 +41,7 @@ table tr th {
   border: 1px solid #1c7b01;
 }
 .table_bg_br_clr_on:hover {
-  background-color: #32e202;
+  background-color: #35ee00;
   border: 1px solid #1c7b01;
 }
 .table_bg_br_clr_off, .table_bg_br_clr_off:hover {
@@ -136,7 +136,7 @@ select {
   background: #fafafa;
   border: 1px solid #111;
 }
-#content.infopage {
+#content.infopage, .odd {
   background-color: transparent;
 }
 #content.infopage #main {
@@ -157,9 +157,6 @@ select {
   background: #aaa;
   border: 1px solid #888;
 }
-.odd {
-  background-color: transparent;
-}
 .warning {
   background: #fcc;
   border: 2px dashed #f99;
@@ -176,6 +173,6 @@ pre {
   background: #f6f6f6;
   border: 1px solid #f6f6f6;
 }
-#tablePwdCheck tr th {
+#tablePwdCheck tr th, #score {
   color: #000;
 }
