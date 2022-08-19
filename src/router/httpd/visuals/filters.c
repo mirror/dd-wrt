@@ -672,28 +672,28 @@ EJ_VISIBLE void ej_filter_summary_show(webs_t wp, int argc, char_t ** argv)
 
 		filter_tod_init(wp, i + 1);
 
-		websWrite(wp, "<tr class=\"center\" bgcolor=\"#CCCCCC\" >\n"
-			  "<td width=\"50\" ><font face=\"Arial\" size=\"2\" >%d.</font></td>\n"
-			  "<td width=\"200\" ><font face=\"Arial\" size=\"2\" >%s</font></td>\n"
+		websWrite(wp, "<tr class=\"table_row_bg center\" >\n"
+			  "<td width=\"50\" >%d.</td>\n"
+			  "<td width=\"200\" >%s</td>\n"
 			  "<td height=\"30\" width=\"150\" >\n"
-			  "<table width=\"150\" height=\"30\" border=\"1\" cellspacing=\"1\" bordercolor=\"#000000\" bgcolor=\"#FFFFFF\" style=\"border-collapse:collapse\" >\n" "<tr>\n", i + 1, name);
-		websWrite(wp, "<td class=\"center\" width=\"17\" bgcolor=\"%s\" style=\"border-style: solid\"><script type=\"text/javascript\">Capture(%s)</script></td>\n"
-			  "<td class=\"center\" width=\"17\" bgcolor=\"%s\" style=\"border-style: solid\"><script type=\"text/javascript\">Capture(%s)</script></td>\n"
-			  "<td class=\"center\" width=\"17\" bgcolor=\"%s\" style=\"border-style: solid\"><script type=\"text/javascript\">Capture(%s)</script></td>\n"
-			  "<td class=\"center\" width=\"17\" bgcolor=\"%s\" style=\"border-style: solid\"><script type=\"text/javascript\">Capture(%s)</script></td>\n", wp->p->tod_data_null == 0 && (wp->p->day_all == 1
+			  "<table width=\"150\" height=\"30\" border=\"1\" cellspacing=\"1\" style=\"border-collapse: collapse\" >\n" "<tr>\n", i + 1, name);
+		websWrite(wp, "<td class=\"%s center\" width=\"17\"><script type=\"text/javascript\">Capture(%s)</script></td>\n"
+			  "<td class=\"%s center\" width=\"17\"><script type=\"text/javascript\">Capture(%s)</script></td>\n"
+			  "<td class=\"%s center\" width=\"17\"><script type=\"text/javascript\">Capture(%s)</script></td>\n"
+			  "<td class=\"%s center\" width=\"17\"><script type=\"text/javascript\">Capture(%s)</script></td>\n", wp->p->tod_data_null == 0 && (wp->p->day_all == 1
 																								       || wp->p->week0 ==
-																								       1) ? "#C0C0C0" :
-			  "#FFFFFF", w[0], wp->p->tod_data_null == 0 && (wp->p->day_all == 1 || wp->p->week1 == 1) ? "#C0C0C0" : "#FFFFFF", w[1], wp->p->tod_data_null == 0 && (wp->p->day_all == 1
+																								       1) ? "table_bg_br_clr_on" :
+			  "table_bg_br_clr_off", w[0], wp->p->tod_data_null == 0 && (wp->p->day_all == 1 || wp->p->week1 == 1) ? "table_bg_br_clr_on" : "table_bg_br_clr_off", w[1], wp->p->tod_data_null == 0 && (wp->p->day_all == 1
 																						|| wp->p->week2 ==
-																						1) ? "#C0C0C0" : "#FFFFFF", w[2],
-			  wp->p->tod_data_null == 0 && (wp->p->day_all == 1 || wp->p->week3 == 1) ? "#C0C0C0" : "#FFFFFF", w[3]);
+																						1) ? "table_bg_br_clr_on" : "table_bg_br_clr_off", w[2],
+			  wp->p->tod_data_null == 0 && (wp->p->day_all == 1 || wp->p->week3 == 1) ? "table_bg_br_clr_on" : "table_bg_br_clr_off", w[3]);
 		websWrite(wp,
-			  "<td class=\"center\" width=\"17\" bgcolor=\"%s\" style=\"border-style: solid\"><script type=\"text/javascript\">Capture(%s)</script></td>\n"
-			  "<td class=\"center\" width=\"17\" bgcolor=\"%s\" style=\"border-style: solid\"><script type=\"text/javascript\">Capture(%s)</script></td>\n"
-			  "<td class=\"center\" width=\"17\" bgcolor=\"%s\" style=\"border-style: solid\"><script type=\"text/javascript\">Capture(%s)</script></td>\n" "</tr>\n" "</table>\n" "</td>\n",
-			  wp->p->tod_data_null == 0 && (wp->p->day_all == 1 || wp->p->week4 == 1) ? "#C0C0C0" : "#FFFFFF", w[4], wp->p->tod_data_null == 0 && (wp->p->day_all == 1
-																			       || wp->p->week5 == 1) ? "#C0C0C0" : "#FFFFFF", w[5],
-			  wp->p->tod_data_null == 0 && (wp->p->day_all == 1 || wp->p->week6 == 1) ? "#C0C0C0" : "#FFFFFF", w[6]);
+			  "<td class=\"%s center\" width=\"17\"><script type=\"text/javascript\">Capture(%s)</script></td>\n"
+			  "<td class=\"%s center\" width=\"17\"><script type=\"text/javascript\">Capture(%s)</script></td>\n"
+			  "<td class=\"%s center\" width=\"17\"><script type=\"text/javascript\">Capture(%s)</script></td>\n" "</tr>\n" "</table>\n" "</td>\n",
+			  wp->p->tod_data_null == 0 && (wp->p->day_all == 1 || wp->p->week4 == 1) ? "table_bg_br_clr_on" : "table_bg_br_clr_off", w[4], wp->p->tod_data_null == 0 && (wp->p->day_all == 1
+																			       || wp->p->week5 == 1) ? "table_bg_br_clr_on" : "table_bg_br_clr_off", w[5],
+			  wp->p->tod_data_null == 0 && (wp->p->day_all == 1 || wp->p->week6 == 1) ? "table_bg_br_clr_on" : "table_bg_br_clr_off", w[6]);
 
 		if (wp->p->tod_data_null == 0) {
 			if (wp->p->time_all == 1)

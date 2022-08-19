@@ -37,15 +37,31 @@ body a:link {
 body a:link:hover {
   color: var(--v0-9);
 }
-body[onunload*="location.href='Filters.asp'"] {
-  height: 180% !important;
-  background-color: var(--bg-0);
+body[onunload*="location.href='Filters.asp'"] h2 {
+  background: var(--bg-5);
+}
+body[onunload*="location.href='Filters.asp'"] tr.table_row_bg {
+  background-color: var(--bg-2);
+}
+body[onunload*="location.href='Filters.asp'"] tr.table_row_bg:hover,
+body[onunload*="location.href='Filters.asp'"] tr.table_row_bg:focus-within {
+  background-color: var(--bg-3);
 }
 body[onunload*="location.href='Filters.asp'"] td[width='70'] input[type='checkbox'][name*='sum'] {
   margin-bottom: 0;
 }
-body[onunload*="location.href='Filters.asp'"] h2 {
-  background: var(--bg-5);
+body[onunload*="location.href='Filters.asp'"] td.table_bg_br_clr_on {
+  background-color: var(--v4-3);
+  border-color: var(--v4-0);
+}
+body[onunload*="location.href='Filters.asp'"] td.table_bg_br_clr_on:hover {
+  background-color: var(--v4-5);
+  border-color: var(--v4-0);
+}
+body[onunload*="location.href='Filters.asp'"] td.table_bg_br_clr_off {
+  background-color: var(--bg-2);
+  border-color: var(--bg-4);
+  opacity: 0.5;
 }
 body.gui {
   background: var(--bg-0);
@@ -244,6 +260,7 @@ body div.message {
   border-color: var(--bg-3);
   border-radius: 4px;
 }
+.popup,
 .popup_bg,
 .iplookup {
   background: var(--bg-1);
@@ -275,10 +292,6 @@ pre {
 }
 #wrapper #content {
   background-color: var(--bg-1);
-}
-.popup {
-  background: var(--bg-1);
-  color: var(--v9-7);
 }
 hr {
   color: var(--bg-5) !important;
@@ -459,14 +472,11 @@ textarea:focus-visible {
   box-shadow: 0 0 10px 0 var(--v0-4) !important;
   outline: 0 !important;
 }
-.syslog_bd {
-  background: var(--bg-1);
-}
 .dark_fs_bg {
-  background: var(--syslog-bd);
+  background: var(--syslog-bg);
 }
 .syslog_bg {
-  background: var(--syslog-bd);
+  background: var(--syslog-bg);
   color: var(--v9-7);
   padding-top: 0.1rem;
 }
@@ -495,12 +505,6 @@ textarea:focus-visible {
 .syslog_bg tr td.syslog_text_dark {
   color: var(--v9-0);
 }
-table[bgcolor='#FFFFFF'] {
-  background-color: var(--bg-0);
-}
-table[bordercolor='#000000'] {
-  border-color: var(--bg-4);
-}
 table tr:not([bgcolor]):not([class]):hover,
 table tr:not([bgcolor]):not([class]):focus-within {
   background-color: transparent;
@@ -510,12 +514,6 @@ table tr:not([bgcolor]):not([class]) th {
   border-color: var(--bg-5);
   color: var(--fg-1);
   padding-bottom: 2px;
-}
-table tr td[style='color:#000'] {
-  color: var(--v9-0) !important;
-}
-table tr td[bgcolor='#FFFFFF'] {
-  background-color: var(--bg-0);
 }
 #ip_count:hover,
 [title*='Search']:hover,
@@ -529,23 +527,6 @@ table tr td[bgcolor='#FFFFFF'] {
 }
 [style*='background-color: rgb(205, 0, 0)'] {
   background-color: var(--v1-5) !important;
-}
-table td[bgcolor='#C0C0C0'] {
-  background-color: var(--bg-2);
-}
-table td[bgcolor='#C0C0C0']:hover {
-  background-color: var(--bg-3);
-}
-table tr[bgcolor='#CCCCCC'] {
-  background-color: var(--bg-2);
-}
-table tr[bgcolor='#CCCCCC']:hover,
-table tr[bgcolor='#CCCCCC']:focus-within {
-  background-color: var(--bg-3);
-}
-table tr[bgcolor='#7CFC00'] {
-  background-color: var(--v4-2);
-  color: var(--v9-9);
 }
 #drives {
   margin-bottom: 6px;

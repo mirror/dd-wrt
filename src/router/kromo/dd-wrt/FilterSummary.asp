@@ -21,9 +21,9 @@ function filter_del(F) {
 				<tbody>
 					<tr>
 						<th class="center"><% tran("filterSum.polnum"); %></th>
-						<th><% tran("filter.polname"); %></th>
-						<th><% tran("filter.legend2"); %></th>
-						<th><% tran("filterSum.polday"); %></th>
+						<th class="center"><% tran("filter.polname"); %></th>
+						<th class="center"><% tran("filter.legend2"); %></th>
+						<th class="center"><% tran("filterSum.polday"); %></th>
 						<th class="center"><% tran("share.del"); %></th>
 					</tr>
 					<% filter_summary_show(); %>
