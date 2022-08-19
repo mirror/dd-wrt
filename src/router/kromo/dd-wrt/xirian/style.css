@@ -126,6 +126,13 @@ select[name='time_zone'] {
 select[onchange*="SelFilter"] {
   margin-right: .2rem
 }
+select[onchange*='blockedServices'] { 
+  margin-left: -.2em;
+  width: 11.2rem;
+}
+input.num[readonly] {
+  width: 2.2rem
+}
 input {
   background: #e9e9ed;
   border: 1px solid #9292a0;
@@ -430,5 +437,5 @@ form[name='wds'] input[size='25'] {
   background-color: #ccd;
 }
 .table_row_bg:hover {
-  background-color: #d9d9e7;
+  background-color: #bbbbcc;
 }
