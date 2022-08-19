@@ -52,3 +52,4 @@
  "openvpncl_wdog_sleept" "Watchdog ping interval" "RANGE"  "10"  "60"  "FALSE" "0"
  "openvpncl_tls_btn" "TLS key choice" "CHOICE" "2" "0" "1" "FALSE" "0"
  "openvpncl_mit" "CVE Mitigation" "CHOICE" "2" "0" "1" "FALSE" "0"
+ 

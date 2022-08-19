@@ -1085,6 +1085,12 @@ static struct gozila_action gozila_actions[] = {
 	 */
 	{ "index", "wan_proto", "", REFRESH, "wan_proto" },
 	{ "index", "dhcpfwd", "", REFRESH, "dhcpfwd" },
+//egc
+#ifdef HAVE_OPENVPN
+	//{ "PPTP", "import_vpntunnel", "", REFRESH, "import_vpntunnel" },
+	//{ "PPTP", "import_vpntunnel", "", NOTHING, "import_vpntunnel" },
+	{ "PPTP", "import_vpntunnel", "", REFRESH_DELAY, "import_vpntunnel" },
+#endif
 #ifdef HAVE_IAS
 	{ "index", "admin_card", "", RESTART, "ias_save_admincard" },
 #endif
