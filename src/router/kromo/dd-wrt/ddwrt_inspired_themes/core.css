@@ -1030,11 +1030,11 @@ input[type='file']::-webkit-file-upload-button:hover {
   color: 98;
 }
 input[disabled] {
-  opacity: 0.6;
+  opacity: 0.5;
 }
 .off {
   background: var(--bg-2);
-  opacity: 0.99;
+  opacity: 0.5;
 }
 .off input {
   color: var(--v9-4) !important;
