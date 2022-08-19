@@ -50,6 +50,7 @@ struct ksmbd_session {
 	char				sess_key[CIFS_KEY_SIZE];
 
 	struct hlist_node		hlist;
+	rwlock_t			chann_lock;
 	struct list_head		ksmbd_chann_list;
 	struct list_head		tree_conn_list;
 	struct ida			tree_conn_ida;
