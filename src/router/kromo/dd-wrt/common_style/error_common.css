@@ -10,7 +10,7 @@
   --v9-9: hsla(0,0%,93.34%,1);
   --rgba-bg-04: rgba(17,26,34,0.4);
 }
-body[bgcolor="#cc9999"] {
+.error_page {
   background-color: var(--v1-1);
   color: var(--v9-8);
   font-size: 0;
@@ -19,15 +19,15 @@ body[bgcolor="#cc9999"] {
   cursor: auto;
   overflow: hidden !important;
 }
-body[bgcolor="#cc9999"] h4 {
+.error_page h4 {
   margin-top: 3rem;
   font-size: 0;
 }
-body[bgcolor="#cc9999"] h4:hover {
+.error_page h4:hover {
   animation: move-it 1.2s ease-in-out;
   cursor: not-allowed;
 }
-body[bgcolor="#cc9999"] h4::before {
+.error_page h4::before {
   content: '%d\A';
   font-size: 7rem;
   line-height: 10rem;
@@ -44,7 +44,7 @@ body[bgcolor="#cc9999"] h4::before {
                0 20px 10px var(--rgba-bg-04);
   white-space: pre-wrap;
 }
-body[bgcolor="#cc9999"] h4::after {
+.error_page h4::after {
   content: '%s';
   animation: color_change 1s ease-in-out infinite alternate;
   font-variant: small-caps;
@@ -52,7 +52,7 @@ body[bgcolor="#cc9999"] h4::after {
   letter-spacing: 1px;
   line-height: 2rem;
 }
-body[bgcolor="#cc9999"]::after {
+.error_page::after {
   content: '\A \24D8 %s';
   color: var(--v9-9);
   font-size: 1rem;

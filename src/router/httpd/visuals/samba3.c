@@ -135,7 +135,7 @@ EJ_VISIBLE void ej_samba3_sharepaths(webs_t wp, int argc, char_t ** argv)
 			  "<td style=\"width: 1%%;\"><input type=\"text\" name=\"smbshare_label%s\" id=\"smbshare_label%s\" value=\"%s\" style=\"width: 100px;\" onChange=\"updateSambaUserShare(this);\" /></td>\n",
 			  number, number, cs->label);
 		websWrite(wp,
-			  "<td style=\"width: 25px; vertical-align: bottom;\" class=\"center\"><input type=\"checkbox\" name=\"smbshare_public%s\" id=\"smbshare_public%s\" value=\"1\" %s></td>\n",
+			  "<td style=\"width: 25px; vertical-align: middle;\" class=\"center\"><input type=\"checkbox\" name=\"smbshare_public%s\" id=\"smbshare_public%s\" value=\"1\" %s></td>\n",
 			  number, number, cs->public == 1 ? "checked" : "");
 		websWrite(wp, "<td>\n");
 		websWrite(wp,

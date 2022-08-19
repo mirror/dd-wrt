@@ -75,7 +75,7 @@ hr {
   border: 0;
   margin: 2em 0;
 }
-table {
+table, .table {
   width: 100%;
 }
 #radio_table {
@@ -278,7 +278,7 @@ input.spaceradio {
   margin-top: -.4rem;
   margin-left: .6rem;
 }
-div.center .button, tr.center {
+div.center .button, tr.center:not(.table_row_bg) {
   margin-left: .3em;
   margin-top: .9em;
   float: left;
@@ -294,7 +294,7 @@ iframe[src*='/graph_if.svg'] {
 }
 iframe#syslog {
   left: 13.55rem;
-  top: 4.4rem;
+  top: 5rem;
   max-width: 82%;
   position: relative;
   height: 811px;

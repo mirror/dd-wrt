@@ -189,7 +189,8 @@ input.button[onclick*="delete"] {
 .gui .submitFooter {
   margin: 0 300px 0 0;
 }
-[name="Info"] .submitFooter {
+[name="Info"] .submitFooter,
+#contents[style="padding: .93em;"] .submitFooter {
   margin: 0;
 }
 .submitFooter {
