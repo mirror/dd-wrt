@@ -477,7 +477,7 @@ int smb_tree_connect_andx(struct ksmbd_work *work)
 	else if (!strcmp(dev_type, "?????"))
 		dev_flags = 5;
 
-	if (!strncmp("IPC$", name, 4)) {
+	if (!strcmp(name, "IPC$")) {
 		if (dev_flags < 3) {
 			status.ret = -ENODEV;
 			goto out_err;
@@ -2263,12 +2263,9 @@ int smb_nt_create_andx(struct ksmbd_work *work)
 	}
 
 	if (is_relative_root) {
-		int org_len = strnlen(name, PATH_MAX);
-		int add_len = strnlen(root, PATH_MAX);
 		char *full_name;
 
-		/* +3 for: '\'<root>'\' & '\0' */
-		full_name = kzalloc(org_len + add_len + 3, GFP_KERNEL);
+		full_name = kasprintf(GFP_KERNEL, "\\%s\\%s", root, name);
 		if (!full_name) {
 			printk(KERN_ERR "Out of memory in %s:%d\n", __func__,__LINE__);
 			kfree(name);
@@ -2276,8 +2273,6 @@ int smb_nt_create_andx(struct ksmbd_work *work)
 			return -ENOMEM;
 		}
 
-		snprintf(full_name, add_len + 3, "\\%s\\", root);
-		strncat(full_name, name, org_len);
 		kfree(name);
 		name = full_name;
 	}
@@ -2297,6 +2292,7 @@ int smb_nt_create_andx(struct ksmbd_work *work)
 	if (IS_ERR(conv_name)) {
 		rsp->hdr.Status.CifsError =
 			STATUS_OBJECT_NAME_INVALID;
+		kfree(name);
 		return PTR_ERR(conv_name);
 	}
 
@@ -6295,7 +6291,6 @@ static int find_next(struct ksmbd_work *work)
 	int data_alignment_offset = 0;
 	int rc = 0, reclen = 0;
 	__u16 sid;
-	char *name = NULL;
 	char *pathname = NULL;
 	int header_size, srch_cnt, struct_sz;
 
@@ -6304,16 +6299,6 @@ static int find_next(struct ksmbd_work *work)
 	req_params = (struct smb_com_trans2_fnext_req_params *)
 		(work->request_buf + le16_to_cpu(req->ParameterOffset) + 4);
 	sid = req_params->SearchHandle;
-
-	/*Currently no usage of ResumeFilename*/
-	name = req_params->ResumeFileName;
-	name = smb_strndup_from_utf16(name, NAME_MAX, 1, conn->local_nls);
-	if (IS_ERR(name)) {
-		rsp->hdr.Status.CifsError = STATUS_NO_MEMORY;
-		return PTR_ERR(name);
-	}
-	ksmbd_debug(SMB, "FileName after unicode conversion %s\n", name);
-	kfree(name);
 
 	dir_fp = ksmbd_lookup_fd_fast(work, sid);
 	if (!dir_fp) {
