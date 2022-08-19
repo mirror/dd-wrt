@@ -2,6 +2,32 @@
 		<script type="text/javascript">
 		//<![CDATA[
 
+function import_vpntunnel(F,myid)
+{
+	//this is triggered by on change event of filepicker
+	//alert("getvpnfile: F:" + F.name + "; key-tun: " +  "; myid: " + myid);
+	var vpnfileid = document.getElementById(myid).files[0];
+	//console.log("vpnfileid.name: " + vpnfileid.name + "; F: " + F + "; key-tun: " + "; myid: " + myid);
+	if (vpnfileid.size > 128000) {
+		//alert("File: " + vpnfileid.name +" with size: " + vpnfileid.size +"B exceeds limit, is this the right file?");
+		if(!confirm("File:" + vpnfileid.name +" with size:" + vpnfileid.size +"B exceeds limit, is this the right file?")) {
+			return false;
+		}
+	}
+ 	var vpnreader = new FileReader();
+ 	vpnreader.readAsText(vpnfileid, "UTF-8");
+	vpnreader.onload = function () {
+		var vpnfile = vpnreader.result;
+		//console.log("vpnconffile: " + vpnfile);
+		//F.keyindex.value = keyindex;
+		F.vpn_conf_file.value = vpnfile;
+		//console.log("F.vpn_conf_file.value: " + F.vpn_conf_file.value);
+		F.change_action.value="gozila_cgi";
+		F.submit_type.value = "import_vpntunnel";  //either execute script or .c module to parse data
+		apply(F);
+	}
+}
+
 function chap_user_add_submit(F) {
 	F.change_action.value="gozila_cgi";
 	F.submit_type.value = "add_chap_user";
@@ -168,6 +194,7 @@ addEvent(window, "unload", function() {
 							<input type="hidden" name="openvpncl_killswitch" />
 							<input type="hidden" name="openvpncl_splitdns" />
 							<input type="hidden" name="openvpn_fw" />
+							<input type="hidden" name="vpn_conf_file" />
 							
 							<h2><% tran("service.pptp_h2"); %></h2>
 							<fieldset>

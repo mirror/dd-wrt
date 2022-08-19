@@ -1860,6 +1860,45 @@ void validate_avahi(webs_t wp, char *value, struct variable *v)
 }
 #endif
 
+//egc
+#ifdef HAVE_OPENVPN
+void import_vpntunnel(webs_t wp)
+{
+/*
+Alternatively get the POST data, those will contain the file if enctype="multipart/form-data"
+POST data are written to stdin retrieve with wfgets (router/httpd/httpd.c line 1983)
+Need parsing to get the file data out of the POST data
+*/
+	char *vpn_conf_file = websGetVar(wp, "vpn_conf_file", "");
+	FILE *fp = NULL;
+	char vpnupload_file[64] = "/tmp/vpnupload.conf";
+	char jffs_vpnconfig_script[64] = "/jffs/etc/config/importvpncl.sh";
+	char vpnconfig_script[64] = "/usr/bin/importvpncl.sh";
+	//dd_loginfo("OpenVPN", "OpenVPN import tunnel * config file: %s\n", vpn_conf_file);
+	//dd_loginfo("OpenVPN", "OpenVPN import tunnel config file\n");
+	fp = fopen(vpnupload_file, "w");
+	if (fp == NULL) {
+		dd_loginfo("OpenVPN", "Cannot open %s\n", vpnupload_file);
+		return;
+	} else {
+		fprintf(fp, "%s\n", vpn_conf_file);
+		//dd_loginfo("OpenVPN", "import config saved to %s\n", vpnupload_file);
+		fclose(fp);
+	}
+	// now parsing vpnupload_file
+	// check if temp script exist as we might need custom/updated/test scripts
+	struct stat statbuffer;
+	int fexist = stat(jffs_vpnconfig_script,&statbuffer);
+	if(fexist == 0) {
+		eval(jffs_vpnconfig_script);
+		dd_loginfo("OpenVPN", "converting %s with %s\n", vpnupload_file, jffs_vpnconfig_script);
+	} else {
+		eval(vpnconfig_script);
+		dd_loginfo("OpenVPN", "converting %s with %s\n", vpnupload_file, vpnconfig_script);
+	}
+}
+#endif
+
 #ifdef HAVE_EOP_TUNNEL
 void tunnel_save(webs_t wp)
 {

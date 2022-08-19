@@ -217,6 +217,9 @@ static struct callmap gozila_map[] = {
 #ifdef HAVE_PPTPD
 	{ "delete_pptp", &delete_pptp },
 #endif
+#ifdef HAVE_OPENVPN
+	{ "import_vpntunnel", &import_vpntunnel },
+#endif
 	{ "save_wifi", &save_wifi },
 	{ "save_wifi", &save_wifi },
 	{ "dhcp_release", &dhcp_release },
