@@ -269,7 +269,8 @@ select[name='time_zone'] {
 }
 select[onchange*='blockedServices'] { 
   margin-right: .362em;
-  height: 1.7rem
+  height: 1.7rem;
+  width: 10.3rem;
 }
 select[onchange*='ServiceTable'] {
   width: inherit;
@@ -563,7 +564,6 @@ div.bulle, table.bulle, td.bulle {
   color: #000;
 }
 #score {
-  color: #000;
   font-size: 85%;
   position: absolute;
   text-align: center;
