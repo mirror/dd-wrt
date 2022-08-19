@@ -73,9 +73,10 @@ select {
 select[name='time_zone'] {
   min-width: 15.3rem;
 }
-select[onchange*='blockedServices'] {
+select[onchange*='blockedServices'] { 
   margin-right: .362em;
-  height: 1.7rem
+  height: 1.7rem;
+  width: 10.3rem;
 }
 select[onchange*='ServiceTable'] {
   width: inherit;

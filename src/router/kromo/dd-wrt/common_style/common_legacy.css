@@ -45,12 +45,9 @@ input.button {
   cursor: pointer;
 }
 input.button[disabled],
-input[disabled], select[disabled] {
+input[disabled], select[disabled], .off {
   cursor: default;
   opacity: .6
-}
-.off {
-  opacity: .6;
 }
 #tablePwdCheck tr th {
   background-color: transparent;
@@ -111,7 +108,7 @@ table tr:not([class]):hover {
   border: 1px solid #1c7b01;
 }
 .table_bg_br_clr_on:hover {
-  background-color: #32e202;
+  background-color: #35ee00;
   border: 1px solid #1c7b01;
 }
 .table_bg_br_clr_off, .table_bg_br_clr_off:hover {
