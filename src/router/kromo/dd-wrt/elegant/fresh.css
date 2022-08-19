@@ -33,7 +33,7 @@ table tr th {
 .table_row_bg {
   background-color: #d1d1d1;
 }
-table tr:hover, .table_row_bg:hover {
+.table_row_bg:hover {
   background-color: #d9d9d9;
 }
 .table_bg_br_clr_on {

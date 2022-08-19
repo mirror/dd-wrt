@@ -213,6 +213,10 @@ input.button[onclick*="delete"] {
   margin: .362em;
   height: 1.533rem;
 }
+.button[name="refresh_button"] {
+  background-color: #e9e9ed;
+  border-radius: 4px;
+}
 #statusInfo {
   position: absolute;
   top: 2em;

@@ -100,8 +100,11 @@ div.bulle, table.bulle, td.bulle {
 .table_row_bg {
   background-color: #d1d1d1;
 }
-table tr:hover, .table_row_bg:hover {
+.table_row_bg:hover {
   background-color: #d9d9d9;
+}
+table tr:not([class]):hover {
+  background-color: transparent;
 }
 .table_bg_br_clr_on {
   background-color: #31dd00;
