@@ -31,7 +31,7 @@
  "openvpncl_spbr" "Source routing (PBR)" "CHOICE" "3" "0" "1" "2" "FALSE" "0"
  "openvpncl_splitdns" "OpenVPN Split DNS" "CHOICE" "2" "0" "1" "FALSE" "0"
  "openvpncl_tlsauth"  "TLS Auth Key"  "NULL"   "FALSE" "0"
- "openvpncl_cipher" "Cipher" "CHOICE" "10" "CHACHA20-POLY1305" "AES-256-GCM" "AES-192-GCM" "AES-128-GCM" "AES-512-CBC" "AES-256-CBC" "AES-192-CBC" "AES-128-CBC" "none" "" "FALSE" "0"
+ "openvpncl_cipher" "Cipher" "CHOICE" "10" "CHACHA20-POLY1305" "AES-256-GCM" "AES-192-GCM" "AES-128-GCM" "AES-256-CBC" "AES-192-CBC" "AES-128-CBC" "none" "" "FALSE" "0"
  "openvpncl_dc1" "Data Cipher 1" "CHOICE" "9" "CHACHA20-POLY1305" "AES-256-GCM" "AES-192-GCM" "AES-128-GCM" "AES-256-CBC" "AES-192-CBC" "AES-128-CBC" "none" "" "FALSE" "0"
  "openvpncl_dc2" "Data Cipher 2" "CHOICE" "8" "CHACHA20-POLY1305" "AES-256-GCM" "AES-192-GCM" "AES-128-GCM" "AES-256-CBC" "AES-192-CBC" "AES-128-CBC" "" "FALSE" "0"
  "openvpncl_dc3" "Data Cipher 3" "CHOICE" "8" "CHACHA20-POLY1305" "AES-256-GCM" "AES-192-GCM" "AES-128-GCM" "AES-256-CBC" "AES-192-CBC" "AES-128-CBC" "" "FALSE" "0"

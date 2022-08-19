@@ -78,7 +78,6 @@
 			<option value="AES-256-GCM" <% nvram_selected("openvpncl_cipher","AES-256-GCM"); %>>AES-256-GCM</option>
 			<option value="AES-192-GCM" <% nvram_selected("openvpncl_cipher","AES-192-GCM"); %>>AES-192-GCM</option>
 			<option value="AES-128-GCM" <% nvram_selected("openvpncl_cipher","AES-128-GCM"); %>>AES-128-GCM</option>
-			<option value="AES-512-CBC" <% nvram_selected("openvpncl_cipher","AES-512-CBC"); %>>AES-512-CBC</option>
 			<option value="AES-256-CBC" <% nvram_selected("openvpncl_cipher","AES-256-CBC"); %>>AES-256-CBC</option>
 			<option value="AES-192-CBC" <% nvram_selected("openvpncl_cipher","AES-192-CBC"); %>>AES-192-CBC</option>
 			<option value="AES-128-CBC" <% nvram_selected("openvpncl_cipher","AES-128-CBC"); %>>AES-128-CBC</option>
