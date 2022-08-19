@@ -285,6 +285,9 @@ form[name='nvramrestore'] .warning p {
 form[name='wireless'] input[name*='ssid'] {
   min-width: initial;
 }
+form tr[id*='samba_shares_row'] td[style*='width: 25px; vertical-align: middle'] {
+  vertical-align: bottom !important;
+}
 pre {
   background-color: var(--bg-0);
   border-color: var(--bg-4);

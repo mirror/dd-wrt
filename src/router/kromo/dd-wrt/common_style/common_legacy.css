@@ -97,3 +97,22 @@ div.bulle, table.bulle, td.bulle {
 [title*='Chain']:hover, [title*='Monitoring']:hover {
   color: #04c;
 }
+.table_row_bg {
+  background-color: #d1d1d1;
+}
+table tr:hover, .table_row_bg:hover {
+  background-color: #d9d9d9;
+}
+.table_bg_br_clr_on {
+  background-color: #31dd00;
+  border: 1px solid #1c7b01;
+}
+.table_bg_br_clr_on:hover {
+  background-color: #32e202;
+  border: 1px solid #1c7b01;
+}
+.table_bg_br_clr_off, .table_bg_br_clr_off:hover {
+  background-color: #fff;
+  border: 1px solid #777674;
+  opacity: .5;
+}
