@@ -1121,6 +1121,8 @@ static inline void skb_queue_head_init_class(struct sk_buff_head *list,
 	lockdep_set_class(&list->lock, class);
 }
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Warray-bounds"
 /*
  *	Insert an sk_buff on a list.
  *
@@ -1293,6 +1295,7 @@ static inline void __skb_unlink(struct sk_buff *skb, struct sk_buff_head *list)
 	next->prev = prev;
 	prev->next = next;
 }
+#pragma GCC diagnostic pop
 
 /**
  *	__skb_dequeue - remove from the head of the queue
