@@ -128,34 +128,19 @@ select {
   border: 1px solid #454545;
   color: #e0e0e0;
 }
-table tr th {
-  background-color: #777674;
-  border-color: #777674;
-  color: #fff;
-}
-table tr[bgcolor='#CCCCCC'] {
+.table_row_bg {
   background-color: #222;
 }
-table tr[bgcolor='#CCCCCC']:hover {
-  background-color: #1a1a1a;
+.table_bg_br_clr_off, .table_bg_br_clr_off:hover {
+  background-color: #292929;
+  border: 1px solid #777674;
+  opacity: .5;
 }
-table tr:hover {
-  background: #1a1a1a;
+table tr:hover, .table_row_bg:hover {
+  background-color: #1a1a1a;
 }
 table tr:not([bgcolor]):not([class]):hover {
   background-color: transparent;
-}
-[bgcolor='#FFFFFF'] {
-  background-color: #292929;
-}
-[bordercolor='#000000'] {
-  border-color: #777674;
-}
-td[bgcolor='#C0C0C0'] {
-  background-color: #383838;
-}
-td[bgcolor='#C0C0C0']:hover {
-  background-color: #1a1a1a;
 }
 .submitFooter {
   background-color: #262626;
