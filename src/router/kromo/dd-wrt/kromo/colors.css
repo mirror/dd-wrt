@@ -48,10 +48,26 @@ table tr th {
   border-color: #ccc28f;
   color: #115b80;
 }
-table tr:hover {
-  background-color: #f1f1f1;
+.table_row_bg {
+  background-color: #d1d1d1;
 }
-table tr:not([bgcolor]):hover {
+table tr:hover, .table_row_bg:hover {
+  background-color: #d9d9d9;
+}
+.table_bg_br_clr_on {
+  background-color: #31dd00;
+  border: 1px solid #1c7b01;
+}
+.table_bg_br_clr_on:hover {
+  background-color: #32e202;
+  border: 1px solid #1c7b01;
+}
+.table_bg_br_clr_off, .table_bg_br_clr_off:hover {
+  background-color: #fff;
+  border: 1px solid #777674;
+  opacity: .5;
+}
+table tr:not([class]):hover {
   background-color: transparent;
 }
 .submitFooter {
