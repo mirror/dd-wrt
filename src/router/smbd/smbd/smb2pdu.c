@@ -13,6 +13,7 @@
 #include <linux/falloc.h>
 #include <linux/magic.h>
 #include <linux/crc32.h>
+#include <linux/mount.h>
 
 #include "glob.h"
 #include "smb2pdu.h"
@@ -5107,22 +5108,12 @@ static int smb2_get_info_filesystem(struct ksmbd_work *work,
 	case FS_SIZE_INFORMATION:
 	{
 		struct filesystem_info *info;
-		struct ksmbd_fs_sector_size fs_ss;
-		unsigned int sector_size = stfs.f_bsize, units = 1;
-		int unit = stfs.f_bsize >> 10;
-		ksmbd_vfs_sector_size(d_inode(path.dentry), &fs_ss);
-
-		if (sector_size > fs_ss.logical_sector_size &&
-		    !(sector_size % fs_ss.logical_sector_size)) {
-			units = sector_size / fs_ss.logical_sector_size;
-			sector_size = fs_ss.logical_sector_size;
-		}
 
 		info = (struct filesystem_info *)(rsp->Buffer);
-		info->TotalAllocationUnits = cpu_to_le64(stfs.f_blocks * unit);
-		info->FreeAllocationUnits = cpu_to_le64(stfs.f_bavail * unit);
-		info->SectorsPerAllocationUnit = cpu_to_le32(units);
-		info->BytesPerSector = cpu_to_le32(sector_size);
+		info->TotalAllocationUnits = cpu_to_le64(stfs.f_blocks);
+		info->FreeAllocationUnits = cpu_to_le64(stfs.f_bfree);
+		info->SectorsPerAllocationUnit = cpu_to_le32(1);
+		info->BytesPerSector = cpu_to_le32(stfs.f_bsize);
 		rsp->OutputBufferLength = cpu_to_le32(24);
 		inc_rfc1001_len(work->response_buf, 24);
 		fs_infoclass_size = FS_SIZE_INFORMATION_SIZE;
@@ -5131,25 +5122,15 @@ static int smb2_get_info_filesystem(struct ksmbd_work *work,
 	case FS_FULL_SIZE_INFORMATION:
 	{
 		struct smb2_fs_full_size_info *info;
-		struct ksmbd_fs_sector_size fs_ss;
-		unsigned int sector_size = stfs.f_bsize, units = 1;
-		int unit = stfs.f_bsize >> 10;
 
 		info = (struct smb2_fs_full_size_info *)(rsp->Buffer);
-		ksmbd_vfs_sector_size(d_inode(path.dentry), &fs_ss);
-
-		if (sector_size > fs_ss.logical_sector_size &&
-		    !(sector_size % fs_ss.logical_sector_size)) {
-			units = sector_size / fs_ss.logical_sector_size;
-			sector_size = fs_ss.logical_sector_size;
-		}
-		info->TotalAllocationUnits = cpu_to_le64(stfs.f_blocks * unit);
+		info->TotalAllocationUnits = cpu_to_le64(stfs.f_blocks);
 		info->CallerAvailableAllocationUnits =
-					cpu_to_le64(stfs.f_bavail * unit);
+					cpu_to_le64(stfs.f_bavail);
 		info->ActualAvailableAllocationUnits =
-					cpu_to_le64(stfs.f_bfree * unit);
-		info->SectorsPerAllocationUnit = cpu_to_le32(units);
-		info->BytesPerSector = cpu_to_le32(sector_size);
+					cpu_to_le64(stfs.f_bfree);
+		info->SectorsPerAllocationUnit = cpu_to_le32(1);
+		info->BytesPerSector = cpu_to_le32(stfs.f_bsize);
 		rsp->OutputBufferLength = cpu_to_le32(32);
 		inc_rfc1001_len(work->response_buf, 32);
 		fs_infoclass_size = FS_FULL_SIZE_INFORMATION_SIZE;
@@ -5179,19 +5160,17 @@ static int smb2_get_info_filesystem(struct ksmbd_work *work,
 	case FS_SECTOR_SIZE_INFORMATION:
 	{
 		struct smb3_fs_ss_info *info;
-		struct ksmbd_fs_sector_size fs_ss;
+		unsigned int sector_size =
+			min_t(unsigned int, path.mnt->mnt_sb->s_blocksize, 4096);
 
 		info = (struct smb3_fs_ss_info *)(rsp->Buffer);
-		ksmbd_vfs_sector_size(d_inode(path.dentry), &fs_ss);
 
-		info->LogicalBytesPerSector =
-			cpu_to_le32(fs_ss.logical_sector_size);
+		info->LogicalBytesPerSector = cpu_to_le32(sector_size);
 		info->PhysicalBytesPerSectorForAtomicity =
-				cpu_to_le32(fs_ss.physical_sector_size);
-		info->PhysicalBytesPerSectorForPerf =
-				cpu_to_le32(fs_ss.physical_sector_size);
+				cpu_to_le32(sector_size);
+		info->PhysicalBytesPerSectorForPerf = cpu_to_le32(sector_size);
 		info->FSEffPhysicalBytesPerSectorForAtomicity =
-				cpu_to_le32(fs_ss.physical_sector_size);
+				cpu_to_le32(sector_size);
 		info->Flags = cpu_to_le32(SSINFO_FLAGS_ALIGNED_DEVICE |
 				    SSINFO_FLAGS_PARTITION_ALIGNED_ON_DEVICE);
 		info->ByteOffsetForSectorAlignment = 0;
