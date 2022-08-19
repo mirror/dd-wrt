@@ -139,7 +139,7 @@ select {
 table tr:hover, .table_row_bg:hover {
   background-color: #1a1a1a;
 }
-table tr:not([bgcolor]):not([class]):hover {
+table tr:not([class]):hover {
   background-color: transparent;
 }
 .submitFooter {
