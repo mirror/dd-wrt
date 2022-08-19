@@ -15,6 +15,7 @@
 #include <limits.h>
 #include <string.h>
 #include <errno.h>
+#include <glib.h>
 
 #include "asn1.h"
 
@@ -201,6 +202,8 @@ unsigned char asn1_read(struct asn1_ctx *ctx,
 	}
 
 	*buf = malloc(len);
+	if (!*buf)
+		return 0;
 	memcpy(*buf, ctx->pointer, len);
 	ctx->pointer += len;
 	return 1;
@@ -237,7 +240,7 @@ asn1_oid_decode(struct asn1_ctx *ctx,
 	if (size < 2 || size > UINT_MAX/sizeof(unsigned long))
 		return 0;
 
-	*oid = calloc(size, sizeof(unsigned long));
+	*oid = g_try_malloc0_n(size, sizeof(unsigned long));
 	if (*oid == NULL)
 		return 0;
 
@@ -312,7 +315,7 @@ int asn1_oid_encode(const unsigned long *in_oid, int in_len,
 	unsigned long id;
 	int i;
 
-	*out_oid = calloc(1, in_len * 5);
+	*out_oid = g_try_malloc0_n(in_len, 5);
 	if (*out_oid == NULL)
 		return -ENOMEM;
 

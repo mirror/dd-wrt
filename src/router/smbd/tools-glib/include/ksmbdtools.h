@@ -12,18 +12,17 @@
 #define _GNU_SOURCE 1
 #endif
 
+#include <errno.h>
+#include <getopt.h>
+#include <glib.h>
+#include <poll.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <unistd.h>
 #include <sys/types.h>
 #include <sys/wait.h>
-#include <string.h>
-#include <errno.h>
 #include <time.h>
-#include <poll.h>
-#include <getopt.h>
-#include <glib.h>
+#include <unistd.h>
 
 #ifdef HAVE_CONFIG_H
 #include <config.h>
@@ -53,6 +52,7 @@ struct smbconf_global {
 	unsigned int		smb2_max_write;
 	unsigned int		smb2_max_trans;
 	unsigned int		smb2_max_credits;
+	unsigned int		smbd_max_io_size;
 	unsigned int		share_fake_fscaps;
 	unsigned int		gen_subauth[3];
 	char			*krb5_keytab_file;
@@ -81,7 +81,7 @@ extern struct smbconf_global global_conf;
 #define KSMBD_CONF_FALLBACK_GUEST_ACCOUNT	"ftp"
 
 #define KSMBD_CONF_DEFAULT_SESS_CAP	1024
-#define KSMBD_CONF_DEFAULT_TPC_PORT	445
+#define KSMBD_CONF_DEFAULT_TCP_PORT	445
 
 #define KSMBD_CONF_FILE_MAX		10000
 
@@ -97,6 +97,9 @@ extern int ksmbd_health_status;
 #define TRACING_DUMP_NL_MSG	0
 
 #define ARRAY_SIZE(X) (sizeof(X) / sizeof((X)[0]))
+
+#define STR_HELPER(x) #x
+#define STR(x) STR_HELPER(x)
 
 //---------------------------------------------------------------//
 #define LOGAPP		"[%s/%d]:"

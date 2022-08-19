@@ -78,7 +78,7 @@ void spnego_destroy(void)
 	int i;
 
 	for (i = 0; i < SPNEGO_MAX_MECHS; i++) {
-		if (mech_ctxs[i].ops->cleanup)
+		if (mech_ctxs[i].ops && mech_ctxs[i].ops->cleanup)
 			mech_ctxs[i].ops->cleanup(&mech_ctxs[i]);
 	}
 }
@@ -104,7 +104,9 @@ static bool is_supported_mech(unsigned long *oid, unsigned int len,
 	if (!compare_oid(oid, len, MSKRB5_OID, ARRAY_SIZE(MSKRB5_OID))) {
 		*mech_type = SPNEGO_MECH_MSKRB5;
 		return true;
-	} else if (!compare_oid(oid, len, KRB5_OID, ARRAY_SIZE(KRB5_OID))) {
+	}
+
+	if (!compare_oid(oid, len, KRB5_OID, ARRAY_SIZE(KRB5_OID))) {
 		*mech_type = SPNEGO_MECH_KRB5;
 		return true;
 	}
@@ -250,7 +252,7 @@ static int encode_negTokenTarg(char *in_blob, int in_len,
 
 	*out_len = asn1_header_len(
 			neg_result_len + sup_mech_len + rep_token_len, 2);
-	*out_blob = calloc(1, *out_len);
+	*out_blob = g_try_malloc0(*out_len);
 	if (*out_blob == NULL)
 		return -ENOMEM;
 	buf = *out_blob;

@@ -30,16 +30,20 @@ static const struct smb_sid sid_unix_groups = { 1, 1, {0, 0, 0, 0, 0, 22},
 static const struct smb_sid sid_local_group = {
 	1, 1, {0, 0, 0, 0, 0, 5}, {32} };
 
-void smb_read_sid(struct ksmbd_dcerpc *dce, struct smb_sid *sid)
+int smb_read_sid(struct ksmbd_dcerpc *dce, struct smb_sid *sid)
 {
 	int i;
 
-	sid->revision = ndr_read_int8(dce);
-	sid->num_subauth = ndr_read_int8(dce);
+	if (ndr_read_int8(dce, &sid->revision))
+		return -EINVAL;
+	if (ndr_read_int8(dce, &sid->num_subauth))
+		return -EINVAL;
 	for (i = 0; i < NUM_AUTHS; ++i)
-		sid->authority[i] = ndr_read_int8(dce);
+		if (ndr_read_int8(dce, &sid->authority[i]))
+			return -EINVAL;
 	for (i = 0; i < sid->num_subauth; ++i)
-		sid->sub_auth[i] = ndr_read_int32(dce);
+		if (ndr_read_int32(dce, &sid->sub_auth[i]))
+			return -EINVAL;
 }
 
 void smb_write_sid(struct ksmbd_dcerpc *dce, const struct smb_sid *src)
@@ -91,8 +95,7 @@ int smb_compare_sids(const struct smb_sid *ctsid, const struct smb_sid *cwsid)
 	if (ctsid->revision != cwsid->revision) {
 		if (ctsid->revision > cwsid->revision)
 			return 1;
-		else
-			return -1;
+		return -1;
 	}
 
 	/* compare all of the six auth values */
@@ -100,8 +103,7 @@ int smb_compare_sids(const struct smb_sid *ctsid, const struct smb_sid *cwsid)
 		if (ctsid->authority[i] != cwsid->authority[i]) {
 			if (ctsid->authority[i] > cwsid->authority[i])
 				return 1;
-			else
-				return -1;
+			return -1;
 		}
 	}
 
@@ -115,8 +117,7 @@ int smb_compare_sids(const struct smb_sid *ctsid, const struct smb_sid *cwsid)
 				if (ctsid->sub_auth[i] >
 					cwsid->sub_auth[i])
 					return 1;
-				else
-					return -1;
+				return -1;
 			}
 		}
 	}
@@ -127,10 +128,9 @@ int smb_compare_sids(const struct smb_sid *ctsid, const struct smb_sid *cwsid)
 static void smb_sid_to_string(char *domain, struct smb_sid *sid)
 {
 	char str[PATH_MAX];
-	int i, domain_len = 0, len;
+	int i, domain_len, len;
 
-	strncpy(domain, "S-", 2);
-	domain_len += 2;
+	domain_len = g_sprintf(domain, "S-");
 	len = g_sprintf(str, "%i", (int)sid->revision);
 	strncpy(&domain[domain_len], str, len);
 	domain_len += len;
@@ -232,7 +232,7 @@ int build_sec_desc(struct ksmbd_dcerpc *dce, __u32 *secdesclen, int rid)
 	int l_offset, acl_size_offset;
 	int acl_size;
 
-	/* NT Security Descrptor : Revision */
+	/* NT Security Descriptor : Revision */
 	ndr_write_int16(dce, 1);
 
 	/* ACL Type */

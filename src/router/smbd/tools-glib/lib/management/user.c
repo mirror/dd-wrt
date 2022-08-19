@@ -97,7 +97,7 @@ static struct ksmbd_user *new_ksmbd_user(char *name, char *pwd)
 	struct passwd *passwd;
 	size_t pass_sz;
 
-	user = calloc(1, sizeof(struct ksmbd_user));
+	user = g_try_malloc0(sizeof(struct ksmbd_user));
 	if (!user)
 		return NULL;
 

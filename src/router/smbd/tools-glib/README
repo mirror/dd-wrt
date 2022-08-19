@@ -28,10 +28,10 @@ Setup steps:
 	- install smbd kernel driver
 		modprobe ksmbd
 	- create user/password for SMB share
-		mkdir /etc/ksmbd/
+		mkdir -p /usr/local/etc/ksmbd/
 		ksmbd.adduser -a <Enter USERNAME for SMB share access>
 		Enter password for SMB share access
-	- create /etc/ksmbd/smb.conf file, add SMB share in smb.conf file
+	- create /usr/local/etc/ksmbd/smb.conf file, add SMB share in smb.conf file
 		Refer smb.conf.example
 	- start smbd user space daemon
 		ksmbd.mountd

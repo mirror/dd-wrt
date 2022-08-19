@@ -20,7 +20,7 @@ static struct ksmbd_tree_conn *new_ksmbd_tree_conn(void)
 {
 	struct ksmbd_tree_conn *conn;
 
-	conn = calloc(1, sizeof(struct ksmbd_tree_conn));
+	conn = g_try_malloc0(sizeof(struct ksmbd_tree_conn));
 	if (!conn)
 		return NULL;
 
