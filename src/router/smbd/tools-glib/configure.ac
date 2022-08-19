@@ -1,8 +1,7 @@
 AC_PREREQ([2.68])
 
-m4_define([ksmbd_tools_version], m4_esyscmd_s(
-	 grep "define KSMBD_TOOLS_VERSION " include/version.h | \
-		 awk '{print $3}' | sed 's/\"//g'))
+m4_define([ksmbd_tools_version], m4_esyscmd_s([awk '/define KSMBD_TOOLS_VERSION / \
+	{ gsub(/"/,"",$3); printf "%s", $3 }' include/version.h]))
 
 AC_INIT([ksmbd-tools],
 	ksmbd_tools_version,
@@ -30,6 +29,7 @@ AC_ARG_ENABLE(krb5,
 
 # Checks for header files.
 if test "$enable_krb5" != "no"; then
+	CPPFLAGS="$CPPFLAGS $LIBKRB5_CFLAGS"
 	AC_CHECK_HEADERS([krb5.h])
 	if test x$ac_cv_header_krb5_h != xyes; then
 		if test "$enable_krb5" = "yes"; then
@@ -55,7 +55,33 @@ AS_IF([test "$has_libnl_ver" -eq 0], [
 
 if test "$enable_krb5" != "no"; then
 	PKG_CHECK_MODULES([LIBKRB5], [krb5])
-	AC_DEFINE([CONFIG_KRB5], [], "support kerberos authentication")
+	AC_DEFINE([CONFIG_KRB5], [], [Define if Kerberos 5 authentication is supported.])
+	ksmbd_tools_LIBS=$LIBS
+	LIBS="$LIBS $LIBKRB5_LIBS"
+	AC_CHECK_FUNCS([krb5_auth_con_getrecvsubkey])
+	LIBS=$ksmbd_tools_LIBS
+	AC_CACHE_CHECK([for keyvalue in krb5_keyblock], [ac_cv_have_krb5_keyblock_keyvalue], [
+		AC_COMPILE_IFELSE([AC_LANG_PROGRAM([#include <krb5.h>], [krb5_keyblock key; key.keyvalue.data = NULL;])],
+			[ac_cv_have_krb5_keyblock_keyvalue="yes"], [ac_cv_have_krb5_keyblock_keyvalue="no"])
+	])
+	if test "$ac_cv_have_krb5_keyblock_keyvalue" = "yes" ; then
+		AC_DEFINE(HAVE_KRB5_KEYBLOCK_KEYVALUE, [], [Define if the krb5_keyblock struct has a keyvalue property.])
+	fi
+	AC_CACHE_CHECK([for double pointer in krb5_auth_con_getauthenticator], [ac_cv_have_krb5_auth_con_getauthenticator_double_pointer], [
+		AC_COMPILE_IFELSE([AC_LANG_PROGRAM([#include <krb5.h>
+				krb5_error_code krb5_auth_con_getauthenticator(krb5_context, krb5_auth_context, krb5_authenticator**);], [])],
+			[ac_cv_have_krb5_auth_con_getauthenticator_double_pointer="yes"], [ac_cv_have_krb5_auth_con_getauthenticator_double_pointer="no"])
+	])
+	if test "$ac_cv_have_krb5_auth_con_getauthenticator_double_pointer" = "yes" ; then
+		AC_DEFINE(HAVE_KRB5_AUTH_CON_GETAUTHENTICATOR_DOUBLE_POINTER, [], [Define if the krb5_auth_con_getauthenticator function takes a double pointer.])
+	fi
+	AC_CACHE_CHECK([for client in krb5_authenticator], [ac_cv_have_krb5_authenticator_client], [
+		AC_COMPILE_IFELSE([AC_LANG_PROGRAM([#include <krb5.h>], [krb5_authenticator authenti; authenti.client = NULL;])],
+			[ac_cv_have_krb5_authenticator_client="yes"], [ac_cv_have_krb5_authenticator_client="no"])
+	])
+	if test "$ac_cv_have_krb5_authenticator_client" = "yes" ; then
+		AC_DEFINE(HAVE_KRB5_AUTHENTICATOR_CLIENT, [], [Define if the krb5_authenticator struct has a client property.])
+	fi
 fi
 AM_CONDITIONAL(HAVE_LIBKRB5, [test "$enable_krb5" != "no"])
 

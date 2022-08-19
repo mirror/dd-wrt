@@ -8,6 +8,8 @@
 #ifndef __KSMBD_USER_ADMIN_H__
 #define __KSMBD_USER_ADMIN_H__
 
+#define MAX_NT_PWD_LEN 129
+
 int command_add_user(char *pwddb, char *account, char *password);
 int command_update_user(char *pwddb, char *account, char *password);
 int command_del_user(char *pwddb, char *account);

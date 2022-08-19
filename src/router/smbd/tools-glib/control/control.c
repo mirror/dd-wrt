@@ -12,21 +12,44 @@
 #include "ksmbdtools.h"
 #include "version.h"
 
-static void usage(void)
+static void usage(int status)
 {
-	fprintf(stderr, "Usage: ksmbd.control\n");
-	fprintf(stderr, "\t-s | --shutdown\n");
-	fprintf(stderr, "\t-d | --debug=all or [smb, auth, etc...]\n");
-	fprintf(stderr, "\t-c | --ksmbd-version\n");
-	fprintf(stderr, "\t-V | --version\n");
+	fprintf(stderr,
+		"Usage: ksmbd.control {-s | -d COMPONENT | -c | -V | -h}\n");
 
-	exit(EXIT_FAILURE);
+	if (status != EXIT_SUCCESS)
+		fprintf(stderr, "Try 'ksmbd.control --help' for more information.\n");
+	else
+		fprintf(stderr,
+			"Control ksmbd.mountd user mode and ksmbd kernel mode daemons.\n"
+			"\n"
+			"Mandatory arguments to long options are mandatory for short options too.\n"
+			"  -s, --shutdown           shutdown ksmbd.mountd and ksmbd and exit\n"
+			"  -d, --debug=COMPONENT    toggle debug printing for COMPONENT and exit;\n"
+			"                           COMPONENT is 'all', 'smb', 'auth', 'vfs',\n"
+			"                           'oplock', 'ipc', 'conn', or 'rdma';\n"
+			"                           output also status of all components;\n"
+			"                           enabled components are enclosed in brackets\n"
+			"  -c, --ksmbd-version      output ksmbd version information and exit\n"
+			"  -V, --version            output version information and exit\n"
+			"  -h, --help               display this help and exit\n"
+			"\n"
+			"ksmbd-tools home page: <https://github.com/cifsd-team/ksmbd-tools>\n");
 }
 
-static void show_version(void)
+static const struct option opts[] = {
+	{"shutdown",		no_argument,		NULL,	's' },
+	{"debug",		required_argument,	NULL,	'd' },
+	{"ksmbd-version",	no_argument,		NULL,	'c' },
+	{"version",		no_argument,		NULL,	'V' },
+	{"help",		no_argument,		NULL,	'h' },
+	{NULL,			0,			NULL,	 0  }
+};
+
+static int show_version(void)
 {
 	printf("ksmbd-tools version : %s\n", KSMBD_TOOLS_VERSION);
-	exit(EXIT_FAILURE);
+	return EXIT_SUCCESS;
 }
 
 static int ksmbd_control_shutdown(void)
@@ -78,6 +101,9 @@ static int ksmbd_control_debug(char *comp)
 	ret = write(fd, comp, strlen(comp));
 	if (ret < 0)
 		goto out;
+	ret = lseek(fd, 0, SEEK_SET);
+	if (ret < 0)
+		goto out;
 	ret = read(fd, buf, 255);
 	if (ret < 0)
 		goto out;
@@ -100,29 +126,31 @@ int main(int argc, char *argv[])
 		return ret;
 	}
 
-	opterr = 0;
-	while ((c = getopt(argc, argv, "sd:cVh")) != EOF)
+	while ((c = getopt_long(argc, argv, "sd:cVh", opts, NULL)) != EOF)
 		switch (c) {
 		case 's':
 			ksmbd_control_shutdown();
-			break;
+			goto out;
 		case 'd':
 			ret = ksmbd_control_debug(optarg);
-			break;
+			goto out;
 		case 'c':
 			ret = ksmbd_control_show_version();
-			break;
+			goto out;
 		case 'V':
-			show_version();
-			break;
-		case '?':
+			ret = show_version();
+			goto out;
 		case 'h':
+			ret = EXIT_SUCCESS;
+			/* Fall through */
+		case '?':
 		default:
-			usage();
-	}
+			usage(ret);
+			goto out;
+		}
 
-	if (argc < 2)
-		usage();
-
+	if (argc < 2 || argc > optind)
+		usage(ret);
+out:
 	return ret;
 }

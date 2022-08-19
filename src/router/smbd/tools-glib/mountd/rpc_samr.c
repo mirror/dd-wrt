@@ -60,7 +60,7 @@ static struct connect_handle *samr_ch_alloc(unsigned int id)
 	struct connect_handle *ch;
 	int ret;
 
-	ch = calloc(1, sizeof(struct connect_handle));
+	ch = g_try_malloc0(sizeof(struct connect_handle));
 	if (!ch)
 		return NULL;
 
@@ -84,11 +84,19 @@ static int samr_connect5_invoke(struct ksmbd_rpc_pipe *pipe)
 	struct ksmbd_dcerpc *dce = pipe->dce;
 	struct ndr_uniq_char_ptr server_name;
 
-	ndr_read_uniq_vsting_ptr(dce, &server_name);
-	ndr_read_int32(dce); // Access mask
-	dce->sm_req.level = ndr_read_int32(dce); // level in
-	ndr_read_int32(dce); // Info in
-	dce->sm_req.client_version = ndr_read_int32(dce);
+	if (ndr_read_uniq_vstring_ptr(dce, &server_name))
+		return KSMBD_RPC_EINVALID_PARAMETER;
+	// Access mask
+	if (ndr_read_int32(dce, NULL))
+		return KSMBD_RPC_EINVALID_PARAMETER;
+	// level in
+	if (ndr_read_int32(dce, &dce->sm_req.level))
+		return KSMBD_RPC_EINVALID_PARAMETER;
+	// Info in
+	if (ndr_read_int32(dce, NULL))
+		return KSMBD_RPC_EINVALID_PARAMETER;
+	if (ndr_read_int32(dce, &dce->sm_req.client_version))
+		return KSMBD_RPC_EINVALID_PARAMETER;
 	return 0;
 }
 
@@ -115,7 +123,8 @@ static int samr_enum_domain_invoke(struct ksmbd_rpc_pipe *pipe)
 {
 	struct ksmbd_dcerpc *dce = pipe->dce;
 
-	ndr_read_bytes(dce, dce->sm_req.handle, HANDLE_SIZE);
+	if (ndr_read_bytes(dce, dce->sm_req.handle, HANDLE_SIZE))
+		return KSMBD_RPC_EINVALID_PARAMETER;
 
 	return KSMBD_RPC_OK;
 }
@@ -181,10 +190,17 @@ static int samr_lookup_domain_invoke(struct ksmbd_rpc_pipe *pipe)
 {
 	struct ksmbd_dcerpc *dce = pipe->dce;
 
-	ndr_read_bytes(dce, dce->sm_req.handle, HANDLE_SIZE);
-	ndr_read_int16(dce); // name len
-	ndr_read_int16(dce); // name size
-	ndr_read_uniq_vsting_ptr(dce, &dce->sm_req.name); // domain name
+	if (ndr_read_bytes(dce, dce->sm_req.handle, HANDLE_SIZE))
+		return KSMBD_RPC_EINVALID_PARAMETER;
+	// name len
+	if (ndr_read_int16(dce, NULL))
+		return KSMBD_RPC_EINVALID_PARAMETER;
+	// name size
+	if (ndr_read_int16(dce, NULL))
+		return KSMBD_RPC_EINVALID_PARAMETER;
+	// domain name
+	if (ndr_read_uniq_vstring_ptr(dce, &dce->sm_req.name))
+		return KSMBD_RPC_EINVALID_PARAMETER;
 
 	return KSMBD_RPC_OK;
 }
@@ -221,7 +237,8 @@ static int samr_open_domain_invoke(struct ksmbd_rpc_pipe *pipe)
 {
 	struct ksmbd_dcerpc *dce = pipe->dce;
 
-	ndr_read_bytes(dce, dce->sm_req.handle, HANDLE_SIZE);
+	if (ndr_read_bytes(dce, dce->sm_req.handle, HANDLE_SIZE))
+		return KSMBD_RPC_EINVALID_PARAMETER;
 
 	return KSMBD_RPC_OK;
 }
@@ -245,16 +262,30 @@ static int samr_lookup_names_invoke(struct ksmbd_rpc_pipe *pipe)
 	struct ksmbd_dcerpc *dce = pipe->dce;
 	int user_num;
 
-	ndr_read_bytes(dce, dce->sm_req.handle, HANDLE_SIZE);
+	if (ndr_read_bytes(dce, dce->sm_req.handle, HANDLE_SIZE))
+		return KSMBD_RPC_EINVALID_PARAMETER;
 
-	user_num = ndr_read_int32(dce);
-	ndr_read_int32(dce); // max count
-	ndr_read_int32(dce); // offset
-	ndr_read_int32(dce); // actual count
-	ndr_read_int16(dce); // name len
-	ndr_read_int16(dce); // name size
+	if (ndr_read_int32(dce, &user_num))
+		return KSMBD_RPC_EINVALID_PARAMETER;
+	// max count
+	if (ndr_read_int32(dce, NULL))
+		return KSMBD_RPC_EINVALID_PARAMETER;
+	// offset
+	if (ndr_read_int32(dce, NULL))
+		return KSMBD_RPC_EINVALID_PARAMETER;
+	// actual count
+	if (ndr_read_int32(dce, NULL))
+		return KSMBD_RPC_EINVALID_PARAMETER;
+	// name len
+	if (ndr_read_int16(dce, NULL))
+		return KSMBD_RPC_EINVALID_PARAMETER;
+	// name size
+	if (ndr_read_int16(dce, NULL))
+		return KSMBD_RPC_EINVALID_PARAMETER;
 
-	ndr_read_uniq_vsting_ptr(dce, &dce->sm_req.name); // names
+	// names
+	if (ndr_read_uniq_vstring_ptr(dce, &dce->sm_req.name))
+		return KSMBD_RPC_EINVALID_PARAMETER;
 
 	return KSMBD_RPC_OK;
 }
@@ -291,10 +322,14 @@ static int samr_open_user_invoke(struct ksmbd_rpc_pipe *pipe)
 {
 	struct ksmbd_dcerpc *dce = pipe->dce;
 
-	ndr_read_bytes(dce, dce->sm_req.handle, HANDLE_SIZE);
+	if (ndr_read_bytes(dce, dce->sm_req.handle, HANDLE_SIZE))
+		return KSMBD_RPC_EINVALID_PARAMETER;
 
-	ndr_read_int32(dce);
-	dce->sm_req.rid = ndr_read_int32(dce); // RID
+	if (ndr_read_int32(dce, NULL))
+		return KSMBD_RPC_EINVALID_PARAMETER;
+	// RID
+	if (ndr_read_int32(dce, &dce->sm_req.rid))
+		return KSMBD_RPC_EINVALID_PARAMETER;
 
 	return KSMBD_RPC_OK;
 }
@@ -321,7 +356,8 @@ static int samr_query_user_info_invoke(struct ksmbd_rpc_pipe *pipe)
 {
 	struct ksmbd_dcerpc *dce = pipe->dce;
 
-	ndr_read_bytes(dce, dce->sm_req.handle, HANDLE_SIZE);
+	if (ndr_read_bytes(dce, dce->sm_req.handle, HANDLE_SIZE))
+		return KSMBD_RPC_EINVALID_PARAMETER;
 
 	return KSMBD_RPC_OK;
 }
@@ -341,7 +377,7 @@ static int samr_query_user_info_return(struct ksmbd_rpc_pipe *pipe)
 	gethostname(hostname, NAME_MAX);
 	home_dir_len = 2 + strlen(hostname) + 1 + strlen(ch->user->name);
 
-	home_dir = calloc(1, home_dir_len);
+	home_dir = g_try_malloc0(home_dir_len);
 	if (!home_dir)
 		return KSMBD_RPC_ENOMEM;
 
@@ -351,7 +387,7 @@ static int samr_query_user_info_return(struct ksmbd_rpc_pipe *pipe)
 	strcat(home_dir, "\\");
 	strcat(home_dir, ch->user->name);
 
-	profile_path = calloc(1, home_dir_len + strlen("profile"));
+	profile_path = g_try_malloc0(home_dir_len + strlen("profile"));
 	if (!profile_path) {
 		free(home_dir);
 		return KSMBD_RPC_ENOMEM;
@@ -481,7 +517,8 @@ static int samr_query_security_invoke(struct ksmbd_rpc_pipe *pipe)
 {
 	struct ksmbd_dcerpc *dce = pipe->dce;
 
-	ndr_read_bytes(dce, dce->sm_req.handle, HANDLE_SIZE);
+	if (ndr_read_bytes(dce, dce->sm_req.handle, HANDLE_SIZE))
+		return KSMBD_RPC_EINVALID_PARAMETER;
 
 	return KSMBD_RPC_OK;
 }
@@ -519,7 +556,8 @@ static int samr_get_group_for_user_invoke(struct ksmbd_rpc_pipe *pipe)
 {
 	struct ksmbd_dcerpc *dce = pipe->dce;
 
-	ndr_read_bytes(dce, dce->sm_req.handle, HANDLE_SIZE);
+	if (ndr_read_bytes(dce, dce->sm_req.handle, HANDLE_SIZE))
+		return KSMBD_RPC_EINVALID_PARAMETER;
 
 	return KSMBD_RPC_OK;
 }
@@ -549,7 +587,8 @@ static int samr_get_alias_membership_invoke(struct ksmbd_rpc_pipe *pipe)
 {
 	struct ksmbd_dcerpc *dce = pipe->dce;
 
-	ndr_read_bytes(dce, dce->sm_req.handle, HANDLE_SIZE);
+	if (ndr_read_bytes(dce, dce->sm_req.handle, HANDLE_SIZE))
+		return KSMBD_RPC_EACCESS_DENIED;
 
 	return KSMBD_RPC_OK;
 }
@@ -575,7 +614,8 @@ static int samr_close_invoke(struct ksmbd_rpc_pipe *pipe)
 {
 	struct ksmbd_dcerpc *dce = pipe->dce;
 
-	ndr_read_bytes(dce, dce->sm_req.handle, HANDLE_SIZE);
+	if (ndr_read_bytes(dce, dce->sm_req.handle, HANDLE_SIZE))
+		return KSMBD_RPC_EACCESS_DENIED;
 
 	return KSMBD_RPC_OK;
 }
@@ -588,7 +628,7 @@ static int samr_close_return(struct ksmbd_rpc_pipe *pipe)
 	ch = samr_ch_lookup(dce->sm_req.handle);
 	if (!ch)
 		return KSMBD_RPC_EBAD_FID;
-	else if (ch->refcount > 1)
+	if (ch->refcount > 1)
 		ch->refcount--;
 	else
 		samr_ch_free(ch);
@@ -783,5 +823,6 @@ void rpc_samr_destroy(void)
 	g_rw_lock_clear(&ch_table_lock);
 	num_domain_entries = 0;
 	g_free(domain_name);
-	g_array_free(domain_entries, 1);
+	if (domain_entries)
+		g_array_free(domain_entries, 1);
 }

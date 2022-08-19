@@ -39,7 +39,7 @@ static struct ksmbd_session *new_ksmbd_session(unsigned long long id,
 {
 	struct ksmbd_session *sess;
 
-	sess = calloc(1, sizeof(struct ksmbd_session));
+	sess = g_try_malloc0(sizeof(struct ksmbd_session));
 	if (!sess)
 		return NULL;
 

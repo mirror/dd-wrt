@@ -59,7 +59,7 @@ static struct policy_handle *lsarpc_ph_alloc(unsigned int id)
 	struct policy_handle *ph;
 	int ret;
 
-	ph = calloc(1, sizeof(struct policy_handle));
+	ph = g_try_malloc(sizeof(struct policy_handle));
 	if (!ph)
 		return NULL;
 
@@ -105,8 +105,12 @@ static int lsa_domain_account_data(struct ksmbd_dcerpc *dce, char *domain_name,
 static int lsarpc_get_primary_domain_info_invoke(struct ksmbd_rpc_pipe *pipe)
 {
 	struct ksmbd_dcerpc *dce = pipe->dce;
+	__u16 val;
 
-	dce->lr_req.level = ndr_read_int16(dce);
+	if (ndr_read_int16(dce, &val))
+		return KSMBD_RPC_EINVALID_PARAMETER;
+
+	dce->lr_req.level = val;
 
 	return KSMBD_RPC_OK;
 }
@@ -158,9 +162,15 @@ static int lsarpc_open_policy2_return(struct ksmbd_rpc_pipe *pipe)
 static int lsarpc_query_info_policy_invoke(struct ksmbd_rpc_pipe *pipe)
 {
 	struct ksmbd_dcerpc *dce = pipe->dce;
+	__u16 val;
 
-	ndr_read_bytes(dce, dce->lr_req.handle, HANDLE_SIZE);
-	dce->lr_req.level = ndr_read_int16(dce); // level
+	if (ndr_read_bytes(dce, dce->lr_req.handle, HANDLE_SIZE))
+		return KSMBD_RPC_EINVALID_PARAMETER;
+	// level
+	if (ndr_read_int16(dce, &val))
+		return KSMBD_RPC_EINVALID_PARAMETER;
+
+	dce->lr_req.level = val;
 
 	return KSMBD_RPC_OK;
 }
@@ -206,28 +216,39 @@ static int __lsarpc_entry_processed(struct ksmbd_rpc_pipe *pipe, int i)
 static int lsarpc_lookup_sid2_invoke(struct ksmbd_rpc_pipe *pipe)
 {
 	struct ksmbd_dcerpc *dce = pipe->dce;
+	struct lsarpc_names_info *ni = NULL;
 	unsigned int num_sid, i;
 
-	ndr_read_bytes(dce, dce->lr_req.handle, HANDLE_SIZE);
+	if (ndr_read_bytes(dce, dce->lr_req.handle, HANDLE_SIZE))
+		goto fail;
 
-	num_sid = ndr_read_int32(dce);
-	ndr_read_int32(dce); // ref pointer
-	ndr_read_int32(dce); // max count
+	if (ndr_read_int32(dce, &num_sid))
+		goto fail;
+	// ref pointer
+	if (ndr_read_int32(dce, NULL))
+		goto fail;
+	// max count
+	if (ndr_read_int32(dce, NULL))
+		goto fail;
 
 	for (i = 0; i < num_sid; i++)
-		ndr_read_int32(dce); // ref pointer
+		if (ndr_read_int32(dce, NULL)) // ref pointer
+			goto fail;
 
 	for (i = 0; i < num_sid; i++) {
-		struct lsarpc_names_info *ni;
 		struct passwd *passwd;
 		int rid;
 
-		ni = calloc(1, sizeof(struct lsarpc_names_info));
+		ni = g_try_malloc0(sizeof(struct lsarpc_names_info));
 		if (!ni)
 			break;
 
-		ndr_read_int32(dce); // max count
-		smb_read_sid(dce, &ni->sid); // sid
+		// max count
+		if (ndr_read_int32(dce, NULL))
+			goto fail;
+		// sid
+		if (smb_read_sid(dce, &ni->sid))
+			goto fail;
 		ni->sid.num_subauth--;
 		rid = ni->sid.sub_auth[ni->sid.num_subauth];
 		passwd = getpwuid(rid);
@@ -244,6 +265,9 @@ static int lsarpc_lookup_sid2_invoke(struct ksmbd_rpc_pipe *pipe)
 
 	pipe->entry_processed = __lsarpc_entry_processed;
 	return KSMBD_RPC_OK;
+fail:
+	free(ni);
+	return KSMBD_RPC_EINVALID_PARAMETER;
 }
 
 static int lsarpc_lookup_sid2_return(struct ksmbd_rpc_pipe *pipe)
@@ -333,32 +357,44 @@ static int lsarpc_lookup_sid2_return(struct ksmbd_rpc_pipe *pipe)
 static int lsarpc_lookup_names3_invoke(struct ksmbd_rpc_pipe *pipe)
 {
 	struct ksmbd_dcerpc *dce = pipe->dce;
+	struct lsarpc_names_info *ni = NULL;
 	struct ndr_uniq_char_ptr username;
 	int num_names, i;
 
-	ndr_read_bytes(dce, dce->lr_req.handle, HANDLE_SIZE);
+	if (ndr_read_bytes(dce, dce->lr_req.handle, HANDLE_SIZE))
+		goto fail;
 
-	num_names = ndr_read_int32(dce); // num names
-	ndr_read_int32(dce); // max count
+	// num names
+	if (ndr_read_int32(dce, &num_names))
+		goto fail;
+	// max count
+	if (ndr_read_int32(dce, NULL))
+		goto fail;
 
 	for (i = 0; i < num_names; i++) {
-		struct lsarpc_names_info *ni;
 		char *name = NULL;
 
 		ni = malloc(sizeof(struct lsarpc_names_info));
 		if (!ni)
 			break;
-		ndr_read_int16(dce); // length
-		ndr_read_int16(dce); // size
-		ndr_read_uniq_vsting_ptr(dce, &username);
+		// length
+		if (ndr_read_int16(dce, NULL))
+			goto fail;
+		// size
+		if (ndr_read_int16(dce, NULL))
+			goto fail;
+		if (ndr_read_uniq_vstring_ptr(dce, &username))
+			goto fail;
 		if (strstr(STR_VAL(username), "\\")) {
 			strtok(STR_VAL(username), "\\");
 			name = strtok(NULL, "\\");
 		}
 
 		ni->user = usm_lookup_user(name);
-		if (!ni->user)
+		if (!ni->user) {
+			free(ni);
 			break;
+		}
 		pipe->entries = g_array_append_val(pipe->entries, ni);
 		pipe->num_entries++;
 		smb_init_domain_sid(&ni->sid);
@@ -366,6 +402,10 @@ static int lsarpc_lookup_names3_invoke(struct ksmbd_rpc_pipe *pipe)
 	pipe->entry_processed = __lsarpc_entry_processed;
 
 	return KSMBD_RPC_OK;
+
+fail:
+	free(ni);
+	return KSMBD_RPC_EINVALID_PARAMETER;
 }
 
 static int lsarpc_lookup_names3_return(struct ksmbd_rpc_pipe *pipe)
@@ -431,7 +471,8 @@ static int lsarpc_close_invoke(struct ksmbd_rpc_pipe *pipe)
 {
 	struct ksmbd_dcerpc *dce = pipe->dce;
 
-	ndr_read_bytes(dce, dce->lr_req.handle, HANDLE_SIZE);
+	if (ndr_read_bytes(dce, dce->lr_req.handle, HANDLE_SIZE))
+		return KSMBD_RPC_EINVALID_PARAMETER;
 
 	return KSMBD_RPC_OK;
 }

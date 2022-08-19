@@ -34,7 +34,7 @@ struct ksmbd_ipc_msg *ipc_msg_alloc(size_t sz)
 	if (msg_sz > KSMBD_IPC_MAX_MESSAGE_SIZE)
 		pr_err("IPC message is too large: %zu\n", msg_sz);
 
-	msg = calloc(1, msg_sz);
+	msg = g_try_malloc0(msg_sz);
 	if (msg)
 		msg->sz = sz;
 	return msg;
@@ -171,6 +171,7 @@ static int ipc_ksmbd_starting_up(void)
 	ev->smb2_max_read = global_conf.smb2_max_read;
 	ev->smb2_max_write = global_conf.smb2_max_write;
 	ev->smb2_max_trans = global_conf.smb2_max_trans;
+	ev->smbd_max_io_size = global_conf.smbd_max_io_size;
 	ev->share_fake_fscaps = global_conf.share_fake_fscaps;
 	memcpy(ev->sub_auth, global_conf.gen_subauth, sizeof(ev->sub_auth));
 	ev->smb2_max_credits = global_conf.smb2_max_credits;
