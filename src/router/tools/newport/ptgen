@@ -147,6 +147,7 @@ part()
 	local type start len
 
 	type=${args%%:*}; args=${args#*:}
+	type=$((type))
 	start=${args%%:*}; args=${args#*:}
 	len=${args%%:*}; args=${args#*:}
 
@@ -154,8 +155,8 @@ part()
 	len=$(to_sectors $len)
 	debug "P$partno: $2 type=$type start=$start len=$len"
 
-	# status: 0x80=active
-	if [ $partno -eq 1 ]; then
+	# status: bit7 set for active/bootable
+	if [ $type -eq 1 -o $type -eq $((0x83)) ]; then
 		u8 0x80
 	else
 		u8 0x0
