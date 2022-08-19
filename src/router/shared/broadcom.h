@@ -29,6 +29,7 @@ EJ_VISIBLE void clone_mac(webs_t wp);
 EJ_VISIBLE void delete_leases(webs_t wp);
 EJ_VISIBLE void static_leases(webs_t wp);
 EJ_VISIBLE void delete_pptp(webs_t wp);
+EJ_VISIBLE void import_vpntunnel(webs_t wp);
 EJ_VISIBLE void save_wifi(webs_t wp);
 EJ_VISIBLE void save_wifi(webs_t wp);
 EJ_VISIBLE void dhcp_release(webs_t wp);
