@@ -167,6 +167,7 @@ int ksmbd_verify_smb_message(struct ksmbd_work *work)
 		return ksmbd_smb2_check_message(work);
 	}
 
+	work->conn->outstanding_credits++;
 	return ksmbd_smb1_check_message(work);
 #else
 	struct smb_hdr *hdr;
@@ -176,8 +177,10 @@ int ksmbd_verify_smb_message(struct ksmbd_work *work)
 
 	hdr = work->request_buf;
 	if (*(__le32 *)hdr->Protocol == SMB1_PROTO_NUMBER &&
-	    hdr->Command == SMB_COM_NEGOTIATE)
+	    hdr->Command == SMB_COM_NEGOTIATE) {
+		work->conn->outstanding_credits++;
 		return 0;
+	}
 
 	return -EINVAL;
 #endif
