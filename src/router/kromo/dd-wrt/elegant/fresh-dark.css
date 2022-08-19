@@ -136,7 +136,7 @@ select {
   border: 1px solid #777674;
   opacity: .5;
 }
-table tr:hover, .table_row_bg:hover {
+.table_row_bg:hover {
   background-color: #1a1a1a;
 }
 table tr:not([class]):hover {

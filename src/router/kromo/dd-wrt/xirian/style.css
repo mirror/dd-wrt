@@ -47,6 +47,9 @@ div.infopage #header {
   width: 65.536em;
   padding: .906em .906em 0;
 }
+#contents[style*='padding: .93em'] {
+  width: initial
+}
 #contentsInfo {
   width: 87.471em;
   padding: .906em;
@@ -421,4 +424,11 @@ form[name='wds'] input[size='25'] {
   padding: 0;
   border: 0;
   mix-blend-mode: darken;
+}
+/* override for xiria */
+.table_row_bg {
+  background-color: #ccd;
+}
+.table_row_bg:hover {
+  background-color: #d9d9e7;
 }
