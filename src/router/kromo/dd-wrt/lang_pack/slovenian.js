@@ -1194,7 +1194,8 @@ qos.pktrst="RST";
 qos.pktsyn="SYN";
 qos.pktfin="FIN";
 qos.enabledefaultlvls="Omogoči privzete omejitve po uporabniku";
-qos.bandwidth="Pasovna širina v kbit/s";
+qos.bandwidth="Pasovna širina";
+qos.speed="v kbit/s";
 
 //help container
 

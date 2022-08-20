@@ -1169,7 +1169,8 @@ qos.pktrst="RST";
 qos.pktsyn="SYN";
 qos.pktfin="FIN";
 qos.enabledefaultlvls="Ограничить для каждого";
-qos.bandwidth="Ширина канала (Кбит)";
+qos.bandwidth="Ширина канала";
+qos.speed="Кбит";
 qos.up="⇈";
 qos.down="⇊";
 //help container

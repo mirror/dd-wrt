@@ -1094,8 +1094,8 @@ qos.maxrate_o="Maksimum Hız";
 qos.legend4="MAC Önceliği";
 qos.legend5="Ethernet Portu Önceliği";
 qos.legend6="Varsayılan Bant Genişliği Düzeyi";
-qos.bandwidth="kbit/s cinsinden bant genişliği";
-
+qos.bandwidth="Bant Genişliği";
+qos.speed="kbit/s cinsinden";
 //help container
 hqos.right1="Yukarı bağlantı:";
 hqos.right2="Bunu toplam yükleme sınırınızın %80-%95 (maks) oranına ayarlayın.";
