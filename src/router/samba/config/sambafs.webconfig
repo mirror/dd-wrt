@@ -29,7 +29,7 @@
 			<script type="text/javascript">
 			//<![CDATA[
 			<% statfs("/tmp/mnt/smbshare", "samba"); %>
-			document.write( ((<% nvg("samba_mount"); %>) && (samba.size)) ? (scaleSize(samba.size) + ' / ' + scaleSize(samba.free)) : '<span style="color:#999999;"><em>(' + share.nmounted + ')</em></span>' );
+			document.write( ((<% nvg("samba_mount"); %>) && (samba.size)) ? (scaleSize(samba.size) + ' / ' + scaleSize(samba.free)) : '<span style="opacity: .8;;"><em>(' + share.nmounted + ')</em></span>' );
 			//]]>
 			</script>
 		</div>
