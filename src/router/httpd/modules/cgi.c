@@ -38,15 +38,14 @@ static void unescape(char *s)
 	while ((s = strpbrk(s, "%+"))) {
 		/* Parse %xx */
 		if (*s == '%') {
-			if ((strlen(s + 1)) >= 2) {
-				sscanf(s + 1, "%02x", &c);
-				*s++ = (char)c;
-				strlcpy(s, s + 2, strlen(s) + 1);
-			}
-			else {
+			if (*(s + 1) == 0 || *(s + 2) == 0) {
 				/* something's wrong - skip... */
 				strlcpy(s, "", strlen(s) + 1);
 				dd_logerror("httpd", "malformed substring (skipped)!");
+			} else {
+				sscanf(s + 1, "%02x", &c);
+				*s++ = (char)c;
+				strlcpy(s, s + 2, strlen(s) + 1);
 			}
 		}
 		/* Space is special */
