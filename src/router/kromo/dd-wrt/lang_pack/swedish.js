@@ -1068,7 +1068,7 @@ qos.legend4="MAC Prioritet";
 qos.legend5="Ethernet Port Prioritet";
 qos.legend6="Standard Bandbredds Nivå";
 qos.bandwidth="Bandbredd";
-qos.speed="i kbit/s";
+qos.speed="kbit/s";
 
 //help container
 hqos.right1="Uppladdning:";

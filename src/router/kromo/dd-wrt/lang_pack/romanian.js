@@ -1169,7 +1169,7 @@ qos.pktsyn="SYN";
 qos.pktfin="FIN";
 qos.enabledefaultlvls="Activează limite implicite per utilizator";
 qos.bandwidth="Lățime de bandă";
-qos.speed="in kbit/s";
+qos.speed="kbit/s";
 
 //help container
 hqos.right1="";
