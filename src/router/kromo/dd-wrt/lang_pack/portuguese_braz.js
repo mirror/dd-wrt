@@ -1230,7 +1230,7 @@ qos.pktsyn="SYN";
 qos.pktfin="FIN";
 qos.enabledefaultlvls="Habilitar Limite Padrão por Usuário";
 qos.bandwidth="Banda";
-qos.speed="em kbit/s";
+qos.speed="kbit/s";
 
 //help container
 hqos.right1="";

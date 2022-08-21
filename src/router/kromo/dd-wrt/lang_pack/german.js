@@ -1489,7 +1489,7 @@ qos.pktsyn="SYN";
 qos.pktfin="FIN";
 qos.enabledefaultlvls="Benutzer Bandbreiten Management";
 qos.bandwidth="Bandbreite";
-qos.speed="in kbit/s";
+qos.speed="kbit/s";
 qos.service="Dienst";
 
 //help container

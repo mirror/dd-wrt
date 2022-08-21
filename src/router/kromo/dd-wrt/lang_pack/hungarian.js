@@ -902,7 +902,7 @@ qos.legend4="MAC-prioritás";
 qos.legend5="Ethernet Port-prioritás";
 qos.legend6="Alapértelmezett sávszélesség szint";
 qos.bandwidth="Sávszélesség";
-qos.speed="kbit/s-ekben";
+qos.speed="kbit/s";
 //help container
 
 hqos.right1="Uplink:";

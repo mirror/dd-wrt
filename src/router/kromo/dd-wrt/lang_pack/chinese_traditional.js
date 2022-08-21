@@ -1006,7 +1006,7 @@ qos.legend4="MAC 優先順序";
 qos.legend5="LAN 埠優先順序";
 qos.legend6="預設帶寬等級";
 qos.bandwidth="表示的帶寬";
-qos.speed="以 kbit/s";
+qos.speed="kbit/s";
 //help container
 hqos.right1="上傳:";
 hqos.right2="將此設定為您的總上傳限制的80%-95%（最大）.";
