@@ -620,7 +620,7 @@ hdiag.right2="Můžete použít příkazovou řádku přes webové rozhraní. Za
 hdiag.page1="<dd>Příkazy můžete spouštět přímo přes webové rozhraní.</dd>";
 hdiag.page2="<dd>Vyplňte textovou oblast příkazem, klikněte na <em>Spustit příkazy</em> a odešlete.</dd>";
 hdiag.page3="<dd>Můžete uložit některé příkazové řádky, které se mají spustit při spuštění Routeru. Naplňte textovou oblast příkazy (pouze jeden příkaz po řádku) a klikněte na <em>Uložit spuštění</em>.</dd>";
-hdiag.page4="<dd>Při každém spuštění brány firewall může spustit některé vlastní instrukce iptables. Do textové oblasti vyplňte pokyny brány firewall (pouze jeden příkaz po řádku) a klikněte na <em>Uložit bránu firewall</em>.<br /><br />";
+hdiag.page4="<dd>Při každém spuštění brány firewall může spustit některé vlastní instrukce iptables. Do textové oblasti vyplňte pokyny brány firewall (pouze jeden příkaz po řádku) a klikněte na <em>Uložit bránu firewall</em>.</dd>";
 hdiag.page5="<dd>Vlastní skript je uložen v souboru /tmp/.rc_custom. Můžete jej spustit ručně nebo jej použít k vyvolání pomocí cronu. Vyplňte textovou oblast podle pokynů skriptu (pouze jeden příkaz na řádek) a klikněte na <em>Uložit vlastní skript</em>. <br /><br /><div class=\"note\"><h4>Poznámka</h4><div><ul class=\"wide\"><li>Spouštěcí příkazy jsou uloženy v proměnné nvram rc_startup</li><li>Firewall příkazy jsou uloženy v proměnné nvram rc_firewall</li><li>Vlastní skript je uložen v proměnné nvram rc_custom</li></ul></div></div></dd>";
 
 // ** DMZ.asp **//
@@ -762,16 +762,16 @@ hfirewall.right2="Povolte, nebo zakažte SPI Firewall.";
 // help page
 hfirewall.page1="<dd>Blokuje požadavky HTTP obsahující řetězec &quot;<i>Host:</i>&quot;</dd>";
 hfirewall.page2="<dd>Identifikuje HTTP požadavky, které obsahují &quot;<i>Cookie:</i> &quot;řetězec a spravují cookie. Pokouší se zastavit používání cookies.</dd>";
-hfirewall.page3="<dd>Blokuje požadavky HTTP obsahující URL končící na &quot;<i>.js</i>&quot; nebo &quot;<i>.class</i>&quot;.</ dd>";
-hfirewall.page4="<dd>Blokuje požadavky HTTP obsahující URL končící na &quot;<i>.ocx</i>&quot; nebo &quot;<i>.cab</i>&quot;.</ dd>";
+hfirewall.page3="<dd>Blokuje požadavky HTTP obsahující URL končící na &quot;<i>.js</i>&quot; nebo &quot;<i>.class</i>&quot;.</dd>";
+hfirewall.page4="<dd>Blokuje požadavky HTTP obsahující URL končící na &quot;<i>.ocx</i>&quot; nebo &quot;<i>.cab</i>&quot;.</dd>";
 hfirewall.page5="<dd>Zastaví router v reakci na &quot; ping &quot; z WAN.</dd>";
 hfirewall.page6="<dd>Zabraňuje paketům vícesměrového vysílání dosáhnout LAN.</dd>";
 hfirewall.page7="<dd>Zabraňuje hostitelům v LAN používat adresu WAN routeru ke kontaktování serverů v LAN (které byly nakonfigurovány pomocí přesměrování portů).</dd>";
 hfirewall.page8="<dd>Zabraňuje WAN přístupu k portu 113.</dd>";
 hfirewall.page9="<dd>Router může uchovávat protokoly veškerého příchozího nebo odchozího provozu pro vaše internetové připojení.</dd>";
 hfirewall.page10="<dd>Chcete-li zachovat protokoly aktivit, vyberte <i>Povolit</i>. Chcete-li protokolování zastavit, vyberte <i> Zakázat </i>.</dd>";
-hfirewall.page11="<dd>Nastavte na požadované množství informací. Chcete-li zaznamenat více akcí, nastavte <i>Úroveň záznamu</i> na vyšší.";
-hfirewall.page12="<dd>Chcete-li zobrazit dočasný protokol nejnovější příchozí komunikace Routeru, klikněte na tlačítko <i>Příchozí protokol</i>.</td>";
+hfirewall.page11="<dd>Nastavte na požadované množství informací. Chcete-li zaznamenat více akcí, nastavte <i>Úroveň záznamu</i> na vyšší.</dd>";
+hfirewall.page12="<dd>Chcete-li zobrazit dočasný protokol nejnovější příchozí komunikace Routeru, klikněte na tlačítko <i>Příchozí protokol</i>.</dd>";
 hfirewall.page13="<dd>Chcete-li zobrazit dočasný protokol poslední odchozí komunikace Routeru, klikněte na tlačítko <i>Odchozí protokol</i>.</dd><dd>Zkontrolujte všechny hodnoty a klikněte na <i>Uložit Nastavení</i> uložte nastavení. Kliknutím na <i>Zrušit změny</i> zrušíte neuložené změny.</dd>";
 
 // ** Forward.asp **//
@@ -790,7 +790,7 @@ hprforward.page1="<dd>Přesměrování rozsahu portů vám umožňuje nastavit v
 hprforward.page2="<dd>Do poskytnutého pole zadejte název aplikace.</dd>";
 hprforward.page3="<dd>Zadejte číslo prvního portu rozsahu, který chcete vidět uživatelé na internetu a přeposlat je do vašeho počítače.</dd>";
 hprforward.page4="<dd>Zadejte číslo posledního portu rozsahu, který chcete vidět uživatelé na internetu a přeposlali jej do vašeho počítače.</dd>";
-hprforward.page5="<dd>Vyberte správný protokol <i> TCP </i>, <i> UDP </i> nebo <i> Oba </i>. Nastavte to, co aplikace vyžaduje. </ dd > ";
+hprforward.page5="<dd>Vyberte správný protokol <i> TCP </i>, <i> UDP </i> nebo <i> Oba </i>. Nastavte to, co aplikace vyžaduje. </dd> ";
 hprforward.page6="<dd>Zadejte IP adresu počítače, na kterém je spuštěna aplikace.</dd>";
 hprforward.page7="<dd>Zaškrtnutím políčka <i> Povolit </i> povolíte předávání portů pro aplikaci.</dd><dd> Zkontrolujte všechny hodnoty a kliknutím <i> Uložit nastavení </i> uložte vaše nastavení. Kliknutím na tlačítko <i> Zrušit změny </i> zrušíte neuložené změny. <br /><br /><div class=\"note\"><h4> Note </h4><div> Než přidáte další pravidlo pro předávání, nezapomeňte své změny uložit. </div></div></dd> ";
 
@@ -821,7 +821,7 @@ hpforward.right2="Některé aplikace vyžadují, aby byly některé porty otevř
 hpforward.page1="<dd>Port Forwarding vám umožňuje nastavit veřejné služby ve vaší síti, jako jsou webové servery, ftp servery, e-mailové servery nebo jiné specializované internetové aplikace. Specializované internetové aplikace jsou všechny aplikace, které využívají přístup k internetu k provádění funkcí, jako jsou videokonference nebo online hraní. Když uživatelé pošlou tento typ požadavku do vaší sítě přes internet, router předá tyto požadavky příslušnému počítači. <br /><br /> Pokud chcete přeposlat celý dokument rozsah portů, viz <a href=\"HForward.asp\">";
 hpforward.page2="</a>.<br /><br /><div class=\"note\"><h4>Poznámka</h4><div>Každé zařízení, jehož port je přesměrován, musí mít statickou IP adresu, která mu byla přidělena, protože IP adresa zařízení se může při použití funkce DHCP změnit.</div></div></dd><dd>Chcete-li přidat nové pravidlo předávání portů, klikněte na <i>Přidat</i> a vyplňte níže uvedená pole. Chcete-li odebrat poslední pravidlo, klikněte na <i>Odebrat</i>.</dd>";
 hpforward.page3="<dd>Do určeného pole zadejte název aplikace.</dd>";
-hpforward.page4="<dd>Vyberte správný protokol <i>TCP</i>, <i>UDP</i> nebo <i>Oba</i>. Nastavte to, co aplikace vyžaduje.</ dd>";
+hpforward.page4="<dd>Vyberte správný protokol <i>TCP</i>, <i>UDP</i> nebo <i>Oba</i>. Nastavte to, co aplikace vyžaduje.</dd>";
 hpforward.page5="<dd>Přesměrovat, pouze pokud odesílatel odpovídá této IP/SÍTI (příklad 192.168.1.0/24).</dd>";
 hpforward.page6="<dd>Zadejte číslo externího portu (číslo portu, které vidí uživatelé na internetu).</dd>";
 hpforward.page7="<dd>Zadejte IP adresu počítače, na kterém je spuštěna aplikace.</dd>";
@@ -2361,7 +2361,7 @@ hstatus_wireless.page4="<dd>Zde se zobrazuje SSID bezdrátové sítě.</dd>";
 hstatus_wireless.page5="<dd>Zde se zobrazuje kanál bezdrátové sítě.</dd>";
 hstatus_wireless.page6="<dd>Zde se zobrazuje přenosový výkon bezdrátového zařízení.</dd>";
 hstatus_wireless.page7="<dd>Zde se zobrazuje aktuální rychlost bezdrátového přenosu.</dd>";
-hstatus_wireless.page8="<dd>Zde je zobrazen stav šifrování.</dd><dd>Klepnutím na tlačítko <i>Průzkum</i> zobrazíte všechny bezdrátové sítě ve vašem okolí, které jsou Routerem viditělné.</ dd>";
+hstatus_wireless.page8="<dd>Zde je zobrazen stav šifrování.</dd><dd>Klepnutím na tlačítko <i>Průzkum</i> zobrazíte všechny bezdrátové sítě ve vašem okolí, které jsou Routerem viditělné.</dd>";
 
 // ** Status_OpenVPN.asp **//
 //
@@ -2698,7 +2698,7 @@ radius.local_ip="Vynutit IP Klienta";
 
 // help page
 hradauth.page1="<dd>RADIUS (Remote Authentication Dial-In User Service) je bezpečnostní služba pro ověřování a autorizaci dial-up uživatelů. Typická podniková síť může mít přístupový server připojený k fondu modemů spolu s RADIUS server pro poskytování ověřovacích služeb. Vzdálení uživatelé vytáčejí přístupový server a přístupový server odešle požadavky na ověřování serveru RADIUS. Server RADIUS ověřuje uživatele a autorizuje přístup k interním síťovým prostředkům. Vzdálení uživatelé jsou klienti přístupového serveru a přístupu server je klientem serveru RADIUS.<br /><br /><div class =\"note\"><h4>Poznámka</h4><div>RADIUS je k dispozici pouze v <em>AP</em> režimu. </div></div></dd>";
-hradauth.page2="<dd>Při odesílání požadavku na ověření na server RADIUS použije bezdrátový klient jako uživatelské jméno MAC Adresu. Tu server RADIUS obdrží v následujícím formátu: <ulclass=\"wide\"><li>aabbcc-ddeeff</li><li>aabbccddeeff</li><li>aa-bb-cc-dd-ee-ff</li></ul></ul></d>> ";
+hradauth.page2="<dd>Při odesílání požadavku na ověření na server RADIUS použije bezdrátový klient jako uživatelské jméno MAC Adresu. Tu server RADIUS obdrží v následujícím formátu: <ulclass=\"wide\"><li>aabbcc-ddeeff</li><li>aabbccddeeff</li><li>aa-bb-cc-dd-ee-ff</li></ul></ul></dd>> ";
 hradauth.page3="<dd>IP Adresa serveru Radius a TCP port.</dd>";
 hradauth.page4="<dd>Nastavuje množství uživatelů, kteří spustili přístup bez platného ověřování Radius</dd>";
 hradauth.page5="<dd>Nastavuje vlastností, které by se měly použít pro heslo RADIUS, sdílený klíč nebo samotná adresa MAC</dd>";
@@ -2717,7 +2717,7 @@ wl_mac.allow="Povolit přístup k bezdrátové síti pouze klientům uvedeným v
 
 //help page
 //
-hwl_mac.page1="<dd>Bezdrátový MAC filtr umožňuje řídit, která bezdrátově vybavená PC mohou nebo nemusí komunikovat s Routerem v závislosti na jejich MAC Adresách. Informace o tom, jak získat MAC Adresy z Windows-PC, <a href=\"HWanMAC.asp\">Klonování MAC Adres</a>, kde najdete podrobné pokyny.</dd><dd> Chcete-li nastavit filtr, klikněte na <i>Povolit</i> a postupujte podle těchto pokynů:<ol class=\"wide\"><li>Pokud chcete blokovat komunikaci konkrétních bezdrátových počítačů s Routerem, ponechte výchozí nastavení, <i>Zabraňte počítačům uvedeným v seznamu v přístupu k bezdrátové síti</i>. Pokud chcete povolit komunikaci konkrétních počítačů vybavených bezdrátovým připojením s Routerem, klikněte na přepínač vedle položky <i>Povolit přístup k bezdrátové síti pouze uvedeným počítačům </i>.</li><li>Klikněte na ikonu <i>Upravit seznam filtrů MAC</i>. Do polí MAC zadejte příslušné adresy MAC.<br /><br /><div class=\"note\"><b>Poznámka:</b><br />Adresa MAC by měla být zadána v tomto formátu: xxxxxxxxxxxx (písmena x představují skutečné znaky MAC Adresy).</div></li><li>Uložte změny kliknutím na tlačítko <i>Uložit nastavení</i>. Kliknutím na tlačítko <i>Zrušit změny</i> zrušíte neuložené změny. Kliknutím na tlačítko <i>Zavřít</i> se vrátíte na předchozí obrazovku bez uložení změn.</li></ol><br />Chcete-li deaktivovat filtr bezdrátové MAC, ponechte výchozí nastavení, <i>Zakázat</i>.<dd>";
+hwl_mac.page1="<dd>Bezdrátový MAC filtr umožňuje řídit, která bezdrátově vybavená PC mohou nebo nemusí komunikovat s Routerem v závislosti na jejich MAC Adresách. Informace o tom, jak získat MAC Adresy z Windows-PC, <a href=\"HWanMAC.asp\">Klonování MAC Adres</a>, kde najdete podrobné pokyny.</dd><dd> Chcete-li nastavit filtr, klikněte na <i>Povolit</i> a postupujte podle těchto pokynů:<ol class=\"wide\"><li>Pokud chcete blokovat komunikaci konkrétních bezdrátových počítačů s Routerem, ponechte výchozí nastavení, <i>Zabraňte počítačům uvedeným v seznamu v přístupu k bezdrátové síti</i>. Pokud chcete povolit komunikaci konkrétních počítačů vybavených bezdrátovým připojením s Routerem, klikněte na přepínač vedle položky <i>Povolit přístup k bezdrátové síti pouze uvedeným počítačům </i>.</li><li>Klikněte na ikonu <i>Upravit seznam filtrů MAC</i>. Do polí MAC zadejte příslušné adresy MAC.<br /><br /><div class=\"note\"><b>Poznámka:</b><br />Adresa MAC by měla být zadána v tomto formátu: xxxxxxxxxxxx (písmena x představují skutečné znaky MAC Adresy).</div></li><li>Uložte změny kliknutím na tlačítko <i>Uložit nastavení</i>. Kliknutím na tlačítko <i>Zrušit změny</i> zrušíte neuložené změny. Kliknutím na tlačítko <i>Zavřít</i> se vrátíte na předchozí obrazovku bez uložení změn.</li></ol><br />Chcete-li deaktivovat filtr bezdrátové MAC, ponechte výchozí nastavení, <i>Zakázat</i>.</dd>";
 
 // ** WiMAX
 //
