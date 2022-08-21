@@ -266,9 +266,7 @@ errmsg.err49="A RADIUS csak AP módban érhető el.";
 errmsg.err50="Kérem adjon meg egy SSID-t.";
 
 // Management.asp error messages
-errmsg.err51="A Router jelenleg az alapértelmezett jelszavával van beállítva. \
-			Biztonság növelése érdekében meg kell változtatnia a jelszót mielőtt a Remote-Management funkciót engedélyezné. \
-			Kattintson az OK gombra a jelszó megváltoztatásához. Kattintson a Mégse gombra a Remote Management funkció tiltásához.";
+errmsg.err51="A Router jelenleg az alapértelmezett jelszavával van beállítva. Biztonság növelése érdekében meg kell változtatnia a jelszót mielőtt a Remote-Management funkciót engedélyezné. Kattintson az OK gombra a jelszó megváltoztatásához. Kattintson a Mégse gombra a Remote Management funkció tiltásához.";
 errmsg.err52="A jelszó visszaigazolás nem felel meg.";
 
 // Port_Services.asp error messages
@@ -406,7 +404,6 @@ ddns.legend="DDNS";
 ddns.srv="DDNS szolgáltatás";
 ddns.emailaddr="E-Mail cím";
 ddns.typ="Típus";
-// ddns.static="Static"; Please note: Mozilla doesn't like ".static", use ".sttic" , Eko 22.mar.06
 ddns.custom="Specifikus";
 ddns.wildcard="Wildcard";
 ddns.statu="DDNS Státusz";
@@ -422,9 +419,7 @@ ddnsm.all_noip="Nincs WAN összeköttetés";
 
 //help container
 
-hddns.right2="DDNS lehetővé teszi, hogy elérje hálózatát domain neveket használva IP címek helyett. A szolgáltatás \
-	kezeli a változó IP címeket, és a domain információkat automatikusan frissííti. \
-	A TZO.com, ZoneEdit.com vagy DynNS.ORG címeken igényelheti ezt a szolgáltatást.";
+hddns.right2="DDNS lehetővé teszi, hogy elérje hálózatát domain neveket használva IP címek helyett. A szolgáltatás kezeli a változó IP címeket, és a domain információkat automatikusan frissííti. A TZO.com, ZoneEdit.com vagy DynNS.ORG címeken igényelheti ezt a szolgáltatást.";
 
 
 
@@ -528,7 +523,7 @@ firewall.h2="Biztonság";
 firewall.legend="Tűzfal védelem";
 firewall.firewall="SPI tűzfal";
 firewall.legend2="További filterek";
-firewall.proxy="Proxy szűrés" ;
+firewall.proxy="Proxy szűrés";
 firewall.cookies="Süti (Cookie) szűrés";
 firewall.applet="Java Appletek szűrése";
 firewall.activex="ActiveX szűrés";
@@ -575,11 +570,7 @@ prforward.app="Alkalmazás";
 
 //help container
 
-hprforward.right2="Egyes alkalmazásoknak szükségük van bizonyos portok megnyitására, azért hogy\
-	helyesen működjenek. Ilyen alkalmazások körébe tartoznak szerverek és egyes online játékok. \
-	Ha egy kérés érkezik a kiválasztott portra az internet felől, a router továbbirányítja az adatot a megadott számítógépnek. \
-	Biztonsági megfontolások miatt javasolt a port továbbítások korlátozása csak azokra a portokra, amelyeket használ, és miután végzett szedje ki a jelölőpipát:  <em>" + share.enable +"</em> .";
-	
+hprforward.right2="Egyes alkalmazásoknak szükségük van bizonyos portok megnyitására, azért hogy helyesen működjenek. Ilyen alkalmazások körébe tartoznak szerverek és egyes online játékok. Ha egy kérés érkezik a kiválasztott portra az internet felől, a router továbbirányítja az adatot a megadott számítógépnek. Biztonsági megfontolások miatt javasolt a port továbbítások korlátozása csak azokra a portokra, amelyeket használ, és miután végzett szedje ki a jelölőpipát:  <em>" + share.enable +"</em> .";
 
 
 // **************************************************************** ForwardSpec.asp **********************************************************************//
@@ -593,10 +584,7 @@ pforward.to="Cél port";
 
 //help container
 
-hpforward.right2="Egyes alkalmazásoknak szükségük van bizonyos portok megnyitására, azért hogy\
-	helyesen működjenek. Ilyen alkalmazások körébe tartoznak szerverek és egyes online játékok. \
-	Ha egy kérés érkezik a kiválasztott portra az internet felől, a router továbbirányítja az adatot a megadott számítógépnek. \
-	Biztonsági megfontolások miatt javasolt a port továbbítások korlátozása csak azokra a portokra, amelyeket használ, és miután végzett szedje ki a jelölőpipát az <em>Enable</em> jelölőnégyzetből";
+hpforward.right2="Egyes alkalmazásoknak szükségük van bizonyos portok megnyitására, azért hogy helyesen működjenek. Ilyen alkalmazások körébe tartoznak szerverek és egyes online játékok. Ha egy kérés érkezik a kiválasztott portra az internet felől, a router továbbirányítja az adatot a megadott számítógépnek. Biztonsági megfontolások miatt javasolt a port továbbítások korlátozása csak azokra a portokra, amelyeket használ, és miután végzett szedje ki a jelölőpipát az <em>Enable</em> jelölőnégyzetből";
 
 
 

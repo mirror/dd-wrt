@@ -1040,7 +1040,7 @@ hstatus_hots.right1="conup/condown:<br /><i>Když je USB nebo JFFS připojeno k 
 // help page
 hstatus_hots.page1="<dd>Router můžete použít jako bránu Hotspot (řešení CoovaChilli) s ověřováním, účtu (Radius). CoovaChilli je open source captive portál, nebo řadič přístupového bodu bezdrátové sítě LAN. Používá se pro ověřování uživatelů v bezdrátové síťi LAN. Podporuje webové přihlášení, které je dnes standardem pro veřejné HotSpoty a podporuje bezdrátový chráněný přístup (WPA), který je standardem budoucnosti. Ověřování, autorizaci a práci s účty (AAA) zajišťuje váš oblíbený server s Radiusem.</dd>";
 hstatus_hots.page2="<dd>Můžete si nechat spravovat váš hotspotový portál pomocí HotspotSystem.com. Poskytují bezplatná hotspotová řešení s placením za použití ​​fakturací. Pro více informací navštivte <a href=\"http:\/\/www.hotspotsystem.com\">www.hotspotsystem.com</a></dd>";
-hstatus_hots.page3="<dd>Uživatelské jméno operátora, které jste zaregistrovali na <a href=\"http:\/\/www.hotspotsystem.com\">www.hotspotsystem.com</a></dd>" ;
+hstatus_hots.page3="<dd>Uživatelské jméno operátora, které jste zaregistrovali na <a href=\"http:\/\/www.hotspotsystem.com\">www.hotspotsystem.com</a></dd>";
 hstatus_hots.page4="<dd>Číslo umístění, které chcete nastavit.</dd>";
 hstatus_hots.page5="<dd>Je-li tato možnost povolena (výchozí), pak se s WiFi a LAN manipuluje samostatně. Například můžete uživatele Wifi přeposlat na úvodní stránku, zatímco porty LAN zůstávají zcela volné, nadále jsou poté všechny porty zpracovány společně.</dd>";
 hstatus_hots.page6="<dd>Toto musí být rozhraní, které chcete použít pro portál hotspot.</dd>";
