@@ -171,7 +171,7 @@ strip-flags	= $(addprefix --remove-section=,$(drop-sections))
 
 include kernel-features.mk
 
-kernel:
+kernel: build_date
         # Also build kernel
 	# Also build kernel
 ifeq ($(CONFIG_CA8),y)
@@ -274,6 +274,7 @@ ifeq ($(CONFIG_SWCONFIG),y)
 else
 	echo "# CONFIG_AR8216_PHY is not set" >> $(LINUXDIR)/.config
 endif
+	echo "# CONFIG_CPU_MIPS32_R2 is not set" >> $(LINUXDIR)/.config
 
 	$(MAKE) -C $(LINUXDIR) oldconfig	
 	if ! grep -q "CONFIG_EMBEDDED_RAMDISK=y" $(LINUXDIR)/.config ; then \
