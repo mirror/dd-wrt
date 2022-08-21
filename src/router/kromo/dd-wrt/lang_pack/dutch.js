@@ -1105,7 +1105,7 @@ qos.legend4="MAC Prioriteit";
 qos.legend5="Ethernet Poort Prioriteit";
 qos.legend6="Standaard Bandbreedte Niveau";
 qos.bandwidth="Bandbreedte";
-qos.speed="in kbit/s";
+qos.speed="kbit/s";
 
 //help container
 

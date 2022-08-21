@@ -1100,7 +1100,7 @@ qos.legend4="MAC Önceliği";
 qos.legend5="Ethernet Portu Önceliği";
 qos.legend6="Varsayılan Bant Genişliği Düzeyi";
 qos.bandwidth="Bant Genişliği";
-qos.speed="kbit/s cinsinden";
+qos.speed="kbit/s";
 //help container
 hqos.right1="Yukarı bağlantı:";
 hqos.right2="Bunu toplam yükleme sınırınızın %80-%95 (maks) oranına ayarlayın.";

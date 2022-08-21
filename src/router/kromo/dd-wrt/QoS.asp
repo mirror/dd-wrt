@@ -98,7 +98,6 @@ function devlvl_grey(num,field,F,overwrite) {
 	eval("F.svqos_devlanlvl" + num).disabled = sw_disabled;
 }
 
-
 function ips_grey(sw_disabled,F,overwrite) {
 	F.svqos_ipaddr0.disabled = sw_disabled;
 	F.svqos_ipaddr1.disabled = sw_disabled;
@@ -174,13 +173,13 @@ function service(id, name, port_start, port_end, protocol, servicename) {
 
 var sorton = function(x,y){
 	if(x.name <  y.name) {
-	    return -1;
+		return -1;
 	} else {
 		if (x.name == y.name) {
-		    return 0;
+			return 0;
 		} else {
-	          return 1;
-	        }
+				return 1;
+			}
 	}
 };
 
@@ -231,28 +230,25 @@ function submitcheck(F) {
 }
 
 function to_submit(F) {
-    submitcheck(F);
-    apply(F);
+	submitcheck(F);
+	apply(F);
 }
 function to_apply(F) {
-    submitcheck(F);
-    applytake(F);
+	submitcheck(F);
+	applytake(F);
 }
 
 var update;
 
 addEvent(window, "load", function() {
-
 	qos_grey(<% nvg("wshaper_enable"); %>,document.QoS);
 
 	update = new StatusbarUpdate();
 	update.start();
-
 });
 
 addEvent(window, "unload", function() {
 	update.stop();
-
 });
 
 			//]]>
@@ -260,14 +256,13 @@ addEvent(window, "unload", function() {
 	</head>
 
 	<body class="gui">
-
 		<div id="wrapper">
 			<div id="content">
 				<div id="header">
 					<div id="logo"><h1><% show_control(); %></h1></div>
 					<% do_menu("ForwardSpec.asp","QoS.asp"); %>
 				</div>
-            	<div id="main">
+				<div id="main">
 					<div id="contents">
 						<form name="QoS" action="apply.cgi" method="post" >
 							<input type="hidden" name="submit_button" value="QoS" />
@@ -277,7 +272,6 @@ addEvent(window, "unload", function() {
 							<input type="hidden" name="commit" value="1" />
 
 							<h2><% tran("qos.h2"); %></h2>
-
 							<fieldset>
   								<legend><% tran("qos.legend"); %></legend>
   								<div class="setting">
@@ -299,14 +293,14 @@ addEvent(window, "unload", function() {
 										<option value="1" <% nvsm("qos_type", "1", "selected"); %>>HFSC</option>
 									</select>
 								</div>
-                                <% show_qos_aqd(); %>
+								<% show_qos_aqd(); %>
 								<div class="setting">
 									<div class="label"><% tran("qos.dnlink"); %></div>
-									<input class="num" type="number" size="10" min="0" max="1000000" step="10" name="wshaper_downlink" value="<% nvg("wshaper_downlink"); %>" />
+									<input class="num" type="number" size="10" min="0" max="1000000" step="10" name="wshaper_downlink" value="<% nvg("wshaper_downlink"); %>" />&nbsp;<% tran("qos.speed"); %>
 								</div>
 								<div class="setting">
 									<div class="label"><% tran("qos.uplink"); %></div>
-									<input class="num" type="number" size="10" min="100" max="1000000" step="10" name="wshaper_uplink" value="<% nvg("wshaper_uplink"); %>" />
+									<input class="num" type="number" size="10" min="100" max="1000000" step="10" name="wshaper_uplink" value="<% nvg("wshaper_uplink"); %>" />&nbsp;<% tran("qos.speed"); %>
 								</div>
 							</fieldset><br />
 								<fieldset>

@@ -1437,7 +1437,7 @@ qos.pktsyn="SYN";
 qos.pktfin="FIN";
 qos.enabledefaultlvls="Abilita Limiti Di Default Per Utente";
 qos.bandwidth="Banda";
-qos.speed="in kbit/s";
+qos.speed="kbit/s";
 qos.up="Up";
 qos.down="Down";
 
