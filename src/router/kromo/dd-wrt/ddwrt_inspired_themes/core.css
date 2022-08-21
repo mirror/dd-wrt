@@ -1,5 +1,5 @@
 /*
- * style-name: DD-WRT Inspired Themes v6.0.8
+ * style-name: DD-WRT Inspired Themes v6.1.0
  * copyright: (c) Style-it-themes: the-j0k3r
  * license: MIT https://git.io/JrzcO
  * home-url: https: //github.com/style-it-themes/dd-wrt-inspired-themes
@@ -20,11 +20,8 @@
   border-radius: 2px;
 }
 #tablePwdCheck tr th {
-  background-color: transparent;
   border: 0;
   color: var(--v9-8);
-  text-align: right;
-  vertical-align: middle;
 }
 body {
   background: var(--bg-1);
@@ -116,7 +113,7 @@ body input.focus {
   box-shadow: 0 0 5px 1px var(--v0-8);
 }
 body input[disabled] {
-  background-color: var(--bg-0) !important;
+  background-color: var(--bg-0);
   border-color: var(--bg-2);
   color: var(--v9-6);
 }
@@ -159,7 +156,7 @@ body input.button[disabled]:hover {
 }
 body input[name*='apply'],
 body input[name='changepassword'] {
-  background: none repeat scroll 0 0 var(--v4-2);
+  background: var(--v4-2);
   border-color: var(--v4-3);
   color: var(--v9-8);
   text-shadow: 0 1px 0 var(--bg-0);
@@ -168,51 +165,45 @@ body input[name*='apply']:hover,
 body input[name='changepassword']:hover,
 body input[name*='apply']:focus-within,
 body input[name='changepassword']:focus-within {
-  background: none repeat scroll 0 0 var(--v4-3) !important;
+  background: var(--v4-3) !important;
   border-color: var(--v4-3) !important;
   box-shadow: 0 0 10px 0 var(--v4-3) !important;
   color: var(--v9-9) !important;
 }
 body input[name*='reset']:not([type="radio"]) {
-  background: none repeat scroll 0 0 var(--bg-3);
+  background: var(--bg-3);
   border-color: var(--bg-4);
   color: var(--v9-8);
   text-shadow: 0 1px 0 var(--bg-0);
 }
 body input[name*='reset']:not([type="radio"]):hover,
 body input[name*='reset']:not([type="radio"]):focus-within {
-  background: none repeat scroll 0 0 var(--bg-5) !important;
+  background: var(--bg-5) !important;
   border-color: var(--bg-5) !important;
   box-shadow: 0 0 10px 0 var(--bg-5) !important;
   color: var(--v9-9) !important;
 }
-body input[name*='refresh'][style*='background'] {
-  background: var(--v0-5) !important;
-}
 body input[name*='reboot'] {
-  background: none repeat scroll 0 0 var(--v1-4);
+  background: var(--v1-4);
   border-color: var(--v1-5);
   color: var(--v9-8);
   text-shadow: 0 1px 0 var(--bg-0);
 }
 body input[name*='reboot']:hover,
 body input[name*='reboot']:focus-within {
-  background: none repeat scroll 0 0 var(--v1-6) !important;
+  background: var(--v1-6) !important;
   border-color: var(--v1-7) !important;
   box-shadow: 0 0 10px 0 var(--v1-6) !important;
 }
 body input[name*='reboot']:disabled,
 body input[name*='reboot']:disabled:hover {
-  background: none repeat scroll 0 0 var(--v1-4) !important;
+  background: var(--v1-4) !important;
   border-color: var(--v1-5) !important;
 }
-body div.progressbar {
-  background-color: var(--bg-4);
-  border: 1px solid var(--bg-5);
+body .progressbar {
+  background-color: var(--bg-0);
+  border: 1px solid var(--bg-4);
   border-radius: 4px;
-}
-body dd {
-  border-bottom: 0.123rem dotted var(--bg-5);
 }
 body.about-bg {
   background: var(--bg-2) !important;
@@ -454,7 +445,7 @@ select[onchange*='SelRoute'] {
   outline: 0;
 }
 #help dd.definition {
-  border-bottom: 0.123rem dotted var(--bg-5);
+  border-bottom: 0.0648rem dotted var(--bg-5);
 }
 textarea {
   background-color: var(--bg-0);
@@ -648,9 +639,6 @@ div.slidingbody {
 span.title3d {
   background-color: var(--bg-0);
 }
-.setting span[style*='color:#999999'] {
-  color: var(--v9-6) !important;
-}
 .setting .default {
   color: var(--v9-6) 0 0;
 }
@@ -679,9 +667,7 @@ h2 {
   border-radius: 4px;
 }
 .submitFooter .button {
-  padding: 0 1rem;
-  margin: 0.362em;
-  height: 1.533rem;
+  padding: 0 1rem 0.1rem;
 }
 .meter {
   background-color: var(--bg-4);
@@ -946,6 +932,7 @@ input[type='checkbox']:disabled:hover {
   color: var(--v9-5) !important;
   border-color: var(--bg-5) !important;
   background-color: var(--bg-4) !important;
+  box-shadow: none;
   opacity: 0.7;
   cursor: default;
 }
@@ -969,6 +956,14 @@ input[type='radio']:checked {
   border-color: var(--v0-7) !important;
   background-color: var(--v0-7) !important;
   padding: 7px;
+}
+input[type='radio']:checked:disabled,
+input[type='radio']:checked:disabled:hover {
+  border-color: var(--v0-9) !important;
+  background-color: var(--v0-7) !important;
+  box-shadow: none;
+  opacity: 0.7;
+  cursor: default;
 }
 input[type='radio']:hover {
   border-color: var(--v0-8) !important;
@@ -1043,6 +1038,7 @@ input[disabled] {
   opacity: 0.5;
 }
 .num.off {
+  box-shadow: none;
   opacity: 0.5;
 }
 .row[role='controls'] {
@@ -1094,7 +1090,9 @@ select:hover {
   background-color: var(--v0-1) !important;
   transition: all 0.2s cubic-bezier(0.3, 0, 0.5, 1);
 }
-select[disabled] {
+select[disabled],
+select[disabled]:hover {
+  background: url('data:image/svg+xml;utf8,<svg width="14" height="14" viewBox="0 0 14 12" fill="\%23adadad" xmlns="http://www.w3.org/2000/svg"><path d="M6 9a1 1 0 0 1-.707-.293l-3-3a1 1 0 0 1 1.414-1.414L6 6.586l2.293-2.293a1 1 0 0 1 1.414 1.414l-3 3A1 1 0 0 1 6 9z"/></svg>') no-repeat right 3px center !important;
   color: var(--v9-6) !important;
   border-color: var(--bg-4) !important;
   background-color: var(--bg-0) !important;

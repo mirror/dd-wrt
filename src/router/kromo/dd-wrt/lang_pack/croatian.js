@@ -1169,8 +1169,8 @@ qos.legend4="MAC Priority";
 qos.legend5="Prioritet Ethernet Vrata";
 qos.legend6="Uobičajeni nivo Pojasne Širine";
 qos.enabledefaultlvls="Enable Per User Default Limits";
-qos.bandwidth="Bandwidth in kbit/s";
-
+qos.bandwidth="Bandwidth";
+qos.speed="in kbit/s";
 //help container
 
 hqos.right1="";

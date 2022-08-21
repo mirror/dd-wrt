@@ -1098,8 +1098,8 @@ qos.maxrate_o="最大Rate";
 qos.legend4="MACアドレス毎に優先度を設定";
 qos.legend5="Ethernet Port 毎に優先度を設定";
 qos.legend6="Default Bandwidth Level";
-qos.bandwidth="割り当て帯域(kbit/s)";
-
+qos.bandwidth="割り当て帯域";
+qos.speed="kbit/s";
 //help container
 
 hqos.right1="Uplink帯域:";

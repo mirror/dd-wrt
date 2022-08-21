@@ -722,17 +722,17 @@ EJ_VISIBLE void ej_show_default_level(webs_t wp, int argc, char_t ** argv)
 	websWrite(wp, "<input type=\"checkbox\" onclick=\"defaultlvl_grey(this.checked,this.form)\" name=\"svqos_defaults\" value=\"1\" %s />\n", nvram_matchi("svqos_defaults", 1) ? "checked=\"checked\"" : "");
 	websWrite(wp, "</div>\n");
 	websWrite(wp, "<div class=\"setting\">\n");
-	websWrite(wp, "<div class=\"label\">WAN <script type=\"text/javascript\">document.write(qos.bandwidth+\" \"+qos.down)</script></div>\n");
+	websWrite(wp, "<div class=\"label\">WAN <script type=\"text/javascript\">document.write(qos.bandwidth)</script></div>\n");
 	websWrite(wp, "<input type=\"num\" name=\"default_downlevel\" size=\"6\" value=\"%s\" %s/>\n", nvram_safe_get("default_downlevel"), (!strcmp(defaults, "1")) ? "" : "disabled");
-	websWrite(wp, "</div>\n");
+	websWrite(wp, "&nbsp<script type=\"text/javascript\">document.write(qos.speed+\" \"+qos.down)</script></div>\n");
 	websWrite(wp, "<div class=\"setting\">\n");
-	websWrite(wp, "<div class=\"label\">WAN <script type=\"text/javascript\">document.write(qos.bandwidth+\" \"+qos.up)</script></div>\n");
+	websWrite(wp, "<div class=\"label\">WAN <script type=\"text/javascript\">document.write(qos.bandwidth)</script></div>\n");
 	websWrite(wp, "<input type=\"num\" name=\"default_uplevel\" size=\"6\" value=\"%s\" %s/>\n", nvram_safe_get("default_uplevel"), (!strcmp(defaults, "1")) ? "" : "disabled");
-	websWrite(wp, "</div>\n");
+	websWrite(wp, "&nbsp<script type=\"text/javascript\">document.write(qos.speed+\" \"+qos.up)</script></div>\n");
 	websWrite(wp, "<div class=\"setting\">\n");
 	websWrite(wp, "<div class=\"label\">LAN <script type=\"text/javascript\">Capture(qos.bandwidth)</script></div>\n");
 	websWrite(wp, "<input type=\"num\" name=\"default_lanlevel\" size=\"6\" value=\"%s\" %s/>\n", nvram_default_get("default_lanlevel", "100000"), (!strcmp(defaults, "1")) ? "" : "disabled");
-	websWrite(wp, "</div>\n");
+	websWrite(wp, "&nbsp<script type=\"text/javascript\">document.write(qos.speed)</script></div>\n");
 	websWrite(wp, "</fieldset><br />\n");
 	return;
 }

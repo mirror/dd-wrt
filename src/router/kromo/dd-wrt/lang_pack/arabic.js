@@ -1014,7 +1014,8 @@ qos.maxrate_o="Max Rate";
 qos.legend4="MAC Priority";
 qos.legend5="Ethernet Port Priority";
 qos.legend6="Default Bandwidth Level";
-qos.bandwidth="Bandwidth in kbit/s";
+qos.bandwidth="Bandwidth";
+qos.speed="in kbit/s";
 
 //help container
 
