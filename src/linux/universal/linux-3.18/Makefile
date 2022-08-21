@@ -794,6 +794,8 @@ CFLAGS += $(call cc-option,-funit-at-a-time,)
 # warn about C99 declaration after statement
 KBUILD_CFLAGS += $(call cc-option,-Wdeclaration-after-statement,)
 
+# disable pointer signed / unsigned warnings in gcc 4.0
+KBUILD_CFLAGS += $(call cc-disable-warning, pointer-sign)
 
 # We'll want to enable this eventually, but it's not going away for 5.7 at least
 KBUILD_CFLAGS += $(call cc-disable-warning, zero-length-bounds)
