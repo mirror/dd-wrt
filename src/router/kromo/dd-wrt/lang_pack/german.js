@@ -677,7 +677,7 @@ hdiag.right2="Hier können Sie mit Hilfe des Web-GUI Kommandos auf der Kommandoz
 hdiag.page1="<dd><b>Empfohlen:</b> Eine Terminal-Verbindung über SSH/Telnet ist für einige Befehle besser geeignet, flexibler, schneller und zuverlässiger.</dd>";
 hdiag.page2="<dd>Geben Sie in das Eingabefeld den gewünschten Befehl ein und klicken Sie auf die Schaltfläche <em>" + sbutton.runcmd + "</em> um den Befehl auszuführen.</dd>";
 hdiag.page3="<dd>Sie können bestimmte Befehle angeben, die beim Start des Routers ausgeführt werden sollen. Geben Sie die gewünschten Befehle in das Eingabefeld ein (nur ein Befehl pro Zeile) und klicken Sie auf die Schaltfläche <em>" + sbutton.startup + "</em>.</dd>";
-hdiag.page4="<dd>Jedes Mal, wenn die Firewall gestartet wird, können benutzerdefinierte Firewall-Regeln zur Filterkette hinzugefügt werden. Füllen Sie das Eingabefeld mit zusätzlichen iptables/ip6tables Befehlen (nur ein Befehl pro Zeile) und klicken Sie auf die Schaltfläche <em>" + sbutton.firewall + "</em>.<br /><br />";
+hdiag.page4="<dd>Jedes Mal, wenn die Firewall gestartet wird, können benutzerdefinierte Firewall-Regeln zur Filterkette hinzugefügt werden. Füllen Sie das Eingabefeld mit zusätzlichen iptables/ip6tables Befehlen (nur ein Befehl pro Zeile) und klicken Sie auf die Schaltfläche <em>" + sbutton.firewall + "</em>.</dd>";
 hdiag.page5="<dd>Ein benutzerdefiniertes Skript wird in <b>/tmp/.rc_custom</b> gespeichert. Sie können es manuell ausführen oder Cron verwenden, um das Skript auszuführen. Füllen Sie das Eingabefeld mit den gewünschten Befehlen (nur ein Befehl pro Zeile) und klicken Sie auf die Schaltfläche <em>" + sbutton.custom + "</em>.<br /><br /><div class=\"note\"><h4>Hinweis:</h4><div><ul><li>Startup Befehle werden in der NVRAM-Variable rc_startup gespeichert</li><li>Firewall Befehle werden in der NVRAM-Variable rc_firewall gespeichert</li><li>Benutzerdefinierte Skripte werden in der NVRAM-Variable rc_custom gespeichert</li></ul></div></div></dd>";
 
 // ** DMZ.asp **//
@@ -830,7 +830,7 @@ hfirewall.page8="<dd>Verhindert den WAN-Zugriff auf Port 113.</dd>";
 hfirewall.page9="<dd>Der Router kann den gesamten eingehenden und ausgehenden Datenverkehr für Ihre Internetverbindung protokollieren.</dd>";
 hfirewall.page10="<dd>Um Aktivitätsprotokolle zu erstellen, wählen Sie <em>" + share.enable + "</em>. Um die Protokollierung zu beenden, wählen Sie <em>" + share.disable + "</em>.</dd>";
 hfirewall.page11="<dd>Stellen Sie hier die gewünschte Informationsmenge ein. Setzen Sie den <em>" + log.lvl + "</em> höher, um mehr Aktionen zu protokollieren.</dd>";
-hfirewall.page12="<dd>Klicken Sie auf die Schaltfläche <em>" + sbutton.log_in + "</em>, um sich ein temporäres Protokoll der letzten eingehenden Verbindungen des Routers anzeigen zulassen.</td>";
+hfirewall.page12="<dd>Klicken Sie auf die Schaltfläche <em>" + sbutton.log_in + "</em>, um sich ein temporäres Protokoll der letzten eingehenden Verbindungen des Routers anzeigen zulassen.</dd>";
 hfirewall.page13="<dd>Klicken Sie auf die Schaltfläche <em>" + sbutton.log_out + "</em>, um sich ein temporäres Protokoll der letzten ausgehenden Verbindungen des Routers anzeigen zulassen.</dd><dd>Überprüfen Sie alle Werte und klicken Sie auf die Schaltfläche <em>" + sbutton.save + "</em>, um Ihre Einstellungen zu speichern. Klicken Sie auf die Schaltfläche <em>" + sbutton.cancel + "</em>, um Ihre nicht gespeicherten Änderungen zu verwerfen.</dd>";
 
 // ** Forward.asp **//
