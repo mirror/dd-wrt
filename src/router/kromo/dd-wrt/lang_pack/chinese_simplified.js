@@ -593,7 +593,7 @@ hdiag.right2="您可以通过Web界面运行命令行。将您的命令填入文
 hdiag.page1="<dd>你可以直接通过web界面运行命令.</dd>";
 hdiag.page2="<dd>在文本区域输入命令内容，然后点击 <em>"+ sbutton.runcmd + "</em> 运行.</dd>";
 hdiag.page3="<dd>您可以指定在路由器启动期间要执行的某些命令. 在文本区域输入命令内容(每行仅一个命令),然后点击<em>" + sbutton.startup + "</em>.</dd>";
-hdiag.page4="<dd>每次启动防火墙时，可以将自定义防火墙规则添加到链中. 在文本区域输入iptables/ip6tables命令内容(每行仅一个命令),然后点击<em>" + sbutton.firewall + "</em>.<br /><br />";
+hdiag.page4="<dd>每次启动防火墙时，可以将自定义防火墙规则添加到链中. 在文本区域输入iptables/ip6tables命令内容(每行仅一个命令),然后点击<em>" + sbutton.firewall + "</em></dd>";
 hdiag.page5="<dd>自定义脚本存储在/tmp/.rc_custom. 您可以手动运行它，也可以使用Cron执行内容. 在文本区域输入命令内容(每行仅一个命令),然后点击 <em>" + sbutton.custom + "</em>.<br /><br /><div class=\"note\"><h4>注意</h4><div><ul class=\"wide\"><li>启动命令存储在NVRAM rc_startup变量里</li><li>防火墙命令存储在NVRAM rc_firewall变量里</li><li>自定义脚本存储在NVRAM rc_custom变量里</li></ul></div></div></dd>";
 
 // ** DMZ.asp **//
@@ -735,7 +735,7 @@ hfirewall.page8="<dd>防止WAN访问端口113.</dd>";
 hfirewall.page9="<dd>路由器可以保留Internet连接的所有传入或传出流量的日志.</dd>";
 hfirewall.page10="<dd>想要启用日志, 选择 <i>启用</i>. 想要禁用日志, 选择 <i>禁用</i>.</dd>";
 hfirewall.page11="<dd>设置日志合适的信息量. 设置 <i>日志等级</i> 为更高来记录更多的内容.</dd>";
-hfirewall.page12="<dd>查看路由器最近传入流量的临时日志, 点击 <i>传入日志</i> 按钮.</td>";
+hfirewall.page12="<dd>查看路由器最近传入流量的临时日志, 点击 <i>传入日志</i> 按钮.</dd>";
 hfirewall.page13="<dd>查看路由器最近传出流量的临时日志, 点击 <i>传出日志</i> 按钮.</dd><dd>检测所有设置然后点击 <i>保存设置</i> 来保存你的设置. 点击 <i>" + sbutton.cancel + "</i> 清除没有保存的设置.</dd>";
 
 // ** Forward.asp **//
