@@ -46,7 +46,7 @@ static void unescape(char *s)
 			else {
 				/* something's wrong - skip... */
 				strlcpy(s, "", strlen(s) + 1);
-				logmsg(LOG_DEBUG, "*** [cgi] %s: malformed substring (skipped)!", __FUNCTION__);
+				dd_logerror("httpd", "malformed substring (skipped)!");
 			}
 		}
 		/* Space is special */
