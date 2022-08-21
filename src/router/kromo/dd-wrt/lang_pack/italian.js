@@ -594,7 +594,7 @@ hdiag.right2="Puoi eseguire linee di comando attraverso l'interfaccia web. Riemp
 hdiag.page1="<dd>È possibile eseguire delle righe di comando direttamente dall'interfaccia WEB.</dd>";
 hdiag.page2="<dd>Riempire l'area di testo con il comando/comandi e fare click su <em>Esegui Comandi</em> per eseguire.</dd>";
 hdiag.page3="<dd>È possibile salvare alcune linee di comando da eseguire all'avvio del router. Riempire l'area di testo con i comandi (un solo comando per riga) e fare click su <em>Salva Startup</em>.</dd>";
-hdiag.page4="<dd>Ogni volta che il firewall viene avviato, è possibile eseguire alcune istruzioni iptables personalizzate. Riempire l'area di testo con le istruzioni per il firewall (un solo comando per riga) e fare click su <em>Salva Firewall</em>.<br /><br />";
+hdiag.page4="<dd>Ogni volta che il firewall viene avviato, è possibile eseguire alcune istruzioni iptables personalizzate. Riempire l'area di testo con le istruzioni per il firewall (un solo comando per riga) e fare click su <em>Salva Firewall</em>.</dd>";
 hdiag.page5="<dd>Lo script personalizzato viene memorizzato nel file /tmp/custom.sh. È possibile eseguirlo manualmente o utilizzare cron per richiamarlo. Riempire l'area di testo con le istruzioni dello script (un solo comando per riga) e fare click su <em>Save Custom Script</em>.<br /><br /><div class=\"note\"><h4>Note</h4><div><ul class=\"wide\"><li>I comandi di avvio sono memorizzati nella variabile rc_startup della nvram</li><li>I comandi per il firewall vengono memorizzati nella variabile rc_firewall della nvram</li><li>Lo script personalizzato viene memorizzato nella variabile rc_custom della nvram</li></ul></div></div></dd>";
 
 // ** DMZ.asp **//
@@ -745,7 +745,7 @@ hfirewall.page8="<dd>Impedisce l'accesso alla porta 113 dalla WAN.</dd>";
 hfirewall.page9="<dd>Il router può tenere un registro di tutto il traffico in entrata o in uscita della connessione Internet.</dd>";
 hfirewall.page10="<dd>Per abilitare i registri del traffico, selezionare <i>Abilita</i>. Per disabilitare i registri, selezionare <i>Disabilita</i>.</dd>";
 hfirewall.page11="<dd>Impostare questo per cambiare la quantità di informazioni da loggare. Imposta il <i>Livello Log</i> più alto per loggare più cose.</dd>";
-hfirewall.page12="<dd>Per vedere un registro temporaneo del traffico Internet in entrata, fare click sul bottone <i>Log In Ingresso</i>.</td>";
+hfirewall.page12="<dd>Per vedere un registro temporaneo del traffico Internet in entrata, fare click sul bottone <i>Log In Ingresso</i>.</dd>";
 hfirewall.page13="<dd>Per vedere un registro temporaneo del traffico Internet in uscita, fare click sul bottone <i>Log In Uscita</i>.</dd><dd>Controllare tutti i valori e fare click su <i>Salva Impostazioni</i> per salvare le impostazioni. Fare click su <i>Annulla Modifiche</i> per cancellare le modifiche non salvate.</dd>";
 
 // ** Forward.asp **//

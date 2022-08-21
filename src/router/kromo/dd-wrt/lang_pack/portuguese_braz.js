@@ -579,7 +579,7 @@ hdiag.right2="Você pode executar comandos via interface web. Preencha a caixa d
 hdiag.page1="<dd>Você é capaz de executar linhas de comando diretamente através da interface Web.</dd>";
 hdiag.page2="<dd>Preencha a área de texto com o comando e clique em <em>Executar Comandos</em> para enviar.</dd>";
 hdiag.page3="<dd>Você pode salvar algumas linhas de comando a serem executados na inicialização do roteador. Preencha a área de texto com os comandos (apenas um comando por linha) e clique em <em>Salvar Inicialização</em>.</dd>";
-hdiag.page4="<dd>Cada vez que o firewall é iniciado, ele pode executar algumas instruções iptables personalizadas. Preencha a área de texto com as instruções do firewall (apenas um comando por linha) e clique em <em>Salvar Firewall</em>.<br /><br />";
+hdiag.page4="<dd>Cada vez que o firewall é iniciado, ele pode executar algumas instruções iptables personalizadas. Preencha a área de texto com as instruções do firewall (apenas um comando por linha) e clique em <em>Salvar Firewall</em>.<br/><br /></dd>";
 hdiag.page5="<dd>Um script personalizado é armazenado no arquivo /tmp/custom.sh. Você pode executá-lo manualmente ou usar o cron para chamá-lo. Preencha a área de texto com as instruções do script (apenas um comando por linha) e clique em <em>Salvar Script Personalizado</em>.<br /><br /><div class=\"note\"><h4>Nota</h4><div><ul class=\"wide\"><li>Comandos de inicialização são armazenados na variável nvram rc_startup.</li><li>Comandos de firewall são armazenados na variável nvram rc_firewall.</li><li>Scripts personalizados são armazenados na variável nvram rc_custom.</li></ul></div></div></dd>";
 
 // ** DMZ.asp **//
