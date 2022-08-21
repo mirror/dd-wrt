@@ -641,9 +641,7 @@ ddnsm.all_noip="Keine WAN-Verbindung";
 
 //help container
 
-hddns.right2="DDNS erlaubt Ihnen den Zugriff auf Ihr Netzwerk unter Zuhilfenahme eines Domainnamens anstatt einer IP-Adresse. \
-	Der Dienst verwaltet und ändert die IP-Adresse sowie die Domaininformation dynamisch.\
-	Sie müssen sich für den Dienst bei einem entsprechenden Provider (passend zur Auswahlbox links) anmelden.";
+hddns.right2="DDNS erlaubt Ihnen den Zugriff auf Ihr Netzwerk unter Zuhilfenahme eines Domainnamens anstatt einer IP-Adresse. Der Dienst verwaltet und ändert die IP-Adresse sowie die Domaininformation dynamisch. Sie müssen sich für den Dienst bei einem entsprechenden Provider (passend zur Auswahlbox links) anmelden.";
 hddns.right4="Geben Sie eine Zahl in der Box an um den Intervall für das erzwungene Update anzugeben (in Tagen). Updates sollten nur automatisch durchgeführt werden wenn sich Ihre IP ändert. Achten Sie darauf das Sie Updates nicht zu oft durchführen, da ihr DDNS Provider Sie sonst sperren könnte.";
 
 //help page
@@ -842,10 +840,7 @@ prforward.app="Anwendung";
 
 //help container
 
-hprforward.right2="Einige Anwendungen benötigen offene Ports, damit sie korrekt funktionieren. \
-	Beispiele sind Server-Anwendungen oder einige Onlinespiele. \
-	Wenn eine Anfrage auf einem dieser Ports aus dem Internet kommt, wird der Router diese auf den entsprechend angegebenen Computer weiterleiten. \
-	Aus Sicherheitsgründen sollten Sie die Weiterleitung auf diejenigen Ports beschränken, die Sie benötigen.";
+hprforward.right2="Einige Anwendungen benötigen offene Ports, damit sie korrekt funktionieren. Beispiele sind Server-Anwendungen oder einige Onlinespiele. Wenn eine Anfrage auf einem dieser Ports aus dem Internet kommt, wird der Router diese auf den entsprechend angegebenen Computer weiterleiten. Aus Sicherheitsgründen sollten Sie die Weiterleitung auf diejenigen Ports beschränken, die Sie benötigen.";
 
 //help page
 hprforward.page1="<dd>Die Port-Bereichs-Weiterleitung ermöglicht es Ihnen, öffentliche Dienste in Ihrem Netzwerk einzurichten, z. B. Webserver, FTP-Server, E-Mail-Server oder andere spezielle Internetanwendungen. Spezielle Internetanwendungen sind alle Anwendungen, die den Internetzugang nutzen, um Funktionen wie Videokonferenzen oder Online-Gaming bereitzustellen. Wenn diese Art von Anfragen über das Internet an das Netzwerk gesendet werden, leitet der Router diese Anfragen an das entsprechende Gerät weiter.<br /><br />Wenn Sie nur einen einzelnen Port weiterleiten möchten, lesen Sie bitte den Abschnitt <a href=\"HForward.asp\">Port-Weiterleitung</a>.<br /><br /><div class=\"note\"><h4>Hinweis:</h4><div>Jedem Gerät, dessen Port weitergeleitet wird, muss eine statische IP-Adresse zugewiesen werden, da sich die IP-Adresse bei Verwendung der DHCP-Funktion ändern kann.</div></div></dd><dd>Um eine neue Port-Bereichs-Weiterleitungs-Regel zu erstellen, klicken Sie auf die Schaltfläche <em>" + share.add + "</em>, und füllen Sie die unten stehenden Felder aus. Um Regeln zu entfernen, klicken Sie auf das Symbol <i>Löschen</i>.</dd>";
@@ -2171,8 +2166,7 @@ status_inet.delete_confirm="WARNUNG! Dies löscht alle ihre Traffic Daten. Fortf
 
 //help container
 
-hstatus_inet.right2="Dies zeigt die Informationen an, welche von Ihrem Anbieter zum Verbinden ins Internet benötigt werden. \
-				Diese Informationen wurden auf dem Setup-Tab eingegeben. Sie können hier auch Ihre Verbindung <em>aufbauen</em> oder <em>trennen</em> indem Sie den entsprechenden Button anklicken.";
+hstatus_inet.right2="Dies zeigt die Informationen an, welche von Ihrem Anbieter zum Verbinden ins Internet benötigt werden. Diese Informationen wurden auf dem Setup-Tab eingegeben. Sie können hier auch Ihre Verbindung <em>aufbauen</em> oder <em>trennen</em> indem Sie den entsprechenden Button anklicken.";
 hstatus_inet.right4="Dies zeigt den Internet Verkehr ihres Routers seit dem letzten Neustart an.";
 hstatus_inet.right6="Hier wird die Datenmenge der Routers ins und vom Internet pro Monat angezeigt. Bewegen Sie die Maus über die Grafik um die tägliche Nutzung zu sehen. Die Daten sind im nvram gespeichert.";
 
@@ -2275,8 +2269,7 @@ upgrad.mess1="Das Aktualisieren der Firmware kann einige Minuten dauern.<br />Bi
 
 //help container
 
-hupgrad.right2="Klicken Sie auf den <em>Durchsuchen...</em>-Button, um eine Firmware auszuwählen die auf das Gerät hochgeladen werden soll.<br /><br /> \
-			Klicken Sie den <em>Aktualisieren</em>-Button um den Aktualisierungsprozess zu starten. Der Aktualisierungsprozess darf nicht unterbrochen werden.";
+hupgrad.right2="Klicken Sie auf den <em>Durchsuchen...</em>-Button, um eine Firmware auszuwählen die auf das Gerät hochgeladen werden soll.<br /><br /> Klicken Sie den <em>Aktualisieren</em>-Button um den Aktualisierungsprozess zu starten. Der Aktualisierungsprozess darf nicht unterbrochen werden.";
 
 
 // ** UPnP.asp **//
