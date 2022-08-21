@@ -1192,6 +1192,11 @@ idx.legend3="Nastavení času";
 idx.timeset="Časová zóna";
 idx.static_ip="Statická IP";
 idx.dhcp="Automatická konfigurace - DHCP";
+idx.dsl_mdm_bdg="DSL Modem Most";
+idx.pppoe_dual="PPPoE Duál (MLPPP)";
+idx.heartbeat_sig="Signál Heartbeat";
+idx.iphone_tether="iPhone Uvazování";
+idx.mobile_bb="Mobilní Širokopásmové Připojení";
 idx.dhcp_auth="DHCP Autentifikace";
 idx.dhcp6c_auth="DHCP IPV6 Autentifikace";
 idx.dhcp_userclass="DHCP Userclass";
@@ -1242,10 +1247,10 @@ hidx.right18="Vyberte čas, který je v letním období (DST). Router může pou
 hidx.sas="Asistent instalace vás provede základními kroky nastavení, abyste nakonfigurovali Router.";
 
 //help page
-hidx.page1="<dd>Obrazovka nastavení je první obrazovka, která se zobrazí při přístupu k Routeru. Většině uživatelům bude stačit Router nakonfigurovat pomocí nastavení na této obrazovce a bude fungovat. Někteří poskytovatelé internetových služeb budou vyžadovat zadání konkrétních hodnot a informací, například uživatelského jména, hesla, adresy IP, výchozí adresy brány, nebo adresy IP DNS. Tyto informace lze v případě potřeby získat přímo od poskytovatele internetových služeb.<br /><br /><div class=\"note\"><h4>Poznámka</h4><div>Po nakonfigurování těchto nastavení byste měli pro Router nastavit nové heslo pomocí<a href=\"HManagement.asp\">Správa</a>Tím se zvýší zabezpečení a Router ochrání před neoprávněnými změnami. Všichni uživatelé, kteří se pokoušejí získat přístup k webovému nástroji Routeru, nebo průvodce nastavením, budou vyzváni k zadání hesla Routeru.</div></div></dd>";
-hidx.page2="<dd>Tato položka je nezbytná pro některé ISP a může být jimi poskytována.</dd>";
-hidx.page3="<dd>Tato položka je nutná pro některé ISP a může být jimi poskytována.</dd>";
-hidx.page4="<dd>Router podporuje čtyři typy připojení: <ul><li>Automatická konfigurace DHCP</li><li>Statická IP</li><li>PPPoE (Protokol typu Point-to-Point přes Ethernet)</li><li>Protokol PPTP (Point-to-Point Tunneling Protocol)</li></ul><br />Tyto typy lze vybrat z rozbalovací nabídky vedle položky <i>Připojení k internetu</i>. Požadované informace a dostupné funkce se budou lišit v závislosti na tom, jaký typ připojení vyberete.<br /><br /><div class=\"note\"><h4>Poznámka</h4><div>Někteří poskytovatelé kabelů vyžadují pro připojení k Internetu konkrétní MAC adresu. Chcete-li se o tom dozvědět více, klikněte na kartu Systém. Poté klikněte na tlačítko Nápověda a přečtěte si informace o funkci <a href=\"HWanMAC.asp\"> klonování MAC adres</a></div></div></dd>";
+hidx.intro="<dd>Obrazovka nastavení je první obrazovka, která se zobrazí při přístupu k Routeru. Většině uživatelům bude stačit Router nakonfigurovat pomocí nastavení na této obrazovce a bude fungovat. Někteří poskytovatelé internetových služeb budou vyžadovat zadání konkrétních hodnot a informací, například uživatelského jména, hesla, adresy IP, výchozí adresy brány, nebo adresy IP DNS. Tyto informace lze v případě potřeby získat přímo od poskytovatele internetových služeb.<br /><br /><div class=\"note\"><h4>Poznámka</h4><div>Po nakonfigurování těchto nastavení byste měli pro Router nastavit nové heslo pomocí<a href=\"HManagement.asp\">Správa</a>Tím se zvýší zabezpečení a Router ochrání před neoprávněnými změnami. Všichni uživatelé, kteří se pokoušejí získat přístup k webovému nástroji Routeru, nebo průvodce nastavením, budou vyzváni k zadání hesla Routeru.</div></div></dd>";
+hidx.wanctype="<dd>Router podporuje čtyři typy připojení: <ul><li>" + share.disabled + "</li><li>" + idx.static_ip + "</li><li>" + idx.dhcp + "</li><li>" + idx.dhcp_auth + "</li><li>PPPoE</li><li>" + idx.pppoe_dual + "</li><li>PPTP</li><li>L2TP</li><li>" + idx.heartbeat_sig + "</li><li>" + idx.iphone_tether + "</li><li>" + idx.mobile_bb + "</li></ul><br />Tyto typy lze vybrat z rozbalovací nabídky vedle položky <i>Připojení k internetu</i>. Požadované informace a dostupné funkce se budou lišit v závislosti na tom, jaký typ připojení vyberete.<br /><br /><div class=\"note\"><h4>Poznámka</h4><div>Někteří poskytovatelé kabelů vyžadují pro připojení k Internetu konkrétní MAC adresu. Chcete-li se o tom dozvědět více, klikněte na kartu Systém. Poté klikněte na tlačítko Nápověda a přečtěte si informace o funkci <a href=\"HWanMAC.asp\"> klonování MAC adres</a></div></div></dd>";
+hidx.hname="<dd>Tato položka je nezbytná pro některé ISP a může být jimi poskytována.</dd>";
+hidx.dname=hidx.hname;
 hidx.page5="<dd>Toto je IP adresa Routeru a maska ​​podsítě, jak ji vidí externí uživatelé na Internetu (včetně vašeho ISP). Pokud vaše připojení k internetu vyžaduje statickou IP adresu, váš ISP vám poskytne statickou IP adresu a masku ​​podsítě.</dd>";
 hidx.page6="<dd>Váš ISP vám poskytne IP Adresu brány.</dd>";
 hidx.page7="<dd>Váš ISP vám poskytne alespoň jednu IP Adresu DNS.</dd>";

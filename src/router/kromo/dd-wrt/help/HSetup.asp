@@ -7,13 +7,15 @@
 		<div id="content">
 			<h2><% tran("bmenu.setupbasic"); %></h2>
 			<dl>
-				<% tran("hidx.page1"); %>
-				<dt><% tran("share.hostname"); %></dt>
-				<% tran("hidx.page2"); %>
-				<dt><% tran("share.domainname"); %></dt>
-				<% tran("hidx.page3"); %>
+				<% tran("hidx.intro"); %>
 				<dt><% tran("idx.legend"); %></dt>
-				<% tran("hidx.page4"); %>
+				<% tran("hidx.wanctype"); %>
+				<dt><% tran("share.routername"); %></dt>
+				<% tran("hidx.rname"); %>
+				<dt><% tran("share.hostname"); %></dt>
+				<% tran("hidx.hname"); %>
+				<dt><% tran("share.domainname"); %></dt>
+				<% tran("hidx.dname"); %>
 				<dt><% tran("idx_pptp.wan_ip"); %> / <% tran("share.subnet"); %></dt>
 				<% tran("hidx.page5"); %>
 				<dt><% tran("share.gateway"); %></dt>

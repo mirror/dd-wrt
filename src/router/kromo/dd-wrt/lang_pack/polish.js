@@ -1182,6 +1182,11 @@ idx.legend3="Ustawienia czasu";
 idx.timeset="Strefa czasowa";
 idx.static_ip="Statyczny adres IP";
 idx.dhcp="Konfiguracja automatyczna - DHCP";
+idx.dsl_mdm_bdg="DSL Modem Bridge";
+idx.pppoe_dual="PPPoE Dual (MLPPP)";
+idx.heartbeat_sig="Heartbeat Signal";
+idx.iphone_tether="iPhone Tethering";
+idx.mobile_bb="Mobile Broadband";
 idx.dhcp_auth="Uwieżytelnianie serwera DHCP";
 idx.dhcp6c_auth="Uwieżytelnianie serwera DHCP IPv6";
 idx.dhcp_userclass="DHCP Userclass";
@@ -1231,10 +1236,10 @@ hidx.right18="Choose the time you are in an summer time (DST) period. The router
 hidx.sas="The setup assistant guides you through the basic setup steps to configure your router.";
 
 //help page
-hidx.page1="<dd>The Setup screen is the first screen you will see when accessing the router. Most users will be able to configure the router and get it working properly using only the settings on this screen. Some Internet Service Providers (ISPs) will require that you enter specific information, such as User Name, Password, IP Address, Default Gateway Address, or DNS IP Address. This information can be obtained from your ISP, if required.<br /><br /><div class=\"note\"><h4>Note</h4><div>After you have configured these settings, you should set a new password for the router using the <a href=\"HManagement.asp\">Management</a> screen. This will increase security, protecting the router from unauthorized changes. All users who try to access the router web-based utility or Setup Wizard will be prompted for the router's password.</div></div></dd>";
-hidx.page2="<dd>This entry is necessary for some ISPs and can be provided by them.</dd>";
-hidx.page3="<dd>This entry is necessary for some ISPs and can be provided by them.</dd>";
-hidx.page4="<dd>The router supports four connection types:<ul><li>Automatic Configuration DHCP</li><li>Static IP</li><li>PPPoE (Point-to-Point Protocol over Ethernet)</li><li>PPTP (Point-to-Point Tunneling Protocol)</li></ul><br />These types can be selected from the drop-down menu next to <i>Internet Connection</i>. The information required and available features will differ depending on what kind of connection type you select.<br /><br /><div class=\"note\"><h4>Note</h4><div>Some cable providers require a specific MAC address for connection to the Internet. To learn more about this, click the System tab. Then click the Help button, and read about the <a href=\"HWanMAC.asp\">MAC Address Cloning</a> feature.</div></div></dd>";
+hidx.intro="<dd>The Setup screen is the first screen you will see when accessing the router. Most users will be able to configure the router and get it working properly using only the settings on this screen. Some Internet Service Providers (ISPs) will require that you enter specific information, such as User Name, Password, IP Address, Default Gateway Address, or DNS IP Address. This information can be obtained from your ISP, if required.<br /><br /><div class=\"note\"><h4>Note</h4><div>After you have configured these settings, you should set a new password for the router using the <a href=\"HManagement.asp\">Management</a> screen. This will increase security, protecting the router from unauthorized changes. All users who try to access the router web-based utility or Setup Wizard will be prompted for the router's password.</div></div></dd>";
+hidx.wanctype="<dd>The router supports several connection types:<ul><li>" + share.disabled + "</li><li>" + idx.static_ip + "</li><li>" + idx.dhcp + "</li><li>" + idx.dhcp_auth + "</li><li>PPPoE</li><li>" + idx.pppoe_dual + "</li><li>PPTP</li><li>L2TP</li><li>" + idx.heartbeat_sig + "</li><li>" + idx.iphone_tether + "</li><li>" + idx.mobile_bb + "</li></ul><br />The coonection types can be selected from the dropdown menu labeled <em>" + idx.conn_type + "</em>. The information required and available features will differ depending on what kind of connection type you select.<br /><br /><div class=\"note\"><h4>Note:</h4><div>Some cable providers require a specific MAC address for connection to the Internet. To learn more about this, click the System tab. Then click the Help more... link, and read about the <a href=\"HWanMAC.asp\">MAC Address Cloning</a> feature.</div></div></dd>";
+hidx.hname="<dd>This entry is necessary for some ISPs and can be provided by them.</dd>";
+hidx.dname=hidx.hname;
 hidx.page5="<dd>This is the router's IP Address and Subnet Mask as seen by external users on the Internet (including your ISP). If your Internet connection requires a static IP address, then your ISP will provide you with a Static IP Address and Subnet Mask.</dd>";
 hidx.page6="<dd>Your ISP will provide you with the Gateway IP Address.</dd>";
 hidx.page7="<dd>Your ISP will provide you with at least one DNS IP Address.</dd>";
