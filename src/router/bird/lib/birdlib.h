@@ -9,6 +9,7 @@
 #ifndef _BIRD_BIRDLIB_H_
 #define _BIRD_BIRDLIB_H_
 
+#include <stdlib.h>
 #include "timer.h"
 #include "alloca.h"
 
