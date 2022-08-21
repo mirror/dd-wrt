@@ -1139,7 +1139,7 @@ service.proftpd_legend="ProFTPD";
 service.proftpd_srv="ProFTPD";
 
 //pptpd_client.webservices
-service.pptp_h2="PPTP Server / Client"
+service.pptp_h2="PPTP Server / Client";
 service.pptpd_legend="PPTP Client";
 service.pptpd_lblcli="Enable Client";
 service.pptpd_ipdns="Server IP or DNS Name";
