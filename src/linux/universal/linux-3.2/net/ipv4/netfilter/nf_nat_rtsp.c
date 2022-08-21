@@ -146,8 +146,8 @@ rtsp_mangle_tran(enum ip_conntrack_info ctinfo,
     t = &exp->tuple;
     t->dst.u3.ip = newip;
 
-    extaddrlen = extip ? sprintf(szextaddr, "%u.%u.%u.%u", &extip)
-                       : sprintf(szextaddr, "%u.%u.%u.%u", &newip);
+    extaddrlen = extip ? sprintf(szextaddr, "%pI4", &extip)
+                       : sprintf(szextaddr, "%pI4", &newip);
     DEBUGP("stunaddr=%s (%s)\n", szextaddr, (extip?"forced":"auto"));
 
     rbuf1len = rbufalen = 0;
