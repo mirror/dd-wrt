@@ -18,7 +18,7 @@
 				<% tran("hprforward.page5"); %>
 				<dt><% tran("share.ip"); %></dt>
 				<% tran("hprforward.page6"); %>
-				<dt><% tran("share.enable"); %></td>
+				<dt><% tran("share.enable"); %></dt>
 				<% tran("hprforward.page7"); %>
 			</dl>
 		</div>
