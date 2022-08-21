@@ -1494,7 +1494,7 @@ management.clock_legend="Overclocking";
 management.clock_frq="Frequency";
 management.clock_support="Not Supported";
 management.mmc_legend="MMC / SD Card Support";
-management.mmc_srv="MMC Device";
+management.mmc_srv="Enable Device";
 management.mmc_gpiosel="GPIO Pins Select";
 management.mmc_gpiopins="GPIO Pins";
 management.mmc_cardinfo="Card Info";
@@ -1669,7 +1669,8 @@ qos.pktsyn="SYN";
 qos.pktfin="FIN";
 qos.pkticmp="ICMP";
 qos.enabledefaultlvls="Enable Per User Default Limits";
-qos.bandwidth="Bandwidth in kbit/s";
+qos.bandwidth="Bandwidth";
+qos.speed="in kbit/s";
 qos.up="Up";
 qos.down="Down";
 qos.service="Service";
@@ -1976,7 +1977,7 @@ service.vpnd_cl2cl="Client to Client Connection Allowed";
 service.vpnd_switch="Config as";
 service.vpnd_dupcn="Allow Duplicate Clients";
 service.vpnd_allowcnwan="Allow Clients WAN Access";
-service.vpnd_allowcnlan="Allow Clients LAN access";
+service.vpnd_allowcnlan="Bypass LAN Same-Origin Policy";
 service.vpnd_proxy="DHCP-Proxy mode";
 service.vpnd_clcon="Client Connect Script";
 service.vpnd_cldiscon="Client Disconnect Script";
@@ -2068,9 +2069,12 @@ var hstatus_vpn=new Object();
 hstatus_vpn.right1="<b>Policy-based Routing</b>:<br />Add IPs / NETs in the following format 0.0.0.0/0 to force clients to use the tunnel as the default gateway. Enter one IP / NET per line.<br /><b>IP Address / Netmask</b>:<br />Must be set when using DHCP-Proxy mode and local TAP is NOT bridged</i>";
 hstatus_vpn.right2="<b>Additional Configuration</b>:<br />To push routes to clients add <i>'push \"route IP mask gateway\"'</i>, to push DNS / WINS add <i>'push \"dhcp-option DNS (or WINS) IP\"'</i> to the config.<br />Client connect directory:<br />When either USB or JFFS are mounted to /jffs, scripts will be called from <i>/jffs/etc/openvpn/ccd/</i>";
 hstatus_vpn.right3="<b>General</b>:<br />Three auth methods are supported; pkcs12 (+dh on server), static and standard certs. <i>Only enable MSS on one side of the link, fragment on both.</i>";
+// common for wireguard and OpenVPN - Bypass LAN Same-Origin Policy
+hstatus_vpn.right4="Allows the client to get around personal firewalls on target devices that have a same-origin policy. The inbound traffic is NATed from the VPN as it flows through the local network interface e.g. br0 to make it appear as if it originated from the router's LAN IP, rather than the tunnel's IP network.";
+
 
 //help page
-hstatus_vpn.page1="<dd>A VPN server technology compatible with Microsoft and other remote access vendors, it is implemented in multiple desktop and mobile OS's. Configuring this allows you to access your LAN at home remotely.<ul class=\"wide\"><li>Server IP – The IP address of your router</li><li>Client IP – A list or range of IP addresses for remotely connected devices. This range should not overlap with the DHCP range (e.g. 192.168.0.2,192.168.0.3), a range (192.168.0.1-254 or 192.168.0-255.2) or some combination (192.168.0.2,192.168.0.5-8).</li><li>CHAP-Secrets – A list of usernames and passwords for the VPN login, one user per line (e.g. joe * joespassword *). For more details look up the pppd main page.</li></ul></dd>";
+hstatus_vpn.page1="<dd>A VPN server technology compatible with Microsoft and other remote access vendors, it is implemented in multiple desktop and mobile OSs. Configuring this allows you to access your LAN at home remotely.<ul class=\"wide\"><li>Server IP – The IP address of your router</li><li>Client IP – A list or range of IP addresses for remotely connected devices. This range should not overlap with the DHCP range (e.g. 192.168.0.2,192.168.0.3), a range (192.168.0.1-254 or 192.168.0-255.2) or some combination (192.168.0.2,192.168.0.5-8).</li><li>CHAP-Secrets – A list of usernames and passwords for the VPN login, one user per line (e.g. joe * joespassword *). For more details look up the pppd main page.</li></ul></dd>";
 hstatus_vpn.page2="<dd>A VPN client enables you to connect to VPN servers compatible with Microsoft and other remote access vendors. Configuring this allows the router to VPN into a remote network.<ul class=\"wide\"><li>Server IP or DNS Name – The IP address or DNS Name of the VPN server that you would like to connect to (e.g. www.MyServer.com). </li><li>Remote Subnet – Remote Subnet of the network you are connecting to (e.g. 192.168.2.0). </li><li>Remote Subnet Mask – Remote Subnet Mask of the network you are connecting to (e.g 255.255.255.0). </li><li>MPPE Encryption  – The type of security to use for the connection. If you are connecting to another DD-WRT router you need (e.g. mppe required). But if you are connecting to a Windows VPN server you need (e.g. mppe required,no40,no56,stateless) or (e.g. mppe required,no40,no56,stateful) </li><li>MTU – Maximum Transmission Unit (Default: 1436) </li><li>MRU – Maximum Receiving Unit (Default: 1436) </li><li>NAT – Enabling this option will make outbound traffic from inside appear to be coming from router IP, instead of client IP. Enabling this can improve security, but can cause issues in some cases, i.e. when VoIP is used. </li><li>User Name – Enter the username that you will use to connect to the VPN server. If you are connecting to another Linux based PPTP server you just need to enter the username. But if you are connecting to a Windows VPN server you need to enter the servername and username (e.g. DOMAIN\\username). </li><li>Password – Enter the password for the username </li><li>Additional Options – If default options are not working for your setup, you can use this field. If defined, these will replace the default internal options. The options above are still used. </li></ul></dd><dd>Check all values and click the <em>" + sbutton.save + "</em> button to save your settings. Click the <em>" + sbutton.cancel + "</em> button to cancel your unsaved changes.</dd>";
 
 //vnc.repeater
@@ -2321,7 +2325,7 @@ eoip.wireguard_failstate="Fail State (auto)";
 eoip.wireguard_standby="Standby";
 eoip.wireguard_running="Running";
 eoip.wireguard_failed="Failed";
-eoip.wireguard_lanac="Allow Clients Full LAN Access";
+eoip.wireguard_lanac=service.vpnd_allowcnlan;
 eoip.etherip="RFC 3378 EoIP";
 eoip.srv="Tunnel";
 eoip.remoteIP="Remote IP Address";

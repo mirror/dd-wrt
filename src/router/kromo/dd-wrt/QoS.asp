@@ -632,7 +632,7 @@ addEvent(window, "unload", function() {
 									</tr>
 								</table>
 							</fieldset><br />
-<% nvm("portprio_support","0","-->"); %>
+							<% nvm("portprio_support","0","-->"); %>
 							<div class="submitFooter">
 								<script type="text/javascript">
 								//<![CDATA[

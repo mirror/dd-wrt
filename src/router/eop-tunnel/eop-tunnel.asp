@@ -232,6 +232,8 @@ addEvent(window, "unload", function() {
 						<div id="help">
 							<div><h2><% tran("share.help"); %></h2></div>
 							<dl>
+								<dt class="term"><% tran("eoip.wireguard_lanac"); %></dt>
+								<dd class="definition"><% tran("hstatus_vpn.right4"); %></dd>
 							</dl><br />
 							<a href="javascript:openHelpWindow<% nvram_selmatch("dist_type","micro","Ext"); %>('HEoIP.asp');"><% tran("share.more"); %></a>
 					</div>
