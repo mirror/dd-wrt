@@ -206,7 +206,7 @@ table#radio_table {
   border-spacing: .1666em;
   text-align: center;
 }
-table#radio_table tr td {
+table#radio_table tr td, .table_row_bg td {
   height: 18px;
 }
 table tr th {
@@ -313,6 +313,9 @@ fieldset legend {
   margin-left: 0;
   margin-right: .362em;
 }
+.setting [summary='week days table'] input[type] {
+  margin-left: .4rem;
+}
 .setting .label {
   float: left;
   width: 19.444em;
@@ -357,7 +360,7 @@ fieldset legend {
 }
 .submitFooter {
   position: sticky;
-  bottom: 1em;
+  bottom: 1px;
   padding: 4px 12px;
   margin: 0;
   text-align: center;

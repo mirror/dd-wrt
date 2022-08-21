@@ -1154,7 +1154,8 @@ qos.pktrst="RST";
 qos.pktsyn="SYN";
 qos.pktfin="FIN";
 qos.enabledefaultlvls="Habilita Límits per Defecte per Usuari";
-qos.bandwidth="Ample de banda en kbit/s";
+qos.bandwidth="Ample de banda";
+qos.speed="en kbit/s";
 
 //help container
 hqos.right1="";

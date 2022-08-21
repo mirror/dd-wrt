@@ -896,8 +896,8 @@ qos.maxrate_o="Max arány";
 qos.legend4="MAC-prioritás";
 qos.legend5="Ethernet Port-prioritás";
 qos.legend6="Alapértelmezett sávszélesség szint";
-qos.bandwidth="Sávszélesség kbit/s-ekben";
-
+qos.bandwidth="Sávszélesség";
+qos.speed="kbit/s-ekben";
 //help container
 
 hqos.right1="Uplink:";

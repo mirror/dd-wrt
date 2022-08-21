@@ -1093,8 +1093,8 @@ qos.maxrate_o="Tasa Max";
 qos.legend4="Prioridad MAC";
 qos.legend5="Prioridad Puerto Ethernet";
 qos.legend6="Ancho de Banda por Defecto";
-qos.bandwidth="Ancho de Banda (kbit/s)";
-
+qos.bandwidth="Ancho de Banda";
+qos.speed="kbit/s";
 //help container
 hqos.right1="Enlace Subida (UplinK):";
 hqos.right2="Establecer esto entre 80%-95% (max) de tu límite total de subida.";
