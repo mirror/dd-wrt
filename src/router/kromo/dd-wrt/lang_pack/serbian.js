@@ -1214,7 +1214,7 @@ qos.pktsyn="SYN";
 qos.pktfin="FIN";
 qos.enabledefaultlvls="Омогући дифолтно лимитирање по кориснику";
 qos.bandwidth="Проток";
-qos.speed="у kbit/s";
+qos.speed="kbit/s";
 //help container
 var hqos=new Object();
 hqos.right1="";
