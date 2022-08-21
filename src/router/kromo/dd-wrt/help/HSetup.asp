@@ -10,12 +10,22 @@
 				<% tran("hidx.intro"); %>
 				<dt><% tran("idx.legend"); %></dt>
 				<% tran("hidx.wanctype"); %>
+				<dt><% tran("idx.ignore_wan_dns"); %></dt>
+				<% tran("hidx.ignwandns"); %>
 				<dt><% tran("share.routername"); %></dt>
 				<% tran("hidx.rname"); %>
 				<dt><% tran("share.hostname"); %></dt>
 				<% tran("hidx.hname"); %>
 				<dt><% tran("share.domainname"); %></dt>
 				<% tran("hidx.dname"); %>
+				<dt><% tran("idx.mtu"); %></dt>
+				<% tran("hidx.mtu"); %>
+				<dt><% tran("idx.sfe"); %></dt>
+				<% tran("hidx.sfe"); %>
+				<dt><% tran("idx.fa"); %></dt>
+				<% tran("hidx.fa"); %>
+				<dt><% tran("idx.stp"); %></dt>
+				<% tran("hidx.stp"); %>
 				<dt><% tran("idx_pptp.wan_ip"); %> / <% tran("share.subnet"); %></dt>
 				<% tran("hidx.page5"); %>
 				<dt><% tran("share.gateway"); %></dt>
@@ -34,8 +44,6 @@
 				<% tran("hidx.page12"); %>
 				<dt><% tran("idx_h.alive"); %></dt>
 				<% tran("hidx.page13"); %>
-				<dt><% tran("idx.mtu"); %></dt>
-				<% tran("hidx.page14"); %>
 				<dt><% tran("idx.lanip"); %> / <% tran("share.subnet"); %></dt>
 				<% tran("hidx.page15"); %>
 				<dt><% tran("idx.dhcp_srv"); %></dt>
