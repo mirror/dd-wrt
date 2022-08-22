@@ -944,14 +944,14 @@ nas.samba3="Samba Server";
 nas.samba3_legend="File Sharing";
 nas.samba3_legend1="Share Configuration";
 nas.samba3_legend2="Samba Configuration";
-nas.samba3_srv_label="Enable Server";
+nas.samba3_srv_label=nas.proftpd_srv_label;
 nas.nfs="Network File System Server (NFS)";
 nas.rsync="Remote Synchronisation";
 
 // ** DLNA **
 nas.dlna_legend="DLNA Server";
 nas.dlna_srv="MiniDLNA";
-nas.dlna_label="Enable Server";
+nas.dlna_label="nas.proftpd_srv_label";
 nas.dlna_merge="Merge Media Dirs";
 nas.dlna_no_art="Ignore Album Art";
 nas.dlna_subtitles="Enable Subtitles";
@@ -1018,7 +1018,7 @@ hprivoxy.page4="<dd><br /><ul><li>Allows you to specify custom settings and path
 var lighttpd=new Object();
 lighttpd.titl="Web Server";
 lighttpd.legend="Lighttpd Web Server";
-lighttpd.server="Enable Server";
+lighttpd.server=nas.proftpd_srv_label;
 lighttpd.port="HTTP Port";
 lighttpd.sslport="HTTPS Port";
 lighttpd.wan="WAN Access";
@@ -1881,7 +1881,7 @@ service.syslog_ip="Remote Server";
 
 //telnet.webservices
 service.telnet_legend="Telnet";
-service.telnet_srv="Enable Server";
+service.telnet_srv=nas.proftpd_srv_label;
 
 service.mactelnetd_legend="Mikrotik MAC Telnet";
 service.mactelnetd="MAC Telnet";
@@ -1890,13 +1890,13 @@ service.mactelnetd="MAC Telnet";
 service.pptp_h2="PPTP Server / Client";
 service.pptp_legend="PPTP";
 service.pptp_srv="PPTP Server";
-service.pptp_option_srv="Enable Server";
+service.pptp_option_srv=nas.proftpd_srv_label;
 service.pptp_client="Client IP(s)";
 service.pptp_chap="CHAP-Secrets";
 
 //pptpd_client.webservices
 service.pptpd_legend="PPTP Client";
-service.pptpd_lblcli="Enable Client";
+service.pptpd_lblcli=idx.ntp_client;
 service.pptpd_ipdns="Server IP or DNS Name";
 service.pptpd_subnet="Remote Subnet";
 service.pptpd_subnetmask="Remote Subnet Mask";
@@ -1920,7 +1920,7 @@ service.pppoe_srv="Enable Relay";
 
 //pppoe-server.webservices
 service.pppoesrv_legend="RP-PPPoE Server";
-service.pppoesrv_srv="Enable Server";
+service.pppoesrv_srv=nas.proftpd_srv_label;
 service.pppoesrv_interface="Server Interface";
 service.pppoesrv_srvopt="RP-PPPoE Server Options";
 service.pppoesrv_compr="Compression";
@@ -1960,7 +1960,7 @@ service.snmp_write="RW Community";
 //openvpn.webvpn
 service.vpnd_hlegend1="OpenVPN Server";
 service.vpnd_legend="OpenVPN Server / Client";
-service.vpnd_srv="Enable Server";
+service.vpnd_srv=nas.proftpd_srv_label;
 service.vpnd_starttype="Start Type";
 service.vpnd_startWanup="WAN Up";
 service.vpnd_startSystem="System";
@@ -1996,7 +1996,7 @@ service.vpn_defgateway="Default Gateway";
 service.vpn_srvroute="Servers Subnet";
 service.vpn_legend="OpenVPN Client";
 service.vpn_mit="CVE-2019-14899 Mitigation";
-service.vpn_srv="Enable Client";
+service.vpn_srv=idx.ntp_client;
 service.vpn_mtu="Tunnel MTU Setting";
 service.vpn_mss="Tunnel UDP MSS Fix";
 service.vpn_fragment="Tunnel UDP Fragment";
@@ -2041,8 +2041,8 @@ service.vpn_randomsrv="Choose random Server";
 service.softether_h2="SoftEther VPN Server / Client";
 service.softether_legend="SoftEther VPN";
 service.softether_bridge="Enable Bridge";
-service.softether_client="Enable Client";
-service.softether_server="Enable Server";
+service.softether_client=idx.ntp_client;
+service.softether_server=nas.proftpd_srv_label;
 service.softether_config="Configuration";
 
 //help page
@@ -2243,7 +2243,7 @@ service.rsync_allowed="Allowed Hosts";
 
 // Zabbix
 service.zabbix_legend="Zabbix";
-service.zabbix_cl="Enable Client";
+service.zabbix_cl=idx.ntp_client;
 service.zabbix_serverip="Server IP";
 service.zabbix_usrpara="User Parameters";
 
@@ -2264,7 +2264,7 @@ service.transmission_rpc="Web UI Port";
 service.transmission_whitelist="Whitelist IPs";
 
 service.plex_legend="Plex Media Server";
-service.plex_srv="Enable Server";
+service.plex_srv=nas.proftpd_srv_label;
 service.plex_appdir="Application Support Directory";
 
 service.antaira_agent_h2="Antaira Quick VPN Agent";
