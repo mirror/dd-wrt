@@ -152,15 +152,12 @@ form[name="macfilter"] td[align="left"] {
 }
 .submitFooter {
    position: sticky;
-   bottom: 1em;
+   bottom: 0;
    padding: 8px 12px;
    margin-top: 0;
    text-align: center;
    border-radius: 4px;
  }
-.nostick {
-  position: unset;
-}
 .submitFooter .button {
   padding: 0 1rem;
   height: 1.433rem;
