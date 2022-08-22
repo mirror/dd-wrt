@@ -308,7 +308,7 @@ table th {
 }
 .submitFooter {
   position: sticky;
-  bottom: 1em;
+  bottom: 0;
   border: 1px solid #a3a3a3;
   box-shadow: 1px 1px 0 1px #dde;
   text-align: center;
@@ -319,9 +319,6 @@ table th {
   background: repeating-linear-gradient(55deg,
     #eee, #eee 2px,
     #ccd 1px, #ccd 3px );
-}
-.nostick {
-  position: unset;
 }
 .submitFooter .button {
   padding: .2rem .5rem;
