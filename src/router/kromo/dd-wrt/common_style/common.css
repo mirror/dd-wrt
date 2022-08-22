@@ -151,8 +151,8 @@ li.current {
   padding: .906em 0;
 }
 #help dl {
-  padding: 0;
   margin: 0;
+  padding: 0;
 }
 #help dt.term {
   margin: 0 0 .362em 0;
@@ -360,7 +360,7 @@ fieldset legend {
 }
 .submitFooter {
   position: sticky;
-  bottom: 1px;
+  bottom: 0;
   padding: 4px 12px;
   margin: 0;
   text-align: center;
@@ -368,6 +368,7 @@ fieldset legend {
 }
 .nostick {
   position: unset;
+  bottom: unset;
 }
 .submitFooter .button {
   padding: 0 1rem;
@@ -448,7 +449,7 @@ input.button {
 input.button[disabled],
 input[disabled], select[disabled] {
   cursor: default;
-  opacity: .6
+  opacity: .6;
 }
 input[onclick*='bond_del']{
   margin-top: -.3rem;
@@ -459,13 +460,16 @@ input.button[onclick*='add_peer'] {
 }
 input.button[onclick*='gen_wg_key'],
 input.button[onclick*='gen_wg_psk'] {
-  margin: 0 0 6px
+  margin: 0 0 6px;
+}
+input.three_column {
+  min-width: 10.1rem;
 }
 [type='image'][src*='paypal'] {
   margin-bottom: -1rem;
   margin-top: .2rem;
   padding: 0;
-  border: 0
+  border: 0;
 }
 input.spaceradio {
   margin-right: .4em;
@@ -490,15 +494,15 @@ input.button[onclick*='delete'] {
   margin: -.1rem .2rem 0 .3rem;
 }
 input.button[onclick*='filter_remove'] {
-  margin: 0 .3em 0 .1em
+  margin: 0 .3em 0 .1em;
 }
 input.button[onclick*='FilterSummary'] {
-  margin-top: -.1rem
+  margin-top: -.1rem;
 }
 input.button[name='preview_button'] {
   padding: 0 .6rem .1rem .6rem;
   margin-left: .362em;
-  margin-top: -.11rem
+  margin-top: -.11rem;
 }
 .off {
   opacity: .6;

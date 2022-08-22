@@ -113,9 +113,9 @@ EJ_VISIBLE void ej_show_ddwrt_inspired_themes(webs_t wp, int argc, char_t ** arg
 	websWrite(wp, "<select name=\"stylus\">\n");
 	websWrite(wp, "<option value=\"off\" %s>%s</option>\n", nvram_match("stylus", "off") ? "selected=\"selected\"" : "", tran_string(buf, sizeof(buf), "share.off"));
 	websWrite(wp, "<option value=\"aeon\" %s>Aeon</option>\n", nvram_match("stylus", "aeon") ? "selected=\"selected\"" : "");
+	websWrite(wp, "<option value=\"antigua\" %s>Antigua</option>\n", nvram_match("stylus", "antigua") ? "selected=\"selected\"" : "");
 	websWrite(wp, "<option value=\"dracula\" %s>Dracula</option>\n", nvram_match("stylus", "dracula") ? "selected=\"selected\"" : "");
 	websWrite(wp, "<option value=\"duo_cocoa\" %s>Duo Cocoa</option>\n", nvram_match("stylus", "duo_cocoa") ? "selected=\"selected\"" : "");
-	websWrite(wp, "<option value=\"legacy\" %s>Legacy</option>\n", nvram_match("stylus", "legacy") ? "selected=\"selected\"" : "");
 	websWrite(wp, "<option value=\"material\" %s>Material</option>\n", nvram_match("stylus", "material") ? "selected=\"selected\"" : "");
 	websWrite(wp, "<option value=\"material_darker\" %s>Material Darker</option>\n", nvram_match("stylus", "material_darker") ? "selected=\"selected\"" : "");
 	websWrite(wp, "<option value=\"solarized_dark\" %s>Solarized Dark</option>\n", nvram_match("stylus", "solarized_dark") ? "selected=\"selected\"" : "");
