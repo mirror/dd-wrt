@@ -616,7 +616,7 @@ void start_sysinit(void)
 		writeproc("/sys/devices/system/cpu/cpu0/cpufreq/scaling_min_freq", "800000");
 		writeproc("/sys/devices/system/cpu/cpu1/cpufreq/scaling_min_freq", "800000");
 		break;
-	case ROUTER_LINKSYS_R7500V2:
+	case ROUTER_NETGEAR_R7500V2:
 		eval("swconfig", "dev", "switch0", "set", "reset", "1");
 		eval("swconfig", "dev", "switch0", "set", "enable_vlan", "0");
 		eval("swconfig", "dev", "switch0", "set", "igmp_snooping", "0");
