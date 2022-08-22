@@ -121,6 +121,7 @@ body input[disabled]:hover {
   border-color: var(--bg-2) !important;
   background-color: var(--bg-0) !important;
   color: var(--v9-6);
+  box-shadow: none;
 }
 body input.button {
   background: var(--v0-4);
@@ -137,7 +138,7 @@ body input.button:hover,
 body input.button:focus-within {
   background: var(--v0-7) !important;
   border-color: var(--v0-7) !important;
-  box-shadow: 0 0 10px 0 var(--v0-4) !important;
+  box-shadow: 0 0 10px 0 var(--v0-4);
   color: var(--v9-9);
 }
 body input.button[disabled] {
@@ -151,7 +152,7 @@ body input.button[disabled]:hover {
   color: var(--v9-9) !important;
   border-color: var(--v0-6) !important;
   background-color: var(--v0-5) !important;
-  box-shadow: none !important;
+  box-shadow: none;
   opacity: 0.6;
 }
 body input[name*='apply'],
@@ -516,11 +517,19 @@ table tr:not([bgcolor]):not([class]) th {
   color: var(--v0-9);
   transition: all 0.2s cubic-bezier(0.3, 0, 0.5, 1);
 }
-[style*='background-color: rgb(34, 139, 34)'] {
+#radio_table [style*='background-color: rgb(34, 139, 34)'] {
   background-color: var(--v4-3) !important;
+  transition: all 0.2s cubic-bezier(0.3, 0, 0.5, 1);
 }
-[style*='background-color: rgb(205, 0, 0)'] {
+#radio_table [style*='background-color: rgb(34, 139, 34)']:hover {
+  background-color: var(--v4-5) !important;
+}
+#radio_table [style*='background-color: rgb(205, 0, 0)'] {
   background-color: var(--v1-5) !important;
+  transition: all 0.2s cubic-bezier(0.3, 0, 0.5, 1);
+}
+#radio_table [style*='background-color: rgb(205, 0, 0)']:hover {
+  background-color: var(--v1-7) !important;
 }
 #drives {
   margin-bottom: 6px;
@@ -640,7 +649,7 @@ span.title3d {
   background-color: var(--bg-0);
 }
 .setting .default {
-  color: var(--v9-6) 0 0;
+  color: var(--v9-7);
 }
 a {
   color: var(--v0-8);
