@@ -185,7 +185,7 @@ addEvent(window, "unload", function() {
 							<% show_bondings(); %>
 							<% portsetup(); %>
 							<% show_mdhcp(); %>
-							<div class="submitFooter">
+							<div id="footer" class="submitFooter">
 								<script type="text/javascript">
 								//<![CDATA[
 								submitFooterButton(1,1);

@@ -116,6 +116,10 @@ table tr:not([class]):hover {
   border: 1px solid #777674;
   opacity: .5;
 }
+.stick {
+  position: sticky;
+  bottom: 0;
+}
 .nostick {
   position: unset;
   bottom: unset;

@@ -114,7 +114,7 @@ function to_apply(F) {
 				</div>
 			</fieldset>
 			<br />
-			<div class="submitFooter nostick">
+			<div id="footer" class="submitFooter nostick">
 				<script type="text/javascript">
 				//<![CDATA[
 				submitFooterButton(1,1,0,0,0,1);

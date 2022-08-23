@@ -50,7 +50,7 @@ addEvent(window, "unload", function() {
 							
 							<h2>Sysctl Configuration</h2>
 							<% sysctl(); %>
-							<div class="submitFooter">
+							<div id="footer" class="submitFooter">
 								<script type="text/javascript">
 							//<![CDATA[
 							submitFooterButton(1,1);

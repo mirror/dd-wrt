@@ -586,7 +586,7 @@ addEvent(window, "unload", function() {
 							</fieldset><br />
 							<% ifndef("HAVE_PBR", "-->"); %>
 
-							<div class="submitFooter">
+							<div id="footer" class="submitFooter">
 								<script type="text/javascript">
 								//<![CDATA[
 								submitFooterButton(1,1);

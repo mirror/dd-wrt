@@ -71,7 +71,7 @@ addEvent(window, "unload", function() {
 				</ul>
 			</div>
 			</div><br /><br />
-			<div class="submitFooter">
+			<div id="footer" class="submitFooter">
 			<script type="text/javascript">
 			//<![CDATA[
 				document.write("<input class=\"button\" type=\"button\" name=\"action\" value=\"" + sbutton.continu + "\" onclick=\"to_submit();\" />");

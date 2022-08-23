@@ -168,8 +168,7 @@ addEvent(window, "unload", function() {
 								</div>
 							</fieldset><br />
 							<% nvm("rc_custom", "", "-->"); %>
-														
-							<div class="submitFooter">
+							<div id="footer" class="submitFooter">
 								<script type="text/javascript">
 								//<![CDATA[
 								document.write("<input class=\"button\" type=\"button\" name=\"ping\" value=\"" + sbutton.runcmd + "\" onclick=\"to_submit(this.form, 'start');\" />");

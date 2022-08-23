@@ -65,7 +65,7 @@ addEvent(window, "unload", function() {
 									<input class="num" maxlength="3" size="3" name="dmz_ipaddr" value="<% nvg("dmz_ipaddr"); %>" onblur="valid_range(this,1,254,dmz.host)" />
 								</div>
 							</fieldset><br />
-							<div class="submitFooter">
+							<div id="footer" class="submitFooter">
 								<script type="text/javascript">
 								//<![CDATA[
 								submitFooterButton(1,1);

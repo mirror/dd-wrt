@@ -355,12 +355,17 @@ table[summary='ports forwarding table'] input[size='10'] {
   text-decoration: underline;
 }
 .submitFooter {
-  position: sticky;
-  bottom: 0;
   padding: 4px 12px;
   margin: 0;
   text-align: center;
   border-radius: 2px;
+}
+.stick {
+  position: sticky;
+  bottom: 0;
+}
+.nostick {
+  position: unset;
 }
 .submitFooter .button {
   padding: 0 1rem;

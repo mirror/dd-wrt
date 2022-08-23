@@ -330,7 +330,7 @@ addEvent(window, "unload", function() {
 					<input type="hidden" name="%s_br1_netmask" value="4" /><input class="num" name="%s_br1_netmask0" size="3" maxlength="3" onblur="valid_range(this,0,255,share.subnet)" value="<%% get_br1_netmask("0","%s"); %%>" />.<input class="num" name="%s_br1_netmask1" size="3" maxlength="3" onblur="valid_range(this,0,255,share.subnet)" value="<%% get_br1_netmask("1","%s"); %%>" />.<input class="num" name="%s_br1_netmask2" size="3" maxlength="3" onblur="valid_range(this,0,255,share.subnet)" value="<%% get_br1_netmask("2","%s"); %%>" />.<input class="num" name="%s_br1_netmask3" size="3" maxlength="3" onblur="valid_range(this,0,255,share.subnet)" value="<%% get_br1_netmask("3","%s"); %%>" />
 				</div>
 				</fieldset><br/>
-				 <div class="submitFooter">
+				 <div id="footer" class="submitFooter">
 					<script type="text/javascript">
 					//<![CDATA[
 					submitFooterButton(1,1);

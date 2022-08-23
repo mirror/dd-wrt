@@ -478,7 +478,7 @@ addEvent(window, "unload", function() {
 									<input size="21" maxlength="79" name="url15" onblur="valid_name(this,'Keyword')" value="<% filter_web_get("url","15"); %>" class="four_column four_column_last" />
 								</div>
 							</fieldset><br />
-							<div class="submitFooter">
+							<div id="footer" class="submitFooter">
 								<script type="text/javascript">
 								//<![CDATA[
 								submitFooterButton(1,1);
