@@ -23,13 +23,13 @@
  * Copyright (c) 2021-2022 Tino Reichardt <milky-zfs@mcmilk.de>
  */
 
-#include <sys/types.h>
-#include <sys/spa.h>
 #include <sys/zio_checksum.h>
 #include <sys/zfs_context.h>
 #include <sys/zfs_chksum.h>
+#include <sys/zfs_impl.h>
 
 #include <sys/blake3.h>
+#include <sys/sha2.h>
 
 /* limit benchmarking to max 256KiB, when EdonR is slower then this: */
 #define	LIMIT_PERF_MBS	300
@@ -237,24 +237,32 @@ abort:
 static void
 chksum_benchmark(void)
 {
-
 #ifndef _KERNEL
 	/* we need the benchmark only for the kernel module */
 	return;
 #endif
 
 	chksum_stat_t *cs;
-	int cbid = 0, id;
 	uint64_t max = 0;
+	uint32_t id, cid = 0, id_save;
+	const zfs_impl_t *blake3 = zfs_impl_get_ops("blake3");
+	const zfs_impl_t *sha256 = zfs_impl_get_ops("sha256");
+	const zfs_impl_t *sha512 = zfs_impl_get_ops("sha512");
+
+	/* count implementations */
+	chksum_stat_cnt = 2;
+	chksum_stat_cnt += sha256->getcnt();
+	chksum_stat_cnt += sha512->getcnt();
+	chksum_stat_cnt += blake3->getcnt();
 
 	/* space for the benchmark times */
-	chksum_stat_cnt = 4;
-	chksum_stat_cnt += blake3_get_impl_count();
 	chksum_stat_data = (chksum_stat_t *)kmem_zalloc(
 	    sizeof (chksum_stat_t) * chksum_stat_cnt, KM_SLEEP);
 
 	/* edonr - needs to be the first one here (slow CPU check) */
-	cs = &chksum_stat_data[cbid++];
+	cs = &chksum_stat_data[cid++];
+
+	/* edonr */
 	cs->init = abd_checksum_edonr_tmpl_init;
 	cs->func = abd_checksum_edonr_native;
 	cs->free = abd_checksum_edonr_tmpl_free;
@@ -263,7 +271,7 @@ chksum_benchmark(void)
 	chksum_benchit(cs);
 
 	/* skein */
-	cs = &chksum_stat_data[cbid++];
+	cs = &chksum_stat_data[cid++];
 	cs->init = abd_checksum_skein_tmpl_init;
 	cs->func = abd_checksum_skein_native;
 	cs->free = abd_checksum_skein_tmpl_free;
@@ -272,38 +280,58 @@ chksum_benchmark(void)
 	chksum_benchit(cs);
 
 	/* sha256 */
-	cs = &chksum_stat_data[cbid++];
-	cs->init = 0;
-	cs->func = abd_checksum_SHA256;
-	cs->free = 0;
-	cs->name = "sha256";
-	cs->impl = "generic";
-	chksum_benchit(cs);
-
-	/* sha512 */
-	cs = &chksum_stat_data[cbid++];
-	cs->init = 0;
-	cs->func = abd_checksum_SHA512_native;
-	cs->free = 0;
-	cs->name = "sha512";
-	cs->impl = "generic";
-	chksum_benchit(cs);
-
-	/* blake3 */
-	for (id = 0; id < blake3_get_impl_count(); id++) {
-		blake3_set_impl_id(id);
-		cs = &chksum_stat_data[cbid++];
-		cs->init = abd_checksum_blake3_tmpl_init;
-		cs->func = abd_checksum_blake3_native;
-		cs->free = abd_checksum_blake3_tmpl_free;
-		cs->name = "blake3";
-		cs->impl = blake3_get_impl_name();
+	id_save = sha256->getid();
+	for (id = 0; id < sha256->getcnt(); id++) {
+		sha256->setid(id);
+		cs = &chksum_stat_data[cid++];
+		cs->init = 0;
+		cs->func = abd_checksum_sha256;
+		cs->free = 0;
+		cs->name = sha256->name;
+		cs->impl = sha256->getname();
 		chksum_benchit(cs);
 		if (cs->bs256k > max) {
 			max = cs->bs256k;
-			blake3_set_impl_fastest(id);
+			sha256->set_fastest(id);
 		}
 	}
+	sha256->setid(id_save);
+
+	/* sha512 */
+	id_save = sha512->getid();
+	for (id = 0; id < sha512->getcnt(); id++) {
+		sha512->setid(id);
+		cs = &chksum_stat_data[cid++];
+		cs->init = 0;
+		cs->func = abd_checksum_sha512_native;
+		cs->free = 0;
+		cs->name = sha512->name;
+		cs->impl = sha512->getname();
+		chksum_benchit(cs);
+		if (cs->bs256k > max) {
+			max = cs->bs256k;
+			sha512->set_fastest(id);
+		}
+	}
+	sha512->setid(id_save);
+
+	/* blake3 */
+	id_save = blake3->getid();
+	for (id = 0; id < blake3->getcnt(); id++) {
+		blake3->setid(id);
+		cs = &chksum_stat_data[cid++];
+		cs->init = abd_checksum_blake3_tmpl_init;
+		cs->func = abd_checksum_blake3_native;
+		cs->free = abd_checksum_blake3_tmpl_free;
+		cs->name = blake3->name;
+		cs->impl = blake3->getname();
+		chksum_benchit(cs);
+		if (cs->bs256k > max) {
+			max = cs->bs256k;
+			blake3->set_fastest(id);
+		}
+	}
+	blake3->setid(id_save);
 }
 
 void
@@ -329,9 +357,6 @@ chksum_init(void)
 		    chksum_kstat_addr);
 		kstat_install(chksum_kstat);
 	}
-
-	/* setup implementations */
-	blake3_setup_impl();
 }
 
 void
