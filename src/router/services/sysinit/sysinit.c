@@ -1202,7 +1202,7 @@ void start_restore_defaults(void)
 		{ "wan_default", "eth1" },
 		{ 0, 0 }
 	};
-	struct nvram_param ea8500[] = {
+	struct nvram_param g10[] = {
 		{ "lan_ifname", "br0" },
 		{ "lan_ifnames", "vlan1 vlan2 wlan0 wlan1" },
 		{ "wan_ifname", "vlan2" },
@@ -1215,12 +1215,10 @@ void start_restore_defaults(void)
 	struct nvram_param *generic = NULL;
 
 	int wrt_brand = getRouterBrand();
-	if (wrt_brand == ROUTER_LINKSYS_EA8500 || wrt_brand == ROUTER_ASROCK_G10)
-		generic = ea8500;
+	if (wrt_brand == wrt_brand == ROUTER_ASROCK_G10)
+		generic = g10;
 	else if (wrt_brand == ROUTER_HABANERO)
 		generic = habanero;
-	else if (wrt_brand == ROUTER_NETGEAR_R7800)
-		generic = ipq806x;
 	else
 		generic = ipq806x;
 

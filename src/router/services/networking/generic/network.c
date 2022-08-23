@@ -822,6 +822,7 @@ void start_lan(void)
 	int board = getRouterBrand();
 	switch (board) {
 	case ROUTER_TRENDNET_TEW827:
+	case ROUTER_LINKSYS_EA8500:
 		if (getSTA() || getWET() || CANBRIDGE()) {
 			nvram_setz(lan_ifnames, "eth0 eth1 wlan0");
 			PORTSETUPWAN("");
@@ -832,7 +833,6 @@ void start_lan(void)
 		strncpy(ifr.ifr_name, "eth1", IFNAMSIZ);
 		break;
 	case ROUTER_ASROCK_G10:
-	case ROUTER_LINKSYS_EA8500:
 		if (getSTA() || getWET() || CANBRIDGE()) {
 			nvram_setz(lan_ifnames, "vlan1 vlan2 wlan0 wlan1");
 			PORTSETUPWAN("");
