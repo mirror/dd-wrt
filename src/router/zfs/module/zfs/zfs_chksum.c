@@ -212,7 +212,7 @@ chksum_benchit(chksum_stat_t *cs)
 	}
 
 	/* skip benchmarks >= 1MiB when the CPU is to slow */
-//	if (chksum_stat_limit == LIMIT_NEEDED)
+	if (chksum_stat_limit == LIMIT_NEEDED)
 		goto abort;
 
 	chksum_run(cs, abd, ctx, 6, &cs->bs1m);
