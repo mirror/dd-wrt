@@ -14,6 +14,7 @@ function to_apply(F) {
 var update;
 
 addEvent(window, "load", function() {
+	stickControl(<% nvg("sticky_footer"); %>);
 	show_layer_ext(document.setup.lighttpd_enable, 'lighttpdconfig', <% nvem("lighttpd_enable", "1", "1", "0"); %> == 1);
 
 	update = new StatusbarUpdate();

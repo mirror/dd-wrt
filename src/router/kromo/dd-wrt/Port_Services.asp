@@ -203,6 +203,7 @@ function onchange_Prot(I) {
 }
 
 addEvent(window, "load", function() {
+	stickControl(<% nvg("sticky_footer"); %>);
    setValue();
    if (ref_page == "Filters.asp") {
       document.PortServices.submit_button.value = "Port_Services";

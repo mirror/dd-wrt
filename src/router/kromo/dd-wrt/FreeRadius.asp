@@ -58,6 +58,7 @@ function make_client_cert(F,I) {
 var update;
 
 addEvent(window, "load", function() {
+	stickControl(<% nvg("sticky_footer"); %>);
 	show_layer_ext(document.radius.radius_enabled, 'idradius', <% nvem("radius_enabled", "1", "1", "0"); %> == 1);
 	update = new StatusUpdate("FreeRadius.live.asp", <% nvg("refresh_time"); %>);
 	update.start();		

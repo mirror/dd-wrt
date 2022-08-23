@@ -120,6 +120,7 @@ function to_apply(F) {
 var update;
 
 addEvent(window, "load", function() {
+	stickControl(<% nvg("sticky_footer"); %>);
 	setBRCTLTable(<% show_bridgetable(); %>);
 	
 	update = new StatusUpdate("Networking.live.asp", <% nvg("refresh_time"); %>);

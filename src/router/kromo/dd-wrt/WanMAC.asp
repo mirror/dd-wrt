@@ -29,6 +29,7 @@ function SelMac(val) {
 var update;
 
 addEvent(window, "load", function() {
+	stickControl(<% nvg("sticky_footer"); %>);
 	SelMac("<% nvg("mac_clone_enable"); %>");
 	<% onload("MACClone", "document.mac.mac_clone_enable[0].checked = true; SelMac(1);"); %>
 	

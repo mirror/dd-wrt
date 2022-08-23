@@ -798,6 +798,7 @@ function to_apply(F) {
 var update;
 
 addEvent(window, "load", function() {
+	stickControl(<% nvg("sticky_footer"); %>);
 	if (document.setup.proftpd_rad)
 		show_layer_ext(document.setup.proftpd_rad, 'idftprad', <% nvem("proftpd_rad", "1", "1", "0"); %> == 1);
 	if (document.setup.proftpd_enable)

@@ -14,6 +14,7 @@ function to_apply(F) {
 var update;
 
 addEvent(window, "load", function() {
+	stickControl(<% nvg("sticky_footer"); %>);
 	show_layer_ext(document.setup.ipv6_enable,'idipv6', <% nvem("ipv6_enable", "1", "1", "0"); %> == 1);
 	show_layer_ext(document.setup.dhcp6c_custom,'iddhcp6c_custom', <% nvem("dhcp6c_custom", "1", "1", "0"); %> == 1);
 	show_layer_ext(document.setup.dhcp6s_enable,'iddhcp6s_enabled', <% nvem("dhcp6s_enable", "1", "1", "0"); %> == 1);

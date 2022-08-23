@@ -92,6 +92,7 @@ function to_apply(F) {
 var update;
 
 addEvent(window, "load", function() {
+	stickControl(<% nvg("sticky_footer"); %>);
 		show_layer_ext(document.setup.tor_enable, 'idtor', <% nvem("tor_enable", "1", "1", "0"); %> == 1);
 		show_layer_ext(document.setup.zabbix_enable, 'idzabbix', <% nvem("zabbix_enable", "1", "1", "0"); %> == 1);
 		show_layer_ext(document.setup.mdns_enable, 'idmdns', <% nvem("mdns_enable", "1", "1", "0"); %> == 1);

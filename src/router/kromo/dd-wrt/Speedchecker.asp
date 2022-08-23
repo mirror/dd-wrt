@@ -14,6 +14,7 @@ function to_apply(F) {
 var update;
 
 addEvent(window, "load", function() {
+	stickControl(<% nvg("sticky_footer"); %>);
 	speedchecker_enable_onClick(<% nvg("speedchecker_enable"); %>);
 
 	document.getElementById("main").style.float="none";

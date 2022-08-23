@@ -190,6 +190,7 @@ function setARPTable() {
 var update;
 
 addEvent(window, "load", function() {
+	stickControl(<% nvg("sticky_footer"); %>);
 	setElementContent("dhcp_end_ip", "<% calcendip(); %>");
 	setDHCPTable(<% dumpleases(0); %>);
 <% ifndef("PPTPD", "/*"); %>
