@@ -9,7 +9,9 @@ function to_apply(F) {
 	F.save_button.value = sbutton.saving;
 	applytake(F);
 }
-		
+addEvent(window, "load", function() {
+	stickControl(<% nvg("sticky_footer"); %>);
+}
 		//]]>
 		</script>
 	</head>

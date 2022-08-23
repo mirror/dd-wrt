@@ -11,6 +11,9 @@ function do_join (F,SSID) {
 	}
 	apply(F);
 }
+addEvent(window, "load", function() {
+	stickControl(<% nvg("sticky_footer"); %>);
+}
 		
 		//]]>
 		</script>

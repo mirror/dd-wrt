@@ -6,7 +6,9 @@ function filter_del(F) {
 	F.submit_type.value = "delete";
 	apply(F);
 }
-		
+addEvent(window, "load", function() {
+	stickControl(<% nvg("sticky_footer"); %>);
+}
 		//]]>
 		</script>
 	</head>
