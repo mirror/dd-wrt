@@ -15,6 +15,9 @@ function openGeotool(IP) {
 	addEvent(window, "unload", function() { if(!win.closed) win.close(); });
 	win.focus();
 }
+addEvent(window, "load", function() {
+	stickControl(<% nvg("sticky_footer"); %>);
+}
 //]]>
 </script>
 	</head>

@@ -1,4 +1,11 @@
 <% do_pagehead("log_in.titl"); %>
+		<script type="text/javascript">
+		//<![CDATA[
+addEvent(window, "load", function() {
+	stickControl(<% nvg("sticky_footer"); %>);
+}
+		//]]>
+		</script>
 
 	</head>
 	<body class="popup_bg">

@@ -1,4 +1,11 @@
 <% do_pagehead("survey.titl2"); %>
+		<script type="text/javascript">
+		//<![CDATA[
+addEvent(window, "load", function() {
+	stickControl(<% nvg("sticky_footer"); %>);
+}
+		//]]>
+		</script>
 	</head>
 
 	<body>
