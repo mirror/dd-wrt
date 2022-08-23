@@ -269,7 +269,7 @@ document.write("<\/tr>");
 				<br />
 <% ifndef("HAVE_WPS", "-->"); %>
 				
-				<div class="submitFooter">
+				<div id="footer" class="submitFooter">
 					<script type="text/javascript">
 									//<![CDATA[
 									var autoref = <% nvem("refresh_time","0","sbutton.refres","sbutton.autorefresh"); %>;

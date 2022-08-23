@@ -80,7 +80,7 @@ addEvent(window, "unload", function() {
 							
 							<h2><% tran("alive.h2"); %></h2>
 							<% show_modules(".webalive"); %>
-							<div class="submitFooter">
+							<div id="footer" class="submitFooter">
 								<script type="text/javascript">
 								//<![CDATA[
 								submitFooterButton(1,1);

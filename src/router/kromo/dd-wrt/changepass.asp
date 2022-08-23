@@ -332,7 +332,7 @@ function to_submit(F) {
 									</tr>
 								</table>
 							</fieldset><br />
-							<div class="submitFooter">
+							<div id="footer" class="submitFooter">
 								<script type="text/javascript">
 								//<![CDATA[
 								document.write("<input class=\"button\" type=\"button\" name=\"changepassword\" value=\"" + management.cpbutton + "\" onclick=\"to_submit(this.form)\" />");

@@ -64,7 +64,7 @@ addEvent(window, "unload", function() {
 							
 						<% show_modules(".ipv6config"); %>
 
-							<div class="submitFooter">
+							<div id="footer" class="submitFooter">
 								<script type="text/javascript">
 								//<![CDATA[
 								submitFooterButton(1,1);

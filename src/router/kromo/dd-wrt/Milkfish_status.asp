@@ -52,7 +52,7 @@ function to_submit(F) {
 				<div id="contentsInfo">
 					<h2><% tran("service.milkfish_status"); %></h2>
                                         <% exec_milkfish_service("milkfish_services status"); %>
-                                        <div class="submitFooter">
+                                        <div id="footer" class="submitFooter">
 						<script type="text/javascript">
 						//<![CDATA[
 						submitFooterButton(0,0,0,0,0,1);

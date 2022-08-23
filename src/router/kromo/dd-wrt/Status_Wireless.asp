@@ -305,7 +305,7 @@ addEvent(window, "unload", function() {
 								//]]>
 								</script>
 							</div><br /> -->
-							<div class="submitFooter">
+							<div id="footer" class="submitFooter">
 								<script type="text/javascript">
 								//<![CDATA[
 								<% spectral_scan(); %>

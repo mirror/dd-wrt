@@ -194,8 +194,6 @@ input.button[onclick*="delete"] {
   margin: 0;
 }
 .submitFooter {
-  position: sticky;
-  bottom: 0;
   padding: 4px 12px;
   text-align: center;
   border-radius: 4px;

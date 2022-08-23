@@ -718,7 +718,7 @@ static int do_radiuscert(unsigned char method, struct mime_handler *handler, cha
 			  "<h2>%s</h2>\n"
 			  "Error: please specify a username and password.\n"
 			  "<br /><br />\n"
-			  "<div class=\"submitFooter\">\n"
+			  "<div id=\"footer\" class=\"submitFooter\">\n"
 			  "<script type=\"text/javascript\">\n"
 			  "//<![CDATA[\n" "submitFooterButton(0,0,0,0,0,1);\n" "//]]>\n" "</script>\n" "</div>\n" "</div>\n" "</div>\n" "</body>\n" "\n", _tran_string(buf, sizeof(buf), "freeradius.clientcert"));
 		websWrite(stream, "</html>");
@@ -830,7 +830,7 @@ static int do_radiuscert(unsigned char method, struct mime_handler *handler, cha
 	show_certfield(wp, "Certificate Request", filename);
 	sprintf(filename, "%s-key.pem", db->users[radiusindex].user);
 	show_certfield(wp, "Private Key PEM", filename);
-	websWrite(wp, "<div class=\"submitFooter\">\n" "<script type=\"text/javascript\">\n" "//<![CDATA[\n" "submitFooterButton(0,0,0,0,0,1);\n" "//]]>\n" "</script>\n" "</div>\n" "</div>\n" "</div>\n" "</body>\n");
+	websWrite(wp, "<div id=\"footer\" class=\"submitFooter\">\n" "<script type=\"text/javascript\">\n" "//<![CDATA[\n" "submitFooterButton(0,0,0,0,0,1);\n" "//]]>\n" "</script>\n" "</div>\n" "</div>\n" "</div>\n" "</body>\n");
 	websWrite(wp, "</html>");
 
 	//make certificates

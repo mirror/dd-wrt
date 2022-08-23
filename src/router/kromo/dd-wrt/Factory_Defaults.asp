@@ -62,7 +62,7 @@ addEvent(window, "unload", function() {
 							</div>
 							</fieldset><br/>
 							
-							<div class="submitFooter">
+							<div id="footer" class="submitFooter">
 								<script type="text/javascript">
 								//<![CDATA[
 								document.write("<input title=\"" + sbutton.applytitle + "\" class=\"button\" type=\"button\" name=\"save_button\" value=\"" + sbutton.apply + "\" onclick=\"to_apply(this.form);\" />");

@@ -127,5 +127,10 @@ document.forms[0].onreset = function() {
 		<input class="spaceradio" type="radio" name="router_style_dark" value="1" <% nvc("router_style_dark", "1"); %> /><% tran("share.enable"); %>&nbsp;
 		<input class="spaceradio" type="radio" name="router_style_dark" value="0" <% nvc("router_style_dark", "0"); %> /><% tran("share.disable"); %>
 	</div>
+	<div class="setting">
+		<div class="label"><% tran("share.styl_opt"); %></div>
+		<input class="spaceradio" type="radio" name="opt_sticky_footer" value="1" <% nvc("opt_sticky_footer", "1"); %> /><% tran("share.enable"); %>&nbsp;
+		<input class="spaceradio" type="radio" name="opt_sticky_footer" value="0" <% nvc("opt_sticky_footer", "0"); %> /><% tran("share.disable"); %>
+	</div>
 </fieldset><br />
 <% show_ddwrt_inspired_themes(); %>
