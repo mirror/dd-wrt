@@ -130,8 +130,8 @@ document.forms[0].onreset = function() {
 	</div>
 	<div class="setting">
 		<div class="label"><% tran("share.styl_opt"); %></div>
-		<input class="spaceradio" type="radio" name="opt_sticky_footer" value="<% nvram_get("opt_sticky_footer"); %>" <% nvc("opt_sticky_footer", "1"); %> onclick="stickControl(1)" /><% tran("share.enable"); %>&nbsp;
-		<input class="spaceradio" type="radio" name="opt_sticky_footer" value="<% nvram_get("opt_sticky_footer"); %>" <% nvc("opt_sticky_footer", "0"); %> onclick="stickControl(0)" /><% tran("share.disable"); %>
+		<input class="spaceradio" type="radio" name="opt_sticky_footer" value="1" <% nvc("opt_sticky_footer", "1"); %> onclick="stickControl(1)" /><% tran("share.enable"); %>&nbsp;
+		<input class="spaceradio" type="radio" name="opt_sticky_footer" value="0" <% nvc("opt_sticky_footer", "0"); %> onclick="stickControl(0)" /><% tran("share.disable"); %>
 	</div>
 </fieldset><br />
 <% show_ddwrt_inspired_themes(); %>
