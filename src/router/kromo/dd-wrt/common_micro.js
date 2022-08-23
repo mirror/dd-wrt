@@ -1442,15 +1442,21 @@ function removeTableEntry( tableId, button ) {
 // 22/08/2022 initial addtions of optional sticky for #submitFooter
 function stickControl(status) {
 	var control = document.getElementById("footer");
-
+	if (!control) {
+	    return;
+	}
 	const classList = document.getElementsByClassName("nostick");
+	if (!classList) {
+	    return;
+	}
 	const classLength = classList.length;
 	if (classLength != 0) {
 		return;
 	} else {
-		if (status)
+		if (status) {
 			control.classList.add("stick");
-		else
+		} else {
 			control.classList.remove("stick");
+		}
 	}
 }
