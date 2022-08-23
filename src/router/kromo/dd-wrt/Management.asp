@@ -180,7 +180,7 @@ addEvent(window, "load", function() {
 		selSSH("<% nvg("sshd_enable"); %>", 1);
 	if (document.setup.remote_mgt_telnet)
 		selTelnet("<% nvg("telnetd_enable"); %>", 1);
-	stickControl(<% nvg("opt_sticky_footer"); %>);
+	stickControl(<% nvg("sticky_footerer"); %>);
 	show_layer_ext(document.setup.remote_mgt_ssh, 'idssh', <% nvem("remote_mgt_ssh", "1", "1", "0"); %> == 1);
 	show_layer_ext(document.setup.remote_mgt_telnet, 'idtelnet', <% nvem("remote_mgt_telnet", "1", "1", "0"); %> == 1);
 	show_layer_ext(document.setup.remote_ip_any, 'idremip', <% nvem("remote_ip_any", "1", "0", "1"); %> == 1);
