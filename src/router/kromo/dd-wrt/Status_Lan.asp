@@ -395,7 +395,7 @@ addEvent(window, "unload", function() {
 								</fieldset><br />
 							</div>
 							<% ifndef("PPPOESERVER", "-->"); %>
-							<div class="submitFooter">
+							<div id="footer" class="submitFooter">
 								<script type="text/javascript">
 								//<![CDATA[
 								var autoref = <% nvem("refresh_time","0","sbutton.refres","sbutton.autorefresh"); %>;

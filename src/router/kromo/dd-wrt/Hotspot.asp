@@ -132,7 +132,7 @@ addEvent(window, "unload", function() {
 							
 							<h2><% tran("hotspot.h2"); %></h2>
 							<% show_modules(".webhotspot"); %>
-							<div class="submitFooter">
+							<div id="footer" class="submitFooter">
 								<script type="text/javascript">
 								//<![CDATA[
 								submitFooterButton(1,1);

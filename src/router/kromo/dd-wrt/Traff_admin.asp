@@ -35,7 +35,7 @@ function ttraff_restore_submit(F) {
 						<input type="file" name="file" size="40" />
 					</div>
 				</fieldset><br />
-				<div class="submitFooter">
+				<div id="footer" class="submitFooter">
 					<script type="text/javascript">
 					//<![CDATA[
 					document.write("<input class=\"button\" type=\"button\" name=\"restore_button\" value=\"" + sbutton.restore + "\" onclick=\"ttraff_restore_submit(this.form);\" />");

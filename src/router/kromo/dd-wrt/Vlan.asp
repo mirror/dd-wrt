@@ -172,7 +172,7 @@ addEvent(window, "unload", function() {
 									</tbody>
 							 </table>
 						 </fieldset><br/>
-							<div class="submitFooter">
+							<div id="footer" class="submitFooter">
 								<script type="text/javascript">
 								//<![CDATA[
 								submitFooterButton(1,1);

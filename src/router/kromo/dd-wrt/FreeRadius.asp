@@ -176,7 +176,7 @@ addEvent(window, "unload", function() {
 									<% show_radius_users(); %>
 								</fieldset><br />
 							</div>
-							<div class="submitFooter">
+							<div id="footer" class="submitFooter">
 								<script type="text/javascript">
 								//<![CDATA[
 								var autoref = <% nvem("refresh_time","0","sbutton.refres","sbutton.autorefresh"); %>;

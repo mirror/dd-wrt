@@ -201,6 +201,7 @@ share.dhcp="DHCP";
 share.styl="Select a Style";
 share.theme="Select a Theme";
 share.styl_dark="Enable Dark Styles";
+share.styl_opt="Enable Sticky Footer";
 share.err="error";
 share.errs="errors";
 share.meters="meters";

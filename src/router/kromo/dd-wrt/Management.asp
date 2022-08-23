@@ -227,7 +227,7 @@ addEvent(window, "unload", function() {
 							<h2><% tran("management.h2"); %></h2>
 							<% show_modules(".webconfig"); %>
 							<% show_modules(".webconfig_release"); %>
-							<div class="submitFooter">
+							<div id="footer" class="submitFooter">
 								<script type="text/javascript">
 								//<![CDATA[
 								submitFooterButton(1,1,1);

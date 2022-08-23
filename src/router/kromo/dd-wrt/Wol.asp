@@ -383,7 +383,7 @@ addEvent(window, "unload", function() {
 
 								<% nvsm("wol_cmd","","<!--"); %><script type="text/javascript">callDump();</script><% nvram_selmatch("wol_cmd","","-->"); %>
 
-								<div class="submitFooter">
+								<div id="footer" class="submitFooter">
 									<script type="text/javascript">
 									//<![CDATA[
 										submitFooterButton(1,1);

@@ -48,7 +48,7 @@ addEvent(window, "unload", function() {
 							
 							<h2><% tran("wl_mac.h2"); %></h2>
 							<% show_macfilter(); %>
-							<div class="submitFooter">
+							<div id="footer" class="submitFooter">
 								<script type="text/javascript">
 								//<![CDATA[
 								submitFooterButton(1,1);

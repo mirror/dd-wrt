@@ -188,7 +188,7 @@ addEvent(window, "unload", function() {
 									<input class="spaceradio" type="radio" name="upnpcas" value="0" <% nvc("upnpcas","0"); %> /><% tran("share.disable"); %>
 								</div>
 							</fieldset><br />
-							<div class="submitFooter">
+							<div id="footer" class="submitFooter">
 								<script type="text/javascript">
 								//<![CDATA[
 								var autoref = <% nvem("refresh_time","0","sbutton.refres","sbutton.autorefresh"); %>;

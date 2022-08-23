@@ -48,7 +48,7 @@ addEvent(window, "unload", function() {
 							<input type="hidden" name="submit_type" />
 							<input type="hidden" name="commit" value="1"/>
 							<% show_modules(".webproxy"); %>
-							<div class="submitFooter">
+							<div id="footer" class="submitFooter">
 								<script type="text/javascript">
 								//<![CDATA[
 								submitFooterButton(1,1);

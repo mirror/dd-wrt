@@ -17,7 +17,7 @@
 					<% dumplog("outgoing"); %>
 				</table>
 				</fieldset><br />
-				<div class="submitFooter">
+				<div id="footer" class="submitFooter">
 					<script type="text/javascript">
 					//<![CDATA[
 					submitFooterButton(0,0,0,0,1,1);
