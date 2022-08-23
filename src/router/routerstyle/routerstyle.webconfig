@@ -108,19 +108,6 @@ document.forms[0].onreset = function() {
 	previewStyle("<% nvg("router_style"); %>"); 
 };
 
-// 22/08/2022 initial addtions of optional sticky for #submitFooter
-function stickControl() {
-	var control = document.getElementById("footer");
-
-	const classList = document.getElementsByClassName("nostick");
-	const classLength = classList.length;
-	if (classLength != 0) {
-		return;
-	} else {
-			control.classList.toggle("stick");
-			return;
-	}
-}
 //]]>
 </script>
 <fieldset>
@@ -143,8 +130,8 @@ function stickControl() {
 	</div>
 	<div class="setting">
 		<div class="label"><% tran("share.styl_opt"); %></div>
-		<input class="spaceradio" type="radio" name="opt_sticky_footer" value="<% nvram_get("opt_sticky_footer"); %>" <% nvc("opt_sticky_footer", "1"); %> onclick="stickControl()" /><% tran("share.enable"); %>&nbsp;
-		<input class="spaceradio" type="radio" name="opt_sticky_footer" value="<% nvram_get("opt_sticky_footer"); %>" <% nvc("opt_sticky_footer", "0"); %> onclick="stickControl()" /><% tran("share.disable"); %>
+		<input class="spaceradio" type="radio" name="opt_sticky_footer" value="<% nvram_get("opt_sticky_footer"); %>" <% nvc("opt_sticky_footer", "1"); %> onclick="stickControl(1)" /><% tran("share.enable"); %>&nbsp;
+		<input class="spaceradio" type="radio" name="opt_sticky_footer" value="<% nvram_get("opt_sticky_footer"); %>" <% nvc("opt_sticky_footer", "0"); %> onclick="stickControl(0)" /><% tran("share.disable"); %>
 	</div>
 </fieldset><br />
 <% show_ddwrt_inspired_themes(); %>
