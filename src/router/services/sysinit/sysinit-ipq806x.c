@@ -522,8 +522,6 @@ void start_sysinit(void)
 		eval("ledtool", "20", "0");
 
 #endif				/*HAVE_ANTAIRA */
-		writeproc("/proc/irq/101/smp_affinity", "2");
-		writeproc("/proc/irq/98/smp_affinity", "2");	// move second wifi interface to core 2
 		eval("swconfig", "dev", "switch0", "vlan", "1", "set", "ports", "0 1 2 3 4");
 		eval("swconfig", "dev", "switch0", "vlan", "2", "set", "ports", "0t 5");
 		eval("swconfig", "dev", "switch0", "set", "apply");
@@ -543,6 +541,8 @@ void start_sysinit(void)
 		eval("vconfig", "set_name_type", "VLAN_PLUS_VID_NO_PAD");
 		eval("vconfig", "add", "eth1", "1");
 		eval("vconfig", "add", "eth1", "2");
+		writeproc("/proc/irq/101/smp_affinity", "2");
+		writeproc("/proc/irq/98/smp_affinity", "2");	// move second wifi interface to core 2
 		writestr("/sys/class/leds/ath10k-phy0/trigger", "phy0tpt");
 		writestr("/sys/class/leds/ath10k-phy1/trigger", "phy1tpt");
 		writeproc("/sys/devices/system/cpu/cpu0/cpufreq/scaling_min_freq", "800000");
