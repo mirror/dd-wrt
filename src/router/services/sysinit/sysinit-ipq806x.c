@@ -521,54 +521,19 @@ void start_sysinit(void)
 		eval("hwclock", "-s", "-u");
 		eval("ledtool", "20", "0");
 
-/*
-		if (!nvram_safe_get("sw_cpuport")) {
-			nvram_seti("sw_cpuport", 0);
-			nvram_seti("sw_wan", 5);
-			nvram_seti("sw_lan1", 4);
-			nvram_seti("sw_lan2", 3);
-			nvram_seti("sw_lan3", 2);
-			nvram_seti("sw_lan4", 1);
-			nvram_commit();
-		}
-*/
 #endif				/*HAVE_ANTAIRA */
+		writeproc("/proc/irq/101/smp_affinity", "2");
+		writeproc("/proc/irq/98/smp_affinity", "2");	// move second wifi interface to core 2
 		eval("swconfig", "dev", "switch0", "vlan", "1", "set", "ports", "0 1 2 3 4");
 		eval("swconfig", "dev", "switch0", "vlan", "2", "set", "ports", "0t 5");
 		eval("swconfig", "dev", "switch0", "set", "apply");
 		eval("ifconfig", "eth0", "up");
 		eval("ifconfig", "eth1", "up");
 
-//              writeproc("/proc/irq/167/smp_affinity", "2");
-		break;
-	case ROUTER_NETGEAR_R7800:	// why is this extra? looks like the default one
-		eval("swconfig", "dev", "switch0", "set", "reset", "1");
-		eval("swconfig", "dev", "switch0", "set", "enable_vlan", "0");
-		eval("swconfig", "dev", "switch0", "set", "igmp_snooping", "0");
-		eval("swconfig", "dev", "switch0", "set", "igmp_v3", "1");
-		eval("swconfig", "dev", "switch0", "vlan", "1", "set", "ports", "6 1 2 3 4");
-		eval("swconfig", "dev", "switch0", "vlan", "2", "set", "ports", "0 5");
-		eval("swconfig", "dev", "switch0", "set", "apply");
-		eval("ifconfig", "eth0", "up");
-		eval("ifconfig", "eth1", "up");
-
-		nvram_seti("sw_wancpuport", 0);
-		nvram_seti("sw_lancpuport", 6);
-		nvram_seti("sw_wan", 5);
-		nvram_seti("sw_lan1", 4);
-		nvram_seti("sw_lan2", 3);
-		nvram_seti("sw_lan3", 2);
-		nvram_seti("sw_lan4", 1);
-		writestr("/sys/class/leds/ath10k-phy0/trigger", "phy0tpt");
-		writestr("/sys/class/leds/ath10k-phy1/trigger", "phy1tpt");
-//              writeproc("/proc/irq/101/smp_affinity", "2");
-//              writeproc("/proc/irq/98/smp_affinity", "2");    // move second wifi interface to core 2
-		writeproc("/sys/devices/system/cpu/cpu0/cpufreq/scaling_min_freq", "800000");
-		writeproc("/sys/devices/system/cpu/cpu1/cpufreq/scaling_min_freq", "800000");
 		break;
 	case ROUTER_ASROCK_G10:
 		eval("swconfig", "dev", "switch0", "set", "reset", "1");
-		eval("swconfig", "dev", "switch0", "set", "enable_vlan", "1");
+		eval("swconfig", "dev", "switch0", "set", "enable_vlan", "0");
 		eval("swconfig", "dev", "switch0", "set", "igmp_snooping", "0");
 		eval("swconfig", "dev", "switch0", "set", "igmp_v3", "1");
 		eval("swconfig", "dev", "switch0", "vlan", "1", "set", "ports", "2 3 4 5 6t");
@@ -578,65 +543,8 @@ void start_sysinit(void)
 		eval("vconfig", "set_name_type", "VLAN_PLUS_VID_NO_PAD");
 		eval("vconfig", "add", "eth1", "1");
 		eval("vconfig", "add", "eth1", "2");
-		nvram_seti("sw_cpuport", 6);
-		nvram_seti("sw_wan", 1);
-		nvram_seti("sw_lan1", 2);
-		nvram_seti("sw_lan2", 3);
-		nvram_seti("sw_lan3", 4);
-		nvram_seti("sw_lan4", 5);
 		writestr("/sys/class/leds/ath10k-phy0/trigger", "phy0tpt");
 		writestr("/sys/class/leds/ath10k-phy1/trigger", "phy1tpt");
-//              writeproc("/proc/irq/101/smp_affinity", "2");
-//              writeproc("/proc/irq/98/smp_affinity", "2");    // move second wifi interface to core 2
-		writeproc("/sys/devices/system/cpu/cpu0/cpufreq/scaling_min_freq", "800000");
-		writeproc("/sys/devices/system/cpu/cpu1/cpufreq/scaling_min_freq", "800000");
-		break;
-	case ROUTER_LINKSYS_EA8500:
-		eval("swconfig", "dev", "switch0", "set", "reset", "1");
-		eval("swconfig", "dev", "switch0", "set", "enable_vlan", "0");
-		eval("swconfig", "dev", "switch0", "set", "igmp_snooping", "0");
-		eval("swconfig", "dev", "switch0", "set", "igmp_v3", "1");
-		eval("swconfig", "dev", "switch0", "vlan", "1", "set", "ports", "6 1 2 3 4");
-		eval("swconfig", "dev", "switch0", "vlan", "2", "set", "ports", "0 5");
-		eval("swconfig", "dev", "switch0", "set", "apply");
-		eval("ifconfig", "eth0", "up");
-		nvram_seti("sw_wancpuport", 0);
-		nvram_seti("sw_lancpuport", 6);
-		nvram_seti("sw_wan", 5);
-		nvram_seti("sw_lan1", 1);
-		nvram_seti("sw_lan2", 2);
-		nvram_seti("sw_lan3", 3);
-		nvram_seti("sw_lan4", 4);
-		writestr("/sys/class/leds/ath10k-phy0/trigger", "phy0tpt");
-		writestr("/sys/class/leds/ath10k-phy1/trigger", "phy1tpt");
-		writeproc("/proc/irq/101/smp_affinity", "2");
-		writeproc("/proc/irq/98/smp_affinity", "2");	// move second wifi interface to core 2
-		writeproc("/sys/devices/system/cpu/cpu0/cpufreq/scaling_min_freq", "800000");
-		writeproc("/sys/devices/system/cpu/cpu1/cpufreq/scaling_min_freq", "800000");
-		break;
-	case ROUTER_NETGEAR_R7500V2:
-	case ROUTER_NETGEAR_R7500:
-		eval("swconfig", "dev", "switch0", "set", "reset", "1");
-		eval("swconfig", "dev", "switch0", "set", "enable_vlan", "0");
-		eval("swconfig", "dev", "switch0", "set", "igmp_snooping", "0");
-		eval("swconfig", "dev", "switch0", "set", "igmp_v3", "1");
-		eval("swconfig", "dev", "switch0", "vlan", "1", "set", "ports", "6 1 2 3 4");
-		eval("swconfig", "dev", "switch0", "vlan", "2", "set", "ports", "5 0");
-		eval("swconfig", "dev", "switch0", "set", "apply");
-		eval("ifconfig", "eth0", "up");
-		eval("ifconfig", "eth1", "up");
-
-		nvram_seti("sw_wancpuport", 0);
-		nvram_seti("sw_lancpuport", 6);
-		nvram_seti("sw_wan", 5);
-		nvram_seti("sw_lan1", 4);
-		nvram_seti("sw_lan2", 3);
-		nvram_seti("sw_lan3", 2);
-		nvram_seti("sw_lan4", 1);
-		writestr("/sys/class/leds/ath10k-phy0/trigger", "phy0tpt");
-		writestr("/sys/class/leds/ath10k-phy1/trigger", "phy1tpt");
-//              writeproc("/proc/irq/101/smp_affinity", "2");
-//              writeproc("/proc/irq/98/smp_affinity", "2");    // move second wifi interface to core 2
 		writeproc("/sys/devices/system/cpu/cpu0/cpufreq/scaling_min_freq", "800000");
 		writeproc("/sys/devices/system/cpu/cpu1/cpufreq/scaling_min_freq", "800000");
 		break;
@@ -651,6 +559,60 @@ void start_sysinit(void)
 		eval("ifconfig", "eth0", "up");
 		eval("ifconfig", "eth1", "up");
 
+		writeproc("/proc/irq/101/smp_affinity", "2");
+		writeproc("/proc/irq/98/smp_affinity", "2");	// move second wifi interface to core 2
+		writestr("/sys/class/leds/ath10k-phy0/trigger", "phy0tpt");
+		writestr("/sys/class/leds/ath10k-phy1/trigger", "phy1tpt");
+		writeproc("/sys/devices/system/cpu/cpu0/cpufreq/scaling_min_freq", "800000");
+		writeproc("/sys/devices/system/cpu/cpu1/cpufreq/scaling_min_freq", "800000");
+		break;
+	}
+
+	switch (board) {
+	case ROUTER_HABANERO:
+#ifdef HAVE_ANTAIRA
+		eval("insmod", "i2c-gpio-custom", "bus2=2,11,10");
+		eval("insmod", "rtc-pcf8523");
+		writestr("/sys/class/i2c-dev/i2c-2/device/new_device", "pcf8523 0x68");
+		eval("insmod", "gpio-antaira-i2c");
+		writestr("/sys/class/i2c-dev/i2c-2/device/new_device", "antairagpio 0x60");
+		eval("hwclock", "-s", "-u");
+		eval("ledtool", "20", "0");
+
+/*
+		if (!nvram_safe_get("sw_cpuport")) {
+			nvram_seti("sw_cpuport", 0);
+			nvram_seti("sw_wan", 5);
+			nvram_seti("sw_lan1", 4);
+			nvram_seti("sw_lan2", 3);
+			nvram_seti("sw_lan3", 2);
+			nvram_seti("sw_lan4", 1);
+			nvram_commit();
+		}
+*/
+#endif				/*HAVE_ANTAIRA */
+		break;
+	case ROUTER_ASROCK_G10:
+		nvram_seti("sw_cpuport", 6);
+		nvram_seti("sw_wan", 1);
+		nvram_seti("sw_lan1", 2);
+		nvram_seti("sw_lan2", 3);
+		nvram_seti("sw_lan3", 4);
+		nvram_seti("sw_lan4", 5);
+		break;
+	case ROUTER_NETGEAR_R7800:	// why is this extra? looks like the default one
+	case ROUTER_NETGEAR_R7500V2:
+	case ROUTER_NETGEAR_R7500:
+		nvram_seti("sw_wancpuport", 0);
+		nvram_seti("sw_lancpuport", 6);
+		nvram_seti("sw_wan", 5);
+		nvram_seti("sw_lan1", 4);
+		nvram_seti("sw_lan2", 3);
+		nvram_seti("sw_lan3", 2);
+		nvram_seti("sw_lan4", 1);
+		break;
+	case ROUTER_LINKSYS_EA8500:
+	default:
 		nvram_seti("sw_wancpuport", 0);
 		nvram_seti("sw_lancpuport", 6);
 		nvram_seti("sw_wan", 5);
@@ -658,14 +620,9 @@ void start_sysinit(void)
 		nvram_seti("sw_lan2", 2);
 		nvram_seti("sw_lan3", 3);
 		nvram_seti("sw_lan4", 4);
-		writestr("/sys/class/leds/ath10k-phy0/trigger", "phy0tpt");
-		writestr("/sys/class/leds/ath10k-phy1/trigger", "phy1tpt");
-//              writeproc("/proc/irq/101/smp_affinity", "2");
-//              writeproc("/proc/irq/98/smp_affinity", "2");    // move second wifi interface to core 2
-		writeproc("/sys/devices/system/cpu/cpu0/cpufreq/scaling_min_freq", "800000");
-		writeproc("/sys/devices/system/cpu/cpu1/cpufreq/scaling_min_freq", "800000");
 		break;
 	}
+
 	nvram_default_geti("port0vlans", 2);
 	nvram_default_geti("port1vlans", 1);
 	nvram_default_geti("port2vlans", 1);
