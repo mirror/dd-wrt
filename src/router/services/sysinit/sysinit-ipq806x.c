@@ -600,7 +600,8 @@ void start_sysinit(void)
 		nvram_seti("sw_lan3", 4);
 		nvram_seti("sw_lan4", 5);
 		break;
-	case ROUTER_NETGEAR_R7800:	// why is this extra? looks like the default one
+	/* routers with reverse port order */
+	case ROUTER_NETGEAR_R7800:
 	case ROUTER_NETGEAR_R7500V2:
 	case ROUTER_NETGEAR_R7500:
 		nvram_seti("sw_wancpuport", 0);
