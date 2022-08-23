@@ -3655,7 +3655,7 @@ struct nvram_param srouter_defaults[] = {
 #endif
 #ifdef HAVE_ROUTERSTYLE
 	{ "router_style_dark", "0" },
-	{ "opt_sticky_footer", "1" },
+	{ "sticky_footer", "1" },
 #endif
 #if defined(HAVE_ONNET) || defined(HAVE_RAYTRONIK)
 	{ "radius_country", "ARE" },
