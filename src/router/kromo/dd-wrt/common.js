@@ -1538,3 +1538,19 @@ function removeTableEntry( tableId, button ) {
 		}
 	}
 }
+
+// 22/08/2022 initial addtions of optional sticky for #submitFooter
+function stickControl(status) {
+	var control = document.getElementById("footer");
+
+	const classList = document.getElementsByClassName("nostick");
+	const classLength = classList.length;
+	if (classLength != 0) {
+		return;
+	} else {
+		if (status)
+			control.classList.add("stick");
+		else
+			control.classList.remove("stick");
+	}
+}
