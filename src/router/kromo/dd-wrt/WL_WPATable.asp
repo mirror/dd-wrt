@@ -270,6 +270,7 @@ function enable_idtls(ifname) {
 var update;
 
 addEvent(window, "load", function() {
+	stickControl(<% nvg("sticky_footer"); %>);
 
 	<% init_80211x_layers(); %>
 	

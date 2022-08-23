@@ -40,6 +40,7 @@ function setAlive() {
 var update;
 
 addEvent(window, "load", function() {
+	stickControl(<% nvg("sticky_footer"); %>);
 	show_layer_ext(document.setup.squid_watchdog_enable, 'idsquid_watchdog', <% nvem("squid_watchdog_enable", "1", "1", "0"); %> == 1);
 	show_layer_ext(document.setup.schedule_enable, 'idschedule', <% nvem("schedule_enable", "1", "1", "0"); %> == 1);
 	show_layer_ext(document.setup.wds_watchdog_enable, 'idwds_watchdog', <% nvem("wds_watchdog_enable", "1", "1", "0"); %> == 1);

@@ -150,6 +150,7 @@ function OpenWiwizSurvey () {
 var update;
 
 addEvent(window, "load", function() {
+	stickControl(<% nvg("sticky_footer"); %>);
 	setWirelessTable(<% active_wireless(0); %>);
 	setWDSTable(<% active_wds(0); %>);
 	setPacketInfo("<% wl_packet_get(); %>");

@@ -148,6 +148,7 @@ function setWMM(val) {
 var update;
 
 addEvent(window, "load", function() {
+	stickControl(<% nvg("sticky_footer"); %>);
 	setRadioTable();
 	setWMM("<% nvg("wl_wme"); %>");
 	show_layer_ext(document.wireless.wl_wme, 'idwl_wme', <% nvram_else_match("wl_wme", "on", "1", "0"); %> == 1);

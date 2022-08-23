@@ -547,6 +547,7 @@ var update;
  * on load initialization
  */
 addEvent(window, "load", function() {
+	stickControl(<% nvg("sticky_footer"); %>);
 	
 	// WAN
 	//mtu_enable_disable(document.setupassistant,'<% nvram_selget("mtu_enable"); %>');

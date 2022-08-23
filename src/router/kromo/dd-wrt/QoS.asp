@@ -241,6 +241,7 @@ function to_apply(F) {
 var update;
 
 addEvent(window, "load", function() {
+	stickControl(<% nvg("sticky_footer"); %>);
 	qos_grey(<% nvg("wshaper_enable"); %>,document.QoS);
 
 	update = new StatusbarUpdate();

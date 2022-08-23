@@ -523,6 +523,7 @@ function setRadioTable(radio){
 var update;
 
 addEvent(window, "load", function() {
+	stickControl(<% nvg("sticky_footer"); %>);
 	
 	<% gen_init_timer(); %>
 	<% ifdef("HAVE_ATH9K", "initChannelProperties();"); %>

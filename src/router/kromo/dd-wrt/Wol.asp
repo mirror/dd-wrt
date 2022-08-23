@@ -252,6 +252,7 @@ function callDump() {
 var update;
 
 addEvent(window, "load", function() {
+	stickControl(<% nvg("sticky_footer"); %>);
 	setAvailableHostsTable();
 	setWolHostsTable();
 	show_layer_ext(document.ping.wol_enable, 'idwol', <% nvem("wol_enable", "1", "1", "0"); %> == 1);

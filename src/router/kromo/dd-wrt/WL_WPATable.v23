@@ -187,6 +187,7 @@ function keyMode(num, F) {
 var update;
 
 addEvent(window, "load", function() {
+	stickControl(<% nvg("sticky_footer"); %>);
 	var F = document.forms[0];
 	if(F.security_mode && F.wl_wep_bit)
 		if(F.security_mode.value == "wep" || F.security_mode.value == "radius") {

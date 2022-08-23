@@ -55,6 +55,7 @@ function to_apply(F) {
 var update;
 
 addEvent(window, "load", function() {
+	stickControl(<% nvg("sticky_footer"); %>);
 
 		show_layer_ext(document.setup.pppoeradius_enabled, 'idpppoelocal', <% nvem("pppoeradius_enabled", "0", "1", "0"); %> == 1);
 		show_layer_ext(document.setup.pppoeradius_enabled, 'idpppoerad', <% nvem("pppoeradius_enabled", "1", "1", "0"); %> == 1);

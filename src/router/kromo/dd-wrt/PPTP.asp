@@ -131,6 +131,7 @@ function changevpnpbr(F, value)
 var update;
 
 addEvent(window, "load", function() {
+	stickControl(<% nvg("sticky_footer"); %>);
 
 		show_layer_ext(document.setup.pptpd_radius, 'idradius', <% nvem("pptpd_radius", "1", "1", "0"); %> == 1);
 		show_layer_ext(document.setup.pptpd_radius, 'idlocal', <% nvem("pptpd_radius", "0", "1", "0"); %> == 1);

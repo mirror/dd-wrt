@@ -157,6 +157,7 @@ function to_apply(F) {
 var update;
 
 addEvent(window, "load", function() {
+	stickControl(<% nvg("sticky_footer"); %>);
 
 	show_layer_ext(document.static.ospfd_copt, 'idospfd', <% nvem("ospfd_copt", "1", "1", "0"); %> == 1);
 	show_layer_ext(document.static.ripd_copt, 'idripd', <% nvem("ripd_copt", "1", "1", "0"); %> == 1);
