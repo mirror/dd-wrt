@@ -1545,11 +1545,11 @@ function stickControl(status) {
 	if (!control) {
 	    return;
 	}
-	const classList = document.getElementsByClassName("nostick");
+	var classList = document.getElementsByClassName("nostick");
 	if (!classList) {
 	    return;
 	}
-	const classLength = classList.length;
+	var classLength = classList.length;
 	if (classLength != 0) {
 		return;
 	} else {
