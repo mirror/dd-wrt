@@ -71,6 +71,7 @@ function to_apply(F) {
 var update;
 
 addEvent(window, "load", function() {
+	stickControl(<% nvg("sticky_footer"); %>);
 	show_layer_ext(document.setup.af_enable, 'idanchorfree', <% nvem("af_enable", "1", "1", "0"); %> == 1);
 	show_layer_ext(document.setup.af_ssid, 'idanchorfreessid', <% nvem("af_ssid", "1", "1", "0"); %> == 1);
 	update = new StatusUpdate("AnchorFree.live.asp", <% nvg("refresh_time"); %>);

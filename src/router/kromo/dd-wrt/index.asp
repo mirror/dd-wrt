@@ -273,6 +273,7 @@ function to_apply(F) {
 var update;
 
 addEvent(window, "load", function() {
+	stickControl(<% nvg("sticky_footer"); %>);
 
 	mtu_enable_disable(document.setup,'<% nvg("mtu_enable"); %>');
 

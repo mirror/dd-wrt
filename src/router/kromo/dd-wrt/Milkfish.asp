@@ -54,6 +54,7 @@ function to_reboot(F) {
 var update;
 
 addEvent(window, "load", function() {
+	stickControl(<% nvg("sticky_footer"); %>);
 
 		show_layer_ext(document.setup.milkfish_fromswitch, 'idfrom', <% nvem("milkfish_fromswitch", "on", "1", "0"); %> == 1);
 		show_layer_ext(document.setup.milkfish_enabled, 'idmilkfish', <% nvem("milkfish_enabled", "1", "1", "0"); %> == 1);

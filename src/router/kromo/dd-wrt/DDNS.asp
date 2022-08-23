@@ -101,6 +101,7 @@ function SelDDNS(num,F) {
 var update;
 
 addEvent(window, "load", function() {
+	stickControl(<% nvg("sticky_footer"); %>);
 	update = new StatusUpdate("DDNS.live.asp", <% nvg("refresh_time"); %>);
 	update.start();
 });

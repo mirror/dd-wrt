@@ -29,6 +29,7 @@ function message()
 }
 
 addEvent(window, "load", function() {
+	stickControl(<% nvg("sticky_footer"); %>);
 	bar1.togglePause();
 });
 

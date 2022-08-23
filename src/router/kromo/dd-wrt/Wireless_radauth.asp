@@ -31,6 +31,7 @@ function setRad(val) {
 var update;
 
 addEvent(window, "load", function() {
+	stickControl(<% nvg("sticky_footer"); %>);
 	setRad("<% nvg("wl_radauth"); %>");
 	if ("ap" != "<% nvg("wl_mode"); %>"){
 		setElementsActive("wl_radauth", "_radius_override", false);

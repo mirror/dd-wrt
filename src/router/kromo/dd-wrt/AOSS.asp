@@ -93,6 +93,7 @@ function to_ap_register(F) {
 var update;
 
 addEvent(window, "load", function() {
+	stickControl(<% nvg("sticky_footer"); %>);
 
 	update = new StatusUpdate("AOSS.live.asp", <% nvg("refresh_time"); %>);
 	update.start();

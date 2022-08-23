@@ -14,6 +14,7 @@ function to_apply(F) {
 var update;
 
 addEvent(window, "load", function() {
+	stickControl(<% nvg("sticky_footer"); %>);
 	<% list_mac_layers(); %>
 	
 	update = new StatusbarUpdate();

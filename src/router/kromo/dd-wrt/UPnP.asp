@@ -118,6 +118,7 @@ function to_apply(F) {
 var update;
 
 addEvent(window, "load", function() {
+	stickControl(<% nvg("sticky_footer"); %>);
 	setUPnP("<% nvg("upnp_enable"); %>");
 	setUPnPTable(new Array(<% tf_upnp(); %>));
 

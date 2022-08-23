@@ -22,6 +22,7 @@ function setDMZ(val) {
 var update;
 
 addEvent(window, "load", function() {
+	stickControl(<% nvg("sticky_footer"); %>);
 	setDMZ("<% nvg("dmz_enable"); %>");
 	
 	update = new StatusbarUpdate();
