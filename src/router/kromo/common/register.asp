@@ -13,6 +13,9 @@ function to_submit(F) {
 	F.action.value = "Apply";
 	apply(F);
 }
+addEvent(window, "load", function() {
+	stickControl(<% nvg("sticky_footer"); %>);
+}
 
 //]]>
 </script>
