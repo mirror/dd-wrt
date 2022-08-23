@@ -87,7 +87,7 @@ function milkfish_sip_message_submit(F) {
 				    <br/><br/>
                                     <b>Please note: Not all SIP Clients (Soft- or Hardphones) support SIP Messaging.<br /><br />Please refer to your SIP Clients Datasheet or Documentation to learn more about SIP Messaging capabilities.</b><br /><br />
                                     <br/>
-                                        <div class="submitFooter">
+                                        <div id="footer" class="submitFooter">
                                                 <script type="text/javascript">
                                                 //<![CDATA[
                                                 submitFooterButton(0,0,0,0,0,1);

@@ -41,7 +41,7 @@ document.title = "<% nvg("router_name"); %> - Activation";
 							<dl>
 								<dd><% tran("reg.reg_aok"); %><br></dd>
 							</dl>
-							<div class="submitFooter"></div>
+							<div id="footer" class="submitFooter"></div>
 						</div>
 					</form>
 				</div>

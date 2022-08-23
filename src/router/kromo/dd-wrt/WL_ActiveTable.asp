@@ -91,7 +91,7 @@ refreshParent = function() {
 				</tbody>
 			</table>
 		  </fieldset><br />
-			<div id="submit_footer" class="submitFooter">
+			<div id="submit_footer" id="footer" class="submitFooter">
 					<script type="text/javascript">
 					//<![CDATA[
 					submitFooterButton(1,0,0,0,1,1);

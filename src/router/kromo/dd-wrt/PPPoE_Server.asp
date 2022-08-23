@@ -306,7 +306,7 @@ addEvent(window, "unload", function() {
 <br/>
 
 							
-							<div class="submitFooter">
+							<div id="footer" class="submitFooter">
 								<script type="text/javascript">
 								//<![CDATA[
 								submitFooterButton(1,1);

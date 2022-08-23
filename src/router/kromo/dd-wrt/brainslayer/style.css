@@ -151,8 +151,6 @@ form[name="macfilter"] td[align="left"] {
   text-decoration: underline;
 }
 .submitFooter {
-   position: sticky;
-   bottom: 0;
    padding: 8px 12px;
    margin-top: 0;
    text-align: center;

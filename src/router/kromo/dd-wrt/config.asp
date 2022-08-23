@@ -63,7 +63,7 @@ addEvent(window, "unload", function() {
 								<p><b><% tran("config.mess3"); %></b></p>
 								<p><% tran("config.mess4"); %></p>
 							</div><br />
-							<div class="submitFooter">
+							<div id="footer" class="submitFooter">
 								<script type="text/javascript">
 								//<![CDATA[
 								document.write("<input class=\"button\" type=\"button\" name=\"backup_button\" value=\"" + sbutton.backup + "\" onclick=\"window.location.href='/<% get_backup_name(); %>';\" />");

@@ -124,7 +124,7 @@ addEvent(window, "unload", function() {
 								//]]>
 								</script></div><br />
 							</div><br />
-							<div class="submitFooter">
+							<div id="footer" class="submitFooter">
 								<script type="text/javascript">
 								//<![CDATA[
 								document.write("<input class=\"button\" type=\"button\" name=\"Upgrade_b\" value=\"" + sbutton.upgrade + "\" onclick=\"upgrade(this.form,'warning_text');\" />");

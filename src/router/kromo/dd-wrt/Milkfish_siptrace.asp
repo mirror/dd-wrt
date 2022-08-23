@@ -54,7 +54,7 @@ function to_submit(F) {
 					<b>Close and open this window again to update trace...</b>
 					<br /><br />
                                         <% exec_milkfish_service("cat /var/log/sip_trace.log"); %>
-                                        <div class="submitFooter">
+                                        <div id="footer" class="submitFooter">
 						<script type="text/javascript">
 						//<![CDATA[
 						submitFooterButton(0,0,0,0,0,1);

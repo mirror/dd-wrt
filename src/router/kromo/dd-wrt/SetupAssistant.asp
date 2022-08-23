@@ -811,7 +811,7 @@ function submitSavePrevButtons() {
 								</div-->
 							</fieldset><br style="<% sas_stage_visible_css("4"); %>" />
 								
-							<div class="submitFooter">
+							<div id="footer" class="submitFooter">
 								<script type="text/javascript">
 					//<![CDATA[
 					submitSavePrevButtons();

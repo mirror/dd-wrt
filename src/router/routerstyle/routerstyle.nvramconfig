@@ -1,2 +1,3 @@
 "router_style_dark" "Dark Styles" "CHOICE" "2" "1" "0" "FALSE" "0"
+"opt_sticky_footer" "Sticky Footer" "CHOICE" "2" "0" "1" "FALSE" "0"
 "stylus" "DD-WRT Inspired Themes" "NULL" "FALSE" "0"

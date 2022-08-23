@@ -1366,4 +1366,15 @@ $(_8a+"_add").show();
 }
 }
 };
-
+// 22/08/2022 initial addtions of optional sticky for #submitFooter
+function stickControl() {
+var control = document.getElementById("footer");
+const classList = document.getElementsByClassName("nostick");
+const classLength = classList.length;
+if (classLength != 0) {
+return;
+} else {
+control.classList.toggle("stick");
+return;
+}
+}

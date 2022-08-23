@@ -15,7 +15,7 @@ function setWirelessTable() {
 	}
 	for(var i = 0; i < val.length; i = i + 4) {
 		var row = table.insertRow(-1);
-		
+
 		var mac = val[i];
 		if ("<% nvram_get("maskmac"); %>" != "1") {
 		  var cellmac = row.insertCell(-1);
@@ -45,7 +45,7 @@ function setWDSTable() {
 	}
 	for(var i = 0; i < val.length; i = i + 5) {
 		var row = table.insertRow(-1);
-		
+
 		var mac = val[i];
 		if ("<% nvram_get("maskmac"); %>" != "1") {
 		  var cellmac = row.insertCell(-1);
@@ -57,7 +57,7 @@ function setWDSTable() {
 		} else {
 		  row.insertCell(-1).innerHTML = mac;		 
 		}
-		
+
 		row.insertCell(-1).innerHTML = val[i + 1];
 		row.insertCell(-1).innerHTML = val[i + 2];
 		row.insertCell(-1).innerHTML = val[i + 3];
@@ -79,11 +79,11 @@ function setDHCPTable() {
 		return;
 	}
 	for(var i = 0; i < val.length; i = i + 5) {
-		
+
 		var row = table.insertRow(-1);
 		row.insertCell(-1).innerHTML = val[i];
 		row.insertCell(-1).innerHTML = val[i + 1];
-		
+
 		var mac = val[i + 2];
 		if ("<% nvram_get("maskmac"); %>" != "1") {
 		  var cellmac = row.insertCell(-1);
@@ -95,7 +95,6 @@ function setDHCPTable() {
 		} else {
 		  row.insertCell(-1).innerHTML = mac;		 
 		}
-
 		row.insertCell(-1).innerHTML = val[i + 3];
 	}
 }
@@ -238,7 +237,6 @@ addEvent(window, "unload", function() {
 									<span id="lan_ip"><% nvram_get("lan_ipaddr"); %></span>&nbsp;
 								</div>
 							</fieldset><br />
-							
 							<fieldset>
 								<legend><% tran("share.wireless"); %></legend>
 								<div class="setting">
@@ -270,7 +268,6 @@ addEvent(window, "unload", function() {
 									<span id="wl_rate"><% get_currate(); %></span>&nbsp;
 								</div>
 							</fieldset><br />
-							
 							<fieldset>
 								<legend><% tran("status_wireless.legend2"); %></legend>
 								<div class="setting">
@@ -283,7 +280,6 @@ addEvent(window, "unload", function() {
 								</div>
 							</fieldset><br />
 						</div>
-
 						<div class="col2r">
 							<fieldset>
 								<legend><% tran("info.srv"); %></legend>
@@ -324,7 +320,6 @@ addEvent(window, "unload", function() {
 								</div>
 								<% ifndef("RSTATS","-->"); %>
 							</fieldset><br />
-							
 							<fieldset>
 								<legend><% tran("status_router.legend3"); %></legend>
 								<div class="setting">
@@ -356,10 +351,9 @@ addEvent(window, "unload", function() {
 									<span id="mem_inactive"></span>&nbsp;
 								</div>
 							</fieldset><br />
-							
 							<fieldset>
 								<legend><% tran("status_router.legend6"); %></legend>
-				<% ifndef("SAMBA", "<!--"); %>
+									<% ifndef("SAMBA", "<!--"); %>
 									<div class="setting">
 										<div class="label">CIFS</div>
 										<script type="text/javascript">
@@ -369,8 +363,8 @@ addEvent(window, "unload", function() {
 										//]]>
 										</script>
 									</div>
-				<% ifndef("SAMBA", "-->"); %>
-				<% ifndef("JFFS2", "<!--"); %>
+									<% ifndef("SAMBA", "-->"); %>
+									<% ifndef("JFFS2", "<!--"); %>
 								<div class="setting">
 									<div class="label">JFFS2</div>
 									<script type="text/javascript">
@@ -380,8 +374,8 @@ addEvent(window, "unload", function() {
 									//]]>
 									</script>
 								</div>
-				<% ifndef("JFFS2", "-->"); %>
-				<% ifndef("MMC", "<!--"); %>
+								<% ifndef("JFFS2", "-->"); %>
+								<% ifndef("MMC", "<!--"); %>
 								<div class="setting">
 									<div class="label">MMC</div>
 									<script type="text/javascript">
@@ -391,9 +385,8 @@ addEvent(window, "unload", function() {
 									//]]>
 									</script>
 								</div>
-				<% ifndef("MMC", "-->"); %>
+								<% ifndef("MMC", "-->"); %>
 							</fieldset><br />
-							
 						</div><br clear="all" />
 						<h2><% tran("share.wireless"); %></h2>
 						<fieldset>
@@ -408,7 +401,6 @@ addEvent(window, "unload", function() {
 								</tr>
 							</table>
 						</fieldset><br />
-						
 						<div id="wds" style="display:none">
 							<fieldset>
 								<legend><% tran("status_wireless.wds"); %></legend>
@@ -423,7 +415,6 @@ addEvent(window, "unload", function() {
 									</tr>
 								</table>
 							</fieldset><br />
-							
 						</div>
 						<div id="dhcp" style="display:none">
 							<h2><% tran("share.dhcp"); %></h2>
@@ -438,12 +429,11 @@ addEvent(window, "unload", function() {
 									</tr>
 								</table>
 							</fieldset><br />
-							
 						</div>
 						<div class="center">
 							<% show_paypal(); %>
 						</div><br />
-						<div class="submitFooter nostick">
+						<div id="footer" class="submitFooter nostick">
 							<script type="text/javascript">
 							 //<![CDATA[
 							 var autoref = <% nvram_else_match("refresh_time","0","sbutton.refres","sbutton.autorefresh"); %>;

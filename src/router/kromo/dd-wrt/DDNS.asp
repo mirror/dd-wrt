@@ -659,7 +659,7 @@ addEvent(window, "unload", function() {
 								</div>
 								<% nvsm("ddns_enable","0","-->"); %>
 							</fieldset><br />
-							<div class="submitFooter">
+							<div id="footer" class="submitFooter">
 							 <script type="text/javascript">
 							 //<![CDATA[
 							 var autoref = <% nvem("refresh_time","0","sbutton.refres","sbutton.autorefresh"); %>;

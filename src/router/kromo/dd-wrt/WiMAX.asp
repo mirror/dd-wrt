@@ -100,7 +100,7 @@ addEvent(window, "unload", function() {
 							    <input size="27" name="ofdm_macaddr" value="<% nvg("ofdm_macaddr"); %>" />
 							</div>
 							<br />
-							<div class="submitFooter">
+							<div id="footer" class="submitFooter">
 								<script type="text/javascript">
 								//<![CDATA[
 								submitFooterButton(1,1);

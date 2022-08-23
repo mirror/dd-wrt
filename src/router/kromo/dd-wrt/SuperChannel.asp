@@ -59,7 +59,7 @@ function to_submit(F) {
 						</script>
 						</div>
 					</fieldset><br />
-					<div class="submitFooter">
+					<div id="footer" class="submitFooter">
 							<script type="text/javascript">
 							//<![CDATA[
 							document.write("<input class=\"button\" type=\"button\" name=\"register\" value=\"Activate\" onclick=\"to_submit(this.form)\" />");
