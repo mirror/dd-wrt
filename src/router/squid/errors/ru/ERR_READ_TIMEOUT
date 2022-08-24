@@ -1,6 +1,6 @@
 <!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
 <html><head>
-<meta type="copyright" content="Copyright (C) 1996-2021 The Squid Software Foundation and contributors">
+<meta type="copyright" content="Copyright (C) 1996-2022 The Squid Software Foundation and contributors">
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
 <title>ОШИБКА: Запрошенный URL не может быть получен</title>
 <style type="text/css"><!-- 
@@ -26,7 +26,7 @@ body
 
 <p id="sysmsg">Система вернула: <i>%E</i></p>
 
-<p>Превышен интервал времени ожидания при получении данных из сети. Сеть или сервер могут бытьнедоступны или перегружены. Повторите попытку позже.</p>
+<p>Превышен интервал времени ожидания при получении данных из сети. Сеть или сервер могут быть недоступны или перегружены. Повторите попытку позже.</p>
 
 <p>Администратор Вашего кэша: <a href="mailto:%w%W">%w</a>.</p>
 <br>

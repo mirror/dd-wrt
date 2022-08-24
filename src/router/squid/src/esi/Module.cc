@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2021 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2022 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -22,8 +22,6 @@ static ESIParser::Register *prExpat = 0;
 
 void Esi::Init()
 {
-    // register in reverse order of preference.
-    // The latest registered parser will be used as default.
 #if HAVE_LIBEXPAT
     assert(!prExpat); // we should be called once
     prExpat = new ESIParser::Register("expat", &ESIExpatParser::NewParser);

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2021 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2022 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -288,7 +288,7 @@ public:
     /// opens entry (identified by key) for reading, increments read level
     const Anchor *openForReading(const cache_key *const key, sfileno &fileno);
     /// opens entry (identified by sfileno) for reading, increments read level
-    const Anchor *openForReadingAt(const sfileno fileno);
+    const Anchor *openForReadingAt(const sfileno, const cache_key *const);
     /// closes open entry after reading, decrements read level
     void closeForReading(const sfileno fileno);
     /// same as closeForReading() but also frees the entry if it is unlocked

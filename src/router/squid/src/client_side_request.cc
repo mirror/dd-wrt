@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2021 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2022 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -162,6 +162,7 @@ ClientHttpRequest::ClientHttpRequest(ConnStateData * aConn) :
     , sslBumpNeed_(Ssl::bumpEnd)
 #endif
 #if USE_ADAPTATION
+    , receivedWholeAdaptedReply(false)
     , request_satisfaction_mode(false)
     , request_satisfaction_offset(0)
 #endif
@@ -2124,6 +2125,11 @@ void
 ClientHttpRequest::noteBodyProductionEnded(BodyPipe::Pointer)
 {
     assert(!virginHeadSource);
+
+    // distinguish this code path from future noteBodyProducerAborted() that
+    // would continue storing/delivering (truncated) reply if necessary (TODO)
+    receivedWholeAdaptedReply = true;
+
     // should we end request satisfaction now?
     if (adaptedBodySource != NULL && adaptedBodySource->exhausted())
         endRequestSatisfaction();
@@ -2137,7 +2143,14 @@ ClientHttpRequest::endRequestSatisfaction()
     stopConsumingFrom(adaptedBodySource);
 
     // TODO: anything else needed to end store entry formation correctly?
-    storeEntry()->complete();
+    if (receivedWholeAdaptedReply) {
+        // We received the entire reply per receivedWholeAdaptedReply.
+        // We are called when we consumed everything received (per our callers).
+        // We consume only what we store per noteMoreBodyDataAvailable().
+        storeEntry()->completeSuccessfully("received, consumed, and, hence, stored the entire REQMOD reply");
+    } else {
+        storeEntry()->completeTruncated("REQMOD request satisfaction default");
+    }
 }
 
 void
