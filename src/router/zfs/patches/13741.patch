@@ -1,12 +1,16 @@
-From 3b5397d96223d2f54025c5d3add2bbe4920e388f Mon Sep 17 00:00:00 2001
+From 2a0e2ba51e8c524653d8c345e8baaffe3e7bcac9 Mon Sep 17 00:00:00 2001
 From: Tino Reichardt <milky-zfs@mcmilk.de>
-Date: Sun, 21 Aug 2022 23:21:00 +0200
-Subject: [PATCH 1/3] Fully remove old SHA2 files.
+Date: Tue, 23 Aug 2022 23:54:20 +0200
+Subject: [PATCH 1/4] Remove old or redundant SHA2 files
 
-We had three sha2.h headers in different places. The BSD version
-within the SPL layer, the generic solaris version within the ICP
-module and some old openssl implementation for generic speedups on
-the x86_64 architecture.
+We had three sha2.h headers in different places. The BSD spl version,
+the linux spl version and the generic solaris version.
+
+The only assembly used for acceleration was some old x86-64 openssl
+implementation for sha256 within the icp module.
+
+On FreeBSD the whole SHA2 files of FreeBSD were copied into OpenZFS,
+these files got removed also.
 
 Signed-off-by: Tino Reichardt <milky-zfs@mcmilk.de>
 ---
@@ -21,7 +25,6 @@ Signed-off-by: Tino Reichardt <milky-zfs@mcmilk.de>
  module/icp/asm-x86_64/sha2/sha256_impl.S | 2089 ---------------------
  module/icp/asm-x86_64/sha2/sha512_impl.S | 2114 ----------------------
  module/icp/include/sha2/sha2_consts.h    |  219 ---
- module/icp/include/sha2/sha2_impl.h      |   64 -
  module/os/freebsd/spl/sha224.h           |   96 -
  module/os/freebsd/spl/sha256.h           |   99 -
  module/os/freebsd/spl/sha256c.c          |  378 ----
@@ -30,7 +33,7 @@ Signed-off-by: Tino Reichardt <milky-zfs@mcmilk.de>
  module/os/freebsd/spl/sha512c.c          |  508 ------
  module/os/freebsd/spl/sha512t.h          |  143 --
  module/zfs/sha256.c                      |  104 --
- 20 files changed, 3 insertions(+), 7477 deletions(-)
+ 19 files changed, 3 insertions(+), 7413 deletions(-)
  delete mode 100644 include/os/freebsd/zfs/sys/sha2.h
  delete mode 100644 include/os/linux/zfs/sys/sha2.h
  delete mode 100644 lib/libspl/include/sys/sha2.h
@@ -38,7 +41,6 @@ Signed-off-by: Tino Reichardt <milky-zfs@mcmilk.de>
  delete mode 100644 module/icp/asm-x86_64/sha2/sha256_impl.S
  delete mode 100644 module/icp/asm-x86_64/sha2/sha512_impl.S
  delete mode 100644 module/icp/include/sha2/sha2_consts.h
- delete mode 100644 module/icp/include/sha2/sha2_impl.h
  delete mode 100644 module/os/freebsd/spl/sha224.h
  delete mode 100644 module/os/freebsd/spl/sha256.h
  delete mode 100644 module/os/freebsd/spl/sha256c.c
@@ -6053,76 +6055,6 @@ index b33ddf82184..00000000000
 -#endif
 -
 -#endif /* _SYS_SHA2_CONSTS_H */
-diff --git a/module/icp/include/sha2/sha2_impl.h b/module/icp/include/sha2/sha2_impl.h
-deleted file mode 100644
-index 0e89747eefd..00000000000
---- a/module/icp/include/sha2/sha2_impl.h
-+++ /dev/null
-@@ -1,64 +0,0 @@
--/*
-- * CDDL HEADER START
-- *
-- * The contents of this file are subject to the terms of the
-- * Common Development and Distribution License (the "License").
-- * You may not use this file except in compliance with the License.
-- *
-- * You can obtain a copy of the license at usr/src/OPENSOLARIS.LICENSE
-- * or https://opensource.org/licenses/CDDL-1.0.
-- * See the License for the specific language governing permissions
-- * and limitations under the License.
-- *
-- * When distributing Covered Code, include this CDDL HEADER in each
-- * file and include the License file at usr/src/OPENSOLARIS.LICENSE.
-- * If applicable, add the following below this CDDL HEADER, with the
-- * fields enclosed by brackets "[]" replaced with your own identifying
-- * information: Portions Copyright [yyyy] [name of copyright owner]
-- *
-- * CDDL HEADER END
-- */
--/*
-- * Copyright 2009 Sun Microsystems, Inc.  All rights reserved.
-- * Use is subject to license terms.
-- */
--
--#ifndef	_SHA2_IMPL_H
--#define	_SHA2_IMPL_H
--
--#include <sys/sha2.h>
--
--#ifdef __cplusplus
--extern "C" {
--#endif
--
--typedef enum {
--	SHA1_TYPE,
--	SHA256_TYPE,
--	SHA384_TYPE,
--	SHA512_TYPE
--} sha2_mech_t;
--
--/*
-- * Context for SHA2 mechanism.
-- */
--typedef struct sha2_ctx {
--	sha2_mech_type_t	sc_mech_type;	/* type of context */
--	SHA2_CTX		sc_sha2_ctx;	/* SHA2 context */
--} sha2_ctx_t;
--
--/*
-- * Context for SHA2 HMAC and HMAC GENERAL mechanisms.
-- */
--typedef struct sha2_hmac_ctx {
--	sha2_mech_type_t	hc_mech_type;	/* type of context */
--	uint32_t		hc_digest_len;	/* digest len in bytes */
--	SHA2_CTX		hc_icontext;	/* inner SHA2 context */
--	SHA2_CTX		hc_ocontext;	/* outer SHA2 context */
--} sha2_hmac_ctx_t;
--
--#ifdef	__cplusplus
--}
--#endif
--
--#endif /* _SHA2_IMPL_H */
 diff --git a/module/os/freebsd/spl/sha224.h b/module/os/freebsd/spl/sha224.h
 deleted file mode 100644
 index 0abd4306870..00000000000
@@ -7697,10 +7629,10 @@ index 445d82ed020..00000000000
 -	zcp->zc_word[3] = BSWAP_64(tmp.zc_word[3]);
 -}
 
-From ece537598d11cfb918557e37efcb83afb3c7b2ee Mon Sep 17 00:00:00 2001
+From 3bbf9e954c52b66846ac906360bb06d59b4e4251 Mon Sep 17 00:00:00 2001
 From: Tino Reichardt <milky-zfs@mcmilk.de>
-Date: Mon, 1 Aug 2022 08:09:45 +0200
-Subject: [PATCH 2/3] Add SHA_NI instruction check to the SIMD headers
+Date: Tue, 23 Aug 2022 23:54:34 +0200
+Subject: [PATCH 2/4] Add SHA_NI instruction check to the SIMD headers
 
 This commit adds the function zfs_shani_available() to the libspl,
 os/freebsd and os/linux headers.
@@ -7823,50 +7755,57 @@ index c9d86a0808f..547e8b808f9 100644
   * AVX-512 family of instruction sets:
   *
 
-From d36c47b3c6a0740c97e1203b6d9cabdae88c9a9f Mon Sep 17 00:00:00 2001
+From ef9b17e6da1b377b01a86512d88da2ca30904989 Mon Sep 17 00:00:00 2001
 From: Tino Reichardt <milky-zfs@mcmilk.de>
-Date: Sun, 21 Aug 2022 23:25:33 +0200
-Subject: [PATCH 3/3] Add new SHA2 files
+Date: Tue, 23 Aug 2022 23:57:52 +0200
+Subject: [PATCH 3/4] Add generic implementation handling and new SHA2 impl
 
-- please note, this big commit will be splitted
-- this is some work in progress
+The skeleton file module/icp/include/generic_impl.c can be used for
+iterating over different implementations of algorithms. It's used by
+SHA256, SHA512 and BLAKE3 currently.
+
+The generic SHA2 implementation is based on public domain code of
+ccpcrypto v0.10.
+
+The assembly files are taken from current openssl master and are
+licensed under the Apache License Version 2.0.
+
+sha256-x86_64.S: x86-64, SSSE3, AVX, AVX2, SHA-NI
+sha512-x86_64.S: x86-64,AVX, AVX2
+sha256-armv8.S: NEON, ARMv8 Cryptography Extension
+sha512-armv8.S: ARMv8 Cryptography Extension
+sha256-ppc.S: generic PPC64 LE/BE
+sha512-ppc.S: generic PPC64 LE/BE
+sha256-p8.S: Power ISA Version 2.07 LE/BE
+sha512-p8.S: Power ISA Version 2.07 LE/BE
 
 Signed-off-by: Tino Reichardt <milky-zfs@mcmilk.de>
 ---
- cmd/ztest.c                                |    6 +-
  include/Makefile.am                        |    2 +
  include/os/freebsd/spl/sys/mod_os.h        |    9 +
  include/os/linux/kernel/linux/simd_x86.h   |    3 +-
- include/sys/blake3.h                       |   31 +-
  include/sys/sha2.h                         |  127 +
  include/sys/zfs_impl.h                     |   69 +
  include/sys/zio_checksum.h                 |    6 +-
  lib/libicp/Makefile.am                     |   22 +-
  lib/libspl/include/Makefile.am             |    1 -
  lib/libzfs/Makefile.am                     |    3 -
- lib/libzfs/libzfs.suppr                    |   12 +-
  lib/libzpool/Makefile.am                   |    2 +-
  module/Kbuild.in                           |   22 +-
  module/Makefile.bsd                        |   29 +-
- module/icp/algs/blake3/blake3.c            |   16 +-
- module/icp/algs/blake3/blake3_generic.c    |    7 +-
- module/icp/algs/blake3/blake3_impl.c       |  482 ++-
- module/icp/algs/blake3/blake3_impl.h       |   34 +-
- module/icp/algs/blake3/blake3_x86-64.c     |  248 --
- module/icp/algs/sha2/sha256_impl.c         |  278 ++
+ module/icp/algs/sha2/sha256_impl.c         |  292 ++
  module/icp/algs/sha2/sha2_generic.c        |  562 +++
- module/icp/algs/sha2/sha2_impl.h           |   61 +
- module/icp/algs/sha2/sha512_impl.c         |  230 ++
- module/icp/asm-aarch64/sha2/sha256-armv8.S | 1020 ++++++
+ module/icp/algs/sha2/sha512_impl.c         |  244 +
+ module/icp/asm-aarch64/sha2/sha256-armv8.S | 1020 ++++
  module/icp/asm-aarch64/sha2/sha512-armv8.S |  580 +++
- module/icp/asm-ppc64/sha2/sha256-p8.S      | 1498 ++++++++
- module/icp/asm-ppc64/sha2/sha256-ppc.S     | 2705 ++++++++++++++
- module/icp/asm-ppc64/sha2/sha512-p8.S      | 1699 +++++++++
- module/icp/asm-ppc64/sha2/sha512-ppc.S     | 2945 +++++++++++++++
- module/icp/asm-x86_64/sha2/sha256-x86_64.S | 3742 ++++++++++++++++++++
- module/icp/asm-x86_64/sha2/sha512-x86_64.S | 2650 ++++++++++++++
- module/icp/include/generic_impl.c          |  229 ++
- module/icp/include/sha2/sha2_impl.h        |   64 +
+ module/icp/asm-ppc64/sha2/sha256-p8.S      | 1498 ++++++
+ module/icp/asm-ppc64/sha2/sha256-ppc.S     | 2705 +++++++++++
+ module/icp/asm-ppc64/sha2/sha512-p8.S      | 1699 +++++++
+ module/icp/asm-ppc64/sha2/sha512-ppc.S     | 2945 +++++++++++
+ module/icp/asm-x86_64/sha2/sha256-x86_64.S | 5096 ++++++++++++++++++++
+ module/icp/asm-x86_64/sha2/sha512-x86_64.S | 4003 +++++++++++++++
+ module/icp/include/generic_impl.c          |  229 +
+ module/icp/include/sha2/sha2_impl.h        |   27 +-
  module/icp/io/sha2_mod.c                   |    1 -
  module/zfs/sha2_zfs.c                      |  102 +
  module/zfs/zfs_chksum.c                    |   87 +-
@@ -7874,13 +7813,11 @@ Signed-off-by: Tino Reichardt <milky-zfs@mcmilk.de>
  module/zfs/zio_checksum.c                  |    8 +-
  tests/zfs-tests/cmd/checksum/blake3_test.c |   18 +-
  tests/zfs-tests/cmd/checksum/sha2_test.c   |   34 +-
- 41 files changed, 19127 insertions(+), 578 deletions(-)
+ 32 files changed, 21429 insertions(+), 77 deletions(-)
  create mode 100644 include/sys/sha2.h
  create mode 100644 include/sys/zfs_impl.h
- delete mode 100644 module/icp/algs/blake3/blake3_x86-64.c
  create mode 100644 module/icp/algs/sha2/sha256_impl.c
  create mode 100644 module/icp/algs/sha2/sha2_generic.c
- create mode 100644 module/icp/algs/sha2/sha2_impl.h
  create mode 100644 module/icp/algs/sha2/sha512_impl.c
  create mode 100644 module/icp/asm-aarch64/sha2/sha256-armv8.S
  create mode 100644 module/icp/asm-aarch64/sha2/sha512-armv8.S
@@ -7891,48 +7828,9 @@ Signed-off-by: Tino Reichardt <milky-zfs@mcmilk.de>
  create mode 100644 module/icp/asm-x86_64/sha2/sha256-x86_64.S
  create mode 100644 module/icp/asm-x86_64/sha2/sha512-x86_64.S
  create mode 100644 module/icp/include/generic_impl.c
- create mode 100644 module/icp/include/sha2/sha2_impl.h
  create mode 100644 module/zfs/sha2_zfs.c
  create mode 100644 module/zfs/zfs_impl.c
 
-diff --git a/cmd/ztest.c b/cmd/ztest.c
-index 31b9990a1fc..6e83dcf906a 100644
---- a/cmd/ztest.c
-+++ b/cmd/ztest.c
-@@ -135,6 +135,7 @@
- #include <libnvpair.h>
- #include <libzutil.h>
- #include <sys/crypto/icp.h>
-+#include <sys/zfs_impl.h>
- #if (__GLIBC__ && !__UCLIBC__)
- #include <execinfo.h> /* for backtrace() */
- #endif
-@@ -6389,6 +6390,7 @@ ztest_blake3(ztest_ds_t *zd, uint64_t id)
- 	int i, *ptr;
- 	uint32_t size;
- 	BLAKE3_CTX ctx;
-+	const zfs_impl_t *blake3 = zfs_impl_get_ops("blake3");
- 
- 	size = ztest_random_blocksize();
- 	buf = umem_alloc(size, UMEM_NOFAIL);
-@@ -6413,7 +6415,7 @@ ztest_blake3(ztest_ds_t *zd, uint64_t id)
- 		void *res2 = &zc_res2;
- 
- 		/* BLAKE3_KEY_LEN = 32 */
--		VERIFY0(blake3_set_impl_name("generic"));
-+		VERIFY0(blake3->setname("generic"));
- 		templ = abd_checksum_blake3_tmpl_init(&salt);
- 		Blake3_InitKeyed(&ctx, salt_ptr);
- 		Blake3_Update(&ctx, buf, size);
-@@ -6422,7 +6424,7 @@ ztest_blake3(ztest_ds_t *zd, uint64_t id)
- 		ZIO_CHECKSUM_BSWAP(&zc_ref2);
- 		abd_checksum_blake3_tmpl_free(templ);
- 
--		VERIFY0(blake3_set_impl_name("cycle"));
-+		VERIFY0(blake3->setname("cycle"));
- 		while (run_count-- > 0) {
- 
- 			/* Test current implementation */
 diff --git a/include/Makefile.am b/include/Makefile.am
 index 1a7f67e9c44..79bdc3b3aee 100644
 --- a/include/Makefile.am
@@ -7988,65 +7886,6 @@ index 382e323e424..1d77f0487a3 100644
  }
  
  /*
-diff --git a/include/sys/blake3.h b/include/sys/blake3.h
-index 19500585f38..b981b18db94 100644
---- a/include/sys/blake3.h
-+++ b/include/sys/blake3.h
-@@ -22,11 +22,11 @@
- /*
-  * Based on BLAKE3 v1.3.1, https://github.com/BLAKE3-team/BLAKE3
-  * Copyright (c) 2019-2020 Samuel Neves and Jack O'Connor
-- * Copyright (c) 2021 Tino Reichardt <milky-zfs@mcmilk.de>
-+ * Copyright (c) 2021-2022 Tino Reichardt <milky-zfs@mcmilk.de>
-  */
- 
--#ifndef BLAKE3_H
--#define	BLAKE3_H
-+#ifndef	_SYS_BLAKE3_H
-+#define	_SYS_BLAKE3_H
- 
- #ifdef  _KERNEL
- #include <sys/types.h>
-@@ -72,7 +72,7 @@ typedef struct {
- 	 */
- 	uint8_t cv_stack[(BLAKE3_MAX_DEPTH + 1) * BLAKE3_OUT_LEN];
- 
--	/* const blake3_impl_ops_t *ops */
-+	/* const blake3_ops_t *ops */
- 	const void *ops;
- } BLAKE3_CTX;
- 
-@@ -97,29 +97,8 @@ extern void **blake3_per_cpu_ctx;
- extern void blake3_per_cpu_ctx_init(void);
- extern void blake3_per_cpu_ctx_fini(void);
- 
--/* return number of supported implementations */
--extern int blake3_get_impl_count(void);
--
--/* return id of selected implementation */
--extern int blake3_get_impl_id(void);
--
--/* return name of selected implementation */
--extern const char *blake3_get_impl_name(void);
--
--/* setup id as fastest implementation */
--extern void blake3_set_impl_fastest(uint32_t id);
--
--/* set implementation by id */
--extern void blake3_set_impl_id(uint32_t id);
--
--/* set implementation by name */
--extern int blake3_set_impl_name(const char *name);
--
--/* set startup implementation */
--extern void blake3_setup_impl(void);
--
- #ifdef __cplusplus
- }
- #endif
- 
--#endif	/* BLAKE3_H */
-+#endif	/* _SYS_BLAKE3_H */
 diff --git a/include/sys/sha2.h b/include/sys/sha2.h
 new file mode 100644
 index 00000000000..81dfbbb8cea
@@ -8368,30 +8207,6 @@ index f5eb8467920..cffe341220c 100644
  libzfs_la_LIBADD = \
  	libshare.la \
  	libzfs_core.la \
-diff --git a/lib/libzfs/libzfs.suppr b/lib/libzfs/libzfs.suppr
-index d55b5b72811..0cc74deaa0d 100644
---- a/lib/libzfs/libzfs.suppr
-+++ b/lib/libzfs/libzfs.suppr
-@@ -1,13 +1,13 @@
- [suppress_type]
- 	name = FILE*
- 
--[suppress_type]
--	type_kind = typedef
--	name = SHA256_CTX
-+#[suppress_type]
-+#	type_kind = typedef
-+#	name = SHA256_CTX
- 
--[suppress_type]
--	type_kind = typedef
--	name = SHA2_CTX
-+#[suppress_type]
-+#	type_kind = typedef
-+#	name = SHA2_CTX
- 
- [suppress_variable]
- 	name = zfs_deleg_perm_tab
 diff --git a/lib/libzpool/Makefile.am b/lib/libzpool/Makefile.am
 index eaa920e5610..47543d7ff0e 100644
 --- a/lib/libzpool/Makefile.am
@@ -8548,982 +8363,12 @@ index 56742c8ad49..190a5a4094a 100644
  	zfs_ioctl.c \
  	zfs_log.c \
  	zfs_onexit.c \
-diff --git a/module/icp/algs/blake3/blake3.c b/module/icp/algs/blake3/blake3.c
-index b9600207b67..3a446ceeb7a 100644
---- a/module/icp/algs/blake3/blake3.c
-+++ b/module/icp/algs/blake3/blake3.c
-@@ -129,7 +129,7 @@ static output_t make_output(const uint32_t input_cv[8],
-  * bytes. For that reason, chaining values in the CV stack are represented as
-  * bytes.
-  */
--static void output_chaining_value(const blake3_impl_ops_t *ops,
-+static void output_chaining_value(const blake3_ops_t *ops,
-     const output_t *ctx, uint8_t cv[32])
- {
- 	uint32_t cv_words[8];
-@@ -139,7 +139,7 @@ static void output_chaining_value(const blake3_impl_ops_t *ops,
- 	store_cv_words(cv, cv_words);
- }
- 
--static void output_root_bytes(const blake3_impl_ops_t *ops, const output_t *ctx,
-+static void output_root_bytes(const blake3_ops_t *ops, const output_t *ctx,
-     uint64_t seek, uint8_t *out, size_t out_len)
- {
- 	uint64_t output_block_counter = seek / 64;
-@@ -163,7 +163,7 @@ static void output_root_bytes(const blake3_impl_ops_t *ops, const output_t *ctx,
- 	}
- }
- 
--static void chunk_state_update(const blake3_impl_ops_t *ops,
-+static void chunk_state_update(const blake3_ops_t *ops,
-     blake3_chunk_state_t *ctx, const uint8_t *input, size_t input_len)
- {
- 	if (ctx->buf_len > 0) {
-@@ -230,7 +230,7 @@ static size_t left_len(size_t content_len)
-  * number of chunks hashed. These chunks are never the root and never empty;
-  * those cases use a different codepath.
-  */
--static size_t compress_chunks_parallel(const blake3_impl_ops_t *ops,
-+static size_t compress_chunks_parallel(const blake3_ops_t *ops,
-     const uint8_t *input, size_t input_len, const uint32_t key[8],
-     uint64_t chunk_counter, uint8_t flags, uint8_t *out)
- {
-@@ -274,7 +274,7 @@ static size_t compress_chunks_parallel(const blake3_impl_ops_t *ops,
-  * return it as an additional output.) These parents are never the root and
-  * never empty; those cases use a different codepath.
-  */
--static size_t compress_parents_parallel(const blake3_impl_ops_t *ops,
-+static size_t compress_parents_parallel(const blake3_ops_t *ops,
-     const uint8_t *child_chaining_values, size_t num_chaining_values,
-     const uint32_t key[8], uint8_t flags, uint8_t *out)
- {
-@@ -320,7 +320,7 @@ static size_t compress_parents_parallel(const blake3_impl_ops_t *ops,
-  * of implementing this special rule? Because we don't want to limit SIMD or
-  * multi-threading parallelism for that update().
-  */
--static size_t blake3_compress_subtree_wide(const blake3_impl_ops_t *ops,
-+static size_t blake3_compress_subtree_wide(const blake3_ops_t *ops,
-     const uint8_t *input, size_t input_len, const uint32_t key[8],
-     uint64_t chunk_counter, uint8_t flags, uint8_t *out)
- {
-@@ -406,7 +406,7 @@ static size_t blake3_compress_subtree_wide(const blake3_impl_ops_t *ops,
-  * As with compress_subtree_wide(), this function is not used on inputs of 1
-  * chunk or less. That's a different codepath.
-  */
--static void compress_subtree_to_parent_node(const blake3_impl_ops_t *ops,
-+static void compress_subtree_to_parent_node(const blake3_ops_t *ops,
-     const uint8_t *input, size_t input_len, const uint32_t key[8],
-     uint64_t chunk_counter, uint8_t flags, uint8_t out[2 * BLAKE3_OUT_LEN])
- {
-@@ -434,7 +434,7 @@ static void hasher_init_base(BLAKE3_CTX *ctx, const uint32_t key[8],
- 	memcpy(ctx->key, key, BLAKE3_KEY_LEN);
- 	chunk_state_init(&ctx->chunk, key, flags);
- 	ctx->cv_stack_len = 0;
--	ctx->ops = blake3_impl_get_ops();
-+	ctx->ops = blake3_get_ops();
- }
- 
- /*
-diff --git a/module/icp/algs/blake3/blake3_generic.c b/module/icp/algs/blake3/blake3_generic.c
-index 6c1eb33e89c..ca7197a26f3 100644
---- a/module/icp/algs/blake3/blake3_generic.c
-+++ b/module/icp/algs/blake3/blake3_generic.c
-@@ -187,16 +187,17 @@ static inline void blake3_hash_many_generic(const uint8_t * const *inputs,
- 	}
- }
- 
--static inline boolean_t blake3_is_generic_supported(void)
-+/* the generic implementation is always okay */
-+static boolean_t blake3_is_supported(void)
- {
- 	return (B_TRUE);
- }
- 
--const blake3_impl_ops_t blake3_generic_impl = {
-+const blake3_ops_t blake3_generic_impl = {
- 	.compress_in_place = blake3_compress_in_place_generic,
- 	.compress_xof = blake3_compress_xof_generic,
- 	.hash_many = blake3_hash_many_generic,
--	.is_supported = blake3_is_generic_supported,
-+	.is_supported = blake3_is_supported,
- 	.degree = 4,
- 	.name = "generic"
- };
-diff --git a/module/icp/algs/blake3/blake3_impl.c b/module/icp/algs/blake3/blake3_impl.c
-index 10741c82de7..5143ed60c1b 100644
---- a/module/icp/algs/blake3/blake3_impl.c
-+++ b/module/icp/algs/blake3/blake3_impl.c
-@@ -24,184 +24,266 @@
-  */
- 
- #include <sys/zfs_context.h>
--#include <sys/zio_checksum.h>
-+#include <sys/zfs_impl.h>
-+#include <sys/blake3.h>
-+#include <sys/simd.h>
- 
- #include "blake3_impl.h"
- 
--static const blake3_impl_ops_t *const blake3_impls[] = {
--	&blake3_generic_impl,
- #if defined(__aarch64__) || \
- 	(defined(__x86_64) && defined(HAVE_SSE2)) || \
- 	(defined(__PPC64__) && defined(__LITTLE_ENDIAN__))
--	&blake3_sse2_impl,
--#endif
--#if defined(__aarch64__) || \
--	(defined(__x86_64) && defined(HAVE_SSE4_1)) || \
--	(defined(__PPC64__) && defined(__LITTLE_ENDIAN__))
--	&blake3_sse41_impl,
--#endif
--#if defined(__x86_64) && defined(HAVE_SSE4_1) && defined(HAVE_AVX2)
--	&blake3_avx2_impl,
--#endif
--#if defined(__x86_64) && defined(HAVE_AVX512F) && defined(HAVE_AVX512VL)
--	&blake3_avx512_impl,
--#endif
--};
--
--/* this pointer holds current ops for implementation */
--static const blake3_impl_ops_t *blake3_selected_impl = &blake3_generic_impl;
--
--/* special implementation selections */
--#define	IMPL_FASTEST	(UINT32_MAX)
--#define	IMPL_CYCLE	(UINT32_MAX-1)
--#define	IMPL_USER	(UINT32_MAX-2)
--#define	IMPL_PARAM	(UINT32_MAX-3)
--
--#define	IMPL_READ(i) (*(volatile uint32_t *) &(i))
--static uint32_t icp_blake3_impl = IMPL_FASTEST;
- 
--#define	BLAKE3_IMPL_NAME_MAX	16
--
--/* id of fastest implementation */
--static uint32_t blake3_fastest_id = 0;
-+extern void zfs_blake3_compress_in_place_sse2(uint32_t cv[8],
-+    const uint8_t block[BLAKE3_BLOCK_LEN], uint8_t block_len,
-+    uint64_t counter, uint8_t flags);
-+
-+extern void zfs_blake3_compress_xof_sse2(const uint32_t cv[8],
-+    const uint8_t block[BLAKE3_BLOCK_LEN], uint8_t block_len,
-+    uint64_t counter, uint8_t flags, uint8_t out[64]);
-+
-+extern void zfs_blake3_hash_many_sse2(const uint8_t * const *inputs,
-+    size_t num_inputs, size_t blocks, const uint32_t key[8],
-+    uint64_t counter, boolean_t increment_counter, uint8_t flags,
-+    uint8_t flags_start, uint8_t flags_end, uint8_t *out);
-+
-+static void blake3_compress_in_place_sse2(uint32_t cv[8],
-+    const uint8_t block[BLAKE3_BLOCK_LEN], uint8_t block_len,
-+    uint64_t counter, uint8_t flags) {
-+	kfpu_begin();
-+	zfs_blake3_compress_in_place_sse2(cv, block, block_len, counter,
-+	    flags);
-+	kfpu_end();
-+}
- 
--/* currently used id */
--static uint32_t blake3_current_id = 0;
-+static void blake3_compress_xof_sse2(const uint32_t cv[8],
-+    const uint8_t block[BLAKE3_BLOCK_LEN], uint8_t block_len,
-+    uint64_t counter, uint8_t flags, uint8_t out[64]) {
-+	kfpu_begin();
-+	zfs_blake3_compress_xof_sse2(cv, block, block_len, counter, flags,
-+	    out);
-+	kfpu_end();
-+}
- 
--/* id of module parameter (-1 == unused) */
--static int blake3_param_id = -1;
-+static void blake3_hash_many_sse2(const uint8_t * const *inputs,
-+    size_t num_inputs, size_t blocks, const uint32_t key[8],
-+    uint64_t counter, boolean_t increment_counter, uint8_t flags,
-+    uint8_t flags_start, uint8_t flags_end, uint8_t *out) {
-+	kfpu_begin();
-+	zfs_blake3_hash_many_sse2(inputs, num_inputs, blocks, key, counter,
-+	    increment_counter, flags, flags_start, flags_end, out);
-+	kfpu_end();
-+}
- 
--/* return number of supported implementations */
--int
--blake3_get_impl_count(void)
-+static boolean_t blake3_is_sse2_supported(void)
- {
--	static int impls = 0;
--	int i;
-+#if defined(__x86_64)
-+	return (kfpu_allowed() && zfs_sse2_available());
-+#elif defined(__PPC64__)
-+	return (kfpu_allowed() && zfs_vsx_available());
-+#else
-+	return (kfpu_allowed());
-+#endif
-+}
- 
--	if (impls)
--		return (impls);
-+const blake3_ops_t blake3_sse2_impl = {
-+	.compress_in_place = blake3_compress_in_place_sse2,
-+	.compress_xof = blake3_compress_xof_sse2,
-+	.hash_many = blake3_hash_many_sse2,
-+	.is_supported = blake3_is_sse2_supported,
-+	.degree = 4,
-+	.name = "sse2"
-+};
-+#endif
- 
--	for (i = 0; i < ARRAY_SIZE(blake3_impls); i++) {
--		if (!blake3_impls[i]->is_supported()) continue;
--		impls++;
--	}
-+#if defined(__aarch64__) || \
-+	(defined(__x86_64) && defined(HAVE_SSE2)) || \
-+	(defined(__PPC64__) && defined(__LITTLE_ENDIAN__))
- 
--	return (impls);
-+extern void zfs_blake3_compress_in_place_sse41(uint32_t cv[8],
-+    const uint8_t block[BLAKE3_BLOCK_LEN], uint8_t block_len,
-+    uint64_t counter, uint8_t flags);
-+
-+extern void zfs_blake3_compress_xof_sse41(const uint32_t cv[8],
-+    const uint8_t block[BLAKE3_BLOCK_LEN], uint8_t block_len,
-+    uint64_t counter, uint8_t flags, uint8_t out[64]);
-+
-+extern void zfs_blake3_hash_many_sse41(const uint8_t * const *inputs,
-+    size_t num_inputs, size_t blocks, const uint32_t key[8],
-+    uint64_t counter, boolean_t increment_counter, uint8_t flags,
-+    uint8_t flags_start, uint8_t flags_end, uint8_t *out);
-+
-+static void blake3_compress_in_place_sse41(uint32_t cv[8],
-+    const uint8_t block[BLAKE3_BLOCK_LEN], uint8_t block_len,
-+    uint64_t counter, uint8_t flags) {
-+	kfpu_begin();
-+	zfs_blake3_compress_in_place_sse41(cv, block, block_len, counter,
-+	    flags);
-+	kfpu_end();
- }
- 
--/* return id of selected implementation */
--int
--blake3_get_impl_id(void)
--{
--	return (blake3_current_id);
-+static void blake3_compress_xof_sse41(const uint32_t cv[8],
-+    const uint8_t block[BLAKE3_BLOCK_LEN], uint8_t block_len,
-+    uint64_t counter, uint8_t flags, uint8_t out[64]) {
-+	kfpu_begin();
-+	zfs_blake3_compress_xof_sse41(cv, block, block_len, counter, flags,
-+	    out);
-+	kfpu_end();
- }
- 
--/* return name of selected implementation */
--const char *
--blake3_get_impl_name(void)
--{
--	return (blake3_selected_impl->name);
-+static void blake3_hash_many_sse41(const uint8_t * const *inputs,
-+    size_t num_inputs, size_t blocks, const uint32_t key[8],
-+    uint64_t counter, boolean_t increment_counter, uint8_t flags,
-+    uint8_t flags_start, uint8_t flags_end, uint8_t *out) {
-+	kfpu_begin();
-+	zfs_blake3_hash_many_sse41(inputs, num_inputs, blocks, key, counter,
-+	    increment_counter, flags, flags_start, flags_end, out);
-+	kfpu_end();
- }
- 
--/* setup id as fastest implementation */
--void
--blake3_set_impl_fastest(uint32_t id)
-+static boolean_t blake3_is_sse41_supported(void)
- {
--	blake3_fastest_id = id;
-+#if defined(__x86_64)
-+	return (kfpu_allowed() && zfs_sse4_1_available());
-+#elif defined(__PPC64__)
-+	return (kfpu_allowed() && zfs_vsx_available());
-+#else
-+	return (kfpu_allowed());
-+#endif
- }
- 
--/* set implementation by id */
--void
--blake3_set_impl_id(uint32_t id)
--{
--	int i, cid;
--
--	/* select fastest */
--	if (id == IMPL_FASTEST)
--		id = blake3_fastest_id;
--
--	/* select next or first */
--	if (id == IMPL_CYCLE)
--		id = (++blake3_current_id) % blake3_get_impl_count();
--
--	/* 0..N for the real impl */
--	for (i = 0, cid = 0; i < ARRAY_SIZE(blake3_impls); i++) {
--		if (!blake3_impls[i]->is_supported()) continue;
--		if (cid == id) {
--			blake3_current_id = cid;
--			blake3_selected_impl = blake3_impls[i];
--			return;
--		}
--		cid++;
--	}
-+const blake3_ops_t blake3_sse41_impl = {
-+	.compress_in_place = blake3_compress_in_place_sse41,
-+	.compress_xof = blake3_compress_xof_sse41,
-+	.hash_many = blake3_hash_many_sse41,
-+	.is_supported = blake3_is_sse41_supported,
-+	.degree = 4,
-+	.name = "sse41"
-+};
-+#endif
-+
-+#if defined(__x86_64) && defined(HAVE_SSE4_1) && defined(HAVE_AVX2)
-+extern void zfs_blake3_hash_many_avx2(const uint8_t * const *inputs,
-+    size_t num_inputs, size_t blocks, const uint32_t key[8],
-+    uint64_t counter, boolean_t increment_counter, uint8_t flags,
-+    uint8_t flags_start, uint8_t flags_end, uint8_t *out);
-+
-+static void blake3_hash_many_avx2(const uint8_t * const *inputs,
-+    size_t num_inputs, size_t blocks, const uint32_t key[8],
-+    uint64_t counter, boolean_t increment_counter, uint8_t flags,
-+    uint8_t flags_start, uint8_t flags_end, uint8_t *out) {
-+	kfpu_begin();
-+	zfs_blake3_hash_many_avx2(inputs, num_inputs, blocks, key, counter,
-+	    increment_counter, flags, flags_start, flags_end, out);
-+	kfpu_end();
- }
- 
--/* set implementation by name */
--int
--blake3_set_impl_name(const char *name)
-+static boolean_t blake3_is_avx2_supported(void)
- {
--	int i, cid;
--
--	if (strcmp(name, "fastest") == 0) {
--		atomic_swap_32(&icp_blake3_impl, IMPL_FASTEST);
--		blake3_set_impl_id(IMPL_FASTEST);
--		return (0);
--	} else if (strcmp(name, "cycle") == 0) {
--		atomic_swap_32(&icp_blake3_impl, IMPL_CYCLE);
--		blake3_set_impl_id(IMPL_CYCLE);
--		return (0);
--	}
-+	return (kfpu_allowed() && zfs_sse4_1_available() &&
-+	    zfs_avx2_available());
-+}
- 
--	for (i = 0, cid = 0; i < ARRAY_SIZE(blake3_impls); i++) {
--		if (!blake3_impls[i]->is_supported()) continue;
--		if (strcmp(name, blake3_impls[i]->name) == 0) {
--			if (icp_blake3_impl == IMPL_PARAM) {
--				blake3_param_id = cid;
--				return (0);
--			}
--			blake3_selected_impl = blake3_impls[i];
--			blake3_current_id = cid;
--			return (0);
--		}
--		cid++;
--	}
-+const blake3_ops_t
-+blake3_avx2_impl = {
-+	.compress_in_place = blake3_compress_in_place_sse41,
-+	.compress_xof = blake3_compress_xof_sse41,
-+	.hash_many = blake3_hash_many_avx2,
-+	.is_supported = blake3_is_avx2_supported,
-+	.degree = 8,
-+	.name = "avx2"
-+};
-+#endif
- 
--	return (-EINVAL);
-+#if defined(__x86_64) && defined(HAVE_AVX512F) && defined(HAVE_AVX512VL)
-+extern void zfs_blake3_compress_in_place_avx512(uint32_t cv[8],
-+    const uint8_t block[BLAKE3_BLOCK_LEN], uint8_t block_len,
-+    uint64_t counter, uint8_t flags);
-+
-+extern void zfs_blake3_compress_xof_avx512(const uint32_t cv[8],
-+    const uint8_t block[BLAKE3_BLOCK_LEN], uint8_t block_len,
-+    uint64_t counter, uint8_t flags, uint8_t out[64]);
-+
-+extern void zfs_blake3_hash_many_avx512(const uint8_t * const *inputs,
-+    size_t num_inputs, size_t blocks, const uint32_t key[8],
-+    uint64_t counter, boolean_t increment_counter, uint8_t flags,
-+    uint8_t flags_start, uint8_t flags_end, uint8_t *out);
-+
-+static void blake3_compress_in_place_avx512(uint32_t cv[8],
-+    const uint8_t block[BLAKE3_BLOCK_LEN], uint8_t block_len,
-+    uint64_t counter, uint8_t flags) {
-+	kfpu_begin();
-+	zfs_blake3_compress_in_place_avx512(cv, block, block_len, counter,
-+	    flags);
-+	kfpu_end();
- }
- 
--/* setup implementation */
--void
--blake3_setup_impl(void)
--{
--	switch (IMPL_READ(icp_blake3_impl)) {
--	case IMPL_PARAM:
--		blake3_set_impl_id(blake3_param_id);
--		atomic_swap_32(&icp_blake3_impl, IMPL_USER);
--		break;
--	case IMPL_FASTEST:
--		blake3_set_impl_id(IMPL_FASTEST);
--		break;
--	case IMPL_CYCLE:
--		blake3_set_impl_id(IMPL_CYCLE);
--		break;
--	default:
--		blake3_set_impl_id(blake3_current_id);
--		break;
--	}
-+static void blake3_compress_xof_avx512(const uint32_t cv[8],
-+    const uint8_t block[BLAKE3_BLOCK_LEN], uint8_t block_len,
-+    uint64_t counter, uint8_t flags, uint8_t out[64]) {
-+	kfpu_begin();
-+	zfs_blake3_compress_xof_avx512(cv, block, block_len, counter, flags,
-+	    out);
-+	kfpu_end();
- }
- 
--/* return selected implementation */
--const blake3_impl_ops_t *
--blake3_impl_get_ops(void)
--{
--	/* each call to ops will cycle */
--	if (icp_blake3_impl == IMPL_CYCLE)
--		blake3_set_impl_id(IMPL_CYCLE);
-+static void blake3_hash_many_avx512(const uint8_t * const *inputs,
-+    size_t num_inputs, size_t blocks, const uint32_t key[8],
-+    uint64_t counter, boolean_t increment_counter, uint8_t flags,
-+    uint8_t flags_start, uint8_t flags_end, uint8_t *out) {
-+	kfpu_begin();
-+	zfs_blake3_hash_many_avx512(inputs, num_inputs, blocks, key, counter,
-+	    increment_counter, flags, flags_start, flags_end, out);
-+	kfpu_end();
-+}
- 
--	return (blake3_selected_impl);
-+static boolean_t blake3_is_avx512_supported(void)
-+{
-+	return (kfpu_allowed() && zfs_avx512f_available() &&
-+	    zfs_avx512vl_available());
- }
- 
--#if defined(_KERNEL)
-+const blake3_ops_t blake3_avx512_impl = {
-+	.compress_in_place = blake3_compress_in_place_avx512,
-+	.compress_xof = blake3_compress_xof_avx512,
-+	.hash_many = blake3_hash_many_avx512,
-+	.is_supported = blake3_is_avx512_supported,
-+	.degree = 16,
-+	.name = "avx512"
-+};
-+#endif
-+
-+extern const blake3_ops_t blake3_generic_impl;
-+
-+static const blake3_ops_t *const blake3_impls[] = {
-+	&blake3_generic_impl,
-+#if defined(__aarch64__) || \
-+	(defined(__x86_64) && defined(HAVE_SSE2)) || \
-+	(defined(__PPC64__) && defined(__LITTLE_ENDIAN__))
-+	&blake3_sse2_impl,
-+#endif
-+#if defined(__aarch64__) || \
-+	(defined(__x86_64) && defined(HAVE_SSE4_1)) || \
-+	(defined(__PPC64__) && defined(__LITTLE_ENDIAN__))
-+	&blake3_sse41_impl,
-+#endif
-+#if defined(__x86_64) && defined(HAVE_SSE4_1) && defined(HAVE_AVX2)
-+	&blake3_avx2_impl,
-+#endif
-+#if defined(__x86_64) && defined(HAVE_AVX512F) && defined(HAVE_AVX512VL)
-+	&blake3_avx512_impl,
-+#endif
-+};
-+
-+/* use the generic implementation functions */
-+#define	IMPL_NAME		"blake3"
-+#define	IMPL_OPS_T		blake3_ops_t
-+#define	IMPL_ARRAY		blake3_impls
-+#define	IMPL_GET_OPS		blake3_get_ops
-+#define	ZFS_IMPL_OPS		zfs_blake3_ops
-+#include <generic_impl.c>
-+
-+#ifdef _KERNEL
- void **blake3_per_cpu_ctx;
- 
- void
-@@ -227,58 +309,96 @@ blake3_per_cpu_ctx_fini(void)
- 	memset(blake3_per_cpu_ctx, 0, max_ncpus * sizeof (void *));
- 	kmem_free(blake3_per_cpu_ctx, max_ncpus * sizeof (void *));
- }
--#endif
- 
--#if defined(_KERNEL) && defined(__linux__)
-+#define	IMPL_FMT(impl, i)	(((impl) == (i)) ? "[%s] " : "%s ")
-+
-+#if defined(__linux__)
-+
- static int
--icp_blake3_impl_set(const char *name, zfs_kernel_param_t *kp)
-+blake3_param_get(char *buffer, zfs_kernel_param_t *unused)
- {
--	char req_name[BLAKE3_IMPL_NAME_MAX];
--	size_t i;
-+	const uint32_t impl = IMPL_READ(generic_impl_chosen);
-+	char *fmt;
-+	int cnt = 0;
- 
--	/* sanitize input */
--	i = strnlen(name, BLAKE3_IMPL_NAME_MAX);
--	if (i == 0 || i >= BLAKE3_IMPL_NAME_MAX)
--		return (-EINVAL);
-+	/* cycling */
-+	fmt = IMPL_FMT(impl, IMPL_CYCLE);
-+	cnt += sprintf(buffer + cnt, fmt, "cycle");
-+
-+	/* list fastest */
-+	fmt = IMPL_FMT(impl, IMPL_FASTEST);
-+	cnt += sprintf(buffer + cnt, fmt, "fastest");
-+
-+	/* list all supported implementations */
-+	generic_impl_init();
-+	for (uint32_t i = 0; i < generic_supp_impls_cnt; ++i) {
-+		fmt = IMPL_FMT(impl, i);
-+		cnt += sprintf(buffer + cnt, fmt,
-+		    generic_supp_impls[i]->name);
-+	}
- 
--	strlcpy(req_name, name, BLAKE3_IMPL_NAME_MAX);
--	while (i > 0 && isspace(req_name[i-1]))
--		i--;
--	req_name[i] = '\0';
-+	return (cnt);
-+}
- 
--	atomic_swap_32(&icp_blake3_impl, IMPL_PARAM);
--	return (blake3_set_impl_name(req_name));
-+static int
-+blake3_param_set(const char *val, zfs_kernel_param_t *unused)
-+{
-+	(void) unused;
-+	return (generic_impl_setname(val));
- }
- 
-+#elif defined(__FreeBSD__)
-+
-+#include <sys/sbuf.h>
-+
- static int
--icp_blake3_impl_get(char *buffer, zfs_kernel_param_t *kp)
-+blake3_param(ZFS_MODULE_PARAM_ARGS)
- {
--	int i, cid, cnt = 0;
--	char *fmt;
-+	int err;
- 
--	/* cycling */
--	fmt = (icp_blake3_impl == IMPL_CYCLE) ? "[cycle] " : "cycle ";
--	cnt += sprintf(buffer + cnt, fmt);
--
--	/* fastest one */
--	fmt = (icp_blake3_impl == IMPL_FASTEST) ? "[fastest] " : "fastest ";
--	cnt += sprintf(buffer + cnt, fmt);
--
--	/* user selected */
--	for (i = 0, cid = 0; i < ARRAY_SIZE(blake3_impls); i++) {
--		if (!blake3_impls[i]->is_supported()) continue;
--		fmt = (icp_blake3_impl == IMPL_USER &&
--		    cid == blake3_current_id) ? "[%s] " : "%s ";
--		cnt += sprintf(buffer + cnt, fmt, blake3_impls[i]->name);
--		cid++;
-+	generic_impl_init();
-+	if (req->newptr == NULL) {
-+		const uint32_t impl = IMPL_READ(generic_impl_chosen);
-+		const int init_buflen = 64;
-+		const char *fmt;
-+		struct sbuf *s;
-+
-+		s = sbuf_new_for_sysctl(NULL, NULL, init_buflen, req);
-+
-+		/* cycling */
-+		fmt = IMPL_FMT(impl, IMPL_CYCLE);
-+		(void) sbuf_printf(s, fmt, "cycle");
-+
-+		/* list fastest */
-+		fmt = IMPL_FMT(impl, IMPL_FASTEST);
-+		(void) sbuf_printf(s, fmt, "fastest");
-+
-+		/* list all supported implementations */
-+		for (uint32_t i = 0; i < generic_supp_impls_cnt; ++i) {
-+			fmt = IMPL_FMT(impl, i);
-+			(void) sbuf_printf(s, fmt, generic_supp_impls[i]->name);
-+		}
-+
-+		err = sbuf_finish(s);
-+		sbuf_delete(s);
-+
-+		return (err);
- 	}
- 
--	buffer[cnt] = 0;
-+	char buf[16];
- 
--	return (cnt);
-+	err = sysctl_handle_string(oidp, buf, sizeof (buf), req);
-+	if (err) {
-+		return (err);
-+	}
-+
-+	return (-generic_impl_setname(buf));
- }
-+#endif
-+
-+#undef IMPL_FMT
- 
--module_param_call(icp_blake3_impl, icp_blake3_impl_set, icp_blake3_impl_get,
--    NULL, 0644);
--MODULE_PARM_DESC(icp_blake3_impl, "Select BLAKE3 implementation.");
-+ZFS_MODULE_VIRTUAL_PARAM_CALL(zfs, zfs_, blake3_impl,
-+    blake3_param_set, blake3_param_get, ZMOD_RW, \
-+	"Select BLAKE3 implementation.");
- #endif
-diff --git a/module/icp/algs/blake3/blake3_impl.h b/module/icp/algs/blake3/blake3_impl.h
-index 5254061c737..b65123013d5 100644
---- a/module/icp/algs/blake3/blake3_impl.h
-+++ b/module/icp/algs/blake3/blake3_impl.h
-@@ -25,16 +25,14 @@
-  * Copyright (c) 2021-2022 Tino Reichardt <milky-zfs@mcmilk.de>
-  */
- 
--#ifndef BLAKE3_IMPL_H
-+#ifndef	BLAKE3_IMPL_H
- #define	BLAKE3_IMPL_H
- 
- #ifdef	__cplusplus
- extern "C" {
- #endif
- 
--#include <sys/types.h>
- #include <sys/blake3.h>
--#include <sys/simd.h>
- 
- /*
-  * Methods used to define BLAKE3 assembler implementations
-@@ -55,39 +53,17 @@ typedef void (*blake3_hash_many_f)(const uint8_t * const *inputs,
- 
- typedef boolean_t (*blake3_is_supported_f)(void);
- 
--typedef struct blake3_impl_ops {
-+typedef struct {
- 	blake3_compress_in_place_f compress_in_place;
- 	blake3_compress_xof_f compress_xof;
- 	blake3_hash_many_f hash_many;
- 	blake3_is_supported_f is_supported;
- 	int degree;
- 	const char *name;
--} blake3_impl_ops_t;
-+} blake3_ops_t;
- 
--/* Return selected BLAKE3 implementation ops */
--extern const blake3_impl_ops_t *blake3_impl_get_ops(void);
--
--extern const blake3_impl_ops_t blake3_generic_impl;
--
--#if defined(__aarch64__) || \
--	(defined(__x86_64) && defined(HAVE_SSE2)) || \
--	(defined(__PPC64__) && defined(__LITTLE_ENDIAN__))
--extern const blake3_impl_ops_t blake3_sse2_impl;
--#endif
--
--#if defined(__aarch64__) || \
--	(defined(__x86_64) && defined(HAVE_SSE4_1)) || \
--	(defined(__PPC64__) && defined(__LITTLE_ENDIAN__))
--extern const blake3_impl_ops_t blake3_sse41_impl;
--#endif
--
--#if defined(__x86_64) && defined(HAVE_SSE4_1) && defined(HAVE_AVX2)
--extern const blake3_impl_ops_t blake3_avx2_impl;
--#endif
--
--#if defined(__x86_64) && defined(HAVE_AVX512F) && defined(HAVE_AVX512VL)
--extern const blake3_impl_ops_t blake3_avx512_impl;
--#endif
-+/* return selected BLAKE3 implementation ops */
-+extern const blake3_ops_t *blake3_get_ops(void);
- 
- #if defined(__x86_64)
- #define	MAX_SIMD_DEGREE 16
-diff --git a/module/icp/algs/blake3/blake3_x86-64.c b/module/icp/algs/blake3/blake3_x86-64.c
-deleted file mode 100644
-index a7552bdde4a..00000000000
---- a/module/icp/algs/blake3/blake3_x86-64.c
-+++ /dev/null
-@@ -1,248 +0,0 @@
--/*
-- * CDDL HEADER START
-- *
-- * The contents of this file are subject to the terms of the
-- * Common Development and Distribution License (the "License").
-- * You may not use this file except in compliance with the License.
-- *
-- * You can obtain a copy of the license at usr/src/OPENSOLARIS.LICENSE
-- * or https://opensource.org/licenses/CDDL-1.0.
-- * See the License for the specific language governing permissions
-- * and limitations under the License.
-- *
-- * When distributing Covered Code, include this CDDL HEADER in each
-- * file and include the License file at usr/src/OPENSOLARIS.LICENSE.
-- * If applicable, add the following below this CDDL HEADER, with the
-- * fields enclosed by brackets "[]" replaced with your own identifying
-- * information: Portions Copyright [yyyy] [name of copyright owner]
-- *
-- * CDDL HEADER END
-- */
--
--/*
-- * Copyright (c) 2021-2022 Tino Reichardt <milky-zfs@mcmilk.de>
-- */
--
--#include "blake3_impl.h"
--
--#if defined(__aarch64__) || \
--	(defined(__x86_64) && defined(HAVE_SSE2)) || \
--	(defined(__PPC64__) && defined(__LITTLE_ENDIAN__))
--
--extern void zfs_blake3_compress_in_place_sse2(uint32_t cv[8],
--    const uint8_t block[BLAKE3_BLOCK_LEN], uint8_t block_len,
--    uint64_t counter, uint8_t flags);
--
--extern void zfs_blake3_compress_xof_sse2(const uint32_t cv[8],
--    const uint8_t block[BLAKE3_BLOCK_LEN], uint8_t block_len,
--    uint64_t counter, uint8_t flags, uint8_t out[64]);
--
--extern void zfs_blake3_hash_many_sse2(const uint8_t * const *inputs,
--    size_t num_inputs, size_t blocks, const uint32_t key[8],
--    uint64_t counter, boolean_t increment_counter, uint8_t flags,
--    uint8_t flags_start, uint8_t flags_end, uint8_t *out);
--
--static void blake3_compress_in_place_sse2(uint32_t cv[8],
--    const uint8_t block[BLAKE3_BLOCK_LEN], uint8_t block_len,
--    uint64_t counter, uint8_t flags) {
--	kfpu_begin();
--	zfs_blake3_compress_in_place_sse2(cv, block, block_len, counter,
--	    flags);
--	kfpu_end();
--}
--
--static void blake3_compress_xof_sse2(const uint32_t cv[8],
--    const uint8_t block[BLAKE3_BLOCK_LEN], uint8_t block_len,
--    uint64_t counter, uint8_t flags, uint8_t out[64]) {
--	kfpu_begin();
--	zfs_blake3_compress_xof_sse2(cv, block, block_len, counter, flags,
--	    out);
--	kfpu_end();
--}
--
--static void blake3_hash_many_sse2(const uint8_t * const *inputs,
--    size_t num_inputs, size_t blocks, const uint32_t key[8],
--    uint64_t counter, boolean_t increment_counter, uint8_t flags,
--    uint8_t flags_start, uint8_t flags_end, uint8_t *out) {
--	kfpu_begin();
--	zfs_blake3_hash_many_sse2(inputs, num_inputs, blocks, key, counter,
--	    increment_counter, flags, flags_start, flags_end, out);
--	kfpu_end();
--}
--
--static boolean_t blake3_is_sse2_supported(void)
--{
--#if defined(__x86_64)
--	return (kfpu_allowed() && zfs_sse2_available());
--#elif defined(__PPC64__)
--	return (kfpu_allowed() && zfs_vsx_available());
--#else
--	return (kfpu_allowed());
--#endif
--}
--
--const blake3_impl_ops_t blake3_sse2_impl = {
--	.compress_in_place = blake3_compress_in_place_sse2,
--	.compress_xof = blake3_compress_xof_sse2,
--	.hash_many = blake3_hash_many_sse2,
--	.is_supported = blake3_is_sse2_supported,
--	.degree = 4,
--	.name = "sse2"
--};
--#endif
--
--#if defined(__aarch64__) || \
--	(defined(__x86_64) && defined(HAVE_SSE2)) || \
--	(defined(__PPC64__) && defined(__LITTLE_ENDIAN__))
--
--extern void zfs_blake3_compress_in_place_sse41(uint32_t cv[8],
--    const uint8_t block[BLAKE3_BLOCK_LEN], uint8_t block_len,
--    uint64_t counter, uint8_t flags);
--
--extern void zfs_blake3_compress_xof_sse41(const uint32_t cv[8],
--    const uint8_t block[BLAKE3_BLOCK_LEN], uint8_t block_len,
--    uint64_t counter, uint8_t flags, uint8_t out[64]);
--
--extern void zfs_blake3_hash_many_sse41(const uint8_t * const *inputs,
--    size_t num_inputs, size_t blocks, const uint32_t key[8],
--    uint64_t counter, boolean_t increment_counter, uint8_t flags,
--    uint8_t flags_start, uint8_t flags_end, uint8_t *out);
--
--static void blake3_compress_in_place_sse41(uint32_t cv[8],
--    const uint8_t block[BLAKE3_BLOCK_LEN], uint8_t block_len,
--    uint64_t counter, uint8_t flags) {
--	kfpu_begin();
--	zfs_blake3_compress_in_place_sse41(cv, block, block_len, counter,
--	    flags);
--	kfpu_end();
--}
--
--static void blake3_compress_xof_sse41(const uint32_t cv[8],
--    const uint8_t block[BLAKE3_BLOCK_LEN], uint8_t block_len,
--    uint64_t counter, uint8_t flags, uint8_t out[64]) {
--	kfpu_begin();
--	zfs_blake3_compress_xof_sse41(cv, block, block_len, counter, flags,
--	    out);
--	kfpu_end();
--}
--
--static void blake3_hash_many_sse41(const uint8_t * const *inputs,
--    size_t num_inputs, size_t blocks, const uint32_t key[8],
--    uint64_t counter, boolean_t increment_counter, uint8_t flags,
--    uint8_t flags_start, uint8_t flags_end, uint8_t *out) {
--	kfpu_begin();
--	zfs_blake3_hash_many_sse41(inputs, num_inputs, blocks, key, counter,
--	    increment_counter, flags, flags_start, flags_end, out);
--	kfpu_end();
--}
--
--static boolean_t blake3_is_sse41_supported(void)
--{
--#if defined(__x86_64)
--	return (kfpu_allowed() && zfs_sse4_1_available());
--#elif defined(__PPC64__)
--	return (kfpu_allowed() && zfs_vsx_available());
--#else
--	return (kfpu_allowed());
--#endif
--}
--
--const blake3_impl_ops_t blake3_sse41_impl = {
--	.compress_in_place = blake3_compress_in_place_sse41,
--	.compress_xof = blake3_compress_xof_sse41,
--	.hash_many = blake3_hash_many_sse41,
--	.is_supported = blake3_is_sse41_supported,
--	.degree = 4,
--	.name = "sse41"
--};
--#endif
--
--#if defined(__x86_64) && defined(HAVE_SSE4_1) && defined(HAVE_AVX2)
--extern void zfs_blake3_hash_many_avx2(const uint8_t * const *inputs,
--    size_t num_inputs, size_t blocks, const uint32_t key[8],
--    uint64_t counter, boolean_t increment_counter, uint8_t flags,
--    uint8_t flags_start, uint8_t flags_end, uint8_t *out);
--
--static void blake3_hash_many_avx2(const uint8_t * const *inputs,
--    size_t num_inputs, size_t blocks, const uint32_t key[8],
--    uint64_t counter, boolean_t increment_counter, uint8_t flags,
--    uint8_t flags_start, uint8_t flags_end, uint8_t *out) {
--	kfpu_begin();
--	zfs_blake3_hash_many_avx2(inputs, num_inputs, blocks, key, counter,
--	    increment_counter, flags, flags_start, flags_end, out);
--	kfpu_end();
--}
--
--static boolean_t blake3_is_avx2_supported(void)
--{
--	return (kfpu_allowed() && zfs_sse4_1_available() &&
--	    zfs_avx2_available());
--}
--
--const blake3_impl_ops_t blake3_avx2_impl = {
--	.compress_in_place = blake3_compress_in_place_sse41,
--	.compress_xof = blake3_compress_xof_sse41,
--	.hash_many = blake3_hash_many_avx2,
--	.is_supported = blake3_is_avx2_supported,
--	.degree = 8,
--	.name = "avx2"
--};
--#endif
--
--#if defined(__x86_64) && defined(HAVE_AVX512F) && defined(HAVE_AVX512VL)
--extern void zfs_blake3_compress_in_place_avx512(uint32_t cv[8],
--    const uint8_t block[BLAKE3_BLOCK_LEN], uint8_t block_len,
--    uint64_t counter, uint8_t flags);
--
--extern void zfs_blake3_compress_xof_avx512(const uint32_t cv[8],
--    const uint8_t block[BLAKE3_BLOCK_LEN], uint8_t block_len,
--    uint64_t counter, uint8_t flags, uint8_t out[64]);
--
--extern void zfs_blake3_hash_many_avx512(const uint8_t * const *inputs,
--    size_t num_inputs, size_t blocks, const uint32_t key[8],
--    uint64_t counter, boolean_t increment_counter, uint8_t flags,
--    uint8_t flags_start, uint8_t flags_end, uint8_t *out);
--
--static void blake3_compress_in_place_avx512(uint32_t cv[8],
--    const uint8_t block[BLAKE3_BLOCK_LEN], uint8_t block_len,
--    uint64_t counter, uint8_t flags) {
--	kfpu_begin();
--	zfs_blake3_compress_in_place_avx512(cv, block, block_len, counter,
--	    flags);
--	kfpu_end();
--}
--
--static void blake3_compress_xof_avx512(const uint32_t cv[8],
--    const uint8_t block[BLAKE3_BLOCK_LEN], uint8_t block_len,
--    uint64_t counter, uint8_t flags, uint8_t out[64]) {
--	kfpu_begin();
--	zfs_blake3_compress_xof_avx512(cv, block, block_len, counter, flags,
--	    out);
--	kfpu_end();
--}
--
--static void blake3_hash_many_avx512(const uint8_t * const *inputs,
--    size_t num_inputs, size_t blocks, const uint32_t key[8],
--    uint64_t counter, boolean_t increment_counter, uint8_t flags,
--    uint8_t flags_start, uint8_t flags_end, uint8_t *out) {
--	kfpu_begin();
--	zfs_blake3_hash_many_avx512(inputs, num_inputs, blocks, key, counter,
--	    increment_counter, flags, flags_start, flags_end, out);
--	kfpu_end();
--}
--
--static boolean_t blake3_is_avx512_supported(void)
--{
--	return (kfpu_allowed() && zfs_avx512f_available() &&
--	    zfs_avx512vl_available());
--}
--
--const blake3_impl_ops_t blake3_avx512_impl = {
--	.compress_in_place = blake3_compress_in_place_avx512,
--	.compress_xof = blake3_compress_xof_avx512,
--	.hash_many = blake3_hash_many_avx512,
--	.is_supported = blake3_is_avx512_supported,
--	.degree = 16,
--	.name = "avx512"
--};
--#endif
 diff --git a/module/icp/algs/sha2/sha256_impl.c b/module/icp/algs/sha2/sha256_impl.c
 new file mode 100644
-index 00000000000..b8ece5a6266
+index 00000000000..efee1551677
 --- /dev/null
 +++ b/module/icp/algs/sha2/sha256_impl.c
-@@ -0,0 +1,278 @@
+@@ -0,0 +1,292 @@
 +/*
 + * CDDL HEADER START
 + *
@@ -9554,7 +8399,7 @@ index 00000000000..b8ece5a6266
 +#include <sys/sha2.h>
 +#include <sys/simd.h>
 +
-+#include "sha2_impl.h"
++#include <sha2/sha2_impl.h>
 +
 +#define	TF(E, N) \
 +	extern void E(uint32_t s[8], const void *, size_t); \
@@ -9563,6 +8408,17 @@ index 00000000000..b8ece5a6266
 +}
 +
 +#if defined(__x86_64)
++
++extern void zfs_sha256_transform_x64(uint32_t s[8], const void *, size_t);
++static boolean_t sha2_have_x64(void)
++{
++	return (B_TRUE);
++}
++const sha256_ops_t sha256_x64_impl = {
++	.is_supported = sha2_have_x64,
++	.transform = zfs_sha256_transform_x64,
++	.name = "x64"
++};
 +
 +#if defined(HAVE_SSSE3)
 +static boolean_t sha2_have_ssse3(void)
@@ -9676,6 +8532,9 @@ index 00000000000..b8ece5a6266
 +/* array with all sha256 implementations */
 +static const sha256_ops_t *const sha256_impls[] = {
 +	&sha256_generic_impl,
++#if defined(__x86_64)
++	&sha256_x64_impl,
++#endif
 +#if defined(__x86_64) && defined(HAVE_SSSE3)
 +	&sha256_ssse3_impl,
 +#endif
@@ -9804,7 +8663,7 @@ index 00000000000..b8ece5a6266
 +#undef TF
 diff --git a/module/icp/algs/sha2/sha2_generic.c b/module/icp/algs/sha2/sha2_generic.c
 new file mode 100644
-index 00000000000..34d620bce12
+index 00000000000..fe24f2cbabc
 --- /dev/null
 +++ b/module/icp/algs/sha2/sha2_generic.c
 @@ -0,0 +1,562 @@
@@ -9838,7 +8697,7 @@ index 00000000000..34d620bce12
 +#include <sys/zfs_impl.h>
 +#include <sys/sha2.h>
 +
-+#include "sha2_impl.h"
++#include <sha2/sha2_impl.h>
 +
 +/*
 + * On i386, gcc brings this for sha512_generic():
@@ -9869,12 +8728,12 @@ index 00000000000..34d620bce12
 +};
 +
 +#define	Ch(x, y, z)	((z) ^ ((x) & ((y) ^ (z))))
-+#define	Maj(x, y, z)	(((x) & (y)) | ((z) & ((x) ^ (y))))
++#define	Maj(x, y, z)	(((y) & (z)) | (((y) | (z)) & (x)))
 +
 +#define	rotr32(x, n)	(((x) >> n) | ((x) << (32 - n)))
-+#define	sum0(x)		(rotr32((x), 2) ^ rotr32((x), 13) ^ rotr32((x), 22))
-+#define	sum1(x)		(rotr32((x), 6) ^ rotr32((x), 11) ^ rotr32((x), 25))
-+#define	sigma0(x)	(rotr32((x), 7) ^ rotr32((x), 18) ^ ((x) >> 3))
++#define	sum0(x)		(rotr32((x),  2) ^ rotr32((x), 13) ^ rotr32((x), 22))
++#define	sum1(x)		(rotr32((x),  6) ^ rotr32((x), 11) ^ rotr32((x), 25))
++#define	sigma0(x)	(rotr32((x),  7) ^ rotr32((x), 18) ^ ((x) >> 3))
 +#define	sigma1(x)	(rotr32((x), 17) ^ rotr32((x), 19) ^ ((x) >> 10))
 +
 +#define	WU(j) (W[j & 15] += sigma1(W[(j + 14) & 15]) \
@@ -9948,7 +8807,7 @@ index 00000000000..34d620bce12
 +#define	rotr64(x, n)	(((x) >> n) | ((x) << (64 - n)))
 +#define	sum0(x)		(rotr64((x), 28) ^ rotr64((x), 34) ^ rotr64((x), 39))
 +#define	sum1(x)		(rotr64((x), 14) ^ rotr64((x), 18) ^ rotr64((x), 41))
-+#define	sigma0(x)	(rotr64((x), 1)  ^ rotr64((x), 8)  ^ ((x) >> 7))
++#define	sigma0(x)	(rotr64((x),  1) ^ rotr64((x),  8) ^ ((x) >> 7))
 +#define	sigma1(x)	(rotr64((x), 19) ^ rotr64((x), 61) ^ ((x) >> 6))
 +
 +/* SHA512 */
@@ -10108,12 +8967,12 @@ index 00000000000..34d620bce12
 +
 +	m[pos++] = 0x80;
 +	if (pos > 56) {
-+		memset(m + pos, 0, (size_t)(64 - pos));
++		memset(m + pos, 0, 64 - pos);
 +		ops->transform(ctx->state, m, 1);
 +		pos = 0;
 +	}
 +
-+	memset(m + pos, 0, (size_t)(56 - pos));
++	memset(m + pos, 0, 64 - pos);
 +	mlen = BE_64(ctx->count[1]);
 +	memcpy(m + (64 - 8), &mlen, 64 / 8);
 +	ops->transform(ctx->state, m, 1);
@@ -10152,12 +9011,12 @@ index 00000000000..34d620bce12
 +
 +	m[pos++] = 0x80;
 +	if (pos > 112) {
-+		memset(m + pos, 0, (size_t)(128 - pos));
++		memset(m + pos, 0, 128 - pos);
 +		ops->transform(ctx->state, m, 1);
 +		pos = 0;
 +	}
 +
-+	memset(m + pos, 0, (size_t)(128 - pos));
++	memset(m + pos, 0, 128 - pos);
 +	mlen = BE_64(ctx->count[1]);
 +	memcpy(m + (128 - 8), &mlen, 64 / 8);
 +	ops->transform(ctx->state, m, 1);
@@ -10370,79 +9229,12 @@ index 00000000000..34d620bce12
 +	.transform = sha512_generic,
 +	.is_supported = sha2_is_supported
 +};
-diff --git a/module/icp/algs/sha2/sha2_impl.h b/module/icp/algs/sha2/sha2_impl.h
-new file mode 100644
-index 00000000000..daab1983f21
---- /dev/null
-+++ b/module/icp/algs/sha2/sha2_impl.h
-@@ -0,0 +1,61 @@
-+/*
-+ * CDDL HEADER START
-+ *
-+ * The contents of this file are subject to the terms of the
-+ * Common Development and Distribution License (the "License").
-+ * You may not use this file except in compliance with the License.
-+ *
-+ * You can obtain a copy of the license at usr/src/OPENSOLARIS.LICENSE
-+ * or https://opensource.org/licenses/CDDL-1.0.
-+ * See the License for the specific language governing permissions
-+ * and limitations under the License.
-+ *
-+ * When distributing Covered Code, include this CDDL HEADER in each
-+ * file and include the License file at usr/src/OPENSOLARIS.LICENSE.
-+ * If applicable, add the following below this CDDL HEADER, with the
-+ * fields enclosed by brackets "[]" replaced with your own identifying
-+ * information: Portions Copyright [yyyy] [name of copyright owner]
-+ *
-+ * CDDL HEADER END
-+ */
-+
-+/*
-+ * Copyright (c) 2022 Tino Reichardt <milky-zfs@mcmilk.de>
-+ */
-+
-+#ifndef	SHA2_IMPL_H
-+#define	SHA2_IMPL_H
-+
-+#ifdef __cplusplus
-+extern "C" {
-+#endif
-+
-+#include <sys/sha2.h>
-+
-+/* transform function definition */
-+typedef void (*sha256_f)(uint32_t state[8], const void *data, size_t blks);
-+typedef void (*sha512_f)(uint64_t state[8], const void *data, size_t blks);
-+
-+/* needed for checking valid implementations */
-+typedef boolean_t (*sha2_is_supported_f)(void);
-+
-+typedef struct {
-+	const char *name;
-+	sha256_f transform;
-+	sha2_is_supported_f is_supported;
-+} sha256_ops_t;
-+
-+typedef struct {
-+	const char *name;
-+	sha512_f transform;
-+	sha2_is_supported_f is_supported;
-+} sha512_ops_t;
-+
-+extern const sha256_ops_t *sha256_get_ops(void);
-+extern const sha512_ops_t *sha512_get_ops(void);
-+
-+#ifdef	__cplusplus
-+}
-+#endif
-+
-+#endif /* _SHA2_IMPL_H */
 diff --git a/module/icp/algs/sha2/sha512_impl.c b/module/icp/algs/sha2/sha512_impl.c
 new file mode 100644
-index 00000000000..0f58087ced7
+index 00000000000..deb2462de87
 --- /dev/null
 +++ b/module/icp/algs/sha2/sha512_impl.c
-@@ -0,0 +1,230 @@
+@@ -0,0 +1,244 @@
 +/*
 + * CDDL HEADER START
 + *
@@ -10473,7 +9265,7 @@ index 00000000000..0f58087ced7
 +#include <sys/sha2.h>
 +#include <sys/simd.h>
 +
-+#include "sha2_impl.h"
++#include <sha2/sha2_impl.h>
 +
 +#define	TF(E, N) \
 +	extern void E(uint64_t s[8], const void *, size_t); \
@@ -10482,6 +9274,17 @@ index 00000000000..0f58087ced7
 +}
 +
 +#if defined(__x86_64)
++
++extern void zfs_sha512_transform_x64(uint64_t s[8], const void *, size_t);
++static boolean_t sha2_have_x64(void)
++{
++	return (B_TRUE);
++}
++const sha512_ops_t sha512_x64_impl = {
++	.is_supported = sha2_have_x64,
++	.transform = zfs_sha512_transform_x64,
++	.name = "x64"
++};
 +
 +#if defined(HAVE_AVX)
 +static boolean_t sha2_have_avx(void)
@@ -10553,6 +9356,9 @@ index 00000000000..0f58087ced7
 +/* array with all sha512 implementations */
 +static const sha512_ops_t *const sha512_impls[] = {
 +	&sha512_generic_impl,
++#if defined(__x86_64)
++	&sha512_x64_impl,
++#endif
 +#if defined(__x86_64) && defined(HAVE_AVX)
 +	&sha512_avx_impl,
 +#endif
@@ -21158,10 +19964,10 @@ index 00000000000..6ff4e5702ed
 +#endif
 diff --git a/module/icp/asm-x86_64/sha2/sha256-x86_64.S b/module/icp/asm-x86_64/sha2/sha256-x86_64.S
 new file mode 100644
-index 00000000000..713a0b5e893
+index 00000000000..176bf2438ae
 --- /dev/null
 +++ b/module/icp/asm-x86_64/sha2/sha256-x86_64.S
-@@ -0,0 +1,3742 @@
+@@ -0,0 +1,5096 @@
 +/*
 + * Copyright 2004-2022 The OpenSSL Project Authors. All Rights Reserved.
 + *
@@ -21218,6 +20024,1360 @@ index 00000000000..713a0b5e893
 +.long	0xffffffff,0xffffffff,0x03020100,0x0b0a0908
 +.long	0xffffffff,0xffffffff,0x03020100,0x0b0a0908
 +.byte	83,72,65,50,53,54,32,98,108,111,99,107,32,116,114,97,110,115,102,111,114,109,32,102,111,114,32,120,56,54,95,54,52,44,32,67,82,89,80,84,79,71,65,77,83,32,98,121,32,60,97,112,112,114,111,64,111,112,101,110,115,115,108,46,111,114,103,62,0
++
++.globl	zfs_sha256_transform_x64
++.type	zfs_sha256_transform_x64,@function
++.align	16
++zfs_sha256_transform_x64:
++.cfi_startproc	
++	movq	%rsp,%rax
++.cfi_def_cfa_register	%rax
++	pushq	%rbx
++.cfi_offset	%rbx,-16
++	pushq	%rbp
++.cfi_offset	%rbp,-24
++	pushq	%r12
++.cfi_offset	%r12,-32
++	pushq	%r13
++.cfi_offset	%r13,-40
++	pushq	%r14
++.cfi_offset	%r14,-48
++	pushq	%r15
++.cfi_offset	%r15,-56
++	shlq	$4,%rdx
++	subq	$64+32,%rsp
++	leaq	(%rsi,%rdx,4),%rdx
++	andq	$-64,%rsp
++	movq	%rdi,64+0(%rsp)
++	movq	%rsi,64+8(%rsp)
++	movq	%rdx,64+16(%rsp)
++	movq	%rax,88(%rsp)
++.cfi_escape	0x0f,0x06,0x77,0xd8,0x00,0x06,0x23,0x08
++.Lprologue:
++	movl	0(%rdi),%eax
++	movl	4(%rdi),%ebx
++	movl	8(%rdi),%ecx
++	movl	12(%rdi),%edx
++	movl	16(%rdi),%r8d
++	movl	20(%rdi),%r9d
++	movl	24(%rdi),%r10d
++	movl	28(%rdi),%r11d
++	jmp	.Lloop
++.align	16
++.Lloop:
++	movl	%ebx,%edi
++	leaq	K256(%rip),%rbp
++	xorl	%ecx,%edi
++	movl	0(%rsi),%r12d
++	movl	%r8d,%r13d
++	movl	%eax,%r14d
++	bswapl	%r12d
++	rorl	$14,%r13d
++	movl	%r9d,%r15d
++	xorl	%r8d,%r13d
++	rorl	$9,%r14d
++	xorl	%r10d,%r15d
++	movl	%r12d,0(%rsp)
++	xorl	%eax,%r14d
++	andl	%r8d,%r15d
++	rorl	$5,%r13d
++	addl	%r11d,%r12d
++	xorl	%r10d,%r15d
++	rorl	$11,%r14d
++	xorl	%r8d,%r13d
++	addl	%r15d,%r12d
++	movl	%eax,%r15d
++	addl	(%rbp),%r12d
++	xorl	%eax,%r14d
++	xorl	%ebx,%r15d
++	rorl	$6,%r13d
++	movl	%ebx,%r11d
++	andl	%r15d,%edi
++	rorl	$2,%r14d
++	addl	%r13d,%r12d
++	xorl	%edi,%r11d
++	addl	%r12d,%edx
++	addl	%r12d,%r11d
++	leaq	4(%rbp),%rbp
++	addl	%r14d,%r11d
++	movl	4(%rsi),%r12d
++	movl	%edx,%r13d
++	movl	%r11d,%r14d
++	bswapl	%r12d
++	rorl	$14,%r13d
++	movl	%r8d,%edi
++	xorl	%edx,%r13d
++	rorl	$9,%r14d
++	xorl	%r9d,%edi
++	movl	%r12d,4(%rsp)
++	xorl	%r11d,%r14d
++	andl	%edx,%edi
++	rorl	$5,%r13d
++	addl	%r10d,%r12d
++	xorl	%r9d,%edi
++	rorl	$11,%r14d
++	xorl	%edx,%r13d
++	addl	%edi,%r12d
++	movl	%r11d,%edi
++	addl	(%rbp),%r12d
++	xorl	%r11d,%r14d
++	xorl	%eax,%edi
++	rorl	$6,%r13d
++	movl	%eax,%r10d
++	andl	%edi,%r15d
++	rorl	$2,%r14d
++	addl	%r13d,%r12d
++	xorl	%r15d,%r10d
++	addl	%r12d,%ecx
++	addl	%r12d,%r10d
++	leaq	4(%rbp),%rbp
++	addl	%r14d,%r10d
++	movl	8(%rsi),%r12d
++	movl	%ecx,%r13d
++	movl	%r10d,%r14d
++	bswapl	%r12d
++	rorl	$14,%r13d
++	movl	%edx,%r15d
++	xorl	%ecx,%r13d
++	rorl	$9,%r14d
++	xorl	%r8d,%r15d
++	movl	%r12d,8(%rsp)
++	xorl	%r10d,%r14d
++	andl	%ecx,%r15d
++	rorl	$5,%r13d
++	addl	%r9d,%r12d
++	xorl	%r8d,%r15d
++	rorl	$11,%r14d
++	xorl	%ecx,%r13d
++	addl	%r15d,%r12d
++	movl	%r10d,%r15d
++	addl	(%rbp),%r12d
++	xorl	%r10d,%r14d
++	xorl	%r11d,%r15d
++	rorl	$6,%r13d
++	movl	%r11d,%r9d
++	andl	%r15d,%edi
++	rorl	$2,%r14d
++	addl	%r13d,%r12d
++	xorl	%edi,%r9d
++	addl	%r12d,%ebx
++	addl	%r12d,%r9d
++	leaq	4(%rbp),%rbp
++	addl	%r14d,%r9d
++	movl	12(%rsi),%r12d
++	movl	%ebx,%r13d
++	movl	%r9d,%r14d
++	bswapl	%r12d
++	rorl	$14,%r13d
++	movl	%ecx,%edi
++	xorl	%ebx,%r13d
++	rorl	$9,%r14d
++	xorl	%edx,%edi
++	movl	%r12d,12(%rsp)
++	xorl	%r9d,%r14d
++	andl	%ebx,%edi
++	rorl	$5,%r13d
++	addl	%r8d,%r12d
++	xorl	%edx,%edi
++	rorl	$11,%r14d
++	xorl	%ebx,%r13d
++	addl	%edi,%r12d
++	movl	%r9d,%edi
++	addl	(%rbp),%r12d
++	xorl	%r9d,%r14d
++	xorl	%r10d,%edi
++	rorl	$6,%r13d
++	movl	%r10d,%r8d
++	andl	%edi,%r15d
++	rorl	$2,%r14d
++	addl	%r13d,%r12d
++	xorl	%r15d,%r8d
++	addl	%r12d,%eax
++	addl	%r12d,%r8d
++	leaq	20(%rbp),%rbp
++	addl	%r14d,%r8d
++	movl	16(%rsi),%r12d
++	movl	%eax,%r13d
++	movl	%r8d,%r14d
++	bswapl	%r12d
++	rorl	$14,%r13d
++	movl	%ebx,%r15d
++	xorl	%eax,%r13d
++	rorl	$9,%r14d
++	xorl	%ecx,%r15d
++	movl	%r12d,16(%rsp)
++	xorl	%r8d,%r14d
++	andl	%eax,%r15d
++	rorl	$5,%r13d
++	addl	%edx,%r12d
++	xorl	%ecx,%r15d
++	rorl	$11,%r14d
++	xorl	%eax,%r13d
++	addl	%r15d,%r12d
++	movl	%r8d,%r15d
++	addl	(%rbp),%r12d
++	xorl	%r8d,%r14d
++	xorl	%r9d,%r15d
++	rorl	$6,%r13d
++	movl	%r9d,%edx
++	andl	%r15d,%edi
++	rorl	$2,%r14d
++	addl	%r13d,%r12d
++	xorl	%edi,%edx
++	addl	%r12d,%r11d
++	addl	%r12d,%edx
++	leaq	4(%rbp),%rbp
++	addl	%r14d,%edx
++	movl	20(%rsi),%r12d
++	movl	%r11d,%r13d
++	movl	%edx,%r14d
++	bswapl	%r12d
++	rorl	$14,%r13d
++	movl	%eax,%edi
++	xorl	%r11d,%r13d
++	rorl	$9,%r14d
++	xorl	%ebx,%edi
++	movl	%r12d,20(%rsp)
++	xorl	%edx,%r14d
++	andl	%r11d,%edi
++	rorl	$5,%r13d
++	addl	%ecx,%r12d
++	xorl	%ebx,%edi
++	rorl	$11,%r14d
++	xorl	%r11d,%r13d
++	addl	%edi,%r12d
++	movl	%edx,%edi
++	addl	(%rbp),%r12d
++	xorl	%edx,%r14d
++	xorl	%r8d,%edi
++	rorl	$6,%r13d
++	movl	%r8d,%ecx
++	andl	%edi,%r15d
++	rorl	$2,%r14d
++	addl	%r13d,%r12d
++	xorl	%r15d,%ecx
++	addl	%r12d,%r10d
++	addl	%r12d,%ecx
++	leaq	4(%rbp),%rbp
++	addl	%r14d,%ecx
++	movl	24(%rsi),%r12d
++	movl	%r10d,%r13d
++	movl	%ecx,%r14d
++	bswapl	%r12d
++	rorl	$14,%r13d
++	movl	%r11d,%r15d
++	xorl	%r10d,%r13d
++	rorl	$9,%r14d
++	xorl	%eax,%r15d
++	movl	%r12d,24(%rsp)
++	xorl	%ecx,%r14d
++	andl	%r10d,%r15d
++	rorl	$5,%r13d
++	addl	%ebx,%r12d
++	xorl	%eax,%r15d
++	rorl	$11,%r14d
++	xorl	%r10d,%r13d
++	addl	%r15d,%r12d
++	movl	%ecx,%r15d
++	addl	(%rbp),%r12d
++	xorl	%ecx,%r14d
++	xorl	%edx,%r15d
++	rorl	$6,%r13d
++	movl	%edx,%ebx
++	andl	%r15d,%edi
++	rorl	$2,%r14d
++	addl	%r13d,%r12d
++	xorl	%edi,%ebx
++	addl	%r12d,%r9d
++	addl	%r12d,%ebx
++	leaq	4(%rbp),%rbp
++	addl	%r14d,%ebx
++	movl	28(%rsi),%r12d
++	movl	%r9d,%r13d
++	movl	%ebx,%r14d
++	bswapl	%r12d
++	rorl	$14,%r13d
++	movl	%r10d,%edi
++	xorl	%r9d,%r13d
++	rorl	$9,%r14d
++	xorl	%r11d,%edi
++	movl	%r12d,28(%rsp)
++	xorl	%ebx,%r14d
++	andl	%r9d,%edi
++	rorl	$5,%r13d
++	addl	%eax,%r12d
++	xorl	%r11d,%edi
++	rorl	$11,%r14d
++	xorl	%r9d,%r13d
++	addl	%edi,%r12d
++	movl	%ebx,%edi
++	addl	(%rbp),%r12d
++	xorl	%ebx,%r14d
++	xorl	%ecx,%edi
++	rorl	$6,%r13d
++	movl	%ecx,%eax
++	andl	%edi,%r15d
++	rorl	$2,%r14d
++	addl	%r13d,%r12d
++	xorl	%r15d,%eax
++	addl	%r12d,%r8d
++	addl	%r12d,%eax
++	leaq	20(%rbp),%rbp
++	addl	%r14d,%eax
++	movl	32(%rsi),%r12d
++	movl	%r8d,%r13d
++	movl	%eax,%r14d
++	bswapl	%r12d
++	rorl	$14,%r13d
++	movl	%r9d,%r15d
++	xorl	%r8d,%r13d
++	rorl	$9,%r14d
++	xorl	%r10d,%r15d
++	movl	%r12d,32(%rsp)
++	xorl	%eax,%r14d
++	andl	%r8d,%r15d
++	rorl	$5,%r13d
++	addl	%r11d,%r12d
++	xorl	%r10d,%r15d
++	rorl	$11,%r14d
++	xorl	%r8d,%r13d
++	addl	%r15d,%r12d
++	movl	%eax,%r15d
++	addl	(%rbp),%r12d
++	xorl	%eax,%r14d
++	xorl	%ebx,%r15d
++	rorl	$6,%r13d
++	movl	%ebx,%r11d
++	andl	%r15d,%edi
++	rorl	$2,%r14d
++	addl	%r13d,%r12d
++	xorl	%edi,%r11d
++	addl	%r12d,%edx
++	addl	%r12d,%r11d
++	leaq	4(%rbp),%rbp
++	addl	%r14d,%r11d
++	movl	36(%rsi),%r12d
++	movl	%edx,%r13d
++	movl	%r11d,%r14d
++	bswapl	%r12d
++	rorl	$14,%r13d
++	movl	%r8d,%edi
++	xorl	%edx,%r13d
++	rorl	$9,%r14d
++	xorl	%r9d,%edi
++	movl	%r12d,36(%rsp)
++	xorl	%r11d,%r14d
++	andl	%edx,%edi
++	rorl	$5,%r13d
++	addl	%r10d,%r12d
++	xorl	%r9d,%edi
++	rorl	$11,%r14d
++	xorl	%edx,%r13d
++	addl	%edi,%r12d
++	movl	%r11d,%edi
++	addl	(%rbp),%r12d
++	xorl	%r11d,%r14d
++	xorl	%eax,%edi
++	rorl	$6,%r13d
++	movl	%eax,%r10d
++	andl	%edi,%r15d
++	rorl	$2,%r14d
++	addl	%r13d,%r12d
++	xorl	%r15d,%r10d
++	addl	%r12d,%ecx
++	addl	%r12d,%r10d
++	leaq	4(%rbp),%rbp
++	addl	%r14d,%r10d
++	movl	40(%rsi),%r12d
++	movl	%ecx,%r13d
++	movl	%r10d,%r14d
++	bswapl	%r12d
++	rorl	$14,%r13d
++	movl	%edx,%r15d
++	xorl	%ecx,%r13d
++	rorl	$9,%r14d
++	xorl	%r8d,%r15d
++	movl	%r12d,40(%rsp)
++	xorl	%r10d,%r14d
++	andl	%ecx,%r15d
++	rorl	$5,%r13d
++	addl	%r9d,%r12d
++	xorl	%r8d,%r15d
++	rorl	$11,%r14d
++	xorl	%ecx,%r13d
++	addl	%r15d,%r12d
++	movl	%r10d,%r15d
++	addl	(%rbp),%r12d
++	xorl	%r10d,%r14d
++	xorl	%r11d,%r15d
++	rorl	$6,%r13d
++	movl	%r11d,%r9d
++	andl	%r15d,%edi
++	rorl	$2,%r14d
++	addl	%r13d,%r12d
++	xorl	%edi,%r9d
++	addl	%r12d,%ebx
++	addl	%r12d,%r9d
++	leaq	4(%rbp),%rbp
++	addl	%r14d,%r9d
++	movl	44(%rsi),%r12d
++	movl	%ebx,%r13d
++	movl	%r9d,%r14d
++	bswapl	%r12d
++	rorl	$14,%r13d
++	movl	%ecx,%edi
++	xorl	%ebx,%r13d
++	rorl	$9,%r14d
++	xorl	%edx,%edi
++	movl	%r12d,44(%rsp)
++	xorl	%r9d,%r14d
++	andl	%ebx,%edi
++	rorl	$5,%r13d
++	addl	%r8d,%r12d
++	xorl	%edx,%edi
++	rorl	$11,%r14d
++	xorl	%ebx,%r13d
++	addl	%edi,%r12d
++	movl	%r9d,%edi
++	addl	(%rbp),%r12d
++	xorl	%r9d,%r14d
++	xorl	%r10d,%edi
++	rorl	$6,%r13d
++	movl	%r10d,%r8d
++	andl	%edi,%r15d
++	rorl	$2,%r14d
++	addl	%r13d,%r12d
++	xorl	%r15d,%r8d
++	addl	%r12d,%eax
++	addl	%r12d,%r8d
++	leaq	20(%rbp),%rbp
++	addl	%r14d,%r8d
++	movl	48(%rsi),%r12d
++	movl	%eax,%r13d
++	movl	%r8d,%r14d
++	bswapl	%r12d
++	rorl	$14,%r13d
++	movl	%ebx,%r15d
++	xorl	%eax,%r13d
++	rorl	$9,%r14d
++	xorl	%ecx,%r15d
++	movl	%r12d,48(%rsp)
++	xorl	%r8d,%r14d
++	andl	%eax,%r15d
++	rorl	$5,%r13d
++	addl	%edx,%r12d
++	xorl	%ecx,%r15d
++	rorl	$11,%r14d
++	xorl	%eax,%r13d
++	addl	%r15d,%r12d
++	movl	%r8d,%r15d
++	addl	(%rbp),%r12d
++	xorl	%r8d,%r14d
++	xorl	%r9d,%r15d
++	rorl	$6,%r13d
++	movl	%r9d,%edx
++	andl	%r15d,%edi
++	rorl	$2,%r14d
++	addl	%r13d,%r12d
++	xorl	%edi,%edx
++	addl	%r12d,%r11d
++	addl	%r12d,%edx
++	leaq	4(%rbp),%rbp
++	addl	%r14d,%edx
++	movl	52(%rsi),%r12d
++	movl	%r11d,%r13d
++	movl	%edx,%r14d
++	bswapl	%r12d
++	rorl	$14,%r13d
++	movl	%eax,%edi
++	xorl	%r11d,%r13d
++	rorl	$9,%r14d
++	xorl	%ebx,%edi
++	movl	%r12d,52(%rsp)
++	xorl	%edx,%r14d
++	andl	%r11d,%edi
++	rorl	$5,%r13d
++	addl	%ecx,%r12d
++	xorl	%ebx,%edi
++	rorl	$11,%r14d
++	xorl	%r11d,%r13d
++	addl	%edi,%r12d
++	movl	%edx,%edi
++	addl	(%rbp),%r12d
++	xorl	%edx,%r14d
++	xorl	%r8d,%edi
++	rorl	$6,%r13d
++	movl	%r8d,%ecx
++	andl	%edi,%r15d
++	rorl	$2,%r14d
++	addl	%r13d,%r12d
++	xorl	%r15d,%ecx
++	addl	%r12d,%r10d
++	addl	%r12d,%ecx
++	leaq	4(%rbp),%rbp
++	addl	%r14d,%ecx
++	movl	56(%rsi),%r12d
++	movl	%r10d,%r13d
++	movl	%ecx,%r14d
++	bswapl	%r12d
++	rorl	$14,%r13d
++	movl	%r11d,%r15d
++	xorl	%r10d,%r13d
++	rorl	$9,%r14d
++	xorl	%eax,%r15d
++	movl	%r12d,56(%rsp)
++	xorl	%ecx,%r14d
++	andl	%r10d,%r15d
++	rorl	$5,%r13d
++	addl	%ebx,%r12d
++	xorl	%eax,%r15d
++	rorl	$11,%r14d
++	xorl	%r10d,%r13d
++	addl	%r15d,%r12d
++	movl	%ecx,%r15d
++	addl	(%rbp),%r12d
++	xorl	%ecx,%r14d
++	xorl	%edx,%r15d
++	rorl	$6,%r13d
++	movl	%edx,%ebx
++	andl	%r15d,%edi
++	rorl	$2,%r14d
++	addl	%r13d,%r12d
++	xorl	%edi,%ebx
++	addl	%r12d,%r9d
++	addl	%r12d,%ebx
++	leaq	4(%rbp),%rbp
++	addl	%r14d,%ebx
++	movl	60(%rsi),%r12d
++	movl	%r9d,%r13d
++	movl	%ebx,%r14d
++	bswapl	%r12d
++	rorl	$14,%r13d
++	movl	%r10d,%edi
++	xorl	%r9d,%r13d
++	rorl	$9,%r14d
++	xorl	%r11d,%edi
++	movl	%r12d,60(%rsp)
++	xorl	%ebx,%r14d
++	andl	%r9d,%edi
++	rorl	$5,%r13d
++	addl	%eax,%r12d
++	xorl	%r11d,%edi
++	rorl	$11,%r14d
++	xorl	%r9d,%r13d
++	addl	%edi,%r12d
++	movl	%ebx,%edi
++	addl	(%rbp),%r12d
++	xorl	%ebx,%r14d
++	xorl	%ecx,%edi
++	rorl	$6,%r13d
++	movl	%ecx,%eax
++	andl	%edi,%r15d
++	rorl	$2,%r14d
++	addl	%r13d,%r12d
++	xorl	%r15d,%eax
++	addl	%r12d,%r8d
++	addl	%r12d,%eax
++	leaq	20(%rbp),%rbp
++	jmp	.Lrounds_16_xx
++.align	16
++.Lrounds_16_xx:
++	movl	4(%rsp),%r13d
++	movl	56(%rsp),%r15d
++	movl	%r13d,%r12d
++	rorl	$11,%r13d
++	addl	%r14d,%eax
++	movl	%r15d,%r14d
++	rorl	$2,%r15d
++	xorl	%r12d,%r13d
++	shrl	$3,%r12d
++	rorl	$7,%r13d
++	xorl	%r14d,%r15d
++	shrl	$10,%r14d
++	rorl	$17,%r15d
++	xorl	%r13d,%r12d
++	xorl	%r14d,%r15d
++	addl	36(%rsp),%r12d
++	addl	0(%rsp),%r12d
++	movl	%r8d,%r13d
++	addl	%r15d,%r12d
++	movl	%eax,%r14d
++	rorl	$14,%r13d
++	movl	%r9d,%r15d
++	xorl	%r8d,%r13d
++	rorl	$9,%r14d
++	xorl	%r10d,%r15d
++	movl	%r12d,0(%rsp)
++	xorl	%eax,%r14d
++	andl	%r8d,%r15d
++	rorl	$5,%r13d
++	addl	%r11d,%r12d
++	xorl	%r10d,%r15d
++	rorl	$11,%r14d
++	xorl	%r8d,%r13d
++	addl	%r15d,%r12d
++	movl	%eax,%r15d
++	addl	(%rbp),%r12d
++	xorl	%eax,%r14d
++	xorl	%ebx,%r15d
++	rorl	$6,%r13d
++	movl	%ebx,%r11d
++	andl	%r15d,%edi
++	rorl	$2,%r14d
++	addl	%r13d,%r12d
++	xorl	%edi,%r11d
++	addl	%r12d,%edx
++	addl	%r12d,%r11d
++	leaq	4(%rbp),%rbp
++	movl	8(%rsp),%r13d
++	movl	60(%rsp),%edi
++	movl	%r13d,%r12d
++	rorl	$11,%r13d
++	addl	%r14d,%r11d
++	movl	%edi,%r14d
++	rorl	$2,%edi
++	xorl	%r12d,%r13d
++	shrl	$3,%r12d
++	rorl	$7,%r13d
++	xorl	%r14d,%edi
++	shrl	$10,%r14d
++	rorl	$17,%edi
++	xorl	%r13d,%r12d
++	xorl	%r14d,%edi
++	addl	40(%rsp),%r12d
++	addl	4(%rsp),%r12d
++	movl	%edx,%r13d
++	addl	%edi,%r12d
++	movl	%r11d,%r14d
++	rorl	$14,%r13d
++	movl	%r8d,%edi
++	xorl	%edx,%r13d
++	rorl	$9,%r14d
++	xorl	%r9d,%edi
++	movl	%r12d,4(%rsp)
++	xorl	%r11d,%r14d
++	andl	%edx,%edi
++	rorl	$5,%r13d
++	addl	%r10d,%r12d
++	xorl	%r9d,%edi
++	rorl	$11,%r14d
++	xorl	%edx,%r13d
++	addl	%edi,%r12d
++	movl	%r11d,%edi
++	addl	(%rbp),%r12d
++	xorl	%r11d,%r14d
++	xorl	%eax,%edi
++	rorl	$6,%r13d
++	movl	%eax,%r10d
++	andl	%edi,%r15d
++	rorl	$2,%r14d
++	addl	%r13d,%r12d
++	xorl	%r15d,%r10d
++	addl	%r12d,%ecx
++	addl	%r12d,%r10d
++	leaq	4(%rbp),%rbp
++	movl	12(%rsp),%r13d
++	movl	0(%rsp),%r15d
++	movl	%r13d,%r12d
++	rorl	$11,%r13d
++	addl	%r14d,%r10d
++	movl	%r15d,%r14d
++	rorl	$2,%r15d
++	xorl	%r12d,%r13d
++	shrl	$3,%r12d
++	rorl	$7,%r13d
++	xorl	%r14d,%r15d
++	shrl	$10,%r14d
++	rorl	$17,%r15d
++	xorl	%r13d,%r12d
++	xorl	%r14d,%r15d
++	addl	44(%rsp),%r12d
++	addl	8(%rsp),%r12d
++	movl	%ecx,%r13d
++	addl	%r15d,%r12d
++	movl	%r10d,%r14d
++	rorl	$14,%r13d
++	movl	%edx,%r15d
++	xorl	%ecx,%r13d
++	rorl	$9,%r14d
++	xorl	%r8d,%r15d
++	movl	%r12d,8(%rsp)
++	xorl	%r10d,%r14d
++	andl	%ecx,%r15d
++	rorl	$5,%r13d
++	addl	%r9d,%r12d
++	xorl	%r8d,%r15d
++	rorl	$11,%r14d
++	xorl	%ecx,%r13d
++	addl	%r15d,%r12d
++	movl	%r10d,%r15d
++	addl	(%rbp),%r12d
++	xorl	%r10d,%r14d
++	xorl	%r11d,%r15d
++	rorl	$6,%r13d
++	movl	%r11d,%r9d
++	andl	%r15d,%edi
++	rorl	$2,%r14d
++	addl	%r13d,%r12d
++	xorl	%edi,%r9d
++	addl	%r12d,%ebx
++	addl	%r12d,%r9d
++	leaq	4(%rbp),%rbp
++	movl	16(%rsp),%r13d
++	movl	4(%rsp),%edi
++	movl	%r13d,%r12d
++	rorl	$11,%r13d
++	addl	%r14d,%r9d
++	movl	%edi,%r14d
++	rorl	$2,%edi
++	xorl	%r12d,%r13d
++	shrl	$3,%r12d
++	rorl	$7,%r13d
++	xorl	%r14d,%edi
++	shrl	$10,%r14d
++	rorl	$17,%edi
++	xorl	%r13d,%r12d
++	xorl	%r14d,%edi
++	addl	48(%rsp),%r12d
++	addl	12(%rsp),%r12d
++	movl	%ebx,%r13d
++	addl	%edi,%r12d
++	movl	%r9d,%r14d
++	rorl	$14,%r13d
++	movl	%ecx,%edi
++	xorl	%ebx,%r13d
++	rorl	$9,%r14d
++	xorl	%edx,%edi
++	movl	%r12d,12(%rsp)
++	xorl	%r9d,%r14d
++	andl	%ebx,%edi
++	rorl	$5,%r13d
++	addl	%r8d,%r12d
++	xorl	%edx,%edi
++	rorl	$11,%r14d
++	xorl	%ebx,%r13d
++	addl	%edi,%r12d
++	movl	%r9d,%edi
++	addl	(%rbp),%r12d
++	xorl	%r9d,%r14d
++	xorl	%r10d,%edi
++	rorl	$6,%r13d
++	movl	%r10d,%r8d
++	andl	%edi,%r15d
++	rorl	$2,%r14d
++	addl	%r13d,%r12d
++	xorl	%r15d,%r8d
++	addl	%r12d,%eax
++	addl	%r12d,%r8d
++	leaq	20(%rbp),%rbp
++	movl	20(%rsp),%r13d
++	movl	8(%rsp),%r15d
++	movl	%r13d,%r12d
++	rorl	$11,%r13d
++	addl	%r14d,%r8d
++	movl	%r15d,%r14d
++	rorl	$2,%r15d
++	xorl	%r12d,%r13d
++	shrl	$3,%r12d
++	rorl	$7,%r13d
++	xorl	%r14d,%r15d
++	shrl	$10,%r14d
++	rorl	$17,%r15d
++	xorl	%r13d,%r12d
++	xorl	%r14d,%r15d
++	addl	52(%rsp),%r12d
++	addl	16(%rsp),%r12d
++	movl	%eax,%r13d
++	addl	%r15d,%r12d
++	movl	%r8d,%r14d
++	rorl	$14,%r13d
++	movl	%ebx,%r15d
++	xorl	%eax,%r13d
++	rorl	$9,%r14d
++	xorl	%ecx,%r15d
++	movl	%r12d,16(%rsp)
++	xorl	%r8d,%r14d
++	andl	%eax,%r15d
++	rorl	$5,%r13d
++	addl	%edx,%r12d
++	xorl	%ecx,%r15d
++	rorl	$11,%r14d
++	xorl	%eax,%r13d
++	addl	%r15d,%r12d
++	movl	%r8d,%r15d
++	addl	(%rbp),%r12d
++	xorl	%r8d,%r14d
++	xorl	%r9d,%r15d
++	rorl	$6,%r13d
++	movl	%r9d,%edx
++	andl	%r15d,%edi
++	rorl	$2,%r14d
++	addl	%r13d,%r12d
++	xorl	%edi,%edx
++	addl	%r12d,%r11d
++	addl	%r12d,%edx
++	leaq	4(%rbp),%rbp
++	movl	24(%rsp),%r13d
++	movl	12(%rsp),%edi
++	movl	%r13d,%r12d
++	rorl	$11,%r13d
++	addl	%r14d,%edx
++	movl	%edi,%r14d
++	rorl	$2,%edi
++	xorl	%r12d,%r13d
++	shrl	$3,%r12d
++	rorl	$7,%r13d
++	xorl	%r14d,%edi
++	shrl	$10,%r14d
++	rorl	$17,%edi
++	xorl	%r13d,%r12d
++	xorl	%r14d,%edi
++	addl	56(%rsp),%r12d
++	addl	20(%rsp),%r12d
++	movl	%r11d,%r13d
++	addl	%edi,%r12d
++	movl	%edx,%r14d
++	rorl	$14,%r13d
++	movl	%eax,%edi
++	xorl	%r11d,%r13d
++	rorl	$9,%r14d
++	xorl	%ebx,%edi
++	movl	%r12d,20(%rsp)
++	xorl	%edx,%r14d
++	andl	%r11d,%edi
++	rorl	$5,%r13d
++	addl	%ecx,%r12d
++	xorl	%ebx,%edi
++	rorl	$11,%r14d
++	xorl	%r11d,%r13d
++	addl	%edi,%r12d
++	movl	%edx,%edi
++	addl	(%rbp),%r12d
++	xorl	%edx,%r14d
++	xorl	%r8d,%edi
++	rorl	$6,%r13d
++	movl	%r8d,%ecx
++	andl	%edi,%r15d
++	rorl	$2,%r14d
++	addl	%r13d,%r12d
++	xorl	%r15d,%ecx
++	addl	%r12d,%r10d
++	addl	%r12d,%ecx
++	leaq	4(%rbp),%rbp
++	movl	28(%rsp),%r13d
++	movl	16(%rsp),%r15d
++	movl	%r13d,%r12d
++	rorl	$11,%r13d
++	addl	%r14d,%ecx
++	movl	%r15d,%r14d
++	rorl	$2,%r15d
++	xorl	%r12d,%r13d
++	shrl	$3,%r12d
++	rorl	$7,%r13d
++	xorl	%r14d,%r15d
++	shrl	$10,%r14d
++	rorl	$17,%r15d
++	xorl	%r13d,%r12d
++	xorl	%r14d,%r15d
++	addl	60(%rsp),%r12d
++	addl	24(%rsp),%r12d
++	movl	%r10d,%r13d
++	addl	%r15d,%r12d
++	movl	%ecx,%r14d
++	rorl	$14,%r13d
++	movl	%r11d,%r15d
++	xorl	%r10d,%r13d
++	rorl	$9,%r14d
++	xorl	%eax,%r15d
++	movl	%r12d,24(%rsp)
++	xorl	%ecx,%r14d
++	andl	%r10d,%r15d
++	rorl	$5,%r13d
++	addl	%ebx,%r12d
++	xorl	%eax,%r15d
++	rorl	$11,%r14d
++	xorl	%r10d,%r13d
++	addl	%r15d,%r12d
++	movl	%ecx,%r15d
++	addl	(%rbp),%r12d
++	xorl	%ecx,%r14d
++	xorl	%edx,%r15d
++	rorl	$6,%r13d
++	movl	%edx,%ebx
++	andl	%r15d,%edi
++	rorl	$2,%r14d
++	addl	%r13d,%r12d
++	xorl	%edi,%ebx
++	addl	%r12d,%r9d
++	addl	%r12d,%ebx
++	leaq	4(%rbp),%rbp
++	movl	32(%rsp),%r13d
++	movl	20(%rsp),%edi
++	movl	%r13d,%r12d
++	rorl	$11,%r13d
++	addl	%r14d,%ebx
++	movl	%edi,%r14d
++	rorl	$2,%edi
++	xorl	%r12d,%r13d
++	shrl	$3,%r12d
++	rorl	$7,%r13d
++	xorl	%r14d,%edi
++	shrl	$10,%r14d
++	rorl	$17,%edi
++	xorl	%r13d,%r12d
++	xorl	%r14d,%edi
++	addl	0(%rsp),%r12d
++	addl	28(%rsp),%r12d
++	movl	%r9d,%r13d
++	addl	%edi,%r12d
++	movl	%ebx,%r14d
++	rorl	$14,%r13d
++	movl	%r10d,%edi
++	xorl	%r9d,%r13d
++	rorl	$9,%r14d
++	xorl	%r11d,%edi
++	movl	%r12d,28(%rsp)
++	xorl	%ebx,%r14d
++	andl	%r9d,%edi
++	rorl	$5,%r13d
++	addl	%eax,%r12d
++	xorl	%r11d,%edi
++	rorl	$11,%r14d
++	xorl	%r9d,%r13d
++	addl	%edi,%r12d
++	movl	%ebx,%edi
++	addl	(%rbp),%r12d
++	xorl	%ebx,%r14d
++	xorl	%ecx,%edi
++	rorl	$6,%r13d
++	movl	%ecx,%eax
++	andl	%edi,%r15d
++	rorl	$2,%r14d
++	addl	%r13d,%r12d
++	xorl	%r15d,%eax
++	addl	%r12d,%r8d
++	addl	%r12d,%eax
++	leaq	20(%rbp),%rbp
++	movl	36(%rsp),%r13d
++	movl	24(%rsp),%r15d
++	movl	%r13d,%r12d
++	rorl	$11,%r13d
++	addl	%r14d,%eax
++	movl	%r15d,%r14d
++	rorl	$2,%r15d
++	xorl	%r12d,%r13d
++	shrl	$3,%r12d
++	rorl	$7,%r13d
++	xorl	%r14d,%r15d
++	shrl	$10,%r14d
++	rorl	$17,%r15d
++	xorl	%r13d,%r12d
++	xorl	%r14d,%r15d
++	addl	4(%rsp),%r12d
++	addl	32(%rsp),%r12d
++	movl	%r8d,%r13d
++	addl	%r15d,%r12d
++	movl	%eax,%r14d
++	rorl	$14,%r13d
++	movl	%r9d,%r15d
++	xorl	%r8d,%r13d
++	rorl	$9,%r14d
++	xorl	%r10d,%r15d
++	movl	%r12d,32(%rsp)
++	xorl	%eax,%r14d
++	andl	%r8d,%r15d
++	rorl	$5,%r13d
++	addl	%r11d,%r12d
++	xorl	%r10d,%r15d
++	rorl	$11,%r14d
++	xorl	%r8d,%r13d
++	addl	%r15d,%r12d
++	movl	%eax,%r15d
++	addl	(%rbp),%r12d
++	xorl	%eax,%r14d
++	xorl	%ebx,%r15d
++	rorl	$6,%r13d
++	movl	%ebx,%r11d
++	andl	%r15d,%edi
++	rorl	$2,%r14d
++	addl	%r13d,%r12d
++	xorl	%edi,%r11d
++	addl	%r12d,%edx
++	addl	%r12d,%r11d
++	leaq	4(%rbp),%rbp
++	movl	40(%rsp),%r13d
++	movl	28(%rsp),%edi
++	movl	%r13d,%r12d
++	rorl	$11,%r13d
++	addl	%r14d,%r11d
++	movl	%edi,%r14d
++	rorl	$2,%edi
++	xorl	%r12d,%r13d
++	shrl	$3,%r12d
++	rorl	$7,%r13d
++	xorl	%r14d,%edi
++	shrl	$10,%r14d
++	rorl	$17,%edi
++	xorl	%r13d,%r12d
++	xorl	%r14d,%edi
++	addl	8(%rsp),%r12d
++	addl	36(%rsp),%r12d
++	movl	%edx,%r13d
++	addl	%edi,%r12d
++	movl	%r11d,%r14d
++	rorl	$14,%r13d
++	movl	%r8d,%edi
++	xorl	%edx,%r13d
++	rorl	$9,%r14d
++	xorl	%r9d,%edi
++	movl	%r12d,36(%rsp)
++	xorl	%r11d,%r14d
++	andl	%edx,%edi
++	rorl	$5,%r13d
++	addl	%r10d,%r12d
++	xorl	%r9d,%edi
++	rorl	$11,%r14d
++	xorl	%edx,%r13d
++	addl	%edi,%r12d
++	movl	%r11d,%edi
++	addl	(%rbp),%r12d
++	xorl	%r11d,%r14d
++	xorl	%eax,%edi
++	rorl	$6,%r13d
++	movl	%eax,%r10d
++	andl	%edi,%r15d
++	rorl	$2,%r14d
++	addl	%r13d,%r12d
++	xorl	%r15d,%r10d
++	addl	%r12d,%ecx
++	addl	%r12d,%r10d
++	leaq	4(%rbp),%rbp
++	movl	44(%rsp),%r13d
++	movl	32(%rsp),%r15d
++	movl	%r13d,%r12d
++	rorl	$11,%r13d
++	addl	%r14d,%r10d
++	movl	%r15d,%r14d
++	rorl	$2,%r15d
++	xorl	%r12d,%r13d
++	shrl	$3,%r12d
++	rorl	$7,%r13d
++	xorl	%r14d,%r15d
++	shrl	$10,%r14d
++	rorl	$17,%r15d
++	xorl	%r13d,%r12d
++	xorl	%r14d,%r15d
++	addl	12(%rsp),%r12d
++	addl	40(%rsp),%r12d
++	movl	%ecx,%r13d
++	addl	%r15d,%r12d
++	movl	%r10d,%r14d
++	rorl	$14,%r13d
++	movl	%edx,%r15d
++	xorl	%ecx,%r13d
++	rorl	$9,%r14d
++	xorl	%r8d,%r15d
++	movl	%r12d,40(%rsp)
++	xorl	%r10d,%r14d
++	andl	%ecx,%r15d
++	rorl	$5,%r13d
++	addl	%r9d,%r12d
++	xorl	%r8d,%r15d
++	rorl	$11,%r14d
++	xorl	%ecx,%r13d
++	addl	%r15d,%r12d
++	movl	%r10d,%r15d
++	addl	(%rbp),%r12d
++	xorl	%r10d,%r14d
++	xorl	%r11d,%r15d
++	rorl	$6,%r13d
++	movl	%r11d,%r9d
++	andl	%r15d,%edi
++	rorl	$2,%r14d
++	addl	%r13d,%r12d
++	xorl	%edi,%r9d
++	addl	%r12d,%ebx
++	addl	%r12d,%r9d
++	leaq	4(%rbp),%rbp
++	movl	48(%rsp),%r13d
++	movl	36(%rsp),%edi
++	movl	%r13d,%r12d
++	rorl	$11,%r13d
++	addl	%r14d,%r9d
++	movl	%edi,%r14d
++	rorl	$2,%edi
++	xorl	%r12d,%r13d
++	shrl	$3,%r12d
++	rorl	$7,%r13d
++	xorl	%r14d,%edi
++	shrl	$10,%r14d
++	rorl	$17,%edi
++	xorl	%r13d,%r12d
++	xorl	%r14d,%edi
++	addl	16(%rsp),%r12d
++	addl	44(%rsp),%r12d
++	movl	%ebx,%r13d
++	addl	%edi,%r12d
++	movl	%r9d,%r14d
++	rorl	$14,%r13d
++	movl	%ecx,%edi
++	xorl	%ebx,%r13d
++	rorl	$9,%r14d
++	xorl	%edx,%edi
++	movl	%r12d,44(%rsp)
++	xorl	%r9d,%r14d
++	andl	%ebx,%edi
++	rorl	$5,%r13d
++	addl	%r8d,%r12d
++	xorl	%edx,%edi
++	rorl	$11,%r14d
++	xorl	%ebx,%r13d
++	addl	%edi,%r12d
++	movl	%r9d,%edi
++	addl	(%rbp),%r12d
++	xorl	%r9d,%r14d
++	xorl	%r10d,%edi
++	rorl	$6,%r13d
++	movl	%r10d,%r8d
++	andl	%edi,%r15d
++	rorl	$2,%r14d
++	addl	%r13d,%r12d
++	xorl	%r15d,%r8d
++	addl	%r12d,%eax
++	addl	%r12d,%r8d
++	leaq	20(%rbp),%rbp
++	movl	52(%rsp),%r13d
++	movl	40(%rsp),%r15d
++	movl	%r13d,%r12d
++	rorl	$11,%r13d
++	addl	%r14d,%r8d
++	movl	%r15d,%r14d
++	rorl	$2,%r15d
++	xorl	%r12d,%r13d
++	shrl	$3,%r12d
++	rorl	$7,%r13d
++	xorl	%r14d,%r15d
++	shrl	$10,%r14d
++	rorl	$17,%r15d
++	xorl	%r13d,%r12d
++	xorl	%r14d,%r15d
++	addl	20(%rsp),%r12d
++	addl	48(%rsp),%r12d
++	movl	%eax,%r13d
++	addl	%r15d,%r12d
++	movl	%r8d,%r14d
++	rorl	$14,%r13d
++	movl	%ebx,%r15d
++	xorl	%eax,%r13d
++	rorl	$9,%r14d
++	xorl	%ecx,%r15d
++	movl	%r12d,48(%rsp)
++	xorl	%r8d,%r14d
++	andl	%eax,%r15d
++	rorl	$5,%r13d
++	addl	%edx,%r12d
++	xorl	%ecx,%r15d
++	rorl	$11,%r14d
++	xorl	%eax,%r13d
++	addl	%r15d,%r12d
++	movl	%r8d,%r15d
++	addl	(%rbp),%r12d
++	xorl	%r8d,%r14d
++	xorl	%r9d,%r15d
++	rorl	$6,%r13d
++	movl	%r9d,%edx
++	andl	%r15d,%edi
++	rorl	$2,%r14d
++	addl	%r13d,%r12d
++	xorl	%edi,%edx
++	addl	%r12d,%r11d
++	addl	%r12d,%edx
++	leaq	4(%rbp),%rbp
++	movl	56(%rsp),%r13d
++	movl	44(%rsp),%edi
++	movl	%r13d,%r12d
++	rorl	$11,%r13d
++	addl	%r14d,%edx
++	movl	%edi,%r14d
++	rorl	$2,%edi
++	xorl	%r12d,%r13d
++	shrl	$3,%r12d
++	rorl	$7,%r13d
++	xorl	%r14d,%edi
++	shrl	$10,%r14d
++	rorl	$17,%edi
++	xorl	%r13d,%r12d
++	xorl	%r14d,%edi
++	addl	24(%rsp),%r12d
++	addl	52(%rsp),%r12d
++	movl	%r11d,%r13d
++	addl	%edi,%r12d
++	movl	%edx,%r14d
++	rorl	$14,%r13d
++	movl	%eax,%edi
++	xorl	%r11d,%r13d
++	rorl	$9,%r14d
++	xorl	%ebx,%edi
++	movl	%r12d,52(%rsp)
++	xorl	%edx,%r14d
++	andl	%r11d,%edi
++	rorl	$5,%r13d
++	addl	%ecx,%r12d
++	xorl	%ebx,%edi
++	rorl	$11,%r14d
++	xorl	%r11d,%r13d
++	addl	%edi,%r12d
++	movl	%edx,%edi
++	addl	(%rbp),%r12d
++	xorl	%edx,%r14d
++	xorl	%r8d,%edi
++	rorl	$6,%r13d
++	movl	%r8d,%ecx
++	andl	%edi,%r15d
++	rorl	$2,%r14d
++	addl	%r13d,%r12d
++	xorl	%r15d,%ecx
++	addl	%r12d,%r10d
++	addl	%r12d,%ecx
++	leaq	4(%rbp),%rbp
++	movl	60(%rsp),%r13d
++	movl	48(%rsp),%r15d
++	movl	%r13d,%r12d
++	rorl	$11,%r13d
++	addl	%r14d,%ecx
++	movl	%r15d,%r14d
++	rorl	$2,%r15d
++	xorl	%r12d,%r13d
++	shrl	$3,%r12d
++	rorl	$7,%r13d
++	xorl	%r14d,%r15d
++	shrl	$10,%r14d
++	rorl	$17,%r15d
++	xorl	%r13d,%r12d
++	xorl	%r14d,%r15d
++	addl	28(%rsp),%r12d
++	addl	56(%rsp),%r12d
++	movl	%r10d,%r13d
++	addl	%r15d,%r12d
++	movl	%ecx,%r14d
++	rorl	$14,%r13d
++	movl	%r11d,%r15d
++	xorl	%r10d,%r13d
++	rorl	$9,%r14d
++	xorl	%eax,%r15d
++	movl	%r12d,56(%rsp)
++	xorl	%ecx,%r14d
++	andl	%r10d,%r15d
++	rorl	$5,%r13d
++	addl	%ebx,%r12d
++	xorl	%eax,%r15d
++	rorl	$11,%r14d
++	xorl	%r10d,%r13d
++	addl	%r15d,%r12d
++	movl	%ecx,%r15d
++	addl	(%rbp),%r12d
++	xorl	%ecx,%r14d
++	xorl	%edx,%r15d
++	rorl	$6,%r13d
++	movl	%edx,%ebx
++	andl	%r15d,%edi
++	rorl	$2,%r14d
++	addl	%r13d,%r12d
++	xorl	%edi,%ebx
++	addl	%r12d,%r9d
++	addl	%r12d,%ebx
++	leaq	4(%rbp),%rbp
++	movl	0(%rsp),%r13d
++	movl	52(%rsp),%edi
++	movl	%r13d,%r12d
++	rorl	$11,%r13d
++	addl	%r14d,%ebx
++	movl	%edi,%r14d
++	rorl	$2,%edi
++	xorl	%r12d,%r13d
++	shrl	$3,%r12d
++	rorl	$7,%r13d
++	xorl	%r14d,%edi
++	shrl	$10,%r14d
++	rorl	$17,%edi
++	xorl	%r13d,%r12d
++	xorl	%r14d,%edi
++	addl	32(%rsp),%r12d
++	addl	60(%rsp),%r12d
++	movl	%r9d,%r13d
++	addl	%edi,%r12d
++	movl	%ebx,%r14d
++	rorl	$14,%r13d
++	movl	%r10d,%edi
++	xorl	%r9d,%r13d
++	rorl	$9,%r14d
++	xorl	%r11d,%edi
++	movl	%r12d,60(%rsp)
++	xorl	%ebx,%r14d
++	andl	%r9d,%edi
++	rorl	$5,%r13d
++	addl	%eax,%r12d
++	xorl	%r11d,%edi
++	rorl	$11,%r14d
++	xorl	%r9d,%r13d
++	addl	%edi,%r12d
++	movl	%ebx,%edi
++	addl	(%rbp),%r12d
++	xorl	%ebx,%r14d
++	xorl	%ecx,%edi
++	rorl	$6,%r13d
++	movl	%ecx,%eax
++	andl	%edi,%r15d
++	rorl	$2,%r14d
++	addl	%r13d,%r12d
++	xorl	%r15d,%eax
++	addl	%r12d,%r8d
++	addl	%r12d,%eax
++	leaq	20(%rbp),%rbp
++	cmpb	$0,3(%rbp)
++	jnz	.Lrounds_16_xx
++	movq	64+0(%rsp),%rdi
++	addl	%r14d,%eax
++	leaq	64(%rsi),%rsi
++	addl	0(%rdi),%eax
++	addl	4(%rdi),%ebx
++	addl	8(%rdi),%ecx
++	addl	12(%rdi),%edx
++	addl	16(%rdi),%r8d
++	addl	20(%rdi),%r9d
++	addl	24(%rdi),%r10d
++	addl	28(%rdi),%r11d
++	cmpq	64+16(%rsp),%rsi
++	movl	%eax,0(%rdi)
++	movl	%ebx,4(%rdi)
++	movl	%ecx,8(%rdi)
++	movl	%edx,12(%rdi)
++	movl	%r8d,16(%rdi)
++	movl	%r9d,20(%rdi)
++	movl	%r10d,24(%rdi)
++	movl	%r11d,28(%rdi)
++	jb	.Lloop
++	movq	88(%rsp),%rsi
++.cfi_def_cfa	%rsi,8
++	movq	-48(%rsi),%r15
++.cfi_restore	%r15
++	movq	-40(%rsi),%r14
++.cfi_restore	%r14
++	movq	-32(%rsi),%r13
++.cfi_restore	%r13
++	movq	-24(%rsi),%r12
++.cfi_restore	%r12
++	movq	-16(%rsi),%rbp
++.cfi_restore	%rbp
++	movq	-8(%rsi),%rbx
++.cfi_restore	%rbx
++	leaq	(%rsi),%rsp
++.cfi_def_cfa_register	%rsp
++.Lepilogue:
++	.byte	0xf3,0xc3
++.cfi_endproc	
++.size	zfs_sha256_transform_x64,.-zfs_sha256_transform_x64
++
 +.globl	zfs_sha256_transform_shani
 +.type	zfs_sha256_transform_shani,@function
 +.align	64
@@ -24906,10 +25066,10 @@ index 00000000000..713a0b5e893
 +#endif
 diff --git a/module/icp/asm-x86_64/sha2/sha512-x86_64.S b/module/icp/asm-x86_64/sha2/sha512-x86_64.S
 new file mode 100644
-index 00000000000..2e04a2a1f66
+index 00000000000..a4224a20c11
 --- /dev/null
 +++ b/module/icp/asm-x86_64/sha2/sha512-x86_64.S
-@@ -0,0 +1,2650 @@
+@@ -0,0 +1,4003 @@
 +/*
 + * Copyright 2004-2022 The OpenSSL Project Authors. All Rights Reserved.
 + *
@@ -25010,6 +25170,1359 @@ index 00000000000..2e04a2a1f66
 +.quad	0x0001020304050607,0x08090a0b0c0d0e0f
 +.quad	0x0001020304050607,0x08090a0b0c0d0e0f
 +.byte	83,72,65,53,49,50,32,98,108,111,99,107,32,116,114,97,110,115,102,111,114,109,32,102,111,114,32,120,56,54,95,54,52,44,32,67,82,89,80,84,79,71,65,77,83,32,98,121,32,60,97,112,112,114,111,64,111,112,101,110,115,115,108,46,111,114,103,62,0
++
++.globl	zfs_sha512_transform_x64
++.type	zfs_sha512_transform_x64,@function
++.align	16
++zfs_sha512_transform_x64:
++.cfi_startproc	
++	movq	%rsp,%rax
++.cfi_def_cfa_register	%rax
++	pushq	%rbx
++.cfi_offset	%rbx,-16
++	pushq	%rbp
++.cfi_offset	%rbp,-24
++	pushq	%r12
++.cfi_offset	%r12,-32
++	pushq	%r13
++.cfi_offset	%r13,-40
++	pushq	%r14
++.cfi_offset	%r14,-48
++	pushq	%r15
++.cfi_offset	%r15,-56
++	shlq	$4,%rdx
++	subq	$128+32,%rsp
++	leaq	(%rsi,%rdx,8),%rdx
++	andq	$-64,%rsp
++	movq	%rdi,128+0(%rsp)
++	movq	%rsi,128+8(%rsp)
++	movq	%rdx,128+16(%rsp)
++	movq	%rax,152(%rsp)
++.cfi_escape	0x0f,0x06,0x77,0x98,0x01,0x06,0x23,0x08
++.Lprologue:
++	movq	0(%rdi),%rax
++	movq	8(%rdi),%rbx
++	movq	16(%rdi),%rcx
++	movq	24(%rdi),%rdx
++	movq	32(%rdi),%r8
++	movq	40(%rdi),%r9
++	movq	48(%rdi),%r10
++	movq	56(%rdi),%r11
++	jmp	.Lloop
++.align	16
++.Lloop:
++	movq	%rbx,%rdi
++	leaq	K512(%rip),%rbp
++	xorq	%rcx,%rdi
++	movq	0(%rsi),%r12
++	movq	%r8,%r13
++	movq	%rax,%r14
++	bswapq	%r12
++	rorq	$23,%r13
++	movq	%r9,%r15
++	xorq	%r8,%r13
++	rorq	$5,%r14
++	xorq	%r10,%r15
++	movq	%r12,0(%rsp)
++	xorq	%rax,%r14
++	andq	%r8,%r15
++	rorq	$4,%r13
++	addq	%r11,%r12
++	xorq	%r10,%r15
++	rorq	$6,%r14
++	xorq	%r8,%r13
++	addq	%r15,%r12
++	movq	%rax,%r15
++	addq	(%rbp),%r12
++	xorq	%rax,%r14
++	xorq	%rbx,%r15
++	rorq	$14,%r13
++	movq	%rbx,%r11
++	andq	%r15,%rdi
++	rorq	$28,%r14
++	addq	%r13,%r12
++	xorq	%rdi,%r11
++	addq	%r12,%rdx
++	addq	%r12,%r11
++	leaq	8(%rbp),%rbp
++	addq	%r14,%r11
++	movq	8(%rsi),%r12
++	movq	%rdx,%r13
++	movq	%r11,%r14
++	bswapq	%r12
++	rorq	$23,%r13
++	movq	%r8,%rdi
++	xorq	%rdx,%r13
++	rorq	$5,%r14
++	xorq	%r9,%rdi
++	movq	%r12,8(%rsp)
++	xorq	%r11,%r14
++	andq	%rdx,%rdi
++	rorq	$4,%r13
++	addq	%r10,%r12
++	xorq	%r9,%rdi
++	rorq	$6,%r14
++	xorq	%rdx,%r13
++	addq	%rdi,%r12
++	movq	%r11,%rdi
++	addq	(%rbp),%r12
++	xorq	%r11,%r14
++	xorq	%rax,%rdi
++	rorq	$14,%r13
++	movq	%rax,%r10
++	andq	%rdi,%r15
++	rorq	$28,%r14
++	addq	%r13,%r12
++	xorq	%r15,%r10
++	addq	%r12,%rcx
++	addq	%r12,%r10
++	leaq	24(%rbp),%rbp
++	addq	%r14,%r10
++	movq	16(%rsi),%r12
++	movq	%rcx,%r13
++	movq	%r10,%r14
++	bswapq	%r12
++	rorq	$23,%r13
++	movq	%rdx,%r15
++	xorq	%rcx,%r13
++	rorq	$5,%r14
++	xorq	%r8,%r15
++	movq	%r12,16(%rsp)
++	xorq	%r10,%r14
++	andq	%rcx,%r15
++	rorq	$4,%r13
++	addq	%r9,%r12
++	xorq	%r8,%r15
++	rorq	$6,%r14
++	xorq	%rcx,%r13
++	addq	%r15,%r12
++	movq	%r10,%r15
++	addq	(%rbp),%r12
++	xorq	%r10,%r14
++	xorq	%r11,%r15
++	rorq	$14,%r13
++	movq	%r11,%r9
++	andq	%r15,%rdi
++	rorq	$28,%r14
++	addq	%r13,%r12
++	xorq	%rdi,%r9
++	addq	%r12,%rbx
++	addq	%r12,%r9
++	leaq	8(%rbp),%rbp
++	addq	%r14,%r9
++	movq	24(%rsi),%r12
++	movq	%rbx,%r13
++	movq	%r9,%r14
++	bswapq	%r12
++	rorq	$23,%r13
++	movq	%rcx,%rdi
++	xorq	%rbx,%r13
++	rorq	$5,%r14
++	xorq	%rdx,%rdi
++	movq	%r12,24(%rsp)
++	xorq	%r9,%r14
++	andq	%rbx,%rdi
++	rorq	$4,%r13
++	addq	%r8,%r12
++	xorq	%rdx,%rdi
++	rorq	$6,%r14
++	xorq	%rbx,%r13
++	addq	%rdi,%r12
++	movq	%r9,%rdi
++	addq	(%rbp),%r12
++	xorq	%r9,%r14
++	xorq	%r10,%rdi
++	rorq	$14,%r13
++	movq	%r10,%r8
++	andq	%rdi,%r15
++	rorq	$28,%r14
++	addq	%r13,%r12
++	xorq	%r15,%r8
++	addq	%r12,%rax
++	addq	%r12,%r8
++	leaq	24(%rbp),%rbp
++	addq	%r14,%r8
++	movq	32(%rsi),%r12
++	movq	%rax,%r13
++	movq	%r8,%r14
++	bswapq	%r12
++	rorq	$23,%r13
++	movq	%rbx,%r15
++	xorq	%rax,%r13
++	rorq	$5,%r14
++	xorq	%rcx,%r15
++	movq	%r12,32(%rsp)
++	xorq	%r8,%r14
++	andq	%rax,%r15
++	rorq	$4,%r13
++	addq	%rdx,%r12
++	xorq	%rcx,%r15
++	rorq	$6,%r14
++	xorq	%rax,%r13
++	addq	%r15,%r12
++	movq	%r8,%r15
++	addq	(%rbp),%r12
++	xorq	%r8,%r14
++	xorq	%r9,%r15
++	rorq	$14,%r13
++	movq	%r9,%rdx
++	andq	%r15,%rdi
++	rorq	$28,%r14
++	addq	%r13,%r12
++	xorq	%rdi,%rdx
++	addq	%r12,%r11
++	addq	%r12,%rdx
++	leaq	8(%rbp),%rbp
++	addq	%r14,%rdx
++	movq	40(%rsi),%r12
++	movq	%r11,%r13
++	movq	%rdx,%r14
++	bswapq	%r12
++	rorq	$23,%r13
++	movq	%rax,%rdi
++	xorq	%r11,%r13
++	rorq	$5,%r14
++	xorq	%rbx,%rdi
++	movq	%r12,40(%rsp)
++	xorq	%rdx,%r14
++	andq	%r11,%rdi
++	rorq	$4,%r13
++	addq	%rcx,%r12
++	xorq	%rbx,%rdi
++	rorq	$6,%r14
++	xorq	%r11,%r13
++	addq	%rdi,%r12
++	movq	%rdx,%rdi
++	addq	(%rbp),%r12
++	xorq	%rdx,%r14
++	xorq	%r8,%rdi
++	rorq	$14,%r13
++	movq	%r8,%rcx
++	andq	%rdi,%r15
++	rorq	$28,%r14
++	addq	%r13,%r12
++	xorq	%r15,%rcx
++	addq	%r12,%r10
++	addq	%r12,%rcx
++	leaq	24(%rbp),%rbp
++	addq	%r14,%rcx
++	movq	48(%rsi),%r12
++	movq	%r10,%r13
++	movq	%rcx,%r14
++	bswapq	%r12
++	rorq	$23,%r13
++	movq	%r11,%r15
++	xorq	%r10,%r13
++	rorq	$5,%r14
++	xorq	%rax,%r15
++	movq	%r12,48(%rsp)
++	xorq	%rcx,%r14
++	andq	%r10,%r15
++	rorq	$4,%r13
++	addq	%rbx,%r12
++	xorq	%rax,%r15
++	rorq	$6,%r14
++	xorq	%r10,%r13
++	addq	%r15,%r12
++	movq	%rcx,%r15
++	addq	(%rbp),%r12
++	xorq	%rcx,%r14
++	xorq	%rdx,%r15
++	rorq	$14,%r13
++	movq	%rdx,%rbx
++	andq	%r15,%rdi
++	rorq	$28,%r14
++	addq	%r13,%r12
++	xorq	%rdi,%rbx
++	addq	%r12,%r9
++	addq	%r12,%rbx
++	leaq	8(%rbp),%rbp
++	addq	%r14,%rbx
++	movq	56(%rsi),%r12
++	movq	%r9,%r13
++	movq	%rbx,%r14
++	bswapq	%r12
++	rorq	$23,%r13
++	movq	%r10,%rdi
++	xorq	%r9,%r13
++	rorq	$5,%r14
++	xorq	%r11,%rdi
++	movq	%r12,56(%rsp)
++	xorq	%rbx,%r14
++	andq	%r9,%rdi
++	rorq	$4,%r13
++	addq	%rax,%r12
++	xorq	%r11,%rdi
++	rorq	$6,%r14
++	xorq	%r9,%r13
++	addq	%rdi,%r12
++	movq	%rbx,%rdi
++	addq	(%rbp),%r12
++	xorq	%rbx,%r14
++	xorq	%rcx,%rdi
++	rorq	$14,%r13
++	movq	%rcx,%rax
++	andq	%rdi,%r15
++	rorq	$28,%r14
++	addq	%r13,%r12
++	xorq	%r15,%rax
++	addq	%r12,%r8
++	addq	%r12,%rax
++	leaq	24(%rbp),%rbp
++	addq	%r14,%rax
++	movq	64(%rsi),%r12
++	movq	%r8,%r13
++	movq	%rax,%r14
++	bswapq	%r12
++	rorq	$23,%r13
++	movq	%r9,%r15
++	xorq	%r8,%r13
++	rorq	$5,%r14
++	xorq	%r10,%r15
++	movq	%r12,64(%rsp)
++	xorq	%rax,%r14
++	andq	%r8,%r15
++	rorq	$4,%r13
++	addq	%r11,%r12
++	xorq	%r10,%r15
++	rorq	$6,%r14
++	xorq	%r8,%r13
++	addq	%r15,%r12
++	movq	%rax,%r15
++	addq	(%rbp),%r12
++	xorq	%rax,%r14
++	xorq	%rbx,%r15
++	rorq	$14,%r13
++	movq	%rbx,%r11
++	andq	%r15,%rdi
++	rorq	$28,%r14
++	addq	%r13,%r12
++	xorq	%rdi,%r11
++	addq	%r12,%rdx
++	addq	%r12,%r11
++	leaq	8(%rbp),%rbp
++	addq	%r14,%r11
++	movq	72(%rsi),%r12
++	movq	%rdx,%r13
++	movq	%r11,%r14
++	bswapq	%r12
++	rorq	$23,%r13
++	movq	%r8,%rdi
++	xorq	%rdx,%r13
++	rorq	$5,%r14
++	xorq	%r9,%rdi
++	movq	%r12,72(%rsp)
++	xorq	%r11,%r14
++	andq	%rdx,%rdi
++	rorq	$4,%r13
++	addq	%r10,%r12
++	xorq	%r9,%rdi
++	rorq	$6,%r14
++	xorq	%rdx,%r13
++	addq	%rdi,%r12
++	movq	%r11,%rdi
++	addq	(%rbp),%r12
++	xorq	%r11,%r14
++	xorq	%rax,%rdi
++	rorq	$14,%r13
++	movq	%rax,%r10
++	andq	%rdi,%r15
++	rorq	$28,%r14
++	addq	%r13,%r12
++	xorq	%r15,%r10
++	addq	%r12,%rcx
++	addq	%r12,%r10
++	leaq	24(%rbp),%rbp
++	addq	%r14,%r10
++	movq	80(%rsi),%r12
++	movq	%rcx,%r13
++	movq	%r10,%r14
++	bswapq	%r12
++	rorq	$23,%r13
++	movq	%rdx,%r15
++	xorq	%rcx,%r13
++	rorq	$5,%r14
++	xorq	%r8,%r15
++	movq	%r12,80(%rsp)
++	xorq	%r10,%r14
++	andq	%rcx,%r15
++	rorq	$4,%r13
++	addq	%r9,%r12
++	xorq	%r8,%r15
++	rorq	$6,%r14
++	xorq	%rcx,%r13
++	addq	%r15,%r12
++	movq	%r10,%r15
++	addq	(%rbp),%r12
++	xorq	%r10,%r14
++	xorq	%r11,%r15
++	rorq	$14,%r13
++	movq	%r11,%r9
++	andq	%r15,%rdi
++	rorq	$28,%r14
++	addq	%r13,%r12
++	xorq	%rdi,%r9
++	addq	%r12,%rbx
++	addq	%r12,%r9
++	leaq	8(%rbp),%rbp
++	addq	%r14,%r9
++	movq	88(%rsi),%r12
++	movq	%rbx,%r13
++	movq	%r9,%r14
++	bswapq	%r12
++	rorq	$23,%r13
++	movq	%rcx,%rdi
++	xorq	%rbx,%r13
++	rorq	$5,%r14
++	xorq	%rdx,%rdi
++	movq	%r12,88(%rsp)
++	xorq	%r9,%r14
++	andq	%rbx,%rdi
++	rorq	$4,%r13
++	addq	%r8,%r12
++	xorq	%rdx,%rdi
++	rorq	$6,%r14
++	xorq	%rbx,%r13
++	addq	%rdi,%r12
++	movq	%r9,%rdi
++	addq	(%rbp),%r12
++	xorq	%r9,%r14
++	xorq	%r10,%rdi
++	rorq	$14,%r13
++	movq	%r10,%r8
++	andq	%rdi,%r15
++	rorq	$28,%r14
++	addq	%r13,%r12
++	xorq	%r15,%r8
++	addq	%r12,%rax
++	addq	%r12,%r8
++	leaq	24(%rbp),%rbp
++	addq	%r14,%r8
++	movq	96(%rsi),%r12
++	movq	%rax,%r13
++	movq	%r8,%r14
++	bswapq	%r12
++	rorq	$23,%r13
++	movq	%rbx,%r15
++	xorq	%rax,%r13
++	rorq	$5,%r14
++	xorq	%rcx,%r15
++	movq	%r12,96(%rsp)
++	xorq	%r8,%r14
++	andq	%rax,%r15
++	rorq	$4,%r13
++	addq	%rdx,%r12
++	xorq	%rcx,%r15
++	rorq	$6,%r14
++	xorq	%rax,%r13
++	addq	%r15,%r12
++	movq	%r8,%r15
++	addq	(%rbp),%r12
++	xorq	%r8,%r14
++	xorq	%r9,%r15
++	rorq	$14,%r13
++	movq	%r9,%rdx
++	andq	%r15,%rdi
++	rorq	$28,%r14
++	addq	%r13,%r12
++	xorq	%rdi,%rdx
++	addq	%r12,%r11
++	addq	%r12,%rdx
++	leaq	8(%rbp),%rbp
++	addq	%r14,%rdx
++	movq	104(%rsi),%r12
++	movq	%r11,%r13
++	movq	%rdx,%r14
++	bswapq	%r12
++	rorq	$23,%r13
++	movq	%rax,%rdi
++	xorq	%r11,%r13
++	rorq	$5,%r14
++	xorq	%rbx,%rdi
++	movq	%r12,104(%rsp)
++	xorq	%rdx,%r14
++	andq	%r11,%rdi
++	rorq	$4,%r13
++	addq	%rcx,%r12
++	xorq	%rbx,%rdi
++	rorq	$6,%r14
++	xorq	%r11,%r13
++	addq	%rdi,%r12
++	movq	%rdx,%rdi
++	addq	(%rbp),%r12
++	xorq	%rdx,%r14
++	xorq	%r8,%rdi
++	rorq	$14,%r13
++	movq	%r8,%rcx
++	andq	%rdi,%r15
++	rorq	$28,%r14
++	addq	%r13,%r12
++	xorq	%r15,%rcx
++	addq	%r12,%r10
++	addq	%r12,%rcx
++	leaq	24(%rbp),%rbp
++	addq	%r14,%rcx
++	movq	112(%rsi),%r12
++	movq	%r10,%r13
++	movq	%rcx,%r14
++	bswapq	%r12
++	rorq	$23,%r13
++	movq	%r11,%r15
++	xorq	%r10,%r13
++	rorq	$5,%r14
++	xorq	%rax,%r15
++	movq	%r12,112(%rsp)
++	xorq	%rcx,%r14
++	andq	%r10,%r15
++	rorq	$4,%r13
++	addq	%rbx,%r12
++	xorq	%rax,%r15
++	rorq	$6,%r14
++	xorq	%r10,%r13
++	addq	%r15,%r12
++	movq	%rcx,%r15
++	addq	(%rbp),%r12
++	xorq	%rcx,%r14
++	xorq	%rdx,%r15
++	rorq	$14,%r13
++	movq	%rdx,%rbx
++	andq	%r15,%rdi
++	rorq	$28,%r14
++	addq	%r13,%r12
++	xorq	%rdi,%rbx
++	addq	%r12,%r9
++	addq	%r12,%rbx
++	leaq	8(%rbp),%rbp
++	addq	%r14,%rbx
++	movq	120(%rsi),%r12
++	movq	%r9,%r13
++	movq	%rbx,%r14
++	bswapq	%r12
++	rorq	$23,%r13
++	movq	%r10,%rdi
++	xorq	%r9,%r13
++	rorq	$5,%r14
++	xorq	%r11,%rdi
++	movq	%r12,120(%rsp)
++	xorq	%rbx,%r14
++	andq	%r9,%rdi
++	rorq	$4,%r13
++	addq	%rax,%r12
++	xorq	%r11,%rdi
++	rorq	$6,%r14
++	xorq	%r9,%r13
++	addq	%rdi,%r12
++	movq	%rbx,%rdi
++	addq	(%rbp),%r12
++	xorq	%rbx,%r14
++	xorq	%rcx,%rdi
++	rorq	$14,%r13
++	movq	%rcx,%rax
++	andq	%rdi,%r15
++	rorq	$28,%r14
++	addq	%r13,%r12
++	xorq	%r15,%rax
++	addq	%r12,%r8
++	addq	%r12,%rax
++	leaq	24(%rbp),%rbp
++	jmp	.Lrounds_16_xx
++.align	16
++.Lrounds_16_xx:
++	movq	8(%rsp),%r13
++	movq	112(%rsp),%r15
++	movq	%r13,%r12
++	rorq	$7,%r13
++	addq	%r14,%rax
++	movq	%r15,%r14
++	rorq	$42,%r15
++	xorq	%r12,%r13
++	shrq	$7,%r12
++	rorq	$1,%r13
++	xorq	%r14,%r15
++	shrq	$6,%r14
++	rorq	$19,%r15
++	xorq	%r13,%r12
++	xorq	%r14,%r15
++	addq	72(%rsp),%r12
++	addq	0(%rsp),%r12
++	movq	%r8,%r13
++	addq	%r15,%r12
++	movq	%rax,%r14
++	rorq	$23,%r13
++	movq	%r9,%r15
++	xorq	%r8,%r13
++	rorq	$5,%r14
++	xorq	%r10,%r15
++	movq	%r12,0(%rsp)
++	xorq	%rax,%r14
++	andq	%r8,%r15
++	rorq	$4,%r13
++	addq	%r11,%r12
++	xorq	%r10,%r15
++	rorq	$6,%r14
++	xorq	%r8,%r13
++	addq	%r15,%r12
++	movq	%rax,%r15
++	addq	(%rbp),%r12
++	xorq	%rax,%r14
++	xorq	%rbx,%r15
++	rorq	$14,%r13
++	movq	%rbx,%r11
++	andq	%r15,%rdi
++	rorq	$28,%r14
++	addq	%r13,%r12
++	xorq	%rdi,%r11
++	addq	%r12,%rdx
++	addq	%r12,%r11
++	leaq	8(%rbp),%rbp
++	movq	16(%rsp),%r13
++	movq	120(%rsp),%rdi
++	movq	%r13,%r12
++	rorq	$7,%r13
++	addq	%r14,%r11
++	movq	%rdi,%r14
++	rorq	$42,%rdi
++	xorq	%r12,%r13
++	shrq	$7,%r12
++	rorq	$1,%r13
++	xorq	%r14,%rdi
++	shrq	$6,%r14
++	rorq	$19,%rdi
++	xorq	%r13,%r12
++	xorq	%r14,%rdi
++	addq	80(%rsp),%r12
++	addq	8(%rsp),%r12
++	movq	%rdx,%r13
++	addq	%rdi,%r12
++	movq	%r11,%r14
++	rorq	$23,%r13
++	movq	%r8,%rdi
++	xorq	%rdx,%r13
++	rorq	$5,%r14
++	xorq	%r9,%rdi
++	movq	%r12,8(%rsp)
++	xorq	%r11,%r14
++	andq	%rdx,%rdi
++	rorq	$4,%r13
++	addq	%r10,%r12
++	xorq	%r9,%rdi
++	rorq	$6,%r14
++	xorq	%rdx,%r13
++	addq	%rdi,%r12
++	movq	%r11,%rdi
++	addq	(%rbp),%r12
++	xorq	%r11,%r14
++	xorq	%rax,%rdi
++	rorq	$14,%r13
++	movq	%rax,%r10
++	andq	%rdi,%r15
++	rorq	$28,%r14
++	addq	%r13,%r12
++	xorq	%r15,%r10
++	addq	%r12,%rcx
++	addq	%r12,%r10
++	leaq	24(%rbp),%rbp
++	movq	24(%rsp),%r13
++	movq	0(%rsp),%r15
++	movq	%r13,%r12
++	rorq	$7,%r13
++	addq	%r14,%r10
++	movq	%r15,%r14
++	rorq	$42,%r15
++	xorq	%r12,%r13
++	shrq	$7,%r12
++	rorq	$1,%r13
++	xorq	%r14,%r15
++	shrq	$6,%r14
++	rorq	$19,%r15
++	xorq	%r13,%r12
++	xorq	%r14,%r15
++	addq	88(%rsp),%r12
++	addq	16(%rsp),%r12
++	movq	%rcx,%r13
++	addq	%r15,%r12
++	movq	%r10,%r14
++	rorq	$23,%r13
++	movq	%rdx,%r15
++	xorq	%rcx,%r13
++	rorq	$5,%r14
++	xorq	%r8,%r15
++	movq	%r12,16(%rsp)
++	xorq	%r10,%r14
++	andq	%rcx,%r15
++	rorq	$4,%r13
++	addq	%r9,%r12
++	xorq	%r8,%r15
++	rorq	$6,%r14
++	xorq	%rcx,%r13
++	addq	%r15,%r12
++	movq	%r10,%r15
++	addq	(%rbp),%r12
++	xorq	%r10,%r14
++	xorq	%r11,%r15
++	rorq	$14,%r13
++	movq	%r11,%r9
++	andq	%r15,%rdi
++	rorq	$28,%r14
++	addq	%r13,%r12
++	xorq	%rdi,%r9
++	addq	%r12,%rbx
++	addq	%r12,%r9
++	leaq	8(%rbp),%rbp
++	movq	32(%rsp),%r13
++	movq	8(%rsp),%rdi
++	movq	%r13,%r12
++	rorq	$7,%r13
++	addq	%r14,%r9
++	movq	%rdi,%r14
++	rorq	$42,%rdi
++	xorq	%r12,%r13
++	shrq	$7,%r12
++	rorq	$1,%r13
++	xorq	%r14,%rdi
++	shrq	$6,%r14
++	rorq	$19,%rdi
++	xorq	%r13,%r12
++	xorq	%r14,%rdi
++	addq	96(%rsp),%r12
++	addq	24(%rsp),%r12
++	movq	%rbx,%r13
++	addq	%rdi,%r12
++	movq	%r9,%r14
++	rorq	$23,%r13
++	movq	%rcx,%rdi
++	xorq	%rbx,%r13
++	rorq	$5,%r14
++	xorq	%rdx,%rdi
++	movq	%r12,24(%rsp)
++	xorq	%r9,%r14
++	andq	%rbx,%rdi
++	rorq	$4,%r13
++	addq	%r8,%r12
++	xorq	%rdx,%rdi
++	rorq	$6,%r14
++	xorq	%rbx,%r13
++	addq	%rdi,%r12
++	movq	%r9,%rdi
++	addq	(%rbp),%r12
++	xorq	%r9,%r14
++	xorq	%r10,%rdi
++	rorq	$14,%r13
++	movq	%r10,%r8
++	andq	%rdi,%r15
++	rorq	$28,%r14
++	addq	%r13,%r12
++	xorq	%r15,%r8
++	addq	%r12,%rax
++	addq	%r12,%r8
++	leaq	24(%rbp),%rbp
++	movq	40(%rsp),%r13
++	movq	16(%rsp),%r15
++	movq	%r13,%r12
++	rorq	$7,%r13
++	addq	%r14,%r8
++	movq	%r15,%r14
++	rorq	$42,%r15
++	xorq	%r12,%r13
++	shrq	$7,%r12
++	rorq	$1,%r13
++	xorq	%r14,%r15
++	shrq	$6,%r14
++	rorq	$19,%r15
++	xorq	%r13,%r12
++	xorq	%r14,%r15
++	addq	104(%rsp),%r12
++	addq	32(%rsp),%r12
++	movq	%rax,%r13
++	addq	%r15,%r12
++	movq	%r8,%r14
++	rorq	$23,%r13
++	movq	%rbx,%r15
++	xorq	%rax,%r13
++	rorq	$5,%r14
++	xorq	%rcx,%r15
++	movq	%r12,32(%rsp)
++	xorq	%r8,%r14
++	andq	%rax,%r15
++	rorq	$4,%r13
++	addq	%rdx,%r12
++	xorq	%rcx,%r15
++	rorq	$6,%r14
++	xorq	%rax,%r13
++	addq	%r15,%r12
++	movq	%r8,%r15
++	addq	(%rbp),%r12
++	xorq	%r8,%r14
++	xorq	%r9,%r15
++	rorq	$14,%r13
++	movq	%r9,%rdx
++	andq	%r15,%rdi
++	rorq	$28,%r14
++	addq	%r13,%r12
++	xorq	%rdi,%rdx
++	addq	%r12,%r11
++	addq	%r12,%rdx
++	leaq	8(%rbp),%rbp
++	movq	48(%rsp),%r13
++	movq	24(%rsp),%rdi
++	movq	%r13,%r12
++	rorq	$7,%r13
++	addq	%r14,%rdx
++	movq	%rdi,%r14
++	rorq	$42,%rdi
++	xorq	%r12,%r13
++	shrq	$7,%r12
++	rorq	$1,%r13
++	xorq	%r14,%rdi
++	shrq	$6,%r14
++	rorq	$19,%rdi
++	xorq	%r13,%r12
++	xorq	%r14,%rdi
++	addq	112(%rsp),%r12
++	addq	40(%rsp),%r12
++	movq	%r11,%r13
++	addq	%rdi,%r12
++	movq	%rdx,%r14
++	rorq	$23,%r13
++	movq	%rax,%rdi
++	xorq	%r11,%r13
++	rorq	$5,%r14
++	xorq	%rbx,%rdi
++	movq	%r12,40(%rsp)
++	xorq	%rdx,%r14
++	andq	%r11,%rdi
++	rorq	$4,%r13
++	addq	%rcx,%r12
++	xorq	%rbx,%rdi
++	rorq	$6,%r14
++	xorq	%r11,%r13
++	addq	%rdi,%r12
++	movq	%rdx,%rdi
++	addq	(%rbp),%r12
++	xorq	%rdx,%r14
++	xorq	%r8,%rdi
++	rorq	$14,%r13
++	movq	%r8,%rcx
++	andq	%rdi,%r15
++	rorq	$28,%r14
++	addq	%r13,%r12
++	xorq	%r15,%rcx
++	addq	%r12,%r10
++	addq	%r12,%rcx
++	leaq	24(%rbp),%rbp
++	movq	56(%rsp),%r13
++	movq	32(%rsp),%r15
++	movq	%r13,%r12
++	rorq	$7,%r13
++	addq	%r14,%rcx
++	movq	%r15,%r14
++	rorq	$42,%r15
++	xorq	%r12,%r13
++	shrq	$7,%r12
++	rorq	$1,%r13
++	xorq	%r14,%r15
++	shrq	$6,%r14
++	rorq	$19,%r15
++	xorq	%r13,%r12
++	xorq	%r14,%r15
++	addq	120(%rsp),%r12
++	addq	48(%rsp),%r12
++	movq	%r10,%r13
++	addq	%r15,%r12
++	movq	%rcx,%r14
++	rorq	$23,%r13
++	movq	%r11,%r15
++	xorq	%r10,%r13
++	rorq	$5,%r14
++	xorq	%rax,%r15
++	movq	%r12,48(%rsp)
++	xorq	%rcx,%r14
++	andq	%r10,%r15
++	rorq	$4,%r13
++	addq	%rbx,%r12
++	xorq	%rax,%r15
++	rorq	$6,%r14
++	xorq	%r10,%r13
++	addq	%r15,%r12
++	movq	%rcx,%r15
++	addq	(%rbp),%r12
++	xorq	%rcx,%r14
++	xorq	%rdx,%r15
++	rorq	$14,%r13
++	movq	%rdx,%rbx
++	andq	%r15,%rdi
++	rorq	$28,%r14
++	addq	%r13,%r12
++	xorq	%rdi,%rbx
++	addq	%r12,%r9
++	addq	%r12,%rbx
++	leaq	8(%rbp),%rbp
++	movq	64(%rsp),%r13
++	movq	40(%rsp),%rdi
++	movq	%r13,%r12
++	rorq	$7,%r13
++	addq	%r14,%rbx
++	movq	%rdi,%r14
++	rorq	$42,%rdi
++	xorq	%r12,%r13
++	shrq	$7,%r12
++	rorq	$1,%r13
++	xorq	%r14,%rdi
++	shrq	$6,%r14
++	rorq	$19,%rdi
++	xorq	%r13,%r12
++	xorq	%r14,%rdi
++	addq	0(%rsp),%r12
++	addq	56(%rsp),%r12
++	movq	%r9,%r13
++	addq	%rdi,%r12
++	movq	%rbx,%r14
++	rorq	$23,%r13
++	movq	%r10,%rdi
++	xorq	%r9,%r13
++	rorq	$5,%r14
++	xorq	%r11,%rdi
++	movq	%r12,56(%rsp)
++	xorq	%rbx,%r14
++	andq	%r9,%rdi
++	rorq	$4,%r13
++	addq	%rax,%r12
++	xorq	%r11,%rdi
++	rorq	$6,%r14
++	xorq	%r9,%r13
++	addq	%rdi,%r12
++	movq	%rbx,%rdi
++	addq	(%rbp),%r12
++	xorq	%rbx,%r14
++	xorq	%rcx,%rdi
++	rorq	$14,%r13
++	movq	%rcx,%rax
++	andq	%rdi,%r15
++	rorq	$28,%r14
++	addq	%r13,%r12
++	xorq	%r15,%rax
++	addq	%r12,%r8
++	addq	%r12,%rax
++	leaq	24(%rbp),%rbp
++	movq	72(%rsp),%r13
++	movq	48(%rsp),%r15
++	movq	%r13,%r12
++	rorq	$7,%r13
++	addq	%r14,%rax
++	movq	%r15,%r14
++	rorq	$42,%r15
++	xorq	%r12,%r13
++	shrq	$7,%r12
++	rorq	$1,%r13
++	xorq	%r14,%r15
++	shrq	$6,%r14
++	rorq	$19,%r15
++	xorq	%r13,%r12
++	xorq	%r14,%r15
++	addq	8(%rsp),%r12
++	addq	64(%rsp),%r12
++	movq	%r8,%r13
++	addq	%r15,%r12
++	movq	%rax,%r14
++	rorq	$23,%r13
++	movq	%r9,%r15
++	xorq	%r8,%r13
++	rorq	$5,%r14
++	xorq	%r10,%r15
++	movq	%r12,64(%rsp)
++	xorq	%rax,%r14
++	andq	%r8,%r15
++	rorq	$4,%r13
++	addq	%r11,%r12
++	xorq	%r10,%r15
++	rorq	$6,%r14
++	xorq	%r8,%r13
++	addq	%r15,%r12
++	movq	%rax,%r15
++	addq	(%rbp),%r12
++	xorq	%rax,%r14
++	xorq	%rbx,%r15
++	rorq	$14,%r13
++	movq	%rbx,%r11
++	andq	%r15,%rdi
++	rorq	$28,%r14
++	addq	%r13,%r12
++	xorq	%rdi,%r11
++	addq	%r12,%rdx
++	addq	%r12,%r11
++	leaq	8(%rbp),%rbp
++	movq	80(%rsp),%r13
++	movq	56(%rsp),%rdi
++	movq	%r13,%r12
++	rorq	$7,%r13
++	addq	%r14,%r11
++	movq	%rdi,%r14
++	rorq	$42,%rdi
++	xorq	%r12,%r13
++	shrq	$7,%r12
++	rorq	$1,%r13
++	xorq	%r14,%rdi
++	shrq	$6,%r14
++	rorq	$19,%rdi
++	xorq	%r13,%r12
++	xorq	%r14,%rdi
++	addq	16(%rsp),%r12
++	addq	72(%rsp),%r12
++	movq	%rdx,%r13
++	addq	%rdi,%r12
++	movq	%r11,%r14
++	rorq	$23,%r13
++	movq	%r8,%rdi
++	xorq	%rdx,%r13
++	rorq	$5,%r14
++	xorq	%r9,%rdi
++	movq	%r12,72(%rsp)
++	xorq	%r11,%r14
++	andq	%rdx,%rdi
++	rorq	$4,%r13
++	addq	%r10,%r12
++	xorq	%r9,%rdi
++	rorq	$6,%r14
++	xorq	%rdx,%r13
++	addq	%rdi,%r12
++	movq	%r11,%rdi
++	addq	(%rbp),%r12
++	xorq	%r11,%r14
++	xorq	%rax,%rdi
++	rorq	$14,%r13
++	movq	%rax,%r10
++	andq	%rdi,%r15
++	rorq	$28,%r14
++	addq	%r13,%r12
++	xorq	%r15,%r10
++	addq	%r12,%rcx
++	addq	%r12,%r10
++	leaq	24(%rbp),%rbp
++	movq	88(%rsp),%r13
++	movq	64(%rsp),%r15
++	movq	%r13,%r12
++	rorq	$7,%r13
++	addq	%r14,%r10
++	movq	%r15,%r14
++	rorq	$42,%r15
++	xorq	%r12,%r13
++	shrq	$7,%r12
++	rorq	$1,%r13
++	xorq	%r14,%r15
++	shrq	$6,%r14
++	rorq	$19,%r15
++	xorq	%r13,%r12
++	xorq	%r14,%r15
++	addq	24(%rsp),%r12
++	addq	80(%rsp),%r12
++	movq	%rcx,%r13
++	addq	%r15,%r12
++	movq	%r10,%r14
++	rorq	$23,%r13
++	movq	%rdx,%r15
++	xorq	%rcx,%r13
++	rorq	$5,%r14
++	xorq	%r8,%r15
++	movq	%r12,80(%rsp)
++	xorq	%r10,%r14
++	andq	%rcx,%r15
++	rorq	$4,%r13
++	addq	%r9,%r12
++	xorq	%r8,%r15
++	rorq	$6,%r14
++	xorq	%rcx,%r13
++	addq	%r15,%r12
++	movq	%r10,%r15
++	addq	(%rbp),%r12
++	xorq	%r10,%r14
++	xorq	%r11,%r15
++	rorq	$14,%r13
++	movq	%r11,%r9
++	andq	%r15,%rdi
++	rorq	$28,%r14
++	addq	%r13,%r12
++	xorq	%rdi,%r9
++	addq	%r12,%rbx
++	addq	%r12,%r9
++	leaq	8(%rbp),%rbp
++	movq	96(%rsp),%r13
++	movq	72(%rsp),%rdi
++	movq	%r13,%r12
++	rorq	$7,%r13
++	addq	%r14,%r9
++	movq	%rdi,%r14
++	rorq	$42,%rdi
++	xorq	%r12,%r13
++	shrq	$7,%r12
++	rorq	$1,%r13
++	xorq	%r14,%rdi
++	shrq	$6,%r14
++	rorq	$19,%rdi
++	xorq	%r13,%r12
++	xorq	%r14,%rdi
++	addq	32(%rsp),%r12
++	addq	88(%rsp),%r12
++	movq	%rbx,%r13
++	addq	%rdi,%r12
++	movq	%r9,%r14
++	rorq	$23,%r13
++	movq	%rcx,%rdi
++	xorq	%rbx,%r13
++	rorq	$5,%r14
++	xorq	%rdx,%rdi
++	movq	%r12,88(%rsp)
++	xorq	%r9,%r14
++	andq	%rbx,%rdi
++	rorq	$4,%r13
++	addq	%r8,%r12
++	xorq	%rdx,%rdi
++	rorq	$6,%r14
++	xorq	%rbx,%r13
++	addq	%rdi,%r12
++	movq	%r9,%rdi
++	addq	(%rbp),%r12
++	xorq	%r9,%r14
++	xorq	%r10,%rdi
++	rorq	$14,%r13
++	movq	%r10,%r8
++	andq	%rdi,%r15
++	rorq	$28,%r14
++	addq	%r13,%r12
++	xorq	%r15,%r8
++	addq	%r12,%rax
++	addq	%r12,%r8
++	leaq	24(%rbp),%rbp
++	movq	104(%rsp),%r13
++	movq	80(%rsp),%r15
++	movq	%r13,%r12
++	rorq	$7,%r13
++	addq	%r14,%r8
++	movq	%r15,%r14
++	rorq	$42,%r15
++	xorq	%r12,%r13
++	shrq	$7,%r12
++	rorq	$1,%r13
++	xorq	%r14,%r15
++	shrq	$6,%r14
++	rorq	$19,%r15
++	xorq	%r13,%r12
++	xorq	%r14,%r15
++	addq	40(%rsp),%r12
++	addq	96(%rsp),%r12
++	movq	%rax,%r13
++	addq	%r15,%r12
++	movq	%r8,%r14
++	rorq	$23,%r13
++	movq	%rbx,%r15
++	xorq	%rax,%r13
++	rorq	$5,%r14
++	xorq	%rcx,%r15
++	movq	%r12,96(%rsp)
++	xorq	%r8,%r14
++	andq	%rax,%r15
++	rorq	$4,%r13
++	addq	%rdx,%r12
++	xorq	%rcx,%r15
++	rorq	$6,%r14
++	xorq	%rax,%r13
++	addq	%r15,%r12
++	movq	%r8,%r15
++	addq	(%rbp),%r12
++	xorq	%r8,%r14
++	xorq	%r9,%r15
++	rorq	$14,%r13
++	movq	%r9,%rdx
++	andq	%r15,%rdi
++	rorq	$28,%r14
++	addq	%r13,%r12
++	xorq	%rdi,%rdx
++	addq	%r12,%r11
++	addq	%r12,%rdx
++	leaq	8(%rbp),%rbp
++	movq	112(%rsp),%r13
++	movq	88(%rsp),%rdi
++	movq	%r13,%r12
++	rorq	$7,%r13
++	addq	%r14,%rdx
++	movq	%rdi,%r14
++	rorq	$42,%rdi
++	xorq	%r12,%r13
++	shrq	$7,%r12
++	rorq	$1,%r13
++	xorq	%r14,%rdi
++	shrq	$6,%r14
++	rorq	$19,%rdi
++	xorq	%r13,%r12
++	xorq	%r14,%rdi
++	addq	48(%rsp),%r12
++	addq	104(%rsp),%r12
++	movq	%r11,%r13
++	addq	%rdi,%r12
++	movq	%rdx,%r14
++	rorq	$23,%r13
++	movq	%rax,%rdi
++	xorq	%r11,%r13
++	rorq	$5,%r14
++	xorq	%rbx,%rdi
++	movq	%r12,104(%rsp)
++	xorq	%rdx,%r14
++	andq	%r11,%rdi
++	rorq	$4,%r13
++	addq	%rcx,%r12
++	xorq	%rbx,%rdi
++	rorq	$6,%r14
++	xorq	%r11,%r13
++	addq	%rdi,%r12
++	movq	%rdx,%rdi
++	addq	(%rbp),%r12
++	xorq	%rdx,%r14
++	xorq	%r8,%rdi
++	rorq	$14,%r13
++	movq	%r8,%rcx
++	andq	%rdi,%r15
++	rorq	$28,%r14
++	addq	%r13,%r12
++	xorq	%r15,%rcx
++	addq	%r12,%r10
++	addq	%r12,%rcx
++	leaq	24(%rbp),%rbp
++	movq	120(%rsp),%r13
++	movq	96(%rsp),%r15
++	movq	%r13,%r12
++	rorq	$7,%r13
++	addq	%r14,%rcx
++	movq	%r15,%r14
++	rorq	$42,%r15
++	xorq	%r12,%r13
++	shrq	$7,%r12
++	rorq	$1,%r13
++	xorq	%r14,%r15
++	shrq	$6,%r14
++	rorq	$19,%r15
++	xorq	%r13,%r12
++	xorq	%r14,%r15
++	addq	56(%rsp),%r12
++	addq	112(%rsp),%r12
++	movq	%r10,%r13
++	addq	%r15,%r12
++	movq	%rcx,%r14
++	rorq	$23,%r13
++	movq	%r11,%r15
++	xorq	%r10,%r13
++	rorq	$5,%r14
++	xorq	%rax,%r15
++	movq	%r12,112(%rsp)
++	xorq	%rcx,%r14
++	andq	%r10,%r15
++	rorq	$4,%r13
++	addq	%rbx,%r12
++	xorq	%rax,%r15
++	rorq	$6,%r14
++	xorq	%r10,%r13
++	addq	%r15,%r12
++	movq	%rcx,%r15
++	addq	(%rbp),%r12
++	xorq	%rcx,%r14
++	xorq	%rdx,%r15
++	rorq	$14,%r13
++	movq	%rdx,%rbx
++	andq	%r15,%rdi
++	rorq	$28,%r14
++	addq	%r13,%r12
++	xorq	%rdi,%rbx
++	addq	%r12,%r9
++	addq	%r12,%rbx
++	leaq	8(%rbp),%rbp
++	movq	0(%rsp),%r13
++	movq	104(%rsp),%rdi
++	movq	%r13,%r12
++	rorq	$7,%r13
++	addq	%r14,%rbx
++	movq	%rdi,%r14
++	rorq	$42,%rdi
++	xorq	%r12,%r13
++	shrq	$7,%r12
++	rorq	$1,%r13
++	xorq	%r14,%rdi
++	shrq	$6,%r14
++	rorq	$19,%rdi
++	xorq	%r13,%r12
++	xorq	%r14,%rdi
++	addq	64(%rsp),%r12
++	addq	120(%rsp),%r12
++	movq	%r9,%r13
++	addq	%rdi,%r12
++	movq	%rbx,%r14
++	rorq	$23,%r13
++	movq	%r10,%rdi
++	xorq	%r9,%r13
++	rorq	$5,%r14
++	xorq	%r11,%rdi
++	movq	%r12,120(%rsp)
++	xorq	%rbx,%r14
++	andq	%r9,%rdi
++	rorq	$4,%r13
++	addq	%rax,%r12
++	xorq	%r11,%rdi
++	rorq	$6,%r14
++	xorq	%r9,%r13
++	addq	%rdi,%r12
++	movq	%rbx,%rdi
++	addq	(%rbp),%r12
++	xorq	%rbx,%r14
++	xorq	%rcx,%rdi
++	rorq	$14,%r13
++	movq	%rcx,%rax
++	andq	%rdi,%r15
++	rorq	$28,%r14
++	addq	%r13,%r12
++	xorq	%r15,%rax
++	addq	%r12,%r8
++	addq	%r12,%rax
++	leaq	24(%rbp),%rbp
++	cmpb	$0,7(%rbp)
++	jnz	.Lrounds_16_xx
++	movq	128+0(%rsp),%rdi
++	addq	%r14,%rax
++	leaq	128(%rsi),%rsi
++	addq	0(%rdi),%rax
++	addq	8(%rdi),%rbx
++	addq	16(%rdi),%rcx
++	addq	24(%rdi),%rdx
++	addq	32(%rdi),%r8
++	addq	40(%rdi),%r9
++	addq	48(%rdi),%r10
++	addq	56(%rdi),%r11
++	cmpq	128+16(%rsp),%rsi
++	movq	%rax,0(%rdi)
++	movq	%rbx,8(%rdi)
++	movq	%rcx,16(%rdi)
++	movq	%rdx,24(%rdi)
++	movq	%r8,32(%rdi)
++	movq	%r9,40(%rdi)
++	movq	%r10,48(%rdi)
++	movq	%r11,56(%rdi)
++	jb	.Lloop
++	movq	152(%rsp),%rsi
++.cfi_def_cfa	%rsi,8
++	movq	-48(%rsi),%r15
++.cfi_restore	%r15
++	movq	-40(%rsi),%r14
++.cfi_restore	%r14
++	movq	-32(%rsi),%r13
++.cfi_restore	%r13
++	movq	-24(%rsi),%r12
++.cfi_restore	%r12
++	movq	-16(%rsi),%rbp
++.cfi_restore	%rbp
++	movq	-8(%rsi),%rbx
++.cfi_restore	%rbx
++	leaq	(%rsi),%rsp
++.cfi_def_cfa_register	%rsp
++.Lepilogue:
++	.byte	0xf3,0xc3
++.cfi_endproc	
++.size	zfs_sha512_transform_x64,.-zfs_sha512_transform_x64
 +
 +.globl	zfs_sha512_transform_avx
 +.type	zfs_sha512_transform_avx,@function
@@ -26176,6 +27689,7 @@ index 00000000000..2e04a2a1f66
 +	.byte	0xf3,0xc3
 +.cfi_endproc	
 +.size	zfs_sha512_transform_avx,.-zfs_sha512_transform_avx
++
 +.globl	zfs_sha512_transform_avx2
 +.type	zfs_sha512_transform_avx2,@function
 +.align	64
@@ -27531,7 +29045,6 @@ index 00000000000..2e04a2a1f66
 +	jbe	.Loop_avx2
 +	leaq	(%rsp),%rbp
 +
-+
 +.cfi_escape	0x0f,0x06,0x76,0x98,0x01,0x06,0x23,0x08
 +
 +.Ldone_avx2:
@@ -27796,75 +29309,51 @@ index 00000000000..071b659a8a2
 +	return (ops);
 +}
 diff --git a/module/icp/include/sha2/sha2_impl.h b/module/icp/include/sha2/sha2_impl.h
-new file mode 100644
-index 00000000000..0e89747eefd
---- /dev/null
+index 0e89747eefd..9a1bd38f1a7 100644
+--- a/module/icp/include/sha2/sha2_impl.h
 +++ b/module/icp/include/sha2/sha2_impl.h
-@@ -0,0 +1,64 @@
-+/*
-+ * CDDL HEADER START
-+ *
-+ * The contents of this file are subject to the terms of the
-+ * Common Development and Distribution License (the "License").
-+ * You may not use this file except in compliance with the License.
-+ *
-+ * You can obtain a copy of the license at usr/src/OPENSOLARIS.LICENSE
-+ * or https://opensource.org/licenses/CDDL-1.0.
-+ * See the License for the specific language governing permissions
-+ * and limitations under the License.
-+ *
-+ * When distributing Covered Code, include this CDDL HEADER in each
-+ * file and include the License file at usr/src/OPENSOLARIS.LICENSE.
-+ * If applicable, add the following below this CDDL HEADER, with the
-+ * fields enclosed by brackets "[]" replaced with your own identifying
-+ * information: Portions Copyright [yyyy] [name of copyright owner]
-+ *
-+ * CDDL HEADER END
-+ */
-+/*
-+ * Copyright 2009 Sun Microsystems, Inc.  All rights reserved.
-+ * Use is subject to license terms.
-+ */
+@@ -18,9 +18,10 @@
+  *
+  * CDDL HEADER END
+  */
 +
-+#ifndef	_SHA2_IMPL_H
-+#define	_SHA2_IMPL_H
+ /*
+- * Copyright 2009 Sun Microsystems, Inc.  All rights reserved.
+- * Use is subject to license terms.
++ * Copyright (c) 2009 Sun Microsystems, Inc.  All rights reserved.
++ * Copyright (c) 2022 Tino Reichardt <milky-zfs@mcmilk.de>
+  */
+ 
+ #ifndef	_SHA2_IMPL_H
+@@ -32,6 +33,28 @@
+ extern "C" {
+ #endif
+ 
++/* transform function definition */
++typedef void (*sha256_f)(uint32_t state[8], const void *data, size_t blks);
++typedef void (*sha512_f)(uint64_t state[8], const void *data, size_t blks);
 +
-+#include <sys/sha2.h>
++/* needed for checking valid implementations */
++typedef boolean_t (*sha2_is_supported_f)(void);
 +
-+#ifdef __cplusplus
-+extern "C" {
-+#endif
++typedef struct {
++	const char *name;
++	sha256_f transform;
++	sha2_is_supported_f is_supported;
++} sha256_ops_t;
 +
-+typedef enum {
-+	SHA1_TYPE,
-+	SHA256_TYPE,
-+	SHA384_TYPE,
-+	SHA512_TYPE
-+} sha2_mech_t;
++typedef struct {
++	const char *name;
++	sha512_f transform;
++	sha2_is_supported_f is_supported;
++} sha512_ops_t;
 +
-+/*
-+ * Context for SHA2 mechanism.
-+ */
-+typedef struct sha2_ctx {
-+	sha2_mech_type_t	sc_mech_type;	/* type of context */
-+	SHA2_CTX		sc_sha2_ctx;	/* SHA2 context */
-+} sha2_ctx_t;
++extern const sha256_ops_t *sha256_get_ops(void);
++extern const sha512_ops_t *sha512_get_ops(void);
 +
-+/*
-+ * Context for SHA2 HMAC and HMAC GENERAL mechanisms.
-+ */
-+typedef struct sha2_hmac_ctx {
-+	sha2_mech_type_t	hc_mech_type;	/* type of context */
-+	uint32_t		hc_digest_len;	/* digest len in bytes */
-+	SHA2_CTX		hc_icontext;	/* inner SHA2 context */
-+	SHA2_CTX		hc_ocontext;	/* outer SHA2 context */
-+} sha2_hmac_ctx_t;
-+
-+#ifdef	__cplusplus
-+}
-+#endif
-+
-+#endif /* _SHA2_IMPL_H */
+ typedef enum {
+ 	SHA1_TYPE,
+ 	SHA256_TYPE,
 diff --git a/module/icp/io/sha2_mod.c b/module/icp/io/sha2_mod.c
 index fadb58b8188..027fcbe46de 100644
 --- a/module/icp/io/sha2_mod.c
@@ -28375,3 +29864,1091 @@ index bb355311091..53ec6385c95 100644
  
  	return (0);
  }
+
+From 138d17843e7a04d2b20533c13bf1b729c2b87154 Mon Sep 17 00:00:00 2001
+From: Tino Reichardt <milky-zfs@mcmilk.de>
+Date: Tue, 23 Aug 2022 23:58:30 +0200
+Subject: [PATCH 4/4] Update BLAKE3 for using the new impl handling
+
+This commit changes the BLAKE3 implementation handling and
+also the calls to it from the ztest command.
+
+Signed-off-by: Tino Reichardt <milky-zfs@mcmilk.de>
+---
+ cmd/ztest.c                             |   6 +-
+ include/sys/blake3.h                    |  31 +-
+ module/icp/algs/blake3/blake3.c         |  16 +-
+ module/icp/algs/blake3/blake3_generic.c |   7 +-
+ module/icp/algs/blake3/blake3_impl.c    | 482 +++++++++++++++---------
+ module/icp/algs/blake3/blake3_impl.h    |  34 +-
+ module/icp/algs/blake3/blake3_x86-64.c  | 248 ------------
+ 7 files changed, 327 insertions(+), 497 deletions(-)
+ delete mode 100644 module/icp/algs/blake3/blake3_x86-64.c
+
+diff --git a/cmd/ztest.c b/cmd/ztest.c
+index 31b9990a1fc..6e83dcf906a 100644
+--- a/cmd/ztest.c
++++ b/cmd/ztest.c
+@@ -135,6 +135,7 @@
+ #include <libnvpair.h>
+ #include <libzutil.h>
+ #include <sys/crypto/icp.h>
++#include <sys/zfs_impl.h>
+ #if (__GLIBC__ && !__UCLIBC__)
+ #include <execinfo.h> /* for backtrace() */
+ #endif
+@@ -6389,6 +6390,7 @@ ztest_blake3(ztest_ds_t *zd, uint64_t id)
+ 	int i, *ptr;
+ 	uint32_t size;
+ 	BLAKE3_CTX ctx;
++	const zfs_impl_t *blake3 = zfs_impl_get_ops("blake3");
+ 
+ 	size = ztest_random_blocksize();
+ 	buf = umem_alloc(size, UMEM_NOFAIL);
+@@ -6413,7 +6415,7 @@ ztest_blake3(ztest_ds_t *zd, uint64_t id)
+ 		void *res2 = &zc_res2;
+ 
+ 		/* BLAKE3_KEY_LEN = 32 */
+-		VERIFY0(blake3_set_impl_name("generic"));
++		VERIFY0(blake3->setname("generic"));
+ 		templ = abd_checksum_blake3_tmpl_init(&salt);
+ 		Blake3_InitKeyed(&ctx, salt_ptr);
+ 		Blake3_Update(&ctx, buf, size);
+@@ -6422,7 +6424,7 @@ ztest_blake3(ztest_ds_t *zd, uint64_t id)
+ 		ZIO_CHECKSUM_BSWAP(&zc_ref2);
+ 		abd_checksum_blake3_tmpl_free(templ);
+ 
+-		VERIFY0(blake3_set_impl_name("cycle"));
++		VERIFY0(blake3->setname("cycle"));
+ 		while (run_count-- > 0) {
+ 
+ 			/* Test current implementation */
+diff --git a/include/sys/blake3.h b/include/sys/blake3.h
+index 19500585f38..b981b18db94 100644
+--- a/include/sys/blake3.h
++++ b/include/sys/blake3.h
+@@ -22,11 +22,11 @@
+ /*
+  * Based on BLAKE3 v1.3.1, https://github.com/BLAKE3-team/BLAKE3
+  * Copyright (c) 2019-2020 Samuel Neves and Jack O'Connor
+- * Copyright (c) 2021 Tino Reichardt <milky-zfs@mcmilk.de>
++ * Copyright (c) 2021-2022 Tino Reichardt <milky-zfs@mcmilk.de>
+  */
+ 
+-#ifndef BLAKE3_H
+-#define	BLAKE3_H
++#ifndef	_SYS_BLAKE3_H
++#define	_SYS_BLAKE3_H
+ 
+ #ifdef  _KERNEL
+ #include <sys/types.h>
+@@ -72,7 +72,7 @@ typedef struct {
+ 	 */
+ 	uint8_t cv_stack[(BLAKE3_MAX_DEPTH + 1) * BLAKE3_OUT_LEN];
+ 
+-	/* const blake3_impl_ops_t *ops */
++	/* const blake3_ops_t *ops */
+ 	const void *ops;
+ } BLAKE3_CTX;
+ 
+@@ -97,29 +97,8 @@ extern void **blake3_per_cpu_ctx;
+ extern void blake3_per_cpu_ctx_init(void);
+ extern void blake3_per_cpu_ctx_fini(void);
+ 
+-/* return number of supported implementations */
+-extern int blake3_get_impl_count(void);
+-
+-/* return id of selected implementation */
+-extern int blake3_get_impl_id(void);
+-
+-/* return name of selected implementation */
+-extern const char *blake3_get_impl_name(void);
+-
+-/* setup id as fastest implementation */
+-extern void blake3_set_impl_fastest(uint32_t id);
+-
+-/* set implementation by id */
+-extern void blake3_set_impl_id(uint32_t id);
+-
+-/* set implementation by name */
+-extern int blake3_set_impl_name(const char *name);
+-
+-/* set startup implementation */
+-extern void blake3_setup_impl(void);
+-
+ #ifdef __cplusplus
+ }
+ #endif
+ 
+-#endif	/* BLAKE3_H */
++#endif	/* _SYS_BLAKE3_H */
+diff --git a/module/icp/algs/blake3/blake3.c b/module/icp/algs/blake3/blake3.c
+index b9600207b67..3a446ceeb7a 100644
+--- a/module/icp/algs/blake3/blake3.c
++++ b/module/icp/algs/blake3/blake3.c
+@@ -129,7 +129,7 @@ static output_t make_output(const uint32_t input_cv[8],
+  * bytes. For that reason, chaining values in the CV stack are represented as
+  * bytes.
+  */
+-static void output_chaining_value(const blake3_impl_ops_t *ops,
++static void output_chaining_value(const blake3_ops_t *ops,
+     const output_t *ctx, uint8_t cv[32])
+ {
+ 	uint32_t cv_words[8];
+@@ -139,7 +139,7 @@ static void output_chaining_value(const blake3_impl_ops_t *ops,
+ 	store_cv_words(cv, cv_words);
+ }
+ 
+-static void output_root_bytes(const blake3_impl_ops_t *ops, const output_t *ctx,
++static void output_root_bytes(const blake3_ops_t *ops, const output_t *ctx,
+     uint64_t seek, uint8_t *out, size_t out_len)
+ {
+ 	uint64_t output_block_counter = seek / 64;
+@@ -163,7 +163,7 @@ static void output_root_bytes(const blake3_impl_ops_t *ops, const output_t *ctx,
+ 	}
+ }
+ 
+-static void chunk_state_update(const blake3_impl_ops_t *ops,
++static void chunk_state_update(const blake3_ops_t *ops,
+     blake3_chunk_state_t *ctx, const uint8_t *input, size_t input_len)
+ {
+ 	if (ctx->buf_len > 0) {
+@@ -230,7 +230,7 @@ static size_t left_len(size_t content_len)
+  * number of chunks hashed. These chunks are never the root and never empty;
+  * those cases use a different codepath.
+  */
+-static size_t compress_chunks_parallel(const blake3_impl_ops_t *ops,
++static size_t compress_chunks_parallel(const blake3_ops_t *ops,
+     const uint8_t *input, size_t input_len, const uint32_t key[8],
+     uint64_t chunk_counter, uint8_t flags, uint8_t *out)
+ {
+@@ -274,7 +274,7 @@ static size_t compress_chunks_parallel(const blake3_impl_ops_t *ops,
+  * return it as an additional output.) These parents are never the root and
+  * never empty; those cases use a different codepath.
+  */
+-static size_t compress_parents_parallel(const blake3_impl_ops_t *ops,
++static size_t compress_parents_parallel(const blake3_ops_t *ops,
+     const uint8_t *child_chaining_values, size_t num_chaining_values,
+     const uint32_t key[8], uint8_t flags, uint8_t *out)
+ {
+@@ -320,7 +320,7 @@ static size_t compress_parents_parallel(const blake3_impl_ops_t *ops,
+  * of implementing this special rule? Because we don't want to limit SIMD or
+  * multi-threading parallelism for that update().
+  */
+-static size_t blake3_compress_subtree_wide(const blake3_impl_ops_t *ops,
++static size_t blake3_compress_subtree_wide(const blake3_ops_t *ops,
+     const uint8_t *input, size_t input_len, const uint32_t key[8],
+     uint64_t chunk_counter, uint8_t flags, uint8_t *out)
+ {
+@@ -406,7 +406,7 @@ static size_t blake3_compress_subtree_wide(const blake3_impl_ops_t *ops,
+  * As with compress_subtree_wide(), this function is not used on inputs of 1
+  * chunk or less. That's a different codepath.
+  */
+-static void compress_subtree_to_parent_node(const blake3_impl_ops_t *ops,
++static void compress_subtree_to_parent_node(const blake3_ops_t *ops,
+     const uint8_t *input, size_t input_len, const uint32_t key[8],
+     uint64_t chunk_counter, uint8_t flags, uint8_t out[2 * BLAKE3_OUT_LEN])
+ {
+@@ -434,7 +434,7 @@ static void hasher_init_base(BLAKE3_CTX *ctx, const uint32_t key[8],
+ 	memcpy(ctx->key, key, BLAKE3_KEY_LEN);
+ 	chunk_state_init(&ctx->chunk, key, flags);
+ 	ctx->cv_stack_len = 0;
+-	ctx->ops = blake3_impl_get_ops();
++	ctx->ops = blake3_get_ops();
+ }
+ 
+ /*
+diff --git a/module/icp/algs/blake3/blake3_generic.c b/module/icp/algs/blake3/blake3_generic.c
+index 6c1eb33e89c..ca7197a26f3 100644
+--- a/module/icp/algs/blake3/blake3_generic.c
++++ b/module/icp/algs/blake3/blake3_generic.c
+@@ -187,16 +187,17 @@ static inline void blake3_hash_many_generic(const uint8_t * const *inputs,
+ 	}
+ }
+ 
+-static inline boolean_t blake3_is_generic_supported(void)
++/* the generic implementation is always okay */
++static boolean_t blake3_is_supported(void)
+ {
+ 	return (B_TRUE);
+ }
+ 
+-const blake3_impl_ops_t blake3_generic_impl = {
++const blake3_ops_t blake3_generic_impl = {
+ 	.compress_in_place = blake3_compress_in_place_generic,
+ 	.compress_xof = blake3_compress_xof_generic,
+ 	.hash_many = blake3_hash_many_generic,
+-	.is_supported = blake3_is_generic_supported,
++	.is_supported = blake3_is_supported,
+ 	.degree = 4,
+ 	.name = "generic"
+ };
+diff --git a/module/icp/algs/blake3/blake3_impl.c b/module/icp/algs/blake3/blake3_impl.c
+index 10741c82de7..5143ed60c1b 100644
+--- a/module/icp/algs/blake3/blake3_impl.c
++++ b/module/icp/algs/blake3/blake3_impl.c
+@@ -24,184 +24,266 @@
+  */
+ 
+ #include <sys/zfs_context.h>
+-#include <sys/zio_checksum.h>
++#include <sys/zfs_impl.h>
++#include <sys/blake3.h>
++#include <sys/simd.h>
+ 
+ #include "blake3_impl.h"
+ 
+-static const blake3_impl_ops_t *const blake3_impls[] = {
+-	&blake3_generic_impl,
+ #if defined(__aarch64__) || \
+ 	(defined(__x86_64) && defined(HAVE_SSE2)) || \
+ 	(defined(__PPC64__) && defined(__LITTLE_ENDIAN__))
+-	&blake3_sse2_impl,
+-#endif
+-#if defined(__aarch64__) || \
+-	(defined(__x86_64) && defined(HAVE_SSE4_1)) || \
+-	(defined(__PPC64__) && defined(__LITTLE_ENDIAN__))
+-	&blake3_sse41_impl,
+-#endif
+-#if defined(__x86_64) && defined(HAVE_SSE4_1) && defined(HAVE_AVX2)
+-	&blake3_avx2_impl,
+-#endif
+-#if defined(__x86_64) && defined(HAVE_AVX512F) && defined(HAVE_AVX512VL)
+-	&blake3_avx512_impl,
+-#endif
+-};
+-
+-/* this pointer holds current ops for implementation */
+-static const blake3_impl_ops_t *blake3_selected_impl = &blake3_generic_impl;
+-
+-/* special implementation selections */
+-#define	IMPL_FASTEST	(UINT32_MAX)
+-#define	IMPL_CYCLE	(UINT32_MAX-1)
+-#define	IMPL_USER	(UINT32_MAX-2)
+-#define	IMPL_PARAM	(UINT32_MAX-3)
+-
+-#define	IMPL_READ(i) (*(volatile uint32_t *) &(i))
+-static uint32_t icp_blake3_impl = IMPL_FASTEST;
+ 
+-#define	BLAKE3_IMPL_NAME_MAX	16
+-
+-/* id of fastest implementation */
+-static uint32_t blake3_fastest_id = 0;
++extern void zfs_blake3_compress_in_place_sse2(uint32_t cv[8],
++    const uint8_t block[BLAKE3_BLOCK_LEN], uint8_t block_len,
++    uint64_t counter, uint8_t flags);
++
++extern void zfs_blake3_compress_xof_sse2(const uint32_t cv[8],
++    const uint8_t block[BLAKE3_BLOCK_LEN], uint8_t block_len,
++    uint64_t counter, uint8_t flags, uint8_t out[64]);
++
++extern void zfs_blake3_hash_many_sse2(const uint8_t * const *inputs,
++    size_t num_inputs, size_t blocks, const uint32_t key[8],
++    uint64_t counter, boolean_t increment_counter, uint8_t flags,
++    uint8_t flags_start, uint8_t flags_end, uint8_t *out);
++
++static void blake3_compress_in_place_sse2(uint32_t cv[8],
++    const uint8_t block[BLAKE3_BLOCK_LEN], uint8_t block_len,
++    uint64_t counter, uint8_t flags) {
++	kfpu_begin();
++	zfs_blake3_compress_in_place_sse2(cv, block, block_len, counter,
++	    flags);
++	kfpu_end();
++}
+ 
+-/* currently used id */
+-static uint32_t blake3_current_id = 0;
++static void blake3_compress_xof_sse2(const uint32_t cv[8],
++    const uint8_t block[BLAKE3_BLOCK_LEN], uint8_t block_len,
++    uint64_t counter, uint8_t flags, uint8_t out[64]) {
++	kfpu_begin();
++	zfs_blake3_compress_xof_sse2(cv, block, block_len, counter, flags,
++	    out);
++	kfpu_end();
++}
+ 
+-/* id of module parameter (-1 == unused) */
+-static int blake3_param_id = -1;
++static void blake3_hash_many_sse2(const uint8_t * const *inputs,
++    size_t num_inputs, size_t blocks, const uint32_t key[8],
++    uint64_t counter, boolean_t increment_counter, uint8_t flags,
++    uint8_t flags_start, uint8_t flags_end, uint8_t *out) {
++	kfpu_begin();
++	zfs_blake3_hash_many_sse2(inputs, num_inputs, blocks, key, counter,
++	    increment_counter, flags, flags_start, flags_end, out);
++	kfpu_end();
++}
+ 
+-/* return number of supported implementations */
+-int
+-blake3_get_impl_count(void)
++static boolean_t blake3_is_sse2_supported(void)
+ {
+-	static int impls = 0;
+-	int i;
++#if defined(__x86_64)
++	return (kfpu_allowed() && zfs_sse2_available());
++#elif defined(__PPC64__)
++	return (kfpu_allowed() && zfs_vsx_available());
++#else
++	return (kfpu_allowed());
++#endif
++}
+ 
+-	if (impls)
+-		return (impls);
++const blake3_ops_t blake3_sse2_impl = {
++	.compress_in_place = blake3_compress_in_place_sse2,
++	.compress_xof = blake3_compress_xof_sse2,
++	.hash_many = blake3_hash_many_sse2,
++	.is_supported = blake3_is_sse2_supported,
++	.degree = 4,
++	.name = "sse2"
++};
++#endif
+ 
+-	for (i = 0; i < ARRAY_SIZE(blake3_impls); i++) {
+-		if (!blake3_impls[i]->is_supported()) continue;
+-		impls++;
+-	}
++#if defined(__aarch64__) || \
++	(defined(__x86_64) && defined(HAVE_SSE2)) || \
++	(defined(__PPC64__) && defined(__LITTLE_ENDIAN__))
+ 
+-	return (impls);
++extern void zfs_blake3_compress_in_place_sse41(uint32_t cv[8],
++    const uint8_t block[BLAKE3_BLOCK_LEN], uint8_t block_len,
++    uint64_t counter, uint8_t flags);
++
++extern void zfs_blake3_compress_xof_sse41(const uint32_t cv[8],
++    const uint8_t block[BLAKE3_BLOCK_LEN], uint8_t block_len,
++    uint64_t counter, uint8_t flags, uint8_t out[64]);
++
++extern void zfs_blake3_hash_many_sse41(const uint8_t * const *inputs,
++    size_t num_inputs, size_t blocks, const uint32_t key[8],
++    uint64_t counter, boolean_t increment_counter, uint8_t flags,
++    uint8_t flags_start, uint8_t flags_end, uint8_t *out);
++
++static void blake3_compress_in_place_sse41(uint32_t cv[8],
++    const uint8_t block[BLAKE3_BLOCK_LEN], uint8_t block_len,
++    uint64_t counter, uint8_t flags) {
++	kfpu_begin();
++	zfs_blake3_compress_in_place_sse41(cv, block, block_len, counter,
++	    flags);
++	kfpu_end();
+ }
+ 
+-/* return id of selected implementation */
+-int
+-blake3_get_impl_id(void)
+-{
+-	return (blake3_current_id);
++static void blake3_compress_xof_sse41(const uint32_t cv[8],
++    const uint8_t block[BLAKE3_BLOCK_LEN], uint8_t block_len,
++    uint64_t counter, uint8_t flags, uint8_t out[64]) {
++	kfpu_begin();
++	zfs_blake3_compress_xof_sse41(cv, block, block_len, counter, flags,
++	    out);
++	kfpu_end();
+ }
+ 
+-/* return name of selected implementation */
+-const char *
+-blake3_get_impl_name(void)
+-{
+-	return (blake3_selected_impl->name);
++static void blake3_hash_many_sse41(const uint8_t * const *inputs,
++    size_t num_inputs, size_t blocks, const uint32_t key[8],
++    uint64_t counter, boolean_t increment_counter, uint8_t flags,
++    uint8_t flags_start, uint8_t flags_end, uint8_t *out) {
++	kfpu_begin();
++	zfs_blake3_hash_many_sse41(inputs, num_inputs, blocks, key, counter,
++	    increment_counter, flags, flags_start, flags_end, out);
++	kfpu_end();
+ }
+ 
+-/* setup id as fastest implementation */
+-void
+-blake3_set_impl_fastest(uint32_t id)
++static boolean_t blake3_is_sse41_supported(void)
+ {
+-	blake3_fastest_id = id;
++#if defined(__x86_64)
++	return (kfpu_allowed() && zfs_sse4_1_available());
++#elif defined(__PPC64__)
++	return (kfpu_allowed() && zfs_vsx_available());
++#else
++	return (kfpu_allowed());
++#endif
+ }
+ 
+-/* set implementation by id */
+-void
+-blake3_set_impl_id(uint32_t id)
+-{
+-	int i, cid;
+-
+-	/* select fastest */
+-	if (id == IMPL_FASTEST)
+-		id = blake3_fastest_id;
+-
+-	/* select next or first */
+-	if (id == IMPL_CYCLE)
+-		id = (++blake3_current_id) % blake3_get_impl_count();
+-
+-	/* 0..N for the real impl */
+-	for (i = 0, cid = 0; i < ARRAY_SIZE(blake3_impls); i++) {
+-		if (!blake3_impls[i]->is_supported()) continue;
+-		if (cid == id) {
+-			blake3_current_id = cid;
+-			blake3_selected_impl = blake3_impls[i];
+-			return;
+-		}
+-		cid++;
+-	}
++const blake3_ops_t blake3_sse41_impl = {
++	.compress_in_place = blake3_compress_in_place_sse41,
++	.compress_xof = blake3_compress_xof_sse41,
++	.hash_many = blake3_hash_many_sse41,
++	.is_supported = blake3_is_sse41_supported,
++	.degree = 4,
++	.name = "sse41"
++};
++#endif
++
++#if defined(__x86_64) && defined(HAVE_SSE4_1) && defined(HAVE_AVX2)
++extern void zfs_blake3_hash_many_avx2(const uint8_t * const *inputs,
++    size_t num_inputs, size_t blocks, const uint32_t key[8],
++    uint64_t counter, boolean_t increment_counter, uint8_t flags,
++    uint8_t flags_start, uint8_t flags_end, uint8_t *out);
++
++static void blake3_hash_many_avx2(const uint8_t * const *inputs,
++    size_t num_inputs, size_t blocks, const uint32_t key[8],
++    uint64_t counter, boolean_t increment_counter, uint8_t flags,
++    uint8_t flags_start, uint8_t flags_end, uint8_t *out) {
++	kfpu_begin();
++	zfs_blake3_hash_many_avx2(inputs, num_inputs, blocks, key, counter,
++	    increment_counter, flags, flags_start, flags_end, out);
++	kfpu_end();
+ }
+ 
+-/* set implementation by name */
+-int
+-blake3_set_impl_name(const char *name)
++static boolean_t blake3_is_avx2_supported(void)
+ {
+-	int i, cid;
+-
+-	if (strcmp(name, "fastest") == 0) {
+-		atomic_swap_32(&icp_blake3_impl, IMPL_FASTEST);
+-		blake3_set_impl_id(IMPL_FASTEST);
+-		return (0);
+-	} else if (strcmp(name, "cycle") == 0) {
+-		atomic_swap_32(&icp_blake3_impl, IMPL_CYCLE);
+-		blake3_set_impl_id(IMPL_CYCLE);
+-		return (0);
+-	}
++	return (kfpu_allowed() && zfs_sse4_1_available() &&
++	    zfs_avx2_available());
++}
+ 
+-	for (i = 0, cid = 0; i < ARRAY_SIZE(blake3_impls); i++) {
+-		if (!blake3_impls[i]->is_supported()) continue;
+-		if (strcmp(name, blake3_impls[i]->name) == 0) {
+-			if (icp_blake3_impl == IMPL_PARAM) {
+-				blake3_param_id = cid;
+-				return (0);
+-			}
+-			blake3_selected_impl = blake3_impls[i];
+-			blake3_current_id = cid;
+-			return (0);
+-		}
+-		cid++;
+-	}
++const blake3_ops_t
++blake3_avx2_impl = {
++	.compress_in_place = blake3_compress_in_place_sse41,
++	.compress_xof = blake3_compress_xof_sse41,
++	.hash_many = blake3_hash_many_avx2,
++	.is_supported = blake3_is_avx2_supported,
++	.degree = 8,
++	.name = "avx2"
++};
++#endif
+ 
+-	return (-EINVAL);
++#if defined(__x86_64) && defined(HAVE_AVX512F) && defined(HAVE_AVX512VL)
++extern void zfs_blake3_compress_in_place_avx512(uint32_t cv[8],
++    const uint8_t block[BLAKE3_BLOCK_LEN], uint8_t block_len,
++    uint64_t counter, uint8_t flags);
++
++extern void zfs_blake3_compress_xof_avx512(const uint32_t cv[8],
++    const uint8_t block[BLAKE3_BLOCK_LEN], uint8_t block_len,
++    uint64_t counter, uint8_t flags, uint8_t out[64]);
++
++extern void zfs_blake3_hash_many_avx512(const uint8_t * const *inputs,
++    size_t num_inputs, size_t blocks, const uint32_t key[8],
++    uint64_t counter, boolean_t increment_counter, uint8_t flags,
++    uint8_t flags_start, uint8_t flags_end, uint8_t *out);
++
++static void blake3_compress_in_place_avx512(uint32_t cv[8],
++    const uint8_t block[BLAKE3_BLOCK_LEN], uint8_t block_len,
++    uint64_t counter, uint8_t flags) {
++	kfpu_begin();
++	zfs_blake3_compress_in_place_avx512(cv, block, block_len, counter,
++	    flags);
++	kfpu_end();
+ }
+ 
+-/* setup implementation */
+-void
+-blake3_setup_impl(void)
+-{
+-	switch (IMPL_READ(icp_blake3_impl)) {
+-	case IMPL_PARAM:
+-		blake3_set_impl_id(blake3_param_id);
+-		atomic_swap_32(&icp_blake3_impl, IMPL_USER);
+-		break;
+-	case IMPL_FASTEST:
+-		blake3_set_impl_id(IMPL_FASTEST);
+-		break;
+-	case IMPL_CYCLE:
+-		blake3_set_impl_id(IMPL_CYCLE);
+-		break;
+-	default:
+-		blake3_set_impl_id(blake3_current_id);
+-		break;
+-	}
++static void blake3_compress_xof_avx512(const uint32_t cv[8],
++    const uint8_t block[BLAKE3_BLOCK_LEN], uint8_t block_len,
++    uint64_t counter, uint8_t flags, uint8_t out[64]) {
++	kfpu_begin();
++	zfs_blake3_compress_xof_avx512(cv, block, block_len, counter, flags,
++	    out);
++	kfpu_end();
+ }
+ 
+-/* return selected implementation */
+-const blake3_impl_ops_t *
+-blake3_impl_get_ops(void)
+-{
+-	/* each call to ops will cycle */
+-	if (icp_blake3_impl == IMPL_CYCLE)
+-		blake3_set_impl_id(IMPL_CYCLE);
++static void blake3_hash_many_avx512(const uint8_t * const *inputs,
++    size_t num_inputs, size_t blocks, const uint32_t key[8],
++    uint64_t counter, boolean_t increment_counter, uint8_t flags,
++    uint8_t flags_start, uint8_t flags_end, uint8_t *out) {
++	kfpu_begin();
++	zfs_blake3_hash_many_avx512(inputs, num_inputs, blocks, key, counter,
++	    increment_counter, flags, flags_start, flags_end, out);
++	kfpu_end();
++}
+ 
+-	return (blake3_selected_impl);
++static boolean_t blake3_is_avx512_supported(void)
++{
++	return (kfpu_allowed() && zfs_avx512f_available() &&
++	    zfs_avx512vl_available());
+ }
+ 
+-#if defined(_KERNEL)
++const blake3_ops_t blake3_avx512_impl = {
++	.compress_in_place = blake3_compress_in_place_avx512,
++	.compress_xof = blake3_compress_xof_avx512,
++	.hash_many = blake3_hash_many_avx512,
++	.is_supported = blake3_is_avx512_supported,
++	.degree = 16,
++	.name = "avx512"
++};
++#endif
++
++extern const blake3_ops_t blake3_generic_impl;
++
++static const blake3_ops_t *const blake3_impls[] = {
++	&blake3_generic_impl,
++#if defined(__aarch64__) || \
++	(defined(__x86_64) && defined(HAVE_SSE2)) || \
++	(defined(__PPC64__) && defined(__LITTLE_ENDIAN__))
++	&blake3_sse2_impl,
++#endif
++#if defined(__aarch64__) || \
++	(defined(__x86_64) && defined(HAVE_SSE4_1)) || \
++	(defined(__PPC64__) && defined(__LITTLE_ENDIAN__))
++	&blake3_sse41_impl,
++#endif
++#if defined(__x86_64) && defined(HAVE_SSE4_1) && defined(HAVE_AVX2)
++	&blake3_avx2_impl,
++#endif
++#if defined(__x86_64) && defined(HAVE_AVX512F) && defined(HAVE_AVX512VL)
++	&blake3_avx512_impl,
++#endif
++};
++
++/* use the generic implementation functions */
++#define	IMPL_NAME		"blake3"
++#define	IMPL_OPS_T		blake3_ops_t
++#define	IMPL_ARRAY		blake3_impls
++#define	IMPL_GET_OPS		blake3_get_ops
++#define	ZFS_IMPL_OPS		zfs_blake3_ops
++#include <generic_impl.c>
++
++#ifdef _KERNEL
+ void **blake3_per_cpu_ctx;
+ 
+ void
+@@ -227,58 +309,96 @@ blake3_per_cpu_ctx_fini(void)
+ 	memset(blake3_per_cpu_ctx, 0, max_ncpus * sizeof (void *));
+ 	kmem_free(blake3_per_cpu_ctx, max_ncpus * sizeof (void *));
+ }
+-#endif
+ 
+-#if defined(_KERNEL) && defined(__linux__)
++#define	IMPL_FMT(impl, i)	(((impl) == (i)) ? "[%s] " : "%s ")
++
++#if defined(__linux__)
++
+ static int
+-icp_blake3_impl_set(const char *name, zfs_kernel_param_t *kp)
++blake3_param_get(char *buffer, zfs_kernel_param_t *unused)
+ {
+-	char req_name[BLAKE3_IMPL_NAME_MAX];
+-	size_t i;
++	const uint32_t impl = IMPL_READ(generic_impl_chosen);
++	char *fmt;
++	int cnt = 0;
+ 
+-	/* sanitize input */
+-	i = strnlen(name, BLAKE3_IMPL_NAME_MAX);
+-	if (i == 0 || i >= BLAKE3_IMPL_NAME_MAX)
+-		return (-EINVAL);
++	/* cycling */
++	fmt = IMPL_FMT(impl, IMPL_CYCLE);
++	cnt += sprintf(buffer + cnt, fmt, "cycle");
++
++	/* list fastest */
++	fmt = IMPL_FMT(impl, IMPL_FASTEST);
++	cnt += sprintf(buffer + cnt, fmt, "fastest");
++
++	/* list all supported implementations */
++	generic_impl_init();
++	for (uint32_t i = 0; i < generic_supp_impls_cnt; ++i) {
++		fmt = IMPL_FMT(impl, i);
++		cnt += sprintf(buffer + cnt, fmt,
++		    generic_supp_impls[i]->name);
++	}
+ 
+-	strlcpy(req_name, name, BLAKE3_IMPL_NAME_MAX);
+-	while (i > 0 && isspace(req_name[i-1]))
+-		i--;
+-	req_name[i] = '\0';
++	return (cnt);
++}
+ 
+-	atomic_swap_32(&icp_blake3_impl, IMPL_PARAM);
+-	return (blake3_set_impl_name(req_name));
++static int
++blake3_param_set(const char *val, zfs_kernel_param_t *unused)
++{
++	(void) unused;
++	return (generic_impl_setname(val));
+ }
+ 
++#elif defined(__FreeBSD__)
++
++#include <sys/sbuf.h>
++
+ static int
+-icp_blake3_impl_get(char *buffer, zfs_kernel_param_t *kp)
++blake3_param(ZFS_MODULE_PARAM_ARGS)
+ {
+-	int i, cid, cnt = 0;
+-	char *fmt;
++	int err;
+ 
+-	/* cycling */
+-	fmt = (icp_blake3_impl == IMPL_CYCLE) ? "[cycle] " : "cycle ";
+-	cnt += sprintf(buffer + cnt, fmt);
+-
+-	/* fastest one */
+-	fmt = (icp_blake3_impl == IMPL_FASTEST) ? "[fastest] " : "fastest ";
+-	cnt += sprintf(buffer + cnt, fmt);
+-
+-	/* user selected */
+-	for (i = 0, cid = 0; i < ARRAY_SIZE(blake3_impls); i++) {
+-		if (!blake3_impls[i]->is_supported()) continue;
+-		fmt = (icp_blake3_impl == IMPL_USER &&
+-		    cid == blake3_current_id) ? "[%s] " : "%s ";
+-		cnt += sprintf(buffer + cnt, fmt, blake3_impls[i]->name);
+-		cid++;
++	generic_impl_init();
++	if (req->newptr == NULL) {
++		const uint32_t impl = IMPL_READ(generic_impl_chosen);
++		const int init_buflen = 64;
++		const char *fmt;
++		struct sbuf *s;
++
++		s = sbuf_new_for_sysctl(NULL, NULL, init_buflen, req);
++
++		/* cycling */
++		fmt = IMPL_FMT(impl, IMPL_CYCLE);
++		(void) sbuf_printf(s, fmt, "cycle");
++
++		/* list fastest */
++		fmt = IMPL_FMT(impl, IMPL_FASTEST);
++		(void) sbuf_printf(s, fmt, "fastest");
++
++		/* list all supported implementations */
++		for (uint32_t i = 0; i < generic_supp_impls_cnt; ++i) {
++			fmt = IMPL_FMT(impl, i);
++			(void) sbuf_printf(s, fmt, generic_supp_impls[i]->name);
++		}
++
++		err = sbuf_finish(s);
++		sbuf_delete(s);
++
++		return (err);
+ 	}
+ 
+-	buffer[cnt] = 0;
++	char buf[16];
+ 
+-	return (cnt);
++	err = sysctl_handle_string(oidp, buf, sizeof (buf), req);
++	if (err) {
++		return (err);
++	}
++
++	return (-generic_impl_setname(buf));
+ }
++#endif
++
++#undef IMPL_FMT
+ 
+-module_param_call(icp_blake3_impl, icp_blake3_impl_set, icp_blake3_impl_get,
+-    NULL, 0644);
+-MODULE_PARM_DESC(icp_blake3_impl, "Select BLAKE3 implementation.");
++ZFS_MODULE_VIRTUAL_PARAM_CALL(zfs, zfs_, blake3_impl,
++    blake3_param_set, blake3_param_get, ZMOD_RW, \
++	"Select BLAKE3 implementation.");
+ #endif
+diff --git a/module/icp/algs/blake3/blake3_impl.h b/module/icp/algs/blake3/blake3_impl.h
+index 5254061c737..b65123013d5 100644
+--- a/module/icp/algs/blake3/blake3_impl.h
++++ b/module/icp/algs/blake3/blake3_impl.h
+@@ -25,16 +25,14 @@
+  * Copyright (c) 2021-2022 Tino Reichardt <milky-zfs@mcmilk.de>
+  */
+ 
+-#ifndef BLAKE3_IMPL_H
++#ifndef	BLAKE3_IMPL_H
+ #define	BLAKE3_IMPL_H
+ 
+ #ifdef	__cplusplus
+ extern "C" {
+ #endif
+ 
+-#include <sys/types.h>
+ #include <sys/blake3.h>
+-#include <sys/simd.h>
+ 
+ /*
+  * Methods used to define BLAKE3 assembler implementations
+@@ -55,39 +53,17 @@ typedef void (*blake3_hash_many_f)(const uint8_t * const *inputs,
+ 
+ typedef boolean_t (*blake3_is_supported_f)(void);
+ 
+-typedef struct blake3_impl_ops {
++typedef struct {
+ 	blake3_compress_in_place_f compress_in_place;
+ 	blake3_compress_xof_f compress_xof;
+ 	blake3_hash_many_f hash_many;
+ 	blake3_is_supported_f is_supported;
+ 	int degree;
+ 	const char *name;
+-} blake3_impl_ops_t;
++} blake3_ops_t;
+ 
+-/* Return selected BLAKE3 implementation ops */
+-extern const blake3_impl_ops_t *blake3_impl_get_ops(void);
+-
+-extern const blake3_impl_ops_t blake3_generic_impl;
+-
+-#if defined(__aarch64__) || \
+-	(defined(__x86_64) && defined(HAVE_SSE2)) || \
+-	(defined(__PPC64__) && defined(__LITTLE_ENDIAN__))
+-extern const blake3_impl_ops_t blake3_sse2_impl;
+-#endif
+-
+-#if defined(__aarch64__) || \
+-	(defined(__x86_64) && defined(HAVE_SSE4_1)) || \
+-	(defined(__PPC64__) && defined(__LITTLE_ENDIAN__))
+-extern const blake3_impl_ops_t blake3_sse41_impl;
+-#endif
+-
+-#if defined(__x86_64) && defined(HAVE_SSE4_1) && defined(HAVE_AVX2)
+-extern const blake3_impl_ops_t blake3_avx2_impl;
+-#endif
+-
+-#if defined(__x86_64) && defined(HAVE_AVX512F) && defined(HAVE_AVX512VL)
+-extern const blake3_impl_ops_t blake3_avx512_impl;
+-#endif
++/* return selected BLAKE3 implementation ops */
++extern const blake3_ops_t *blake3_get_ops(void);
+ 
+ #if defined(__x86_64)
+ #define	MAX_SIMD_DEGREE 16
+diff --git a/module/icp/algs/blake3/blake3_x86-64.c b/module/icp/algs/blake3/blake3_x86-64.c
+deleted file mode 100644
+index a7552bdde4a..00000000000
+--- a/module/icp/algs/blake3/blake3_x86-64.c
++++ /dev/null
+@@ -1,248 +0,0 @@
+-/*
+- * CDDL HEADER START
+- *
+- * The contents of this file are subject to the terms of the
+- * Common Development and Distribution License (the "License").
+- * You may not use this file except in compliance with the License.
+- *
+- * You can obtain a copy of the license at usr/src/OPENSOLARIS.LICENSE
+- * or https://opensource.org/licenses/CDDL-1.0.
+- * See the License for the specific language governing permissions
+- * and limitations under the License.
+- *
+- * When distributing Covered Code, include this CDDL HEADER in each
+- * file and include the License file at usr/src/OPENSOLARIS.LICENSE.
+- * If applicable, add the following below this CDDL HEADER, with the
+- * fields enclosed by brackets "[]" replaced with your own identifying
+- * information: Portions Copyright [yyyy] [name of copyright owner]
+- *
+- * CDDL HEADER END
+- */
+-
+-/*
+- * Copyright (c) 2021-2022 Tino Reichardt <milky-zfs@mcmilk.de>
+- */
+-
+-#include "blake3_impl.h"
+-
+-#if defined(__aarch64__) || \
+-	(defined(__x86_64) && defined(HAVE_SSE2)) || \
+-	(defined(__PPC64__) && defined(__LITTLE_ENDIAN__))
+-
+-extern void zfs_blake3_compress_in_place_sse2(uint32_t cv[8],
+-    const uint8_t block[BLAKE3_BLOCK_LEN], uint8_t block_len,
+-    uint64_t counter, uint8_t flags);
+-
+-extern void zfs_blake3_compress_xof_sse2(const uint32_t cv[8],
+-    const uint8_t block[BLAKE3_BLOCK_LEN], uint8_t block_len,
+-    uint64_t counter, uint8_t flags, uint8_t out[64]);
+-
+-extern void zfs_blake3_hash_many_sse2(const uint8_t * const *inputs,
+-    size_t num_inputs, size_t blocks, const uint32_t key[8],
+-    uint64_t counter, boolean_t increment_counter, uint8_t flags,
+-    uint8_t flags_start, uint8_t flags_end, uint8_t *out);
+-
+-static void blake3_compress_in_place_sse2(uint32_t cv[8],
+-    const uint8_t block[BLAKE3_BLOCK_LEN], uint8_t block_len,
+-    uint64_t counter, uint8_t flags) {
+-	kfpu_begin();
+-	zfs_blake3_compress_in_place_sse2(cv, block, block_len, counter,
+-	    flags);
+-	kfpu_end();
+-}
+-
+-static void blake3_compress_xof_sse2(const uint32_t cv[8],
+-    const uint8_t block[BLAKE3_BLOCK_LEN], uint8_t block_len,
+-    uint64_t counter, uint8_t flags, uint8_t out[64]) {
+-	kfpu_begin();
+-	zfs_blake3_compress_xof_sse2(cv, block, block_len, counter, flags,
+-	    out);
+-	kfpu_end();
+-}
+-
+-static void blake3_hash_many_sse2(const uint8_t * const *inputs,
+-    size_t num_inputs, size_t blocks, const uint32_t key[8],
+-    uint64_t counter, boolean_t increment_counter, uint8_t flags,
+-    uint8_t flags_start, uint8_t flags_end, uint8_t *out) {
+-	kfpu_begin();
+-	zfs_blake3_hash_many_sse2(inputs, num_inputs, blocks, key, counter,
+-	    increment_counter, flags, flags_start, flags_end, out);
+-	kfpu_end();
+-}
+-
+-static boolean_t blake3_is_sse2_supported(void)
+-{
+-#if defined(__x86_64)
+-	return (kfpu_allowed() && zfs_sse2_available());
+-#elif defined(__PPC64__)
+-	return (kfpu_allowed() && zfs_vsx_available());
+-#else
+-	return (kfpu_allowed());
+-#endif
+-}
+-
+-const blake3_impl_ops_t blake3_sse2_impl = {
+-	.compress_in_place = blake3_compress_in_place_sse2,
+-	.compress_xof = blake3_compress_xof_sse2,
+-	.hash_many = blake3_hash_many_sse2,
+-	.is_supported = blake3_is_sse2_supported,
+-	.degree = 4,
+-	.name = "sse2"
+-};
+-#endif
+-
+-#if defined(__aarch64__) || \
+-	(defined(__x86_64) && defined(HAVE_SSE2)) || \
+-	(defined(__PPC64__) && defined(__LITTLE_ENDIAN__))
+-
+-extern void zfs_blake3_compress_in_place_sse41(uint32_t cv[8],
+-    const uint8_t block[BLAKE3_BLOCK_LEN], uint8_t block_len,
+-    uint64_t counter, uint8_t flags);
+-
+-extern void zfs_blake3_compress_xof_sse41(const uint32_t cv[8],
+-    const uint8_t block[BLAKE3_BLOCK_LEN], uint8_t block_len,
+-    uint64_t counter, uint8_t flags, uint8_t out[64]);
+-
+-extern void zfs_blake3_hash_many_sse41(const uint8_t * const *inputs,
+-    size_t num_inputs, size_t blocks, const uint32_t key[8],
+-    uint64_t counter, boolean_t increment_counter, uint8_t flags,
+-    uint8_t flags_start, uint8_t flags_end, uint8_t *out);
+-
+-static void blake3_compress_in_place_sse41(uint32_t cv[8],
+-    const uint8_t block[BLAKE3_BLOCK_LEN], uint8_t block_len,
+-    uint64_t counter, uint8_t flags) {
+-	kfpu_begin();
+-	zfs_blake3_compress_in_place_sse41(cv, block, block_len, counter,
+-	    flags);
+-	kfpu_end();
+-}
+-
+-static void blake3_compress_xof_sse41(const uint32_t cv[8],
+-    const uint8_t block[BLAKE3_BLOCK_LEN], uint8_t block_len,
+-    uint64_t counter, uint8_t flags, uint8_t out[64]) {
+-	kfpu_begin();
+-	zfs_blake3_compress_xof_sse41(cv, block, block_len, counter, flags,
+-	    out);
+-	kfpu_end();
+-}
+-
+-static void blake3_hash_many_sse41(const uint8_t * const *inputs,
+-    size_t num_inputs, size_t blocks, const uint32_t key[8],
+-    uint64_t counter, boolean_t increment_counter, uint8_t flags,
+-    uint8_t flags_start, uint8_t flags_end, uint8_t *out) {
+-	kfpu_begin();
+-	zfs_blake3_hash_many_sse41(inputs, num_inputs, blocks, key, counter,
+-	    increment_counter, flags, flags_start, flags_end, out);
+-	kfpu_end();
+-}
+-
+-static boolean_t blake3_is_sse41_supported(void)
+-{
+-#if defined(__x86_64)
+-	return (kfpu_allowed() && zfs_sse4_1_available());
+-#elif defined(__PPC64__)
+-	return (kfpu_allowed() && zfs_vsx_available());
+-#else
+-	return (kfpu_allowed());
+-#endif
+-}
+-
+-const blake3_impl_ops_t blake3_sse41_impl = {
+-	.compress_in_place = blake3_compress_in_place_sse41,
+-	.compress_xof = blake3_compress_xof_sse41,
+-	.hash_many = blake3_hash_many_sse41,
+-	.is_supported = blake3_is_sse41_supported,
+-	.degree = 4,
+-	.name = "sse41"
+-};
+-#endif
+-
+-#if defined(__x86_64) && defined(HAVE_SSE4_1) && defined(HAVE_AVX2)
+-extern void zfs_blake3_hash_many_avx2(const uint8_t * const *inputs,
+-    size_t num_inputs, size_t blocks, const uint32_t key[8],
+-    uint64_t counter, boolean_t increment_counter, uint8_t flags,
+-    uint8_t flags_start, uint8_t flags_end, uint8_t *out);
+-
+-static void blake3_hash_many_avx2(const uint8_t * const *inputs,
+-    size_t num_inputs, size_t blocks, const uint32_t key[8],
+-    uint64_t counter, boolean_t increment_counter, uint8_t flags,
+-    uint8_t flags_start, uint8_t flags_end, uint8_t *out) {
+-	kfpu_begin();
+-	zfs_blake3_hash_many_avx2(inputs, num_inputs, blocks, key, counter,
+-	    increment_counter, flags, flags_start, flags_end, out);
+-	kfpu_end();
+-}
+-
+-static boolean_t blake3_is_avx2_supported(void)
+-{
+-	return (kfpu_allowed() && zfs_sse4_1_available() &&
+-	    zfs_avx2_available());
+-}
+-
+-const blake3_impl_ops_t blake3_avx2_impl = {
+-	.compress_in_place = blake3_compress_in_place_sse41,
+-	.compress_xof = blake3_compress_xof_sse41,
+-	.hash_many = blake3_hash_many_avx2,
+-	.is_supported = blake3_is_avx2_supported,
+-	.degree = 8,
+-	.name = "avx2"
+-};
+-#endif
+-
+-#if defined(__x86_64) && defined(HAVE_AVX512F) && defined(HAVE_AVX512VL)
+-extern void zfs_blake3_compress_in_place_avx512(uint32_t cv[8],
+-    const uint8_t block[BLAKE3_BLOCK_LEN], uint8_t block_len,
+-    uint64_t counter, uint8_t flags);
+-
+-extern void zfs_blake3_compress_xof_avx512(const uint32_t cv[8],
+-    const uint8_t block[BLAKE3_BLOCK_LEN], uint8_t block_len,
+-    uint64_t counter, uint8_t flags, uint8_t out[64]);
+-
+-extern void zfs_blake3_hash_many_avx512(const uint8_t * const *inputs,
+-    size_t num_inputs, size_t blocks, const uint32_t key[8],
+-    uint64_t counter, boolean_t increment_counter, uint8_t flags,
+-    uint8_t flags_start, uint8_t flags_end, uint8_t *out);
+-
+-static void blake3_compress_in_place_avx512(uint32_t cv[8],
+-    const uint8_t block[BLAKE3_BLOCK_LEN], uint8_t block_len,
+-    uint64_t counter, uint8_t flags) {
+-	kfpu_begin();
+-	zfs_blake3_compress_in_place_avx512(cv, block, block_len, counter,
+-	    flags);
+-	kfpu_end();
+-}
+-
+-static void blake3_compress_xof_avx512(const uint32_t cv[8],
+-    const uint8_t block[BLAKE3_BLOCK_LEN], uint8_t block_len,
+-    uint64_t counter, uint8_t flags, uint8_t out[64]) {
+-	kfpu_begin();
+-	zfs_blake3_compress_xof_avx512(cv, block, block_len, counter, flags,
+-	    out);
+-	kfpu_end();
+-}
+-
+-static void blake3_hash_many_avx512(const uint8_t * const *inputs,
+-    size_t num_inputs, size_t blocks, const uint32_t key[8],
+-    uint64_t counter, boolean_t increment_counter, uint8_t flags,
+-    uint8_t flags_start, uint8_t flags_end, uint8_t *out) {
+-	kfpu_begin();
+-	zfs_blake3_hash_many_avx512(inputs, num_inputs, blocks, key, counter,
+-	    increment_counter, flags, flags_start, flags_end, out);
+-	kfpu_end();
+-}
+-
+-static boolean_t blake3_is_avx512_supported(void)
+-{
+-	return (kfpu_allowed() && zfs_avx512f_available() &&
+-	    zfs_avx512vl_available());
+-}
+-
+-const blake3_impl_ops_t blake3_avx512_impl = {
+-	.compress_in_place = blake3_compress_in_place_avx512,
+-	.compress_xof = blake3_compress_xof_avx512,
+-	.hash_many = blake3_hash_many_avx512,
+-	.is_supported = blake3_is_avx512_supported,
+-	.degree = 16,
+-	.name = "avx512"
+-};
+-#endif
