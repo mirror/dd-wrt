@@ -1,4 +1,4 @@
-## Copyright (C) 1996-2021 The Squid Software Foundation and contributors
+## Copyright (C) 1996-2022 The Squid Software Foundation and contributors
 ##
 ## Squid software is distributed under GPLv2+ license and includes
 ## contributions from numerous individuals and organizations.
@@ -43,7 +43,7 @@ DEFS += -DDEFAULT_CONFIG_FILE=\"$(DEFAULT_CONFIG_FILE)\" \
 
 ## so that others can always use += for these variables
 CLEANFILES =
-check_PROGRAMS = 
+check_PROGRAMS =
 TESTS =
 
 AM_CPPFLAGS = \

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2021 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2022 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -503,6 +503,10 @@ httpRequestFree(void *data)
 /* This is a handler normally called by comm_close() */
 void ConnStateData::connStateClosed(const CommCloseCbParams &)
 {
+    if (clientConnection) {
+        clientConnection->noteClosure();
+        // keep closed clientConnection for logging, clientdb cleanup, etc.
+    }
     deleteThis("ConnStateData::connStateClosed");
 }
 
@@ -4001,8 +4005,16 @@ ConnStateData::unpinConnection(const bool andClose)
 }
 
 void
-ConnStateData::terminateAll(const Error &error, const LogTagsErrors &lte)
+ConnStateData::terminateAll(const Error &rawError, const LogTagsErrors &lte)
 {
+    auto error = rawError; // (cheap) copy so that we can detail
+    // We detail even ERR_NONE: There should be no transactions left, and
+    // detailed ERR_NONE will be unused. Otherwise, this detail helps in triage.
+    if (!error.detail) {
+        static const auto d = MakeNamedErrorDetail("WITH_CLIENT");
+        error.detail = d;
+    }
+
     debugs(33, 3, pipeline.count() << '/' << pipeline.nrequests << " after " << error);
 
     if (pipeline.empty()) {
