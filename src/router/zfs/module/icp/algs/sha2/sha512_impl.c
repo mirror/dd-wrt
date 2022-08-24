@@ -28,7 +28,7 @@
 #include <sys/sha2.h>
 #include <sys/simd.h>
 
-#include "sha2_impl.h"
+#include <sha2/sha2_impl.h>
 
 #define	TF(E, N) \
 	extern void E(uint64_t s[8], const void *, size_t); \
@@ -37,6 +37,17 @@
 }
 
 #if defined(__x86_64)
+
+extern void zfs_sha512_transform_x64(uint64_t s[8], const void *, size_t);
+static boolean_t sha2_have_x64(void)
+{
+	return (B_TRUE);
+}
+const sha512_ops_t sha512_x64_impl = {
+	.is_supported = sha2_have_x64,
+	.transform = zfs_sha512_transform_x64,
+	.name = "x64"
+};
 
 #if defined(HAVE_AVX)
 static boolean_t sha2_have_avx(void)
@@ -108,6 +119,9 @@ extern const sha512_ops_t sha512_generic_impl;
 /* array with all sha512 implementations */
 static const sha512_ops_t *const sha512_impls[] = {
 	&sha512_generic_impl,
+#if defined(__x86_64)
+	&sha512_x64_impl,
+#endif
 #if defined(__x86_64) && defined(HAVE_AVX)
 	&sha512_avx_impl,
 #endif

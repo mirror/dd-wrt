@@ -28,7 +28,7 @@
 #include <sys/zfs_impl.h>
 #include <sys/sha2.h>
 
-#include "sha2_impl.h"
+#include <sha2/sha2_impl.h>
 
 /*
  * On i386, gcc brings this for sha512_generic():
@@ -59,12 +59,12 @@ static const uint32_t SHA256_K[64] = {
 };
 
 #define	Ch(x, y, z)	((z) ^ ((x) & ((y) ^ (z))))
-#define	Maj(x, y, z)	(((x) & (y)) | ((z) & ((x) ^ (y))))
+#define	Maj(x, y, z)	(((y) & (z)) | (((y) | (z)) & (x)))
 
 #define	rotr32(x, n)	(((x) >> n) | ((x) << (32 - n)))
-#define	sum0(x)		(rotr32((x), 2) ^ rotr32((x), 13) ^ rotr32((x), 22))
-#define	sum1(x)		(rotr32((x), 6) ^ rotr32((x), 11) ^ rotr32((x), 25))
-#define	sigma0(x)	(rotr32((x), 7) ^ rotr32((x), 18) ^ ((x) >> 3))
+#define	sum0(x)		(rotr32((x),  2) ^ rotr32((x), 13) ^ rotr32((x), 22))
+#define	sum1(x)		(rotr32((x),  6) ^ rotr32((x), 11) ^ rotr32((x), 25))
+#define	sigma0(x)	(rotr32((x),  7) ^ rotr32((x), 18) ^ ((x) >> 3))
 #define	sigma1(x)	(rotr32((x), 17) ^ rotr32((x), 19) ^ ((x) >> 10))
 
 #define	WU(j) (W[j & 15] += sigma1(W[(j + 14) & 15]) \
@@ -138,7 +138,7 @@ static void sha256_generic(uint32_t state[8], const void *data, size_t num_blks)
 #define	rotr64(x, n)	(((x) >> n) | ((x) << (64 - n)))
 #define	sum0(x)		(rotr64((x), 28) ^ rotr64((x), 34) ^ rotr64((x), 39))
 #define	sum1(x)		(rotr64((x), 14) ^ rotr64((x), 18) ^ rotr64((x), 41))
-#define	sigma0(x)	(rotr64((x), 1)  ^ rotr64((x), 8)  ^ ((x) >> 7))
+#define	sigma0(x)	(rotr64((x),  1) ^ rotr64((x),  8) ^ ((x) >> 7))
 #define	sigma1(x)	(rotr64((x), 19) ^ rotr64((x), 61) ^ ((x) >> 6))
 
 /* SHA512 */
@@ -298,12 +298,12 @@ static void sha256_final(sha256_ctx *ctx, uint8_t *result, int bits)
 
 	m[pos++] = 0x80;
 	if (pos > 56) {
-		memset(m + pos, 0, (size_t)(64 - pos));
+		memset(m + pos, 0, 64 - pos);
 		ops->transform(ctx->state, m, 1);
 		pos = 0;
 	}
 
-	memset(m + pos, 0, (size_t)(56 - pos));
+	memset(m + pos, 0, 64 - pos);
 	mlen = BE_64(ctx->count[1]);
 	memcpy(m + (64 - 8), &mlen, 64 / 8);
 	ops->transform(ctx->state, m, 1);
@@ -342,12 +342,12 @@ static void sha512_final(sha512_ctx *ctx, uint8_t *result, int bits)
 
 	m[pos++] = 0x80;
 	if (pos > 112) {
-		memset(m + pos, 0, (size_t)(128 - pos));
+		memset(m + pos, 0, 128 - pos);
 		ops->transform(ctx->state, m, 1);
 		pos = 0;
 	}
 
-	memset(m + pos, 0, (size_t)(128 - pos));
+	memset(m + pos, 0, 128 - pos);
 	mlen = BE_64(ctx->count[1]);
 	memcpy(m + (128 - 8), &mlen, 64 / 8);
 	ops->transform(ctx->state, m, 1);
