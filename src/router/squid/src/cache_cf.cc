@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2021 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2022 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -4361,6 +4361,7 @@ static void
 parse_CpuAffinityMap(CpuAffinityMap **const cpuAffinityMap)
 {
 #if !HAVE_CPU_AFFINITY
+    (void)cpuAffinityMap;
     debugs(3, DBG_CRITICAL, "FATAL: Squid built with no CPU affinity " <<
            "support, do not set 'cpu_affinity_map'");
     self_destruct();

@@ -1,7 +1,7 @@
 /* loader-dld_link.c -- dynamic linking with dld
 
-   Copyright (C) 1998-2000, 2004, 2006-2008, 2011-2015 Free Software
-   Foundation, Inc.
+   Copyright (C) 1998-2000, 2004, 2006-2008, 2011-2019, 2021-2022 Free
+   Software Foundation, Inc.
    Written by Thomas Tanner, 1998
 
    NOTE: The canonical source of this file is maintained with the
@@ -112,7 +112,7 @@ vm_open (lt_user_data loader_data LT__UNUSED, const char *filename,
 {
   lt_module module = lt__strdup (filename);
 
-  if (dld_link (filename) != 0)
+  if (module && dld_link (filename) != 0)
     {
       LT__SETERROR (CANNOT_OPEN);
       FREE (module);

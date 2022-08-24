@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2021 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2022 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -169,6 +169,9 @@ WhoisState::readReply(const Comm::ConnectionPointer &conn, char *aBuffer, size_t
     if (!entry->makePublic())
         entry->makePrivate(true);
 
+    if (dataWritten) // treat zero-length responses as incomplete
+        fwd->markStoredReplyAsWhole("whois received/stored the entire response");
+
     fwd->complete();
     debugs(75, 3, "whoisReadReply: Done: " << entry->url());
     conn->close();
@@ -179,6 +182,7 @@ whoisClose(const CommCloseCbParams &params)
 {
     WhoisState *p = (WhoisState *)params.data;
     debugs(75, 3, "whoisClose: FD " << params.fd);
+    // We do not own a Connection. Assume that FwdState is also monitoring.
     p->entry->unlock("whoisClose");
     delete p;
 }

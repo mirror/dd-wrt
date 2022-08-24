@@ -1,7 +1,7 @@
 /* loader-dyld.c -- dynamic linking on darwin and OS X
 
-   Copyright (C) 1998-2000, 2004, 2006-2008, 2011-2015 Free Software
-   Foundation, Inc.
+   Copyright (C) 1998-2000, 2004, 2006-2008, 2011-2019, 2021-2022 Free
+   Software Foundation, Inc.
    Written by Peter O'Gorman, 1998
 
    NOTE: The canonical source of this file is maintained with the

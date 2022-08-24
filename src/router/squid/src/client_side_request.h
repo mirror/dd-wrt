@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2021 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2022 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -238,6 +238,9 @@ private:
 private:
     CbcPointer<Adaptation::Initiate> virginHeadSource;
     BodyPipe::Pointer adaptedBodySource;
+
+    /// noteBodyProductionEnded() was called
+    bool receivedWholeAdaptedReply;
 
     bool request_satisfaction_mode;
     int64_t request_satisfaction_offset;

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2021 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2022 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -486,11 +486,9 @@ Ftp::Gateway::timeout(const CommTimeoutCbParams &io)
         flags.pasv_supported = false;
         debugs(9, DBG_IMPORTANT, "FTP Gateway timeout in SENT_PASV state");
 
-        // cancel the data connection setup.
-        if (data.opener != NULL) {
-            data.opener->cancel("timeout");
-            data.opener = NULL;
-        }
+        // cancel the data connection setup, if any
+        dataConnWait.cancel("timeout");
+
         data.close();
     }
 
@@ -1723,7 +1721,7 @@ void
 Ftp::Gateway::dataChannelConnected(const CommConnectCbParams &io)
 {
     debugs(9, 3, HERE);
-    data.opener = NULL;
+    dataConnWait.finish();
 
     if (io.flag != Comm::OK) {
         debugs(9, 2, HERE << "Failed to connect. Retrying via another method.");
@@ -2281,6 +2279,7 @@ ftpReadTransferDone(Ftp::Gateway * ftpState)
             ftpState->completedListing();
             /* QUIT operation handles sending the reply to client */
         }
+        ftpState->markParsedVirginReplyAsWhole("ftpReadTransferDone code 226 or 250");
         ftpSendQuit(ftpState);
     } else {            /* != 226 */
         debugs(9, DBG_IMPORTANT, HERE << "Got code " << code << " after reading data");
@@ -2726,9 +2725,9 @@ Ftp::Gateway::mayReadVirginReplyBody() const
     return !doneWithServer();
 }
 
-AsyncJob::Pointer
+void
 Ftp::StartGateway(FwdState *const fwdState)
 {
-    return AsyncJob::Start(new Ftp::Gateway(fwdState));
+    AsyncJob::Start(new Ftp::Gateway(fwdState));
 }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2021 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2022 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -410,6 +410,7 @@ Security::ServerOptions::updateContextConfig(Security::ContextPointer &ctx)
     updateContextClientCa(ctx);
 
 #if USE_OPENSSL
+    SSL_CTX_set_mode(ctx.get(), SSL_MODE_NO_AUTO_CHAIN);
     if (parsedFlags & SSL_FLAG_DONT_VERIFY_DOMAIN)
         SSL_CTX_set_ex_data(ctx.get(), ssl_ctx_ex_index_dont_verify_domain, (void *) -1);
 

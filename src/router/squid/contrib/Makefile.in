@@ -247,6 +247,7 @@ EXT_LIBECAP_CFLAGS = @EXT_LIBECAP_CFLAGS@
 EXT_LIBECAP_LIBS = @EXT_LIBECAP_LIBS@
 FALSE = @FALSE@
 FGREP = @FGREP@
+FILECMD = @FILECMD@
 GREP = @GREP@
 HAVE_CXX11 = @HAVE_CXX11@
 INCLTDL = @INCLTDL@
@@ -632,7 +633,7 @@ uninstall-am:
 .PRECIOUS: Makefile
 
 
-all: 
+all:
 
 install: install-@host_os@
 
