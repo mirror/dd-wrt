@@ -28,7 +28,7 @@
 #include <sys/sha2.h>
 #include <sys/simd.h>
 
-#include "sha2_impl.h"
+#include <sha2/sha2_impl.h>
 
 #define	TF(E, N) \
 	extern void E(uint32_t s[8], const void *, size_t); \
@@ -37,6 +37,17 @@
 }
 
 #if defined(__x86_64)
+
+extern void zfs_sha256_transform_x64(uint32_t s[8], const void *, size_t);
+static boolean_t sha2_have_x64(void)
+{
+	return (B_TRUE);
+}
+const sha256_ops_t sha256_x64_impl = {
+	.is_supported = sha2_have_x64,
+	.transform = zfs_sha256_transform_x64,
+	.name = "x64"
+};
 
 #if defined(HAVE_SSSE3)
 static boolean_t sha2_have_ssse3(void)
@@ -150,6 +161,9 @@ extern const sha256_ops_t sha256_generic_impl;
 /* array with all sha256 implementations */
 static const sha256_ops_t *const sha256_impls[] = {
 	&sha256_generic_impl,
+#if defined(__x86_64)
+	&sha256_x64_impl,
+#endif
 #if defined(__x86_64) && defined(HAVE_SSSE3)
 	&sha256_ssse3_impl,
 #endif
