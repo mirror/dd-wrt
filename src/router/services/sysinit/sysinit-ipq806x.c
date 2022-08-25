@@ -529,13 +529,31 @@ void start_sysinit(void)
 		eval("ifconfig", "eth1", "up");
 
 		break;
+	case ROUTER_ASROCK_G10:
+		eval("swconfig", "dev", "switch0", "set", "reset", "1");
+		eval("swconfig", "dev", "switch0", "set", "enable_vlan", "0");
+		eval("swconfig", "dev", "switch0", "set", "igmp_snooping", "0");
+		eval("swconfig", "dev", "switch0", "set", "igmp_v3", "1");
+		eval("swconfig", "dev", "switch0", "vlan", "1", "set", "ports", "6 2 3 4 5");
+		eval("swconfig", "dev", "switch0", "vlan", "2", "set", "ports", "0 1");
+		eval("swconfig", "dev", "switch0", "set", "apply");
+		eval("ifconfig", "eth0", "up");
+		eval("ifconfig", "eth1", "up");
+
+		writeproc("/proc/irq/101/smp_affinity", "2");
+		writeproc("/proc/irq/98/smp_affinity", "2");	// move second wifi interface to core 2
+		writestr("/sys/class/leds/ath10k-phy0/trigger", "phy0tpt");
+		writestr("/sys/class/leds/ath10k-phy1/trigger", "phy1tpt");
+		writeproc("/sys/devices/system/cpu/cpu0/cpufreq/scaling_min_freq", "800000");
+		writeproc("/sys/devices/system/cpu/cpu1/cpufreq/scaling_min_freq", "800000");
+		break;
 	default:
 		eval("swconfig", "dev", "switch0", "set", "reset", "1");
 		eval("swconfig", "dev", "switch0", "set", "enable_vlan", "0");
 		eval("swconfig", "dev", "switch0", "set", "igmp_snooping", "0");
 		eval("swconfig", "dev", "switch0", "set", "igmp_v3", "1");
 		eval("swconfig", "dev", "switch0", "vlan", "1", "set", "ports", "6 1 2 3 4");
-		eval("swconfig", "dev", "switch0", "vlan", "2", "set", "ports", "5 0");
+		eval("swconfig", "dev", "switch0", "vlan", "2", "set", "ports", "0 5");
 		eval("swconfig", "dev", "switch0", "set", "apply");
 		eval("ifconfig", "eth0", "up");
 		eval("ifconfig", "eth1", "up");
@@ -579,6 +597,7 @@ void start_sysinit(void)
 	case ROUTER_NETGEAR_R7500:
 		nvram_seti("sw_wancpuport", 0);
 		nvram_seti("sw_lancpuport", 6);
+		nvram_unset("sw_cpuport");
 		nvram_seti("sw_wan", 5);
 		nvram_seti("sw_lan1", 4);
 		nvram_seti("sw_lan2", 3);
@@ -586,8 +605,18 @@ void start_sysinit(void)
 		nvram_seti("sw_lan4", 1);
 		break;
 	case ROUTER_ASROCK_G10:
+		nvram_seti("sw_wancpuport", 0);
+		nvram_seti("sw_lancpuport", 6);
+		nvram_unset("sw_cpuport");
+		nvram_seti("sw_wan", 1);
+		nvram_seti("sw_lan1", 2);
+		nvram_seti("sw_lan2", 3);
+		nvram_seti("sw_lan3", 4);
+		nvram_seti("sw_lan4", 5);
+		break;
 	case ROUTER_LINKSYS_EA8500:
 	default:
+		nvram_unset("sw_cpuport");
 		nvram_seti("sw_wancpuport", 0);
 		nvram_seti("sw_lancpuport", 6);
 		nvram_seti("sw_wan", 5);
