@@ -141,6 +141,9 @@ input {
   margin-left: 1px;
   margin-right: 1px;
 }
+input[type] {
+  accent-color: #345b80;  
+}
 input.button {
   padding: .12rem .5rem;
   margin-right: .2rem
