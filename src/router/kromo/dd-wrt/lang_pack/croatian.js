@@ -462,14 +462,14 @@ bmenu.servicesUSB="USB";
 bmenu.servicesNAS="NAS";
 bmenu.servicesHotspot="Hotspot";
 bmenu.servicesNintendo="Nintendo";
-bmenu.servicesMilkfish="SIP Proxy";
+//bmenu.servicesMilkfish="SIP Proxy";
 //bmenu.servicesAnchorFree="Reklamna Mreža";
 
 bmenu.statu="Status";
 bmenu.statuRouter="Usmjerivač";
 bmenu.statuInet="WAN";
 bmenu.statuLAN="LAN";
-bmenu.statuSputnik="Sputnik Agent";
+//bmenu.statuSputnik="Sputnik Agent";
 bmenu.statuWLAN="WiFi";
 bmenu.statuVPN="OpenVPN";
 bmenu.statuBand="Pojasna Širina";
@@ -2040,7 +2040,7 @@ freeradius.port="RADIUS Port";
 
 //help container
 
-hfreeradius.right2="You must enable JFFS before starting FreeRADIUS.";
+hfreeradius.right2="You must enable JFFS2 before starting FreeRADIUS.";
 
 // ** Wireless_Advanced.asp **//
 
