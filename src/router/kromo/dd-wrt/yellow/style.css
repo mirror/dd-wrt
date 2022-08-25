@@ -31,6 +31,9 @@ fieldset legend, .syslog_legend {
 .progressbarblock {
   background-color: #eec900;
 }
+input[type] {
+  accent-color: #eec900;  
+}
 input.button, input.button[disabled]:hover {
   background: #eec900;
   border: 1px solid #eec900;
