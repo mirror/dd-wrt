@@ -527,8 +527,8 @@ static int forward_query(int udpfd, union mysockaddr *udpaddr,
 		}
 #ifdef HAVE_DNSSEC
 	      else
-		log_query_mysockaddr(F_NOEXTRA | F_DNSSEC | F_SERVER, daemon->namebuff, &srv->addr,
-				     (forward->flags & FREC_DNSKEY_QUERY) ? "dnssec-retry[DNSKEY]" : "dnssec-retry[DS]", 0);
+		log_query_mysockaddr(F_NOEXTRA | F_DNSSEC, daemon->namebuff, &srv->addr,
+				     "dnssec-retry", (forward->flags & FREC_DNSKEY_QUERY) ? T_DNSKEY : T_DS);
 #endif
 
 	      srv->queries++;
@@ -1619,17 +1619,13 @@ void receive_query(struct listener *listen, time_t now)
 	
       /* If the client provides an EDNS0 UDP size, use that to limit our reply.
 	 (bounded by the maximum configured). If no EDNS0, then it
-	 defaults to 512. We write this value into the query packet too, so that
-	 if it's forwarded, we don't specify a maximum size greater than we can handle. */
+	 defaults to 512 */
       if (udp_size > daemon->edns_pktsz)
 	udp_size = daemon->edns_pktsz;
       else if (udp_size < PACKETSZ)
 	udp_size = PACKETSZ; /* Sanity check - can't reduce below default. RFC 6891 6.2.3 */
-
-      pheader -= 6; /* ext_class */
-      PUTSHORT(udp_size, pheader); /* Bounding forwarded queries to maximum configured */
     }
-  
+
 #ifdef HAVE_CONNTRACK
 #ifdef HAVE_AUTH
   if (!auth_dns || local_auth)
