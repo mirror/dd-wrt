@@ -459,7 +459,7 @@ bmenu.servicesUSB="USB";
 bmenu.servicesNAS="NAS";
 bmenu.servicesHotspot="Hotspot";
 bmenu.servicesNintendo="Nintendo";
-bmenu.servicesMilkfish="SIP Proxy";
+//bmenu.servicesMilkfish="SIP Proxy";
 bmenu.servicesPrivoxy="Bloqueig d'Anuncis";
 //bmenu.servicesAnchorFree="My Ad Network";
 
@@ -837,7 +837,7 @@ hotspot.wifidog_password="Contrasenya del Servidor HTTP";
 hotspot.wifidog_auth="Suport d'Autenticació del Servidor HTTP";
 
 //help container
-hstatus_hots.right1="conup/condown:<br /><i>Quan USB o JFFS està muntat a jffs, scripts de connexió es poden utilitzar en /jffs/etc/chilli/</i><br />Usuaris Locals:<br /><i>Quan només usuaris locals s'utilitzen, establiu el RADIUS primari com a 127.0.0.1</i>";
+hstatus_hots.right1="conup/condown:<br />Quan USB o JFFS2 està muntat a <b>jffs</b>, scripts de connexió es poden utilitzar en <b>/jffs/etc/chilli/</b><br />Usuaris Locals:<br />Quan només usuaris locals s'utilitzen, establiu el RADIUS primari com a <b>127.0.0.1</b>";
 
 // ** Hotspotsystem **//
 hotspotsys.legend="Sistema Hotspot";
@@ -1389,7 +1389,7 @@ service.vpn_route="Enrutament basat en Política";
 
 //help container
 hstatus_vpn.right1="Enrutament basat en Política:<br /><i>Afegiu els IP/NET en la forma 0.0.0.0/0 per forçar que els clients utilitzin el túnel com gateway per defecte. Una línia per IP/NET.<br /><i>Adreça IP/Màscara de xarxa:</i><br />Ha de ser establert quan s'utilitza el mode DHCP-Proxy i el TAP local NO s'extén</i>";
-hstatus_vpn.right2="Configuració Adicional:<br /><i>Per empenyar les rutes als clients afegiu 'push \"ruta IP màscara gateway\"', per empenyar DNS/WINS afegiu 'push \"opció-DHCP DNS (o WINS) IP\"' a la configuració.</i><br />directori de connexió de client:<br /><i>Quan USB o JFFS està muntat a /jffs, els scripts es trucan de /jffs/etc/openvpn/ccd/</i>";
+hstatus_vpn.right2="Configuració Adicional:<br /><i>Per empenyar les rutes als clients afegiu 'push \"ruta IP màscara gateway\"', per empenyar DNS/WINS afegiu 'push \"opció-DHCP DNS (o WINS) IP\"' a la configuració.</i><br />directori de connexió de client:<br /><i>Quan USB o JFFS2 està muntat a /jffs, els scripts es trucan de /jffs/etc/openvpn/ccd/</i>";
 hstatus_vpn.right3="General:<br /><i>3 mètodes d'autenticació es soportan: pkcs12 (+dh en el servidor), estàtica, i certificats estàndards. Habiliteu el MSS en només un costat de l'enllaç, fragmenteu en ambdós.</i>";
 
 //vnc.repeater
@@ -1983,7 +1983,7 @@ freeradius.cert_status="Estatus de Certificat";
 freeradius.port="Port de RADIUS";
 
 //help container
-hfreeradius.right2="Heu de habilitar JFFS abans d'iniciar el FreeRADIUS.";
+hfreeradius.right2="Heu de habilitar JFFS2 abans d'iniciar el FreeRADIUS.";
 
 // ** Wireless_Advanced.asp **//
 wl_adv.titl="Paràmetres Sense Fil Avançats";

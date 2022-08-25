@@ -462,14 +462,14 @@ bmenu.servicesUSB="USB";
 bmenu.servicesNAS="NAS";
 bmenu.servicesHotspot="Hotspot";
 bmenu.servicesNintendo="Nintendo";
-bmenu.servicesMilkfish="SIP Proxy";
+//bmenu.servicesMilkfish="SIP Proxy";
 //bmenu.servicesAnchorFree="My Ad Network";
 
 bmenu.statu="Статус";
 bmenu.statuRouter="Рутер";
 bmenu.statuInet="WAN";
 bmenu.statuLAN="LAN";
-bmenu.statuSputnik="Sputnik Agent";
+//bmenu.statuSputnik="Sputnik Agent";
 bmenu.statuWLAN="WLAN";
 bmenu.statuVPN="OpenVPN";
 bmenu.statuBand="Проток";
@@ -874,7 +874,7 @@ hotspot.wifidog_password="HTTP Сервер Лозинка";
 hotspot.wifidog_auth="Подршка за HTTP сервер аутентификацију";
 
 //help container
-hstatus_hots.right1="conup/condown:<br /><i>Када је USB или JFFS маунтован на jffs-у, скрипта за повезивање се може користити у /jffs/etc/chilli/</i>";
+hstatus_hots.right1="conup/condown:<br />Када је USB или JFFS2 маунтован на <b>/jffs</b>, скрипта за повезивање се може користити у <b>/jffs/etc/chilli/</b>";
 
 // ** Hotspotsystem **//
 hotspotsys.legend="Hotspot System";
