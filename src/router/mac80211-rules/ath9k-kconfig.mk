@@ -373,6 +373,9 @@ ifneq ($(CONFIG_QCA99X0),y)
 	rm -rf $(INSTALLDIR)/ath9k/lib/firmware/ath10k/QCA99X0
 	rm -rf $(INSTALLDIR)/ath9k/lib/firmware/ath10k/QCA9984
 else
+ifeq ($(CONFIG_G10),y)
+	cp $(MAC80211_PATH)/ath10k-firmware*/g10-boarddata/* $(INSTALLDIR)/ath9k/lib/firmware/ath10k/QCA99X0/hw2.0
+endif
 	mv $(INSTALLDIR)/ath9k/lib/firmware/ath10k/QCA9984/hw1.0/board.bin $(INSTALLDIR)/ath9k/lib/ath10k/board_9984.bin
 	mv $(INSTALLDIR)/ath9k/lib/firmware/ath10k/QCA99X0/hw2.0/board.bin $(INSTALLDIR)/ath9k/lib/ath10k/board_99X0.bin
 	-cd $(INSTALLDIR)/ath9k/lib/firmware/ath10k/QCA99X0/hw2.0 && ln -s /tmp/board1.bin board.bin 
@@ -390,9 +393,6 @@ ifneq ($(CONFIG_QCA9888),y)
 endif
 	mv $(INSTALLDIR)/ath9k/lib/firmware/ath10k/QCA988X/hw2.0/board.bin $(INSTALLDIR)/ath9k/lib/ath10k
 	cd $(INSTALLDIR)/ath9k/lib/firmware/ath10k/QCA988X/hw2.0 && ln -s /tmp/ath10k-board.bin board.bin 
-ifeq ($(CONFIG_G10),y)
-	cp $(MAC80211_PATH)/ath10k-firmware*/g10-boarddata/* $(INSTALLDIR)/ath9k/lib/firmware/ath10k/QCA988X/hw2.0
-endif
 ifeq ($(CONFIG_R9000),y)
 	cd $(INSTALLDIR)/ath9k/lib/firmware/ath10k && rm -f pre-cal-pci-0000:01:00.0.bin && ln -s /tmp/board1.bin pre-cal-pci-0001:03:00.0.bin 
 	cd $(INSTALLDIR)/ath9k/lib/firmware/ath10k && rm -f pre-cal-pci-0001:01:00.0.bin && ln -s /tmp/board2.bin pre-cal-pci-0001:04:00.0.bin 
