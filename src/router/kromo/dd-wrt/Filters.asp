@@ -255,7 +255,7 @@ function to_apply(F) {
 
 var update;
 
-addEvent(window, "load", function() {	
+addEvent(window, "load", function() {
 	stickControl(<% nvg("sticky_footer"); %>);
 	day_enable_disable(document.filters, "<% filter_tod_get("day_all_init"); %>");
 	time_enable_disable(document.filters, "<% filter_tod_get("time_all_init"); %>");

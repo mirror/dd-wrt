@@ -17,7 +17,7 @@ function openGeotool(IP) {
 }
 addEvent(window, "load", function() {
 	stickControl(<% nvg("sticky_footer"); %>);
-}
+});
 //]]>
 </script>
 	</head>
