@@ -237,18 +237,12 @@
 					>;
 			};
 
-			phy4: ethernet-phy@4 {
-				device_type = "ethernet-phy";
-				reg = <4>;
-			};
-
 		};
 
 		gmac1: ethernet@37200000 {
 			status = "ok";
 			phy-mode = "rgmii";
 			qcom,id = <1>;
-			phy-handle = <&phy4>;
 
 			pinctrl-0 = <&rgmii2_pins>;
 			pinctrl-names = "default";
@@ -265,7 +259,6 @@
 			status = "ok";
 			phy-mode = "sgmii";
 			qcom,id = <2>;
-		/*	phy-handle = <&phy0>;*/
 
 			mtd-mac-address = <&art 0>;
 
