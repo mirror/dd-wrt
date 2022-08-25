@@ -2837,8 +2837,7 @@ void run_wan(int status)
 		fprintf(stderr, "[SERVICE WAN] testmode\n");
 	}
 #ifdef HAVE_PPPOE
-	char *pppoe_wan_ifname = nvram_invmatch("pppoe_wan_ifname",
-						"") ? nvram_safe_get("pppoe_wan_ifname") : nvram_safe_get("wan_ifname");
+	char *pppoe_wan_ifname = nvram_safe_get("wan_ifname");
 
 #ifdef HAVE_MULTICAST
 	if ((!nvram_matchi("dtag_vlan8", 1) && nvram_matchi("dtag_bng", 1)) || nvram_matchi("wan_vdsl", 0))
