@@ -601,6 +601,7 @@ void start_sysinit(void)
 		nvram_seti("sw_lan4", 5);
 		break;
 	/* routers with reverse port order */
+	case ROUTER_NETGEAR_R7800:
 	case ROUTER_NETGEAR_R7500V2:
 	case ROUTER_NETGEAR_R7500:
 		nvram_seti("sw_wancpuport", 0);
@@ -612,7 +613,6 @@ void start_sysinit(void)
 		nvram_seti("sw_lan4", 1);
 		break;
 	case ROUTER_LINKSYS_EA8500:
-	case ROUTER_NETGEAR_R7800:
 	default:
 		nvram_seti("sw_wancpuport", 0);
 		nvram_seti("sw_lancpuport", 6);
