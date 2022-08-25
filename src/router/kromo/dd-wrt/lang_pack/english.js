@@ -952,7 +952,7 @@ nas.rsync="Remote Synchronisation";
 // ** DLNA **
 nas.dlna_legend="DLNA Server";
 nas.dlna_srv="MiniDLNA";
-nas.dlna_label="nas.proftpd_srv_label";
+nas.dlna_label=nas.proftpd_srv_label;
 nas.dlna_merge="Merge Media Dirs";
 nas.dlna_no_art="Ignore Album Art";
 nas.dlna_subtitles="Enable Subtitles";
