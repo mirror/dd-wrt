@@ -529,25 +529,6 @@ void start_sysinit(void)
 		eval("ifconfig", "eth1", "up");
 
 		break;
-	case ROUTER_ASROCK_G10:
-		eval("swconfig", "dev", "switch0", "set", "reset", "1");
-		eval("swconfig", "dev", "switch0", "set", "enable_vlan", "0");
-		eval("swconfig", "dev", "switch0", "set", "igmp_snooping", "0");
-		eval("swconfig", "dev", "switch0", "set", "igmp_v3", "1");
-		eval("swconfig", "dev", "switch0", "vlan", "1", "set", "ports", "2 3 4 5 6t");
-		eval("swconfig", "dev", "switch0", "vlan", "2", "set", "ports", "1 6t");
-		eval("swconfig", "dev", "switch0", "set", "apply");
-		eval("ifconfig", "eth1", "up");
-		eval("vconfig", "set_name_type", "VLAN_PLUS_VID_NO_PAD");
-		eval("vconfig", "add", "eth1", "1");
-		eval("vconfig", "add", "eth1", "2");
-		writeproc("/proc/irq/101/smp_affinity", "2");
-		writeproc("/proc/irq/98/smp_affinity", "2");	// move second wifi interface to core 2
-		writestr("/sys/class/leds/ath10k-phy0/trigger", "phy0tpt");
-		writestr("/sys/class/leds/ath10k-phy1/trigger", "phy1tpt");
-		writeproc("/sys/devices/system/cpu/cpu0/cpufreq/scaling_min_freq", "800000");
-		writeproc("/sys/devices/system/cpu/cpu1/cpufreq/scaling_min_freq", "800000");
-		break;
 	default:
 		eval("swconfig", "dev", "switch0", "set", "reset", "1");
 		eval("swconfig", "dev", "switch0", "set", "enable_vlan", "0");
@@ -592,14 +573,6 @@ void start_sysinit(void)
 */
 #endif				/*HAVE_ANTAIRA */
 		break;
-	case ROUTER_ASROCK_G10:
-		nvram_seti("sw_cpuport", 6);
-		nvram_seti("sw_wan", 1);
-		nvram_seti("sw_lan1", 2);
-		nvram_seti("sw_lan2", 3);
-		nvram_seti("sw_lan3", 4);
-		nvram_seti("sw_lan4", 5);
-		break;
 	/* routers with reverse port order */
 	case ROUTER_NETGEAR_R7800:
 	case ROUTER_NETGEAR_R7500V2:
@@ -612,6 +585,7 @@ void start_sysinit(void)
 		nvram_seti("sw_lan3", 2);
 		nvram_seti("sw_lan4", 1);
 		break;
+	case ROUTER_ASROCK_G10:
 	case ROUTER_LINKSYS_EA8500:
 	default:
 		nvram_seti("sw_wancpuport", 0);

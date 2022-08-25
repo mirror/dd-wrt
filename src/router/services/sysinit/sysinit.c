@@ -1202,22 +1202,11 @@ void start_restore_defaults(void)
 		{ "wan_default", "eth1" },
 		{ 0, 0 }
 	};
-	struct nvram_param g10[] = {
-		{ "lan_ifname", "br0" },
-		{ "lan_ifnames", "vlan1 vlan2 wlan0 wlan1" },
-		{ "wan_ifname", "vlan2" },
-		{ "wan_ifname2", "vlan2" },
-		{ "wan_ifnames", "vlan2" },
-		{ "wan_default", "vlan2" },
-		{ 0, 0 }
-	};
 
 	struct nvram_param *generic = NULL;
 
 	int wrt_brand = getRouterBrand();
-	if (wrt_brand == wrt_brand == ROUTER_ASROCK_G10)
-		generic = g10;
-	else if (wrt_brand == ROUTER_HABANERO)
+	if (wrt_brand == ROUTER_HABANERO)
 		generic = habanero;
 	else
 		generic = ipq806x;
