@@ -4,7 +4,7 @@
 		//<![CDATA[
 addEvent(window, "load", function() {
 	stickControl(<% nvg("sticky_footer"); %>);
-}
+});
 		//]]>
 		</script>
 	</head>

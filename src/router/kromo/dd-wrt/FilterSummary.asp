@@ -8,7 +8,7 @@ function filter_del(F) {
 }
 addEvent(window, "load", function() {
 	stickControl(<% nvg("sticky_footer"); %>);
-}
+});
 		//]]>
 		</script>
 	</head>

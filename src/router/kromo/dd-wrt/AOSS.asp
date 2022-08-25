@@ -28,8 +28,7 @@ function to_apply(F) {
 
 /* the following 3 functions are taken and ported from HostAPD to Javascript*/
 
-function wps_pin_checksum(pin)
-{
+function wps_pin_checksum(pin) {
 	accum = 0;
 	while (pin) {
 		accum += parseInt(3 * (pin % 10));
@@ -41,14 +40,11 @@ function wps_pin_checksum(pin)
 	return (10 - accum % 10) % 10;
 }
 
-function wps_pin_valid(pin)
-{
+function wps_pin_valid(pin) {
 	return wps_pin_checksum(parseInt(pin / 10)) == (pin % 10);
 }
 
-function wps_generate_pin(field)
-{
-
+function wps_generate_pin(field) {
 	/* Generate seven random digits for the PIN */
 	val = parseInt(Math.random()*(9999999+1));
 	val %= 10000000;
@@ -56,9 +52,9 @@ function wps_generate_pin(field)
 	/* Append checksum digit */
 	value = val * 10 + wps_pin_checksum(val);
 	if (value<10000000)
-	    field.value = "0" + value;
+		field.value = "0" + value;
 	else
-	    field.value = value;
+		field.value = value;
 }
 
 function to_register(F) {
@@ -81,14 +77,13 @@ function to_configure(F) {
 
 function to_ap_register(F) {
 	if (!wps_pin_valid(F.wps_ap_pin.value)) {
-	    alert(aoss.pinnotvalid);
-	    return;
-	    }
+		alert(aoss.pinnotvalid);
+		return;
+	}
 	F.change_action.value="gozila_cgi";
 	F.submit_type.value = "wps_ap_register";
   apply(F);
 }
-
 
 var update;
 
@@ -97,12 +92,10 @@ addEvent(window, "load", function() {
 
 	update = new StatusUpdate("AOSS.live.asp", <% nvg("refresh_time"); %>);
 	update.start();
-
 });
 
 addEvent(window, "unload", function() {
 	update.stop();
-
 });
 
 		//]]>
