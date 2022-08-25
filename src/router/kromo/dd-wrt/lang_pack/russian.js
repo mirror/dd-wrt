@@ -845,7 +845,7 @@ hotspot.wifidog_username="Имя пользователя HTTP сервера";
 hotspot.wifidog_password="Пароль для HTTP сервера";
 hotspot.wifidog_auth="Поддержка аутентификации HTTP сервера";
 //help container
-hstatus_hots.right1="conup/condown:<br><i>При подключении USB или JFFS к jffs, можно использовать скрипт подключения в /jffs/etc/chilli/</i><br>Локальные пользователи:<br><i>При использовании только локальных пользователей, установите основной RADIUS сервер в 127.0.0.1</i>";
+hstatus_hots.right1="conup/condown:<br>При подключении USB или JFFS2 к <b>/jffs</b>, можно использовать скрипт подключения в <b>/jffs/etc/chilli/</b><br>Локальные пользователи:<br>При использовании только локальных пользователей, установите основной RADIUS сервер в <b>127.0.0.1</b>";
 
 // ** Hotspotsystem **//
 hotspotsys.legend="Система Hotspot";
@@ -1981,7 +1981,7 @@ freeradius.expiration="Истекает через (дней)";
 freeradius.passphrase="Контрольная фраза";
 //freeradius.generate="Сгенерировать сертификат";
 freeradius.cert_status="Состояние сертификата";
-freeradius.port="Порт Radius";
+freeradius.port="Порт RADIUS";
 //help container
 hfreeradius.right2="Необходимо включить JFFS перед запуском FreeRADIUS.";
 

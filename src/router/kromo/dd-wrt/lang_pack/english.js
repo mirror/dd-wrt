@@ -1,4 +1,4 @@
-////////////////////////////////////////////////////////////////////////////////////
+<b>/jffs</b>////////////////////////////////////////////////////////////////////////////////////
 //     English reference translation file - DD-WRT V3 -  Updated on 28/08/2022    //
 ////////////////////////////////////////////////////////////////////////////////////
 
@@ -537,7 +537,7 @@ bmenu.servicesUSB="USB";
 bmenu.servicesNAS="NAS";
 bmenu.servicesHotspot="Hotspot";
 bmenu.servicesNintendo="Nintendo";
-bmenu.servicesMilkfish="SIP Proxy";
+//bmenu.servicesMilkfish="SIP Proxy";
 bmenu.servicesPrivoxy="Ad Blocking";
 //bmenu.servicesLighttpd="Web Server";
 bmenu.servicesSpeedchecker="SpeedChecker";
@@ -547,7 +547,7 @@ bmenu.statu="Status";
 bmenu.statuRouter="Router";
 bmenu.statuInet="WAN";
 bmenu.statuLAN="LAN";
-bmenu.statuSputnik="Sputnik Agent";
+//bmenu.statuSputnik="Sputnik Agent";
 bmenu.statuWLAN="Wireless";
 bmenu.statuVPN="OpenVPN";
 bmenu.statuBand="Bandwidth";
@@ -925,7 +925,7 @@ husb.page2="<dd><ul><li>Enable Printer Support</li></ul></dd>";
 husb.page3="<dd><ul><li>Enable support for external drives</li></ul></dd>";
 husb.page4="<dd><ul><li>Auto mount connected drives</li></ul></dd>";
 husb.page5="<dt>Options</dt><dd><ul><li>Run script from the specified path whenever a drive is mounted by automount</li><li>Mount partition with given UUID to specified mount point e.g. /opt</li><li>Use SES Button to un mount drives before disconnecting them</li></ul></dd>";
-husb.page6="<dd><ul><li>Displays disk info e.g. partition size, volume name if set, as well as UUID e.g. <i>B965FA66-CC65-4DK8-1254-DD0A78D19A90</i> for all connected drives</li></ul></dd><div class=\"note\"><h4>Note:</h4><div>Automount by default mounts all drives to /mnt/<devname> e.g. <i>/mnt/sda1</i> <br />If your volume name is <b>opt</b> the partition will be mounted to /opt, if set to jffs -> /jffs.<br />You can override this by entering a partitions UUID in the option fields.</div></div><br />";
+husb.page6="<dd><ul><li>Displays disk info e.g. partition size, volume name if set, as well as UUID e.g. <i>B965FA66-CC65-4DK8-1254-DD0A78D19A90</i> for all connected drives</li></ul></dd><div class=\"note\"><h4>Note:</h4><div>Automount by default mounts all drives to /mnt/<devname> e.g. <i>/mnt/sda1</i> <br />If your volume name is <b>opt</b> the partition will be mounted to <b>/opt</b>, if set to jffs -> <b>/jffs</b>.<br />You can override this by entering a partitions UUID in the option fields.</div></div><br />";
 
 // ** NAS.asp **//
 var nas=new Object();
@@ -985,13 +985,13 @@ nas.compression="Compression";
 
 // Help container
 var hnas=new Object();
-hnas.right2="In order to share resources add new shares by supplying a path and share name. Define users that can access the share through FTP or Samba.<br /><br /><b>MiniDLNA Warning:</b> Unless you mount a partition to /jffs the index DB will be stored in RAM. This can fill up your RAM and will initiate a DB reindex at every boot.";
+hnas.right2="In order to share resources add new shares by supplying a path and share name. Define users that can access the share through FTP or Samba.<br /><br /><b>MiniDLNA Warning:</b> Unless you mount a partition to <b>/jffs</b> the index DB will be stored in RAM. This can fill up your RAM and will initiate a DB reindex at every boot.";
 
 //help page
 hnas.page1="<dd>A FTP server enables you to share files: <br /><ul><li>Over the Internet - WAN</li><li>Over - LAN / WLAN</li></ul></dd>";
 hnas.page2="<dd>A DLNA server enables you to share media: <br /><ul><li>You need a DLNA capable client e.g. a TV to view files served by the router.</li></ul></dd>";
 hnas.page3="<dd>A Samba server enables you to access files: <br /><ul><li>Via file explorer on your client device the shares you have setup and have connected to the router's USB ports.</li></ul></dd>";
-hnas.page4="<dd><ul><li>Path: Path to mounted partition. See currently mounted disks under <a href=\"../USB.asp\">Disk Info</a> </li><li>Subdir: Directory name on given partition e.g. public or folder/sub_folder/sub_sub_folder </li><li>Name: Share name displayed when browsing the network shares e.g. \\router\name </li><li>Public: Everyone can access this share. No user account required.</li></ul></dd><div class=\"note\"><h4>Note:</h4><div>For Windows users: a connected USB drive shows up in Windows under e.g. <b>D:</b> and contains two directories <i>public and secret</i>.<br />You want to share <i>D:\public</i>. To do this connect the USB drive and lookup or specify a mountpoint under <a href=\"../USB.asp\">USB Settings</a>.<br /><b>/dev/sdX</b> equals a mount point under Linux. In order to share <i>D:\public</i>, select current mount point and specify subdir <i>public</i> give it a name e.g. <i>Guest and setup access permissions</i>.</div></div><br />";
+hnas.page4="<dd><ul><li>Path: Path to mounted partition. See currently mounted disks under <a href=\"../USB.asp\">Disk Info</a> </li><li>Subdir: Directory name on given partition e.g. public or folder/sub_folder/sub_sub_folder </li><li>Name: Share name displayed when browsing the network shares e.g. <b>\\router\name</b> </li><li>Public: Everyone can access this share. No user account required.</li></ul></dd><div class=\"note\"><h4>Note:</h4><div>For Windows users: a connected USB drive shows up in Windows under e.g. <b>D:</b> and contains two directories <i>public and secret</i>.<br />You want to share <i>D:\public</i>. To do this connect the USB drive and lookup or specify a mountpoint under <a href=\"../USB.asp\">USB Settings</a>.<br /><b>/dev/sdX</b> equals a mount point under Linux. In order to share <i>D:\public</i>, select current mount point and specify subdir <i>public</i> give it a name e.g. <i>Guest and setup access permissions</i>.</div></div><br />";
 
 //** Privoxy.asp **//
 var privoxy=new Object();
@@ -1026,7 +1026,7 @@ lighttpd.wan="WAN Access";
 lighttpd.url="URL";
 
 var hlighttpd=new Object();
-hlighttpd.right2="Enable lighttpd and configure the HTTP or HTTPS ports where lighttpd will listen for a request.<br /><br />The default Web server's root is located on <i>/jffs/www</i> where you can place your website's files.";
+hlighttpd.right2="Enable lighttpd and configure the HTTP or HTTPS ports where lighttpd will listen for a request.<br /><br />The default Web server's root is located on <b>/jffs/www</b> where you can place your website's files.";
 
 var lltd=new Object();
 lltd.legend="Link Layer Topology Discovery (LLTD)";
@@ -1090,16 +1090,16 @@ hotspot.smtp_net="Source Network";
 
 hotspot.shat_legend="Zero IP Configuration";
 hotspot.shat_srv="Zero IP";
-hotspot.shat_srv2="Enable Zero IP";
+hotspot.shat_srv2="Enable Service";
 
-hotspot.sputnik_legend="Sputnik";
-hotspot.sputnik_srv="Sputnik Agent";
-hotspot.sputnik_mode="Sputnik Mode";
-hotspot.sputnik_id="Sputnik Server ID";
-hotspot.sputnik_instant="Use Sputnik Instant Setup";
-hotspot.sputnik_express="Use SputnikNet Express";
-hotspot.sputnik_about="about Sputnik";
-hotspot.sputnik_learn="Learn more";
+//hotspot.sputnik_legend="Sputnik";
+//hotspot.sputnik_srv="Sputnik Agent";
+//hotspot.sputnik_mode="Sputnik Mode";
+//hotspot.sputnik_id="Sputnik Server ID";
+//hotspot.sputnik_instant="Use Sputnik Instant Setup";
+//hotspot.sputnik_express="Use SputnikNet Express";
+//hotspot.sputnik_about="about Sputnik";
+//hotspot.sputnik_learn="Learn more";
 
 hotspot.wifidog_legend="WiFiDog";
 hotspot.wifidog_srv="Enable Gateway";
@@ -1125,7 +1125,7 @@ hotspot.wifidog_auth="Server Authentication Support";
 
 //help container
 var hstatus_hots=new Object();
-hstatus_hots.right1="conup/condown:<br /><i>When USB or JFFS is mounted to /jffs, connection scripts are accessible at /jffs/etc/chilli/</i><br />Local Users:<br /><i>When only local users are used, set the primary RADIUS to 127.0.0.1</i>";
+hstatus_hots.right1="conup/condown:<br />When USB or JFFS2 is mounted to <b>/jffs</b>, connection scripts are accessible at <b>/jffs/etc/chilli/</b><br />Local Users:<br />When only local users are used, set the primary RADIUS to <b>127.0.0.1</b>";
 
 // help page
 hstatus_hots.page1="<dd>You can use the router as an Hotspot gateway (CoovaChilli solution) with authentication and accounting (RADIUS). CoovaChilli is an opensource captive portal or wireless LAN access point controller. It is used for authenticating users of a wireless LAN. It supports Web based login while also supporting Wireless Protected Access (WPA). Authentication, authorization and accounting (AAA) is handled by your RADIUS server.</dd>";
@@ -2073,7 +2073,7 @@ hservice.page9="<dd>Enable the telnet server to connect to the router with telne
 //help container
 var hstatus_vpn=new Object();
 hstatus_vpn.right1="<b>Policy-based Routing</b>:<br />Add IPs / NETs in the following format 0.0.0.0/0 to force clients to use the tunnel as the default gateway. Enter one IP / NET per line.<br /><b>IP Address / Netmask</b>:<br />Must be set when using DHCP-Proxy mode and local TAP is NOT bridged</i>";
-hstatus_vpn.right2="<b>Additional Configuration</b>:<br />To push routes to clients add <i>'push \"route IP mask gateway\"'</i>, to push DNS / WINS add <i>'push \"dhcp-option DNS (or WINS) IP\"'</i> to the config.<br />Client connect directory:<br />When either USB or JFFS are mounted to /jffs, scripts will be called from <i>/jffs/etc/openvpn/ccd/</i>";
+hstatus_vpn.right2="<b>Additional Configuration</b>:<br />To push routes to clients add <i>'push \"route IP mask gateway\"'</i>, to push DNS / WINS add <i>'push \"dhcp-option DNS (or WINS) IP\"'</i> to the config.<br />Client connect directory:<br />When either USB or JFFS2 are mounted to <b>/jffs</b>, scripts will be called from <b>/jffs/etc/openvpn/ccd/</b>";
 hstatus_vpn.right3="<b>General</b>:<br />Three auth methods are supported; pkcs12 (+dh on server), static and standard certs. <i>Only enable MSS on one side of the link, fragment on both.</i>";
 // common for wireguard and OpenVPN - Bypass LAN Same-Origin Policy
 hstatus_vpn.right4="Allows the client to get around personal firewalls on target devices that have a same-origin policy. The inbound traffic is NATed from the VPN as it flows through the local network interface e.g. br0 to make it appear as if it originated from the router's LAN IP, rather than the tunnel's IP network.";
@@ -2173,8 +2173,6 @@ service.warn_pass="SMTP Auth Password";
 //service.milkfish_registrations="Active Registrations";
 //service.milkfish_localsubscr="Local Subscribers";
 //service.milkfish_localalias="Local Aliases";
-//service.milkfish_messaging="SIP Messaging";
-//service.milkfish_siptrace="SIP Trace";
 //service.milkfish_advdynsip="Advanced DynSIP Settings";
 //service.milkfish_="";//
 //service.milkfish_right2="Enable or disable your Milkfish SIP router.";

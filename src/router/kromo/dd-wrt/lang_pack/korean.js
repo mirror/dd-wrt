@@ -945,7 +945,7 @@ hotspot.wifidog_password="HTTP 서버 비밀번호";
 hotspot.wifidog_auth="HTTP 서버 인증 지원";
 
 //help container
-hstatus_hots.right1="conup/condown:<br /><i>When USB or JFFS is mounted to jffs, connection scripts can be used in /jffs/etc/chilli/</i><br />Local Users:<br /><i>When only local users are used set primary RADIUS to 127.0.0.1</i>";
+hstatus_hots.right1="conup/condown:<br />When USB or JFFS2 is mounted to <b>/jffs</b>, connection scripts are accessible at <b>/jffs/etc/chilli/</b><br />Local Users:<br />When only local users are used, set the primary RADIUS to <b>127.0.0.1</b>";
 
 // help page
 hstatus_hots.page1="<dd>You can use the router as an Hotspot gateway (CoovaChilli solution) with authentication, accounting (RADIUS). CoovaChilli is an open source captive portal or wireless LAN access point controller. It is used for authenticating users of a wireless LAN. It supports web based login which is today's standard for public HotSpots and it supports Wireless Protected Access (WPA) which is the standard of the future. Authentication, authorization and accounting (AAA) is handled by your favorite RADIUS server.</dd>";

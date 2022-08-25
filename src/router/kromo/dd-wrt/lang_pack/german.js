@@ -538,7 +538,7 @@ bmenu.servicesUSB="USB";
 bmenu.servicesNAS="NAS";
 bmenu.servicesHotspot="Hotspot";
 bmenu.servicesNintendo="Nintendo";
-bmenu.servicesMilkfish="SIP Proxy";
+//bmenu.servicesMilkfish="SIP Proxy";
 bmenu.servicesPrivoxy="Werbeblocker";
 //bmenu.servicesLighttpd="Web Server";
 bmenu.servicesSpeedchecker="SpeedChecker";
@@ -1050,7 +1050,7 @@ hotspot.wifidog_auth="HTTP Authentifizierungs Unterstützung";
 
 //help container
 
-hstatus_hots.right1="conup/condown:<br /><i>Wenn USB oder JFFS als /jffs eingebunden ist, können Verbindungsskripte in  /jffs/etc/chilli/ verwendet werden.</i><br />Lokale Benutzer:<br /><i>Wenn nur lokale Benutzer verwendet werden, soll der primäre RADIUSserver auf 127.0.0.1 gesetzt werden.</i>";
+hstatus_hots.right1="conup/condown:<br />Wenn USB oder JFFS2 als <b>/jffs</b> eingebunden ist, können Verbindungsskripte in  <b>/jffs/etc/chilli/</b> verwendet werden.<br />Lokale Benutzer:<br />Wenn nur lokale Benutzer verwendet werden, soll der primäre RADIUS-server auf <b>127.0.0.1</b> gesetzt werden.";
 
 // ** Hotspotsystem **//
 
@@ -1817,7 +1817,7 @@ service.vpn_wdog="Watchdog";
 
 //help container
 hstatus_vpn.right1="Regelbasiertes Routing:<br /><i>IP/Netze in der Form 0.0.0.0/0 erzwingen das Verwenden des Tunnels als Standardgateway durch den Client. Eine Zeile pro IP/Netz!<br /><i>IP Adresse/Netzmaske:</i><br />Muss bei der Verwendung eines DHCP-Proxy angegeben werden, wenn das lokale TAP Gerät nicht überbrückt ist.</i>";
-hstatus_vpn.right2="Zusätzliche Einstellungen:<br /><i>Folgender Eintrag erlaubt Routen an den Client weiterzugeben: 'push \"route IP mask gateway\"'. Analog kann mit 'push \"dhcp-option DNS (or WINS) IP\"' DNS/WINS Server weitergegeben werden.</i><br />Ordner für Klientenverbindungen:<br /><i>Falls USB oder JFFS als /jffs eingehängt sind, werden Skripte aus /jffs/etc/openvpn/ccd/ ausgeführt.</i>";
+hstatus_vpn.right2="Zusätzliche Einstellungen:<br /><i>Folgender Eintrag erlaubt Routen an den Client weiterzugeben: 'push \"route IP mask gateway\"'. Analog kann mit 'push \"dhcp-option DNS (or WINS) IP\"' DNS/WINS Server weitergegeben werden.</i><br />Ordner für Klientenverbindungen:<br /><i>Falls USB oder JFFS2 als /jffs eingehängt sind, werden Skripte aus /jffs/etc/openvpn/ccd/ ausgeführt.</i>";
 hstatus_vpn.right3="Allgemein:<br /><i>Drei Methoden zur Authentifizierung sind verfügbar: pkcs12 (+dh auf Server), statisch und Standardzertifikate. MSS darf nur auf einer Seite der Verbindung aktiviert werden, Fragmentierung jedoch auf beiden.</i>";
 
 //vnc.repeater
@@ -2589,7 +2589,7 @@ freeradius.gencerdone="Zertifikat fertiggestellt!";
 
 //help container
 
-hfreeradius.right2="Bitte JFFS Einschalten, bevor sie RADIUS nutzen.";
+hfreeradius.right2="Bitte JFFS2 Einschalten, bevor sie RADIUS nutzen.";
 
 // ** Wireless_Advanced.asp **//
 

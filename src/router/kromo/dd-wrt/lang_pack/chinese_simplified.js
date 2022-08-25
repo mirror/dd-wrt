@@ -983,7 +983,7 @@ hotspot.wifidog_password="HTTP服务器密码";
 hotspot.wifidog_auth="HTTP服务器认证方式支持";
 
 //help container
-hstatus_hots.right1="conup/condown:<br /><i>When USB or JFFS is mounted to jffs, connection scripts can be used in /jffs/etc/chilli/</i><br />Local Users:<br /><i>When only local users are used set primary RADIUS to 127.0.0.1</i>";
+hstatus_hots.right1="conup/condown:<br />When USB or JFFS2 is mounted to <b>/jffs</b>, connection scripts are accessible at <b>/jffs/etc/chilli/</b><br />Local Users:<br />When only local users are used, set the primary RADIUS to <b>127.0.0.1</b>";
 
 // help page
 hstatus_hots.page1="<dd>You can use the router as an Hotspot gateway (CoovaChilli solution) with authentication, accounting (RADIUS). CoovaChilli is an open source captive portal or wireless LAN access point controller. It is used for authenticating users of a wireless LAN. It supports web based login which is today's standard for public HotSpots and it supports Wireless Protected Access (WPA) which is the standard of the future. Authentication, authorization and accounting (AAA) is handled by your favorite RADIUS server.</dd>";
@@ -1812,7 +1812,7 @@ hservice.page9="<dd>Enable a telnet server to connect to the router with telnet.
 
 //help container
 hstatus_vpn.right1="Policy based Routing:<br /><i>Add IPs/NETs in the form 0.0.0.0/0 to force clients to use the tunnel as default gateway. One line per IP/NET.<br /><i>IP Address/Netmask:</i><br />Must be set when using DHCP-Proxy mode and local TAP is NOT bridged</i>";
-hstatus_vpn.right2="Additional Config:<br /><i>To push routes to clients add 'push \"route IP mask gateway\"', to push DNS/WINS add 'push \"dhcp-option DNS (or WINS) IP\"' to the config.</i><br />client connect directory:<br /><i>When USB or JFFS is mounted to /jffs, scripts will be called from /jffs/etc/openvpn/ccd/</i>";
+hstatus_vpn.right2="Additional Config:<br /><i>To push routes to clients add 'push \"route IP mask gateway\"', to push DNS/WINS add 'push \"dhcp-option DNS (or WINS) IP\"' to the config.</i><br />client connect directory:<br /><i>When USB or JFFS2 is mounted to /jffs, scripts will be called from /jffs/etc/openvpn/ccd/</i>";
 hstatus_vpn.right3="General:<br /><i>3 auth methods are supported: pkcs12 (+dh on server), static, standard certs. Enable MSS only on one side of the link, fragment on both.</i>";
 
 //help page
@@ -2589,7 +2589,7 @@ freeradius.cert_status="Certificate Status";
 freeradius.port="RADIUS Port";
 
 //help container
-hfreeradius.right2="You must enable JFFS before starting FreeRADIUS.";
+hfreeradius.right2="You must enable JFFS2 before starting FreeRADIUS.";
 
 // ** Wireless_Advanced.asp **//
 wl_adv.titl="高级无线设置";

@@ -848,7 +848,7 @@ hotspot.wifidog_username="Nume utilizator server HTTP";
 hotspot.wifidog_password="Parolă server HTTP";
 hotspot.wifidog_auth="Posibilitate de autentificare prin HTTP";
 
-hstatus_hots.right1="conup/condown:<br /><i>Când USB sau JFFS este montat în jffs, scripturi pentru conexiune pot fi folosite în /jffs/etc/chilli/</i><br />Utilizatori locali:<br /><i>Când se folosesc doar utilizatori locali setați RADIUS primar la 127.0.0.1</i>";
+hstatus_hots.right1="conup/condown:<br />Când USB sau JFFS2 este montat în <b>/jffs</b>, scripturi pentru conexiune pot fi folosite în <b>/jffs/etc/chilli/</b><br />Utilizatori locali:<br /><i>Când se folosesc doar utilizatori locali setați RADIUS primar la <b>127.0.0.1</b>";
 
 // ** Hotspotsystem **//
 hotspotsys.legend="Hotspot System";
@@ -1396,7 +1396,7 @@ service.vpn_route="Rutare bazată pe politici";
 
 //help container
 hstatus_vpn.right1="Rutare bazată pe politici:<br /><i>Adăugați IP-uri/Rețele de forma 0.0.0.0/0 pentru a forța clienții să folosească tunelul ca gateway implicit. O linie per IP/Rețea.<br /><i>Adresă IP/Mască de rețea:</i><br />Trebuie setată când este folosit modul DHCP-Proxy și TAP-ul local NU este în modul bridge</i>";
-hstatus_vpn.right2="Configurare adițională:<br /><i>Pentru a trimite rute la clienți adăugați 'push \"rută mască IP gateway\"', pentru a trimite DNS/WINS adăugați 'push \"opțiune-DHCP DNS (sau WINS) IP\"' la configurație.</i><br />Director de conectare clienți:<br /><i>Când USB sau JFFS este montat în /jffs, scripturile vor fi apelate din /jffs/etc/openvpn/ccd/</i>";
+hstatus_vpn.right2="Configurare adițională:<br /><i>Pentru a trimite rute la clienți adăugați 'push \"rută mască IP gateway\"', pentru a trimite DNS/WINS adăugați 'push \"opțiune-DHCP DNS (sau WINS) IP\"' la configurație.</i><br />Director de conectare clienți:<br /><i>Când USB sau JFFS2 este montat în /jffs, scripturile vor fi apelate din /jffs/etc/openvpn/ccd/</i>";
 hstatus_vpn.right3="General:<br /><i>3 metode de autentificare sunt suportate: pkcs12 (+dh pe server), statică, certificate standard. Activați MSS doar pe o parte a legăturii, pe un fragment sau pe ambele.</i>";
 
 //vnc.repeater
@@ -1990,7 +1990,7 @@ freeradius.expiration="Expiră în (zile)";
 freeradius.passphrase="Frază secretă";
 //freeradius.generate="Generează certificat";
 freeradius.cert_status="Stare certificat";
-freeradius.port="Port Radius";
+freeradius.port="Port RADIUS";
 
 //help container
 hfreeradius.right2="Trebuie să activați JFFS înainte de a porni FreeRADIUS.";
