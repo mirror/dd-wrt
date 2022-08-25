@@ -1,7 +1,7 @@
 /*
  * notifier.c - connection limit email notifier (some sort of IDS or lets say the beginning of cyclic connection analysis)
  *
- * Copyright (C) 2009 Sebastian Gottschall <gottschall@dd-wrt.com>
+ * Copyright (C) 2009 Sebastian Gottschall <s.gottschall@dd-wrt.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
