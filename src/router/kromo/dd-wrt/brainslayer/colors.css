@@ -7,6 +7,9 @@ body {
 input, select, option {
   color: #a57b46;
 }
+input[type] {
+  accent-color: #f00;
+}
 .popup_bg {
   background-color: #fff
 }
