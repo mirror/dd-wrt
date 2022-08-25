@@ -860,7 +860,7 @@ hotspot.wifidog_auth="HTTP strežnik: podpora overjanju";
 
 //help container
 
-hstatus_hots.right1="conup/condown:<br /><i>Kadar je USB ali JFFS priklopljen na jffs, lahko uporabite skripe v /jffs/etc/chilli/</i><br />Lokalni uporabniki:<br /><i>Kadar uporabljante samo lokalne uporabnike nastavite primarni RADIUS na 127.0.0.1</i>";
+hstatus_hots.right1="conup/condown:<br />Kadar je USB ali JFFS2 priklopljen na <b>/jffs</b>, lahko uporabite skripe v <b>/jffs/etc/chilli/</b><br />Lokalni uporabniki:<br />Kadar uporabljante samo lokalne uporabnike nastavite primarni RADIUS na <b>127.0.0.1</b>";
 
 // ** Hotspotsystem **//
 

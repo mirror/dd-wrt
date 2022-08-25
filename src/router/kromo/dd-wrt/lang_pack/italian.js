@@ -477,7 +477,7 @@ bmenu.statu="Stato";
 bmenu.statuRouter="Router";
 bmenu.statuInet="WAN";
 bmenu.statuLAN="LAN";
-bmenu.statuSputnik="Sputnik Agent";
+//bmenu.statuSputnik="Sputnik Agent";
 bmenu.statuWLAN="Wireless";
 bmenu.statuVPN="OpenVPN";
 bmenu.statuBand="Bandwidth";
@@ -988,7 +988,7 @@ hotspot.wifidog_auth="Supporto Autenticazione Server HTTP";
 
 //help container
 //var hstatus_hots=new Object();
-hstatus_hots.right1="conup/condown:<br /><i>Quando una memoria USB o la JFFS è montata su /jffs, possono essere salvati ed utilizzati degli script di connessione in /jffs/etc/chilli/</i><br />Utenti Locali:<br /><i>Quando sono utilizzati solo utenti locali viene impostato il server RADIUS primaro su 127.0.0.1</i>";
+hstatus_hots.right1="conup/condown:<br />Quando una memoria USB o la JFFS2 è montata su <b>/jffs</b>, possono essere salvati ed utilizzati degli script di connessione in <b>/jffs/etc/chilli/</b><br />Utenti Locali:<br /><i>Quando sono utilizzati solo utenti locali viene impostato il server RADIUS primaro su <b>127.0.0.1</b>";
 
 // help page
 hstatus_hots.page1="<dd>È possibile utilizzare il router come un Hotspot (CoovaChilli) con autenticazione e accounting (RADIUS). CoovaChilli è un open source captive portal o un gestore di un access point wireless. Viene utilizzato per autenticare gli utenti di una Wireless LAN. Supporta l'accesso degli utenti tramite pagina WEB che è ormai uno standard per gli access point pubblici e supporta il protocollo Wireless Protected Access (WPA) che è lo standard del futuro. L'autenticazione, l'autorizzazione e l'accounting (AAA) sono gestiti dal vostro server RADIUS.</dd>";
@@ -2329,11 +2329,11 @@ freeradius.expiration="Scadenza (Giorni)";
 freeradius.passphrase="Passphrase";
 //freeradius.generate="Generate Certificate";
 freeradius.cert_status="Stato Certificato";
-freeradius.port="Porta Radius";
+freeradius.port="Porta RADIUS";
 
 //help container
 //var hfreeradius=new Object();
-hfreeradius.right2="Bisogna abilitare la JFFS prima di poter utilizzare il FreeRADIUS.";
+hfreeradius.right2="Bisogna abilitare la JFFS2 prima di poter utilizzare il FreeRADIUS.";
 
 // ** Wireless_Advanced.asp **//
 //var wl_adv=new Object();

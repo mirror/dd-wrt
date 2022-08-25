@@ -891,7 +891,7 @@ hotspot.wifidog_password="Senha do Servidor HTTP";
 hotspot.wifidog_auth="Suporte Autenticação Servidor HTTP";
 
 //help container
-hstatus_hots.right1="ConUp/ConDown:<br />Quando USB ou JFFS são montados em /jffs, scripts de conexão podem ser usados em /jffs/etc/chilli/<br />Usuários Locais:<br />Quando só usuários locais forem usados configure o IP do RADIUS primário para 127.0.0.1";
+hstatus_hots.right1="ConUp/ConDown:<br />Quando USB ou JFFS2 são montados em <b>/jffs</b>, scripts de conexão podem ser usados em <b>/jffs/etc/chilli/</b><br />Usuários Locais:<br />Quando só usuários locais forem usados configure o IP do RADIUS primário para <b>127.0.0.1</b>";
 
 // ** Hotspotsystem **//
 hotspotsys.legend="Hotspot System";
@@ -1459,7 +1459,7 @@ service.vpn_route="Roteamento Baseado em Políticas";
 
 //help container
 hstatus_vpn.right1="Roteamento Baseado em Políticas:<br />Adicione IPs/Redes no formato 0.0.0.0/0 para forçar clientes a usar o túnel como gateway padrão. Uma linha por IP/REDE.<br />Endereço IP/Máscara de Sub-Rede:<br />Deve ser configurado quando se está usando o modo DHCP-Proxy e TAP local NÃO está em modo bridged.";
-hstatus_vpn.right2="Configurações Adicionais:<br />Para entregar rotas a clientes adicione 'push \"route IP mask gateway\"'. Para entregar DNS/WINS adicione 'push \"dhcp-option DNS (ou WINS) IP\"' à configuração.<br />Diretório de conexão do cliente:<br />Quando USB ou JFFS estão montados em /jffs, scripts são chamados de /jffs/etc/openvpn/ccd/";
+hstatus_vpn.right2="Configurações Adicionais:<br />Para entregar rotas a clientes adicione 'push \"route IP mask gateway\"'. Para entregar DNS/WINS adicione 'push \"dhcp-option DNS (ou WINS) IP\"' à configuração.<br />Diretório de conexão do cliente:<br />Quando USB ou JFFS2 estão montados em /jffs, scripts são chamados de /jffs/etc/openvpn/ccd/";
 hstatus_vpn.right3="Geral:<br />São suportados 3 métodos de autenticação: pkcs12 (+dh no servidor), estático e certificados padrão. Habilitar o MSS só num dos lados do link fragmentará em ambos.";
 
 //vnc.repeater
@@ -2060,7 +2060,7 @@ freeradius.cert_status="Status do Certificado";
 freeradius.port="Porta RADIUS";
 
 //help container
-hfreeradius.right2="Habilite o JFFS antes de iniciar o FreeRADIUS.";
+hfreeradius.right2="Habilite o JFFS2 antes de iniciar o FreeRADIUS.";
 
 // ** Wireless_Advanced.asp **//
 wl_adv.titl="Configurações Wireless Avançadas";
