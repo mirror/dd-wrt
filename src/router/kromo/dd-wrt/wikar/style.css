@@ -178,6 +178,9 @@ fieldset legend {
 .setting input {
   margin: 2px 4px 4px 0;
 }
+input[type] {
+  accent-color: #483c9f;  
+}
 input.button {
   margin: 2px 4px 4px 0;
   padding: .06em .6em;
