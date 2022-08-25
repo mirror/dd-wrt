@@ -1597,7 +1597,7 @@ size_t answer_request(struct dns_header *header, char *limit, size_t qlen,
 		    
 		    if (addrlist)
 		      break;
-		    else if (!(intr->flags & INP4))
+		    else
 		      while (intr->next && strcmp(intr->intr, intr->next->intr) == 0)
 			intr = intr->next;
 		  }
@@ -1612,7 +1612,7 @@ size_t answer_request(struct dns_header *header, char *limit, size_t qlen,
 		    
 		    if (addrlist)
 		      break;
-		    else if (!(intr->flags & INP6))
+		    else
 		      while (intr->next && strcmp(intr->intr, intr->next->intr) == 0)
 			intr = intr->next;
 		  }

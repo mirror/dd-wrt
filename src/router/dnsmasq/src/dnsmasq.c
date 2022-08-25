@@ -1665,10 +1665,9 @@ static void poll_resolv(int force, int do_reload, time_t now)
     else
       {
 	res->logged = 0;
-	if (force || (statbuf.st_mtime != res->mtime || statbuf.st_ino != res->ino))
+	if (force || (statbuf.st_mtime != res->mtime))
           {
             res->mtime = statbuf.st_mtime;
-	    res->ino = statbuf.st_ino;
 	    if (difftime(statbuf.st_mtime, last_change) > 0.0)
 	      {
 		last_change = statbuf.st_mtime;
