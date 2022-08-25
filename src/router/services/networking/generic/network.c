@@ -832,16 +832,6 @@ void start_lan(void)
 		}
 		strncpy(ifr.ifr_name, "eth1", IFNAMSIZ);
 		break;
-	case ROUTER_ASROCK_G10:
-		if (getSTA() || getWET() || CANBRIDGE()) {
-			nvram_setz(lan_ifnames, "vlan1 vlan2 wlan0 wlan1");
-			PORTSETUPWAN("");
-		} else {
-			nvram_setz(lan_ifnames, "vlan1 vlan2 wlan0 wlan1");
-			PORTSETUPWAN("vlan2");
-		}
-		strncpy(ifr.ifr_name, "vlan1", IFNAMSIZ);
-		break;
 	case ROUTER_HABANERO:
 		if (getSTA() || getWET() || CANBRIDGE()) {
 			nvram_setz(lan_ifnames, "eth0 eth1 wlan0 wlan1");
@@ -852,6 +842,7 @@ void start_lan(void)
 		}
 		strncpy(ifr.ifr_name, "eth0", IFNAMSIZ);
 		break;
+	case ROUTER_ASROCK_G10:
 	case ROUTER_NETGEAR_R7800:
 	default:
 		if (getSTA() || getWET() || CANBRIDGE()) {
