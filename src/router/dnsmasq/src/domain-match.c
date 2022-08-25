@@ -213,13 +213,9 @@ int lookup_domain(char *domain, int flags, int *lowout, int *highout)
 	       to continue generalising */
 	    {
 	      /* We've matched a setting which says to use servers without a domain.
-		 Continue the search with empty query. We set the F_SERVER flag
-		 so that --address=/#/... doesn't match. */
+		 Continue the search with empty query */
 	      if (daemon->serverarray[nlow]->flags & SERV_USE_RESOLV)
-		{
-		  crop_query = qlen;
-		  flags |= F_SERVER;
-		}
+		crop_query = qlen;
 	      else
 		break;
 	    }
@@ -303,7 +299,7 @@ int filter_servers(int seed, int flags, int *lowout, int *highout)
       
       for (i = nlow; i < nhigh && (daemon->serverarray[i]->flags & SERV_6ADDR); i++);
       
-      if (!(flags & F_SERVER) && i != nlow && (flags & F_IPV6))
+      if (i != nlow && (flags & F_IPV6))
 	nhigh = i;
       else
 	{
@@ -311,7 +307,7 @@ int filter_servers(int seed, int flags, int *lowout, int *highout)
 	  
 	  for (i = nlow; i < nhigh && (daemon->serverarray[i]->flags & SERV_4ADDR); i++);
 	  
-	  if (!(flags & F_SERVER) && i != nlow && (flags & F_IPV4))
+	  if (i != nlow && (flags & F_IPV4))
 	    nhigh = i;
 	  else
 	    {
@@ -319,7 +315,7 @@ int filter_servers(int seed, int flags, int *lowout, int *highout)
 	      
 	      for (i = nlow; i < nhigh && (daemon->serverarray[i]->flags & SERV_ALL_ZEROS); i++);
 	      
-	      if (!(flags & F_SERVER) && i != nlow && (flags & (F_IPV4 | F_IPV6)))
+	      if (i != nlow && (flags & (F_IPV4 | F_IPV6)))
 		nhigh = i;
 	      else
 		{

@@ -49,36 +49,9 @@ version 2.87
 
 	Add --conf-script configuration option.
 
-	Enhance --domain to accept, for instance,
-	--domain=net2.thekelleys.org.uk,eth2 so that hosts get a domain
-	which relects the interface they are attached to in a way which
-	doesn't require hard-coding addresses. Thanks to Sten Spans for
-	the idea.
-
 	Fix write-after-free error in DHCPv6 server code.
 	CVE-2022-0934 refers.
 	
-	Add the ability to specify destination port in
-	DHCP-relay mode. This change also removes a previous bug
-	where --dhcp-alternate-port would affect the port used
-	to relay _to_ as well as the port being listened on.
-	The new feature allows configuration to provide bug-for-bug
-	compatibility, if required. Thanks to Damian Kaczkowski 
-	for the feature suggestion.
-
-	Bound the value of UDP packet size in the EDNS0 header of
-	forwarded queries to the configured or default value of
-	edns-packet-max. There's no point letting a client set a larger
-	value if we're unable to return the answer. Thanks to Bertie
-	Taylor for pointing out the problem and supplying the patch.
-	
-	Fix problem with the configuration
-	
-	--server=/some.domain/# --address=/#/<ip> --server=<server_ip>
-
-	This would return <ip> for queries in some.domain, rather than
-	forwarding the query via the default server.
-
 	
 version 2.86
 	Handle DHCPREBIND requests in the DHCPv6 server code.
