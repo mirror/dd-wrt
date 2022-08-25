@@ -2849,7 +2849,6 @@ void start_sysinit(void)
 		nvram_set("wan_ifname2", wanifname);
 		nvram_set("wan_ifnames", wanifname);
 		nvram_set("wan_default", wanifname);
-		nvram_set("pppoe_wan_ifname", wanifname);
 		nvram_set("pppoe_ifname", wanifname);
 	}
 
