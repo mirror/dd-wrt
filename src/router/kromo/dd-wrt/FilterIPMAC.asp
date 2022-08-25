@@ -1,7 +1,9 @@
 <% do_pagehead("filterIP.titl"); %>
 		<script type="text/javascript">
 		//<![CDATA[
-		
+addEvent(window, "load", function() {
+	stickControl(<% nvg("sticky_footer"); %>);
+});
 function to_submit(F) {
 	F.save_button.value = sbutton.saving;
 	apply(F);

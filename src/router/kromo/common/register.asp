@@ -15,7 +15,7 @@ function to_submit(F) {
 }
 addEvent(window, "load", function() {
 	stickControl(<% nvg("sticky_footer"); %>);
-}
+});
 
 //]]>
 </script>
