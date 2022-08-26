@@ -1044,8 +1044,6 @@ static void *handle_request(void *arg)
 			{
 			 "it", "italian" },	//
 			{
-			 "lv", "latvian" },	//
-			{
 			 "jp", "japanese" },	//
 			{
 			 "pl", "polish" },	//
