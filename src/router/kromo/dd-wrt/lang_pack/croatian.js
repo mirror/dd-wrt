@@ -803,51 +803,8 @@ hotspot.nocat_gatewayaddr="IP Adresa Poveznika";
 hotspot.nocat_home="Home Page";
 hotspot.nocat_extifname="Vanjsko Sučelje";
 hotspot.nocat_ifname="Unutrašnje Sučelje";
-hotspot.nocat_redirect="Homepage Redirection";
-hotspot.nocat_allowweb="Allowed Web Hosts";
-hotspot.nocat_docroot="Document Root";
 hotspot.nocat_splash="Splash URL";
 hotspot.nocat_port="Isključi Vrata";
-hotspot.nocat_timeout="Login Timeout";
-hotspot.nocat_verbose="Verbosity";
-hotspot.nocat_route="Route Only";
-hotspot.nocat_MAClist="MAC White List";
-hotspot.smtp_legend="SMTP Redirect";
-hotspot.smtp_srv="SMTP Redirect";
-hotspot.smtp_ip="SMTP Destination IP";
-hotspot.smtp_net="SMTP Source Network";
-hotspot.shat_legend="Zero IP Config";
-hotspot.shat_srv="Zero IP Config";
-hotspot.shat_srv2="Zero IP Config enabled";
-hotspot.sputnik_legend="Sputnik";
-hotspot.sputnik_srv="Sputnik Agent";
-hotspot.sputnik_mode="Sputnik Mode";
-hotspot.sputnik_id="Sputnik Server ID";
-hotspot.sputnik_instant="Use Sputnik Instant Setup";
-hotspot.sputnik_express="Use SputnikNet Express";
-hotspot.sputnik_about="about Sputnik";
-hotspot.sputnik_learn="Learn more";
-hotspot.wifidog_legend="Wifidog";
-hotspot.wifidog_srv="Wifidog daemon";
-hotspot.wifidog_id="ID Poveznika";
-hotspot.wifidog_url="Portal's URL";
-hotspot.wifidog_port="Vrata";
-hotspot.wifidog_httpdname="Web Server Name";
-hotspot.wifidog_httpdconn="Max Users";
-hotspot.wifidog_checkinter="Check Interval (s)";
-hotspot.wifidog_checktimeout="Client Timeout";
-hotspot.wifidog_tmaclist="Trusted MAC List";
-hotspot.wifidog_authsrv="AuthServer Hostname";
-hotspot.wifidog_authsrvssl="AuthServer SSL Available";
-hotspot.wifidog_authsrvsslport="AuthServer SSL Vrata";
-hotspot.wifidog_authsrvhttpport="AuthServer HTTP Vrata";
-hotspot.wifidog_authsrvpath="AuthServer Path";
-hotspot.wifidog_config="Firewall Ruleset";
-hotspot.wifidog_messagefile="HTML Message File for Wifidog";
-hotspot.wifidog_realm="HTTP Server Realm";
-hotspot.wifidog_username="HTTP Server Username";
-hotspot.wifidog_password="HTTP Server Password";
-hotspot.wifidog_auth="HTTP Server Authentication Support";
 
 // ** Hotspotsystem **//
 
@@ -863,43 +820,6 @@ hotspotsys.locationid="ID Lokacije";
 hotspotsys.dhcp="DHCP Sučelje";
 hotspotsys.net="Udaljena Mreža";
 hotspotsys.customsplash="Custom Splash Page (Walled Garden)";
-
-
-//anchorfree.anchorfree="AnchorFree";
-//anchorfree.titl="My Ad Network";
-//anchorfree.h2="AnchorFree Ad Network";
-//anchorfree.anchorfree_revenue="Earn revenue by creating ad-supported AnchorFree Hotspot";
-//anchorfree.email="Email to receive revenue reports";
-//anchorfree.ssid="Use different SSID";
-//anchorfree.ssid_name="SSID";
-//anchorfree.address_1="Street Address";
-//anchorfree.address_2="Street Address 2";
-//anchorfree.city="City";
-//anchorfree.zip="Postal or Zip Code";
-//anchorfree.state="County/State/Province";
-//anchorfree.country="Country";
-//anchorfree.category="Category";
-//anchorfree.publish="Publish this hotspot on the free WiFi map";
-//anchorfree.serviceid="Service ID";
-//anchorfree.servicestatus="Service Status";
-//anchorfree.agreement="Terms and Conditions";
-//anchorfree.agree="I ACCEPT AND AGREE";
-//anchorfree.validaddr="a valid address field must be provided if this hotspot should be published on the wifi hotspot map!";
-//anchorfree.validcity="a valid city or zip/postal code must be provided if this hotspot should be published on the wifi hotspot map!";
-//anchorfree.validcat="please select a advertising category for your hotspot";
-//anchorfree.validcountry="please select a country for your hotspot";
-//anchorfree.validterms="You must agree to the terms & conditions!";
-//
-//
-//hanchorfree.right1="Join AnchorFree's hotspot advertising network";
-//hanchorfree.right2="AnchorFree operates a hotspot advertising network allowing DD-WRT customers to generate incremental revenues.";
-//hanchorfree.right3="Generate incremental revenue with advertising from AnchorFree";
-//hanchorfree.right4="By activating this feature and creating an account with AnchorFree (it's free and easy), a persistent advertising frame is inserted directly into users web browsers, which will earn you a payment every month.  Earn a minimum monthly threshold of $25 and AnchorFree will automatically credit your account with funds.";
-//hanchorfree.right5="For more information please visit www.anchorfree.com";
-//hanchorfree.right6="Activation is easy";
-//hanchorfree.right7="Once you have activated, AnchorFree will send an email to the registered account owner with simple instructions on optimizing your hotspot, FAQs, and other pertinent information on earning money from your router. Through this configuration screen, AnchorFree inserts a thin, non-intrusive advertising frame directly into web browsers accessing the internet from this router.";
-//hanchorfree.right8="Customer support";
-//hanchorfree.right9="Have questions? Contact us at boxhelp@anchorfree.com";
 
 
 // ** Info.htm **//
@@ -1174,19 +1094,7 @@ qos.legend4="MAC Priority";
 qos.legend5="Prioritet Ethernet Vrata";
 qos.legend6="Uobičajeni nivo Pojasne Širine";
 qos.enabledefaultlvls="Enable Per User Default Limits";
-qos.bandwidth="Bandwidth";
-qos.speed="kbit/s";
 //help container
-
-hqos.right1="";
-hqos.right2="Uplink:<br />Set this to 80%-95% (max) of your total upload limit.<br />Downlink:<br />Set this to 80%-100% (max) of your total download limit.";
-hqos.right3="";
-hqos.right4="Enable Per User Default Limits:<br />Enable the default level per user or else set the level for all users.";
-hqos.right6="You may control your data rate with respect to the application that is consuming bandwidth.";
-hqos.right8="You may specify priority for all traffic from a given IP address or IP range.";
-hqos.right10="You may specify priority for all traffic from a device on your network by giving the device a device name, specifying priority and entering its MAC address.";
-hqos.right12="You may control your data rate according to which physical LAN port your device is plugged into. You may assign Priorities accordingly for devices connected on LAN ports 1 through 4.";
-
 
 // ** RouteTable.asp **//
 
@@ -1344,11 +1252,6 @@ service.pppoesrv_radaccport="Vrata RADIUS Računovodstva";
 service.pppoesrv_radkey="Dijeljeni RADIUS Ključ";
 service.pppoesrv_chaps="Lokalno Upravljanje Korisnicima (CHAP Secrets)";
 
-//help container
-
-hpppoesrv.right2="IP: 0.0.0.0 -> You'll serve IP's from the pool";
-hpppoesrv.right3="You MUST set the correct amount of associated clients according your IP range";
-
 //snmp.webservices
 service.snmp_legend="SNMP";
 service.snmp_srv="SNMP";
@@ -1406,19 +1309,7 @@ service.vpn_adv="Napredne Opcije";
 service.vpn_tlscip="TLS Cipher";
 service.vpn_route="Policy based Routing";
 
-//help container
 
-hstatus_vpn.right1="Policy based Routing:<br /><i>Add IPs/NETs in the form 0.0.0.0/0 to force clients to use the tunnel as default gateway. One line per IP/NET.<br /><i>IP Address/Netmask:</i><br />Must be set when using DHCP-Proxy mode and local TAP is NOT bridged</i>";
-hstatus_vpn.right2="Additional Config:<br /><i>To push routes to clients add 'push \"route IP mask gateway\"', to push DNS/WINS add 'push \"dhcp-option DNS (or WINS) IP\"' to the config.</i>";
-hstatus_vpn.right3="General:<br /><i>3 auth methods are supported: pkcs12 (+dh on server), static, standard certs</i>";
-
-//vnc.repeater
-service.vncrepeater_legend="VNC";
-service.vncrepeater="VNC Repeater";
-
-//sshd.webservices
-service.ssh_legend="Secure Shell";
-service.ssh_srv="SSHd";
 service.ssh_password="Prijava sa zaporkom";
 service.ssh_key="Autorizirani Ključevi";
 service.ssh_forwarding="SSH TCP Prosljeđivanje";
@@ -1431,11 +1322,6 @@ service.radiooff_srv_aoss="AOSS";
 service.radiooff_srv_disabled="Nije u upotrebi";
 service.radiooff_bootoff="Ugasi radio pri pokretanju";
 
-//ses.webservices ====> might replace the above radiooff_button
-service.ses_legend="SES / AOSS / EZ-SETUP / WPS Button";
-service.ses_srv="Button action";
-service.ses_toggleradio="Toggle Wireless";
-service.ses_script="Custom Script";
 
 //hwmon.webservices
 service.hwmon_legend="Nadzor Strojevine";
@@ -1451,70 +1337,7 @@ service.rstats_path="Save Bandwidth Data to";
 service.rstats_time="Saving Interval";
 service.rstats_usrdir="User Directory";
 
-//nstx.webservices
-service.nstx_legend="IP over DNS Tunneling";
-service.nstx_srv="NSTX Daemon";
-service.nstx_ipenable="Bind to this IP only";
-service.nstx_log="Switch on debug messages";
 
-//ttraff.webservices
-service.ttraff_legend="WAN Traffic Counter";
-service.ttraff_daemon="ttraff Daemon";
-
-//notifier.webservices
-service.warn_legend="Connection Warning Notifier";
-service.warn="Warning Notifier";
-service.warn_limit="Connection Limit";
-service.warn_server="Email SMTP Server";
-service.warn_from="Senders Email Address";
-service.warn_fromfull="Senders Full Name";
-service.warn_to="Recipient Email Address";
-service.warn_domain="Recipient Domain Name";
-service.warn_user="SMTP Auth Username";
-service.warn_pass="SMTP Auth Password";
-
-//milkfish.webservices
-service.milkfish_siprouter="Milkfish SIP Router";
-service.milkfish_alias="Alias";
-service.milkfish_uri="SIP URI";
-service.milkfish_mainswitch="SIP Usmjerivač";
-service.milkfish_fromswitch="From-Substitution";
-service.milkfish_fromdomain="From-Domain";
-service.milkfish_username="Milkfish Username";
-service.milkfish_password="Milkfish Password";
-service.milkfish_audit="Milkfish Audit";
-service.milkfish_siptrace="SIP Trace";
-service.milkfish_subscribers="Local Subscribers";
-service.milkfish_aliases="Local Aliases";
-service.milkfish_dynsip="Dynamic SIP";
-service.milkfish_status="SIP Status";
-service.milkfish_database="SIP Database";
-service.milkfish_messaging="SIP Messaging";
-service.milkfish_phonebook="SIP Phonebook";
-service.milkfish_dynsipdomain="DynSIP Domain";
-service.milkfish_dynsipurl="DynSIP Update URL";
-service.milkfish_dsusername="DynSIP Username";
-service.milkfish_dspassword="DynSIP Password";
-service.milkfish_sipmessage="SIP Message";
-service.milkfish_destination="SIP Destination";
-service.milkfish_contact="Contact";
-service.milkfish_agent="User Agent";
-service.milkfish_registrations="Active Registrations";
-//service.milkfish_="";//
-service.hmilkfish_right2="Enable or disable your Milkfish SIP router.";
-service.hmilkfish_right4="Enable or disable from:-headerfield substitution of your WAN IP in outgoing SIP messages. This setting should be enabled if you want to allow callees to call you back if your WAN IP has changed.";
-service.hmilkfish_right6="Callee calls back this domain (instead of your WAN IP) when you send it as your from:-domain instead of your WAN IP. From-Substitution needs to be enabled for this setting to take effect.";
-service.hmilkfish_right8="Put your Milkfish community forum username here.  Register at yourname.homesip.net.";
-service.hmilkfish_right10="Put your Milkfish community forum password here. Register at yourname.homesip.net.";
-service.hmilkfish_right12="Enable or disable basic SIP tracing on your router.";
-service.hmilkfish_right14="Local SIP subscribers are locally managed SIP accounts.";
-service.hmilkfish_right16="Local SIP aliases are SIP forwards similar to Email forwards. Can be used to forward alphanumeric-to-numeric phone user accounts or vice versa.";
-service.hmilkfish_right18="Enable or disable dynamic SIP (for example Homesip.net service). You will need to set your username and password.";
-service.hmilkfish_right20="not implemented yet - leave empty";
-service.hmilkfish_right22="not implemented yet - leave empty";
-service.hmilkfish_right24="not implemented yet - leave empty";
-service.hmilkfish_right26="not implemented yet - leave empty";
-//service.hmilkfish_="";//
 
 service.samba3_srv="Samba";
 service.samba3_srvstr="Poslužiteljev Niz";
@@ -1659,36 +1482,6 @@ status_inet.traffout="Outgoing";
 status_inet.previous="Previous Month";
 status_inet.next="Next Month";
 status_inet.dataadmin="Data Administration";
-status_inet.delete_confirm="WARNING! This will delete all traffic data. Proceed?";
-
-
-//help container
-
-hstatus_inet.right2="This shows the information required by your ISP for connection to the Internet. This information was entered on the Setup Tab. You can <em>Connect</em> or <em>Disconnect</em> your connection here by clicking on that button.";
-hstatus_inet.right4="This shows your router's Internet traffic since last reboot.";
-hstatus_inet.right6="This shows your router's Internet traffic by month. Drag the mouse over graph to see daily data. Data is stored in nvram.";
-
-
-// ** Status_Conntrack.asp **//
-
-status_conn.titl="Active IP Connections Table";
-status_conn.h2="Active IP Connections";
-
-
-// ** Status_SputnikAPD.asp **//
-
-status_sputnik.titl="Sputnik Agent Status";
-status_sputnik.h2="Sputnik® Agent™";
-status_sputnik.manage="Managed By";
-status_sputnik.license="SCC License No.";
-
-//help container
-
-hstatus_sputnik.right1="Sputnik Agent Status";
-hstatus_sputnik.right2="This screen displays the status of the Sputnik Agent process.";
-hstatus_sputnik.right4="The Sputnik Control Center that this access point is connected to.";
-hstatus_sputnik.right6="The current Agent status.";
-hstatus_sputnik.right8="The license number of your Sputnik Control Center.";
 
 
 // ** Status_Wireless.asp **//
@@ -1715,10 +1508,6 @@ status_gpsi.lat="Latitude";
 status_gpsi.alt="Altitude";
 status_gpsi.sat="Visible Satelites";
 
-//help container
-
-hstatus_wireless.right2="This is the router's MAC address, as seen on your local, wireless network.";
-hstatus_wireless.right4="As selected from the wireless tab, this will display the wireless mode (Mixed, G-Only, B-Only or Disabled) used by the network.";
 
 
 // ** Status_OpenVPN.asp **//
@@ -1735,13 +1524,6 @@ trforward.trrange="Aktivirani Rang Vrata";
 trforward.fwdrange="Prosljeđeni Rang Vrata";
 trforward.app="Primjena";
 
-//help container
-
-htrforward.right2="Enter the application name of the trigger.";
-htrforward.right4="For each application, list the triggered port number range. Check with the Internet application documentation for the port number(s) needed.";
-htrforward.right6="For each application, list the forwarded port number range. Check with the Internet application documentation for the port number(s) needed.";
-htrforward.right8="Enter the starting port numbers of the Triggered and Forwarded Ranges.";
-htrforward.right10="Enter the ending port numbers of the Triggered and Forwarded Ranges.";
 
 
 // ** Upgrade.asp **//
@@ -1773,10 +1555,6 @@ upnp.url="Šalji prezentacijski URL";
 upnp.msg1="Klikni za brisanje unosa";
 upnp.msg2="Brisati sve unose?";
 
-//help container
-
-hupnp.right2="Click the trash can to delete an individual entry.";
-hupnp.right4="Allows applications to automatically configure port forwardings.";
 
 
 // ** VPN.asp **//
@@ -1788,9 +1566,6 @@ vpn.ipsec="IPSec Propusnost";
 vpn.pptp="PPTP Propusnost";
 vpn.l2tp="L2TP Propusnost";
 
-//help container
-
-hvpn.right1="You may choose to enable IPSec, PPTP and/or L2TP passthrough to allow your network devices to communicate via VPN.";
 
 
 // ** Vlan.asp **//
@@ -1828,12 +1603,6 @@ wol.h22="Automatsko Wake-On-LAN";
 wol.legend5="Wake-On-LAN daemon";
 wol.srv="WOL daemon";
 wol.pass="SecureOn Zaporka";
-
-//help container
-
-hwol.right2="This page allows you to <em>Wake Up</em> hosts on your local network (for example locally connected to your router). You can manually wake up hosts by clicking the <em>"+sbutton.wol+"</em> or you can program an automatic schedule wake up thanks to the "+wol.srv+".";
-hwol.right4="MAC Address(es) are entered in the format xx:xx:xx:xx:xx:xx (for example 01:23:45:67:89:AB) and must be separated by a <em>SPACE</em>.";
-hwol.right6="IP Address is typically the broadcast address for the local network, but could be a remote address if the target host is not connected to the router's local network.";
 
 
 // ** WanMAC.asp **//
@@ -1897,30 +1666,6 @@ aoss.externalregistrar="Metoda PIN-om";
 aoss.release="Otpusti";
 aoss.configure="Konfiguriraj";
 
-
-olupgrade.avail_updates="Available Updates";
-olupgrade.version="Version";
-olupgrade.release="Release";
-olupgrade.readme="Readme";
-olupgrade.choose="Choose";
-olupgrade.retrieve_error="Error retrieving update information";
-
-
-nintendo.titl="Nintendo";
-
-nintendo.spotpass.titl="Nintendo SpotPass";
-nintendo.spotpass.enable="Enable Nintendo SpotPass";
-nintendo.spotpass.servers="Allow Servers";
-
-
-sec80211x.xsuptype="XSupplicant Type";
-sec80211x.keyxchng="EAP Key-Management";
-sec80211x.servercertif="Public Server Certificate";
-sec80211x.clientcertif="Client Certificate";
-sec80211x.phase2="Phase2";
-sec80211x.anon="Anonymous Identity";
-sec80211x.options="Additional Network Options";
-
 //help container
 
 hwpa.right2="Možete onemogućiti ili izabrati između WEP, WPA Personal, WPA Enterprise ili RADIUS. Svi uređaji na bežičnoj mreži moraju rabiti isti način enkripcije. Za N-Mode morate rabiti WPA2/AES";
@@ -1958,28 +1703,6 @@ wds.subnet="Podmreža";
 wds.legend2="Posebne Opcije";
 
 
-// ** Wireless_radauth.asp **//
-
-radius.titl="RADIUS";
-radius.h2="Remote Authentication Dial-In User Service";
-radius.legend="RADIUS";
-radius.label="MAC RADIUS Client";
-radius.label2="MAC Format";
-radius.label3="RADIUS Auth Server Address";
-radius.label4="RADIUS Auth Server Port";
-radius.label7="RADIUS Auth Shared Secret";
-
-radius.label23="RADIUS Auth Backup Server Address";
-radius.label24="RADIUS Auth Backup Server Port";
-radius.label27="RADIUS Auth Backup Shared Secret";
-
-radius.label5="Maximum Unauthenticated Users";
-radius.label6="Password Format";
-radius.label8="Override RADIUS if server is unavailable";
-radius.label13="RADIUS Acct Server Address";
-radius.label14="RADIUS Acct Server Port";
-radius.label17="RADIUS Acct Shared Secret";
-radius.label18="RADIUS Accounting";
 
 // ** Wireless_MAC.asp **//
 
@@ -1991,28 +1714,9 @@ wl_mac.label2="Način Filtriranja";
 wl_mac.deny="Zabrani pristup Klijentima na listi";
 wl_mac.allow="Dozvoli pristup Klijentima na listi";
 
-// ** WiMAX
-
-wl_wimax.titl="WiMAX";
-wl_wimax.h2="Worldwide Interoperability for Microwave Access";
-wl_wimax.downstream="Downstream Frequency";
-wl_wimax.upstream="Upstream Frequency";
-wl_wimax.width="Channel Width";
-wl_wimax.duplex="Duplex Mode";
-wl_wimax.mode="Operation Mode";
-wl_wimax.mac="Subscriber MAC Address";
-
-// ** Gpio **//
-
-gpio.titl="Gpio Inputs / Outputs";
-gpio.h2="Gpio Inputs / Outputs";
-gpio.oplegend="Gpio Outputs";
-gpio.iplegend="Gpio Inputs";
 
 // ** FreeRadius.asp **//
 
-freeradius.titl="FreeRADIUS";
-freeradius.h2="FreeRADIUS";
 freeradius.certificate="Certifikat Poslužitelja";
 freeradius.cert="Generiraj Certifikat";
 freeradius.clientcert="Certifikati Klijenata";
@@ -2025,23 +1729,6 @@ freeradius.downstream="Dolazna Brzina";
 freeradius.upstream="Odlazna Brzina";
 freeradius.sharedkey="Dijeljeni Ključ";
 
-
-freeradius.countrycode="Country Code";
-freeradius.state="State or Province";
-freeradius.locality="Locality";
-freeradius.organisation="Organisation / Company";
-freeradius.email="Email Address";
-freeradius.common="Common Certificate Name";
-freeradius.expiration="Expires (Days)";
-freeradius.passphrase="Passphrase";
-//freeradius.generate="Generate Certificate";
-freeradius.cert_status="Certificate Status";
-freeradius.port="RADIUS Port";
-
-//help container
-
-hfreeradius.right2="You must enable JFFS2 before starting FreeRADIUS.";
-
 // ** Wireless_Advanced.asp **//
 
 wl_adv.titl="Napredne Bežične Postavke";
@@ -2049,66 +1736,7 @@ wl_adv.h2="Napredne Bežične Postavke";
 wl_adv.legend="Napredne Postavke";
 wl_adv.legend2="Podrška Bežičnoj Multimediji";
 wl_adv.label="Način Autentifikacije";
-wl_adv.label2="Basic Rate";
-wl_adv.label3="Transmission Fixed Rate";
-wl_adv.label4="CTS Protection Mode";
-wl_adv.label5="Frame Burst";
-wl_adv.label6="Beacon Interval";
-wl_adv.label7="DTIM Interval";
-wl_adv.label8="Fragmentation Threshold";
-wl_adv.label9="RTS Threshold";
-wl_adv.label10="Max Associated Clients";
-wl_adv.label11="AP Isolation";
-wl_adv.label12="TX Antenna";
-wl_adv.label13="RX Antenna";
-wl_adv.label14="Preamble";
-wl_adv.reference="Noise Reference";
-wl_adv.label16="Afterburner";
-wl_adv.label17="Bežični GUI Pristup";
-wl_adv.label18="WMM Podrška";
-wl_adv.label19="No-Acknowledgement";
-wl_adv.label20="Shortslot Override";
-wl_adv.label21="Transmission Maximum Rate";
-wl_adv.label23="Transmission Minimum Rate";
-wl_adv.label22="Bluetooth Coexistence Mode";
-wl_adv.label24="Antenna Alignment";
-wl_adv.label25="Antenna Output";
-wl_adv.table1="EDCA AP Parameters (AP to Client)";
 
-wl_adv.txchainmask="TX Antenna Chains";
-wl_adv.rxchainmask="RX Antenna Chains";
-
-
-
-wl_adv.col1="CWmin";
-wl_adv.col2="CWmax";
-wl_adv.col3="AIFSN";
-wl_adv.col4="TXOP(b)";
-wl_adv.col5="TXOP(a/g)";
-
-wl_adv.table3="WMM Tx retry limits, fallback limits and max rate parameters.";
-wl_adv.txpcol1="S. Retry";
-wl_adv.txpcol2="S. Fallbk";
-wl_adv.txpcol3="L. Retry";
-wl_adv.txpcol4="L. Fallbk";
-wl_adv.txpcol5="Max Rate";
-wl_adv.txprow1="AC BE TX Parameters";
-wl_adv.txprow2="AC BK TX Parameters";
-wl_adv.txprow3="AC VI TX Parameters";
-wl_adv.txprow4="AC VO TX Parameters";
-
-wl_adv.col6="Admin Forced";
-wl_adv.row1="Background";
-wl_adv.row2="Best Effort";
-wl_adv.row3="Video";
-wl_adv.row4="Voice";
-wl_adv.table2="EDCA STA Parameters (Client to AP)";
-wl_adv.lng="Long"; 					//************* don't use .long! *************
-wl_adv.shrt="Short"; 				//************* don't use .short! **************
-
-//help container
-
-hwl_adv.right2="You may choose from Auto or Shared Key. Shared key authentication is more secure, but all devices on your network must also support Shared Key authentication.";
 
 // ** Wireless_Basic.asp **//
 
@@ -2243,29 +1871,6 @@ sas.network_settings="Mrežne Postavke";
 sas.wireless_settings="Bežične Postavke";
 sas.other_settings="Ostale Postavke";
 sas.hwan="Internet (WAN) Postavke";
-
-
-hsas.wan="The WAN interface connects your router to the Internet or other networks. If your network is connected to the internet and you only need an access point then set the WAN mode to \"Disabled\".";
-hsas.h_routerip="Router IP";
-hsas.routerip="This is the IP-address assigned to the router in your internal network. If you change this address you also have to use it to access the Router Management after applying the changes.";
-hsas.h_dhcp="DHCP";
-hsas.dhcp="Computers and other networking devices can automatically obtain IP-adresses via DHCP in your local network without requiring manual configuration. In case there is a DHCP-server running in your local network, please disable this option to avoid conflicts.";
-hsas.h_wireless_physical="Wireless Radio Interface";
-hsas.wireless_physical="The interface settings allow you to define the radio behavior of the router. You can define the main operation mode (Access Point, Client or Repeater), change the wireless network name and change advanced settings like the channel width. In case you did change the wireless channel width from the 20 MHz standard please take care that your wireless clients do support the channel width and are configured properly.";
-hsas.h_wireless_security="Wireless Security";
-hsas.wireless_security="To make it easier for you to configure client devices you can change the wireless network password. Disabling encryption or changing it to WEP is not recommended for security reasons.";
-hsas.h_routername="Router name";
-hsas.routername="This name is communicated to other devices in your network and allows easier identification.";
-hsas.networking="Networking help text";
-hsas.wireless="Wireless help text";
-hsas.other="Other Settings help text";
-
-// ** AOSS **//
-
-haoss.basic="The \"AirStation One-Touch Secure System\" (AOSS) allows you to connect AOSS-capable clients to your access point without requiring manual configuration.";
-haoss.securitymodes="AOSS security modes define what client security modes are accepted for AOSS negotiation. If a client only supports security modes that are not enabled, it cannot connect.";
-haoss.wps="WPS enables support for Wi-Fi Protected Setup using the button on your router or the PIN that came with your client device.";
-
 
 ias.title="Setup";
 ias.card_info="Setup Card";
