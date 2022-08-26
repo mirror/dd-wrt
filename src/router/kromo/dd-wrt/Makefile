@@ -896,10 +896,10 @@ endif
 # This was added on r22867 the 18th November 2013 and removed on r32130 the 23rd May 2017
 # Lighttpd.asp is blank upon direct call, and the HLighttpd.asp was updated to later transfer contents to the english.js file.
 # Since lighttpd and its lighttpd.webservices has been implemeted under Services.asp page We no longer need to install these files.
-ifeq ($(CONFIG_WEBSERVER),y)
+#ifneq ($(CONFIG_WEBSERVER),y)
 	-rm -f $(INSTALLDIR)/www/Lighttpd.asp
 	rm -f $(INSTALLDIR)/www/help/HLighttpd.asp
-endif
+#endif
 
 ifneq ($(CONFIG_FTP),y)
 ifneq ($(CONFIG_TRANSMISSION),y)
