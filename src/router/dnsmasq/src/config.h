@@ -1,3 +1,6 @@
+#ifndef CONFIG_H_DEF
+#define CONFIG_H_DEF
+
 /* dnsmasq is Copyright (c) 2000-2022 Simon Kelley
 
    This program is free software; you can redistribute it and/or modify
@@ -461,3 +464,4 @@ static char *compile_opts =
 "dumpfile";
 
 #endif /* defined(HAVE_DHCP) */
+#endif
