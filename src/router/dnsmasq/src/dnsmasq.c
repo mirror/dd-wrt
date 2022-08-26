@@ -24,6 +24,8 @@
 #include <locale.h>
 #endif
 
+#include "lease.c"
+
 struct daemon *daemon;
 
 static volatile pid_t pid = 0;
