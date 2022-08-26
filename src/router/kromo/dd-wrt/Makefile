@@ -897,8 +897,8 @@ endif
 # Lighttpd.asp is blank upon direct call, and the HLighttpd.asp was updated to later transfer contents to the english.js file.
 # Since lighttpd and its lighttpd.webservices has been implemeted under Services.asp page We no longer need to install these files.
 #ifneq ($(CONFIG_WEBSERVER),y)
-	-rm -f $(INSTALLDIR)/www/Lighttpd.asp
-	rm -f $(INSTALLDIR)/www/help/HLighttpd.asp
+#	-rm -f $(INSTALLDIR)/www/Lighttpd.asp
+#	rm -f $(INSTALLDIR)/www/help/HLighttpd.asp
 #endif
 
 ifneq ($(CONFIG_FTP),y)
