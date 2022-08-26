@@ -1,3 +1,6 @@
+#ifndef DNSMASQ_H
+#define DNSMASQ_H
+
 /* dnsmasq is Copyright (c) 2000-2022 Simon Kelley
  
    This program is free software; you can redistribute it and/or modify
@@ -16,6 +19,7 @@
 
 #define COPYRIGHT "Copyright (c) 2000-2022 Simon Kelley"
 
+#include "config.h"
 /* We do defines that influence behavior of stdio.h, so complain
    if included too early. */
 #ifdef _STDIO_H
@@ -1836,3 +1840,4 @@ int add_update_server(int flags,
 		      const char *interface,
 		      const char *domain,
 		      union all_addr *local_addr); 
+#endif
