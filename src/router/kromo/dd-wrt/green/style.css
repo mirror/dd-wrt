@@ -2,7 +2,7 @@
 /*! Green */
 ::selection {
   background: #090;
-  color: #fff;
+  color: #000;
 }
 #menuSub, #menuMainList li span, #help h2 {
   background: #090;
