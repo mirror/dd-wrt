@@ -156,6 +156,7 @@ static int _nvram_set(const char *name, const char *value)
 	size_t count = strlen(name) + 1;
 	char *buf;
 	int ret = -1;
+	int cnt = 0;
 
 	if (_nvram_init())
 		return -1;
@@ -177,7 +178,13 @@ static int _nvram_set(const char *name, const char *value)
 	else
 		strcpy(buf, name);
 
-	count = strlen(buf) + 1;
+	count = 0;
+	while (buf[cnt] != 0) {
+		if (buf[cnt] != '\r')
+			buf[count++] = buf[cnt];
+		cnt++;
+	}
+	buf[count++] = 0;
 	ret = write(nvram_fd, buf, count);
 	if (ret < 0)
 		perror(PATH_DEV_NVRAM);
@@ -205,7 +212,7 @@ int nvram_set(const char *name, const char *value)
 	}
 #endif
 	if (!strcmp(name, "et0macaddr_safe") && nvram_get("et0macaddr_safe"))
-	    return 0; //ignore if already set
+		return 0;	//ignore if already set
 	ret = _nvram_set(name, value);
 
 	for (v = nvram_converts; v->name; v++) {
@@ -405,6 +412,5 @@ void free_defaults(struct nvram_param *srouter_defaults)
 	free(values);
 
 }
-
 
 #include "nvram_generics.h"
