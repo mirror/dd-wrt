@@ -6,18 +6,18 @@
 }
 #menuSub, #menuMainList li span, #help h2 {
   background: #099;
-  color: #000;
   border-color: #3bb;
+  color: #000;
 }
 #menuSubList li a {
   background: #3bb;
-  color: #000;
   border-color: #4cc;
+  color: #000;
 }
 #menuSubList li a:hover {
   background: #6cc;
-  color: #000;
   border-color: #8dd;
+  color: #000;
 }
 fieldset legend, .syslog_legend {
   color: #099;
@@ -25,10 +25,7 @@ fieldset legend, .syslog_legend {
 #help a, #help a:hover, .meter .text {
   color: #000;
 }
-.meter .bar {
-  background-color: #099;
-}
-.progressbarblock {
+.meter .bar, .progressbarblock {
   background-color: #099;
 }
 input[type] {
@@ -47,13 +44,10 @@ input.button:hover {
 input.button:focus-visible {
   box-shadow: 0 0 5px 1px #6cc;
 }
+input:focus, textarea:focus,
 input:focus-visible, textarea:focus-visible,
 select:focus-within {
   box-shadow: 0 0 5px 1px #6cc;
   border: 1px solid #6cc;
   outline: 0;
-}
-input:focus, textarea:focus {
-  border: 1px solid #6cc;
-  box-shadow: 0 0 5px 1px #6cc;
 }

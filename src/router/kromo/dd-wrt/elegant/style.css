@@ -6,32 +6,26 @@
 }
 #menuSub, #menuMainList li span, #help h2 {
   background: #30519c;
-  color: #fff;
   border-color: #496fc7;
+  color: #fff;
 }
 #menuSubList li a {
   background: #496fc7;
-  color: #fff;
   border-color: #6384cf;
+  color: #fff;
 }
 #menuSubList li a:hover {
   background: #6384cf;
-  color: #fff;
   border-color: #849dd9;
+  color: #fff;
 }
 fieldset legend, .syslog_legend {
   color: #30519c;
 }
-#help a, #help a:hover {
+#help a, #help a:hover, .meter .text {
   color: #fff;
 }
-.meter .bar {
-  background-color: #30519c;
-}
-.meter .text {
-  color: #fff;
-}
-.progressbarblock {
+.meter .bar, .progressbarblock {
   background-color: #30519c;
 }
 input[type] {
@@ -50,13 +44,10 @@ input.button:hover {
 input.button:focus-visible {
   box-shadow: 0 0 5px 1px #6384cf;
 }
+input:focus, textarea:focus,
 input:focus-visible, textarea:focus-visible,
 select:focus-within {
   box-shadow: 0 0 5px 1px #6384cf;
   border: 1px solid #6384cf;
   outline: 0;
-}
-input:focus, textarea:focus {
-  border: 1px solid #6384cf;
-  box-shadow: 0 0 5px 1px #6384cf;
 }

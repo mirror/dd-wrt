@@ -25,10 +25,7 @@ fieldset legend, .syslog_legend {
 #help a, #help a:hover, .meter .text {
   color: #000;
 }
-.meter .bar {
-  background-color: #338cff;
-}
-.progressbarblock {
+.meter .bar, .progressbarblock {
   background-color: #338cff;
 }
 input[type] {
@@ -41,19 +38,16 @@ input.button, input.button[disabled]:hover {
 }
 input.button:hover {
   background: #57a1ff;
-  border: 1px solid #99aeff;
+  border: 1px solid #57a1ff;
   color: #000;
 }
 input.button:focus-visible {
-  box-shadow: 0 0 5px 1px #5781ff;
+  box-shadow: 0 0 5px 1px #57a1ff;
 }
+input:focus, textarea:focus,
 input:focus-visible, textarea:focus-visible,
 select:focus-within {
-  box-shadow: 0 0 5px 1px #5781ff;
-  border: 1px solid #5781ff;
+  box-shadow: 0 0 5px 1px #57a1ff;
+  border: 1px solid #57a1ff;
   outline: 0;
-}
-input:focus, textarea:focus {
-  border: 1px solid #5781ff;
-  box-shadow: 0 0 5px 1px #5781ff;
 }
