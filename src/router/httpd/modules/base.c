@@ -2903,7 +2903,7 @@ static struct mime_handler mime_handlers[] = {
 	{ "**.jpeg", "image/jpeg", NULL, NULL, do_file, NULL, NO_HEADER, IGNORE_OPTIONS },
 	{ "**.ico", "image/x-icon", NULL, NULL, do_file, NULL, NO_HEADER, IGNORE_OPTIONS },
 	{ "**.js", "text/javascript", NULL, NULL, do_file, NULL, NO_HEADER, IGNORE_OPTIONS },
-	{ "**.css", "text/css", NULL, NULL, do_file, NULL, NO_HEADER, IGNORE_OPTIONS },
+	{ "**.css", "text/css", NULL, NULL, do_ej, NULL, NO_HEADER, IGNORE_OPTIONS },
 	{ "**.txt", "text/plain", NULL, NULL, do_file, NULL, NO_HEADER, IGNORE_OPTIONS },
 	{ "**.bin", "application/octet-stream", NULL, NULL, do_file, NULL, NO_HEADER, IGNORE_OPTIONS },
 	{ "**.pdf", "application/pdf", NULL, NULL, do_file, NULL, NO_HEADER, IGNORE_OPTIONS },
