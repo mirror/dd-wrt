@@ -1,0 +1,12 @@
+@import url(../common.css);
+/*! Blue */
+:root {
+  --ac-0: #338cff;
+  --ac-1: #4496ff;
+  --ac-2: #57a1ff;
+  --ac-3: #669bff;
+  --ac-4: #77a6ff;
+  --ac-5: #99aeff;
+  --tx-c: #000;
+  --lg-c: #36f;
+}

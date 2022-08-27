@@ -1,0 +1,12 @@
+@import url(../common.css);
+/*! Yellow */
+:root {
+  --ac-0: #eec900;
+  --ac-1: #ffd700;
+  --ac-2: #ffe03c;
+  --ac-3: #ee3;
+  --ac-4: #ee7;
+  --ac-5: #ff9;
+  --tx-c: #000;
+  --lg-c: #ccb016;
+}

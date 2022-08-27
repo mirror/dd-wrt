@@ -1,0 +1,12 @@
+@import url(../common.css);
+/*! Cyan */
+:root {
+  --ac-0: #099;
+  --ac-1: #3bb;
+  --ac-2: #6cc;
+  --ac-3: #3bb;
+  --ac-4: #4cc;
+  --ac-5: #8dd;
+  --tx-c: #000;
+  --lg-c: #099;
+}

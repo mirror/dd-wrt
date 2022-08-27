@@ -1,0 +1,12 @@
+@import url(../common.css);
+/*! Orange */
+:root {
+  --ac-0: #f26522;
+  --ac-1: #ff8400;
+  --ac-2: #ff9000;
+  --ac-3: #ff8400;
+  --ac-4: #feb311;
+  --ac-5: #ffa200;
+  --tx-c: #000;
+  --lg-c: #f26522;
+}

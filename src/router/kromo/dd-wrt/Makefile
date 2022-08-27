@@ -264,11 +264,13 @@ endif
 
 ifeq ($(CONFIG_RED),y)
 	mkdir $(INSTALLDIR)/www/style/red
-	cp red/style.css $(INSTALLDIR)/www/style/red
+	cp red/colorscheme.css $(INSTALLDIR)/www/style/red
+	cd $(INSTALLDIR)/www/style/red && ln -s style.css ../common_core_rules.css
 #	cp common_style/common_style_ie.css $(INSTALLDIR)/www/style/red
-	touch $(INSTALLDIR)/www/style/red/style.css
 	cp common_style/common.css $(INSTALLDIR)/www/style
-#	cp red/logo.png $(INSTALLDIR)/www/style
+	cp common_style/common_core_rules.css $(INSTALLDIR)/www/style
+	touch $(INSTALLDIR)/www/style/common_core_rules.css
+	cd $(INSTALLDIR)/www/style/red && ln -s style.css ../common_core_rules.css
 endif
 
 ifeq ($(CONFIG_FONSTYLE),y)
@@ -281,17 +283,20 @@ endif
 
 ifeq ($(CONFIG_BLUE),y)
 	mkdir $(INSTALLDIR)/www/style/blue
-	cp blue/style.css $(INSTALLDIR)/www/style/blue
+	cp blue/colorscheme.css $(INSTALLDIR)/www/style/blue
 #	common_style/common_style_ie.css $(INSTALLDIR)/www/style/blue
-	touch $(INSTALLDIR)/www/style/blue/style.css
 	cp common_style/common.css $(INSTALLDIR)/www/style
-#	cp blue/logo.png $(INSTALLDIR)/www/style
+	cp common_style/common_core_rules.css $(INSTALLDIR)/www/style
+	touch $(INSTALLDIR)/www/style/common_core_rules.css
+	cd $(INSTALLDIR)/www/style/blue && ln -s style.css ../common_core_rules.css
 endif
 
 ifeq ($(CONFIG_ELEGANT),y)
 	mkdir $(INSTALLDIR)/www/style/elegant
-	cp elegant/style.css $(INSTALLDIR)/www/style/elegant
+	cp elegant/colorscheme.css $(INSTALLDIR)/www/style/elegant
 	cp elegant/fresh.css $(INSTALLDIR)/www/style/elegant
+	cp common_style/common_core_rules.css $(INSTALLDIR)/www/style
+	touch $(INSTALLDIR)/www/style/common_core_rules.css
 ifneq ($(CONFIG_ROUTERSTYLE),y)	
 	mkdir $(INSTALLDIR)/www/common_style
 	cp common_style/common_style_ie.css $(INSTALLDIR)/www/style
@@ -299,9 +304,9 @@ ifneq ($(CONFIG_ROUTERSTYLE),y)
 else
 #	cp common_style/common_style_ie.css $(INSTALLDIR)/www/style/elegant
 	cp elegant/fresh-dark.css $(INSTALLDIR)/www/style/elegant
-	touch $(INSTALLDIR)/www/style/elegant/style.css
+	cd $(INSTALLDIR)/www/style/elegant && ln -s style.css ../common_core_rules.css
 endif
-	cp elegant/help-about-dark.css $(INSTALLDIR)/www/style/elegant
+	cp common_style/help-about-dark.css $(INSTALLDIR)/www/style
 	cp common_style/common.css $(INSTALLDIR)/www/style
 #	cp elegant/logo.png $(INSTALLDIR)/www/style
 	cp elegant/logo-trial.png $(INSTALLDIR)/www/style
@@ -310,11 +315,12 @@ endif
 
 ifeq ($(CONFIG_CYAN),y)
 	mkdir $(INSTALLDIR)/www/style/cyan
-	cp cyan/style.css $(INSTALLDIR)/www/style/cyan
+	cp cyan/colorscheme.css $(INSTALLDIR)/www/style/cyan
 #	cp common_style/common_style_ie.css $(INSTALLDIR)/www/style/cyan
-	touch $(INSTALLDIR)/www/style/cyan/style.css
 	cp common_style/common.css $(INSTALLDIR)/www/style
-#	cp cyan/logo.png $(INSTALLDIR)/www/style
+	cp common_style/common_core_rules.css $(INSTALLDIR)/www/style
+	touch $(INSTALLDIR)/www/style/common_core_rules.css
+	cd $(INSTALLDIR)/www/style/cyan && ln -s style.css ../common_core_rules.css
 endif
 
 ifeq ($(CONFIG_CESAR),y)
@@ -335,28 +341,31 @@ endif
 
 ifeq ($(CONFIG_YELLOW),y)
 	mkdir $(INSTALLDIR)/www/style/yellow
-	cp yellow/style.css $(INSTALLDIR)/www/style/yellow
+	cp yellow/colorscheme.css $(INSTALLDIR)/www/style/yellow
 #	cp common_style/common_style_ie.css $(INSTALLDIR)/www/style/yellow
-	touch $(INSTALLDIR)/www/style/yellow/style.css
 	cp common_style/common.css $(INSTALLDIR)/www/style
-#	cp yellow/logo.png $(INSTALLDIR)/www/style
+	cp common_style/common_core_rules.css $(INSTALLDIR)/www/style
+	touch $(INSTALLDIR)/www/style/common_core_rules.css
+	cd $(INSTALLDIR)/www/style/yellow && ln -s style.css ../common_core_rules.css
 endif
 
 ifeq ($(CONFIG_GREEN),y)
 	mkdir $(INSTALLDIR)/www/style/green
-	cp green/style.css $(INSTALLDIR)/www/style/green
+	cp green/colorscheme.css $(INSTALLDIR)/www/style/green
 #	cp common_style/common_style_ie.css $(INSTALLDIR)/www/style/green
-	touch $(INSTALLDIR)/www/style/green/style.css
 	cp common_style/common.css $(INSTALLDIR)/www/style
-#	cp green/logo.png $(INSTALLDIR)/www/style
+	cp common_style/common_core_rules.css $(INSTALLDIR)/www/style
+	touch $(INSTALLDIR)/www/style/common_core_rules.css
+	cd $(INSTALLDIR)/www/style/green && ln -s style.css ../common_core_rules.css
 endif
 ifeq ($(CONFIG_ORANGE),y)
 	mkdir $(INSTALLDIR)/www/style/orange
-	cp orange/style.css $(INSTALLDIR)/www/style/orange
+	cp orange/colorscheme.css $(INSTALLDIR)/www/style/orange
 #	cp common_style/common_style_ie.css $(INSTALLDIR)/www/style/orange
-	touch $(INSTALLDIR)/www/style/orange/style.css
 	cp common_style/common.css $(INSTALLDIR)/www/style
-#	cp orange/logo.png $(INSTALLDIR)/www/style
+	cp common_style/common_core_rules.css $(INSTALLDIR)/www/style
+	touch $(INSTALLDIR)/www/style/common_core_rules.css
+	cd $(INSTALLDIR)/www/style/orange && ln -s style.css ../common_core_rules.css
 endif
 
 # dirty - fix missing orange for all builds - remove after .config files update!
@@ -368,11 +377,12 @@ ifeq ($(CONFIG_CYAN),y)
 ifeq ($(CONFIG_YELLOW),y)
 ifeq ($(CONFIG_GREEN),y)
 	mkdir $(INSTALLDIR)/www/style/orange
-	cp orange/style.css $(INSTALLDIR)/www/style/orange
+	cp orange/colorscheme.css $(INSTALLDIR)/www/style/orange
 #	cp common_style/common_style_ie.css $(INSTALLDIR)/www/style/orange
-	touch $(INSTALLDIR)/www/style/orange/style.css
 	cp common_style/common.css $(INSTALLDIR)/www/style
-#	cp orange/logo.png $(INSTALLDIR)/www/style
+	cp common_style/common_core_rules.css $(INSTALLDIR)/www/style
+	touch $(INSTALLDIR)/www/style/common_core_rules.css
+	cd $(INSTALLDIR)/www/style/orange && ln -s style.css ../common_core_rules.css
 endif
 endif
 endif
@@ -843,7 +853,8 @@ endif
 ifeq ($(CONFIG_ANTAIRA),y)
 	mkdir -p $(INSTALLDIR)/www/style/elegant
 	cp elegant/fresh.css $(INSTALLDIR)/www/style/elegant
-	cp antaira/style.css $(INSTALLDIR)/www/style/red
+	cp antaira/colorscheme.css $(INSTALLDIR)/www/style/red
+	cd $(INSTALLDIR)/www/style/red && ln -s style.css ../common_core_rules.css
 	cp -f antaira/logo.png $(INSTALLDIR)/www/images
 	cp -f antaira/favicon.ico $(INSTALLDIR)/www/favicon.ico
 	cp -f antaira/logo-help.png $(INSTALLDIR)/www/help/logo-help.png
