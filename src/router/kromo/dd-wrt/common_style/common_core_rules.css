@@ -1,4 +1,3 @@
-@import url(../common.css);
 ::selection {
   background: var(--ac-0);
   color: var(--tx-c);
