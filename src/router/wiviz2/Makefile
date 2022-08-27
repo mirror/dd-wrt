@@ -73,7 +73,7 @@ wwwinstall:
 	install -d $(INSTALLDIR)/../www/www/images/wiviz
 	cp www/wiviz2/wiviz2.css $(INSTALLDIR)/../www/www/style/wiviz2.css
 	cp www/wiviz2/wiviz2.js $(INSTALLDIR)/../www/www/js/wiviz2.js
-	cp www/wiviz2/*.gif $(INSTALLDIR)/../www/www/images/wiviz
+	cp www/wiviz2/*.svg $(INSTALLDIR)/../www/www/images/wiviz
 	cp www/wiviz2/*.png $(INSTALLDIR)/../www/www/images/wiviz
 #	cp www/wiviz2/*.asp $(INSTALLDIR)/../www/www
 
