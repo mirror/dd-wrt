@@ -10,7 +10,7 @@ function to_apply(F) {
 	applytake(F);
 }
 addEvent(window, "load", function() {
-	stickControl(<% nvg("sticky_footer"); %>);
+	stickControl(<%% nvg("sticky_footer"); %%>);
 });
 		//]]>
 		</script>
