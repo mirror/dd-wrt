@@ -50,7 +50,7 @@ function setWDS(val) {
 var update;
 
 addEvent(window, "load", function() {
-	stickControl(<% nvg("sticky_footer"); %>);
+	stickControl(<%% nvg("sticky_footer"); %%>);
 	var wds = "1";
 	setElementsActive("%s_br1_nat", "%s_br1_netmask3", "<%% nvg("%s_br1_enable"); %%>" == 1);
 	
