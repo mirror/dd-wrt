@@ -1,0 +1,52 @@
+@import url(../common.css);
+::selection {
+  background: var(--ac-0);
+  color: var(--tx-c);
+}
+#menuSub, #menuMainList li span, #help h2 {
+  background: var(--ac-0);
+  border-color: var(--ac-3);
+  color: var(--tx-c);
+}
+#menuSubList li a {
+  background: var(--ac-1);
+  border-color: var(--ac-4);
+  color: var(--tx-c);
+}
+#menuSubList li a:hover {
+  background: var(--ac-2);
+  border-color: var(--ac-5);
+  color: var(--tx-c);
+}
+fieldset legend, .syslog_legend {
+  color: var(--lg-c);
+}
+#help a, #help a:hover, .meter .text {
+  color: var(--tx-c);
+}
+.meter .bar, .progressbarblock {
+  background-color: var(--ac-0);
+}
+input[type] {
+  accent-color: var(--ac-0);
+}
+input.button, input.button[disabled]:hover {
+  background: var(--ac-0);
+  border: 1px solid var(--ac-0);
+  color: var(--tx-c);
+}
+input.button:hover {
+  background: var(--ac-2);
+  border: 1px solid var(--ac-2);
+  color: var(--tx-c);
+}
+input.button:focus-visible {
+  box-shadow: 0 0 5px 1px var(--ac-2);
+}
+input:focus, textarea:focus,
+input:focus-visible, textarea:focus-visible,
+select:focus-within {
+  box-shadow: 0 0 5px 1px var(--ac-2);
+  border: 1px solid var(--ac-2);
+  outline: 0;
+}

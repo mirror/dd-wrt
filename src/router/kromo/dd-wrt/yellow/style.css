@@ -1,53 +1,11 @@
-@import url(../common.css);
 /*! Yellow */
-::selection {
-  background: #eec900;
-  color: #000;
-}
-#menuSub, #menuMainList li span, #help h2 {
-  background: #eec900;
-  color: #000;
-  border-color: #ee3;
-}
-#menuSubList li a {
-  background: #ffd700;
-  color: #000;
-  border-color: #ee7;
-}
-#menuSubList li a:hover {
-  background: #eec900;
-  color: #000;
-  border-color: #ff9;
-}
-fieldset legend, .syslog_legend {
-  color: #eec900;
-}
-#help a, #help a:hover, .meter .text {
-  color: #000;
-}
-.meter .bar, .progressbarblock {
-  background-color: #eec900;
-}
-input[type] {
-  accent-color: #eec900;
-}
-input.button, input.button[disabled]:hover {
-  background: #eec900;
-  border: 1px solid #eec900;
-  color: #000;
-}
-input.button:hover {
-  background: #ffd700;
-  border: 1px solid #ffd700;
-  color: #000;
-}
-input.button:focus-visible {
-  box-shadow: 0 0 5px 1px #ffd700;
-}
-input:focus, textarea:focus,
-input:focus-visible, textarea:focus-visible,
-select:focus-within {
-  box-shadow: 0 0 5px 1px #ffd700;
-  border: 1px solid #ffd700;
-  outline: 0;
+:root {
+  --ac-0: #eec900;
+  --ac-1: #ffd700;
+  --ac-2: #ffe03c;
+  --ac-3: #ee3;
+  --ac-4: #ee7;
+  --ac-5: #ff9;
+  --tx-c: #000;
+  --lg-c: #ccb016;
 }
