@@ -1179,7 +1179,7 @@ removeobsolete:
 	cd $(INSTALLDIR)/www  &&  find . -iname ".svn" | xargs rm -rf
 
 makewww:
-	cd $(INSTALLDIR)/www && $(SRCBASE)/../tools/webcomp . $(SRCBASE)/../tools/filelist *.asp *.svg *.htm *.html *.ico help/*.asp *.js js/* ddwrt_inspired_themes/*.css ddwrt_inspired_themes/*.stylus lang_pack/* *.css help/*.css style/*.css style/*/* style/*/*/* style/*/*/*/* style/*/*/*/*/* intatstart/js/* intatstart/css/* intatstart/css/images/* intatstart/lang_pack/* intatstart/config/* help/*.png  images/*.png images/*.svg images/*/*.png style/*.png style/*.jpg images/*.gif  images/*/*.gif images/*.jpg images/*.ico $(SRCBASE)/router/httpd/html.c $(SRCBASE)/router/httpd/www 
+	cd $(INSTALLDIR)/www && $(SRCBASE)/../tools/webcomp . $(SRCBASE)/../tools/filelist *.asp *.svg *.htm *.html *.ico help/*.asp *.js js/* ddwrt_inspired_themes/*.css ddwrt_inspired_themes/*.stylus lang_pack/* *.css help/*.css style/*.css style/*/* style/*/*/* style/*/*/*/* style/*/*/*/*/* intatstart/js/* intatstart/css/* intatstart/css/images/* intatstart/lang_pack/* intatstart/config/* help/*.png  images/*.png images/*.svg images/*/*.png style/*.png style/*.jpg images/*.gif images/*/*.gif images/*/*.svg images/*.jpg images/*.ico $(SRCBASE)/router/httpd/html.c $(SRCBASE)/router/httpd/www 
 
 
 removepwc:
