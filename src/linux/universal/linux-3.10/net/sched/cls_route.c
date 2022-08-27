@@ -382,6 +382,9 @@ static int route4_set_parms(struct net *net, struct tcf_proto *tp,
 			goto errout;
 	}
 
+	if (!nhandle)
+		return -EINVAL;
+
 	h1 = to_hash(nhandle);
 	b = head->table[h1];
 	if (!b) {
@@ -443,6 +446,9 @@ static int route4_change(struct net *net, struct sk_buff *in_skb,
 	u32 old_handle = 0;
 	int err;
 
+	if (!handle)
+		return -EINVAL;
+
 	if (opt == NULL)
 		return handle ? -EINVAL : 0;
 
@@ -496,7 +502,7 @@ reinsert:
 	tcf_tree_lock(tp);
 	*fp = f;
 
-	if (old_handle && f->handle != old_handle) {
+	if (old_handle) {
 		th = to_hash(old_handle);
 		h = from_hash(old_handle >> 16);
 		b = head->table[th];
