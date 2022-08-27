@@ -265,7 +265,7 @@ endif
 ifeq ($(CONFIG_RED),y)
 	mkdir $(INSTALLDIR)/www/style/red
 	cp red/colorscheme.css $(INSTALLDIR)/www/style/red
-	cd $(INSTALLDIR)/www/style/red && ln -s ../common_core_rules.css style.css
+	cp red/style.css $(INSTALLDIR)/www/style/red
 #	cp common_style/common_style_ie.css $(INSTALLDIR)/www/style/red
 	cp common_style/common.css $(INSTALLDIR)/www/style
 	cp common_style/common_core_rules.css $(INSTALLDIR)/www/style
@@ -282,16 +282,16 @@ endif
 ifeq ($(CONFIG_BLUE),y)
 	mkdir $(INSTALLDIR)/www/style/blue
 	cp blue/colorscheme.css $(INSTALLDIR)/www/style/blue
+	cp blue/style.css $(INSTALLDIR)/www/style/blue
 #	common_style/common_style_ie.css $(INSTALLDIR)/www/style/blue
 	cp common_style/common.css $(INSTALLDIR)/www/style
 	cp common_style/common_core_rules.css $(INSTALLDIR)/www/style
-	touch $(INSTALLDIR)/www/style/common_core_rules.css
-	cd $(INSTALLDIR)/www/style/blue && ln -s ../common_core_rules.css style.css
 endif
 
 ifeq ($(CONFIG_ELEGANT),y)
 	mkdir $(INSTALLDIR)/www/style/elegant
 	cp elegant/colorscheme.css $(INSTALLDIR)/www/style/elegant
+	cp elegant/style.css $(INSTALLDIR)/www/style/elegant
 	cp elegant/fresh.css $(INSTALLDIR)/www/style/elegant
 	cp common_style/common_core_rules.css $(INSTALLDIR)/www/style
 	touch $(INSTALLDIR)/www/style/common_core_rules.css
@@ -302,7 +302,6 @@ ifneq ($(CONFIG_ROUTERSTYLE),y)
 else
 #	cp common_style/common_style_ie.css $(INSTALLDIR)/www/style/elegant
 	cp elegant/fresh-dark.css $(INSTALLDIR)/www/style/elegant
-	cd $(INSTALLDIR)/www/style/elegant && ln -s ../common_core_rules.css style.css
 endif
 	cp common_style/help-about-dark.css $(INSTALLDIR)/www/style
 	cp common_style/common.css $(INSTALLDIR)/www/style
@@ -314,11 +313,10 @@ endif
 ifeq ($(CONFIG_CYAN),y)
 	mkdir $(INSTALLDIR)/www/style/cyan
 	cp cyan/colorscheme.css $(INSTALLDIR)/www/style/cyan
+	cp cyan/style.css $(INSTALLDIR)/www/style/cyan
 #	cp common_style/common_style_ie.css $(INSTALLDIR)/www/style/cyan
 	cp common_style/common.css $(INSTALLDIR)/www/style
 	cp common_style/common_core_rules.css $(INSTALLDIR)/www/style
-	touch $(INSTALLDIR)/www/style/common_core_rules.css
-	cd $(INSTALLDIR)/www/style/cyan && ln -s ../common_core_rules.css style.css
 endif
 
 ifeq ($(CONFIG_CESAR),y)
@@ -340,30 +338,27 @@ endif
 ifeq ($(CONFIG_YELLOW),y)
 	mkdir $(INSTALLDIR)/www/style/yellow
 	cp yellow/colorscheme.css $(INSTALLDIR)/www/style/yellow
+	cp yellow/style.css $(INSTALLDIR)/www/style/yellow
 #	cp common_style/common_style_ie.css $(INSTALLDIR)/www/style/yellow
 	cp common_style/common.css $(INSTALLDIR)/www/style
 	cp common_style/common_core_rules.css $(INSTALLDIR)/www/style
-	touch $(INSTALLDIR)/www/style/common_core_rules.css
-	cd $(INSTALLDIR)/www/style/yellow && ln -s ../common_core_rules.css style.css
 endif
 
 ifeq ($(CONFIG_GREEN),y)
 	mkdir $(INSTALLDIR)/www/style/green
 	cp green/colorscheme.css $(INSTALLDIR)/www/style/green
+	cp green/style.css $(INSTALLDIR)/www/style/green
 #	cp common_style/common_style_ie.css $(INSTALLDIR)/www/style/green
 	cp common_style/common.css $(INSTALLDIR)/www/style
 	cp common_style/common_core_rules.css $(INSTALLDIR)/www/style
-	touch $(INSTALLDIR)/www/style/common_core_rules.css
-	cd $(INSTALLDIR)/www/style/green && ln -s ../common_core_rules.css style.css
 endif
 ifeq ($(CONFIG_ORANGE),y)
 	mkdir $(INSTALLDIR)/www/style/orange
 	cp orange/colorscheme.css $(INSTALLDIR)/www/style/orange
+	cp orange/style.css $(INSTALLDIR)/www/style/orange
 #	cp common_style/common_style_ie.css $(INSTALLDIR)/www/style/orange
 	cp common_style/common.css $(INSTALLDIR)/www/style
 	cp common_style/common_core_rules.css $(INSTALLDIR)/www/style
-	touch $(INSTALLDIR)/www/style/common_core_rules.css
-	cd $(INSTALLDIR)/www/style/orange && ln -s ../common_core_rules.css style.css
 endif
 
 # dirty - fix missing orange for all builds - remove after .config files update!
@@ -376,11 +371,10 @@ ifeq ($(CONFIG_YELLOW),y)
 ifeq ($(CONFIG_GREEN),y)
 	mkdir $(INSTALLDIR)/www/style/orange
 	cp orange/colorscheme.css $(INSTALLDIR)/www/style/orange
+	cp orange/style.css $(INSTALLDIR)/www/style/orange
 #	cp common_style/common_style_ie.css $(INSTALLDIR)/www/style/orange
 	cp common_style/common.css $(INSTALLDIR)/www/style
 	cp common_style/common_core_rules.css $(INSTALLDIR)/www/style
-	touch $(INSTALLDIR)/www/style/common_core_rules.css
-	cd $(INSTALLDIR)/www/style/orange && ln ../common_core_rules.css -s style.css
 endif
 endif
 endif
@@ -852,7 +846,7 @@ ifeq ($(CONFIG_ANTAIRA),y)
 	mkdir -p $(INSTALLDIR)/www/style/elegant
 	cp elegant/fresh.css $(INSTALLDIR)/www/style/elegant
 	cp antaira/colorscheme.css $(INSTALLDIR)/www/style/red
-	cd $(INSTALLDIR)/www/style/red && ln -s ../common_core_rules.css style.css
+	cp antaira/style.css $(INSTALLDIR)/www/style/red
 	cp -f antaira/logo.png $(INSTALLDIR)/www/images
 	cp -f antaira/favicon.ico $(INSTALLDIR)/www/favicon.ico
 	cp -f antaira/logo-help.png $(INSTALLDIR)/www/help/logo-help.png
