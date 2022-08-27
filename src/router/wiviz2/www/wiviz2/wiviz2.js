@@ -627,7 +627,7 @@ function wiviz_callback(hosts, cfgobj) {
 			}
 			el = document.createElement('img');
 			el.className = 'sizeimage';
-			el.src = "images/wiviz/" + h.type + (h.encrypted == 'yes' ? "-enc" : "") + ".svg";
+			el.src = "images/wiviz/" + h.type + (h.encrypted == 'yes' ? "-enc" : "") + ".png";
 			if (IEfix) {
 				var ne = document.createElement('a');
 				ne.style.width = "50px";
