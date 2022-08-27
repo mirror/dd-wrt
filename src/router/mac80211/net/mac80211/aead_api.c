@@ -90,8 +90,10 @@ aead_key_setup_encrypt(const char *alg, const u8 key[],
 	int err;
 
 	tfm = crypto_alloc_aead(alg, 0, CRYPTO_ALG_ASYNC);
-	if (IS_ERR(tfm))
+	if (IS_ERR(tfm)) {
+		printk("%s: failed algo %s\n",__func__, alg);
 		return tfm;
+	}
 
 	err = crypto_aead_setkey(tfm, key, key_len);
 	if (err)

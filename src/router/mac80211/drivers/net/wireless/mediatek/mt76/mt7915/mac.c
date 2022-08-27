@@ -242,12 +242,12 @@ mt7915_mac_fill_rx(struct mt7915_dev *dev, struct sk_buff *skb)
 	memset(status, 0, sizeof(*status));
 
 	if ((rxd1 & MT_RXD1_NORMAL_BAND_IDX) && !phy->band_idx) {
-		mphy = dev->mt76.phy2;
+		mphy = dev->mt76.phys[MT_BAND1];
 		if (!mphy)
 			return -EINVAL;
 
 		phy = mphy->priv;
-		status->ext_phy = true;
+		status->phy_idx = 1;
 	}
 
 	if (!test_bit(MT76_STATE_RUNNING, &mphy->state))
@@ -666,10 +666,11 @@ void mt7915_mac_write_txwi(struct mt76_dev *dev, __le32 *txwi,
 			   enum mt76_txq_id qid, u32 changed)
 {
 	struct ieee80211_tx_info *info = IEEE80211_SKB_CB(skb);
+	u8 phy_idx = (info->hw_queue & MT_TX_HW_QUEUE_PHY) >> 2;
 	struct mt76_phy *mphy = &dev->phy;
 
-	if ((info->hw_queue & MT_TX_HW_QUEUE_EXT_PHY) && dev->phy2)
-		mphy = dev->phy2;
+	if (phy_idx && dev->phys[MT_BAND1])
+		mphy = dev->phys[MT_BAND1];
 
 	mt76_connac2_mac_write_txwi(dev, txwi, skb, wcid, key, pid, qid, changed);
 
@@ -853,7 +854,7 @@ static void
 mt7915_mac_tx_free_prepare(struct mt7915_dev *dev)
 {
 	struct mt76_dev *mdev = &dev->mt76;
-	struct mt76_phy *mphy_ext = mdev->phy2;
+	struct mt76_phy *mphy_ext = mdev->phys[MT_BAND1];
 
 	/* clean DMA queues and unmap buffers first */
 	mt76_queue_tx_cleanup(dev, dev->mphy.q_tx[MT_TXQ_PSD], false);
@@ -1275,22 +1276,24 @@ mt7915_update_vif_beacon(void *priv, u8 *mac, struct ieee80211_vif *vif)
 static void
 mt7915_update_beacons(struct mt7915_dev *dev)
 {
+	struct mt76_phy *mphy_ext = dev->mt76.phys[MT_BAND1];
+
 	ieee80211_iterate_active_interfaces(dev->mt76.hw,
 		IEEE80211_IFACE_ITER_RESUME_ALL,
 		mt7915_update_vif_beacon, dev->mt76.hw);
 
-	if (!dev->mt76.phy2)
+	if (!mphy_ext)
 		return;
 
-	ieee80211_iterate_active_interfaces(dev->mt76.phy2->hw,
+	ieee80211_iterate_active_interfaces(mphy_ext->hw,
 		IEEE80211_IFACE_ITER_RESUME_ALL,
-		mt7915_update_vif_beacon, dev->mt76.phy2->hw);
+		mt7915_update_vif_beacon, mphy_ext->hw);
 }
 
 static void
 mt7915_dma_reset(struct mt7915_dev *dev)
 {
-	struct mt76_phy *mphy_ext = dev->mt76.phy2;
+	struct mt76_phy *mphy_ext = dev->mt76.phys[MT_BAND1];
 	u32 hif1_ofs = MT_WFDMA0_PCIE1(0) - MT_WFDMA0(0);
 	int i;
 
@@ -1377,7 +1380,7 @@ void mt7915_mac_reset_work(struct work_struct *work)
 	int i;
 
 	dev = container_of(work, struct mt7915_dev, reset_work);
-	ext_phy = dev->mt76.phy2;
+	ext_phy = dev->mt76.phys[MT_BAND1];
 	phy2 = ext_phy ? ext_phy->priv : NULL;
 
 	if (!(READ_ONCE(dev->reset_state) & MT_MCU_CMD_STOP_DMA))

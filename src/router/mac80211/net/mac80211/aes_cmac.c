@@ -81,6 +81,8 @@ struct crypto_shash *ieee80211_aes_cmac_key_setup(const u8 key[],
 			crypto_free_shash(tfm);
 			return ERR_PTR(err);
 		}
+	}else {
+	printk("%s: failed algo %s\n",__func__, "cmac(aes)");
 	}
 
 	return tfm;
