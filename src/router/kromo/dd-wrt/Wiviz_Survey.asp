@@ -11,11 +11,11 @@
 	<img class='logo' id='logo' src='images/wiviz/wiviz2logo-smaller.png' height=75 width=207>
 	<div class='mainarea' id='mainarea'></div>
 	<div class='controls'>
-		<a href='javascript:cameraElevation(0.2)'><img src='images/wiviz/up.gif' alt='Up'></a>
-		<a href='javascript:cameraElevation(-0.2)'><img src='images/wiviz/down.gif' alt='Down'></a>
-		<a href='javascript:cameraZoom(1.2)'><img src='images/wiviz/zoomin.gif' alt='Zoom in'></a>
-		<a href='javascript:cameraZoom(1/1.2)'><img src='images/wiviz/zoomout.gif' alt='Zoom out'></a>
-		<a href='javascript:resetCameraWithFlair();'><img src='images/wiviz/reset.gif' alt='Reset view'></a>
+		<a href='javascript:cameraElevation(0.2)'><img src='images/wiviz/up.svg' alt='Up'></a>
+		<a href='javascript:cameraElevation(-0.2)'><img src='images/wiviz/down.svg' alt='Down'></a>
+		<a href='javascript:cameraZoom(1.2)'><img src='images/wiviz/zoomin.svg' alt='Zoom in'></a>
+		<a href='javascript:cameraZoom(1/1.2)'><img src='images/wiviz/zoomout.svg' alt='Zoom out'></a>
+		<a href='javascript:resetCameraWithFlair();'><img src='images/wiviz/reset.svg' alt='Reset view'></a>
 	</div>
 	<div class='rightmenu'>
 		<div class='expando'>
