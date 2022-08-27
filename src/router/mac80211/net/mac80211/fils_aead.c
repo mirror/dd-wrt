@@ -86,8 +86,10 @@ static int aes_siv_encrypt(const u8 *key, size_t key_len,
 	/* S2V */
 
 	tfm = crypto_alloc_shash("cmac(aes)", 0, 0);
-	if (IS_ERR(tfm))
+	if (IS_ERR(tfm)) {
+		printk("%s: failed algo %s\n",__func__, "cmac(aes)");
 		return PTR_ERR(tfm);
+	}
 	/* K1 for S2V */
 	res = crypto_shash_setkey(tfm, key, key_len);
 	if (!res)
@@ -116,6 +118,7 @@ static int aes_siv_encrypt(const u8 *key, size_t key_len,
 
 	tfm2 = crypto_alloc_skcipher("ctr(aes)", 0, CRYPTO_ALG_ASYNC);
 	if (IS_ERR(tfm2)) {
+		printk("%s: failed algo %s\n",__func__, "ctr(aes)");
 		kfree(tmp);
 		return PTR_ERR(tfm2);
 	}
@@ -174,8 +177,10 @@ static int aes_siv_decrypt(const u8 *key, size_t key_len,
 	/* CTR */
 
 	tfm2 = crypto_alloc_skcipher("ctr(aes)", 0, CRYPTO_ALG_ASYNC);
-	if (IS_ERR(tfm2))
+	if (IS_ERR(tfm2)) {
+		printk("%s: failed algo %s\n",__func__, "ctr(aes)");
 		return PTR_ERR(tfm2);
+	}
 	/* K2 for CTR */
 	res = crypto_skcipher_setkey(tfm2, key + key_len, key_len);
 	if (res) {
@@ -201,8 +206,10 @@ static int aes_siv_decrypt(const u8 *key, size_t key_len,
 	/* S2V */
 
 	tfm = crypto_alloc_shash("cmac(aes)", 0, 0);
-	if (IS_ERR(tfm))
+	if (IS_ERR(tfm)) {
+		printk("%s: failed algo %s\n",__func__, "cmac(aes)");
 		return PTR_ERR(tfm);
+	}
 	/* K1 for S2V */
 	res = crypto_shash_setkey(tfm, key, key_len);
 	if (!res)

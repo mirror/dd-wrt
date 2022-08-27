@@ -251,6 +251,22 @@ void mt76_connac_txp_skb_unmap(struct mt76_dev *dev,
 }
 EXPORT_SYMBOL_GPL(mt76_connac_txp_skb_unmap);
 
+int mt76_connac_init_tx_queues(struct mt76_phy *phy, int idx, int n_desc,
+			       int ring_base, u32 flags)
+{
+	int i, err;
+
+	err = mt76_init_tx_queue(phy, 0, idx, n_desc, ring_base, flags);
+	if (err < 0)
+		return err;
+
+	for (i = 1; i <= MT_TXQ_PSD; i++)
+		phy->q_tx[i] = phy->q_tx[0];
+
+	return 0;
+}
+EXPORT_SYMBOL_GPL(mt76_connac_init_tx_queues);
+
 static u16
 mt76_connac2_mac_tx_rate_val(struct mt76_phy *mphy, struct ieee80211_vif *vif,
 			     bool beacon, bool mcast)
@@ -439,7 +455,7 @@ void mt76_connac2_mac_write_txwi(struct mt76_dev *dev, __le32 *txwi,
 				 enum mt76_txq_id qid, u32 changed)
 {
 	struct ieee80211_tx_info *info = IEEE80211_SKB_CB(skb);
-	bool ext_phy = info->hw_queue & MT_TX_HW_QUEUE_EXT_PHY;
+	u8 phy_idx = (info->hw_queue & MT_TX_HW_QUEUE_PHY) >> 2;
 	struct ieee80211_vif *vif = info->control.vif;
 	struct mt76_phy *mphy = &dev->phy;
 	u8 p_fmt, q_idx, omac_idx = 0, wmm_idx = 0, band_idx = 0;
@@ -458,8 +474,8 @@ void mt76_connac2_mac_write_txwi(struct mt76_dev *dev, __le32 *txwi,
 		band_idx = mvif->band_idx;
 	}
 
-	if (ext_phy && dev->phy2)
-		mphy = dev->phy2;
+	if (phy_idx && dev->phys[MT_BAND1])
+		mphy = dev->phys[MT_BAND1];
 
 	if (inband_disc) {
 		p_fmt = MT_TX_TYPE_FW;
@@ -486,7 +502,7 @@ void mt76_connac2_mac_write_txwi(struct mt76_dev *dev, __le32 *txwi,
 	      FIELD_PREP(MT_TXD1_OWN_MAC, omac_idx);
 	if (!is_mt7921(dev))
 		val |= MT_TXD1_VTA;
-	if (ext_phy || band_idx)
+	if (phy_idx || band_idx)
 		val |= MT_TXD1_TGID;
 
 	txwi[1] = cpu_to_le32(val);
@@ -581,8 +597,8 @@ bool mt76_connac2_mac_add_txs_skb(struct mt76_dev *dev, struct mt76_wcid *wcid,
 		fallthrough;
 	case MT_PHY_TYPE_OFDM:
 		mphy = &dev->phy;
-		if (wcid->ext_phy && dev->phy2)
-			mphy = dev->phy2;
+		if (wcid->phy_idx == MT_BAND1 && dev->phys[MT_BAND1])
+			mphy = dev->phys[MT_BAND1];
 
 		if (mphy->chandef.chan->band == NL80211_BAND_5GHZ)
 			sband = &mphy->sband_5g.sband;
