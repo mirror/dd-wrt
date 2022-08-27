@@ -627,7 +627,7 @@ function wiviz_callback(hosts, cfgobj) {
 			}
 			el = document.createElement('img');
 			el.className = 'sizeimage';
-			el.src = "images/wiviz/" + h.type + (h.encrypted == 'yes' ? "-enc" : "") + ".png";
+			el.src = "images/wiviz/" + h.type + (h.encrypted == 'yes' ? "-enc" : "") + ".svg";
 			if (IEfix) {
 				var ne = document.createElement('a');
 				ne.style.width = "50px";
@@ -787,7 +787,7 @@ function updateCenteredInfo() {
 		sp.innerHTML = "Type Unknown";
 		if (h.type == 'ap') sp.innerHTML = "Access Point";
 		if (h.type == 'ssid') sp.innerHTML = "SSID Collection";
-		if (h.type == 'adhoc') sp.innerHTML = "Ad-hoc entity";
+		if (h.type == 'adhoc') sp.innerHTML = "Ad Hoc Entity";
 		if (h.type == 'sta') sp.innerHTML = "Client";
 		if (h.type == 'wds') sp.innerHTML = "WDS";
 		if (h.type == 'mesh') sp.innerHTML = "Mesh";
