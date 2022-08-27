@@ -1579,7 +1579,7 @@ int ieee80211_txq_setup_flows(struct ieee80211_local *local)
 		supp_vht = supp_vht || sband->vht_cap.vht_supported;
 	}
 
-#if defined(CONFIG_X86) || defined(CONFIG_ALPINE)
+#if defined(CONFIG_X86) || defined(CONFIG_ALPINE) || defined(CONFIG_ARM64)
 	if (!supp_vht)
 		fq->memory_limit = 4 << 20; /* 4M */
 	else
@@ -3615,6 +3615,7 @@ static bool ieee80211_mesh_xmit_fast(struct ieee80211_sub_if_data *sdata,
 	u16 ethertype;
 	struct ieee80211_key *key;
 	struct sta_info *sta;
+	struct mesh_path *mpath;
 
 	if (ctrl_flags & IEEE80211_TX_CTRL_SKIP_MPATH_LOOKUP)
 		return false;
@@ -3669,8 +3670,12 @@ static bool ieee80211_mesh_xmit_fast(struct ieee80211_sub_if_data *sdata,
 		info->flags |= IEEE80211_TX_CTL_REQ_TX_STATUS;
 #endif
 
-	sta = entry->mpath->next_hop;
-	key = entry->key;
+	/* availability of hdr entry ensures the mpath and sta are valid
+	 * hence validation can be avoided.
+	 */
+	mpath = rcu_dereference(entry->mpath);
+	sta = rcu_dereference(mpath->next_hop);
+	key = rcu_dereference(entry->key);
 
 	__skb_queue_head_init(&tx.skbs);
 

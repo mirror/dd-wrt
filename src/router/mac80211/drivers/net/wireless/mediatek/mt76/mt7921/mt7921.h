@@ -272,7 +272,6 @@ mt7921_hw_dev(struct ieee80211_hw *hw)
 	mt76_connac_mutex_release(&(dev)->mt76, &(dev)->pm)
 
 extern const struct ieee80211_ops mt7921_ops;
-extern struct pci_driver mt7921_pci_driver;
 
 u32 mt7921_reg_map(struct mt7921_dev *dev, u32 addr);
 
@@ -344,12 +343,6 @@ mt7921_l1_rmw(struct mt7921_dev *dev, u32 addr, u32 mask, u32 val)
 static inline bool mt7921_dma_need_reinit(struct mt7921_dev *dev)
 {
 	return !mt76_get_field(dev, MT_WFDMA_DUMMY_CR, MT_WFDMA_NEED_REINIT);
-}
-
-static inline void mt7921_mcu_tx_cleanup(struct mt7921_dev *dev)
-{
-	mt76_queue_tx_cleanup(dev, dev->mt76.q_mcu[MT_MCUQ_WM], false);
-	mt76_queue_tx_cleanup(dev, dev->mt76.q_mcu[MT_MCUQ_WA], false);
 }
 
 static inline void

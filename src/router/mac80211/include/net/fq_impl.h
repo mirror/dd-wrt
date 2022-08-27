@@ -360,7 +360,7 @@ static int fq_init(struct fq *fq, int flows_cnt)
 #endif
 	fq->quantum = 300;
 	fq->limit = 8192;
-#if defined(CONFIG_X86) || defined(CONFIG_ALPINE) || defined(CONFIG_ARCH_QCOM) || defined(CONFIG_SOC_IMX6)
+#if defined(CONFIG_X86) || defined(CONFIG_ALPINE) || defined(CONFIG_ARCH_QCOM) || defined(CONFIG_SOC_IMX6) || defined(CONFIG_ARM64)
 	fq->memory_limit = 32 << 20; /* 32 MBytes */
 #elif defined(CONFIG_UBNTXW)
 	fq->memory_limit = 4 << 20; /* 16 MBytes */
