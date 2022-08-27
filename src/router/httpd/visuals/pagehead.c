@@ -102,7 +102,7 @@ EJ_VISIBLE void ej_do_hpagehead(webs_t wp, int argc, char_t ** argv)	// Eko
 		websWrite(wp, "<link type=\"text/css\" rel=\"stylesheet\" href=\"help/help.css\">\n");
 		if (!strcmp(style, "blue") || !strcmp(style, "cyan") || !strcmp(style, "elegant") || !strcmp(style, "green") || !strcmp(style, "orange") || !strcmp(style, "red") || !strcmp(style, "yellow")) {
 			if (style_dark != NULL && !strcmp(style_dark, "1")) {
-				websWrite(wp, "<link type=\"text/css\" rel=\"stylesheet\" href=\"../style/elegant/help-about-dark.css\" />\n");
+				websWrite(wp, "<link type=\"text/css\" rel=\"stylesheet\" href=\"../style/help-about-dark.css\" />\n");
 			}
 		}
 		websWrite(wp, "<style type=\"text/css\">\n");
@@ -163,7 +163,7 @@ EJ_VISIBLE void ej_do_hpagehead(webs_t wp, int argc, char_t ** argv)	// Eko
 	websWrite(wp, "<link type=\"text/css\" rel=\"stylesheet\" href=\"help.css\">\n");
 	if (!strcmp(style, "blue") || !strcmp(style, "cyan") || !strcmp(style, "elegant") || !strcmp(style, "green") || !strcmp(style, "orange") || !strcmp(style, "red") || !strcmp(style, "yellow")) {
 		if (style_dark != NULL && !strcmp(style_dark, "1")) {
-			websWrite(wp, "<link type=\"text/css\" rel=\"stylesheet\" href=\"../style/elegant/help-about-dark.css\" />\n");
+			websWrite(wp, "<link type=\"text/css\" rel=\"stylesheet\" href=\"../style/help-about-dark.css\" />\n");
 		}
 	}
 #ifndef HAVE_MICRO
