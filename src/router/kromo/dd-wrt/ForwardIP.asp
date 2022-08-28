@@ -77,8 +77,8 @@ addEvent(window, "unload", function() {
 										<td>&nbsp;</td>
 										<td>&nbsp;</td>
 										<td>&nbsp;</td>
-										<td align="center">
-											<div class="center">
+										<td class="center">
+											<div>
 											<script type="text/javascript">
 												//<![CDATA[
 												document.write("<input class=\"button\" type=\"button\" name=\"add_button\" value=\"" + sbutton.add + "\" onclick=\"forward_add_submit(this.form);\" />");
@@ -91,9 +91,9 @@ addEvent(window, "unload", function() {
 							</fieldset><br />
 							<div id="footer" class="submitFooter">
 								<script type="text/javascript">
-									//<![CDATA[
-									submitFooterButton(1,1);
-									//]]>
+								//<![CDATA[
+								submitFooterButton(1,1);
+								//]]>
 								</script>
 							</div>
 						</form>
