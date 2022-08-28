@@ -2871,7 +2871,7 @@ void delfrom_qos(char *var, int todel)
 		wordlist = occ + 1;
 		idx++;
 	}
-	
+
 	if (target[0] == ' ')
 		nvram_set(var, target + 1);
 	else

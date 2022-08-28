@@ -1456,7 +1456,7 @@ EJ_VISIBLE void validate_forward_proto(webs_t wp, char *value, struct variable *
 		 * check name 
 		 */
 		if (strcmp(name, "")) {
-			if (!valid_name(wp, name, &which[0],1)) {
+			if (!valid_name(wp, name, &which[0], 1)) {
 				continue;
 			} else {
 				httpd_filter_name(name, new_name, sizeof(new_name), SET);
@@ -1575,7 +1575,7 @@ void validate_forward_ip(webs_t wp, char *value, struct variable *v)
 		 * check name 
 		 */
 		if (strcmp(name, "")) {
-			if (!valid_name(wp, name, &which[0],1)) {
+			if (!valid_name(wp, name, &which[0], 1)) {
 				continue;
 			} else {
 				httpd_filter_name(name, new_name, sizeof(new_name), SET);
@@ -1676,7 +1676,7 @@ EJ_VISIBLE void validate_forward_spec(webs_t wp, char *value, struct variable *v
 		 * check name 
 		 */
 		if (strcmp(name, "")) {
-			if (!valid_name(wp, name, &which[0],1)) {
+			if (!valid_name(wp, name, &which[0], 1)) {
 				continue;
 			} else {
 				httpd_filter_name(name, new_name, sizeof(new_name), SET);
@@ -2055,7 +2055,7 @@ EJ_VISIBLE void validate_chaps(webs_t wp, char *value, struct variable *v)
 		 * check name 
 		 */
 		if (strcmp(user, "")) {
-			if (!valid_name(wp, user, &which[0],1)) {
+			if (!valid_name(wp, user, &which[0], 1)) {
 				continue;
 			} else {
 				httpd_filter_name(user, new_user, sizeof(new_user), SET);
@@ -2063,7 +2063,7 @@ EJ_VISIBLE void validate_chaps(webs_t wp, char *value, struct variable *v)
 		}
 
 		if (strcmp(pass, "")) {
-			if (!valid_name(wp, pass, &which[1],1)) {
+			if (!valid_name(wp, pass, &which[1], 1)) {
 				continue;
 			} else {
 				httpd_filter_name(pass, new_pass, sizeof(new_pass), SET);
@@ -2129,7 +2129,7 @@ EJ_VISIBLE void validate_aliases(webs_t wp, char *value, struct variable *v)
 
 		which = &alias_variables[0];
 		if (strcmp(user, "")) {
-			if (!valid_name(wp, user, &which[0],1)) {
+			if (!valid_name(wp, user, &which[0], 1)) {
 				continue;
 			} else {
 				httpd_filter_name(user, new_user, sizeof(new_user), SET);
@@ -2137,7 +2137,7 @@ EJ_VISIBLE void validate_aliases(webs_t wp, char *value, struct variable *v)
 		}
 
 		if (strcmp(pass, "")) {
-			if (!valid_name(wp, pass, &which[1],1)) {
+			if (!valid_name(wp, pass, &which[1], 1)) {
 				continue;
 			} else {
 				httpd_filter_name(pass, new_pass, sizeof(new_pass), SET);
@@ -2186,7 +2186,7 @@ EJ_VISIBLE void validate_subscribers(webs_t wp, char *value, struct variable *v)
 
 		which = &subscriber_variables[0];
 		if (strcmp(user, "")) {
-			if (!valid_name(wp, user, &which[0],1)) {
+			if (!valid_name(wp, user, &which[0], 1)) {
 				continue;
 			} else {
 				httpd_filter_name(user, new_user, sizeof(new_user), SET);
@@ -2194,7 +2194,7 @@ EJ_VISIBLE void validate_subscribers(webs_t wp, char *value, struct variable *v)
 		}
 
 		if (strcmp(pass, "")) {
-			if (!valid_name(wp, pass, &which[1],1)) {
+			if (!valid_name(wp, pass, &which[1], 1)) {
 				continue;
 			} else {
 				httpd_filter_name(pass, new_pass, sizeof(new_pass), SET);
@@ -2386,7 +2386,7 @@ EJ_VISIBLE void validate_staticleases(webs_t wp, char *value, struct variable *v
 
 	for (i = 0; i < leasenum; i++) {
 		if (i)
-		    strcat(leases, " ");
+			strcat(leases, " ");
 		snprintf(lease_hwaddr, sizeof(lease_hwaddr), "lease%d_hwaddr", i);
 		hwaddr = websGetVar(wp, lease_hwaddr, NULL);
 		if (hwaddr == NULL)
@@ -3090,7 +3090,7 @@ EJ_VISIBLE void validate_port_trigger(webs_t wp, char *value, struct variable *v
 			SWAP(o_from, o_to);
 
 		if (strcmp(name, "")) {
-			if (!valid_name(wp, name, &which[0],1)) {
+			if (!valid_name(wp, name, &which[0], 1)) {
 				error = 1;
 				continue;
 			} else {
