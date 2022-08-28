@@ -163,7 +163,8 @@ void show_ip(webs_t wp, char *prefix, char *var, int nm, int invalid_allowed, ch
 	else
 		snprintf(name, 64, "%s", var);
 	char *ipv = nvram_default_get(name, "0.0.0.0");
-	websWrite(wp, "<input class=\"num\" maxlength=\"3\" size=\"3\" onblur=\"valid_range(this,%d,%d,%s)\" name=\"%s_0\" value=\"%d\" />.", nm ? 0 : invalid_allowed ? 0 : 1, nm ? 255 : 254, type, name, get_single_ip(ipv, 0));
+	websWrite(wp, "<input class=\"num\" maxlength=\"3\" size=\"3\" onblur=\"valid_range(this,%d,%d,%s)\" name=\"%s_0\" value=\"%d\" />.", nm ? 0 : invalid_allowed ? 0 : 1, nm ? 255 : 254, type, name,
+		  get_single_ip(ipv, 0));
 	websWrite(wp, "<input class=\"num\" maxlength=\"3\" size=\"3\" onblur=\"valid_range(this,0,255,%s)\" name=\"%s_1\" value=\"%d\" />.", type, name, get_single_ip(ipv, 1));
 	websWrite(wp, "<input class=\"num\" maxlength=\"3\" size=\"3\" onblur=\"valid_range(this,0,255,%s)\" name=\"%s_2\" value=\"%d\" />.", type, name, get_single_ip(ipv, 2));
 	websWrite(wp, "<input class=\"num\" maxlength=\"3\" size=\"3\" onblur=\"valid_range(this,0,255,%s)\" name=\"%s_3\" value=\"%d\" />\n", type, name, get_single_ip(ipv, 3));

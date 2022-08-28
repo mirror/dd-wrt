@@ -65,7 +65,7 @@ static int show_temp(webs_t wp, char *fmt)
 		FILE *tempfp = fopen(sysfs, "rb");
 		if (tempfp) {
 			if (temperature == -255)
-			    temperature = 0;
+				temperature = 0;
 			int cpu;
 			fscanf(tempfp, "%d", &cpu);
 			fclose(tempfp);
@@ -386,7 +386,7 @@ EJ_VISIBLE void ej_get_cputemp(webs_t wp, int argc, char_t ** argv)
 				fscanf(fp2, "%d", &temp);
 				fclose(fp2);
 				if (temp < 0)
-				    goto exit_error;
+					goto exit_error;
 				if (cpufound) {
 					websWrite(wp, " / ");
 				}
@@ -397,7 +397,7 @@ EJ_VISIBLE void ej_get_cputemp(webs_t wp, int argc, char_t ** argv)
 					websWrite(wp, "wlan%d %d &#176;C", i, temp / 1000);
 				cpufound = 1;
 			}
-			exit_error:;
+		      exit_error:;
 		}
 	}
 #endif

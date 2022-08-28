@@ -100,11 +100,18 @@ EJ_VISIBLE void ej_show_vlantagging(webs_t wp, int argc, char_t ** argv)
 		websWrite(wp, "</tr>\n");
 		totalcount++;
 	}
-	websWrite(wp, "</table><br />\n");
 	char var[32];
 
 	sprintf(var, "%d", totalcount);
 	nvram_set("vlan_tagcount", var);
+	websWrite(wp, "<tr>\n");
+	websWrite(wp, "<td>&nbsp;</td>\n");
+	websWrite(wp, "<td>&nbsp;</td>\n");
+	websWrite(wp, "<td>&nbsp;</td>\n");
+	websWrite(wp, "<td>");
 	websWrite(wp,
 		  "<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<input class=\\\"button\\\" type=\\\"button\\\" value=\\\"\" + sbutton.add + \"\\\" onclick=\\\"vlan_add_submit(this.form)\\\" />\");\n//]]>\n</script>\n");
+	websWrite(wp, "</td>\n");
+	websWrite(wp, "</tr>\n");
+	websWrite(wp, "</table><br />\n");
 }

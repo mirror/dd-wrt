@@ -554,7 +554,7 @@ EJ_VISIBLE void ej_do_menu(webs_t wp, int argc, char_t ** argv)
 				else if (*(m->menu[i][j])) {
 					websWrite(wp, "<li><a href=\"%s\"><strong><script type=\"text/javascript\">Capture(bmenu.%s)</script></strong></a></li>\n", m->menu[i][j], m->menuname[i][j + 1]);
 				}
-				skip:;
+			      skip:;
 			}
 			websWrite(wp, "</ul>\n");
 			websWrite(wp, "</div>\n");

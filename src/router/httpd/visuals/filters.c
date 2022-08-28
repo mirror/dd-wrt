@@ -674,26 +674,25 @@ EJ_VISIBLE void ej_filter_summary_show(webs_t wp, int argc, char_t ** argv)
 
 		websWrite(wp, "<tr class=\"table_row_bg center\" >\n"
 			  "<td width=\"50\" >%d.</td>\n"
-			  "<td width=\"200\" >%s</td>\n"
-			  "<td width=\"150\" >\n"
-			  "<table width=\"150\" border=\"1\" cellspacing=\"1\" style=\"border-collapse: collapse\" >\n" "<tr>\n", i + 1, name);
+			  "<td width=\"200\" >%s</td>\n" "<td width=\"150\" >\n" "<table width=\"150\" border=\"1\" cellspacing=\"1\" style=\"border-collapse: collapse\" >\n" "<tr>\n", i + 1, name);
 		websWrite(wp, "<td class=\"%s center\" width=\"17\"><script type=\"text/javascript\">Capture(%s)</script></td>\n"
 			  "<td class=\"%s center\" width=\"17\"><script type=\"text/javascript\">Capture(%s)</script></td>\n"
 			  "<td class=\"%s center\" width=\"17\"><script type=\"text/javascript\">Capture(%s)</script></td>\n"
 			  "<td class=\"%s center\" width=\"17\"><script type=\"text/javascript\">Capture(%s)</script></td>\n", wp->p->tod_data_null == 0 && (wp->p->day_all == 1
-																								       || wp->p->week0 ==
-																								       1) ? "table_bg_br_clr_on" :
-			  "table_bg_br_clr_off", w[0], wp->p->tod_data_null == 0 && (wp->p->day_all == 1 || wp->p->week1 == 1) ? "table_bg_br_clr_on" : "table_bg_br_clr_off", w[1], wp->p->tod_data_null == 0 && (wp->p->day_all == 1
-																						|| wp->p->week2 ==
-																						1) ? "table_bg_br_clr_on" : "table_bg_br_clr_off", w[2],
-			  wp->p->tod_data_null == 0 && (wp->p->day_all == 1 || wp->p->week3 == 1) ? "table_bg_br_clr_on" : "table_bg_br_clr_off", w[3]);
+																			     || wp->p->week0 ==
+																			     1) ? "table_bg_br_clr_on" :
+			  "table_bg_br_clr_off", w[0], wp->p->tod_data_null == 0 && (wp->p->day_all == 1 || wp->p->week1 == 1) ? "table_bg_br_clr_on" : "table_bg_br_clr_off", w[1], wp->p->tod_data_null == 0
+			  && (wp->p->day_all == 1 || wp->p->week2 == 1) ? "table_bg_br_clr_on" : "table_bg_br_clr_off", w[2], wp->p->tod_data_null == 0 && (wp->p->day_all == 1
+																			    || wp->p->week3 ==
+																			    1) ? "table_bg_br_clr_on" : "table_bg_br_clr_off", w[3]);
 		websWrite(wp,
 			  "<td class=\"%s center\" width=\"17\"><script type=\"text/javascript\">Capture(%s)</script></td>\n"
 			  "<td class=\"%s center\" width=\"17\"><script type=\"text/javascript\">Capture(%s)</script></td>\n"
-			  "<td class=\"%s center\" width=\"17\"><script type=\"text/javascript\">Capture(%s)</script></td>\n" "</tr>\n" "</table>\n" "</td>\n",
-			  wp->p->tod_data_null == 0 && (wp->p->day_all == 1 || wp->p->week4 == 1) ? "table_bg_br_clr_on" : "table_bg_br_clr_off", w[4], wp->p->tod_data_null == 0 && (wp->p->day_all == 1
-																			       || wp->p->week5 == 1) ? "table_bg_br_clr_on" : "table_bg_br_clr_off", w[5],
-			  wp->p->tod_data_null == 0 && (wp->p->day_all == 1 || wp->p->week6 == 1) ? "table_bg_br_clr_on" : "table_bg_br_clr_off", w[6]);
+			  "<td class=\"%s center\" width=\"17\"><script type=\"text/javascript\">Capture(%s)</script></td>\n" "</tr>\n" "</table>\n" "</td>\n", wp->p->tod_data_null == 0 && (wp->p->day_all == 1
+																							      || wp->p->week4 ==
+																							      1) ? "table_bg_br_clr_on" :
+			  "table_bg_br_clr_off", w[4], wp->p->tod_data_null == 0 && (wp->p->day_all == 1 || wp->p->week5 == 1) ? "table_bg_br_clr_on" : "table_bg_br_clr_off", w[5], wp->p->tod_data_null == 0
+			  && (wp->p->day_all == 1 || wp->p->week6 == 1) ? "table_bg_br_clr_on" : "table_bg_br_clr_off", w[6]);
 
 		if (wp->p->tod_data_null == 0) {
 			if (wp->p->time_all == 1)
