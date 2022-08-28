@@ -229,6 +229,36 @@ function submitcheck(F) {
 	F.save_button.value = sbutton.saving;
 }
 
+function qosmacs_del_submit(F,I) {
+	F.change_action.value="gozila_cgi";
+	F.del_value.value = I;
+	F.submit_type.value = "del_qosmacs";
+	apply(F);
+}
+
+function qosips_del_submit(F,I) {
+	F.change_action.value="gozila_cgi";
+	F.del_value.value = I;
+	F.submit_type.value = "del_qosips";
+	apply(F);
+}
+
+function qosdevs_del_submit(F,I) {
+	F.change_action.value="gozila_cgi";
+	F.del_value.value = I;
+	F.submit_type.value = "del_qosdevs";
+	apply(F);
+}
+
+function qossvcs_del_submit(F,I) {
+	F.change_action.value="gozila_cgi";
+	F.del_value.value = I;
+	F.submit_type.value = "del_qossvcs";
+	apply(F);
+}
+
+
+
 function to_submit(F) {
 	submitcheck(F);
 	apply(F);
@@ -270,6 +300,7 @@ addEvent(window, "unload", function() {
 							<input type="hidden" name="action" value="Apply" />
 							<input type="hidden" name="change_action" />
 							<input type="hidden" name="submit_type" />
+							<input type="hidden" name="del_value" />
 							<input type="hidden" name="commit" value="1" />
 
 							<h2><% tran("qos.h2"); %></h2>
@@ -317,10 +348,10 @@ addEvent(window, "unload", function() {
 								<legend><% tran("qos.legend2"); %></legend>
 								<table class="table" summary="services priority table">
 									<tr>
-										<th class="center" width="12%"><% tran("share.del"); %></th>
 										<th><% tran("share.srv"); %></th>
 										<th><% tran("share.priority"); %></th>
 										<th width="12%"><% tran("share.packets"); %></th>
+										<th class="center" width="12%"><% tran("share.del"); %></th>
 									</tr>
 									<% get_qossvcs(); %>
 									<tr>
