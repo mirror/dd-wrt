@@ -321,7 +321,7 @@ function redraw() {
 		if (!item.div) {
 			item.div = document.createElement('div');
 			item.div.className = 'div3d';
-			item.div.innerHTML = "<img class='sizeimage' src='images/wiviz/ssid.png'>";
+			item.div.innerHTML = "<img class='sizeimage' src='images/wiviz/ssid.svg'>";
 			mainarea.appendChild(item.div);
 			item.div.backref = item;
 		}
@@ -627,7 +627,7 @@ function wiviz_callback(hosts, cfgobj) {
 			}
 			el = document.createElement('img');
 			el.className = 'sizeimage';
-			el.src = "images/wiviz/" + h.type + (h.encrypted == 'yes' ? "-enc" : "") + ".png";
+			el.src = "images/wiviz/" + h.type + (h.encrypted == 'yes' ? "-enc" : "") + ".svg";
 			if (IEfix) {
 				var ne = document.createElement('a');
 				ne.style.width = "50px";
