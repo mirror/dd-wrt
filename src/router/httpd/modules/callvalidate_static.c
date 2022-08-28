@@ -125,7 +125,6 @@ static struct callmap ej_map[] = {
 #include "ejtable.h"
 };
 
-
 static struct callmap validate_map[] = {
 #ifdef HAVE_MILKFISH
 	{ "validate_subscribers", &validate_subscribers },

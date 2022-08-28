@@ -664,7 +664,8 @@ sys_upgrade(char *url, webs_t stream, size_t *total, int type)	// jimmy,
 					cprintf("image not compatible with nv60k router!\n");
 					goto err;	// must be there, otherwise fail here
 				}
-			} else if (brand == ROUTER_NETGEAR_WNDR4000 || brand == ROUTER_NETGEAR_R6200 || brand == ROUTER_NETGEAR_WNDR3400 || brand == ROUTER_LINKSYS_E900 || brand == ROUTER_LINKSYS_E800 || brand == ROUTER_LINKSYS_E1500) {
+			} else if (brand == ROUTER_NETGEAR_WNDR4000 || brand == ROUTER_NETGEAR_R6200 || brand == ROUTER_NETGEAR_WNDR3400 || brand == ROUTER_LINKSYS_E900 || brand == ROUTER_LINKSYS_E800
+				   || brand == ROUTER_LINKSYS_E1500) {
 				if (checkmagic(&buf[0], nv64k)) {
 					cprintf("image not compatible with nv64k router!\n");
 					goto err;	// must be there, otherwise fail here

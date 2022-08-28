@@ -830,7 +830,9 @@ static int do_radiuscert(unsigned char method, struct mime_handler *handler, cha
 	show_certfield(wp, "Certificate Request", filename);
 	sprintf(filename, "%s-key.pem", db->users[radiusindex].user);
 	show_certfield(wp, "Private Key PEM", filename);
-	websWrite(wp, "<div id=\"footer\" class=\"submitFooter\">\n" "<script type=\"text/javascript\">\n" "//<![CDATA[\n" "submitFooterButton(0,0,0,0,0,1);\n" "//]]>\n" "</script>\n" "</div>\n" "</div>\n" "</div>\n" "</body>\n");
+	websWrite(wp,
+		  "<div id=\"footer\" class=\"submitFooter\">\n" "<script type=\"text/javascript\">\n" "//<![CDATA[\n" "submitFooterButton(0,0,0,0,0,1);\n" "//]]>\n" "</script>\n" "</div>\n" "</div>\n" "</div>\n"
+		  "</body>\n");
 	websWrite(wp, "</html>");
 
 	//make certificates
@@ -1898,6 +1900,7 @@ static int do_cauth(webs_t wp, int (*auth_check)(webs_t conn_fp))
 		return 1;
 	return do_auth(wp, auth_check);
 }
+
 static int do_auth_changepass(webs_t wp, int (*auth_check)(webs_t conn_fp))
 {
 	if ((nvram_match("http_username", DEFAULT_USER) && nvram_match("http_passwd", DEFAULT_PASS)))
@@ -1905,6 +1908,7 @@ static int do_auth_changepass(webs_t wp, int (*auth_check)(webs_t conn_fp))
 	return do_auth(wp, auth_check);
 
 }
+
 #ifdef HAVE_REGISTER
 static int do_auth_reg(webs_t wp, int (*auth_check)(webs_t conn_fp))
 {
@@ -2521,8 +2525,7 @@ static int do_syslog(unsigned char method, struct mime_handler *handler, char *u
 #endif
 		  , charset);
 	char *style = nvram_safe_get("router_style");
-	websWrite(stream, "<link type=\"text/css\" rel=\"stylesheet\" href=\"style/%s/style.css\" />\n<!--[if IE]><link type=\"text/css\" rel=\"stylesheet\" href=\"style/common_style_ie.css\" /><![endif]-->\n",
-		  style);
+	websWrite(stream, "<link type=\"text/css\" rel=\"stylesheet\" href=\"style/%s/style.css\" />\n<!--[if IE]><link type=\"text/css\" rel=\"stylesheet\" href=\"style/common_style_ie.css\" /><![endif]-->\n", style);
 #ifdef HAVE_MICRO
 	websWrite(stream, "<link type=\"text/css\" rel=\"stylesheet\" href=\"style/elegant/fresh.css\" />\n");
 #else
@@ -2532,7 +2535,7 @@ static int do_syslog(unsigned char method, struct mime_handler *handler, char *u
 			websWrite(stream, "<link type=\"text/css\" rel=\"stylesheet\" href=\"style/elegant/fresh-dark.css\" />\n");
 		}
 	} else {
-	    style_dark = NULL;
+		style_dark = NULL;
 	}
 #endif
 	websWrite(stream,	//
