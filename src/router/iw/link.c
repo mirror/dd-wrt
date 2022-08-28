@@ -306,7 +306,7 @@ static int handle_link(struct nl80211_state *state,
 }
 TOPLEVEL(link, NULL, 0, 0, CIB_NETDEV, handle_link,
 	 "Print information about the current link, if any.");
-HIDDEN(link, get_sta, "", NL80211_CMD_GET_STATION, 0,
+HIDDEN(link, get_sta, "<mac-addr>", NL80211_CMD_GET_STATION, 0,
 	CIB_NETDEV, handle_link_sta);
 HIDDEN(link, get_bss, NULL, NL80211_CMD_GET_SCAN, NLM_F_DUMP,
 	CIB_NETDEV, handle_scan_for_link);

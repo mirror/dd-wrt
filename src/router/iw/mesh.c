@@ -11,6 +11,7 @@
 #include "iw.h"
 
 SECTION(mesh);
+SECTION(mesh_param);
 
 
 typedef struct _any_t {
@@ -193,7 +194,7 @@ static void _print_s32_in_dBm(struct nlattr *a)
 
 
 /* The current mesh parameters */
-const static struct mesh_param_descr _mesh_param_descrs[] =
+static const struct mesh_param_descr _mesh_param_descrs[] =
 {
 	{"mesh_retry_timeout",
 	NL80211_MESHCONF_RETRY_TIMEOUT,
@@ -304,7 +305,7 @@ static int set_interface_meshparam(struct nl80211_state *state,
 	const struct mesh_param_descr *mdescr;
 	struct nlattr *container;
 	uint32_t ret;
-	int err;
+	int err = 2;
 
 	container = nla_nest_start(msg, NL80211_ATTR_MESH_PARAMS);
 	if (!container)
@@ -399,18 +400,23 @@ static int print_mesh_param_handler(struct nl_msg *msg, void *arg)
 	if (!mdescr) {
 		unsigned int i;
 
+		/* print out all the supported mesh parameters */
 		for (i = 0; i < ARRAY_SIZE(_mesh_param_descrs); i++) {
 			mdescr = &_mesh_param_descrs[i];
-			printf("%s = ", mdescr->name);
-			mdescr->nla_print_fn(mesh_params[mdescr->mesh_param_num]);
-			printf("\n");
+			if (mesh_params[mdescr->mesh_param_num]) {
+				printf("%s = ", mdescr->name);
+				mdescr->nla_print_fn(mesh_params[mdescr->mesh_param_num]);
+				printf("\n");
+			}
 		}
 		return NL_SKIP;
 	}
 
-	/* print out the mesh parameter */
-	mdescr->nla_print_fn(mesh_params[mdescr->mesh_param_num]);
-	printf("\n");
+	/* print out the requested mesh parameter */
+	if (mesh_params[mdescr->mesh_param_num]) {
+		mdescr->nla_print_fn(mesh_params[mdescr->mesh_param_num]);
+		printf("\n");
+	}
 	return NL_SKIP;
 }
 
@@ -443,6 +449,19 @@ COMMAND(get, mesh_param, "[<param>]",
 	NL80211_CMD_GET_MESH_PARAMS, 0, CIB_NETDEV, get_interface_meshparam,
 	"Retrieve mesh parameter (run command without any to see available ones).");
 
+static int dump_interface_meshparam(struct nl80211_state *state,
+				    struct nl_msg *msg,
+				    int argc, char **argv,
+				    enum id_input id)
+{
+	register_handler(print_mesh_param_handler, NULL);
+	return 0;
+}
+
+COMMAND(mesh_param, dump, "",
+	NL80211_CMD_GET_MESH_PARAMS, 0, CIB_NETDEV, dump_interface_meshparam,
+	"List all supported mesh parameters");
+
 static int join_mesh(struct nl80211_state *state,
 		     struct nl_msg *msg, int argc, char **argv,
 		     enum id_input id)
@@ -473,7 +492,7 @@ static int join_mesh(struct nl80211_state *state,
 		argv += parsed + 1;
 		argc -= parsed + 1;
 
-		put_chandef(msg, &chandef);
+		err = put_chandef(msg, &chandef);
 		if (err)
 			return err;
 	}

@@ -74,10 +74,20 @@ static int handle_survey_dump(struct nl80211_state *state,
 			      int argc, char **argv,
 			      enum id_input id)
 {
+	if (argc > 1)
+		return HANDLER_RET_USAGE;
+
+	if (argc) {
+		if (!strcmp(argv[0], "--radio"))
+			nla_put_flag(msg, NL80211_ATTR_SURVEY_RADIO_STATS);
+		else
+			return HANDLER_RET_USAGE;
+	}
+
 	register_handler(print_survey_handler, NULL);
 	return 0;
 }
-COMMAND(survey, dump, NULL,
+COMMAND(survey, dump, "[--radio]",
 	NL80211_CMD_GET_SURVEY, NLM_F_DUMP, CIB_NETDEV, handle_survey_dump,
 	"List all gathered channel survey data");
 

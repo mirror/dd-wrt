@@ -209,6 +209,8 @@ static int print_reg_handler(struct nl_msg *msg, void *arg)
 		PARSE_FLAG(NL80211_RRF_NO_HT40PLUS, "NO-HT40PLUS");
 		PARSE_FLAG(NL80211_RRF_NO_80MHZ, "NO-80MHZ");
 		PARSE_FLAG(NL80211_RRF_NO_160MHZ, "NO-160MHZ");
+		PARSE_FLAG(NL80211_RRF_NO_HE, "NO-HE");
+		PARSE_FLAG(NL80211_RRF_NO_320MHZ, "NO-320MHZ");
 
 		/* Kernels that support NO_IR always turn on both flags */
 		if ((flags & NL80211_RRF_NO_IR) && (flags & __NL80211_RRF_NO_IBSS)) {
@@ -243,7 +245,17 @@ static int handle_reg_get(struct nl80211_state *state,
 	char *dump_args[] = { "reg", "dump" };
 	int err;
 
-	err = handle_cmd(state, CIB_NONE, 2, dump_args);
+	/*
+	 * If PHY was specifically given, get the PHY specific regulatory
+	 * information. Otherwise, dump the entire regulatory information.
+	 */
+	if (id == II_PHY_IDX || id == II_PHY_NAME) {
+		register_handler(print_reg_handler, NULL);
+		return 0;
+	}
+
+	err = handle_cmd(state, II_NONE, 2, dump_args);
+
 	/*
 	 * dump might fail since it's not supported on older kernels,
 	 * in that case the handler is still registered already
@@ -255,7 +267,17 @@ static int handle_reg_get(struct nl80211_state *state,
 }
 COMMAND(reg, get, NULL, NL80211_CMD_GET_REG, 0, CIB_NONE, handle_reg_get,
 	"Print out the kernel's current regulatory domain information.");
-COMMAND(reg, get, NULL, NL80211_CMD_GET_REG, 0, CIB_PHY, handle_reg_get,
+COMMAND(reg, get, NULL, NL80211_CMD_GET_REG, 0, CIB_PHY, handle_reg_dump,
 	"Print out the devices' current regulatory domain information.");
 HIDDEN(reg, dump, NULL, NL80211_CMD_GET_REG, NLM_F_DUMP, CIB_NONE,
        handle_reg_dump);
+
+static int handle_reg_reload(struct nl80211_state *state,
+			     struct nl_msg *msg,
+			     int argc, char **argv,
+			     enum id_input id)
+{
+	return 0;
+}
+//COMMAND(reg, reload, NULL, NL80211_CMD_RELOAD_REGDB, 0, CIB_NONE,
+//	handle_reg_reload, "Reload the kernel's regulatory database.");

@@ -69,12 +69,104 @@ static int ext_feature_isset(const unsigned char *ext_features, int ext_features
 	return (ft_byte & BIT(ftidx % 8)) != 0;
 }
 
-static void ext_feat_print(const struct nlattr *tb,
-			   enum nl80211_ext_feature_index idx,
-			   const char *feature_name, const char *feature_desc)
+static void ext_feat_print(enum nl80211_ext_feature_index idx)
 {
-	if (ext_feature_isset(nla_data(tb), nla_len(tb),idx))
-		printf("\t\t* [ %s ]: %s\n", feature_name, feature_desc);
+#define ext_feat_case(name, desc)				\
+	case NL80211_EXT_FEATURE_##name:			\
+		printf("\t\t* [ %s ]: %s\n", #name, desc);	\
+		break
+
+	switch (idx) {
+	case NUM_NL80211_EXT_FEATURES: /* cannot happen */ break;
+	ext_feat_case(VHT_IBSS, "VHT-IBSS");
+	ext_feat_case(RRM, "RRM");
+	ext_feat_case(MU_MIMO_AIR_SNIFFER, "MU-MIMO sniffer");
+	ext_feat_case(SCAN_START_TIME, "scan start timestamp");
+	ext_feat_case(BSS_PARENT_TSF,
+		      "BSS last beacon/probe TSF");
+	ext_feat_case(SET_SCAN_DWELL, "scan dwell setting");
+	ext_feat_case(BEACON_RATE_LEGACY,
+		      "legacy beacon rate setting");
+	ext_feat_case(BEACON_RATE_HT, "HT beacon rate setting");
+	ext_feat_case(BEACON_RATE_VHT, "VHT beacon rate setting");
+	ext_feat_case(FILS_STA,
+		      "STA FILS (Fast Initial Link Setup)");
+	ext_feat_case(MGMT_TX_RANDOM_TA,
+		      "randomized TA while not associated");
+	ext_feat_case(MGMT_TX_RANDOM_TA_CONNECTED,
+		      "randomized TA while associated");
+	ext_feat_case(SCHED_SCAN_RELATIVE_RSSI,
+		      "sched_scan for BSS with better RSSI report");
+	ext_feat_case(CQM_RSSI_LIST,
+		      "multiple CQM_RSSI_THOLD records");
+	ext_feat_case(FILS_SK_OFFLOAD,
+		      "FILS shared key authentication offload");
+	ext_feat_case(4WAY_HANDSHAKE_STA_PSK,
+		      "4-way handshake with PSK in station mode");
+	ext_feat_case(4WAY_HANDSHAKE_STA_1X,
+		      "4-way handshake with 802.1X in station mode");
+	ext_feat_case(FILS_MAX_CHANNEL_TIME,
+		      "FILS max channel attribute override with dwell time");
+	ext_feat_case(ACCEPT_BCAST_PROBE_RESP,
+		      "accepts broadcast probe response");
+	ext_feat_case(OCE_PROBE_REQ_HIGH_TX_RATE,
+		      "probe request TX at high rate (at least 5.5Mbps)");
+	ext_feat_case(OCE_PROBE_REQ_DEFERRAL_SUPPRESSION,
+		      "probe request tx deferral and suppression");
+	ext_feat_case(MFP_OPTIONAL,
+		      "MFP_OPTIONAL value in ATTR_USE_MFP");
+	ext_feat_case(LOW_SPAN_SCAN, "low span scan");
+	ext_feat_case(LOW_POWER_SCAN, "low power scan");
+	ext_feat_case(HIGH_ACCURACY_SCAN, "high accuracy scan");
+	ext_feat_case(DFS_OFFLOAD, "DFS offload");
+	ext_feat_case(CONTROL_PORT_OVER_NL80211,
+		      "control port over nl80211");
+	ext_feat_case(ACK_SIGNAL_SUPPORT,
+		      "ack signal level support");
+	ext_feat_case(TXQS, "FQ-CoDel-enabled intermediate TXQs");
+	ext_feat_case(SCAN_RANDOM_SN,
+		      "use random sequence numbers in scans");
+	ext_feat_case(SCAN_MIN_PREQ_CONTENT,
+		      "use probe request with only rate IEs in scans");
+	ext_feat_case(CAN_REPLACE_PTK0,
+		      "can safely replace PTK 0 when rekeying");
+	ext_feat_case(ENABLE_FTM_RESPONDER,
+		      "enable FTM (Fine Time Measurement) responder");
+	ext_feat_case(AIRTIME_FAIRNESS,
+		      "airtime fairness scheduling");
+	ext_feat_case(AP_PMKSA_CACHING,
+		      "PMKSA caching supported in AP mode");
+	ext_feat_case(SCHED_SCAN_BAND_SPECIFIC_RSSI_THOLD,
+		      "band specific RSSI thresholds for scheduled scan");
+	ext_feat_case(EXT_KEY_ID, "Extended Key ID support");
+	ext_feat_case(STA_TX_PWR, "TX power control per station");
+	ext_feat_case(SAE_OFFLOAD, "SAE offload support");
+	ext_feat_case(VLAN_OFFLOAD, "VLAN offload support");
+	ext_feat_case(AQL,
+		      "Airtime Queue Limits (AQL)");
+	ext_feat_case(BEACON_PROTECTION, "beacon protection support");
+	ext_feat_case(CONTROL_PORT_NO_PREAUTH, "disable pre-auth over nl80211 control port support");
+	ext_feat_case(PROTECTED_TWT, "protected Target Wake Time (TWT) support");
+	ext_feat_case(DEL_IBSS_STA, "deletion of IBSS station support");
+	ext_feat_case(MULTICAST_REGISTRATIONS, "mgmt frame registration for multicast");
+	ext_feat_case(BEACON_PROTECTION_CLIENT, "beacon prot. for clients support");
+	ext_feat_case(SCAN_FREQ_KHZ, "scan on kHz frequency support");
+	ext_feat_case(CONTROL_PORT_OVER_NL80211_TX_STATUS, "tx status for nl80211 control port support");
+	ext_feat_case(OPERATING_CHANNEL_VALIDATION, "Operating Channel Validation (OCV) support");
+	ext_feat_case(4WAY_HANDSHAKE_AP_PSK, "AP mode PSK offload support");
+	ext_feat_case(SAE_OFFLOAD_AP, "AP mode SAE authentication offload support");
+	ext_feat_case(FILS_DISCOVERY, "FILS discovery frame transmission support");
+	ext_feat_case(UNSOL_BCAST_PROBE_RESP,
+		      "unsolicated broadcast probe response transmission support");
+	ext_feat_case(BEACON_RATE_HE, "HE beacon rate support (AP/mesh)");
+	ext_feat_case(SECURE_LTF, "secure LTF measurement protocol support");
+	ext_feat_case(SECURE_RTT, "secure RTT measurement protocol support");
+	ext_feat_case(PROT_RANGE_NEGO_AND_MEASURE,
+		      "support for MFP in range measurement negotiation/procedure");
+	ext_feat_case(BSS_COLOR, "BSS coloring support");
+	ext_feat_case(FILS_CRYPTO_OFFLOAD, "FILS crypto offload");
+	ext_feat_case(RADAR_BACKGROUND, "Radar background support");
+	}
 }
 
 static int print_phy_handler(struct nl_msg *msg, void *arg)
@@ -103,10 +195,9 @@ static int print_phy_handler(struct nl_msg *msg, void *arg)
 	struct nlattr *nl_band;
 	struct nlattr *nl_freq;
 	struct nlattr *nl_rate;
-	struct nlattr *nl_mode;
 	struct nlattr *nl_cmd;
 	struct nlattr *nl_if, *nl_ftype;
-	int rem_band, rem_freq, rem_rate, rem_mode, rem_cmd, rem_ftype, rem_if;
+	int rem_band, rem_freq, rem_rate, rem_cmd, rem_ftype, rem_if;
 	int open;
 	/*
 	 * static variables only work here, other applications need to use the
@@ -130,6 +221,9 @@ static int print_phy_handler(struct nl_msg *msg, void *arg)
 	}
 	if (print_name && tb_msg[NL80211_ATTR_WIPHY_NAME])
 		printf("Wiphy %s\n", nla_get_string(tb_msg[NL80211_ATTR_WIPHY_NAME]));
+
+	if (print_name && tb_msg[NL80211_ATTR_WIPHY])
+		printf("\twiphy index: %u\n", nla_get_u32(tb_msg[NL80211_ATTR_WIPHY]));
 
 	/* needed for split dump */
 	if (tb_msg[NL80211_ATTR_WIPHY_BANDS]) {
@@ -162,7 +256,19 @@ static int print_phy_handler(struct nl_msg *msg, void *arg)
 			    tb_band[NL80211_BAND_ATTR_VHT_MCS_SET])
 				print_vht_info(nla_get_u32(tb_band[NL80211_BAND_ATTR_VHT_CAPA]),
 					       nla_data(tb_band[NL80211_BAND_ATTR_VHT_MCS_SET]));
+#if 0
+			if (tb_band[NL80211_BAND_ATTR_IFTYPE_DATA]) {
+				struct nlattr *nl_iftype;
+				int rem_band;
 
+				nla_for_each_nested(nl_iftype,
+						    tb_band[NL80211_BAND_ATTR_IFTYPE_DATA],
+						    rem_band) {
+					print_he_info(nl_iftype);
+					print_eht_info(nl_iftype, last_band);
+				}
+			}
+#endif
 			if (tb_band[NL80211_BAND_ATTR_FREQS]) {
 				if (!band_had_freq) {
 					printf("\t\tFrequencies:\n");
@@ -204,8 +310,8 @@ next:
 					printf("\n");
 				}
 			}
-
 #if 0
+
 			if (tb_band[NL80211_BAND_ATTR_RATES]) {
 			printf("\t\tBitrates (non-HT):\n");
 			nla_for_each_nested(nl_rate, tb_band[NL80211_BAND_ATTR_RATES], rem_rate) {
@@ -288,7 +394,6 @@ next:
 		printf("\tCoverage class: %d (up to %dm)\n", coverage, 450 * coverage);
 	}
 
-#if 1
 	if (tb_msg[NL80211_ATTR_CIPHER_SUITES]) {
 		int num = nla_len(tb_msg[NL80211_ATTR_CIPHER_SUITES]) / sizeof(__u32);
 		int i;
@@ -300,7 +405,6 @@ next:
 					cipher_name(ciphers[i]));
 		}
 	}
-#endif
 
 	if (tb_msg[NL80211_ATTR_WIPHY_ANTENNA_AVAIL_TX] &&
 	    tb_msg[NL80211_ATTR_WIPHY_ANTENNA_AVAIL_RX])
@@ -314,19 +418,13 @@ next:
 		       nla_get_u32(tb_msg[NL80211_ATTR_WIPHY_ANTENNA_TX]),
 		       nla_get_u32(tb_msg[NL80211_ATTR_WIPHY_ANTENNA_RX]));
 
-	if (tb_msg[NL80211_ATTR_SUPPORTED_IFTYPES]) {
-		printf("\tSupported interface modes:\n");
-		nla_for_each_nested(nl_mode, tb_msg[NL80211_ATTR_SUPPORTED_IFTYPES], rem_mode)
-			printf("\t\t * %s\n", iftype_name(nla_type(nl_mode)));
-	}
+	if (tb_msg[NL80211_ATTR_SUPPORTED_IFTYPES])
+		print_iftype_list("\tSupported interface modes", "\t\t",
+				  tb_msg[NL80211_ATTR_SUPPORTED_IFTYPES]);
 
-#if 0
-	if (tb_msg[NL80211_ATTR_SOFTWARE_IFTYPES]) {
-		printf("\tsoftware interface modes (can always be added):\n");
-		nla_for_each_nested(nl_mode, tb_msg[NL80211_ATTR_SOFTWARE_IFTYPES], rem_mode)
-			printf("\t\t * %s\n", iftype_name(nla_type(nl_mode)));
-	}
-#endif
+	if (tb_msg[NL80211_ATTR_SOFTWARE_IFTYPES])
+		print_iftype_list("\tsoftware interface modes (can always be added)",
+				  "\t\t", tb_msg[NL80211_ATTR_SOFTWARE_IFTYPES]);
 
 	if (tb_msg[NL80211_ATTR_INTERFACE_COMBINATIONS]) {
 		struct nlattr *nl_combi;
@@ -368,8 +466,6 @@ next:
 			}
 
 			nla_for_each_nested(nl_limit, tb_comb[NL80211_IFACE_COMB_LIMITS], rem_limit) {
-				bool ift_comma = false;
-
 				err = nla_parse_nested(tb_limit, MAX_NL80211_IFACE_LIMIT,
 						       nl_limit, iface_limit_policy);
 				if (err || !tb_limit[NL80211_IFACE_LIMIT_TYPES]) {
@@ -380,13 +476,8 @@ next:
 				if (comma)
 					printf(", ");
 				comma = true;
-				printf("#{");
-
-				nla_for_each_nested(nl_mode, tb_limit[NL80211_IFACE_LIMIT_TYPES], rem_mode) {
-					printf("%s %s", ift_comma ? "," : "",
-						iftype_name(nla_type(nl_mode)));
-					ift_comma = true;
-				}
+				printf("#{ ");
+				print_iftype_line(tb_limit[NL80211_IFACE_LIMIT_TYPES]);
 				printf(" } <= %u", nla_get_u32(tb_limit[NL80211_IFACE_LIMIT_MAX]));
 			}
 			printf(",\n\t\t   ");
@@ -444,6 +535,7 @@ broken_combination:
 				printf("\n");
 		}
 	}
+#endif
 
 	if (tb_msg[NL80211_ATTR_RX_FRAME_TYPES]) {
 		printf("\tSupported RX frame types:\n");
@@ -521,7 +613,6 @@ broken_combination:
 				printf("\t\t * wake up on TCP connection\n");
 		}
 	}
-#endif
 
 	if (tb_msg[NL80211_ATTR_ROAM_SUPPORT])
 		printf("\tDevice supports roaming.\n");
@@ -560,7 +651,6 @@ broken_combination:
 		}
 	}
 
-#if 1
 	if (tb_msg[NL80211_ATTR_FEATURE_FLAGS]) {
 		unsigned int features = nla_get_u32(tb_msg[NL80211_ATTR_FEATURE_FLAGS]);
 
@@ -625,87 +715,21 @@ broken_combination:
 		if (features & NL80211_FEATURE_ND_RANDOM_MAC_ADDR)
 			printf("\tDevice supports randomizing MAC-addr in net-detect scans.\n");
 	}
-#endif
 
 	if (tb_msg[NL80211_ATTR_TDLS_SUPPORT])
 		printf("\tDevice supports T-DLS.\n");
 
 	if (tb_msg[NL80211_ATTR_EXT_FEATURES]) {
 		struct nlattr *tb = tb_msg[NL80211_ATTR_EXT_FEATURES];
+		enum nl80211_ext_feature_index feat;
 
 		printf("\tSupported extended features:\n");
 
-		ext_feat_print(tb, NL80211_EXT_FEATURE_VHT_IBSS,
-			       "VHT_IBSS", "VHT-IBSS");
-		ext_feat_print(tb, NL80211_EXT_FEATURE_RRM,
-			       "RRM", "RRM");
-		ext_feat_print(tb, NL80211_EXT_FEATURE_MU_MIMO_AIR_SNIFFER,
-			       "MU_MIMO_AIR_SNIFFER", "MU-MIMO sniffer");
-		ext_feat_print(tb, NL80211_EXT_FEATURE_SCAN_START_TIME,
-			       "SCAN_START_TIME", "scan start timestamp");
-		ext_feat_print(tb, NL80211_EXT_FEATURE_BSS_PARENT_TSF,
-			       "BSS_PARENT_TSF", "BSS last beacon/probe TSF");
-		ext_feat_print(tb, NL80211_EXT_FEATURE_SET_SCAN_DWELL,
-			       "SET_SCAN_DWELL", "scan dwell setting");
-		ext_feat_print(tb, NL80211_EXT_FEATURE_BEACON_RATE_LEGACY,
-			       "BEACON_RATE_LEGACY", "legacy beacon rate setting");
-		ext_feat_print(tb, NL80211_EXT_FEATURE_BEACON_RATE_HT,
-			       "BEACON_RATE_HT", "HT beacon rate setting");
-		ext_feat_print(tb, NL80211_EXT_FEATURE_BEACON_RATE_VHT,
-			       "BEACON_RATE_VHT", "VHT beacon rate setting");
-		ext_feat_print(tb, NL80211_EXT_FEATURE_FILS_STA,
-			       "FILS_STA", "STA FILS (Fast Initial Link Setup)");
-		ext_feat_print(tb, NL80211_EXT_FEATURE_MGMT_TX_RANDOM_TA,
-			       "MGMT_TX_RANDOM_TA",
-			       "randomized TA while not associated");
-		ext_feat_print(tb, NL80211_EXT_FEATURE_MGMT_TX_RANDOM_TA_CONNECTED,
-			       "MGMT_TX_RANDOM_TA_CONNECTED",
-			       "randomized TA while associated");
-		ext_feat_print(tb, NL80211_EXT_FEATURE_SCHED_SCAN_RELATIVE_RSSI,
-			       "SCHED_SCAN_RELATIVE_RSSI",
-			       "sched_scan for BSS with better RSSI report");
-		ext_feat_print(tb, NL80211_EXT_FEATURE_CQM_RSSI_LIST,
-			       "CQM_RSSI_LIST",
-			       "multiple CQM_RSSI_THOLD records");
-		ext_feat_print(tb, NL80211_EXT_FEATURE_FILS_SK_OFFLOAD,
-			       "FILS_SK_OFFLOAD",
-			       "FILS shared key authentication offload");
-		ext_feat_print(tb, NL80211_EXT_FEATURE_4WAY_HANDSHAKE_STA_PSK,
-			       "4WAY_HANDSHAKE_STA_PSK",
-			       "4-way handshake with PSK in station mode");
-		ext_feat_print(tb, NL80211_EXT_FEATURE_4WAY_HANDSHAKE_STA_1X,
-			       "4WAY_HANDSHAKE_STA_1X",
-			       "4-way handshake with 802.1X in station mode");
-		ext_feat_print(tb, NL80211_EXT_FEATURE_FILS_MAX_CHANNEL_TIME,
-			       "FILS_MAX_CHANNEL_TIME",
-			       "FILS max channel attribute override with dwell time");
-		ext_feat_print(tb, NL80211_EXT_FEATURE_ACCEPT_BCAST_PROBE_RESP,
-			       "ACCEPT_BCAST_PROBE_RESP",
-			       "accepts broadcast probe response");
-		ext_feat_print(tb, NL80211_EXT_FEATURE_OCE_PROBE_REQ_HIGH_TX_RATE,
-			       "OCE_PROBE_REQ_HIGH_TX_RATE",
-			       "probe request TX at high rate (at least 5.5Mbps)");
-		ext_feat_print(tb, NL80211_EXT_FEATURE_OCE_PROBE_REQ_DEFERRAL_SUPPRESSION,
-			       "OCE_PROBE_REQ_DEFERRAL_SUPPRESSION",
-			       "probe request tx deferral and suppression");
-		ext_feat_print(tb, NL80211_EXT_FEATURE_MFP_OPTIONAL,
-			       "MFP_OPTIONAL",
-			       "MFP_OPTIONAL value in ATTR_USE_MFP");
-		ext_feat_print(tb, NL80211_EXT_FEATURE_LOW_SPAN_SCAN,
-			       "LOW_SPAN_SCAN", "low span scan");
-		ext_feat_print(tb, NL80211_EXT_FEATURE_LOW_POWER_SCAN,
-			       "LOW_POWER_SCAN", "low power scan");
-		ext_feat_print(tb, NL80211_EXT_FEATURE_HIGH_ACCURACY_SCAN,
-			       "HIGH_ACCURACY_SCAN", "high accuracy scan");
-		ext_feat_print(tb, NL80211_EXT_FEATURE_DFS_OFFLOAD,
-			       "DFS_OFFLOAD", "DFS offload");
-		ext_feat_print(tb, NL80211_EXT_FEATURE_CONTROL_PORT_OVER_NL80211,
-			       "CONTROL_PORT_OVER_NL80211",
-			       "control port over nl80211");
-		ext_feat_print(tb, NL80211_EXT_FEATURE_TXQS,
-			       "TXQS", "FQ-CoDel-enabled intermediate TXQs");
-		ext_feat_print(tb, NL80211_EXT_FEATURE_AIRTIME_FAIRNESS,
-			       "AIRTIME_FAIRNESS", "airtime fairness scheduling");
+		for (feat = 0; feat < NUM_NL80211_EXT_FEATURES; feat++) {
+			if (!ext_feature_isset(nla_data(tb), nla_len(tb), feat))
+				continue;
+			ext_feat_print(feat);
+		}
 	}
 
 	if (tb_msg[NL80211_ATTR_COALESCE_RULE]) {
@@ -716,7 +740,7 @@ broken_combination:
 		rule = nla_data(tb_msg[NL80211_ATTR_COALESCE_RULE]);
 		pat = &rule->pat;
 		printf("\t\t * Maximum %u coalesce rules supported\n"
-		       "\t\t * Each rule contains upto %u patterns of %u-%u bytes,\n"
+		       "\t\t * Each rule contains up to %u patterns of %u-%u bytes,\n"
 		       "\t\t   maximum packet offset %u bytes\n"
 		       "\t\t * Maximum supported coalescing delay %u msecs\n",
 			rule->max_rules, pat->max_patterns, pat->min_pattern_len,
@@ -740,7 +764,7 @@ static int handle_info(struct nl80211_state *state,
 	char *feat_args[] = { "features", "-q" };
 	int err;
 
-	err = handle_cmd(state, CIB_NONE, 2, feat_args);
+	err = handle_cmd(state, II_NONE, 2, feat_args);
 	if (!err && nl80211_has_split_wiphy) {
 		nla_put_flag(msg, NL80211_ATTR_SPLIT_WIPHY_DUMP);
 		nlmsg_hdr(msg)->nlmsg_flags |= NLM_F_DUMP;
@@ -755,7 +779,6 @@ __COMMAND(NULL, info, "info", NULL, NL80211_CMD_GET_WIPHY, 0, 0, CIB_PHY, handle
 TOPLEVEL(list, NULL, NL80211_CMD_GET_WIPHY, NLM_F_DUMP, CIB_NONE, handle_info,
 	 "List all wireless devices and their capabilities.");
 TOPLEVEL(phy, NULL, NL80211_CMD_GET_WIPHY, NLM_F_DUMP, CIB_NONE, handle_info, NULL);
-
 #if 0
 static int handle_commands(struct nl80211_state *state, struct nl_msg *msg,
 			   int argc, char **argv, enum id_input id)

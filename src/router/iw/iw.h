@@ -11,6 +11,11 @@
 #include "nl80211.h"
 #include "ieee80211.h"
 
+#ifndef NL_CAPABILITY_VERSION_3_5_0
+#define nla_nest_start(msg, attrtype) \
+       nla_nest_start(msg, NLA_F_NESTED | (attrtype))
+#endif
+
 /* support for extack if compilation headers are too old */
 #ifndef NETLINK_EXT_ACK
 #define NETLINK_EXT_ACK 11
@@ -106,8 +111,7 @@ struct chandef {
 
 #define __COMMAND(_section, _symname, _name, _args, _nlcmd, _flags, _hidden, _idby, _handler, _help, _sel)\
 	static struct cmd						\
-	__cmd ## _ ## _symname ## _ ## _handler ## _ ## _nlcmd ## _ ## _idby ## _ ## _hidden\
-	__attribute__((used)) __attribute__((section("__cmd")))	= {	\
+	__cmd ## _ ## _symname ## _ ## _handler ## _ ## _nlcmd ## _ ## _idby ## _ ## _hidden = {\
 		.name = (_name),					\
 		.args = (_args),					\
 		.cmd = (_nlcmd),					\
@@ -118,7 +122,10 @@ struct chandef {
 		.help = (_help),					\
 		.parent = _section,					\
 		.selector = (_sel),					\
-	}
+	};								\
+	static struct cmd *__cmd ## _ ## _symname ## _ ## _handler ## _ ## _nlcmd ## _ ## _idby ## _ ## _hidden ## _p \
+	__attribute__((used,section("__cmd"))) =			\
+	&__cmd ## _ ## _symname ## _ ## _handler ## _ ## _nlcmd ## _ ## _idby ## _ ## _hidden
 #define __ACMD(_section, _symname, _name, _args, _nlcmd, _flags, _hidden, _idby, _handler, _help, _sel, _alias)\
 	__COMMAND(_section, _symname, _name, _args, _nlcmd, _flags, _hidden, _idby, _handler, _help, _sel);\
 	static const struct cmd *_alias = &__cmd ## _ ## _symname ## _ ## _handler ## _ ## _nlcmd ## _ ## _idby ## _ ## _hidden
@@ -130,9 +137,7 @@ struct chandef {
 	__COMMAND(&(__section ## _ ## section), name, #name, args, cmd, flags, 1, idby, handler, NULL, NULL)
 
 #define TOPLEVEL(_name, _args, _nlcmd, _flags, _idby, _handler, _help)	\
-	struct cmd							\
-	__section ## _ ## _name						\
-	__attribute__((used)) __attribute__((section("__cmd")))	= {	\
+	struct cmd __section ## _ ## _name = {				\
 		.name = (#_name),					\
 		.args = (_args),					\
 		.cmd = (_nlcmd),					\
@@ -140,16 +145,36 @@ struct chandef {
 		.idby = (_idby),					\
 		.handler = (_handler),					\
 		.help = (_help),					\
-	 }
+	 };								\
+	static struct cmd *__section ## _ ## _name ## _p		\
+	__attribute__((used,section("__cmd"))) = &__section ## _ ## _name
+
 #define SECTION(_name)							\
-	struct cmd __section ## _ ## _name				\
-	__attribute__((used)) __attribute__((section("__cmd"))) = {	\
+	struct cmd __section ## _ ## _name = {				\
 		.name = (#_name),					\
 		.hidden = 1,						\
-	}
+	};								\
+	static struct cmd *__section ## _ ## _name ## _p		\
+	__attribute__((used,section("__cmd"))) = &__section ## _ ## _name
 
 #define DECLARE_SECTION(_name)						\
 	extern struct cmd __section ## _ ## _name;
+
+struct vendor_event {
+	unsigned int vendor_id, subcmd;
+	void (*callback)(unsigned int vendor_id, unsigned int subcmd,
+			 struct nlattr *data);
+};
+
+#define VENDOR_EVENT(_id, _subcmd, _callback)				\
+	static const struct vendor_event 				\
+	vendor_event_ ## _id ## _ ## _subcmd = {			\
+		.vendor_id = _id,					\
+		.subcmd = _subcmd,					\
+		.callback = _callback,					\
+	}, * const vendor_event_ ## _id ## _ ## _subcmd ## _p		\
+	__attribute__((used,section("vendor_event"))) =			\
+		&vendor_event_ ## _id ## _ ## _subcmd
 
 extern const char iw_version[];
 
@@ -161,7 +186,7 @@ int handle_cmd(struct nl80211_state *state, enum id_input idby,
 struct print_event_args {
 	struct timeval ts; /* internal */
 	bool have_ts; /* must be set false */
-	bool frame, time, reltime;
+	bool frame, time, reltime, ctime;
 };
 
 __u32 listen_events(struct nl80211_state *state,
@@ -169,18 +194,19 @@ __u32 listen_events(struct nl80211_state *state,
 int __prepare_listen_events(struct nl80211_state *state);
 __u32 __do_listen_events(struct nl80211_state *state,
 			 const int n_waits, const __u32 *waits,
+			 const int n_prints, const __u32 *prints,
 			 struct print_event_args *args);
 
 int valid_handler(struct nl_msg *msg, void *arg);
 void register_handler(int (*handler)(struct nl_msg *, void *), void *data);
 
 int mac_addr_a2n(unsigned char *mac_addr, char *arg);
-void mac_addr_n2a(char *mac_addr, unsigned char *arg);
+void mac_addr_n2a(char *mac_addr, const unsigned char *arg);
 int parse_hex_mask(char *hexmask, unsigned char **result, size_t *result_len,
 		   unsigned char **mask);
 unsigned char *parse_hex(char *hex, size_t *outlen);
 
-int parse_keys(struct nl_msg *msg, char **argv, int argc);
+int parse_keys(struct nl_msg *msg, char **argv[], int *argc);
 int parse_freqchan(struct chandef *chandef, bool chan, int argc, char **argv, int *parsed);
 enum nl80211_chan_width str_to_bw(const char *str);
 int parse_txq_stats(char *buf, int buflen, struct nlattr *tid_stats_attr, int header,
@@ -192,9 +218,14 @@ void print_ampdu_length(__u8 exponent);
 void print_ampdu_spacing(__u8 spacing);
 void print_ht_capability(__u16 cap);
 void print_vht_info(__u32 capa, const __u8 *mcs);
+void print_he_capability(const uint8_t *ie, int len);
+void print_he_info(struct nlattr *nl_iftype);
+void print_eht_info(struct nlattr *nl_iftype, int band);
 
 char *channel_width_name(enum nl80211_chan_width width);
 const char *iftype_name(enum nl80211_iftype iftype);
+void print_iftype_list(const char *name, const char *pfx, struct nlattr *attr);
+void print_iftype_line(struct nlattr *attr);
 const char *command_name(enum nl80211_commands cmd);
 int ieee80211_channel_to_frequency(int chan, enum nl80211_band band);
 int ieee80211_frequency_to_channel(int freq);
@@ -223,15 +254,64 @@ void iw_hexdump(const char *prefix, const __u8 *data, size_t len);
 
 int get_cf1(const struct chanmode *chanmode, unsigned long freq);
 
+int parse_random_mac_addr(struct nl_msg *msg, char *addrs);
+
 #define SCHED_SCAN_OPTIONS "[interval <in_msecs> | scan_plans [<interval_secs:iterations>*] <interval_secs>] "	\
 	"[delay <in_secs>] [freqs <freq>+] [matches [ssid <ssid>]+]] [active [ssid <ssid>]+|passive] "	\
-	"[randomise[=<addr>/<mask>]]"
+	"[randomise[=<addr>/<mask>]] [coloc] [flush]"
 int parse_sched_scan(struct nl_msg *msg, int *argc, char ***argv);
 
-DECLARE_SECTION(switch);
-DECLARE_SECTION(set);
-DECLARE_SECTION(get);
+void nan_bf(uint8_t idx, uint8_t *bf, uint16_t bf_len, const uint8_t *buf,
+	    size_t len);
 
 char *hex2bin(const char *hex, char *buf);
+
+int set_bitrates(struct nl_msg *msg, int argc, char **argv,
+		 enum nl80211_attrs attr);
+
+
+/* sections */
+DECLARE_SECTION(ap);
+DECLARE_SECTION(auth);
+DECLARE_SECTION(cac);
+DECLARE_SECTION(channels);
+DECLARE_SECTION(coalesce);
+DECLARE_SECTION(commands);
+DECLARE_SECTION(connect);
+DECLARE_SECTION(cqm);
+DECLARE_SECTION(del);
+DECLARE_SECTION(dev);
+DECLARE_SECTION(disconnect);
+DECLARE_SECTION(event);
+DECLARE_SECTION(features);
+DECLARE_SECTION(ftm);
+DECLARE_SECTION(get);
+DECLARE_SECTION(help);
+DECLARE_SECTION(hwsim);
+DECLARE_SECTION(ibss);
+DECLARE_SECTION(info);
+DECLARE_SECTION(interface);
+DECLARE_SECTION(link);
+DECLARE_SECTION(list);
+DECLARE_SECTION(measurement);
+DECLARE_SECTION(mesh);
+DECLARE_SECTION(mesh_param);
+DECLARE_SECTION(mgmt);
+DECLARE_SECTION(mpath);
+DECLARE_SECTION(mpp);
+DECLARE_SECTION(nan);
+DECLARE_SECTION(ocb);
+DECLARE_SECTION(offchannel);
+DECLARE_SECTION(p2p);
+DECLARE_SECTION(phy);
+DECLARE_SECTION(reg);
+DECLARE_SECTION(roc);
+DECLARE_SECTION(scan);
+DECLARE_SECTION(set);
+DECLARE_SECTION(station);
+DECLARE_SECTION(survey);
+DECLARE_SECTION(switch);
+DECLARE_SECTION(vendor);
+DECLARE_SECTION(wowlan);
 
 #endif /* __IW_H */
