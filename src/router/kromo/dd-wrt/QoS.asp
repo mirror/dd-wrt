@@ -5,7 +5,6 @@
 function svcs_grey(sw_disabled,F) {
 	F.add_svc.disabled = sw_disabled;
 	for (i=0; i<F.svqos_nosvcs.value; i++) {
-		eval("F.svqos_svcdel" + i).disabled = sw_disabled;
 		eval("F.svqos_svcprio" + i).disabled = sw_disabled;
 	}
 }
@@ -29,7 +28,6 @@ function macs_grey(sw_disabled,F,overwrite) {
 
 	if (sw_disabled == true) {
 		for (i=0; i<F.svqos_nomacs.value; i++){
-			eval("F.svqos_macdel" + i).disabled = sw_disabled;
 			eval("F.svqos_macup" + i).disabled = sw_disabled;
 			eval("F.svqos_macdown" + i).disabled = sw_disabled;
 			eval("F.svqos_maclanlvl" + i).disabled = sw_disabled;
@@ -37,7 +35,6 @@ function macs_grey(sw_disabled,F,overwrite) {
 		}
 	} else {
 		for (i=0; i<F.svqos_nomacs.value; i++) {
-			eval("F.svqos_macdel" + i).disabled = sw_disabled;
 			eval("F.svqos_macprio" + i).disabled = sw_disabled;
 			if (eval("F.svqos_macup" + i))
 				maclvl_grey(i, eval("F.svqos_macprio" + i), F, overwrite);
@@ -71,7 +68,6 @@ function devs_grey(sw_disabled,F,overwrite) {
 
 	if (sw_disabled == true) {
 		for (i=0; i<F.svqos_nodevs.value; i++){
-			eval("F.svqos_devdel" + i).disabled = sw_disabled;
 			eval("F.svqos_devup" + i).disabled = sw_disabled;
 			eval("F.svqos_devdown" + i).disabled = sw_disabled;
 			eval("F.svqos_devlanlvl" + i).disabled = sw_disabled;
@@ -80,7 +76,6 @@ function devs_grey(sw_disabled,F,overwrite) {
 		}
 	} else {
 		for (i=0; i<F.svqos_nodevs.value; i++) {
-			eval("F.svqos_devdel" + i).disabled = sw_disabled;
 			eval("F.svqos_devprio" + i).disabled = sw_disabled;
 			eval("F.svqos_devservice" + i).disabled = sw_disabled;
 			if (eval("F.svqos_devup" + i))
@@ -108,7 +103,6 @@ function ips_grey(sw_disabled,F,overwrite) {
 
 	if (sw_disabled == true) {
 		for (i=0; i<F.svqos_noips.value; i++){
-			eval("F.svqos_ipdel" + i).disabled = sw_disabled;
 			eval("F.svqos_ipup" + i).disabled = sw_disabled;
 			eval("F.svqos_ipdown" + i).disabled = sw_disabled;
 			eval("F.svqos_iplanlvl" + i).disabled = sw_disabled;
@@ -116,7 +110,6 @@ function ips_grey(sw_disabled,F,overwrite) {
 		}
 	} else {
 		for (i=0; i<F.svqos_noips.value; i++) {
-			eval("F.svqos_ipdel" + i).disabled = sw_disabled;
 			eval("F.svqos_ipprio" + i).disabled = sw_disabled;
 			if (eval("F.svqos_ipup" + i))
 				iplvl_grey(i, eval("F.svqos_ipprio" + i), F, overwrite);
@@ -396,7 +389,6 @@ addEvent(window, "unload", function() {
 								<table class="table" summary="ifname priority table">
 									<% get_qosdevs(); %>
 									<tr>
-										<td>&nbsp;</td>
 										<td colspan="3">
 											<script type="text/javascript">
 											//<![CDATA[
@@ -416,7 +408,6 @@ addEvent(window, "unload", function() {
 								<table class="table" summary="IP addresses priority table">
 									<% get_qosips(); %>
 									<tr>
-										<td>&nbsp;</td>
 										<td colspan="3">
 											<script type="text/javascript">
 											//<![CDATA[
@@ -434,7 +425,6 @@ addEvent(window, "unload", function() {
 								<table class="table" summary="MAC priority table">
 									<% get_qosmacs(); %>
 									<tr>
-										<td>&nbsp;</td>
 										<td colspan="4">
 											<script type="text/javascript">
 											//<![CDATA[
