@@ -155,7 +155,7 @@ img {
   }
   .logo {
     filter: contrast(1.6) opacity(.7);
-    mix-blend-mode: lighten;
+    mix-blend-mode: darken;
     border-radius: 4px;
   }
   [src*='up']:hover,
