@@ -348,7 +348,7 @@ addEvent(window, "unload", function() {
 									</tr>
 									<% get_qossvcs(); %>
 									<tr>
-										<td colspan="2">
+										<td>
 											<select name="add_svc">
 												<script type="text/javascript">
 												//<![CDATA[
@@ -391,8 +391,7 @@ addEvent(window, "unload", function() {
 								<table class="table" summary="ifname priority table">
 									<% get_qosdevs(); %>
 									<tr>
-										<td colspan="3">
-											</script>&nbsp;&nbsp;&nbsp;
+										<td>
 											<select name="svqos_dev">
 											<% show_iflist(); %>
 											<% show_iflist("tun"); %>
@@ -408,6 +407,7 @@ addEvent(window, "unload", function() {
 											//<![CDATA[
 											document.write("<input class=\"button\" type=\"button\" name=\"add_devsprio_button\" value=\"" + sbutton.add + "\" onclick=\"dev_add_submit(this.form);\" />");
 											//]]>
+											</script>
 										</td>
 									</tr>
 								</table>
@@ -417,7 +417,7 @@ addEvent(window, "unload", function() {
 								<table class="table" summary="IP addresses priority table">
 									<% get_qosips(); %>
 									<tr>
-										<td colspan="3">
+										<td>
 											<input size="3" maxlength="3" name="svqos_ipaddr0" value="0" onblur="valid_range(this,0,255,'IP')" class="num" />.<input size="3" maxlength="3" name="svqos_ipaddr1" value="0" onblur="valid_range(this,0,255,'IP')" class="num" />.<input size="3" maxlength="3" name="svqos_ipaddr2" value="0" onblur="valid_range(this,0,255,'IP')" class="num" />.<input size="3" maxlength="3" name="svqos_ipaddr3" value="0" onblur="valid_range(this,0,255,'IP')" class="num" />&nbsp;/&nbsp;
 											<input size="3" maxlength="3" name="svqos_netmask" value="0" onblur="valid_range(this,0,32,share.subnet)" class="num" />
 										</td>
@@ -440,7 +440,7 @@ addEvent(window, "unload", function() {
 								<table class="table" summary="MAC priority table">
 									<% get_qosmacs(); %>
 									<tr>
-										<td colspan="4">
+										<td>
 											<input name="svqos_hwaddr0" value="00" size="2" maxlength="2" onblur="valid_mac(this,0)" class="num" />:<input name="svqos_hwaddr1" value="00" size="2" maxlength="2" onblur="valid_mac(this,1)" class="num" />:<input name="svqos_hwaddr2" value="00" size="2" maxlength="2" onblur="valid_mac(this,1)" class="num"/>:<input name="svqos_hwaddr3" value="00" size="2" maxlength="2" onblur="valid_mac(this,1)" class="num" />:<input name="svqos_hwaddr4" value="00" size="2" maxlength="2" onblur="valid_mac(this,1)" class="num" />:<input name="svqos_hwaddr5" value="00" size="2" maxlength="2" onblur="valid_mac(this,1)" class="num" />
 										</td>
 										<td>&nbsp;</td>
