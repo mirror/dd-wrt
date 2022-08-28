@@ -98,6 +98,7 @@ static int print_mpath_handler(struct nl_msg *msg, void *arg)
 	return NL_SKIP;
 }
 
+#if 0
 static int handle_mpath_probe(struct nl80211_state *state,
 			      struct nl_msg *msg,
 			      int argc, char **argv,
@@ -136,6 +137,7 @@ COMMAND(mpath, probe, "<destination MAC address> frame <frame>",
 	"Inject ethernet frame to given peer overriding the next hop\n"
 	"lookup from mpath table.\n."
 	"Example: iw dev wlan0 mpath probe xx:xx:xx:xx:xx:xx frame 01:xx:xx:00\n");
+#endif
 
 static int handle_mpath_get(struct nl80211_state *state,
 			    struct nl_msg *msg,
