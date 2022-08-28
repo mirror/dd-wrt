@@ -38,7 +38,15 @@ void main(int argc, char *argv[])
 	fclose(fp);
 	fp = fopen(argv[1], "wb");
 	int i;
+	int stop=0;
 	for (i = 0; i < l; i++) {
+		if (stop) {
+		    if (mem[i]=='*' && mem[i]=='/') {
+			stop = 0;
+			i++;
+		    }
+		    continue;
+		}
 		FILTER_pre("//<![CDATA[");
 		FILTER_pre("//]]>");
 //		if (!strncmp(&mem[i], "//", 2)) {
@@ -56,6 +64,10 @@ void main(int argc, char *argv[])
 //		}
 		if (i>=l)
 		    break;
+		if (mem[i]=='/' && mem[i+1]=='*') {
+		    stop=1;
+		    continue;
+		}
 		if (mem[i] != '\r' && mem[i] != '\n' && mem[i] != '\t' && mem[i] != '\f')
 			putc(mem[i], fp);
 	}
