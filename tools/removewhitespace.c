@@ -65,7 +65,7 @@ void main(int argc, char *argv[])
 		if (i>=l)
 		    break;
 		if (mem[i]=='/' && mem[i+1]=='*') {
-		    if (i==0 || (mem[i-1]!='"' && mem[i-1]!='/' && mem[i+2]!='"' && mem[i+2]!='\'')) {
+		    if (i==0 || (mem[i-1]!='"' && mem[i-1]!='/' && mem[i-1]!='*' && mem[i+2]!='"' && mem[i+2]!='\'')) {
 		    stop=1;
 		    continue;
 		    }
