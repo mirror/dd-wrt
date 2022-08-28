@@ -10,11 +10,11 @@ function svcs_grey(sw_disabled,F) {
 }
 
 function pkts_grey(sw_disabled,F) {
-    F.svqos_pktack.disabled = sw_disabled;
-    F.svqos_pktsyn.disabled = sw_disabled;
-    F.svqos_pktfin.disabled = sw_disabled;
-    F.svqos_pktrst.disabled = sw_disabled;
-    F.svqos_pkticmp.disabled = sw_disabled;
+	F.svqos_pktack.disabled = sw_disabled;
+	F.svqos_pktsyn.disabled = sw_disabled;
+	F.svqos_pktfin.disabled = sw_disabled;
+	F.svqos_pktrst.disabled = sw_disabled;
+	F.svqos_pkticmp.disabled = sw_disabled;
 }
 
 function macs_grey(sw_disabled,F,overwrite) {
@@ -250,12 +250,11 @@ function qossvcs_del_submit(F,I) {
 	apply(F);
 }
 
-
-
 function to_submit(F) {
 	submitcheck(F);
 	apply(F);
 }
+
 function to_apply(F) {
 	submitcheck(F);
 	applytake(F);
@@ -298,8 +297,8 @@ addEvent(window, "unload", function() {
 
 							<h2><% tran("qos.h2"); %></h2>
 							<fieldset>
-  								<legend><% tran("qos.legend"); %></legend>
-  								<div class="setting">
+									<legend><% tran("qos.legend"); %></legend>
+									<div class="setting">
 									<div class="label"><% tran("qos.srv"); %></div>
 									<input class="spaceradio" type="radio" value="1" name="wshaper_enable" onclick="qos_grey(this.value,this.form)" <% nvsm("wshaper_enable", "1", "checked"); %> /><% tran("share.enable"); %>&nbsp;
 									<input class="spaceradio" type="radio" value="0" name="wshaper_enable" onclick="qos_grey(this.value,this.form)" <% nvsm("wshaper_enable", "0", "checked"); %> /><% tran("share.disable"); %>
@@ -331,10 +330,10 @@ addEvent(window, "unload", function() {
 								<fieldset>
 								<legend><% tran("qos.legend7"); %></legend>
 								<table class="table" summary="packet-type priority table">
-										<tr>
-												<td colspan="5"><% tran("qos.pktdesc"); %></td>
-										</tr>
-										<% get_qospkts(); %>
+									<tr>
+										<td colspan="5"><% tran("qos.pktdesc"); %></td>
+									</tr>
+									<% get_qospkts(); %>
 								</table>
 								</fieldset><br />
 							<fieldset>
@@ -369,7 +368,7 @@ addEvent(window, "unload", function() {
 										</td>
 										<td>&nbsp;</td>
 										<td>&nbsp;</td>
-										<td align="center">
+										<td class="center">
 											<script type="text/javascript">
 											//<![CDATA[
 											document.write("<input class=\"button\" type=\"button\" name=\"add_svc_button\" value=\"" + sbutton.add + "\" onclick=\"svc_add_submit(this.form);\" />");
@@ -402,7 +401,7 @@ addEvent(window, "unload", function() {
 										<td>&nbsp;</td>
 										<td>&nbsp;</td>
 										<td>&nbsp;</td>
-										<td align="center">
+										<td class="center">
 											<script type="text/javascript">
 											//<![CDATA[
 											document.write("<input class=\"button\" type=\"button\" name=\"add_devsprio_button\" value=\"" + sbutton.add + "\" onclick=\"dev_add_submit(this.form);\" />");
@@ -425,7 +424,7 @@ addEvent(window, "unload", function() {
 										<td>&nbsp;</td>
 										<td>&nbsp;</td>
 										<td>&nbsp;</td>
-										<td align="center">
+										<td class="center">
 											<script type="text/javascript">
 											//<![CDATA[
 											document.write("<input class=\"button\" type=\"button\" name=\"add_ipsprio_button\" value=\"" + sbutton.add + "\" onclick=\"ip_add_submit(this.form);\" />");
@@ -447,7 +446,7 @@ addEvent(window, "unload", function() {
 										<td>&nbsp;</td>
 										<td>&nbsp;</td>
 										<td>&nbsp;</td>
-										<td align="center">
+										<td class="center">
 											<script type="text/javascript">
 											//<![CDATA[
 											document.write("<input class=\"button\" type=\"button\" name=\"add_macprio_button\" value=\"" + sbutton.add + "\" onclick=\"mac_add_submit(this.form);\" />")
@@ -458,7 +457,7 @@ addEvent(window, "unload", function() {
 								</table>
 							</fieldset><br />
 							<% show_default_level(); %>
-<% nvm("portprio_support","0","<!--"); %>
+							<% nvm("portprio_support","0","<!--"); %>
 							<fieldset>
 								<legend><% tran("qos.legend5"); %></legend>
 								<table>
@@ -474,25 +473,9 @@ addEvent(window, "unload", function() {
 												<script type="text/javascript">
 												//<![CDATA[
 												document.write("<option value=\"100\" <% nvsm("svqos_port1prio", "100", "selected"); %> >" + qos.prio_x + "</option>");
-												//]]>
-												</script>
-												<script type="text/javascript">
-												//<![CDATA[
 												document.write("<option value=\"10\" <% nvsm("svqos_port1prio", "10", "selected"); %> >" + qos.prio_p + "</option>");
-												//]]>
-												</script>
-												<script type="text/javascript">
-												//<![CDATA[
 												document.write("<option value=\"20\" <% nvsm("svqos_port1prio", "20", "selected"); %> >" + qos.prio_e + "</option>");
-												//]]>
-												</script>
-												<script type="text/javascript">
-												//<![CDATA[
 												document.write("<option value=\"30\" <% nvsm("svqos_port1prio", "30", "selected"); %> >" + share.standard + "</option>");
-												//]]>
-												</script>
-												<script type="text/javascript">
-												//<![CDATA[
 												document.write("<option value=\"40\" <% nvsm("svqos_port1prio", "40", "selected"); %> >" + qos.prio_b + "</option>");
 												//]]>
 												</script>
