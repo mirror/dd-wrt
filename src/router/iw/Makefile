@@ -104,7 +104,11 @@ version.c: version.sh $(patsubst %.o,%.c,$(VERSION_OBJS)) iw.h Makefile \
 	@$(NQ) ' GEN ' $@
 	$(Q)./version.sh $@
 
-%.o: %.c iw.h nl80211.h
+nl80211-commands.inc: ../shared/nl80211.h
+	@$(NQ) ' GEN ' $@
+	$(Q)sed 's%^\tNL80211_CMD_%%;t n;d;:n s%^\([^=]*\),.*%\t[NL80211_CMD_\1] = \"\L\1\",%;t;d' ../shared/nl80211.h | grep -v "reserved" > $@
+
+%.o: %.c iw.h ../shared/nl80211.h nl80211-commands.inc
 	@$(NQ) ' CC  ' $@
 	$(Q)$(CC) $(CFLAGS) -c -o $@ $<
 

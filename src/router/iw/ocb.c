@@ -21,7 +21,7 @@ static int join_ocb(struct nl80211_state *state,
 	if (err)
 		return err;
 
-	put_chandef(msg, &chandef);
+	err = put_chandef(msg, &chandef);
 	if (err)
 		return err;
 

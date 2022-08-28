@@ -395,6 +395,8 @@ char *channel_width_name(enum nl80211_chan_width width)
 		return "80+80 MHz";
 	case NL80211_CHAN_WIDTH_160:
 		return "160 MHz";
+	case NL80211_CHAN_WIDTH_320:
+		return "320 MHz";
 	default:
 		return "unknown";
 	}
@@ -468,10 +470,22 @@ static int print_iface_handler(struct nl_msg *msg, void *arg)
 	}
 
 	if (tb_msg[NL80211_ATTR_WIPHY_TX_POWER_LEVEL]) {
-		uint32_t txp = nla_get_u32(tb_msg[NL80211_ATTR_WIPHY_TX_POWER_LEVEL]);
+		int32_t txp = nla_get_u32(tb_msg[NL80211_ATTR_WIPHY_TX_POWER_LEVEL]);
 
 		printf("%s\ttxpower %d.%.2d dBm\n",
 		       indent, txp / 100, txp % 100);
+	}
+
+	if (tb_msg[NL80211_ATTR_TXQ_STATS]) {
+		char buf[150];
+		parse_txq_stats(buf, sizeof(buf), tb_msg[NL80211_ATTR_TXQ_STATS], 1, -1, indent);
+		printf("%s\tmulticast TXQ:%s\n", indent, buf);
+	}
+
+	if (tb_msg[NL80211_ATTR_4ADDR]) {
+		uint8_t use_4addr = nla_get_u8(tb_msg[NL80211_ATTR_4ADDR]);
+		if (use_4addr)
+			printf("%s\t4addr: on\n", indent);
 	}
 
 	if (tb_msg[NL80211_ATTR_TXQ_STATS]) {
@@ -833,3 +847,266 @@ COMMAND(switch, freq,
 	"Switch the operating channel by sending a channel switch announcement (CSA).");
 COMMAND(switch, channel, "<channel> [NOHT|HT20|HT40+|HT40-|5MHz|10MHz|80MHz] [beacons <count>] [block-tx]",
 	NL80211_CMD_CHANNEL_SWITCH, 0, CIB_NETDEV, handle_chan, NULL);
+
+
+static int toggle_tid_param(const char *argv0, const char *argv1,
+			    struct nl_msg *msg, uint32_t attr)
+{
+	uint8_t val;
+
+	if (strcmp(argv1, "on") == 0) {
+		val = NL80211_TID_CONFIG_ENABLE;
+	} else if (strcmp(argv1, "off") == 0) {
+		val = NL80211_TID_CONFIG_DISABLE;
+	} else {
+		fprintf(stderr, "Invalid %s parameter: %s\n", argv0, argv1);
+		return 2;
+	}
+
+	NLA_PUT_U8(msg, attr, val);
+	return 0;
+
+ nla_put_failure:
+	return -ENOBUFS;
+}
+
+static int handle_tid_config(struct nl80211_state *state,
+			     struct nl_msg *msg,
+			     int argc, char **argv,
+			     enum id_input id)
+{
+	struct nlattr *tids_array = NULL;
+	struct nlattr *tids_entry = NULL;
+	enum nl80211_tx_rate_setting txrate_type;
+	unsigned char peer[ETH_ALEN];
+	int tids_num = 0;
+	char *end;
+	int ret;
+	enum {
+		PS_ADDR,
+		PS_TIDS,
+		PS_CONF,
+	} parse_state = PS_ADDR;
+	unsigned int attr;
+
+	while (argc) {
+		switch (parse_state) {
+		case PS_ADDR:
+			if (strcmp(argv[0], "peer") == 0) {
+				if (argc < 2) {
+					fprintf(stderr, "Not enough args for %s\n", argv[0]);
+					return HANDLER_RET_USAGE;
+				}
+
+				if (mac_addr_a2n(peer, argv[1])) {
+					fprintf(stderr, "Invalid MAC address\n");
+					return 2;
+				}
+
+				NLA_PUT(msg, NL80211_ATTR_MAC, ETH_ALEN, peer);
+
+				argc -= 2;
+				argv += 2;
+				parse_state = PS_TIDS;
+
+			} else if (strcmp(argv[0], "tids") == 0) {
+				parse_state = PS_TIDS;
+			} else {
+				fprintf(stderr, "Peer MAC address expected\n");
+				return HANDLER_RET_USAGE;
+			}
+
+			break;
+		case PS_TIDS:
+			if (strcmp(argv[0], "tids") == 0) {
+				if (argc < 2) {
+					fprintf(stderr, "not enough args for %s\n", argv[0]);
+					return HANDLER_RET_USAGE;
+				}
+
+				if (!tids_array) {
+					tids_array = nla_nest_start(msg, NL80211_ATTR_TID_CONFIG);
+					if (!tids_array)
+						return -ENOBUFS;
+				}
+
+				if (tids_entry) {
+					nla_nest_end(msg, tids_entry);
+					tids_num++;
+				}
+
+				tids_entry = nla_nest_start(msg, tids_num);
+				if (!tids_entry)
+					return -ENOBUFS;
+
+				NLA_PUT_U16(msg, NL80211_TID_CONFIG_ATTR_TIDS, strtol(argv[1], &end, 0));
+				if (*end) {
+					fprintf(stderr, "Invalid TID mask value: %s\n", argv[1]);
+					return 2;
+				}
+
+				argc -= 2;
+				argv += 2;
+				parse_state = PS_CONF;
+			} else {
+				fprintf(stderr, "TID mask expected\n");
+				return HANDLER_RET_USAGE;
+			}
+
+			break;
+		case PS_CONF:
+			if (strcmp(argv[0], "tids") == 0) {
+				parse_state = PS_TIDS;
+			} else if (strcmp(argv[0], "override") == 0) {
+				NLA_PUT_FLAG(msg, NL80211_TID_CONFIG_ATTR_OVERRIDE);
+
+				argc -= 1;
+				argv += 1;
+			} else if (strcmp(argv[0], "ampdu") == 0) {
+				if (argc < 2) {
+					fprintf(stderr, "not enough args for %s\n", argv[0]);
+					return HANDLER_RET_USAGE;
+				}
+
+				ret = toggle_tid_param(argv[0], argv[1], msg,
+						       NL80211_TID_CONFIG_ATTR_AMPDU_CTRL);
+				if (ret)
+					return ret;
+
+				argc -= 2;
+				argv += 2;
+			} else if (strcmp(argv[0], "amsdu") == 0) {
+				if (argc < 2) {
+					fprintf(stderr, "not enough args for %s\n", argv[0]);
+					return HANDLER_RET_USAGE;
+				}
+
+				ret = toggle_tid_param(argv[0], argv[1], msg,
+						       NL80211_TID_CONFIG_ATTR_AMSDU_CTRL);
+				if (ret)
+					return ret;
+
+				argc -= 2;
+				argv += 2;
+			} else if (strcmp(argv[0], "noack") == 0) {
+				if (argc < 2) {
+					fprintf(stderr, "not enough args for %s\n", argv[0]);
+					return HANDLER_RET_USAGE;
+				}
+
+				ret = toggle_tid_param(argv[0], argv[1], msg,
+						       NL80211_TID_CONFIG_ATTR_NOACK);
+				if (ret)
+					return ret;
+
+				argc -= 2;
+				argv += 2;
+			} else if (strcmp(argv[0], "rtscts") == 0) {
+				if (argc < 2) {
+					fprintf(stderr, "not enough args for %s\n", argv[0]);
+					return HANDLER_RET_USAGE;
+				}
+
+				ret = toggle_tid_param(argv[0], argv[1], msg,
+						       NL80211_TID_CONFIG_ATTR_RTSCTS_CTRL);
+				if (ret)
+					return ret;
+
+				argc -= 2;
+				argv += 2;
+			} else if (strcmp(argv[0], "sretry") == 0) {
+				if (argc < 2) {
+					fprintf(stderr, "not enough args for %s\n", argv[0]);
+					return HANDLER_RET_USAGE;
+				}
+
+				NLA_PUT_U8(msg, NL80211_TID_CONFIG_ATTR_RETRY_SHORT, strtol(argv[1], &end, 0));
+				if (*end) {
+					fprintf(stderr, "Invalid short_retry value: %s\n", argv[1]);
+					return 2;
+				}
+
+				argc -= 2;
+				argv += 2;
+			} else if (strcmp(argv[0], "lretry") == 0) {
+				if (argc < 2) {
+					fprintf(stderr, "not enough args for %s\n", argv[0]);
+					return HANDLER_RET_USAGE;
+				}
+
+				NLA_PUT_U8(msg, NL80211_TID_CONFIG_ATTR_RETRY_LONG, strtol(argv[1], &end, 0));
+				if (*end) {
+					fprintf(stderr, "Invalid long_retry value: %s\n", argv[1]);
+					return 2;
+				}
+
+				argc -= 2;
+				argv += 2;
+			} else if (strcmp(argv[0], "bitrates") == 0) {
+				if (argc < 2) {
+					fprintf(stderr, "not enough args for %s\n", argv[0]);
+					return HANDLER_RET_USAGE;
+				}
+				if (!strcmp(argv[1], "auto"))
+					txrate_type = NL80211_TX_RATE_AUTOMATIC;
+				else if (!strcmp(argv[1], "fixed"))
+					txrate_type = NL80211_TX_RATE_FIXED;
+				else if (!strcmp(argv[1], "limit"))
+					txrate_type = NL80211_TX_RATE_LIMITED;
+				else {
+					printf("Invalid parameter: %s\n", argv[0]);
+					return 2;
+				}
+				NLA_PUT_U8(msg, NL80211_TID_CONFIG_ATTR_TX_RATE_TYPE, txrate_type);
+				argc -= 2;
+				argv += 2;
+				if (txrate_type != NL80211_TX_RATE_AUTOMATIC) {
+					attr = NL80211_TID_CONFIG_ATTR_TX_RATE;
+					ret = set_bitrates(msg, argc, argv,
+							   attr);
+					if (ret < 2)
+						return 1;
+
+					argc -= ret;
+					argv += ret;
+				}
+			} else {
+				fprintf(stderr, "Unknown parameter: %s\n", argv[0]);
+				return HANDLER_RET_USAGE;
+			}
+
+			break;
+		default:
+			fprintf(stderr, "Failed to parse: internal failure\n");
+			return HANDLER_RET_USAGE;
+		}
+	}
+
+	if (tids_entry)
+		nla_nest_end(msg, tids_entry);
+
+	if (tids_array)
+		nla_nest_end(msg, tids_array);
+
+	return 0;
+
+nla_put_failure:
+	return -ENOBUFS;
+}
+
+COMMAND(set, tidconf, "[peer <MAC address>] tids <mask> [override] [sretry <num>] [lretry <num>] "
+	"[ampdu [on|off]] [amsdu [on|off]] [noack [on|off]] [rtscts [on|off]]"
+	"[bitrates <type [auto|fixed|limit]> [legacy-<2.4|5> <legacy rate in Mbps>*] [ht-mcs-<2.4|5> <MCS index>*]"
+	" [vht-mcs-<2.4|5> <NSS:MCSx,MCSy... | NSS:MCSx-MCSy>*] [sgi-2.4|lgi-2.4] [sgi-5|lgi-5]]",
+	NL80211_CMD_SET_TID_CONFIG, 0, CIB_NETDEV, handle_tid_config,
+	"Setup per-node TID specific configuration for TIDs selected by bitmask.\n"
+	"If MAC address is not specified, then supplied TID configuration\n"
+	"applied to all the peers.\n"
+	"Examples:\n"
+	"  $ iw dev wlan0 set tidconf tids 0x1 ampdu off\n"
+	"  $ iw dev wlan0 set tidconf tids 0x5 ampdu off amsdu off rtscts on\n"
+	"  $ iw dev wlan0 set tidconf tids 0x3 override ampdu on noack on rtscts on\n"
+	"  $ iw dev wlan0 set tidconf peer xx:xx:xx:xx:xx:xx tids 0x1 ampdu off tids 0x3 amsdu off rtscts on\n"
+	"  $ iw dev wlan0 set tidconf peer xx:xx:xx:xx:xx:xx tids 0x2 bitrates auto\n"
+	"  $ iw dev wlan0 set tidconf peer xx:xx:xx:xx:xx:xx tids 0x2 bitrates limit vht-mcs-5 4:9\n"
+	);
