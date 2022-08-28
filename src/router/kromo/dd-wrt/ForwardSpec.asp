@@ -90,8 +90,8 @@ addEvent(window, "unload", function() {
 												//<![CDATA[
 			    									document.write("<input class=\"button\" type=\"button\" name=\"add_button\" value=\"" + sbutton.add + "\" onclick=\"forward_add_submit(this.form);\" />");
 												//]]>
+3											</script>
 											</div>
-											</script>
 										</td>
 									</tr>
 								</table><br />
