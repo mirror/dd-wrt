@@ -122,7 +122,7 @@ EJ_VISIBLE void ej_get_qossvcs(webs_t wp, int argc, char_t ** argv)
 			  "<td>\n" 
 			  "<input type=\"hidden\" name=\"svqos_svcname%d\" value=\"%s\" />\n"
 			  "<input type=\"hidden\" name=\"svqos_svctype%d\" value=\"%s\" />\n" 
-			  "<td><em>%s</em></td>\n" "<td >\n", i, name, i, type, name);
+			  "<em>%s</em></td>\n" "<td >\n", i, name, i, type, name);
 #if 0
 		websWrite(wp, "<select name=\"svqos_svcprio%d\"> \n"
 			  "<script type=\"text/javascript\">\n//<![CDATA[\n"
