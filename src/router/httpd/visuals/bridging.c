@@ -391,6 +391,9 @@ EJ_VISIBLE void ej_show_bridgeifnames(webs_t wp, int argc, char_t ** argv)
 	websWrite(wp, "<tr>\n");
 	websWrite(wp, "<td>&nbsp;</td>\n");
 	websWrite(wp, "<td>&nbsp;</td>\n");
+#ifdef HAVE_MSTP
+	websWrite(wp, "<td>&nbsp;</td>\n");
+#endif
 	websWrite(wp, "<td>&nbsp;</td>\n");
 	websWrite(wp, "<td>&nbsp;</td>\n");
 	websWrite(wp, "<td>&nbsp;</td>\n");
