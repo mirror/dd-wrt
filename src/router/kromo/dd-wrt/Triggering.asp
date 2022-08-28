@@ -85,14 +85,25 @@ addEvent(window, "unload", function() {
 										<th class="center" width="10%"><% tran("share.actiontbl"); %></th>
 									</tr>
 									<% show_triggering(); %>
+									<tr>
+										<td>&nbsp;</td>
+										<td>&nbsp;</td>
+										<td>&nbsp;</td>
+										<td>&nbsp;</td>
+										<td>&nbsp;</td>
+										<td>&nbsp;</td>
+										<td>&nbsp;</td>
+										<td>
+											<div class="center">
+											<script type="text/javascript">
+												//<![CDATA[
+												document.write("<input class=\"button\" type=\"button\" name =\"add_button\" value=\"" + sbutton.add + "\" onclick=\"trigger_add_submit(this.form);\" />");
+												//]]>
+											</script>
+											</div>
+										</td>
+									</tr>
 								</table><br />
-								<div class="center">
-									<script type="text/javascript">
-									//<![CDATA[
-									document.write("<input class=\"button\" type=\"button\" name =\"add_button\" value=\"" + sbutton.add + "\" onclick=\"trigger_add_submit(this.form);\" />");
-									//]]>
-									</script>
-								</div>
 							</fieldset><br />
 							<div id="footer" class="submitFooter">
 								<script type="text/javascript">
