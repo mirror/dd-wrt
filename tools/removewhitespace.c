@@ -41,7 +41,7 @@ void main(int argc, char *argv[])
 	int stop=0;
 	for (i = 0; i < l; i++) {
 		if (stop) {
-		    if (mem[i]=='*' && mem[i]=='/') {
+		    if (mem[i]=='*' && mem[i+1]=='/') {
 			stop = 0;
 			i++;
 		    }
