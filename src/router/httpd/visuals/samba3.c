@@ -158,20 +158,12 @@ EJ_VISIBLE void ej_samba3_sharepaths(webs_t wp, int argc, char_t ** argv)
 		csnext = cs->next;
 		debug_free(cs);
 	}
-	websWrite(wp, "<tr>\n");
-	websWrite(wp, "<td>&nbsp;</td>\n");
-	websWrite(wp, "<td>&nbsp;</td>\n");
-	websWrite(wp, "<td>&nbsp;</td>\n");
-	websWrite(wp, "<td>&nbsp;</td>\n");
-	websWrite(wp, "<td>&nbsp;</td>\n");
-	websWrite(wp, "<td>\n");
+
+	websWrite(wp, "</table><br />\n");
+
 	// add button
 	websWrite(wp,
 		  "<script type=\"text/javascript\">document.write(\"<div id=\\\"samba_shares_add\\\" class=\\\"center\\\"><input type=\\\"button\\\" class=\\\"button\\\" name=\\\"share_add\\\" value=\\\"\"+nas.shareadd+\"\\\" onclick=\\\"addSambaShare();\\\" />\");</script></div>");
-
-	websWrite(wp, "</td>\n");
-	websWrite(wp, "</tr>\n");
-	websWrite(wp, "</table><br />\n");
 
 	for (current = fs; fs; current = fs) {
 		fs = current->next;
@@ -302,19 +294,11 @@ EJ_VISIBLE void ej_samba3_users(webs_t wp, int argc, char_t ** argv)
 		debug_free(cs);
 	}
 
-	websWrite(wp, "<tr>\n");
-	websWrite(wp, "<td>&nbsp;</td>\n");
-	websWrite(wp, "<td>&nbsp;</td>\n");
-	websWrite(wp, "<td>&nbsp;</td>\n");
-	websWrite(wp, "<td>&nbsp;</td>\n");
-	websWrite(wp, "<td>&nbsp;</td>\n");
-	websWrite(wp, "<td>\n");
+	websWrite(wp, "</table><br />\n");
+
 	// add button
 	websWrite(wp,
 		  "<script type=\"text/javascript\">document.write(\"<div id=\\\"samba_users_add\\\" class=\\\"center\\\"><input type=\\\"button\\\" class=\\\"button\\\" name=\\\"user_add\\\" value=\\\"\"+nas.useradd+\"\\\" onclick=\\\"addSambaUser();\\\" />\");</script></div>");
-	websWrite(wp, "</td>\n");
-	websWrite(wp, "</tr>\n");
-	websWrite(wp, "</table><br />\n");
 
 	// free memory
 
