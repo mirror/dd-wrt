@@ -138,9 +138,7 @@ EJ_VISIBLE void ej_samba3_sharepaths(webs_t wp, int argc, char_t ** argv)
 			  "<td style=\"width: 25px; vertical-align: middle;\" class=\"center\"><input type=\"checkbox\" name=\"smbshare_public%s\" id=\"smbshare_public%s\" value=\"1\" %s></td>\n",
 			  number, number, cs->public == 1 ? "checked" : "");
 		websWrite(wp, "<td>\n");
-		websWrite(wp,
-			  "<select name=\"smbshare_access_perms%s\" id=\"smbshare_access_perms%s\" style=\"width: 100%%;\"%s>\n",
-			  number, number, !strcmp(perms, "") ? " disabled" : "");
+		websWrite(wp, "<select name=\"smbshare_access_perms%s\" id=\"smbshare_access_perms%s\" style=\"width: 100%%;\"%s>\n", number, number, !strcmp(perms, "") ? " disabled" : "");
 		if (rows == 0 || strcmp(perms, "")) {
 			websWrite(wp, "<option value=\"rw\"%s>", !strcmp(cs->access_perms, "rw") ? " selected" : "");
 			show_caption(wp, NULL, "nas.perm_rw", "</option>\n");
@@ -229,8 +227,7 @@ EJ_VISIBLE void ej_samba3_users(webs_t wp, int argc, char_t ** argv)
 		websWrite(wp, "</td>\n");
 
 		websWrite(wp, "<td id=\"n_smbuser_pass\">\n");
-		websWrite(wp, "<input type=\"password\" autocomplete=\"new-password\" name=\"smbuser_password%s\" id=\"smbuser_password%s\" value=\"%s\" size=\"20\">&nbsp;\n", number, number,
-			  cu->password);
+		websWrite(wp, "<input type=\"password\" autocomplete=\"new-password\" name=\"smbuser_password%s\" id=\"smbuser_password%s\" value=\"%s\" size=\"20\">&nbsp;\n", number, number, cu->password);
 		//websWrite(wp, "                               <div style=\"float: left;padding-top: 2px;\">\n");
 		websWrite(wp,
 			  "<input type=\"checkbox\" name=\"smbuser_password_unmask%s\" value=\"0\" onclick=\"setElementMask('smbuser_password' + this.name.substr(23, this.name.length - 23), this.checked);\" />",
@@ -262,9 +259,7 @@ EJ_VISIBLE void ej_samba3_users(webs_t wp, int argc, char_t ** argv)
 					}
 				}
 				if (usershares > 0) {
-					websWrite(wp,
-						  "<div id=\"n_smbuser_share\"><input type=\"checkbox\" name=\"smbshare_%d_user_%d\"%s value=\"1\">&nbsp;<span>%s</span></div>\n",
-						  usershares, rows, buffer, cs->label);
+					websWrite(wp, "<div id=\"n_smbuser_share\"><input type=\"checkbox\" name=\"smbshare_%d_user_%d\"%s value=\"1\">&nbsp;<span>%s</span></div>\n", usershares, rows, buffer, cs->label);
 				}
 				usershares++;
 			}

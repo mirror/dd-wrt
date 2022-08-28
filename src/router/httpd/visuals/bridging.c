@@ -209,14 +209,27 @@ EJ_VISIBLE void ej_show_bridgenames(webs_t wp, int argc, char_t ** argv)
 			  i);
 		totalcount++;
 	}
-	websWrite(wp, "</table><br />\n");
+
+	websWrite(wp, "<tr>");
+	websWrite(wp, "<td>&nbsp;</td>\n");
+	websWrite(wp, "<td>&nbsp;</td>\n");
+	websWrite(wp, "<td>&nbsp;</td>\n");
+	websWrite(wp, "<td>&nbsp;</td>\n");
+	websWrite(wp, "<td>&nbsp;</td>\n");
+	websWrite(wp, "<td>&nbsp;</td>\n");
+	websWrite(wp, "<td>&nbsp;</td>\n");
+	websWrite(wp, "<td>&nbsp;</td>\n");
+	websWrite(wp, "<td>");
 
 	websWrite(wp,
 		  "<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<input class=\\\"button\\\" type=\\\"button\\\" value=\\\"\" + sbutton.add + \"\\\" onclick=\\\"bridge_add_submit(this.form)\\\" />\");\n//]]>\n</script>\n");
 	char var[32];
+	websWrite(wp, "</td>");
+	websWrite(wp, "</tr>");
 
 	sprintf(var, "%d", totalcount);
 	nvram_set("bridges_count", var);
+	websWrite(wp, "</table><br />\n");
 }
 
 EJ_VISIBLE void ej_show_bridgetable(webs_t wp, int argc, char_t ** argv)
@@ -375,11 +388,20 @@ EJ_VISIBLE void ej_show_bridgeifnames(webs_t wp, int argc, char_t ** argv)
 		show_bridgeifname(wp, finalbuffer, bufferif, i, "", "", NULL, NULL, NULL, NULL);
 		totalcount++;
 	}
-	websWrite(wp, "</table><br />\n");
+	websWrite(wp, "<tr>\n");
+	websWrite(wp, "<td>&nbsp;</td>\n");
+	websWrite(wp, "<td>&nbsp;</td>\n");
+	websWrite(wp, "<td>&nbsp;</td>\n");
+	websWrite(wp, "<td>&nbsp;</td>\n");
+	websWrite(wp, "<td>&nbsp;</td>\n");
+	websWrite(wp, "<td>\n");
 	websWrite(wp,
 		  "<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<input class=\\\"button\\\" type=\\\"button\\\" value=\\\"\" + sbutton.add + \"\\\" onclick=\\\"bridgeif_add_submit(this.form)\\\" />\");\n//]]>\n</script>\n");
+	websWrite(wp, "</td>\n");
+	websWrite(wp, "</tr>\n");
 	char var[32];
 
 	sprintf(var, "%d", totalcount);
 	nvram_set("bridgesif_count", var);
+	websWrite(wp, "</table><br />\n");
 }
