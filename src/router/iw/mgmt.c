@@ -54,6 +54,9 @@ static int register_mgmt_frame(struct nl80211_state *state,
 	size_t match_len;
 	int ret;
 
+	if (argc < 2)
+		return HANDLER_RET_USAGE;
+
 	ret = sscanf(argv[0], "%x", &type);
 	if (ret != 1) {
 		printf("invalid frame type: %s\n", argv[0]);
@@ -69,9 +72,11 @@ static int register_mgmt_frame(struct nl80211_state *state,
 	NLA_PUT_U16(msg, NL80211_ATTR_FRAME_TYPE, type);
 	NLA_PUT(msg, NL80211_ATTR_FRAME_MATCH, match_len, match);
 
+	free(match);
 	return 0;
 
 nla_put_failure:
+	free(match);
 	return -ENOBUFS;
 }
 
@@ -94,7 +99,6 @@ static int handle_mgmt_dump(struct nl80211_state *state,
 	char **mgmt_argv;
 	unsigned int count = 0;
 	int err = 0;
-	int i;
 
 	mgmt_argv = calloc(mgmt_argc, sizeof(char*));
 	if (!mgmt_argv)
@@ -104,23 +108,40 @@ static int handle_mgmt_dump(struct nl80211_state *state,
 	mgmt_argv[1] = "mgmt";
 	mgmt_argv[2] = "reg";
 
-	for (i = 3; i < argc; i += 3) {
-		if (strcmp(argv[i], "count") == 0) {
-			count = 1 + atoi(argv[i + 1]);
-			break;
-		}
+	if (argc < 6) {
+		err = HANDLER_RET_USAGE;
+		goto out;
+	}
 
-		if (strcmp(argv[i], "frame") != 0) {
-			err = 1;
+	argc -= 3;
+	argv += 3;
+	while (argc >= 3) {
+		if (strcmp(argv[0], "frame") != 0) {
+			err = HANDLER_RET_USAGE;
 			goto out;
 		}
 
-		mgmt_argv[3] = argv[i + 1];
-		mgmt_argv[4] = argv[i + 2];
+		mgmt_argv[3] = argv[1];
+		mgmt_argv[4] = argv[2];
+
+		argc -= 3;
+		argv += 3;
 
 		err = handle_cmd(state, II_NETDEV, mgmt_argc, mgmt_argv);
 		if (err)
 			goto out;
+	}
+
+	if (argc == 2 && strcmp(argv[0], "count") == 0) {
+		count = 1 + atoi(argv[1]);
+		if (count < 1)
+			count = 1;
+
+		argc -= 2;
+		argv += 2;
+	} else if (argc) {
+		err = HANDLER_RET_USAGE;
+		goto out;
 	}
 
 	mgmt_cb = nl_cb_alloc(iw_debug ? NL_CB_DEBUG : NL_CB_DEFAULT);

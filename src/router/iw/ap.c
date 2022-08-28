@@ -110,13 +110,37 @@ static int handle_start_ap(struct nl80211_state *state,
 	if (!argc)
 		return 0;
 
+	/* inactivity time (optional) */
+	if (strcmp(argv[0], "inactivity-time") == 0) {
+		argv++;
+		argc--;
+
+		if (!argc)
+			return -EINVAL;
+		len = strlen(argv[0]);
+		if (!len)
+			return -EINVAL;
+
+		val = strtoul(argv[0], &end, 10);
+		if (*end != '\0')
+			return -EINVAL;
+
+		NLA_PUT_U16(msg, NL80211_ATTR_INACTIVITY_TIMEOUT, val);
+		argv++;
+		argc--;
+	}
+
+	if (!argc) {
+		return 0;
+	}
+
 	if (strcmp(*argv, "key") != 0 && strcmp(*argv, "keys") != 0)
 		return 1;
 
 	argv++;
 	argc--;
 
-	return parse_keys(msg, argv, argc);
+	return parse_keys(msg, &argv, &argc);
  nla_put_failure:
 	return -ENOSPC;
 }
@@ -125,7 +149,7 @@ COMMAND(ap, start, "",
 	"<SSID> <control freq> [5|10|20|40|80|80+80|160] [<center1_freq> [<center2_freq>]]"
 	" <beacon interval in TU> <DTIM period> [hidden-ssid|zeroed-ssid] head"
 	" <beacon head in hexadecimal> [tail <beacon tail in hexadecimal>]"
-	" [key0:abcde d:1:6162636465]\n");
+	" [inactivity-time <inactivity time in seconds>] [key0:abcde d:1:6162636465]\n");
 
 static int handle_stop_ap(struct nl80211_state *state,
 			  struct nl_msg *msg,

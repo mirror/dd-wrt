@@ -107,7 +107,8 @@ static int handle_vendor(struct nl80211_state *state,
 
 	if (file) {
 		count = read_file(file, buf, sizeof(buf));
-		fclose(file);
+		if (file != stdin)
+			fclose(file);
 	} else
 		count = read_hex(argc - 2, &argv[2], buf, sizeof(buf));
 
@@ -120,6 +121,8 @@ static int handle_vendor(struct nl80211_state *state,
 	return 0;
 
 nla_put_failure:
+	if (file && file != stdin)
+		fclose(file);
 	return -ENOBUFS;
 }
 

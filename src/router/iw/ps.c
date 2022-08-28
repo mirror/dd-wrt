@@ -75,6 +75,6 @@ static int get_power_save(struct nl80211_state *state,
 	return 0;
 }
 
-COMMAND(get, power_save, "<param>",
+COMMAND(get, power_save, "",
 	NL80211_CMD_GET_POWER_SAVE, 0, CIB_NETDEV, get_power_save,
 	"Retrieve power save state.");

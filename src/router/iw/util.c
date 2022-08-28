@@ -5,7 +5,7 @@
 #include "iw.h"
 #include "nl80211.h"
 
-void mac_addr_n2a(char *mac_addr, unsigned char *arg)
+void mac_addr_n2a(char *mac_addr, const unsigned char *arg)
 {
 	int i, l;
 
@@ -149,143 +149,10 @@ const char *iftype_name(enum nl80211_iftype iftype)
 }
 
 static const char *commands[NL80211_CMD_MAX + 1] = {
-/*
- * sed 's%^\tNL80211_CMD_%%;t n;d;:n s%^\([^=]*\),.*%\t[NL80211_CMD_\1] = \"\L\1\",%;t;d' nl80211.h | grep -v "reserved"
- */
-	[NL80211_CMD_UNSPEC] = "unspec",
-	[NL80211_CMD_GET_WIPHY] = "get_wiphy",
-	[NL80211_CMD_SET_WIPHY] = "set_wiphy",
-	[NL80211_CMD_NEW_WIPHY] = "new_wiphy",
-	[NL80211_CMD_DEL_WIPHY] = "del_wiphy",
-	[NL80211_CMD_GET_INTERFACE] = "get_interface",
-	[NL80211_CMD_SET_INTERFACE] = "set_interface",
-	[NL80211_CMD_NEW_INTERFACE] = "new_interface",
-	[NL80211_CMD_DEL_INTERFACE] = "del_interface",
-	[NL80211_CMD_GET_KEY] = "get_key",
-	[NL80211_CMD_SET_KEY] = "set_key",
-	[NL80211_CMD_NEW_KEY] = "new_key",
-	[NL80211_CMD_DEL_KEY] = "del_key",
-	[NL80211_CMD_GET_BEACON] = "get_beacon",
-	[NL80211_CMD_SET_BEACON] = "set_beacon",
-	[NL80211_CMD_START_AP] = "start_ap",
-	[NL80211_CMD_STOP_AP] = "stop_ap",
-	[NL80211_CMD_GET_STATION] = "get_station",
-	[NL80211_CMD_SET_STATION] = "set_station",
-	[NL80211_CMD_NEW_STATION] = "new_station",
-	[NL80211_CMD_DEL_STATION] = "del_station",
-	[NL80211_CMD_GET_MPATH] = "get_mpath",
-	[NL80211_CMD_SET_MPATH] = "set_mpath",
-	[NL80211_CMD_NEW_MPATH] = "new_mpath",
-	[NL80211_CMD_DEL_MPATH] = "del_mpath",
-	[NL80211_CMD_SET_BSS] = "set_bss",
-	[NL80211_CMD_SET_REG] = "set_reg",
-	[NL80211_CMD_REQ_SET_REG] = "req_set_reg",
-	[NL80211_CMD_GET_MESH_CONFIG] = "get_mesh_config",
-	[NL80211_CMD_SET_MESH_CONFIG] = "set_mesh_config",
-	[NL80211_CMD_GET_REG] = "get_reg",
-	[NL80211_CMD_GET_SCAN] = "get_scan",
-	[NL80211_CMD_TRIGGER_SCAN] = "trigger_scan",
-	[NL80211_CMD_NEW_SCAN_RESULTS] = "new_scan_results",
-	[NL80211_CMD_SCAN_ABORTED] = "scan_aborted",
-	[NL80211_CMD_REG_CHANGE] = "reg_change",
-	[NL80211_CMD_AUTHENTICATE] = "authenticate",
-	[NL80211_CMD_ASSOCIATE] = "associate",
-	[NL80211_CMD_DEAUTHENTICATE] = "deauthenticate",
-	[NL80211_CMD_DISASSOCIATE] = "disassociate",
-	[NL80211_CMD_MICHAEL_MIC_FAILURE] = "michael_mic_failure",
-	[NL80211_CMD_REG_BEACON_HINT] = "reg_beacon_hint",
-	[NL80211_CMD_JOIN_IBSS] = "join_ibss",
-	[NL80211_CMD_LEAVE_IBSS] = "leave_ibss",
-	[NL80211_CMD_TESTMODE] = "testmode",
-	[NL80211_CMD_CONNECT] = "connect",
-	[NL80211_CMD_ROAM] = "roam",
-	[NL80211_CMD_DISCONNECT] = "disconnect",
-	[NL80211_CMD_SET_WIPHY_NETNS] = "set_wiphy_netns",
-	[NL80211_CMD_GET_SURVEY] = "get_survey",
-	[NL80211_CMD_NEW_SURVEY_RESULTS] = "new_survey_results",
-	[NL80211_CMD_SET_PMKSA] = "set_pmksa",
-	[NL80211_CMD_DEL_PMKSA] = "del_pmksa",
-	[NL80211_CMD_FLUSH_PMKSA] = "flush_pmksa",
-	[NL80211_CMD_REMAIN_ON_CHANNEL] = "remain_on_channel",
-	[NL80211_CMD_CANCEL_REMAIN_ON_CHANNEL] = "cancel_remain_on_channel",
-	[NL80211_CMD_SET_TX_BITRATE_MASK] = "set_tx_bitrate_mask",
-	[NL80211_CMD_REGISTER_FRAME] = "register_frame",
-	[NL80211_CMD_FRAME] = "frame",
-	[NL80211_CMD_FRAME_TX_STATUS] = "frame_tx_status",
-	[NL80211_CMD_SET_POWER_SAVE] = "set_power_save",
-	[NL80211_CMD_GET_POWER_SAVE] = "get_power_save",
-	[NL80211_CMD_SET_CQM] = "set_cqm",
-	[NL80211_CMD_NOTIFY_CQM] = "notify_cqm",
-	[NL80211_CMD_SET_CHANNEL] = "set_channel",
-	[NL80211_CMD_SET_WDS_PEER] = "set_wds_peer",
-	[NL80211_CMD_FRAME_WAIT_CANCEL] = "frame_wait_cancel",
-	[NL80211_CMD_JOIN_MESH] = "join_mesh",
-	[NL80211_CMD_LEAVE_MESH] = "leave_mesh",
-	[NL80211_CMD_UNPROT_DEAUTHENTICATE] = "unprot_deauthenticate",
-	[NL80211_CMD_UNPROT_DISASSOCIATE] = "unprot_disassociate",
-	[NL80211_CMD_NEW_PEER_CANDIDATE] = "new_peer_candidate",
-	[NL80211_CMD_GET_WOWLAN] = "get_wowlan",
-	[NL80211_CMD_SET_WOWLAN] = "set_wowlan",
-	[NL80211_CMD_START_SCHED_SCAN] = "start_sched_scan",
-	[NL80211_CMD_STOP_SCHED_SCAN] = "stop_sched_scan",
-	[NL80211_CMD_SCHED_SCAN_RESULTS] = "sched_scan_results",
-	[NL80211_CMD_SCHED_SCAN_STOPPED] = "sched_scan_stopped",
-	[NL80211_CMD_SET_REKEY_OFFLOAD] = "set_rekey_offload",
-	[NL80211_CMD_PMKSA_CANDIDATE] = "pmksa_candidate",
-	[NL80211_CMD_TDLS_OPER] = "tdls_oper",
-	[NL80211_CMD_TDLS_MGMT] = "tdls_mgmt",
-	[NL80211_CMD_UNEXPECTED_FRAME] = "unexpected_frame",
-	[NL80211_CMD_PROBE_CLIENT] = "probe_client",
-	[NL80211_CMD_REGISTER_BEACONS] = "register_beacons",
-	[NL80211_CMD_UNEXPECTED_4ADDR_FRAME] = "unexpected_4addr_frame",
-	[NL80211_CMD_SET_NOACK_MAP] = "set_noack_map",
-	[NL80211_CMD_CH_SWITCH_NOTIFY] = "ch_switch_notify",
-	[NL80211_CMD_START_P2P_DEVICE] = "start_p2p_device",
-	[NL80211_CMD_STOP_P2P_DEVICE] = "stop_p2p_device",
-	[NL80211_CMD_CONN_FAILED] = "conn_failed",
-	[NL80211_CMD_SET_MCAST_RATE] = "set_mcast_rate",
-	[NL80211_CMD_SET_MAC_ACL] = "set_mac_acl",
-	[NL80211_CMD_RADAR_DETECT] = "radar_detect",
-	[NL80211_CMD_GET_PROTOCOL_FEATURES] = "get_protocol_features",
-	[NL80211_CMD_UPDATE_FT_IES] = "update_ft_ies",
-	[NL80211_CMD_FT_EVENT] = "ft_event",
-	[NL80211_CMD_CRIT_PROTOCOL_START] = "crit_protocol_start",
-	[NL80211_CMD_CRIT_PROTOCOL_STOP] = "crit_protocol_stop",
-	[NL80211_CMD_GET_COALESCE] = "get_coalesce",
-	[NL80211_CMD_SET_COALESCE] = "set_coalesce",
-	[NL80211_CMD_CHANNEL_SWITCH] = "channel_switch",
-	[NL80211_CMD_VENDOR] = "vendor",
-	[NL80211_CMD_SET_QOS_MAP] = "set_qos_map",
-	[NL80211_CMD_ADD_TX_TS] = "add_tx_ts",
-	[NL80211_CMD_DEL_TX_TS] = "del_tx_ts",
-	[NL80211_CMD_GET_MPP] = "get_mpp",
-	[NL80211_CMD_JOIN_OCB] = "join_ocb",
-	[NL80211_CMD_LEAVE_OCB] = "leave_ocb",
-	[NL80211_CMD_CH_SWITCH_STARTED_NOTIFY] = "ch_switch_started_notify",
-	[NL80211_CMD_TDLS_CHANNEL_SWITCH] = "tdls_channel_switch",
-	[NL80211_CMD_TDLS_CANCEL_CHANNEL_SWITCH] = "tdls_cancel_channel_switch",
-	[NL80211_CMD_WIPHY_REG_CHANGE] = "wiphy_reg_change",
-	[NL80211_CMD_ABORT_SCAN] = "abort_scan",
-	[NL80211_CMD_START_NAN] = "start_nan",
-	[NL80211_CMD_STOP_NAN] = "stop_nan",
-	[NL80211_CMD_ADD_NAN_FUNCTION] = "add_nan_function",
-	[NL80211_CMD_DEL_NAN_FUNCTION] = "del_nan_function",
-	[NL80211_CMD_CHANGE_NAN_CONFIG] = "change_nan_config",
-	[NL80211_CMD_NAN_MATCH] = "nan_match",
-	[NL80211_CMD_SET_MULTICAST_TO_UNICAST] = "set_multicast_to_unicast",
-	[NL80211_CMD_UPDATE_CONNECT_PARAMS] = "update_connect_params",
-	[NL80211_CMD_SET_PMK] = "set_pmk",
-	[NL80211_CMD_DEL_PMK] = "del_pmk",
-	[NL80211_CMD_PORT_AUTHORIZED] = "port_authorized",
-//	[NL80211_CMD_RELOAD_REGDB] = "reload_regdb",
-#ifdef CONFIG_TDMA
-	[NL80211_CMD_JOIN_TDMA] = "join_tdma",
-	[NL80211_CMD_LEAVE_TDMA] = "leave_tdma",
-#endif
+#include "nl80211-commands.inc"
 };
 
 static char cmdbuf[100];
-
 #if 0
 const char *command_name(enum nl80211_commands cmd)
 {
@@ -325,12 +192,14 @@ int ieee80211_channel_to_frequency(int chan, enum nl80211_band band)
 			return 5000 + chan * 5;
 		break;
 	case NL80211_BAND_6GHZ:
-	/* see 802.11ax D4.1 27.3.22.2 */
+		/* see 802.11ax D6.1 27.3.23.2 */
+		if (chan == 2)
+			return 5935;
 		if (chan <= 253)
-			return 5940 + chan * 5;
+			return 5950 + chan * 5;
 		break;
 	case NL80211_BAND_60GHZ:
-		if (chan < 5)
+		if (chan < 7)
 			return 56160 + chan * 2160;
 		break;
 	default:
@@ -344,6 +213,9 @@ int ieee80211_frequency_to_channel(int freq)
 	/* see 802.11-2007 17.3.8.3.2 and Annex J */
 	if (freq == 2484)
 		return 14;
+	/* see 802.11ax D6.1 27.3.23.2 and Annex E */
+	else if (freq == 5935)
+		return 2;
 	// boes hack...
 	else if (freq == 2407)
 		return 0;
@@ -438,35 +310,35 @@ static int parse_cipher_suite(const char *cipher_str)
 {
 
 	if (!strcmp(cipher_str, "TKIP"))
-		return 0x000FAC02;
+		return WLAN_CIPHER_SUITE_TKIP;
 	if (!strcmp(cipher_str, "CCMP") || !strcmp(cipher_str, "CCMP-128"))
-		return 0x000FAC04;
+		return WLAN_CIPHER_SUITE_CCMP;
 	if (!strcmp(cipher_str, "GCMP") || !strcmp(cipher_str, "GCMP-128"))
-		return 0x000FAC08;
+		return WLAN_CIPHER_SUITE_GCMP;
 	if (!strcmp(cipher_str, "GCMP-256"))
-		return 0x000FAC09;
+		return WLAN_CIPHER_SUITE_GCMP_256;
 	if (!strcmp(cipher_str, "CCMP-256"))
-		return 0x000FAC0A;
+		return WLAN_CIPHER_SUITE_CCMP_256;
 	return -EINVAL;
 }
 
-int parse_keys(struct nl_msg *msg, char **argv, int argc)
+int parse_keys(struct nl_msg *msg, char **argv[], int *argc)
 {
 	struct nlattr *keys;
 	int i = 0;
 	bool have_default = false;
-	char *arg = *argv;
+	char *arg = **argv;
 	char keybuf[13];
 	int pos = 0;
 
-	if (!argc)
+	if (!*argc)
 		return 1;
 
 	if (!memcmp(&arg[pos], "psk", 3)) {
 		char psk_keybuf[32];
 		int cipher_suite, akm_suite;
 
-		if (argc < 4)
+		if (*argc < 4)
 			goto explain;
 
 		pos+=3;
@@ -484,9 +356,9 @@ int parse_keys(struct nl_msg *msg, char **argv, int argc)
 		NLA_PUT(msg, NL80211_ATTR_PMK, 32, psk_keybuf);
 		NLA_PUT_U32(msg, NL80211_ATTR_AUTH_TYPE, NL80211_AUTHTYPE_OPEN_SYSTEM);
 
-		argv++;
-		argc--;
-		arg = *argv;
+		*argv += 1;
+		*argc -= 1;
+		arg = **argv;
 
 		akm_suite = parse_akm_suite(arg);
 		if (akm_suite < 0)
@@ -494,9 +366,9 @@ int parse_keys(struct nl_msg *msg, char **argv, int argc)
 
 		NLA_PUT_U32(msg, NL80211_ATTR_AKM_SUITES, akm_suite);
 
-		argv++;
-		argc--;
-		arg = *argv;
+		*argv += 1;
+		*argc -= 1;
+		arg = **argv;
 
 		cipher_suite = parse_cipher_suite(arg);
 		if (cipher_suite < 0)
@@ -504,9 +376,9 @@ int parse_keys(struct nl_msg *msg, char **argv, int argc)
 
 		NLA_PUT_U32(msg, NL80211_ATTR_CIPHER_SUITES_PAIRWISE, cipher_suite);
 
-		argv++;
-		argc--;
-		arg = *argv;
+		*argv += 1;
+		*argc -= 1;
+		arg = **argv;
 
 		cipher_suite = parse_cipher_suite(arg);
 		if (cipher_suite < 0)
@@ -514,6 +386,8 @@ int parse_keys(struct nl_msg *msg, char **argv, int argc)
 
 		NLA_PUT_U32(msg, NL80211_ATTR_CIPHER_SUITE_GROUP, cipher_suite);
 
+		*argv += 1;
+		*argc -= 1;
 		return 0;
 	}
 
@@ -528,7 +402,7 @@ int parse_keys(struct nl_msg *msg, char **argv, int argc)
 		struct nlattr *key = nla_nest_start(msg, ++i);
 		char *keydata;
 
-		arg = *argv;
+		arg = **argv;
 		pos = 0;
 
 		if (!key)
@@ -551,14 +425,18 @@ int parse_keys(struct nl_msg *msg, char **argv, int argc)
 		switch (strlen(keydata)) {
 		case 10:
 			keydata = hex2bin(keydata, keybuf);
+			/* fall through */
 		case 5:
-			NLA_PUT_U32(msg, NL80211_KEY_CIPHER, 0x000FAC01);
+			NLA_PUT_U32(msg, NL80211_KEY_CIPHER,
+				    WLAN_CIPHER_SUITE_WEP40);
 			keylen = 5;
 			break;
 		case 26:
 			keydata = hex2bin(keydata, keybuf);
+			/* fall through */
 		case 13:
-			NLA_PUT_U32(msg, NL80211_KEY_CIPHER, 0x000FAC05);
+			NLA_PUT_U32(msg, NL80211_KEY_CIPHER,
+				    WLAN_CIPHER_SUITE_WEP104);
 			keylen = 13;
 			break;
 		default:
@@ -570,15 +448,15 @@ int parse_keys(struct nl_msg *msg, char **argv, int argc)
 
 		NLA_PUT(msg, NL80211_KEY_DATA, keylen, keydata);
 
-		argv++;
-		argc--;
+		*argv += 1;
+		*argc -= 1;
 
 		/* one key should be TX key */
-		if (!have_default && !argc)
+		if (!have_default && !*argc)
 			NLA_PUT_FLAG(msg, NL80211_KEY_DEFAULT);
 
 		nla_nest_end(msg, key);
-	} while (argc);
+	} while (*argc);
 
 	nla_nest_end(msg, keys);
 
@@ -652,7 +530,15 @@ static int parse_freqs(struct chandef *chandef, int argc, char **argv,
 	case NL80211_CHAN_WIDTH_40:
 	case NL80211_CHAN_WIDTH_80:
 	case NL80211_CHAN_WIDTH_160:
+	case NL80211_CHAN_WIDTH_320:
 		need_cf1 = true;
+		break;
+	case NL80211_CHAN_WIDTH_1:
+	case NL80211_CHAN_WIDTH_2:
+	case NL80211_CHAN_WIDTH_4:
+	case NL80211_CHAN_WIDTH_8:
+	case NL80211_CHAN_WIDTH_16:
+		/* can't happen yet */
 		break;
 	}
 
@@ -715,10 +601,10 @@ static int parse_freqs(struct chandef *chandef, int argc, char **argv,
  * user by giving "NOHT" instead.
  *
  * The working specifier if chan is set are:
- *   <channel> [NOHT|HT20|HT40+|HT40-|5MHz|10MHz|80MHz]
+ *   <channel> [NOHT|HT20|HT40+|HT40-|5MHz|10MHz|80MHz|160MHz]
  *
  * And if frequency is set:
- *   <freq> [NOHT|HT20|HT40+|HT40-|5MHz|10MHz|80MHz]
+ *   <freq> [NOHT|HT20|HT40+|HT40-|5MHz|10MHz|80MHz|160MHz]
  *   <control freq> [5|10|20|40|80|80+80|160] [<center1_freq> [<center2_freq>]]
  *
  * If the mode/channel width is not given the NOHT is assumed.
@@ -760,6 +646,14 @@ int parse_freqchan(struct chandef *chandef, bool chan, int argc, char **argv,
 		  .chantype = -1 },
 		{ .name = "80MHz",
 		  .width = NL80211_CHAN_WIDTH_80,
+		  .freq1_diff = 0,
+		  .chantype = -1 },
+		{ .name = "160MHz",
+		  .width = NL80211_CHAN_WIDTH_160,
+		  .freq1_diff = 0,
+		  .chantype = -1 },
+		{ .name = "320MHz",
+		  .width = NL80211_CHAN_WIDTH_320,
 		  .freq1_diff = 0,
 		  .chantype = -1 },
 		{ .name = "160MHz",
@@ -1062,9 +956,159 @@ void print_ht_mcs(const __u8 *mcs)
 	}
 }
 
+struct vht_nss_ratio {
+	bool valid;
+	int bw_20;
+	int bw_40;
+	int bw_80;
+	int bw_160;
+	int bw_80_80;
+};
+
+/*
+ * indexed by [chan_width][ext_nss_bw], ratio in 1/4 unit
+ */
+static const struct vht_nss_ratio nss_ratio_tbl[3][4] = {
+	{
+		/* chan_width == 0, ext_nss_bw == 0 */
+		{
+			.valid = true,
+			.bw_20 = 4,
+			.bw_40 = 4,
+			.bw_80 = 4,
+		},
+		/* chan_width == 0, ext_nss_bw == 1 */
+		{
+			.valid = true,
+			.bw_20 = 4,
+			.bw_40 = 4,
+			.bw_80 = 4,
+			.bw_160 = 2,
+		},
+		/* chan_width == 0, ext_nss_bw == 2 */
+		{
+			.valid = true,
+			.bw_20 = 4,
+			.bw_40 = 4,
+			.bw_80 = 4,
+			.bw_160 = 2,
+			.bw_80_80 = 2,
+		},
+		/* chan_width == 0, ext_nss_bw == 3 */
+		{
+			.valid = true,
+			.bw_20 = 4,
+			.bw_40 = 4,
+			.bw_80 = 4,
+			.bw_160 = 3,
+			.bw_80_80 = 3,
+		},
+	},
+	{
+		/* chan_width == 1, ext_nss_bw == 0 */
+		{
+			.valid = true,
+			.bw_20 = 4,
+			.bw_40 = 4,
+			.bw_80 = 4,
+			.bw_160 = 4,
+		},
+		/* chan_width == 1, ext_nss_bw == 1 */
+		{
+			.valid = true,
+			.bw_20 = 4,
+			.bw_40 = 4,
+			.bw_80 = 4,
+			.bw_160 = 4,
+			.bw_80_80 = 2,
+		},
+		/* chan_width == 1, ext_nss_bw == 2 */
+		{
+			.valid = true,
+			.bw_20 = 4,
+			.bw_40 = 4,
+			.bw_80 = 4,
+			.bw_160 = 4,
+			.bw_80_80 = 3,
+		},
+		/* chan_width == 1, ext_nss_bw == 3 */
+		{
+			.valid = true,
+			.bw_20 = 8,
+			.bw_40 = 8,
+			.bw_80 = 8,
+			.bw_160 = 8,
+			.bw_80_80 = 1,
+		},
+	},
+	{
+		/* chan_width == 2, ext_nss_bw == 0 */
+		{
+			.valid = true,
+			.bw_20 = 4,
+			.bw_40 = 4,
+			.bw_80 = 4,
+			.bw_160 = 4,
+			.bw_80_80 = 4,
+		},
+		/* chan_width == 2, ext_nss_bw == 1 */
+		{},
+		/* chan_width == 2, ext_nss_bw == 2 */
+		{},
+		/* chan_width == 2, ext_nss_bw == 3 */
+		{
+			.valid = true,
+			.bw_20 = 8,
+			.bw_40 = 8,
+			.bw_80 = 8,
+			.bw_160 = 4,
+			.bw_80_80 = 4,
+		},
+	},
+};
+
+static void print_nss_ratio_value(int ratio)
+{
+	const char *rstr;
+
+	switch (ratio) {
+	case 4:
+		return;
+	case 3:
+		rstr = "3/4";
+		break;
+	case 2:
+		rstr = "1/2";
+		break;
+	case 8:
+		rstr = "x2";
+		break;
+	default:
+		rstr = "undef";
+		break;
+	}
+
+	printf("(%s NSS) ", rstr);
+}
+
+static void print_nss_ratio(const char *str, bool force_show, int ratio)
+{
+	if (!ratio)
+		return;
+	if (ratio == 4) {
+		if (force_show)
+			printf("%s ", str);
+	} else {
+		printf("%s ", str);
+		print_nss_ratio_value(ratio);
+	}
+}
+
 void print_vht_info(__u32 capa, const __u8 *mcs)
 {
 	__u16 tmp;
+	__u32 supp_chan_width, ext_nss_bw;
+	const struct vht_nss_ratio *nss_tbl;
 	int i;
 
 	printf("\t\tVHT Capabilities (0x%.8x):\n", capa);
@@ -1082,13 +1126,34 @@ void print_vht_info(__u32 capa, const __u8 *mcs)
 	case 2: printf("11454\n"); break;
 	case 3: printf("(reserved)\n");
 	}
+
 	printf("\t\t\tSupported Channel Width: ");
-	switch ((capa >> 2) & 3) {
-	case 0: printf("neither 160 nor 80+80\n"); break;
-	case 1: printf("160 MHz\n"); break;
-	case 2: printf("160 MHz, 80+80 MHz\n"); break;
-	case 3: printf("(reserved)\n");
+	supp_chan_width = (capa >> 2) & 3;
+	ext_nss_bw = (capa >> 30) & 3;
+	nss_tbl = &nss_ratio_tbl[supp_chan_width][ext_nss_bw];
+
+	if (!nss_tbl->valid)
+		printf("(reserved)\n");
+	else if (nss_tbl->bw_20 == 4 &&
+		 nss_tbl->bw_40 == 4 &&
+		 nss_tbl->bw_80 == 4 &&
+		 (!nss_tbl->bw_160 || nss_tbl->bw_160 == 4) &&
+		 (!nss_tbl->bw_80_80 || nss_tbl->bw_80_80 == 4)) {
+		/* old style print format */
+		switch (supp_chan_width) {
+		case 0: printf("neither 160 nor 80+80\n"); break;
+		case 1: printf("160 MHz\n"); break;
+		case 2: printf("160 MHz, 80+80 MHz\n"); break;
+		}
+	} else {
+		print_nss_ratio("20Mhz", false, nss_tbl->bw_20);
+		print_nss_ratio("40Mhz", false, nss_tbl->bw_40);
+		print_nss_ratio("80Mhz", false, nss_tbl->bw_80);
+		print_nss_ratio("160Mhz", false, nss_tbl->bw_160);
+		print_nss_ratio("80+80Mhz", false, nss_tbl->bw_80_80);
+		printf("\n");
 	}
+
 	PRINT_VHT_CAPA(4, "RX LDPC");
 	PRINT_VHT_CAPA(5, "short GI (80 MHz)");
 	PRINT_VHT_CAPA(6, "short GI (160/80+80 MHz)");
@@ -1134,6 +1199,512 @@ void print_vht_info(__u32 capa, const __u8 *mcs)
 	}
 	tmp = mcs[6] | (mcs[7] << 8);
 	printf("\t\tVHT TX highest supported: %d Mbps\n", tmp & 0x1fff);
+
+	printf("\t\tVHT extended NSS: %ssupported\n",
+	       (tmp & (1 << 13)) ? "" : "not ");
+}
+
+static void __print_he_capa(const __u16 *mac_cap,
+			    const __u16 *phy_cap,
+			    const __u16 *mcs_set, size_t mcs_len,
+			    const __u8 *ppet, int ppet_len,
+			    bool indent)
+{
+	size_t mcs_used;
+	int i;
+	const char *pre = indent ? "\t" : "";
+
+	#define PRINT_HE_CAP(_var, _idx, _bit, _str) \
+	do { \
+		if (_var[_idx] & BIT(_bit)) \
+			printf("%s\t\t\t" _str "\n", pre); \
+	} while (0)
+
+	#define PRINT_HE_CAP_MASK(_var, _idx, _shift, _mask, _str) \
+	do { \
+		if ((_var[_idx] >> _shift) & _mask) \
+			printf("%s\t\t\t" _str ": %d\n", pre, (_var[_idx] >> _shift) & _mask); \
+	} while (0)
+
+	#define PRINT_HE_MAC_CAP(...) PRINT_HE_CAP(mac_cap, __VA_ARGS__)
+	#define PRINT_HE_MAC_CAP_MASK(...) PRINT_HE_CAP_MASK(mac_cap, __VA_ARGS__)
+	#define PRINT_HE_PHY_CAP(...) PRINT_HE_CAP(phy_cap, __VA_ARGS__)
+	#define PRINT_HE_PHY_CAP0(_idx, _bit, ...) PRINT_HE_CAP(phy_cap, _idx, _bit + 8, __VA_ARGS__)
+	#define PRINT_HE_PHY_CAP_MASK(...) PRINT_HE_CAP_MASK(phy_cap, __VA_ARGS__)
+
+	printf("%s\t\tHE MAC Capabilities (0x", pre);
+	for (i = 0; i < 3; i++)
+		printf("%04x", mac_cap[i]);
+	printf("):\n");
+
+	PRINT_HE_MAC_CAP(0, 0, "+HTC HE Supported");
+	PRINT_HE_MAC_CAP(0, 1, "TWT Requester");
+	PRINT_HE_MAC_CAP(0, 2, "TWT Responder");
+	PRINT_HE_MAC_CAP_MASK(0, 3, 0x3, "Dynamic BA Fragementation Level");
+	PRINT_HE_MAC_CAP_MASK(0, 5, 0x7, "Maximum number of MSDUS Fragments");
+	PRINT_HE_MAC_CAP_MASK(0, 8, 0x3, "Minimum Payload size of 128 bytes");
+	PRINT_HE_MAC_CAP_MASK(0, 10, 0x3, "Trigger Frame MAC Padding Duration");
+	PRINT_HE_MAC_CAP_MASK(0, 12, 0x7, "Multi-TID Aggregation Support");
+
+	PRINT_HE_MAC_CAP(1, 1, "All Ack");
+	PRINT_HE_MAC_CAP(1, 2, "TRS");
+	PRINT_HE_MAC_CAP(1, 3, "BSR");
+	PRINT_HE_MAC_CAP(1, 4, "Broadcast TWT");
+	PRINT_HE_MAC_CAP(1, 5, "32-bit BA Bitmap");
+	PRINT_HE_MAC_CAP(1, 6, "MU Cascading");
+	PRINT_HE_MAC_CAP(1, 7, "Ack-Enabled Aggregation");
+	PRINT_HE_MAC_CAP(1, 9, "OM Control");
+	PRINT_HE_MAC_CAP(1, 10, "OFDMA RA");
+	PRINT_HE_MAC_CAP_MASK(1, 11, 0x3, "Maximum A-MPDU Length Exponent");
+	PRINT_HE_MAC_CAP(1, 13, "A-MSDU Fragmentation");
+	PRINT_HE_MAC_CAP(1, 14, "Flexible TWT Scheduling");
+	PRINT_HE_MAC_CAP(1, 15, "RX Control Frame to MultiBSS");
+
+	PRINT_HE_MAC_CAP(2, 0, "BSRP BQRP A-MPDU Aggregation");
+	PRINT_HE_MAC_CAP(2, 1, "QTP");
+	PRINT_HE_MAC_CAP(2, 2, "BQR");
+	PRINT_HE_MAC_CAP(2, 3, "SRP Responder Role");
+	PRINT_HE_MAC_CAP(2, 4, "NDP Feedback Report");
+	PRINT_HE_MAC_CAP(2, 5, "OPS");
+	PRINT_HE_MAC_CAP(2, 6, "A-MSDU in A-MPDU");
+	PRINT_HE_MAC_CAP_MASK(2, 7, 7, "Multi-TID Aggregation TX");
+	PRINT_HE_MAC_CAP(2, 10, "HE Subchannel Selective Transmission");
+	PRINT_HE_MAC_CAP(2, 11, "UL 2x996-Tone RU");
+	PRINT_HE_MAC_CAP(2, 12, "OM Control UL MU Data Disable RX");
+
+	printf("%s\t\tHE PHY Capabilities: (0x", pre);
+	for (i = 0; i < 11; i++)
+		printf("%02x", ((__u8 *)phy_cap)[i + 1]);
+	printf("):\n");
+
+	PRINT_HE_PHY_CAP0(0, 1, "HE40/2.4GHz");
+	PRINT_HE_PHY_CAP0(0, 2, "HE40/HE80/5GHz");
+	PRINT_HE_PHY_CAP0(0, 3, "HE160/5GHz");
+	PRINT_HE_PHY_CAP0(0, 4, "HE160/HE80+80/5GHz");
+	PRINT_HE_PHY_CAP0(0, 5, "242 tone RUs/2.4GHz");
+	PRINT_HE_PHY_CAP0(0, 6, "242 tone RUs/5GHz");
+
+	PRINT_HE_PHY_CAP_MASK(1, 0, 0xf, "Punctured Preamble RX");
+	PRINT_HE_PHY_CAP_MASK(1, 4, 0x1, "Device Class");
+	PRINT_HE_PHY_CAP(1, 5, "LDPC Coding in Payload");
+	PRINT_HE_PHY_CAP(1, 6, "HE SU PPDU with 1x HE-LTF and 0.8us GI");
+	PRINT_HE_PHY_CAP_MASK(1, 7, 0x3, "Midamble Rx Max NSTS");
+	PRINT_HE_PHY_CAP(1, 9, "NDP with 4x HE-LTF and 3.2us GI");
+	PRINT_HE_PHY_CAP(1, 10, "STBC Tx <= 80MHz");
+	PRINT_HE_PHY_CAP(1, 11, "STBC Rx <= 80MHz");
+	PRINT_HE_PHY_CAP(1, 12, "Doppler Tx");
+	PRINT_HE_PHY_CAP(1, 13, "Doppler Rx");
+	PRINT_HE_PHY_CAP(1, 14, "Full Bandwidth UL MU-MIMO");
+	PRINT_HE_PHY_CAP(1, 15, "Partial Bandwidth UL MU-MIMO");
+
+	PRINT_HE_PHY_CAP_MASK(2, 0, 0x3, "DCM Max Constellation");
+	PRINT_HE_PHY_CAP_MASK(2, 2, 0x1, "DCM Max NSS Tx");
+	PRINT_HE_PHY_CAP_MASK(2, 3, 0x3, "DCM Max Constellation Rx");
+	PRINT_HE_PHY_CAP_MASK(2, 5, 0x1, "DCM Max NSS Rx");
+	PRINT_HE_PHY_CAP(2, 6, "Rx HE MU PPDU from Non-AP STA");
+	PRINT_HE_PHY_CAP(2, 7, "SU Beamformer");
+	PRINT_HE_PHY_CAP(2, 8, "SU Beamformee");
+	PRINT_HE_PHY_CAP(2, 9, "MU Beamformer");
+	PRINT_HE_PHY_CAP_MASK(2, 10, 0x7, "Beamformee STS <= 80Mhz");
+	PRINT_HE_PHY_CAP_MASK(2, 13, 0x7, "Beamformee STS > 80Mhz");
+
+	PRINT_HE_PHY_CAP_MASK(3, 0, 0x7, "Sounding Dimensions <= 80Mhz");
+	PRINT_HE_PHY_CAP_MASK(3, 3, 0x7, "Sounding Dimensions > 80Mhz");
+	PRINT_HE_PHY_CAP(3, 6, "Ng = 16 SU Feedback");
+	PRINT_HE_PHY_CAP(3, 7, "Ng = 16 MU Feedback");
+	PRINT_HE_PHY_CAP(3, 8, "Codebook Size SU Feedback");
+	PRINT_HE_PHY_CAP(3, 9, "Codebook Size MU Feedback");
+	PRINT_HE_PHY_CAP(3, 10, "Triggered SU Beamforming Feedback");
+	PRINT_HE_PHY_CAP(3, 11, "Triggered MU Beamforming Feedback");
+	PRINT_HE_PHY_CAP(3, 12, "Triggered CQI Feedback");
+	PRINT_HE_PHY_CAP(3, 13, "Partial Bandwidth Extended Range");
+	PRINT_HE_PHY_CAP(3, 14, "Partial Bandwidth DL MU-MIMO");
+	PRINT_HE_PHY_CAP(3, 15, "PPE Threshold Present");
+
+	PRINT_HE_PHY_CAP(4, 0, "SRP-based SR");
+	PRINT_HE_PHY_CAP(4, 1, "Power Boost Factor ar");
+	PRINT_HE_PHY_CAP(4, 2, "HE SU PPDU & HE PPDU 4x HE-LTF 0.8us GI");
+	PRINT_HE_PHY_CAP_MASK(4, 3, 0x7, "Max NC");
+	PRINT_HE_PHY_CAP(4, 6, "STBC Tx > 80MHz");
+	PRINT_HE_PHY_CAP(4, 7, "STBC Rx > 80MHz");
+	PRINT_HE_PHY_CAP(4, 8, "HE ER SU PPDU 4x HE-LTF 0.8us GI");
+	PRINT_HE_PHY_CAP(4, 9, "20MHz in 40MHz HE PPDU 2.4GHz");
+	PRINT_HE_PHY_CAP(4, 10, "20MHz in 160/80+80MHz HE PPDU");
+	PRINT_HE_PHY_CAP(4, 11, "80MHz in 160/80+80MHz HE PPDU");
+	PRINT_HE_PHY_CAP(4, 12, "HE ER SU PPDU 1x HE-LTF 0.8us GI");
+	PRINT_HE_PHY_CAP(4, 13, "Midamble Rx 2x & 1x HE-LTF");
+	PRINT_HE_PHY_CAP_MASK(4, 14, 0x3, "DCM Max BW");
+
+	PRINT_HE_PHY_CAP(5, 0, "Longer Than 16HE SIG-B OFDM Symbols");
+	PRINT_HE_PHY_CAP(5, 1, "Non-Triggered CQI Feedback");
+	PRINT_HE_PHY_CAP(5, 2, "TX 1024-QAM");
+	PRINT_HE_PHY_CAP(5, 3, "RX 1024-QAM");
+	PRINT_HE_PHY_CAP(5, 4, "RX Full BW SU Using HE MU PPDU with Compression SIGB");
+	PRINT_HE_PHY_CAP(5, 5, "RX Full BW SU Using HE MU PPDU with Non-Compression SIGB");
+
+	mcs_used = 0;
+	for (i = 0; i < 3; i++) {
+		__u8 phy_cap_support[] = { BIT(1) | BIT(2), BIT(3), BIT(4) };
+		char *bw[] = { "<= 80", "160", "80+80" };
+		int j;
+
+		if ((phy_cap[0] & (phy_cap_support[i] << 8)) == 0)
+			continue;
+
+		/* Supports more, but overflow? Abort. */
+		if ((i * 2 + 2) * sizeof(mcs_set[0]) >= mcs_len)
+			return;
+
+		for (j = 0; j < 2; j++) {
+			int k;
+			printf("%s\t\tHE %s MCS and NSS set %s MHz\n", pre, j ? "TX" : "RX", bw[i]);
+			for (k = 0; k < 8; k++) {
+				__u16 mcs = mcs_set[(i * 2) + j];
+				mcs >>= k * 2;
+				mcs &= 0x3;
+				printf("%s\t\t\t%d streams: ", pre, k + 1);
+				if (mcs == 3)
+					printf("not supported\n");
+				else
+					printf("MCS 0-%d\n", 7 + (mcs * 2));
+			}
+
+		}
+		mcs_used += 2 * sizeof(mcs_set[0]);
+	}
+
+	/* Caller didn't provide ppet; infer it, if there's trailing space. */
+	if (!ppet) {
+		ppet = (const void *)((const __u8 *)mcs_set + mcs_used);
+		if (mcs_used < mcs_len)
+			ppet_len = mcs_len - mcs_used;
+		else
+			ppet_len = 0;
+	}
+
+	if (ppet_len && (phy_cap[3] & BIT(15))) {
+		printf("%s\t\tPPE Threshold ", pre);
+		for (i = 0; i < ppet_len; i++)
+			if (ppet[i])
+				printf("0x%02x ", ppet[i]);
+		printf("\n");
+	}
+}
+
+void print_iftype_list(const char *name, const char *pfx, struct nlattr *attr)
+{
+	struct nlattr *ift;
+	int rem;
+
+	printf("%s:\n", name);
+	nla_for_each_nested(ift, attr, rem)
+		printf("%s * %s\n", pfx, iftype_name(nla_type(ift)));
+}
+
+void print_iftype_line(struct nlattr *attr)
+{
+	struct nlattr *ift;
+	bool first = true;
+	int rem;
+
+	nla_for_each_nested(ift, attr, rem) {
+		if (first)
+			first = false;
+		else
+			printf(", ");
+		printf("%s", iftype_name(nla_type(ift)));
+	}
+}
+
+void print_he_info(struct nlattr *nl_iftype)
+{
+	struct nlattr *tb[NL80211_BAND_IFTYPE_ATTR_MAX + 1];
+	__u16 mac_cap[3] = { 0 };
+	__u16 phy_cap[6] = { 0 };
+	__u16 mcs_set[6] = { 0 };
+	__u8 ppet[25] = { 0 };
+	size_t len;
+	int mcs_len = 0, ppet_len = 0;
+
+	nla_parse(tb, NL80211_BAND_IFTYPE_ATTR_MAX,
+		  nla_data(nl_iftype), nla_len(nl_iftype), NULL);
+
+	if (!tb[NL80211_BAND_IFTYPE_ATTR_IFTYPES])
+		return;
+
+	printf("\t\tHE Iftypes: ");
+	print_iftype_line(tb[NL80211_BAND_IFTYPE_ATTR_IFTYPES]);
+	printf("\n");
+
+	if (tb[NL80211_BAND_IFTYPE_ATTR_HE_CAP_MAC]) {
+		len = nla_len(tb[NL80211_BAND_IFTYPE_ATTR_HE_CAP_MAC]);
+		if (len > sizeof(mac_cap))
+			len = sizeof(mac_cap);
+		memcpy(mac_cap,
+		       nla_data(tb[NL80211_BAND_IFTYPE_ATTR_HE_CAP_MAC]),
+		       len);
+	}
+
+	if (tb[NL80211_BAND_IFTYPE_ATTR_HE_CAP_PHY]) {
+		len = nla_len(tb[NL80211_BAND_IFTYPE_ATTR_HE_CAP_PHY]);
+
+		if (len > sizeof(phy_cap) - 1)
+			len = sizeof(phy_cap) - 1;
+		memcpy(&((__u8 *)phy_cap)[1],
+		       nla_data(tb[NL80211_BAND_IFTYPE_ATTR_HE_CAP_PHY]),
+		       len);
+	}
+
+	if (tb[NL80211_BAND_IFTYPE_ATTR_HE_CAP_MCS_SET]) {
+		len = nla_len(tb[NL80211_BAND_IFTYPE_ATTR_HE_CAP_MCS_SET]);
+		if (len > sizeof(mcs_set))
+			len = sizeof(mcs_set);
+		memcpy(mcs_set,
+		       nla_data(tb[NL80211_BAND_IFTYPE_ATTR_HE_CAP_MCS_SET]),
+		       len);
+		mcs_len = len;
+	}
+
+	if (tb[NL80211_BAND_IFTYPE_ATTR_HE_CAP_PPE]) {
+		len = nla_len(tb[NL80211_BAND_IFTYPE_ATTR_HE_CAP_PPE]);
+		if (len > sizeof(ppet))
+			len = sizeof(ppet);
+		memcpy(ppet,
+		       nla_data(tb[NL80211_BAND_IFTYPE_ATTR_HE_CAP_PPE]),
+		       len);
+		ppet_len = len;
+	}
+
+	__print_he_capa(mac_cap, phy_cap, mcs_set, mcs_len, ppet, ppet_len,
+			true);
+}
+
+static void __print_eht_capa(int band,
+			     const __u8 *mac_cap,
+			     const __u32 *phy_cap,
+			     const __u8 *mcs_set, size_t mcs_len,
+			     const __u8 *ppet, size_t ppet_len,
+			     const __u16 *he_phy_cap,
+			     bool indent)
+{
+	unsigned int i;
+	const char *pre = indent ? "\t" : "";
+	const char *mcs[] = { "0-7", "8-9", "10-11", "12-13"};
+
+	#define PRINT_EHT_CAP(_var, _idx, _bit, _str) \
+	do { \
+		if (_var[_idx] & BIT(_bit)) \
+			printf("%s\t\t\t" _str "\n", pre); \
+	} while (0)
+
+	#define PRINT_EHT_CAP_MASK(_var, _idx, _shift, _mask, _str) \
+	do { \
+		if ((_var[_idx] >> _shift) & _mask) \
+			printf("%s\t\t\t" _str ": %d\n", pre, (_var[_idx] >> _shift) & _mask); \
+	} while (0)
+
+	#define PRINT_EHT_MAC_CAP(...) PRINT_EHT_CAP(mac_cap, __VA_ARGS__)
+	#define PRINT_EHT_PHY_CAP(...) PRINT_EHT_CAP(phy_cap, __VA_ARGS__)
+	#define PRINT_EHT_PHY_CAP_MASK(...) PRINT_EHT_CAP_MASK(phy_cap, __VA_ARGS__)
+
+	printf("%s\t\tEHT MAC Capabilities (0x", pre);
+	for (i = 0; i < 2; i++)
+		printf("%02x", mac_cap[i]);
+	printf("):\n");
+
+	PRINT_EHT_MAC_CAP(0, 0, "NSEP priority access Supported");
+	PRINT_EHT_MAC_CAP(0, 1, "EHT OM Control Supported");
+	PRINT_EHT_MAC_CAP(0, 2, "Triggered TXOP Sharing Supported");
+	PRINT_EHT_MAC_CAP(0, 3, "ARR Supported");
+
+	printf("%s\t\tEHT PHY Capabilities: (0x", pre);
+	for (i = 0; i < 8; i++)
+		printf("%02x", ((__u8 *)phy_cap)[i]);
+	printf("):\n");
+
+	PRINT_EHT_PHY_CAP(0, 1, "320MHz in 6GHz Supported");
+	PRINT_EHT_PHY_CAP(0, 2, "242-tone RU in BW wider than 20MHz Supported");
+	PRINT_EHT_PHY_CAP(0, 3, "NDP With  EHT-LTF And 3.2 µs GI");
+	PRINT_EHT_PHY_CAP(0, 4, "Partial Bandwidth UL MU-MIMO");
+	PRINT_EHT_PHY_CAP(0, 5, "SU Beamformer");
+	PRINT_EHT_PHY_CAP(0, 6, "SU Beamformee");
+	PRINT_EHT_PHY_CAP_MASK(0, 7, 0x7, "Beamformee SS (80MHz)");
+	PRINT_EHT_PHY_CAP_MASK(0, 10, 0x7, "Beamformee SS (160MHz)");
+	PRINT_EHT_PHY_CAP_MASK(0, 13, 0x7, "Beamformee SS (320MHz)");
+
+	PRINT_EHT_PHY_CAP_MASK(0, 16, 0x7, "Number Of Sounding Dimensions (80MHz)");
+	PRINT_EHT_PHY_CAP_MASK(0, 19, 0x7, "Number Of Sounding Dimensions (160MHz)");
+	PRINT_EHT_PHY_CAP_MASK(0, 22, 0x7, "Number Of Sounding Dimensions (320MHz)");
+	PRINT_EHT_PHY_CAP(0, 25, "Ng = 16 SU Feedback");
+	PRINT_EHT_PHY_CAP(0, 26, "Ng = 16 MU Feedback");
+	PRINT_EHT_PHY_CAP(0, 27, "Codebook size (4, 2) SU Feedback");
+	PRINT_EHT_PHY_CAP(0, 28, "Codebook size (7, 5) MU Feedback");
+	PRINT_EHT_PHY_CAP(0, 29, "Triggered SU Beamforming Feedback");
+	PRINT_EHT_PHY_CAP(0, 30, "Triggered MU Beamforming Partial BW Feedback");
+	PRINT_EHT_PHY_CAP(0, 31, "Triggered CQI Feedback");
+
+	PRINT_EHT_PHY_CAP(1, 0, "Partial Bandwidth DL MU-MIMO");
+	PRINT_EHT_PHY_CAP(1, 1, "PSR-Based SR Support");
+	PRINT_EHT_PHY_CAP(1, 2, "Power Boost Factor Support");
+	PRINT_EHT_PHY_CAP(1, 3, "EHT MU PPDU With 4 EHT-LTF And 0.8 µs GI");
+	PRINT_EHT_PHY_CAP_MASK(1, 4, 0xf, "Max Nc");
+	PRINT_EHT_PHY_CAP(1, 8, "Non-Triggered CQI Feedback");
+
+	PRINT_EHT_PHY_CAP(1, 9, "Tx 1024-QAM And 4096-QAM < 242-tone RU");
+	PRINT_EHT_PHY_CAP(1, 10, "Rx 1024-QAM And 4096-QAM < 242-tone RU");
+	PRINT_EHT_PHY_CAP(1, 11, "PPE Thresholds Present");
+	PRINT_EHT_PHY_CAP_MASK(1, 12, 0x3, "Common Nominal Packet Padding");
+	PRINT_EHT_PHY_CAP_MASK(1, 14, 0x1f, "Maximum Number Of Supported EHT-LTFs");
+	PRINT_EHT_PHY_CAP_MASK(1, 19, 0xf, "Support of MCS 15");
+	PRINT_EHT_PHY_CAP(1, 23, "Support Of EHT DUP In 6 GHz");
+	PRINT_EHT_PHY_CAP(1, 24, "Support For 20MHz Rx NDP With Wider Bandwidth");
+	PRINT_EHT_PHY_CAP(1, 25, "Non-OFDMA UL MU-MIMO (80MHz)");
+	PRINT_EHT_PHY_CAP(1, 26, "Non-OFDMA UL MU-MIMO (160MHz)");
+	PRINT_EHT_PHY_CAP(1, 27, "Non-OFDMA UL MU-MIMO (320MHz)");
+	PRINT_EHT_PHY_CAP(1, 28, "MU Beamformer (80MHz)");
+	PRINT_EHT_PHY_CAP(1, 29, "MU Beamformer (160MHz)");
+	PRINT_EHT_PHY_CAP(1, 30, "MU Beamformer (320MHz)");
+
+	printf("%s\t\tEHT MCS/NSS: (0x", pre);
+	for (i = 0; i < mcs_len; i++)
+		printf("%02x", ((__u8 *)mcs_set)[i]);
+	printf("):\n");
+
+	if (!(he_phy_cap[0] & ((BIT(2) | BIT(3) | BIT(4)) << 8))){
+		for (i = 0; i < 4; i++)
+			printf("%s\t\tEHT bw=20 MHz, max NSS for MCS %s: Rx=%u, Tx=%u\n",
+			       pre, mcs[i],
+			       mcs_set[i] & 0xf, mcs_set[i] >> 4);
+	}
+
+	mcs_set += 4;
+	if (he_phy_cap[0] & (BIT(2) << 8)) {
+		for (i = 0; i < 3; i++)
+			printf("%s\t\tEHT bw <= 80 MHz, max NSS for MCS %s: Rx=%u, Tx=%u\n",
+			       pre, mcs[i + 1],
+			       mcs_set[i] & 0xf, mcs_set[i] >> 4);
+
+	}
+
+	mcs_set += 3;
+	if (he_phy_cap[0] & (BIT(3) << 8)) {
+		for (i = 0; i < 3; i++)
+			printf("%s\t\tEHT bw=160 MHz, max NSS for MCS %s: Rx=%u, Tx=%u\n",
+			       pre, mcs[i + 1],
+			       mcs_set[i] & 0xf, mcs_set[i] >> 4);
+
+	}
+
+	mcs_set += 3;
+	if (band == NL80211_BAND_6GHZ && (phy_cap[0] & BIT(1))) {
+		for (i = 0; i < 3; i++)
+			printf("%s\t\tEHT bw=320 MHz, max NSS for MCS %s: Rx=%u, Tx=%u\n",
+			       pre, mcs[i + 1],
+			       mcs_set[i] & 0xf, mcs_set[i] >> 4);
+
+	}
+
+	if (ppet && ppet_len && (phy_cap[1] & BIT(11))) {
+		printf("%s\t\tEHT PPE Thresholds ", pre);
+		for (i = 0; i < ppet_len; i++)
+			if (ppet[i])
+				printf("0x%02x ", ppet[i]);
+		printf("\n");
+	}
+}
+
+void print_eht_info(struct nlattr *nl_iftype, int band)
+{
+	struct nlattr *tb[NL80211_BAND_IFTYPE_ATTR_MAX + 1];
+	__u8 mac_cap[2] = { 0 };
+	__u32 phy_cap[2] = { 0 };
+	__u8 mcs_set[13] = { 0 };
+	__u8 ppet[31] = { 0 };
+	__u16 he_phy_cap[6] = { 0 };
+	size_t len, mcs_len = 0, ppet_len = 0;
+
+	nla_parse(tb, NL80211_BAND_IFTYPE_ATTR_MAX,
+		  nla_data(nl_iftype), nla_len(nl_iftype), NULL);
+
+	if (!tb[NL80211_BAND_IFTYPE_ATTR_IFTYPES])
+		return;
+
+	printf("\t\tEHT Iftypes: ");
+	print_iftype_line(tb[NL80211_BAND_IFTYPE_ATTR_IFTYPES]);
+	printf("\n");
+
+	if (tb[NL80211_BAND_IFTYPE_ATTR_EHT_CAP_MAC]) {
+		len = nla_len(tb[NL80211_BAND_IFTYPE_ATTR_EHT_CAP_MAC]);
+		if (len > sizeof(mac_cap))
+			len = sizeof(mac_cap);
+		memcpy(mac_cap,
+		       nla_data(tb[NL80211_BAND_IFTYPE_ATTR_EHT_CAP_MAC]),
+		       len);
+	}
+
+	if (tb[NL80211_BAND_IFTYPE_ATTR_EHT_CAP_PHY]) {
+		len = nla_len(tb[NL80211_BAND_IFTYPE_ATTR_EHT_CAP_PHY]);
+
+		if (len > sizeof(phy_cap))
+			len = sizeof(phy_cap);
+
+		memcpy(phy_cap,
+		       nla_data(tb[NL80211_BAND_IFTYPE_ATTR_EHT_CAP_PHY]),
+		       len);
+	}
+
+	if (tb[NL80211_BAND_IFTYPE_ATTR_EHT_CAP_MCS_SET]) {
+		len = nla_len(tb[NL80211_BAND_IFTYPE_ATTR_EHT_CAP_MCS_SET]);
+		if (len > sizeof(mcs_set))
+			len = sizeof(mcs_set);
+		memcpy(mcs_set,
+		       nla_data(tb[NL80211_BAND_IFTYPE_ATTR_EHT_CAP_MCS_SET]),
+		       len);
+
+		// Assume that all parts of the MCS set are present
+		mcs_len = sizeof(mcs_set);
+	}
+
+	if (tb[NL80211_BAND_IFTYPE_ATTR_EHT_CAP_PPE]) {
+		len = nla_len(tb[NL80211_BAND_IFTYPE_ATTR_EHT_CAP_PPE]);
+		if (len > sizeof(ppet))
+			len = sizeof(ppet);
+		memcpy(ppet,
+		       nla_data(tb[NL80211_BAND_IFTYPE_ATTR_EHT_CAP_PPE]),
+		       len);
+		ppet_len = len;
+	}
+
+	if (tb[NL80211_BAND_IFTYPE_ATTR_HE_CAP_PHY]) {
+		len = nla_len(tb[NL80211_BAND_IFTYPE_ATTR_HE_CAP_PHY]);
+
+		if (len > sizeof(he_phy_cap) - 1)
+			len = sizeof(he_phy_cap) - 1;
+		memcpy(&((__u8 *)he_phy_cap)[1],
+		       nla_data(tb[NL80211_BAND_IFTYPE_ATTR_HE_CAP_PHY]),
+		       len);
+	}
+
+	__print_eht_capa(band, mac_cap, phy_cap, mcs_set, mcs_len, ppet, ppet_len,
+			 he_phy_cap, true);
+}
+
+void print_he_capability(const uint8_t *ie, int len)
+{
+	const void *mac_cap, *phy_cap, *mcs_set;
+	int mcs_len;
+	int i = 0;
+
+	mac_cap = &ie[i];
+	i += 6;
+
+	phy_cap = &ie[i];
+	i += 11;
+
+	mcs_set = &ie[i];
+	mcs_len = len - i;
+
+	__print_he_capa(mac_cap, phy_cap - 1, mcs_set, mcs_len, NULL, 0, false);
 }
 
 void iw_hexdump(const char *prefix, const __u8 *buf, size_t size)
@@ -1152,33 +1723,38 @@ void iw_hexdump(const char *prefix, const __u8 *buf, size_t size)
 int get_cf1(const struct chanmode *chanmode, unsigned long freq)
 {
 	unsigned int cf1 = freq, j;
-	unsigned int vht80[] = { 5180, 5260, 5500, 5580, 5660, 5745, 5825 };
+	unsigned int bw80[] = { 5180, 5260, 5500, 5580, 5660, 5745, 5825,
+				5955, 6035, 6115, 6195, 6275, 6355,
+				6435, 6515, 6595, 6675, 6755, 6835,
+				6195, 6995 };
+	unsigned int bw160[] = { 5180, 5500, 5955, 6115, 6275, 6435,
+				  6595, 6755, 6915 };
 
 	switch (chanmode->width) {
 	case NL80211_CHAN_WIDTH_80:
 	case NL80211_CHAN_WIDTH_80P80:
 	        /* setup center_freq1 */
-		for (j = 0; j < ARRAY_SIZE(vht80); j++) {
-			if (freq >= vht80[j] && freq < vht80[j] + 80)
+		for (j = 0; j < ARRAY_SIZE(bw80); j++) {
+			if (freq >= bw80[j] && freq < bw80[j] + 80)
 				break;
 		}
 
-		if (j == ARRAY_SIZE(vht80))
+		if (j == ARRAY_SIZE(bw80))
 			break;
 
-		cf1 = vht80[j] + 30;
+		cf1 = bw80[j] + 30;
 		break;
 	case NL80211_CHAN_WIDTH_160:
-	        /* setup center_freq1 */
-		for (j = 0; j < ARRAY_SIZE(vht80); j++) {
-			if (freq >= vht80[j] && freq < vht80[j] + 160)
+		/* setup center_freq1 */
+		for (j = 0; j < ARRAY_SIZE(bw160); j++) {
+			if (freq >= bw160[j] && freq < bw160[j] + 160)
 				break;
 		}
 
-		if (j == ARRAY_SIZE(vht80))
+		if (j == ARRAY_SIZE(bw160))
 			break;
 
-		cf1 = vht80[j] + 70;
+		cf1 = bw160[j] + 70;
 		break;
 	default:
 		cf1 = freq + chanmode->freq1_diff;
@@ -1186,4 +1762,41 @@ int get_cf1(const struct chanmode *chanmode, unsigned long freq)
 	}
 
 	return cf1;
+}
+
+int parse_random_mac_addr(struct nl_msg *msg, char *addrs)
+{
+	char *a_addr, *a_mask, *sep;
+	unsigned char addr[ETH_ALEN], mask[ETH_ALEN];
+
+	if (!*addrs) {
+		/* randomise all but the multicast bit */
+		NLA_PUT(msg, NL80211_ATTR_MAC, ETH_ALEN,
+			"\x00\x00\x00\x00\x00\x00");
+		NLA_PUT(msg, NL80211_ATTR_MAC_MASK, ETH_ALEN,
+			"\x01\x00\x00\x00\x00\x00");
+		return 0;
+	}
+
+	if (*addrs != '=')
+		return 1;
+
+	addrs++;
+	sep = strchr(addrs, '/');
+	a_addr = addrs;
+
+	if (!sep)
+		return 1;
+
+	*sep = 0;
+	a_mask = sep + 1;
+	if (mac_addr_a2n(addr, a_addr) || mac_addr_a2n(mask, a_mask))
+		return 1;
+
+	NLA_PUT(msg, NL80211_ATTR_MAC, ETH_ALEN, addr);
+	NLA_PUT(msg, NL80211_ATTR_MAC_MASK, ETH_ALEN, mask);
+
+	return 0;
+ nla_put_failure:
+	return -ENOBUFS;
 }

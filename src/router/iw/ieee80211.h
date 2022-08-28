@@ -58,4 +58,21 @@ struct ieee80211_vht_cap {
 	struct ieee80211_vht_mcs_info mcs;
 } __attribute__ ((packed));
 
+#define SUITE(oui, id)  (((oui) << 8) | (id))
+
+/* cipher suite selectors */
+#define WLAN_CIPHER_SUITE_USE_GROUP     SUITE(0x000FAC, 0)
+#define WLAN_CIPHER_SUITE_WEP40         SUITE(0x000FAC, 1)
+#define WLAN_CIPHER_SUITE_TKIP          SUITE(0x000FAC, 2)
+/* reserved:                            SUITE(0x000FAC, 3) */
+#define WLAN_CIPHER_SUITE_CCMP          SUITE(0x000FAC, 4)
+#define WLAN_CIPHER_SUITE_WEP104        SUITE(0x000FAC, 5)
+#define WLAN_CIPHER_SUITE_AES_CMAC      SUITE(0x000FAC, 6)
+#define WLAN_CIPHER_SUITE_GCMP          SUITE(0x000FAC, 8)
+#define WLAN_CIPHER_SUITE_GCMP_256      SUITE(0x000FAC, 9)
+#define WLAN_CIPHER_SUITE_CCMP_256      SUITE(0x000FAC, 10)
+#define WLAN_CIPHER_SUITE_BIP_GMAC_128  SUITE(0x000FAC, 11)
+#define WLAN_CIPHER_SUITE_BIP_GMAC_256  SUITE(0x000FAC, 12)
+#define WLAN_CIPHER_SUITE_BIP_CMAC_256  SUITE(0x000FAC, 13)
+
 #endif /* __IEEE80211 */

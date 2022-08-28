@@ -1,6 +1,7 @@
 #include <stdbool.h>
 #include <errno.h>
 #include <strings.h>
+#include <unistd.h>
 #include <sys/param.h>
 #include <sys/stat.h>
 #include <fcntl.h>
@@ -204,7 +205,7 @@ COMMAND(set, freq,
 	"Set frequency/channel the hardware is using, including HT\n"
 	"configuration.");
 COMMAND(set, freq,
-	"<freq> [NOHT|HT20|HT40+|HT40-|5MHz|10MHz|80MHz]\n"
+	"<freq> [NOHT|HT20|HT40+|HT40-|5MHz|10MHz|80MHz|160MHz]\n"
 	"<control freq> [5|10|20|40|80|80+80|160] [<center1_freq> [<center2_freq>]]",
 	NL80211_CMD_SET_WIPHY, 0, CIB_NETDEV, handle_freq, NULL);
 
@@ -328,12 +329,16 @@ static int handle_cac(struct nl80211_state *state,
 	} else if (strcmp(argv[2], "freq") == 0) {
 		err = parse_freqchan(&chandef, false, argc - 3, argv + 3, NULL);
 	} else {
-		return 1;
+		err = 1;
 	}
+	if (err)
+		goto err_out;
 
 	cac_trigger_argv = calloc(argc + 1, sizeof(char*));
-	if (!cac_trigger_argv)
-		return -ENOMEM;
+	if (!cac_trigger_argv) {
+		err = -ENOMEM;
+		goto err_out;
+	}
 
 	cac_trigger_argv[0] = argv[0];
 	cac_trigger_argv[1] = "cac";
@@ -341,9 +346,8 @@ static int handle_cac(struct nl80211_state *state,
 	memcpy(&cac_trigger_argv[3], &argv[2], (argc - 2) * sizeof(char*));
 
 	err = handle_cmd(state, id, argc + 1, cac_trigger_argv);
-	free(cac_trigger_argv);
 	if (err)
-		return err;
+		goto err_out;
 
 	cac_event.ret = 1;
 	cac_event.freq = chandef.control_freq;
@@ -357,15 +361,21 @@ static int handle_cac(struct nl80211_state *state,
 	while (cac_event.ret > 0)
 		nl_recvmsgs(state->nl_sock, radar_cb);
 
-	return 0;
+	err = 0;
+err_out:
+	if (radar_cb)
+		nl_cb_put(radar_cb);
+	if (cac_trigger_argv)
+		free(cac_trigger_argv);
+	return err;
 }
-TOPLEVEL(cac, "channel <channel> [NOHT|HT20|HT40+|HT40-|5MHz|10MHz|80MHz|160MHz]\n"
-	      "freq <freq> [NOHT|HT20|HT40+|HT40-|5MHz|10MHz|80MHz|160MHz]\n"
+TOPLEVEL(cac, "channel <channel> [NOHT|HT20|HT40+|HT40-|5MHz|10MHz|80MHz]\n"
+	      "freq <freq> [NOHT|HT20|HT40+|HT40-|5MHz|10MHz|80MHz]\n"
 	      "freq <control freq> [5|10|20|40|80|80+80|160] [<center1_freq> [<center2_freq>]]",
 	 0, 0, CIB_NETDEV, handle_cac, NULL);
 COMMAND(cac, trigger,
-	"channel <channel> [NOHT|HT20|HT40+|HT40-|5MHz|10MHz|80MHz|160MHz]\n"
-	"freq <frequency> [NOHT|HT20|HT40+|HT40-|5MHz|10MHz|80MHz|160MHz]\n"
+	"channel <channel> [NOHT|HT20|HT40+|HT40-|5MHz|10MHz|80MHz]\n"
+	"freq <frequency> [NOHT|HT20|HT40+|HT40-|5MHz|10MHz|80MHz]\n"
 	"freq <frequency> [5|10|20|40|80|80+80|160] [<center1_freq> [<center2_freq>]]",
 	NL80211_CMD_RADAR_DETECT, 0, CIB_NETDEV, handle_cac_trigger,
 	"Start or trigger a channel availability check (CAC) looking to look for\n"
@@ -523,7 +533,7 @@ static int handle_netns(struct nl80211_state *state,
 			enum id_input id)
 {
 	char *end;
-	int fd;
+	int fd = -1;
 
 	if (argc < 1 || !*argv[0])
 		return 1;
@@ -551,6 +561,8 @@ static int handle_netns(struct nl80211_state *state,
 	return 1;
 
  nla_put_failure:
+	if (fd >= 0)
+		close(fd);
 	return -ENOBUFS;
 }
 COMMAND(set, netns, "{ <pid> | name <nsname> }",
@@ -754,6 +766,7 @@ static int handle_antenna_gain(struct nl80211_state *state,
 COMMAND(set, antenna_gain, "<antenna gain in dBm>",
 	NL80211_CMD_SET_WIPHY, 0, CIB_PHY, handle_antenna_gain,
 	"Specify antenna gain.");
+
 
 static int handle_set_txq(struct nl80211_state *state,
 			  struct nl_msg *msg,

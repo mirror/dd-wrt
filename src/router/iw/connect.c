@@ -15,6 +15,7 @@ static int iw_conn(struct nl80211_state *state,
 {
 	char *end;
 	unsigned char bssid[6];
+	bool need_key = false;
 	int freq;
 	int ret;
 
@@ -48,18 +49,40 @@ static int iw_conn(struct nl80211_state *state,
 	if (!argc)
 		return 0;
 
-	if (strcmp(*argv, "key") != 0 && strcmp(*argv, "keys") != 0)
+	if (strcmp(*argv, "auth") == 0) {
+		argv++;
+		argc--;
+
+		if (!argc)
+			return 1;
+
+		if (strcmp(argv[0], "open") == 0) {
+			NLA_PUT_U32(msg, NL80211_ATTR_AUTH_TYPE,
+			    NL80211_AUTHTYPE_OPEN_SYSTEM);
+		} else if (strcmp(argv[0], "shared") == 0) {
+			NLA_PUT_U32(msg, NL80211_ATTR_AUTH_TYPE,
+			    NL80211_AUTHTYPE_SHARED_KEY);
+			need_key = true;
+		} else {
+			return 1;
+		}
+
+		argv++;
+		argc--;
+	}
+
+	if (need_key && !argc)
+		return 1;
+
+	if (argc && strcmp(*argv, "key") != 0 && strcmp(*argv, "keys") != 0)
 		return 1;
 
 	argv++;
 	argc--;
 
-	ret = parse_keys(msg, argv, argc);
+	ret = parse_keys(msg, &argv, &argc);
 	if (ret)
 		return ret;
-
-	argc -= 4;
-	argv += 4;
 
 	if (!argc)
 		return 0;
@@ -157,10 +180,13 @@ static int iw_connect(struct nl80211_state *state,
 	 * Alas, the kernel doesn't do that (yet).
 	 */
 
-	__do_listen_events(state, ARRAY_SIZE(cmds), cmds, &printargs);
+	__do_listen_events(state,
+			   ARRAY_SIZE(cmds), cmds,
+			   ARRAY_SIZE(cmds), cmds,
+			   &printargs);
 	return 0;
 }
-TOPLEVEL(connect, "[-w] <SSID> [<freq in MHz>] [<bssid>] [key 0:abcde d:1:6162636465] [mfp:req/opt/no]",
+TOPLEVEL(connect, "[-w] <SSID> [<freq in MHz>] [<bssid>] [auth open|shared] [key 0:abcde d:1:6162636465] [mfp:req/opt/no]",
 	0, 0, CIB_NETDEV, iw_connect,
 	"Join the network with the given SSID (and frequency, BSSID).\n"
 	"With -w, wait for the connect to finish or fail.");
@@ -228,7 +254,7 @@ static int iw_auth(struct nl80211_state *state,
 	argv++;
 	argc--;
 
-	return parse_keys(msg, argv, argc);
+	return parse_keys(msg, &argv, &argc);
  nla_put_failure:
 	return -ENOSPC;
 }
