@@ -2516,12 +2516,6 @@ void qos_save(webs_t wp)
 		bzero(protocol, 100);
 		bzero(ports, 10);
 
-		snprintf(field, sizeof(field), "svqos_svcdel%d", i);
-		delete = websGetVar(wp, field, NULL);
-
-		if (delete && *(delete))
-			continue;
-
 		snprintf(field, sizeof(field), "svqos_svcname%d", i);
 		name = websGetVar(wp, field, NULL);
 		if (!name)
@@ -2569,12 +2563,6 @@ void qos_save(webs_t wp)
 	 */
 	for (i = 0; i < no_devs; i++) {
 
-		snprintf(field, sizeof(field), "svqos_devdel%d", i);
-		delete = websGetVar(wp, field, NULL);
-
-		if (delete && *(delete))
-			continue;
-
 		snprintf(field, sizeof(field), "svqos_dev%d", i);
 		data = websGetVar(wp, field, NULL);
 
@@ -2621,12 +2609,6 @@ void qos_save(webs_t wp)
 	 */
 	for (i = 0; i < no_ips; i++) {
 
-		snprintf(field, sizeof(field), "svqos_ipdel%d", i);
-		delete = websGetVar(wp, field, NULL);
-
-		if (delete && *(delete))
-			continue;
-
 		snprintf(field, sizeof(field), "svqos_ip%d", i);
 		data = websGetVar(wp, field, NULL);
 		if (!data)
@@ -2668,11 +2650,6 @@ void qos_save(webs_t wp)
 	 * MAC priorities 
 	 */
 	for (i = 0; i < no_macs; i++) {
-		snprintf(field, sizeof(field), "svqos_macdel%d", i);
-		delete = websGetVar(wp, field, NULL);
-
-		if (delete && *(delete))
-			continue;
 
 		snprintf(field, sizeof(field), "svqos_mac%d", i);
 		data = websGetVar(wp, field, NULL);
@@ -2798,7 +2775,29 @@ void forward_add(webs_t wp)
 void forward_del(webs_t wp)
 {
 	int todel = websGetVari(wp, "del_value", 0);
-	delfrom("forward_port", "forward_entries", todel);
+	delfrom("forward_port", "forward_entries", todel, " ");
+}
+
+
+void qossvcs_del(webs_t wp)
+{
+	int todel = websGetVari(wp, "del_value", 0);
+	delfrom("svqos_svcs", NULL, todel, "|");
+}
+void qosdevs_del(webs_t wp)
+{
+	int todel = websGetVari(wp, "del_value", 0);
+	delfrom("svqos_devs", NULL, todel, "|");
+}
+void qosmacs_del(webs_t wp)
+{
+	int todel = websGetVari(wp, "del_value", 0);
+	delfrom("svqos_macs", NULL, todel, "|");
+}
+void qosips_del(webs_t wp)
+{
+	int todel = websGetVari(wp, "del_value", 0);
+	delfrom("svqos_ips", NULL, todel, "|");
 }
 
 void filter_remove(webs_t wp)
@@ -2824,7 +2823,7 @@ void filter_add(webs_t wp)
 	nvram_set(filter, num);
 }
 
-void delfrom(char *var, char *countvar, int todel)
+void delfrom(char *var, char *countvar, int todel, char *delimiter)
 {
 	char *wordlist = nvram_safe_get(var);
 	char *next;
@@ -2832,9 +2831,9 @@ void delfrom(char *var, char *countvar, int todel)
 	char *target = malloc(strlen(wordlist) + 1);
 	memset(target, 0, strlen(wordlist) + 1);
 	int idx = 0;
-	foreach(word, wordlist, next) {
+	foreach_delim(word, wordlist, next, delimiter) {
 		if (idx)
-			strcat(target, " ");
+			strcat(target, delimiter);
 		if (idx == todel) {
 			idx++;
 			continue;
@@ -2842,10 +2841,12 @@ void delfrom(char *var, char *countvar, int todel)
 		idx++;
 		strcat(target, word);
 	}
-	int num = nvram_geti(countvar);
-	if (num)
-		num--;
-	nvram_seti(countvar, num);
+	if (countvar) {
+		int num = nvram_geti(countvar);
+		if (num)
+			num--;
+		nvram_seti(countvar, num);
+	}
 	nvram_set(var, target);
 	free(target);
 
@@ -2854,7 +2855,7 @@ void delfrom(char *var, char *countvar, int todel)
 void lease_del(webs_t wp)
 {
 	int todel = websGetVari(wp, "lease_del_value", 0);
-	delfrom("static_leases", "static_leasenum", todel);
+	delfrom("static_leases", "static_leasenum", todel, " ");
 }
 
 void lease_add(webs_t wp)
@@ -2910,7 +2911,7 @@ void forwardspec_add(webs_t wp)
 void forwardspec_del(webs_t wp)
 {
 	int todel = websGetVari(wp, "del_value", 0);
-	delfrom("forward_spec", "forwardspec_entries", todel);
+	delfrom("forward_spec", "forwardspec_entries", todel, " ");
 }
 
 void forwardip_add(webs_t wp)
@@ -2921,7 +2922,7 @@ void forwardip_add(webs_t wp)
 void forwardip_del(webs_t wp)
 {
 	int todel = websGetVari(wp, "del_value", 0);
-	delfrom("forward_ip", "forwardip_entries", todel);
+	delfrom("forward_ip", "forwardip_entries", todel, " ");
 }
 
 void trigger_add(webs_t wp)
@@ -2932,7 +2933,7 @@ void trigger_add(webs_t wp)
 void trigger_del(webs_t wp)
 {
 	int todel = websGetVari(wp, "del_value", 0);
-	delfrom("port_trigger", "trigger_entries", todel);
+	delfrom("port_trigger", "trigger_entries", todel, " ");
 }
 
 int get_vifcount(char *prefix)

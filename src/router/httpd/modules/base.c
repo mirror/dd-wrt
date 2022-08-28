@@ -1196,6 +1196,11 @@ static struct gozila_action gozila_actions[] = {
 	{ "QoS", "add_mac", "", REFRESH, "qos_add_mac" },
 	{ "QoS", "add_dev", "", REFRESH, "qos_add_dev" },
 	{ "QoS", "save", "filters", REFRESH, "qos_save" },
+	{ "QoS", "del_qossvcs", "", REFRESH, "qossvcs_del" },
+	{ "QoS", "del_qosmacs", "", REFRESH, "qosmacs_del" },
+	{ "QoS", "del_qosips", "", REFRESH, "qosips_del" },
+	{ "QoS", "del_qosdevs", "", REFRESH, "qosdevs_del" },
+
 	/*
 	 * end Sveasoft addition
 	 */
