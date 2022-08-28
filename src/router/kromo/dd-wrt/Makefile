@@ -1160,6 +1160,7 @@ endif
 	../../../../tools/removewhitespace.sh $(TOP)/../../tools $(INSTALLDIR)/www
 	../../../../tools/removewhitespace.sh $(TOP)/../../tools $(INSTALLDIR)/www/help
 	../../../../tools/removewhitespace.sh $(TOP)/../../tools $(INSTALLDIR)/www/lang_pack
+	../../../../tools/removewhitespace.sh $(TOP)/../../tools $(INSTALLDIR)/www/images
 	../../../../tools/removewhitespace.sh $(TOP)/../../tools $(INSTALLDIR)/www/ddwrt_inspired_themes
 	../../../../tools/removewhitespace.sh $(TOP)/../../tools $(INSTALLDIR)/www/style
 	../../../../tools/removewhitespace.sh $(TOP)/../../tools $(INSTALLDIR)/www/style/syslogd
