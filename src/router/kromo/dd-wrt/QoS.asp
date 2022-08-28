@@ -348,7 +348,7 @@ addEvent(window, "unload", function() {
 									</tr>
 									<% get_qossvcs(); %>
 									<tr>
-										<td align="center">
+										<td>
 											<select name="add_svc">
 												<script type="text/javascript">
 												//<![CDATA[
@@ -369,7 +369,7 @@ addEvent(window, "unload", function() {
 										</td>
 										<td>&nbsp;</td>
 										<td>&nbsp;</td>
-										<td>
+										<td align="center">
 											<script type="text/javascript">
 											//<![CDATA[
 											document.write("<input class=\"button\" type=\"button\" name=\"add_svc_button\" value=\"" + sbutton.add + "\" onclick=\"svc_add_submit(this.form);\" />");
@@ -402,7 +402,7 @@ addEvent(window, "unload", function() {
 										<td>&nbsp;</td>
 										<td>&nbsp;</td>
 										<td>&nbsp;</td>
-										<td>
+										<td align="center">
 											<script type="text/javascript">
 											//<![CDATA[
 											document.write("<input class=\"button\" type=\"button\" name=\"add_devsprio_button\" value=\"" + sbutton.add + "\" onclick=\"dev_add_submit(this.form);\" />");
@@ -425,7 +425,7 @@ addEvent(window, "unload", function() {
 										<td>&nbsp;</td>
 										<td>&nbsp;</td>
 										<td>&nbsp;</td>
-										<td>
+										<td align="center">
 											<script type="text/javascript">
 											//<![CDATA[
 											document.write("<input class=\"button\" type=\"button\" name=\"add_ipsprio_button\" value=\"" + sbutton.add + "\" onclick=\"ip_add_submit(this.form);\" />");
@@ -447,7 +447,7 @@ addEvent(window, "unload", function() {
 										<td>&nbsp;</td>
 										<td>&nbsp;</td>
 										<td>&nbsp;</td>
-										<td>
+										<td align="center">
 											<script type="text/javascript">
 											//<![CDATA[
 											document.write("<input class=\"button\" type=\"button\" name=\"add_macprio_button\" value=\"" + sbutton.add + "\" onclick=\"mac_add_submit(this.form);\" />")
