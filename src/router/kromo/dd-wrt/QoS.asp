@@ -344,17 +344,11 @@ addEvent(window, "unload", function() {
 										<th><% tran("share.srv"); %></th>
 										<th><% tran("share.priority"); %></th>
 										<th width="12%"><% tran("share.packets"); %></th>
-										<th class="center" width="12%"><% tran("share.del"); %></th>
+										<th class="center" width="10%"><% tran("share.actiontbl"); %></th>
 									</tr>
 									<% get_qossvcs(); %>
 									<tr>
-										<td>&nbsp;</td>
 										<td colspan="2">
-											<script type="text/javascript">
-											//<![CDATA[
-											document.write("<input class=\"button\" type=\"button\" name=\"add_svc_button\" value=\"" + sbutton.add + "\" onclick=\"svc_add_submit(this.form);\" />");
-											//]]>
-											</script>&nbsp;&nbsp;&nbsp;
 											<select name="add_svc">
 												<script type="text/javascript">
 												//<![CDATA[
@@ -374,6 +368,14 @@ addEvent(window, "unload", function() {
 											</select>
 										</td>
 										<td>&nbsp;</td>
+										<td>&nbsp;</td>
+										<td>
+											<script type="text/javascript">
+											//<![CDATA[
+											document.write("<input class=\"button\" type=\"button\" name=\"add_svc_button\" value=\"" + sbutton.add + "\" onclick=\"svc_add_submit(this.form);\" />");
+											//]]>
+											</script>
+										</td>
 									</tr>
 								</table><br />
 								<div class="center">
@@ -390,15 +392,22 @@ addEvent(window, "unload", function() {
 									<% get_qosdevs(); %>
 									<tr>
 										<td colspan="3">
-											<script type="text/javascript">
-											//<![CDATA[
-											document.write("<input class=\"button\" type=\"button\" name=\"add_devsprio_button\" value=\"" + sbutton.add + "\" onclick=\"dev_add_submit(this.form);\" />");
-											//]]>
 											</script>&nbsp;&nbsp;&nbsp;
 											<select name="svqos_dev">
 											<% show_iflist(); %>
 											<% show_iflist("tun"); %>
 											</select>
+										</td>
+										<td>&nbsp;</td>
+										<td>&nbsp;</td>
+										<td>&nbsp;</td>
+										<td>&nbsp;</td>
+										<td>&nbsp;</td>
+										<td>
+											<script type="text/javascript">
+											//<![CDATA[
+											document.write("<input class=\"button\" type=\"button\" name=\"add_devsprio_button\" value=\"" + sbutton.add + "\" onclick=\"dev_add_submit(this.form);\" />");
+											//]]>
 										</td>
 									</tr>
 								</table>
@@ -409,13 +418,19 @@ addEvent(window, "unload", function() {
 									<% get_qosips(); %>
 									<tr>
 										<td colspan="3">
+											<input size="3" maxlength="3" name="svqos_ipaddr0" value="0" onblur="valid_range(this,0,255,'IP')" class="num" />.<input size="3" maxlength="3" name="svqos_ipaddr1" value="0" onblur="valid_range(this,0,255,'IP')" class="num" />.<input size="3" maxlength="3" name="svqos_ipaddr2" value="0" onblur="valid_range(this,0,255,'IP')" class="num" />.<input size="3" maxlength="3" name="svqos_ipaddr3" value="0" onblur="valid_range(this,0,255,'IP')" class="num" />&nbsp;/&nbsp;
+											<input size="3" maxlength="3" name="svqos_netmask" value="0" onblur="valid_range(this,0,32,share.subnet)" class="num" />
+										</td>
+										<td>&nbsp;</td>
+										<td>&nbsp;</td>
+										<td>&nbsp;</td>
+										<td>&nbsp;</td>
+										<td>
 											<script type="text/javascript">
 											//<![CDATA[
 											document.write("<input class=\"button\" type=\"button\" name=\"add_ipsprio_button\" value=\"" + sbutton.add + "\" onclick=\"ip_add_submit(this.form);\" />");
 											//]]>
-											</script>&nbsp;&nbsp;&nbsp;
-											<input size="3" maxlength="3" name="svqos_ipaddr0" value="0" onblur="valid_range(this,0,255,'IP')" class="num" />.<input size="3" maxlength="3" name="svqos_ipaddr1" value="0" onblur="valid_range(this,0,255,'IP')" class="num" />.<input size="3" maxlength="3" name="svqos_ipaddr2" value="0" onblur="valid_range(this,0,255,'IP')" class="num" />.<input size="3" maxlength="3" name="svqos_ipaddr3" value="0" onblur="valid_range(this,0,255,'IP')" class="num" />&nbsp;/&nbsp;
-											<input size="3" maxlength="3" name="svqos_netmask" value="0" onblur="valid_range(this,0,32,share.subnet)" class="num" />
+											</script>
 										</td>
 									</tr>
 								</table>
@@ -426,12 +441,18 @@ addEvent(window, "unload", function() {
 									<% get_qosmacs(); %>
 									<tr>
 										<td colspan="4">
+											<input name="svqos_hwaddr0" value="00" size="2" maxlength="2" onblur="valid_mac(this,0)" class="num" />:<input name="svqos_hwaddr1" value="00" size="2" maxlength="2" onblur="valid_mac(this,1)" class="num" />:<input name="svqos_hwaddr2" value="00" size="2" maxlength="2" onblur="valid_mac(this,1)" class="num"/>:<input name="svqos_hwaddr3" value="00" size="2" maxlength="2" onblur="valid_mac(this,1)" class="num" />:<input name="svqos_hwaddr4" value="00" size="2" maxlength="2" onblur="valid_mac(this,1)" class="num" />:<input name="svqos_hwaddr5" value="00" size="2" maxlength="2" onblur="valid_mac(this,1)" class="num" />
+										</td>
+										<td>&nbsp;</td>
+										<td>&nbsp;</td>
+										<td>&nbsp;</td>
+										<td>&nbsp;</td>
+										<td>
 											<script type="text/javascript">
 											//<![CDATA[
 											document.write("<input class=\"button\" type=\"button\" name=\"add_macprio_button\" value=\"" + sbutton.add + "\" onclick=\"mac_add_submit(this.form);\" />")
 											//]]>
-											</script>&nbsp;&nbsp;&nbsp;
-											<input name="svqos_hwaddr0" value="00" size="2" maxlength="2" onblur="valid_mac(this,0)" class="num" />:<input name="svqos_hwaddr1" value="00" size="2" maxlength="2" onblur="valid_mac(this,1)" class="num" />:<input name="svqos_hwaddr2" value="00" size="2" maxlength="2" onblur="valid_mac(this,1)" class="num"/>:<input name="svqos_hwaddr3" value="00" size="2" maxlength="2" onblur="valid_mac(this,1)" class="num" />:<input name="svqos_hwaddr4" value="00" size="2" maxlength="2" onblur="valid_mac(this,1)" class="num" />:<input name="svqos_hwaddr5" value="00" size="2" maxlength="2" onblur="valid_mac(this,1)" class="num" />
+											</script>
 										</td>
 									</tr>
 								</table>

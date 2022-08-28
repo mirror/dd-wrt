@@ -191,7 +191,7 @@ EJ_VISIBLE void ej_get_qosdevs(webs_t wp, int argc, char_t ** argv)
 		  "<th><script type=\"text/javascript\">Capture(qos.maxlanrate_b)</script></th>\n"	//
 		  "<th><script type=\"text/javascript\">Capture(qos.service)</script></th>\n"	//
 		  "<th><script type=\"text/javascript\">Capture(share.priority)</script></th>\n"	//
-		  "<th class=\"center\"><script type=\"text/javascript\">Capture(share.del)</script></th>\n"	//
+		  "<th class=\"center\" width=\"10%%\"><script type=\"text/javascript\">Capture(share.actiontbl)</script></th>\n"	//
 		  "</tr>\n");	//
 
 	// write HTML data
@@ -295,7 +295,7 @@ EJ_VISIBLE void ej_get_qosips(webs_t wp, int argc, char_t ** argv)
 		  "<th><script type=\"text/javascript\">Capture(qos.maxuprate_b)</script></th>\n"	//
 		  "<th><script type=\"text/javascript\">Capture(qos.maxlanrate_b)</script></th>\n"	//
 		  "<th><script type=\"text/javascript\">Capture(share.priority)</script></th>\n"	//
-		  "<th class=\"center\"><script type=\"text/javascript\">Capture(share.del)</script></th>\n"	//
+		  "<th class=\"center\" width=\"10%%\"><script type=\"text/javascript\">Capture(share.actiontbl)</script></th>\n"	//
 		  "</tr>\n");	//
 
 	// write HTML data
@@ -382,7 +382,7 @@ EJ_VISIBLE void ej_get_qosmacs(webs_t wp, int argc, char_t ** argv)
 		  "<th><script type=\"text/javascript\">Capture(qos.maxuprate_b)</script></th>\n"	//
 		  "<th><script type=\"text/javascript\">Capture(qos.maxlanrate_b)</script></th>\n"	//
 		  "<th><script type=\"text/javascript\">Capture(share.priority)</script></th>\n"	//
-		  "<th class=\"center\"><script type=\"text/javascript\">Capture(share.del)</script></th>\n"	//
+		  "<th class=\"center\" width=\"10%%\"><script type=\"text/javascript\">Capture(share.actiontbl)</script></th>\n"	//
 		  "</tr>\n");	//
 
 	// write HTML data
