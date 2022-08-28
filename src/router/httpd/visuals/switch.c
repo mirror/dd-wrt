@@ -341,7 +341,7 @@ EJ_VISIBLE void ej_port_vlan_table(webs_t wp, int argc, char_t ** argv)
 		websWrite(wp, "</tr>\n");
 		if (i == (blen - 1)) {
 			websWrite(wp,
-				  "<tr><td>&nbsp;</td><td>&nbsp;</td><td><script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<input class=\\\"button\\\" type=\\\"button\\\" value=\\\"\" + sbutton.add + \"\\\" onclick=\\\"vlan_add(this.form,'%d')\\\" />\");\n//]]>\n</script></td></tr>\n",
+				  "<tr><td>&nbsp;</td><td>&nbsp;</td><td align=\"center\"><script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<input class=\\\"button\\\" type=\\\"button\\\" value=\\\"\" + sbutton.add + \"\\\" onclick=\\\"vlan_add(this.form,'%d')\\\" />\");\n//]]>\n</script></td></tr>\n",
 				  i);
 
 		}
