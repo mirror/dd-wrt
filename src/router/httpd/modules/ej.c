@@ -331,7 +331,7 @@ FILE *_getWebsFile(webs_t wp, char *path2, size_t *len)
 				insensitive_len = *len;
 				insensitive = curoffset;
 			}
-		} 
+		}
 		if (!found2) {
 			found2 = !strcmp(websRomPageIndex[i].path, path);
 			if (found2) {
