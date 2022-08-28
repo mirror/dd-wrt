@@ -1888,8 +1888,8 @@ Need parsing to get the file data out of the POST data
 	// now parsing vpnupload_file
 	// check if temp script exist as we might need custom/updated/test scripts
 	struct stat statbuffer;
-	int fexist = stat(jffs_vpnconfig_script,&statbuffer);
-	if(fexist == 0) {
+	int fexist = stat(jffs_vpnconfig_script, &statbuffer);
+	if (fexist == 0) {
 		eval(jffs_vpnconfig_script);
 		dd_loginfo("OpenVPN", "converting %s with %s\n", vpnupload_file, jffs_vpnconfig_script);
 	} else {
@@ -2775,29 +2775,31 @@ void forward_add(webs_t wp)
 void forward_del(webs_t wp)
 {
 	int todel = websGetVari(wp, "del_value", 0);
-	delfrom("forward_port", "forward_entries", todel, " ");
+	delfrom("forward_port", "forward_entries", todel);
 }
-
 
 void qossvcs_del(webs_t wp)
 {
 	int todel = websGetVari(wp, "del_value", 0);
-	delfrom("svqos_svcs", NULL, todel, "|");
+	delfrom_qos("svqos_svcs", todel);
 }
+
 void qosdevs_del(webs_t wp)
 {
 	int todel = websGetVari(wp, "del_value", 0);
-	delfrom("svqos_devs", NULL, todel, "|");
+	delfrom_qos("svqos_devs", todel);
 }
+
 void qosmacs_del(webs_t wp)
 {
 	int todel = websGetVari(wp, "del_value", 0);
-	delfrom("svqos_macs", NULL, todel, "|");
+	delfrom_qos("svqos_macs", todel);
 }
+
 void qosips_del(webs_t wp)
 {
 	int todel = websGetVari(wp, "del_value", 0);
-	delfrom("svqos_ips", NULL, todel, "|");
+	delfrom_qos("svqos_ips", todel);
 }
 
 void filter_remove(webs_t wp)
@@ -2823,7 +2825,7 @@ void filter_add(webs_t wp)
 	nvram_set(filter, num);
 }
 
-void delfrom(char *var, char *countvar, int todel, char *delimiter)
+void delfrom(char *var, char *countvar, int todel)
 {
 	char *wordlist = nvram_safe_get(var);
 	char *next;
@@ -2831,9 +2833,9 @@ void delfrom(char *var, char *countvar, int todel, char *delimiter)
 	char *target = malloc(strlen(wordlist) + 1);
 	memset(target, 0, strlen(wordlist) + 1);
 	int idx = 0;
-	foreach_delim(word, wordlist, next, delimiter) {
+	foreach(word, wordlist, next) {
 		if (idx)
-			strcat(target, delimiter);
+			strcat(target, " ");
 		if (idx == todel) {
 			idx++;
 			continue;
@@ -2852,10 +2854,36 @@ void delfrom(char *var, char *countvar, int todel, char *delimiter)
 
 }
 
+void delfrom_qos(char *var, int todel)
+{
+	char *wordlist = nvram_safe_get(var);
+	char *next;
+	char word[256];
+	char *target = malloc(strlen(wordlist) + 1);
+	memset(target, 0, strlen(wordlist) + 1);
+	char *occ;
+	int idx = 0;
+	while ((occ = strchr(wordlist, '|'))) {
+		if (idx != todel) {
+			strncat(target, wordlist, occ - wordlist);
+			strcat(target, "|");
+		}
+		wordlist = occ + 1;
+		idx++;
+	}
+	
+	if (target[0] == ' ')
+		nvram_set(var, target + 1);
+	else
+		nvram_set(var, target);
+	free(target);
+
+}
+
 void lease_del(webs_t wp)
 {
 	int todel = websGetVari(wp, "lease_del_value", 0);
-	delfrom("static_leases", "static_leasenum", todel, " ");
+	delfrom("static_leases", "static_leasenum", todel);
 }
 
 void lease_add(webs_t wp)
@@ -2911,7 +2939,7 @@ void forwardspec_add(webs_t wp)
 void forwardspec_del(webs_t wp)
 {
 	int todel = websGetVari(wp, "del_value", 0);
-	delfrom("forward_spec", "forwardspec_entries", todel, " ");
+	delfrom("forward_spec", "forwardspec_entries", todel);
 }
 
 void forwardip_add(webs_t wp)
@@ -2922,7 +2950,7 @@ void forwardip_add(webs_t wp)
 void forwardip_del(webs_t wp)
 {
 	int todel = websGetVari(wp, "del_value", 0);
-	delfrom("forward_ip", "forwardip_entries", todel, " ");
+	delfrom("forward_ip", "forwardip_entries", todel);
 }
 
 void trigger_add(webs_t wp)
@@ -2933,7 +2961,7 @@ void trigger_add(webs_t wp)
 void trigger_del(webs_t wp)
 {
 	int todel = websGetVari(wp, "del_value", 0);
-	delfrom("port_trigger", "trigger_entries", todel, " ");
+	delfrom("port_trigger", "trigger_entries", todel);
 }
 
 int get_vifcount(char *prefix)
@@ -3349,7 +3377,7 @@ static char *vapsettings[] = {
 	"mesh_hwmp_net_diameter_traversal_time",
 	"mesh_hwmp_rootmode", "mesh_hwmp_rann_interval", "mesh_gate_announcements", "mesh_sync_offset_max_neighor", "mesh_rssi_threshold", "mesh_hwmp_active_path_to_root_timeout", "mesh_hwmp_root_interval",
 	"mesh_hwmp_confirmation_interval", "mesh_power_mode", "mesh_awake_window", "mesh_plink_timeout", "mesh_connected_to_gate", "mesh_connected_to_as", "bgscan_mode", "bgscan_short_int",
-	    "bgscan_threshold",
+	"bgscan_threshold",
 	"bgscan_long_int"
 };
 
