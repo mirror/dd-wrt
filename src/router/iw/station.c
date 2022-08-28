@@ -798,10 +798,10 @@ static const struct cmd *select_station_cmd(int argc, char **argv)
 		return station_set_vlan;
 	if (strcmp(argv[1], "mesh_power_mode") == 0)
 		return station_set_mesh_power_mode;
-	if (strcmp(argv[1], "airtime_weight") == 0)
-		return station_set_airtime_weight;
-	if (strcmp(argv[1], "txpwr") == 0)
-		return station_set_txpwr;
+//	if (strcmp(argv[1], "airtime_weight") == 0)
+//		return station_set_airtime_weight;
+//	if (strcmp(argv[1], "txpwr") == 0)
+//		return station_set_txpwr;
 	return NULL;
 }
 
@@ -996,11 +996,11 @@ static int handle_station_set_airtime_weight(struct nl80211_state *state,
 	return -ENOBUFS;
 
 }
-COMMAND_ALIAS(station, set, "<MAC address> airtime_weight <weight>",
+/*COMMAND_ALIAS(station, set, "<MAC address> airtime_weight <weight>",
 	NL80211_CMD_SET_STATION, 0, CIB_NETDEV, handle_station_set_airtime_weight,
 	"Set airtime weight for this station.",
 	select_station_cmd, station_set_airtime_weight);
-
+*/
 static int handle_station_set_txpwr(struct nl80211_state *state,
 				    struct nl_msg *msg,
 				    int argc, char **argv,
