@@ -1162,6 +1162,7 @@ endif
 	../../../../tools/removewhitespace.sh $(TOP)/../../tools $(INSTALLDIR)/www/lang_pack
 	../../../../tools/removewhitespace.sh $(TOP)/../../tools $(INSTALLDIR)/www/ddwrt_inspired_themes
 	../../../../tools/removewhitespace.sh $(TOP)/../../tools $(INSTALLDIR)/www/style
+	../../../../tools/removewhitespace.sh $(TOP)/../../tools $(INSTALLDIR)/www/style/syslogd
 	../../../../tools/removewhitespace.sh $(TOP)/../../tools $(INSTALLDIR)/www/style/blue
 	../../../../tools/removewhitespace.sh $(TOP)/../../tools $(INSTALLDIR)/www/style/brainslayer
 	../../../../tools/removewhitespace.sh $(TOP)/../../tools $(INSTALLDIR)/www/style/cyan
@@ -1170,6 +1171,7 @@ endif
 	../../../../tools/removewhitespace.sh $(TOP)/../../tools $(INSTALLDIR)/www/style/kromo
 	../../../../tools/removewhitespace.sh $(TOP)/../../tools $(INSTALLDIR)/www/style/orange
 	../../../../tools/removewhitespace.sh $(TOP)/../../tools $(INSTALLDIR)/www/style/pwc
+	../../../../tools/removewhitespace.sh $(TOP)/../../tools $(INSTALLDIR)/www/style/pwc/ddwrt
 	../../../../tools/removewhitespace.sh $(TOP)/../../tools $(INSTALLDIR)/www/style/red
 	../../../../tools/removewhitespace.sh $(TOP)/../../tools $(INSTALLDIR)/www/style/wikar
 	../../../../tools/removewhitespace.sh $(TOP)/../../tools $(INSTALLDIR)/www/style/xirian
