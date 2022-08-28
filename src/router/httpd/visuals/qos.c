@@ -116,13 +116,11 @@ EJ_VISIBLE void ej_get_qossvcs(webs_t wp, int argc, char_t ** argv)
 			break;
 
 		websWrite(wp, "<tr>\n"
-//			  "<td class=\"center\">\n"
-//			  "<input type=\"checkbox\" name=\"svqos_svcdel%d\" />\n"
-//			  "</td>\n" 
-			  "<td>\n" 
-			  "<input type=\"hidden\" name=\"svqos_svcname%d\" value=\"%s\" />\n"
-			  "<input type=\"hidden\" name=\"svqos_svctype%d\" value=\"%s\" />\n" 
-			  "<em>%s</em></td>\n" "<td >\n", i, name, i, type, name);
+//                        "<td class=\"center\">\n"
+//                        "<input type=\"checkbox\" name=\"svqos_svcdel%d\" />\n"
+//                        "</td>\n" 
+			  "<td>\n"
+			  "<input type=\"hidden\" name=\"svqos_svcname%d\" value=\"%s\" />\n" "<input type=\"hidden\" name=\"svqos_svctype%d\" value=\"%s\" />\n" "<em>%s</em></td>\n" "<td >\n", i, name, i, type, name);
 #if 0
 		websWrite(wp, "<select name=\"svqos_svcprio%d\"> \n"
 			  "<script type=\"text/javascript\">\n//<![CDATA[\n"
@@ -220,11 +218,10 @@ EJ_VISIBLE void ej_get_qosdevs(webs_t wp, int argc, char_t ** argv)
 			if (!strcmp(proto, "|"))
 				strcpy(proto, "none");
 		}
-
-//		websWrite(wp, "<tr>\n" "<td class=\"center\">\n"	//
-//			  "<input type=\"checkbox\" name=\"svqos_devdel%d\" />\n"	//
-//			  "\n"	//
-//			  "</td>\n", i, i, ip);
+//              websWrite(wp, "<tr>\n" "<td class=\"center\">\n"        //
+//                        "<input type=\"checkbox\" name=\"svqos_devdel%d\" />\n"       //
+//                        "\n"  //
+//                        "</td>\n", i, i, ip);
 		websWrite(wp, "	<tr><td><input type=\"hidden\" name=\"svqos_dev%d\" value=\"%s\" /><em>%s</em></td>\n", i, ip, getNetworkLabel(wp, ip));
 
 		websWrite(wp, "	<td nowrap>\n" "<input name=\"svqos_devdown%d\" class=\"num\" size=\"5\" maxlength=\"6\" value=\"%s\" style=\"text-align:right;\" %s /> kbit/s\n"	//
@@ -261,13 +258,13 @@ EJ_VISIBLE void ej_get_qosdevs(webs_t wp, int argc, char_t ** argv)
 			  "</select>\n"	//
 			  "</td>\n",	//
 			  i, i, strcmp(prio, "0") == 0 ? "selected=\\\"selected\\\"" : "", strcmp(prio, "100") == 0 ? "selected=\\\"selected\\\"" : "", strcmp(prio,
-																					  "10") == 0 ? "selected=\\\"selected\\\"" : "",
+																			       "10") == 0 ? "selected=\\\"selected\\\"" : "",
 			  strcmp(prio, "20") == 0 ? "selected=\\\"selected\\\"" : "", strcmp(prio, "30") == 0 ? "selected=\\\"selected\\\"" : "", strcmp(prio, "40") == 0 ? "selected=\\\"selected\\\"" : "");
 
 		websWrite(wp,
 			  "<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<td class=\\\"center\\\" title=\\\"\" + sbutton.del + \"\\\"><input class=\\\"remove\\\" aria-label=\\\"\" + sbutton.del + \"\\\" type=\\\"button\\\" onclick=\\\"qosdevs_del_submit(this.form,%d)\\\" />\");\n//]]>\n</script>\n</td>\n",
 			  i);
-		websWrite(wp,"</tr>\n");
+		websWrite(wp, "</tr>\n");
 
 		qos_ips = strchr(++qos_ips, '|');
 		if (qos_ips)
@@ -353,7 +350,7 @@ EJ_VISIBLE void ej_get_qosips(webs_t wp, int argc, char_t ** argv)
 		websWrite(wp,
 			  "<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<td class=\\\"center\\\" title=\\\"\" + sbutton.del + \"\\\"><input class=\\\"remove\\\" aria-label=\\\"\" + sbutton.del + \"\\\" type=\\\"button\\\" onclick=\\\"qosips_del_submit(this.form,%d)\\\" />\");\n//]]>\n</script>\n</td>\n",
 			  i);
-		websWrite(wp,"</tr>\n");
+		websWrite(wp, "</tr>\n");
 
 		qos_ips = strchr(++qos_ips, '|');
 		if (qos_ips)
@@ -405,9 +402,9 @@ EJ_VISIBLE void ej_get_qosmacs(webs_t wp, int argc, char_t ** argv)
 		}
 
 		websWrite(wp, "<tr>\n"
-//			  "<td class=\"center\">\n"
-//			  "<input type=\"checkbox\" name=\"svqos_macdel%d\" />\n"
-//			  "</td>\n"
+//                        "<td class=\"center\">\n"
+//                        "<input type=\"checkbox\" name=\"svqos_macdel%d\" />\n"
+//                        "</td>\n"
 			  "<td><input type=\"hidden\" name=\"svqos_mac%d\" value=\"%s\" /><em>%s</em></td>\n"
 			  "<td nowrap>\n"
 			  "<input name=\"svqos_macdown%d\" class=\"num\" size=\"5\" maxlength=\"6\" value=\"%s\" style=\"text-align:right;\" %s /> kbit/s\n"
@@ -417,8 +414,7 @@ EJ_VISIBLE void ej_get_qosmacs(webs_t wp, int argc, char_t ** argv)
 			  "</td>\n"
 			  "<td nowrap>\n"
 			  "<input name=\"svqos_maclanlvl%d\" class=\"num\" size=\"5\" maxlength=\"6\" value=\"%s\" style=\"text-align:right;\" %s /> kbit/s\n"
-			  "</td>\n"
-			  "<td>\n", i, mac, mac, i, level2, strcmp(prio, "0") == 0 ? "" : "disabled", i, level, strcmp(prio, "0") == 0 ? "" : "disabled", i, lanlevel, strcmp(prio, "0") == 0 ? "" : "disabled");
+			  "</td>\n" "<td>\n", i, mac, mac, i, level2, strcmp(prio, "0") == 0 ? "" : "disabled", i, level, strcmp(prio, "0") == 0 ? "" : "disabled", i, lanlevel, strcmp(prio, "0") == 0 ? "" : "disabled");
 
 		websWrite(wp, "<select name=\"svqos_macprio%d\" onChange=\"maclvl_grey(%d,this,this.form,false)\"> \n"
 			  "<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<option value=\\\"0\\\" %s >\" + qos.prio_m + \"</option>\");\n"
@@ -436,7 +432,7 @@ EJ_VISIBLE void ej_get_qosmacs(webs_t wp, int argc, char_t ** argv)
 		websWrite(wp,
 			  "<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<td class=\\\"center\\\" title=\\\"\" + sbutton.del + \"\\\"><input class=\\\"remove\\\" aria-label=\\\"\" + sbutton.del + \"\\\" type=\\\"button\\\" onclick=\\\"qosmacs_del_submit(this.form,%d)\\\" />\");\n//]]>\n</script>\n</td>\n",
 			  i);
-		websWrite(wp,"</tr>\n");
+		websWrite(wp, "</tr>\n");
 
 		qos_macs = strchr(++qos_macs, '|');
 		if (qos_macs)

@@ -120,10 +120,18 @@ EJ_VISIBLE void ej_show_ipvsassignments(webs_t wp, int argc, char_t ** argv)
 				  i);
 			totalcount++;
 		}
-		websWrite(wp, "</table><br/>");
-
+		websWrite(wp, "<tr>");
+		websWrite(wp, "<td>&nbsp;</td>\n");
+		websWrite(wp, "<td>&nbsp;</td>\n");
+		websWrite(wp, "<td>&nbsp;</td>\n");
+		websWrite(wp, "<td>&nbsp;</td>\n");
+		websWrite(wp, "<td>&nbsp;</td>\n");
+		websWrite(wp, "<td>\n");
 		websWrite(wp,
 			  "<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<input class=\\\"button\\\" type=\\\"button\\\" value=\\\"\" + sbutton.add + \"\\\" onclick=\\\"ipvstarget_add_submit(this.form)\\\" />\");\n//]]>\n</script>\n");
+		websWrite(wp, "</td>\n");
+		websWrite(wp, "</tr>");
+		websWrite(wp, "</table><br/>");
 		websWrite(wp, "</fieldset><br/>\n");
 
 		char var[32];

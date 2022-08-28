@@ -147,6 +147,7 @@ EJ_VISIBLE void ej_nvram_get(webs_t wp, int argc, char_t ** argv)
 
 	return;
 }
+
 EJALIAS(ej_nvram_get, ej_nvg);
 
 extern struct nvram_param *srouter_defaults;
