@@ -348,7 +348,7 @@ addEvent(window, "unload", function() {
 									</tr>
 									<% get_qossvcs(); %>
 									<tr>
-										<td>
+										<td align="center">
 											<select name="add_svc">
 												<script type="text/javascript">
 												//<![CDATA[
