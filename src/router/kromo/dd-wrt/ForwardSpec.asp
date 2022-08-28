@@ -84,7 +84,7 @@ addEvent(window, "unload", function() {
 										<td>&nbsp;</td>
 										<td>&nbsp;</td>
 										<td>&nbsp;</td>
-										<td>
+										<td align="center">
 											<div class="center">
 											<script type="text/javascript">
 												//<![CDATA[
