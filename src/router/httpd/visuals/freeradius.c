@@ -151,7 +151,6 @@ EJ_VISIBLE void ej_show_radius_users(webs_t wp, int argc, char_t ** argv)
 			websWrite(wp,
 				  "<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<td class=\\\"center\\\" title=\\\"\" + sbutton.del + \"\\\"><input class=\\\"remove\\\" aria-label=\\\"\" + sbutton.del + \"\\\" type=\\\"button\\\" onclick=\\\"user_del_submit(this.form,%d)\\\" />\");\n//]]>\n</script>\n</td>",
 				  i);
-
 			websWrite(wp, "</tr>\n");
 		}
 		freeradiusdb(db);
@@ -164,7 +163,7 @@ EJ_VISIBLE void ej_show_radius_users(webs_t wp, int argc, char_t ** argv)
 	websWrite(wp, "<td>&nbsp;</td>\n");
 	websWrite(wp, "<td>&nbsp;</td>\n");
 	websWrite(wp, "<td>&nbsp;</td>\n");
-	websWrite(wp, "<td align=\"center\">\n");
+	websWrite(wp, "<td class=\"center\">\n");
 	websWrite(wp,
 		  "<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<input class=\\\"button\\\" type=\\\"button\\\" value=\\\"\" + sbutton.add + \"\\\" onclick=\\\"user_add_submit(this.form)\\\" />\");\n//]]>\n</script>\n");
 	websWrite(wp, "</td>\n");
@@ -202,7 +201,7 @@ EJ_VISIBLE void ej_show_radius_clients(webs_t wp, int argc, char_t ** argv)
 	websWrite(wp, "<tr>\n");
 	websWrite(wp, "<td>&nbsp;</td>\n");
 	websWrite(wp, "<td>&nbsp;</td>\n");
-	websWrite(wp, "<td align=\"center\">\n");
+	websWrite(wp, "<td class=\"center\">\n");
 	websWrite(wp,
 		  "<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<input class=\\\"button\\\" type=\\\"button\\\" value=\\\"\" + sbutton.add + \"\\\" onclick=\\\"client_add_submit(this.form)\\\" />\");\n//]]>\n</script>\n");
 	websWrite(wp, "</td>\n");

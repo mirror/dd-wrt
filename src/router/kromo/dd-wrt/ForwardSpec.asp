@@ -84,8 +84,8 @@ addEvent(window, "unload", function() {
 										<td>&nbsp;</td>
 										<td>&nbsp;</td>
 										<td>&nbsp;</td>
-										<td align="center">
-											<div class="center">
+										<td class="center">
+											<div>
 											<script type="text/javascript">
 												//<![CDATA[
 			    									document.write("<input class=\"button\" type=\"button\" name=\"add_button\" value=\"" + sbutton.add + "\" onclick=\"forward_add_submit(this.form);\" />");
