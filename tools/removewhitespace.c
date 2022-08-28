@@ -65,8 +65,10 @@ void main(int argc, char *argv[])
 		if (i>=l)
 		    break;
 		if (mem[i]=='/' && mem[i+1]=='*') {
+		    if (i==0 || mem[i-1]!='"') {
 		    stop=1;
 		    continue;
+		    }
 		}
 		if (mem[i] != '\r' && mem[i] != '\n' && mem[i] != '\t' && mem[i] != '\f')
 			putc(mem[i], fp);
