@@ -355,11 +355,6 @@ input.button[onclick*='show_next'] {
 input.button[onclick*='add_peer'] {
   margin: 0 0 -8px;
 }
-input.button[onclick*='previewStyle'] {
-  padding: 0 0.6rem 0 0.6rem;
-  vertical-align: -0.1rem;
-  height: 1.56rem;
-}
 input.button[onclick*='vlan_add'],
 input.button[onclick*='bridge_add'],
 input.button[onclick*='bridgeif_add'],

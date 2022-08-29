@@ -359,7 +359,7 @@ errmsg.err6="You must input a password.";
 errmsg.err7="You must input a hostname.";
 errmsg.err8="You must input an IP Address or Domain Name.";
 errmsg.err9="Illegal DMZ IP Address.";
-errmsg.err10="Confirmed password did not match Entered Password. Please re-enter password.";
+errmsg.err10="Confirmed password did not match the entered password. Please re-enter password.";
 errmsg.err11="No spaces are allowed in the password value";
 errmsg.err12="You must input a command to run.";
 errmsg.err13="Upgrade failed.";
@@ -538,17 +538,13 @@ bmenu.servicesUSB="USB";
 bmenu.servicesNAS="NAS";
 bmenu.servicesHotspot="Hotspot";
 bmenu.servicesNintendo="Nintendo";
-//bmenu.servicesMilkfish="SIP Proxy";
 bmenu.servicesPrivoxy="Ad Blocking";
-//bmenu.servicesLighttpd="Web Server";
 bmenu.servicesSpeedchecker="SpeedChecker";
-//bmenu.servicesAnchorFree="My Ad Network";
 
 bmenu.statu="Status";
 bmenu.statuRouter="Router";
 bmenu.statuInet="WAN";
 bmenu.statuLAN="LAN";
-//bmenu.statuSputnik="Sputnik Agent";
 bmenu.statuWLAN="Wireless";
 bmenu.statuVPN="OpenVPN";
 bmenu.statuBand="Bandwidth";
@@ -1092,15 +1088,6 @@ hotspot.smtp_net="Source Network";
 hotspot.shat_legend="Zero IP Configuration";
 hotspot.shat_srv="Zero IP";
 hotspot.shat_srv2="Enable Service";
-
-//hotspot.sputnik_legend="Sputnik";
-//hotspot.sputnik_srv="Sputnik Agent";
-//hotspot.sputnik_mode="Sputnik Mode";
-//hotspot.sputnik_id="Sputnik Server ID";
-//hotspot.sputnik_instant="Use Sputnik Instant Setup";
-//hotspot.sputnik_express="Use SputnikNet Express";
-//hotspot.sputnik_about="about Sputnik";
-//hotspot.sputnik_learn="Learn more";
 
 hotspot.wifidog_legend="WiFiDog";
 hotspot.wifidog_srv="Enable Gateway";
@@ -2428,22 +2415,6 @@ hstatus_inet.page1="<dt>" + status_inet.conft + "</dt><br /><dt>" + idx.conn_typ
 var status_conn=new Object();
 status_conn.titl="Active IP Connections Table";
 status_conn.h2="Active IP Connections";
-
-// ** Status_SputnikAPD.asp **//
-var status_sputnik=new Object();
-status_sputnik.titl="Sputnik Agent Status";
-status_sputnik.h2="Sputnik® Agent™";
-status_sputnik.manage="Managed By";
-status_sputnik.license="SCC License No.";
-
-//help container
-var hstatus_sputnik=new Object();
-hstatus_sputnik.right1="Sputnik Agent Status";
-hstatus_sputnik.right2="This screen displays the status of the Sputnik Agent process.";
-hstatus_sputnik.right4="The Sputnik Control Center that this access point is connected to.";
-hstatus_sputnik.right6="The current Agent status.";
-hstatus_sputnik.right8="The license number of your Sputnik Control Center.";
-
 
 // ** Status_Wireless.asp **//
 var status_wireless=new Object();

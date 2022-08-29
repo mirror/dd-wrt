@@ -474,7 +474,7 @@ input.spaceradio {
   margin-right: .4em;
 }
 input.three_column {
-  min-width: 10.1rem;
+  width: 11.1rem;
   margin-left: 0;
   margin-right: 10px;
 }
@@ -482,7 +482,7 @@ input.three_column_last {
   margin-right: 0;
 }
 input.four_column {
-  width: 115px;
+  width: 8rem;
   margin-left: 0;
   margin-right: 10px;
 }
@@ -497,11 +497,6 @@ input.button[onclick*='filter_remove'] {
 }
 input.button[onclick*='FilterSummary'] {
   margin-top: -.1rem;
-}
-input.button[name='preview_button'] {
-  padding: 0 .6rem .1rem .6rem;
-  margin-left: .362em;
-  margin-top: -.11rem;
 }
 .off {
   opacity: .6;
