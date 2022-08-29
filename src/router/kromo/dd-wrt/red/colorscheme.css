@@ -1,12 +1,12 @@
 @import url(../common.css);
 /*! Red */
 :root {
-  --ac-0: #e90519;
-  --ac-1: #fb4949;
-  --ac-2: #ff5b5b;
+  --ac-0: #c00;
+  --ac-1: #e62222;
+  --ac-2: #e92222;
   --ac-3: #ff4545;
   --ac-4: #f66;
   --ac-5: #f77;
-  --tx-c: #000;
+  --tx-c: #fff;
   --lg-c: #c00;
 }
