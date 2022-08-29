@@ -77,13 +77,7 @@ addEvent(window, "unload", function() {
 									</tr>
 									<% show_forward_spec(); %>
 									<tr>
-										<td>&nbsp;</td>
-										<td>&nbsp;</td>
-										<td>&nbsp;</td>
-										<td>&nbsp;</td>
-										<td>&nbsp;</td>
-										<td>&nbsp;</td>
-										<td>&nbsp;</td>
+										<td colspan="7">&nbsp;</td>
 										<td class="center">
 											<div>
 											<script type="text/javascript">

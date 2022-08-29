@@ -146,12 +146,7 @@ EJ_VISIBLE void ej_show_mdhcp(webs_t wp, int argc, char_t ** argv)
 	sprintf(var, "%d", totalcount);
 	nvram_set("mdhcpd_count", var);
 	websWrite(wp, "<tr>\n");
-	websWrite(wp, "<td>&nbsp;</td>\n");
-	websWrite(wp, "<td>&nbsp;</td>\n");
-	websWrite(wp, "<td>&nbsp;</td>\n");
-	websWrite(wp, "<td>&nbsp;</td>\n");
-	websWrite(wp, "<td>&nbsp;</td>\n");
-	websWrite(wp, "<td>&nbsp;</td>\n");
+	websWrite(wp, "<td colspan=\"6\">&nbsp;</td>\n");
 	websWrite(wp, "<td class=\"center\">\n");
 	websWrite(wp,
 		  "<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<input class=\\\"button\\\" type=\\\"button\\\" value=\\\"\" + sbutton.add + \"\\\" onclick=\\\"mdhcp_add_submit(this.form)\\\" />\");\n//]]>\n</script>\n");

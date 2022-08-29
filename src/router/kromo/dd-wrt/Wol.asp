@@ -263,7 +263,6 @@ addEvent(window, "load", function() {
 
 addEvent(window, "unload", function() {
 	update.stop();
-
 });
 	
 		//]]>
@@ -284,10 +283,9 @@ addEvent(window, "unload", function() {
 							<input type="hidden" name="action" value="Apply" />
 							<input type="hidden" name="change_action" />
 							<input type="hidden" name="submit_type" value="wol" />
-							
 							<input type="hidden" name="wol_hosts" value="" />
 							<input type="hidden" name="wol_type" value="wol" />
-							
+
 							<h2><% tran("wol.h2"); %></h2>
 							<fieldset>
 								<legend><% tran("wol.legend"); %></legend>
@@ -314,7 +312,7 @@ addEvent(window, "unload", function() {
 										<td><input maxlength="17" size="17" id="wol_hosts_mac" name="wol_hosts_mac" onblur="valid_macs_17(this)" value="" onchange="this.value=this.value.toUpperCase()" /></td>
 										<td><input maxlength="24" size="24" id="wol_hosts_hostname" name="wol_hosts_hostname" value="" /></td>
 										<td><input class="num" maxlength="15" size="15" id="wol_hosts_ip" name="wol_hosts_ip" onblur="valid_ip_str(this, wol.broadcast)" value="" /></td>
-										<td></td>
+										<td>&nbsp;</td>
 										<td class="center"><script type="text/javascript">
 										//<![CDATA[
 											document.write("<input class=\"button\" type=\"button\" name=\"add\" value=\"" + sbutton.add_wol + "\" onclick=\"add_wol_host(this.form);\" />");
@@ -338,9 +336,9 @@ addEvent(window, "unload", function() {
 										<input class="num" maxlength="5" size="5" id="manual_wol_port" name="manual_wol_port" onblur="valid_port(this)"  value="<% nvg("manual_wol_port"); %>" />
 									</div>
 									<script type="text/javascript">
-										//<![CDATA[
-											document.write("<input class=\"button\" type=\"button\" name=\"ping\" value=\"" + sbutton.manual_wol + "\" onclick=\"submit_manual_wol(this.form);\" />");
-										//]]>
+									//<![CDATA[
+									document.write("<input class=\"button\" type=\"button\" name=\"ping\" value=\"" + sbutton.manual_wol + "\" onclick=\"submit_manual_wol(this.form);\" />");
+									//]]>
 									</script>
 								</fieldset><br />
 							<h2><% tran("wol.h22"); %></h2>
@@ -356,9 +354,9 @@ addEvent(window, "unload", function() {
 										<div class="label"><% tran("share.inter"); %></div>
 										<input class="num" maxlength="5" size="5" name="wol_interval" onblur="valid_range(this,1,86400,share.inter)" value="<% nvg("wol_interval"); %>" />&nbsp;<% tran("share.seconds"); %>
 										<span class="default"><script type="text/javascript">
-										//<![CDATA[
+											//<![CDATA[
 											document.write("(" + share.deflt + ": 86400, " + share.range + ": 1 - 86400)");
-										//]]>
+											//]]>
 										</script></span>
 									</div>
 									<div class="setting">

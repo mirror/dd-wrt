@@ -121,11 +121,7 @@ EJ_VISIBLE void ej_show_ipvsassignments(webs_t wp, int argc, char_t ** argv)
 			totalcount++;
 		}
 		websWrite(wp, "<tr>");
-		websWrite(wp, "<td>&nbsp;</td>\n");
-		websWrite(wp, "<td>&nbsp;</td>\n");
-		websWrite(wp, "<td>&nbsp;</td>\n");
-		websWrite(wp, "<td>&nbsp;</td>\n");
-		websWrite(wp, "<td>&nbsp;</td>\n");
+		websWrite(wp, "<td colspan=\"5\">&nbsp;</td>\n");
 		websWrite(wp, "<td class=\"center\">\n");
 		websWrite(wp,
 			  "<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<input class=\\\"button\\\" type=\\\"button\\\" value=\\\"\" + sbutton.add + \"\\\" onclick=\\\"ipvstarget_add_submit(this.form)\\\" />\");\n//]]>\n</script>\n");
@@ -250,11 +246,7 @@ EJ_VISIBLE void ej_show_ipvs(webs_t wp, int argc, char_t ** argv)
 	}
 
 	websWrite(wp, "<tr>");
-	websWrite(wp, "<td>&nbsp;</td>\n");
-	websWrite(wp, "<td>&nbsp;</td>\n");
-	websWrite(wp, "<td>&nbsp;</td>\n");
-	websWrite(wp, "<td>&nbsp;</td>\n");
-	websWrite(wp, "<td>&nbsp;</td>\n");
+	websWrite(wp, "<td colspan=\"5\">&nbsp;</td>\n");
 	websWrite(wp, "<td class=\"center\">\n");
 	websWrite(wp,
 		  "<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<input class=\\\"button\\\" type=\\\"button\\\" value=\\\"\" + sbutton.add + \"\\\" onclick=\\\"ipvs_add_submit(this.form)\\\" />\");\n//]]>\n</script>\n");
