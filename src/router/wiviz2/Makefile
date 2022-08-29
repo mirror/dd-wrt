@@ -76,6 +76,7 @@ wwwinstall:
 	cp www/wiviz2/*.svg $(INSTALLDIR)/../www/www/images/wiviz
 	cp www/wiviz2/*.png $(INSTALLDIR)/../www/www/images/wiviz
 #	cp www/wiviz2/*.asp $(INSTALLDIR)/../www/www
+	cp dd-wrt/common_style/common_core_rules.css/common_core_rules.css $(INSTALLDIR)/../www/www/style/
 
 clean:
 	rm -f *.o *.c~ *.h~ wiviz
