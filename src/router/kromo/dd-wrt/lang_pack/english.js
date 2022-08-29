@@ -359,7 +359,7 @@ errmsg.err6="You must input a password.";
 errmsg.err7="You must input a hostname.";
 errmsg.err8="You must input an IP Address or Domain Name.";
 errmsg.err9="Illegal DMZ IP Address.";
-errmsg.err10="Confirmed password did not match Entered Password. Please re-enter password.";
+errmsg.err10="Confirmed password did not match the entered password. Please re-enter password.";
 errmsg.err11="No spaces are allowed in the password value";
 errmsg.err12="You must input a command to run.";
 errmsg.err13="Upgrade failed.";
@@ -538,17 +538,13 @@ bmenu.servicesUSB="USB";
 bmenu.servicesNAS="NAS";
 bmenu.servicesHotspot="Hotspot";
 bmenu.servicesNintendo="Nintendo";
-//bmenu.servicesMilkfish="SIP Proxy";
 bmenu.servicesPrivoxy="Ad Blocking";
-//bmenu.servicesLighttpd="Web Server";
 bmenu.servicesSpeedchecker="SpeedChecker";
-//bmenu.servicesAnchorFree="My Ad Network";
 
 bmenu.statu="Status";
 bmenu.statuRouter="Router";
 bmenu.statuInet="WAN";
 bmenu.statuLAN="LAN";
-//bmenu.statuSputnik="Sputnik Agent";
 bmenu.statuWLAN="Wireless";
 bmenu.statuVPN="OpenVPN";
 bmenu.statuBand="Bandwidth";
@@ -1093,15 +1089,6 @@ hotspot.shat_legend="Zero IP Configuration";
 hotspot.shat_srv="Zero IP";
 hotspot.shat_srv2="Enable Service";
 
-//hotspot.sputnik_legend="Sputnik";
-//hotspot.sputnik_srv="Sputnik Agent";
-//hotspot.sputnik_mode="Sputnik Mode";
-//hotspot.sputnik_id="Sputnik Server ID";
-//hotspot.sputnik_instant="Use Sputnik Instant Setup";
-//hotspot.sputnik_express="Use SputnikNet Express";
-//hotspot.sputnik_about="about Sputnik";
-//hotspot.sputnik_learn="Learn more";
-
 hotspot.wifidog_legend="WiFiDog";
 hotspot.wifidog_srv="Enable Gateway";
 hotspot.wifidog_id="Gateway ID";
@@ -1175,43 +1162,6 @@ hotspotsys.locationid="Location ID";
 hotspotsys.dhcp="DHCP Interface";
 hotspotsys.net="Remote Network";
 hotspotsys.customsplash="Custom Splash Page (Walled Garden)";
-
-//var anchorfree=new Object();
-//anchorfree.anchorfree="AnchorFree";
-//anchorfree.titl="My Ad Network";
-//anchorfree.h2="AnchorFree Ad Network";
-//anchorfree.anchorfree_revenue="Earn revenue by creating ad-supported AnchorFree Hotspot";
-//anchorfree.email="Email to receive revenue reports";
-//anchorfree.ssid="Use different SSID";
-//anchorfree.ssid_name="SSID";
-//anchorfree.address_1="Street Address";
-//anchorfree.address_2="Street Address 2";
-//anchorfree.city="City";
-//anchorfree.zip="Postal or Zip Code";
-//anchorfree.state="County/State/Province";
-//anchorfree.country="Country";
-//anchorfree.category="Category";
-//anchorfree.publish="Publish this hotspot on the free WiFi map";
-//anchorfree.serviceid="Service ID";
-//anchorfree.servicestatus="Service Status";
-//anchorfree.agreement="Terms and Conditions";
-//anchorfree.agree="I ACCEPT AND AGREE";
-//anchorfree.validaddr="a valid address field must be provided if this hotspot should be published on the wifi hotspot map!";
-//anchorfree.validcity="a valid city or zip/postal code must be provided if this hotspot should be published on the wifi hotspot map!";
-//anchorfree.validcat="please select a advertising category for your hotspot";
-//anchorfree.validcountry="please select a country for your hotspot";
-//anchorfree.validterms="You must agree to the terms & conditions!";
-//
-//var hanchorfree=new Object();
-//hanchorfree.right1="Join AnchorFree's hotspot advertising network";
-//hanchorfree.right2="AnchorFree operates a hotspot advertising network allowing DD-WRT customers to generate incremental revenues.";
-//hanchorfree.right3="Generate incremental revenue with advertising from AnchorFree";
-//hanchorfree.right4="By activating this feature and creating an account with AnchorFree (it's free and easy), a persistent advertising frame is inserted directly into users Web browsers, which will earn you a payment every month.  Earn a minimum monthly threshold of $25 and AnchorFree will automatically credit your account with funds.";
-//hanchorfree.right5="For more information please visit www.anchorfree.com";
-//hanchorfree.right6="Activation is easy";
-//hanchorfree.right7="Once you have activated, AnchorFree will send an email to the registered account owner with simple instructions on optimizing your hotspot, FAQs, and other pertinent information on earning money from your router. Through this configuration screen, AnchorFree inserts a thin, non-intrusive advertising frame directly into Web browsers accessing the Internet from this router.";
-//hanchorfree.right8="Customer support";
-//hanchorfree.right9="Have questions? Contact us at boxhelp@anchorfree.com";
 
 // ** Info.htm **//
 var info=new Object();
@@ -2428,22 +2378,6 @@ hstatus_inet.page1="<dt>" + status_inet.conft + "</dt><br /><dt>" + idx.conn_typ
 var status_conn=new Object();
 status_conn.titl="Active IP Connections Table";
 status_conn.h2="Active IP Connections";
-
-// ** Status_SputnikAPD.asp **//
-var status_sputnik=new Object();
-status_sputnik.titl="Sputnik Agent Status";
-status_sputnik.h2="Sputnik® Agent™";
-status_sputnik.manage="Managed By";
-status_sputnik.license="SCC License No.";
-
-//help container
-var hstatus_sputnik=new Object();
-hstatus_sputnik.right1="Sputnik Agent Status";
-hstatus_sputnik.right2="This screen displays the status of the Sputnik Agent process.";
-hstatus_sputnik.right4="The Sputnik Control Center that this access point is connected to.";
-hstatus_sputnik.right6="The current Agent status.";
-hstatus_sputnik.right8="The license number of your Sputnik Control Center.";
-
 
 // ** Status_Wireless.asp **//
 var status_wireless=new Object();

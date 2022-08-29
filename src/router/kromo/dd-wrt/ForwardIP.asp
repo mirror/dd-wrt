@@ -87,7 +87,7 @@ addEvent(window, "unload", function() {
 											</div>
 										</td>
 									</tr>
-								</table><br />
+								</table>
 							</fieldset><br />
 							<div id="footer" class="submitFooter">
 								<script type="text/javascript">
