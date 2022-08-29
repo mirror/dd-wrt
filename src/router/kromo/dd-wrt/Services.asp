@@ -57,7 +57,6 @@ function to_reboot(F) {
 	apply(F);
 }
 
-
 function to_submit(F) {
 	if(!verify_unique_static_ip(F)) {
 		return false;
