@@ -8,16 +8,7 @@ var submit_button = "<% get_web_page_name(); %>";
 var timer = setTimeout("message()", <% getboottime(); %> * 1000);
 var browserName=navigator.appName;
 
-function to_submit()
-{
-	if(submit_button == ".asp") {
-		history.go(-1);
-	} else {
-		document.location.href =  submit_button;
-	}
-}
-function to_apply()
-{
+function to_submit() {
 	if(submit_button == ".asp") {
 		history.go(-1);
 	} else {
@@ -25,8 +16,15 @@ function to_apply()
 	}
 }
 
-function message()
-{
+function to_apply() {
+	if(submit_button == ".asp") {
+		history.go(-1);
+	} else {
+		document.location.href =  submit_button;
+	}
+}
+
+function message() {
 	clearTimeout(timer);
 	bar1.togglePause();
 	setElementVisible("mess", true);
@@ -64,8 +62,8 @@ addEvent(window, "unload", function() {
 			  	</script>
 			</div>
 			<div id="mess" style="display: none"><br /><br />
-			<div style="text-align: left"><% tran("success.alert1"); %>
-				<ul>
+			<div class="center"><% tran("success.alert1"); %>
+				<ul style="text-align: left">
 					<li><% tran("success.alert2"); %></li>
 					<li><% tran("success.alert3"); %></li>
 				</ul>
