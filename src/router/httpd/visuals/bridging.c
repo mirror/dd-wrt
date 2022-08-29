@@ -211,14 +211,7 @@ EJ_VISIBLE void ej_show_bridgenames(webs_t wp, int argc, char_t ** argv)
 	}
 
 	websWrite(wp, "<tr>");
-	websWrite(wp, "<td>&nbsp;</td>\n");
-	websWrite(wp, "<td>&nbsp;</td>\n");
-	websWrite(wp, "<td>&nbsp;</td>\n");
-	websWrite(wp, "<td>&nbsp;</td>\n");
-	websWrite(wp, "<td>&nbsp;</td>\n");
-	websWrite(wp, "<td>&nbsp;</td>\n");
-	websWrite(wp, "<td>&nbsp;</td>\n");
-	websWrite(wp, "<td>&nbsp;</td>\n");
+	websWrite(wp, "<td colspan=\"8\">&nbsp;</td>\n");
 	websWrite(wp, "<td class=\"center\">\n");
 
 	websWrite(wp,
@@ -389,14 +382,12 @@ EJ_VISIBLE void ej_show_bridgeifnames(webs_t wp, int argc, char_t ** argv)
 		totalcount++;
 	}
 	websWrite(wp, "<tr>\n");
-	websWrite(wp, "<td>&nbsp;</td>\n");
+	websWrite(wp, "<td colspan=\"2\">&nbsp;</td>\n");
 	websWrite(wp, "<td>&nbsp;</td>\n");
 #ifdef HAVE_MSTP
 	websWrite(wp, "<td>&nbsp;</td>\n");
 #endif
-	websWrite(wp, "<td>&nbsp;</td>\n");
-	websWrite(wp, "<td>&nbsp;</td>\n");
-	websWrite(wp, "<td>&nbsp;</td>\n");
+	websWrite(wp, "<td colspan=\"3\">&nbsp;</td>\n");
 	websWrite(wp, "<td class=\"center\">\n");
 	websWrite(wp,
 		  "<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<input class=\\\"button\\\" type=\\\"button\\\" value=\\\"\" + sbutton.add + \"\\\" onclick=\\\"bridgeif_add_submit(this.form)\\\" />\");\n//]]>\n</script>\n");

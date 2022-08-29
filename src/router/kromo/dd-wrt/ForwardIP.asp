@@ -73,10 +73,7 @@ addEvent(window, "unload", function() {
 									</tr>
 									<% show_forward_ip(); %>
 									<tr>
-										<td>&nbsp;</td>
-										<td>&nbsp;</td>
-										<td>&nbsp;</td>
-										<td>&nbsp;</td>
+										<td colspan="4">&nbsp;</td>
 										<td class="center">
 											<div>
 											<script type="text/javascript">
