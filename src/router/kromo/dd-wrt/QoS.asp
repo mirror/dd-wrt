@@ -366,8 +366,7 @@ addEvent(window, "unload", function() {
 												</script>
 											</select>
 										</td>
-										<td>&nbsp;</td>
-										<td>&nbsp;</td>
+										<td colspan="2">&nbsp;</td>
 										<td class="center">
 											<script type="text/javascript">
 											//<![CDATA[
@@ -396,11 +395,7 @@ addEvent(window, "unload", function() {
 											<% show_iflist("tun"); %>
 											</select>
 										</td>
-										<td>&nbsp;</td>
-										<td>&nbsp;</td>
-										<td>&nbsp;</td>
-										<td>&nbsp;</td>
-										<td>&nbsp;</td>
+										<td colspan="5">&nbsp;</td>
 										<td class="center">
 											<script type="text/javascript">
 											//<![CDATA[
@@ -420,10 +415,7 @@ addEvent(window, "unload", function() {
 											<input size="3" maxlength="3" name="svqos_ipaddr0" value="0" onblur="valid_range(this,0,255,'IP')" class="num" />.<input size="3" maxlength="3" name="svqos_ipaddr1" value="0" onblur="valid_range(this,0,255,'IP')" class="num" />.<input size="3" maxlength="3" name="svqos_ipaddr2" value="0" onblur="valid_range(this,0,255,'IP')" class="num" />.<input size="3" maxlength="3" name="svqos_ipaddr3" value="0" onblur="valid_range(this,0,255,'IP')" class="num" />&nbsp;/&nbsp;
 											<input size="3" maxlength="3" name="svqos_netmask" value="0" onblur="valid_range(this,0,32,share.subnet)" class="num" />
 										</td>
-										<td>&nbsp;</td>
-										<td>&nbsp;</td>
-										<td>&nbsp;</td>
-										<td>&nbsp;</td>
+										<td colspan="4">&nbsp;</td>
 										<td class="center">
 											<script type="text/javascript">
 											//<![CDATA[
@@ -442,10 +434,7 @@ addEvent(window, "unload", function() {
 										<td>
 											<input name="svqos_hwaddr0" value="00" size="2" maxlength="2" onblur="valid_mac(this,0)" class="num" />:<input name="svqos_hwaddr1" value="00" size="2" maxlength="2" onblur="valid_mac(this,1)" class="num" />:<input name="svqos_hwaddr2" value="00" size="2" maxlength="2" onblur="valid_mac(this,1)" class="num"/>:<input name="svqos_hwaddr3" value="00" size="2" maxlength="2" onblur="valid_mac(this,1)" class="num" />:<input name="svqos_hwaddr4" value="00" size="2" maxlength="2" onblur="valid_mac(this,1)" class="num" />:<input name="svqos_hwaddr5" value="00" size="2" maxlength="2" onblur="valid_mac(this,1)" class="num" />
 										</td>
-										<td>&nbsp;</td>
-										<td>&nbsp;</td>
-										<td>&nbsp;</td>
-										<td>&nbsp;</td>
+										<td colspan="4">&nbsp;</td>
 										<td class="center">
 											<script type="text/javascript">
 											//<![CDATA[
@@ -507,25 +496,9 @@ addEvent(window, "unload", function() {
 												<script type="text/javascript">
 												//<![CDATA[
 												document.write("<option value=\"100\" <% nvsm("svqos_port2prio", "100", "selected"); %> >" + qos.prio_x + "</option>");
-												//]]>
-												</script>
-												<script type="text/javascript">
-												//<![CDATA[
 												document.write("<option value=\"10\" <% nvsm("svqos_port2prio", "10", "selected"); %> >" + qos.prio_p + "</option>");
-												//]]>
-												</script>
-												<script type="text/javascript">
-												//<![CDATA[
 												document.write("<option value=\"20\" <% nvsm("svqos_port2prio", "20", "selected"); %> >" + qos.prio_e + "</option>");
-												//]]>
-												</script>
-												<script type="text/javascript">
-												//<![CDATA[
 												document.write("<option value=\"30\" <% nvsm("svqos_port2prio", "30", "selected"); %> >" + share.standard + "</option>");
-												//]]>
-												</script>
-												<script type="text/javascript">
-												//<![CDATA[
 												document.write("<option value=\"40\" <% nvsm("svqos_port2prio", "40", "selected"); %> >" + qos.prio_b + "</option>");
 												//]]>
 												</script>
@@ -557,25 +530,9 @@ addEvent(window, "unload", function() {
 												<script type="text/javascript">
 												//<![CDATA[
 												document.write("<option value=\"100\" <% nvsm("svqos_port3prio", "100", "selected"); %> >" + qos.prio_x + "</option>");
-												//]]>
-												</script>
-												<script type="text/javascript">
-												//<![CDATA[
 												document.write("<option value=\"10\" <% nvsm("svqos_port3prio", "10", "selected"); %> >" + qos.prio_p + "</option>");
-												//]]>
-												</script>
-												<script type="text/javascript">
-												//<![CDATA[
 												document.write("<option value=\"20\" <% nvsm("svqos_port3prio", "20", "selected"); %> >" + qos.prio_e + "</option>");
-												//]]>
-												</script>
-												<script type="text/javascript">
-												//<![CDATA[
 												document.write("<option value=\"30\" <% nvsm("svqos_port3prio", "30", "selected"); %> >" + share.standard + "</option>");
-												//]]>
-												</script>
-												<script type="text/javascript">
-												//<![CDATA[
 												document.write("<option value=\"40\" <% nvsm("svqos_port3prio", "40", "selected"); %> >" + qos.prio_b + "</option>");
 												//]]>
 												</script>
@@ -607,25 +564,9 @@ addEvent(window, "unload", function() {
 												<script type="text/javascript">
 												//<![CDATA[
 												document.write("<option value=\"100\" <% nvsm("svqos_port4prio", "100", "selected"); %> >" + qos.prio_x + "</option>");
-												//]]>
-												</script>
-												<script type="text/javascript">
-												//<![CDATA[
 												document.write("<option value=\"10\" <% nvsm("svqos_port4prio", "10", "selected"); %> >" + qos.prio_p + "</option>");
-												//]]>
-												</script>
-												<script type="text/javascript">
-												//<![CDATA[
 												document.write("<option value=\"20\" <% nvsm("svqos_port4prio", "20", "selected"); %> >" + qos.prio_e + "</option>");
-												//]]>
-												</script>
-												<script type="text/javascript">
-												//<![CDATA[
 												document.write("<option value=\"30\" <% nvsm("svqos_port4prio", "30", "selected"); %> >" + share.standard + "</option>");
-												//]]>
-												</script>
-												<script type="text/javascript">
-												//<![CDATA[
 												document.write("<option value=\"40\" <% nvsm("svqos_port4prio", "40", "selected"); %> >" + qos.prio_b + "</option>");
 												//]]>
 												</script>

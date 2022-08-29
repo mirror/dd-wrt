@@ -268,7 +268,6 @@ addEvent(window, "load", function() {
 	
 	update = new StatusbarUpdate();
 	update.start();
-
 });
 
 addEvent(window, "unload", function() {
@@ -369,7 +368,7 @@ addEvent(window, "unload", function() {
 											<td><% tran("share.fri_s"); %></td>
 											<td><% tran("share.sat_s"); %></td>
 										</tr>
-										<tr <td class="center">
+										<tr class="center">
 											<td><input type="checkbox" value="1" name="day_all" onclick="dayall(this.form)" <% filter_tod_get("day_all"); %> /></td>
 											<td><input type="checkbox" value="1" name="week0" <% filter_tod_get("week0"); %> /></td>
 											<td><input type="checkbox" value="1" name="week1" <% filter_tod_get("week1"); %> /></td>
@@ -410,15 +409,7 @@ addEvent(window, "unload", function() {
 									<script type="text/javascript">
 										//<![CDATA[
 										document.write("<input class=\"button\" style=\"width:6em;\" type=\"button\" value=\"" + sbutton.add + "\" onclick=\"filter_add_submit(this.form);\"/>");
-										//]]>
-									</script>
-									<script type="text/javascript">
-										//<![CDATA[
 										document.write("<input class=\"button\" style=\"width:6em;\" type=\"button\" value=\"" + sbutton.del + "\" onclick=\"filter_remove_submit(this.form);\"/>");
-										//]]>
-									</script>
-									<script type="text/javascript">
-										//<![CDATA[
 										document.write("<input class=\"button\" type=\"button\" value=\"" + sbutton.filterSer + "\" onclick=\"openWindow('Port_Services.asp', 640, 500);\" />");
 										//]]>
 									</script>
