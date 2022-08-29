@@ -8,5 +8,6 @@
   --ac-4: #f66;
   --ac-5: #f77;
   --tx-c: #fff;
-  --lg-c: #c00;
+  --lg-c: var(--ac-0);
+  --it-c: var(--ac-0);
 }
