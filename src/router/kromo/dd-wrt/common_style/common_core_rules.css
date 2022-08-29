@@ -28,7 +28,7 @@ fieldset legend, .syslog_legend {
   background-color: var(--ac-0);
 }
 input[type] {
-  accent-color: var(--ac-0);
+  accent-color: var(--it-c);
 }
 input.button, input.button[disabled]:hover {
   background: var(--ac-0);
