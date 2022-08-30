@@ -63,7 +63,7 @@ time_t ndpi_bt_node_expire = 1200; /* time in seconds */
 #define false 0
 
 #else
-extern unsigned long 
+/*extern unsigned long 
 	ndpi_pto,
 	ndpi_ptss,ndpi_ptsd,
 	ndpi_ptds,ndpi_ptdd;
@@ -77,7 +77,7 @@ extern unsigned long
 	ndpi_ptudsr, ndpi_ptuddf;
 extern unsigned long
 	ndpi_btp_tm[20]; /* 3600/ 3m */
-
+*/
 static void diagram(unsigned long *d,size_t n,int var) {
 int i = 3600/n;
 if(var < 0) var = 0;
