@@ -1,7 +1,7 @@
 /*
  * git.c
  *
- * Copyright (C) 2012-18 - ntop.org
+ * Copyright (C) 2012-22 - ntop.org
  *
  * This module is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -22,9 +22,6 @@
 
 #define NDPI_CURRENT_PROTO NDPI_PROTOCOL_GIT
 
-#ifndef __KERNEL__
-#include <stdlib.h>
-#endif
 #include "ndpi_api.h"
 
 
@@ -33,7 +30,7 @@
 void ndpi_search_git(struct ndpi_detection_module_struct *ndpi_struct,
 		     struct ndpi_flow_struct *flow)
 {
-  struct ndpi_packet_struct * packet = &flow->packet;
+  struct ndpi_packet_struct * packet = ndpi_get_packet_struct(ndpi_struct);
 
   NDPI_LOG_DBG(ndpi_struct, "search Git\n");
 
@@ -50,7 +47,10 @@ void ndpi_search_git(struct ndpi_detection_module_struct *ndpi_struct,
 	u_int32_t git_pkt_len;
 
 	memcpy(&len, &pp[offset], 4), len[4] = 0;
-	git_pkt_len = atoi(len);
+	if(sscanf(len, "%x", &git_pkt_len) != 1) {
+	  found_git = 0;
+	  break;
+	}
 
 	if((payload_len < git_pkt_len) || (git_pkt_len == 0 /* Bad */)) {
 	  found_git = 0;
@@ -61,7 +61,7 @@ void ndpi_search_git(struct ndpi_detection_module_struct *ndpi_struct,
 
       if(found_git) {
 	NDPI_LOG_INFO(ndpi_struct, "found Git\n");
-	ndpi_set_detected_protocol(ndpi_struct, flow, NDPI_PROTOCOL_GIT, NDPI_PROTOCOL_UNKNOWN);
+	ndpi_set_detected_protocol(ndpi_struct, flow, NDPI_PROTOCOL_GIT, NDPI_PROTOCOL_UNKNOWN, NDPI_CONFIDENCE_DPI);
 	return;
       }
     }
@@ -79,7 +79,7 @@ void init_git_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int3
   ndpi_set_bitmask_protocol_detection("Git", ndpi_struct, detection_bitmask, *id,
 				      NDPI_PROTOCOL_GIT,
 				      ndpi_search_git,
-				      NDPI_SELECTION_BITMASK_PROTOCOL_TCP_WITH_PAYLOAD,
+				      NDPI_SELECTION_BITMASK_PROTOCOL_V4_V6_TCP_WITH_PAYLOAD_WITHOUT_RETRANSMISSION,
 				      SAVE_DETECTION_BITMASK_AS_UNKNOWN,
 				      ADD_TO_DETECTION_BITMASK);
 

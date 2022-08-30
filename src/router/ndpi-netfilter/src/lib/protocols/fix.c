@@ -1,7 +1,7 @@
 /*
  * fix.c
  *
- * Copyright (C) 2017-18 - ntop.org
+ * Copyright (C) 2017-22 - ntop.org
  *
  * This file is part of nDPI, an open source deep packet inspection
  * library based on the OpenDPI and PACE technology by ipoque GmbH
@@ -30,20 +30,19 @@
 
 void ndpi_search_fix(struct ndpi_detection_module_struct *ndpi_struct, struct ndpi_flow_struct *flow)
 {
-  struct ndpi_packet_struct *packet = &flow->packet;
+  struct ndpi_packet_struct *packet = ndpi_get_packet_struct(ndpi_struct);
 
   NDPI_LOG_DBG(ndpi_struct, "search FIX\n");
-  if(packet->tcp) {
+  if(packet->tcp && packet->payload_packet_len > 5) {
     // 8=
     if(packet->payload[0] == 0x38 && packet->payload[1] == 0x3d) {
-      // FIX.
+      // FIX
       if(packet->payload[2] == 0x46 &&
 	 packet->payload[3] == 0x49 &&
-	 packet->payload[4] == 0x58 &&
-	 packet->payload[5] == 0x2e) {
+	 packet->payload[4] == 0x58) {
 	
 	NDPI_LOG_INFO(ndpi_struct, "found FIX\n");
-	ndpi_set_detected_protocol(ndpi_struct, flow, NDPI_PROTOCOL_FIX, NDPI_PROTOCOL_UNKNOWN);
+	ndpi_set_detected_protocol(ndpi_struct, flow, NDPI_PROTOCOL_FIX, NDPI_PROTOCOL_UNKNOWN, NDPI_CONFIDENCE_DPI);
 	return;
       }
       // 0. 9=
@@ -53,7 +52,7 @@ void ndpi_search_fix(struct ndpi_detection_module_struct *ndpi_struct, struct nd
 	 packet->payload[5] == 0x3d) {
 
 	NDPI_LOG_INFO(ndpi_struct, "found FIX\n");
-	ndpi_set_detected_protocol(ndpi_struct, flow, NDPI_PROTOCOL_FIX, NDPI_PROTOCOL_UNKNOWN);
+	ndpi_set_detected_protocol(ndpi_struct, flow, NDPI_PROTOCOL_FIX, NDPI_PROTOCOL_UNKNOWN, NDPI_CONFIDENCE_DPI);
 	return;
       }
     }
@@ -68,7 +67,7 @@ void init_fix_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int3
   ndpi_set_bitmask_protocol_detection("FIX", ndpi_struct, detection_bitmask, *id,
 				      NDPI_PROTOCOL_FIX,
 				      ndpi_search_fix,
-				      NDPI_SELECTION_BITMASK_PROTOCOL_V4_V6_TCP_WITH_PAYLOAD,
+				      NDPI_SELECTION_BITMASK_PROTOCOL_V4_V6_TCP_WITH_PAYLOAD_WITHOUT_RETRANSMISSION,
 				      SAVE_DETECTION_BITMASK_AS_UNKNOWN,
 				      ADD_TO_DETECTION_BITMASK);
   *id += 1;

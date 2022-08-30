@@ -1,8 +1,8 @@
 /*
  * tftp.c
  *
- * Copyright (C) 2009-2011 by ipoque GmbH
- * Copyright (C) 2011-18 - ntop.org
+ * Copyright (C) 2009-11 - ipoque GmbH
+ * Copyright (C) 2011-22 - ntop.org
  *
  * This file is part of nDPI, an open source deep packet inspection
  * library based on the OpenDPI and PACE technology by ipoque GmbH
@@ -28,40 +28,130 @@
 
 #include "ndpi_api.h"
 
+/* see: https://datatracker.ietf.org/doc/html/rfc1350 */
+
 static void ndpi_int_tftp_add_connection(struct ndpi_detection_module_struct
 					 *ndpi_struct, struct ndpi_flow_struct *flow)
 {
-  ndpi_set_detected_protocol(ndpi_struct, flow, NDPI_PROTOCOL_TFTP, NDPI_PROTOCOL_UNKNOWN);
+  ndpi_set_detected_protocol(ndpi_struct, flow, NDPI_PROTOCOL_TFTP, NDPI_PROTOCOL_UNKNOWN, NDPI_CONFIDENCE_DPI);
 }
 
 void ndpi_search_tftp(struct ndpi_detection_module_struct
 		      *ndpi_struct, struct ndpi_flow_struct *flow)
 {
-  struct ndpi_packet_struct *packet = &flow->packet;
+  struct ndpi_packet_struct *packet = ndpi_get_packet_struct(ndpi_struct);
 
   NDPI_LOG_DBG(ndpi_struct, "search TFTP\n");
 
-  if (packet->payload_packet_len > 3 && flow->l4.udp.tftp_stage == 0
-      && ntohl(get_u_int32_t(packet->payload, 0)) == 0x00030001) {
+  if (packet->payload_packet_len < 4 /* min. header size */ ||
+      get_u_int8_t(packet->payload, 0) != 0x00)
+  {
+    NDPI_EXCLUDE_PROTO(ndpi_struct, flow);
+    return;
+  }
+
+  /* parse TFTP opcode */
+  switch (get_u_int8_t(packet->payload, 1))
+  {
+    case 0x01:
+        /* Read request (RRQ) */
+    case 0x02:
+        /* Write request (WWQ) */
+
+        if (packet->payload[packet->payload_packet_len - 1] != 0x00 /* last pdu element is a nul terminated string */)
+        {
+          NDPI_EXCLUDE_PROTO(ndpi_struct, flow);
+          return;
+        }
+
+        {
+          char const * const possible_modes[] = { "netascii", "octet", "mail" };
+          uint8_t mode_found = 0, mode_idx;
+          size_t mode_len;
+
+          for(mode_idx = 0; mode_idx < NDPI_ARRAY_LENGTH(possible_modes); ++mode_idx)
+          {
+            mode_len = strlen(possible_modes[mode_idx]);
+
+            if (packet->payload_packet_len < mode_len + 1 /* mode is a nul terminated string */)
+            {
+              continue;
+            }
+            if (strncasecmp((char const *)&packet->payload[packet->payload_packet_len - 1 - mode_len],
+                            possible_modes[mode_idx], mode_len) == 0)
+            {
+              mode_found = 1;
+              break;
+            }
+          }
+
+          if (mode_found == 0)
+          {
+            NDPI_EXCLUDE_PROTO(ndpi_struct, flow);
+            return;
+          }
+
+          /* Dissect RRQ/WWQ filename. */
+          size_t filename_len = packet->payload_packet_len - 2 /* Opcode */ - mode_len - 1 /* NUL */;
+
+          if (filename_len == 0 || packet->payload[2] == '\0' || ndpi_is_printable_buffer(&packet->payload[2], filename_len - 1) == 0)
+          {
+            ndpi_set_risk(ndpi_struct, flow, NDPI_MALFORMED_PACKET, "Invalid TFTP RR/WR header: Source/Destination file missing");
+          } else {
+            memcpy(flow->protos.tftp.filename, &packet->payload[2], ndpi_min(filename_len, sizeof(flow->protos.tftp.filename) - 1));
+            flow->protos.tftp.filename[filename_len] = '\0';
+          }
+
+          /* We have seen enough and do not need any more TFTP packets. */
+          NDPI_LOG_INFO(ndpi_struct, "found tftp (RRQ/WWQ)\n");
+          ndpi_int_tftp_add_connection(ndpi_struct, flow);
+        }
+        return;
+
+    case 0x03:
+        /* Data (DATA) */
+        if (packet->payload_packet_len > 4 /* DATA header size */ + 512 /* max. block size */)
+        {
+          NDPI_EXCLUDE_PROTO(ndpi_struct, flow);
+          return;
+        }
+        break;
+
+    case 0x04:
+        /* Acknowledgment (ACK) */
+        if (packet->payload_packet_len != 4 /* ACK has a fixed packet size */)
+        {
+          NDPI_EXCLUDE_PROTO(ndpi_struct, flow);
+          return;
+        }
+        break;
+
+    case 0x05:
+        /* Error (ERROR) */
+
+        if (packet->payload_packet_len < 5 ||
+            packet->payload[packet->payload_packet_len - 1] != 0x00 ||
+            packet->payload[2] != 0x00 || packet->payload[3] > 0x07)
+        {
+          NDPI_EXCLUDE_PROTO(ndpi_struct, flow);
+          return;
+        }
+        break;
+
+    default:
+        NDPI_EXCLUDE_PROTO(ndpi_struct, flow);
+        return;
+  }
+
+  if (flow->l4.udp.tftp_stage < 3)
+  {
     NDPI_LOG_DBG2(ndpi_struct, "maybe tftp. need next packet\n");
-    flow->l4.udp.tftp_stage = 1;
-    return;
-  }
-  if (packet->payload_packet_len > 3 && (flow->l4.udp.tftp_stage == 1)
-      && ntohl(get_u_int32_t(packet->payload, 0)) == 0x00040001) {
-
-    NDPI_LOG_INFO(ndpi_struct, "found tftp\n");
-    ndpi_int_tftp_add_connection(ndpi_struct, flow);
-    return;
-  }
-  if (packet->payload_packet_len > 1
-      && ((packet->payload[0] == 0 && packet->payload[packet->payload_packet_len - 1] == 0)
-	  || (packet->payload_packet_len == 4 && ntohl(get_u_int32_t(packet->payload, 0)) == 0x00040000))) {
-    NDPI_LOG_DBG2(ndpi_struct, "skip initial packet\n");
+    flow->l4.udp.tftp_stage++;
     return;
   }
 
-  NDPI_EXCLUDE_PROTO(ndpi_struct, flow);
+  NDPI_LOG_INFO(ndpi_struct, "found tftp\n");
+  ndpi_int_tftp_add_connection(ndpi_struct, flow);
 }
 
 

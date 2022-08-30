@@ -1,14 +1,16 @@
-#ifndef NDPI_FLOW_INFO_H
-#define NDPI_FLOW_INFO_H
+#ifndef FLOW_DATA_H
+#define FLOW_DATA_H
 
 struct flow_data_common {
 	uint8_t			rec_type:2, // 0 - proto name,
 					    // 1 - start, 2 - flow, 3 - lost traffic
 				family:1,   // 0 - ipv4, 1 - ipv6
 				nat_flags:3,// 1 - snat, 2 - dnat, 4 - userid
+				extflag:2,  // 0 - old, 1 - new, 2,3 - reserved
 				proto,      // transport protocol
-				cert_len,   // cert name length (0 - none)
+				opt_len,    // option length (0 - none)
 				host_len;   // host name length (0 - none)
+					    // cert_len + host_len < 510;
 					    // 4 bytes
 	uint32_t		time_start; // 4 bytes
 	/* 0 - in, 1 - out */

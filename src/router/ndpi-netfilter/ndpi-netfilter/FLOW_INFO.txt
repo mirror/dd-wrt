@@ -11,9 +11,14 @@ allowing you to flexibly choose the traffic that interests us.
 An example for sample traffic passing only through a specific network
 interface eth1 :
 
-	iptables -t mangle -A PREROUTING -m ndpi --all
-	iptables -t mangle -A OUTPUT -m ndpi --all
-	iptables -t mangle -A PREROUTING -i eth1  -m ndpi ! --error -j NDPI --flow-info
+	iptables -t mangle -A INPUT -i eth1 -m ndpi ! --error -j NDPI --flow-info
+	iptables -t mangle -A FORWARD -i eth1  -m ndpi ! --error -j NDPI --flow-info
+	iptables -t mangle -A FORWARD -o eth1  -m ndpi ! --error -j NDPI --flow-info
+	iptables -t mangle -A OUTPUT -o eth1 -m ndpi ! --error -j NDPI --flow-info
+
+If NAT are not used on the network interface, then you can do the two rules:
+
+	iptables -t mangle -A PREROUTING  -i eth1 -m ndpi ! --error -j NDPI --flow-info
 	iptables -t mangle -A POSTROUTING -o eth1 -m ndpi ! --error -j NDPI --flow-info
 
 For information about traffic, you need to open the /proc/net/xt_ndpi/flows file
@@ -35,7 +40,7 @@ TIME 1553364302
 1553364301 1553364301 4 6 217.66.156.233 62198 xxx.xxx.xxx.153 443 64 60 1 1 I=20,20 SSL
 1553364301 1553364301 4 17 xxx.xxx.xxx.4 49164 173.194.222.157 443 1378 2756 1 2 I=20,20 Google.QUIC H=www.googleadservices.com
 1553364301 1553364301 4 17 xxx.xxx.xxx.49 44919 69.171.255.11 53 100 227 1 1 I=20,20 Facebook.DNS H=instagram.fhel3-1.fna.fbcdn.net
-1553364301 1553364301 4 6 xxx.xxx.xxx.3 59438 64.233.161.104 443 447 2762 4 3 I=20,20 Google.SSL C=www.google.com
+1553364301 1553364301 4 6 xxx.xxx.xxx.3 59438 64.233.161.104 443 447 2762 4 3 I=20,20 Google.SSL H=www.google.com
 ------------------------------------------------------------------------------
 
 The first two lines of the data line may be special: 
@@ -66,7 +71,11 @@ Each line of connection information has 14 required fields and 5 additional fiel
 16. Destination NAT. Optional, only for IPv4. Format: "DN=ipv4_address:port"
 17. NDPI protocol. Format: "P=xxx"
 18. NDPI hostname info. Optional. Only for DNS,HTTP. Format: "H=hostname"
-19. NDPI SSL info. Optional. Only for SSL. Format: "C=cert_name"
+19*. NDPI SSL info. Optional. Only for SSL/TLS. See "ndpi_flow_opt" option.
+    "S=<JA3 server hash>"
+    "C=<JA3 client hash>"
+    "F=<TLS finger print>"
+    "V=<TLS version>"
 
 We must read the file until we get an EOF. In the process of reading data, the
 memory occupied by closed connections is released. If the number of records of
@@ -100,3 +109,12 @@ Each time the /proc/net/xt_ndpi/flows file is opened, the read mode is reset to 
 Changing the read mode can be done only if the current position is 0 or when
 the EOF is reached.
 
+Option ndpi_flow_opt (string)
+Allows you to specify which of the JA3 parameters are added to "flow".
+S - server JA3 hash
+C - client JA3 hash
+F - TLS fingerprint
+V - version of TLS
+L - confidence level (1 - port, 2 - ip, 3 - ip+port, 4 - dpi cache, 5 - dpi)
+
+The information will be added in the order of the options.

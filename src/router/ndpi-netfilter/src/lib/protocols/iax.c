@@ -1,8 +1,8 @@
 /*
  * iax.c
  *
- * Copyright (C) 2009-2011 by ipoque GmbH
- * Copyright (C) 2011-18 - ntop.org
+ * Copyright (C) 2009-11 - ipoque GmbH
+ * Copyright (C) 2011-22 - ntop.org
  *
  * This file is part of nDPI, an open source deep packet inspection
  * library based on the OpenDPI and PACE technology by ipoque GmbH
@@ -34,12 +34,12 @@
 
 static void ndpi_int_iax_add_connection(struct ndpi_detection_module_struct *ndpi_struct, struct ndpi_flow_struct *flow)
 {
-  ndpi_set_detected_protocol(ndpi_struct, flow, NDPI_PROTOCOL_IAX, NDPI_PROTOCOL_UNKNOWN);
+  ndpi_set_detected_protocol(ndpi_struct, flow, NDPI_PROTOCOL_IAX, NDPI_PROTOCOL_UNKNOWN, NDPI_CONFIDENCE_DPI);
 }
 
 static void ndpi_search_setup_iax(struct ndpi_detection_module_struct *ndpi_struct, struct ndpi_flow_struct *flow)
 {
-  struct ndpi_packet_struct *packet = &flow->packet;
+  struct ndpi_packet_struct *packet = ndpi_get_packet_struct(ndpi_struct);
   u_int8_t i;
   u_int16_t packet_len;
 
@@ -65,16 +65,17 @@ static void ndpi_search_setup_iax(struct ndpi_detection_module_struct *ndpi_stru
       ndpi_int_iax_add_connection(ndpi_struct, flow);
       return;
     }
+
     packet_len = 12;
-    for (i = 0; i < NDPI_IAX_MAX_INFORMATION_ELEMENTS; i++) {
+    for(i = 0; i < NDPI_IAX_MAX_INFORMATION_ELEMENTS; i++) {
+      if ((packet_len+1) >= packet->payload_packet_len)
+	break;      
+
       packet_len = packet_len + 2 + packet->payload[packet_len + 1];
-      if (packet_len == packet->payload_packet_len) {
+      if(packet_len == packet->payload_packet_len) {
 	NDPI_LOG_INFO(ndpi_struct, "found IAX\n");
 	ndpi_int_iax_add_connection(ndpi_struct, flow);
 	return;
-      }
-      if (packet_len > packet->payload_packet_len) {
-	break;
       }
     }
 
@@ -86,10 +87,10 @@ static void ndpi_search_setup_iax(struct ndpi_detection_module_struct *ndpi_stru
 
 void ndpi_search_iax(struct ndpi_detection_module_struct *ndpi_struct, struct ndpi_flow_struct *flow)
 {
-  struct ndpi_packet_struct *packet = &flow->packet;
+  struct ndpi_packet_struct *packet = ndpi_get_packet_struct(ndpi_struct);
 
   if(packet->udp 
-     && (packet->detected_protocol_stack[0] == NDPI_PROTOCOL_UNKNOWN))
+     && (flow->detected_protocol_stack[0] == NDPI_PROTOCOL_UNKNOWN))
     ndpi_search_setup_iax(ndpi_struct, flow);
 }
 

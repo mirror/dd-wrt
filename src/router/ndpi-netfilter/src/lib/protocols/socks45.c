@@ -1,7 +1,7 @@
 /*
  * socks4.c
  *
- * Copyright (C) 2016-18 - ntop.org
+ * Copyright (C) 2016-22 - ntop.org
  * Copyright (C) 2014 Tomasz Bujlow <tomasz@skatnet.dk>
  *
  * The signature is based on the Libprotoident library.
@@ -31,12 +31,12 @@
 
 static void ndpi_int_socks_add_connection(struct ndpi_detection_module_struct *ndpi_struct, struct ndpi_flow_struct *flow)
 {
-  ndpi_set_detected_protocol(ndpi_struct, flow, NDPI_PROTOCOL_SOCKS, NDPI_PROTOCOL_UNKNOWN);
+  ndpi_set_detected_protocol(ndpi_struct, flow, NDPI_PROTOCOL_SOCKS, NDPI_PROTOCOL_UNKNOWN, NDPI_CONFIDENCE_DPI);
 }
 
 static void ndpi_check_socks4(struct ndpi_detection_module_struct *ndpi_struct, struct ndpi_flow_struct *flow)
 {
-  struct ndpi_packet_struct *packet = &flow->packet;
+  struct ndpi_packet_struct *packet = ndpi_get_packet_struct(ndpi_struct);
   u_int32_t payload_len = packet->payload_packet_len;
 
   /* Break after 20 packets. */
@@ -77,7 +77,7 @@ static void ndpi_check_socks4(struct ndpi_detection_module_struct *ndpi_struct, 
 
 static void ndpi_check_socks5(struct ndpi_detection_module_struct *ndpi_struct, struct ndpi_flow_struct *flow)
 {
-  struct ndpi_packet_struct *packet = &flow->packet;
+  struct ndpi_packet_struct *packet = ndpi_get_packet_struct(ndpi_struct);
   u_int32_t payload_len = packet->payload_packet_len;
 
   /* Break after 20 packets. */
@@ -117,20 +117,16 @@ static void ndpi_check_socks5(struct ndpi_detection_module_struct *ndpi_struct, 
   }
 }
 
-static void ndpi_search_socks(struct ndpi_detection_module_struct *ndpi_struct, struct ndpi_flow_struct *flow)
+void ndpi_search_socks(struct ndpi_detection_module_struct *ndpi_struct, struct ndpi_flow_struct *flow)
 {
-  struct ndpi_packet_struct *packet = &flow->packet;
-
   NDPI_LOG_DBG(ndpi_struct, "search SOCKS\n");
 
   /* skip marked packets */
-  if(packet->detected_protocol_stack[0] != NDPI_PROTOCOL_SOCKS) {
-    if(packet->tcp_retransmission == 0) {
-      ndpi_check_socks4(ndpi_struct, flow);
+  if(flow->detected_protocol_stack[0] != NDPI_PROTOCOL_SOCKS) {
+    ndpi_check_socks4(ndpi_struct, flow);
 
-      if(packet->detected_protocol_stack[0] != NDPI_PROTOCOL_SOCKS)
-	ndpi_check_socks5(ndpi_struct, flow);
-    }
+    if(flow->detected_protocol_stack[0] != NDPI_PROTOCOL_SOCKS)
+      ndpi_check_socks5(ndpi_struct, flow);
   }
 }
 

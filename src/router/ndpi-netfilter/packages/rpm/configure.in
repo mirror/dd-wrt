@@ -29,16 +29,35 @@ PACKAGE_VERSION=`../version.sh --release`
 MAJOR_RELEASE=`../version.sh --major-release`
 GIT_REVISION=`../version.sh --revision`
 
+CENTOS_RELEASE=`cat /etc/centos-release | cut -d ' ' -f 3|cut -d '.' -f 1`
+if test $CENTOS_RELEASE = "release"; then
+  CENTOS_RELEASE=`cat /etc/centos-release | cut -d ' ' -f 4|cut -d '.' -f 1`
+fi
+
+RPM_SIGN_CMD="rpm --addsign"
+if test "$CENTOS_RELEASE" -ne 8; then
+  RPM_SIGN_CMD="./rpm-sign.exp"
+fi
+
+AC_CHECK_LIB([maxminddb], [MMDB_lookup_sockaddr])
+AC_HAVE_HEADERS(maxminddb.h)
+if test ".${ac_cv_lib_maxminddb_MMDB_lookup_sockaddr}" = ".yes" &&
+      test ".${ac_cv_header_maxminddb_h}" = ".yes"; then
+      GEOIP_DEP="libmaxminddb"
+fi
+
 AC_CONFIG_FILES([Makefile ndpi.spec])
 
 AC_SUBST(PACKAGE_VERSION)
 AC_SUBST(PLATFORM)
+AC_SUBST(GEOIP_DEP)
 AC_SUBST(MACHINE)
 AC_SUBST(EXTN)
 AC_SUBST(DATE)
 AC_SUBST(KERNEL)
 AC_SUBST(GIT_REVISION)
 AC_SUBST(MAJOR_RELEASE)
+AC_SUBST(RPM_SIGN_CMD)
 
 AC_OUTPUT
 

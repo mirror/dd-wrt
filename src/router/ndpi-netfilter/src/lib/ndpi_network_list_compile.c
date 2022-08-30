@@ -39,10 +39,11 @@ return s+1;
 
 uint16_t get_proto_by_name(const char *name) {
 const char *s;
-int i;
+size_t i;
 if(!name || !*name) return NDPI_PROTOCOL_UNKNOWN;
 for(i=0; i < sizeof(proto_def)/sizeof(proto_def[0]); i++) {
 	s = proto_def[i];
+	if(!s) continue;
 	/* Skip NDPI_PROTOCOL_ or NDPI_CONTENT_ */
 	s += 12;
 	if(*s != '_') s++;
@@ -91,8 +92,8 @@ if(addr) {
 
 static void free_ptree_data(void *data) { ; };
 
-prefix_t *fill_ipv4_prefix(prefix_t *prefix,struct in_addr *pin, int masklen ) {
-	memset((char *)prefix, 0, sizeof(prefix_t));
+ndpi_prefix_t *fill_ipv4_prefix(ndpi_prefix_t *prefix,struct in_addr *pin, int masklen ) {
+	memset((char *)prefix, 0, sizeof(ndpi_prefix_t));
 	prefix->add.sin.s_addr = pin->s_addr;
 	prefix->family = AF_INET;
 	prefix->bitlen = masklen;
@@ -101,7 +102,7 @@ prefix_t *fill_ipv4_prefix(prefix_t *prefix,struct in_addr *pin, int masklen ) {
 }
 
 
-static char *prefix_str(prefix_t *px, int proto,char *lbuf,size_t bufsize) {
+static char *prefix_str(ndpi_prefix_t *px, int proto,char *lbuf,size_t bufsize) {
 char ibuf[64];
 int k;
 	lbuf[0] = 0;
@@ -119,15 +120,15 @@ int k;
 	return lbuf;
 }
 
-static void list_ptree(patricia_tree_t *pt)
+static void list_ptree(ndpi_patricia_tree_t *pt)
 {
-	patricia_node_t *Xstack[PATRICIA_MAXBITS+1], **Xsp, *node;
+	ndpi_patricia_node_t *Xstack[PATRICIA_MAXBITS+1], **Xsp, *node;
 
 	Xsp = &Xstack[0];
 	node = pt->head;
 	while (node) {
 	    if (node->prefix)
-		add_net_cidr_proto(&node->prefix->add.sin,node->prefix->bitlen,node->value.user_value);
+		add_net_cidr_proto(&node->prefix->add.sin,node->prefix->bitlen,node->value.u.uv32.user_value);
 
 	    if (node->l) {
 		if (node->r) {
@@ -179,7 +180,7 @@ char *s = l,*sw,*dlm;
   }
   dlm = strchr(sw,':');
   if(!dlm) return 0;
-  strncpy(word,s,wlen < (dlm - sw) ? wlen : dlm - sw);
+  strncpy(word,s,wlen < (size_t)(dlm - sw) ? wlen : (size_t)(dlm - sw));
   if(strchr(word,' ') || strchr(word,'\t')) return 0;
   dlm++;
   while(*dlm && (*dlm == ' ' || *dlm == '\t')) dlm++;
@@ -216,10 +217,10 @@ void usage(void) {
 int main(int argc,char **argv) {
 
   struct in_addr pin;
-  patricia_node_t *node;
-  patricia_tree_t *ptree;
-  prefix_t prefix,prefix1;
-  int i,line,code,nsp,psp;
+  ndpi_patricia_node_t *node;
+  ndpi_patricia_tree_t *ptree;
+  ndpi_prefix_t prefix,prefix1;
+  int i,line=0,code,nsp,psp;
   uint16_t protocol;
   char lbuf[128],lbuf2[128];
   char word[128],lastword[128],*wordarg;
@@ -229,6 +230,7 @@ int main(int argc,char **argv) {
   char *outfile = NULL;
   char *infile = NULL;
   struct net_cidr_list *pnl = NULL;
+  char *protocol_name = NULL;
 
   while ((opt = getopt(argc, argv, "ahvo:y:")) != EOF) {
 	switch(opt) {
@@ -241,7 +243,7 @@ int main(int argc,char **argv) {
 	}
   }
 
-  ptree = ndpi_New_Patricia(32);
+  ptree = ndpi_patricia_new(32);
   if(!ptree) {
 	fprintf(stderr,"Out of memory\n");
 	exit(1);
@@ -291,6 +293,8 @@ int main(int argc,char **argv) {
 						word,line,s);
 				exit(1);
 			}
+			if(protocol_name) free(protocol_name);
+			protocol_name = strdup(word);
 			add_net_cidr_proto(NULL,0,protocol);
 			pnl = net_cidr_list[protocol];
 			lastword[0] = '\0';
@@ -338,7 +342,8 @@ int main(int argc,char **argv) {
 			}
 			if(nm) *nm = '/';
 			if((pin.s_addr & htonl(~(0xfffffffful << (32 - ml)))) != 0)
-				fprintf(stderr,"Warning: line %4d: '%s' is not network\n",line,word);
+				fprintf(stderr,"Warning: line %4d: '%s' is not network (%s)\n",line,word,
+						protocol_name ? protocol_name : "unknown");
 			if((pin.s_addr & htonl(0xf0000000ul)) == htonl(0xe0000000ul))
 				fprintf(stderr,"Warning: line %4d: '%s' is multicast address!\n",line,word);
 			if((pin.s_addr & htonl(0x7f000000ul)) == htonl(0x7f000000ul))
@@ -349,17 +354,17 @@ int main(int argc,char **argv) {
 
 			node = ndpi_patricia_search_best(ptree, &prefix);
 			if(verbose) {
-			  if(node && node->prefix && protocol != node->value.user_value) {
+			  if(node && node->prefix && protocol != node->value.u.uv32.user_value) {
 
 			    fprintf(stderr,"%-32s subnet %s\n",
 				prefix_str(&prefix,protocol,lbuf2,sizeof lbuf2),
-				prefix_str(node->prefix,node->value.user_value,lbuf,sizeof lbuf)
+				prefix_str(node->prefix,node->value.u.uv32.user_value,lbuf,sizeof lbuf)
 				);
 			  }
 			}
 			node = ndpi_patricia_lookup(ptree, &prefix);
 			if(node) 
-			  node->value.user_value = protocol;
+			  node->value.u.uv32.user_value = protocol;
 
 			continue;
 		}
@@ -381,6 +386,7 @@ int main(int argc,char **argv) {
 	fclose(fd);
 
 	if (optind < argc) {
+		if(infile) free(infile);
 		infile = strdup(argv[optind++]);
 		fd = fopen(infile,"r");
 		if(!fd) {
@@ -398,7 +404,7 @@ int main(int argc,char **argv) {
   if(!line) exit(0);
   list_ptree(ptree);
 
-  ndpi_Destroy_Patricia(ptree, free_ptree_data);
+  ndpi_patricia_destroy(ptree, free_ptree_data);
 
   if(youtfile) {
 	yfd = fopen(youtfile,"w");
@@ -418,12 +424,13 @@ int main(int argc,char **argv) {
   }
   ofd = fd ? fd:stdout;
 
-  fprintf(ofd,"/*\n\n\tDon't edit this file!\n\n\tsource file: %s\n\n */\n\n",infile);
-  fprintf(ofd,"static ndpi_network host_protocol_list[] = {\n");
+  fprintf(ofd,"/*\n\n\tDon't edit this file!\n\n\tchange *.yaml files\n\n */\n\n");
+  fprintf(ofd,"ndpi_network host_protocol_list[] = {\n");
 
   for(i=0; i <= NDPI_LAST_IMPLEMENTED_PROTOCOL; i++) {
 	struct net_cidr_list *nl = net_cidr_list[i];
-	int l,mg;
+	size_t l;
+	int mg;
 	if(!nl) continue;
         
 	const  char *pname = get_proto_by_id(i);
@@ -452,7 +459,7 @@ int main(int argc,char **argv) {
 				uint32_t m = 0xfffffffful << (32 - nl->addr[l].masklen);
 				if( (a & ~(m << 1)) == 0 &&
 				     a + (~m + 1) == htonl(nl->addr[l+1].a.s_addr)) {
-					int l2;
+					size_t l2;
 					if(verbose) {
 						fill_ipv4_prefix(&prefix, &nl->addr[l].a,nl->addr[l].masklen);
 						fill_ipv4_prefix(&prefix1,&nl->addr[l+1].a,nl->addr[l+1].masklen);
@@ -487,6 +494,8 @@ int main(int argc,char **argv) {
 
   if(fd) fclose(fd);
   if(yfd) fclose(yfd);
-
+  if(outfile) free(outfile);
+  if(infile) free(infile);
+  if(protocol_name) free(protocol_name);
   return(0);
 }

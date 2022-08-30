@@ -1,7 +1,7 @@
 /*
  * ayiya.c
  *
- * Copyright (C) 2011-18 - ntop.org
+ * Copyright (C) 2011-22 - ntop.org
  *
  * This file is part of nDPI, an open source deep packet inspection
  * library based on the OpenDPI and PACE technology by ipoque GmbH
@@ -42,13 +42,15 @@ struct ayiya {
 
 void ndpi_search_ayiya(struct ndpi_detection_module_struct *ndpi_struct, struct ndpi_flow_struct *flow)
 {
-  struct ndpi_packet_struct *packet = &flow->packet;
+  struct ndpi_packet_struct *packet = ndpi_get_packet_struct(ndpi_struct);
 
   NDPI_LOG_DBG(ndpi_struct, "search AYIYA\n");
 
-  if(packet->udp && (packet->detected_protocol_stack[0] == NDPI_PROTOCOL_UNKNOWN)) {
+  if(packet->udp && (flow->detected_protocol_stack[0] == NDPI_PROTOCOL_UNKNOWN)) {
     /* Ayiya is udp based, port 5072 */
-    if ((packet->udp->source == htons(5072) || packet->udp->dest == htons(5072))
+    u_int16_t port_to_match = htons(5072);
+    
+    if ((packet->udp->source == port_to_match || packet->udp->dest == port_to_match)
 	/* check for ayiya new packet */
 	&& (packet->payload_packet_len > 44)
 	) {
@@ -57,11 +59,11 @@ void ndpi_search_ayiya(struct ndpi_detection_module_struct *ndpi_struct, struct 
       u_int32_t epoch = ntohl(a->epoch), now;
       u_int32_t fiveyears = 86400 * 365 * 5;
 
-      now = flow->packet.tick_timestamp;
+      now = packet->current_time_ms;
 
       if((epoch >= (now - fiveyears)) && (epoch <= (now+86400 /* 1 day */))) {
 	NDPI_LOG_INFO(ndpi_struct, "found AYIYA\n");
-	ndpi_set_detected_protocol(ndpi_struct, flow, NDPI_PROTOCOL_AYIYA, NDPI_PROTOCOL_UNKNOWN);
+	ndpi_set_detected_protocol(ndpi_struct, flow, NDPI_PROTOCOL_AYIYA, NDPI_PROTOCOL_UNKNOWN, NDPI_CONFIDENCE_DPI);
       }
 
       return;
@@ -77,7 +79,7 @@ void init_ayiya_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_in
   ndpi_set_bitmask_protocol_detection("Ayiya", ndpi_struct, detection_bitmask, *id,
 				      NDPI_PROTOCOL_AYIYA,
 				      ndpi_search_ayiya,
-				      NDPI_SELECTION_BITMASK_PROTOCOL_UDP_WITH_PAYLOAD,
+				      NDPI_SELECTION_BITMASK_PROTOCOL_V4_V6_UDP_WITH_PAYLOAD,
 				      SAVE_DETECTION_BITMASK_AS_UNKNOWN,
 				      ADD_TO_DETECTION_BITMASK);
 

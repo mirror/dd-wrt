@@ -1,7 +1,7 @@
 /*
  * vhua.c
  *
- * Copyright (C) 2011-18 - ntop.org
+ * Copyright (C) 2011-22 - ntop.org
  *
  * nDPI is free software: you can vhuatribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -32,13 +32,13 @@
 
 
 static void ndpi_int_vhua_add_connection(struct ndpi_detection_module_struct *ndpi_struct, struct ndpi_flow_struct *flow) {
-  ndpi_set_detected_protocol(ndpi_struct, flow, NDPI_PROTOCOL_VHUA, NDPI_PROTOCOL_UNKNOWN);
+  ndpi_set_detected_protocol(ndpi_struct, flow, NDPI_PROTOCOL_VHUA, NDPI_PROTOCOL_UNKNOWN, NDPI_CONFIDENCE_DPI);
   NDPI_LOG_INFO(ndpi_struct, "found VHUA\n");
 }
 
 
 static void ndpi_check_vhua(struct ndpi_detection_module_struct *ndpi_struct, struct ndpi_flow_struct *flow) {
-  struct ndpi_packet_struct *packet = &flow->packet;
+  struct ndpi_packet_struct *packet = ndpi_get_packet_struct(ndpi_struct);
   u_int32_t payload_len = packet->payload_packet_len;
   u_char p0[] =  { 0x05, 0x14, 0x3a, 0x05, 0x08, 0xf8, 0xa1, 0xb1, 0x03 };
 
@@ -55,12 +55,10 @@ static void ndpi_check_vhua(struct ndpi_detection_module_struct *ndpi_struct, st
 }
 
 void ndpi_search_vhua(struct ndpi_detection_module_struct *ndpi_struct, struct ndpi_flow_struct *flow) {
-  struct ndpi_packet_struct *packet = &flow->packet;
-
   NDPI_LOG_DBG(ndpi_struct, "search VHUA\n");
 
   /* skip marked packets */
-  if(packet->detected_protocol_stack[0] != NDPI_PROTOCOL_VHUA) {
+  if(flow->detected_protocol_stack[0] != NDPI_PROTOCOL_VHUA) {
     ndpi_check_vhua(ndpi_struct, flow);
   }
 }
@@ -71,7 +69,7 @@ void init_vhua_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int
   ndpi_set_bitmask_protocol_detection("VHUA", ndpi_struct, detection_bitmask, *id,
 				      NDPI_PROTOCOL_VHUA,
 				      ndpi_search_vhua,
-				      NDPI_SELECTION_BITMASK_PROTOCOL_UDP_WITH_PAYLOAD,
+				      NDPI_SELECTION_BITMASK_PROTOCOL_V4_V6_UDP_WITH_PAYLOAD,
 				      SAVE_DETECTION_BITMASK_AS_UNKNOWN,
 				      ADD_TO_DETECTION_BITMASK);
   *id += 1;

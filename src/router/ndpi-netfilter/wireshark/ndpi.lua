@@ -1,5 +1,5 @@
 --
--- (C) 2017-18 - ntop.org
+-- (C) 2017-21 - ntop.org
 --
 -- This plugin is part of nDPI (https://github.com/ntop/nDPI)
 --
@@ -18,8 +18,9 @@
 -- Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 --
 
--- wireshark ~/Dropbox/discovery/Daniele/alexa_sonos_only.pcap
--- cat /tmp/wireshark.sql | influx -database wireshark
+function bit(p)
+   return 2 ^ p  -- 0-based indexing
+end
 
 
 local ndpi_proto = Proto("ndpi", "nDPI Protocol Interpreter")
@@ -29,6 +30,68 @@ local ndpi_fds    = ndpi_proto.fields
 ndpi_fds.network_protocol     = ProtoField.new("nDPI Network Protocol", "ndpi.protocol.network", ftypes.UINT8, nil, base.DEC)
 ndpi_fds.application_protocol = ProtoField.new("nDPI Application Protocol", "ndpi.protocol.application", ftypes.UINT8, nil, base.DEC)
 ndpi_fds.name                 = ProtoField.new("nDPI Protocol Name", "ndpi.protocol.name", ftypes.STRING)
+ndpi_fds.flow_risk            = ProtoField.new("nDPI Flow Risk", "ndpi.flow_risk", ftypes.UINT64, nil, base.HEX)
+ndpi_fds.flow_score           = ProtoField.new("nDPI Flow Score", "ndpi.flow_score", ftypes.UINT32)
+
+
+local flow_risks = {}
+-- Wireshark/Lua doesn't handle 64 bit integer very well, so we split the risk mask into two 32 bit integer values
+local num_bits_flow_risks = 32
+flow_risks[0]  = ProtoField.bool("ndpi.flow_risk.unused0", "Reserved", num_bits_flow_risks, nil, bit(0), "nDPI Flow Risk: Reserved bit")
+flow_risks[1]  = ProtoField.bool("ndpi.flow_risk.xss_attack", "XSS attack", num_bits_flow_risks, nil, bit(1), "nDPI Flow Risk: XSS attack")
+flow_risks[2]  = ProtoField.bool("ndpi.flow_risk.sql_injection", "SQL injection", num_bits_flow_risks, nil, bit(2), "nDPI Flow Risk: SQL injection")
+flow_risks[3]  = ProtoField.bool("ndpi.flow_risk.rce_injection", "RCE injection", num_bits_flow_risks, nil, bit(3), "nDPI Flow Risk: RCE injection")
+flow_risks[4]  = ProtoField.bool("ndpi.flow_risk.binary_application_transfer", "Binary application transfer", num_bits_flow_risks, nil, bit(4), "nDPI Flow Risk: Binary application transfer")
+flow_risks[5]  = ProtoField.bool("ndpi.flow_risk.known_protocol_on_non_standard_port", "Known protocol on non standard port", num_bits_flow_risks, nil, bit(5), "nDPI Flow Risk: Known protocol on non standard port")
+flow_risks[6]  = ProtoField.bool("ndpi.flow_risk.self_signed_certificate", "Self-signed Certificate", num_bits_flow_risks, nil, bit(6), "nDPI Flow Risk: Self-signed Certificate")
+flow_risks[7]  = ProtoField.bool("ndpi.flow_risk.obsolete_tls_version", "Obsolete TLS version (< 1.1)", num_bits_flow_risks, nil, bit(7), "nDPI Flow Risk: Obsolete TLS version (< 1.1)")
+flow_risks[8]  = ProtoField.bool("ndpi.flow_risk.weak_tls_cipher", "Weak TLS cipher", num_bits_flow_risks, nil, bit(8), "nDPI Flow Risk: Weak TLS cipher")
+flow_risks[9]  = ProtoField.bool("ndpi.flow_risk.tls_expired_certificate", "TLS Expired Certificate", num_bits_flow_risks, nil, bit(9), "nDPI Flow Risk: TLS Expired Certificate")
+flow_risks[10] = ProtoField.bool("ndpi.flow_risk.tls_certificate_mismatch", "TLS Certificate Mismatch", num_bits_flow_risks, nil, bit(10), "nDPI Flow Risk: TLS Certificate Mismatch")
+flow_risks[11] = ProtoField.bool("ndpi.flow_risk.http_suspicious_user_agent", "HTTP Suspicious User-Agent", num_bits_flow_risks, nil, bit(11), "nDPI Flow Risk: HTTP Suspicious User-Agent")
+flow_risks[12] = ProtoField.bool("ndpi.flow_risk.http_numeric_ip_address", "HTTP Numeric IP Address", num_bits_flow_risks, nil, bit(12), "nDPI Flow Risk: HTTP Numeric IP Address")
+flow_risks[13] = ProtoField.bool("ndpi.flow_risk.http_suspicious_url", "HTTP Suspicious URL", num_bits_flow_risks, nil, bit(13), "nDPI Flow Risk: HTTP Suspicious URL")
+flow_risks[14] = ProtoField.bool("ndpi.flow_risk.http_suspicious_header", "HTTP Suspicious Header", num_bits_flow_risks, nil, bit(14), "nDPI Flow Risk: HTTP Suspicious Header")
+flow_risks[15] = ProtoField.bool("ndpi.flow_risk.tls_probably_not_https", "TLS (probably) not carrying HTTPS", num_bits_flow_risks, nil, bit(15), "nDPI Flow Risk: TLS (probably) not carrying HTTPS")
+flow_risks[16] = ProtoField.bool("ndpi.flow_risk.suspicious_dga", "Suspicious DGA domain name", num_bits_flow_risks, nil, bit(16), "nDPI Flow Risk: Suspicious DGA domain name")
+flow_risks[17] = ProtoField.bool("ndpi.flow_risk.malformed_packet", "Malformed packet", num_bits_flow_risks, nil, bit(17), "nDPI Flow Risk: Malformed packet")
+flow_risks[18] = ProtoField.bool("ndpi.flow_risk.ssh_obsolete_client", "SSH Obsolete Client Version/Cipher", num_bits_flow_risks, nil, bit(18), "nDPI Flow Risk: SSH Obsolete Client Version/Cipher")
+flow_risks[19] = ProtoField.bool("ndpi.flow_risk.ssh_obsolete_server", "SSH Obsolete Server Version/Cipher", num_bits_flow_risks, nil, bit(19), "nDPI Flow Risk: SSH Obsolete Server Version/Cipher")
+flow_risks[20] = ProtoField.bool("ndpi.flow_risk.smb_insecure_version", "SMB Insecure Version", num_bits_flow_risks, nil, bit(20), "nDPI Flow Risk: SMB Insecure Version")
+flow_risks[21] = ProtoField.bool("ndpi.flow_risk.tls_suspicious_esni", "TLS Suspicious ESNI Usage", num_bits_flow_risks, nil, bit(21), "nDPI Flow Risk: TLS Suspicious ESNI Usage")
+flow_risks[22] = ProtoField.bool("ndpi.flow_risk.unsafe_protocol", "Unsafe Protocol", num_bits_flow_risks, nil, bit(22), "nDPI Flow Risk: Unsafe Protocol")
+flow_risks[23] = ProtoField.bool("ndpi.flow_risk.suspicious_dns_traffic", "Suspicious DNS traffic", num_bits_flow_risks, nil, bit(23), "nDPI Flow Risk: Suspicious DNS traffic")
+flow_risks[24] = ProtoField.bool("ndpi.flow_risk.sni_tls_extension_missing", "SNI TLS extension was missing", num_bits_flow_risks, nil, bit(24), "nDPI Flow Risk: SNI TLS extension was missing")
+flow_risks[25] = ProtoField.bool("ndpi.flow_risk.http_suspicious_content", "HTTP suspicious content", num_bits_flow_risks, nil, bit(25), "nDPI Flow Risk: HTTP suspicious content")
+flow_risks[26] = ProtoField.bool("ndpi.flow_risk.risky_asn", "Risky ASN", num_bits_flow_risks, nil, bit(26), "nDPI Flow Risk: Risky ASN")
+flow_risks[27] = ProtoField.bool("ndpi.flow_risk.risky_domain_name", "Risky domain name", num_bits_flow_risks, nil, bit(27), "nDPI Flow Risk: Risky domain name")
+flow_risks[28] = ProtoField.bool("ndpi.flow_risk.possibly_malicious_ja3", "Possibly Malicious JA3 Fingerprint", num_bits_flow_risks, nil, bit(28), "nDPI Flow Risk: Possibly Malicious JA3 Fingerprint")
+flow_risks[29] = ProtoField.bool("ndpi.flow_risk.possibly_malicious_ssl_certificate_sha1", "Possibly Malicious SSL Certificate SHA1 Fingerprint", num_bits_flow_risks, nil, bit(29), "nDPI Flow Risk: Possibly Malicious SSL Certificate SHA1 Fingerprint")
+flow_risks[30] = ProtoField.bool("ndpi.flow_risk.desktop_file_sharing_session", "Desktop/File Sharing Session", num_bits_flow_risks, nil, bit(30), "nDPI Flow Risk: Desktop/File Sharing Session")
+flow_risks[31] = ProtoField.bool("ndpi.flow_risk.uncommon_tls_alpn", "Uncommon TLS ALPN", num_bits_flow_risks, nil, bit(31), "nDPI Flow Risk: Uncommon TLS ALPN")
+-- Restart bitmask from 0!
+flow_risks[32] = ProtoField.bool("ndpi.flow_risk.cert_validity_too_long", "TLS certificate validity longer than 13 months", num_bits_flow_risks, nil, bit(0), "nDPI Flow Risk: TLS certificate validity longer than 13 months")
+flow_risks[33] = ProtoField.bool("ndpi.flow_risk.suspicious_extension", "TLS suspicious extension", num_bits_flow_risks, nil, bit(1), "nDPI Flow Risk: TLS suspicious extension")
+flow_risks[34] = ProtoField.bool("ndpi.flow_risk.fatal_alert", "TLS fatal alert detected", num_bits_flow_risks, nil, bit(2), "nDPI Flow Risk: TLS fatal alert")
+flow_risks[35] = ProtoField.bool("ndpi.flow_risk.suspicious_entropy", "Suspicious entropy", num_bits_flow_risks, nil, bit(3), "nDPI Flow Risk: suspicious entropy")
+flow_risks[36] = ProtoField.bool("ndpi.flow_risk.clear_text_credentials", "Cleat-Text credentials", num_bits_flow_risks, nil, bit(4), "nDPI Flow Risk: cleat-text credentials")
+flow_risks[37] = ProtoField.bool("ndpi.flow_risk.dns_large_packet", "DNS large packet", num_bits_flow_risks, nil, bit(5), "nDPI Flow Risk: DNS packet is larger than 512 bytes")
+flow_risks[38] = ProtoField.bool("ndpi.flow_risk.dns_fragmented", "DNS fragmented", num_bits_flow_risks, nil, bit(6), "nDPI Flow Risk: DNS message is fragmented")
+flow_risks[39] = ProtoField.bool("ndpi.flow_risk.invalid_characters", "Invalid characters", num_bits_flow_risks, nil, bit(7), "nDPI Flow Risk: Text contains non-printable characters")
+flow_risks[40] = ProtoField.bool("ndpi.flow_risk.possible_exploit", "Possible Exploit", num_bits_flow_risks, nil, bit(8), "nDPI Flow Risk: Possible exploit detected")
+flow_risks[41] = ProtoField.bool("ndpi.flow_risk.cert_about_to_expire", "TLS cert about to expire", num_bits_flow_risks, nil, bit(9), "nDPI Flow Risk: TLS certificate about to expire")
+flow_risks[42] = ProtoField.bool("ndpi.flow_risk.punycode_idn", "IDN Domain Name", num_bits_flow_risks, nil, bit(10), "nDPI Flow Risk: IDN Domain Name")
+flow_risks[43] = ProtoField.bool("ndpi.flow_risk.error_code_detected", "Error Code Detected", num_bits_flow_risks, nil, bit(11), "nDPI Flow Risk: Error Code Detected")
+flow_risks[44] = ProtoField.bool("ndpi.flow_risk.crawler_bot", "Crawler/Bot Detected", num_bits_flow_risks, nil, bit(12), "nDPI Flow Risk: Crawler/Bot Detected")
+flow_risks[45] = ProtoField.bool("ndpi.flow_risk.anonymous_subscriber", "Anonymous Subscriber", num_bits_flow_risks, nil, bit(13), "nDPI Flow Risk: Anonymous Subscriber")
+flow_risks[46] = ProtoField.bool("ndpi.flow_risk.unidirectional_traffic", "Unidirectional Traffic", num_bits_flow_risks, nil, bit(13), "nDPI Flow Risk: Unidirectional Traffi")
+
+-- Last one: keep in sync the bitmask when adding new risks!!
+flow_risks[64] = ProtoField.new("Unused", "ndpi.flow_risk.unused", ftypes.UINT32, nil, base.HEX, bit(32) - bit(13))
+
+for _,v in pairs(flow_risks) do
+  ndpi_fds[#ndpi_fds + 1] = v
+end
 
 local ntop_proto = Proto("ntop", "ntop Extensions")
 ntop_proto.fields = {}
@@ -40,6 +103,7 @@ ntop_fds.appl_latency_rtt = ProtoField.new("Application Latency RTT (msec)", "nt
 
 local f_eth_source        = Field.new("eth.src")
 local f_eth_trailer       = Field.new("eth.trailer")
+local f_vlan_trailer      = Field.new("vlan.trailer")
 local f_vlan_id           = Field.new("vlan.id")
 local f_arp_opcode        = Field.new("arp.opcode")
 local f_arp_sender_mac    = Field.new("arp.src.hw_mac")
@@ -96,6 +160,8 @@ local tot_http_ua_flows      = 0
 
 local flows                  = {}
 local tot_flows              = 0
+
+local flows_with_risks       = {}
 
 local dhcp_fingerprints      = {}
 
@@ -340,6 +406,9 @@ function ndpi_proto.init()
    -- Flows
    flows                  = {}
    tot_flows              = 0
+
+   -- Risks
+   flows_with_risks      = {}
    
    -- DHCP
    dhcp_fingerprints      = {}
@@ -560,6 +629,55 @@ end
 -- ###############################################
 
 function timeseries_dissector(tvb, pinfo, tree)
+   if(pinfo.dst_port ~= 0) then
+      local rev_key = getstring(pinfo.dst)..":"..getstring(pinfo.dst_port).."-"..getstring(pinfo.src)..":"..getstring(pinfo.src_port)
+      local k
+            
+      if(flows[rev_key] ~= nil) then
+	 flows[rev_key][2] = flows[rev_key][2] + pinfo.len
+	 k = rev_key
+      else
+	 local key = getstring(pinfo.src)..":"..getstring(pinfo.src_port).."-"..getstring(pinfo.dst)..":"..getstring(pinfo.dst_port)
+	 
+	 k = key
+	 if(flows[key] == nil) then
+	    flows[key] = { pinfo.len, 0 } -- src -> dst  / dst -> src
+	    tot_flows = tot_flows + 1
+	 else
+	    flows[key][1] = flows[key][1] + pinfo.len
+	 end
+      end
+      
+      --k = pinfo.curr_proto..","..k
+      
+      local bytes = flows[k][1]+flows[k][2]
+      local row
+
+      -- Prometheus
+      -- row = "wireshark {metric=\"bytes\", flow=\""..k.."\"} ".. bytes .. " ".. (tonumber(pinfo.abs_ts)*10000).."00000"
+
+      -- Influx      
+      row = "wireshark,flow="..k.." bytes=".. pinfo.len .. " ".. (tonumber(pinfo.abs_ts)*10000).."00000"   
+      file:write(row.."\n")
+
+      row = "wireshark,ndpi="..ndpi.protocol_name.." bytes=".. pinfo.len .. " ".. (tonumber(pinfo.abs_ts)*10000).."00000"   
+      file:write(row.."\n")
+
+      row = "wireshark,host="..getstring(pinfo.src).." sent=".. pinfo.len .. " ".. (tonumber(pinfo.abs_ts)*10000).."00000"   
+      file:write(row.."\n")
+
+      row = "wireshark,host="..getstring(pinfo.dst).." rcvd=".. pinfo.len .. " ".. (tonumber(pinfo.abs_ts)*10000).."00000"   
+      file:write(row.."\n")
+   
+      -- print(row)
+
+      file:flush()
+   end
+end
+
+-- ###############################################
+
+function risk_dissector(tvb, pinfo, tree)
    if(pinfo.dst_port ~= 0) then
       local rev_key = getstring(pinfo.dst)..":"..getstring(pinfo.dst_port).."-"..getstring(pinfo.src)..":"..getstring(pinfo.src_port)
       local k
@@ -888,6 +1006,12 @@ function latency_dissector(tvb, pinfo, tree)
    end
 end
 
+
+
+function hasbit(x, p)
+   return x % (p + p) >= p
+end
+
 -- the dissector function callback
 function ndpi_proto.dissector(tvb, pinfo, tree)
    -- Wireshark dissects the packet twice. We ignore the first
@@ -895,29 +1019,82 @@ function ndpi_proto.dissector(tvb, pinfo, tree)
    -- The trick below avoids to process the packet twice
 
    if(pinfo.visited == true) then
-      local eth_trailer = f_eth_trailer()
+      local eth_trailer = {f_eth_trailer()}
+      local vlan_trailer = {f_vlan_trailer()}
 
-      if(eth_trailer ~= nil) then
-	 local eth_trailer = getval(eth_trailer)
-	 local magic = string.sub(eth_trailer, 1, 11)
+      -- nDPI trailer is usually the (only one) ethernet trailer.
+      -- But, depending on Wireshark configuration and on L2 protocols, the
+      -- situation may be more complex. Let's try to handle the most common cases:
+      --  1) with (multiple) ethernet trailers, nDPI trailer is usually the last one
+      --  2) with VLAN encapsulation, nDPI trailer is usually recognized as vlan trailer
+      if(eth_trailer[#eth_trailer] ~= nil or
+         vlan_trailer[#vlan_trailer] ~= nil) then
+
+	 local ndpi_trailer
+	 if (eth_trailer[#eth_trailer] ~= nil) then
+	     ndpi_trailer = getval(eth_trailer[#eth_trailer])
+	 else
+	     ndpi_trailer = getval(vlan_trailer[#vlan_trailer])
+	 end
+	 local magic = string.sub(ndpi_trailer, 1, 11)
 
 	 if(magic == "19:68:09:24") then
 	    local ndpikey, srckey, dstkey, flowkey
-	    local elems                = string.split(string.sub(eth_trailer, 12), ":")
+	    local elems                = string.split(string.sub(ndpi_trailer, 12), ":")
 	    local ndpi_subtree         = tree:add(ndpi_proto, tvb(), "nDPI Protocol")
-	    local network_protocol     = tonumber(elems[2]..elems[3], 16) -- 16 = HEX
-	    local application_protocol = tonumber(elems[4]..elems[5], 16) -- 16 = HEX
+	    local str_score            = elems[14]..elems[15]
+	    local flow_score           = tonumber(str_score, 16) -- 16 = HEX
+	    local len                  = tvb:len()
+	    local flow_risk            = tvb(len-30, 8):uint64() -- UInt64 object!
 	    local name                 = ""
-
-	    for i=6,21 do
+	    local flow_risk_tree
+	    
+	    for i=16,31 do
 	       name = name .. string.char(tonumber(elems[i], 16))
 	    end
 
-	    ndpi_subtree:add(ndpi_fds.network_protocol, network_protocol)
-	    ndpi_subtree:add(ndpi_fds.application_protocol, application_protocol)
-	    ndpi_subtree:add(ndpi_fds.name, name)
+	    ndpi_subtree:add(ndpi_fds.network_protocol, tvb(len-34, 2))
+	    ndpi_subtree:add(ndpi_fds.application_protocol, tvb(len-32, 2))
 
-	    if(application_protocol ~= 0) then
+	    flow_risk_tree = ndpi_subtree:add(ndpi_fds.flow_risk, tvb(len-30, 8))
+	    if (flow_risk ~= UInt64(0, 0)) then
+	       local rev_key = getstring(pinfo.dst)..":"..getstring(pinfo.dst_port).." - "..getstring(pinfo.src)..":"..getstring(pinfo.src_port)
+
+	       if(flows_with_risks[rev_key] == nil) then
+		  local key = getstring(pinfo.src)..":"..getstring(pinfo.src_port).." - "..getstring(pinfo.dst)..":"..getstring(pinfo.dst_port)
+		  
+		  if(flows_with_risks[key] == nil) then
+		     flows_with_risks[key] = flow_score
+		  end
+	       end
+	       
+	       for i=0,63 do
+		 if flow_risks[i] ~= nil then
+	            -- Wireshark/Lua doesn't handle 64 bit integer very well, so we split the risk mask into two 32 bit integer values
+	            flow_risk_tree:add(flow_risks[i], tvb(len - (i < 32 and 26 or 30), 4))
+		 end
+
+	       end
+	       flow_risk_tree:add(flow_risks[64], tvb(len - 30, 4))
+	    end
+	    
+	    ndpi_subtree:add(ndpi_fds.flow_score, tvb(len-22, 2))	    
+	    ndpi_subtree:add(ndpi_fds.name, tvb(len-20, 16))
+
+	    if(flow_score > 0) then
+	       local level
+	       if(flow_score <= 10) then     -- NDPI_SCORE_RISK_LOW
+		  level = PI_NOTE
+	       elseif(flow_score <= 50) then -- NDPI_SCORE_RISK_MEDIUM
+		  level = PI_WARN
+	       else
+		  level = PI_ERROR
+	       end
+	       
+	       ndpi_subtree:add_expert_info(PI_MALFORMED, PI_WARN, "Non zero score")
+	    end
+
+	    if(application_protocol ~= 0) then	       
 	       -- Set protocol name in the wireshark protocol column (if not Unknown)
 	       pinfo.cols.protocol = name
 	       --print(network_protocol .. "/" .. application_protocol .. "/".. name)
@@ -943,7 +1120,7 @@ function ndpi_proto.dissector(tvb, pinfo, tree)
 
 		     for k,v in pairsByValues(ndpi_flows, asc) do
 			if(k ~= flowkey) then
-			   table.remove(ndpi_flows, k)
+			   ndpi_flows[k] = nil -- Remove entry
 			   num_ndpi_flows = num_ndpi_flows + 1
 			   if(num_ndpi_flows == (2*max_num_entries)) then
 			      break
@@ -986,6 +1163,7 @@ function ndpi_proto.dissector(tvb, pinfo, tree)
    if(dump_timeseries) then
       timeseries_dissector(tvb, pinfo, tree)
    end
+   
    mac_dissector(tvb, pinfo, tree)
    arp_dissector(tvb, pinfo, tree)
    vlan_dissector(tvb, pinfo, tree)
@@ -997,6 +1175,29 @@ function ndpi_proto.dissector(tvb, pinfo, tree)
 end
 
 register_postdissector(ndpi_proto)
+
+-- ###############################################
+
+local function flow_score_dialog_menu()
+   local win = TextWindow.new("nDPI Flow Risks");
+   local label = ""
+   local i
+
+   for k,v in pairsByValues(flows_with_risks, asc) do
+      if(label == "") then
+	 label = "Flows with positive score value:\n"
+      end
+      
+      label = label .. "- " .. k .." [score: ".. v .."]\n"
+   end
+
+   if(label == "") then
+      label = "No flows with score > 0 found"
+   end
+   
+   win:set(label)
+   win:add_button("Clear", function() win:clear() end)
+end
 
 -- ###############################################
 
@@ -1475,4 +1676,5 @@ register_menu("ntop/Latency/Application",  appl_rtt_dialog_menu, MENU_TOOLS_UNSO
 
 if(compute_flows_stats) then
    register_menu("ntop/nDPI", ndpi_dialog_menu, MENU_TOOLS_UNSORTED)
+   register_menu("ntop/nDPI Flow Score", flow_score_dialog_menu, MENU_TOOLS_UNSORTED)
 end

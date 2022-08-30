@@ -1,8 +1,8 @@
 /*
  * world_of_warcraft.c
  *
- * Copyright (C) 2009-2011 by ipoque GmbH
- * Copyright (C) 2011-18 - ntop.org
+ * Copyright (C) 2009-11 - ipoque GmbH
+ * Copyright (C) 2011-22 - ntop.org
  *
  * This file is part of nDPI, an open source deep packet inspection
  * library based on the OpenDPI and PACE technology by ipoque GmbH
@@ -31,7 +31,7 @@ static void ndpi_int_worldofwarcraft_add_connection(struct ndpi_detection_module
 						    struct ndpi_flow_struct *flow/* , */
 						    /* ndpi_protocol_type_t protocol_type */)
 {
-  ndpi_set_detected_protocol(ndpi_struct, flow, NDPI_PROTOCOL_WORLDOFWARCRAFT, NDPI_PROTOCOL_UNKNOWN);
+  ndpi_set_detected_protocol(ndpi_struct, flow, NDPI_PROTOCOL_WORLDOFWARCRAFT, NDPI_PROTOCOL_UNKNOWN, NDPI_CONFIDENCE_DPI);
 }
 
 
@@ -54,10 +54,7 @@ u_int8_t ndpi_int_is_wow_port(const u_int16_t port)
 void ndpi_search_worldofwarcraft(struct ndpi_detection_module_struct
 				 *ndpi_struct, struct ndpi_flow_struct *flow)
 {
-  struct ndpi_packet_struct *packet = &flow->packet;
-
-  struct ndpi_id_struct *src = flow->src;
-  struct ndpi_id_struct *dst = flow->dst;
+  struct ndpi_packet_struct *packet = ndpi_get_packet_struct(ndpi_struct);
 
   NDPI_LOG_DBG(ndpi_struct, "search World of Warcraft\n");
 
@@ -108,14 +105,11 @@ void ndpi_search_worldofwarcraft(struct ndpi_detection_module_struct
       return;
     }
 
-    if (NDPI_SRC_OR_DST_HAS_PROTOCOL(src, dst, NDPI_PROTOCOL_WORLDOFWARCRAFT) != 0) {
-      if (packet->tcp->source == htons(3724)
-	  && packet->payload_packet_len == 8 && get_u_int32_t(packet->payload, 0) == htonl(0x0006ec01)) {
-	ndpi_int_worldofwarcraft_add_connection(ndpi_struct, flow);
-	NDPI_LOG_INFO(ndpi_struct, "World of Warcraft: connection detected\n");
-	return;
-      }
-
+    if (packet->tcp->source == htons(3724)
+	&& packet->payload_packet_len == 8 && get_u_int32_t(packet->payload, 0) == htonl(0x0006ec01)) {
+      ndpi_int_worldofwarcraft_add_connection(ndpi_struct, flow);
+      NDPI_LOG_INFO(ndpi_struct, "World of Warcraft: connection detected\n");
+      return;
     }
 
     /* for some well known WoW ports

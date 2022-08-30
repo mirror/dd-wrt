@@ -1,7 +1,7 @@
 /*
  * drda.c
  *
- * Copyright (C) 2012-18 - ntop.org
+ * Copyright (C) 2012-22 - ntop.org
  *
  * This module is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -36,7 +36,7 @@ struct ndpi_drda_hdr {
 void ndpi_search_drda(struct ndpi_detection_module_struct *ndpi_struct,
 		      struct ndpi_flow_struct *flow)
 {
-  struct ndpi_packet_struct * packet = &flow->packet;
+  struct ndpi_packet_struct * packet = ndpi_get_packet_struct(ndpi_struct);
   u_int16_t payload_len = packet->payload_packet_len;
   u_int count = 0; // prevent integer overflow
 
@@ -76,7 +76,7 @@ void ndpi_search_drda(struct ndpi_detection_module_struct *ndpi_struct,
 	if(count != payload_len) goto no_drda;
       }
       NDPI_LOG_INFO(ndpi_struct, "found DRDA\n");
-      ndpi_set_detected_protocol(ndpi_struct, flow, NDPI_PROTOCOL_DRDA, NDPI_PROTOCOL_UNKNOWN);
+      ndpi_set_detected_protocol(ndpi_struct, flow, NDPI_PROTOCOL_DRDA, NDPI_PROTOCOL_UNKNOWN, NDPI_CONFIDENCE_DPI);
       return;
     }
   }
@@ -95,7 +95,7 @@ void init_drda_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int
   ndpi_set_bitmask_protocol_detection("DRDA", ndpi_struct, detection_bitmask, *id,
 				      NDPI_PROTOCOL_DRDA,
 				      ndpi_search_drda,
-				      NDPI_SELECTION_BITMASK_PROTOCOL_TCP_WITH_PAYLOAD,
+				      NDPI_SELECTION_BITMASK_PROTOCOL_V4_V6_TCP_WITH_PAYLOAD_WITHOUT_RETRANSMISSION,
 				      SAVE_DETECTION_BITMASK_AS_UNKNOWN,
 				      ADD_TO_DETECTION_BITMASK);
 
