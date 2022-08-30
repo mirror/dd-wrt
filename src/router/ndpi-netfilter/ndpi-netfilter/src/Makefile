@@ -35,7 +35,7 @@ xt_ndpi-y := main.o ndpi_strcol.o ndpi_proc_parsers.o ndpi_proc_generic.o \
 		${NDPI_SRC}/lib/ndpi_utils.o \
 		${NDPI_SRC}/lib/ndpi_serializer.o \
 		${NDPI_SRC}/lib/ndpi_geoip.o \
-		$(patsubst %.c,%.o, $(NDPI_PROTO_SRC))
+		${NDPI_SRC}/lib/protocols.o \
 
 all:	modules
 
