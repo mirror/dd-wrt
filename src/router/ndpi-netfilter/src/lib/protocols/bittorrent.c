@@ -395,10 +395,10 @@ return ret;
 
 
 /* copy from https://secure.wand.net.nz/trac/libprotoident/browser/lib/udp/lpi_dht_dict.cc */
-#define ANY -1
+#define BT_ANY -1
 
 #define MASKOCTET(x) \
-        ((x) == ANY ? 0U : 255U)
+        ((x) == BT_ANY ? 0U : 255U)
 
 #define FORMUP(a,b,c,d) \
         (unsigned)((((a)&0xFF)<<24)|(((b)&0xFF)<<16)|(((c)&0xFF)<<8)|((d)&0xFF))
@@ -418,21 +418,21 @@ return ret;
 
 static inline bool match_utp_query(uint32_t payload, uint32_t len) {
 
-	//if(MATCH(payload, 0x01, 0x00, ANY, ANY))
+	//if(MATCH(payload, 0x01, 0x00, BT_ANY, BT_ANY))
         //        return true;
-        if(MATCH(payload, 0x11, 0x00, ANY, ANY) && len == 20)
+        if(MATCH(payload, 0x11, 0x00, BT_ANY, BT_ANY) && len == 20)
                 return true;
-	if(MATCH(payload, 0x21, 0x02, ANY, ANY) && len == 30)
+	if(MATCH(payload, 0x21, 0x02, BT_ANY, BT_ANY) && len == 30)
                 return true;
-        if(MATCH(payload, 0x21, 0x00, ANY, ANY) && len == 20)
+        if(MATCH(payload, 0x21, 0x00, BT_ANY, BT_ANY) && len == 20)
                 return true;
-	if(MATCH(payload, 0x31, 0x02, ANY, ANY) && len == 30)
+	if(MATCH(payload, 0x31, 0x02, BT_ANY, BT_ANY) && len == 30)
                 return true;
-        if(MATCH(payload, 0x31, 0x00, ANY, ANY) && len == 20)
+        if(MATCH(payload, 0x31, 0x00, BT_ANY, BT_ANY) && len == 20)
                 return true;
-	if(MATCH(payload, 0x41, 0x02, ANY, ANY) && len == 30)
+	if(MATCH(payload, 0x41, 0x02, BT_ANY, BT_ANY) && len == 30)
                 return true;
-        if(MATCH(payload, 0x41, 0x00, ANY, ANY) && len == 20)
+        if(MATCH(payload, 0x41, 0x00, BT_ANY, BT_ANY) && len == 20)
                 return true;
         return false;	
 
@@ -442,19 +442,19 @@ static inline bool match_utp_reply(uint32_t payload, uint32_t len) {
 
 	if(len == 0)
 		return true;
-        if(MATCH(payload, 0x11, 0x00, ANY, ANY) && len == 20)
+        if(MATCH(payload, 0x11, 0x00, BT_ANY, BT_ANY) && len == 20)
                 return true;
-	if(MATCH(payload, 0x21, 0x02, ANY, ANY) && (len == 30 || len == 33))
+	if(MATCH(payload, 0x21, 0x02, BT_ANY, BT_ANY) && (len == 30 || len == 33))
                 return true;
-        if(MATCH(payload, 0x21, 0x01, ANY, ANY) && (len == 26 || len == 23))
+        if(MATCH(payload, 0x21, 0x01, BT_ANY, BT_ANY) && (len == 26 || len == 23))
                 return true;
-        if(MATCH(payload, 0x21, 0x00, ANY, ANY) && len == 20)
+        if(MATCH(payload, 0x21, 0x00, BT_ANY, BT_ANY) && len == 20)
                 return true;
-	if(MATCH(payload, 0x31, 0x02, ANY, ANY) && len == 30)
+	if(MATCH(payload, 0x31, 0x02, BT_ANY, BT_ANY) && len == 30)
                 return true;
-        if(MATCH(payload, 0x31, 0x00, ANY, ANY) && len == 20)
+        if(MATCH(payload, 0x31, 0x00, BT_ANY, BT_ANY) && len == 20)
                 return true;
-	if(MATCH(payload, 0x41, 0x02, ANY, ANY) && (len == 33 || len == 30))
+	if(MATCH(payload, 0x41, 0x02, BT_ANY, BT_ANY) && (len == 33 || len == 30))
                 return true;
 
 	return false;
@@ -480,7 +480,7 @@ static inline bool match_utp_query_reply(uint32_t *ppayload, uint32_t *bt_seq,
 
 	payload = htonl(*ppayload);
 	if(match_utp_query(payload,len)) {
-                if (MATCH(payload, 0x01, 0x00, ANY, ANY)) {
+                if (MATCH(payload, 0x01, 0x00, BT_ANY, BT_ANY)) {
                         if (len <= 20 ||
                             (payload == 0x1000004ul && 
                              (htonl(ppayload[3]) & 0xffff0000ul) == 0x1030000ul)) {
