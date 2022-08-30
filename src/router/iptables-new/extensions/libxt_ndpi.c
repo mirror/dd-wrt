@@ -364,6 +364,8 @@ static char *prot_short_str[NDPI_NUM_BITS] = {
 	"psiphon",
 	"ultrasurf",
 	"threema",
+	"alicloud",
+	"avast",
 	NULL,
 };
 static char  prot_disabled[NDPI_NUM_BITS+1] = { 0, };
