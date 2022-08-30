@@ -66,7 +66,7 @@ static char  prot_disabled[NDPI_NUM_BITS+1] = { 0, };
 #define EXT_OPT_BASE 0
 // #define EXT_OPT_BASE NDPI_LAST_IMPLEMENTED_PROTOCOL
 enum ndpi_opt_index {
-	NDPI_OPT_UNKNOWN=NDPI_LAST_IMPLEMENTED_PROTOCOL,
+	NDPI_OPT_UNKNOWN=0,
 	NDPI_OPT_ALL,
 	NDPI_OPT_ERROR,
 	NDPI_OPT_PROTO,
@@ -532,7 +532,7 @@ ndpi_mt_help(void)
 	ndpi_print_prot_list(1);
 }
 
-static struct option ndpi_mt_opts[NDPI_LAST_IMPLEMENTED_PROTOCOL+11];
+static struct option ndpi_mt_opts[NDPI_OPT_LAST+2];
 
 static struct iptables_match
 ndpi_mt4_reg = {
@@ -790,12 +790,12 @@ void _init(void)
 	pname[0] = '\0';
 	index = 0;
 
-        for (i = 0; i <= NDPI_LAST_IMPLEMENTED_PROTOCOL; i++){
+/*        for (i = 0; i <= NDPI_LAST_IMPLEMENTED_PROTOCOL; i++){
                 ndpi_mt_opts[i].name = prot_short_str[i];
                 ndpi_mt_opts[i].flag = NULL;
 		ndpi_mt_opts[i].has_arg = 0;
                 ndpi_mt_opts[i].val = i;
-        }
+        }*/
 
 #define MT_OPT(np,protoname,nargs) { i=(np); \
 	ndpi_mt_opts[i].name = protoname; ndpi_mt_opts[i].flag = NULL; \
