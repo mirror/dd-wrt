@@ -808,10 +808,8 @@ static int svqos_iptables(void)
 		}
 #ifdef HAVE_OPENDPI
 		if (strstr(type, "dpi")) {
-			char dpi[32];
-			sprintf(dpi, "--%s", name);
 			insmod("xt_ndpi");
-			eval("iptables", "-t", "mangle", "-A", "SVQOS_SVCS", "-m", "ndpi", dpi, "-j", "MARK", "--set-mark", qos_nfmark(level));
+			eval("iptables", "-t", "mangle", "-A", "SVQOS_SVCS", "-m", "ndpi", "--proto", name, "-j", "MARK", "--set-mark", qos_nfmark(level));
 		}
 #endif
 
