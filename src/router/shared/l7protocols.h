@@ -41,6 +41,7 @@ l7filters filters_list[] = {
 #ifdef HAVE_OPENDPI
 	{ "ajp", NDPI_ONLY },
 	{ "alibaba", NDPI_ONLY },
+	{ "alicloud", NDPI_ONLY },
 	{ "amazon", NDPI_ONLY },
 	{ "amazonalexa", NDPI_ONLY },
 	{ "amazonaws", NDPI_ONLY },
@@ -62,6 +63,7 @@ l7filters filters_list[] = {
 	{ "armagetron", DPI },
 	{ "audiogalaxy", L7_ONLY },
 #ifdef HAVE_OPENDPI
+	{ "avast", NDPI_ONLY },
 	{ "avastsecuredns", NDPI_ONLY },
 	{ "ayiya", NDPI_ONLY },
 	{ "azure", NDPI_ONLY },
