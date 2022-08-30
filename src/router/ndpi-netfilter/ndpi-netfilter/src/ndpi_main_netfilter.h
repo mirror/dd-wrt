@@ -209,7 +209,7 @@ struct nf_ct_ext_ndpi {
 
 } __attribute__((__aligned__(__SIZEOF_LONG__ * 2)));
 
-extern unsigned long ndpi_log_debug;
+//extern unsigned long ndpi_log_debug;
 
 #include "../lib/third_party/include/ahocorasick.h"
 

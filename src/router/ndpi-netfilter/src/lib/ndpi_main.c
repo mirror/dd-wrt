@@ -124,14 +124,14 @@
 
 /* #define MATCH_DEBUG 1 */
 
-int ndpi_debug_print_level = 0;
+static int ndpi_debug_print_level = 0;
 
 static int _ndpi_debug_callbacks = 0;
 
 /* #define DGA_DEBUG 1 */
 /* #define MATCH_DEBUG 1 */
 
-u_int ndpi_verbose_dga_detection = 0;
+static u_int ndpi_verbose_dga_detection = 0;
 
 /* ****************************************** */
 
@@ -142,7 +142,7 @@ static void *(*_ndpi_malloc)(size_t size);
 static void (*_ndpi_free)(void *ptr);
 
 static u_int32_t _ticks_per_second = 1000;
-struct ndpi_detection_module_struct xxx0;
+static struct ndpi_detection_module_struct xxx0;
 /* ****************************************** */
 
 static ndpi_risk_info ndpi_known_risks[] = {
@@ -221,7 +221,7 @@ static void ndpi_enabled_callbacks_init(struct ndpi_detection_module_struct *ndp
 
 /* ****************************************** */
 
-ndpi_custom_dga_predict_fctn ndpi_dga_function = NULL;
+static ndpi_custom_dga_predict_fctn ndpi_dga_function = NULL;
 
 /* ****************************************** */
 
