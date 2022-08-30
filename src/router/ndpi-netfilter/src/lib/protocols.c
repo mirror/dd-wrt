@@ -360,3 +360,9 @@
 #undef NDPI_CURRENT_PROTO
 #include "protocols/zeromq.c"
 #undef NDPI_CURRENT_PROTO
+#include "protocols/discord.c"
+#undef NDPI_CURRENT_PROTO
+#include "protocols/avast.c"
+#undef NDPI_CURRENT_PROTO
+#include "protocols/alicloud.c"
+#undef NDPI_CURRENT_PROTO
