@@ -166,10 +166,8 @@ void add_client_dev_srvfilter(char *name, char *type, char *data, int level, int
 	}
 #ifdef HAVE_OPENDPI
 	if (strstr(type, "dpi")) {
-		char ndpi[32];
-		snprintf(ndpi, 32, "--%s", name);
 		insmod("xt_ndpi");
-		eval("iptables", "-t", "mangle", "-A", chain, "-m", "ndpi", ndpi, "-j", "MARK", "--set-mark", qos_nfmark(base + idx));
+		eval("iptables", "-t", "mangle", "-A", chain, "-m", "ndpi", "--proto", name, "-j", "MARK", "--set-mark", qos_nfmark(base + idx));
 	}
 #endif
 
@@ -225,10 +223,8 @@ void add_client_mac_srvfilter(char *name, char *type, char *data, int level, int
 	}
 #ifdef HAVE_OPENDPI
 	if (strstr(type, "dpi")) {
-		char ndpi[32];
-		snprintf(ndpi, 32, "--%s", name);
 		insmod("xt_ndpi");
-		eval("iptables", "-t", "mangle", "-A", "FILTER_IN", "-m", "mac", "--mac-source", client, "-m", "ndpi", ndpi, "-j", "MARK", "--set-mark", qos_nfmark(base + idx));
+		eval("iptables", "-t", "mangle", "-A", "FILTER_IN", "-m", "mac", "--mac-source", client, "-m", "ndpi", "--proto", name, "-j", "MARK", "--set-mark", qos_nfmark(base + idx));
 	}
 #endif
 
@@ -303,14 +299,12 @@ void add_client_ip_srvfilter(char *name, char *type, char *data, int level, int 
 	}
 #ifdef HAVE_OPENDPI
 	if (strstr(type, "dpi")) {
-		char ndpi[32];
-		snprintf(ndpi, 32, "--%s", name);
 		insmod("xt_ndpi");
 
-		eval("iptables", "-t", "mangle", "-A", "FILTER_OUT", "-s", client, "-m", "ndpi", ndpi, "-j", "MARK", "--set-mark", qos_nfmark(base + idx));
-		eval("iptables", "-t", "mangle", "-A", "FILTER_OUT", "-d", client, "-m", "ndpi", ndpi, "-j", "MARK", "--set-mark", qos_nfmark(base + idx));
-		eval("iptables", "-t", "mangle", "-A", "FILTER_IN", "-s", client, "-m", "ndpi", ndpi, "-j", "MARK", "--set-mark", qos_nfmark(base + idx));
-		eval("iptables", "-t", "mangle", "-A", "FILTER_IN", "-d", client, "-m", "ndpi", ndpi, "-j", "MARK", "--set-mark", qos_nfmark(base + idx));
+		eval("iptables", "-t", "mangle", "-A", "FILTER_OUT", "-s", client, "-m", "ndpi", "--proto", name, "-j", "MARK", "--set-mark", qos_nfmark(base + idx));
+		eval("iptables", "-t", "mangle", "-A", "FILTER_OUT", "-d", client, "-m", "ndpi", "--proto", name, "-j", "MARK", "--set-mark", qos_nfmark(base + idx));
+		eval("iptables", "-t", "mangle", "-A", "FILTER_IN", "-s", client, "-m", "ndpi", "--proto", name, "-j", "MARK", "--set-mark", qos_nfmark(base + idx));
+		eval("iptables", "-t", "mangle", "-A", "FILTER_IN", "-d", client, "-m", "ndpi", "--proto", name, "-j", "MARK", "--set-mark", qos_nfmark(base + idx));
 
 	}
 #endif
