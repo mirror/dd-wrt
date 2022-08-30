@@ -385,14 +385,14 @@ module_param_named(err_alloc_id, ndpi_p_err_alloc_id, ulong, 0400);
 module_param_named(l4mismatch,	 ndpi_p_l4mismatch,  ulong, 0400);
 module_param_named(l4mis_size,	 ndpi_p_l4mis_size, ulong, 0400);
 
-unsigned long  ndpi_pto=0,
+static unsigned long  ndpi_pto=0,
 	       ndpi_ptss=0, ndpi_ptsd=0,
 	       ndpi_ptds=0, ndpi_ptdd=0,
 	       ndpi_ptussf=0,ndpi_ptusdr=0,
 	       ndpi_ptussr=0,ndpi_ptusdf=0,
 	       ndpi_ptudsf=0,ndpi_ptuddr=0,
 	       ndpi_ptudsr=0,ndpi_ptuddf=0 ;
-unsigned long 
+static unsigned long 
 	       ndpi_pusf=0,ndpi_pusr=0,
 	       ndpi_pudf=0,ndpi_pudr=0,
 	       ndpi_puo=0;
