@@ -13,18 +13,18 @@ select {
   text-overflow: ellipsis;
   display: inline-block;
 }
-div.rightmenu {
+.rightmenu {
   float: right;
   right: 20px;
   top: 5px;
   position: relative;
   width: 177px;
 }
-div.expando {
+.expando {
   position: relative;
   z-index: 150;
 }
-div.button {
+.button {
   background: #30519c;
   border: 1px solid #30519c;
   color: #fff;
@@ -34,33 +34,45 @@ div.button {
   cursor: pointer;
   border-radius: 4px;
 }
-div.button:hover {
+.button:hover, .button:focus-visible {
   background: #6384cf;
   border: 1px solid #6384cf;
   color: #fff;
 }
-div.slidingbody {
+.slidingbody {
   width: 197px;
   overflow: hidden;
 }
-div.slidingbodyshow {
+.slidingbodyshow {
   text-align: left;
   width: 100%;
   padding: 10px;
 }
-div.slidingbodyshow center {
+.slidingbodyshow center {
   font-weight: bold;
   margin-top: 6px;
   margin-bottom: 6px;
   padding: 3px;
 }
-div.controls {
+.controls {
   position: absolute;
   bottom: 10px;
   left: 10px;
   z-index: 1;
 }
-div.mainarea {
+.controls a {
+  height: 50px;
+  width: 50px;
+  display: inline-block;
+}
+.controls > a > img, .button {
+  transition: all .15s cubic-bezier(0.3, 0, 0.5, 1);
+}
+.controls > a:focus-visible {
+  outline: 2px solid #30519c;
+  border-radius: 4px;
+}
+.mainarea {
   position: absolute;
   width: 98%;
   height: 98%;
@@ -70,7 +82,7 @@ div.mainarea {
   right: 2px;
   overflow: hidden;
 }
-div.poweredby {
+.poweredby {
   position: absolute;
   bottom: 5px;
   right: 10px;
@@ -79,13 +91,13 @@ div.poweredby {
   text-align: right;
   z-index: 149;
 }
-div.div3d {
+.div3d {
   position: absolute;
   font-style: italic;
   font-size: 8pt;
   text-align: center;
 }
-div.gridpoint {
+.gridpoint {
   width: 4px;
   height: 4px;
   position: absolute;
@@ -94,9 +106,8 @@ div.gridpoint {
 .glow {
   position: absolute;
   cursor: pointer;
-  filter: opacity(1) !important;
 }
-img.logo {
+.logo {
   position: absolute;
   z-index: 0;
   top: 30%;
@@ -116,11 +127,11 @@ a.action {
 a.actionunimplemented {
   display: none;
 }
-span.actionlist {
+.actionlist {
   text-align: center;
   display: none;
 }
-div#debugger {
+#debugger {
   position: absolute;
   z-index: 200;
 }
@@ -136,36 +147,24 @@ img {
     border: 1px solid #ccc;
     color: #000;
   }
-  .popup_bg, span.title3d {
+  .popup_bg, .title3d {
     background-color: #f6f6f6;
     color: #000;
   }
   a.action {
     color: #000;
   }
-  div.slidingbodyshow center {
+  .slidingbodyshow center {
     border-top: 1px solid #454545;
     border-bottom: 1px solid #454545;
   }
-  div.gridpoint {
+  .gridpoint {
     background-color: #111;
   }
-  div.slidingbody, div.slidingbodyshow {
+  .slidingbody, .slidingbodyshow {
     background-color: #f6f6f6;
   }
-  .logo {
-    filter: contrast(1.6) opacity(.7);
-    mix-blend-mode: darken;
-    border-radius: 4px;
-  }
-  [src*='up']:hover,
-  [src*='down']:hover,
-  [src*='zoom']:hover,
-  [src*='reset']:hover,
-  [src*='up']:focus-within,
-  [src*='down']:focus-within,
-  [src*='zoom']:focus-within,
-  [src*='reset']:focus-within {
+  .controls > a > img:hover {
     filter: invert(1);
     mix-blend-mode: darken;
   }
@@ -179,21 +178,21 @@ img {
     border: 1px solid #454545;
     color: #e0e0e0;
   }
-  .popup_bg, span.title3d {
+  .popup_bg, .title3d {
     background-color: #1a1a1a;
     color: #fff;
   }
   a.action {
     color: #fff;
   }
-  div.slidingbodyshow center {
+  .slidingbodyshow center {
     border-top: 1px solid #454545;
     border-bottom: 1px solid #454545;
   }
-  div.gridpoint {
+  .gridpoint {
     background-color: #eee;
   }
-  div.slidingbody, div.slidingbodyshow {
+  .slidingbody, .slidingbodyshow {
     background-color: #1a1a1a;
     border: 1px solid #454545;
   }
@@ -201,14 +200,13 @@ img {
     filter: invert(.95) hue-rotate(180deg) contrast(1.2);
     mix-blend-mode: lighten;
   }
-  [src*='up']:hover,
-  [src*='down']:hover,
-  [src*='zoom']:hover,
-  [src*='reset']:hover,
-  [src*='up']:focus-within,
-  [src*='down']:focus-within,
-  [src*='zoom']:focus-within,
-  [src*='reset']:focus-within {
+  .sizeimage {
+    filter: invert(.9) hue-rotate(180deg) brightness(.5)
+  }
+  .sizeimage[src*='ssid.svg'] {
+    filter: invert(.5) hue-rotate(180deg) contrast(2);
+  }
+  .controls > a > img:hover {
     filter: invert(0.95) contrast(1.2);
     mix-blend-mode: lighten;
   }
