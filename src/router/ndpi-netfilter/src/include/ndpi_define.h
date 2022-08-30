@@ -340,8 +340,8 @@ static inline u_int64_t get_u_int64_t(const u_int8_t* X, int O)
 #define get_l32(X,O)  get_u_int32_t(X,O)
 #elif defined(__BIG_ENDIAN__) || defined(__BIG_ENDIAN)
 /* convert the bytes from big to little endian */
-# define get_l16(X,O) bswap_16(get_u_int16_t(X,O))
-# define get_l32(X,O) bswap_32(get_u_int32_t(X,O))
+# define get_l16(X,O) __cpu_to_le16(get_u_int16_t(X,O))
+# define get_l32(X,O) __cpu_to_le32(get_u_int32_t(X,O))
 #else
 #error "__BYTE_ORDER MUST BE DEFINED !"
 #endif							/* __BYTE_ORDER */
