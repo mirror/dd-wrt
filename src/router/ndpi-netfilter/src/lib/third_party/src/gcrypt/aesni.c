@@ -45,7 +45,7 @@
 /*
  * AES-NI support detection routine
  */
-int mbedtls_aesni_has_support( unsigned int what )
+static int mbedtls_aesni_has_support( unsigned int what )
 {
 #if defined(__has_feature)
 #  if __has_feature(memory_sanitizer)

@@ -75,17 +75,17 @@ enum dbg_trace {
 #include "../lib/third_party/include/ahocorasick.h"
 NDPI_STATIC AC_ERROR_t      ac_automata_add_exact(AC_AUTOMATA_t *, AC_PATTERN_t *);
 
-extern unsigned long  ndpi_flow_limit;
+/*extern unsigned long  ndpi_flow_limit;
 extern unsigned long  bt_hash_size;
 extern unsigned long  bt6_hash_size;
 extern unsigned long  bt_hash_tmo;
 extern unsigned long  ndpi_enable_flow;
 extern unsigned long  flow_read_debug;
 extern unsigned long  ndpi_log_debug;
-
+*/
 #define NDPI_FLOW_OPT_MAX 6
-extern char  ndpi_flow_opt[NDPI_FLOW_OPT_MAX+1];
-extern struct kmem_cache *ct_info_cache;
+//extern char  ndpi_flow_opt[NDPI_FLOW_OPT_MAX+1];
+//extern struct kmem_cache *ct_info_cache;
 
 #define XCHGP(a,b) { void *__c = a; a = b; b = __c; }
 
