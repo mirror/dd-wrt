@@ -1,7 +1,7 @@
 /*
  * steam.c
  *
- * Copyright (C) 2011-20 - ntop.org
+ * Copyright (C) 2011-22 - ntop.org
  * Copyright (C) 2014 Tomasz Bujlow <tomasz@skatnet.dk>
  * 
  * The signature is mostly based on the Libprotoident library
@@ -31,11 +31,11 @@
 #include "ndpi_api.h"
 
 static void ndpi_int_steam_add_connection(struct ndpi_detection_module_struct *ndpi_struct, struct ndpi_flow_struct *flow) {
-  ndpi_set_detected_protocol(ndpi_struct, flow, NDPI_PROTOCOL_STEAM, NDPI_PROTOCOL_UNKNOWN);
+  ndpi_set_detected_protocol(ndpi_struct, flow, NDPI_PROTOCOL_STEAM, NDPI_PROTOCOL_UNKNOWN, NDPI_CONFIDENCE_DPI);
 }
 
 static void ndpi_check_steam_http(struct ndpi_detection_module_struct *ndpi_struct, struct ndpi_flow_struct *flow) {
-  struct ndpi_packet_struct *packet = &flow->packet;
+  struct ndpi_packet_struct *packet = ndpi_get_packet_struct(ndpi_struct);
 	
   NDPI_PARSE_PACKET_LINE_INFO(ndpi_struct, flow, packet);
   if (packet->user_agent_line.ptr != NULL 
@@ -47,7 +47,7 @@ static void ndpi_check_steam_http(struct ndpi_detection_module_struct *ndpi_stru
 }
 
 static void ndpi_check_steam_tcp(struct ndpi_detection_module_struct *ndpi_struct, struct ndpi_flow_struct *flow) {
-  struct ndpi_packet_struct *packet = &flow->packet;
+  struct ndpi_packet_struct *packet = ndpi_get_packet_struct(ndpi_struct);
   u_int32_t payload_len = packet->payload_packet_len;
 	
   if (flow->steam_stage == 0) {
@@ -104,7 +104,7 @@ static void ndpi_check_steam_tcp(struct ndpi_detection_module_struct *ndpi_struc
 }
 
 static void ndpi_check_steam_udp1(struct ndpi_detection_module_struct *ndpi_struct, struct ndpi_flow_struct *flow) {
-  struct ndpi_packet_struct *packet = &flow->packet;
+  struct ndpi_packet_struct *packet = ndpi_get_packet_struct(ndpi_struct);
   u_int32_t payload_len = packet->payload_packet_len;
 	
   if (ndpi_match_strprefix(packet->payload, payload_len, "VS01")) {
@@ -113,6 +113,20 @@ static void ndpi_check_steam_udp1(struct ndpi_detection_module_struct *ndpi_stru
     return;
   }
 
+  /* Check for Steam Datagram Relay (SDR) packets. */
+  if (payload_len > 8) {
+    u_int64_t n;
+
+    /* Necessary as simple cast crashes on ARM */
+    memcpy(&n, packet->payload, sizeof(u_int64_t));
+    
+    if(ndpi_ntohll(n) == 0x0101736470696e67 /* "\x01\x01sdping" */) {
+      NDPI_LOG_INFO(ndpi_struct, "found STEAM (Steam Datagram Relay)\n");
+      ndpi_int_steam_add_connection(ndpi_struct, flow);
+      return;
+    }  
+  }
+  
   /* Check if we so far detected the protocol in the request or not. */
   if (flow->steam_stage1 == 0) {
     NDPI_LOG_DBG2(ndpi_struct, "STEAM stage 0: \n");
@@ -171,7 +185,7 @@ static void ndpi_check_steam_udp1(struct ndpi_detection_module_struct *ndpi_stru
 }
 
 static void ndpi_check_steam_udp2(struct ndpi_detection_module_struct *ndpi_struct, struct ndpi_flow_struct *flow) {
-  struct ndpi_packet_struct *packet = &flow->packet;
+  struct ndpi_packet_struct *packet = ndpi_get_packet_struct(ndpi_struct);
   u_int32_t payload_len = packet->payload_packet_len;
 
   /* Check if we so far detected the protocol in the request or not. */
@@ -206,7 +220,7 @@ static void ndpi_check_steam_udp2(struct ndpi_detection_module_struct *ndpi_stru
 }
 
 static void ndpi_check_steam_udp3(struct ndpi_detection_module_struct *ndpi_struct, struct ndpi_flow_struct *flow) {
-  struct ndpi_packet_struct *packet = &flow->packet;
+  struct ndpi_packet_struct *packet = ndpi_get_packet_struct(ndpi_struct);
   u_int32_t payload_len = packet->payload_packet_len;
 
   /* Check if we so far detected the protocol in the request or not. */
@@ -241,9 +255,9 @@ static void ndpi_check_steam_udp3(struct ndpi_detection_module_struct *ndpi_stru
 }
 
 void ndpi_search_steam(struct ndpi_detection_module_struct *ndpi_struct, struct ndpi_flow_struct *flow) {
-  struct ndpi_packet_struct *packet = &flow->packet;
-	
-  if(flow->packet.udp != NULL) {
+  struct ndpi_packet_struct *packet = ndpi_get_packet_struct(ndpi_struct);
+
+  if(packet->udp != NULL) {
     if(flow->packet_counter > 5) {
       NDPI_EXCLUDE_PROTO(ndpi_struct, flow);
       return;
@@ -251,12 +265,12 @@ void ndpi_search_steam(struct ndpi_detection_module_struct *ndpi_struct, struct 
     
     ndpi_check_steam_udp1(ndpi_struct, flow);
 	
-    if(packet->detected_protocol_stack[0] == NDPI_PROTOCOL_STEAM)
+    if(flow->detected_protocol_stack[0] == NDPI_PROTOCOL_STEAM)
       return;   
 	
     ndpi_check_steam_udp2(ndpi_struct, flow);
 	
-    if(packet->detected_protocol_stack[0] == NDPI_PROTOCOL_STEAM)
+    if(flow->detected_protocol_stack[0] == NDPI_PROTOCOL_STEAM)
       return;   
 	
     ndpi_check_steam_udp3(ndpi_struct, flow);
@@ -267,24 +281,19 @@ void ndpi_search_steam(struct ndpi_detection_module_struct *ndpi_struct, struct 
       return;
     }
 
-
-    /* skip marked or retransmitted packets */
-    if(packet->tcp_retransmission != 0) {
-      return;
-    }
-
-    if(packet->detected_protocol_stack[0] == NDPI_PROTOCOL_STEAM)
+    /* skip marked packets */
+    if(flow->detected_protocol_stack[0] == NDPI_PROTOCOL_STEAM)
       return;   
 
     NDPI_LOG_DBG(ndpi_struct, "search STEAM\n");
     ndpi_check_steam_http(ndpi_struct, flow);
 	
-    if(packet->detected_protocol_stack[0] == NDPI_PROTOCOL_STEAM)
+    if(flow->detected_protocol_stack[0] == NDPI_PROTOCOL_STEAM)
       return;   
 
     ndpi_check_steam_tcp(ndpi_struct, flow);
 	
-    if(packet->detected_protocol_stack[0] == NDPI_PROTOCOL_STEAM)
+    if(flow->detected_protocol_stack[0] == NDPI_PROTOCOL_STEAM)
       return;   
   }
 }

@@ -1,0 +1,32 @@
+Howto Compile libndpi on OpenWRT
+-------------------------------
+
+cd myopenwrt_directory
+mkdir package/network/services/libndpi
+cd package/network/services/libndpi
+
+# (a) Stable version
+ln -s ~/nDPI/packages/openwrt/Makefile .
+
+# (b) Dev version
+cp ~/nDPI/packages/openwrt/Makefile.dev Makefile
+
+cd myopenwrt_directory
+make menuconfig
+
+Go under libraries and select
+
+<M> libndpi.............................. nDPI Deep Packet Inspection Library
+
+
+Build Commands
+--------------
+
+If you want to build just libndpi do:
+make -j1 V=s package/network/services/libndpi/clean
+make -j1 V=s package/network/services/libndpi/compile
+
+Other Documents
+---------------
+https://openwrt.org/packages/pkgdata/libndpi
+

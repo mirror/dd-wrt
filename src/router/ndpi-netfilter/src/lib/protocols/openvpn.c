@@ -1,8 +1,31 @@
 /*
  * openvpn.c
  *
- * Copyright (C) 2011-18 - ntop.org
+ * Copyright (C) 2011-22 - ntop.org
  *
+  *
+ * nDPI is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Lesser General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * nDPI is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with nDPI.  If not, see <http://www.gnu.org/licenses/>.
+ *
+ */
+
+#include "ndpi_protocol_ids.h"
+
+#define NDPI_CURRENT_PROTO NDPI_PROTOCOL_OPENVPN
+
+#include "ndpi_api.h"
+
+/*
  * OpenVPN TCP / UDP Detection - 128/160 hmac
  *
  * Detection based upon these openvpn protocol properties:
@@ -20,13 +43,6 @@
  *  - TLS certificate extraction
  *
  */
-
-#include "ndpi_protocol_ids.h"
-
-#define NDPI_CURRENT_PROTO NDPI_PROTOCOL_OPENVPN
-
-#include "ndpi_api.h"
-
 
 #define P_CONTROL_HARD_RESET_CLIENT_V1  (0x01 << 3)
 #define P_CONTROL_HARD_RESET_CLIENT_V2  (0x07 << 3)
@@ -65,18 +81,19 @@ int8_t check_pkid_and_detect_hmac_size(const u_int8_t * payload) {
 
 void ndpi_search_openvpn(struct ndpi_detection_module_struct* ndpi_struct,
                          struct ndpi_flow_struct* flow) {
-  struct ndpi_packet_struct* packet = &flow->packet;
+  struct ndpi_packet_struct* packet = ndpi_get_packet_struct(ndpi_struct);
   const u_int8_t * ovpn_payload = packet->payload;
   const u_int8_t * session_remote;
   u_int8_t opcode;
   u_int8_t alen;
   int8_t hmac_size;
   int8_t failed = 0;
-
-  if(packet->payload_packet_len >= 40) {
+  /* No u_ */int16_t ovpn_payload_len = packet->payload_packet_len;
+  
+  if(ovpn_payload_len >= 40) {
     // skip openvpn TCP transport packet size
     if(packet->tcp != NULL)
-      ovpn_payload += 2;
+      ovpn_payload += 2, ovpn_payload_len -= 2;;
 
     opcode = ovpn_payload[0] & P_OPCODE_MASK;
 
@@ -85,54 +102,65 @@ void ndpi_search_openvpn(struct ndpi_detection_module_struct* ndpi_struct,
       printf("[packet_id: %u][opcode: %u][Packet ID: %d][%u <-> %u][len: %u]\n",
 	     flow->num_processed_pkts,
 	     opcode, check_pkid_and_detect_hmac_size(ovpn_payload),
-	     htons(packet->udp->source), htons(packet->udp->dest), packet->payload_packet_len);	   
+	     htons(packet->udp->source), htons(packet->udp->dest), ovpn_payload_len);	   
 #endif
       
       if(
 	 (flow->num_processed_pkts == 1)
 	 && (
-	     ((packet->payload_packet_len == 112)
+	     ((ovpn_payload_len == 112)
 	      && ((opcode == 168) || (opcode == 192))
 	      )
-	     || ((packet->payload_packet_len == 80)
+	     || ((ovpn_payload_len == 80)
 		 && ((opcode == 184) || (opcode == 88) || (opcode == 160) || (opcode == 168) || (opcode == 200)))
 	     )) {
 	NDPI_LOG_INFO(ndpi_struct,"found openvpn\n");
-	ndpi_set_detected_protocol(ndpi_struct, flow, NDPI_PROTOCOL_OPENVPN, NDPI_PROTOCOL_UNKNOWN);
+	ndpi_set_detected_protocol(ndpi_struct, flow, NDPI_PROTOCOL_OPENVPN, NDPI_PROTOCOL_UNKNOWN, NDPI_CONFIDENCE_DPI);
 	return;
       }
     }
     
     if(flow->ovpn_counter < P_HARD_RESET_CLIENT_MAX_COUNT && (opcode == P_CONTROL_HARD_RESET_CLIENT_V1 ||
-				    opcode == P_CONTROL_HARD_RESET_CLIENT_V2)) {
+							      opcode == P_CONTROL_HARD_RESET_CLIENT_V2)) {
       if(check_pkid_and_detect_hmac_size(ovpn_payload) > 0) {
         memcpy(flow->ovpn_session_id, ovpn_payload+1, 8);
 
         NDPI_LOG_DBG2(ndpi_struct,
-		 "session key: %02x%02x%02x%02x%02x%02x%02x%02x\n",
-		 flow->ovpn_session_id[0], flow->ovpn_session_id[1], flow->ovpn_session_id[2], flow->ovpn_session_id[3],
-		 flow->ovpn_session_id[4], flow->ovpn_session_id[5], flow->ovpn_session_id[6], flow->ovpn_session_id[7]);
+		      "session key: %02x%02x%02x%02x%02x%02x%02x%02x\n",
+		      flow->ovpn_session_id[0], flow->ovpn_session_id[1], flow->ovpn_session_id[2], flow->ovpn_session_id[3],
+		      flow->ovpn_session_id[4], flow->ovpn_session_id[5], flow->ovpn_session_id[6], flow->ovpn_session_id[7]);
       }
     } else if(flow->ovpn_counter >= 1 && flow->ovpn_counter <= P_HARD_RESET_CLIENT_MAX_COUNT &&
-            (opcode == P_CONTROL_HARD_RESET_SERVER_V1 || opcode == P_CONTROL_HARD_RESET_SERVER_V2)) {
+	      (opcode == P_CONTROL_HARD_RESET_SERVER_V1 || opcode == P_CONTROL_HARD_RESET_SERVER_V2)) {
 
       hmac_size = check_pkid_and_detect_hmac_size(ovpn_payload);
 
       if(hmac_size > 0) {
-        alen = ovpn_payload[P_PACKET_ID_ARRAY_LEN_OFFSET(hmac_size)];
-        session_remote = ovpn_payload + P_PACKET_ID_ARRAY_LEN_OFFSET(hmac_size) + 1 + alen * 4;
+	u_int16_t offset = P_PACKET_ID_ARRAY_LEN_OFFSET(hmac_size);
+	  
+        alen = ovpn_payload[offset];
+	
+        if (alen > 0) {
+	  offset += 1 + alen * 4;
 
-        if(memcmp(flow->ovpn_session_id, session_remote, 8) == 0) {
-	  NDPI_LOG_INFO(ndpi_struct,"found openvpn\n");
-	  ndpi_set_detected_protocol(ndpi_struct, flow, NDPI_PROTOCOL_OPENVPN, NDPI_PROTOCOL_UNKNOWN);
-	  return;
-	} else {
-          NDPI_LOG_DBG2(ndpi_struct,
-		   "key mismatch: %02x%02x%02x%02x%02x%02x%02x%02x\n",
-		   session_remote[0], session_remote[1], session_remote[2], session_remote[3],
-		   session_remote[4], session_remote[5], session_remote[6], session_remote[7]);
+	  if((offset+8) <= ovpn_payload_len) {
+	    session_remote = &ovpn_payload[offset];
+	    
+	    if(memcmp(flow->ovpn_session_id, session_remote, 8) == 0) {
+	      NDPI_LOG_INFO(ndpi_struct,"found openvpn\n");
+	      ndpi_set_detected_protocol(ndpi_struct, flow, NDPI_PROTOCOL_OPENVPN, NDPI_PROTOCOL_UNKNOWN, NDPI_CONFIDENCE_DPI);
+	      return;
+	    } else {
+	      NDPI_LOG_DBG2(ndpi_struct,
+			    "key mismatch: %02x%02x%02x%02x%02x%02x%02x%02x\n",
+			    session_remote[0], session_remote[1], session_remote[2], session_remote[3],
+			    session_remote[4], session_remote[5], session_remote[6], session_remote[7]);
+	      failed = 1;
+	    }
+	  } else
+	    failed = 1;
+	} else
           failed = 1;
-        }
       } else
         failed = 1;
     } else
@@ -140,10 +168,12 @@ void ndpi_search_openvpn(struct ndpi_detection_module_struct* ndpi_struct,
 
     flow->ovpn_counter++;
     
-    if(failed) {
-      NDPI_EXCLUDE_PROTO(ndpi_struct, flow);
-    }
+    if(failed)
+      NDPI_EXCLUDE_PROTO(ndpi_struct, flow);  
   }
+
+  if(flow->packet_counter > 5)
+    NDPI_EXCLUDE_PROTO(ndpi_struct, flow);    
 }
 
 void init_openvpn_dissector(struct ndpi_detection_module_struct *ndpi_struct,
@@ -151,7 +181,7 @@ void init_openvpn_dissector(struct ndpi_detection_module_struct *ndpi_struct,
   ndpi_set_bitmask_protocol_detection("OpenVPN", ndpi_struct, detection_bitmask, *id,
 				      NDPI_PROTOCOL_OPENVPN,
 				      ndpi_search_openvpn,
-				      NDPI_SELECTION_BITMASK_PROTOCOL_TCP_OR_UDP_WITH_PAYLOAD,
+				      NDPI_SELECTION_BITMASK_PROTOCOL_V4_V6_TCP_OR_UDP_WITH_PAYLOAD,
 				      SAVE_DETECTION_BITMASK_AS_UNKNOWN,
 				      ADD_TO_DETECTION_BITMASK);
 

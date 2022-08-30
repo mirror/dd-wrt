@@ -1,7 +1,7 @@
 /*
  * tcp_or_udp.c
  *
- * Copyright (C) 2011-18 - ntop.org
+ * Copyright (C) 2011-22 - ntop.org
  *
  * nDPI is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -22,7 +22,7 @@
 #include "ndpi_api.h"
 
 /* ndpi_main.c */
-static u_int8_t  ndpi_is_tor_flow(struct ndpi_detection_module_struct *ndpi_struct, struct ndpi_flow_struct *flow);
+extern u_int8_t  ndpi_is_tor_flow(struct ndpi_detection_module_struct *ndpi_struct, struct ndpi_flow_struct *flow);
 
 u_int ndpi_search_tcp_or_udp_raw(struct ndpi_detection_module_struct *ndpi_struct,
 				 struct ndpi_flow_struct *flow,
@@ -55,13 +55,13 @@ void ndpi_search_tcp_or_udp(struct ndpi_detection_module_struct *ndpi_struct, st
 {
   u_int16_t sport, dport;
   u_int proto;
-  struct ndpi_packet_struct *packet = &flow->packet;
+  struct ndpi_packet_struct *packet = ndpi_get_packet_struct(ndpi_struct);
 
   if(flow->host_server_name[0] != '\0')
     return;
 
   if(ndpi_is_tor_flow(ndpi_struct, flow)) {
-    ndpi_set_detected_protocol(ndpi_struct, flow, NDPI_PROTOCOL_TOR, NDPI_PROTOCOL_UNKNOWN);
+    ndpi_set_detected_protocol(ndpi_struct, flow, NDPI_PROTOCOL_TOR, NDPI_PROTOCOL_UNKNOWN, NDPI_CONFIDENCE_DPI);
     return;
   }
 
@@ -72,17 +72,13 @@ void ndpi_search_tcp_or_udp(struct ndpi_detection_module_struct *ndpi_struct, st
   if(packet->iph /* IPv4 Only: we need to support packet->iphv6 at some point */) {
     proto = ndpi_search_tcp_or_udp_raw(ndpi_struct,
 				       flow,
-				       flow->packet.iph ? flow->packet.iph->protocol :
-#ifdef NDPI_DETECTION_SUPPORT_IPV6
-				       flow->packet.iphv6->ip6_hdr.ip6_un1_nxt,
-#else
-				       0,
-#endif
+				       packet->iph ? packet->iph->protocol :
+				       packet->iphv6->ip6_hdr.ip6_un1_nxt,
 				       ntohl(packet->iph->saddr), 
 				       ntohl(packet->iph->daddr),
 				       sport, dport);
 
     if(proto != NDPI_PROTOCOL_UNKNOWN)
-      ndpi_set_detected_protocol(ndpi_struct, flow, proto, NDPI_PROTOCOL_UNKNOWN);
+      ndpi_set_detected_protocol(ndpi_struct, flow, proto, NDPI_PROTOCOL_UNKNOWN, NDPI_CONFIDENCE_MATCH_BY_PORT);
   }
 }

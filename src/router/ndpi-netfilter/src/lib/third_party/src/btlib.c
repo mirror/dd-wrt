@@ -1,7 +1,7 @@
 /*
  * btlib.c
  *
- * Copyright (C) 2011-18 - ntop.org
+ * Copyright (C) 2011-22 - ntop.org
  *               Contributed by Vitaly Lavrov <vel21ripn@gmail.com>
  *
  * This file is part of nDPI, an open source deep packet inspection
@@ -27,8 +27,9 @@
 #if !defined(NDPI_NO_STD_INC) && !defined(__KERNEL__)
 #include <stdlib.h>
 #include <stdio.h>
-#include <unistd.h>
 #include <string.h>
+#include <unistd.h>
+#include <unistd.h>
 #include <strings.h>
 
 /*
@@ -41,7 +42,6 @@ typedef unsigned long long int u_int64_t;
 #include <stdlib.h>
 #include <arpa/inet.h>
 #endif
-
 
 #include "btlib.h"
 
@@ -82,7 +82,8 @@ static char *print_ip_p(char *s, const struct bt_ipv4p *b,int np) {
 	   p[0], p[1], p[2], p[3], htons(b->port));
   return s;
 }
-
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Waddress-of-packed-member"
 static char *print_ip6_p(char *s, const struct bt_ipv6p *b,int np) {
   u_int16_t *p = (void*)b;
   snprintf(s,79,np ? "%x:%x:%x:%x:%x:%x:%x:%x.%u":"%x:%x:%x:%x:%x:%x:%x:%x",
@@ -91,6 +92,7 @@ static char *print_ip6_p(char *s, const struct bt_ipv6p *b,int np) {
 	   htons(b->port));
   return s;
 }
+#pragma GCC diagnostic pop
 
 static char *print_id_ip6_p(char *s,const struct bt_nodes6_data *b) {
   return print_ip6_p(s,(struct bt_ipv6p *)&b->ip,0);
@@ -209,7 +211,7 @@ static void print_safe_str(char *msg,bt_parse_data_cb_t *cbd) {
 #define STREQ(a,b) !strcmp(a,b)
 
 
-static void cb_data(bt_parse_data_cb_t *cbd,int *ret) {
+void cb_data(bt_parse_data_cb_t *cbd,int *ret) {
   struct bt_parse_protocol *p = &(cbd->p);
   const u_int8_t *s;
   const char *ss;
@@ -427,10 +429,12 @@ static void cb_data(bt_parse_data_cb_t *cbd,int *ret) {
   // DEBUG_TRACE(print_safe_str("UNKNOWN",cbd));
 }
 
-
 const u_int8_t *bt_decode(const u_int8_t *b, size_t *l, int *ret, bt_parse_data_cb_t *cbd) {
 
   unsigned int n=0,neg=0;
+  const u_int8_t *sb = b;
+  const u_int8_t *eb = b+(*l);
+#define in_buf_range(x) ((x) >= sb && (x) <= eb)
   int64_t d = 0;
   u_int8_t c;
 
@@ -475,7 +479,7 @@ const u_int8_t *bt_decode(const u_int8_t *b, size_t *l, int *ret, bt_parse_data_
       if(c != ':') goto bad_data;
       break;
     }
-    if(d > *l) goto bad_data;
+    if((size_t)d > *l) goto bad_data;
     cbd->t = 2;
     cbd->v.s.s = b;
     cbd->v.s.l = d;
@@ -488,6 +492,7 @@ const u_int8_t *bt_decode(const u_int8_t *b, size_t *l, int *ret, bt_parse_data_
     do {
       b = bt_decode(b,l,ret,cbd);
       if(*ret < 0 || *l == 0) goto bad_data;
+      if(!in_buf_range(b)) goto bad_data;
       cb_data(cbd,ret);
       if(*ret < 0) goto bad_data;
       cbd->t = 0;
@@ -504,6 +509,7 @@ const u_int8_t *bt_decode(const u_int8_t *b, size_t *l, int *ret, bt_parse_data_
       if(!(*b >= '1' && *b <= '9')) goto bad_data;
       b = bt_decode(b,l,ret,cbd);
       if(*ret < 0 || *l == 0) goto bad_data;
+      if(!in_buf_range(b)) goto bad_data;
       if(ls+cbd->v.s.l+l1 < &cbd->buf[sizeof(cbd->buf)-1]) {
 	if(l1)	ls[0]='.';
 	strncpy(ls+l1,(char *)cbd->v.s.s,cbd->v.s.l);
@@ -511,6 +517,7 @@ const u_int8_t *bt_decode(const u_int8_t *b, size_t *l, int *ret, bt_parse_data_
       }
       b = bt_decode(b,l,ret,cbd);
       if(*ret < 0 || *l == 0) goto bad_data;
+      if(!in_buf_range(b)) goto bad_data;
       cb_data(cbd,ret);
       if(*ret < 0) goto bad_data;
       cbd->t = 0;

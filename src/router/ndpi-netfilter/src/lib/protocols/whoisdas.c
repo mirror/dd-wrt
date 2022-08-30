@@ -1,7 +1,7 @@
 /*
  * whoisdas.c
  *
- * Copyright (C) 2016-18 - ntop.org
+ * Copyright (C) 2016-22 - ntop.org
  *
  * nDPI is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -27,34 +27,24 @@
 
 void ndpi_search_whois_das(struct ndpi_detection_module_struct *ndpi_struct, struct ndpi_flow_struct *flow)
 {
-  struct ndpi_packet_struct *packet = &flow->packet;
+  struct ndpi_packet_struct *packet = ndpi_get_packet_struct(ndpi_struct);
 
   NDPI_LOG_DBG(ndpi_struct, "search WHOIS/DAS\n");
   if(packet->tcp != NULL) {
     u_int16_t sport = ntohs(packet->tcp->source), dport = ntohs(packet->tcp->dest);
     
-    if(((sport == 43) || (dport == 43)) || ((sport == 4343) || (dport == 4343))) {
+    if((((sport == 43) || (dport == 43)) || ((sport == 4343) || (dport == 4343))) &&
+       packet->payload_packet_len > 2 &&
+       packet->payload[packet->payload_packet_len - 2] == '\r' &&
+       packet->payload[packet->payload_packet_len - 1] == '\n') {
+	
+      ndpi_set_detected_protocol(ndpi_struct, flow, NDPI_PROTOCOL_WHOIS_DAS, NDPI_PROTOCOL_UNKNOWN, NDPI_CONFIDENCE_DPI);
 
-      if(packet->payload_packet_len > 0) {
-	
-	u_int max_len = sizeof(flow->host_server_name) - 1;
-	u_int i, j;
-
-	if(!ndpi_struct->disable_metadata_export) {
-	  for(i=strlen((const char *)flow->host_server_name), j=0; (i<max_len) && (j<packet->payload_packet_len); i++, j++) {
-	    if((packet->payload[j] == '\n') || (packet->payload[j] == '\r')) break;	  
-	    flow->host_server_name[i] = packet->payload[j];
-	  }
-	  
-	  flow->host_server_name[i] = '\0';
-	}
-	
-	flow->server_id = ((sport == 43) || (sport == 4343)) ? flow->src : flow->dst;
-	
-	NDPI_LOG_INFO(ndpi_struct, "[WHOIS/DAS] %s\n", flow->host_server_name);
-	ndpi_set_detected_protocol(ndpi_struct, flow, NDPI_PROTOCOL_WHOIS_DAS, NDPI_PROTOCOL_UNKNOWN);
-	return;
+      if((dport == 43) || (dport == 4343)) { /* Request */
+        ndpi_hostname_sni_set(flow, &packet->payload[0], packet->payload_packet_len - 2); /* Skip \r\n */
+        NDPI_LOG_INFO(ndpi_struct, "[WHOIS/DAS] %s\n", flow->host_server_name);
       }
+      return;
     }
   }
 

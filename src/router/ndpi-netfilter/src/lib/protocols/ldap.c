@@ -1,8 +1,8 @@
 /*
  * ldap.c
  *
- * Copyright (C) 2009-2011 by ipoque GmbH
- * Copyright (C) 2011-18 - ntop.org
+ * Copyright (C) 2009-11 - ipoque GmbH
+ * Copyright (C) 2011-22 - ntop.org
  *
  * This file is part of nDPI, an open source deep packet inspection
  * library based on the OpenDPI and PACE technology by ipoque GmbH
@@ -32,12 +32,12 @@
 static void ndpi_int_ldap_add_connection(struct ndpi_detection_module_struct *ndpi_struct,
 					 struct ndpi_flow_struct *flow)
 {
-  ndpi_set_detected_protocol(ndpi_struct, flow, NDPI_PROTOCOL_LDAP, NDPI_PROTOCOL_UNKNOWN);
+  ndpi_set_detected_protocol(ndpi_struct, flow, NDPI_PROTOCOL_LDAP, NDPI_PROTOCOL_UNKNOWN, NDPI_CONFIDENCE_DPI);
 }
 
 void ndpi_search_ldap(struct ndpi_detection_module_struct *ndpi_struct, struct ndpi_flow_struct *flow)
 {
-	struct ndpi_packet_struct *packet = &flow->packet;
+	struct ndpi_packet_struct *packet = ndpi_get_packet_struct(ndpi_struct);
 	
 	NDPI_LOG_DBG(ndpi_struct, "search ldap\n");
 
@@ -62,7 +62,7 @@ void ndpi_search_ldap(struct ndpi_detection_module_struct *ndpi_struct, struct n
 			}
 		}
 		// normal type
-		if (packet->payload[1] == 0x84 && packet->payload_packet_len >= 0x84 &&
+		if (packet->payload[1] == 0x84 &&
 			packet->payload[2] == 0x00 && packet->payload[3] == 0x00 && packet->payload[6] == 0x02) {
 
 			if (packet->payload[7] == 0x01 &&
@@ -79,6 +79,15 @@ void ndpi_search_ldap(struct ndpi_detection_module_struct *ndpi_struct, struct n
 				 packet->payload[10] == 0x64) && packet->payload[11] == 0x84) {
 
 				NDPI_LOG_INFO(ndpi_struct, "found ldap type 2\n");
+				ndpi_int_ldap_add_connection(ndpi_struct, flow);
+				return;
+			}
+
+			if (packet->payload[7] == 0x03 &&
+				(packet->payload[11] == 0x60 || packet->payload[11] == 0x61 || packet->payload[11] == 0x63 ||
+				 packet->payload[11] == 0x64 || packet->payload[11] == 0x65) && packet->payload[12] == 0x84) {
+
+				NDPI_LOG_INFO(ndpi_struct, "found ldap type 3\n");
 				ndpi_int_ldap_add_connection(ndpi_struct, flow);
 				return;
 			}

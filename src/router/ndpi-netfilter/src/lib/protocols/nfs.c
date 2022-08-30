@@ -1,8 +1,8 @@
 /*
  * nfs.c
  *
- * Copyright (C) 2009-2011 by ipoque GmbH
- * Copyright (C) 2011-18 - ntop.org
+ * Copyright (C) 2009-11 - ipoque GmbH
+ * Copyright (C) 2011-22 - ntop.org
  *
  * This file is part of nDPI, an open source deep packet inspection
  * library based on the OpenDPI and PACE technology by ipoque GmbH
@@ -33,12 +33,12 @@
 static void ndpi_int_nfs_add_connection(struct ndpi_detection_module_struct
 					*ndpi_struct, struct ndpi_flow_struct *flow)
 {
-  ndpi_set_detected_protocol(ndpi_struct, flow, NDPI_PROTOCOL_NFS, NDPI_PROTOCOL_UNKNOWN);
+  ndpi_set_detected_protocol(ndpi_struct, flow, NDPI_PROTOCOL_NFS, NDPI_PROTOCOL_UNKNOWN, NDPI_CONFIDENCE_DPI);
 }
 
 void ndpi_search_nfs(struct ndpi_detection_module_struct *ndpi_struct, struct ndpi_flow_struct *flow)
 {
-	struct ndpi_packet_struct *packet = &flow->packet;
+	struct ndpi_packet_struct *packet = ndpi_get_packet_struct(ndpi_struct);
 	u_int8_t offset = 0;
 	
 	NDPI_LOG_DBG(ndpi_struct, "search NFS\n");

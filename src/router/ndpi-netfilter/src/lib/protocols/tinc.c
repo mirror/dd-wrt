@@ -2,7 +2,7 @@
  * tinc.c
  *
  * Copyright (C) 2017 - William Guglielmo <william@deselmo.com>
- * Copyright (C) 2017-18 - ntop.org
+ * Copyright (C) 2017-22 - ntop.org
  *
  * nDPI is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -28,7 +28,7 @@
 
 static void ndpi_check_tinc(struct ndpi_detection_module_struct *ndpi_struct, struct ndpi_flow_struct *flow)
 {
-  struct ndpi_packet_struct *packet = &flow->packet;
+  struct ndpi_packet_struct *packet = ndpi_get_packet_struct(ndpi_struct);
   const u_int8_t *packet_payload = packet->payload;
   u_int32_t payload_len = packet->payload_packet_len;
   
@@ -55,12 +55,12 @@ static void ndpi_check_tinc(struct ndpi_detection_module_struct *ndpi_struct, st
 	/* cache_free(ndpi_struct->tinc_cache); */
 
         NDPI_LOG_INFO(ndpi_struct, "found tinc udp connection\n");
-        ndpi_set_detected_protocol(ndpi_struct, flow, NDPI_PROTOCOL_TINC, NDPI_PROTOCOL_UNKNOWN);
+        ndpi_set_detected_protocol(ndpi_struct, flow, NDPI_PROTOCOL_TINC, NDPI_PROTOCOL_UNKNOWN, NDPI_CONFIDENCE_DPI_CACHE);
       }
     }
-
+    
+    NDPI_EXCLUDE_PROTO(ndpi_struct, flow);
     return;
-
   } else if(packet->tcp != NULL) {
     if(payload_len == 0) {
       if(packet->tcp->syn == 1 && packet->tcp->ack == 0) {
@@ -75,7 +75,7 @@ static void ndpi_check_tinc(struct ndpi_detection_module_struct *ndpi_struct, st
     case 0:
     case 1:
       if(payload_len > 6 && memcmp(packet_payload, "0 ", 2) == 0 && packet_payload[2] != ' ') {
-	u_int16_t i = 3;
+	u_int32_t i = 3;
 	while(i < payload_len && packet_payload[i++] != ' ');
 	if(i+3 == payload_len && memcmp((packet_payload+i), "17\n", 3) == 0) {
 	  flow->tinc_state++;
@@ -90,11 +90,11 @@ static void ndpi_check_tinc(struct ndpi_detection_module_struct *ndpi_struct, st
 	u_int16_t i = 3;
 	u_int8_t numbers_left = 4;
 	while(numbers_left) {
-	  while(packet_payload[i] >= '0' && packet_payload[i] <= '9') {
+	  while(i < payload_len && packet_payload[i] >= '0' && packet_payload[i] <= '9') {
 	    i++;
 	  }
 
-	  if(packet_payload[i++] == ' ') {
+	  if(i < payload_len && packet_payload[i++] == ' ') {
 	    numbers_left--;
 	  }
 	  else break;
@@ -102,19 +102,20 @@ static void ndpi_check_tinc(struct ndpi_detection_module_struct *ndpi_struct, st
           
 	if(numbers_left) break;
           
-	while((packet_payload[i] >= '0' && packet_payload[i] <= '9') ||
-	      (packet_payload[i] >= 'A' && packet_payload[i] <= 'Z')) {
+	while(i < payload_len &&
+	      ((packet_payload[i] >= '0' && packet_payload[i] <= '9') ||
+	       (packet_payload[i] >= 'A' && packet_payload[i] <= 'Z'))) {
 	  i++;
 	}
           
-	if(packet_payload[i] == '\n') {
+	if(i < payload_len && packet_payload[i] == '\n') {
 	  if(++flow->tinc_state > 3) {
 	    if(ndpi_struct->tinc_cache == NULL)
-	      ndpi_struct->tinc_cache = cache_new(TINC_CACHE_MAX_SIZE);              
+	      ndpi_struct->tinc_cache = cache_new(TINC_CACHE_MAX_SIZE,0);
 
 	    cache_add(ndpi_struct->tinc_cache, &(flow->tinc_cache_entry), sizeof(flow->tinc_cache_entry));
 	    NDPI_LOG_INFO(ndpi_struct, "found tinc tcp connection\n");
-	    ndpi_set_detected_protocol(ndpi_struct, flow, NDPI_PROTOCOL_TINC, NDPI_PROTOCOL_UNKNOWN);
+	    ndpi_set_detected_protocol(ndpi_struct, flow, NDPI_PROTOCOL_TINC, NDPI_PROTOCOL_UNKNOWN, NDPI_CONFIDENCE_DPI);
 	  }
 	  return;
 	}
@@ -129,14 +130,10 @@ static void ndpi_check_tinc(struct ndpi_detection_module_struct *ndpi_struct, st
 }
 
 void ndpi_search_tinc(struct ndpi_detection_module_struct* ndpi_struct, struct ndpi_flow_struct* flow) {
-  struct ndpi_packet_struct* packet = &flow->packet;
-
   NDPI_LOG_DBG(ndpi_struct, "tinc detection\n");
 
-  if(packet->detected_protocol_stack[0] != NDPI_PROTOCOL_TINC) {
-    if(packet->tcp_retransmission == 0) {
-      ndpi_check_tinc(ndpi_struct, flow);
-    }
+  if(flow->detected_protocol_stack[0] != NDPI_PROTOCOL_TINC) {
+    ndpi_check_tinc(ndpi_struct, flow);
   }
 }
 
@@ -145,7 +142,7 @@ void init_tinc_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int
   ndpi_set_bitmask_protocol_detection("TINC", ndpi_struct, detection_bitmask, *id,
 				      NDPI_PROTOCOL_TINC,
 				      ndpi_search_tinc,
-				      NDPI_SELECTION_BITMASK_PROTOCOL_TCP_OR_UDP,
+				      NDPI_SELECTION_BITMASK_PROTOCOL_TCP_OR_UDP_WITHOUT_RETRANSMISSION, /* TODO: IPv6? */
 				      SAVE_DETECTION_BITMASK_AS_UNKNOWN,
 				      ADD_TO_DETECTION_BITMASK);
 

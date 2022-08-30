@@ -1,8 +1,8 @@
 /*
  * rtsp.c
  *
- * Copyright (C) 2009-2011 by ipoque GmbH
- * Copyright (C) 2011-18 - ntop.org
+ * Copyright (C) 2009-11 - ipoque GmbH
+ * Copyright (C) 2011-22 - ntop.org
  *
  * This file is part of nDPI, an open source deep packet inspection
  * library based on the OpenDPI and PACE technology by ipoque GmbH
@@ -33,22 +33,33 @@ static void ndpi_int_rtsp_add_connection(struct ndpi_detection_module_struct *nd
 					 struct ndpi_flow_struct *flow/* , */
 					 /* ndpi_protocol_type_t protocol_type */)
 {
-  ndpi_set_detected_protocol(ndpi_struct, flow, NDPI_PROTOCOL_RTSP, NDPI_PROTOCOL_UNKNOWN);
+  ndpi_set_detected_protocol(ndpi_struct, flow, NDPI_PROTOCOL_RTSP, NDPI_PROTOCOL_UNKNOWN, NDPI_CONFIDENCE_DPI);
 }
 
 /* this function searches for a rtsp-"handshake" over tcp or udp. */
 void ndpi_search_rtsp_tcp_udp(struct ndpi_detection_module_struct
 			      *ndpi_struct, struct ndpi_flow_struct *flow)
 {
-  struct ndpi_packet_struct *packet = &flow->packet;
-
-  struct ndpi_id_struct *src = flow->src;
-  struct ndpi_id_struct *dst = flow->dst;
+  struct ndpi_packet_struct *packet = ndpi_get_packet_struct(ndpi_struct);
 
   NDPI_LOG_DBG(ndpi_struct, "search RTSP\n");
 
+  if (packet->parsed_lines == 0)
+  {
+    ndpi_parse_packet_line_info(ndpi_struct, flow);
+  }
+
+  if (packet->parsed_lines > 0 &&
+      (LINE_ENDS(packet->line[0], "RTSP/1.0") != 0 ||
+       LINE_ENDS(packet->accept_line, "application/x-rtsp-tunnelled") != 0 ||
+       LINE_ENDS(packet->content_line, "application/x-rtsp-tunnelled") != 0))
+  {
+    ndpi_int_rtsp_add_connection(ndpi_struct, flow);
+    return;
+  }
+
   if (flow->rtsprdt_stage == 0
-      && !(packet->detected_protocol_stack[0] == NDPI_PROTOCOL_RTCP)
+      && !(flow->detected_protocol_stack[0] == NDPI_PROTOCOL_RTCP)
       ) {
     flow->rtsprdt_stage = 1 + packet->packet_direction;
     NDPI_LOG_DBG2(ndpi_struct, "maybe handshake 1; need next packet, return\n");
@@ -72,25 +83,13 @@ void ndpi_search_rtsp_tcp_udp(struct ndpi_detection_module_struct
     if((memcmp(packet->payload, "RTSP/1.0 ", 9) == 0)
        || (strstr(buf, "rtsp://") != NULL)) {
       NDPI_LOG_DBG2(ndpi_struct, "found RTSP/1.0 \n");
-      if (dst != NULL) {
-	NDPI_LOG_DBG2(ndpi_struct, "found dst\n");
-	ndpi_packet_src_ip_get(packet, &dst->rtsp_ip_address);
-	dst->rtsp_timer = packet->tick_timestamp;
-	dst->rtsp_ts_set = 1;
-      }
-      if (src != NULL) {
-	NDPI_LOG_DBG2(ndpi_struct, "found src\n");
-	ndpi_packet_dst_ip_get(packet, &src->rtsp_ip_address);
-	src->rtsp_timer = packet->tick_timestamp;
-	src->rtsp_ts_set = 1;
-      }
       NDPI_LOG_INFO(ndpi_struct, "found RTSP\n");
-      flow->rtsp_control_flow = 1;
       ndpi_int_rtsp_add_connection(ndpi_struct, flow);
       return;
     }
   }
-  if (packet->udp != NULL && packet->detected_protocol_stack[0] == NDPI_PROTOCOL_UNKNOWN
+
+  if (packet->udp != NULL && flow->detected_protocol_stack[0] == NDPI_PROTOCOL_UNKNOWN
       && ((NDPI_COMPARE_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, NDPI_PROTOCOL_RTP) == 0)
 	  || (NDPI_COMPARE_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, NDPI_PROTOCOL_RTCP) == 0)
 	  )) {

@@ -164,7 +164,11 @@ static int inet_pton4(const char *src, unsigned char *dst)
 	memcpy(dst, tmp, INADDRSZ);
 	return (1);
 }
-
+static uint32_t inet_addr(const char *ip) {
+	uint32_t r;
+	if(inet_pton4(ip,(char *)&r)) return r;
+	return 0;
+}
 
 #ifdef NDPI_DETECTION_SUPPORT_IPV6
 
@@ -358,6 +362,11 @@ static int inet_pton6(const char *src, unsigned char *dst)
 }
 #endif /* NDPI_DETECTION_SUPPORT_IPV6 */
 
+long long int atoll(const char *buf) {
+	long long int ret;
+	if(kstrtoll(buf,0,&ret)) ret = 0;
+	return ret;
+}
 long int atol(const char *buf) {
 	long int ret;
 	if(kstrtol(buf,0,&ret)) ret = 0;
@@ -367,15 +376,40 @@ int atoi(const char *buf) {
 	return atol(buf);
 }
 
-
-void gettimeofday(struct timeval *tv, void *tz) {
-	struct timespec tm;
-	getnstimeofday(&tm);
-	tv->tv_sec = tm.tv_sec;
-	tv->tv_usec = tm.tv_nsec/1000;
-//	do_gettimeofday(tv);
+void gettimeofday64(struct timespec64 *tv, void *tz) {
+	tv->tv_sec = ktime_get_real_seconds();
+	tv->tv_nsec = 0;
 }
 
+char *strtok_r (char *s, const char *delim, char **save_ptr)
+{
+  char *end;
+  if (s == NULL)
+    s = *save_ptr;
+  if (*s == '\0')
+    {
+      *save_ptr = s;
+      return NULL;
+    }
+  /* Scan leading delimiters.  */
+  s += strspn (s, delim);
+  if (*s == '\0')
+    {
+      *save_ptr = s;
+      return NULL;
+    }
+  /* Find the end of the token.  */
+  end = s + strcspn (s, delim);
+  if (*end == '\0')
+    {
+      *save_ptr = end;
+      return s;
+    }
+  /* Terminate the token and make *SAVE_PTR point past it.  */
+  *end = '\0';
+  *save_ptr = end + 1;
+  return s;
+}
 
 #endif
 /*

@@ -32,16 +32,17 @@
 
 struct xt_ndpi_mtinfo {
         NDPI_PROTOCOL_BITMASK flags;
-	unsigned short int    invert:1,error:1,m_proto:1,p_proto:1,have_master:1,
-			      host:1,ssl:1,re:1,empty:1;
-	char	hostname[256 - sizeof(NDPI_PROTOCOL_BITMASK) - sizeof(unsigned short int)-sizeof(void *)];
+	uint32_t    invert:1,error:1,m_proto:1,p_proto:1,have_master:1,
+		    host:1,re:1,empty:1,proto:1,inprogress:1,ja3s:1,ja3c:1,tlsfp:1,tlsv:1,
+		    untracked:1,clevel:3,clevel_op:2;
+	char	hostname[256 - sizeof(NDPI_PROTOCOL_BITMASK) - sizeof(uint32_t)-sizeof(void *)];
 	void	*reg_data; // kernel only
 };
 
 struct xt_ndpi_tginfo {
        __u32 mark, mask;
        __u16 p_proto_id:1,m_proto_id:1,any_proto_id:1,
-	     t_accept:1,t_mark:1,t_clsf:1,flow_yes:1;
+	     t_accept:1,t_mark:1,t_clsf:1,flow_yes:1,t_mark2:1;
 };
 
 #endif /* _LINUX_NETFILTER_XT_NDPI_H */

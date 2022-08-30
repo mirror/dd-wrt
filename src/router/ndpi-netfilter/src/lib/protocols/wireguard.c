@@ -42,7 +42,7 @@ enum wg_message_type {
 void ndpi_search_wireguard(struct ndpi_detection_module_struct
 			   *ndpi_struct, struct ndpi_flow_struct *flow)
 {
-  struct ndpi_packet_struct *packet = &flow->packet;
+  struct ndpi_packet_struct *packet = ndpi_get_packet_struct(ndpi_struct);
   const u_int8_t *payload = packet->payload;
   u_int8_t message_type = payload[0];
 
@@ -108,7 +108,7 @@ void ndpi_search_wireguard(struct ndpi_detection_module_struct
        */
       u_int32_t receiver_index = get_u_int32_t(payload, 8);
       if (receiver_index == flow->l4.udp.wireguard_peer_index[1 - packet->packet_direction]) {
-        ndpi_set_detected_protocol(ndpi_struct, flow, NDPI_PROTOCOL_WIREGUARD, NDPI_PROTOCOL_UNKNOWN);
+        ndpi_set_detected_protocol(ndpi_struct, flow, NDPI_PROTOCOL_WIREGUARD, NDPI_PROTOCOL_UNKNOWN, NDPI_CONFIDENCE_DPI);
       } else {
         NDPI_EXCLUDE_PROTO(ndpi_struct, flow);
       }
@@ -124,7 +124,7 @@ void ndpi_search_wireguard(struct ndpi_detection_module_struct
     if (flow->l4.udp.wireguard_stage == 2 - packet->packet_direction) {
       u_int32_t receiver_index = get_u_int32_t(payload, 4);
       if (receiver_index == flow->l4.udp.wireguard_peer_index[1 - packet->packet_direction]) {
-        ndpi_set_detected_protocol(ndpi_struct, flow, NDPI_PROTOCOL_WIREGUARD, NDPI_PROTOCOL_UNKNOWN);
+        ndpi_set_detected_protocol(ndpi_struct, flow, NDPI_PROTOCOL_WIREGUARD, NDPI_PROTOCOL_UNKNOWN, NDPI_CONFIDENCE_DPI);
       } else {
         NDPI_EXCLUDE_PROTO(ndpi_struct, flow);
       }
@@ -138,6 +138,11 @@ void ndpi_search_wireguard(struct ndpi_detection_module_struct
      * against the appropriate index for a match (stage 5).
      */
     u_int32_t receiver_index = get_u_int32_t(payload, 4);
+
+    /* We speculate this is wireguard, so let's remember it */
+    if(flow->guessed_host_protocol_id == NDPI_PROTOCOL_UNKNOWN)
+      flow->guessed_host_protocol_id = NDPI_PROTOCOL_WIREGUARD;
+    
     if (flow->l4.udp.wireguard_stage == 0) {
       flow->l4.udp.wireguard_stage = 3 + packet->packet_direction;
       flow->l4.udp.wireguard_peer_index[packet->packet_direction] = receiver_index;
@@ -148,7 +153,7 @@ void ndpi_search_wireguard(struct ndpi_detection_module_struct
       /* need more packets before deciding */
     } else if (flow->l4.udp.wireguard_stage == 5) {
       if (receiver_index == flow->l4.udp.wireguard_peer_index[packet->packet_direction]) {
-        ndpi_set_detected_protocol(ndpi_struct, flow, NDPI_PROTOCOL_WIREGUARD, NDPI_PROTOCOL_UNKNOWN);
+        ndpi_set_detected_protocol(ndpi_struct, flow, NDPI_PROTOCOL_WIREGUARD, NDPI_PROTOCOL_UNKNOWN, NDPI_CONFIDENCE_DPI);
       } else {
         NDPI_EXCLUDE_PROTO(ndpi_struct, flow);
       }

@@ -1,8 +1,8 @@
 /*
  * postgres.c
  *
- * Copyright (C) 2009-2011 by ipoque GmbH
- * Copyright (C) 2011-18 - ntop.org
+ * Copyright (C) 2009-11 - ipoque GmbH
+ * Copyright (C) 2011-22 - ntop.org
  *
  * This file is part of nDPI, an open source deep packet inspection
  * library based on the OpenDPI and PACE technology by ipoque GmbH
@@ -33,13 +33,13 @@
 static void ndpi_int_postgres_add_connection(struct ndpi_detection_module_struct
 					     *ndpi_struct, struct ndpi_flow_struct *flow)
 {
-  ndpi_set_detected_protocol(ndpi_struct, flow, NDPI_PROTOCOL_POSTGRES, NDPI_PROTOCOL_UNKNOWN);
+  ndpi_set_detected_protocol(ndpi_struct, flow, NDPI_PROTOCOL_POSTGRES, NDPI_PROTOCOL_UNKNOWN, NDPI_CONFIDENCE_DPI);
 }
 
 void ndpi_search_postgres_tcp(struct ndpi_detection_module_struct
 								*ndpi_struct, struct ndpi_flow_struct *flow)
 {
-	struct ndpi_packet_struct *packet = &flow->packet;
+	struct ndpi_packet_struct *packet = ndpi_get_packet_struct(ndpi_struct);
 	u_int16_t size;
 
 	if (flow->l4.tcp.postgres_stage == 0) {
@@ -79,25 +79,25 @@ void ndpi_search_postgres_tcp(struct ndpi_detection_module_struct
 		if (flow->l4.tcp.postgres_stage == 4 - packet->packet_direction)
 			if (packet->payload_packet_len > 8 &&
 				ntohl(get_u_int32_t(packet->payload, 5)) < 10 &&
-				ntohl(get_u_int32_t(packet->payload, 1)) == packet->payload_packet_len - 1 && packet->payload[0] == 0x52) {
+				ntohl(get_u_int32_t(packet->payload, 1)) == (uint32_t)packet->payload_packet_len - 1 && packet->payload[0] == 0x52) {
 				NDPI_LOG_INFO(ndpi_struct, "PostgreSQL detected, no SSL\n");
 				ndpi_int_postgres_add_connection(ndpi_struct, flow);
 				return;
 			}
 		if (flow->l4.tcp.postgres_stage == 6
-			&& ntohl(get_u_int32_t(packet->payload, 1)) == packet->payload_packet_len - 1 && packet->payload[0] == 'p') {
+			&& ntohl(get_u_int32_t(packet->payload, 1)) == (uint32_t)packet->payload_packet_len - 1 && packet->payload[0] == 'p') {
 			NDPI_LOG_INFO(ndpi_struct, "found postgres asymmetrically\n");
 			ndpi_int_postgres_add_connection(ndpi_struct, flow);
 			return;
 		}
 		if (flow->l4.tcp.postgres_stage == 5 && packet->payload[0] == 'R') {
-			if (ntohl(get_u_int32_t(packet->payload, 1)) == packet->payload_packet_len - 1) {
+			if (ntohl(get_u_int32_t(packet->payload, 1)) == (uint32_t)packet->payload_packet_len - 1) {
 				NDPI_LOG_INFO(ndpi_struct, "found postgres asymmetrically\n");
 				ndpi_int_postgres_add_connection(ndpi_struct, flow);
 				return;
 			}
 			size = (u_int16_t)ntohl(get_u_int32_t(packet->payload, 1)) + 1;
-			if (packet->payload[size - 1] == 'S') {
+			if (size > 0 && size - 1 < packet->payload_packet_len && packet->payload[size - 1] == 'S') {
 				if ((size + get_u_int32_t(packet->payload, (size + 1))) == packet->payload_packet_len) {
 					NDPI_LOG_INFO(ndpi_struct, "found postgres asymmetrically\n");
 					ndpi_int_postgres_add_connection(ndpi_struct, flow);
@@ -105,7 +105,7 @@ void ndpi_search_postgres_tcp(struct ndpi_detection_module_struct
 				}
 			}
 			size += get_u_int32_t(packet->payload, (size + 1)) + 1;
-			if (packet->payload[size - 1] == 'S') {
+			if (size > 0 && size - 1 < packet->payload_packet_len && packet->payload[size - 1] == 'S') {
 				NDPI_LOG_INFO(ndpi_struct, "found postgres asymmetrically\n");
 				ndpi_int_postgres_add_connection(ndpi_struct, flow);
 				return;
