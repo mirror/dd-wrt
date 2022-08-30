@@ -27,18 +27,18 @@
 #include "ndpi_sha1.h"
 #include "ndpi_encryption.h"
 
-extern char *strptime(const char *s, const char *format, struct tm *tm);
-extern int processTLSBlock(struct ndpi_detection_module_struct *ndpi_struct,
+NDPI_STATIC char *strptime(const char *s, const char *format, struct tm *tm);
+NDPI_STATIC int processTLSBlock(struct ndpi_detection_module_struct *ndpi_struct,
                            struct ndpi_flow_struct *flow);
-extern int processClientServerHello(struct ndpi_detection_module_struct *ndpi_struct,
+NDPI_STATIC int processClientServerHello(struct ndpi_detection_module_struct *ndpi_struct,
 				    struct ndpi_flow_struct *flow, uint32_t quic_version);
-extern int http_process_user_agent(struct ndpi_detection_module_struct *ndpi_struct,
+NDPI_STATIC int http_process_user_agent(struct ndpi_detection_module_struct *ndpi_struct,
                                    struct ndpi_flow_struct *flow,
                                    const u_int8_t *ua_ptr, u_int16_t ua_ptr_len);
 /* QUIC/GQUIC stuff */
-extern int quic_len(const uint8_t *buf, uint64_t *value);
-extern int quic_len_buffer_still_required(uint8_t value);
-extern int is_version_with_var_int_transport_params(uint32_t version);
+NDPI_STATIC int quic_len(const uint8_t *buf, uint64_t *value);
+NDPI_STATIC int quic_len_buffer_still_required(uint8_t value);
+NDPI_STATIC int is_version_with_var_int_transport_params(uint32_t version);
 
 // #define DEBUG_TLS_MEMORY       1
 // #define DEBUG_TLS              1
@@ -84,16 +84,16 @@ typedef union ja3_info ja3_info_t;
 
 /* **************************************** */
 
-extern char *strptime(const char *s, const char *format, struct tm *tm);
-extern int processClientServerHello(struct ndpi_detection_module_struct *ndpi_struct,
+NDPI_STATIC char *strptime(const char *s, const char *format, struct tm *tm);
+NDPI_STATIC int processClientServerHello(struct ndpi_detection_module_struct *ndpi_struct,
 				    struct ndpi_flow_struct *flow, uint32_t quic_version);
-extern int http_process_user_agent(struct ndpi_detection_module_struct *ndpi_struct,
+NDPI_STATIC int http_process_user_agent(struct ndpi_detection_module_struct *ndpi_struct,
                                    struct ndpi_flow_struct *flow,
                                    const u_int8_t *ua_ptr, u_int16_t ua_ptr_len);
 /* QUIC/GQUIC stuff */
-extern int quic_len(const uint8_t *buf, uint64_t *value);
-extern int quic_len_buffer_still_required(uint8_t value);
-extern int is_version_with_var_int_transport_params(uint32_t version);
+NDPI_STATIC int quic_len(const uint8_t *buf, uint64_t *value);
+NDPI_STATIC int quic_len_buffer_still_required(uint8_t value);
+NDPI_STATIC int is_version_with_var_int_transport_params(uint32_t version);
 
 // #define DEBUG_TLS_MEMORY       1
 // #define DEBUG_TLS              1
@@ -771,7 +771,7 @@ static void processCertificateElements(struct ndpi_detection_module_struct *ndpi
 /* **************************************** */
 
 /* See https://blog.catchpoint.com/2017/05/12/dissecting-tls-using-wireshark/ */
-int processCertificate(struct ndpi_detection_module_struct *ndpi_struct,
+NDPI_STATIC int processCertificate(struct ndpi_detection_module_struct *ndpi_struct,
 		       struct ndpi_flow_struct *flow) {
   struct ndpi_packet_struct *packet = ndpi_get_packet_struct(ndpi_struct);
   int is_dtls = packet->udp ? 1 : 0;

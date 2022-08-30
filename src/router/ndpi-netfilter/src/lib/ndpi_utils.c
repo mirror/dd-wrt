@@ -388,7 +388,7 @@ u_int8_t ndpi_is_safe_ssl_cipher(u_int32_t cipher) {
 
 /* ***************************************************** */
 
-const char* ndpi_cipher2str(u_int32_t cipher) {
+NDPI_STATIC const char* ndpi_cipher2str(u_int32_t cipher) {
   switch(cipher) {
   case TLS_NULL_WITH_NULL_NULL:	return("TLS_NULL_WITH_NULL_NULL");
   case TLS_RSA_EXPORT_WITH_RC4_40_MD5:	return("TLS_RSA_EXPORT_WITH_RC4_40_MD5");
@@ -1770,7 +1770,7 @@ ndpi_risk_enum ndpi_validate_url(char *url) {
 #endif
 /* ******************************************************************** */
 
-u_int8_t ndpi_is_protocol_detected(struct ndpi_detection_module_struct *ndpi_str,
+NDPI_STATIC u_int8_t ndpi_is_protocol_detected(struct ndpi_detection_module_struct *ndpi_str,
 				   ndpi_protocol proto) {
   if((proto.master_protocol != NDPI_PROTOCOL_UNKNOWN)
      || (proto.app_protocol != NDPI_PROTOCOL_UNKNOWN)
@@ -2319,7 +2319,7 @@ void ndpi_set_risk(struct ndpi_detection_module_struct *ndpi_str,
 
 /* ******************************************************************** */
 
-void ndpi_unset_risk(struct ndpi_detection_module_struct *ndpi_str,
+NDPI_STATIC void ndpi_unset_risk(struct ndpi_detection_module_struct *ndpi_str,
 		     struct ndpi_flow_struct *flow, ndpi_risk_enum r) {
   if(ndpi_isset_risk(ndpi_str, flow, r)) {
     u_int8_t i, j;

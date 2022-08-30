@@ -63,7 +63,7 @@ extern "C" {
    *         else 0
    *
    */
-  int ndpi_check_punycode_string(char *buff, int len);
+  NDPI_STATIC int ndpi_check_punycode_string(char *buff, int len);
 
 
   /**
@@ -72,7 +72,7 @@ extern "C" {
    * @return the size of the flow struct
    *
    */
-  u_int32_t ndpi_detection_get_sizeof_ndpi_flow_struct(void);
+ NDPI_STATIC  u_int32_t ndpi_detection_get_sizeof_ndpi_flow_struct(void);
 
 
   /**
@@ -81,7 +81,7 @@ extern "C" {
    * @return the size of the flow tcp struct
    *
    */
-  u_int32_t ndpi_detection_get_sizeof_ndpi_flow_tcp_struct(void);
+NDPI_STATIC   u_int32_t ndpi_detection_get_sizeof_ndpi_flow_tcp_struct(void);
 
 
   /**
@@ -90,13 +90,13 @@ extern "C" {
    * @return the size of the flow udp struct
    *
    */
-  u_int32_t ndpi_detection_get_sizeof_ndpi_flow_udp_struct(void);
+NDPI_STATIC   u_int32_t ndpi_detection_get_sizeof_ndpi_flow_udp_struct(void);
 
   /*
     Same as the API call above but used for matching raw id's added
     via ndpi_add_string_value_to_automa()
   */
-  int ndpi_match_string_value(void *_automa, char *string_to_match,
+NDPI_STATIC   int ndpi_match_string_value(void *_automa, char *string_to_match,
 			      u_int match_len, u_int32_t *num);
 
   /**
@@ -106,19 +106,19 @@ extern "C" {
    * @return the error code or 0 otherwise
    *                        
    */
-  u_int32_t ndpi_get_flow_error_code(struct ndpi_flow_struct *flow);
+NDPI_STATIC   u_int32_t ndpi_get_flow_error_code(struct ndpi_flow_struct *flow);
   
   /**
    * nDPI personal allocation and free functions
    **/
-  void * ndpi_malloc(size_t size);
-  void * ndpi_calloc(unsigned long count, size_t size);
-  void * ndpi_realloc(void *ptr, size_t old_size, size_t new_size);
-  char * ndpi_strdup(const char *s);
-  void   ndpi_free(void *ptr);
-  void * ndpi_flow_malloc(size_t size);
-  void   ndpi_flow_free(void *ptr);
-  u_int32_t ndpi_get_tot_allocated_memory(void);
+NDPI_STATIC   void * ndpi_malloc(size_t size);
+NDPI_STATIC   void * ndpi_calloc(unsigned long count, size_t size);
+NDPI_STATIC   void * ndpi_realloc(void *ptr, size_t old_size, size_t new_size);
+NDPI_STATIC   char * ndpi_strdup(const char *s);
+NDPI_STATIC   void   ndpi_free(void *ptr);
+NDPI_STATIC   void * ndpi_flow_malloc(size_t size);
+NDPI_STATIC   void   ndpi_flow_free(void *ptr);
+NDPI_STATIC   u_int32_t ndpi_get_tot_allocated_memory(void);
 
   /**
    * Search the first occurrence of substring -find- in -s-
@@ -131,7 +131,7 @@ extern "C" {
    *         NULL if the substring is not found
    *
    */
-  char* ndpi_strnstr(const char *s, const char *find, size_t slen);
+NDPI_STATIC   char* ndpi_strnstr(const char *s, const char *find, size_t slen);
 
   /**
    * Same as ndpi_strnstr but case insensitive
@@ -143,7 +143,7 @@ extern "C" {
    *         NULL if the substring is not found
    *
    */
-  const char* ndpi_strncasestr(const char *s, const char *find, size_t slen);
+NDPI_STATIC   const char* ndpi_strncasestr(const char *s, const char *find, size_t slen);
 
   /**
    * Returns the nDPI protocol id for IP-based protocol detection
@@ -154,7 +154,7 @@ extern "C" {
    * @return the nDPI protocol ID
    *
    */
-  u_int16_t ndpi_network_ptree_match(struct ndpi_detection_module_struct *ndpi_struct,
+NDPI_STATIC   u_int16_t ndpi_network_ptree_match(struct ndpi_detection_module_struct *ndpi_struct,
 				     struct in_addr *pin);
 
   /**
@@ -168,7 +168,7 @@ extern "C" {
    * @return the nDPI protocol ID
    *
    */
-  u_int16_t ndpi_network_port_ptree_match(struct ndpi_detection_module_struct *ndpi_struct,
+NDPI_STATIC   u_int16_t ndpi_network_port_ptree_match(struct ndpi_detection_module_struct *ndpi_struct,
 					  struct in_addr *pin /* network byte order */,
 					  u_int16_t port /* network byte order */);
 
@@ -181,7 +181,7 @@ extern "C" {
    * @return  0 - success, -1 - error
    *
    */
-  int ndpi_init_protocol_match(struct ndpi_detection_module_struct *ndpi_mod,
+NDPI_STATIC   int ndpi_init_protocol_match(struct ndpi_detection_module_struct *ndpi_mod,
 				ndpi_protocol_match *match);
 
   /**
@@ -198,7 +198,7 @@ extern "C" {
    * @return  the initialized detection module
    *
    */
-  struct ndpi_detection_module_struct *ndpi_init_detection_module(ndpi_init_prefs prefs);
+NDPI_STATIC   struct ndpi_detection_module_struct *ndpi_init_detection_module(ndpi_init_prefs prefs);
 
   /**
    * Completes the initialization (2nd step)
@@ -206,7 +206,7 @@ extern "C" {
    * @par ndpi_str = the struct created for the protocol detection
    *
    */
-  void ndpi_finalize_initialization(struct ndpi_detection_module_struct *ndpi_str);
+NDPI_STATIC   void ndpi_finalize_initialization(struct ndpi_detection_module_struct *ndpi_str);
 
   /**
    * Frees the dynamic memory allocated members in the specified flow
@@ -214,7 +214,7 @@ extern "C" {
    * @par flow  = the flow struct which dynamic allocated members should be deallocated
    *
    */
-  void ndpi_free_flow_data(struct ndpi_flow_struct *flow);
+NDPI_STATIC   void ndpi_free_flow_data(struct ndpi_flow_struct *flow);
 
   /**
    * Frees the dynamic memory allocated members in the specified flow and the flow struct itself
@@ -222,7 +222,7 @@ extern "C" {
    * @par flow  = the flow struct and its dynamic allocated members that should be deallocated
    *
    */
-  void ndpi_free_flow(struct ndpi_flow_struct *flow);
+NDPI_STATIC   void ndpi_free_flow(struct ndpi_flow_struct *flow);
 
   /**
    * Enables cache support.
@@ -233,7 +233,7 @@ extern "C" {
    * @par port      = unsigned int for the port number
    *
    */
-  void ndpi_enable_cache(struct ndpi_detection_module_struct *ndpi_mod,
+NDPI_STATIC   void ndpi_enable_cache(struct ndpi_detection_module_struct *ndpi_mod,
 			 char* host, u_int port);
 
   /**
@@ -242,7 +242,7 @@ extern "C" {
    * @par ndpi_struct  = the struct to clearing for the detection module
    *
    */
-  void ndpi_exit_detection_module(struct ndpi_detection_module_struct *ndpi_struct);
+NDPI_STATIC   void ndpi_exit_detection_module(struct ndpi_detection_module_struct *ndpi_struct);
 
   /**
    * Sets a single protocol bitmask
@@ -258,7 +258,7 @@ extern "C" {
    * @par b_add_detection_bitmask  = if set as "true" add the protocol bitmask to the detection bitmask
    *
    */
-  void ndpi_set_bitmask_protocol_detection(char *label,
+NDPI_STATIC   void ndpi_set_bitmask_protocol_detection(char *label,
 					   struct ndpi_detection_module_struct *ndpi_struct,
 					   const NDPI_PROTOCOL_BITMASK *detection_bitmask,
 					   const u_int32_t idx,
@@ -276,7 +276,7 @@ extern "C" {
    * @par detection_bitmask  = the protocol bitmask to set
    *
    */
-  void ndpi_set_protocol_detection_bitmask2(struct ndpi_detection_module_struct *ndpi_struct,
+NDPI_STATIC   void ndpi_set_protocol_detection_bitmask2(struct ndpi_detection_module_struct *ndpi_struct,
 					    const NDPI_PROTOCOL_BITMASK * detection_bitmask);
 
   /**
@@ -290,7 +290,7 @@ extern "C" {
    * @return the detected protocol even if the flow is not completed;
    *
    */
-  ndpi_protocol ndpi_detection_giveup(struct ndpi_detection_module_struct *ndpi_struct,
+NDPI_STATIC   ndpi_protocol ndpi_detection_giveup(struct ndpi_detection_module_struct *ndpi_struct,
 				      struct ndpi_flow_struct *flow,
 				      u_int8_t enable_guess,
 				      u_int8_t *protocol_was_guessed);
@@ -308,7 +308,7 @@ extern "C" {
    * @return void
    *
    */
-  void ndpi_process_extra_packet(struct ndpi_detection_module_struct *ndpi_struct,
+NDPI_STATIC   void ndpi_process_extra_packet(struct ndpi_detection_module_struct *ndpi_struct,
 				 struct ndpi_flow_struct *flow,
 				 const unsigned char *packet,
 				 const unsigned short packetlen,
@@ -326,7 +326,7 @@ extern "C" {
    * @return the detected ID of the protocol
    *
    */
-  ndpi_protocol ndpi_detection_process_packet(struct ndpi_detection_module_struct *ndpi_struct,
+NDPI_STATIC   ndpi_protocol ndpi_detection_process_packet(struct ndpi_detection_module_struct *ndpi_struct,
 					      struct ndpi_flow_struct *flow,
 					      const unsigned char *packet,
 					      const unsigned short packetlen,
@@ -340,7 +340,7 @@ extern "C" {
    * @return the ID of the master protocol detected
    *
    */
-  u_int16_t ndpi_get_flow_masterprotocol(struct ndpi_detection_module_struct *ndpi_struct,
+NDPI_STATIC   u_int16_t ndpi_get_flow_masterprotocol(struct ndpi_detection_module_struct *ndpi_struct,
 					 struct ndpi_flow_struct *flow);
 
   /**
@@ -352,7 +352,7 @@ extern "C" {
    * @return the ID of the app protocol detected
    *
    */
-  u_int16_t ndpi_get_flow_appprotocol(struct ndpi_detection_module_struct *ndpi_str, struct ndpi_flow_struct *flow);
+NDPI_STATIC   u_int16_t ndpi_get_flow_appprotocol(struct ndpi_detection_module_struct *ndpi_str, struct ndpi_flow_struct *flow);
 
   /**
    * Get the category of the passed flows for the detected module
@@ -363,7 +363,7 @@ extern "C" {
    * @return the ID of the category
    *
    */
-  ndpi_protocol_category_t ndpi_get_flow_category(struct ndpi_detection_module_struct *ndpi_str, struct ndpi_flow_struct *flow);
+NDPI_STATIC   ndpi_protocol_category_t ndpi_get_flow_category(struct ndpi_detection_module_struct *ndpi_str, struct ndpi_flow_struct *flow);
 
   /**
    * Get the ndpi protocol data of the passed flows for the detected module
@@ -374,7 +374,7 @@ extern "C" {
    * @par    ndpi_proto   = the output struct where to store the requested information
    *
    */
-  void ndpi_get_flow_ndpi_proto(struct ndpi_detection_module_struct *ndpi_str, struct ndpi_flow_struct *flow,
+NDPI_STATIC   void ndpi_get_flow_ndpi_proto(struct ndpi_detection_module_struct *ndpi_str, struct ndpi_flow_struct *flow,
                     struct ndpi_proto * ndpi_proto);
 
   /**
@@ -389,7 +389,7 @@ extern "C" {
    * @return number of protocol dissector that have been tried (0 = no more dissectors)
    *
    */
-  u_int32_t ndpi_check_flow_func(struct ndpi_detection_module_struct *ndpi_struct,
+NDPI_STATIC   u_int32_t ndpi_check_flow_func(struct ndpi_detection_module_struct *ndpi_struct,
 				 struct ndpi_flow_struct *flow,
 				 NDPI_SELECTION_BITMASK_PROTOCOL_SIZE *ndpi_selection_packet);
 
@@ -407,7 +407,7 @@ extern "C" {
    else != 0
    *
    */
-  u_int8_t ndpi_detection_get_l4(const u_int8_t *l3, u_int16_t l3_len, const u_int8_t **l4_return, u_int16_t *l4_len_return,
+NDPI_STATIC   u_int8_t ndpi_detection_get_l4(const u_int8_t *l3, u_int16_t l3_len, const u_int8_t **l4_return, u_int16_t *l4_len_return,
 				 u_int8_t *l4_protocol_return, u_int32_t flags);
 
   /**
@@ -421,7 +421,7 @@ extern "C" {
    * @return the struct ndpi_protocol that match the port base protocol
    *
    */
-  ndpi_protocol ndpi_find_port_based_protocol(struct ndpi_detection_module_struct *ndpi_struct/* , u_int8_t proto */,
+NDPI_STATIC   ndpi_protocol ndpi_find_port_based_protocol(struct ndpi_detection_module_struct *ndpi_struct/* , u_int8_t proto */,
 					      u_int32_t shost,
 					      u_int16_t sport,
 					      u_int32_t dhost,
@@ -439,7 +439,7 @@ extern "C" {
    * @return the struct ndpi_protocol that match the port base protocol
    *
    */
-  ndpi_protocol ndpi_guess_undetected_protocol(struct ndpi_detection_module_struct *ndpi_struct,
+NDPI_STATIC   ndpi_protocol ndpi_guess_undetected_protocol(struct ndpi_detection_module_struct *ndpi_struct,
 					       struct ndpi_flow_struct *flow,
 					       u_int8_t proto,
 					       u_int32_t shost,
@@ -458,7 +458,7 @@ extern "C" {
    *         -2 if automa==NULL or string_to_match==NULL or empty string_to_match
    *
    */
-  int ndpi_match_string_subprotocol(struct ndpi_detection_module_struct *ndpi_struct,
+NDPI_STATIC   int ndpi_match_string_subprotocol(struct ndpi_detection_module_struct *ndpi_struct,
 				    char *string_to_match,
 				    u_int string_to_match_len,
 				    ndpi_protocol_match_result *ret_match);
@@ -474,7 +474,7 @@ extern "C" {
    * @return the ID of the matched subprotocol
    *
    */
-  u_int16_t ndpi_match_host_subprotocol(struct ndpi_detection_module_struct *ndpi_struct,
+NDPI_STATIC   u_int16_t ndpi_match_host_subprotocol(struct ndpi_detection_module_struct *ndpi_struct,
 					struct ndpi_flow_struct *flow,
 					char *string_to_match,
 					u_int string_to_match_len,
@@ -488,7 +488,7 @@ extern "C" {
    * @par    flow                = the flow where match the host
    * @par    subprotocol_id      = subprotocol id
    */
-  void ndpi_check_subprotocol_risk(struct ndpi_detection_module_struct *ndpi_str,
+NDPI_STATIC   void ndpi_check_subprotocol_risk(struct ndpi_detection_module_struct *ndpi_str,
 				 struct ndpi_flow_struct *flow, u_int16_t subprotocol_id);
 
   /**
@@ -499,7 +499,7 @@ extern "C" {
    * @par    master_protocol_id  = value of the ID associated to the master protocol detected
    *
    */
-  void ndpi_exclude_protocol(struct ndpi_detection_module_struct *ndpi_struct,
+NDPI_STATIC   void ndpi_exclude_protocol(struct ndpi_detection_module_struct *ndpi_struct,
 			     struct ndpi_flow_struct *flow,
 			     u_int16_t master_protocol_id,
 			     const char *_file, const char *_func,int _line);
@@ -512,7 +512,7 @@ extern "C" {
    * @return  0
    *
    */
-  int ndpi_match_bigram(const char *bigram_to_match);
+NDPI_STATIC   int ndpi_match_bigram(const char *bigram_to_match);
 
   /**
    * Write the protocol name in the buffer -buf- as master_protocol.protocol
@@ -524,7 +524,7 @@ extern "C" {
    * @return  the buffer contains the master_protocol and protocol name
    *
    */
-  char* ndpi_protocol2name(struct ndpi_detection_module_struct *ndpi_mod,
+NDPI_STATIC   char* ndpi_protocol2name(struct ndpi_detection_module_struct *ndpi_mod,
 			   ndpi_protocol proto, char *buf, u_int buf_len);
 
   /**
@@ -538,7 +538,7 @@ extern "C" {
    * @return  the buffer contains the master_protocol and protocol name
    *
    */
-  char* ndpi_protocol2id(struct ndpi_detection_module_struct *ndpi_mod,
+NDPI_STATIC   char* ndpi_protocol2id(struct ndpi_detection_module_struct *ndpi_mod,
 			 ndpi_protocol proto, char *buf, u_int buf_len);
 
   /**
@@ -548,7 +548,7 @@ extern "C" {
    * @return  1 if this is a custom user category, 0 otherwise
    *
    */
-  int ndpi_is_custom_category(ndpi_protocol_category_t category);
+NDPI_STATIC   int ndpi_is_custom_category(ndpi_protocol_category_t category);
 
   /**
    * Overwrite a protocol category defined by nDPI with the custom category
@@ -558,7 +558,7 @@ extern "C" {
    * @par     breed         = the breed to be associated to the protocol
    *
    */
-  void ndpi_set_proto_breed(struct ndpi_detection_module_struct *ndpi_mod,
+NDPI_STATIC   void ndpi_set_proto_breed(struct ndpi_detection_module_struct *ndpi_mod,
 			    u_int16_t protoId, ndpi_protocol_breed_t breed);
 
   /**
@@ -569,7 +569,7 @@ extern "C" {
    * @par     category      = the category associated to the protocol
    *
    */
-  void ndpi_set_proto_category(struct ndpi_detection_module_struct *ndpi_mod,
+NDPI_STATIC   void ndpi_set_proto_category(struct ndpi_detection_module_struct *ndpi_mod,
 			       u_int16_t protoId, ndpi_protocol_category_t protoCategory);
 
   /**
@@ -581,7 +581,7 @@ extern "C" {
    * @return  1 = the subprotocol is informative, 0 otherwise.
    *
    */
-  u_int8_t ndpi_is_subprotocol_informative(struct ndpi_detection_module_struct *ndpi_mod,
+NDPI_STATIC   u_int8_t ndpi_is_subprotocol_informative(struct ndpi_detection_module_struct *ndpi_mod,
 					   u_int16_t protoId);
 
   /**
@@ -594,12 +594,12 @@ extern "C" {
    * @par name_len          = length of the host name
    *
    */
-  int ndpi_match_hostname_protocol(struct ndpi_detection_module_struct *ndpi_mod,
+NDPI_STATIC   int ndpi_match_hostname_protocol(struct ndpi_detection_module_struct *ndpi_mod,
 				   struct ndpi_flow_struct *flow,
 				   u_int16_t master_protocol,
 				   char *name, u_int name_len);
 
-  u_int16_t ndpi_get_proto_by_name(struct ndpi_detection_module_struct *ndpi_mod,
+NDPI_STATIC   u_int16_t ndpi_get_proto_by_name(struct ndpi_detection_module_struct *ndpi_mod,
 		  		   const char *name);
 
   /**
@@ -609,7 +609,7 @@ extern "C" {
    * @return  the string name of the confidence result
    *
    */
-  const char* ndpi_confidence_get_name(ndpi_confidence_t confidence);
+NDPI_STATIC   const char* ndpi_confidence_get_name(ndpi_confidence_t confidence);
 
 #ifndef __KERNEL__
   /**
@@ -620,7 +620,7 @@ extern "C" {
    * @return  the string name of the category
    *
    */
-  const char* ndpi_category_get_name(struct ndpi_detection_module_struct *ndpi_mod,
+NDPI_STATIC   const char* ndpi_category_get_name(struct ndpi_detection_module_struct *ndpi_mod,
 				     ndpi_protocol_category_t category);
 
   /**
@@ -631,7 +631,7 @@ extern "C" {
    * @paw     name          = the string name of the category
    *
    */
-  void ndpi_category_set_name(struct ndpi_detection_module_struct *ndpi_mod,
+NDPI_STATIC   void ndpi_category_set_name(struct ndpi_detection_module_struct *ndpi_mod,
 			      ndpi_protocol_category_t category, char *name);
 
   /**
@@ -641,7 +641,7 @@ extern "C" {
    * @par     proto         = the struct ndpi_protocol contain the protocols name
    * @return  the protocol category
    */
-  ndpi_protocol_category_t ndpi_get_proto_category(struct ndpi_detection_module_struct *ndpi_mod,
+NDPI_STATIC   ndpi_protocol_category_t ndpi_get_proto_category(struct ndpi_detection_module_struct *ndpi_mod,
 						   ndpi_protocol proto);
 
 #endif
@@ -653,7 +653,7 @@ extern "C" {
    * @return  the buffer contains the master_protocol and protocol name
    *
    */
-  char* ndpi_get_proto_name(struct ndpi_detection_module_struct *mod, u_int16_t proto_id);
+NDPI_STATIC   char* ndpi_get_proto_name(struct ndpi_detection_module_struct *mod, u_int16_t proto_id);
 
 
   /**
@@ -664,7 +664,7 @@ extern "C" {
    * @return  the breed ID associated to the protocol
    *
    */
-  ndpi_protocol_breed_t ndpi_get_proto_breed(struct ndpi_detection_module_struct *ndpi_struct,
+NDPI_STATIC   ndpi_protocol_breed_t ndpi_get_proto_breed(struct ndpi_detection_module_struct *ndpi_struct,
 					     u_int16_t proto);
 
   /**
@@ -675,7 +675,7 @@ extern "C" {
    * @return  the string name of the breed ID
    *
    */
-  char* ndpi_get_proto_breed_name(struct ndpi_detection_module_struct *ndpi_struct,
+NDPI_STATIC   char* ndpi_get_proto_breed_name(struct ndpi_detection_module_struct *ndpi_struct,
 				  ndpi_protocol_breed_t breed_id);
 
   /**
@@ -686,7 +686,7 @@ extern "C" {
    * @return  the ID of the protocol
    *
    */
-  int ndpi_get_protocol_id(struct ndpi_detection_module_struct *ndpi_mod, char *proto);
+NDPI_STATIC   int ndpi_get_protocol_id(struct ndpi_detection_module_struct *ndpi_mod, char *proto);
 
   /**
    * Return the ID of the category
@@ -696,7 +696,7 @@ extern "C" {
    * @return  the ID of the category
    *
    */
-  int ndpi_get_category_id(struct ndpi_detection_module_struct *ndpi_mod, char *cat);
+NDPI_STATIC   int ndpi_get_category_id(struct ndpi_detection_module_struct *ndpi_mod, char *cat);
 
 #ifndef __KERNEL__
   /**
@@ -704,21 +704,21 @@ extern "C" {
    *
    * @par  ndpi_mod = the detection module
    */
-  void ndpi_dump_protocols(struct ndpi_detection_module_struct *mod);
+NDPI_STATIC   void ndpi_dump_protocols(struct ndpi_detection_module_struct *mod);
 
   /**
    * Generate Options list used in OPNsense firewall plugin
    *
    * @par  opt = The Option list to generate
    */
-  void ndpi_generate_options(u_int opt);
+NDPI_STATIC   void ndpi_generate_options(u_int opt);
 
   /**
    * Write the list of the scores and their associated risks
    *
    * @par  ndpi_mod = the detection module
    */
-  void ndpi_dump_risks_score(void);
+NDPI_STATIC   void ndpi_dump_risks_score(void);
 
 #endif
   /**
@@ -736,7 +736,7 @@ extern "C" {
    *          -1 else
    *
    */
-  int ndpi_load_protocols_file(struct ndpi_detection_module_struct *ndpi_mod,
+NDPI_STATIC   int ndpi_load_protocols_file(struct ndpi_detection_module_struct *ndpi_mod,
 			       const char* path);
 
   /**
@@ -748,7 +748,7 @@ extern "C" {
    * @return  0 if the rule is loaded correctly;
    *          -1 else
    */
-  int ndpi_add_ip_risk_mask(struct ndpi_detection_module_struct *ndpi_mod, char *ip, ndpi_risk mask);
+NDPI_STATIC   int ndpi_add_ip_risk_mask(struct ndpi_detection_module_struct *ndpi_mod, char *ip, ndpi_risk mask);
 
   /**
    * Add a host-address based risk mask
@@ -759,7 +759,7 @@ extern "C" {
    * @return  0 if the rule is loaded correctly;
    *          -1 else
    */
-  int ndpi_add_host_risk_mask(struct ndpi_detection_module_struct *ndpi_mod, char *host, ndpi_risk mask);
+NDPI_STATIC   int ndpi_add_host_risk_mask(struct ndpi_detection_module_struct *ndpi_mod, char *host, ndpi_risk mask);
 
   /**
    * Add a trusted certificate issuer DN
@@ -768,7 +768,7 @@ extern "C" {
    * @par     dn       = the issuer DN as it appears in the certificate (example "CN=813845657003339838, O=Code42, OU=TEST, ST=MN, C=US")
    * @return  0 if the rule is loaded correctly; < 0 in case an error is detected
    */
-  int ndpi_add_trusted_issuer_dn(struct ndpi_detection_module_struct *ndpi_mod, char *dn);
+NDPI_STATIC   int ndpi_add_trusted_issuer_dn(struct ndpi_detection_module_struct *ndpi_mod, char *dn);
 
   /**
    * Read a file and load the categories
@@ -779,7 +779,7 @@ extern "C" {
    * @return  0 if the file is loaded correctly;
    *          -1 else
    */
-  int ndpi_load_categories_file(struct ndpi_detection_module_struct *ndpi_str, const char* path, void *user_data);
+NDPI_STATIC   int ndpi_load_categories_file(struct ndpi_detection_module_struct *ndpi_str, const char* path, void *user_data);
 
   /**
    * Read a file and load the list of risky domains
@@ -789,7 +789,7 @@ extern "C" {
    * @return  0 if the file is loaded correctly;
    *          -1 else
    */
-  int ndpi_load_risk_domain_file(struct ndpi_detection_module_struct *ndpi_str, const char* path);
+  NDPI_STATIC int ndpi_load_risk_domain_file(struct ndpi_detection_module_struct *ndpi_str, const char* path);
 
   /**
    * Read a file and load the list of malicious JA3 signatures
@@ -799,7 +799,7 @@ extern "C" {
    * @return  0 if the file is loaded correctly;
    *          -1 else
    */
-  int ndpi_load_malicious_ja3_file(struct ndpi_detection_module_struct *ndpi_str, const char *path);
+  NDPI_STATIC int ndpi_load_malicious_ja3_file(struct ndpi_detection_module_struct *ndpi_str, const char *path);
 
   /**
    * Read a file and load the list of malicious SSL certificate SHA1 fingerprints.
@@ -808,7 +808,7 @@ extern "C" {
    * @return  0 if the file is loaded correctly;
    *          -1 else
    */
-  int ndpi_load_malicious_sha1_file(struct ndpi_detection_module_struct *ndpi_str, const char *path);
+  NDPI_STATIC int ndpi_load_malicious_sha1_file(struct ndpi_detection_module_struct *ndpi_str, const char *path);
 
   /**
    * Get the total number of the supported protocols
@@ -817,7 +817,7 @@ extern "C" {
    * @return  the number of protocols
    *
    */
-  u_int ndpi_get_num_supported_protocols(struct ndpi_detection_module_struct *ndpi_mod);
+  NDPI_STATIC u_int ndpi_get_num_supported_protocols(struct ndpi_detection_module_struct *ndpi_mod);
 
   /**
    * Get the nDPI version release
@@ -825,7 +825,7 @@ extern "C" {
    * @return the NDPI_GIT_RELEASE
    *
    */
-  char* ndpi_revision(void);
+  NDPI_STATIC char* ndpi_revision(void);
 
   /**
    * Set the automa for the protocol search
@@ -834,7 +834,7 @@ extern "C" {
    * @par automa      = the automa to match
    *
    */
-  void ndpi_set_automa(struct ndpi_detection_module_struct *ndpi_struct,
+  NDPI_STATIC void ndpi_set_automa(struct ndpi_detection_module_struct *ndpi_struct,
 		       void* automa);
 
   /* NDPI_PROTOCOL_HTTP */
@@ -846,7 +846,7 @@ extern "C" {
    * @return  the HTTP method information about the flow
    *
    */
-  ndpi_http_method ndpi_get_http_method(struct ndpi_detection_module_struct *ndpi_mod,
+  NDPI_STATIC ndpi_http_method ndpi_get_http_method(struct ndpi_detection_module_struct *ndpi_mod,
 					struct ndpi_flow_struct *flow);
 
   /**
@@ -857,7 +857,7 @@ extern "C" {
    * @return  the HTTP method information about the flow
    *
    */
-  char* ndpi_get_http_url(struct ndpi_detection_module_struct *ndpi_mod,
+  NDPI_STATIC char* ndpi_get_http_url(struct ndpi_detection_module_struct *ndpi_mod,
 			  struct ndpi_flow_struct *flow);
 
   /**
@@ -868,7 +868,7 @@ extern "C" {
    * @return  the HTTP method information about the flow
    *
    */
-  char* ndpi_get_http_content_type(struct ndpi_detection_module_struct *ndpi_mod,
+  NDPI_STATIC char* ndpi_get_http_content_type(struct ndpi_detection_module_struct *ndpi_mod,
 				   struct ndpi_flow_struct *flow);
 
   /* NDPI_PROTOCOL_TOR */
@@ -882,7 +882,7 @@ extern "C" {
    *          0 else
    *
    */
-  int ndpi_is_tls_tor(struct ndpi_detection_module_struct *ndpi_struct,
+  NDPI_STATIC int ndpi_is_tls_tor(struct ndpi_detection_module_struct *ndpi_struct,
 		      struct ndpi_flow_struct *flow, char *certificate);
 
   /* Wrappers functions */
@@ -892,7 +892,7 @@ extern "C" {
    * @return  The requested automata, or NULL if an error occurred
    *
    */
-  void* ndpi_init_automa(void);
+  NDPI_STATIC void* ndpi_init_automa(void);
 
   /**
    * Free Aho-Corasick automata allocated with ndpi_init_automa();
@@ -900,9 +900,9 @@ extern "C" {
    * @par     The automata initialized with ndpi_init_automa();
    *
    */
-  void ndpi_free_automa(void *_automa);
+  NDPI_STATIC void ndpi_free_automa(void *_automa);
 
-  int ndpi_string_to_automa(struct ndpi_detection_module_struct *ndpi_str,
+  NDPI_STATIC int ndpi_string_to_automa(struct ndpi_detection_module_struct *ndpi_str,
                            void *ac_automa, const char *value,
                            u_int16_t protocol_id, ndpi_protocol_category_t category,
                            ndpi_protocol_breed_t breed, uint8_t level,
@@ -916,7 +916,7 @@ extern "C" {
    * @return  0 in case of no error, or -1 if an error occurred.
    *
    */
-  int ndpi_add_string_value_to_automa(void *_automa, char *str, u_int32_t num);
+  NDPI_STATIC int ndpi_add_string_value_to_automa(void *_automa, char *str, u_int32_t num);
 
   /**
    * Add a string to match to an automata. Same as ndpi_add_string_value_to_automa() with num set to 1
@@ -926,7 +926,7 @@ extern "C" {
    * @return  0 in case of no error, or -1 if an error occurred.
    *
    */
-  int ndpi_add_string_to_automa(void *_automa, char *str);
+  NDPI_STATIC int ndpi_add_string_to_automa(void *_automa, char *str);
 
   /**
    * Finalize the automa (necessary before start searching)
@@ -934,10 +934,10 @@ extern "C" {
    * @par     The automata initialized with ndpi_init_automa();
    *
    */
-  void ndpi_finalize_automa(void *_automa);
+  NDPI_STATIC void ndpi_finalize_automa(void *_automa);
 
-  void *ndpi_automa_host(struct ndpi_detection_module_struct *ndpi_struct);
-  void **ndpi_get_automata(struct ndpi_detection_module_struct *ndpi_str);
+  NDPI_STATIC void *ndpi_automa_host(struct ndpi_detection_module_struct *ndpi_struct);
+  NDPI_STATIC void **ndpi_get_automata(struct ndpi_detection_module_struct *ndpi_str);
 
   /**
    * Add a string to match to an automata
@@ -947,57 +947,57 @@ extern "C" {
    * @return  0 in case of match, or -1 if no match, or -2 if an error occurred.
    *
    */
-  int ndpi_match_string(void *_automa, char *string_to_match);
+  NDPI_STATIC int ndpi_match_string(void *_automa, char *string_to_match);
 
-  int ndpi_load_ip_category(struct ndpi_detection_module_struct *ndpi_struct,
+  NDPI_STATIC int ndpi_load_ip_category(struct ndpi_detection_module_struct *ndpi_struct,
 			    const char *ip_address_and_mask, ndpi_protocol_category_t category,
 			    void *user_data);
-  int ndpi_load_hostname_category(struct ndpi_detection_module_struct *ndpi_struct,
+  NDPI_STATIC int ndpi_load_hostname_category(struct ndpi_detection_module_struct *ndpi_struct,
 				  const char *name_to_add, ndpi_protocol_category_t category);
 #ifndef __KERNEL__
-  int ndpi_load_category(struct ndpi_detection_module_struct *ndpi_struct,
+  NDPI_STATIC int ndpi_load_category(struct ndpi_detection_module_struct *ndpi_struct,
 			 const char *ip_or_name, ndpi_protocol_category_t category,
 			 void *user_data);
-  int ndpi_enable_loaded_categories(struct ndpi_detection_module_struct *ndpi_struct);
-  void* ndpi_find_ipv4_category_userdata(struct ndpi_detection_module_struct *ndpi_str,
+  NDPI_STATIC int ndpi_enable_loaded_categories(struct ndpi_detection_module_struct *ndpi_struct);
+  NDPI_STATIC void* ndpi_find_ipv4_category_userdata(struct ndpi_detection_module_struct *ndpi_str,
 					 u_int32_t saddr);
-  int ndpi_fill_ip_protocol_category(struct ndpi_detection_module_struct *ndpi_struct,
+  NDPI_STATIC int ndpi_fill_ip_protocol_category(struct ndpi_detection_module_struct *ndpi_struct,
 				     u_int32_t saddr,
 				     u_int32_t daddr,
 				     ndpi_protocol *ret);
-  int ndpi_match_custom_category(struct ndpi_detection_module_struct *ndpi_struct,
+  NDPI_STATIC int ndpi_match_custom_category(struct ndpi_detection_module_struct *ndpi_struct,
 				 char *name, u_int name_len, ndpi_protocol_category_t *id);
-  int ndpi_get_custom_category_match(struct ndpi_detection_module_struct *ndpi_struct,
+  NDPI_STATIC int ndpi_get_custom_category_match(struct ndpi_detection_module_struct *ndpi_struct,
 				     char *name_or_ip, u_int name_len,
 				     ndpi_protocol_category_t *id);
 #endif
-  void ndpi_fill_protocol_category(struct ndpi_detection_module_struct *ndpi_struct,
+  NDPI_STATIC void ndpi_fill_protocol_category(struct ndpi_detection_module_struct *ndpi_struct,
 				   struct ndpi_flow_struct *flow,
 				   ndpi_protocol *ret);
-  int ndpi_set_detection_preferences(struct ndpi_detection_module_struct *ndpi_mod,
+  NDPI_STATIC int ndpi_set_detection_preferences(struct ndpi_detection_module_struct *ndpi_mod,
 				     ndpi_detection_preference pref,
 				     int value);
 
   /* Tells to called on what l4 protocol given application protocol can be found */
-  ndpi_l4_proto_info ndpi_get_l4_proto_info(struct ndpi_detection_module_struct *ndpi_struct, u_int16_t ndpi_proto_id);
-  const char* ndpi_get_l4_proto_name(ndpi_l4_proto_info proto);
+  NDPI_STATIC ndpi_l4_proto_info ndpi_get_l4_proto_info(struct ndpi_detection_module_struct *ndpi_struct, u_int16_t ndpi_proto_id);
+  NDPI_STATIC const char* ndpi_get_l4_proto_name(ndpi_l4_proto_info proto);
 
-  u_int16_t ndpi_get_lower_proto(ndpi_protocol proto);
-  u_int16_t ndpi_get_upper_proto(ndpi_protocol proto);
+  NDPI_STATIC u_int16_t ndpi_get_lower_proto(ndpi_protocol proto);
+  NDPI_STATIC u_int16_t ndpi_get_upper_proto(ndpi_protocol proto);
 
-  ndpi_proto_defaults_t* ndpi_get_proto_defaults(struct ndpi_detection_module_struct *ndpi_mod);
-  u_int ndpi_get_ndpi_num_supported_protocols(struct ndpi_detection_module_struct *ndpi_mod);
-  u_int ndpi_get_ndpi_num_custom_protocols(struct ndpi_detection_module_struct *ndpi_mod);
-  u_int ndpi_get_ndpi_detection_module_size(void);
-  void ndpi_set_log_level(struct ndpi_detection_module_struct *ndpi_mod, u_int l);
-  void ndpi_set_debug_bitmask(struct ndpi_detection_module_struct *ndpi_mod, NDPI_PROTOCOL_BITMASK debug_bitmask);
+  NDPI_STATIC ndpi_proto_defaults_t* ndpi_get_proto_defaults(struct ndpi_detection_module_struct *ndpi_mod);
+  NDPI_STATIC u_int ndpi_get_ndpi_num_supported_protocols(struct ndpi_detection_module_struct *ndpi_mod);
+  NDPI_STATIC u_int ndpi_get_ndpi_num_custom_protocols(struct ndpi_detection_module_struct *ndpi_mod);
+  NDPI_STATIC u_int ndpi_get_ndpi_detection_module_size(void);
+  NDPI_STATIC void ndpi_set_log_level(struct ndpi_detection_module_struct *ndpi_mod, u_int l);
+  NDPI_STATIC void ndpi_set_debug_bitmask(struct ndpi_detection_module_struct *ndpi_mod, NDPI_PROTOCOL_BITMASK debug_bitmask);
 
   /* LRU cache */
-  struct ndpi_lru_cache* ndpi_lru_cache_init(u_int32_t num_entries);
-  void ndpi_lru_free_cache(struct ndpi_lru_cache *c);
-  u_int8_t ndpi_lru_find_cache(struct ndpi_lru_cache *c, u_int32_t key,
+  NDPI_STATIC struct ndpi_lru_cache* ndpi_lru_cache_init(u_int32_t num_entries);
+  NDPI_STATIC void ndpi_lru_free_cache(struct ndpi_lru_cache *c);
+  NDPI_STATIC u_int8_t ndpi_lru_find_cache(struct ndpi_lru_cache *c, u_int32_t key,
 			       u_int16_t *value, u_int8_t clean_key_when_found);
-  void ndpi_lru_add_to_cache(struct ndpi_lru_cache *c, u_int32_t key, u_int16_t value);
+  NDPI_STATIC void ndpi_lru_add_to_cache(struct ndpi_lru_cache *c, u_int32_t key, u_int16_t value);
 
   /**
    * Find a protocol id associated with a string automata
@@ -1009,12 +1009,12 @@ extern "C" {
    * @return  0 in case of match, or -1 if no match, or -2 if an error occurred.
    *
    */
-  int ndpi_match_string_protocol_id(void *_automa, char *string_to_match, u_int match_len,
+  NDPI_STATIC int ndpi_match_string_protocol_id(void *_automa, char *string_to_match, u_int match_len,
 				    u_int16_t *protocol_id,
 				    ndpi_protocol_category_t *category,
 				    ndpi_protocol_breed_t *breed);
 
-  int ndpi_handle_rule(struct ndpi_detection_module_struct *ndpi_str, char *rule, u_int8_t do_add);
+  NDPI_STATIC int ndpi_handle_rule(struct ndpi_detection_module_struct *ndpi_str, char *rule, u_int8_t do_add);
 
   /**
    * Specifies the threshold used to trigger the NDPI_TLS_CERTIFICATE_ABOUT_TO_EXPIRE
@@ -1024,63 +1024,63 @@ extern "C" {
    * @par    days         = the number of days threshold for emitting the alert
    *
    */
-  void ndpi_set_tls_cert_expire_days(struct ndpi_detection_module_struct *ndpi_str,
+  NDPI_STATIC void ndpi_set_tls_cert_expire_days(struct ndpi_detection_module_struct *ndpi_str,
 				     u_int8_t days);
 
 
   /* Utility functions to set ndpi malloc/free/print wrappers */
-  void set_ndpi_ticks_per_second(u_int32_t ticks_per_second);
-  void set_ndpi_malloc(void* (*__ndpi_malloc)(size_t size));
-  void set_ndpi_free(void  (*__ndpi_free)(void *ptr));
-  void set_ndpi_flow_malloc(void* (*__ndpi_flow_malloc)(size_t size));
-  void set_ndpi_flow_free(void  (*__ndpi_flow_free)(void *ptr));
-  void set_ndpi_debug_function(struct ndpi_detection_module_struct *ndpi_str,
+  NDPI_STATIC void set_ndpi_ticks_per_second(u_int32_t ticks_per_second);
+  NDPI_STATIC void set_ndpi_malloc(void* (*__ndpi_malloc)(size_t size));
+  NDPI_STATIC void set_ndpi_free(void  (*__ndpi_free)(void *ptr));
+  NDPI_STATIC void set_ndpi_flow_malloc(void* (*__ndpi_flow_malloc)(size_t size));
+  NDPI_STATIC void set_ndpi_flow_free(void  (*__ndpi_flow_free)(void *ptr));
+  NDPI_STATIC void set_ndpi_debug_function(struct ndpi_detection_module_struct *ndpi_str,
 			       ndpi_debug_function_ptr ndpi_debug_printf);
-  u_int16_t ndpi_get_api_version(void);
-  const char *ndpi_get_gcrypt_version(void);
+  NDPI_STATIC u_int16_t ndpi_get_api_version(void);
+  NDPI_STATIC const char *ndpi_get_gcrypt_version(void);
 
   /* https://github.com/corelight/community-id-spec */
-  int ndpi_flowv4_flow_hash(u_int8_t l4_proto, u_int32_t src_ip, u_int32_t dst_ip, u_int16_t src_port, u_int16_t dst_port,
+  NDPI_STATIC int ndpi_flowv4_flow_hash(u_int8_t l4_proto, u_int32_t src_ip, u_int32_t dst_ip, u_int16_t src_port, u_int16_t dst_port,
 			    u_int8_t icmp_type, u_int8_t icmp_code, u_char *hash_buf, u_int8_t hash_buf_len);
-  int ndpi_flowv6_flow_hash(u_int8_t l4_proto, struct ndpi_in6_addr *src_ip, struct ndpi_in6_addr *dst_ip,
+  NDPI_STATIC int ndpi_flowv6_flow_hash(u_int8_t l4_proto, struct ndpi_in6_addr *src_ip, struct ndpi_in6_addr *dst_ip,
 			    u_int16_t src_port, u_int16_t dst_port, u_int8_t icmp_type, u_int8_t icmp_code,
 			    u_char *hash_buf, u_int8_t hash_buf_len);
-  u_int8_t ndpi_extra_dissection_possible(struct ndpi_detection_module_struct *ndpi_struct,
+  NDPI_STATIC u_int8_t ndpi_extra_dissection_possible(struct ndpi_detection_module_struct *ndpi_struct,
 					  struct ndpi_flow_struct *flow);
-  u_int8_t ndpi_is_safe_ssl_cipher(u_int32_t cipher);
-  u_int16_t ndpi_guess_host_protocol_id(struct ndpi_detection_module_struct *ndpi_struct,
+  NDPI_STATIC u_int8_t ndpi_is_safe_ssl_cipher(u_int32_t cipher);
+  NDPI_STATIC u_int16_t ndpi_guess_host_protocol_id(struct ndpi_detection_module_struct *ndpi_struct,
 					struct ndpi_flow_struct *flow);
-  int ndpi_has_human_readeable_string(struct ndpi_detection_module_struct *ndpi_struct,
+  NDPI_STATIC int ndpi_has_human_readeable_string(struct ndpi_detection_module_struct *ndpi_struct,
 				      char *buffer, u_int buffer_size,
 				      u_int8_t min_string_match_len, /* Will return 0 if no string > min_string_match_len have been found */
 				      char *outbuf, u_int outbuf_len);
   /* Return a flow info string (summarized). Does only work for DNS/HTTP/TLS/QUIC. */
-  const char* ndpi_get_flow_info(struct ndpi_flow_struct const * const flow,
+  NDPI_STATIC const char* ndpi_get_flow_info(struct ndpi_flow_struct const * const flow,
                                  ndpi_protocol const * const l7_protocol);
-  char* ndpi_ssl_version2str(char *buf, int buf_len,
+  NDPI_STATIC char* ndpi_ssl_version2str(char *buf, int buf_len,
                              u_int16_t version, u_int8_t *unknown_tls_version);
-  int ndpi_netbios_name_interpret(u_char *in, u_int in_len, u_char *out, u_int out_len);
-  void ndpi_patchIPv6Address(char *str);
-  void ndpi_user_pwd_payload_copy(u_int8_t *dest, u_int dest_len, u_int offset,
+  NDPI_STATIC int ndpi_netbios_name_interpret(u_char *in, u_int in_len, u_char *out, u_int out_len);
+  NDPI_STATIC void ndpi_patchIPv6Address(char *str);
+  NDPI_STATIC void ndpi_user_pwd_payload_copy(u_int8_t *dest, u_int dest_len, u_int offset,
 				  const u_int8_t *src, u_int src_len);
-  u_char* ndpi_base64_decode(const u_char *src, size_t len, size_t *out_len);
-  char* ndpi_base64_encode(unsigned char const* bytes_to_encode, size_t in_len); /* NOTE: caller MUST free the returned pointer */
-  void ndpi_string_sha1_hash(const uint8_t *message, size_t len, u_char *hash /* 20-bytes */);
+  NDPI_STATIC u_char* ndpi_base64_decode(const u_char *src, size_t len, size_t *out_len);
+  NDPI_STATIC char* ndpi_base64_encode(unsigned char const* bytes_to_encode, size_t in_len); /* NOTE: caller MUST free the returned pointer */
+  NDPI_STATIC void ndpi_string_sha1_hash(const uint8_t *message, size_t len, u_char *hash /* 20-bytes */);
 
-  int ndpi_load_ipv4_ptree(struct ndpi_detection_module_struct *ndpi_str,
+  NDPI_STATIC int ndpi_load_ipv4_ptree(struct ndpi_detection_module_struct *ndpi_str,
 			   const char *path, u_int16_t protocol_id);
 #ifndef __KERNEL__    
-  const char* ndpi_cipher2str(u_int32_t cipher);
-  const char* ndpi_tunnel2str(ndpi_packet_tunnel tt);
-  int ndpi_has_human_readeable_string(struct ndpi_detection_module_struct *ndpi_struct,
+  NDPI_STATIC const char* ndpi_cipher2str(u_int32_t cipher);
+  NDPI_STATIC const char* ndpi_tunnel2str(ndpi_packet_tunnel tt);
+  NDPI_STATIC int ndpi_has_human_readeable_string(struct ndpi_detection_module_struct *ndpi_struct,
 				      char *buffer, u_int buffer_size,
 				      u_int8_t min_string_match_len, /* Will return 0 if no string > min_string_match_len have been found */
 				      char *outbuf, u_int outbuf_len);
-  int ndpi_dpi2json(struct ndpi_detection_module_struct *ndpi_struct,
+  NDPI_STATIC int ndpi_dpi2json(struct ndpi_detection_module_struct *ndpi_struct,
 		    struct ndpi_flow_struct *flow,
 		    ndpi_protocol l7_protocol,
 		    ndpi_serializer *serializer);
-  int ndpi_flow2json(struct ndpi_detection_module_struct *ndpi_struct,
+  NDPI_STATIC int ndpi_flow2json(struct ndpi_detection_module_struct *ndpi_struct,
 		     struct ndpi_flow_struct *flow,
 		     u_int8_t ip_version,
 		     u_int8_t l4_protocol,
@@ -1091,51 +1091,51 @@ extern "C" {
 		     ndpi_serializer *serializer);
 #endif
 
-  void ndpi_md5(const u_char *data, size_t data_len, u_char hash[16]);
-  u_int32_t ndpi_quick_hash(unsigned char *str, u_int str_len);
+  NDPI_STATIC void ndpi_md5(const u_char *data, size_t data_len, u_char hash[16]);
+  NDPI_STATIC u_int32_t ndpi_quick_hash(unsigned char *str, u_int str_len);
 
-  const char* ndpi_http_method2str(ndpi_http_method m);
-  ndpi_http_method ndpi_http_str2method(const char* method, u_int16_t method_len);
+  NDPI_STATIC const char* ndpi_http_method2str(ndpi_http_method m);
+  NDPI_STATIC ndpi_http_method ndpi_http_str2method(const char* method, u_int16_t method_len);
 
   /* Utility functions to fill prefix (used by the patricia tree) */
-  int ndpi_fill_prefix_v4(ndpi_prefix_t *p, const struct in_addr *a, int b, int mb);
-  int ndpi_fill_prefix_v6(ndpi_prefix_t *prefix, const struct in6_addr *addr, int bits, int maxbits);
-  int ndpi_fill_prefix_mac(ndpi_prefix_t *prefix, u_int8_t *mac, int bits, int maxbits);
+  NDPI_STATIC int ndpi_fill_prefix_v4(ndpi_prefix_t *p, const struct in_addr *a, int b, int mb);
+  NDPI_STATIC int ndpi_fill_prefix_v6(ndpi_prefix_t *prefix, const struct in6_addr *addr, int bits, int maxbits);
+  NDPI_STATIC int ndpi_fill_prefix_mac(ndpi_prefix_t *prefix, u_int8_t *mac, int bits, int maxbits);
 
   /* Patricia tree API (radix tree supporting IPv4/IPv6/MAC) */
-  ndpi_patricia_tree_t *ndpi_patricia_new(u_int16_t maxbits);
-  ndpi_patricia_tree_t *ndpi_patricia_clone (const ndpi_patricia_tree_t * const from);
-  void ndpi_patricia_destroy(ndpi_patricia_tree_t *patricia, ndpi_void_fn_t func);
+  NDPI_STATIC ndpi_patricia_tree_t *ndpi_patricia_new(u_int16_t maxbits);
+  NDPI_STATIC ndpi_patricia_tree_t *ndpi_patricia_clone (const ndpi_patricia_tree_t * const from);
+  NDPI_STATIC void ndpi_patricia_destroy(ndpi_patricia_tree_t *patricia, ndpi_void_fn_t func);
 
-  ndpi_patricia_node_t *ndpi_patricia_search_exact(ndpi_patricia_tree_t *patricia, ndpi_prefix_t *prefix);
-  ndpi_patricia_node_t *ndpi_patricia_search_best(ndpi_patricia_tree_t *patricia, ndpi_prefix_t *prefix);
-  ndpi_patricia_node_t *ndpi_patricia_lookup(ndpi_patricia_tree_t *patricia, ndpi_prefix_t *prefix);
-  size_t ndpi_patricia_walk_tree_inorder(ndpi_patricia_tree_t *patricia, ndpi_void_fn3_t func, void *data);
-  size_t ndpi_patricia_walk_inorder(ndpi_patricia_node_t *node, ndpi_void_fn3_t func, void *data);
-  void ndpi_patricia_remove(ndpi_patricia_tree_t *patricia, ndpi_patricia_node_t *node);
+  NDPI_STATIC ndpi_patricia_node_t *ndpi_patricia_search_exact(ndpi_patricia_tree_t *patricia, ndpi_prefix_t *prefix);
+  NDPI_STATIC ndpi_patricia_node_t *ndpi_patricia_search_best(ndpi_patricia_tree_t *patricia, ndpi_prefix_t *prefix);
+  NDPI_STATIC ndpi_patricia_node_t *ndpi_patricia_lookup(ndpi_patricia_tree_t *patricia, ndpi_prefix_t *prefix);
+  NDPI_STATIC size_t ndpi_patricia_walk_tree_inorder(ndpi_patricia_tree_t *patricia, ndpi_void_fn3_t func, void *data);
+  NDPI_STATIC size_t ndpi_patricia_walk_inorder(ndpi_patricia_node_t *node, ndpi_void_fn3_t func, void *data);
+  NDPI_STATIC void ndpi_patricia_remove(ndpi_patricia_tree_t *patricia, ndpi_patricia_node_t *node);
 
-  void ndpi_patricia_set_node_u64(ndpi_patricia_node_t *node, u_int64_t value);
-  u_int64_t ndpi_patricia_get_node_u64(ndpi_patricia_node_t *node);
-  void ndpi_patricia_set_node_data(ndpi_patricia_node_t *node, void *data);
-  void *ndpi_patricia_get_node_data(ndpi_patricia_node_t *node);
-  ndpi_prefix_t *ndpi_patricia_get_node_prefix(ndpi_patricia_node_t *node);
-  u_int16_t ndpi_patricia_get_node_bits(ndpi_patricia_node_t *node);
-  u_int16_t ndpi_patricia_get_maxbits(ndpi_patricia_tree_t *tree);
+  NDPI_STATIC void ndpi_patricia_set_node_u64(ndpi_patricia_node_t *node, u_int64_t value);
+  NDPI_STATIC u_int64_t ndpi_patricia_get_node_u64(ndpi_patricia_node_t *node);
+  NDPI_STATIC void ndpi_patricia_set_node_data(ndpi_patricia_node_t *node, void *data);
+  NDPI_STATIC void *ndpi_patricia_get_node_data(ndpi_patricia_node_t *node);
+  NDPI_STATIC ndpi_prefix_t *ndpi_patricia_get_node_prefix(ndpi_patricia_node_t *node);
+  NDPI_STATIC u_int16_t ndpi_patricia_get_node_bits(ndpi_patricia_node_t *node);
+  NDPI_STATIC u_int16_t ndpi_patricia_get_maxbits(ndpi_patricia_tree_t *tree);
 
   /* ptree (trie) API - a wrapper on top of Patricia that seamlessly handle IPv4 and IPv6 */
-  ndpi_ptree_t* ndpi_ptree_create(void);
-  int ndpi_ptree_insert(ndpi_ptree_t *tree, const ndpi_ip_addr_t *addr, u_int8_t bits, u_int64_t user_data);
-  int ndpi_ptree_match_addr(ndpi_ptree_t *tree, const ndpi_ip_addr_t *addr, u_int64_t *user_data);
-  void ndpi_ptree_destroy(ndpi_ptree_t *tree);
+  NDPI_STATIC ndpi_ptree_t* ndpi_ptree_create(void);
+  NDPI_STATIC int ndpi_ptree_insert(ndpi_ptree_t *tree, const ndpi_ip_addr_t *addr, u_int8_t bits, u_int64_t user_data);
+  NDPI_STATIC int ndpi_ptree_match_addr(ndpi_ptree_t *tree, const ndpi_ip_addr_t *addr, u_int64_t *user_data);
+  NDPI_STATIC void ndpi_ptree_destroy(ndpi_ptree_t *tree);
 
   /* General purpose utilities */
-  u_int64_t ndpi_htonll(u_int64_t v);
-  u_int64_t ndpi_ntohll(u_int64_t v);
-  u_int8_t ndpi_is_valid_protoId(u_int16_t protoId);
-  u_int8_t ndpi_is_encrypted_proto(struct ndpi_detection_module_struct *ndpi_str, ndpi_protocol proto);
+  NDPI_STATIC u_int64_t ndpi_htonll(u_int64_t v);
+  NDPI_STATIC u_int64_t ndpi_ntohll(u_int64_t v);
+  NDPI_STATIC u_int8_t ndpi_is_valid_protoId(u_int16_t protoId);
+  NDPI_STATIC u_int8_t ndpi_is_encrypted_proto(struct ndpi_detection_module_struct *ndpi_str, ndpi_protocol proto);
 
   /* DGA */
-  int ndpi_check_dga_name(struct ndpi_detection_module_struct *ndpi_str,
+  NDPI_STATIC int ndpi_check_dga_name(struct ndpi_detection_module_struct *ndpi_str,
 			  struct ndpi_flow_struct *flow,
 			  char *name, u_int8_t is_hostname);
 #ifndef __KERNEL__    
@@ -1148,7 +1148,7 @@ extern "C" {
    * @param fmt The serialization format (ndpi_serialization_format_json, ndpi_serialization_format_tlv, ndpi_serialization_format_csv)
    * @return 0 on success, a negative number otherwise
    */
-  int ndpi_init_serializer(ndpi_serializer *serializer, ndpi_serialization_format fmt);
+  NDPI_STATIC int ndpi_init_serializer(ndpi_serializer *serializer, ndpi_serialization_format fmt);
 
   /**
    * Initialize a serializer handle. Same as ndpi_init_serializer, but with some low-level settings.
@@ -1157,25 +1157,25 @@ extern "C" {
    * @param buffer_size The initial internal buffer_size
    * @return 0 on success, a negative number otherwise
    */
-  int ndpi_init_serializer_ll(ndpi_serializer *serializer, ndpi_serialization_format fmt, u_int32_t buffer_size);
+  NDPI_STATIC int ndpi_init_serializer_ll(ndpi_serializer *serializer, ndpi_serialization_format fmt, u_int32_t buffer_size);
 
   /**
    * Release all allocated data structure.
    * @param serializer The serializer handle
    */
-  void ndpi_term_serializer(ndpi_serializer *serializer);
+  NDPI_STATIC void ndpi_term_serializer(ndpi_serializer *serializer);
 
   /**
    * Reset the serializer (cleanup the internal buffer to start a new serialization)
    * @param serializer The serializer handle
    */
-  void ndpi_reset_serializer(ndpi_serializer *serializer);
+  NDPI_STATIC void ndpi_reset_serializer(ndpi_serializer *serializer);
 
   /**
    * Hint to not create the header (used to avoid creaign the header when not used)
    * @param serializer The serializer handle
    */
-  void ndpi_serializer_skip_header(ndpi_serializer *serializer);
+  NDPI_STATIC void ndpi_serializer_skip_header(ndpi_serializer *serializer);
 
   /**
    * Serialize a 32-bit unsigned int key and a 32-bit unsigned int value
@@ -1184,7 +1184,7 @@ extern "C" {
    * @param value The field value
    * @return 0 on success, a negative number otherwise
    */
-  int ndpi_serialize_uint32_uint32(ndpi_serializer *serializer, u_int32_t key, u_int32_t value);
+  NDPI_STATIC int ndpi_serialize_uint32_uint32(ndpi_serializer *serializer, u_int32_t key, u_int32_t value);
 
   /**
    * Serialize a 32-bit unsigned int key and a 64-bit unsigned int value
@@ -1193,7 +1193,7 @@ extern "C" {
    * @param value The field value
    * @return 0 on success, a negative number otherwise
    */
-  int ndpi_serialize_uint32_uint64(ndpi_serializer *serializer, u_int32_t key, u_int64_t value);
+  NDPI_STATIC int ndpi_serialize_uint32_uint64(ndpi_serializer *serializer, u_int32_t key, u_int64_t value);
 
   /**
    * Serialize a 32-bit unsigned int key and a 32-bit signed int value
@@ -1202,7 +1202,7 @@ extern "C" {
    * @param value The field value
    * @return 0 on success, a negative number otherwise
    */
-  int ndpi_serialize_uint32_int32(ndpi_serializer *serializer, u_int32_t key, int32_t value);
+  NDPI_STATIC int ndpi_serialize_uint32_int32(ndpi_serializer *serializer, u_int32_t key, int32_t value);
 
   /**
    * Serialize a 32-bit unsigned int key and a 64-bit signed int value
@@ -1211,7 +1211,7 @@ extern "C" {
    * @param value The field value
    * @return 0 on success, a negative number otherwise
    */
-  int ndpi_serialize_uint32_int64(ndpi_serializer *serializer, u_int32_t key, int64_t value);
+  NDPI_STATIC int ndpi_serialize_uint32_int64(ndpi_serializer *serializer, u_int32_t key, int64_t value);
 
   /**
    * Serialize a 32-bit unsigned int key and a float value
@@ -1221,7 +1221,7 @@ extern "C" {
    * @param format The float value format
    * @return 0 on success, a negative number otherwise
    */
-  int ndpi_serialize_uint32_float(ndpi_serializer *serializer, u_int32_t key, float value, const char *format /* e.f. "%.2f" */);
+  NDPI_STATIC int ndpi_serialize_uint32_float(ndpi_serializer *serializer, u_int32_t key, float value, const char *format /* e.f. "%.2f" */);
 
   /**
    * Serialize a 32-bit unsigned int key and a string value
@@ -1230,7 +1230,7 @@ extern "C" {
    * @param value The field value
    * @return 0 on success, a negative number otherwise
    */
-  int ndpi_serialize_uint32_string(ndpi_serializer *serializer, u_int32_t key, const char *value);
+  NDPI_STATIC int ndpi_serialize_uint32_string(ndpi_serializer *serializer, u_int32_t key, const char *value);
 
   /**
    * Serialize a 32-bit unsigned int key and a boolean value (JSON/CSV only, not supported by TLV)
@@ -1239,7 +1239,7 @@ extern "C" {
    * @param value The field value
    * @return 0 on success, a negative number otherwise
    */
-  int ndpi_serialize_uint32_boolean(ndpi_serializer *serializer, u_int32_t key, u_int8_t value);
+  NDPI_STATIC int ndpi_serialize_uint32_boolean(ndpi_serializer *serializer, u_int32_t key, u_int8_t value);
 
   /**
    * Serialize an unterminated string key and a 32-bit signed int value
@@ -1249,7 +1249,7 @@ extern "C" {
    * @param value The field value
    * @return 0 on success, a negative number otherwise
    */
-  int ndpi_serialize_binary_int32(ndpi_serializer *_serializer, const char *key, u_int16_t klen, int32_t value);
+  NDPI_STATIC int ndpi_serialize_binary_int32(ndpi_serializer *_serializer, const char *key, u_int16_t klen, int32_t value);
 
   /**
    * Serialize a string key and a 32-bit signed int value
@@ -1258,7 +1258,7 @@ extern "C" {
    * @param value The field value
    * @return 0 on success, a negative number otherwise
    */
-  int ndpi_serialize_string_int32(ndpi_serializer *serializer, const char *key, int32_t value);
+  NDPI_STATIC int ndpi_serialize_string_int32(ndpi_serializer *serializer, const char *key, int32_t value);
 
   /**
    * Serialize an unterminated string key and a 64-bit signed int value
@@ -1268,7 +1268,7 @@ extern "C" {
    * @param value The field value
    * @return 0 on success, a negative number otherwise
    */
-  int ndpi_serialize_binary_int64(ndpi_serializer *_serializer, const char *key, u_int16_t klen, int64_t value);
+  NDPI_STATIC int ndpi_serialize_binary_int64(ndpi_serializer *_serializer, const char *key, u_int16_t klen, int64_t value);
 
   /**
    * Serialize a string key and a 64-bit signed int value
@@ -1277,7 +1277,7 @@ extern "C" {
    * @param value The field value
    * @return 0 on success, a negative number otherwise
    */
-  int ndpi_serialize_string_int64(ndpi_serializer *serializer, const char *key, int64_t value);
+  NDPI_STATIC int ndpi_serialize_string_int64(ndpi_serializer *serializer, const char *key, int64_t value);
 
   /**
    * Serialize an unterminated string key and a 32-bit unsigned int value
@@ -1287,7 +1287,7 @@ extern "C" {
    * @param value The field value
    * @return 0 on success, a negative number otherwise
    */
-  int ndpi_serialize_binary_uint32(ndpi_serializer *_serializer, const char *key, u_int16_t klen, u_int32_t value);
+  NDPI_STATIC int ndpi_serialize_binary_uint32(ndpi_serializer *_serializer, const char *key, u_int16_t klen, u_int32_t value);
 
   /**
    * Serialize a string key and a 32-bit unsigned int value
@@ -1296,7 +1296,7 @@ extern "C" {
    * @param value The field value
    * @return 0 on success, a negative number otherwise
    */
-  int ndpi_serialize_string_uint32(ndpi_serializer *serializer, const char *key, u_int32_t value);
+  NDPI_STATIC int ndpi_serialize_string_uint32(ndpi_serializer *serializer, const char *key, u_int32_t value);
 
   /**
    * Serialize a string key and a float value
@@ -1306,7 +1306,7 @@ extern "C" {
    * @param format The float format
    * @return 0 on success, a negative number otherwise
    */
-  int ndpi_serialize_string_uint32_format(ndpi_serializer *serializer, const char *key, u_int32_t value, const char *format);
+  NDPI_STATIC int ndpi_serialize_string_uint32_format(ndpi_serializer *serializer, const char *key, u_int32_t value, const char *format);
 
   /**
    * Serialize an unterminated string key and a 64-bit unsigned int value
@@ -1316,7 +1316,7 @@ extern "C" {
    * @param value The field value
    * @return 0 on success, a negative number otherwise
    */
-  int ndpi_serialize_binary_uint64(ndpi_serializer *_serializer, const char *key, u_int16_t klen, u_int64_t value);
+  NDPI_STATIC int ndpi_serialize_binary_uint64(ndpi_serializer *_serializer, const char *key, u_int16_t klen, u_int64_t value);
 
   /**
    * Serialize a string key and a 64-bit unsigned int value
@@ -1325,7 +1325,7 @@ extern "C" {
    * @param value The field value
    * @return 0 on success, a negative number otherwise
    */
-  int ndpi_serialize_string_uint64(ndpi_serializer *serializer, const char *key, u_int64_t value);
+  NDPI_STATIC int ndpi_serialize_string_uint64(ndpi_serializer *serializer, const char *key, u_int64_t value);
 
   /**
    * Serialize an unterminated string key and an unterminated string value
@@ -1336,7 +1336,7 @@ extern "C" {
    * @param vlen The value length
    * @return 0 on success, a negative number otherwise
    */
-  int ndpi_serialize_binary_binary(ndpi_serializer *_serializer, const char *key, u_int16_t klen, const char *_value, u_int16_t vlen);
+  NDPI_STATIC int ndpi_serialize_binary_binary(ndpi_serializer *_serializer, const char *key, u_int16_t klen, const char *_value, u_int16_t vlen);
 
   /**
    * Serialize a string key and a string value
@@ -1345,7 +1345,7 @@ extern "C" {
    * @param value The field value
    * @return 0 on success, a negative number otherwise
    */
-  int ndpi_serialize_string_string(ndpi_serializer *serializer, const char *key, const char *value);
+  NDPI_STATIC int ndpi_serialize_string_string(ndpi_serializer *serializer, const char *key, const char *value);
 
   /**
    * Serialize a string key and a string value
@@ -1355,7 +1355,7 @@ extern "C" {
    * @param value_len The field value length
    * @return 0 on success, a negative number otherwise
    */
-  int ndpi_serialize_string_string_len(ndpi_serializer *serializer, const char *key,
+  NDPI_STATIC int ndpi_serialize_string_string_len(ndpi_serializer *serializer, const char *key,
 				       const char *value, u_int16_t value_len);
 
   /**
@@ -1366,7 +1366,7 @@ extern "C" {
    * @param vlen The value length
    * @return 0 on success, a negative number otherwise
    */
-  int ndpi_serialize_string_binary(ndpi_serializer *serializer, const char *key, const char *_value, u_int16_t vlen);
+  NDPI_STATIC int ndpi_serialize_string_binary(ndpi_serializer *serializer, const char *key, const char *_value, u_int16_t vlen);
 
   /**
    * Serialize a string key and a raw value (this is a string which is added to the JSON without any quote or escaping)
@@ -1376,7 +1376,7 @@ extern "C" {
    * @param vlen The value length
    * @return 0 on success, a negative number otherwise
    */
-  int ndpi_serialize_string_raw(ndpi_serializer *_serializer, const char *key, const char *_value, u_int16_t vlen);
+  NDPI_STATIC int ndpi_serialize_string_raw(ndpi_serializer *_serializer, const char *key, const char *_value, u_int16_t vlen);
 
   /**
    * Serialize an unterminated string key and a float value
@@ -1387,7 +1387,7 @@ extern "C" {
    * @param format The float format
    * @return 0 on success, a negative number otherwise
    */
-  int ndpi_serialize_binary_float(ndpi_serializer *_serializer, const char *key, u_int16_t klen, float value, const char *format /* e.f. "%.2f" */);
+  NDPI_STATIC int ndpi_serialize_binary_float(ndpi_serializer *_serializer, const char *key, u_int16_t klen, float value, const char *format /* e.f. "%.2f" */);
 
   /**
    * Serialize a string key and a a float value
@@ -1397,7 +1397,7 @@ extern "C" {
    * @param format The float format
    * @return 0 on success, a negative number otherwise
    */
-  int ndpi_serialize_string_float(ndpi_serializer *serializer, const char *key, float value, const char *format /* e.f. "%.2f" */);
+  NDPI_STATIC int ndpi_serialize_string_float(ndpi_serializer *serializer, const char *key, float value, const char *format /* e.f. "%.2f" */);
 
   /**
    * Serialize an unterminated string key and a boolean value (JSON/CSV only, not supported by TLV)
@@ -1407,7 +1407,7 @@ extern "C" {
    * @param value The field value
    * @return 0 on success, a negative number otherwise
    */
-  int ndpi_serialize_binary_boolean(ndpi_serializer *_serializer, const char *key, u_int16_t klen, u_int8_t value);
+  NDPI_STATIC int ndpi_serialize_binary_boolean(ndpi_serializer *_serializer, const char *key, u_int16_t klen, u_int8_t value);
 
   /**
    * Serialize a string key and a boolean value (JSON/CSV only, not supported by TLV)
@@ -1416,7 +1416,7 @@ extern "C" {
    * @param value The field value
    * @return 0 on success, a negative number otherwise
    */
-  int ndpi_serialize_string_boolean(ndpi_serializer *serializer, const char *key, u_int8_t value);
+  NDPI_STATIC int ndpi_serialize_string_boolean(ndpi_serializer *serializer, const char *key, u_int8_t value);
 
   /**
    * Serialize a raw record in an array (this is a low-level function and its use is not recommended)
@@ -1425,7 +1425,7 @@ extern "C" {
    * @param record_len The record length
    * @return 0 on success, a negative number otherwise
    */
-  int ndpi_serialize_raw_record(ndpi_serializer *_serializer, u_char *record, u_int32_t record_len);
+  NDPI_STATIC int ndpi_serialize_raw_record(ndpi_serializer *_serializer, u_char *record, u_int32_t record_len);
 
   /**
    * Serialize an End-Of-Record (the current object becomes is terminated and added to an array,
@@ -1433,7 +1433,7 @@ extern "C" {
    * @param serializer The serializer handle
    * @return 0 on success, a negative number otherwise
    */
-  int ndpi_serialize_end_of_record(ndpi_serializer *serializer);
+  NDPI_STATIC int ndpi_serialize_end_of_record(ndpi_serializer *serializer);
 
   /**
    * Serialize the start of a list with an unterminated string key, where the next serialized items
@@ -1443,7 +1443,7 @@ extern "C" {
    * @param klen The key length
    * @return 0 on success, a negative number otherwise
    */
-  int ndpi_serialize_start_of_list_binary(ndpi_serializer *_serializer, const char *key, u_int16_t klen);
+  NDPI_STATIC int ndpi_serialize_start_of_list_binary(ndpi_serializer *_serializer, const char *key, u_int16_t klen);
 
   /**
    * Serialize the start of a list, where the next serialized items will be added (note: keys for
@@ -1453,14 +1453,14 @@ extern "C" {
    * @param value The field value
    * @return 0 on success, a negative number otherwise
    */
-  int ndpi_serialize_start_of_list(ndpi_serializer *serializer, const char *key);
+  NDPI_STATIC int ndpi_serialize_start_of_list(ndpi_serializer *serializer, const char *key);
 
   /**
    * Serialize the end of a list
    * @param serializer The serializer handle
    * @return 0 on success, a negative number otherwise
    */
-  int ndpi_serialize_end_of_list(ndpi_serializer *serializer);
+  NDPI_STATIC int ndpi_serialize_end_of_list(ndpi_serializer *serializer);
 
   /**
    * Serialize the start of a block with an unterminated string key
@@ -1469,7 +1469,7 @@ extern "C" {
    * @param klen The key length
    * @return 0 on success, a negative number otherwise
    */
-  int ndpi_serialize_start_of_block_binary(ndpi_serializer *_serializer, const char *key, u_int16_t klen);
+  NDPI_STATIC int ndpi_serialize_start_of_block_binary(ndpi_serializer *_serializer, const char *key, u_int16_t klen);
 
   /**
    * Serialize the start of a block with a string key
@@ -1477,7 +1477,7 @@ extern "C" {
    * @param key The field name or ID
    * @return 0 on success, a negative number otherwise
    */
-  int ndpi_serialize_start_of_block(ndpi_serializer *serializer, const char *key);
+  NDPI_STATIC int ndpi_serialize_start_of_block(ndpi_serializer *serializer, const char *key);
 
   /**
    * Serialize the start of a block with a numeric key
@@ -1485,7 +1485,7 @@ extern "C" {
    * @param key The numeric key as 32-bit unsigned integer.
    * @return 0 on success, a negative number otherwise
    */
-  int ndpi_serialize_start_of_block_uint32(ndpi_serializer *serializer, u_int32_t key);
+  NDPI_STATIC int ndpi_serialize_start_of_block_uint32(ndpi_serializer *serializer, u_int32_t key);
 
   /**
    * Serialize the end of a block
@@ -1494,7 +1494,7 @@ extern "C" {
    * @param value The field value
    * @return 0 on success, a negative number otherwise
    */
-  int ndpi_serialize_end_of_block(ndpi_serializer *serializer);
+  NDPI_STATIC int ndpi_serialize_end_of_block(ndpi_serializer *serializer);
 
   /**
    * Return the serialized buffer
@@ -1502,21 +1502,21 @@ extern "C" {
    * @param buffer_len The buffer length (out)
    * @return The buffer
    */
-  char* ndpi_serializer_get_buffer(ndpi_serializer *serializer, u_int32_t *buffer_len);
+  NDPI_STATIC char* ndpi_serializer_get_buffer(ndpi_serializer *serializer, u_int32_t *buffer_len);
 
   /**
    * Return the current serialized buffer length
    * @param serializer The serializer handle
    * @return The buffer length
    */
-  u_int32_t ndpi_serializer_get_buffer_len(ndpi_serializer *serializer);
+  NDPI_STATIC u_int32_t ndpi_serializer_get_buffer_len(ndpi_serializer *serializer);
 
   /**
    * Return the real internal buffer size (containing the serialized buffer)
    * @param serializer The serializer handle
    * @return The internal buffer size
    */
-  u_int32_t ndpi_serializer_get_internal_buffer_size(ndpi_serializer *serializer);
+  NDPI_STATIC u_int32_t ndpi_serializer_get_internal_buffer_size(ndpi_serializer *serializer);
 
   /**
    * Change the serializer buffer length
@@ -1524,21 +1524,21 @@ extern "C" {
    * @param l The new buffer length
    * @return 0 on success, a negative number otherwise
    */
-  int ndpi_serializer_set_buffer_len(ndpi_serializer *serializer, u_int32_t l);
+  NDPI_STATIC int ndpi_serializer_set_buffer_len(ndpi_serializer *serializer, u_int32_t l);
 
   /**
    * Return the configured serialization format
    * @param serializer The serializer handle
    * @return The serialization format
    */
-  ndpi_serialization_format ndpi_serializer_get_format(ndpi_serializer *serializer);
+  NDPI_STATIC ndpi_serialization_format ndpi_serializer_get_format(ndpi_serializer *serializer);
 
   /**
    * Set the CSV separator
    * @param serializer The serializer handle
    * @param separator The separator
    */
-  void ndpi_serializer_set_csv_separator(ndpi_serializer *serializer, char separator);
+  NDPI_STATIC void ndpi_serializer_set_csv_separator(ndpi_serializer *serializer, char separator);
 
   /**
    * Return the header automatically built from keys (CSV only)
@@ -1546,134 +1546,134 @@ extern "C" {
    * @param buffer_len The buffer length (out)
    * @return The header
    */
-  char* ndpi_serializer_get_header(ndpi_serializer *serializer, u_int32_t *buffer_len);
+  NDPI_STATIC char* ndpi_serializer_get_header(ndpi_serializer *serializer, u_int32_t *buffer_len);
 
   /**
    * Create a snapshot of the internal buffer for later rollback (ndpi_serializer_rollback_snapshot)
    * @param serializer The serializer handle
    */
-  void ndpi_serializer_create_snapshot(ndpi_serializer *serializer);
+  NDPI_STATIC void ndpi_serializer_create_snapshot(ndpi_serializer *serializer);
 
   /**
    * Rollback to the latest snapshot
    * @param serializer The serializer handle
    */
-  void ndpi_serializer_rollback_snapshot(ndpi_serializer *serializer);
+  NDPI_STATIC void ndpi_serializer_rollback_snapshot(ndpi_serializer *serializer);
 
   /* Deserializer (supports TLV only) */
 
-  int ndpi_init_deserializer(ndpi_deserializer *deserializer,
+  NDPI_STATIC int ndpi_init_deserializer(ndpi_deserializer *deserializer,
 			     ndpi_serializer *serializer);
-  int ndpi_init_deserializer_buf(ndpi_deserializer *deserializer,
+  NDPI_STATIC int ndpi_init_deserializer_buf(ndpi_deserializer *deserializer,
 				 u_int8_t *serialized_buffer,
 				 u_int32_t serialized_buffer_len);
 
   ndpi_serialization_format ndpi_deserialize_get_format(ndpi_deserializer *_deserializer);
   ndpi_serialization_type ndpi_deserialize_get_item_type(ndpi_deserializer *deserializer, ndpi_serialization_type *key_type);
-  int ndpi_deserialize_next(ndpi_deserializer *deserializer);
+  NDPI_STATIC int ndpi_deserialize_next(ndpi_deserializer *deserializer);
 
-  int ndpi_deserialize_key_uint32(ndpi_deserializer *deserializer, u_int32_t *key);
-  int ndpi_deserialize_key_string(ndpi_deserializer *deserializer, ndpi_string *key);
+  NDPI_STATIC int ndpi_deserialize_key_uint32(ndpi_deserializer *deserializer, u_int32_t *key);
+  NDPI_STATIC int ndpi_deserialize_key_string(ndpi_deserializer *deserializer, ndpi_string *key);
 
-  int ndpi_deserialize_value_uint32(ndpi_deserializer *deserializer, u_int32_t *value);
-  int ndpi_deserialize_value_uint64(ndpi_deserializer *deserializer, u_int64_t *value);
-  int ndpi_deserialize_value_int32(ndpi_deserializer *deserializer, int32_t *value);
-  int ndpi_deserialize_value_int64(ndpi_deserializer *deserializer, int64_t *value);
-  int ndpi_deserialize_value_float(ndpi_deserializer *deserializer, float *value);
-  int ndpi_deserialize_value_string(ndpi_deserializer *deserializer, ndpi_string *value);
+  NDPI_STATIC int ndpi_deserialize_value_uint32(ndpi_deserializer *deserializer, u_int32_t *value);
+  NDPI_STATIC int ndpi_deserialize_value_uint64(ndpi_deserializer *deserializer, u_int64_t *value);
+  NDPI_STATIC int ndpi_deserialize_value_int32(ndpi_deserializer *deserializer, int32_t *value);
+  NDPI_STATIC int ndpi_deserialize_value_int64(ndpi_deserializer *deserializer, int64_t *value);
+  NDPI_STATIC int ndpi_deserialize_value_float(ndpi_deserializer *deserializer, float *value);
+  NDPI_STATIC int ndpi_deserialize_value_string(ndpi_deserializer *deserializer, ndpi_string *value);
 
-  int ndpi_deserialize_clone_item(ndpi_deserializer *deserializer, ndpi_serializer *serializer);
-  int ndpi_deserialize_clone_all(ndpi_deserializer *deserializer, ndpi_serializer *serializer);
+  NDPI_STATIC int ndpi_deserialize_clone_item(ndpi_deserializer *deserializer, ndpi_serializer *serializer);
+  NDPI_STATIC int ndpi_deserialize_clone_all(ndpi_deserializer *deserializer, ndpi_serializer *serializer);
 
   /*
    * Escape a string to be suitable for a JSON value, adding double quotes, and terminating the string with a null byte.
    * It is recommended to provide a destination buffer (dst) which is as large as double the source buffer (src) at least.
    * Upon successful return, these functions return the number of characters printed (excluding the null byte used to terminate the string).
    */
-  int ndpi_json_string_escape(const char *src, int src_len, char *dst, int dst_max_len);
+  NDPI_STATIC int ndpi_json_string_escape(const char *src, int src_len, char *dst, int dst_max_len);
 
   /* Data analysis */
   struct ndpi_analyze_struct* ndpi_alloc_data_analysis(u_int16_t _max_series_len);
-  void ndpi_init_data_analysis(struct ndpi_analyze_struct *s, u_int16_t _max_series_len);
-  void ndpi_free_data_analysis(struct ndpi_analyze_struct *d, u_int8_t free_pointer);
-  void ndpi_reset_data_analysis(struct ndpi_analyze_struct *d);
-  void ndpi_data_add_value(struct ndpi_analyze_struct *s, const u_int32_t value);
+  NDPI_STATIC void ndpi_init_data_analysis(struct ndpi_analyze_struct *s, u_int16_t _max_series_len);
+  NDPI_STATIC void ndpi_free_data_analysis(struct ndpi_analyze_struct *d, u_int8_t free_pointer);
+  NDPI_STATIC void ndpi_reset_data_analysis(struct ndpi_analyze_struct *d);
+  NDPI_STATIC void ndpi_data_add_value(struct ndpi_analyze_struct *s, const u_int32_t value);
 
   /* Sliding-window only */
-  float ndpi_data_window_average(struct ndpi_analyze_struct *s);
-  float ndpi_data_window_variance(struct ndpi_analyze_struct *s);
-  float ndpi_data_window_stddev(struct ndpi_analyze_struct *s);
+  NDPI_STATIC float ndpi_data_window_average(struct ndpi_analyze_struct *s);
+  NDPI_STATIC float ndpi_data_window_variance(struct ndpi_analyze_struct *s);
+  NDPI_STATIC float ndpi_data_window_stddev(struct ndpi_analyze_struct *s);
 
   /* All data */
-  float ndpi_data_average(struct ndpi_analyze_struct *s);
-  float ndpi_data_entropy(struct ndpi_analyze_struct *s);
-  float ndpi_data_variance(struct ndpi_analyze_struct *s);
-  float ndpi_data_stddev(struct ndpi_analyze_struct *s);
-  float ndpi_data_mean(struct ndpi_analyze_struct *s);
-  u_int32_t ndpi_data_last(struct ndpi_analyze_struct *s);
-  u_int32_t ndpi_data_min(struct ndpi_analyze_struct *s);
-  u_int32_t ndpi_data_max(struct ndpi_analyze_struct *s);
-  float ndpi_data_ratio(u_int32_t sent, u_int32_t rcvd);
+  NDPI_STATIC float ndpi_data_average(struct ndpi_analyze_struct *s);
+  NDPI_STATIC float ndpi_data_entropy(struct ndpi_analyze_struct *s);
+  NDPI_STATIC float ndpi_data_variance(struct ndpi_analyze_struct *s);
+  NDPI_STATIC float ndpi_data_stddev(struct ndpi_analyze_struct *s);
+  NDPI_STATIC float ndpi_data_mean(struct ndpi_analyze_struct *s);
+  NDPI_STATIC u_int32_t ndpi_data_last(struct ndpi_analyze_struct *s);
+  NDPI_STATIC u_int32_t ndpi_data_min(struct ndpi_analyze_struct *s);
+  NDPI_STATIC u_int32_t ndpi_data_max(struct ndpi_analyze_struct *s);
+  NDPI_STATIC float ndpi_data_ratio(u_int32_t sent, u_int32_t rcvd);
 
   /* ******************************* */
 
-  int ndpi_alloc_rsi(struct ndpi_rsi_struct *s, u_int16_t num_learning_values);
-  void  ndpi_free_rsi(struct ndpi_rsi_struct *s);
-  float ndpi_rsi_add_value(struct ndpi_rsi_struct *s, const u_int32_t value);
+  NDPI_STATIC int ndpi_alloc_rsi(struct ndpi_rsi_struct *s, u_int16_t num_learning_values);
+  NDPI_STATIC void  ndpi_free_rsi(struct ndpi_rsi_struct *s);
+  NDPI_STATIC float ndpi_rsi_add_value(struct ndpi_rsi_struct *s, const u_int32_t value);
 
   /* ******************************* */
 
-  int  ndpi_hw_init(struct ndpi_hw_struct *hw, u_int16_t num_periods, u_int8_t additive_seeasonal,
+  NDPI_STATIC int  ndpi_hw_init(struct ndpi_hw_struct *hw, u_int16_t num_periods, u_int8_t additive_seeasonal,
 		    double alpha, double beta, double gamma, float significance);
-  void ndpi_hw_free(struct ndpi_hw_struct *hw);
-  int  ndpi_hw_add_value(struct ndpi_hw_struct *hw, const u_int64_t value, double *forecast,  double *confidence_band);
+  NDPI_STATIC void ndpi_hw_free(struct ndpi_hw_struct *hw);
+  NDPI_STATIC int  ndpi_hw_add_value(struct ndpi_hw_struct *hw, const u_int64_t value, double *forecast,  double *confidence_band);
 
   /* ******************************* */
 
-  int ndpi_ses_init(struct ndpi_ses_struct *ses, double alpha, float significance);
-  int ndpi_ses_add_value(struct ndpi_ses_struct *ses, const u_int64_t _value, double *forecast, double *confidence_band);
-  void ndpi_ses_fitting(double *values, u_int32_t num_values, float *ret_alpha);
+  NDPI_STATIC int ndpi_ses_init(struct ndpi_ses_struct *ses, double alpha, float significance);
+  NDPI_STATIC int ndpi_ses_add_value(struct ndpi_ses_struct *ses, const u_int64_t _value, double *forecast, double *confidence_band);
+  NDPI_STATIC void ndpi_ses_fitting(double *values, u_int32_t num_values, float *ret_alpha);
 
   /* ******************************* */
 
-  int ndpi_des_init(struct ndpi_des_struct *des, double alpha, double beta, float significance);
-  int ndpi_des_add_value(struct ndpi_des_struct *des, const u_int64_t _value, double *forecast, double *confidence_band);
-  void ndpi_des_fitting(double *values, u_int32_t num_values, float *ret_alpha, float *ret_beta);
+  NDPI_STATIC int ndpi_des_init(struct ndpi_des_struct *des, double alpha, double beta, float significance);
+  NDPI_STATIC int ndpi_des_add_value(struct ndpi_des_struct *des, const u_int64_t _value, double *forecast, double *confidence_band);
+  NDPI_STATIC void ndpi_des_fitting(double *values, u_int32_t num_values, float *ret_alpha, float *ret_beta);
 
   /* ******************************* */
 
-  int   ndpi_jitter_init(struct ndpi_jitter_struct *hw, u_int16_t num_periods);
-  void  ndpi_jitter_free(struct ndpi_jitter_struct *hw);
-  float ndpi_jitter_add_value(struct ndpi_jitter_struct *s, const float value);
+  NDPI_STATIC int   ndpi_jitter_init(struct ndpi_jitter_struct *hw, u_int16_t num_periods);
+  NDPI_STATIC void  ndpi_jitter_free(struct ndpi_jitter_struct *hw);
+  NDPI_STATIC float ndpi_jitter_add_value(struct ndpi_jitter_struct *s, const float value);
 
   /* ******************************* */
 
-  const char* ndpi_data_ratio2str(float ratio);
+  NDPI_STATIC const char* ndpi_data_ratio2str(float ratio);
 
-  void ndpi_data_print_window_values(struct ndpi_analyze_struct *s); /* debug */
+  NDPI_STATIC void ndpi_data_print_window_values(struct ndpi_analyze_struct *s); /* debug */
 
-  ndpi_risk_enum ndpi_validate_url(char *url);
+  NDPI_STATIC ndpi_risk_enum ndpi_validate_url(char *url);
 
-  u_int8_t ndpi_is_protocol_detected(struct ndpi_detection_module_struct *ndpi_str,
+  NDPI_STATIC u_int8_t ndpi_is_protocol_detected(struct ndpi_detection_module_struct *ndpi_str,
 				     ndpi_protocol proto);
-  void ndpi_serialize_risk(ndpi_serializer *serializer, ndpi_risk risk);
-  void ndpi_serialize_risk_score(ndpi_serializer *serializer, ndpi_risk_enum risk);
-  void ndpi_serialize_confidence(ndpi_serializer *serializer, ndpi_confidence_t confidence);
-  void ndpi_serialize_proto(struct ndpi_detection_module_struct *ndpi_struct,
+  NDPI_STATIC void ndpi_serialize_risk(ndpi_serializer *serializer, ndpi_risk risk);
+  NDPI_STATIC void ndpi_serialize_risk_score(ndpi_serializer *serializer, ndpi_risk_enum risk);
+  NDPI_STATIC void ndpi_serialize_confidence(ndpi_serializer *serializer, ndpi_confidence_t confidence);
+  NDPI_STATIC void ndpi_serialize_proto(struct ndpi_detection_module_struct *ndpi_struct,
                             ndpi_serializer *serializer,
                             ndpi_risk_enum risk,
                             ndpi_confidence_t confidence,
                             ndpi_protocol l7_protocol);
 #endif /* KERNEL */
-  const char* ndpi_risk2str(ndpi_risk_enum risk);
-  const char* ndpi_severity2str(ndpi_risk_severity s);
-  ndpi_risk_info* ndpi_risk2severity(ndpi_risk_enum risk);
-  u_int16_t ndpi_risk2score(ndpi_risk risk,
+  NDPI_STATIC const char* ndpi_risk2str(ndpi_risk_enum risk);
+  NDPI_STATIC const char* ndpi_severity2str(ndpi_risk_severity s);
+  NDPI_STATIC ndpi_risk_info* ndpi_risk2severity(ndpi_risk_enum risk);
+  NDPI_STATIC u_int16_t ndpi_risk2score(ndpi_risk risk,
 			    u_int16_t *client_score, u_int16_t *server_score);
 
-  u_int8_t ndpi_check_issuerdn_risk_exception(struct ndpi_detection_module_struct *ndpi_str,
+  NDPI_STATIC u_int8_t ndpi_check_issuerdn_risk_exception(struct ndpi_detection_module_struct *ndpi_str,
 					      char *issuerDN);    
-  u_int8_t ndpi_check_flow_risk_exceptions(struct ndpi_detection_module_struct *ndpi_str,
+  NDPI_STATIC u_int8_t ndpi_check_flow_risk_exceptions(struct ndpi_detection_module_struct *ndpi_str,
 					   u_int num_params,
 					   ndpi_risk_params params[]);
   
@@ -1682,31 +1682,31 @@ extern "C" {
   /* HyperLogLog cardinality estimator */
 
   /* Memory lifecycle */
-  int ndpi_hll_init(struct ndpi_hll *hll, u_int8_t bits);
-  void ndpi_hll_destroy(struct ndpi_hll *hll);
-  void ndpi_hll_reset(struct ndpi_hll *hll);
+  NDPI_STATIC int ndpi_hll_init(struct ndpi_hll *hll, u_int8_t bits);
+  NDPI_STATIC void ndpi_hll_destroy(struct ndpi_hll *hll);
+  NDPI_STATIC void ndpi_hll_reset(struct ndpi_hll *hll);
 
   /* Add values */
-  void ndpi_hll_add(struct ndpi_hll *hll, const char *data, size_t data_len);
-  void ndpi_hll_add_number(struct ndpi_hll *hll, u_int32_t value) ;
+  NDPI_STATIC void ndpi_hll_add(struct ndpi_hll *hll, const char *data, size_t data_len);
+  NDPI_STATIC void ndpi_hll_add_number(struct ndpi_hll *hll, u_int32_t value) ;
 
   /* Get cardinality estimation */
-  double ndpi_hll_count(struct ndpi_hll *hll);
+  NDPI_STATIC double ndpi_hll_count(struct ndpi_hll *hll);
 
   /* ******************************* */
 
-  int  ndpi_init_bin(struct ndpi_bin *b, enum ndpi_bin_family f, u_int16_t num_bins);
-  void ndpi_free_bin(struct ndpi_bin *b);
-  struct ndpi_bin* ndpi_clone_bin(struct ndpi_bin *b);
-  void ndpi_inc_bin(struct ndpi_bin *b, u_int16_t slot_id, u_int64_t val);
-  void ndpi_set_bin(struct ndpi_bin *b, u_int16_t slot_id, u_int64_t value);
-  u_int64_t ndpi_get_bin_value(struct ndpi_bin *b, u_int16_t slot_id);
-  void ndpi_reset_bin(struct ndpi_bin *b);
-  void ndpi_normalize_bin(struct ndpi_bin *b);
-  char* ndpi_print_bin(struct ndpi_bin *b, u_int8_t normalize_first, char *out_buf, u_int out_buf_len);
-  float ndpi_bin_similarity(struct ndpi_bin *b1, struct ndpi_bin *b2,
+  NDPI_STATIC int  ndpi_init_bin(struct ndpi_bin *b, enum ndpi_bin_family f, u_int16_t num_bins);
+  NDPI_STATIC void ndpi_free_bin(struct ndpi_bin *b);
+  NDPI_STATIC struct ndpi_bin* ndpi_clone_bin(struct ndpi_bin *b);
+  NDPI_STATIC void ndpi_inc_bin(struct ndpi_bin *b, u_int16_t slot_id, u_int64_t val);
+  NDPI_STATIC void ndpi_set_bin(struct ndpi_bin *b, u_int16_t slot_id, u_int64_t value);
+  NDPI_STATIC u_int64_t ndpi_get_bin_value(struct ndpi_bin *b, u_int16_t slot_id);
+  NDPI_STATIC void ndpi_reset_bin(struct ndpi_bin *b);
+  NDPI_STATIC void ndpi_normalize_bin(struct ndpi_bin *b);
+  NDPI_STATIC char* ndpi_print_bin(struct ndpi_bin *b, u_int8_t normalize_first, char *out_buf, u_int out_buf_len);
+  NDPI_STATIC float ndpi_bin_similarity(struct ndpi_bin *b1, struct ndpi_bin *b2,
 			    u_int8_t normalize_first, float similarity_max_threshold);
-  int ndpi_cluster_bins(struct ndpi_bin *bins, u_int16_t num_bins,
+  NDPI_STATIC int ndpi_cluster_bins(struct ndpi_bin *bins, u_int16_t num_bins,
 			u_int8_t num_clusters, u_int16_t *cluster_ids,
 			struct ndpi_bin *centroids);
 
@@ -1722,11 +1722,11 @@ extern "C" {
    *
    * @return The number of outliers found
   */
-  u_int ndpi_find_outliers(u_int32_t *values, bool *outliers, u_int32_t num_values);
+  NDPI_STATIC u_int ndpi_find_outliers(u_int32_t *values, bool *outliers, u_int32_t num_values);
 
   /* ******************************* */
 
-  u_int32_t ndpi_quick_16_byte_hash(u_int8_t *in_16_bytes_long);
+  NDPI_STATIC u_int32_t ndpi_quick_16_byte_hash(u_int8_t *in_16_bytes_long);
 
   extern int ndpi_stun_cache_enable;
 
@@ -1738,7 +1738,7 @@ extern "C" {
    * @return 0 on success, 1 otherwise
    *
    */
-  int ndpi_hash_init(ndpi_str_hash **h);
+  NDPI_STATIC int ndpi_hash_init(ndpi_str_hash **h);
 
   /**
    * Free the hashmap.
@@ -1748,7 +1748,7 @@ extern "C" {
    *                        called for each element in the hashmap [in]
    *
    */
-  void ndpi_hash_free(ndpi_str_hash **h, void (*cleanup_func)(ndpi_str_hash *h));
+  NDPI_STATIC void ndpi_hash_free(ndpi_str_hash **h, void (*cleanup_func)(ndpi_str_hash *h));
 
   /**
    * Search for an entry in the hashmap.
@@ -1762,7 +1762,7 @@ extern "C" {
    * @return 0 if an entry with that key was found, 1 otherwise
    *
    */
-  int ndpi_hash_find_entry(ndpi_str_hash *h, char *key, u_int key_len, void **value);
+  NDPI_STATIC int ndpi_hash_find_entry(ndpi_str_hash *h, char *key, u_int key_len, void **value);
 
   /**
    * Add an entry to the hashmap.
@@ -1775,27 +1775,27 @@ extern "C" {
    * @return 0 if the entry was added, 1 otherwise
    *
    */
-  int ndpi_hash_add_entry(ndpi_str_hash **h, char *key, u_int8_t key_len, void *value);
+  NDPI_STATIC int ndpi_hash_add_entry(ndpi_str_hash **h, char *key, u_int8_t key_len, void *value);
 
   /* ******************************* */
 
 #ifndef __KERNEL__
-  int ndpi_load_geoip(struct ndpi_detection_module_struct *ndpi_str,
+  NDPI_STATIC int ndpi_load_geoip(struct ndpi_detection_module_struct *ndpi_str,
 		      const char *ip_city_data, const char *ip_as_data);
-  void ndpi_free_geoip(struct ndpi_detection_module_struct *ndpi_str);
-  int ndpi_get_geoip_asn(struct ndpi_detection_module_struct *ndpi_str,
+  NDPI_STATIC void ndpi_free_geoip(struct ndpi_detection_module_struct *ndpi_str);
+  NDPI_STATIC int ndpi_get_geoip_asn(struct ndpi_detection_module_struct *ndpi_str,
 			 char *ip, u_int32_t *asn);
-  int ndpi_get_geoip_country_continent(struct ndpi_detection_module_struct *ndpi_str, char *ip,
+  NDPI_STATIC int ndpi_get_geoip_country_continent(struct ndpi_detection_module_struct *ndpi_str, char *ip,
 				       char *country_code, u_int8_t country_code_len,
 				       char *continent, u_int8_t continent_len);
 #endif
 
   /* ******************************* */
 
-  char* ndpi_get_flow_name(struct ndpi_flow_struct *flow);
+  NDPI_STATIC char* ndpi_get_flow_name(struct ndpi_flow_struct *flow);
 
 #ifndef __KERNEL__
-  struct ndpi_packet_struct *
+  NDPI_STATIC struct ndpi_packet_struct *
   ndpi_get_packet_struct(struct ndpi_detection_module_struct *ndpi_mod);
 #else
   static inline struct ndpi_packet_struct *
@@ -1807,27 +1807,27 @@ extern "C" {
   /* ******************************* */
 
 #ifndef __KERNEL__
-  ndpi_bitmap* ndpi_bitmap_alloc(void);
-  void ndpi_bitmap_free(ndpi_bitmap* b);
-  u_int64_t ndpi_bitmap_cardinality(ndpi_bitmap* b);
-  void ndpi_bitmap_set(ndpi_bitmap* b, u_int32_t value);
-  void ndpi_bitmap_unset(ndpi_bitmap* b, u_int32_t value);
-  bool ndpi_bitmap_isset(ndpi_bitmap* b, u_int32_t value);
-  void ndpi_bitmap_clear(ndpi_bitmap* b);
+  NDPI_STATIC ndpi_bitmap* ndpi_bitmap_alloc(void);
+  NDPI_STATIC void ndpi_bitmap_free(ndpi_bitmap* b);
+  NDPI_STATIC u_int64_t ndpi_bitmap_cardinality(ndpi_bitmap* b);
+  NDPI_STATIC void ndpi_bitmap_set(ndpi_bitmap* b, u_int32_t value);
+  NDPI_STATIC void ndpi_bitmap_unset(ndpi_bitmap* b, u_int32_t value);
+  NDPI_STATIC bool ndpi_bitmap_isset(ndpi_bitmap* b, u_int32_t value);
+  NDPI_STATIC void ndpi_bitmap_clear(ndpi_bitmap* b);
 
-  size_t ndpi_bitmap_serialize(ndpi_bitmap* b, char **buf);
-  ndpi_bitmap* ndpi_bitmap_deserialize(char *buf);
+  NDPI_STATIC size_t ndpi_bitmap_serialize(ndpi_bitmap* b, char **buf);
+  NDPI_STATIC ndpi_bitmap* ndpi_bitmap_deserialize(char *buf);
 
-  void ndpi_bitmap_and(ndpi_bitmap* a, ndpi_bitmap* b_and);
-  void ndpi_bitmap_or(ndpi_bitmap* a, ndpi_bitmap* b_or);
+  NDPI_STATIC void ndpi_bitmap_and(ndpi_bitmap* a, ndpi_bitmap* b_and);
+  NDPI_STATIC void ndpi_bitmap_or(ndpi_bitmap* a, ndpi_bitmap* b_or);
 
-  ndpi_bitmap_iterator* ndpi_bitmap_iterator_alloc(ndpi_bitmap* b);
-  void ndpi_bitmap_iterator_free(ndpi_bitmap* b);
-  bool ndpi_bitmap_iterator_next(ndpi_bitmap_iterator* i, uint32_t *value);
+  NDPI_STATIC ndpi_bitmap_iterator* ndpi_bitmap_iterator_alloc(ndpi_bitmap* b);
+  NDPI_STATIC void ndpi_bitmap_iterator_free(ndpi_bitmap* b);
+  NDPI_STATIC bool ndpi_bitmap_iterator_next(ndpi_bitmap_iterator* i, uint32_t *value);
 
   /* ******************************* */
 
-  char* ndpi_get_flow_risk_info(struct ndpi_flow_struct *flow,
+  NDPI_STATIC char* ndpi_get_flow_risk_info(struct ndpi_flow_struct *flow,
 				char *out, u_int out_len,
 				u_int8_t use_json);
 #endif

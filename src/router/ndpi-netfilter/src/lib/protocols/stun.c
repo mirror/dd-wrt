@@ -49,7 +49,7 @@ int ndpi_stun_cache_enable=
 
 /* ************************************************************ */
 
-u_int32_t get_stun_lru_key(struct ndpi_packet_struct *packet, u_int8_t rev) {
+NDPI_STATIC u_int32_t get_stun_lru_key(struct ndpi_packet_struct *packet, u_int8_t rev) {
   if(rev)
     return(ntohl(packet->iph->daddr) + ntohs(packet->udp->dest));
   else
@@ -58,7 +58,7 @@ u_int32_t get_stun_lru_key(struct ndpi_packet_struct *packet, u_int8_t rev) {
 
 /* ************************************************************ */
 
-void ndpi_int_stun_add_connection(struct ndpi_detection_module_struct *ndpi_struct,
+NDPI_STATIC void ndpi_int_stun_add_connection(struct ndpi_detection_module_struct *ndpi_struct,
 				  struct ndpi_flow_struct *flow,
 				  u_int proto, u_int app_proto) {
   ndpi_confidence_t confidence = NDPI_CONFIDENCE_DPI;
