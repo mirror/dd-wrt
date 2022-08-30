@@ -1,12 +1,14 @@
+#ifndef NDPI_MAIN_COMMON_H
+#define NDPI_MAIN_COMMON_H
 
 struct ndpi_net;
 
-int inet_ntop_port(int family,void *ip, u_int16_t port, char *lbuf, size_t bufsize);
-int ndpi_delete_acct(struct ndpi_net *n,int all);
-ssize_t nflow_read(struct ndpi_net *n, char __user *buf,
+NDPI_STATIC int inet_ntop_port(int family,void *ip, u_int16_t port, char *lbuf, size_t bufsize);
+NDPI_STATIC int ndpi_delete_acct(struct ndpi_net *n,int all);
+NDPI_STATIC ssize_t nflow_read(struct ndpi_net *n, char __user *buf,
 	            size_t count, loff_t *ppos);
-int dbg_ipt_opt(char *lbuf,size_t count);
-uint32_t dbg_ipt_opt_get(const char *lbuf);
+NDPI_STATIC int dbg_ipt_opt(char *lbuf,size_t count);
+NDPI_STATIC uint32_t dbg_ipt_opt_get(const char *lbuf);
 
 enum dbg_trace {
 	DBG_TRACE_CT,
@@ -71,7 +73,7 @@ enum dbg_trace {
 #define _DBG_TRACE_NETNS (ndpi_log_debug & (1 << DBG_TRACE_NETNS))
 
 #include "../lib/third_party/include/ahocorasick.h"
-AC_ERROR_t      ac_automata_add_exact(AC_AUTOMATA_t *, AC_PATTERN_t *);
+NDPI_STATIC AC_ERROR_t      ac_automata_add_exact(AC_AUTOMATA_t *, AC_PATTERN_t *);
 
 extern unsigned long  ndpi_flow_limit;
 extern unsigned long  bt_hash_size;
@@ -101,4 +103,5 @@ static inline void getnstimeofday64(struct timespec64 *ts) {
 
 #if LINUX_VERSION_CODE < KERNEL_VERSION(5, 17, 0)
 #define pde_data(inode) PDE_DATA(inode)
+#endif
 #endif

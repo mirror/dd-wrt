@@ -1,3 +1,15 @@
+#include "third_party/include/ndpi_sha1.h"
+
+#include "third_party/src/ndpi_md5.c"
+#include "third_party/src/ndpi_sha1.c"
+#include "third_party/src/ahocorasick.c"
+#include "third_party/src/libcache.c"
+#include "third_party/src/ndpi_patricia.c"
+#include "third_party/src/gcrypt_light.c"
+#include "third_party/src/btlib.c"
+
+
+#undef NDPI_CURRENT_PROTO
 #include "protocols/afp.c"
 #undef NDPI_CURRENT_PROTO
 #include "protocols/aimini.c"

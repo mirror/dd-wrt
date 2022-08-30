@@ -246,24 +246,24 @@ typedef void (*ALPHA_CALLBACK_f)(AC_AUTOMATA_t *, AC_NODE_t *,AC_NODE_t *,int ,v
 #define AC_FEATURE_LC 2
 #define AC_FEATURE_NO_ROOT_RANGE 4
 
-AC_AUTOMATA_t * ac_automata_init     (MATCH_CALLBACK_f mc);
-AC_ERROR_t      ac_automata_feature  (AC_AUTOMATA_t * thiz, unsigned int feature);
-AC_ERROR_t      ac_automata_name     (AC_AUTOMATA_t * thiz, char *name, int debug);
-AC_ERROR_t      ac_automata_add      (AC_AUTOMATA_t * thiz, AC_PATTERN_t * str);
-AC_ERROR_t      ac_automata_finalize (AC_AUTOMATA_t * thiz);
-AC_ERROR_t      ac_automata_walk     (AC_AUTOMATA_t * thiz, NODE_CALLBACK_f node_cb,
+NDPI_STATIC AC_AUTOMATA_t * ac_automata_init     (MATCH_CALLBACK_f mc);
+NDPI_STATIC AC_ERROR_t      ac_automata_feature  (AC_AUTOMATA_t * thiz, unsigned int feature);
+NDPI_STATIC AC_ERROR_t      ac_automata_name     (AC_AUTOMATA_t * thiz, char *name, int debug);
+NDPI_STATIC AC_ERROR_t      ac_automata_add      (AC_AUTOMATA_t * thiz, AC_PATTERN_t * str);
+NDPI_STATIC AC_ERROR_t      ac_automata_finalize (AC_AUTOMATA_t * thiz);
+NDPI_STATIC AC_ERROR_t      ac_automata_walk     (AC_AUTOMATA_t * thiz, NODE_CALLBACK_f node_cb,
 						ALPHA_CALLBACK_f alpha_cb, void *);
 
-int             ac_automata_search   (AC_AUTOMATA_t * thiz,
+NDPI_STATIC int             ac_automata_search   (AC_AUTOMATA_t * thiz,
 						AC_TEXT_t * str, 
 						AC_REP_t * param);
-int             ac_automata_exact_match(AC_PATTERNS_t *mp,int pos, AC_TEXT_t *);
-void            ac_automata_clean    (AC_AUTOMATA_t * thiz);
-void            ac_automata_release  (AC_AUTOMATA_t * thiz, uint8_t free_pattern);
+NDPI_STATIC int             ac_automata_exact_match(AC_PATTERNS_t *mp,int pos, AC_TEXT_t *);
+NDPI_STATIC void            ac_automata_clean    (AC_AUTOMATA_t * thiz);
+NDPI_STATIC void            ac_automata_release  (AC_AUTOMATA_t * thiz, uint8_t free_pattern);
 #ifndef __KERNEL__
 /* Global debug control. */
-void            ac_automata_enable_debug (int debug);
+NDPI_STATIC void            ac_automata_enable_debug (int debug);
 /* See man open_memstream() for get result as string */
-void            ac_automata_dump     (AC_AUTOMATA_t * thiz, FILE *);
+NDPI_STATIC void            ac_automata_dump     (AC_AUTOMATA_t * thiz, FILE *);
 #endif
 #endif

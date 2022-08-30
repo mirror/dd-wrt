@@ -38,7 +38,7 @@
 #define PKT_LEN_ALERT 512
 
 /* ndpi_main.c */
-extern u_int8_t ndpi_iph_is_valid_and_not_fragmented(const struct ndpi_iphdr *iph, const u_int16_t ipsize);
+NDPI_STATIC u_int8_t ndpi_iph_is_valid_and_not_fragmented(const struct ndpi_iphdr *iph, const u_int16_t ipsize);
 
 static void ndpi_search_dns(struct ndpi_detection_module_struct *ndpi_struct,
 			    struct ndpi_flow_struct *flow);

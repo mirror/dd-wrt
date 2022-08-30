@@ -18,7 +18,7 @@ typedef struct sha256_t
   unsigned char buffer[64];
 } sha256_t;
 
-void
+NDPI_STATIC void
 hmac_sha256 (uint8_t out[HMAC_SHA256_DIGEST_SIZE],
              const uint8_t *data, size_t data_len,
              const uint8_t *key, size_t key_len);

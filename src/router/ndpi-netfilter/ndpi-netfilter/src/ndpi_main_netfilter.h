@@ -1,3 +1,5 @@
+#ifndef NDPI_MAIN_NETFILTER_H
+#define NDPI_MAIN_NETFILTER_H
 
 #ifdef NDPI_IPPORT_DEBUG
 #undef DP
@@ -211,10 +213,11 @@ extern unsigned long ndpi_log_debug;
 
 #include "../lib/third_party/include/ahocorasick.h"
 
-const char *acerr2txt(AC_ERROR_t r);
-int str_coll_to_automata(struct ndpi_detection_module_struct *ndpi_str,
+NDPI_STATIC const char *acerr2txt(AC_ERROR_t r);
+NDPI_STATIC int str_coll_to_automata(struct ndpi_detection_module_struct *ndpi_str,
 		void *host_ac,hosts_str_t *hosts);
 
-void set_debug_trace( struct ndpi_net *n);
+NDPI_STATIC void set_debug_trace( struct ndpi_net *n);
 
 
+#endif

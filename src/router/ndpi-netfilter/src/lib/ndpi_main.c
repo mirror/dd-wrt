@@ -115,6 +115,9 @@
 /* Third party libraries */
 #include "third_party/include/ndpi_patricia.h"
 #include "third_party/include/ndpi_md5.h"
+#include "protocols.c"
+#include "ndpi_utils.c"
+#include "ndpi_serializer.c"
 
 /* #define MATCH_DEBUG 1 */
 
@@ -194,7 +197,7 @@ static ndpi_risk_info ndpi_known_risks[] = {
 
 /* ****************************************** */
 
-extern void ndpi_unset_risk(struct ndpi_detection_module_struct *ndpi_str,
+NDPI_STATIC void ndpi_unset_risk(struct ndpi_detection_module_struct *ndpi_str,
 			    struct ndpi_flow_struct *flow, ndpi_risk_enum r);
 
 /* Forward */
@@ -357,7 +360,7 @@ char *ndpi_get_proto_by_id(struct ndpi_detection_module_struct *ndpi_str, u_int 
 
 /* *********************************************************************************** */
 
-u_int16_t ndpi_get_proto_by_name(struct ndpi_detection_module_struct *ndpi_str, const char *name) {
+NDPI_STATIC u_int16_t ndpi_get_proto_by_name(struct ndpi_detection_module_struct *ndpi_str, const char *name) {
   u_int16_t i, num = ndpi_get_num_supported_protocols(ndpi_str);
 
   for(i = 0; i < num; i++)
@@ -581,7 +584,7 @@ static int ndpi_default_ports_tree_node_t_cmp(const void *a, const void *b) {
 
 /* ******************************************************************** */
 
-void ndpi_default_ports_tree_node_t_walker(const void *node, const ndpi_VISIT which, const int depth) {
+NDPI_STATIC void ndpi_default_ports_tree_node_t_walker(const void *node, const ndpi_VISIT which, const int depth) {
   ndpi_default_ports_tree_node_t *f = *(ndpi_default_ports_tree_node_t **) node;
 
   printf("<%d>Walk on node %s (%u)\n", depth,
@@ -2202,7 +2205,7 @@ u_int64_t ndpi_patricia_get_node_u64(ndpi_patricia_node_t *node) {
 
 /* ******************************************* */
 
-u_int8_t ndpi_is_public_ipv4(u_int32_t a /* host byte order */) {
+NDPI_STATIC u_int8_t ndpi_is_public_ipv4(u_int32_t a /* host byte order */) {
   if(   ((a & 0xFF000000) == 0x0A000000 /* 10.0.0.0/8 */)
 	|| ((a & 0xFFF00000) == 0xAC100000 /* 172.16.0.0/12 */)
 	|| ((a & 0xFFFF0000) == 0xC0A80000 /* 192.168.0.0/16 */)
@@ -2264,7 +2267,7 @@ u_int16_t ndpi_network_port_ptree_match(struct ndpi_detection_module_struct *ndp
 
 /* ******************************************* */
 
-ndpi_risk_enum ndpi_network_risk_ptree_match(struct ndpi_detection_module_struct *ndpi_str,
+NDPI_STATIC ndpi_risk_enum ndpi_network_risk_ptree_match(struct ndpi_detection_module_struct *ndpi_str,
 					     struct in_addr *pin /* network byte order */) {
   ndpi_prefix_t prefix;
   ndpi_patricia_node_t *node;
@@ -2289,7 +2292,7 @@ static u_int8_t tor_ptree_match(struct ndpi_detection_module_struct *ndpi_str, s
 
 /* ******************************************* */
 
-u_int8_t ndpi_is_tor_flow(struct ndpi_detection_module_struct *ndpi_str, struct ndpi_flow_struct *flow) {
+NDPI_STATIC u_int8_t ndpi_is_tor_flow(struct ndpi_detection_module_struct *ndpi_str, struct ndpi_flow_struct *flow) {
   struct ndpi_packet_struct *packet = ndpi_get_packet_struct(ndpi_str);
 
   if(packet->tcp != NULL) {
@@ -3032,7 +3035,7 @@ int ndpi_match_string_value(void *automa, char *string_to_match,
 
 /* *********************************************** */
 
-int ndpi_match_custom_category(struct ndpi_detection_module_struct *ndpi_str,
+NDPI_STATIC int ndpi_match_custom_category(struct ndpi_detection_module_struct *ndpi_str,
 			       char *name, u_int name_len,
                                ndpi_protocol_category_t *category) {
   u_int32_t id;
@@ -3044,7 +3047,7 @@ int ndpi_match_custom_category(struct ndpi_detection_module_struct *ndpi_str,
 
 /* *********************************************** */
 
-int ndpi_get_custom_category_match(struct ndpi_detection_module_struct *ndpi_str,
+NDPI_STATIC int ndpi_get_custom_category_match(struct ndpi_detection_module_struct *ndpi_str,
 				   char *name_or_ip, u_int name_len,
 				   ndpi_protocol_category_t *id) {
   char ipbuf[64], *ptr;
@@ -3253,7 +3256,7 @@ static ndpi_default_ports_tree_node_t *ndpi_get_guessed_protocol_id(struct ndpi_
   and thus that if have NOT been detected they cannot be guessed
   as they have been excluded
 */
-u_int8_t is_udp_guessable_protocol(u_int16_t l7_guessed_proto) {
+NDPI_STATIC u_int8_t is_udp_guessable_protocol(u_int16_t l7_guessed_proto) {
   switch(l7_guessed_proto) {
   case NDPI_PROTOCOL_QUIC:
   case NDPI_PROTOCOL_SNMP:
@@ -4797,7 +4800,7 @@ int ndpi_handle_ipv6_extension_headers(u_int16_t l3len, const u_int8_t **l4ptr,
 }
 
 /* Used by dns.c */
-u_int8_t ndpi_iph_is_valid_and_not_fragmented(const struct ndpi_iphdr *iph, const u_int16_t ipsize) {
+NDPI_STATIC u_int8_t ndpi_iph_is_valid_and_not_fragmented(const struct ndpi_iphdr *iph, const u_int16_t ipsize) {
   /*
     returned value:
     0: fragmented
@@ -5163,7 +5166,7 @@ static u_int8_t ndpi_is_multi_or_broadcast(struct ndpi_packet_struct *packet) {
 
 /* ************************************************ */
 
-void ndpi_connection_tracking(struct ndpi_detection_module_struct *ndpi_str,
+NDPI_STATIC void ndpi_connection_tracking(struct ndpi_detection_module_struct *ndpi_str,
 			      struct ndpi_flow_struct *flow) {
   if(!flow) {
     return;
@@ -5407,7 +5410,7 @@ static u_int32_t check_ndpi_detection_func(struct ndpi_detection_module_struct *
 
 /* ************************************************ */
 
-u_int32_t check_ndpi_other_flow_func(struct ndpi_detection_module_struct *ndpi_str,
+NDPI_STATIC u_int32_t check_ndpi_other_flow_func(struct ndpi_detection_module_struct *ndpi_str,
 				     struct ndpi_flow_struct *flow,
 				     NDPI_SELECTION_BITMASK_PROTOCOL_SIZE *ndpi_selection_packet)
 {
@@ -8104,17 +8107,17 @@ static inline int ndpi_match_xgram(unsigned int *map,unsigned int l,const char *
   }
   return (map[c >> 5] & (1u << (c & 0x1f))) != 0;
 }
-int ndpi_match_bigram(const char *str) {
+NDPI_STATIC int ndpi_match_bigram(const char *str) {
   return ndpi_match_xgram(bigrams_bitmap, 2, str);
 }
 
-int ndpi_match_impossible_bigram(const char *str) {
+NDPI_STATIC int ndpi_match_impossible_bigram(const char *str) {
   return ndpi_match_xgram(imposible_bigrams_bitmap, 2, str);
 }
 
 /* ****************************************************** */
 
-int ndpi_match_trigram(const char *str) {
+NDPI_STATIC int ndpi_match_trigram(const char *str) {
   return ndpi_match_xgram(trigrams_bitmap, 3, str);
 }
 
