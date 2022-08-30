@@ -1696,7 +1696,7 @@ static void advgrp_chain(int seq, int urlenable, char *ifname)
 #ifdef HAVE_OPENDPI
 			else if (!strcmp(protocol, "dpi")) {
 				insmod("xt_ndpi");
-				save2file_A("advgrp_%d -m ndpi --%s -j %s", seq, realname, log_drop);
+				save2file_A("advgrp_%d -m ndpi --proto %s -j %s", seq, realname, log_drop);
 			}
 #endif
 			else if (!strcmp(protocol, "p2p")) {
@@ -1737,7 +1737,7 @@ static void advgrp_chain(int seq, int urlenable, char *ifname)
 						/* bittorrent detection enhanced */
 #ifdef HAVE_OPENDPI
 						insmod("xt_ndpi");
-						save2file_A("advgrp_%d -m ndpi --bittorrent -j %s", seq, log_drop);
+						save2file_A("advgrp_%d -m ndpi --proto bittorrent -j %s", seq, log_drop);
 #else
 						insmod("ipt_layer7 xt_layer7");
 #ifdef HAVE_MICRO
@@ -1776,19 +1776,19 @@ static void advgrp_chain(int seq, int urlenable, char *ifname)
 #ifdef HAVE_OPENDPI
 		insmod("xt_ndpi");
 		/*commonly used protocols, decending */
-		save2file_A("advgrp_%d -m ndpi --bittorrent -j %s", seq, log_drop);
-		save2file_A("advgrp_%d -m ndpi --edonkey -j %s", seq, log_drop);
+		save2file_A("advgrp_%d -m ndpi --proto bittorrent -j %s", seq, log_drop);
+		save2file_A("advgrp_%d -m ndpi --proto edonkey -j %s", seq, log_drop);
 		/*atm rarly used protocols */
-		save2file_A("advgrp_%d -p tcp -m ndpi --applejuice -j %s", seq, log_drop);
-		save2file_A("advgrp_%d -p tcp -m ndpi --directconnect -j %s", seq, log_drop);
-		save2file_A("advgrp_%d -m ndpi --fasttrack -j %s", seq, log_drop);
-		save2file_A("advgrp_%d -p tcp -m ndpi --filetopia -j %s", seq, log_drop);
-		save2file_A("advgrp_%d -m ndpi --gnutella -j %s", seq, log_drop);
-		save2file_A("advgrp_%d -m ndpi --imesh -j %s", seq, log_drop);
-		save2file_A("advgrp_%d -p tcp -m ndpi --openft -j %s", seq, log_drop);
-		save2file_A("advgrp_%d -m ndpi --pando_media_booster -j %s", seq, log_drop);
-		save2file_A("advgrp_%d -p tcp -m ndpi --soulseek -j %s", seq, log_drop);
-		save2file_A("advgrp_%d -p tcp -m ndpi --winmx -j %s", seq, log_drop);
+		save2file_A("advgrp_%d -p tcp -m ndpi --proto applejuice -j %s", seq, log_drop);
+		save2file_A("advgrp_%d -p tcp -m ndpi --proto directconnect -j %s", seq, log_drop);
+		save2file_A("advgrp_%d -m ndpi --proto fasttrack -j %s", seq, log_drop);
+//		save2file_A("advgrp_%d -p tcp -m ndpi --proto filetopia -j %s", seq, log_drop);
+		save2file_A("advgrp_%d -m ndpi --proto gnutella -j %s", seq, log_drop);
+//		save2file_A("advgrp_%d -m ndpi --imesh -j %s", seq, log_drop);
+		save2file_A("advgrp_%d -p tcp -m ndpi --proto openft -j %s", seq, log_drop);
+//		save2file_A("advgrp_%d -m ndpi --pando_media_booster -j %s", seq, log_drop);
+//		save2file_A("advgrp_%d -p tcp -m ndpi --soulseek -j %s", seq, log_drop);
+//		save2file_A("advgrp_%d -p tcp -m ndpi --winmx -j %s", seq, log_drop);
 #else
 #ifdef HAVE_MICRO
 		save2file_A("advgrp_%d -m layer7 --l7proto bt -j %s", seq, log_drop);
