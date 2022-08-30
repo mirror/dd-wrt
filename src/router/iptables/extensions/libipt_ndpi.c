@@ -63,137 +63,170 @@ int NDPI_BITMASK_IS_EMPTY(NDPI_PROTOCOL_BITMASK a) {
 static char *prot_short_str[NDPI_NUM_BITS] = { "unknown","ftp_control","pop3","smtp","imap","dns","ipp","http","mdns","ntp","netbios","nfs","ssdp","bgp","snmp","xdmcp","smbv1","syslog","dhcp","postgresql","mysql","hotmail","direct_download_link","pops","applejuice","directconnect","ntop","coap","vmware","smtps","facebookzero","ubntac2","kontiki","openft","fasttrack","gnutella","edonkey","bittorrent","skypecall","signal","memcached","smbv23","mining","nestlogsink","modbus","filetopia","winmx","xbox","qq","free_49","rtsp","imaps","icecast","pplive","ppstream","zattoo","shoutcast","sopcast","tvants","tvuplayer","http_download","qqlive","thunder","soulseek","ssl_no_cert","irc","ayiya","unencrypted_jabber","msn","oscar","yahoo","battlefield","googleplus","vrrp","steam","halflife2","worldofwarcraft","telnet","stun","ipsec","gre","icmp","igmp","egp","sctp","ospf","ip_in_ip","rtp","rdp","vnc","pcanywhere","ssl","ssh","usenet","mgcp","iax","tftp","afp","stealthnet","aimini","sip","truphone","icmpv6","dhcpv6","armagetron","crossfire","dofus","fiesta","florensia","guildwars","http_activesync","kerberos","ldap","maplestory","mssql-tds","pptp","warcraft3","worldofkungfu","slack","facebook","twitter","dropbox","gmail","googlemaps","youtube","skype","google","dce_rpc","netflow","sflow","http_connect","http_proxy","citrix","netflix","lastfm","waze","youtubeupload","genericprotocol","checkmk","ajp","apple","webex","whatsapp","appleicloud","viber","appleitunes","radius","windowsupdate","teamviewer","tuenti","lotusnotes","sap","gtp","upnp","llmnr","remotescan","spotify","messenger","h323","openvpn","noe","ciscovpn","teamspeak","tor","ciscoskinny","rtcp","rsync","oracle","corba","ubuntuone","whois-das","collectd","socks","nintendo","rtmp","ftp_data","wikipedia","zeromq","amazon","ebay","cnn","megaco","redis","pando_media_booster","vhua","telegram","vevo","pandora","quic","whatsappvoice","eaq","ookla","amqp","kakaotalk","kakaotalk_voice","twitch","imesh","wechat","mpeg_ts","snapchat","sina(weibo)","googlehangout","iflix","github","bjnp","line","vidto","smpp","dnscrypt","tinc","deezer","instagram","microsoft","starcraft","teredo","hotspotshield","hep","googledrive","ocs","office365","cloudflare","ms_onedrive","mqtt","rx","applestore","opendns","git","drda","playstore","someip","fix","playstation","pastebin","linkedin","soundcloud","csgo","lisp","diameter","applepush","googleservices","amazonvideo","googledocs","whatsappfiles","targus","wireguard", NULL};
 static char  prot_disabled[NDPI_NUM_BITS+1] = { 0, };
 
-#define NDPI_OPT_ERROR    (NDPI_LAST_IMPLEMENTED_PROTOCOL+1)
-#define NDPI_OPT_PROTO    (NDPI_LAST_IMPLEMENTED_PROTOCOL+2)
-#define NDPI_OPT_ALL      (NDPI_LAST_IMPLEMENTED_PROTOCOL+3)
-#define NDPI_OPT_MASTER   (NDPI_LAST_IMPLEMENTED_PROTOCOL+4)
-#define NDPI_OPT_PROTOCOL (NDPI_LAST_IMPLEMENTED_PROTOCOL+5)
-#define NDPI_OPT_HMASTER  (NDPI_LAST_IMPLEMENTED_PROTOCOL+6)
-#define NDPI_OPT_HOST     (NDPI_LAST_IMPLEMENTED_PROTOCOL+7)
-#define NDPI_OPT_SSL      (NDPI_LAST_IMPLEMENTED_PROTOCOL+8)
-#define NDPI_OPT_ANYNAME  (NDPI_LAST_IMPLEMENTED_PROTOCOL+9)
+#define EXT_OPT_BASE 0
+// #define EXT_OPT_BASE NDPI_LAST_IMPLEMENTED_PROTOCOL
+enum ndpi_opt_index {
+	NDPI_OPT_UNKNOWN=NDPI_LAST_IMPLEMENTED_PROTOCOL,
+	NDPI_OPT_ALL,
+	NDPI_OPT_ERROR,
+	NDPI_OPT_PROTO,
+	NDPI_OPT_MPROTO,
+	NDPI_OPT_APROTO,
+	NDPI_OPT_HMASTER,
+	NDPI_OPT_HOST,
+	NDPI_OPT_INPROGRESS,
+	NDPI_OPT_JA3S,
+	NDPI_OPT_JA3C,
+	NDPI_OPT_TLSFP,
+	NDPI_OPT_TLSV,
+	NDPI_OPT_UNTRACKED,
+	NDPI_OPT_CLEVEL,
+	NDPI_OPT_LAST
+};
+
+#define FLAGS_ALL 0x1
+#define FLAGS_ERR 0x2
+#define FLAGS_HMASTER 0x4
+#define FLAGS_MPROTO 0x8
+#define FLAGS_APROTO 0x10
+#define FLAGS_HOST 0x20
+#define FLAGS_INPROGRESS 0x40
+#define FLAGS_PROTO 0x80
+#define FLAGS_JA3S 0x100
+#define FLAGS_JA3C 0x200
+#define FLAGS_TLSFP 0x400
+#define FLAGS_TLSV 0x800
+#define FLAGS_UNTRACKED 0x1000
+#define FLAGS_CLEVEL 0x2000
+#define FLAGS_HPROTO 0x4000
+
+static char *_clevel2str[] = {
+ "unknown", "port", "ip", "user",
+ "dpart",  "dcpart", "dcache", "dpi" };
+static int clevelnc[] = { 2, 1, 1, 2, 3, 3, 3, 3 };
+
+#define clevel2num (sizeof(_clevel2str)/sizeof(_clevel2str[0]))
+
+static const char *clevel2str(int l) {
+	return (l > 0 && l < clevel2num) ? _clevel2str[l] : "?";
+}
+static const char *clevel_op2str(int l) {
+	switch(l) {
+	  case 1: return "-";
+	  case 2: return "+";
+	}
+	return "";
+}
+static int str2clevel(const char *s) {
+	int i;
+	char *e;
+
+	for(i=0; i < clevel2num; i++)
+	    if(!strcasecmp(_clevel2str[i],s)) return i;
+	for(i=0; i < clevel2num; i++)
+	    if(!strncasecmp(_clevel2str[i],s,clevelnc[i])) return i;
+	i = strtol(s,&e,0);
+	if(*e) return 0;
+	return i < 0 || i > 7 ? 0 : i;
+}
 
 static void 
-ndpi_mt4_save(const struct ipt_ip *entry, const struct ipt_entry_match *match)
+_ndpi_mt4_save(const struct ipt_ip *entry, const struct ipt_entry_match *match, int save)
 {
 	const struct xt_ndpi_mtinfo *info = (const void *)match->data;
 	const char *cinv = info->invert ? "! ":"";
+	const char *csave = save ? "--":"";
         int i,c,l,t;
 
-	if(info->error) {
-		printf(" %s--error",cinv);
-		return;
-	}
-	if(info->have_master) {
-		printf(" %s--have-master",cinv);
-		return;
-	}
-
         for (t = l = c = i = 0; i < NDPI_NUM_BITS; i++) {
-		if (!prot_short_str[i] || !strncmp(prot_short_str[i],"badproto_",9)) continue;
-		if (!prot_disabled[i]) { 
-		    t++;
-		    if (NDPI_COMPARE_PROTOCOL_TO_BITMASK(info->flags, i) != 0) {
-			l = i;
-			c++;
-		    }
+		if (!prot_short_str[i] || prot_disabled[i] || 
+				!strncmp(prot_short_str[i],"badproto_",9)) continue;
+		t++;
+		if (NDPI_COMPARE_PROTOCOL_TO_BITMASK(info->flags, i) != 0) {
+			l = i; c++;
 		}
 	}
 
-	printf(" %s", cinv);
-	if(info->m_proto && !info->p_proto)
-		printf("--match-master");
-	if(!info->m_proto && info->p_proto)
-		printf("--match-proto");
+	if(!save)
+		printf(" ndpi");
+	if(info->error) {
+		printf(" %s%serror",cinv,csave);
+		return;
+	}
+	if(info->untracked) {
+		printf(" %s%suntracked",cinv,csave);
+		return;
+	}
+	if(info->invert)
+		printf(" !");
 
 	if(info->hostname[0]) {
-		char *p = info->host && info->ssl ? "host-or-cert" :
-			(info->ssl ? "cert" : "host");
-		printf(" --%s %s",p,info->hostname);
+		printf(" %shost %s",csave,info->hostname);
 	}
+	if(info->have_master) {
+		printf(" %shave-master",csave);
+	}
+	if(info->clevel) {
+		printf(" %sclevel %s%s", csave, clevel_op2str(info->clevel_op),
+				clevel2str(info->clevel));
+	}
+	if(info->m_proto && !info->p_proto)
+		printf(" %smatch-m-proto",csave);
+	if(!info->m_proto && info->p_proto)
+		printf(" %smatch-a-proto",csave);
+
 	if(!c) return;
+	printf(" %s",csave);
+	if(info->inprogress) {
+	  printf("inprogress");
+	} else if(info->ja3s) {
+	  printf("ja3s");
+	} else if(info->ja3c) {
+	  printf("ja3c");
+	} else if(info->tlsfp) {
+	  printf("tlsfp");
+	} else if(info->tlsv) {
+	  printf("tlsv");
+	} else
+	  printf("proto");
+
 	if( c == 1) {
-		printf(" --%s%s ",l > NDPI_LAST_IMPLEMENTED_PROTOCOL ? "proto ":"",
-				prot_short_str[l]);
+		printf(" %s",prot_short_str[l]);
 		return;
 	}
 	if( c == t-1 && 
 	    !NDPI_COMPARE_PROTOCOL_TO_BITMASK(info->flags,NDPI_PROTOCOL_UNKNOWN) ) { 
-		printf(" --all ");
+		printf(" all");
 		return;
 	}
-	printf(" --proto " );
+
 	if(c > t/2 + 1) {
-	    printf("all");
+	    printf(" all");
 	    for (i = 1; i < NDPI_NUM_BITS; i++) {
                 if (prot_short_str[i] && !prot_disabled[i] && NDPI_COMPARE_PROTOCOL_TO_BITMASK(info->flags, i) == 0)
 			printf(",-%s", prot_short_str[i]);
 	    }
 	    return;
 	}
+	printf(" ");
         for (l = i = 0; i < NDPI_NUM_BITS; i++) {
                 if (prot_short_str[i] && !prot_disabled[i] && NDPI_COMPARE_PROTOCOL_TO_BITMASK(info->flags, i) != 0)
 			printf("%s%s",l++ ? ",":"", prot_short_str[i]);
         }
 }
 
+static void 
+ndpi_mt4_save(const struct ipt_ip *entry, const struct xt_entry_match *match) {
+	_ndpi_mt4_save(entry,match,1);
+}
 
 static void 
-ndpi_mt4_print(const struct ipt_ip *entry, const struct ipt_entry_match *match,
+ndpi_mt4_print(const struct ipt_ip *entry, const struct xt_entry_match *match,
                   int numeric)
 {
-	const struct xt_ndpi_mtinfo *info = (const void *)match->data;
-	const char *cinv = info->invert ? "!":"";
-        int i,c,l,t;
-
-	if(info->error) {
-		printf(" %sndpi error",cinv);
-		return;
-	}
-	if(info->have_master) {
-		printf(" %sndpi have-master",cinv);
-		return;
-	}
-
-        for (t = c = i = 0; i < NDPI_NUM_BITS; i++) {
-		if (!prot_short_str[i] || prot_disabled[i] || !strncmp(prot_short_str[i],"badproto_",9)) continue;
-		t++;
-		if (NDPI_COMPARE_PROTOCOL_TO_BITMASK(info->flags, i) != 0) c++;
-	}
-	printf(" %sndpi", cinv);
-	if(info->m_proto && !info->p_proto)
-		printf(" match-master");
-	if(!info->m_proto && info->p_proto)
-		printf(" match-proto");
-	if(info->hostname[0]) {
-		char *p = info->host && info->ssl ? "host or cert" :
-			(info->ssl ? "cert" : "host");
-		printf(" %s %s",p,info->hostname);
-	}
-	if(!c) return;
-
-	if( c == t-1 && 
-	    !NDPI_COMPARE_PROTOCOL_TO_BITMASK(info->flags,NDPI_PROTOCOL_UNKNOWN) ) {
-		printf(" all protocols");
-		return;
-	}
-
-	printf(" protocol%s ",c > 1 ? "s":"");
-	if(c > t/2 + 1) {
-	    printf("all");
-	    for (i = 1; i < NDPI_NUM_BITS; i++) {
-                if (prot_short_str[i] && !prot_disabled[i] && NDPI_COMPARE_PROTOCOL_TO_BITMASK(info->flags, i) == 0)
-			printf(",-%s", prot_short_str[i]);
-	    }
-	    return;
-	}
-
-        for (l = i = 0; i < NDPI_NUM_BITS; i++) {
-                if (prot_short_str[i] && !prot_disabled[i] && NDPI_COMPARE_PROTOCOL_TO_BITMASK(info->flags, i) != 0)
-                        printf("%s%s",l++ ? ",":"", prot_short_str[i]);
-        }
-
+	_ndpi_mt4_save(entry,match,0);
 }
+
 
 
 static int 
@@ -207,26 +240,58 @@ ndpi_mt4_parse(int c, char **argv, int invert, unsigned int *flags,
 
 	if(c == NDPI_OPT_ERROR) {
 		info->error = 1;
-        	*flags |= 2;
+        	*flags |= FLAGS_ERR;
 		return true;
 	}
 	if(c == NDPI_OPT_HMASTER ) {
 		info->have_master = 1;
-        	*flags |= 4;
+        	*flags |= FLAGS_HMASTER;
 		return true;
 	}
-	if(c == NDPI_OPT_MASTER) {
+	if(c == NDPI_OPT_UNTRACKED ) {
+		info->untracked = 1;
+                *flags |= FLAGS_UNTRACKED;
+                return true;
+	}
+	if(c == NDPI_OPT_MPROTO) {
 		info->m_proto = 1;
-        	*flags |= 8;
+        	*flags |= FLAGS_MPROTO;
 		return true;
 	}
-	if(c == NDPI_OPT_PROTOCOL) {
+	if(c == NDPI_OPT_CLEVEL) {
+		int cl = 0;
+		info->clevel_op = 0;
+		if(optarg[0] == '-') {
+			info->clevel_op = 1;
+			cl = str2clevel(optarg+1);
+		} else if(optarg[0] == '+') {
+			info->clevel_op = 2;
+			cl = str2clevel(optarg+1);
+		} else
+			cl = str2clevel(optarg);
+		if(!cl) {
+			printf("Error: invalid clevel %s\n",optarg);
+			return false;
+		}
+		if(info->clevel == 0 && info->clevel_op == 1) {
+			printf("Error: impossible condition '-unknown'\n");
+			return false;
+		}
+		if(info->clevel == 5 && info->clevel_op == 2) {
+			printf("Error: impossible condition '+dpi'\n");
+			return false;
+		}
+		info->clevel = cl;
+        	*flags |= FLAGS_CLEVEL;
+		return true;
+	}
+	if(c == NDPI_OPT_APROTO) {
 		info->p_proto = 1;
-        	*flags |= 0x10;
+        	*flags |= FLAGS_APROTO;
 		return true;
 	}
 
-	if(c == NDPI_OPT_HOST || c == NDPI_OPT_SSL || c == NDPI_OPT_ANYNAME) {
+	if(c == NDPI_OPT_HOST) {
 		char *s;
 		int re_len = strlen(optarg);
 
@@ -240,26 +305,16 @@ ndpi_mt4_parse(int c, char **argv, int invert, unsigned int *flags,
 			return false;
 		}
 		if(info->hostname[0]) {
-			printf("Error: Double --cert or --host\n");
+			printf("Error: Double --host\n");
 			return false;
 		}
 		strncpy(info->hostname,optarg,sizeof(info->hostname)-1);
 
 		for(s = &info->hostname[0]; *s; s++) *s = tolower(*s);
 
-		if(c == NDPI_OPT_HOST) {
-			info->host = 1;
-			*flags |= 0x20;
-		}
-		if(c == NDPI_OPT_SSL) {
-			info->ssl = 1;
-			*flags |= 0x40;
-		}
-		if(c == NDPI_OPT_ANYNAME) {
-			info->ssl = 1;
-			info->host = 1;
-			*flags |= 0x60;
-		}
+		info->host = 1;
+		*flags |= FLAGS_HOST;
+
 		if(info->hostname[0] == '/') {
 			char re_buf[sizeof(info->hostname)];
 			regexp *pattern;
@@ -283,9 +338,12 @@ ndpi_mt4_parse(int c, char **argv, int invert, unsigned int *flags,
 			info->re = 1;
 
 		} else info->re = 0;
+
 		return true;
 	}
-	if(c == NDPI_OPT_PROTO) {
+	if(c == NDPI_OPT_PROTO || c == NDPI_OPT_INPROGRESS ||
+	   c == NDPI_OPT_JA3S  || c == NDPI_OPT_JA3C ||
+	   c == NDPI_OPT_TLSFP || c == NDPI_OPT_TLSV) {
 		char *np = optarg,*n;
 		int num;
 		int op;
@@ -325,27 +383,36 @@ ndpi_mt4_parse(int c, char **argv, int invert, unsigned int *flags,
 			     else
 				NDPI_DEL_PROTOCOL_FROM_BITMASK(info->flags,num);
 			}
-			*flags |= 1;
 			np = NULL;
 		}
-		if(NDPI_BITMASK_IS_EMPTY(info->flags)) *flags &= ~1;
-		return *flags != 0;
+		if(c == NDPI_OPT_PROTO) { *flags |= FLAGS_PROTO; info->proto = 1; }
+		if(c == NDPI_OPT_JA3S)  { *flags |= FLAGS_JA3S;  info->ja3s = 1; }
+		if(c == NDPI_OPT_JA3C)  { *flags |= FLAGS_JA3C;  info->ja3c = 1; }
+		if(c == NDPI_OPT_TLSFP) { *flags |= FLAGS_TLSFP; info->tlsfp = 1; }
+		if(c == NDPI_OPT_TLSV)  { *flags |= FLAGS_TLSV;  info->tlsv = 1; }
+		if(c == NDPI_OPT_INPROGRESS ) { *flags |= FLAGS_INPROGRESS;
+						info->inprogress = 1; }
+		if(NDPI_BITMASK_IS_EMPTY(info->flags)) {
+			info->empty = 1;
+			*flags &= ~FLAGS_PROTO;
+		} else
+			*flags |= FLAGS_HPROTO;
+
+		return true;
+	}
+	if(c == NDPI_OPT_UNKNOWN) {
+		NDPI_ADD_PROTOCOL_TO_BITMASK(info->flags,NDPI_PROTOCOL_UNKNOWN);
+		info->proto = 1;
+        	*flags |= FLAGS_PROTO | FLAGS_HPROTO;
+		return true;
 	}
 	if(c == NDPI_OPT_ALL) {
 		for (i = 1; i < NDPI_NUM_BITS; i++) {
 	    	    if(prot_short_str[i] && strncmp(prot_short_str[i],"badproto_",9) && !prot_disabled[i])
 			NDPI_ADD_PROTOCOL_TO_BITMASK(info->flags,i);
 		}
-        	*flags |= 1;
-		return true;
-	}
-	if(c > NDPI_OPT_ALL) {
-		printf("BUG! c > NDPI_NUM_BITS+1\n");
-		return false;
-	}
-	if(c >= 0 && c < NDPI_NUM_BITS) {
-        	NDPI_ADD_PROTOCOL_TO_BITMASK(info->flags, c);
-		*flags |= 1;
+		info->proto = 1;
+        	*flags |= FLAGS_PROTO | FLAGS_HPROTO | FLAGS_ALL;
 		return true;
 	}
 	return false;
@@ -358,21 +425,46 @@ ndpi_mt4_parse(int c, char **argv, int invert, unsigned int *flags,
 static void
 ndpi_mt_check (unsigned int flags)
 {
-	if (!(flags & 0x63))
-	    xtables_error(PARAMETER_PROBLEM, "xt_ndpi: You need to "
-                              "specify at least one protocol on host/cert name");
-
-	if(flags & 0x60) flags |= 1;
-
-	flags &= 7;
-	if (flags == 1 || flags == 2 || flags == 4) return;
-	if ((flags & 6) == 6) {
-	    xtables_error(PARAMETER_PROBLEM, "xt_ndpi: cant check error and master protocol ");
+	int nopt = 0;
+	if (!flags)
+		xtables_error(PARAMETER_PROBLEM, "xt_ndpi: missing options.");
+	
+	if (flags & FLAGS_ERR) {
+	   if (flags != FLAGS_ERR)
+		xtables_error(PARAMETER_PROBLEM, "xt_ndpi: cant use '--error' with other options");
+	    else
+		return;
 	}
-	if ((flags & 3) == 3)
-	    xtables_error(PARAMETER_PROBLEM, "xt_ndpi: cant check error and protocol ");
+	if (flags & FLAGS_UNTRACKED) {
+	   if (flags != FLAGS_UNTRACKED)
+		xtables_error(PARAMETER_PROBLEM, "xt_ndpi: cant use '--untracked' with other options");
+	    else
+		return;
+	}
+	if (flags & FLAGS_HMASTER) {
+	   if(flags & (FLAGS_ALL | FLAGS_MPROTO | FLAGS_APROTO))
+		 xtables_error(PARAMETER_PROBLEM, "xt_ndpi: cant use '--have-master' with options match-m-proto,match-a-proto,proto");
+	      else
+		 return;
+	}
 
-	xtables_error(PARAMETER_PROBLEM, "xt_ndpi: unknown error! ");
+	if (flags & (FLAGS_APROTO|FLAGS_MPROTO)) {
+	    if(!(flags & FLAGS_HPROTO))
+		 xtables_error(PARAMETER_PROBLEM, "xt_ndpi: You need to specify at least one protocol");
+	}
+
+	if (flags & (FLAGS_PROTO|FLAGS_JA3S|FLAGS_JA3C|FLAGS_TLSFP|FLAGS_TLSV|FLAGS_INPROGRESS)) {
+	    if(!(flags & FLAGS_HPROTO))
+		 xtables_error(PARAMETER_PROBLEM, "xt_ndpi: You need to specify at least one protocol");
+	}
+	if(flags & FLAGS_PROTO) nopt++;
+	if(flags & FLAGS_JA3S)  nopt++;
+	if(flags & FLAGS_JA3C)  nopt++;
+	if(flags & FLAGS_TLSFP) nopt++;
+	if(flags & FLAGS_TLSV)  nopt++;
+	if(flags & FLAGS_INPROGRESS) nopt++;
+	if(nopt != 1)
+		 xtables_error(PARAMETER_PROBLEM, "xt_ndpi: --proto|--ja3s|--ja3c|--tlsfp|--tlsv|--inprogress %x %d",flags,nopt);
 }
 
 static int cmp_pname(const void *p1, const void *p2) {
@@ -461,13 +553,13 @@ ndpi_mt4_reg = {
 	.save = ndpi_mt4_save,
 	.extra_opts = ndpi_mt_opts,
 };
-/* target NDPIMARK */
 enum {
         O_SET_VALUE=0,
         O_SET_NDPI,
         O_SET_NDPI_M,
         O_SET_NDPI_P,
         O_SET_MARK,
+        O_SET_MARK2,
         O_SET_CLSF,
         O_SET_FLOW,
         O_ACCEPT,
@@ -475,7 +567,8 @@ enum {
         F_SET_NDPI   = 1 << O_SET_NDPI,
         F_SET_NDPI_M = 1 << O_SET_NDPI_M,
         F_SET_NDPI_P = 1 << O_SET_NDPI_P,
-        F_SET_MARK = 1 << O_SET_MARK,
+        F_SET_MARK  = 1 << O_SET_MARK,
+        F_SET_MARK2 = 1 << O_SET_MARK2,
         F_SET_CLSF = 1 << O_SET_CLSF,
         F_SET_FLOW = 1 << O_SET_FLOW,
         F_ACCEPT   = 1 << O_ACCEPT,
@@ -505,6 +598,7 @@ static struct option NDPI_opts[] = {
         {.name = "ndpi-id-m", .val = O_SET_NDPI_M, .has_arg = 0, .flag = 0},
         {.name = "ndpi-id-p", .val = O_SET_NDPI_P, .has_arg = 0, .flag = 0},
         {.name = "set-mark",  .val = O_SET_MARK,   .has_arg = 0, .flag = 0},
+        {.name = "set-mark2", .val = O_SET_MARK2,  .has_arg = 0, .flag = 0},
         {.name = "set-clsf",  .val = O_SET_CLSF,   .has_arg = 0, .flag = 0},
         {.name = "flow-info", .val = O_SET_FLOW,   .has_arg = 0, .flag = 0},
         {.name = "accept",    .val = O_ACCEPT,     .has_arg = 0, .flag = 0},
@@ -562,6 +656,9 @@ static int NDPI_parse_v0(int c, char **argv, int invert, unsigned int *flags,
 	case O_SET_MARK:
 		markinfo->t_mark = 1;
 		break;
+	case O_SET_MARK2:
+		markinfo->t_mark2 = 1;
+		break;
 	case O_SET_CLSF:
 		markinfo->t_clsf = 1;
 		break;
@@ -590,8 +687,11 @@ int l;
         l = snprintf(buf,sizeof(buf)-1," NDPI");
 	if(info->flow_yes)
 	     l += snprintf(&buf[l],sizeof(buf)-l-1, " NETFLOW");
-	if(info->t_mark)
-	     l += snprintf(&buf[l],sizeof(buf)-l-1, " set MARK ");
+	if(info->t_mark2)
+	     l += snprintf(&buf[l],sizeof(buf)-l-1, " set MARK2 ");
+	  else
+	    if(info->t_mark)
+		l += snprintf(&buf[l],sizeof(buf)-l-1, " set MARK ");
 	if(info->t_clsf)
 	     l += snprintf(&buf[l],sizeof(buf)-l-1, " set CLSF ");
 	if(info->mask || info->mark) {
@@ -636,8 +736,11 @@ static void NDPI_save_v0(const struct ipt_ip *ip, const struct ipt_entry_target 
 		if(info->p_proto_id)
 		     l += snprintf(&buf[l],sizeof(buf)-l-1, " --ndpi-id-p");
 	}
-	if(info->t_mark)
-	     l += snprintf(&buf[l],sizeof(buf)-l-1, " --set-mark");
+	if(info->t_mark2)
+	     l += snprintf(&buf[l],sizeof(buf)-l-1, " --set-mark2");
+	  else
+	    if(info->t_mark)
+		l += snprintf(&buf[l],sizeof(buf)-l-1, " --set-mark");
 	if(info->t_clsf)
 	     l += snprintf(&buf[l],sizeof(buf)-l-1, " --set-clsf");
 	if(info->flow_yes)
@@ -668,7 +771,9 @@ static struct iptables_target ndpi_tg_reg =
                 .version       = IPTABLES_VERSION,
                 .revision      = 0,
                 .size          = IPT_ALIGN(sizeof(struct xt_ndpi_tginfo)),
-                .userspacesize = IPT_ALIGN(sizeof(struct xt_ndpi_tginfo)),
+//		.userspacesize = offsetof(struct xt_ndpi_mtinfo, reg_data),
+		.userspacesize = IPT_ALIGN(sizeof(struct xt_ndpi_mtinfo)),
+//                .userspacesize = IPT_ALIGN(sizeof(struct xt_ndpi_tginfo)),
 //                .help          = NDPI_help,
                 .print         = NDPI_print_v0,
                 .save          = NDPI_save_v0,
@@ -692,57 +797,26 @@ void _init(void)
                 ndpi_mt_opts[i].val = i;
         }
 
-	i=NDPI_OPT_ERROR;
-	ndpi_mt_opts[i].name = "error";
-	ndpi_mt_opts[i].flag = NULL;
-	ndpi_mt_opts[i].has_arg = 0;
-	ndpi_mt_opts[i].val = i;
-	i=NDPI_OPT_PROTO;
-	ndpi_mt_opts[i].name = "proto";
-	ndpi_mt_opts[i].flag = NULL;
-	ndpi_mt_opts[i].has_arg = 1;
-	ndpi_mt_opts[i].val = i;
-	i=NDPI_OPT_ALL;
-	ndpi_mt_opts[i].name = "all";
-	ndpi_mt_opts[i].flag = NULL;
-	ndpi_mt_opts[i].has_arg = 0;
-	ndpi_mt_opts[i].val = i;
-	i=NDPI_OPT_MASTER;
-	ndpi_mt_opts[i].name = "match-master";
-	ndpi_mt_opts[i].flag = NULL;
-	ndpi_mt_opts[i].has_arg = 0;
-	ndpi_mt_opts[i].val = i;
-	i=NDPI_OPT_PROTOCOL;
-	ndpi_mt_opts[i].name = "match-proto";
-	ndpi_mt_opts[i].flag = NULL;
-	ndpi_mt_opts[i].has_arg = 0;
-	ndpi_mt_opts[i].val = i;
-	i=NDPI_OPT_HMASTER;
-	ndpi_mt_opts[i].name = "have-master";
-	ndpi_mt_opts[i].flag = NULL;
-	ndpi_mt_opts[i].has_arg = 0;
-	ndpi_mt_opts[i].val = i;
-	i=NDPI_OPT_HOST;
-	ndpi_mt_opts[i].name = "host";
-	ndpi_mt_opts[i].flag = NULL;
-	ndpi_mt_opts[i].has_arg = 1;
-	ndpi_mt_opts[i].val = i;
-	i=NDPI_OPT_SSL;
-	ndpi_mt_opts[i].name = "cert";
-	ndpi_mt_opts[i].flag = NULL;
-	ndpi_mt_opts[i].has_arg = 1;
-	ndpi_mt_opts[i].val = i;
-	i++;
-	i=NDPI_OPT_ANYNAME;
-	ndpi_mt_opts[i].name = "host-or-cert";
-	ndpi_mt_opts[i].flag = NULL;
-	ndpi_mt_opts[i].has_arg = 1;
-	ndpi_mt_opts[i].val = i;
-	i++;
-	ndpi_mt_opts[i].name = NULL;
-	ndpi_mt_opts[i].flag = NULL;
-	ndpi_mt_opts[i].has_arg = 0;
-	ndpi_mt_opts[i].val = 0;
+#define MT_OPT(np,protoname,nargs) { i=(np); \
+	ndpi_mt_opts[i].name = protoname; ndpi_mt_opts[i].flag = NULL; \
+	ndpi_mt_opts[i].has_arg = nargs;  ndpi_mt_opts[i].val = i; }
+
+	MT_OPT(NDPI_OPT_UNKNOWN,"unknown",0)
+	MT_OPT(NDPI_OPT_ALL,"all",0)
+	MT_OPT(NDPI_OPT_ERROR,"error",0)
+	MT_OPT(NDPI_OPT_PROTO,"proto",1)
+	MT_OPT(NDPI_OPT_MPROTO,"match-m-proto",0)
+	MT_OPT(NDPI_OPT_APROTO,"match-a-proto",0)
+	MT_OPT(NDPI_OPT_HMASTER,"have-master",0)
+	MT_OPT(NDPI_OPT_HOST,"host",1)
+	MT_OPT(NDPI_OPT_INPROGRESS,"inprogress",1)
+	MT_OPT(NDPI_OPT_JA3S,"ja3s",1)
+	MT_OPT(NDPI_OPT_JA3C,"ja3c",1)
+	MT_OPT(NDPI_OPT_TLSFP,"tlsfp",1)
+	MT_OPT(NDPI_OPT_TLSV,"tlsv",1)
+	MT_OPT(NDPI_OPT_UNTRACKED,"untracked",0)
+	MT_OPT(NDPI_OPT_CLEVEL,"clevel",1)
+	MT_OPT(NDPI_OPT_LAST,NULL,0)
 
 	register_match(&ndpi_mt4_reg);
 	register_target(&ndpi_tg_reg);

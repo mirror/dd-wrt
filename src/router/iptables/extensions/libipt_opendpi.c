@@ -188,6 +188,8 @@ ndpi_mt_init(struct ipt_entry_match *m, unsigned int *nfcache)
 	/* inet_pton(PF_INET, "192.0.2.137", &info->dst.in); */
 }
 
+#undef offsetof
+#define offsetof(TYPE, MEMBER) ((size_t) &((TYPE *)0)->MEMBER)
 
 static struct option ndpi_mt_opts[NDPI_LAST_IMPLEMENTED_PROTOCOL+4];
 
@@ -201,7 +203,7 @@ static struct iptables_match ndpi_mt4_reg = {
 //	.family = NFPROTO_IPV4,
 //#endif
 	.size = IPT_ALIGN(sizeof(struct xt_ndpi_mtinfo)),
-	.userspacesize = IPT_ALIGN(sizeof(struct xt_ndpi_mtinfo)),
+	.userspacesize = offsetof(struct xt_ndpi_mtinfo, reg_data),
 //	.help = ndpi_mt_help,
 	.init = ndpi_mt_init,
 	.parse = ndpi_mt4_parse,
