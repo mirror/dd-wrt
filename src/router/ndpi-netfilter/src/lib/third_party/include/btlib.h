@@ -21,6 +21,8 @@
  * along with nDPI.  If not, see <http://www.gnu.org/licenses/>.
  *
  */
+#ifndef BTLIB_H
+#define BTLIB_H
 
 #define BDEC_MAXDEPT 8
 
@@ -145,3 +147,4 @@ void dump_bt_proto_struct(struct bt_parse_protocol *p);
 #endif
 const u_int8_t *bt_decode(const u_int8_t *b, size_t *l, int *ret, bt_parse_data_cb_t *cbd);
 
+#endif
