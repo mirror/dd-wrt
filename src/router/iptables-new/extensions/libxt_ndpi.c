@@ -19,7 +19,8 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
  */
-#define NDPI_STATIC
+
+#define NDPI_STATIC 
 
 #include <stdio.h>
 #include <string.h>
@@ -55,7 +56,6 @@ int NDPI_BITMASK_IS_EMPTY(NDPI_PROTOCOL_BITMASK a) {
 //#if NDPI_LAST_IMPLEMENTED_PROTOCOL != NDPI_PROTOCOL_MAXNUM
 //#error LAST_IMPLEMENTED_PROTOCOL != PROTOCOL_MAXNUM
 //#endif
-//
 
 static char *prot_short_str[NDPI_NUM_BITS] = {
 	"unknown",
@@ -371,7 +371,7 @@ static char *prot_short_str[NDPI_NUM_BITS] = {
 static char  prot_disabled[NDPI_NUM_BITS+1] = { 0, };
 
 #define EXT_OPT_BASE 0
-//#define EXT_OPT_BASE NDPI_LAST_IMPLEMENTED_PROTOCOL
+// #define EXT_OPT_BASE NDPI_LAST_IMPLEMENTED_PROTOCOL
 enum ndpi_opt_index {
 	NDPI_OPT_UNKNOWN=NDPI_LAST_IMPLEMENTED_PROTOCOL,
 	NDPI_OPT_ALL,
@@ -407,6 +407,7 @@ enum ndpi_opt_index {
 #define FLAGS_CLEVEL 0x2000
 #define FLAGS_HPROTO 0x4000
 
+
 static void ndpi_mt_init(struct xt_entry_match *match)
 {
 	struct xt_ndpi_mtinfo *info = (void *)match->data;
@@ -441,8 +442,6 @@ static int str2clevel(const char *s) {
 	if(*e) return 0;
 	return i < 0 || i > 7 ? 0 : i;
 }
-
-
 static void 
 _ndpi_mt4_save(const void *entry, const struct xt_entry_match *match,int save)
 {
@@ -834,24 +833,32 @@ ndpi_mt_help(void)
         int d;
 
 	printf( "ndpi match options:\n"
-		"  --error            Match error detecting process\n"
-		"  --have-master      Match if master protocol detected\n"
-		"  --match-master     Match master protocol only\n"
-		"  --match-proto      Match protocol only\n"
-		"  --host  str        Match server host name\n"
-		"  --cert  str        Match SSL server certificate name\n"
-		"  --host-or-cert str Match host name or SSL server certificate name\n"
-		"                     Use /str/ for regexp match.\n"
+		"  --error                Match error detecting process\n"
+		"  --untracked            Match if detection is not started for this connection\n"
+		"  --host str             Match server host name\n"
+		"                         Use /str/ for regexp match.\n"
+		"  --clevel L             Match confidence level. -L - level < L, +L - level > L\n"
+		"                         Levels: unknown,port,ip,user,cache,dpi\n"
+		"  --have-master          Match if master protocol detected\n"
+		"  --match-m-proto        Match master protocol only\n"
+		"  --match-a-proto        Match application protocol only\n"
+		"  --proto protocols      Match if protocols detected\n"
+		"                         (list of protocols comma separated)\n"
+		"  --inprogress protocols Match if protocols detection is not finished yet\n"
+		"  --ja3s protocols       Match ja3 server hash (user defined protocols)\n"
+		"  --ja3c protocols       Match ja3 client hash (user defined protocols)\n"
+		"  --tlsfp protocols      Match tls fingerprint (user defined protocols)\n"
+		"  --tlsv  protocols      Match tls version (user defined protocols)\n"
 		"Special protocol names:\n"
 		"  --all              Match any known protocol\n"
 		"  --unknown          Match unknown protocol packets\n");
 	d = ndpi_print_prot_list(0,
-			"Enabled protocols: ( option --proto protoname[,protoname...])\n");
+			"Enabled protocols:\n");
 	if(!d) return;
 	ndpi_print_prot_list(1,"Disabled protocols:\n");
 }
 
-static struct option ndpi_mt_opts[NDPI_LAST_IMPLEMENTED_PROTOCOL+18];
+static struct option ndpi_mt_opts[NDPI_OPT_LAST+2]; // 0 + last NULL
 
 static struct xtables_match
 ndpi_mt4_reg = {
@@ -864,8 +871,8 @@ ndpi_mt4_reg = {
 	.family = NFPROTO_UNSPEC,
 #endif
 	.size = XT_ALIGN(sizeof(struct xt_ndpi_mtinfo)),
-	.userspacesize = XT_ALIGN(sizeof(struct xt_ndpi_mtinfo)),
-	//.help = ndpi_mt_help,
+	.userspacesize = offsetof(struct xt_ndpi_mtinfo, reg_data),
+//	.help = ndpi_mt_help,
 	.init = ndpi_mt_init,
 	.parse = ndpi_mt4_parse,
 	.final_check = ndpi_mt_check,
@@ -880,6 +887,7 @@ enum {
         O_SET_NDPI_M,
         O_SET_NDPI_P,
         O_SET_MARK,
+        O_SET_MARK2,
         O_SET_CLSF,
         O_SET_FLOW,
         O_ACCEPT,
@@ -887,7 +895,8 @@ enum {
         F_SET_NDPI   = 1 << O_SET_NDPI,
         F_SET_NDPI_M = 1 << O_SET_NDPI_M,
         F_SET_NDPI_P = 1 << O_SET_NDPI_P,
-        F_SET_MARK = 1 << O_SET_MARK,
+        F_SET_MARK  = 1 << O_SET_MARK,
+        F_SET_MARK2 = 1 << O_SET_MARK2,
         F_SET_CLSF = 1 << O_SET_CLSF,
         F_SET_FLOW = 1 << O_SET_FLOW,
         F_ACCEPT   = 1 << O_ACCEPT,
@@ -917,6 +926,7 @@ static const struct xt_option_entry NDPI_opts[] = {
         {.name = "ndpi-id-m", .id = O_SET_NDPI_M, .type = XTTYPE_NONE},
         {.name = "ndpi-id-p", .id = O_SET_NDPI_P, .type = XTTYPE_NONE},
         {.name = "set-mark",  .id = O_SET_MARK,   .type = XTTYPE_NONE},
+        {.name = "set-mark2", .id = O_SET_MARK2,  .type = XTTYPE_NONE},
         {.name = "set-clsf",  .id = O_SET_CLSF,   .type = XTTYPE_NONE},
         {.name = "flow-info", .id = O_SET_FLOW,   .type = XTTYPE_NONE},
         {.name = "accept",    .id = O_ACCEPT,     .type = XTTYPE_NONE},
@@ -956,6 +966,9 @@ static void NDPI_parse_v0(struct xt_option_call *cb)
 	case O_SET_MARK:
 		markinfo->t_mark = 1;
 		break;
+	case O_SET_MARK2:
+		markinfo->t_mark2 = 1;
+		break;
 	case O_SET_CLSF:
 		markinfo->t_clsf = 1;
 		break;
@@ -982,8 +995,11 @@ int l;
         l = snprintf(buf,sizeof(buf)-1," NDPI");
 	if(info->flow_yes)
 	     l += snprintf(&buf[l],sizeof(buf)-l-1, " NETFLOW");
-	if(info->t_mark)
-	     l += snprintf(&buf[l],sizeof(buf)-l-1, " set MARK ");
+	if(info->t_mark2)
+	     l += snprintf(&buf[l],sizeof(buf)-l-1, " set MARK2 ");
+	  else
+	    if(info->t_mark)
+		l += snprintf(&buf[l],sizeof(buf)-l-1, " set MARK ");
 	if(info->t_clsf)
 	     l += snprintf(&buf[l],sizeof(buf)-l-1, " set CLSF ");
 	if(info->mask || info->mark) {
@@ -1028,8 +1044,11 @@ static void NDPI_save_v0(const void *ip, const struct xt_entry_target *target)
 		if(info->p_proto_id)
 		     l += snprintf(&buf[l],sizeof(buf)-l-1, " --ndpi-id-p");
 	}
-	if(info->t_mark)
-	     l += snprintf(&buf[l],sizeof(buf)-l-1, " --set-mark");
+	if(info->t_mark2)
+	     l += snprintf(&buf[l],sizeof(buf)-l-1, " --set-mark2");
+	  else
+	    if(info->t_mark)
+		l += snprintf(&buf[l],sizeof(buf)-l-1, " --set-mark");
 	if(info->t_clsf)
 	     l += snprintf(&buf[l],sizeof(buf)-l-1, " --set-clsf");
 	if(info->flow_yes)
@@ -1061,7 +1080,7 @@ static struct xtables_target ndpi_tg_reg[] = {
                 .revision      = 0,
                 .size          = XT_ALIGN(sizeof(struct xt_ndpi_tginfo)),
                 .userspacesize = XT_ALIGN(sizeof(struct xt_ndpi_tginfo)),
-                //.help          = NDPI_help,
+//                .help          = NDPI_help,
                 .print         = NDPI_print_v0,
                 .save          = NDPI_save_v0,
                 .x6_parse      = NDPI_parse_v0,
@@ -1075,8 +1094,6 @@ void _init(void)
         int i;
 	char buf[128],*c,pname[32],mark[32];
 	uint32_t index;
-	pname[0] = '\0';
-	index = 0;
 
         for (i = 0; i <= NDPI_LAST_IMPLEMENTED_PROTOCOL; i++){
                 ndpi_mt_opts[i].name = prot_short_str[i];
