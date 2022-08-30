@@ -7241,7 +7241,7 @@ void ndpi_int_reset_protocol(struct ndpi_flow_struct *flow) {
 
 /* ********************************************************************************* */
 
-void NDPI_PROTOCOL_IP_clear(ndpi_ip_addr_t *ip) {
+static void NDPI_PROTOCOL_IP_clear(ndpi_ip_addr_t *ip) {
   memset(ip, 0, sizeof(ndpi_ip_addr_t));
 }
 
