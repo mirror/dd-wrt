@@ -40,7 +40,7 @@
 
 #ifdef __KERNEL__
 
-extern struct kmem_cache *bt_port_cache;
+//extern struct kmem_cache *bt_port_cache;
 #define BT_MALLOC(a) ndpi_malloc(a)
 #define BT_N_MALLOC(a)         kmem_cache_zalloc (bt_port_cache, GFP_ATOMIC)
 #define BT_FREE(a) ndpi_free(a)
@@ -54,7 +54,7 @@ extern struct kmem_cache *bt_port_cache;
 
 #endif
 
-time_t ndpi_bt_node_expire = 1200; /* time in seconds */
+static time_t ndpi_bt_node_expire = 1200; /* time in seconds */
 
 #ifndef __KERNEL__
 
@@ -76,7 +76,7 @@ extern unsigned long
 	ndpi_ptudsf, ndpi_ptuddr,
 	ndpi_ptudsr, ndpi_ptuddf;
 extern unsigned long
-	ndpi_btp_tm[20]; /* 3600/ 3m */
+	ndpi_btp_tm[20];
 */
 static void diagram(unsigned long *d,size_t n,int var) {
 int i = 3600/n;

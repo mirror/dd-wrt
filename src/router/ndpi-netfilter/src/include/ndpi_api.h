@@ -46,12 +46,12 @@ extern "C" {
 #define SAVE_DETECTION_BITMASK_AS_UNKNOWN     1
 #define NO_SAVE_DETECTION_BITMASK_AS_UNKNOWN  0
 
-  extern int ndpi_debug_print_level;
+//  extern int ndpi_debug_print_level;
   /*
     In case a custom DGA function is used, the fucntion
     below must be overwritten,
   */
-  extern ndpi_custom_dga_predict_fctn ndpi_dga_function;
+//  extern ndpi_custom_dga_predict_fctn ndpi_dga_function;
 
   /**
    * Check if a string is encoded with punycode
@@ -1728,7 +1728,7 @@ NDPI_STATIC   int ndpi_load_categories_file(struct ndpi_detection_module_struct 
 
   NDPI_STATIC u_int32_t ndpi_quick_16_byte_hash(u_int8_t *in_16_bytes_long);
 
-  extern int ndpi_stun_cache_enable;
+//  extern int ndpi_stun_cache_enable;
 
   /**
    * Initialize the hashmap.

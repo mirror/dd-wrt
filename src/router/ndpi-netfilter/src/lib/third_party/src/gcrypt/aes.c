@@ -59,7 +59,7 @@ static uint32_t RCON[10];
 #define MUL(x,y) ( ( (x) && (y) ) ? pow[(log[(x)]+log[(y)]) % 255] : 0 )
 
 static int aes_init_done = 0;
-int aes_aesni_has_support = 0;
+static int aes_aesni_has_support = 0;
 
 static void aes_gen_tables( void )
 {
