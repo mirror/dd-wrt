@@ -19,14 +19,14 @@
 
 typedef long intptr_t;
 typedef size_t socklen_t;
-const char *
+NDPI_STATIC const char *
 inet_ntop (int af, const void *src, char *dst, socklen_t size);
-int inet_pton(int af, const char *src, void *dst);
-int atoi(const char *);
-long int atol(const char *);
+NDPI_STATIC int inet_pton(int af, const char *src, void *dst);
+NDPI_STATIC int atoi(const char *);
+NDPI_STATIC long int atol(const char *);
 
-void gettimeofday64(struct timespec64 *tv, void *tz);
-char *strtok_r(char *str, const char *delim, char **saveptr);
+NDPI_STATIC void gettimeofday64(struct timespec64 *tv, void *tz);
+NDPI_STATIC char *strtok_r(char *str, const char *delim, char **saveptr);
 
 #define le64toh(v) le64_to_cpu(v)
 #define le32toh(v) le32_to_cpu(v)

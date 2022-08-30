@@ -49,7 +49,7 @@ static int         inet_pton6(const char *src, unsigned char *dst);
  * author:
  *	Paul Vixie, 1996.
  */
-const char *
+NDPI_STATIC const char *
 inet_ntop (int af, const void *src, char *dst, socklen_t size)
 {
 	switch (af) {
@@ -76,7 +76,7 @@ inet_ntop (int af, const void *src, char *dst, socklen_t size)
  * author:
  *      Paul Vixie, 1996.
  */
-int inet_pton(int af, const char *src, void *dst)
+NDPI_STATIC int inet_pton(int af, const char *src, void *dst)
 {
 	switch (af) {
 	case AF_INET:
@@ -362,26 +362,26 @@ static int inet_pton6(const char *src, unsigned char *dst)
 }
 #endif /* NDPI_DETECTION_SUPPORT_IPV6 */
 
-long long int atoll(const char *buf) {
+NDPI_STATIC long long int atoll(const char *buf) {
 	long long int ret;
 	if(kstrtoll(buf,0,&ret)) ret = 0;
 	return ret;
 }
-long int atol(const char *buf) {
+NDPI_STATIC long int atol(const char *buf) {
 	long int ret;
 	if(kstrtol(buf,0,&ret)) ret = 0;
 	return ret;
 }
-int atoi(const char *buf) {
+NDPI_STATIC int atoi(const char *buf) {
 	return atol(buf);
 }
 
-void gettimeofday64(struct timespec64 *tv, void *tz) {
+NDPI_STATIC void gettimeofday64(struct timespec64 *tv, void *tz) {
 	tv->tv_sec = ktime_get_real_seconds();
 	tv->tv_nsec = 0;
 }
 
-char *strtok_r (char *s, const char *delim, char **save_ptr)
+NDPI_STATIC char *strtok_r (char *s, const char *delim, char **save_ptr)
 {
   char *end;
   if (s == NULL)

@@ -255,7 +255,7 @@ int parse_port_range(char *pr,ndpi_port_range_t *np)
 }
 
 /**************************************************************/
-struct ndpi_port_def *ndpi_port_range_replace(
+NDPI_STATIC struct ndpi_port_def *ndpi_port_range_replace(
 		struct ndpi_port_def *pd,
 		int start, int end,
 		ndpi_port_range_t *np,
@@ -313,7 +313,7 @@ ndpi_free(pd);
 return pd1;
 }
 
-struct ndpi_port_def *ndpi_port_range_update(
+NDPI_STATIC struct ndpi_port_def *ndpi_port_range_update(
 		struct ndpi_port_def *pd,
 		ndpi_port_range_t *np,
 		int op,
@@ -463,7 +463,7 @@ static inline void _node_free_data(ndpi_patricia_node_t *node) {
 	node->data = NULL;
 }
 
-void *ndpi_port_add_one_range(void *data, ndpi_port_range_t *np,int op,
+NDPI_STATIC void *ndpi_port_add_one_range(void *data, ndpi_port_range_t *np,int op,
 		ndpi_mod_str_t *ndpi_str)
 {
 struct ndpi_port_def *pd = data;

@@ -50,9 +50,9 @@
    * https://tools.ietf.org/html/draft-ietf-quic-transport-29
    */
 
-extern int processClientServerHello(struct ndpi_detection_module_struct *ndpi_struct,
+NDPI_STATIC int processClientServerHello(struct ndpi_detection_module_struct *ndpi_struct,
                                     struct ndpi_flow_struct *flow, uint32_t quic_version);
-extern int http_process_user_agent(struct ndpi_detection_module_struct *ndpi_struct,
+NDPI_STATIC int http_process_user_agent(struct ndpi_detection_module_struct *ndpi_struct,
                                    struct ndpi_flow_struct *flow,
                                    const u_int8_t *ua_ptr, u_int16_t ua_ptr_len);
 
@@ -184,12 +184,12 @@ static int is_version_with_tls(uint32_t version)
   return is_version_quic(version) ||
     ((version & 0xFFFFFF00) == 0x54303500) /* T05X */;
 }
-int is_version_with_var_int_transport_params(uint32_t version)
+NDPI_STATIC int is_version_with_var_int_transport_params(uint32_t version)
 {
   return (is_version_quic(version) && is_quic_ver_greater_than(version, 27)) ||
     (version == V_T051);
 }
-int is_version_with_ietf_long_header(uint32_t version)
+NDPI_STATIC int is_version_with_ietf_long_header(uint32_t version)
 {
   /* At least draft-ietf-quic-invariants-06, or newer*/
   return is_version_quic(version) ||
@@ -208,7 +208,7 @@ static int is_version_quic_v2(uint32_t version)
   return version == 0x709A50C4;
 }
 
-int quic_len(const uint8_t *buf, uint64_t *value)
+NDPI_STATIC int quic_len(const uint8_t *buf, uint64_t *value)
 {
   *value = buf[0];
   switch((*value) >> 6) {
@@ -228,7 +228,7 @@ int quic_len(const uint8_t *buf, uint64_t *value)
     return 0;
   }
 }
-int quic_len_buffer_still_required(uint8_t value)
+NDPI_STATIC int quic_len_buffer_still_required(uint8_t value)
 {
   switch(value >> 6) {
   case 0:
@@ -253,7 +253,7 @@ static uint16_t gquic_get_u16(const uint8_t *buf, uint32_t version)
 }
 
 
-char *__gcry_err(gpg_error_t err, char *buf, size_t buflen)
+NDPI_STATIC char *__gcry_err(gpg_error_t err, char *buf, size_t buflen)
 {
   gpg_strerror_r(err, buf, buflen);
   /* I am not sure if the string will be always null-terminated...

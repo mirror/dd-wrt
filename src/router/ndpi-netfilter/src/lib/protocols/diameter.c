@@ -62,7 +62,7 @@ struct diameter_header_t
 
 
 // Check packet
-int is_diameter(struct ndpi_packet_struct *packet)
+NDPI_STATIC int is_diameter(struct ndpi_packet_struct *packet)
 {
   struct diameter_header_t *diameter = (struct diameter_header_t *)packet->payload;
 
@@ -86,7 +86,7 @@ int is_diameter(struct ndpi_packet_struct *packet)
 }
 
 
-void ndpi_search_diameter(struct ndpi_detection_module_struct *ndpi_struct,
+NDPI_STATIC void ndpi_search_diameter(struct ndpi_detection_module_struct *ndpi_struct,
 			  struct ndpi_flow_struct *flow)
 {
   struct ndpi_packet_struct *packet = ndpi_get_packet_struct(ndpi_struct);
@@ -104,7 +104,7 @@ void ndpi_search_diameter(struct ndpi_detection_module_struct *ndpi_struct,
 }
 
 
-void init_diameter_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id,
+NDPI_STATIC void init_diameter_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id,
 			 NDPI_PROTOCOL_BITMASK *detection_bitmask)
 {
   ndpi_set_bitmask_protocol_detection("Diameter", ndpi_struct, detection_bitmask, *id,

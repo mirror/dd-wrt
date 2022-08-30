@@ -2301,7 +2301,7 @@ return  family == AF_INET6 ?
 	      :	snprintf(lbuf,bufsize-1, "%pI4n:%d",ip,htons(port));
 }
 
-AC_ERROR_t ac_automata_add_exact(AC_AUTOMATA_t *thiz, AC_PATTERN_t *ac_pattern) {
+NDPI_STATIC AC_ERROR_t ac_automata_add_exact(AC_AUTOMATA_t *thiz, AC_PATTERN_t *ac_pattern) {
 
 	if( ac_pattern->astring[0] == '|') {
 		ac_pattern->astring++;
@@ -2656,7 +2656,7 @@ const char *acerr2txt(AC_ERROR_t r) {
 	return r >= ACERR_SUCCESS && r <= ACERR_ERROR ? __acerr2txt[r]:"UNKNOWN";
 }
 
-int str_coll_to_automata(struct ndpi_detection_module_struct *ndpi_str,
+NDPI_STATIC int str_coll_to_automata(struct ndpi_detection_module_struct *ndpi_str,
 		void *host_ac,hosts_str_t *hosts) {
 str_collect_t *ph;
 int np,nh,err=0;
@@ -3311,3 +3311,13 @@ static void __exit ndpi_mt_exit(void)
 
 module_init(ndpi_mt_init);
 module_exit(ndpi_mt_exit);
+
+#include "ndpi_strcol.c" 
+#include "ndpi_proc_parsers.c" 
+#include "ndpi_proc_generic.c"
+#include "ndpi_proc_info.c"
+#include "ndpi_proc_flow.c" 
+#include "ndpi_proc_hostdef.c"
+#include "ndpi_proc_ipdef.c"
+#include "../libre/regexp.c"
+#include "../../src/lib/ndpi_main.c"
