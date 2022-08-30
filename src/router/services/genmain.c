@@ -1,7 +1,7 @@
 /*
  * genmain.c - generates main.c for service handling
  *
- * Copyright (C) 2020 Sebastian Gottschall <gottschall@dd-wrt.com>
+ * Copyright (C) 2020 Sebastian Gottschall <s.gottschall@dd-wrt.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
