@@ -1085,6 +1085,20 @@ void process_ndpi_collected_info(struct ndpi_workflow * workflow, struct ndpi_fl
       flow->bittorent_hash[j] = '\0';
     }
   }
+  /* DISCORD */
+  else if(is_ndpi_proto(flow, NDPI_PROTOCOL_DISCORD) && !is_ndpi_proto(flow, NDPI_PROTOCOL_TLS) &&
+          flow->ndpi_flow->protos.discord.client_ip[0] != '\0') {
+    flow->info_type = INFO_GENERIC;
+    ndpi_snprintf(flow->info, sizeof(flow->info), "Client IP: %s",
+                  flow->ndpi_flow->protos.discord.client_ip);
+  }
+  /* DISCORD */
+  else if(is_ndpi_proto(flow, NDPI_PROTOCOL_DISCORD) && !is_ndpi_proto(flow, NDPI_PROTOCOL_TLS) &&
+          flow->ndpi_flow->protos.discord.client_ip[0] != '\0') {
+    flow->info_type = INFO_GENERIC;
+    ndpi_snprintf(flow->info, sizeof(flow->info), "Client IP: %s",
+                  flow->ndpi_flow->protos.discord.client_ip);
+  }
   /* DNS */
   else if(is_ndpi_proto(flow, NDPI_PROTOCOL_DNS)) {
     if(flow->ndpi_flow->protos.dns.rsp_type == 0x1)
