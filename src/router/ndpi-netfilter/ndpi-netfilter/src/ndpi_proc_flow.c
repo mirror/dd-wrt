@@ -322,6 +322,26 @@ ssize_t ndpi_dump_acct_info(struct ndpi_net *n,
 	return l;
 }
 
+#if LINUX_VERSION_CODE < KERNEL_VERSION(3,18,0)
+static inline int unsigned_offsets(struct file *file)
+{
+	return file->f_mode & FMODE_UNSIGNED_OFFSET;
+}
+
+static loff_t vfs_setpos(struct file *file, loff_t offset, loff_t maxsize)
+{
+	if (offset < 0 && !unsigned_offsets(file))
+		return -EINVAL;
+	if (offset > maxsize)
+		return -EINVAL;
+
+	if (offset != file->f_pos) {
+		file->f_pos = offset;
+		file->f_version = 0;
+	}
+	return offset;
+}
+#endif
 
 ssize_t nflow_proc_read(struct file *file, char __user *buf,
                               size_t count, loff_t *ppos)
