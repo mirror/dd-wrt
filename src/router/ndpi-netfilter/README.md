@@ -1,61 +1,97 @@
 ![ntop][ntopng_logo] ![ntop][ntop_logo]
 # nDPI
 
-[![Build Status](https://travis-ci.org/ntop/nDPI.png?branch=dev)](https://travis-ci.org/ntop/nDPI)
+[![Build Status](https://img.shields.io/github/workflow/status/ntop/nDPI/Build/dev?logo=github)](https://github.com/ntop/nDPI/actions?query=workflow%3ABuild)
 [![Code Quality: Cpp](https://img.shields.io/lgtm/grade/cpp/g/ntop/nDPI.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/ntop/nDPI/context:cpp)
 [![Total Alerts](https://img.shields.io/lgtm/alerts/g/ntop/nDPI.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/ntop/nDPI/alerts)
+[![Fuzzing Status](https://oss-fuzz-build-logs.storage.googleapis.com/badges/ndpi.svg)](https://bugs.chromium.org/p/oss-fuzz/issues/list?sort=-opened&can=1&q=proj:ndpi)
 
 ## What is nDPI ?
 
-nDPI is an open source LGPLv3 library for deep-packet inspection. Based on OpenDPI it includes ntop extensions. We have tried to push them into the OpenDPI source tree but nobody answered emails so we have decided to create our own source tree
+nDPI® is an open source LGPLv3 library for deep-packet inspection. Based on OpenDPI it includes ntop extensions. We have tried to push them into the OpenDPI source tree but nobody answered emails so we have decided to create our own source tree
 
 ### How To Compile nDPI
 
-In order to compile this library do
+In order to compile this project do
 
 - ./autogen.sh
-- ./configure
+- make
+
+To compile the library w/o any tools or tests:
+
+- ./autogen.sh --with-only-libndpi
 - make
 
 To run tests do additionally:
 
-- cd tests; ./do.sh
+- ./tests/do.sh # Generate and check for diff's in PCAP files
+- ./tests/do-unit.sh # Run unit tests
+- ./tests/do-dga.sh # Run DGA detection test
 
-Please note that the pre-requisites for compilation include:
-- GNU tools (autogen, automake, autoconf, libtool)
-- GNU C compiler (gcc)
+or run all with: `make check`
+
+Please note that the (minimal) pre-requisites for compilation include:
+- GNU tools (autoconf automake libtool pkg-config gettext flex bison)
+- GNU C compiler (gcc) or Clang
+
+On Debian/Ubuntu systems do:
+- sudo apt-get install build-essential git gettext flex bison libtool autoconf automake pkg-config libpcap-dev libjson-c-dev libnuma-dev libpcre2-dev libmaxminddb-dev librrd-dev
+
+On Arch Linux:
+- sudo pacman -S gcc git gettext flex bison libtool autoconf automake pkg-config libpcap json-c numactl pcre2 libmaxminddb rrdtool
+
+On FreeBSD:
+- sudo pkg install gcc git gettext flex bison libtool autoconf automake devel/pkgconf gmake libpcap json-c pcre2 libmaxminddb rrdtool
+
+Remember to use `gmake` and not `make` on FreeBSD
+
+On MacOS:
+- brew install coreutils gcc git gettext flex bison libtool autoconf automake pkg-config libpcap json-c pcre2 libmaxminddb rrdtool
+
+On Windows (assuming [MSYS2](https://www.msys2.org/) already installed):
+- msys2 -c "pacman --noconfirm -S --needed --overwrite '\*' git mingw-w64-x86\_64-toolchain automake1.16 automake-wrapper autoconf libtool make mingw-w64-x86\_64-json-c mingw-w64-x86\_64-crt-git mingw-w64-x86\_64-pcre mingw-w64-x86\_64-libpcap"
+
+### How To Build The Documentation
+
+- pip install --upgrade pip
+- pip install -r doc/requirements.txt
+- make doc
+
+Use the builtin python3 webserver to view documentation:
+- make doc-view
 
 ### How To Add A New Protocol Dissector
 
 The entire procedure of adding new protocols in detail:
 
-1. Add new protocol together with its unique ID to: src/include/ndpi_protocol_ids.h
-2. Create a new protocol in: src/lib/protocols/
-3. Variables to be kept for the duration of the entire flow (as state variables) need to be placed in: src/include/ndpi_typedefs.h in ndpi_flow_tcp_struct (for TCP only), ndpi_flow_udp_struct (for UDP only), or ndpi_flow_struct (for both).
-4. Add a new entry for the search function for the new protocol in: src/include/ndpi_protocols.h
-5. Choose (do not change anything) a selection bitmask from: src/include/ndpi_define.h
-6. Add a new entry in ndpi_set_protocol_detection_bitmask2 in: src/lib/ndpi_main.c
-7. Set protocol default ports in ndpi_init_protocol_defaults in: src/lib/ndpi_main.c
-8.  ./autogen.sh
-9. make
-10. make check
+1. Add new protocol together with its unique ID to: `src/include/ndpi_protocol_ids.h`
+2. Create a new protocol in: `src/lib/protocols/`
+3. Variables to be kept for the duration of the entire flow (as state variables) need to be placed in: `src/include/ndpi_typedefs.h` in `ndpi_flow_tcp_struct` (for TCP only), `ndpi_flow_udp_struct` (for UDP only), or `ndpi_flow_struct` (for both).
+4. Add a new entry for the search function for the new protocol in: `src/include/ndpi_protocols.h`
+5. Choose (do not change anything) a selection bitmask from: `src/include/ndpi_define.h`
+6. Set protocol default ports in `ndpi_init_protocol_defaults` in: `src/lib/ndpi_main.c`
+7. `./autogen.sh`
+8. `make`
+9. `make check`
 
 ### How to use nDPI to Block Selected Traffic
 
 You can use nDPI to selectively block selected Internet traffic by embedding it onto an application (remember that nDPI is just a library). Both [ntopng](https://github.com/ntop/ntopng) and [nProbe cento](http://www.ntop.org/products/netflow/nprobe-cento/) can do this.
 
+### nDPI Paper Citation
+
+- Deri, Luca, et al. [nDPI: Open-source high-speed deep packet inspection](http://luca.ntop.org/nDPI.pdf) 2014 International Wireless Communications and Mobile Computing Conference (IWCMC). IEEE, 2014.
+
+### nDPI-Related Projects
+
+- [nfstream](https://github.com/aouinizied/nfstream)
+- [nDPId](https://github.com/utoni/nDPId)
+
 ### DISCLAIMER
+
 While we do our best to detect network protocols, we cannot guarantee that our software is error free and 100% accurate in protocol detection. Please make sure that you respect the privacy of users and you have proper authorization to listen, capture and inspect network traffic.
 
-### Creating A Source File Tar Ball
-
-If you want to distribute a source tar file of nDPI do:
-
-- make dist
-
-To ensure that a tar file includes all necessary files and to run tests on distribution do:
-
-- make distcheck
+nDPI is a registered trademark in the US and EU.
 
 [ntopng_logo]: https://camo.githubusercontent.com/0f789abcef232035c05e0d2e82afa3cc3be46485/687474703a2f2f7777772e6e746f702e6f72672f77702d636f6e74656e742f75706c6f6164732f323031312f30382f6e746f706e672d69636f6e2d313530783135302e706e67
 

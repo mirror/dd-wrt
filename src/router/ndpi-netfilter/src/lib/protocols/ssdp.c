@@ -1,8 +1,8 @@
 /*
  * ssdp.c
  *
- * Copyright (C) 2009-2011 by ipoque GmbH
- * Copyright (C) 2011-18 - ntop.org
+ * Copyright (C) 2009-11 - ipoque GmbH
+ * Copyright (C) 2011-22 - ntop.org
  *
  * This file is part of nDPI, an open source deep packet inspection
  * library based on the OpenDPI and PACE technology by ipoque GmbH
@@ -29,16 +29,42 @@
 #include "ndpi_api.h"
 
 
+static void ssdp_parse_lines(struct ndpi_detection_module_struct
+					 *ndpi_struct, struct ndpi_flow_struct *flow)
+{
+  struct ndpi_packet_struct *packet = ndpi_get_packet_struct(ndpi_struct);
+
+
+  ndpi_parse_packet_line_info(ndpi_struct, flow);
+
+  /* Save user-agent for device discovery if available */
+  if(packet->user_agent_line.ptr != NULL && packet->user_agent_line.len > 0) {
+    if (ndpi_user_agent_set(flow, packet->user_agent_line.ptr, packet->user_agent_line.len) == NULL)
+    {
+      NDPI_LOG_DBG2(ndpi_struct, "Could not set SSDP user agent\n");
+    }
+  }
+
+  /* Save host which provides a service if available */
+  if (packet->host_line.ptr != NULL && packet->host_line.len > 0) {
+    if (ndpi_hostname_sni_set(flow, packet->host_line.ptr, packet->host_line.len) == NULL)
+    {
+      NDPI_LOG_DBG2(ndpi_struct, "Could not set SSDP host\n");
+    }
+  }
+}
+
 static void ndpi_int_ssdp_add_connection(struct ndpi_detection_module_struct
 					 *ndpi_struct, struct ndpi_flow_struct *flow)
 {
-  ndpi_set_detected_protocol(ndpi_struct, flow, NDPI_PROTOCOL_SSDP, NDPI_PROTOCOL_UNKNOWN);
+  ssdp_parse_lines(ndpi_struct, flow);
+  ndpi_set_detected_protocol(ndpi_struct, flow, NDPI_PROTOCOL_SSDP, NDPI_PROTOCOL_UNKNOWN, NDPI_CONFIDENCE_DPI);
 }
 
 /* this detection also works asymmetrically */
 void ndpi_search_ssdp(struct ndpi_detection_module_struct *ndpi_struct, struct ndpi_flow_struct *flow)
 {
-  struct ndpi_packet_struct *packet = &flow->packet;
+  struct ndpi_packet_struct *packet = ndpi_get_packet_struct(ndpi_struct);
 	
   NDPI_LOG_DBG(ndpi_struct, "search ssdp\n");
   if (packet->udp != NULL) {

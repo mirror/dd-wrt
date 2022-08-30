@@ -27,13 +27,13 @@
 
 static void ndpi_int_ubntac2_add_connection(struct ndpi_detection_module_struct *ndpi_struct, struct ndpi_flow_struct *flow)
 {
-  ndpi_set_detected_protocol(ndpi_struct, flow, NDPI_PROTOCOL_UBNTAC2, NDPI_PROTOCOL_UNKNOWN);
+  ndpi_set_detected_protocol(ndpi_struct, flow, NDPI_PROTOCOL_UBNTAC2, NDPI_PROTOCOL_UNKNOWN, NDPI_CONFIDENCE_DPI);
 }
 
 
 void ndpi_search_ubntac2(struct ndpi_detection_module_struct *ndpi_struct, struct ndpi_flow_struct *flow)
 {
-  struct ndpi_packet_struct *packet = &flow->packet;
+  struct ndpi_packet_struct *packet = ndpi_get_packet_struct(ndpi_struct);
 
   NDPI_LOG_DBG(ndpi_struct, "search ubntac2\n");
   NDPI_LOG_DBG2(ndpi_struct, "UBNTAC2 detection... plen:%i %i:%i\n", packet->payload_packet_len, ntohs(packet->udp->source), ntohs(packet->udp->dest));
@@ -50,23 +50,24 @@ void ndpi_search_ubntac2(struct ndpi_detection_module_struct *ndpi_struct, struc
       }
 
       if(found) {
-	char version[256];
-	int i, j, len;
-	
 	found += packet->payload[found+1] + 4; /* Skip model name */
-	found++; /* Skip len*/
+	found++; /* Skip len */
 	
 	if(found < packet->payload_packet_len) {
-	  for(i=found, j=0; (packet->payload[i] != 0) && (i < packet->payload_packet_len) && (i < (sizeof(version)-1)); i++)
+	  char version[256];
+	  int len;
+	  u_int i, j;
+	  
+	  for(i=found, j=0; (i < packet->payload_packet_len)
+		&& (i < (sizeof(version)-1))
+		&& (packet->payload[i] != 0); i++)
 	    version[j++] = packet->payload[i];
 	  
 	  version[j] = '\0';
 
-	  if(!ndpi_struct->disable_metadata_export) {
-	    len = ndpi_min(sizeof(flow->protos.ubntac2.version)-1, j);
-	    strncpy(flow->protos.ubntac2.version, (const char *)version, len);
-	    flow->protos.ubntac2.version[len] = '\0';
-	  }
+	  len = ndpi_min(sizeof(flow->protos.ubntac2.version)-1, j);
+	  strncpy(flow->protos.ubntac2.version, (const char *)version, len);
+	  flow->protos.ubntac2.version[len] = '\0';
 	}
 	
 	NDPI_LOG_INFO(ndpi_struct, "UBNT AirControl 2 request\n");
@@ -86,7 +87,7 @@ void init_ubntac2_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_
   ndpi_set_bitmask_protocol_detection("UBNTAC2", ndpi_struct, detection_bitmask, *id,
 				      NDPI_PROTOCOL_UBNTAC2,
 				      ndpi_search_ubntac2,
-				      NDPI_SELECTION_BITMASK_PROTOCOL_UDP_WITH_PAYLOAD,
+				      NDPI_SELECTION_BITMASK_PROTOCOL_V4_V6_UDP_WITH_PAYLOAD,
 				      SAVE_DETECTION_BITMASK_AS_UNKNOWN,
 				      ADD_TO_DETECTION_BITMASK);
   *id += 1;

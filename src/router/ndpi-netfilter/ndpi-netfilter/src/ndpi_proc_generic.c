@@ -30,7 +30,7 @@ generic_proc_close(struct ndpi_net *n,
 
 	if(w_buf) {
 		if(w_buf->cpos ) {
-			if(ndpi_log_debug > 1)
+			if(_DBG_TRACE_SPROC)
 			    pr_info("%s:%s cmd %d:%s\n",__func__,n->ns_name,
 					    w_buf->cpos,&w_buf->cmd[0]);
 			ret = (parse_line)(n,&w_buf->cmd[0]);
@@ -88,7 +88,7 @@ generic_proc_write(struct ndpi_net *n, const char __user *buffer,
 			c = buf[i];
 			if(c == '\n' || !c) {
 				if(w_buf->cpos) {
-					if(ndpi_log_debug > 1)
+					if(_DBG_TRACE_SPROC)
 					    pr_info("%s:%s POS %lld cmd %d:'%s' i %d\n", __func__,n->ns_name,
 							   *loff,w_buf->cpos,&w_buf->cmd[0],i);
 					r = (parse_line)(n,&w_buf->cmd[0]);

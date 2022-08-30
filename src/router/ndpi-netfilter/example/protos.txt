@@ -10,15 +10,49 @@ tcp:3000@ntop
 #  Format:
 #  host:"<value>",host:"<value>",.....@<subproto>
 
-host:"googlesyndication.com"@Google
-host:"venere.com"@Venere
-host:"kataweb.it",host:"repubblica.it"@Repubblica
-host:"ntop"@ntop
+host:"disneyplus.com",host:"cdn.registerdisney.go.com",host:"disney-portal.my.onetrust.com",host:"disneyplus.bn5x.net",host:"disney-plus.net"@DisneyPlus
+host:"*.lvlt.dash.us.aiv-cdn.net.c.footprint.net"@AmazonVideo
+host:"api-global.netflix.com"@Netflix
 #  IP based Subprotocols
 #  Format:
 #  ip:<value>,ip:<value>,.....@<subproto>
 
-ip:213.75.170.11@CustomProtocol
+#
+# NOTES
+# 1) the port of a custom protocol is optional but if
+#    specified it must match the port.
+# 2) you can specify up to 1 port per IP address
+# 3) if you specify a custom ip:<IP>:<PORT> rule,
+#    even if the <PORT> doesn't match the <IP>
+#    (if best match during the search) will
+#    have priority as best match. Example if
+#    you specify a <Google IP>:<port 9999> and
+#    in your traffic have match for such IP but
+#    with a port other than 9999, the IP address
+#    begin a best match will hve preference over
+#    <Google IP> so this protocol will not be
+#    detected as <L7 proto>.Google but only
+#    as <L7 proto>
+#
+
+ip:213.75.170.11/32:443@CustomProtocol
+ip:8.248.73.247:443@AmazonPrime
+ip:54.80.47.130@AmazonPrime
+
+#
+# Risk Exceptions
+#
+# ip_risk_mask:   used to mask flow risks for IP addresses
+# host_risk_mask: used to mask exceptions for domain names and hosts
+#
+# Syntax: <name>=<64 bit mask to be put in AND with the risk
+#
+# For IPs, the flow risk is put in AND (source IP mask OR destination IP mask)
+# For Flows with a hostname (e.g. TLS) the risk is also put in AND with the host_risk_mask
+#ip_risk_mask:192.168.1.0/24=0
+#ip_risk_mask:10.196.157.228=0
+host_risk_mask:".home"=0
 
 
-
+# Custom certification autorities we trust
+trusted_issuer_dn:"CN=813845657003339838, O=Code42, OU=TEST, ST=MN, C=US"

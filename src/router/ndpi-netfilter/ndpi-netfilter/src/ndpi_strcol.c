@@ -6,6 +6,8 @@
 #undef HAVE_HYPERSCAN
 #include "ndpi_main.h"
 
+#include <linux/in6.h>
+
 #include "ndpi_strcol.h"
 
 void str_hosts_done(hosts_str_t *h) {

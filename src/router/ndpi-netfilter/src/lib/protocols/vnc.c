@@ -1,7 +1,7 @@
 /*
  * vnc.c
  *
- * Copyright (C) 2016-18 - ntop.org
+ * Copyright (C) 2016-22 - ntop.org
  *
  * This file is part of nDPI, an open source deep packet inspection
  * library based on the OpenDPI and PACE technology by ipoque GmbH
@@ -28,33 +28,30 @@
 
 void ndpi_search_vnc_tcp(struct ndpi_detection_module_struct *ndpi_struct, struct ndpi_flow_struct *flow)
 {
-  struct ndpi_packet_struct *packet = &flow->packet;
+  struct ndpi_packet_struct *packet = ndpi_get_packet_struct(ndpi_struct);
 
   NDPI_LOG_DBG(ndpi_struct, "search vnc\n");
   /* search over TCP */
   if(packet->tcp) {
-    
+
     if(flow->l4.tcp.vnc_stage == 0) {
-      
       if((packet->payload_packet_len == 12) &&
-	 ((memcmp(packet->payload, "RFB 003.003", 11) == 0 && packet->payload[11] == 0x0a) ||
-	  (memcmp(packet->payload, "RFB 003.007", 11) == 0 && packet->payload[11] == 0x0a) ||
-	  (memcmp(packet->payload, "RFB 003.008", 11) == 0 && packet->payload[11] == 0x0a) ||
-	  (memcmp(packet->payload, "RFB 004.001", 11) == 0 && packet->payload[11] == 0x0a))) {	   
+	 (((memcmp(packet->payload, "RFB 003.", 7) == 0) && (packet->payload[11] == 0x0a))
+	  ||
+	  ((memcmp(packet->payload, "RFB 004.", 7) == 0) && (packet->payload[11] == 0x0a)))) {
 	NDPI_LOG_DBG2(ndpi_struct, "reached vnc stage one\n");
 	flow->l4.tcp.vnc_stage = 1 + packet->packet_direction;
 	return;
       }
     } else if(flow->l4.tcp.vnc_stage == 2 - packet->packet_direction) {
-      
+
       if((packet->payload_packet_len == 12) &&
-	 ((memcmp(packet->payload, "RFB 003.003", 11) == 0 && packet->payload[11] == 0x0a) ||
-	  (memcmp(packet->payload, "RFB 003.007", 11) == 0 && packet->payload[11] == 0x0a) ||
-	  (memcmp(packet->payload, "RFB 003.008", 11) == 0 && packet->payload[11] == 0x0a) ||
-	  (memcmp(packet->payload, "RFB 004.001", 11) == 0 && packet->payload[11] == 0x0a))) {
-	
+	 (((memcmp(packet->payload, "RFB 003.", 7) == 0) && (packet->payload[11] == 0x0a))
+	  ||
+	  ((memcmp(packet->payload, "RFB 004.", 7) == 0) && (packet->payload[11] == 0x0a)))) {	   
 	NDPI_LOG_INFO(ndpi_struct, "found vnc\n");
-	ndpi_set_detected_protocol(ndpi_struct, flow, NDPI_PROTOCOL_VNC, NDPI_PROTOCOL_UNKNOWN);
+	ndpi_set_detected_protocol(ndpi_struct, flow, NDPI_PROTOCOL_VNC, NDPI_PROTOCOL_UNKNOWN, NDPI_CONFIDENCE_DPI);
+	ndpi_set_risk(ndpi_struct, flow, NDPI_DESKTOP_OR_FILE_SHARING_SESSION, "Found VNC"); /* Remote assistance */
 	return;
       }
     }
@@ -71,6 +68,6 @@ void init_vnc_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int3
 				      NDPI_SELECTION_BITMASK_PROTOCOL_V4_V6_TCP_WITH_PAYLOAD_WITHOUT_RETRANSMISSION,
 				      SAVE_DETECTION_BITMASK_AS_UNKNOWN,
 				      ADD_TO_DETECTION_BITMASK);
-  
+
   *id += 1;
 }

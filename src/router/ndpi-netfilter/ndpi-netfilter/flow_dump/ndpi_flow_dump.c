@@ -147,14 +147,14 @@ int ret=0;
 				}
 				return offs != dump->len ? -1: ret;
 			}
-			if(offs+rl+c->cert_len+c->host_len > dump->len) {
+			if(offs+rl+c->opt_len+c->host_len > dump->len) {
 				if(!move_to_next(dump,offs)) {
 					printf("T2:%d len error1. offs %d\n",n,offs);
 					return -1;
 				}
 				return offs != dump->len ? -1: ret;
 			}
-			rl += c->cert_len + c->host_len;
+			rl += c->opt_len + c->host_len;
 			offs += rl;
 			ret |= REC_FLOW;
 			break;
@@ -186,7 +186,7 @@ for(id=0; id <= ndpi_last_proto; id++) {
 	append_buf(lbuf,(n-lbuf)+len);
 }
 if(proto_buf && proto_buf_pos)
-	write(fd,proto_buf,proto_buf_pos);
+	(void)write(fd,proto_buf,proto_buf_pos);
 if(proto_buf) {
 	free(proto_buf);
 	proto_buf = 0;
@@ -276,7 +276,7 @@ uint16_t id;
 			rl = 8;
 			if(offs+rl > dump->len) return -1;
 			l = snprintf(buff,sizeof(buff)-1,"TIME %u\n",c->time_start);
-			write(fd,buff,l);
+			(void)write(fd,buff,l);
 			offs += rl;
 			break;
 		case 3:
@@ -284,14 +284,14 @@ uint16_t id;
 			if(offs+rl > dump->len) return -1;
 			l = snprintf(buff,sizeof(buff)-1,"LOST_TRAFFIC %u %u %" PRIu64 " %" PRIu64 "\n",
 				c->p[0],c->p[1],c->b[0],c->b[1]);
-			write(fd,buff,l);
+			(void)write(fd,buff,l);
 			offs += rl;
 			break;
 		case 2:
 			rl = sizeof(struct flow_data_common) + 
 				( c->family ? sizeof(struct flow_data_v6) :
 				  	      sizeof(struct flow_data_v4));
-			if(offs+rl+c->cert_len+c->host_len > dump->len) return -1;
+			if(offs+rl+c->opt_len+c->host_len > dump->len) return -1;
 			if(c->family) {
 				v6 = (struct flow_data_v6 *)&data[offs+sizeof(struct flow_data_common)];
 				inet_ntop(AF_INET6,&v6->ip_s,a1,sizeof(a1)-1);
@@ -338,7 +338,7 @@ uint16_t id;
 			if(!ndpi_last_proto)
 				ndpi_get_proto_names();
 			if(c->proto_app) {
-				if(c->proto_master) {
+				if(c->proto_master && c->proto_master != c->proto_app) {
 					snprintf(pn,sizeof(pn)-1,"%s,%s",
 						ndpi_proto_name(c->proto_app),
 						ndpi_proto_name(c->proto_master));
@@ -361,18 +361,23 @@ uint16_t id;
 			}
 			l += snprintf(&buff[l],sizeof(buff)-1-l," P=%s",pn[0] ? pn : "Unknown");
 
-			if(c->cert_len)
+			if(!c->extflag) {
+			    if(c->host_len)
 				l += snprintf(&buff[l],sizeof(buff)-1-l,
-						" C=%.*s",c->cert_len,&data[offs+rl]);
-
-			if(c->host_len)
+						" H=%.*s",c->host_len,&data[offs+rl+c->opt_len]);
+			    if(c->opt_len)
 				l += snprintf(&buff[l],sizeof(buff)-1-l,
-						" H=%.*s",c->host_len,&data[offs+rl+c->cert_len]);
-
+						" J=%.*s",c->opt_len,&data[offs+rl]);
+			} else {
+			    if(c->host_len + c->opt_len)
+				l += snprintf(&buff[l],sizeof(buff)-1-l,
+						" %s%.*s", c->host_len ? "H=":"",
+						c->host_len+c->opt_len,&data[offs+rl]);
+			}
 			buff[l++] = '\n';
 			buff[l] = '\0';
-			write(fd,buff,l);
-			offs += rl + c->cert_len + c->host_len;
+			(void)write(fd,buff,l);
+			offs += rl + c->opt_len + c->host_len;
 			break;
 		}
 	}
@@ -440,7 +445,7 @@ int main(int argc,char **argv) {
 	} else {
 		fd = open(src_file ,O_RDONLY);
 		if(fd < 0) {
-			perror("open lows");
+			perror("open flows");
 			exit(1);
 		}
 		if(fstat(fd,&src_st) < 0) {
@@ -459,7 +464,7 @@ int main(int argc,char **argv) {
 	gettimeofday(&tv1,NULL);
 	while(1) {
 		if(!c) 
-			c = malloc(sizeof(struct dump_data)+blk_size+FLOW_PRE_HDR);
+			c = calloc(1,sizeof(struct dump_data)+blk_size+FLOW_PRE_HDR);
 		if(!c) {
 			perror("malloc");
 			break;

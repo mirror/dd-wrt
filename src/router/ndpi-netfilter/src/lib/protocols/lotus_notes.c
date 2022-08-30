@@ -1,7 +1,7 @@
 /*
  * lotus_notes.c
  *
- * Copyright (C) 2012-18 - ntop.org
+ * Copyright (C) 2012-22 - ntop.org
  *
  * nDPI is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -29,7 +29,7 @@
 static void ndpi_check_lotus_notes(struct ndpi_detection_module_struct *ndpi_struct, 
 				   struct ndpi_flow_struct *flow)
 {
-  struct ndpi_packet_struct *packet = &flow->packet;  
+  struct ndpi_packet_struct *packet = ndpi_get_packet_struct(ndpi_struct);
   // const u_int8_t *packet_payload = packet->payload;
   u_int32_t payload_len = packet->payload_packet_len;
 
@@ -47,7 +47,7 @@ static void ndpi_check_lotus_notes(struct ndpi_detection_module_struct *ndpi_str
       
       if(memcmp(&packet->payload[6], lotus_notes_header, sizeof(lotus_notes_header)) == 0) {
         NDPI_LOG_INFO(ndpi_struct, "found lotus_notes\n");
-        ndpi_set_detected_protocol(ndpi_struct, flow, NDPI_PROTOCOL_LOTUS_NOTES, NDPI_PROTOCOL_UNKNOWN);
+        ndpi_set_detected_protocol(ndpi_struct, flow, NDPI_PROTOCOL_LOTUS_NOTES, NDPI_PROTOCOL_UNKNOWN, NDPI_CONFIDENCE_DPI);
       }
       return;
     }
@@ -59,12 +59,10 @@ static void ndpi_check_lotus_notes(struct ndpi_detection_module_struct *ndpi_str
 
 void ndpi_search_lotus_notes(struct ndpi_detection_module_struct *ndpi_struct, struct ndpi_flow_struct *flow)
 {
-  struct ndpi_packet_struct *packet = &flow->packet;
-
   NDPI_LOG_DBG(ndpi_struct, "search lotus_notes\n");
 
   /* skip marked packets */
-  if(packet->detected_protocol_stack[0] != NDPI_PROTOCOL_LOTUS_NOTES)
+  if(flow->detected_protocol_stack[0] != NDPI_PROTOCOL_LOTUS_NOTES)
     ndpi_check_lotus_notes(ndpi_struct, flow);
 }
 

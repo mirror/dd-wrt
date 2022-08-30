@@ -14,13 +14,13 @@ static void ndpi_int_rtcp_add_connection(struct ndpi_detection_module_struct
 					 *ndpi_struct, struct ndpi_flow_struct *flow)
 {
   ndpi_set_detected_protocol(ndpi_struct, flow, NDPI_PROTOCOL_RTCP,
-			     NDPI_PROTOCOL_UNKNOWN);
+			     NDPI_PROTOCOL_UNKNOWN, NDPI_CONFIDENCE_DPI);
 }
 
 void ndpi_search_rtcp(struct ndpi_detection_module_struct *ndpi_struct,
 		      struct ndpi_flow_struct *flow)
 {
-  struct ndpi_packet_struct *packet = &flow->packet;
+  struct ndpi_packet_struct *packet = ndpi_get_packet_struct(ndpi_struct);
   u_int16_t dport = 0, sport = 0;
 
   NDPI_LOG_DBG(ndpi_struct, "search RTCP\n");
@@ -45,7 +45,7 @@ void ndpi_search_rtcp(struct ndpi_detection_module_struct *ndpi_struct,
       len = packet->payload[2+offset] * 256 + packet->payload[2+offset+1];
       rtcp_section_len = (len + 1) * 4;
       
-      if(((offset+rtcp_section_len) > packet->payload_packet_len) || (rtcp_section_len == 0))
+      if(((offset+rtcp_section_len) > packet->payload_packet_len) || (rtcp_section_len == 0) || (len == 0))
 	goto exclude_rtcp;
       else
 	offset += rtcp_section_len;
@@ -60,6 +60,9 @@ void ndpi_search_rtcp(struct ndpi_detection_module_struct *ndpi_struct,
       NDPI_LOG_INFO(ndpi_struct, "found rtcp\n");
       ndpi_int_rtcp_add_connection(ndpi_struct, flow);
     }
+
+    if(flow->packet_counter > 3)
+      NDPI_EXCLUDE_PROTO(ndpi_struct, flow);
   } else {
   exclude_rtcp:
     
@@ -73,7 +76,7 @@ void init_rtcp_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int
   ndpi_set_bitmask_protocol_detection("RTCP", ndpi_struct, detection_bitmask, *id,
 				      NDPI_PROTOCOL_RTCP,
 				      ndpi_search_rtcp,
-				      NDPI_SELECTION_BITMASK_PROTOCOL_TCP_OR_UDP_WITH_PAYLOAD,
+				      NDPI_SELECTION_BITMASK_PROTOCOL_V4_V6_TCP_OR_UDP_WITH_PAYLOAD,
 				      SAVE_DETECTION_BITMASK_AS_UNKNOWN,
 				      ADD_TO_DETECTION_BITMASK);
 

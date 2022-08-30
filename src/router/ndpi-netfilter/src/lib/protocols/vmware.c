@@ -1,7 +1,7 @@
 /*
  * vmware.c
  *
- * Copyright (C) 2016-18 - ntop.org
+ * Copyright (C) 2016-22 - ntop.org
  *
  * nDPI is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -26,7 +26,7 @@
 
 void ndpi_search_vmware(struct ndpi_detection_module_struct *ndpi_struct, struct ndpi_flow_struct *flow)
 {
-  struct ndpi_packet_struct *packet = &flow->packet;
+  struct ndpi_packet_struct *packet = ndpi_get_packet_struct(ndpi_struct);
 
   NDPI_LOG_DBG(ndpi_struct, "search vmware\n");
   /* Check whether this is an VMWARE flow */
@@ -36,7 +36,7 @@ void ndpi_search_vmware(struct ndpi_detection_module_struct *ndpi_struct, struct
        ((packet->payload[0] & 0xFF) == 0xA4)){
       
       NDPI_LOG_INFO(ndpi_struct, "found vmware\n");
-      ndpi_set_detected_protocol(ndpi_struct, flow, NDPI_PROTOCOL_VMWARE, NDPI_PROTOCOL_UNKNOWN);
+      ndpi_set_detected_protocol(ndpi_struct, flow, NDPI_PROTOCOL_VMWARE, NDPI_PROTOCOL_UNKNOWN, NDPI_CONFIDENCE_DPI);
       return;
     }
   }
@@ -48,7 +48,7 @@ void init_vmware_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_i
   ndpi_set_bitmask_protocol_detection("VMWARE", ndpi_struct, detection_bitmask, *id,
 				      NDPI_PROTOCOL_VMWARE,
 				      ndpi_search_vmware,
-				      NDPI_SELECTION_BITMASK_PROTOCOL_UDP_WITH_PAYLOAD,
+				      NDPI_SELECTION_BITMASK_PROTOCOL_V4_V6_UDP_WITH_PAYLOAD,
 				      SAVE_DETECTION_BITMASK_AS_UNKNOWN,
 				      ADD_TO_DETECTION_BITMASK);
   

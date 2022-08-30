@@ -1,7 +1,7 @@
 /*
  * mssql.c
  *
- * Copyright (C) 2016-18 - ntop.org
+ * Copyright (C) 2016-22 - ntop.org
  *
  * This file is part of nDPI, an open source deep packet inspection
  * library based on the OpenDPI and PACE technology by ipoque GmbH
@@ -41,17 +41,22 @@ struct tds_packet_header {
 static void ndpi_int_mssql_tds_add_connection(struct ndpi_detection_module_struct
 					  *ndpi_struct, struct ndpi_flow_struct *flow)
 {
-  ndpi_set_detected_protocol(ndpi_struct, flow, NDPI_PROTOCOL_MSSQL_TDS, NDPI_PROTOCOL_UNKNOWN);
+  ndpi_set_detected_protocol(ndpi_struct, flow, NDPI_PROTOCOL_MSSQL_TDS, NDPI_PROTOCOL_UNKNOWN, NDPI_CONFIDENCE_DPI);
 }
 
 void ndpi_search_mssql_tds(struct ndpi_detection_module_struct *ndpi_struct, struct ndpi_flow_struct *flow)
 {
-  struct ndpi_packet_struct *packet = &flow->packet;
+  struct ndpi_packet_struct *packet = ndpi_get_packet_struct(ndpi_struct);
   struct tds_packet_header *h = (struct tds_packet_header*) packet->payload;
 
   NDPI_LOG_DBG(ndpi_struct, "search mssql_tds\n");
 
-  if(packet->payload_packet_len < sizeof(struct tds_packet_header)) {
+  if((packet->payload_packet_len < sizeof(struct tds_packet_header))
+     /*
+       The TPKT protocol used by ISO 8072 (on port 102) is similar
+       to this potocol and it can cause false positives 
+     */
+     || (packet->tcp->dest == ntohs(102))) {
     NDPI_EXCLUDE_PROTO(ndpi_struct, flow);
     return;
   }

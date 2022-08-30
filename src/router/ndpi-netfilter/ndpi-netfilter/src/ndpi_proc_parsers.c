@@ -10,6 +10,7 @@
 #undef HAVE_HYPERSCAN
 #include "ndpi_main.h"
 
+#include "ndpi_main_common.h"
 #include "ndpi_strcol.h"
 #include "ndpi_main_netfilter.h"
 #include "ndpi_proc_parsers.h"
@@ -22,10 +23,9 @@
 
 int parse_ndpi_hostdef(struct ndpi_net *n,char *cmd) {
 
-    AC_PATTERN_t ac_pattern;
     char *pname,*host_match,*nc,*nh,*cstr;
     uint16_t protocol_id;
-    AC_ERROR_t r;
+    int op_del = 0;
 
     nc = NULL;
 
@@ -33,14 +33,12 @@ int parse_ndpi_hostdef(struct ndpi_net *n,char *cmd) {
 	if(*cmd == '#') break;
 
 	while(*cmd && (*cmd == ' ' || *cmd == '\t')) cmd++;
-	if(ndpi_log_debug > 1)
+	if(_DBG_TRACE_SPROC_H)
 		pr_info("%s: %.100s\n",__func__,cmd);
 	if(!strcmp(cmd,"reset")) {
 
-		if(ndpi_log_debug > 1)
+		if(_DBG_TRACE_SPROC_H)
 			pr_info("hostdef: clean host_ac %px\n",n->host_ac);
-
-		ac_automata_clean((AC_AUTOMATA_t*)n->host_ac);
 
 		for(protocol_id = 0; protocol_id < NDPI_NUM_BITS; protocol_id++) {
 			if(n->hosts_tmp->p[protocol_id]) {
@@ -49,8 +47,9 @@ int parse_ndpi_hostdef(struct ndpi_net *n,char *cmd) {
 			}
 		}
 		n->host_error = 0;
+		n->host_upd++;
 
-		if(ndpi_log_debug > 1)
+		if(_DBG_TRACE_SPROC_H)
 			pr_info("xt_ndpi: reset hosts\n");
 		break;
 	}
@@ -70,7 +69,12 @@ int parse_ndpi_hostdef(struct ndpi_net *n,char *cmd) {
 		*nc++ = '\0';
 		while(*nc && (*nc == ' ' || *nc == '\t' || *nc == ';')) nc++;
 	}
-
+	if(*pname == '+') {
+		pname++;
+	} else if(*pname == '-') {
+		op_del = 1;
+		pname++;
+	}
 	protocol_id =  ndpi_get_proto_by_name(n->ndpi_struct, pname);
 
 	if(protocol_id == NDPI_PROTOCOL_UNKNOWN) {
@@ -89,33 +93,23 @@ int parse_ndpi_hostdef(struct ndpi_net *n,char *cmd) {
 		if(nh) *nh++ = '\0';
 
 		sml = strlen(host_match);
-		cstr = str_collect_add(&n->hosts_tmp->p[protocol_id],host_match,sml);
-		if(!cstr) {
-			pr_err("xt_ndpi: can't alloc memory for '%.60s'\n",host_match);
-			goto bad_cmd;
-		}
-
-		ac_pattern.astring    = cstr;
-		ac_pattern.length     = sml;
-		ac_pattern.rep.number = protocol_id;
-		r = n->host_ac ? ac_automata_add(n->host_ac, &ac_pattern) : ACERR_ERROR;
-		if(r != ACERR_SUCCESS) {
-			str_collect_del(n->hosts_tmp->p[protocol_id],host_match,sml);
-			if(r != ACERR_DUPLICATE_PATTERN) {
-				pr_info("xt_ndpi: add host '%s' proto %s error: %s\n",
-						host_match,pname,acerr2txt(r));
-				goto bad_cmd;
+		if(str_collect_look(n->hosts_tmp->p[protocol_id],host_match,sml) >= 0) {
+			if(op_del) 
+				str_collect_del(n->hosts_tmp->p[protocol_id],host_match,sml);
+			else {
+				pr_err("xt_ndpi: exists '%.60s'\n",host_match);
+				continue;
 			}
-			if(ac_pattern.rep.number != protocol_id) {
-				pr_info("xt_ndpi: Host '%s' proto %s already defined as %s\n",
-					host_match,pname,
-					ndpi_get_proto_by_id(n->ndpi_struct,
-								     ac_pattern.rep.number));
+		} else 	{
+			cstr = str_collect_add(&n->hosts_tmp->p[protocol_id],host_match,sml);
+			if(!cstr) {
+				pr_err("xt_ndpi: can't alloc memory for '%.60s'\n",host_match);
 				goto bad_cmd;
 			}
 		}
+		n->host_upd++;
 	}
-	if(ndpi_log_debug > 2 && nc && *nc)
+	if(_DBG_TRACE_SPROC_H && nc && *nc)
 		pr_info("xt_ndpi: next part '%s'\n",nc);
     }
     return 0;
@@ -129,7 +123,7 @@ bad_cmd:
 
 /*************************** ip_def **************************/
 
-uint16_t ndpi_check_ipport(patricia_node_t *node,uint16_t port,int l4) {
+uint16_t ndpi_check_ipport(ndpi_patricia_node_t *node,uint16_t port,int l4) {
 struct ndpi_port_def *pd;
 if(!node) return NDPI_PROTOCOL_UNKNOWN;
 pd = node->data;
@@ -146,7 +140,7 @@ if(pd->count[l4]) {
 		i = start + ((end-start) >> 1);
 		do {
 			pt = &pd->p[i];
-			if(pt->start <= port && port <= pt->end) return pt->proto;
+			if(pt->start <= port && port <= pt->end) return pt->proto | (pt->no_dpi ? 0x8000:0);
 			if(port < pt->start) {
 			    end = i;
 			} else {
@@ -156,9 +150,8 @@ if(pd->count[l4]) {
 		} while(start < end);
 	}
 }
-/* FIXME */
-//return node->value.user_value;
-return NDPI_PROTOCOL_UNKNOWN;
+return (node->value.u.uv32.user_value & 0x7fff) |
+	(node->value.u.uv32.user_value & 0xff0000 ? 0x8000:0);
 }
 
 int ndpi_print_port_range(ndpi_port_range_t *pt,
@@ -175,8 +168,9 @@ int ndpi_print_port_range(ndpi_port_range_t *pt,
 		else
 		  l += snprintf(&buf[l],bufsize - l,":%d-%d",pt->start,pt->end);
 
-		t_proto = ndpi_get_proto_by_id(ndpi_str,pt->proto);
-		l += snprintf(&buf[l],bufsize - l,":%s", t_proto ? t_proto : "unknown");
+		t_proto = ndpi_get_proto_by_id(ndpi_str,pt->proto & 0xffff);
+		l += snprintf(&buf[l],bufsize - l,":%s%s", t_proto ? t_proto : "unknown",
+				pt->no_dpi ? "!":"");
 		if(l == bufsize) break;
 	}
 	return l;
@@ -185,12 +179,18 @@ int ndpi_print_port_range(ndpi_port_range_t *pt,
 int parse_n_proto(char *pr,ndpi_port_range_t *np,ndpi_mod_str_t *ndpi_str)
 {
 int i;
+char *lc;
 
 if(!*pr) return 1;
 
 if(!strcmp(pr,"any")) {
 	np->proto = NDPI_NUM_BITS;
 	return 0;
+}
+lc = pr + strlen(pr)-1;
+if(*lc == '!') {
+	np->no_dpi = 1;
+	*lc = '\0';
 }
 i = ndpi_get_proto_by_name(ndpi_str,pr);
 if(i != NDPI_PROTOCOL_UNKNOWN) {
@@ -255,11 +255,11 @@ int parse_port_range(char *pr,ndpi_port_range_t *np)
 }
 
 /**************************************************************/
-static struct ndpi_port_def *ndpi_port_range_replace(
+struct ndpi_port_def *ndpi_port_range_replace(
 		struct ndpi_port_def *pd,
 		int start, int end,
 		ndpi_port_range_t *np,
-		int count,int proto,
+		int count,
 		ndpi_mod_str_t *ndpi_str)
 {
 struct ndpi_port_def *pd1;
@@ -270,7 +270,7 @@ DBGDATA(char dbuf[256])
 ndpi_print_port_range(pd->p,pd->count[0]+pd->count[1],dbuf,sizeof(dbuf),ndpi_str);
 DP("%s: old %d,%d %s\n",pd->count[0],pd->count[1],dbuf);
 ndpi_print_port_range(np,count,dbuf,sizeof(dbuf),ndpi_str);
-DP("%s: on %d,%d,%d,%d %s\n",start,end,count,proto,dbuf);
+DP("%s: on %d,%d,%d,%d %s\n",start,end,count,np->l4_proto,dbuf);
 #endif
 
 if( (end-start) == count) {
@@ -283,15 +283,15 @@ if( (end-start) == count) {
 
 pd1 = ndpi_malloc( sizeof(struct ndpi_port_def) + 
 		   sizeof(ndpi_port_range_t) * 
-		   (count + pd->count[1-proto]));
+		   (count + pd->count[1-np->l4_proto]));
 if(!pd1) return pd;
 
 memcpy(pd1,pd,sizeof(struct ndpi_port_def));
-if(!proto) { // udp
+if(!np->l4_proto) { // udp
 	if(count) 
 		memcpy( &pd1->p[0],np,count*sizeof(ndpi_port_range_t));
 	if(pd->count[1])
-		memcpy( &pd1->p[pd->count[0]], &pd->p[pd->count[0]],
+		memcpy( &pd1->p[count], &pd->p[pd->count[0]],
 			pd->count[1]*sizeof(ndpi_port_range_t));
 	pd1->count[0] = count;
 } else { // tcp
@@ -313,16 +313,16 @@ ndpi_free(pd);
 return pd1;
 }
 
-static struct ndpi_port_def *ndpi_port_range_update(
+struct ndpi_port_def *ndpi_port_range_update(
 		struct ndpi_port_def *pd,
 		ndpi_port_range_t *np,
-		int proto,int op,
+		int op,
 		ndpi_mod_str_t *ndpi_str)
 {
 ndpi_port_range_t *tp,*tmp;
 int i,n,k;
 int start,end;
-if(!proto) {
+if(!np->l4_proto) {
 	start = 0;
 	end   = pd->count[0];
 } else {
@@ -332,12 +332,12 @@ if(!proto) {
 n = end-start;
 DP("%s: %s:%d-%d:%d %d %d %d %s\n",
 	np->l4_proto ? (np->l4_proto == 1 ? "tcp":"any"):"udp",
-	np->start,np->end,np->proto,start,end,proto,
+	np->start,np->end,np->proto,start,end,np->l4_proto,
 	op ? "set":"del");
 
 if(!n) {
 	if(!op) return pd;
-	return ndpi_port_range_replace(pd,start,end,np,1,proto,ndpi_str); // create 1 range
+	return ndpi_port_range_replace(pd,start,end,np,1,ndpi_str); // create 1 range
 }
 
 tmp = ndpi_malloc(sizeof(ndpi_port_range_t)*(n+2));
@@ -452,12 +452,18 @@ if(k <= 1) {
 }
 DP("%s: k %d\n",k);
 
-pd = ndpi_port_range_replace(pd,start,end,tmp,k,proto,ndpi_str);
+pd = ndpi_port_range_replace(pd,start,end,tmp,k,ndpi_str);
 ndpi_free(tmp);
 return pd;
 }
 
-static void *ndpi_port_add_one_range(void *data, ndpi_port_range_t *np,int op,
+static inline void _node_free_data(ndpi_patricia_node_t *node) {
+	if(!node->data) return;
+	ndpi_free(node->data);
+	node->data = NULL;
+}
+
+void *ndpi_port_add_one_range(void *data, ndpi_port_range_t *np,int op,
 		ndpi_mod_str_t *ndpi_str)
 {
 struct ndpi_port_def *pd = data;
@@ -479,11 +485,18 @@ if(!pd) {
 	}
 	return pd;
 }
-if(np->l4_proto != 1) { // udp or any
-	pd = ndpi_port_range_update(pd,np,0,op,ndpi_str);
-}
-if(np->l4_proto > 0 ) { // tcp or any
-	pd = ndpi_port_range_update(pd,np,1,op,ndpi_str);
+switch(np->l4_proto) {
+    case 2: // any
+	np->l4_proto = 0;
+	pd = ndpi_port_range_update(pd,np,op,ndpi_str);
+	np->l4_proto = 1;
+	pd = ndpi_port_range_update(pd,np,op,ndpi_str);
+	break;
+    case 1:
+	pd = ndpi_port_range_update(pd,np,op,ndpi_str);
+	break;
+    case 0:
+	pd = ndpi_port_range_update(pd,np,op,ndpi_str);
 }
 if(pd && (pd->count[0] + pd->count[1]) == 0) {
 	ndpi_free(pd);
@@ -492,14 +505,14 @@ if(pd && (pd->count[0] + pd->count[1]) == 0) {
 return pd;
 }
 
-int parse_ndpi_ipdef_cmd(struct ndpi_net *n, int f_op, prefix_t *prefix, char *arg) {
+int parse_ndpi_ipdef_cmd(struct ndpi_net *n, int f_op, ndpi_prefix_t *prefix, char *arg) {
 char *d1,*d2;
 int f_op2=0;
 int ret = 0;
 
 ndpi_port_range_t np = { .start=0, .end=0, .l4_proto = 2, .proto = NDPI_PROTOCOL_UNKNOWN };
-patricia_node_t *node;
-patricia_tree_t *pt;
+ndpi_patricia_node_t *node;
+ndpi_patricia_tree_t *pt;
 
 if(*arg == '-') {
 	f_op2=1;
@@ -544,16 +557,18 @@ if(f_op || f_op2) { // delete
 	// -xxxx any
 	if(np.proto >= NDPI_NUM_BITS && 
 		np.l4_proto == 2 && !np.start && !np.end) {
+		_node_free_data(node);
 		ndpi_patricia_remove(pt,node);
 		break;
 	}
 	if(!np.start && !np.end) {
 	    // -xxxx proto
-	    if(node->value.user_value == np.proto) {
+	    if(node->value.u.uv32.user_value == np.proto) {
 		if(!node->data) {
+		    _node_free_data(node);
 		    ndpi_patricia_remove(pt,node);
 		} else {
-		  node->value.user_value = 0;
+		  node->value.u.uv32.user_value = 0;
 		}
 		break;
 	    }
@@ -577,7 +592,7 @@ if(np.proto == NDPI_PROTOCOL_UNKNOWN ||
 if(!np.start && !np.end) {
 	if(np.l4_proto == 2) {
 	    // any:proto
-	    node->value.user_value = np.proto;
+	    node->value.u.uv32.user_value = np.proto | (np.no_dpi << 16);
 	    break;
 	}
 	// (tcp|udp):any:proto
@@ -602,7 +617,7 @@ return ret;
 int parse_ndpi_ipdef(struct ndpi_net *n,char *cmd) {
 int f_op = 0; // 1 if delete
 char *addr,c;
-prefix_t *prefix;
+ndpi_prefix_t *prefix;
 int res = 0;
 
 SKIP_SPACE_C;
@@ -631,7 +646,9 @@ while(*cmd && !res) {
 	SKIP_SPACE_C;
 	if(parse_ndpi_ipdef_cmd(n,f_op,prefix,t)) res=1;
 }
-ndpi_Deref_Prefix (prefix);
+
+ndpi_Deref_Prefix(prefix);
+
 return res;
 }
 
@@ -732,7 +749,7 @@ int parse_ndpi_proto(struct ndpi_net *n,char *cmd) {
 				return 1;
 			}
 			e_proto = ndpi_get_proto_by_name(n->ndpi_struct,v+1);
-			if(ndpi_log_debug > 1)
+			if(_DBG_TRACE_SPROC)
 				pr_info("NDPI: add custom protocol %x\n",e_proto);
 			n->mark[e_proto].mark = e_proto;
 			n->mark[e_proto].mask = 0x1ff;
@@ -810,7 +827,7 @@ int parse_ndpi_proto(struct ndpi_net *n,char *cmd) {
 		}
 //		pr_info("NDPI: proto %s id %d mark %x mask %s\n",
 //				hid,id,mark,m);
-		if(atomic_read(&n->protocols_cnt[0]) &&
+		if(atomic64_read(&n->protocols_cnt[0]) &&
 			!mark && !mask) {
 			pr_err("NDPI: iptables in use! Can't disable protocol\n");
 			return 1;
@@ -843,6 +860,41 @@ int parse_ndpi_proto(struct ndpi_net *n,char *cmd) {
 		return 0;
 	}
 	pr_err("NDPI: bad cmd %s\n",hid);
+	return *v ? 0:1;
+}
+
+/********************* ndpi debug *********************************/
+
+int parse_ndpi_debug(struct ndpi_net *n,char *cmd) {
+	char *v;
+	uint32_t mask;
+	v = cmd;
+	if(!*v) return 0;
+/*
+ * opt [yY1+]
+ */
+	while(v && *v != ' ' && *v != '\t') v++;
+	if(*v) {
+		*v = '\0';
+		mask = dbg_ipt_opt_get(cmd);
+		if(!mask) {
+			pr_err("NDPI: bad debug opt %s\n",cmd);
+			return 1;
+		}
+		*v = ' ';
+		while(*v && (*v == ' ' || *v == '\t')) v++;
+		if(*v) {
+			if(*v == 'y' || *v == 'Y' || *v == '1' || *v == '+')
+				ndpi_log_debug |= mask;
+			  else 
+			    if(*v == 'n' || *v == 'N' || *v == '0' || *v == '-')
+				ndpi_log_debug &= ~mask;
+			      else 
+				return 1;
+			return 0;
+		}
+	}
+	pr_err("NDPI: bad cmd %s\n",cmd);
 	return *v ? 0:1;
 }
 

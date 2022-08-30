@@ -2,28 +2,16 @@
 1. Kernel patches
 -----------------
 
-You _must_ apply the patch to the kernel in two cases:
-- Kernel version 3.2 or 3.4.
-- Kernel version 3.10 or higher (see minimum requirements for the kernel)
-In other cases kernel patches not requhired!
-
-Patches are located in the kernel-patch/*.diff
-
-V3.4.97  patch can be applied for 3.4 kernels (tested on 3.4.97+) and possibly to 3.2.
-V3.10.20 patch can be applied to kernel 3.10 (3.11).
-V3.12.7  patch can be applied to kernel 3.12.
-V3.14.4  patch can be applied to kernel 3.14.2-3.14.4
-V3.14.5  patch can be applied to kernel 3.14.5 and higher (3.18 including).
-v4.8.0   patch can be applied to kernel 4.8,4.9
-v4.12.0   patch can be applied to kernel 4.12
-v4.14.0   patch can be applied to kernel 4.14
-v4.15.3   patch can be applied to kernel 4.15
+This version works without patches for the kernel.
+The minimum required kernel version is 4.4.
+If you need to use the extension 'connlabel' you need
+to use a patch for the kernel.
 
 --------------------------------------------------------
 2. The minimum requirements for the kernel configuration
 --------------------------------------------------------
 
-Kernel version >= 3.4 (3.2 not tested)
+Kernel version >= 4.4
 
 Networking support  --->
   Networking options  --->
@@ -33,18 +21,19 @@ Networking support  --->
           Number of custom extend (1) (if patched kernel)
 	  "connlabel" match support (M)
 
-Check your kernel configuration file. For patched kernel there should be:
-
-CONFIG_NF_CONNTRACK=m or y
-CONFIG_NF_CONNTRACK_CUSTOM=1
-CONFIG_UNUSED_SYMBOLS=y
-
+Check your kernel configuration file.
 For non-patched kernel there should be:
 
-CONFIG_NF_CONNTRACK=m or y
-CONFIG_NF_CONNTRACK_LABELS=y
-CONFIG_NETFILTER_XT_MATCH_CONNLABEL=m
-CONFIG_UNUSED_SYMBOLS=y
+  CONFIG_NF_CONNTRACK=m or y
+  CONFIG_NF_CONNTRACK_LABELS=y
+  CONFIG_NETFILTER_XT_MATCH_CONNLABEL=m
+  CONFIG_UNUSED_SYMBOLS=y
+
+For patched kernel there should be:
+
+  CONFIG_NF_CONNTRACK=m or y
+  CONFIG_NF_CONNTRACK_CUSTOM=1
+  CONFIG_UNUSED_SYMBOLS=y
 
 ----------------------
 3. Compile and install
@@ -111,23 +100,51 @@ This wouldn't allow any HTTP traffic that originates from the machine where the
 rule was added.
 
 ------------------------------------------------------------------
-WARNING! You can't use form '--protoname' for user-defined protocols!
-Only '--proto protoname' form is allowed!
-(Iptables not allow  over 256 options on extensions)
-------------------------------------------------------------------
-
-------------------------------------------------------------------
 BIG FAT WARNING!
 
 Do not discard all the unknown traffic. Tcp-syn packets are always treated as an
 unknown protocol.
+Use the "inprogress" option to determine when the protocol detection process ends.
+
+Example of allowing several protocols:
+
+	iptables -A FORWARD -m ndpi --inprogress ssh,dns,tls -j ACCEPT
+	iptables -A FORWARD -m ndpi --clevel dpi --proto ssh,dns,tls -j ACCEPT
+	iptables -A FORWARD -m ndpi --unknown -j DROP
+
+Example of disabling several protocols:
+
+	iptables -A FORWARD -m ndpi --inprogress ssh,dns,tls -j ACCEPT
+	iptables -A FORWARD -m ndpi --clevel dpi --proto ssh,dns,tls -j DROP
+	iptables -A FORWARD -m ndpi --unknown -j ACCEPT
+
+Protocols defined in /proc/net/xt_ndpi/host_proto will be considered at the "dpi" confidence level
+Protocols defined in /proc/net/xt_ndpi/ip_proto by ip address have "ip" confidence level.
+Protocols defined in /proc/net/xt_ndpi/ip_proto by ip address and port have "user" confidence level.
+
 ------------------------------------------------------------------
+
+Using ja3s/ja3c/tlsfp/tlsv matches.
+
+These options can use only user-defined protocols.
+You need to create such a protocol and add hashes with additional prefixes to it.
+To check the ja3s hash, add the string JA3S_<hash>. Similar to other options.
+
+Example: 
+  echo "add_custom bad_ctcl" >/proc/net/xt_ndpi/proto
+  echo "bad_ctls:JA3C_63c4972da11f7a873178a9ee53acfd9e" >/proc/net/xt_ndpi/host_proto
+
+  iptables -A ... -m ndpi --ja3c bad_ctcl -j DROP
+
 
 Using NDPI target. To see available options type:
 
         iptables -j NDPI --help
 
-NDPI target may be using for packet marking (see MARK target) or packet classify (see CLASSIFY target).
+NDPI target may be using for packet marking (see MARK target), packet classify (see CLASSIFY target)
+and selecting traffic for "netflow" (see ipt_netflow).
+There is a limitation: the "-j NDPI" target must be after the "-m ndpi" match. 
+They can be used in one rule "iptables ... -m ndpi ... -j NDPI ..."
 Values for mark or class may be give from /proc/net/xt_ndpi/proto (see procfs section below) or specified in netfilter rules (--values).
 
 Example (traffic shaper)
@@ -180,12 +197,19 @@ done
 echo "unknown 10040" >/proc/net/xt_ndpi/proto
 
 #detect incoming traffic
-iptables -t mangle -A PREROUTING -m ndpi --all
+iptables -t mangle -A INPUT -m ndpi --all
+#detect transit traffic
+iptables -t mangle -A FORWARD -m ndpi --all
 #detect outgoing local traffic
 iptables -t mangle -A OUTPUT -m ndpi --all
 
 #traffic classification
 iptables -t mangle -A POSTROUTING -o eth0 -j NDPI --ndpi-id --set-clsf
+
+Warning! Do not use the 'mangle/PREROUTING' chain for incoming packets via
+the network interface with the translations of addresses (NAT),
+since the 'mangle/PREROUTING' chain is performed before NAT. Packet checks need
+to be moved to the 'mangle/FORWARD' and 'mangle/INPUT' chains.
 
 ----------------
 5. Module unload
@@ -200,7 +224,7 @@ iptables rule for nDPI and then type (as root):
 6. Module parameters
 --------------------
 
-xt_debug:	Debug level for xt_ndpi (0-3). Default 0.
+xt_debug:	Debug level for xt_ndpi. Default 0. See /proc/net/xt_ndpi/debug
 lib_trace:	Maximem debug level for nDPI library. Default 0.
 		0-off, 1-error, 2-trace, 3-debug, 4->extra debug"
 		(Needed configure with --enable-debug-messages option)
@@ -221,7 +245,12 @@ bt_log_size: size of log BT announces (kb). 192 bytes per announce. Default 128.
                  (Only if bt_hash_size > 0).
 
 ndpi_enable_flow: Enable netflow info. See FLOW_INFO.txt
+ndpi_flow_opt:    Output additional info about TLS. See FLOW_INFO.txt
 ndpi_flow_limit:  Limit netflow records. Default 10000000 (~4.3Gb RAM). See FLOW_INFO.txt
+
+ndpi_stun_cache: STUN cache control (0-1). Default 0.
+
+tls_buf_size: The maximum buffer size in kB for the TLS protocol. default 8, range 2-16
 
 ---------------
 7. procfs files
@@ -261,7 +290,7 @@ ndpi_flow_limit:  Limit netflow records. Default 10000000 (~4.3Gb RAM). See FLOW
   echo http_proxy 1 >/proc/net/xt_ndpi/proto
   echo 83 1 >/proc/net/xt_ndpi/proto
   echo "add_custom bad_host" >/proc/net/xt_ndpi/proto && \
-    echo "+bad_host:bad.org" >/proc/net/xt_ndpi/host_proto
+    echo "bad_host:bad.org" >/proc/net/xt_ndpi/host_proto
 
 /proc/net/xt_ndpi/ip_proto - show and change IP and port based protocols settings
 
@@ -269,11 +298,18 @@ ndpi_flow_limit:  Limit netflow records. Default 10000000 (~4.3Gb RAM). See FLOW
   "cat /proc/net/xt_ndpi/ip_proto"
 
   Change settings:
-  "echo '[-]prefix ([[(tcp|udp|any):]port[-port]:]protocol)+' >/proc/net/xt_ndpi/ip_proto" - change
+  "echo '[-]prefix ([[(tcp|udp|any):]port[-port]:]protocol[!])+' >/proc/net/xt_ndpi/ip_proto" - change
 
-  Example:      echo '1.1.1.1 any:53:DNS tcp:81:http' >/proc/net/xt_ndpi/ip_proto
+  Example:      echo '1.1.1.1 any:53:DNS! tcp:81:http' >/proc/net/xt_ndpi/ip_proto
 
-/proc/net/xt_ndpi/host_proto - show host based settings (used in DNS,HTTP,SSL)
+  If checking the first packet did not determine the protocol and there is a "!" after the protocol name,
+  then checking the contents of packets is stopped and the specified protocol is assigned to the connection.
+  Otherwise, the protocol will be assigned after any of the 3 conditions are met:
+  1. 10 or more packets have passed through the connection.
+  2. In both directions at least one packet with a payload is transmitted.
+  3. Three or more packets with payload are transmitted in one (any) direction.
+
+/proc/net/xt_ndpi/host_proto - show and change host based settings (used in DNS,HTTP,SSL)
 
   View current settings:
   "cat /proc/net/xt_ndpi/host_proto"
@@ -281,11 +317,25 @@ ndpi_flow_limit:  Limit netflow records. Default 10000000 (~4.3Gb RAM). See FLOW
   Change settings:
   "echo 'protoname:host[,host...][ protoname:host[,host...]]' >/proc/net/xt_ndpi/host_proto"
 
+  Delete match:
+  "echo '-protoname:host' >/proc/net/xt_ndpi/host_proto"
+
   Delete all hosts matchs:
   "echo 'reset' >/proc/net/xt_ndpi/host_proto"
 
   Updating /proc/net/xt_ndpi/host_prot is slow and expensive.
   It is recommended to download all the data in one go.
+
+/proc/net/xt_ndpi/debug - show and change debug output
+  
+  View current settings:
+  "cat /proc/net/xt_ndpi/debug"
+  
+  Change settings:
+  "echo 'packet y' >/proc/net/xt_ndpi/debug"
+
+  Disable all debug:
+  "echo 'all y' >/proc/net/xt_ndpi/debug"
 
 Bittorrents-specific files:
 
