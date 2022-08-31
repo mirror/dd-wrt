@@ -1483,7 +1483,7 @@ void setupHostAPPSK(FILE * fp, char *prefix, int isfirst)
 	    && (ispsk3 || ispsk || ispsk2 || ispsk2sha256 || iswpa || iswpa2 || iswpa3 || iswpa2sha256 || iswpa3_128 || iswpa3_192)) {
 		fprintf(fp, "nas_identifier=%s\n", nvram_nget("%s_nas", prefix));
 		fprintf(fp, "mobility_domain=%s\n", nvram_nget("%s_domain", prefix));
-		fprintf(fp, "ft_over_ds=1\n");
+		fprintf(fp, "ft_over_ds=0\n");
 		fprintf(fp, "ft_psk_generate_local=1\n");
 		fprintf(fp, "pmk_r1_push=1\n");
 		// todo. add key holders
