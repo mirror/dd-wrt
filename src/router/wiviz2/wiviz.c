@@ -43,6 +43,7 @@ To add:
 #include <endian.h>
 #include <unistd.h>
 #include <stdint.h>
+#include <airbag.h>
 
 #define INFO_UPTIME 0
 #define INFO_RSSI 1
@@ -111,6 +112,7 @@ int main(int argc, char **argv)
 	int defaultHopSeq[] = { 1, 3, 6, 8, 11 };
 	int s, one;
 	memset(&cfg, 0, sizeof(cfg));
+	airbag_init();
 #ifdef HAVE_MADWIFI
 	wl_dev = nvram_safe_get("wifi_display");
 #elif HAVE_RT2880
