@@ -161,7 +161,7 @@ typedef enum {
 typedef struct {
 	u_char bssid[6];
 	char ssid[33];
-	u_char ssidlen;
+	char ssidlen;
 	u_char channel;
 	u_short flags;
 	int encryption;
@@ -172,7 +172,7 @@ typedef struct {
 	sta_state state;
 	u_char connectedBSSID[6];
 	char lastssid[33];
-	u_char lastssidlen;
+	char lastssidlen;
 	char radioname[16];
 } sta_info;
 
