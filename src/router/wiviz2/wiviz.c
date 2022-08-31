@@ -299,7 +299,7 @@ void writeJavascript()
 	int i;
 	FILE *outf;
 	wiviz_host *h;
-
+	nvram_unset("wiviz2_dump_done");
 	outf = fopen("/tmp/wiviz2-dump", "w");
 	if (!outf) {
 		printf("Failure to open output file\n");
@@ -335,6 +335,7 @@ void writeJavascript()
 	fprintf(outf, "location.replace('Wiviz_Survey.asp');\n");
 	fprintf(outf, "}");
 	fclose(outf);
+	nvram_set("wiviz2_dump_done","1");
 }
 
 static const char *ntoa(const uint8_t mac[6])
