@@ -456,11 +456,31 @@ EJ_VISIBLE void ej_dump_wiviz_data(webs_t wp, int argc, char_t ** argv)	// Eko, 
 	killall("autokill_wiviz", SIGTERM);
 	eval("autokill_wiviz");
 	eval("run_wiviz");
-
+	int cnt = 0;
+	FILE *w = NULL;
 	if ((f = fopen("/tmp/wiviz2-dump", "r")) != NULL) {
+		while (nvram_invmatch("wiviz2_dump_done", "1")) {	// wait until writing is done
+			struct timespec tim, tim2;
+			tim.tv_sec = 0;
+			tim.tv_nsec = 10000000L;
+			nanosleep(&tim, &tim2);
+			if (cnt++ > 100)
+				fclose(f);
+			/* in case there is a problem, read backup */
+			f = fopen("/tmp/wiviz2-old", "r");
+			goto read_old;
+		}
+		w = fopen("/tmp/wiviz2-old", "wb");
+		if (!w)
+			return;
+	      read_old:;
 		while (fgets(buf, sizeof(buf), f)) {
 			websWrite(wp, "%s", buf);
+			if (w)
+				fprintf(w, "%s", buf);
 		}
+		if (w)
+			fclose(w);
 		fclose(f);
 	} else			// dummy data - to prevent first time js
 		// error
