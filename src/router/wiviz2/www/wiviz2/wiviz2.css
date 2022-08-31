@@ -23,13 +23,13 @@ select {
   position: relative;
   z-index: 150;
 }
-input[type] {
-  accent-color: var(--it-c);
+input.spaceradio {
+  accent-color: var(--it-c, inherit);
 }
 .button {
-  background: var(--ac-0);
-  border: 1px solid var(--ac-0);
-  color: var(--tx-c);
+  background: var(--ac-0, #30519c);
+  border: 1px solid var(--ac-0, #30519c);
+  color: var(--tx-c, #fff);
   width: 180px;
   padding: .2em .6em;
   text-align: center;
@@ -37,14 +37,14 @@ input[type] {
   border-radius: 4px;
 }
 .button:hover {
-  background: var(--ac-2);
-  border: 1px solid var(--ac-2);
-  color: var(--tx-c);
+  background: var(--ac-2, #6384cf);
+  border: 1px solid var(--ac-2, #6384cf);
+  color: var(--tx-c, #fff);
 }
 .button:focus, select:focus,
 .button:focus-visible, select:focus-visible {
-  border: 1px solid var(--ac-2);
-  box-shadow: 0 0 5px 1px var(--ac-2);
+  border: 1px solid var(--ac-2, #6384cf);
+  box-shadow: 0 0 5px 1px var(--ac-2, #6384cf);
   outline: 0;
 }
 .slidingbody {
@@ -77,7 +77,7 @@ input[type] {
   transition: all .15s cubic-bezier(0.3, 0, 0.5, 1);
 }
 .controls > a:focus-visible {
-  outline: 2px solid var(--ac-0);
+  outline: 2px solid var(--ac-0, #30519c);
   border-radius: 4px;
 }
 .mainarea {
@@ -148,7 +148,7 @@ img {
 }
 @media (prefers-color-scheme: light) {
   a[href] {
-    color: var(--ac-0);
+    color: var(--ac-0, #6384cf);
   }
   select {
     background-color: #fff;
@@ -179,7 +179,7 @@ img {
 }
 @media (prefers-color-scheme: dark) {
   a[href] {
-    color: var(--ac-2);;
+    color: var(--ac-2, #6384cf);
   }
   select {
     background-color: #333;
@@ -188,10 +188,10 @@ img {
   }
   .popup_bg, .title3d {
     background-color: #1a1a1a;
-    color: var(--tx-c);
+    color: var(--tx-c, #fff);
   }
   a.action {
-    color: var(--tx-c);
+    color: var(--tx-c, #fff);
   }
   .slidingbodyshow center {
     border-top: 1px solid #454545;
