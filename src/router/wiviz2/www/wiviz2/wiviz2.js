@@ -1,7 +1,3 @@
-var demomode = false;
-var demourl = "capture/f_capture_";
-var demomax = 38;
-var demoindex = 1;
 var IEfix = window.ActiveXObject ? true : false;
 var prefs = new Object();
 prefs.rotate = true;
@@ -559,11 +555,6 @@ function tick() {
 	if (!wvzFrame) wvzFrame = document.getElementById('wivizGetFrame');
 	if (wvzFrame && now - lastWvzUpdate > 5000) {
 		var loc = wvzFrame.contentWindow.location;
-		if (demomode) {
-			wvzLoc = demourl + demoindex + ".html";
-			demoindex++;
-			if (demoindex > demomax) demoindex = 1;
-		}
 		if (loc.href == wvzLoc)
 			loc.reload(true);
 		else
