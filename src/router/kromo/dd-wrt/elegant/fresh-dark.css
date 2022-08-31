@@ -15,7 +15,7 @@ body a:link {
 body a:hover, body a:link:hover,
 #ip_count:hover, [title*='Search']:hover,
 [title*='Chain']:hover, [title*='Monitoring']:hover {
-  color: #5cb3ff;
+  color: var(--ac-1);
 }
 #menuSubList li span {
   background: #1a1a1a;
@@ -29,11 +29,6 @@ div.message {
 div.progressbar {
   background-color: #333;
   border: 1px solid #333;
-}
-input.button, input.button:hover,
-input.button[disabled]:hover {
-  box-shadow: none;
-  border: 1px solid transparent;
 }
 body #content {
   background: #1a1a1a;
@@ -77,21 +72,11 @@ body input[name='apply_button']:hover {
   border-color: #199235;
   color: #fff;
 }
-body input[name='reset_button'] {
-  background: #595959;
-  border-color: #656565;
-  color: #eee;
-}
-body input[name='reset_button']:hover {
-  background: #ff8400;
-  border-color: #d0911d;
-  color: #fff;
-}
 body input[name='reboot_button'],
 body input[name='reboot_button']:disabled:hover {
   background: #c00;
   border-color: #c00;
-  color: #f8f8f8;
+  color: #fff;
 }
 body input[name='reboot_button']:hover {
   background: #e00;
@@ -115,9 +100,9 @@ body input[name='reboot_button']:hover {
   mix-blend-mode: exclusion;
 }
 textarea {
-  color: #e0e0e0;
   background-color: #333;
   border: 1px solid #454545;
+  color: #e0e0e0;
 }
 pre {
   background-color: #333;
@@ -131,16 +116,16 @@ select {
 .table_row_bg {
   background-color: #222;
 }
+.table_row_bg:hover {
+  background-color: #282828;
+}
+.table_bg_br_clr_on {
+  color: #000;
+}
 .table_bg_br_clr_off, .table_bg_br_clr_off:hover {
   background-color: #292929;
   border: 1px solid #777674;
   opacity: .5;
-}
-.table_row_bg:hover {
-  background-color: #1a1a1a;
-}
-table tr:not([class]):hover {
-  background-color: transparent;
 }
 .submitFooter {
   background-color: #262626;

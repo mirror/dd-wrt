@@ -31,10 +31,10 @@ table tr th {
   color: #fff;
 }
 .table_row_bg {
-  background-color: #d1d1d1;
+  background-color: #e4e4e4;
 }
 .table_row_bg:hover {
-  background-color: #d9d9d9;
+  background-color: #e9e9e9;
 }
 .table_bg_br_clr_on {
   background-color: #31dd00;
@@ -67,7 +67,7 @@ input {
   background-color: #fff;
   border: 1px solid #ccc;
   color: #000;
-  box-shadow: 0 1px 1px rgba(0, 0, 0, .075) inset;
+  box-shadow: inset 0 1px 1px rgba(0, 0, 0, .075);
   transition: all .15s ease-in-out 0s;
 }
 input[name='apply_button'] {
@@ -85,47 +85,43 @@ input[name='apply_button']:focus-visible {
   outline: 0;
 }
 input[name='reset_button'] {
-  background: #fff;
-  border-color: #ccc;
+  background: #f26522;
+  border-color: #ff8400;
   color: #000;
 }
 input[name='reset_button']:hover {
   background: #ff8400;
-  border-color: #ccc;
+  border-color: #feb311;
   color: #000;
 }
 input[name='reset_button']:focus-visible {
-  box-shadow: 0 0 5px 1px #aaa;
+  box-shadow: 0 0 5px 1px #ff8400;
   outline: 0;
 }
 input[name='reboot_button'],
 input[name='reboot_button']:disabled:hover {
   background: #c00;
-  border-color: #ccc;
-  color: #f8f8f8;
+  border-color: #ff4545;
+  color: #fff;
 }
 input[name='reboot_button']:hover {
-  background: #e00;
-  border-color: #d00;
+  background: #f33;
+  border-color: #f33;
   color: #fff;
 }
 input[name='reboot_button']:focus-visible {
   box-shadow: 0 0 5px 1px #ff7c7c;
   outline: 0;
 }
-input.button, input.button:hover,
-input.button[disabled]:hover {
-  border-color: #ccc;
-}
 #ip_count:hover, [title*='Search']:hover,
 [title*='Chain']:hover, [title*='Monitoring']:hover {
-	color: #00f;
+	color: var(--ac-0);
 }
 select {
   background-color: #fff;
   border: 1px solid #ccc;
   color: #000;
-  box-shadow: 0 1px 1px rgba(0, 0, 0, .075) inset;
+  box-shadow: inset 0 1px 1px rgba(0, 0, 0, .075);
   transition: all .15s ease-in-out 0s;
 }
 .progressbar {

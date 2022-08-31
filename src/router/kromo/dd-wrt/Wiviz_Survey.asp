@@ -14,8 +14,8 @@
 		<!-- The proper way to deal with memory leaks -->
 		<meta http-equiv="refresh" content="1800" charset="utf-8">
 	</head>
-<body class="popup_bg">
-	<img class='logo' id='logo' src='images/wiviz/wiviz2-logo.png' height=75 width=207>
+<body class='popup_bg'>
+	<img class='logo' id='logo' src='images/wiviz/wiviz2-logo.png' width='207' height='75'>
 	<div class='mainarea' id='mainarea'></div>
 	<div class='controls'>
 		<a href='javascript:cameraElevation(0.2)'><img src='images/wiviz/up.svg' alt='Up'></a>
