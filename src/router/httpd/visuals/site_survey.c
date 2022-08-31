@@ -468,6 +468,8 @@ EJ_VISIBLE void ej_dump_wiviz_data(webs_t wp, int argc, char_t ** argv)	// Eko, 
 				fclose(f);
 			/* in case there is a problem, read backup */
 			f = fopen("/tmp/wiviz2-old", "r");
+			if (!f)
+			    goto err;
 			goto read_old;
 		}
 		w = fopen("/tmp/wiviz2-old", "wb");
@@ -485,6 +487,7 @@ EJ_VISIBLE void ej_dump_wiviz_data(webs_t wp, int argc, char_t ** argv)	// Eko, 
 	} else			// dummy data - to prevent first time js
 		// error
 	{
+	    err:;
 		websWrite(wp,
 			  "top.hosts = new Array();\nvar hnum = 0;\nvar h;\nvar wiviz_cfg = new Object();\n wiviz_cfg.channel = 6\ntop.wiviz_callback(top.hosts, wiviz_cfg);\nfunction wiviz_callback(one, two) {\nalert(\'This asp is intended to run inside Wi-Viz.  You will now be redirected there.\');\nlocation.replace('Wiviz_Survey.asp');\n}\n");
 	}
