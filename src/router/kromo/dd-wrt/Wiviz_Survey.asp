@@ -5,7 +5,7 @@
 		<script type="text/javascript" src="js/wiviz2.js"></script>
 		<script type="text/javascript">
 		//<![CDATA[
-		if (!['brainslayer', 'kromo', 'wikar', 'xirian'].includes(<% nvg("router_style"); %>)) {
+		if (!['brainslayer', 'kromo', 'wikar', 'xirian'].includes("<% nvg("router_style"); %>")) {
 			document.write('<link type="text/css" rel="stylesheet" href="/style/<% nvg("router_style"); %>/colorscheme.css" />');
 		}
 		//]]>
