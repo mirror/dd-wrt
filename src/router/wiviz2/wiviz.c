@@ -502,7 +502,7 @@ void dealWithPacket(wiviz_cfg * cfg, int pktlen, const u_char * packet)
 	char *ssid = "";
 	int channel = 0;
 	int adhocbeacon = 0;
-	u_char ssidlen = 0;
+	char ssidlen = 0;
 	if (!packet)
 		return;
 	src = i_src;
@@ -810,6 +810,11 @@ void dealWithPacket(wiviz_cfg * cfg, int pktlen, const u_char * packet)
 					memcpy(emergebss->apInfo->ssid, ssid, ssidlen);
 					emergebss->apInfo->ssid[ssidlen] = 0;
 					emergebss->apInfo->ssidlen = ssidlen;
+				}else {
+					emergebss->apInfo->ssid[0] = 0;
+					emergebss->apInfo->ssidlen = 0;
+					ssidlen = 0;
+				
 				}
 				if (channel)
 					emergebss->apInfo->channel = channel;
@@ -825,6 +830,10 @@ void dealWithPacket(wiviz_cfg * cfg, int pktlen, const u_char * packet)
 			memcpy(host->staInfo->lastssid, ssid, ssidlen);
 			host->staInfo->lastssid[ssidlen] = 0;
 			host->staInfo->lastssidlen = ssidlen;
+		}else {
+			host->staInfo->lastssid[0] = 0;
+			host->staInfo->lastssidlen = 0;
+			ssidlen = 0;
 		}
 		if (strlen(radioname))
 			memcpy(host->staInfo->radioname, radioname, 16);
@@ -837,6 +846,12 @@ void dealWithPacket(wiviz_cfg * cfg, int pktlen, const u_char * packet)
 			memcpy(host->apInfo->ssid, ssid, ssidlen);
 			host->apInfo->ssid[ssidlen] = 0;
 			host->apInfo->ssidlen = ssidlen;
+		}else {
+			host->apInfo->ssid[0] = 0;
+			host->apInfo->ssidlen = 0;
+			ssidlen = 0;
+		
+		
 		}
 		if (channel)
 			host->apInfo->channel = channel;
@@ -1075,6 +1090,8 @@ void readWL(wiviz_cfg * cfg)
 #if defined(HAVE_MADWIFI)
 		strcpy(host->apInfo->ssid, nvram_nget("%s_ssid", wl_dev));
 		host->apInfo->ssidlen = strlen(host->apInfo->ssid);
+		if (host->apInfo->ssidlen > 32)
+		    host->apInfo->ssidlen = 32;
 		ether_atoe(nvram_nget("%s_hwaddr", wl_dev), buf);
 		memcpy(host->apInfo->bssid, buf, 6);
 #elif defined(HAVE_RT2880)
@@ -1086,12 +1103,16 @@ void readWL(wiviz_cfg * cfg)
 			ether_atoe(nvram_safe_get("wl1_hwaddr"), buf);
 		}
 		host->apInfo->ssidlen = strlen(host->apInfo->ssid);
+		if (host->apInfo->ssidlen > 32)
+		    host->apInfo->ssidlen = 32;
 		memcpy(host->apInfo->bssid, buf, 6);
 #else
 		wl_ioctl(wl_dev, WLC_GET_BSSID, host->apInfo->bssid, 6);
 		wl_ioctl(wl_dev, WLC_GET_SSID, &ssid, sizeof(wlc_ssid_t));
 		memcpy(host->apInfo->ssid, ssid.SSID, 32);
 		host->apInfo->ssidlen = ssid.SSID_len;
+		if (host->apInfo->ssidlen > 32)
+		    host->apInfo->ssidlen = 32;
 #endif
 		host->RSSI = 0;
 #ifdef HAVE_MADWIFI
