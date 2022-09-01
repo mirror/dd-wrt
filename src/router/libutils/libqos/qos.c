@@ -143,9 +143,10 @@ static struct namemaps NM[] = {
 };
 
 #ifdef HAVE_IPV6
-#define evalip6(args ...) \
-	if (nvram_match("ipv6_enable","1")) { \
-		eval(## args); \
+#define evalip6(cmd, args...) { \
+		if (nvram_match("ipv6_enable","1")) {	\
+			eval_va(cmd, ## args, NULL); \
+		} \
 	}
 #else
 #define evalip6(...)
@@ -282,6 +283,7 @@ void add_client_mac_srvfilter(char *name, char *type, char *data, int level, int
 				eval("iptables", "-t", "mangle", "-A", "FILTER_IN", "-m", "mac", "--mac-source", client, "-m", "layer7", "--l7proto", "bt2", "-j", "MARK", "--set-mark", qos_nfmark(base + idx));
 
 				evalip6("ip6tables", "-t", "mangle", "-A", "FILTER_IN", "-m", "mac", "--mac-source", client, "-m", "length", "--length", "0:550", "-m", "layer7", "--l7proto", "bt", "-j", "MARK",
+				     "--set-mark", qos_nfmark(base + idx));
 				evalip6("ip6tables", "-t", "mangle", "-A", "FILTER_IN", "-m", "mac", "--mac-source", client, "-m", "layer7", "--l7proto", "bt1", "-j", "MARK", "--set-mark", qos_nfmark(base + idx));
 				evalip6("ip6tables", "-t", "mangle", "-A", "FILTER_IN", "-m", "mac", "--mac-source", client, "-m", "layer7", "--l7proto", "bt2", "-j", "MARK", "--set-mark", qos_nfmark(base + idx));
 			}
