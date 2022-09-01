@@ -15,7 +15,7 @@
 		<meta http-equiv="refresh" content="1800" charset="utf-8">
 	</head>
 <body class='popup_bg'>
-	<img class='logo' id='logo' src='images/wiviz/wiviz2-logo.png' width='207' height='75'>
+	<img class='logo' id='logo' src='images/wiviz/wiviz2-logo.png' width='184' height='67'>
 	<div class='mainarea' id='mainarea'></div>
 	<div class='controls'>
 		<a href='javascript:cameraElevation(0.2)'><img src='images/wiviz/up.svg' alt='Up'></a>
@@ -146,8 +146,10 @@
 		</div>
 </div>
 <div class='poweredby'>By Nate True<br>Powered by DD-WRT</div>
+<!--
 <div class='debugger' id='debugger'></div>
 	<iframe class='wiviz' id='wivizGetFrame' src='about:blank'></iframe>
 	<iframe class='wiviz' id='wivizSetFrame' name='wivizSetFrame' src='about:blank'></iframe>
+-->
 </body>
 </html>

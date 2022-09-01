@@ -265,10 +265,14 @@ input.spaceradio {
   margin-top: -.4rem;
   margin-left: .6rem;
 }
-div.center .button, tr.center:not(.table_row_bg) {
+div.center .button {
   margin-left: .3em;
   margin-top: .9em;
   float: left;
+}
+form[name='eop'] div.center .button {
+  float: unset;
+  margin-top: inherit;
 }
 .setting.center {
   text-align: left;
