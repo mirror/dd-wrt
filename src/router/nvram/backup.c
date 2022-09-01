@@ -36,7 +36,9 @@
 //#include <netconf.h>
 #include <bcmnvram.h>
 //#include <shutils.h>
-#include <utils.h>
+//#include <utils.h>
+#define NVROUTER "DD_BOARD"
+#define NVROUTER_ALT "alternate_name"
 
 static int NVRAMSPACE = NVRAM_SPACE;
 
