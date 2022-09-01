@@ -36,7 +36,7 @@
 //#include <netconf.h>
 #include <bcmnvram.h>
 //#include <shutils.h>
-//#include <utils.h>
+#include <utils.h>
 
 static int NVRAMSPACE = NVRAM_SPACE;
 
