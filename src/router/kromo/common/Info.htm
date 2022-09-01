@@ -276,22 +276,20 @@ function refresh(F) {
 										<% get_sysmodel(); %>
 									</div>
 									<div class="setting">
-										<div class="label">LAN MAC</div>
+										<div class="label">WAN MAC</div>
 										<script type="text/javascript">
 										//<![CDATA[
-										document.write("<span id=\"lan_mac\" style=\"cursor:pointer; text-decoration:underline;\" title=\"" + share.oui + "\" onclick=\"getOUIFromMAC('<% nvg("lan_hwaddr"); %>')\" >");
-										document.write("<% nvg("lan_hwaddr"); %>");
-										document.write("</span>");
+										document.write("<span id=\"wan_mac\" style=\"cursor:pointer; text-decoration: underline;\" title=\"" + share.oui + "\" onclick=\"getOUIFromMAC('<% nvg("wan_hwaddr"); %>')\" >");
+										document.write("<% nvg("wan_hwaddr"); %>\n</span>");
 										//]]>
 										</script>&nbsp;
 									</div>
 									<div class="setting">
-										<div class="label">WAN MAC</div>
+										<div class="label">LAN MAC</div>
 										<script type="text/javascript">
 										//<![CDATA[
-										document.write("<span id=\"wan_mac\" style=\"cursor:pointer; text-decoration:underline;\" title=\"" + share.oui + "\" onclick=\"getOUIFromMAC('<% nvg("wan_hwaddr"); %>')\" >");
-										document.write("<% nvg("wan_hwaddr"); %>");
-										document.write("</span>");
+										document.write("<span id=\"lan_mac\" style=\"cursor:pointer; text-decoration: underline;\" title=\"" + share.oui + "\" onclick=\"getOUIFromMAC('<% nvg("lan_hwaddr"); %>')\" >");
+										document.write("<% nvg("lan_hwaddr"); %>\n</span>");
 										//]]>
 										</script>&nbsp;
 									</div>
