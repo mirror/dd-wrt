@@ -142,6 +142,14 @@ static struct namemaps NM[] = {
 	{ "soulseek", "soul" }
 };
 
+#ifdef HAVE_IPV6
+#define evalip6(args ...) \
+	if (nvram_match("ipv6_enable","1")) { \
+		eval(## args); \
+	}
+#else
+#define evalip6(...)
+#endif
 void add_client_dev_srvfilter(char *name, char *type, char *data, int level, int base, char *chain)
 {
 	int idx = level / 10;
@@ -152,22 +160,28 @@ void add_client_dev_srvfilter(char *name, char *type, char *data, int level, int
 	if (strstr(type, "udp") || strstr(type, "both")) {
 		eval("iptables", "-t", "mangle", "-A", chain, "-p", "udp", "-m", "udp", "--dport", data, "-j", "MARK", "--set-mark", qos_nfmark(base + idx));
 		eval("iptables", "-t", "mangle", "-A", chain, "-p", "udp", "-m", "udp", "--sport", data, "-j", "MARK", "--set-mark", qos_nfmark(base + idx));
+		evalip6("ip6tables", "-t", "mangle", "-A", chain, "-p", "udp", "-m", "udp", "--dport", data, "-j", "MARK", "--set-mark", qos_nfmark(base + idx));
+		evalip6("ip6tables", "-t", "mangle", "-A", chain, "-p", "udp", "-m", "udp", "--sport", data, "-j", "MARK", "--set-mark", qos_nfmark(base + idx));
 	}
 
 	if (strstr(type, "tcp") || strstr(type, "both")) {
 		eval("iptables", "-t", "mangle", "-A", chain, "-p", "tcp", "-m", "tcp", "--dport", data, "-j", "MARK", "--set-mark", qos_nfmark(base + idx));
 		eval("iptables", "-t", "mangle", "-A", chain, "-p", "tcp", "-m", "tcp", "--sport", data, "-j", "MARK", "--set-mark", qos_nfmark(base + idx));
+		evalip6("ip6tables", "-t", "mangle", "-A", chain, "-p", "tcp", "-m", "tcp", "--dport", data, "-j", "MARK", "--set-mark", qos_nfmark(base + idx));
+		evalip6("ip6tables", "-t", "mangle", "-A", chain, "-p", "tcp", "-m", "tcp", "--sport", data, "-j", "MARK", "--set-mark", qos_nfmark(base + idx));
 	}
 
 	if (strstr(type, "l7")) {
 		insmod("ipt_layer7");
 		insmod("xt_layer7");
 		eval("iptables", "-t", "mangle", "-A", chain, "-m", "layer7", "--l7proto", name, "-j", "MARK", "--set-mark", qos_nfmark(base + idx));
+		evalip6("ip6tables", "-t", "mangle", "-A", chain, "-m", "layer7", "--l7proto", name, "-j", "MARK", "--set-mark", qos_nfmark(base + idx));
 	}
 #ifdef HAVE_OPENDPI
 	if (strstr(type, "dpi")) {
 		insmod("xt_ndpi");
 		eval("iptables", "-t", "mangle", "-A", chain, "-m", "ndpi", "--proto", name, "-j", "MARK", "--set-mark", qos_nfmark(base + idx));
+		evalip6("ip6tables", "-t", "mangle", "-A", chain, "-m", "ndpi", "--proto", name, "-j", "MARK", "--set-mark", qos_nfmark(base + idx));
 	}
 #endif
 
@@ -184,6 +198,7 @@ void add_client_dev_srvfilter(char *name, char *type, char *data, int level, int
 			snprintf(ipp2p, 32, "--%s", proto);
 
 			eval("iptables", "-t", "mangle", "-A", chain, "-p", "tcp", "-m", "ipp2p", ipp2p, "-j", "MARK", "--set-mark", qos_nfmark(base + idx));
+			evalip6("ip6tables", "-t", "mangle", "-A", chain, "-p", "tcp", "-m", "ipp2p", ipp2p, "-j", "MARK", "--set-mark", qos_nfmark(base + idx));
 
 			if (!strcmp(proto, "bit")) {
 				// bittorrent detection enhanced 
@@ -194,6 +209,10 @@ void add_client_dev_srvfilter(char *name, char *type, char *data, int level, int
 #endif
 				eval("iptables", "-t", "mangle", "-A", chain, "-m", "layer7", "--l7proto", "bt1", "-j", "MARK", "--set-mark", qos_nfmark(base + idx));
 				eval("iptables", "-t", "mangle", "-A", chain, "-m", "layer7", "--l7proto", "bt2", "-j", "MARK", "--set-mark", qos_nfmark(base + idx));
+
+				evalip6("ip6tables", "-t", "mangle", "-A", chain, "-m", "length", "--length", "0:550", "-m", "layer7", "--l7proto", "bt", "-j", "MARK", "--set-mark", qos_nfmark(base + idx));
+				evalip6("ip6tables", "-t", "mangle", "-A", chain, "-m", "layer7", "--l7proto", "bt1", "-j", "MARK", "--set-mark", qos_nfmark(base + idx));
+				evalip6("ip6tables", "-t", "mangle", "-A", chain, "-m", "layer7", "--l7proto", "bt2", "-j", "MARK", "--set-mark", qos_nfmark(base + idx));
 			}
 		}
 	}
@@ -209,22 +228,30 @@ void add_client_mac_srvfilter(char *name, char *type, char *data, int level, int
 	if (strstr(type, "udp") || strstr(type, "both")) {
 		eval("iptables", "-t", "mangle", "-A", "FILTER_IN", "-p", "udp", "-m", "udp", "--dport", data, "-m", "mac", "--mac-source", client, "-j", "MARK", "--set-mark", qos_nfmark(base + idx));
 		eval("iptables", "-t", "mangle", "-A", "FILTER_IN", "-p", "udp", "-m", "udp", "--sport", data, "-m", "mac", "--mac-source", client, "-j", "MARK", "--set-mark", qos_nfmark(base + idx));
+
+		evalip6("ip6tables", "-t", "mangle", "-A", "FILTER_IN", "-p", "udp", "-m", "udp", "--dport", data, "-m", "mac", "--mac-source", client, "-j", "MARK", "--set-mark", qos_nfmark(base + idx));
+		evalip6("ip6tables", "-t", "mangle", "-A", "FILTER_IN", "-p", "udp", "-m", "udp", "--sport", data, "-m", "mac", "--mac-source", client, "-j", "MARK", "--set-mark", qos_nfmark(base + idx));
 	}
 
 	if (strstr(type, "tcp") || strstr(type, "both")) {
 		eval("iptables", "-t", "mangle", "-A", "FILTER_IN", "-p", "tcp", "-m", "tcp", "--dport", data, "-m", "mac", "--mac-source", client, "-j", "MARK", "--set-mark", qos_nfmark(base + idx));
 		eval("iptables", "-t", "mangle", "-A", "FILTER_IN", "-p", "tcp", "-m", "tcp", "--sport", data, "-m", "mac", "--mac-source", client, "-j", "MARK", "--set-mark", qos_nfmark(base + idx));
+
+		evalip6("ip6tables", "-t", "mangle", "-A", "FILTER_IN", "-p", "tcp", "-m", "tcp", "--dport", data, "-m", "mac", "--mac-source", client, "-j", "MARK", "--set-mark", qos_nfmark(base + idx));
+		evalip6("ip6tables", "-t", "mangle", "-A", "FILTER_IN", "-p", "tcp", "-m", "tcp", "--sport", data, "-m", "mac", "--mac-source", client, "-j", "MARK", "--set-mark", qos_nfmark(base + idx));
 	}
 
 	if (strstr(type, "l7")) {
 		insmod("ipt_layer7");
 		insmod("xt_layer7");
 		eval("iptables", "-t", "mangle", "-A", "FILTER_IN", "-m", "mac", "--mac-source", client, "-m", "layer7", "--l7proto", name, "-j", "MARK", "--set-mark", qos_nfmark(base + idx));
+		evalip6("ip6tables", "-t", "mangle", "-A", "FILTER_IN", "-m", "mac", "--mac-source", client, "-m", "layer7", "--l7proto", name, "-j", "MARK", "--set-mark", qos_nfmark(base + idx));
 	}
 #ifdef HAVE_OPENDPI
 	if (strstr(type, "dpi")) {
 		insmod("xt_ndpi");
 		eval("iptables", "-t", "mangle", "-A", "FILTER_IN", "-m", "mac", "--mac-source", client, "-m", "ndpi", "--proto", name, "-j", "MARK", "--set-mark", qos_nfmark(base + idx));
+		evalip6("ip6tables", "-t", "mangle", "-A", "FILTER_IN", "-m", "mac", "--mac-source", client, "-m", "ndpi", "--proto", name, "-j", "MARK", "--set-mark", qos_nfmark(base + idx));
 	}
 #endif
 
@@ -241,6 +268,7 @@ void add_client_mac_srvfilter(char *name, char *type, char *data, int level, int
 			snprintf(ipp2p, 32, "--%s", proto);
 
 			eval("iptables", "-t", "mangle", "-A", "FILTER_IN", "-p", "tcp", "-m", "mac", "--mac-source", client, "-m", "ipp2p", ipp2p, "-j", "MARK", "--set-mark", qos_nfmark(base + idx));
+			evalip6("ip6tables", "-t", "mangle", "-A", "FILTER_IN", "-p", "tcp", "-m", "mac", "--mac-source", client, "-m", "ipp2p", ipp2p, "-j", "MARK", "--set-mark", qos_nfmark(base + idx));
 
 			if (!strcmp(proto, "bit")) {
 				// bittorrent detection enhanced 
@@ -252,6 +280,10 @@ void add_client_mac_srvfilter(char *name, char *type, char *data, int level, int
 #endif
 				eval("iptables", "-t", "mangle", "-A", "FILTER_IN", "-m", "mac", "--mac-source", client, "-m", "layer7", "--l7proto", "bt1", "-j", "MARK", "--set-mark", qos_nfmark(base + idx));
 				eval("iptables", "-t", "mangle", "-A", "FILTER_IN", "-m", "mac", "--mac-source", client, "-m", "layer7", "--l7proto", "bt2", "-j", "MARK", "--set-mark", qos_nfmark(base + idx));
+
+				evalip6("ip6tables", "-t", "mangle", "-A", "FILTER_IN", "-m", "mac", "--mac-source", client, "-m", "length", "--length", "0:550", "-m", "layer7", "--l7proto", "bt", "-j", "MARK",
+				evalip6("ip6tables", "-t", "mangle", "-A", "FILTER_IN", "-m", "mac", "--mac-source", client, "-m", "layer7", "--l7proto", "bt1", "-j", "MARK", "--set-mark", qos_nfmark(base + idx));
+				evalip6("ip6tables", "-t", "mangle", "-A", "FILTER_IN", "-m", "mac", "--mac-source", client, "-m", "layer7", "--l7proto", "bt2", "-j", "MARK", "--set-mark", qos_nfmark(base + idx));
 			}
 		}
 	}
@@ -386,6 +418,7 @@ static void add_tc_class(char *dev, int pref, int handle, int classid)
 	sprintf(c, "1:", classid);
 	sprintf(p, "%d", pref);
 	eval("tc", "filter", "add", "dev", dev, "protocol", "ip", "pref", p, "handle", h, "fw", "classid", c);
+	eval("tc", "filter", "add", "dev", dev, "protocol", "ipv6", "pref", p, "handle", h, "fw", "classid", c);
 }
 #else
 static void add_tc_mark(char *dev, int pref, char *mark, char *mark2, int flow)
@@ -395,6 +428,7 @@ static void add_tc_mark(char *dev, int pref, char *mark, char *mark2, int flow)
 	char f[32];
 	sprintf(f, "1:%d", flow);
 	eval("tc", "filter", "add", "dev", dev, "protocol", "ip", "pref", p, "parent", "1:", "u32", "match", "mark", mark, mark2, "flowid", f);
+	eval("tc", "filter", "add", "dev", dev, "protocol", "ipv6", "pref", p, "parent", "1:", "u32", "match", "mark", mark, mark2, "flowid", f);
 }
 #endif
 
@@ -769,6 +803,9 @@ void add_usermac(char *mac, int base, int uprate, int downrate, int lanrate)
 	eval("iptables", "-t", "mangle", "-D", "FILTER_IN", "-j", "CONNMARK", "--save");
 	eval("iptables", "-t", "mangle", "-D", "FILTER_IN", "-j", "RETURN");
 
+	evalip6("ip6tables", "-t", "mangle", "-D", "FILTER_IN", "-j", "CONNMARK", "--save");
+	evalip6("ip6tables", "-t", "mangle", "-D", "FILTER_IN", "-j", "RETURN");
+
 	add_client_classes(base, uprate, downrate, lanrate, 0);
 
 	do {
@@ -782,6 +819,11 @@ void add_usermac(char *mac, int base, int uprate, int downrate, int lanrate)
 
 	eval("iptables", "-t", "mangle", "-A", "FILTER_IN", "-j", "CONNMARK", "--save");
 	eval("iptables", "-t", "mangle", "-A", "FILTER_IN", "-j", "RETURN");
+
+	evalip6("ip6tables", "-t", "mangle", "-A", "FILTER_IN", "-m", "mac", "--mac-source", mac, "-m", "mark", "--mark", nullmask, "-j", "MARK", "--set-mark", qos_nfmark(base));
+
+	evalip6("ip6tables", "-t", "mangle", "-A", "FILTER_IN", "-j", "CONNMARK", "--save");
+	evalip6("ip6tables", "-t", "mangle", "-A", "FILTER_IN", "-j", "RETURN");
 }
 
 void add_userip(char *ip, int base, int uprate, int downrate, int lanrate)
@@ -991,6 +1033,7 @@ static void add_filter(const char *dev, int pref, int handle, int classid)
 	sprintf(h, "0x%02X", handle);
 	sprintf(c, "1:%d", classid);
 	eval("tc", "filter", "add", "dev", dev, "protocol", "ip", "pref", p, "handle", h, "fw", "classid", c);
+	eval("tc", "filter", "add", "dev", dev, "protocol", "ipv6", "pref", p, "handle", h, "fw", "classid", c);
 
 }
 
