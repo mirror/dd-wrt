@@ -199,24 +199,22 @@ addEvent(window, "unload", function() {
 									<% nvram_get("DD_BOARD"); %>&nbsp;
 								</div>
 								<div class="setting">
-									<div class="label">LAN MAC</div>
-									<script type="text/javascript">//
-									//<![CDATA[
-									document.write("<span id=\"lan_mac\" style=\"cursor:pointer; text-decoration:underline;\" title=\"" + share.oui + "\" onclick=\"getOUIFromMAC('<% nvram_get("lan_hwaddr"); %>')\" >");
-									document.write("<% nvram_get("lan_hwaddr"); %>");
-									document.write("</span>");
-									//]]>
-									</script>&nbsp;
-								</div>
-								<div class="setting">
 									<div class="label">WAN MAC</div>
 									<script type="text/javascript">
 									//<![CDATA[
-									document.write("<span id=\"wan_mac\" style=\"cursor:pointer; text-decoration:underline;\" title=\"" + share.oui + "\" onclick=\"getOUIFromMAC('<% nvram_get("wan_hwaddr"); %>')\" >");
-									document.write("<% nvram_get("wan_hwaddr"); %>");
-									document.write("</span>");
+									document.write("<span id=\"wan_mac\" style=\"cursor:pointer; text-decoration: underline;\" title=\"" + share.oui + "\" onclick=\"getOUIFromMAC('<% nvram_get("wan_hwaddr"); %>')\" >");
+									document.write("<% nvram_get("wan_hwaddr"); %>\n</span>");
 									//]]>
 								  </script>&nbsp;
+								</div>
+								<div class="setting">
+									<div class="label">LAN MAC</div>
+									<script type="text/javascript">//
+									//<![CDATA[
+									document.write("<span id=\"lan_mac\" style=\"cursor:pointer; text-decoration: underline;\" title=\"" + share.oui + "\" onclick=\"getOUIFromMAC('<% nvram_get("lan_hwaddr"); %>')\" >");
+									document.write("<% nvram_get("lan_hwaddr"); %>\n</span>");
+									//]]>
+									</script>&nbsp;
 								</div>
 								<div class="setting">
 									<div class="label"><% tran("info.wlanmac"); %></div>

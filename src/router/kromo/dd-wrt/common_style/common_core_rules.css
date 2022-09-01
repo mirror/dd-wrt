@@ -27,7 +27,7 @@ fieldset legend, .syslog_legend {
 .meter .bar, .progressbarblock {
   background-color: var(--ac-0);
 }
-input[type] {
+input.spaceradio {
   accent-color: var(--it-c);
 }
 input.button, input.button[disabled]:hover {
