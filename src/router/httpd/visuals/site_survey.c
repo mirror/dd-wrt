@@ -446,13 +446,25 @@ EJ_VISIBLE void ej_dump_site_survey(webs_t wp, int argc, char_t ** argv)
 
 #ifdef HAVE_WIVIZ
 
+#ifndef HAVE_MICRO
+#include <pthread.h>
+static pthread_mutex_t wiz_mutex_contr = PTHREAD_MUTEX_INITIALIZER;
+static char *lastlock;
+static char *lastunlock;
+#define wiz_lock() pthread_mutex_lock(&wiz_mutex_contr)
+#define wiz_unlock() pthread_mutex_unlock(&wiz_mutex_contr)
+#else
+#define wiz_lock()
+#define wiz_unlock()
+#endif
+
 EJ_VISIBLE void ej_dump_wiviz_data(webs_t wp, int argc, char_t ** argv)	// Eko, for
 								// testing
 								// only
 {
 	FILE *f;
 	char buf[256];
-
+	wiz_lock();
 	killall("autokill_wiviz", SIGTERM);
 	eval("autokill_wiviz");
 	eval("run_wiviz");
@@ -464,22 +476,28 @@ EJ_VISIBLE void ej_dump_wiviz_data(webs_t wp, int argc, char_t ** argv)	// Eko, 
 			tim.tv_sec = 0;
 			tim.tv_nsec = 10000000L;
 			nanosleep(&tim, &tim2);
-			if (cnt++ > 100)
+			if (cnt++ > 100) {
 				fclose(f);
-			/* in case there is a problem, read backup */
-			f = fopen("/tmp/wiviz2-old", "r");
-			if (!f)
-			    goto err;
-			goto read_old;
+				/* in case there is a problem, read backup */
+				f = fopen("/tmp/wiviz2-old", "r");
+				if (!f)
+					goto err;
+				goto read_old;
+			}
 		}
 		w = fopen("/tmp/wiviz2-old", "wb");
-		if (!w)
+		if (!w) {
+			wiz_unlock();
 			return;
+		}
 	      read_old:;
-		while (fgets(buf, sizeof(buf), f)) {
-			websWrite(wp, "%s", buf);
-			if (w)
-				fprintf(w, "%s", buf);
+		while (!feof(f)) {
+			char *str = fgets(buf, sizeof(buf), f);
+			if (str) {
+				websWrite(wp, "%s", buf);
+				if (w)
+					fprintf(w, "%s", buf);
+			}
 		}
 		if (w)
 			fclose(w);
@@ -487,10 +505,11 @@ EJ_VISIBLE void ej_dump_wiviz_data(webs_t wp, int argc, char_t ** argv)	// Eko, 
 	} else			// dummy data - to prevent first time js
 		// error
 	{
-	    err:;
+	      err:;
 		websWrite(wp,
 			  "top.hosts = new Array();\nvar hnum = 0;\nvar h;\nvar wiviz_cfg = new Object();\n wiviz_cfg.channel = 6\ntop.wiviz_callback(top.hosts, wiviz_cfg);\nfunction wiviz_callback(one, two) {\nalert(\'This asp is intended to run inside Wi-Viz.  You will now be redirected there.\');\nlocation.replace('Wiviz_Survey.asp');\n}\n");
 	}
+	wiz_unlock();
 }
 
 #endif
