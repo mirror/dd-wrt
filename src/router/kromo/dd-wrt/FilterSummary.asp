@@ -19,8 +19,8 @@ addEvent(window, "load", function() {
 			<input type="hidden" name="submit_type" />
 			<input type="hidden" name="change_action" value="gozila_cgi" />
 			<h2><% tran("filterSum.h2"); %></h2>
-			<table>
-				<tbody>
+			<table class="table">
+				<thead>
 					<tr>
 						<th class="center"><% tran("filterSum.polnum"); %></th>
 						<th class="center"><% tran("filter.polname"); %></th>
@@ -28,10 +28,11 @@ addEvent(window, "load", function() {
 						<th class="center"><% tran("filterSum.polday"); %></th>
 						<th class="center"><% tran("share.del"); %></th>
 					</tr>
+				</thead>
+				<tbody>
 					<% filter_summary_show(); %>
 				</tbody>
-			</table>
-			<br />
+			</table><br />
 			<div id="footer" class="submitFooter">
 				<script type="text/javascript">
 					//<![CDATA[

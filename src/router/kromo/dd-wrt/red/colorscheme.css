@@ -1,9 +1,8 @@
-@import url(../common.css);
 /*! Red */
 :root {
   --ac-0: #c00;
   --ac-1: #e62222;
-  --ac-2: #e92222;
+  --ac-2: #f33;
   --ac-3: #ff4545;
   --ac-4: #f66;
   --ac-5: #f77;
