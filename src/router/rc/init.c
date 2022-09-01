@@ -244,6 +244,7 @@ static void unmount_fs(void)
 		}
 #endif
 		dd_loginfo("init", "unmounting %s\n", mpoint);
+		eval("mount","-o","remount,sync,ro", mpoint); // set to readonly first since unmounting may fail.
 		eval("umount", "-r", "-f", mpoint);
 	}
 	fclose(fp);
