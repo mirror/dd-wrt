@@ -293,7 +293,7 @@ static char *filter[] = {
 	"PA",
 	"nocountrysel",
 	"nvram_min_ver",
-	"board_id", //netgear specific
+	"board_id",		//netgear specific
 	"hwrev",
 	"hwver",
 	"winbond_flash",
@@ -389,10 +389,12 @@ static void save(FILE * fp, char *p, int not)
 
 }
 
+#define getRouterName() nvram_exists(NVROUTER_ALT)?nvram_safe_get(NVROUTER_ALT):nvram_safe_get(NVROUTER)
+
 int nvram_restore(char *filename, int force)
 {
 	char sign[7];
-//	char *nvram_ver = NULL;
+//      char *nvram_ver = NULL;
 #ifdef HAVE_REGISTER
 	if (!isregistered_real()) {
 		return -1;
@@ -447,12 +449,39 @@ int nvram_restore(char *filename, int force)
 				len -= (l + 2);
 				value[l] = 0;
 				// cprintf("setting %s to %s\n",name,value);
-//				if (!strcmp(name, "nvram_ver"))
-//					nvram_ver = value;
-				if (!c && !strcmp(name, "DD_BOARD")) {
-					fprintf(stdout, "backup is for board %s, board is %s\n", value, nvram_safe_get("DD_BOARD"));
-					#ifndef HAVE_X86
-					if (!nvram_match("DD_BOARD", value)) {
+//                              if (!strcmp(name, "nvram_ver"))
+//                                      nvram_ver = value;
+				char *routername = getRouterName();
+#if defined(HAVE_NEWPORT) || defined(HAVE_VENTANA) || defined(HAVE_LAGUNA)
+				if (!strncmp(routername, "Gateworks Newport GW61", 22) && !strncmp(value, "Gateworks Newport GW61", 22))
+					goto success;
+				if (!strncmp(routername, "Gateworks Newport GW62", 22) && !strncmp(value, "Gateworks Newport GW62", 22))
+					goto success;
+				if (!strncmp(routername, "Gateworks Newport GW63", 22) && !strncmp(value, "Gateworks Newport GW63", 22))
+					goto success;
+				if (!strncmp(routername, "Gateworks Newport GW64", 22) && !strncmp(value, "Gateworks Newport GW64", 22))
+					goto success;
+				if (!strncmp(routername, "Gateworks Newport GW65", 22) && !strncmp(value, "Gateworks Newport GW65", 22))
+					goto success;
+				if (!strncmp(routername, "Gateworks Newport GW69", 22) && !strncmp(value, "Gateworks Newport GW69", 22))
+					goto success;
+				if (!strncmp(routername, "Gateworks Ventana GW51", 22) && !strncmp(value, "Gateworks Ventana GW51", 22))
+					goto success;
+				if (!strncmp(routername, "Gateworks Ventana GW52", 22) && !strncmp(value, "Gateworks Ventana GW52", 22))
+					goto success;
+				if (!strncmp(routername, "Gateworks Ventana GW53", 22) && !strncmp(value, "Gateworks Ventana GW53", 22))
+					goto success;
+				if (!strncmp(routername, "Gateworks Ventana GW54", 22) && !strncmp(value, "Gateworks Ventana GW54", 22))
+					goto success;
+				if (!strncmp(routername, "Gateworks Ventana GW55", 22) && !strncmp(value, "Gateworks Ventana GW55", 22))
+					goto success;
+				if (!strncmp(routername, "Gateworks Laguna GW23", 21) && !strncmp(value, "Gateworks Laguna GW23", 21))
+					goto success;
+#endif
+				if (!c && !strcmp(name, routername)) {
+					fprintf(stdout, "backup is for board %s, board is %s\n", value, routername);
+#ifndef HAVE_X86
+					if (!nvram_match(routername, value)) {
 						if (!force) {
 							fprintf(stderr, "incompatible backup file!\n");
 							fclose(fp);
@@ -461,8 +490,9 @@ int nvram_restore(char *filename, int force)
 							fprintf(stderr, "WARNING: incompatible backup file!\n");
 						}
 					}
-					#endif
+#endif
 				}
+			      success:;
 				if (c && !nvram_critical(name)) {
 					nvram_immed_set(name, value);
 				}
