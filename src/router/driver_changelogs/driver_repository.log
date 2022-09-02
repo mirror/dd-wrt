@@ -1,4 +1,12 @@
 ------------------------------------------------------------------------
+r6771 | brainslayer | 2022-09-02 14:28:02 +0700 (Fri, 02 Sep 2022) | 1 line
+
+fix frequency offset for lower channels
+------------------------------------------------------------------------
+r6770 | brainslayer | 2022-09-02 14:22:15 +0700 (Fri, 02 Sep 2022) | 1 line
+
+fix frequency offset for lower channels
+------------------------------------------------------------------------
 r6769 | brainslayer | 2022-09-01 22:04:49 +0700 (Thu, 01 Sep 2022) | 1 line
 
 fix low temperature calibration under arctic conditions
