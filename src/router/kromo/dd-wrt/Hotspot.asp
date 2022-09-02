@@ -78,7 +78,7 @@ var update;
 
 addEvent(window, "load", function() {
 	stickControl(<% nvg("sticky_footer"); %>);
-	show_layer_ext(document.setup.apd_enable, 'idsputnik', <% nvem("apd_enable", "1", "1", "0"); %> == 1);
+	//show_layer_ext(document.setup.apd_enable, 'idsputnik', <% nvem("apd_enable", "1", "1", "0"); %> == 1);
 	show_layer_ext(document.setup.wd_enable, 'idwifidog', <% nvem("wd_enable", "1", "1", "0"); %> == 1);
 	show_layer_ext(document.setup.wd_sslavailable, 'idwifidogssl', <% nvem("wd_sslavailable", "1", "1", "0"); %> == 1);
 	show_layer_ext(document.setup.wd_auth, 'idauth', <% nvem("wd_auth", "1", "1", "0"); %> == 1);

@@ -12,7 +12,7 @@ body a:visited {
 body a:link {
   color: #fff;
 }
-body a:hover, body a:link:hover,
+a:hover, a:link:hover,
 #ip_count:hover, [title*='Search']:hover,
 [title*='Chain']:hover, [title*='Monitoring']:hover {
   color: var(--ac-1);

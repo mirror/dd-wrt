@@ -7,8 +7,13 @@ body {
 input, select, option {
   color: #a57b46;
 }
-input[type] {
+input[type='checkbox'],
+input[type='radio'] {
   accent-color: #f00;
+}
+#ip_count:hover, [title*='Search']:hover,
+[title*='Chain']:hover, [title*='Monitoring']:hover {
+  color: #f00;
 }
 .popup_bg {
   background-color: #fff
@@ -107,6 +112,11 @@ textarea {
     #fed9ae, #fed9ae 1px,
     #f1d496 2px, #f1d496 3px);
   border: 1px solid #bb9273;
+}
+.submitFooter .button {
+  background-color: #e9e9ed;
+  border: 1px solid #8f8f9d;
+  border-radius: 4px;
 }
 .message {
   background-color: #f6f6f6;

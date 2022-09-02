@@ -23,8 +23,8 @@ select {
   position: relative;
   z-index: 150;
 }
-input.spaceradio {
-  accent-color: var(--it-c, inherit);
+input[type='checkbox'] {
+  accent-color: var(--it-c, #30519c);
 }
 .button {
   background: var(--ac-0, #30519c);
@@ -113,18 +113,19 @@ input.spaceradio {
 }
 .glow {
   position: absolute;
+  margin-left: 3px;
+  opacity: .8;
   cursor: pointer;
+  z-index: 1;
 }
 .logo {
   position: absolute;
   z-index: 0;
-  top: 30%;
-  left: 30%;
 }
 .sizeimage {
   cursor: help;
 }
-iframe.wiviz {
+iframe.wiviz, a.actionunimplemented {
   display: none;
 }
 a.action {
@@ -132,19 +133,9 @@ a.action {
   margin-bottom: 3px;
   text-align: center;
 }
-a.actionunimplemented {
-  display: none;
-}
 .actionlist {
   text-align: center;
   display: none;
-}
-#debugger {
-  position: absolute;
-  z-index: 200;
-}
-img {
-  border: none;
 }
 @media (prefers-color-scheme: light) {
   a[href] {
