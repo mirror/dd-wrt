@@ -867,6 +867,7 @@ morechecks(struct config_file* cfg)
 			cfg->module_conf);
 	}
 
+#if 0
 #ifdef HAVE_GETPWNAM
 	if(cfg->username && cfg->username[0]) {
 		if(getpwnam(cfg->username) == NULL)
@@ -875,6 +876,7 @@ morechecks(struct config_file* cfg)
 		endpwent();
 #  endif
 	}
+#endif
 #endif
 	if(cfg->remote_control_enable && options_remote_is_address(cfg)
 		&& cfg->control_use_cert) {
