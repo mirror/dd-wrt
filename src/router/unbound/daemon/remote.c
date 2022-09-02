@@ -313,9 +313,9 @@ add_open(const char* ip, int nr, struct listen_port** list, int noproto_is_err,
 			(void)cfg;
 #endif
 		}
+#endif
 	} 
 	else 
-#endif
 	{
 		hints.ai_socktype = SOCK_STREAM;
 		hints.ai_flags = AI_PASSIVE | AI_NUMERICHOST;
