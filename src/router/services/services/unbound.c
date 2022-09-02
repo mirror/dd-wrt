@@ -153,7 +153,6 @@ static void unbound_config(void)
 		}
 		free(cp);
 	}
-	system("cp -R /etc/unbound /tmp/etc");
 
 }
 
@@ -166,6 +165,8 @@ void start_unbound(void)
 		update_timezone();
 		unbound_config();
 		if (reload_process("unbound")) {
+			eval("cp", "-R", "/etc/unbound", "/tmp/etc");
+			eval("mount", "--bind", "/tmp/etc/unbound", "/etc/unbound");
 			log_eval("unbound", "-c", getdefaultconfig(path, "unbound.conf"));
 		}
 	} else {
