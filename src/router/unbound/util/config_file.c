@@ -2249,6 +2249,7 @@ config_apply(struct config_file* config)
 
 void config_lookup_uid(struct config_file* cfg)
 {
+#if 0
 #ifdef HAVE_GETPWNAM
 	/* translate username into uid and gid */
 	if(cfg->username && cfg->username[0]) {
@@ -2260,6 +2261,7 @@ void config_lookup_uid(struct config_file* cfg)
 	}
 #else
 	(void)cfg;
+#endif
 #endif
 }
 
