@@ -1,4 +1,3 @@
-@import url(wiviz_common.css);
 a[href] {
   color: var(--ac-2, #6384cf);
 }
