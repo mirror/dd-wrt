@@ -596,6 +596,7 @@ perform_setup(struct daemon* daemon, struct config_file* cfg, int debug_mode,
 #endif /* HAVE_GETPWNAM */
 #endif
 	/* box into the chroot */
+#if 0
 #ifdef HAVE_CHROOT
 	if(cfg->chrootdir && cfg->chrootdir[0]) {
 		if(chdir(cfg->chrootdir)) {
@@ -631,7 +632,9 @@ perform_setup(struct daemon* daemon, struct config_file* cfg, int debug_mode,
 #else
 	(void)cfgfile;
 #endif
+#endif
 	/* change to working directory inside chroot */
+#if 0
 	if(cfg->directory && cfg->directory[0]) {
 		char* dir = cfg->directory;
 		if(cfg->chrootdir && cfg->chrootdir[0] &&
@@ -646,7 +649,7 @@ perform_setup(struct daemon* daemon, struct config_file* cfg, int debug_mode,
 			verbose(VERB_QUERY, "chdir to %s", dir);
 		}
 	}
-
+#endif
 	/* drop permissions after chroot, getpwnam, pidfile, syslog done*/
 #if 0
 #ifdef HAVE_GETPWNAM

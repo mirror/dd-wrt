@@ -1373,7 +1373,7 @@ config_read(struct config_file* cfg, const char* filename, const char* chroot)
 	}
 #endif /* HAVE_GLOB */
 
-	in = fopen(fname, "r");
+	in = fopen(fname, "rb");
 	if(!in) {
 		log_err("Could not open %s: %s", fname, strerror(errno));
 		return 0;
