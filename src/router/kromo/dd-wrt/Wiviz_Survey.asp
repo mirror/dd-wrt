@@ -7,11 +7,15 @@
 		//<![CDATA[
 		if (!['brainslayer', 'kromo', 'wikar', 'xirian'].includes("<% nvg("router_style"); %>")) {
 			document.write('<link type="text/css" rel="stylesheet" href="/style/<% nvg("router_style"); %>/colorscheme.css" />');
-		}
-		if (<% nvem("router_style_dark", "1", "1", "0"); %>) {
-			document.write('<link type="text/css" rel="stylesheet" href="style/wiviz_dark.css" />')
-		} else {
-			document.write('<link type="text/css" rel="stylesheet" href="style/wiviz_light.css" />')
+		} else if (['brainslayer', 'kromo', 'wikar', 'xirian'].includes("<% nvg("router_style"); %>")) {
+				document.write('<link type="text/css" rel="stylesheet" href="style/wiviz_light.css" />')
+			} else {
+				if (<% nvem("router_style_dark", "1", "1", "0"); %>) {
+					document.write('<link type="text/css" rel="stylesheet" href="style/wiviz_light.css" />')
+				} else {
+					document.write('<link type="text/css" rel="stylesheet" href="style/wiviz_dark.css" />')
+				}
+			}
 		}
 		//]]>
 		</script>
@@ -20,7 +24,7 @@
 		<meta http-equiv="refresh" content="1800" charset="utf-8">
 	</head>
 <body class='popup_bg'>
-	<img class='logo' id='logo' src='images/wiviz/wiviz2-logo.png' width='184' height='67'>
+	<img class='logo' id='logo' src='images/wiviz/wiviz2-logo.png' width='200' height='67'>
 	<div class='mainarea' id='mainarea'></div>
 	<div class='controls'>
 		<a href='javascript:cameraElevation(0.2)'><img src='images/wiviz/up.svg' alt='Up'></a>
