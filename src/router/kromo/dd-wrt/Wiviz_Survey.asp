@@ -8,9 +8,14 @@
 		if (!['brainslayer', 'kromo', 'wikar', 'xirian'].includes("<% nvg("router_style"); %>")) {
 			document.write('<link type="text/css" rel="stylesheet" href="/style/<% nvg("router_style"); %>/colorscheme.css" />');
 		}
+		if (<% nvem("router_style_dark", "1", "1", "0"); %>) {
+			document.write('<link type="text/css" rel="stylesheet" href="style/wiviz_dark.css" />')
+		} else {
+			document.write('<link type="text/css" rel="stylesheet" href="style/wiviz_light.css" />')
+		}
 		//]]>
 		</script>
-		<link type="text/css" rel="stylesheet" href="style/wiviz2.css" />
+		<link type="text/css" rel="stylesheet" href="style/wiviz_common.css" />
 		<!-- The proper way to deal with memory leaks -->
 		<meta http-equiv="refresh" content="1800" charset="utf-8">
 	</head>
@@ -24,8 +29,8 @@
 		<a href='javascript:cameraZoom(1/1.2)'><img src='images/wiviz/zoomout.svg' alt='Zoom out'></a>
 		<a href='javascript:resetCameraWithFlair();'><img src='images/wiviz/reset.svg' alt='Reset view'></a>
 	</div>
-	<div class='rightmenu'>
-		<div class='expando'>
+	<div class='sidemenu'>
+		<div class='expander'>
 		<div class='button' id='scanoptions' onClick='toggleExpando(this)'>
 			Scanning Options
 		</div>
@@ -76,7 +81,7 @@
 			</form>
 		</div>
 	</div>
-	<div class='expando'>
+	<div class='expander'>
 		<div class='button' id='displayoptions' onClick='toggleExpando(this)'>
 			Display Options
 		</div>
@@ -95,7 +100,7 @@
 			<input type='checkbox' id='flyin' onClick='updatePrefs(this)'> Fly in on Click<br>
 		</div>
 	</div>
-	<div class='expando'>
+	<div class='expander'>
 		<div class='button' id='details' onClick='toggleExpando(this)'>
 			 Details
 		</div>
@@ -131,7 +136,7 @@
 			</span>
 		</div>
 	</div>
-	<!--	<div class='expando' style='display:none'>
+	<!--	<div class='expander' style='display:none'>
 		<div class='button' id='clientspy' onClick='toggleExpando(this)'>
 			Client spy
 		</div>
@@ -139,17 +144,15 @@
 			Content<br>
 		</div>
 	</div> -->
-		<div class='expando'>
+		<div class='expander'>
 			<div class='button' id='configuration' onClick="self.close()">
 				Close
 			</div>
 		</div>
 </div>
 <div class='poweredby'>By Nate True<br>Powered by DD-WRT</div>
-<!--
 <div class='debugger' id='debugger'></div>
 	<iframe class='wiviz' id='wivizGetFrame' src='about:blank'></iframe>
 	<iframe class='wiviz' id='wivizSetFrame' name='wivizSetFrame' src='about:blank'></iframe>
--->
 </body>
 </html>
