@@ -312,9 +312,11 @@ add_open(const char* ip, int nr, struct listen_port** list, int noproto_is_err,
 #else
 			(void)cfg;
 #endif
-#endif
 		}
-	} else {
+	} 
+	else 
+#endif
+	{
 		hints.ai_socktype = SOCK_STREAM;
 		hints.ai_flags = AI_PASSIVE | AI_NUMERICHOST;
 		if((r = getaddrinfo(ip, port, &hints, &res)) != 0 || !res) {
