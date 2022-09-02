@@ -7,13 +7,14 @@
 		//<![CDATA[
 		if (!['brainslayer', 'kromo', 'wikar', 'xirian'].includes("<% nvg("router_style"); %>")) {
 			document.write('<link type="text/css" rel="stylesheet" href="/style/<% nvg("router_style"); %>/colorscheme.css" />');
-		} else if (['brainslayer', 'kromo', 'wikar', 'xirian'].includes("<% nvg("router_style"); %>")) {
+		} else {
+			 if (['brainslayer', 'kromo', 'wikar', 'xirian'].includes("<% nvg("router_style"); %>")) {
 				document.write('<link type="text/css" rel="stylesheet" href="style/wiviz_light.css" />')
 			} else {
 				if (<% nvem("router_style_dark", "1", "1", "0"); %>) {
-					document.write('<link type="text/css" rel="stylesheet" href="style/wiviz_light.css" />')
+					document.write('<link type="text/css" rel="stylesheet" href="style/wiviz_light.css" />');
 				} else {
-					document.write('<link type="text/css" rel="stylesheet" href="style/wiviz_dark.css" />')
+					document.write('<link type="text/css" rel="stylesheet" href="style/wiviz_dark.css" />');
 				}
 			}
 		}
