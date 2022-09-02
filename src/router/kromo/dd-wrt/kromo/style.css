@@ -68,7 +68,8 @@ input.button:focus, input.button:focus-visible {
   box-shadow: 0 0 5px 1px #115b80;
   outline: 0;
 }
-input[type] {
+input[type='checkbox'],
+input[type='radio'] {
   accent-color: #115b80;
 }
 input.button, input.button[disabled]:hover {
