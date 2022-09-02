@@ -12,14 +12,14 @@ select {
   text-overflow: ellipsis;
   display: inline-block;
 }
-.rightmenu {
-  float: right;
-  right: 20px;
-  top: 5px;
+.sidemenu {
+  float: left;
+  top: 70px;
+  left: 2px;
   position: relative;
-  width: 177px;
+  width: 200px
 }
-.expando {
+.expander {
   position: relative;
   z-index: 150;
 }
@@ -48,12 +48,10 @@ input[type='checkbox'] {
   outline: 0;
 }
 .slidingbody {
-  width: 197px;
   overflow: hidden;
 }
 .slidingbodyshow {
   text-align: left;
-  width: 100%;
   padding: 10px;
 }
 .slidingbodyshow center {
@@ -64,21 +62,27 @@ input[type='checkbox'] {
 }
 .controls {
   position: absolute;
-  bottom: 10px;
-  left: 10px;
+  bottom: 18px;
+  left: 5px;
   z-index: 1;
 }
 .controls a {
-  height: 50px;
-  width: 50px;
+  height: 45px;
+  width: 45px;
+  margin-right: -5px;
   display: inline-block;
 }
 .controls > a > img, .button {
   transition: all .15s cubic-bezier(0.3, 0, 0.5, 1);
 }
+.controls > a > img {
+  height: 45px;
+  width: 45px;
+}
 .controls > a:focus-visible {
-  outline: 2px solid var(--ac-0, #30519c);
-  border-radius: 4px;
+  outline: 2px dashed var(--ac-0, #30519c);
+  outline-offset: -2px;
+  border-radius: 6px;
 }
 .mainarea {
   position: absolute;
@@ -120,6 +124,8 @@ input[type='checkbox'] {
 }
 .logo {
   position: absolute;
+  top: 5px !important;
+  left: 10px !important;
   z-index: 0;
 }
 .sizeimage {
@@ -136,77 +142,4 @@ a.action {
 .actionlist {
   text-align: center;
   display: none;
-}
-@media (prefers-color-scheme: light) {
-  a[href] {
-    color: var(--ac-0, #6384cf);
-  }
-  select {
-    background-color: #fff;
-    border: 1px solid #ccc;
-    color: #000;
-  }
-  .popup_bg, .title3d {
-    background-color: #f6f6f6;
-    color: #000;
-  }
-  a.action {
-    color: #000;
-  }
-  .slidingbodyshow center {
-    border-top: 1px solid #454545;
-    border-bottom: 1px solid #454545;
-  }
-  .gridpoint {
-    background-color: #111;
-  }
-  .slidingbody, .slidingbodyshow {
-    background-color: #f6f6f6;
-  }
-  .controls > a > img:hover {
-    filter: invert(1);
-    mix-blend-mode: darken;
-  }
-}
-@media (prefers-color-scheme: dark) {
-  a[href] {
-    color: var(--ac-2, #6384cf);
-  }
-  select {
-    background-color: #333;
-    border: 1px solid #454545;
-    color: #e0e0e0;
-  }
-  .popup_bg, .title3d {
-    background-color: #1a1a1a;
-    color: var(--tx-c, #fff);
-  }
-  a.action {
-    color: var(--tx-c, #fff);
-  }
-  .slidingbodyshow center {
-    border-top: 1px solid #454545;
-    border-bottom: 1px solid #454545;
-  }
-  .gridpoint {
-    background-color: #eee;
-  }
-  .slidingbody, .slidingbodyshow {
-    background-color: #1a1a1a;
-    border: 1px solid #454545;
-  }
-  .logo {
-    filter: invert(.95) hue-rotate(180deg) contrast(1.2);
-    mix-blend-mode: lighten;
-  }
-  .sizeimage {
-    filter: invert(.9) hue-rotate(180deg) brightness(.5)
-  }
-  .sizeimage[src*='ssid.svg'] {
-    filter: invert(.5) hue-rotate(180deg) contrast(2);
-  }
-  .controls > a > img:hover {
-    filter: invert(0.95) contrast(1.2);
-    mix-blend-mode: lighten;
-  }
 }
