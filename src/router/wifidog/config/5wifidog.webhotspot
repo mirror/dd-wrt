@@ -4,13 +4,15 @@
 	<div class="center">
 		<script type="text/javascript">
 		//<![CDATA[
-		if (!['brainslayer', 'kromo', 'wikar', 'xirian'].includes(<% nvg("router_style"); %>)) {
-			if (<% nvem("router_style_dark", "1", "1", "0"); %>) {
-			  document.write("<img src=\"images/wifidog-light.png\" alt=\"wifidog logo\" />\n");
-			} else {
-			  document.write("<img src=\"images/wifidog.png\" alt=\"wifidog logo\" />\n");
-			}
+		if (<% nvem("router_style_dark", "1", "1", "0"); %>) {
+			document.write("<img src=\"images/wifidog-light.png\" alt=\"wifidog logo\" />\n");
+		} else {
+				document.write("<img src=\"images/wifidog.png\" alt=\"wifidog logo\" />\n");
 		}
+		if (['brainslayer', 'kromo', 'wikar', 'xirian'].includes(<% nvg("router_style"); %>) && (<% nvem("router_style_dark", "1", "0", "1"); %>)) {
+			document.write("<img src=\"images/wifidog.png\" alt=\"wifidog logo\" />\n");
+		} else
+				return;
 		//]]>
 		</script>
 	</div><br />
