@@ -140,7 +140,7 @@ function OpenSpectral () {
 
 function OpenWiwizSurvey () {
 	if( "<% radio_on(); %>" == "1" ) {
-		openWindow('Wiviz_Survey.asp', 900, 700);
+		openWindow('Wiviz_Survey.asp', 1024, 700);
 	}
 	else {
 		alert(errmsg.err59);
