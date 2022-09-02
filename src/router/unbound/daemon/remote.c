@@ -298,6 +298,7 @@ add_open(const char* ip, int nr, struct listen_port** list, int noproto_is_err,
 		 * than root can access it provided they are in the same
 		 * group as the user we run as.
 		 */
+#if 0
 		if(fd != -1) {
 #ifdef HAVE_CHOWN
 			chmod(ip, (mode_t)(S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP));
@@ -310,6 +311,7 @@ add_open(const char* ip, int nr, struct listen_port** list, int noproto_is_err,
 			}
 #else
 			(void)cfg;
+#endif
 #endif
 		}
 	} else {

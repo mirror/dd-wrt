@@ -558,6 +558,7 @@ perform_setup(struct daemon* daemon, struct config_file* cfg, int debug_mode,
 #ifdef HAVE_KILL
 	if(cfg->pidfile && cfg->pidfile[0] && need_pidfile) {
 		if(writepid(daemon->pidfile, getpid())) {
+#if 0
 			if(cfg->username && cfg->username[0] && cfg_uid != (uid_t)-1 &&
 				pidinchroot) {
 #  ifdef HAVE_CHOWN
@@ -568,6 +569,7 @@ perform_setup(struct daemon* daemon, struct config_file* cfg, int debug_mode,
 				}
 #  endif /* HAVE_CHOWN */
 			}
+#endif
 		}
 	}
 #else
@@ -576,6 +578,7 @@ perform_setup(struct daemon* daemon, struct config_file* cfg, int debug_mode,
 #endif /* HAVE_KILL */
 
 	/* Set user context */
+#if 0
 #ifdef HAVE_GETPWNAM
 	if(cfg->username && cfg->username[0] && cfg_uid != (uid_t)-1) {
 #ifdef HAVE_SETUSERCONTEXT
@@ -591,7 +594,7 @@ perform_setup(struct daemon* daemon, struct config_file* cfg, int debug_mode,
 #endif /* HAVE_SETUSERCONTEXT */
 	}
 #endif /* HAVE_GETPWNAM */
-
+#endif
 	/* box into the chroot */
 #ifdef HAVE_CHROOT
 	if(cfg->chrootdir && cfg->chrootdir[0]) {
@@ -645,6 +648,7 @@ perform_setup(struct daemon* daemon, struct config_file* cfg, int debug_mode,
 	}
 
 	/* drop permissions after chroot, getpwnam, pidfile, syslog done*/
+#if 0
 #ifdef HAVE_GETPWNAM
 	if(cfg->username && cfg->username[0] && cfg_uid != (uid_t)-1) {
 #  ifdef HAVE_INITGROUPS
@@ -678,6 +682,7 @@ perform_setup(struct daemon* daemon, struct config_file* cfg, int debug_mode,
 			cfg->username);
 	}
 #endif /* HAVE_GETPWNAM */
+#endif
 	/* file logging inited after chroot,chdir,setuid is done so that 
 	 * it would succeed on SIGHUP as well */
 	if(!cfg->use_syslog)
