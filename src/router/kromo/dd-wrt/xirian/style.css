@@ -104,6 +104,10 @@ h2, h3 {
 #menu li span, #menu li a:hover {
   background: linear-gradient(0deg, #ededed, #fff 100%);
 }
+#ip_count:hover, [title*='Search']:hover,
+[title*='Chain']:hover, [title*='Monitoring']:hover {
+  color: #115b80;
+}
 textarea {
   background: #f0f0f4;
   padding: 4px;
@@ -141,9 +145,6 @@ input {
   margin-left: 1px;
   margin-right: 1px;
 }
-input[type] {
-  accent-color: #345b80;  
-}
 input.button {
   padding: .12rem .5rem;
   margin-right: .2rem
@@ -159,7 +160,7 @@ input.num[name*='lease'][size='10'] {
   width: 65%
 }
 input.three_column {
-  width: 150px;
+  width: 158px;
   margin-left: 0;
   margin-right: 10px;
 }
@@ -174,8 +175,10 @@ input.four_column {
 input.four_column_last {
   margin-right: 0;
 }
-input.spaceradio {
+input[type='checkbox'],
+input[type='radio'] {
   margin-right: .4em;
+  accent-color: #345b80;
 }
 #mainno #contents[style*="padding: .906em"] {
   padding: 0 !important;
@@ -188,17 +191,17 @@ form {
   margin: 0;
   padding: 0;
 }
-div.message {
+.message {
   margin: 0;
   padding: .906em;
   text-align: center;
   z-index: 99;
   position: relative
 }
-div.message div {
+.message div {
   text-align: center;
 }
-div.message div form {
+.message div form {
   position: absolute;
   top: 50%;
   left: 50%;
@@ -241,20 +244,44 @@ pre {
 }
 fieldset {
   background-color: #ccd;
-  padding-left: 10px;
   border-radius: 3px;
   filter: brightness(1.02);
 }
-fieldset legend, fieldset .syslog_legend {
+fieldset legend {
   font-weight: bold;
   color: #115b80;
 }
-table {
-  width: 100%;
+table, .table {
+  margin: 0 -3px;
+	border-spacing: .1em;
 }
 table th {
   background: #bbc;
   padding: 1px 4px;
+  border-radius: 3px;
+  font-weight: normal;
+  line-height: normal;
+	vertical-align: bottom;
+}
+/* override for xirian */
+.table_row_bg {
+  background-color: #ccd;
+}
+.table_row_bg:hover {
+  background-color: #bbbbcc;
+}
+#active_clients_table,
+#dhcp_leases_table {
+  table-layout: fixed;
+}
+#active_clients_table td,
+#dhcp_leases_table td {
+  text-overflow: ellipsis;
+  overflow: hidden;
+}
+table#radio_table {
+  border-spacing: .1666em;
+  text-align: center;
 }
 .center {
   text-align: center;
@@ -429,11 +456,4 @@ form[name='wds'] input[size='25'] {
   padding: 0;
   border: 0;
   mix-blend-mode: darken;
-}
-/* override for xiria */
-.table_row_bg {
-  background-color: #ccd;
-}
-.table_row_bg:hover {
-  background-color: #bbbbcc;
 }

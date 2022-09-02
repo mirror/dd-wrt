@@ -90,18 +90,11 @@ div.bulle, table.bulle, td.bulle {
   background-color: #eec900;
   color: #000;
 }
-#ip_count:hover, [title*='Search']:hover,
-[title*='Chain']:hover, [title*='Monitoring']:hover {
-  color: #04c;
-}
 .table_row_bg {
   background-color: #d1d1d1;
 }
 .table_row_bg:hover {
   background-color: #d9d9d9;
-}
-table tr:not([class]):hover {
-  background-color: transparent;
 }
 .table_bg_br_clr_on {
   background-color: #31dd00;
@@ -123,4 +116,10 @@ table tr:not([class]):hover {
 .nostick {
   position: unset;
   bottom: unset;
+}
+table tr th[sortdir] {
+	cursor: pointer;
+}
+table#radio_table tr td, .table_row_bg td {
+  height: 18px;
 }

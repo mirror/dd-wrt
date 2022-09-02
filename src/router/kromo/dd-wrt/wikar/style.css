@@ -178,7 +178,12 @@ fieldset legend {
 .setting input {
   margin: 2px 4px 4px 0;
 }
-input[type] {
+#ip_count:hover, [title*='Search']:hover,
+[title*='Chain']:hover, [title*='Monitoring']:hover {
+  color: #483c9f;
+}
+input[type='checkbox'],
+input[type='radio'] {
   accent-color: #483c9f;  
 }
 input.button {
