@@ -173,8 +173,8 @@ function closeExpando(e) {
 }
 function Expando(e, onlyOpen, onlyClose) {
 	updatePrefs(e);
-	mn = findParentOfClass(e, "rightmenu");
-	ex = findParentOfClass(e, "expando");
+	mn = findParentOfClass(e, "sidemenu");
+	ex = findParentOfClass(e, "expander");
 	bds = findChildOfClass(mn, "slidingbodyshow");
 	bdh = findChildOfClass(ex, "slidingbody");
 	var newsx;
