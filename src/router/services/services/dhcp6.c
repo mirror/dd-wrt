@@ -55,6 +55,16 @@
 #include <services.h>
 #include <time.h>
 
+#ifdef HAVE_IPV6
+#define evalip6(cmd, args...) { \
+		if (nvram_match("ipv6_enable","1")) {	\
+			eval_va(cmd, ## args, NULL); \
+		} \
+	}
+#else
+#define evalip6(...)
+#endif
+
 void start_dhcp6c(void)
 {
 	char wan_if_buffer[33];
@@ -191,16 +201,16 @@ void start_dhcp6c(void)
 		eval("iptables", "-t", "mangle", "-D", "POSTROUTING", "-m", "--mark", "0x100000", "-j", "CLASSIFY", "--set-class", "0:1");
 		eval("iptables", "-t", "mangle", "-A", "POSTROUTING", "-m", "--mark", "0x100000", "-j", "CLASSIFY", "--set-class", "0:1");
 
-		eval("ip6tables", "-t", "mangle", "-D", "PREROUTING", "-i", wan_ifname, "-j", "MARK", "--set-mark", "0x100000");
-		eval("ip6tables", "-t", "mangle", "-A", "PREROUTING", "-i", wan_ifname, "-j", "MARK", "--set-mark", "0x100000");
-		eval("ip6tables", "-t", "mangle", "-D", "POSTROUTING", "-o", wan_ifname, "-j", "MARK", "--set-mark", "0x100000");
-		eval("ip6tables", "-t", "mangle", "-A", "POSTROUTING", "-o", wan_ifname, "-j", "MARK", "--set-mark", "0x100000");
+		evalip6("ip6tables", "-t", "mangle", "-D", "PREROUTING", "-i", wan_ifname, "-j", "MARK", "--set-mark", "0x100000");
+		evalip6("ip6tables", "-t", "mangle", "-A", "PREROUTING", "-i", wan_ifname, "-j", "MARK", "--set-mark", "0x100000");
+		evalip6("ip6tables", "-t", "mangle", "-D", "POSTROUTING", "-o", wan_ifname, "-j", "MARK", "--set-mark", "0x100000");
+		evalip6("ip6tables", "-t", "mangle", "-A", "POSTROUTING", "-o", wan_ifname, "-j", "MARK", "--set-mark", "0x100000");
 
-		eval("ip6tables", "-t", "mangle", "-D", "POSTROUTING", "-m", "mark", "--mark", "0x100000", "-j", "CLASSIFY", "--set-class", "0:1");
-		eval("ip6tables", "-t", "mangle", "-A", "POSTROUTING", "-m", "mark", "--mark", "0x100000", "-j", "CLASSIFY", "--set-class", "0:1");
+		evalip6("ip6tables", "-t", "mangle", "-D", "POSTROUTING", "-m", "mark", "--mark", "0x100000", "-j", "CLASSIFY", "--set-class", "0:1");
+		evalip6("ip6tables", "-t", "mangle", "-A", "POSTROUTING", "-m", "mark", "--mark", "0x100000", "-j", "CLASSIFY", "--set-class", "0:1");
 
-		eval("ip6tables", "-t", "mangle", "-D", "POSTROUTING", "-o", wan_ifname, "-p", "udp", "--dport", "547", "-j", "CLASSIFY", "--set-class", "0:0");
-		eval("ip6tables", "-t", "mangle", "-A", "POSTROUTING", "-o", wan_ifname, "-p", "udp", "--dport", "547", "-j", "CLASSIFY", "--set-class", "0:0");
+		evalip6("ip6tables", "-t", "mangle", "-D", "POSTROUTING", "-o", wan_ifname, "-p", "udp", "--dport", "547", "-j", "CLASSIFY", "--set-class", "0:0");
+		evalip6("ip6tables", "-t", "mangle", "-A", "POSTROUTING", "-o", wan_ifname, "-p", "udp", "--dport", "547", "-j", "CLASSIFY", "--set-class", "0:0");
 
 	}
 #endif
