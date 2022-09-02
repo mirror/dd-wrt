@@ -420,8 +420,7 @@ static void add_tc_class(char *dev, int pref, int handle, int classid)
 	sprintf(c, "1:", classid);
 	sprintf(p, "%d", pref);
 	eval("tc", "filter", "add", "dev", dev, "protocol", "ip", "pref", p, "handle", h, "fw", "classid", c);
-	if (nvram_match("ipv6_enable", "1"))
-		eval("tc", "filter", "add", "dev", dev, "protocol", "ipv6", "pref", p, "handle", h, "fw", "classid", c);
+	evalip6("tc", "filter", "add", "dev", dev, "protocol", "ipv6", "pref", p, "handle", h, "fw", "classid", c);
 }
 #else
 static void add_tc_mark(char *dev, int pref, char *mark, char *mark2, int flow)
@@ -431,8 +430,7 @@ static void add_tc_mark(char *dev, int pref, char *mark, char *mark2, int flow)
 	char f[32];
 	sprintf(f, "1:%d", flow);
 	eval("tc", "filter", "add", "dev", dev, "protocol", "ip", "pref", p, "parent", "1:", "u32", "match", "mark", mark, mark2, "flowid", f);
-	if (nvram_match("ipv6_enable", "1"))
-		eval("tc", "filter", "add", "dev", dev, "protocol", "ipv6", "pref", p, "parent", "1:", "u32", "match", "mark", mark, mark2, "flowid", f);
+	evalip6("tc", "filter", "add", "dev", dev, "protocol", "ipv6", "pref", p, "parent", "1:", "u32", "match", "mark", mark, mark2, "flowid", f);
 }
 #endif
 
@@ -1037,8 +1035,7 @@ static void add_filter(const char *dev, int pref, int handle, int classid)
 	sprintf(h, "0x%02X", handle);
 	sprintf(c, "1:%d", classid);
 	eval("tc", "filter", "add", "dev", dev, "protocol", "ip", "pref", p, "handle", h, "fw", "classid", c);
-	if (nvram_match("ipv6_enable", "1"))
-		eval("tc", "filter", "add", "dev", dev, "protocol", "ipv6", "pref", p, "handle", h, "fw", "classid", c);
+	evalip6("tc", "filter", "add", "dev", dev, "protocol", "ipv6", "pref", p, "handle", h, "fw", "classid", c);
 
 }
 
