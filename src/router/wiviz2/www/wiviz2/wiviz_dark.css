@@ -1,0 +1,37 @@
+@import url(wiviz_common.css);
+a[href] {
+  color: var(--ac-2, #6384cf);
+}
+select {
+  background-color: #333;
+  border: 1px solid #454545;
+  color: #e0e0e0;
+}
+.popup_bg, .title3d {
+  background-color: #1a1a1a;
+  color: #fff
+}
+a.action {
+  color: #fff;
+}
+.slidingbodyshow center {
+  border-top: 1px solid #454545;
+  border-bottom: 1px solid #454545;
+}
+.gridpoint {
+  background-color: #eee;
+}
+.slidingbody, .slidingbodyshow {
+  background-color: #1a1a1a;
+  border: 1px solid #454545;
+}
+.sizeimage {
+  filter: invert(.9) hue-rotate(180deg) brightness(.5)
+}
+.sizeimage[src*='ssid.svg'] {
+  filter: invert(.5) hue-rotate(180deg) contrast(2);
+}
+.controls > a > img:hover {
+  filter: invert(0.95) contrast(1.2);
+  mix-blend-mode: lighten;
+}

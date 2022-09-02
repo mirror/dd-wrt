@@ -1,0 +1,30 @@
+@import url(wiviz_common.css);
+a[href] {
+  color: var(--ac-0, #6384cf);
+}
+select {
+  background-color: #fff;
+  border: 1px solid #ccc;
+  color: #000;
+}
+.popup_bg, .title3d {
+  background-color: #f6f6f6;
+  color: #000;
+}
+a.action {
+  color: #000;
+}
+.slidingbodyshow center {
+  border-top: 1px solid #454545;
+  border-bottom: 1px solid #454545;
+}
+.gridpoint {
+  background-color: #111;
+}
+.slidingbody, .slidingbodyshow {
+  background-color: #f6f6f6;
+}
+.controls > a > img:hover {
+  filter: invert(1);
+  mix-blend-mode: darken;
+}
