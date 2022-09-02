@@ -674,7 +674,7 @@ EJ_VISIBLE void ej_filter_summary_show(webs_t wp, int argc, char_t ** argv)
 
 		websWrite(wp, "<tr class=\"table_row_bg center\" >\n"
 			  "<td width=\"50\" >%d.</td>\n"
-			  "<td width=\"200\" >%s</td>\n" "<td width=\"150\" >\n" "<table width=\"150\" border=\"1\" cellspacing=\"1\" style=\"border-collapse: collapse\" >\n" "<tr class=\"center\>\n", i + 1, name);
+			  "<td width=\"200\" >%s</td>\n" "<td width=\"150\" >\n" "<table width=\"150\" border=\"1\" cellspacing=\"1\" style=\"border-collapse: collapse\" >\n" "<tr class=\"center\">\n", i + 1, name);
 		websWrite(wp, "<td class=\"%s\" width=\"17\"><script type=\"text/javascript\">Capture(%s)</script></td>\n"
 			  "<td class=\"%s\" width=\"17\"><script type=\"text/javascript\">Capture(%s)</script></td>\n"
 			  "<td class=\"%s\" width=\"17\"><script type=\"text/javascript\">Capture(%s)</script></td>\n"
