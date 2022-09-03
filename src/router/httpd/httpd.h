@@ -39,7 +39,11 @@ extern BIO *bio_err;
 #include <search.h>
 #endif
 #include <stdarg.h>
-
+#ifdef HAVE_WIVIZ
+#ifndef HAVE_MICRO
+#include  <pthread.h>
+#endif
+#endif
 #define AUTH_MAX 64
 
 #define USE_LAN 0
@@ -56,6 +60,11 @@ typedef struct {
 	volatile int tod_data_null;
 	volatile int nv_count;
 	volatile struct wl_client_mac wl_client_macs[MAX_LEASES];
+#ifdef HAVE_WIVIZ
+#if !defined(HAVE_MICRO) && !defined(__UCLIBC__)
+	pthread_mutex_t wiz_mutex_contr;
+#endif
+#endif
 } persistent_vars;
 
 typedef struct {

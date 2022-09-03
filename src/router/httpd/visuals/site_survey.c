@@ -446,13 +446,12 @@ EJ_VISIBLE void ej_dump_site_survey(webs_t wp, int argc, char_t ** argv)
 
 #ifdef HAVE_WIVIZ
 
-#ifndef HAVE_MICRO
+#if !defined(HAVE_MICRO) && !defined(__UCLIBC__)
 #include <pthread.h>
-static pthread_mutex_t wiz_mutex_contr = PTHREAD_MUTEX_INITIALIZER;
 static char *lastlock;
 static char *lastunlock;
-#define wiz_lock() pthread_mutex_lock(&wiz_mutex_contr)
-#define wiz_unlock() pthread_mutex_unlock(&wiz_mutex_contr)
+#define wiz_lock() pthread_mutex_lock(&wp->p->wiz_mutex_contr)
+#define wiz_unlock() pthread_mutex_unlock(&wp->p->wiz_mutex_contr)
 #else
 #define wiz_lock()
 #define wiz_unlock()
@@ -465,9 +464,24 @@ EJ_VISIBLE void ej_dump_wiviz_data(webs_t wp, int argc, char_t ** argv)	// Eko, 
 	FILE *f;
 	char buf[256];
 	wiz_lock();
-	killall("autokill_wiviz", SIGTERM);
+	killall("autokill_wiviz", SIGKILL);
 	eval("autokill_wiviz");
-	eval("run_wiviz");
+
+	if (pidof("wiviz") > 0)
+		killall("wiviz", SIGUSR1);
+	else {
+		char *hopseq = nvram_safe_get("hopseq");
+		FILE *fp = fopen("/tmp/wiviz2-cfg", "wb");
+		if (nvram_matchi("hopseq", 0))
+			fprintf(fp, "channelsel=hop&");
+		else if (strstr(hopseq, ","))
+			fprintf(fp, "channelsel=hop&");
+		else
+			fprintf(fp, "channelsel=%s&", hopseq);
+		fprintf(fp, "hopdwell=%s&hopseq=%s\n", nvram_safe_get("hopdwell"), hopseq);
+		fclose(fp);
+		eval("wiviz");
+	}
 	int cnt = 0;
 	FILE *w = NULL;
 	if ((f = fopen("/tmp/wiviz2-dump", "r")) != NULL) {
