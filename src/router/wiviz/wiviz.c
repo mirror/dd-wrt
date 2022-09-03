@@ -58,6 +58,8 @@ main (int argc, char **argv)
   int i;
   int defaultHopSeq[] = { 1, 3, 6, 8, 11 };
   global_cfg = &cfg;
+  if (pidof("wiviz") > 1)
+	return 0;
   signal (SIGUSR1, &signal_handler);
   signal (SIGUSR2, &signal_handler);
   fprintf (stderr, "Wi-Viz infogathering daemon by Nathan True\n");

@@ -10,6 +10,8 @@ SOURCES=wiviz.c wl_access.c channelhopper.c
 OBJS=wiviz.o wl_access.o channelhopper.o
 TARGET=wiviz
 
+all: clean wiviz
+
 wiviz: ${OBJS}
 	${CC} ${CCOPTS} -I${INCLUDE} -o ${TARGET} ${OBJS} ${LIBS}
 
