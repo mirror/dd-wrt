@@ -20,6 +20,7 @@
 /* ****************************************************** */
 
 
+#if 0
 static ndpi_network ndpi_protocol_alibaba_protocol_list[] = {
  { 0x08D17A00 /* 8.209.122.0/24 */, 24, NDPI_PROTOCOL_ALIBABA },
  { 0x08D3E400 /* 8.211.228.0/22 */, 22, NDPI_PROTOCOL_ALIBABA },
@@ -30,6 +31,7 @@ static ndpi_network ndpi_protocol_alibaba_protocol_list[] = {
  { 0x08D6A000 /* 8.214.160.0/22 */, 22, NDPI_PROTOCOL_ALIBABA },
  { 0x08D84C00 /* 8.216.76.0/22 */, 22, NDPI_PROTOCOL_ALIBABA },
  { 0x0E017000 /* 14.1.112.0/22 */, 22, NDPI_PROTOCOL_ALIBABA },
+ { 0x2D5D1200 /* 45.93.18.0/23 */, 23, NDPI_PROTOCOL_ALIBABA },
  { 0x2EC75800 /* 46.199.88.0/24 */, 24, NDPI_PROTOCOL_ALIBABA },
  { 0x2F39C500 /* 47.57.197.0/24 */, 24, NDPI_PROTOCOL_ALIBABA },
  { 0x2F5AAC00 /* 47.90.172.0/22 */, 22, NDPI_PROTOCOL_ALIBABA },
@@ -43,7 +45,6 @@ static ndpi_network ndpi_protocol_alibaba_protocol_list[] = {
  { 0x2FF6A300 /* 47.246.163.0/24 */, 24, NDPI_PROTOCOL_ALIBABA },
  { 0x2FFA4000 /* 47.250.64.0/22 */, 22, NDPI_PROTOCOL_ALIBABA },
  { 0x2FFB8000 /* 47.251.128.0/22 */, 22, NDPI_PROTOCOL_ALIBABA },
- { 0x6737CA00 /* 103.55.202.0/24 */, 24, NDPI_PROTOCOL_ALIBABA },
  { 0x67CE2800 /* 103.206.40.0/22 */, 22, NDPI_PROTOCOL_ALIBABA },
  { 0x80006B00 /* 128.0.107.0/24 */, 24, NDPI_PROTOCOL_ALIBABA },
  { 0x938BFC00 /* 147.139.252.0/22 */, 22, NDPI_PROTOCOL_ALIBABA },
@@ -65,3 +66,4 @@ static ndpi_network ndpi_protocol_alibaba_protocol_list[] = {
  /* End */
  { 0x0, 0, 0 }
 };
+#endif

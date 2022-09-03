@@ -20,6 +20,7 @@
 /* ****************************************************** */
 
 
+#if 0
 static ndpi_network ndpi_protocol_avast_protocol_list[] = {
  { 0x052D3800 /* 5.45.56.0/21 */, 21, NDPI_PROTOCOL_AVAST },
  { 0x053E1000 /* 5.62.16.0/23 */, 23, NDPI_PROTOCOL_AVAST },
@@ -62,3 +63,4 @@ static ndpi_network ndpi_protocol_avast_protocol_list[] = {
  /* End */
  { 0x0, 0, 0 }
 };
+#endif
