@@ -7,5 +7,6 @@
   --ac-4: #6384cf;
   --ac-5: #849dd9;
   --tx-c: #fff;
-  --lg-c: #30519c;
+  --lg-c: var(--ac-0);
+  --it-c: var(--ac-0);
 }
