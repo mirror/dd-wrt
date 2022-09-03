@@ -73,7 +73,6 @@
 #endif
 #ifdef HAVE_WIVIZ
 #include "autokill_wiviz.c"
-#include "run_wiviz.c"
 #endif
 #ifdef HAVE_QTN
 #include "qtn_monitor.c"
@@ -400,7 +399,6 @@ static struct MAIN maincalls[] = {
 	// {"radio_timer", NULL, &radio_timer_main},
 	// {"ttraf", NULL, &ttraff_main},
 #ifdef HAVE_WIVIZ
-	{ "run_wiviz", NULL, &run_wiviz_main },
 	{ "autokill_wiviz", NULL, &autokill_wiviz_main },
 #endif
 	{ "site_survey", "site_survey", NULL },
