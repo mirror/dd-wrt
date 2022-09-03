@@ -111,8 +111,6 @@ int main(int argc, char **argv)
 	int i;
 	int defaultHopSeq[] = { 1, 3, 6, 8, 11 };
 	int s, one;
-	if (pidof("wiviz") > 1)
-		return 0;
 	memset(&cfg, 0, sizeof(cfg));
 	airbag_init();
 #ifdef HAVE_MADWIFI
