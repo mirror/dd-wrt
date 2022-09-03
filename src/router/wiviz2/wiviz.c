@@ -111,6 +111,8 @@ int main(int argc, char **argv)
 	int i;
 	int defaultHopSeq[] = { 1, 3, 6, 8, 11 };
 	int s, one;
+	if (pidof("wiviz") > 1)
+		return 0;
 	memset(&cfg, 0, sizeof(cfg));
 	airbag_init();
 #ifdef HAVE_MADWIFI
@@ -337,7 +339,7 @@ void writeJavascript()
 	fprintf(outf, "location.replace('Wiviz_Survey.asp');\n");
 	fprintf(outf, "}");
 	fclose(outf);
-	nvram_set("wiviz2_dump_done","1");
+	nvram_set("wiviz2_dump_done", "1");
 }
 
 static const char *ntoa(const uint8_t mac[6])
@@ -810,11 +812,11 @@ void dealWithPacket(wiviz_cfg * cfg, int pktlen, const u_char * packet)
 					memcpy(emergebss->apInfo->ssid, ssid, ssidlen);
 					emergebss->apInfo->ssid[ssidlen] = 0;
 					emergebss->apInfo->ssidlen = ssidlen;
-				}else {
+				} else {
 					emergebss->apInfo->ssid[0] = 0;
 					emergebss->apInfo->ssidlen = 0;
 					ssidlen = 0;
-				
+
 				}
 				if (channel)
 					emergebss->apInfo->channel = channel;
@@ -830,7 +832,7 @@ void dealWithPacket(wiviz_cfg * cfg, int pktlen, const u_char * packet)
 			memcpy(host->staInfo->lastssid, ssid, ssidlen);
 			host->staInfo->lastssid[ssidlen] = 0;
 			host->staInfo->lastssidlen = ssidlen;
-		}else {
+		} else {
 			host->staInfo->lastssid[0] = 0;
 			host->staInfo->lastssidlen = 0;
 			ssidlen = 0;
@@ -846,12 +848,11 @@ void dealWithPacket(wiviz_cfg * cfg, int pktlen, const u_char * packet)
 			memcpy(host->apInfo->ssid, ssid, ssidlen);
 			host->apInfo->ssid[ssidlen] = 0;
 			host->apInfo->ssidlen = ssidlen;
-		}else {
+		} else {
 			host->apInfo->ssid[0] = 0;
 			host->apInfo->ssidlen = 0;
 			ssidlen = 0;
-		
-		
+
 		}
 		if (channel)
 			host->apInfo->channel = channel;
@@ -1091,7 +1092,7 @@ void readWL(wiviz_cfg * cfg)
 		strcpy(host->apInfo->ssid, nvram_nget("%s_ssid", wl_dev));
 		host->apInfo->ssidlen = strlen(host->apInfo->ssid);
 		if (host->apInfo->ssidlen > 32)
-		    host->apInfo->ssidlen = 32;
+			host->apInfo->ssidlen = 32;
 		ether_atoe(nvram_nget("%s_hwaddr", wl_dev), buf);
 		memcpy(host->apInfo->bssid, buf, 6);
 #elif defined(HAVE_RT2880)
@@ -1104,7 +1105,7 @@ void readWL(wiviz_cfg * cfg)
 		}
 		host->apInfo->ssidlen = strlen(host->apInfo->ssid);
 		if (host->apInfo->ssidlen > 32)
-		    host->apInfo->ssidlen = 32;
+			host->apInfo->ssidlen = 32;
 		memcpy(host->apInfo->bssid, buf, 6);
 #else
 		wl_ioctl(wl_dev, WLC_GET_BSSID, host->apInfo->bssid, 6);
@@ -1112,7 +1113,7 @@ void readWL(wiviz_cfg * cfg)
 		memcpy(host->apInfo->ssid, ssid.SSID, 32);
 		host->apInfo->ssidlen = ssid.SSID_len;
 		if (host->apInfo->ssidlen > 32)
-		    host->apInfo->ssidlen = 32;
+			host->apInfo->ssidlen = 32;
 #endif
 		host->RSSI = 0;
 #ifdef HAVE_MADWIFI
