@@ -1230,7 +1230,6 @@ endif
 	cd $(INSTALLDIR)/sbin && ln -sf rc radio_timer
 	cd $(INSTALLDIR)/sbin && ln -sf rc ttraff	
 ifeq ($(CONFIG_WIVIZ),y)
-	cd $(INSTALLDIR)/sbin && ln -sf rc run_wiviz
 	cd $(INSTALLDIR)/sbin && ln -sf rc autokill_wiviz
 endif
 ifeq ($(CONFIG_ARP),y)
