@@ -10,15 +10,6 @@
 
 static int run_wiviz_main(int argc, char **argv)
 {
-	pid_t pid;
-
-	pid = fork();
-	switch (pid) {
-	case -1:
-		perror("fork failed");
-		exit(1);
-		break;
-	case 0:
 		if (pidof("wiviz") > 0)
 			killall("wiviz", SIGUSR1);
 		else {
@@ -34,12 +25,7 @@ static int run_wiviz_main(int argc, char **argv)
 			fclose(fp);
 			if (pidof("wiviz") > 0)
 			    exit(0);
-			eval("wiviz", ">/dev/null", "</dev/null", "2>&1", "&");
+			eval("wiviz");
 		}
-		exit(0);
-		break;
-	default:
-		_exit(0);
-		break;
-	}
+	return 0;
 }
