@@ -5,6 +5,15 @@
   font-size: 1em;
   color: #115b80;
 }
+::selection {
+  background-color: #115b80;
+  color: #fff;
+}
+:focus-visible, .button:focus-visible {
+  border: 1px solid #115b80;
+  box-shadow: 0 0 5px 1px #115b80;
+  outline: 0;
+}
 body {
   background: #dde;
   margin: 12px;
