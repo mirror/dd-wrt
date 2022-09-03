@@ -21,8 +21,8 @@ a.action {
   background-color: #eee;
 }
 .slidingbody, .slidingbodyshow {
-  background-color: #1a1a1a;
-  border: 1px solid #454545;
+  background-color: #222;
+  border: 1px solid #333;
 }
 .sizeimage {
   filter: invert(.9) hue-rotate(180deg) brightness(.5)
