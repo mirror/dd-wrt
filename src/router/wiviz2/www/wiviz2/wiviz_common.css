@@ -124,8 +124,8 @@ input[type='checkbox'] {
 }
 .logo {
   position: absolute;
-  top: 5px !important;
-  left: 10px !important;
+  top: 5px;
+  left: 10px;
   z-index: 0;
 }
 .sizeimage {

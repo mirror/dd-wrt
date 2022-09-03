@@ -521,15 +521,7 @@ function init_3d() {
 	globalRedraw = true;
 	setTimeout('tick()', 10);
 	updatePrefs();
-	if (prefs.showlogo) {
-		logodiv = document.getElementById('logo');
-		logodiv.style.left = "30%";
-		logodiv.style.top = "30%";
-		movePropertyTo("logodiv.style.left", 0, "%",
-			0.6, 0.01, true, true);
-		movePropertyTo("logodiv.style.top", 0, "%",
-			0.6, 0.01, true, true);
-	} else {
+	if (!prefs.showlogo) {
 		logodiv = document.getElementById('logo');
 		logodiv.style.display = "none";
 		sidemenucl = document.getElementsByClassName('sidemenu')
