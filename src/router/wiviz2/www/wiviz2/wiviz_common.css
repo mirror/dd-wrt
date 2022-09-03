@@ -4,7 +4,9 @@ body {
   letter-spacing: -.01em;
 }
 select {
+  width: 6rem;
   border-radius: 4px;
+  height: 1.5rem
 }
 #detail_info {
   width: 185px;
@@ -49,6 +51,7 @@ input[type='checkbox'] {
 }
 .slidingbody {
   overflow: hidden;
+  border-radius: 4px;
 }
 .slidingbodyshow {
   text-align: left;
@@ -86,7 +89,7 @@ input[type='checkbox'] {
 }
 .mainarea {
   position: absolute;
-  width: 77%;
+  width: 79%;
   height: 98%;
   bottom: 2px;
   top: 2px;

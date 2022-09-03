@@ -7,7 +7,7 @@ select {
   color: #000;
 }
 .popup_bg, .title3d {
-  background-color: #f6f6f6;
+  background-color: #fafafa;
   color: #000;
 }
 a.action {
@@ -21,7 +21,8 @@ a.action {
   background-color: #111;
 }
 .slidingbody, .slidingbodyshow {
-  background-color: #f6f6f6;
+  background-color: #f5f5f5;
+  border: 1px solid #ccc;
 }
 .controls > a > img:hover {
   filter: invert(1);
