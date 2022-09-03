@@ -27,6 +27,7 @@ var view_mtx, model_mtx, mtx = new Array(16);
 var items = new Array();
 var screenH, screenW, mainarea;
 var logodiv;
+var sidemenucl;
 var lastWvzUpdate = now - 4500;
 var lastInfoUpdate = now;
 var wvzFrame;
@@ -522,10 +523,10 @@ function init_3d() {
 	setTimeout('tick()', 10);
 	updatePrefs();
 	if (!prefs.showlogo) {
-		logodiv = document.getElementById('logo');
-		logodiv.style.display = "none";
-		sidemenucl = document.getElementsByClassName('sidemenu')
-		sidemenucl.style.top = "5px";
+		logodiv = document.getElementById('logo').classList;
+  	logodiv.toggle('hide-me');
+		sidemenucl = document.getElementById('smenu').classList;
+		sidemenucl.toggle('align-top');
 	}
 }
 

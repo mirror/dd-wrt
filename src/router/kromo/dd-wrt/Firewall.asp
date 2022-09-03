@@ -257,7 +257,6 @@ addEvent(window, "unload", function() {
 								<% show_modules(".websecurity"); %>
 								<% ifdef("MICRO", "<!--"); %>
 								<h2><% tran("log.h2"); %></h2>
-							
 							<fieldset>
 								<legend><% tran("log.legend"); %></legend>
 								<div class="setting">
@@ -322,8 +321,8 @@ addEvent(window, "unload", function() {
 									//]]>
 									</script>
 								</div>
-							</div>
-							</fieldset><br />
+							</fieldset>
+							</div><br />
 								<% ifdef("MICRO", "-->"); %>
 								<div id="footer" class="submitFooter">
 									<script type="text/javascript">
