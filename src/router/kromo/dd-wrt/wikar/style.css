@@ -4,6 +4,15 @@
  font-family: verdana, arial, helvetica, sans-serif;
  font-size: 1em;
 }
+::selection {
+  background-color: #483c9f;
+  color: #fff;
+}
+:focus-visible, .button:focus-visible {
+  border: 1px solid #483c9f;
+  box-shadow: 0 0 5px 1px #483c9f;
+  outline: 0;
+}
 html {
   width: 100%;
   margin: 0;
@@ -361,6 +370,9 @@ iframe#syslog {
   left: 0;
   top: 1rem;
   position: relative;
+}
+input {
+  border: 1px solid #8f8f9d;
 }
 input.button[onclick*="do_show"]:not([value*="Month"]) {
   margin: 1.2em 0 0 .362em;
