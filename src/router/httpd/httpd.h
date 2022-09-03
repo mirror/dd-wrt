@@ -60,8 +60,9 @@ typedef struct {
 	volatile int tod_data_null;
 	volatile int nv_count;
 	volatile struct wl_client_mac wl_client_macs[MAX_LEASES];
-#ifdef HAVE_WIVIZ
 #if !defined(HAVE_MICRO) && !defined(__UCLIBC__)
+	pthread_mutex_t mutex_contr;
+#ifdef HAVE_WIVIZ
 	pthread_mutex_t wiz_mutex_contr;
 #endif
 #endif

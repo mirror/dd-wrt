@@ -23,13 +23,12 @@
  * Added by Botho 03.April.06 
  */
 
-#ifndef HAVE_MICRO
+#if !defined(HAVE_MICRO) && !defined(__UCLIBC__)
 #include <pthread.h>
-static pthread_mutex_t mutex_contr = PTHREAD_MUTEX_INITIALIZER;
 static char *lastlock;
 static char *lastunlock;
-#define lock() pthread_mutex_lock(&mutex_contr)
-#define unlock() pthread_mutex_unlock(&mutex_contr)
+#define lock() pthread_mutex_lock(&wp->p->mutex_contr)
+#define unlock() pthread_mutex_unlock(&wp->p->mutex_contr)
 #else
 #define mutex_init()
 #define lock()
