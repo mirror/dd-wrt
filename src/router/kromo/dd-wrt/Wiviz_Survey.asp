@@ -31,7 +31,7 @@
 		<a href='javascript:cameraZoom(1/1.2)'><img src='images/wiviz/zoomout.svg' alt='Zoom out'></a>
 		<a href='javascript:resetCameraWithFlair();'><img src='images/wiviz/reset.svg' alt='Reset view'></a>
 	</div>
-	<div class='sidemenu'>
+	<div id='smenu' class='sidemenu'>
 		<div class='expander'>
 		<div class='button' id='scanoptions' onClick='toggleExpando(this)'>
 			Scanning Options
