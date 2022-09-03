@@ -101,7 +101,7 @@ int stop = 0;
 wiviz_cfg *global_cfg;
 char *wl_dev;
 ////////////////////////////////////////////////////////////////////////////////
-int main(int argc, char **argv)
+int wiviz_main(int argc, char **argv)
 {
 	char *dev;
 	int oldMonitor, newMonitor;
@@ -1182,4 +1182,33 @@ void readWL(wiviz_cfg * cfg)
 		printf("Current channel is %i\n", cfg->curChannel);
 	}
 #endif
+}
+int main(int argc, char **argv)
+{
+	if (argc > 1) {
+		if (!strcmp(argv[1], "terminate")) {
+		    return wiviz_main(argc,argv);
+		}
+	}
+	if (count_processes("wiviz")>1)
+	    return 0;
+
+	pid_t pid;
+
+	pid = fork();
+	switch (pid) {
+	case -1:
+		perror("fork failed");
+		exit(1);
+		break;
+	case 0:
+		wiviz_main(argc,argv);
+		exit(0);
+		break;
+	default:
+		_exit(0);
+		break;
+	}
+
+
 }

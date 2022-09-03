@@ -44,6 +44,9 @@ endif
 ifeq ($(CONFIG_RT61),y)
 CCOPTS+=-DHAVE_RT2880 
 endif
+ifeq ($(CONFIG_SYSLOG),y)
+CCOPTS+=-DHAVE_SYSLOG 
+endif
 ifeq ($(CONFIG_80211AC),y)
 CCOPTS+=-DHAVE_80211AC
 endif
