@@ -20,6 +20,7 @@
 /* ****************************************************** */
 
 
+#if 0
 static ndpi_network ndpi_protocol_discord_protocol_list[] = {
  { 0x05C80000 /* 5.200.0.0/19 */, 19, NDPI_PROTOCOL_DISCORD },
  { 0x1FCC8000 /* 31.204.128.0/19 */, 19, NDPI_PROTOCOL_DISCORD },
@@ -34,9 +35,7 @@ static ndpi_network ndpi_protocol_discord_protocol_list[] = {
  { 0x4216E800 /* 66.22.232.0/22 */, 22, NDPI_PROTOCOL_DISCORD },
  { 0x4216EC00 /* 66.22.236.0/23 */, 23, NDPI_PROTOCOL_DISCORD },
  { 0x4216EE00 /* 66.22.238.0/24 */, 24, NDPI_PROTOCOL_DISCORD },
- { 0x4216F000 /* 66.22.240.0/23 */, 23, NDPI_PROTOCOL_DISCORD },
- { 0x4216F200 /* 66.22.242.0/24 */, 24, NDPI_PROTOCOL_DISCORD },
- { 0x4216F400 /* 66.22.244.0/22 */, 22, NDPI_PROTOCOL_DISCORD },
+ { 0x4216F000 /* 66.22.240.0/21 */, 21, NDPI_PROTOCOL_DISCORD },
  { 0x4216F800 /* 66.22.248.0/24 */, 24, NDPI_PROTOCOL_DISCORD },
  { 0x45A8EA00 /* 69.168.234.0/24 */, 24, NDPI_PROTOCOL_DISCORD },
  { 0x559F7200 /* 85.159.114.0/24 */, 24, NDPI_PROTOCOL_DISCORD },
@@ -63,7 +62,6 @@ static ndpi_network ndpi_protocol_discord_protocol_list[] = {
  { 0xB9729C00 /* 185.114.156.0/22 */, 22, NDPI_PROTOCOL_DISCORD },
  { 0xB9782300 /* 185.120.35.0/24 */, 24, NDPI_PROTOCOL_DISCORD },
  { 0xB9A23800 /* 185.162.56.0/22 */, 22, NDPI_PROTOCOL_DISCORD },
- { 0xB9A53000 /* 185.165.48.0/24 */, 24, NDPI_PROTOCOL_DISCORD },
  { 0xB9ABF000 /* 185.171.240.0/22 */, 22, NDPI_PROTOCOL_DISCORD },
  { 0xB9AC8400 /* 185.172.132.0/22 */, 22, NDPI_PROTOCOL_DISCORD },
  { 0xB9B3C800 /* 185.179.200.0/22 */, 22, NDPI_PROTOCOL_DISCORD },
@@ -84,6 +82,7 @@ static ndpi_network ndpi_protocol_discord_protocol_list[] = {
  { 0xC71BD400 /* 199.27.212.0/22 */, 22, NDPI_PROTOCOL_DISCORD },
  { 0xCB841800 /* 203.132.24.0/24 */, 24, NDPI_PROTOCOL_DISCORD },
  { 0xD412E600 /* 212.18.230.0/24 */, 24, NDPI_PROTOCOL_DISCORD },
+ { 0xD413E000 /* 212.19.224.0/22 */, 22, NDPI_PROTOCOL_DISCORD },
  { 0xD468C800 /* 212.104.200.0/23 */, 23, NDPI_PROTOCOL_DISCORD },
  { 0xD468CA00 /* 212.104.202.0/24 */, 24, NDPI_PROTOCOL_DISCORD },
  { 0xD468CD00 /* 212.104.205.0/24 */, 24, NDPI_PROTOCOL_DISCORD },
@@ -94,3 +93,4 @@ static ndpi_network ndpi_protocol_discord_protocol_list[] = {
  /* End */
  { 0x0, 0, 0 }
 };
+#endif

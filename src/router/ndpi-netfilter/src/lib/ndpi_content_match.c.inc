@@ -1736,7 +1736,6 @@ static ndpi_tls_cert_name_match tls_certificate_match [] = {
    Do NOT pur here strings that overlap with string in host_match[]
    specified above
 */
-
 #ifndef __KERNEL__
 static ndpi_category_match category_match[] = {
    { ".edgecastcdn.net",                 NDPI_PROTOCOL_CATEGORY_MEDIA },
