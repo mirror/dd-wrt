@@ -11,6 +11,7 @@ prefs.clientass = true;
 prefs.clientdiss = true;
 prefs.apenc = true;
 prefs.apunenc = true;
+prefs.showlogo = true;
 var hexX = new Array(
 	0, 2, -1, -1, 1, -2, 1
 );
@@ -520,13 +521,20 @@ function init_3d() {
 	globalRedraw = true;
 	setTimeout('tick()', 10);
 	updatePrefs();
-	logodiv = document.getElementById('logo');
-	logodiv.style.left = "30%";
-	logodiv.style.top = "30%";
-	movePropertyTo("logodiv.style.left", 0, "%",
-		0.6, 0.01, true, true);
-	movePropertyTo("logodiv.style.top", 0, "%",
-		0.6, 0.01, true, true);
+	if (prefs.showlogo) {
+		logodiv = document.getElementById('logo');
+		logodiv.style.left = "30%";
+		logodiv.style.top = "30%";
+		movePropertyTo("logodiv.style.left", 0, "%",
+			0.6, 0.01, true, true);
+		movePropertyTo("logodiv.style.top", 0, "%",
+			0.6, 0.01, true, true);
+	} else {
+		logodiv = document.getElementById('logo');
+		logodiv.style.display = "none";
+		sidemenucl = document.getElementsByClassName('sidemenu')
+		sidemenucl.style.top = "5px";
+	}
 }
 
 function mult_mtx(mtx1, mtx2) {

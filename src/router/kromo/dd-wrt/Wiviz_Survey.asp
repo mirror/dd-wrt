@@ -89,6 +89,7 @@
 		</div>
 		<div class='slidingbody'>
 			<center>Show / Hide</center>
+			<input type='checkbox' id='showlogo' onClick='updatePrefs(this)'> Show Logo<br>
 			<input type='checkbox' id='apunenc' onClick='updatePrefs(this)'> Unsecured AP<br>
 			<input type='checkbox' id='apenc' onClick='updatePrefs(this)'> Encrypted AP<br>
 			<input type='checkbox' id='clientass' onClick='updatePrefs(this)'> Clients - Connected<br>
