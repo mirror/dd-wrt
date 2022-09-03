@@ -40,7 +40,7 @@
 			<center>Status</center>
 			Monitoring<br>
 			<center>Channel Setting</center>
-			<form name="channelform" action="apply.cgi" method="post" />
+			<form name="channelform" action="apply.cgi" method="post">
 			<input type="hidden" name="action" value="Apply" />
 			<input type="hidden" name="change_action" value="gozila_cgi" />
 			<input type="hidden" name="submit_button" value="Wiviz_Survey" />
