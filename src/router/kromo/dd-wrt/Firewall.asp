@@ -279,11 +279,7 @@ addEvent(window, "unload", function() {
 									</select>
 								</div>
 							</div>
-							</fieldset><br />
-							
 							<div id="idlog2">
-								<fieldset>
-									<legend><% tran("share.option"); %></legend>
 									<div class="setting">
 										<div class="label"><% tran("log.drop"); %></div>
 										<select name="log_dropped">
@@ -317,8 +313,7 @@ addEvent(window, "unload", function() {
 										</script>
 										</select>
 									</div>
-								</fieldset><br />
-
+								</div><br />
 								<div class="center">
 									<script type="text/javascript">
 									//<![CDATA[
@@ -326,9 +321,10 @@ addEvent(window, "unload", function() {
 									document.write("<input class=\"button\" type=\"button\" name=\"log_outgoing\" value=\"" + sbutton.log_out + "\" onclick=\"openWindow('Log_outgoing.asp', 760, 600);\" />");
 									//]]>
 									</script>
-								</div><br />
+								</div>
 							</div>
-								<% ifdef("MICRO", "-->"); %>								
+							</fieldset><br />
+								<% ifdef("MICRO", "-->"); %>
 								<div id="footer" class="submitFooter">
 									<script type="text/javascript">
 									//<![CDATA[
