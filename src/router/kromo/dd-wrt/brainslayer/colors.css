@@ -1,11 +1,23 @@
 @import url(/style/common_legacy.css);
 @import url(/style/buttons.css);
+::selection {
+  background-color: #955322;
+  color: #fff;
+}
+:focus-visible, .button:focus-visible {
+  border: 1px solid #955322;
+  box-shadow: 0 0 5px 1px #955322;
+  outline: 0;
+}
 body {
   color: #000;
   background: #eeeae4;
 }
 input, select, option {
   color: #a57b46;
+}
+input {
+  border: 1px solid #999;
 }
 input[type='checkbox'],
 input[type='radio'] {
