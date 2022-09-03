@@ -1517,8 +1517,9 @@ int main(int argc, char **argv)
 	SEM_INIT(&semaphore, 0, HTTP_MAXCONN);
 	PTHREAD_MUTEX_INIT(&httpd_mutex, NULL);
 	PTHREAD_MUTEX_INIT(&input_mutex, NULL);
-#ifdef HAVE_WIVIZ
 #if !defined(HAVE_MICRO) && !defined(__UCLIBC__)
+	PTHREAD_MUTEX_INIT(&global_vars.mutex_contr, NULL);
+#ifdef HAVE_WIVIZ
 	PTHREAD_MUTEX_INIT(&global_vars.wiz_mutex_contr, NULL);
 #endif
 #endif
