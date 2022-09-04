@@ -192,64 +192,79 @@ addEvent(window, "unload", function() {
 							<fieldset>
 								<legend><% tran("firewall.legend2"); %></legend>
 									<div class="setting">
-										<input class="spaceradio" type="checkbox" value="1" name="_block_proxy" <% nvc("block_proxy", "1"); %> /><% tran("firewall.proxy"); %>
+									<div class="label"><% tran("firewall.proxy"); %></div>
+										<input class="spaceradio" type="checkbox" value="1" name="_block_proxy" <% nvc("block_proxy", "1"); %> />
 									</div>
 									<div class="setting">
-										<input class="spaceradio" type="checkbox" value="1" name="_block_cookie" <% nvc("block_cookie", "1"); %> /><% tran("firewall.cookies"); %>
+									<div class="label"><% tran("firewall.cookies"); %></div>
+										<input class="spaceradio" type="checkbox" value="1" name="_block_cookie" <% nvc("block_cookie", "1"); %> />
 									</div>
 									<div class="setting">
-										<input class="spaceradio" type="checkbox" value="1" name="_block_java" <% nvc("block_java", "1"); %> /><% tran("firewall.applet"); %>
+										<div class="label"><% tran("firewall.applet"); %></div>
+										<input class="spaceradio" type="checkbox" value="1" name="_block_java" <% nvc("block_java", "1"); %> />
 									</div>
 									<div class="setting">
-										<input class="spaceradio" type="checkbox" value="1" name="_block_activex" <% nvc("block_activex", "1"); %> /><% tran("firewall.activex"); %>
+										<div class="label"><% tran("firewall.activex"); %></div>
+										<input class="spaceradio" type="checkbox" value="1" name="_block_activex" <% nvc("block_activex", "1"); %> />
 									</div>
 									<div class="setting">
-										<input class="spaceradio" type="checkbox" value="1" name="_filter_tos" <% nvc("filter_tos", "1"); %> /><% tran("firewall.filter_tos"); %>
+										<div class="label"><% tran("firewall.filter_tos"); %></div>
+										<input class="spaceradio" type="checkbox" value="1" name="_filter_tos" <% nvc("filter_tos", "1"); %> />
 									</div>
 									<div class="setting">
-										<input class="spaceradio" type="checkbox" value="1" name="_arp_spoofing" <% nvc("arp_spoofing", "1"); %> /><% tran("firewall.arp_spoofing"); %>
+										<div class="label"><% tran("firewall.arp_spoofing"); %></div>
+										<input class="spaceradio" type="checkbox" value="1" name="_arp_spoofing" <% nvc("arp_spoofing", "1"); %> />
 									</div>
 								</fieldset><br />
 								
 								<fieldset>
 									<legend><% tran("firewall.legend3"); %></legend>
 										<div class="setting">
-											<input class="spaceradio" type="checkbox" value="1" name="_block_wan" <% nvc("block_wan", "1"); %> /><% tran("firewall.ping"); %>
+											<div class="label"><% tran("firewall.ping"); %></div>
+											<input class="spaceradio" type="checkbox" value="1" name="_block_wan" <% nvc("block_wan", "1"); %> />
 										</div>
 										
 										<% ifndef("MULTICAST", "<!--"); %>
 										<div class="setting">
-											<input class="spaceradio" type="checkbox" value="1" name="_block_multicast" <% nvc("block_multicast", "1"); %> /><% tran("firewall.muticast"); %>
+											<div class="label"><% tran("firewall.muticast"); %></div>
+											<input class="spaceradio" type="checkbox" value="1" name="_block_multicast" <% nvc("block_multicast", "1"); %> />
 										</div>
 										<% ifndef("MULTICAST", "-->"); %>
 										
 										<div class="setting">
-											<input class="spaceradio" type="checkbox" value="1" name="_block_loopback" <% nvc("block_loopback", "1"); %> /><% tran("filter.nat"); %>
+											<div class="label"><% tran("filter.nat"); %></div>
+											<input class="spaceradio" type="checkbox" value="1" name="_block_loopback" <% nvc("block_loopback", "1"); %> />
 										</div>
 										<div class="setting">
-											<input class="spaceradio" type="checkbox" value="1" name="_block_ident" <% nvc("block_ident", "1"); %> /><% tran("filter.port113"); %>
+											<div class="label"><% tran("filter.port113"); %></div>
+											<input class="spaceradio" type="checkbox" value="1" name="_block_ident" <% nvc("block_ident", "1"); %> />
 										</div>
 										<% ifndef("SNMP", "<!--"); %>
 										<div class="setting">
-											<input class="spaceradio" type="checkbox" value="1" name="_block_snmp" <% nvc("block_snmp", "1"); %> /><% tran("filter.snmp"); %>
+											<div class="label"><% tran("filter.snmp"); %></div>
+											<input class="spaceradio" type="checkbox" value="1" name="_block_snmp" <% nvc("block_snmp", "1"); %> />
 										</div>
 										<% ifndef("SNMP", "-->"); %>
 									</fieldset>
-								<% ifdef("MICRO", "<!--"); %>								
+								<% ifdef("MICRO", "<!--"); %>
 								<br />
 								<fieldset>
 									<legend><% tran("firewall.legend4"); %></legend>
 										<div class="setting">
-											<input class="spaceradio" type="checkbox" value="1" name="_limit_ssh" <% nvc("limit_ssh", "1"); %> /><% tran("firewall.ssh"); %>
+											<div class="label"><% tran("firewall.ssh"); %></div>
+											<input class="spaceradio" type="checkbox" value="1" name="_limit_ssh" <% nvc("limit_ssh", "1"); %> />
 										</div>
 										<div class="setting">
-											<input class="spaceradio" type="checkbox" value="1" name="_limit_telnet" <% nvc("limit_telnet", "1"); %> /><% tran("firewall.telnet"); %>
+											<div class="label"><% tran("firewall.telnet"); %></div>
+											<input class="spaceradio" type="checkbox" value="1" name="_limit_telnet" <% nvc("limit_telnet", "1"); %> />
 										</div>
 										<div class="setting">
-											<input class="spaceradio" type="checkbox" value="1" name="_limit_pptp" <% nvc("limit_pptp", "1"); %> /><% tran("firewall.pptp"); %>
+											<div class="label"><% tran("firewall.pptp"); %></div>
+											<input class="spaceradio" type="checkbox" value="1" name="_limit_pptp" <% nvc("limit_pptp", "1"); %> />
 										</div>
 										<div class="setting">
-											<input class="spaceradio" type="checkbox" value="1" name="_limit_ftp" <% nvc("limit_ftp", "1"); %> /><% tran("firewall.ftp"); %>
+											<div class="label"><% tran("firewall.ftp"); %></div>
+											<input class="spaceradio" type="checkbox" value="1" name="_limit_ftp" <% nvc("limit_ftp", "1"); %> />
 										</div>
 								</fieldset>
 								<% ifdef("MICRO", "-->"); %>
@@ -311,7 +326,7 @@ addEvent(window, "unload", function() {
 										//]]>
 										</script>
 										</select>
-									</div>
+									</div><br />
 								<div class="center">
 									<script type="text/javascript">
 									//<![CDATA[
@@ -319,10 +334,10 @@ addEvent(window, "unload", function() {
 									document.write("<input class=\"button\" type=\"button\" name=\"log_outgoing\" value=\"" + sbutton.log_out + "\" onclick=\"openWindow('Log_outgoing.asp', 760, 600);\" />");
 									//]]>
 									</script>
-								</div><br />
+								</div>
 							</div>
 								</fieldset><br />
-								<% ifdef("MICRO", "-->"); %>								
+								<% ifdef("MICRO", "-->"); %>
 								<div id="footer" class="submitFooter">
 									<script type="text/javascript">
 									//<![CDATA[
