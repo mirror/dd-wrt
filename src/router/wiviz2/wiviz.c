@@ -38,6 +38,7 @@ To add:
 #include <stdio.h>
 #include <bcmnvram.h>
 #include <shutils.h>
+#include <wlutils.h>
 #include <utils.h>
 #include <unistd.h>
 #include <endian.h>
@@ -97,9 +98,46 @@ void __cdecl signal_handler(int);
 void readWL(wiviz_cfg * cfg);
 void reloadConfig();
 int stop = 0;
-
+static int curfreq = 0;
 wiviz_cfg *global_cfg;
 char *wl_dev;
+static void shutdown_monitor(void)
+{
+#ifdef HAVE_MADWIFI
+	// return to original channel
+	if (is_mac80211(wl_dev)) {
+		set_channel(get_monitor(), curfreq);	// reset channel before shutdown
+		eval("ifconfig", get_monitor(), "down");
+		eval("iw", "dev", get_monitor(), "del");
+	} else {
+		char chann[32];
+		sprintf(chann, "%dM", curfreq);
+		eval("iwconfig", get_monitor(), "channel", chann);
+		sleep(1);
+		eval("ifconfig", get_monitor(), "down");
+		eval("wlanconfig", get_monitor(), "destroy");
+	}
+#elif HAVE_RT2880
+	if (nvram_match("wifi_display", "wl0")) {
+		nvram_set("wl0_mode", nvram_safe_get("wl0_oldmode"));
+		eval("startservice", "configurewifi");
+		if (nvram_match("wl0_mode", "sta") || nvram_match("wl0_mode", "apsta")) {
+			eval("startstop", "wan");
+		}
+	} else {
+		nvram_set("wl1_mode", nvram_safe_get("wl1_oldmode"));
+		eval("startservice", "configurewifi");
+		if (nvram_match("wl1_mode", "sta") || nvram_match("wl1_mode", "apsta")) {
+			eval("startstop", "wan");
+		}
+	}
+#else
+	int oldMonitor = 0;
+	wiviz_wl_ioctl(wl_dev, WLC_SET_MONITOR, &oldMonitor, 4);
+#endif
+
+}
+
 ////////////////////////////////////////////////////////////////////////////////
 int wiviz_main(int argc, char **argv)
 {
@@ -122,43 +160,17 @@ int wiviz_main(int argc, char **argv)
 	sprintf(tmp, "%s_ifname", nvram_safe_get("wifi_display"));
 	wl_dev = nvram_safe_get(tmp);
 #endif
-	if (argc > 1)
-		if (!strcmp(argv[1], "terminate")) {
 #ifdef HAVE_MADWIFI
-			// return to original channel
-			if (is_mac80211(wl_dev)) {
-				sysprintf("ifconfig %s down", get_monitor());
-				sysprintf("iw dev %s del", get_monitor());
-			} else {
-				sysprintf("iwconfig %s channel %sM", get_monitor(), nvram_nget("%s_channel", nvram_safe_get("wifi_display")));
-				sleep(1);
-				sysprintf("ifconfig %s down", get_monitor());
-				sysprintf("wlanconfig %s destroy", get_monitor());
-			}
-#elif HAVE_RT2880
-			if (nvram_match("wifi_display", "wl0")) {
-				nvram_set("wl0_mode", nvram_safe_get("wl0_oldmode"));
-				sysprintf("startservice configurewifi");
-				if (nvram_match("wl0_mode", "sta") || nvram_match("wl0_mode", "apsta")) {
-					sysprintf("startstop wan");
-				}
-			} else {
-				nvram_set("wl1_mode", nvram_safe_get("wl1_oldmode"));
-				sysprintf("startservice configurewifi");
-				if (nvram_match("wl1_mode", "sta") || nvram_match("wl1_mode", "apsta")) {
-					sysprintf("startstop wan");
-				}
-			}
-#else
-			oldMonitor = 0;
-			wl_ioctl(wl_dev, WLC_SET_MONITOR, &oldMonitor, 4);
+	struct wifi_interface *interface = wifi_getfreq(wl_dev);
+	if (interface)
+		curfreq = interface->freq;
+
 #endif
-			return 0;
-		}
 
 	global_cfg = &cfg;
 	signal(SIGUSR1, &signal_handler);
 	signal(SIGUSR2, &signal_handler);
+	signal(SIGTERM, &signal_handler);
 
 	printf("Wi-Viz 2 infogathering daemon by Nathan True\n");
 	printf("http://wiviz.natetrue.com\n");
@@ -173,40 +185,40 @@ int wiviz_main(int argc, char **argv)
 
 #if defined(HAVE_MADWIFI)
 	if (is_mac80211(nvram_safe_get("wifi_display"))) {
-		sysprintf("iw phy phy%d interface add %s type monitor flags control otherbss", get_ath9k_phy_ifname(nvram_safe_get("wifi_display")), get_monitor());
-//              sysprintf("iw phy phy%d interface add %s type monitor flags none", get_ath9k_phy_ifname(nvram_safe_get("wifi_display")), get_monitor());
-		sysprintf("ifconfig %s up", get_monitor());
+		char phy[32];
+		sprintf(phy, "phy%d", get_ath9k_phy_ifname(nvram_safe_get("wifi_display")));
+		eval("iw", "phy", phy, "interface", "add", get_monitor(), "type", "monitor", "flags", "control", "otherbss");
 	} else {
-		sysprintf("wlanconfig %s create wlandev %s wlanmode monitor", get_monitor(), getWifi(nvram_safe_get("wifi_display")));
-		sysprintf("ifconfig %s up", get_monitor());
+		eval("wlanconfig", get_monitor(), "create", "wlandev", getWifi(nvram_safe_get("wifi_display")), "wlanmode", "monitor");
 	}
+	eval("ifconfig", get_monitor(), "up");
 	cfg.readFromWl = 1;
 #elif HAVE_RT2880
 	if (nvram_match("wifi_display", "wl0")) {
 		nvram_set("wl0_oldmode", nvram_safe_get("wl0_mode"));
 		nvram_set("wl0_mode", "sta");
 		if (!nvram_match("wl0_oldmode", "sta"))
-			sysprintf("startservice configurewifi");
-		sysprintf("iwconfig ra0 mode monitor");
+			eval("startservice configurewifi");
+		eval("iwconfig", "ra0", "mode", "monitor");
 	} else {
 		nvram_set("wl1_oldmode", nvram_safe_get("wl1_mode"));
 		nvram_set("wl1_mode", "sta");
 		if (!nvram_match("wl1_oldmode", "sta"))
-			sysprintf("startservice configurewifi");
-		sysprintf("iwconfig ba0 mode monitor");
+			eval("startservice configurewifi");
+		eval("iwconfig", "ba0", "mode", "monitor");
 
 	}
 	cfg.readFromWl = 1;
 #else
-	wl_ioctl(wl_dev, WLC_GET_MAGIC, &i, 4);
+	wiviz_wl_ioctl(wl_dev, WLC_GET_MAGIC, &i, 4);
 	if (i != WLC_IOCTL_MAGIC) {
 		printf("Wireless magic not correct, not querying wl for info %X!=%X\n", i, WLC_IOCTL_MAGIC);
 		cfg.readFromWl = 0;
 	} else {
 		cfg.readFromWl = 1;
-		wl_ioctl(wl_dev, WLC_GET_MONITOR, &oldMonitor, 4);
+		wiviz_wl_ioctl(wl_dev, WLC_GET_MONITOR, &oldMonitor, 4);
 		newMonitor = 1;
-		wl_ioctl(wl_dev, WLC_SET_MONITOR, &newMonitor, 4);
+		wiviz_wl_ioctl(wl_dev, WLC_SET_MONITOR, &newMonitor, 4);
 	}
 #endif
 	reloadConfig();
@@ -272,7 +284,7 @@ int openMonitorSocket(char *dev)
 	struct ifreq ifr;
 	struct sockaddr_ll addr;
 	int s;
-	sysprintf("ifconfig %s up", dev);
+	eval("ifconfig", dev, "up");
 	s = socket(PF_PACKET, SOCK_RAW, 0);
 	memset(&ifr, 0, sizeof(ifr));
 	strcpy(ifr.ifr_name, dev);
@@ -410,14 +422,14 @@ void reloadConfig()
 					if (cfg->readFromWl) {
 #ifdef HAVE_MADWIFI
 						set_channel(wl_dev, cfg->curChannel);
-//          sysprintf("iwconfig %s channel %d\n",wl_dev,cfg->curChannel);
+//          eval("iwconfig %s channel %d\n",wl_dev,cfg->curChannel);
 #elif HAVE_RT2880
 						if (nvram_match("wifi_display", "wl0"))
 							sysprintf("iwpriv ra0 set Channel=%d", cfg->curChannel);
 						else
 							sysprintf("iwpriv ba0 set Channel=%d", cfg->curChannel);
 #else
-						if (wl_ioctl(wl_dev, WLC_SET_CHANNEL, &cfg->curChannel, 4) < 0) {
+						if (wiviz_wl_ioctl(wl_dev, WLC_SET_CHANNEL, &cfg->curChannel, 4) < 0) {
 							printf("Channel set to %i failed\n", cfg->curChannel);
 						}
 #endif
@@ -476,8 +488,10 @@ void __cdecl signal_handler(int signum)
 		writeJavascript();
 	if (signum == SIGUSR2)
 		reloadConfig();
-	if (signum == SIGTERM)
+	if (signum == SIGTERM) {
 		stop = 1;
+		shutdown_monitor();
+	}
 }
 
 static unsigned char i_src[6];	// = "\0\0\0\0\0\0";
@@ -1055,9 +1069,9 @@ void readWL(wiviz_cfg * cfg)
 	int ap, i;
 	wiviz_host *host, *sta;
 	uchar mac[6];
-	wlc_ssid_t ssid;
-	channel_info_t channel;
-	maclist_t *macs;
+	wiviz_wlc_ssid_t ssid;
+	wiviz_channel_info_t channel;
+	wiviz_maclist_t *macs;
 	sta_rssi_t starssi;
 	char buf[32];
 
@@ -1082,7 +1096,7 @@ void readWL(wiviz_cfg * cfg)
 			ap = 1;
 	}
 #endif
-//      wl_ioctl(wl_dev, WLC_GET_AP, &ap, 4);
+//      wiviz_wl_ioctl(wl_dev, WLC_GET_AP, &ap, 4);
 	if (ap) {
 		host = gotHost(cfg, mac, typeAP);
 		host->isSelf = 1;
@@ -1106,8 +1120,8 @@ void readWL(wiviz_cfg * cfg)
 			host->apInfo->ssidlen = 32;
 		memcpy(host->apInfo->bssid, buf, 6);
 #else
-		wl_ioctl(wl_dev, WLC_GET_BSSID, host->apInfo->bssid, 6);
-		wl_ioctl(wl_dev, WLC_GET_SSID, &ssid, sizeof(wlc_ssid_t));
+		wiviz_wl_ioctl(wl_dev, WLC_GET_BSSID, host->apInfo->bssid, 6);
+		wiviz_wl_ioctl(wl_dev, WLC_GET_SSID, &ssid, sizeof(wiviz_wlc_ssid_t));
 		memcpy(host->apInfo->ssid, ssid.SSID, 32);
 		host->apInfo->ssidlen = ssid.SSID_len;
 		if (host->apInfo->ssidlen > 32)
@@ -1122,11 +1136,11 @@ void readWL(wiviz_cfg * cfg)
 		else
 			host->apInfo->channel = atoi(nvram_safe_get("wl1_channel"));
 #else
-		wl_ioctl(wl_dev, WLC_GET_CHANNEL, &channel, sizeof(channel_info_t));
+		wiviz_wl_ioctl(wl_dev, WLC_GET_CHANNEL, &channel, sizeof(wiviz_channel_info_t));
 		host->apInfo->channel = channel.hw_channel;
 #endif
 
-		macs = (maclist_t *) malloc(4 + MAX_STA_COUNT * sizeof(ether_addr_t));
+		macs = (wiviz_maclist_t *) malloc(4 + MAX_STA_COUNT * sizeof(wiviz_ether_addr_t));
 		macs->count = MAX_STA_COUNT;
 		int code = getassoclist(wl_dev, macs);
 		printf("code :%d\n", code);
@@ -1141,7 +1155,7 @@ void readWL(wiviz_cfg * cfg)
 				memcpy(starssi.mac, &macs->ea[i], 6);
 				starssi.RSSI = 3000;
 				starssi.zero_ex_forty_one = 0x41;
-				if (wl_ioctl(wl_dev, WLC_GET_RSSI, &starssi, 12) < 0)
+				if (wiviz_wl_ioctl(wl_dev, WLC_GET_RSSI, &starssi, 12) < 0)
 					printf("rssifail\n");
 				sta->RSSI = -starssi.RSSI * 100;
 #endif
@@ -1166,7 +1180,7 @@ void readWL(wiviz_cfg * cfg)
 		}
 
 #else
-		if (wl_ioctl(wl_dev, WLC_GET_BSSID, &host->staInfo->connectedBSSID, 6) < 0) {
+		if (wiviz_wl_ioctl(wl_dev, WLC_GET_BSSID, &host->staInfo->connectedBSSID, 6) < 0) {
 			host->staInfo->state = ssUnassociated;
 		} else {
 			host->staInfo->state = ssAssociated;
@@ -1177,21 +1191,17 @@ void readWL(wiviz_cfg * cfg)
 	cfg->curChannel = wifi_getchannel(wl_dev);
 
 #else
-	if (wl_ioctl(wl_dev, WLC_GET_CHANNEL, &channel, sizeof(channel_info_t)) >= 0) {
+	if (wiviz_wl_ioctl(wl_dev, WLC_GET_CHANNEL, &channel, sizeof(wiviz_channel_info_t)) >= 0) {
 		cfg->curChannel = channel.hw_channel;
 		printf("Current channel is %i\n", cfg->curChannel);
 	}
 #endif
 }
+
 int main(int argc, char **argv)
 {
-	if (argc > 1) {
-		if (!strcmp(argv[1], "terminate")) {
-		    return wiviz_main(argc,argv);
-		}
-	}
-	if (count_processes("wiviz")>1)
-	    return 0;
+	if (count_processes("wiviz") > 1)
+		return 0;
 
 	pid_t pid;
 
@@ -1202,13 +1212,12 @@ int main(int argc, char **argv)
 		exit(1);
 		break;
 	case 0:
-		wiviz_main(argc,argv);
+		wiviz_main(argc, argv);
 		exit(0);
 		break;
 	default:
 		_exit(0);
 		break;
 	}
-
 
 }
