@@ -184,12 +184,12 @@ int wiviz_main(int argc, char **argv)
 	memcpy(cfg.channelHopSeq, defaultHopSeq, sizeof(defaultHopSeq));
 
 #if defined(HAVE_MADWIFI)
-	if (is_mac80211(nvram_safe_get("wifi_display"))) {
+	if (is_mac80211(wl_dev)) {
 		char phy[32];
-		sprintf(phy, "phy%d", get_ath9k_phy_ifname(nvram_safe_get("wifi_display")));
+		sprintf(phy, "phy%d", get_ath9k_phy_ifname(wl_dev));
 		eval("iw", "phy", phy, "interface", "add", get_monitor(), "type", "monitor", "flags", "control", "otherbss");
 	} else {
-		eval("wlanconfig", get_monitor(), "create", "wlandev", getWifi(nvram_safe_get("wifi_display")), "wlanmode", "monitor");
+		eval("wlanconfig", get_monitor(), "create", "wlandev", getWifi(wl_dev), "wlanmode", "monitor");
 	}
 	eval("ifconfig", get_monitor(), "up");
 	cfg.readFromWl = 1;
@@ -361,6 +361,8 @@ static const char *ntoa(const uint8_t mac[6])
 	return (i < 17 ? NULL : a);
 }
 
+u_int ieee80211_ieee2mhz(u_int chan, u_int flags);
+
 ////////////////////////////////////////////////////////////////////////////////
 void reloadConfig()
 {
@@ -421,7 +423,7 @@ void reloadConfig()
 					cfg->curChannel = val;
 					if (cfg->readFromWl) {
 #ifdef HAVE_MADWIFI
-						set_channel(wl_dev, cfg->curChannel);
+						set_channel(wl_dev, ieee80211_ieee2mhz(cfg->curChannel, 0));
 //          eval("iwconfig %s channel %d\n",wl_dev,cfg->curChannel);
 #elif HAVE_RT2880
 						if (nvram_match("wifi_display", "wl0"))
@@ -524,7 +526,7 @@ void dealWithPacket(wiviz_cfg * cfg, int pktlen, const u_char * packet)
 	bss = i_bss;
 	int encType = -1;
 
-	if (is_mac80211(nvram_safe_get("wifi_display"))) {
+	if (is_mac80211(wl_dev)) {
 		if (packet[0] > 0) {
 			printf("Wrong radiotap header version.\n");
 			return;
