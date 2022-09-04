@@ -523,16 +523,14 @@ function init_3d() {
 	globalRedraw = true;
 	setTimeout('tick()', 10);
 	updatePrefs();
-}
-
-if (!prefs.showlogo) {
-	logodiv = document.getElementById('logo').classList;
-	logodiv.toggle('hide-me');
-	return logodiv.contains('hide-me');
-	sidemenucl = document.getElementById('smenu').classList;
-	sidemenucl.toggle('align-top');
-	return sidemenucl.contains('align-top');
-	updatePrefs();
+	if (!prefs.showlogo) {
+		logodiv = document.getElementById('logo').classList;
+		logodiv.toggle('hide-me');
+		return logodiv.contains('hide-me');
+		sidemenucl = document.getElementById('smenu').classList;
+		sidemenucl.toggle('align-top');
+		return sidemenucl.contains('align-top');
+	}
 }
 
 function mult_mtx(mtx1, mtx2) {
