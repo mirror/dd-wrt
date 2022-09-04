@@ -90,8 +90,9 @@ int set_channel(char *dev, int channel)
 			flags = 2;
 		else
 			flags = 1;
-		sysprintf("iw dev %s set channel %d >/dev/null 2>&1", get_monitor(), channel);
-		sysprintf("iw dev %s scan freq %d passive >/dev/null 2>&1", dev, ieee80211_ieee2mhz(channel, flags));
+		char channel[32];
+		sprintf(channel, "%d", ieee80211_ieee2mhz(channel, flags));
+		eval("iw", "dev", dev, "set", "freq", channel);
 	} else {
 		memset(&wrq, 0, sizeof(struct iwreq));
 		strncpy(wrq.ifr_name, get_monitor(), IFNAMSIZ);
@@ -148,7 +149,7 @@ void channelHopper(wiviz_cfg * cfg)
 #ifdef HAVE_MADWIFI
 		{
 			printf("set channel %d\n", nc);
-			int ret = set_channel(nvram_safe_get("wifi_display"), nc);
+			int ret = set_channel(get_monitor(), nc);
 			if (ret == -1)
 				continue;
 		}

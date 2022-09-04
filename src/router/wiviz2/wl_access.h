@@ -1,33 +1,33 @@
 //wl_access.h - functions for accessing broadcom crap
 
-typedef struct ether_addr {
+typedef struct wiviz_ether_addr {
 	uchar addr[6];
-} ether_addr_t;
+} wiviz_ether_addr_t;
 
-typedef struct wlc_ssid {
+typedef struct wiviz_wlc_ssid {
 	uint32 SSID_len;
 	uchar SSID[32];
-} wlc_ssid_t;
+} wiviz_wlc_ssid_t;
 /* For ioctls that take a list of MAC addresses */
-typedef struct maclist {
+typedef struct wiviz_maclist {
 	uint count;		/* number of MAC addresses */
-	struct ether_addr ea[1];	/* variable length array of MAC addresses */
-} maclist_t;
+	struct wiviz_ether_addr ea[1];	/* variable length array of MAC addresses */
+} wiviz_maclist_t;
 /* Linux network driver ioctl encoding */
-typedef struct wl_ioctl {
+typedef struct wiviz_wl_ioctl {
 	uint cmd;		/* common ioctl definition */
 	void *buf;		/* pointer to user buffer */
 	uint len;		/* length of user buffer */
 	bool set;		/* get or set request (optional) */
 	uint used;		/* bytes read or written (optional) */
 	uint needed;		/* bytes needed (optional) */
-} wl_ioctl_t;
+} wiviz_wl_ioctl_t;
 /* channel encoding */
-typedef struct channel_info {
+typedef struct wiviz_channel_info {
 	int hw_channel;
 	int target_channel;
 	int scan_channel;
-} channel_info_t;
+} wiviz_channel_info_t;
 /* RSSI info for sta */
 typedef struct sta_rssi {
 	int RSSI;
@@ -53,4 +53,4 @@ typedef struct sta_rssi {
 #define WLC_GET_ASSOCLIST			159
 #define WLC_GET_VERSION				1
 
-int wl_ioctl(char *name, int cmd, void *buf, int len);
+int wiviz_wl_ioctl(char *name, int cmd, void *buf, int len);
