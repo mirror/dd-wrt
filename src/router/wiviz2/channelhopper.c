@@ -35,6 +35,7 @@
 #include "wl_access.h"
 #include "channelhopper.h"
 #include "structs.h"
+#include <wlutils.h>
 
 void ch_sig_handler(int i)
 {
@@ -86,20 +87,13 @@ int set_channel(char *dev, int channel)
 	struct iwreq wrq;
 	int flags = 0;
 	if (is_mac80211(nvram_safe_get("wifi_display"))) {
-		if (channel > 14)
-			flags = 2;
-		else
-			flags = 1;
 		char chann[32];
-		sprintf(chann, "%d", ieee80211_ieee2mhz(channel, flags));
+		sprintf(chann, "%d", channel);
 		eval("iw", "dev", dev, "set", "freq", chann);
 	} else {
 		memset(&wrq, 0, sizeof(struct iwreq));
 		strncpy(wrq.ifr_name, get_monitor(), IFNAMSIZ);
-		if (channel > 14)
-			wrq.u.freq.m = (double)ieee80211_ieee2mhz(channel, 2) * 100000;
-		else
-			wrq.u.freq.m = (double)ieee80211_ieee2mhz(channel, 1) * 100000;
+		wrq.u.freq.m = channel  * 100000;
 		wrq.u.freq.e = (double)1;
 
 		if (ioctl(getsocket(), SIOCSIWFREQ, &wrq) < 0) {
@@ -115,14 +109,29 @@ int set_channel(char *dev, int channel)
 	return 0;
 }
 #endif
+#ifdef HAVE_MADWIFI
+struct wifi_channels *wifi_channels;
+#endif
+extern char *wl_dev;
+
 void channelHopper(wiviz_cfg * cfg)
 {
 	int hopPos;
-	int nc;
+#ifdef HAVE_MADWIFI
+	int nc = 0;
+	const char *country = getIsoName(nvram_default_get("wlan0_regdomain", "UNITED_STATES"));
+	if (!country)
+		country = "DE";
+	wifi_channels = mac80211_get_channels_simple(wl_dev, country, 20, 0xff);
+
+#else
+	int nc = -1;
+#endif
 
 	//Turn off signal handling from parent process
 	signal(SIGUSR1, &ch_sig_handler);
 	signal(SIGUSR2, &ch_sig_handler);
+	signal(SIGTERM, &ch_sig_handler);
 
 	//Start hoppin'!
 	hopPos = 0;
@@ -136,8 +145,8 @@ void channelHopper(wiviz_cfg * cfg)
 			hopPos = (hopPos + 1) % cfg->channelHopSeqLen;
 		}
 #ifdef HAVE_MADWIFI
-		if (nc > 255)
-			nc = 1;
+		if (wifi_channels[nc].freq == -1)
+			nc = -1;
 #elif HAVE_RT2880
 		if (nc > 14)
 			nc = 1;
@@ -149,7 +158,7 @@ void channelHopper(wiviz_cfg * cfg)
 #ifdef HAVE_MADWIFI
 		{
 			printf("set channel %d\n", nc);
-			int ret = set_channel(get_monitor(), nc);
+			int ret = set_channel(get_monitor(), wifi_channels[nc].freq);
 			if (ret == -1)
 				continue;
 		}
