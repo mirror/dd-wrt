@@ -22,7 +22,7 @@ select {
   width: 200px
 }
 .align-top {
-  top: 5px !important;
+  top: 0 !important;
 }
 .expander {
   position: relative;
@@ -135,7 +135,7 @@ input[type='checkbox'] {
   z-index: 0;
 }
 .hide-me {
-  display: none !important;
+  opacity: 0;
 }
 .sizeimage {
   cursor: help;

@@ -175,17 +175,17 @@ body input[name='changepassword']:focus-within {
   color: var(--v9-9) !important;
 }
 body input[name*='reset']:not([type="radio"]) {
-	background: var(--v2-2);
-	border-color: var(--v2-4);
-	color: var(--v9-8);
-	text-shadow: 0 1px 0 var(--bg-0);
+  background: var(--v2-2);
+  border-color: var(--v2-4);
+  color: var(--v9-8);
+  text-shadow: 0 1px 0 var(--bg-0);
 }
 body input[name*='reset']:not([type="radio"]):hover,
 body input[name*='reset']:not([type="radio"]):focus-within {
-	background: var(--v2-3) !important;
-	border-color: var(--v2-3) !important;
-	box-shadow: 0 0 10px 0 var(--v2-3) !important;
-	color: var(--v9-9);
+  background: var(--v2-3) !important;
+  border-color: var(--v2-3) !important;
+  box-shadow: 0 0 10px 0 var(--v2-3) !important;
+  color: var(--v9-9);
 }
 body input[name*='reboot'] {
   background: var(--v1-4);
