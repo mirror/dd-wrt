@@ -44,10 +44,10 @@ char *get_monitor(void)
 }
 
 #else
-int wl_ioctl(char *name, int cmd, void *buf, int len)
+int wiviz_wl_ioctl(char *name, int cmd, void *buf, int len)
 {
 	struct ifreq ifr;
-	wl_ioctl_t ioc;
+	wiviz_wl_ioctl_t ioc;
 	int ret = 0;
 	int s;
 
