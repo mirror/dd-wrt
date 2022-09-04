@@ -523,12 +523,6 @@ function init_3d() {
 	globalRedraw = true;
 	setTimeout('tick()', 10);
 	updatePrefs();
-	if (!prefs.showlogo) {
-		logodiv = document.getElementById('logo').classList;
-		logodiv.toggle('hide-me');
-		sidemenucl = document.getElementById('smenu').classList;
-		sidemenucl.toggle('align-top');
-	}
 }
 
 function mult_mtx(mtx1, mtx2) {
@@ -569,7 +563,14 @@ function tick() {
 	}
 	if (globalRedraw) redraw();
 	setTimeout('tick()', 30);
+	if (!prefs.showlogo) {
+		logodiv = document.getElementById('logo').classList;
+		logodiv.toggle('hide-me');
+		sidemenucl = document.getElementById('smenu').classList;
+		sidemenucl.toggle('align-top');
+	}
 }
+
 function wiviz_callback(hosts, cfgobj) {
 	var i, h, d, e, el, a;
 	var root = new Object();
