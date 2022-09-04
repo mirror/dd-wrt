@@ -90,9 +90,9 @@ int set_channel(char *dev, int channel)
 			flags = 2;
 		else
 			flags = 1;
-		char channel[32];
-		sprintf(channel, "%d", ieee80211_ieee2mhz(channel, flags));
-		eval("iw", "dev", dev, "set", "freq", channel);
+		char chann[32];
+		sprintf(chann, "%d", ieee80211_ieee2mhz(channel, flags));
+		eval("iw", "dev", dev, "set", "freq", chann);
 	} else {
 		memset(&wrq, 0, sizeof(struct iwreq));
 		strncpy(wrq.ifr_name, get_monitor(), IFNAMSIZ);
