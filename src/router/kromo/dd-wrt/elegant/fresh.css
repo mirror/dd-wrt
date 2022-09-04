@@ -71,12 +71,12 @@ input {
   transition: all .15s ease-in-out 0s;
 }
 input[name='apply_button'] {
-  background: none repeat scroll 0 0 #166f2a;
+  background: #166f2a;
   border-color: #1a6d2d;
   color: #fff;
 }
 input[name='apply_button']:hover {
-  background: none repeat scroll 0 0 #199235;
+  background: #199235;
   border-color: #199235;
   color: #fff;
 }
@@ -85,14 +85,14 @@ input[name='apply_button']:focus-visible {
   outline: 0;
 }
 input[name='reset_button'] {
-  background: #f26522;
-  border-color: #ff8400;
-  color: #000;
+  background: #6f4816;
+  border-color: #755416;
+  color: #fff;
 }
 input[name='reset_button']:hover {
-  background: #ff8400;
-  border-color: #feb311;
-  color: #000;
+  background: #925d19;
+  border-color: #925d19;
+  color: #fff;
 }
 input[name='reset_button']:focus-visible {
   box-shadow: 0 0 5px 1px #ff8400;
