@@ -526,10 +526,11 @@ function init_3d() {
 	if (!prefs.showlogo) {
 		logodiv = document.getElementById('logo').classList;
 		logodiv.toggle('hide-me');
-		return logodiv.contains('hide-me');
+		if (logodiv.contains('hide-me')) {
+			return;
+		}
 		sidemenucl = document.getElementById('smenu').classList;
 		sidemenucl.toggle('align-top');
-		return sidemenucl.contains('align-top');
 	}
 }
 
