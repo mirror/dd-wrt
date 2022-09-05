@@ -440,28 +440,27 @@ input.num {
   text-align: center;
   vertical-align: middle;
 }
-input.button {
+.button {
   border: 1px solid;
-  padding: .2em .6em;
+  padding: 0 .6em .2em;
   margin: 0 .3em 0 0;
   height: 1.6rem;
   vertical-align: middle;
   cursor: pointer;
 }
-input.button[disabled],
-input[disabled], select[disabled] {
+[disabled], :disabled, .off {
   cursor: default;
   opacity: .6;
 }
-input[onclick*='bond_del']{
+.button[onclick*='bond_del']{
   margin-top: -.3rem;
   margin-left: .325em;
 }
-input.button[onclick*='add_peer'] {
+.button[onclick*='add_peer'] {
   margin: 0 0 -8px;
 }
-input.button[onclick*='gen_wg_key'],
-input.button[onclick*='gen_wg_psk'] {
+.button[onclick*='gen_wg_key'],
+.button[onclick*='gen_wg_psk'] {
   margin: 0 0 6px;
 }
 [type='image'][src*='paypal'] {
@@ -470,23 +469,23 @@ input.button[onclick*='gen_wg_psk'] {
   padding: 0;
   border: 0;
 }
-input.spaceradio {
+.spaceradio {
   margin-right: .4em;
 }
-input.three_column {
+.three_column {
   width: 11.1rem;
   margin-left: 0;
   margin-right: 10px;
 }
-input.three_column_last {
+.three_column_last {
   margin-right: 0;
 }
-input.four_column {
+.four_column {
   width: 8rem;
   margin-left: 0;
   margin-right: 10px;
 }
-input.four_column_last {
+.four_column_last {
   margin-right: 0;
 }
 input.button[onclick*='delete'] {
@@ -497,9 +496,6 @@ input.button[onclick*='filter_remove'] {
 }
 input.button[onclick*='FilterSummary'] {
   margin-top: -.1rem;
-}
-.off {
-  opacity: .6;
 }
 /*! colors below are common to light/dark */
 /*! these colors conform to WCAG Standards */
