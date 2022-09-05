@@ -13,18 +13,10 @@ select {
 a.action {
   color: #000;
 }
-.slidingbodyshow center {
-  border-top: 1px solid #454545;
-  border-bottom: 1px solid #454545;
-}
 .gridpoint {
   background-color: #111;
 }
 .slidingbody, .slidingbodyshow {
   background-color: #f5f5f5;
   border: 1px solid #ccc;
-}
-.controls > a > img:hover {
-  filter: invert(1);
-  mix-blend-mode: darken;
 }

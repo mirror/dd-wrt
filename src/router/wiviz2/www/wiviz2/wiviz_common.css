@@ -3,10 +3,10 @@ body {
   font-size: 14px;
   letter-spacing: -.01em;
 }
-select {
-  width: 6rem;
+select.hop {
+  width: 5rem;
   border-radius: 4px;
-  height: 1.5rem
+  height: 1.5rem;
 }
 #detail_info {
   width: 185px;
@@ -60,11 +60,36 @@ input[type='checkbox'] {
   text-align: left;
   padding: 10px;
 }
-.slidingbodyshow center {
+.slidingbodyshow {
+  padding: 3px;
+}
+.setting {
+  position: relative;
+  margin-bottom: .453em;
+  line-height: 1.993;
+  white-space: nowrap
+}
+.bold {
+  font-weight: bold;
+}
+.label {
+  float: left;
+  width: 5.5em;
+  margin-right: 2.2em;
+}
+.center {
+  text-align: center;
+}
+h2 {
+  background-color: #777674;
+  color: #fff;
+  font-size: 14px;
   font-weight: bold;
   margin-top: 6px;
   margin-bottom: 6px;
   padding: 3px;
+  text-align: center;
+  border-radius: 4px;
 }
 .controls {
   position: absolute;
@@ -84,6 +109,9 @@ input[type='checkbox'] {
 .controls > a > img {
   height: 45px;
   width: 45px;
+}
+.controls > a > img:hover {
+  filter: brightness(1.2);
 }
 .controls > a:focus-visible {
   outline: 2px dashed var(--ac-0, #30519c);
