@@ -563,11 +563,14 @@ function tick() {
 	}
 	if (globalRedraw) redraw();
 	setTimeout('tick()', 30);
+	logodiv = document.getElementById('logo').classList;
+	sidemenucl = document.getElementById('smenu').classList;
 	if (!prefs.showlogo) {
-		logodiv = document.getElementById('logo').classList;
-		logodiv.toggle('hide-me');
-		sidemenucl = document.getElementById('smenu').classList;
-		sidemenucl.toggle('align-top');
+		logodiv.add('hide-me');
+		sidemenucl.add('align-top');
+	}else{
+		logodiv.remove('hide-me');
+		sidemenucl.remove('align-top');	
 	}
 }
 
