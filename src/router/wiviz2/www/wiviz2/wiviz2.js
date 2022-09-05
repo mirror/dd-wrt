@@ -142,10 +142,11 @@ function updatePrefs(what) {
 
 function findParentOfClass(el, parentClass) {
 	var p = el;
-	while (p.parentNode && p.className != parentClass) {
+	while (p.parentNode && ((p.className != parentClass) && (p.className != parentClass + " align-top"))) {
 		p = p.parentNode;
 	}
 	if (p && p.className == parentClass) return p;
+	if (p && p.className == parentClass + " align-top") return p;
 	return null;
 }
 
