@@ -175,8 +175,8 @@ function closeExpando(e) {
 }
 function Expando(e, onlyOpen, onlyClose) {
 	updatePrefs(e);
-	mn = findParentOfClass(e, "sidemenu");
 	ex = findParentOfClass(e, "expander");
+	mn = findParentOfClass(ex, "sidemenu");
 	bds = findChildOfClass(mn, "slidingbodyshow");
 	bdh = findChildOfClass(ex, "slidingbody");
 	var newsx;
