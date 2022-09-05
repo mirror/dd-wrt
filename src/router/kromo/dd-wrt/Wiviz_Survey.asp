@@ -93,18 +93,18 @@
 		</div>
 		<div class='slidingbody'>
 			<h2>Show / Hide</h2>
-			<input type='checkbox' id='showlogo' onClick='updatePrefs(this)'> Show Logo<br>
-			<input type='checkbox' id='apunenc' onClick='updatePrefs(this)'> Unsecured AP<br>
-			<input type='checkbox' id='apenc' onClick='updatePrefs(this)'> Encrypted AP<br>
-			<input type='checkbox' id='clientass' onClick='updatePrefs(this)'> Clients - Connected<br>
-			<input type='checkbox' id='clientdiss' onClick='updatePrefs(this)'> Clients - Searching<br>
+			Show Logo <input type='checkbox' id='showlogo' onClick='updatePrefs(this)'><br>
+			Unsecured AP <input type='checkbox' id='apunenc' onClick='updatePrefs(this)'><br>
+			Encrypted AP <input type='checkbox' id='apenc' onClick='updatePrefs(this)'><br>
+			Clients - Connected <input type='checkbox' id='clientass' onClick='updatePrefs(this)'><br>
+			Clients - Searching <input type='checkbox' id='clientdiss' onClick='updatePrefs(this)'><br>
 			<h2>Effects</h2>
-			<input type='checkbox' id='rotate' onClick='updatePrefs(this)'> Rotate Slowly<br>
-			<input type='checkbox' id='grid' onClick='updatePrefs(this)'> Show Grid<br>
-			<input type='checkbox' id='animation' onClick='updatePrefs(this)'> Smooth Animation<br>
-			<input type='checkbox' id='blend' onClick='updatePrefs(this)'> Blending Effects<br>
-			<input type='checkbox' id='scale' onClick='updatePrefs(this)'> Scaling<br>
-			<input type='checkbox' id='flyin' onClick='updatePrefs(this)'> Fly in on Click<br>
+			Rotate Slowly <input type='checkbox' id='rotate' onClick='updatePrefs(this)'><br>
+			Show Grid <input type='checkbox' id='grid' onClick='updatePrefs(this)'><br>
+			Smooth Animation <input type='checkbox' id='animation' onClick='updatePrefs(this)'><br>
+			Blending Effects <input type='checkbox' id='blend' onClick='updatePrefs(this)'><br>
+			Scaling <input type='checkbox' id='scale' onClick='updatePrefs(this)'><br>
+			Fly in on Click <input type='checkbox' id='flyin' onClick='updatePrefs(this)'><br>
 		</div>
 	</div>
 	<div class='expander'>
