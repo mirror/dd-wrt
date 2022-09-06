@@ -18,7 +18,7 @@
   border-color: var(--ac-5);
   color: var(--tx-c);
 }
-fieldset legend, .syslog_legend {
+legend, .syslog_legend {
   color: var(--lg-c);
 }
 #help a, #help a:hover, .meter .text {
@@ -31,17 +31,17 @@ input[type='checkbox'],
 input[type='radio'] {
   accent-color: var(--it-c);
 }
-input.button, input.button[disabled]:hover {
+.button, .button[disabled]:hover {
   background: var(--ac-0);
   border: 1px solid var(--ac-0);
   color: var(--tx-c);
 }
-input.button:hover {
+.button:hover {
   background: var(--ac-2);
   border: 1px solid var(--ac-2);
   color: var(--tx-c);
 }
-input.button:focus-visible {
+.button:focus-visible {
   box-shadow: 0 0 5px 1px var(--ac-2);
 }
 input:focus, textarea:focus,

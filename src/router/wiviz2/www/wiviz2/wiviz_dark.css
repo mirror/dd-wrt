@@ -12,11 +12,7 @@ select {
 }
 a.action {
   color: #fff;
-}
-.slidingbodyshow center {
-  border-top: 1px solid #454545;
-  border-bottom: 1px solid #454545;
-}
+}}
 .gridpoint {
   background-color: #eee;
 }
@@ -29,8 +25,4 @@ a.action {
 }
 .sizeimage[src*='ssid.svg'] {
   filter: invert(.5) hue-rotate(180deg) contrast(2);
-}
-.controls > a > img:hover {
-  filter: invert(0.95) contrast(1.2);
-  mix-blend-mode: lighten;
 }
