@@ -39,7 +39,7 @@
 		<div class='slidingbodyshow'>
 			<h2>Status</h2>
 			<div class='center bold' style='margin-bottom: 5px'>Monitoring</div>
-			<form name='channelform' action='apply.cgi' method='post'>
+			<form name='channelform' action='apply.cgi' method='post' />
 			<input type='hidden' name='action' value='Apply' />
 			<input type='hidden' name='change_action' value='gozila_cgi' />
 			<input type='hidden' name='submit_button' value='Wiviz_Survey' />

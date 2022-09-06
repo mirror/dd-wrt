@@ -21,7 +21,7 @@ select.hop {
   top: 70px;
   left: 2px;
   position: relative;
-  width: 200px
+  width: 200px;
 }
 .align-top {
   top: 0;
@@ -38,6 +38,7 @@ input[type='checkbox'] {
   border: 1px solid var(--ac-0, #30519c);
   color: var(--tx-c, #fff);
   width: 180px;
+  height: 1rem;
   padding: .2em .6em;
   text-align: center;
   cursor: pointer;
