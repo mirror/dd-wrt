@@ -81,7 +81,7 @@ addEvent(window, "unload", function() {
 											<div>
 											<script type="text/javascript">
 											//<![CDATA[
-											document.write("<input class=\"button\" type=\"button\" name=\"add_button\" value=\"" + sbutton.add + "\" onclick=\"forward_add_submit(this.form);\" />");
+											document.write("<input class=\"add\" type=\"button\" name=\"add_button\" aria-label=\"" + sbutton.add + "\" onclick=\"forward_add_submit(this.form);\" />");
 											//]]>
 											</script>
 											</div>

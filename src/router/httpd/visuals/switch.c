@@ -152,9 +152,9 @@ EJ_VISIBLE void ej_port_vlan_table(webs_t wp, int argc, char_t ** argv)
 		else
 			sprintf(cstatus, "status_red");
 		if (status >= 10)
-			websWrite(wp, "<td class=\"%s\">%d</td>\n", cstatus, status);
+			websWrite(wp, "<td class=\"%s center\">%d</td>\n", cstatus, status);
 		else
-			websWrite(wp, "<td class=\"%s\"><script type=\"text/javascript\">Capture(share.down)</script></td>\n", cstatus);
+			websWrite(wp, "<td class=\"%s center\"><script type=\"text/javascript\">Capture(share.down)</script></td>\n", cstatus);
 	}
 
 	websWrite(wp, "<td></td>\n");
