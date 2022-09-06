@@ -370,7 +370,7 @@ addEvent(window, "unload", function() {
 										<td class="center">
 											<script type="text/javascript">
 											//<![CDATA[
-											document.write("<input class=\"button\" type=\"button\" name=\"add_svc_button\" value=\"" + sbutton.add + "\" onclick=\"svc_add_submit(this.form);\" />");
+											document.write("<input class=\"add\" type=\"button\" name=\"add_svc_button\" arial-label=\"" + sbutton.add + "\" onclick=\"svc_add_submit(this.form);\" />");
 											//]]>
 											</script>
 										</td>
@@ -399,7 +399,7 @@ addEvent(window, "unload", function() {
 										<td class="center">
 											<script type="text/javascript">
 											//<![CDATA[
-											document.write("<input class=\"button\" type=\"button\" name=\"add_devsprio_button\" value=\"" + sbutton.add + "\" onclick=\"dev_add_submit(this.form);\" />");
+											document.write("<input class=\"add\" type=\"button\" name=\"add_devsprio_button\" aria-label=\"" + sbutton.add + "\" onclick=\"dev_add_submit(this.form);\" />");
 											//]]>
 											</script>
 										</td>
@@ -419,7 +419,7 @@ addEvent(window, "unload", function() {
 										<td class="center">
 											<script type="text/javascript">
 											//<![CDATA[
-											document.write("<input class=\"button\" type=\"button\" name=\"add_ipsprio_button\" value=\"" + sbutton.add + "\" onclick=\"ip_add_submit(this.form);\" />");
+											document.write("<input class=\"add\" type=\"button\" name=\"add_ipsprio_button\" aria-label=\"" + sbutton.add + "\" onclick=\"ip_add_submit(this.form);\" />");
 											//]]>
 											</script>
 										</td>
@@ -438,7 +438,7 @@ addEvent(window, "unload", function() {
 										<td class="center">
 											<script type="text/javascript">
 											//<![CDATA[
-											document.write("<input class=\"button\" type=\"button\" name=\"add_macprio_button\" value=\"" + sbutton.add + "\" onclick=\"mac_add_submit(this.form);\" />")
+											document.write("<input class=\"add\" type=\"button\" name=\"add_macprio_button\" aria-label=\"" + sbutton.add + "\" onclick=\"mac_add_submit(this.form);\" />")
 											//]]>
 											</script>
 										</td>
