@@ -224,9 +224,9 @@ EJ_VISIBLE void ej_port_vlan_table(webs_t wp, int argc, char_t ** argv)
 				sprintf(status, "status_green");
 			}
 			if (speed)
-				websWrite(wp, "<td class=\"%s\">%d</td>\n", status, speed);
+				websWrite(wp, "<td class=\"%s center\">%d</td>\n", status, speed);
 			else
-				websWrite(wp, "<td class=\"%s\">down</td>\n", status);
+				websWrite(wp, "<td class=\"%s center\">down</td>\n", status);
 		}
 		websWrite(wp, "<td></td>\n");
 		websWrite(wp, "</tr>\n");
@@ -341,7 +341,7 @@ EJ_VISIBLE void ej_port_vlan_table(webs_t wp, int argc, char_t ** argv)
 		websWrite(wp, "</tr>\n");
 		if (i == (blen - 1)) {
 			websWrite(wp,
-				  "<tr><td colspan=\"6\">&nbsp;</td><td class=\"center\"><script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<input class=\\\"button\\\" type=\\\"button\\\" value=\\\"\" + sbutton.add + \"\\\" onclick=\\\"vlan_add(this.form,'%d')\\\" />\");\n//]]>\n</script></td></tr>\n",
+				  "<tr><td colspan=\"6\">&nbsp;</td><td class=\"center\"><script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<input class=\\\"add\\\" type=\\\"button\\\" aria-label=\\\"\" + sbutton.add + \"\\\" onclick=\\\"vlan_add(this.form,'%d')\\\" />\");\n//]]>\n</script></td></tr>\n",
 				  i);
 		}
 		if (flag == 20000 || flag == 16000) {

@@ -38,7 +38,7 @@
 		</div>
 		<div class='slidingbodyshow'>
 			<h2>Status</h2>
-			<p class='center bold'>Monitoring</p>
+			<div class='center bold' style='margin-bottom: 5px'>Monitoring</div>
 			<form name='channelform' action='apply.cgi' method='post'>
 			<input type='hidden' name='action' value='Apply' />
 			<input type='hidden' name='change_action' value='gozila_cgi' />
@@ -93,18 +93,51 @@
 		</div>
 		<div class='slidingbody'>
 			<h2>Show / Hide</h2>
-			Show Logo <input type='checkbox' id='showlogo' onClick='updatePrefs(this)'><br>
-			Unsecured AP <input type='checkbox' id='apunenc' onClick='updatePrefs(this)'><br>
-			Encrypted AP <input type='checkbox' id='apenc' onClick='updatePrefs(this)'><br>
-			Clients - Connected <input type='checkbox' id='clientass' onClick='updatePrefs(this)'><br>
-			Clients - Searching <input type='checkbox' id='clientdiss' onClick='updatePrefs(this)'><br>
+			<div>
+				<div class='label'>Show Logo</div>
+				<input type='checkbox' id='showlogo' onClick='updatePrefs(this)'>
+			</div>
+			<div>
+				<div class='label'>Unsecured AP</div>
+				<input type='checkbox' id='apunenc' onClick='updatePrefs(this)'>
+			</div>
+			<div>
+				<div class='label'>Encrypted AP</div>
+				<input type='checkbox' id='apenc' onClick='updatePrefs(this)'>
+			</div>
+			<div>
+				<div class='label'>Clients - Connected</div>
+				<input type='checkbox' id='clientass' onClick='updatePrefs(this)'>
+			</div>
+			<div>
+				<div class='label'>Clients - Searching</div>
+				<input type='checkbox' id='clientdiss' onClick='updatePrefs(this)'>
+			</div>
 			<h2>Effects</h2>
-			Rotate Slowly <input type='checkbox' id='rotate' onClick='updatePrefs(this)'><br>
-			Show Grid <input type='checkbox' id='grid' onClick='updatePrefs(this)'><br>
-			Smooth Animation <input type='checkbox' id='animation' onClick='updatePrefs(this)'><br>
-			Blending Effects <input type='checkbox' id='blend' onClick='updatePrefs(this)'><br>
-			Scaling <input type='checkbox' id='scale' onClick='updatePrefs(this)'><br>
-			Fly in on Click <input type='checkbox' id='flyin' onClick='updatePrefs(this)'><br>
+			<div>
+				<div class='label'>Rotate Slowly</div>
+				<input type='checkbox' id='rotate' onClick='updatePrefs(this)'>
+			</div>
+			<div>
+				<div class='label'>Show Grid</div>
+				<input type='checkbox' id='grid' onClick='updatePrefs(this)'>
+			</div>
+			<div>
+				<div class='label'>Smooth Animation</div>
+				<input type='checkbox' id='animation' onClick='updatePrefs(this)'>
+			</div>
+			<div>
+				<div class='label'>Blending Effects</div>
+				<input type='checkbox' id='blend' onClick='updatePrefs(this)'>
+			</div>
+			<div>
+				<div class='label'>Scaling</div>
+				<input type='checkbox' id='scale' onClick='updatePrefs(this)'>
+			</div>
+			<div>
+				<div class='label'>Fly in on Click</div>
+				<input type='checkbox' id='flyin' onClick='updatePrefs(this)'>
+			</div>
 		</div>
 	</div>
 	<div class='expander'>
@@ -112,7 +145,7 @@
 			 Details
 		</div>
 		<div class='slidingbody'>
-			<span class='center' id='detail_type'>Nothing here yet</span>
+			<div class='center' id='detail_type'>Nothing here yet</div>
 			<span id='detail_info'>
 				<i>Click a host to view details.</i>
 			</span>
