@@ -337,16 +337,16 @@ addEvent(window, "unload", function() {
 								</div>
 								<div class="setting">
 									<div class="label">
-										<input class="spaceradio" type="radio" name="f_status2" value="deny" onclick="Status(this.form,'deny')" <% filter_policy_get("f_status","deny"); %> /><% tran("share.deny"); %>
+										<% tran("share.deny"); %>
 									</div>
-									<% tran("filter.polallow"); %>
+									<input class="spaceradio" type="radio" name="f_status2" value="deny" onclick="Status(this.form,'deny')" <% filter_policy_get("f_status","deny"); %> />&nbsp;<% tran("filter.polallow"); %>
 								</div>
 								<div class="setting">
 									<div class="label">
-										<input class="spaceradio" type="radio" name="f_status2" value="allow" onclick="Status(this.form,'allow')" <% filter_policy_get("f_status","allow"); %> /><% tran("share.filter"); %>
+										<% tran("share.filter"); %>
 									</div>
+									<input class="spaceradio" type="radio" name="f_status2" value="allow" onclick="Status(this.form,'allow')" <% filter_policy_get("f_status","allow"); %> />
 								</div>
-								<br />
 								<br />
 								<div class="setting">
 									<div class="label"><% tran("filter.packetcount"); %></div>

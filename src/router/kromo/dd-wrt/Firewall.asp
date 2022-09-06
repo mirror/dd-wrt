@@ -292,8 +292,8 @@ addEvent(window, "unload", function() {
 										</script>
 									</select>
 								</div>
-							</div><br />
-							<div id="idlog2">
+							</div>
+							<div id="idlog2"><br />
 									<div class="setting">
 										<div class="label"><% tran("log.drop"); %></div>
 										<select name="log_dropped">
@@ -330,7 +330,7 @@ addEvent(window, "unload", function() {
 								<div class="center">
 									<script type="text/javascript">
 									//<![CDATA[
-									document.write("<input class=\"button\" type=\"button\" name=\"log_incoming\" value=\"" + sbutton.log_in + "\" onclick=\"openWindow('Log_incoming.asp', 580, 600);\" />");
+									document.write("<input class=\"button\" type=\"button\" name=\"log_incoming\" value=\"" + sbutton.log_in + "\" onclick=\"openWindow('Log_incoming.asp', 580, 600);\" />");&nbsp;
 									document.write("<input class=\"button\" type=\"button\" name=\"log_outgoing\" value=\"" + sbutton.log_out + "\" onclick=\"openWindow('Log_outgoing.asp', 760, 600);\" />");
 									//]]>
 									</script>
