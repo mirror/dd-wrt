@@ -34,12 +34,10 @@ addEvent(window, "load", function() {
 	
 	update = new StatusbarUpdate();
 	update.start();
-	
 });
 
 addEvent(window, "unload", function() {
 	update.stop();
-
 });
 		
 		//]]>
@@ -47,7 +45,6 @@ addEvent(window, "unload", function() {
 	</head>
 
 	<body class="gui">
-		
 		<div id="wrapper">
 			<div id="content">
 				<div id="header">
@@ -62,9 +59,7 @@ addEvent(window, "unload", function() {
 							<input type="hidden" name="change_action" />
 							<input type="hidden" name="submit_type" />
 							<input type="hidden" name="commit" value="1"/>
-							
-						<% show_modules(".ipv6config"); %>
-
+							<% show_modules(".ipv6config"); %>
 							<div id="footer" class="submitFooter">
 								<script type="text/javascript">
 								//<![CDATA[

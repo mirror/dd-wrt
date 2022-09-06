@@ -7,6 +7,8 @@ select.hop {
   width: 5rem;
   border-radius: 4px;
   height: 1.5rem;
+  position: absolute;
+  right: 0;
 }
 #detail_info {
   width: 185px;
@@ -22,7 +24,7 @@ select.hop {
   width: 200px
 }
 .align-top {
-  top: 0 !important;
+  top: 0;
 }
 .expander {
   position: relative;
@@ -57,11 +59,8 @@ input[type='checkbox'] {
   border-radius: 4px;
 }
 .slidingbodyshow {
+  padding: 6px;
   text-align: left;
-  padding: 10px;
-}
-.slidingbodyshow {
-  padding: 3px;
 }
 .setting {
   position: relative;
@@ -74,8 +73,9 @@ input[type='checkbox'] {
 }
 .label {
   float: left;
-  width: 5.5em;
-  margin-right: 2.2em;
+  width: 8em;
+  margin-right: 3em;
+  white-space: nowrap;
 }
 .center {
   text-align: center;

@@ -771,8 +771,8 @@ firewall.applet="Filter Java Applets";
 firewall.activex="Filter ActiveX";
 firewall.legend3="Block WAN Requests";
 firewall.legend4="Impede WAN DoS / Bruteforce";
-firewall.ping="Block Anonymous WAN Requests (ping)";
-firewall.muticast="Filter Multicast";
+firewall.ping="Anonymous WAN Requests (ping)";
+firewall.muticast="Multicast Communication";
 firewall.ssh="Limit SSH Access";
 firewall.telnet="Limit Telnet Access";
 firewall.pptp="Limit PPTP Server Access";
@@ -780,9 +780,9 @@ firewall.ftp="Limit FTP Server Access";
 firewall.arp_spoofing="ARP Spoofing Protection";
 firewall.filter_tos="Filter ToS / DSCP";
 
-filter.nat="Filter WAN NAT Redirection";
-filter.port113="Filter IDENT (Port 113)";
-filter.snmp="Block WAN SNMP Access";
+filter.nat="WAN NAT Redirection";
+filter.port113="IDENT (Port 113)";
+filter.snmp="WAN SNMP Access";
 
 // ** Firewall.asp **//
 var log=new Object();
