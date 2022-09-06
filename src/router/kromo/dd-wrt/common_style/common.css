@@ -502,28 +502,24 @@ input.button[onclick*='FilterSummary'] {
 .status_red {
   background: #ff6666;
   color: #000;
-  text-align: center;
   padding: 2px;
   border-radius: 2px;
 }
 .status_green {
   background: #35ee00;
   color: #000;
-  text-align: center;
   padding: 2px;
   border-radius: 2px;
 }
 .status_yellow {
   background: #eec900;
   color: #000;
-  text-align: center;
   padding: 2px;
   border-radius: 2px;
 }
 .status_orange {
   background: #fea543;
   color: #000;
-  text-align: center;
   padding: 2px;
   border-radius: 2px;
 }
