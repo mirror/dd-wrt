@@ -93,7 +93,7 @@ int set_channel(char *dev, int channel)
 	} else {
 		memset(&wrq, 0, sizeof(struct iwreq));
 		strncpy(wrq.ifr_name, get_monitor(), IFNAMSIZ);
-		wrq.u.freq.m = channel  * 100000;
+		wrq.u.freq.m = channel * 100000;
 		wrq.u.freq.e = (double)1;
 
 		if (ioctl(getsocket(), SIOCSIWFREQ, &wrq) < 0) {
@@ -122,7 +122,11 @@ void channelHopper(wiviz_cfg * cfg)
 	const char *country = getIsoName(nvram_default_get("wlan0_regdomain", "UNITED_STATES"));
 	if (!country)
 		country = "DE";
-	wifi_channels = mac80211_get_channels_simple(wl_dev, country, 20, 0xff);
+	if (is_mac80211(wl_dev)) {
+		wifi_channels = mac80211_get_channels_simple(wl_dev, country, 20, 0xff);
+	} else {
+		wifi_channels = list_channels(wl_dev);
+	}
 
 #else
 	int nc = -1;
