@@ -58,7 +58,7 @@
 		<div class="setting">
 				<div class="label"><% tran("idx.mtu"); %></div>
 				<input class="text" size="5" maxlength="4" type="number" min="1280" max="1480" name="ipv6_mtu" value="<% nvg("ipv6_mtu"); %>" />
-		</div><br />
+		</div>
 		<fieldset>
 		<legend><% tran("management.ipv6_dhcp6c_legend"); %></legend>
 		<div class="setting">
@@ -94,7 +94,7 @@
 				<div class="label"><% tran("management.ipv6_dhcp6s_seq_ips"); %></div>
 				<input class="spaceradio" type="radio" value="1" name="dhcp6s_seq_ips" <% nvc("dhcp6s_seq_ips","1"); %> /><% tran("share.enable"); %>&nbsp;
 				<input class="spaceradio" type="radio" value="0" name="dhcp6s_seq_ips" <% nvc("dhcp6s_seq_ips","0"); %> /><% tran("share.disable"); %>
-			</div><br>
+			</div>
 			<div id="iddhcp6s_hosts">
 				<div class="label"><% tran("management.ipv6_dhcp6s_hosts"); %></div>
 				<textarea id="dhcp6s_hosts" name="dhcp6s_hosts" cols="80" rows="4"></textarea>
