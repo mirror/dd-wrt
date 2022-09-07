@@ -95,48 +95,48 @@
 			<h2>Show / Hide</h2>
 			<div>
 				<div class='label'>Show Logo</div>
-				<input type='checkbox' id='showlogo' onClick='updatePrefs(this)'>
+				<input type='checkbox' id='showlogo' onClick='updatePrefs(this)' />
 			</div>
 			<div>
 				<div class='label'>Unsecured AP</div>
-				<input type='checkbox' id='apunenc' onClick='updatePrefs(this)'>
+				<input type='checkbox' id='apunenc' onClick='updatePrefs(this)' />
 			</div>
 			<div>
 				<div class='label'>Encrypted AP</div>
-				<input type='checkbox' id='apenc' onClick='updatePrefs(this)'>
+				<input type='checkbox' id='apenc' onClick='updatePrefs(this)' />
 			</div>
 			<div>
 				<div class='label'>Clients - Connected</div>
-				<input type='checkbox' id='clientass' onClick='updatePrefs(this)'>
+				<input type='checkbox' id='clientass' onClick='updatePrefs(this)' />
 			</div>
 			<div>
 				<div class='label'>Clients - Searching</div>
-				<input type='checkbox' id='clientdiss' onClick='updatePrefs(this)'>
+				<input type='checkbox' id='clientdiss' onClick='updatePrefs(this)' />
 			</div>
 			<h2>Effects</h2>
 			<div>
 				<div class='label'>Rotate Slowly</div>
-				<input type='checkbox' id='rotate' onClick='updatePrefs(this)'>
+				<input type='checkbox' id='rotate' onClick='updatePrefs(this)' />
 			</div>
 			<div>
 				<div class='label'>Show Grid</div>
-				<input type='checkbox' id='grid' onClick='updatePrefs(this)'>
+				<input type='checkbox' id='grid' onClick='updatePrefs(this)' />
 			</div>
 			<div>
 				<div class='label'>Smooth Animation</div>
-				<input type='checkbox' id='animation' onClick='updatePrefs(this)'>
+				<input type='checkbox' id='animation' onClick='updatePrefs(this)' />
 			</div>
 			<div>
 				<div class='label'>Blending Effects</div>
-				<input type='checkbox' id='blend' onClick='updatePrefs(this)'>
+				<input type='checkbox' id='blend' onClick='updatePrefs(this)' />
 			</div>
 			<div>
 				<div class='label'>Scaling</div>
-				<input type='checkbox' id='scale' onClick='updatePrefs(this)'>
+				<input type='checkbox' id='scale' onClick='updatePrefs(this)' />
 			</div>
 			<div>
 				<div class='label'>Fly in on Click</div>
-				<input type='checkbox' id='flyin' onClick='updatePrefs(this)'>
+				<input type='checkbox' id='flyin' onClick='updatePrefs(this)' />
 			</div>
 		</div>
 	</div>
