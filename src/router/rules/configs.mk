@@ -325,7 +325,9 @@ obj-$(CONFIG_WEBSERVER) += libffi zlib libzip libucontext openssl glib20 libxml2
 obj-$(CONFIG_TRANSMISSION) += libevent curl transmission zlib
 obj-$(CONFIG_CLOUD4WI) += curl zlib
 obj-$(CONFIG_UNIWIP) += uniwip_gpio
-obj-$(CONFIG_MACTELNET) += mactelnet
+ifeq ($(CONFIG_OPENSSL),y)
+obj-$(CONFIG_MACTELNET) += libucontext openssl openssl-shared openssl-apps mactelnet
+endif
 obj-$(CONFIG_FIRMWARES) += firmwares
 obj-$(CONFIG_SERVICEGATE) += servicegate
 obj-$(CONFIG_UNBOUND) += unbound
