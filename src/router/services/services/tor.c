@@ -61,7 +61,7 @@ void start_tor(void)
 		NULL
 	};
 
-	if (nvram_matchi("tor_enable", 0)) {
+	if (!nvram_matchi("tor_enable", 1)) {
 		stop_tor();
 		return;
 	}
