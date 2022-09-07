@@ -145,7 +145,7 @@
 			 Details
 		</div>
 		<div class='slidingbody'>
-			<h2 id='detail_type'>Nothing Here Yet</h2>
+			<div class='center' id='detail_type'>Nothing Here Yet</div>
 			<span id='detail_info'>
 				<p class='center bold'>Click a host to view details.</center>
 			</span>
