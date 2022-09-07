@@ -25,13 +25,16 @@ fieldset {
   background: #eee;
   border: 1px solid #aaa;
 }
+fieldset fieldset {
+  background: #e9e9e9;
+}
 .dark_fs_bg {
   background: #f6f6f6;
 }
 fieldset legend {
   background: transparent;
 }
-#help dd.definition {
+dd.definition {
   border-bottom: 1px dotted #333;
 }
 hr {
@@ -44,9 +47,9 @@ h2, h3 {
   color: #115b80;
 }
 table tr th {
-  background-color: #fff3b3;
-  border-color: #ccc28f;
-  color: #115b80;
+  background-color: #115b80;
+  border-color: #1a89c0;
+  color: #fff3b3;
 }
 .table_row_bg {
   background-color: #d1d1d1;
@@ -66,9 +69,6 @@ table tr th {
   background-color: #fff;
   border: 1px solid #777674;
   opacity: .5;
-}
-table tr:not([class]):hover {
-  background-color: transparent;
 }
 .submitFooter {
   background: repeating-linear-gradient(55deg,
@@ -106,7 +106,7 @@ a[title='Geotool']:hover {
 #content.infopage {
   background-color: transparent;
 }
-#content.infopage #main {
+.infopage #main {
   background-color: #fafafa;
   border-radius: 2px;
   border: 1px solid #aaa;
@@ -162,21 +162,18 @@ body .value_error:focus {
 .status_green {
   background: #35ee00;
   color: #000;
-  text-align: center;
   padding: 2px;
   border-radius: 2px;
 }
 .status_yellow {
   background: #eec900;
   color: #115b80;
-  text-align: center;
   padding: 2px;
   border-radius: 2px;
 }
 .status_orange {
   background: #fea543;
   color: #115b80;
-  text-align: center;
   padding: 2px;
   border-radius: 2px;
 }

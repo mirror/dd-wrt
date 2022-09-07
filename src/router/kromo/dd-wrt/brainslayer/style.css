@@ -24,7 +24,7 @@ select {
 select[name='time_zone'] {
   min-width: 17.7rem;
 }
-input.button, select {
+.button, select {
   padding: .05em .5em;
   margin: 0 .4em 0 0;
 }
@@ -40,7 +40,7 @@ input.num[name*="lease"][size="10"] {
   margin-right: 4px;
   width: 52%
 }
-input.three_column, input.four_column {
+.three_column, .four_column {
   width: 200px;
   margin-left: 0;
   margin-right: 10px;
@@ -165,7 +165,7 @@ fieldset {
   margin: 0;
   border-radius: 3px;
 }
-div.setting {
+.setting {
   margin: 1px;
   margin-top: 3px;
   padding: 1px;
@@ -240,7 +240,7 @@ td .meter {
 .progressbarblock {
   position: absolute;
 }
-input.spaceradio {
+.spaceradio {
   margin-right: .4em;
 }
 #score {
@@ -363,6 +363,6 @@ pre {
   padding: 0;
   border: 0
 }
-.center a[href='http://www.dd-wrt.com/'] {
+.center a[href] {
   line-height: 2.2;
 }

@@ -74,6 +74,12 @@ select {
 select[name='time_zone'] {
   min-width: 17.2rem;
 }
+select[onchange*='blockedServices'] { 
+  width: 15rem !important;
+}
+input.num[readonly] {
+  width: 3.1rem
+}
 option, input.num {
   width: auto;
   min-width: 30px;
@@ -167,6 +173,10 @@ fieldset {
   background: #f9f9f9;
   border-radius: 4px;
 }
+fieldset fieldset {
+  background: #f5f5f5;
+  margin: 0 !important;
+}
 fieldset legend {
   color: #2b226f;
   background-color: transparent;
@@ -195,7 +205,7 @@ input[type='checkbox'],
 input[type='radio'] {
   accent-color: #483c9f;  
 }
-input.button {
+.button {
   margin: 2px 4px 4px 0;
   padding: .06em .6em;
   cursor: pointer;
@@ -257,11 +267,11 @@ input.button[onclick*="delete"] {
   padding: 0;
   margin: 0;
 }
-#help dt.term {
+dt.term {
   margin: 0 0 .362em 0;
   font-weight: bold;
 }
-#help dd.definition {
+dd.definition {
   padding-bottom: .908em;
   margin: 0 0 .908em 0;
   border-bottom: 1px dotted #000;
@@ -371,27 +381,27 @@ iframe#syslog {
   top: 1rem;
   position: relative;
 }
-input {
+input, select {
   border: 1px solid #8f8f9d;
 }
 input.button[onclick*="do_show"]:not([value*="Month"]) {
   margin: 1.2em 0 0 .362em;
   position: relative;
 }
-input.three_column {
-  width: 160px;
+.three_column {
+  width: 217px;
   margin-left: 0;
-  margin-right: 10px !important;
+  margin-right: 5px !important;
 }
-input.three_column_last {
+.three_column_last {
   margin-right: 0;
 }
-input.four_column {
+.four_column {
   width: 160px;
   margin-left: 0;
-  margin-right: 10px !important;
+  margin-right: 5px !important;
 }
-input.four_column_last {
+.four_column_last {
   margin-right: 0;
 }
 .message {
