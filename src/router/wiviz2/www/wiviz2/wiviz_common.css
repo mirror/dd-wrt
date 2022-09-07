@@ -23,12 +23,22 @@ select.hop {
   left: 2px;
   width: 200px;
 }
-.align-top {
-  top: 0;
+.slidingbody {
+  overflow: hidden;
+  border-radius: 4px;
+  padding: 6px;
+  box-sizing: border-box;
+}
+.slidingbodyshow {
+  overflow: hidden;
+  border-radius: 4px;
 }
 .expander {
   position: relative;
   z-index: 150;
+}
+.align-top {
+  top: 0;
 }
 input[type='checkbox'] {
   accent-color: var(--it-c, #30519c);
@@ -55,12 +65,11 @@ input[type='checkbox'] {
   box-shadow: 0 0 5px 1px var(--ac-2, #6384cf);
   outline: 0;
 }
-.slidingbody {
-  border-radius: 4px;
-}
-.slidingbodyshow {
-  padding: 6px;
-  text-align: left;
+center {
+  font-weight: bold;
+  margin-top: 6px;
+  margin-bottom: 6px;
+  padding: 3px;
 }
 .setting {
   position: relative;
@@ -73,7 +82,7 @@ input[type='checkbox'] {
 }
 .label {
   float: left;
-  width: 12em;
+  width: 11.3em;
 }
 .center {
   text-align: center;

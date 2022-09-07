@@ -836,7 +836,7 @@ function updateCenteredInfo() {
 			} else {
 				s += "Unknown";
 			}
-			s += "<h2>Clients</h2>";
+			s += "<center>Clients</center>";
 			var clientct = 0;
 			a = e.elemref;
 			if (a) a = a.children;
