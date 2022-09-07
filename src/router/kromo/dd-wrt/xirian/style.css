@@ -54,7 +54,7 @@ div.infopage #header {
 }
 #contents {
   width: 65.536em;
-  padding: .906em .906em 0;
+  padding: .8em .8em 0;
 }
 #contents[style*='padding: .93em'] {
   width: initial
@@ -115,7 +115,7 @@ h2, h3 {
 }
 #ip_count:hover, [title*='Search']:hover,
 [title*='Chain']:hover, [title*='Monitoring']:hover {
-  color: #115b80;
+  color: #1c81b3;
 }
 textarea {
   background: #f0f0f4;
@@ -131,6 +131,7 @@ textarea {
   resize: vertical;
 }
 select {
+  border: 1px solid #9292a0;
   min-width: 6.3rem;
 }
 select[name='time_zone'] {
@@ -154,34 +155,34 @@ input {
   margin-left: 1px;
   margin-right: 1px;
 }
-input.button {
+.button {
   padding: .12rem .5rem;
   margin-right: .2rem
 }
-input.button:hover {
+.button:hover {
   background-color: #d4d4db;
 }
-input.button[disabled]:hover {
+.button[disabled]:hover {
   background: #e9e9ed;
 }
-input.num[name*='lease'][size='10'] {
+.num[name*='lease'][size='10'] {
   margin-right: 4px;
   width: 65%
 }
-input.three_column {
+.three_column {
   width: 158px;
   margin-left: 0;
   margin-right: 10px;
 }
-input.three_column_last {
+.three_column_last {
   margin-right: 0;
 }
-input.four_column {
+.four_column {
   width: 115px;
   margin-left: 0;
   margin-right: 10px;
 }
-input.four_column_last {
+.four_column_last {
   margin-right: 0;
 }
 input[type='checkbox'],
@@ -189,9 +190,8 @@ input[type='radio'] {
   margin-right: .4em;
   accent-color: #345b80;
 }
-#mainno #contents[style*="padding: .906em"] {
-  padding: 0 !important;
-  width: 97.5%;
+#mainno #contents[style*="padding: .93em"] {
+  width: 98%;
 }
 [summary="week days table"] {
   margin-left: -1.3rem;
@@ -244,7 +244,7 @@ pre {
   overflow: auto;
   padding: 1em;
   margin: 0;
-  font-family: 'Courier New', Courier, monospace;
+  font-family: monospace;
   white-space: pre-wrap;
   border-radius: 4px;
 }
@@ -255,6 +255,9 @@ fieldset {
   background-color: #ccd;
   border-radius: 3px;
   filter: brightness(1.02);
+}
+fieldset fieldset {
+  background-color: #bfbfd0;
 }
 fieldset legend {
   font-weight: bold;
@@ -267,6 +270,7 @@ table, .table {
 }
 table th {
   background: #bbc;
+  border: 1px solid 99b;
   padding: 1px 4px;
   border-radius: 3px;
   font-weight: normal;
