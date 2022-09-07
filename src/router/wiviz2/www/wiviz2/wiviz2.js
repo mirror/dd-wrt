@@ -827,8 +827,6 @@ function updateCenteredInfo() {
 		}
 		if (h.type == 'ap' || h.type == 'adhoc' || h.type == 'wds' || h.type == 'mesh') {
 			s += "SSID: " + h.ssid + "<br>";
-			if (h.radioname.length)
-				s += "Radioname: " + h.radioname + "<br>";
 			s += "Channel: " + h.channel + "<br>";
 			s += "Encryption: ";
 			if (h.encrypted == 'yes') {
