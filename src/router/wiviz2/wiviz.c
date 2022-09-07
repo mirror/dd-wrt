@@ -151,6 +151,7 @@ int wiviz_main(int argc, char **argv)
 	int s, one;
 	memset(&cfg, 0, sizeof(cfg));
 	airbag_init();
+	nvram_unset("wiviz2_dump_done");
 #ifdef HAVE_MADWIFI
 	wl_dev = nvram_safe_get("wifi_display");
 #elif HAVE_RT2880
