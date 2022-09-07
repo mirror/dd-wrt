@@ -3199,7 +3199,7 @@ struct nvram_param srouter_defaults[] = {
 	{ "antaira_agent_enable", "0" },
 	{ "antaira_agent_retry_min", "5" },
 	{ "antaira_agent_retry_max", "10" },
-	{ "antaira_agent_cloud_url", "https://testvpnserver:8443" },
+	{ "antaira_agent_cloud_url", "https://vpn.antaira.com:8443" },
 	{ "antaira_agent_connect_url", "/v2/connect" },
 	{ "antaira_agent_configuration_url", "/v2/configuration" },
 	{ "antaira_agent_wan_ifname", "br0" },
