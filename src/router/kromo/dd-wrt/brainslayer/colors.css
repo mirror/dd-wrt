@@ -16,7 +16,7 @@ body {
 input, select, option {
   color: #a57b46;
 }
-input {
+input, select, textarea {
   border: 1px solid #999;
 }
 input[type='checkbox'],
@@ -64,7 +64,7 @@ fieldset {
   background-color: #f6f6f6;
   border: 1px solid #8f8f9d;
 }
-#main {
+fieldset fieldset, #main {
   background-color: #f9f9f9;
 }
 #header {
@@ -115,9 +115,6 @@ th {
   border: 2px dashed #f99;
   color: #f00;
   font-weight: bold;
-}
-textarea {
-  border: 1px solid #999;
 }
 .submitFooter {
   background: repeating-linear-gradient(-45deg,
