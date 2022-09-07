@@ -1805,6 +1805,7 @@ struct nvram_param srouter_defaults[] = {
 	{ "menu_nosecurity", "1" },
 	{ "menu_noaccrestriction", "1" },
 	{ "sv_restore_defaults", "0" },
+	{ "xor_backup", "1" },
 #elif  HAVE_BKM
 	{ "router_name", "BKM-HSDL" },
 #elif  HAVE_ERC
