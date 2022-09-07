@@ -263,6 +263,7 @@ fieldset legend {
 table, .table {
   margin: 0 -3px;
 	border-spacing: .1em;
+  width: 100%;
 }
 table th {
   background: #bbc;
