@@ -51,6 +51,7 @@
 #endif
 #include "config.h"
 #include "md5.h"
+#include "mtwei.h"
 #include "protocol.h"
 #include "console.h"
 #include "interfaces.h"
@@ -69,6 +70,10 @@ static int insockfd;
 static unsigned int outcounter = 0;
 static long incounter = -1;
 static int sessionkey = 0;
+static mtwei_state_t mtwei;
+BIGNUM *private_key;
+static uint8_t public_key[MTWEI_PUBKEY_LEN];
+static uint8_t server_key[MTWEI_PUBKEY_LEN];
 static int running = 1;
 
 static unsigned char use_raw_socket = 0;
@@ -207,34 +212,40 @@ static void send_auth(char *username, char *password) {
 	unsigned short width = 0;
 	unsigned short height = 0;
 	char *terminal = getenv("TERM");
-	char md5data[100];
-	unsigned char md5sum[17];
+	char hashdata[100];
+	unsigned char hashsum[32], pubkey[33];
 	int plen, act_pass_len;
 	md5_state_t state;
 
 #if defined(__linux__) && defined(_POSIX_MEMLOCK_RANGE)
-	mlock(md5data, sizeof(md5data));
-	mlock(md5sum, sizeof(md5data));
+	mlock(hashdata, sizeof(hashdata));
+	mlock(hashsum, sizeof(hashdata));
+	mlock(&state, sizeof(state));
 #endif
 
 	/* calculate the actual password's length */
 	act_pass_len = strnlen(password, 82);
 
-	/* Concat string of 0 + password + pass_salt */
-	md5data[0] = 0;
-	memcpy(md5data + 1, password, act_pass_len);
-	/* in case that password is long, calculate only using the used-up parts */
-	memcpy(md5data + 1 + act_pass_len, pass_salt, 16);
+	if (server_key[0] == 1) { /* Server hasn't sent the key, use the old MD5 algorithm */
+		/* Concat string of 0 + password + pass_salt */
+		hashdata[0] = 0;
+		memcpy(hashdata + 1, password, act_pass_len);
+		/* in case that password is long, calculate only using the used-up parts */
+		memcpy(hashdata + 1 + act_pass_len, pass_salt, 16);
 
-	/* Generate md5 sum of md5data with a leading 0 */
-	md5_init(&state);
-	md5_append(&state, (const md5_byte_t *)md5data, 1 + act_pass_len + 16);
-	md5_finish(&state, (md5_byte_t *)md5sum + 1);
-	md5sum[0] = 0;
+		/* Generate md5 sum of md5data with a leading 0 */
+		md5_init(&state);
+		md5_append(&state, (const md5_byte_t *)hashdata, 1 + act_pass_len + 16);
+		md5_finish(&state, (md5_byte_t *)hashsum + 1);
+		hashsum[0] = 0;
+	} else {
+		mtwei_id(username, password, pass_salt, hashdata);
+		mtwei_docrypto(&mtwei, private_key, server_key, public_key, hashdata, hashsum);
+	}
 
 	/* Send combined packet to server */
 	init_packet(&data, MT_PTYPE_DATA, srcmac, dstmac, sessionkey, outcounter);
-	plen = add_control_packet(&data, MT_CPTYPE_PASSWORD, md5sum, 17);
+	plen = add_control_packet(&data, MT_CPTYPE_PASSWORD, hashsum, server_key[0] == 255 ? 17 : 32);
 	plen += add_control_packet(&data, MT_CPTYPE_USERNAME, username, strlen(username));
 	plen += add_control_packet(&data, MT_CPTYPE_TERM_TYPE, terminal, strlen(terminal));
 	
@@ -316,12 +327,17 @@ static int handle_packet(unsigned char *data, int data_len) {
 
 			/* If we receive pass_salt, transmit auth data back */
 			if (cpkt.cptype == MT_CPTYPE_PASSSALT) {
-				/* check validity, server sends exactly 16 bytes */
-				if (cpkt.length != 16) {
-					fprintf(stderr, _("Invalid salt length: %d (instead of 16) received from server %s\n"), cpkt.length, _ether_ntoa((struct ether_addr *)dstmac));
-				}
-				memcpy(pass_salt, cpkt.data, 16);
-				send_auth(username, password);
+				/* check validity, server sends exactly 49 (or 16 for legacy auth) bytes */
+				if (cpkt.length == sizeof(pass_salt)) {
+					memcpy(pass_salt, cpkt.data, sizeof(pass_salt));
+					send_auth(username, password);
+				} else if (cpkt.length == sizeof(pass_salt) + sizeof(server_key)) {
+				        memcpy(server_key, cpkt.data, sizeof(server_key));
+					memcpy(pass_salt, cpkt.data + sizeof(server_key), sizeof(pass_salt));
+					send_auth(username, password);
+				} else {
+					fprintf(stderr, _("Invalid salt length: %d (instead of 16 or 49) received from server %s\n"), cpkt.length, ether_ntoa((struct ether_addr *)dstmac));
+ 				}
 			}
 
 			/* If the (remaining) data did not have a control-packet magic byte sequence,
@@ -463,6 +479,7 @@ int mactelnet_main (int argc, char **argv) {
 	struct autologin_profile *login_profile;
 	struct net_interface *interface, *tmp;
 	unsigned char buff[MT_PACKET_LEN];
+	unsigned char loginkey[512];
 	unsigned char print_help = 0, have_username = 0, have_password = 0;
 	unsigned char drop_priv = 0;
 	int c;
@@ -683,6 +700,14 @@ int mactelnet_main (int argc, char **argv) {
 	/* Session key */
 	sessionkey = rand() % 65535;
 
+	/* Private key */
+#if defined(__linux__) && defined(_POSIX_MEMLOCK_RANGE)
+	mlock(&mtwei, sizeof(mtwei));
+#endif
+	mtwei_init(&mtwei);
+	private_key = mtwei_keygen(&mtwei, public_key);
+	memset(server_key, 255, sizeof(server_key));
+
 	/* stop output buffering */
 	setvbuf(stdout, (char*)NULL, _IONBF, 0);
 
@@ -714,6 +739,9 @@ int mactelnet_main (int argc, char **argv) {
 
 	init_packet(&data, MT_PTYPE_DATA, srcmac, dstmac, sessionkey, 0);
 	outcounter += add_control_packet(&data, MT_CPTYPE_BEGINAUTH, NULL, 0);
+	strcpy(loginkey, username);
+	memcpy(loginkey + strlen(username) + 1, public_key, sizeof(public_key));
+	outcounter += add_control_packet(&data, MT_CPTYPE_PASSSALT, loginkey, sizeof(public_key) + strlen(username) + 1);
 
 	/* TODO: handle result of send_udp */
 	result = send_udp(&data, 1);
