@@ -2,7 +2,7 @@
 <html>
 	<head>
 		<title><% nvg("router_name"); %> - Wi-viz 2.0: Wireless Network Visualization</title>
-		<script type="text/javascript" src="js/wiviz2.js"></script>
+		<link type="text/css" rel="stylesheet" href="style/wiviz_common.css" />
 		<script type="text/javascript">
 		//<![CDATA[
 		if (!['brainslayer', 'kromo', 'wikar', 'xirian'].includes("<% nvg("router_style"); %>")) {
@@ -13,11 +13,11 @@
 			    document.write('<link type="text/css" rel="stylesheet" href="style/wiviz_dark.css" />');
 			}
 		} else {
-			document.write('<link type="text/css" rel="stylesheet" href="style/wiviz_light.css" />')
+			document.write('<link type="text/css" rel="stylesheet" href="style/wiviz_light.css" />');
 		}
 		//]]>
 		</script>
-		<link type="text/css" rel="stylesheet" href="style/wiviz_common.css" />
+		<script type="text/javascript" src="js/wiviz2.js"></script>
 		<!-- The proper way to deal with memory leaks -->
 		<meta http-equiv="refresh" content="1800" charset="utf-8">
 	</head>
@@ -145,9 +145,9 @@
 			 Details
 		</div>
 		<div class='slidingbody'>
-			<div class='center' id='detail_type'>Nothing here yet</div>
+			<h2 id='detail_type'>Nothing Here Yet</h2>
 			<span id='detail_info'>
-				<i>Click a host to view details.</i>
+				<p class='center bold'>Click a host to view details.</center>
 			</span>
 			<span id='detail_network_actions' class='actionlist'>
 			<!--			<center>Network Actions</center>
