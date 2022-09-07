@@ -101,7 +101,7 @@ h2 {
   margin-right: -5px;
   display: inline-block;
 }
-.controls > a > img, .button {
+.controls > a > img {
   transition: all .15s cubic-bezier(0.3, 0, 0.5, 1);
 }
 .controls > a > img {
