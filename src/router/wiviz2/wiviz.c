@@ -313,6 +313,10 @@ void writeJavascript()
 	int i;
 	FILE *outf;
 	wiviz_host *h;
+	int cnt=0;
+	while (nvram_match("wiviz2_dump_done", "1") && cnt++ < 5) {	// wait until writing is done
+	    sleep(1);
+	}
 	outf = fopen("/tmp/wiviz2-dump", "w");
 	if (!outf) {
 		printf("Failure to open output file\n");
