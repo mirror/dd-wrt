@@ -2555,7 +2555,7 @@ static int do_syslog(unsigned char method, struct mime_handler *handler, char *u
 		FILE *fp = fopen(filename, "r");
 		if (fp != NULL) {
 			char line[1024];
-			websWrite(stream, "<div style=\"height: 750px; overflow-y: auto;\"><table>");
+			websWrite(stream, "<div style=\"height: 750px; overflow-y: auto; overflow-x: hidden;\"><table>");
 			while (fgets(line, sizeof(line), fp) != NULL) {
 				count++;
 				if (offset <= count && ((offset + 50) > count)) {	// show 100 lines
