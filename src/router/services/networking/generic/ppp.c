@@ -324,7 +324,7 @@ int disconnected_pppoe_main(int argc, char **argv)
 		dns_to_resolv();
 
 #ifdef HAVE_DNSMASQ
-		start_dnsmasq();
+		restart_dnsmasq();
 #endif
 #ifdef HAVE_SMARTDNS
 		stop_smartdns();

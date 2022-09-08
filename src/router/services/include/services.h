@@ -175,6 +175,7 @@ extern void start_l2tp_boot(void);
 extern void start_udhcpd(void);
 extern void stop_udhcpd(void);
 extern void start_dnsmasq(void);
+extern void restart_dnsmasq(void);
 extern void stop_dnsmasq(void);
 #ifdef HAVE_SMARTDNS
 extern void start_smartdns(void);

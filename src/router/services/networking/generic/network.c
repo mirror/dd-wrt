@@ -4463,7 +4463,7 @@ void wan_done(char *wan_ifname)
 	nvram_set("wan_iface", nvram_safe_get("wan_ifname"));
 
 #ifdef HAVE_DNSMASQ
-	start_dnsmasq();
+	restart_dnsmasq();
 #endif
 #ifdef HAVE_SMARTDNS
 	stop_smartdns();
