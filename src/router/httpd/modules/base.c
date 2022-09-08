@@ -2789,8 +2789,8 @@ static int do_wifiselect_cgi(unsigned char method, struct mime_handler *handler,
 	else {
 		sprintf(path, "%s.asp", submit_button);
 	}
-	do_redirect(METHOD_GET, handler, path, wp);
-	websDone(wp, 200);
+	do_redirect(METHOD_GET, handler, path, stream);
+	websDone(stream, 200);
 	deinit_cgi(stream);
 	return 0;
 }
