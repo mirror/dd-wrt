@@ -2760,7 +2760,7 @@ static int do_apply_cgi(unsigned char method, struct mime_handler *handler, char
 		return -1;
 
 	apply_cgi(stream, NULL, NULL, 0, url, path, query, handler);
-	init_cgi(stream, NULL);
+	deinit_cgi(stream);
 	return 0;
 }
 
@@ -2781,7 +2781,7 @@ static int do_wifiselect_cgi(unsigned char method, struct mime_handler *handler,
 	char *select = websGetVar("wifi_display",NULL);
 	if (select)
 	    nvram_set("wifi_display",select);
-	init_cgi(stream, NULL);
+	deinit_cgi(stream);
 	return 0;
 }
 
