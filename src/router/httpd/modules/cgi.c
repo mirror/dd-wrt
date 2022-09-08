@@ -134,3 +134,7 @@ static void init_cgi(webs_t wp, char *query)
 	}
 	//cprintf("\nIn init_cgi(), AFTER PROCESS query = %s\n", query);
 }
+static void deinit_cgi(webs_t wp)
+{
+	hdestroy_r(&wp->htab);
+}
