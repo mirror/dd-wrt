@@ -8,9 +8,9 @@
 		if (!['brainslayer', 'kromo', 'wikar', 'xirian'].includes("<% nvg("router_style"); %>")) {
 			document.write('<link type="text/css" rel="stylesheet" href="/style/<% nvg("router_style"); %>/colorscheme.css" />');
 			if (<% nvem("router_style_dark", "1", "0", "1"); %>) {
-			    document.write('<link type="text/css" rel="stylesheet" href="style/wiviz_light.css" />');
+					document.write('<link type="text/css" rel="stylesheet" href="style/wiviz_light.css" />');
 			} else {
-			    document.write('<link type="text/css" rel="stylesheet" href="style/wiviz_dark.css" />');
+					document.write('<link type="text/css" rel="stylesheet" href="style/wiviz_dark.css" />');
 			}
 		} else {
 			document.write('<link type="text/css" rel="stylesheet" href="style/wiviz_light.css" />');
@@ -46,7 +46,7 @@
 			<input type='hidden' name='submit_type' value='Set' />
 			<input type='hidden' name='commit' value='1' />
 			<div class="setting">
-				<span class='label'>Channel Setting<span>
+				<label for='hopseq'>Channel Setting</label>
 					<select class='hop' name='hopseq' onChange='this.form.submit()'>
 						<option value='0' <% nvs("hopseq","0"); %> >All</option>
 						<option value='1' <% nvs("hopseq","1"); %> >1</option>
@@ -73,7 +73,7 @@
 					</select>
 				</div>
 			<div class="setting">
-				<span class='label'>Hop Dwell (in ms)</class>
+				<label for='hopdwell'>Hop Dwell (in ms)</label>
 					<select class='hop' name='hopdwell' onChange='this.form.submit()'>
 						<option value='250' <% nvs("hopdwell","250"); %> >250</option>
 						<option value='500' <% nvs("hopdwell","500"); %> >500</option>
@@ -93,61 +93,39 @@
 		</div>
 		<div class='slidingbody'>
 			<h2>Show / Hide</h2>
-			<div>
-				<div class='label'>Show Logo</div>
-				<input type='checkbox' id='showlogo' onClick='updatePrefs(this)' />
-			</div>
-			<div>
-				<div class='label'>Unsecured AP</div>
-				<input type='checkbox' id='apunenc' onClick='updatePrefs(this)' />
-			</div>
-			<div>
-				<div class='label'>Encrypted AP</div>
-				<input type='checkbox' id='apenc' onClick='updatePrefs(this)' />
-			</div>
-			<div>
-				<div class='label'>Clients - Connected</div>
-				<input type='checkbox' id='clientass' onClick='updatePrefs(this)' />
-			</div>
-			<div>
-				<div class='label'>Clients - Searching</div>
-				<input type='checkbox' id='clientdiss' onClick='updatePrefs(this)' />
-			</div>
+			<input type='checkbox' id='showlogo' onClick='updatePrefs(this)'>
+			<label for='showlogo'>Show Logo</label><br>
+			<input type='checkbox' id='apunenc' onClick='updatePrefs(this)'>
+			<label for='apunenc'>Unsecured AP</label><br>
+			<input type='checkbox' id='apenc' onClick='updatePrefs(this)'>
+			<label for='apenc'>Encrypted AP</label><br>
+			<input type='checkbox' id='clientass' onClick='updatePrefs(this)'>
+			<label for='clientass'>Clients - Connected</label><br>
+			<input type='checkbox' id='clientdiss' onClick='updatePrefs(this)'>
+			<label for='clientdiss'>Clients - Searching</label><br>
 			<h2>Effects</h2>
-			<div>
-				<div class='label'>Rotate Slowly</div>
-				<input type='checkbox' id='rotate' onClick='updatePrefs(this)' />
-			</div>
-			<div>
-				<div class='label'>Show Grid</div>
-				<input type='checkbox' id='grid' onClick='updatePrefs(this)' />
-			</div>
-			<div>
-				<div class='label'>Smooth Animation</div>
-				<input type='checkbox' id='animation' onClick='updatePrefs(this)' />
-			</div>
-			<div>
-				<div class='label'>Blending Effects</div>
-				<input type='checkbox' id='blend' onClick='updatePrefs(this)' />
-			</div>
-			<div>
-				<div class='label'>Scaling</div>
-				<input type='checkbox' id='scale' onClick='updatePrefs(this)' />
-			</div>
-			<div>
-				<div class='label'>Fly in on Click</div>
-				<input type='checkbox' id='flyin' onClick='updatePrefs(this)' />
-			</div>
+			<input type='checkbox' id='rotate' onClick='updatePrefs(this)'>
+			<label for='rotate'>Rotate Slowly</label><br>
+			<input type='checkbox' id='grid' onClick='updatePrefs(this)'>
+			<label for='grid'>Show Grid</label><br>
+			<input type='checkbox' id='animation' onClick='updatePrefs(this)'>
+			<label for='animation'>Smooth Animation</label><br>
+			<input type='checkbox' id='blend' onClick='updatePrefs(this)'>
+			<label for='blend'>Blending Effects</label><br>
+			<input type='checkbox' id='scale' onClick='updatePrefs(this)'>
+			<label for='scale'>Scaling</label><br>
+			<input type='checkbox' id='flyin' onClick='updatePrefs(this)'>
+			<label for='flyin'>Fly in on Click</label><br>
 		</div>
 	</div>
 	<div class='expander'>
 		<div class='button' id='details' onClick='toggleExpando(this)'>
-			 Details
+			Details
 		</div>
 		<div class='slidingbody'>
 			<div class='center' id='detail_type'>Nothing Here Yet</div>
 			<span id='detail_info'>
-				<p class='center bold'>Click a host to view details.</center>
+				<p class='center bold'>Click a host to view details.</p>
 			</span>
 			<span id='detail_network_actions' class='actionlist'>
 			<!--			<center>Network Actions</center>
