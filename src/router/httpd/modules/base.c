@@ -2778,7 +2778,7 @@ static int do_wifiselect_cgi(unsigned char method, struct mime_handler *handler,
 
 	if (!query)
 		return -1;
-	char *select = getWebsVar("wifi_display",NULL);
+	char *select = websGetVar("wifi_display",NULL);
 	if (select)
 	    nvram_set("wifi_display",select);
 	init_cgi(stream, NULL);
