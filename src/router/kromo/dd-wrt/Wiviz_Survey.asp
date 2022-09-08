@@ -123,7 +123,7 @@
 			Details
 		</div>
 		<div class='slidingbody'>
-			<div class='center' id='detail_type'>Nothing Here Yet</div>
+			<h2 id='detail_type'>Nothing Here Yet</h2>
 			<span id='detail_info'>
 				<p class='center bold'>Click a host to view details.</p>
 			</span>
