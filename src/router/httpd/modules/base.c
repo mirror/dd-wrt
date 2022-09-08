@@ -2781,6 +2781,16 @@ static int do_wifiselect_cgi(unsigned char method, struct mime_handler *handler,
 	char *select = websGetVar(stream, "wifi_display",NULL);
 	if (select)
 	    nvram_set("wifi_display",select);
+	char *next_page = websGetVar(stream, "next_page", NULL);
+	char *submit_button = websGetVar(stream, "submit_button", "");
+
+	if (next_page)
+		sprintf(path, "%s", next_page);
+	else {
+		sprintf(path, "%s.asp", submit_button);
+	}
+	do_redirect(METHOD_GET, handler, path, wp);
+	websDone(wp, 200);
 	deinit_cgi(stream);
 	return 0;
 }
