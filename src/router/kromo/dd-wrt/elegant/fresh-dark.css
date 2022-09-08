@@ -14,11 +14,6 @@ a:hover, a:link:hover,
 [title*='Chain']:hover, [title*='Monitoring']:hover {
   color: var(--ac-1);
 }
-#menuSubList li span {
-  background: #1a1a1a;
-  color: #fff;
-  border-color: #1a1a1a;
-}
 .message {
   background-color: #1a1a1a;
   border: 1px solid #333;
@@ -35,6 +30,11 @@ a:hover, a:link:hover,
 .infopage #main {
   background-color: #1a1a1a;
   border: 1px solid #333;
+}
+#menuSubList li span {
+  background: #1a1a1a;
+  color: #fff;
+  border-color: #1a1a1a;
 }
 .dark_fs_bg {
   background: #111;
