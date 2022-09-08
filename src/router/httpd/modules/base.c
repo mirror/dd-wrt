@@ -1611,7 +1611,7 @@ static void do_logout(webs_t conn_fp)	// static functions are not exportable,
 	send_authenticate(conn_fp);
 }
 
-static int apply_cgi(webs_t wp, char_t * urlPrefix, char_t * webDir, int arg, char_t * url, char_t * path, char *query, struct mime_handler *handler)
+static void apply_cgi(webs_t wp, char_t * urlPrefix, char_t * webDir, int arg, char_t * url, char_t * path, char *query, struct mime_handler *handler)
 {
 	int action = NOTHING;
 	char *value;
@@ -1649,7 +1649,7 @@ static int apply_cgi(webs_t wp, char_t * urlPrefix, char_t * webDir, int arg, ch
 	if (value && !strcmp(value, "gozila_cgi")) {
 		fprintf(stderr, "[GOZILLA_APPLY] %s %s %s\n", websGetVar(wp, "submit_button", NULL), websGetVar(wp, "submit_type", NULL), websGetVar(wp, "call", "no call defined"));
 		gozila_cgi(wp, urlPrefix, webDir, arg, url, path, handler);
-		return 1;
+		return;
 	}
 
 				/***************************************************************************/
@@ -1815,7 +1815,7 @@ static int apply_cgi(webs_t wp, char_t * urlPrefix, char_t * webDir, int arg, ch
 		do_ej(METHOD_GET, NULL, "Logout.asp", wp);
 		websDone(wp, 200);
 		do_logout(wp);
-		return 1;
+		return;
 	}
 
 	/*
@@ -1854,7 +1854,7 @@ footer:
 		websDone(wp, 200);
 #endif
 		sys_reboot();
-		return 1;
+		return;
 	}
 
 	nvram_set("upnp_wan_proto", "");
@@ -1863,7 +1863,7 @@ footer:
 	else if (action == SERVICE_RESTART)
 		service_restart();
 
-	return 1;
+	return;
 
 }
 
@@ -2764,6 +2764,27 @@ static int do_apply_cgi(unsigned char method, struct mime_handler *handler, char
 	return 0;
 }
 
+
+static int do_wifiselect_cgi(unsigned char method, struct mime_handler *handler, char *url, webs_t stream)
+{
+	char *path, *query;
+	if (stream->post == 1) {
+		query = stream->post_buf;
+		path = url;
+	} else {
+		query = url;
+		path = strsep(&query, "?") ? : url;
+	}
+
+	if (!query)
+		return -1;
+	char *select = getWebsVar("wifi_display",NULL);
+	if (select)
+	    nvram_set("wifi_display",select);
+	init_cgi(stream, NULL);
+	return 0;
+}
+
 #ifdef HAVE_MADWIFI
 extern int getdevicecount(void);
 #endif
@@ -2872,6 +2893,7 @@ static struct mime_handler mime_handlers[] = {
 	{ "apply.cgi*", "text/html", no_cache, do_apply_post, do_apply_cgi, do_auth, NO_HEADER, IGNORE_OPTIONS },
 	{ "upgrade.cgi*", "text/html", no_cache, do_upgrade_post, do_upgrade_cgi, do_auth, NO_HEADER, IGNORE_OPTIONS },
 #endif
+	{ "wifiselect.cgi*", "text/html", no_cache, do_apply_post, do_wifiselect_cgi, do_cauth, NO_HEADER, IGNORE_OPTIONS },
 #ifdef HAVE_BUFFALO
 	{ "olupgrade.cgi*", "text/html", no_cache, do_olupgrade_post, do_upgrade_cgi, do_auth, SEND_HEADER, IGNORE_OPTIONS },
 #endif
