@@ -138,7 +138,7 @@ select {
 #content.infopage, .odd {
   background-color: transparent;
 }
-#content.infopage #main {
+.infopage #main {
   background-color: #fafafa;
   border-radius: 5px;
   border: 1px solid #111;
