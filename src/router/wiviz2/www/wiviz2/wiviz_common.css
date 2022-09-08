@@ -26,12 +26,12 @@ select.hop {
 .slidingbody {
   overflow: hidden;
   border-radius: 4px;
-  padding: 6px;
   box-sizing: border-box;
 }
 .slidingbodyshow {
   overflow: hidden;
   border-radius: 4px;
+  padding: 6px;
 }
 .expander {
   position: relative;
@@ -65,27 +65,23 @@ input[type='checkbox'] {
   box-shadow: 0 0 5px 1px var(--ac-2, #6384cf);
   outline: 0;
 }
-center {
-  font-weight: bold;
-  margin-top: 6px;
-  margin-bottom: 6px;
-  padding: 3px;
-}
 .setting {
   position: relative;
-  margin-bottom: .453em;
-  line-height: 1.993;
+  margin-bottom: .353em;
+  line-height: 1.7;
   white-space: nowrap
 }
 .bold {
   font-weight: bold;
 }
-.label {
-  float: left;
-  width: 11.3em;
-}
 .center {
   text-align: center;
+}
+center {
+  font-weight: bold;
+  margin-top: 6px;
+  margin-bottom: 6px;
+  padding: 3px;
 }
 h2 {
   background-color: #777674;
