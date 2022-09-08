@@ -147,7 +147,7 @@ EJ_VISIBLE void ej_do_hpagehead(webs_t wp, int argc, char_t ** argv)	// Eko
 		websWrite(wp, ".about-bg {\n");
 		websWrite(wp, "  background-color: #fff;\n");
 		websWrite(wp, "}\n");
-		websWrite(wp, "#container }\n");
+		websWrite(wp, "#container {\n");
 		websWrite(wp, "  height: 500px;\n");
 		websWrite(wp, "  max-width: 80%;\n");
 		websWrite(wp, "  margin: -18em auto .5em auto;\n");
