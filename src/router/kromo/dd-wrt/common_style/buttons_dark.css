@@ -14,6 +14,12 @@
   border: 0;
   box-shadow: none;
 }
+.add[disabled], .add[disabled]:hover {
+  background: url(/images/add-white.svg) center no-repeat;
+  background-color: transparent !important;
+  opacity: .6;
+  cursor: default;
+}
 .remove {
   background: url(/images/remove-white.svg) center no-repeat;
   cursor: pointer;
@@ -30,9 +36,9 @@
   border: 0;
   box-shadow: none;
 }
-.add[disabled], .add[disabled]:hover,
 .remove[disabled], .remove[disabled]:hover {
   background: url(/images/remove-white.svg) center no-repeat;
   background-color: transparent !important;
   opacity: .6;
+  cursor: default;
 }
