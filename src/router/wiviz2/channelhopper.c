@@ -82,14 +82,20 @@ u_int ieee80211_ieee2mhz(u_int chan, u_int flags)
 
 char *get_monitor(void);
 
-int set_channel(char *dev, int channel)
+int set_channel(wiviz_cfg * cfg, char *dev, int channel)
 {
 	struct iwreq wrq;
 	int flags = 0;
 	if (is_mac80211(nvram_safe_get("wifi_display"))) {
 		char chann[32];
 		sprintf(chann, "%d", channel);
-		eval("iw", "dev", dev, "set", "freq", chann);
+		if (is_ath10k(nvram_safe_get("wifi_display"))) {
+			char dwell[32];
+			sprintf(dwell, "%d", cfg->channelDwellTime);
+			eval("iw", "dev", nvram_safe_get("wifi_display"), "offchannel", chann, dwell);
+		} else {
+			eval("iw", "dev", dev, "set", "freq", chann);
+		}
 	} else {
 		memset(&wrq, 0, sizeof(struct iwreq));
 		strncpy(wrq.ifr_name, get_monitor(), IFNAMSIZ);
@@ -164,7 +170,7 @@ void channelHopper(wiviz_cfg * cfg)
 #ifdef HAVE_MADWIFI
 		{
 			printf("set channel %d\n", nc);
-			int ret = set_channel(get_monitor(), wifi_channels[nc].freq);
+			int ret = set_channel(cfg, get_monitor(), wifi_channels[nc].freq);
 			if (ret == -1)
 				continue;
 		}
