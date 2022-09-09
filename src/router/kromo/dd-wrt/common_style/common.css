@@ -39,11 +39,9 @@ body.gui {
   color: #ccc;
 }
 #statusInfo a {
-  color: #ccc;
   text-decoration: none;
 }
 #statusInfo a:hover {
-  color: #fff;
   text-decoration: underline;
 }
 #wrapper {
