@@ -34,7 +34,26 @@
 #include <errno.h>
 #include <stdio.h>
 #include <string.h>
-#include <sys/random.h>
+#include <fcntl.h>
+#include <unistd.h>
+
+
+ssize_t
+my_getrandom (void *buffer, size_t length, unsigned int flags)
+{
+  const char *random_source = "/dev/urandom";
+  int open_flags = O_RDONLY | O_CLOEXEC;
+  size_t amount_read;
+  int fd;
+
+  fd = open(random_source, open_flags);
+  if (fd == -1)
+    return -1;
+
+  amount_read = read(fd, buffer, length);
+  close(fd);
+  return amount_read;
+}
 
 void
 mtwei_init (mtwei_state_t *state)
@@ -78,7 +97,7 @@ mtwei_keygen (mtwei_state_t *state, uint8_t *pubkey_out)
     BIGNUM *x = BN_new();
     BIGNUM *y = BN_new();
 
-    if (getrandom (client_priv, sizeof(client_priv), 0) != sizeof(client_priv))
+    if (my_getrandom (client_priv, sizeof(client_priv), 0) != sizeof(client_priv))
     {
         perror ("getrandom");
         abort ();
