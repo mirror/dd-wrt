@@ -146,7 +146,7 @@ if [ $((total_remotes)) -ge $MAX_REMOTES ]; then
 write_addn_config
 return
 fi
-if [[ ! "$proto" || "$proto" == "$(nvram get openvpncl_proto)" ]]; then
+[ "$proto" ] && nvram set openvpncl_proto="$proto"
 if [ $total_remotes -eq 0 ]; then
 let $((total_remotes++))
 nvram set openvpncl_remoteip="$ip"
@@ -160,9 +160,6 @@ nvram set openvpncl_remoteip${total_remotes}="$ip"
 nvram set openvpncl_remoteport${total_remotes}="$port" || \
 nvram set openvpncl_remoteport${total_remotes}="$default_port"
 nvram set openvpncl_multirem='1'
-fi
-else
-write_addn_config
 fi
 }
 handle_remote_cert_tls() {
