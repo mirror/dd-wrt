@@ -3589,8 +3589,8 @@ IS_DRIVER(ath10k, "pci:ath10k_pci");
 IS_DRIVER(brcmfmac, "pci:brcmfmac");
 #endif
 IS_DRIVER(iwlwifi, "pci:iwlwifi");
-IS_DRIVER(iwlwifi, "pci:iwl4965");
-IS_DRIVER(iwlwifi, "pci:iwl3945");
+IS_DRIVER(iwl4965, "pci:iwl4965");
+IS_DRIVER(iwl3945, "pci:iwl3945");
 #ifdef HAVE_MT76
 IS_DRIVER(mt7615, "pci:mt7615e");
 IS_DRIVER(mt7915, "pci:mt7915e");
@@ -3656,8 +3656,15 @@ int getmaxvaps(const char *prefix)
 		return 16;
 	if (is_wil6210(prefix))
 		return 1;
+	if (is_iwlwifi(prefix))
+		return 1;
+	if (is_iwl4965(prefix))
+		return 1;
+	if (is_iwl3945(prefix))
+		return 1;
 	return 8;		// default
 }
+
 #endif
 static int HTtoVHTindex(int mcs)
 {
