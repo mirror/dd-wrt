@@ -106,7 +106,7 @@ static void shutdown_monitor(void)
 #ifdef HAVE_MADWIFI
 	// return to original channel
 	if (is_mac80211(wl_dev)) {
-		set_channel(get_monitor(), curfreq);	// reset channel before shutdown
+		set_channel(NULL, get_monitor(), curfreq);	// reset channel before shutdown
 		eval("ifconfig", get_monitor(), "down");
 		eval("iw", "dev", get_monitor(), "del");
 	} else {
