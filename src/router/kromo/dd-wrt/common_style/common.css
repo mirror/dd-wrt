@@ -39,11 +39,9 @@ body.gui {
   color: #ccc;
 }
 #statusInfo a {
-  color: #ccc;
   text-decoration: none;
 }
 #statusInfo a:hover {
-  color: #fff;
   text-decoration: underline;
 }
 #wrapper {
@@ -496,6 +494,53 @@ input.button[onclick*='filter_remove'] {
 }
 input.button[onclick*='FilterSummary'] {
   margin-top: -.1rem;
+}
+/* submitfooter buttons */
+.button[name='apply_button'] {
+  background: #166f2a;
+  border-color: #1a6d2d;
+  color: #fff;
+}
+.button[name='apply_button']:hover {
+  background: #199235;
+  border-color: #199235;
+  color: #fff;
+}
+.button[name='apply_button']:focus,
+.button[name='apply_button']:focus-visible {
+  box-shadow: 0 0 5px 1px #35ee00;
+  outline: 0;
+}
+.button[name='reset_button'] {
+  background: #6f4816;
+  border-color: #755416;
+  color: #fff;
+}
+.button[name='reset_button']:hover {
+  background: #925d19;
+  border-color: #925d19;
+  color: #fff;
+}
+.button[name='reset_button']:focus,
+.button[name='reset_button']:focus-visible {
+  box-shadow: 0 0 5px 1px #ff8400;
+  outline: 0;
+}
+.button[name='reboot_button'],
+.button[name='reboot_button']:disabled:hover {
+  background: #c00;
+  border-color: #c00;
+  color: #fff;
+}
+.button[name='reboot_button']:hover {
+  background: #e00;
+  border-color: #d00;
+  color: #fff;
+}
+.button[name='reboot_button']:focus,
+.button[name='reboot_button']:focus-visible {
+  box-shadow: 0 0 5px 1px #f00;
+  outline: 0;
 }
 /*! colors below are common to light/dark */
 /*! these colors conform to WCAG Standards */
