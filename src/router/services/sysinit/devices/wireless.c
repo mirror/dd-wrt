@@ -525,7 +525,7 @@ static void detect_wireless_devices(int mask)
 		}
 		insmod("iwlwifi");
 		sleep(3);	// neet to wait a little bit
-		if (!detectchange("iwldwm") && !detectchange("iwlmvm")) {
+		if (!detectchange("iwldvm") && !detectchange("iwlmvm")) {
 			rmmod("iwlwifi");
 		}
 
