@@ -3588,6 +3588,9 @@ IS_DRIVER(ath10k, "pci:ath10k_pci");
 #ifdef HAVE_BRCMFMAC
 IS_DRIVER(brcmfmac, "pci:brcmfmac");
 #endif
+IS_DRIVER(iwlwifi, "pci:iwlwifi");
+IS_DRIVER(iwlwifi, "pci:iwl4965");
+IS_DRIVER(iwlwifi, "pci:iwl3945");
 #ifdef HAVE_MT76
 IS_DRIVER(mt7615, "pci:mt7615e");
 IS_DRIVER(mt7915, "pci:mt7915e");
