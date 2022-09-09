@@ -4,10 +4,7 @@ body, .popup, .popup_bg {
   color: #ccc;
 }
 a, a:link {
-  color: #fff;
-}
-a:visited {
-  color: #eee;
+  color: #ccc;
 }
 a:hover, a:link:hover,
 #ip_count:hover, [title*='Search']:hover,
@@ -60,27 +57,6 @@ input {
   background-color: #333;
   border: 1px solid #454545;
   color: #e0e0e0;
-}
-.button[name='apply_button'] {
-  background: #166f2a;
-  border-color: #1a6d2d;
-  color: #fff;
-}
-.button[name='apply_button']:hover {
-  background: #199235;
-  border-color: #199235;
-  color: #fff;
-}
-.button[name='reboot_button'],
-.button[name='reboot_button']:disabled:hover {
-  background: #c00;
-  border-color: #c00;
-  color: #fff;
-}
-.button[name='reboot_button']:hover {
-  background: #e00;
-  border-color: #d00;
-  color: #fff;
 }
 /*! darken paypal logo */
 [type='image'][src*='paypal'] {

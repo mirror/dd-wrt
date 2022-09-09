@@ -3,6 +3,14 @@ body, .popup, .popup_bg {
   background: #f9f9f9;
   color: #000;
 }
+a, a:link {
+  color: #ccc;
+}
+a:hover, a:link:hover,
+#ip_count:hover, [title*='Search']:hover,
+[title*='Chain']:hover, [title*='Monitoring']:hover {
+	color: var(--ac-0);
+}
 fieldset {
   background: #f5f5f5;
   border: 1px solid #ccc;
@@ -52,9 +60,6 @@ table tr th {
   border: 1px solid #777674;
   opacity: .5;
 }
-table tr:not([class]):hover {
-  background-color: transparent;
-}
 .submitFooter {
   background-color: #d9d9d9;
   border: 1px solid #ccc;
@@ -72,53 +77,6 @@ input {
   color: #000;
   box-shadow: inset 0 1px 1px rgba(0, 0, 0, .075);
   transition: all .15s ease-in-out 0s;
-}
-.button[name='apply_button'] {
-  background: #166f2a;
-  border-color: #1a6d2d;
-  color: #fff;
-}
-.button[name='apply_button']:hover {
-  background: #199235;
-  border-color: #199235;
-  color: #fff;
-}
-.button[name='apply_button']:focus-visible {
-  box-shadow: 0 0 5px 1px #199235;
-  outline: 0;
-}
-.button[name='reset_button'] {
-  background: #6f4816;
-  border-color: #755416;
-  color: #fff;
-}
-.button[name='reset_button']:hover {
-  background: #925d19;
-  border-color: #925d19;
-  color: #fff;
-}
-.button[name='reset_button']:focus-visible {
-  box-shadow: 0 0 5px 1px #ff8400;
-  outline: 0;
-}
-.button[name='reboot_button'],
-.button[name='reboot_button']:disabled:hover {
-  background: #c00;
-  border-color: #ff4545;
-  color: #fff;
-}
-.button[name='reboot_button']:hover {
-  background: #f33;
-  border-color: #f33;
-  color: #fff;
-}
-.button[name='reboot_button']:focus-visible {
-  box-shadow: 0 0 5px 1px #ff7c7c;
-  outline: 0;
-}
-#ip_count:hover, [title*='Search']:hover,
-[title*='Chain']:hover, [title*='Monitoring']:hover {
-	color: var(--ac-0);
 }
 select {
   background-color: #fff;
