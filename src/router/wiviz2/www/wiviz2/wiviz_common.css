@@ -27,6 +27,7 @@ select.hop {
   overflow: hidden;
   border-radius: 4px;
   box-sizing: border-box;
+  padding: 0 6px 0 6px;
 }
 .slidingbodyshow {
   overflow: hidden;

@@ -152,11 +152,12 @@ EJ_VISIBLE void ej_do_hpagehead(webs_t wp, int argc, char_t ** argv)	// Eko
 		websWrite(wp, "  max-width: 80%%;\n");
 		websWrite(wp, "  margin: -18em auto .5em auto;\n");
 		websWrite(wp, "  overflow: hidden;\n");
+		websWrite(wp, "  color: #f6be00;\n");
 		websWrite(wp, "  background: linear-gradient(to bottom, #ffcf2c, #ee8806);\n");
 		websWrite(wp, "  -webkit-text-fill-color: transparent;\n");
 		websWrite(wp, "  -webkit-background-clip: text;\n");
 		websWrite(wp, "  transform-origin: 50%% 100%%;\n");
-		websWrite(wp, "  transform: perspective(100px) rotateX(25deg);;\n");
+		websWrite(wp, "  transform: perspective(100px) rotateX(25deg);\n");
 		websWrite(wp, "}\n");
 		websWrite(wp, "#credits {\n");
 		websWrite(wp, "  height: 100%%;\n");
@@ -165,7 +166,7 @@ EJ_VISIBLE void ej_do_hpagehead(webs_t wp, int argc, char_t ** argv)	// Eko
 		websWrite(wp, "}\n");
 		websWrite(wp, "@keyframes foolywood {\n");
 		websWrite(wp, "  from { transform: translateY(100%%); opacity: 1; }\n");
-		websWrite(wp, "  to { transform: translateY(-200%%); opacity: .5 }\n");
+		websWrite(wp, "  to { transform: translateY(-200%%); opacity: .5; }\n");
 		websWrite(wp, "}\n");
 		websWrite(wp, "</style>\n");
 		do_ddwrt_inspired_themes(wp);

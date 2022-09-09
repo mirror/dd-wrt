@@ -41,7 +41,7 @@ input[type='radio'] {
   border: 1px solid var(--ac-2);
   color: var(--tx-c);
 }
-.button:focus-visible {
+.button:focus, .button:focus-visible {
   box-shadow: 0 0 5px 1px var(--ac-2);
 }
 input:focus, textarea:focus,
