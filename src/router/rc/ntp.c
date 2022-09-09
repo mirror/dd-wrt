@@ -109,7 +109,7 @@ static int do_ntp(void)		// called from ntp_main and
 #endif
 	gettimeofday(&then, NULL);
 	dd_syslog(LOG_INFO, "Cyclic NTP Update success (servers %s)\n", servers);
-	dd_syslog(LOG_INFO, "Local timer delta is %lld\n", (then.tv_sec - now.tv_sec));
+	dd_syslog(LOG_INFO, "Local timer delta is %ld\n", (then.tv_sec - now.tv_sec));
 	if ((abs(now.tv_sec - then.tv_sec) > 100000000)) {
 		int seq;
 //              for (seq = 1; seq <= NR_RULES; seq++)
