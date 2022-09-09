@@ -89,7 +89,7 @@ int set_channel(wiviz_cfg * cfg, char *dev, int channel)
 	if (is_mac80211(nvram_safe_get("wifi_display"))) {
 		char chann[32];
 		sprintf(chann, "%d", channel);
-		if (cfg && is_ath10k(nvram_safe_get("wifi_display")) || is_mt76(nvram_safe_get("wifi_display"))) {
+		if (cfg && is_ath10k(nvram_safe_get("wifi_display"))) {
 			char dwell[32];
 			sprintf(dwell, "%d", cfg->channelDwellTime);
 			eval("iw", "dev", nvram_safe_get("wifi_display"), "offchannel", chann, dwell);
