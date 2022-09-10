@@ -157,7 +157,7 @@ EJ_VISIBLE void ej_do_hpagehead(webs_t wp, int argc, char_t ** argv)	// Eko
 		websWrite(wp, "  transform: perspective(205px) rotateX(25deg);\n");
 		websWrite(wp, "}\n");
 		websWrite(wp, "#credits {\n");
-		websWrite(wp, "  height: 100%%;\n");
+		websWrite(wp, "  height: auto;\n");
 		websWrite(wp, "  font-size: 20px;\n");
 		websWrite(wp, "  color: #f6be00;\n");
 		websWrite(wp, "  background: linear-gradient(to bottom, #ffcf2c, #ee8806);\n");
