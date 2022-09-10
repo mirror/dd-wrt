@@ -765,31 +765,37 @@ img[src*='hotspotsystem'] {
   filter: invert(0.95) hue-rotate(180deg) contrast(1.6);
   mix-blend-mode: lighten;
 }
-[src*='wiviz'] {
-  background-color: transparent;
-  filter: invert(0.95) hue-rotate(180deg) contrast(1.6) opacity(0.5);
-  mix-blend-mode: lighten;
+img.sizeimage {
+  filter: invert(0.6);
 }
-[src*='up']:hover,
-[src*='down']:hover,
-[src*='zoom']:hover,
-[src*='reset']:hover,
-[src*='up']:focus-within,
-[src*='down']:focus-within,
-[src*='zoom']:focus-within,
-[src*='reset']:focus-within {
-  background-color: transparent;
-  filter: invert(0.95) hue-rotate(180deg) contrast(1.6) opacity(1);
-  mix-blend-mode: lighten;
+img.sizeimage:hover {
+  filter: invert(0.8);
 }
-.rightmenu .button {
+.controls > a > img,
+.rightmenu {
+  transition: all 0.2s cubic-bezier(0.3, 0, 0.5, 1);
+}
+.controls > a > img:hover,
+.rightmenu:hover {
+  filter: brightness(1.2);
+}
+.controls a {
+  width: 50px;
+  height: 50px;
+  display: inline-block;
+}
+.controls a:focus-visible {
+  outline: 2px solid var(--v0-9);
+  border-radius: 4px;
+}
+.sidemenu .button {
   background: var(--v0-4);
   border: 1px solid var(--v0-6);
   box-shadow: 0 1px 0 var(--bg-0);
   color: var(--v9-8);
   text-shadow: 0 1px 0 var(--bg-0);
 }
-.rightmenu .button:hover {
+.sidemenu .button:hover {
   background: var(--v0-7);
   border-color: var(--v0-7);
   box-shadow: 0 0 10px 0 var(--v0-4);
@@ -1060,6 +1066,14 @@ input[disabled] {
   box-shadow: none;
   opacity: 0.5;
 }
+@media print {
+  input[type='checkbox'],
+  input[type='radio'] {
+    accent-color: var(--v0-4);
+    appearance: auto !important;
+    vertical-align: middle !important;
+  }
+}
 .row[role='controls'] {
   border-color: var(--bg-4);
 }
@@ -1076,7 +1090,7 @@ select {
   background: url('data:image/svg+xml;utf8,<svg width="14" height="14" viewBox="0 0 14 12" fill="\%23c3c3c3" xmlns="http://www.w3.org/2000/svg"><path d="M6 9a1 1 0 0 1-.707-.293l-3-3a1 1 0 0 1 1.414-1.414L6 6.586l2.293-2.293a1 1 0 0 1 1.414 1.414l-3 3A1 1 0 0 1 6 9z"/></svg>') no-repeat right 3px center !important;
   background-color: var(--bg-0) !important;
   border: 1px solid var(--bg-4);
-  box-shadow: 0px 1px 1px var(--rgba-bg-075);
+  box-shadow: 0 1px 1px var(--rgba-bg-075);
   color: var(--v9-8);
   -moz-appearance: none;
   -webkit-appearance: none;
