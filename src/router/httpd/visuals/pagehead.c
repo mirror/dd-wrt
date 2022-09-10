@@ -95,19 +95,20 @@ EJ_VISIBLE void ej_do_hpagehead(webs_t wp, int argc, char_t ** argv)	// Eko
 		style = "elegant";
 	websWrite(wp, "<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Strict//EN\" \"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd\">\n");
 	if (!strcmp(htitle, "doctype_only")) {
-		websWrite(wp, "<html>\n");
+		websWrite(wp, "<html lang=\"en\">\n");
 		websWrite(wp, "<head>\n");
 		websWrite(wp, "<title>About DD-WRT</title>\n");
 		websWrite(wp, "<meta http-equiv=\"Content-Type\" content=\"application/xhtml+xml; charset=iso-8859-1\" />\n");
+		websWrite(wp, "<meta name=\"viewport\" content=\"width=device-width, initial-scale=1\" />\n");
 		websWrite(wp, "<link type=\"text/css\" rel=\"stylesheet\" href=\"help/help.css\">\n");
 		if (!strcmp(style, "blue") || !strcmp(style, "cyan") || !strcmp(style, "elegant") || !strcmp(style, "green") || !strcmp(style, "orange") || !strcmp(style, "red") || !strcmp(style, "yellow")) {
 			if (style_dark != NULL && !strcmp(style_dark, "1")) {
 				websWrite(wp, "<link type=\"text/css\" rel=\"stylesheet\" href=\"../style/help-about-dark.css\" />\n");
 			}
 		}
-		websWrite(wp, "<style type=\"text/css\">\n");
+		websWrite(wp, "<style type=\"text/css\">");
 		websWrite(wp, "* {\n");
-		websWrite(wp, "  font-family:Tahoma, Arial, Helvetica, sans-serif;\n");
+		websWrite(wp, "  font-family: Tahoma, Arial, Helvetica, sans-serif;\n");
 		websWrite(wp, "  font-size: 1em;\n");
 		websWrite(wp, "  text-align: center;\n");
 		websWrite(wp, "  line-height: 1.7em;\n");
@@ -148,21 +149,21 @@ EJ_VISIBLE void ej_do_hpagehead(webs_t wp, int argc, char_t ** argv)	// Eko
 		websWrite(wp, "  background-color: #fff;\n");
 		websWrite(wp, "}\n");
 		websWrite(wp, "#container {\n");
-		websWrite(wp, "  height: 500px;\n");
+		websWrite(wp, "  height: 425px;\n");
 		websWrite(wp, "  max-width: 80%%;\n");
 		websWrite(wp, "  margin: -18em auto .5em auto;\n");
 		websWrite(wp, "  overflow: hidden;\n");
+		websWrite(wp, "  transform-origin: 50%% 100%%;\n");
+		websWrite(wp, "  transform: perspective(205px) rotateX(25deg);\n");
+		websWrite(wp, "}\n");
+		websWrite(wp, "#credits {\n");
+		websWrite(wp, "  height: 100%%;\n");
+		websWrite(wp, "  font-size: 20px;\n");
 		websWrite(wp, "  color: #f6be00;\n");
 		websWrite(wp, "  background: linear-gradient(to bottom, #ffcf2c, #ee8806);\n");
 		websWrite(wp, "  -webkit-text-fill-color: transparent;\n");
 		websWrite(wp, "  -webkit-background-clip: text;\n");
-		websWrite(wp, "  transform-origin: 50%% 100%%;\n");
-		websWrite(wp, "  transform: perspective(100px) rotateX(25deg);\n");
-		websWrite(wp, "}\n");
-		websWrite(wp, "#credits {\n");
-		websWrite(wp, "  height: 100%%;\n");
-		websWrite(wp, "  transform: translateY(100%%);\n");
-		websWrite(wp, "  animation: foolywood 20s linear infinite;\n");
+		websWrite(wp, "  animation: foolywood 35s linear infinite;\n");
 		websWrite(wp, "}\n");
 		websWrite(wp, "@keyframes foolywood {\n");
 		websWrite(wp, "  from { transform: translateY(100%%); opacity: 1; }\n");
