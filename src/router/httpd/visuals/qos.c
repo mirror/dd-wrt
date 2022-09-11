@@ -60,7 +60,7 @@ EJ_VISIBLE void ej_get_qospkts(webs_t wp, int argc, char_t ** argv)
 	char *qos_pkts = nvram_safe_get("svqos_pkts");
 	char pkt_filter[4];
 
-	websWrite(wp, "<tr>\n"
+	websWrite(wp, "<tr class=\"center\">\n"
 		  "<td><input type=\"checkbox\" name=\"svqos_pktack\" value=\"ACK\" %s><script type=\"text/javascript\">Capture(qos.pktack)</script></input></td>\n"
 		  "<td><input type=\"checkbox\" name=\"svqos_pktsyn\" value=\"SYN\" %s><script type=\"text/javascript\">Capture(qos.pktsyn)</script></input></td>\n"
 		  "<td><input type=\"checkbox\" name=\"svqos_pktfin\" value=\"FIN\" %s><script type=\"text/javascript\">Capture(qos.pktfin)</script></input></td>\n"

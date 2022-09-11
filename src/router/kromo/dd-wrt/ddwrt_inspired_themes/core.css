@@ -1,5 +1,5 @@
 /*
- * style-name: DD-WRT Inspired Themes v6.1.0
+ * style-name: DD-WRT Inspired Themes v6.2.0
  * copyright: (c) Style-it-themes: the-j0k3r
  * license: MIT https://git.io/JrzcO
  * home-url: https: //github.com/style-it-themes/dd-wrt-inspired-themes
@@ -129,7 +129,7 @@ body input[disabled]:hover {
   color: var(--v9-6);
   box-shadow: none;
 }
-body input.button {
+.button {
   background: var(--v0-4);
   border: 1px solid var(--v0-6);
   box-shadow: 0 1px 0 var(--bg-0);
@@ -140,72 +140,72 @@ body input.button {
   transition: all 0.2s cubic-bezier(0.3, 0, 0.5, 1);
   outline: 0;
 }
-body input.button:hover,
-body input.button:focus-within {
+.button:hover,
+.button:focus-within {
   background: var(--v0-7) !important;
   border-color: var(--v0-7) !important;
   box-shadow: 0 0 10px 0 var(--v0-4);
   color: var(--v9-9);
 }
-body input.button[disabled] {
+.button[disabled] {
   color: var(--v9-9) !important;
   border-color: var(--v0-6) !important;
   background-color: var(--v0-5) !important;
   box-shadow: none;
   opacity: 0.6;
 }
-body input.button[disabled]:hover {
+.button[disabled]:hover {
   color: var(--v9-9) !important;
   border-color: var(--v0-6) !important;
   background-color: var(--v0-5) !important;
   box-shadow: none;
   opacity: 0.6;
 }
-body input[name*='apply'],
-body input[name='changepassword'] {
-  background: var(--v4-2);
-  border-color: var(--v4-4);
-  color: var(--v9-8);
-  text-shadow: 0 1px 0 var(--bg-0);
-}
-body input[name*='apply']:hover,
-body input[name='changepassword']:hover,
-body input[name*='apply']:focus-within,
-body input[name='changepassword']:focus-within {
-  background: var(--v4-3) !important;
-  border-color: var(--v4-3) !important;
-  box-shadow: 0 0 10px 0 var(--v4-3) !important;
-  color: var(--v9-9) !important;
-}
-body input[name*='reset']:not([type="radio"]) {
-  background: var(--v2-2);
-  border-color: var(--v2-4);
-  color: var(--v9-8);
-  text-shadow: 0 1px 0 var(--bg-0);
-}
-body input[name*='reset']:not([type="radio"]):hover,
-body input[name*='reset']:not([type="radio"]):focus-within {
-  background: var(--v2-3) !important;
-  border-color: var(--v2-3) !important;
-  box-shadow: 0 0 10px 0 var(--v2-3) !important;
-  color: var(--v9-9);
-}
-body input[name*='reboot'] {
+.button[name*='reboot'] {
   background: var(--v1-4);
   border-color: var(--v1-6);
   color: var(--v9-8);
   text-shadow: 0 1px 0 var(--bg-0);
 }
-body input[name*='reboot']:hover,
-body input[name*='reboot']:focus-within {
+.button[name*='reboot']:hover,
+.button[name*='reboot']:focus-within {
   background: var(--v1-6) !important;
   border-color: var(--v1-7) !important;
   box-shadow: 0 0 10px 0 var(--v1-6) !important;
 }
-body input[name*='reboot']:disabled,
-body input[name*='reboot']:disabled:hover {
+.button[name*='reboot']:disabled,
+.button[name*='reboot']:disabled:hover {
   background: var(--v1-4) !important;
   border-color: var(--v1-5) !important;
+}
+.button[name*='apply'],
+.button[name='changepassword'] {
+  background: var(--v4-2);
+  border-color: var(--v4-4);
+  color: var(--v9-8);
+  text-shadow: 0 1px 0 var(--bg-0);
+}
+.button[name*='apply']:hover,
+.button[name='changepassword']:hover,
+.button[name*='apply']:focus-within,
+.button[name='changepassword']:focus-within {
+  background: var(--v4-3) !important;
+  border-color: var(--v4-3) !important;
+  box-shadow: 0 0 10px 0 var(--v4-3) !important;
+  color: var(--v9-9) !important;
+}
+.button[name*='reset'] {
+  background: var(--v2-2);
+  border-color: var(--v2-4);
+  color: var(--v9-8);
+  text-shadow: 0 1px 0 var(--bg-0);
+}
+.button[name*='reset']:hover,
+.button[name*='reset']:focus-within {
+  background: var(--v2-3) !important;
+  border-color: var(--v2-3) !important;
+  box-shadow: 0 0 10px 0 var(--v2-3) !important;
+  color: var(--v9-9);
 }
 body .progressbar {
   background-color: var(--bg-0);
@@ -1053,17 +1053,6 @@ input[disabled] {
   opacity: 0.5;
 }
 .off {
-  background: var(--bg-2);
-  opacity: 0.5;
-}
-.off input {
-  color: var(--v9-4) !important;
-  border-color: var(--bg-4);
-  background-color: var(--bg-0);
-  opacity: 0.5;
-}
-.num.off {
-  box-shadow: none;
   opacity: 0.5;
 }
 @media print {
@@ -1193,7 +1182,16 @@ select[name='erase'] {
   filter: saturate(4) contrast(2);
   border: 0;
   box-shadow: none;
-  -width: 2px;
+}
+.add[disabled] {
+  background: url('data:image/svg+xml;utf8,<svg viewBox="0 0 16 16" width="16" height="16"  fill="\%23c3c3c3" xmlns="http://www.w3.org/2000/svg"><path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14zm0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16z"/><path d="M8 4a.5.5 0 0 1 .5.5v3h3a.5.5 0 0 1 0 1h-3v3a.5.5 0 0 1-1 0v-3h-3a.5.5 0 0 1 0-1h3v-3A.5.5 0 0 1 8 4z"/></svg>') no-repeat center/15px;
+  opacity: 0.5;
+  border: 0;
+}
+.add[disabled]:hover {
+  background: url('data:image/svg+xml;utf8,<svg viewBox="0 0 16 16" width="16" height="16"  fill="\%23c3c3c3" xmlns="http://www.w3.org/2000/svg"><path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14zm0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16z"/><path d="M8 4a.5.5 0 0 1 .5.5v3h3a.5.5 0 0 1 0 1h-3v3a.5.5 0 0 1-1 0v-3h-3a.5.5 0 0 1 0-1h3v-3A.5.5 0 0 1 8 4z"/></svg>') no-repeat center/15px;
+  border: 0;
+  opacity: 0.4;
 }
 iframe[height='250'][src*='speedchecker'] {
   height: 293px;

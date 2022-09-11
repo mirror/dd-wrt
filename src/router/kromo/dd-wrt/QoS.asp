@@ -171,8 +171,8 @@ var sorton = function(x,y){
 		if (x.name == y.name) {
 			return 0;
 		} else {
-				return 1;
-			}
+			return 1;
+		}
 	}
 };
 
@@ -330,21 +330,26 @@ addEvent(window, "unload", function() {
 								<fieldset>
 								<legend><% tran("qos.legend7"); %></legend>
 								<table class="table" summary="packet-type priority table">
-									<tr>
-										<td colspan="5"><% tran("qos.pktdesc"); %></td>
-									</tr>
-									<% get_qospkts(); %>
+									<tbody>
+										<tr>
+											<td colspan="5"><% tran("qos.pktdesc"); %></td>
+										</tr>
+										<% get_qospkts(); %>
+									</tbody>
 								</table>
 								</fieldset><br />
 							<fieldset>
 								<legend><% tran("qos.legend2"); %></legend>
 								<table class="table" summary="services priority table">
+									<thead>
 									<tr>
 										<th><% tran("share.srv"); %></th>
 										<th><% tran("share.priority"); %></th>
 										<th width="12%"><% tran("share.packets"); %></th>
 										<th class="center" width="10%"><% tran("share.actiontbl"); %></th>
 									</tr>
+								</thead>
+								<tbody>
 									<% get_qossvcs(); %>
 									<tr>
 										<td>
@@ -375,6 +380,7 @@ addEvent(window, "unload", function() {
 											</script>
 										</td>
 									</tr>
+								</tbody>
 								</table><br />
 								<div class="center">
 									<script type="text/javascript">
@@ -387,7 +393,10 @@ addEvent(window, "unload", function() {
 							<fieldset>
 								<legend><% tran("qos.legend8"); %></legend>
 								<table class="table" summary="ifname priority table">
-									<% get_qosdevs(); %>
+									<thead>
+										<% get_qosdevs(); %>
+									</thead>
+									<tbody>
 									<tr>
 										<td>
 											<select name="svqos_dev">
@@ -404,12 +413,16 @@ addEvent(window, "unload", function() {
 											</script>
 										</td>
 									</tr>
+								</tbody>
 								</table>
 							</fieldset><br />
 							<fieldset>
 								<legend><% tran("qos.legend3"); %></legend>
 								<table class="table" summary="IP addresses priority table">
-									<% get_qosips(); %>
+									<thead>
+										<% get_qosips(); %>
+									</thead>
+									<tbody>
 									<tr>
 										<td>
 											<input size="3" maxlength="3" name="svqos_ipaddr0" value="0" onblur="valid_range(this,0,255,'IP')" class="num" />.<input size="3" maxlength="3" name="svqos_ipaddr1" value="0" onblur="valid_range(this,0,255,'IP')" class="num" />.<input size="3" maxlength="3" name="svqos_ipaddr2" value="0" onblur="valid_range(this,0,255,'IP')" class="num" />.<input size="3" maxlength="3" name="svqos_ipaddr3" value="0" onblur="valid_range(this,0,255,'IP')" class="num" />&nbsp;/&nbsp;
@@ -424,12 +437,16 @@ addEvent(window, "unload", function() {
 											</script>
 										</td>
 									</tr>
+								</tbody>
 								</table>
 							</fieldset><br />
 							<fieldset>
 								<legend><% tran("qos.legend4"); %></legend>
 								<table class="table" summary="MAC priority table">
-									<% get_qosmacs(); %>
+									<thead>
+										<% get_qosmacs(); %>
+									</thead>
+								<tbody>
 									<tr>
 										<td>
 											<input name="svqos_hwaddr0" value="00" size="2" maxlength="2" onblur="valid_mac(this,0)" class="num" />:<input name="svqos_hwaddr1" value="00" size="2" maxlength="2" onblur="valid_mac(this,1)" class="num" />:<input name="svqos_hwaddr2" value="00" size="2" maxlength="2" onblur="valid_mac(this,1)" class="num"/>:<input name="svqos_hwaddr3" value="00" size="2" maxlength="2" onblur="valid_mac(this,1)" class="num" />:<input name="svqos_hwaddr4" value="00" size="2" maxlength="2" onblur="valid_mac(this,1)" class="num" />:<input name="svqos_hwaddr5" value="00" size="2" maxlength="2" onblur="valid_mac(this,1)" class="num" />
@@ -443,18 +460,22 @@ addEvent(window, "unload", function() {
 											</script>
 										</td>
 									</tr>
+								</tbody>
 								</table>
 							</fieldset><br />
 							<% show_default_level(); %>
 							<% nvm("portprio_support","0","<!--"); %>
 							<fieldset>
 								<legend><% tran("qos.legend5"); %></legend>
-								<table>
+								<table class="table">
+									<thead>
 									<tr>
 										<th>&nbsp;</th>
 										<th><% tran("share.priority"); %></th>
 										<th><% tran("qos.maxrate_o"); %></th>
 									</tr>
+									</thead>
+									<tbody>
 									<tr>
 										<td><% tran("share.port"); %> 1</td>
 										<td>
@@ -591,6 +612,7 @@ addEvent(window, "unload", function() {
 											</select>
 										</td>
 									</tr>
+								</tbody>
 								</table>
 							</fieldset><br />
 							<% nvm("portprio_support","0","-->"); %>

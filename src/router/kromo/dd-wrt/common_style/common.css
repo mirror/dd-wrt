@@ -316,7 +316,7 @@ fieldset legend {
 }
 .setting .label {
   float: left;
-  width: 19.444em;
+  width: 20.6em;
   /* temporary for polish extra long strings */
   overflow: hidden;
   text-overflow: ellipsis;
@@ -331,7 +331,7 @@ fieldset legend {
 }
 /* this applies to CPU Features label results and MAC Clone button */
 .padding-left {
-  padding-left: 14.6rem;
+  padding-left: 15.42rem;
 }
 /* commands tab, output box label */
 .pre_label {
