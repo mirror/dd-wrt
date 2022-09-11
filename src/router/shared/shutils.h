@@ -69,7 +69,6 @@ extern int log_eval_va(const char *cmd, ...);
 extern int eval_va_space(const char *cmd, ...);
 extern int eval_va_silence(const char *cmd, ...);
 extern int eval_va_silence_space(const char *cmd, ...);
-extern int internal_eval_va(int silence, int space, const char *cmd, va_list args);
 
 #define eval(cmd, args...) eval_va(cmd, ## args, NULL)
 #define log_eval(cmd, args...) log_eval_va(cmd, ## args, NULL)
