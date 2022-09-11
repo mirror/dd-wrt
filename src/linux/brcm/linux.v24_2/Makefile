@@ -98,7 +98,7 @@ CFLAGS := $(CPPFLAGS) -Wall -Wstrict-prototypes -Wno-trigraphs \
 	    -fno-strict-aliasing -fno-common -fshort-wchar \
 	     -Wno-format-security \
 	  -fno-strict-aliasing -fno-common -fno-caller-saves -fno-stack-protector -fno-var-tracking-assignments -funit-at-a-time
-CFLAGS += -fno-builtin-strpbrk -std=gnu89 -fno-delete-null-pointer-checks
+CFLAGS += -fno-builtin-strpbrk -fno-builtin-strcpy -std=gnu89 -fno-delete-null-pointer-checks
 CFLAGS += -fno-builtin-sprintf -DBCMDRIVER -DBCMVISTAROUTER -DBCM5354 -DBCMWPA2 
 #-ffunction-sections -fdata-sections -Wl,--gc-sections
 
