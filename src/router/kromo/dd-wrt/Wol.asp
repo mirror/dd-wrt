@@ -278,7 +278,7 @@ addEvent(window, "unload", function() {
 				</div>
 				<div id="main">
 					<div id="contents">
-						<form name="ping" action="apply.cgi" method="post">
+						<form name="ping" action="apply.cgi" method="post" spellcheck="false">
 							<input type="hidden" name="submit_button" value="Wol" />
 							<input type="hidden" name="action" value="Apply" />
 							<input type="hidden" name="change_action" />
@@ -290,17 +290,20 @@ addEvent(window, "unload", function() {
 							<fieldset>
 								<legend><% tran("wol.legend"); %></legend>
 								<table class="table" cellspacing="5" id="available_hosts_table" summary="available hosts table">
+									<thead>
 									<tr>
 										<th width="25%"><% tran("share.mac"); %></th>
 										<th width="35%"><% tran("share.hostname"); %></th>
 										<th width="20%"><% tran("share.ip"); %></th>
 										<th width="20%" class="center"><% tran("wol.enable"); %></th>
 									</tr>
+								</thead>
 								</table>
 							</fieldset><br />
 							<fieldset>
 								<legend><% tran("wol.legend2"); %></legend>
 								<table class="table" cellspacing="5" id="wol_hosts_table" summary="wol hosts table">
+									<thead>
 									<tr>
 										<th width="25%"><% tran("share.mac"); %></th>
 										<th width="25%"><% tran("share.hostname"); %></th>
@@ -308,6 +311,8 @@ addEvent(window, "unload", function() {
 										<th width="10%" class="center"><% tran("share.remove"); %></th>
 										<th width="10%" class="center"><% tran("share.actiontbl"); %></th>
 									</tr>
+									</thead>
+									<tbody>
 									<tr>
 										<td><input maxlength="17" size="17" id="wol_hosts_mac" name="wol_hosts_mac" onblur="valid_macs_17(this)" value="" onchange="this.value=this.value.toUpperCase()" /></td>
 										<td><input maxlength="24" size="24" id="wol_hosts_hostname" name="wol_hosts_hostname" value="" /></td>
@@ -319,6 +324,7 @@ addEvent(window, "unload", function() {
 										//]]>
 										</script></td>
 									</tr>
+								</tbody>
 								</table>
 							</fieldset><br />
 							<fieldset> 

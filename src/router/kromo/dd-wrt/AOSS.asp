@@ -103,7 +103,6 @@ addEvent(window, "unload", function() {
 	</head>
 
 	<body class="gui">
-	
 		<div id="wrapper">
 		<div id="content">
 		<div id="header">
@@ -112,20 +111,19 @@ addEvent(window, "unload", function() {
 		</div>
 		<div id="main">
 			<div id="contents">
-			<form name="aoss" action="apply.cgi" method="post">
+			<form name="aoss" action="apply.cgi" method="post" spellcheck="false">
 				<input type="hidden" name="submit_button" value="AOSS" />
 				<input type="hidden" name="action" value="Apply" />
 				<input type="hidden" name="change_action" value="gozila_cgi" />
 				<input type="hidden" name="submit_type" value="save" />
-				
+
 				<input type="hidden" name="security_varname" />
 				<input type="hidden" name="security_mode_last" />
 				<input type="hidden" name="wl_wep_last" />
 				<input type="hidden" name="filter_mac_value" />
-				
+
 				<!-- AOSS start -->
 				<h2><% tran("aoss.aoss"); %></h2>
-
 				<% ifaoss_possible("yes", "<!--"); %>
 				<fieldset>
 					<legend><% tran("aoss.service"); %></legend>
@@ -155,9 +153,7 @@ addEvent(window, "unload", function() {
 						<div class="label"><% tran("aoss.start"); %></div>
 						<input type="button" class="aoss_enable" value="" onclick="startAOSS(this.form)">
 					</div>
-				</fieldset>
-
-				<br />
+				</fieldset><br />
 				<div id="aoss_options" style="<% visible_css("aoss_enable", "1"); %>">
 					<fieldset>
 						<legend><% tran("aoss.securitymodes"); %></legend>
@@ -173,12 +169,9 @@ addEvent(window, "unload", function() {
 							<div class="label"><% tran("aoss.wep"); %></div>
 								<input type="checkbox" name="aoss_wep" value="1"<% isChecked("aoss_wep", "1"); %>></input>
 						</div>
-					</fieldset>
-
-					<br />
+					</fieldset><br />
 				</div>
 				<% ifaoss_possible("no", "-->"); %>
-
 <!--fieldset>
 <legend><% tran("aoss.clients"); %></legend>
 <table class="center table" cellspacing="5">
@@ -221,7 +214,7 @@ document.write("<\/tr>");
 </fieldset>
 <br /-->
 <!-- AOSS end -->
-<% ifndef("HAVE_WPS", "<!--"); %>
+				<% ifndef("HAVE_WPS", "<!--"); %>
 				<h2>WPS</h2>
 				<fieldset>
 					<legend><% tran("aoss.wps"); %></legend>
@@ -261,37 +254,35 @@ document.write("<\/tr>");
 					</div>
 				</fieldset>
 				<br />
-<% ifndef("HAVE_WPS", "-->"); %>
-				
+				<% ifndef("HAVE_WPS", "-->"); %>
 				<div id="footer" class="submitFooter">
 					<script type="text/javascript">
-									//<![CDATA[
-									var autoref = <% nvem("refresh_time","0","sbutton.refres","sbutton.autorefresh"); %>;
-									submitFooterButton(1,1,0,autoref);
-									//]]>
-									</script>
-								</div>
-							</form>
-					</div>
+					//<![CDATA[
+					var autoref = <% nvem("refresh_time","0","sbutton.refres","sbutton.autorefresh"); %>;
+					submitFooterButton(1,1,0,autoref);
+					//]]>
+					</script>
 				</div>
-				<div id="helpContainer">
-			<div id="help">
-			   <div><h2><% tran("share.help"); %></h2></div>
-			   <dl>
+			</form>
+		</div>
+	</div>
+	<div id="helpContainer">
+		<div id="help">
+		   <div><h2><% tran("share.help"); %></h2></div>
+		   	<dl>
 				 <dt class="term"><% tran("aoss.aoss"); %></dt>
 				 <dd class="definition"><% tran("haoss.basic"); %></dd>
 				 <dt class="term"><% tran("aoss.securitymodes"); %></dt>
 				 <dd class="definition"><% tran("haoss.securitymodes"); %></dd>
-<% ifndef("HAVE_WPS", "<!--"); %>
+				 <% ifndef("HAVE_WPS", "<!--"); %>
 				 <dt class="term"><% tran("aoss.wps"); %></dt>
 				 <dd class="definition"><% tran("haoss.wps"); %></dd>
-<% ifndef("HAVE_WPS", "-->"); %>
-
+				 <% ifndef("HAVE_WPS", "-->"); %>
 			   </dl><br />
 			   <!--a href="javascript:openHelpWindow<% ifdef("EXTHELP","Ext"); %>('HWPA.asp')"><% tran("share.more"); %></a-->
-			</div>
-			</div>
-			<div id="floatKiller"></div>
+		</div>
+	</div>
+		<div id="floatKiller"></div>
 			<div id="statusInfo">
 				<div class="info"><% tran("share.firmware"); %>: 
 					<script type="text/javascript">

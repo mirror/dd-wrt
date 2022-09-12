@@ -20,21 +20,20 @@ function to_submit(F) {
 	</head>
 
 	<body class="gui">
-
 		<div id="wrapper">
 			<div id="content">
 				<div id="header">
 					<div id="logo">
 						<h1><% show_control(); %></h1>
 					</div>
-				        <% do_menu("Wireless_Basic.asp","SuperChannel.asp"); %>
+						<% do_menu("Wireless_Basic.asp","SuperChannel.asp"); %>
 				</div>
 				<div id="main">
 				<div id="contents">
-                    		<form name="register" action="apply.cgi" method="post">
-                  			<input type="hidden" name="submit_button" value="SuperChannel" />
-                  			<input type="hidden" name="submit_type" />
-                  			<input type="hidden" name="change_action" />
+					<form name="register" action="apply.cgi" method="post" spellcheck="false">
+					<input type="hidden" name="submit_button" value="SuperChannel" />
+					<input type="hidden" name="submit_type" />
+					<input type="hidden" name="change_action" />
 					<input type="hidden" name="action" value="Apply" />
 					<fieldset>
 					<legend><% tran("superchan.legend"); %></legend>

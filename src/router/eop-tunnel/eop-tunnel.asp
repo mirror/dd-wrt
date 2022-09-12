@@ -205,7 +205,7 @@ addEvent(window, "unload", function() {
 				</div>
 				<div id="main">
 					<div id="contents">
-						<form name="eop" action="apply.cgi" method="post">
+						<form name="eop" action="apply.cgi" method="post" spellcheck="false">
 						//<form name="eop" action="apply.cgi" method="post" enctype="multipart/form-data">
 							<input type="hidden" name="submit_button" value="eop-tunnel" />
 							<input type="hidden" name="action" value="Apply" />
@@ -214,11 +214,9 @@ addEvent(window, "unload", function() {
 							<input type="hidden" name="peerindex" />
 							<input type="hidden" name="submit_type" />
 							<input type="hidden" name="wg_conf_file" />
-							
+
 							<h2><% tran("eoip.legend"); %></h2>
-							
 								<% show_eop_tunnels(); %>
-				
 								<div id="footer" class="submitFooter">
 									<script type="text/javascript">
 									//<![CDATA[

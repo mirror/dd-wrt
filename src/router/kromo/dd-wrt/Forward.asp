@@ -54,7 +54,7 @@ addEvent(window, "unload", function() {
 				</div>
 				<div id="main">
 					<div id="contents">
-						<form name="portRange" action="apply.cgi" method="post">
+						<form name="portRange" action="apply.cgi" method="post" spellcheck="false">
 							<input type="hidden" name="submit_button" value="Forward" />
 							<input type="hidden" name="action" value="Apply" />
 							<input type="hidden" name="change_action" />
@@ -65,6 +65,7 @@ addEvent(window, "unload", function() {
 							<fieldset>
 								<legend><% tran("prforward.legend"); %></legend>
 								<table class="table" cellspacing="5" summary="port forwarding table">
+									<thead>
 									<tr>
 										<th><% tran("prforward.app"); %></th>
 										<th><% tran("share.start"); %></th>
@@ -74,6 +75,8 @@ addEvent(window, "unload", function() {
 										<th class="center" width="10%"><% tran("share.enable"); %></th>
 										<th class="center" width="10%"><% tran("share.actiontbl"); %></th>
 									</tr>
+								</thead>
+								<tbody>
 									<% show_forward(); %>
 									<tr>
 										<td colspan="6">&nbsp;</td>
@@ -87,6 +90,7 @@ addEvent(window, "unload", function() {
 											</div>
 										</td>
 									</tr>
+								</tbody>
 								</table>
 							</fieldset><br />
 							<div id="footer" class="submitFooter">
