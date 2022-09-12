@@ -78,7 +78,7 @@ addEvent(window, "load", function() {
 							document.write("<td align=\"right\">"+table[i+13]+"</td>");
 							document.write("<td align=\"right\">"+table[i+14]+"</td>");
 							document.write("<td align=\"right\" class=\"center\"><input class=\"button\" type=\"button\" value=\"" + sbutton.join + "\" onclick='do_join(this.form,\"" + table[i] + "\")' /></td>");
-							document.write("</tr>");
+							document.write("<\/tr>");
 						}
 					}
 					

@@ -245,7 +245,7 @@ function callDump() {
 		document.write("<fieldset>");
 		document.write("<legend>" + wol.legend3 + "</legend>");
 		document.write("<br /><pre>" + table.join("\n") + "</pre>");
-		document.write("</fieldset><br />");
+		document.write("<\/fieldset><br />");
 	}
 }
 

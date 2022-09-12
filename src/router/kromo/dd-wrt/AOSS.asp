@@ -203,7 +203,7 @@ document.write("<td align=\"left\">"+table[i+1]+"</td>");
 document.write("<td align=\"right\">"+table[i+2]+"</td>");
 document.write("<td align=\"right\">"+table[i+3]+"</td>");
 document.write("<td align=\"left\"><select name=\"\"><option value=\"allow\">Allow</option><option value=\"deny\">Deny</option><option value=\"delete\">Delete</option></select></td>");
-document.write("</tr>");
+document.write("<\/tr>");
 }
 }
 

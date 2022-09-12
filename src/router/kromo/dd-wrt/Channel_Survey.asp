@@ -48,7 +48,7 @@ addEvent(window, "load", function() {
 							document.write("<td class=\"center\">"+table[i+5]+"</td>");
 							document.write("<td class=\"center\">"+table[i+6]+"</td>");
 							document.write("<td class=\"center\">"+table[i+7]+"</td>");
-							document.write("</tbody></tr>");
+							document.write("<\/tbody><\/tr>");
 						}
 					}
 					//]]>
