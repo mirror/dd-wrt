@@ -144,6 +144,9 @@ li.current {
   float: right;
   width: 43em;
 }
+.syslog-padding {
+  padding: .906em;
+}
 #help {
   width: 21em;
   padding: .906em 0;

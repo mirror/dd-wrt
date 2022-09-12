@@ -51,7 +51,7 @@ addEvent(window, "unload", function() {
 				</div>
 				<div id="mainno">
 					<!-- add padding to #contents so that submitfooter has padding on sides/bottom -->
-					<div id="contents" style="padding: .93em;">
+					<div id="contents" class="syslog-padding">
 						  <!-- see syslogd dir stylesheets for .syslog_bg padding/margins -->
 							<script type="text/javascript">
 								//<![CDATA[
