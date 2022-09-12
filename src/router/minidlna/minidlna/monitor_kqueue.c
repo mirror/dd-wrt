@@ -69,6 +69,7 @@ dir_vnode_process(struct event *ev, u_int fflags)
 		close(ev->fd);
 		free(wt);
 		monitor_remove_directory(0, path);
+		free(path);
 		return;
 	} else if ((fflags & (NOTE_WRITE | NOTE_LINK)) ==
 	    (NOTE_WRITE | NOTE_LINK)) {
@@ -214,7 +215,7 @@ err1:
 }
 
 int
-add_watch(int fd __unused, const char *path)
+monitor_add_watch(int fd __unused, const char *path)
 {
 	struct watch *wt;
 	struct event *ev;
@@ -251,14 +252,20 @@ add_watch(int fd __unused, const char *path)
 	return (0);
 }
 
+int
+monitor_remove_watch(int fd __unused, const char *path __unused)
+{
+
+	return (0);
+}
+
 /*
- * XXXGL: this function has too much copypaste of inotify_create_watches().
- * We need to split out inotify stuff from monitor.c into monitor_inotify.c,
- * compile the latter on Linux and this file on FreeBSD, and keep monitor.c
- * itself platform independent.
+ * XXXGL: this function has some copypaste with inotify_create_watches().
+ * We need to push more code to platform independent start_monitor()
+ * in minidlna.c.
  */
 void
-kqueue_monitor_start()
+monitor_start()
 {
 	struct media_dir_s *media_path;
 	char **result;
@@ -267,9 +274,14 @@ kqueue_monitor_start()
 	DPRINTF(E_DEBUG, L_INOTIFY, "kqueue monitoring starting\n");
 	for (media_path = media_dirs; media_path != NULL;
 	    media_path = media_path->next)
-		add_watch(0, media_path->path);
+		monitor_add_watch(0, media_path->path);
 	sql_get_table(db, "SELECT PATH from DETAILS where MIME is NULL and PATH is not NULL", &result, &rows, NULL);
 	for (i = 1; i <= rows; i++ )
-		add_watch(0, result[i]);
+		monitor_add_watch(0, result[i]);
 	sqlite3_free_table(result);
+}
+
+void
+monitor_stop()
+{
 }

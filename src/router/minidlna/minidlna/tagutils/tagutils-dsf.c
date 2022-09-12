@@ -141,6 +141,7 @@ _get_dsftags(char *file, struct song_metadata *psong)
 
 	if (!pid3tag)
 	{
+		fclose(fp);
 		free(id3tagbuf);
 		err = errno;
 		errno = err;

@@ -178,27 +178,21 @@ kqueue_set(struct event *ev, short filter, u_short flags, u_int fflags)
 }
 
 static int
-kqueue_process(u_long timer)
+kqueue_process(struct timeval *tv)
 {
 	struct event *ev;
 	int events, n, i;
-	struct timespec ts, *tp;
+	struct timespec ts;
 
 	n = (int) nchanges;
 	nchanges = 0;
 
-	if (timer == 0) {
-		tp = NULL;
-	} else {
-		ts.tv_sec = timer / 1000;
-		ts.tv_nsec = (timer % 1000) * 1000000;
-		tp = &ts;
-	}
+	TIMEVAL_TO_TIMESPEC(tv, &ts);
 
-	DPRINTF(E_DEBUG, L_GENERAL, "kevent timer: %lu, changes: %d\n",
-	    timer, n);
+	DPRINTF(E_DEBUG, L_GENERAL, "kevent timer: %lu.%06lu, changes: %d\n",
+	    ts.tv_sec, ts.tv_nsec, n);
 
-	events = kevent(kq, change_list, n, event_list, MAXEVENTS, tp);
+	events = kevent(kq, change_list, n, event_list, MAXEVENTS, &ts);
 
 	if (events == -1) {
 		if (errno == EINTR)
@@ -207,12 +201,6 @@ kqueue_process(u_long timer)
 	}
 
 	DPRINTF(E_DEBUG, L_GENERAL, "kevent events: %d\n", events);
-
-	if (events == 0) {
-		if (timer != 0)
-			return (0);
-		DPRINTF(E_FATAL, L_GENERAL, "kevent() returned no events. EXITING\n");
-	}
 
 	for (i = 0; i < events; i++) {
 		if (event_list[i].flags & EV_ERROR) {

@@ -239,23 +239,23 @@ upnp_event_create_notify(struct subscriber *sub)
 
 	obj = calloc(1, sizeof(struct upnp_event_notify));
 	if(!obj) {
-		DPRINTF(E_ERROR, L_HTTP, "%s: calloc(): %s\n", "upnp_event_create_notify", strerror(errno));
+		DPRINTF(E_ERROR, L_HTTP, "calloc(): %s\n", strerror(errno));
 		return;
 	}
 	obj->sub = sub;
 	s = socket(PF_INET, SOCK_STREAM, 0);
 	if(s < 0) {
-		DPRINTF(E_ERROR, L_HTTP, "%s: socket(): %s\n", "upnp_event_create_notify", strerror(errno));
+		DPRINTF(E_ERROR, L_HTTP, "socket(): %s\n", strerror(errno));
 		goto error;
 	}
 	if((flags = fcntl(s, F_GETFL, 0)) < 0) {
-		DPRINTF(E_ERROR, L_HTTP, "%s: fcntl(..F_GETFL..): %s\n",
-		       "upnp_event_create_notify", strerror(errno));
+		DPRINTF(E_ERROR, L_HTTP, "fcntl(..F_GETFL..): %s\n",
+		       strerror(errno));
 		goto error;
 	}
 	if(fcntl(s, F_SETFL, flags | O_NONBLOCK) < 0) {
-		DPRINTF(E_ERROR, L_HTTP, "%s: fcntl(..F_SETFL..): %s\n",
-		       "upnp_event_create_notify", strerror(errno));
+		DPRINTF(E_ERROR, L_HTTP, "fcntl(..F_SETFL..): %s\n",
+		       strerror(errno));
 		goto error;
 	}
 	if(sub)
@@ -290,18 +290,18 @@ upnp_event_create_notify(struct subscriber *sub)
 	addr.sin_family = AF_INET;
 	inet_aton(obj->addrstr, &addr.sin_addr);
 	addr.sin_port = htons(port);
-	DPRINTF(E_DEBUG, L_HTTP, "%s: '%s' %hu '%s'\n", "upnp_event_notify_connect",
+	DPRINTF(E_DEBUG, L_HTTP, "'%s' %hu '%s'\n",
 	       obj->addrstr, port, obj->path);
 	obj->state = EConnecting;
+	obj->ev = (struct event ){ .fd = s, .rdwr = EVENT_WRITE,
+		.process = upnp_event_process_notify, .data = obj };
+	event_module.add(&obj->ev);
 	if(connect(s, (struct sockaddr *)&addr, sizeof(addr)) < 0) {
 		if(errno != EINPROGRESS && errno != EWOULDBLOCK) {
-			DPRINTF(E_ERROR, L_HTTP, "%s: connect(): %s\n", "upnp_event_notify_connect", strerror(errno));
+			DPRINTF(E_ERROR, L_HTTP, "connect(): %s\n", strerror(errno));
 			obj->state = EError;
+			event_module.del(&obj->ev, 0);
 		}
-	} else {
-		obj->ev = (struct event ){ .fd = s, .rdwr = EVENT_WRITE,
-		    .process = upnp_event_process_notify, .data = obj };
-		event_module.add(&obj->ev);
 	}
 
 	return;

@@ -1,3 +1,17 @@
+1.3.2 - Released 30-Aug-2022
+--------------------------------
+- Improved DNS rebinding attack protection.
+- Added Samsung Neo QLED series (2021) support.
+- Added webm/rm/rmvb support.
+
+1.3.1 - Released 11-Feb-2022
+--------------------------------
+- Fixed a potential crash in SSDP request parsing.
+- Fixed a configure script failure on some platforms.
+- Protect against DNS rebinding attacks.
+- Fix an socket leakage issue on some platforms.
+- Minor bug fixes.
+
 1.3.0 - Released 24-Nov-2020
 --------------------------------
 - Fixed some build warnings when building with musl.
