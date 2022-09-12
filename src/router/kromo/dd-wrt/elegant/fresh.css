@@ -4,7 +4,7 @@ body, .popup, .popup_bg {
   color: #000;
 }
 a, a:link {
-  color: #ccc;
+  color: #000;
 }
 a:hover, a:link:hover,
 #ip_count:hover, [title*='Search']:hover,

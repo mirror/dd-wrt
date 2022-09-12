@@ -566,8 +566,8 @@ hddns.right2="DDNS 允许您使用域名代替IP地址来访问您的网络。�
 hddns.right4="在方框中输入一个整型数值以设置强制更新间隔(天)。只有在您的IP变化时，更新才会自动执行。注意您的DDNS提供商对更新频率的限制以及您的域名是否被封锁。";
 
 //help page
-hddns.page1="<dd>路由器提供动态域名系统(DDNS)功能. DDNS可以绑定域名到你的WAN IP地址. 它能帮助你访问你路由器上的web服务, FTP服务, 或者其他服务. 在使用这个功能钱,你需要向DDNS服务商 <a href=\"http:\/\/www.dyndns.org\" target=\"_new\">www.dyndns.org</a>注册DDNS服务.</dd>";
-hddns.page2="<dd>要禁用DDNS服务, 保持默认配置无需更改, <i>禁用</i>. 要启用DDNS服务, 跟随这些指示:<ol class=\"wide\"><li>注册DDNS服务于 <a href=\"http:\/\/www.dyndns.org\" target=\"_new\">www.dyndns.org</a>,并且记录你的用户名,密码,和域名信息.</li><li>在DDNS界面, 选择 <i>启用</i>.</li><li>输入 <i>用户名</i>, <i>密码</i>, 和 <i>域名</i> .</li><li>点击 <i>保存设置</i> 按钮来保存你的设置. 点击 <i>取消更改</i> 按钮来清楚没有保存的设置.</li></ol><br />现在你就可以使用域名远程连接你的路由器了.</dd>";
+hddns.page1="<dd>路由器提供动态域名系统(DDNS)功能. DDNS可以绑定域名到你的WAN IP地址. 它能帮助你访问你路由器上的web服务, FTP服务, 或者其他服务. 在使用这个功能钱,你需要向DDNS服务商 <a href=\"http://www.dyndns.org\" target=\"_new\">www.dyndns.org</a>注册DDNS服务.</dd>";
+hddns.page2="<dd>要禁用DDNS服务, 保持默认配置无需更改, <i>禁用</i>. 要启用DDNS服务, 跟随这些指示:<ol class=\"wide\"><li>注册DDNS服务于 <a href=\"http://www.dyndns.org\" target=\"_new\">www.dyndns.org</a>,并且记录你的用户名,密码,和域名信息.</li><li>在DDNS界面, 选择 <i>启用</i>.</li><li>输入 <i>用户名</i>, <i>密码</i>, 和 <i>域名</i> .</li><li>点击 <i>保存设置</i> 按钮来保存你的设置. 点击 <i>取消更改</i> 按钮来清楚没有保存的设置.</li></ol><br />现在你就可以使用域名远程连接你的路由器了.</dd>";
 hddns.page3="<dd><em>静态</em> DNS服务类似于 <em>动态</em> DNS服务, 它允许你的域名，例如yourname.dyndns.org指向到你的IP地址. 不像 <em>动态</em> DNS主机, 一个 <em>静态</em> DNS主机不会在超过35天后没有更新IP而失效, 但是更新需要更长的时间才能通过DNS系统传播.<br />DynDNS的 <em>动态</em> DNS服务提供一个可管理的主要DNS解决方案, 使您可以完全控制整个域名，并提供统一的主要/辅助DNS服务. 基于Web的界面可对你的域名进行两个级别的控制, 以适合普通用户或高级用户.</dd>";
 hddns.page4="<dd>为主机启用通配符功能 *.yourhost.dyndns.org会导致别名与您的主机yourhost.dyndns.org获得相同的IP地址. 如果您希望能够使用此功能，则很有用, 例如, www.yourhost.dyndns.org能和yourhost.dyndns.org一样访问你的路由器.</dd>";
 hddns.page5="<dd>在框中输入整数以设置强制更新间隔 (天). 强制更新是强制进行更新，尽管您的IP地址仍然相同. 强制更新是很有必要的, 特别是对于dyndns.org的非捐赠用户, 可以避免域名被删除.</dd>";

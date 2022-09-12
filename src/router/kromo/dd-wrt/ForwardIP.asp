@@ -53,7 +53,7 @@ addEvent(window, "unload", function() {
 				</div>
 				<div id="main">
 					<div id="contents">
-						<form name="portRange" action="apply.cgi" method="post">
+						<form name="portRange" action="apply.cgi" method="post" spellcheck="false">
 							<input type="hidden" name="submit_button" value="ForwardIP" />
 							<input type="hidden" name="action" value="Apply" />
 							<input type="hidden" name="change_action" />
@@ -64,6 +64,7 @@ addEvent(window, "unload", function() {
 							<fieldset>
 								<legend><% tran("pforwardip.legend"); %></legend>
 								<table class="table" cellspacing="5" summary="ports forwarding table">
+								<thead>
 									<tr>
 										<th><% tran("pforwardip.name"); %></th>
 										<th><% tran("pforwardip.src"); %></th>
@@ -71,6 +72,8 @@ addEvent(window, "unload", function() {
 										<th class="center" width="10%"><% tran("share.enable"); %></th>
 										<th class="center" width="10%"><% tran("share.actiontbl"); %></th>
 									</tr>
+								</thead>
+								<tbody>
 									<% show_forward_ip(); %>
 									<tr>
 										<td colspan="4">&nbsp;</td>
@@ -84,6 +87,7 @@ addEvent(window, "unload", function() {
 											</div>
 										</td>
 									</tr>
+								</tbody>
 								</table>
 							</fieldset><br />
 							<div id="footer" class="submitFooter">

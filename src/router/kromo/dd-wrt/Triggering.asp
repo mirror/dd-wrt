@@ -36,12 +36,10 @@ addEvent(window, "load", function() {
 	
 	update = new StatusbarUpdate();
 	update.start();
-
 });
 
 addEvent(window, "unload", function() {
 	update.stop();
-
 });
 
 		//]]>
@@ -68,6 +66,7 @@ addEvent(window, "unload", function() {
 							<fieldset>
 								<legend><% tran("trforward.legend"); %></legend>
 								<table class="table" cellspacing="5" summary="ports triggering table">
+									<thead>
 									<tr>
 										<td></td>
 										<th class="center" colspan="2" width="30%"><% tran("trforward.trrange"); %></th>
@@ -84,6 +83,8 @@ addEvent(window, "unload", function() {
 										<th class="center" width="10%"><% tran("share.enable"); %></th>
 										<th class="center" width="10%"><% tran("share.actiontbl"); %></th>
 									</tr>
+								</thead>
+								<tbody>
 									<% show_triggering(); %>
 									<tr>
 										<td colspan="7">&nbsp;</td>
@@ -95,6 +96,7 @@ addEvent(window, "unload", function() {
 											</script>
 										</td>
 									</tr>
+								</tbody>
 								</table>
 							</fieldset><br />
 							<div id="footer" class="submitFooter">

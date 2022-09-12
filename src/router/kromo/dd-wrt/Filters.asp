@@ -289,7 +289,7 @@ addEvent(window, "unload", function() {
 				</div>
 				<div id="main">
 					<div id="contents">
-						<form name="filters" action="apply.cgi" method="post" >
+						<form name="filters" action="apply.cgi" method="post" spellcheck="false">
 							<input type="hidden" name="submit_button" value="Filters" />
 							<input type="hidden" name="action" value="Apply" />
 							<input type="hidden" name="change_action" />
@@ -358,6 +358,7 @@ addEvent(window, "unload", function() {
 								<legend><% tran("filter.legend2"); %></legend>
 								<div class="setting">
 									<table summary="week days table">
+										<tbody>
 										<tr class="center">
 											<td><% tran("share.everyday"); %></td>
 											<td><% tran("share.sun_s"); %></td>
@@ -378,6 +379,7 @@ addEvent(window, "unload", function() {
 											<td><input type="checkbox" value="1" name="week5" <% filter_tod_get("week5"); %> /></td>
 											<td><input type="checkbox" value="1" name="week6" <% filter_tod_get("week6"); %> /></td>
 										</tr>
+									</tbody>
 									</table>
 								</div>
 							</fieldset><br />
