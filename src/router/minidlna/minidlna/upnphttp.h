@@ -89,6 +89,8 @@ struct upnphttp {
 	struct client_cache_s * req_client;
 	const char * req_soapAction;
 	int req_soapActionLen;
+	const char * req_Host;        /* Host: header */
+	int req_HostLen;
 	const char * req_Callback;	/* For SUBSCRIBE */
 	int req_CallbackLen;
 	const char * req_NT;

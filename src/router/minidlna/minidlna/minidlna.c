@@ -64,7 +64,6 @@
 #include <time.h>
 #include <signal.h>
 #include <errno.h>
-#include <pthread.h>
 #include <limits.h>
 #include <libgen.h>
 #include <pwd.h>
@@ -1122,6 +1121,19 @@ init(int argc, char **argv)
 	return 0;
 }
 
+#ifdef HAVE_WATCH
+void
+start_monitor()
+{
+
+	if (!GETFLAG(INOTIFY_MASK))
+		return;
+
+	lav_register_all();
+	monitor_start();
+}
+#endif
+
 /* === main === */
 /* process HTTP or SSDP requests */
 int
@@ -1134,10 +1146,8 @@ main(int argc, char **argv)
 	struct upnphttp * next;
 	struct timeval tv, timeofday, lastnotifytime = {0, 0};
 	time_t lastupdatetime = 0, lastdbtime = 0;
-	u_long timeout;	/* in milliseconds */
 	int last_changecnt = 0;
 	pid_t scanner_pid = 0;
-	pthread_t inotify_thread = 0;
 	struct event ssdpev, httpev, monev;
 #ifdef TIVO_SUPPORT
 	uint8_t beacon_interval = 5;
@@ -1172,23 +1182,11 @@ main(int argc, char **argv)
 	}
 	check_db(db, ret, &scanner_pid);
 	lastdbtime = _get_dbtime();
-#ifdef HAVE_INOTIFY
-	if( GETFLAG(INOTIFY_MASK) )
-	{
-		if (!sqlite3_threadsafe() || sqlite3_libversion_number() < 3005001)
-			DPRINTF(E_ERROR, L_GENERAL, "SQLite library is not threadsafe!  "
-			                            "Inotify will be disabled.\n");
-		else if (pthread_create(&inotify_thread, NULL, start_inotify, NULL) != 0)
-			DPRINTF(E_FATAL, L_GENERAL, "ERROR: pthread_create() failed for start_inotify. EXITING\n");
-	}
-#endif /* HAVE_INOTIFY */
 
-#ifdef HAVE_KQUEUE
-	if (!GETFLAG(SCANNING_MASK)) {
-		lav_register_all();
-		kqueue_monitor_start();
-	}
-#endif /* HAVE_KQUEUE */
+#ifdef HAVE_WATCH
+	if (!GETFLAG(SCANNING_MASK))
+		start_monitor();
+#endif
 
 	smonitor = OpenAndConfMonitorSocket();
 	if (smonitor > 0)
@@ -1219,6 +1217,9 @@ main(int argc, char **argv)
 	httpev = (struct event ){ .fd = shttpl, .rdwr = EVENT_READ, .process = ProcessListen };
 	event_module.add(&httpev);
 
+	if (gettimeofday(&timeofday, 0) < 0)
+		DPRINTF(E_FATAL, L_GENERAL, "gettimeofday(): %s\n", strerror(errno));
+
 #ifdef TIVO_SUPPORT
 	if (GETFLAG(TIVO_MASK))
 	{
@@ -1243,18 +1244,17 @@ main(int argc, char **argv)
 			tivo_bcast.sin_family = AF_INET;
 			tivo_bcast.sin_addr.s_addr = htonl(getBcastAddress());
 			tivo_bcast.sin_port = htons(2190);
+			lastbeacontime = timeofday;
 		}
 	}
 #endif
 
-	reload_ifaces(0);
-	lastnotifytime.tv_sec = time(NULL) + runtime_vars.notify_interval;
+	reload_ifaces(0);	/* sends SSDP notifies */
+	lastnotifytime = timeofday;
 
 	/* main loop */
 	while (!quitting)
 	{
-		if (gettimeofday(&timeofday, 0) < 0)
-			DPRINTF(E_FATAL, L_GENERAL, "gettimeofday(): %s\n", strerror(errno));
 		/* Check if we need to send SSDP NOTIFY messages and do it if
 		 * needed */
 		tv = lastnotifytime;
@@ -1268,53 +1268,53 @@ main(int argc, char **argv)
 					runtime_vars.port, runtime_vars.notify_interval);
 			}
 			lastnotifytime = timeofday;
-			timeout = runtime_vars.notify_interval * 1000;
+			tv.tv_sec = runtime_vars.notify_interval;
+			tv.tv_usec = 0;
 		}
 		else
 		{
 			timevalsub(&tv, &timeofday);
-			timeout = tv.tv_sec * 1000 + tv.tv_usec / 1000;
 		}
 #ifdef TIVO_SUPPORT
 		if (sbeacon >= 0)
 		{
-			u_long beacontimeout;
+			struct timeval beacontv;
 
-			tv = lastbeacontime;
-			tv.tv_sec += beacon_interval;
-			if (timevalcmp(&timeofday, &tv, >=))
+			beacontv = lastbeacontime;
+			beacontv.tv_sec += beacon_interval;
+			if (timevalcmp(&timeofday, &beacontv, >=))
 			{
 				sendBeaconMessage(sbeacon, &tivo_bcast, sizeof(struct sockaddr_in), 1);
 				lastbeacontime = timeofday;
-				beacontimeout = beacon_interval * 1000;
-				if (timeout > beacon_interval * 1000)
-					timeout = beacon_interval * 1000;
 				/* Beacons should be sent every 5 seconds or
 				 * so for the first minute, then every minute
 				 * or so thereafter. */
 				if (beacon_interval == 5 && (timeofday.tv_sec - startup_time) > 60)
 					beacon_interval = 60;
+				beacontv.tv_sec = beacon_interval;
+				beacontv.tv_usec = 0;
 			}
 			else
 			{
-				timevalsub(&tv, &timeofday);
-				beacontimeout = tv.tv_sec * 1000 +
-				    tv.tv_usec / 1000;
+				timevalsub(&beacontv, &timeofday);
 			}
-			if (timeout > beacontimeout)
-				timeout = beacontimeout;
+			if (timevalcmp(&tv, &beacontv, >))
+				tv = beacontv;
 		}
 #endif
 
-		if (GETFLAG(SCANNING_MASK) && kill(scanner_pid, 0) != 0) {
-			CLEARFLAG(SCANNING_MASK);
-			CLEARFLAG(RESCAN_MASK);
-			if (_get_dbtime() != lastdbtime)
-				updateID++;
-#ifdef HAVE_KQUEUE
-			lav_register_all();
-			kqueue_monitor_start();
-#endif /* HAVE_KQUEUE */
+		if (GETFLAG(SCANNING_MASK)) {
+			if (kill(scanner_pid, 0) != 0) {
+				DPRINTF(E_INFO, L_GENERAL, "Scanner exited\n");
+				CLEARFLAG(SCANNING_MASK);
+				if (_get_dbtime() != lastdbtime)
+					updateID++;
+#ifdef HAVE_WATCH
+				start_monitor();
+#endif
+			} else
+				/* Keep checking for the scanner every sec. */
+				tv.tv_sec = 1;
 		}
 		if (GETFLAG(RESCAN_MASK) && !GETFLAG(SCANNING_MASK))
 		{
@@ -1324,9 +1324,13 @@ main(int argc, char **argv)
 				check_db(db, -1, &scanner_pid);
 		}
 
-		event_module.process(timeout);
+		event_module.process(&tv);
 		if (quitting)
 			goto shutdown;
+
+
+		if (gettimeofday(&timeofday, 0) < 0)
+			DPRINTF(E_FATAL, L_GENERAL, "gettimeofday(): %s\n", strerror(errno));
 
 		upnpevents_gc();
 
@@ -1393,11 +1397,9 @@ shutdown:
 		close(lan_addr[i].snotify);
 	}
 
-	if (inotify_thread)
-	{
-		pthread_kill(inotify_thread, SIGCHLD);
-		pthread_join(inotify_thread, NULL);
-	}
+#ifdef HAVE_WATCH
+	monitor_stop();
+#endif
 
 	/* kill other child processes */
 	process_reap_children();

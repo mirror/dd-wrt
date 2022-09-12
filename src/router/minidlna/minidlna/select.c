@@ -142,9 +142,8 @@ select_del(struct event *ev, int flags)
 }
 
 static int
-select_process(u_long msec)
+select_process(struct timeval *tv)
 {
-	struct timeval tv, *tp;
 	struct event *ev;
 	int ready, i;
 
@@ -155,14 +154,10 @@ select_process(u_long msec)
 				max_fd = events[i]->fd;
 		}
 
-	tv.tv_sec = (long) (msec / 1000);
-	tv.tv_usec = (long) ((msec % 1000) * 1000);
-	tp = &tv;
-
 	work_read_fd_set = master_read_fd_set;
 	work_write_fd_set = master_write_fd_set;
 
-	ready = select(max_fd + 1, &work_read_fd_set, &work_write_fd_set, NULL, tp);
+	ready = select(max_fd + 1, &work_read_fd_set, &work_write_fd_set, NULL, tv);
 
 	if (ready == -1) {
 		if (errno == EINTR)

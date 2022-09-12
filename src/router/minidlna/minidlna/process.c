@@ -123,7 +123,8 @@ process_handle_child_termination(int signal)
 			else
 				break;
 		}
-		number_of_children--;
+		if (number_of_children)
+			number_of_children--;
 		remove_process_info(pid);
 	}
 }

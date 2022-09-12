@@ -46,7 +46,7 @@ BASEOBJS = minidlna.o upnphttp.o upnpdescgen.o upnpsoap.o \
            upnpreplyparse.o minixml.o clients.o \
            getifaddr.o process.o upnpglobalvars.o \
            options.o minissdp.o uuid.o upnpevents.o \
-           sql.o utils.o metadata.o scanner.o monitor.o \
+           sql.o utils.o metadata.o scanner.o monitor.o monitor_inotify.o \
            tivo_utils.o tivo_beacon.o tivo_commands.o \
            playlist.o image_utils.o albumart.o log.o \
            containers.o avahi.o tagutils/tagutils.o select.o
