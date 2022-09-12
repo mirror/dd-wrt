@@ -74,13 +74,13 @@ addEvent(window, "unload", function() {
 				</div>
 				<div id="main">
 					<div id="contents">
-						<form name="ping" action="apply.cgi" method="post" >
+						<form name="ping" action="apply.cgi" method="post" spellcheck="false">
 							<input type="hidden" name="submit_button" value="Diagnostics" />
 							<input type="hidden" name="action" value="Apply" />
 							<input type="hidden" name="submit_type" />
 							<input type="hidden" name="change_action" value="gozila_cgi" />
 							<h2><% tran("diag.h2"); %></h2>
-							
+
 							<fieldset>
 								<legend><% tran("diag.legend"); %></legend>
 								<div class="setting">
@@ -99,7 +99,6 @@ addEvent(window, "unload", function() {
 									//]]>
 									</script>
 							</fieldset><br />
-							
 							<% nvm("rc_startup", "", "<!--"); %>
 							<fieldset>
 								<legend><% tran("diag.startup"); %></legend>
@@ -127,7 +126,7 @@ addEvent(window, "unload", function() {
 								</div>
 							</fieldset><br />
 							<% nvm("rc_shutdown", "", "-->"); %>
-							
+
 							<% nvm("rc_firewall", "", "<!--"); %>
 							<fieldset>
 								<legend><% tran("diag.firewall"); %></legend>

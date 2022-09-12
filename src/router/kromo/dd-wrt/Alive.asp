@@ -61,7 +61,6 @@ addEvent(window, "unload", function() {
 	</head>
 
 	<body class="gui">
-		
 		<div id="wrapper">
 			<div id="content">
 				<div id="header">
@@ -70,13 +69,13 @@ addEvent(window, "unload", function() {
 				</div>
 				<div id="main">
 					<div id="contents">
-						<form name="setup" action="apply.cgi" method="post">
+						<form name="setup" action="apply.cgi" method="post" spellcheck="false">
 							<input type="hidden" name="submit_button" value="Alive" />
 							<input type="hidden" name="action" value="Apply" />
 							<input type="hidden" name="change_action" />
 							<input type="hidden" name="submit_type" />
 							<input type="hidden" name="commit" value="1" />
-							
+
 							<h2><% tran("alive.h2"); %></h2>
 							<% show_modules(".webalive"); %>
 							<div id="footer" class="submitFooter">

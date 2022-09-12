@@ -23,7 +23,6 @@ addEvent(window, "load", function() {
 
 addEvent(window, "unload", function() {
 	update.stop();
-
 });
 		
 		//]]>
@@ -31,7 +30,6 @@ addEvent(window, "unload", function() {
 	</head>
 
 	<body class="gui">
-		
 		<div id="wrapper">
 			<div id="content">
 				<div id="header">
@@ -42,14 +40,14 @@ addEvent(window, "unload", function() {
 				</div>
 				<div id="main">
 					<div id="contents">
-						<form action="apply.cgi" method="post">
+						<form action="apply.cgi" method="post" spellcheck="false">
 							<input type="hidden" name="submit_button" value="VPN" />
 							<input type="hidden" name="action" value="Apply" />
 							<input type="hidden" name="change_action" />
 							<input type="hidden" name="submit_type" />
-							
+
 							<h2><% tran("vpn.h2"); %></h2>
-							
+
 							<fieldset>
 								<legend><% tran("vpn.legend"); %></legend>
 								<div class="setting">

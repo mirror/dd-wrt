@@ -149,7 +149,7 @@ addEvent(window, "unload", function() {
 				</div>
 				<div id="main">
 					<div id="contents">
-						<form name="vlan" action="apply.cgi" method="post">
+						<form name="vlan" action="apply.cgi" method="post" spellcheck="false">
 							<input type="hidden" name="submit_button" value="Networking" />
 							<input type="hidden" name="action" value="Apply" />
 							<input type="hidden" name="change_action" />
@@ -174,11 +174,13 @@ addEvent(window, "unload", function() {
 							<fieldset>
 							   <legend><% tran("networking.legend4"); %></legend>
 							   <table class="table" cellspacing="5" id="Bridging_table" summary="current bridging table">
-								<tr>
-									<th width="15%"><% tran("networking.brname"); %></th>
-									<th width="15%"><% tran("networking.stp"); %></th>
-									<th width="70%"><% tran("networking.iface"); %></th>
-								</tr>
+									 <thead>
+										 <tr>
+											 <th width="15%"><% tran("networking.brname"); %></th>
+											 <th width="15%"><% tran("networking.stp"); %></th>
+											 <th width="70%"><% tran("networking.iface"); %></th>
+										 </tr>
+									</thead>
 								</table><br />
 							</fieldset><br />
 							<% show_mrp(); %>
