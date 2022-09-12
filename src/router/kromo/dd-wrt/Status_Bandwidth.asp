@@ -7,7 +7,6 @@ var update;
 addEvent(window, "load", function() {
 	if(document.getElementsByName("refresh_button").length) {
 		document.getElementsByName("refresh_button")[0].disabled = true;
-		//document.getElementsByName("refresh_button")[0].style.background = '#DADADA';
 		document.getElementsByName("refresh_button")[0].style.cursor = "default";
 	}
 	
@@ -28,7 +27,7 @@ addEvent(window, "unload", function() {
 			<div id="content">
 				<div id="header">
 					<div id="logo"><h1><% show_control(); %></h1></div>
-				<% do_menu("Status_Router.asp","Status_Bandwidth.asp"); %>
+					<% do_menu("Status_Router.asp","Status_Bandwidth.asp"); %>
 				</div>
 				<div id="main">
 					<div id="contents">
@@ -37,7 +36,7 @@ addEvent(window, "unload", function() {
 							<input type="hidden" name="action" value="Apply" />
 							<input type="hidden" name="change_action" />
 							<input type="hidden" name="submit_type" />
-							
+
 							<% show_bandwidth(); %>
 							<div class="submitFooter nostick">
 								<script type="text/javascript">

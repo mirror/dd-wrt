@@ -541,9 +541,6 @@ table tr:not([bgcolor]):not([class]) th {
 #radio_table [style*='background-color: rgb(205, 0, 0)']:hover {
   background-color: var(--v1-7) !important;
 }
-#drives {
-  margin-bottom: 6px;
-}
 [summary='packet-type priority table'] td[colspan='5'] {
   padding-bottom: 6px;
 }
@@ -657,6 +654,7 @@ div.slidingbody {
 }
 span.title3d {
   background-color: var(--bg-0);
+  color: var(--v9-9);
 }
 .setting .default {
   color: var(--v9-7);
@@ -791,15 +789,24 @@ img.sizeimage:hover {
 .sidemenu .button {
   background: var(--v0-4);
   border: 1px solid var(--v0-6);
-  box-shadow: 0 1px 0 var(--bg-0);
   color: var(--v9-8);
+  box-shadow: 0 1px 0 var(--bg-0);
   text-shadow: 0 1px 0 var(--bg-0);
+  height: 1.1rem;
+  padding: 0.2em 0.6em;
 }
 .sidemenu .button:hover {
   background: var(--v0-7);
   border-color: var(--v0-7);
   box-shadow: 0 0 10px 0 var(--v0-4);
   color: var(--v9-9);
+}
+.sidemenu .button label[for] {
+  font-size: 13px;
+}
+.slidingbodyshow select.hop {
+  min-width: 4.99rem;
+  max-width: 4.99rem;
 }
 svg {
   shape-rendering: geometricPrecision;

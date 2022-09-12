@@ -49,13 +49,12 @@ function valid_value(F) {
 					F.wan_ipaddr_2.value == "0" &&
 					F.wan_ipaddr_3.value == "0")
 						pptp_dhcp = "skip";
-			
+
 			if (!F.pptp_use_dhcp || F.pptp_use_dhcp.value == "0") {
 				if(pptp_dhcp != "skip" && !valid_ip(F,"F.wan_ipaddr","IP",ZERO_NO|MASK_NO))
 					return false;
 				}
-	
-	
+
 			if(pptp_dhcp != "skip" && F.now_proto.value == "pptp") {
 				if (F.pptp_use_dhcp.value == "0") {
 					if(!valid_ip(F,"F.pptp_server_ip","Gateway",ZERO_NO|MASK_NO))
@@ -111,15 +110,15 @@ function valid_dhcp_server(F) {
 	if (F.wan_dns0 != null)
 		if (!valid_ip(F,"F.wan_dns0","DNS",MASK_NO))
 			return false;
-	
+
 	if (F.wan_dns1 != null)
 		if (!valid_ip(F,"F.wan_dns1","DNS",MASK_NO))
 			return false;
-	
+
 	if (F.wan_dns2 != null)
 		if (!valid_ip(F,"F.wan_dns2","DNS",MASK_NO))
 			return false;
-	
+
 	if (F.wan_wins != null)
 		if (!valid_ip(F,"F.wan_wins","WINS",MASK_NO))
 			return false;
@@ -135,7 +134,7 @@ function dhcp_enable_disable(F,T) {
 	var start = '';
 	var end = '';
  	var total = F.elements.length;
-	
+
 	for(var i=0 ; i < total ; i++) {
 		if(F.elements[i].name == "dhcp_start")
 			start = i;
@@ -196,14 +195,14 @@ var wl1_40m_disable = '<% nvram_selget("wl1_40m_disable"); %>';
 
 function create_wchannel0_auto(F) {
 	F.wl0_wchannel.length = 1;
-	
+
 	F.wl0_wchannel[0] = new Option(share.auto);
 	F.wl0_wchannel[0].value = "0";
 }
 
 function create_wchannel1_auto(F) {
 	F.wl1_wchannel.length = 1;
-	
+
 	F.wl1_wchannel[0] = new Option(share.auto);
 	F.wl1_wchannel[0].value = "0";
 }
@@ -211,16 +210,16 @@ function create_wchannel1_auto(F) {
 function create_wchannel0(F) {
 	var max_channel = '14';
 	var wch;
-	
+
 	if(wl0_nctrlsb == "lower") {
 		wch = parseInt(F.wl0_channel.value)+2;
 	}
 	else {
 		wch = parseInt(F.wl0_channel.value)-2;
 	}
-	
+
 	F.wl0_wchannel.length = parseInt(max_channel)-4;
-	
+
 	for(ch=3 ; ch<=(parseInt(max_channel)-2) ; ch++){
 		F.wl0_wchannel[ch-3] = new Option(ch);
 		F.wl0_wchannel[ch-3].value = ch; 
@@ -234,16 +233,16 @@ function create_wchannel0(F) {
 function create_wchannel1(F) {
 	var max_channel = '14';
 	var wch;
-	
+
 	if(wl1_nctrlsb == "lower") {
 		wch = parseInt(F.wl1_channel.value)+2;
 	}
 	else {
 		wch = parseInt(F.wl1_channel.value)-2;
 	}
-	
+
 	F.wl1_wchannel.length = parseInt(max_channel)-4;
-	
+
 	for(ch=3 ; ch<=(parseInt(max_channel)-2) ; ch++){
 		F.wl1_wchannel[ch-3] = new Option(ch);
 		F.wl1_wchannel[ch-3].value = ch;
@@ -258,7 +257,7 @@ function InitBW0(num,F) {
 	if(wl0_channel == "0") {
 		if(F.wl0_wchannel) choose_enable(F.wl0_wchannel);
 			choose_enable(F.wl0_schannel);
-		
+
 		if(F.wl0_wchannel) create_wchannel0_auto(F)
 	}
 	else
@@ -269,8 +268,8 @@ function InitBW1(num,F) {
 	if(wl1_channel == "0") {
 		if(F.wl1_wchannel) choose_enable(F.wl1_wchannel);
 			choose_enable(F.wl1_schannel);
-		
-	if(F.wl1_wchannel) create_wchannel1_auto(F)
+
+		if(F.wl1_wchannel) create_wchannel1_auto(F)
 	}
 	else
 		SelBW1(num,F);
