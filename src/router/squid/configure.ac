@@ -5,7 +5,7 @@
 ## Please see the COPYING and CONTRIBUTORS files for details.
 ##
 
-AC_INIT([Squid Web Proxy],[5.6],[http://bugs.squid-cache.org/],[squid])
+AC_INIT([Squid Web Proxy],[5.7],[http://bugs.squid-cache.org/],[squid])
 AC_PREREQ(2.61)
 AC_CONFIG_HEADERS([include/autoconf.h])
 AC_CONFIG_AUX_DIR(cfgaux)
@@ -1334,6 +1334,7 @@ if test "x$with_openssl" = "xyes"; then
     openssl/bio.h \
     openssl/bn.h \
     openssl/crypto.h \
+    openssl/decoder.h \
     openssl/dh.h \
     openssl/err.h \
     openssl/evp.h \

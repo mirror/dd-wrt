@@ -1036,7 +1036,7 @@ DEFAULT: ssl::certUntrusted ssl_error X509_V_ERR_INVALID_CA X509_V_ERR_SELF_SIGN
 DEFAULT: ssl::certSelfSigned ssl_error X509_V_ERR_DEPTH_ZERO_SELF_SIGNED_CERT
 ENDIF
 DEFAULT: all src all
-DEFAULT: manager url_regex -i ^cache_object:// +i ^https?://[^/]+/squid-internal-mgr/
+DEFAULT: manager url_regex -i ^cache_object:// +i ^[^:]+://[^/]+/squid-internal-mgr/
 DEFAULT: localhost src 127.0.0.1/32 ::1
 DEFAULT: to_localhost dst 127.0.0.0/8 0.0.0.0/32 ::1/128 ::/128
 DEFAULT: CONNECT method CONNECT
@@ -3049,6 +3049,8 @@ DEFAULT: none
 DOC_START
 	The OpenSSL engine to use. You will need to set this if you
 	would like to use hardware SSL acceleration for example.
+
+	Not supported in builds with OpenSSL 3.0 or newer.
 DOC_END
 
 NAME: sslproxy_session_ttl
@@ -4004,8 +4006,10 @@ DOC_START
 	For the purpose of this limit, Squid counts all high-level request
 	forwarding attempts, including any same-destination retries after
 	certain persistent connection failures and any attempts to use a
-	different peer. However, low-level connection reopening attempts
-	(enabled using connect_retries) are not counted.
+	different peer. However, these low-level attempts are not counted:
+	* connection reopening attempts (enabled using connect_retries)
+	* unfinished Happy Eyeballs connection attempts (prevented by setting
+	  happy_eyeballs_connect_limit to 0)
 
 	See also: forward_timeout and connect_retries.
 DOC_END
