@@ -946,6 +946,10 @@ GetVideoMetadata(const char *path, const char *name)
 			xasprintf(&m.mime, "video/x-matroska");
 		else if( strcmp(ctx->iformat->name, "flv") == 0 )
 			xasprintf(&m.mime, "video/x-flv");
+		else if( strcmp(ctx->iformat->name, "rm") == 0 )
+			xasprintf(&m.mime, "application/vnd.rn-realmedia");
+		else if( strcmp(ctx->iformat->name, "rmvb") == 0 )
+			xasprintf(&m.mime, "application/vnd.rn-realmedia-vbr");
 		if( m.mime )
 			goto video_no_dlna;
 
@@ -1622,6 +1626,10 @@ video_no_dlna:
 			xasprintf(&m.mime, "video/x-matroska");
 		else if( strcmp(ctx->iformat->name, "flv") == 0 )
 			xasprintf(&m.mime, "video/x-flv");
+		else if( strcmp(ctx->iformat->name, "rm") == 0 )
+			xasprintf(&m.mime, "application/vnd.rn-realmedia");
+		else if( strcmp(ctx->iformat->name, "rmvb") == 0 )
+			xasprintf(&m.mime, "application/vnd.rn-realmedia-vbr");
 		else
 			DPRINTF(E_WARN, L_METADATA, "%s: Unhandled format: %s\n", path, ctx->iformat->name);
 	}

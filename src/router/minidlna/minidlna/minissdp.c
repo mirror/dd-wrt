@@ -552,27 +552,27 @@ ProcessSSDPRequest(struct event *ev)
 			if (strncasecmp(bufr+i, "SERVER:", 7) == 0)
 			{
 				srv = bufr+i+7;
-				while (*srv == ' ' || *srv == '\t')
+				while (*srv && (*srv == ' ' || *srv == '\t'))
 					srv++;
 			}
 			else if (strncasecmp(bufr+i, "LOCATION:", 9) == 0)
 			{
 				loc = bufr+i+9;
-				while (*loc == ' ' || *loc == '\t')
+				while (*loc && (*loc == ' ' || *loc == '\t'))
 					loc++;
-				while (loc[loc_len]!='\r' && loc[loc_len]!='\n')
+				while (loc[loc_len] && (loc[loc_len]!='\r' && loc[loc_len]!='\n'))
 					loc_len++;
 			}
 			else if (strncasecmp(bufr+i, "NTS:", 4) == 0)
 			{
 				nts = bufr+i+4;
-				while (*nts == ' ' || *nts == '\t')
+				while (*nts && (*nts == ' ' || *nts == '\t'))
 					nts++;
 			}
 			else if (strncasecmp(bufr+i, "NT:", 3) == 0)
 			{
 				nt = bufr+i+3;
-				while(*nt == ' ' || *nt == '\t')
+				while(*nt && (*nt == ' ' || *nt == '\t'))
 					nt++;
 			}
 		}

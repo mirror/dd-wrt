@@ -57,7 +57,7 @@
 
 #include <sqlite3.h>
 
-#define MINIDLNA_VERSION "1.3.0"
+#define MINIDLNA_VERSION "1.3.1"
 
 #ifdef NETGEAR
 # define SERVER_NAME "ReadyDLNA"
@@ -172,7 +172,10 @@
 	"http-get:*:audio/x-wav:*," \
 	"http-get:*:audio/x-flac:*," \
 	"http-get:*:audio/x-dsd:*," \
-	"http-get:*:application/ogg:*"
+	"http-get:*:application/ogg:*" \
+	"http-get:*:application/vnd.rn-realmedia:*" \
+	"http-get:*:application/vnd.rn-realmedia-vbr:*" \
+	"http-get:*:video/webm:*"
 
 #define DLNA_FLAG_DLNA_V1_5      0x00100000
 #define DLNA_FLAG_HTTP_STALLING  0x00200000

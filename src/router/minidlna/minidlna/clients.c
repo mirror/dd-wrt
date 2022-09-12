@@ -54,6 +54,13 @@ struct client_type_s client_types[] =
 	  EXAVClientInfo
 	},
 
+	{ ECling,
+	  FLAG_MS_PFS,
+	  "Cling",
+	  "Cling/",
+	  EUserAgent
+	},
+
 	/* User-Agent: DLNADOC/1.50 SEC_HHP_[PC]LPC001/1.0  MS-DeviceCaps/1024 */
 	/* This is AllShare running on a PC.  We don't want to respond with Samsung
 	 * capabilities, or Windows (and AllShare) might get grumpy. */
@@ -80,12 +87,21 @@ struct client_type_s client_types[] =
 	  "SEC_HHP_BD",
 	  EUserAgent
 	},
-	/* Samsung Series [Q] TVs work wit milliseconds for bookmarks */
+	/* Samsung Series [Q] TVs work with milliseconds for bookmarks */
 	/* User-Agent: DLNADOC/1.50 SEC_HHP_[TV] Samsung Q7 Series (49)/1.0 */
 	{ ESamsungSeriesQ,
 	  FLAG_SAMSUNG | FLAG_DLNA | FLAG_NO_RESIZE | FLAG_SAMSUNG_DCM10 | FLAG_CAPTION_RES | FLAG_CONVERT_MS,
 	  "Samsung Series [Q]",
 	  "SEC_HHP_[TV] Samsung Q",
+	  EUserAgent
+	},
+
+	/* Samsung Series [QN] TVs work with milliseconds for bookmarks */
+	/* User-Agent: DLNADOC/1.50 SEC_HHP_Samsung QN90AA 50 TV/1.0 */
+	{ ESamsungSeriesQ,
+	  FLAG_SAMSUNG | FLAG_DLNA | FLAG_NO_RESIZE | FLAG_SAMSUNG_DCM10 | FLAG_CAPTION_RES | FLAG_CONVERT_MS,
+	  "Samsung Series [QN]",
+	  "SEC_HHP_Samsung QN",
 	  EUserAgent
 	},
 

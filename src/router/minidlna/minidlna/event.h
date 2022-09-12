@@ -42,7 +42,7 @@ typedef	int	event_module_add_t(struct event *);
 typedef	int	event_module_del_t(struct event *, int flags);
 typedef int	event_module_init_t(void);
 typedef void	event_module_fini_t(void);
-typedef int	event_module_process_t(u_long);
+typedef int	event_module_process_t(struct timeval *);
 struct event_module {
 	event_module_add_t	*add;
 	event_module_del_t	*del;

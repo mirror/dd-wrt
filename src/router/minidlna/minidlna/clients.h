@@ -56,6 +56,7 @@ enum match_types {
 enum client_types {
 	EXbox = 1,
 	EPS3,
+	ECling,
 	EDenonReceiver,
 	EDirecTV,
 	EFreeBox,

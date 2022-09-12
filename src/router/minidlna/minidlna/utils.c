@@ -429,7 +429,9 @@ is_video(const char * file)
 #ifdef TIVO_SUPPORT
 		ends_with(file, ".TiVo") ||
 #endif
-		ends_with(file, ".mov") || ends_with(file, ".3gp"));
+		ends_with(file, ".mov") || ends_with(file, ".3gp") ||
+		ends_with(file, ".rm") || ends_with(file, ".rmvb") ||
+		ends_with(file, ".webm"));
 }
 
 int
