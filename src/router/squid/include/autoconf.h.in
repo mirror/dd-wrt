@@ -772,6 +772,9 @@
 /* Define to 1 if you have the <openssl/crypto.h> header file. */
 #undef HAVE_OPENSSL_CRYPTO_H
 
+/* Define to 1 if you have the <openssl/decoder.h> header file. */
+#undef HAVE_OPENSSL_DECODER_H
+
 /* Define to 1 if you have the <openssl/dh.h> header file. */
 #undef HAVE_OPENSSL_DH_H
 
