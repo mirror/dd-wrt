@@ -378,7 +378,7 @@ static struct net_device *register_vlan_device(const char *eth_IF_name,
 
 	if (r) {
 		/* was already registered. */
-		printk(VLAN_DBG "%s: ALREADY had VLAN registered\n", __FUNCTION__);
+		printk(VLAN_DBG "%s: ALREADY had VLAN %d registered\n", __FUNCTION__, VLAN_ID);
 		goto out_unlock;
 	}
 
