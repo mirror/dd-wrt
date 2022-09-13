@@ -448,6 +448,12 @@ input.num {
   vertical-align: middle;
   cursor: pointer;
 }
+::file-selector-button {
+  height: 1.4rem;
+  padding: 0 .4rem;
+  border-radius: 4px;
+  cursor: pointer;
+}
 [disabled], :disabled, .off {
   cursor: default;
   opacity: .6;
