@@ -66,7 +66,7 @@
 		<input class="spaceradio" type="radio" name="pptp_iptv" value="0" <% nvc("pptp_iptv", "0"); %> /><% tran("share.no"); %>
 	</div>
 	
-<script>
+<script type="text/javascript">
 //<![CDATA[
         show_layer_ext(this, 'pppoe_advanced', <% else_selmatch("pppoeadv", "1", "1", "0"); %> == 1);
 //]]>

@@ -28,7 +28,7 @@
 		</div>
 	</div>
 </div>
-<script>
+<script type="text/javascript">
 //<![CDATA[
 	show_layer_ext(document.setupassistant.wan_vdsl, 'idvlan8', <% sas_nvem("wan_vdsl", "1", "1", "0"); %> == 1);
 //]]>
