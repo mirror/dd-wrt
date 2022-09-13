@@ -1,6 +1,6 @@
 <% do_pagehead("upgrad.titl"); %>
-		<script type="text/javascript">
-		//<![CDATA[
+	<script type="text/javascript">
+	//<![CDATA[
 
 function process_aborted(F) {
 	bar1.togglePause();
@@ -8,7 +8,6 @@ function process_aborted(F) {
 	window.location.replace("Upgrade.asp");
 	return false;
 }
-
 
 function upgrade(F,id) {
 	var upgrade_file = '';
@@ -61,7 +60,7 @@ var update;
 
 addEvent(window, "load", function() {
 	stickControl(<% nvg("sticky_footer"); %>);
-	
+
 	update = new StatusbarUpdate();
 	update.start();
 
@@ -69,15 +68,13 @@ addEvent(window, "load", function() {
 
 addEvent(window, "unload", function() {
 	update.stop();
-
 });
 
-		//]]>
-		</script>
+	//]]>
+	</script>
 	</head>
 
 	<body class="gui">
-		
 		<div id="wrapper">
 			<div id="content">
 				<div id="header">
@@ -91,9 +88,8 @@ addEvent(window, "unload", function() {
 							<input type="hidden" name="_action" id="submit_action" />
 							<input type="hidden" name="change_action" />
 							<input type="hidden" name="submit_type" />
-							
+
 							<h2><% tran("upgrad.h2"); %></h2>
-							
 							<fieldset>
 								<legend><% tran("upgrad.legend"); %></legend>
 								<div class="setting">
@@ -112,9 +108,7 @@ addEvent(window, "unload", function() {
 									<input type="file" name="file" size="40"/>
 								</div>
 							</fieldset><br />
-							
 							<% show_upgrade_options(); %>
-							
 							<div class="warning">
 								<div id="warning_text"><p><b><% tran("upgrad.warning"); %></b></p></div>
 								<p><% tran("upgrad.mess1"); %></p><br/>
@@ -137,7 +131,7 @@ addEvent(window, "unload", function() {
 				</div>
 				<div id="helpContainer">
 					<div id="help">
-						<div><h2><% tran("share.help"); %></h2></div>
+						<h2><% tran("share.help"); %></h2>
 						<dl>
 							<dt class="term"><% tran("upgrad.legend"); %>: </dt>
 							<dd class="definition"><% tran("hupgrad.right2"); %></dd>

@@ -1,7 +1,7 @@
 <% do_pagehead(""); %>
 
 	</head>
-	
+
 	<body>
 		<div class="message">
 			<form>

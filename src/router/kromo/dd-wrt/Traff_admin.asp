@@ -1,7 +1,6 @@
 <% do_pagehead("status_inet.dataadmin"); %>
-		<script type="text/javascript">
-		//<![CDATA[
-
+	<script type="text/javascript">
+	//<![CDATA[
 function ttraff_restore_submit(F) {
 	if (F.file.value == "")	{
 		alert(errmsg.err42);
@@ -26,7 +25,6 @@ function ttraff_restore_submit(F) {
 	<body class="popup_bg">
 		<form name="firmware" method="post" action="tadmin.cgi" enctype="multipart/form-data">
 			<input type="hidden" name="submit_button" value="Traff_admin" />
-
 				<h2><% tran("status_inet.traff"); %></h2>
 				<fieldset>
 					<legend><% tran("status_inet.dataadmin"); %></legend>
