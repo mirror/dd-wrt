@@ -395,6 +395,7 @@ fieldset legend {
   margin-top: 1px;
   width: 14.49em;
   height: 1.268em;
+  overflow: hidden;
 }
 .meter .bar {
   height: 1.268em;
