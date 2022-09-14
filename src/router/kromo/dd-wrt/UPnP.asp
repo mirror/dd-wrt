@@ -56,17 +56,16 @@ function setUPnPTable(forwards) {
 		cell.innerHTML = (data[i].enabled ? share.yes : share.no);
 		cell.align="right";
 
-
 		//wan port
 		var cell = row.insertCell(-1);
 		cell.innerHTML = data[i].wanPorts;
 		cell.align="right";
-		
+
 		//lan port
 		var cell = row.insertCell(-1);
 		cell.innerHTML = data[i].lanPorts;
 		cell.align="right";
-		
+
 		//IP
 		var cell = row.insertCell(-1);
 		cell.innerHTML = data[i].lanIP;
@@ -77,7 +76,6 @@ function setUPnPTable(forwards) {
 		cell.innerHTML = data[i].proto;
 		cell.align = "center";
 
-		
 		cell = row.insertCell(-1);
 		cell.title = upnp.msg1;
 		cell.align = "center";
@@ -110,6 +108,7 @@ function to_submit(F) {
 	F.save_button.value = sbutton.saving;
 	apply(F);
 }
+
 function to_apply(F) {
 	F.save_button.value = sbutton.saving;
 	applytake(F);
@@ -132,9 +131,9 @@ addEvent(window, "load", function() {
 addEvent(window, "unload", function() {
 	update.stop();
 });
-		
-		//]]>
-		</script>
+
+	//]]>
+	</script>
 	</head>
 
 	<body class="gui">
@@ -158,7 +157,6 @@ addEvent(window, "unload", function() {
 							<fieldset>
 								<legend><% tran("upnp.legend"); %></legend>
 								<table class="table" cellspacing="6" id="upnp_table" summary="UPnP table">
-									<thead>
 									<tr>
 										<th width="30%"><% tran("share.descr"); %></th>
 										<th width="10%" class="center"><% tran("share.enabled"); %></th>
@@ -168,7 +166,6 @@ addEvent(window, "unload", function() {
 										<th><% tran("share.proto"); %></th>
 										<th width="10%" class="center"><% tran("share.del"); %></th>
 									</tr>
-								</thead>
 								</table><br />
 								<div class="center">
 									<script type="text/javascript">
@@ -204,7 +201,7 @@ addEvent(window, "unload", function() {
 				</div>
 				<div id="helpContainer">
 					<div id="help">
-						<div><h2><% tran("share.help"); %></h2></div>
+						<h2><% tran("share.help"); %></h2>
 						<dl>
 							<dt class="term"><% tran("upnp.legend"); %>:</dt>
 							<dd class="definition"><% tran("hupnp.right2"); %></dd>

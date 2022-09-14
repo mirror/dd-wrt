@@ -53,7 +53,7 @@ function valid_value(F) {
 			if (!F.pptp_use_dhcp || F.pptp_use_dhcp.value == "0") {
 				if(pptp_dhcp != "skip" && !valid_ip(F,"F.wan_ipaddr","IP",ZERO_NO|MASK_NO))
 					return false;
-				}
+			}
 
 			if(pptp_dhcp != "skip" && F.now_proto.value == "pptp") {
 				if (F.pptp_use_dhcp.value == "0") {
@@ -133,7 +133,7 @@ function SelDHCP(T,F) {
 function dhcp_enable_disable(F,T) {
 	var start = '';
 	var end = '';
- 	var total = F.elements.length;
+	var total = F.elements.length;
 
 	for(var i=0 ; i < total ; i++) {
 		if(F.elements[i].name == "dhcp_start")
@@ -220,14 +220,14 @@ function create_wchannel0(F) {
 
 	F.wl0_wchannel.length = parseInt(max_channel)-4;
 
-	for(ch=3 ; ch<=(parseInt(max_channel)-2) ; ch++){
+	for(ch=3 ; ch<=(parseInt(max_channel)-2) ; ch++) {
 		F.wl0_wchannel[ch-3] = new Option(ch);
-		F.wl0_wchannel[ch-3].value = ch; 
+		F.wl0_wchannel[ch-3].value = ch;
 	}
-	if(wch < 3 || wch > max_channel-2 || wch == "0") 
+	if(wch < 3 || wch > max_channel-2 || wch == "0")
 		F.wl0_wchannel[0].selected = true;
 	else
-		F.wl0_wchannel[wch-3].selected = true;  
+		F.wl0_wchannel[wch-3].selected = true;
 }
 
 function create_wchannel1(F) {
@@ -250,7 +250,7 @@ function create_wchannel1(F) {
 	if(wch < 3 || wch > max_channel-2 || wch == "0")
 		F.wl1_wchannel[0].selected = true;
 	else
-		F.wl1_wchannel[wch-3].selected = true;  
+		F.wl1_wchannel[wch-3].selected = true;
 }
 
 function InitBW0(num,F) {
@@ -279,7 +279,7 @@ function SelBW0(num,F) {
 	if (num == 0) { // Auto
 		if(F.wl0_wchannel)
 			choose_enable(F.wl0_wchannel);
-			
+
 		choose_enable(F.wl0_channel);
 		if(F.wl0_wchannel)
 			create_wchannel0_auto(F);
@@ -287,7 +287,7 @@ function SelBW0(num,F) {
 	else if (num == 10 || num == 20) {
 		if(F.wl0_wchannel)
 			choose_disable(F.wl0_wchannel);
-		
+
 		choose_enable(F.wl0_schannel);
 		if(F.wl0_wchannel)
 			create_wchannel0(F);
@@ -295,7 +295,7 @@ function SelBW0(num,F) {
 	else {
 		if(F.wl0_wchannel)
 			choose_enable(F.wl0_wchannel);
-		
+
 		choose_enable(F.wl0_schannel);
 		if(F.wl0_wchannel)
 			create_wchannel0(F);
@@ -306,7 +306,7 @@ function SelBW1(num,F) {
 	if (num == 0) { // Auto
 		if(F.wl1_wchannel)
 			choose_enable(F.wl1_wchannel);
-			
+
 		choose_enable(F.wl1_channel);
 		if(F.wl1_wchannel)
 			create_wchannel1_auto(F);
@@ -314,7 +314,7 @@ function SelBW1(num,F) {
 	else if (num == 10 || num == 20) {
 		if(F.wl1_wchannel)
 			choose_disable(F.wl1_wchannel);
-		
+
 		choose_enable(F.wl1_schannel);
 		if(F.wl1_wchannel)
 			create_wchannel1(F);
@@ -322,10 +322,10 @@ function SelBW1(num,F) {
 	else {
 		if(F.wl1_wchannel)
 			choose_enable(F.wl1_wchannel);
-		
-	choose_enable(F.wl1_schannel);
-	if(F.wl1_wchannel)
-		create_wchannel1(F);
+
+		choose_enable(F.wl1_schannel);
+		if(F.wl1_wchannel)
+			create_wchannel1(F);
 	}
 }
 
@@ -365,6 +365,7 @@ function enable_idpeap(ifname) {
 	show_layer_ext(this, 'idpeap' + ifname, true)
 	show_layer_ext(this, 'idleap' + ifname, false)
 }
+
 function enable_idleap(ifname) {
 	show_layer_ext(this, 'idttls' + ifname, false)
 	show_layer_ext(this, 'idtls' + ifname, false)
@@ -385,24 +386,20 @@ function enable_idtls(ifname) {
 function submitcheck(F) {
 	if( !checkformelements( F )) {
 		return false;
-	}	
+	}
 	switch(F.sas_stage.value) {
 		case '1':
 			// WAN connection
 			if(valid_value(F)) {
-				
 				if(F._dns_dnsmasq) {
 					F.dns_dnsmasq.value = F._dns_dnsmasq.checked ? 1 : 0;
 				}
-	
 				if(F._auth_dnsmasq) {
 					F.auth_dnsmasq.value = F._auth_dnsmasq.checked ? 1 : 0;
 				}
-				
 				if(F._fullswitch) {
 					F.fullswitch.value = F._fullswitch.checked ? 1 : 0;
 				}
-				
 				if(F._ppp_mlppp) {
 					F.ppp_mlppp.value = F._ppp_mlppp.checked ? 1 : 0;
 				}
@@ -413,76 +410,71 @@ function submitcheck(F) {
 				return false;
 			}
 			break;
-
 		case '3':
 			// Wireless
 			if(F.wlan0_ssid)
-                		if(F.wlan0_ssid.value == ""){
-                        		alert(errmsg.err50);
-                        		F.wlan0_ssid.focus();
-                        		return false;
-                		}
-        		if(F.wl1_ssid)
-                		if(F.wl1_ssid.value == ""){
-                        		alert(errmsg.err50);
-                        		F.wl1_ssid.focus();
-                        		return false;
-                	}
-        		if(F.wl0_nbw)
-        		{
-        			if(F.wl0_nbw.value == 0) { // Auto
-                			F.wl0_channel.value = 0;
-        			}
-        			else if(F.wl0_nbw.value == 10) { // 10MHz
-                			F.wl0_nctrlsb.value = "none";
-                			F.wl0_nbw.value = 10;
-        			}
-        			else if(F.wl0_nbw.value == 20) { // 20MHz
-        			        F.wl0_nctrlsb.value = "none";
-        			        F.wl0_nbw.value = 20;
-        			}
-        			else { // 40MHz
-                			if(F.wl0_channel.selectedIndex == 0) {
-                				F.wl0_nctrlsb.value = "lower";
-                			}
-                			else {
-                				F.wl0_nctrlsb.value = "upper";
-                			}
-                			F.wl0_nbw.value = 40;
-        			}
-        		}
-        		if(F.wl1_nbw)
-        		{
-        			if(F.wl1_nbw.value == 0) { // Auto
-        			        F.wl1_channel.value = 0;
-        			}
-        			else if(F.wl1_nbw.value == 10) { // 10MHz
-        			        F.wl1_nctrlsb.value = "none";
-                			F.wl1_nbw.value = 10;
-        			}
-        			else if(F.wl1_nbw.value == 20) { // 20MHz
-                			F.wl1_nctrlsb.value = "none";
-                			F.wl1_nbw.value = 20;
-        			}
-        			else { // 40MHz
-                			if(F.wl1_channel.selectedIndex == 0) {
-                        			F.wl1_nctrlsb.value = "lower";
-                			}
-                			else {
-                        			F.wl1_nctrlsb.value = "upper";
-                			}
-                			F.wl1_nbw.value = 40;
-        			}
-        		}
-        		break;
-		
+				if(F.wlan0_ssid.value == "") {
+					alert(errmsg.err50);
+					F.wlan0_ssid.focus();
+					return false;
+				}
+				if(F.wl1_ssid)
+					if(F.wl1_ssid.value == "") {
+						alert(errmsg.err50);
+						F.wl1_ssid.focus();
+						return false;
+					}
+					if(F.wl0_nbw) {
+						if(F.wl0_nbw.value == 0) { // Auto
+							F.wl0_channel.value = 0;
+						}
+						else if(F.wl0_nbw.value == 10) { // 10MHz
+							F.wl0_nctrlsb.value = "none";
+							F.wl0_nbw.value = 10;
+						}
+						else if(F.wl0_nbw.value == 20) { // 20MHz
+							F.wl0_nctrlsb.value = "none";
+							F.wl0_nbw.value = 20;
+						}
+						else { // 40MHz
+							if(F.wl0_channel.selectedIndex == 0) {
+								F.wl0_nctrlsb.value = "lower";
+							}
+							else {
+								F.wl0_nctrlsb.value = "upper";
+							}
+							F.wl0_nbw.value = 40;
+						}
+					}
+					if(F.wl1_nbw) {
+						if(F.wl1_nbw.value == 0) { // Auto
+							F.wl1_channel.value = 0;
+						}
+						else if(F.wl1_nbw.value == 10) { // 10MHz
+							F.wl1_nctrlsb.value = "none";
+							F.wl1_nbw.value = 10;
+						}
+						else if(F.wl1_nbw.value == 20) { // 20MHz
+							F.wl1_nctrlsb.value = "none";
+							F.wl1_nbw.value = 20;
+						}
+						else { // 40MHz
+							if(F.wl1_channel.selectedIndex == 0) {
+								F.wl1_nctrlsb.value = "lower";
+							}
+							else {
+								F.wl1_nctrlsb.value = "upper";
+							}
+							F.wl1_nbw.value = 40;
+						}
+					}
+			break;
 		case "4":
-			break;	
+			break;
 		default:
 			break;
 	}
-	
-	return true;		
+	return true;
 	//F.submit_type.value = "save";
 	//F.change_action.value = "";
 	//F.save_button.value = sbutton.saving;
@@ -490,55 +482,54 @@ function submitcheck(F) {
 }
 
 function toggleAOSS(button, show) {
-        show_layer_ext(button, 'aoss_options', show);
+	show_layer_ext(button, 'aoss_options', show);
 }
 
 /**
  * refreshes stage view
  */
 function refresh(F) {
-    F.change_action.value="gozila_cgi";
-    //F.submit_type.value = "save";
-    F.submit();
+	F.change_action.value="gozila_cgi";
+	//F.submit_type.value = "save";
+	F.submit();
 }
 
 /**
  * Moves to next setup assistant step
  */
 function to_next(F) {
-    if(submitcheck(F)) {
-    	F.sas_stage.value = parseInt(F.sas_stage.value) + 1;
-    	F.change_action.value="gozila_cgi";
-    	//F.submit_type.value = "save";
-    	F.submit();
-    }
+	if(submitcheck(F)) {
+		F.sas_stage.value = parseInt(F.sas_stage.value) + 1;
+		F.change_action.value="gozila_cgi";
+		//F.submit_type.value = "save";
+		F.submit();
+	}
 }
 
 /**
  * Moves to previous setup assistant step
  */
 function to_prev(F) {
-    if(submitcheck(F)) {
-    	F.sas_stage.value = parseInt(F.sas_stage.value) - 1;
-    	F.change_action.value="gozila_cgi";
-    	//F.submit_type.value = "save";
-    	F.submit();
-    }
+	if(submitcheck(F)) {
+		F.sas_stage.value = parseInt(F.sas_stage.value) - 1;
+		F.change_action.value="gozila_cgi";
+		//F.submit_type.value = "save";
+		F.submit();
+	}
 }
 
 /**
  * Applies the changes
  */
 function to_apply(F) {
-    if(submitcheck(F)) {
-    	F.submit_type.value = "save";
-    	F.save_button.value = sbutton.saving;
-	F.next_page.disabled = false;
-	F.next_page.value = "index.asp";
-    	applytake(F);
-    }
+	if(submitcheck(F)) {
+		F.submit_type.value = "save";
+		F.save_button.value = sbutton.saving;
+		F.next_page.disabled = false;
+		F.next_page.value = "index.asp";
+		applytake(F);
+	}
 }
-
 
 var update;
 
@@ -547,62 +538,55 @@ var update;
  */
 addEvent(window, "load", function() {
 	stickControl(<% nvg("sticky_footer"); %>);
-	
 	// WAN
 	//mtu_enable_disable(document.setupassistant,'<% nvram_selget("mtu_enable"); %>');
-	
 	if (document.setupassistant.now_proto.value == "pptp")
 		pptpUseDHCP(document.setupassistant, '<% nvram_selget("pptp_use_dhcp"); %>');
-	    
+			
 	if (document.setupassistant.now_proto.value == "pppoe" ||
 		document.setupassistant.now_proto.value == "pptp" ||
 		document.setupassistant.now_proto.value == "l2tp" ||
-		document.setupassistant.now_proto.value == "heartbeat") 
+		document.setupassistant.now_proto.value == "heartbeat")
 			ppp_enable_disable(document.setupassistant,'<% nvram_selget("ppp_demand"); %>');
 	
 	dhcp_enable_disable(document.setupassistant,'<% nvram_selget("lan_proto"); %>');
-	
+
 	show_layer_ext(document.setupassistant.ntp_enable, 'idntp', <% nvem("ntp_enable", "1", "1", "0"); %> == 1);
 	show_layer_ext(document.setupassistant.reconnect_enable, 'idreconnect', <% nvem("reconnect_enable", "1", "1", "0"); %> == 1);
-	
+
 	// Wireless
-        var wl0_mode = "<% nvram_selget("wl0_mode"); %>";
-           if (wl0_mode=="ap" || wl0_mode=="infra")
-        {
-            if (wl0_phytype == 'n')
-                InitBW0('<% nvram_selget("wl0_nbw"); %>' ,document.wireless);
-        }
-        var wl1_mode = "<% nvram_selget("wl1_mode"); %>";
-           if (wl1_mode=="ap" || wl1_mode=="infra")
-        {
-            if (wl1_phytype == 'n')
-                InitBW1('<% nvram_selget("wl1_nbw"); %>' ,document.wireless);
-        }
-       	
+	var wl0_mode = "<% nvram_selget("wl0_mode"); %>";
+	if (wl0_mode=="ap" || wl0_mode=="infra") {
+		if (wl0_phytype == 'n')
+			InitBW0('<% nvram_selget("wl0_nbw"); %>' ,document.wireless);
+	}
+	var wl1_mode = "<% nvram_selget("wl1_mode"); %>";
+	if (wl1_mode=="ap" || wl1_mode=="infra") {
+		if (wl1_phytype == 'n')
+			InitBW1('<% nvram_selget("wl1_nbw"); %>' ,document.wireless);
+	}
 	// Wireless Security
 	<% sas_init_80211x_layers(); %>
-	
+
 	var F = document.forms[0];
 	if(F.security_mode && F.wl_wep_bit)
 		if(F.security_mode.value == "wep" || F.security_mode.value == "radius") {
 			keyMode(F.wl_wep_bit.value, F);
 		}
-	         
+
 	update = new StatusbarUpdate();
 	update.start();
-	
 });
 
 addEvent(window, "unload", function() {
 	update.stop();
-
 });
 
 function submitSaveNextButtons() {
 	if( <% print_sas_stage(); %> < 4 ) {
 		document.write("<input title=\"" + sbutton.nexttitle + "\" class=\"button\" style=\"float: right;\" type=\"button\" name=\"next_button\" value=\"" + sbutton.next + "\" onclick=\"to_next(this.form);\" />");
 	} else {
-        	document.write("<input title=\"" + sbutton.savetitle + "\" class=\"button\" style=\"float: right;\" type=\"button\" name=\"save_button\" value=\"" + sbutton.apply + "\" onclick=\"to_apply(this.form);\" />");
+		document.write("<input title=\"" + sbutton.savetitle + "\" class=\"button\" style=\"float: right;\" type=\"button\" name=\"save_button\" value=\"" + sbutton.apply + "\" onclick=\"to_apply(this.form);\" />");
 	}
 }
 
@@ -627,64 +611,61 @@ function submitSavePrevButtons() {
 				</div>
 				<div id="main">
 					<div id="contents">
-						
 						<!--p>Assistant stage: <% print_sas_stage(); %></p-->
-						
-						<% do_sas_stage_menu(); %> 
+
+						<% do_sas_stage_menu(); %>
 						<form name="setupassistant" action="apply.cgi" method="post">
 							<input type="hidden" name="submit_button" value="SetupAssistant" />
 							<input type="hidden" name="action" value="Apply" />
 							<input type="hidden" name="change_action" value="gozila_cgi" />
 							<input type="hidden" name="submit_type" />
 							<input type="hidden" name="next_page" disabled />
-							
+
 							<input type="hidden" name="sas_stage" value="<% print_sas_stage(); %>">
-							
-							<!-- WAN Setup related -->	
+
+							<!-- WAN Setup related -->
 							<input type="hidden" name="now_proto" value="<% nvram_gozila_get("wan_proto"); %>" />
 							<input type="hidden" name="lan_ipaddr" value="<% nvram_selget("lan_ipaddr"); %>" />
-							
-							<!-- Wireless related -->	
+
+							<!-- Wireless related -->
 							<input type="hidden" name="wl0_nctrlsb" />
 							<input type="hidden" name="wl1_nctrlsb" />
 							<input type="hidden" name="iface" />
-							
+
 							<input type="hidden" name="security_varname" />
 							<input type="hidden" name="security_mode_last" />
 							<input type="hidden" name="wl_wep_last" />
 							<input type="hidden" name="filter_mac_value" />
-							
+
 							<h2 style="<% sas_stage_visible_css("1"); %>"><script type="text/javascript">Capture(sas.hwan);</script></h2>
-							
-							<!-- Internet Setup -->	
+
+							<!-- Internet Setup -->
 							<fieldset style="<% sas_stage_visible_css("1"); %>">
 								<legend><% tran("idx.legend"); %></legend>
-
-				<% ifndef("WET", "<!--"); %>
+								<% ifndef("WET", "<!--"); %>
 								<div class="setting">
-							    	<div class="label"><% tran("idx.conn_type"); %></div>
-							    	<% tran("share.disabled"); %>
+									<div class="label"><% tran("idx.conn_type"); %></div>
+									<% tran("share.disabled"); %>
 								</div>
-				<% ifndef("WET", "-->"); %>
-				
-				<% ifdef("WET", "<!--"); %>
+								<% ifndef("WET", "-->"); %>
+
+								<% ifdef("WET", "<!--"); %>
 								<div class="setting">
-							    	<div class="label"><% tran("idx.conn_type"); %></div>
-							    	<select name="wan_proto" onchange="SelWAN(this.form.wan_proto.selectedIndex,this.form)">
+										<div class="label"><% tran("idx.conn_type"); %></div>
+										<select name="wan_proto" onchange="SelWAN(this.form.wan_proto.selectedIndex,this.form)">
 									<% show_connectiontype(); %>
 									</select>
 								</div>
 								<% show_sas_wan_setting(); %>
-				<% ifdef("WET", "-->"); %>
-				
+								<% ifdef("WET", "-->"); %>
 								<!--div class="setting">
 									<div class="label"><% tran("idx.stp"); %></div>
 									<input class="spaceradio" type="radio" value="1" name="lan_stp" <% nvc("lan_stp", "1"); %> /><% tran("share.enable"); %>&nbsp;
 									<input class="spaceradio" type="radio" value="0" name="lan_stp" <% nvc("lan_stp", "0"); %> /><% tran("share.disable"); %>
 								</div-->
 							</fieldset><br style="<% sas_stage_visible_css("1"); %>" />
-				
-						        <!-- Network Setup -->
+
+							<!-- Network Setup -->
 							<h2 style="<% sas_stage_visible_css("2"); %>"><% tran("idx.h23"); %></h2>
 							<fieldset style="<% sas_stage_visible_css("2"); %>">
 								<legend><% tran("idx.routerip"); %></legend>
@@ -707,10 +688,9 @@ function submitSavePrevButtons() {
 									<input type="hidden" name="sv_localdns" value="4" />
 									<input class="num" maxlength="3" size="3" name="sv_localdns_0" onblur="valid_range(this,0,255,share.localdns)" value="<% sas_get_single_ip("sv_localdns","0"); %>"/>.<input class="num" maxlength="3" size="3" name="sv_localdns_1" onblur="valid_range(this,0,255,share.localdns)" value="<% sas_get_single_ip("sv_localdns","1"); %>"/>.<input class="num" maxlength="3" size="3" name="sv_localdns_2" onblur="valid_range(this,0,255,share.localdns)" value="<% sas_get_single_ip("sv_localdns","2"); %>"/>.<input class="num" maxlength="3" size="3" name="sv_localdns_3" onblur="valid_range(this,0,254,share.localdns)" value="<% sas_get_single_ip("sv_localdns","3"); %>"/>
 								</div>
-							</fieldset><br  style="<% sas_stage_visible_css("2"); %>" />
-							
+							</fieldset><br style="<% sas_stage_visible_css("2"); %>" />
+
 							<% sas_show_dhcpd_settings("2"); %>
-							
 							<!-- Wireless Setup -->
 							<% sas_show_wireless("3"); %>
 							<!--% sas_show_security("3"); %-->
@@ -724,15 +704,13 @@ function submitSavePrevButtons() {
 								<legend><% tran("aoss.service"); %></legend>
 								<div class="setting">
 									<div class="label"><% tran("aoss.enable"); %></div>
-										<input class="spaceradio" type="radio" value="1" name="aoss_enable" disabled /><% tran("share.enable"); %>&nbsp;
-										<input class="spaceradio" type="radio" value="0" name="aoss_enable" checked disabled /><% tran("share.disable"); %>
-									</div>
+									<input class="spaceradio" type="radio" value="1" name="aoss_enable" disabled /><% tran("share.enable"); %>&nbsp;
+									<input class="spaceradio" type="radio" value="0" name="aoss_enable" checked disabled /><% tran("share.disable"); %>
+								</div>
 							</fieldset>
 							<br style="<% sas_stage_visible_css("4"); %>"/>
 							<div class="warning" style="<% sas_stage_visible_css("4"); %>">
-								<p>
-									<% tran("aoss.ap_mode_notice"); %>
-								</p>
+								<p><% tran("aoss.ap_mode_notice"); %></p>
 							</div>
 							<br style="<% sas_stage_visible_css("4"); %>" />
 							<% ifaoss_possible("yes", "-->"); %>
@@ -745,7 +723,6 @@ function submitSavePrevButtons() {
 									<input class="spaceradio" type="radio" value="0" name="aoss_enable" <% sas_nvc("aoss_enable", "0"); %> onClick="toggleAOSS(this, false);" /><% tran("share.disable"); %>
 								</div>
 							</fieldset>
-
 							<br style="<% sas_stage_visible_css("4"); %>"/>
 							<div id="aoss_options" style="<% visible_css("aoss_enable", "1"); %>" style="<% sas_stage_visible_css("4"); %>">
 							<fieldset style="<% sas_stage_visible_css("4"); %>">
@@ -779,8 +756,7 @@ function submitSavePrevButtons() {
 									<div class="label"><% tran("share.routername"); %></div>
 									<input maxlength="39" name="router_name" size="20" onblur="valid_name(this,&#34;Router%20Name&#34;)" value="<% nvram_selget("router_name"); %>"/>
 								</div>
-
-				<% ifdef("WET", "<!--"); %>
+								<% ifdef("WET", "<!--"); %>
 								<div class="setting">
 									<div class="label"><% tran("share.hostname"); %></div>
 									<input maxlength="39" name="wan_hostname" size="20" onblur="valid_name(this,&#34;Host%20Name&#34;)" value="<% nvram_selget("wan_hostname"); %>"/>
@@ -810,22 +786,21 @@ function submitSavePrevButtons() {
 									</script>
 								</div-->
 							</fieldset><br style="<% sas_stage_visible_css("4"); %>" />
-								
 							<div id="footer" class="submitFooter">
 								<script type="text/javascript">
-					//<![CDATA[
-					submitSavePrevButtons();
-					submitSaveNextButtons();
-					//]]>
-					</script>
-                                                             <div style="clear: both;"></div>
+								//<![CDATA[
+								submitSavePrevButtons();
+								submitSaveNextButtons();
+								//]]>
+								</script>
+								<div style="clear: both;"></div>
 							</div>
 						</form>
 					</div>
 				</div>
 				<div id="helpContainer">
 					<div id="help">
-						<div><h2><% tran("share.help"); %></h2></div>
+						<h2><% tran("share.help"); %></h2>
 						<dl>
 							<dt class="term" style="<% sas_stage_visible_css("1"); %>"><% tran("sas.hwan"); %>:</dt>
 							<dd class="definition"  style="<% sas_stage_visible_css("1"); %>"><% tran("hsas.wan"); %></dd>
@@ -854,7 +829,7 @@ function submitSavePrevButtons() {
 				</div>
 				<div id="floatKiller"></div>
 				<div id="statusInfo">
-				<div class="info"><% tran("share.firmware"); %>: 
+				<div class="info"><% tran("share.firmware"); %>:
 					<script type="text/javascript">
 					//<![CDATA[
 					document.write("<a title=\"" + share.about + "\" href=\"javascript:openAboutWindow()\"><% get_firmware_version(); %></a>");

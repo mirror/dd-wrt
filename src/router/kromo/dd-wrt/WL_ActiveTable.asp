@@ -1,17 +1,15 @@
 <%% do_pagehead("wl_active.titl"); %%>
-		<script type="text/javascript">
-		//<![CDATA[
+	<script type="text/javascript">
+	//<![CDATA[
 
-function to_submit(F)
-{
+function to_submit(F) {
 	if(valid_value(F)){
 		F.submit_type.value="add_mac";
 		F.submit();
 		refreshParent();
 	}
 }
-function to_apply(F)
-{
+function to_apply(F) {
 	if(valid_value(F)){
 		F.submit_type.value="add_mac";
 		F.submit();
@@ -19,8 +17,7 @@ function to_apply(F)
 	}
 }
 
-function valid_value(F)
-{
+function valid_value(F) {
 	var num = F.elements.length;
 	var count = 0;
 
@@ -41,7 +38,6 @@ addEvent(window, "load", function() {
 	stickControl(<%% nvg("sticky_footer"); %%>);
 	<%% onload("WL_ActiveTable", "setTimeout('opener.window.location.reload();',500);"); %%>
 	window.focus();
-
 });
 
 refreshParent = function() {
@@ -49,9 +45,8 @@ refreshParent = function() {
 	var url = elements["submit_button"].value + ".asp";
 	opener.window.location = url;
 };
-		
-		//]]>
-		</script>
+	//]]>
+	</script>
 	</head>
 
 	<body class="popup_bg">
@@ -62,18 +57,20 @@ refreshParent = function() {
 			<input type="hidden" name="submit_type" />
 			<input type="hidden" name="ifname" value="%s" />
 			<input type="hidden" name="commit" value="1" />
-			
+
 			<h2><%% tran("wl_active.h2"); %%></h2>
 			<fieldset>
 				<legend><%% tran("wl_active.active"); %%></legend>
 			<table>
-				<tbody>
+				<thead>
 					<tr>
 						<th><%% tran("dhcp.tclient"); %%></th>
 						<th><%% tran("share.ip"); %%></th>
 						<th><%% tran("share.mac"); %%></th>
 						<th><%% tran("wl_active.h3"); %%></th>
 					</tr>
+				</thead>
+				<tbody>
 					<%% wireless_active_table("online", "%s"); %%>
 				</tbody>
 			</table>
@@ -81,13 +78,15 @@ refreshParent = function() {
 			<fieldset>
 				<legend><%% tran("wl_active.inactive"); %%></legend>
 			<table>
-				<tbody>
+				<thead>
 					<tr>
 						<th><%% tran("dhcp.tclient"); %%></th>
 						<th><%% tran("share.ip"); %%></th>
 						<th><%% tran("share.mac"); %%></th>
 						<th><%% tran("wl_active.h3"); %%></th>
 					</tr>
+				</thead>
+				<tbody>
 					<%% wireless_active_table("offline", "%s"); %%>
 				</tbody>
 			</table>

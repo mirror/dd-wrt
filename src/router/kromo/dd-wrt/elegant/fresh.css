@@ -3,10 +3,10 @@ body, .popup, .popup_bg {
   background: #f9f9f9;
   color: #000;
 }
-a, a:link {
-  color: #000;
+a {
+  color: currentcolor;
 }
-a:hover, a:link:hover,
+a:hover, #statusInfo a:hover,
 #ip_count:hover, [title*='Search']:hover,
 [title*='Chain']:hover, [title*='Monitoring']:hover {
 	color: var(--ac-0);

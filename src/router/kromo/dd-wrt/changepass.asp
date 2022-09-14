@@ -1,9 +1,7 @@
 <% do_pagehead("share.change"); %>
-		<script type="text/javascript">//
-		//<![CDATA[
-
+	<script type="text/javascript">//
+	//<![CDATA[
 document.title = "<% nvg("router_name"); %> - User Password Change";
-
 /*
  * based on passwordmeter by Jeff Todnem
  * see http://www.passwordmeter.com/js/pwdmeter.js for full license information
@@ -114,28 +112,28 @@ function chkPass(pwd) {
 				nRepInc = (nUnqChar) ? Math.ceil(nRepInc/nUnqChar) : Math.ceil(nRepInc); 
 			}
 		}
-		
+
 		/* Check for sequential alpha string patterns (forward and reverse) */
 		for (var s=0; s < 23; s++) {
 			var sFwd = sAlphas.substring(s,parseInt(s+3));
 			var sRev = sFwd.strReverse();
 			if (pwd.toLowerCase().indexOf(sFwd) != -1 || pwd.toLowerCase().indexOf(sRev) != -1) { nSeqAlpha++; nSeqChar++;}
 		}
-		
+
 		/* Check for sequential numeric string patterns (forward and reverse) */
 		for (var s=0; s < 8; s++) {
 			var sFwd = sNumerics.substring(s,parseInt(s+3));
 			var sRev = sFwd.strReverse();
 			if (pwd.toLowerCase().indexOf(sFwd) != -1 || pwd.toLowerCase().indexOf(sRev) != -1) { nSeqNumber++; nSeqChar++;}
 		}
-		
+
 		/* Check for sequential symbol string patterns (forward and reverse) */
 		for (var s=0; s < 8; s++) {
 			var sFwd = sSymbols.substring(s,parseInt(s+3));
 			var sRev = sFwd.strReverse();
 			if (pwd.toLowerCase().indexOf(sFwd) != -1 || pwd.toLowerCase().indexOf(sRev) != -1) { nSeqSymbol++; nSeqChar++;}
 		}
-		
+
 	/* Modify overall score value based on usage vs requirements */
 
 		/* General point assignment */
@@ -226,10 +224,8 @@ function valid_password(F) {
 		F.http_passwdConfirm.select();
 		return false;
 	}
-
 	return true;
 }
-
 
 function to_submit(F) {
 	if (valid_password(F)) {
@@ -242,9 +238,8 @@ function to_submit(F) {
 	}
 }
 
-
-//]]>
-</script>
+	//]]>
+	</script>
 	</head>
 
 	<body class="gui">

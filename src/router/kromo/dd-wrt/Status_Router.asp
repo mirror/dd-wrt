@@ -1,6 +1,6 @@
 <% do_pagehead("status_router.titl"); %>
-		<script type="text/javascript">
-		//<![CDATA[
+	<script type="text/javascript">
+	//<![CDATA[
 
 var update;
 
@@ -33,7 +33,6 @@ function setIpconntrackValues(val) {
 	setMeterBar("ip_count", val / <% nvg("ip_conntrack_max"); %> * 100, val);
 }
 
-
 addEvent(window, "load", function() {
 	setMemoryValues("<% dumpmeminfo(); %>");
 	setUptimeValues("<% get_uptime(); %>");
@@ -56,9 +55,9 @@ addEvent(window, "load", function() {
 addEvent(window, "unload", function() {
 	update.stop();
 });
-		
-		//]]>
-		</script>
+
+	//]]>
+	</script>
 	</head>
 
 	<body class="gui">
@@ -184,7 +183,7 @@ addEvent(window, "unload", function() {
 										<div class="label">NVRAM</div>
 										<span id="nvram"><% statnv(); %></span>&nbsp;
 									</div>
-				<% ifndef("SAMBA", "<!--"); %>
+									<% ifndef("SAMBA", "<!--"); %>
 									<div class="setting">
 										<div class="label">CIFS</div>
 										<script type="text/javascript">
@@ -194,29 +193,29 @@ addEvent(window, "unload", function() {
 										//]]>
 										</script>
 									</div>
-				<% ifndef("SAMBA", "-->"); %>
-				<% ifndef("JFFS2", "<!--"); %>
-								<div class="setting">
-									<div class="label">JFFS2</div>
-									<script type="text/javascript">
-									//<![CDATA[
-									<% statfs("/jffs", "my_jffs"); %>
-									document.write( ((<% nvg("enable_jffs2"); %>) && (my_jffs.size)) ? (scaleSize(my_jffs.used) + ' / ' + scaleSize(my_jffs.size)) : '<span style="opacity: .8;"><em>(' + share.nmounted + ')</em></span>' );
-									//]]>
-									</script>
-								</div>
-				<% ifndef("JFFS2", "-->"); %>
-				<% ifndef("MMC", "<!--"); %>
-								<div class="setting">
-									<div class="label">MMC</div>
-									<script type="text/javascript">
-									//<![CDATA[
-									<% statfs("/mmc", "mmc"); %>
-									document.write( ((<% nvg("mmc_enable0"); %>) && (mmc.size)) ? (scaleSize(mmc.used) + ' / ' + scaleSize(mmc.size)) : '<span style="opacity: .8;"><em>(' + share.nmounted + ')</em></span>' );
-									//]]>
-									</script>
-								</div>
-				<% ifndef("MMC", "-->"); %>
+									<% ifndef("SAMBA", "-->"); %>
+									<% ifndef("JFFS2", "<!--"); %>
+									<div class="setting">
+										<div class="label">JFFS2</div>
+										<script type="text/javascript">
+										//<![CDATA[
+										<% statfs("/jffs", "my_jffs"); %>
+										document.write( ((<% nvg("enable_jffs2"); %>) && (my_jffs.size)) ? (scaleSize(my_jffs.used) + ' / ' + scaleSize(my_jffs.size)) : '<span style="opacity: .8;"><em>(' + share.nmounted + ')</em></span>' );
+										//]]>
+										</script>
+									</div>
+									<% ifndef("JFFS2", "-->"); %>
+									<% ifndef("MMC", "<!--"); %>
+									<div class="setting">
+										<div class="label">MMC</div>
+										<script type="text/javascript">
+										//<![CDATA[
+										<% statfs("/mmc", "mmc"); %>
+										document.write( ((<% nvg("mmc_enable0"); %>) && (mmc.size)) ? (scaleSize(mmc.used) + ' / ' + scaleSize(mmc.size)) : '<span style="opacity: .8;"><em>(' + share.nmounted + ')</em></span>' );
+										//]]>
+										</script>
+									</div>
+									<% ifndef("MMC", "-->"); %>
 							</fieldset><br />
 							<fieldset>
 								<legend><% tran("status_router.legend4"); %></legend>
@@ -247,7 +246,7 @@ addEvent(window, "unload", function() {
 				</div>
 				<div id="helpContainer">
 					<div id="help">
-						<div><h2><% tran("share.help"); %></h2></div>
+						<h2><% tran("share.help"); %></h2>
 						<dl>
 							<dt class="term"><% tran("share.routername"); %>: </dt>
 							<dd class="definition"><% tran("hstatus_router.right2"); %></dd>
@@ -267,15 +266,15 @@ addEvent(window, "unload", function() {
 				</div>
 				<div id="floatKiller"></div>
 				<div id="statusInfo">
-				<div class="info"><% tran("share.firmware"); %>: 
+					<div class="info"><% tran("share.firmware"); %>: 
 					<script type="text/javascript">
 					//<![CDATA[
 					document.write("<a title=\"" + share.about + "\" href=\"javascript:openAboutWindow()\"><% get_firmware_version(); %></a>");
 					//]]>
 					</script>
-				</div>
-				<div class="info"><% tran("share.time"); %>:  <span id="uptime"><% get_uptime(); %></span></div>
-				<div class="info">WAN<span id="ipinfo"><% show_wanipinfo(); %></span></div>
+					</div>
+					<div class="info"><% tran("share.time"); %>:  <span id="uptime"><% get_uptime(); %></span></div>
+					<div class="info">WAN<span id="ipinfo"><% show_wanipinfo(); %></span></div>
 				</div>
 			</div>
 		</div>

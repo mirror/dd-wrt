@@ -1,6 +1,6 @@
 <% do_pagehead("idx.titl"); %>
-		<script type="text/javascript">
-		//<![CDATA[
+	<script type="text/javascript">
+	//<![CDATA[
 
 var wan_proto = "<% nvg("wan_proto"); %>";
 var dhcp_win = null;
@@ -252,7 +252,6 @@ function submitcheck(F) {
 	}
 }
 
-
 function toggle_layer(checkbox, label) {
 	if(checkbox.checked) {
 		show_layer_ext(this,label,true);
@@ -306,9 +305,9 @@ addEvent(window, "unload", function() {
 	update.stop();
 });
 
-		//]]>
-		</script>
-		<% ias_wwwincludes(); %>
+	//]]>
+	</script>
+	<% ias_wwwincludes(); %>
 	</head>
 
 	<body class="gui">
@@ -488,7 +487,7 @@ addEvent(window, "unload", function() {
 				</div>
 				<div id="helpContainer">
 					<div id="help">
-						<div><h2><% tran("share.help"); %></h2></div>
+						<h2><% tran("share.help"); %></h2>
 						<dl>
 							<% ifndef("HAVE_BUFFALO", "<!--"); %>
 							<dt class="term"><% tran("sas.title"); %>:</dt>

@@ -22,9 +22,9 @@
 	<input class="spaceradio" type="radio" name="wan_vdsl" value="0" <% sas_nvc("wan_vdsl","0"); %> onclick="show_layer_ext(this, 'idvlan8', false)" /><% tran("share.disable"); %> 
 	<div id="idvlan8">
 		<div class="setting">
-		    <div class="label"><% tran("share.vdslvlan8"); %></div>
-		    <input class="spaceradio" type="radio" name="dtag_vlan8" value="1" <% sas_nvc("dtag_vlan8","1"); %> /><% tran("share.enable"); %>&nbsp;
-		    <input class="spaceradio" type="radio" name="dtag_vlan8" value="0" <% sas_nvc("dtag_vlan8","0"); %> /><% tran("share.disable"); %> 
+			<div class="label"><% tran("share.vdslvlan8"); %></div>
+			<input class="spaceradio" type="radio" name="dtag_vlan8" value="1" <% sas_nvc("dtag_vlan8","1"); %> /><% tran("share.enable"); %>&nbsp;
+			<input class="spaceradio" type="radio" name="dtag_vlan8" value="0" <% sas_nvc("dtag_vlan8","0"); %> /><% tran("share.disable"); %> 
 		</div>
 	</div>
 </div>

@@ -191,7 +191,7 @@ addEvent(window, "unload", function() {
 				</div>
 				<div id="helpContainer">
 					<div id="help">
-						<div><h2><% tran("share.help"); %></h2></div>
+						<h2><% tran("share.help"); %></h2>
 						<dl>
 							<dt class="term"><% tran("management.jffs_legend"); %>&nbsp;<% tran("share.requiremts"); %>:</dt>
 							<dd class="definition"><% tran("hservice.right1"); %></dd>

@@ -1,6 +1,6 @@
 <%% do_pagehead("wl_filter.titl"); %%>
-		<script type="text/javascript">
-		//<![CDATA[
+	<script type="text/javascript">
+	//<![CDATA[
 function to_submit(F) {
 	F.save_button.value = sbutton.saving;
 	apply(F);
@@ -12,8 +12,8 @@ function to_apply(F) {
 addEvent(window, "load", function() {
 	stickControl(<%% nvg("sticky_footer"); %%>);
 });
-		//]]>
-		</script>
+	//]]>
+	</script>
 	</head>
 	
 	<body class="popup_bg">
@@ -28,6 +28,7 @@ addEvent(window, "load", function() {
 				<div id="contentsInfo" style="padding-top: 0px;">
 					<h2><%% tran("wl_filter.h2"); %%></h2>
 					<table width="100%" style="padding-bottom: 5px;">
+						<tbody>
 						<tr>
 							<td align="left"><%% tran("wl_filter.h3"); %%></td>
 							<td align="right"><script type="text/javascript">
@@ -36,6 +37,7 @@ addEvent(window, "load", function() {
 							//]]>
 							</script></td>
 						</tr>
+					</tbody>
 					</table>
 					<%% wireless_filter_table("input","%s"); %%>
 					<div id="submit_footer" id="footer" class="submitFooter">

@@ -1,6 +1,6 @@
 <%% do_pagehead("wds.titl"); %%>
-		<script type="text/javascript">
-		//<![CDATA[
+	<script type="text/javascript">
+	//<![CDATA[
 
 function SelSubnet(F,num) {
 	F.change_action.value="gozila_cgi";
@@ -60,11 +60,10 @@ addEvent(window, "load", function() {
 
 addEvent(window, "unload", function() {
 	update.stop();
-
 });
 
-		//]]>
-		</script>
+	//]]>
+	</script>
 	</head>
 
 	<body class="gui">
@@ -291,7 +290,7 @@ addEvent(window, "unload", function() {
 				</div>
 				</fieldset><br/>
 				<fieldset>
-					 <legend><%% tran("wds.legend2"); %%></legend>
+					<legend><%% tran("wds.legend2"); %%></legend>
 				<div class="setting">
 					<div class="label"><%% tran("wds.label"); %%></div>
 					<input class="spaceradio" type="radio" name="%s_lazywds" value="1" <%% nvsm("%s_lazywds", "1", "checked"); %%> /><%% tran("share.enable"); %%>&nbsp;
@@ -338,12 +337,12 @@ addEvent(window, "unload", function() {
 					//]]>
 				 </script>
 				</div>
-				 </form>
+			</form>
 			</div>
 			</div>
 				<div id="helpContainer">
 					<div id="help">
-						<div><h2><%% tran("share.help"); %%></h2></div>
+						<h2><%% tran("share.help"); %%></h2>
 						<a href="javascript:openHelpWindow<%% ifdef("EXTHELP","Ext"); %%>('HWDS.asp')"><%% tran("share.more"); %%></a>
 					</div>
 				</div>

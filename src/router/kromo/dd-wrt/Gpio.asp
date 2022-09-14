@@ -78,7 +78,7 @@ addEvent(window, "unload", function() {
 				</div>
 				<div id="helpContainer">
 					<div id="help">
-						<div><h2><% tran("share.help"); %></h2></div>
+						<h2><% tran("share.help"); %></h2>
 						<dl>
 							<dt class="term"><% tran("upnp.legend"); %>:</dt>
 							<dd class="definition"><% tran("hupnp.right2"); %></dd>

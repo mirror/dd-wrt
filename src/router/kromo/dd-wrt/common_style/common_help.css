@@ -23,24 +23,25 @@ tt {
   position: relative;
   height: 4.257em;
 }
-#header .logo {
+.logo {
   background: url(../help/logo-help.png) left center no-repeat;
   height: 4.076em;
   width: 314px;
   mix-blend-mode: darken;
 }
-#header .navig {
+.navig {
   position: absolute;
   top: 4.737em;
   right: .815em;
+  color: #fff;
 }
-#header .navig a {
+.navig a {
   font-weight: bold;
   text-decoration: none;
   color: #fff;
 }
-#header .navig a:hover {
-  color: #ccc;
+.navig a:hover {
+  color: #33f;
 }
 h2 {
   background: #777674;
@@ -69,55 +70,57 @@ ul, ol {
   padding: 0;
   margin: 0;
 }
-ul.wide li, ol.wide li {
+.wide li {
   margin-top: 1em;
 }
 ul {
-  list-style: square;
+  list-style-type: '\01F81A\A0';
 }
 ul li {
   margin-left: 1.5em;
 }
 ol {
-  list-style: decimal;
+  list-style-type: decimal;
 }
 ol li {
   margin-left: 2.5em;
 }
 a {
   text-decoration: none;
-  color: #00f;
+  color: #33f;
 }
 a:hover {
   text-decoration: underline;
   color: #33f;
 }
-div.also, div.note {
+.also, .note {
   padding: .725em;
-  border-radius: 4px;
 }
-div.also {
-  background: #ddd;
-  border: 1px solid #aaa;
+.note {
+  background: #daffda;
+  border-left: 0.5em solid #19cc19;
 }
-div.note {
-  background: #ddf;
-  border: 1px solid #aaf;
-  margin-top: .5rem;
-}
-div.note h4 {
+.note h4 {
   float: left;
   margin-top: 0;
   padding-right: .4em;
+  text-transform: uppercase;
+  color: #077507;
 }
-div.also h4 {
-  float: left;
-  margin-top: 0;
-  padding-right: 1.3em;
-}
-div.note div {
+.note div {
   margin-left: 3.2em;
 }
-div.also ul {
+.also {
+  background: #fffade;
+  border-left: 0.5em solid #e0cb52;
+}
+.also h4 {
+  float: left;
+  margin-top: 0;
+  text-transform: uppercase;
+  padding-right: 1.6em;
+  color: #755a07;
+}
+.also ul {
   margin-left: 4.4em;
 }
