@@ -316,6 +316,15 @@ static int _dns_server_epoll_ctl(struct dns_server_conn_head *head, int op, uint
 	return 0;
 }
 
+static void *_dns_server_get_dns_rule(struct dns_request *request, enum domain_rule rule)
+{
+	if (rule >= DOMAIN_RULE_MAX || request == NULL) {
+		return NULL;
+	}
+
+	return request->domain_rule.rules[rule];
+}
+
 static void _dns_server_set_dualstack_selection(struct dns_request *request)
 {
 	struct dns_rule_flags *rule_flag = NULL;
@@ -325,7 +334,7 @@ static void _dns_server_set_dualstack_selection(struct dns_request *request)
 		return;
 	}
 
-	rule_flag = request->domain_rule.rules[DOMAIN_RULE_FLAGS];
+	rule_flag = _dns_server_get_dns_rule(request, DOMAIN_RULE_FLAGS);
 	if (rule_flag) {
 		if (rule_flag->flags & DOMAIN_FLAG_DUALSTACK_SELECT) {
 			request->dualstack_selection = 1;
@@ -361,7 +370,7 @@ static int _dns_server_is_return_soa(struct dns_request *request)
 		}
 	}
 
-	rule_flag = request->domain_rule.rules[DOMAIN_RULE_FLAGS];
+	rule_flag = _dns_server_get_dns_rule(request, DOMAIN_RULE_FLAGS);
 	if (rule_flag) {
 		flags = rule_flag->flags;
 		if (flags & DOMAIN_FLAG_ADDR_SOA) {
@@ -733,11 +742,11 @@ static int _dns_add_rrs(struct dns_server_post_context *context)
 	}
 	/* add SOA record */
 	if (has_soa) {
-		ret |= dns_add_SOA(context->packet, DNS_RRS_NS, domain, 0, &request->soa);
+		ret |= dns_add_SOA(context->packet, DNS_RRS_NS, domain, request->ip_ttl, &request->soa);
 		tlog(TLOG_DEBUG, "result: %s, qtype: %d, return SOA", request->domain, context->qtype);
 	} else if (context->do_force_soa == 1) {
 		_dns_server_setup_soa(request);
-		ret |= dns_add_SOA(context->packet, DNS_RRS_NS, domain, 0, &request->soa);
+		ret |= dns_add_SOA(context->packet, DNS_RRS_NS, domain, request->ip_ttl, &request->soa);
 	}
 
 	if (request->has_ecs) {
@@ -793,7 +802,7 @@ static int _dns_setup_dns_raw_packet(struct dns_server_post_context *context)
 	/* encode to binary data */
 	int encode_len = dns_encode(context->inpacket, context->inpacket_maxlen, context->packet);
 	if (encode_len <= 0) {
-		tlog(TLOG_ERROR, "encode raw packet failed for %s", context->request->domain);
+		tlog(TLOG_DEBUG, "encode raw packet failed for %s", context->request->domain);
 		return -1;
 	}
 
@@ -1317,15 +1326,15 @@ static int _dns_server_setup_ipset_packet(struct dns_server_post_context *contex
 	}
 
 	/* check ipset rule */
-	rule_flags = request->domain_rule.rules[DOMAIN_RULE_FLAGS];
+	rule_flags = _dns_server_get_dns_rule(request, DOMAIN_RULE_FLAGS);
 	if (!rule_flags || (rule_flags->flags & DOMAIN_FLAG_IPSET_IGN) == 0) {
-		ipset_rule = request->domain_rule.rules[DOMAIN_RULE_IPSET];
+		ipset_rule = _dns_server_get_dns_rule(request, DOMAIN_RULE_IPSET);
 	}
 	if (!rule_flags || (rule_flags->flags & DOMAIN_FLAG_IPSET_IPV4_IGN) == 0) {
-		ipset_rule_v4 = request->domain_rule.rules[DOMAIN_RULE_IPSET_IPV4];
+		ipset_rule_v4 = _dns_server_get_dns_rule(request, DOMAIN_RULE_IPSET_IPV4);
 	}
 	if (!rule_flags || (rule_flags->flags & DOMAIN_FLAG_IPSET_IPV6_IGN) == 0) {
-		ipset_rule_v6 = request->domain_rule.rules[DOMAIN_RULE_IPSET_IPV6];
+		ipset_rule_v6 = _dns_server_get_dns_rule(request, DOMAIN_RULE_IPSET_IPV6);
 	}
 
 	if (!(ipset_rule || ipset_rule_v4 || ipset_rule_v6)) {
@@ -1566,6 +1575,7 @@ static int _dns_server_force_dualstack(struct dns_request *request)
 static int _dns_server_request_complete(struct dns_request *request)
 {
 	int ttl = DNS_SERVER_TMOUT_TTL;
+	int reply_ttl = ttl;
 
 	if (request->rcode == DNS_RC_SERVFAIL || request->rcode == DNS_RC_NXDOMAIN) {
 		ttl = DNS_SERVER_FAIL_TTL;
@@ -1617,6 +1627,15 @@ out:
 		}
 	}
 
+	reply_ttl = ttl;
+	if (request->passthrough == 0 && dns_conf_cachesize > 0 &&
+		request->check_order_list->orders[0].type != DOMAIN_CHECK_NONE) {
+		reply_ttl = dns_conf_serve_expired_reply_ttl;
+		if (reply_ttl < 2) {
+			reply_ttl = 2;
+		}
+	}
+
 	struct dns_server_post_context context;
 	_dns_server_post_context_init(&context, request);
 	context.do_cache = 1;
@@ -1624,7 +1643,7 @@ out:
 	context.do_force_soa = request->dualstack_selection_force_soa;
 	context.do_audit = 1;
 	context.do_reply = 1;
-	context.reply_ttl = ttl;
+	context.reply_ttl = reply_ttl;
 	context.skip_notify_count = 1;
 
 	_dns_request_post(&context);
@@ -1812,6 +1831,10 @@ static void _dns_server_complete_with_multi_ipaddress(struct dns_request *reques
 	if (atomic_inc_return(&request->notified) == 1) {
 		do_reply = 1;
 		_dns_server_force_dualstack(request);
+	}
+
+	if (request->passthrough && do_reply == 0) {
+		return;
 	}
 
 	_dns_server_post_context_init(&context, request);
@@ -2312,6 +2335,7 @@ static int _dns_server_process_answer_A(struct dns_rrs *rrs, struct dns_request 
 	if (addr[0] == 0 || addr[0] == 127) {
 		/* If half of the servers return the same result, then ignore this address */
 		if (atomic_inc_return(&request->adblock) <= (dns_server_num() / 2 + dns_server_num() % 2)) {
+			request->rcode = DNS_RC_NOERROR;
 			_dns_server_request_release(request);
 			return -1;
 		}
@@ -2388,6 +2412,7 @@ static int _dns_server_process_answer_AAAA(struct dns_rrs *rrs, struct dns_reque
 	if (_dns_server_is_adblock_ipv6(addr) == 0) {
 		/* If half of the servers return the same result, then ignore this address */
 		if (atomic_inc_return(&request->adblock) <= (dns_server_num() / 2 + dns_server_num() % 2)) {
+			request->rcode = DNS_RC_NOERROR;
 			_dns_server_request_release(request);
 			return -1;
 		}
@@ -2485,6 +2510,7 @@ static int _dns_server_process_answer(struct dns_request *request, const char *d
 					 request->soa.refresh, request->soa.retry, request->soa.expire, request->soa.minimum);
 				int soa_num = atomic_inc_return(&request->soa_num);
 				if ((soa_num >= (dns_server_num() / 3) + 1 || soa_num > 4) && atomic_read(&request->ip_map_num) <= 0) {
+					request->ip_ttl = ttl;
 					_dns_server_request_complete(request);
 				}
 			} break;
@@ -3023,7 +3049,7 @@ static int _dns_server_reply_request_eth_ip(struct dns_request *request)
 	}
 
 	request->rcode = DNS_RC_NOERROR;
-	request->ip_ttl = 600;
+	request->ip_ttl = dns_conf_local_ttl;
 	request->has_ip = 1;
 
 	struct dns_server_post_context context;
@@ -3324,7 +3350,7 @@ static int _dns_server_pre_process_rule_flags(struct dns_request *request)
 	unsigned int flags = 0;
 
 	/* get domain rule flag */
-	rule_flag = request->domain_rule.rules[DOMAIN_RULE_FLAGS];
+	rule_flag = _dns_server_get_dns_rule(request, DOMAIN_RULE_FLAGS);
 	if (rule_flag == NULL) {
 		goto out;
 	}
@@ -3378,14 +3404,15 @@ out:
 
 soa:
 	/* return SOA */
+	request->ip_ttl = 30;
 	_dns_server_reply_SOA(DNS_RC_NOERROR, request);
 	return 0;
 }
 
 static int _dns_server_process_address(struct dns_request *request)
 {
-	struct dns_address_IPV4 *address_ipv4 = NULL;
-	struct dns_address_IPV6 *address_ipv6 = NULL;
+	struct dns_rule_address_IPV4 *address_ipv4 = NULL;
+	struct dns_rule_address_IPV6 *address_ipv6 = NULL;
 
 	if (_dns_server_has_bind_flag(request, BIND_FLAG_NO_RULE_ADDR) == 0) {
 		goto errout;
@@ -3397,14 +3424,14 @@ static int _dns_server_process_address(struct dns_request *request)
 		if (request->domain_rule.rules[DOMAIN_RULE_ADDRESS_IPV4] == NULL) {
 			goto errout;
 		}
-		address_ipv4 = request->domain_rule.rules[DOMAIN_RULE_ADDRESS_IPV4];
+		address_ipv4 = _dns_server_get_dns_rule(request, DOMAIN_RULE_ADDRESS_IPV4);
 		memcpy(request->ip_addr, address_ipv4->ipv4_addr, DNS_RR_A_LEN);
 		break;
 	case DNS_T_AAAA:
 		if (request->domain_rule.rules[DOMAIN_RULE_ADDRESS_IPV6] == NULL) {
 			goto errout;
 		}
-		address_ipv6 = request->domain_rule.rules[DOMAIN_RULE_ADDRESS_IPV6];
+		address_ipv6 = _dns_server_get_dns_rule(request, DOMAIN_RULE_ADDRESS_IPV6);
 		memcpy(request->ip_addr, address_ipv6->ipv6_addr, DNS_RR_AAAA_LEN);
 		break;
 	default:
@@ -3413,7 +3440,7 @@ static int _dns_server_process_address(struct dns_request *request)
 	}
 
 	request->rcode = DNS_RC_NOERROR;
-	request->ip_ttl = 600;
+	request->ip_ttl = dns_conf_local_ttl;
 	request->has_ip = 1;
 
 	struct dns_server_post_context context;
@@ -3452,7 +3479,7 @@ static void _dns_server_process_speed_check_rule(struct dns_request *request)
 	struct dns_domain_check_orders *check_order = NULL;
 
 	/* get domain rule flag */
-	check_order = request->domain_rule.rules[DOMAIN_RULE_CHECKSPEED];
+	check_order = _dns_server_get_dns_rule(request, DOMAIN_RULE_CHECKSPEED);
 	if (check_order == NULL) {
 		return;
 	}
@@ -3796,7 +3823,7 @@ static int _dns_server_process_smartdns_domain(struct dns_request *request)
 	unsigned int flags = 0;
 
 	/* get domain rule flag */
-	rule_flag = request->domain_rule.rules[DOMAIN_RULE_FLAGS];
+	rule_flag = _dns_server_get_dns_rule(request, DOMAIN_RULE_FLAGS);
 	if (rule_flag == NULL) {
 		return -1;
 	}
@@ -3812,10 +3839,6 @@ static int _dns_server_process_smartdns_domain(struct dns_request *request)
 static int _dns_server_process_special_query(struct dns_request *request)
 {
 	int ret = 0;
-
-	if (_dns_server_process_smartdns_domain(request) == 0) {
-		goto clean_exit;
-	}
 
 	switch (request->qtype) {
 	case DNS_T_PTR:
@@ -3858,7 +3881,7 @@ static const char *_dns_server_get_request_groupname(struct dns_request *request
 
 	/* Get the nameserver rule */
 	if (request->domain_rule.rules[DOMAIN_RULE_NAMESERVER]) {
-		struct dns_nameserver_rule *nameserver_rule = request->domain_rule.rules[DOMAIN_RULE_NAMESERVER];
+		struct dns_nameserver_rule *nameserver_rule = _dns_server_get_dns_rule(request, DOMAIN_RULE_NAMESERVER);
 		return nameserver_rule->group_name;
 	}
 
@@ -3934,7 +3957,7 @@ static int _dns_server_process_host(struct dns_request *request)
 	}
 
 	request->rcode = DNS_RC_NOERROR;
-	request->ip_ttl = 600;
+	request->ip_ttl = dns_conf_local_ttl;
 	request->has_ip = 1;
 
 	struct dns_server_post_context context;
@@ -4040,10 +4063,6 @@ static int _dns_server_do_query(struct dns_request *request)
 		safe_strncpy(request->dns_group_name, group_name, DNS_GROUP_NAME_LEN);
 	}
 
-	if (_dns_server_process_host(request) == 0) {
-		goto clean_exit;
-	}
-
 	_dns_server_set_dualstack_selection(request);
 
 	if (_dns_server_process_special_query(request) == 0) {
@@ -4057,6 +4076,14 @@ static int _dns_server_do_query(struct dns_request *request)
 
 	/* process domain address */
 	if (_dns_server_process_address(request) == 0) {
+		goto clean_exit;
+	}
+
+	if (_dns_server_process_smartdns_domain(request) == 0) {
+		goto clean_exit;
+	}
+
+	if (_dns_server_process_host(request) == 0) {
 		goto clean_exit;
 	}
 
