@@ -12,7 +12,6 @@ function to_apply(F) {
 	applytake(F);
 }
 
-
 var update;
 
 addEvent(window, "load", function() {
@@ -20,12 +19,10 @@ addEvent(window, "load", function() {
 	
 	update = new StatusbarUpdate();
 	update.start();
-
 });
 
 addEvent(window, "unload", function() {
 	update.stop();
-
 });
 		
 	//]]>
@@ -33,7 +30,6 @@ addEvent(window, "unload", function() {
 	</head>
 
 	<body class="gui">
-		
 		<div id="wrapper">
 			<div id="content">
 				<div id="header">
@@ -48,7 +44,6 @@ addEvent(window, "unload", function() {
 							<input type="hidden" name="change_action" />
 							<input type="hidden" name="submit_type" value="save" />
 							<input type="hidden" name="commit" value="1" />
-							
 							<h2>Sysctl Configuration</h2>
 							<% sysctl(); %>
 							<div id="footer" class="submitFooter">
@@ -63,7 +58,7 @@ addEvent(window, "unload", function() {
 				</div>
 				<div id="helpContainer">
 					<div id="help">
-						<div><h2><% tran("share.help"); %></h2></div>
+						<h2><% tran("share.help"); %></h2>
 						<dl>
 						</dl><br />
 						<!-- Hide more... there is no help page here https://svn.dd-wrt.com/ticket/7478

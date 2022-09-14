@@ -28,18 +28,18 @@ addEvent(window, "load", function() {
 						<th sortdir="up" width="5%"><% tran("status_wireless.tx_time"); %></th>
 					</tr>
 				</thead>
+				<tbody>
 					<script type="text/javascript">
 					//<![CDATA[
 					var table = new Array(
-					<% dump_channel_survey(""); %>
+						<% dump_channel_survey(""); %>
 					);
-
 					if (table.length == 0) {
-						document.write("<tbody><tr><td colspan=\"12\" class=\"center\">" + share.none + "</td></tr></tbody>");
+						document.write("<tr><td colspan=\"12\" class=\"center\">" + share.none + "</td></tr>");
 					}
 					else {
 						for (var i = 0; i < table.length; i = i + 8) {
-							document.write("<tbody><tr>");
+							document.write("<tr>");
 							document.write("<td class=\"center\">"+table[i]+"</td>");
 							document.write("<td class=\"center\">"+table[i+1]+"</td>");
 							document.write("<td class=\"center\">"+table[i+2]+"</td>");
@@ -48,11 +48,12 @@ addEvent(window, "load", function() {
 							document.write("<td class=\"center\">"+table[i+5]+"</td>");
 							document.write("<td class=\"center\">"+table[i+6]+"</td>");
 							document.write("<td class=\"center\">"+table[i+7]+"</td>");
-							document.write("<\/tbody><\/tr>");
+							document.write("<\/tr>");
 						}
 					}
 					//]]>
 					</script>
+				</tbody>
 			</table>
 			<script type="text/javascript">
 			//<![CDATA[

@@ -10,4 +10,3 @@
 	show_layer_ext(document.setup.bridgeadv, 'bridge_advanced', <% else_selmatch("bridgeadv", "1", "1", "0"); %> == 1);
 //]]>
 </script>
-

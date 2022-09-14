@@ -1,14 +1,12 @@
 <% do_pagehead("routetbl.titl"); %>
-
-		<script type="text/javascript">
-		//<![CDATA[
+	<script type="text/javascript">
+	//<![CDATA[
 addEvent(window, "load", function() {
 	stickControl(<% nvg("sticky_footer"); %>);
 });
-		//]]>
-		</script>
+	//]]>
+	</script>
 	</head>
-
 
 	<body class="popup_bg">
 		<form>
@@ -16,6 +14,7 @@ addEvent(window, "load", function() {
 			<fieldset>
 			<legend><% tran("filter.pol"); %></legend>
 			<table class="table" cellspacing="4" id="pbr_table" summary="pbr table">
+				<thead>
 				<tr>
 					<th sortdir="up"><% tran("routetbl.priority"); %></th>
 					<th sortdir="up"><% tran("routetbl.not"); %></th>
@@ -31,6 +30,8 @@ addEvent(window, "load", function() {
 					<th sortdir="up"><% tran("routetbl.table"); %></th>
 					<th sortdir="up"><% tran("routetbl.nat"); %></th>
 				</tr>
+			</thead>
+			<tbody>
 				<script type="text/javascript">
 				//<![CDATA[
 					var table = new Array(<% dump_pbr_table(); %>);
@@ -52,6 +53,7 @@ addEvent(window, "load", function() {
 					}
 				//]]>
 				</script>
+			</tbody>
 			</table>
 			</fieldset><br />
 			<script type="text/javascript">

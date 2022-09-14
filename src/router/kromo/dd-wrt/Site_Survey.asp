@@ -27,32 +27,33 @@ addEvent(window, "load", function() {
 			<input type="hidden" name="action" value="Apply" />
 			<input type="hidden" name="change_action" value="gozila_cgi" />
 			<input type="hidden" name="commit" value="1" />
-			
 			<input type="hidden" name="wl_ssid" />
 			<h2><%% tran("survey.h2"); %%></h2>
 			<fieldset>
 			<legend><%% tran("status_wireless.legend"); %%></legend>
 			<table class="table" cellspacing="5" id="survey_table">
-				<tr>
-				   <th sortdir="up" width="20%"><%% tran("share.ssid"); %%></th>
-				   <th sortdir="up" width="7%"><%% tran("share.mode"); %%></th>
-				   <th sortdir="up" width="19%"><%% tran("share.mac"); %%></th>
-				   <th sortdir="up" width="5%"><%% tran("share.channel"); %%></th>
-				   <th sortdir="up" width="5%"><%% tran("share.frequency"); %%></th>
-				   <th sortdir="up" width="5%"><%% tran("share.stations"); %%></th>
-				   <th sortdir="up" width="5%"><%% tran("share.radioname"); %%></th>
-				   <th sortdir="up" width="5%"><%% tran("share.rssi"); %%></th>
-				   <th sortdir="up" width="5%"><%% tran("share.noise"); %%></th>
-				   <th sortdir="up" width="5%"><%% tran("share.quality"); %%></th>
-				   <th sortdir="up" width="5%"><%% tran("share.beacon"); %%></th>
-				   <th sortdir="up" width="5%"><%% tran("share.openn"); %%></th>
-				   <th sortdir="up" width="5%"><%% tran("share.dtim"); %%></th>
-				   <th sortdir="up" width="5%"><%% tran("share.rates"); %%></th>
-				   <th sortdir="up" width="10%" class="center"><%% tran("share.actiontbl"); %%></th>
-				</tr>
+				<thead>
+					<tr>
+						<th sortdir="up" width="20%"><%% tran("share.ssid"); %%></th>
+						<th sortdir="up" width="7%"><%% tran("share.mode"); %%></th>
+						<th sortdir="up" width="19%"><%% tran("share.mac"); %%></th>
+						<th sortdir="up" width="5%"><%% tran("share.channel"); %%></th>
+						<th sortdir="up" width="5%"><%% tran("share.frequency"); %%></th>
+						<th sortdir="up" width="5%"><%% tran("share.stations"); %%></th>
+						<th sortdir="up" width="5%"><%% tran("share.radioname"); %%></th>
+						<th sortdir="up" width="5%"><%% tran("share.rssi"); %%></th>
+						<th sortdir="up" width="5%"><%% tran("share.noise"); %%></th>
+						<th sortdir="up" width="5%"><%% tran("share.quality"); %%></th>
+						<th sortdir="up" width="5%"><%% tran("share.beacon"); %%></th>
+						<th sortdir="up" width="5%"><%% tran("share.openn"); %%></th>
+						<th sortdir="up" width="5%"><%% tran("share.dtim"); %%></th>
+						<th sortdir="up" width="5%"><%% tran("share.rates"); %%></th>
+						<th sortdir="up" width="10%" class="center"><%% tran("share.actiontbl"); %%></th>
+					</tr>
+				</thead>
+				<tbody>
 					<script type="text/javascript">
 					//<![CDATA[
-					
 					var table = new Array(
 					<%% dump_site_survey("%s"); %%>
 					);
@@ -81,9 +82,9 @@ addEvent(window, "load", function() {
 							document.write("<\/tr>");
 						}
 					}
-					
 					//]]>
 					</script>
+				</tbody>
 			</table>
 			</fieldset><br />
 			<script type="text/javascript">

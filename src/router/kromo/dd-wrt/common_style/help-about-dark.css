@@ -4,12 +4,12 @@
   filter: invert(.95) hue-rotate(180deg) !important;
   mix-blend-mode: lighten !important;
 }
+.about-bg a {
+  color: #5cb3ff !important;
+}
 .about-bg, .help-bg, #header {
   background: #1a1a1a !important;
   color: #eee;
-}
-.help-bg a, .about-bg a {
-  color: #5cb3ff !important;
 }
 /*! about */
 .about-bg #content {
@@ -22,26 +22,25 @@
   background-color: #282828 !important;
 }
 /*! help */
-#header .navig a {
-  color: #fff !important;
-}
-#header .navig a:hover {
-  color: #ccc !important;
-}
-.help-bg h2 {
-  background-color: #777674 !important;
-  color: #fff !important;
+a, a:hover {
+  color: #5cb3ff;
 }
 .help-bg #content {
-  background: transparent !important;
-  border: 1px solid transparent !important;
-  color: #eee !important;
+  background: transparent;
+  border: 1px solid transparent;
+  color: #eee;
 }
-div.note {
-  background: #380c55 !important;
-  border-color: #8030b5 !important;
+.note {
+  background: #244a24;
+  border-left: .5em solid #4ee139;
 }
-div.also {
-  background: #222 !important;
-  border: 1px solid #333 !important;
+.note h4 {
+  color: #4ee139;
+}
+.also {
+  background: #4a3f24;
+  border-left: .5em solid #e1b739;
+}
+.also h4 {
+  color: #e1b739;
 }

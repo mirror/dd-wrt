@@ -1,6 +1,6 @@
 <% do_pagehead("filterSum.titl"); %>
-		<script type="text/javascript">
-		//<![CDATA[
+	<script type="text/javascript">
+	//<![CDATA[
 
 function filter_del(F) {
 	F.submit_type.value = "delete";
@@ -9,8 +9,8 @@ function filter_del(F) {
 addEvent(window, "load", function() {
 	stickControl(<% nvg("sticky_footer"); %>);
 });
-		//]]>
-		</script>
+	//]]>
+	</script>
 	</head>
 
 	<body class="popup_bg" onunload="top.opener.window.location.href='Filters.asp'">

@@ -1,7 +1,7 @@
 <% do_pagehead("status_openvpn.titl"); %>
 		<script type="text/javascript">
 		//<![CDATA[
-		
+
 var update;
 
 addEvent(window, "load", function() {
@@ -9,12 +9,10 @@ addEvent(window, "load", function() {
 	
 	update = new StatusbarUpdate();
 	update.start();
-
 });
 
 addEvent(window, "unload", function() {
 	update.stop();
-
 });	
 	
 		//]]>
@@ -22,14 +20,12 @@ addEvent(window, "unload", function() {
 	</head>
 
 	<body class="gui">
-		
 		<div id="wrapper">
 			<div id="content">
 				<div id="header">
 					<div id="logo"><h1><% show_control(); %></h1></div>
 					<% do_menu("Status_Router.asp","Status_OpenVPN.asp"); %>
 				</div>
-
 				<div id="main">
 					<div id="contents">
 					<% show_openvpn_status(); %>

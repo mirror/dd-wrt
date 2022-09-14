@@ -38,12 +38,6 @@ body.gui {
   text-align: right;
   color: #ccc;
 }
-#statusInfo a {
-  text-decoration: none;
-}
-#statusInfo a:hover {
-  text-decoration: underline;
-}
 #wrapper {
   position: relative;
   text-align: left;
@@ -172,6 +166,10 @@ li.current {
   text-decoration: none;
   text-transform: lowercase;
 }
+#statusInfo a {
+  text-decoration: none;
+}
+#statusInfo a:hover,
 #help a:hover, a[title='Geotool'] {
   text-decoration: underline;
 }
@@ -374,7 +372,7 @@ fieldset legend {
   bottom: unset;
 }
 .submitFooter .button {
-  padding: 0 1rem;
+  padding: 0 1rem .05em;
   margin: .362em;
   height: 1.533rem;
 }
@@ -397,6 +395,7 @@ fieldset legend {
   margin-top: 1px;
   width: 14.49em;
   height: 1.268em;
+  overflow: hidden;
 }
 .meter .bar {
   height: 1.268em;
@@ -447,6 +446,12 @@ input.num {
   margin: 0 .3em 0 0;
   height: 1.6rem;
   vertical-align: middle;
+  cursor: pointer;
+}
+::file-selector-button {
+  height: 1.4rem;
+  padding: 0 .4rem;
+  border-radius: 4px;
   cursor: pointer;
 }
 [disabled], :disabled, .off {
@@ -571,13 +576,13 @@ input.button[onclick*='FilterSummary'] {
   padding: 2px;
   border-radius: 2px;
 }
-body .value_error {
+.value_error {
   border: 1px solid #ff6666;
 }
-body .value_error:hover {
+.value_error:hover {
   border-color: #c00;
 }
-body .value_error:focus {
+.value_error:focus {
   border-color: #c00;
   box-shadow: 0 0 10px 0 #c00;
 }

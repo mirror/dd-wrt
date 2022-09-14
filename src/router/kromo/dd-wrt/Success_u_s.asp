@@ -1,22 +1,18 @@
 <% do_pagehead(""); %>
-		<title><% nvg("router_name"); %></title>
-
-		<script type="text/javascript">
-		//<![CDATA[
-
+	<title><% nvg("router_name"); %></title>
+	<script type="text/javascript">
+	//<![CDATA[
 var clk = <% get_clkfreq("1"); %>;
 var rest_default = <% nvg("sv_restore_defaults"); %>;
 var submit_button = "<% get_web_page_name(); %>";
 var timer = setTimeout("message()", <% getboottime(); %> * 1000);
 var browserName=navigator.appName;
 
-function to_submit()
-{
+function to_submit() {
 	document.location.href =  "index.asp";
 }
 
-function message()
-{
+function message() {
 	clearTimeout(timer);
 	bar1.togglePause();
 	setElementVisible("mess", true);
@@ -36,11 +32,10 @@ addEvent(window, "load", function() {
 addEvent(window, "unload", function() {
 	clearTimeout(timer);
 });
-		
-		//]]>
-		</script>
+	//]]>
+	</script>
 	</head>
-	
+
 	<body class="gui">
 		<div class="message">
 			<form name="success">

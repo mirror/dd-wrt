@@ -50,7 +50,6 @@
 		<input class="num" name="wan_dns2_0" size="3" maxlength="3" onblur="valid_range(this,0,255,idx_static.dns)" value="<% get_dns_ip("wan_dns","2","0"); %>" />.<input class="num" name="wan_dns2_1" size="3" maxlength="3" onblur="valid_range(this,0,255,idx_static.dns)" value="<% get_dns_ip("wan_dns","2","1"); %>" />.<input class="num" name="wan_dns2_2" size="3" maxlength="3" onblur="valid_range(this,0,255,idx_static.dns)" value="<% get_dns_ip("wan_dns","2","2"); %>" />.<input class="num" name="wan_dns2_3" size="3" maxlength="3" onblur="valid_range(this,0,255,idx_static.dns)" value="<% get_dns_ip("wan_dns","2","3"); %>" />
 	</div>
 </div>
-
 	<div class="setting">
 		<div class="label"><% tran("share.compression"); %></div>
 		<input class="spaceradio" type="radio" name="ppp_compression" value="1" <% nvc("ppp_compression","1"); %> /><% tran("share.enable"); %>&nbsp;
@@ -65,9 +64,8 @@
 		<input class="spaceradio" type="radio" name="pptp_iptv" value="1" <% nvc("pptp_iptv", "1"); %> /><% tran("share.yes"); %>&nbsp;
 		<input class="spaceradio" type="radio" name="pptp_iptv" value="0" <% nvc("pptp_iptv", "0"); %> /><% tran("share.no"); %>
 	</div>
-	
-<script type="text/javascript">
-//<![CDATA[
-        show_layer_ext(this, 'pppoe_advanced', <% else_selmatch("pppoeadv", "1", "1", "0"); %> == 1);
-//]]>
-</script>
+	<script type="text/javascript">
+	//<![CDATA[
+	show_layer_ext(this, 'pppoe_advanced', <% else_selmatch("pppoeadv", "1", "1", "0"); %> == 1);
+	//]]>
+	</script>

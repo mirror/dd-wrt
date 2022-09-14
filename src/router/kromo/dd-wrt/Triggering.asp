@@ -1,6 +1,6 @@
 <% do_pagehead("trforward.titl"); %>
-		<script type="text/javascript">
-		//<![CDATA[
+	<script type="text/javascript">
+	//<![CDATA[
 
 function trigger_add_submit(F) {
 	F.change_action.value="gozila_cgi";
@@ -14,7 +14,6 @@ function trigger_del_submit(F,I) {
 	F.submit_type.value = "del_trigger";
 	apply(F);
 }
-
 
 function to_submit(F) {
 	F.submit_type.value = "";
@@ -42,8 +41,8 @@ addEvent(window, "unload", function() {
 	update.stop();
 });
 
-		//]]>
-		</script>
+	//]]>
+	</script>
 	</head>
 
 	<body class="gui">
@@ -111,7 +110,7 @@ addEvent(window, "unload", function() {
 				</div>
 				<div id="helpContainer">
 					<div id="help">
-						<div><h2><% tran("share.help"); %></h2></div>
+						<h2><% tran("share.help"); %></h2>
 						<dl>
 							<dt class="term"><% tran("trforward.app"); %>:</dt>
 							<dd class="definition"><% tran("htrforward.right2"); %></dd>

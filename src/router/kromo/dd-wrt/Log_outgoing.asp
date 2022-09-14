@@ -1,11 +1,11 @@
 <% do_pagehead("log_out.titl"); %>
-		<script type="text/javascript">
-		//<![CDATA[
+	<script type="text/javascript">
+	//<![CDATA[
 addEvent(window, "load", function() {
 	stickControl(<% nvg("sticky_footer"); %>);
 });
-		//]]>
-		</script>
+	//]]>
+	</script>
 
 	</head>
 	<body class="popup_bg">
@@ -14,6 +14,7 @@ addEvent(window, "load", function() {
 				<fieldset>
 				<legend><% tran("log.legend"); %></legend>
 				<table class="table">
+					<thead>
 					<tr>
 						<th><% tran("log_out.th_lanip"); %></th>
 						<th><% tran("log_out.th_wanip"); %></th>
@@ -21,7 +22,10 @@ addEvent(window, "load", function() {
 						<th><% tran("log_out.th_port"); %></th>
 						<th><% tran("share.rule"); %></th>
 					</tr>
+				</thead>
+				<tbody>
 					<% dumplog("outgoing"); %>
+				</tbody>
 				</table>
 				</fieldset><br />
 				<div id="footer" class="submitFooter">

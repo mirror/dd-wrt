@@ -1,6 +1,6 @@
 <% do_pagehead("aoss.titl"); %>
-		<script type="text/javascript">
-		//<![CDATA[
+	<script type="text/javascript">
+	//<![CDATA[
 
 function startAOSS(F) {
 	F.submit_type.value = "start";
@@ -27,7 +27,6 @@ function to_apply(F) {
 }
 
 /* the following 3 functions are taken and ported from HostAPD to Javascript*/
-
 function wps_pin_checksum(pin) {
 	accum = 0;
 	while (pin) {
@@ -268,7 +267,7 @@ document.write("<\/tr>");
 	</div>
 	<div id="helpContainer">
 		<div id="help">
-		   <div><h2><% tran("share.help"); %></h2></div>
+		   <h2><% tran("share.help"); %></h2>
 		   	<dl>
 				 <dt class="term"><% tran("aoss.aoss"); %></dt>
 				 <dd class="definition"><% tran("haoss.basic"); %></dd>

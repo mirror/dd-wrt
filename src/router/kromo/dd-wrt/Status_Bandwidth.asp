@@ -1,7 +1,7 @@
 <% do_pagehead("status_band.titl"); %>
 		<script type="text/javascript">
 		//<![CDATA[
-		
+
 var update;
 
 addEvent(window, "load", function() {
@@ -9,7 +9,7 @@ addEvent(window, "load", function() {
 		document.getElementsByName("refresh_button")[0].disabled = true;
 		document.getElementsByName("refresh_button")[0].style.cursor = "default";
 	}
-	
+
 	update = new StatusbarUpdate();
 	update.start();
 });
@@ -22,7 +22,6 @@ addEvent(window, "unload", function() {
 	</head>
 
 	<body class="gui">
-		
 		<div id="wrapper">
 			<div id="content">
 				<div id="header">
@@ -51,7 +50,7 @@ addEvent(window, "unload", function() {
 				</div>
 				<div id="helpContainer">
 					<div id="help">
-						<div><h2><% tran("share.help"); %></h2></div>
+						<h2><% tran("share.help"); %></h2>
 						<dl>
 							<dt class="term"><% tran("status_band.h2"); %>:</dt>
 							<dd class="definition"><% tran("hstatus_band.svg"); %></dd>

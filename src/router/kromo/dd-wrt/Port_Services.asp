@@ -1,6 +1,6 @@
 <% do_pagehead("portserv.titl"); %>
-		<script type="text/javascript">
-		//<![CDATA[
+	<script type="text/javascript">
+	//<![CDATA[
 
 var ref_page = window.opener.location;
 
@@ -223,29 +223,29 @@ addEvent(window, "unload", function() {
 	</head>
 	<body class="popup_bg">
 		<form name="PortServices" action="apply.cgi" method="post" >
-		<input type="hidden" name="submit_button" />
-		<input type="hidden" name="action" />
-		<input type="hidden" name="change_action" />
-		<input type="hidden" name="submit_type" />
-		
-		<input type="hidden" name="services_array" />
-		<input type="hidden" name="services_array0" />
-		<input type="hidden" name="services_array1" />
-		<input type="hidden" name="services_array2" />
-		<input type="hidden" name="services_array3" />
-		<input type="hidden" name="services_array4" />
-		<input type="hidden" name="services_array5" />
-		<input type="hidden" name="services_array6" />
-		<input type="hidden" name="services_array7" />
-		<input type="hidden" name="services_length" />
-		<input type="hidden" name="services_length0" />
-		<input type="hidden" name="services_length1" />
-		<input type="hidden" name="services_length2" />
-		<input type="hidden" name="services_length3" />
-		<input type="hidden" name="services_length4" />
-		<input type="hidden" name="services_length5" />
-		<input type="hidden" name="services_length6" />
-		<input type="hidden" name="services_length7" />
+			<input type="hidden" name="submit_button" />
+			<input type="hidden" name="action" />
+			<input type="hidden" name="change_action" />
+			<input type="hidden" name="submit_type" />
+
+			<input type="hidden" name="services_array" />
+			<input type="hidden" name="services_array0" />
+			<input type="hidden" name="services_array1" />
+			<input type="hidden" name="services_array2" />
+			<input type="hidden" name="services_array3" />
+			<input type="hidden" name="services_array4" />
+			<input type="hidden" name="services_array5" />
+			<input type="hidden" name="services_array6" />
+			<input type="hidden" name="services_array7" />
+			<input type="hidden" name="services_length" />
+			<input type="hidden" name="services_length0" />
+			<input type="hidden" name="services_length1" />
+			<input type="hidden" name="services_length2" />
+			<input type="hidden" name="services_length3" />
+			<input type="hidden" name="services_length4" />
+			<input type="hidden" name="services_length5" />
+			<input type="hidden" name="services_length6" />
+			<input type="hidden" name="services_length7" />
 			<h2><% tran("portserv.h2"); %></h2>
 			<fieldset>
 			<legend><% tran("share.option"); %></legend>
