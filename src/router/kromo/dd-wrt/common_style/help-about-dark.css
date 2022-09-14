@@ -15,14 +15,16 @@
 .about-bg #content {
   border-color: transparent !important;
 }
-.about-bg #content .t-border {
+.about-bg .t-border {
   border-color: #333 !important;
 }
-.thc {
-  background-color: #282828 !important;
+#credits {
+  background: linear-gradient(to bottom, #f6be00, #ffcf2c) !important;
+  -webkit-text-fill-color: transparent !important;
+  -webkit-background-clip: text !important;
 }
 /*! help */
-a, a:hover {
+a, a:hover, .navig a:hover {
   color: #5cb3ff;
 }
 .help-bg #content {
