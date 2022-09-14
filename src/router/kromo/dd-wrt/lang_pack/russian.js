@@ -462,16 +462,12 @@ bmenu.servicesPptp="VPN";
 bmenu.servicesUSB="USB";
 bmenu.servicesNAS="NAS";
 bmenu.servicesHotspot="HotSpot";
-bmenu.servicesMilkfish="Milkfish SIP";
 bmenu.servicesPrivoxy="Блок. рекламы";
-bmenu.servicesLighttpd="Web-сервер";
-//bmenu.servicesAnchorFree="Моя рекламная сеть";
 
 bmenu.statu="Состояние";
 bmenu.statuRouter="Роутер";
 bmenu.statuInet="WAN";
 bmenu.statuLAN="LAN";
-bmenu.statuSputnik="Агент Sputnik";
 bmenu.statuWLAN="WLAN";
 bmenu.statuVPN="OpenVPN";
 bmenu.statuBand="Загрузка сетей";
@@ -815,14 +811,6 @@ hotspot.smtp_net="Исходная сеть SMTP";
 hotspot.shat_legend="Нулевая конфигурация IP";
 hotspot.shat_srv="Нулевая конфигурация IP";
 hotspot.shat_srv2="Нулевая конфигурация IP включена";
-hotspot.sputnik_legend="Sputnik";
-hotspot.sputnik_srv="Агент Sputnik";
-hotspot.sputnik_mode="Режим Sputnik";
-hotspot.sputnik_id="ID сервера Sputnik";
-hotspot.sputnik_instant="Использовать Sputnik Instant Setup";
-hotspot.sputnik_express="Использовать SputnikNet Express";
-hotspot.sputnik_about="про Sputnik";
-hotspot.sputnik_learn="Узнать больше";
 hotspot.wifidog_legend="Wifidog";
 hotspot.wifidog_srv="Демон Wifidog";
 hotspot.wifidog_id="ID шлюза";
@@ -1503,56 +1491,6 @@ service.dlna_type_audio="Аудио";
 service.dlna_type_video="Видео";
 service.dlna_type_images="Изображения";
 
-//milkfish.webservices
-service.milkfish_siprouter="Milkfish SIP";
-service.milkfish_alias="Псевдоним";
-service.milkfish_uri="SIP URI";
-service.milkfish_mainswitch="Основной коммутатор";
-service.milkfish_fromswitch="From-Substitution";
-service.milkfish_fromdomain="From-Domain";
-service.milkfish_username="Имя пользователя Milkfish";
-service.milkfish_password="Пароль Milkfish";
-service.milkfish_audit="Аудит Milkfish";
-service.milkfish_siptrace="Трассировка SIP";
-service.milkfish_subscribers="Локальные подписчики";
-service.milkfish_aliases="Локальные псевдонимы";
-service.milkfish_dynsip="Динамический SIP";
-service.milkfish_status="Статус SIP";
-service.milkfish_database="База данных SIP";
-service.milkfish_messaging="Сообщения SIP";
-service.milkfish_phonebook="Адресная книга SIP";
-service.milkfish_dynsipdomain="Домен DynSIP";
-service.milkfish_dynsipurl="Обновление URL DynSIP";
-service.milkfish_dsusername="Имя пользователя DynSIP";
-service.milkfish_dspassword="Пароль DynSIP";
-service.milkfish_sipmessage="Сообщение SIP";
-service.milkfish_destination="Назначение SIP";
-service.milkfish_contact="Контакт";
-service.milkfish_agent="User Agent";
-service.milkfish_registrations="Активные регистрации";
-service.milkfish_localsubscr="Локальные подписчики";
-service.milkfish_localalias="Локальные псевдонимы";
-service.milkfish_messaging="Сообщения SIP";
-service.milkfish_siptrace="Трассировка SIP";
-service.milkfish_advdynsip="Расширенные настройки DynSIP";
-service.milkfish_answers="Проблемы, вопросы, предложения? – Ищите ответы на <a href=\"http:\/\/forum.milkfish.org\" target=\"_blank\">Форуме пользователей Milkfish-dd</a>";
-
-//service.milkfish_="";//
-service.hmilkfish_right2="Включает/отключает ваш роутер Milkfish SIP.";
-service.hmilkfish_right4="Включает/отключает подмену From:-Headerfield вашего WAN IP в исходящих сообщениях SIP. Эта опция должна быть включена, если вы хотите позволить вызываемым делать обратные вызовы при изменении вашего IP-адреса";
-service.hmilkfish_right6="Вызываемый при обратном вызове вызывает данный домен (вместо вашего IP-адреса). Чтобы эта опция действовала, необходимо включить также опцию From-Substitution";
-service.hmilkfish_right8="Здесь задается ваше имя пользователя в  Milkfish Community Forum – оно выдается при регистрации на yourname.homesip.net";
-service.hmilkfish_right10="Здесь задается ваш пароль в  Milkfish Community Forum – он выдается при регистрации на yourname.homesip.net";
-service.hmilkfish_right12="Включает/отключает базовую трассировку SIP на вашем роутере";
-service.hmilkfish_right14="Локальные подписчики SIP – это локально управляемые учетные записи SIP";
-service.hmilkfish_right16="Псевдонимы SIP – это перенаправление, аналогичное перенаправлению E-mail. Могут быть использованы для перенаправления буквенно-цифровых учетных записей в цифровые учетные записи телефонных пользователей и наоборот";
-service.hmilkfish_right18="Включает/отключает динамический SIP (т.е. службу Homesip.net). Требуется задание имени пользователя и пароля";
-service.hmilkfish_right20="пока не реализовано – оставьте поле пустым";
-service.hmilkfish_right22="пока не реализовано – оставьте поле пустым";
-service.hmilkfish_right24="пока не реализовано – оставьте поле пустым";
-service.hmilkfish_right26="пока не реализовано – оставьте поле пустым";
-//service.hmilkfish_="";//
-
 // Zabbix
 service.zabbix_legend="Zabbix";
 service.zabbix_cl="Клиент";
@@ -1681,18 +1619,6 @@ hstatus_inet.right6=" Здесь показан Интернет-трафик в
 // ** Status_Conntrack.asp **//
 status_conn.titl="Таблица активных IP-соединений";
 status_conn.h2="Активные IP-соединения";
-
-// ** Status_SputnikAPD.asp **//
-status_sputnik.titl="Статус агента Sputnik";
-status_sputnik.h2="Sputnik® Agent™";
-status_sputnik.manage="Управляется";
-status_sputnik.license="Нр.лицензии SCC.";
-//help container
-hstatus_sputnik.right1="Состояние агента Sputnik";
-hstatus_sputnik.right2="Это окно отображает состояние процессов агента Sputnik.";
-hstatus_sputnik.right4="Центр управления Sputnik к которому подключается эта точка доступа.";
-hstatus_sputnik.right6="Текущее состояние агента.";
-hstatus_sputnik.right8="Номер лицензии вашего центра управления Sputnik.";
 
 // ** Status_Wireless.asp **//
 status_wireless.titl="Статус беспроводной сети";

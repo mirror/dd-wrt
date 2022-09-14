@@ -419,14 +419,11 @@ bmenu.servicesPptp="VPN";
 bmenu.servicesUSB="USB";
 bmenu.servicesNAS="NAS";
 bmenu.servicesHotspot="熱點";
-bmenu.servicesMilkfish="Milkfish SIP Router";
-//bmenu.servicesAnchorFree="My Ad Network";
 
 bmenu.statu="機器狀態";
 bmenu.statuRouter="路由器";
 bmenu.statuInet="WAN";
 bmenu.statuLAN="區域網路";
-//bmenu.statuSputnik="Sputnik Agent";
 bmenu.statuWLAN="無線網路";
 bmenu.statuVPN="OpenVPN";
 bmenu.statuBand="頻寬監控";
@@ -719,14 +716,6 @@ hotspot.smtp_net="SMTP來源網路";
 hotspot.shat_legend="零IP設定";
 hotspot.shat_srv="零IP設定";
 hotspot.shat_srv2="零IP設定已開啟";
-hotspot.sputnik_legend="Sputnik";
-hotspot.sputnik_srv="Sputnik 代理";
-hotspot.sputnik_mode="Sputnik 模式";
-hotspot.sputnik_id="Sputnik伺服器ID";
-hotspot.sputnik_instant="使用Sputnik即時設定";
-hotspot.sputnik_express="使用SputnikNet Express";
-hotspot.sputnik_about="關於Sputnik";
-hotspot.sputnik_learn="更多";
 hotspot.wifidog_legend="Wifidog";
 hotspot.wifidog_srv="Wifidog 背景程式";
 hotspot.wifidog_id="Gateway ID";
@@ -1216,49 +1205,6 @@ service.nstx_log="打開除錯訊息";
 service.ttraff_legend="WAN 傳輸流量";
 service.ttraff_daemon="傳輸流量 背景程式";
 
-//milkfish.webservices
-service.milkfish_siprouter="Milkfish SIP Router";
-service.milkfish_alias="Alias";
-service.milkfish_uri="SIP URI";
-service.milkfish_mainswitch="Main Switch";
-service.milkfish_fromswitch="From-Substitution";
-service.milkfish_fromdomain="From-Domain";
-service.milkfish_username="Milkfish 帳號";
-service.milkfish_password="Milkfish Password";
-service.milkfish_audit="Milkfish Audit";
-service.milkfish_siptrace="SIP Trace";
-service.milkfish_subscribers="Local Subscribers";
-service.milkfish_aliases="Local Aliases";
-service.milkfish_dynsip="Dynamic SIP";
-service.milkfish_status="SIP 狀態";
-service.milkfish_database="SIP 資料庫";
-service.milkfish_messaging="SIP Messaging";
-service.milkfish_phonebook="SIP 電話簿";
-service.milkfish_dynsipdomain="DynSIP Domain";
-service.milkfish_dynsipurl="DynSIP Update URL";
-service.milkfish_dsusername="DynSIP 帳號";
-service.milkfish_dspassword="DynSIP 密碼";
-service.milkfish_sipmessage="SIP Message";
-service.milkfish_destination="SIP Destination";
-service.milkfish_contact="Contact";
-service.milkfish_agent="User Agent";
-service.milkfish_registrations="Active Registrations";
-//service.milkfish_="";//
-service.hmilkfish_right2="開啟/關閉 Milkfish SIP 路由器.";
-service.hmilkfish_right4="開啟/關閉 From:-Headerfield 替代的您的 WAN IP 傳出 SIP 訊息. 如果 WAN IP 已變更 ,讓呼叫端可以呼叫你,此設定必須 啟用";
-service.hmilkfish_right6="Callee calls back this Domain (instead of your WAN IP) when you send it as your From:-Domain instead of your WAN IP. From-Substitution needs to be enabled for this setting to take effect";
-service.hmilkfish_right8="這裡是 Milkfish 論壇 - 註冊後取得的帳號 yourname.homesip.net";
-service.hmilkfish_right10="這裡是 Milkfish 論壇 - 註冊後取得的密碼 ";
-service.hmilkfish_right12="Enables/Disables basic SIP Tracing on your router";
-service.hmilkfish_right14="Local SIP Subscribers are locally managed SIP Accounts";
-service.hmilkfish_right16="Local SIP Aliases are SIP Forwards similar to Email Forwards. Can be used to forward alphanumeric to numeric phone user accounts or vice versa";
-service.hmilkfish_right18="開啟/關閉 Dynamic SIP (for example Homesip.net Service) - Username and Password need to be set";
-service.hmilkfish_right20="not implemented yet - leave empty";
-service.hmilkfish_right22="not implemented yet - leave empty";
-service.hmilkfish_right24="not implemented yet - leave empty";
-service.hmilkfish_right26="not implemented yet - leave empty";
-//service.hmilkfish_="";//
-
 // ** eop-tunnel.asp **//
 eoip.titl="EoIP 通道";
 eoip.tunnel="通道";
@@ -1379,21 +1325,6 @@ hstatus_inet.right6="顯示每個月網際網路上傳下載的傳輸流量. 圖
 //
 status_conn.titl="使用中的IP連接表";
 status_conn.h2="使用中的IP連接";
-
-// ** Status_SputnikAPD.asp **//
-//
-status_sputnik.titl="Sputnik 代理資訊";
-status_sputnik.h2="Sputnik® Agent™";
-status_sputnik.manage="管理器";
-status_sputnik.license="SCC 授權編號";
-
-//help container
-hstatus_sputnik.right1="Sputnik 代理資訊";
-hstatus_sputnik.right2="此螢幕顯示Sputnik代理操作的資訊.";
-hstatus_sputnik.right4="本連線點所連接到的Sputnik控制中心.";
-hstatus_sputnik.right6="目前代理資訊.";
-hstatus_sputnik.right8="您的Sputnik控制中心的授權數.";
-
 
 // ** Status_Wireless.asp **//
 status_wireless.titl="無線資訊";

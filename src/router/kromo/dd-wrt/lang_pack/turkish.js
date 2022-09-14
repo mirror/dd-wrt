@@ -451,14 +451,11 @@ bmenu.servicesUSB="USB";
 bmenu.servicesNAS="NAS";
 bmenu.servicesHotspot="Hotspot";
 bmenu.servicesNintendo="Nintendo";
-bmenu.servicesMilkfish="Milkfish SIP Yönlendirici";
-//bmenu.servicesAnchorFree="Reklam Ağım";
 
 bmenu.statu="Durum";
 bmenu.statuRouter="Yönlendirici";
 bmenu.statuInet="WAN";
 bmenu.statuLAN="LAN";
-bmenu.statuSputnik="Sputnik Aracı";
 bmenu.statuWLAN="Kablosuz";
 bmenu.statuVPN="OpenVPN";
 bmenu.statuBand="Bant Genişliği";
@@ -771,14 +768,6 @@ hotspot.smtp_net="SMTP Kaynak Ağı";
 hotspot.shat_legend="Sıfır IP Yap.";
 hotspot.shat_srv="Sıfır IP Yap.";
 hotspot.shat_srv2="Sıfır IP Yap. etkin";
-hotspot.sputnik_legend="Sputnik";
-hotspot.sputnik_srv="Sputnik Aracı";
-hotspot.sputnik_mode="Sputnik Modu";
-hotspot.sputnik_id="Sputnik Sunucu Kimliği";
-hotspot.sputnik_instant="Sputnik Anında Kurulumu Kullan";
-hotspot.sputnik_express="SputnikNet Express'i Kullan";
-hotspot.sputnik_about="Sputnik hakkında";
-hotspot.sputnik_learn="Daha fazla bilgi";
 hotspot.wifidog_legend="Wifidog";
 hotspot.wifidog_srv="Wifidog daemon";
 hotspot.wifidog_id="Ağ Geçidi Kimliği";
@@ -1384,50 +1373,6 @@ service.warn_to="Alıcı E-posta Adresi";
 service.warn_domain="Alıcı Etki Alanı";
 service.warn_user="SMTP Yetkili Kullanıcı Adı";
 service.warn_pass="SMTP Yetkili Şifre";
-
-//milkfish.webservices
-service.milkfish_siprouter="Milkfish SIP Yönlendirici";
-service.milkfish_alias="Diğer adı";
-service.milkfish_uri="SIP URI";
-service.milkfish_mainswitch="SIP Yönlendirici";
-service.milkfish_fromswitch="Kimden-Alternatif";
-service.milkfish_fromdomain="Kimden-Etki Alanı";
-service.milkfish_username="Milkfish Kullanıcı Adı";
-service.milkfish_password="Milkfish Şifre";
-service.milkfish_audit="Milkfish Denetim";
-service.milkfish_siptrace="SIP İzleme";
-service.milkfish_subscribers="Yerel Aboneler";
-service.milkfish_aliases="Yerel Diğer Adlar";
-service.milkfish_dynsip="Dinamik SIP";
-service.milkfish_status="SIP Durumu";
-service.milkfish_database="SIP Veritabanı";
-service.milkfish_messaging="SIP Mesajlaşma";
-service.milkfish_phonebook="SIP Telefon Defteri";
-service.milkfish_dynsipdomain="DynSIP Etki Alanı";
-service.milkfish_dynsipurl="DynSIP Güncelleme URL'si";
-service.milkfish_dsusername="DynSIP Kullanıcı Adı";
-service.milkfish_dspassword="DynSIP Şifre";
-service.milkfish_sipmessage="SIP Mesajı";
-service.milkfish_destination="SIP Hedefi";
-service.milkfish_contact="İletişim";
-service.milkfish_agent="Kullanıcı Aracısı";
-service.milkfish_registrations="Etkin Kayıtlar";
-//service.milkfish_="";//
-service.hmilkfish_right2="Milkfish SIP Yönlendiricinizi Etkinleştirir/Devre Dışı Bırakır.";
-service.hmilkfish_right4="Kimden:Giden SIP mesajlarındaki WAN IP'nizin Üst Bilgi Alternatifini Etkinleştirir/Devre Dışı Bırakır. WAN IP'niz değiştiğinde arananların sizi geri arayabilmesini istiyorsanız bu ayar etkinleştirilmelidir.";
-service.hmilkfish_right6="Kimden:-WAN IP yerine Etki Alanı şeklinde gönderdiğinizde Aranan kişi bu Etki Alanını (WAN IP'niz yerine) geri arayabilir. Bu ayarın uygulamaya konması için Kimden-Alternatif seçeneği etkinleştirilmelidir";
-service.hmilkfish_right8="Milkfish Topluluğu Forumu Kullanıcı Adınız - Kayıt size yourname.homesip.net adını tahsis eder";
-service.hmilkfish_right10="Milkfish Topluluğu Forumu Şifreniz - Kayıt size yourname.homesip.net şifresini tahsis eder";
-service.hmilkfish_right12="Yönlendiricinizdeki temel SIP İzleme işlevini Etkinleştirir/Devre Dışı bırakır";
-service.hmilkfish_right14="Yerel SIP Aboneleri yerel olarak yönetilen SIP Hesaplarıdır";
-service.hmilkfish_right16="Yerel SIP Diğer Adları, E-posta Yönlendirmelerine benzer SIP Yönlendirmeleridir. Alfanümerik telefon kullanıcısı hesaplarını nümerik olanlara yönlendirmek veya aksi yönde yönlendirme yapmak için kullanılabilir";
-service.hmilkfish_right18="Dinamik SIP'i Etkinleştirir/Devre Dışı Bırakır (ör. Homesip.net Service) - Kullanıcı Adı ve Şifre belirlenmeli";
-service.hmilkfish_right20="henüz uygulanmadı - boş bırakın";
-service.hmilkfish_right22="henüz uygulanmadı - boş bırakın";
-service.hmilkfish_right24="henüz uygulanmadı - boş bırakın";
-service.hmilkfish_right26="henüz uygulanmadı - boş bırakın";
-//service.hmilkfish_="";//
-
 service.samba3_srv="Samba";
 service.samba3_srvstr="Sunucu Dizesi";
 service.samba3_pub="Genel Paylaşım";
@@ -1574,21 +1519,6 @@ hstatus_inet.right6="Bu, yönlendiricinizin aylık Internet trafiğini gösterir
 // ** Status_Conntrack.asp **//
 status_conn.titl="Etkin IP Bağlantıları Tablosu";
 status_conn.h2="Etkin IP Bağlantıları";
-
-
-// ** Status_SputnikAPD.asp **//
-status_sputnik.titl="Sputnik Araç Durumu";
-status_sputnik.h2="Sputnik® Agent™";
-status_sputnik.manage="Yürüten";
-status_sputnik.license="SCC Lisans No.";
-
-//help container
-hstatus_sputnik.right1="Sputnik Araç Durumu";
-hstatus_sputnik.right2="Bu ekran Sputnik Aracı işleminin durumunu görüntüler.";
-hstatus_sputnik.right4="Bu erişim noktasının bağlı olduğu Sputnik Kontrol Merkezi.";
-hstatus_sputnik.right6="Geçerli Araç durumu.";
-hstatus_sputnik.right8="Sputnik Kontrol Merkezi lisans numarası.";
-
 
 // ** Status_Wireless.asp **//
 status_wireless.titl="Kablosuz Durumu";
