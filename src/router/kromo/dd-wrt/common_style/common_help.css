@@ -29,6 +29,14 @@ tt {
   width: 314px;
   mix-blend-mode: darken;
 }
+a {
+  text-decoration: none;
+  color: #33f;
+}
+a:hover {
+  text-decoration: underline;
+  color: #33f;
+}
 .navig {
   position: absolute;
   top: 4.737em;
@@ -41,7 +49,7 @@ tt {
   color: #fff;
 }
 .navig a:hover {
-  color: #33f;
+  color: #5cb3ff;
 }
 h2 {
   background: #777674;
@@ -85,14 +93,6 @@ ol {
 }
 ol li {
   margin-left: 2.5em;
-}
-a {
-  text-decoration: none;
-  color: #33f;
-}
-a:hover {
-  text-decoration: underline;
-  color: #33f;
 }
 .also, .note {
   padding: .725em;
