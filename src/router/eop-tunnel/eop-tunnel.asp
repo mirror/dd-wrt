@@ -16,16 +16,14 @@ function to_apply(F) {
 	applytake(F);
 }
 
-function gen_wg_key(F,keyindex)
-{
+function gen_wg_key(F,keyindex) {
 	F.keyindex.value = keyindex;
 	F.change_action.value="gozila_cgi";
 	F.submit_type.value = "gen_wg_key";
 	apply(F);
 }
 
-function gen_wg_client(F,keyindex,peerindex)
-{
+function gen_wg_client(F,keyindex,peerindex) {
 	F.keyindex.value = keyindex;
 	F.peerindex.value = peerindex;
 	F.change_action.value="gozila_cgi";
@@ -33,8 +31,7 @@ function gen_wg_client(F,keyindex,peerindex)
 	apply(F);
 }
 
-function del_wg_client(F,keyindex,peerindex)
-{
+function del_wg_client(F,keyindex,peerindex) {
 	F.keyindex.value = keyindex;
 	F.peerindex.value = peerindex;
 	F.change_action.value="gozila_cgi";
@@ -42,8 +39,7 @@ function del_wg_client(F,keyindex,peerindex)
 	apply(F);
 }
 
-function add_peer(F,keyindex)
-{
+function add_peer(F,keyindex) {
 	F.keyindex.value = keyindex;
 	F.change_action.value="gozila_cgi";
 	F.submit_type.value = "add_peer";
@@ -51,8 +47,7 @@ function add_peer(F,keyindex)
 }
 
 //egc
-function import_tunnel(F,myid,keyindex)
-{
+function import_tunnel(F,myid,keyindex) {
 	//this is triggered by on change event of filepicker
 	//alert("getwgfile: F:" + F.name + "; key-tun: " + keyindex + "; myid: " + myid);
 	var wgfileid = document.getElementById(myid).files[0];
@@ -74,8 +69,7 @@ function import_tunnel(F,myid,keyindex)
 	}
 }
 
-function del_peer(F, keyindex, peerindex)
-{
+function del_peer(F, keyindex, peerindex) {
 	F.keyindex.value = keyindex;
 	F.peerindex.value = peerindex;
 	F.change_action.value="gozila_cgi";
@@ -83,22 +77,19 @@ function del_peer(F, keyindex, peerindex)
 	apply(F);
 }
 
-function add_tunnel(F)
-{
+function add_tunnel(F) {
 	F.change_action.value="gozila_cgi";
 	F.submit_type.value = "add_tunnel";
 	apply(F);
 }
-function del_tunnel(F,tunnelindex)
-{
+function del_tunnel(F,tunnelindex) {
 	F.keyindex.value = tunnelindex;
 	F.change_action.value="gozila_cgi";
 	F.submit_type.value = "del_tunnel";
 	apply(F);
 }
 
-function gen_wg_psk(F,keyindex,peer)
-{
+function gen_wg_psk(F,keyindex,peer) {
 	F.keyindex.value = keyindex;
 	F.peerindex.value = peer;
 	F.change_action.value="gozila_cgi";
@@ -106,8 +97,7 @@ function gen_wg_psk(F,keyindex,peer)
 	apply(F);
 }
 
-function changespbr(F, index, value)
-{
+function changespbr(F, index, value) {
 	//alert(" F:" + F.name + "; tun: " + index + "; value: " + value);
 	if (value == 1 || value == 2) {
 		show_layer_ext(F, "idoet" + index + "_spbr", true);
@@ -116,8 +106,7 @@ function changespbr(F, index, value)
 	}
 }
 
-function changedpbr(F, index, value)
-{
+function changedpbr(F, index, value) {
 	//alert(" F:" + F.name + "; tun: " + index + "; value: " + value);
 	if (value == 1 || value == 2) {
 		show_layer_ext(F, "idoet" + index + "_dpbr", true);
@@ -126,8 +115,7 @@ function changedpbr(F, index, value)
 	}
 }
 
-function changeproto(F, index, value, brvalue)
-{
+function changeproto(F, index, value, brvalue) {
 if (value == 1) {
 	show_layer_ext(F, "idmtik" + index, true);
 } else {
@@ -141,54 +129,51 @@ if (value == 2) {
 	show_layer_ext(F, "idlocalip" + index, false);
 	show_layer_ext(F, "idbridged" + index, false);
 } else {
-	show_layer_ext(F, "idwireguard" + index, false);
-	show_layer_ext(F, "idl2support" + index, true);
-	show_layer_ext(F, "idwginput" + index, false);
-	show_layer_ext(F, "idlocalip" + index, true);
-	if (brvalue == 1) {
-	    show_layer_ext(F, "idbridged" + index, false);
-	} else {
-	    show_layer_ext(F, "idbridged" + index, true);
+		show_layer_ext(F, "idwireguard" + index, false);
+		show_layer_ext(F, "idl2support" + index, true);
+		show_layer_ext(F, "idwginput" + index, false);
+		show_layer_ext(F, "idlocalip" + index, true);
+		if (brvalue == 1) {
+			show_layer_ext(F, "idbridged" + index, false);
+		} else {
+			show_layer_ext(F, "idbridged" + index, true);
+		}
 	}
 }
-}
 
-function failover_show(F, index, value)
-{
-if (value == 1) {
-	show_layer_ext(F, "idoet" + index + "_tunnelstate", true);
-	show_layer_ext(F, "idoet" + index + "_wdog", true);
-	show_layer_ext(F, "idoet" + index + "_wdog2", false);
-} else {
-	show_layer_ext(F, "idoet" + index + "_tunnelstate", false);
-	show_layer_ext(F, "idoet" + index + "_wdog", false);
-	show_layer_ext(F, "idoet" + index + "_wdog2", true);
+function failover_show(F, index, value) {
+	if (value == 1) {
+		show_layer_ext(F, "idoet" + index + "_tunnelstate", true);
+		show_layer_ext(F, "idoet" + index + "_wdog", true);
+		show_layer_ext(F, "idoet" + index + "_wdog2", false);
+	} else {
+		show_layer_ext(F, "idoet" + index + "_tunnelstate", false);
+		show_layer_ext(F, "idoet" + index + "_wdog", false);
+		show_layer_ext(F, "idoet" + index + "_wdog2", true);
+	}
 }
-}
-function wdog_show(F, index, value)
-{
-if (value == 1) {
-	show_layer_ext(F, "idoet" + index + "_failgrp", false);
-	show_layer_ext(F, "idoet" + index + "_wdog", true);
-} else {
-	show_layer_ext(F, "idoet" + index + "_failgrp", true);
-	show_layer_ext(F, "idoet" + index + "_wdog", false);
-}
+function wdog_show(F, index, value) {
+	if (value == 1) {
+		show_layer_ext(F, "idoet" + index + "_failgrp", false);
+		show_layer_ext(F, "idoet" + index + "_wdog", true);
+	} else {
+		show_layer_ext(F, "idoet" + index + "_failgrp", true);
+		show_layer_ext(F, "idoet" + index + "_wdog", false);
+	}
 }
 var update;
 
 addEvent(window, "load", function() {
-		stickControl(<% nvg("sticky_footer"); %>);
-		update = new StatusbarUpdate();
-		update.start();
+	stickControl(<% nvg("sticky_footer"); %>);
+	update = new StatusbarUpdate();
+	update.start();
 });
 
 addEvent(window, "unload", function() {
 	update.stop();
 });
-
-		//]]>
-		</script>
+	//]]>
+	</script>
 	//added to do screen refresh but gives nasty screen flicker need intelligent way to only refresh status window auto refresh div jquery
 	//<meta http-equiv="refresh" content="30" />
 	</head>
@@ -227,7 +212,7 @@ addEvent(window, "unload", function() {
 					</div>
 					<div id="helpContainer">
 						<div id="help">
-							<div><h2><% tran("share.help"); %></h2></div>
+							<h2><% tran("share.help"); %></h2>
 							<dl>
 								<dt class="term"><% tran("eoip.wireguard_lanac"); %></dt>
 								<dd class="definition"><% tran("hstatus_vpn.right4"); %></dd>
