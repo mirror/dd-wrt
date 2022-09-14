@@ -126,7 +126,7 @@ EJ_VISIBLE void ej_do_hpagehead(webs_t wp, int argc, char_t ** argv)	// Eko
 		websWrite(wp, "  height: 22px;\n");
 		websWrite(wp, "}\n");
 		websWrite(wp, ".thc {\n");
-		websWrite(wp, "  background-color: #ccc;\n");
+		websWrite(wp, "  background-color: #777674;\n");
 		websWrite(wp, "  border: 0;\n");
 		websWrite(wp, "  color: #fff;\n");
 		websWrite(wp, "}\n");
