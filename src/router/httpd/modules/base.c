@@ -2959,7 +2959,7 @@ static struct mime_handler mime_handlers[] = {
 	{ "**.rar", "application/vnd.rar", NULL, NULL, do_file, NULL, NO_HEADER, IGNORE_OPTIONS },
 	{ "**.tar", "application/x-tar", NULL, NULL, do_file, NULL, NO_HEADER, IGNORE_OPTIONS },
 	{ "**.zip", "application/zip", NULL, NULL, do_file, NULL, NO_HEADER, IGNORE_OPTIONS },
-	{ "**.xhtml", "application/xhtml+xml", NULL, NULL, do_ej, NULL, NO_HEADER, IGNORE_OPTIONS },
+	{ "**.xhtml", "application/xhtml+xml", no_cache, NULL, do_ej, do_auth, NO_HEADER, IGNORE_OPTIONS },
 	{ "**.avi", "video/x-msvideo", NULL, NULL, do_file, NULL, NO_HEADER, IGNORE_OPTIONS },
 	{ "**.mp4", "video/mp4", NULL, NULL, do_file, NULL, NO_HEADER, IGNORE_OPTIONS },
 	{ "**.mpeg", "video/mpeg", NULL, NULL, do_file, NULL, NO_HEADER, IGNORE_OPTIONS },
