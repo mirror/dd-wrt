@@ -32,14 +32,6 @@ EJ_VISIBLE void ej_do_pagehead(webs_t wp, int argc, char_t ** argv)	// Eko
 #ifndef HAVE_MICRO
 	websWrite(wp, "<link rel=\"icon\" href=\"favicon.ico\" type=\"image/x-icon\" />\n<link rel=\"shortcut icon\" href=\"favicon.ico\" type=\"image/x-icon\" />\n");
 #endif
-	websWrite(wp, "<script type=\"text/javascript\" src=\"common.js\"></script>\n<script type=\"text/javascript\" src=\"lang_pack/english.js\"></script>\n");
-#ifdef HAVE_LANGUAGE
-	websWrite(wp, "<script type=\"text/javascript\" src=\"lang_pack/language.js\"></script>\n");
-#endif
-// temp
-#ifdef HAVE_FREECWMP
-	websWrite(wp, "<script type=\"text/javascript\" src=\"lang_pack/freecwmp-english.js\"></script>\n");
-#endif
 	char *style = nvram_safe_get("router_style");
 	char *style_dark = nvram_safe_get("router_style_dark");
 	if (!*style)
@@ -54,6 +46,14 @@ EJ_VISIBLE void ej_do_pagehead(webs_t wp, int argc, char_t ** argv)	// Eko
 			websWrite(wp, "<link type=\"text/css\" rel=\"stylesheet\" href=\"style/elegant/fresh-dark.css\" />\n");
 		}
 	}
+#endif
+websWrite(wp, "<script type=\"text/javascript\" src=\"common.js\"></script>\n<script type=\"text/javascript\" src=\"lang_pack/english.js\"></script>\n");
+#ifdef HAVE_LANGUAGE
+websWrite(wp, "<script type=\"text/javascript\" src=\"lang_pack/language.js\"></script>\n");
+#endif
+// temp
+#ifdef HAVE_FREECWMP
+websWrite(wp, "<script type=\"text/javascript\" src=\"lang_pack/freecwmp-english.js\"></script>\n");
 #endif
 #ifdef HAVE_PWC
 	websWrite(wp,
@@ -118,15 +118,17 @@ EJ_VISIBLE void ej_do_hpagehead(webs_t wp, int argc, char_t ** argv)	// Eko
 		websWrite(wp, "  margin: .906em;\n");
 		websWrite(wp, "}\n");
 		websWrite(wp, ".t-border {\n");
-		websWrite(wp, "  border: 1px solid #222;\n");
+		websWrite(wp, "  border: 1px solid #ccc;\n");
 		websWrite(wp, "  border-radius: 4px;\n");
 		websWrite(wp, "}\n");
 		websWrite(wp, "th {\n");
-		websWrite(wp, "  font-size: .88rem;\n");
-		websWrite(wp, "  padding: 2px;\n");
+		websWrite(wp, "  letter-spacing: .123rem;\n");
+		websWrite(wp, "  height: 22px;\n");
 		websWrite(wp, "}\n");
 		websWrite(wp, ".thc {\n");
 		websWrite(wp, "  background-color: #ccc;\n");
+		websWrite(wp, "  border: 0;\n");
+		websWrite(wp, "  color: #fff;\n");
 		websWrite(wp, "}\n");
 		websWrite(wp, "td {\n");
 		websWrite(wp, "  text-align: start;\n");
@@ -160,7 +162,7 @@ EJ_VISIBLE void ej_do_hpagehead(webs_t wp, int argc, char_t ** argv)	// Eko
 		websWrite(wp, "  height: auto;\n");
 		websWrite(wp, "  font-size: 20px;\n");
 		websWrite(wp, "  color: #f6be00;\n");
-		websWrite(wp, "  background: linear-gradient(to bottom, #ffcf2c, #ee8806);\n");
+		websWrite(wp, "  background: linear-gradient(to bottom, #ce9f00, #ffc516);\n");
 		websWrite(wp, "  -webkit-text-fill-color: transparent;\n");
 		websWrite(wp, "  -webkit-background-clip: text;\n");
 		websWrite(wp, "  animation: foolywood 35s linear infinite;\n");
@@ -177,11 +179,6 @@ EJ_VISIBLE void ej_do_hpagehead(webs_t wp, int argc, char_t ** argv)	// Eko
 	websWrite(wp, "<html>\n");
 	websWrite(wp, "<head>\n");
 	websWrite(wp, "<meta http-equiv=\"Content-Type\" content=\"application/xhtml+xml; charset=%s\" />\n", live_translate(wp, "lang_charset.set"));
-	websWrite(wp, "<script type=\"text/javascript\" src=\"../common.js\"></script>\n");
-	websWrite(wp, "<script type=\"text/javascript\" src=\"../lang_pack/english.js\"></script>\n");
-#ifdef HAVE_LANGUAGE
-	websWrite(wp, "<script type=\"text/javascript\" src=\"../lang_pack/language.js\"></script>\n");
-#endif
 	websWrite(wp, "<link type=\"text/css\" rel=\"stylesheet\" href=\"help.css\">\n");
 	if (!strcmp(style, "blue") || !strcmp(style, "cyan") || !strcmp(style, "elegant") || !strcmp(style, "green") || !strcmp(style, "orange") || !strcmp(style, "red") || !strcmp(style, "yellow")) {
 		if (style_dark != NULL && !strcmp(style_dark, "1")) {
@@ -191,8 +188,12 @@ EJ_VISIBLE void ej_do_hpagehead(webs_t wp, int argc, char_t ** argv)	// Eko
 #ifndef HAVE_MICRO
 	do_ddwrt_inspired_themes(wp);
 #endif
+	websWrite(wp, "<script type=\"text/javascript\" src=\"../common.js\"></script>\n");
+	websWrite(wp, "<script type=\"text/javascript\" src=\"../lang_pack/english.js\"></script>\n");
+#ifdef HAVE_LANGUAGE
+	websWrite(wp, "<script type=\"text/javascript\" src=\"../lang_pack/language.js\"></script>\n");
+#endif
 	websWrite(wp, "<title>%s (build %s)", live_translate(wp, "share.help"), SVN_REVISION);
 	websWrite(wp, " - %s</title>\n", live_translate(wp, htitle));
 	websWrite(wp, "</head>\n");
-
 }
