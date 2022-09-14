@@ -258,92 +258,29 @@ rtt min/avg/max/mdev = 5.954/6.133/6.313/0.195 ms
    * 在 `Domain Address` 指定特定域名的 IP 地址，可用于广告屏蔽。
 
 3. 启用服务
-   
-   SmartDNS 服务生效方法有两种，一种是**直接作为主 DNS 服务**，另一种是**作为 DNSmasq 的上游**。
-   默认情况下，SmartDNS 采用第一种方式。如下两种方式根据需求选择即可。
-   
-   - **方法一：作为主 DNS 服务（默认方案）**
      
-     * 启用 SmartDNS 的 53 端口重定向
-       
-       登录 OpenWrt 管理界面，点击 `Services` -> `SmartDNS` -> `redirect`，选择 `重定向 53 端口到 SmartDNS `启用 53 端口转发。
-     
-     * 检测转发服务是否配置成功
-       
-       执行
-       
-       ```shell
-       $ nslookup -querytype=ptr smartdns
+  * 替换默认Dndmasq为主DNS。
+    
+    登录 OpenWrt 管理界面，点击 `Services` -> `SmartDNS` -> `port`，设置端口号为`53`，smartdns会自动接管主DNS服务器。
+
+  * 检测转发服务是否配置成功
+    
+    执行
+    
+    ```shell
+    $ nslookup -querytype=ptr smartdns
+    ```
+    
+    查看命令结果中的 `name` 是否为 `smartdns` 或你的主机名，如果是则表示生效
+    
+    ```shell
+    $ nslookup -querytype=ptr smartdns
+    Server:         192.168.1.1
+    Address:        192.168.1.1#53
+    
+    Non-authoritative answer:
+    smartdns        name = smartdns.
        ```
-       
-       查看命令结果中的 `name` 是否为 `smartdns` 或你的主机名，如果是则表示生效
-       
-       ```shell
-       $ nslookup -querytype=ptr smartdns
-       Server:         192.168.1.1
-       Address:        192.168.1.1#53
-       
-       Non-authoritative answer:
-       smartdns        name = smartdns.
-       ```
-     
-     * 界面提示重定向失败
-       
-       * 检查 `iptables` 和/或 `ip6tables` 命令是否正确安装。
-       
-       * OpenWrt 15.01 系统不支持 IPv6 重定向，如网络需要支持 IPv6，请将 DNSmasq 上游改为 SmartDNS，或者将 SmartDNS 的端口改为53，并停用 DNSmasq。
-       
-       * LEDE 系统请安装 IPv6 的 NAT 转发驱动。点击 `System` -> `Software`，点击 `Update lists` 更新软件列表后，安装 `ip6tables-mod-nat`。
-       
-       * 使用如下命令检查路由规则是否生效
-         
-         ```shell
-         iptables -t nat -L PREROUTING | grep REDIRECT
-         ```
-       
-       * 如转发功能不正常，请使用**方法二：作为 DNSmasq 的上游**。
-   
-   - **方法二：作为 DNSmasq 的上游**
-     
-     * **将 DNSmasq 的请求发送到 SmartDNS**
-       
-       登录 OpenWrt 管理界面，点击 `Services` -> `SmartDNS` -> `Redirect`，选择`作为 DNSmasq 的上游服务器`，设置 DNSmasq 的上游服务器为 SmartDNS。
-     
-     * **检测上游服务是否配置成功**
-       
-         执行
-         
-         ```shell
-         $ nslookup -querytype=ptr smartdns
-         ```
-         
-         查看命令结果中的 `name` 是否为 `smartdns` 或你的主机名，如果是则表示生效
-         
-         ```shell
-         $ nslookup -querytype=ptr smartdns
-         Server:         192.168.1.1
-         Address:        192.168.1.1#53
-         
-         Non-authoritative answer:
-         smartdns        name = smartdns.
-         ```
-
-         或执行
-
-         ```shell
-         $ nslookup smartdns
-         ```
-
-         查看命令结果是否有解析出路由器的IP地址，如果是则表示生效。
-
-         或执行
-
-         ```shell
-         ping smartdns.
-         ```
-
-         检测ping是否解析对应主机的IP地址。
-
 
 4. 启动服务
    
@@ -352,7 +289,14 @@ rtt min/avg/max/mdev = 5.954/6.133/6.313/0.195 ms
 5. **注意：**
    
    * 如已经安装 ChinaDNS，建议将 ChinaDNS 的上游配置为 SmartDNS。
-   * SmartDNS 默认情况下将 53 端口的请求转发到 SmartDNS的 本地端口，此行为由 `Redirect` 配置选项控制。
+   * 当smartdns的端口为53时，将自动接管dnsmasq为主dns。配置其他端口时，会重新启用dnsmasq为主dns。
+   * 若在此过程中发生异常，可使用如下命令还原dnsmasq为主DNS
+
+   ```shell
+   uci delete dhcp.@dnsmasq[0].port
+   uci commit dhcp
+   /etc/init.d/dnsmasq restart
+   ```
 
 ### 华硕路由器原生固件 / 梅林固件
 
@@ -563,6 +507,7 @@ rtt min/avg/max/mdev = 5.954/6.133/6.313/0.195 ms
 | rr-ttl-min | 允许的最小 TTL 值 | 远程查询结果 | 大于 0 的数字 | rr-ttl-min 60 |
 | rr-ttl-max | 允许的最大 TTL 值 | 远程查询结果 | 大于 0 的数字 | rr-ttl-max 600 |
 | rr-ttl-reply-max | 允许返回给客户端的最大 TTL 值 | 远程查询结果 | 大于 0 的数字 | rr-ttl-reply-max 60 |
+| local-ttl | 本地HOST，address的TTL值 | rr-ttl-min | 大于 0 的数字 | local-ttl  60 |
 | max-reply-ip-num | 允许返回给客户的最大IP数量 | IP数量 | 大于 0 的数字 | max-reply-ip-num 1 |
 | log-level | 设置日志级别 | error | fatal、error、warn、notice、info 或 debug | log-level error |
 | log-file | 日志文件路径 | /var/log/smartdns/smartdns.log | 合法路径字符串 | log-file /var/log/smartdns/smartdns.log |
@@ -578,12 +523,13 @@ rtt min/avg/max/mdev = 5.954/6.133/6.313/0.195 ms
 | server-tls | 上游 TLS DNS | 无 | 可重复。<br>[ip][:port]：服务器 IP:端口（可选)<br>[-spki-pin [sha256-pin]]：TLS 合法性校验 SPKI 值，base64 编码的 sha256 SPKI pin 值<br>[-host-name]：TLS SNI 名称<br>[-tls-host-verify]：TLS 证书主机名校验<br> [-no-check-certificate]：跳过证书校验<br>[-blacklist-ip]：配置 IP 过滤结果<br>[-whitelist-ip]：仅接受参数中配置的 IP 范围<br>[-group [group] ...]：DNS 服务器所属组，比如 office 和 foreign，和 nameserver 配套使用<br>[-exclude-default-group]：将 DNS 服务器从默认组中排除 | server-tls 8.8.8.8:853 |
 | server-https | 上游 HTTPS DNS | 无 | 可重复。<br>https://[host][:port]/path：服务器 IP:端口（可选）<br>[-spki-pin [sha256-pin]]：TLS 合法性校验 SPKI 值，base64 编码的 sha256 SPKI pin 值<br>[-host-name]：TLS SNI 名称<br>[-http-host]：http 协议头主机名<br>[-tls-host-verify]：TLS 证书主机名校验<br> [-no-check-certificate]：跳过证书校验<br>[-blacklist-ip]：配置 IP 过滤结果<br>[-whitelist-ip]：仅接受参数中配置的 IP 范围。<br>[-group [group] ...]：DNS 服务器所属组，比如 office 和 foreign，和 nameserver 配套使用<br>[-exclude-default-group]：将 DNS 服务器从默认组中排除 | server-https https://cloudflare-dns.com/dns-query |
 | speed-check-mode | 测速模式选择 | 无 | [ping\|tcp:[80]\|none] | speed-check-mode ping,tcp:80,tcp:443 |
-| response-mode | 首次查询响应模式 | first-ping |模式：[fisrt-ping\|fastest-ip\|first-response]<br> [first-ping]: 最快ping响应地址模式，DNS上游最快查询时延+ping时延最短，查询等待与链接体验最佳;<br>[fastest-ip]: 最快IP地址模式，查询到的所有IP地址中ping最短的IP。需等待IP测速; <br>[first-response]: 最快响应的DNS结果，DNS查询等待时间最短，返回的IP地址可能不是最快。| response-mode first-ping |
+| response-mode | 首次查询响应模式 | first-ping |模式：[fisrt-ping\|fastest-ip\|fastest-response]<br> [first-ping]: 最快ping响应地址模式，DNS上游最快查询时延+ping时延最短，查询等待与链接体验最佳;<br>[fastest-ip]: 最快IP地址模式，查询到的所有IP地址中ping最短的IP。需等待IP测速; <br>[fastest-response]: 最快响应的DNS结果，DNS查询等待时间最短，返回的IP地址可能不是最快。| response-mode first-ping |
 | address | 指定域名 IP 地址 | 无 | address /domain/[ip\|-\|-4\|-6\|#\|#4\|#6] <br>- 表示忽略 <br># 表示返回 SOA <br>4 表示 IPv4 <br>6 表示 IPv6 | address /www.example.com/1.2.3.4 |
 | nameserver | 指定域名使用 server 组解析 | 无 | nameserver /domain/[group\|-], group 为组名，- 表示忽略此规则，配套 server 中的 -group 参数使用 | nameserver /www.example.com/office |
 | ipset | 域名 ipset | 无 | ipset /domain/[ipset\|-\|#[4\|6]:[ipset\|-][,#[4\|6]:[ipset\|-]]]，-表示忽略 | ipset /www.example.com/#4:dns4,#6:- |
 | ipset-timeout | 设置 ipset 超时功能启用  | 自动 | [yes] | ipset-timeout yes |
 | domain-rules | 设置域名规则 | 无 | domain-rules /domain/ [-rules...]<br>[-c\|-speed-check-mode]：测速模式，参考 speed-check-mode 配置<br>[-a\|-address]：参考 address 配置<br>[-n\|-nameserver]：参考 nameserver 配置<br>[-p\|-ipset]：参考ipset配置<br>[-d\|-dualstack-ip-selection]：参考 dualstack-ip-selection  | domain-rules /www.example.com/ -speed-check-mode none |
+| domain-set | 设置域名集合 | 无 | domain-set [options...]<br>[-n\|-name]：域名集合名称 <br>[-t\|-type]：域名集合类型，当前仅支持list，格式为域名列表，一行一个域名。<br>[-f\|-file]：域名集合文件路径。<br> 选项需要配合address, nameserver, ipset等需要指定域名的地方使用，使用方式为 /domain-set:[name]/| domain-set -name set -type list -file /path/to/list <br> address /domain-set:set/1.2.4.8 |
 | bogus-nxdomain | 假冒 IP 地址过滤 | 无 | [ip/subnet]，可重复 | bogus-nxdomain 1.2.3.4/16 |
 | ignore-ip | 忽略 IP 地址 | 无 | [ip/subnet]，可重复 | ignore-ip 1.2.3.4/16 |
 | whitelist-ip | 白名单 IP 地址 | 无 | [ip/subnet]，可重复 | whitelist-ip 1.2.3.4/16 |
@@ -751,6 +697,31 @@ rtt min/avg/max/mdev = 5.954/6.133/6.313/0.195 ms
     配置完成后，可以直接使用主机名连接对应的机器。但需要注意：
 
     * Windows系统默认使用mDNS解析地址，如需要在windows下用使用smartdns解析，则需要在主机名后面增加`.`，表示使用DNS解析。如`ping smartdns.`
+
+13. 域名集合如何使用？  
+    为方便按集合配置域名，对于有/domain/的配置，可以指定域名集合，方便维护。具体方法为：
+    
+    * 使用`domain-set`配置集合文件，如
+    
+    ```sh
+    domain-set -name ad -file /etc/smartdns/ad-list.conf
+    ```
+
+    ad-list.conf的格式为一个域名一行，如
+    
+    ```
+    ad.com
+    site.com
+    ```
+
+    * 在有/domain/配置的选项使用域名集合，只需要将`/domain/`配置为`/domain-set:[集合名称]/`即可，如：
+
+    ```sh
+    address /domain-set:ad/#
+    domain-rules /domain-set:ad/ -a #
+    nameserver /domain-set:ad/server
+    ...
+    ```
 
 ## 编译
 
