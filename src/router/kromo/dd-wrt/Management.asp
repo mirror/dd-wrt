@@ -1,6 +1,6 @@
 <% do_pagehead("management.titl"); %>
-		<script type="text/javascript">
-		//<![CDATA[
+	<script type="text/javascript">
+	//<![CDATA[
 
 function SelPort(num,F)	{
 	if(num == 1 && F.PasswdModify.value == 1){
@@ -109,7 +109,7 @@ function submitcheck(F) {
 		if(!ChangePasswd(F))
 			return false;
 	}
-	
+
 	if(F._remote_mgt_https) {
 		if(F.http_enable.checked == true && F.https_enable.checked == false) {
 			F._remote_mgt_https.checked == false;
@@ -123,7 +123,7 @@ function submitcheck(F) {
 			F.remote_mgt_https.value = 0;
 		}
 	}
-	
+
 	if(F._https_enable) {
 		if(F._https_enable.checked == true) {
 			F.https_enable.value = 1;
@@ -139,7 +139,7 @@ function submitcheck(F) {
 			F.http_enable.value = 0;
 		}
 	}
-	
+
 	if(F._info_passwd) {
 		if(F._info_passwd.checked == true) {
 			F.info_passwd.value = 1;
@@ -163,10 +163,12 @@ function submitcheck(F) {
 	F.save_button.value = sbutton.saving;
 	return true;
 }
+
 function to_submit(F) {
 	if (submitcheck(F))
 	apply(F);
 }
+
 function to_apply(F) {
 	if (submitcheck(F))
 	applytake(F);
@@ -199,9 +201,9 @@ addEvent(window, "load", function() {
 addEvent(window, "unload", function() {
 	update.stop();
 });
-		
-		//]]>
-		</script>
+
+	//]]>
+	</script>
 	</head>
 	<body class="gui">
 		<div id="wrapper">
