@@ -462,16 +462,12 @@ bmenu.servicesUSB="USB";
 bmenu.servicesNAS="NAS";
 bmenu.servicesHotspot="Hotspot";
 bmenu.servicesNintendo="Nintendo";
-bmenu.servicesMilkfish="Proxy SIP";
 bmenu.servicesPrivoxy="Bloqueio de Propaganda";
-bmenu.servicesLighttpd="Servidor Web";
-//bmenu.servicesAnchorFree="My Ad Network";
 
 bmenu.statu="Status";
 bmenu.statuRouter="Roteador";
 bmenu.statuInet="WAN";
 bmenu.statuLAN="LAN";
-bmenu.statuSputnik="Agente Sputnik";
 bmenu.statuWLAN="Wireless";
 bmenu.statuVPN="OpenVPN";
 bmenu.statuBand="Largura de Banda";
@@ -860,14 +856,6 @@ hotspot.smtp_net="Rede de Origem SMTP";
 hotspot.shat_legend="Zero IP Config";
 hotspot.shat_srv="Zero IP Config";
 hotspot.shat_srv2="Zero IP Config habilitado";
-hotspot.sputnik_legend="Sputnik";
-hotspot.sputnik_srv="Agente Sputnik";
-hotspot.sputnik_mode="Modo Sputnik";
-hotspot.sputnik_id="ID do Servidor Sputnik";
-hotspot.sputnik_instant="Usar Configuração Instantânea do Sputnik";
-hotspot.sputnik_express="Usar SputnikNet Express";
-hotspot.sputnik_about="sobre o Sputnik";
-hotspot.sputnik_learn="Saiba mais";
 hotspot.wifidog_legend="Wifidog";
 hotspot.wifidog_srv="Gateway Wifidog";
 hotspot.wifidog_id="Gateway ID";
@@ -1522,50 +1510,6 @@ service.warn_to="Endereço de Email do Destinatário";
 service.warn_domain="Nome do Domínio do Destinatário";
 service.warn_user="Nome de Usuário para Autenticação SMTP";
 service.warn_pass="Senha para Autenticação SMTP";
-
-//milkfish.webservices
-service.milkfish_siprouter="Roteador SIP Milkfish";
-service.milkfish_alias="Apelido";
-service.milkfish_uri="URI SIP";
-service.milkfish_mainswitch="Roteador SIP";
-service.milkfish_fromswitch="Substituir Remetente";
-service.milkfish_fromdomain="Domínio de Origem";
-service.milkfish_username="Nome de Usuário Milkfish";
-service.milkfish_password="Senha Milkfish";
-service.milkfish_audit="Auditoria Milkfish";
-service.milkfish_siptrace="SIP Trace";
-service.milkfish_subscribers="Assinantes Locais";
-service.milkfish_aliases="Apelidos Locais";
-service.milkfish_dynsip="SIP Dinâmico";
-service.milkfish_status="Status SIP";
-service.milkfish_database="Banco de Dados SIP";
-service.milkfish_messaging="Messaging SIP";
-service.milkfish_phonebook="Agenda Telefônica SIP";
-service.milkfish_dynsipdomain="Domínio DynSIP";
-service.milkfish_dynsipurl="URL de Atualização DynSIP";
-service.milkfish_dsusername="Nome de Usuário DynSIP";
-service.milkfish_dspassword="Senha DynSIP";
-service.milkfish_sipmessage="Mensagem SIP";
-service.milkfish_destination="Destino SIP";
-service.milkfish_contact="Contato";
-service.milkfish_agent="Agente de Usuário";
-service.milkfish_registrations="Registros Ativos";
-//service.milkfish_="";//
-service.hmilkfish_right2="Habilita ou desabilita seu roteador SIP Milkfish.";
-service.hmilkfish_right4="Habilita ou desabilita substituição do cabeçalho from: do seu endereço IP WAN em mensagens de saída SIP. Habilite esta configuração se você desejar permitir aos chamadores ligarem de volta a você se o seu endereço WAN for alterado.";
-service.hmilkfish_right6="O chamador retorna a chamada a este domínio (ao invés de ao seu endereço de IP WAN) quando você envia-o como seu domínio de origem ao invés do seu endereço de IP WAN. Habilite Substituir Remetente para esta configuração ter efeito.";
-service.hmilkfish_right8="Coloque o seu nome de usuário do fórum da comunidade Milkfish aqui. Registre em seunome.homesip.net.";
-service.hmilkfish_right10="Coloque a sua senha do fórum da comunidade Milkfish aqui. Registre em seunome.homesip.net.";
-service.hmilkfish_right12="Habilita ou desabilita o rastreamento SIP básico em seu roteador.";
-service.hmilkfish_right14="Assinantes SIP locais são gerenciados localmente pelas contas SIP.";
-service.hmilkfish_right16="Apelidos SIP locais são encaminhados via SIP similar a encaminhamentos de e-mail. Pode ser usado para encaminhar contas de usuários telefônicos de alfanumérico para numérico ou vice-versa.";
-service.hmilkfish_right18="Habilita ou desabilita o SIP Dinâmico (ex.: Serviço Homesip.net). Você precisará configurar seu nome de usuário e senha.";
-service.hmilkfish_right20="ainda não implementado - deixe em branco";
-service.hmilkfish_right22="ainda não implementado - deixe em branco";
-service.hmilkfish_right24="ainda não implementado - deixe em branco";
-service.hmilkfish_right26="ainda não implementado - deixe em branco";
-//service.hmilkfish_="";//
-
 service.samba3_srv="Samba";
 service.samba3_srvstr="String do Servidor";
 service.samba3_pub="Compartilhamento Público";
@@ -1729,21 +1673,6 @@ hstatus_inet.right6="Exibe o tráfego de Internet do seu roteador por mês. Pass
 // ** Status_Conntrack.asp **//
 status_conn.titl="Tabela de Conexões IP Ativas";
 status_conn.h2="Conexões IP Ativas";
-
-
-// ** Status_SputnikAPD.asp **//
-status_sputnik.titl="Status do Agente Sputnik";
-status_sputnik.h2="Agente Sputnik®™";
-status_sputnik.manage="Gerenciado Por";
-status_sputnik.license="Licença SCC Nº.";
-
-//help container
-hstatus_sputnik.right1="Status do Agente Sputnik";
-hstatus_sputnik.right2="Esta tela exibe o status do processo do Agente Sputnik.";
-hstatus_sputnik.right4="O Centro de Controle Sputnik ao qual este Ponto de Acesso está conectado.";
-hstatus_sputnik.right6="O status atual do Agente.";
-hstatus_sputnik.right8="O número da licença do seu Centro de Controle Sputnik.";
-
 
 // ** Status_Wireless.asp **//
 status_wireless.titl="Status Wireless";

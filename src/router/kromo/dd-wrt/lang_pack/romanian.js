@@ -457,16 +457,12 @@ bmenu.servicesUSB="USB";
 bmenu.servicesNAS="NAS";
 bmenu.servicesHotspot="Hotspot";
 bmenu.servicesNintendo="Nintendo";
-bmenu.servicesMilkfish="Proxy SIP";
 bmenu.servicesPrivoxy="Blocare reclame";
-bmenu.servicesLighttpd="Server web";
-//bmenu.servicesAnchorFree="Rețeaua mea de reclame";
 
 bmenu.statu="Stare";
 bmenu.statuRouter="Ruter";
 bmenu.statuInet="WAN";
 bmenu.statuLAN="LAN";
-bmenu.statuSputnik="Agent Sputnik";
 bmenu.statuWLAN="Fără fir";
 bmenu.statuVPN="OpenVPN";
 bmenu.statuBand="Lățime de bandă";
@@ -818,14 +814,6 @@ hotspot.smtp_net="Rețea sursă SMTP";
 hotspot.shat_legend="Configurare Zero IP";
 hotspot.shat_srv="Configurează Zero IP";
 hotspot.shat_srv2="Configurare Zero IP activată";
-hotspot.sputnik_legend="Sputnik";
-hotspot.sputnik_srv="Agent Sputnik";
-hotspot.sputnik_mode="Mod Sputnik";
-hotspot.sputnik_id="ID server Sputnik";
-hotspot.sputnik_instant="Folosește Sputnik Instant Setup";
-hotspot.sputnik_express="Folosește SputnikNet Express";
-hotspot.sputnik_about="despre Sputnik";
-hotspot.sputnik_learn="Aflați mai multe";
 hotspot.wifidog_legend="Wifidog";
 hotspot.wifidog_srv="Gateway Wifidog";
 hotspot.wifidog_id="ID gateway";
@@ -1458,50 +1446,6 @@ service.warn_to="Adresă destinatar email";
 service.warn_domain="Nume domeniu destinatar";
 service.warn_user="Nume utilizator autentificare SMTP";
 service.warn_pass="Parolă autentificare SMTP";
-
-//milkfish.webservices
-service.milkfish_siprouter="Ruter SIP Milkfish";
-service.milkfish_alias="Alias";
-service.milkfish_uri="URI SIP";
-service.milkfish_mainswitch="Ruter SIP";
-service.milkfish_fromswitch="De la-substituție";
-service.milkfish_fromdomain="De la-domeniu";
-service.milkfish_username="Utilizator Milkfish";
-service.milkfish_password="Parolă Milkfish";
-service.milkfish_audit="Verificare Milkfish";
-service.milkfish_siptrace="Urmărire SIP";
-service.milkfish_subscribers="Abonați Locali";
-service.milkfish_aliases="Alias-uri Locale";
-service.milkfish_dynsip="SIP dinamic";
-service.milkfish_status="Stare SIP";
-service.milkfish_database="Bază de date SIP";
-service.milkfish_messaging="Mesagerie SIP";
-service.milkfish_phonebook="Carte de telefon SIP";
-service.milkfish_dynsipdomain="Domeniu DynSIP";
-service.milkfish_dynsipurl="Actualizare URL DynSIP";
-service.milkfish_dsusername="Utilizator DynSIP";
-service.milkfish_dspassword="Parolă DynSIP";
-service.milkfish_sipmessage="Mesaj SIP";
-service.milkfish_destination="Destinație SIP";
-service.milkfish_contact="Contact";
-service.milkfish_agent="Agent utilizator";
-service.milkfish_registrations="Înregistrări active";
-//service.milkfish_="";//
-service.hmilkfish_right2="Activați sau dezactivați ruterul dumneavoastră SIP Milkfish.";
-service.hmilkfish_right4="Activați sau dezactivați de la:-înlocuirea zonei din antet a IP-ului dumneavoastră WAN în mesajele SIP de ieșire. Această setare ar trebui activată, dacă doriți să permiteți apelanților să vă poată apela înapoi dacă IP-ul dumneavoastră WAN s-a schimbat.";
-service.hmilkfish_right6="Apelantul apelează acest domeniu (în locul adresei dumneavoastră IP WAN) atunci când trimiteți ca de la:-domeniu în loc de IP WAN. De la-subtituția trebuie să fie activată pentru ca această setare să aibă efect.";
-service.hmilkfish_right8="Puneți numele dumneavoastră de utilizator de pe forumul comunității Milkfish. Înregistrați-vă la numeledumneavoastra.homesip.net.";
-service.hmilkfish_right10="Puneți numele parola de pe forumul comunității Milkfish. Înregistrați-vă la numeledumneavoastra.homesip.net.";
-service.hmilkfish_right12="Activați sau dezactivați urmărire de bază SIP pe ruterul dumneavoastră.";
-service.hmilkfish_right14="Abonații locali SIP sunt conturile SIP administrate local.";
-service.hmilkfish_right16="Alias-uri locale SIP sunt înaintări SIP similare cu înaintările emailurilor. Pot fi folosite pentru înaintarea conturilor alfanumerice până la numerice ale utilizatorilor de telefon sau viceversa.";
-service.hmilkfish_right18="Activați sau dezactivați SIP dinamic (ex. serviciul Homesip.net) - Numele de utilizator și parola trebuie să fie setate.";
-service.hmilkfish_right20="deocamdată nu este implementat - lăsați-l gol";
-service.hmilkfish_right22="deocamdată nu este implementat - lăsați-l gol";
-service.hmilkfish_right24="deocamdată nu este implementat - lăsați-l gol";
-service.hmilkfish_right26="deocamdată nu este implementat - lăsați-l gol";
-//service.hmilkfish_="";//
-
 service.samba3_srv="Samba";
 service.samba3_srvstr="Șir de caractere server";
 service.samba3_pub="Partajare publică";
@@ -1665,20 +1609,6 @@ hstatus_inet.right6="Afișează traficul în Internet pe lună al ruterului dumn
 // ** Status_Conntrack.asp **//
 status_conn.titl="Tabel conexiuni IP active";
 status_conn.h2="Conexiuni IP active";
-
-
-// ** Status_SputnikAPD.asp **//
-status_sputnik.titl="Stare agent Sputnik";
-status_sputnik.h2="Sputnik® Agent™";
-status_sputnik.manage="Administrat de";
-status_sputnik.license="Nr. licență SCC";
-
-//help container
-hstatus_sputnik.right1="Stare agent Sputnik";
-hstatus_sputnik.right2="Acest ecran afișează starea procesului agentului Sputnik.";
-hstatus_sputnik.right4="Centrul de control Sputnik la care acest punct de acces este conectat.";
-hstatus_sputnik.right6="Starea curentă a agentului.";
-hstatus_sputnik.right8="Numărul licenței centrului dumneavoastră de control Sputnik.";
 
 
 // ** Status_Wireless.asp **//

@@ -353,7 +353,6 @@ bmenu.statu="Státusz";
 bmenu.statuRouter="Router";
 bmenu.statuInet="WAN";
 bmenu.statuLAN="LAN";
-bmenu.statuSputnik="Sputnik-Agent";
 bmenu.statuWLAN="WLAN";
 bmenu.statuVPN="OpenVPN";
 bmenu.statuSysInfo="Sys-Info";
@@ -632,13 +631,6 @@ hotspot.smtp_net="SMTP forrás hálózat";
 hotspot.shat_legend="Zéró IP beállítás";
 hotspot.shat_srv="Zéró IP beállítás";
 hotspot.shat_srv2="Zéró IP beállítás engedélyezve";
-hotspot.sputnik_legend="Sputnik";
-hotspot.sputnik_srv="Sputnik Agent";
-hotspot.sputnik_id="Sputnik szerver azonosító (ID)";
-hotspot.sputnik_instant="Sputnik Instant Setup használata";
-hotspot.sputnik_express="SputnikNet Express használata";
-hotspot.sputnik_about="A Sputnikról";
-
 hotspot.wifidog_legend="Wifidog";
 hotspot.wifidog_srv="Wifidog daemon";
 hotspot.wifidog_id="Átjáró azonosító (ID)";
@@ -1193,28 +1185,6 @@ status_inet.next="Next Month";
 
 hstatus_inet.right2="Ezek azok az adatok, amelyek szükségesek az internet szolgáltatónak, hogy csatlakozhasson az internethez. Ezeket az adatokat a <em>Beállítások</em> fülön adta meg. Itt lehetősége van csatlakozni a <em>Csatlakozás</em> vagy lecsatlakozni a <em>Disconnect</em> gombokkal.";
 hstatus_inet.right4="This shows your router's Internet traffic.";
-
-// **************************************************************** Status_SputnikAPD.asp **********************************************************************//
-//
-//                    itt kezhetnéld Karesz, a szövegen kívül a formátumot ne változtasd meg, semmi pontot és beágyazásokat sem, csak a szöveget
-//                       nem muszály végig lefordítani, ha nincs kedved, ameddig eljutsz. Ha végeztél akkor küld el vissza lécci a fájlt
-//
-//
-//
-//************************************************************************************************************************************************************
-status_sputnik.titl="Sputnik-Agent státusz";
-status_sputnik.h2="SputnikÂŽ-Agentâ˘";
-status_sputnik.manage="Managed By";
-status_sputnik.license="SCC Licensz szám.";
-
-//help container
-
-hstatus_sputnik.right1="Sputnik-Agent státusz";
-hstatus_sputnik.right2="A Sputnik Agent státuszának megjelenítése";
-hstatus_sputnik.right4="Az The Sputnik Control Center-hez csatlakozott hozzáférési pont.";
-hstatus_sputnik.right6="A Sputnik-Agent aktuális státusza";
-hstatus_sputnik.right8="A Sputnik Control Center license száma.";
-
 
 
 // **************************************************************** Status_Wireless.asp **********************************************************************//

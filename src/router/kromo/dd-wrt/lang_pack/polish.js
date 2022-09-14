@@ -485,17 +485,13 @@ bmenu.servicesUSB="USB";
 bmenu.servicesNAS="NAS";
 bmenu.servicesHotspot="Hotspot";
 bmenu.servicesNintendo="Nintendo";
-//bmenu.servicesMilkfish="SIP Proxy";
 bmenu.servicesPrivoxy="Blokowanie reklam";
-bmenu.servicesLighttpd="Serwer Web";
 bmenu.servicesSpeedchecker="SpeedChecker";
-//bmenu.servicesAnchorFree="My Ad Network";
 
 bmenu.statu="Status";
 bmenu.statuRouter="Router";
 bmenu.statuInet="WAN";
 bmenu.statuLAN="LAN";
-//bmenu.statuSputnik="Sputnik Agent";
 bmenu.statuWLAN="Sieć bezprzewodowa";
 bmenu.statuVPN="OpenVPN";
 bmenu.statuBand="Pasmo";
@@ -998,14 +994,6 @@ hotspot.smtp_net="SMTP Source Network";
 hotspot.shat_legend="Zero IP Config";
 hotspot.shat_srv="Zero IP Config";
 hotspot.shat_srv2="Zero IP Config enabled";
-hotspot.sputnik_legend="Sputnik";
-hotspot.sputnik_srv="Sputnik Agent";
-hotspot.sputnik_mode="Sputnik Mode";
-hotspot.sputnik_id="Sputnik Server ID";
-hotspot.sputnik_instant="Use Sputnik Instant Setup";
-hotspot.sputnik_express="Use SputnikNet Express";
-hotspot.sputnik_about="o Sputnik";
-hotspot.sputnik_learn="Dowiedź się więcej";
 hotspot.wifidog_legend="WiFiDog";
 hotspot.wifidog_srv="Brama WiFiDog";
 hotspot.wifidog_id="ID bramy";
@@ -1992,60 +1980,10 @@ service.warn_domain="Recipient Domain Name";
 service.warn_user="SMTP Auth Username";
 service.warn_pass="SMTP Auth Password";
 
-//milkfish.webservices
-service.milkfish_siprouter="Milkfish SIP Router";
-service.milkfish_alias="Alias";
-service.milkfish_uri="SIP URI";
-service.milkfish_mainswitch="SIP Router";
-service.milkfish_fromswitch="From-Substitution";
-service.milkfish_fromdomain="From-Domain";
-service.milkfish_username="Milkfish Username";
-service.milkfish_password="Milkfish Password";
-service.milkfish_audit="Milkfish Audit";
-service.milkfish_siptrace="SIP Trace";
-service.milkfish_subscribers="Local Subscribers";
-service.milkfish_aliases="Local Aliases";
-service.milkfish_dynsip="Dynamic SIP";
-service.milkfish_status="SIP Status";
-service.milkfish_database="SIP Database";
-service.milkfish_messaging="SIP Messaging";
-service.milkfish_phonebook="SIP Phonebook";
-service.milkfish_dynsipdomain="DynSIP Domain";
-service.milkfish_dynsipurl="DynSIP Update URL";
-service.milkfish_dsusername="DynSIP Username";
-service.milkfish_dspassword="DynSIP Password";
-service.milkfish_sipmessage="SIP Message";
-service.milkfish_destination="SIP Destination";
-service.milkfish_contact="Contact";
-service.milkfish_agent="User Agent";
-service.milkfish_registrations="Active Registrations";
-service.milkfish_localsubscr="Local Subscribers";
-service.milkfish_localalias="Local Aliases";
-service.milkfish_messaging="SIP Messaging";
-service.milkfish_siptrace="SIP Trace";
-service.milkfish_advdynsip="Advanced DynSIP Settings";
-//service.milkfish_="";//
-service.hmilkfish_right2="Enable or disable your Milkfish SIP router.";
-service.hmilkfish_right4="Enable or disable from:-headerfield substitution of your WAN IP in outgoing SIP messages. This setting should be enabled if you want to allow callees to call you back if your WAN IP has changed.";
-service.hmilkfish_right6="Callee calls back this domain (instead of your WAN IP) when you send it as your from:-domain instead of your WAN IP. From-Substitution needs to be enabled for this setting to take effect.";
-service.hmilkfish_right8="Put your Milkfish community forum username here.  Register at yourname.homesip.net.";
-service.hmilkfish_right10="Put your Milkfish community forum password here. Register at yourname.homesip.net.";
-service.hmilkfish_right12="Enable or disable basic SIP tracing on your router.";
-service.hmilkfish_right14="Local SIP subscribers are locally managed SIP accounts.";
-service.hmilkfish_right16="Local SIP aliases are SIP forwards similar to Email forwards. Can be used to forward alphanumeric-to-numeric phone user accounts or vice versa.";
-service.hmilkfish_right18="Enable or disable dynamic SIP (for example Homesip.net service). You will need to set your username and password.";
-
-//service.hmilkfish_="";//
-
 //service.chronyd
 service.chronyd_legend="Chronyd - Serwer NTP";
 service.chronyd_srv="Chronyd";
 service.chronyd_conf="Niestandardowa konfiguracja";
-
-//help page
-service.hmilkfish_page1="<dt>Milkfish-dd - Professional VoIP/IM Router - v1.0</dt><ul class=\"wide\"> <br /><b>Welcome to the Milkfish on DD-WRT...</b><br />The Milkfish enables the operation and management of several SIP phones in spite of NAT.<br /><br /><u>Provider Phone Configuration</u>: The IP address of this router is the <b>Outbound Proxy</b> or <b>Outbound Server</b> and <b>STUN is deactivated</b>.<br />All other settings should be set according to the providers recommendation.<br /><br /><u>Local Phone Configuration</u>: The IP address of this router is the <b>SIP Server</b> or <b>Registrar Server</b> and <b>a local subscriber account was added</b>.<br /><br />Dynamic SIP needs a valid User Account set to work. Homesip Users need to be registered at the Milkfish Forum.<br /></ul><br /><div class=\"note\"><h4>Get support...</h4><div><br />Find the documentation of this embedded software at <a href=\"http:\/\/wiki.milkfish.org\" target=\"new\">wiki.milkfish.org</a>.<br />Any questions can go to the user forum being available at <a href=\"http:\/\/forum.milkfish.org\" target=\"new\">forum.milkfish.org</a>.</div></div><br /><div class=\"note\"><h4>Give support...</h4><div><br />You like the Milkfish? - Then support us through <b>donations@milkfish.org</b>:&nbsp;&nbsp;<br /></div>";
-service.hmilkfish_page2="<div class=\"note\"><h4>Legal</h4><div>Copyright © 2005-2008 by <a href=\"http:\/\/www.milkfish.org\" target=\"new\">The Milkfish Project</a>. All rights reserved.<br />Logos and trademarks are the property of their respective owners.<br />The Milkfish software is licensed under the <a href=\"http:\/\/www.gnu.org/licenses/gpl.html\" target=\"new\">GNU General Public License</a>.<br />Please note that this software is under development and comes with absolutely no warranty, to the extend permitted by applicable law.</div></div><br /><div class=\"note\"><div class=\"center\">Milkfish is developed by...<br /><a target=\"_blank\" href=\"http:\/\/www.sipwerk.com\"><img border=\"1\" src=\"../images/sipwerk.png\" alt=\"sipwerk logo\" /></a><br /></div><br /></div><br /></dd><dd>Click <i>Save Settings</i> to save your settings or click <i>Cancel Changes</i> to cancel your unsaved changes.</dd>";
-
 service.samba3_srv="Samba";
 service.samba3_srvstr="Server String";
 service.samba3_connlimit="Connection Limit";
@@ -2289,21 +2227,6 @@ hstatus_inet.right6="Pokazywany tutaj jest ruch internetowy routera w ostatnim m
 
 status_conn.titl="Tabela aktywnych połączeń IP";
 status_conn.h2="Aktywne połączenia IP";
-
-// ** Status_SputnikAPD.asp **//
-
-status_sputnik.titl="Status agenta Sputnik";
-status_sputnik.h2="Sputnik® Agent™";
-status_sputnik.manage="Zarządzany przez";
-status_sputnik.license="Numer licencji SCC";
-
-//help container
-
-hstatus_sputnik.right1="Stan agenta Sputnik";
-hstatus_sputnik.right2="Ten ekran pokazuje stan procesu agenta Sputnik.";
-hstatus_sputnik.right4="The Sputnik Control Center that this access point is connected to.";
-hstatus_sputnik.right6="Obecny status agenta Sputnik..";
-hstatus_sputnik.right8="Numer licencji Sputnik Control Center.";
 
 // ** Status_Wireless.asp **//
 

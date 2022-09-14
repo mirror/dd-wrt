@@ -490,17 +490,13 @@ bmenu.servicesUSB="USB";
 bmenu.servicesNAS="NAS";
 bmenu.servicesHotspot="Hotspot";
 bmenu.servicesNintendo="Nintendo";
-//bmenu.servicesMilkfish="SIP Proxy";
 bmenu.servicesPrivoxy="Blokování reklam";
-bmenu.servicesLighttpd="Webserver";
 bmenu.servicesSpeedchecker="Kontrola rychlosti";
-//bmenu.servicesAnchorFree="Moje Ad síť";
 
 bmenu.statu="Stav";
 bmenu.statuRouter="Router";
 bmenu.statuInet="WAN";
 bmenu.statuLAN="LAN";
-//bmenu.statuSputnik="Sputnik Agent";
 bmenu.statuWLAN="Bezdrát";
 bmenu.statuVPN="OpenVPN";
 bmenu.statuBand="Šířka pásma";
@@ -1004,14 +1000,6 @@ hotspot.smtp_net="SMTP Zdrojová síť";
 hotspot.shat_legend="Zero IP Konfigurace";
 hotspot.shat_srv="Zero IP Konfigurace";
 hotspot.shat_srv2="Zero IP Konfigurace povolena";
-hotspot.sputnik_legend="Sputnik";
-hotspot.sputnik_srv="Sputnik agent";
-hotspot.sputnik_mode="Sputnik režim";
-hotspot.sputnik_id="Sputnik Server ID";
-hotspot.sputnik_instant="Použít instantní nastavení Sputnik";
-hotspot.sputnik_express="Použít SputnikNet Express";
-hotspot.sputnik_about="O Sputniku";
-hotspot.sputnik_learn="Dozvědět se více";
 hotspot.wifidog_legend="Wifi Pes";
 hotspot.wifidog_srv="Brána WiFi Psa";
 hotspot.wifidog_id="Brána ID";
@@ -1084,44 +1072,6 @@ hotspotsys.locationid="Lokace ID";
 hotspotsys.dhcp="DHCP Rozhraní";
 hotspotsys.net="Vzdálená síť";
 hotspotsys.customsplash="Vlastní uvítací stránka (zářivá zahrada)";
-
-//
-//anchorfree.anchorfree="AnchorFree";
-//anchorfree.titl="My Ad Network";
-//anchorfree.h2="AnchorFree Ad Network";
-//anchorfree.anchorfree_revenue="Earn revenue by creating ad-supported AnchorFree Hotspot";
-//anchorfree.email="Email to receive revenue reports";
-//anchorfree.ssid="Use different SSID";
-//anchorfree.ssid_name="SSID";
-//anchorfree.address_1="Street Address";
-//anchorfree.address_2="Street Address 2";
-//anchorfree.city="City";
-//anchorfree.zip="Postal or Zip Code";
-//anchorfree.state="County/State/Province";
-//anchorfree.country="Country";
-//anchorfree.category="Category";
-//anchorfree.publish="Publish this hotspot on the free WiFi map";
-//anchorfree.serviceid="Service ID";
-//anchorfree.servicestatus="Service Status";
-//anchorfree.agreement="Terms and Conditions";
-//anchorfree.agree="I ACCEPT AND AGREE";
-//anchorfree.validaddr="a valid address field must be provided if this hotspot should be published on the wifi hotspot map!";
-//anchorfree.validcity="a valid city or zip/postal code must be provided if this hotspot should be published on the wifi hotspot map!";
-//anchorfree.validcat="please select a advertising category for your hotspot";
-//anchorfree.validcountry="please select a country for your hotspot";
-//anchorfree.validterms="You must agree to the terms & conditions!";
-//
-//
-//hanchorfree.right1="Join AnchorFree's hotspot advertising network";
-//hanchorfree.right2="AnchorFree operates a hotspot advertising network allowing DD-WRT customers to generate incremental revenues.";
-//hanchorfree.right3="Generate incremental revenue with advertising from AnchorFree";
-//hanchorfree.right4="By activating this feature and creating an account with AnchorFree (it's free and easy), a persistent advertising frame is inserted directly into users web browsers, which will earn you a payment every month.  Earn a minimum monthly threshold of $25 and AnchorFree will automatically credit your account with funds.";
-//hanchorfree.right5="For more information please visit www.anchorfree.com";
-//hanchorfree.right6="Activation is easy";
-//hanchorfree.right7="Once you have activated, AnchorFree will send an email to the registered account owner with simple instructions on optimizing your hotspot, FAQs, and other pertinent information on earning money from your router. Through this configuration screen, AnchorFree inserts a thin, non-intrusive advertising frame directly into web browsers accessing the internet from this router.";
-//hanchorfree.right8="Customer support";
-//hanchorfree.right9="Have questions? Contact us at boxhelp@anchorfree.com";
-
 
 // ** Info.htm **//
 //
@@ -2002,63 +1952,10 @@ service.warn_domain="Doménové jméno příjemce";
 service.warn_user="SMTP Auten. uživ. jméno";
 service.warn_pass="SMTP Auten. heslo";
 
-//milkfish.webservices
-service.milkfish_siprouter="Milkfish SIPcRouter";
-service.milkfish_alias="Alias";
-service.milkfish_uri="SIP URI";
-service.milkfish_mainswitch="SIP Router";
-service.milkfish_fromswitch="Od-Substituce";
-service.milkfish_fromdomain="Od-Domény";
-service.milkfish_username="Milkfish Uživ.jméno";
-service.milkfish_password="Milkfish Heslo";
-service.milkfish_audit="Milkfish Audit";
-service.milkfish_siptrace="SIP Trasování";
-service.milkfish_subscribers="Místní odběratelé";
-service.milkfish_aliases="Místní aliasy";
-service.milkfish_dynsip="Dynamický SIP";
-service.milkfish_status="SIP Status";
-service.milkfish_database="SIP Databáze";
-service.milkfish_messaging="SIP Zprávy";
-service.milkfish_phonebook="SIP Tel.seznam";
-service.milkfish_dynsipdomain="DynSIP Doména";
-service.milkfish_dynsipurl="DynSIP Aktualizace URL";
-service.milkfish_dsusername="DynSIP Uživ.jméno";
-service.milkfish_dspassword="DynSIP Heslo";
-service.milkfish_sipmessage="SIP Zpráva";
-service.milkfish_destination="SIP Destinace";
-service.milkfish_contact="Kontakt";
-service.milkfish_agent="Uživatelský agent";
-service.milkfish_registrations="Aktivní registrace";
-service.milkfish_localsubscr="Místní odběratelé";
-service.milkfish_localalias="Místní aliasy";
-service.milkfish_messaging="SIP Zprávy";
-service.milkfish_siptrace="SIP Trasování";
-service.milkfish_advdynsip="Pokročilé možnosti DynSIP";
-//service.milkfish_="";//
-service.hmilkfish_right2="Povolit nebo zakázat směrovač SIP Milkfish.";
-service.hmilkfish_right4="Povolit nebo zakázat z: -headerfield substituci vaší WAN IP v odchozích zprávách SIP. Toto nastavení by mělo být povoleno, pokud chcete povolit volaným, aby vám zavolali zpět, pokud se vaše WAN IP změnila.";
-service.hmilkfish_right6="Volající zavolá zpět tuto doménu (namísto vaší WAN IP), když ji odešlete jako vaši z: -domény namísto vaší WAN IP. Aby se toto nastavení projevilo, musí být povoleno Od-substituce.";
-service.hmilkfish_right8="Sem vložte své uživatelské jméno pro komunitní fórum Milkfish. Zaregistrujte se na yourname.homesip.net.";
-service.hmilkfish_right10="Sem vložte své heslo do fóra komunity Milkfish. Zaregistrujte se na yourname.homesip.net.";
-service.hmilkfish_right12="Povolit nebo zakázat základní trasování SIP na Routeru.";
-service.hmilkfish_right14="Místní předplatitelé SIP jsou lokálně spravované účty SIP.";
-service.hmilkfish_right16="Místní aliasy SIP jsou podobné přeposílačům SIP e-mailem. Lze je použít k přeposílání alfanumerických na číselné uživatelské účty telefonu nebo naopak.";
-service.hmilkfish_right18="Povolit nebo zakázat dynamický SIP (např. služba Homesip.net). Bude třeba nastavit vaše uživatelské jméno a heslo.";
-service.hmilkfish_right20="ještě není implementováno - ponechte prázdné";
-service.hmilkfish_right22="zatím není implementováno - ponechte prázdné";
-service.hmilkfish_right24="ještě není implementováno - ponechte prázdné";
-service.hmilkfish_right26="zatím není implementováno - ponechte prázdné";
-//service.hmilkfish_="";//
-
 //service.chronyd
 service.chronyd_legend="Chronyd - NTP Server";
 service.chronyd_srv="Chronyd";
 service.chronyd_conf="Vlastní konfigurace";
-
-//help page
-service.hmilkfish_page1="<dt>Milkfish-dd - Profesionální VoIP/IM Router - v1.0</dt><ul class=\"wide\"> <br /><br /><b>Vítejte v Milkfish na DD-WRT. ..</b><br /> Milkfish umožňuje provoz a správu několika telefonů SIP i přes NAT.<br /><br /><u> Konfigurace telefonů poskytovatele </u>: IP Adresa tohoto routeru je <b>Odchozí Proxy</b> nebo <b>Odchozí Server</b> a <b>STUN je deaktivován</b>.<br />Všechna ostatní nastavení by měla být nastavena podle doporučení poskytovatelů.<br /><br /><u>Konfigurace lokálního telefonu</u>: IP Adresa tohoto routeru je <b>SIP server</b> nebo <b>Registrační Server</b> a <b>byl přidán účet místního účastníka </b>.<br /><br />Dynamic SIP potřebuje platný uživatelský účet nastavený, aby fungoval. Homesip Uživatelé musí být zaregistrováni na fóru Milkfish.<br /></ul><br /><div class=\"note\"><h4>Získat podporu ...</h4><div><br />Najít dokumentaci k tomuto zabudovanému softwaru na <a href=\"http:\/\/wiki.milkfish.org\" target=\"new\">wiki.milkfish.org</a>.<br />Jakékoli dotazy mohou směřovat na uživatelské fórum, které je k dispozici na adrese <a href=\"http:\/\/forum.milkfish.org\" target=\"new\">forum.milkfish.org</a>.</div></div><br /><div class=\"note\"><h4>Podpořte ... </h4><div><br />Máte rádi Milkfish? - Pak nás podporujte prostřednictvím <b>donations@milkfish.org</b>:&nbsp;&nbsp;<br />";
-service.hmilkfish_page2="<div class=\"note\"><h4>Legal</h4><div>Copyright © 2005-2008 by <a href=\"http:\/\/www.milkfish.org\" target=\"new\">The Milkfish Project</a>. Všechna práva vyhrazena.<br />Loga a ochranné známky jsou majetkem příslušných vlastníků.<br />Software Milkfish je licencován na základě <a href=\"http:\/\/www.gnu.org/licenses/gpl.html\" target=\"new\">GNU General Public License</a>.<br />Upozorňujeme, že tento software je ve vývoji a nemá žádnou záruku v rozsahu povoleném platnými zákony.</div></div><br /><div class=\"note\"><div class=\"center\">Milkfish je vyvíjen ...<br /><a target=\"_blank\" href=\"http:\/\/www.sipwerk.com\"><img border=\"1\" src=\"../images/sipwerk.png\" alt=\"sipwerk logo\"/></a><br /></div><br /></div><br /></dd><dd>Kliknutím na <i>Uložit nastavení</i> uložte nastavení nebo kliknutím na <i>Zrušit změny</i> zrušte neuložené změny.</dd>";
-
 service.samba3_srv="Samba";
 service.samba3_srvstr="Řětězec serveru";
 service.samba3_pub="Veřejné sdílení";
@@ -2300,23 +2197,6 @@ hstatus_inet.right6="Toto ukazuje internetový provoz Routeru dle měsíce. Pře
 //
 status_conn.titl="Tabulka aktivních IP spojení";
 status_conn.h2="Aktivní IP spojení";
-
-
-// ** Status_SputnikAPD.asp **//
-//
-status_sputnik.titl="Stav Agenta Sputnik";
-status_sputnik.h2="Sputnik® Agent™";
-status_sputnik.manage="Řízeno kým";
-status_sputnik.license="SCC licence číslo.";
-
-//help container
-//
-hstatus_sputnik.right1="Stav Agenta Sputnik";
-hstatus_sputnik.right2="Tato obrazovka zobrazuje stav procesu Agenta Sputnik.";
-hstatus_sputnik.right4="Sputnik Kontrolní Centrum, ke kterému je tento přístupový bod připojen.";
-hstatus_sputnik.right6="Aktuální stav Agenta.";
-hstatus_sputnik.right8="Licenční číslo vašeho Kontrolního Centra Sputnik.";
-
 
 // ** Status_Wireless.asp **//
 //

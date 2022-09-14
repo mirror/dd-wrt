@@ -538,17 +538,13 @@ bmenu.servicesUSB="USB";
 bmenu.servicesNAS="NAS";
 bmenu.servicesHotspot="Hotspot";
 bmenu.servicesNintendo="Nintendo";
-//bmenu.servicesMilkfish="SIP Proxy";
 bmenu.servicesPrivoxy="Werbeblocker";
-//bmenu.servicesLighttpd="Web Server";
 bmenu.servicesSpeedchecker="SpeedChecker";
-//bmenu.servicesAnchorFree="My Ad Network";
 
 bmenu.statu="Status";
 bmenu.statuRouter="Router";
 bmenu.statuInet="WAN";
 bmenu.statuLAN="LAN";
-bmenu.statuSputnik="Sputnik-Agent";
 bmenu.statuWLAN="WLAN";
 bmenu.statuVPN="OpenVPN";
 bmenu.statuBand="Bandbreite";
@@ -1018,14 +1014,6 @@ hotspot.smtp_net="SMTP-Ursprungs-Netzwerk";
 hotspot.shat_legend="Zero IP Config";
 hotspot.shat_srv="Zero IP Config";
 hotspot.shat_srv2="Zero IP Config eingeschaltet";
-hotspot.sputnik_legend="Sputnik";
-hotspot.sputnik_srv="Sputnik-Agent";
-hotspot.sputnik_mode="Sputnik Modus";
-hotspot.sputnik_id="Sputnik-Server-ID";
-hotspot.sputnik_instant="Nutze Sputnik Instant Setup";
-hotspot.sputnik_express="Nutze SputnikNet Express";
-hotspot.sputnik_about="Über Sputnik";
-hotspot.sputnik_learn="Mehr Lernen";
 hotspot.wifidog_legend="Wifidog";
 hotspot.wifidog_srv="Wifidog daemon";
 hotspot.wifidog_id="Gateway ID";
@@ -1881,50 +1869,6 @@ service.warn_to="E-Mail Adresse des Empfängers";
 service.warn_domain="Domain Name des Empfängers";
 service.warn_user="SMTP Auth Benutzername";
 service.warn_pass="SMTP Auth Kennwort";
-
-//milkfish.webservices
-service.milkfish_siprouter="Milkfish SIP Router";
-service.milkfish_alias="Alias";
-service.milkfish_uri="SIP URI";
-service.milkfish_mainswitch="SIP Router";
-service.milkfish_fromswitch="Von-Ersetzen";
-service.milkfish_fromdomain="Von-Domain";
-service.milkfish_username="Milkfish Benutzername";
-service.milkfish_password="Milkfish Kennwort";
-service.milkfish_audit="Milkfish Kontrolle";
-service.milkfish_siptrace="SIP verfolgen";
-service.milkfish_subscribers="Lokale Clients";
-service.milkfish_aliases="Lokale Aliase";
-service.milkfish_dynsip="Dynamisches SIP";
-service.milkfish_status="SIP Status";
-service.milkfish_database="SIP Datenbank";
-service.milkfish_messaging="SIP Nachrichten";
-service.milkfish_phonebook="SIP Telefonbuch";
-service.milkfish_dynsipdomain="DynSIP Domain";
-service.milkfish_dynsipurl="DynSIP Update URL";
-service.milkfish_dsusername="DynSIP Benutzername";
-service.milkfish_dspassword="DynSIP Kennwort";
-service.milkfish_sipmessage="SIP Nachricht";
-service.milkfish_destination="SIP Ziel";
-service.milkfish_contact="Kontakt";
-service.milkfish_agent="Benutzer Agent";
-service.milkfish_registrations="Aktive Registrierungen";
-//service.milkfish_="";//
-service.hmilkfish_right2="Schaltet den Milkfish SIP Router ein oder aus.";
-service.hmilkfish_right4="Schaltet die Von:-Kopfzeile Ersetzung ihrer WAN IP in ausgehenden SIP Nachrichten ein oder aus. Diese Einstellungen sollte eingeschaltet sein, wenn Sie möchten dass der Anrufer Sie zurückrufen kann, wenn sich ihre WAN IP ändert";
-service.hmilkfish_right6="Der Anrufer ruft Sie unter dieser Domain zurück (anstelle der WAN IP), wenn Sie diesen Eintrag als Von:-Domain anstelle ihrer WAN IP mitsenden. Von-Ersetzen muss hierbei eingeschaltet sein";
-service.hmilkfish_right8="Dies ist der Milkfish Community Benutzername - Die Registrierung weist ihnen yourname.homesip.net automatisch zu";
-service.hmilkfish_right10="Dies ist das Milkfish Community Forum Kennwort";
-service.hmilkfish_right12="Schaltet die einfache SIP Verfolgung auf ihren Router an oder ab";
-service.hmilkfish_right14="Lokale SIP Clients sind lokal verwaltete SIP Accounts";
-service.hmilkfish_right16="Lokale SIP Aliase sind SIP Weiterleitungen, ähnlich zu E-Mail Weiterleitungen. Man kann sie z.B. benutzen um alphanumerische Nutzer Accounts an numerische weiterzuleiten oder umgekehrt";
-service.hmilkfish_right18="Schaltet den dynamischen SIP (for example Homesip.net) Dienst an oder aus - Benutzername und Kennwort müssen angegeben werden";
-service.hmilkfish_right20="Noch nicht implementiert. Bitte leer lassen.";
-service.hmilkfish_right22="Noch nicht implementiert. Bitte leer lassen.";
-service.hmilkfish_right24="Noch nicht implementiert. Bitte leer lassen.";
-service.hmilkfish_right26="Noch nicht implementiert. Bitte leer lassen.";
-//service.hmilkfish_="";//
-
 service.samba3_srv="Samba";
 service.samba3_srvstr="Server String";
 service.samba3_pub="Öffentliche Freigabe";
@@ -2174,23 +2118,6 @@ hstatus_inet.right6="Hier wird die Datenmenge der Routers ins und vom Internet p
 
 status_conn.titl="Tabelle aktiver IP Verbindungen";
 status_conn.h2="Aktive IP Verbindungen";
-
-
-// ** Status_SputnikAPD.asp **//
-
-status_sputnik.titl="Status Sputnik-Agent";
-status_sputnik.h2="Sputnik®-Agent™";
-status_sputnik.manage="Verwaltet von";
-status_sputnik.license="SCC-Lizenz-Nr.";
-
-//help container
-
-hstatus_sputnik.right1="Status Sputnik-Agent";
-hstatus_sputnik.right2="Diese Seite zeigt Ihnen den Status des Sputnik-Agenten an.";
-hstatus_sputnik.right4="Das Sputnik Control Center (SCC) zu dem Ihr Accesspoint verbunden ist.";
-hstatus_sputnik.right6="Der aktuelle Status des Agenten.";
-hstatus_sputnik.right8="Die Lizenz-Nummer Ihres Sputnik Control Centers.";
-
 
 // ** Status_Wireless.asp **//
 

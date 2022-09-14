@@ -441,14 +441,11 @@ bmenu.servicesPptp="PPTPサーバー/クライアント";
 bmenu.servicesUSB="USB";
 bmenu.servicesNAS="NAS";
 bmenu.servicesHotspot="ホットスポット";
-bmenu.servicesMilkfish="Milkfish SIP Router";
-//bmenu.servicesAnchorFree="My Ad Network";
 
 bmenu.statu="機器診断";
 bmenu.statuRouter="機器情報";
 bmenu.statuInet="WAN";
 bmenu.statuLAN="LAN";
-bmenu.statuSputnik="Sputnik エージェント";
 bmenu.statuWLAN="無線 LAN";
 bmenu.statuVPN="OpenVPN";
 bmenu.statuBand="帯域パフォーマンス";
@@ -774,14 +771,6 @@ hotspot.smtp_net="SMTP Source ネットワーク";
 hotspot.shat_legend="ゼロ IP 設定";
 hotspot.shat_srv="ゼロ IP 設定";
 hotspot.shat_srv2="ゼロ IP 設定：入";
-hotspot.sputnik_legend="Sputnik";
-hotspot.sputnik_srv="Sputnikサービス";
-hotspot.sputnik_mode="Sputnik モード";
-hotspot.sputnik_id="Sputnik サーバー ID";
-hotspot.sputnik_instant="Sputnik Instant Setupを使う";
-hotspot.sputnik_express="SputnikNet Expressを使う";
-hotspot.sputnik_about="を参照ください";
-hotspot.sputnik_learn="詳しい設定方法はこちら";
 hotspot.wifidog_legend="Wifidog";
 hotspot.wifidog_srv="Wifidogサービス";
 hotspot.wifidog_id="ゲートウェイ ID";
@@ -1355,52 +1344,6 @@ service.warn_domain="Recipient Domain Name";
 service.warn_user="SMTP Auth Username";
 service.warn_pass="SMTP Auth Password";
 
-
-//milkfish.webservices
-
-service.milkfish_siprouter="Milkfish SIP Router";
-service.milkfish_alias="Alias";
-service.milkfish_uri="SIP URI";
-service.milkfish_mainswitch="Main Switch";
-service.milkfish_fromswitch="From-Substitution";
-service.milkfish_fromdomain="From-Domain";
-service.milkfish_username="Milkfish Username";
-service.milkfish_password="Milkfish Password";
-service.milkfish_audit="Milkfish Audit";
-service.milkfish_siptrace="SIP Trace";
-service.milkfish_subscribers="Local Subscribers";
-service.milkfish_aliases="Local Aliases";
-service.milkfish_dynsip="Dynamic SIP";
-service.milkfish_status="SIP Status";
-service.milkfish_database="SIP Database";
-service.milkfish_messaging="SIP Messaging";
-service.milkfish_phonebook="SIP Phonebook";
-service.milkfish_dynsipdomain="DynSIP Domain";
-service.milkfish_dynsipurl="DynSIP Update URL";
-service.milkfish_dsusername="DynSIP Username";
-service.milkfish_dspassword="DynSIP Password";
-service.milkfish_sipmessage="SIP Message";
-service.milkfish_destination="SIP Destination";
-service.milkfish_contact="Contact";
-service.milkfish_agent="User Agent";
-service.milkfish_registrations="Active Registrations";
-//service.milkfish_="";//
-service.hmilkfish_right2="Enables/Disables your Milkfish SIP Router.";
-service.hmilkfish_right4="Enables/Disables From:-Headerfield substitution of your WAN IP in outgoing SIP messages. This setting should be enabled, if you want to allow callees to call you back if your WAN IP has changed";
-service.hmilkfish_right6="Callee calls back this Domain (instead of your WAN IP) when you send it as your From:-Domain instead of your WAN IP. From-Substitution needs to be enabled for this setting to take effect";
-service.hmilkfish_right8="Here goes your Milkfish Community Forum Username - Registration allocates you yourname.homesip.net";
-service.hmilkfish_right10="Here goes your Milkfish Community Forum Password - Registration allocates you yourname.homesip.net";
-service.hmilkfish_right12="Enables/Disables basic SIP Tracing on your router";
-service.hmilkfish_right14="Local SIP Subscribers are locally managed SIP Accounts";
-service.hmilkfish_right16="Local SIP Aliases are SIP Forwards similar to Email Forwards. Can be used to forward alphanumeric to numeric phone user accounts or vice versa";
-service.hmilkfish_right18="Enables/Disables Dynamic SIP (for example Homesip.net Service) - Username and Password need to be set";
-service.hmilkfish_right20="not implemented yet - leave empty";
-service.hmilkfish_right22="not implemented yet - leave empty";
-service.hmilkfish_right24="not implemented yet - leave empty";
-service.hmilkfish_right26="not implemented yet - leave empty";
-//service.hmilkfish_="";//
-
-
 // ** eop-tunnel.asp **//
 
 eoip.titl="EoIPトンネル";
@@ -1534,23 +1477,6 @@ hstatus_inet.right6="月次のインターネットトラフィックを表示�
 
 status_conn.titl="Firewall 学習テーブル";
 status_conn.h2="Firewall学習テーブル";
-
-
-// ** Status_SputnikAPD.asp **//
-
-status_sputnik.titl="Sputnik エージェント情報";
-status_sputnik.h2="Sputnik® エージェント™";
-status_sputnik.manage="管理者：";
-status_sputnik.license="SCC ライセンス番号";
-
-//help container
-
-hstatus_sputnik.right1="Sputnik エージェント情報";
-hstatus_sputnik.right2="Sputnikエージェントサービスに関する情報を表示します。";
-hstatus_sputnik.right4="この機器が接続するSputnik Control Centerを表示します。";
-hstatus_sputnik.right6="エージェントサービスの状態を示します";
-hstatus_sputnik.right8="Sputnik Control Centerへの接続に使用するLicence番号を表示します。";
-
 
 // ** Status_Wireless.asp **//
 

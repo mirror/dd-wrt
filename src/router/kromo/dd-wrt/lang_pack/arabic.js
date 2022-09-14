@@ -410,14 +410,11 @@ bmenu.servicesServices="خدمات";
 bmenu.servicesPppoesrv="PPPoE Server";
 bmenu.servicesPptp="VPN";
 bmenu.servicesHotspot="نقطة حارة";
-bmenu.servicesMilkfish="Milkfish SIP Router";
-//bmenu.servicesAnchorFree="My Ad Network";
 
 bmenu.statu="Status";
 bmenu.statuRouter="راوتر";
 bmenu.statuInet="WAN";
 bmenu.statuLAN="LAN";
-//bmenu.statuSputnik="Sputnik Agent";
 bmenu.statuWLAN="Wireless";
 bmenu.statuVPN="OpenVPN";
 bmenu.statuBand="Bandwidth";
@@ -710,14 +707,6 @@ hotspot.smtp_net="SMTP Source Network";
 hotspot.shat_legend="Zero IP Config";
 hotspot.shat_srv="Zero IP Config";
 hotspot.shat_srv2="Zero IP Config enabled";
-hotspot.sputnik_legend="Sputnik";
-hotspot.sputnik_srv="Sputnik Agent";
-hotspot.sputnik_mode="Sputnik Mode";
-hotspot.sputnik_id="Sputnik Server ID";
-hotspot.sputnik_instant="Use Sputnik Instant Setup";
-hotspot.sputnik_express="Use SputnikNet Express";
-hotspot.sputnik_about="about Sputnik";
-hotspot.sputnik_learn="Learn more";
 hotspot.wifidog_legend="Wifidog";
 hotspot.wifidog_srv="Wifidog daemon";
 hotspot.wifidog_id="Gateway ID";
@@ -733,44 +722,6 @@ hotspot.wifidog_authsrvssl="AuthServer SSL Available";
 hotspot.wifidog_authsrvsslport="AuthServer SSL Port";
 hotspot.wifidog_authsrvhttpport="AuthServer HTTP Port";
 hotspot.wifidog_authsrvpath="AuthServer Path";
-
-
-//anchorfree.anchorfree="AnchorFree";
-//anchorfree.titl="My Ad Network";
-//anchorfree.h2="AnchorFree Ad Network";
-//anchorfree.anchorfree_revenue="Earn revenue by creating ad-supported AnchorFree Hotspot";
-//anchorfree.email="Email to receive revenue reports";
-//anchorfree.ssid="Use different SSID";
-//anchorfree.ssid_name="SSID";
-//anchorfree.address_1="Street Address";
-//anchorfree.address_2="Street Address 2";
-//anchorfree.city="City";
-//anchorfree.zip="Postal or Zip Code";
-//anchorfree.state="County/State/Province";
-//anchorfree.country="Country";
-//anchorfree.category="Category";
-//anchorfree.publish="Publish this hotspot on the free WiFi map";
-//anchorfree.serviceid="Service ID";
-//anchorfree.servicestatus="Service Status";
-//anchorfree.agreement="Terms and Conditions";
-//anchorfree.agree="I ACCEPT AND AGREE";
-//anchorfree.validaddr="a valid address field must be provided if this hotspot should be published on the wifi hotspot map!";
-//anchorfree.validcity="a valid city or zip/postal code must be provided if this hotspot should be published on the wifi hotspot map!";
-//anchorfree.validcat="please select a advertising category for your hotspot";
-//anchorfree.validcountry="please select a country for your hotspot";
-//anchorfree.validterms="You must agree to the terms & conditions!";
-
-
-//hanchorfree.right1="Join AnchorFree's hotspot advertising network";
-//hanchorfree.right2="AnchorFree operates a hotspot advertising network allowing DD-WRT customers to generate incremental revenues.";
-//hanchorfree.right3="Generate incremental revenue with advertising from AnchorFree";
-//hanchorfree.right4="By activating this feature and creating an account with AnchorFree (it's free and easy), a persistent advertising frame is inserted directly into users web browsers, which will earn you a payment every month.  Earn a minimum monthly threshold of $25 and AnchorFree will automatically credit your account with funds.";
-//hanchorfree.right5="For more information please visit www.anchorfree.com";
-//hanchorfree.right6="Activation is easy";
-//hanchorfree.right7="Once you have activated, AnchorFree will send an email to the registered account owner with simple instructions on optimizing your hotspot, FAQs, and other pertinent information on earning money from your router. Through this configuration screen, AnchorFree inserts a thin, non-intrusive advertising frame directly into web browsers accessing the internet from this router.";
-//hanchorfree.right8="Customer support";
-//hanchorfree.right9="Have questions? Contact us at boxhelp@anchorfree.com";
-
 
 // ** Info.htm **//
 
@@ -1251,50 +1202,6 @@ service.usb_printer="USB Printer Support";
 service.ttraff_legend="WAN Traffic Counter";
 service.ttraff_daemon="ttraff Daemon";
 
-//milkfish.webservices
-service.milkfish_siprouter="Milkfish SIP Router";
-service.milkfish_alias="Alias";
-service.milkfish_uri="SIP URI";
-service.milkfish_mainswitch="Main Switch";
-service.milkfish_fromswitch="From-Substitution";
-service.milkfish_fromdomain="From-Domain";
-service.milkfish_username="Milkfish Username";
-service.milkfish_password="Milkfish Password";
-service.milkfish_audit="Milkfish Audit";
-service.milkfish_siptrace="SIP Trace";
-service.milkfish_subscribers="Local Subscribers";
-service.milkfish_aliases="Local Aliases";
-service.milkfish_dynsip="Dynamic SIP";
-service.milkfish_status="SIP Status";
-service.milkfish_database="SIP Database";
-service.milkfish_messaging="SIP Messaging";
-service.milkfish_phonebook="SIP Phonebook";
-service.milkfish_dynsipdomain="DynSIP Domain";
-service.milkfish_dynsipurl="DynSIP Update URL";
-service.milkfish_dsusername="DynSIP Username";
-service.milkfish_dspassword="DynSIP Password";
-service.milkfish_sipmessage="SIP Message";
-service.milkfish_destination="SIP Destination";
-service.milkfish_contact="Contact";
-service.milkfish_agent="User Agent";
-service.milkfish_registrations="Active Registrations";
-//service.milkfish_="";//
-service.hmilkfish_right2="Enables/Disables your Milkfish SIP Router.";
-service.hmilkfish_right4="Enables/Disables From:-Headerfield substitution of your WAN IP in outgoing SIP messages. This setting should be enabled, if you want to allow callees to call you back if your WAN IP has changed";
-service.hmilkfish_right6="Callee calls back this Domain (instead of your WAN IP) when you send it as your From:-Domain instead of your WAN IP. From-Substitution needs to be enabled for this setting to take effect";
-service.hmilkfish_right8="Here goes your Milkfish Community Forum Username - Registration allocates you yourname.homesip.net";
-service.hmilkfish_right10="Here goes your Milkfish Community Forum Password - Registration allocates you yourname.homesip.net";
-service.hmilkfish_right12="Enables/Disables basic SIP Tracing on your router";
-service.hmilkfish_right14="Local SIP Subscribers are locally managed SIP Accounts";
-service.hmilkfish_right16="Local SIP Aliases are SIP Forwards similar to Email Forwards. Can be used to forward alphanumeric to numeric phone user accounts or vice versa";
-service.hmilkfish_right18="Enables/Disables Dynamic SIP (for example Homesip.net Service) - Username and Password need to be set";
-service.hmilkfish_right20="not implemented yet - leave empty";
-service.hmilkfish_right22="not implemented yet - leave empty";
-service.hmilkfish_right24="not implemented yet - leave empty";
-service.hmilkfish_right26="not implemented yet - leave empty";
-//service.hmilkfish_="";//
-
-
 // ** eop-tunnel.asp **//
 
 eoip.titl="EoIP Tunnel";
@@ -1427,23 +1334,6 @@ hstatus_inet.right6="This shows your router's Internet traffic by month. Drag th
 
 status_conn.titl="Active IP Connections Table";
 status_conn.h2="Active IP Connections";
-
-
-// ** Status_SputnikAPD.asp **//
-
-status_sputnik.titl="Sputnik Agent Status";
-status_sputnik.h2="Sputnik® Agent™";
-status_sputnik.manage="Managed By";
-status_sputnik.license="SCC License No.";
-
-//help container
-
-hstatus_sputnik.right1="Sputnik Agent Status";
-hstatus_sputnik.right2="This screen displays the status of the Sputnik Agent process.";
-hstatus_sputnik.right4="The Sputnik Control Center that this access point is connected to.";
-hstatus_sputnik.right6="The current Agent status.";
-hstatus_sputnik.right8="The license number of your Sputnik Control Center.";
-
 
 // ** Status_Wireless.asp **//
 

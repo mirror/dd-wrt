@@ -468,16 +468,12 @@ bmenu.servicesUSB="USB";
 bmenu.servicesNAS="NAS";
 bmenu.servicesHotspot="Hotspot";
 bmenu.servicesNintendo="Nintendo";
-bmenu.servicesMilkfish="Milkfish SIP Router";
 bmenu.servicesPrivoxy="Adblocking";
-bmenu.servicesLighttpd="Server Web";
-//bmenu.servicesAnchorFree="My Ad Network";
 
 bmenu.statu="Stato";
 bmenu.statuRouter="Router";
 bmenu.statuInet="WAN";
 bmenu.statuLAN="LAN";
-//bmenu.statuSputnik="Sputnik Agent";
 bmenu.statuWLAN="Wireless";
 bmenu.statuVPN="OpenVPN";
 bmenu.statuBand="Bandwidth";
@@ -956,14 +952,6 @@ hotspot.smtp_net="Rete Sorgente SMTP";
 hotspot.shat_legend="Zero IP Config";
 hotspot.shat_srv="Zero IP Config";
 hotspot.shat_srv2="Zero IP Config abilitato";
-hotspot.sputnik_legend="Sputnik";
-hotspot.sputnik_srv="Sputnik Agent";
-hotspot.sputnik_mode="Sputnik Mode";
-hotspot.sputnik_id="ID Del Server Sputnik";
-hotspot.sputnik_instant="Usa Setup Rapido Di Sputnik";
-hotspot.sputnik_express="Usa SputnikNet Express";
-hotspot.sputnik_about="Informazioni Su Sputnik";
-hotspot.sputnik_learn="Più info";
 hotspot.wifidog_legend="Wifidog";
 hotspot.wifidog_srv="Wifidog daemon";
 hotspot.wifidog_id="Gateway ID";
@@ -1747,55 +1735,6 @@ service.warn_to="Recipient Email Address";
 service.warn_domain="Recipient Domain Name";
 service.warn_user="SMTP Auth Username";
 service.warn_pass="SMTP Auth Password";
-
-//milkfish.webservices
-service.milkfish_siprouter="Milkfish SIP Router";
-service.milkfish_alias="Alias";
-service.milkfish_uri="SIP URI";
-service.milkfish_mainswitch="Switch Principale";
-service.milkfish_fromswitch="From-Substitution";
-service.milkfish_fromdomain="From-Domain";
-service.milkfish_username="Milkfish Username";
-service.milkfish_password="Milkfish Password";
-service.milkfish_audit="Milkfish Audit";
-service.milkfish_siptrace="SIP Trace";
-service.milkfish_subscribers="Iscritti Locali";
-service.milkfish_aliases="Alias Locali";
-service.milkfish_dynsip="SIP Dinamico";
-service.milkfish_status="Stato SIP";
-service.milkfish_database="Database SIP";
-service.milkfish_messaging="Messaggistica SIP";
-service.milkfish_phonebook="Rubrica SIP";
-service.milkfish_dynsipdomain="DynSIP Domain";
-service.milkfish_dynsipurl="DynSIP Update URL";
-service.milkfish_dsusername="DynSIP Username";
-service.milkfish_dspassword="DynSIP Password";
-service.milkfish_sipmessage="SIP Messaggio";
-service.milkfish_destination="Destinazione SIP";
-service.milkfish_contact="Contatto";
-service.milkfish_agent="Rappresentate";
-service.milkfish_registrations="Attiva Registrazioni";
-service.milkfish_localsubscr="Iscritti Locali";
-service.milkfish_localalias="Alias Locali";
-service.milkfish_messaging="Messaggi SIP";
-service.milkfish_siptrace="SIP Trace";
-service.milkfish_advdynsip="Impostazioni Avanzate DynSIP";
-//service.milkfish_="";//
-service.hmilkfish_right2="Abilita/Disabilita il tuo Milkfish SIP Router.";
-service.hmilkfish_right4="Abilita/Disabilita la sostituzione del campo di intestazione 'From' del tuo IP WAN nei messagi SIP uscenti. Questo settaggio può essere abilitato se vuoi permettere che le persone da te contattate ti richiamino se il tuo IP WAN è cambiato";
-service.hmilkfish_right6="Le persone che hai chiamato richiameranno su questo dominio (invece che sul tuo IP WAN) se le contatterai con il tuo From:-Domain al posto dell'IP WAN. From-Substitution deve essere attivo perchè ciò funzioni";
-service.hmilkfish_right8="Qui ci va il tuo nome utente del Forum della Comunità Milkfish - Verrai registrato come nomeutente.homesip.net";
-service.hmilkfish_right10="Qui ci va la tua password del Forum della Comunità Milkfish - Verrai registrato come nomeutente.homesip.net";
-service.hmilkfish_right12="Abilita/Disabilita il SIP Tracing di base sul tuo router";
-service.hmilkfish_right14="Gli iscritti locali hanno uno pseudonimo (Alias) SIP gestito localmente";
-service.hmilkfish_right16="Gli pseudonimi (Alias) SIP locali vengono SIP-inotrati in maniera simile a quanto accade per l'inoltro mail. Può essere usato per inoltrare account alfanumerici a numerici o vice versa";
-service.hmilkfish_right18="Abilita/Disabilita SIP Dinamico (per esempio il servizio Homesip.net) - Nome utente e Password devono essere inseriti";
-service.hmilkfish_right20="not implemented yet - leave empty";
-service.hmilkfish_right22="not implemented yet - leave empty";
-service.hmilkfish_right24="not implemented yet - leave empty";
-service.hmilkfish_right26="not implemented yet - leave empty";
-//service.hmilkfish_="";//
-
 service.samba3_srv="Samba";
 service.samba3_srvstr="Nome Server";
 service.samba3_pub="Public Share";
@@ -1968,23 +1907,6 @@ hstatus_inet.right6="Ti fa vedere il traffico Internet del tuo router mese per m
 //var status_conn=new Object();
 status_conn.titl="Tabella Connessioni IP Attiv";
 status_conn.h2="Connessioni IP Attive";
-
-
-// ** Status_SputnikAPD.asp **//
-//var status_sputnik=new Object();
-status_sputnik.titl="Stato Dello Sputnik Agent";
-status_sputnik.h2="Sputnik® Agent™";
-status_sputnik.manage="Gestito Da";
-status_sputnik.license="Licenza SCC No.";
-
-//help container
-//var hstatus_sputnik=new Object();
-hstatus_sputnik.right1="Stato Dello Sputnik Agent";
-hstatus_sputnik.right2="La schermata mostra lo stato del processo dello Sputnik Agent.";
-hstatus_sputnik.right4="Il centro di controllo dello Sputnik al quale questo access point è connesso.";
-hstatus_sputnik.right6="Lo stato corrent dell' Agent.";
-hstatus_sputnik.right8="Il numero di licenza del tuo centro di controllo Sputnik.";
-
 
 // ** Status_Wireless.asp **//
 //var status_wireless=new Object();
