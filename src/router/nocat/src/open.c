@@ -144,6 +144,7 @@ void handle_request( http_request *h ) {
 	{
 	    if (CONFd("Verbosity") >= 4) g_message( "handle_request: %s has ACCEPTED on our port: %s, REDIRECTED to: %s", h->peer_ip, CONF("GatewayPort"), url_decode(QUERY("redirect")) );
 	    accept_peer(h);
+	    sleep(2);
 	} else if ( QUERY("redirect") != NULL ) {
 	    if (CONFd("Verbosity") >= 4) g_message( "handle_request: %s is being SPLASHED.", h->peer_ip );
 	    splash_peer(h);
