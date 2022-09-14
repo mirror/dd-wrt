@@ -412,14 +412,11 @@ bmenu.servicesPptp="VPN";
 bmenu.servicesUSB="USB";
 bmenu.servicesNAS="NAS";
 bmenu.servicesHotspot="Hotspot";
-bmenu.servicesMilkfish="Routeur SIP Milkfish";
-//bmenu.servicesAnchorFree="Mon rèseau publicitaire";
 
 bmenu.statu="État";
 bmenu.statuRouter="Routeur";
 bmenu.statuInet="WAN";
 bmenu.statuLAN="LAN";
-bmenu.statuSputnik="Agent Sputnik";
 bmenu.statuWLAN="Sans fil";
 bmenu.statuVPN="OpenVPN";
 bmenu.statuBand="Bande Passante";
@@ -686,14 +683,6 @@ hotspot.smtp_net="Rèseau SMTP de départ";
 hotspot.shat_legend="Configuration Zero IP";
 hotspot.shat_srv="Configuration Zero IP";
 hotspot.shat_srv2="Configuration Zero IP activè";
-hotspot.sputnik_legend="Sputnik";
-hotspot.sputnik_srv="Agent Sputnik";
-hotspot.sputnik_mode="Mode";
-hotspot.sputnik_id="Serveur ID Sputnik";
-hotspot.sputnik_instant="Utilisez la configuration instantanèe Spoutnik";
-hotspot.sputnik_express="Utilisez SputnikNet Express";
-hotspot.sputnik_about="à propos de Sputnik";
-hotspot.sputnik_learn="En savoir plus";
 hotspot.wifidog_legend="Wifidog";
 hotspot.wifidog_srv="Dèmon Wifidog";
 hotspot.wifidog_id="ID de la Passerelle";
@@ -709,44 +698,6 @@ hotspot.wifidog_authsrvssl="Authentification SSL disponible";
 hotspot.wifidog_authsrvsslport="Port SSL du serveur d'authentification";
 hotspot.wifidog_authsrvhttpport="Port HTTP du serveur d'authentification";
 hotspot.wifidog_authsrvpath="Chemin du serveur d'authentification";
-
-// AnchorFree
-//anchorfree.anchorfree="AnchorFree";
-//anchorfree.titl="Mon rèseau publicitaire";
-//anchorfree.h2="Rèseau publicitaire AnchorFree";
-//anchorfree.anchorfree_revenue="Gagnez de l'argent en crèant un support publicitaire AnchorFree Hotspot";
-//anchorfree.email="Votre courriel pour recevoir des rapports de revenus";
-//anchorfree.ssid="Utilisez un SSID diffèrent";
-//anchorfree.ssid_name="SSID";
-//anchorfree.address_1="Adresse";
-//anchorfree.address_2="Adresse 2";
-//anchorfree.city="Ville";
-//anchorfree.zip="Code postal ou Zip";
-//anchorfree.state="Comtè/état/province";
-//anchorfree.country="Pays";
-//anchorfree.category="Catègorie";
-//anchorfree.publish="Publication du Hotspot sur la carte";
-//anchorfree.serviceid="ID Service";
-//anchorfree.servicestatus="Etat du service";
-//anchorfree.agreement="Conditions gènérales de vente";
-//anchorfree.agree="Je suis d'accord et j'accepte";
-//anchorfree.validaddr="champ d'adresse non valide pour être place sur la carte des rèseaux sans fil gratuits!";
-//anchorfree.validcity="champ du code poste ou ville invalide pour être place sur la carte des rèseaux sans fil gratuits!";
-//anchorfree.validcat="Choisissez s'il vous plaît une catègorie publicitaire pour votre Hotspot";
-//anchorfree.validcountry="Choisissez s'il vous plaît un pays pour votre Hotspot";
-//anchorfree.validterms="Vous devez être d'accord avec les conditions gènérales!";
-//
-//
-//hanchorfree.right1="S'inscrire au rèseau publicitaire AnchorFree's Hotspot";
-//hanchorfree.right2="AnchorFree utilise le rèseau publicitaire des hotspots permettant au client DD-WRT de produire des revenus progressifs.";
-//hanchorfree.right3="Produisez des revenus progressifs avec la publicitè d'AnchorFree";
-//hanchorfree.right4="En activant, cette fonction et en crèant un compte auprès de AnchorFree (gratuit et facile), un cadre publicitaire sera inséré directement sur le navigateur Web de l'utilisateur, qui vous fera gagner un paiement chaque mois. Gagnez pour un seuil minimum mensuel de 25$ et AnchorFree créditera automatiquement votre compte de ces fonds.";
-//hanchorfree.right5="Pour plus d'informations : www.anchorfree.com";
-//hanchorfree.right6="L'activation est facile";
-//hanchorfree.right7="Une fois activè, AnchorFree enverra un courriel au propriétaire du compte enregistré avec des instructions simples sur l'optimisation de votre Hotspot, FAQ et d'autres informations pertinentes sur gain de l'argent avec votre routeur. Gr&acirc;ce à cet écran de configuration, AnchorFree insère un petit cadre publicitaire, non importun, directement dans le navigateur Web à l'accès à Internet du routeur.";
-//hanchorfree.right8="Support client";
-//hanchorfree.right9="Des questions ? Entrez en contact avec nous à boxhelp@anchorfree.com";
-
 
 // ** Info.htm **//
 info.titl="Information";
@@ -1176,48 +1127,6 @@ service.nstx_log="Activer Debug";
 service.ttraff_legend="Suivi du trafic WAN";
 service.ttraff_daemon="Dèmon ttraff";
 
-//milkfish.webservices
-service.milkfish_siprouter="Routeur SIP Milkfish";
-service.milkfish_alias="Alias";
-service.milkfish_uri="URI SIP";
-service.milkfish_mainswitch="Commutateur principal";
-service.milkfish_fromswitch="From-Substitution";
-service.milkfish_fromdomain="From-Domain";
-service.milkfish_username="Nom d'utilisateur Milkfish";
-service.milkfish_password="Mot de passe Milkfish";
-service.milkfish_audit="Vèrification Milkfish";
-service.milkfish_siptrace="SIP Trace";
-service.milkfish_subscribers="Abonnès locaux";
-service.milkfish_aliases="Alias locaux";
-service.milkfish_dynsip="SIP dynamique";
-service.milkfish_status="État SIP";
-service.milkfish_database="Base de donnèes SIP";
-service.milkfish_messaging="Messagerie SIP";
-service.milkfish_phonebook="Annuaire tèléphonique SIP";
-service.milkfish_dynsipdomain="Domaine DynSIP";
-service.milkfish_dynsipurl="Mettre à jour l'URL DynSIP";
-service.milkfish_dsusername="Nom d'utilisateur DynSIP";
-service.milkfish_dspassword="Mot de passe DynSIP";
-service.milkfish_sipmessage="Messagerie SIP";
-service.milkfish_destination="Destination SIP";
-service.milkfish_contact="Contact";
-service.milkfish_agent="Agent d'utilisateur";
-service.milkfish_registrations="Enregistrements actifs";
-
-service.hmilkfish_right2="Activer/dèsactiver votre routeur Milkfish SIP.";
-service.hmilkfish_right4="Activer/dèsactiver From:-Headerfield substitution de votre WAN IP dans les messages SIP sortants. Ce paramètre doit être activé, si vous voulez permettre aux interlocuteurs de vous rappeler si votre WAN IP a changé.";
-service.hmilkfish_right6="L'interlocuteur rappelle ce Domaine (au lieu de votre IP WAN) quand vous l'envoyez comme votre From:-Domain au lieu de votre IP WAN. From-Substitution doit être activè pour que le réglage prenne effet.";
-service.hmilkfish_right8="Entrez ici, le nom d'utilisateur de votre forum communautaire Milkfish - Votre enregistrement est assignè de cette façon : yourname.homesip.net";
-service.hmilkfish_right10="Entrez ici, le mot de passe de votre forum communautaire Milkfish - Votre enregistrement est assignè de cette façon : yourname.homesip.net";
-service.hmilkfish_right12="Activer/dèsactiver la recherche de base SIP sur votre routeur";
-service.hmilkfish_right14="Les abonnès SIP Local sont localement gérés comptes SIP";
-service.hmilkfish_right16="Les alias SIP locaux sont des transferts de SIP similaires aux transferts de courriel. Peut être utilisè pour expédier en alphanumérique aux comptes d'utilisateur de téléphone numérique ou vice versa";
-service.hmilkfish_right18="Activer/dèsactiver Dynamic SIP (c'est-à-dire le Service Homesip.net) - Nom d'utilisateur et votre mot de passe doivent être définis";
-service.hmilkfish_right20="pas encore implèmenté - laisser vide";
-service.hmilkfish_right22="pas encore implèmenté - laisser vide";
-service.hmilkfish_right24="pas encore implèmenté - laisser vide";
-service.hmilkfish_right26="pas encore implèmenté - laisser vide";
-
 // ** eop-tunnel.asp **//
 eoip.titl="Tunel EoIP";
 eoip.tunnel="Tunel";
@@ -1333,19 +1242,6 @@ hstatus_inet.right6="Trafic Internet ventilè par mois. Par défaut, le mois cou
 // ** Status_Conntrack.asp **//
 status_conn.titl="Table des connexions";
 status_conn.h2="Connexions IP actives";
-
-// ** Status_SputnikAPD.asp **//
-status_sputnik.titl="État de l'agent Sputnik";
-status_sputnik.h2="Agent™ Sputnik®";
-status_sputnik.manage="Gèré Par";
-status_sputnik.license="Numèro de License SCC";
-
-//help container
-hstatus_sputnik.right1="État de l'agent Sputnik";
-hstatus_sputnik.right2="Cette partie affiche l'ètat du processus de l'Agent Sputnik.";
-hstatus_sputnik.right4="Le centre de contrôle Sputnik auquel ce point d'accès est connectè.";
-hstatus_sputnik.right6="État actuel de l'agent Sputnik";
-hstatus_sputnik.right8="Le numèro de licence de votre centre de contrôle Sputnik.";
 
 // ** Status_Wireless.asp **//
 status_wireless.titl="État sans fil";

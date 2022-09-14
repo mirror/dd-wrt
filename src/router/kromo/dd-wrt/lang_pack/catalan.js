@@ -459,15 +459,11 @@ bmenu.servicesUSB="USB";
 bmenu.servicesNAS="NAS";
 bmenu.servicesHotspot="Hotspot";
 bmenu.servicesNintendo="Nintendo";
-//bmenu.servicesMilkfish="SIP Proxy";
 bmenu.servicesPrivoxy="Bloqueig d'Anuncis";
-//bmenu.servicesAnchorFree="My Ad Network";
-
 bmenu.statu="Estatus";
 bmenu.statuRouter="Encaminador";
 bmenu.statuInet="WAN";
 bmenu.statuLAN="LAN";
-bmenu.statuSputnik="Agent Sputnik";
 bmenu.statuWLAN="Sense Fil";
 bmenu.statuVPN="OpenVPN";
 bmenu.statuBand="Ample de banda";
@@ -806,14 +802,6 @@ hotspot.smtp_net="Xarxa d'Origen SMTP";
 hotspot.shat_legend="Configuració Zero IP";
 hotspot.shat_srv="Configuració Zero IP";
 hotspot.shat_srv2="Configuració Zero IP habilitada";
-hotspot.sputnik_legend="Sputnik";
-hotspot.sputnik_srv="Agent Sputnik";
-hotspot.sputnik_mode="Mode Sputnik";
-hotspot.sputnik_id="ID del Servidor Sputnik";
-hotspot.sputnik_instant="Utilitza Inici Instantani de Sputnik";
-hotspot.sputnik_express="Utilitza SputnikNet Express";
-hotspot.sputnik_about="quant a Sputnik";
-hotspot.sputnik_learn="Aprendre més";
 hotspot.wifidog_legend="Wifidog";
 hotspot.wifidog_srv="Gateway de Wifidog";
 hotspot.wifidog_id="ID de Gateway";
@@ -853,42 +841,6 @@ hotspotsys.locationid="ID d'Ubicació";
 hotspotsys.dhcp="Interfície DHCP";
 hotspotsys.net="Xarxa Remota";
 hotspotsys.customsplash="Pàgina de Benvinguda Personal (Jardí Emmurallat)";
-
-//anchorfree.anchorfree="AnchorFree";
-//anchorfree.titl="My Ad Network";
-//anchorfree.h2="AnchorFree Ad Network";
-//anchorfree.anchorfree_revenue="Earn revenue by creating ad-supported AnchorFree Hotspot";
-//anchorfree.email="Email to receive revenue reports";
-//anchorfree.ssid="Use different SSID";
-//anchorfree.ssid_name="SSID";
-//anchorfree.address_1="Street Address";
-//anchorfree.address_2="Street Address 2";
-//anchorfree.city="City";
-//anchorfree.zip="Postal or Zip Code";
-//anchorfree.state="County/State/Province";
-//anchorfree.country="Country";
-//anchorfree.category="Category";
-//anchorfree.publish="Publish this hotspot on the free WiFi map";
-//anchorfree.serviceid="Service ID";
-//anchorfree.servicestatus="Service Status";
-//anchorfree.agreement="Terms and Conditions";
-//anchorfree.agree="I ACCEPT AND AGREE";
-//anchorfree.validaddr="a valid address field must be provided if this hotspot should be published on the wifi hotspot map!";
-//anchorfree.validcity="a valid city or zip/postal code must be provided if this hotspot should be published on the wifi hotspot map!";
-//anchorfree.validcat="please select a advertising category for your hotspot";
-//anchorfree.validcountry="please select a country for your hotspot";
-//anchorfree.validterms="You must agree to the terms & conditions!";
-//
-//hanchorfree.right1="Join AnchorFree's hotspot advertising network";
-//hanchorfree.right2="AnchorFree operates a hotspot advertising network allowing DD-WRT customers to generate incremental revenues.";
-//hanchorfree.right3="Generate incremental revenue with advertising from AnchorFree";
-//hanchorfree.right4="By activating this feature and creating an account with AnchorFree (it's free and easy), a persistent advertising frame is inserted directly into users web browsers, which will earn you a payment every month.  Earn a minimum monthly threshold of $25 and AnchorFree will automatically credit your account with funds.";
-//hanchorfree.right5="For more information please visit www.anchorfree.com";
-//hanchorfree.right6="Activation is easy";
-//hanchorfree.right7="Once you have activated, AnchorFree will send an email to the registered account owner with simple instructions on optimizing your hotspot, FAQs, and other pertinent information on earning money from your router. Through this configuration screen, AnchorFree inserts a thin, non-intrusive advertising frame directly into web browsers accessing the internet from this router.";
-//hanchorfree.right8="Customer support";
-//hanchorfree.right9="Have questions? Contact us at boxhelp@anchorfree.com";
-
 
 // ** Info.htm **//
 info.titl="Informació";
@@ -1451,50 +1403,6 @@ service.warn_to="Adreça de Correu Electrònic del Rebedor";
 service.warn_domain="Nom de Domini del Rebedor";
 service.warn_user="Nom d'Usuari de SMTP Auth";
 service.warn_pass="Contrasenya de SMTP Auth";
-
-//milkfish.webservices
-service.milkfish_siprouter="Enrutador SIP Milkfish";
-service.milkfish_alias="Àlies";
-service.milkfish_uri="URI SIP";
-service.milkfish_mainswitch="Enrutador SIP";
-service.milkfish_fromswitch="De-Substitució";
-service.milkfish_fromdomain="De-Domini";
-service.milkfish_username="Nom d'Usuari de Milkfish";
-service.milkfish_password="Contrasenya de Milkfish";
-service.milkfish_audit="Auditoria de Milkfish";
-service.milkfish_siptrace="Rastreig SIP";
-service.milkfish_subscribers="Subscriptors Locals";
-service.milkfish_aliases="Àliesos Locals";
-service.milkfish_dynsip="SIP Dinàmic";
-service.milkfish_status="Estatus SIP";
-service.milkfish_database="Base de Dades SIP";
-service.milkfish_messaging="Missatge SIP";
-service.milkfish_phonebook="Agenda SIP";
-service.milkfish_dynsipdomain="Domini de DynSIP";
-service.milkfish_dynsipurl="URL d'Actualització de DynSIP";
-service.milkfish_dsusername="Nom d'Usuari de DynSIP";
-service.milkfish_dspassword="Contrasenya de DynSIP";
-service.milkfish_sipmessage="Missatge SIP";
-service.milkfish_destination="Destinació SIP";
-service.milkfish_contact="Contacte";
-service.milkfish_agent="Agent d'Usuari";
-service.milkfish_registrations="Registracions Actives";
-//service.milkfish_="";//
-service.hmilkfish_right2="Habilitar o deshabilitar el teu encaminador de Milkfish SIP.";
-service.hmilkfish_right4="Habilitar o deshabilitar la substitució del camp de capçalera from: del vostre IP WAN en missatges SIP sortints. Cal habilitar aquest paràmetre si voleu permetre que els destinaris us truquin de nou si el vostre IP WAN s'ha canviat.";
-service.hmilkfish_right6="El destinari truca de nou a aquest domini (en lloc del vostre IP WAN) quan envieu'l com el vostre domini from: en lloc del vostre IP WAN. Cal habilitar Substitució From per que aquest paràmetre tingui efecte.";
-service.hmilkfish_right8="Poseu el vostre nom d'usuari del fòrum comunitari de Milkfish. Registreu-vos a yourname.homesip.net.";
-service.hmilkfish_right10="Poseu la vostra contrasenya del fòrum comunitari de Milkfish. Registreu-vos a yourname.homesip.net.";
-service.hmilkfish_right12="Habilitar o deshabilitar el rastreig SIP bàsic en el vostre encaminador.";
-service.hmilkfish_right14="Subscriptors SIP Locals són comptes SIP administrades localment.";
-service.hmilkfish_right16="Àliesos SIP Locals són reenviaments SIP semblant a reenviaments de Correu Electrònic. Es poden utilitzar per reenviar comptes d'usuari de telefón alfanumèric-a-numèric o viceversa.";
-service.hmilkfish_right18="Habilitar o deshabilitar SIP dinàmic (és a dir, servei Homesip.net). Necesitareu establir el vostre nom d'usuari i contrasenya.";
-service.hmilkfish_right20="no implementat - deixeu buit";
-service.hmilkfish_right22="no implementat - deixeu buit";
-service.hmilkfish_right24="no implementat - deixeu buit";
-service.hmilkfish_right26="no implementat - deixeu buit";
-//service.hmilkfish_="";//
-
 service.samba3_srv="Samba";
 service.samba3_srvstr="Cadena de Servidor";
 service.samba3_pub="Compartició Pública";
@@ -1652,21 +1560,6 @@ hstatus_inet.right6="Aixó mostra el tràfic d'Internet del vostre encaminador p
 // ** Status_Conntrack.asp **//
 status_conn.titl="Taula de Connexions IP Actives";
 status_conn.h2="Connexions IP Actives";
-
-
-// ** Status_SputnikAPD.asp **//
-status_sputnik.titl="Estatus de l'Agent Sputnik";
-status_sputnik.h2="Agent™ Sputnik®";
-status_sputnik.manage="Administrat Per";
-status_sputnik.license="Nombre de Llicència SCC";
-
-//help container
-hstatus_sputnik.right1="Estatus de l'Agent Sputnik";
-hstatus_sputnik.right2="Aquesta pantalla mostra l'estatus del procés de l'Agent Sputnik.";
-hstatus_sputnik.right4="El Centre de Control de Sputnik a que aquest punt d'accés està connectat.";
-hstatus_sputnik.right6="L'estatus actual de l'Agent.";
-hstatus_sputnik.right8="El nombre de llicència del vostre Centre de Control de Sputnik.";
-
 
 // ** Status_Wireless.asp **//
 status_wireless.titl="Estatus Sense Fil";

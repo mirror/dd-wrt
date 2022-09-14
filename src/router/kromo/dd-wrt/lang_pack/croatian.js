@@ -462,14 +462,11 @@ bmenu.servicesUSB="USB";
 bmenu.servicesNAS="NAS";
 bmenu.servicesHotspot="Hotspot";
 bmenu.servicesNintendo="Nintendo";
-//bmenu.servicesMilkfish="SIP Proxy";
-//bmenu.servicesAnchorFree="Reklamna Mreža";
 
 bmenu.statu="Status";
 bmenu.statuRouter="Usmjerivač";
 bmenu.statuInet="WAN";
 bmenu.statuLAN="LAN";
-//bmenu.statuSputnik="Sputnik Agent";
 bmenu.statuWLAN="WiFi";
 bmenu.statuVPN="OpenVPN";
 bmenu.statuBand="Pojasna Širina";

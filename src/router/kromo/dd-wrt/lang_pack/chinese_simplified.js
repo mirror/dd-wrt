@@ -473,16 +473,12 @@ bmenu.servicesUSB="USB";
 bmenu.servicesNAS="NAS";
 bmenu.servicesHotspot="热点";
 bmenu.servicesNintendo="Nintendo";
-bmenu.servicesMilkfish="SIP 代理";
 bmenu.servicesPrivoxy="Adblocking";
-bmenu.servicesLighttpd="Web服务器";
 bmenu.servicesSpeedchecker="网速检测";
-//bmenu.servicesAnchorFree="我的广告网络";
 bmenu.statu="状态";
 bmenu.statuRouter="路由器";
 bmenu.statuInet="WAN";
 bmenu.statuLAN="LAN";
-bmenu.statuSputnik="Sputnik代理";
 bmenu.statuWLAN="无线";
 bmenu.statuVPN="OpenVPN";
 bmenu.statuBand="带宽";
@@ -952,14 +948,6 @@ hotspot.smtp_net="SMTP来源网络";
 hotspot.shat_legend="零IP配置";
 hotspot.shat_srv="零IP配置";
 hotspot.shat_srv2="零IP配置已开启";
-hotspot.sputnik_legend="Sputnik";
-hotspot.sputnik_srv="Sputnik代理";
-hotspot.sputnik_mode="Sputnik模式";
-hotspot.sputnik_id="Sputnik服务器ID";
-hotspot.sputnik_instant="使用Sputnik即时设置";
-hotspot.sputnik_express="使用SputnikNet Express";
-hotspot.sputnik_about="关于Sputnik";
-hotspot.sputnik_learn="学习更多";
 hotspot.wifidog_legend="Wifidog";
 hotspot.wifidog_srv="Wifidog守护进程";
 hotspot.wifidog_id="网关ID";
@@ -1603,46 +1591,6 @@ service.warn_to="接收者Email地址";
 service.warn_domain="接收者域名";
 service.warn_user="SMTP用户名";
 service.warn_pass="SMTP密码";
-
-//milkfish.webservices
-service.milkfish_siprouter="Milkfish SIP 路由器";
-service.milkfish_alias="别名";
-service.milkfish_username="Milkfish 用户名";
-service.milkfish_password="Milkfish 密码";
-service.milkfish_audit="Milkfish Audit";
-service.milkfish_siptrace="SIP跟踪";
-service.milkfish_subscribers="本地订阅者";
-service.milkfish_aliases="本地别名";
-service.milkfish_dynsip="动态 SIP";
-service.milkfish_status="SIP状态";
-service.milkfish_database="SIP数据库";
-service.milkfish_messaging="SIP信息";
-service.milkfish_phonebook="SIP电话本";
-service.milkfish_dynsipdomain="DynSIP 域名";
-service.milkfish_dynsipurl="DynSIP 更新URL";
-service.milkfish_dsusername="DynSIP 用户名";
-service.milkfish_dspassword="DynSIP 密码";
-service.milkfish_sipmessage="SIP信息";
-service.milkfish_destination="SIP目标";
-service.milkfish_contact="联系";
-service.milkfish_agent="用户代理";
-//service.milkfish_="";//
-service.hmilkfish_right2="启用/禁用 您的Milkfish SIP路由器。";
-service.hmilkfish_right4="启用/禁用 数据包头部分的来源替换为您的WAN IP传出SIP信息。如果WAN IP已变更，让呼叫端可以呼叫您，此设置必须启用";
-service.hmilkfish_right6="当您把数据包来源部分用域名替换掉您的WAN IP，呼叫端就可以呼叫此域名(代替呼叫您的WAN IP)。来源替换必须开启才可以使用此特性";
-service.hmilkfish_right8="这里填上您在Milkfish社区论坛的用户名 - 注册后分配给您 yourname.homesip.net";
-service.hmilkfish_right10="这里填上您在Milkfish社区论坛的密码 - 注册后分配给您 yourname.homesip.net";
-service.hmilkfish_right12="在您的路由器上启用/禁用 基本SIP 跟踪";
-service.hmilkfish_right14="本地SIP订阅者是本地管理的SIP帐号";
-service.hmilkfish_right16="本地SIP别名是SIP转发，类似于Email转发。可以用来转发字母到以数字为电话号码的帐号，反之亦然";
-service.hmilkfish_right18="启用/禁用 动态SIP（如Homesip.net服务） - 需要设置用户名和密码";
-service.hmilkfish_right20="尚未实现 - 留空";
-service.hmilkfish_right22="尚未实现 - 留空";
-service.hmilkfish_right24="尚未实现 - 留空";
-service.hmilkfish_right26="尚未实现 - 留空";
-//service.hmilkfish_="";//
-
-
 service.samba3_srv="Samba";
 service.samba3_srvstr="服务器名";
 service.samba3_pub="公开共享";
@@ -1813,20 +1761,6 @@ hstatus_inet.right6="这里显示您的路由器月上网流量。拖动鼠标�
 // ** Status_Conntrack.asp **//
 status_conn.titl="活动的IP连接列表";
 status_conn.h2="活动的IP连接";
-
-// ** Status_SputnikAPD.asp **//
-status_sputnik.titl="Sputnik代理状态";
-status_sputnik.h2="Sputnik® Agent™";
-status_sputnik.manage="Managed By";
-status_sputnik.license="SCC授权编号";
-
-//help container
-hstatus_sputnik.right1="Sputnik代理状态";
-hstatus_sputnik.right2="此屏幕显示Sputnik代理进程的状态。";
-hstatus_sputnik.right4="本访问点所连接到的Sputnik控制中心。";
-hstatus_sputnik.right6="当前代理状态。";
-hstatus_sputnik.right8="您的Sputnik控制中心的授权号。";
-
 
 // ** Status_Wireless.asp **//
 status_wireless.titl="无线状态";

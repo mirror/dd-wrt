@@ -441,14 +441,11 @@ bmenu.servicesPptp="VPN";
 bmenu.servicesUSB="USB";
 bmenu.servicesNAS="NAS";
 bmenu.servicesHotspot="Hotspot";
-bmenu.servicesMilkfish="Milkfish SIP Router";
-//bmenu.servicesAnchorFree="Mitt Ad Nätverk";
 
 bmenu.statu="Status";
 bmenu.statuRouter="Router";
 bmenu.statuInet="WAN";
 bmenu.statuLAN="LAN";
-//bmenu.statuSputnik="Sputnik Agent";
 bmenu.statuWLAN="Trådlöst";
 bmenu.statuVPN="OpenVPN";
 bmenu.statuBand="Bandbredd";
@@ -748,14 +745,6 @@ hotspot.smtp_net="SMTP Käll Nätverk";
 hotspot.shat_legend="Noll IP Konfig";
 hotspot.shat_srv="Noll IP Konfig";
 hotspot.shat_srv2="Noll IP Konfig Aktiverad";
-hotspot.sputnik_legend="Sputnik";
-hotspot.sputnik_srv="Sputnik Agent";
-hotspot.sputnik_mode="Sputnik Mode";
-hotspot.sputnik_id="Sputnik Server ID";
-hotspot.sputnik_instant="Använd Sputnik Instant Setup";
-hotspot.sputnik_express="Använd SputnikNet Express";
-hotspot.sputnik_about="om Sputnik";
-hotspot.sputnik_learn="Läs mer";
 hotspot.wifidog_legend="Wifidog";
 hotspot.wifidog_srv="Wifidog Demon";
 hotspot.wifidog_id="Gateway ID";
@@ -1320,50 +1309,6 @@ service.warn_domain="Mottagarens Domän Namn";
 service.warn_user="SMTP Auth Användarnamn";
 service.warn_pass="SMTP Auth Lösenord";
 
-//milkfish.webservices
-service.milkfish_siprouter="Milkfish SIP Router";
-service.milkfish_alias="Alias";
-service.milkfish_uri="SIP URI";
-service.milkfish_mainswitch="Huvudbrytare";
-service.milkfish_fromswitch="Från-Anknytning";
-service.milkfish_fromdomain="Från-Domän";
-service.milkfish_username="Milkfish Användarnamn";
-service.milkfish_password="Milkfish Lösenord";
-service.milkfish_audit="Milkfish Audit";
-service.milkfish_siptrace="SIP Spårning";
-service.milkfish_subscribers="Locala Prenumeranter";
-service.milkfish_aliases="Lokala Alias";
-service.milkfish_dynsip="Dynamisk SIP";
-service.milkfish_status="SIP Status";
-service.milkfish_database="SIP Databas";
-service.milkfish_messaging="SIP Meddelanden";
-service.milkfish_phonebook="SIP Telefonbok";
-service.milkfish_dynsipdomain="DynSIP Domän";
-service.milkfish_dynsipurl="DynSIP Updaterings URL";
-service.milkfish_dsusername="DynSIP Användarnamn";
-service.milkfish_dspassword="DynSIP Lösenord";
-service.milkfish_sipmessage="SIP Meddelande";
-service.milkfish_destination="SIP Destination";
-service.milkfish_contact="Kontakt";
-service.milkfish_agent="Användar Agent";
-service.milkfish_registrations="Aktiva Registreringar";
-//service.milkfish_="";//
-service.hmilkfish_right2="Aktivera/Inaktivera din Milkfish SIP Router.";
-service.hmilkfish_right4="Aktivera/Inaktivera Från:-Huvudfält anknytning av din WAN IP på utgående SIP meddelanden. Detta bör vara aktiverat, om du vill att dina samtal ska kunna ringa tillbaka om din WAN IP ändras";
-service.hmilkfish_right6="Samtal ringer åter denna domän (istället för WAN IP) när du sänder det som din Från:-Domän Istället för WAN IP. Från-Anknytning behöver vara aktiverad för att detta skall ha effekt";
-service.hmilkfish_right8="Skriv in ditt Milkfish Community Forum User - Registrering reserverar yournamn.homesip.net";
-service.hmilkfish_right10="Skriv in ditt Milkfish Community Forum Lösenord - Registrering reserverar yournamn.homesip.net";
-service.hmilkfish_right12="Aktivera/Inaktivera grundlig SIP Spårning på din router";
-service.hmilkfish_right14="Lokala SIP Anknytningar är lokalt hanterade SIP Konton";
-service.hmilkfish_right16="Lokala SIP Alias är SIP Forwards liknande Email Forwards. kan användas för  alphanumerisk till numerisk telefon konton eller tvärsom";
-service.hmilkfish_right18="Aktivera/Inaktivera Dynamisk SIP (e.x. Homesip.net Tjänst) - Användarnamn och Lösenord måste vara uppsatta";
-service.hmilkfish_right20="Ej implementerad än - lämna tomt";
-service.hmilkfish_right22="Ej implementerad än - lämna tomt";
-service.hmilkfish_right24="Ej implementerad än - lämna tomt";
-service.hmilkfish_right26="Ej implementerad än - lämna tomt";
-//service.hmilkfish_="";//
-
-
 // ** eop-tunnel.asp **//
 eoip.titl="EoIP Tunnel";
 eoip.tunnel="Tunnel";
@@ -1487,21 +1432,6 @@ hstatus_inet.right6="Detta visar din internettrafik per månad. För musen över
 // ** Status_Conntrack.asp **//
 status_conn.titl="Aktiva IP Kopplingstabell";
 status_conn.h2="Aktiva IP Kopplingar";
-
-
-// ** Status_SputnikAPD.asp **//
-status_sputnik.titl="Sputnik Agent Status";
-status_sputnik.h2="Sputnik® Agent™";
-status_sputnik.manage="Hanterad av";
-status_sputnik.license="SCC Licens Num.";
-
-//help container
-hstatus_sputnik.right1="Sputnik Agent Status";
-hstatus_sputnik.right2="Denna bild visar statusen för Sputnik Agent processen.";
-hstatus_sputnik.right4="Sputnik Kontroll Center som denna AP är kopplad till.";
-hstatus_sputnik.right6="Aktuell Agent status.";
-hstatus_sputnik.right8="Din Licens för Sputnik Kontroll Center.";
-
 
 // ** Status_Trådlöst.asp **//
 status_wireless.titl="Trådlös Status";

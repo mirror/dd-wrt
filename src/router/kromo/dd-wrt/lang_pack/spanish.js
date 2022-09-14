@@ -451,14 +451,11 @@ bmenu.servicesPptp="VPN";
 bmenu.servicesUSB="USB";
 bmenu.servicesNAS="NAS";
 bmenu.servicesHotspot="Hotspot";
-bmenu.servicesMilkfish="Milkfish SIP Router";
-//bmenu.servicesAnchorFree="Mi publicidad en red";
 
 bmenu.statu="Estado";
 bmenu.statuRouter="Router";
 bmenu.statuInet="WAN";
 bmenu.statuLAN="LAN";
-bmenu.statuSputnik="Agente Sputnik";
 bmenu.statuWLAN="Inalámbrico";
 bmenu.statuVPN="OpenVPN";
 bmenu.statuBand="Ancho de banda";
@@ -774,13 +771,6 @@ hotspot.smtp_net="Red de Orígen de SMTP";
 hotspot.shat_legend="Configuración Zero IP";
 hotspot.shat_srv="Configuración Zero IP";
 hotspot.shat_srv2="Configuración Zero IP activado";
-hotspot.sputnik_legend="Sputnik";
-hotspot.sputnik_srv="Agente Sputnik";
-hotspot.sputnik_mode="Modo Sputnik";
-hotspot.sputnik_id="ID del Servidor Sputnik";
-hotspot.sputnik_instant="Usar setup instantáneo de Sputnik";
-hotspot.sputnik_express="Usar SputnikNet Express";
-hotspot.sputnik_about="A cerca de Sputnik";
 hotspot.wifidog_legend="Wifidog";
 hotspot.wifidog_srv="Demonio Wifidog";
 hotspot.wifidog_id="ID de la puerta de enlace";
@@ -1360,50 +1350,6 @@ service.warn_domain="Nombre de dominio del destinatario";
 service.warn_user="Usuario para la autentificación SMTP";
 service.warn_pass="Contraseña para la autentificación SMTP";
 
-//milkfish.webservices
-service.milkfish_siprouter="Router Milkfish SIP";
-service.milkfish_alias="Alias";
-service.milkfish_uri="SIP URI";
-service.milkfish_mainswitch="Switch principal";
-service.milkfish_fromswitch="De-Sustitución";
-service.milkfish_fromdomain="De-Dominio";
-service.milkfish_username="Usuario Milkfish";
-service.milkfish_password="Contraseña Milkfish";
-service.milkfish_audit="Auditar Milkfish";
-service.milkfish_siptrace="Rastrear SIP";
-service.milkfish_subscribers="Suscriptores locales";
-service.milkfish_aliases="Alias locales";
-service.milkfish_dynsip="SIP Dinámico";
-service.milkfish_status="Estado SIP";
-service.milkfish_database="BD SIP";
-service.milkfish_messaging="Mensajes SIP";
-service.milkfish_phonebook="Libreta de direcciónes SIP";
-service.milkfish_dynsipdomain="Dominio DynSIP";
-service.milkfish_dynsipurl="Actualizar URL de DynSIP";
-service.milkfish_dsusername="Usuario DynSIP";
-service.milkfish_dspassword="Contraseña DynSIP";
-service.milkfish_sipmessage="Mensaje SIP";
-service.milkfish_destination="Destino SIP";
-service.milkfish_contact="Contacto";
-service.milkfish_agent="User Agent";
-service.milkfish_registrations="Activar el registro";
-//service.milkfish_="";//
-service.hmilkfish_right2="Activa/Desactiva su router Milkfish SIP.";
-service.hmilkfish_right4="Activa/Desactiva De:-Headerfield sustitución de su IP WAN en mensajes salientes SIP. Esta opción debería de estar habilitada, si quieres permitir a los usuarios llamar de vuelta si su IP WAN ha cambiado";
-service.hmilkfish_right6="Las llamadas de retorno caen a este dominio (en vez de a su IP WAN) cuando envía este como su De:-Domain en vez de su IP WAN. De-Sustitución necesita estár activado para que esta configuración tenga efecto";
-service.hmilkfish_right8="Aquí especifica su usuario en los foros de la comunidad Milkfish  - El registro aloja su nombre.homesip.net";
-service.hmilkfish_right10="Aquí especifica su contraseña en los foros de la comunidad Milkfish  - El registro aloja su nombre.homesip.net";
-service.hmilkfish_right12="Activa/Desactiva el rastreo básico SIP en su router";
-service.hmilkfish_right14="Las cuentas de los suscriptores locales SIP son administradas localmente";
-service.hmilkfish_right16="Alias locales SIP son redirigidos mediante SIP de forma similar a como sucede en el email. Puede ser usado para redirigir cuentas de usuario alfanumèricas a números de teléfono o viceversa";
-service.hmilkfish_right18="Activa/Desactiva SIP dinámico (ej. el servicio Homesip.net) - Usuario y contraseña se debe de especificar";
-service.hmilkfish_right20="not implemented yet - leave empty";
-service.hmilkfish_right22="not implemented yet - leave empty";
-service.hmilkfish_right24="not implemented yet - leave empty";
-service.hmilkfish_right26="not implemented yet - leave empty";
-//service.hmilkfish_="";//
-
-
 // ** eop-tunnel.asp **//
 eoip.titl="Tunel EoIP";
 eoip.tunnel="Tunel";
@@ -1417,8 +1363,6 @@ eoip.frag="fragmento";
 eoip.mssfix="mssfix";
 eoip.shaper="shaper";
 eoip.bridging="Bridging";
-
-
 
 // ** Sipath.asp + cgi **//
 sipath.titl="Revisión SiPath";

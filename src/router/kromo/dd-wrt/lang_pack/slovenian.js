@@ -464,14 +464,11 @@ bmenu.servicesUSB="USB";
 bmenu.servicesNAS="NAS";
 bmenu.servicesHotspot="Hotspot";
 bmenu.servicesNintendo="Nintendo";
-bmenu.servicesMilkfish="SIP proksi";
-//bmenu.servicesAnchorFree="Moja Ad mreža";
 
 bmenu.statu="Status";
 bmenu.statuRouter="Usmerjevalnik";
 bmenu.statuInet="WAN";
 bmenu.statuLAN="LAN";
-bmenu.statuSputnik="Agent Sputnik";
 bmenu.statuWLAN="Brezžično";
 bmenu.statuVPN="OpenVPN";
 bmenu.statuBand="Pasovna širina";
@@ -828,14 +825,6 @@ hotspot.smtp_net="SMTP izvorna mreža";
 hotspot.shat_legend="Zero IP nastavitev";
 hotspot.shat_srv="Zero IP nastavitev";
 hotspot.shat_srv2="Zero IP nastavitev omogočena";
-hotspot.sputnik_legend="Sputnik";
-hotspot.sputnik_srv="Sputnikov zastopnik";
-hotspot.sputnik_mode="Sputnik način";
-hotspot.sputnik_id="Sputnik strežnikov ID";
-hotspot.sputnik_instant="Uporabi Sputnik Instant Setup";
-hotspot.sputnik_express="Uporabi SputnikNet Express";
-hotspot.sputnik_about="o Sputniku";
-hotspot.sputnik_learn="Več podatkov";
 hotspot.wifidog_legend="Wifidog";
 hotspot.wifidog_srv="Wifidog demon";
 hotspot.wifidog_id="ID prehoda";
@@ -1499,50 +1488,6 @@ service.warn_to="Prejemnikov email naslov";
 service.warn_domain="Prejemnikovo domensko ime";
 service.warn_user="Uporabniško ime za SMTP overjanje";
 service.warn_pass="Geslo za SMTP overjanje";
-
-//milkfish.webservices
-service.milkfish_siprouter="Milkfish SIP Router";
-service.milkfish_alias="Alias";
-service.milkfish_uri="SIP URI";
-service.milkfish_mainswitch="SIP Router";
-service.milkfish_fromswitch="From-Substitution";
-service.milkfish_fromdomain="From-Domain";
-service.milkfish_username="Milkfish Username";
-service.milkfish_password="Milkfish Password";
-service.milkfish_audit="Milkfish Audit";
-service.milkfish_siptrace="SIP Trace";
-service.milkfish_subscribers="Local Subscribers";
-service.milkfish_aliases="Local Aliases";
-service.milkfish_dynsip="Dynamic SIP";
-service.milkfish_status="SIP Status";
-service.milkfish_database="SIP Database";
-service.milkfish_messaging="SIP Messaging";
-service.milkfish_phonebook="SIP Phonebook";
-service.milkfish_dynsipdomain="DynSIP Domain";
-service.milkfish_dynsipurl="DynSIP Update URL";
-service.milkfish_dsusername="DynSIP Username";
-service.milkfish_dspassword="DynSIP Password";
-service.milkfish_sipmessage="SIP Message";
-service.milkfish_destination="SIP Destination";
-service.milkfish_contact="Contact";
-service.milkfish_agent="User Agent";
-service.milkfish_registrations="Active Registrations";
-//service.milkfish_="";//
-service.hmilkfish_right2="Enable or disable your Milkfish SIP router.";
-service.hmilkfish_right4="Enable or disable from:-headerfield substitution of your WAN IP in outgoing SIP messages. This setting should be enabled if you want to allow callees to call you back if your WAN IP has changed.";
-service.hmilkfish_right6="Callee calls back this domain (instead of your WAN IP) when you send it as your from:-domain instead of your WAN IP. From-Substitution needs to be enabled for this setting to take effect.";
-service.hmilkfish_right8="Put your Milkfish community forum username here.  Register at yourname.homesip.net.";
-service.hmilkfish_right10="Put your Milkfish community forum password here. Register at yourname.homesip.net.";
-service.hmilkfish_right12="Enable or disable basic SIP tracing on your router.";
-service.hmilkfish_right14="Local SIP subscribers are locally managed SIP accounts.";
-service.hmilkfish_right16="Local SIP aliases are SIP forwards similar to Email forwards. Can be used to forward alphanumeric-to-numeric phone user accounts or vice versa.";
-service.hmilkfish_right18="Enable or disable dynamic SIP (for example Homesip.net service). You will need to set your username and password.";
-service.hmilkfish_right20="not implemented yet - leave empty";
-service.hmilkfish_right22="not implemented yet - leave empty";
-service.hmilkfish_right24="not implemented yet - leave empty";
-service.hmilkfish_right26="not implemented yet - leave empty";
-//service.hmilkfish_="";//
-
 service.samba3_srv="Samba";
 service.samba3_srvstr="Niz strežnika";
 service.samba3_pub="Javna souporaba";
@@ -1710,23 +1655,6 @@ hstatus_inet.right6="To kaže količino prenešenih podatkov po mesecih. Za prik
 
 status_conn.titl="Tabela aktivnih IP povezav";
 status_conn.h2="Aktivne IP povezave";
-
-
-// ** Status_SputnikAPD.asp **//
-
-status_sputnik.titl="Status Sputnik agenta";
-status_sputnik.h2="Sputnik® agent™";
-status_sputnik.manage="Upravljan od";
-status_sputnik.license="SCC št. licence";
-
-//help container
-
-hstatus_sputnik.right1="Status Sputnik agenta";
-hstatus_sputnik.right2="Ta zaslon prikazuje status Sputnik agenta.";
-hstatus_sputnik.right4="Sputnikov kontrolni center na katerega je ta usmerjevalnik povezan.";
-hstatus_sputnik.right6="Trenutni status Sputnik agenta.";
-hstatus_sputnik.right8="Št. licence vašega Sputnik kontrolnega centra.";
-
 
 // ** Status_Wireless.asp **//
 
