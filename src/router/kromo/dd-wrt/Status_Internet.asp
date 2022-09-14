@@ -20,7 +20,7 @@ function connect(F,I) {
 
 function ttraff_remove_submit(F) {
 	if(!confirm(status_inet.delete_confirm)) {
-	return false;
+		return false;
 	}
 	F.change_action.value="gozila_cgi";
 	F.submit_type.value = "delete_ttraffdata";
@@ -232,7 +232,7 @@ addEvent(window, "unload", function() {
 				</div>
 				<div id="helpContainer">
 					<div id="help">
-						<div><h2><% tran("share.help"); %></h2></div>
+						<h2><% tran("share.help"); %></h2>
 						<dl>
 							<dt class="term"><% tran("status_inet.conft"); %>: </dt>
 							<dd class="definition"><% tran("hstatus_inet.right2"); %></dd>

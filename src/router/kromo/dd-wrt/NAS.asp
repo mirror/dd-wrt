@@ -16,14 +16,13 @@ function removeDlnaShare( button ) {
 
 
 function verifyDlnaSettings() {
-	
 	var error = false;
-	
+
 	// get the share entries
 	var table = $('dlna_shares');
 	var section = table.childElements()[0];
 	var rows = section.childElements();
-	
+
 	// walk through the rows
 	for(i = 0; i < rows.length; i++) {
 		for(j = 0; j < rows[i].childElements().length; j++) {
@@ -34,17 +33,16 @@ function verifyDlnaSettings() {
 }
 
 function checkDlnaShares() {
-	
 	var shares = $('dlna_shares').childElements()[0].childElements();
 	var mp = '';
 	var label = '';
 	var sublabel = 'dlna_shares_row_';
 	var index = 0;
 	var error = false;
-		
+
 	for( i = 0; i < shares.length; i++ ) {
 		mp = '';
-		
+
 		if( shares[i].id.substr( 0, sublabel.length ) == sublabel && shares[i].id.substr(shares[i].id.length - 9, 9) != '_template') {
 			index = shares[i].id.substr( sublabel.length, shares[i].id.length - sublabel.length );
 			for(j = 0; j < shares[i].childElements().length; j++) {
@@ -56,7 +54,7 @@ function checkDlnaShares() {
 						if(mp.length == 0) error = true;
 					} 
 				}
-				
+
 				// error handling
 				if(error) {
 					element.className = "value_error";
@@ -64,7 +62,7 @@ function checkDlnaShares() {
 					element.className = '';
 				}
 			}
-			
+
 			// error handling
 			if( mp.length == 0) {
 				alert( 'Please select a mountpoint and enter a share label to proceed.' );
@@ -72,47 +70,41 @@ function checkDlnaShares() {
 			}
 		}
 	}
-	
+
 	return true;
 }
-
-
-
 
 function addnfsShare() {	
 	addTableEntry('nfs_shares');
 }
 
 function removenfsShare( button ) {
-	
 	tableId = 'nfs_shares';
-	
 	// remove the share
 	removeTableEntry( tableId, button );
 }
 
 function setnfsShareAccessOptions( shareElement ) {
-
 	var position = shareElement.name.lastIndexOf('_') + 1;	
-	
+
 	// get the select
 	var shareSelect = document.getElementById('nfsshare_mp_' + shareElement.name.substr( position, shareElement.name.length - position ) );
 	if(!shareSelect) return;
-	
+
 	var label = 'nfsshare_public_perms_' + shareSelect.name.substr(12,shareSelect.name.length - 12);
 	var properties = null;
-	
+
 	// remove options
 	var len = $(label).options.length;
 	for(i = 0; i < len; i++) {
 		$(label).removeChild($(label).childElements()[0]);
 	}
-	
+
 	// read properties in case something is selected
 	if( shareSelect.selectedIndex > 0 ) {
 		properties = eval('(' + shareSelect.options[shareSelect.selectedIndex].getAttribute('rel') + ')' );
 	}
-	
+
 	// add options from default
 	var options = $('nfsshare_public_perms').childElements();
 	for(i = 0; i < options.length; i++) {
@@ -128,7 +120,7 @@ function setnfsShareAccessOptions( shareElement ) {
 			$(label).appendChild(option);	
 		}
 	}
-		
+
 	if(shareSelect.selectedIndex > 0) {
 		$(label).disabled = false;
 	} else {
@@ -137,14 +129,13 @@ function setnfsShareAccessOptions( shareElement ) {
 }
 
 function verifynfsSettings() {
-	
 	var error = false;
-	
+
 	// get the share entries
 	var table = $('nfs_shares');
 	var section = table.childElements()[0];
 	var rows = section.childElements();
-	
+
 	// walk through the rows
 	for(i = 0; i < rows.length; i++) {
 		for(j = 0; j < rows[i].childElements().length; j++) {
@@ -155,17 +146,16 @@ function verifynfsSettings() {
 }
 
 function checknfsShares() {
-	
 	var shares = $('nfs_shares').childElements()[0].childElements();
 	var mp = '';
 	var label = '';
 	var sublabel = 'nfs_shares_row_';
 	var index = 0;
 	var error = false;
-		
+
 	for( i = 0; i < shares.length; i++ ) {
 		mp = '';
-		
+
 		if( shares[i].id.substr( 0, sublabel.length ) == sublabel && shares[i].id.substr(shares[i].id.length - 9, 9) != '_template') {
 			index = shares[i].id.substr( sublabel.length, shares[i].id.length - sublabel.length );
 			for(j = 0; j < shares[i].childElements().length; j++) {
@@ -177,7 +167,7 @@ function checknfsShares() {
 						if(mp.length == 0) error = true;
 					} 
 				}
-				
+
 				// error handling
 				if(error) {
 					element.className = "value_error";
@@ -185,7 +175,7 @@ function checknfsShares() {
 					element.className = '';
 				}
 			}
-			
+
 			// error handling
 			if( mp.length == 0) {
 				alert( 'Please select a mountpoint and enter a share label to proceed.' );
@@ -193,33 +183,29 @@ function checknfsShares() {
 			}
 		}
 	}
-	
+
 	return true;
 }
-
 
 function addrsyncShare() {	
 	addTableEntry('rsync_shares');
 }
 
 function removersyncShare( button ) {
-	
 	tableId = 'rsync_shares';
-	
+
 	// remove the share
 	removeTableEntry( tableId, button );
 }
 
-
 function verifyrsyncSettings() {
-	
 	var error = false;
-	
+
 	// get the share entries
 	var table = $('rsync_shares');
 	var section = table.childElements()[0];
 	var rows = section.childElements();
-	
+
 	// walk through the rows
 	for(i = 0; i < rows.length; i++) {
 		for(j = 0; j < rows[i].childElements().length; j++) {
@@ -230,18 +216,17 @@ function verifyrsyncSettings() {
 }
 
 function checkrsyncShares() {
-	
 	var shares = $('rsync_shares').childElements()[0].childElements();
 	var mp = '';
 	var label = '';
 	var sublabel = 'rsync_shares_row_';
 	var index = 0;
 	var error = false;
-		
+
 	for( i = 0; i < shares.length; i++ ) {
 		mp = '';
 		label = '';
-		
+
 		if( shares[i].id.substr( 0, sublabel.length ) == sublabel && shares[i].id.substr(shares[i].id.length - 9, 9) != '_template') {
 			index = shares[i].id.substr( sublabel.length, shares[i].id.length - sublabel.length );
 			for(j = 0; j < shares[i].childElements().length; j++) {
@@ -256,7 +241,7 @@ function checkrsyncShares() {
 						if(label.length == 0) error = true;
 					}
 				}
-				
+
 				// error handling
 				if(error) {
 					element.className = "value_error";
@@ -264,7 +249,7 @@ function checkrsyncShares() {
 					element.className = '';
 				}
 			}
-			
+
 			// error handling
 			if( mp.length == 0 || label.length == 0) {
 				alert( 'Please select a mountpoint and enter a share label to proceed.' );
@@ -272,18 +257,15 @@ function checkrsyncShares() {
 			}
 		}
 	}
-	
+
 	return true;
 }
 
-
-
 function addSambaShare() {
-	
 	var position = 0;
 	var shareIndex = null;
 	var template = null;
-	
+
 	var share = addTableEntry('samba_shares');
 	position = share.id.lastIndexOf('_') + 1;
 	shareIndex = share.id.substr( position, share.id.length - position );
@@ -310,41 +292,35 @@ function addSambaShare() {
 }
 
 function removeSambaShare( button ) {
-	
 	tableId = 'samba_shares';
-	
 	// remove the share
 	removeTableEntry( tableId, button );
-	
 	// remove users share entries and reorder
 	var position = button.name.lastIndexOf('_') + 1;
 	var index = button.name.substr( position, button.name.length - position);
-	
+
 	removeSambaUserShare(index);
 }
 
 function setSambaShareAccessOptions( shareElement ) {
-
 	var position = shareElement.name.lastIndexOf('_') + 1;	
-	
 	// get the select
 	var shareSelect = document.getElementById('smbshare_mp_' + shareElement.name.substr( position, shareElement.name.length - position ) );
 	if(!shareSelect) return;
-	
+
 	var label = 'smbshare_public_perms_' + shareSelect.name.substr(12,shareSelect.name.length - 12);
 	var properties = null;
-	
 	// remove options
 	var len = $(label).options.length;
 	for(i = 0; i < len; i++) {
 		$(label).removeChild($(label).childElements()[0]);
 	}
-	
+
 	// read properties in case something is selected
 	if( shareSelect.selectedIndex > 0 ) {
 		properties = eval('(' + shareSelect.options[shareSelect.selectedIndex].getAttribute('rel') + ')' );
 	}
-	
+
 	// add options from default
 	var options = $('smbshare_public_perms').childElements();
 	for(i = 0; i < options.length; i++) {
@@ -360,7 +336,7 @@ function setSambaShareAccessOptions( shareElement ) {
 			$(label).appendChild(option);	
 		}
 	}
-		
+
 	if(shareSelect.selectedIndex > 0) {
 		$(label).disabled = false;
 	} else {
@@ -369,14 +345,12 @@ function setSambaShareAccessOptions( shareElement ) {
 }
 
 function verifySambaSettings() {
-	
 	var error = false;
-	
 	// get the share entries
 	var table = $('samba_shares');
 	var section = table.childElements()[0];
 	var rows = section.childElements();
-	
+
 	// walk through the rows
 	for(i = 0; i < rows.length; i++) {
 		for(j = 0; j < rows[i].childElements().length; j++) {
@@ -387,7 +361,6 @@ function verifySambaSettings() {
 }
 
 function checkSambaShares() {
-	
 	var shares = $('samba_shares').childElements()[0].childElements();
 	var mp = '';
 	var sd = '';
@@ -395,11 +368,11 @@ function checkSambaShares() {
 	var sublabel = 'samba_shares_row_';
 	var index = 0;
 	var error = false;
-		
+
 	for( i = 0; i < shares.length; i++ ) {
 		mp = '';
 		label = '';
-		
+
 		if( shares[i].id.substr( 0, sublabel.length ) == sublabel && shares[i].id.substr(shares[i].id.length - 9, 9) != '_template') {
 			index = shares[i].id.substr( sublabel.length, shares[i].id.length - sublabel.length );
 			for(j = 0; j < shares[i].childElements().length; j++) {
@@ -414,7 +387,7 @@ function checkSambaShares() {
 						if(label.length == 0) error = true;
 					}
 				}
-				
+
 				// error handling
 				if(error) {
 					element.className = "value_error";
@@ -422,7 +395,7 @@ function checkSambaShares() {
 					element.className = '';
 				}
 			}
-			
+
 			// error handling
 			if( mp.length == 0 || label.length == 0) {
 				alert( 'Please select a mountpoint and enter a share label to proceed.' );
@@ -430,25 +403,22 @@ function checkSambaShares() {
 			}
 		}
 	}
-	
 	return true;
 }
 
 function addSambaUser() {
-	
 	var col = null;
 	var userIndex = null;
 	var template = null;
-	
 	// get and check the shares
 	var shares = $('samba_shares').childElements()[0].childElements();
 	if(!shares || !checkSambaShares()) return;
-	
+
 	// check if adding was successful
 	if( row = addTableEntry('samba_users') ) {
-		
+
 		cols = row.children;
-		
+
 		for(var i = 0; i < cols.length; i++) {
 			col = cols[i];
 			if(col.id == 'n_smbuser_shareaccess') {
@@ -473,11 +443,10 @@ function addSambaUser() {
 				}
 			}
 		}
-		
+
 		if( template && userIndex ) {
-			
 			var sublabel = 'samba_shares_row_';
-			
+
 			for( i = 0; i < shares.length; i++ ) {
 				if( shares[i].id ) {
 					if( shares[i].id.substr( 0, sublabel.length ) == sublabel && shares[i].id.substr(shares[i].id.length - 9, 9) != '_template') {
@@ -490,12 +459,11 @@ function addSambaUser() {
 }
 
 function addSambaUserShare( userIndex, template, share ) {
-	
 	var mp = null;
 	var sd = null;
 	var label = null;
 	var element = null;
-	
+
 	// extrace the reqired share information
 	for( var i = 0; i < share.childElements().length; i++ ) {	
 		element = share.childElements()[i].childElements()[0];
@@ -509,11 +477,11 @@ function addSambaUserShare( userIndex, template, share ) {
 			}
 		}
 	}
-	
+
 	// get the share index
 	var prefix = 'samba_shares_row_';
 	var shareIndex = share.id.substr( prefix.length, share.id.length - prefix.length );
-		
+
 	for( i = 0; i < template.childElements().length; i++ ) {
 		element = template.childElements()[i];
 		if( element.tagName == 'SPAN' ) {
@@ -522,7 +490,7 @@ function addSambaUserShare( userIndex, template, share ) {
 			template.childElements()[i].name = 'smbshare_' + shareIndex + '_user_' + userIndex;
 		}
 	}
-		
+
 	// add the template to the user entry
 	var users = $('samba_users').childElements()[0].childElements();
 	for( i = 0; i < users.length; i++ ) {
@@ -534,15 +502,13 @@ function addSambaUserShare( userIndex, template, share ) {
 	}
 }
 
-
 function removeSambaUserShare( shareIndex ) {
-	
 	var position = 0;
 	var next = 0;
 	var shares = null;
 	var share = null;
 	var index = 0;
-	
+
 	var users = $('samba_users').childElements()[0].childElements();
 	for( i = 0; i < users.length; i++ ) {
 		if( users[i].id ) {
@@ -570,19 +536,16 @@ function removeSambaUserShare( shareIndex ) {
 	}
 }
 
-
 function updateSambaUserShare( element ) {
-	
 	var i = 0;
 	var j = 0;
 	var position = 0;
 	var shares = null;
 	var share_prefix = "smbshare_label_";
-	
 	// get the share index
 	var index = element.name.substr( share_prefix.length, element.name.length - share_prefix.length );
 	var user_prefix = 'smbshare_' + index + '_user';
-	
+
 	var users = $('samba_users').childElements()[0].childElements();
 	for( i = 0; i < users.length; i++ ) {
 		if( users[i].id ) {
@@ -603,24 +566,23 @@ function updateSambaUserShare( element ) {
 }
 
 function checkSambaUsers() {
-	
 	var users = $('samba_users').childElements()[0].childElements();
 	var username = null;
 	var password = null;
 	var sublabel = 'samba_users_row_';
 	var index = 0;
 	var error = false;
-		
+
 	for( i = 0; i < users.length; i++ ) {
 		username = '';
 		password = '';
-		
+
 		if( users[i].id.substr( 0, sublabel.length ) == sublabel && users[i].id.substr(users[i].id.length - 9, 9) != '_template') {
 			index = users[i].id.substr( sublabel.length, users[i].id.length - sublabel.length );
 			for(j = 0; j < users[i].childElements().length; j++) {
 				element = users[i].childElements()[j].childElements()[0];
 				error = false;
-				
+
 				if(element && element != undefined && element.name ) {
 					if( element.name.substr(0, element.name.length - index.length - 1 ) == 'smbuser_username' ) {
 						username = element.value.replace(/^\s+|\s+$/g,"");
@@ -629,7 +591,7 @@ function checkSambaUsers() {
 						password = element.value.replace(/^\s+|\s+$/g,"");
 						if(password.length == 0) error = true;
 					}
-					
+
 					// error handling
 					if(error) {
 						element.className = "value_error";
@@ -638,7 +600,7 @@ function checkSambaUsers() {
 					}
 				}
 			}
-			
+
 			// error handling
 			if( username.length == 0 || password.length == 0) {
 				alert( 'Please enter username and password for the samba users.' );
@@ -646,7 +608,6 @@ function checkSambaUsers() {
 			}
 		}
 	}
-	
 	return true;
 }
 
@@ -676,7 +637,6 @@ function raid_format_submit(F, I) {
 	F.raid_del_value.value=I;
 	F.submit();
 }
-
 
 function drive_format_submit(F, I, drive) {
 	F.change_action.value="gozila_cgi";
@@ -708,7 +668,6 @@ function member_add_submit(F,I) {
 }
 
 function drive_fs_changed(F,formatindex, selectedindex) {
-
 	var xfs = <% support_fs("xfs"); %>;
 	var ext2 = <% support_fs("ext2"); %>;
 	var ext3 = <% support_fs("ext3"); %>;
@@ -719,30 +678,29 @@ function drive_fs_changed(F,formatindex, selectedindex) {
 	var fat32 = <% support_fs("fat"); %>;
 	var opt = $('format' + formatindex);
 	var value = opt.options[selectedindex].value;
-	
+
 	var format = $('drive_format' + formatindex);
 
 	if (value == "xfs" && xfs == 1) {
-	    format.disabled = false; 
+			format.disabled = false; 
 	} else if (value == "ext2" && ext2 == 1) {
-	    format.disabled = false; 
+			format.disabled = false; 
 	} else if (value == "ext3" && ext3 == 1) {
-	    format.disabled = false; 
+			format.disabled = false; 
 	} else if (value == "ext4" && ext4 == 1) {
-	    format.disabled = false; 
+			format.disabled = false; 
 	} else if (value == "btrfs" && btrfs == 1) {
-	    format.disabled = false; 
+			format.disabled = false; 
 	} else if (value == "exfat" && exfat == 1) {
-	    format.disabled = false; 
+			format.disabled = false; 
 	} else if (value == "ntfs" && ntfs == 1) {
-	    format.disabled = false; 
+			format.disabled = false; 
 	} else if (value == "fat32" && fat32 == 1) {
-	    format.disabled = false; 
+			format.disabled = false; 
 	} else {
-	    format.disabled = true; 
+			format.disabled = true; 
 	}
 }	
-
 
 function to_submit(F) {
 	if($('samba_shares')) {
@@ -763,18 +721,19 @@ function to_submit(F) {
 	if($('rsync_shares')) {
 		if(!checkrsyncShares())
 			return false;
-	}	
+	}
 	F.change_action.value="gozila_cgi";
 	F.submit_type.value = "save";
 	F.save_button.value = sbutton.saving;
 	apply(F);
 }
+
 function to_apply(F) {
 	if($('samba_shares')) {
 		if(!checkSambaShares() || !checkSambaUsers())
 			return false;	
 	}
-	
+
 	if($('dlna_shares')) {
 		if(!checkDlnaShares())
 			return false;	
@@ -789,6 +748,7 @@ function to_apply(F) {
 		if(!checkrsyncShares())
 			return false;	
 	}
+
 	F.change_action.value="gozila_cgi";
 	F.submit_type.value = "save";
 	F.save_button.value = sbutton.saving;
@@ -823,23 +783,14 @@ addEvent(window, "load", function() {
 
 	update = new StatusbarUpdate();
 	update.start();
-	
 });
 
 addEvent(window, "unload", function() {
 	update.stop();
-
 });
 		
-		//]]>
-		</script>
-
-		<style type="text/css">
-			.value_error {
-				 border: solid 2px #f00;
-			}
-		</style>
-	
+	//]]>
+	</script>
 	</head>
 
 	<body class="gui">
@@ -876,7 +827,7 @@ addEvent(window, "unload", function() {
 				</div>
 				<div id="helpContainer">
 					<div id="help">
-						<div><h2><% tran("share.help"); %></h2></div>
+						<h2><% tran("share.help"); %></h2>
 						<dl>
 							<dt class="term"><% tran("nas.samba3_legend"); %></dt>
 							<dd class="definition"><% tran("hnas.right2"); %></dd>

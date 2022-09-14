@@ -610,20 +610,24 @@ td.bulle {
   margin-bottom: -0.8rem;
 }
 div.also {
-  background: var(--bg-3) !important;
-  border-color: var(--bg-4) !important;
-  border-radius: 4px;
+  background: var(--v2-1);
+  border-color: var(--v2-5);
+  color: var(--v9-9);
+}
+div.also h4 {
+  color: var(--v2-9);
+}
+div.note {
+  background: var(--v4-1);
+  border-color: var(--v4-5);
+}
+div.note h4 {
+  color: var(--v4-7);
 }
 div.bulle {
   background-color: var(--bg-4);
   border: 1px solid var(--bg-5);
   color: var(--v9-9);
-  border-radius: 4px;
-}
-div.note {
-  background: var(--v7-1) !important;
-  border-color: var(--v7-5) !important;
-  margin-top: 0.5rem;
   border-radius: 4px;
 }
 div.gridpoint {
@@ -643,9 +647,6 @@ div.slidingheader:hover {
 }
 div.slidingbodyshow {
   background-color: var(--bg-2);
-  border-color: var(--bg-5);
-}
-div.slidingbodyshow center {
   border-color: var(--bg-5);
 }
 div.slidingbody {

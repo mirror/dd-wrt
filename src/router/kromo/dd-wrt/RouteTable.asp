@@ -1,12 +1,11 @@
 <% do_pagehead("routetbl.titl"); %>
-
-		<script type="text/javascript">
-		//<![CDATA[
+	<script type="text/javascript">
+	//<![CDATA[
 addEvent(window, "load", function() {
 	stickControl(<% nvg("sticky_footer"); %>);
 });
-		//]]>
-		</script>
+	//]]>
+	</script>
 	</head>
 
 	<body class="popup_bg">
@@ -15,6 +14,7 @@ addEvent(window, "load", function() {
 			<fieldset>
 			<legend><% tran("route.titl"); %></legend>
 			<table class="table" cellspacing="4" id="routing_table" summary="routing table">
+				<thead>
 				<tr>
 					<th sortdir="up"> <% tran("routetbl.th1"); %></th>
 					<th sortdir="up"> <% tran("share.gateway"); %></th>
@@ -24,6 +24,8 @@ addEvent(window, "load", function() {
 					<th sortdir="up"> <% tran("share.iftbl"); %></th>
 					<th sortdir="up"> <% tran("routetbl.src"); %></th>
 				</tr>
+			</thead>
+			<tbody>
 				<script type="text/javascript">
 				//<![CDATA[
 					var table = new Array(<% dump_route_table(); %>);
@@ -41,6 +43,7 @@ addEvent(window, "load", function() {
 					}
 				//]]>
 				</script>
+			</tbody>
 			</table>
 			</fieldset><br />
 			<script type="text/javascript">

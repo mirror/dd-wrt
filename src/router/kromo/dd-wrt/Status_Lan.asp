@@ -135,7 +135,6 @@ function getSize(size) {
 	} else {
 		precision = 1;
 	}
-	
 	return (Math.round(size*precision)/precision)+prefix[pos];
 }
 
@@ -178,11 +177,10 @@ function setARPTable() {
 		cellcount.style.textAlign = 'center';
 		cellcount.innerHTML = getSize(val[i+7]);
 
-
 		var cellcount = row.insertCell(-1);
 		cellcount.style.textAlign = 'center';
 		cellcount.innerHTML = val[i+3];
-		
+
 		setMeterBar(row.insertCell(-1), parseInt(val[i+3])/<% nvg("ip_conntrack_max"); %>*100, "");
 	}
 }
@@ -409,7 +407,7 @@ addEvent(window, "unload", function() {
 				</div>
 				<div id="helpContainer">
 					<div id="help">
-						<div><h2><% tran("share.help"); %></h2></div>
+						<h2><% tran("share.help"); %></h2>
 						<dl>
 							<dt class="term"><% tran("share.mac"); %>:</dt>
 							<dd class="definition"><% tran("hstatus_lan.right2"); %></dd>

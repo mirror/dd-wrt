@@ -47,7 +47,6 @@ addEvent(window, "unload", function() {
 							<input type="hidden" name="submit_type" />
 
 							<h2><% tran("vpn.h2"); %></h2>
-
 							<fieldset>
 								<legend><% tran("vpn.legend"); %></legend>
 								<div class="setting">
@@ -79,7 +78,7 @@ addEvent(window, "unload", function() {
 				</div>
 				<div id="helpContainer">
 					<div id="help">
-						<div><h2><% tran("share.help"); %></h2></div>
+						<h2><% tran("share.help"); %></h2>
 						<dl>
 							<dd class="definition"><% tran("hvpn.right1"); %></dd>
 						</dl>

@@ -105,7 +105,7 @@ addEvent(window, "unload", function() {
             </div>
 				<div id="helpContainer">
 					<div id="help">
-						<div><h2><% tran("share.help"); %></h2></div>
+						<h2><% tran("share.help"); %></h2>
 					<br />
 					<!--<a href="javascript:openHelpWindow<% ifdef("MICRO","Ext"); %>('HSipath.asp')"><% tran("share.more"); %></a>-->
 					</div>

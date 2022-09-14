@@ -102,7 +102,7 @@ addEvent(window, "unload", function() {
 				</div>
 				<div id="helpContainer">
 					<div id="help">
-						<div><h2><% tran("share.help"); %></h2></div>
+						<h2><% tran("share.help"); %></h2>
 						<dl>
 							<dt class="term"><% tran("pforward.h2"); %>:</dt>
 							<dd class="definition"><% tran("hpforward.right2"); %></dd>

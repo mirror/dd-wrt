@@ -1,6 +1,6 @@
 <%% do_pagehead("wl_adv.titl"); %%>
-		<script type="text/javascript">
-		//<![CDATA[
+	<script type="text/javascript">
+	//<![CDATA[
 
 var wl_net_mode = '<%% nvg("%s_net_mode"); %%>';
 var wl_phytype = '<%% nvg("%s_phytype"); %%>';
@@ -35,7 +35,7 @@ function initWlTimer(radio_on_time) {
 function setWlTimer(id, state) {
 	var color_red = '#cd0000';
 	var color_green = '#228b22';
-	
+
 	if(id=='all') {
 		if(state) {
 			bgcolor = color_green;
@@ -115,9 +115,9 @@ function setRadioTable() {
 	var row1 = table.insertRow(-1);
 	var row2 = table.insertRow(-1);
 	row2.style.cursor = "pointer";
-	
+
 	for(var i = 0; i < 24; i++) {
-		
+
 		var cell_label = row1.insertCell(-1);
 		cell_label.innerHTML = i;
 				
@@ -227,9 +227,8 @@ addEvent(window, "load", function() {
 addEvent(window, "unload", function() {
 	update.stop();
 });
-		
-		//]]>
-		</script>
+	//]]>
+	</script>
 	</head>
 
 	<body class="gui">
@@ -607,9 +606,12 @@ addEvent(window, "unload", function() {
 										</span>
 									</div>
 									<table class="table" cellspacing="5" summary="edca ap parameters">
+										<thead>
 										<tr>
 											<th colspan="7"><%% tran("wl_adv.table1"); %%></th>
 										</tr>
+									</thead>
+									<tbody>
 										<tr>
 											<td>&nbsp;</td>
 											<td class="center"><%% tran("wl_adv.col1"); %%></td>
@@ -655,11 +657,15 @@ addEvent(window, "unload", function() {
 											<td class="center"><input class="num" name="%s_wme_ap_vo4" value="<%% nvram_list("%s_wme_ap_vo", 4); %%>" size="5" maxlength="6" onblur="valid_range(this,0,65504,wl_adv.col5)" /></td>
 											<td class="center"><input type="hidden" name="%s_wme_ap_vo5" value="<%% nvram_list("%s_wme_ap_vo", 5); %%>" /><input type="checkbox" name="_%s_wme_ap_vo5" <%% wme_match_op("%s_wme_ap_vo", "on", "checked='checked'"); %%> onchange="this.form.%s_wme_ap_vo5.value = (this.checked ? 'on' : 'off');" /></td>
 										</tr>
+									</tbody>
 									</table>
 									<table cellspacing="5" summary="edca sta parameters">
+										<thead>
 										<tr>
 											<th colspan="7"><%% tran("wl_adv.table2"); %%></th>
 										</tr>
+									</thead>
+									<tbody>
 										<tr>
 											<td>&nbsp;</td>
 											<td class="center"><%% tran("wl_adv.col1"); %%></td>
@@ -705,11 +711,15 @@ addEvent(window, "unload", function() {
 											<td class="center"><input class="num" name="%s_wme_sta_vo4" value="<%% nvram_list("%s_wme_sta_vo", 4); %%>" size="5" maxlength="6" onblur="valid_range(this,0,65504,wl_adv.col5)" /></td>
 											<td class="center"><input type="hidden" name="%s_wme_sta_vo5" value="<%% nvram_list("%s_wme_sta_vo", 5); %%>" /><input type="checkbox" name="_%s_wme_sta_vo5" <%% wme_match_op("%s_wme_sta_vo", "on", "checked='checked'"); %%> onchange="this.form.%s_wme_sta_vo5.value = (this.checked ? 'on' : 'off');" /></td>
 										</tr>
+									</tbody>
 									</table>
 									<table class="table" cellspacing="5" summary="WMM Tx retry limits">
+										<thead>
 										<tr>
 											<th colspan="7"><%% tran("wl_adv.table3"); %%></th>
 										</tr>
+									</thead>
+									<tbody>
 										<tr>
 											<td>&nbsp;</td>
 											<td class="center"><%% tran("wl_adv.txpcol1"); %%></td>
@@ -750,6 +760,7 @@ addEvent(window, "unload", function() {
 											<td class="center"><input class="num" name="%s_wme_txp_vo3" value="<%% nvram_list("%s_wme_txp_vo", 3); %%>" size="5" maxlength="6" onblur="valid_range(this,1,15,wl_adv.txpcol4)" /></td>
 											<td class="center"><input class="num" name="%s_wme_txp_vo4" value="<%% nvram_list("%s_wme_txp_vo", 4); %%>" size="5" maxlength="6" /></td>
 										</tr>
+									</tbody>
 									</table>
 								</div>
 							</fieldset><br />
@@ -765,7 +776,7 @@ addEvent(window, "unload", function() {
 				</div>
 				<div id="helpContainer">
 					<div id="help">
-						<div><h2><%% tran("share.help"); %%></h2></div>
+						<h2><%% tran("share.help"); %%></h2>
 						<dl>
 							<dt class="term"><%% tran("wl_adv.label"); %%>:</dt>
 							<dd class="definition"><%% tran("hwl_adv.right2"); %%></dd>
