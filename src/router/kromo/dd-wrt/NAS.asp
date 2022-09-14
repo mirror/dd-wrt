@@ -7,13 +7,10 @@ function addDlnaShare() {
 }
 
 function removeDlnaShare( button ) {
-	
 	tableId = 'dlna_shares';
-	
 	// remove the share
 	removeTableEntry( tableId, button );
 }
-
 
 function verifyDlnaSettings() {
 	var error = false;
@@ -682,7 +679,7 @@ function drive_fs_changed(F,formatindex, selectedindex) {
 	var format = $('drive_format' + formatindex);
 
 	if (value == "xfs" && xfs == 1) {
-			format.disabled = false; 
+		format.disabled = false; 
 	} else if (value == "ext2" && ext2 == 1) {
 			format.disabled = false; 
 	} else if (value == "ext3" && ext3 == 1) {

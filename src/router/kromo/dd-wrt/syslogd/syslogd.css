@@ -7,12 +7,12 @@
   background: #f6f6f6;
   padding: .3rem;
   padding-top: .1rem;
-  margin: -.8rem -.8rem 0 -.8rem;
+  margin: -.8rem -.7rem 0 -.7rem;
 }
 .syslog_legend {
   margin: unset;
 }
-.syslog_bg tr:not([class]):hover {
+.syslog_bg tr:hover {
   background-color: #ccc;
   color: #000;
 }

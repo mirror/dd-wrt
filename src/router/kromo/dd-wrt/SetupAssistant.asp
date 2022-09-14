@@ -546,7 +546,7 @@ addEvent(window, "load", function() {
 	if (document.setupassistant.now_proto.value == "pppoe" ||
 		document.setupassistant.now_proto.value == "pptp" ||
 		document.setupassistant.now_proto.value == "l2tp" ||
-		document.setupassistant.now_proto.value == "heartbeat")
+		document.setupassistant.now_proto.value == "heartbeat") 
 			ppp_enable_disable(document.setupassistant,'<% nvram_selget("ppp_demand"); %>');
 	
 	dhcp_enable_disable(document.setupassistant,'<% nvram_selget("lan_proto"); %>');

@@ -39,9 +39,6 @@
 						<li><a href="HUSB.asp"><% tran("bmenu.servicesUSB"); %></a></li>
 						<li><a href="HNAS.asp"><% tran("bmenu.servicesNAS"); %></a></li>
 						<li><a href="HHotspot.asp"><% tran("bmenu.servicesHotspot"); %></a></li>
-						<% ifndef("MILKFISH", "<!--"); %>
-						<li><a href="HMilkfish.asp"><% tran("bmenu.servicesMilkfish"); %></a></li>
-						<% ifndef("MILKFISH", "-->"); %>
 					</ul>
 				</dd>
 				<dt><% tran("bmenu.security"); %></dt>
