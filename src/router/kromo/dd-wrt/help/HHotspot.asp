@@ -8,41 +8,41 @@
 			<h2><% tran("hotspot.h2"); %></h2>
 			<dl>
 				<% tran("hstatus_hots.page1"); %>
-				<dt><script type="text/javascript">Capture(hotspotsys.legend)</script></dt>
+				<dt><% tran("hotspotsys.legend"); %></dt>
 				<% tran("hstatus_hots.page2"); %>
-				<dt><script type="text/javascript">Capture(hotspotsys.operatorid)</script></dt>
+				<dt><% tran("hotspotsys.operatorid"); %></dt>
 				<% tran("hstatus_hots.page3"); %>
-				<dt><script type="text/javascript">Capture(hotspotsys.locationid)</script></dt>
+				<dt><% tran("hotspotsys.locationid"); %></dt>
 				<% tran("hstatus_hots.page4"); %>
-				<dt><script type="text/javascript">Capture(hotspotsys.nobridge)</script></dt>
+				<dt><% tran("hotspotsys.nobridge"); %></dt>
 				<% tran("hstatus_hots.page5"); %>
-				<dt><script type="text/javascript">Capture(hotspotsys.dhcp)</script></dt>
+				<dt><% tran("hotspotsys.dhcp"); %></dt>
 				<% tran("hstatus_hots.page6"); %>
-				<dt><script type="text/javascript">Capture(hotspotsys.net)</script></dt>
+				<dt><% tran("hotspotsys.net"); %></dt>
 				<% tran("hstatus_hots.page7"); %>
-				<dt><script type="text/javascript">Capture(hotspotsys.uamenable)</script></dt>
+				<dt><% tran("hotspotsys.uamenable"); %></dt>
 				<% tran("hstatus_hots.page8"); %>
-				<dt><script type="text/javascript">Capture(hotspot.pserver)</script></dt>
+				<dt><% tran("hotspot.pserver"); %></dt>
 				<% tran("hstatus_hots.page9"); %>
-				<dt><script type="text/javascript">Capture(hotspot.dns)</script></dt>
+				<dt><% tran("hotspot.dns"); %></dt>
 				<% tran("hstatus_hots.page10"); %>
-				<dt><script type="text/javascript">Capture(hotspot.url)</script></dt>
+				<dt><% tran("hotspot.url"); %></dt>
 				<% tran("hstatus_hots.page11"); %>
-				<dt><script type="text/javascript">Capture(share.share_key)</script></dt>
+				<dt><% tran("share.share_key"); %></dt>
 				<% tran("hstatus_hots.page12"); %>
-				<dt><script type="text/javascript">Capture(hotspot.dhcp)</script></dt>
+				<dt><% tran("hotspot.dhcp"); %></dt>
 				<% tran("hstatus_hots.page13"); %>
-				<dt><script type="text/javascript">Capture(hotspot.radnas)</script></dt>
+				<dt><% tran("hotspot.radnas"); %></dt>
 				<% tran("hstatus_hots.page14"); %>
-				<dt><script type="text/javascript">Capture(hotspot.uam)</script></dt>
+				<dt><% tran("hotspot.uam"); %></dt>
 				<% tran("hstatus_hots.page15"); %>
-				<dt><script type="text/javascript">Capture(hotspot.uamdns)</script></dt>
+				<dt><% tran("hotspot.uamdns"); %></dt>
 				<% tran("hstatus_hots.page16"); %>
-				<dt><script type="text/javascript">Capture(hotspot.allowuam)</script></dt>
+				<dt><% tran("hotspot.allowuam"); %></dt>
 				<% tran("hstatus_hots.page17"); %>
-				<dt><script type="text/javascript">Capture(hotspot.macauth)</script></dt>
+				<dt><% tran("hotspot.macauth"); %></dt>
 				<% tran("hstatus_hots.page18"); %>
-				<dt><script type="text/javascript">Capture(hotspot.option)</script></dt>
+				<dt><% tran("hotspot.option"); %></dt>
 				<% tran("hstatus_hots.page19"); %>
 				<dt><% tran("hotspot.nocat_legend"); %></dt>
 				<% tran("hstatus_hots.page20"); %>

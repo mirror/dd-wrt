@@ -56,8 +56,8 @@ div.infopage #header {
   width: 65.536em;
   padding: .8em .8em 0;
 }
-#contents[style*='padding: .93em'] {
-  width: initial
+#contents.syslog-padding {
+  width: initial;
 }
 #contentsInfo {
   width: 87.471em;
@@ -189,9 +189,6 @@ input[type='checkbox'],
 input[type='radio'] {
   margin-right: .4em;
   accent-color: #345b80;
-}
-#mainno #contents[style*="padding: .93em"] {
-  width: 98%;
 }
 [summary="week days table"] {
   margin-left: -1.3rem;
