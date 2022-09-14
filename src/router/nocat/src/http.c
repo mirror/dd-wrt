@@ -29,13 +29,13 @@ GIOChannel *http_bind_socket( const char *ip, int port, int queue ) {
     if (r == -1)
 	g_error("socket failed: %m");	
     
-    r = bind( fd, (struct sockaddr *)&addr, sizeof(addr) );
-    if (r == -1)
-	g_error("bind failed on %s: %m", ip);	
-
     r = setsockopt( fd, SOL_SOCKET, SO_REUSEADDR, &n, sizeof(n) );
     if (r == -1)
 	g_error("setsockopt failed on %s: %m", ip);	
+
+    r = bind( fd, (struct sockaddr *)&addr, sizeof(addr) );
+    if (r == -1)
+	g_error("bind failed on %s: %m", ip);	
 
     n = fcntl( fd, F_GETFL, 0 );
     if (n == -1)
