@@ -119,3 +119,6 @@ table tr th[sortdir] {
 table#radio_table tr td, .table_row_bg td {
   height: 18px;
 }
+.syslog-padding {
+  padding: .906em;
+}
