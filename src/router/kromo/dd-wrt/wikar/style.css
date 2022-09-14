@@ -217,7 +217,7 @@ input.button[onclick*="delete"] {
   margin: 0 300px 0 0;
 }
 [name="Info"] .submitFooter,
-#contents[style="padding: .93em;"] .submitFooter {
+#contents.syslog-padding .submitFooter {
   margin: 0;
 }
 .submitFooter {

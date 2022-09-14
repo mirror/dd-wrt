@@ -266,6 +266,9 @@ h2, h3 {
 .padding-left {
   padding-left: 13.6rem;
 }
+.syslog-padding {
+  padding: .906em;
+}
 .warning {
   padding: .725em;
   text-align: center;

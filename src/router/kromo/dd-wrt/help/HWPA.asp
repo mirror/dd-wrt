@@ -26,8 +26,8 @@
 			<h4><% tran("share.seealso"); %></h4>
 			<ul>
 				<li><a href="HWireless.asp"><% tran("sas.wireless_settings"); %></a></li>
-				<li><a href="Hradauth.asp">RADIUS Authentication</a></li>
-				<li><a href="HWirelessMAC.asp">wl_mac.h2</a></li>
+				<li><a href="Hradauth.asp"><% tran("service.pppoesrv_radauth"); %></a></li>
+				<li><a href="HWirelessMAC.asp"><% tran("wl_mac.h2"); %></a></li>
 				<li><a href="HWirelessAdvanced.asp"><% tran("wl_adv.titl"); %></a></li>
 			</ul>
 		</div>
