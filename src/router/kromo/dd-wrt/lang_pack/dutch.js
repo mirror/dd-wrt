@@ -437,14 +437,11 @@ bmenu.servicesPptp="VPN";
 bmenu.servicesUSB="USB";
 bmenu.servicesNAS="NAS";
 bmenu.servicesHotspot="Hotspot";
-bmenu.servicesMilkfish="Milkfish SIP Router";
-//bmenu.servicesAnchorFree="Mijn Reclame Hotspot";
 
 bmenu.statu="Status";
 bmenu.statuRouter="Router";
 bmenu.statuInet="WAN";
 bmenu.statuLAN="LAN";
-//bmenu.statuSputnik="Sputnik Agent";
 bmenu.statuWLAN="Draadloos";
 bmenu.statuVPN="OpenVPN";
 bmenu.statuBand="Bandbreedte";
@@ -781,14 +778,6 @@ hotspot.smtp_net="SMTP Bron Netwerk";
 hotspot.shat_legend="Zero IP Configuratie";
 hotspot.shat_srv="Zero IP Configuratie";
 hotspot.shat_srv2="Zero IP Configuratie geactiveerd";
-hotspot.sputnik_legend="Sputnik";
-hotspot.sputnik_srv="Sputnik Agent";
-hotspot.sputnik_mode="Sputnik Mode";
-hotspot.sputnik_id="Sputnik Server ID";
-hotspot.sputnik_instant="Gebruik Sputnik Instant Instelling";
-hotspot.sputnik_express="Gebruik SputnikNet Express";
-hotspot.sputnik_about="over Sputnik";
-hotspot.sputnik_learn="Leer meer";
 hotspot.wifidog_legend="Wifidog";
 hotspot.wifidog_srv="Wifidog daemon";
 hotspot.wifidog_id="Gateway ID";
@@ -806,44 +795,6 @@ hotspot.wifidog_authsrvhttpport="AuthServer HTTP Poort";
 hotspot.wifidog_authsrvpath="AuthServer Pad";
 hotspot.wifidog_config="Firewall Regelset";
 
-
-//anchorfree.anchorfree="AnchorFree";
-//anchorfree.titl="Mijn Reclame Hotspot";
-//anchorfree.h2="AnchorFree Reclame Hotspot";
-//anchorfree.anchorfree_revenue="Inkomsten genereren met AnchorFree Hotspot Reclame";
-//anchorfree.email="Email om inkomstenrapporten te ontvangen";
-//anchorfree.ssid="Gebruik een verschillend SSID";
-//anchorfree.ssid_name="SSID";
-//anchorfree.address_1="Straat Adres";
-//anchorfree.address_2="Straat Adres 2";
-//anchorfree.city="Woonplaats";
-//anchorfree.zip="Postcode of Zip Code";
-//anchorfree.state="Land/Staat/Provincie";
-//anchorfree.country="Land";
-//anchorfree.category="Categorie";
-//anchorfree.publish="Publiceer deze hotspot op de gratis WiFi kaart";
-//anchorfree.serviceid="Service ID";
-//anchorfree.servicestatus="Service Status";
-//anchorfree.agreement="Voorwaarden";
-//anchorfree.agree="IK ACCEPTEER DE VOORWAARDEN EN GA AKKOORD";
-//anchorfree.validaddr="een geldig adres moet worden verstrekt indien deze hotspot moet worden gepubliceerd op de wifi hotspot kaart!";
-//anchorfree.validcity="een geldige stad of post/zip code moet worden verstrekt indien deze hotspot moet worden gepubliceerd op de wifi hotspot kaart!";
-//anchorfree.validcat="selecteer een categorie voor uw reclame hotspot";
-//anchorfree.validcountry="selecteer het land voor uw hotspot";
-//anchorfree.validterms="U moet akkoord gaan met de algemene voorwaarden!";
-//
-//
-//hanchorfree.right1="Join AnchorFree's hotspot reclame netwerk";
-//hanchorfree.right2="AnchorFree exploiteert een hotspot reclame netwerk dat DD-WRT gebruikers toestaat incrementele inkomsten te genereren.";
-//hanchorfree.right3="Genereer incrementele inkomsten met advertenties van AnchorFree";
-//hanchorfree.right4="Door het activeren van deze functie en het creëren van een account bij AnchorFree (Het is Gratis en makkelijk), een hardnekkig reclameframe wordt direct geintregeerd in de gebruikers webbrowsers, dat voor u elke maand een uitbetaling verdient.  Verdien met een minimale maandelijkse drempel van $25 en AnchorFree zal automatisch credit storten op uw account met fondsen.";
-//hanchorfree.right5="Voor meer informatie bezoekt u www.anchorfree.com";
-//hanchorfree.right6="Activatie is heel erg gemakkelijk";
-//hanchorfree.right7="Zodra u heeft geactiveerd, stuurt AnchorFree u een email naar de geregistreerde accounteigenaar met eenvoudige instructies over het optimaliseren van uw hotspot, FAQs en andere relevante informatie over het verdienen van geld met uw router. Door dit configuratie scherm, voegt AnchorFree een dunne, niet-opdringerige reclameframe rechtstreeks aan de webbrowsers die toegang tot het internet maken via deze router.";
-//hanchorfree.right8="Klantenservice";
-//hanchorfree.right9="Heeft u vragen? Neem contact met ons op via boxhelp@anchorfree.com";
-
-
 // ******************************************* Info.htm *******************************************//
 
 info.titl="Info";
@@ -851,8 +802,6 @@ info.h2="Systeem Informatie";
 info.wlanmac="Draadloos MAC";
 info.srv="Services";
 info.ap="Toegangspunt";
-
-
 
 // ******************************************* index_heartbeat.asp *******************************************//
 
@@ -867,13 +816,9 @@ idx_h.reconnect="Forceer herverbinding";
 
 idx_l.srv="L2TP Server";
 
-
-
 // ******************************************* index_pppoe.asp *******************************************//
 
 idx_pppoe.use_rp="Gebruik RP PPPoE";
-
-
 
 // ******************************************* index_pptp.asp *******************************************//
 
@@ -1352,50 +1297,6 @@ service.warn_domain="Domeinnaam Ontvanger";
 service.warn_user="SMTP Auth Gebruikersnaam";
 service.warn_pass="SMTP Auth Wachtwoord";
 
-//milkfish.webservices
-service.milkfish_siprouter="Milkfish SIP Router";
-service.milkfish_alias="Alias";
-service.milkfish_uri="SIP URI";
-service.milkfish_mainswitch="Milkfish Starten";
-service.milkfish_fromswitch="Van-Substitutie";
-service.milkfish_fromdomain="Van-Domein";
-service.milkfish_username="Milkfish Gebruikersnaam";
-service.milkfish_password="Milkfish Wachtwoord";
-service.milkfish_audit="Milkfish Audit";
-service.milkfish_siptrace="Traceer SIP";
-service.milkfish_subscribers="Lokale Abonnees";
-service.milkfish_aliases="Lokale Aliases";
-service.milkfish_dynsip="Dynamische SIP";
-service.milkfish_status="SIP Status";
-service.milkfish_database="SIP Database";
-service.milkfish_messaging="SIP Berichten";
-service.milkfish_phonebook="SIP Telefoonboek";
-service.milkfish_dynsipdomain="DynSIP Domein";
-service.milkfish_dynsipurl="DynSIP Update URL";
-service.milkfish_dsusername="DynSIP Gebruikersnaam";
-service.milkfish_dspassword="DynSIP Wachtwoord";
-service.milkfish_sipmessage="SIP Bericht";
-service.milkfish_destination="SIP Bestemming";
-service.milkfish_contact="Contact";
-service.milkfish_agent="Gebruikers Agent";
-service.milkfish_registrations="Actieve Registraties";
-//service.milkfish_="";//
-service.hmilkfish_right2="Activeren/Deactiveren Milkfish SIP Router.";
-service.hmilkfish_right4="Activeren/Deactiveren Van:-Hoofdveld substitutie van uw WAN IP in de uitgaande SIP berichten. Deze insteling zou ingesteld moeten zijn, indien u door gebelden terug gebeld wilt worden als het IP adres is veranderd.";
-service.hmilkfish_right6="Gebelde belt terug naar dit domein (in plaats vanuit(Vanaf) uw WAN IP) wanneer u dit zend als:-Vanuit(Vanaf) Domein in plaats vanuit(Vanaf) uw WAN IP. Vanuit(Vanaf)-Substitutie moet ingeschakeld zijn om deze instelling van kracht te laten worden";
-service.hmilkfish_right8="Vul hier uw Milkfish Community Forum Gebruikersnaam in - Registratie verwijst u naar yourname.homesip.net";
-service.hmilkfish_right10="Vul hier uw Milkfish Community Forum Wachtwoord in - Registratie verwijst u naar yourname.homesip.net";
-service.hmilkfish_right12="Activeerd/Deactiveerd standaard SIP Tracering op (in) uw router";
-service.hmilkfish_right14="Lokale SIP Abonnees zijn lokaal beheerde SIP Acounts";
-service.hmilkfish_right16="Lokale SIP Alliassen zijn SIP Forwards gelijk aan Email Forwards. Deze kunnen worden gebruikt om alphanummerieke naar nummerieke telefoon gebruikers acounts te forwarden of andersom";
-service.hmilkfish_right18="Activeerd/Deactiveerd Dynamische SIP (bijv. Homesip.net Service) - Gebruikersnaam en Wachtwoord dienen te worden ingevuld";
-service.hmilkfish_right20="not implemented yet - leave empty";
-service.hmilkfish_right22="not implemented yet - leave empty";
-service.hmilkfish_right24="not implemented yet - leave empty";
-service.hmilkfish_right26="not implemented yet - leave empty";
-//service.hmilkfish_="";//
-
-
 // ******************************************* eop-tunnel.asp *******************************************//
 
 eoip.titl="EoIP Tunnel";
@@ -1418,7 +1319,6 @@ eoip.bridging="Bridging";
 sipath.titl="SiPath Overzicht";
 sipath.phone_titl="Telefoonboek";
 sipath.status_titl="Status";
-
 
 
 // ******************************************* Status_Lan.asp *******************************************//

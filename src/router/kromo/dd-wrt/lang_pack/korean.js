@@ -458,16 +458,12 @@ bmenu.servicesUSB="USB";
 bmenu.servicesNAS="NAS";
 bmenu.servicesHotspot="핫스팟";
 bmenu.servicesNintendo="닌텐도";
-bmenu.servicesMilkfish="SIP 프록시";
 bmenu.servicesPrivoxy="광고 차단";
-bmenu.servicesLighttpd="웹서버";
-//bmenu.servicesAnchorFree="내 광고 네트워크";
 
 bmenu.statu="상태";
 bmenu.statuRouter="공유기";
 bmenu.statuInet="WAN";
 bmenu.statuLAN="LAN";
-bmenu.statuSputnik="Sputnik 에이전트";
 bmenu.statuWLAN="무선";
 bmenu.statuVPN="OpenVPN";
 bmenu.statuBand="대역폭";
@@ -836,14 +832,6 @@ hotspot.smtp_net="SMTP 발신원 네트워크";
 hotspot.shat_legend="Zero IP 설정";
 hotspot.shat_srv="Zero IP 설정";
 hotspot.shat_srv2="Zero IP 설정 사용";
-hotspot.sputnik_legend="Sputnik";
-hotspot.sputnik_srv="Sputnik 에이전트";
-hotspot.sputnik_mode="Sputnik 모드";
-hotspot.sputnik_id="Sputnik 서버 ID";
-hotspot.sputnik_instant="Sputnik Instant 설정 사용";
-hotspot.sputnik_express="SputnikNet Express 사용";
-hotspot.sputnik_about="Sputnik에 대해서";
-hotspot.sputnik_learn="상세히";
 hotspot.wifidog_legend="Wifidog";
 hotspot.wifidog_srv="Wifidog 게이트웨이";
 hotspot.wifidog_id="게이트웨이 ID";
@@ -1529,56 +1517,6 @@ service.warn_to="수신자 이메일 주소";
 service.warn_domain="수신자 도메인 이름";
 service.warn_user="SMTP 인증 사용자 이름";
 service.warn_pass="SMTP 인증 비밀번호";
-
-//milkfish.webservices
-service.milkfish_siprouter="Milkfish SIP 라우터";
-service.milkfish_alias="별명";
-service.milkfish_uri="SIP URI";
-service.milkfish_mainswitch="SIP 라우터";
-service.milkfish_fromswitch="From-Substitution";
-service.milkfish_fromdomain="From-Domain";
-service.milkfish_username="Milkfish 사용자 이름";
-service.milkfish_password="Milkfish 비밀번호";
-service.milkfish_audit="Milkfish 심사";
-service.milkfish_siptrace="SIP 추적";
-service.milkfish_subscribers="로컬 구독자";
-service.milkfish_aliases="로컬 별명";
-service.milkfish_dynsip="다이나믹 SIP";
-service.milkfish_status="SIP 상태";
-service.milkfish_database="SIP 데이터베이스";
-service.milkfish_messaging="SIP 메시지";
-service.milkfish_phonebook="SIP 전화번호부";
-service.milkfish_dynsipdomain="DynSIP 도메인";
-service.milkfish_dynsipurl="DynSIP 업데이트 URL";
-service.milkfish_dsusername="DynSIP 사용자 이름";
-service.milkfish_dspassword="DynSIP 비밀번호";
-service.milkfish_sipmessage="SIP 메시지";
-service.milkfish_destination="SIP 목적지";
-service.milkfish_contact="연락처";
-service.milkfish_agent="사용자 에이전트";
-service.milkfish_registrations="등록 활성화";
-service.milkfish_localsubscr="로컬 구독자";
-service.milkfish_localalias="로컬 별명";
-service.milkfish_messaging="SIP 메시징";
-service.milkfish_siptrace="SIP 추적";
-service.milkfish_advdynsip="고급 DynSIP 설정";
-service.milkfish_answers="문제, 질문, 제안이 있나요? - <a href=\"http:\/\/forum.milkfish.org\" target=\"_blank\">Milkfish-dd User Forum</a>에서 답을 찾으세요";
-//service.milkfish_="";//
-service.hmilkfish_right2="Milkfish SIP 라우터를 활성화 또는 비활성화 합니다.";
-service.hmilkfish_right4="다음으로부터 활성화 또는 비활성화 합니다:-발신 SIP 메시지의 WAN IP 주소의 헤더필드 대체. 만일 WAN IP 주소가 변경되었을 시, 피 호출자로부터의 회신을 허락할 경우 이 설정을 활성화 시켜야 합니다.";
-service.hmilkfish_right6="피호출자가 도메인으로 발신을 할 경우 (현재 사용자의 WAN IP 주소를 대신해), From-Substitution은 이 설정이 유효하도록 활성화 시켜야 합니다.";
-service.hmilkfish_right8="Milkfish 커뮤니티 포럼의 사용자 이름을 이곳에 입력하세요. yourname.homesip.net에 등록하세요.";
-service.hmilkfish_right10="Milkfish 커뮤니티 포럼의 비밀번호를 이곳에 입력하세요. yourname.homesip.net에 등록해 주세요.";
-service.hmilkfish_right12="공유기에 기본적인 SIP 추적을 활성화 또는 비활성화 합니다.";
-service.hmilkfish_right14="로컬 SIP 신청자는 로컬로 SIP 계정이 관리되어집니다.";
-service.hmilkfish_right16="로컬 SIP 별명은 이메일 포워드와 비슷한 SIP 포워드 입니다. 알파벳&숫자 조합을 숫자로 변환하는 또는 거꾸로 인 전화 사용자 계정 포워드를 사용할 수 있습니다.";
-service.hmilkfish_right18="동적 SIP를 활성화 또는 비활성화 시킵니다 (예. Homesip.net 서비스). 사용자 이름과 비밀번호 설정이 필요합니다.";
-service.hmilkfish_right20="정의되지 않은 영역입니다 - 비워두시길 바랍니다";
-service.hmilkfish_right22="정의되지 않은 영역입니다 - 비워두시길 바랍니다";
-service.hmilkfish_right24="정의되지 않은 영역입니다 - 비워두시길 바랍니다";
-service.hmilkfish_right26="정의되지 않은 영역입니다 - 비워두시길 바랍니다";
-//service.hmilkfish_="";//
-
 service.samba3_srv="Samba";
 service.samba3_srvstr="서버 설명";
 service.samba3_pub="공개 공유";
@@ -1736,21 +1674,6 @@ hstatus_inet.right6="공유기의 월별 인터넷 트래픽을 표시합니다.
 // ** Status_Conntrack.asp **//
 status_conn.titl="활성 IP 연결 테이블";
 status_conn.h2="활성 IP 연결";
-
-
-// ** Status_SputnikAPD.asp **//
-status_sputnik.titl="Sputnik 에이전트 상태";
-status_sputnik.h2="Sputnik® Agent™";
-status_sputnik.manage="관리자";
-status_sputnik.license="SCC 라이센스 No.";
-
-//help container
-hstatus_sputnik.right1="Sputnik 에이전트 정보";
-hstatus_sputnik.right2="Sputnik 에이전트 프로세스에 관한 정보를 표시합니다.";
-hstatus_sputnik.right4="이 액세스 포인트가 연결하는 Sputnik 제어 센터를 표시합니다.";
-hstatus_sputnik.right6="현재의 에이전트 상태를 나타냅니다.";
-hstatus_sputnik.right8="Sputnik 제어 센터의 연결에 사용되는 라이센스 번호를 표시합니다.";
-
 
 // ** Status_Wireless.asp **//
 status_wireless.titl="무선 상태";
