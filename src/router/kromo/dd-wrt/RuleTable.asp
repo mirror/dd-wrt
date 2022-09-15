@@ -14,7 +14,7 @@ addEvent(window, "load", function() {
 			<fieldset>
 			<legend><% tran("filter.pol"); %></legend>
 			<table class="table" cellspacing="4" id="pbr_table" summary="pbr table">
-				<thead>
+			<tbody>
 				<tr>
 					<th sortdir="up"><% tran("routetbl.priority"); %></th>
 					<th sortdir="up"><% tran("routetbl.not"); %></th>
@@ -30,8 +30,6 @@ addEvent(window, "load", function() {
 					<th sortdir="up"><% tran("routetbl.table"); %></th>
 					<th sortdir="up"><% tran("routetbl.nat"); %></th>
 				</tr>
-			</thead>
-			<tbody>
 				<script type="text/javascript">
 				//<![CDATA[
 					var table = new Array(<% dump_pbr_table(); %>);

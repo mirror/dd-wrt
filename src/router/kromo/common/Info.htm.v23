@@ -390,6 +390,7 @@ addEvent(window, "unload", function() {
 						<fieldset>
 							<legend><% nvram_match("wl_mode", "wet", "<script type="text/javascript">Capture(info.ap)</script>"); %><% nvram_match("wl_mode", "ap", "<script type="text/javascript">Capture(status_wireless.legend3)</script>"); %><% nvram_match("wl_mode", "sta", "<script type="text/javascript">Capture(info.ap)</script>"); %><% nvram_match("wl_mode", "infra", "<script type="text/javascript">Capture(info.ap)</script>"); %><% nvram_match("wl_mode", "apsta", "<script type="text/javascript">Capture(status_wireless.legend3)</script>"); %><% nvram_match("wl_mode", "apstawet", "<script type="text/javascript">Capture(status_wireless.legend3)</script>"); %></legend>
 							<table class="table" cellspacing="5" id="wireless_table" summary="wireless clients table">
+							<tbody>
 								<tr>
 									<th width="52%"><% tran("share.mac"); %></th>
 									<th width="8%"><% tran("share.signal"); %></th>
@@ -397,12 +398,14 @@ addEvent(window, "unload", function() {
 									<th width="8%">SNR</th>
 									<th width="24%"><% tran("status_wireless.signal_qual"); %></th>
 								</tr>
+							</tbody>
 							</table>
 						</fieldset><br />
-						<div id="wds" style="display:none">
+						<div id="wds" style="display: none">
 							<fieldset>
 								<legend><% tran("status_wireless.wds"); %></legend>
 								<table class="table" cellspacing="5" id="wds_table" summary="wds clients table">
+								<tbody>
 									<tr>
 										<th width="28%"><% tran("share.mac"); %></th>
 										<th width="24%"><% tran("share.descr"); %></th>
@@ -411,6 +414,7 @@ addEvent(window, "unload", function() {
 										<th width="8%">SNR</th>
 										<th width="24%"><% tran("status_wireless.signal_qual"); %></th>
 									</tr>
+								</tbody>
 								</table>
 							</fieldset><br />
 						</div>
@@ -419,12 +423,14 @@ addEvent(window, "unload", function() {
 							<fieldset>
 								<legend><% tran("status_lan.legend3"); %></legend>
 								<table class="table" cellspacing="5" id="dhcp_leases_table" summary="dhcp leases table">
+									<tbody>
 									<tr>
 										<th width="25%"><% tran("share.hostname"); %></th>
 										<th width="25%"><% tran("share.ip"); %></th>
 										<th width="25%"><% tran("share.mac"); %></th>
 										<th width="25%"><script type="text/javascript">Capture(<% nvram_else_match("dhcp_dnsmasq","1","idx.dhcp_lease","share.expires"); %>)</script></th>
 									</tr>
+								</tbody>
 								</table>
 							</fieldset><br />
 						</div>

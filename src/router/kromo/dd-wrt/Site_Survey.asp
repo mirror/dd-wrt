@@ -32,7 +32,7 @@ addEvent(window, "load", function() {
 			<fieldset>
 			<legend><%% tran("status_wireless.legend"); %%></legend>
 			<table class="table" cellspacing="5" id="survey_table">
-				<thead>
+				<tbody>
 					<tr>
 						<th sortdir="up" width="20%"><%% tran("share.ssid"); %%></th>
 						<th sortdir="up" width="7%"><%% tran("share.mode"); %%></th>
@@ -50,14 +50,11 @@ addEvent(window, "load", function() {
 						<th sortdir="up" width="5%"><%% tran("share.rates"); %%></th>
 						<th sortdir="up" width="10%" class="center"><%% tran("share.actiontbl"); %%></th>
 					</tr>
-				</thead>
-				<tbody>
 					<script type="text/javascript">
 					//<![CDATA[
 					var table = new Array(
 					<%% dump_site_survey("%s"); %%>
 					);
-					
 					if (table.length == 0) {
 						document.write("<tr><td colspan=\"15\" class=\"center\">" + share.none + "</td></tr>");
 					}

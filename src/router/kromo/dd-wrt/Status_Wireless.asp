@@ -1,6 +1,6 @@
 <% do_pagehead("status_wireless.titl"); %>
-		<script type="text/javascript">
-		//<![CDATA[
+	<script type="text/javascript">
+	//<![CDATA[
 
 function setWirelessTable() {
 	var table = document.getElementById("wireless_table");
@@ -166,7 +166,6 @@ addEvent(window, "load", function() {
 		setPacketInfo(u.packet_info);
 	});
 	update.start();
-
 });
 
 function refresh(F) {
@@ -177,8 +176,8 @@ addEvent(window, "unload", function() {
 	update.stop();
 });
 		
-		//]]>
-		</script>
+	//]]>
+	</script>
 	</head>
 
 	<body class="gui">
@@ -203,7 +202,7 @@ addEvent(window, "unload", function() {
 									<div class="label"><% tran("share.mac"); %></div>
 										<script type="text/javascript">
 										//<![CDATA[
-										document.write("<span id=\"wl_mac\" style=\"cursor:pointer; text-decoration:underline;\" title=\"" + share.oui + "\" onclick=\"getOUIFromMAC('<% show_wl_mac(); %>')\" >");
+										document.write("<span id=\"wl_mac\" style=\"cursor: pointer; text-decoration: underline;\" title=\"" + share.oui + "\" onclick=\"getOUIFromMAC('<% show_wl_mac(); %>')\" >");
 										document.write("<% show_wl_mac(); %>");
 										document.write("</span>");
 										//]]>
@@ -259,6 +258,7 @@ addEvent(window, "unload", function() {
 							<fieldset>
 								<legend><% getwirelessstatus(); %></legend>
 								<table class="table" cellspacing="5" id="wireless_table" summary="wireless clients table">
+								<tbody>
 									<tr>
 										<th sortdir="up" width="16%"><% tran("share.mac"); %></th>
 										<th sortdir="up" width="10%"><% tran("share.radioname"); %></th>
@@ -272,6 +272,7 @@ addEvent(window, "unload", function() {
 										<th sortdir="up" width="5%">SNR</th>
 										<th sortdir="up" width="12%"><% tran("status_wireless.signal_qual"); %></th>
 									</tr>
+								</tbody>
 								</table>
 								<script type="text/javascript">
 								//<![CDATA[
@@ -279,10 +280,11 @@ addEvent(window, "unload", function() {
 								//]]>
 								</script>
 							</fieldset><br />
-							<div id="wds" style="display:none">
+							<div id="wds" style="display: none">
 								<fieldset>
 									<legend><% tran("status_wireless.wds"); %></legend>
 									<table class="table" cellspacing="5" id="wds_table" summary="wds clients table">
+									<tbody>
 										<tr>
 											<th sortdir="up" width="16%"><% tran("share.mac"); %></th>
 											<th sortdir="up" width="10%"><% tran("share.iftbl"); %></th>
@@ -292,6 +294,7 @@ addEvent(window, "unload", function() {
 											<th sortdir="up" width="8%">SNR</th>
 											<th sortdir="up" width="24%"><% tran("status_wireless.signal_qual"); %></th>
 										</tr>
+									</tbody>
 									</table>
 									<script type="text/javascript">
 									//<![CDATA[
