@@ -294,6 +294,7 @@ addEvent(window, "unload", function() {
 							<fieldset>
 								<legend><% tran("status_lan.legend4"); %></legend>
 								<table class="table" cellspacing="5" id="active_clients_table" summary="active clients in arp table">
+								<tbody>
 									<tr>
 										<th sortdir="up" width="15%"><% tran("share.hostname"); %></th>
 										<th sortdir="up" width="20%"><% tran("share.ip"); %></th>
@@ -305,6 +306,7 @@ addEvent(window, "unload", function() {
 										<th sortdir="up" width="13%"><% tran("status_lan.concount"); %></th>
 										<th sortdir="up" width="15%"><% tran("status_lan.conratio"); %> [<% nvg("ip_conntrack_max"); %>]</th>
 									</tr>
+								</tbody>
 								</table>
 								<script type="text/javascript">
 								//<![CDATA[
@@ -338,6 +340,7 @@ addEvent(window, "unload", function() {
 								<fieldset>
 									<legend><% tran("status_lan.legend3"); %></legend>
 									<table class="table" cellspacing="6" id="dhcp_leases_table" summary="dhcp leases table">
+									<tbody>
 										<tr>
 											<th sortdir="up" width="20%"><% tran("share.hostname"); %></th>
 											<th sortdir="up" width="17%"><% tran("share.ip"); %></th>
@@ -345,6 +348,7 @@ addEvent(window, "unload", function() {
 											<th sortdir="up" width="18%"><% tran("idx.dhcp_lease"); %></th>
 											<th sortdir="up" width="12%" class="center" colspan="2"><% tran("share.static_lease"); %></th>
 										</tr>
+									</tbody>
 									</table>
 									<script type="text/javascript">
 									//<![CDATA[
@@ -358,6 +362,7 @@ addEvent(window, "unload", function() {
 								<fieldset>
 									<legend><% tran("status_lan.legend5"); %></legend>
 									<table class="table" cellspacing="6" id="pptp_table" summary="pptp table">
+									<tbody>
 										<tr>
 											<th sortdir="up" width="15%"><% tran("share.iftbl"); %></th>
 											<th sortdir="up" width="51%"><% tran("share.usrname"); %></th>
@@ -365,6 +370,7 @@ addEvent(window, "unload", function() {
 											<th sortdir="up" width="17%"><% tran("share.remoteip"); %></th>
 											<th sortdir="up" width="10%"><% tran("share.del"); %></th>
 										</tr>
+									</tbody>
 									</table>
 									<script type="text/javascript">
 									//<![CDATA[
@@ -379,12 +385,14 @@ addEvent(window, "unload", function() {
 								<fieldset>
 									<legend><% tran("status_lan.legend6"); %></legend>
 									<table class="table" cellspacing="6" id="pppoe_table" summary="pppoe table">
+									<tbody>
 										<tr>
 											<th sortdir="up" width="15%"><% tran("share.iftbl"); %></th>
 											<th sortdir="up" width="68%"><% tran("share.usrname"); %></th>
 											<th sortdir="up" width="17%"><% tran("share.localip"); %></th>
 											<th sortdir="up" width="10%"><% tran("share.del"); %></th>
 										</tr>
+									</tbody>
 									</table>
 									<script type="text/javascript">
 									//<![CDATA[
