@@ -32,7 +32,7 @@ addEvent(window, "load", function() {
 				<fieldset>
 			  <legend><% tran("status_lan.concount"); %></legend>
 				<table class="table" cellspacing="4" id="conntrack_table" summary="conntrack table">
-					<thead>
+					<tbody>
 						<tr>
 							<th sortdir="up"><% tran("filterSum.polnum"); %></th>
 							<th sortdir="up"><% tran("share.proto"); %></th>
@@ -42,8 +42,6 @@ addEvent(window, "load", function() {
 							<th sortdir="up"><% tran("share.srv"); %></th>
 							<th sortdir="up"><% tran("share.state"); %></th>
 						</tr>
-					</thead>
-					<tbody>
 						<% ip_conntrack_table(); %>
 					</tbody>
 				</table>

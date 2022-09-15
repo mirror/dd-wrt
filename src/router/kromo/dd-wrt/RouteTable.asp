@@ -14,7 +14,7 @@ addEvent(window, "load", function() {
 			<fieldset>
 			<legend><% tran("route.titl"); %></legend>
 			<table class="table" cellspacing="4" id="routing_table" summary="routing table">
-				<thead>
+			<tbody>
 				<tr>
 					<th sortdir="up"> <% tran("routetbl.th1"); %></th>
 					<th sortdir="up"> <% tran("share.gateway"); %></th>
@@ -24,8 +24,6 @@ addEvent(window, "load", function() {
 					<th sortdir="up"> <% tran("share.iftbl"); %></th>
 					<th sortdir="up"> <% tran("routetbl.src"); %></th>
 				</tr>
-			</thead>
-			<tbody>
 				<script type="text/javascript">
 				//<![CDATA[
 					var table = new Array(<% dump_route_table(); %>);

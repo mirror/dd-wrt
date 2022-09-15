@@ -517,6 +517,7 @@ function refresh(F) {
 							<fieldset>
 								<legend><% getwirelessstatus(); %></legend>
 								<table class="table" cellspacing="5" id="wireless_table" summary="wireless clients table">
+								<tbody>
 									<tr>
 										<th sortdir="up" width="12%"><% tran("share.mac"); %></th>
 										<th sortdir="up" width="8%"><% tran("share.radioname"); %></th>
@@ -530,6 +531,7 @@ function refresh(F) {
 										<th sortdir="up" width="8%">SNR</th>
 										<th sortdir="up" width="24%"><% tran("status_wireless.signal_qual"); %></th>
 									</tr>
+								</tbody>
 								</table>
 							<script type="text/javascript">
 							//<![CDATA[
@@ -541,6 +543,7 @@ function refresh(F) {
 								<fieldset>
 									<legend><% tran("status_wireless.wds"); %></legend>
 									<table class="table" cellspacing="5" id="wds_table" summary="wds clients table">
+									<tbody>
 										<tr>
 											<th sortdir="up" width="16%"><% tran("share.mac"); %></th>
 											<th sortdir="up" width="10%"><% tran("share.iftbl"); %></th>
@@ -550,6 +553,7 @@ function refresh(F) {
 											<th sortdir="up" width="8%">SNR</th>
 											<th sortdir="up" width="24%"><% tran("status_wireless.signal_qual"); %></th>
 										</tr>
+									</tbody>
 									</table>
 							<script type="text/javascript">
 							//<![CDATA[
@@ -564,6 +568,7 @@ function refresh(F) {
 								<fieldset>
 									<legend><% tran("status_lan.legend3"); %></legend>
 									<table class="table" cellspacing="5" id="dhcp_leases_table" summary="dhcp leases table">
+										<tbody>
 										<tr>
 											<th sortdir="up" width="25%"><% tran("share.hostname"); %></th>
 											<th sortdir="up" width="10%"><% tran("share.iftbl"); %></th>
@@ -571,6 +576,7 @@ function refresh(F) {
 											<th sortdir="up" width="20%"><% tran("share.mac"); %></th>
 											<th sortdir="up" width="25%"><% tran("idx.dhcp_lease"); %></th>
 										</tr>
+										<tbody>
 									</table>
 										<script type="text/javascript">
 										//<![CDATA[
