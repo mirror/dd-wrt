@@ -1243,7 +1243,7 @@ function submitFooterButton(sub, res, reb, autoref, ref, clo) {
 
 function SortableTable(tableEl) {
 	this.tbody = tableEl.getElementsByTagName('tbody');
-	this.thead = tableEl.getElementsByTagName('thead');
+	this.thead = tableEl.getElementsByTagName('tbody');
 
 	this.getInnerText = function(el) {
 		if (typeof el == "undefined") return null;

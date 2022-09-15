@@ -1190,7 +1190,7 @@ document.write("<input class=\"button\" type=\"button\" name=\"close_button\" va
 };
 function SortableTable(_7c){
 this.tbody=_7c.getElementsByTagName("tbody");
-this.thead=_7c.getElementsByTagName("thead");
+this.thead=_7c.getElementsByTagName("tbody");
 this.getInnerText=function(el){
 if (typeof el == "undefined") return null;
 if (el == null) return null;
