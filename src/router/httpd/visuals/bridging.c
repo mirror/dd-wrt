@@ -44,7 +44,7 @@ EJ_VISIBLE void ej_show_bridgenames(webs_t wp, int argc, char_t ** argv)
 		}
 	}
 
-	websWrite(wp, "<table cellspacing=\"5\" summary=\"bridges\" id=\"Bridge_table\" class=\"table\"><tr>\n");
+	websWrite(wp, "<table cellspacing=\"5\" summary=\"bridges\" id=\"Bridge_table\" class=\"table\"><thead><tr>\n");
 	websWrite(wp, "<th><script type=\"text/javascript\">Capture(nas.raidnametbl)</script></th>\n");
 	show_caption_pp(wp, NULL, "networking.stp", "<th>", "</th>\n");
 #ifdef HAVE_MSTP
@@ -60,12 +60,12 @@ EJ_VISIBLE void ej_show_bridgenames(webs_t wp, int argc, char_t ** argv)
 	show_caption_pp(wp, NULL, "networking.max_age", "<th>", "</th>\n");
 	websWrite(wp, "<th>MTU</th>\n");
 	websWrite(wp, "<th>Root MAC</th>\n");
-	show_caption_pp(wp, NULL, "share.actiontbl", "<th class=\"center\" width=\"10%%\">", "</th>\n");
+	show_caption_pp(wp, NULL, "share.actiontbl", "<th class=\"center\" width=\"10%%\">", "</th></thead>\n");
 
 	if (!br0found) {
 
 		sprintf(bridge_name, "bridgename%d", count);
-		websWrite(wp, "<tr><td><input class=\"num\" name=\"%s\" size=\"3\" value=\"br0\" /></td>\n", bridge_name);
+		websWrite(wp, "<tbody><tr><td><input class=\"num\" name=\"%s\" size=\"3\" value=\"br0\" /></td>\n", bridge_name);
 
 		sprintf(bridge_name, "bridgestp%d", count);
 		websWrite(wp, "<td>");
@@ -222,7 +222,7 @@ EJ_VISIBLE void ej_show_bridgenames(webs_t wp, int argc, char_t ** argv)
 
 	sprintf(var, "%d", totalcount);
 	nvram_set("bridges_count", var);
-	websWrite(wp, "</table><br />\n");
+	websWrite(wp, "</tbody></table><br />\n");
 }
 
 EJ_VISIBLE void ej_show_bridgetable(webs_t wp, int argc, char_t ** argv)
@@ -346,7 +346,7 @@ EJ_VISIBLE void ej_show_bridgeifnames(webs_t wp, int argc, char_t ** argv)
 	strcpy(finalbuffer, checkbuffer);
 	debug_free(checkbuffer);
 	int realcount = nvram_default_geti("bridgesif_count", 0);
-	websWrite(wp, "<table cellspacing=\"5\" summary=\"bridgeassignments\" id=\"bridgeassignments_table\" class=\"table\"><tr>\n");
+	websWrite(wp, "<table cellspacing=\"5\" summary=\"bridgeassignments\" id=\"bridgeassignments_table\" class=\"table\"><thead><tr>\n");
 	show_caption_pp(wp, NULL, "networking.assign", "<th>", "</th>\n");
 	show_caption_pp(wp, NULL, "networking.iface", "<th>", "</th>\n");
 #ifdef HAVE_MSTP
@@ -355,7 +355,7 @@ EJ_VISIBLE void ej_show_bridgeifnames(webs_t wp, int argc, char_t ** argv)
 	show_caption_pp(wp, NULL, "networking.prio", "<th>", "</th>\n");
 	show_caption_pp(wp, NULL, "networking.pathcost", "<th>", "</th>\n");
 	show_caption_pp(wp, NULL, "networking.hairpin", "<th class=\"center\">", "</th>\n");
-	show_caption_pp(wp, NULL, "share.actiontbl", "<th class=\"center\" width=\"10%%\">", "</th>\n");
+	show_caption_pp(wp, NULL, "share.actiontbl", "<th class=\"center\" width=\"10%%\">", "</th></thead>\n");
 
 	wordlist = nvram_safe_get("bridgesif");
 	foreach(word, wordlist, next) {
@@ -381,7 +381,7 @@ EJ_VISIBLE void ej_show_bridgeifnames(webs_t wp, int argc, char_t ** argv)
 		show_bridgeifname(wp, finalbuffer, bufferif, i, "", "", NULL, NULL, NULL, NULL);
 		totalcount++;
 	}
-	websWrite(wp, "<tr>\n");
+	websWrite(wp, "<tbody><tr>\n");
 	websWrite(wp, "<td colspan=\"2\">&nbsp;</td>\n");
 #ifdef HAVE_MSTP
 	websWrite(wp, "<td>&nbsp;</td>\n");
@@ -396,5 +396,5 @@ EJ_VISIBLE void ej_show_bridgeifnames(webs_t wp, int argc, char_t ** argv)
 
 	sprintf(var, "%d", totalcount);
 	nvram_set("bridgesif_count", var);
-	websWrite(wp, "</table><br />\n");
+	websWrite(wp, "</tbody></table><br />\n");
 }
