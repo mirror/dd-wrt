@@ -1,17 +1,19 @@
 <% do_pagehead("bmenu.networking"); %>
-		<script type="text/javascript">
-		//<![CDATA[
+	<script type="text/javascript">
+	//<![CDATA[
 
 function vlan_add_submit(F) {
 	F.change_action.value="gozila_cgi";
 	F.submit_type.value = "add_vlan";
 	F.submit();
 }
+
 function mdhcp_add_submit(F) {
 	F.change_action.value="gozila_cgi";
 	F.submit_type.value = "add_mdhcp";
 	F.submit();
 }
+
 function bridge_add_submit(F) {
 	F.change_action.value="gozila_cgi";
 	F.submit_type.value = "add_bridge";
@@ -23,16 +25,19 @@ function ipvs_add_submit(F) {
 	F.submit_type.value = "add_ipvs";
 	F.submit();
 }
+
 function ipvstarget_add_submit(F) {
 	F.change_action.value="gozila_cgi";
 	F.submit_type.value = "add_ipvstarget";
 	F.submit();
 }
+
 function bridgeif_add_submit(F) {
 	F.change_action.value="gozila_cgi";
 	F.submit_type.value = "add_bridgeif";
 	F.submit();
 }
+
 function bond_add_submit(F) {
 	F.change_action.value="gozila_cgi";
 	F.submit_type.value = "add_bond";
@@ -45,12 +50,14 @@ function vlan_del_submit(F,I) {
 	F.del_value.value=I;
 	F.submit();
 }
+
 function mdhcp_del_submit(F,I) {
 	F.change_action.value="gozila_cgi";
 	F.submit_type.value = "del_mdhcp";
 	F.del_value.value=I;
 	F.submit();
 }
+
 function bridge_del_submit(F,I) {
 	F.change_action.value="gozila_cgi";
 	F.submit_type.value = "del_bridge";
@@ -71,12 +78,14 @@ function ipvstarget_del_submit(F,I) {
 	F.del_value.value=I;
 	F.submit();
 }
+
 function bridgeif_del_submit(F,I) {
 	F.change_action.value="gozila_cgi";
 	F.submit_type.value = "del_bridgeif";
 	F.del_value.value=I;
 	F.submit();
 }
+
 function bond_del_submit(F,I) {
 	F.change_action.value="gozila_cgi";
 	F.submit_type.value = "del_bond";
@@ -110,6 +119,7 @@ function to_submit(F) {
 	F.save_button.value = sbutton.saving;
 	apply(F);
 }
+
 function to_apply(F) {
 	F.change_action.value="gozila_cgi";
 	F.submit_type.value = "save_networking";
@@ -122,9 +132,9 @@ var update;
 addEvent(window, "load", function() {
 	stickControl(<% nvg("sticky_footer"); %>);
 	setBRCTLTable(<% show_bridgetable(); %>);
-	
+
 	update = new StatusUpdate("Networking.live.asp", <% nvg("refresh_time"); %>);
-	
+
 	update.onUpdate("bridges_table", function(u) {
 		eval('setBRCTLTable(' + u.bridges_table + ')');
 	});
@@ -136,8 +146,8 @@ addEvent(window, "unload", function() {
 	update.stop();
 });
 		
-		//]]>
-		</script>
+	//]]>
+	</script>
 	</head>
 
 	<body class="gui">
@@ -159,28 +169,28 @@ addEvent(window, "unload", function() {
 							<input type="hidden" name="commit" value="1" />
 							<h2><% tran("networking.h2"); %></h2>
 							<fieldset>
-							   <legend><% tran("networking.legend"); %></legend>
-							   <% show_vlantagging(); %>
+								 <legend><% tran("networking.legend"); %></legend>
+								 <% show_vlantagging(); %>
 							</fieldset><br />
 							<h2><% tran("networking.h22"); %></h2>
 							<fieldset>
-							   <legend><% tran("networking.legend2"); %></legend>
-							   <% show_bridgenames(); %>
+								<legend><% tran("networking.legend2"); %></legend>
+								<% show_bridgenames(); %>
 							</fieldset><br />
 							<fieldset>
-							   <legend><% tran("networking.legend3"); %></legend>
-							   <% show_bridgeifnames(); %>
+								<legend><% tran("networking.legend3"); %></legend>
+								<% show_bridgeifnames(); %>
 							</fieldset><br />
 							<fieldset>
-							   <legend><% tran("networking.legend4"); %></legend>
-							   <table class="table" cellspacing="5" id="Bridging_table" summary="current bridging table">
-									 <thead>
-										 <tr>
-											 <th width="15%"><% tran("networking.brname"); %></th>
-											 <th width="15%"><% tran("networking.stp"); %></th>
-											 <th width="70%"><% tran("networking.iface"); %></th>
+								<legend><% tran("networking.legend4"); %></legend>
+								<table class="table" cellspacing="5" id="Bridging_table" summary="current bridging table">
+									<tbody>
+										<tr>
+											<th width="15%"><% tran("networking.brname"); %></th>
+											<th width="15%"><% tran("networking.stp"); %></th>
+											<th width="70%"><% tran("networking.iface"); %></th>
 										 </tr>
-									</thead>
+									</tbody>
 								</table><br />
 							</fieldset><br />
 							<% show_mrp(); %>

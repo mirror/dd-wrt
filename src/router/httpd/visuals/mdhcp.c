@@ -31,14 +31,14 @@ EJ_VISIBLE void ej_show_mdhcp(webs_t wp, int argc, char_t ** argv)
 	websWrite(wp, "<h2>%s</h2>\n<fieldset>\n", tran_string(buf, sizeof(buf), "networking.h5"));
 	websWrite(wp, "<legend>%s</legend>\n", tran_string(buf, sizeof(buf), "networking.legend5"));
 
-	websWrite(wp, "<table id=\"mdhcp_table\" class=\"table\" summary=\"mdhcp\" cellspacing=\"7\"><tr>\n");
+	websWrite(wp, "<table id=\"mdhcp_table\" class=\"table\" summary=\"mdhcp\" cellspacing=\"7\"><thead><tr>\n");
 	show_caption_pp(wp, NULL, "share.ip", "<th>", "</th>\n");
 	show_caption_pp(wp, NULL, "networking.iface", "<th>", "</th>\n");
 	show_caption_pp(wp, NULL, "share.enable", "<th>", "</th>\n");
 	show_caption_pp(wp, NULL, "share.start", "<th>", "</th>\n");
 	show_caption_pp(wp, NULL, "networking.max", "<th>", "</th>\n");
 	show_caption_pp(wp, NULL, "networking.leasetime", "<th>", "</th>\n");
-	show_caption_pp(wp, NULL, "share.actiontbl", "<th class=\"center\" width=\"10%%\">", "</th>\n");
+	show_caption_pp(wp, NULL, "share.actiontbl", "<th class=\"center\" width=\"10%%\">", "</th></thead>\n");
 	bzero(buffer, 256);
 	getIfListNoPorts(buffer, NULL);
 	int totalcount = 0;
@@ -61,7 +61,7 @@ EJ_VISIBLE void ej_show_mdhcp(webs_t wp, int argc, char_t ** argv)
 		// interface
 		char *ipaddr = nvram_nget("%s_ipaddr", interface);
 		char *netmask = nvram_nget("%s_netmask", interface);
-		websWrite(wp, "<tr>\n");
+		websWrite(wp, "<tbody><tr>\n");
 		websWrite(wp, "<td>\n");
 		if (*ipaddr && *netmask) {
 			websWrite(wp, "%s/%d\n", ipaddr, getmask(netmask));
@@ -152,7 +152,7 @@ EJ_VISIBLE void ej_show_mdhcp(webs_t wp, int argc, char_t ** argv)
 		  "<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<input class=\\\"add\\\" type=\\\"button\\\" aria-label=\\\"\" + sbutton.add + \"\\\" onclick=\\\"mdhcp_add_submit(this.form)\\\" />\");\n//]]>\n</script>\n");
 	websWrite(wp, "</td>\n");
 	websWrite(wp, "</tr>\n");
-	websWrite(wp, "</table>\n");
+	websWrite(wp, "</tbody></table>\n");
 	websWrite(wp, "</fieldset><br />\n");
 
 }
