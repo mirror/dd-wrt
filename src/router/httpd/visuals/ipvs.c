@@ -156,13 +156,13 @@ EJ_VISIBLE void ej_show_ipvs(webs_t wp, int argc, char_t ** argv)
 	websWrite(wp, "<fieldset>\n");
 	show_caption_pp(wp, NULL, "networking.create_ipvs", "<legend>", "</legend>\n");
 
-	websWrite(wp, "<table cellspacing=\"5\" summary=\"ipvs\" id=\"ipvs_table\" class=\"table\"><tr>\n");
+	websWrite(wp, "<table cellspacing=\"5\" summary=\"ipvs\" id=\"ipvs_table\" class=\"table\"><thead><tr>\n");
 	show_caption_pp(wp, NULL, "networking.ipvs_name", "<th>", "</th>\n");
 	show_caption_pp(wp, NULL, "networking.ipvs_sourceip", "<th>", "</th>\n");
 	show_caption_pp(wp, NULL, "networking.ipvs_sourceport", "<th>", "</th>\n");
 	show_caption_pp(wp, NULL, "share.proto", "<th>", "</th>\n");
 	show_caption_pp(wp, NULL, "networking.ipvs_scheduler", "<th>", "</th>\n");
-	show_caption_pp(wp, NULL, "share.actiontbl", "<th class=\"center\" width=\"10%%\">", "</th>\n");
+	show_caption_pp(wp, NULL, "share.actiontbl", "<th class=\"center\" width=\"10%%\">", "</th></thead>\n");
 
 	wordlist = nvram_safe_get("ipvs");
 
@@ -178,7 +178,7 @@ EJ_VISIBLE void ej_show_ipvs(webs_t wp, int argc, char_t ** argv)
 			break;
 
 		sprintf(ipvs_name, "ipvsname%d", count);
-		websWrite(wp, "<tr><td><input class=\"num\" name=\"%s\" size=\"3\" value=\"%s\" /></td>\n", ipvs_name, ipvsname);
+		websWrite(wp, "<tbody><tr><td><input class=\"num\" name=\"%s\" size=\"3\" value=\"%s\" /></td>\n", ipvs_name, ipvsname);
 		sprintf(ipvs_name, "ipvsip%d", count);
 		websWrite(wp, "<td class=\"center\"><input class=\"num\" name=\"%s\" size=\"12\" value=\"%s\" /></td>\n", ipvs_name, sourceip);
 		sprintf(ipvs_name, "ipvsport%d", count);
@@ -252,7 +252,7 @@ EJ_VISIBLE void ej_show_ipvs(webs_t wp, int argc, char_t ** argv)
 		  "<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<input class=\\\"add\\\" type=\\\"button\\\" aria-label=\\\"\" + sbutton.add + \"\\\" onclick=\\\"ipvs_add_submit(this.form)\\\" />\");\n//]]>\n</script>\n");
 	websWrite(wp, "</td>\n");
 	websWrite(wp, "</tr>");
-	websWrite(wp, "</table><br />\n");
+	websWrite(wp, "</tbody></table><br />\n");
 	websWrite(wp, "</fieldset><br/>\n");
 
 	char var[32];
