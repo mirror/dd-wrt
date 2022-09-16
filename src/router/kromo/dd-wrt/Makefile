@@ -824,7 +824,6 @@ else
 	rm -f $(INSTALLDIR)/www/images/dd-wrt.png
 endif
 
-
 ifeq ($(CONFIG_BRAINSLAYER),y)
 	cp -a brainslayer $(INSTALLDIR)/www/style
 	cp common_style/common_legacy.css $(INSTALLDIR)/www/style
@@ -938,8 +937,9 @@ ifneq ($(HEARTBEAT_SUPPORT),1)
 endif
 ifneq ($(CONFIG_ATH9K),y)
 	rm -f $(INSTALLDIR)/www/spectral_scan*
-	rm -f $(INSTALLDIR)/www/spectral.css
-	rm -f $(INSTALLDIR)/www/background.png
+	rm -f $(INSTALLDIR)/www/spectral_common.css
+	rm -f $(INSTALLDIR)/www/spectral_light.css
+	rm -f $(INSTALLDIR)/www/spectral_dark.css
 	rm -f $(INSTALLDIR)/www/jquery.flot.js
 	rm -f $(INSTALLDIR)/www/jquery.ui.js
 	rm -f $(INSTALLDIR)/www/jquery.ui.css
