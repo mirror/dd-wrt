@@ -106,7 +106,6 @@ function setBRCTLTable() {
 		return;
 	}
 	for(var i = 0; i < val.length; i = i + 3) {
-		
 		var row = tbody.insertRow(-1);
 		row.insertCell(-1).innerHTML = val[i];
 		row.insertCell(-1).innerHTML = val[i + 1];
@@ -192,7 +191,7 @@ addEvent(window, "unload", function() {
 											<th width="70%"><% tran("networking.iface"); %></th>
 										 </tr>
 									</thead>
-								</table><br />
+								</table>
 							</fieldset><br />
 							<% show_mrp(); %>
 							<% show_ipvs(); %>

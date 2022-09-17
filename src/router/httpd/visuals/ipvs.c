@@ -127,7 +127,7 @@ EJ_VISIBLE void ej_show_ipvsassignments(webs_t wp, int argc, char_t ** argv)
 			  "<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<input class=\\\"add\\\" type=\\\"button\\\" aria-label=\\\"\" + sbutton.add + \"\\\" onclick=\\\"ipvstarget_add_submit(this.form)\\\" />\");\n//]]>\n</script>\n");
 		websWrite(wp, "</td>\n");
 		websWrite(wp, "</tr>");
-		websWrite(wp, "</table><br/>");
+		websWrite(wp, "</table>");
 		websWrite(wp, "</fieldset><br/>\n");
 
 		char var[32];
@@ -162,7 +162,7 @@ EJ_VISIBLE void ej_show_ipvs(webs_t wp, int argc, char_t ** argv)
 	show_caption_pp(wp, NULL, "networking.ipvs_sourceport", "<th>", "</th>\n");
 	show_caption_pp(wp, NULL, "share.proto", "<th>", "</th>\n");
 	show_caption_pp(wp, NULL, "networking.ipvs_scheduler", "<th>", "</th>\n");
-	show_caption_pp(wp, NULL, "share.actiontbl", "<th class=\"center\" width=\"10%%\">", "</th></thead>\n");
+	show_caption_pp(wp, NULL, "share.actiontbl", "<th class=\"center\" width=\"10%%\">", "</th></thead><tbody>\n");
 
 	wordlist = nvram_safe_get("ipvs");
 
@@ -178,7 +178,7 @@ EJ_VISIBLE void ej_show_ipvs(webs_t wp, int argc, char_t ** argv)
 			break;
 
 		sprintf(ipvs_name, "ipvsname%d", count);
-		websWrite(wp, "<tbody><tr><td><input class=\"num\" name=\"%s\" size=\"3\" value=\"%s\" /></td>\n", ipvs_name, ipvsname);
+		websWrite(wp, "<tr><td><input class=\"num\" name=\"%s\" size=\"3\" value=\"%s\" /></td>\n", ipvs_name, ipvsname);
 		sprintf(ipvs_name, "ipvsip%d", count);
 		websWrite(wp, "<td class=\"center\"><input class=\"num\" name=\"%s\" size=\"12\" value=\"%s\" /></td>\n", ipvs_name, sourceip);
 		sprintf(ipvs_name, "ipvsport%d", count);
