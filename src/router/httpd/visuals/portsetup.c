@@ -226,7 +226,7 @@ EJ_VISIBLE void ej_portsetup(webs_t wp, int argc, char_t ** argv)
 			nvram_default_get(bat_bridge, "br0");
 			websWrite(wp, "<div class=\"setting\">\n<div class=\"label\">L2Mesh&nbsp;<script type=\"text/javascript\">Capture(networking.bridge)</script></div>\n");
 			websWrite(wp, "<select name=\"bat_%s_bridge\">\n", var);
-			websWrite(wp, "<option value=\"\"><script type=\"text/javascript\">Capture(share.none)</script></option>\n");
+			websWrite(wp, "<option value=\"none\"><script type=\"text/javascript\">Capture(share.none)</script></option>\n");
 			foreach(word, bufferif, next) {
 				// if( strcmp( word, "br0" ) ) {
 				websWrite(wp, "<option value=\"%s\" %s >%s</option>\n", word, nvram_match(bat_bridge, word) ? "selected=\"selected\"" : "", word);
