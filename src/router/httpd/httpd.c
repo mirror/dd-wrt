@@ -541,7 +541,7 @@ static void send_error(webs_t conn_fp, int noheader, int status, char *title, ch
 	va_start(args, (char *)fmt);
 	vasprintf(&text, fmt, args);
 	va_end(args);
-	dd_logerror("httpd", "Request Error Code %d: %s\n", status, text);
+//	dd_logerror("httpd", "Request Error Code %d: %s\n", status, text);
 	// jimmy, https, 8/4/2003, fprintf -> websWrite, fflush -> wfflush
 	if (!noheader)
 		send_headers(conn_fp, status, title, extra_header, "text/html", -1, NULL, 1);
