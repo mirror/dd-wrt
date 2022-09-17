@@ -1,10 +1,14 @@
 body {
- background: #1a1a1a;
+  background: #1a1a1a;
+  color: #ccc;
 }
 input {
- background-color: #333;
- border: 1px solid #454545;
- color: #e0e0e0;
+  background-color: #333;
+  border: 1px solid #454545;
+  color: #e0e0e0;
+}
+.container {
+  border: 1px solid #333;
 }
 a {
   color: var(--ac-1, #496fc7);
