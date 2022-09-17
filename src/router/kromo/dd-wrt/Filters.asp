@@ -339,7 +339,7 @@ addEvent(window, "unload", function() {
 									<div class="label">
 										<% tran("share.deny"); %>
 									</div>
-									<input class="spaceradio" type="radio" name="f_status2" value="deny" onclick="Status(this.form,'deny')" <% filter_policy_get("f_status","deny"); %> />&nbsp;<% tran("filter.polallow"); %>
+									<input class="spaceradio" type="radio" name="f_status2" value="deny" onclick="Status(this.form,'deny')" <% filter_policy_get("f_status","deny"); %> /><% tran("filter.polallow"); %>
 								</div>
 								<div class="setting">
 									<div class="label">

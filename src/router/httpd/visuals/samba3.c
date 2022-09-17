@@ -61,13 +61,13 @@ EJ_VISIBLE void ej_samba3_sharepaths(webs_t wp, int argc, char_t ** argv)
 
 	// table header
 	websWrite(wp, "<table id=\"samba_shares\" class=\"table\" summary=\"samba share table\">\n");
-	show_caption_pp(wp, NULL, "service.samba3_shares", "<tr><th colspan=\"6\">", "</th></tr>\n<tr>\n");
+	show_caption_pp(wp, NULL, "service.samba3_shares", "<thead><tr><th colspan=\"6\">", "</th></tr>\n<tr>\n");
 	show_caption_pp(wp, NULL, "service.samba3_share_path", "<th>", "</th>\n");
 	show_caption_pp(wp, NULL, "service.samba3_share_subdir", "<th>", "</th>\n");
 	show_caption_pp(wp, NULL, "service.samba3_share_label", "<th>", "</th>\n");
 	show_caption_pp(wp, NULL, "service.samba3_share_public", "<th>", "</th>\n");
 	show_caption_pp(wp, NULL, "service.samba3_share_access", "<th>", "</th>\n");
-	websWrite(wp, "<th class=\"center\" width=\"10%%\" ><script type=\"text/javascript\">Capture(share.actiontbl)</script></th>\n");
+	websWrite(wp, "<th class=\"center\" width=\"10%%\" ><script type=\"text/javascript\">Capture(share.actiontbl)</script></th></thead><tbody>\n");
 
 	for (cs = samba3shares; cs; cs = csnext) {
 
@@ -159,7 +159,7 @@ EJ_VISIBLE void ej_samba3_sharepaths(webs_t wp, int argc, char_t ** argv)
 		debug_free(cs);
 	}
 
-	websWrite(wp, "</table><br />\n");
+	websWrite(wp, "</tbody></table><br />\n");
 
 	// add button
 	websWrite(wp,
