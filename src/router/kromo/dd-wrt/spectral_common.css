@@ -1,37 +1,32 @@
 * {
- font-family: Tahoma, Arial, sans-serif;
- font-size: 1em;
+  font-family: Tahoma, Arial, sans-serif;
+  font-size: 1em;
 }
 body {
- margin: .906em;
- font-size: 75%;
+  margin: .906em;
+  font-size: 75%;
 }
 h2 {
- padding: 4px 12px;
- line-height: 1.42857;
- letter-spacing: .123rem;
- margin: 0 0 .906em 0;
- border-radius: 4px;
- background: #777674;
- color: #fff;
+  padding: 4px 12px;
+  line-height: 1.42857;
+  letter-spacing: .123rem;
+  margin: 0 0 .906em 0;
+  border-radius: 4px;
+  background: #777674;
+  color: #fff;
 }
 input {
- padding: 4px;
- font-size: 12px;
- line-height: 1.42857;
- border-radius: 4px;
- text-align: right;
- width: 5em;
- box-shadow: inset 0 1px 1px rgba(0, 0, 0, .075);
- transition: all .15s ease-in-out 0s;
+  padding: 4px;
+  line-height: 1.42857;
+  border-radius: 4px;
+  width: 6em;
+  box-shadow: inset 0 1px 1px rgba(0, 0, 0, .075);
+  transition: all .15s ease-in-out 0s;
 }
 input:focus, input:focus-visible {
   box-shadow: 0 0 5px 1px var(--ac-2, #6384cf);
   border: 1px solid var(--ac-2, #6384cf);
   outline: 0;
-}
-input[type="checkbox"] {
-  accent-color: var(--it-c)
 }
 #header {
   position: relative;
@@ -49,8 +44,7 @@ input[type="checkbox"] {
   height: 450px;
   padding: 20px 15px 15px 15px;
   margin: 15px auto 30px auto;
-  background: #fff;
-  border: 1px solid #333;
+  background: #eee;
   border-radius: 4px;
   box-shadow: 0 3px 10px rgba(0, 0, 0, 0.15);
 }
