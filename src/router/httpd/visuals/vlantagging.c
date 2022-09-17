@@ -34,7 +34,7 @@ EJ_VISIBLE void ej_show_vlantagging(webs_t wp, int argc, char_t ** argv)
 	show_caption_pp(wp, NULL, "networking.iface", "<th>", "</th>\n");
 	show_caption_pp(wp, NULL, "networking.tg_number", "<th>", "</th>\n");
 	show_caption_pp(wp, NULL, "networking.prio", "<th>", "</th>\n");
-	show_caption_pp(wp, NULL, "share.actiontbl", "<th class=\"center\" width=\"10%%\">", "</th></thead>\n");
+	show_caption_pp(wp, NULL, "share.actiontbl", "<th class=\"center\" width=\"10%%\">", "</th></thead><tbody>\n");
 
 	wordlist = nvram_safe_get("vlan_tags");
 	foreach(word, wordlist, next) {
@@ -47,7 +47,7 @@ EJ_VISIBLE void ej_show_vlantagging(webs_t wp, int argc, char_t ** argv)
 		if (!prio)
 			prio = "0";
 		char vlan_name[32];
-		websWrite(wp, "<tbody><tr>\n");
+		websWrite(wp, "<tr>\n");
 		websWrite(wp, "<td>");
 		sprintf(vlan_name, "vlanifname%d", count);
 		showIfOptions(wp, vlan_name, buffer, tag);
@@ -111,5 +111,5 @@ EJ_VISIBLE void ej_show_vlantagging(webs_t wp, int argc, char_t ** argv)
 		  "<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<input class=\\\"add\\\" type=\\\"button\\\" aria-label=\\\"\" + sbutton.add + \"\\\" onclick=\\\"vlan_add_submit(this.form)\\\" />\");\n//]]>\n</script>\n");
 	websWrite(wp, "</td>\n");
 	websWrite(wp, "</tr>\n");
-	websWrite(wp, "</tbody></table><br />\n");
+	websWrite(wp, "</tbody></table>\n");
 }

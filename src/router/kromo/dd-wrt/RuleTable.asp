@@ -33,7 +33,6 @@ addEvent(window, "load", function() {
 				<script type="text/javascript">
 				//<![CDATA[
 					var table = new Array(<% dump_pbr_table(); %>);
-					
 					if(table.length == 0) {
 						document.write("<tr><td class=\"center\" colspan=\"4\">- " + share.none + " -</td></tr>");
 					} else {
