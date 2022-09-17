@@ -310,7 +310,6 @@ fieldset legend {
 }
 .setting input[type] {
   margin-left: 0;
-  margin-right: .362em;
 }
 .setting [summary='week days table'] input[type] {
   margin-left: .4rem;
