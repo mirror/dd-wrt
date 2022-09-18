@@ -503,49 +503,49 @@ input.button[onclick*='FilterSummary'] {
   margin-top: -.1rem;
 }
 /* submitfooter buttons */
-.button[name='apply_button'] {
+.button.green_btn {
   background: #166f2a;
   border-color: #1a6d2d;
   color: #fff;
 }
-.button[name='apply_button']:hover {
+.button.green_btn:hover {
   background: #199235;
   border-color: #199235;
   color: #fff;
 }
-.button[name='apply_button']:focus,
-.button[name='apply_button']:focus-visible {
+.button.green_btn:focus,
+.button.green_btn:focus-visible {
   box-shadow: 0 0 5px 1px #35ee00;
   outline: 0;
 }
-.button[name='reset_button'] {
+.button.brown_btn {
   background: #6f4816;
   border-color: #755416;
   color: #fff;
 }
-.button[name='reset_button']:hover {
+.button.brown_btn:hover {
   background: #925d19;
   border-color: #925d19;
   color: #fff;
 }
-.button[name='reset_button']:focus,
-.button[name='reset_button']:focus-visible {
+.button.brown_btn:focus,
+.button.brown_btn:focus-visible {
   box-shadow: 0 0 5px 1px #ff8400;
   outline: 0;
 }
-.button[name='reboot_button'],
-.button[name='reboot_button']:disabled:hover {
+.button.red_btn,
+.button.red_btn:disabled:hover {
   background: #c00;
   border-color: #c00;
   color: #fff;
 }
-.button[name='reboot_button']:hover {
+.button.red_btn:hover {
   background: #e00;
   border-color: #d00;
   color: #fff;
 }
-.button[name='reboot_button']:focus,
-.button[name='reboot_button']:focus-visible {
+.button.red_btn:focus,
+.button.red_btn:focus-visible {
   box-shadow: 0 0 5px 1px #f00;
   outline: 0;
 }

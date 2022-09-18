@@ -120,7 +120,7 @@ addEvent(window, "unload", function() {
 							<div id="footer" class="submitFooter">
 								<script type="text/javascript">
 								//<![CDATA[
-								document.write("<input class=\"button\" type=\"button\" name=\"Upgrade_b\" value=\"" + sbutton.upgrade + "\" onclick=\"upgrade(this.form,'warning_text');\" />");
+								document.write("<input class=\"button green_btn\" type=\"button\" name=\"Upgrade_b\" value=\"" + sbutton.upgrade + "\" onclick=\"upgrade(this.form,'warning_text');\" />");
 								//]]>
 								</script>
 							</div>
