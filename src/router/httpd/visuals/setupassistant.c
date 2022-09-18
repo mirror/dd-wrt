@@ -272,25 +272,25 @@ EJ_VISIBLE void ej_do_sas_stage_menu(webs_t wp, int argc, char_t ** argv)
 	stage = ej_get_sas_stage(wp, argc, argv);
 
 	websWrite(wp, "<div id=\"sas_menu\">\n");
-	websWrite(wp, "  <div class=\"wrapper\">\n");
-	websWrite(wp, "    <ul>\n");
+	websWrite(wp, "<div class=\"wrapper\">\n");
+	websWrite(wp, "<ul>\n");
 	for (i = 1; i < 5; i++) {
 		if (i + 1 < 5) {
 			if (atoi(stage) == i) {
-				websWrite(wp, "      <li class=\"active\"><span><strong class=\"step_%s\">%s</strong></span></li>\n", stage, live_translate(wp, labels[atoi(stage)]));
+				websWrite(wp, "<li class=\"active\"><span><strong class=\"step_%s\">%s</strong></span></li>\n", stage, live_translate(wp, labels[atoi(stage)]));
 			} else {
-				websWrite(wp, "      <li><span><strong class=\"step_%i\">%s</strong></span></li>\n", i, live_translate(wp, labels[i]));
+				websWrite(wp, "<li><span><strong class=\"step_%i\">%s</strong></span></li>\n", i, live_translate(wp, labels[i]));
 			}
 		} else {
 			if (atoi(stage) == i) {
-				websWrite(wp, "      <li class=\"active last\"><span class=\"last\"><strong class=\"step_%s\">%s</strong></span></li>\n", stage, live_translate(wp, labels[atoi(stage)]));
+				websWrite(wp, "<li class=\"active last\"><span class=\"last\"><strong class=\"step_%s\">%s</strong></span></li>\n", stage, live_translate(wp, labels[atoi(stage)]));
 			} else {
-				websWrite(wp, "      <li class=\"last\"><span class=\"last\"><strong class=\"step_%i\">%s</strong></span></li>\n", i, live_translate(wp, labels[i]));
+				websWrite(wp, "<li class=\"last\"><span class=\"last\"><strong class=\"step_%i\">%s</strong></span></li>\n", i, live_translate(wp, labels[i]));
 			}
 		}
 	}
-	websWrite(wp, "    </ul>\n");
-	websWrite(wp, "  </div>\n");
+	websWrite(wp, "</ul>\n");
+	websWrite(wp, "</div>\n");
 	websWrite(wp, "</div>\n");
 }
 
@@ -507,10 +507,10 @@ EJ_VISIBLE void ej_sas_show_wireless_single(webs_t wp, char *prefix)
 		sprintf(wl_relayd, "%s_relayd_gw_auto", prefix);
 		nvram_default_get(wl_relayd, "1");
 		websWrite(wp,
-			  " 		<input class=\"spaceradio\" type=\"radio\" value=\"1\" name=\"%s_relayd_gw_auto\" onclick=\"show_layer_ext(this, '%s_relayd_gw_ipaddr', false)\" %s /><script type=\"text/javascript\">Capture(share.auto)</script>&nbsp;(DHCP)&nbsp;\n",
+			  "<input class=\"spaceradio\" type=\"radio\" value=\"1\" name=\"%s_relayd_gw_auto\" onclick=\"show_layer_ext(this, '%s_relayd_gw_ipaddr', false)\" %s /><script type=\"text/javascript\">Capture(share.auto)</script>&nbsp;(DHCP)&nbsp;\n",
 			  prefix, prefix, nvram_selmatch(wp, wl_relayd, "1") ? "checked" : "");
 		websWrite(wp,
-			  " 		<input class=\"spaceradio\" type=\"radio\" value=\"0\" name=\"%s_relayd_gw_auto\" onclick=\"show_layer_ext(this, '%s_relayd_gw_ipaddr', true)\" %s/><script type=\"text/javascript\">Capture(share.manual)</script>\n",
+			  "<input class=\"spaceradio\" type=\"radio\" value=\"0\" name=\"%s_relayd_gw_auto\" onclick=\"show_layer_ext(this, '%s_relayd_gw_ipaddr', true)\" %s/><script type=\"text/javascript\">Capture(share.manual)</script>\n",
 			  prefix, prefix, nvram_selmatch(wp, wl_relayd, "0") ? "checked" : "");
 		websWrite(wp, "</div>\n");
 
