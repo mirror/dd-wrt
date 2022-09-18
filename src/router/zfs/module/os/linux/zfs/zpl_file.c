@@ -195,9 +195,12 @@ zpl_fsync(struct file *filp, loff_t start, loff_t end, int datasync)
 	 * zfs_putpage() respectively.
 	 */
 	if (atomic_load_32(&zp->z_async_writes_cnt) > 0) {
-		ZPL_ENTER(zfsvfs);
+		if ((error = zpl_enter(zfsvfs, FTAG)) != 0) {
+			atomic_dec_32(&zp->z_sync_writes_cnt);
+			return (error);
+		}
 		zil_commit(zfsvfs->z_log, zp->z_id);
-		ZPL_EXIT(zfsvfs);
+		zpl_exit(zfsvfs, FTAG);
 	}
 
 	error = filemap_write_and_wait_range(inode->i_mapping, start, end);
@@ -757,10 +760,11 @@ zpl_writepages(struct address_space *mapping, struct writeback_control *wbc)
 	enum writeback_sync_modes sync_mode;
 	int result;
 
-	ZPL_ENTER(zfsvfs);
+	if ((result = zpl_enter(zfsvfs, FTAG)) != 0)
+		return (result);
 	if (zfsvfs->z_os->os_sync == ZFS_SYNC_ALWAYS)
 		wbc->sync_mode = WB_SYNC_ALL;
-	ZPL_EXIT(zfsvfs);
+	zpl_exit(zfsvfs, FTAG);
 	sync_mode = wbc->sync_mode;
 
 	/*
@@ -774,11 +778,11 @@ zpl_writepages(struct address_space *mapping, struct writeback_control *wbc)
 	wbc->sync_mode = WB_SYNC_NONE;
 	result = write_cache_pages(mapping, wbc, zpl_putpage, &for_sync);
 	if (sync_mode != wbc->sync_mode) {
-		ZPL_ENTER(zfsvfs);
-		ZPL_VERIFY_ZP(zp);
+		if ((result = zpl_enter_verify_zp(zfsvfs, zp, FTAG)) != 0)
+			return (result);
 		if (zfsvfs->z_log != NULL)
 			zil_commit(zfsvfs->z_log, zp->z_id);
-		ZPL_EXIT(zfsvfs);
+		zpl_exit(zfsvfs, FTAG);
 
 		/*
 		 * We need to call write_cache_pages() again (we can't just
@@ -931,8 +935,8 @@ zpl_fadvise(struct file *filp, loff_t offset, loff_t len, int advice)
 	if (offset < 0 || len < 0)
 		return (-EINVAL);
 
-	ZFS_ENTER(zfsvfs);
-	ZFS_VERIFY_ZP(zp);
+	if ((error = zpl_enter_verify_zp(zfsvfs, zp, FTAG)) != 0)
+		return (error);
 
 	switch (advice) {
 	case POSIX_FADV_SEQUENTIAL:
@@ -964,7 +968,7 @@ zpl_fadvise(struct file *filp, loff_t offset, loff_t len, int advice)
 		break;
 	}
 
-	ZFS_EXIT(zfsvfs);
+	zfs_exit(zfsvfs, FTAG);
 
 	return (error);
 }
