@@ -58,14 +58,14 @@ EJ_VISIBLE void ej_nfs_sharepaths(webs_t wp, int argc, char_t ** argv)
 
 	// table header
 	websWrite(wp, "	<table id=\"nfs_shares\" class=\"table\" summary=\"nfs share table\">\n");
-	show_caption_pp(wp, NULL, "service.samba3_shares", "<tr><th colspan=\"6\">", "</th></tr>\n");
+	show_caption_pp(wp, NULL, "service.samba3_shares", "<thead><tr><th colspan=\"6\">", "</th></tr>\n");
 	websWrite(wp, "		<tr>\n");
 	show_caption_pp(wp, NULL, "service.samba3_share_path", "<th>", "</th>\n");
 	show_caption_pp(wp, NULL, "service.samba3_share_subdir", "<th>", "</th>\n");
 	show_caption_pp(wp, NULL, "service.nfs_allowed", "<th>", "</th>\n");
 	show_caption_pp(wp, NULL, "service.samba3_share_access", "<th>", "</th>\n");
 	websWrite(wp, "<th style=\"width: 50px;\">&nbsp;</th>\n");
-	websWrite(wp, "</tr>\n");
+	websWrite(wp, "</tr></thead><tbody>\n");
 
 	for (cs = nfsshares; cs; cs = csnext) {
 
@@ -153,7 +153,7 @@ EJ_VISIBLE void ej_nfs_sharepaths(webs_t wp, int argc, char_t ** argv)
 		debug_free(cs);
 	}
 
-	websWrite(wp, "</table>\n");
+	websWrite(wp, "</tbody></table>\n");
 
 	// add button
 	websWrite(wp,

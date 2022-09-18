@@ -102,7 +102,7 @@ EJ_VISIBLE void ej_show_radius_users(webs_t wp, int argc, char_t ** argv)
 {
 	websWrite(wp, "<table class=\"table\" summary=\"Radius Users\">\n");
 
-	websWrite(wp, "<tr>\n"
+	websWrite(wp, "<thead><tr>\n"
 		  "<th><script type=\"text/javascript\">Capture(freeradius.username)</script></th>\n"
 		  "<th><script type=\"text/javascript\">Capture(freeradius.password)</script></th>\n"
 		  "<th><script type=\"text/javascript\">Capture(freeradius.downstream)</script></th>\n"
@@ -110,7 +110,7 @@ EJ_VISIBLE void ej_show_radius_users(webs_t wp, int argc, char_t ** argv)
 		  "<th><script type=\"text/javascript\">Capture(freeradius.expiration)</script></th>\n"
 		  "<th><script type=\"text/javascript\">Capture(freeradius.certtbl)</script></th>\n"
 		  "<th class=\"center\"><script type=\"text/javascript\">Capture(share.enabled)</script></th>\n"
-		  "<th class=\"center\" width=\"10%%\"><script type=\"text/javascript\">Capture(share.actiontbl)</script></th>\n" "</tr>\n");
+		  "<th class=\"center\" width=\"10%%\"><script type=\"text/javascript\">Capture(share.actiontbl)</script></th>\n" "</tr></thead><tbody>\n");
 
 	unsigned int i;
 	struct radiusdb *db = loadradiusdb();
@@ -199,7 +199,7 @@ EJ_VISIBLE void ej_show_radius_clients(webs_t wp, int argc, char_t ** argv)
 		  "<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<input class=\\\"add\\\" type=\\\"button\\\" aria-label=\\\"\" + sbutton.add + \"\\\" onclick=\\\"client_add_submit(this.form)\\\" />\");\n//]]>\n</script>\n");
 	websWrite(wp, "</td>\n");
 	websWrite(wp, "</tr>\n");
-	websWrite(wp, "</table>\n<br />\n");
+	websWrite(wp, "</tbody></table>\n<br />\n");
 }
 
 #endif

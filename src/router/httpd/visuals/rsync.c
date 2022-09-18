@@ -50,21 +50,21 @@ EJ_VISIBLE void ej_rsync_sharepaths(webs_t wp, int argc, char_t ** argv)
 		rows++;
 	}
 	rows--;
-	websWrite(wp, "	<input type=\"hidden\" name=\"rsync_shares_count\" id=\"rsync_shares_count\" value=\"%d\">\n", rows);
+	websWrite(wp, "<input type=\"hidden\" name=\"rsync_shares_count\" id=\"rsync_shares_count\" value=\"%d\">\n", rows);
 	rows = 5;
 
-	websWrite(wp, "	<input type=\"hidden\" name=\"rsync_shares_count_limit\" id=\"rsync_shares_count_limit\" value=\"%d\">\n", rows);
+	websWrite(wp, "<input type=\"hidden\" name=\"rsync_shares_count_limit\" id=\"rsync_shares_count_limit\" value=\"%d\">\n", rows);
 	rows = 0;
 
 	// table header
-	websWrite(wp, "	<table id=\"rsync_shares\" class=\"table\" summary=\"rsync share table\">\n");
-	show_caption_pp(wp, NULL, "service.samba3_shares", "<tr><th colspan=\"6\">", "</th></tr>\n");
-	websWrite(wp, "		<tr>\n");
+	websWrite(wp, "<table id=\"rsync_shares\" class=\"table\" summary=\"rsync share table\">\n");
+	show_caption_pp(wp, NULL, "service.samba3_shares", "<thead><tr><th colspan=\"6\">", "</th></tr>\n");
+	websWrite(wp, "<tr>\n");
 	show_caption_pp(wp, NULL, "service.samba3_share_path", "<th>", "</th>\n");
 	show_caption_pp(wp, NULL, "service.samba3_share_subdir", "<th>", "</th>\n");
 	show_caption_pp(wp, NULL, "service.samba3_share_label", "<th>", "</th>\n");
-	websWrite(wp, "			<th style=\"width: 50px;\">&nbsp;</th>\n");
-	websWrite(wp, "		</tr>\n");
+	websWrite(wp, "<th style=\"width: 50px;\">&nbsp;</th>\n");
+	websWrite(wp, "</tr></thead><tbody>\n");
 
 	for (cs = rsyncshares; cs; cs = csnext) {
 
@@ -113,15 +113,15 @@ EJ_VISIBLE void ej_rsync_sharepaths(webs_t wp, int argc, char_t ** argv)
 				}
 
 				websWrite(wp,
-					  "				<option value=\"%s\" rel='{\"fstype\":\"%s\",\"perms\":[%s],\"avail\":1}' %s>%s</option>\n",
+					  "<option value=\"%s\" rel='{\"fstype\":\"%s\",\"perms\":[%s],\"avail\":1}' %s>%s</option>\n",
 					  current->mp, current->fstype, buffer, strcmp(current->mp, cs->mp) ? "" : "selected=\"selected\"", current->mp);
 			}
 		}
 		// fs not available -> add stored entry for display
 		if (found == 0 && rows > 0) {
-			websWrite(wp, "				<option value=\"%s\" rel='{\"fstype\":\"\",\"perms\":[\"%s\"],\"avail\":0}' selected>[not available!]</option>\n", cs->mp, cs->mp);
+			websWrite(wp, "<option value=\"%s\" rel='{\"fstype\":\"\",\"perms\":[\"%s\"],\"avail\":0}' selected>[not available!]</option>\n", cs->mp, cs->mp);
 		}
-		websWrite(wp, "				</select></td>\n");
+		websWrite(wp, "</select></td>\n");
 		websWrite(wp,
 			  "				<td style=\"width: 1%%;\"><input type=\"text\" name=\"rsyncshare_subdir%s\" id=\"rsyncshare_subdir%s\" value=\"%s\" style=\"width: 150px;\"/></td>\n",
 			  number, number, cs->sd);
@@ -131,15 +131,15 @@ EJ_VISIBLE void ej_rsync_sharepaths(webs_t wp, int argc, char_t ** argv)
 		websWrite(wp,
 			  "					<script type=\"text/javascript\">document.write(\"<td class=\\\"center\\\" title=\\\"\" + sbutton.del + \"\\\"><input type=\\\"button\\\" class=\\\"remove\\\" aria-label=\\\"\" + sbutton.del + \"\\\" name=\\\"rsyncshare_del%s\\\" style=\\\"width: 100%%;\\\" onclick=\\\"removersyncShare(this);\\\" />\")</script>\n",
 			  number);
-		websWrite(wp, "				</td>\n");
-		websWrite(wp, "			</tr>\n");
+		websWrite(wp, "</td>\n");
+		websWrite(wp, "</tr>\n");
 
 		rows++;
 		csnext = cs->next;
 		debug_free(cs);
 	}
 
-	websWrite(wp, "		</table>\n");
+	websWrite(wp, "</tbody></table>\n");
 
 	// add button
 	websWrite(wp,
