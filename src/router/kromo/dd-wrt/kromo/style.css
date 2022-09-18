@@ -80,40 +80,40 @@ input[type='radio'] {
 .button:hover {
   filter: brightness(1.2)
 }
-.button[name='apply_button'] {
+.button.green_btn {
   background: #166f2a;
   color: #fff;
 }
-.button[name='apply_button']:hover {
+.button.green_btn:hover {
   background: #199235;
   color: #fff;
 }
-.button[name='apply_button']:focus, .button[name='apply_button']:focus-visible {
+.button.green_btn:focus, .button.green_btn:focus-visible {
   box-shadow: 0 0 5px 1px #199235;
   outline: 0;
 }
-.button[name='reset_button'] {
+.button.brown_btn {
   background: #6f4816;
   color: #fff;
 }
-.button[name='reset_button']:hover {
+.button.brown_btn:hover {
   background: #925d19;
   color: #fff;
 }
-.button[name='reset_button']:focus-visible {
+.button.brown_btn:focus, .button.brown_btn:focus-visible {
   box-shadow: 0 0 5px 1px #ff8400;
   outline: 0;
 }
-.button[name='reboot_button'],
-.button[name='reboot_button']:disabled:hover {
+.button.red_btn,
+.button.red_btn:disabled:hover {
   background: #c00;
   color: #f8f8f8;
 }
-.button[name='reboot_button']:hover {
+.button.red_btn:hover {
   background: #e00;
   color: #fff;
 }
-.button[name='reboot_button']:focus, .button[name='reboot_button']:focus-visible {
+.button.red_btn:focus, .button.red_btn:focus-visible {
   box-shadow: 0 0 5px 1px #ff7c7c;
   outline: 0;
 }
