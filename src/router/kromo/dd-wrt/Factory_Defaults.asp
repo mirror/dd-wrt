@@ -1,6 +1,6 @@
 <% do_pagehead("factdef.titl"); %>
-		<script type="text/javascript">
-		//<![CDATA[
+	<script type="text/javascript">
+	//<![CDATA[
 
 function submitcheck(F) {
 	F.save_button.value = sbutton.saving;
@@ -21,23 +21,20 @@ var update;
 
 addEvent(window, "load", function() {
 	stickControl(<% nvg("sticky_footer"); %>);
-	
+
 	update = new StatusbarUpdate();
 	update.start();
-
 });
 
 addEvent(window, "unload", function() {
 	update.stop();
-
 });
-		
-		//]]>
-		</script>
+
+	//]]>
+	</script>
 	</head>
 
 	<body class="gui">
-		
 		<div id="wrapper">
 			<div id="content">
 				<div id="header">
@@ -51,18 +48,17 @@ addEvent(window, "unload", function() {
 							<input type="hidden" name="action" value="Restore" />
 							<input type="hidden" name="change_action" />
 							<input type="hidden" name="submit_type" />
-							
+
 							<h2><% tran("factdef.h2"); %></h2>
-							
+
 							<fieldset>
-							<legend><% tran("factdef.legend"); %></legend>
-							<div class="setting">
-								<div class="label"><% tran("factdef.restore"); %></div>
-								<input class="spaceradio" type="radio" name="FactoryDefaults" value="1" /><% tran("share.yes"); %>&nbsp;
-								<input class="spaceradio" type="radio" name="FactoryDefaults" value="0" checked="checked" /><% tran("share.no"); %>
-							</div>
+								<legend><% tran("factdef.legend"); %></legend>
+								<div class="setting">
+									<div class="label"><% tran("factdef.restore"); %></div>
+									<input class="spaceradio" type="radio" name="FactoryDefaults" value="1" /><% tran("share.yes"); %>&nbsp;
+									<input class="spaceradio" type="radio" name="FactoryDefaults" value="0" checked="checked" /><% tran("share.no"); %>
+								</div>
 							</fieldset><br/>
-							
 							<div id="footer" class="submitFooter">
 								<script type="text/javascript">
 								//<![CDATA[

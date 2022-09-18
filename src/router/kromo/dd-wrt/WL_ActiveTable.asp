@@ -91,18 +91,18 @@ refreshParent = function() {
 				</tbody>
 			</table>
 		  </fieldset><br />
-			<div id="submit_footer" id="footer" class="submitFooter">
-					<script type="text/javascript">
-					//<![CDATA[
-					submitFooterButton(1,0,0,0,1,1);
-					var children = document.getElementById('submit_footer').childNodes;
-					for(var i = 0; i < children.length; i++) {
-						if(children[i].name == "apply_button") {
-							document.getElementById('submit_footer').removeChild(children[i]);
-						}
+			<div id="footer" class="submitFooter">
+				<script type="text/javascript">
+				//<![CDATA[
+				submitFooterButton(1,0,0,0,1,1);
+				var children = document.getElementById('footer').childNodes;
+				for(var i = 0; i < children.length; i++) {
+					if(children[i].name == "apply_button") {
+						document.getElementById('footer').removeChild(children[i]);
 					}
-					//]]>
-					</script>
+				}
+				//]]>
+				</script>
 			</div>
 		</form>
 	</body>

@@ -1,6 +1,6 @@
 <% do_pagehead("wpa.titl"); %>
-		<script type="text/javascript">
-		//<![CDATA[
+	<script type="text/javascript">
+	//<![CDATA[
 
 function SelMode(varname,num,F)	{
 	F.change_action.value="gozila_cgi";
@@ -26,6 +26,7 @@ function generateKey64(F,PREFIX) {
 	F.submit_type.value = "key_64";
 	F.submit();
 }
+
 function generateKey128(F,PREFIX) {
 	F.change_action.value="gozila_cgi";
 	F.security_varname.value = PREFIX;
@@ -41,12 +42,13 @@ function to_submit(F) {
     apply(F);
 	}
 }
+
 function to_apply(F) {
 	if (valid_value(F)) {
 		F.change_action.value = "";
 		F.submit_type.value = "";
 		F.save_button.value = sbutton.saving;
-    applytake(F);
+		applytake(F);
 	}
 }
 
@@ -69,7 +71,6 @@ function valid_radius(F) {
 			return false;
 		}
 	}
-
 	return true;
 }
 
@@ -88,7 +89,6 @@ function valid_wpa_psk(F) {
 			return false;
 		}
 	}
-
 	return true;
 }
 
@@ -99,7 +99,7 @@ function valid_wep(F) {
 	if (ValidateKey(F.wl_key1, F.wl_wep_bit.options[F.wl_wep_bit.selectedIndex].value,1) == false)
 		return false;
 
-  	if (ValidateKey(F.wl_key2, F.wl_wep_bit.options[F.wl_wep_bit.selectedIndex].value,2) == false)
+  if (ValidateKey(F.wl_key2, F.wl_wep_bit.options[F.wl_wep_bit.selectedIndex].value,2) == false)
 		return false;
 
 	if (ValidateKey(F.wl_key3, F.wl_wep_bit.options[F.wl_wep_bit.selectedIndex].value,3) == false)
@@ -118,8 +118,7 @@ function valid_wep(F) {
 			break;
 		}
 	}
-
-    return true;
+	return true;
 }
 
 function ValidateKey(key, bit, index) {
@@ -193,18 +192,17 @@ addEvent(window, "load", function() {
 		if(F.security_mode.value == "wep" || F.security_mode.value == "radius") {
 			keyMode(F.wl_wep_bit.value, F);
 		}
-		
+
 	update = new StatusbarUpdate();
 	update.start();
 });
 
 addEvent(window, "unload", function() {
 	update.stop();
-
 });
 
-		//]]>
-		</script>
+	//]]>
+	</script>
 	</head>
 
 	<body class="gui">
@@ -246,8 +244,8 @@ addEvent(window, "unload", function() {
 				<div id="help">
 					<h2><% tran("share.help"); %></h2>
 					<dl>
-					<dt class="term"><% tran("wpa.secmode"); %>:</dt>
-					<dd class="definition"><% tran("hwpa.right2"); %></dd>
+						<dt class="term"><% tran("wpa.secmode"); %>:</dt>
+						<dd class="definition"><% tran("hwpa.right2"); %></dd>
 					</dl><br />
 				<a href="javascript:openHelpWindow<% ifdef("EXTHELP","Ext"); %>('HWPA.asp')"><% tran("share.more"); %></a>
 				</div>

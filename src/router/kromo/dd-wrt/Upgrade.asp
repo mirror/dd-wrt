@@ -29,7 +29,7 @@ function upgrade(F,id) {
 		F.action = 'olupgrade.cgi';
 		F.removeAttribute('enctype');
 		$('submit_button').remove();
-	} else if (F.file.value == "")	{
+	} else if (F.file.value == "") {
 		alert(errmsg.err60);
 		return false;
 	}
@@ -63,13 +63,11 @@ addEvent(window, "load", function() {
 
 	update = new StatusbarUpdate();
 	update.start();
-
 });
 
 addEvent(window, "unload", function() {
 	update.stop();
 });
-
 	//]]>
 	</script>
 	</head>

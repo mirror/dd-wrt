@@ -40,17 +40,17 @@ addEvent(window, "load", function() {
 					</tbody>
 					</table>
 					<%% wireless_filter_table("input","%s"); %%>
-					<div id="submit_footer" id="footer" class="submitFooter">
+					<div id="footer" class="submitFooter">
 						<script type="text/javascript">
 						//<![CDATA[
 						submitFooterButton(1,1,0,0,0,1);
-						var children = document.getElementById('submit_footer').childNodes;
+						var children = document.getElementById('footer').childNodes;
 						for(var i = 0; i < children.length; i++) {
 							if(children[i].name == "apply_button") {
-								document.getElementById('submit_footer').removeChild(children[i]);
+								document.getElementById('footer').removeChild(children[i]);
 							}
 							if(children[i].name == "reset_button") {
-								document.getElementById('submit_footer').childNodes[i].onclick = function(){
+								document.getElementById('footer').childNodes[i].onclick = function(){
 									var ref = document.forms[0].elements['submit_button'].value;
 									if( document.forms[0].elements['ifname'].value) {
 										ref = ref + '-' + document.forms[0].elements['ifname'].value;
