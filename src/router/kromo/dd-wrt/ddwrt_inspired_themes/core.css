@@ -161,47 +161,44 @@ body input[disabled]:hover {
   box-shadow: none;
   opacity: 0.6;
 }
-.button[name*='reboot'] {
+.button.red_btn {
   background: var(--v1-4);
   border-color: var(--v1-6);
   color: var(--v9-8);
   text-shadow: 0 1px 0 var(--bg-0);
 }
-.button[name*='reboot']:hover,
-.button[name*='reboot']:focus-within {
+.button.red_btn:hover,
+.button.red_btn:focus-within {
   background: var(--v1-6) !important;
   border-color: var(--v1-7) !important;
   box-shadow: 0 0 10px 0 var(--v1-6) !important;
 }
-.button[name*='reboot']:disabled,
-.button[name*='reboot']:disabled:hover {
+.button.red_btn:disabled,
+.button.red_btn:disabled:hover {
   background: var(--v1-4) !important;
   border-color: var(--v1-5) !important;
 }
-.button[name*='apply'],
-.button[name='changepassword'] {
+.button.green_btn {
   background: var(--v4-2);
   border-color: var(--v4-4);
   color: var(--v9-8);
   text-shadow: 0 1px 0 var(--bg-0);
 }
-.button[name*='apply']:hover,
-.button[name='changepassword']:hover,
-.button[name*='apply']:focus-within,
-.button[name='changepassword']:focus-within {
+.button.green_btn:hover,
+.button.green_btn:focus-within {
   background: var(--v4-3) !important;
   border-color: var(--v4-3) !important;
   box-shadow: 0 0 10px 0 var(--v4-3) !important;
   color: var(--v9-9) !important;
 }
-.button[name*='reset'] {
+.button.brown_btn {
   background: var(--v2-2);
   border-color: var(--v2-4);
   color: var(--v9-8);
   text-shadow: 0 1px 0 var(--bg-0);
 }
-.button[name*='reset']:hover,
-.button[name*='reset']:focus-within {
+.button.brown_btn:hover,
+.button.brown_btn:focus-within {
   background: var(--v2-3) !important;
   border-color: var(--v2-3) !important;
   box-shadow: 0 0 10px 0 var(--v2-3) !important;
