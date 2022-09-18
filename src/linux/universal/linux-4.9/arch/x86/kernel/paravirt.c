@@ -182,7 +182,7 @@ unsigned paravirt_patch_insns(void *insnbuf, unsigned len,
 	return insn_len;
 }
 
-static void native_flush_tlb(void)
+__visible void native_flush_tlb(void)
 {
 	__native_flush_tlb();
 }
