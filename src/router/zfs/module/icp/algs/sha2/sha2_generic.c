@@ -265,7 +265,7 @@ static void sha512_update(sha512_ctx *ctx, const uint8_t *data, size_t len)
 	const sha512_ops_t *ops = ctx->ops;
 
 	if (pos && pos + len >= 128) {
-		memcpy(m + pos, data, (size_t)(128 - pos));
+		memcpy(m + pos, data, 128 - pos);
 		ops->transform(ctx->state, m, 1);
 		len -= 128 - pos;
 		total += (128 - pos) * 8;
@@ -281,7 +281,7 @@ static void sha512_update(sha512_ctx *ctx, const uint8_t *data, size_t len)
 		total += (bytes) * 8;
 		data += bytes;
 	}
-	memcpy(m + pos, data, (size_t)(len));
+	memcpy(m + pos, data, len);
 
 	pos += len;
 	total += len * 8;

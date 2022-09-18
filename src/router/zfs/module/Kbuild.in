@@ -348,7 +348,6 @@ ZFS_OBJS := \
 	sha2_zfs.o \
 	skein_zfs.o \
 	spa.o \
-	spa_boot.o \
 	spa_checkpoint.o \
 	spa_config.o \
 	spa_errlog.o \
