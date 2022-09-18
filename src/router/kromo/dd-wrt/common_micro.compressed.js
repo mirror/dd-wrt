@@ -1165,7 +1165,7 @@ if(sub){
 document.write("<input title=\""+sbutton.savetitle+"\" class=\"button\" type=\"button\" name=\"save_button\" value=\""+sbutton.save+"\" onclick=\"to_submit(this.form);\" />");
 }
 if(sub){
-document.write("<input title=\""+sbutton.applytitle+"\" class=\"button\" type=\"button\" name=\"apply_button\" value=\""+sbutton.apply+"\" onclick=\"to_apply(this.form);\" />");
+document.write("<input title=\""+sbutton.applytitle+"\" class=\"button green_btn\" type=\"button\" name=\"apply_button\" value=\""+sbutton.apply+"\" onclick=\"to_apply(this.form);\" />");
 }
 if(res){
 if(document.forms[0].elements["submit_button"].value){
@@ -1173,10 +1173,10 @@ var _7b="document.location=document.forms[0].elements['submit_button'].value+'.a
 }else{
 var _7b="window.location.reload();";
 }
-document.write("<input title=\""+sbutton.canceltitle+"\" class=\"button\" type=\"button\" name=\"reset_button\" value=\""+sbutton.cancel+"\" onclick=\""+_7b+"\" />");
+document.write("<input title=\""+sbutton.canceltitle+"\" class=\"button brown_btn\" type=\"button\" name=\"reset_button\" value=\""+sbutton.cancel+"\" onclick=\""+_7b+"\" />");
 }
 if(reb){
-document.write("<input class=\"button\" type=\"button\" name=\"reboot_button\" value=\""+sbutton.reboot+"\" onclick=\"to_reboot(this.form);\" />");
+document.write("<input class=\"button\" type=\"button red_btn\" name=\"reboot_button\" value=\""+sbutton.reboot+"\" onclick=\"to_reboot(this.form);\" />");
 }
 if(_7a){
 document.write("<input class=\"button\" type=\"button\" name=\"refresh_button\" value=\""+_7a+"\" onclick=\"window.location.reload();\">");

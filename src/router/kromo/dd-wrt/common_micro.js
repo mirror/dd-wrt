@@ -1222,17 +1222,17 @@ function submitFooterButton(sub, res, reb, autoref, ref, clo) {
 	if(sub)
 		document.write("<input title=\"" + sbutton.savetitle + "\" class=\"button\" type=\"button\" name=\"save_button\" value=\"" + sbutton.save + "\" onclick=\"to_submit(this.form);\" />");
 	if(sub)
-		document.write("<input title=\"" + sbutton.applytitle + "\" class=\"button\" type=\"button\" name=\"apply_button\" value=\"" + sbutton.apply + "\" onclick=\"to_apply(this.form);\" />");
+		document.write("<input title=\"" + sbutton.applytitle + "\" class=\"button green_btn\" type=\"button\" name=\"apply_button\" value=\"" + sbutton.apply + "\" onclick=\"to_apply(this.form);\" />");
 	if(res) {
 		if(document.forms[0].elements['submit_button'].value) {
 			var button_action = "document.location=document.forms[0].elements['submit_button'].value+'.asp';";
 		} else {
 			var button_action = "window.location.reload();";
 		}
-		document.write("<input title=\"" + sbutton.canceltitle + "\" class=\"button\" type=\"button\" name=\"reset_button\" value=\"" + sbutton.cancel + "\" onclick=\"" + button_action + "\" />");
+		document.write("<input title=\"" + sbutton.canceltitle + "\" class=\"button brown_btn\" type=\"button\" name=\"reset_button\" value=\"" + sbutton.cancel + "\" onclick=\"" + button_action + "\" />");
 	}
 	if(reb)
-		document.write("<input class=\"button\" type=\"button\" name=\"reboot_button\" value=\"" + sbutton.reboot + "\" onclick=\"to_reboot(this.form);\" />");
+		document.write("<input class=\"button red_btn\" type=\"button\" name=\"reboot_button\" value=\"" + sbutton.reboot + "\" onclick=\"to_reboot(this.form);\" />");
 	if(autoref)
 		document.write("<input class=\"button\" type=\"button\" name=\"refresh_button\" value=\"" + autoref + "\" onclick=\"window.location.reload();\">");
 	if(ref)
