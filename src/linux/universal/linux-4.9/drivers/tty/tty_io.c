@@ -3633,7 +3633,8 @@ void tty_default_fops(struct file_operations *fops)
  */
 void __init console_init(void)
 {
-	initcall_t *call;
+	initcall_t call;
+	initcall_entry_t *ce;
 
 	/* Setup the default TTY line discipline. */
 	n_tty_init();
@@ -3642,10 +3643,11 @@ void __init console_init(void)
 	 * set up the console device so that later boot sequences can
 	 * inform about problems etc..
 	 */
-	call = __con_initcall_start;
-	while (call < __con_initcall_end) {
-		(*call)();
-		call++;
+	ce = __con_initcall_start;
+	while (ce < __con_initcall_end) {
+		call = initcall_from_entry(ce);
+		call();
+		ce++;
 	}
 }
 

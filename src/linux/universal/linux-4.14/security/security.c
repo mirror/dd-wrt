@@ -44,11 +44,14 @@ static __initdata char chosen_lsm[SECURITY_NAME_MAX + 1] =
 
 static void __init do_security_initcalls(void)
 {
-	initcall_t *call;
-	call = __security_initcall_start;
-	while (call < __security_initcall_end) {
-		(*call) ();
-		call++;
+	initcall_t call;
+	initcall_entry_t *ce;
+
+	ce = __security_initcall_start;
+	while (ce < __security_initcall_end) {
+		call = initcall_from_entry(ce);
+		call();
+		ce++;
 	}
 }
 
