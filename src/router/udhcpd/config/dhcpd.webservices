@@ -49,11 +49,15 @@
 		//]]>
 		</script>
 	</div>
-	<table class="table" id="static_leasetable" summary="static lease table">
+	<table class="table">
 	<tbody>
 		<tr>
 			<th colspan="5"><% tran("share.static_lease"); %></th>
 		</tr>
+	</tbody>
+	</table>
+	<table class="table" id="static_leasetable" summary="static lease table">
+	<tbody>
 		<tr>
 			<th width="22%"><% tran("share.mac"); %></th>
 			<th width="22%"><% tran("share.hostname"); %></th>
