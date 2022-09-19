@@ -20,7 +20,7 @@ function setWirelessTable() {
 
 		var mac = val[i];
 		if ("<% nvg("maskmac"); %>" != "1") {
-		var cellmac = row.insertCell(-1);
+			var cellmac = row.insertCell(-1);
 			if (val[i + 11] == 0) {
 				cellmac.title = share.oui;
 			} else {
@@ -36,10 +36,10 @@ function setWirelessTable() {
 				}
 				cellmac.title = cellmac.title + "]";
 			}
-		cellmac.classList.add("link");
-		cellmac.style.cursor = "pointer";
-		eval("addEvent(cellmac, 'click', function() { getOUIFromMAC('" + mac + "') })");
-		cellmac.innerHTML = mac;
+			cellmac.classList.add("link");
+			cellmac.style.cursor = "pointer";
+			eval("addEvent(cellmac, 'click', function() { getOUIFromMAC('" + mac + "') })");
+			cellmac.innerHTML = mac;
 		} else {
 		  row.insertCell(-1).innerHTML = mac;
 		}
