@@ -50,6 +50,7 @@
 		</script>
 	</div>
 	<table class="table" id="static_leasetable" summary="static lease table">
+	<tbody>
 		<tr>
 			<th colspan="5"><% tran("share.static_lease"); %></th>
 		</tr>
@@ -61,6 +62,7 @@
 			<th width="12%" class="center"><% tran("share.actiontbl"); %></th>
 		</tr>
 		<% show_staticleases(); %>
+		</tbody>
 		<script type="text/javascript">
 		//<![CDATA[
 		var t = new SortableTable(document.getElementById('static_leasetable'), 1000);
@@ -68,7 +70,7 @@
 		</script>
 		<tr>
 			<td colspan="4"></td>
-				<td class="center">
+				<td class="center" style="height: 27.2px;">
 				<script type="text/javascript">
 				//<![CDATA[
 				document.write("<input class=\"add\" type=\"button\" name=\"add_button\" aria-label=\"" + sbutton.add + "\" onclick=\"lease_add_submit(this.form);\" />");
@@ -76,6 +78,7 @@
 				</script>
 			</td>
 		</tr>
+	</tbody>
 	</table>
 </fieldset><br/>
 <% ifndef("SMARTDNS", "<!--"); %>
