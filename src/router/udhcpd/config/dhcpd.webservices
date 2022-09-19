@@ -71,6 +71,8 @@
 		var t = new SortableTable(document.getElementById('static_leasetable'), 1000);
 		//]]>
 		</script>
+		</tbody>
+		<tfoot>
 		<tr>
 			<td colspan="4"></td>
 				<td class="center" style="height: 27.2px;">
@@ -81,7 +83,7 @@
 				</script>
 			</td>
 		</tr>
-	</tbody>
+	</tfoot>
 	</table>
 </fieldset><br/>
 <% ifndef("SMARTDNS", "<!--"); %>
