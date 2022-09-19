@@ -203,7 +203,7 @@ addEvent(window, "unload", function() {
 									<div class="label"><% tran("share.mac"); %></div>
 										<script type="text/javascript">
 										//<![CDATA[
-										document.write("<span id=\"wl_mac\" class\"link\" style=\"cursor: pointer;\" title=\"" + share.oui + "\" onclick=\"getOUIFromMAC('<% show_wl_mac(); %>')\" >");
+										document.write("<span id=\"wl_mac\" class=\"link\" style=\"cursor: pointer;\" title=\"" + share.oui + "\" onclick=\"getOUIFromMAC('<% show_wl_mac(); %>')\" >");
 										document.write("<% show_wl_mac(); %>");
 										document.write("</span>");
 										//]]>
