@@ -534,12 +534,6 @@ table .table_bg_br_clr_off:hover {
 [summary='packet-type priority table'] td[colspan='5'] {
   padding-bottom: 6px;
 }
-#conntrack_table a:link {
-  color: var(--v9-7);
-}
-#conntrack_table a:link:hover {
-  color: var(--v0-8);
-}
 table.bulle {
   background-color: var(--bg-4);
   border: 1px solid var(--bg-5);

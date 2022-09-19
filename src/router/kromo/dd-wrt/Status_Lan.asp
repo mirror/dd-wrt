@@ -72,9 +72,7 @@ function setPPPOETable() {
 		row.style.height = "15px";
 
 		row.insertCell(-1).innerHTML = val[i]; // interface
-
 		row.insertCell(-1).innerHTML = val[i+1]; // peer name
-
 		row.insertCell(-1).innerHTML = val[i+2]; // local ip
 
 		var cell = row.insertCell(-1);
@@ -151,7 +149,11 @@ function setARPTable() {
 		var row = table.insertRow(-1);
 		row.style.height = "20px";
 		row.insertCell(-1).innerHTML = val[i];
-		row.insertCell(-1).innerHTML = val[i+1];
+
+		var cellip = row.insertCell(-1);
+		cellip.title = val[i+1];
+		cellip.innerHTML = val[i+1];
+
 		var cellmac = row.insertCell(-1);
 		cellmac.classList.add("link");
 		cellmac.title = share.oui;
