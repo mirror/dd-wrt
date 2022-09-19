@@ -7,8 +7,7 @@ a {
   color: currentcolor;
 }
 a:hover, #statusInfo a:hover,
-#ip_count:hover, [title*='Search']:hover,
-[title*='Chain']:hover, [title*='Monitoring']:hover {
+.link:hover {
 	color: var(--ac-0);
 }
 fieldset {

@@ -97,7 +97,7 @@ addEvent(window, "unload", function() {
 									<div class="label"><% tran("share.mac"); %></div>
 									<script type="text/javascript">
 									//<![CDATA[
-									document.write("<span id=\"wan_mac\" style=\"cursor:pointer; text-decoration:underline;\" title=\"" + share.oui + "\" onclick=\"getOUIFromMAC('<% nvg("wan_hwaddr"); %>');\" >");
+									document.write("<span id=\"wan_mac\" class=\"link\" style=\"cursor:pointer;\" title=\"" + share.oui + "\" onclick=\"getOUIFromMAC('<% nvg("wan_hwaddr"); %>');\" >");
 									document.write("<% nvg("wan_hwaddr"); %>");
 									document.write("</span>");
 									//]]>
@@ -227,7 +227,7 @@ addEvent(window, "unload", function() {
 									<div class="label"><% tran("status_router.net_conntrack"); %></div>
 									<script type="text/javascript">
 									//<![CDATA[
-									document.write("<span id=\"ip_count\" style=\"cursor:pointer; text-decoration:underline;\" title=\"" + share.detail + "\" onclick=\"openWindow('Status_Conntrack.asp', 800, 600)\" >");
+									document.write("<span class=\"link\" id=\"ip_count\" style=\"cursor: pointer;\" title=\"" + share.detail + "\" onclick=\"openWindow('Status_Conntrack.asp', 800, 600)\" >");
 									document.write("</span>&nbsp;");
 									//]]>
 									</script>&nbsp;
