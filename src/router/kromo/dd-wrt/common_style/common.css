@@ -278,12 +278,18 @@ select[name*='bonding'], select[name*='schedule_'],
 .num[name='schedule_time'], .num[name='bonding_number'] {
   vertical-align: unset;
 }
-h2, h3 {
+h2 {
   padding: 4px 12px;
   line-height: 1.42857;
   letter-spacing: .123rem;
   margin: 0 0 .906em 0;
   border-radius: 4px;
+}
+h4 {
+ padding: 2px 8px;
+ font-weight: 300;
+ margin: .906em .1em .05em .1em;
+ border-radius: 2px;
 }
 hr {
   border: none;

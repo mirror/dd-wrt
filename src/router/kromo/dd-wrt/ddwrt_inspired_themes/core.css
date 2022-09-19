@@ -651,12 +651,10 @@ a:hover,
 a:focus-within {
   color: var(--v0-9);
 }
-h2,
-h3 {
+h2, h4 {
   background: var(--bg-5);
   border-color: var(--bg-5);
   color: var(--fg-1);
-  letter-spacing: 0.95px;
   border-radius: 4px;
 }
 h2 {

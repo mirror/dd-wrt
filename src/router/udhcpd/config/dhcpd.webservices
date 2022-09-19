@@ -49,17 +49,15 @@
 		//]]>
 		</script>
 	</div>
+	<h4><% tran("share.static_lease"); %></h4>
 	<table class="table" id="static_leasetable" summary="static lease table">
 	<tbody>
 		<tr>
-			<th colspan="5"><% tran("share.static_lease"); %></th>
-		</tr>
-		<tr>
-			<th width="22%"><% tran("share.mac"); %></th>
-			<th width="22%"><% tran("share.hostname"); %></th>
-			<th width="22%"><% tran("share.ip"); %></th>
-			<th width="22%"><% tran("idx.dhcp_lease"); %></th>
-			<th width="12%" class="center"><% tran("share.actiontbl"); %></th>
+			<th sortdir="up" width="22%"><% tran("share.mac"); %></th>
+			<th sortdir="up" width="22%"><% tran("share.hostname"); %></th>
+			<th sortdir="up" width="22%"><% tran("share.ip"); %></th>
+			<th sortdir="up" width="22%"><% tran("idx.dhcp_lease"); %></th>
+			<th sortdir="up" width="12%" class="center"><% tran("share.actiontbl"); %></th>
 		</tr>
 		<% show_staticleases(); %>
 		</tbody>
