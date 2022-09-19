@@ -170,7 +170,7 @@ li.current {
   text-decoration: none;
 }
 #statusInfo a:hover,
-#help a:hover, a[title='Geotool'] {
+#help a:hover, .link {
   text-decoration: underline;
 }
 textarea {
@@ -178,8 +178,6 @@ textarea {
   font-size: 12px;
   line-height: 1.42857;
   border-radius: 4px;
-  -webkit-box-sizing: border-box;
-  -moz-box-sizing: border-box;
   box-sizing: border-box;
   width: 100%;
   resize: vertical;
@@ -188,8 +186,8 @@ pre {
   overflow: auto;
   padding: 1em;
   margin: 0;
-  font-family: monospace;
   font-size: 12px;
+  font-family: monospace;
   white-space: pre-wrap;
   border-radius: 4px;
 }

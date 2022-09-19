@@ -20,7 +20,7 @@ function setWirelessTable() {
 
 		var mac = val[i];
 		if ("<% nvg("maskmac"); %>" != "1") {
-		  var cellmac = row.insertCell(-1);
+		var cellmac = row.insertCell(-1);
 			if (val[i + 11] == 0) {
 				cellmac.title = share.oui;
 			} else {
@@ -36,10 +36,10 @@ function setWirelessTable() {
 				}
 				cellmac.title = cellmac.title + "]";
 			}
-		  cellmac.style.cursor = "pointer";
-		  cellmac.style.textDecoration = "underline";
-		  eval("addEvent(cellmac, 'click', function() { getOUIFromMAC('" + mac + "') })");
-		  cellmac.innerHTML = mac;
+		cellmac.classList.add("link");
+		cellmac.style.cursor = "pointer";
+		eval("addEvent(cellmac, 'click', function() { getOUIFromMAC('" + mac + "') })");
+		cellmac.innerHTML = mac;
 		} else {
 		  row.insertCell(-1).innerHTML = mac;
 		}
@@ -48,6 +48,7 @@ function setWirelessTable() {
 		var ifn = val[i + 2];
 		var label = val[i + 15];
 		var iface = row.insertCell(-1);
+		iface.classList.add("link");
 		iface.title = status_band.titl;
 		iface.style.cursor = "pointer";
 		iface.style.textDecoration = "none";
@@ -87,8 +88,8 @@ function setWDSTable() {
 		if ("<% nvg("maskmac"); %>" != "1") {
 			var cellmac = row.insertCell(-1);
 			cellmac.title = share.oui;
+			cellmac.classList.add("link");
 			cellmac.style.cursor = "pointer";
-			cellmac.style.textDecoration = "underline";
 			eval("addEvent(cellmac, 'click', function() { getOUIFromMAC('" + mac + "') })");
 			cellmac.innerHTML = mac;
 		} else {
@@ -97,6 +98,7 @@ function setWDSTable() {
 
 		var ifn = val[i + 1];
 		var iface = row.insertCell(-1);
+		iface.classList.add("link");
 		iface.title = status_band.titl;
 		iface.style.cursor = "pointer";
 		iface.style.textDecoration = "none";
@@ -130,6 +132,7 @@ function setDHCPTable() {
 		var ifn = val[i + 5];
 		var label = val[i + 6];
 		var iface = row.insertCell(-1);
+		iface.classList.add("link");
 		iface.title = status_band.titl;
 		iface.style.cursor = "pointer";
 		iface.style.textDecoration = "none";
@@ -144,9 +147,9 @@ function setDHCPTable() {
 		var mac = val[i + 2];
 		if ("<% nvg("maskmac"); %>" != "1") {
 			var cellmac = row.insertCell(-1);
+			cellmac.classList.add("link");
 			cellmac.title = share.oui;
 			cellmac.style.cursor = "pointer";
-			cellmac.style.textDecoration = "underline";
 			eval("addEvent(cellmac, 'click', function() { getOUIFromMAC('" + mac + "') })");
 			cellmac.innerHTML = mac;
 		} else {
@@ -279,7 +282,7 @@ function refresh(F) {
 										<div class="label">WAN MAC</div>
 										<script type="text/javascript">
 										//<![CDATA[
-										document.write("<span id=\"wan_mac\" style=\"cursor:pointer; text-decoration: underline;\" title=\"" + share.oui + "\" onclick=\"getOUIFromMAC('<% nvg("wan_hwaddr"); %>')\" >");
+										document.write("<span id=\"wan_mac\" class=\"link\" style=\"cursor:pointer;\" title=\"" + share.oui + "\" onclick=\"getOUIFromMAC('<% nvg("wan_hwaddr"); %>')\" >");
 										document.write("<% nvg("wan_hwaddr"); %>\n</span>");
 										//]]>
 										</script>&nbsp;
@@ -288,7 +291,7 @@ function refresh(F) {
 										<div class="label">LAN MAC</div>
 										<script type="text/javascript">
 										//<![CDATA[
-										document.write("<span id=\"lan_mac\" style=\"cursor:pointer; text-decoration: underline;\" title=\"" + share.oui + "\" onclick=\"getOUIFromMAC('<% nvg("lan_hwaddr"); %>')\" >");
+										document.write("<span id=\"lan_mac\" class=\"link\" style=\"cursor:pointer;\" title=\"" + share.oui + "\" onclick=\"getOUIFromMAC('<% nvg("lan_hwaddr"); %>')\" >");
 										document.write("<% nvg("lan_hwaddr"); %>\n</span>");
 										//]]>
 										</script>&nbsp;
@@ -298,7 +301,7 @@ function refresh(F) {
 										<div class="label"><% tran("info.wlanmac"); %></div>
 										<script type="text/javascript">
 										//<![CDATA[
-										document.write("<span id=\"wl_mac\" style=\"cursor:pointer; text-decoration:underline;\" title=\"" + share.oui + "\" onclick=\"getOUIFromMAC('<% show_wl_mac(); %>')\" >");
+										document.write("<span id=\"wl_mac\" class=\"link\" style=\"cursor:pointer;\" title=\"" + share.oui + "\" onclick=\"getOUIFromMAC('<% show_wl_mac(); %>')\" >");
 										document.write("<% show_wl_mac(); %>");
 										document.write("</span>");
 										//]]>
