@@ -17,7 +17,6 @@ function setWirelessTable() {
 	}
 	for(var i = 0; i < val.length; i = i + 17) {
 		var row = table.insertRow(-1);
-		
 		var mac = val[i];
 		var cellmac = row.insertCell(-1);
 		if (val[i + 11] == 0) {
@@ -35,14 +34,15 @@ function setWirelessTable() {
 			}
 			cellmac.title = cellmac.title + "]";
 		}
+		cellmac.classList.add("link");
 		cellmac.style.cursor = "pointer";
-		cellmac.style.textDecoration = "underline";
 		eval("addEvent(cellmac, 'click', function() { getOUIFromMAC('" + mac + "') })");
 		cellmac.innerHTML = mac;
 		row.insertCell(-1).innerHTML = val[i + 1];
 		var ifn = val[i + 2];
 		var label = val[i + 15];
 		var iface = row.insertCell(-1);
+		iface.classList.add("link");
 		iface.title = status_band.titl;
 		iface.style.cursor = "pointer";
 		iface.style.textDecoration = "none";
@@ -76,14 +76,15 @@ function setWDSTable() {
 		
 		var mac = val[i];
 		var cellmac = row.insertCell(-1);
+		cellmac.classList.add("link");
 		cellmac.title = share.oui;
 		cellmac.style.cursor = "pointer";
-		cellmac.style.textDecoration = "underline";
 		eval("addEvent(cellmac, 'click', function() { getOUIFromMAC('" + mac + "') })");
 		cellmac.innerHTML = mac;
 
 		var ifn = val[i + 1];
 		var iface = row.insertCell(-1);
+		iface.classList.add("link");
 		iface.title = status_band.titl;
 		iface.style.cursor = "pointer";
 		iface.style.textDecoration = "none";
@@ -202,7 +203,7 @@ addEvent(window, "unload", function() {
 									<div class="label"><% tran("share.mac"); %></div>
 										<script type="text/javascript">
 										//<![CDATA[
-										document.write("<span id=\"wl_mac\" style=\"cursor: pointer; text-decoration: underline;\" title=\"" + share.oui + "\" onclick=\"getOUIFromMAC('<% show_wl_mac(); %>')\" >");
+										document.write("<span id=\"wl_mac\" class\"link\" style=\"cursor: pointer;\" title=\"" + share.oui + "\" onclick=\"getOUIFromMAC('<% show_wl_mac(); %>')\" >");
 										document.write("<% show_wl_mac(); %>");
 										document.write("</span>");
 										//]]>

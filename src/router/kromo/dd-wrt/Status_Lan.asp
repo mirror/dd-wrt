@@ -98,15 +98,13 @@ function setDHCPTable() {
 	for(var i = 0; i < val.length; i = i + 7) {
 		var row = table.insertRow(-1);
 		row.style.height = "15px";
-
 		row.insertCell(-1).innerHTML = val[i];
-
 		row.insertCell(-1).innerHTML = val[i+1];
 
 		var cellmac = row.insertCell(-1);
+		cellmac.classList.add("link");
 		cellmac.title = share.oui;
 		cellmac.style.cursor = "pointer";
-		cellmac.style.textDecoration = "underline";
 		eval("addEvent(cellmac, 'click', function() { getOUIFromMAC('" + val[i+2] + "') })");
 		cellmac.innerHTML = val[i+2];
 
@@ -155,9 +153,9 @@ function setARPTable() {
 		row.insertCell(-1).innerHTML = val[i];
 		row.insertCell(-1).innerHTML = val[i+1];
 		var cellmac = row.insertCell(-1);
+		cellmac.classList.add("link");
 		cellmac.title = share.oui;
 		cellmac.style.cursor = "pointer";
-		cellmac.style.textDecoration = "underline";
 		eval("addEvent(cellmac, 'click', function() { getOUIFromMAC('" + val[i+2] + "') })");
 		cellmac.innerHTML = val[i+2];
 
@@ -272,7 +270,7 @@ addEvent(window, "unload", function() {
 									<div class="label"><% tran("share.mac"); %></div>
 									<script type="text/javascript">
 									//<![CDATA[
-									document.write("<span id=\"lan_mac\" style=\"cursor:pointer; text-decoration:underline;\" title=\"" + share.oui + "\" onclick=\"getOUIFromMAC('<% nvg("lan_hwaddr"); %>')\" >");
+									document.write("<span id=\"lan_mac\" class=\"link\" style=\"cursor:pointer;\" title=\"" + share.oui + "\" onclick=\"getOUIFromMAC('<% nvg("lan_hwaddr"); %>')\" >");
 									document.write("<% nvg("lan_hwaddr"); %>");
 									document.write("</span>");
 									//]]>

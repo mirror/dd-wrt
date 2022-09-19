@@ -1,5 +1,5 @@
 /*
- * style-name: DD-WRT Inspired Themes v6.2.0
+ * style-name: DD-WRT Inspired Themes v6.2.1
  * copyright: (c) Style-it-themes: the-j0k3r
  * license: MIT https://git.io/JrzcO
  * home-url: https: //github.com/style-it-themes/dd-wrt-inspired-themes
@@ -33,32 +33,6 @@ body a:link {
 }
 body a:link:hover {
   color: var(--v0-9);
-}
-body[onunload*="location.href='Filters.asp'"] h2 {
-  background: var(--bg-5);
-}
-body[onunload*="location.href='Filters.asp'"] tr.table_row_bg {
-  background-color: var(--bg-2);
-}
-body[onunload*="location.href='Filters.asp'"] tr.table_row_bg:hover,
-body[onunload*="location.href='Filters.asp'"] tr.table_row_bg:focus-within {
-  background-color: var(--bg-3);
-}
-body[onunload*="location.href='Filters.asp'"] td[width='70'] input[type='checkbox'][name*='sum'] {
-  margin-bottom: 0;
-}
-body[onunload*="location.href='Filters.asp'"] td.table_bg_br_clr_on {
-  background-color: var(--v4-3);
-  border-color: var(--v4-0);
-}
-body[onunload*="location.href='Filters.asp'"] td.table_bg_br_clr_on:hover {
-  background-color: var(--v4-5);
-  border-color: var(--v4-0);
-}
-body[onunload*="location.href='Filters.asp'"] td.table_bg_br_clr_off {
-  background-color: var(--bg-2);
-  border-color: var(--bg-4);
-  opacity: 0.5;
 }
 body.gui {
   background: var(--bg-0);
@@ -113,8 +87,7 @@ body input {
   color: var(--v9-8);
   outline: 0;
 }
-body input:focus,
-body input.focus {
+body input:focus {
   border-color: var(--v0-9);
   box-shadow: 0 0 5px 1px var(--v0-8);
 }
@@ -464,7 +437,6 @@ textarea {
   transition: all 0.2s cubic-bezier(0.3, 0, 0.5, 1);
 }
 textarea:hover,
-textarea.focus,
 textarea:focus,
 textarea:focus-within,
 textarea:focus-visible {
@@ -482,7 +454,7 @@ textarea:focus-visible {
   color: var(--v9-7);
   padding-top: 0.1rem;
 }
-.syslog_bg tr:not([class]):hover {
+.syslog_bg tr:hover {
   background: var(--bg-2);
   color: var(--v9-9);
 }
@@ -507,20 +479,41 @@ textarea:focus-visible {
 .syslog_bg tr td.syslog_text_dark {
   color: var(--v9-0);
 }
-table tr:not([bgcolor]):not([class]):hover,
-table tr:not([bgcolor]):not([class]):focus-within {
+table tr.table_row_bg {
+  background-color: var(--bg-2);
+}
+table tr.table_row_bg:hover,
+table tr.table_row_bg:focus-within {
+  background-color: var(--bg-3);
+}
+table tr:hover,
+table tr:focus-within {
   background-color: transparent;
 }
-table tr:not([bgcolor]):not([class]) th {
+table tr th {
   background-color: var(--bg-5);
   border-color: var(--bg-5);
   color: var(--fg-1);
   padding-bottom: 2px;
 }
-#ip_count:hover,
-[title*='Search']:hover,
-[title*='Chain']:hover,
-[title*='Monitoring']:hover {
+table td[width='70'] input[type='checkbox'][name*='sum'] {
+  margin-bottom: 0;
+}
+table .table_bg_br_clr_on {
+  background-color: var(--v4-3);
+  border-color: var(--v4-0);
+}
+table .table_bg_br_clr_on:hover {
+  background-color: var(--v4-5);
+  border-color: var(--v4-0);
+}
+table .table_bg_br_clr_off,
+table .table_bg_br_clr_off:hover {
+  background-color: var(--bg-2);
+  border-color: var(--bg-4);
+  opacity: 0.5;
+}
+.link:hover {
   color: var(--v0-9);
   transition: all 0.2s cubic-bezier(0.3, 0, 0.5, 1);
 }
@@ -695,9 +688,6 @@ h2 {
 .meter .bar {
   background: var(--v0-5);
   border-radius: 2px;
-}
-.center a[href='http://www.dd-wrt.com/'] {
-  line-height: 2.2rem;
 }
 #header {
   background: var(--bg-2) !important;
@@ -907,6 +897,8 @@ svg {
 }
 .ddwrt_progress {
   mix-blend-mode: lighten;
+  width: 100%;
+  height: 32px;
 }
 .ddwrt_message {
   padding-top: 1.5rem;
