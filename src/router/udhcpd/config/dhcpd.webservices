@@ -57,7 +57,7 @@
 	</thead>
 	</table>
 	<table class="table" id="static_leasetable" summary="static lease table">
-	<tbody>
+	<thead>
 		<tr>
 			<th sortdir="up" width="22%"><% tran("share.mac"); %></th>
 			<th sortdir="up" width="22%"><% tran("share.hostname"); %></th>
@@ -65,6 +65,8 @@
 			<th width="22%"><% tran("idx.dhcp_lease"); %></th>
 			<th width="12%" class="center"><% tran("share.actiontbl"); %></th>
 		</tr>
+	</thead>
+	<tbody>
 		<% show_staticleases(); %>
 		<script type="text/javascript">
 		//<![CDATA[
