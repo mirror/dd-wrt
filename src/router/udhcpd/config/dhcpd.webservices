@@ -60,8 +60,8 @@
 	<tbody>
 		<tr>
 			<th sortdir="up" width="22%"><% tran("share.mac"); %></th>
-			<th sortdir="up" width="22%"><% tran("share.hostname"); %></th>
-			<th sortdir="up" width="22%"><% tran("share.ip"); %></th>
+			<th width="22%"><% tran("share.hostname"); %></th>
+			<th width="22%"><% tran("share.ip"); %></th>
 			<th width="22%"><% tran("idx.dhcp_lease"); %></th>
 			<th width="12%" class="center"><% tran("share.actiontbl"); %></th>
 		</tr>
