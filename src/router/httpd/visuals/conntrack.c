@@ -173,7 +173,7 @@ EJ_VISIBLE void ej_ip_conntrack_table(webs_t wp, int argc, char_t ** argv)
 		if (!strcmp(srcip, lanip))
 			websWrite(wp, "<td align=\"right\">%s</td>", srcip);
 		else
-			websWrite(wp, "<td align=\"right\"><a title=\"Geotool\" href=\"javascript:openGeotool('%s')\">%s</a></td>", srcip, srcip);
+			websWrite(wp, "<td align=\"right\"><a class=\"link\" title=\"Geotool\" href=\"javascript:openGeotool('%s')\">%s</a></td>", srcip, srcip);
 
 		// dst
 		if (search_hit("dst=", line, dstip))
@@ -186,7 +186,7 @@ EJ_VISIBLE void ej_ip_conntrack_table(webs_t wp, int argc, char_t ** argv)
 		if (!strcmp(dstip, lanip))
 			websWrite(wp, "<td align=\"right\">%s</td>", dstip);
 		else
-			websWrite(wp, "<td align=\"right\"><a title=\"Geotool\" href=\"javascript:openGeotool('%s')\">%s</a></td>", dstip, dstip);
+			websWrite(wp, "<td align=\"right\"><a class=\"link\" title=\"Geotool\" href=\"javascript:openGeotool('%s')\">%s</a></td>", dstip, dstip);
 		// service
 		if (search_hit("dport=", line, dstport))
 			continue;
