@@ -142,7 +142,10 @@ function setDHCPTable() {
 		} else {
 			iface.innerHTML = label;
 		}
-		row.insertCell(-1).innerHTML = val[i + 1];
+
+		var cellip = row.insertCell(-1);
+		cellip.title = val[i+1];
+		cellip.innerHTML = val[i+1];
 
 		var mac = val[i + 2];
 		if ("<% nvg("maskmac"); %>" != "1") {
