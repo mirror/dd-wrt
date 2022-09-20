@@ -19,19 +19,19 @@
 .syslog_bg_yellow {
   background-color: #eec900;
 }
-.syslog_bg_yellow:hover {
+tr.syslog_bg_yellow:hover {
   background-color: #dbba02;
 }
 .syslog_bg_red {
   background-color: #ff6666;
 }
-.syslog_bg_red:hover {
+tr.syslog_bg_red:hover {
   background-color: #fc5a5a;
 }
 .syslog_bg_green {
   background-color: #31dd00;
 }
-.syslog_bg_green:hover {
+tr.syslog_bg_green:hover {
   background-color: #32e202;
 }
 .syslog_text_dark {

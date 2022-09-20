@@ -211,7 +211,7 @@ EJ_VISIBLE void ej_show_bridgenames(webs_t wp, int argc, char_t ** argv)
 	}
 
 	websWrite(wp, "<tr>");
-	websWrite(wp, "<td colspan=\"8\">&nbsp;</td>\n");
+	websWrite(wp, "<td colspan=\"8\"></td>\n");
 	websWrite(wp, "<td class=\"center\">\n");
 
 	websWrite(wp,
@@ -222,7 +222,7 @@ EJ_VISIBLE void ej_show_bridgenames(webs_t wp, int argc, char_t ** argv)
 
 	sprintf(var, "%d", totalcount);
 	nvram_set("bridges_count", var);
-	websWrite(wp, "</tbody></table><br />\n");
+	websWrite(wp, "</tbody></table>\n");
 }
 
 EJ_VISIBLE void ej_show_bridgetable(webs_t wp, int argc, char_t ** argv)
