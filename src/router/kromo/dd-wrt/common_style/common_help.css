@@ -99,7 +99,7 @@ ol li {
 }
 .note {
   background: #daffda;
-  border-left: 0.5em solid #19cc19;
+  border-left: .5em solid #19cc19;
 }
 .note h4 {
   float: left;
@@ -113,7 +113,7 @@ ol li {
 }
 .also {
   background: #fffade;
-  border-left: 0.5em solid #e0cb52;
+  border-left: .5em solid #e0cb52;
 }
 .also h4 {
   float: left;

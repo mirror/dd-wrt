@@ -28,7 +28,7 @@ input[type='radio'] {
   color: #f00;
 }
 .popup_bg {
-  background-color: #fff
+  background-color: #fff;
 }
 pre {
   background-color: #000;
@@ -39,7 +39,7 @@ h1 {
   background-image: radial-gradient(#ffeabfcc, transparent);
   background-size: 320px;
   background-repeat: no-repeat;
-  background-position: left
+  background-position: left;
 }
 h2, legend {
   color: #ec361d;

@@ -142,7 +142,7 @@ pre {
   color: #115b80;
 }
 body .value_error {
-  border: 1px solid #ff6666;
+  border: 1px solid #f66;
 }
 body .value_error:hover {
   border-color: #c00;
@@ -153,7 +153,7 @@ body .value_error:focus {
 }
 /*! these colors conform to WCAG Standards */
 .status_red {
-  background: #ff6666;
+  background: #f66;
   color: #115b80;
   text-align: center;
   padding: 2px;

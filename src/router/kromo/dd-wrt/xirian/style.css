@@ -1,7 +1,7 @@
 @import url(/style/buttons.css);
 @import url(/style/common_legacy.css);
 * {
-  font-family: Verdana,  Arial,  Helvetica,  sans-serif;
+  font-family: Verdana, Arial, Helvetica, sans-serif;
   font-size: 1em;
   color: #115b80;
 }
@@ -92,7 +92,7 @@ h2, h3 {
   height: 23px;
   margin: 0 auto;
   padding: 0;
-  background: linear-gradient(0deg, #f6f6f6, #d6d6d6 100%)
+  background: linear-gradient(0deg, #f6f6f6, #d6d6d6 100%);
 }
 #menu li {
   display: inline;
@@ -137,15 +137,15 @@ select {
 select[name='time_zone'] {
   min-width: 17.1rem;
 }
-select[onchange*="SelFilter"] {
-  margin-right: .2rem
+select[onchange*='SelFilter'] {
+  margin-right: .2rem;
 }
-select[onchange*='blockedServices'] { 
+select[onchange*='blockedServices'] {
   margin-left: -.2em;
   width: 11.2rem;
 }
 input.num[readonly] {
-  width: 2.2rem
+  width: 2.2rem;
 }
 input {
   background: #e9e9ed;
@@ -157,7 +157,7 @@ input {
 }
 .button {
   padding: .12rem .5rem;
-  margin-right: .2rem
+  margin-right: .2rem;
 }
 .button:hover {
   background-color: #d4d4db;
@@ -167,7 +167,7 @@ input {
 }
 .num[name*='lease'][size='10'] {
   margin-right: 4px;
-  width: 65%
+  width: 65%;
 }
 .three_column {
   width: 158px;
@@ -190,7 +190,7 @@ input[type='radio'] {
   margin-right: .4em;
   accent-color: #345b80;
 }
-[summary="week days table"] {
+[summary='week days table'] {
   margin-left: -1.3rem;
 }
 form {
@@ -202,7 +202,7 @@ form {
   padding: .906em;
   text-align: center;
   z-index: 99;
-  position: relative
+  position: relative;
 }
 .message div {
   text-align: center;
@@ -279,7 +279,7 @@ table th {
   background-color: #ccd;
 }
 .table_row_bg:hover {
-  background-color: #bbbbcc;
+  background-color: #bbc;
 }
 #active_clients_table,
 #dhcp_leases_table {
@@ -396,7 +396,7 @@ div.setting {
   border-radius: 2px;
 }
 .warning * {
-  color: #e40101;    
+  color: #e40101;
 }
 .meter {
   float: right;
