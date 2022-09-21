@@ -21,13 +21,13 @@ body.gui {
 .infopage #header {
   height: 6.612em;
 }
-#header #logo {
+#logo {
   background: url(/images/logo.png) left center no-repeat;
   height: 4.076em;
   width: 454px;
   margin-bottom: .272em;
 }
-#header #logo h1 {
+h1 {
   display: none;
 }
 #statusInfo {
@@ -103,10 +103,12 @@ body.gui {
   margin-top: 0;
   padding-bottom: .543em;
 }
-#menuMainList li a:hover {
+#menuMainList li a:hover,
+#menuMainList li a:focus-visible {
   background: #666;
   color: #eee;
   border-color: #888;
+  outline: 0;
 }
 #menuSubList li {
   margin-bottom: -2px;
@@ -166,12 +168,13 @@ li.current {
   text-decoration: none;
   text-transform: lowercase;
 }
-#statusInfo a {
+.info a {
   text-decoration: none;
 }
-#statusInfo a:hover,
-#help a:hover, .link {
+:link:hover, #help a:hover, .link,
+.info a:focus-visible {
   text-decoration: underline;
+  outline: 0;
 }
 textarea {
   padding: 4px;
@@ -183,18 +186,19 @@ textarea {
   resize: vertical;
 }
 pre {
-  overflow: auto;
-  padding: 1em;
-  margin: 0;
   font-size: 12px;
   font-family: monospace;
+  overflow: auto;
+  margin: 0 0 .5em 0;
+  padding: 8px 4px;
+  line-height: 1.42857;
   white-space: pre-wrap;
   border-radius: 4px;
 }
 table, .table {
   margin: 0 auto;
   width: 100%;
-  border-spacing: .1em;
+  border-spacing: 1px;
 }
 table[summary='week days table'] {
   margin-left: -1.3rem;
@@ -247,11 +251,11 @@ form[name='wds'] select {
 form[name='wds'] input[size='25'] {
   vertical-align: middle;
 }
-form[name="wireless"] select {
-  min-width: 9.7rem
+form[name='wireless'] select {
+  min-width: 9.7rem;
 }
-form[name="wireless"] input[name*='ssid'] {
-  min-width: 9.1rem
+form[name='wireless'] input[name*='ssid'] {
+  min-width: 9.1rem;
 }
 select {
   padding: 4px;
@@ -264,10 +268,9 @@ select {
 select[name='time_zone'] {
   min-width: 15.3rem;
 }
-select[onchange*='blockedServices'] { 
+select[onchange*='blockedServices'] {
   margin-right: .362em;
   height: 1.7rem;
-  width: 10.3rem;
 }
 select[onchange*='ServiceTable'] {
   width: inherit;
@@ -331,6 +334,7 @@ fieldset legend {
 .padding-left {
   padding-left: 15.42rem;
 }
+
 /* commands tab, output box label */
 .pre_label {
   margin-bottom: .453em;
@@ -369,9 +373,7 @@ fieldset legend {
   bottom: unset;
 }
 .submitFooter .button {
-  padding: 0 1rem .05em;
   margin: .362em;
-  height: 1.533rem;
 }
 #floatKiller {
   clear: both;
@@ -439,8 +441,8 @@ input.num {
 }
 .button {
   border: 1px solid;
-  padding: 0 .6em .05em;
-  margin: 0 .3em 0 0;
+  padding: 0 1rem .05em;
+  margin: 0 .362em 0 .362em;
   height: 1.6rem;
   vertical-align: middle;
   cursor: pointer;
@@ -455,7 +457,7 @@ input.num {
   cursor: default;
   opacity: .6;
 }
-.button[onclick*='bond_del']{
+.button[onclick*='bond_del'] {
   margin-top: -.3rem;
   margin-left: .325em;
 }
@@ -492,10 +494,7 @@ input.num {
   margin-right: 0;
 }
 input.button[onclick*='delete'] {
-  margin: -.1rem .2rem 0 .3rem;
-}
-input.button[onclick*='filter_remove'] {
-  margin: 0 .3em 0 .1em;
+  margin: -.1rem .5em 0 .362em;
 }
 input.button[onclick*='FilterSummary'] {
   margin-top: -.1rem;
@@ -550,7 +549,7 @@ input.button[onclick*='FilterSummary'] {
 /*! colors below are common to light/dark */
 /*! these colors conform to WCAG Standards */
 .status_red {
-  background: #ff6666;
+  background: #f66;
   color: #000;
   padding: 2px;
   border-radius: 2px;
@@ -574,7 +573,7 @@ input.button[onclick*='FilterSummary'] {
   border-radius: 2px;
 }
 .value_error {
-  border: 1px solid #ff6666;
+  border: 1px solid #f66;
 }
 .value_error:hover {
   border-color: #c00;

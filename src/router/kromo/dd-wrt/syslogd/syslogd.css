@@ -9,10 +9,13 @@
   padding-top: .1rem;
   margin: -.8rem -.7rem 0 -.7rem;
 }
+.syslog_bg div:focus-visible {
+  outline: 0;
+}
 .syslog_legend {
   margin: unset;
 }
-.syslog_bg tr:hover {
+.syslog_bg tr:not([class]):hover {
   background-color: #ccc;
   color: #000;
 }

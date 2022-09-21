@@ -13,7 +13,7 @@
   width: 16px;
   border: 0;
   box-shadow: none;
-  outline: 0
+  outline: 0;
 }
 .add[disabled], .add[disabled]:hover {
   background: url(/images/add-black.svg) center no-repeat;

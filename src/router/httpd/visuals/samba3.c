@@ -61,13 +61,13 @@ EJ_VISIBLE void ej_samba3_sharepaths(webs_t wp, int argc, char_t ** argv)
 
 	// table header
 	websWrite(wp, "<table id=\"samba_shares\" class=\"table\" summary=\"samba share table\">\n");
-	show_caption_pp(wp, NULL, "service.samba3_shares", "<thead><tr><th colspan=\"6\">", "</th></tr>\n<tr>\n");
+	show_caption_pp(wp, NULL, "service.samba3_shares", "<tbody><tr><th colspan=\"6\">", "</th></tr>\n<tr>\n");
 	show_caption_pp(wp, NULL, "service.samba3_share_path", "<th>", "</th>\n");
 	show_caption_pp(wp, NULL, "service.samba3_share_subdir", "<th>", "</th>\n");
 	show_caption_pp(wp, NULL, "service.samba3_share_label", "<th>", "</th>\n");
 	show_caption_pp(wp, NULL, "service.samba3_share_public", "<th>", "</th>\n");
 	show_caption_pp(wp, NULL, "service.samba3_share_access", "<th>", "</th>\n");
-	websWrite(wp, "<th class=\"center\" width=\"10%%\" ><script type=\"text/javascript\">Capture(share.actiontbl)</script></th></thead><tbody>\n");
+	websWrite(wp, "<th class=\"center\" width=\"10%%\" ><script type=\"text/javascript\">Capture(share.actiontbl)</script></th>\n");
 
 	for (cs = samba3shares; cs; cs = csnext) {
 
@@ -197,7 +197,7 @@ EJ_VISIBLE void ej_samba3_users(webs_t wp, int argc, char_t ** argv)
 	// table header
 	websWrite(wp, "<table id=\"samba_users\" class=\"table\" summary=\"samba user table\">\n");
 
-	show_caption_pp(wp, NULL, "service.samba3_users", "<thead><tr><th colspan=\"6\">", "</th></tr>\n");
+	show_caption_pp(wp, NULL, "service.samba3_users", "<tbody><tr><th colspan=\"6\">", "</th></tr>\n");
 	websWrite(wp, "<tr>\n");
 	websWrite(wp, "<th><script type=\"text/javascript\">Capture(nas.uname);</script></th>\n");
 	show_caption_pp(wp, NULL, "nas.pwd", "<th style=\"width:200px;\">", "</th>\n");
@@ -206,7 +206,7 @@ EJ_VISIBLE void ej_samba3_users(webs_t wp, int argc, char_t ** argv)
 	websWrite(wp, "<th class=\"center\">FTP</th>\n");
 
 	websWrite(wp, "<th class=\"center\" width=\"10%%\"><script type=\"text/javascript\">Capture(share.actiontbl)</script></th>\n");
-	websWrite(wp, "</tr></thead><tbody>\n");
+	websWrite(wp, "</tr>\n");
 
 	for (cu = samba3users; cu; cu = cunext) {
 

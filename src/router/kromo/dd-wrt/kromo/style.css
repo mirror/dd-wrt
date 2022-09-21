@@ -20,7 +20,7 @@
   font-weight: bold;
 }
 #menuMainList li a:hover {
-  filter: brightness(1.2)
+  filter: brightness(1.2);
 }
 #menuSubList li a {
   background: #115b80;
@@ -28,7 +28,7 @@
   border-color: #115b80;
 }
 #menuSubList li a:hover {
-  filter: brightness(1.2)
+  filter: brightness(1.2);
 }
 fieldset legend, .syslog_legend {
   color: #115b80;
@@ -37,7 +37,7 @@ fieldset legend, .syslog_legend {
   color: #115b80;
 }
 @keyframes animate-progress {
-  to { background-position: -40px 0 }
+  to { background-position: -40px 0; }
 }
 .meter .bar {
   background-color: #fff3b3;
@@ -75,10 +75,10 @@ input[type='radio'] {
 .button, .button[disabled]:hover {
   background: #115b80;
   color: #fff;
-  filter: brightness(1)
+  filter: brightness(1);
 }
 .button:hover {
-  filter: brightness(1.2)
+  filter: brightness(1.2);
 }
 .button.green_btn {
   background: #166f2a;

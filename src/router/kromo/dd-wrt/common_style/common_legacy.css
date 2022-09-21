@@ -1,10 +1,10 @@
 /*! common styling for legacy old themes;
  * Brainslayer
  * Wikar
- * Xirian 
+ * Xirian
  */
 .status_red {
-  background: #ff6666;
+  background: #f66;
   color: #000;
   padding: 2px;
   border-radius: 2px;
@@ -28,7 +28,7 @@
   border-radius: 2px;
 }
 .value_error {
-  border: 1px solid #ff6666;
+  border: 1px solid #f66;
 }
 .value_error:hover {
   border-color: #f00;
@@ -43,7 +43,7 @@ input.button {
 input.button[disabled],
 input[disabled], select[disabled], .off {
   cursor: default;
-  opacity: .6
+  opacity: .6;
 }
 #tablePwdCheck tr th {
   background-color: transparent;

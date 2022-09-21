@@ -73,7 +73,7 @@ select {
 select[name='time_zone'] {
   min-width: 15.3rem;
 }
-select[onchange*='blockedServices'] { 
+select[onchange*='blockedServices'] {
   margin-right: .362em;
   height: 1.7rem;
   width: 9.5rem;
@@ -455,7 +455,7 @@ td .meter {
   cursor: default;
   opacity: .6;
 }
-input[onclick*='bond_del']{
+input[onclick*='bond_del'] {
   margin-top: -.3rem;
   margin-left: .325em;
 }
@@ -470,7 +470,7 @@ input.button[onclick*='gen_wg_psk'] {
   margin-bottom: -1rem;
   margin-top: .2rem;
   padding: 0;
-  border: 0
+  border: 0;
 }
 .spaceradio {
   margin-right: .4em;
@@ -495,10 +495,10 @@ input.button[onclick*='delete'] {
   margin: -.1rem .2rem 0 .3rem;
 }
 input.button[onclick*='filter_remove'] {
-  margin: 0 .3em 0 .1em
+  margin: 0 .3em 0 .1em;
 }
 input.button[onclick*='FilterSummary'] {
-  margin-top: -.1rem
+  margin-top: -.1rem;
 }
 div.bulle {
   position: absolute;

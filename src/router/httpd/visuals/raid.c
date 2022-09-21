@@ -497,7 +497,7 @@ EJ_VISIBLE void ej_show_raid(webs_t wp, int argc, char_t ** argv)
 			  i);
 		websWrite(wp, "</td>\n");
 		websWrite(wp, "</tr></tbody>\n");
-		websWrite(wp, "</table>\n<br/>");
+		websWrite(wp, "</table>\n");
 		websWrite(wp, "<fieldset>\n<legend><script type=\"text/javascript\">Capture(bmenu.adminman)</script></legend>\n");
 		websWrite(wp, "<table class=\"table\" summary=\"Raid Members\">\n");
 		websWrite(wp, "<thead><tr>\n" "<th><script type=\"text/javascript\">Capture(nas.raidmember)</script></th>\n"

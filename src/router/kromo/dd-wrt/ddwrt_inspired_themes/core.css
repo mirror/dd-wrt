@@ -38,46 +38,46 @@ body.gui {
   background: var(--bg-0);
   color: var(--v9-6);
 }
-body fieldset {
+fieldset {
   background: var(--bg-2);
   border-color: var(--bg-4);
   color: var(--v9-8);
   border-radius: 4px;
   border-width: 1px;
 }
-body fieldset legend,
-body fieldset .syslog_legend {
+fieldset legend,
+fieldset .syslog_legend {
   background: transparent;
   color: var(--v0-9);
   text-shadow: 0 1px 0 var(--bg-0);
   filter: none;
 }
-body fieldset fieldset {
+fieldset fieldset {
   background: var(--rgba-bg-05);
 }
-body fieldset[disabled] .label {
+fieldset[disabled] .label {
   opacity: 0.5;
 }
-body #content {
+#content {
   background: transparent;
   border: 1px solid transparent;
   color: var(--v9-8);
   border-radius: 0 0 4px 4px;
 }
-body #content #help {
+#content #help {
   background: var(--bg-1);
 }
-body #content.infopage #main {
+#content.infopage #main {
   background-color: var(--bg-1);
   border: 1px solid var(--bg-4);
 }
-body #content.infopage #main #contentsInfo h2 input {
+#content.infopage #main #contentsInfo h2 input {
   vertical-align: -0.03rem;
 }
-body #content #header {
+#content #header {
   background: var(--bg-0) !important;
 }
-body #main #contents {
+#main #contents {
   background: var(--bg-1);
   color: var(--v9-7);
 }
@@ -91,13 +91,8 @@ body input:focus {
   border-color: var(--v0-9);
   box-shadow: 0 0 5px 1px var(--v0-8);
 }
-body input[disabled] {
-  background-color: var(--bg-0);
-  border-color: var(--bg-2);
-  color: var(--v9-6);
-}
 body input[disabled]:hover {
-  border-color: var(--bg-2) !important;
+  border-color: var(--bg-4) !important;
   background-color: var(--bg-0) !important;
   color: var(--v9-6);
   box-shadow: none;
@@ -108,8 +103,8 @@ body input[disabled]:hover {
   box-shadow: 0 1px 0 var(--bg-0);
   color: var(--v9-8);
   text-shadow: 0 1px 0 var(--bg-0);
-  height: 1.54rem;
-  padding: 0 0.462rem 0 0.462rem;
+  height: 1.533rem;
+  padding: 0 1rem 0 !important;
   transition: all 0.2s cubic-bezier(0.3, 0, 0.5, 1);
   outline: 0;
 }
@@ -206,7 +201,6 @@ body.about-bg a:hover {
 }
 body.help-bg {
   background: var(--bg-2) !important;
-  color: var(--v9-6);
 }
 body.help-bg #content {
   background: transparent;
@@ -259,6 +253,7 @@ form tr[id*='samba_shares_row'] td[style*='width: 25px; vertical-align: middle']
 pre {
   background-color: var(--bg-0);
   border-color: var(--bg-4);
+  color: var(--v4-7);
   cursor: copy;
 }
 #wrapper #content {
@@ -268,14 +263,13 @@ hr {
   color: var(--bg-5) !important;
   background-color: var(--bg-5) !important;
 }
-#statusInfo {
-  color: var(--v0-9);
-}
-#statusInfo a {
-  color: var(--v0-9);
-}
 #statusInfo a:hover {
-  color: var(--v9-9);
+  color: var(--v0-9);
+}
+#statusInfo a:focus-visible {
+  color: var(--v0-9);
+  text-decoration: underline;
+  outline: 0;
 }
 div.center input.button[name='add_button']:not([onclick*='_add']) {
   margin: 0 0 0.8em 0;
@@ -284,7 +278,7 @@ div.center input.button[name='add_button'][onclick*='_add'] {
   margin: 0 0.5em 0;
 }
 div.center input.button[name='add_button'][onclick*='add_tunnel'] {
-  margin: 0 0.5em 0;
+  margin: 0 0.6em 0;
 }
 input.num {
   vertical-align: unset;
@@ -311,10 +305,10 @@ input.button[onclick*='DeleteEntry'] {
 input.button[onclick*='to_delete'] {
   margin: 0 0.4rem 0 0.362rem;
 }
-input.button[onclick*="filter_remove"] {
-  margin: 0 0.5rem 0 0.3rem;
+input.button[onclick*='FilterSummary'] {
+  margin-top: 0;
 }
-input.button[onclick*="filter_del"] {
+input.button[onclick*='filter_del'] {
   margin: 0 0.5rem 0 0;
 }
 input.button[onclick*='gen_wg_key'],
@@ -370,7 +364,7 @@ select[onchange*='SelFilter'] {
   margin-top: 0.13rem;
 }
 .table[summary='ports forwarding table'] input[type='checkbox'],
-.table[summary="ports triggering table"] input[type='checkbox'] {
+.table[summary='ports triggering table'] input[type='checkbox'] {
   margin-top: 0.4rem;
 }
 #menu #menuMainList li span {
@@ -478,6 +472,9 @@ textarea:focus-visible {
 }
 .syslog_bg tr td.syslog_text_dark {
   color: var(--v9-0);
+}
+.syslog_bg div:focus-visible {
+  outline: 0;
 }
 table tr.table_row_bg {
   background-color: var(--bg-2);
@@ -651,25 +648,23 @@ a:hover,
 a:focus-within {
   color: var(--v0-9);
 }
-h2,
-h3 {
+h2 {
   background: var(--bg-5);
   border-color: var(--bg-5);
   color: var(--fg-1);
   letter-spacing: 0.95px;
+  padding-bottom: 0.3rem;
   border-radius: 4px;
 }
-h2 {
-  padding-bottom: 0.3rem;
-}
 .submitFooter {
-  background: var(--bg-2);
+  background: var(--bg-3);
   border: 1px solid var(--bg-4);
   color: var(--v9-8);
   border-radius: 4px;
 }
 .submitFooter .button {
-  padding: 0 1rem 0.1rem;
+  padding: 0 1rem 0;
+  height: 1.6rem;
 }
 .meter {
   background-color: var(--bg-4);
@@ -729,15 +724,15 @@ img[src*='hotspotsystem'] {
   height: 0;
   width: 0;
 }
-[type='image'i][src*='paypal'] {
+[type='image'][src*='paypal'] {
   filter: invert(0.9) hue-rotate(180deg);
   height: initial;
   width: initial;
 }
-[type='image'i][src*='paypal']:hover,
-[type='image'i][src*='paypal']:focus,
-[type='image'i][src*='paypal']:focus-within,
-[type='image'i][src*='paypal']:focus-visible {
+[type='image'][src*='paypal']:hover,
+[type='image'][src*='paypal']:focus,
+[type='image'][src*='paypal']:focus-within,
+[type='image'][src*='paypal']:focus-visible {
   box-shadow: none !important;
   mix-blend-mode: exclusion;
 }
@@ -874,7 +869,7 @@ svg {
   background-color: var(--bg-3) !important;
   opacity: 0.5;
 }
-[id*="modal_dialog_"].dialog {
+[id*='modal_dialog_'].dialog {
   border: 1px solid var(--bg-3);
   border-radius: 4px;
 }
@@ -912,8 +907,6 @@ input {
   padding: 7px;
   line-height: 1.4em;
   height: 0.7rem;
-  -moz-appearance: none;
-  -webkit-appearance: none;
   appearance: none;
   border-radius: 4px;
 }
@@ -1002,9 +995,8 @@ input[type='checkbox']:hover {
   box-shadow: 0 0 8px 0 var(--v0-4);
 }
 input[type='file'] {
-  margin-top: -0.3rem;
-  height: 1.4rem;
-  max-height: 1.4rem;
+  height: initial;
+  max-height: initial;
 }
 input[type='file']::file-selector-button {
   background-color: var(--bg-5);
@@ -1059,7 +1051,6 @@ input[disabled] {
 }
 .progress {
   background-color: var(--bg-4);
-  -webkit-box-shadow: inset 0 1px 2px var(--rgba-bg-01);
   box-shadow: inset 0 1px 2px var(--rgba-bg-01);
   border-radius: 4px;
 }
@@ -1072,8 +1063,6 @@ select {
   border: 1px solid var(--bg-4);
   box-shadow: 0 1px 1px var(--rgba-bg-075);
   color: var(--v9-8);
-  -moz-appearance: none;
-  -webkit-appearance: none;
   appearance: none;
   min-width: 5.99rem;
   outline: 0;

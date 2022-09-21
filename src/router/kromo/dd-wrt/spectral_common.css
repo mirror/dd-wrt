@@ -46,7 +46,7 @@ input:focus, input:focus-visible {
   margin: 15px auto 20px auto;
   background: #eee;
   border-radius: 4px;
-  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.15);
+  box-shadow: 0 3px 10px rgba(0, 0, 0, .15);
 }
 .placeholder {
   width: 100%;
