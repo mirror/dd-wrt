@@ -8,7 +8,7 @@ select {
 }
 .popup_bg, .title3d {
   background-color: #1a1a1a;
-  color: #fff
+  color: #fff;
 }
 a.action {
   color: #fff;
@@ -21,7 +21,7 @@ a.action {
   border: 1px solid #333;
 }
 .sizeimage {
-  filter: invert(.9) hue-rotate(180deg) brightness(.5)
+  filter: invert(.9) hue-rotate(180deg) brightness(.5);
 }
 .sizeimage[src*='ssid.svg'] {
   filter: invert(.5) hue-rotate(180deg) contrast(2);

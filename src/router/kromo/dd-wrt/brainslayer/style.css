@@ -8,7 +8,7 @@ body {
   font-size: 75%;
 }
 .popup_bg {
-  background-color: #fff
+  background-color: #fff;
 }
 form {
   margin: 0;
@@ -33,12 +33,12 @@ input.num {
   padding-right: 2px;
   vertical-align: middle;
 }
-input.num[maxlength="3"] {
-  width: 5%
+input.num[maxlength='3'] {
+  width: 5%;
 }
-input.num[name*="lease"][size="10"] {
+input.num[name*='lease'][size='10'] {
   margin-right: 4px;
-  width: 52%
+  width: 52%;
 }
 .three_column, .four_column {
   width: 200px;
@@ -86,8 +86,8 @@ table, .table {
   height: 18px;
   border-radius: 2px;
 }
-[summary="edca ap parameters"], [summary="edca sta parameters"],
-[summary="WMM Tx retry limits"] {
+[summary='edca ap parameters'], [summary='edca sta parameters'],
+[summary='WMM Tx retry limits'] {
   width: 100%;
 }
 #wrapper {
@@ -108,16 +108,16 @@ table, .table {
   padding: 0;
 }
 #header h1 {
-  font-size: 2.3em
+  font-size: 2.3em;
 }
-form[name="macfilter"] #main {
-  height: initial
+form[name='macfilter'] #main {
+  height: initial;
 }
-form[name="macfilter"] .button[name="table_button"] {
+form[name='macfilter'] .button[name='table_button'] {
   margin-left: 1em;
 }
-form[name="macfilter"] td[align="left"] {
-  white-space: nowrap
+form[name='macfilter'] td[align='left'] {
+  white-space: nowrap;
 }
 #main {
   height: 100%;
@@ -126,11 +126,11 @@ form[name="macfilter"] td[align="left"] {
   padding: 1.5em;
   padding-top: 90px;
 }
-[name="macfilter"] #main {
-  margin-left: 0
+[name='macfilter'] #main {
+  margin-left: 0;
 }
-[name="macfilter"] #contentsInfo {
-  margin-top: -5.5rem
+[name='macfilter'] #contentsInfo {
+  margin-top: -5.5rem;
 }
 #content, #contentInfo {
   margin: 0;
@@ -201,7 +201,7 @@ fieldset {
   text-decoration: none;
   margin-left: -2em;
   padding: 5px 0 4px .5em;
-  transition: all 0.2s cubic-bezier(0.3, 0, 0.5, 1);
+  transition: all .2s cubic-bezier(.3, 0, .5, 1);
 }
 #menuSubList {
   margin-left: -1.5rem;
@@ -212,11 +212,11 @@ fieldset {
   position: relative;
   height: 16px;
   width: 220px;
-  border-radius: 2px
+  border-radius: 2px;
 }
 .meter .bar {
   height: 16px;
-  border-radius: 2px
+  border-radius: 2px;
 }
 .meter .text {
   position: absolute;
@@ -295,10 +295,10 @@ iframe#syslog {
   min-width: 79.888%;
   max-width: 80.999%;
 }
-input.button[onclick*="do_show"]:not([value*='Month']) {
+input.button[onclick*='do_show']:not([value*='Month']) {
   margin: 2.8em .5em;
   position: relative;
-  left: 2em
+  left: 2em;
 }
 .progressbar {
   visibility: visible;
@@ -349,11 +349,11 @@ pre {
   float: right;
   width: 42.2em;
 }
-#contentsInfo [name="Info"] div.col2l {
+#contentsInfo [name='Info'] div.col2l {
   float: left;
   min-width: 100%;
 }
-#contentsInfo [name="Info"] div.col2r {
+#contentsInfo [name='Info'] div.col2r {
   float: left;
   min-width: 100%;
 }
@@ -361,7 +361,7 @@ pre {
   margin-bottom: -1.3rem;
   margin-top: .2rem;
   padding: 0;
-  border: 0
+  border: 0;
 }
 .center a[href] {
   line-height: 2.2;

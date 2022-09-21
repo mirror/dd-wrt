@@ -8,7 +8,7 @@
   padding: .3rem;
   margin: -.8rem -.7rem 0 -.7rem;
 }
-.syslog_bg tr:hover {
+.syslog_bg tr:not([class]):hover {
   background: #222;
   color: #eee;
 }

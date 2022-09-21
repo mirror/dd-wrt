@@ -13,10 +13,12 @@
   border-color: var(--ac-4);
   color: var(--tx-c);
 }
-#menuSubList li a:hover {
+#menuSubList li a:hover,
+#menuSubList li a:focus-visible {
   background: var(--ac-2);
   border-color: var(--ac-5);
   color: var(--tx-c);
+  outline: 0;
 }
 legend, .syslog_legend {
   color: var(--lg-c);

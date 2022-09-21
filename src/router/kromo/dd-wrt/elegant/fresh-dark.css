@@ -4,10 +4,10 @@ body, .popup, .popup_bg {
   color: #ccc;
 }
 a {
-  color: currentcolor;
+  color: currentColor;
 }
-a:hover, #statusInfo a:hover,
-.link:hover {
+a:hover, :link:hover, .link:hover,
+:link:focus-visible {
   color: var(--ac-1);
 }
 .message {
@@ -61,7 +61,7 @@ input {
 [type='image'][src*='paypal'] {
   background: transparent;
   border-color: transparent;
-  filter: invert(0.9) hue-rotate(180deg);
+  filter: invert(.9) hue-rotate(180deg);
   mix-blend-mode: lighten;
 }
 [type='image'][src*='paypal']:hover,
@@ -80,7 +80,8 @@ textarea {
 }
 pre {
   background-color: #333;
-  border: 1px solid transparent;
+  border: 1px solid #454545;
+  color: #35ee00;
 }
 select {
   background-color: #333;
