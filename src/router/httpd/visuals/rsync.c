@@ -58,13 +58,13 @@ EJ_VISIBLE void ej_rsync_sharepaths(webs_t wp, int argc, char_t ** argv)
 
 	// table header
 	websWrite(wp, "<table id=\"rsync_shares\" class=\"table\" summary=\"rsync share table\">\n");
-	show_caption_pp(wp, NULL, "service.samba3_shares", "<thead><tr><th colspan=\"6\">", "</th></tr>\n");
+	show_caption_pp(wp, NULL, "service.samba3_shares", "<tbody><tr><th colspan=\"6\">", "</th></tr>\n");
 	websWrite(wp, "<tr>\n");
 	show_caption_pp(wp, NULL, "service.samba3_share_path", "<th>", "</th>\n");
 	show_caption_pp(wp, NULL, "service.samba3_share_subdir", "<th>", "</th>\n");
 	show_caption_pp(wp, NULL, "service.samba3_share_label", "<th>", "</th>\n");
-	websWrite(wp, "<th style=\"width: 50px;\">&nbsp;</th>\n");
-	websWrite(wp, "</tr></thead><tbody>\n");
+	show_caption_pp(wp, NULL, "share.actiontbl", "<th class=\"center\" style=\"width: 10%%;\">", "</th>\n");
+	websWrite(wp, "</tr>\n");
 
 	for (cs = rsyncshares; cs; cs = csnext) {
 
@@ -123,13 +123,13 @@ EJ_VISIBLE void ej_rsync_sharepaths(webs_t wp, int argc, char_t ** argv)
 		}
 		websWrite(wp, "</select></td>\n");
 		websWrite(wp,
-			  "				<td style=\"width: 1%%;\"><input type=\"text\" name=\"rsyncshare_subdir%s\" id=\"rsyncshare_subdir%s\" value=\"%s\" style=\"width: 150px;\"/></td>\n",
+			  "<td style=\"width: 1%%;\"><input type=\"text\" name=\"rsyncshare_subdir%s\" id=\"rsyncshare_subdir%s\" value=\"%s\" style=\"width: 150px;\"/></td>\n",
 			  number, number, cs->sd);
 		websWrite(wp,
-			  "				<td style=\"width: 1%%;\"><input type=\"text\" name=\"rsyncshare_label%s\" id=\"rsyncshare_label%s\" value=\"%s\" style=\"width: 100px;\" /></td>\n",
+			  "<td style=\"width: 1%%;\"><input type=\"text\" name=\"rsyncshare_label%s\" id=\"rsyncshare_label%s\" value=\"%s\" style=\"width: 100px;\" /></td>\n",
 			  number, number, cs->label);
 		websWrite(wp,
-			  "					<script type=\"text/javascript\">document.write(\"<td class=\\\"center\\\" title=\\\"\" + sbutton.del + \"\\\"><input type=\\\"button\\\" class=\\\"remove\\\" aria-label=\\\"\" + sbutton.del + \"\\\" name=\\\"rsyncshare_del%s\\\" style=\\\"width: 100%%;\\\" onclick=\\\"removersyncShare(this);\\\" />\")</script>\n",
+			  "<script type=\"text/javascript\">document.write(\"<td class=\\\"center\\\" title=\\\"\" + sbutton.del + \"\\\"><input type=\\\"button\\\" class=\\\"remove\\\" aria-label=\\\"\" + sbutton.del + \"\\\" name=\\\"rsyncshare_del%s\\\" style=\\\"width: 100%%;\\\" onclick=\\\"removersyncShare(this);\\\" />\")</script>\n",
 			  number);
 		websWrite(wp, "</td>\n");
 		websWrite(wp, "</tr>\n");
@@ -139,7 +139,7 @@ EJ_VISIBLE void ej_rsync_sharepaths(webs_t wp, int argc, char_t ** argv)
 		debug_free(cs);
 	}
 
-	websWrite(wp, "</tbody></table>\n");
+	websWrite(wp, "</tbody></table><br />\n");
 
 	// add button
 	websWrite(wp,

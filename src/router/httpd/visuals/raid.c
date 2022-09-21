@@ -341,10 +341,10 @@ EJ_VISIBLE void ej_show_raid(webs_t wp, int argc, char_t ** argv)
 					  "<th><script type=\"text/javascript\">Capture(nas.raidleveltbl)</script></th>\n"
 					  "<th><script type=\"text/javascript\">Capture(nas.raiddeduptbl)</script></th>\n" "<th><script type=\"text/javascript\">Capture(nas.compression)</script></th>\n"
 					  //which of these two is the action table header?
-					  "<th>&nbsp;</th>\n" "<th>&nbsp;</th>\n" "</tr></thead>\n");
+					  "<th class=\"center\" colspan=\"2\">&nbsp;</th>\n" "</tr></thead><tbody>\n");
 		}
 
-		websWrite(wp, "<tbody><tr>\n");
+		websWrite(wp, "<tr>\n");
 		websWrite(wp, "<td>\n");
 		websWrite(wp, "<input name=\"raidname%d\" size=\"20\" value=\"%s\" />", i, raidname);
 		websWrite(wp, "</td>\n");
@@ -449,7 +449,7 @@ EJ_VISIBLE void ej_show_raid(webs_t wp, int argc, char_t ** argv)
 			websWrite(wp, "document.write(\"<option value=\\\"z3\\\" %s >Raid-Z3</option>\");\n", !strcmp(raidlevel, "z3") ? "selected=\\\"selected\\\"" : "");
 			websWrite(wp, "//]]>\n</script></select>\n");
 			websWrite(wp, "</td>\n");
-			websWrite(wp, "<td>\n");
+			websWrite(wp, "<td class=\"center\">\n");
 			websWrite(wp, "<input type=\"checkbox\" name=\"raiddedup%d\" value=\"1\" %s/>", i, !strcmp(raiddedup, "1") ? "checked=\"checked\"" : "");
 			websWrite(wp, "</td>\n");
 
@@ -485,7 +485,7 @@ EJ_VISIBLE void ej_show_raid(webs_t wp, int argc, char_t ** argv)
 				websWrite(wp, "//]]>\n</script></select>\n");
 				websWrite(wp, "</td>\n");
 			}
-			websWrite(wp, "<td>\n");
+			websWrite(wp, "<td class\"center\">\n");
 			websWrite(wp,
 				  "<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<input class=\\\"button\\\" type=\\\"button\\\" value=\\\"\" + sbutton.scrub + \"\\\" onclick=\\\"zfs_scrub_submit(this.form,%d)\\\" />\");\n//]]>\n</script>\n",
 				  i);
