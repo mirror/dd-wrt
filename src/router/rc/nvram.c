@@ -90,7 +90,7 @@ static int nvram_main(int argc, char **argv)
 			"             [clear|erase] [backup filename] [restore filename]\n"	//
 			"\n"	//
 			"get name         : Displays current value or string for the given variable name.\n"	//
-			"set name=value   : Insert new value or "string" for the variable name specified.\n"	//
+			"set name=value   : Insert new value or \"string\" for the variable name specified.\n"	//
 			"unset name       : Removes by name both NVRAM variable name and value or string.\n"	//
 			"commit           : Writes pending data operations to NVRAM, flash or filesystem.\n"	//
 			"show | getall    : Displays a list of all current NVRAM variable names and data.\n"	//
