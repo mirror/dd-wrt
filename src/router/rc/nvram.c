@@ -86,17 +86,18 @@ static int nvram_main(int argc, char **argv)
 	++argv;
 
 	if (!*argv) {
-		fprintf(stderr, "usage: nvram [get name] [set name=value] [unset name] [show|getall] [clear|erase] [commit] [backup filename] [restore filename]\n"	//
+		fprintf(stderr, "Usage: nvram [get name] [set name=value] [unset name] [commit] [show|getall]\n"	//
+			"             [clear|erase] [backup filename] [restore filename]\n"	//
 			"\n"	//
-			"get name         : Returns the value for a given name\n"	//
-			"set name=value   : Sets a value for the datavalue by its name.\n"	//
-			"unset name       : Unsets the nvram value pair by its name\n"	//
-			"commit           : Writes the pending data operations to nvram storage (flashmemory or filesystem)\n"	//
-			"show|getall      : Shows all stored nvram names and values.\n"	//
-			"clear | erase    : Deletes all NVRAM names and values while keeping important system variables needed for the device to remain in runnable state\n"	//
-			"backup filename  : Backup the NVRAM to the desired filename.\n"	//
-			"restore filename : Restores all NVRAM names and values from the desired backup filename. Important system variables are not overwritten\n"	//
-			"--force          : Warning: optional argument which overrides the device name and compatiblity check for nvram restore operations.\n");
+			"get name         : Displays current value or string for the given variable name.\n"	//
+			"set name=value   : Insert new value or "string" for the variable name specified.\n"	//
+			"unset name       : Removes by name both NVRAM variable name and value or string.\n"	//
+			"commit           : Writes pending data operations to NVRAM, flash or filesystem.\n"	//
+			"show | getall    : Displays a list of all current NVRAM variable names and data.\n"	//
+			"clear | erase    : Delete all NVRAM names and data, but retain system variables.\n"	//
+			"backup filename  : Backup all stored NVRAM variables data to specified filename.\n"	//
+			"restore filename : Restore NVRAM names and data, not overwrite system variables.\n"	//
+			"--force          : WARNING override device name compatibility check for restore.\n");
 		exit(0);
 	}
 
