@@ -58,14 +58,15 @@ EJ_VISIBLE void ej_nfs_sharepaths(webs_t wp, int argc, char_t ** argv)
 
 	// table header
 	websWrite(wp, "	<table id=\"nfs_shares\" class=\"table\" summary=\"nfs share table\">\n");
-	show_caption_pp(wp, NULL, "service.samba3_shares", "<thead><tr><th colspan=\"6\">", "</th></tr>\n");
+	show_caption_pp(wp, NULL, "service.samba3_shares", "<tbody><tr><th colspan=\"6\">", "</th></tr>\n");
 	websWrite(wp, "		<tr>\n");
 	show_caption_pp(wp, NULL, "service.samba3_share_path", "<th>", "</th>\n");
 	show_caption_pp(wp, NULL, "service.samba3_share_subdir", "<th>", "</th>\n");
 	show_caption_pp(wp, NULL, "service.nfs_allowed", "<th>", "</th>\n");
 	show_caption_pp(wp, NULL, "service.samba3_share_access", "<th>", "</th>\n");
-	websWrite(wp, "<th style=\"width: 50px;\">&nbsp;</th>\n");
-	websWrite(wp, "</tr></thead><tbody>\n");
+	show_caption_pp(wp, NULL, "share.actiontbl", "<th class=\"center\" style=\"width: 10%%;\">", "</th>\n");
+	websWrite(wp, "<th ></th>\n");
+	websWrite(wp, "</tr>\n");
 
 	for (cs = nfsshares; cs; cs = csnext) {
 
@@ -143,7 +144,7 @@ EJ_VISIBLE void ej_nfs_sharepaths(webs_t wp, int argc, char_t ** argv)
 		websWrite(wp, "</td>\n");
 		websWrite(wp, "<td style=\"width: 50px; text-align: center;\">\n");
 		websWrite(wp,
-			  "<script type=\"text/javascript\">document.write(\"<input type=\\\"button\\\" class=\\\"button\\\" name=\\\"nfsshare_del%s\\\" value=\\\"\"+nas.sharedel+\"\\\"  style=\\\"width: 100%%;\\\" onclick=\\\"removenfsShare(this);\\\" />\")</script>\n",
+			  "<script type=\"text/javascript\">document.write(\"<input type=\\\"button\\\" class=\\\"remove\\\" name=\\\"nfsshare_del%s\\\" value=\\\"\"+nas.sharedel+\"\\\"  style=\\\"width: 100%%;\\\" onclick=\\\"removenfsShare(this);\\\" />\")</script>\n",
 			  number);
 		websWrite(wp, "</td>\n");
 		websWrite(wp, "</tr>\n");
@@ -153,7 +154,7 @@ EJ_VISIBLE void ej_nfs_sharepaths(webs_t wp, int argc, char_t ** argv)
 		debug_free(cs);
 	}
 
-	websWrite(wp, "</tbody></table>\n");
+	websWrite(wp, "</tbody></table><br />\n");
 
 	// add button
 	websWrite(wp,
