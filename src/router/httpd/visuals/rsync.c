@@ -36,7 +36,6 @@ void show_caption_pp(webs_t wp, const char *class, const char *caption, const ch
 
 EJ_VISIBLE void ej_rsync_sharepaths(webs_t wp, int argc, char_t ** argv)
 {
-
 	struct fsentry *fs, *current;
 	struct rsync_share *cs, *csnext;
 	char buffer[64], number[4], perms[16];
@@ -84,8 +83,8 @@ EJ_VISIBLE void ej_rsync_sharepaths(webs_t wp, int argc, char_t ** argv)
 		found = 0;
 		//sprintf( perms, "");
 		perms[0] = '\0';
-		websWrite(wp, "			<td id=\"n_rsync_mp%s\" style=\"width: 17.816em;\"><select name=\"rsyncshare_mp%s\" id=\"rsyncshare_mp%s\" style=\"width: 100%%;\" >\n", number, number, number);
-		websWrite(wp, "				<option value=\"\" rel=\"\">-</option>\n");
+		websWrite(wp, "<td id=\"n_rsync_mp%s\" style=\"width: 17.816em;\"><select name=\"rsyncshare_mp%s\" id=\"rsyncshare_mp%s\" style=\"width: 100%%;\" >\n", number, number, number);
+		websWrite(wp, "<option value=\"\" rel=\"\">-</option>\n");
 		//fprintf(stderr, "[SAMBA] FS %s:%s public:%d\n", cs->label, cs->mp, cs->public );
 		for (current = fs; current; current = current->next) {
 			if (strcmp(current->fstype, "squashfs")
@@ -143,7 +142,7 @@ EJ_VISIBLE void ej_rsync_sharepaths(webs_t wp, int argc, char_t ** argv)
 
 	// add button
 	websWrite(wp,
-		  "<script type=\"text/javascript\">document.write(\"<div id=\\\"rsync_shares_add\\\" style=\\\"text-align: center;\\\"><input type=\\\"button\\\" class=\\\"button\\\" name=\\\"share_add\\\" value=\\\"\"+nas.shareadd+\"\\\" onclick=\\\"addrsyncShare();\\\" />\")</script></div>");
+		  "<script type=\"text/javascript\">document.write(\"<div id=\\\"rsync_shares_add\\\" class=\\\"center\\\"><input type=\\\"button\\\" class=\\\"button\\\" name=\\\"share_add\\\" value=\\\"\"+nas.shareadd+\"\\\" onclick=\\\"addrsyncShare();\\\" />\")</script></div>");
 
 	for (current = fs; fs; current = fs) {
 		fs = current->next;
