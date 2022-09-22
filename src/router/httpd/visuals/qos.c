@@ -238,7 +238,7 @@ EJ_VISIBLE void ej_get_qosdevs(webs_t wp, int argc, char_t ** argv)
 			int count = 0;
 			websWrite(wp, "	<td nowrap>\n");
 			websWrite(wp, "<select name=\"svqos_devservice%d\" style=\"overflow:hidden; max-width:100px;\"> size=\"1\"\n", i);
-			websWrite(wp, "<option value=\"none\" %s >None</option>\n", !strcmp(proto, "none") ? "selected=\"selected\"" : "");
+			websWrite(wp, "<option value=\"none\" %s ><script type=\"text/javascript\">Capture(share.none)</script></option>\n", !strcmp(proto, "none") ? "selected=\"selected\"" : "");
 			while (services[count].name != NULL) {
 				websWrite(wp, "<option value=\"%s\" %s >%s</option>\n", services[count].name, !strcmp(proto, services[count].name) ? "selected=\"selected\"" : "", services[count].name);
 				count++;
