@@ -548,8 +548,6 @@ EJ_VISIBLE void ej_show_raid(webs_t wp, int argc, char_t ** argv)
 		websWrite(wp,
 			  "<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<input class=\\\"button red_btn\\\" name=\\\"raid_format\\\" type=\\\"button\\\" value=\\\"\" + nas.format + \"\\\" onclick=\\\"raid_format_submit(this.form,%d)\\\" />\");\n//]]>\n</script>\n",
 			  i);
-		if (i)
-			websWrite(wp, "</br>\n");
 		i++;
 	}
 	websWrite(wp,
