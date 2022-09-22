@@ -23,22 +23,8 @@ fieldset fieldset {
 legend {
   background: transparent;
 }
-#help dd.definition {
+dd.definition, hr {
   border-bottom: 1px dotted #333;
-}
-hr {
-  background: #ccc;
-  color: #ccc;
-}
-h2 {
-  background-color: #777674;
-  border-style: none;
-  color: #fff;
-}
-table tr th {
-  background-color: #777674;
-  border-color: #777674;
-  color: #fff;
 }
 .table_row_bg {
   background-color: #e4e4e4;

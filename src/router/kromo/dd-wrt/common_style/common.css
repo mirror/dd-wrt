@@ -200,7 +200,10 @@ table, .table {
   width: 100%;
   border-spacing: 1px;
 }
-table[summary='week days table'] {
+.table.raid {
+	margin-top: .4em;
+}
+.table.weekdays {
   margin-left: -1.3rem;
 }
 table#radio_table {
@@ -211,8 +214,9 @@ table#radio_table tr td, .table_row_bg td {
   height: 18px;
 }
 table tr th {
-  border-style: solid;
-  border-width: 1px;
+  background-color: #777674;
+  border: 1px solid #777674;
+  color: #fff;
   border-radius: 3px;
   font-weight: normal;
   padding: .09em .543em;
@@ -281,7 +285,9 @@ select[name*='bonding'], select[name*='schedule_'],
 .num[name='schedule_time'], .num[name='bonding_number'] {
   vertical-align: unset;
 }
-h2, h3 {
+h2 {
+  background-color: #777674;
+  color: #fff;
   padding: 4px 12px;
   line-height: 1.42857;
   letter-spacing: .123rem;
@@ -442,7 +448,7 @@ input.num {
 .button {
   border: 1px solid;
   padding: 0 1rem .05em;
-  margin: 0 .362em 0 .362em;
+  margin: 0 .362em 0 0;
   height: 1.6rem;
   vertical-align: middle;
   cursor: pointer;

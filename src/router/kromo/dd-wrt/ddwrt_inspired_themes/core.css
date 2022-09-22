@@ -28,12 +28,6 @@ body {
   color: var(--v9-7);
   text-rendering: optimizeLegibility;
 }
-body a:link {
-  color: var(--v9-8);
-}
-body a:link:hover {
-  color: var(--v0-9);
-}
 body.gui {
   background: var(--bg-0);
   color: var(--v9-6);
@@ -103,7 +97,7 @@ body input[disabled]:hover {
   box-shadow: 0 1px 0 var(--bg-0);
   color: var(--v9-8);
   text-shadow: 0 1px 0 var(--bg-0);
-  height: 1.533rem;
+  height: 1.6rem;
   padding: 0 1rem 0 !important;
   transition: all 0.2s cubic-bezier(0.3, 0, 0.5, 1);
   outline: 0;
@@ -199,23 +193,26 @@ body.about-bg a {
 body.about-bg a:hover {
   color: var(--v0-8) !important;
 }
-body.help-bg {
+.help-bg {
   background: var(--bg-2) !important;
 }
-body.help-bg #content {
+.help-bg #content {
   background: transparent;
   border-color: transparent;
   color: var(--v9-8);
 }
-body.help-bg #content h2 {
+.help-bg #content h2 {
   background: var(--bg-5) !important;
   color: var(--fg-1) !important;
 }
-body.help-bg a {
-  color: var(--v0-9) !important;
+.help-bg a {
+  color: var(--v9-8);
 }
-body.help-bg a:hover {
-  color: var(--v0-8) !important;
+.help-bg a:hover {
+  color: var(--v0-9);
+}
+.help-bg dd {
+  border-bottom: 0.0648rem dotted var(--fg-5);
 }
 body div.message {
   background-color: var(--bg-1);
@@ -260,8 +257,7 @@ pre {
   background-color: var(--bg-1);
 }
 hr {
-  color: var(--bg-5) !important;
-  background-color: var(--bg-5) !important;
+  border-bottom-color: var(--bg-5);
 }
 #statusInfo a:hover {
   color: var(--v0-9);
@@ -420,7 +416,7 @@ select[onchange*='SelFilter'] {
   outline: 0;
 }
 #help dd.definition {
-  border-bottom: 0.0648rem dotted var(--bg-5);
+  border-bottom: 0.0648rem dotted var(--fg-5);
 }
 textarea {
   background-color: var(--bg-0);
@@ -664,7 +660,6 @@ h2 {
 }
 .submitFooter .button {
   padding: 0 1rem 0;
-  height: 1.6rem;
 }
 .meter {
   background-color: var(--bg-4);
@@ -691,14 +686,6 @@ h2 {
 }
 #header .navig {
   top: 4.737em;
-}
-#header .navig a {
-  color: var(--v0-9) !important;
-}
-#header .navig a:hover,
-#header .navig a:focus,
-#header .navig a:focus-within {
-  color: var(--v0-8) !important;
 }
 [src*='dd-logo.png'] {
   filter: invert(0.95) hue-rotate(180deg);
@@ -934,8 +921,6 @@ input[type='checkbox']:hover:active {
 }
 input[type='radio']:disabled,
 input[type='checkbox']:disabled,
-input[type='radio']:hover:active:disabled,
-input[type='checkbox']:hover:active:disabled,
 input[type='radio']:disabled:hover,
 input[type='checkbox']:disabled:hover {
   color: var(--v9-5) !important;
