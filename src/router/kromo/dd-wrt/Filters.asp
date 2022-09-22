@@ -357,7 +357,7 @@ addEvent(window, "unload", function() {
 							<fieldset>
 								<legend><% tran("filter.legend2"); %></legend>
 								<div class="setting">
-									<table summary="week days table">
+									<table class="table weekdays" summary="week days table">
 										<tbody>
 										<tr class="center">
 											<td><% tran("share.everyday"); %></td>
@@ -410,8 +410,8 @@ addEvent(window, "unload", function() {
 								<div class="center">
 									<script type="text/javascript">
 										//<![CDATA[
-										document.write("<input class=\"button\" style=\"width:6em;\" type=\"button\" value=\"" + sbutton.add + "\" onclick=\"filter_add_submit(this.form);\"/>");
-										document.write("<input class=\"button\" style=\"width:6em;\" type=\"button\" value=\"" + sbutton.del + "\" onclick=\"filter_remove_submit(this.form);\"/>");
+										document.write("<input class=\"button\" style=\"margin-right: .5em\" type=\"button\" value=\"" + sbutton.add + "\" onclick=\"filter_add_submit(this.form);\"/>");
+										document.write("<input class=\"button\" style=\"margin-right: .5em\" type=\"button\" value=\"" + sbutton.del + "\" onclick=\"filter_remove_submit(this.form);\"/>");
 										document.write("<input class=\"button\" type=\"button\" value=\"" + sbutton.filterSer + "\" onclick=\"openWindow('Port_Services.asp', 640, 500);\" />");
 										//]]>
 									</script>

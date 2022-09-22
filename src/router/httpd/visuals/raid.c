@@ -298,7 +298,7 @@ EJ_VISIBLE void ej_show_raid(webs_t wp, int argc, char_t ** argv)
 		if (!*(raidtype))
 			break;
 		websWrite(wp, "<div class=\"setting\">\n");
-		websWrite(wp, "<table class=\"table\" summary=\"Raid\">\n");
+		websWrite(wp, "<table class=\"table raid\" summary=\"Raid\">\n");
 		if (!strcmp(raidtype, "md")) {
 			websWrite(wp,
 				  "<thead><tr>\n" "<th><script type=\"text/javascript\">Capture(nas.raidnametbl)</script></th>\n"
@@ -320,9 +320,9 @@ EJ_VISIBLE void ej_show_raid(webs_t wp, int argc, char_t ** argv)
 				websWrite(wp,
 					  "<thead><tr>\n" "<th><script type=\"text/javascript\">Capture(nas.raidnametbl)</script></th>\n"
 					  "<th><script type=\"text/javascript\">Capture(ddns.typ)</script></th>\n"
-					  "<th><script type=\"text/javascript\">Capture(nas.raidleveltbl)</script></th>\n" "<th><script type=\"text/javascript\">Capture(nas.compression)</script></th>\n"
-					  //which of these two is the action table header?
-					  "<th>&nbsp;</th>\n" "<th>&nbsp;</th>\n" "</tr></thead>\n");
+					  "<th><script type=\"text/javascript\">Capture(nas.raidleveltbl)</script></th>\n"
+					  "<th><script type=\"text/javascript\">Capture(nas.compression)</script></th>\n"
+					  "<th class=\"center\" colspan=\"2\" width=\"10%%\"><script type=\"text/javascript\">Capture(share.actiontbl)</script></th>\n" "</tr></thead>\n");
 		}
 		if (!strcmp(raidtype, "zfs")) {
 			if (!strcmp(raidlz, "gzip") || !strcmp(raidlz, "zstd"))
@@ -331,20 +331,20 @@ EJ_VISIBLE void ej_show_raid(webs_t wp, int argc, char_t ** argv)
 					  "<th><script type=\"text/javascript\">Capture(ddns.typ)</script></th>\n"
 					  "<th><script type=\"text/javascript\">Capture(nas.raidleveltbl)</script></th>\n"
 					  "<th><script type=\"text/javascript\">Capture(nas.raiddeduptbl)</script></th>\n"
-					  "<th><script type=\"text/javascript\">Capture(nas.compression)</script></th>\n" "<th><script type=\"text/javascript\">Capture(nas.raidleveltbl)</script></th>\n"
-					  //which of these two is the action table header?
-					  "<th>&nbsp;</th>\n" "<th>&nbsp;</th>\n" "</tr></thead>\n");
+					  "<th><script type=\"text/javascript\">Capture(nas.compression)</script></th>\n"
+					  "<th><script type=\"text/javascript\">Capture(nas.raidleveltbl)</script></th>\n"
+					  "<th class=\"center\" colspan=\"2\" width=\"10%%\"><script type=\"text/javascript\">Capture(share.actiontbl)</script></th>\n" "</tr></thead>\n");
 			else
 				websWrite(wp,
 					  "<thead><tr>\n" "<th><script type=\"text/javascript\">Capture(nas.raidnametbl)</script></th>\n"
 					  "<th><script type=\"text/javascript\">Capture(ddns.typ)</script></th>\n"
 					  "<th><script type=\"text/javascript\">Capture(nas.raidleveltbl)</script></th>\n"
-					  "<th><script type=\"text/javascript\">Capture(nas.raiddeduptbl)</script></th>\n" "<th><script type=\"text/javascript\">Capture(nas.compression)</script></th>\n"
-					  //which of these two is the action table header?
-					  "<th class=\"center\" colspan=\"2\">&nbsp;</th>\n" "</tr></thead><tbody>\n");
+					  "<th><script type=\"text/javascript\">Capture(nas.raiddeduptbl)</script></th>\n"
+					  "<th><script type=\"text/javascript\">Capture(nas.compression)</script></th>\n"
+					  "<th class=\"center\" colspan=\"2\" width=\"10%%\"><script type=\"text/javascript\">Capture(share.actiontbl)</script></th>\n" "</tr></thead>\n");
 		}
 
-		websWrite(wp, "<tr>\n");
+		websWrite(wp, "<tbody><tr>\n");
 		websWrite(wp, "<td>\n");
 		websWrite(wp, "<input name=\"raidname%d\" size=\"20\" value=\"%s\" />", i, raidname);
 		websWrite(wp, "</td>\n");

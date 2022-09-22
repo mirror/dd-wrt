@@ -45,12 +45,8 @@ fieldset fieldset {
 legend {
   filter: brightness(1.8);
 }
-dd.definition {
+dd.definition, hr {
   border-bottom: 1px dotted #ccc;
-}
-hr {
-  background: #333;
-  color: #333;
 }
 input {
   background-color: #333;
