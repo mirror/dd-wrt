@@ -289,6 +289,7 @@ sbutton.save="Save";
 sbutton.download_config="Export Peer Config";
 sbutton.savetitle="Only save settings without commit";
 sbutton.apply="Apply Settings";
+sbutton.applied="Applying";
 sbutton.applytitle="Apply settings immediately";
 sbutton.saving="Saved";
 sbutton.cmd="Executing";

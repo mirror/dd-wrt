@@ -485,7 +485,7 @@ EJ_VISIBLE void ej_show_raid(webs_t wp, int argc, char_t ** argv)
 				websWrite(wp, "//]]>\n</script></select>\n");
 				websWrite(wp, "</td>\n");
 			}
-			websWrite(wp, "<td class\"center\">\n");
+			websWrite(wp, "<td class=\"center\" style=\"margin-top: 2px; display: block\">\n");
 			websWrite(wp,
 				  "<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<input class=\\\"button\\\" type=\\\"button\\\" value=\\\"\" + sbutton.scrub + \"\\\" onclick=\\\"zfs_scrub_submit(this.form,%d)\\\" />\");\n//]]>\n</script>\n",
 				  i);
@@ -514,7 +514,7 @@ EJ_VISIBLE void ej_show_raid(webs_t wp, int argc, char_t ** argv)
 			websWrite(wp, "<td>\n");
 			websWrite(wp, "<select name=\"raid%dmember%d\">\n", i, midx);
 			if (!strcmp(var, "none"))
-				websWrite(wp, "<option value=\"none\">None</option>\n");
+				websWrite(wp, "<option value=\"none\"><script type=\"text/javascript\">Capture(share.none)</script></option>\n");
 			if (drives) {
 				foreach(drive, drives, dnext) {
 #ifdef HAVE_X86
@@ -555,11 +555,12 @@ EJ_VISIBLE void ej_show_raid(webs_t wp, int argc, char_t ** argv)
 	websWrite(wp, "</fieldset><br />\n");
 	websWrite(wp, "<h2><script type=\"text/javascript\">Capture(nas.drivemanager)</script></h2>");
 	websWrite(wp, "<fieldset>\n<legend><script type=\"text/javascript\">Capture(bmenu.adminman)</script></legend>\n");
-	websWrite(wp, "<table id=\"drives\" class=\"table\" summary=\"Drive List\">\n<thead>");
-	websWrite(wp,
+	websWrite(wp, "<table id=\"drives\" class=\"table\" summary=\"Drive List\">\n<thead>\n"
 		  "<tr>\n" "<th><script type=\"text/javascript\">Capture(nas.drive)</script></th>\n"
 		  "<th><script type=\"text/javascript\">Capture(idx.label)</script></th>\n"
-		  "<th><script type=\"text/javascript\">Capture(nas.fs)</script></th>\n" "<th class=\"center\" width=\"10%%\"><script type=\"text/javascript\">Capture(share.actiontbl)</script></th>\n" "</tr>\n</thead><tbody>");
+		  "<th><script type=\"text/javascript\">Capture(nas.fs)</script></th>\n"
+			"<th class=\"center\" width=\"10%%\"><script type=\"text/javascript\">Capture(share.actiontbl)</script></th>\n"
+			"</tr>\n</thead><tbody>");
 	int idx = 0;
 	if (drives) {
 		foreach(drive, drives, dnext) {
