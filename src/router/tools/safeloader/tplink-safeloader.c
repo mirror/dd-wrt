@@ -310,7 +310,7 @@ static struct device_info boards[] = {
 			"{product_name:ArcherC25,product_ver:1.0.0,special_id:55530000}\n"
 			"{product_name:ArcherC25,product_ver:1.0.0,special_id:45550000}\n",
 		.support_trail = '\x00',
-		.soft_ver = "soft_ver:1.0.0\n",
+		.soft_ver = "soft_ver:1.0.9\n",
 
 		/**
 		    We use a bigger os-image partition than the stock images (and thus
@@ -353,7 +353,7 @@ static struct device_info boards[] = {
 			"{product_name:Archer C58,product_ver:1.0.0,special_id:45550000}\r\n"
 			"{product_name:Archer C58,product_ver:1.0.0,special_id:55530000}\r\n",
 		.support_trail = '\x00',
-		.soft_ver = "soft_ver:1.0.0\n",
+		.soft_ver = "soft_ver:1.0.9\n",
 
 		.partitions = {
 			{"fs-uboot", 0x00000, 0x10000},
@@ -389,7 +389,7 @@ static struct device_info boards[] = {
 			"{product_name:Archer C59,product_ver:1.0.0,special_id:52550000}\r\n"
 			"{product_name:Archer C59,product_ver:1.0.0,special_id:55530000}\r\n",
 		.support_trail = '\x00',
-		.soft_ver = "soft_ver:1.0.0\n",
+		.soft_ver = "soft_ver:1.0.9\n",
 
 		.partitions = {
 			{"fs-uboot", 0x00000, 0x10000},
@@ -427,7 +427,7 @@ static struct device_info boards[] = {
 			"{product_name:Archer C60,product_ver:1.0.0,special_id:45550000}\r\n"
 			"{product_name:Archer C60,product_ver:1.0.0,special_id:55530000}\r\n",
 		.support_trail = '\x00',
-		.soft_ver = "soft_ver:1.0.0\n",
+		.soft_ver = "soft_ver:1.0.9\n",
 
 		.partitions = {
 			{"fs-uboot", 0x00000, 0x10000},
@@ -735,7 +735,7 @@ static struct device_info boards[] = {
 			"{product_name:TL-WR1043N,product_ver:5.0.0,special_id:52550000}\n" //RU
 			"{product_name:TL-WR1043N,product_ver:5.0.0,special_id:54570000}\n", // TW
 		.support_trail = '\x00',
-		.soft_ver = "soft_ver:1.0.0\n",
+		.soft_ver = "soft_ver:1.0.9\n",
 		.partitions = {
 			{"factory-boot", 0x00000, 0x20000},
 			{"fs-uboot", 0x20000, 0x20000},
@@ -824,7 +824,7 @@ static struct device_info boards[] = {
 			"{product_name:ARCHER C7,product_ver:4.0.0,special_id:52550000}\n" //RU
 			"{product_name:ARCHER C7,product_ver:4.0.0,special_id:54570000}\n", // TW
 		.support_trail = '\x00',
-		.soft_ver = "soft_ver:2.0.0\n",
+		.soft_ver = "soft_ver:2.0.9\n",
 
 		/**
 		    We use a bigger os-image partition than the stock images (and thus
@@ -1498,6 +1498,11 @@ static void build_image(const char *output,
 	parts[4] = read_file("file-system", rootfs_image, add_jffs2_eof);
 
 	if (strcasecmp(info->id, "ARCHER-C25-V1") == 0) {
+		const char mdat[11] = {0x00, 0x00, 0x00, 0x02, 0x00, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00};
+		parts[5] = put_data("extra-para", mdat, 11);
+	}
+
+	if (strcasecmp(info->id, "TLWR1043NV5") == 0) {
 		const char mdat[11] = {0x00, 0x00, 0x00, 0x02, 0x00, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00};
 		parts[5] = put_data("extra-para", mdat, 11);
 	}
