@@ -2,7 +2,7 @@
 	<script type="text/javascript">
 	//<![CDATA[
 
-function submitcheck(F) {
+function applycheck(F) {
 	F.apply_button.value = sbutton.applied;
 }
 
@@ -11,7 +11,7 @@ function to_apply(F) {
 		if(!confirm(factdef.mess1)) {
 			return false;
 		}
-		submitcheck(F);
+		applycheck(F);
 		applyupdate(F);
 		return true;
 	}

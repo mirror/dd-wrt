@@ -47,7 +47,7 @@ addEvent(window, "unload", function() {
 						bar1.togglePause();
 					//]]>
 					</script>
-				</div>
+				</div></br />
 				<div id="mess" style="display:none"><br /><br />
 					<div style="text-align:left">
 						<script type="text/javascript">

@@ -6,8 +6,9 @@ function to_submit(F) {
 	F.save_button.value = sbutton.saving;
 	apply(F);
 }
+
 function to_apply(F) {
-	F.save_button.value = sbutton.saving;
+	F.apply_button.value = sbutton.applied;
 	applytake(F);
 }
 
@@ -26,11 +27,10 @@ addEvent(window, "load", function() {
 
 addEvent(window, "unload", function() {
 	update.stop();
-
 });
 		
-		//]]>
-		</script>
+	//]]>
+	</script>
 	</head>
 
 	<body class="gui">
