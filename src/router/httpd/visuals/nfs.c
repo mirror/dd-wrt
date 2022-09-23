@@ -36,7 +36,6 @@ void show_caption_pp(webs_t wp, const char *class, const char *caption, const ch
 
 EJ_VISIBLE void ej_nfs_sharepaths(webs_t wp, int argc, char_t ** argv)
 {
-
 	struct fsentry *fs, *current;
 	struct nfs_share *cs, *csnext;
 	char buffer[64], number[4], perms[16];
@@ -50,22 +49,21 @@ EJ_VISIBLE void ej_nfs_sharepaths(webs_t wp, int argc, char_t ** argv)
 		rows++;
 	}
 	rows--;
-	websWrite(wp, "	<input type=\"hidden\" name=\"nfs_shares_count\" id=\"nfs_shares_count\" value=\"%d\">\n", rows);
+	websWrite(wp, "<input type=\"hidden\" name=\"nfs_shares_count\" id=\"nfs_shares_count\" value=\"%d\">\n", rows);
 	rows = 5;
 
-	websWrite(wp, "	<input type=\"hidden\" name=\"nfs_shares_count_limit\" id=\"nfs_shares_count_limit\" value=\"%d\">\n", rows);
+	websWrite(wp, "<input type=\"hidden\" name=\"nfs_shares_count_limit\" id=\"nfs_shares_count_limit\" value=\"%d\">\n", rows);
 	rows = 0;
 
 	// table header
-	websWrite(wp, "	<table id=\"nfs_shares\" class=\"table\" summary=\"nfs share table\">\n");
+	websWrite(wp, "<table id=\"nfs_shares\" class=\"table\" summary=\"nfs share table\">\n");
 	show_caption_pp(wp, NULL, "service.samba3_shares", "<tbody><tr><th colspan=\"6\">", "</th></tr>\n");
-	websWrite(wp, "		<tr>\n");
+	websWrite(wp, "<tr>\n");
 	show_caption_pp(wp, NULL, "service.samba3_share_path", "<th>", "</th>\n");
 	show_caption_pp(wp, NULL, "service.samba3_share_subdir", "<th>", "</th>\n");
 	show_caption_pp(wp, NULL, "service.nfs_allowed", "<th>", "</th>\n");
 	show_caption_pp(wp, NULL, "service.samba3_share_access", "<th>", "</th>\n");
-	show_caption_pp(wp, NULL, "share.actiontbl", "<th class=\"center\" style=\"width: 10%%;\">", "</th>\n");
-	websWrite(wp, "<th ></th>\n");
+	show_caption_pp(wp, NULL, "share.actiontbl", "<th class=\"center\" colspan=\"2\" style=\"width: 10%%;\">", "</th>\n");
 	websWrite(wp, "</tr>\n");
 
 	for (cs = nfsshares; cs; cs = csnext) {
@@ -87,7 +85,7 @@ EJ_VISIBLE void ej_nfs_sharepaths(webs_t wp, int argc, char_t ** argv)
 		//sprintf( perms, "");
 		perms[0] = '\0';
 		websWrite(wp,
-			  "			<td id=\"n_nfs_mp%s\" style=\"width: 17.816em;\"><select name=\"nfsshare_mp%s\" id=\"nfsshare_mp%s\" style=\"width: 100%%;\" onchange=\"setnfsShareAccessOptions(this);\">\n",
+			  "<td id=\"n_nfs_mp%s\" style=\"width: 17.816em;\"><select name=\"nfsshare_mp%s\" id=\"nfsshare_mp%s\" style=\"width: 100%%;\" onchange=\"setnfsShareAccessOptions(this);\">\n",
 			  number, number, number);
 		websWrite(wp, "<option value=\"\" rel=\"\">-</option>\n");
 		//fprintf(stderr, "[SAMBA] FS %s:%s public:%d\n", cs->label, cs->mp, cs->public );
@@ -132,7 +130,7 @@ EJ_VISIBLE void ej_nfs_sharepaths(webs_t wp, int argc, char_t ** argv)
 			  "<td style=\"width: 1%%;\"><input type=\"text\" name=\"nfsshare_allowed%s\" id=\"nfsshare_allowed%s\" size=\"20\" maxlength=\"18\" value=\"%s\" style=\"width: 150px;\"/></td>\n",
 			  number, number, cs->allowed);
 		websWrite(wp, "<td>\n");
-		websWrite(wp, "	<select name=\"nfsshare_access_perms%s\" id=\"nfsshare_access_perms%s\" style=\"width: 100%%;\"%s>\n", number, number, !strcmp(perms, "") ? " disabled" : "");
+		websWrite(wp, "<select name=\"nfsshare_access_perms%s\" id=\"nfsshare_access_perms%s\" style=\"width: 100%%;\"%s>\n", number, number, !strcmp(perms, "") ? " disabled" : "");
 		if (rows == 0 || strcmp(perms, "")) {
 			websWrite(wp, "<option value=\"rw\"%s>", !strcmp(cs->access_perms, "rw") ? " selected" : "");
 			show_caption(wp, NULL, "nas.perm_rw", "</option>\n");
@@ -142,9 +140,9 @@ EJ_VISIBLE void ej_nfs_sharepaths(webs_t wp, int argc, char_t ** argv)
 		websWrite(wp, "</select>\n");
 		websWrite(wp, "<input type=\"hidden\" name=\"nfsshare_access_perms_prev_%d\" value=\"%s\">\n", rows, cs->access_perms);
 		websWrite(wp, "</td>\n");
-		websWrite(wp, "<td style=\"width: 50px; text-align: center;\">\n");
+		websWrite(wp, "<td class=\"center\">\n");
 		websWrite(wp,
-			  "<script type=\"text/javascript\">document.write(\"<input type=\\\"button\\\" class=\\\"remove\\\" name=\\\"nfsshare_del%s\\\" value=\\\"\"+nas.sharedel+\"\\\"  style=\\\"width: 100%%;\\\" onclick=\\\"removenfsShare(this);\\\" />\")</script>\n",
+			  "<script type=\"text/javascript\">document.write(\"<input type=\\\"button\\\" class=\\\"remove\\\" name=\\\"nfsshare_del%s\\\" aria-label=\\\"\"+nas.sharedel+\"\\\"  style=\\\"width: 100%%;\\\" onclick=\\\"removenfsShare(this);\\\" />\")</script>\n",
 			  number);
 		websWrite(wp, "</td>\n");
 		websWrite(wp, "</tr>\n");
@@ -158,7 +156,7 @@ EJ_VISIBLE void ej_nfs_sharepaths(webs_t wp, int argc, char_t ** argv)
 
 	// add button
 	websWrite(wp,
-		  "<script type=\"text/javascript\">document.write(\"<div id=\\\"nfs_shares_add\\\" style=\\\"text-align: center;\\\"><input type=\\\"button\\\" class=\\\"button\\\" name=\\\"share_add\\\" value=\\\"\"+nas.shareadd+\"\\\" onclick=\\\"addnfsShare();\\\" />\")</script></div>");
+		  "<script type=\"text/javascript\">document.write(\"<div id=\\\"nfs_shares_add\\\" class=\\\"center\\\"><input type=\\\"button\\\" class=\\\"button\\\" name=\\\"share_add\\\" value=\\\"\"+nas.shareadd+\"\\\" onclick=\\\"addnfsShare();\\\" />\")</script></div>");
 
 	for (current = fs; fs; current = fs) {
 		fs = current->next;
