@@ -3,7 +3,7 @@
 	//<![CDATA[
 
 function submitcheck(F) {
-	F.save_button.value = sbutton.saving;
+	F.apply_button.value = sbutton.applied;
 }
 
 function to_apply(F) {
