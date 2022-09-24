@@ -376,7 +376,6 @@ fieldset legend {
 }
 .nostick {
   position: unset;
-  bottom: unset;
 }
 .submitFooter .button {
   margin: .362em;
