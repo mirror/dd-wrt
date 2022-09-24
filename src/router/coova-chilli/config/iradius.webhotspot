@@ -1,24 +1,29 @@
 
 <fieldset>
-	<legend>MAC Userlist</legend>
+	<legend><% tran("hotspot.fon_user"); %></legend>
 	<input type="hidden" name="iradius" value="13" />
 	<table class="table">
+	<thead>
 		<tr>
-			<th colspan="2">MACS</th>
+			<th colspan="4"><% tran("wol.mac"); %></th>
 		</tr>
 		<tr>
-			<th>MAC Address</th>
-			<th>Active</th>
-			<th>Leasetime</th>
-			<th>Delete</th>
+			<th><% tran("share.mac"); %></th>
+			<th><% tran("wl_basic.mesh_active"); %></th>
+			<th><% tran("networking.leasetime"); %></th>
+			<th class="center"><% tran("share.actiontbl"); %></th>
 		</tr>
+		</thead>
+		<tbody>
 		<% show_iradius(); %>
 		<tr>
-			<td colspan="2">
-				<div class="center">
-					<script type="text/javascript">document.write("<input type=\"button\" value=\"" + sbutton.add + "\" onclick=\"iradius_add_submit(this.form)\" />")</script>
-				</div>
+			<td colspan="3"></td>
+			<td class="center" width="10%">
+				<script type="text/javascript">
+				document.write("<input type=\"add\" aria-label=\"" + sbutton.add + "\" onclick=\"iradius_add_submit(this.form)\" />")
+				</script>
 			</td>
 		</tr>
+	</tbody>
 	</table>
 </fieldset><br />
