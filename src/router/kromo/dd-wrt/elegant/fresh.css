@@ -53,6 +53,7 @@ textarea {
   background-color: #fff;
   border: 1px solid #ccc;
   color: #000;
+  caret-color: var(--v0-9, --ac-0);
   box-shadow: 0 1px 1px rgba(0, 0, 0, .075) inset;
   transition: all .15s ease-in-out 0s;
 }
@@ -60,6 +61,7 @@ input {
   background-color: #fff;
   border: 1px solid #ccc;
   color: #000;
+  caret-color: var(--v0-9, --ac-0);
   box-shadow: inset 0 1px 1px rgba(0, 0, 0, .075);
   transition: all .15s ease-in-out 0s;
 }
@@ -69,6 +71,11 @@ select {
   color: #000;
   box-shadow: inset 0 1px 1px rgba(0, 0, 0, .075);
   transition: all .15s ease-in-out 0s;
+}
+pre {
+  background-color: #fff;
+  border: 1px solid #ccc;
+  color: #166f2a;
 }
 .progressbar {
   background-color: #fff;
@@ -103,11 +110,6 @@ select {
   background: #fcc;
   border: 2px dashed #f99;
   font-weight: bold;
-}
-pre {
-  background-color: #fff;
-  border: 1px solid #ccc;
-  color: #166f2a;
 }
 .setting .default {
   color: #666;

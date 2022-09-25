@@ -601,7 +601,7 @@ EJ_VISIBLE void ej_show_iradius(webs_t wp, int argc, char_t ** argv)
 			sprintf(st, "%ld", t);
 		else
 			sprintf(st, "over");
-		websWrite(wp, "<input type=\"num\" name=\"%s\" value='%s' />\n", active, st);
+		websWrite(wp, "<input class=\"num\" name=\"%s\" value='%s' />\n", active, st);
 		websWrite(wp, "</td>\n");
 
 		websWrite(wp, "<td>\n");
@@ -724,15 +724,15 @@ EJ_VISIBLE void ej_show_default_level(webs_t wp, int argc, char_t ** argv)
 	websWrite(wp, "</div>\n");
 	websWrite(wp, "<div class=\"setting\">\n");
 	websWrite(wp, "<div class=\"label\">WAN <script type=\"text/javascript\">document.write(qos.bandwidth)</script></div>\n");
-	websWrite(wp, "<input type=\"num\" name=\"default_downlevel\" size=\"6\" value=\"%s\" %s/>\n", nvram_safe_get("default_downlevel"), (!strcmp(defaults, "1")) ? "" : "disabled");
+	websWrite(wp, "<input class\"num\" type=\"number\" size=\"10\" name=\"default_downlevel\" value=\"%s\" %s/>\n", nvram_safe_get("default_downlevel"), (!strcmp(defaults, "1")) ? "" : "disabled");
 	websWrite(wp, "&nbsp<script type=\"text/javascript\">document.write(qos.speed+\" \"+qos.down)</script></div>\n");
 	websWrite(wp, "<div class=\"setting\">\n");
 	websWrite(wp, "<div class=\"label\">WAN <script type=\"text/javascript\">document.write(qos.bandwidth)</script></div>\n");
-	websWrite(wp, "<input type=\"num\" name=\"default_uplevel\" size=\"6\" value=\"%s\" %s/>\n", nvram_safe_get("default_uplevel"), (!strcmp(defaults, "1")) ? "" : "disabled");
+	websWrite(wp, "<input class\"num\" type=\"number\" size=\"10\" name=\"default_uplevel\" value=\"%s\" %s/>\n", nvram_safe_get("default_uplevel"), (!strcmp(defaults, "1")) ? "" : "disabled");
 	websWrite(wp, "&nbsp<script type=\"text/javascript\">document.write(qos.speed+\" \"+qos.up)</script></div>\n");
 	websWrite(wp, "<div class=\"setting\">\n");
 	websWrite(wp, "<div class=\"label\">LAN <script type=\"text/javascript\">Capture(qos.bandwidth)</script></div>\n");
-	websWrite(wp, "<input type=\"num\" name=\"default_lanlevel\" size=\"6\" value=\"%s\" %s/>\n", nvram_default_get("default_lanlevel", "100000"), (!strcmp(defaults, "1")) ? "" : "disabled");
+	websWrite(wp, "<input class\"num\" type=\"number\" size=\"10\" name=\"default_lanlevel\" value=\"%s\" %s/>\n", nvram_default_get("default_lanlevel", "100000"), (!strcmp(defaults, "1")) ? "" : "disabled");
 	websWrite(wp, "&nbsp<script type=\"text/javascript\">document.write(qos.speed)</script></div>\n");
 	websWrite(wp, "</fieldset><br />\n");
 	return;
