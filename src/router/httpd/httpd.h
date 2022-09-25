@@ -95,7 +95,8 @@ typedef struct {
 	FILE *s_fp;
 	unsigned char *s_filebuffer;
 	int s_filecount;
-	int s_filelen;
+	size_t s_filelen;
+	size_t s_fileoffset;
 	char label[64];
 	int upgrade_ret;
 	int restore_ret;

@@ -52,21 +52,21 @@ size_t wfwrite(void *buf, size_t size, size_t n, webs_t wp);
 
 void do_error_style(webs_t wp, int status, char *title, char *text)
 {
-	size_t len = 0;
-	FILE *web = _getWebsFile(wp, "style/error_common.css", &len);
+	FILE *web = _getWebsFile(wp, "style/error_common.css");
 	if (!web)
 		return;
-	if (!len) {
+	if (!wp->s_filelen) {
 		fclose(web);
 		return;
 	}
-	char *mem = malloc(len + 1 + 16 + strlen(title) + strlen(text) + strlen(text));
+	char *mem = malloc(wp->s_filelen + 1 + 16 + strlen(title) + strlen(text) + strlen(text));
 
 	if (!mem) {
 		fclose(web);
 		return;
 	}
-	fread(mem, 1, len, web);
+	fseek(web, wp->s_fileoffset, SEEK_SET);
+	fread(mem, 1, wp->s_filelen, web);
 	fclose(web);
 	int i;
 	char stat[32];
@@ -133,42 +133,43 @@ void do_ddwrt_inspired_themes(webs_t wp)
 	if (nvram_match("router_style", "kromo") || nvram_match("router_style", "brainslayer") || nvram_match("router_style", "wikar") || nvram_match("router_style", "xirian"))
 		return;
 	char path[128];
-	size_t len = 0;
 	sprintf(path, "ddwrt_inspired_themes/%s.stylus", nvram_safe_get("stylus"));
-	FILE *web = _getWebsFile(wp, path, &len);
+	FILE *web = _getWebsFile(wp, path);
 	if (!web)
 		return;
-	if (!len) {
+	if (!wp->s_filelen) {
 		fclose(web);
 		return;
 	}
-	char *mem = malloc(len + 1);
+	char *mem = malloc(wp->s_filelen + 1);
 	if (!mem) {
 		fclose(web);
 		return;
 	}
-	fread(mem, 1, len, web);
+	fseek(web, wp->s_fileoffset, SEEK_SET);
+	fread(mem, 1, wp->s_filelen, web);
 	fclose(web);
 	websWrite(wp, "<style id=\"stylus-1\" type=\"text/css\" class=\"stylus\">\n");
-	wfwrite(mem, 1, len, wp);
+	wfwrite(mem, 1, wp->s_filelen, wp);
 	debug_free(mem);
 	sprintf(path, "ddwrt_inspired_themes/core.css");
-	web = _getWebsFile(wp, path, &len);
+	web = _getWebsFile(wp, path);
 	if (!web)
 		return;
-	if (!len) {
+	if (!wp->s_filelen) {
 		fclose(web);
 		return;
 	}
-	mem = malloc(len + 1);
+	mem = malloc(wp->s_filelen + 1);
 
 	if (!mem) {
 		fclose(web);
 		return;
 	}
-	fread(mem, 1, len, web);
+	fseek(web, wp->s_fileoffset, SEEK_SET);
+	fread(mem, 1, wp->s_filelen, web);
 	fclose(web);
-	wfwrite(mem, 1, len, wp);
+	wfwrite(mem, 1, wp->s_filelen, wp);
 	debug_free(mem);
 	websWrite(wp, "</style>\n");
 }

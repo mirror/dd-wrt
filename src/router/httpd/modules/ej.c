@@ -284,19 +284,19 @@ static void do_ej_buffer(char *buffer, webs_t stream)
 	do_ej_s(&buffer_get, stream);
 }
 
-static void do_ej_file(FILE * fp, int len, webs_t stream)
+static void do_ej_file(FILE * fp, webs_t stream)
 {
 #ifndef HAVE_MICRO
 	stream->s_filebuffer = (unsigned char *)malloc(len);
-	stream->s_filelen = len;
 	stream->s_filecount = 0;
-	fread(stream->s_filebuffer, 1, len, fp);
+	fseek(stream->s_filebuffer, stream->s_fileoffset, SEEK_SET);
+	fread(stream->s_filebuffer, 1, stream->s_filelen, fp);
 	do_ej_s(&buffer_get, stream);
 	debug_free(stream->s_filebuffer);
 #else
 	stream->s_fp = fp;
 	stream->s_filecount = 0;
-	stream->s_filelen = len;
+	fseek(stream->s_filebuffer, stream->s_fileoffset, SEEK_SET);
 	do_ej_s(&file_get, stream);
 #endif
 }
@@ -305,7 +305,7 @@ static void do_ej_file(FILE * fp, int len, webs_t stream)
 
 #include "../html.c"
 
-FILE *_getWebsFile(webs_t wp, char *path2, size_t *len)
+FILE *_getWebsFile(webs_t wp, char *path2)
 {
 	FILE *web;
 
@@ -323,19 +323,20 @@ FILE *_getWebsFile(webs_t wp, char *path2, size_t *len)
 	size_t insensitive_len;
 	int found = 0;
 	int found2 = 0;
+	size_t len;
 	while (websRomPageIndex[i].path != NULL) {
-		*len = websRomPageIndex[i].size - WEBSOFFSET;
+		len = websRomPageIndex[i].size - WEBSOFFSET;
 		if (!found && (endswith(path, ".asp") || endswith(path, ".htm") || endswith(path, ".html"))) {
 			found = !strcasecmp(websRomPageIndex[i].path, path);
 			if (found) {
-				insensitive_len = *len;
+				insensitive_len = len;
 				insensitive = curoffset;
 			}
 		}
 		if (!found2) {
 			found2 = !strcmp(websRomPageIndex[i].path, path);
 			if (found2) {
-				sensitive_len = *len;
+				sensitive_len = len;
 				sensitive = curoffset;
 			}
 		}
@@ -350,24 +351,24 @@ FILE *_getWebsFile(webs_t wp, char *path2, size_t *len)
 		if (web == NULL)
 			goto err;
 		if (sensitive != -1) {
-			fseek(web, sensitive, SEEK_SET);
-			*len = sensitive_len;
+			wp->s_fileoffset = sensitive;
+			wp->s_filelen = sensitive_len;
 		} else {
-			fseek(web, insensitive, SEEK_SET);
-			*len = insensitive_len;
+			wp->s_fileoffset = insensitive;
+			wp->s_filelen = insensitive_len;
 		}
 		debug_free(path);
 		return web;
 	}
 
 err:
-	*len = 0;
 	web = fopen(path, "rb");
 	if (web == NULL)
 		goto err2;
 	fseek(web, 0, SEEK_END);
-	*len = ftell(web);
+	wp->s_filelen = ftell(web);
 	fseek(web, 0, SEEK_SET);
+	wp->s_fileoffset = 0;
 err2:
 	debug_free(path);
 	return web;
@@ -375,17 +376,15 @@ err2:
 
 FILE *getWebsFile(webs_t wp, char *path2)
 {
-	size_t len;
-	return _getWebsFile(wp, path2, &len);
+	return _getWebsFile(wp, path2);
 }
 
 size_t getWebsFileLen(webs_t wp, char *path2)
 {
-	size_t len = 0;
-	FILE *fp = _getWebsFile(wp, path2, &len);
+	FILE *fp = _getWebsFile(wp, path2);
 	if (fp)
 		fclose(fp);
-	return len;
+	return wp->s_filelen;
 }
 
 static void send_headers(webs_t conn_fp, int status, char *title, char *extra_header, char *mime_type, int length, char *attach_file, int nocache);
@@ -397,13 +396,12 @@ int do_ej(unsigned char method, struct mime_handler *handler, char *path, webs_t
 	int i;
 	memdebug_enter();
 	i = 0;
-	len = 0;
-	fp = _getWebsFile(stream, path, &len);
+	fp = _getWebsFile(stream, path);
 	if (fp) {
 		if (handler && !handler->send_headers)
 			send_headers(stream, 200, "OK", handler->extra_header, handler->mime_type, -1, NULL, 1);
 		stream->path = path;
-		do_ej_file(fp, len, stream);
+		do_ej_file(fp, stream);
 		fclose(fp);
 		return 0;
 	} else

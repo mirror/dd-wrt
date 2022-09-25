@@ -749,17 +749,17 @@ static int match_one(const char *pattern, int patternlen, const char *string)
 
 static int do_file_2(struct mime_handler *handler, char *path, webs_t stream, char *attach)	//jimmy, https, 8/4/2003
 {
-	size_t len;
-	FILE *web = _getWebsFile(stream, path, &len);
+	FILE *web = _getWebsFile(stream, path);
 	if (!web)
 		return -1;
 	if (!handler->send_headers) {
-		send_headers(stream, 200, "OK", handler->extra_header, handler->mime_type, len, attach, 0);
+		send_headers(stream, 200, "OK", handler->extra_header, handler->mime_type, wp->s_filelen, attach, 0);
 	}
 	if (DO_SSL(stream)) {
 		char *buffer = malloc(4096);
-		while (len && !feof(web)) {
-			size_t ret = fread(buffer, 1, len > 4096 ? 4096 : len, web);
+		fseek(web, wp->s_fileoffset, SEEK_SET);
+		while (wp->s_filelen && !feof(web)) {
+			size_t ret = fread(buffer, 1, wp->s_filelen > 4096 ? 4096 : wp->s_filelen, web);
 			if (ferror(web)) {
 				dd_loginfo("httpd", "%s: cannot read from local file stream (%s)\n", __func__, strerror(errno));
 				break;	// deadlock prevention
@@ -772,7 +772,8 @@ static int do_file_2(struct mime_handler *handler, char *path, webs_t stream, ch
 		debug_free(buffer);
 	} else {
 		wfflush(stream);
-		wfsendfile(fileno(web), ftell(web), len, stream);
+		fseek(web, wp->s_fileoffset, SEEK_SET);
+		wfsendfile(fileno(web), wp->s_fileoffset, wp->s_filelen, stream);
 	}
 	fclose(web);
 	return 0;
