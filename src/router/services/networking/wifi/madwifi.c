@@ -209,52 +209,52 @@ void get_pairwise(char *prefix, char *pwstring, char *grpstring, int isadhoc, in
 	int iswpa3_128 = nvhas(akm, "wpa3-128");
 	int iswpa3 = nvhas(akm, "wpa3");
 	if (nvram_nmatch("1", "%s_ccmp", prefix)) {
-		strspcattach( pwstring, "CCMP");
+		strspcattach(pwstring, "CCMP");
 		if (grpstring) {
 #if defined(HAVE_MAKSAT) || defined(HAVE_TMK) || defined(HAVE_BKM)
 			if (isadhoc)
-				strspcattach( temp_grpstring, "CCMP");
+				strspcattach(temp_grpstring, "CCMP");
 			else
 #endif
 			if (ismesh)
-				strspcattach( temp_grpstring, "CCMP");
+				strspcattach(temp_grpstring, "CCMP");
 			else
-				strspcattach( temp_grpstring, "CCMP TKIP");
+				strspcattach(temp_grpstring, "CCMP TKIP");
 		}
 	}
 	if (nvram_nmatch("1", "%s_tkip", prefix)) {
-		strspcattach( pwstring, "TKIP");
+		strspcattach(pwstring, "TKIP");
 		if (grpstring)
-			strspcattach( temp_grpstring, "TKIP");
+			strspcattach(temp_grpstring, "TKIP");
 	}
 	if (nvram_nmatch("1", "%s_ccmp-256", prefix)) {
-		strspcattach( pwstring, "CCMP-256");
+		strspcattach(pwstring, "CCMP-256");
 		if (grpstring) {
 			if (ismesh)
-				strspcattach( temp_grpstring, "CCMP-256 GCMP-256 GCMP CCMP");
+				strspcattach(temp_grpstring, "CCMP-256 GCMP-256 GCMP CCMP");
 			else
-				strspcattach( temp_grpstring, "CCMP-256 GCMP-256 GCMP CCMP TKIP");
+				strspcattach(temp_grpstring, "CCMP-256 GCMP-256 GCMP CCMP TKIP");
 		}
 	}
 	if (nvram_nmatch("1", "%s_gcmp-256", prefix) || iswpa3_192) {
-		strspcattach( pwstring, "GCMP-256");
+		strspcattach(pwstring, "GCMP-256");
 		if (grpstring) {
 			if (ismesh)
-				strspcattach( temp_grpstring, "GCMP-256 GCMP CCMP");
+				strspcattach(temp_grpstring, "GCMP-256 GCMP CCMP");
 			else
-				strspcattach( temp_grpstring, "GCMP-256 GCMP CCMP TKIP");
+				strspcattach(temp_grpstring, "GCMP-256 GCMP CCMP TKIP");
 		}
 	}
 	if (nvram_nmatch("1", "%s_gcmp", prefix) || iswpa3_128) {
-		strspcattach( pwstring, "GCMP");
+		strspcattach(pwstring, "GCMP");
 		if (grpstring) {
 			if (has_ad(prefix))
-				strspcattach( temp_grpstring, "GCMP");
+				strspcattach(temp_grpstring, "GCMP");
 			else {
 				if (ismesh)
-					strspcattach( temp_grpstring, "GCMP CCMP");
+					strspcattach(temp_grpstring, "GCMP CCMP");
 				else
-					strspcattach( temp_grpstring, "GCMP CCMP TKIP");
+					strspcattach(temp_grpstring, "GCMP CCMP TKIP");
 			}
 		}
 	}
@@ -289,15 +289,15 @@ void eap_sta_key_mgmt(FILE * fp, char *prefix)
 	const int iswpa3_128 = _has_wpa3 ? nvhas(akm, "wpa3-128") : 0;
 	const int iswpa2sha256 = _has_wpa3 ? nvhas(akm, "wpa2-sha256") : 0;
 	char pwstring[128] = {
-		0, 0
+		0
 	};
 	char grpstring[128] = {
-		0, 0
+		0
 	};
 	get_pairwise(prefix, pwstring, grpstring, 0, 0);
 	if (*pwstring && (iswpa2 || iswpa || iswpa3 || iswpa3_128 || iswpa3_192 || iswpa2sha256)) {
-		fprintf(fp, "\tpairwise=%s\n", &pwstring[1]);
-		fprintf(fp, "\tgroup=%s\n", &grpstring[1]);
+		fprintf(fp, "\tpairwise=%s\n", pwstring);
+		fprintf(fp, "\tgroup=%s\n", grpstring);
 	}
 
 	fprintf(fp, "\tkey_mgmt=");
@@ -693,10 +693,10 @@ void setupSupplicant(char *prefix, char *ssidoverride)
 		fprintf(fp, "\n");
 
 		char pwstring[128] = {
-			0, 0
+			0
 		};
 		char grpstring[128] = {
-			0, 0
+			0
 		};
 		get_pairwise(prefix, pwstring, grpstring, 0, 0);
 #ifdef HAVE_80211W
@@ -742,8 +742,8 @@ void setupSupplicant(char *prefix, char *ssidoverride)
 				fprintf(fp, "\tgroup=CCMP TKIP\n");
 			}
 		} else {
-			fprintf(fp, "\tpairwise=%s\n", &pwstring[1]);
-			fprintf(fp, "\tgroup=%s\n", &grpstring[1]);
+			fprintf(fp, "\tpairwise=%s\n", pwstring);
+			fprintf(fp, "\tgroup=%s\n", grpstring);
 
 		}
 		if (ispsk)
@@ -1538,7 +1538,7 @@ void setupHostAPPSK(FILE * fp, char *prefix, int isfirst)
 		}
 	}
 	char pwstring[128] = {
-		0, 0
+		0
 	};
 
 	get_pairwise(prefix, pwstring, NULL, 0, 0);
@@ -1574,7 +1574,7 @@ void setupHostAPPSK(FILE * fp, char *prefix, int isfirst)
 			fprintf(fp, "wpa_pairwise=TKIP CCMP\n");
 		}
 	} else {
-		fprintf(fp, "wpa_pairwise=%s\n", &pwstring[1]);
+		fprintf(fp, "wpa_pairwise=%s\n", pwstring);
 		if (iswpa3_192)
 			fprintf(fp, "group_mgmt_cipher=BIP-GMAC-256\n");
 		else if (iswpa3_128)
