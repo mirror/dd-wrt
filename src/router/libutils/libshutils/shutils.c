@@ -1142,7 +1142,7 @@ char *strattach(char *src, char *attach, char *delimiter)
 {
 	if (!src || !delimiter)
 		return NULL;
-	if (!strlen(src)) {
+	if (!*src) {
 		strcpy(src, attach);
 	} else {
 		strcat(src, delimiter);
