@@ -3676,10 +3676,7 @@ void start_nvram(void)
 						sprintf(newvalue, "%s wlan%s", newvalue, &entry[3]);
 
 				} else {
-					if (first)
-						sprintf(newvalue, "%s", entry);
-					else
-						sprintf(newvalue, "%s %s", newvalue, entry);
+					strspcattach(newvalue, entry);
 				}
 				first = 0;
 			}

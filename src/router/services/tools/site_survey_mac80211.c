@@ -126,10 +126,7 @@ static void fillENC(const char *text)
 		if (!strcmp(var, text))
 			return;
 	}
-	if (*buf == 0)
-		strcpy(buf, text);
-	else
-		sprintf(buf, "%s %s", buf, text);
+	strspcattach(buf, text);
 }
 
 static struct nla_policy survey_policy[NL80211_SURVEY_INFO_MAX + 1] = {
