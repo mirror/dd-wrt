@@ -758,8 +758,9 @@ static int do_file_2(struct mime_handler *handler, char *path, webs_t stream, ch
 	if (DO_SSL(stream)) {
 		char *buffer = malloc(4096);
 		fseek(web, stream->s_fileoffset, SEEK_SET);
-		while (stream->s_filelen && !feof(web)) {
-			size_t ret = fread(buffer, 1, stream->s_filelen > 4096 ? 4096 : stream->s_filelen, web);
+		size_t len = stream->s_filelen;
+		while (len && !feof(web)) {
+			size_t ret = fread(buffer, 1, len > 4096 ? 4096 : len, web);
 			if (ferror(web)) {
 				dd_loginfo("httpd", "%s: cannot read from local file stream (%s)\n", __func__, strerror(errno));
 				break;	// deadlock prevention
