@@ -23,7 +23,6 @@ addEvent(window, "load", function() {
 
 addEvent(window, "unload", function() {
 	update.stop();
-
 });
 
 		//]]>
