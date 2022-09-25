@@ -1912,10 +1912,10 @@ void setupSupplicant_ath9k(char *prefix, char *ssidoverride, int isadhoc)
 #endif
 		fprintf(fp, "\n");
 		char pwstring[128] = {
-			0, 0
+			0
 		};
 		char grpstring[128] = {
-			0, 0
+			0
 		};
 		get_pairwise(prefix, pwstring, grpstring, isadhoc, ismesh);
 #ifdef HAVE_80211W
@@ -1971,8 +1971,8 @@ void setupSupplicant_ath9k(char *prefix, char *ssidoverride, int isadhoc)
 				fprintf(fp, "\tgroup=CCMP TKIP\n");
 			}
 		} else {
-			fprintf(fp, "\tpairwise=%s\n", &pwstring[1]);
-			fprintf(fp, "\tgroup=%s\n", &grpstring[1]);
+			fprintf(fp, "\tpairwise=%s\n", pwstring);
+			fprintf(fp, "\tgroup=%s\n", grpstring);
 		}
 		if (ispsk)
 			nvram_nseti(1, "%s_psk", prefix);
