@@ -123,7 +123,7 @@ function to_submit(F) {
 function to_apply(F) {
 	F.change_action.value="gozila_cgi";
 	F.submit_type.value = "save_networking";
-	F.save_button.value = sbutton.saving;
+	F.apply_button.value = sbutton.applied;
 	applytake(F);
 }
 
