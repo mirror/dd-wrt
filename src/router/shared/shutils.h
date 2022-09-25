@@ -136,6 +136,8 @@ extern struct nvram_param * load_defaults(void);
 extern void free_defaults(struct nvram_param *);
 
 extern char *strattach(char *src, char *attach, char *delimiter);
+#define strspcattach(src, attach) strattach(src,attach," ")
+    
 extern int dd_system(const char *command);
 extern int sysprintf(const char *fmt, ...);
 extern int f_exists(const char *path);	// note: anything but a directory

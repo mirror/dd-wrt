@@ -5437,7 +5437,7 @@ void set_security(webs_t wp)
 	nvram_set(prefix, prefix2);
 #ifdef HAVE_MADWIFI
 	char n2[32];
-	char akm[128] = { 0, 0 };
+	char akm[128] = { 0 };
 	if (ifname && !strcmp(prefix2, "wpa")) {
 		sprintf(n2, "%s_akm", ifname);
 		_copytonv_prefix(wp, "psk", ifname);
@@ -5446,16 +5446,16 @@ void set_security(webs_t wp)
 		_copytonv_prefix(wp, "psk3", ifname);
 		_copytonv_prefix(wp, "owe", ifname);
 		if (nvram_nmatch("1", "%s_psk", ifname))
-			sprintf(akm, "%s %s", akm, "psk");
+			strspcattach(akm, "psk");
 		if (nvram_nmatch("1", "%s_owe", ifname))
-			sprintf(akm, "%s %s", akm, "owe");
+			strspcattach(akm, "owe");
 		if (nvram_nmatch("1", "%s_psk2", ifname))
-			sprintf(akm, "%s %s", akm, "psk2");
+			strspcattach(akm, "psk2");
 		if (nvram_nmatch("1", "%s_psk2-sha256", ifname))
-			sprintf(akm, "%s %s", akm, "psk2-sha256");
+			strspcattach(akm, "psk2-sha256");
 		if (nvram_nmatch("1", "%s_psk3", ifname))
-			sprintf(akm, "%s %s", akm, "psk3");
-		nvram_set(n2, &akm[1]);
+			strspcattach(akm, "psk3");
+		nvram_set(n2, akm);
 	}
 	if (ifname && !strcmp(prefix2, "8021X")) {
 		sprintf(n2, "%s_akm", ifname);
@@ -5471,16 +5471,16 @@ void set_security(webs_t wp)
 		_copytonv_prefix(wp, "wpa3-192", ifname);
 		_copytonv_prefix(wp, "wpa3-128", ifname);
 		if (nvram_nmatch("1", "%s_802.1x", ifname))
-			sprintf(akm, "%s %s", akm, "802.1x");
+			strspcattach(akm, "802.1x");
 		if (nvram_nmatch("1", "%s_leap", ifname))
-			sprintf(akm, "%s %s", akm, "leap");
+			strspcattach(akm, "leap");
 		if (nvram_nmatch("1", "%s_peap", ifname))
-			sprintf(akm, "%s %s", akm, "peap");
+			strspcattach(akm, "peap");
 		if (nvram_nmatch("1", "%s_tls", ifname))
-			sprintf(akm, "%s %s", akm, "tls");
+			strspcattach(akm, "tls");
 		if (nvram_nmatch("1", "%s_ttls", ifname))
-			sprintf(akm, "%s %s", akm, "ttls");
-		nvram_set(n2, &akm[1]);
+			strspcattach(akm, "ttls");
+		nvram_set(n2, akm);
 	}
 	if (ifname && (!strcmp(prefix2, "wpa") || !strcmp(prefix2, "8021X"))) {
 		sprintf(n2, "%s_akm", ifname);
@@ -5496,22 +5496,22 @@ void set_security(webs_t wp)
 		_copytonv_prefix(wp, "wpa3-192", ifname);
 		_copytonv_prefix(wp, "wpa3-128", ifname);
 		if (nvram_nmatch("1", "%s_wpa", ifname))
-			sprintf(akm, "%s %s", akm, "wpa");
+			strspcattach(akm, "wpa");
 		if (nvram_nmatch("1", "%s_wpa2", ifname))
-			sprintf(akm, "%s %s", akm, "wpa2");
+			strspcattach(akm, "wpa2");
 		if (nvram_nmatch("1", "%s_wpa2-sha256", ifname))
-			sprintf(akm, "%s %s", akm, "wpa2-sha256");
+			strspcattach(akm, "wpa2-sha256");
 		if (nvram_nmatch("1", "%s_wpa3", ifname))
-			sprintf(akm, "%s %s", akm, "wpa3");
+			strspcattach(akm, "wpa3");
 		if (nvram_nmatch("1", "%s_wpa3-192", ifname)) {
-			sprintf(akm, "%s %s", akm, "wpa3-192");
+			strspcattach(akm, "wpa3-192");
 			nvram_nset("1", "%s_gcmp-256", ifname);
 		}
 		if (nvram_nmatch("1", "%s_wpa3-128", ifname)) {
-			sprintf(akm, "%s %s", akm, "wpa3-128");
+			strspcattach(akm, "wpa3-128");
 			nvram_nset("1", "%s_gcmp", ifname);
 		}
-		nvram_set(n2, &akm[1]);
+		nvram_set(n2, akm);
 	}
 #endif
 
