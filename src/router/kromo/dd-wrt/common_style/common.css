@@ -376,7 +376,6 @@ fieldset legend {
 }
 .nostick {
   position: unset;
-  bottom: unset;
 }
 .submitFooter .button {
   margin: .362em;
@@ -501,6 +500,9 @@ input.num {
 }
 input.button[onclick*='delete'] {
   margin: -.1rem .5em 0 .362em;
+}
+input.button[onclick*="to_delete"] {
+	margin: -.1rem .5em 0 .4rem;
 }
 input.button[onclick*='FilterSummary'] {
   margin-top: -.1rem;

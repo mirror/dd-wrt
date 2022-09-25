@@ -182,7 +182,7 @@ EJ_VISIBLE void ej_get_qosdevs(webs_t wp, int argc, char_t ** argv)
 		no_ips++;
 		qos_ips++;
 	}
-	websWrite(wp, "<tr>\n"	//
+	websWrite(wp, "<thead><tr>\n"	//
 		  "<th><script type=\"text/javascript\">Capture(share.iftbl)</script></th>\n"	//
 		  "<th><script type=\"text/javascript\">Capture(qos.maxdownrate_b)</script></th>\n"	//
 		  "<th><script type=\"text/javascript\">Capture(qos.maxuprate_b)</script></th>\n"	//
@@ -190,7 +190,7 @@ EJ_VISIBLE void ej_get_qosdevs(webs_t wp, int argc, char_t ** argv)
 		  "<th><script type=\"text/javascript\">Capture(qos.service)</script></th>\n"	//
 		  "<th><script type=\"text/javascript\">Capture(share.priority)</script></th>\n"	//
 		  "<th class=\"center\" width=\"10%%\"><script type=\"text/javascript\">Capture(share.actiontbl)</script></th>\n"	//
-		  "</tr>\n");	//
+		  "</tr></thead><tbody>\n");	//
 
 	// write HTML data
 
@@ -236,7 +236,7 @@ EJ_VISIBLE void ej_get_qosdevs(webs_t wp, int argc, char_t ** argv)
 		filters *services = get_filters_list();
 		if (services) {
 			int count = 0;
-			websWrite(wp, "	<td nowrap>\n");
+			websWrite(wp, "<td nowrap>\n");
 			websWrite(wp, "<select name=\"svqos_devservice%d\" style=\"overflow:hidden; max-width:100px;\"> size=\"1\"\n", i);
 			websWrite(wp, "<option value=\"none\" %s ><script type=\"text/javascript\">Capture(share.none)</script></option>\n", !strcmp(proto, "none") ? "selected=\"selected\"" : "");
 			while (services[count].name != NULL) {
@@ -246,7 +246,7 @@ EJ_VISIBLE void ej_get_qosdevs(webs_t wp, int argc, char_t ** argv)
 			websWrite(wp, "</select>\n");
 			free_filters(services);
 		}
-		websWrite(wp, "	<td>\n"	//
+		websWrite(wp, "<td>\n"	//
 			  "<select name=\"svqos_devprio%d\" onChange=\"iplvl_grey(%d,this,this.form,false)\"> \n"	//
 			  "<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<option value=\\\"0\\\" %s >\" + qos.prio_m + \"</option>\");\n"	//
 			  "document.write(\"<option value=\\\"100\\\" %s >\" + qos.prio_x + \"</option>\");\n"	//
@@ -286,14 +286,14 @@ EJ_VISIBLE void ej_get_qosips(webs_t wp, int argc, char_t ** argv)
 		no_ips++;
 		qos_ips++;
 	}
-	websWrite(wp, "<tr>\n"	//
+	websWrite(wp, "<thead><tr>\n"	//
 		  "<th><script type=\"text/javascript\">Capture(qos.ipmask)</script></th>\n"	//
 		  "<th><script type=\"text/javascript\">Capture(qos.maxdownrate_b)</script></th>\n"	//
 		  "<th><script type=\"text/javascript\">Capture(qos.maxuprate_b)</script></th>\n"	//
 		  "<th><script type=\"text/javascript\">Capture(qos.maxlanrate_b)</script></th>\n"	//
 		  "<th><script type=\"text/javascript\">Capture(share.priority)</script></th>\n"	//
 		  "<th class=\"center\" width=\"10%%\"><script type=\"text/javascript\">Capture(share.actiontbl)</script></th>\n"	//
-		  "</tr>\n");	//
+		  "</tr></thead><tbody\n");	//
 
 	// write HTML data
 
@@ -332,7 +332,7 @@ EJ_VISIBLE void ej_get_qosips(webs_t wp, int argc, char_t ** argv)
 			  "<input name=\"svqos_iplanlvl%d\" class=\"num\" size=\"5\" maxlength=\"6\" value=\"%s\" style=\"text-align:right;\" %s /> kbit/s\n"
 			  "</td>\n", i, lanlevel, strcmp(prio, "0") == 0 ? "" : "disabled");
 
-		websWrite(wp, "	<td>\n"
+		websWrite(wp, "<td>\n"
 			  "<select name=\"svqos_ipprio%d\" onChange=\"iplvl_grey(%d,this,this.form,false)\"> \n"
 			  "<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<option value=\\\"0\\\" %s >\" + qos.prio_m + \"</option>\");\n"
 			  "document.write(\"<option value=\\\"100\\\" %s >\" + qos.prio_x + \"</option>\");\n"
@@ -373,14 +373,14 @@ EJ_VISIBLE void ej_get_qosmacs(webs_t wp, int argc, char_t ** argv)
 		no_macs++;
 		qos_macs++;
 	}
-	websWrite(wp, "<tr>\n"	//
+	websWrite(wp, "<thead><tr>\n"	//
 		  "<th><script type=\"text/javascript\">Capture(share.mac)</script></th>\n"	//
 		  "<th><script type=\"text/javascript\">Capture(qos.maxdownrate_b)</script></th>\n"	//
 		  "<th><script type=\"text/javascript\">Capture(qos.maxuprate_b)</script></th>\n"	//
 		  "<th><script type=\"text/javascript\">Capture(qos.maxlanrate_b)</script></th>\n"	//
 		  "<th><script type=\"text/javascript\">Capture(share.priority)</script></th>\n"	//
 		  "<th class=\"center\" width=\"10%%\"><script type=\"text/javascript\">Capture(share.actiontbl)</script></th>\n"	//
-		  "</tr>\n");	//
+		  "</tr></thead><tbody>\n");	//
 
 	// write HTML data
 	websWrite(wp, "<input type=\"hidden\" name=\"svqos_nomacs\" value=\"%d\" />", no_macs);
