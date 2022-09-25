@@ -2293,6 +2293,7 @@ static char *scanfile(webs_t wp, char *buf, const char *tran)
 	char *temp2;
 	char *temp1;
 	FILE *fp = _getWebsFile(wp, buf);
+	fseek(fp, wp->s_fileoffset, SEEK_SET);
 	size_t filelen = wp->s_filelen;
 	if (fp) {
 		temp1 = malloc(strlen(tran) + 3);
