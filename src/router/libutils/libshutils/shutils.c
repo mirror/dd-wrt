@@ -1138,6 +1138,19 @@ int getMTD(char *name)
 	return device;
 }
 
+char *strattach(char *src, char *attach, char *delimiter)
+{
+	if (!src || !delimiter)
+		return NULL;
+	if (!strlen(src)) {
+		strcpy(src, attach);
+	} else {
+		strcat(src, delimiter);
+		strcat(src, attach);
+	}
+
+}
+
 #undef malloc
 
 void *dd_malloc(size_t len)
