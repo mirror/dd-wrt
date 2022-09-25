@@ -287,16 +287,16 @@ static void do_ej_buffer(char *buffer, webs_t stream)
 static void do_ej_file(FILE * fp, webs_t stream)
 {
 #ifndef HAVE_MICRO
-	stream->s_filebuffer = (unsigned char *)malloc(len);
+	stream->s_filebuffer = (unsigned char *)malloc(stream->s_filelen);
 	stream->s_filecount = 0;
-	fseek(stream->s_filebuffer, stream->s_fileoffset, SEEK_SET);
+	fseek(fp, stream->s_fileoffset, SEEK_SET);
 	fread(stream->s_filebuffer, 1, stream->s_filelen, fp);
 	do_ej_s(&buffer_get, stream);
 	debug_free(stream->s_filebuffer);
 #else
 	stream->s_fp = fp;
 	stream->s_filecount = 0;
-	fseek(stream->s_filebuffer, stream->s_fileoffset, SEEK_SET);
+	fseek(stream->s_fp, stream->s_fileoffset, SEEK_SET);
 	do_ej_s(&file_get, stream);
 #endif
 }
