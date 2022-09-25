@@ -3849,7 +3849,7 @@ char *set_wan_state(int state)
 		p = strchr(vlan2, 't');
 		if (!p)
 			strcat(vlan2, "t");
-		sprintf(vlan1, "%s %s", vlan1, vlan2);
+		strspcattach(vlan1, vlan2);
 		eval("swconfig", "dev", "switch0", "set", "reset", "1");
 		eval("swconfig", "dev", "switch0", "set", "enable_vlan", "1");
 		eval("swconfig", "dev", "switch0", "vlan", "1", "set", "ports", vlan1);
