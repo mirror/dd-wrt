@@ -548,7 +548,7 @@ static void s_addDeletion(char *word, char *arg)
 	if (*(oldarg)) {
 		char *newarg = safe_malloc(strlen(oldarg) + strlen(word) + 2);
 
-		sprintf(newarg, "%s %s", oldarg, word);
+		strspcattach(newarg, word);
 		nvram_set(arg, newarg);
 		debug_free(newarg);
 	} else
@@ -1233,35 +1233,35 @@ _8021xprv
 			nvram_set(oname, oif);
 			nvram_nset(prefix, "%s_owe_ifname", oif);
 		}
-		char akm[128] = { 0, 0 };
+		char akm[128] = { 0  };
 		if (nvram_nmatch("1", "%s_psk", prefix))
-			sprintf(akm, "%s %s", akm, "psk");
+			strspcattach( akm, "psk");
 		if (nvram_nmatch("1", "%s_psk2", prefix))
-			sprintf(akm, "%s %s", akm, "psk2");
+			strspcattach( akm, "psk2");
 		if (nvram_nmatch("1", "%s_psk2-sha256", prefix))
-			sprintf(akm, "%s %s", akm, "psk2-sha256");
+			strspcattach( akm, "psk2-sha256");
 		if (nvram_nmatch("1", "%s_psk3", prefix))
-			sprintf(akm, "%s %s", akm, "psk3");
+			strspcattach( akm, "psk3");
 		if (nvram_nmatch("1", "%s_wpa", prefix))
-			sprintf(akm, "%s %s", akm, "wpa");
+			strspcattach( akm, "wpa");
 		if (nvram_nmatch("1", "%s_wpa2", prefix))
-			sprintf(akm, "%s %s", akm, "wpa2");
+			strspcattach( akm, "wpa2");
 		if (nvram_nmatch("1", "%s_wpa2-sha256", prefix))
-			sprintf(akm, "%s %s", akm, "wpa2-sha256");
+			strspcattach( akm, "wpa2-sha256");
 		if (nvram_nmatch("1", "%s_wpa3", prefix))
-			sprintf(akm, "%s %s", akm, "wpa3");
+			strspcattach( akm, "wpa3");
 		if (nvram_nmatch("1", "%s_owe", prefix))
-			sprintf(akm, "%s %s", akm, "owe");
+			strspcattach( akm, "owe");
 		if (nvram_nmatch("1", "%s_wpa3-192", prefix)) {
-			sprintf(akm, "%s %s", akm, "wpa3-192");
+			strspcattach( akm, "wpa3-192");
 			nvram_nset("1", "%s_gcmp-256", prefix);
 		}
 		if (nvram_nmatch("1", "%s_wpa3-128", prefix)) {
-			sprintf(akm, "%s %s", akm, "wpa3-128");
+			strspcattach( akm, "wpa3-128");
 			nvram_nset("1", "%s_gcmp", prefix);
 		}
 
-		nvram_set(n2, &akm[1]);
+		nvram_set(n2, akm);
 	}
 
 	if (v && !strcmp(v, "8021X")) {
@@ -1278,32 +1278,32 @@ _8021xprv
 		_copytonv_prefix(wp, "wpa3-128", prefix);
 		char akm[128] = { 0, 0 };
 		if (nvram_nmatch("1", "%s_leap", prefix))
-			sprintf(akm, "%s %s", akm, "leap");
+			strspcattach( akm, "leap");
 		if (nvram_nmatch("1", "%s_peap", prefix))
-			sprintf(akm, "%s %s", akm, "peap");
+			strspcattach( akm, "peap");
 		if (nvram_nmatch("1", "%s_tls", prefix))
-			sprintf(akm, "%s %s", akm, "tls");
+			strspcattach( akm, "tls");
 		if (nvram_nmatch("1", "%s_ttls", prefix))
-			sprintf(akm, "%s %s", akm, "ttls");
+			strspcattach( akm, "ttls");
 		if (nvram_nmatch("1", "%s_802.1x", prefix))
-			sprintf(akm, "%s %s", akm, "802.1x");
+			strspcattach( akm, "802.1x");
 		if (nvram_nmatch("1", "%s_wpa", prefix))
-			sprintf(akm, "%s %s", akm, "wpa");
+			strspcattach( akm, "wpa");
 		if (nvram_nmatch("1", "%s_wpa2", prefix))
-			sprintf(akm, "%s %s", akm, "wpa2");
+			strspcattach( akm, "wpa2");
 		if (nvram_nmatch("1", "%s_wpa2-sha256", prefix))
-			sprintf(akm, "%s %s", akm, "wpa2-sha256");
+			strspcattach( akm, "wpa2-sha256");
 		if (nvram_nmatch("1", "%s_wpa3", prefix))
-			sprintf(akm, "%s %s", akm, "wpa3");
+			strspcattach( akm, "wpa3");
 		if (nvram_nmatch("1", "%s_wpa3-192", prefix)) {
-			sprintf(akm, "%s %s", akm, "wpa3-192");
+			strspcattach( akm, "wpa3-192");
 			nvram_nset("1", "%s_gcmp-192", prefix);
 		}
 		if (nvram_nmatch("1", "%s_wpa3-128", prefix)) {
-			sprintf(akm, "%s %s", akm, "wpa3-128");
+			strspcattach( akm, "wpa3-128");
 			nvram_nset("1", "%s_gcmp", prefix);
 		}
-		nvram_set(n2, &akm[1]);
+		nvram_set(n2, akm);
 	}
 #endif
 	copytonv(wp, n);
@@ -3612,10 +3612,7 @@ void remove_vifs_single(char *prefix, int vap)
 		foreach(word, vifs, next) {
 			if (gp == elements - 1)
 				break;
-			if (strlen(copy))
-				sprintf(copy, "%s %s", copy, word);
-			else
-				strcpy(copy, word);
+				strspcattach(copy,word);
 			gp++;
 		}
 		nvram_set(wif, copy);
@@ -5768,10 +5765,7 @@ void portvlan_remove(webs_t wp)
 		int i = 0, a;
 		foreach(portvlan, vlist, next) {
 			if (val != i) {
-				if (*vlanlist)
-					sprintf(vlanlist, "%s %s", vlanlist, portvlan);
-				else
-					sprintf(vlanlist, "%s", portvlan);
+				strspcattach(vlanlist, portvlan);
 			} else {
 				for (a = 0; a < ports; a++) {
 					char var[32];
@@ -5781,10 +5775,7 @@ void portvlan_remove(webs_t wp)
 					char *next2;
 					foreach(var, list, next2) {
 						if (atoi(var) != i) {
-							if (*newlist)
-								sprintf(newlist, "%s %s", newlist, var);
-							else
-								strcpy(newlist, var);
+							strspcattach(newlist, var);
 						}
 
 					}

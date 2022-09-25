@@ -386,10 +386,7 @@ EJ_VISIBLE void ej_show_cpufeatures(webs_t wp, int argc, char_t ** argv)
 							resultlen = strlen(result);
 							result = realloc(result, resultlen + namelen + 2);
 						}
-						if (resultlen)
-							sprintf(result, "%s %s", result, cpufeatures[i].name);
-						else
-							strcpy(result, cpufeatures[i].name);
+						strspcattach(result, cpufeatures[i].name);
 					}
 				}
 
