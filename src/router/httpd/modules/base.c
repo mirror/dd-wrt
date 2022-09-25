@@ -461,16 +461,17 @@ static char *_tran_string(char *buf, size_t len, char *str)
 static char *readweb(webs_t wp, char *filename)
 {
 	size_t len;
-	FILE *web = _getWebsFile(wp, filename, &len);
+	FILE *web = _getWebsFile(wp, filename);
 	if (!web) {
 		return NULL;
 	}
-	char *webfile = (char *)safe_malloc(len + 1);
+	char *webfile = (char *)safe_malloc(wp->s_filelen + 1);
 	if (!webfile) {
 		fclose(web);
 		return NULL;
 	}
-	fread(webfile, len, 1, web);
+	fseek(web, wp->s_fileoffset, SEEK_SET);
+	fread(webfile, wp->s_filelen, 1, web);
 	fclose(web);
 	webfile[len] = 0;
 	return webfile;
@@ -2291,8 +2292,8 @@ static char *scanfile(webs_t wp, char *buf, const char *tran)
 	char *temp = malloc(256);
 	char *temp2;
 	char *temp1;
-	size_t filelen;
-	FILE *fp = _getWebsFile(wp, buf, &filelen);
+	FILE *fp = _getWebsFile(wp, buf);
+	size_t filelen = wp->s_filelen;
 	if (fp) {
 		temp1 = malloc(strlen(tran) + 3);
 		strcpy(temp1, tran);
