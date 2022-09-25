@@ -289,6 +289,7 @@ sbutton.save="Speichern";
 sbutton.download_config="Exportiere Partner Konfiguration";
 sbutton.savetitle="Nur speichern, ohne bereitstellen";
 sbutton.apply="Anwenden";
+sbutton.applied="Angewendet";
 sbutton.applytitle="Wende Einstellungen unmittelbar an";
 sbutton.saving="Gespeichert";
 sbutton.cmd="Ausführen";
