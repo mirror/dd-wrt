@@ -68,9 +68,10 @@ void do_error_style(webs_t wp, int status, char *title, char *text)
 	fseek(web, wp->s_fileoffset, SEEK_SET);
 	fread(mem, 1, wp->s_filelen, web);
 	fclose(web);
-	int i;
+	size_t i;
 	char stat[32];
 	sprintf(stat, "%d", status);
+	size_t len = wp->s_filelen; 
 	for (i = 0; i < len; i++) {
 		if (mem[i] == '%' && mem[i + 1] == 'd') {
 			memmove(&mem[i + strlen(stat)], &mem[i + 2], len - i);
