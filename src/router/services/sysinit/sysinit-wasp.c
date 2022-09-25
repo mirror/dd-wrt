@@ -294,10 +294,17 @@ void start_sysinit(void)
 	setSwitchLED(20, 0x02);	// lan4
 	nvram_seti("sw_cpuport", 0);
 	nvram_seti("sw_wan", 5);
+#if defined (HAVE_WR1043V5)
+	nvram_seti("sw_lan1", 4);
+	nvram_seti("sw_lan2", 3);
+	nvram_seti("sw_lan3", 2);
+	nvram_seti("sw_lan4", 1);
+#else
 	nvram_seti("sw_lan1", 1);
 	nvram_seti("sw_lan2", 2);
 	nvram_seti("sw_lan3", 3);
 	nvram_seti("sw_lan4", 4);
+#endif
 #elif defined (HAVE_ARCHERC7V5)
 	eval("swconfig", "dev", "eth0", "set", "reset", "1");
 	eval("swconfig", "dev", "eth0", "set", "enable_vlan", "1");

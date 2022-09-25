@@ -758,6 +758,13 @@ static void getledconfig(struct ledconfig *cfg)
 	case ROUTER_BOARD_WHRHPGN:
 		cfg->diag_gpio = GPIO_LOW | 0xe;
 		break;
+#elif HAVE_WR1043V5
+	case ROUTER_BOARD_WHRHPGN:
+		cfg->diag_gpio = 0x6;
+		cfg->ses_gpio = GPIO_LOW | 0x1;
+		cfg->sec0_gpio = GPIO_LOW | 0x1;
+
+		break;
 #elif HAVE_WR1043V4
 	case ROUTER_BOARD_WHRHPGN:
 		cfg->diag_gpio = 0x6;
