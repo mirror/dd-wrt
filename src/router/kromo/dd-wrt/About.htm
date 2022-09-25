@@ -1,7 +1,7 @@
 <% do_hpagehead("doctype_only"); %>
 	<body class="about-bg">
 		<div id="content">
-			<p><img src="images/dd-logo.png" alt="DD-WRT logo" /><br /></p>
+			<p><img src="images/dd-logo.png" alt="DD-WRT logo" /><br /><b><% get_firmware_version(); %><br /></b></p>
 			<h1>About DD-WRT's distributions</h1>
 			<table class="table-props t-border">
 				<thead>
@@ -13,33 +13,52 @@
 					<tr>
 						<td>Includes the same features of the standard distribution, with the exception of chillispot, nocat, rflow<!--, kaid-->, CIFS client, SNMP, IPv6, and MMC/SD card support.</td>
 					</tr>
+				<thead>
 					<tr>
 						<th class="t-border thc">The Standard</th>
 					</tr>
+				</thead>
+				<tbody>
 					<tr>
 						<td>The (std) includes all features, with the exception of VOIP.</td>
 					</tr>
+				</tbody>
+				<thead>
 					<tr>
 						<th class="t-border thc">The Standard Nokaid</th>
 					</tr>
+				</thead>
+				<tbody>
 					<tr>
 						<td>The (std-nokaid) includes the same features of the standard distribution,<!-- <i>without kaid</i>--> to free some flash space.</td>
 					</tr>
+				</tbody>
+				<thead>
 					<tr>
 						<th class="t-border thc">The VOIP</th>
 					</tr>
+				</thead>
+				<tbody>
 					<tr>
 						<td>This includes all features<!--, except without<i>kaid</i>-->.</td>
 					</tr>
+				</tbody>
+				<thead>
 					<tr>
 						<th class="t-border thc">The VPN</th>
 					</tr>
+				</thead>
+				<tbody>
 					<tr>
 						<td>It includes OpenVPN but <i>does not</i> include IPv6, CIFS client<!--, or kaid-->.</td>
 					</tr>
+				</tbody>
+				<thead>
 					<tr>
 						<th class="t-border thc">The Micro</th>
 					</tr>
+				</thead>
+				<tbody>
 					<tr>
 						<td>This is a stripped down version designed for the WRT54G v5 and other 2MB router models.</td>
 					</tr>

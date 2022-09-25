@@ -48,11 +48,6 @@ legend {
 dd.definition, hr {
   border-bottom: 1px dotted #ccc;
 }
-input {
-  background-color: #333;
-  border: 1px solid #454545;
-  color: #e0e0e0;
-}
 /*! darken paypal logo */
 [type='image'][src*='paypal'] {
   background: transparent;
@@ -73,16 +68,23 @@ textarea {
   background-color: #333;
   border: 1px solid #454545;
   color: #e0e0e0;
+  caret-color: var(--v0-9, --ac-1);
 }
-pre {
+input {
   background-color: #333;
   border: 1px solid #454545;
-  color: #35ee00;
+  color: #e0e0e0;
+  caret-color: var(--v0-9, --ac-1);
 }
 select {
   background-color: #333;
   border: 1px solid #454545;
   color: #e0e0e0;
+}
+pre {
+  background-color: #333;
+  border: 1px solid #454545;
+  color: #35ee00;
 }
 .table_row_bg {
   background-color: #222;

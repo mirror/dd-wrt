@@ -43,28 +43,27 @@ function check_form(F) {
 						wpa_psk_error = 0;
 						if(result == false) return result;
 					}
-				} else {
-					if(element.options[element.selectedIndex].value.substr(0,3) == "wep") {
-						var iface = element.name.substr(0, element.name.length - 14).replace("X",".");
-						for (var j=1; j <= 4; j++) {
-							if(F.elements[iface + '_key'][j-1].checked) {
-								aaa = eval(F.elements[iface+"_key"+j]).value;
-								if(aaa == "") {
-									alert(errmsg.err40 + j);
-									return false;
-								} else {
-									result = valid_wep(F.elements[iface+"_key"+j]);
-									wep_error = 0;
-									if(result == false) return result;
-								}
-							//break;
+				} else { if(element.options[element.selectedIndex].value.substr(0,3) == "wep") {
+					var iface = element.name.substr(0, element.name.length - 14).replace("X",".");
+					for (var j=1; j <= 4; j++) {
+						if(F.elements[iface + '_key'][j-1].checked) {
+							aaa = eval(F.elements[iface+"_key"+j]).value;
+							if(aaa == "") {
+								alert(errmsg.err40 + j);
+								return false;
 							} else {
 								result = valid_wep(F.elements[iface+"_key"+j]);
 								wep_error = 0;
 								if(result == false) return result;
 							}
+							//break;
+						} else {
+							result = valid_wep(F.elements[iface+"_key"+j]);
+							wep_error = 0;
+							if(result == false) return result;
 						}
-				 	}
+					}
+				 }
 				}
 			}
 		}	
@@ -96,62 +95,64 @@ function valid_radius(F) {
 			return false;
 		}
 	}
+
 	return true;
 }
 
 function valid_wpa_psk(F, blur) {
 	if(F.nodeName == 'INPUT') {
 		var value = F.value;
-		if(F.value.length == 64) {
+		if(F.value.length == 64){
 			if(!isxdigit(F, F.value)) {
 				wpa_psk_error = 1;
 				setTimeout("wpa_psk_error=0", 1000);
 				return false;
 			}
 		} else {
-			if(F.value.length >=8 && F.value.length <= 63 ) {
+		if(F.value.length >=8 && F.value.length <= 63 ){
+			if(!isascii(F,F.value)) {
+				F.value = value;
+				wpa_psk_error = 1;
+				setTimeout("wpa_psk_error=0", 1000);
+				return false;
+			}
+		} else {
+			if(blur) {
 				if(!isascii(F,F.value)) {
 					F.value = value;
 					wpa_psk_error = 1;
 					setTimeout("wpa_psk_error=0", 1000);
 					return false;
-				}
+				}	
 			} else {
-				if(blur) {
-					if(!isascii(F,F.value)) {
-						F.value = value;
-						wpa_psk_error = 1;
-						setTimeout("wpa_psk_error=0", 1000);
-						return false;
-					}	
-				} else {
-					if(!wpa_psk_error) {
-						alert(errmsg.err39);
-						wpa_psk_error = 1;
-						setTimeout("wpa_psk_error=0", 1000);
-					}
-					return false;
+				if(!wpa_psk_error) {
+					alert(errmsg.err39);
+					wpa_psk_error = 1;
+					setTimeout("wpa_psk_error=0", 1000);
 				}
+				return false;
 			}
+		}
 		}
 	} else {
 		if(F.security_mode.value == "psk" || F.security_mode.value == "psk2" || F.security_mode.value == "psk psk2"){
-			if(F.wl_wpa_psk.value.length == 64) {
+			if(F.wl_wpa_psk.value.length == 64){
 				if(!isxdigit(F.wl_wpa_psk, F.wl_wpa_psk.value)) {
 					return false;
 				}
 			} else {
-				if(F.wl_wpa_psk.value.length >=8 && F.wl_wpa_psk.value.length <= 63 ) {
-					if(!isascii(F.wl_wpa_psk,F.wl_wpa_psk.value)) {
-						return false;
-					}
-				} else {
-					alert(errmsg.err39);
+			if(F.wl_wpa_psk.value.length >=8 && F.wl_wpa_psk.value.length <= 63 ){
+				if(!isascii(F.wl_wpa_psk,F.wl_wpa_psk.value)) {
 					return false;
 				}
+			} else{
+				alert(errmsg.err39);
+				return false;
+			}
 			}
 		}
 	}
+
 	wpa_psk_error = 0;
 	return true;
 }
@@ -201,6 +202,7 @@ function valid_wep(F, blur) {
 			}
 		}
 	}
+
   wep_error = 0;
   return true;
 }
@@ -272,7 +274,6 @@ addEvent(window, "load", function() {
 	stickControl(<% nvg("sticky_footer"); %>);
 
 	<% init_80211x_layers(); %>
-
 	var F = document.forms[0];
 	if(F.security_mode && F.wl_wep_bit) {
 		if(F.security_mode.value == "wep" || F.security_mode.value == "radius") {
