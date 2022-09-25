@@ -201,7 +201,7 @@ table, .table {
   border-spacing: 1px;
 }
 .table.raid {
-	margin-top: .4em;
+  margin-top: .4em;
 }
 .table.weekdays {
   margin-left: -1.3rem;
@@ -502,7 +502,7 @@ input.button[onclick*='delete'] {
   margin: -.1rem .5em 0 .362em;
 }
 input.button[onclick*="to_delete"] {
-	margin: -.1rem .5em 0 .4rem;
+  margin: -.1rem .5em 0 .4rem;
 }
 input.button[onclick*='FilterSummary'] {
   margin-top: -.1rem;
