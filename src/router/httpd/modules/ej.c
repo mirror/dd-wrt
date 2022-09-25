@@ -323,7 +323,7 @@ FILE *_getWebsFile(webs_t wp, char *path2)
 	size_t insensitive_len;
 	int found = 0;
 	int found2 = 0;
-	size_t len;
+	size_t len = 0;
 	while (websRomPageIndex[i].path != NULL) {
 		len = websRomPageIndex[i].size - WEBSOFFSET;
 		if (!found && (endswith(path, ".asp") || endswith(path, ".htm") || endswith(path, ".html"))) {
@@ -370,6 +370,8 @@ err:
 	fseek(web, 0, SEEK_SET);
 	wp->s_fileoffset = 0;
 err2:
+	wp->s_filelen = 0;
+	wp->s_fileoffset = 0;
 	debug_free(path);
 	return web;
 }
