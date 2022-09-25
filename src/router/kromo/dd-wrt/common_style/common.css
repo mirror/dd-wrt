@@ -245,7 +245,7 @@ table[summary='ports forwarding table'] .num[size='5'] {
 table[summary='ports forwarding table'] input[size='10'] {
   max-width: 79px;
 }
-form {
+form, .button.margin-0 {
   margin: 0;
 }
 form[name='wds'] select {
