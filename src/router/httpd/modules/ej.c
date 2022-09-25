@@ -340,7 +340,7 @@ FILE *_getWebsFile(webs_t wp, char *path2)
 				sensitive = curoffset;
 			}
 		}
-		curoffset += *len;
+		curoffset += len;
 		i++;
 	}
 	if (found || found2) {
