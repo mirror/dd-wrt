@@ -50,7 +50,6 @@
 #define	_LINUX_SIMD_ARM_H
 
 #include <sys/types.h>
-#include <sys/cdefs.h>
 
 #define	kfpu_allowed()		1
 #define	kfpu_initialize(tsk)	do {} while (0)
@@ -76,7 +75,13 @@ HWCAP_SHA2
 
 */
 
+#define	PPC_FEATURE_HAS_ALTIVEC	0x10000000
 
+#define	PPC_FEATURE_HAS_VSX	0x00000080
+
+#define	PPC_FEATURE2_ARCH_2_07	0x80000000
+
+#if 0
 /*
  * Check if NEON is available
  */
@@ -103,5 +108,5 @@ zfs_sha512_available(void)
 {
 	return ((cpu_features2 & PPC_FEATURE2_ARCH_2_07) != 0);
 }
-
+#endif
 #endif /* _LINUX_SIMD_ARM_H */

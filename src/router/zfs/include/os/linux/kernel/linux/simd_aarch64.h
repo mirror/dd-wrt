@@ -65,7 +65,7 @@ HWCAP_SHA2
 
 */
 
-
+#if 0
 /*
  * Check if NEON is available
  */
@@ -92,5 +92,5 @@ zfs_sha512_available(void)
 {
 	return ((cpu_features2 & PPC_FEATURE2_ARCH_2_07) != 0);
 }
-
+#endif
 #endif /* _LINUX_SIMD_AARCH64_H */
