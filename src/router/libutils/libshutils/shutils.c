@@ -1151,7 +1151,7 @@ char *strattach(char *src, char *attach, char *delimiter)
 
 }
 
-char *strspcattach(char *src, char *attach, char *delimiter)
+char *strspcattach(char *src, char *attach)
 {
 	return strattach(src, attach, " ");
 }
