@@ -103,7 +103,7 @@ typedef struct {
 	char *authorization;
 
 //internal vars only
-	char *path;
+	char *s_path;
 	unsigned char *s_filebuffer;
 	int s_filecount;
 	size_t s_filelen;
