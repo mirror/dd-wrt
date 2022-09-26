@@ -875,8 +875,8 @@ size_t websWrite(webs_t wp, char *fmt, ...);
 
 void do_ej(unsigned char method, struct mime_handler *handler, char *path, webs_t stream);
 
-FILE *getWebsFile(webs_t wp, char *path);
-FILE *_getWebsFile(webs_t wp, char *path);
+int getWebsFile(webs_t wp, char *path);
+int _getWebsFile(webs_t wp, char *path);
 
 int wfputs(char *buf, webs_t fp);
 
