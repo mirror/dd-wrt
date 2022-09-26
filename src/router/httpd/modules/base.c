@@ -460,22 +460,19 @@ static char *_tran_string(char *buf, size_t len, char *str)
 
 static char *readweb(webs_t wp, char *filename)
 {
-	int web = _getWebsFile(wp, filename);
+	size_t len;
+	FILE *web = _getWebsFile(wp, filename, &len);
 	if (!web) {
 		return NULL;
 	}
-	char *webfile = (char *)safe_malloc(wp->s_filelen + 1);
+	char *webfile = (char *)safe_malloc(len + 1);
 	if (!webfile) {
+		fclose(web);
 		return NULL;
 	}
-	www_lock(wp);
-	FILE *fp = fopen(wp->s_path, "rb");
-	debug_free(wp->s_path);
-	fseek(fp, wp->s_fileoffset, SEEK_SET);
-	fread(webfile, wp->s_filelen, 1, fp);
-	fclose(fp);
-	www_unlock(wp);
-	webfile[wp->s_filelen] = 0;
+	fread(webfile, len, 1, web);
+	fclose(web);
+	webfile[len] = 0;
 	return webfile;
 }
 
@@ -2291,17 +2288,11 @@ static char *getLanguageName()
 
 static char *scanfile(webs_t wp, char *buf, const char *tran)
 {
+	char *temp = malloc(256);
 	char *temp2;
 	char *temp1;
-	int web = _getWebsFile(wp, buf);
-	if (!web)
-	    return NULL;
-	char *temp = malloc(256);
-	www_lock(wp);
-	FILE *fp = fopen(wp->s_path, "rb");
-	debug_free(wp->s_path);
-	fseek(fp, wp->s_fileoffset, SEEK_SET);
-	size_t filelen = wp->s_filelen;
+	size_t filelen;
+	FILE *fp = _getWebsFile(wp, buf, &filelen);
 	if (fp) {
 		temp1 = malloc(strlen(tran) + 3);
 		strcpy(temp1, tran);
@@ -2321,7 +2312,6 @@ static char *scanfile(webs_t wp, char *buf, const char *tran)
 					debug_free(temp);
 					debug_free(temp1);
 					fclose(fp);
-					www_unlock(wp);
 					return NULL;
 				}
 				if (!count && (val == ' ' || val == '\r' || val == '\t' || val == '\n'))
@@ -2334,7 +2324,6 @@ static char *scanfile(webs_t wp, char *buf, const char *tran)
 					if (v == EOF) {
 						debug_free(temp);
 						debug_free(temp1);
-					www_unlock(wp);
 						return NULL;
 					}
 					if (v == '"' && prev != '\\') {
@@ -2352,7 +2341,6 @@ static char *scanfile(webs_t wp, char *buf, const char *tran)
 				debug_free(temp);
 				debug_free(temp1);
 				fclose(fp);
-					www_unlock(wp);
 				return NULL;
 			}
 			if (count == 255)
@@ -2384,7 +2372,6 @@ static char *scanfile(webs_t wp, char *buf, const char *tran)
 						debug_free(temp);
 						debug_free(temp1);
 						fclose(fp);
-					www_unlock(wp);
 						return temp2;
 					}
 				}
@@ -2395,7 +2382,6 @@ static char *scanfile(webs_t wp, char *buf, const char *tran)
 		fclose(fp);
 	}
 	debug_free(temp);
-	www_unlock(wp);
 	return NULL;
 }
 

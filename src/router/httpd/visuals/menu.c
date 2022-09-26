@@ -316,16 +316,19 @@ EJ_VISIBLE void ej_do_menu(webs_t wp, int argc, char_t ** argv)
 		if (i >= MAXMENU)
 			break;
 		if (!strcmp(m->menu[i][0], mainmenu)) {
+//fprintf(stderr,"%s->%d\n",__func__,__LINE__);
 #ifdef HAVE_MADWIFI
 			if (!wifi && wimaxwifi && !strcmp_pnt(m->menu[i][0], "Wireless_Basic.asp"))
 				websWrite(wp, "<li class=\"current\"><span><strong><script type=\"text/javascript\">Capture(bmenu.wimax)</script></strong></span>\n");
 			else
 #endif
 				websWrite(wp, "<li class=\"current\"><span><strong><script type=\"text/javascript\">Capture(bmenu.%s)</script></strong></span>\n", m->menuname[i][0]);
+//fprintf(stderr,"%s->%d\n",__func__,__LINE__);
 			websWrite(wp, "<div id=\"menuSub\">\n");
 			websWrite(wp, "<ul id=\"menuSubList\">\n");
 
 			for (j = 0; j < MAXSUBMENU; j++) {
+//fprintf(stderr,"%s->%d %d %d\n",__func__,__LINE__,i, j);
 				if (!m->menu[i][j] || !(*m->menu[i][j]))
 					continue;
 #ifdef HAVE_MADWIFI
