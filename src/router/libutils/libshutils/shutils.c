@@ -1151,6 +1151,11 @@ char *strattach(char *src, char *attach, char *delimiter)
 
 }
 
+char *strspcattach(char *src, char *attach, char *delimiter)
+{
+	return strattach(src, attach, " ");
+}
+
 #undef malloc
 
 void *dd_malloc(size_t len)
