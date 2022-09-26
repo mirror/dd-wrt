@@ -460,7 +460,6 @@ static char *_tran_string(char *buf, size_t len, char *str)
 
 static char *readweb(webs_t wp, char *filename)
 {
-	size_t len;
 	FILE *web = _getWebsFile(wp, filename);
 	if (!web) {
 		return NULL;
@@ -470,10 +469,12 @@ static char *readweb(webs_t wp, char *filename)
 		fclose(web);
 		return NULL;
 	}
+	www_lock(wp);
 	fseek(web, wp->s_fileoffset, SEEK_SET);
 	fread(webfile, wp->s_filelen, 1, web);
+	www_unlock(wp);
 	fclose(web);
-	webfile[len] = 0;
+	webfile[wp->s_filelen] = 0;
 	return webfile;
 }
 
@@ -2293,6 +2294,7 @@ static char *scanfile(webs_t wp, char *buf, const char *tran)
 	char *temp2;
 	char *temp1;
 	FILE *fp = _getWebsFile(wp, buf);
+	www_lock(wp);
 	fseek(fp, wp->s_fileoffset, SEEK_SET);
 	size_t filelen = wp->s_filelen;
 	if (fp) {
@@ -2314,6 +2316,7 @@ static char *scanfile(webs_t wp, char *buf, const char *tran)
 					debug_free(temp);
 					debug_free(temp1);
 					fclose(fp);
+					www_unlock(wp);
 					return NULL;
 				}
 				if (!count && (val == ' ' || val == '\r' || val == '\t' || val == '\n'))
@@ -2326,6 +2329,7 @@ static char *scanfile(webs_t wp, char *buf, const char *tran)
 					if (v == EOF) {
 						debug_free(temp);
 						debug_free(temp1);
+					www_unlock(wp);
 						return NULL;
 					}
 					if (v == '"' && prev != '\\') {
@@ -2343,6 +2347,7 @@ static char *scanfile(webs_t wp, char *buf, const char *tran)
 				debug_free(temp);
 				debug_free(temp1);
 				fclose(fp);
+					www_unlock(wp);
 				return NULL;
 			}
 			if (count == 255)
@@ -2374,6 +2379,7 @@ static char *scanfile(webs_t wp, char *buf, const char *tran)
 						debug_free(temp);
 						debug_free(temp1);
 						fclose(fp);
+					www_unlock(wp);
 						return temp2;
 					}
 				}
@@ -2384,6 +2390,7 @@ static char *scanfile(webs_t wp, char *buf, const char *tran)
 		fclose(fp);
 	}
 	debug_free(temp);
+	www_unlock(wp);
 	return NULL;
 }
 
