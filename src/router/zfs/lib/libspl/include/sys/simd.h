@@ -456,99 +456,17 @@ zfs_avx512vbmi_available(void)
 	    __zmm_enabled());
 }
 
-#elif defined(__arm__)
-#include <sys/auxv.h>
-
-#define	kfpu_allowed()		1
-#define	kfpu_initialize(tsk)	do {} while (0)
-#define	kfpu_begin()		do {} while (0)
-#define	kfpu_end()		do {} while (0)
-
-#if defined(__FreeBSD__)
-static inline unsigned long getauxval(unsigned long key)
-{
-	unsigned long val = 0UL;
-
-	if (elf_aux_info((int)key, &val, sizeof (val)) != 0)
-		return (0UL);
-
-	return (val);
-}
-#endif
-
-/*
- * Check if NEON is available
- */
-static inline boolean_t
-zfs_neon_available(void)
-{
-	unsigned long hwcap = getauxval(AT_HWCAP);
-	return (hwcap & HWCAP_NEON);
-}
-
-/*
- * Check if SHA2 is available
- */
-static inline boolean_t
-zfs_sha256_available(void)
-{
-	unsigned long hwcap = getauxval(AT_HWCAP);
-	return (hwcap & HWCAP2_SHA2);
-}
-
 #elif defined(__aarch64__)
-#include <sys/auxv.h>
 
 #define	kfpu_allowed()		1
 #define	kfpu_initialize(tsk)	do {} while (0)
 #define	kfpu_begin()		do {} while (0)
 #define	kfpu_end()		do {} while (0)
-
-#if defined(__FreeBSD__)
-static inline unsigned long getauxval(unsigned long key)
-{
-	unsigned long val = 0UL;
-
-	if (elf_aux_info((int)key, &val, sizeof (val)) != 0)
-		return (0UL);
-
-	return (val);
-}
-#endif
-
-/*
- * Check if NEON is available
- */
-static inline boolean_t
-zfs_neon_available(void)
-{
-	/* AARCH64 has NEON */
-	return (B_TRUE);
-}
-
-/*
- * Check if SHA2 is available
- */
-static inline boolean_t
-zfs_sha256_available(void)
-{
-	unsigned long hwcap = getauxval(AT_HWCAP);
-	return (hwcap & HWCAP_SHA2);
-}
-
-/*
- * Check if SHA512 is available
- */
-static inline boolean_t
-zfs_sha512_available(void)
-{
-	unsigned long hwcap = getauxval(AT_HWCAP);
-	return (hwcap & HWCAP_SHA512);
-}
 
 #elif defined(__powerpc__)
 
 /* including <sys/auxv.h> clashes with AT_UID and others */
+extern unsigned long getauxval(unsigned long type);
 #if defined(__FreeBSD__)
 #define	AT_HWCAP	25	/* CPU feature flags. */
 #define	AT_HWCAP2	26	/* CPU feature flags 2. */
@@ -565,7 +483,6 @@ static unsigned long getauxval(unsigned long key)
 #elif defined(__linux__)
 #define	AT_HWCAP	16	/* CPU feature flags. */
 #define	AT_HWCAP2	26	/* CPU feature flags 2. */
-extern unsigned long getauxval(unsigned long type);
 #endif
 
 #define	kfpu_allowed()		1

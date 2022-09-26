@@ -23,7 +23,6 @@
 #
 # Copyright (c) 2020 by Lawrence Livermore National Security, LLC.
 # Copyright (c) 2021 by The FreeBSD Foundation.
-# Copyright (c) 2022 by Delphix. All rights reserved.
 #
 
 . $STF_SUITE/include/libtest.shlib
@@ -35,10 +34,6 @@
 # STRATEGY:
 # 1. Create a dense file
 # 2. Punch an assortment of holes in the file and verify the result.
-#
-# Note: We can't compare exact block numbers as reported by du, because
-# different backing stores may allocate different numbers of blocks for
-# the same amount of data.
 #
 
 verify_runnable "global"
@@ -65,24 +60,27 @@ function cleanup
 	[[ -e $TESTDIR ]] && log_must rm -f $FILE
 }
 
-function get_reported_size
+function check_reported_size
 {
-	if ! [ -e "$FILE" ]; then
+	typeset expected_size=$1
+
+	if ! [ -e "${FILE}" ]; then
 		log_fail "$FILE does not exist"
 	fi
-
-	sync_pool $TESTPOOL >/dev/null 2>&1
-	du "$FILE" | awk '{print $1}'
+		
+	reported_size=$(du "${FILE}" | awk '{print $1}')
+	if [ "$reported_size" != "$expected_size" ]; then
+		log_fail "Incorrect reported size: $reported_size != $expected_size"
+	fi
 }
 
 function check_apparent_size
 {
 	typeset expected_size=$1
 
-	apparent_size=$(stat_size "$FILE")
+	apparent_size=$(stat_size "${FILE}")
 	if [ "$apparent_size" != "$expected_size" ]; then
-		log_fail \
-		    "Incorrect apparent size: $apparent_size != $expected_size"
+		log_fail "Incorrect apparent size: $apparent_size != $expected_size"
 	fi
 }
 
@@ -92,36 +90,30 @@ log_onexit cleanup
 
 # Create a dense file and check it is the correct size.
 log_must file_write -o create -f $FILE -b $BLKSZ -c 8
-full_size=$(get_reported_size)
+sync_pool $TESTPOOL
+log_must check_reported_size 1027
 
-# Punch a hole for the first full block. The reported size should decrease.
+# Punch a hole for the first full block.
 log_must punch_hole 0 $BLKSZ $FILE
-one_hole=$(get_reported_size)
-[[ $full_size -gt $one_hole ]] || log_fail \
-    "One hole failure: $full_size -> $one_hole"
+sync_pool $TESTPOOL
+log_must check_reported_size 899
 
-# Partially punch a hole in the second block. The reported size should
-# remain constant.
+# Partially punch a hole in the second block.
 log_must punch_hole $BLKSZ $((BLKSZ / 2)) $FILE
-partial_hole=$(get_reported_size)
-[[ $one_hole -eq $partial_hole ]] || log_fail \
-    "Partial hole failure: $one_hole -> $partial_hole"
+sync_pool $TESTPOOL
+log_must check_reported_size 899
 
-# Punch a hole which overlaps the third and fourth block. The reported size
-# should remain constant.
+# Punch a hole which overlaps the third and fourth block.
 log_must punch_hole $(((BLKSZ * 2) + (BLKSZ / 2))) $((BLKSZ)) $FILE
-overlap_hole=$(get_reported_size)
-[[ $one_hole -eq $overlap_hole ]] || log_fail \
-    "Overlap hole failure: $one_hole -> $overlap_hole"
+sync_pool $TESTPOOL
+log_must check_reported_size 899
 
-# Punch a hole from the fifth block past the end of file.  The reported size
-# should decrease, and the apparent file size should not change since
-# --keep-size is implied.
+# Punch a hole from the fifth block past the end of file.  The apparent
+# file size should not change since --keep-size is implied.
 apparent_size=$(stat_size $FILE)
 log_must punch_hole $((BLKSZ * 4)) $((BLKSZ * 10)) $FILE
-eof_hole=$(get_reported_size)
-[[ $overlap_hole -gt $eof_hole ]] || log_fail \
-    "EOF hole failure: $overlap_hole -> $eof_hole"
+sync_pool $TESTPOOL
+log_must check_reported_size 387
 log_must check_apparent_size $apparent_size
 
 log_pass "Ensure holes can be punched in files making them sparse"

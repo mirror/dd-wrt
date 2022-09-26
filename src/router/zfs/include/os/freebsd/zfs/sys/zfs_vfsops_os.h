@@ -128,6 +128,9 @@ struct zfsvfs {
 #define	ZFS_TEARDOWN_DESTROY(zfsvfs)		\
 	rms_destroy(&(zfsvfs)->z_teardown_lock)
 
+#define	ZFS_TEARDOWN_TRY_ENTER_READ(zfsvfs)	\
+	rms_try_rlock(&(zfsvfs)->z_teardown_lock)
+
 #define	ZFS_TEARDOWN_ENTER_READ(zfsvfs, tag)	\
 	rms_rlock(&(zfsvfs)->z_teardown_lock);
 
@@ -157,6 +160,9 @@ struct zfsvfs {
 
 #define	ZFS_TEARDOWN_DESTROY(zfsvfs)		\
 	rrm_destroy(&(zfsvfs)->z_teardown_lock)
+
+#define	ZFS_TEARDOWN_TRY_ENTER_READ(zfsvfs)	\
+	rw_tryenter(&(zfsvfs)->z_teardown_lock, RW_READER)
 
 #define	ZFS_TEARDOWN_ENTER_READ(zfsvfs, tag)	\
 	rrm_enter_read(&(zfsvfs)->z_teardown_lock, tag);

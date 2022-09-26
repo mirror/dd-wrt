@@ -382,12 +382,6 @@ membar_exit(void)
 }
 
 void
-membar_sync(void)
-{
-	__atomic_thread_fence(__ATOMIC_SEQ_CST);
-}
-
-void
 membar_producer(void)
 {
 	__atomic_thread_fence(__ATOMIC_RELEASE);
