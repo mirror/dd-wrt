@@ -129,8 +129,8 @@ ICP_OBJS_X86 := \
 	algs/modes/gcm_pclmulqdq.o
 
 ICP_OBJS_ARM := \
-	asm-aarch64/sha2/sha256-armv7.o \
-	asm-aarch64/sha2/sha512-armv7.o
+	asm-arm/sha256-armv7.o \
+	asm-arm/sha512-armv7.o
 
 ICP_OBJS_ARM64 := \
 	asm-aarch64/blake3/b3_aarch64_sse2.o \

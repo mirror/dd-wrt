@@ -52,8 +52,8 @@ endif
 
 if TARGET_CPU_ARM
 nodist_libicp_la_SOURCES += \
-	module/icp/asm-arm/sha2/sha256-armv7.S \
-	module/icp/asm-arm/sha2/sha512-armv7.S
+	module/icp/asm-arm/sha256-armv7.S \
+	module/icp/asm-arm/sha512-armv7.S
 endif
 
 if TARGET_CPU_POWERPC
