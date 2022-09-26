@@ -57,9 +57,6 @@
 /* Define to enable DHCP/RADIUS integration */
 #undef ENABLE_DHCPRADIUS
 
-/* Define to logging of DNS requests */
-#undef ENABLE_DNSLOG
-
 /* Define to enable EAPOL */
 #undef ENABLE_EAPOL
 
@@ -575,8 +572,7 @@
 /* Public define for json_inttypes.h */
 #undef JSON_C_HAVE_INTTYPES_H
 
-/* Define to the sub-directory in which libtool stores uninstalled libraries.
-   */
+/* Define to the sub-directory where libtool stores uninstalled libraries. */
 #undef LT_OBJDIR
 
 /* Define to 1 if your C compiler doesn't accept -c and -o together. */

@@ -1,7 +1,7 @@
 
 <fieldset>
 	<legend><% tran("hotspotsys.legend"); %><% nvram_else_match("hotss_remotekey", "", "", "&nbsp;- remotekey:&nbsp;"); %><% nvram_get("hotss_remotekey"); %></legend>
-	<div class="center"><a href="http://www.hotspotsystem.com/" target="_blank"><img src="images/hotspotsystem.png" alt="hotspotsystem logo" border="0" /></a></div><br />
+	<div class="center"><a href="http://www.hotspotsystem.com/" target="_blank"><img src="images/hotspotsystem.png" alt="hotspotsystem logo" border="0" /></a></div><br class="hide"/>
 	<div class="setting">
 		<div class="label"><% tran("hotspotsys.legend"); %></div>
 		<input class="spaceradio" type="radio" value="1" name="hotss_enable" <% nvsm("hotss_enable","1", "checked"); %> onclick="setHotss(this.value);" /><% tran("share.enable"); %>&nbsp;
