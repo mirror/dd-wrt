@@ -284,21 +284,25 @@ static void do_ej_buffer(char *buffer, webs_t stream)
 	do_ej_s(&buffer_get, stream);
 }
 
-static void do_ej_file(FILE * fp, webs_t stream)
+static void do_ej_file(webs_t stream)
 {
+	FILE *fp;
 #ifndef HAVE_MICRO
 	stream->s_filebuffer = (unsigned char *)malloc(stream->s_filelen);
 	stream->s_filecount = 0;
 	www_lock(stream);
+	fp = fopen(stream->s_path);
+	debug_free(stream->s_path);
 	fseek(fp, stream->s_fileoffset, SEEK_SET);
 	fread(stream->s_filebuffer, 1, stream->s_filelen, fp);
 	www_unlock(stream);
 	do_ej_s(&buffer_get, stream);
 	debug_free(stream->s_filebuffer);
 #else
-	stream->s_fp = fp;
+	fp = fopen(stream->s_path);
+	debug_free(stream->s_path);
 	stream->s_filecount = 0;
-	fseek(stream->s_fp, stream->s_fileoffset, SEEK_SET);
+	fseek(fp, stream->s_fileoffset, SEEK_SET);
 	do_ej_s(&file_get, stream);
 #endif
 }
@@ -307,7 +311,7 @@ static void do_ej_file(FILE * fp, webs_t stream)
 
 #include "../html.c"
 
-FILE *_getWebsFile(webs_t wp, char *path2)
+int _getWebsFile(webs_t wp, char *path2)
 {
 	FILE *web;
 
@@ -350,8 +354,14 @@ FILE *_getWebsFile(webs_t wp, char *path2)
 		web = fopen("/tmp/debug/www", "rbe");
 		if (!web)
 			web = fopen("/etc/www", "rbe");
+		else 
+			wp->s_path = strdup("/tmp/debug/www");
 		if (web == NULL)
 			goto err;
+		else if (!wp->s_path)
+			wp->s_path = strdup("/etc/www");
+		if (web)
+			fclose(web);
 		if (sensitive != -1) {
 			wp->s_fileoffset = sensitive;
 			wp->s_filelen = sensitive_len;
@@ -360,7 +370,7 @@ FILE *_getWebsFile(webs_t wp, char *path2)
 			wp->s_filelen = insensitive_len;
 		}
 		debug_free(path);
-		return web;
+		return 1;
 	}
 
 err:
@@ -369,27 +379,27 @@ err:
 		goto err2;
 	fseek(web, 0, SEEK_END);
 	wp->s_filelen = ftell(web);
-	fseek(web, 0, SEEK_SET);
+	fclose(web);
 	wp->s_fileoffset = 0;
+	wp->s_path = strdup(path);
 	debug_free(path);
-	return web;
+	
+	return 1;
 err2:
 	wp->s_filelen = 0;
 	wp->s_fileoffset = 0;
 	debug_free(path);
-	return web;
+	return 0;
 }
 
-FILE *getWebsFile(webs_t wp, char *path2)
+int getWebsFile(webs_t wp, char *path2)
 {
 	return _getWebsFile(wp, path2);
 }
 
 size_t getWebsFileLen(webs_t wp, char *path2)
 {
-	FILE *fp = _getWebsFile(wp, path2);
-	if (fp)
-		fclose(fp);
+	_getWebsFile(wp, path2);
 	return wp->s_filelen;
 }
 
@@ -397,18 +407,16 @@ static void send_headers(webs_t conn_fp, int status, char *title, char *extra_he
 
 int do_ej(unsigned char method, struct mime_handler *handler, char *path, webs_t stream)	// jimmy, https, 8/4/2003
 {
-	FILE *fp = NULL;
 	size_t len;
 	int i;
 	memdebug_enter();
 	i = 0;
-	fp = _getWebsFile(stream, path);
+	_getWebsFile(stream, path);
 	if (fp) {
 		if (handler && !handler->send_headers)
 			send_headers(stream, 200, "OK", handler->extra_header, handler->mime_type, -1, NULL, 1);
 		stream->path = path;
-		do_ej_file(fp, stream);
-		fclose(fp);
+		do_ej_file(stream);
 		return 0;
 	} else
 		return -1;
