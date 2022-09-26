@@ -76,7 +76,6 @@
 #include <sys/zfs_quota.h>
 #include <sys/zfs_sa.h>
 #include <sys/zfs_rlock.h>
-#include <sys/extdirent.h>
 #include <sys/bio.h>
 #include <sys/buf.h>
 #include <sys/sched.h>
@@ -971,13 +970,17 @@ zfs_lookup(vnode_t *dvp, const char *nm, vnode_t **vpp,
 		case RENAME:
 			if (error == ENOENT) {
 				error = EJUSTRETURN;
+#if __FreeBSD_version < 1400068
 				cnp->cn_flags |= SAVENAME;
+#endif
 				break;
 			}
 			zfs_fallthrough;
 		case DELETE:
+#if __FreeBSD_version < 1400068
 			if (error == 0)
 				cnp->cn_flags |= SAVENAME;
+#endif
 			break;
 		}
 	}
@@ -1327,7 +1330,10 @@ zfs_lookup_internal(znode_t *dzp, const char *name, vnode_t **vpp,
 	cnp->cn_nameptr = __DECONST(char *, name);
 	cnp->cn_namelen = strlen(name);
 	cnp->cn_nameiop = nameiop;
-	cnp->cn_flags = ISLASTCN | SAVENAME;
+	cnp->cn_flags = ISLASTCN;
+#if __FreeBSD_version < 1400068
+	cnp->cn_flags |= SAVENAME;
+#endif
 	cnp->cn_lkflags = LK_EXCLUSIVE | LK_RETRY;
 	cnp->cn_cred = kcred;
 #if __FreeBSD_version < 1400037
@@ -1648,10 +1654,11 @@ zfs_rmdir(znode_t *dzp, const char *name, znode_t *cwd, cred_t *cr, int flags)
  *			  and return buffer.
  *		cr	- credentials of caller.
  *		ct	- caller context
- *		flags	- case flags
  *
  *	OUT:	uio	- updated offset and range, buffer filled.
  *		eofp	- set to true if end-of-file detected.
+ *		ncookies- number of entries in cookies
+ *		cookies	- offsets to directory entries
  *
  *	RETURN:	0 on success, error code on failure.
  *
@@ -1669,7 +1676,6 @@ zfs_readdir(vnode_t *vp, zfs_uio_t *uio, cred_t *cr, int *eofp,
 {
 	znode_t		*zp = VTOZ(vp);
 	iovec_t		*iovp;
-	edirent_t	*eodp;
 	dirent64_t	*odp;
 	zfsvfs_t	*zfsvfs = zp->z_zfsvfs;
 	objset_t	*os;
@@ -1687,7 +1693,6 @@ zfs_readdir(vnode_t *vp, zfs_uio_t *uio, cred_t *cr, int *eofp,
 	uint8_t		type;
 	int		ncooks;
 	cookie_t	*cooks = NULL;
-	int		flags = 0;
 
 	if ((error = zfs_enter_verify_zp(zfsvfs, zp, FTAG)) != 0)
 		return (error);
@@ -1755,7 +1760,6 @@ zfs_readdir(vnode_t *vp, zfs_uio_t *uio, cred_t *cr, int *eofp,
 		outbuf = NULL;
 		odp = (struct dirent64 *)iovp->iov_base;
 	}
-	eodp = (struct edirent *)odp;
 
 	if (ncookies != NULL) {
 		/*
@@ -1824,25 +1828,7 @@ zfs_readdir(vnode_t *vp, zfs_uio_t *uio, cred_t *cr, int *eofp,
 			type = ZFS_DIRENT_TYPE(zap.za_first_integer);
 		}
 
-		if (flags & V_RDDIR_ACCFILTER) {
-			/*
-			 * If we have no access at all, don't include
-			 * this entry in the returned information
-			 */
-			znode_t	*ezp;
-			if (zfs_zget(zp->z_zfsvfs, objnum, &ezp) != 0)
-				goto skip_entry;
-			if (!zfs_has_access(ezp, cr)) {
-				vrele(ZTOV(ezp));
-				goto skip_entry;
-			}
-			vrele(ZTOV(ezp));
-		}
-
-		if (flags & V_RDDIR_ENTFLAGS)
-			reclen = EDIRENT_RECLEN(strlen(zap.za_name));
-		else
-			reclen = DIRENT64_RECLEN(strlen(zap.za_name));
+		reclen = DIRENT64_RECLEN(strlen(zap.za_name));
 
 		/*
 		 * Will this entry fit in the buffer?
@@ -1857,33 +1843,19 @@ zfs_readdir(vnode_t *vp, zfs_uio_t *uio, cred_t *cr, int *eofp,
 			}
 			break;
 		}
-		if (flags & V_RDDIR_ENTFLAGS) {
-			/*
-			 * Add extended flag entry:
-			 */
-			eodp->ed_ino = objnum;
-			eodp->ed_reclen = reclen;
-			/* NOTE: ed_off is the offset for the *next* entry */
-			next = &(eodp->ed_off);
-			eodp->ed_eflags = zap.za_normalization_conflict ?
-			    ED_CASE_CONFLICT : 0;
-			(void) strncpy(eodp->ed_name, zap.za_name,
-			    EDIRENT_NAMELEN(reclen));
-			eodp = (edirent_t *)((intptr_t)eodp + reclen);
-		} else {
-			/*
-			 * Add normal entry:
-			 */
-			odp->d_ino = objnum;
-			odp->d_reclen = reclen;
-			odp->d_namlen = strlen(zap.za_name);
-			/* NOTE: d_off is the offset for the *next* entry. */
-			next = &odp->d_off;
-			strlcpy(odp->d_name, zap.za_name, odp->d_namlen + 1);
-			odp->d_type = type;
-			dirent_terminate(odp);
-			odp = (dirent64_t *)((intptr_t)odp + reclen);
-		}
+		/*
+		 * Add normal entry:
+		 */
+		odp->d_ino = objnum;
+		odp->d_reclen = reclen;
+		odp->d_namlen = strlen(zap.za_name);
+		/* NOTE: d_off is the offset for the *next* entry. */
+		next = &odp->d_off;
+		strlcpy(odp->d_name, zap.za_name, odp->d_namlen + 1);
+		odp->d_type = type;
+		dirent_terminate(odp);
+		odp = (dirent64_t *)((intptr_t)odp + reclen);
+
 		outcount += reclen;
 
 		ASSERT3S(outcount, <=, bufsize);
@@ -1893,7 +1865,6 @@ zfs_readdir(vnode_t *vp, zfs_uio_t *uio, cred_t *cr, int *eofp,
 			dmu_prefetch(os, objnum, 0, 0, 0,
 			    ZIO_PRIORITY_SYNC_READ);
 
-	skip_entry:
 		/*
 		 * Move to the next entry, fill in the previous offset.
 		 */
@@ -4626,7 +4597,9 @@ zfs_freebsd_create(struct vop_create_args *ap)
 	znode_t *zp = NULL;
 	int rc, mode;
 
+#if __FreeBSD_version < 1400068
 	ASSERT(cnp->cn_flags & SAVENAME);
+#endif
 
 	vattr_init_mask(vap);
 	mode = vap->va_mode & ALLPERMS;
@@ -4656,7 +4629,9 @@ static int
 zfs_freebsd_remove(struct vop_remove_args *ap)
 {
 
+#if __FreeBSD_version < 1400068
 	ASSERT(ap->a_cnp->cn_flags & SAVENAME);
+#endif
 
 	return (zfs_remove_(ap->a_dvp, ap->a_vp, ap->a_cnp->cn_nameptr,
 	    ap->a_cnp->cn_cred));
@@ -4678,7 +4653,9 @@ zfs_freebsd_mkdir(struct vop_mkdir_args *ap)
 	znode_t *zp = NULL;
 	int rc;
 
+#if __FreeBSD_version < 1400068
 	ASSERT(ap->a_cnp->cn_flags & SAVENAME);
+#endif
 
 	vattr_init_mask(vap);
 	*ap->a_vpp = NULL;
@@ -4704,7 +4681,9 @@ zfs_freebsd_rmdir(struct vop_rmdir_args *ap)
 {
 	struct componentname *cnp = ap->a_cnp;
 
+#if __FreeBSD_version < 1400068
 	ASSERT(cnp->cn_flags & SAVENAME);
+#endif
 
 	return (zfs_rmdir_(ap->a_dvp, ap->a_vp, cnp->cn_nameptr, cnp->cn_cred));
 }
@@ -4958,8 +4937,10 @@ zfs_freebsd_rename(struct vop_rename_args *ap)
 	vnode_t *tvp = ap->a_tvp;
 	int error;
 
+#if __FreeBSD_version < 1400068
 	ASSERT(ap->a_fcnp->cn_flags & (SAVENAME|SAVESTART));
 	ASSERT(ap->a_tcnp->cn_flags & (SAVENAME|SAVESTART));
+#endif
 
 	error = zfs_do_rename(fdvp, &fvp, ap->a_fcnp, tdvp, &tvp,
 	    ap->a_tcnp, ap->a_fcnp->cn_cred);
@@ -4995,7 +4976,9 @@ zfs_freebsd_symlink(struct vop_symlink_args *ap)
 #endif
 	int rc;
 
+#if __FreeBSD_version < 1400068
 	ASSERT(cnp->cn_flags & SAVENAME);
+#endif
 
 	vap->va_type = VLNK;	/* FreeBSD: Syscall only sets va_mode. */
 	vattr_init_mask(vap);
@@ -5089,7 +5072,9 @@ zfs_freebsd_link(struct vop_link_args *ap)
 	if (tdvp->v_mount != vp->v_mount)
 		return (EXDEV);
 
+#if __FreeBSD_version < 1400068
 	ASSERT(cnp->cn_flags & SAVENAME);
+#endif
 
 	return (zfs_link(VTOZ(tdvp), VTOZ(vp),
 	    cnp->cn_nameptr, cnp->cn_cred, 0));
@@ -5361,10 +5346,10 @@ zfs_getextattr_dir(struct vop_getextattr_args *ap, const char *attrname)
 	NDINIT_ATVP(&nd, LOOKUP, NOFOLLOW, UIO_SYSSPACE, attrname, xvp);
 #endif
 	error = vn_open_cred(&nd, &flags, 0, VN_OPEN_INVFS, ap->a_cred, NULL);
-	vp = nd.ni_vp;
-	NDFREE_PNBUF(&nd);
 	if (error != 0)
 		return (SET_ERROR(error));
+	vp = nd.ni_vp;
+	NDFREE_PNBUF(&nd);
 
 	if (ap->a_size != NULL) {
 		error = VOP_GETATTR(vp, &va, ap->a_cred);
@@ -5506,12 +5491,10 @@ zfs_deleteextattr_dir(struct vop_deleteextattr_args *ap, const char *attrname)
 	    UIO_SYSSPACE, attrname, xvp);
 #endif
 	error = namei(&nd);
-	vp = nd.ni_vp;
-	if (error != 0) {
-		NDFREE_PNBUF(&nd);
+	if (error != 0)
 		return (SET_ERROR(error));
-	}
 
+	vp = nd.ni_vp;
 	error = VOP_REMOVE(nd.ni_dvp, vp, &nd.ni_cnd);
 	NDFREE_PNBUF(&nd);
 
@@ -5651,10 +5634,10 @@ zfs_setextattr_dir(struct vop_setextattr_args *ap, const char *attrname)
 #endif
 	error = vn_open_cred(&nd, &flags, 0600, VN_OPEN_INVFS, ap->a_cred,
 	    NULL);
-	vp = nd.ni_vp;
-	NDFREE_PNBUF(&nd);
 	if (error != 0)
 		return (SET_ERROR(error));
+	vp = nd.ni_vp;
+	NDFREE_PNBUF(&nd);
 
 	VATTR_NULL(&va);
 	va.va_size = 0;
@@ -5838,10 +5821,10 @@ zfs_listextattr_dir(struct vop_listextattr_args *ap, const char *attrprefix)
 	    UIO_SYSSPACE, ".", xvp);
 #endif
 	error = namei(&nd);
-	vp = nd.ni_vp;
-	NDFREE_PNBUF(&nd);
 	if (error != 0)
 		return (SET_ERROR(error));
+	vp = nd.ni_vp;
+	NDFREE_PNBUF(&nd);
 
 	auio.uio_iov = &aiov;
 	auio.uio_iovcnt = 1;

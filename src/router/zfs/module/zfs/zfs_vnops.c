@@ -80,10 +80,6 @@ out:
 	return (error);
 }
 
-#ifndef SEEK_DATA
-#define SEEK_DATA 3
-#define SEEK_HOLE 4
-#endif
 
 #if defined(SEEK_HOLE) && defined(SEEK_DATA)
 /*
