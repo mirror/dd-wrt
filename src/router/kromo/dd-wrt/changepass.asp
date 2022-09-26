@@ -232,7 +232,7 @@ function to_submit(F) {
 		F.change_action.value = "gozila_cgi";
 		F.submit_button.value = "index";
 		F.submit_type.value = "changepass";
-		F.changepassword.value = "Changing Password";
+		F.changepassword.value = management.cpbutton_changed;
 		F.action.value = "Apply";
 		apply(F);
 	}
