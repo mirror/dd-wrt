@@ -757,10 +757,13 @@ static int do_file_2(struct mime_handler *handler, char *path, webs_t stream, ch
 	}
 	if (DO_SSL(stream)) {
 		char *buffer = malloc(4096);
-		fseek(web, stream->s_fileoffset, SEEK_SET);
 		size_t len = stream->s_filelen;
 		while (len && !feof(web)) {
+			www_lock(stream);
+			fseek(web, stream->s_fileoffset, SEEK_SET);
 			size_t ret = fread(buffer, 1, len > 4096 ? 4096 : len, web);
+			stream->s_fileoffset+=ret;
+			www_unlock(stream);
 			if (ferror(web)) {
 				dd_loginfo("httpd", "%s: cannot read from local file stream (%s)\n", __func__, strerror(errno));
 				break;	// deadlock prevention
@@ -773,8 +776,10 @@ static int do_file_2(struct mime_handler *handler, char *path, webs_t stream, ch
 		debug_free(buffer);
 	} else {
 		wfflush(stream);
+		www_lock(stream);
 		fseek(web, stream->s_fileoffset, SEEK_SET);
 		wfsendfile(fileno(web), stream->s_fileoffset, stream->s_filelen, stream);
+		www_unlock(stream);
 	}
 	fclose(web);
 	return 0;
@@ -1524,6 +1529,7 @@ int main(int argc, char **argv)
 #ifdef HAVE_WIVIZ
 	PTHREAD_MUTEX_INIT(&global_vars.wiz_mutex_contr, NULL);
 #endif
+	PTHREAD_MUTEX_INIT(&global_vars.www_mutex, NULL);
 #endif
 
 	strcpy(pid_file, "/var/run/httpd.pid");
