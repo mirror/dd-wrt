@@ -18,10 +18,8 @@
  *
  * CDDL HEADER END
  */
-
 /*
  * Copyright (C) 2016 Romain Dolbeau <romain@dolbeau.org>.
- * Copyright (C) 2022 Tino Reichardt <milky-zfs@mcmilk.de>
  */
 
 /*
@@ -39,6 +37,9 @@
 #define	_LINUX_SIMD_AARCH64_H
 
 #include <sys/isa_defs.h>
+
+#if defined(__aarch64__)
+
 #include <sys/types.h>
 #include <asm/neon.h>
 
@@ -48,49 +49,6 @@
 #define	kfpu_init()		0
 #define	kfpu_fini()		((void) 0)
 
-/*
+#endif /* __aarch64__ */
 
-FreeBSD
-arm   HWCAP_NEON HWCAP2_SHA2
-arm64 HWCAP_SHA2 HWCAP_SHA512 HWCAP32_NEON HWCAP32_2_SHA2
-
-#define	HWCAP_NEON		0x00001000
-#define	HWCAP2_SHA2		0x00000008
-
-Linux
-arm   HWCAP_NEON HWCAP2_SHA2
-arm64 HWCAP_SHA2 HWCAP_SHA512
-
-HWCAP_SHA2
-
-*/
-
-#if 0
-/*
- * Check if NEON is available
- */
-static inline boolean_t
-zfs_neon_available(void)
-{
-	return ((cpu_features & PPC_FEATURE_HAS_ALTIVEC) != 0);
-}
-
-/*
- * Check if SHA256 is available
- */
-static inline boolean_t
-zfs_sha256_available(void)
-{
-	return ((cpu_features & PPC_FEATURE_HAS_VSX) != 0);
-}
-
-/*
- * Check if SHA512 is available
- */
-static inline boolean_t
-zfs_sha512_available(void)
-{
-	return ((cpu_features2 & PPC_FEATURE2_ARCH_2_07) != 0);
-}
-#endif
 #endif /* _LINUX_SIMD_AARCH64_H */

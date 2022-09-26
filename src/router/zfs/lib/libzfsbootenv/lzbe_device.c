@@ -74,7 +74,6 @@ lzbe_set_boot_device(const char *pool, lzbe_flags_t flag, const char *device)
 	/* version is mandatory */
 	fnvlist_add_uint64(nv, BOOTENV_VERSION, VB_NVLIST);
 
-	rv = 0;
 	/*
 	 * If device name is empty, remove boot device configuration.
 	 */
@@ -96,8 +95,8 @@ lzbe_set_boot_device(const char *pool, lzbe_flags_t flag, const char *device)
 				rv = ENOMEM;
 		}
 	}
-	if (rv == 0)
-		rv = zpool_set_bootenv(zphdl, nv);
+
+	rv = zpool_set_bootenv(zphdl, nv);
 	if (rv != 0)
 		fprintf(stderr, "%s\n", libzfs_error_description(hdl));
 
