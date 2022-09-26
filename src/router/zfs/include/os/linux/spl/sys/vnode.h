@@ -52,6 +52,10 @@
 
 #define	F_FREESP	11 	/* Free file space */
 
+#ifndef SEEK_DATA
+#define SEEK_DATA 3
+#define SEEK_HOLE 4
+#endif
 
 #if defined(SEEK_HOLE) && defined(SEEK_DATA)
 #define	F_SEEK_DATA	SEEK_DATA
