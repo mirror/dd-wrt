@@ -552,6 +552,11 @@ zpl_direct_IO(int rw, struct kiocb *kiocb, struct iov_iter *iter, loff_t pos)
 
 #endif /* HAVE_VFS_RW_ITERATE */
 
+#ifndef SEEK_DATA
+#define SEEK_DATA 3
+#define SEEK_HOLE 4
+#endif
+
 static loff_t
 zpl_llseek(struct file *filp, loff_t offset, int whence)
 {
