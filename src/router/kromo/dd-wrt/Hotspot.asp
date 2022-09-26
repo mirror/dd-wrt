@@ -1,6 +1,6 @@
 <% do_pagehead("hotspot.titl"); %>
-		<script type="text/javascript">
-		//<![CDATA[
+	<script type="text/javascript">
+	//<![CDATA[
 
 function user_add_submit(F) {
 	F.change_action.value="gozila_cgi";
@@ -34,15 +34,14 @@ function to_apply(F) {
 	<% show_iradius_check(); %>
 	F.change_action.value = "";
 	F.submit_type.value = "";
-	F.save_button.value = sbutton.saving;
+	F.apply_button.value = sbutton.applied;
 	if(F._hotss_customsplash) {
 		F.hotss_customsplash.value = F._hotss_customsplash.checked ? 1 : 0;
 	}
 	applytake(F);
 }
 
-function handle_hotss(F,value)
-{
+function handle_hotss(F,value) {
 	if(value == 0) {
 		choose_enable(F._hotss_customsplash);
 	}
@@ -51,7 +50,6 @@ function handle_hotss(F,value)
 		choose_disable(F._hotss_customsplash);
 	}
 }
-
 
 function setHotss(val) {
 	if (val == "1") {
@@ -101,16 +99,14 @@ addEvent(window, "load", function() {
 		
 	update = new StatusbarUpdate();
 	update.start();
-	
 });
 
 addEvent(window, "unload", function() {
 	update.stop();
-
 });
 		
-			//]]>
-		</script>
+	//]]>
+	</script>
 	</head>
 
 	<body class="gui">
@@ -130,7 +126,6 @@ addEvent(window, "unload", function() {
 							<input type="hidden" name="commit" value="1"/>
 							<input type="hidden" name="hotss_preconfig" value="0"/>
 							<input type="hidden" name="hotss_customsplash" />
-							
 							<h2><% tran("hotspot.h2"); %></h2>
 							<% show_modules(".webhotspot"); %>
 							<div id="footer" class="submitFooter">
