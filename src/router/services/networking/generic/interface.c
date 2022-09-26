@@ -540,9 +540,10 @@ void start_setup_vlans(void)
 		strcpy(port, portsettings[i]);
 		bzero(portsettings[i], 64);
 		char strvid[32];
-		sprintf(strvid,"%d*",vlan_number);
 		foreach(vlan, port, next) {
 			int vlan_number = vlan[0] - '0';
+			char strvid[32];
+			sprintf(strvid,"%d*",vlan_number);
 			if (vlan_number < 5 && vlan_number >= 0) {
 				strspcattach( portsettings[i], vlan);
 			} else if ((vlan_number == 5 || vlan_number == 8 || vlan_number == 7)
