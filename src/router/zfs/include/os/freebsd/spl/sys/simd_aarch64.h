@@ -20,7 +20,6 @@
  */
 
 /*
- * Copyright (C) 2016 Romain Dolbeau <romain@dolbeau.org>.
  * Copyright (C) 2022 Tino Reichardt <milky-zfs@mcmilk.de>
  */
 
@@ -33,20 +32,32 @@
  *	kfpu_end()
  *	kfpu_init()
  *	kfpu_fini()
+ *
+ * SIMD support:
+ *
+ * Following functions should be called to determine whether CPU feature
+ * is supported. All functions are usable in kernel and user space.
+ * If a SIMD algorithm is using more than one instruction set
+ * all relevant feature test functions should be called.
+ *
+ * Supported features:
+ *   zfs_neon_available()
+ *   zfs_sha256_available()
+ *   zfs_sha512_available()
  */
 
-#ifndef _LINUX_SIMD_AARCH64_H
-#define	_LINUX_SIMD_AARCH64_H
+#ifndef _FREEBSD_SIMD_ARM_H
+#define	_FREEBSD_SIMD_ARM_H
 
-#include <sys/isa_defs.h>
 #include <sys/types.h>
-#include <asm/neon.h>
+#include <sys/cdefs.h>
 
 #define	kfpu_allowed()		1
-#define	kfpu_begin()		kernel_neon_begin()
-#define	kfpu_end()		kernel_neon_end()
-#define	kfpu_init()		0
-#define	kfpu_fini()		((void) 0)
+#define	kfpu_initialize(tsk)	do {} while (0)
+#define	kfpu_begin()		do {} while (0)
+#define	kfpu_end()		do {} while (0)
+#define	kfpu_init()		(0)
+#define	kfpu_fini()		do {} while (0)
 
 /*
 
@@ -92,5 +103,3 @@ zfs_sha512_available(void)
 {
 	return ((cpu_features2 & PPC_FEATURE2_ARCH_2_07) != 0);
 }
-
-#endif /* _LINUX_SIMD_AARCH64_H */

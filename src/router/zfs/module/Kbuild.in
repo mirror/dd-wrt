@@ -119,12 +119,18 @@ ICP_OBJS_X86_64 := \
 	asm-x86_64/sha2/sha512-x86_64.o \
 	asm-x86_64/modes/aesni-gcm-x86_64.o \
 	asm-x86_64/modes/gcm_pclmulqdq.o \
-	asm-x86_64/modes/ghash-x86_64.o
+	asm-x86_64/modes/ghash-x86_64.o \
+	asm-x86_64/sha2/sha256_impl.o \
+	asm-x86_64/sha2/sha512_impl.o
 
 ICP_OBJS_X86 := \
 	algs/aes/aes_impl_aesni.o \
 	algs/aes/aes_impl_x86-64.o \
 	algs/modes/gcm_pclmulqdq.o
+
+ICP_OBJS_ARM := \
+	asm-aarch64/sha2/sha256-armv7.o \
+	asm-aarch64/sha2/sha512-armv7.o
 
 ICP_OBJS_ARM64 := \
 	asm-aarch64/blake3/b3_aarch64_sse2.o \
@@ -144,15 +150,16 @@ zfs-objs             += $(addprefix icp/,$(ICP_OBJS))
 zfs-$(CONFIG_X86)    += $(addprefix icp/,$(ICP_OBJS_X86))
 zfs-$(CONFIG_UML_X86)+= $(addprefix icp/,$(ICP_OBJS_X86))
 zfs-$(CONFIG_X86_64) += $(addprefix icp/,$(ICP_OBJS_X86_64))
+zfs-$(CONFIG_ARM)    += $(addprefix icp/,$(ICP_OBJS_ARM))
 zfs-$(CONFIG_ARM64)  += $(addprefix icp/,$(ICP_OBJS_ARM64))
 zfs-$(CONFIG_PPC)    += $(addprefix icp/,$(ICP_OBJS_PPC_PPC64))
 zfs-$(CONFIG_PPC64)  += $(addprefix icp/,$(ICP_OBJS_PPC_PPC64))
 
 $(addprefix $(obj)/icp/,$(ICP_OBJS) $(ICP_OBJS_X86) $(ICP_OBJS_X86_64) \
-	$(ICP_OBJS_ARM64) $(ICP_OBJS_PPC_PPC64)) : asflags-y += -I$(icp_include)
+	$(ICP_OBJS_ARM) $(ICP_OBJS_ARM64) $(ICP_OBJS_PPC_PPC64)) : asflags-y += -I$(icp_include)
 
 $(addprefix $(obj)/icp/,$(ICP_OBJS) $(ICP_OBJS_X86) $(ICP_OBJS_X86_64) \
-	$(ICP_OBJS_ARM64) $(ICP_OBJS_PPC_PPC64)) : ccflags-y += -I$(icp_include)
+	$(ICP_OBJS_ARM) $(ICP_OBJS_ARM64) $(ICP_OBJS_PPC_PPC64)) : ccflags-y += -I$(icp_include)
 
 # Suppress objtool "can't find jump dest instruction at" warnings.  They
 # are caused by the constants which are defined in the text section of the
@@ -464,10 +471,8 @@ zfs-objs            += $(addprefix zfs/,$(ZFS_OBJS)) $(addprefix os/linux/zfs/,$
 zfs-$(CONFIG_X86)   += $(addprefix zfs/,$(ZFS_OBJS_X86))
 zfs-$(CONFIG_UML_X86)+= $(addprefix zfs/,$(ZFS_OBJS_X86))
 zfs-$(CONFIG_ARM64) += $(addprefix zfs/,$(ZFS_OBJS_ARM64))
-ifeq ($(CONFIG_ALTIVEC),y)
 zfs-$(CONFIG_PPC)   += $(addprefix zfs/,$(ZFS_OBJS_PPC_PPC64))
 zfs-$(CONFIG_PPC64) += $(addprefix zfs/,$(ZFS_OBJS_PPC_PPC64))
-endif
 
 # Suppress incorrect warnings from versions of objtool which are not
 # aware of x86 EVEX prefix instructions used for AVX512.
