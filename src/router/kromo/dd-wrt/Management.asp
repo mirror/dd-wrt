@@ -159,19 +159,21 @@ function submitcheck(F) {
 			return false;
 		}
 	}
-
-	F.save_button.value = sbutton.saving;
 	return true;
 }
 
 function to_submit(F) {
-	if (submitcheck(F))
-	apply(F);
+	if (submitcheck(F)) {
+		F.save_button.value = sbutton.saving;
+		apply(F);
+	}
 }
 
 function to_apply(F) {
-	if (submitcheck(F))
-	applytake(F);
+	if (submitcheck(F)) {
+		F.apply_button.value = sbutton.applied;
+		applytake(F);
+	}
 }
 
 var update;

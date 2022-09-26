@@ -15,7 +15,7 @@
 		}
 		//]]>
 		</script>
-	</div><br />
+	</div><br class="hide"/>
 	<div class="setting">
 		<div class="label"><% tran("hotspot.wifidog_srv"); %></div>
 		<input class="spaceradio" type="radio" name="wd_enable" value="1" <% nvc("wd_enable", "1"); %> onclick="show_layer_ext(this, 'idwifidog', true)" /><% tran("share.enable"); %>&nbsp;
