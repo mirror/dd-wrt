@@ -33,6 +33,7 @@
 #include <sys/resource.h>
 #include <sys/vfs.h>
 #include <sys/vnode.h>
+#include <sys/extdirent.h>
 #include <sys/file.h>
 #include <sys/kmem.h>
 #include <sys/uio.h>

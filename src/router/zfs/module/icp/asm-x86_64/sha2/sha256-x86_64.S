@@ -1,22 +1,10 @@
 /*
  * Copyright 2004-2022 The OpenSSL Project Authors. All Rights Reserved.
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     https://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-
-/*
- * Portions Copyright (c) 2022 Tino Reichardt <milky-zfs@mcmilk.de>
- * - modified assembly to fit into OpenZFS
+ * Licensed under the Apache License 2.0 (the "License").  You may not use
+ * this file except in compliance with the License.  You can obtain a copy
+ * in the file LICENSE in the source distribution or at
+ * https://www.openssl.org/source/license.html
  */
 
 #if defined(__x86_64)
@@ -65,6 +53,7 @@ K256:
 .long	0x03020100,0x0b0a0908,0xffffffff,0xffffffff
 .long	0xffffffff,0xffffffff,0x03020100,0x0b0a0908
 .long	0xffffffff,0xffffffff,0x03020100,0x0b0a0908
+.byte	83,72,65,50,53,54,32,98,108,111,99,107,32,116,114,97,110,115,102,111,114,109,32,102,111,114,32,120,56,54,95,54,52,44,32,67,82,89,80,84,79,71,65,77,83,32,98,121,32,60,97,112,112,114,111,64,111,112,101,110,115,115,108,46,111,114,103,62,0
 
 .globl	zfs_sha256_transform_x64
 .type	zfs_sha256_transform_x64,@function
