@@ -369,6 +369,8 @@ err:
 	wp->s_filelen = ftell(web);
 	fseek(web, 0, SEEK_SET);
 	wp->s_fileoffset = 0;
+	debug_free(path);
+	return web;
 err2:
 	wp->s_filelen = 0;
 	wp->s_fileoffset = 0;
