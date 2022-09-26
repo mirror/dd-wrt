@@ -15,6 +15,7 @@ KMOD=	openzfs
 	${SRCDIR}/icp/asm-ppc64/blake3 \
 	${SRCDIR}/icp/asm-x86_64/blake3 \
 	${SRCDIR}/icp/algs/sha2 \
+	${SRCDIR}/icp/asm-arm/sha2 \
 	${SRCDIR}/icp/asm-aarch64/sha2 \
 	${SRCDIR}/icp/asm-ppc64/sha2 \
 	${SRCDIR}/icp/asm-x86_64/sha2 \
@@ -110,6 +111,10 @@ SRCS+=	blake3_avx2.S \
 SRCS+=	sha2_generic.c \
 	sha256_impl.c \
 	sha512_impl.c
+
+#icp/asm-arm/sha2
+SRCS+=	sha256-armv7.S \
+	sha512-armv7.S
 
 #icp/asm-aarch64/sha2
 SRCS+=	sha256-armv8.S \

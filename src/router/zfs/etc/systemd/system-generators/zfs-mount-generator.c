@@ -193,8 +193,6 @@ fopenat(int dirfd, const char *pathname, int flags,
 	return (fdopen(fd, stream_mode));
 }
 
-#define	my_strndupa(x,y)	strncpy(alloca(y),x,y)
-
 static int
 line_worker(char *line, const char *cachefile)
 {
@@ -228,7 +226,7 @@ line_worker(char *line, const char *cachefile)
 
 	const char *pool = dataset;
 	if ((toktmp = strchr(pool, '/')) != NULL)
-		pool = my_strndupa(pool, toktmp - pool);
+		pool = strndupa(pool, toktmp - pool);
 
 	if (p_nbmand == NULL) {
 		fprintf(stderr, PROGNAME "[%d]: %s: not enough tokens!\n",
