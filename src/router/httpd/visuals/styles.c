@@ -52,11 +52,10 @@ size_t wfwrite(void *buf, size_t size, size_t n, webs_t wp);
 
 void do_error_style(webs_t wp, int status, char *title, char *text)
 {
-	FILE *web = _getWebsFile(wp, "style/error_common.css");
-	if (!web)
+	int web = _getWebsFile(wp, "style/error_common.css");
+	if (web)
 		return;
 	if (!wp->s_filelen) {
-		fclose(web);
 		return;
 	}
 	char *mem = malloc(wp->s_filelen + 1 + 16 + strlen(title) + strlen(text) + strlen(text));
@@ -66,11 +65,12 @@ void do_error_style(webs_t wp, int status, char *title, char *text)
 		return;
 	}
 	www_lock(wp);
-	fseek(web, wp->s_fileoffset, SEEK_SET);
-	fread(mem, 1, wp->s_filelen, web);
+	FILE *fp = fopen(wp->s_path,"rb");
+	debug_free(wp->s_path);
+	fseek(fp, wp->s_fileoffset, SEEK_SET);
+	fread(mem, 1, wp->s_filelen, fp);
+	fclose(fp);
 	www_unlock(wp);
-
-	fclose(web);
 	size_t i;
 	char stat[32];
 	sprintf(stat, "%d", status);
@@ -138,23 +138,23 @@ void do_ddwrt_inspired_themes(webs_t wp)
 		return;
 	char path[128];
 	sprintf(path, "ddwrt_inspired_themes/%s.stylus", nvram_safe_get("stylus"));
-	FILE *web = _getWebsFile(wp, path);
+	int web = _getWebsFile(wp, path);
 	if (!web)
 		return;
 	if (!wp->s_filelen) {
-		fclose(web);
 		return;
 	}
 	char *mem = malloc(wp->s_filelen + 1);
 	if (!mem) {
-		fclose(web);
 		return;
 	}
 	www_lock(wp);
-	fseek(web, wp->s_fileoffset, SEEK_SET);
-	fread(mem, 1, wp->s_filelen, web);
+	FILE *fp = fopen(wp->s_path,"rb");
+	debug_free(wp->s_path);
+	fseek(fp, wp->s_fileoffset, SEEK_SET);
+	fread(mem, 1, wp->s_filelen, fp);
+	fclose(fp);
 	www_unlock(wp);
-	fclose(web);
 	websWrite(wp, "<style id=\"stylus-1\" type=\"text/css\" class=\"stylus\">\n");
 	wfwrite(mem, 1, wp->s_filelen, wp);
 	debug_free(mem);
@@ -163,18 +163,21 @@ void do_ddwrt_inspired_themes(webs_t wp)
 	if (!web)
 		return;
 	if (!wp->s_filelen) {
-		fclose(web);
 		return;
 	}
 	mem = malloc(wp->s_filelen + 1);
 
 	if (!mem) {
-		fclose(web);
 		return;
 	}
-	fseek(web, wp->s_fileoffset, SEEK_SET);
-	fread(mem, 1, wp->s_filelen, web);
-	fclose(web);
+
+	www_lock(wp);
+	FILE *fp = fopen(wp->s_path,"rb");
+	debug_free(wp->s_path);
+	fseek(fp, wp->s_fileoffset, SEEK_SET);
+	fread(mem, 1, wp->s_filelen, fp);
+	fclose(fp);
+	www_unlock();
 	wfwrite(mem, 1, wp->s_filelen, wp);
 	debug_free(mem);
 	websWrite(wp, "</style>\n");
