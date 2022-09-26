@@ -52,29 +52,25 @@ size_t wfwrite(void *buf, size_t size, size_t n, webs_t wp);
 
 void do_error_style(webs_t wp, int status, char *title, char *text)
 {
-	int web = _getWebsFile(wp, "style/error_common.css");
-	if (web)
+	size_t len = 0;
+	FILE *web = _getWebsFile(wp, "style/error_common.css", &len);
+	if (!web)
 		return;
-	if (!wp->s_filelen) {
+	if (!len) {
+		fclose(web);
 		return;
 	}
-	char *mem = malloc(wp->s_filelen + 1 + 16 + strlen(title) + strlen(text) + strlen(text));
+	char *mem = malloc(len + 1 + 16 + strlen(title) + strlen(text) + strlen(text));
 
 	if (!mem) {
 		fclose(web);
 		return;
 	}
-	www_lock(wp);
-	FILE *fp = fopen(wp->s_path,"rb");
-	debug_free(wp->s_path);
-	fseek(fp, wp->s_fileoffset, SEEK_SET);
-	fread(mem, 1, wp->s_filelen, fp);
-	fclose(fp);
-	www_unlock(wp);
-	size_t i;
+	fread(mem, 1, len, web);
+	fclose(web);
+	int i;
 	char stat[32];
 	sprintf(stat, "%d", status);
-	size_t len = wp->s_filelen; 
 	for (i = 0; i < len; i++) {
 		if (mem[i] == '%' && mem[i + 1] == 'd') {
 			memmove(&mem[i + strlen(stat)], &mem[i + 2], len - i);
@@ -137,48 +133,42 @@ void do_ddwrt_inspired_themes(webs_t wp)
 	if (nvram_match("router_style", "kromo") || nvram_match("router_style", "brainslayer") || nvram_match("router_style", "wikar") || nvram_match("router_style", "xirian"))
 		return;
 	char path[128];
+	size_t len = 0;
 	sprintf(path, "ddwrt_inspired_themes/%s.stylus", nvram_safe_get("stylus"));
-	int web = _getWebsFile(wp, path);
+	FILE *web = _getWebsFile(wp, path, &len);
 	if (!web)
 		return;
-	if (!wp->s_filelen) {
+	if (!len) {
+		fclose(web);
 		return;
 	}
-	char *mem = malloc(wp->s_filelen + 1);
+	char *mem = malloc(len + 1);
 	if (!mem) {
+		fclose(web);
 		return;
 	}
-	www_lock(wp);
-	FILE *fp = fopen(wp->s_path,"rb");
-	debug_free(wp->s_path);
-	fseek(fp, wp->s_fileoffset, SEEK_SET);
-	fread(mem, 1, wp->s_filelen, fp);
-	fclose(fp);
-	www_unlock(wp);
+	fread(mem, 1, len, web);
+	fclose(web);
 	websWrite(wp, "<style id=\"stylus-1\" type=\"text/css\" class=\"stylus\">\n");
-	wfwrite(mem, 1, wp->s_filelen, wp);
+	wfwrite(mem, 1, len, wp);
 	debug_free(mem);
 	sprintf(path, "ddwrt_inspired_themes/core.css");
-	web = _getWebsFile(wp, path);
+	web = _getWebsFile(wp, path, &len);
 	if (!web)
 		return;
-	if (!wp->s_filelen) {
+	if (!len) {
+		fclose(web);
 		return;
 	}
-	mem = malloc(wp->s_filelen + 1);
+	mem = malloc(len + 1);
 
 	if (!mem) {
+		fclose(web);
 		return;
 	}
-
-	www_lock(wp);
-	fp = fopen(wp->s_path,"rb");
-	debug_free(wp->s_path);
-	fseek(fp, wp->s_fileoffset, SEEK_SET);
-	fread(mem, 1, wp->s_filelen, fp);
-	fclose(fp);
-	www_unlock(wp);
-	wfwrite(mem, 1, wp->s_filelen, wp);
+	fread(mem, 1, len, web);
+	fclose(web);
+	wfwrite(mem, 1, len, wp);
 	debug_free(mem);
 	websWrite(wp, "</style>\n");
 }

@@ -49,16 +49,6 @@ extern BIO *bio_err;
 #define USE_LAN 0
 #define USE_WAN 1
 
-#if !defined(HAVE_MICRO) && !defined(__UCLIBC__)
-#include <pthread.h>
-#define www_lock(wp_stream) pthread_mutex_lock(&wp_stream->p->www_mutex)
-#define www_unlock(wp_stream) pthread_mutex_unlock(&wp_stream->p->www_mutex)
-#else
-#define www_lock(wp_stream)
-#define www_unlock(wp_stream)
-#endif
-
-
 typedef struct {
 //persistent
 	volatile int generate_key;
@@ -75,7 +65,6 @@ typedef struct {
 #ifdef HAVE_WIVIZ
 	pthread_mutex_t wiz_mutex_contr;
 #endif
-	pthread_mutex_t www_mutex;
 #endif
 } persistent_vars;
 
@@ -103,11 +92,10 @@ typedef struct {
 	char *authorization;
 
 //internal vars only
-	char *s_path;
+	FILE *s_fp;
 	unsigned char *s_filebuffer;
 	int s_filecount;
-	size_t s_filelen;
-	size_t s_fileoffset;
+	int s_filelen;
 	char label[64];
 	int upgrade_ret;
 	int restore_ret;
