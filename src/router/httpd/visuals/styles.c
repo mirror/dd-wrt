@@ -172,12 +172,12 @@ void do_ddwrt_inspired_themes(webs_t wp)
 	}
 
 	www_lock(wp);
-	FILE *fp = fopen(wp->s_path,"rb");
+	fp = fopen(wp->s_path,"rb");
 	debug_free(wp->s_path);
 	fseek(fp, wp->s_fileoffset, SEEK_SET);
 	fread(mem, 1, wp->s_filelen, fp);
 	fclose(fp);
-	www_unlock();
+	www_unlock(wp);
 	wfwrite(mem, 1, wp->s_filelen, wp);
 	debug_free(mem);
 	websWrite(wp, "</style>\n");

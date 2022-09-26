@@ -291,7 +291,7 @@ static void do_ej_file(webs_t stream)
 	stream->s_filebuffer = (unsigned char *)malloc(stream->s_filelen);
 	stream->s_filecount = 0;
 	www_lock(stream);
-	fp = fopen(stream->s_path);
+	fp = fopen(stream->s_path, "rb");
 	debug_free(stream->s_path);
 	fseek(fp, stream->s_fileoffset, SEEK_SET);
 	fread(stream->s_filebuffer, 1, stream->s_filelen, fp);
@@ -299,7 +299,7 @@ static void do_ej_file(webs_t stream)
 	do_ej_s(&buffer_get, stream);
 	debug_free(stream->s_filebuffer);
 #else
-	fp = fopen(stream->s_path);
+	fp = fopen(stream->s_path, "rb");
 	debug_free(stream->s_path);
 	stream->s_filecount = 0;
 	fseek(fp, stream->s_fileoffset, SEEK_SET);
@@ -314,12 +314,10 @@ static void do_ej_file(webs_t stream)
 int _getWebsFile(webs_t wp, char *path2)
 {
 	FILE *web;
-
 	char *path = strdup(path2);
 	char *query = strchr(path, '?');
 	if (query)
 		*query++ = 0;
-//      fprintf(stderr, "open %s\n", path);
 	cprintf("opening %s\n", path);
 	int i = 0;
 	size_t curoffset = 0;
@@ -351,6 +349,7 @@ int _getWebsFile(webs_t wp, char *path2)
 	}
 	if (found || found2) {
 		/* to prevent stack overwrite problems */
+		wp->s_path = NULL;
 		web = fopen("/tmp/debug/www", "rbe");
 		if (!web)
 			web = fopen("/etc/www", "rbe");
@@ -411,8 +410,8 @@ int do_ej(unsigned char method, struct mime_handler *handler, char *path, webs_t
 	int i;
 	memdebug_enter();
 	i = 0;
-	_getWebsFile(stream, path);
-	if (fp) {
+	int web = _getWebsFile(stream, path);
+	if (web) {
 		if (handler && !handler->send_headers)
 			send_headers(stream, 200, "OK", handler->extra_header, handler->mime_type, -1, NULL, 1);
 		stream->path = path;

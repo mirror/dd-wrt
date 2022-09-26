@@ -469,7 +469,7 @@ static char *readweb(webs_t wp, char *filename)
 		return NULL;
 	}
 	www_lock(wp);
-	FILE *fp = fopen(wp->s_path);
+	FILE *fp = fopen(wp->s_path, "rb");
 	debug_free(wp->s_path);
 	fseek(fp, wp->s_fileoffset, SEEK_SET);
 	fread(webfile, wp->s_filelen, 1, fp);
@@ -2291,10 +2291,12 @@ static char *getLanguageName()
 
 static char *scanfile(webs_t wp, char *buf, const char *tran)
 {
-	char *temp = malloc(256);
 	char *temp2;
 	char *temp1;
 	int web = _getWebsFile(wp, buf);
+	if (!web)
+	    return NULL;
+	char *temp = malloc(256);
 	www_lock(wp);
 	FILE *fp = fopen(wp->s_path, "rb");
 	debug_free(wp->s_path);
