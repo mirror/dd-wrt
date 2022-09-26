@@ -289,8 +289,10 @@ static void do_ej_file(FILE * fp, webs_t stream)
 #ifndef HAVE_MICRO
 	stream->s_filebuffer = (unsigned char *)malloc(stream->s_filelen);
 	stream->s_filecount = 0;
+	www_lock(stream);
 	fseek(fp, stream->s_fileoffset, SEEK_SET);
 	fread(stream->s_filebuffer, 1, stream->s_filelen, fp);
+	www_unlock(stream);
 	do_ej_s(&buffer_get, stream);
 	debug_free(stream->s_filebuffer);
 #else
@@ -345,9 +347,9 @@ FILE *_getWebsFile(webs_t wp, char *path2)
 	}
 	if (found || found2) {
 		/* to prevent stack overwrite problems */
-		web = fopen("/tmp/debug/www", "rb");
+		web = fopen("/tmp/debug/www", "rbe");
 		if (!web)
-			web = fopen("/etc/www", "rb");
+			web = fopen("/etc/www", "rbe");
 		if (web == NULL)
 			goto err;
 		if (sensitive != -1) {

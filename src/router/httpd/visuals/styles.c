@@ -65,8 +65,11 @@ void do_error_style(webs_t wp, int status, char *title, char *text)
 		fclose(web);
 		return;
 	}
+	www_lock(wp);
 	fseek(web, wp->s_fileoffset, SEEK_SET);
 	fread(mem, 1, wp->s_filelen, web);
+	www_unlock(wp);
+
 	fclose(web);
 	size_t i;
 	char stat[32];
@@ -147,8 +150,10 @@ void do_ddwrt_inspired_themes(webs_t wp)
 		fclose(web);
 		return;
 	}
+	www_lock(wp);
 	fseek(web, wp->s_fileoffset, SEEK_SET);
 	fread(mem, 1, wp->s_filelen, web);
+	www_unlock(wp);
 	fclose(web);
 	websWrite(wp, "<style id=\"stylus-1\" type=\"text/css\" class=\"stylus\">\n");
 	wfwrite(mem, 1, wp->s_filelen, wp);
