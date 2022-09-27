@@ -63,7 +63,8 @@ static struct generic_impl_selector {
 };
 
 /* check the supported implementations */
-static void generic_impl_init(void)
+static void
+generic_impl_init(void)
 {
 	int i, c;
 
@@ -120,10 +121,10 @@ generic_impl_getname(void)
 
 /* set implementation by id */
 static void
-generic_impl_setid(uint32_t id)
+generic_impl_setid(uint32_t impl)
 {
 	generic_impl_init();
-	switch (id) {
+	switch (impl) {
 	case IMPL_FASTEST:
 		atomic_swap_32(&generic_impl_chosen, IMPL_FASTEST);
 		break;
@@ -131,7 +132,8 @@ generic_impl_setid(uint32_t id)
 		atomic_swap_32(&generic_impl_chosen, IMPL_CYCLE);
 		break;
 	default:
-		atomic_swap_32(&generic_impl_chosen, id);
+		ASSERT3U(impl, <, generic_supp_impls_cnt);
+		atomic_swap_32(&generic_impl_chosen, impl);
 		break;
 	}
 }
@@ -220,6 +222,7 @@ IMPL_GET_OPS(void)
 		ops = generic_supp_impls[idx];
 		break;
 	default:
+		ASSERT3U(impl, <, generic_supp_impls_cnt);
 		ops = generic_supp_impls[impl];
 		break;
 	}

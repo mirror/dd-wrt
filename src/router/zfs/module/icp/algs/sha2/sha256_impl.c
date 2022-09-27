@@ -36,15 +36,17 @@
 	kfpu_begin(); E(s, d, b); kfpu_end(); \
 }
 
-#if defined(__x86_64)
-
-extern void zfs_sha256_transform_x64(uint32_t s[8], const void *, size_t);
-static boolean_t sha2_have_x64(void)
+/* some implementation is always okay */
+static inline boolean_t sha2_is_supported(void)
 {
 	return (B_TRUE);
 }
+
+#if defined(__x86_64)
+
+extern void zfs_sha256_transform_x64(uint32_t s[8], const void *, size_t);
 const sha256_ops_t sha256_x64_impl = {
-	.is_supported = sha2_have_x64,
+	.is_supported = sha2_is_supported,
 	.transform = zfs_sha256_transform_x64,
 	.name = "x64"
 };
@@ -106,52 +108,56 @@ const sha256_ops_t sha256_shani_impl = {
 };
 #endif
 
-
-#endif /* __x86_64 */
-
-#if defined(__aarch64__)
+#elif defined(__aarch64__) || defined(__arm__)
 static boolean_t sha256_have_neon(void)
 {
-	return (kfpu_allowed());
+	return (kfpu_allowed() && zfs_neon_available());
 }
 
-TF(zfs_sha256_neon, tf_sha256_neon);
+static boolean_t sha256_have_armv8ce(void)
+{
+	return (kfpu_allowed() && zfs_sha256_available());
+}
+
+extern void zfs_sha256_block_armv7(uint32_t s[8], const void *, size_t);
+const sha256_ops_t sha256_armv7_impl = {
+	.is_supported = sha2_is_supported,
+	.transform = zfs_sha256_block_armv7,
+	.name = "armv7"
+};
+
+TF(zfs_sha256_block_neon, tf_sha256_neon);
 const sha256_ops_t sha256_neon_impl = {
 	.is_supported = sha256_have_neon,
 	.transform = tf_sha256_neon,
 	.name = "neon"
 };
 
-static boolean_t sha256_have_armv8ce(void)
-{
-	return (kfpu_allowed());
-}
-
-TF(zfs_sha256_armv8ce, tf_sha256_armv8ce);
+TF(zfs_sha256_block_armv8, tf_sha256_armv8ce);
 const sha256_ops_t sha256_armv8_impl = {
 	.is_supported = sha256_have_armv8ce,
 	.transform = tf_sha256_armv8ce,
 	.name = "armv8-ce"
 };
-#endif /* __aarch64__ */
 
-#if defined(__PPC64__)
+#elif defined(__PPC64__)
 static boolean_t sha256_have_vsx(void)
 {
 	return (kfpu_allowed() && zfs_vsx_available());
 }
+
+TF(zfs_sha256_ppc, tf_sha256_ppc);
+const sha256_ops_t sha256_ppc_impl = {
+	.is_supported = sha2_is_supported,
+	.transform = tf_sha256_ppc,
+	.name = "ppc"
+};
 
 TF(zfs_sha256_power8, tf_sha256_power8);
 const sha256_ops_t sha256_power8_impl = {
 	.is_supported = sha256_have_vsx,
 	.transform = tf_sha256_power8,
 	.name = "power8"
-};
-
-TF(zfs_sha256_ppc, tf_sha256_ppc);
-const sha256_ops_t sha256_ppc_impl = {
-	.transform = tf_sha256_ppc,
-	.name = "ppc"
 };
 #endif /* __PPC64__ */
 
@@ -176,7 +182,8 @@ static const sha256_ops_t *const sha256_impls[] = {
 #if defined(__x86_64) && defined(HAVE_SSE4_1)
 	&sha256_shani_impl,
 #endif
-#if defined(__aarch64__)
+#if defined(__aarch64__) || defined(__arm__)
+	&sha256_armv7_impl,
 	&sha256_neon_impl,
 	&sha256_armv8_impl,
 #endif
