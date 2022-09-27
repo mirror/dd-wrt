@@ -67,7 +67,7 @@
 static inline boolean_t
 zfs_neon_available(void)
 {
-	return (compat_elf_hwcap & HWCAP_FP);
+	return (elf_hwcap & HWCAP_FP);
 }
 
 /*
@@ -76,7 +76,7 @@ zfs_neon_available(void)
 static inline boolean_t
 zfs_sha256_available(void)
 {
-	return (compat_elf_hwcap & HWCAP_SHA2);
+	return (elf_hwcap & HWCAP_SHA2);
 }
 
 /*
@@ -85,7 +85,7 @@ zfs_sha256_available(void)
 static inline boolean_t
 zfs_sha512_available(void)
 {
-	return (compat_elf_hwcap & HWCAP_SHA512);
+	return (elf_hwcap & HWCAP_SHA512);
 }
 
 #endif /* _LINUX_SIMD_AARCH64_H */
