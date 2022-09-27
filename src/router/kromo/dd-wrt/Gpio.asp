@@ -1,6 +1,6 @@
 <% do_pagehead("gpio.titl"); %>
-		<script type="text/javascript">
-		//<![CDATA[
+	<script type="text/javascript">
+	//<![CDATA[
 
 function to_submit(F) {
 	F.change_action.value="gozila_cgi";
@@ -14,24 +14,22 @@ function to_apply(F) {
 	F.apply_button.value = sbutton.applied;
 	applytake(F);
 }
-		
+
 var update;
 
 addEvent(window, "load", function() {
 	stickControl(<% nvg("sticky_footer"); %>);
-	
+
 	update = new StatusbarUpdate();
 	update.start();
-
 });
 
 addEvent(window, "unload", function() {
 	update.stop();
-
 });	
 	
-		//]]>
-		</script>
+	//]]>
+	</script>
 	</head>
 
 	<body class="gui">
@@ -50,11 +48,8 @@ addEvent(window, "unload", function() {
 							<input type="hidden" name="change_action" />
 							<input type="hidden" name="submit_type" />
 							<input type="hidden" name="commit" value="1" />
-							
 							<input type="hidden" name="remove" />
-							
 							<h2><% tran("gpio.h2"); %></h2>
-							
 							<fieldset>
 								<legend><% tran("gpio.oplegend"); %></legend>
 								<div class="setting">
@@ -62,10 +57,9 @@ addEvent(window, "unload", function() {
 								</div>
 								<legend><% tran("gpio.iplegend"); %></legend>
 								<div class="setting">
-				                    <% show_status_gpio_input(); %><br>
+								<% show_status_gpio_input(); %><br>
 								</div>
 							</fieldset><br />
-							
 							<div id="footer" class="submitFooter">
 								<script type="text/javascript">
 								//<![CDATA[

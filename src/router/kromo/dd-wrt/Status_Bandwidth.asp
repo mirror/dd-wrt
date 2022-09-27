@@ -1,6 +1,6 @@
 <% do_pagehead("status_band.titl"); %>
-		<script type="text/javascript">
-		//<![CDATA[
+	<script type="text/javascript">
+	//<![CDATA[
 
 var update;
 
@@ -17,8 +17,8 @@ addEvent(window, "load", function() {
 addEvent(window, "unload", function() {
 	update.stop();
 });
-		//]]>
-		</script>
+	//]]>
+	</script>
 	</head>
 
 	<body class="gui">

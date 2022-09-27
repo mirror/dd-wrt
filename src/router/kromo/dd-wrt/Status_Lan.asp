@@ -1,6 +1,6 @@
 <% do_pagehead("status_lan.titl"); %>
-		<script type="text/javascript">
-		//<![CDATA[
+	<script type="text/javascript">
+	//<![CDATA[
 
 function deleteLease(val, val2) {
 	document.forms[0].del_ip.value = val;
@@ -172,7 +172,7 @@ function setARPTable() {
 		var cellcount = row.insertCell(-1);
 		cellcount.style.textAlign = 'center';
 		cellcount.innerHTML = getSize(val[i+6]);
-		
+
 		var cellcount = row.insertCell(-1);
 		cellcount.style.textAlign = 'center';
 		cellcount.innerHTML = getSize(val[i+7]);
@@ -237,9 +237,9 @@ addEvent(window, "unload", function() {
 	update.stop();
 });
 
-		//]]>
-		</script>
-	 </head>
+	//]]>
+	</script>
+	</head>
 
 	 <body class="gui">
 		<div id="wrapper">

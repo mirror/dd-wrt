@@ -1,6 +1,6 @@
 <% do_pagehead("idx.titl"); %>
-		<script type="text/javascript">
-		//<![CDATA[
+	<script type="text/javascript">
+	//<![CDATA[
 // WAN related JS
 var wan_proto = "<% nvram_selget("wan_proto"); %>";
 var dhcp_win = null;
@@ -59,7 +59,7 @@ function valid_value(F) {
 				if (F.pptp_use_dhcp.value == "0") {
 					if(!valid_ip(F,"F.pptp_server_ip","Gateway",ZERO_NO|MASK_NO))
 						return false;
-					
+
 					if(!valid_ip_gw(F,"F.wan_ipaddr","F.wan_netmask","F.pptp_server_ip"))
 						return false;
 				}

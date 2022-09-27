@@ -1,11 +1,11 @@
 <% do_pagehead("wl_mac.titl"); %>
-		<script type="text/javascript">
-		//<![CDATA[
-
+	<script type="text/javascript">
+	//<![CDATA[
 function to_submit(F) {
 	F.save_button.value = sbutton.saving;
 	apply(F);
 }
+
 function to_apply(F) {
 	F.apply_button.value = sbutton.applied;
 	applytake(F);
@@ -16,15 +16,13 @@ var update;
 addEvent(window, "load", function() {
 	stickControl(<% nvg("sticky_footer"); %>);
 	<% list_mac_layers(); %>
-	
+
 	update = new StatusbarUpdate();
 	update.start();
-	
 });
 
 addEvent(window, "unload", function() {
 	update.stop();
-
 });
 		
 		//]]>
@@ -32,7 +30,6 @@ addEvent(window, "unload", function() {
 	</head>
 
 	<body class="gui">
-		
 		<div id="wrapper">
 			<div id="content">
 				<div id="header">
@@ -42,11 +39,10 @@ addEvent(window, "unload", function() {
 				<div id="main">
 					<div id="contents">
 						<form name="wireless" action="apply.cgi" method="post">
-							<input type="hidden" name="submit_button" value="Wireless_MAC" />
-							<input type="hidden" name="action" value="Apply" />
-							<input type="hidden" name="change_action" />
-							<input type="hidden" name="submit_type" />
-							
+							<input type="hidden" name="submit_button" value="Wireless_MAC">
+							<input type="hidden" name="action" value="Apply">
+							<input type="hidden" name="change_action">
+							<input type="hidden" name="submit_type">
 							<h2><% tran("wl_mac.h2"); %></h2>
 							<% show_macfilter(); %>
 							<div id="footer" class="submitFooter">

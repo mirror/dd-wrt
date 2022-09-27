@@ -1,9 +1,8 @@
 <% do_pagehead(""); %>
-		<title><% nvg("router_name"); %></title>
+	<title><% nvg("router_name"); %></title>
 
-		<script type="text/javascript">
-		//<![CDATA[
-		
+	<script type="text/javascript">
+	//<![CDATA[
 var submit_button = "<% get_web_page_name(); %>";
 
 function to_submit() {
@@ -13,15 +12,14 @@ function to_submit() {
 		document.location.href =  submit_button;
 	}
 }
-		
-		//]]>
-		</script>
+	//]]>
+	</script>
 	</head>
 
 	<body>
 		<div class="message">
 				<form>
-				<% tran("fail.mess1"); %><br />
+				<% tran("fail.mess1"); %><br /><br />
 				<script type="text/javascript">
 				//<![CDATA[
 				document.write("<input class=\"button\" type=\"button\" name=\"action\" value=\"" + sbutton.continu + "\" onclick=\"to_submit();\" />");

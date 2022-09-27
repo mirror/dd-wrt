@@ -1,6 +1,6 @@
 <% do_pagehead("sysctl.titl"); %>
-		<script type="text/javascript">
-		//<![CDATA[
+	<script type="text/javascript">
+	//<![CDATA[
 
 function to_submit(F) {
 	F.change_action.value="gozila_cgi";
@@ -16,7 +16,7 @@ var update;
 
 addEvent(window, "load", function() {
 	stickControl(<% nvg("sticky_footer"); %>);
-	
+
 	update = new StatusbarUpdate();
 	update.start();
 });
@@ -26,7 +26,7 @@ addEvent(window, "unload", function() {
 });
 		
 	//]]>
-</script>
+	</script>
 	</head>
 
 	<body class="gui">

@@ -68,8 +68,8 @@ addEvent(window, "unload", function() {
 	update.stop();
 });
 
-		//]]>
-		</script>
+	//]]>
+	</script>
 	</head>
 
 	<body class="gui">

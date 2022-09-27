@@ -220,8 +220,8 @@ addEvent(window, "unload", function() {
 	top.opener.window.location.href =  ref_page;
 });
 
-		//]]>
-		</script>
+	//]]>
+	</script>
 	</head>
 	<body class="popup_bg">
 		<form name="PortServices" action="apply.cgi" method="post" >

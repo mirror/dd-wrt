@@ -1,6 +1,6 @@
 <% do_pagehead("usb.titl"); %>
-		<script type="text/javascript">
-		//<![CDATA[
+	<script type="text/javascript">
+	//<![CDATA[
 
 function to_submit(F) {
 	F.save_button.value = sbutton.saving;
@@ -22,19 +22,17 @@ addEvent(window, "load", function() {
 	
 	update = new StatusUpdate("USB.live.asp", <% nvg("refresh_time"); %>);
 	update.start();
-	
 });
 
 addEvent(window, "unload", function() {
 	update.stop();
 });
-		
+
 	//]]>
 	</script>
 	</head>
 
 	<body class="gui">
-		
 		<div id="wrapper">
 			<div id="content">
 				<div id="header">

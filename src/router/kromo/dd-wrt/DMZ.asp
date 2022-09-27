@@ -1,6 +1,6 @@
 <% do_pagehead("dmz.titl"); %>
-		<script type="text/javascript">
-		//<![CDATA[
+	<script type="text/javascript">
+	//<![CDATA[
 
 function submitcheck(F) {
 	F.save_button.value = sbutton.saving;
@@ -33,8 +33,8 @@ addEvent(window, "unload", function() {
 	update.stop();
 });
 	
-		//]]>
-		</script>
+	//]]>
+	</script>
 	</head>
 
 	<body class="gui">

@@ -1,6 +1,6 @@
 <% do_pagehead("qos.titl"); %>
-		<script type="text/javascript">
-		//<![CDATA[
+	<script type="text/javascript">
+	//<![CDATA[
 
 function svcs_grey(sw_disabled,F) {
 	F.add_svc.disabled = sw_disabled;
@@ -275,8 +275,8 @@ addEvent(window, "unload", function() {
 	update.stop();
 });
 
-			//]]>
-		</script>
+	//]]>
+	</script>
 	</head>
 
 	<body class="gui">

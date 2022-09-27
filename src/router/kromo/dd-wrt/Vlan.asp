@@ -1,6 +1,6 @@
 <% do_pagehead("vlan.titl"); %>
-		<script type="text/javascript">
-		//<![CDATA[
+	<script type="text/javascript">
+	//<![CDATA[
 
 function to_submit(F) {
 	F.save_button.value = sbutton.saving;
@@ -143,8 +143,8 @@ addEvent(window, "unload", function() {
 	update.stop();
 });
 	
-		//]]>
-		</script>
+	//]]>
+	</script>
 	</head>
 
 	<body class="gui" onload="init()">

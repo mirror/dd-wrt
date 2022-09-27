@@ -1,6 +1,6 @@
 <% do_pagehead("bmenu.setupipv6"); %>
-		<script type="text/javascript">
-		//<![CDATA[
+	<script type="text/javascript">
+	//<![CDATA[
 
 function to_submit(F) {
 	F.save_button.value = sbutton.saving;
@@ -21,10 +21,9 @@ addEvent(window, "load", function() {
 	show_layer_ext(document.setup.dhcp6s_custom,'iddhcp6s_custom', <% nvem("dhcp6s_custom", "1", "1", "0"); %> == 1);
 	show_layer_ext(document.setup.radvd_enable,'idradvd', <% nvem("radvd_enable", "1", "1", "0"); %> == 1);
 	show_layer_ext(document.setup.radvd_custom,'idradvd_custom', <% nvem("radvd_custom", "1", "1", "0"); %> == 1);
-	
 	show_layer_ext(document.setup.ipv6_typ,'idipv6_native', false);
 	show_layer_ext(document.setup.ipv6_typ,'idipv6_6in4', false);
-	
+
 	if( "<% nvram_gozila_get("ipv6_typ"); %>" == "ipv6native" ){
 		show_layer_ext(document.setup.ipv6_typ,'idipv6_native', true);
 	} else if ( "<% nvram_gozila_get("ipv6_typ"); %>" == "ipv6in4" ) {
@@ -40,8 +39,8 @@ addEvent(window, "unload", function() {
 	update.stop();
 });
 		
-		//]]>
-		</script>
+	//]]>
+	</script>
 	</head>
 
 	<body class="gui">

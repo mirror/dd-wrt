@@ -1,6 +1,6 @@
 <% do_pagehead("service.syslog_srv"); %>
-		<script type="text/javascript">
-		//<![CDATA[
+	<script type="text/javascript">
+	//<![CDATA[
 
 var count = 0;
 

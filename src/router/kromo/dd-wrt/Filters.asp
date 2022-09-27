@@ -1,6 +1,6 @@
 <% do_pagehead("filter.titl"); %>
-		<script type="text/javascript">
-		//<![CDATA[
+	<script type="text/javascript">
+	//<![CDATA[
 
 <% filter_init(); %>
 var summary_win = null;
@@ -12,7 +12,7 @@ function dayall(F) {
 	} else {
 		I = 0;
 	}
-	
+
 	day_enable_disable(F,I);
 }
 

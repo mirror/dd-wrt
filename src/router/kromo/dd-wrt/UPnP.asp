@@ -4,8 +4,8 @@
 		11.2005	tofu10		init
 		Intergated to DD-WRT by LawnMowerGuy1
 -->
-		<script type="text/javascript">
-		//<![CDATA[
+	<script type="text/javascript">
+	//<![CDATA[
 
 var data = new Array();
 

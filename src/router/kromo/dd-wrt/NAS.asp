@@ -1,6 +1,6 @@
 <% do_pagehead("nas.titl"); %>
-		<script type="text/javascript">
-		//<![CDATA[
+	<script type="text/javascript">
+	//<![CDATA[
 
 function addDlnaShare() {	
 	addTableEntry('dlna_shares');
