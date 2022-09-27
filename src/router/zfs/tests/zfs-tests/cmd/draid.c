@@ -139,7 +139,7 @@ read_map_key(const char *filename, const char *key, nvlist_t **cfg)
 	if (error != 0)
 		return (error);
 
-	nvlist_lookup_nvlist(allcfgs, key, &foundcfg);
+	(void) nvlist_lookup_nvlist(allcfgs, key, &foundcfg);
 	if (foundcfg != NULL) {
 		nvlist_dup(foundcfg, cfg, KM_SLEEP);
 		error = 0;
@@ -375,7 +375,7 @@ dump_map_nv(const char *key, nvlist_t *cfg, int verbose)
 	map.dm_checksum = fnvlist_lookup_uint64(cfg, MAP_CHECKSUM);
 	map.dm_children = fnvlist_lookup_uint64(cfg, MAP_CHILDREN);
 	map.dm_nperms = fnvlist_lookup_uint64(cfg, MAP_NPERMS);
-	nvlist_lookup_uint8_array(cfg, MAP_PERMS, &map.dm_perms, &c);
+	map.dm_perms = fnvlist_lookup_uint8_array(cfg, MAP_PERMS, &c);
 
 	dump_map(&map, key, (double)worst_ratio / 1000.0,
 	    avg_ratio / 1000.0, verbose);
@@ -720,8 +720,11 @@ eval_maps(uint64_t children, int passes, uint64_t *map_seed,
 		 */
 		error = alloc_new_map(children, MAP_ROWS_DEFAULT,
 		    vdev_draid_rand(map_seed), &map);
-		if (error)
+		if (error) {
+			if (best_map != NULL)
+				free_map(best_map);
 			return (error);
+		}
 
 		/*
 		 * Consider maps with a lower worst_ratio to be of higher
@@ -849,6 +852,7 @@ restart:
 			if (rc < 0) {
 				printf("Unable to read /dev/urandom: %s\n:",
 				    strerror(errno));
+				close(fd);
 				return (1);
 			}
 			bytes_read += rc;

@@ -20,7 +20,6 @@
  */
 
 /*
- * Copyright (C) 2016 Romain Dolbeau <romain@dolbeau.org>.
  * Copyright (C) 2022 Tino Reichardt <milky-zfs@mcmilk.de>
  */
 
@@ -44,11 +43,10 @@
  * Supported features:
  *   zfs_neon_available()
  *   zfs_sha256_available()
- *   zfs_sha512_available()
  */
 
-#ifndef _LINUX_SIMD_AARCH64_H
-#define	_LINUX_SIMD_AARCH64_H
+#ifndef _LINUX_SIMD_ARM_H
+#define	_LINUX_SIMD_ARM_H
 
 #include <sys/types.h>
 #include <asm/neon.h>
@@ -67,7 +65,7 @@
 static inline boolean_t
 zfs_neon_available(void)
 {
-	return (compat_elf_hwcap & HWCAP_FP);
+	return (elf_hwcap & HWCAP_NEON);
 }
 
 /*
@@ -76,16 +74,7 @@ zfs_neon_available(void)
 static inline boolean_t
 zfs_sha256_available(void)
 {
-	return (compat_elf_hwcap & HWCAP_SHA2);
+	return (elf_hwcap2 & HWCAP2_SHA2);
 }
 
-/*
- * Check if SHA512 is available
- */
-static inline boolean_t
-zfs_sha512_available(void)
-{
-	return (compat_elf_hwcap & HWCAP_SHA512);
-}
-
-#endif /* _LINUX_SIMD_AARCH64_H */
+#endif /* _LINUX_SIMD_ARM_H */

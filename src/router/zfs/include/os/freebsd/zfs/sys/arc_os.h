@@ -1,6 +1,7 @@
 /*
- * Copyright (c) 2020 iXsystems, Inc.
- * All rights reserved.
+ * SPDX-License-Identifier: BSD-2-Clause-FreeBSD
+ *
+ * Copyright (c) 2022 Martin Matuska
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -11,10 +12,10 @@
  *    notice, this list of conditions and the following disclaimer in the
  *    documentation and/or other materials provided with the distribution.
  *
- * THIS SOFTWARE IS PROVIDED BY THE AUTHORS AND CONTRIBUTORS ``AS IS'' AND
+ * THIS SOFTWARE IS PROVIDED BY THE REGENTS AND CONTRIBUTORS ``AS IS'' AND
  * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
- * ARE DISCLAIMED.  IN NO EVENT SHALL THE AUTHORS OR CONTRIBUTORS BE LIABLE
+ * ARE DISCLAIMED.  IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE
  * FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
  * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
  * OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
@@ -22,32 +23,12 @@
  * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
- *
- * $FreeBSD$
  */
 
-#ifndef _FREEBSD_SIMD_H
-#define	_FREEBSD_SIMD_H
+#ifndef	_SYS_ARC_OS_H
+#define	_SYS_ARC_OS_H
 
-#if defined(__amd64__) || defined(__i386__)
-#include <sys/simd_x86.h>
-
-#elif defined(__arm__)
-#include <sys/simd_arm.h>
-
-#elif defined(__aarch64__)
-#include <sys/simd_aarch64.h>
-
-#elif defined(__powerpc__)
-#include <sys/simd_powerpc.h>
-
-#else
-#define	kfpu_allowed()		0
-#define	kfpu_initialize(tsk)	do {} while (0)
-#define	kfpu_begin()		do {} while (0)
-#define	kfpu_end()		do {} while (0)
-#define	kfpu_init()		(0)
-#define	kfpu_fini()		do {} while (0)
-#endif
+int param_set_arc_free_target(SYSCTL_HANDLER_ARGS);
+int param_set_arc_no_grow_shift(SYSCTL_HANDLER_ARGS);
 
 #endif
