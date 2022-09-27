@@ -1,13 +1,13 @@
 <% do_pagehead("wl_wimax.titl"); %>
-		<script type="text/javascript">
-		//<![CDATA[
+	<script type="text/javascript">
+	//<![CDATA[
 
 function to_submit(F) {
 	F.save_button.value = sbutton.saving;
 	apply(F);
 }
 function to_apply(F) {
-	F.save_button.value = sbutton.saving;
+	F.apply_button.value = sbutton.applied;
 	applytake(F);
 }
 
@@ -19,16 +19,14 @@ addEvent(window, "load", function() {
 	
 	update = new StatusbarUpdate();
 	update.start();
-	
 });
 
 addEvent(window, "unload", function() {
 	update.stop();
-
 });
 		
-		//]]>
-		</script>
+	//]]>
+	</script>
 	</head>
 
 	<body class="gui">
@@ -46,11 +44,10 @@ addEvent(window, "unload", function() {
 							<input type="hidden" name="action" value="Apply" />
 							<input type="hidden" name="change_action" />
 							<input type="hidden" name="submit_type" />
-							
 							<h2><% tran("wl_wimax.h2"); %></h2>
 							<div class="setting">
-							    <div class="label"><% tran("wl_wimax.mode"); %></div>
-							    <select name="ofdm_mode">
+								<div class="label"><% tran("wl_wimax.mode"); %></div>
+								<select name="ofdm_mode">
 								<script type="text/javascript">
 								//<![CDATA[
 								document.write("<option value=\"disabled\" <% nvsm("ofdm_mode", "disabled", "selected"); %> >Disabled</option>");
@@ -59,20 +56,20 @@ addEvent(window, "unload", function() {
 								document.write("<option value=\"router\" <% nvsm("ofdm_mode", "router", "selected"); %> >LAN Router</option>");
 								//]]>
 								</script>
-							    </select>
+								</select>
 							</div>
 							<% showbridgesettings("ofdm","0"); %>
 							<div class="setting">
-							    <div class="label"><% tran("wl_wimax.downstream"); %></div>
-							    <input size="27" name="ofdm_downstream" value="<% nvg("ofdm_downstream"); %>" />&nbsp;KHz
+								<div class="label"><% tran("wl_wimax.downstream"); %></div>
+								<input size="27" name="ofdm_downstream" value="<% nvg("ofdm_downstream"); %>" />&nbsp;KHz
 							</div>
 							<div class="setting">
-							    <div class="label"><% tran("wl_wimax.upstream"); %></div>
-							    <input size="27" name="ofdm_upstream" value="<% nvg("ofdm_upstream"); %>" />&nbsp;KHz
+								<div class="label"><% tran("wl_wimax.upstream"); %></div>
+								<input size="27" name="ofdm_upstream" value="<% nvg("ofdm_upstream"); %>" />&nbsp;KHz
 							</div>
 							<div class="setting">
-							    <div class="label"><% tran("wl_wimax.width"); %></div>
-							    <select name="ofdm_width">
+								<div class="label"><% tran("wl_wimax.width"); %></div>
+								<select name="ofdm_width">
 								<script type="text/javascript">
 								//<![CDATA[
 								document.write("<option value=\"1.75\" <% nvsm("ofdm_width", "1.75", "selected"); %> >1.75</option>");
@@ -83,22 +80,22 @@ addEvent(window, "unload", function() {
 								document.write("<option value=\"10\" <% nvsm("ofdm_width", "10", "selected"); %> >10</option>");
 								//]]>
 								</script>
-							    </select>&nbsp;MHz
+								</select>&nbsp;MHz
 							</div>
 							<div class="setting">
-							    <div class="label"><% tran("wl_wimax.duplex"); %></div>
-							    <select name="ofdm_duplex">
+								<div class="label"><% tran("wl_wimax.duplex"); %></div>
+								<select name="ofdm_duplex">
 								<script type="text/javascript">
 								//<![CDATA[
 								document.write("<option value=\"TDD\" <% nvsm("ofdm_duplex", "TDD", "selected"); %> >Time Divison Duplex</option>");
 								document.write("<option value=\"H-FDD\" <% nvsm("ofdm_duplex", "H-FDD", "selected"); %> >Half-Duplex Frequency Division Duplex</option>");
 								//]]>
 								</script>
-							    </select>
+								</select>
 							</div>
 							<div class="setting">
-							    <div class="label"><% tran("wl_wimax.mac"); %></div>
-							    <input size="27" name="ofdm_macaddr" value="<% nvg("ofdm_macaddr"); %>" />
+								<div class="label"><% tran("wl_wimax.mac"); %></div>
+								<input size="27" name="ofdm_macaddr" value="<% nvg("ofdm_macaddr"); %>" />
 							</div>
 							<br />
 							<div id="footer" class="submitFooter">

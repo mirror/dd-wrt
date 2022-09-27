@@ -24,7 +24,7 @@ function to_submit(F) {
 function to_apply(F) {
 	F.submit_type.value = "";
 	F.change_action.value = "";
-	F.save_button.value = sbutton.saving;
+	F.apply_button.value = sbutton.applied;
 	applytake(F);
 }
 
@@ -32,7 +32,7 @@ var update;
 
 addEvent(window, "load", function() {
 	stickControl(<% nvg("sticky_footer"); %>);
-	
+
 	update = new StatusbarUpdate();
 	update.start();
 });

@@ -1,6 +1,6 @@
 <% do_pagehead("service.titl"); %>
-		<script type="text/javascript">
-		//<![CDATA[
+	<script type="text/javascript">
+	//<![CDATA[
 
 function verify_unique_static_ip(F){
 	static_leasenum = <% nvg("static_leasenum"); %>;
@@ -14,7 +14,6 @@ function verify_unique_static_ip(F){
 		} else {
 			alert(elem.value + errmsg.err62);
 			elem.focus();
-			
 			return false;
 		}
 	}
@@ -57,7 +56,6 @@ function to_reboot(F) {
 	apply(F);
 }
 
-
 function to_submit(F) {
 	if(!verify_unique_static_ip(F)) {
 		return false;
@@ -73,6 +71,7 @@ function to_submit(F) {
 	apply(F);
 	return true;
 }
+
 function to_apply(F) {
 	if(!verify_unique_static_ip(F)) {
 		return false;
@@ -83,7 +82,7 @@ function to_apply(F) {
 	}
 	F.change_action.value = "";
 	F.submit_type.value = "";
-	F.save_button.value = sbutton.saving;
+	F.apply_button.value = sbutton.applied;
 	checked(F);
 	applytake(F);
 	return true;
@@ -147,9 +146,9 @@ addEvent(window, "load", function() {
 addEvent(window, "unload", function() {
 	update.stop();
 });
-	
-		//]]>
-		</script>
+
+	//]]>
+	</script>
 	</head>
 
 	<body class="gui">
@@ -167,14 +166,14 @@ addEvent(window, "unload", function() {
 							<input type="hidden" name="change_action" />
 							<input type="hidden" name="submit_type" />
 							<input type="hidden" name="commit" value="1" />
-							
+
 							<input type="hidden" name="static_leases" value="13" />
 							<input type="hidden" name="openvpn_certtype" />
 							<input type="hidden" name="dhcpd_usejffs" />
 							<input type="hidden" name="lease_del_value" />
 							<input type="hidden" name="dhcpd_usenvram" />
 							<input type="hidden" name="nstx_log" />
-							
+
 							<h2><% tran("service.h2"); %></h2>
 							<% show_modules(".webservices"); %>
 							//experimental by egc

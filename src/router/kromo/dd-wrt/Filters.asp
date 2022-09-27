@@ -1,6 +1,6 @@
 <% do_pagehead("filter.titl"); %>
-		<script type="text/javascript">
-		//<![CDATA[
+	<script type="text/javascript">
+	//<![CDATA[
 
 <% filter_init(); %>
 var summary_win = null;
@@ -12,7 +12,7 @@ function dayall(F) {
 	} else {
 		I = 0;
 	}
-	
+
 	day_enable_disable(F,I);
 }
 
@@ -248,7 +248,7 @@ function to_apply(F) {
 	if(valid(F) == true) {
 		F.change_action.value = "";
 		F.submit_type.value = "";
-		F.save_button.value = sbutton.saving;
+		F.apply_button.value = sbutton.applied;
 		applytake(F);
 	}
 }

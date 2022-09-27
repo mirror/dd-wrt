@@ -1,12 +1,12 @@
 <% do_pagehead("radius.titl"); %>
-		<script type="text/javascript">
-		//<![CDATA[
+	<script type="text/javascript">
+	//<![CDATA[
 
 function to_submit(F) {
 	if (F._radius_override.checked == false){
-	    F.wl0_radius_override.value = 0;
-	}else{
-	    F.wl0_radius_override.value = 1;
+		F.wl0_radius_override.value = 0;
+	} else {
+		F.wl0_radius_override.value = 1;
 	}
 
 	F.save_button.value = sbutton.saving;
@@ -14,12 +14,12 @@ function to_submit(F) {
 }
 function to_apply(F) {
 	if (F._radius_override.checked == false){
-	    F.wl0_radius_override.value = 0;
-	}else{
-	    F.wl0_radius_override.value = 1;
+		F.wl0_radius_override.value = 0;
+	} else {
+			F.wl0_radius_override.value = 1;
 	}
 
-	F.save_button.value = sbutton.saving;
+	F.apply_button.value = sbutton.applied;
 	applytake(F);
 }
 
@@ -44,11 +44,10 @@ addEvent(window, "load", function() {
 
 addEvent(window, "unload", function() {
 	update.stop();
-
 });
 
-		//]]>
-		</script>
+	//]]>
+	</script>
 	</head>
 	<body class="gui">
 	
@@ -56,7 +55,7 @@ addEvent(window, "unload", function() {
 		<div id="content">
 			<div id="header">
 			<div id="logo"><h1><% show_control(); %></h1></div>
-					<% do_menu("Wireless_Basic.asp","Wireless_radauth.asp"); %>
+				<% do_menu("Wireless_Basic.asp","Wireless_radauth.asp"); %>
 		</div>
 		<div id="main">
 			<div id="contents">
@@ -66,11 +65,8 @@ addEvent(window, "unload", function() {
 				<input type="hidden" name="change_action" />
 				<input type="hidden" name="submit_type" />
 				<input type="hidden" name="commit" value="1" />
-				
 				<input type="hidden" name="wl0_radius_override" />
-				
 				<h2><% tran("radius.h2"); %></h2>
-				
 				<fieldset>
 				<legend><% tran("radius.legend"); %></legend>
 				<div class="setting">
@@ -79,7 +75,7 @@ addEvent(window, "unload", function() {
 					<input class="spaceradio" type="radio" name="wl_radauth" value="0" <% nvc("wl_radauth","0"); %> onclick="setRad(this.value)" /><% tran("share.disable"); %>
 				</div>
 				<div id="idradius">
-					  <div class="setting">
+					<div class="setting">
 						<div class="label"><% tran("radius.label2"); %></div>
 						<select name="wl_radmactype">
 							<option value="0" <% nvs("wl_radmactype","0"); %>>aabbcc-ddeeff</option>
@@ -117,7 +113,6 @@ addEvent(window, "unload", function() {
 					</div>
 					</div>
 				</fieldset><br/>
-				
 				<div id="footer" class="submitFooter">
 					<script type="text/javascript">
 					//<![CDATA[
@@ -134,7 +129,7 @@ addEvent(window, "unload", function() {
 				<a href="javascript:openHelpWindow<% ifdef("EXTHELP","Ext"); %>('Hradauth.asp')"><% tran("share.more"); %></a>
 			</div>
 		</div>
-				<div id="floatKiller"></div>
+			<div id="floatKiller"></div>
 				<div id="statusInfo">
 				<div class="info"><% tran("share.firmware"); %>: 
 					<script type="text/javascript">

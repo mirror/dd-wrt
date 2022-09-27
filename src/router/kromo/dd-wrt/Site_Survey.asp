@@ -1,6 +1,6 @@
 <%% do_pagehead("survey.titl"); %%>
-		<script type="text/javascript">
-		//<![CDATA[
+	<script type="text/javascript">
+	//<![CDATA[
 
 function do_join (F,SSID) {
 	F.wl_ssid.value = SSID;
@@ -14,9 +14,9 @@ function do_join (F,SSID) {
 addEvent(window, "load", function() {
 	stickControl(<%% nvg("sticky_footer"); %%>);
 });
-		
-		//]]>
-		</script>
+
+	//]]>
+	</script>
 	</head>
 
 	<body class="popup_bg">

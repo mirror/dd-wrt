@@ -1,6 +1,6 @@
 <% do_pagehead("speedchecker.titl"); %>
-		<script type="text/javascript">
-		//<![CDATA[
+	<script type="text/javascript">
+	//<![CDATA[
 function to_submit(F) {
 	F.submit_type.value = "speedchecker";
 	apply(F);
@@ -54,8 +54,8 @@ function speedchecker_toggle_desc(value) {
 		scope.innerHTML = '<iframe width="100%" height="200" frameborder="0" scrolling="no" src="https://speedchecker.dd-wrt.com/header.html"></iframe>';
 	}
 }
-		//]]>
-		</script>
+	//]]>
+	</script>
 	</head>
 
 	<body class="gui">
