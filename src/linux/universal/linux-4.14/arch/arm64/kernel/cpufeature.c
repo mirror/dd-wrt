@@ -38,7 +38,7 @@
 #include <asm/virt.h>
 
 unsigned long elf_hwcap __read_mostly;
-EXPORT_SYMBOL_GPL(elf_hwcap);
+EXPORT_SYMBOL(elf_hwcap);
 
 #ifdef CONFIG_COMPAT
 #define COMPAT_ELF_HWCAP_DEFAULT	\
