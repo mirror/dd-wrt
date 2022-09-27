@@ -8,8 +8,8 @@ function to_send(url) {
 	opener.focus();
 	opener.location.href = url;
 }
-		//]]>
-		</script>
+	//]]>
+	</script>
 	</head>
 
 	<body onunload="to_send('Wireless_Basic.asp')">

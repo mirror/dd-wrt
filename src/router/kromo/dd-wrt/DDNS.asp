@@ -1,6 +1,6 @@
 <% do_pagehead("ddns.titl"); %>
-		<script type="text/javascript">
-		//<![CDATA[
+	<script type="text/javascript">
+	//<![CDATA[
 
 function ddns_check(F,T) {
 	if(F.ddns_enable.value == 0) {
@@ -77,18 +77,19 @@ function ddns_check(F,T) {
 function submitcheck(F) {
 	if(!ddns_check(F,"save"))
 		return;
-	
 	F.change_action.value = "";
-	F.save_button.value = sbutton.saving;
 	update.stop();
 }
 function to_submit(F) {
-    submitcheck(F);
-    apply(F);
+	submitcheck(F);
+	F.save_button.value = sbutton.saving;
+	apply(F);
 }
+
 function to_apply(F) {
-    submitcheck(F);
-    applytake(F);
+	submitcheck(F);
+	F.apply_button.value = sbutton.applied;
+	applytake(F);
 }
 
 function SelDDNS(num,F) {
@@ -110,8 +111,8 @@ addEvent(window, "unload", function() {
 	update.stop();
 });
 
-		//]]>
-		</script>
+	//]]>
+	</script>
 	</head>
 
 	<body class="gui">

@@ -1,9 +1,8 @@
 <% do_pagehead("status_inet.titl"); %>
-		<script type="text/javascript">
-		//<![CDATA[
+	<script type="text/javascript">
+	//<![CDATA[
 
 var update;
-
 var dummy="";
 
 function DHCPAction(F,I) {
@@ -62,7 +61,6 @@ function reloadIt() {
 	setTimeout("reloadIt()", 30000);
 }
 
-
 addEvent(window, "load", function() {
 	setElementVisible("wan_show", "<% getWET(); %>" == "0");
 	setElementVisible("wan_showtraff", "<% nvg("ttraff_enable"); %>" == "1" && ("<% getWET(); %>" == "0" && "<% nvg("wan_proto"); %>" != "disabled" || "<% nvg("ttraff_iface"); %>" != "") );
@@ -87,9 +85,9 @@ addEvent(window, "load", function() {
 addEvent(window, "unload", function() {
 	update.stop();
 });
-		
-		//]]>
-		</script>
+
+	//]]>
+	</script>
 	</head>
 
 	<body class="gui" onload="reloadIt()">

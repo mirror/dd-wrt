@@ -1,6 +1,5 @@
 <% do_pagehead(""); %>
 	<title><% nvg("router_name"); %></title>
-
 	<script type="text/javascript">
 	//<![CDATA[
 

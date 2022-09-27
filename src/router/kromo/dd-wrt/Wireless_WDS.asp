@@ -34,7 +34,7 @@ function to_submit(F) {
 function to_apply(F) {
 	F.submit_type.value = "";		//avoid gozilla and force save process
 	F.change_action.value = "";
-	F.save_button.value = sbutton.saving;
+	F.apply_button.value = sbutton.applied;
 	applytake(F);
 }
 

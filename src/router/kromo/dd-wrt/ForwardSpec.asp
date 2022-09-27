@@ -1,6 +1,6 @@
 <% do_pagehead("pforward.titl"); %>
-		<script type="text/javascript">
-		//<![CDATA[
+	<script type="text/javascript">
+	//<![CDATA[
 
 function forward_add_submit(F) {
 	F.change_action.value="gozila_cgi";
@@ -24,7 +24,7 @@ function to_submit(F) {
 function to_apply(F) {
 	F.change_action.value = "";
 	F.submit_type.value = "";
-	F.save_button.value = sbutton.saving;
+	F.apply_button.value = sbutton.applied;
 	applytake(F);
 }
 	

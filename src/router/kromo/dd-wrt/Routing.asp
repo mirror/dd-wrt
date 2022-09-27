@@ -1,6 +1,6 @@
 <% do_pagehead("route.titl"); %>
-		<script type="text/javascript">
-		//<![CDATA[
+	<script type="text/javascript">
+	//<![CDATA[
 
 <% ifdef("QUAGGA", "/*"); %>
 route.zebra_copt = route.bird_copt;
@@ -24,6 +24,7 @@ function DeleteEntry(F) {
 	F.submit_type.value = "del";
 	apply(F);
 }
+
 function DeleteRuleEntry(F) {
 	if(!confirm(errmsg.err57)) return;
 	F.change_action.value="gozila_cgi";
@@ -141,17 +142,18 @@ function submitcheck(F) {
 	}
 	F.change_action.value = "";
 	F.submit_type.value = "";
-	F.save_button.value = sbutton.saving;
 }
 
 function to_submit(F) {
-    submitcheck(F);
-    apply(F);
+	submitcheck(F);
+	F.save_button.value = sbutton.saving;
+	apply(F);
 }
 
 function to_apply(F) {
-    submitcheck(F);
-    applytake(F);
+	submitcheck(F);
+	F.apply_button.value = sbutton.applied;
+	applytake(F);
 }
 
 var update;
