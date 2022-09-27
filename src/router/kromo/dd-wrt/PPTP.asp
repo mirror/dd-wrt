@@ -1,9 +1,8 @@
 <% do_pagehead("service.pptp_legend"); %>
-		<script type="text/javascript">
-		//<![CDATA[
+	<script type="text/javascript">
+	//<![CDATA[
 
-function import_vpntunnel(F,myid)
-{
+function import_vpntunnel(F,myid) {
 	//this is triggered by on change event of filepicker
 	//alert("getvpnfile: F:" + F.name + "; key-tun: " +  "; myid: " + myid);
 	var vpnfileid = document.getElementById(myid).files[0];
@@ -70,7 +69,7 @@ function to_submit(F) {
 function to_apply(F) {
 	F.change_action.value = "";
 	F.submit_type.value = "";
-	F.save_button.value = sbutton.saving;
+	F.apply_button.value = sbutton.applied;
 	if (F._openvpncl_certtype) {
 		F.openvpncl_certtype.value = F._openvpncl_certtype.checked ? 1 : 0;
 	}
@@ -89,12 +88,10 @@ function to_apply(F) {
 	if (F._openvpn_fw) {
 		F.openvpn_fw.value = F._openvpn_fw.checked ? 1 : 0;
 	}
-	
 	applytake(F);
 }
 
-function changevpnclprot(F, value)
-{
+function changevpnclprot(F, value) {
 	if (value == "tap" ) {
 		show_layer_ext(F, "idnat", true);
 		show_layer_ext(F, "idsec", false);
@@ -104,8 +101,7 @@ function changevpnclprot(F, value)
 	}
 }
 
-function changesrvtuntap(F, value)
-{
+function changesrvtuntap(F, value) {
 	if (value == "tap" ) {
 		show_layer_ext(F, "idrouter", false);
 		show_layer_ext(F, "idrouter2", false);
@@ -117,9 +113,7 @@ function changesrvtuntap(F, value)
 	}
 }
 
-
-function changevpnpbr(F, value)
-{
+function changevpnpbr(F, value) {
 	//alert(" F:" + F.name + "; value: " + value);
 	if (value == 1 || value == 2) {
 		show_layer_ext(F, "idpbr", true);
@@ -133,45 +127,43 @@ var update;
 addEvent(window, "load", function() {
 	stickControl(<% nvg("sticky_footer"); %>);
 
-		show_layer_ext(document.setup.pptpd_radius, 'idradius', <% nvem("pptpd_radius", "1", "1", "0"); %> == 1);
-		show_layer_ext(document.setup.pptpd_radius, 'idlocal', <% nvem("pptpd_radius", "0", "1", "0"); %> == 1);
-		show_layer_ext(document.setup.pptpd_enable, 'idpptp', <% nvem("pptpd_enable", "1", "1", "0"); %> == 1);
-		show_layer_ext(document.setup.pptpd_enable, 'idpptpcred', <% nvem("pptpd_enable", "1", "1", "0"); %> == 1);
-		show_layer_ext(document.setup.pptpd_client_enable, 'idpptpcli', <% nvem("pptpd_client_enable", "1", "1", "0"); %> == 1);
+	show_layer_ext(document.setup.pptpd_radius, 'idradius', <% nvem("pptpd_radius", "1", "1", "0"); %> == 1);
+	show_layer_ext(document.setup.pptpd_radius, 'idlocal', <% nvem("pptpd_radius", "0", "1", "0"); %> == 1);
+	show_layer_ext(document.setup.pptpd_enable, 'idpptp', <% nvem("pptpd_enable", "1", "1", "0"); %> == 1);
+	show_layer_ext(document.setup.pptpd_enable, 'idpptpcred', <% nvem("pptpd_enable", "1", "1", "0"); %> == 1);
+	show_layer_ext(document.setup.pptpd_client_enable, 'idpptpcli', <% nvem("pptpd_client_enable", "1", "1", "0"); %> == 1);
 <% ifndef("ANTAIRA_AGENT", "/*"); %>
-		show_layer_ext(document.setup.antaira_agent_enable, 'idantairavpn', <% nvem("antaira_agent_enable", "1", "1", "0"); %> == 1);
+	show_layer_ext(document.setup.antaira_agent_enable, 'idantairavpn', <% nvem("antaira_agent_enable", "1", "1", "0"); %> == 1);
 <% ifndef("ANTAIRA_AGENT", "*/"); %>
-		show_layer_ext(document.setup.openvpn_enable, 'idvpn', <% nvem("openvpn_enable", "1", "1", "0"); %> == 1);
-		show_layer_ext(document.setup.openvpn_tuntap, 'idrouter', <% nvem("openvpn_tuntap", "tun", "1", "0"); %> == 1);
-		show_layer_ext(document.setup.openvpn_tuntap, 'idrouter2', <% nvem("openvpn_tuntap", "tun", "1", "0"); %> == 1);
-		show_layer_ext(document.setup.openvpn_tuntap, 'idbridge', <% nvem("openvpn_tuntap", "tap", "1", "0"); %> == 1);
-		show_layer_ext(document.setup.openvpn_proxy, 'idproxy', <% nvem("openvpn_proxy", "0", "1", "0"); %> == 1);
-		show_layer_ext(document.setup.openvpn_switch, 'idnew', <% nvem("openvpn_switch", "1", "1", "0"); %> == 1);
-		show_layer_ext(document.setup.openvpn_switch, 'idold', <% nvem("openvpn_switch", "0", "1", "0"); %> == 1);
-		show_layer_ext(document.setup.openvpn_adv, 'idmtu', <% nvem("openvpn_adv", "1", "1", "0"); %> == 1);
-		show_layer_ext(document.setup.openvpncl_enable, 'idvpncl', <% nvem("openvpncl_enable", "1", "1", "0"); %> == 1);
-		show_layer_ext(document.setup.openvpncl_adv, 'idmtucl', <% nvem("openvpncl_adv", "1", "1", "0"); %> == 1);
-		show_layer_ext(document.setup.openvpncl_upauth, 'idupauth', <% nvem("openvpncl_upauth", "1", "1", "0"); %> == 1);
-		show_layer_ext(document.setup.openvpncl_nat, 'idnat', <% nvem("openvpncl_tuntap", "tap", "1", "0"); %> == 1);
-		show_layer_ext(document.setup.openvpncl_tuntap, 'idsec', <% nvem("openvpncl_tuntap", "tun", "1", "0"); %> == 1);
-		show_layer_ext(document.setup.openvpncl_wdog, 'idwdog', <% nvem("openvpncl_wdog", "1", "1", "0"); %> == 1);
-		show_layer_ext(document.setup.openvpn_dh_btn, 'iddhpem', <% nvem("openvpn_dh_btn", "0", "1", "0"); %> == 1);
-		show_layer_ext(document.setup.openvpncl_multirem, 'idmultirem', <% nvem("openvpncl_multirem", "1", "1", "0"); %> == 1);
-		// if nvram match with arg 1 then arg 2 otherwise arg 3
-		show_layer_ext(document.setup.openvpncl_spbr, 'idpbr', <% nvem("openvpncl_spbr", "0", "0", "1"); %> == 1);
+	show_layer_ext(document.setup.openvpn_enable, 'idvpn', <% nvem("openvpn_enable", "1", "1", "0"); %> == 1);
+	show_layer_ext(document.setup.openvpn_tuntap, 'idrouter', <% nvem("openvpn_tuntap", "tun", "1", "0"); %> == 1);
+	show_layer_ext(document.setup.openvpn_tuntap, 'idrouter2', <% nvem("openvpn_tuntap", "tun", "1", "0"); %> == 1);
+	show_layer_ext(document.setup.openvpn_tuntap, 'idbridge', <% nvem("openvpn_tuntap", "tap", "1", "0"); %> == 1);
+	show_layer_ext(document.setup.openvpn_proxy, 'idproxy', <% nvem("openvpn_proxy", "0", "1", "0"); %> == 1);
+	show_layer_ext(document.setup.openvpn_switch, 'idnew', <% nvem("openvpn_switch", "1", "1", "0"); %> == 1);
+	show_layer_ext(document.setup.openvpn_switch, 'idold', <% nvem("openvpn_switch", "0", "1", "0"); %> == 1);
+	show_layer_ext(document.setup.openvpn_adv, 'idmtu', <% nvem("openvpn_adv", "1", "1", "0"); %> == 1);
+	show_layer_ext(document.setup.openvpncl_enable, 'idvpncl', <% nvem("openvpncl_enable", "1", "1", "0"); %> == 1);
+	show_layer_ext(document.setup.openvpncl_adv, 'idmtucl', <% nvem("openvpncl_adv", "1", "1", "0"); %> == 1);
+	show_layer_ext(document.setup.openvpncl_upauth, 'idupauth', <% nvem("openvpncl_upauth", "1", "1", "0"); %> == 1);
+	show_layer_ext(document.setup.openvpncl_nat, 'idnat', <% nvem("openvpncl_tuntap", "tap", "1", "0"); %> == 1);
+	show_layer_ext(document.setup.openvpncl_tuntap, 'idsec', <% nvem("openvpncl_tuntap", "tun", "1", "0"); %> == 1);
+	show_layer_ext(document.setup.openvpncl_wdog, 'idwdog', <% nvem("openvpncl_wdog", "1", "1", "0"); %> == 1);
+	show_layer_ext(document.setup.openvpn_dh_btn, 'iddhpem', <% nvem("openvpn_dh_btn", "0", "1", "0"); %> == 1);
+	show_layer_ext(document.setup.openvpncl_multirem, 'idmultirem', <% nvem("openvpncl_multirem", "1", "1", "0"); %> == 1);
+	// if nvram match with arg 1 then arg 2 otherwise arg 3
+	show_layer_ext(document.setup.openvpncl_spbr, 'idpbr', <% nvem("openvpncl_spbr", "0", "0", "1"); %> == 1);
 		
-		update = new StatusbarUpdate();
-		update.start();
-		
+	update = new StatusbarUpdate();
+	update.start();	
 });
 
 addEvent(window, "unload", function() {
 	update.stop();
-
 });
-		
-		//]]>
-		</script>
+
+	//]]>
+	</script>
 	</head>
 
 	<body class="gui">
@@ -196,7 +188,7 @@ addEvent(window, "unload", function() {
 							<input type="hidden" name="openvpncl_splitdns" />
 							<input type="hidden" name="openvpn_fw" />
 							<input type="hidden" name="vpn_conf_file" />
-							
+
 							<h2><% tran("service.pptp_h2"); %></h2>
 							<fieldset>
 								<legend><% tran("service.pptp_srv"); %></legend>

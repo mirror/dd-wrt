@@ -1,6 +1,6 @@
 <% do_pagehead("firewall.titl"); %>
-		<script type="text/javascript">
-		//<![CDATA[
+	<script type="text/javascript">
+	//<![CDATA[
 
 function submitcheck(F) {
 	if(F._block_proxy){
@@ -53,19 +53,17 @@ function submitcheck(F) {
 			F.log_enable.value = 0;
 		}
 	}
-	F.save_button.value = sbutton.saving;
-	
 }
 
-function to_submit(F)
-{
-    submitcheck(F);
-    apply(F);
+function to_submit(F) {
+	submitcheck(F);
+	F.save_button.value = sbutton.saving;
+	apply(F);
 }
-function to_apply(F)
-{
-    submitcheck(F);
-    applytake(F);
+function to_apply(F) {
+	submitcheck(F);
+	F.apply_button.value = sbutton.applied;
+	applytake(F);
 }
 
 function setFirewall(F, val) {

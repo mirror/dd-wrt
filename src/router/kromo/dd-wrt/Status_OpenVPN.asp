@@ -1,12 +1,12 @@
 <% do_pagehead("status_openvpn.titl"); %>
-		<script type="text/javascript">
-		//<![CDATA[
+	<script type="text/javascript">
+	//<![CDATA[
 
 var update;
 
 addEvent(window, "load", function() {
 	stickControl(<% nvg("sticky_footer"); %>);
-	
+
 	update = new StatusbarUpdate();
 	update.start();
 });
@@ -14,9 +14,9 @@ addEvent(window, "load", function() {
 addEvent(window, "unload", function() {
 	update.stop();
 });	
-	
-		//]]>
-		</script>
+
+	//]]>
+	</script>
 	</head>
 
 	<body class="gui">

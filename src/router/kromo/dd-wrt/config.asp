@@ -1,6 +1,6 @@
 <% do_pagehead("config.titl"); %>
-		<script type="text/javascript">
-		//<![CDATA[
+	<script type="text/javascript">
+	//<![CDATA[
 
 function to_submit(F) {
 	if (F.file.value == "")	{
@@ -25,12 +25,11 @@ addEvent(window, "unload", function() {
 	update.stop();
 });
 
-		//]]>
-		</script>
+	//]]>
+	</script>
 	</head>
 
 	<body class="gui">
-		
 		<div id="wrapper">
 			<div id="content">
 				<div id="header">
@@ -41,14 +40,12 @@ addEvent(window, "unload", function() {
 					<div id="contents">
 						<form name="nvramrestore" action="nvram.cgi" method="post" enctype="multipart/form-data">
 							<h2><% tran("config.h2"); %></h2>
-							
 							<fieldset>
 								<legend><% tran("config.legend"); %></legend>
 								<div class="setting">
 									<% tran("config.mess1"); %>
 								</div>
 							</fieldset><br />
-							
 							<h2><% tran("config.h22"); %></h2>
 							<fieldset>
 								<legend><% tran("config.legend2"); %></legend>
@@ -57,7 +54,6 @@ addEvent(window, "unload", function() {
 									<input type="file" name="file" size="40" />
 								</div>
 							</fieldset><br />
-							
 							<div class="warning">
 								<p><b><% tran("config.mess3"); %></b></p>
 								<p><% tran("config.mess4"); %></p>

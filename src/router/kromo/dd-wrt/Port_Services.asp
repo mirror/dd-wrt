@@ -186,11 +186,13 @@ function submitcheck(F) {
 
 function to_submit(F) {
 	submitcheck(F);
+	F.save_button.value = sbutton.saving;
 	apply(F);
 }
 
 function to_apply(F) {
 	submitcheck(F);
+	F.apply_button.value = sbutton.applied;
 	applytake(F);
 }
 
@@ -218,8 +220,8 @@ addEvent(window, "unload", function() {
 	top.opener.window.location.href =  ref_page;
 });
 
-		//]]>
-		</script>
+	//]]>
+	</script>
 	</head>
 	<body class="popup_bg">
 		<form name="PortServices" action="apply.cgi" method="post" >

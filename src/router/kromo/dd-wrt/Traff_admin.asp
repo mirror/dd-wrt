@@ -18,8 +18,8 @@ function ttraff_restore_submit(F) {
 	apply(F);
 }
 
-		//]]>
-		</script>
+	//]]>
+	</script>
 	</head>
 
 	<body class="popup_bg">
