@@ -219,7 +219,6 @@ function submitcheck(F) {
 
 	F.change_action.value="gozila_cgi";
 	F.submit_type.value = "save";
-	F.save_button.value = sbutton.saving;
 }
 
 function qosmacs_del_submit(F,I) {
@@ -252,11 +251,13 @@ function qossvcs_del_submit(F,I) {
 
 function to_submit(F) {
 	submitcheck(F);
+	F.save_button.value = sbutton.saving;
 	apply(F);
 }
 
 function to_apply(F) {
 	submitcheck(F);
+	F.apply_button.value = sbutton.applied;
 	applytake(F);
 }
 

@@ -47,7 +47,7 @@ function to_submit(F) {
 function to_apply(F) {
 	F.change_action.value = "";
 	F.submit_type.value = "";
-	F.save_button.value = sbutton.saving;
+	F.apply_button.value = sbutton.applied;
 	checked(F);
 	applytake(F);
 }

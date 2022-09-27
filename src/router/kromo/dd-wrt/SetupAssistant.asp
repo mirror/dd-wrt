@@ -524,7 +524,7 @@ function to_prev(F) {
 function to_apply(F) {
 	if(submitcheck(F)) {
 		F.submit_type.value = "save";
-		F.save_button.value = sbutton.saving;
+		F.apply_button.value = sbutton.applied;
 		F.next_page.disabled = false;
 		F.next_page.value = "index.asp";
 		applytake(F);

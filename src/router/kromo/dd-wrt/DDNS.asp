@@ -79,16 +79,17 @@ function submitcheck(F) {
 		return;
 	
 	F.change_action.value = "";
-	F.save_button.value = sbutton.saving;
 	update.stop();
 }
 function to_submit(F) {
     submitcheck(F);
     apply(F);
+	F.save_button.value = sbutton.saving;
 }
 function to_apply(F) {
     submitcheck(F);
     applytake(F);
+	F.apply_button.value = sbutton.applied;
 }
 
 function SelDDNS(num,F) {

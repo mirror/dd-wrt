@@ -643,3 +643,6 @@ div.bulle, table.bulle, td.bulle {
   text-align: right;
   vertical-align: middle;
 }
+.iplookup {
+  overflow-x: hidden;
+}

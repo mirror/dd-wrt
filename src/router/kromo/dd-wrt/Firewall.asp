@@ -53,7 +53,6 @@ function submitcheck(F) {
 			F.log_enable.value = 0;
 		}
 	}
-	F.save_button.value = sbutton.saving;
 	
 }
 
@@ -61,11 +60,13 @@ function to_submit(F)
 {
     submitcheck(F);
     apply(F);
+	F.save_button.value = sbutton.saving;
 }
 function to_apply(F)
 {
     submitcheck(F);
     applytake(F);
+	F.apply_button.value = sbutton.applied;
 }
 
 function setFirewall(F, val) {

@@ -141,17 +141,18 @@ function submitcheck(F) {
 	}
 	F.change_action.value = "";
 	F.submit_type.value = "";
-	F.save_button.value = sbutton.saving;
 }
 
 function to_submit(F) {
     submitcheck(F);
     apply(F);
+	F.save_button.value = sbutton.saving;
 }
 
 function to_apply(F) {
     submitcheck(F);
     applytake(F);
+	F.apply_button.value = sbutton.applied;
 }
 
 var update;

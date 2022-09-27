@@ -248,7 +248,7 @@ function to_apply(F) {
 	if(valid(F) == true) {
 		F.change_action.value = "";
 		F.submit_type.value = "";
-		F.save_button.value = sbutton.saving;
+		F.apply_button.value = sbutton.applied;
 		applytake(F);
 	}
 }

@@ -11,7 +11,7 @@ function to_submit(F) {
 	apply(F);
 }
 function to_apply(F) {
-	submitcheck(F);
+	F.apply_button.value = sbutton.applied;
 	applytake(F);
 }
 

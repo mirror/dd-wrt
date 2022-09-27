@@ -110,7 +110,7 @@ function to_submit(F) {
 }
 
 function to_apply(F) {
-	F.save_button.value = sbutton.saving;
+	F.apply_button.value = sbutton.applied;
 	applytake(F);
 }
 

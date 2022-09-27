@@ -195,7 +195,7 @@ function to_submit(F) {
 
 function to_apply(F) {
 	F.%s_nmode_protection.value = F.%s_gmode_protection.value;
-	F.save_button.value = sbutton.saving;
+	F.apply_button.value = sbutton.applied;
 	F.radio%d_on_time.value = computeWlTimer();
 	applytake(F);
 }

@@ -372,7 +372,6 @@ function submitcheck(F) {
 	}
 	}
 	F.submit_type.value = "save";
-	F.save_button.value = sbutton.saving;
 	<% gen_timer_compute(); %>
 	return true;
 }
@@ -383,12 +382,14 @@ function to_submit(F)
     if (submitcheck(F)){	
 	apply(F);
     }
+		F.save_button.value = sbutton.saving;
 }
 function to_apply(F)
 {
     if (submitcheck(F)){
 	applytake(F);
     }
+		F.apply_button.value = sbutton.applied;
 }
 
 function initWlTimer(radio_on_time, radio )

@@ -19,7 +19,7 @@ function to_apply(F) {
 	    F.wl0_radius_override.value = 1;
 	}
 
-	F.save_button.value = sbutton.saving;
+	F.apply_button.value = sbutton.applied;
 	applytake(F);
 }
 

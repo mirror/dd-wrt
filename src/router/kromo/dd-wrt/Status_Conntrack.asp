@@ -1,9 +1,4 @@
 <% do_pagehead("status_conn.titl"); %>
-
-<style type="text/css">
-.iplookup {overflow-x: hidden;}
-</style>
-
 <script type="text/javascript">
 //<![CDATA[
 function openGeotool(IP) {
