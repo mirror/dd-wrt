@@ -181,7 +181,7 @@ zfs_shani_available(void)
 {
 	boolean_t has_shani;
 
-	has_shani = !!(cpu_stdext_feature & CPUID_STDEXT_SHA);
+	has_shani = (cpu_stdext_feature & CPUID_STDEXT_SHA) != 0;
 
 	return (has_shani && __ymm_enabled());
 }

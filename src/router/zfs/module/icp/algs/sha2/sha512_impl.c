@@ -36,15 +36,17 @@
 	kfpu_begin(); E(s, d, b); kfpu_end(); \
 }
 
-#if defined(__x86_64)
-
-extern void zfs_sha512_transform_x64(uint64_t s[8], const void *, size_t);
-static boolean_t sha2_have_x64(void)
+/* some implementation is always okay */
+static inline boolean_t sha2_is_supported(void)
 {
 	return (B_TRUE);
 }
+
+#if defined(__x86_64)
+
+extern void zfs_sha512_transform_x64(uint64_t s[8], const void *, size_t);
 const sha512_ops_t sha512_x64_impl = {
-	.is_supported = sha2_have_x64,
+	.is_supported = sha2_is_supported,
 	.transform = zfs_sha512_transform_x64,
 	.name = "x64"
 };
@@ -77,33 +79,57 @@ const sha512_ops_t sha512_avx2_impl = {
 };
 #endif
 
-#endif /* __x86_64 */
+#elif defined(__aarch64__)
+extern void zfs_sha512_block_armv7(uint64_t s[8], const void *, size_t);
+const sha512_ops_t sha512_armv7_impl = {
+	.is_supported = sha2_is_supported,
+	.transform = zfs_sha512_block_armv7,
+	.name = "armv7"
+};
 
-#if defined(__aarch64__)
 static boolean_t sha512_have_armv8ce(void)
 {
-	return (kfpu_allowed());
+	return (kfpu_allowed() && zfs_sha512_available());
 }
-
-TF(zfs_sha512_armv8ce, tf_sha512_armv8ce);
+TF(zfs_sha512_block_armv8, tf_sha512_armv8ce);
 const sha512_ops_t sha512_armv8_impl = {
 	.is_supported = sha512_have_armv8ce,
 	.transform = tf_sha512_armv8ce,
 	.name = "armv8-ce"
 };
-#endif /* __aarch64__ */
 
-#if defined(__PPC64__)
+#elif defined(__arm__)
+extern void zfs_sha512_block_armv7(uint64_t s[8], const void *, size_t);
+const sha512_ops_t sha512_armv7_impl = {
+	.is_supported = sha2_is_supported,
+	.transform = zfs_sha512_block_armv7,
+	.name = "armv7"
+};
+
+static boolean_t sha512_have_neon(void)
+{
+	return (kfpu_allowed() && zfs_neon_available());
+}
+
+TF(zfs_sha512_block_neon, tf_sha512_neon);
+const sha512_ops_t sha512_neon_impl = {
+	.is_supported = sha512_have_neon,
+	.transform = tf_sha512_neon,
+	.name = "neon"
+};
+
+#elif defined(__PPC64__)
+TF(zfs_sha512_ppc, tf_sha512_ppc);
+const sha512_ops_t sha512_ppc_impl = {
+	.is_supported = sha2_is_supported,
+	.transform = tf_sha512_ppc,
+	.name = "ppc"
+};
+
 static boolean_t sha512_have_vsx(void)
 {
 	return (kfpu_allowed() && zfs_vsx_available());
 }
-
-TF(zfs_sha512_ppc, tf_sha512_ppc);
-const sha512_ops_t sha512_ppc_impl = {
-	.transform = tf_sha512_ppc,
-	.name = "ppc"
-};
 
 TF(zfs_sha512_power8, tf_sha512_power8);
 const sha512_ops_t sha512_power8_impl = {
@@ -129,7 +155,12 @@ static const sha512_ops_t *const sha512_impls[] = {
 	&sha512_avx2_impl,
 #endif
 #if defined(__aarch64__)
+	&sha512_armv7_impl,
 	&sha512_armv8_impl,
+#endif
+#if defined(__arm__)
+	&sha512_armv7_impl,
+	&sha512_neon_impl,
 #endif
 #if defined(__PPC64__)
 	&sha512_ppc_impl,
