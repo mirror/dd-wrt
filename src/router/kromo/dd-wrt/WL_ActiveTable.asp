@@ -64,15 +64,13 @@ refreshParent = function() {
 			<fieldset>
 				<legend><%% tran("wl_active.active"); %%></legend>
 			<table>
-				<thead>
+				<tbody>
 					<tr>
 						<th><%% tran("dhcp.tclient"); %%></th>
 						<th><%% tran("share.ip"); %%></th>
 						<th><%% tran("share.mac"); %%></th>
 						<th><%% tran("wl_active.h3"); %%></th>
 					</tr>
-				</thead>
-				<tbody>
 					<%% wireless_active_table("online", "%s"); %%>
 				</tbody>
 			</table>
@@ -80,15 +78,13 @@ refreshParent = function() {
 			<fieldset>
 				<legend><%% tran("wl_active.inactive"); %%></legend>
 			<table>
-				<thead>
+				<tbody>
 					<tr>
 						<th><%% tran("dhcp.tclient"); %%></th>
 						<th><%% tran("share.ip"); %%></th>
 						<th><%% tran("share.mac"); %%></th>
 						<th><%% tran("wl_active.h3"); %%></th>
 					</tr>
-				</thead>
-				<tbody>
 					<%% wireless_active_table("offline", "%s"); %%>
 				</tbody>
 			</table>
