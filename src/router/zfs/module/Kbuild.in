@@ -168,7 +168,6 @@ OBJECT_FILES_NON_STANDARD_ghash-x86_64.o := y
 OBJECT_FILES_NON_STANDARD_sha256-x86_64.o := y
 OBJECT_FILES_NON_STANDARD_sha512-x86_64.o := y
 
-
 LUA_OBJS := \
 	lapi.o \
 	lauxlib.o \

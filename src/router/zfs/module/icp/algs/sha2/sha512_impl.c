@@ -91,6 +91,7 @@ static boolean_t sha512_have_armv8ce(void)
 {
 	return (kfpu_allowed() && zfs_sha512_available());
 }
+
 TF(zfs_sha512_block_armv8, tf_sha512_armv8ce);
 const sha512_ops_t sha512_armv8_impl = {
 	.is_supported = sha512_have_armv8ce,
