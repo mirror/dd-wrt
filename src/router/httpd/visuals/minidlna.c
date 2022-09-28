@@ -58,7 +58,7 @@ EJ_VISIBLE void ej_dlna_sharepaths(webs_t wp, int argc, char_t ** argv)
 
 	// table header
 	websWrite(wp, "<table id=\"dlna_shares\" class=\"table\" summary=\"dlna share table\">\n");
-	show_caption_pp(wp, NULL, "service.samba3_shares", "<thead><tr><th colspan=\"6\">", "</th></tr>\n");
+	show_caption_pp(wp, NULL, "service.samba3_shares", "<tbody><tr><th colspan=\"6\">", "</th></tr>\n");
 	websWrite(wp, "<tr>\n");
 	show_caption_pp(wp, NULL, "service.samba3_share_path", "<th>", "</th>\n");
 	show_caption_pp(wp, NULL, "service.samba3_share_subdir", "<th>", "</th>\n");
@@ -66,7 +66,7 @@ EJ_VISIBLE void ej_dlna_sharepaths(webs_t wp, int argc, char_t ** argv)
 	show_caption_pp(wp, NULL, "service.dlna_type_video", "<th>", "</th>\n");
 	show_caption_pp(wp, NULL, "service.dlna_type_images", "<th>", "</th>\n");
 	websWrite(wp, "<th class=\"center\" width=\"10%%\"><script type=\"text/javascript\">Capture(share.actiontbl)</script></th>\n");
-	websWrite(wp, "</tr></thead><tbody>\n");
+	websWrite(wp, "</tr>\n");
 
 	for (cs = dlnashares; cs; cs = csnext) {
 
