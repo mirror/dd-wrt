@@ -317,7 +317,7 @@ addEvent(window, "unload", function() {
 											<td class="center">
 												<script type="text/javascript">
 												//<![CDATA[
-												document.write("<input class=\"button\" type=\"button\" name=\"add\" value=\"" + sbutton.add_wol + "\" onclick=\"add_wol_host(this.form);\" />");
+												document.write("<input class=\"button margin-0\" type=\"button\" name=\"add\" value=\"" + sbutton.add_wol + "\" onclick=\"add_wol_host(this.form);\" />");
 												//]]>
 												</script>
 											</td>
