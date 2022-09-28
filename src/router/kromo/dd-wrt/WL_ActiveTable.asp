@@ -5,6 +5,7 @@
 function to_submit(F) {
 	if(valid_value(F)){
 		F.submit_type.value="add_mac";
+		F.save_button.value = sbutton.saving;
 		F.submit();
 		refreshParent();
 	}
@@ -12,6 +13,7 @@ function to_submit(F) {
 function to_apply(F) {
 	if(valid_value(F)){
 		F.submit_type.value="add_mac";
+		F.apply_button.value = sbutton.applied;
 		F.submit();
 		refreshParent();
 	}
