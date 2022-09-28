@@ -330,13 +330,13 @@ function submitcheck(F) {
 			F.wl2_nbw.value = 40;
 		}
 	}
-	F.submit_type.value = "save";
 	<% gen_timer_compute(); %>
 	return true;
 }
 
 function to_submit(F) {
 	if (submitcheck(F)) {
+		F.submit_type.value = "save";
 		F.save_button.value = sbutton.saving;
 		apply(F);
 	}
@@ -344,6 +344,7 @@ function to_submit(F) {
 
 function to_apply(F) {
 	if (submitcheck(F)) {
+		F.submit_type.value = "save";
 		F.apply_button.value = sbutton.applied;
 		applytake(F);
 	}
