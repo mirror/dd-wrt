@@ -696,10 +696,6 @@ static void __cpuidle acpi_idle_do_entry(struct acpi_processor_cx *cx)
 	} else {
 		/* IO port based C-state */
 		inb(cx->address);
-#ifdef CONFIG_X86
-		if (boot_cpu_data.x86_vendor != X86_VENDOR_INTEL)
-			return;
-#endif
 		/* Dummy wait op - must do something useless after P_LVL2 read
 		   because chipsets cannot guarantee that STPCLK# signal
 		   gets asserted in time to freeze execution properly. */
@@ -724,10 +720,6 @@ static int acpi_idle_play_dead(struct cpuidle_device *dev, int index)
 			safe_halt();
 		else if (cx->entry_method == ACPI_CSTATE_SYSTEMIO) {
 			inb(cx->address);
-#ifdef CONFIG_X86
-			if (boot_cpu_data.x86_vendor != X86_VENDOR_INTEL)
-				return;
-#endif
 			/* See comment in acpi_idle_do_entry() */
 			inl(acpi_gbl_FADT.xpm_timer_block.address);
 		} else
