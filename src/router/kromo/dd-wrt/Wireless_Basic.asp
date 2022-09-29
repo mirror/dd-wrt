@@ -481,7 +481,7 @@ addEvent(window, "load", function () {
 	stickControl(<% nvg("sticky_footer"); %>);
 
 	<% gen_init_timer(); %>
-	<% ifdef("HAVE_ATH9K", "initChannelProperties();"); % >
+	<% ifdef("HAVE_ATH9K", "initChannelProperties();"); %>
 	var wl0_mode = "<% nvg("wl0_mode"); %>";
 	if (wl0_mode == "ap" || wl0_mode == "infra") {
 		if (wl0_phytype == 'n' || wl0_phytype == 'h' || wl0_phytype == 'v' || wl0_phytype == 's')
