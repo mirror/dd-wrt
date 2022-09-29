@@ -233,7 +233,7 @@ sys_upgrade(char *url, webs_t stream, size_t *total, int type)	// jimmy,
 	 * Set nonblock on the socket so we can timeout 
 	 */
 	if (!DO_SSL(stream)) {
-		if ((flags = fcntl(fileno(stream->fp), F_GETFL)) < 0 || fcntl(fileno(stream->fp), F_SETFL, flags | O_NONBLOCK) < 0) {
+		if ((flags = fcntl(fileno(stream->fp_in), F_GETFL)) < 0 || fcntl(fileno(stream->fp_in), F_SETFL, flags | O_NONBLOCK) < 0) {
 			ret = errno;
 			goto err;
 		}
@@ -269,11 +269,11 @@ sys_upgrade(char *url, webs_t stream, size_t *total, int type)	// jimmy,
 				size = *total;
 			count = wfread(buf, 1, size, stream);
 		} else {
-			if (waitfor(fileno(stream->fp), 5) <= 0) {
+			if (waitfor(fileno(stream->fp_in), 5) <= 0) {
 				lastblock = 1;
 			}
-			count = safe_fread(buf, 1, size, stream->fp);
-			if (!count && (ferror(stream->fp) || feof(stream->fp))) {
+			count = safe_fread(buf, 1, size, stream->fp_in);
+			if (!count && (ferror(stream->fp_in) || feof(stream->fp_in))) {
 				break;
 			}
 		}
@@ -731,7 +731,7 @@ sys_upgrade(char *url, webs_t stream, size_t *total, int type)	// jimmy,
 		/*
 		 * Reset nonblock on the socket 
 		 */
-		if (fcntl(fileno(stream->fp), F_SETFL, flags) < 0) {
+		if (fcntl(fileno(stream->fp_in), F_SETFL, flags) < 0) {
 			ret = errno;
 			goto err;
 		}
