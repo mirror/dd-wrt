@@ -79,6 +79,11 @@ version 2.87
 	This would return <ip> for queries in some.domain, rather than
 	forwarding the query via the default server.
 
+	Tweak DHCPv6 relay code so that packets relayed towards a server
+	have source address on the server-facing network, not the
+	client facing network. Thanks to Luis Thomas for spotting this
+	and initial patch.
+
 	
 version 2.86
 	Handle DHCPREBIND requests in the DHCPv6 server code.
