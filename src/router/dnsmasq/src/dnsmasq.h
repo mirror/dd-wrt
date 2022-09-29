@@ -1400,6 +1400,7 @@ void *safe_malloc(size_t size);
 void safe_strncpy(char *dest, const char *src, size_t size);
 void safe_pipe(int *fd, int read_noblock);
 void *whine_malloc(size_t size);
+void *whine_realloc(void *ptr, size_t size);
 int sa_len(union mysockaddr *addr);
 int sockaddr_isequal(const union mysockaddr *s1, const union mysockaddr *s2);
 int hostname_order(const char *a, const char *b);
@@ -1817,8 +1818,10 @@ int do_arp_script_run(void);
 /* dump.c */
 #ifdef HAVE_DUMPFILE
 void dump_init(void);
-void dump_packet(int mask, void *packet, size_t len, union mysockaddr *src,
-		 union mysockaddr *dst, int port);
+void dump_packet_udp(int mask, void *packet, size_t len, union mysockaddr *src,
+		     union mysockaddr *dst, int fd);
+void dump_packet_icmp(int mask, void *packet, size_t len, union mysockaddr *src,
+		      union mysockaddr *dst);
 #endif
 
 /* domain-match.c */
