@@ -38,11 +38,11 @@ addEvent(window, "unload", function() {
 				</div>
 				<div id="main">
 					<div id="contents">
-						<form name="wireless" action="apply.cgi" method="post">
-							<input type="hidden" name="submit_button" value="Wireless_MAC">
-							<input type="hidden" name="action" value="Apply">
-							<input type="hidden" name="change_action">
-							<input type="hidden" name="submit_type">
+						<form name="wireless" action="apply.cgi" method="post" />
+							<input type="hidden" name="submit_button" value="Wireless_MAC" />
+							<input type="hidden" name="action" value="Apply" />
+							<input type="hidden" name="change_action" />
+							<input type="hidden" name="submit_type" />
 							<h2><% tran("wl_mac.h2"); %></h2>
 							<% show_macfilter(); %>
 							<div id="footer" class="submitFooter">
