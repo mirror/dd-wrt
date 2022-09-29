@@ -69,7 +69,8 @@ typedef struct {
 } persistent_vars;
 
 typedef struct {
-	FILE *fp;
+	FILE *fp_in;
+	FILE *fp_out;
 	int userid;
 	int conn_fd;
 	int post;

@@ -1886,12 +1886,12 @@ int main(int argc, char **argv)
 				continue;
 			}
 
-			conn_fp->fp = (FILE *) initsslbuffer(conn_fp->ssl);
+			conn_fp->fp_in = (FILE *) initsslbuffer(conn_fp->ssl);
 
 #elif defined(HAVE_MATRIXSSL)
 			matrixssl_new_session(conn_fp->conn_fd);
 
-			conn_fp->fp = (FILE *) conn_fp->conn_fd;
+			conn_fp->fp_in = (FILE *) conn_fp->conn_fd;
 #endif
 #ifdef HAVE_POLARSSL
 			ssl_free(&conn_fp->ssl);
@@ -1921,7 +1921,7 @@ int main(int argc, char **argv)
 				continue;
 			}
 
-			conn_fp->fp = (webs_t)(&ssl);
+			conn_fp->fp_in = (webs_t)(&ssl);
 
 #endif
 		} else {
@@ -1933,7 +1933,13 @@ int main(int argc, char **argv)
 			}
 
 			dd_logdebug("httpd", "fdopen()\n");
-			if (!(conn_fp->fp = fdopen(conn_fp->conn_fd, "r+"))) {
+			if (!(conn_fp->fp_in = fdopen(conn_fp->conn_fd, "r"))) {
+				dd_logdebug("httpd", "fd error error %d\n", errno);
+				close(conn_fp->conn_fd);
+				SEM_POST(&semaphore);
+				continue;
+			}
+			if (!(conn_fp->fp_out = fdopen(dup(conn_fp->conn_fd), "w"))) {
 				dd_logdebug("httpd", "fd error error %d\n", errno);
 				close(conn_fp->conn_fd);
 				SEM_POST(&semaphore);
@@ -1987,7 +1993,7 @@ int main(int argc, char **argv)
 
 static char *wfgets(char *buf, int len, webs_t wp, int *rfeof)
 {
-	FILE *fp = wp->fp;
+	FILE *fp = wp->fp_in;
 	char *ret = NULL;
 	int i;
 	errno = 0;
@@ -2058,9 +2064,9 @@ static char *wfgets(char *buf, int len, webs_t wp, int *rfeof)
 int wfputs(char *buf, webs_t wp)
 {
 	airbag_setpostinfo(buf);
-	FILE *fp = wp->fp;
 	int ret;
 	if (DO_SSL(wp)) {
+	FILE *fp = wp->fp_in;
 #ifdef HAVE_OPENSSL
 		ret = sslbufferwrite((struct sslbuffer *)fp, buf, strlen(buf));
 
@@ -2073,6 +2079,7 @@ int wfputs(char *buf, webs_t wp)
 
 #endif
 	} else {
+	FILE *fp = wp->fp_out;
 		ret = fputs(buf, fp);
 	}
 	return ret;
@@ -2086,10 +2093,10 @@ size_t vwebsWrite(webs_t wp, char *fmt, va_list args)
 		return -1;
 
 	airbag_setpostinfo(fmt);
-	FILE *fp = wp->fp;
 
 	vasprintf(&buf, fmt, args);
 	if (DO_SSL(wp)) {
+	FILE *fp = wp->fp_in;
 #ifdef HAVE_OPENSSL
 		ret = sslbufferwrite((struct sslbuffer *)fp, buf, strlen(buf));
 #elif defined(HAVE_MATRIXSSL)
@@ -2098,8 +2105,10 @@ size_t vwebsWrite(webs_t wp, char *fmt, va_list args)
 		fprintf(stderr, "SSL write buf %d\n", strlen(buf));
 		ret = ssl_write((ssl_context *) fp, buf, strlen(buf));
 #endif
-	} else
+	} else {
+	FILE *fp = wp->fp_out;
 		ret = fprintf(fp, "%s", buf);
+	}
 	debug_free(buf);
 
 	return ret;
@@ -2120,9 +2129,9 @@ size_t websWrite(webs_t wp, char *fmt, ...)
 size_t wfwrite(void *buf, size_t size, size_t n, webs_t wp)
 {
 
-	FILE *fp = wp->fp;
 	size_t ret;
 	if (DO_SSL(wp)) {
+	FILE *fp = wp->fp_out;
 #ifdef HAVE_OPENSSL
 		{
 			ret = sslbufferwrite((struct sslbuffer *)fp, buf, n * size);
@@ -2136,6 +2145,7 @@ size_t wfwrite(void *buf, size_t size, size_t n, webs_t wp)
 		}
 #endif
 	} else {
+	FILE *fp = wp->fp_in;
 		ret = fwrite(buf, size, n, fp);
 	}
 	return ret;
@@ -2151,7 +2161,7 @@ static size_t wfread(void *p, size_t size, size_t n, webs_t wp)
 {
 	char *buf = (void *)p;
 	size_t ret;
-	FILE *fp = wp->fp;
+	FILE *fp = wp->fp_in;
 	int i;
 	errno = 0;
 	for (i = 0; i < 500; i++) {
@@ -2194,9 +2204,9 @@ static size_t wfread(void *p, size_t size, size_t n, webs_t wp)
 static int wfflush(webs_t wp)
 {
 	int ret;
-	FILE *fp = wp->fp;
 
 	if (DO_SSL(wp)) {
+	FILE *fp = wp->fp_in;
 #ifdef HAVE_OPENSSL
 		/* ssl_write doesn't buffer */
 		sslbufferflush((struct sslbuffer *)fp);
@@ -2208,6 +2218,7 @@ static int wfflush(webs_t wp)
 		ret = 1;
 #endif
 	} else {
+	FILE *fp = wp->fp_out;
 		ret = fflush(fp);
 	}
 	return ret;
@@ -2216,9 +2227,9 @@ static int wfflush(webs_t wp)
 static int wfclose(webs_t wp)
 {
 	int ret = 0;
-	FILE *fp = wp->fp;
 
 	if (DO_SSL(wp)) {
+	FILE *fp = wp->fp_in;
 #ifdef HAVE_OPENSSL
 		sslbufferflush((struct sslbuffer *)fp);
 		sslbufferfree((struct sslbuffer *)fp);
@@ -2231,8 +2242,10 @@ static int wfclose(webs_t wp)
 		ret = 1;
 #endif
 	} else {
-		int ret = fclose(fp);
-		wp->fp = NULL;
+		int ret = fclose(wp->fp_in);
+		int ret = fclose(wp->fp_out);
+		wp->fp_in = NULL;
+		wp->fp_out = NULL;
 	}
 	return ret;
 }
