@@ -542,6 +542,13 @@ static int rule_poeswitch(char *name)
 	return led_control(POE_GPIO, GPIO_CHECK);
 }
 
+#ifdef HAVE_USB
+static int rule_usb_rc(char *name)
+{
+	return !nvram_match("rc_usb","");
+}
+#endif
+
 #include <linux/version.h>
 #define KERNEL_VERSION(a,b,c) (((a) << 16) + ((b) << 8) + (c))
 
@@ -599,6 +606,7 @@ static struct defrule s_conditions[] = {
 #endif
 #ifdef HAVE_USB
 	{ "USB", NULL },
+	{ "USB_rc", rule_usb_rc },
 #endif
 #ifdef HAVE_RADIUSPLUGIN
 	{ "RADIUSPLUGIN", NULL },
