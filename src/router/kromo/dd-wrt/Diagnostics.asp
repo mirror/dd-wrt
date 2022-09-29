@@ -137,7 +137,6 @@ addEvent(window, "unload", function() {
 								</div>
 							</fieldset><br />
 							<% nvm("rc_firewall", "", "-->"); %>
-							<% ifndef("USB", "<!--"); %>
 							<% nvm("rc_usb", "", "<!--"); %>
 							<fieldset>
 								<legend><% tran("diag.usb"); %></legend>
@@ -151,7 +150,6 @@ addEvent(window, "unload", function() {
 								</div>
 							</fieldset><br />
 							<% nvm("rc_usb", "", "-->"); %>
-							<% ifndef("USB", "-->"); %>
 							<% nvm("rc_custom", "", "<!--"); %>
 							<fieldset>
 								<legend><% tran("diag.custom"); %></legend>
