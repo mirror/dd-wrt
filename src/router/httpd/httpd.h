@@ -73,6 +73,7 @@ typedef struct {
 	FILE *fp_out;
 	int userid;
 	int conn_fd;
+	int conn_fd_out;
 	int post;
 	int ssl_enabled;
 #ifdef HAVE_OPENSSL

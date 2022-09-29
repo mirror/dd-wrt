@@ -1341,7 +1341,6 @@ static void *handle_request(void *arg)
 
 	debug_free(line);
 	wfclose(conn_fp);
-	close(conn_fp->conn_fd);
 	if (conn_fp->request_url)
 		debug_free(conn_fp->request_url);
 	if (conn_fp->authorization)
@@ -1926,7 +1925,7 @@ int main(int argc, char **argv)
 				SEM_POST(&semaphore);
 				continue;
 			}
-
+			conn_fp->conn_fd_out = dup(conn_fp->conn_fd);
 			dd_logdebug("httpd", "fdopen()\n");
 			if (!(conn_fp->fp_in = fdopen(conn_fp->conn_fd, "r"))) {
 				dd_logdebug("httpd", "fd error error %d\n", errno);
@@ -1934,7 +1933,7 @@ int main(int argc, char **argv)
 				SEM_POST(&semaphore);
 				continue;
 			}
-			if (!(conn_fp->fp_out = fdopen(dup(conn_fp->conn_fd), "w"))) {
+			if (!(conn_fp->fp_out = fdopen(conn_fp->conn_fd_out, "w"))) {
 				dd_logdebug("httpd", "fd error error %d\n", errno);
 				close(conn_fp->conn_fd);
 				SEM_POST(&semaphore);
@@ -2236,12 +2235,16 @@ static int wfclose(webs_t wp)
 		ssl_free((ssl_context *) fp);
 		ret = 1;
 #endif
+	close(wp->conn_fd);
 	} else {
 		ret = fclose(wp->fp_in);
 		ret |= fclose(wp->fp_out);
 		wp->fp_in = NULL;
 		wp->fp_out = NULL;
+	close(wp->conn_fd);
+	close(wp->conn_fd_out);
 	}
+
 	return ret;
 }
 
