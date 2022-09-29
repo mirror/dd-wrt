@@ -169,19 +169,14 @@ static int my_ciphers[] = {
 static char *dhm_P =
     "E4004C1F94182000103D883A448B3F80"
     "2CE4B44A83301270002C20D0321CFD00"
-    "11CCEF784C26A400F43DFB901BCA7538"
-		"F2C6B176001CF5A0FD16D2C48B1D0C1C"
-		"F6AC8E1DA6BCC3B4E1F96B0564965300"
-		"FFA1D0B601EB2800F489AA512C4B248C"
-		"01F76949A60BB7F00A40B1EAB64BDD48"
-		"E8A700D60B7F1200FA8E77B0A979DABF";
+    "11CCEF784C26A400F43DFB901BCA7538" "F2C6B176001CF5A0FD16D2C48B1D0C1C" "F6AC8E1DA6BCC3B4E1F96B0564965300" "FFA1D0B601EB2800F489AA512C4B248C" "01F76949A60BB7F00A40B1EAB64BDD48" "E8A700D60B7F1200FA8E77B0A979DABF";
 
 static char *dhm_G = "4";
 //unsigned char session_table[SSL_SESSION_TBL_LEN];
 #endif
 struct nvram_param *srouter_defaults;
 
-extern struct nvram_param * load_defaults(void);
+extern struct nvram_param *load_defaults(void);
 extern void free_defaults(struct nvram_param *);
 
 #ifdef HAVE_REGISTER
@@ -541,20 +536,20 @@ static void send_error(webs_t conn_fp, int noheader, int status, char *title, ch
 	va_start(args, (char *)fmt);
 	vasprintf(&text, fmt, args);
 	va_end(args);
-//	dd_logerror("httpd", "Request Error Code %d: %s\n", status, text);
+//      dd_logerror("httpd", "Request Error Code %d: %s\n", status, text);
 	// jimmy, https, 8/4/2003, fprintf -> websWrite, fflush -> wfflush
 	if (!noheader)
 		send_headers(conn_fp, status, title, extra_header, "text/html", -1, NULL, 1);
 	char *translate = "";
 	if (!nvram_match("language", "english"))
 		translate = " translate=\"no\"";
-	websWrite(conn_fp, "<html%s>\n",translate);
+	websWrite(conn_fp, "<html%s>\n", translate);
 	do_error_style(conn_fp, status, title, text);
 
 	char *charset = live_translate(conn_fp, "lang_charset.set");
-	websWrite(conn_fp, "<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Strict//EN\" \"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd\">\n" //
-			   "<head>\n" //
-			   "<meta http-equiv=\"Content-Type\" content=\"application/xhtml+xml; charset=%s\" />\n", charset);
+	websWrite(conn_fp, "<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Strict//EN\" \"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd\">\n"	//
+		  "<head>\n"	//
+		  "<meta http-equiv=\"Content-Type\" content=\"application/xhtml+xml; charset=%s\" />\n", charset);
 	websWrite(conn_fp, "<title>%d %s</title></head>\n<body class=\"error_page\"><h4>%d %s</h4>\n", status, title, status, title);
 	websWrite(conn_fp, "%s\n", text);
 	websWrite(conn_fp, "</body>");
@@ -2066,7 +2061,7 @@ int wfputs(char *buf, webs_t wp)
 	airbag_setpostinfo(buf);
 	int ret;
 	if (DO_SSL(wp)) {
-	FILE *fp = wp->fp_in;
+		FILE *fp = wp->fp_in;
 #ifdef HAVE_OPENSSL
 		ret = sslbufferwrite((struct sslbuffer *)fp, buf, strlen(buf));
 
@@ -2079,7 +2074,7 @@ int wfputs(char *buf, webs_t wp)
 
 #endif
 	} else {
-	FILE *fp = wp->fp_out;
+		FILE *fp = wp->fp_out;
 		ret = fputs(buf, fp);
 	}
 	return ret;
@@ -2096,7 +2091,7 @@ size_t vwebsWrite(webs_t wp, char *fmt, va_list args)
 
 	vasprintf(&buf, fmt, args);
 	if (DO_SSL(wp)) {
-	FILE *fp = wp->fp_in;
+		FILE *fp = wp->fp_in;
 #ifdef HAVE_OPENSSL
 		ret = sslbufferwrite((struct sslbuffer *)fp, buf, strlen(buf));
 #elif defined(HAVE_MATRIXSSL)
@@ -2106,7 +2101,7 @@ size_t vwebsWrite(webs_t wp, char *fmt, va_list args)
 		ret = ssl_write((ssl_context *) fp, buf, strlen(buf));
 #endif
 	} else {
-	FILE *fp = wp->fp_out;
+		FILE *fp = wp->fp_out;
 		ret = fprintf(fp, "%s", buf);
 	}
 	debug_free(buf);
@@ -2131,7 +2126,7 @@ size_t wfwrite(void *buf, size_t size, size_t n, webs_t wp)
 
 	size_t ret;
 	if (DO_SSL(wp)) {
-	FILE *fp = wp->fp_out;
+		FILE *fp = wp->fp_out;
 #ifdef HAVE_OPENSSL
 		{
 			ret = sslbufferwrite((struct sslbuffer *)fp, buf, n * size);
@@ -2145,7 +2140,7 @@ size_t wfwrite(void *buf, size_t size, size_t n, webs_t wp)
 		}
 #endif
 	} else {
-	FILE *fp = wp->fp_in;
+		FILE *fp = wp->fp_in;
 		ret = fwrite(buf, size, n, fp);
 	}
 	return ret;
@@ -2206,7 +2201,7 @@ static int wfflush(webs_t wp)
 	int ret;
 
 	if (DO_SSL(wp)) {
-	FILE *fp = wp->fp_in;
+		FILE *fp = wp->fp_in;
 #ifdef HAVE_OPENSSL
 		/* ssl_write doesn't buffer */
 		sslbufferflush((struct sslbuffer *)fp);
@@ -2218,7 +2213,7 @@ static int wfflush(webs_t wp)
 		ret = 1;
 #endif
 	} else {
-	FILE *fp = wp->fp_out;
+		FILE *fp = wp->fp_out;
 		ret = fflush(fp);
 	}
 	return ret;
@@ -2229,7 +2224,7 @@ static int wfclose(webs_t wp)
 	int ret = 0;
 
 	if (DO_SSL(wp)) {
-	FILE *fp = wp->fp_in;
+		FILE *fp = wp->fp_in;
 #ifdef HAVE_OPENSSL
 		sslbufferflush((struct sslbuffer *)fp);
 		sslbufferfree((struct sslbuffer *)fp);
@@ -2242,8 +2237,8 @@ static int wfclose(webs_t wp)
 		ret = 1;
 #endif
 	} else {
-		int ret = fclose(wp->fp_in);
-		int ret = fclose(wp->fp_out);
+		ret = fclose(wp->fp_in);
+		ret |= fclose(wp->fp_out);
 		wp->fp_in = NULL;
 		wp->fp_out = NULL;
 	}
