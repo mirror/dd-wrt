@@ -1987,7 +1987,6 @@ int main(int argc, char **argv)
 
 static char *wfgets(char *buf, int len, webs_t wp, int *rfeof)
 {
-	FILE *fp = wp->fp_in;
 	char *ret = NULL;
 	int i;
 	errno = 0;
@@ -1997,7 +1996,7 @@ static char *wfgets(char *buf, int len, webs_t wp, int *rfeof)
 			int eof = 1;
 			int i;
 			char c;
-			int sr = sslbufferpeek((struct sslbuffer *)fp, buf, len);
+			int sr = sslbufferpeek((struct sslbuffer *)wp->fp_in, buf, len);
 			if (sr <= 0) {
 				if (sr == 0 && rfeof)
 					*rfeof = 1;
@@ -2011,7 +2010,7 @@ static char *wfgets(char *buf, int len, webs_t wp, int *rfeof)
 				}
 			}
 		      next:;
-			sr = sslbufferread((struct sslbuffer *)fp, buf, i + 1);
+			sr = sslbufferread((struct sslbuffer *)wp->fp_in, buf, i + 1);
 			if (sr <= 0) {
 				if (sr == 0 && rfeof)
 					*rfeof = 1;
@@ -2028,18 +2027,18 @@ static char *wfgets(char *buf, int len, webs_t wp, int *rfeof)
 			}
 
 #elif defined(HAVE_MATRIXSSL)
-			ret = (char *)matrixssl_gets(fp, buf, len);
+			ret = (char *)matrixssl_gets(wp->fp_in, buf, len);
 #elif defined(HAVE_POLARSSL)
 
-			int r = ssl_read((ssl_context *) fp, (unsigned char *)buf, len);
+			int r = ssl_read((ssl_context *) wp->fp_in, (unsigned char *)buf, len);
 			ret = buf;
 #endif
 		} else {
-			if (feof(fp)) {
+			if (feof(wp->fp_in)) {
 				if (rfeof)
 					*rfeof = 1;
 			} else
-				ret = fgets(buf, len, fp);
+				ret = fgets(buf, len, wp->fp_in);
 		}
 	      out:;
 		if (!*(buf) && (errno == EINTR || errno == EAGAIN)) {
@@ -2060,21 +2059,19 @@ int wfputs(char *buf, webs_t wp)
 	airbag_setpostinfo(buf);
 	int ret;
 	if (DO_SSL(wp)) {
-		FILE *fp = wp->fp_in;
 #ifdef HAVE_OPENSSL
-		ret = sslbufferwrite((struct sslbuffer *)fp, buf, strlen(buf));
+		ret = sslbufferwrite((struct sslbuffer *)wp->fp_in, buf, strlen(buf));
 
 #elif defined(HAVE_MATRIXSSL)
-		ret = matrixssl_puts(fp, buf);
+		ret = matrixssl_puts(wp->fp_in, buf);
 
 #elif defined(HAVE_POLARSSL)
-		ret = ssl_write((ssl_context *) fp, (unsigned char *)buf, strlen(buf));
+		ret = ssl_write((ssl_context *) wp->fp_in, (unsigned char *)buf, strlen(buf));
 		fprintf(stderr, "SSL write str %d\n", strlen(buf));
 
 #endif
 	} else {
-		FILE *fp = wp->fp_out;
-		ret = fputs(buf, fp);
+		ret = fputs(buf, wp->fp_out);
 	}
 	return ret;
 }
@@ -2090,18 +2087,16 @@ size_t vwebsWrite(webs_t wp, char *fmt, va_list args)
 
 	vasprintf(&buf, fmt, args);
 	if (DO_SSL(wp)) {
-		FILE *fp = wp->fp_in;
 #ifdef HAVE_OPENSSL
-		ret = sslbufferwrite((struct sslbuffer *)fp, buf, strlen(buf));
+		ret = sslbufferwrite((struct sslbuffer *)wp->fp_in, buf, strlen(buf));
 #elif defined(HAVE_MATRIXSSL)
-		ret = matrixssl_printf(fp, "%s", buf);
+		ret = matrixssl_printf(wp->fp_in, "%s", buf);
 #elif defined(HAVE_POLARSSL)
 		fprintf(stderr, "SSL write buf %d\n", strlen(buf));
-		ret = ssl_write((ssl_context *) fp, buf, strlen(buf));
+		ret = ssl_write((ssl_context *) wp->fp_in, buf, strlen(buf));
 #endif
 	} else {
-		FILE *fp = wp->fp_out;
-		ret = fprintf(fp, "%s", buf);
+		ret = fprintf(wp->fp_out, "%s", buf);
 	}
 	debug_free(buf);
 
@@ -2125,22 +2120,20 @@ size_t wfwrite(void *buf, size_t size, size_t n, webs_t wp)
 
 	size_t ret;
 	if (DO_SSL(wp)) {
-		FILE *fp = wp->fp_out;
 #ifdef HAVE_OPENSSL
 		{
-			ret = sslbufferwrite((struct sslbuffer *)fp, buf, n * size);
+			ret = sslbufferwrite((struct sslbuffer *)wp->fp_in, buf, n * size);
 		}
 #elif defined(HAVE_MATRIXSSL)
-		ret = matrixssl_write(fp, (unsigned char *)buf, n * size);
+		ret = matrixssl_write(wp->fp_in, (unsigned char *)buf, n * size);
 #elif defined(HAVE_POLARSSL)
 		{
 			fprintf(stderr, "SSL write buf %d\n", n * size);
-			ret = ssl_write((ssl_context *) fp, (unsigned char *)buf, n * size);
+			ret = ssl_write((ssl_context *) wp->fp_in, (unsigned char *)buf, n * size);
 		}
 #endif
 	} else {
-		FILE *fp = wp->fp_in;
-		ret = fwrite(buf, size, n, fp);
+		ret = fwrite(buf, size, n, wp->fp_out);
 	}
 	return ret;
 }
@@ -2155,13 +2148,12 @@ static size_t wfread(void *p, size_t size, size_t n, webs_t wp)
 {
 	char *buf = (void *)p;
 	size_t ret;
-	FILE *fp = wp->fp_in;
 	int i;
 	errno = 0;
 	for (i = 0; i < 500; i++) {
 		if (DO_SSL(wp)) {
 #ifdef HAVE_OPENSSL
-			ret = sslbufferread((struct sslbuffer *)fp, buf, n * size);
+			ret = sslbufferread((struct sslbuffer *)wp->fp_in, buf, n * size);
 #elif defined(HAVE_MATRIXSSL)
 			//do it in chains
 			size_t cnt = (size * n) / 0x4000;
@@ -2172,16 +2164,16 @@ static size_t wfread(void *p, size_t size, size_t n, webs_t wp)
 				len += matrixssl_read(fp, buf, 0x4000);
 				*buf += 0x4000;
 			}
-			len += matrixssl_read(fp, buf, (size * n) % 0x4000);
+			len += matrixssl_read(wp->fp_in, buf, (size * n) % 0x4000);
 
 			ret = len;
 #elif defined(HAVE_POLARSSL)
 			size_t len = n * size;
 			fprintf(stderr, "read SSL %d\n", len);
-			ret = ssl_read((ssl_context *) fp, (unsigned char *)buf, &len);
+			ret = ssl_read((ssl_context *) wp->fp_in, (unsigned char *)buf, &len);
 #endif
 		} else {
-			ret = fread(buf, size, n, fp);
+			ret = fread(buf, size, n, wp->fp_in);
 		}
 		if (!ret && (errno == EINTR || errno == EAGAIN)) {
 			struct timespec tim, tim2;
@@ -2200,20 +2192,18 @@ static int wfflush(webs_t wp)
 	int ret;
 
 	if (DO_SSL(wp)) {
-		FILE *fp = wp->fp_in;
 #ifdef HAVE_OPENSSL
 		/* ssl_write doesn't buffer */
-		sslbufferflush((struct sslbuffer *)fp);
+		sslbufferflush((struct sslbuffer *)wp->fp_in);
 		ret = 1;
 #elif defined(HAVE_MATRIXSSL)
-		ret = matrixssl_flush(fp);
+		ret = matrixssl_flush(wp->fp_in);
 #elif defined(HAVE_POLARSSL)
-		ssl_flush_output((ssl_context *) fp);
+		ssl_flush_output((ssl_context *) wp->fp_in);
 		ret = 1;
 #endif
 	} else {
-		FILE *fp = wp->fp_out;
-		ret = fflush(fp);
+		ret = fflush(wp->fp_out);
 	}
 	return ret;
 }
@@ -2223,26 +2213,25 @@ static int wfclose(webs_t wp)
 	int ret = 0;
 
 	if (DO_SSL(wp)) {
-		FILE *fp = wp->fp_in;
 #ifdef HAVE_OPENSSL
-		sslbufferflush((struct sslbuffer *)fp);
-		sslbufferfree((struct sslbuffer *)fp);
+		sslbufferflush((struct sslbuffer *)wp->fp_in);
+		sslbufferfree((struct sslbuffer *)wp->fp_in);
 		ret = 1;
 #elif defined(HAVE_MATRIXSSL)
-		ret = matrixssl_free_session(fp);
+		ret = matrixssl_free_session(wp->fp_in);
 #elif defined(HAVE_POLARSSL)
-		ssl_close_notify((ssl_context *) fp);
-		ssl_free((ssl_context *) fp);
+		ssl_close_notify((ssl_context *) wp->fp_in);
+		ssl_free((ssl_context *) wp->fp_in);
 		ret = 1;
 #endif
-	close(wp->conn_fd);
+		close(wp->conn_fd);
 	} else {
 		ret = fclose(wp->fp_in);
 		ret |= fclose(wp->fp_out);
 		wp->fp_in = NULL;
 		wp->fp_out = NULL;
-	close(wp->conn_fd);
-	close(wp->conn_fd_out);
+		close(wp->conn_fd);
+		close(wp->conn_fd_out);
 	}
 
 	return ret;
