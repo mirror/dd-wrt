@@ -126,13 +126,13 @@ EJ_VISIBLE void ej_dlna_sharepaths(webs_t wp, int argc, char_t ** argv)
 		websWrite(wp, "</select></td>\n");
 		websWrite(wp, "<td style=\"width: 1%%;\"><input type=\"text\" name=\"dlnashare_subdir%s\" id=\"dlnashare_subdir%s\" value=\"%s\" style=\"width: 150px;\"/></td>\n", number, number, cs->sd);
 		websWrite(wp,
-			  "<td style=\"width: 25px; text-align: center;\"><input type=\"checkbox\" name=\"dlnashare_audio%s\" id=\"dlnashare_audio%s\" value=\"1\" %s></td>\n",
+			  "<td class=\"center\" style=\"width: 25px;\"><input type=\"checkbox\" name=\"dlnashare_audio%s\" id=\"dlnashare_audio%s\" value=\"1\" %s></td>\n",
 			  number, number, cs->types & TYPE_AUDIO ? "checked" : "");
 		websWrite(wp,
-			  "<td style=\"width: 25px; text-align: center;\"><input type=\"checkbox\" name=\"dlnashare_video%s\" id=\"dlnashare_video%s\" value=\"1\" %s></td>\n",
+			  "<td class=\"center\" style=\"width: 25px;\"><input type=\"checkbox\" name=\"dlnashare_video%s\" id=\"dlnashare_video%s\" value=\"1\" %s></td>\n",
 			  number, number, cs->types & TYPE_VIDEO ? "checked" : "");
 		websWrite(wp,
-			  "<td style=\"width: 25px; text-align: center;\"><input type=\"checkbox\" name=\"dlnashare_images%s\" id=\"dlnashare_images%s\" value=\"1\" %s></td>\n",
+			  "<td class=\"center\" style=\"width: 25px;\"><input type=\"checkbox\" name=\"dlnashare_images%s\" id=\"dlnashare_images%s\" value=\"1\" %s></td>\n",
 			  number, number, cs->types & TYPE_IMAGES ? "checked" : "");
 
 		websWrite(wp, "<td class=\"center\">\n");
@@ -151,7 +151,7 @@ EJ_VISIBLE void ej_dlna_sharepaths(webs_t wp, int argc, char_t ** argv)
 
 	// add button
 	websWrite(wp,
-		  "<script type=\"text/javascript\">document.write(\"<div id=\\\"dlna_shares_add\\\" style=\\\"text-align: center;\\\"><input type=\\\"button\\\" class=\\\"button\\\" name=\\\"share_add\\\" value=\\\"\"+nas.shareadd+\"\\\" onclick=\\\"addDlnaShare();\\\" />\")</script></div>");
+		  "<script type=\"text/javascript\">document.write(\"<div id=\\\"dlna_shares_add\\\" class=\\\"center\\\"><input type=\\\"button\\\" class=\\\"button\\\" name=\\\"share_add\\\" value=\\\"\"+nas.shareadd+\"\\\" onclick=\\\"addDlnaShare();\\\" />\")</script></div>");
 
 	for (current = fs; fs; current = fs) {
 		fs = current->next;

@@ -10,7 +10,7 @@ function to_submit(F) {
 }
 
 function to_apply(F) {
-	F.save_button.value = sbutton.saving;
+	F.apply_button.value = sbutton.applied;
 	F.submit_type.value = "save";
 	F.change_action.value="gozila_cgi";
 	applytake(F);
@@ -82,6 +82,7 @@ function add_tunnel(F) {
 	F.submit_type.value = "add_tunnel";
 	apply(F);
 }
+
 function del_tunnel(F,tunnelindex) {
 	F.keyindex.value = tunnelindex;
 	F.change_action.value="gozila_cgi";
