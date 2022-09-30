@@ -42,7 +42,10 @@ function setUPnPTable(forwards) {
 		cell.colSpan = 7;
 		cell.align = "center";
 		cell.innerHTML = "- " + share.none + " - ";
+		document.getElementsByName("delete_button").disabled = true;
 		return;
+	} else {
+			document.getElementsByName("delete_button").disabled = false;
 	}
 	for(var i = 0; i < data.length; i++) {
 		var row = table.insertRow(-1);
@@ -157,6 +160,7 @@ addEvent(window, "unload", function() {
 							<fieldset>
 								<legend><% tran("upnp.legend"); %></legend>
 								<table class="table" cellspacing="6" id="upnp_table" summary="UPnP table">
+									<tbody>
 									<tr>
 										<th width="30%"><% tran("share.descr"); %></th>
 										<th width="10%" class="center"><% tran("share.enabled"); %></th>
@@ -166,6 +170,7 @@ addEvent(window, "unload", function() {
 										<th><% tran("share.proto"); %></th>
 										<th width="10%" class="center"><% tran("share.del"); %></th>
 									</tr>
+									</tbody>
 								</table><br />
 								<div class="center">
 									<script type="text/javascript">
