@@ -157,6 +157,7 @@ addEvent(window, "unload", function() {
 							<fieldset>
 								<legend><% tran("upnp.legend"); %></legend>
 								<table class="table" cellspacing="6" id="upnp_table" summary="UPnP table">
+									<tbody>
 									<tr>
 										<th width="30%"><% tran("share.descr"); %></th>
 										<th width="10%" class="center"><% tran("share.enabled"); %></th>
@@ -166,6 +167,7 @@ addEvent(window, "unload", function() {
 										<th><% tran("share.proto"); %></th>
 										<th width="10%" class="center"><% tran("share.del"); %></th>
 									</tr>
+									</tbody>
 								</table><br />
 								<div class="center">
 									<script type="text/javascript">

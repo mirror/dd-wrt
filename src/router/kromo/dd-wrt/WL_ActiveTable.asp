@@ -10,6 +10,7 @@ function to_submit(F) {
 		refreshParent();
 	}
 }
+
 function to_apply(F) {
 	if(valid_value(F)){
 		F.submit_type.value="add_mac";
@@ -52,7 +53,7 @@ refreshParent = function() {
 	</head>
 
 	<body class="popup_bg">
-		<form action="apply.cgi" method="post">
+		<form action="apply.cgi" method="post" spellcheck="false">
 			<input type="hidden" name="submit_button" value="WL_ActiveTable" />
 			<input type="hidden" name="action" value="Apply" />
 			<input type="hidden" name="change_action" value="gozila_cgi" />
