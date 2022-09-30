@@ -1939,6 +1939,8 @@ int main(int argc, char **argv)
 				SEM_POST(&semaphore);
 				continue;
 			}
+			setlinebuf(conn_fp->fp_in);
+			setlinebuf(conn_fp->fp_out);
 //                      setvbuf(conn_fp->fp, NULL, _IONBF, 0);
 		}
 
