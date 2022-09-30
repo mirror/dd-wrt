@@ -1,6 +1,6 @@
 <% do_pagehead("info.titl"); %>
-		<script type="text/javascript">//
-//<![CDATA[
+	<script type="text/javascript">//
+	//<![CDATA[
 
 function setWirelessTable() {
 	var table = document.getElementById("wireless_table");
@@ -396,12 +396,6 @@ function refresh(F) {
 										<% nvm("samba_mount","0","<script type="text/javascript">Capture(share.disabled)</script>"); %><% nvm("samba_mount","1","<script type="text/javascript">Capture(share.enabled)</script>"); %>&nbsp;
 									</div>
 									<% ifndef("SAMBA", "-->"); %>
-									<% ifndef("SPUTNIK_APD", "<!--"); %>
-									<div class="setting">
-										<div class="label"><% tran("bmenu.statuSputnik"); %></div>
-										<% nvm("apd_enable","0","<script type="text/javascript">Capture(share.disabled)</script>"); %><% nvm("apd_enable","1","<script type="text/javascript">Capture(share.enabled)</script>"); %>&nbsp;
-									</div>
-									<% ifndef("SPUTNIK_APD", "-->"); %>
 									<% ifndef("USB", "<!--"); %>
 									<div class="setting">
 										<div class="label"><% tran("usb.usb_legend"); %></div>
