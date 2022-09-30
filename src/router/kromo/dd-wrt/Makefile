@@ -1173,6 +1173,27 @@ endif
 	../../../../tools/removewhitespace.sh $(TOP)/../../tools $(INSTALLDIR)/www/style/xirian
 	../../../../tools/removewhitespace.sh $(TOP)/../../tools $(INSTALLDIR)/www/style/yellow
 
+	-repaccss $(INSTALLDIR)/www
+	-repaccss $(INSTALLDIR)/www/help
+	-repaccss $(INSTALLDIR)/www/lang_pack
+	-repaccss $(INSTALLDIR)/www/images
+	-repaccss $(INSTALLDIR)/www/ddwrt_inspired_themes
+	-repaccss $(INSTALLDIR)/www/style
+	-repaccss $(INSTALLDIR)/www/style/syslogd
+	-repaccss $(INSTALLDIR)/www/style/blue
+	-repaccss $(INSTALLDIR)/www/style/brainslayer
+	-repaccss $(INSTALLDIR)/www/style/cyan
+	-repaccss $(INSTALLDIR)/www/style/elegant
+	-repaccss $(INSTALLDIR)/www/style/green
+	-repaccss $(INSTALLDIR)/www/style/kromo
+	-repaccss $(INSTALLDIR)/www/style/orange
+	-repaccss $(INSTALLDIR)/www/style/pwc
+	-repaccss $(INSTALLDIR)/www/style/pwc/ddwrt
+	-repaccss $(INSTALLDIR)/www/style/red
+	-repaccss $(INSTALLDIR)/www/style/wikar
+	-repaccss $(INSTALLDIR)/www/style/xirian
+	-repaccss $(INSTALLDIR)/www/style/yellow
+
 removeobsolete:
 	cd $(INSTALLDIR)/www  &&  find . -iname "CVS" | xargs rm -rf
 	cd $(INSTALLDIR)/www  &&  find . -iname ".svn" | xargs rm -rf
