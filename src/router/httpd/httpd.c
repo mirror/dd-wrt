@@ -536,7 +536,7 @@ static void send_error(webs_t conn_fp, int noheader, int status, char *title, ch
 	va_start(args, (char *)fmt);
 	vasprintf(&text, fmt, args);
 	va_end(args);
-//      dd_logerror("httpd", "Request Error Code %d: %s\n", status, text);
+//	dd_logerror("httpd", "Request Error Code %d: %s\n", status, text);
 	// jimmy, https, 8/4/2003, fprintf -> websWrite, fflush -> wfflush
 	if (!noheader)
 		send_headers(conn_fp, status, title, extra_header, "text/html", -1, NULL, 1);
@@ -1340,7 +1340,6 @@ static void *handle_request(void *arg)
 	setnaggle(conn_fp, 0);
 
 	debug_free(line);
-	wfclose(conn_fp);
 	if (conn_fp->request_url)
 		debug_free(conn_fp->request_url);
 	if (conn_fp->authorization)
@@ -1357,10 +1356,12 @@ static void *handle_request(void *arg)
 #endif
 	threadnum--;
 	PTHREAD_MUTEX_UNLOCK(&httpd_mutex);
-	bzero(conn_fp, sizeof(webs));	// erase to delete any traces of stored passwords or usernames
-
-	debug_free(conn_fp);
 	SEM_POST(&semaphore);
+
+	wfflush(conn_fp);
+	wfclose(conn_fp);
+	bzero(conn_fp, sizeof(webs));	// erase to delete any traces of stored passwords or usernames
+	debug_free(conn_fp);
 	return NULL;
 }
 
@@ -1939,9 +1940,10 @@ int main(int argc, char **argv)
 				SEM_POST(&semaphore);
 				continue;
 			}
-			setlinebuf(conn_fp->fp_in);
-			setlinebuf(conn_fp->fp_out);
-//                      setvbuf(conn_fp->fp, NULL, _IONBF, 0);
+//                      setlinebuf(conn_fp->fp_in);
+//                      setlinebuf(conn_fp->fp_out);
+//                        setvbuf(conn_fp->fp_in, NULL, _IONBF, 0);
+//                        setvbuf(conn_fp->fp_out, NULL, _IONBF, 0);
 		}
 
 #if !defined(HAVE_MICRO) && !defined(__UCLIBC__)
@@ -2213,6 +2215,11 @@ static int wfflush(webs_t wp)
 static int wfclose(webs_t wp)
 {
 	int ret = 0;
+	wfflush(wp);
+	struct timespec tim, tim2;
+	tim.tv_sec = 0;
+	tim.tv_nsec = 200000000;
+	nanosleep(&tim, &tim2);
 
 	if (DO_SSL(wp)) {
 #ifdef HAVE_OPENSSL

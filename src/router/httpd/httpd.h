@@ -125,8 +125,6 @@ typedef struct {
 #define SSL_ENABLED() 0
 #endif
 
-
-
 typedef webs *webs_t;
 
 /* Generic MIME type handler */
@@ -136,7 +134,7 @@ struct mime_handler {
 	char *extra_header;
 	int (*input)(char *path, webs_t stream, size_t len, char *boundary);
 	int (*output)(unsigned char method, struct mime_handler * handler, char *path, webs_t stream);
-	int (*auth)(webs_t wp, int(*auth_check)(webs_t conn_fp));
+	int (*auth)(webs_t wp, int (*auth_check)(webs_t conn_fp));
 	unsigned char send_headers;
 	unsigned char handle_options;
 };
@@ -150,7 +148,6 @@ typedef struct {
 	const char *path;	/* Web page URL path */
 	unsigned int size;	/* Size of web page in bytes */
 } websRomPageIndexType;
-
 
 //static void setLength(long len);
 
