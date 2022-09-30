@@ -42,7 +42,10 @@ function setUPnPTable(forwards) {
 		cell.colSpan = 7;
 		cell.align = "center";
 		cell.innerHTML = "- " + share.none + " - ";
+		document.getElementsByName("delete_button").disabled = true;
 		return;
+	} else {
+			document.getElementsByName("delete_button").disabled = false;
 	}
 	for(var i = 0; i < data.length; i++) {
 		var row = table.insertRow(-1);
