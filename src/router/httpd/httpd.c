@@ -1382,13 +1382,15 @@ static void handle_server_sig_int(int sig)
 static void settimeouts(webs_t wp, int secs)
 {
 	struct timeval tv;
-
+	int sndbuf = 0;
 	tv.tv_sec = secs;
 	tv.tv_usec = 0;
 	if (setsockopt(wp->conn_fd, SOL_SOCKET, SO_SNDTIMEO, &tv, sizeof(tv)) < 0)
 		perror("setsockopt(SO_SNDTIMEO)");
 	if (setsockopt(wp->conn_fd, SOL_SOCKET, SO_RCVTIMEO, &tv, sizeof(tv)) < 0)
 		perror("setsockopt(SO_RCVTIMEO)");
+	if (setsockopt(wp->conn_fd, SOL_SOCKET, SO_SNDBUF, &sndbuf, sizeof(sndbuf)) < 0)
+		perror("setsockopt(SO_SNDBUF)");
 }
 
 static void handle_sigchld(int sig)
@@ -2216,10 +2218,10 @@ static int wfclose(webs_t wp)
 {
 	int ret = 0;
 	wfflush(wp);
-	struct timespec tim, tim2;
-	tim.tv_sec = 0;
-	tim.tv_nsec = 200000000;
-	nanosleep(&tim, &tim2);
+//	struct timespec tim, tim2;
+//	tim.tv_sec = 0;
+//	tim.tv_nsec = 200000000;
+//	nanosleep(&tim, &tim2);
 
 	if (DO_SSL(wp)) {
 #ifdef HAVE_OPENSSL
