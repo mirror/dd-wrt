@@ -1,34 +1,7 @@
-.overlay_dialog, .overlay___invisible__ {
-  opacity: 0;
-}
-.dialog_nw, .dialog_n, .dialog_ne, .dialog_e, .dialog_w, .dialog_sw, .dialog_s,
-.dialog_se, .dialog_sizer, .dialog_close, .dialog_minimize, .dialog_maximize, .dialog_title {
-  display: none
-}
-.dialog_content {
-  overflow:auto;
-  color: #ddd;
-  font-family: Tahoma, Arial, sans-serif;
-  font-size: 10px;
-  background-color:#123;
-}
-.top_draggable, .bottom_draggable {
-  cursor: move;
-}
-.status_bar {
-  font-size: 12px;
-}
-.status_bar input{
-  font-size:12px;
-}
-.wired_frame {
-  display: block;
-  position: absolute;
-  border: 1px #000 dashed;
-}
 .dialog {
   display: block;
   position: absolute;
+  opacity: 1 !important;
 }
 .dialog table.table_window  { 
   border-collapse: collapse; 
@@ -41,6 +14,9 @@
 .dialog table.table_window th { 
   padding: 0; 
 }
+.top.table_window, .bot.table_window {
+  display: none;
+}
 .dialog .title_window {
-  -moz-user-select: none;
+  user-select: none;
 }                                                    
