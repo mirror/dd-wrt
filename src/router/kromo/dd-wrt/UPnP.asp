@@ -44,8 +44,6 @@ function setUPnPTable(forwards) {
 		cell.innerHTML = "- " + share.none + " - ";
 		document.getElementsByName("delete_button")[0].disabled = true;
 		return;
-	} else {
-			document.getElementsByName("delete_button")[0].disabled = false;
 	}
 	for(var i = 0; i < data.length; i++) {
 		var row = table.insertRow(-1);
@@ -94,6 +92,7 @@ function deleteForward(x) {
 	else {
 		if (!confirm(upnp.msg2)) return;
 	}
+	document.getElementsByName("delete_button")[0].disabled = false;
 	var fupnp = document.getElementById("fupnp");
 	fupnp.remove.value = (x == 'all' ? 'all' : e.index);
 	fupnp.delete_button.value = sbutton.deleted;
