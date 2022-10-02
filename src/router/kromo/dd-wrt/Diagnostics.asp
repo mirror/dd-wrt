@@ -170,9 +170,9 @@ addEvent(window, "unload", function() {
 								document.write("<input class=\"button\" type=\"button\" name=\"startup\" value=\"" + sbutton.startup + "\" onclick=\"to_submit(this.form, 'startup');\" />");
 								document.write("<input class=\"button\" type=\"button\" name=\"shutdown\" value=\"" + sbutton.shutdown + "\" onclick=\"to_submit(this.form, 'shutdown');\" />");
 								document.write("<input class=\"button\" type=\"button\" name=\"firewall\" value=\"" + sbutton.firewall + "\" onclick=\"to_submit(this.form, 'firewall');\" />");
-								<% ifndef("USB", "<!--"); %>
+								<% ifndef("USB", "/*"); %>
 								document.write("<input class=\"button\" type=\"button\" name=\"usb\" value=\"" + sbutton.usb + "\" onclick=\"to_submit(this.form, 'usb');\" />");
-								<% ifndef("USB", "-->"); %>
+								<% ifndef("USB", "*/"); %>
 								document.write("<input class=\"button\" type=\"button\" name=\"custom\" value=\"" + sbutton.custom + "\" onclick=\"to_submit(this.form, 'custom');\" />");
 								//]]>
 								</script>
