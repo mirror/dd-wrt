@@ -33,10 +33,7 @@ addEvent(window, "unload", function() {
 				</div>
 				<div id="helpContainer">
 					<div id="help">
-						<div id="logo">
 							<h2><% tran("share.help"); %></h2>
-						</div>
-						<br />
 					</div>
 				</div>
 				<div id="floatKiller"></div>
