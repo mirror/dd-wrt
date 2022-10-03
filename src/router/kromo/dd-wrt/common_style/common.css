@@ -21,7 +21,7 @@ body.gui {
 .infopage #header {
   height: 6.612em;
 }
-#logo {
+#header #logo {
   background: url(/images/logo.png) left center no-repeat;
   height: 4.076em;
   width: 454px;
