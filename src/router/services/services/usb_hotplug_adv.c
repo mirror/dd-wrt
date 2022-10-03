@@ -98,6 +98,13 @@ static bool usb_startservices(void)
 #ifdef HAVE_PLEX
 	eval("startservice", "plex", "-f");
 #endif
+	char *next;
+	char *services = nvram_safe_get("custom_configs");
+	char service[32];
+	foreach(service, services, next) {
+		eval("service", service, "stop");
+		eval("service", service, "start");
+	}
 	return 0;
 }
 

@@ -331,6 +331,13 @@ static int usb_process_path(char *path, char *fs, char *target)
 	eval("startservice", "run_rc_usb", "-f");
 	if (ret == 0)
 		run_on_mount(path);
+	char *next;
+	char *services = nvram_safe_get("custom_configs");
+	char service[32];
+	foreach(service, services, next) {
+		eval("service", service, "stop");
+		eval("service", service, "start");
+	}
 	return ret;
 }
 
