@@ -27,15 +27,24 @@ addEvent(window, "unload", function() {
 					<% do_menu("Status_Router.asp","Status_OpenVPN.asp"); %>
 				</div>
 				<div id="main">
-					<div id="contents">
-					<% show_openvpn_status(); %>
+					<div id="contentsInfo">
+					<h2><% tran("OpenVPN Status"); %></h2>
+						<% show_openvpn_status(); %>
+						<div id="footer" class="submitFooter">
+							<script type="text/javascript">
+							//<![CDATA[
+							var autoref = <% nvem("refresh_time","0","sbutton.refres","sbutton.autorefresh"); %>;
+							submitFooterButton(1,1,0,autoref);
+							//]]>
+							</script>
+						</div>
 					</div>
 				</div>
-				<div id="helpContainer">
+				<!--<div id="helpContainer">
 					<div id="help">
 							<h2><% tran("share.help"); %></h2>
 					</div>
-				</div>
+				</div>-->
 				<div id="floatKiller"></div>
 				<div id="statusInfo">
 				<div class="info"><% tran("share.firmware"); %>: 
