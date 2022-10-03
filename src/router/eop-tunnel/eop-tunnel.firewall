@@ -21,6 +21,14 @@ for i in $(seq 1 $tunnels); do
 		$ipt -D FORWARD -o $WAN_IF $FW_STATE -j $FW_CHAIN
 		$ipt -F $FW_CHAIN
 		$ipt -X $FW_CHAIN
+		$ipt -t mangle -D INPUT -p udp -m udp --dport `$nv get oet${i}_port` -j WGOBFS --key `$nv get oet${i}_obfkey` --unobfs
+		$ipt -t mangle -D OUTPUT -p udp -m udp --sport `$nv get oet${i}_port` -j WGOBFS --key `$nv get oet${i}_obfkey` --obfs
+		peers=$(($($nv get oet${i}_peers) - 1))
+		for p in $(seq 0 $peers); do
+			$ipt -t mangle -D INPUT -p udp -m udp --sport `$nv get oet${i}_peerport${p}` -j WGOBFS --key `$nv get oet${i}_obfkey${p}` --unobfs >/dev/null 2>&1
+			$ipt -t mangle -D OUTPUT -p udp -m udp --dport `$nv get oet${i}_peerport${p}` -j WGOBFS --key `$nv get oet${i}_obfkey${p}` --obfs >/dev/null 2>&1
+		done
+
 		if [[ -f "$WGDELRT" ]]; then
 			(while read route; do $route; done < $WGDELRT)
 			rm $WGDELRT
@@ -42,6 +50,21 @@ for i in $(seq 1 $tunnels); do
 		if [[ `$nv get oet${i}_bridged` -ne 1 && `$nv get oet${i}_proto` -ne 2 ]]; then
 			$ipt -I FORWARD -i oet${i} -j ACCEPT >/dev/null 2>&1
 			$ipt -I INPUT -i oet${i} -j ACCEPT >/dev/null 2>&1
+		fi
+		if [ $($nv get oet${i}_proto) -eq 2 ] && [ $($nv get oet${i}_obf) -eq 1]; then
+			insmod xt_WGOBFS
+			$ipt -t mangle -I INPUT -p udp -m udp --dport `$nv get oet${i}_port` -j WGOBFS --key `$nv get oet${i}_obfkey` --unobfs >/dev/null 2>&1
+			$ipt -t mangle -I OUTPUT -p udp -m udp --sport `$nv get oet${i}_port` -j WGOBFS --key `$nv get oet${i}_obfkey` --obfs >/dev/null 2>&1
+		fi
+		if [ $($nv get oet${i}_proto) -eq 2 ]; then
+			peers=$(($($nv get oet${i}_peers) - 1))
+			for p in $(seq 0 $peers); do
+				if [ $($nv get oet${i}_obf${p}) -eq 1 ]; then
+					insmod xt_WGOBFS
+					$ipt -t mangle -I INPUT -p udp -m udp --sport `$nv get oet${i}_peerport${p}` -j WGOBFS --key `$nv get oet${i}_obfkey${p}` --unobfs >/dev/null 2>&1
+					$ipt -t mangle -I OUTPUT -p udp -m udp --dport `$nv get oet${i}_peerport${p}` -j WGOBFS --key `$nv get oet${i}_obfkey${p}` --obfs >/dev/null 2>&1
+				fi
+			done
 		fi
 		if [ $($nv get oet${i}_proto) -eq 2 ] && [[ $($nv get oet${i}_failgrp) -ne 1 || $($nv get oet${i}_failstate) -eq 2 ]]; then
 			WGDELRT="/tmp/wgdelrt_oet${i}"
@@ -144,6 +167,8 @@ for i in $(seq 1 $tunnels); do
 				$ipt -I INPUT -i oet${i} $FW_STATE -j ACCEPT >/dev/null 2>&1
 				logger -p user.info "WireGuard Inbound Firewall deactivated on oet${i}"
 			fi
+
+
 			#end inbound firewall
 			# todo make escape rules for destination based routing on by default
 			# use wgdpbrip_oetx but wait till file is made
