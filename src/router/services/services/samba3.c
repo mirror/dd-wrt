@@ -246,25 +246,25 @@ void start_samba3(void)
 	char conffile[64];
 	if (reload_process("smbd")) {
 #ifdef HAVE_SMP
-		if (eval("/usr/bin/taskset", "0x2", "/usr/sbin/smbd", "-D", "-s", getdefaultconfig("samba3", path, "smb.conf")))
+		if (eval("/usr/bin/taskset", "0x2", "/usr/sbin/smbd", "-D", "-s", getdefaultconfig(NULL, path, "smb.conf")))
 #endif
-			log_eval("smbd", "-D", "-s", getdefaultconfig("samba3", path, "smb.conf"));
+			log_eval("smbd", "-D", "-s", getdefaultconfig(NULL, path, "smb.conf"));
 
 		if (pidof("smbd") <= 0) {
 #ifdef HAVE_SMP
-			if (eval("/usr/bin/taskset", "0x2", "/usr/sbin/smbd", "-D", "-s", getdefaultconfig("samba3", path, "smb.conf")))
+			if (eval("/usr/bin/taskset", "0x2", "/usr/sbin/smbd", "-D", "-s", getdefaultconfig(NULL, path, "smb.conf")))
 #endif
-				log_eval("smbd", "-D", "-s", getdefaultconfig("samba3", path, "smb.conf"));
+				log_eval("smbd", "-D", "-s", getdefaultconfig(NULL, path, "smb.conf"));
 		}
 	}
 	if (reload_process("nmbd")) {
-		log_eval("nmbd", "-D", "-s", getdefaultconfig("samba3", path, "smb.conf"));
+		log_eval("nmbd", "-D", "-s", getdefaultconfig(NULL, path, "smb.conf"));
 		if (pidof("nmbd") <= 0) {
-			log_eval("nmbd", "-D", "-s", getdefaultconfig("samba3", path, "smb.conf"));
+			log_eval("nmbd", "-D", "-s", getdefaultconfig(NULL, path, "smb.conf"));
 		}
 	}
 #ifdef HAVE_SAMBA4
-	log_eval("winbindd", "-D", "-s", getdefaultconfig("samba3", path, "smb.conf"));
+	log_eval("winbindd", "-D", "-s", getdefaultconfig(NULL, path, "smb.conf"));
 #endif
 #else
 	insmod("nls_base nls_utf8 crypto_hash crypto_null aead aead2 sha256_generic sha512_generic seqiv arc4 ecb"	//
@@ -292,7 +292,7 @@ void start_samba3(void)
 	char c1[64];
 	char c2[64];
 	if (reload_process("ksmbd.mountd")) {
-		log_eval("ksmbd.mountd", "-c", getdefaultconfig("samba3", c1, "smb.conf"), "-u", getdefaultconfig("samba3", c2, "smb.db"));
+		log_eval("ksmbd.mountd", "-c", getdefaultconfig(NULL, c1, "smb.conf"), "-u", getdefaultconfig(NULL, c2, "smb.db"));
 	}
 #endif
 	return;
