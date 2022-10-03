@@ -2234,6 +2234,7 @@ eoip.wireguard_failstate="Fail State (auto)";
 eoip.wireguard_standby="Standby";
 eoip.wireguard_running="Running";
 eoip.wireguard_failed="Failed";
+eoip.wireguard_obfuscation="Tunnel Obfuscation";
 eoip.wireguard_lanac=service.vpnd_allowcnlan;
 eoip.etherip="RFC 3378 EoIP";
 eoip.srv="Tunnel";
