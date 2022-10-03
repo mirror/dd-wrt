@@ -108,6 +108,33 @@ EJ_VISIBLE void ej_show_eop_tunnels(webs_t wp, int argc, char_t ** argv)
 				}
 				websWrite(wp, "</div>\n");
 
+				snprintf(temp, sizeof(temp), "oet%d_obf", tun);
+				websWrite(wp, "<div class=\"setting\">\n");
+				{
+					show_caption(wp, "label", "eoip.wireguard_obfuscation", NULL);
+					websWrite(wp, "<input class=\"spaceradio\" type=\"radio\" value=\"1\" name=\"%s\" onclick=\"show_layer_ext(this, 'idoet%d_showobf', true)\" %s />", temp, tun,
+						  (nvram_default_matchi(temp, 1, 1) ? "checked=\"checked\"" : ""));
+					show_caption(wp, NULL, "share.enable", "&nbsp;");
+					websWrite(wp, "<input class=\"spaceradio\" type=\"radio\" value=\"0\" name=\"%s\" onclick=\"show_layer_ext(this, 'idoet%d_showobf', false)\" %s />", temp, tun,
+						  (nvram_default_matchi(temp, 0, 1) ? "checked=\"checked\"" : ""));
+					show_caption_simple(wp, "share.disable");
+				}
+				websWrite(wp, "</div>\n");
+
+				websWrite(wp, "<div id=\"idoet%d_showobf\">\n", tun);	//for show or hide advanced options
+				{
+					snprintf(temp, sizeof(temp), "oet%d_obfkey", tun);
+					websWrite(wp, "<div class=\"setting\">\n");
+					{
+						show_caption(wp, "label", "share.key", NULL);
+						websWrite(wp,
+							  "<input type=\"password\" size=\"48\" maxlength=\"48\" name=\"%s\" onmouseover=\"this.type=\'text\'\" onmouseout=\"this.type=\'password\'\"  value=\"%s\"/>\n",
+							  temp, nvram_safe_get(temp));
+					}
+					websWrite(wp, "</div>\n");
+				}
+				websWrite(wp, "</div>\n");
+
 				//egc: add nat out via tunnel, controlled by nvram oet${i}_natout 
 				snprintf(temp, sizeof(temp), "oet%d_natout", tun);
 				websWrite(wp, "<div class=\"setting\">\n");
@@ -543,6 +570,34 @@ EJ_VISIBLE void ej_show_eop_tunnels(webs_t wp, int argc, char_t ** argv)
 						websWrite(wp, "<input size=\"48\" maxlength=\"48\" name=\"%s\" value=\"%s\" />\n", temp, nvram_safe_get(temp));
 					}
 					websWrite(wp, "</div>\n");
+
+					snprintf(temp, sizeof(temp), "oet%d_obf%d", tun, peer);
+					websWrite(wp, "<div class=\"setting\">\n");
+					{
+						show_caption(wp, "label", "eoip.wireguard_obfuscation", NULL);
+						websWrite(wp, "<input class=\"spaceradio\" type=\"radio\" value=\"1\" name=\"%s\" onclick=\"show_layer_ext(this, 'idshowobf%d_peer%d', true)\" %s />", temp, tun, peer,
+							  (nvram_default_matchi(temp, 1, 1) ? "checked=\"checked\"" : ""));
+						show_caption(wp, NULL, "share.enable", "&nbsp;");
+						websWrite(wp, "<input class=\"spaceradio\" type=\"radio\" value=\"0\" name=\"%s\" onclick=\"show_layer_ext(this, 'idshowobf%d_peer%d', false)\" %s />", temp, tun, peer,
+							  (nvram_default_matchi(temp, 0, 1) ? "checked=\"checked\"" : ""));
+						show_caption_simple(wp, "share.disable");
+					}
+					websWrite(wp, "</div>\n");
+
+					websWrite(wp, "<div id=\"idshowobf%d_peer%d\">\n", tun, peer);	//for show or hide advanced options
+					{
+						snprintf(temp, sizeof(temp), "oet%d_obfkey%d", tun, peer);
+						websWrite(wp, "<div class=\"setting\">\n");
+						{
+							show_caption(wp, "label", "share.key", NULL);
+							websWrite(wp,
+								  "<input type=\"password\" size=\"48\" maxlength=\"48\" name=\"%s\" onmouseover=\"this.type=\'text\'\" onmouseout=\"this.type=\'password\'\"  value=\"%s\"/>\n",
+								  temp, nvram_safe_get(temp));
+						}
+						websWrite(wp, "</div>\n");
+					}
+					websWrite(wp, "</div>\n");
+
 					snprintf(temp, sizeof(temp), "oet%d_usepsk%d", tun, peer);
 					nvram_default_get(temp, "0");
 					websWrite(wp, "<div class=\"setting\">\n");
@@ -655,6 +710,7 @@ EJ_VISIBLE void ej_show_eop_tunnels(webs_t wp, int argc, char_t ** argv)
 					websWrite(wp, "show_layer_ext(this, 'idclconfig%d_peer%d',%s);\n", tun, peer, nvram_nmatchi(1, "oet%d_clconfig%d", tun, peer) ? "true" : "false");
 					websWrite(wp, "show_layer_ext(this, 'idpsk%d_peer%d',%s);\n", tun, peer, nvram_nmatchi(1, "oet%d_usepsk%d", tun, peer) ? "true" : "false");
 					websWrite(wp, "show_layer_ext(this, 'idendpoint%d_peer%d',%s);\n", tun, peer, nvram_nmatchi(1, "oet%d_endpoint%d", tun, peer) ? "true" : "false");
+					websWrite(wp, "show_layer_ext(this, 'idshowobf%d_peer%d',%s);\n", tun, peer, nvram_nmatchi(1, "oet%d_obf%d", tun, peer) ? "true" : "false");
 					websWrite(wp,
 						  "document.write(\"<input class=\\\"button red_btn\\\" type=\\\"button\\\" name=\\\"delete_peer\\\" value=\\\"\" + eoip.wireguard_delpeer + \"\\\" onclick=\\\"del_peer(this.form,%d,%d)\\\" />\");\n",
 						  tun, peer);
@@ -760,6 +816,7 @@ EJ_VISIBLE void ej_show_eop_tunnels(webs_t wp, int argc, char_t ** argv)
 		websWrite(wp, "show_layer_ext(document.eop.oet%d_en, 'idoet%d', %s);\n", tun, tun, nvram_nmatchi(1, "oet%d_en", tun) ? "true" : "false");
 		//hide or show advanced settings
 		websWrite(wp, "show_layer_ext(document.eop.oet%d_en, 'idoet%d_showadvanced',%s);\n", tun, tun, nvram_nmatchi(1, "oet%d_showadvanced", tun) ? "true" : "false");
+		websWrite(wp, "show_layer_ext(document.eop.oet%d_en, 'idoet%d_showobf',%s);\n", tun, tun, nvram_nmatchi(1, "oet%d_obf", tun) ? "true" : "false");
 		websWrite(wp, "show_layer_ext(document.eop.oet%d_en, 'idoet%d_tunnelstate', %s);\n", tun, tun, nvram_nmatchi(1, "oet%d_failgrp", tun) ? "true" : "false");
 		websWrite(wp, "show_layer_ext(document.eop.oet%d_en, 'idoet%d_wdog', %s);\n", tun, tun, (nvram_nmatchi(1, "oet%d_failgrp", tun) || nvram_nmatchi(1, "oet%d_wdog", tun)) ? "true" : "false");
 		//websWrite(wp, "show_layer_ext(document.eop.oet%d_en, 'idoet%d_wdog', %s);\n", tun, tun, nvram_nmatchi(1, "oet%d_failgrp", tun) ? "true" : "false");
