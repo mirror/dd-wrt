@@ -13,7 +13,7 @@
   width: 100%;
   padding-bottom: 10px;
   padding-top: 1.5rem;
-  font-size: 1em;
+  font-size: 14px;
 }
 .ddwrt_progress {
   float: left;
@@ -24,6 +24,20 @@
   height: 32px;
   background: transparent url('ddwrt/progress.svg') no-repeat center center;
 }
-.ddwrt_window, .ddwrt_title, .ddwrt_w, .ddwrt_e {
+.ddwrt_window, .ddwrt_title, .ddwrt_w, .ddwrt_e, .top.table_window, .bot.table_window {
   display: none;
+}
+.dialog {
+  display: block;
+  position: absolute;
+  opacity: 1 !important;
+}
+.dialog table.table_window  { 
+  border: 0; 
+  margin: 0;
+  padding: 0;
+}
+.dialog table.table_window td,
+.dialog table.table_window th { 
+  padding: 0; 
 }
