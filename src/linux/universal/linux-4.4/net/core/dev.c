@@ -145,8 +145,13 @@
 #include "net-sysfs.h"
 
 
-#define BCMFASTPATH
+#ifdef CONFIG_BCM47XX
+#include <typedefs.h>
+#include <bcmdefs.h>
+#else
 #define BCMFASTPATH_HOST
+#define BCMFASTPATH
+#endif
 
 #define MAX_GRO_SKBS 8
 
@@ -2806,7 +2811,7 @@ static int xmit_one(struct sk_buff *skb, struct net_device *dev,
 	return rc;
 }
 
-struct sk_buff *dev_hard_start_xmit(struct sk_buff *first, struct net_device *dev,
+struct sk_buff * BCMFASTPATH_HOST dev_hard_start_xmit(struct sk_buff *first, struct net_device *dev,
 				    struct netdev_queue *txq, int *ret)
 {
 	struct sk_buff *skb = first;
@@ -3172,7 +3177,7 @@ struct netdev_queue *netdev_pick_tx(struct net_device *dev,
  *      the BH enable code must have IRQs enabled so that it will not deadlock.
  *          --BLG
  */
-static int __dev_queue_xmit(struct sk_buff *skb, void *accel_priv)
+static int BCMFASTPATH_HOST __dev_queue_xmit(struct sk_buff *skb, void *accel_priv)
 {
 	struct net_device *dev = skb->dev;
 	struct netdev_queue *txq;
@@ -3281,7 +3286,7 @@ out:
 	return rc;
 }
 
-int dev_queue_xmit(struct sk_buff *skb)
+int BCMFASTPATH_HOST dev_queue_xmit(struct sk_buff *skb)
 {
 	return __dev_queue_xmit(skb, NULL);
 }
@@ -3630,7 +3635,7 @@ drop:
 	return NET_RX_DROP;
 }
 
-static int netif_rx_internal(struct sk_buff *skb)
+static int BCMFASTPATH_HOST netif_rx_internal(struct sk_buff *skb)
 {
 	int ret;
 
@@ -3678,7 +3683,7 @@ static int netif_rx_internal(struct sk_buff *skb)
  *
  */
 
-int netif_rx(struct sk_buff *skb)
+int BCMFASTPATH_HOST netif_rx(struct sk_buff *skb)
 {
 	trace_netif_rx_entry(skb);
 
@@ -4087,7 +4092,7 @@ out:
 	return ret;
 }
 
-static int __netif_receive_skb(struct sk_buff *skb)
+static int BCMFASTPATH_HOST __netif_receive_skb(struct sk_buff *skb)
 {
 	int ret;
 
@@ -4112,7 +4117,7 @@ static int __netif_receive_skb(struct sk_buff *skb)
 	return ret;
 }
 
-static int netif_receive_skb_internal(struct sk_buff *skb)
+static int BCMFASTPATH_HOST netif_receive_skb_internal(struct sk_buff *skb)
 {
 	int ret;
 
@@ -4155,7 +4160,7 @@ static int netif_receive_skb_internal(struct sk_buff *skb)
  *	NET_RX_SUCCESS: no congestion
  *	NET_RX_DROP: packet was dropped
  */
-int netif_receive_skb(struct sk_buff *skb)
+int BCMFASTPATH_HOST netif_receive_skb(struct sk_buff *skb)
 {
 	trace_netif_receive_skb_entry(skb);
 
@@ -4246,7 +4251,7 @@ out:
 	return netif_receive_skb_internal(skb);
 }
 
-static void __napi_gro_flush_chain(struct napi_struct *napi, u32 index,
+static void BCMFASTPATH_HOST __napi_gro_flush_chain(struct napi_struct *napi, u32 index,
 				   bool flush_old)
 {
 	struct list_head *head = &napi->gro_hash[index].list;
@@ -4269,7 +4274,7 @@ static void __napi_gro_flush_chain(struct napi_struct *napi, u32 index,
  * youngest packets at the head of it.
  * Complete skbs in reverse order to reduce latencies.
  */
-void napi_gro_flush(struct napi_struct *napi, bool flush_old)
+void BCMFASTPATH_HOST napi_gro_flush(struct napi_struct *napi, bool flush_old)
 {
 	u32 i;
 
@@ -4375,7 +4380,7 @@ static void gro_flush_oldest(struct list_head *head)
 	napi_gro_complete(oldest);
 }
 
-static enum gro_result dev_gro_receive(struct napi_struct *napi, struct sk_buff *skb)
+static enum gro_result BCMFASTPATH_HOST dev_gro_receive(struct napi_struct *napi, struct sk_buff *skb)
 {
 	u32 hash = skb_get_hash_raw(skb) & (GRO_HASH_BUCKETS - 1);
 	struct list_head *head = &offload_base;
@@ -4518,7 +4523,7 @@ static void napi_skb_free_stolen_head(struct sk_buff *skb)
 	kmem_cache_free(skbuff_head_cache, skb);
 }
 
-static gro_result_t napi_skb_finish(gro_result_t ret, struct sk_buff *skb)
+static gro_result_t BCMFASTPATH_HOST napi_skb_finish(gro_result_t ret, struct sk_buff *skb)
 {
 	switch (ret) {
 	case GRO_NORMAL:
@@ -4546,7 +4551,7 @@ static gro_result_t napi_skb_finish(gro_result_t ret, struct sk_buff *skb)
 }
 
 
-gro_result_t napi_gro_receive(struct napi_struct *napi, struct sk_buff *skb)
+gro_result_t BCMFASTPATH_HOST napi_gro_receive(struct napi_struct *napi, struct sk_buff *skb)
 {
 	trace_napi_gro_receive_entry(skb);
 
@@ -5115,7 +5120,7 @@ static int napi_poll(struct napi_struct *n, struct list_head *repoll)
 	return work;
 }
 
-static void net_rx_action(struct softirq_action *h)
+static void BCMFASTPATH_HOST net_rx_action(struct softirq_action *h)
 {
 	struct softnet_data *sd = this_cpu_ptr(&softnet_data);
 	unsigned long time_limit = jiffies + 2;

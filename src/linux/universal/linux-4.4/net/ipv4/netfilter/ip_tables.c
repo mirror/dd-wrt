@@ -34,6 +34,14 @@
 #include <net/netfilter/nf_log.h>
 #include "../../netfilter/xt_repldata.h"
 
+#ifdef CONFIG_BCM47XX
+#include <typedefs.h>
+#include <bcmdefs.h>
+#else
+#define BCMFASTPATH_HOST
+#define BCMFASTPATH
+#endif
+
 MODULE_LICENSE("GPL");
 MODULE_AUTHOR("Netfilter Core Team <coreteam@netfilter.org>");
 MODULE_DESCRIPTION("IPv4 packet filter");
@@ -341,7 +349,7 @@ ipt_handle_default_rule(struct ipt_entry *e, unsigned int *verdict)
 }
 
 /* Returns one of the generic firewall policies, like NF_ACCEPT. */
-unsigned int
+unsigned int BCMFASTPATH_HOST 
 ipt_do_table(struct sk_buff *skb,
 	     const struct nf_hook_state *state,
 	     struct xt_table *table)

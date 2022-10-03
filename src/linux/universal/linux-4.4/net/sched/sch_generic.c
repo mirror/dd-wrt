@@ -30,6 +30,14 @@
 #include <net/pkt_sched.h>
 #include <net/dst.h>
 
+#ifdef CONFIG_BCM47XX
+#include <typedefs.h>
+#include <bcmdefs.h>
+#else
+#define BCMFASTPATH_HOST
+#define BCMFASTPATH
+#endif
+
 /* Qdisc to use by default */
 const struct Qdisc_ops *default_qdisc_ops = &fq_codel_qdisc_ops;
 EXPORT_SYMBOL(default_qdisc_ops);
@@ -200,7 +208,7 @@ static inline int handle_dev_cpu_collision(struct sk_buff *skb,
  *				0  - queue is empty or throttled.
  *				>0 - queue is not empty.
  */
-int sch_direct_xmit(struct sk_buff *skb, struct Qdisc *q,
+int BCMFASTPATH_HOST sch_direct_xmit(struct sk_buff *skb, struct Qdisc *q,
 		    struct net_device *dev, struct netdev_queue *txq,
 		    spinlock_t *root_lock, bool validate)
 {
@@ -285,7 +293,7 @@ static inline int qdisc_restart(struct Qdisc *q, int *packets)
 	return sch_direct_xmit(skb, q, dev, txq, root_lock, validate);
 }
 
-void __qdisc_run(struct Qdisc *q)
+void BCMFASTPATH __qdisc_run(struct Qdisc *q)
 {
 	int quota = weight_p;
 	int packets;
@@ -527,7 +535,7 @@ static inline struct sk_buff_head *band2list(struct pfifo_fast_priv *priv,
 	return priv->q + band;
 }
 
-static int pfifo_fast_enqueue(struct sk_buff *skb, struct Qdisc *qdisc)
+static int BCMFASTPATH pfifo_fast_enqueue(struct sk_buff *skb, struct Qdisc *qdisc)
 {
 	if (skb_queue_len(&qdisc->q) < qdisc_dev(qdisc)->tx_queue_len) {
 		int band = prio2band[skb->priority & TC_PRIO_MAX];

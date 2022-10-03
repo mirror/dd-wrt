@@ -30,12 +30,13 @@
 #define CREATE_TRACE_POINTS
 #include <trace/events/irq.h>
 
-//#ifdef CONFIG_BCM47XX
-//#include <typedefs.h>
-//#include <bcmdefs.h>
-//#else
+#ifdef CONFIG_BCM47XX
+#include <typedefs.h>
+#include <bcmdefs.h>
+#else
+#define BCMFASTPATH_HOST
 #define BCMFASTPATH
-//#endif
+#endif
 /*
    - No shared variables, all the data are CPU local.
    - If a softirq needs serialization, let it serialize itself
@@ -249,7 +250,7 @@ static inline bool lockdep_softirq_start(void) { return false; }
 static inline void lockdep_softirq_end(bool in_hardirq) { }
 #endif
 
-asmlinkage __visible void __do_softirq(void)
+asmlinkage __visible void BCMFASTPATH __do_softirq(void)
 {
 	unsigned long end = jiffies + MAX_SOFTIRQ_TIME;
 	unsigned long old_flags = current->flags;

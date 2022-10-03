@@ -14,6 +14,14 @@
 #include <net/tcp.h>
 #include <net/protocol.h>
 
+#ifdef CONFIG_BCM47XX
+#include <typedefs.h>
+#include <bcmdefs.h>
+#else
+#define BCMFASTPATH_HOST
+#define BCMFASTPATH
+#endif
+
 static void tcp_gso_tstamp(struct sk_buff *skb, unsigned int ts_seq,
 			   unsigned int seq, unsigned int mss)
 {
@@ -175,7 +183,7 @@ out:
 	return segs;
 }
 
-struct sk_buff *tcp_gro_receive(struct list_head *head, struct sk_buff *skb)
+struct sk_buff BCMFASTPATH_HOST *tcp_gro_receive(struct list_head *head, struct sk_buff *skb)
 {
 	struct sk_buff *pp = NULL;
 	struct sk_buff *p;
@@ -269,7 +277,7 @@ out:
 	return pp;
 }
 
-int tcp_gro_complete(struct sk_buff *skb)
+int BCMFASTPATH_HOST tcp_gro_complete(struct sk_buff *skb)
 {
 	struct tcphdr *th = tcp_hdr(skb);
 
@@ -286,7 +294,7 @@ int tcp_gro_complete(struct sk_buff *skb)
 }
 EXPORT_SYMBOL(tcp_gro_complete);
 
-static struct sk_buff *tcp4_gro_receive(struct list_head *head, struct sk_buff *skb)
+static struct sk_buff BCMFASTPATH_HOST *tcp4_gro_receive(struct list_head *head, struct sk_buff *skb)
 {
 	/* Don't bother verifying checksum if we're going to flush anyway. */
 	if (!NAPI_GRO_CB(skb)->flush &&
@@ -299,7 +307,7 @@ static struct sk_buff *tcp4_gro_receive(struct list_head *head, struct sk_buff *
 	return tcp_gro_receive(head, skb);
 }
 
-static int tcp4_gro_complete(struct sk_buff *skb, int thoff)
+static int BCMFASTPATH_HOST tcp4_gro_complete(struct sk_buff *skb, int thoff)
 {
 	const struct iphdr *iph = ip_hdr(skb);
 	struct tcphdr *th = tcp_hdr(skb);

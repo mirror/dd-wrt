@@ -31,13 +31,13 @@
 #include <asm/word-at-a-time.h>
 #include <asm/page.h>
 
-//#ifdef CONFIG_BCM47XX
-//#include <typedefs.h>
-//#include <bcmdefs.h>
-//#else
+#ifdef CONFIG_BCM47XX
+#include <typedefs.h>
+#include <bcmdefs.h>
+#else
 #define BCMFASTPATH
 #define BCMFASTPATH_HOST
-//#endif
+#endif
 
 #ifndef __HAVE_ARCH_STRNCASECMP
 /**
@@ -864,7 +864,7 @@ EXPORT_SYMBOL(memmove);
  * @count: The size of the area.
  */
 #undef memcmp
-__visible int memcmp(const void *cs, const void *ct, size_t count)
+__visible int BCMFASTPATH memcmp(const void *cs, const void *ct, size_t count)
 {
 	const unsigned char *su1, *su2;
 	int res = 0;

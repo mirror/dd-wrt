@@ -120,6 +120,11 @@ SECTIONS
 #ifdef CONFIG_DEBUG_RODATA
 	. = ALIGN(1<<SECTION_SHIFT);
 #endif
+#ifdef CONFIG_BCM47XX
+	__fastpath_begin = .;
+	.text.fastpath : { *(.text.fastpath) }
+	__fastpath_end = .;
+#endif
 	RO_DATA(PAGE_SIZE)
 
 	. = ALIGN(4);

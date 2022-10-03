@@ -37,6 +37,14 @@
 #include <linux/if_vlan.h>
 #include <linux/netpoll.h>
 
+#ifdef CONFIG_BCM47XX
+#include <typedefs.h>
+#include <bcmdefs.h>
+#else
+#define BCMFASTPATH_HOST
+#define BCMFASTPATH
+#endif
+
 /*
  *	Create the VLAN header for an arbitrary protocol layer
  *
@@ -101,7 +109,7 @@ static inline netdev_tx_t vlan_netpoll_send_skb(struct vlan_dev_priv *vlan, stru
 	return NETDEV_TX_OK;
 }
 
-static netdev_tx_t vlan_dev_hard_start_xmit(struct sk_buff *skb,
+static netdev_tx_t BCMFASTPATH_HOST vlan_dev_hard_start_xmit(struct sk_buff *skb,
 					    struct net_device *dev)
 {
 	struct vlan_dev_priv *vlan = vlan_dev_priv(dev);
@@ -158,7 +166,7 @@ static int vlan_dev_change_mtu(struct net_device *dev, int new_mtu)
 }
 
 #ifdef HNDCTF
-void vlan_rxstats_upd(struct net_device *dev, struct sk_buff *skb, int packets, int bytes)
+void BCMFASTPATH vlan_rxstats_upd(struct net_device *dev, struct sk_buff *skb, int packets, int bytes)
 {
 	struct vlan_pcpu_stats *stats;
 	struct vlan_dev_priv *vlan = vlan_dev_priv(dev);
@@ -171,7 +179,7 @@ void vlan_rxstats_upd(struct net_device *dev, struct sk_buff *skb, int packets, 
 }
 EXPORT_SYMBOL(vlan_rxstats_upd);
 
-void vlan_txstats_upd(struct net_device *dev, struct sk_buff *skb, int packets, int bytes)
+void BCMFASTPATH vlan_txstats_upd(struct net_device *dev, struct sk_buff *skb, int packets, int bytes)
 {
 	struct vlan_pcpu_stats *stats;
 	struct vlan_dev_priv *vlan = vlan_dev_priv(dev);

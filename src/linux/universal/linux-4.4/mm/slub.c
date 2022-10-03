@@ -36,6 +36,13 @@
 #include <linux/memcontrol.h>
 
 #include <trace/events/kmem.h>
+#ifdef CONFIG_BCM47XX
+#include <typedefs.h>
+#include <bcmdefs.h>
+#else
+#define BCMFASTPATH_HOST
+#define BCMFASTPATH
+#endif
 
 #include "internal.h"
 
@@ -2346,7 +2353,7 @@ static inline void *get_freelist(struct kmem_cache *s, struct page *page)
  * Version of __slab_alloc to use when we know that interrupts are
  * already disabled (which is the case for bulk allocation).
  */
-static void *___slab_alloc(struct kmem_cache *s, gfp_t gfpflags, int node,
+static void BCMFASTPATH_HOST *___slab_alloc(struct kmem_cache *s, gfp_t gfpflags, int node,
 			  unsigned long addr, struct kmem_cache_cpu *c)
 {
 	void *freelist;
@@ -2585,7 +2592,7 @@ static __always_inline void *slab_alloc(struct kmem_cache *s,
 	return slab_alloc_node(s, gfpflags, NUMA_NO_NODE, addr);
 }
 
-void *kmem_cache_alloc(struct kmem_cache *s, gfp_t gfpflags)
+void BCMFASTPATH_HOST *kmem_cache_alloc(struct kmem_cache *s, gfp_t gfpflags)
 {
 	void *ret = slab_alloc(s, gfpflags, _RET_IP_);
 
@@ -2644,7 +2651,7 @@ EXPORT_SYMBOL(kmem_cache_alloc_node_trace);
  * lock and free the item. If there is no additional partial page
  * handling required then we can return immediately.
  */
-static void __slab_free(struct kmem_cache *s, struct page *page,
+static void BCMFASTPATH_HOST __slab_free(struct kmem_cache *s, struct page *page,
 			void *head, void *tail, int cnt,
 			unsigned long addr)
 
@@ -2819,7 +2826,7 @@ redo:
 
 }
 
-void kmem_cache_free(struct kmem_cache *s, void *x)
+void BCMFASTPATH_HOST kmem_cache_free(struct kmem_cache *s, void *x)
 {
 	s = cache_from_obj(s, x);
 	if (!s)
@@ -3636,7 +3643,7 @@ size_t ksize(const void *object)
 }
 EXPORT_SYMBOL(ksize);
 
-void kfree(const void *x)
+void BCMFASTPATH_HOST kfree(const void *x)
 {
 	struct page *page;
 	void *object = (void *)x;
@@ -4044,7 +4051,7 @@ static struct notifier_block slab_notifier = {
 
 #endif
 
-void *__kmalloc_track_caller(size_t size, gfp_t gfpflags, unsigned long caller)
+void BCMFASTPATH_HOST *__kmalloc_track_caller(size_t size, gfp_t gfpflags, unsigned long caller)
 {
 	struct kmem_cache *s;
 	void *ret;

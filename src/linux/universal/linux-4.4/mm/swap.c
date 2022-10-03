@@ -36,6 +36,14 @@
 
 #include "internal.h"
 
+#ifdef CONFIG_BCM47XX
+#include <typedefs.h>
+#include <bcmdefs.h>
+#else
+#define BCMFASTPATH_HOST
+#define BCMFASTPATH
+#endif
+
 #define CREATE_TRACE_POINTS
 #include <trace/events/pagemap.h>
 
@@ -269,7 +277,7 @@ static void put_compound_page(struct page *page)
 		put_refcounted_compound_page(page_head, page);
 }
 
-void put_page(struct page *page)
+void BCMFASTPATH_HOST put_page(struct page *page)
 {
 	if (unlikely(PageCompound(page)))
 		put_compound_page(page);

@@ -79,6 +79,14 @@
 #include <linux/user_namespace.h>
 #include <osl.h>
 
+#ifdef CONFIG_BCM47XX
+#include <typedefs.h>
+#include <bcmdefs.h>
+#else
+#define BCMFASTPATH_HOST
+#define BCMFASTPATH
+#endif
+
 
 #define BCMFASTPATH
 #define BCMFASTPATH_HOST
@@ -223,7 +231,7 @@ out:
  *
  */
 
-struct sk_buff *__alloc_skb_head(gfp_t gfp_mask, int node)
+struct sk_buff * BCMFASTPATH_HOST __alloc_skb_head(gfp_t gfp_mask, int node)
 {
 	struct sk_buff *skb;
 
@@ -265,7 +273,7 @@ out:
  *	Buffers may only be allocated from interrupts using a @gfp_mask of
  *	%GFP_ATOMIC.
  */
-struct sk_buff *__alloc_skb(unsigned int size, gfp_t gfp_mask,
+struct sk_buff * BCMFASTPATH_HOST __alloc_skb(unsigned int size, gfp_t gfp_mask,
 			    int flags, int node)
 {
 	struct kmem_cache *cache;
@@ -684,7 +692,7 @@ static void skb_free_head(struct sk_buff *skb)
 		kfree(head);
 }
 
-static void skb_release_data(struct sk_buff *skb)
+static void BCMFASTPATH_HOST skb_release_data(struct sk_buff *skb)
 {
 	struct skb_shared_info *shinfo = skb_shinfo(skb);
 	int i;
@@ -748,7 +756,7 @@ fastpath:
 	kmem_cache_free(skbuff_fclone_cache, fclones);
 }
 
-static void skb_release_head_state(struct sk_buff *skb)
+static void BCMFASTPATH_HOST skb_release_head_state(struct sk_buff *skb)
 {
 	skb_dst_drop(skb);
 #ifdef CONFIG_XFRM
@@ -802,7 +810,7 @@ static void skb_release_all(struct sk_buff *skb)
  *	always call kfree_skb
  */
 
-void __kfree_skb(struct sk_buff *skb)
+void BCMFASTPATH_HOST __kfree_skb(struct sk_buff *skb)
 {
 	skb_release_all(skb);
 	kfree_skbmem(skb);
@@ -1582,7 +1590,7 @@ EXPORT_SYMBOL(skb_put);
  *	start. If this would exceed the total buffer headroom the kernel will
  *	panic. A pointer to the first byte of the extra data is returned.
  */
-unsigned char *skb_push(struct sk_buff *skb, unsigned int len)
+unsigned char BCMFASTPATH_HOST *skb_push(struct sk_buff *skb, unsigned int len)
 {
 	skb->data -= len;
 	skb->len  += len;
@@ -1602,7 +1610,7 @@ EXPORT_SYMBOL(skb_push);
  *	is returned. Once the data has been pulled future pushes will overwrite
  *	the old data.
  */
-unsigned char *skb_pull(struct sk_buff *skb, unsigned int len)
+unsigned char BCMFASTPATH_HOST *skb_pull(struct sk_buff *skb, unsigned int len)
 {
 	return skb_pull_inline(skb, len);
 }
@@ -2262,7 +2270,7 @@ fault:
 EXPORT_SYMBOL(skb_store_bits);
 
 /* Checksum skb data. */
-__wsum __skb_checksum(const struct sk_buff *skb, int offset, int len,
+__wsum BCMFASTPATH_HOST __skb_checksum(const struct sk_buff *skb, int offset, int len,
 		      __wsum csum, const struct skb_checksum_ops *ops)
 {
 	int start = skb_headlen(skb);
@@ -3251,7 +3259,7 @@ EXPORT_SYMBOL_GPL(skb_pull_rcsum);
  *	a pointer to the first in a list of new skbs for the segments.
  *	In case of error it returns ERR_PTR(err).
  */
-struct sk_buff *skb_segment(struct sk_buff *head_skb,
+struct sk_buff BCMFASTPATH_HOST *skb_segment(struct sk_buff *head_skb,
 			    netdev_features_t features)
 {
 	struct sk_buff *segs = NULL;
@@ -3477,7 +3485,7 @@ err:
 }
 EXPORT_SYMBOL_GPL(skb_segment);
 
-int skb_gro_receive(struct sk_buff *p, struct sk_buff *skb)
+int BCMFASTPATH_HOST skb_gro_receive(struct sk_buff *p, struct sk_buff *skb)
 {
 	struct skb_shared_info *pinfo, *skbinfo = skb_shinfo(skb);
 	unsigned int offset = skb_gro_offset(skb);
@@ -3609,7 +3617,7 @@ void __init skb_init(void)
 #endif
 }
 
-static int
+static int BCMFASTPATH_HOST 
 __skb_to_sgvec(struct sk_buff *skb, struct scatterlist *sg, int offset, int len,
 	       unsigned int recursion_level)
 {
