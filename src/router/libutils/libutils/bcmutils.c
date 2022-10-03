@@ -389,7 +389,8 @@ const char *getdefaultconfig(char *service, char *path, char *configname)
 	sprintf(path, "/jffs/etc/%s", configname);
 	FILE *fp = fopen(path, "r");	//test if custom config is available
 	if (fp != NULL) {
-		registerCustom(service);
+		if (service)
+			registerCustom(service);
 		fclose(fp);
 	} else {
 		sprintf(path, "/tmp/%s", configname);
