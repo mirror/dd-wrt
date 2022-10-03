@@ -25,6 +25,14 @@
 #include <net/secure_seq.h>
 #include <net/ip.h>
 
+#ifdef CONFIG_BCM47XX
+#include <typedefs.h>
+#include <bcmdefs.h>
+#else
+#define BCMFASTPATH_HOST
+#define BCMFASTPATH
+#endif
+
 static u32 inet_ehashfn(const struct net *net, const __be32 laddr,
 			const __u16 lport, const __be32 faddr,
 			const __be16 fport)
@@ -281,7 +289,7 @@ void sock_edemux(struct sk_buff *skb)
 }
 EXPORT_SYMBOL(sock_edemux);
 
-struct sock *__inet_lookup_established(struct net *net,
+struct sock BCMFASTPATH_HOST *__inet_lookup_established(struct net *net,
 				  struct inet_hashinfo *hashinfo,
 				  const __be32 saddr, const __be16 sport,
 				  const __be32 daddr, const u16 hnum,

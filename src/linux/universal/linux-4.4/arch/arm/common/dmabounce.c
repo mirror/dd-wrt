@@ -34,6 +34,14 @@
 
 #include <asm/cacheflush.h>
 
+#ifdef CONFIG_BCM47XX
+#include <typedefs.h>
+#include <bcmdefs.h>
+#else
+#define BCMFASTPATH_HOST
+#define BCMFASTPATH
+#endif
+
 #undef STATS
 
 #ifdef STATS

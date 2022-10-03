@@ -282,8 +282,13 @@
 #include <asm/unaligned.h>
 #include <net/busy_poll.h>
 
-#define BCMFASTPATH
+#ifdef CONFIG_BCM47XX
+#include <typedefs.h>
+#include <bcmdefs.h>
+#else
 #define BCMFASTPATH_HOST
+#define BCMFASTPATH
+#endif
 
 
 int sysctl_tcp_fin_timeout __read_mostly = TCP_FIN_TIMEOUT;
@@ -896,7 +901,7 @@ static int tcp_send_mss(struct sock *sk, int *size_goal, int flags)
 	return mss_now;
 }
 
-static ssize_t do_tcp_sendpages(struct sock *sk, struct page *page, int offset,
+static ssize_t BCMFASTPATH_HOST do_tcp_sendpages(struct sock *sk, struct page *page, int offset,
 				size_t size, int flags)
 {
 	struct tcp_sock *tp = tcp_sk(sk);
@@ -1023,7 +1028,7 @@ out_err:
 	return sk_stream_error(sk, flags, err);
 }
 
-int tcp_sendpage(struct sock *sk, struct page *page, int offset,
+int BCMFASTPATH_HOST tcp_sendpage(struct sock *sk, struct page *page, int offset,
 		 size_t size, int flags)
 {
 	ssize_t res;
@@ -1100,7 +1105,7 @@ static int tcp_sendmsg_fastopen(struct sock *sk, struct msghdr *msg,
 	return err;
 }
 
-int tcp_sendmsg(struct sock *sk, struct msghdr *msg, size_t size)
+int BCMFASTPATH_HOST tcp_sendmsg(struct sock *sk, struct msghdr *msg, size_t size)
 {
 	struct tcp_sock *tp = tcp_sk(sk);
 	struct sk_buff *skb;
@@ -1586,7 +1591,7 @@ EXPORT_SYMBOL(tcp_read_sock);
  *	Probably, code can be easily improved even more.
  */
 
-int tcp_recvmsg(struct sock *sk, struct msghdr *msg, size_t len, int nonblock,
+int BCMFASTPATH_HOST tcp_recvmsg(struct sock *sk, struct msghdr *msg, size_t len, int nonblock,
 		int flags, int *addr_len)
 {
 	struct tcp_sock *tp = tcp_sk(sk);

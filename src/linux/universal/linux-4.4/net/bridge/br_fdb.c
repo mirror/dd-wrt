@@ -519,7 +519,7 @@ void br_fdb_delete_by_port(struct net_bridge *br,
 }
 
 /* No locking or refcounting, assumes caller has rcu_read_lock */
-struct net_bridge_fdb_entry *__br_fdb_get(struct net_bridge *br,
+struct net_bridge_fdb_entry BCMFASTPATH_HOST *__br_fdb_get(struct net_bridge *br,
 					  const unsigned char *addr,
 					  __u16 vid)
 {
@@ -730,10 +730,10 @@ int br_fdb_insert(struct net_bridge *br, struct net_bridge_port *source,
 }
 
 #ifdef HNDCTF
-void br_fdb_update(struct net_bridge *br, struct net_bridge_port *source,
+void BCMFASTPATH_HOST br_fdb_update(struct net_bridge *br, struct net_bridge_port *source,
 		   const unsigned char *addr, u16 vid, bool added_by_user, struct sk_buff *skb)
 #else
-void br_fdb_update(struct net_bridge *br, struct net_bridge_port *source,
+void BCMFASTPATH_HOST br_fdb_update(struct net_bridge *br, struct net_bridge_port *source,
 		   const unsigned char *addr, u16 vid, bool added_by_user)
 #endif
 {

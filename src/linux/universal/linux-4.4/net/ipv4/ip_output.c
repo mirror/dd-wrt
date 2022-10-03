@@ -81,6 +81,14 @@
 #include <linux/netlink.h>
 #include <linux/tcp.h>
 
+#ifdef CONFIG_BCM47XX
+#include <typedefs.h>
+#include <bcmdefs.h>
+#else
+#define BCMFASTPATH_HOST
+#define BCMFASTPATH
+#endif
+
 int sysctl_ip_default_ttl __read_mostly = IPDEFTTL;
 EXPORT_SYMBOL(sysctl_ip_default_ttl);
 
@@ -389,7 +397,7 @@ static void ip_copy_addrs(struct iphdr *iph, const struct flowi4 *fl4)
 }
 
 /* Note: skb->sk can be different from sk, in case of tunnels */
-int ip_queue_xmit(struct sock *sk, struct sk_buff *skb, struct flowi *fl)
+int BCMFASTPATH_HOST ip_queue_xmit(struct sock *sk, struct sk_buff *skb, struct flowi *fl)
 {
 	struct inet_sock *inet = inet_sk(sk);
 	struct net *net = sock_net(sk);

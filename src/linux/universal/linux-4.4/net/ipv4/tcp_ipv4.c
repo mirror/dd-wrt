@@ -85,8 +85,13 @@
 #include <linux/crypto.h>
 #include <linux/scatterlist.h>
 
-#define BCMFASTPATH
+#ifdef CONFIG_BCM47XX
+#include <typedefs.h>
+#include <bcmdefs.h>
+#else
 #define BCMFASTPATH_HOST
+#define BCMFASTPATH
+#endif
 
 int sysctl_tcp_tw_reuse __read_mostly;
 int sysctl_tcp_low_latency __read_mostly;
@@ -1572,7 +1577,7 @@ EXPORT_SYMBOL(tcp_filter);
  *	From tcp_input.c
  */
 
-int tcp_v4_rcv(struct sk_buff *skb)
+int BCMFASTPATH_HOST tcp_v4_rcv(struct sk_buff *skb)
 {
 	const struct iphdr *iph;
 	const struct tcphdr *th;

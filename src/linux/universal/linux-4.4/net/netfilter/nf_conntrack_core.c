@@ -96,6 +96,7 @@
 #define BCMFASTPATH_HOST
 #endif /* HNDCTF */
 
+
 int (*nfnetlink_parse_nat_setup_hook)(struct nf_conn *ct,
 				      enum nf_nat_manip_type manip,
 				      const struct nlattr *attr) __read_mostly;
@@ -919,7 +920,7 @@ static u32 hash_bucket(u32 hash, const struct net *net)
 	return __hash_bucket(hash, net->ct.htable_size);
 }
 
-static u_int32_t __hash_conntrack(const struct nf_conntrack_tuple *tuple,
+static u_int32_t BCMFASTPATH_HOST __hash_conntrack(const struct nf_conntrack_tuple *tuple,
 				  unsigned int size)
 {
 	return __hash_bucket(hash_conntrack_raw(tuple), size);
@@ -1267,7 +1268,7 @@ nf_ct_key_equal(struct nf_conntrack_tuple_hash *h,
  * - Caller must take a reference on returned object
  *   and recheck nf_ct_tuple_equal(tuple, &h->tuple)
  */
-static struct nf_conntrack_tuple_hash *
+static struct nf_conntrack_tuple_hash BCMFASTPATH_HOST *
 ____nf_conntrack_find(struct net *net, const struct nf_conntrack_zone *zone,
 		      const struct nf_conntrack_tuple *tuple, u32 hash)
 {
@@ -1303,7 +1304,7 @@ begin:
 }
 
 /* Find a connection corresponding to a tuple. */
-static struct nf_conntrack_tuple_hash *
+static struct nf_conntrack_tuple_hash BCMFASTPATH_HOST *
 __nf_conntrack_find_get(struct net *net, const struct nf_conntrack_zone *zone,
 			const struct nf_conntrack_tuple *tuple, u32 hash)
 {
@@ -1330,7 +1331,7 @@ begin:
 	return h;
 }
 
-struct nf_conntrack_tuple_hash *
+struct nf_conntrack_tuple_hash BCMFASTPATH_HOST *
 nf_conntrack_find_get(struct net *net, const struct nf_conntrack_zone *zone,
 		      const struct nf_conntrack_tuple *tuple)
 {
@@ -1915,7 +1916,7 @@ resolve_normal_ct(struct net *net, struct nf_conn *tmpl,
 	return ct;
 }
 
-unsigned int
+unsigned int BCMFASTPATH_HOST 
 nf_conntrack_in(struct net *net, u_int8_t pf, unsigned int hooknum,
 		struct sk_buff *skb)
 {

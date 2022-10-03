@@ -29,8 +29,13 @@
 #include <asm/cacheflush.h>
 #include <asm/hardware/cache-l2x0.h>	/* Old register offsets */
 
+#ifdef CONFIG_BCM47XX
 #include <typedefs.h>
 #include <bcmdefs.h>
+#else
+#define BCMFASTPATH_HOST
+#define BCMFASTPATH
+#endif
 
 #define CACHE_LINE_SIZE		32
 

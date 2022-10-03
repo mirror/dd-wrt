@@ -1,6 +1,10 @@
 #
 # Makefile for the linux arm-specific parts of the memory manager.
 #
+EXTRA_CFLAGS+=-I$(srctree)/brcm/arm/include -I$(srctree)/brcm/arm/shared/bcmwifi/include -DBCMDRIVER -Dlinux
+EXTRA_AFLAGS+=-I$(srctree)/brcm/arm/include -I$(srctree)/brcm/arm/shared/bcmwifi/include -DBCMDRIVER -Dlinux
+EXTRA_CFLAGS+=-I$(srctree)/brcm/arm/common/include
+EXTRA_AFLAGS+=-I$(srctree)/brcm/arm/common/include
 
 obj-y				:= dma-mapping.o extable.o fault.o init.o \
 				   iomap.o

@@ -36,6 +36,14 @@
 #include <linux/rmap.h>
 #include "internal.h"
 
+#ifdef CONFIG_BCM47XX
+#include <typedefs.h>
+#include <bcmdefs.h>
+#else
+#define BCMFASTPATH_HOST
+#define BCMFASTPATH
+#endif
+
 #define CREATE_TRACE_POINTS
 #include <trace/events/filemap.h>
 
@@ -815,7 +823,7 @@ EXPORT_SYMBOL_GPL(add_page_wait_queue);
  * The mb is necessary to enforce ordering between the clear_bit and the read
  * of the waitqueue (to avoid SMP races with a parallel wait_on_page_locked()).
  */
-void unlock_page(struct page *page)
+void BCMFASTPATH_HOST unlock_page(struct page *page)
 {
 	VM_BUG_ON_PAGE(!PageLocked(page), page);
 	clear_bit_unlock(PG_locked, &page->flags);
@@ -1359,7 +1367,7 @@ repeat:
  *
  * find_get_pages_contig() returns the number of pages which were found.
  */
-unsigned find_get_pages_contig(struct address_space *mapping, pgoff_t index,
+unsigned BCMFASTPATH_HOST find_get_pages_contig(struct address_space *mapping, pgoff_t index,
 			       unsigned int nr_pages, struct page **pages)
 {
 	struct radix_tree_iter iter;

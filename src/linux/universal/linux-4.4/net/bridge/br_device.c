@@ -30,14 +30,19 @@ EXPORT_SYMBOL_GPL(nf_br_ops);
 
 static struct lock_class_key bridge_netdev_addr_lock_key;
 
+#ifdef CONFIG_BCM47XX
 #include <typedefs.h>
 #include <bcmdefs.h>
 #ifdef HNDCTF
 #include <ctf/hndctf.h>
 #endif /* HNDCTF */
+#else
+#define BCMFASTPATH_HOST
+#define BCMFASTPATH
+#endif
 
 /* net device transmit always called with BH disabled */
-netdev_tx_t br_dev_xmit(struct sk_buff *skb, struct net_device *dev)
+netdev_tx_t BCMFASTPATH_HOST br_dev_xmit(struct sk_buff *skb, struct net_device *dev)
 {
 	struct net_bridge *br = netdev_priv(dev);
 	const unsigned char *dest = skb->data;
