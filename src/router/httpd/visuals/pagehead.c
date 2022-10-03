@@ -57,7 +57,7 @@ websWrite(wp, "<script type=\"text/javascript\" src=\"lang_pack/freecwmp-english
 #endif
 #ifdef HAVE_PWC
 	websWrite(wp,
-		  "<script type=\"text/javascript\" src=\"js/prototype.js\"></script>\n<script type=\"text/javascript\" src=\"js/effects.js\"></script>\n<script type=\"text/javascript\" src=\"js/window.js\"></script>\n<script type=\"text/javascript\" src=\"js/window_effects.js\"></script>\n<link type=\"text/css\" rel=\"stylesheet\" href=\"style/pwc/default.css\" />\n<link type=\"text/css\" rel=\"stylesheet\" href=\"style/pwc/ddwrt.css\" />\n");
+		  "<script type=\"text/javascript\" src=\"js/prototype.js\"></script>\n<script type=\"text/javascript\" src=\"js/effects.js\"></script>\n<script type=\"text/javascript\" src=\"js/window.js\"></script>\n<script type=\"text/javascript\" src=\"js/window_effects.js\"></script>\n<link type=\"text/css\" rel=\"stylesheet\" href=\"style/pwc/ddwrt.css\" />\n");
 #endif
 	if ((startswith(wp->request_url, "Wireless") || startswith(wp->request_url, "WL_WPA")) && get_wl_instances() == 3)
 		websWrite(wp, "<style type=\"text/css\">#header { height: 11.5em; }</style>\n");
