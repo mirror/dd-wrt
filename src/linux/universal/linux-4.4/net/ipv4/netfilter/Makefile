@@ -1,6 +1,24 @@
 #
 # Makefile for the netfilter modules on top of IPv4.
 #
+ifeq ($(CONFIG_MIPS),y)
+ifeq ($(CONFIG_CPU_MIPS32_R1),y)
+EXTRA_CFLAGS+=-I$(srctree)/brcm/mipsel_r1/include -I$(srctree)/brcm/mipsel_r1/shared/bcmwifi/include -DBCMDRIVER -Dlinux
+EXTRA_AFLAGS+=-I$(srctree)/brcm/mipsel_r1/include -I$(srctree)/brcm/mipsel_r1/shared/bcmwifi/include -DBCMDRIVER -Dlinux
+EXTRA_CFLAGS+=-I$(srctree)/brcm/mipsel_r1/common/include
+EXTRA_AFLAGS+=-I$(srctree)/brcm/mipsel_r1/common/include
+else
+EXTRA_CFLAGS+=-I$(srctree)/brcm/mipsel/include -I$(srctree)/brcm/mipsel/shared/bcmwifi/include -DBCMDRIVER -Dlinux
+EXTRA_AFLAGS+=-I$(srctree)/brcm/mipsel/include -I$(srctree)/brcm/mipsel/shared/bcmwifi/include -DBCMDRIVER -Dlinux
+EXTRA_CFLAGS+=-I$(srctree)/brcm/mipsel/common/include
+EXTRA_AFLAGS+=-I$(srctree)/brcm/mipsel/common/include
+endif
+else
+EXTRA_CFLAGS+=-I$(srctree)/brcm/arm/include -I$(srctree)/brcm/arm/shared/bcmwifi/include -DBCMDRIVER -Dlinux
+EXTRA_AFLAGS+=-I$(srctree)/brcm/arm/include -I$(srctree)/brcm/arm/shared/bcmwifi/include -DBCMDRIVER -Dlinux
+EXTRA_CFLAGS+=-I$(srctree)/brcm/arm/common/include
+EXTRA_AFLAGS+=-I$(srctree)/brcm/arm/common/include
+endif
 
 # objects for l3 independent conntrack
 nf_conntrack_ipv4-y	:=  nf_conntrack_l3proto_ipv4.o nf_conntrack_proto_icmp.o

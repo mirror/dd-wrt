@@ -121,8 +121,13 @@
 #endif
 #include <net/l3mdev.h>
 
-#define BCMFASTPATH
+#ifdef CONFIG_BCM47XX
+#include <typedefs.h>
+#include <bcmdefs.h>
+#else
 #define BCMFASTPATH_HOST
+#define BCMFASTPATH
+#endif
 
 
 /* The inetsw table contains everything that inet_create needs to
@@ -1197,7 +1202,7 @@ int inet_sk_rebuild_header(struct sock *sk)
 }
 EXPORT_SYMBOL(inet_sk_rebuild_header);
 
-static struct sk_buff *inet_gso_segment(struct sk_buff *skb,
+static struct sk_buff BCMFASTPATH_HOST *inet_gso_segment(struct sk_buff *skb,
 					netdev_features_t features)
 {
 	struct sk_buff *segs = ERR_PTR(-EINVAL);
@@ -1293,7 +1298,7 @@ out:
 	return segs;
 }
 
-static struct sk_buff *inet_gro_receive(struct list_head *head,
+static struct sk_buff BCMFASTPATH_HOST *inet_gro_receive(struct list_head *head,
 					 struct sk_buff *skb)
 {
 	const struct net_offload *ops;
@@ -1414,7 +1419,7 @@ int inet_recv_error(struct sock *sk, struct msghdr *msg, int len, int *addr_len)
 	return -EINVAL;
 }
 
-static int inet_gro_complete(struct sk_buff *skb, int nhoff)
+static int BCMFASTPATH_HOST inet_gro_complete(struct sk_buff *skb, int nhoff)
 {
 	__be16 newlen = htons(skb->len - nhoff);
 	struct iphdr *iph = (struct iphdr *)(skb->data + nhoff);

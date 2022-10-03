@@ -21,6 +21,14 @@
 
 #include "internals.h"
 
+#ifdef CONFIG_BCM47XX
+#include <typedefs.h>
+#include <bcmdefs.h>
+#else
+#define BCMFASTPATH_HOST
+#define BCMFASTPATH
+#endif
+
 static irqreturn_t bad_chained_irq(int irq, void *dev_id)
 {
 	WARN_ONCE(1, "Chained irq %d should not call an action\n", irq);
@@ -453,7 +461,7 @@ static void cond_unmask_irq(struct irq_desc *desc)
  *	it after the associated handler has acknowledged the device, so the
  *	interrupt line is back to inactive.
  */
-void handle_level_irq(struct irq_desc *desc)
+void BCMFASTPATH handle_level_irq(struct irq_desc *desc)
 {
 	raw_spin_lock(&desc->lock);
 	mask_ack_irq(desc);

@@ -12,6 +12,7 @@
 #include <asm/unwind.h>
 
 	.text
+	.section .text.fastpath_host, "a"
 	.align	5
 	.word	0
 /*

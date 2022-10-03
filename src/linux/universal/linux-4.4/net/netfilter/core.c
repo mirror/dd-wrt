@@ -25,6 +25,14 @@
 #include <net/net_namespace.h>
 #include <net/sock.h>
 
+#ifdef CONFIG_BCM47XX
+#include <typedefs.h>
+#include <bcmdefs.h>
+#else
+#define BCMFASTPATH_HOST
+#define BCMFASTPATH
+#endif
+
 #include "nf_internals.h"
 
 static DEFINE_MUTEX(afinfo_mutex);
@@ -253,7 +261,7 @@ void nf_unregister_hooks(struct nf_hook_ops *reg, unsigned int n)
 }
 EXPORT_SYMBOL(nf_unregister_hooks);
 
-unsigned int nf_iterate(struct list_head *head,
+unsigned int BCMFASTPATH_HOST nf_iterate(struct list_head *head,
 			struct sk_buff *skb,
 			struct nf_hook_state *state,
 			struct nf_hook_ops **elemp)

@@ -68,6 +68,13 @@
 #include <asm/div64.h>
 #include "internal.h"
 
+#ifdef CONFIG_BCM47XX
+#include <typedefs.h>
+#include <bcmdefs.h>
+#else
+#define BCMFASTPATH_HOST
+#define BCMFASTPATH
+#endif
 /* prevent >1 _updater_ of zone percpu pageset ->high and ->batch fields */
 static DEFINE_MUTEX(pcp_batch_high_lock);
 #define MIN_PERCPU_PAGELIST_FRACTION	(8)
@@ -2548,7 +2555,7 @@ static void reset_alloc_batches(struct zone *preferred_zone)
  * get_page_from_freelist goes through the zonelist trying to allocate
  * a page.
  */
-static struct page *
+static struct page BCMFASTPATH_HOST *
 get_page_from_freelist(gfp_t gfp_mask, unsigned int order, int alloc_flags,
 						const struct alloc_context *ac)
 {

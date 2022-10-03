@@ -39,6 +39,15 @@
 #include <linux/if_vlan.h>
 #include "vlan.h"
 #include "vlanproc.h"
+
+#ifdef CONFIG_BCM47XX
+#include <typedefs.h>
+#include <bcmdefs.h>
+#else
+#define BCMFASTPATH_HOST
+#define BCMFASTPATH
+#endif
+
 #ifdef HNDCTF
 #include <ctf/hndctf.h>
 #endif /* HNDCTF */
@@ -661,7 +670,7 @@ out:
 	return err;
 }
 
-static struct sk_buff *vlan_gro_receive(struct list_head *head,
+static struct sk_buff * BCMFASTPATH_HOST vlan_gro_receive(struct list_head *head,
 					struct sk_buff *skb)
 {
 	const struct packet_offload *ptype;
@@ -713,7 +722,7 @@ out:
 	return pp;
 }
 
-static int vlan_gro_complete(struct sk_buff *skb, int nhoff)
+static int BCMFASTPATH_HOST vlan_gro_complete(struct sk_buff *skb, int nhoff)
 {
 	struct vlan_hdr *vhdr = (struct vlan_hdr *)(skb->data + nhoff);
 	__be16 type = vhdr->h_vlan_encapsulated_proto;

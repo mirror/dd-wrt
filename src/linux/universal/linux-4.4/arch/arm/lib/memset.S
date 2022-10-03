@@ -14,9 +14,9 @@
 #include <asm/unwind.h>
 
 	.text
-//#ifdef CONFIG_BCM47XX
-//	.section .text.fastpath, "a"
-//#endif
+#ifdef CONFIG_BCM47XX
+	.section .text.fastpath, "a"
+#endif
 	.align	5
 
 ENTRY(mmioset)
