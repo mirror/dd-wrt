@@ -1934,6 +1934,8 @@ void tunnel_save(webs_t wp)
 		copytonv(wp, "oet%d_failstate", i);
 		copytonv(wp, "oet%d_failip", i);
 		copytonv(wp, "oet%d_ipaddrmask", i);
+		copytonv(wp, "oet%d_obf", i);
+		copytonv(wp, "oet%d_obfkey", i);
 		copymergetonv(wp, "oet%d_rem", i);
 		copymergetonv(wp, "oet%d_local", i);
 		copymergetonv(wp, "oet%d_ipaddr", i);
@@ -1964,6 +1966,8 @@ void tunnel_save(webs_t wp)
 			copytonv(wp, "oet%d_usepsk%d", i, peer);
 			copytonv(wp, "oet%d_aip_rten%d", i, peer);
 			copytonv(wp, "oet%d_psk%d", i, peer);
+			copytonv(wp, "oet%d_obf%d", i, peer);
+			copytonv(wp, "oet%d_obfkey%d", i, peer);
 		}
 	}
 	char *value = websGetVar(wp, "action", "");
@@ -2042,6 +2046,7 @@ void add_peer(webs_t wp)
 	default_set("cldns", "0.0.0.0");
 	default_set("clend", nvram_safe_get("wan_ipaddr"));
 	default_seti("clka", 25);
+	default_seti("obf", 0);
 #undef default_set
 #undef default_seti
 	peer++;
@@ -2093,6 +2098,8 @@ static void copypeer(int tun, int from, int to)
 	copypeervalue("usepsk", tun, from, to);
 	copypeervalue("aip_rten", tun, from, to);
 	copypeervalue("psk", tun, from, to);
+	copypeervalue("obf", tun, from, to);
+	copypeervalue("obfkey", tun, from, to);
 }
 
 static void copytunpeer(int peer, int from, int to)
@@ -2113,6 +2120,8 @@ static void copytunpeer(int peer, int from, int to)
 	copypeertunvalue("usepsk", peer, from, to);
 	copypeertunvalue("aip_rten", peer, from, to);
 	copypeertunvalue("psk", peer, from, to);
+	copypeertunvalue("obf", peer, from, to);
+	copypeertunvalue("obfkey", peer, from, to);
 }
 
 static void delpeer(int tun, int peer)
@@ -2133,6 +2142,8 @@ static void delpeer(int tun, int peer)
 	delpeervalue("usepsk", tun, peer);
 	delpeervalue("aip_rten", tun, peer);
 	delpeervalue("psk", tun, peer);
+	delpeervalue("obf", tun, peer);
+	delpeervalue("obfkey", tun, peer);
 
 }
 #endif
@@ -2190,6 +2201,8 @@ void add_tunnel(webs_t wp)
 	default_set("ipaddr", "");
 	default_set("netmask", "");
 	default_seti("id", 1);
+	default_seti("obf", 0);
+	default_set("obfkey", "");
 	int overhead = nvram_matchi("ipv6_enable", 1) ? 80 : 60;
 	if (!nvram_match("wan_proto", "disabled"))
 		default_seti("mtu", atoi(nvram_safe_get("wan_mtu")) - overhead);
@@ -2331,6 +2344,8 @@ void del_tunnel(webs_t wp)
 		copytunvalue("bridged", i, i - 1);
 		copytunvalue("port", i, i - 1);
 #ifdef HAVE_WIREGUARD
+		copytunvalue("obf", i, i - 1);
+		copytunvalue("obfkey", i, i - 1);
 		copytunvalue("peers", i, i - 1);
 		sprintf(idx, "oet%d_peers", i);
 		int peers = nvram_geti(idx);
@@ -2382,6 +2397,8 @@ void del_tunnel(webs_t wp)
 	deltunvalue("bridged", tunnels);
 	deltunvalue("port", tunnels);
 #ifdef HAVE_WIREGUARD
+	deltunvalue("obf", tunnels);
+	deltunvalue("obfkey", tunnels);
 	deltunvalue("peers", tunnels);
 	//egc delete resolv.dnsmasq_oet(x) will be recreated on restart
 	char oldfile[32];
