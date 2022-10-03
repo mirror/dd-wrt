@@ -14,7 +14,7 @@ installwebfiles:
 	cp -a images $(INSTALLDIR)/www
 	cp -a style $(INSTALLDIR)/www
 	cp common_style/buttons.css $(INSTALLDIR)/www/style
-	cp common_style/buttons_dark.css $(INSTALLDIR)/www/style
+#	cp common_style/buttons_dark.css $(INSTALLDIR)/www/style
 	
 ifeq ($(CONFIG_DIST),"micro")
 	rm -f $(INSTALLDIR)/www/favicon.ico
