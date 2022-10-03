@@ -326,6 +326,7 @@ enum {				// return code
 };
 
 extern void addAction(char *action);
+extern void registerCustom(char *action);
 
 /*
  * SEG addition for dynamic nvram layout 
