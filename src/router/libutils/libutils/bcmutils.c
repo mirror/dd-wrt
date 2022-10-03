@@ -384,11 +384,12 @@ int weekday(int month, int day, int year)
 
 }
 
-const char *getdefaultconfig(char *path, char *configname)
+const char *getdefaultconfig(char *service, char *path, char *configname)
 {
 	sprintf(path, "/jffs/etc/%s", configname);
 	FILE *fp = fopen(path, "r");	//test if custom config is available
 	if (fp != NULL) {
+		registerCustom(service);
 		fclose(fp);
 	} else {
 		sprintf(path, "/tmp/%s", configname);
@@ -1924,14 +1925,14 @@ int searchfor(FILE * fp, char *str, int scansize)
 	return -1;
 }
 
-void addAction(char *action)
+static void addactions(char *nv, char *action)
 {
 	char *actionstack = "";
 	char *next;
 	char service[80];
 	if (action == NULL || !*action)
 		return;
-	char *services = nvram_safe_get("action_service");
+	char *services = nvram_safe_get(nv);
 
 	foreach(service, services, next) {
 		if (!strcmp(service, action)) {
@@ -1940,12 +1941,22 @@ void addAction(char *action)
 	}
 	if (*services) {
 		asprintf(&actionstack, "%s %s", action, services);
-		nvram_set("action_service", actionstack);
+		nvram_set(nv, actionstack);
 		free(actionstack);
 	} else {
-		nvram_set("action_service", action);
+		nvram_set(nv, action);
 	}
 
+}
+
+void addAction(char *action)
+{
+    addactions("action_service", action);
+}
+
+void registerCustom(char *action)
+{
+    addactions("custom_configs", action);
 }
 
 /*

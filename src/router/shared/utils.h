@@ -1437,7 +1437,7 @@ int nvram_backup(char *filename);
 
 int nvram_restore(char *filename, int force);
 
-const char *getdefaultconfig(char *path, char *configname);
+const char *getdefaultconfig(char *service, char *path, char *configname);
 
 void nvram_clear(void);
 int nvram_critical(char *name);

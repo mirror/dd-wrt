@@ -96,7 +96,7 @@ void start_smartdns(void)
 	fwritenvram("smartdns_options", fp);
 	fclose(fp);
 
-	log_eval("smartdns", "-c", getdefaultconfig(path, "smartdns.conf"));
+	log_eval("smartdns", "-c", getdefaultconfig("smartdns", path, "smartdns.conf"));
 }
 
 void stop_smartdns(void)
