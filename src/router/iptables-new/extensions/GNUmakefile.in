@@ -24,6 +24,7 @@ kinclude_CPPFLAGS  = @kinclude_CPPFLAGS@
 AM_CFLAGS       = ${regular_CFLAGS}
 AM_CPPFLAGS     = ${regular_CPPFLAGS} -I${top_builddir}/include -I${top_builddir} -I${top_srcdir}/include -I${top_srcdir} ${kinclude_CPPFLAGS} ${CPPFLAGS} @libnetfilter_conntrack_CFLAGS@ @libnftnl_CFLAGS@
 AM_CFLAGS      += -DOPENDPI_NETFILTER_MODULE -I$(TOP)/ndpi-netfilter -I$(TOP)/ndpi-netfilter/src/include -I$(TOP)/ndpi-netfilter/src/lib -I$(TOP)/ndpi-netfilter/ndpi-netfilter/src -I$(TOP)/ndpi-netfilter/ndpi-netfilter/libre
+AM_CFLAGS      += -I$(TOP)/wireguard/obfuscation/include
 AM_DEPFLAGS     = -Wp,-MMD,$(@D)/.$(@F).d,-MT,$@
 AM_LDFLAGS      = @noundef_LDFLAGS@
 
