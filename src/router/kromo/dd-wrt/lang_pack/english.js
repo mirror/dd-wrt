@@ -431,7 +431,8 @@ errmsg.err51="The router is currently set to the default username and password. 
 errmsg.err52="Password confirmation does not match.";
 
 // Port_Services.asp error messages
-errmsg.err53="After completing all actions, click the <em>" + sbutton.apply + "</em> button to save the settings.";
+// err53 browser dialog box no HTML support
+errmsg.err53="After completing all actions, click the " + sbutton.apply + " button to save the settings.";
 errmsg.err54="You must input a Service Name.";
 errmsg.err55="The Service Name exists.";
 
