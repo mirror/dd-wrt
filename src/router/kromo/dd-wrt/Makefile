@@ -406,7 +406,7 @@ ifeq ($(CONFIG_PWC),y)
 	mkdir -p $(INSTALLDIR)/www/style/pwc
 #	mkdir -p $(INSTALLDIR)/www/style/pwc/default
 #	cp ../windows_js/themes/default/* $(INSTALLDIR)/www/style/pwc/default
-	cp ../windows_js/themes/default.css $(INSTALLDIR)/www/style/pwc
+#	cp ../windows_js/themes/default.css $(INSTALLDIR)/www/style/pwc
 	cp -r common_style/pwc $(INSTALLDIR)/www/style
 	cp common_style/common.css $(INSTALLDIR)/www/style
 else
