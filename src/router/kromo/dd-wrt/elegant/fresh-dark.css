@@ -1,4 +1,3 @@
-@import url(/style/buttons_dark.css);
 body, .popup, .popup_bg {
   background: #111;
   color: #ccc;
@@ -132,4 +131,48 @@ pre {
 }
 #tablePwdCheck tr th {
   color: #fff;
+}
+.add {
+  background: url(/images/add-white.svg) center no-repeat;
+  cursor: pointer;
+  height: 16px;
+  width: 16px;
+  border: 0;
+  margin: .1rem;
+  vertical-align: middle;
+}
+.add:hover, .add:focus, .add:focus-within, .add:focus-visible {
+  background: url(/images/add-hover.svg) center no-repeat;
+  height: 16px;
+  width: 16px;
+  border: 0;
+  box-shadow: none;
+}
+.add[disabled], .add[disabled]:hover {
+  background: url(/images/add-white.svg) center no-repeat;
+  background-color: transparent !important;
+  opacity: .6;
+  cursor: default;
+}
+.remove {
+  background: url(/images/remove-white.svg) center no-repeat;
+  cursor: pointer;
+  height: 16px;
+  width: 16px;
+  border: 0;
+  margin: .1rem;
+  vertical-align: middle;
+}
+.remove:hover, .remove:focus, .remove:focus-within, .remove:focus-visible {
+  background: url(/images/remove-hover.svg) center no-repeat;
+  height: 16px;
+  width: 16px;
+  border: 0;
+  box-shadow: none;
+}
+.remove[disabled], .remove[disabled]:hover {
+  background: url(/images/remove-white.svg) center no-repeat;
+  background-color: transparent !important;
+  opacity: .6;
+  cursor: default;
 }
