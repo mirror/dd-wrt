@@ -113,10 +113,10 @@ EJ_VISIBLE void ej_show_eop_tunnels(webs_t wp, int argc, char_t ** argv)
 				{
 					show_caption(wp, "label", "eoip.wireguard_obfuscation", NULL);
 					websWrite(wp, "<input class=\"spaceradio\" type=\"radio\" value=\"1\" name=\"%s\" onclick=\"show_layer_ext(this, 'idoet%d_showobf', true)\" %s />", temp, tun,
-						  (nvram_default_matchi(temp, 1, 1) ? "checked=\"checked\"" : ""));
+						  (nvram_default_matchi(temp, 1, 0) ? "checked=\"checked\"" : ""));
 					show_caption(wp, NULL, "share.enable", "&nbsp;");
 					websWrite(wp, "<input class=\"spaceradio\" type=\"radio\" value=\"0\" name=\"%s\" onclick=\"show_layer_ext(this, 'idoet%d_showobf', false)\" %s />", temp, tun,
-						  (nvram_default_matchi(temp, 0, 1) ? "checked=\"checked\"" : ""));
+						  (nvram_default_matchi(temp, 0, 0) ? "checked=\"checked\"" : ""));
 					show_caption_simple(wp, "share.disable");
 				}
 				websWrite(wp, "</div>\n");
@@ -576,10 +576,10 @@ EJ_VISIBLE void ej_show_eop_tunnels(webs_t wp, int argc, char_t ** argv)
 					{
 						show_caption(wp, "label", "eoip.wireguard_obfuscation", NULL);
 						websWrite(wp, "<input class=\"spaceradio\" type=\"radio\" value=\"1\" name=\"%s\" onclick=\"show_layer_ext(this, 'idshowobf%d_peer%d', true)\" %s />", temp, tun, peer,
-							  (nvram_default_matchi(temp, 1, 1) ? "checked=\"checked\"" : ""));
+							  (nvram_default_matchi(temp, 1, 0) ? "checked=\"checked\"" : ""));
 						show_caption(wp, NULL, "share.enable", "&nbsp;");
 						websWrite(wp, "<input class=\"spaceradio\" type=\"radio\" value=\"0\" name=\"%s\" onclick=\"show_layer_ext(this, 'idshowobf%d_peer%d', false)\" %s />", temp, tun, peer,
-							  (nvram_default_matchi(temp, 0, 1) ? "checked=\"checked\"" : ""));
+							  (nvram_default_matchi(temp, 0, 0) ? "checked=\"checked\"" : ""));
 						show_caption_simple(wp, "share.disable");
 					}
 					websWrite(wp, "</div>\n");
