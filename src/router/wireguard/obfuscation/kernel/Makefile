@@ -1,5 +1,5 @@
 KERNEL_VERSION := $(shell cat $(LINUXDIR)/include/config/kernel.release 2> /dev/null)
-IDIR := $(INSTALLDIR)/lib/modules/$(KERNEL_VERSION)
+IDIR := $(INSTALLDIR)/wireguard/lib/modules/$(KERNEL_VERSION)
 MODULES_DIR := $(IDIR)/kernel/net/netfilter/
 KERNEL_DIR := $(LINUXDIR)
 
