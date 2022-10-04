@@ -1,6 +1,6 @@
 KERNEL_VERSION := $(shell cat $(LINUXDIR)/include/config/kernel.release 2> /dev/null)
 IDIR := $(INSTALLDIR)/wireguard/lib/modules/$(KERNEL_VERSION)
-MODULES_DIR := $(IDIR)/kernel/net/netfilter/
+MODULES_DIR := $(IDIR)/net/netfilter/
 KERNEL_DIR := $(LINUXDIR)
 
 EXTRA_CFLAGS := -I$(src)/../include -DbKERNELMOD -Wimplicit-fallthrough=3
