@@ -84,7 +84,7 @@ static inline int wait_for_random_bytes(void)
 }
 #endif
 
-#if LINUX_VERSION_CODE < KERNEL_VERSION(4, 13, 0) && (LINUX_VERSION_CODE >= KERNEL_VERSION(4, 10, 0) || LINUX_VERSION_CODE < KERNEL_VERSION(4, 9, 320))
+#if LINUX_VERSION_CODE < KERNEL_VERSION(4, 9, 0)
 static inline int get_random_bytes_wait(void *buf, int nbytes)
 {
 	int ret = wait_for_random_bytes();
