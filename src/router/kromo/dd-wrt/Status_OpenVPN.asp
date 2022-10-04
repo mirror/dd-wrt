@@ -6,7 +6,10 @@ var update;
 
 addEvent(window, "load", function() {
 	stickControl(<% nvg("sticky_footer"); %>);
-
+	if(document.getElementsByName("refresh_button").length) {
+		document.getElementsByName("refresh_button")[0].disabled = true;
+		document.getElementsByName("refresh_button")[0].style.cursor = "default";
+	}
 	update = new StatusbarUpdate();
 	update.start();
 });
@@ -28,13 +31,13 @@ addEvent(window, "unload", function() {
 				</div>
 				<div id="main">
 					<div id="contentsInfo">
-					<h2><% tran("OpenVPN Status"); %></h2>
+					<h2><% tran("status_openvpn.titl"); %></h2>
 						<% show_openvpn_status(); %>
 						<div id="footer" class="submitFooter">
 							<script type="text/javascript">
 							//<![CDATA[
 							var autoref = <% nvem("refresh_time","0","sbutton.refres","sbutton.autorefresh"); %>;
-							submitFooterButton(1,1,0,autoref);
+							submitFooterButton(0,0,0,autoref);
 							//]]>
 							</script>
 						</div>
