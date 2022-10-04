@@ -40,7 +40,7 @@ struct wg_message_handshake_cookie {
 	u8 encrypted_cookie[wg_noise_encrypted_len(WG_COOKIE_LEN)];
 };
 
-#if LINUX_VERSION_CODE < KERNEL_VERSION(4, 13, 0) && LINUX_VERSION_CODE >= KERNEL_VERSION(4, 2, 0) && (LINUX_VERSION_CODE >= KERNEL_VERSION(4, 10, 0) || LINUX_VERSION_CODE < KERNEL_VERSION(4, 9, 320))
+#if LINUX_VERSION_CODE < KERNEL_VERSION(4, 9, 0) && LINUX_VERSION_CODE >= KERNEL_VERSION(4, 2, 0)
 #include <linux/completion.h>
 #include <linux/random.h>
 #include <linux/errno.h>
