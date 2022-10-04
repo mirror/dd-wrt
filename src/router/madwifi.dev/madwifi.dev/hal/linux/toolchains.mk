@@ -64,7 +64,7 @@ ifneq (,$(findstring arm,$(TARGET)))
 TOOLPREFIX=/xfs/toolchains/toolchain-arm_gcc4.2.3/bin/arm-linux-
 endif
 ifneq (,$(findstring laguna,$(TARGET)))
-TOOLPREFIX=/xfs/toolchains/toolchain-arm_mpcore+vfp_gcc-9.1.0_musl_eabi/bin/arm-linux-
+TOOLPREFIX=/xfs/toolchains/toolchain-arm_mpcore+vfp_gcc-12.1.0_musl_eabi/bin/arm-linux-
 endif
 ifneq (,$(findstring adm5120,$(TARGET)))
 TOOLPREFIX=/xfs/toolchains/toolchain-mipsel_mips32_gcc-8.2.0_musl/bin/mipsel-linux-
