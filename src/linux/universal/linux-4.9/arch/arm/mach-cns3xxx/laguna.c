@@ -140,7 +140,7 @@ struct laguna_board_info {
 	u8 spi_flash_size;
 };
 
-struct laguna_board_info laguna_info __initdata;
+struct laguna_board_info laguna_info;
 
 EXPORT_SYMBOL(laguna_info);
 /*
