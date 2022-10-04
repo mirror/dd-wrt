@@ -51,7 +51,7 @@ for i in $(seq 1 $tunnels); do
 			$ipt -I FORWARD -i oet${i} -j ACCEPT >/dev/null 2>&1
 			$ipt -I INPUT -i oet${i} -j ACCEPT >/dev/null 2>&1
 		fi
-		if [ $($nv get oet${i}_proto) -eq 2 ] && [ $($nv get oet${i}_obf) -eq 1]; then
+		if [ $($nv get oet${i}_proto) -eq 2 ] && [ $($nv get oet${i}_obf) -eq 1 ]; then
 			insmod xt_WGOBFS
 			$ipt -t mangle -I INPUT -p udp -m udp --dport `$nv get oet${i}_port` -j WGOBFS --key `$nv get oet${i}_obfkey` --unobfs >/dev/null 2>&1
 			$ipt -t mangle -I OUTPUT -p udp -m udp --sport `$nv get oet${i}_port` -j WGOBFS --key `$nv get oet${i}_obfkey` --obfs >/dev/null 2>&1
