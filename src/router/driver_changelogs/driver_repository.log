@@ -1,4 +1,8 @@
 ------------------------------------------------------------------------
+r6786 | brainslayer | 2022-10-04 12:52:40 +0700 (Tue, 04 Oct 2022) | 1 line
+
+backport fix
+------------------------------------------------------------------------
 r6785 | brainslayer | 2022-10-03 22:52:38 +0700 (Mon, 03 Oct 2022) | 1 line
 
 dont know if it has any effect. but add the bcm fastpath attrbutes
