@@ -47,6 +47,10 @@ EJ_VISIBLE void ej_do_pagehead(webs_t wp, int argc, char_t ** argv)	// Eko
 		}
 	}
 #endif
+#ifdef HAVE_PWC
+	websWrite(wp,
+		  "</script>\n<link type=\"text/css\" rel=\"stylesheet\" href=\"style/pwc/ddwrt.css\" />\n<script type=\"text/javascript\" src=\"js/prototype.js\"></script>\n<script type=\"text/javascript\" src=\"js/effects.js\"></script>\n<script type=\"text/javascript\" src=\"js/window.js\"></script>\n<script type=\"text/javascript\" src=\"js/window_effects.js\">");
+#endif
 websWrite(wp, "<script type=\"text/javascript\" src=\"common.js\"></script>\n<script type=\"text/javascript\" src=\"lang_pack/english.js\"></script>\n");
 #ifdef HAVE_LANGUAGE
 websWrite(wp, "<script type=\"text/javascript\" src=\"lang_pack/language.js\"></script>\n");
@@ -54,10 +58,6 @@ websWrite(wp, "<script type=\"text/javascript\" src=\"lang_pack/language.js\"></
 // temp
 #ifdef HAVE_FREECWMP
 websWrite(wp, "<script type=\"text/javascript\" src=\"lang_pack/freecwmp-english.js\"></script>\n");
-#endif
-#ifdef HAVE_PWC
-	websWrite(wp,
-		  "<script type=\"text/javascript\" src=\"js/prototype.js\"></script>\n<script type=\"text/javascript\" src=\"js/effects.js\"></script>\n<script type=\"text/javascript\" src=\"js/window.js\"></script>\n<script type=\"text/javascript\" src=\"js/window_effects.js\"></script>\n<link type=\"text/css\" rel=\"stylesheet\" href=\"style/pwc/ddwrt.css\" />\n");
 #endif
 	if ((startswith(wp->request_url, "Wireless") || startswith(wp->request_url, "WL_WPA")) && get_wl_instances() == 3)
 		websWrite(wp, "<style type=\"text/css\">#header { height: 11.5em; }</style>\n");
@@ -188,12 +188,12 @@ EJ_VISIBLE void ej_do_hpagehead(webs_t wp, int argc, char_t ** argv)	// Eko
 #ifndef HAVE_MICRO
 	do_ddwrt_inspired_themes(wp);
 #endif
-	websWrite(wp, "<script type=\"text/javascript\" src=\"../common.js\"></script>\n");
-	websWrite(wp, "<script type=\"text/javascript\" src=\"../lang_pack/english.js\"></script>\n");
 #ifdef HAVE_LANGUAGE
 	websWrite(wp, "<script type=\"text/javascript\" src=\"../lang_pack/language.js\"></script>\n");
 #endif
 	websWrite(wp, "<title>%s (build %s)", live_translate(wp, "share.help"), SVN_REVISION);
 	websWrite(wp, " - %s</title>\n", live_translate(wp, htitle));
+	websWrite(wp, "<script type=\"text/javascript\" src=\"../common.js\"></script>\n");
+	websWrite(wp, "<script type=\"text/javascript\" src=\"../lang_pack/english.js\"></script>\n");
 	websWrite(wp, "</head>\n");
 }
