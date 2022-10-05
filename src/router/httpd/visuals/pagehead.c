@@ -191,12 +191,12 @@ EJ_VISIBLE void ej_do_hpagehead(webs_t wp, int argc, char_t ** argv)	// Eko
 #ifndef HAVE_MICRO
 	do_ddwrt_inspired_themes(wp);
 #endif
+	websWrite(wp, "<script type=\"text/javascript\" src=\"../lang_pack/english.js\"></script>\n");
 #ifdef HAVE_LANGUAGE
 	websWrite(wp, "<script type=\"text/javascript\" src=\"../lang_pack/language.js\"></script>\n");
 #endif
 	websWrite(wp, "<title>%s (build %s)", live_translate(wp, "share.help"), SVN_REVISION);
 	websWrite(wp, " - %s</title>\n", live_translate(wp, htitle));
 	websWrite(wp, "<script type=\"text/javascript\" src=\"../common.js\"></script>\n");
-	websWrite(wp, "<script type=\"text/javascript\" src=\"../lang_pack/english.js\"></script>\n");
 	websWrite(wp, "</head>\n");
 }
