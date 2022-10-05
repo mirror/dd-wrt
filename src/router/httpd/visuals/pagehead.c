@@ -43,20 +43,22 @@ EJ_VISIBLE void ej_do_pagehead(webs_t wp, int argc, char_t ** argv)	// Eko
 #ifdef HAVE_MICRO
 	websWrite(wp, "<link type=\"text/css\" rel=\"stylesheet\" href=\"style/elegant/fresh.css\" />\n");
 #else
-	if (!strcmp(style, "blue") || !strcmp(style, "cyan") || !strcmp(style, "elegant") || !strcmp(style, "carlson") || !strcmp(style, "green") || !strcmp(style, "orange") || !strcmp(style, "red") || !strcmp(style, "yellow")) {
+	if (!strcmp(style, "blue") || !strcmp(style, "cyan") || !strcmp(style, "elegant") || !strcmp(style, "carlson") || !strcmp(style, "green") || !strcmp(style, "orange") || !strcmp(style, "red")
+	    || !strcmp(style, "yellow")) {
 		websWrite(wp, "<link type=\"text/css\" rel=\"stylesheet\" href=\"style/elegant/fresh.css\" />\n");
 		if (style_dark != NULL && !strcmp(style_dark, "1")) {
 			websWrite(wp, "<link type=\"text/css\" rel=\"stylesheet\" href=\"style/elegant/fresh-dark.css\" />\n");
 		}
 	}
 #endif
-websWrite(wp, "<script type=\"text/javascript\" src=\"common.js\"></script>\n<script type=\"text/javascript\" src=\"lang_pack/english.js\"></script>\n");
+	websWrite(wp, "<script type=\"text/javascript\" src=\"common.js\"></script>\n<script type=\"text/javascript\" src=\"lang_pack/english.js\"></script>\n");
 #ifdef HAVE_LANGUAGE
-websWrite(wp, "<script type=\"text/javascript\" src=\"lang_pack/language.js\"></script>\n");
+	if (!nvram_match("language", "english.js"))
+		websWrite(wp, "<script type=\"text/javascript\" src=\"lang_pack/language.js\"></script>\n");
 #endif
 // temp
 #ifdef HAVE_FREECWMP
-websWrite(wp, "<script type=\"text/javascript\" src=\"lang_pack/freecwmp-english.js\"></script>\n");
+	websWrite(wp, "<script type=\"text/javascript\" src=\"lang_pack/freecwmp-english.js\"></script>\n");
 #endif
 #ifdef HAVE_PWC
 	websWrite(wp,
@@ -193,7 +195,8 @@ EJ_VISIBLE void ej_do_hpagehead(webs_t wp, int argc, char_t ** argv)	// Eko
 #endif
 	websWrite(wp, "<script type=\"text/javascript\" src=\"../lang_pack/english.js\"></script>\n");
 #ifdef HAVE_LANGUAGE
-	websWrite(wp, "<script type=\"text/javascript\" src=\"../lang_pack/language.js\"></script>\n");
+	if (!nvram_match("language", "english.js"))
+		websWrite(wp, "<script type=\"text/javascript\" src=\"../lang_pack/language.js\"></script>\n");
 #endif
 	websWrite(wp, "<title>%s (build %s)", live_translate(wp, "share.help"), SVN_REVISION);
 	websWrite(wp, " - %s</title>\n", live_translate(wp, htitle));
