@@ -33,6 +33,13 @@
 #include <linux/socket.h>
 #include <linux/compat.h>
 #include "internal.h"
+#ifdef CONFIG_BCM47XX
+#include <typedefs.h>
+#include <bcmdefs.h>
+#else
+#define BCMFASTPATH_HOST
+#define BCMFASTPATH
+#endif
 
 /*
  * Attempt to steal a page from a pipe buffer. This should perhaps go into
@@ -304,7 +311,7 @@ void splice_shrink_spd(struct splice_pipe_desc *spd)
 	kfree(spd->partial);
 }
 
-static int
+static int BCMFASTPATH_HOST
 __generic_file_splice_read(struct file *in, loff_t *ppos,
 			   struct pipe_inode_info *pipe, size_t len,
 			   unsigned int flags)
@@ -753,7 +760,7 @@ static void wakeup_pipe_writers(struct pipe_inode_info *pipe)
  *    locking is required around copying the pipe buffers to the
  *    destination.
  */
-static int splice_from_pipe_feed(struct pipe_inode_info *pipe, struct splice_desc *sd,
+static int BCMFASTPATH_HOST splice_from_pipe_feed(struct pipe_inode_info *pipe, struct splice_desc *sd,
 			  splice_actor *actor)
 {
 	int ret;
@@ -1114,7 +1121,7 @@ EXPORT_SYMBOL(generic_splice_sendpage);
 /*
  * Attempt to initiate a splice from pipe to file.
  */
-static long do_splice_from(struct pipe_inode_info *pipe, struct file *out,
+static long BCMFASTPATH_HOST do_splice_from(struct pipe_inode_info *pipe, struct file *out,
 			   loff_t *ppos, size_t len, unsigned int flags)
 {
 	ssize_t (*splice_write)(struct pipe_inode_info *, struct file *,

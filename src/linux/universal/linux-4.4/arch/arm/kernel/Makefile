@@ -1,6 +1,10 @@
 #
 # Makefile for the linux kernel.
 #
+EXTRA_CFLAGS+=-I$(srctree)/brcm/arm/include -I$(srctree)/brcm/arm/shared/bcmwifi/include -DBCMDRIVER -Dlinux
+EXTRA_AFLAGS+=-I$(srctree)/brcm/arm/include -I$(srctree)/brcm/arm/shared/bcmwifi/include -DBCMDRIVER -Dlinux
+EXTRA_CFLAGS+=-I$(srctree)/brcm/arm/common/include
+EXTRA_AFLAGS+=-I$(srctree)/brcm/arm/common/include
 
 CPPFLAGS_vmlinux.lds := -DTEXT_OFFSET=$(TEXT_OFFSET)
 AFLAGS_head.o        := -DTEXT_OFFSET=$(TEXT_OFFSET)

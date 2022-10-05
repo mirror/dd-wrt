@@ -32,6 +32,13 @@
 #include <linux/vmalloc.h>
 
 #include <asm/uaccess.h>
+#ifdef CONFIG_BCM47XX
+#include <typedefs.h>
+#include <bcmdefs.h>
+#else
+#define BCMFASTPATH_HOST
+#define BCMFASTPATH
+#endif
 
 
 /*
@@ -397,7 +404,7 @@ static inline void wait_key_set(poll_table *wait, unsigned long in,
 		wait->_key |= POLLOUT_SET;
 }
 
-int do_select(int n, fd_set_bits *fds, struct timespec *end_time)
+int BCMFASTPATH_HOST do_select(int n, fd_set_bits *fds, struct timespec *end_time)
 {
 	ktime_t expire, *to = NULL;
 	struct poll_wqueues table;
