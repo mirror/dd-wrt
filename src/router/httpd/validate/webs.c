@@ -1385,12 +1385,12 @@ void add_active_mac(webs_t wp)
 		if (!index)
 			break;
 		count++;
-
+		fprintf(stderr, "add on wp->p->wl_client_macs[atoi(index)].hwaddr %s\n", wp->p->wl_client_macs[atoi(index)].hwaddr);
 		cur += snprintf(cur, buf + msize - cur, "%s%s", cur == buf ? "" : " ", wp->p->wl_client_macs[atoi(index)].hwaddr);
 	}
 	for (i = 0; i < MAX_LEASES + 2; i++) {
 		char active_mac[] = "offXXX";
-		int index;
+		int *index;
 
 		snprintf(active_mac, sizeof(active_mac), "%s%d", "off", i);
 		index = websGetVar(wp, active_mac, NULL);
@@ -1398,11 +1398,14 @@ void add_active_mac(webs_t wp)
 			break;
 
 		count++;
+		fprintf(stderr, "add off wp->p->wl_client_macs[atoi(index)].hwaddr %s\n", wp->p->wl_client_macs[atoi(index)].hwaddr);
 		cur += snprintf(cur, buf + msize - cur, "%s%s", cur == buf ? "" : " ", wp->p->wl_client_macs[atoi(index)].hwaddr);
 	}
 	char acmac[32];
 	sprintf(acmac, "%s_active_mac", ifname);
+	fprintf(stderr, "result %s", buf);
 	nvram_set(acmac, buf);
+	nvram_commit();
 	if (!strcmp(ifname, "wl0"))
 		nvram_set("wl_active_mac", buf);
 	debug_free(buf);
