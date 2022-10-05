@@ -87,10 +87,6 @@
 #define BCMFASTPATH
 #endif
 
-
-#define BCMFASTPATH
-#define BCMFASTPATH_HOST
-
 struct kmem_cache *skbuff_head_cache __read_mostly;
 static struct kmem_cache *skbuff_fclone_cache __read_mostly;
 int sysctl_max_skb_frags __read_mostly = MAX_SKB_FRAGS;
