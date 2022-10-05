@@ -1383,7 +1383,7 @@ void add_active_mac(webs_t wp)
 		snprintf(active_mac, sizeof(active_mac), "%s%d", "on", i);
 		index = websGetVar(wp, active_mac, NULL);
 		if (!index)
-			break;
+			continue;
 		count++;
 		fprintf(stderr, "add on wp->p->wl_client_macs[atoi(index)].hwaddr %s\n", wp->p->wl_client_macs[atoi(index)].hwaddr);
 		cur += snprintf(cur, buf + msize - cur, "%s%s", cur == buf ? "" : " ", wp->p->wl_client_macs[atoi(index)].hwaddr);
@@ -1395,7 +1395,7 @@ void add_active_mac(webs_t wp)
 		snprintf(active_mac, sizeof(active_mac), "%s%d", "off", i);
 		index = websGetVar(wp, active_mac, NULL);
 		if (!index)
-			break;
+			continue;
 
 		count++;
 		fprintf(stderr, "add off wp->p->wl_client_macs[atoi(index)].hwaddr %s\n", wp->p->wl_client_macs[atoi(index)].hwaddr);
