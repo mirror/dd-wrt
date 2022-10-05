@@ -29,6 +29,13 @@
 #include <linux/pagevec.h>
 #include <linux/cleancache.h>
 #include "internal.h"
+#ifdef CONFIG_BCM47XX
+#include <typedefs.h>
+#include <bcmdefs.h>
+#else
+#define BCMFASTPATH_HOST
+#define BCMFASTPATH
+#endif
 
 /*
  * I/O completion handler for multipage BIOs.
@@ -136,7 +143,7 @@ map_buffer_to_page(struct page *page, struct buffer_head *bh, int page_block)
  * represent the validity of its disk mapping and to decide when to do the next
  * get_block() call.
  */
-static struct bio *
+static struct bio BCMFASTPATH_HOST *
 do_mpage_readpage(struct bio *bio, struct page *page, unsigned nr_pages,
 		sector_t *last_block_in_bio, struct buffer_head *map_bh,
 		unsigned long *first_logical_block, get_block_t get_block,
