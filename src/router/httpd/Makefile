@@ -1248,6 +1248,9 @@ endif
 ifeq ($(CONFIG_HORNET),y)
 CFLAGS += -DHAVE_HORNET
 endif
+ifeq ($(CONFIG_DW02_412H),y)
+CFLAGS += -DHAVE_DW02_412H
+endif
 ifeq ($(CONFIG_WASP),y)
 CFLAGS += -DHAVE_WASP
 endif
