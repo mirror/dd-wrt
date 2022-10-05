@@ -2161,7 +2161,7 @@ static int do_trial_logo(unsigned char method, struct mime_handler *handler, cha
 
 #endif
 
-static int do_logout(unsigned char method, struct mime_handler *handler, char *url, webs_t stream)
+static int do_logout_asp(unsigned char method, struct mime_handler *handler, char *url, webs_t stream)
 {
 	do_ej(method, handler, "Logout.asp", stream);
 	websDone(stream, 200);
@@ -2868,7 +2868,7 @@ static struct mime_handler mime_handlers[] = {
 	{ "Site_Survey*", "text/html", no_cache, NULL, do_sitesurvey, do_auth, NO_HEADER, IGNORE_OPTIONS },
 	{ "Wireless_Advanced*", "text/html", no_cache, NULL, do_wireless_adv, do_auth, NO_HEADER, IGNORE_OPTIONS },
 	{ "MyPage.asp*", "text/html", no_cache, NULL, do_mypage, do_auth, SEND_HEADER, IGNORE_OPTIONS },
-	{ "dologout.asp*", "text/html", no_cache, NULL, do_logout, do_auth, SEND_HEADER, IGNORE_OPTIONS },
+	{ "dologout.asp*", "text/html", no_cache, NULL, do_logout_asp, do_auth, SEND_HEADER, IGNORE_OPTIONS },
 	{ "**.asp", "text/html", no_cache, NULL, do_ej, do_auth, NO_HEADER, IGNORE_OPTIONS },
 	{ "**.JPG", "image/jpeg", NULL, NULL, do_file, NULL, NO_HEADER, IGNORE_OPTIONS },
 	{ "common.js", "text/javascript", NULL, NULL, do_file, NULL, NO_HEADER, IGNORE_OPTIONS },
