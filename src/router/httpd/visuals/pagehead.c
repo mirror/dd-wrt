@@ -53,7 +53,7 @@ EJ_VISIBLE void ej_do_pagehead(webs_t wp, int argc, char_t ** argv)	// Eko
 #endif
 	websWrite(wp, "<script type=\"text/javascript\" src=\"common.js\"></script>\n<script type=\"text/javascript\" src=\"lang_pack/english.js\"></script>\n");
 #ifdef HAVE_LANGUAGE
-	if (!nvram_match("language", "english.js"))
+	if (!nvram_match("language", "english"))
 		websWrite(wp, "<script type=\"text/javascript\" src=\"lang_pack/language.js\"></script>\n");
 #endif
 // temp
@@ -195,7 +195,7 @@ EJ_VISIBLE void ej_do_hpagehead(webs_t wp, int argc, char_t ** argv)	// Eko
 #endif
 	websWrite(wp, "<script type=\"text/javascript\" src=\"../lang_pack/english.js\"></script>\n");
 #ifdef HAVE_LANGUAGE
-	if (!nvram_match("language", "english.js"))
+	if (!nvram_match("language", "english"))
 		websWrite(wp, "<script type=\"text/javascript\" src=\"../lang_pack/language.js\"></script>\n");
 #endif
 	websWrite(wp, "<title>%s (build %s)", live_translate(wp, "share.help"), SVN_REVISION);
