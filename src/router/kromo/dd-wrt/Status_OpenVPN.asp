@@ -6,10 +6,6 @@ var update;
 
 addEvent(window, "load", function() {
 	stickControl(<% nvg("sticky_footer"); %>);
-	if(document.getElementsByName("refresh_button").length) {
-		document.getElementsByName("refresh_button")[0].disabled = true;
-		document.getElementsByName("refresh_button")[0].style.cursor = "default";
-	}
 	update = new StatusbarUpdate();
 	update.start();
 });
@@ -36,8 +32,7 @@ addEvent(window, "unload", function() {
 						<div id="footer" class="submitFooter">
 							<script type="text/javascript">
 							//<![CDATA[
-							var autoref = <% nvem("refresh_time","0","sbutton.refres","sbutton.autorefresh"); %>;
-							submitFooterButton(0,0,0,autoref);
+							submitFooterButton(0,0,0,0,1,0);
 							//]]>
 							</script>
 						</div>
