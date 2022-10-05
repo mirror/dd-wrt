@@ -2160,6 +2160,14 @@ static int do_trial_logo(unsigned char method, struct mime_handler *handler, cha
 }
 
 #endif
+
+static int do_logout(unsigned char method, struct mime_handler *handler, char *url, webs_t stream)
+{
+	do_ej(method, handler, "Logout.asp", stream);
+	websDone(stream, 200);
+	do_logout(stream);
+}
+
 /*
  * static void do_style (char *url, webs_t stream, char *query) { char *style
  * = nvram_get ("router_style"); if (style == NULL || strlen (style) == 0)
@@ -2529,7 +2537,8 @@ static int do_syslog(unsigned char method, struct mime_handler *handler, char *u
 #ifdef HAVE_MICRO
 	websWrite(stream, "<link type=\"text/css\" rel=\"stylesheet\" href=\"style/elegant/fresh.css\" />\n");
 #else
-	if (!strcmp(style, "blue") || !strcmp(style, "cyan") || !strcmp(style, "elegant") || !strcmp(style, "carlson") || !strcmp(style, "green") || !strcmp(style, "orange") || !strcmp(style, "red") || !strcmp(style, "yellow")) {
+	if (!strcmp(style, "blue") || !strcmp(style, "cyan") || !strcmp(style, "elegant") || !strcmp(style, "carlson") || !strcmp(style, "green") || !strcmp(style, "orange") || !strcmp(style, "red")
+	    || !strcmp(style, "yellow")) {
 		websWrite(stream, "<link type=\"text/css\" rel=\"stylesheet\" href=\"style/elegant/fresh.css\" />\n");
 		if (style_dark != NULL && !strcmp(style_dark, "1")) {
 			websWrite(stream, "<link type=\"text/css\" rel=\"stylesheet\" href=\"style/elegant/fresh-dark.css\" />\n");
@@ -2764,7 +2773,6 @@ static int do_apply_cgi(unsigned char method, struct mime_handler *handler, char
 	return 0;
 }
 
-
 static int do_wifiselect_cgi(unsigned char method, struct mime_handler *handler, char *url, webs_t stream)
 {
 	char *path, *query;
@@ -2778,9 +2786,9 @@ static int do_wifiselect_cgi(unsigned char method, struct mime_handler *handler,
 
 	if (!query)
 		return -1;
-	char *select = websGetVar(stream, "wifi_display",NULL);
+	char *select = websGetVar(stream, "wifi_display", NULL);
 	if (select)
-	    nvram_set("wifi_display",select);
+		nvram_set("wifi_display", select);
 	char *next_page = websGetVar(stream, "next_page", NULL);
 	char *submit_button = websGetVar(stream, "submit_button", "");
 
@@ -2860,6 +2868,7 @@ static struct mime_handler mime_handlers[] = {
 	{ "Site_Survey*", "text/html", no_cache, NULL, do_sitesurvey, do_auth, NO_HEADER, IGNORE_OPTIONS },
 	{ "Wireless_Advanced*", "text/html", no_cache, NULL, do_wireless_adv, do_auth, NO_HEADER, IGNORE_OPTIONS },
 	{ "MyPage.asp*", "text/html", no_cache, NULL, do_mypage, do_auth, SEND_HEADER, IGNORE_OPTIONS },
+	{ "dologout.asp*", "text/html", no_cache, NULL, do_logout, do_auth, SEND_HEADER, IGNORE_OPTIONS },
 	{ "**.asp", "text/html", no_cache, NULL, do_ej, do_auth, NO_HEADER, IGNORE_OPTIONS },
 	{ "**.JPG", "image/jpeg", NULL, NULL, do_file, NULL, NO_HEADER, IGNORE_OPTIONS },
 	{ "common.js", "text/javascript", NULL, NULL, do_file, NULL, NO_HEADER, IGNORE_OPTIONS },
