@@ -1884,21 +1884,14 @@ ZBXJS_LDFLAGS="$ZBXJS_LDFLAGS $LIBCURL_LDFLAGS"
 ZBXJS_LIBS="$ZBXJS_LIBS $LIBCURL_LIBS"
 
 if test "x$server" = "xyes" || test "x$proxy" = "xyes" || test "x$agent" = "xyes" || test "x$agent2" = "xyes"; then
-LIBPCRE_CHECK_CONFIG([flags-only])
-LIBPCRE2_CHECK_CONFIG([flags-only])
+
+want_libpcre=yes
+want_libpcre2=no
 
 if test "x$want_libpcre2" = "xno"; then # default to old pcre
 	if test "x$want_libpcre" = "xno"; then
 		AC_MSG_NOTICE([using old pcre library by default])
 	fi
-
-	LIBPCRE_CHECK_CONFIG([mandatory])
-
-	if test "x$found_libpcre" != "xyes"; then
-		AC_MSG_ERROR([unable to use libpcre (libpcre check failed)])
-	fi
-
-	LIBPCRE_CHECK_CONFIG([no])
 
 	CFLAGS="$CFLAGS $LIBPCRE_CFLAGS"
 	LDFLAGS="$LDFLAGS $LIBPCRE_LDFLAGS"
