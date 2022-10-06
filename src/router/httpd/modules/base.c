@@ -2533,6 +2533,7 @@ static int do_syslog(unsigned char method, struct mime_handler *handler, char *u
 		  if (!nvram_match("language", "english"))
 			websWrite(stream,"<script type=\"text/javascript\" src=\"lang_pack/language.js\"></script>\n");
 #endif
+#if 0
 	char *style = nvram_safe_get("router_style");
 	if (!style)
 	    style="elegant";
@@ -2549,6 +2550,7 @@ static int do_syslog(unsigned char method, struct mime_handler *handler, char *u
 	} else {
 		style_dark = NULL;
 	}
+#endif
 #endif
 	websWrite(stream,	//
 		  "<link type=\"text/css\" rel=\"stylesheet\" href=\"style/syslogd/syslogd.css\" />\n"	//
