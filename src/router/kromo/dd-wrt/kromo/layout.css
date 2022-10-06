@@ -364,7 +364,6 @@ table[summary='ports forwarding table'] input[size='10'] {
   right: .1rem;
   z-index: 1;
   cursor: pointer;
-  background: none !important;
   border: 0 !important;
 }
 .logout {
@@ -375,7 +374,7 @@ table[summary='ports forwarding table'] input[size='10'] {
   height: 20px;
 }
 .logout:hover {
-  color: #115b80;
+  color: #c51515;
 }
 .submitFooter {
   padding: 4px 12px;
