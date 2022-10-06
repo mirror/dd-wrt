@@ -2534,6 +2534,8 @@ static int do_syslog(unsigned char method, struct mime_handler *handler, char *u
 			websWrite(stream,"<script type=\"text/javascript\" src=\"lang_pack/language.js\"></script>\n");
 #endif
 	char *style = nvram_safe_get("router_style");
+	if (!style)
+	    style="elegant";
 	websWrite(stream, "<link type=\"text/css\" rel=\"stylesheet\" href=\"style/%s/style.css\" />\n<!--[if IE]><link type=\"text/css\" rel=\"stylesheet\" href=\"style/common_style_ie.css\" /><![endif]-->\n", style);
 #ifdef HAVE_MICRO
 	websWrite(stream, "<link type=\"text/css\" rel=\"stylesheet\" href=\"style/elegant/fresh.css\" />\n");
