@@ -1,6 +1,6 @@
 /*
 ** Zabbix
-** Copyright (C) 2001-2020 Zabbix SIA
+** Copyright (C) 2001-2022 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -43,16 +43,16 @@ static int	get_swap_size(zbx_uint64_t *total, zbx_uint64_t *free, zbx_uint64_t *
 	/* int swpages;		number of PAGE_SIZE'ed swap pages */
 	/* int swpginuse;	number of swap pages in use */
 
-	if (total)
+	if (NULL != total)
 		*total = (zbx_uint64_t)v.swpages * v.pagesize;
-	if (free)
+	if (NULL != free)
 		*free = (zbx_uint64_t)(v.swpages - v.swpginuse) * v.pagesize;
-	if (used)
+	if (NULL != used)
 		*used = (zbx_uint64_t)v.swpginuse * v.pagesize;
-	if (pfree)
-		*pfree = v.swpages ? (double)(100.0 * (v.swpages - v.swpginuse)) / v.swpages : 100;
-	if (pused)
-		*pused = v.swpages ? (double)(100.0 * v.swpginuse) / v.swpages : 0;
+	if (NULL != pfree)
+		*pfree = 0 != v.swpages ? (double)(100.0 * (v.swpages - v.swpginuse)) / v.swpages : 100;
+	if (NULL != pused)
+		*pused = 0 != v.swpages ? (double)(100.0 * v.swpginuse) / v.swpages : 0;
 
 	return SYSINFO_RET_OK;
 }
@@ -151,24 +151,32 @@ int	SYSTEM_SWAP_SIZE(AGENT_REQUEST *request, AGENT_RESULT *result)
 	swapdev = get_rparam(request, 0);
 	mode = get_rparam(request, 1);
 
-	/* default parameter */
 	if (NULL != swapdev && '\0' != *swapdev && 0 != strcmp(swapdev, "all"))
 	{
 		SET_MSG_RESULT(result, zbx_strdup(NULL, "Invalid first parameter."));
 		return SYSINFO_RET_FAIL;
 	}
 
-	/* default parameter */
 	if (NULL == mode || *mode == '\0' || 0 == strcmp(mode, "free"))
+	{
 		ret = SYSTEM_SWAP_FREE(result);
+	}
 	else if (0 == strcmp(mode, "used"))
+	{
 		ret = SYSTEM_SWAP_USED(result);
+	}
 	else if (0 == strcmp(mode, "total"))
+	{
 		ret = SYSTEM_SWAP_TOTAL(result);
+	}
 	else if (0 == strcmp(mode, "pfree"))
+	{
 		ret = SYSTEM_SWAP_PFREE(result);
+	}
 	else if (0 == strcmp(mode, "pused"))
+	{
 		ret = SYSTEM_SWAP_PUSED(result);
+	}
 	else
 	{
 		SET_MSG_RESULT(result, zbx_strdup(NULL, "Invalid second parameter."));
@@ -307,7 +315,6 @@ int	SYSTEM_SWAP_OUT(AGENT_REQUEST *request, AGENT_RESULT *result)
 		SET_UI64_RESULT(result, value);
 	else
 		SET_MSG_RESULT(result, error);
-
 
 	return ret;
 }

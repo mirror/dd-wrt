@@ -1,6 +1,6 @@
 /*
 ** Zabbix
-** Copyright (C) 2001-2020 Zabbix SIA
+** Copyright (C) 2001-2022 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -23,37 +23,32 @@ package version
 import (
 	"fmt"
 	"strings"
-
-	"zabbix.com/pkg/tls"
 )
 
 const (
-	APPLICATION_NAME        = "Zabbix Agent"
-	ZABBIX_REVDATE          = "28 October 2019"
-	ZABBIX_VERSION_MAJOR    = 4
-	ZABBIX_VERSION_MINOR    = 4
-	ZABBIX_VERSION_PATCH    = 6
+	ZABBIX_REVDATE          = "21 September 2022"
+	ZABBIX_VERSION_MAJOR    = 6
+	ZABBIX_VERSION_MINOR    = 2
+	ZABBIX_VERSION_PATCH    = 3
 	ZABBIX_VERSION_RC       = ""
-	ZABBIX_VERSION_RC_NUM   = "1400"
-	ZABBIX_VERSION_REVISION = "8cc702429d"
-	copyrightMessage        = "Copyright (C) 2020 Zabbix SIA\n" +
+	ZABBIX_VERSION_RC_NUM   = "2400"
+	ZABBIX_VERSION_REVISION = "98ee88fc19d"
+	copyrightMessage        = "Copyright (C) 2022 Zabbix SIA\n" +
 		"License GPLv2+: GNU GPL version 2 or later <http://gnu.org/licenses/gpl.html>.\n" +
 		"This is free software: you are free to change and redistribute it according to\n" +
 		"the license. There is NO WARRANTY, to the extent permitted by law."
 )
 
 var (
-	titleMessage string = "{undefined}"
-	compileDate  string = "{undefined}"
-	compileTime  string = "{undefined}"
-	compileOs    string = "{undefined}"
-	compileArch  string = "{undefined}"
-	compileMode  string
+	titleMessage  string = "{undefined}"
+	compileDate   string = "{undefined}"
+	compileTime   string = "{undefined}"
+	compileOs     string = "{undefined}"
+	compileArch   string = "{undefined}"
+	compileMode   string
+	extraLicenses []string
 )
 
-func ApplicationName() string {
-	return APPLICATION_NAME
-}
 func RevDate() string {
 	return ZABBIX_REVDATE
 }
@@ -99,7 +94,13 @@ func Revision() string {
 }
 
 func CopyrightMessage() string {
-	return copyrightMessage + tls.CopyrightMessage()
+	msg := copyrightMessage
+
+	for _, license := range extraLicenses {
+		msg += license
+	}
+
+	return msg
 }
 
 func CompileDate() string {
@@ -139,8 +140,23 @@ func TitleMessage() string {
 	return title
 }
 
-func Display() {
-	fmt.Printf("%s (Zabbix) %s\n", TitleMessage(), LongStr())
-	fmt.Printf("Revision %s %s, compilation time: %s %s\n\n", Revision(), RevDate(), CompileDate(), CompileTime())
+func Display(additionalMessages []string) {
+	fmt.Printf("%s (Zabbix) %s\n", TitleMessage(), Long())
+	fmt.Printf("Revision %s %s, compilation time: %s %s\n", Revision(), RevDate(), CompileDate(), CompileTime())
+
+	for _, msg := range additionalMessages {
+		fmt.Println(msg)
+	}
+
+	fmt.Println()
 	fmt.Println(CopyrightMessage())
+}
+
+func Init(title string, extra ...string) {
+	titleMessage = title
+	extraLicenses = append(extraLicenses, extra...)
+}
+
+func init() {
+	extraLicenses = make([]string, 0)
 }

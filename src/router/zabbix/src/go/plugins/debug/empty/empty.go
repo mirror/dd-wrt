@@ -1,6 +1,6 @@
 /*
 ** Zabbix
-** Copyright (C) 2001-2020 Zabbix SIA
+** Copyright (C) 2001-2022 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -20,8 +20,7 @@
 package empty
 
 import (
-	"zabbix.com/pkg/plugin"
-	"zabbix.com/pkg/std"
+	"git.zabbix.com/ap/plugin-support/plugin"
 )
 
 // Plugin -
@@ -30,7 +29,6 @@ type Plugin struct {
 }
 
 var impl Plugin
-var stdOs std.Os
 
 func (p *Plugin) Export(key string, params []string, ctx plugin.ContextProvider) (result interface{}, err error) {
 	p.Debugf("export %s%v", key, params)
@@ -38,6 +36,5 @@ func (p *Plugin) Export(key string, params []string, ctx plugin.ContextProvider)
 }
 
 func init() {
-	stdOs = std.NewOs()
 	plugin.RegisterMetrics(&impl, "DebugEmpty", "debug.empty", "Returns empty value.")
 }

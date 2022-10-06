@@ -1,6 +1,6 @@
 /*
 ** Zabbix
-** Copyright (C) 2001-2020 Zabbix SIA
+** Copyright (C) 2001-2022 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -25,16 +25,17 @@ import (
 	"time"
 	"unsafe"
 
-	"zabbix.com/pkg/conf"
+	"git.zabbix.com/ap/plugin-support/conf"
+	"git.zabbix.com/ap/plugin-support/plugin"
+	"zabbix.com/internal/agent"
 	"zabbix.com/pkg/glexpr"
 	"zabbix.com/pkg/itemutil"
-	"zabbix.com/pkg/plugin"
 	"zabbix.com/pkg/zbxlib"
 )
 
 type Options struct {
-	MaxLinesPerSecond int `conf:"range=1:1000,default=20"`
-	Capacity          int `conf:"optional,range=1:100"`
+	plugin.SystemOptions `conf:"optional,name=System"`
+	MaxLinesPerSecond    int `conf:"range=1:1000,default=20"`
 }
 
 // Plugin -
@@ -59,11 +60,11 @@ func (p *Plugin) Configure(global *plugin.GlobalOptions, options interface{}) {
 
 func (p *Plugin) Validate(options interface{}) error {
 	var o Options
-	return conf.Unmarshal(options, &o)
+	return conf.Unmarshal(options, &o, false)
 }
 
 func (p *Plugin) Export(key string, params []string, ctx plugin.ContextProvider) (result interface{}, err error) {
-	if ctx == nil || ctx.ClientID() == 0 {
+	if ctx == nil || ctx.ClientID() <= agent.MaxBuiltinClientID {
 		return nil, fmt.Errorf(`The "%s" key is not supported in test or single passive check mode`, key)
 	}
 	meta := ctx.Meta()
@@ -72,7 +73,7 @@ func (p *Plugin) Export(key string, params []string, ctx plugin.ContextProvider)
 		data = &metadata{key: key, params: params}
 		runtime.SetFinalizer(data, func(d *metadata) { zbxlib.FreeActiveMetric(d.blob) })
 		if data.blob, err = zbxlib.NewActiveMetric(key, params, meta.LastLogsize(), meta.Mtime()); err != nil {
-			return
+			return nil, err
 		}
 		meta.Data = data
 	} else {
@@ -81,8 +82,8 @@ func (p *Plugin) Export(key string, params []string, ctx plugin.ContextProvider)
 			zbxlib.FreeActiveMetric(data.blob)
 			data.key = key
 			data.params = params
-			// reset lastlogsize/mtime if item key has been changed
-			if data.blob, err = zbxlib.NewActiveMetric(key, params, 0, 0); err != nil {
+			// recreate if item key has been changed
+			if data.blob, err = zbxlib.NewActiveMetric(key, params, meta.LastLogsize(), meta.Mtime()); err != nil {
 				return nil, err
 			}
 		}

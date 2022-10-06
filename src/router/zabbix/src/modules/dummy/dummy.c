@@ -1,6 +1,6 @@
 /*
 ** Zabbix
-** Copyright (C) 2001-2020 Zabbix SIA
+** Copyright (C) 2001-2022 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -44,8 +44,6 @@ static ZBX_METRIC keys[] =
 
 /******************************************************************************
  *                                                                            *
- * Function: zbx_module_api_version                                           *
- *                                                                            *
  * Purpose: returns version number of the module interface                    *
  *                                                                            *
  * Return value: ZBX_MODULE_API_VERSION - version of module.h module is       *
@@ -60,8 +58,6 @@ int	zbx_module_api_version(void)
 
 /******************************************************************************
  *                                                                            *
- * Function: zbx_module_item_timeout                                          *
- *                                                                            *
  * Purpose: set timeout value for processing of items                         *
  *                                                                            *
  * Parameters: timeout - timeout in seconds, 0 - no timeout set               *
@@ -73,8 +69,6 @@ void	zbx_module_item_timeout(int timeout)
 }
 
 /******************************************************************************
- *                                                                            *
- * Function: zbx_module_item_list                                             *
  *                                                                            *
  * Purpose: returns list of item keys supported by the module                 *
  *                                                                            *
@@ -113,16 +107,16 @@ static int	dummy_echo(AGENT_REQUEST *request, AGENT_RESULT *result)
 
 /******************************************************************************
  *                                                                            *
- * Function: dummy_random                                                     *
- *                                                                            *
  * Purpose: a main entry point for processing of an item                      *
  *                                                                            *
  * Parameters: request - structure that contains item key and parameters      *
  *              request->key - item key without parameters                    *
  *              request->nparam - number of parameters                        *
- *              request->timeout - processing should not take longer than     *
- *                                 this number of seconds                     *
  *              request->params[N-1] - pointers to item key parameters        *
+ *              request->types[N-1] - item key parameters types:              *
+ *                  REQUEST_PARAMETER_TYPE_UNDEFINED (key parameter is empty) *
+ *                  REQUEST_PARAMETER_TYPE_ARRAY (array)                      *
+ *                  REQUEST_PARAMETER_TYPE_STRING (quoted or unquoted string) *
  *                                                                            *
  *             result - structure that will contain result                    *
  *                                                                            *
@@ -133,6 +127,8 @@ static int	dummy_echo(AGENT_REQUEST *request, AGENT_RESULT *result)
  * Comment: get_rparam(request, N-1) can be used to get a pointer to the Nth  *
  *          parameter starting from 0 (first parameter). Make sure it exists  *
  *          by checking value of request->nparam.                             *
+ *          In the same manner get_rparam_type(request, N-1) can be used to   *
+ *          get a parameter type.                                             *
  *                                                                            *
  ******************************************************************************/
 static int	dummy_random(AGENT_REQUEST *request, AGENT_RESULT *result)
@@ -150,7 +146,7 @@ static int	dummy_random(AGENT_REQUEST *request, AGENT_RESULT *result)
 	param1 = get_rparam(request, 0);
 	param2 = get_rparam(request, 1);
 
-	/* there is no strict validation of parameters for simplicity sake */
+	/* there is no strict validation of parameters and types for simplicity sake */
 	from = atoi(param1);
 	to = atoi(param2);
 
@@ -166,8 +162,6 @@ static int	dummy_random(AGENT_REQUEST *request, AGENT_RESULT *result)
 }
 
 /******************************************************************************
- *                                                                            *
- * Function: zbx_module_init                                                  *
  *                                                                            *
  * Purpose: the function is called on agent startup                           *
  *          It should be used to call any initialization routines             *
@@ -187,8 +181,6 @@ int	zbx_module_init(void)
 }
 
 /******************************************************************************
- *                                                                            *
- * Function: zbx_module_uninit                                                *
  *                                                                            *
  * Purpose: the function is called on agent shutdown                          *
  *          It should be used to cleanup used resources if there are any      *
@@ -268,8 +260,6 @@ static void	dummy_history_log_cb(const ZBX_HISTORY_LOG *history, int history_num
 }
 
 /******************************************************************************
- *                                                                            *
- * Function: zbx_module_history_write_cbs                                     *
  *                                                                            *
  * Purpose: returns a set of module functions Zabbix will call to export      *
  *          different types of historical data                                *

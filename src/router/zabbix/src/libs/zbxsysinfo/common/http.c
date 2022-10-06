@@ -1,6 +1,6 @@
 /*
 ** Zabbix
-** Copyright (C) 2001-2020 Zabbix SIA
+** Copyright (C) 2001-2022 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -17,15 +17,14 @@
 ** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 **/
 
+#include "http.h"
+
 #include "common.h"
-#include "sysinfo.h"
 #include "zbxregexp.h"
 #include "zbxhttp.h"
+#include "zbxcomms.h"
 
-#include "comms.h"
-#include "cfg.h"
-
-#include "http.h"
+extern int	CONFIG_TIMEOUT;
 
 #define HTTP_SCHEME_STR		"http://"
 
@@ -43,7 +42,7 @@ typedef struct
 	size_t	allocated;
 	size_t	offset;
 }
-zbx_http_response_t;
+http_response_t;
 
 #endif
 
@@ -129,10 +128,10 @@ static int	check_common_params(const char *host, const char *path, char **error)
 #ifdef HAVE_LIBCURL
 static size_t	curl_write_cb(void *ptr, size_t size, size_t nmemb, void *userdata)
 {
-	size_t			r_size = size * nmemb;
-	zbx_http_response_t	*response;
+	size_t		r_size = size * nmemb;
+	http_response_t	*response;
 
-	response = (zbx_http_response_t*)userdata;
+	response = (http_response_t*)userdata;
 	zbx_str_memcpy_alloc(&response->data, &response->allocated, &response->offset, (const char *)ptr, r_size);
 
 	return r_size;
@@ -149,7 +148,7 @@ static size_t	curl_ignore_cb(void *ptr, size_t size, size_t nmemb, void *userdat
 static int	curl_page_get(char *url, char **buffer, char **error)
 {
 	CURLcode		err;
-	zbx_http_response_t	page = {0};
+	http_response_t		page = {0};
 	CURL			*easyhandle;
 	int			ret = SYSINFO_RET_FAIL;
 
@@ -169,7 +168,9 @@ static int	curl_page_get(char *url, char **buffer, char **error)
 			CURLE_OK != (err = curl_easy_setopt(easyhandle, CURLOPT_WRITEDATA, &page)) ||
 			CURLE_OK != (err = curl_easy_setopt(easyhandle, CURLOPT_HEADER, 1L)) ||
 			(NULL != CONFIG_SOURCE_IP &&
-			CURLE_OK != (err = curl_easy_setopt(easyhandle, CURLOPT_INTERFACE, CONFIG_SOURCE_IP))))
+			CURLE_OK != (err = curl_easy_setopt(easyhandle, CURLOPT_INTERFACE, CONFIG_SOURCE_IP))) ||
+			CURLE_OK != (err = curl_easy_setopt(easyhandle, CURLOPT_TIMEOUT, (long)CONFIG_TIMEOUT)) ||
+			CURLE_OK != (err = curl_easy_setopt(easyhandle, ZBX_CURLOPT_ACCEPT_ENCODING, "")))
 	{
 		*error = zbx_dsprintf(*error, "Cannot set cURL option: %s.", curl_easy_strerror(err));
 		goto out;
@@ -480,8 +481,7 @@ int	WEB_PAGE_PERF(AGENT_REQUEST *request, AGENT_RESULT *result)
 
 int	WEB_PAGE_REGEXP(AGENT_REQUEST *request, AGENT_RESULT *result)
 {
-	char		*hostname, *path_str, *port_str, *buffer = NULL, *error = NULL,
-			*ptr = NULL, *str, *newline, *regexp, *length_str;
+	char		*hostname, *path_str, *port_str, *buffer = NULL, *error = NULL, *regexp, *length_str;
 	const char	*output;
 	int		length, ret;
 
@@ -505,7 +505,7 @@ int	WEB_PAGE_REGEXP(AGENT_REQUEST *request, AGENT_RESULT *result)
 	output = get_rparam(request, 5);
 
 	if (NULL == length_str || '\0' == *length_str)
-		length = MAX_BUFFER_LEN - 1;
+		length = ZBX_MAX_UINT31_1;
 	else if (FAIL == is_uint31_1(length_str, &length))
 	{
 		SET_MSG_RESULT(result, zbx_strdup(NULL, "Invalid fifth parameter."));
@@ -518,8 +518,12 @@ int	WEB_PAGE_REGEXP(AGENT_REQUEST *request, AGENT_RESULT *result)
 
 	if (SYSINFO_RET_OK == (ret = get_http_page(hostname, path_str, port_str, &buffer, &error)))
 	{
+		char	*ptr = NULL, *str;
+
 		for (str = buffer; ;)
 		{
+			char	*newline;
+
 			if (NULL != (newline = strchr(str, '\n')))
 			{
 				if (str != newline && '\r' == newline[-1])
@@ -538,7 +542,12 @@ int	WEB_PAGE_REGEXP(AGENT_REQUEST *request, AGENT_RESULT *result)
 		}
 
 		if (NULL != ptr)
+		{
+			if ((size_t)length < zbx_strlen_utf8(ptr))
+				ptr[zbx_strlen_utf8_nchars(ptr, length)] = '\0';
+
 			SET_STR_RESULT(result, ptr);
+		}
 		else
 			SET_STR_RESULT(result, zbx_strdup(NULL, ""));
 

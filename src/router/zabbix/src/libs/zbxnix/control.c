@@ -1,6 +1,6 @@
 /*
 ** Zabbix
-** Copyright (C) 2001-2020 Zabbix SIA
+** Copyright (C) 2001-2022 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -17,7 +17,10 @@
 ** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 **/
 
+#include "zbxnix.h"
 #include "control.h"
+
+#include "common.h"
 
 static int	parse_log_level_options(const char *opt, size_t len, unsigned int *scope, unsigned int *data)
 {
@@ -108,13 +111,10 @@ static int	parse_log_level_options(const char *opt, size_t len, unsigned int *sc
 
 /******************************************************************************
  *                                                                            *
- * Function: parse_rtc_options                                                *
- *                                                                            *
  * Purpose: parse runtime control options and create a runtime control        *
  *          message                                                           *
  *                                                                            *
  * Parameters: opt          - [IN] the command line argument                  *
- *             program_type - [IN] the program type                           *
  *             message      - [OUT] the message containing options for log    *
  *                                  level change or cache reload              *
  *                                                                            *
@@ -122,7 +122,7 @@ static int	parse_log_level_options(const char *opt, size_t len, unsigned int *sc
  *               FAIL    - an error occurred                                  *
  *                                                                            *
  ******************************************************************************/
-int	parse_rtc_options(const char *opt, unsigned char program_type, int *message)
+int	zbx_parse_rtc_options(const char *opt, int *message)
 {
 	unsigned int	scope, data, command;
 
@@ -140,17 +140,9 @@ int	parse_rtc_options(const char *opt, unsigned char program_type, int *message)
 		if (SUCCEED != parse_log_level_options(opt, ZBX_CONST_STRLEN(ZBX_LOG_LEVEL_DECREASE), &scope, &data))
 			return FAIL;
 	}
-	else if (0 != (program_type & (ZBX_PROGRAM_TYPE_SERVER | ZBX_PROGRAM_TYPE_PROXY)) &&
-			0 == strcmp(opt, ZBX_CONFIG_CACHE_RELOAD))
+	else if (0 == strcmp(opt, ZBX_USER_PARAMETERS_RELOAD))
 	{
-		command = ZBX_RTC_CONFIG_CACHE_RELOAD;
-		scope = 0;
-		data = 0;
-	}
-	else if (0 != (program_type & (ZBX_PROGRAM_TYPE_SERVER | ZBX_PROGRAM_TYPE_PROXY)) &&
-			0 == strcmp(opt, ZBX_HOUSEKEEPER_EXECUTE))
-	{
-		command = ZBX_RTC_HOUSEKEEPER_EXECUTE;
+		command = ZBX_RTC_USER_PARAMETERS_RELOAD;
 		scope = 0;
 		data = 0;
 	}

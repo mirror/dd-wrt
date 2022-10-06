@@ -1,0 +1,24 @@
+.sortable {
+	position: relative;
+	overflow: hidden;
+
+	.sortable-list {
+		position: relative;
+		top: 0;
+		left: 0;
+
+		@if $ui-transitions {
+			transition: left .2s, top .2s;
+
+			.sortable-item:not(.sortable-dragging) {
+				transition: left .2s, top .2s;
+			}
+		}
+	}
+
+	&.sortable-dragging {
+		.sortable-item {
+			position: absolute;
+		}
+	}
+}

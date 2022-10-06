@@ -1,6 +1,6 @@
 /*
 ** Zabbix
-** Copyright (C) 2001-2020 Zabbix SIA
+** Copyright (C) 2001-2022 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -202,7 +202,7 @@ int	VFS_FS_DISCOVERY(AGENT_REQUEST *request, AGENT_RESULT *result)
 	struct statfs	*mntbuf;
 	struct zbx_json	j;
 
-	if (0 == (rc = getmntinfo(&mntbuf, MNT_WAIT)))
+	if (0 == (rc = getmntinfo(&mntbuf, MNT_NOWAIT)))
 	{
 		SET_MSG_RESULT(result, zbx_dsprintf(NULL, "Cannot obtain system information: %s", zbx_strerror(errno)));
 		return SYSINFO_RET_FAIL;
@@ -242,7 +242,7 @@ static int	vfs_fs_get(AGENT_REQUEST *request, AGENT_RESULT *result)
 	int			ret = SYSINFO_RET_FAIL;
 	char 			*mpoint;
 
-	if (0 == (rc = getmntinfo(&mntbuf, MNT_WAIT)))
+	if (0 == (rc = getmntinfo(&mntbuf, MNT_NOWAIT)))
 	{
 		SET_MSG_RESULT(result, zbx_dsprintf(NULL, "Cannot obtain system information: %s", zbx_strerror(errno)));
 		return SYSINFO_RET_FAIL;
@@ -282,7 +282,7 @@ static int	vfs_fs_get(AGENT_REQUEST *request, AGENT_RESULT *result)
 		zbx_vector_ptr_append(&mntpoints, mntpoint);
 	}
 
-	if (0 == (rc = getmntinfo(&mntbuf, MNT_WAIT)))
+	if (0 == (rc = getmntinfo(&mntbuf, MNT_NOWAIT)))
 	{
 		SET_MSG_RESULT(result, zbx_dsprintf(NULL, "Cannot obtain system information: %s", zbx_strerror(errno)));
 		goto out;

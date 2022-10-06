@@ -1,6 +1,6 @@
 /*
 ** Zabbix
-** Copyright (C) 2001-2020 Zabbix SIA
+** Copyright (C) 2001-2022 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -19,13 +19,13 @@
 
 #include "common.h"
 #include "sysinfo.h"
-#include "proc.h"
 
 ZBX_METRIC parameters_specific[] =
 /*	KEY			FLAG		FUNCTION		TEST PARAMETERS */
 {
 	{"kernel.maxfiles",	0,		KERNEL_MAXFILES,	NULL},
 	{"kernel.maxproc",	0,		KERNEL_MAXPROC,		NULL},
+	{"kernel.openfiles",	0,		KERNEL_OPENFILES,	NULL},
 
 	{"vfs.fs.size",		CF_HAVEPARAMS,	VFS_FS_SIZE,		"/,free"},
 	{"vfs.fs.inode",	CF_HAVEPARAMS,	VFS_FS_INODE,		"/,free"},
@@ -39,6 +39,9 @@ ZBX_METRIC parameters_specific[] =
 	{"net.tcp.listen",	CF_HAVEPARAMS,	NET_TCP_LISTEN,		"80"},
 	{"net.udp.listen",	CF_HAVEPARAMS,	NET_UDP_LISTEN,		"68"},
 
+	{"net.tcp.socket.count",CF_HAVEPARAMS,	NET_TCP_SOCKET_COUNT,	",80"},
+	{"net.udp.socket.count",CF_HAVEPARAMS,	NET_UDP_SOCKET_COUNT,	",68"},
+
 	{"net.if.in",		CF_HAVEPARAMS,	NET_IF_IN,		"lo,bytes"},
 	{"net.if.out",		CF_HAVEPARAMS,	NET_IF_OUT,		"lo,bytes"},
 	{"net.if.total",	CF_HAVEPARAMS,	NET_IF_TOTAL,		"lo,bytes"},
@@ -48,6 +51,7 @@ ZBX_METRIC parameters_specific[] =
 	{"vm.memory.size",	CF_HAVEPARAMS,	VM_MEMORY_SIZE,		"total"},
 
 	{"proc.cpu.util",	CF_HAVEPARAMS,	PROC_CPU_UTIL,		"inetd"},
+	{"proc.get",		CF_HAVEPARAMS,	PROC_GET,		"inetd"},
 	{"proc.num",		CF_HAVEPARAMS,	PROC_NUM,		"inetd"},
 	{"proc.mem",		CF_HAVEPARAMS,	PROC_MEM,		"inetd"},
 

@@ -1,6 +1,6 @@
 /*
 ** Zabbix
-** Copyright (C) 2001-2020 Zabbix SIA
+** Copyright (C) 2001-2022 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -19,20 +19,24 @@
 
 package com.zabbix.gateway;
 
+import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.HashSet;
 import javax.management.AttributeList;
 
 import javax.management.InstanceNotFoundException;
+import javax.management.AttributeNotFoundException;
 import javax.management.MBeanAttributeInfo;
 import javax.management.MBeanServerConnection;
 import javax.management.ObjectName;
 import javax.management.MalformedObjectNameException;
 import javax.management.openmbean.CompositeData;
 import javax.management.openmbean.TabularDataSupport;
+import javax.management.openmbean.TabularData;
 import javax.management.remote.JMXConnector;
 import javax.management.remote.JMXServiceURL;
+import javax.rmi.ssl.SslRMIClientSocketFactory;
 
 import org.json.*;
 
@@ -55,6 +59,8 @@ class JMXItemChecker extends ItemChecker
 		ATTRIBUTES,
 		BEANS
 	}
+
+	private static HashMap<String, Boolean> useRMISSLforURLHintCache = new HashMap<String, Boolean>();
 
 	JMXItemChecker(JSONObject request) throws ZabbixException
 	{
@@ -91,16 +97,46 @@ class JMXItemChecker extends ItemChecker
 
 		try
 		{
-			HashMap<String, String[]> env = null;
+			HashMap<String, Object> env = new HashMap<String, Object>();
 
 			if (null != username && null != password)
 			{
-				env = new HashMap<String, String[]>();
 				env.put(JMXConnector.CREDENTIALS, new String[] {username, password});
 			}
 
-			jmxc = ZabbixJMXConnectorFactory.connect(url, env);
+			if (!useRMISSLforURLHintCache.containsKey(url.getURLPath()) ||
+					!useRMISSLforURLHintCache.get(url.getURLPath()))
+			{
+				try
+				{
+					jmxc = ZabbixJMXConnectorFactory.connect(url, env);
+					useRMISSLforURLHintCache.put(url.getURLPath(), false);
+				}
+				catch (IOException e)
+				{
+					env.put("com.sun.jndi.rmi.factory.socket", new SslRMIClientSocketFactory());
+					jmxc = ZabbixJMXConnectorFactory.connect(url, env);
+					useRMISSLforURLHintCache.put(url.getURLPath(), true);
+				}
+			}
+			else
+			{
+				try
+				{
+					env.put("com.sun.jndi.rmi.factory.socket", new SslRMIClientSocketFactory());
+					jmxc = ZabbixJMXConnectorFactory.connect(url, env);
+					useRMISSLforURLHintCache.put(url.getURLPath(), true);
+				}
+				catch (IOException e)
+				{
+					env.remove("com.sun.jndi.rmi.factory.socket");
+					jmxc = ZabbixJMXConnectorFactory.connect(url, env);
+					useRMISSLforURLHintCache.put(url.getURLPath(), false);
+				}
+			}
+
 			mbsc = jmxc.getMBeanServerConnection();
+			logger.debug("using RMI SSL for " + url.getURLPath() + ": " + useRMISSLforURLHintCache.get(url.getURLPath()));
 
 			for (String key : keys)
 				values.put(getJSONValue(key));
@@ -109,7 +145,8 @@ class JMXItemChecker extends ItemChecker
 		{
 			JSONObject value = new JSONObject();
 
-			logger.warn("cannot process keys '{}': {}: {}", new Object[] {keys, ZabbixException.getRootCauseMessage(e1), url});
+			logger.warn("cannot process keys '{}': {}: {}", new Object[] {keys,
+					ZabbixException.getRootCauseMessage(e1), url});
 			logger.debug("error caused by", e1);
 
 			try
@@ -118,7 +155,8 @@ class JMXItemChecker extends ItemChecker
 			}
 			catch (JSONException e2)
 			{
-				Object[] logInfo = {JSON_TAG_ERROR, e1.getMessage(), ZabbixException.getRootCauseMessage(e2)};
+				Object[] logInfo = {JSON_TAG_ERROR, e1.getMessage(),
+						ZabbixException.getRootCauseMessage(e2)};
 				logger.warn("cannot add JSON attribute '{}' with message '{}': {}", logInfo);
 				logger.debug("error caused by", e2);
 			}
@@ -149,8 +187,8 @@ class JMXItemChecker extends ItemChecker
 
 		if (item.getKeyId().equals("jmx"))
 		{
-			if (2 != argumentCount)
-				throw new ZabbixException("required key format: jmx[<object name>,<attribute name>]");
+			if (2 != argumentCount && 3 != argumentCount)
+				throw new ZabbixException("required key format: jmx[<object name>,<attribute name>,<unique short description>]");
 
 			ObjectName objectName = new ObjectName(item.getArgument(1));
 			String attributeName = item.getArgument(2);
@@ -182,23 +220,36 @@ class JMXItemChecker extends ItemChecker
 
 			try
 			{
-				return getPrimitiveAttributeValue(mbsc.getAttribute(objectName, realAttributeName), fieldNames);
+				Object dataObject = mbsc.getAttribute(objectName, realAttributeName);
+
+				if (dataObject instanceof TabularData)
+				{
+					logger.trace("'{}' contains tabular data", attributeName);
+					return getTabularData((TabularData)dataObject).toString();
+				}
+
+				return getPrimitiveAttributeValue(dataObject, fieldNames);
+			}
+			catch (AttributeNotFoundException e)
+			{
+				throw new ZabbixException("Attribute not found: %s", ZabbixException.getRootCauseMessage(e));
 			}
 			catch (InstanceNotFoundException e)
 			{
-				throw new ZabbixException("Object or attribute not found.");
+				throw new ZabbixException("Object or attribute not found: %s", ZabbixException.getRootCauseMessage(e));
 			}
 		}
 		else if (item.getKeyId().equals("jmx.discovery") || item.getKeyId().equals("jmx.get"))
 		{
-			if (2 < argumentCount)
-				throw new ZabbixException("required key format: " + item.getKeyId() + "[<discovery mode>,<object name>]");
+			if (3 < argumentCount)
+				throw new ZabbixException("required key format: " + item.getKeyId() +
+						"[<discovery mode>,<object name>,<unique short description>]");
 
 			ObjectName filter;
 
 			try
 			{
-				filter = (2 == argumentCount) ? new ObjectName(item.getArgument(2)) : null;
+				filter = (2 <= argumentCount) ? new ObjectName(item.getArgument(2)) : null;
 			}
 			catch (MalformedObjectNameException e)
 			{
@@ -292,6 +343,53 @@ class JMXItemChecker extends ItemChecker
 			throw new ZabbixException("unsupported data object type along the path: %s", dataObject.getClass());
 	}
 
+	private JSONArray getTabularData(TabularData data) throws JSONException
+	{
+		JSONArray values = new JSONArray();
+
+		for (Object value : data.values())
+		{
+			JSONObject tmp = getCompositeDataValues((CompositeData)value);
+
+			if (tmp.length() > 0)
+				values.put(tmp);
+		}
+
+		return values;
+	}
+
+	private JSONObject getCompositeDataValues(CompositeData compData) throws JSONException
+	{
+		JSONObject value = new JSONObject();
+
+		for (String key : compData.getCompositeType().keySet())
+		{
+			Object data = compData.get(key);
+
+			if (data == null)
+			{
+				value.put(key, JSONObject.NULL);
+			}
+			else if (data.getClass().isArray())
+			{
+				logger.trace("found attribute of a known, unsupported type: {}", data.getClass());
+				continue;
+			}
+			else if (data instanceof TabularData)
+			{
+				value.put(key, getTabularData((TabularData)data));
+			}
+			else if (data instanceof CompositeData)
+			{
+				value.put(key, getCompositeDataValues((CompositeData)data));
+			}
+			else
+				value.put(key, data);
+		}
+
+		return value;
+	}
+
 	private void discoverAttributes(JSONArray counters, ObjectName filter, boolean propertiesAsMacros) throws Exception
 	{
 		for (ObjectName name : mbsc.queryNames(filter, null))
@@ -347,7 +445,9 @@ class JMXItemChecker extends ItemChecker
 			{
 				logger.trace("discovered attribute '{}'", attrInfo.getName());
 
-				if (null == values.get(attrInfo.getName()))
+				Object attribute;
+
+				if (null == (attribute = values.get(attrInfo.getName())))
 				{
 					logger.trace("cannot retrieve attribute value, skipping");
 					continue;
@@ -355,10 +455,22 @@ class JMXItemChecker extends ItemChecker
 
 				try
 				{
-					logger.trace("looking for attributes of primitive types");
-					String descr = (attrInfo.getName().equals(attrInfo.getDescription()) ? null : attrInfo.getDescription());
-					getAttributeFields(counters, name, descr, attrInfo.getName(), values.get(attrInfo.getName()),
-						propertiesAsMacros);
+					String descr = (attrInfo.getName().equals(attrInfo.getDescription()) ? null :
+							attrInfo.getDescription());
+
+					if (attribute instanceof TabularData)
+					{
+						logger.trace("looking for attributes of tabular types");
+
+						formatPrimitiveTypeResult(counters, name, descr, attrInfo.getName(), attribute,
+							propertiesAsMacros, getTabularData((TabularData)attribute));
+					}
+					else
+					{
+						logger.trace("looking for attributes of primitive types");
+						getAttributeFields(counters, name, descr, attrInfo.getName(), attribute,
+								propertiesAsMacros);
+					}
 				}
 				catch (Exception e)
 				{
@@ -477,30 +589,11 @@ class JMXItemChecker extends ItemChecker
 	private void getAttributeFields(JSONArray counters, ObjectName name, String descr, String attrPath,
 			Object attribute, boolean propertiesAsMacros) throws NoSuchMethodException, JSONException
 	{
-		if (isPrimitiveAttributeType(attribute))
+		if (null == attribute || isPrimitiveAttributeType(attribute))
 		{
-			logger.trace("found attribute of a primitive type: {}", attribute.getClass());
-
-			JSONObject counter = new JSONObject();
-
-			if (propertiesAsMacros)
-			{
-				counter.put("{#JMXDESC}", null == descr ? name + "," + attrPath : descr);
-				counter.put("{#JMXOBJ}", name);
-				counter.put("{#JMXATTR}", attrPath);
-				counter.put("{#JMXTYPE}", attribute.getClass().getName());
-				counter.put("{#JMXVALUE}", attribute.toString());
-			}
-			else
-			{
-				counter.put("name", attrPath);
-				counter.put("object", name);
-				counter.put("description", null == descr ? name + "," + attrPath : descr);
-				counter.put("type", attribute.getClass().getName());
-				counter.put("value", attribute.toString());
-			}
-
-			counters.put(counter);
+			logger.trace("found attribute of a primitive type: {}", null == attribute ? "null" :
+					attribute.getClass());
+			formatPrimitiveTypeResult(counters, name, descr, attrPath, attribute, propertiesAsMacros, attribute);
 		}
 		else if (attribute instanceof CompositeData)
 		{
@@ -515,12 +608,41 @@ class JMXItemChecker extends ItemChecker
 						attrPath + "." + key, comp.get(key), propertiesAsMacros);
 			}
 		}
-		else if (attribute instanceof TabularDataSupport || attribute.getClass().isArray())
+		else if (attribute.getClass().isArray())
 		{
 			logger.trace("found attribute of a known, unsupported type: {}", attribute.getClass());
 		}
 		else
 			logger.trace("found attribute of an unknown, unsupported type: {}", attribute.getClass());
+	}
+
+	private void formatPrimitiveTypeResult(JSONArray counters, ObjectName name, String descr, String attrPath,
+			Object attribute, boolean propertiesAsMacros, Object value) throws JSONException
+	{
+		JSONObject counter = new JSONObject();
+
+		String checkedDescription = null == descr ? name + "," + attrPath : descr;
+		Object checkedType = null == attribute ? JSONObject.NULL : attribute.getClass().getName();
+		Object checkedValue = null == value ? JSONObject.NULL : value.toString();
+
+		if (propertiesAsMacros)
+		{
+			counter.put("{#JMXDESC}", checkedDescription);
+			counter.put("{#JMXOBJ}", name);
+			counter.put("{#JMXATTR}", attrPath);
+			counter.put("{#JMXTYPE}", checkedType);
+			counter.put("{#JMXVALUE}", checkedValue);
+		}
+		else
+		{
+			counter.put("name", attrPath);
+			counter.put("object", name);
+			counter.put("description", checkedDescription);
+			counter.put("type", checkedType);
+			counter.put("value", checkedValue);
+		}
+
+		counters.put(counter);
 	}
 
 	private boolean isPrimitiveAttributeType(Object obj) throws NoSuchMethodException
@@ -534,5 +656,12 @@ class JMXItemChecker extends ItemChecker
 		return HelperFunctionChest.arrayContains(clazzez, obj.getClass()) ||
 				(!(obj instanceof CompositeData)) && (!(obj instanceof TabularDataSupport)) &&
 				(obj.getClass().getMethod("toString").getDeclaringClass() != Object.class);
+	}
+
+	public void cleanUseRMISSLforURLHintCache()
+	{
+		int s = useRMISSLforURLHintCache.size();
+		useRMISSLforURLHintCache.clear();
+		logger.debug("Finished cleanup of RMI SSL hint cache. " + s + " entries removed.");
 	}
 }

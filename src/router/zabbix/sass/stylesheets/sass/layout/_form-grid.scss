@@ -1,0 +1,128 @@
+.form-grid {
+	display: grid;
+	padding: 5px;
+	row-gap: 10px;
+	column-gap: 10px;
+
+	// 15% label column width for use in standalone forms.
+	grid-template-columns: minmax(15%, max-content) auto;
+
+	// True label column width for use in filter forms.
+	&.label-width-true {
+		grid-template-columns: max-content auto;
+	}
+
+	.fields-group {
+		grid-column: 2 / -1;
+		padding: 5px;
+		border: 1px solid $form-fields-group-border-color;
+	}
+
+	> label {
+		line-height: 24px;
+		text-align: right;
+		word-wrap: break-word;
+
+		&.fields-group-label {
+			padding-top: 5px;
+		}
+	}
+
+	> .form-field,
+	> .field-fluid,
+	.form-actions {
+		grid-column: 2 / -1;
+		text-align: left;
+		line-height: 24px;
+	}
+
+	.form-actions {
+		button {
+			&:not(:first-of-type) {
+				margin-left: 10px;
+			}
+		}
+	}
+
+	.form-field {
+		$offsets: (
+				1: 2,
+				2: 3,
+				3: 4
+		);
+
+		@each $offset, $value in $offsets {
+			// Dynamically generated classes:
+			//  .offset-1
+			//  .offset-2
+			//  .offset-3
+			&.offset-#{$offset} {
+				grid-column-start: $value !important;
+			}
+		}
+
+		table {
+			width: 100%;
+
+			&.table-initial-width {
+				width: auto;
+			}
+
+			.sortable td {
+				padding-bottom: 0;
+				vertical-align: middle;
+				line-height: 24px;
+			}
+		}
+
+		th {
+			padding: 0 5px 0 0;
+			color: $font-alt-color;
+
+			&:last-child {
+				padding: 0;
+			}
+		}
+
+		td {
+			padding: 0 5px 5px 0;
+		}
+
+		.list-check-radio {
+			line-height: $body-line-height;
+		}
+	}
+
+	&.form-grid-1-1 {
+		grid-template-columns: repeat(2, minmax(15%, max-content) auto);
+
+		&.label-width-true {
+			grid-template-columns: repeat(2, max-content auto);
+		}
+	}
+
+	&.form-grid-3-1 {
+		grid-template-columns: minmax(15%, max-content) 3fr max-content auto;
+
+		&.label-width-true {
+			grid-template-columns: max-content auto 3fr max-content auto;
+		}
+	}
+
+	&.form-grid-1-1,
+	&.form-grid-3-1 {
+		.form-field:not(.field-fluid) {
+			grid-column-start: initial;
+			grid-column-end: span 1;
+		}
+	}
+
+	.table-forms-separator {
+		display: inline-flex;
+		line-height: 1.4;
+
+		td {
+			padding: 5px 5px 5px 0;
+		}
+	}
+}

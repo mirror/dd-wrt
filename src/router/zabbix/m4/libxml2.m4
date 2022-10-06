@@ -1,6 +1,6 @@
 #
 # Zabbix
-# Copyright (C) 2001-2020 Zabbix SIA
+# Copyright (C) 2001-2022 Zabbix SIA
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -50,7 +50,7 @@ AC_HELP_STRING([--with-libxml2@<:@=ARG@:>@],
 
     if test "$want_libxml2" = "yes"; then
         AC_REQUIRE([PKG_PROG_PKG_CONFIG])
-        PKG_PROG_PKG_CONFIG()
+        m4_ifdef([PKG_PROG_PKG_CONFIG], [PKG_PROG_PKG_CONFIG()], [:])
 
         if test -x "$PKG_CONFIG"; then
 

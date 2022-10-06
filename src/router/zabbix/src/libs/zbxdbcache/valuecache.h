@@ -1,6 +1,6 @@
 /*
 ** Zabbix
-** Copyright (C) 2001-2020 Zabbix SIA
+** Copyright (C) 2001-2022 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -23,6 +23,7 @@
 #include "zbxtypes.h"
 #include "zbxalgo.h"
 #include "zbxhistory.h"
+#include "zbxshmem.h"
 
 /*
  * The Value Cache provides read caching of item historical data residing in history
@@ -82,15 +83,20 @@ typedef struct
 }
 zbx_vc_stats_t;
 
+/* item diagnostic statistics */
+typedef struct
+{
+	zbx_uint64_t	itemid;
+	int		values_num;
+	int		hourly_num;
+}
+zbx_vc_item_stats_t;
+
 int	zbx_vc_init(char **error);
 
 void	zbx_vc_destroy(void);
 
 void	zbx_vc_reset(void);
-
-void	zbx_vc_lock(void);
-
-void	zbx_vc_unlock(void);
 
 void	zbx_vc_enable(void);
 
@@ -101,10 +107,15 @@ int	zbx_vc_get_values(zbx_uint64_t itemid, int value_type, zbx_vector_history_re
 
 int	zbx_vc_get_value(zbx_uint64_t itemid, int value_type, const zbx_timespec_t *ts, zbx_history_record_t *value);
 
-int	zbx_vc_add_values(zbx_vector_ptr_t *history);
+int	zbx_vc_add_values(zbx_vector_ptr_t *history, int *ret_flush);
 
 int	zbx_vc_get_statistics(zbx_vc_stats_t *stats);
 
 void	zbx_vc_housekeeping_value_cache(void);
+
+void	zbx_vc_get_diag_stats(zbx_uint64_t *items_num, zbx_uint64_t *values_num, int *mode);
+void	zbx_vc_get_mem_stats(zbx_shmem_stats_t *mem);
+void	zbx_vc_get_item_stats(zbx_vector_ptr_t *stats);
+void	zbx_vc_flush_stats(void);
 
 #endif	/* ZABBIX_VALUECACHE_H */

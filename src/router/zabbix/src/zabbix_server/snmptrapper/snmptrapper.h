@@ -1,6 +1,6 @@
 /*
 ** Zabbix
-** Copyright (C) 2001-2020 Zabbix SIA
+** Copyright (C) 2001-2022 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -20,10 +20,10 @@
 #ifndef ZABBIX_SNMPTRAPPER_H
 #define ZABBIX_SNMPTRAPPER_H
 
-#include "threads.h"
+#include "zbxthreads.h"
 
 extern char		*CONFIG_SNMPTRAP_FILE;
-extern unsigned char	process_type;
+extern ZBX_THREAD_LOCAL unsigned char	process_type;
 
 ZBX_THREAD_ENTRY(snmptrapper_thread, args);
 

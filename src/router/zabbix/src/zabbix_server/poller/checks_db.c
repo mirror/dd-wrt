@@ -1,6 +1,6 @@
 /*
 ** Zabbix
-** Copyright (C) 2001-2020 Zabbix SIA
+** Copyright (C) 2001-2022 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -26,8 +26,6 @@
 
 /******************************************************************************
  *                                                                            *
- * Function: get_value_db                                                     *
- *                                                                            *
  * Purpose: retrieve data from database                                       *
  *                                                                            *
  * Parameters: item   - [IN] item we are interested in                        *
@@ -36,13 +34,11 @@
  * Return value: SUCCEED - data successfully retrieved and stored in result   *
  *               NOTSUPPORTED - requested item is not supported               *
  *                                                                            *
- * Author: Eugene Grigorjev                                                   *
- *                                                                            *
  ******************************************************************************/
-int	get_value_db(DC_ITEM *item, AGENT_RESULT *result)
+int	get_value_db(const DC_ITEM *item, AGENT_RESULT *result)
 {
 	AGENT_REQUEST		request;
-	const char		*dsn;
+	const char		*dsn, *connection = NULL;
 	zbx_odbc_data_source_t	*data_source;
 	zbx_odbc_query_result_t	*query_result;
 	char			*error = NULL;
@@ -77,7 +73,7 @@ int	get_value_db(DC_ITEM *item, AGENT_RESULT *result)
 		goto out;
 	}
 
-	if (2 != request.nparam)
+	if (2 > request.nparam || 3 < request.nparam)
 	{
 		SET_MSG_RESULT(result, zbx_strdup(NULL, "Invalid number of parameters."));
 		goto out;
@@ -87,13 +83,17 @@ int	get_value_db(DC_ITEM *item, AGENT_RESULT *result)
 
 	dsn = request.params[1];
 
-	if (NULL == dsn || '\0' == *dsn)
+	if (2 < request.nparam)
+		connection = request.params[2];
+
+	if ((NULL == dsn || '\0' == *dsn) && (NULL == connection || '\0' == *connection))
 	{
-		SET_MSG_RESULT(result, zbx_strdup(NULL, "Invalid second parameter."));
+		SET_MSG_RESULT(result, zbx_strdup(NULL, "Invalid database connection settings."));
 		goto out;
 	}
 
-	if (NULL != (data_source = zbx_odbc_connect(dsn, item->username, item->password, CONFIG_TIMEOUT, &error)))
+	if (NULL != (data_source = zbx_odbc_connect(dsn, connection, item->username, item->password, CONFIG_TIMEOUT,
+			&error)))
 	{
 		if (NULL != (query_result = zbx_odbc_select(data_source, item->params, &error)))
 		{

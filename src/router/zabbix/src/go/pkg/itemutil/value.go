@@ -1,6 +1,6 @@
 /*
 ** Zabbix
-** Copyright (C) 2001-2020 Zabbix SIA
+** Copyright (C) 2001-2022 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -24,38 +24,49 @@ import (
 	"strconv"
 	"time"
 
-	"zabbix.com/pkg/plugin"
+	"git.zabbix.com/ap/plugin-support/plugin"
 )
 
 const StateNotSupported = 1
 
-func ValueToResult(itemid uint64, ts time.Time, v interface{}) (result *plugin.Result) {
+func ValueToResult(itemid uint64, ts time.Time, u interface{}) (result *plugin.Result) {
 	var value string
-	switch v.(type) {
+	switch v := u.(type) {
 	case *plugin.Result:
-		return v.(*plugin.Result)
+		return v
 	case plugin.Result:
-		r := v.(plugin.Result)
-		return &r
+		return &v
 	case string:
-		value = v.(string)
+		value = u.(string)
 	case *string:
-		value = *v.(*string)
+		value = *u.(*string)
 	case int:
-		value = strconv.FormatInt(int64(v.(int)), 10)
+		value = strconv.FormatInt(int64(v), 10)
+	case int8:
+		value = strconv.FormatInt(int64(v), 10)
+	case int16:
+		value = strconv.FormatInt(int64(v), 10)
+	case int32:
+		value = strconv.FormatInt(int64(v), 10)
 	case int64:
-		value = strconv.FormatInt(v.(int64), 10)
+		value = strconv.FormatInt(v, 10)
 	case uint:
-		value = strconv.FormatUint(uint64(v.(uint)), 10)
+		value = strconv.FormatUint(uint64(v), 10)
+	case uint8:
+		value = strconv.FormatUint(uint64(v), 10)
+	case uint16:
+		value = strconv.FormatUint(uint64(v), 10)
+	case uint32:
+		value = strconv.FormatUint(uint64(v), 10)
 	case uint64:
-		value = strconv.FormatUint(v.(uint64), 10)
+		value = strconv.FormatUint(v, 10)
 	case float32:
-		value = strconv.FormatFloat(float64(v.(float32)), 'f', 6, 64)
+		value = strconv.FormatFloat(float64(v), 'f', 6, 64)
 	case float64:
-		value = strconv.FormatFloat(v.(float64), 'f', 6, 64)
+		value = strconv.FormatFloat(v, 'f', 6, 64)
 	default:
 		// note that this conversion is slow and it's better to return known value type
-		value = fmt.Sprintf("%v", v)
+		value = fmt.Sprintf("%v", u)
 	}
 	return &plugin.Result{Itemid: itemid, Value: &value, Ts: ts}
 }

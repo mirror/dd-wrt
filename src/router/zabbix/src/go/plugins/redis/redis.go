@@ -1,6 +1,6 @@
 /*
 ** Zabbix
-** Copyright (C) 2001-2020 Zabbix SIA
+** Copyright (C) 2001-2022 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -20,89 +20,43 @@
 package redis
 
 import (
-	"errors"
-	"zabbix.com/pkg/plugin"
+	"time"
+
+	"git.zabbix.com/ap/plugin-support/plugin"
+	"git.zabbix.com/ap/plugin-support/uri"
+	"git.zabbix.com/ap/plugin-support/zbxerr"
 )
 
 const pluginName = "Redis"
 
-const (
-	keyInfo    = "redis.info"
-	keyPing    = "redis.ping"
-	keyConfig  = "redis.config"
-	keySlowlog = "redis.slowlog.count"
-)
-
-// maxParams defines the maximum number of parameters for metrics.
-var maxParams = map[string]int{
-	keyInfo:    2,
-	keyPing:    1,
-	keyConfig:  2,
-	keySlowlog: 1,
-}
-
 // Plugin inherits plugin.Base and store plugin-specific data.
 type Plugin struct {
 	plugin.Base
-	connMgr *connManager
+	connMgr *ConnManager
 	options PluginOptions
 }
-
-type handler func(conn redisClient, params []string) (res interface{}, err error)
 
 // impl is the pointer to the plugin implementation.
 var impl Plugin
 
 // Export implements the Exporter interface.
-func (p *Plugin) Export(key string, params []string, ctx plugin.ContextProvider) (result interface{}, err error) {
-	var (
-		uri     URI
-		handler handler
-	)
-
-	// The first param can be either a URI or a session identifier.
-	if len(params) > 0 && len(params[0]) > 0 {
-		if isLooksLikeUri(params[0]) {
-			// Use the URI from key
-			uri, err = newUriWithCreds(params[0], p.options.Password)
-		} else {
-			if _, ok := p.options.Sessions[params[0]]; !ok {
-				return nil, errorUnknownSession
-			}
-			// Use a pre-defined session
-			uri, err = newUriWithCreds(p.options.Sessions[params[0]].Uri, p.options.Sessions[params[0]].Password)
-		}
-	} else {
-		// Use the default URI if the first param is omitted.
-		uri, err = newUriWithCreds(p.options.Uri, p.options.Password)
-	}
-
+func (p *Plugin) Export(key string, rawParams []string, ctx plugin.ContextProvider) (result interface{}, err error) {
+	params, _, err := metrics[key].EvalParams(rawParams, p.options.Sessions)
 	if err != nil {
 		return nil, err
 	}
 
-	switch key {
-	case keyInfo:
-		handler = p.infoHandler // redis.info[[uri][,section]]
-
-	case keyPing:
-		handler = p.pingHandler // redis.ping[[uri]]
-
-	case keyConfig:
-		handler = p.configHandler // redis.config[[uri][,pattern]]
-
-	case keySlowlog:
-		handler = p.slowlogHandler // redis.slowlog[[uri]]
-
-	default:
-		return nil, errorUnsupportedMetric
+	uri, err := uri.NewWithCreds(params["URI"], "zabbix", params["Password"], uriDefaults)
+	if err != nil {
+		return nil, err
 	}
 
-	if len(params) > maxParams[key] {
-		return nil, errorTooManyParameters
+	handleMetric := getHandlerFunc(key)
+	if handleMetric == nil {
+		return nil, zbxerr.ErrorUnsupportedMetric
 	}
 
-	conn, err := p.connMgr.GetConnection(uri)
+	conn, err := p.connMgr.GetConnection(*uri)
 	if err != nil {
 		// Special logic of processing connection errors is used if redis.ping is requested
 		// because it must return pingFailed if any error occurred.
@@ -111,17 +65,29 @@ func (p *Plugin) Export(key string, params []string, ctx plugin.ContextProvider)
 		}
 
 		p.Errf(err.Error())
-		return nil, errors.New(formatZabbixError(err.Error()))
+
+		return nil, err
 	}
 
-	return handler(conn, params)
+	result, err = handleMetric(conn, params)
+	if err != nil {
+		p.Errf(err.Error())
+	}
+
+	return result, err
 }
 
-// init registers metrics.
-func init() {
-	plugin.RegisterMetrics(&impl, pluginName,
-		keyInfo, "Returns output of INFO command.",
-		keyPing, "Test if connection is alive or not.",
-		keyConfig, "Returns configuration parameters of Redis server.",
-		keySlowlog, "Returns the number of slow log entries since Redis has been started.")
+// Start implements the Runner interface and performs initialization when plugin is activated.
+func (p *Plugin) Start() {
+	p.connMgr = NewConnManager(
+		time.Duration(p.options.KeepAlive)*time.Second,
+		time.Duration(p.options.Timeout)*time.Second,
+		hkInterval*time.Second,
+	)
+}
+
+// Stop implements the Runner interface and frees resources when plugin is deactivated.
+func (p *Plugin) Stop() {
+	p.connMgr.Destroy()
+	p.connMgr = nil
 }

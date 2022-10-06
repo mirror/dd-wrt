@@ -1,6 +1,6 @@
 /*
 ** Zabbix
-** Copyright (C) 2001-2020 Zabbix SIA
+** Copyright (C) 2001-2022 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -20,20 +20,18 @@
 #ifndef ZABBIX_OPERATIONS_H
 #define ZABBIX_OPERATIONS_H
 
-#include "common.h"
-#include "db.h"
-#include "zbxalgo.h"
+#include "dbcache.h"
 
 extern int	CONFIG_TIMEOUT;
 
-void	op_template_add(const DB_EVENT *event, zbx_vector_uint64_t *lnk_templateids);
-void	op_template_del(const DB_EVENT *event, zbx_vector_uint64_t *del_templateids);
-void	op_groups_add(const DB_EVENT *event, zbx_vector_uint64_t *groupids);
-void	op_groups_del(const DB_EVENT *event, zbx_vector_uint64_t *groupids);
-void	op_host_add(const DB_EVENT *event);
-void	op_host_del(const DB_EVENT *event);
-void	op_host_enable(const DB_EVENT *event);
-void	op_host_disable(const DB_EVENT *event);
-void	op_host_inventory_mode(const DB_EVENT *event, int inventory_mode);
+void	op_template_add(const ZBX_DB_EVENT *event, zbx_config_t *cfg, zbx_vector_uint64_t *lnk_templateids);
+void	op_template_del(const ZBX_DB_EVENT *event, zbx_vector_uint64_t *del_templateids);
+void	op_groups_add(const ZBX_DB_EVENT *event,  zbx_config_t *cfg, zbx_vector_uint64_t *groupids);
+void	op_groups_del(const ZBX_DB_EVENT *event, zbx_vector_uint64_t *groupids);
+void	op_host_add(const ZBX_DB_EVENT *event, zbx_config_t *cfg);
+void	op_host_del(const ZBX_DB_EVENT *event);
+void	op_host_enable(const ZBX_DB_EVENT *event, zbx_config_t *cfg);
+void	op_host_disable(const ZBX_DB_EVENT *event, zbx_config_t *cfg);
+void	op_host_inventory_mode(const ZBX_DB_EVENT *event, zbx_config_t *cfg, int inventory_mode);
 
 #endif

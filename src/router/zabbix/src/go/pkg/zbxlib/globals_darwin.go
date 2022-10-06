@@ -1,6 +1,6 @@
 /*
 ** Zabbix
-** Copyright (C) 2001-2020 Zabbix SIA
+** Copyright (C) 2001-2022 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -24,7 +24,8 @@ package zbxlib
 #cgo LDFLAGS: ${SRCDIR}/../../../libs/zbxcomms/libzbxcomms.a
 #cgo LDFLAGS: ${SRCDIR}/../../../libs/zbxcommon/libzbxcommon.a
 #cgo LDFLAGS: ${SRCDIR}/../../../libs/zbxcrypto/libzbxcrypto.a
-#cgo LDFLAGS: ${SRCDIR}/../../../libs/zbxsys/libzbxsys.a
+#cgo LDFLAGS: ${SRCDIR}/../../../libs/zbxthreads/libzbxthreads.a
+#cgo LDFLAGS: ${SRCDIR}/../../../libs/zbxmutexs/libzbxmutexs.a
 #cgo LDFLAGS: ${SRCDIR}/../../../libs/zbxnix/libzbxnix.a
 #cgo LDFLAGS: ${SRCDIR}/../../../libs/zbxconf/libzbxconf.a
 #cgo LDFLAGS: ${SRCDIR}/../../../libs/zbxhttp/libzbxhttp.a
@@ -38,11 +39,13 @@ package zbxlib
 #cgo LDFLAGS: ${SRCDIR}/../../../libs/zbxjson/libzbxjson.a
 #cgo LDFLAGS: ${SRCDIR}/../../../libs/zbxsysinfo/osx/libspechostnamesysinfo.a
 #cgo LDFLAGS: ${SRCDIR}/../../../libs/zbxsysinfo/osx/libspecsysinfo.a
-#cgo LDFLAGS: -lz -lpcre -lresolv
+#cgo pcre  LDFLAGS: -lz -lpcre -lresolv
+#cgo pcre2 LDFLAGS: -lz -lpcre2-8 -lresolv
+#cgo LDFLAGS: -lz -lresolv
 
 #include "common.h"
 #include "sysinfo.h"
-#include "comms.h"
+#include "zbxcomms.h"
 #include "log.h"
 #include "../src/zabbix_agent/metrics.h"
 #include "../src/zabbix_agent/logfiles/logfiles.h"
@@ -51,7 +54,7 @@ typedef ZBX_ACTIVE_METRIC* ZBX_ACTIVE_METRIC_LP;
 typedef zbx_vector_ptr_t * zbx_vector_ptr_lp_t;
 
 int CONFIG_MAX_LINES_PER_SECOND = 20;
-char *CONFIG_HOSTNAME = NULL;
+char ZBX_THREAD_LOCAL  *CONFIG_HOSTNAME = NULL;
 int	CONFIG_UNSAFE_USER_PARAMETERS= 0;
 int	CONFIG_ENABLE_REMOTE_COMMANDS= 0;
 int	CONFIG_LOG_REMOTE_COMMANDS= 0;
@@ -71,8 +74,18 @@ char *CONFIG_TLS_KEY_FILE = NULL;
 char *CONFIG_TLS_PSK_IDENTITY = NULL;
 char *CONFIG_TLS_PSK_FILE = NULL;
 
+char *CONFIG_TLS_CIPHER_CERT13 = NULL;
+char *CONFIG_TLS_CIPHER_CERT = NULL;
+char *CONFIG_TLS_CIPHER_PSK13 = NULL;
+char *CONFIG_TLS_CIPHER_PSK = NULL;
+char *CONFIG_TLS_CIPHER_ALL13 = NULL;
+char *CONFIG_TLS_CIPHER_ALL = NULL;
+char *CONFIG_TLS_CIPHER_CMD13 = NULL;
+char *CONFIG_TLS_CIPHER_CMD = NULL;
+
 int	CONFIG_PASSIVE_FORKS = 0;
 int	CONFIG_ACTIVE_FORKS = 0;
+int	CONFIG_TCP_MAX_BACKLOG_SIZE	= SOMAXCONN;
 
 const char	*progname = NULL;
 const char	title_message[] = "agent";
@@ -83,10 +96,6 @@ const char	*help_message[] = {};
 
 ZBX_METRIC	parameters_agent[] = {NULL};
 ZBX_METRIC	parameters_specific[] = {NULL};
-
-void zbx_on_exit(int ret)
-{
-}
 
 int	zbx_procstat_collector_started(void)
 {

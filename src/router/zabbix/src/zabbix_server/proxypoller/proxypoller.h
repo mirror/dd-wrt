@@ -1,6 +1,6 @@
 /*
 ** Zabbix
-** Copyright (C) 2001-2020 Zabbix SIA
+** Copyright (C) 2001-2022 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -20,7 +20,7 @@
 #ifndef ZABBIX_PROXYPOLLER_H
 #define ZABBIX_PROXYPOLLER_H
 
-#include "threads.h"
+#include "zbxthreads.h"
 
 extern char	*CONFIG_SOURCE_IP;
 extern int	CONFIG_TRAPPER_TIMEOUT;
@@ -28,4 +28,3 @@ extern int	CONFIG_TRAPPER_TIMEOUT;
 ZBX_THREAD_ENTRY(proxypoller_thread, args);
 
 #endif
-

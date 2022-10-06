@@ -1,6 +1,6 @@
 /*
 ** Zabbix
-** Copyright (C) 2001-2020 Zabbix SIA
+** Copyright (C) 2001-2022 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -67,16 +67,26 @@ int	SYSTEM_SWAP_SIZE(AGENT_REQUEST *request, AGENT_RESULT *result)
 		(*mib_dev)++;
 	}
 
-	if (NULL == mode || '\0' == *mode || 0 == strcmp(mode, "free"))	/* default parameter */
+	if (NULL == mode || '\0' == *mode || 0 == strcmp(mode, "free"))
+	{
 		SET_UI64_RESULT(result, (total - used) * getpagesize());
+	}
 	else if (0 == strcmp(mode, "total"))
+	{
 		SET_UI64_RESULT(result, total * getpagesize());
+	}
 	else if (0 == strcmp(mode, "used"))
+	{
 		SET_UI64_RESULT(result, used * getpagesize());
+	}
 	else if (0 == strcmp(mode, "pfree"))
-		SET_DBL_RESULT(result, total ? ((double)(total - used) * 100.0 / (double)total) : 0.0);
+	{
+		SET_DBL_RESULT(result, 0 != total ? ((double)(total - used) * 100.0 / (double)total) : 100.0);
+	}
 	else if (0 == strcmp(mode, "pused"))
-		SET_DBL_RESULT(result, total ? ((double)used * 100.0 / (double)total) : 0.0);
+	{
+		SET_DBL_RESULT(result, 0 != total ? ((double)used * 100.0 / (double)total) : 0.0);
+	}
 	else
 	{
 		SET_MSG_RESULT(result, zbx_strdup(NULL, "Invalid second parameter."));

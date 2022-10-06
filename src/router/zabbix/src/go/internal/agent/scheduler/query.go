@@ -1,6 +1,6 @@
 /*
 ** Zabbix
-** Copyright (C) 2001-2020 Zabbix SIA
+** Copyright (C) 2001-2022 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -25,7 +25,8 @@ import (
 	"sort"
 	"strings"
 
-	"zabbix.com/pkg/plugin"
+	"git.zabbix.com/ap/plugin-support/plugin"
+	"zabbix.com/plugins/external"
 )
 
 type pluginMetrics struct {
@@ -33,6 +34,7 @@ type pluginMetrics struct {
 	metrics []*plugin.Metric
 }
 
+// getStatus() returns a list of plugins with their metrics and statuses in a plain text format.
 func (m *Manager) getStatus() (result string) {
 	var status strings.Builder
 	agents := make(map[plugin.Accessor]*pluginMetrics)
@@ -55,8 +57,14 @@ func (m *Manager) getStatus() (result string) {
 	})
 
 	for _, info := range infos {
-		status.WriteString(fmt.Sprintf("[%s]\nactive: %t\ncapacity: %d/%d\ntasks: %d\n",
-			info.ref.name(), info.ref.active(), info.ref.usedCapacity, info.ref.capacity, len(info.ref.tasks)))
+		var extInfo string
+		if info.ref.impl.IsExternal() {
+			ext := info.ref.impl.(*external.Plugin)
+			extInfo = fmt.Sprintf("path: %s\n", ext.Path)
+		}
+		status.WriteString(fmt.Sprintf("[%s]\nactive: %t\n%scapacity: %d/%d\ncheck on start: %d\ntasks: %d\n",
+			info.ref.name(), info.ref.active(), extInfo, info.ref.usedCapacity, info.ref.maxCapacity,
+			info.ref.forceActiveChecksOnStart, len(info.ref.tasks)))
 		sort.Slice(info.metrics, func(l, r int) bool { return info.metrics[l].Key < info.metrics[r].Key })
 		for _, metric := range info.metrics {
 			status.WriteString(metric.Key)
@@ -69,6 +77,8 @@ func (m *Manager) getStatus() (result string) {
 	return status.String()
 }
 
+// processQuery handles internal queries like list of plugins with their metrics
+// (accessed from status page or remote command).
 func (m *Manager) processQuery(r *queryRequest) (text string, err error) {
 	switch r.command {
 	case "metrics":

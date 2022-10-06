@@ -1,6 +1,6 @@
 /*
 ** Zabbix
-** Copyright (C) 2001-2020 Zabbix SIA
+** Copyright (C) 2001-2022 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -17,14 +17,14 @@
 ** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 **/
 
-#include "common.h"
 #include "log.h"
-#include "mutexs.h"
-#include "threads.h"
+
+#include "zbxmutexs.h"
+#include "zbxthreads.h"
 #include "cfg.h"
 #ifdef _WINDOWS
 #	include "messages.h"
-#	include "service.h"
+#	include "zbxwinservice.h"
 #	include "sysinfo.h"
 static HANDLE		system_log_handle = INVALID_HANDLE_VALUE;
 #endif
@@ -144,7 +144,10 @@ static void	rotate_log(const char *filename)
 {
 	zbx_stat_t		buf;
 	zbx_uint64_t		new_size;
-	static zbx_uint64_t	old_size = ZBX_MAX_UINT64; /* redirect stdout and stderr */
+	static zbx_uint64_t	old_size = ZBX_MAX_UINT64;	/* redirect stdout and stderr */
+#if !defined(_WINDOWS)
+	static zbx_uint64_t	st_ino, st_dev;
+#endif
 
 	if (0 != zbx_stat(filename, &buf))
 	{
@@ -215,6 +218,14 @@ static void	rotate_log(const char *filename)
 
 	if (old_size > new_size)
 		zbx_redirect_stdio(filename);
+#if !defined(_WINDOWS)
+	else if (st_ino != buf.st_ino || st_dev != buf.st_dev)
+	{
+		st_ino = buf.st_ino;
+		st_dev = buf.st_dev;
+		zbx_redirect_stdio(filename);
+	}
+#endif
 
 	old_size = new_size;
 }
@@ -667,3 +678,51 @@ char	*strerror_from_module(unsigned long error, const wchar_t *module)
 	return utf8_string;
 }
 #endif	/* _WINDOWS */
+
+/******************************************************************************
+ *                                                                            *
+ * Purpose: log the message optionally appending to a string buffer           *
+ *                                                                            *
+ * Parameters: level      - [IN] the log level                                *
+ *             out        - [OUT] the output buffer (optional)                *
+ *             out_alloc  - [OUT] the output buffer size                      *
+ *             out_offset - [OUT] the output buffer offset                    *
+ *             format     - [IN] the format string                            *
+ *                                                                            *
+ * Return value: SUCCEED - the socket was successfully opened                 *
+ *               FAIL    - otherwise                                          *
+ *                                                                            *
+ ******************************************************************************/
+void	zbx_strlog_alloc(int level, char **out, size_t *out_alloc, size_t *out_offset, const char *format, ...)
+{
+	va_list	args;
+	size_t	len;
+	char	*buf;
+
+	if (SUCCEED != ZBX_CHECK_LOG_LEVEL(level) && NULL == out)
+		return;
+
+	va_start(args, format);
+	len = (size_t)vsnprintf(NULL, 0, format, args) + 2;
+	va_end(args);
+
+	buf = (char *)zbx_malloc(NULL, len);
+
+	va_start(args, format);
+	len = (size_t)vsnprintf(buf, len, format, args);
+	va_end(args);
+
+	if (SUCCEED == ZBX_CHECK_LOG_LEVEL(level))
+		zabbix_log(level, "%s", buf);
+
+	if (NULL != out)
+	{
+		buf[0] = (char)toupper((unsigned char)buf[0]);
+		buf[len++] = '\n';
+		buf[len] = '\0';
+
+		zbx_strcpy_alloc(out, out_alloc, out_offset, buf);
+	}
+
+	zbx_free(buf);
+}

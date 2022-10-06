@@ -1,6 +1,6 @@
 /*
 ** Zabbix
-** Copyright (C) 2001-2020 Zabbix SIA
+** Copyright (C) 2001-2022 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -20,11 +20,17 @@
 package uname
 
 import (
+	"errors"
 	"fmt"
+	"strings"
 	"syscall"
 )
 
-func getUname() (uname string, err error) {
+func getUname(params []string) (uname string, err error) {
+	if len(params) > 0 {
+		return "", errors.New("Too many parameters.")
+	}
+
 	var utsname syscall.Utsname
 	if err = syscall.Uname(&utsname); err != nil {
 		err = fmt.Errorf("Cannot obtain system information: %s", err.Error())
@@ -36,17 +42,57 @@ func getUname() (uname string, err error) {
 	return uname, nil
 }
 
-func getHostname() (hostname string, err error) {
+func getHostname(params []string) (hostname string, err error) {
+	if len(params) > 2 {
+		return "", errors.New("Too many parameters.")
+	}
+
+	var mode, transform string
+
+	if len(params) > 0 {
+		mode = params[0]
+		if len(params) > 1 {
+			transform = params[1]
+		}
+	}
+
 	var utsname syscall.Utsname
 	if err = syscall.Uname(&utsname); err != nil {
 		err = fmt.Errorf("Cannot obtain system information: %s", err.Error())
 		return
 	}
 
-	return arrayToString(&utsname.Nodename), nil
+	switch mode {
+	case "host", "":
+		hostname = arrayToString(&utsname.Nodename)
+	case "shorthost":
+		hostname = arrayToString(&utsname.Nodename)
+		if idx := strings.Index(hostname, "."); idx > 0 {
+			hostname = hostname[:idx]
+		}
+	case "netbios":
+		return "", errors.New("NetBIOS is not supported on the current platform.")
+	default:
+		return "", errors.New("Invalid first parameter.")
+	}
+
+	switch transform {
+	case "lower":
+		hostname = strings.ToLower(hostname)
+	case "none", "":
+		break
+	default:
+		return "", errors.New("Invalid second parameter.")
+	}
+
+	return
 }
 
-func getSwArch() (uname string, err error) {
+func getSwArch(params []string) (uname string, err error) {
+	if len(params) > 0 {
+		return "", errors.New("Too many parameters.")
+	}
+
 	var utsname syscall.Utsname
 	if err = syscall.Uname(&utsname); err != nil {
 		err = fmt.Errorf("Cannot obtain system information: %s", err.Error())

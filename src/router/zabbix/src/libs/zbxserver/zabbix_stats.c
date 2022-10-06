@@ -1,6 +1,6 @@
 /*
 ** Zabbix
-** Copyright (C) 2001-2020 Zabbix SIA
+** Copyright (C) 2001-2022 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -17,21 +17,32 @@
 ** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 **/
 
+#include "zbxserver.h"
+
 #include "common.h"
-#include "zbxjson.h"
 #include "dbcache.h"
 #include "zbxself.h"
-#include "valuecache.h"
 #include "../../zabbix_server/vmware/vmware.h"
 #include "preproc.h"
 
-#include "zabbix_stats.h"
-
 extern unsigned char	program_type;
+extern int	CONFIG_SERVER_STARTUP_TIME;
+
+static zbx_get_zabbix_stats_ext_func_t	stats_ex_cb;
 
 /******************************************************************************
  *                                                                            *
- * Function: zbx_send_zabbix_stats                                            *
+ * Purpose: sets stats callback function                                      *
+ *                                                                            *
+ * Parameters: cb - [IN] callback function                                    *
+ *                                                                            *
+ ******************************************************************************/
+void	zbx_zabbix_stats_init(zbx_get_zabbix_stats_ext_func_t cb)
+{
+	stats_ex_cb = cb;
+}
+
+/******************************************************************************
  *                                                                            *
  * Purpose: collects all metrics required for Zabbix stats request            *
  *                                                                            *
@@ -49,10 +60,10 @@ void	zbx_get_zabbix_stats(struct zbx_json *json)
 	DCget_count_stats_all(&count_stats);
 
 	/* zabbix[boottime] */
-	zbx_json_adduint64(json, "boottime", CONFIG_SERVER_STARTUP_TIME);
+	zbx_json_addint64(json, "boottime", CONFIG_SERVER_STARTUP_TIME);
 
 	/* zabbix[uptime] */
-	zbx_json_adduint64(json, "uptime", time(NULL) - CONFIG_SERVER_STARTUP_TIME);
+	zbx_json_addint64(json, "uptime", time(NULL) - CONFIG_SERVER_STARTUP_TIME);
 
 	/* zabbix[hosts] */
 	zbx_json_adduint64(json, "hosts", count_stats.hosts);
@@ -69,7 +80,7 @@ void	zbx_get_zabbix_stats(struct zbx_json *json)
 	/* zabbix[preprocessing_queue] */
 	zbx_json_adduint64(json, "preprocessing_queue", zbx_preprocessor_get_queue_size());
 
-	zbx_get_zabbix_stats_ext(json);
+	stats_ex_cb(json);
 
 	/* zabbix[rcache,<cache>,<mode>] */
 	zbx_json_addobject(json, "rcache");
@@ -79,6 +90,9 @@ void	zbx_get_zabbix_stats(struct zbx_json *json)
 	zbx_json_adduint64(json, "used", *(zbx_uint64_t *)DCconfig_get_stats(ZBX_CONFSTATS_BUFFER_USED));
 	zbx_json_addfloat(json, "pused", *(double *)DCconfig_get_stats(ZBX_CONFSTATS_BUFFER_PUSED));
 	zbx_json_close(json);
+
+	/* zabbix[version] */
+	zbx_json_addstring(json, "version", ZABBIX_VERSION, ZBX_JSON_TYPE_STRING);
 
 	/* zabbix[wcache,<cache>,<mode>] */
 	DCget_stats_all(&wcache_info);
@@ -160,10 +174,12 @@ void	zbx_get_zabbix_stats(struct zbx_json *json)
 			zbx_json_addfloat(json, "max", process_stats[proc_type].idle_max);
 			zbx_json_addfloat(json, "min", process_stats[proc_type].idle_min);
 			zbx_json_close(json);
-			zbx_json_adduint64(json, "count", process_stats[proc_type].count);
+			zbx_json_addint64(json, "count", process_stats[proc_type].count);
 			zbx_json_close(json);
 		}
 	}
+
+	zbx_json_close(json);
 
 	zbx_json_close(json);
 }

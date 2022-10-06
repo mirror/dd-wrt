@@ -1,8 +1,9 @@
-// +build linux,386 linux,amd64 linux,arm64
+//go:build (linux && 386) || (linux && amd64) || (linux && arm64) || (linux && mips64le) || (linux && mipsle)
+// +build linux,386 linux,amd64 linux,arm64 linux,mips64le linux,mipsle
 
 /*
 ** Zabbix
-** Copyright (C) 2001-2020 Zabbix SIA
+** Copyright (C) 2001-2022 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -32,4 +33,3 @@ func arrayToString(unameArray *[65]int8) string {
 	}
 	return string(byteString[:indexLength])
 }
-

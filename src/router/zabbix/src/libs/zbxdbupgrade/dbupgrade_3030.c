@@ -1,6 +1,6 @@
 /*
 ** Zabbix
-** Copyright (C) 2001-2020 Zabbix SIA
+** Copyright (C) 2001-2022 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -17,9 +17,9 @@
 ** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 **/
 
-#include "common.h"
-#include "db.h"
 #include "dbupgrade.h"
+
+#include "zbxdbhigh.h"
 #include "log.h"
 
 /*
@@ -369,7 +369,7 @@ static int	DBpatch_3030030(void)
 		}
 
 		sql_offset = 0;
-		DBbegin_multiple_update(&sql, &sql_alloc, &sql_offset);
+		zbx_DBbegin_multiple_update(&sql, &sql_alloc, &sql_offset);
 
 		while (NULL != (row = DBfetch(result)))
 		{
@@ -388,7 +388,7 @@ static int	DBpatch_3030030(void)
 			upd_num++;
 		}
 
-		DBend_multiple_update(&sql, &sql_alloc, &sql_offset);
+		zbx_DBend_multiple_update(&sql, &sql_alloc, &sql_offset);
 
 		if (16 < sql_offset)
 		{
@@ -940,19 +940,7 @@ static int	DBpatch_3030069(void)
 {
 	const ZBX_FIELD	field = {"sysmap_shapeid", NULL, NULL, NULL, 0, ZBX_TYPE_ID, ZBX_NOTNULL, 0};
 
-#ifdef HAVE_IBM_DB2
-	/* DB2 does not allow to rename primary key columns so we drop the primary key... */
-	if (ZBX_DB_OK > DBexecute("alter table sysmap_shape drop primary key"))
-		return FAIL;
-#endif
-	if (SUCCEED != DBrename_field("sysmap_shape", "shapeid", &field))
-		return FAIL;
-#ifdef HAVE_IBM_DB2
-	/* ...and recreate the primary key after renaming the field. */
-	if (ZBX_DB_OK > DBexecute("alter table sysmap_shape add primary key(sysmap_shapeid)"))
-		return FAIL;
-#endif
-	return SUCCEED;
+	return DBrename_field("sysmap_shape", "shapeid", &field);
 }
 
 static int	DBpatch_3030070(void)
@@ -1075,7 +1063,7 @@ static int	DBpatch_table_convert(const char *table, const char *recid, const DBp
 
 	sql_offset = 0;
 
-	DBbegin_multiple_update(&sql, &sql_alloc, &sql_offset);
+	zbx_DBbegin_multiple_update(&sql, &sql_alloc, &sql_offset);
 
 	while (NULL != (row = DBfetch(result)))
 	{
@@ -1095,7 +1083,7 @@ static int	DBpatch_table_convert(const char *table, const char *recid, const DBp
 			goto out;
 	}
 
-	DBend_multiple_update(&sql, &sql_alloc, &sql_offset);
+	zbx_DBend_multiple_update(&sql, &sql_alloc, &sql_offset);
 
 	if (16 < sql_offset)	/* in ORACLE always present begin..end; */
 	{
@@ -1260,7 +1248,7 @@ static int	DBpatch_3030093(void)
 
 	result = DBselect("select itemid,delay,delay_flex from items");
 
-	DBbegin_multiple_update(&sql, &sql_alloc, &sql_offset);
+	zbx_DBbegin_multiple_update(&sql, &sql_alloc, &sql_offset);
 
 	while (NULL != (row = DBfetch(result)))
 	{
@@ -1295,7 +1283,7 @@ static int	DBpatch_3030093(void)
 			goto out;
 	}
 
-	DBend_multiple_update(&sql, &sql_alloc, &sql_offset);
+	zbx_DBend_multiple_update(&sql, &sql_alloc, &sql_offset);
 
 	if (16 < sql_offset)	/* in ORACLE always present begin..end; */
 	{
@@ -1382,7 +1370,7 @@ static int	DBpatch_3030102(void)
 
 	result = DBselect("select itemid,lifetime from items");
 
-	DBbegin_multiple_update(&sql, &sql_alloc, &sql_offset);
+	zbx_DBbegin_multiple_update(&sql, &sql_alloc, &sql_offset);
 
 	while (NULL != (row = DBfetch(result)))
 	{
@@ -1403,7 +1391,7 @@ static int	DBpatch_3030102(void)
 			goto out;
 	}
 
-	DBend_multiple_update(&sql, &sql_alloc, &sql_offset);
+	zbx_DBend_multiple_update(&sql, &sql_alloc, &sql_offset);
 
 	if (16 < sql_offset)	/* in ORACLE always present begin..end; */
 	{
@@ -1718,7 +1706,7 @@ static int	DBpatch_trailing_semicolon_remove(const char *table, const char *reci
 
 	result = DBselect("select %s,%s from %s%s", recid, field, table, condition);
 
-	DBbegin_multiple_update(&sql, &sql_alloc, &sql_offset);
+	zbx_DBbegin_multiple_update(&sql, &sql_alloc, &sql_offset);
 
 	while (NULL != (row = DBfetch(result)))
 	{
@@ -1732,7 +1720,7 @@ static int	DBpatch_trailing_semicolon_remove(const char *table, const char *reci
 			goto out;
 	}
 
-	DBend_multiple_update(&sql, &sql_alloc, &sql_offset);
+	zbx_DBend_multiple_update(&sql, &sql_alloc, &sql_offset);
 
 	if (16 < sql_offset)	/* in ORACLE always present begin..end; */
 	{
@@ -2173,7 +2161,7 @@ static int	DBpatch_3030186(void)
 	return DBadd_foreign_key("items", 5, &field);
 }
 
-/* Patches 3030187-3030198 are solve ZBX-12505 issue */
+/* Patches 3030187-3030198 solve the issue ZBX-12505 */
 
 static int	DBpatch_3030187(void)
 {

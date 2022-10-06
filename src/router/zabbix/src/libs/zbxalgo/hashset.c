@@ -1,6 +1,6 @@
 /*
 ** Zabbix
-** Copyright (C) 2001-2020 Zabbix SIA
+** Copyright (C) 2001-2022 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -17,10 +17,11 @@
 ** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 **/
 
+#include "zbxalgo.h"
+#include "algodefs.h"
+
 #include "common.h"
 #include "log.h"
-
-#include "zbxalgo.h"
 
 static void	__hashset_free_entry(zbx_hashset_t *hs, ZBX_HASHSET_ENTRY_T *entry);
 
@@ -47,8 +48,11 @@ static int	zbx_hashset_init_slots(zbx_hashset_t *hs, size_t init_size)
 	{
 		hs->num_slots = next_prime(init_size);
 
-		if (NULL == (hs->slots = (ZBX_HASHSET_ENTRY_T **)hs->mem_malloc_func(NULL, hs->num_slots * sizeof(ZBX_HASHSET_ENTRY_T *))))
+		if (NULL == (hs->slots = (ZBX_HASHSET_ENTRY_T **)hs->mem_malloc_func(NULL, hs->num_slots *
+				sizeof(ZBX_HASHSET_ENTRY_T *))))
+		{
 			return FAIL;
+		}
 
 		memset(hs->slots, 0, hs->num_slots * sizeof(ZBX_HASHSET_ENTRY_T *));
 	}
@@ -126,8 +130,6 @@ void	zbx_hashset_destroy(zbx_hashset_t *hs)
 
 /******************************************************************************
  *                                                                            *
- * Function: zbx_hashset_reserve                                              *
- *                                                                            *
  * Purpose: allocation not less than the required number of slots for hashset *
  *                                                                            *
  * Parameters: hs            - [IN] the destination hashset                   *
@@ -138,7 +140,7 @@ int	zbx_hashset_reserve(zbx_hashset_t *hs, int num_slots_req)
 {
 	if (0 == hs->num_slots)
 	{
-		/* correction for prevent the second relocation in the case that requires the same number of slots */
+		/* correction to prevent the second relocation in case the same number of slots is required */
 		if (SUCCEED != zbx_hashset_init_slots(hs, MAX(ZBX_HASHSET_DEFAULT_SLOTS,
 				num_slots_req * (2 - CRIT_LOAD_FACTOR) + 1)))
 		{
@@ -225,7 +227,7 @@ void	*zbx_hashset_insert_ext(zbx_hashset_t *hs, const void *data, size_t size, s
 		/* recalculate new slot */
 		slot = hash % hs->num_slots;
 
-		if (NULL == (entry = (ZBX_HASHSET_ENTRY_T *)hs->mem_malloc_func(NULL, offsetof(ZBX_HASHSET_ENTRY_T, data) + size)))
+		if (NULL == (entry = (ZBX_HASHSET_ENTRY_T *)hs->mem_malloc_func(NULL, ZBX_HASHSET_ENTRY_OFFSET + size)))
 			return NULL;
 
 		memcpy((char *)entry->data + offset, (const char *)data + offset, size - offset);
@@ -238,7 +240,7 @@ void	*zbx_hashset_insert_ext(zbx_hashset_t *hs, const void *data, size_t size, s
 	return entry->data;
 }
 
-void	*zbx_hashset_search(zbx_hashset_t *hs, const void *data)
+void	*zbx_hashset_search(const zbx_hashset_t *hs, const void *data)
 {
 	int			slot;
 	zbx_hash_t		hash;
@@ -328,7 +330,7 @@ void	zbx_hashset_remove_direct(zbx_hashset_t *hs, const void *data)
 	if (0 == hs->num_slots)
 		return;
 
-	data_entry = (ZBX_HASHSET_ENTRY_T *)((const char *)data - offsetof(ZBX_HASHSET_ENTRY_T, data));
+	data_entry = (ZBX_HASHSET_ENTRY_T *)((const char *)data - ZBX_HASHSET_ENTRY_OFFSET);
 
 	slot = data_entry->hash % hs->num_slots;
 	iter_entry = hs->slots[slot];
@@ -444,5 +446,42 @@ void	zbx_hashset_iter_remove(zbx_hashset_iter_t *iter)
 		iter->hashset->num_data--;
 
 		iter->entry = prev_entry;
+	}
+}
+
+/*********************************************************************************
+ *                                                                               *
+ * Purpose: copy hashset with fixed size entries                                 *
+ *                                                                               *
+ * Parameters:  dst  - [OUT] the destination hashset                             *
+ *              src  - [IN] the source hashset                                   *
+ *              size - [IN] hashset entry data size                              *
+ *                                                                               *
+ * Comments: Do NOT use this function with hashsets having variable size entries,*
+ *           for example zabbix string pools.                                    *
+ *                                                                               *
+ *********************************************************************************/
+void	zbx_hashset_copy(zbx_hashset_t *dst, const zbx_hashset_t *src, size_t size)
+{
+	int			i;
+	ZBX_HASHSET_ENTRY_T	*entry, **ref;
+
+	*dst = *src;
+
+	dst->slots = (ZBX_HASHSET_ENTRY_T **)dst->mem_malloc_func(NULL, (size_t)dst->num_slots *
+			sizeof(ZBX_HASHSET_ENTRY_T *));
+	memset(dst->slots, 0, (size_t)dst->num_slots * sizeof(ZBX_HASHSET_ENTRY_T *));
+
+	for (i = 0; i < src->num_slots; i++)
+	{
+		if (0 == src->slots[i])
+			continue;
+
+		for (ref = &dst->slots[i], entry = src->slots[i]; NULL != entry; entry = entry->next)
+		{
+			*ref = (ZBX_HASHSET_ENTRY_T *)src->mem_malloc_func(NULL, ZBX_HASHSET_ENTRY_OFFSET + size);
+			memcpy(*ref, entry, ZBX_HASHSET_ENTRY_OFFSET + size);
+			ref = &(*ref)->next;
+		}
 	}
 }

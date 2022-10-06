@@ -1,6 +1,6 @@
 /*
 ** Zabbix
-** Copyright (C) 2001-2020 Zabbix SIA
+** Copyright (C) 2001-2022 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -20,10 +20,10 @@
 #ifndef ZABBIX_ACTIVE_H
 #define ZABBIX_ACTIVE_H
 
-#include "threads.h"
+#include "zbxthreads.h"
+#include "zbxalgo.h"
 
 extern char	*CONFIG_SOURCE_IP;
-extern char	*CONFIG_HOSTNAME;
 extern char	*CONFIG_HOST_METADATA;
 extern char	*CONFIG_HOST_METADATA_ITEM;
 extern char	*CONFIG_HOST_INTERFACE;
@@ -35,13 +35,15 @@ extern int	CONFIG_MAX_LINES_PER_SECOND;
 extern char	*CONFIG_LISTEN_IP;
 extern int	CONFIG_LISTEN_PORT;
 
+extern ZBX_THREAD_LOCAL char	*CONFIG_HOSTNAME;
+
 #define HOST_METADATA_LEN	255	/* UTF-8 characters, not bytes */
 #define HOST_INTERFACE_LEN	255	/* UTF-8 characters, not bytes */
 
 typedef struct
 {
-	char		*host;
-	unsigned short	port;
+	zbx_vector_ptr_t	addrs;
+	char			*hostname;
 }
 ZBX_THREAD_ACTIVECHK_ARGS;
 

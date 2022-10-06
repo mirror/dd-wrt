@@ -1,6 +1,5 @@
 # LIBNETSNMP_CHECK_CONFIG ([DEFAULT-ACTION])
 # ----------------------------------------------------------
-#    Eugene Grigorjev <eugene@zabbix.com>   Feb-02-2007
 #
 # Checks for net-snmp.  DEFAULT-ACTION is the string yes or no to
 # specify whether to default to --with-net-snmp or --without-net-snmp.
@@ -41,9 +40,57 @@ AC_HELP_STRING([--with-net-snmp@<:@=ARG@:>@],
 
   if test "x$want_netsnmp" != "xno"; then
 
-        AC_PATH_PROG([_libnetsnmp_config], [net-snmp-config], [])
+	if test "x$_libnetsnmp_config" = "xno"; then
+		AC_PATH_PROG([_libnetsnmp_config], [net-snmp-config], [])
+		want_static_netsnmp="no"
+		test "x$enable_static_libs" = "xyes" && want_static_netsnmp="yes"
+	else
+		want_static_netsnmp="yes"
+	fi
+
+	if test -d "$_libnetsnmp_config"; then
+		AC_PATH_PROG([_libnetsnmp_config], [net-snmp-config], [], [$_libnetsnmp_config])
+	fi
 
 	if test -x "$_libnetsnmp_config"; then
+
+		netsnmp_version_req=$2
+
+		if test -n "$netsnmp_version_req"; then
+			AC_MSG_CHECKING(version of netsnmp library)
+			LIBNETSNMP_CONFIG_VERSION=`$_libnetsnmp_config --version`
+			netsnmp_version_major=`expr $LIBNETSNMP_CONFIG_VERSION : '\([[0-9]]*\)'`
+			netsnmp_version_minor=`expr $LIBNETSNMP_CONFIG_VERSION : '[[0-9]]*\.\([[0-9]]*\)'`
+			netsnmp_version_micro=`expr $LIBNETSNMP_CONFIG_VERSION : '[[0-9]]*\.[[0-9]]*\.\([[0-9]]*\)'`
+
+			if test "x$netsnmp_version_micro" = "x"; then
+				netsnmp_version_micro="0"
+			fi
+
+			netsnmp_version_number=`expr $netsnmp_version_major \* 1000000 \
+					\+ $netsnmp_version_minor \* 1000 \
+					\+ $netsnmp_version_micro`
+
+			netsnmp_version_req_major=`expr $netsnmp_version_req : '\([[0-9]]*\)'`
+			netsnmp_version_req_minor=`expr $netsnmp_version_req : '[[0-9]]*\.\([[0-9]]*\)'`
+			netsnmp_version_req_micro=`expr $netsnmp_version_req : '[[0-9]]*\.[[0-9]]*\.\([[0-9]]*\)'`
+
+			if test "x$netsnmp_version_req_micro" = "x"; then
+				netsnmp_version_req_micro="0"
+			fi
+
+			netsnmp_version_req_number=`expr $netsnmp_version_req_major \* 1000000 \
+					\+ $netsnmp_version_req_minor \* 1000 \
+					\+ $netsnmp_version_req_micro`
+
+			netsnmp_version_check=`expr $netsnmp_version_number \>\= $netsnmp_version_req_number`
+
+			if test "$netsnmp_version_check" != "1"; then
+				AC_MSG_ERROR([Net-SNMP version mismatch])
+			else
+				AC_MSG_RESULT([yes])
+			fi
+		fi
 
 		_full_libnetsnmp_cflags="`$_libnetsnmp_config --cflags`"
 		for i in $_full_libnetsnmp_cflags; do
@@ -87,6 +134,17 @@ AC_HELP_STRING([--with-net-snmp@<:@=ARG@:>@],
 				;;
 				esac
 			done
+		elif test "x$want_static_netsnmp" = "xyes"; then
+			_libsnmp_dir_lib="`$_libnetsnmp_config --libdir | cut -b3-`"
+
+			test [ "x$static_linking_support" = "xno" -o -z "$static_linking_support" ] -a -z "$_libsnmp_dir_lib" && AC_MSG_ERROR(["Compiler not support statically linked libs from default folders"])
+
+			if test "x$static_linking_support" = "xno" -o -z "$static_linking_support"; then
+				test -f $_libsnmp_dir_lib/libnetsnmp.a || AC_MSG_ERROR(["libnetsnmp.a static library was not found in $_libsnmp_dir_lib"])
+				SNMP_LIBS=`echo "$SNMP_LIBS"|sed "s|-lnetsnmp|$_libsnmp_dir_lib/libnetsnmp.a|g"`
+			else
+				SNMP_LIBS=`echo "$SNMP_LIBS"|sed "s/-lnetsnmp/${static_linking_support}static -lnetsnmp ${static_linking_support}dynamic/g"`
+			fi
 		fi
 
 		_save_netsnmp_cflags="$CFLAGS"
@@ -98,6 +156,36 @@ AC_HELP_STRING([--with-net-snmp@<:@=ARG@:>@],
 
 		AC_CHECK_LIB(netsnmp, main, , [AC_MSG_ERROR([Not found Net-SNMP library])])
 
+		dnl Check for SHA224/256/384/512 protocol support for auth
+		AC_MSG_CHECKING(for strong SHA auth protocol support)
+		AC_TRY_LINK([
+#include <net-snmp/net-snmp-config.h>
+#include <net-snmp/net-snmp-includes.h>
+		],[
+struct snmp_session session;
+session.securityAuthProto = usmHMAC384SHA512AuthProtocol;
+		],[
+		AC_DEFINE(HAVE_NETSNMP_STRONG_AUTH, 1, [Define to 1 if strong SHA auth protocols are supported.])
+		AC_MSG_RESULT(yes)
+		],[
+		AC_MSG_RESULT(no)
+		])
+
+		dnl Check for AES192/256 protocol support for privacy
+		AC_MSG_CHECKING(for strong AES privacy protocol support)
+		AC_TRY_LINK([
+#include <net-snmp/net-snmp-config.h>
+#include <net-snmp/net-snmp-includes.h>
+		],[
+struct snmp_session session;
+session.securityPrivProto = usmAES256PrivProtocol;
+		],[
+		AC_DEFINE(HAVE_NETSNMP_STRONG_PRIV, 1, [Define to 1 if strong AES priv protocols are supported.])
+		AC_MSG_RESULT(yes)
+		],[
+		AC_MSG_RESULT(no)
+		])
+
 		dnl Check for localname in struct snmp_session
 		AC_MSG_CHECKING(for localname in struct snmp_session)
 		AC_TRY_COMPILE([
@@ -108,6 +196,18 @@ struct snmp_session session;
 session.localname = "";
 		],
 		AC_DEFINE(HAVE_NETSNMP_SESSION_LOCALNAME, 1, [Define to 1 if 'session.localname' exist.])
+		AC_MSG_RESULT(yes),
+		AC_MSG_RESULT(no))
+
+		AC_TRY_COMPILE([
+#include <net-snmp/net-snmp-config.h>
+#include <net-snmp/net-snmp-includes.h>],
+		[
+struct snmp_session session;
+
+session.securityPrivProto = usmDESPrivProtocol;
+		],
+		AC_DEFINE(HAVE_NETSNMP_SESSION_DES, 1, [Define to 1 if 'usmDESPrivProtocol' exist.])
 		AC_MSG_RESULT(yes),
 		AC_MSG_RESULT(no))
 

@@ -1,6 +1,6 @@
 /*
 ** Zabbix
-** Copyright (C) 2001-2020 Zabbix SIA
+** Copyright (C) 2001-2022 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -20,8 +20,8 @@
 #ifndef ZABBIX_LISTENER_H
 #define ZABBIX_LISTENER_H
 
-#include "threads.h"
+#include "zbxthreads.h"
 
-ZBX_THREAD_ENTRY(listener_thread, pSock);
+ZBX_THREAD_ENTRY(listener_thread, args);
 
 #endif
