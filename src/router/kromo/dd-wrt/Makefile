@@ -293,6 +293,7 @@ ifeq ($(CONFIG_ELEGANT),y)
 	cp elegant/colorscheme.css $(INSTALLDIR)/www/style/elegant
 	cp elegant/style.css $(INSTALLDIR)/www/style/elegant
 	cp elegant/fresh.css $(INSTALLDIR)/www/style/elegant
+	cp elegant/fresh-template.css $(INSTALLDIR)/www/style/elegant
 	cp common_style/common_core_rules.css $(INSTALLDIR)/www/style
 	touch $(INSTALLDIR)/www/style/common_core_rules.css
 ifneq ($(CONFIG_ROUTERSTYLE),y)	
@@ -844,6 +845,7 @@ endif
 ifeq ($(CONFIG_ANTAIRA),y)
 	mkdir -p $(INSTALLDIR)/www/style/elegant
 	cp elegant/fresh.css $(INSTALLDIR)/www/style/elegant
+	cp elegant/fresh-template.css $(INSTALLDIR)/www/style/elegant
 	cp red/colorscheme.css $(INSTALLDIR)/www/style/red
 	cp antaira/style.css $(INSTALLDIR)/www/style/red
 	cp -f antaira/logo.png $(INSTALLDIR)/www/images
