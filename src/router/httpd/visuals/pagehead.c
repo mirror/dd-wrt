@@ -93,10 +93,13 @@ EJ_VISIBLE void ej_do_pagehead(webs_t wp, int argc, char_t ** argv)	// Eko
 
 EJ_VISIBLE void ej_do_style(webs_t stream, int argc, char_t ** argv)
 {
+//	fprintf(stderr, "do style %d\n", argc);
 	if (argc) {
 		int i;
-		for (i = 0; i < argc; i++)
+		for (i = 0; i < argc; i++) {
+//			fprintf(stderr, "load %s\n", argv[i]);
 			do_file(METHOD_GET, NULL, argv[i], stream);
+		}
 	} else {
 		char *style = nvram_safe_get("router_style");
 		if (!style)
