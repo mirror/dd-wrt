@@ -1,0 +1,468 @@
+* {
+  font-family: Verdana, Arial, Helvetica, sans-serif;
+  font-size: 1em;
+  color: #115b80;
+}
+::selection {
+  background-color: #115b80;
+  color: #fff;
+}
+:focus-visible, .button:focus-visible {
+  border: 1px solid #115b80;
+  box-shadow: 0 0 5px 1px #115b80;
+  outline: 0;
+}
+body {
+  background: #dde;
+  margin: 12px;
+  font-size: 75%;
+}
+#wrapper {
+  position: relative;
+  text-align: left;
+  width: 89.464em;
+  margin: 0 auto;
+}
+#main, #helpContainer {
+  position: relative;
+  float: left;
+}
+#header {
+  width: 89.31em;
+  height: 10em;
+  background: url(/style/xirian/header_bg.png) top left repeat-x;
+  border-bottom: 1px solid #ccc;
+}
+div.infopage #header {
+  height: 92px;
+}
+#header #logo {
+  height: 67px;
+  width: 228px;
+  background: url(/style/xirian/logo.png) top left no-repeat;
+}
+#header h1 {
+  display: none;
+}
+#content {
+  background: #ccd;
+  border: 1px solid #99b;
+  border-radius: 0 0 5px 5px;
+  margin-bottom: 1em;
+}
+#contents {
+  width: 65.536em;
+  padding: .8em .8em 0;
+}
+#contents.syslog-padding {
+  width: initial;
+}
+#contentsInfo {
+  width: 87.471em;
+  padding: .906em;
+}
+#contentsInfo .col2l {
+  float: left;
+  width: 49%;
+}
+#contentsInfo .col2r {
+  float: right;
+  width: 49%;
+}
+h2, h3 {
+  margin: 0 0 12px 0;
+  font-size: 12px;
+}
+#menu {
+  border-top: 1px solid #ccc;
+  position: relative;
+  width: 100%;
+}
+#menuSub {
+  position: absolute;
+  top: 23px;
+  left: 0;
+  width: 100%;
+  border-top: 1px solid #ccc;
+}
+#menuMainList, #menuSubList {
+  width: 100%;
+  height: 23px;
+  margin: 0 auto;
+  padding: 0;
+  background: linear-gradient(0deg, #f6f6f6, #d6d6d6 100%);
+}
+#menu li {
+  display: inline;
+}
+#menu li a, #menu li span {
+  float: left;
+  display: block;
+  height: 23px;
+  line-height: 23px;
+  margin: 0;
+  padding: 0 8px;
+  border-right: 1px solid #ccc;
+  text-decoration: none;
+}
+#menu li span {
+  font-weight: bold;
+}
+#menu li span, #menu li a:hover {
+  background: linear-gradient(0deg, #ededed, #fff 100%);
+}
+#ip_count:hover, [title*='Search']:hover,
+[title*='Chain']:hover, [title*='Monitoring']:hover {
+  color: #1c81b3;
+}
+textarea {
+  background: #f0f0f4;
+  padding: 4px;
+  font-size: 12px;
+  line-height: 1.42857;
+  border-radius: 4px;
+  -webkit-box-sizing: border-box;
+  -moz-box-sizing: border-box;
+  box-sizing: border-box;
+  border: 1px solid #9292a0;
+  width: 100%;
+  resize: vertical;
+}
+select {
+  border: 1px solid #9292a0;
+  min-width: 6.3rem;
+}
+select[name='time_zone'] {
+  min-width: 17.1rem;
+}
+select[onchange*='SelFilter'] {
+  margin-right: .2rem;
+}
+select[onchange*='blockedServices'] {
+  margin-left: -.2em;
+  width: 11.2rem;
+}
+input.num[readonly] {
+  width: 2.2rem;
+}
+input {
+  background: #e9e9ed;
+  border: 1px solid #9292a0;
+  border-radius: 3px;
+  margin: 0;
+  margin-left: 1px;
+  margin-right: 1px;
+}
+.button {
+  padding: .12rem .5rem;
+  margin-right: .2rem;
+}
+.button:hover {
+  background-color: #d4d4db;
+}
+.button[disabled]:hover {
+  background: #e9e9ed;
+}
+.num[name*='lease'][size='10'] {
+  margin-right: 4px;
+  width: 65%;
+}
+.three_column {
+  width: 158px;
+  margin-left: 0;
+  margin-right: 10px;
+}
+.three_column_last {
+  margin-right: 0;
+}
+.four_column {
+  width: 115px;
+  margin-left: 0;
+  margin-right: 10px;
+}
+.four_column_last {
+  margin-right: 0;
+}
+input[type='checkbox'],
+input[type='radio'] {
+  margin-right: .4em;
+  accent-color: #345b80;
+}
+[summary='week days table'] {
+  margin-left: -1.3rem;
+}
+form {
+  margin: 0;
+  padding: 0;
+}
+.message {
+  margin: 0;
+  padding: .906em;
+  text-align: center;
+  z-index: 99;
+  position: relative;
+}
+.message div {
+  text-align: center;
+}
+.message div form {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 400px;
+  height: 100px;
+  margin-left: -200px;
+  margin-top: -40px;
+}
+.progressbar {
+  visibility: visible;
+  position: relative;
+  overflow: hidden;
+  border-radius: 4px;
+  margin: 0 auto;
+  background-color: #fff;
+  border-color: #999;
+}
+.progressbarblock {
+  position: absolute;
+  background: url(/style/xirian/header_bg.png) top left repeat-x;
+}
+h2 {
+  background: #bbc;
+  border: 1px solid #bbc;
+  padding: 1px 4px;
+  border-radius: 4px;
+}
+pre {
+  background: #000;
+  color: #0f0;
+  overflow: auto;
+  padding: 1em;
+  margin: 0;
+  font-family: monospace;
+  white-space: pre-wrap;
+  border-radius: 4px;
+}
+.pre_label {
+  margin-bottom: .3em;
+}
+fieldset {
+  background-color: #ccd;
+  border-radius: 3px;
+  filter: brightness(1.02);
+}
+fieldset fieldset {
+  background-color: #bfbfd0;
+}
+fieldset legend {
+  font-weight: bold;
+  color: #115b80;
+}
+table, .table {
+  margin: 0 -3px;
+	border-spacing: .1em;
+  width: 100%;
+}
+table th {
+  background: #bbc;
+  border: 1px solid 99b;
+  padding: 1px 4px;
+  border-radius: 3px;
+  font-weight: normal;
+  line-height: normal;
+	vertical-align: bottom;
+}
+/* override for xirian */
+.table_row_bg {
+  background-color: #ccd;
+}
+.table_row_bg:hover {
+  background-color: #bbc;
+}
+#active_clients_table,
+#dhcp_leases_table {
+  table-layout: fixed;
+}
+#active_clients_table td,
+#dhcp_leases_table td {
+  text-overflow: ellipsis;
+  overflow: hidden;
+}
+table#radio_table {
+  border-spacing: .1666em;
+  text-align: center;
+}
+.center {
+  text-align: center;
+}
+#help {
+  width: 21em;
+  padding: .906em 0 0;
+}
+#help a {
+  display: block;
+  position: absolute;
+  top: .999em;
+  right: 1em;
+  text-align: right;
+  text-transform: lowercase;
+}
+#help dl {
+  margin: 0;
+}
+#help dd.definition {
+  padding-bottom: .908em;
+  margin: 0 0 .908em 0;
+  border-bottom: 1px dotted #115b80;
+}
+#help dt {
+  font-weight: bold;
+  margin-top: 14px;
+  margin-bottom: 6px;
+}
+#help a {
+  text-decoration: none;
+  font-weight: bold;
+}
+#help a:hover {
+  text-decoration: underline;
+}
+#statusInfo {
+  position: absolute;
+  top: .95em;
+  left: 56em;
+  width: 32.609em;
+  text-align: right;
+}
+#statusInfo .info {
+  font-size: 12px;
+  margin-bottom: 2px;
+}
+#statusInfo a {
+  font-size: 12px;
+  text-decoration: none;
+}
+#statusInfo a:hover {
+  text-decoration: underline;
+}
+.submitFooter {
+  border: 1px solid #a3a3a3;
+  box-shadow: 1px 1px 0 1px #dde;
+  text-align: center;
+  border-radius: 4px;
+  padding: 6px 0;
+  margin: 0 3px;
+  margin-bottom: 1rem;
+  background: repeating-linear-gradient(55deg,
+    #eee, #eee 2px,
+    #ccd 1px, #ccd 3px );
+}
+.submitFooter .button {
+  padding: .2rem .5rem;
+  margin: .362em;
+}
+div.setting {
+  clear: both;
+  margin: 0;
+  padding: 4px 0;
+  line-height: 20px;
+}
+.setting {
+  position: relative;
+  margin-bottom: .453em;
+  line-height: 1.993;
+  width: 100%;
+}
+.setting .label {
+  float: left;
+  width: 19.444em;
+}
+.setting .default {
+  opacity: .8;
+  display: block;
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 23em;
+}
+.warning {
+  background: #fcc;
+  border: 2px dashed #f99;
+  color: #f00;
+  padding: 10px;
+  text-align: center;
+  border-radius: 2px;
+}
+.warning * {
+  color: #e40101;
+}
+.meter {
+  float: right;
+  position: relative;
+  top: -1px;
+  height: 14px;
+  width: 160px;
+  background: #bbc;
+  border-style: solid;
+  border-width: 1px;
+}
+.meter .bar {
+  background: repeating-linear-gradient(55deg,
+    #eee, #eee 2px,
+    #ccd 1px, #ccd 3px );
+  height: 14px;
+}
+.meter .text {
+  position: absolute;
+  top: 0;
+  width: 100%;
+  height: 1.268em;
+  text-align: center;
+  line-height: 1.181em;
+}
+td .meter {
+  float: none !important;
+  margin-top: 0 !important;
+  width: 99% !important;
+}
+#score {
+  color: #000;
+  font-size: 85%;
+  position: absolute;
+  text-align: center;
+  width: 100px;
+  z-index: 10;
+}
+#score, #rating {
+  font-weight: bold;
+}
+#scorebarBorder {
+  border: 1px solid #999;
+  border-radius: 3px;
+  height: 14px;
+  margin-bottom: 2px;
+  width: 100px;
+}
+form[name='wds'] select {
+  margin-right: .562em;
+  margin-top: .1rem;
+}
+form[name='wds'] input[size='25'] {
+  vertical-align: middle;
+}
+#floatKiller {
+  clear: both;
+  width: 1px;
+  height: 1px;
+  font-size: 1px;
+}
+.center a[href] {
+  line-height: 1;
+}
+[type='image'][src*='paypal'] {
+  margin-bottom: -1rem;
+  margin-top: .6rem;
+  padding: 0;
+  border: 0;
+  mix-blend-mode: darken;
+}
