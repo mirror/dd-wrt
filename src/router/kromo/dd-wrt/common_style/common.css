@@ -189,6 +189,7 @@ pre {
   font-size: 12px;
   font-family: monospace;
   overflow: auto;
+  margin: 0 0 .5em 0;
   padding: 8px 4px;
   line-height: 1.42857;
   white-space: pre-wrap;
