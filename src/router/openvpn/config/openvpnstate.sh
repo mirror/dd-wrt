@@ -7,7 +7,7 @@ then
 	PORT=14
 fi
 echo -e "Server: "
-echo -e "`/bin/echo "state" | /usr/bin/nc 127.0.0.1 ${PORT} |awk -F"," '{ print $2}'` `/bin/echo "state" | /usr/bin/nc 127.0.0.1 ${PORT} |awk -F"," '{print $3}'` <hr/>"
+echo -e "`/bin/echo "state" | /usr/bin/nc 127.0.0.1 ${PORT} |awk -F"," '{ print $2}'` `/bin/echo "state" | /usr/bin/nc 127.0.0.1 ${PORT} |awk -F"," '{print $3}'` <br>"
 if [ "$(nvram get openvpn_tuntap)" = "tun" ]; then
 	echo -e "Local Address: `/bin/echo "state" | /usr/bin/nc 127.0.0.1 ${PORT} |awk -F"," '{print $4}'` <br>"
 	echo -e "Remote Address: `ifconfig tun2 |awk '{print $3}'|grep P-t-P|awk -F ":" '{print $2}'` <br>"
