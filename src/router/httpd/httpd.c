@@ -38,7 +38,7 @@ size_t websWrite(webs_t wp, char *fmt, ...);
 size_t wfwrite(void *buf, size_t size, size_t n, webs_t fp);
 static size_t wfread(void *buf, size_t size, size_t n, webs_t fp);
 static int wfclose(webs_t fp);
-static int wfflush(webs_t fp);
+int wfflush(webs_t fp);
 #ifndef VALIDSOURCE
 #ifndef VISUALSOURCE
 
@@ -748,7 +748,7 @@ static int do_file_2(struct mime_handler *handler, char *path, webs_t stream, ch
 	FILE *web = _getWebsFile(stream, path, &len);
 	if (!web)
 		return -1;
-	if (!handler->send_headers) {
+	if (handler && !handler->send_headers) {
 		send_headers(stream, 200, "OK", handler->extra_header, handler->mime_type, len, attach, 0);
 	}
 	if (DO_SSL(stream)) {
@@ -773,7 +773,7 @@ static int do_file_2(struct mime_handler *handler, char *path, webs_t stream, ch
 	return 0;
 }
 
-static int
+int
 //do_file(char *path, FILE *stream)
 do_file(unsigned char method, struct mime_handler *handler, char *path, webs_t stream)	//jimmy, https, 8/4/2003
 {
@@ -2190,7 +2190,7 @@ static size_t wfread(void *p, size_t size, size_t n, webs_t wp)
 	return ret;
 }
 
-static int wfflush(webs_t wp)
+int wfflush(webs_t wp)
 {
 	int ret;
 

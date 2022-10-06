@@ -63,7 +63,7 @@
 #define sys_stats(url) eval("stats", (url))
 
 // tofu
-static int do_file(unsigned char method, struct mime_handler *handler, char *path, webs_t stream);
+int do_file(unsigned char method, struct mime_handler *handler, char *path, webs_t stream);
 static void send_headers(webs_t conn_fp, int status, char *title, char *extra_header, char *mime_type, int length, char *attach_file, int nocache);
 static int do_file_attach(struct mime_handler *handler, char *path, webs_t stream, char *attachment);
 static int do_upgrade_cgi(unsigned char method, struct mime_handler *handler, char *url, webs_t stream);
