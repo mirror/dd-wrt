@@ -1074,7 +1074,6 @@ ifneq ($(CONFIG_CTORRENT),y)
 endif
 #	All: These pages are not used
 	rm -f $(INSTALLDIR)/www/About_test.htm
-	rm -f $(INSTALLDIR)/www/Logout.asp
 	rm -f $(INSTALLDIR)/www/SysInfo.htm
 	rm -f $(INSTALLDIR)/www/graph_cpu.svg	
 	rm -f $(INSTALLDIR)/www/AnchorFree.asp
