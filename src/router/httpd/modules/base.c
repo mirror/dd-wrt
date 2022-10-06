@@ -2165,7 +2165,6 @@ static int do_logout_asp(unsigned char method, struct mime_handler *handler, cha
 {
 	do_ej(method, handler, "Logout.asp", stream);
 	websDone(stream, 200);
-	do_logout(stream);
 }
 
 /*
