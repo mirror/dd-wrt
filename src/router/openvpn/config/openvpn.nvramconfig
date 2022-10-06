@@ -13,6 +13,7 @@
  "openvpn_crt"  "OpenVPN Public Cert"  "NULL"   "FALSE" "0"
  "openvpn_key"  "OpenVPN Private Key"  "NULL"   "FALSE" "0"
  "openvpn_pkcs12"  "Server PKSC12 Cert"  "NULL"   "FALSE" "0"
+ "openvpn_pkcs" "Toggle to show PKCS12" "CHOICE" "2" "0" "1" "FALSE" "0"
  "openvpn_static"  "OpenVPN Static Key"  "NULL"   "FALSE" "0"
  "openvpn_dh" "DH PEM" "NULL" "FALSE" "0"
  "openvpn_proto" "Tunnel Protocol" "CHOICE" "6" "udp4" "udp6" "udp" "tcp4-server" "tcp6-server" "tcp-server" "FALSE" "0"
@@ -45,7 +46,7 @@
  "openvpn_ccddef"  "OpenVPN ccd dir DEFAULT file"  "NULL"   "FALSE" "0"
  "openvpn_dhcpbl"	"Block DHCP" "CHOICE" "2" "0" "1" "FALSE" "0"
  "openvpn_blockmulticast"	"Block multicast" "CHOICE" "2" "0" "1" "FALSE" "0"
- "openvpn_tls_btn" "TLS key choice" "CHOICE" "2" "0" "1" "FALSE" "0"
+ "openvpn_tls_btn" "TLS key choice" "CHOICE" "4" "3" "0" "1" "2" "FALSE" "0"
  "openvpn_mit" "CVE Mitigation" "CHOICE" "2" "0" "1" "FALSE" "0"
  "openvpn_dh_btn" "Use ECDH" "CHOICE" "2" "0" "1" "FALSE" "0"
  
