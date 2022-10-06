@@ -416,10 +416,11 @@ void start_openvpnserver(void)
 	fp = fopen("/tmp/openvpn/openvpn.conf", "wb");
 	if (fp == NULL)
 		return;
-	if (nvram_invmatch("openvpn_static", ""))
+	if (nvram_matchi("openvpn_tls_btn", 2)  && nvram_invmatch("openvpn_static", "")) { //static key
 		fprintf(fp, "secret /tmp/openvpn/static.key\n");
-	else if (nvram_invmatch("openvpn_pkcs12", "")) {
-		fprintf(fp, "dh /tmp/openvpn/dh.pem\n");
+	} else if (nvram_matchi("openvpn_pkcs", 1) && nvram_invmatch("openvpn_pkcs12", "")) {
+		if (nvram_invmatch("openvpn_dh", "") && nvram_matchi("openvpn_dh_btn", 0))
+			fprintf(fp, "dh /tmp/openvpn/dh.pem\n");
 		fprintf(fp, "pkcs12 /tmp/openvpn/cert.p12\n");
 	} else {
 		if (nvram_invmatch("openvpn_dh", "") && nvram_matchi("openvpn_dh_btn", 0))	//egc use ECDH instead of PEM key
@@ -523,7 +524,7 @@ void start_openvpnserver(void)
 		if (*(nvram_safe_get("openvpn_tlsauth"))) {
 			if (nvram_matchi("openvpn_tls_btn", 1))
 				fprintf(fp, "tls-crypt /tmp/openvpn/ta.key\n");	//egc: tls_btn 1 is tls-crypt
-			else
+			else if (nvram_matchi("openvpn_tls_btn", 0))
 				fprintf(fp, "tls-auth /tmp/openvpn/ta.key 0\n");
 		}
 		//egc use ECDH instead of PEM key
@@ -538,8 +539,8 @@ void start_openvpnserver(void)
 		/* for QOS */
 		if (nvram_matchi("wshaper_enable", 1))
 			fprintf(fp, "passtos\n");
-	} else
-		write_nvram("/tmp/openvpn/cert.pem", "openvpn_client");
+	} // else //egc loading a single public server certificate is not what we want, use inline certificates
+		//write_nvram("/tmp/openvpn/cert.pem", "openvpn_client");
 	fprintf(fp, "%s\n", nvram_safe_get("openvpn_config"));
 	fclose(fp);
 	fp = fopen("/tmp/openvpn/route-up.sh", "wb");
@@ -747,9 +748,9 @@ void start_openvpn(void)
 	fp = fopen("/tmp/openvpncl/openvpn.conf", "wb");
 	if (fp == NULL)
 		return;
-	if (nvram_invmatch("openvpncl_static", ""))
+	if (nvram_matchi("openvpncl_tls_btn", 2)  && nvram_invmatch("openvpncl_static", "")) { //static key
 		fprintf(fp, "secret /tmp/openvpncl/static.key\n");
-	else if (nvram_invmatch("openvpncl_pkcs12", "")) {;
+	} else if (nvram_matchi("openvpncl_pkcs", 1) && nvram_invmatch("openvpncl_pkcs12", "")) {
 		fprintf(fp, "pkcs12 /tmp/openvpncl/cert.p12\n");
 	} else {
 		if (nvram_invmatch("openvpncl_ca", ""))
@@ -776,7 +777,7 @@ void start_openvpn(void)
 	if (!nvram_matchi("openvpncl_nobind", 0)) {
 		fprintf(fp, "nobind\n");
 	}
-	if (!nvram_matchi("openvpncl_statickey", 1)) {
+	if (!nvram_matchi("openvpncl_tls_btn", 2)) {  //if not openvpncl_tls_btn=2 then Static key is used and the PKI boxes are hidden and client is not set
 		fprintf(fp, "client\n");
 	}
 	fprintf(fp, "dev %s\n", ovpniface);
@@ -854,8 +855,8 @@ void start_openvpn(void)
 //              fprintf(fp, "tun-ipv6\n");      //enable ipv6 support.
 	if (*(nvram_safe_get("openvpncl_tlsauth"))) {
 		if (nvram_matchi("openvpncl_tls_btn", 1))
-			fprintf(fp, "tls-crypt /tmp/openvpncl/ta.key\n");	//egc: tls_btn 1 is tls-crypt
-		else
+			fprintf(fp, "tls-crypt /tmp/openvpncl/ta.key\n");	//egc: tls_btn 1 is tls-crypt, 0 is tls-auth, 2 is static key
+		else if (nvram_matchi("openvpncl_tls_btn", 0))
 			fprintf(fp, "tls-auth /tmp/openvpncl/ta.key 1\n");
 	}
 	if (nvram_invmatchi("openvpncl_tlscip", 0))

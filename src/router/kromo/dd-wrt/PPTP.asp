@@ -113,6 +113,40 @@ function changesrvtuntap(F, value) {
 	}
 }
 
+function showidpki(F, value) {
+	if (value == 3 ) {
+		show_layer_ext(F, "idpki", true);
+		show_layer_ext(F, "idtls", false);
+		show_layer_ext(F, "idstatic", false);
+	}
+	else if (value == 2 ) {
+		show_layer_ext(F, "idpki", false);
+		show_layer_ext(F, "idtls", false);
+		show_layer_ext(F, "idstatic", true);
+	} else {
+		show_layer_ext(F, "idpki", true);
+		show_layer_ext(F, "idtls", true);
+		show_layer_ext(F, "idstatic", false);
+	}
+}
+
+function showidspki(F, value) {
+	if (value == 3 ) {
+		show_layer_ext(F, "idspki", true);
+		show_layer_ext(F, "idstls", false);
+		show_layer_ext(F, "idsstatic", false);
+	}
+	else if (value == 2 ) {
+		show_layer_ext(F, "idspki", false);
+		show_layer_ext(F, "idstls", false);
+		show_layer_ext(F, "idsstatic", true);
+	} else {
+		show_layer_ext(F, "idspki", true);
+		show_layer_ext(F, "idstls", true);
+		show_layer_ext(F, "idsstatic", false);
+	}
+}
+
 function changevpnpbr(F, value) {
 	//alert(" F:" + F.name + "; value: " + value);
 	if (value == 1 || value == 2) {
@@ -141,7 +175,12 @@ addEvent(window, "load", function() {
 	show_layer_ext(document.setup.openvpn_tuntap, 'idbridge', <% nvem("openvpn_tuntap", "tap", "1", "0"); %> == 1);
 	show_layer_ext(document.setup.openvpn_proxy, 'idproxy', <% nvem("openvpn_proxy", "0", "1", "0"); %> == 1);
 	show_layer_ext(document.setup.openvpn_switch, 'idnew', <% nvem("openvpn_switch", "1", "1", "0"); %> == 1);
-	show_layer_ext(document.setup.openvpn_switch, 'idold', <% nvem("openvpn_switch", "0", "1", "0"); %> == 1);
+	//show_layer_ext(document.setup.openvpn_switch, 'idold', <% nvem("openvpn_switch", "0", "1", "0"); %> == 1);
+	show_layer_ext(document.setup.openvpn_enable, 'idstls', <% nvem("openvpn_tls_btn", "3", "0", "1"); %> == 1);
+	show_layer_ext(document.setup.openvpn_enable, 'idsstatic', <% nvem("openvpn_tls_btn", "2", "1", "0"); %> == 1);
+	show_layer_ext(document.setup.openvpn_enable, 'idspki', <% nvem("openvpn_tls_btn", "2", "0", "1"); %> == 1);
+	show_layer_ext(document.setup.openvpn_pkcs, 'idspkcs12y', <% nvem("openvpn_pkcs", "1", "1", "0"); %> == 1);
+	show_layer_ext(document.setup.openvpnc_pkcs, 'idspkcs12n', <% nvem("openvpn_pkcs", "0", "1", "1"); %> == 1);
 	show_layer_ext(document.setup.openvpn_adv, 'idmtu', <% nvem("openvpn_adv", "1", "1", "0"); %> == 1);
 	show_layer_ext(document.setup.openvpncl_enable, 'idvpncl', <% nvem("openvpncl_enable", "1", "1", "0"); %> == 1);
 	show_layer_ext(document.setup.openvpncl_adv, 'idmtucl', <% nvem("openvpncl_adv", "1", "1", "0"); %> == 1);
@@ -153,9 +192,15 @@ addEvent(window, "load", function() {
 	show_layer_ext(document.setup.openvpncl_multirem, 'idmultirem', <% nvem("openvpncl_multirem", "1", "1", "0"); %> == 1);
 	// if nvram match with arg 1 then arg 2 otherwise arg 3
 	show_layer_ext(document.setup.openvpncl_spbr, 'idpbr', <% nvem("openvpncl_spbr", "0", "0", "1"); %> == 1);
-		
-	update = new StatusbarUpdate();
-	update.start();	
+	show_layer_ext(document.setup.openvpncl_enable, 'idtls', <% nvem("openvpncl_tls_btn", "3", "0", "1"); %> == 1);
+	show_layer_ext(document.setup.openvpncl_enable, 'idpki', <% nvem("openvpncl_tls_btn", "2", "0", "1"); %> == 1);
+	show_layer_ext(document.setup.openvpncl_pkcs, 'idpkcs12y', <% nvem("openvpncl_pkcs", "1", "1", "0"); %> == 1);
+	show_layer_ext(document.setup.openvpncl_pkcs, 'idpkcs12n', <% nvem("openvpncl_pkcs", "0", "1", "1"); %> == 1);
+	show_layer_ext(document.setup.openvpncl_enable, 'idstatic', <% nvem("openvpncl_tls_btn", "2", "1", "0"); %> == 1);
+	//show_layer_ext(document.setup.openvpncl_enable, 'idstatkey', <% nvem("openvpncl_keytype", "1", "1", "0"); %> == 1);
+
+		update = new StatusbarUpdate();
+		update.start();
 });
 
 addEvent(window, "unload", function() {
