@@ -1,7 +1,10 @@
 .syslog_bd {
   background: transparent;
   color: #111;
-  font-size: 14px
+  font-size: 14px;
+  overflow-x: hidden;
+  margin-top: .906em;
+  line-height: 1.4
 }
 .syslog_bg {
   background: #f6f6f6;
@@ -13,7 +16,8 @@
   outline: 0;
 }
 .syslog_legend {
-  margin: unset;
+  background-color: transparent;
+  margin-left: .362em;
 }
 .syslog_bg tr:not([class]):hover {
   background-color: #ccc;
