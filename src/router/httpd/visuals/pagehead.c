@@ -99,7 +99,7 @@ EJ_VISIBLE void ej_do_style(webs_t stream, int argc, char_t ** argv)
 	char colorscheme[64];
 	sprintf(colorscheme, "style/%s/colorscheme.css", style);
 	do_file(METHOD_GET, NULL, colorscheme, stream);
-	do_file(METHOD_GET, NULL, "style/common_core_cules.css", stream);
+	do_file(METHOD_GET, NULL, "style/common_core_rules.css", stream);
 	websDone(stream, 200);
 }
 
