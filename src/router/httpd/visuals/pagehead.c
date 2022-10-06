@@ -91,6 +91,18 @@ EJ_VISIBLE void ej_do_pagehead(webs_t wp, int argc, char_t ** argv)	// Eko
 	}
 }
 
+EJ_VISIBLE void ej_do_style(webs_t stream, int argc, char_t ** argv)
+{
+	char *style = nvram_safe_get("router_style");
+	if (!style)
+	    style="elegant";
+	char colorscheme[64];
+	sprintf(colorscheme, "style/%s/colorscheme.css", style);
+	do_file(METHOD_GET, NULL, colorscheme, stream);
+	do_file(METHOD_GET, NULL, "style/common_core_cules.css", stream);
+	websDone(stream, 200);
+}
+
 EJ_VISIBLE void ej_do_hpagehead(webs_t wp, int argc, char_t ** argv)	// Eko
 {
 	char *htitle = argv[0];
