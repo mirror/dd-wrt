@@ -1,8 +1,6 @@
 # OpenSSL LIBOPENSSL_CHECK_CONFIG ([DEFAULT-ACTION])
 # ----------------------------------------------------------
-# Derived from libssh2.m4 written by
-#    Alexander Vladishev                      Oct-26-2009
-#    Dmitry Borovikov                         Feb-13-2010
+# Derived from libssh2.m4
 #
 # Checks for OpenSSL library libssl.  DEFAULT-ACTION is the string yes or
 # no to specify whether to default to --with-openssl or --without-openssl.
@@ -55,20 +53,32 @@ found_openssl_with_psk="yes",)
 AC_DEFUN([LIBOPENSSL_ACCEPT_VERSION],
 [
 	# Zabbix minimal supported version of OpenSSL.
-	# Version numbering scheme is described in /usr/include/openssl/opensslv.h. Specify version number without the
-	# last byte (status). E.g., version 1.0.1 is 0x1000100f, but without the last byte it is 0x1000100.
-	minimal_openssl_version=0x1000100
+	# Version numbering scheme is described in /usr/include/openssl/opensslv.h.
 
-	# get version
-	found_openssl_version=`grep OPENSSL_VERSION_NUMBER "$1"`
-	found_openssl_version=`expr "$found_openssl_version" : '.*\(0x[[0-f]][[0-f]][[0-f]][[0-f]][[0-f]][[0-f]][[0-f]]\).*'`
+	# Is it OpenSSL 3? Test OPENSSL_VERSION_MAJOR - it is defined only in OpenSSL 3.0.
+	found_openssl_version=`grep OPENSSL_VERSION_MAJOR "$1" | head -n 1`
+	found_openssl_version=`expr "$found_openssl_version" : '^#.*define.*OPENSSL_VERSION_MAJOR.*\(3\)$'`
 
-	# compare versions lexicographically
-	openssl_version_check=`expr $found_openssl_version \>\= $minimal_openssl_version`
-	if test "$openssl_version_check" = "1"; then
+	if test "$found_openssl_version" = "3"; then
+		# OpenSSL 3.x found
 		accept_openssl_version="yes"
-	else
-		accept_openssl_version="no"
+	else	# Is it OpenSSL 1.0.1 - 1.1.1 or LibreSSL?
+		# These versions use similar version numbering scheme:
+		# specify version number without the last byte (status). E.g., version 1.0.1 is 0x1000100f, but without the
+		# last byte it is 0x1000100.
+		minimal_openssl_version=0x1000100
+
+		found_openssl_version=`grep OPENSSL_VERSION_NUMBER "$1"`
+		found_openssl_version=`expr "$found_openssl_version" : '.*\(0x[[0-f]][[0-f]][[0-f]][[0-f]][[0-f]][[0-f]][[0-f]]\).*'`
+
+		# compare versions lexicographically
+		openssl_version_check=`expr $found_openssl_version \>\= $minimal_openssl_version`
+
+		if test "$openssl_version_check" = "1"; then
+			accept_openssl_version="yes"
+		else
+			accept_openssl_version="no"
+		fi;
 	fi;
 ])dnl
 
@@ -87,12 +97,24 @@ AC_HELP_STRING([--with-openssl@<:@=DIR@:>@],[use OpenSSL package @<:@default=no@
 	else
 	    want_openssl="yes"
 	    _libopenssl_dir=$withval
+	    _libopenssl_dir_lib="$withval/lib"
 	fi
 	accept_openssl_version="no"
     ],[want_openssl=ifelse([$1],,[no],[$1])]
   )
 
   if test "x$want_openssl" = "xyes"; then
+
+    if test "x$enable_static_libs" = "xyes"; then
+        test "x$static_linking_support" = "xno" -a -z "$_libopenssl_dir_lib" && AC_MSG_ERROR(["OpenSSL: Compiler not support statically linked libs from default folders"])
+        AC_REQUIRE([PKG_PROG_PKG_CONFIG])
+        m4_ifdef([PKG_PROG_PKG_CONFIG], [PKG_PROG_PKG_CONFIG()], [:])
+        test -z "$PKG_CONFIG" -a -z "$_libopenssl_dir_lib" && AC_MSG_ERROR([Not found pkg-config library])
+        _libopenssl_dir_lib_64="$_libopenssl_dir_lib/64"
+        test -d "$_libopenssl_dir_lib_64" && _libopenssl_dir_lib="$_libopenssl_dir_lib_64"
+        m4_pattern_allow([^PKG_CONFIG_LIBDIR$])
+    fi
+
      AC_MSG_CHECKING(for OpenSSL support)
      if test "x$_libopenssl_dir" = "xno"; then		# if OpenSSL directory is not specified
        if test -f /usr/local/include/openssl/ssl.h -a -f /usr/local/include/openssl/crypto.h; then
@@ -114,7 +136,15 @@ AC_HELP_STRING([--with-openssl@<:@=DIR@:>@],[use OpenSSL package @<:@default=no@
      else						# search in the specified OpenSSL directory
        if test -f $_libopenssl_dir/include/openssl/ssl.h -a -f $_libopenssl_dir/include/openssl/crypto.h; then
          OPENSSL_CFLAGS=-I$_libopenssl_dir/include
-         OPENSSL_LDFLAGS=-L$_libopenssl_dir/lib
+
+         if test -d $_libopenssl_dir/lib64; then
+           OPENSSL_LDFLAGS=-L$_libopenssl_dir/lib64
+         elif test -d $_libopenssl_dir/lib/64; then
+           OPENSSL_LDFLAGS=-L$_libopenssl_dir/lib/64
+         else
+           OPENSSL_LDFLAGS=-L$_libopenssl_dir/lib
+         fi
+
          OPENSSL_LIBS="-lssl -lcrypto"
          found_openssl="yes"
          LIBOPENSSL_ACCEPT_VERSION([$_libopenssl_dir/include/openssl/opensslv.h])
@@ -130,9 +160,34 @@ AC_HELP_STRING([--with-openssl@<:@=DIR@:>@],[use OpenSSL package @<:@default=no@
     am_save_ldflags="$LDFLAGS"
     am_save_libs="$LIBS"
 
+    if test "x$enable_static_libs" = "xyes" -a -z "$PKG_CONFIG"; then
+      OPENSSL_LIBS="$_libopenssl_dir_lib/libssl.a $_libopenssl_dir_lib/libcrypto.a"
+    elif test "x$enable_static_libs" = "xyes"; then
+      if test -z "$_libopenssl_dir_lib"; then
+        m4_ifdef([PKG_CHECK_EXISTS], [
+          PKG_CHECK_EXISTS(openssl,[
+            OPENSSL_LIBS=`$PKG_CONFIG --static --libs openssl`
+          ],[
+            AC_MSG_ERROR([Not found openssl package])
+          ])
+        ], [:])
+      else
+        AC_RUN_LOG([PKG_CONFIG_LIBDIR="$_libopenssl_dir_lib/pkgconfig" $PKG_CONFIG --exists --print-errors openssl]) ||
+          AC_MSG_ERROR(["Not found openssl package in $_libopenssl_dir_lib/pkgconfig"])
+        OPENSSL_LIBS=`PKG_CONFIG_LIBDIR="$_libopenssl_dir_lib/pkgconfig" $PKG_CONFIG --static --libs openssl`
+        test -z "$OPENSSL_LIBS" && OPENSSL_LIBS=`PKG_CONFIG_LIBDIR="$_libopenssl_dir_lib/pkgconfig" $PKG_CONFIG --libs openssl`
+      fi
+
+      if test "x$static_linking_support" = "xno"; then
+        OPENSSL_LIBS=`echo "$OPENSSL_LIBS"|sed "s|-lssl|$_libopenssl_dir_lib/libssl.a|g"|sed "s|-lcrypto|$_libopenssl_dir_lib/libcrypto.a|g"`
+      else
+        OPENSSL_LIBS=`echo "$OPENSSL_LIBS"|sed "s/-lssl/${static_linking_support}static -lssl ${static_linking_support}dynamic/g"|sed "s/-lcrypto/${static_linking_support}static -lcrypto ${static_linking_support}dynamic/g"`
+      fi
+    fi
+
     CFLAGS="$CFLAGS $OPENSSL_CFLAGS"
     LDFLAGS="$LDFLAGS $OPENSSL_LDFLAGS"
-    LIBS="$LIBS $OPENSSL_LIBS"
+    LIBS="$OPENSSL_LIBS $LIBS"
 
     found_openssl="no"
     LIBOPENSSL_TRY_LINK([no])

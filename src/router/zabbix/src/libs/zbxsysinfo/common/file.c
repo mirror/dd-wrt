@@ -1,6 +1,6 @@
 /*
 ** Zabbix
-** Copyright (C) 2001-2020 Zabbix SIA
+** Copyright (C) 2001-2022 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -17,12 +17,21 @@
 ** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 **/
 
+#include "file.h"
+
 #include "common.h"
 #include "sysinfo.h"
-#include "md5.h"
-#include "file.h"
+#include "zbxhash.h"
 #include "zbxregexp.h"
 #include "log.h"
+#include "dir.h"
+#include "zbxhash.h"
+#include "zbxalgo.h"
+
+#if defined(_WINDOWS) || defined(__MINGW32__)
+#include "aclapi.h"
+#include "sddl.h"
+#endif
 
 #define ZBX_MAX_DB_FILE_SIZE	64 * ZBX_KIBIBYTE	/* files larger than 64 KB cannot be stored in the database */
 
@@ -31,16 +40,17 @@ extern int	CONFIG_TIMEOUT;
 int	VFS_FILE_SIZE(AGENT_REQUEST *request, AGENT_RESULT *result)
 {
 	zbx_stat_t	buf;
-	char		*filename;
+	char		*filename, *mode;
 	int		ret = SYSINFO_RET_FAIL;
 
-	if (1 < request->nparam)
+	if (2 < request->nparam)
 	{
 		SET_MSG_RESULT(result, zbx_strdup(NULL, "Too many parameters."));
 		goto err;
 	}
 
 	filename = get_rparam(request, 0);
+	mode = get_rparam(request, 1);
 
 	if (NULL == filename || '\0' == *filename)
 	{
@@ -48,13 +58,72 @@ int	VFS_FILE_SIZE(AGENT_REQUEST *request, AGENT_RESULT *result)
 		goto err;
 	}
 
-	if (0 != zbx_stat(filename, &buf))
+	if (NULL != mode && 0 == strcmp(mode, "lines"))
+	{
+		ssize_t		nbytes;
+		char		cbuf[MAX_BUFFER_LEN];
+		zbx_uint64_t	lines_num = 0;
+		int		f;
+		double		ts;
+
+		ts = zbx_time();
+
+		if (-1 == (f = zbx_open(filename, O_RDONLY)))
+		{
+			SET_MSG_RESULT(result, zbx_dsprintf(NULL, "Cannot open file: %s", zbx_strerror(errno)));
+			goto err;
+		}
+
+		while (0 < (nbytes = read(f, cbuf, ARRSIZE(cbuf))))
+		{
+			char	*p1, *p2;
+			size_t	sz = (size_t)nbytes, dif;
+
+			if (CONFIG_TIMEOUT < zbx_time() - ts)
+			{
+				SET_MSG_RESULT(result, zbx_strdup(NULL, "Timeout while processing item."));
+				close(f);
+				goto err;
+			}
+
+			p1 = cbuf;
+
+			while (NULL != (p2 = memchr(p1, '\n', sz)))
+			{
+				lines_num++;
+				dif = (size_t)(p2 - p1);
+				p1 = p2;
+
+				if (dif < sz)
+				{
+					sz -= dif + 1;
+					p1++;
+				}
+			}
+		}
+
+		close(f);
+
+		if (0 > nbytes)
+		{
+			SET_MSG_RESULT(result, zbx_dsprintf(NULL, "Cannot read from file: %s", zbx_strerror(errno)));
+			goto err;
+		}
+
+		SET_UI64_RESULT(result, lines_num);
+	}
+	else if (NULL != mode && 0 != strcmp(mode, "bytes"))
+	{
+		SET_MSG_RESULT(result, zbx_strdup(NULL, "Invalid second parameter."));
+		goto err;
+	}
+	else if (0 != zbx_stat(filename, &buf))
 	{
 		SET_MSG_RESULT(result, zbx_dsprintf(NULL, "Cannot obtain file information: %s", zbx_strerror(errno)));
 		goto err;
 	}
-
-	SET_UI64_RESULT(result, buf.st_size);
+	else
+		SET_UI64_RESULT(result, buf.st_size);
 
 	ret = SYSINFO_RET_OK;
 err:
@@ -82,7 +151,7 @@ int	VFS_FILE_TIME(AGENT_REQUEST *request, AGENT_RESULT *result)
 		goto err;
 	}
 
-	if (SUCCEED != zbx_get_file_time(filename, &file_time))
+	if (SUCCEED != zbx_get_file_time(filename, 0, &file_time))
 	{
 		SET_MSG_RESULT(result, zbx_dsprintf(NULL, "Cannot obtain file information: %s", zbx_strerror(errno)));
 		goto err;
@@ -105,13 +174,15 @@ err:
 	return ret;
 }
 
-int	VFS_FILE_EXISTS(AGENT_REQUEST *request, AGENT_RESULT *result)
+#if defined(_WINDOWS) || defined(__MINGW32__)
+static int	vfs_file_exists(AGENT_REQUEST *request, AGENT_RESULT *result)
 {
-	zbx_stat_t	buf;
-	char		*filename;
-	int		ret = SYSINFO_RET_FAIL, file_exists;
+	const char	*filename;
+	int		ret = SYSINFO_RET_FAIL, file_exists = 0, types, types_incl, types_excl;
+	DWORD		file_attributes;
+	wchar_t		*wpath;
 
-	if (1 < request->nparam)
+	if (3 < request->nparam)
 	{
 		SET_MSG_RESULT(result, zbx_strdup(NULL, "Too many parameters."));
 		goto err;
@@ -125,24 +196,159 @@ int	VFS_FILE_EXISTS(AGENT_REQUEST *request, AGENT_RESULT *result)
 		goto err;
 	}
 
-	if (0 == zbx_stat(filename, &buf))
+	if (FAIL == (types_incl = zbx_etypes_to_mask(get_rparam(request, 1), result)) ||
+			FAIL == (types_excl = zbx_etypes_to_mask(get_rparam(request, 2), result)))
 	{
-		file_exists = S_ISREG(buf.st_mode) ? 1 : 0;
-	}
-	else if (errno == ENOENT)
-	{
-		file_exists = 0;
-	}
-	else
-	{
-		SET_MSG_RESULT(result, zbx_dsprintf(NULL, "Cannot obtain file information: %s", zbx_strerror(errno)));
 		goto err;
 	}
 
+	if (0 == types_incl)
+	{
+		if (0 == types_excl)
+			types_incl = ZBX_FT_FILE;
+		else
+			types_incl = ZBX_FT_ALLMASK;
+	}
+
+	types = types_incl & (~types_excl) & ZBX_FT_ALLMASK;
+
+	if (NULL == (wpath = zbx_utf8_to_unicode(filename)))
+	{
+		SET_MSG_RESULT(result, zbx_strdup(NULL, "Cannot convert file name to UTF-16."));
+		goto err;
+	}
+
+	file_attributes = GetFileAttributesW(wpath);
+	zbx_free(wpath);
+
+	if (INVALID_FILE_ATTRIBUTES == file_attributes)
+	{
+		DWORD	error;
+
+		switch (error = GetLastError())
+		{
+			case ERROR_FILE_NOT_FOUND:
+				goto exit;
+			case ERROR_BAD_NETPATH:	/* special case from GetFileAttributesW() documentation */
+				SET_MSG_RESULT(result, zbx_dsprintf(NULL, "The specified file is a network share."
+						" Use a path to a subfolder on that share."));
+				goto err;
+			default:
+				SET_MSG_RESULT(result, zbx_dsprintf(NULL, "Cannot obtain file information: %s",
+						strerror_from_system(error)));
+				goto err;
+		}
+	}
+
+	switch (file_attributes & (FILE_ATTRIBUTE_REPARSE_POINT | FILE_ATTRIBUTE_DIRECTORY))
+	{
+		case FILE_ATTRIBUTE_REPARSE_POINT | FILE_ATTRIBUTE_DIRECTORY:
+			if (0 != (types & ZBX_FT_SYM) || 0 != (types & ZBX_FT_DIR))
+				file_exists = 1;
+			break;
+		case FILE_ATTRIBUTE_REPARSE_POINT:
+						/* not a symlink directory => symlink regular file*/
+						/* counting symlink files as MS explorer */
+			if (0 != (types & ZBX_FT_FILE))
+				file_exists = 1;
+			break;
+		case FILE_ATTRIBUTE_DIRECTORY:
+			if (0 != (types & ZBX_FT_DIR))
+				file_exists = 1;
+			break;
+		default:	/* not a directory => regular file */
+			if (0 != (types & ZBX_FT_FILE))
+				file_exists = 1;
+	}
+exit:
 	SET_UI64_RESULT(result, file_exists);
 	ret = SYSINFO_RET_OK;
 err:
 	return ret;
+}
+#else /* not _WINDOWS or __MINGW32__ */
+static int	vfs_file_exists(AGENT_REQUEST *request, AGENT_RESULT *result)
+{
+	zbx_stat_t	buf;
+	const char	*filename;
+	int		types = 0, types_incl, types_excl;
+
+	if (3 < request->nparam)
+	{
+		SET_MSG_RESULT(result, zbx_strdup(NULL, "Too many parameters."));
+		return SYSINFO_RET_FAIL;
+	}
+
+	filename = get_rparam(request, 0);
+
+	if (NULL == filename || '\0' == *filename)
+	{
+		SET_MSG_RESULT(result, zbx_strdup(NULL, "Invalid first parameter."));
+		return SYSINFO_RET_FAIL;
+	}
+
+	if (FAIL == (types_incl = zbx_etypes_to_mask(get_rparam(request, 1), result)) ||
+			FAIL == (types_excl = zbx_etypes_to_mask(get_rparam(request, 2), result)))
+	{
+		return SYSINFO_RET_FAIL;
+	}
+
+	if (0 == types_incl)
+	{
+		if (0 == types_excl)
+			types_incl = ZBX_FT_FILE;
+		else
+			types_incl = ZBX_FT_ALLMASK;
+	}
+
+	if (0 != (types_incl & ZBX_FT_SYM) || 0 != (types_excl & ZBX_FT_SYM))
+	{
+		if (0 == lstat(filename, &buf))
+		{
+			if (0 != S_ISLNK(buf.st_mode))
+				types |= ZBX_FT_SYM;
+		}
+		else if (ENOENT != errno)
+		{
+			SET_MSG_RESULT(result, zbx_dsprintf(NULL, "Cannot obtain file information: %s",
+					zbx_strerror(errno)));
+			return SYSINFO_RET_FAIL;
+		}
+	}
+
+	if (0 == zbx_stat(filename, &buf))
+	{
+		if (0 != S_ISREG(buf.st_mode))
+			types |= ZBX_FT_FILE;
+		else if (0 != S_ISDIR(buf.st_mode))
+			types |= ZBX_FT_DIR;
+		else if (0 != S_ISSOCK(buf.st_mode))
+			types |= ZBX_FT_SOCK;
+		else if (0 != S_ISBLK(buf.st_mode))
+			types |= ZBX_FT_BDEV;
+		else if (0 != S_ISCHR(buf.st_mode))
+			types |= ZBX_FT_CDEV;
+		else if (0 != S_ISFIFO(buf.st_mode))
+			types |= ZBX_FT_FIFO;
+	}
+	else if (ENOENT != errno)
+	{
+		SET_MSG_RESULT(result, zbx_dsprintf(NULL, "Cannot obtain file information: %s", zbx_strerror(errno)));
+		return SYSINFO_RET_FAIL;
+	}
+
+	if (0 == (types & types_excl) && 0 != (types & types_incl))
+		SET_UI64_RESULT(result, 1);
+	else
+		SET_UI64_RESULT(result, 0);
+
+	return SYSINFO_RET_OK;
+}
+#endif
+
+int	VFS_FILE_EXISTS(AGENT_REQUEST *request, AGENT_RESULT *result)
+{
+	return vfs_file_exists(request, result);
 }
 
 int	VFS_FILE_CONTENTS(AGENT_REQUEST *request, AGENT_RESULT *result)
@@ -488,32 +694,17 @@ err:
 	return ret;
 }
 
-int	VFS_FILE_MD5SUM(AGENT_REQUEST *request, AGENT_RESULT *result)
+static int	vfs_file_cksum_md5(char *filename, AGENT_RESULT *result)
 {
-	char		*filename;
-	int		i, nbytes, f = -1, ret = SYSINFO_RET_FAIL;
+	int		i, nbytes, f, ret = SYSINFO_RET_FAIL;
 	md5_state_t	state;
 	u_char		buf[16 * ZBX_KIBIBYTE];
 	char		*hash_text = NULL;
 	size_t		sz;
-	md5_byte_t	hash[MD5_DIGEST_SIZE];
+	md5_byte_t	hash[ZBX_MD5_DIGEST_SIZE];
 	double		ts;
 
 	ts = zbx_time();
-
-	if (1 < request->nparam)
-	{
-		SET_MSG_RESULT(result, zbx_strdup(NULL, "Too many parameters."));
-		goto err;
-	}
-
-	filename = get_rparam(request, 0);
-
-	if (NULL == filename || '\0' == *filename)
-	{
-		SET_MSG_RESULT(result, zbx_strdup(NULL, "Invalid first parameter."));
-		goto err;
-	}
 
 	if (-1 == (f = zbx_open(filename, O_RDONLY)))
 	{
@@ -550,13 +741,11 @@ int	VFS_FILE_MD5SUM(AGENT_REQUEST *request, AGENT_RESULT *result)
 
 	/* convert MD5 hash to text form */
 
-	sz = MD5_DIGEST_SIZE * 2 + 1;
+	sz = ZBX_MD5_DIGEST_SIZE * 2 + 1;
 	hash_text = (char *)zbx_malloc(hash_text, sz);
 
-	for (i = 0; i < MD5_DIGEST_SIZE; i++)
-	{
+	for (i = 0; i < ZBX_MD5_DIGEST_SIZE; i++)
 		zbx_snprintf(&hash_text[i << 1], sz - (i << 1), "%02x", hash[i]);
-	}
 
 	SET_STR_RESULT(result, hash_text);
 
@@ -566,6 +755,27 @@ err:
 		close(f);
 
 	return ret;
+}
+
+int	VFS_FILE_MD5SUM(AGENT_REQUEST *request, AGENT_RESULT *result)
+{
+	char		*filename;
+
+	if (1 < request->nparam)
+	{
+		SET_MSG_RESULT(result, zbx_strdup(NULL, "Too many parameters."));
+		return SYSINFO_RET_FAIL;
+	}
+
+	filename = get_rparam(request, 0);
+
+	if (NULL == filename || '\0' == *filename)
+	{
+		SET_MSG_RESULT(result, zbx_strdup(NULL, "Invalid first parameter."));
+		return SYSINFO_RET_FAIL;
+	}
+
+	return vfs_file_cksum_md5(filename, result);
 }
 
 static u_long	crctab[] =
@@ -624,35 +834,15 @@ static u_long	crctab[] =
 	0xa2f33668, 0xbcb4666d, 0xb8757bda, 0xb5365d03, 0xb1f740b4
 };
 
-/******************************************************************************
- *                                                                            *
- * Comments: computes POSIX 1003.2 checksum                                   *
- *                                                                            *
- ******************************************************************************/
-int	VFS_FILE_CKSUM(AGENT_REQUEST *request, AGENT_RESULT *result)
+static int	vfs_file_cksum_crc32(char *filename, AGENT_RESULT *result)
 {
-	char		*filename;
-	int		i, nr, f = -1, ret = SYSINFO_RET_FAIL;
+	int		i, nr, f, ret = SYSINFO_RET_FAIL;
 	zbx_uint32_t	crc, flen;
 	u_char		buf[16 * ZBX_KIBIBYTE];
 	u_long		cval;
 	double		ts;
 
 	ts = zbx_time();
-
-	if (1 < request->nparam)
-	{
-		SET_MSG_RESULT(result, zbx_strdup(NULL, "Too many parameters."));
-		goto err;
-	}
-
-	filename = get_rparam(request, 0);
-
-	if (NULL == filename || '\0' == *filename)
-	{
-		SET_MSG_RESULT(result, zbx_strdup(NULL, "Invalid first parameter."));
-		goto err;
-	}
 
 	if (-1 == (f = zbx_open(filename, O_RDONLY)))
 	{
@@ -702,4 +892,848 @@ err:
 		close(f);
 
 	return ret;
+}
+
+static int	vfs_file_cksum_sha256(char *filename, AGENT_RESULT *result)
+{
+	int		i, f, ret = SYSINFO_RET_FAIL;
+	char		buf[16 * ZBX_KIBIBYTE];
+	char		hash_res[ZBX_SHA256_DIGEST_SIZE], hash_res_stringhexes[ZBX_SHA256_DIGEST_SIZE * 2 + 1];
+	double		ts;
+	ssize_t		nr;
+	sha256_ctx	ctx;
+
+	ts = zbx_time();
+
+	if (-1 == (f = zbx_open(filename, O_RDONLY)))
+	{
+		SET_MSG_RESULT(result, zbx_dsprintf(NULL, "Cannot open file: %s", zbx_strerror(errno)));
+		goto err;
+	}
+
+	if (CONFIG_TIMEOUT < zbx_time() - ts)
+	{
+		SET_MSG_RESULT(result, zbx_strdup(NULL, "Timeout while processing item."));
+		goto err;
+	}
+
+	zbx_sha256_init(&ctx);
+
+	while (0 < (nr = read(f, buf, sizeof(buf))))
+	{
+		if (CONFIG_TIMEOUT < zbx_time() - ts)
+		{
+			SET_MSG_RESULT(result, zbx_strdup(NULL, "Timeout while processing item."));
+			goto err;
+		}
+
+		zbx_sha256_process_bytes(buf, (size_t)nr, &ctx);
+	}
+
+	if (0 > nr)
+	{
+		SET_MSG_RESULT(result, zbx_strdup(NULL, "Cannot read from file."));
+		goto err;
+	}
+
+	zbx_sha256_finish(&ctx, hash_res);
+
+	for (i = 0 ; i < ZBX_SHA256_DIGEST_SIZE; i++)
+	{
+		char z[3];
+
+		zbx_snprintf(z, 3, "%02x", (unsigned char)hash_res[i]);
+		hash_res_stringhexes[i * 2] = z[0];
+		hash_res_stringhexes[i * 2 + 1] = z[1];
+	}
+
+	hash_res_stringhexes[ZBX_SHA256_DIGEST_SIZE * 2] = '\0';
+
+	SET_STR_RESULT(result, zbx_strdup(NULL, hash_res_stringhexes));
+
+	ret = SYSINFO_RET_OK;
+err:
+	if (-1 != f)
+		close(f);
+
+	return ret;
+}
+
+/******************************************************************************
+ *                                                                            *
+ * Comments: computes POSIX 1003.2 checksum                                   *
+ *                                                                            *
+ ******************************************************************************/
+int	VFS_FILE_CKSUM(AGENT_REQUEST *request, AGENT_RESULT *result)
+{
+	char	*filename, *method;
+	int	ret = SYSINFO_RET_FAIL;
+
+	if (2 < request->nparam)
+	{
+		SET_MSG_RESULT(result, zbx_strdup(NULL, "Too many parameters."));
+		goto err;
+	}
+
+	filename = get_rparam(request, 0);
+	method = get_rparam(request, 1);
+
+	if (NULL == filename || '\0' == *filename)
+	{
+		SET_MSG_RESULT(result, zbx_strdup(NULL, "Invalid first parameter."));
+		goto err;
+	}
+
+	if (NULL == method || '\0' == *method || 0 == strcmp(method, "crc32"))
+		ret = vfs_file_cksum_crc32(filename, result);
+	else if (0 == strcmp(method, "md5"))
+		ret = vfs_file_cksum_md5(filename, result);
+	else if (0 == strcmp(method, "sha256"))
+		ret = vfs_file_cksum_sha256(filename, result);
+	else
+		SET_MSG_RESULT(result, zbx_strdup(NULL, "Invalid second parameter."));
+err:
+	return ret;
+}
+
+#if defined(_WINDOWS) || defined(__MINGW32__)
+int	VFS_FILE_OWNER(AGENT_REQUEST *request, AGENT_RESULT *result)
+{
+	char			*filename, *ownertype, *resulttype;
+	int			ret = SYSINFO_RET_FAIL;
+	wchar_t			*wpath;
+	PSECURITY_DESCRIPTOR	sec = NULL;
+	PSID			sid = NULL;
+
+	if (3 < request->nparam)
+	{
+		SET_MSG_RESULT(result, zbx_strdup(NULL, "Too many parameters."));
+		goto err;
+	}
+
+	filename = get_rparam(request, 0);
+	ownertype = get_rparam(request, 1);
+	resulttype = get_rparam(request, 2);
+
+	if (NULL == filename || '\0' == *filename || NULL == (wpath = zbx_utf8_to_unicode(filename)))
+	{
+		SET_MSG_RESULT(result, zbx_strdup(NULL, "Invalid first parameter."));
+		goto err;
+	}
+
+	if (NULL != ownertype && '\0' != *ownertype && 0 != strcmp(ownertype, "user"))
+	{
+		SET_MSG_RESULT(result, zbx_strdup(NULL, "Invalid second parameter."));
+		goto err;
+	}
+
+	if (NULL != resulttype && '\0' != *resulttype &&
+			(0 != strcmp(resulttype, "id") && 0 != strcmp(resulttype, "name")))
+	{
+		SET_MSG_RESULT(result, zbx_strdup(NULL, "Invalid third parameter."));
+		goto err;
+	}
+
+	if (ERROR_SUCCESS != GetNamedSecurityInfo(wpath, SE_FILE_OBJECT, OWNER_SECURITY_INFORMATION, &sid, NULL, NULL,
+			NULL, &sec) || NULL == sid)
+	{
+		SET_MSG_RESULT(result, zbx_strdup(NULL, "Cannot obtain security information."));
+		goto err;
+	}
+
+	if (NULL != resulttype && 0 == strcmp(resulttype, "id"))
+	{
+		wchar_t	*sid_string = NULL;
+
+		if (TRUE != ConvertSidToStringSid(sid, &sid_string))
+		{
+			SET_MSG_RESULT(result, zbx_strdup(NULL, "Cannot obtain SID."));
+			goto err;
+		}
+
+		SET_STR_RESULT(result, zbx_unicode_to_utf8(sid_string));
+		LocalFree(sid_string);
+	}
+	else
+	{
+		DWORD		acc_sz = 0, dmn_sz = 0;
+		wchar_t		*acc_name = NULL, *dmn_name = NULL;
+		SID_NAME_USE	acc_type = SidTypeUnknown;
+		char		*acc_utf8, *dmn_ut8;
+
+		LookupAccountSid(NULL, sid, acc_name, (LPDWORD)&acc_sz, dmn_name, (LPDWORD)&dmn_sz, &acc_type);
+
+		acc_name = (wchar_t *)zbx_malloc(acc_name, acc_sz * sizeof(wchar_t));
+		dmn_name = (wchar_t *)zbx_malloc(dmn_name, dmn_sz * sizeof(wchar_t));
+
+		if (TRUE != LookupAccountSid(NULL, sid, acc_name, (LPDWORD)&acc_sz, dmn_name, (LPDWORD)&dmn_sz,
+				&acc_type))
+		{
+			SET_MSG_RESULT(result, zbx_strdup(NULL, "Cannot obtain user name."));
+			zbx_free(acc_name);
+			zbx_free(dmn_name);
+			goto err;
+		}
+
+		acc_utf8 = (zbx_unicode_to_utf8(acc_name));
+		dmn_ut8 = (zbx_unicode_to_utf8(dmn_name));
+
+		if (0 == strlen(dmn_ut8))
+			SET_STR_RESULT(result, zbx_dsprintf(NULL, "%s", acc_utf8));
+		else
+			SET_STR_RESULT(result, zbx_dsprintf(NULL, "%s\\%s", dmn_ut8, acc_utf8));
+
+		zbx_free(acc_name);
+		zbx_free(dmn_name);
+		zbx_free(acc_utf8);
+		zbx_free(dmn_ut8);
+	}
+
+	ret = SYSINFO_RET_OK;
+err:
+	if (NULL != sec)
+		LocalFree(sec);
+
+	return ret;
+}
+#else
+int	VFS_FILE_OWNER(AGENT_REQUEST *request, AGENT_RESULT *result)
+{
+	char		*filename, *ownertype, *resulttype;
+	int		ret = SYSINFO_RET_FAIL, type;
+	zbx_stat_t	st;
+
+	if (3 < request->nparam)
+	{
+		SET_MSG_RESULT(result, zbx_strdup(NULL, "Too many parameters."));
+		goto err;
+	}
+
+	filename = get_rparam(request, 0);
+	ownertype = get_rparam(request, 1);
+	resulttype = get_rparam(request, 2);
+
+	if (NULL == filename || '\0' == *filename)
+	{
+		SET_MSG_RESULT(result, zbx_strdup(NULL, "Invalid first parameter."));
+		goto err;
+	}
+
+	if (0 != lstat(filename, &st))
+	{
+		SET_MSG_RESULT(result, zbx_dsprintf(NULL, "Cannot obtain file information: %s", zbx_strerror(errno)));
+		goto err;
+	}
+
+	if (NULL != ownertype && 0 == strcmp(ownertype, "group"))
+	{
+		type = 1;
+	}
+	else if (NULL == ownertype || '\0' == *ownertype || 0 == strcmp(ownertype, "user"))
+	{
+		type = 0;
+	}
+	else
+	{
+		SET_MSG_RESULT(result, zbx_strdup(NULL, "Invalid second parameter."));
+		goto err;
+	}
+
+	if (NULL != resulttype && 0 == strcmp(resulttype, "id"))
+	{
+		if (1 == type)
+			SET_STR_RESULT(result, zbx_dsprintf(NULL, ZBX_FS_UI64, (zbx_uint64_t)st.st_gid));
+		else
+			SET_STR_RESULT(result, zbx_dsprintf(NULL, ZBX_FS_UI64, (zbx_uint64_t)st.st_uid));
+	}
+	else if (NULL == resulttype || '\0' == *resulttype || 0 == strcmp(resulttype, "name"))
+	{
+		if (1 == type)
+		{
+			struct group	*grp;
+
+			if (NULL == (grp = getgrgid(st.st_gid)))
+				SET_STR_RESULT(result, zbx_dsprintf(NULL, ZBX_FS_UI64, (zbx_uint64_t)st.st_gid));
+			else
+				SET_STR_RESULT(result, zbx_strdup(NULL, grp->gr_name));
+		}
+		else
+		{
+			struct passwd	*pwd;
+
+			if (NULL == (pwd = getpwuid(st.st_uid)))
+				SET_STR_RESULT(result, zbx_dsprintf(NULL, ZBX_FS_UI64, (zbx_uint64_t)st.st_uid));
+			else
+				SET_STR_RESULT(result, zbx_strdup(NULL, pwd->pw_name));
+		}
+	}
+	else
+	{
+		SET_MSG_RESULT(result, zbx_strdup(NULL, "Invalid third parameter."));
+		goto err;
+	}
+
+	ret = SYSINFO_RET_OK;
+err:
+	return ret;
+}
+#endif
+
+#if defined(_WINDOWS) || defined(__MINGW32__)
+int	VFS_FILE_PERMISSIONS(AGENT_REQUEST *request, AGENT_RESULT *result)
+{
+	ZBX_UNUSED(request);
+	SET_MSG_RESULT(result, zbx_strdup(NULL, "Item is not supported on Windows."));
+
+	return SYSINFO_RET_FAIL;
+}
+#else
+static char	*get_file_permissions(zbx_stat_t *st)
+{
+	return zbx_dsprintf(NULL, "%x%x%x%x", ((S_ISUID | S_ISGID | S_ISVTX) & st->st_mode) >> 9,
+				(S_IRWXU & st->st_mode) >> 6, (S_IRWXG & st->st_mode) >> 3, S_IRWXO & st->st_mode);
+}
+
+int	VFS_FILE_PERMISSIONS(AGENT_REQUEST *request, AGENT_RESULT *result)
+{
+	char		*filename;
+	int		ret = SYSINFO_RET_FAIL;
+	zbx_stat_t	st;
+
+	if (1 < request->nparam)
+	{
+		SET_MSG_RESULT(result, zbx_strdup(NULL, "Too many parameters."));
+		goto err;
+	}
+
+	filename = get_rparam(request, 0);
+
+	if (NULL == filename || '\0' == *filename)
+	{
+		SET_MSG_RESULT(result, zbx_strdup(NULL, "Invalid first parameter."));
+		goto err;
+	}
+
+	if (SUCCEED != zbx_stat(filename, &st))
+	{
+		SET_MSG_RESULT(result, zbx_dsprintf(NULL, "Cannot obtain file information: %s", zbx_strerror(errno)));
+		goto err;
+	}
+
+	SET_STR_RESULT(result, get_file_permissions(&st));
+
+	ret = SYSINFO_RET_OK;
+err:
+	return ret;
+}
+#endif
+
+static char	*get_print_time(time_t st_raw)
+{
+#define MAX_TIME_STR_LEN	26
+	struct tm	st;
+	char		*st_str;
+
+	st_str = zbx_malloc(NULL, MAX_TIME_STR_LEN);
+	localtime_r(&st_raw, &st);
+	strftime(st_str, MAX_TIME_STR_LEN, "%Y-%m-%dT%T%z", &st);
+
+	return st_str;
+#undef MAX_TIME_STR_LEN
+}
+
+#define VFS_FILE_ADD_TIME(time, tag)						\
+	do									\
+	{									\
+		char	*tmp;							\
+										\
+		if (0 < time)							\
+		{								\
+			tmp = get_print_time((time_t)time);			\
+			zbx_json_addstring(j, tag, tmp, ZBX_JSON_TYPE_STRING);	\
+			zbx_free(tmp);						\
+		}								\
+		else								\
+			zbx_json_addstring(j, tag, NULL, ZBX_JSON_TYPE_STRING);	\
+	} while (0)
+
+#define VFS_FILE_ADD_TS(time, tag)						\
+	do									\
+	{									\
+		if (0 < time)							\
+			zbx_json_adduint64(j, tag, (zbx_uint64_t)time);		\
+		else								\
+			zbx_json_addstring(j, tag, NULL, ZBX_JSON_TYPE_STRING);	\
+	} while (0)
+
+#if defined(_WINDOWS) || defined(__MINGW32__)
+#	define ZBX_DIR_DELIMITER	"\\"
+#else
+#	define ZBX_DIR_DELIMITER	"/"
+
+static char	*canonicalize_path(const char *fullname)
+{
+	int			i, up_level = 0;
+	char			*name;
+	const char		*p_start = &fullname[1], *p_to_delimiter;
+	size_t			name_alloc = 0, name_offset = 0;
+	zbx_vector_str_t	names;
+
+	zbx_vector_str_create(&names);
+
+	do
+	{
+		if (NULL != (p_to_delimiter = strchr(p_start, '/')))
+		{
+			name = zbx_dsprintf(NULL, "%.*s", (int)(p_to_delimiter - p_start), p_start);
+			p_start = p_to_delimiter + 1;
+		}
+		else
+			name = zbx_strdup(NULL, p_start);
+
+		zbx_vector_str_append(&names, name);
+	}
+	while (NULL != p_to_delimiter);
+
+	name = NULL;
+
+	for (i = names.values_num - 1; 0 <= i; i--)
+	{
+		char *ptr = names.values[i];
+
+		if (0 == strcmp(ptr, ".") || 0 == strlen(ptr))
+		{
+			zbx_free(ptr);
+			zbx_vector_str_remove(&names, i);
+		}
+		else if (0 == strcmp(ptr, ".."))
+		{
+			zbx_free(ptr);
+			zbx_vector_str_remove(&names, i);
+			up_level++;
+		}
+		else if (0 < up_level)
+		{
+			zbx_free(ptr);
+			zbx_vector_str_remove(&names, i);
+			up_level--;
+		}
+	}
+
+	if (0 < names.values_num)
+	{
+		for (i = 0; i < names.values_num; i++)
+			zbx_snprintf_alloc(&name, &name_alloc, &name_offset, "/%s", names.values[i]);
+	}
+	else
+		zbx_snprintf_alloc(&name, &name_alloc, &name_offset, "/");
+
+	zbx_vector_str_clear_ext(&names, zbx_str_free);
+	zbx_vector_str_destroy(&names);
+
+	return name;
+}
+#endif
+
+static int	get_dir_names(const char *filename, char **basename, char **dirname, char **pathname)
+{
+	char	*ptr1, *ptr2;
+	size_t	len;
+
+#if defined(_WINDOWS) || defined(__MINGW32__)
+	if (NULL == (*pathname = _fullpath(NULL, filename, 0)))
+		return FAIL;
+#else
+	if ( '/' != filename[0])
+	{
+#ifdef PATH_MAX
+#	define MAX_PATH_BUFFER	PATH_MAX
+#else
+#	define MAX_PATH_BUFFER	4096
+#endif
+		char	resolved_path[MAX_PATH_BUFFER + 1], *name = NULL;
+		size_t	name_alloc = 0, name_offset = 0;
+
+#define ZBX_UNREACHABLE_STR		"(unreachable)"
+#define ZBX_UNREACHABLE_STR_LEN		ZBX_CONST_STRLEN(ZBX_UNREACHABLE_STR)
+
+		if (NULL == getcwd(resolved_path, MAX_PATH_BUFFER) || 0 == strncmp(ZBX_UNREACHABLE_STR, resolved_path,
+				ZBX_UNREACHABLE_STR_LEN))
+		{
+			return FAIL;
+		}
+
+		zbx_snprintf_alloc(&name, &name_alloc, &name_offset, "%s/%s", resolved_path, filename);
+
+		*pathname = canonicalize_path(name);
+		zbx_free(name);
+#undef ZBX_UNREACHABLE_STR_LEN
+#undef ZBX_UNREACHABLE_STR
+#undef MAX_PATH_BUFFER
+	}
+	else
+		*pathname = canonicalize_path(filename);
+#endif
+
+	ptr1 = *pathname;
+	ptr2 = strstr(ptr1, ZBX_DIR_DELIMITER);
+
+	while (NULL != ptr2)
+	{
+		len = strlen(ptr2) + 1;
+		ptr1 = &ptr1[strlen(ptr1) - len + 2];
+		ptr2 = strstr(ptr1, ZBX_DIR_DELIMITER);
+	}
+
+	if (0 == strlen(ptr1))
+		*basename = zbx_strdup(NULL, *pathname);
+	else
+		*basename = zbx_strdup(NULL, ptr1);
+
+	ptr2 = zbx_strdup(NULL, *pathname);
+	len = strlen(*pathname) - strlen(ptr1);
+#if defined(_WINDOWS) || defined(__MINGW32__)
+	if (3 == len)
+#else
+	if (1 == len)
+#endif
+		len++;
+	ptr2[len - 1] = '\0';
+	*dirname = zbx_dsprintf(NULL, "%s", ptr2);
+	zbx_free(ptr2);
+
+	return SUCCEED;
+}
+
+#if defined(_WINDOWS) || defined(__MINGW32__)
+int	zbx_vfs_file_info(const char *filename, struct zbx_json *j, int array, char **error)
+{
+	int			ret = FAIL;
+	DWORD			file_attributes, acc_sz = 0, dmn_sz = 0;
+	wchar_t			*wpath = NULL, *sid_string = NULL, *acc_name = NULL, *dmn_name = NULL;
+	char			*type = NULL, *basename = NULL, *dirname = NULL,
+				*pathname = NULL, *user = NULL, *sidbuf = NULL;
+	PSID			sid = NULL;
+	PSECURITY_DESCRIPTOR	sec = NULL;
+	SID_NAME_USE		acc_type = SidTypeUnknown;
+	zbx_stat_t		buf;
+	zbx_file_time_t		file_time;
+	zbx_uint64_t		size;
+
+	if (NULL == (wpath = zbx_utf8_to_unicode(filename)))
+	{
+		*error = zbx_strdup(NULL, "Cannot convert file name to UTF-16.");
+		goto err;
+	}
+
+	file_attributes = GetFileAttributesW(wpath);
+
+	if (INVALID_FILE_ATTRIBUTES == file_attributes)
+	{
+		DWORD	last_error;
+
+		switch (last_error = GetLastError())
+		{
+			case ERROR_FILE_NOT_FOUND:
+				goto err;
+			case ERROR_BAD_NETPATH:	/* special case from GetFileAttributesW() documentation */
+				*error = zbx_dsprintf(NULL, "The specified file is a network share."
+						" Use a path to a subfolder on that share.");
+				goto err;
+			default:
+				*error = zbx_dsprintf(NULL, "Cannot obtain file information: %s",
+						strerror_from_system(last_error));
+				goto err;
+		}
+	}
+
+	if (0 != (file_attributes & FILE_ATTRIBUTE_REPARSE_POINT))
+		type = zbx_strdup(NULL, "sym");
+	else if (0 != (file_attributes & FILE_ATTRIBUTE_DIRECTORY))
+		type = zbx_strdup(NULL, "dir");
+	else
+		type = zbx_strdup(NULL, "file");
+
+	if (SUCCEED != get_dir_names(filename, &basename, &dirname, &pathname))
+	{
+		*error = zbx_strdup(NULL, "Cannot obtain file or directory name.");
+		goto err;
+	}
+
+	if (ERROR_SUCCESS != GetNamedSecurityInfo(wpath, SE_FILE_OBJECT, OWNER_SECURITY_INFORMATION, &sid, NULL, NULL,
+			NULL, &sec))
+	{
+		*error = zbx_strdup(NULL, "Cannot obtain security information.");
+		goto err;
+	}
+
+	LookupAccountSid(NULL, sid, acc_name, (LPDWORD)&acc_sz, dmn_name, (LPDWORD)&dmn_sz, &acc_type);
+
+	acc_name = (wchar_t *)zbx_malloc(acc_name, acc_sz * sizeof(wchar_t));
+	dmn_name = (wchar_t *)zbx_malloc(dmn_name, dmn_sz * sizeof(wchar_t));
+
+	if (TRUE == LookupAccountSid(NULL, sid, acc_name, (LPDWORD)&acc_sz, dmn_name, (LPDWORD)&dmn_sz,
+			&acc_type))
+	{
+		char	*acc_ut8, *dmn_ut8;
+
+		acc_ut8 = zbx_unicode_to_utf8(acc_name);
+		dmn_ut8 = zbx_unicode_to_utf8(dmn_name);
+
+		if (0 == strlen(dmn_ut8))
+			user = zbx_dsprintf(NULL, "%s", acc_ut8);
+		else
+			user = zbx_dsprintf(NULL, "%s\\%s", dmn_ut8, acc_ut8);
+
+		zbx_free(acc_ut8);
+		zbx_free(dmn_ut8);
+	}
+
+	zbx_free(acc_name);
+	zbx_free(dmn_name);
+
+	if (TRUE != ConvertSidToStringSid(sid, &sid_string))
+	{
+		*error = zbx_strdup(NULL, "Cannot obtain SID.");
+		goto err;
+	}
+
+	sidbuf = zbx_unicode_to_utf8(sid_string);
+	LocalFree(sid_string);
+
+	if (0 != (file_attributes & (FILE_ATTRIBUTE_REPARSE_POINT | FILE_ATTRIBUTE_DIRECTORY)))
+	{
+		size = 0;
+	}
+	else if (0 != zbx_stat(filename, &buf))
+	{
+		*error = zbx_dsprintf(NULL, "Cannot obtain file information: %s", zbx_strerror(errno));
+		goto err;
+	}
+	else
+		size = (zbx_uint64_t)buf.st_size;
+
+	/* name */
+
+	if (0 != array)
+		zbx_json_addobject(j, NULL);
+
+	zbx_json_addstring(j, ZBX_SYSINFO_FILE_TAG_BASENAME, basename, ZBX_JSON_TYPE_STRING);
+	zbx_json_addstring(j, ZBX_SYSINFO_FILE_TAG_PATHNAME, pathname, ZBX_JSON_TYPE_STRING);
+	zbx_json_addstring(j, ZBX_SYSINFO_FILE_TAG_DIRNAME, dirname, ZBX_JSON_TYPE_STRING);
+
+	/* type */
+	zbx_json_addstring(j, ZBX_SYSINFO_FILE_TAG_TYPE, type, ZBX_JSON_TYPE_STRING);
+
+	/* User name */
+	zbx_json_addstring(j, ZBX_SYSINFO_FILE_TAG_USER, user, ZBX_JSON_TYPE_STRING);
+
+	/* SID */
+	zbx_json_addstring(j, ZBX_SYSINFO_FILE_TAG_SID, sidbuf, ZBX_JSON_TYPE_STRING);
+
+	/* size */
+	zbx_json_adduint64(j, ZBX_SYSINFO_FILE_TAG_SIZE, size);
+
+	/* time */
+
+	if (SUCCEED != zbx_get_file_time(filename, 1, &file_time))
+	{
+		memset(&file_time, 0 ,sizeof(file_time));
+	}
+
+	zbx_json_addobject(j, ZBX_SYSINFO_FILE_TAG_TIME);
+	VFS_FILE_ADD_TIME(file_time.access_time, ZBX_SYSINFO_FILE_TAG_TIME_ACCESS);
+	VFS_FILE_ADD_TIME(file_time.modification_time, ZBX_SYSINFO_FILE_TAG_TIME_MODIFY);
+	VFS_FILE_ADD_TIME(file_time.change_time, ZBX_SYSINFO_FILE_TAG_TIME_CHANGE);
+	zbx_json_close(j);
+
+	zbx_json_addobject(j, ZBX_SYSINFO_FILE_TAG_TIMESTAMP);
+	VFS_FILE_ADD_TS(file_time.access_time, ZBX_SYSINFO_FILE_TAG_TIME_ACCESS);
+	VFS_FILE_ADD_TS(file_time.modification_time, ZBX_SYSINFO_FILE_TAG_TIME_MODIFY);
+	VFS_FILE_ADD_TS(file_time.change_time, ZBX_SYSINFO_FILE_TAG_TIME_CHANGE);
+	zbx_json_close(j);
+
+	/* close object*/
+	zbx_json_close(j);
+
+	ret =  SUCCEED;
+err:
+	if (NULL != sec)
+		LocalFree(sec);
+
+	zbx_free(wpath);
+
+	zbx_free(type);
+	zbx_free(basename);
+	zbx_free(dirname);
+	zbx_free(pathname);
+	zbx_free(user);
+	zbx_free(sidbuf);
+
+	return ret;
+}
+#else /* not _WINDOWS or __MINGW32__ */
+int	zbx_vfs_file_info(const char *filename, struct zbx_json *j, int array, char **error)
+{
+	int		ret = FAIL;
+	char		*permissions, *type = NULL, *basename = NULL, *dirname = NULL, *pathname = NULL;
+	zbx_file_time_t	file_time;
+	zbx_stat_t	buf;
+	struct group	*grp;
+	struct passwd	*pwd;
+
+	if (0 != lstat(filename, &buf))
+	{
+		*error = zbx_dsprintf(NULL, "Cannot obtain file information: %s", zbx_strerror(errno));
+		return FAIL;
+	}
+
+	if (0 != S_ISLNK(buf.st_mode))
+		type = zbx_strdup(NULL, "sym");
+	else if (0 != S_ISREG(buf.st_mode))
+		type = zbx_strdup(NULL, "file");
+	else if (0 != S_ISDIR(buf.st_mode))
+		type = zbx_strdup(NULL, "dir");
+	else if (0 != S_ISSOCK(buf.st_mode))
+		type = zbx_strdup(NULL, "sock");
+	else if (0 != S_ISBLK(buf.st_mode))
+		type = zbx_strdup(NULL, "bdev");
+	else if (0 != S_ISCHR(buf.st_mode))
+		type = zbx_strdup(NULL, "cdev");
+	else if (0 != S_ISFIFO(buf.st_mode))
+		type = zbx_strdup(NULL, "fifo");
+
+	if (SUCCEED != get_dir_names(filename, &basename, &dirname, &pathname))
+	{
+		*error = zbx_strdup(NULL, "Cannot obtain file or directory name.");
+		goto err;
+	}
+
+	if (SUCCEED != zbx_get_file_time(filename, 1, &file_time))
+	{
+		*error = zbx_dsprintf(NULL, "Cannot obtain file information: %s", zbx_strerror(errno));
+		goto err;
+	}
+
+	/* name */
+
+	if (0 != array)
+		zbx_json_addobject(j, NULL);
+
+	zbx_json_addstring(j, ZBX_SYSINFO_FILE_TAG_BASENAME, basename, ZBX_JSON_TYPE_STRING);
+	zbx_json_addstring(j, ZBX_SYSINFO_FILE_TAG_PATHNAME, pathname, ZBX_JSON_TYPE_STRING);
+	zbx_json_addstring(j, ZBX_SYSINFO_FILE_TAG_DIRNAME, dirname, ZBX_JSON_TYPE_STRING);
+
+	/* type */
+	zbx_json_addstring(j, ZBX_SYSINFO_FILE_TAG_TYPE, type, ZBX_JSON_TYPE_STRING);
+
+	/* user */
+	if (NULL == (pwd = getpwuid(buf.st_uid)))
+	{
+		char	buffer[MAX_ID_LEN];
+
+		zbx_snprintf(buffer, sizeof(buffer), ZBX_FS_UI64, (zbx_uint64_t)buf.st_uid);
+		zbx_json_addstring(j, ZBX_SYSINFO_FILE_TAG_USER, buffer, ZBX_JSON_TYPE_STRING);
+	}
+	else
+		zbx_json_addstring(j, ZBX_SYSINFO_FILE_TAG_USER, pwd->pw_name, ZBX_JSON_TYPE_STRING);
+
+	/* group */
+	if (NULL == (grp = getgrgid(buf.st_gid)))
+	{
+		char	buffer[MAX_ID_LEN];
+
+		zbx_snprintf(buffer, sizeof(buffer), ZBX_FS_UI64, (zbx_uint64_t)buf.st_gid);
+		zbx_json_addstring(j, ZBX_SYSINFO_FILE_TAG_GROUP, buffer, ZBX_JSON_TYPE_STRING);
+	}
+	else
+		zbx_json_addstring(j, ZBX_SYSINFO_FILE_TAG_GROUP, grp->gr_name, ZBX_JSON_TYPE_STRING);
+
+	/* permissions */
+	permissions = get_file_permissions(&buf);
+	zbx_json_addstring(j, ZBX_SYSINFO_FILE_TAG_PERMISSIONS, permissions, ZBX_JSON_TYPE_STRING);
+	zbx_free(permissions);
+
+	/* uid */
+	zbx_json_adduint64(j, ZBX_SYSINFO_FILE_TAG_UID, (zbx_uint64_t)buf.st_uid);
+
+	/* gid */
+	zbx_json_adduint64(j, ZBX_SYSINFO_FILE_TAG_GID, (zbx_uint64_t)buf.st_gid);
+
+	/* size */
+	zbx_json_adduint64(j, ZBX_SYSINFO_FILE_TAG_SIZE, (zbx_uint64_t)buf.st_size);
+
+	/* time */
+
+	zbx_json_addobject(j, ZBX_SYSINFO_FILE_TAG_TIME);
+	VFS_FILE_ADD_TIME(file_time.access_time, ZBX_SYSINFO_FILE_TAG_TIME_ACCESS);
+	VFS_FILE_ADD_TIME(file_time.modification_time, ZBX_SYSINFO_FILE_TAG_TIME_MODIFY);
+	VFS_FILE_ADD_TIME(file_time.change_time, ZBX_SYSINFO_FILE_TAG_TIME_CHANGE);
+	zbx_json_close(j);
+
+	zbx_json_addobject(j, ZBX_SYSINFO_FILE_TAG_TIMESTAMP);
+	VFS_FILE_ADD_TS(file_time.access_time, ZBX_SYSINFO_FILE_TAG_TIME_ACCESS);
+	VFS_FILE_ADD_TS(file_time.modification_time, ZBX_SYSINFO_FILE_TAG_TIME_MODIFY);
+	VFS_FILE_ADD_TS(file_time.change_time, ZBX_SYSINFO_FILE_TAG_TIME_CHANGE);
+	zbx_json_close(j);
+
+	zbx_json_close(j);
+
+	ret =  SUCCEED;
+err:
+	zbx_free(type);
+	zbx_free(basename);
+	zbx_free(dirname);
+	zbx_free(pathname);
+
+	return ret;
+}
+#endif
+
+static int	vfs_file_get(const char *filename, AGENT_RESULT *result)
+{
+	int		ret = SYSINFO_RET_FAIL;
+	char		*error = NULL;
+	struct zbx_json	j;
+
+	zbx_json_init(&j, ZBX_JSON_STAT_BUF_LEN);
+
+	if (SUCCEED == zbx_vfs_file_info(filename, &j, 0, &error))
+	{
+		SET_STR_RESULT(result, zbx_strdup(NULL, j.buffer));
+
+		ret =  SYSINFO_RET_OK;
+	}
+	else
+		SET_MSG_RESULT(result, error);
+
+	zbx_json_close(&j);
+
+	zbx_json_free(&j);
+
+	return ret;
+}
+
+#undef VFS_FILE_ADD_TIME
+#undef VFS_FILE_ADD_TS
+
+int	VFS_FILE_GET(AGENT_REQUEST *request, AGENT_RESULT *result)
+{
+	const char	*filename;
+
+	if (1 < request->nparam)
+	{
+		SET_MSG_RESULT(result, zbx_strdup(NULL, "Too many parameters."));
+		return SYSINFO_RET_FAIL;
+	}
+
+	filename = get_rparam(request, 0);
+
+	if (NULL == filename || '\0' == *filename)
+	{
+		SET_MSG_RESULT(result, zbx_strdup(NULL, "Invalid first parameter."));
+		return SYSINFO_RET_FAIL;
+	}
+
+	return vfs_file_get(filename, result);
 }

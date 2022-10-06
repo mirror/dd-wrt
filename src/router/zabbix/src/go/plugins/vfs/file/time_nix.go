@@ -1,8 +1,9 @@
+//go:build !windows
 // +build !windows
 
 /*
 ** Zabbix
-** Copyright (C) 2001-2020 Zabbix SIA
+** Copyright (C) 2001-2022 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -25,6 +26,8 @@ import (
 	"errors"
 	"fmt"
 	"syscall"
+
+	"git.zabbix.com/ap/plugin-support/zbxerr"
 )
 
 // Export -
@@ -36,7 +39,7 @@ func (p *Plugin) exportTime(params []string) (result interface{}, err error) {
 		return nil, errors.New("Invalid first parameter.")
 	}
 	if f, err := stdOs.Stat(params[0]); err != nil {
-		return nil, fmt.Errorf("Cannot obtain file information: %s", err)
+		return nil, zbxerr.New(fmt.Sprintf("Cannot obtain file information")).Wrap(err)
 	} else {
 		if len(params) == 1 || params[1] == "" || params[1] == "modify" {
 			return f.ModTime().Unix(), nil

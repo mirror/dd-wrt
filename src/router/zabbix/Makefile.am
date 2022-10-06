@@ -3,6 +3,7 @@
 ACLOCAL_AMFLAGS = -I m4
 
 SUBDIRS = \
+	include \
 	src \
 	database \
 	man \
@@ -11,7 +12,7 @@ SUBDIRS = \
 EXTRA_DIST = \
 	bin \
 	build \
-	frontends \
+	ui \
 	include \
 	conf \
 	sass
@@ -52,33 +53,44 @@ dist-hook:
 	mv $(top_distdir)/src/go/pkg/version/version.go.new $(top_distdir)/src/go/pkg/version/version.go
 
 	rm -rf `find $(top_distdir) -name ".gitignore" -o -name ".gitattributes"`
-	rm -f $(top_distdir)/include/config.h
-	rm -f $(top_distdir)/include/config.h.in~
-	rm -f $(top_distdir)/frontends/php/conf/zabbix.conf.php
-	rm -rf $(top_distdir)/frontends/php/tests
+	rm -f $(top_distdir)/include/common/config.h
+	rm -f $(top_distdir)/include/common/config.h.in~
+	rm -f $(top_distdir)/ui/conf/zabbix.conf.php
+	rm -rf $(top_distdir)/ui/tests
 	rm -rf $(top_distdir)/sass/img_source
 
 if DBSCHEMA
-dbschema_ibm_db2:
-	cd database/ibm_db2 && \
-	$(MAKE) $(AM_MAKEFLAGS) data.sql && \
-	$(MAKE) $(AM_MAKEFLAGS) schema.sql
-
 dbschema_mysql:
 	cd database/mysql && \
 	$(MAKE) $(AM_MAKEFLAGS) data.sql && \
-	$(MAKE) $(AM_MAKEFLAGS) schema.sql
+	$(MAKE) $(AM_MAKEFLAGS) schema.sql && \
+	$(MAKE) $(AM_MAKEFLAGS) history_pk_prepare.sql
 
 dbschema_oracle:
 	cd database/oracle && \
 	$(MAKE) $(AM_MAKEFLAGS) data.sql && \
-	$(MAKE) $(AM_MAKEFLAGS) schema.sql
+	$(MAKE) $(AM_MAKEFLAGS) schema.sql && \
+	$(MAKE) $(AM_MAKEFLAGS) history_pk_prepare.sql
+
+export tsdb_wcompr_dir = tsdb_history_pk_upgrade_with_compression
+export tsdb_nocompr_dir = tsdb_history_pk_upgrade_no_compression
 
 dbschema_postgresql:
 	cd database/postgresql && \
 	$(MAKE) $(AM_MAKEFLAGS) data.sql && \
 	$(MAKE) $(AM_MAKEFLAGS) schema.sql && \
-	$(MAKE) $(AM_MAKEFLAGS) timescaledb.sql
+	$(MAKE) $(AM_MAKEFLAGS) timescaledb.sql && \
+	$(MAKE) $(AM_MAKEFLAGS) $(tsdb_wcompr_dir)/history_pk.sql && \
+	$(MAKE) $(AM_MAKEFLAGS) $(tsdb_wcompr_dir)/history_pk_uint.sql && \
+	$(MAKE) $(AM_MAKEFLAGS) $(tsdb_wcompr_dir)/history_pk_log.sql && \
+	$(MAKE) $(AM_MAKEFLAGS) $(tsdb_wcompr_dir)/history_pk_str.sql && \
+	$(MAKE) $(AM_MAKEFLAGS) $(tsdb_wcompr_dir)/history_pk_text.sql && \
+	$(MAKE) $(AM_MAKEFLAGS) $(tsdb_nocompr_dir)/history_pk.sql && \
+	$(MAKE) $(AM_MAKEFLAGS) $(tsdb_nocompr_dir)/history_pk_uint.sql && \
+	$(MAKE) $(AM_MAKEFLAGS) $(tsdb_nocompr_dir)/history_pk_log.sql && \
+	$(MAKE) $(AM_MAKEFLAGS) $(tsdb_nocompr_dir)/history_pk_str.sql && \
+	$(MAKE) $(AM_MAKEFLAGS) $(tsdb_nocompr_dir)/history_pk_text.sql && \
+	$(MAKE) $(AM_MAKEFLAGS) history_pk_prepare.sql
 
 dbschema_sqlite3:
 	cd database/sqlite3 && \
@@ -86,41 +98,41 @@ dbschema_sqlite3:
 	$(MAKE) $(AM_MAKEFLAGS) schema.sql
 
 dbschema_c:
-	cd src/libs/zbxdbhigh && \
+	cd src/libs/zbxdbschema && \
 	$(MAKE) $(AM_MAKEFLAGS) dbschema.c
 
-dbschema: dbschema_ibm_db2 dbschema_mysql dbschema_oracle dbschema_postgresql dbschema_sqlite3 dbschema_c
+dbschema: dbschema_mysql dbschema_oracle dbschema_postgresql dbschema_sqlite3 dbschema_c
 endif
 
 gettext:
-	frontends/php/locale/make_mo.sh
+	ui/locale/make_mo.sh
 
 css_theme_blue:
-	sass --no-cache --sourcemap=none sass/stylesheets/sass/screen.scss frontends/php/assets/styles/blue-theme.css
-	cp frontends/php/assets/styles/blue-theme.css sass/stylesheets/screen.css
+	sass --no-cache --sourcemap=none sass/stylesheets/sass/screen.scss ui/assets/styles/blue-theme.css
+	cp ui/assets/styles/blue-theme.css sass/stylesheets/screen.css
 
 css_theme_dark:
-	sass --no-cache --sourcemap=none sass/stylesheets/sass/dark-theme.scss frontends/php/assets/styles/dark-theme.css
-	cp frontends/php/assets/styles/dark-theme.css sass/stylesheets/dark-theme.css
+	sass --no-cache --sourcemap=none sass/stylesheets/sass/dark-theme.scss ui/assets/styles/dark-theme.css
+	cp ui/assets/styles/dark-theme.css sass/stylesheets/dark-theme.css
 
 css_hc_light:
-	sass --no-cache --sourcemap=none sass/stylesheets/sass/hc-light.scss frontends/php/assets/styles/hc-light.css
-	cp frontends/php/assets/styles/hc-light.css sass/stylesheets/hc-light.css
+	sass --no-cache --sourcemap=none sass/stylesheets/sass/hc-light.scss ui/assets/styles/hc-light.css
+	cp ui/assets/styles/hc-light.css sass/stylesheets/hc-light.css
 
 css_hc_dark:
-	sass --no-cache --sourcemap=none sass/stylesheets/sass/hc-dark.scss frontends/php/assets/styles/hc-dark.css
-	cp frontends/php/assets/styles/hc-dark.css sass/stylesheets/hc-dark.css
+	sass --no-cache --sourcemap=none sass/stylesheets/sass/hc-dark.scss ui/assets/styles/hc-dark.css
+	cp ui/assets/styles/hc-dark.css sass/stylesheets/hc-dark.css
 
 css_icons:
-	cp sass/img/icon-sprite.svg frontends/php/assets/img/
-	cp sass/img/browser-sprite.png frontends/php/assets/img/
-	cp sass/apple-touch-icon-120x120-precomposed.png frontends/php/assets/img/
-	cp sass/apple-touch-icon-152x152-precomposed.png frontends/php/assets/img/
-	cp sass/apple-touch-icon-180x180-precomposed.png frontends/php/assets/img/
-	cp sass/apple-touch-icon-76x76-precomposed.png frontends/php/assets/img/
-	cp sass/ms-tile-144x144.png frontends/php/assets/img/
-	cp sass/touch-icon-192x192.png frontends/php/assets/img/
-	cp sass/favicon.ico frontends/php/
+	cp sass/img/icon-sprite.svg ui/assets/img/
+	cp sass/img/browser-sprite.png ui/assets/img/
+	cp sass/apple-touch-icon-120x120-precomposed.png ui/assets/img/
+	cp sass/apple-touch-icon-152x152-precomposed.png ui/assets/img/
+	cp sass/apple-touch-icon-180x180-precomposed.png ui/assets/img/
+	cp sass/apple-touch-icon-76x76-precomposed.png ui/assets/img/
+	cp sass/ms-tile-144x144.png ui/assets/img/
+	cp sass/touch-icon-192x192.png ui/assets/img/
+	cp sass/favicon.ico ui/
 
 css: css_theme_blue css_theme_dark css_hc_light css_hc_dark css_icons
 
@@ -145,9 +157,9 @@ WRAP_IO_FUNCS = \
 WRAP_FS_FUNCS = \
 	-Wl,--wrap=opendir \
 	-Wl,--wrap=readdir \
-	-Wl,--wrap=stat \
 	-Wl,--wrap=__xstat \
-	-Wl,--wrap=__fxstat
+	-Wl,--wrap=__fxstat \
+	-Wl,--wrap=stat
 
 WRAP_EXIT = \
 	-Wl,--wrap=exit
@@ -174,6 +186,9 @@ tests_build:
 
 tests: tests_build
 	tests/tests_run.pl
+
+clean: clean-recursive
+	cd tests && $(MAKE) clean
 endif
 
-.PHONY: test tests
+.PHONY: test tests clean

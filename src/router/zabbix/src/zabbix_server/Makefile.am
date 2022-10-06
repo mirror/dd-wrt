@@ -4,6 +4,7 @@ SUBDIRS = \
 	alerter \
 	dbsyncer \
 	dbconfig \
+	diag \
 	discoverer \
 	housekeeper \
 	httppoller \
@@ -20,22 +21,34 @@ SUBDIRS = \
 	ipmi \
 	odbc \
 	scripts \
+	stats \
 	preprocessor \
-	lld
+	availability \
+	lld \
+	reporter \
+	service \
+	ha
 
 sbin_PROGRAMS = zabbix_server
 
 noinst_LIBRARIES = libzbxserver.a
 
 libzbxserver_a_SOURCES = \
-	actions.c actions.h \
-	operations.c operations.h \
-	events.c events.h \
-	postinit.c postinit.h
+	db_lengths.h \
+	actions.c \
+	actions.h \
+	events.c \
+	events.h \
+	operations.c \
+	operations.h \
+	postinit.c \
+	postinit.h \
+	zbxreport.h
 
 libzbxserver_a_CFLAGS = \
 	-DZABBIX_DAEMON \
-	-I@top_srcdir@/src/libs/zbxdbcache
+	-I$(top_srcdir)/src/libs/zbxdbcache \
+	$(TLS_CFLAGS)
 
 zabbix_server_SOURCES = server.c
 
@@ -43,12 +56,15 @@ zabbix_server_LDADD = \
 	alerter/libzbxalerter.a \
 	dbsyncer/libzbxdbsyncer.a \
 	dbconfig/libzbxdbconfig.a \
+	diag/libzbxdiag_server.a \
 	discoverer/libzbxdiscoverer.a \
 	pinger/libzbxpinger.a \
 	poller/libzbxpoller.a \
 	housekeeper/libzbxhousekeeper.a \
 	timer/libzbxtimer.a \
 	trapper/libzbxtrapper.a \
+	trapper/libzbxtrapper_server.a \
+	reporter/libzbxreporter.a \
 	snmptrapper/libzbxsnmptrapper.a \
 	httppoller/libzbxhttppoller.a \
 	escalator/libzbxescalator.a \
@@ -59,62 +75,95 @@ zabbix_server_LDADD = \
 	odbc/libzbxodbc.a \
 	scripts/libzbxscripts.a \
 	preprocessor/libpreprocessor.a \
-	$(top_srcdir)/src/libs/zbxembed/libzbxembed.a \
+	availability/libavailability.a \
+	service/libservice.a \
+	$(top_builddir)/src/libs/zbxembed/libzbxembed.a \
+	$(top_builddir)/src/libs/zbxdiscovery/libzbxdiscovery.a \
+	$(top_builddir)/src/libs/zbxexport/libzbxexport.a \
+	$(top_builddir)/src/libs/zbxxml/libzbxxml.a \
 	poller/libzbxpoller_server.a \
 	lld/libzbxlld.a \
 	libzbxserver.a \
-	$(top_srcdir)/src/libs/zbxprometheus/libzbxprometheus.a \
-	$(top_srcdir)/src/libs/zbxsysinfo/libzbxserversysinfo.a \
-	$(top_srcdir)/src/libs/zbxsysinfo/common/libcommonsysinfo.a \
-	$(top_srcdir)/src/libs/zbxsysinfo/simple/libsimplesysinfo.a \
-	$(top_srcdir)/src/libs/zbxlog/libzbxlog.a \
-	$(top_srcdir)/src/libs/zbxserver/libzbxserver.a \
-	$(top_srcdir)/src/libs/zbxdbcache/libzbxdbcache.a \
-	$(top_srcdir)/src/libs/zbxhistory/libzbxhistory.a \
-	$(top_srcdir)/src/libs/zbxmemory/libzbxmemory.a \
-	$(top_srcdir)/src/libs/zbxregexp/libzbxregexp.a \
-	$(top_srcdir)/src/libs/zbxself/libzbxself.a \
-	$(top_srcdir)/src/libs/zbxnix/libzbxnix.a \
-	$(top_srcdir)/src/libs/zbxalgo/libzbxalgo.a \
-	$(top_srcdir)/src/libs/zbxsys/libzbxsys.a \
-	$(top_srcdir)/src/libs/zbxconf/libzbxconf.a \
-	$(top_srcdir)/src/libs/zbxmedia/libzbxmedia.a \
-	$(top_srcdir)/src/libs/zbxcommon/libzbxcommon.a \
-	$(top_srcdir)/src/libs/zbxcrypto/libzbxcrypto.a \
-	$(top_srcdir)/src/libs/zbxcomms/libzbxcomms.a \
-	$(top_srcdir)/src/libs/zbxcommshigh/libzbxcommshigh.a \
-	$(top_srcdir)/src/libs/zbxjson/libzbxjson.a \
-	$(top_srcdir)/src/libs/zbxhttp/libzbxhttp.a \
-	$(top_srcdir)/src/libs/zbxipcservice/libzbxipcservice.a \
-	$(top_srcdir)/src/libs/zbxexec/libzbxexec.a \
-	$(top_srcdir)/src/libs/zbxicmpping/libzbxicmpping.a \
-	$(top_srcdir)/src/libs/zbxdbupgrade/libzbxdbupgrade.a \
-	$(top_srcdir)/src/libs/zbxdbhigh/libzbxdbhigh.a \
-	$(top_srcdir)/src/libs/zbxdb/libzbxdb.a \
-	$(top_srcdir)/src/libs/zbxmodules/libzbxmodules.a \
-	$(top_srcdir)/src/libs/zbxtasks/libzbxtasks.a \
-	$(top_srcdir)/src/libs/zbxcompress/libzbxcompress.a \
-	$(top_srcdir)/src/libs/zbxserver/libzbxserver_server.a
+	ha/libzbxha.a \
+	$(top_builddir)/src/libs/zbxprometheus/libzbxprometheus.a \
+	$(top_builddir)/src/libs/zbxsysinfo/libzbxserversysinfo.a \
+	$(top_builddir)/src/libs/zbxsysinfo/common/libcommonsysinfo.a \
+	$(top_builddir)/src/libs/zbxsysinfo/common/libcommonsysinfo_httpmetrics.a \
+	$(top_builddir)/src/libs/zbxsysinfo/common/libcommonsysinfo_http.a \
+	$(top_builddir)/src/libs/zbxsysinfo/simple/libsimplesysinfo.a \
+	$(top_builddir)/src/libs/zbxsysinfo/alias/libalias.a \
+	$(top_builddir)/src/libs/zbxlog/libzbxlog.a \
+	$(top_builddir)/src/libs/zbxdbcache/libzbxdbcache.a \
+	$(top_builddir)/src/libs/zbxserver/libzbxserver.a \
+	$(top_builddir)/src/libs/zbxvariant/libzbxvariant.a \
+	$(top_builddir)/src/libs/zbxeval/libzbxeval.a \
+	$(top_builddir)/src/libs/zbxserialize/libzbxserialize.a \
+	$(top_builddir)/src/libs/zbxhistory/libzbxhistory.a \
+	$(top_builddir)/src/libs/zbxshmem/libzbxshmem.a \
+	$(top_builddir)/src/libs/zbxregexp/libzbxregexp.a \
+	$(top_builddir)/src/libs/zbxself/libzbxself.a \
+	$(top_builddir)/src/libs/zbxself/libzbxself_server.a \
+	$(top_builddir)/src/libs/zbxnix/libzbxnix.a \
+	$(top_builddir)/src/libs/zbxalgo/libzbxalgo.a \
+	$(top_builddir)/src/libs/zbxthreads/libzbxthreads.a \
+	$(top_builddir)/src/libs/zbxmutexs/libzbxmutexs.a \
+	$(top_builddir)/src/libs/zbxconf/libzbxconf.a \
+	$(top_builddir)/src/libs/zbxmedia/libzbxmedia.a \
+	$(top_builddir)/src/libs/zbxaudit/libzbxaudit.a \
+	$(top_builddir)/src/libs/zbxcommon/libzbxcommon.a \
+	$(top_builddir)/src/libs/zbxgetopt/libzbxgetopt.a \
+	$(top_builddir)/src/libs/zbxhash/libzbxhash.a \
+	$(top_builddir)/src/libs/zbxcrypto/libzbxcrypto.a \
+	$(top_builddir)/src/libs/zbxcomms/libzbxcomms.a \
+	$(top_builddir)/src/libs/zbxcommshigh/libzbxcommshigh.a \
+	$(top_builddir)/src/libs/zbxjson/libzbxjson.a \
+	$(top_builddir)/src/libs/zbxhttp/libzbxhttp.a \
+	$(top_builddir)/src/libs/zbxipcservice/libzbxipcservice.a \
+	$(top_builddir)/src/libs/zbxexec/libzbxexec.a \
+	$(top_builddir)/src/libs/zbxicmpping/libzbxicmpping.a \
+	$(top_builddir)/src/libs/zbxdbupgrade/libzbxdbupgrade.a \
+	$(top_builddir)/src/libs/zbxdbhigh/libzbxdbhigh.a \
+	$(top_builddir)/src/libs/zbxdbschema/libzbxdbschema.a \
+	$(top_builddir)/src/libs/zbxdb/libzbxdb.a \
+	$(top_builddir)/src/libs/zbxmodules/libzbxmodules.a \
+	$(top_builddir)/src/libs/zbxtasks/libzbxtasks.a \
+	$(top_builddir)/src/libs/zbxdiag/libzbxdiag.a \
+	$(top_builddir)/src/libs/zbxcompress/libzbxcompress.a \
+	$(top_builddir)/src/libs/zbxtrends/libzbxtrends.a \
+	stats/libzbxserver_server.a \
+	$(top_builddir)/src/libs/zbxha/libzbxha.a \
+	$(top_builddir)/src/libs/zbxrtc/libzbxrtc_service.a \
+	$(top_builddir)/src/libs/zbxrtc/libzbxrtc_server.a \
+	$(top_builddir)/src/libs/zbxrtc/libzbxrtc.a \
+	$(top_builddir)/src/libs/zbxvault/libzbxvault.a \
+	$(top_builddir)/src/libs/zbxcyberark/libzbxcyberark.a \
+	$(top_builddir)/src/libs/zbxhashicorp/libzbxhashicorp.a \
+	$(top_builddir)/src/libs/zbxkvs/libzbxkvs.a \
+	$(top_builddir)/src/libs/zbxavailability/libzbxavailability.a \
+	$(top_builddir)/src/libs/zbxaudit/libzbxaudit.a \
+	$(top_builddir)/src/libs/zbxservice/libzbxservice.a \
+	$(top_builddir)/src/libs/zbxcommon/libzbxcommon.a
 
 if HAVE_IPMI
 zabbix_server_LDADD += ipmi/libipmi.a
 endif
 
-zabbix_server_LDADD += @SERVER_LIBS@
+zabbix_server_LDADD += $(SERVER_LIBS)
 
-zabbix_server_LDFLAGS = @SERVER_LDFLAGS@
+zabbix_server_LDFLAGS = $(SERVER_LDFLAGS)
 
 zabbix_server_CFLAGS = \
-	-DDEFAULT_SSL_CERT_LOCATION="\"@CURL_SSL_CERT_LOCATION@\"" \
-	-DDEFAULT_SSL_KEY_LOCATION="\"@CURL_SSL_KEY_LOCATION@\"" \
-	-DDEFAULT_CONFIG_FILE="\"@SERVER_CONFIG_FILE@\"" \
-	-DDEFAULT_EXTERNAL_SCRIPTS_PATH="\"@EXTERNAL_SCRIPTS_PATH@\"" \
-	-DDEFAULT_ALERT_SCRIPTS_PATH="\"@ALERT_SCRIPTS_PATH@\"" \
-	-DDEFAULT_LOAD_MODULE_PATH="\"@LOAD_MODULE_PATH@\""
+	-DDEFAULT_SSL_CERT_LOCATION="\"$(CURL_SSL_CERT_LOCATION)\"" \
+	-DDEFAULT_SSL_KEY_LOCATION="\"$(CURL_SSL_KEY_LOCATION)\"" \
+	-DDEFAULT_CONFIG_FILE="\"$(SERVER_CONFIG_FILE)\"" \
+	-DDEFAULT_EXTERNAL_SCRIPTS_PATH="\"$(EXTERNAL_SCRIPTS_PATH)\"" \
+	-DDEFAULT_ALERT_SCRIPTS_PATH="\"$(ALERT_SCRIPTS_PATH)\"" \
+	-DDEFAULT_LOAD_MODULE_PATH="\"$(LOAD_MODULE_PATH)\"" \
+	$(TLS_CFLAGS)
 
 install-data-hook:
-	$(MKDIR_P) "$(DESTDIR)@SERVER_CONFIG_FILE@.d"
-	$(MKDIR_P) "$(DESTDIR)@EXTERNAL_SCRIPTS_PATH@"
-	$(MKDIR_P) "$(DESTDIR)@ALERT_SCRIPTS_PATH@"
-	$(MKDIR_P) "$(DESTDIR)@LOAD_MODULE_PATH@"
-	test -f "$(DESTDIR)@SERVER_CONFIG_FILE@" || cp "../../conf/zabbix_server.conf" "$(DESTDIR)@SERVER_CONFIG_FILE@"
+	$(MKDIR_P) "$(DESTDIR)$(SERVER_CONFIG_FILE).d"
+	$(MKDIR_P) "$(DESTDIR)$(EXTERNAL_SCRIPTS_PATH)"
+	$(MKDIR_P) "$(DESTDIR)$(ALERT_SCRIPTS_PATH)"
+	$(MKDIR_P) "$(DESTDIR)$(LOAD_MODULE_PATH)"
+	test -f "$(DESTDIR)$(SERVER_CONFIG_FILE)" || cp "../../conf/zabbix_server.conf" "$(DESTDIR)$(SERVER_CONFIG_FILE)"

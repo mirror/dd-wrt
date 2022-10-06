@@ -1,6 +1,6 @@
 /*
 ** Zabbix
-** Copyright (C) 2001-2020 Zabbix SIA
+** Copyright (C) 2001-2022 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -22,19 +22,31 @@ package scheduler
 import (
 	"container/heap"
 
-	"zabbix.com/pkg/plugin"
+	"git.zabbix.com/ap/plugin-support/plugin"
 )
 
+// pluginAgent manages plugin usage
 type pluginAgent struct {
-	impl         plugin.Accessor
-	tasks        performerHeap
-	capacity     int
+	// the plugin
+	impl plugin.Accessor
+	// queue of tasks to perform
+	tasks performerHeap
+	// maximum plugin capacity
+	maxCapacity int
+	// used plugin capacity
 	usedCapacity int
-	index        int
-	// refcount us used to track plugin usage by request batches
+	// force active check on first configuration
+	forceActiveChecksOnStart int
+	// index in plugin queue
+	index int
+	// refcount us used to track plugin usage by clients
 	refcount int
+	// usrprm is used to indicate that plugin is user parameter
+	usrprm bool
 }
 
+// peekTask() returns next task in the queue without removing it from queue or nil
+// if the queue is empty.
 func (p *pluginAgent) peekTask() performer {
 	if len(p.tasks) == 0 {
 		return nil
@@ -42,6 +54,8 @@ func (p *pluginAgent) peekTask() performer {
 	return p.tasks[0]
 }
 
+// popTask() returns next task in the queue and removes it from queue.
+// nil is returned for empty queues.
 func (p *pluginAgent) popTask() performer {
 	if len(p.tasks) == 0 {
 		return nil
@@ -72,7 +86,7 @@ func (p *pluginAgent) queued() bool {
 }
 
 func (p *pluginAgent) hasCapacity() bool {
-	return len(p.tasks) != 0 && p.capacity-p.usedCapacity >= p.tasks[0].getWeight()
+	return len(p.tasks) != 0 && p.maxCapacity-p.usedCapacity >= p.tasks[0].getWeight()
 }
 
 func (p *pluginAgent) active() bool {

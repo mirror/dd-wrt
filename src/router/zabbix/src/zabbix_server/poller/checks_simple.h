@@ -1,6 +1,6 @@
 /*
 ** Zabbix
-** Copyright (C) 2001-2020 Zabbix SIA
+** Copyright (C) 2001-2022 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -20,10 +20,10 @@
 #ifndef ZABBIX_CHECKS_SIMPLE_H
 #define ZABBIX_CHECKS_SIMPLE_H
 
-#include "common.h"
 #include "dbcache.h"
-#include "sysinfo.h"
+#include "module.h"
+#include "zbxalgo.h"
 
-int	get_value_simple(DC_ITEM *item, AGENT_RESULT *result, zbx_vector_ptr_t *add_results);
+int	get_value_simple(const DC_ITEM *item, AGENT_RESULT *result, zbx_vector_ptr_t *add_results);
 
 #endif

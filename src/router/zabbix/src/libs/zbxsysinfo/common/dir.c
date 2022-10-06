@@ -1,6 +1,6 @@
 /*
 ** Zabbix
-** Copyright (C) 2001-2020 Zabbix SIA
+** Copyright (C) 2001-2022 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -17,19 +17,18 @@
 ** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 **/
 
+#include "dir.h"
+
 #include "common.h"
 #include "sysinfo.h"
-#include "dir.h"
 #include "zbxregexp.h"
 #include "log.h"
 
-#ifdef _WINDOWS
+#if defined(_WINDOWS) || defined(__MINGW32__)
 #	include "disk.h"
 #endif
 
 /******************************************************************************
- *                                                                            *
- * Function: filename_matches                                                 *
  *                                                                            *
  * Purpose: checks if filename matches the include-regexp and doesn't match   *
  *          the exclude-regexp                                                *
@@ -51,8 +50,6 @@ static int	filename_matches(const char *fname, const zbx_regexp_t *regex_incl, c
 }
 
 /******************************************************************************
- *                                                                            *
- * Function: queue_directory                                                  *
  *                                                                            *
  * Purpose: adds directory to processing queue after checking if current      *
  *          depth is less than 'max_depth'                                    *
@@ -87,8 +84,6 @@ static int	queue_directory(zbx_vector_ptr_t *list, char *path, int depth, int ma
 }
 
 /******************************************************************************
- *                                                                            *
- * Function: compare_descriptors                                              *
  *                                                                            *
  * Purpose: compares two zbx_file_descriptor_t values to perform search       *
  *          within descriptor vector                                          *
@@ -141,6 +136,7 @@ static int	prepare_common_parameters(const AGENT_REQUEST *request, AGENT_RESULT 
 		{
 			SET_MSG_RESULT(result, zbx_dsprintf(NULL,
 					"Invalid regular expression in second parameter: %s", error));
+			zbx_regexp_err_msg_free(error);
 			return FAIL;
 		}
 	}
@@ -151,6 +147,7 @@ static int	prepare_common_parameters(const AGENT_REQUEST *request, AGENT_RESULT 
 		{
 			SET_MSG_RESULT(result, zbx_dsprintf(NULL,
 					"Invalid regular expression in third parameter: %s", error));
+			zbx_regexp_err_msg_free(error);
 			return FAIL;
 		}
 	}
@@ -161,6 +158,7 @@ static int	prepare_common_parameters(const AGENT_REQUEST *request, AGENT_RESULT 
 		{
 			SET_MSG_RESULT(result, zbx_dsprintf(NULL, "Invalid regular expression in %s parameter: %s",
 					(5 == excl_dir_param ? "sixth" : "eleventh"), error));
+			zbx_regexp_err_msg_free(error);
 			return FAIL;
 		}
 	}
@@ -183,7 +181,7 @@ static int	prepare_common_parameters(const AGENT_REQUEST *request, AGENT_RESULT 
 	if ('\0' != *(*dir + 1) && ':' != *(*dir + strlen(*dir) - 2))
 		zbx_rtrim(*dir, "/\\");
 
-#ifdef _WINDOWS
+#if defined(_WINDOWS) || defined(__MINGW32__)
 	if (0 != zbx_stat(*dir, status))
 #else
 	if (0 != lstat(*dir, status))
@@ -228,24 +226,9 @@ static int	prepare_mode_parameter(const AGENT_REQUEST *request, AGENT_RESULT *re
 	return SUCCEED;
 }
 
-/* Directory Entry Types */
-#define DET_FILE	0x001
-#define DET_DIR		0x002
-#define DET_SYM		0x004
-#define DET_SOCK	0x008
-#define DET_BDEV	0x010
-#define DET_CDEV	0x020
-#define DET_FIFO	0x040
-#define DET_ALL		0x080
-#define DET_DEV		0x100
-#define DET_OVERFLOW	0x200
-#define DET_TEMPLATE	"file\0dir\0sym\0sock\0bdev\0cdev\0fifo\0all\0dev\0"
-#define DET_ALLMASK	(DET_FILE | DET_DIR | DET_SYM | DET_SOCK | DET_BDEV | DET_CDEV | DET_FIFO)
-#define DET_DEV2	(DET_BDEV | DET_CDEV)
-
-static int	etype_to_mask(char *etype)
+static int	etype_to_mask(const char *etype)
 {
-	static const char	*template_list = DET_TEMPLATE;
+	static const char	*template_list = ZBX_FT_TEMPLATE;
 	const char		*tmp;
 	int			ret = 1;
 
@@ -260,10 +243,9 @@ static int	etype_to_mask(char *etype)
 	return ret;
 }
 
-static int	etypes_to_mask(char *etypes, AGENT_RESULT *result)
+int	zbx_etypes_to_mask(const char *etypes, AGENT_RESULT *result)
 {
-	char	*etype;
-	int	n, num, type, ret = 0;
+	int	n, num, ret = 0;
 
 	if (NULL == etypes || '\0' == *etypes)
 		return 0;
@@ -271,25 +253,28 @@ static int	etypes_to_mask(char *etypes, AGENT_RESULT *result)
 	num = num_param(etypes);
 	for (n = 1; n <= num; n++)
 	{
-		if (NULL == (etype = get_param_dyn(etypes, n)))
+		char	*etype;
+		int	type;
+
+		if (NULL == (etype = get_param_dyn(etypes, n, NULL)))
 			continue;
 
-		if (DET_OVERFLOW & (type = etype_to_mask(etype)))
+		if (ZBX_FT_OVERFLOW & (type = etype_to_mask(etype)))
 		{
-			SET_MSG_RESULT(result, zbx_dsprintf(NULL, "Invalid directory entry type \"%s\".", etype));
+			SET_MSG_RESULT(result, zbx_dsprintf(NULL, "Invalid type \"%s\".", etype));
 			zbx_free(etype);
-			return type;
+			return FAIL;
 		}
 
 		ret |= type;
 		zbx_free(etype);
 	}
 
-	if (DET_DEV & ret)
-		ret |= DET_DEV2;
+	if (ZBX_FT_DEV & ret)
+		ret |= ZBX_FT_DEV2;
 
-	if (DET_ALL & ret)
-		ret |= DET_ALLMASK;
+	if (ZBX_FT_ALL & ret)
+		ret |= ZBX_FT_ALLMASK;
 
 	return ret;
 }
@@ -320,24 +305,20 @@ static int	parse_age_parameter(char *text, time_t *time_out, time_t now)
 static int	prepare_count_parameters(const AGENT_REQUEST *request, AGENT_RESULT *result, int *types_out,
 		zbx_uint64_t *min_size, zbx_uint64_t *max_size, time_t *min_time, time_t *max_time)
 {
-	int	types_incl;
-	int	types_excl;
-	char	*min_size_str;
-	char	*max_size_str;
-	char	*min_age_str;
-	char	*max_age_str;
+	int	types_incl, types_excl;
+	char	*min_size_str, *max_size_str, *min_age_str, *max_age_str;
 	time_t	now;
 
-	types_incl = etypes_to_mask(get_rparam(request, 3), result);
-	types_excl = etypes_to_mask(get_rparam(request, 4), result);
-
-	if (DET_OVERFLOW & (types_incl | types_excl))
+	if (FAIL == (types_incl = zbx_etypes_to_mask(get_rparam(request, 3), result)) ||
+			FAIL == (types_excl = zbx_etypes_to_mask(get_rparam(request, 4), result)))
+	{
 		return FAIL;
+	}
 
 	if (0 == types_incl)
-		types_incl = DET_ALLMASK;
+		types_incl = ZBX_FT_ALLMASK;
 
-	*types_out = types_incl & (~types_excl) & DET_ALLMASK;
+	*types_out = types_incl & (~types_excl) & ZBX_FT_ALLMASK;
 
 	/* min/max output variables must be already initialized to default values */
 
@@ -422,14 +403,12 @@ static void	descriptors_vector_destroy(zbx_vector_ptr_t *descriptors)
  * sockets, etc.).                                                            *
  *                                                                            *
  *****************************************************************************/
-#ifdef _WINDOWS
+#if defined(_WINDOWS) || defined(__MINGW32__)
 
 #define		DW2UI64(h,l) 	((zbx_uint64_t)h << 32 | l)
 #define		FT2UT(ft) 	(time_t)(DW2UI64(ft.dwHighDateTime,ft.dwLowDateTime) / 10000000ULL - 11644473600ULL)
 
 /******************************************************************************
- *                                                                            *
- * Function: has_timed_out                                                    *
  *                                                                            *
  * Purpose: Checks if timeout has occurred. If it is, thread should           *
  *          immediately stop whatever it is doing, clean up everything and    *
@@ -706,7 +685,7 @@ err1:
 
 	return ret;
 }
-#else /* not _WINDOWS */
+#else /* not _WINDOWS or __MINGW32__ */
 static int	vfs_dir_size(AGENT_REQUEST *request, AGENT_RESULT *result)
 {
 	char			*dir = NULL;
@@ -861,20 +840,35 @@ int	VFS_DIR_SIZE(AGENT_REQUEST *request, AGENT_RESULT *result)
 	return zbx_execute_threaded_metric(vfs_dir_size, request, result);
 }
 
+#define EVALUATE_DIR_ENTITY()											\
+{														\
+	if (0 == count_mode)											\
+	{													\
+		char	*error = NULL;										\
+														\
+		if (SUCCEED != zbx_vfs_file_info((const char*)path, &j, 1, &error))				\
+		{												\
+			zabbix_log(LOG_LEVEL_DEBUG, "%s() cannot process directory entry '%s': %s",		\
+					__func__, path, error);							\
+			zbx_free(error);									\
+		}												\
+	}													\
+	else													\
+		++count;											\
+}
+
 /******************************************************************************
  *                                                                            *
- * Function: vfs_dir_count                                                    *
- *                                                                            *
- * Purpose: counts files in directory, subject to regexp, type and depth      *
- *          filters                                                           *
+ * Purpose: counts or lists files in directory, subject to regexp, type and   *
+ *          depth filters                                                     *
  *                                                                            *
  * Return value: boolean failure flag                                         *
  *                                                                            *
- * Comments: under Widows we only support entry types "file" and "dir"        *
+ * Comments: under Windows we only support entry types "file" and "dir"       *
  *                                                                            *
  *****************************************************************************/
-#ifdef _WINDOWS
-static int	vfs_dir_count(const AGENT_REQUEST *request, AGENT_RESULT *result, HANDLE timeout_event)
+#if defined(_WINDOWS) || defined(__MINGW32__)
+static int	vfs_dir_info(AGENT_REQUEST *request, AGENT_RESULT *result, HANDLE timeout_event, int count_mode)
 {
 	char			*dir = NULL;
 	int			types, max_depth, ret = SYSINFO_RET_FAIL;
@@ -885,6 +879,7 @@ static int	vfs_dir_count(const AGENT_REQUEST *request, AGENT_RESULT *result, HAN
 	zbx_uint64_t		min_size = 0, max_size = __UINT64_C(0x7fffffffffffffff);
 	time_t			min_time = 0, max_time = 0x7fffffff;
 	size_t			dir_len;
+	struct zbx_json		j;
 
 	if (SUCCEED != prepare_count_parameters(request, result, &types, &min_size, &max_size, &min_time, &max_time))
 		return ret;
@@ -895,6 +890,7 @@ static int	vfs_dir_count(const AGENT_REQUEST *request, AGENT_RESULT *result, HAN
 		goto err1;
 	}
 
+	zbx_json_initarray(&j, ZBX_JSON_STAT_BUF_LEN);
 	zbx_vector_ptr_create(&descriptors);
 	zbx_vector_ptr_create(&list);
 
@@ -996,28 +992,20 @@ static int	vfs_dir_count(const AGENT_REQUEST *request, AGENT_RESULT *result, HAN
 				case FILE_ATTRIBUTE_REPARSE_POINT:
 								/* not a symlink directory => symlink regular file*/
 								/* counting symlink files as MS explorer */
-					if (0 != (types & DET_FILE) && 0 != match)
-						++count;
-					break;
+					if (0 != (types & ZBX_FT_FILE) && 0 != match)
+						EVALUATE_DIR_ENTITY()
+					goto free_path;
 				case FILE_ATTRIBUTE_DIRECTORY:
+					if (0 != (types & ZBX_FT_DIR) && 0 != match)
+						EVALUATE_DIR_ENTITY()
+
 					if (SUCCEED != queue_directory(&list, path, item->depth, max_depth))
 						zbx_free(path);
 
-					if (0 != (types & DET_DIR) && 0 != match)
-						++count;
 					break;
 				default:	/* not a directory => regular file */
-					if (0 != (types & DET_FILE) && 0 != match)
-					{
-						wpath = zbx_utf8_to_unicode(path);
-						if (FAIL == link_processed(data.dwFileAttributes, wpath, &descriptors,
-								path))
-						{
-							++count;
-						}
-
-						zbx_free(wpath);
-					}
+					if (0 != (types & ZBX_FT_FILE) && 0 != match)
+						EVALUATE_DIR_ENTITY()
 free_path:
 					zbx_free(path);
 			}
@@ -1041,18 +1029,35 @@ skip:
 		goto err2;
 	}
 
-	SET_UI64_RESULT(result, count);
+	if (0 == count_mode)
+	{
+		SET_STR_RESULT(result, zbx_strdup(NULL, j.buffer));
+		zbx_json_close(&j);
+	}
+	else
+		SET_UI64_RESULT(result, count);
 	ret = SYSINFO_RET_OK;
 err2:
 	list_vector_destroy(&list);
 	descriptors_vector_destroy(&descriptors);
+	zbx_json_free(&j);
 err1:
 	regex_incl_excl_free(regex_incl, regex_excl, regex_excl_dir);
 
 	return ret;
 }
-#else /* not _WINDOWS */
-static int	vfs_dir_count(AGENT_REQUEST *request, AGENT_RESULT *result)
+
+static int	vfs_dir_count(AGENT_REQUEST *request, AGENT_RESULT *result, HANDLE timeout_event)
+{
+	return vfs_dir_info(request, result, timeout_event, 1);
+}
+
+static int	vfs_dir_get(AGENT_REQUEST *request, AGENT_RESULT *result, HANDLE timeout_event)
+{
+	return vfs_dir_info(request, result, timeout_event, 0);
+}
+#else /* not _WINDOWS or __MINGW32__ */
+static int	vfs_dir_info(AGENT_REQUEST *request, AGENT_RESULT *result, int count_mode)
 {
 	char			*dir = NULL;
 	int			types, max_depth, ret = SYSINFO_RET_FAIL;
@@ -1063,6 +1068,7 @@ static int	vfs_dir_count(AGENT_REQUEST *request, AGENT_RESULT *result)
 	zbx_uint64_t		min_size = 0, max_size = __UINT64_C(0x7FFFffffFFFFffff);
 	time_t			min_time = 0, max_time = 0x7fffffff;
 	size_t			dir_len;
+	struct zbx_json		j;
 
 	if (SUCCEED != prepare_count_parameters(request, result, &types, &min_size, &max_size, &min_time, &max_time))
 		return ret;
@@ -1072,6 +1078,8 @@ static int	vfs_dir_count(AGENT_REQUEST *request, AGENT_RESULT *result)
 	{
 		goto err1;
 	}
+
+	zbx_json_initarray(&j, ZBX_JSON_STAT_BUF_LEN);
 
 	zbx_vector_ptr_create(&list);
 
@@ -1114,7 +1122,10 @@ static int	vfs_dir_count(AGENT_REQUEST *request, AGENT_RESULT *result)
 			if (0 == strcmp(entry->d_name, ".") || 0 == strcmp(entry->d_name, ".."))
 				continue;
 
-			path = zbx_dsprintf(NULL, "%s/%s", item->path, entry->d_name);
+			if (0 == strcmp(item->path, "/"))
+				path = zbx_dsprintf(NULL, "%s%s", item->path, entry->d_name);
+			else
+				path = zbx_dsprintf(NULL, "%s/%s", item->path, entry->d_name);
 
 			if (0 == lstat(path, &status))
 			{
@@ -1129,19 +1140,19 @@ static int	vfs_dir_count(AGENT_REQUEST *request, AGENT_RESULT *result)
 				}
 
 				if (0 != filename_matches(entry->d_name, regex_incl, regex_excl) && (
-						(S_ISREG(status.st_mode)  && 0 != (types & DET_FILE)) ||
-						(S_ISDIR(status.st_mode)  && 0 != (types & DET_DIR)) ||
-						(S_ISLNK(status.st_mode)  && 0 != (types & DET_SYM)) ||
-						(S_ISSOCK(status.st_mode) && 0 != (types & DET_SOCK)) ||
-						(S_ISBLK(status.st_mode)  && 0 != (types & DET_BDEV)) ||
-						(S_ISCHR(status.st_mode)  && 0 != (types & DET_CDEV)) ||
-						(S_ISFIFO(status.st_mode) && 0 != (types & DET_FIFO))) &&
+						(S_ISREG(status.st_mode)  && 0 != (types & ZBX_FT_FILE)) ||
+						(S_ISDIR(status.st_mode)  && 0 != (types & ZBX_FT_DIR)) ||
+						(S_ISLNK(status.st_mode)  && 0 != (types & ZBX_FT_SYM)) ||
+						(S_ISSOCK(status.st_mode) && 0 != (types & ZBX_FT_SOCK)) ||
+						(S_ISBLK(status.st_mode)  && 0 != (types & ZBX_FT_BDEV)) ||
+						(S_ISCHR(status.st_mode)  && 0 != (types & ZBX_FT_CDEV)) ||
+						(S_ISFIFO(status.st_mode) && 0 != (types & ZBX_FT_FIFO))) &&
 						(min_size <= (zbx_uint64_t)status.st_size
 								&& (zbx_uint64_t)status.st_size <= max_size) &&
 						(min_time < status.st_mtime &&
 								status.st_mtime <= max_time))
 				{
-					++count;
+					EVALUATE_DIR_ENTITY()
 				}
 
 				if (!(0 != S_ISDIR(status.st_mode) && SUCCEED == queue_directory(&list, path,
@@ -1164,18 +1175,40 @@ skip:
 		zbx_free(item);
 	}
 
-	SET_UI64_RESULT(result, count);
+	if (0 == count_mode)
+	{
+		SET_STR_RESULT(result, zbx_strdup(NULL, j.buffer));
+		zbx_json_close(&j);
+	}
+	else
+		SET_UI64_RESULT(result, count);
 	ret = SYSINFO_RET_OK;
 err2:
 	list_vector_destroy(&list);
+	zbx_json_free(&j);
 err1:
 	regex_incl_excl_free(regex_incl, regex_excl, regex_excl_dir);
 
 	return ret;
+}
+
+static int	vfs_dir_count(AGENT_REQUEST *request, AGENT_RESULT *result)
+{
+	return vfs_dir_info(request, result, 1);
+}
+
+static int	vfs_dir_get(AGENT_REQUEST *request, AGENT_RESULT *result)
+{
+	return vfs_dir_info(request, result, 0);
 }
 #endif
 
 int	VFS_DIR_COUNT(AGENT_REQUEST *request, AGENT_RESULT *result)
 {
 	return zbx_execute_threaded_metric(vfs_dir_count, request, result);
+}
+
+int	VFS_DIR_GET(AGENT_REQUEST *request, AGENT_RESULT *result)
+{
+	return zbx_execute_threaded_metric(vfs_dir_get, request, result);
 }

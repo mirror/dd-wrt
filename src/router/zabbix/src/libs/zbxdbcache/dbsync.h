@@ -1,6 +1,6 @@
 /*
 ** Zabbix
-** Copyright (C) 2001-2020 Zabbix SIA
+** Copyright (C) 2001-2022 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -21,6 +21,7 @@
 #define ZABBIX_DBSYNC_H
 
 #include "common.h"
+#include "dbconfig.h"
 
 /* no changes */
 #define ZBX_DBSYNC_ROW_NONE	0
@@ -38,17 +39,17 @@
 #define ZBX_DBSYNC_UPDATE_TRIGGER_DEPENDENCY	__UINT64_C(0x0010)
 #define ZBX_DBSYNC_UPDATE_HOST_GROUPS		__UINT64_C(0x0020)
 #define ZBX_DBSYNC_UPDATE_MAINTENANCE_GROUPS	__UINT64_C(0x0040)
+#define ZBX_DBSYNC_UPDATE_MACROS		__UINT64_C(0x0080)
 
-
-#if defined(HAVE_POLARSSL) || defined(HAVE_GNUTLS) || defined(HAVE_OPENSSL)
+#if defined(HAVE_GNUTLS) || defined(HAVE_OPENSSL)
 #	define ZBX_HOST_TLS_OFFSET	4
 #else
 #	define ZBX_HOST_TLS_OFFSET	0
 #endif
 
+#define ZBX_DBSYNC_TRIGGER_ERROR	0x80
+
 /******************************************************************************
- *                                                                            *
- * Function: zbx_dbsync_preproc_row_func_t                                    *
  *                                                                            *
  * Purpose: applies necessary preprocessing before row is compared/used       *
  *                                                                            *
@@ -58,7 +59,6 @@
  *                                                                            *
  * Comments: The row preprocessing can be used to expand user macros in       *
  *           some columns.                                                    *
- *                                                                            *
  *                                                                            *
  ******************************************************************************/
 typedef char **(*zbx_dbsync_preproc_row_func_t)(char **row);
@@ -108,12 +108,15 @@ struct zbx_dbsync
 	zbx_uint64_t	remove_num;
 };
 
-void	zbx_dbsync_init_env(ZBX_DC_CONFIG *cache);
-void	zbx_dbsync_free_env(void);
+void	zbx_dbsync_env_init(ZBX_DC_CONFIG *cache);
+int	zbx_dbsync_env_prepare(unsigned char mode);
+void	zbx_dbsync_env_flush_changelog(void);
+void	zbx_dbsync_env_clear(void);
+int	zbx_dbsync_env_changelog_num(void);
 
 void	zbx_dbsync_init(zbx_dbsync_t *sync, unsigned char mode);
 void	zbx_dbsync_clear(zbx_dbsync_t *sync);
-int	zbx_dbsync_next(zbx_dbsync_t *sync, zbx_uint64_t *rowid, char ***rows, unsigned char *tag);
+int	zbx_dbsync_next(zbx_dbsync_t *sync, zbx_uint64_t *rowid, char ***row, unsigned char *tag);
 
 int	zbx_dbsync_compare_config(zbx_dbsync_t *sync);
 int	zbx_dbsync_compare_autoreg_psk(zbx_dbsync_t *sync);
@@ -123,6 +126,7 @@ int	zbx_dbsync_compare_host_templates(zbx_dbsync_t *sync);
 int	zbx_dbsync_compare_global_macros(zbx_dbsync_t *sync);
 int	zbx_dbsync_compare_host_macros(zbx_dbsync_t *sync);
 int	zbx_dbsync_compare_interfaces(zbx_dbsync_t *sync);
+int	zbx_dbsync_compare_item_discovery(zbx_dbsync_t *sync);
 int	zbx_dbsync_compare_items(zbx_dbsync_t *sync);
 int	zbx_dbsync_compare_template_items(zbx_dbsync_t *sync);
 int	zbx_dbsync_compare_prototype_items(zbx_dbsync_t *sync);
@@ -134,12 +138,14 @@ int	zbx_dbsync_compare_actions(zbx_dbsync_t *sync);
 int	zbx_dbsync_compare_action_ops(zbx_dbsync_t *sync);
 int	zbx_dbsync_compare_action_conditions(zbx_dbsync_t *sync);
 int	zbx_dbsync_compare_trigger_tags(zbx_dbsync_t *sync);
+int	zbx_dbsync_compare_item_tags(zbx_dbsync_t *sync);
 int	zbx_dbsync_compare_host_tags(zbx_dbsync_t *sync);
 int	zbx_dbsync_compare_correlations(zbx_dbsync_t *sync);
 int	zbx_dbsync_compare_corr_conditions(zbx_dbsync_t *sync);
 int	zbx_dbsync_compare_corr_operations(zbx_dbsync_t *sync);
 int	zbx_dbsync_compare_host_groups(zbx_dbsync_t *sync);
 int	zbx_dbsync_compare_item_preprocs(zbx_dbsync_t *sync);
+int	zbx_dbsync_compare_item_script_param(zbx_dbsync_t *sync);
 int	zbx_dbsync_compare_maintenances(zbx_dbsync_t *sync);
 int	zbx_dbsync_compare_maintenance_tags(zbx_dbsync_t *sync);
 int	zbx_dbsync_compare_maintenance_periods(zbx_dbsync_t *sync);

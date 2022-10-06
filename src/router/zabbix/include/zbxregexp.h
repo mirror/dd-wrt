@@ -1,6 +1,6 @@
 /*
 ** Zabbix
-** Copyright (C) 2001-2020 Zabbix SIA
+** Copyright (C) 2001-2022 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -37,8 +37,8 @@ typedef struct
 zbx_expression_t;
 
 /* regular expressions */
-int	zbx_regexp_compile(const char *pattern, zbx_regexp_t **regexp, const char **err_msg_static);
-int	zbx_regexp_compile_ext(const char *pattern, zbx_regexp_t **regexp, int flags, const char **error);
+int	zbx_regexp_compile(const char *pattern, zbx_regexp_t **regexp, const char **err_msg);
+int	zbx_regexp_compile_ext(const char *pattern, zbx_regexp_t **regexp, int flags, const char **err_msg);
 void	zbx_regexp_free(zbx_regexp_t *regexp);
 int	zbx_regexp_match_precompiled(const char *string, const zbx_regexp_t *regexp);
 char	*zbx_regexp_match(const char *string, const char *pattern, int *len);
@@ -57,5 +57,11 @@ int	regexp_sub_ex(const zbx_vector_ptr_t *regexps, const char *string, const cha
 		const char *output_template, char **output);
 int	zbx_global_regexp_exists(const char *name, const zbx_vector_ptr_t *regexps);
 void	zbx_regexp_escape(char **string);
+
+/* wildcards */
+void	zbx_wildcard_minimize(char *str);
+int	zbx_wildcard_match(const char *value, const char *wildcard);
+
+void	zbx_regexp_err_msg_free(const char *err_msg);
 
 #endif /* ZABBIX_ZBXREGEXP_H */

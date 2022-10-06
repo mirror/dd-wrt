@@ -1,6 +1,6 @@
 /*
 ** Zabbix
-** Copyright (C) 2001-2020 Zabbix SIA
+** Copyright (C) 2001-2022 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -17,25 +17,21 @@
 ** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 **/
 
-#include "common.h"
-#include "daemon.h"
-#include "db.h"
+#include "lld_worker.h"
+
+#include "zbxnix.h"
 #include "log.h"
 #include "zbxipcservice.h"
 #include "zbxself.h"
-#include "dbcache.h"
 #include "proxy.h"
 #include "../events.h"
-
-#include "lld_worker.h"
 #include "lld_protocol.h"
 
-extern unsigned char	process_type, program_type;
-extern int		server_num, process_num;
+extern ZBX_THREAD_LOCAL unsigned char	process_type;
+extern unsigned char			program_type;
+extern ZBX_THREAD_LOCAL int		server_num, process_num;
 
 /******************************************************************************
- *                                                                            *
- * Function: lld_register_worker                                              *
  *                                                                            *
  * Purpose: registers lld worker with lld manager                             *
  *                                                                            *
@@ -53,8 +49,6 @@ static void	lld_register_worker(zbx_ipc_socket_t *socket)
 
 /******************************************************************************
  *                                                                            *
- * Function: lld_process_task                                                 *
- *                                                                            *
  * Purpose: processes lld task and updates rule state/error in configuration  *
  *          cache and database                                                *
  *                                                                            *
@@ -63,7 +57,7 @@ static void	lld_register_worker(zbx_ipc_socket_t *socket)
  ******************************************************************************/
 static void	lld_process_task(zbx_ipc_message_t *message)
 {
-	zbx_uint64_t		itemid, lastlogsize;
+	zbx_uint64_t		itemid, hostid, lastlogsize;
 	char			*value, *error;
 	zbx_timespec_t		ts;
 	zbx_item_diff_t		diff;
@@ -73,7 +67,7 @@ static void	lld_process_task(zbx_ipc_message_t *message)
 
 	zabbix_log(LOG_LEVEL_DEBUG, "In %s()", __func__);
 
-	zbx_lld_deserialize_item_value(message->data, &itemid, &value, &ts, &meta, &lastlogsize, &mtime, &error);
+	zbx_lld_deserialize_item_value(message->data, &itemid, &hostid, &value, &ts, &meta, &lastlogsize, &mtime, &error);
 
 	DCconfig_get_items_by_itemids(&item, &itemid, &errcode, 1);
 	if (SUCCEED != errcode)
@@ -102,7 +96,7 @@ static void	lld_process_task(zbx_ipc_message_t *message)
 
 				zbx_add_event(EVENT_SOURCE_INTERNAL, EVENT_OBJECT_LLDRULE, itemid, &ts,
 						ITEM_STATE_NORMAL, NULL, NULL, NULL, 0, 0, NULL, 0, NULL, 0, NULL,
-						NULL);
+						NULL, NULL);
 			}
 			else
 			{
@@ -111,7 +105,7 @@ static void	lld_process_task(zbx_ipc_message_t *message)
 
 				zbx_add_event(EVENT_SOURCE_INTERNAL, EVENT_OBJECT_LLDRULE, itemid, &ts,
 						ITEM_STATE_NOTSUPPORTED, NULL, NULL, NULL, 0, 0, NULL, 0, NULL, 0,
-						NULL, error);
+						NULL, NULL, error);
 			}
 
 			zbx_process_events(NULL, NULL);
@@ -150,9 +144,9 @@ static void	lld_process_task(zbx_ipc_message_t *message)
 		diff.itemid = itemid;
 		zbx_vector_ptr_append(&diffs, &diff);
 
-		DBbegin_multiple_update(&sql, &sql_alloc, &sql_offset);
-		zbx_db_save_item_changes(&sql, &sql_alloc, &sql_offset, &diffs);
-		DBend_multiple_update(&sql, &sql_alloc, &sql_offset);
+		zbx_DBbegin_multiple_update(&sql, &sql_alloc, &sql_offset);
+		zbx_db_save_item_changes(&sql, &sql_alloc, &sql_offset, &diffs, ZBX_FLAGS_ITEM_DIFF_UPDATE_DB);
+		zbx_DBend_multiple_update(&sql, &sql_alloc, &sql_offset);
 		if (16 < sql_offset)
 			DBexecute("%s", sql);
 
@@ -169,7 +163,6 @@ out:
 
 	zabbix_log(LOG_LEVEL_DEBUG, "End of %s()", __func__);
 }
-
 
 ZBX_THREAD_ENTRY(lld_worker_thread, args)
 {
@@ -203,7 +196,6 @@ ZBX_THREAD_ENTRY(lld_worker_thread, args)
 	lld_register_worker(&lld_socket);
 
 	time_stat = zbx_time();
-
 
 	DBconnect(ZBX_DB_CONNECT_NORMAL);
 

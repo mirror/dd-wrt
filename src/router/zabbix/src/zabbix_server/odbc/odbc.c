@@ -1,6 +1,6 @@
 /*
 ** Zabbix
-** Copyright (C) 2001-2020 Zabbix SIA
+** Copyright (C) 2001-2022 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -21,11 +21,11 @@
 
 #ifdef HAVE_UNIXODBC
 
+#include "odbc.h"
+
 #include <sql.h>
 #include <sqlext.h>
-#include <sqltypes.h>
 
-#include "odbc.h"
 #include "log.h"
 #include "zbxjson.h"
 #include "zbxalgo.h"
@@ -47,8 +47,6 @@ struct zbx_odbc_query_result
 #define ZBX_FLAG_ODBC_LLD	0x01
 
 /******************************************************************************
- *                                                                            *
- * Function: zbx_odbc_rc_str                                                  *
  *                                                                            *
  * Purpose: get human readable representation of ODBC return code             *
  *                                                                            *
@@ -82,8 +80,6 @@ static const char	*zbx_odbc_rc_str(SQLRETURN rc)
 }
 
 /******************************************************************************
- *                                                                            *
- * Function: zbx_odbc_diag                                                    *
  *                                                                            *
  * Purpose: diagnose result of ODBC function call                             *
  *                                                                            *
@@ -149,8 +145,6 @@ static int	zbx_odbc_diag(SQLSMALLINT h_type, SQLHANDLE h, SQLRETURN rc, char **d
 
 /******************************************************************************
  *                                                                            *
- * Function: zbx_log_odbc_connection_info                                     *
- *                                                                            *
  * Purpose: log details upon successful connection on behalf of caller        *
  *                                                                            *
  * Parameters: function - [IN] caller function name                           *
@@ -205,15 +199,39 @@ static void	zbx_log_odbc_connection_info(const char *function, SQLHDBC hdbc)
 
 /******************************************************************************
  *                                                                            *
- * Function: zbx_odbc_connect                                                 *
+ * Purpose: Appends a new argument to ODBC connection string.                 *
+ *          Connection string is reallocated to fit new value.                *
+ *                                                                            *
+ * Parameters: connection_str - [IN/OUT] connection string                    *
+ *             attribute      - [IN] attribute name                           *
+ *             value          - [IN] attribute value                          *
+ *                                                                            *
+ ******************************************************************************/
+static void zbx_odbc_connection_string_append(char **connection_str, const char *attribute, const char *value)
+{
+	size_t	len;
+	char	last = '\0';
+
+	if (NULL == value)
+		return;
+
+	if (0 < (len = strlen(*connection_str)))
+		last = (*connection_str)[len-1];
+
+	*connection_str = zbx_dsprintf(*connection_str, "%s%s%s=%s", *connection_str, ';' == last ? "" : ";",
+			attribute, value);
+}
+
+/******************************************************************************
  *                                                                            *
  * Purpose: connect to ODBC data source                                       *
  *                                                                            *
- * Parameters: dsn     - [IN] data source name                                *
- *             user    - [IN] user name                                       *
- *             pass    - [IN] password                                        *
- *             timeout - [IN] timeout                                         *
- *             error   - [OUT] error message                                  *
+ * Parameters: dsn        - [IN] data source name                             *
+ *             connection - [IN] connection string                            *
+ *             user       - [IN] user name                                    *
+ *             pass       - [IN] password                                     *
+ *             timeout    - [IN] timeout                                      *
+ *             error      - [OUT] error message                               *
  *                                                                            *
  * Return value: pointer to opaque data source data structure or NULL in case *
  *               of failure, allocated error message is returned in error     *
@@ -221,7 +239,8 @@ static void	zbx_log_odbc_connection_info(const char *function, SQLHDBC hdbc)
  * Comments: It is caller's responsibility to free error buffer!              *
  *                                                                            *
  ******************************************************************************/
-zbx_odbc_data_source_t	*zbx_odbc_connect(const char *dsn, const char *user, const char *pass, int timeout, char **error)
+zbx_odbc_data_source_t	*zbx_odbc_connect(const char *dsn, const char *connection, const char *user, const char *pass,
+		int timeout, char **error)
 {
 	char			*diag = NULL;
 	zbx_odbc_data_source_t	*data_source = NULL;
@@ -254,8 +273,31 @@ zbx_odbc_data_source_t	*zbx_odbc_connect(const char *dsn, const char *user, cons
 					if ('\0' == *pass)
 						pass = NULL;
 
-					rc = SQLConnect(data_source->hdbc, (SQLCHAR *)dsn, SQL_NTS, (SQLCHAR *)user,
-							SQL_NTS, (SQLCHAR *)pass, SQL_NTS);
+					if (NULL != connection && '\0' != *connection)
+					{
+						char	*connection_str;
+
+						connection_str = NULL;
+
+						if (NULL != user || NULL != pass)
+						{
+							connection_str = zbx_strdup(NULL, connection);
+							zbx_odbc_connection_string_append(&connection_str, "UID", user);
+							zbx_odbc_connection_string_append(&connection_str, "PWD", pass);
+							connection = connection_str;
+						}
+
+						rc = SQLDriverConnect(data_source->hdbc, NULL,
+								(SQLCHAR *)connection, SQL_NTS, NULL, 0, NULL,
+								SQL_DRIVER_NOPROMPT);
+
+						zbx_free(connection_str);
+					}
+					else
+					{
+						rc = SQLConnect(data_source->hdbc, (SQLCHAR *)dsn, SQL_NTS,
+								(SQLCHAR *)user, SQL_NTS, (SQLCHAR *)pass, SQL_NTS);
+					}
 
 					if (SUCCEED == zbx_odbc_diag(SQL_HANDLE_DBC, data_source->hdbc, rc, &diag))
 					{
@@ -292,8 +334,6 @@ out:
 
 /******************************************************************************
  *                                                                            *
- * Function: zbx_odbc_data_source_free                                        *
- *                                                                            *
  * Purpose: free resources allocated by successful zbx_odbc_connect() call    *
  *                                                                            *
  * Parameters: data_source - [IN] pointer to data source structure            *
@@ -311,8 +351,6 @@ void	zbx_odbc_data_source_free(zbx_odbc_data_source_t *data_source)
 }
 
 /******************************************************************************
- *                                                                            *
- * Function: zbx_odbc_select                                                  *
  *                                                                            *
  * Purpose: execute a query to ODBC data source                               *
  *                                                                            *
@@ -333,6 +371,12 @@ zbx_odbc_query_result_t	*zbx_odbc_select(const zbx_odbc_data_source_t *data_sour
 	SQLRETURN		rc;
 
 	zabbix_log(LOG_LEVEL_DEBUG, "In %s() query:'%s'", __func__, query);
+
+	if (NULL == query || '\0' == *query)
+	{
+		*error = zbx_strdup(*error, "SQL query cannot be empty.");
+		goto out;
+	}
 
 	query_result = (zbx_odbc_query_result_t *)zbx_malloc(query_result, sizeof(zbx_odbc_query_result_t));
 
@@ -386,8 +430,6 @@ out:
 
 /******************************************************************************
  *                                                                            *
- * Function: zbx_odbc_query_result_free                                       *
- *                                                                            *
  * Purpose: free resources allocated by successful zbx_odbc_select() call     *
  *                                                                            *
  * Parameters: query_result - [IN] pointer to query result structure          *
@@ -410,8 +452,6 @@ void	zbx_odbc_query_result_free(zbx_odbc_query_result_t *query_result)
 }
 
 /******************************************************************************
- *                                                                            *
- * Function: zbx_odbc_fetch                                                   *
  *                                                                            *
  * Purpose: fetch single row of ODBC query result                             *
  *                                                                            *
@@ -491,8 +531,6 @@ out:
 
 /******************************************************************************
  *                                                                            *
- * Function: zbx_odbc_query_result_to_string                                  *
- *                                                                            *
  * Purpose: extract the first column of the first row of ODBC SQL query       *
  *                                                                            *
  * Parameters: query_result - [IN] result of SQL query                        *
@@ -535,8 +573,6 @@ int	zbx_odbc_query_result_to_string(zbx_odbc_query_result_t *query_result, char 
 }
 
 /******************************************************************************
- *                                                                            *
- * Function: odbc_query_result_to_json                                        *
  *                                                                            *
  * Purpose: convert ODBC SQL query result into JSON                           *
  *                                                                            *
@@ -659,8 +695,6 @@ out:
 
 /******************************************************************************
  *                                                                            *
- * Function: zbx_odbc_query_result_to_lld_json                                *
- *                                                                            *
  * Purpose: public wrapper for odbc_query_result_to_json                      *
  *                                                                            *
  *****************************************************************************/
@@ -670,8 +704,6 @@ int	zbx_odbc_query_result_to_lld_json(zbx_odbc_query_result_t *query_result, cha
 }
 
 /******************************************************************************
- *                                                                            *
- * Function: zbx_odbc_query_result_to_json                                    *
  *                                                                            *
  * Purpose: public wrapper for odbc_query_result_to_json                      *
  *                                                                            *

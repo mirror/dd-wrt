@@ -1,6 +1,6 @@
 /*
 ** Zabbix
-** Copyright (C) 2001-2020 Zabbix SIA
+** Copyright (C) 2001-2022 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -20,10 +20,9 @@
 package kernel
 
 import (
-	"errors"
-
-	"zabbix.com/pkg/plugin"
-	"zabbix.com/pkg/std"
+	"git.zabbix.com/ap/plugin-support/plugin"
+	"git.zabbix.com/ap/plugin-support/std"
+	"git.zabbix.com/ap/plugin-support/zbxerr"
 )
 
 // Plugin -
@@ -36,28 +35,23 @@ var stdOs std.Os
 
 // Export -
 func (p *Plugin) Export(key string, params []string, ctx plugin.ContextProvider) (result interface{}, err error) {
-	var proc bool
-
 	if len(params) > 0 {
-		return nil, errors.New("Too many parameters.")
+		return nil, zbxerr.ErrorTooManyParameters
 	}
 
 	switch key {
-	case "kernel.maxproc":
-		proc = true
-	case "kernel.maxfiles":
-		proc = false
+	case "kernel.maxproc", "kernel.maxfiles", "kernel.openfiles":
+		return getFirstNum(key)
 	default:
 		/* SHOULD_NEVER_HAPPEN */
 		return 0, plugin.UnsupportedMetricError
 	}
-
-	return getMax(proc)
 }
 
 func init() {
 	stdOs = std.NewOs()
 	plugin.RegisterMetrics(&impl, "Kernel",
 		"kernel.maxproc", "Returns maximum number of processes supported by OS.",
-		"kernel.maxfiles", "Returns maximum number of opened files supported by OS.")
+		"kernel.maxfiles", "Returns maximum number of opened files supported by OS.",
+		"kernel.openfiles", "Returns number of currently open file descriptors.")
 }

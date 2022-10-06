@@ -1,6 +1,6 @@
 /*
 ** Zabbix
-** Copyright (C) 2001-2020 Zabbix SIA
+** Copyright (C) 2001-2022 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -19,13 +19,13 @@
 
 #include "common.h"
 #include "valuecache.h"
-#include "preproc.h"
 #include "zbxlld.h"
+#include "dbcache.h"
+#include "zbxha.h"
+
 #include "checks_internal.h"
 
 /******************************************************************************
- *                                                                            *
- * Function: zbx_get_value_internal_ext                                       *
  *                                                                            *
  * Purpose: processes program type (server) specific internal checks          *
  *                                                                            *
@@ -43,8 +43,8 @@
  ******************************************************************************/
 int	zbx_get_value_internal_ext(const char *param1, const AGENT_REQUEST *request, AGENT_RESULT *result)
 {
-	int	nparams, ret = NOTSUPPORTED;
-	char	*param2, *param3;
+	int		nparams, ret = NOTSUPPORTED;
+	const char	*param2;
 
 	nparams = get_rparams_num(request);
 
@@ -58,34 +58,9 @@ int	zbx_get_value_internal_ext(const char *param1, const AGENT_REQUEST *request,
 
 		SET_UI64_RESULT(result, DCget_trigger_count());
 	}
-	else if (0 == strcmp(param1, "history") ||		/* zabbix["history"] */
-			0 == strcmp(param1, "history_log") ||	/* zabbix["history_log"] */
-			0 == strcmp(param1, "history_str") ||	/* zabbix["history_str"] */
-			0 == strcmp(param1, "history_text") ||	/* zabbix["history_text"] */
-			0 == strcmp(param1, "history_uint"))	/* zabbix["history_uint"] */
+	else if (0 == strcmp(param1, "proxy"))			/* zabbix["proxy",<hostname>,"lastaccess" OR "delay"] */
 	{
-		if (1 != nparams)
-		{
-			SET_MSG_RESULT(result, zbx_strdup(NULL, "Invalid number of parameters."));
-			goto out;
-		}
-
-		SET_UI64_RESULT(result, DBget_row_count(param1));
-	}
-	else if (0 == strcmp(param1, "trends") ||			/* zabbix["trends"] */
-			0 == strcmp(param1, "trends_uint"))	/* zabbix["trends_uint"] */
-	{
-		if (1 != nparams)
-		{
-			SET_MSG_RESULT(result, zbx_strdup(NULL, "Invalid number of parameters."));
-			goto out;
-		}
-
-		SET_UI64_RESULT(result, DBget_row_count(param1));
-	}
-	else if (0 == strcmp(param1, "proxy"))			/* zabbix["proxy",<hostname>,"lastaccess"] */
-	{
-		int	lastaccess;
+		int	value, res;
 		char	*error = NULL;
 
 		/* this item is always processed by server */
@@ -97,22 +72,39 @@ int	zbx_get_value_internal_ext(const char *param1, const AGENT_REQUEST *request,
 		}
 
 		param2 = get_rparam(request, 2);
-		if ('\0' == *param2 || 0 != strcmp(param2, "lastaccess"))
+
+		if (0 == strcmp(param2, "lastaccess"))
+		{
+			res = DCget_proxy_lastaccess_by_name(get_rparam(request, 1), &value, &error);
+		}
+		else if (0 == strcmp(param2, "delay"))
+		{
+			int	lastaccess;
+
+			if (SUCCEED == (res = DCget_proxy_delay_by_name(get_rparam(request, 1), &value, &error)) &&
+					SUCCEED == (res = DCget_proxy_lastaccess_by_name(get_rparam(request, 1),
+					&lastaccess, &error)))
+			{
+				value += (int)time(NULL) - lastaccess;
+			}
+		}
+		else
 		{
 			SET_MSG_RESULT(result, zbx_strdup(NULL, "Invalid third parameter."));
 			goto out;
 		}
 
-		if (FAIL == DBget_proxy_lastaccess(get_rparam(request, 1), &lastaccess, &error))
+		if (SUCCEED != res)
 		{
 			SET_MSG_RESULT(result, error);
 			goto out;
 		}
 
-		SET_UI64_RESULT(result, lastaccess);
+		SET_UI64_RESULT(result, value);
 	}
 	else if (0 == strcmp(param1, "vcache"))
 	{
+		const char	*param3;
 		zbx_vc_stats_t	stats;
 
 		if (FAIL == zbx_vc_get_statistics(&stats))
@@ -128,6 +120,7 @@ int	zbx_get_value_internal_ext(const char *param1, const AGENT_REQUEST *request,
 		}
 
 		param2 = get_rparam(request, 1);
+
 		if (NULL == (param3 = get_rparam(request, 2)))
 			param3 = "";
 
@@ -190,6 +183,38 @@ int	zbx_get_value_internal_ext(const char *param1, const AGENT_REQUEST *request,
 		}
 
 		SET_UI64_RESULT(result, value);
+	}
+	else if (0 == strcmp(param1, "cluster"))
+	{
+		char	*nodes = NULL, *error = NULL;
+
+		if (3 != nparams)
+		{
+			SET_MSG_RESULT(result, zbx_strdup(NULL, "Invalid number of parameters."));
+			goto out;
+		}
+
+		param2 = get_rparam(request, 1);
+		if (0 != strcmp(param2, "discovery"))
+		{
+			SET_MSG_RESULT(result, zbx_strdup(NULL, "Invalid second parameter."));
+			goto out;
+		}
+
+		param2 = get_rparam(request, 2);
+		if (0 != strcmp(param2, "nodes"))
+		{
+			SET_MSG_RESULT(result, zbx_strdup(NULL, "Invalid third parameter."));
+			goto out;
+		}
+
+		if (SUCCEED != zbx_ha_get_nodes(&nodes, &error))
+		{
+			SET_MSG_RESULT(result, error);
+			goto out;
+		}
+
+		SET_TEXT_RESULT(result, nodes);
 	}
 	else
 	{

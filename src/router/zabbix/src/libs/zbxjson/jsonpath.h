@@ -1,6 +1,6 @@
 /*
 ** Zabbix
-** Copyright (C) 2001-2020 Zabbix SIA
+** Copyright (C) 2001-2022 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -48,7 +48,9 @@ typedef enum
 	ZBX_JSONPATH_FUNCTION_AVG,
 	ZBX_JSONPATH_FUNCTION_LENGTH,
 	ZBX_JSONPATH_FUNCTION_FIRST,
-	ZBX_JSONPATH_FUNCTION_SUM
+	ZBX_JSONPATH_FUNCTION_SUM,
+	/* the element name suffix '~' internally is treated as a function */
+	ZBX_JSONPATH_FUNCTION_NAME
 }
 zbx_jsonpath_function_type_t;
 
@@ -154,6 +156,5 @@ typedef struct
 	char		*data;
 }
 zbx_jsonpath_token_t;
-
 
 #endif

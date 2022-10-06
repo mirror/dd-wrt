@@ -3,7 +3,7 @@ package agent
 import (
 	"testing"
 
-	"zabbix.com/pkg/plugin"
+	"git.zabbix.com/ap/plugin-support/plugin"
 )
 
 type Input struct {
@@ -50,7 +50,7 @@ func TestUserParameterPlugin(t *testing.T) {
 		t.Run(results[i].data[0], func(t *testing.T) {
 			plugin.Metrics = make(map[string]*plugin.Metric)
 
-			if err := InitUserParameterPlugin(results[i].data, results[i].unsafeUserParameters); err != nil {
+			if _, err := InitUserParameterPlugin(results[i].data, results[i].unsafeUserParameters, ""); err != nil {
 				if !results[i].failed {
 					t.Errorf("Expected success while got error %s", err)
 				}
@@ -73,7 +73,7 @@ var resultsCmd = []Result{
 		input: []Input{
 			Input{key: "system.test", params: []string{}, cmd: "who | wc -l"},
 			Input{key: "vfs.dir.size", params: []string{"/tmp"}, cmd: "dir=\"/tmp\"; du -s -B 1 \"${dir:-/tmp}\" | cut -f1"},
-			Input{key: "proc.cpu", params: []string{"foo"}, cmd: "proc=\"foo\"; ps -o pcpu= -C \"${proc:-zabbix_agentd}\" | awk '{sum += $foo} END {print sum}"},
+			Input{key: "proc.cpu", params: []string{"foo"}, cmd: "proc=\"foo\"; ps -o pcpu= -C \"${proc:-zabbix_agentd}\" | awk '{sum += $1} END {print sum}"},
 			Input{key: "unix_mail.queue", params: []string{}, cmd: "mailq | grep -v \"Mail queue is empty\" | grep -c '^[0-9A-Z]"},
 			Input{key: "vfs.partitions.discovery.linux", params: []string{}, cmd: "for partition in $(awk 'NR > 2 {print $4}' /proc/partitions); do partitionlist=\"$partitionlist,\"'{\"{#PARTITION}\":\"'$partition'\"}'; done; echo '{\"data\":['${partitionlist#,}']}"},
 			Input{key: "vfs.partitions.discovery.solaris", params: []string{}, cmd: "/somewhere/solaris_partitions.sh"},
@@ -122,12 +122,7 @@ var resultsCmd = []Result{
 	},
 	Result{data: []string{"a[*],$$"},
 		input: []Input{
-			Input{key: "a", params: []string{"c"}, cmd: "$$"},
-		},
-	},
-	Result{data: []string{"a[*],$$"},
-		input: []Input{
-			Input{key: "a", params: []string{"c"}, cmd: "$$"},
+			Input{key: "a", params: []string{"c"}, cmd: "$"},
 		},
 	},
 
@@ -138,7 +133,7 @@ var resultsCmd = []Result{
 	},
 	Result{data: []string{"a[*],$1$1$2$3$2$4$5$6$5$7$8$9"},
 		input: []Input{
-			Input{key: "a", params: []string{"foo"}, cmd: "foofoo$2$3$2$4$5$6$5$7$8$9"},
+			Input{key: "a", params: []string{"foo"}, cmd: "foofoo"},
 		},
 	},
 	Result{data: []string{"a[*],$1$1$2$3$2$4$5$6$5$7$8$9"},
@@ -153,12 +148,12 @@ var resultsCmd = []Result{
 	},
 	Result{data: []string{"a[*],echo $1"},
 		input: []Input{
-			Input{key: "a", params: []string{}, cmd: "echo $1"},
+			Input{key: "a", params: []string{}, cmd: "echo "},
 		},
 	},
 	Result{data: []string{"a[*],echo $1 foo"},
 		input: []Input{
-			Input{key: "a", params: []string{}, cmd: "echo $1 foo"},
+			Input{key: "a", params: []string{}, cmd: "echo  foo"},
 		},
 	},
 	Result{data: []string{"a[*],echo foo"},
@@ -197,6 +192,16 @@ var resultsCmd = []Result{
 			Input{key: "a", params: []string{"\\'\"`*?[]{}~$!&;()<>|#@\n"}, cmd: "echo \\'\"`*?[]{}~$!&;()<>|#@\n"},
 		},
 	},
+	Result{data: []string{"a[*],echo $0"},
+		input: []Input{
+			Input{key: "a", params: []string{}, cmd: "echo echo $0"},
+		},
+	},
+	Result{data: []string{"a[*],echo $$$1"},
+		input: []Input{
+			Input{key: "a", params: []string{}, cmd: "echo $"},
+		},
+	},
 }
 
 func TestCmd(t *testing.T) {
@@ -204,7 +209,7 @@ func TestCmd(t *testing.T) {
 		t.Run(resultsCmd[i].data[0], func(t *testing.T) {
 			plugin.Metrics = make(map[string]*plugin.Metric)
 
-			if err := InitUserParameterPlugin(resultsCmd[i].data, resultsCmd[i].unsafeUserParameters); err != nil {
+			if _, err := InitUserParameterPlugin(resultsCmd[i].data, resultsCmd[i].unsafeUserParameters, ""); err != nil {
 				t.Errorf("Plugin init failed: %s", err)
 			}
 
@@ -233,7 +238,7 @@ func TestUnsafeCmd(t *testing.T) {
 	t.Run("", func(t *testing.T) {
 		plugin.Metrics = make(map[string]*plugin.Metric)
 
-		if err := InitUserParameterPlugin([]string{"a[*],echo $1"}, 0); err != nil {
+		if _, err := InitUserParameterPlugin([]string{"a[*],echo $1"}, 0, ""); err != nil {
 			t.Errorf("Plugin init failed: %s", err)
 		}
 
@@ -246,7 +251,7 @@ func TestUnsafeCmd(t *testing.T) {
 
 		plugin.Metrics = make(map[string]*plugin.Metric)
 
-		if err := InitUserParameterPlugin([]string{"a[*],echo $1"}, 1); err != nil {
+		if _, err := InitUserParameterPlugin([]string{"a[*],echo $1"}, 1, ""); err != nil {
 			t.Errorf("Plugin init failed: %s", err)
 		}
 

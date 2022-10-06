@@ -1,6 +1,6 @@
 /*
 ** Zabbix
-** Copyright (C) 2001-2020 Zabbix SIA
+** Copyright (C) 2001-2022 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -20,19 +20,18 @@
 #ifndef ZABBIX_ALERTER_PROTOCOL_H
 #define ZABBIX_ALERTER_PROTOCOL_H
 
-#include "common.h"
+#include "zbxalert.h"
 
 #define ZBX_IPC_SERVICE_ALERTER	"alerter"
 
 /* alerter -> manager */
 #define ZBX_IPC_ALERTER_REGISTER	1000
 #define ZBX_IPC_ALERTER_RESULT		1001
-#define ZBX_IPC_ALERTER_ALERT		1002
-#define ZBX_IPC_ALERTER_MEDIATYPES	1003
-#define ZBX_IPC_ALERTER_ALERTS		1004
-#define ZBX_IPC_ALERTER_WATCHDOG	1005
-#define ZBX_IPC_ALERTER_RESULTS		1006
-#define ZBX_IPC_ALERTER_DROP_MEDIATYPES	1007
+#define ZBX_IPC_ALERTER_MEDIATYPES	1002
+#define ZBX_IPC_ALERTER_ALERTS		1003
+#define ZBX_IPC_ALERTER_WATCHDOG	1004
+#define ZBX_IPC_ALERTER_RESULTS		1005
+#define ZBX_IPC_ALERTER_DROP_MEDIATYPES	1006
 
 /* manager -> alerter */
 #define ZBX_IPC_ALERTER_EMAIL		1100
@@ -40,7 +39,69 @@
 #define ZBX_IPC_ALERTER_EXEC		1104
 #define ZBX_IPC_ALERTER_WEBHOOK		1105
 
+/* process -> manager */
+#define ZBX_IPC_ALERTER_DIAG_STATS		1200
+#define ZBX_IPC_ALERTER_DIAG_TOP_MEDIATYPES	1201
+#define ZBX_IPC_ALERTER_DIAG_TOP_SOURCES	1202
+#define ZBX_IPC_ALERTER_SEND_ALERT		1203
+#define ZBX_IPC_ALERTER_BEGIN_DISPATCH		1204
+#define ZBX_IPC_ALERTER_SEND_DISPATCH		1205
+#define ZBX_IPC_ALERTER_END_DISPATCH		1206
+
+/* manager -> process */
+#define ZBX_IPC_ALERTER_DIAG_STATS_RESULT		1300
+#define ZBX_IPC_ALERTER_DIAG_TOP_MEDIATYPES_RESULT	1301
+#define ZBX_IPC_ALERTER_DIAG_TOP_SOURCES_RESULT		1302
+#define ZBX_IPC_ALERTER_ABORT_DISPATCH			1303
+
 #define ZBX_WATCHDOG_ALERT_FREQUENCY	(15 * SEC_PER_MIN)
+#define ZBX_ALERT_NO_DEBUG		0
+#define ZBX_ALERT_DEBUG			1
+
+/* media type data */
+typedef struct
+{
+	zbx_uint64_t		mediatypeid;
+
+	int			location;
+
+	/* the number of currently processing alerts */
+	int			alerts_num;
+
+	/* the number of alert objects for this media type */
+	int			refcount;
+
+	/* alert pool queue */
+	zbx_binary_heap_t	queue;
+
+	/* media type data */
+	int			type;
+	char			*smtp_server;
+	char			*smtp_helo;
+	char			*smtp_email;
+	char			*exec_path;
+	char			*gsm_modem;
+	char			*username;
+	char			*passwd;
+	char			*exec_params;
+	char			*script;
+	char			*script_bin;
+	char			*error;
+	unsigned short		smtp_port;
+	unsigned char		smtp_security;
+	unsigned char		smtp_verify_peer;
+	unsigned char		smtp_verify_host;
+	unsigned char		smtp_authentication;
+
+	int			maxsessions;
+	int			maxattempts;
+	int			attempt_interval;
+	int			timeout;
+	int			script_bin_sz;
+	unsigned char		content_type;
+	unsigned char		flags;
+}
+zbx_am_mediatype_t;
 
 typedef struct
 {
@@ -89,6 +150,7 @@ typedef struct
 	zbx_uint64_t	mediatypeid;
 	zbx_uint64_t	eventid;
 	zbx_uint64_t	objectid;
+	zbx_uint64_t	p_eventid;
 
 	char		*sendto;
 	char		*subject;
@@ -120,19 +182,28 @@ void	zbx_am_db_alert_free(zbx_am_db_alert_t *alert);
 void	zbx_am_media_clear(zbx_am_media_t *media);
 void	zbx_am_media_free(zbx_am_media_t *media);
 
-zbx_uint32_t	zbx_alerter_serialize_result(unsigned char **data, const char *value, int errcode, const char *error);
-void	zbx_alerter_deserialize_result(const unsigned char *data, char **value, int *errcode, char **error);
+zbx_uint32_t	zbx_alerter_serialize_result(unsigned char **data, const char *value, int errcode, const char *error,
+		const char *debug);
+void	zbx_alerter_deserialize_result(const unsigned char *data, char **value, int *errcode, char **error,
+		char **debug);
 
-zbx_uint32_t	zbx_alerter_serialize_email(unsigned char **data, zbx_uint64_t alertid, const char *sendto,
-		const char *subject, const char *message, const char *smtp_server, unsigned short smtp_port,
-		const char *smtp_helo, const char *smtp_email, unsigned char smtp_security,
-		unsigned char smtp_verify_peer, unsigned char smtp_verify_host, unsigned char smtp_authentication,
-		const char *username, const char *password, unsigned char content_type);
+zbx_uint32_t	zbx_alerter_serialize_result_ext(unsigned char **data, const char *recipient, const char *value,
+		int errcode, const char *error, const char *debug);
+void	zbx_alerter_deserialize_result_ext(const unsigned char *data, char **recipient, char **value, int *errcode,
+		char **error, char **debug);
 
-void	zbx_alerter_deserialize_email(const unsigned char *data, zbx_uint64_t *alertid, char **sendto, char **subject,
-		char **message, char **smtp_server, unsigned short *smtp_port, char **smtp_helo, char **smtp_email,
-		unsigned char *smtp_security, unsigned char *smtp_verify_peer, unsigned char *smtp_verify_host,
-		unsigned char *smtp_authentication, char **username, char **password, unsigned char *content_type);
+zbx_uint32_t	zbx_alerter_serialize_email(unsigned char **data, zbx_uint64_t alertid, zbx_uint64_t mediatypeid,
+		zbx_uint64_t eventid, const char *sendto, const char *subject, const char *message,
+		const char *smtp_server, unsigned short smtp_port, const char *smtp_helo, const char *smtp_email,
+		unsigned char smtp_security, unsigned char smtp_verify_peer, unsigned char smtp_verify_host,
+		unsigned char smtp_authentication, const char *username, const char *password,
+		unsigned char content_type);
+
+void	zbx_alerter_deserialize_email(const unsigned char *data, zbx_uint64_t *alertid, zbx_uint64_t *mediatypeid,
+		zbx_uint64_t *eventid, char **sendto, char **subject, char **message, char **smtp_server,
+		unsigned short *smtp_port, char **smtp_helo, char **smtp_email, unsigned char *smtp_security,
+		unsigned char *smtp_verify_peer, unsigned char *smtp_verify_host, unsigned char *smtp_authentication,
+		char **username, char **password, unsigned char *content_type);
 
 zbx_uint32_t	zbx_alerter_serialize_sms(unsigned char **data, zbx_uint64_t alertid,  const char *sendto,
 		const char *message, const char *gsm_modem);
@@ -161,10 +232,10 @@ void	zbx_alerter_deserialize_alert_send(const unsigned char *data, zbx_uint64_t 
 		char **sendto, char **subject, char **message, char **params);
 
 zbx_uint32_t	zbx_alerter_serialize_webhook(unsigned char **data, const char *script_bin, int script_sz,
-		int timeout, const char *params);
+		int timeout, const char *params, unsigned char debug);
 
 void	zbx_alerter_deserialize_webhook(const unsigned char *data, char **script_bin, int *script_sz, int *timeout,
-		char **params);
+		char **params, unsigned char *debug);
 
 zbx_uint32_t	zbx_alerter_serialize_mediatypes(unsigned char **data, zbx_am_db_mediatype_t **mediatypes,
 		int mediatypes_num);
@@ -187,5 +258,25 @@ void	zbx_alerter_deserialize_results(const unsigned char *data, zbx_am_result_t 
 zbx_uint32_t	zbx_alerter_serialize_ids(unsigned char **data, zbx_uint64_t *ids, int ids_num);
 
 void	zbx_alerter_deserialize_ids(const unsigned char *data, zbx_uint64_t **ids, int *ids_num);
+
+void	zbx_alerter_deserialize_top_request(const unsigned char *data, int *limit);
+
+zbx_uint32_t	zbx_alerter_serialize_diag_stats(unsigned char **data, zbx_uint64_t alerts_num);
+
+zbx_uint32_t	zbx_alerter_serialize_top_mediatypes_result(unsigned char **data, zbx_am_mediatype_t **mediatypes,
+		int mediatypes_num);
+
+zbx_uint32_t	zbx_alerter_serialize_top_sources_result(unsigned char **data, zbx_am_source_stats_t **sources,
+		int sources_num);
+
+zbx_uint32_t	zbx_alerter_serialize_begin_dispatch(unsigned char **data, const char *subject, const char *message,
+		const char *content_name, const char *content_type, const char *content, zbx_uint32_t content_size);
+void	zbx_alerter_deserialize_begin_dispatch(const unsigned char *data, char **subject, char **message,
+		char **content_name, char **content_type, char **content, zbx_uint32_t *content_size);
+
+zbx_uint32_t	zbx_alerter_serialize_send_dispatch(unsigned char **data, const ZBX_DB_MEDIATYPE *mt,
+		const zbx_vector_str_t *recipients);
+void	zbx_alerter_deserialize_send_dispatch(const unsigned char *data, ZBX_DB_MEDIATYPE *mt, zbx_vector_str_t
+		*recipients);
 
 #endif

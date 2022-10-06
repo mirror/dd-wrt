@@ -1,6 +1,6 @@
 /*
 ** Zabbix
-** Copyright (C) 2001-2020 Zabbix SIA
+** Copyright (C) 2001-2022 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -21,10 +21,10 @@
 #define ZABBIX_CHECKS_AGENT_H
 
 #include "dbcache.h"
-#include "sysinfo.h"
+#include "module.h"
 
 extern char	*CONFIG_SOURCE_IP;
 
-int	get_value_agent(DC_ITEM *item, AGENT_RESULT *result);
+int	get_value_agent(const DC_ITEM *item, AGENT_RESULT *result);
 
 #endif

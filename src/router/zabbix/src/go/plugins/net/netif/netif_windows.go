@@ -1,6 +1,6 @@
 /*
 ** Zabbix
-** Copyright (C) 2001-2020 Zabbix SIA
+** Copyright (C) 2001-2022 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -26,14 +26,15 @@ import (
 	"net"
 	"unsafe"
 
+	"git.zabbix.com/ap/plugin-support/plugin"
 	"golang.org/x/sys/windows"
-	"zabbix.com/pkg/plugin"
 	"zabbix.com/pkg/win32"
 )
 
 const (
 	errorEmptyIpTable = "Empty IP address table returned."
 	errorCannotFindIf = "Cannot obtain network interface information."
+	guidStringLen     = 38
 )
 
 func (p *Plugin) nToIP(addr uint32) net.IP {
@@ -58,7 +59,7 @@ func (p *Plugin) getIpAddrTable() (addrs []win32.MIB_IPADDRROW, err error) {
 			return
 		}
 	}
-	return (*[1 << 16]win32.MIB_IPADDRROW)(unsafe.Pointer(&ipTable.Table[0]))[:ipTable.NumEntries:ipTable.NumEntries], nil
+	return (*win32.RGMIB_IPADDRROW)(unsafe.Pointer(&ipTable.Table[0]))[:ipTable.NumEntries:ipTable.NumEntries], nil
 }
 
 func (p *Plugin) getIfRowByIP(ipaddr string, ifs []win32.MIB_IF_ROW2) (row *win32.MIB_IF_ROW2) {
@@ -85,6 +86,10 @@ func (p *Plugin) getIfRowByIP(ipaddr string, ifs []win32.MIB_IF_ROW2) (row *win3
 	return
 }
 
+func (p *Plugin) getGuidString(winGuid win32.GUID) string {
+	return fmt.Sprintf("{%08X-%04X-%04X-%02X-%02X}", winGuid.Data1, winGuid.Data2, winGuid.Data3, winGuid.Data4[:2], winGuid.Data4[2:])
+}
+
 func (p *Plugin) getNetStats(networkIf string, statName string, dir dirFlag) (result uint64, err error) {
 	var ifTable *win32.MIB_IF_TABLE2
 	if ifTable, err = win32.GetIfTable2(); err != nil {
@@ -92,11 +97,13 @@ func (p *Plugin) getNetStats(networkIf string, statName string, dir dirFlag) (re
 	}
 	defer win32.FreeMibTable(ifTable)
 
-	ifs := (*[1 << 16]win32.MIB_IF_ROW2)(unsafe.Pointer(&ifTable.Table[0]))[:ifTable.NumEntries:ifTable.NumEntries]
+	ifs := (*win32.RGMIB_IF_ROW2)(unsafe.Pointer(&ifTable.Table[0]))[:ifTable.NumEntries:ifTable.NumEntries]
 
 	var row *win32.MIB_IF_ROW2
 	for i := range ifs {
-		if networkIf == windows.UTF16ToString(ifs[i].Description[:]) {
+		if len(networkIf) == guidStringLen && networkIf[0] == '{' && networkIf[guidStringLen-1] == '}' &&
+			networkIf == p.getGuidString(ifs[i].InterfaceGuid) ||
+			networkIf == windows.UTF16ToString(ifs[i].Description[:]) {
 			row = &ifs[i]
 			break
 		}
@@ -152,9 +159,10 @@ func (p *Plugin) getDevDiscovery() (devices []msgIfDiscovery, err error) {
 	defer win32.FreeMibTable(table)
 
 	devices = make([]msgIfDiscovery, 0, table.NumEntries)
-	rows := (*[1 << 16]win32.MIB_IF_ROW2)(unsafe.Pointer(&table.Table[0]))[:table.NumEntries:table.NumEntries]
+	rows := (*win32.RGMIB_IF_ROW2)(unsafe.Pointer(&table.Table[0]))[:table.NumEntries:table.NumEntries]
 	for i := range rows {
-		devices = append(devices, msgIfDiscovery{windows.UTF16ToString(rows[i].Description[:])})
+		guid := p.getGuidString(rows[i].InterfaceGuid)
+		devices = append(devices, msgIfDiscovery{windows.UTF16ToString(rows[i].Description[:]), &guid})
 	}
 	return
 }
@@ -210,7 +218,7 @@ func (p *Plugin) getDevList() (devices string, err error) {
 		return
 	}
 	defer win32.FreeMibTable(ifTable)
-	ifs := (*[1 << 16]win32.MIB_IF_ROW2)(unsafe.Pointer(&ifTable.Table[0]))[:ifTable.NumEntries:ifTable.NumEntries]
+	ifs := (*win32.RGMIB_IF_ROW2)(unsafe.Pointer(&ifTable.Table[0]))[:ifTable.NumEntries:ifTable.NumEntries]
 
 	var ips []win32.MIB_IPADDRROW
 	if ips, err = p.getIpAddrTable(); err != nil {

@@ -1,6 +1,6 @@
 /*
 ** Zabbix
-** Copyright (C) 2001-2020 Zabbix SIA
+** Copyright (C) 2001-2022 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -17,13 +17,10 @@
 ** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 **/
 
-#include "common.h"
 #include "listener.h"
 
-#include "comms.h"
-#include "cfg.h"
+#include "zbxcomms.h"
 #include "zbxconf.h"
-#include "stats.h"
 #include "sysinfo.h"
 #include "log.h"
 
@@ -32,13 +29,14 @@ extern ZBX_THREAD_LOCAL unsigned char	process_type;
 extern ZBX_THREAD_LOCAL int		server_num, process_num;
 
 #if defined(ZABBIX_SERVICE)
-#	include "service.h"
+#	include "zbxwinservice.h"
 #elif defined(ZABBIX_DAEMON)
-#	include "daemon.h"
+#	include "zbxnix.h"
 #endif
 
-#include "zbxcrypto.h"
-#include "../libs/zbxcrypto/tls_tcp_active.h"
+#ifndef _WINDOWS
+static volatile sig_atomic_t	need_update_userparam;
+#endif
 
 static void	process_listener(zbx_socket_t *s)
 {
@@ -99,9 +97,17 @@ static void	process_listener(zbx_socket_t *s)
 		zabbix_log(LOG_LEVEL_DEBUG, "Process listener error: %s", zbx_socket_strerror());
 }
 
+#ifndef _WINDOWS
+static void	zbx_listener_sigusr_handler(int flags)
+{
+	if (ZBX_RTC_USER_PARAMETERS_RELOAD == ZBX_RTC_GET_MSG(flags))
+		need_update_userparam = 1;
+}
+#endif
+
 ZBX_THREAD_ENTRY(listener_thread, args)
 {
-#if defined(HAVE_POLARSSL) || defined(HAVE_GNUTLS) || defined(HAVE_OPENSSL)
+#if defined(HAVE_GNUTLS) || defined(HAVE_OPENSSL)
 	char		*msg = NULL;
 #endif
 	int		ret;
@@ -121,11 +127,25 @@ ZBX_THREAD_ENTRY(listener_thread, args)
 
 	zbx_free(args);
 
-#if defined(HAVE_POLARSSL) || defined(HAVE_GNUTLS) || defined(HAVE_OPENSSL)
+#if defined(HAVE_GNUTLS) || defined(HAVE_OPENSSL)
 	zbx_tls_init_child();
 #endif
+
+#ifndef _WINDOWS
+	zbx_set_sigusr_handler(zbx_listener_sigusr_handler);
+#endif
+
 	while (ZBX_IS_RUNNING())
 	{
+#ifndef _WINDOWS
+		if (1 == need_update_userparam)
+		{
+			zbx_setproctitle("listener #%d [reloading user parameters]", process_num);
+			reload_user_parameters(process_type, process_num);
+			need_update_userparam = 0;
+		}
+#endif
+
 		zbx_setproctitle("listener #%d [waiting for connection]", process_num);
 		ret = zbx_tcp_accept(&s, configured_tls_accept_modes);
 		zbx_update_env(zbx_time());
@@ -137,7 +157,7 @@ ZBX_THREAD_ENTRY(listener_thread, args)
 			if ('\0' != *CONFIG_HOSTS_ALLOWED &&
 					SUCCEED == (ret = zbx_tcp_check_allowed_peers(&s, CONFIG_HOSTS_ALLOWED)))
 			{
-#if defined(HAVE_POLARSSL) || defined(HAVE_GNUTLS) || defined(HAVE_OPENSSL)
+#if defined(HAVE_GNUTLS) || defined(HAVE_OPENSSL)
 				if (ZBX_TCP_SEC_TLS_CERT != s.connection_type ||
 						SUCCEED == (ret = zbx_check_server_issuer_subject(&s, &msg)))
 #endif
@@ -152,7 +172,7 @@ ZBX_THREAD_ENTRY(listener_thread, args)
 		if (SUCCEED == ret || EINTR == zbx_socket_last_error())
 			continue;
 
-#if defined(HAVE_POLARSSL) || defined(HAVE_GNUTLS) || defined(HAVE_OPENSSL)
+#if defined(HAVE_GNUTLS) || defined(HAVE_OPENSSL)
 		if (NULL != msg)
 		{
 			zabbix_log(LOG_LEVEL_WARNING, "failed to accept an incoming connection: %s", msg);

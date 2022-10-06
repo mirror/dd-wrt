@@ -13,6 +13,8 @@
 #	include "zabbix_get_desc.h"
 #elif defined(ZABBIX_SENDER)
 #	include "zabbix_sender_desc.h"
+#elif defined(ZABBIX_AGENT2)
+#	include "zabbix_agent2_desc.h"
 #endif
 
 #define VER_FILEVERSION		ZABBIX_VERSION_MAJOR,ZABBIX_VERSION_MINOR,ZABBIX_VERSION_PATCH,ZABBIX_VERSION_RC_NUM
@@ -22,7 +24,7 @@
 #define VER_PRODUCTVERSION_STR	ZBX_STR(ZABBIX_VERSION_MAJOR) "." ZBX_STR(ZABBIX_VERSION_MINOR) "." \
 					ZBX_STR(ZABBIX_VERSION_PATCH) ZABBIX_VERSION_RC "\0"
 #define VER_COMPANYNAME_STR	"Zabbix SIA\0"
-#define VER_LEGALCOPYRIGHT_STR	"Copyright (C) 2001-2020 " VER_COMPANYNAME_STR
+#define VER_LEGALCOPYRIGHT_STR	"Copyright (C) 2001-2022 " VER_COMPANYNAME_STR
 #define VER_PRODUCTNAME_STR	"Zabbix\0"
 
 // Next default values for new objects

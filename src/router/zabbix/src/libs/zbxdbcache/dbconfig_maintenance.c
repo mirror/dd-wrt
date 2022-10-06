@@ -1,6 +1,6 @@
 /*
 ** Zabbix
-** Copyright (C) 2001-2020 Zabbix SIA
+** Copyright (C) 2001-2022 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -16,15 +16,13 @@
 ** along with this program; if not, write to the Free Software
 ** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 **/
+
+#include "dbconfig.h"
+
 #include "common.h"
 #include "log.h"
 #include "zbxalgo.h"
 #include "dbcache.h"
-#include "mutexs.h"
-
-#define ZBX_DBCONFIG_IMPL
-#include "dbconfig.h"
-
 #include "dbsync.h"
 
 extern int		CONFIG_TIMER_FORKS;
@@ -44,8 +42,6 @@ typedef struct
 zbx_host_event_maintenance_t;
 
 /******************************************************************************
- *                                                                            *
- * Function: DCsync_maintenances                                              *
  *                                                                            *
  * Purpose: Updates maintenances in configuration cache                       *
  *                                                                            *
@@ -125,8 +121,6 @@ void	DCsync_maintenances(zbx_dbsync_t *sync)
 
 /******************************************************************************
  *                                                                            *
- * Function: dc_compare_maintenance_tags                                      *
- *                                                                            *
  * Purpose: compare maintenance tags by tag name for sorting                  *
  *                                                                            *
  ******************************************************************************/
@@ -139,8 +133,6 @@ static int	dc_compare_maintenance_tags(const void *d1, const void *d2)
 }
 
 /******************************************************************************
- *                                                                            *
- * Function: DCsync_maintenance_tags                                          *
  *                                                                            *
  * Purpose: Updates maintenance tags in configuration cache                   *
  *                                                                            *
@@ -190,8 +182,8 @@ void	DCsync_maintenance_tags(zbx_dbsync_t *sync)
 
 		maintenance_tag->maintenanceid = maintenanceid;
 		ZBX_STR2UCHAR(maintenance_tag->op, row[2]);
-		DCstrpool_replace(found, &maintenance_tag->tag, row[3]);
-		DCstrpool_replace(found, &maintenance_tag->value, row[4]);
+		dc_strpool_replace(found, &maintenance_tag->tag, row[3]);
+		dc_strpool_replace(found, &maintenance_tag->value, row[4]);
 
 		if (0 == found)
 			zbx_vector_ptr_append(&maintenance->tags, maintenance_tag);
@@ -221,8 +213,8 @@ void	DCsync_maintenance_tags(zbx_dbsync_t *sync)
 			zbx_vector_ptr_append(&maintenances, maintenance);
 		}
 
-		zbx_strpool_release(maintenance_tag->tag);
-		zbx_strpool_release(maintenance_tag->value);
+		dc_strpool_release(maintenance_tag->tag);
+		dc_strpool_release(maintenance_tag->value);
 
 		zbx_hashset_remove_direct(&config->maintenance_tags, maintenance_tag);
 	}
@@ -244,8 +236,6 @@ void	DCsync_maintenance_tags(zbx_dbsync_t *sync)
 }
 
 /******************************************************************************
- *                                                                            *
- * Function: DCsync_maintenance_periods                                       *
  *                                                                            *
  * Purpose: Updates maintenance period in configuration cache                 *
  *                                                                            *
@@ -337,8 +327,6 @@ void	DCsync_maintenance_periods(zbx_dbsync_t *sync)
 
 /******************************************************************************
  *                                                                            *
- * Function: DCsync_maintenance_groups                                        *
- *                                                                            *
  * Purpose: Updates maintenance groups in configuration cache                 *
  *                                                                            *
  * Parameters: sync - [IN] the db synchronization data                        *
@@ -409,8 +397,6 @@ void	DCsync_maintenance_groups(zbx_dbsync_t *sync)
 }
 
 /******************************************************************************
- *                                                                            *
- * Function: DCsync_maintenance_hosts                                         *
  *                                                                            *
  * Purpose: Updates maintenance hosts in configuration cache                  *
  *                                                                            *
@@ -499,7 +485,28 @@ void	DCsync_maintenance_hosts(zbx_dbsync_t *sync)
 
 /******************************************************************************
  *                                                                            *
- * Function: dc_calculate_maintenance_period                                  *
+ * Purpose: subtract two local times with DST correction                      *
+ *                                                                            *
+ * Parameter: minuend       - [IN] the minuend time                           *
+ *            subtrahend    - [IN] the subtrahend time (may be negative)      *
+ *            tm            - [OUT] the struct tm                             *
+ *                                                                            *
+ * Return value: the resulting time difference in seconds                     *
+ *                                                                            *
+ ******************************************************************************/
+static time_t dc_subtract_time(time_t minuend, int subtrahend, struct tm *tm)
+{
+	time_t	diff, offset_min, offset_diff;
+
+	offset_min = zbx_get_timezone_offset(minuend, tm);
+	diff = minuend - subtrahend;
+	offset_diff = zbx_get_timezone_offset(diff, tm);
+	diff -= offset_diff - offset_min;
+
+	return diff;
+}
+
+/******************************************************************************
  *                                                                            *
  * Purpose: calculate start time for the specified maintenance period         *
  *                                                                            *
@@ -507,8 +514,8 @@ void	DCsync_maintenance_hosts(zbx_dbsync_t *sync)
  *            period        - [IN] the maintenance period                     *
  *            start_date    - [IN] the period starting timestamp based on     *
  *                                 current time                               *
- *            running_since - [IN] the actual period starting timestamp       *
- *            running_since - [IN] the actual period ending timestamp         *
+ *            running_since - [OUT] the actual period starting timestamp      *
+ *            running_until - [OUT] the actual period ending timestamp        *
  *                                                                            *
  * Return value: SUCCEED - a valid period was found                           *
  *               FAIL    - period started before maintenance activation time  *
@@ -519,7 +526,7 @@ static int	dc_calculate_maintenance_period(const zbx_dc_maintenance_t *maintenan
 		time_t *running_until)
 {
 	int		day, wday, week;
-	struct tm	*tm;
+	struct tm	tm;
 	time_t		active_since = maintenance->active_since;
 
 	if (TIMEPERIOD_TYPE_ONETIME == period->type)
@@ -538,23 +545,23 @@ static int	dc_calculate_maintenance_period(const zbx_dc_maintenance_t *maintenan
 			if (start_date < active_since)
 				return FAIL;
 
-			tm = localtime(&active_since);
-			active_since = active_since - (tm->tm_hour * SEC_PER_HOUR + tm->tm_min * SEC_PER_MIN +
-					tm->tm_sec);
+			tm = *localtime(&active_since);
+			active_since = dc_subtract_time(active_since,
+					tm.tm_hour * SEC_PER_HOUR + tm.tm_min * SEC_PER_MIN + tm.tm_sec, &tm);
 
 			day = (start_date - active_since) / SEC_PER_DAY;
-			start_date -= SEC_PER_DAY * (day % period->every);
+			start_date = dc_subtract_time(start_date, SEC_PER_DAY * (day % period->every), &tm);
 			break;
 		case TIMEPERIOD_TYPE_WEEKLY:
 			if (start_date < active_since)
 				return FAIL;
 
-			tm = localtime(&active_since);
-			wday = (0 == tm->tm_wday ? 7 : tm->tm_wday) - 1;
-			active_since = active_since - (wday * SEC_PER_DAY + tm->tm_hour * SEC_PER_HOUR +
-					tm->tm_min * SEC_PER_MIN + tm->tm_sec);
+			tm = *localtime(&active_since);
+			wday = (0 == tm.tm_wday ? 7 : tm.tm_wday) - 1;
+			active_since = dc_subtract_time(active_since, wday * SEC_PER_DAY +
+					tm.tm_hour * SEC_PER_HOUR + tm.tm_min * SEC_PER_MIN + tm.tm_sec, &tm);
 
-			for (; start_date >= active_since; start_date -= SEC_PER_DAY)
+			for (; start_date >= active_since; start_date = dc_subtract_time(start_date, SEC_PER_DAY, &tm))
 			{
 				/* check for every x week(s) */
 				week = (start_date - active_since) / SEC_PER_WEEK;
@@ -562,8 +569,8 @@ static int	dc_calculate_maintenance_period(const zbx_dc_maintenance_t *maintenan
 					continue;
 
 				/* check for day of the week */
-				tm = localtime(&start_date);
-				wday = (0 == tm->tm_wday ? 7 : tm->tm_wday) - 1;
+				tm = *localtime(&start_date);
+				wday = (0 == tm.tm_wday ? 7 : tm.tm_wday) - 1;
 				if (0 == (period->dayofweek & (1 << wday)))
 					continue;
 
@@ -571,32 +578,32 @@ static int	dc_calculate_maintenance_period(const zbx_dc_maintenance_t *maintenan
 			}
 			break;
 		case TIMEPERIOD_TYPE_MONTHLY:
-			for (; start_date >= active_since; start_date -= SEC_PER_DAY)
+			for (; start_date >= active_since; start_date = dc_subtract_time(start_date, SEC_PER_DAY, &tm))
 			{
 				/* check for month */
-				tm = localtime(&start_date);
-				if (0 == (period->month & (1 << tm->tm_mon)))
+				tm = *localtime(&start_date);
+				if (0 == (period->month & (1 << tm.tm_mon)))
 					continue;
 
 				if (0 != period->day)
 				{
 					/* check for day of the month */
-					if (period->day != tm->tm_mday)
+					if (period->day != tm.tm_mday)
 						continue;
 				}
 				else
 				{
 					/* check for day of the week */
-					wday = (0 == tm->tm_wday ? 7 : tm->tm_wday) - 1;
+					wday = (0 == tm.tm_wday ? 7 : tm.tm_wday) - 1;
 					if (0 == (period->dayofweek & (1 << wday)))
 						continue;
 
 					/* check for number of day (first, second, third, fourth or last) */
-					day = (tm->tm_mday - 1) / 7 + 1;
+					day = (tm.tm_mday - 1) / 7 + 1;
 					if (5 == period->every && 4 == day)
 					{
-						if (tm->tm_mday + 7 <= zbx_day_in_month(1900 + tm->tm_year,
-								tm->tm_mon + 1))
+						if (tm.tm_mday + 7 <= zbx_day_in_month(1900 + tm.tm_year,
+								tm.tm_mon + 1))
 						{
 							continue;
 						}
@@ -625,7 +632,55 @@ static int	dc_calculate_maintenance_period(const zbx_dc_maintenance_t *maintenan
 
 /******************************************************************************
  *                                                                            *
- * Function: zbx_dc_maintenance_set_update_flags                              *
+ * Purpose: calculates start time for the specified maintenance period and    *
+ *          checks if we are inside the maintenance period                    *
+ *                                                                            *
+ * Parameter: maintenance   - [IN] the maintenance                            *
+ *            period        - [IN] the maintenance period                     *
+ *            now           - [IN] current time                               *
+ *            running_since - [OUT] the actual period starting timestamp      *
+ *            running_until - [OUT] the actual period ending timestamp        *
+ *                                                                            *
+ * Return value: SUCCEED - current time is inside valid maintenance period    *
+ *               FAIL    - current time is outside valid maintenance period   *
+ *                                                                            *
+ ******************************************************************************/
+static int	dc_check_maintenance_period(const zbx_dc_maintenance_t *maintenance,
+		const zbx_dc_maintenance_period_t *period, time_t now, time_t *running_since, time_t *running_until)
+{
+	struct tm	tm;
+	int		seconds, rc, ret = FAIL;
+	time_t		period_start, period_end;
+
+	tm = *localtime(&now);
+	seconds = tm.tm_hour * SEC_PER_HOUR + tm.tm_min * SEC_PER_MIN + tm.tm_sec;
+	period_start = dc_subtract_time(now, seconds, &tm);
+	period_start = dc_subtract_time(period_start, -period->start_time, &tm);
+
+	tm = *localtime(&period_start);
+
+	/* skip maintenance if the time does not exist due to DST */
+	if (period->start_time != (tm.tm_hour * SEC_PER_HOUR + tm.tm_min * SEC_PER_MIN + tm.tm_sec))
+	{
+		goto out;
+	}
+
+	if (now < period_start)
+		period_start = dc_subtract_time(period_start, SEC_PER_DAY, &tm);
+
+	rc = dc_calculate_maintenance_period(maintenance, period, period_start, &period_start, &period_end);
+
+	if (SUCCEED == rc && period_start <= now && now < period_end)
+	{
+		*running_since = period_start;
+		*running_until = period_end;
+		ret = SUCCEED;
+	}
+out:
+	return ret;
+}
+
+/******************************************************************************
  *                                                                            *
  * Purpose: sets maintenance update flags for all timers                      *
  *                                                                            *
@@ -645,8 +700,6 @@ void	zbx_dc_maintenance_set_update_flags(void)
 }
 
 /******************************************************************************
- *                                                                            *
- * Function: zbx_dc_maintenance_reset_update_flag                             *
  *                                                                            *
  * Purpose: resets maintenance update flags for the specified timer           *
  *                                                                            *
@@ -672,8 +725,6 @@ void	zbx_dc_maintenance_reset_update_flag(int timer)
 }
 
 /******************************************************************************
- *                                                                            *
- * Function: zbx_dc_maintenance_check_update_flag                             *
  *                                                                            *
  * Purpose: checks if the maintenance update flag is set for the specified    *
  *          timer                                                             *
@@ -705,8 +756,6 @@ int	zbx_dc_maintenance_check_update_flag(int timer)
 
 /******************************************************************************
  *                                                                            *
- * Function: zbx_dc_maintenance_check_update_flags                            *
- *                                                                            *
  * Purpose: checks if at least one maintenance update flag is set             *
  *                                                                            *
  * Return value: SUCCEED - a maintenance update flag is set                   *
@@ -737,8 +786,6 @@ out:
 
 /******************************************************************************
  *                                                                            *
- * Function: zbx_dc_update_maintenances                                       *
- *                                                                            *
  * Purpose: update maintenance state depending on maintenance periods         *
  *                                                                            *
  * Return value: SUCCEED - maintenance status was changed, host/event update  *
@@ -755,16 +802,13 @@ int	zbx_dc_update_maintenances(void)
 	zbx_dc_maintenance_t		*maintenance;
 	zbx_dc_maintenance_period_t	*period;
 	zbx_hashset_iter_t		iter;
-	int				i, running_num = 0, seconds, rc, started_num = 0, stopped_num = 0, ret = FAIL;
+	int				i, running_num = 0, started_num = 0, stopped_num = 0, ret = FAIL;
 	unsigned char			state;
-	struct tm			*tm;
 	time_t				now, period_start, period_end, running_since, running_until;
 
 	zabbix_log(LOG_LEVEL_DEBUG, "In %s()", __func__);
 
 	now = time(NULL);
-	tm = localtime(&now);
-	seconds = tm->tm_hour * SEC_PER_HOUR + tm->tm_min * SEC_PER_MIN + tm->tm_sec;
 
 	WRLOCK_CACHE;
 
@@ -788,14 +832,8 @@ int	zbx_dc_update_maintenances(void)
 			{
 				period = (zbx_dc_maintenance_period_t *)maintenance->periods.values[i];
 
-				period_start = now - seconds + period->start_time;
-				if (seconds < period->start_time)
-					period_start -= SEC_PER_DAY;
-
-				rc = dc_calculate_maintenance_period(maintenance, period, period_start, &period_start,
-						&period_end);
-
-				if (SUCCEED == rc && period_start <= now && now < period_end)
+				if (SUCCEED == dc_check_maintenance_period(maintenance, period, now, &period_start,
+						&period_end))
 				{
 					state = ZBX_MAINTENANCE_RUNNING;
 					if (period_end > running_until)
@@ -861,8 +899,6 @@ int	zbx_dc_update_maintenances(void)
 
 /******************************************************************************
  *                                                                            *
- * Function: dc_assign_maintenance_to_host                                    *
- *                                                                            *
  * Purpose: assign maintenance to a host, host can only be in one maintenance *
  *                                                                            *
  * Parameters: host_maintenances - [OUT] host with maintenance                *
@@ -890,8 +926,6 @@ static void	dc_assign_maintenance_to_host(zbx_hashset_t *host_maintenances, zbx_
 }
 
 /******************************************************************************
- *                                                                            *
- * Function: dc_assign_event_maintenance_to_host                              *
  *                                                                            *
  * Purpose: assign maintenance to a host that event belongs to, events can be *
  *          in multiple maintenances at a time                                *
@@ -925,8 +959,6 @@ typedef void	(*assign_maintenance_to_host_f)(zbx_hashset_t *host_maintenances,
 		zbx_dc_maintenance_t *maintenance, zbx_uint64_t hostid);
 
 /******************************************************************************
- *                                                                            *
- * Function: dc_get_host_maintenances_by_ids                                  *
  *                                                                            *
  * Purpose: get hosts and their maintenances                                  *
  *                                                                            *
@@ -990,8 +1022,6 @@ static void	dc_get_host_maintenances_by_ids(const zbx_vector_uint64_t *maintenan
 }
 
 /******************************************************************************
- *                                                                            *
- * Function: dc_get_host_maintenance_updates                                  *
  *                                                                            *
  * Purpose: gets maintenance updates for all hosts                            *
  *                                                                            *
@@ -1061,8 +1091,6 @@ static void	dc_get_host_maintenance_updates(zbx_hashset_t *host_maintenances, zb
 
 /******************************************************************************
  *                                                                            *
- * Function: zbx_dc_flush_host_maintenance_updates                            *
- *                                                                            *
  * Purpose: flush host maintenance updates to configuration cache             *
  *                                                                            *
  * Parameters: updates - [IN] the updates to flush                            *
@@ -1121,8 +1149,6 @@ void	zbx_dc_flush_host_maintenance_updates(const zbx_vector_ptr_t *updates)
 
 /******************************************************************************
  *                                                                            *
- * Function: zbx_dc_get_host_maintenance_updates                              *
- *                                                                            *
  * Purpose: calculates required host maintenance updates based on specified   *
  *          maintenances                                                      *
  *                                                                            *
@@ -1163,8 +1189,6 @@ void	zbx_dc_get_host_maintenance_updates(const zbx_vector_uint64_t *maintenancei
 
 /******************************************************************************
  *                                                                            *
- * Function: dc_maintenance_tag_match                                         *
- *                                                                            *
  * Purpose: perform maintenance tag comparison using maintenance tag operator *
  *                                                                            *
  ******************************************************************************/
@@ -1183,8 +1207,6 @@ static int	dc_maintenance_tag_value_match(const zbx_dc_maintenance_tag_t *mt, co
 }
 
 /******************************************************************************
- *                                                                            *
- * Function: dc_maintenance_match_tag_range                                   *
  *                                                                            *
  * Purpose: matches tags with [*mt_pos] maintenance tag name                  *
  *                                                                            *
@@ -1280,8 +1302,6 @@ static int	dc_maintenance_match_tag_range(const zbx_vector_ptr_t *mtags, const z
 
 /******************************************************************************
  *                                                                            *
- * Function: dc_maintenance_match_tags_or                                     *
- *                                                                            *
  * Purpose: matches maintenance and event tags using OR eval type             *
  *                                                                            *
  * Parameters: mtags    - [IN] the maintenance tags, sorted by tag names      *
@@ -1305,8 +1325,6 @@ static int	dc_maintenance_match_tags_or(const zbx_dc_maintenance_t *maintenance,
 }
 
 /******************************************************************************
- *                                                                            *
- * Function: dc_maintenance_match_tags_andor                                  *
  *                                                                            *
  * Purpose: matches maintenance and event tags using AND/OR eval type         *
  *                                                                            *
@@ -1334,8 +1352,6 @@ static int	dc_maintenance_match_tags_andor(const zbx_dc_maintenance_t *maintenan
 }
 
 /******************************************************************************
- *                                                                            *
- * Function: dc_maintenance_match_tags                                        *
  *                                                                            *
  * Purpose: check if the tags must be processed by the specified maintenance  *
  *                                                                            *
@@ -1372,8 +1388,6 @@ static int	dc_maintenance_match_tags(const zbx_dc_maintenance_t *maintenance, co
 
 /******************************************************************************
  *                                                                            *
- * Function: dc_compare_tags                                                  *
- *                                                                            *
  * Purpose: compare maintenance tags by tag name for sorting                  *
  *                                                                            *
  ******************************************************************************/
@@ -1391,8 +1405,6 @@ static void	host_event_maintenance_clean(zbx_host_event_maintenance_t *host_even
 }
 
 /******************************************************************************
- *                                                                            *
- * Function: zbx_dc_get_event_maintenances                                    *
  *                                                                            *
  * Purpose: get maintenance data for events                                   *
  *                                                                            *
@@ -1452,8 +1464,32 @@ int	zbx_dc_get_event_maintenances(zbx_vector_ptr_t *event_queries, const zbx_vec
 
 		/* find hostids of items used in event trigger expressions */
 
+		/* Some processes do not have trigger data at hand and create event queries */
+		/* without filling query functionids. Do it here if necessary.              */
+		if (0 == query->functionids.values_num)
+		{
+			ZBX_DC_TRIGGER	*trigger;
+
+			if (NULL == (trigger = (ZBX_DC_TRIGGER *)zbx_hashset_search(&config->triggers,
+					&query->triggerid)))
+			{
+				continue;
+			}
+
+			zbx_get_serialized_expression_functionids(trigger->expression, trigger->expression_bin,
+					&query->functionids);
+
+			if (TRIGGER_RECOVERY_MODE_RECOVERY_EXPRESSION == trigger->recovery_mode)
+			{
+				zbx_get_serialized_expression_functionids(trigger->recovery_expression,
+						trigger->recovery_expression_bin, &query->functionids);
+			}
+		}
+
 		for (j = 0; j < query->functionids.values_num; j++)
 		{
+			ZBX_DC_HOST	*dc_host;
+
 			if (NULL == (function = (ZBX_DC_FUNCTION *)zbx_hashset_search(&config->functions,
 					&query->functionids.values[j])))
 			{
@@ -1462,6 +1498,12 @@ int	zbx_dc_get_event_maintenances(zbx_vector_ptr_t *event_queries, const zbx_vec
 
 			if (NULL == (item = (ZBX_DC_ITEM *)zbx_hashset_search(&config->items, &function->itemid)))
 				continue;
+
+			if (NULL == (dc_host = (ZBX_DC_HOST *)zbx_hashset_search(&config->hosts, &item->hostid)))
+				continue;
+
+			if (HOST_MAINTENANCE_STATUS_OFF == dc_host->maintenance_status)
+				goto skip;
 
 			zbx_vector_uint64_append(&hostids, item->hostid);
 		}
@@ -1505,7 +1547,7 @@ int	zbx_dc_get_event_maintenances(zbx_vector_ptr_t *event_queries, const zbx_vec
 				ret = SUCCEED;
 			}
 		}
-
+skip:
 		zbx_vector_uint64_clear(&hostids);
 	}
 unlock:
@@ -1521,8 +1563,6 @@ unlock:
 
 /******************************************************************************
  *                                                                            *
- * Function: zbx_event_suppress_query_free                                    *
- *                                                                            *
  * Purpose: free event suppress query structure                               *
  *                                                                            *
  ******************************************************************************/
@@ -1536,8 +1576,6 @@ void	zbx_event_suppress_query_free(zbx_event_suppress_query_t *query)
 }
 
 /******************************************************************************
- *                                                                            *
- * Function: zbx_dc_get_running_maintenanceids                                *
  *                                                                            *
  * Purpose: get identifiers of the running maintenances                       *
  *                                                                            *

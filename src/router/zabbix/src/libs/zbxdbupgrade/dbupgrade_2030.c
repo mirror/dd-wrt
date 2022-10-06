@@ -1,6 +1,6 @@
 /*
 ** Zabbix
-** Copyright (C) 2001-2020 Zabbix SIA
+** Copyright (C) 2001-2022 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -17,9 +17,9 @@
 ** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 **/
 
-#include "common.h"
-#include "db.h"
 #include "dbupgrade.h"
+
+#include "zbxdbhigh.h"
 #include "log.h"
 
 /*
@@ -971,8 +971,6 @@ static int	DBpatch_2030094(void)
 
 /******************************************************************************
  *                                                                            *
- * Function: parse_function                                                   *
- *                                                                            *
  * Purpose: return function and function parameters                           *
  *          func(param,...)                                                   *
  *                                                                            *
@@ -985,8 +983,6 @@ static int	DBpatch_2030094(void)
  *                                                                            *
  * Return value: return SUCCEED and move exp to the next char after right ')' *
  *               or FAIL and move exp to incorrect character                  *
- *                                                                            *
- * Author: Alexander Vladishev                                                *
  *                                                                            *
  * Comments: This function is outdated and should be used in this upgrade     *
  *           only. For other applications consider zbx_function_find() or     *
@@ -1179,12 +1175,12 @@ static int	DBpatch_2030095(void)
 
 			zbx_chrcpy_alloc(&params, &params_alloc, &params_offset, *p);
 		}
-
-#if defined(HAVE_IBM_DB2) || defined(HAVE_ORACLE)
-		if (0 == params_offset || (2048 < params_offset && 2048 /* ITEM_PARAM_LEN */ < zbx_strlen_utf8(params)))
+#if defined(HAVE_ORACLE)
+		if (0 == params_offset || (2048 < params_offset && 2048 /* ZBX_ITEM_PARAM_LEN */ <
+				zbx_strlen_utf8(params)))
 #else
 		if (0 == params_offset ||
-				(65535 < params_offset && 65535 /* ITEM_PARAM_LEN */ < zbx_strlen_utf8(params)))
+				(65535 < params_offset && 65535 /* ZBX_ITEM_PARAM_LEN */ < zbx_strlen_utf8(params)))
 #endif
 		{
 			zabbix_log(LOG_LEVEL_WARNING, "cannot convert calculated item expression \"%s\": resulting"

@@ -1,6 +1,6 @@
 /*
 ** Zabbix
-** Copyright (C) 2001-2020 Zabbix SIA
+** Copyright (C) 2001-2022 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -17,13 +17,10 @@
 ** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 **/
 
-#include "common.h"
-#include "log.h"
-#include "zbxalgo.h"
-#include "zbxhistory.h"
 #include "history.h"
 
-#include "../zbxalgo/vectorimpl.h"
+#include "common.h"
+#include "log.h"
 
 ZBX_VECTOR_IMPL(history_record, zbx_history_record_t)
 
@@ -33,8 +30,6 @@ extern char	*CONFIG_HISTORY_STORAGE_OPTS;
 zbx_history_iface_t	history_ifaces[ITEM_VALUE_TYPE_MAX];
 
 /************************************************************************************
- *                                                                                  *
- * Function: zbx_history_init                                                       *
  *                                                                                  *
  * Purpose: initializes history storage                                             *
  *                                                                                  *
@@ -67,8 +62,6 @@ int	zbx_history_init(char **error)
 
 /************************************************************************************
  *                                                                                  *
- * Function: zbx_history_destroy                                                    *
- *                                                                                  *
  * Purpose: destroys history storage                                                *
  *                                                                                  *
  * Comments: All interfaces created by zbx_history_init() function are destroyed    *
@@ -89,8 +82,6 @@ void	zbx_history_destroy(void)
 
 /************************************************************************************
  *                                                                                  *
- * Function: zbx_history_add_values                                                 *
- *                                                                                  *
  * Purpose: Sends values to the history storage                                     *
  *                                                                                  *
  * Parameters: history - [IN] the values to store                                   *
@@ -98,9 +89,11 @@ void	zbx_history_destroy(void)
  * Comments: add history values to the configured storage backends                  *
  *                                                                                  *
  ************************************************************************************/
-int	zbx_history_add_values(const zbx_vector_ptr_t *history)
+int	zbx_history_add_values(const zbx_vector_ptr_t *history, int *ret_flush)
 {
-	int	i, flags = 0, ret = SUCCEED;
+	int	i, flags = 0;
+
+	*ret_flush = FLUSH_SUCCEED;
 
 	zabbix_log(LOG_LEVEL_DEBUG, "In %s()", __func__);
 
@@ -117,17 +110,18 @@ int	zbx_history_add_values(const zbx_vector_ptr_t *history)
 		zbx_history_iface_t	*writer = &history_ifaces[i];
 
 		if (0 != (flags & (1 << i)))
-			ret = writer->flush(writer);
+		{
+			if (FLUSH_DUPL_REJECTED == (*ret_flush = writer->flush(writer)))
+				break;
+		}
 	}
 
 	zabbix_log(LOG_LEVEL_DEBUG, "End of %s()", __func__);
 
-	return ret;
+	return (FLUSH_SUCCEED == *ret_flush ? SUCCEED : FAIL);
 }
 
 /************************************************************************************
- *                                                                                  *
- * Function: zbx_history_get_values                                                 *
  *                                                                                  *
  * Purpose: gets item values from history storage                                   *
  *                                                                                  *
@@ -179,8 +173,6 @@ int	zbx_history_get_values(zbx_uint64_t itemid, int value_type, int start, int c
 
 /************************************************************************************
  *                                                                                  *
- * Function: zbx_history_requires_trends                                            *
- *                                                                                  *
  * Purpose: checks if the value type requires trends data calculations              *
  *                                                                                  *
  * Parameters: value_type - [IN] the value type                                     *
@@ -201,8 +193,6 @@ int	zbx_history_requires_trends(int value_type)
 
 /******************************************************************************
  *                                                                            *
- * Function: history_logfree                                                  *
- *                                                                            *
  * Purpose: frees history log and all resources allocated for it              *
  *                                                                            *
  * Parameters: log   - [IN] the history log to free                           *
@@ -216,8 +206,6 @@ static void	history_logfree(zbx_log_value_t *log)
 }
 
 /******************************************************************************
- *                                                                            *
- * Function: zbx_history_record_vector_destroy                                *
  *                                                                            *
  * Purpose: destroys value vector and frees resources allocated for it        *
  *                                                                            *
@@ -237,8 +225,6 @@ void	zbx_history_record_vector_destroy(zbx_vector_history_record_t *vector, int 
 }
 
 /******************************************************************************
- *                                                                            *
- * Function: zbx_history_record_clear                                         *
  *                                                                            *
  * Purpose: frees resources allocated by a cached value                       *
  *                                                                            *
@@ -261,8 +247,6 @@ void	zbx_history_record_clear(zbx_history_record_t *value, int value_type)
 
 /******************************************************************************
  *                                                                            *
- * Function: zbx_history_value2str                                            *
- *                                                                            *
  * Purpose: converts history value to string format                           *
  *                                                                            *
  * Parameters: buffer     - [OUT] the output buffer                           *
@@ -276,7 +260,7 @@ void	zbx_history_value2str(char *buffer, size_t size, const history_value_t *val
 	switch (value_type)
 	{
 		case ITEM_VALUE_TYPE_FLOAT:
-			zbx_snprintf(buffer, size, ZBX_FS_DBL, value->dbl);
+			zbx_snprintf(buffer, size, ZBX_FS_DBL64, value->dbl);
 			break;
 		case ITEM_VALUE_TYPE_UINT64:
 			zbx_snprintf(buffer, size, ZBX_FS_UI64, value->ui64);
@@ -292,7 +276,57 @@ void	zbx_history_value2str(char *buffer, size_t size, const history_value_t *val
 
 /******************************************************************************
  *                                                                            *
- * Function: zbx_history_record_vector_clean                                  *
+ * Purpose: converts history value to string format (with dynamic buffer)     *
+ *                                                                            *
+ * Parameters: value      - [IN] the value to convert                         *
+ *             value_type - [IN] the history value type                       *
+ *                                                                            *
+ * Return value: The value in text format.                                    *
+ *                                                                            *
+ ******************************************************************************/
+char	*zbx_history_value2str_dyn(const history_value_t *value, int value_type)
+{
+	char	*str = NULL;
+	size_t	str_alloc = 0, str_offset = 0;
+
+	switch (value_type)
+	{
+		case ITEM_VALUE_TYPE_FLOAT:
+			zbx_snprintf_alloc(&str, &str_alloc, &str_offset, ZBX_FS_DBL, value->dbl);
+			break;
+		case ITEM_VALUE_TYPE_UINT64:
+			zbx_snprintf_alloc(&str, &str_alloc, &str_offset, ZBX_FS_UI64, value->ui64);
+			break;
+		case ITEM_VALUE_TYPE_STR:
+		case ITEM_VALUE_TYPE_TEXT:
+			str = zbx_strdup(NULL, value->str);
+			break;
+		case ITEM_VALUE_TYPE_LOG:
+			str = zbx_strdup(NULL, value->log->value);
+	}
+	return str;
+}
+
+/******************************************************************************
+ *                                                                            *
+ * Purpose: converts history value to string format (double type printed in   *
+ *          human friendly format)                                            *
+ *                                                                            *
+ * Parameters: buffer     - [OUT] the output buffer                           *
+ *             size       - [IN] the output buffer size                       *
+ *             value      - [IN] the value to convert                         *
+ *             value_type - [IN] the history value type                       *
+ *                                                                            *
+ ******************************************************************************/
+void	zbx_history_value_print(char *buffer, size_t size, const history_value_t *value, int value_type)
+{
+	if (ITEM_VALUE_TYPE_FLOAT == value_type)
+		zbx_print_double(buffer, size, value->dbl);
+	else
+		zbx_history_value2str(buffer, size, value, value_type);
+}
+
+/******************************************************************************
  *                                                                            *
  * Purpose: releases resources allocated to store history records             *
  *                                                                            *
@@ -322,8 +356,6 @@ void	zbx_history_record_vector_clean(zbx_vector_history_record_t *vector, int va
 
 /******************************************************************************
  *                                                                            *
- * Function: zbx_history_record_compare_asc_func                              *
- *                                                                            *
  * Purpose: compares two cache values by their timestamps                     *
  *                                                                            *
  * Parameters: d1   - [IN] the first value                                    *
@@ -347,8 +379,6 @@ int	zbx_history_record_compare_asc_func(const zbx_history_record_t *d1, const zb
 
 /******************************************************************************
  *                                                                            *
- * Function: vc_history_record_compare_desc_func                              *
- *                                                                            *
  * Purpose: compares two cache values by their timestamps                     *
  *                                                                            *
  * Parameters: d1   - [IN] the first value                                    *
@@ -370,3 +400,42 @@ int	zbx_history_record_compare_desc_func(const zbx_history_record_t *d1, const z
 	return d2->timestamp.sec - d1->timestamp.sec;
 }
 
+/******************************************************************************
+ *                                                                            *
+ * Purpose: converts history value to variant value                           *
+ *                                                                            *
+ * Parameters: value      - [IN] the value to convert                         *
+ *             value_type - [IN] the history value type                       *
+ *             var        - [IN] the output value                             *
+ *                                                                            *
+ ******************************************************************************/
+void	zbx_history_value2variant(const history_value_t *value, unsigned char value_type, zbx_variant_t *var)
+{
+	switch (value_type)
+	{
+		case ITEM_VALUE_TYPE_FLOAT:
+			zbx_variant_set_dbl(var, value->dbl);
+			break;
+		case ITEM_VALUE_TYPE_UINT64:
+			zbx_variant_set_ui64(var, value->ui64);
+			break;
+		case ITEM_VALUE_TYPE_STR:
+		case ITEM_VALUE_TYPE_TEXT:
+			zbx_variant_set_str(var, zbx_strdup(NULL, value->str));
+			break;
+		case ITEM_VALUE_TYPE_LOG:
+			zbx_variant_set_str(var, zbx_strdup(NULL, value->log->value));
+	}
+}
+
+/******************************************************************************
+ *                                                                            *
+ * Purpose: relays the version retrieval logic to the history implementation  *
+ *          functions                                                         *
+ *                                                                            *
+ ******************************************************************************/
+void	zbx_history_check_version(struct zbx_json *json, int *result)
+{
+	if (NULL != CONFIG_HISTORY_STORAGE_URL)
+		zbx_elastic_version_extract(json, result);
+}

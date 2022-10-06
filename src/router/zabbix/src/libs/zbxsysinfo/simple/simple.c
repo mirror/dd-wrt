@@ -1,6 +1,6 @@
 /*
 ** Zabbix
-** Copyright (C) 2001-2020 Zabbix SIA
+** Copyright (C) 2001-2022 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -17,15 +17,15 @@
 ** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 **/
 
+#include "simple.h"
+
 #include "common.h"
 #include "sysinfo.h"
-#include "comms.h"
+#include "zbxcomms.h"
 #include "log.h"
 #include "cfg.h"
-#include "telnet.h"
 #include "../common/net.h"
 #include "ntp.h"
-#include "simple.h"
 
 #ifdef HAVE_LDAP
 #	include <ldap.h>
@@ -67,6 +67,18 @@ static int	check_ldap(const char *host, unsigned short port, int timeout, int *v
 		zabbix_log(LOG_LEVEL_DEBUG, "LDAP - initialization failed [%s:%hu]", host, port);
 		goto lbl_ret;
 	}
+
+	#if defined(LDAP_OPT_SOCKET_BIND_ADDRESSES) && defined(HAVE_LDAP_SOURCEIP)
+	if (NULL != CONFIG_SOURCE_IP)
+	{
+		if (LDAP_SUCCESS != (ldapErr = ldap_set_option(ldap, LDAP_OPT_SOCKET_BIND_ADDRESSES, CONFIG_SOURCE_IP)))
+		{
+			zabbix_log(LOG_LEVEL_DEBUG, "LDAP - failed to set source ip address [%s]",
+					ldap_err2string(ldapErr));
+			goto lbl_ret;
+		}
+	}
+	#endif
 
 	if (LDAP_SUCCESS != (ldapErr = ldap_search_s(ldap, "", LDAP_SCOPE_BASE, "(objectClass=*)", attrs, 0, &res)))
 	{
@@ -170,7 +182,8 @@ static int	check_https(const char *host, unsigned short port, int timeout, int *
 		CURLE_OK != (err = curl_easy_setopt(easyhandle, opt = CURLOPT_NOBODY, 1L)) ||
 		CURLE_OK != (err = curl_easy_setopt(easyhandle, opt = CURLOPT_SSL_VERIFYPEER, 0L)) ||
 		CURLE_OK != (err = curl_easy_setopt(easyhandle, opt = CURLOPT_SSL_VERIFYHOST, 0L)) ||
-		CURLE_OK != (err = curl_easy_setopt(easyhandle, opt = CURLOPT_TIMEOUT, (long)timeout)))
+		CURLE_OK != (err = curl_easy_setopt(easyhandle, opt = CURLOPT_TIMEOUT, (long)timeout)) ||
+		CURLE_OK != (err = curl_easy_setopt(easyhandle, opt = ZBX_CURLOPT_ACCEPT_ENCODING, "")))
 	{
 		zabbix_log(LOG_LEVEL_DEBUG, "%s: could not set cURL option [%d]: %s",
 				__func__, (int)opt, curl_easy_strerror(err));
@@ -215,11 +228,16 @@ static int	check_telnet(const char *host, unsigned short port, int timeout, int 
 		ioctlsocket(s.socket, FIONBIO, &argp);	/* non-zero value sets the socket to non-blocking */
 #else
 		flags = fcntl(s.socket, F_GETFL);
-		if (0 == (flags & O_NONBLOCK))
-			fcntl(s.socket, F_SETFL, flags | O_NONBLOCK);
-#endif
+		if (-1 == flags)
+			zabbix_log(LOG_LEVEL_DEBUG, " error in getting the status flag: %s", zbx_strerror(errno));
 
-		if (SUCCEED == telnet_test_login(s.socket))
+		if (0 == (flags & O_NONBLOCK) && (-1 == fcntl(s.socket, F_SETFL, flags | O_NONBLOCK)))
+		{
+			zabbix_log(LOG_LEVEL_DEBUG, " error in setting the status flag: %s",
+				zbx_strerror(errno));
+		}
+#endif
+		if (SUCCEED == zbx_telnet_test_login(s.socket))
 			*value_int = 1;
 		else
 			zabbix_log(LOG_LEVEL_DEBUG, "Telnet check error: no login prompt");
@@ -227,7 +245,9 @@ static int	check_telnet(const char *host, unsigned short port, int timeout, int 
 		zbx_tcp_close(&s);
 	}
 	else
+	{
 		zabbix_log(LOG_LEVEL_DEBUG, "%s error: %s", __func__, zbx_socket_strerror());
+	}
 
 	return SYSINFO_RET_OK;
 }
@@ -276,7 +296,7 @@ static int	validate_imap(const char *line)
 int	check_service(AGENT_REQUEST *request, const char *default_addr, AGENT_RESULT *result, int perf)
 {
 	unsigned short	port = 0;
-	char		*service, *ip_str, ip[MAX_ZBX_DNSNAME_LEN + 1], *port_str;
+	char		*service, *ip_str, ip[ZBX_MAX_DNSNAME_LEN + 1], *port_str;
 	int		value_int, ret = SYSINFO_RET_FAIL;
 	double		check_time;
 

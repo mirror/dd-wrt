@@ -1,6 +1,6 @@
 /*
 ** Zabbix
-** Copyright (C) 2001-2020 Zabbix SIA
+** Copyright (C) 2001-2022 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -29,7 +29,7 @@ package tls
 #include <string.h>
 #include <unistd.h>
 #include <ctype.h>
-#include "config.h"
+#include "common/config.h"
 
 #define TLS_UNUSED(var)	(void)(var)
 
@@ -40,6 +40,29 @@ const char	*tls_crypto_init_msg;
 #include <openssl/err.h>
 #include <openssl/bio.h>
 #include <openssl/rand.h>
+
+#if defined(LIBRESSL_VERSION_NUMBER)
+#	error package zabbix.com/pkg/tls cannot be compiled with LibreSSL. Encryption is supported with OpenSSL.
+#elif !defined(HAVE_OPENSSL_WITH_PSK)
+#	error package zabbix.com/pkg/tls cannot be compiled with OpenSSL which has excluded PSK support.
+#elif defined(_WINDOWS) && OPENSSL_VERSION_NUMBER < 0x1010100fL	// On MS Windows OpenSSL 1.1.1 is required
+#	error on Microsoft Windows the package zabbix.com/pkg/tls requires OpenSSL 1.1.1 or newer.
+#elif OPENSSL_VERSION_NUMBER < 0x1000100fL
+	// OpenSSL before 1.0.1
+#	error package zabbix.com/pkg/tls cannot be compiled with this OpenSSL version.\
+		Supported versions are 1.0.1 and newer.
+#endif
+
+#if OPENSSL_VERSION_NUMBER < 0x1010000fL
+	// OpenSSL 1.0.1/1.0.2 (before 1.1.0)
+#include <openssl/x509v3.h>	// string_to_hex()
+#	define OPENSSL_hexstr2buf			string_to_hex
+#	define TLS_method				TLSv1_2_method
+#	define SSL_CTX_get_ciphers(ciphers)		((ciphers)->cipher_list)
+#	define OPENSSL_VERSION				SSLEAY_VERSION
+#	define OpenSSL_version				SSLeay_version
+#	define SSL_CTX_set_min_proto_version(ctx, TLSv)	1
+#endif
 
 #define TLS_EX_DATA_ERRBIO	0
 #define TLS_EX_DATA_IDENTITY	1
@@ -55,18 +78,98 @@ typedef struct {
 	int ready;
 	char *psk_identity;
 	char *psk_key;
-} tls_t, *tls_lp_t;
+} tls_t;
+
+#if OPENSSL_VERSION_NUMBER < 0x1010000fL
+        // OpenSSL 1.0.1/1.0.2 (before 1.1.0)
+#include <pthread.h>
+
+// exit codes
+#define ZBX_EXIT_LOCK_FAILED	2
+#define ZBX_EXIT_UNLOCK_FAILED	3
+
+static pthread_mutex_t	*mutexes = NULL;	// Mutexes for multi-threaded OpenSSL (see "man 3ssl threads"
+						// and example in crypto/threads/mttest.c).
+
+static void	zbx_mutex_lock(const char *filename, int line, int idx)
+{
+	if (0 != pthread_mutex_lock(mutexes + idx))
+	{
+		fprintf(stderr, "[file:'%s',line:%d] lock failed: [%d] %s\n", filename, line, errno, strerror(errno));
+		exit(ZBX_EXIT_LOCK_FAILED);
+	}
+}
+
+static void	zbx_mutex_unlock(const char *filename, int line, int idx)
+{
+	if (0 != pthread_mutex_unlock(mutexes + idx))
+	{
+		fprintf(stderr, "[file:'%s',line:%d] unlock failed: [%d] %s\n", filename, line, errno, strerror(errno));
+		exit(ZBX_EXIT_UNLOCK_FAILED);
+	}
+}
+
+static void	zbx_openssl_locking_cb(int mode, int n, const char *file, int line)
+{
+	if (0 != (mode & CRYPTO_LOCK))
+		zbx_mutex_lock(file, line, n);
+	else
+		zbx_mutex_unlock(file, line, n);
+}
+
+static int	zbx_allocate_mutexes(const char **error_msg)
+{
+	int	num_locks, i;
+
+	num_locks = CRYPTO_num_locks();
+
+	if (NULL == (mutexes = malloc((size_t)num_locks * sizeof(pthread_mutex_t))))
+	{
+		*error_msg = strdup("cannot allocate mutexes for OpenSSL library: out of memory");
+		return -1;
+	}
+
+	for (i = 0; i < num_locks; i++)
+	{
+		int	res;
+
+		if (0 != (res = pthread_mutex_init(mutexes + i, NULL)))
+		{
+			char	buf[128];
+
+			snprintf(buf, sizeof(buf), "cannot initialize mutex %d (out of %d) for OpenSSL library:"
+					" pthread_mutex_init() returned %d", i, num_locks, res);
+
+			*error_msg = strdup(buf);
+			return -1;
+		}
+	}
+
+	return 0;
+}
+#endif
 
 static int tls_init(void)
 {
-#if OPENSSL_VERSION_NUMBER >= 0x1010000fL && !defined(LIBRESSL_VERSION_NUMBER)
-// OpenSSL 1.1.0 or newer, not LibreSSL
+#if OPENSSL_VERSION_NUMBER >= 0x1010000fL
+	// OpenSSL 1.1.0 or newer
 	if (1 != OPENSSL_init_ssl(OPENSSL_INIT_LOAD_SSL_STRINGS | OPENSSL_INIT_LOAD_CRYPTO_STRINGS, NULL))
 	{
 		tls_crypto_init_msg = "cannot initialize OpenSSL library";
 		return -1;
 	}
+#else	// OpenSSL 1.0.1/1.0.2 (before 1.1.0)
+	SSL_load_error_strings();
+	ERR_load_BIO_strings();
+	SSL_library_init();
 
+	if (0 != zbx_allocate_mutexes(&tls_crypto_init_msg))
+		return -1;
+
+	CRYPTO_set_locking_callback((void (*)(int, int, const char *, int))zbx_openssl_locking_cb);
+
+	// do not register our own threadid_func() callback, use OpenSSL default one
+#endif
 	if (1 != RAND_status())		// protect against not properly seeded PRNG
 	{
 		tls_crypto_init_msg = "cannot initialize PRNG";
@@ -75,10 +178,6 @@ static int tls_init(void)
 
 	tls_crypto_init_msg = "OpenSSL library successfully initialized";
 	return 0;
-#elif	// OpenSSL 1.0.1/1.0.2 (before 1.1.0) or LibreSSL - currently not supported
-	zbx_crypto_lib_init_msg = "OpenSSL older than 1.1.0 and LibreSSL currently are not supported";
-	return -1;
-#endif
 }
 
 static unsigned int tls_psk_client_cb(SSL *ssl, const char *hint, char *identity,
@@ -183,9 +282,18 @@ static unsigned int tls_psk_server_cb(SSL *ssl, const char *identity, unsigned c
 
 static int	zbx_set_ecdhe_parameters(SSL_CTX *ctx)
 {
-	EC_KEY	*ecdh;
 	long	res;
 	int	ret = 0;
+#if defined(OPENSSL_VERSION_MAJOR) && OPENSSL_VERSION_NUMBER >= 3	// OpenSSL 3.0.0 or newer
+#define ARRSIZE(a)	(sizeof(a) / sizeof(*a))
+
+	int	grp_list[1] = { NID_X9_62_prime256v1 };	// use curve secp256r1/prime256v1/NIST P-256
+
+	if (1 != (res = SSL_CTX_set1_groups(ctx, grp_list, ARRSIZE(grp_list))))
+		ret = -1;
+#undef ARRSIZE
+#else
+	EC_KEY	*ecdh;
 
 	// use curve secp256r1/prime256v1/NIST P-256
 
@@ -198,7 +306,7 @@ static int	zbx_set_ecdhe_parameters(SSL_CTX *ctx)
 		ret = -1;
 
 	EC_KEY_free(ecdh);
-
+#endif
 	return ret;
 }
 
@@ -214,9 +322,13 @@ static void *tls_new_context(const char *ca_file, const char *crl_file, const ch
 	// By default, in TLS 1.3 only *-SHA256 ciphersuites work with PSK.
 #	define TLS_1_3_CIPHERSUITES	"TLS_CHACHA20_POLY1305_SHA256:TLS_AES_128_GCM_SHA256"
 #endif
-// OpenSSL 1.1.0 or newer
-#define TLS_CIPHER_PSK_ECDHE		"kECDHEPSK+AES128:"
-#define TLS_CIPHER_PSK			"kPSK+AES128"
+#if OPENSSL_VERSION_NUMBER >= 0x1010000fL	// OpenSSL 1.1.0 or newer
+#	define TLS_CIPHER_PSK_ECDHE	"kECDHEPSK+AES128:"
+#	define TLS_CIPHER_PSK		"kPSK+AES128"
+#else						// OpenSSL 1.0.1/1.0.2 (before 1.1.0)
+#	define TLS_CIPHER_PSK_ECDHE	""
+#	define TLS_CIPHER_PSK		"PSK-AES128-CBC-SHA"
+#endif
 #endif
 	SSL_CTX		*ctx;
 	int		ret = -1;
@@ -361,15 +473,18 @@ static int tls_new(SSL_CTX_LP ctx, const char *psk_identity, const char *psk_key
 	return 0;
 }
 
-static tls_t *tls_new_client(SSL_CTX_LP ctx, const char *psk_identity, const char *psk_key)
+static tls_t *tls_new_client(SSL_CTX_LP ctx, const char *psk_identity, const char *psk_key, const char *servername)
 {
 	tls_t	*tls;
-	int		ret;
+	int	ret;
 
 	if (0 == tls_new(ctx, psk_identity, psk_key, &tls))
 	{
 		if (psk_identity != NULL && psk_key != NULL)
 			SSL_set_psk_client_callback(tls->ssl, tls_psk_client_cb);
+
+		if (NULL != servername && '\0' != *servername)
+			SSL_set_tlsext_host_name(tls->ssl, servername);
 
 		SSL_set_connect_state(tls->ssl);
 		if (1 == (ret = SSL_connect(tls->ssl)) || SSL_ERROR_WANT_READ == SSL_get_error(tls->ssl, ret))
@@ -381,7 +496,7 @@ static tls_t *tls_new_client(SSL_CTX_LP ctx, const char *psk_identity, const cha
 static tls_t *tls_new_server(SSL_CTX_LP ctx, const char *psk_identity, const char *psk_key)
 {
 	tls_t	*tls;
-	int		ret;
+	int	ret;
 
 	if (0 == tls_new(ctx, psk_identity, psk_key, &tls))
 	{
@@ -502,6 +617,8 @@ static int tls_close(tls_t *tls)
 
 static void tls_free(tls_t *tls)
 {
+	if (NULL == tls)
+		return;
 	if (NULL != tls->ssl)
 		SSL_free(tls->ssl);
 	if (NULL != tls->err)
@@ -651,22 +768,25 @@ static void tls_describe_ciphersuites(SSL_CTX_LP ctx, char **desc)
 #undef TLS_CIPHERS_BUF_LEN
 }
 
-static const char	*tls_version()
+static const char	*tls_version(void)
 {
 	return OpenSSL_version(OPENSSL_VERSION);
 }
 
-static const char	*tls_version_static()
+static const char	*tls_version_static(void)
 {
 	return OPENSSL_VERSION_TEXT;
 }
 
-#else // HAVE_OPENSSL 0
+#elif defined(HAVE_GNUTLS)
+#	error zabbix_agent2 does not support GnuTLS library. Compile with OpenSSL\
+		(configure parameter --with-openssl) or without encryption support.
+#else // no crypto library requested, compile without encryption support
 
 typedef void * SSL_CTX_LP;
 
 typedef struct {
-} tls_t, *tls_lp_t;
+} tls_t;
 
 static int tls_init(void)
 {
@@ -690,11 +810,12 @@ static void tls_free_context(SSL_CTX_LP ctx)
 	TLS_UNUSED(ctx);
 }
 
-static tls_t *tls_new_client(SSL_CTX_LP ctx, const char *psk_identity, const char *psk_key)
+static tls_t *tls_new_client(SSL_CTX_LP ctx, const char *psk_identity, const char *psk_key, const char *servername)
 {
 	TLS_UNUSED(ctx);
 	TLS_UNUSED(psk_identity);
 	TLS_UNUSED(psk_key);
+	TLS_UNUSED(servername);
 	return NULL;
 }
 
@@ -800,12 +921,12 @@ static void tls_describe_ciphersuites(SSL_CTX_LP ciphers, char **desc)
 	TLS_UNUSED(desc);
 }
 
-static const char	*tls_version()
+static const char	*tls_version(void)
 {
 	return NULL;
 }
 
-static const char	*tls_version_static()
+static const char	*tls_version_static(void)
 {
 	return NULL;
 }
@@ -823,7 +944,8 @@ import (
 	"time"
 	"unsafe"
 
-	"zabbix.com/pkg/log"
+	"git.zabbix.com/ap/plugin-support/log"
+	"git.zabbix.com/ap/plugin-support/uri"
 )
 
 // TLS initialization
@@ -855,16 +977,17 @@ func describeCiphersuites(context unsafe.Pointer) (desc string) {
 }
 
 type tlsConn struct {
-	conn    net.Conn
-	tls     unsafe.Pointer
-	buf     []byte
-	timeout time.Duration
+	conn          net.Conn
+	tls           unsafe.Pointer
+	buf           []byte
+	timeout       time.Duration
+	shiftDeadline bool
 }
 
 func (c *tlsConn) Error() (err error) {
 	var cBuf *C.char
 	var errmsg string
-	if c.tls != nil && 0 != C.tls_error(C.tls_lp_t(c.tls), &cBuf) {
+	if c.tls != nil && 0 != C.tls_error((*C.tls_t)(c.tls), &cBuf) {
 		errmsg = C.GoString(cBuf)
 		C.free(unsafe.Pointer(cBuf))
 	} else {
@@ -874,15 +997,19 @@ func (c *tlsConn) Error() (err error) {
 }
 
 func (c *tlsConn) ready() bool {
-	return C.tls_ready(C.tls_lp_t(c.tls)) == 1
+	return C.tls_ready((*C.tls_t)(c.tls)) == 1
 }
 
 // Note, don't use flushTLS() and recvTLS() concurrently
 func (c *tlsConn) flushTLS() (err error) {
 	for {
-		if cn := C.tls_recv(C.tls_lp_t(c.tls), (*C.char)(unsafe.Pointer(&c.buf[0])), C.int(len(c.buf))); cn > 0 {
-			// TODO: remove
-			//fmt.Println("->server", cn, c.buf[:5])
+		if cn := C.tls_recv((*C.tls_t)(c.tls), (*C.char)(unsafe.Pointer(&c.buf[0])), C.int(len(c.buf))); cn > 0 {
+			if c.shiftDeadline {
+				if err = c.conn.SetWriteDeadline(time.Now().Add(c.timeout)); err != nil {
+					return
+				}
+			}
+
 			if _, err = c.conn.Write(c.buf[:cn]); err != nil {
 				return
 			}
@@ -894,17 +1021,16 @@ func (c *tlsConn) flushTLS() (err error) {
 
 // Note, don't use flushTLS() and recvTLS() concurrently
 func (c *tlsConn) recvTLS() (err error) {
-
 	var n int
-	if err = c.conn.SetDeadline(time.Now().Add(c.timeout)); err != nil {
-		return
+	if c.shiftDeadline {
+		if err = c.conn.SetReadDeadline(time.Now().Add(c.timeout)); err != nil {
+			return
+		}
 	}
 	if n, err = c.conn.Read(c.buf); err != nil {
 		return
 	}
-	// TODO: remove
-	//fmt.Println("->openssl", n, c.buf[:5])
-	C.tls_send(C.tls_lp_t(c.tls), (*C.char)(unsafe.Pointer(&c.buf[0])), C.int(n))
+	C.tls_send((*C.tls_t)(c.tls), (*C.char)(unsafe.Pointer(&c.buf[0])), C.int(n))
 	return
 }
 
@@ -929,8 +1055,12 @@ func (c *tlsConn) SetWriteDeadline(t time.Time) error {
 }
 
 func (c *tlsConn) Close() (err error) {
-	cr := C.tls_close(C.tls_lp_t(c.tls))
+	cr := C.tls_close((*C.tls_t)(c.tls))
 	c.conn.Close()
+
+	C.tls_free((*C.tls_t)(c.tls))
+	c.tls = nil
+
 	if cr < 0 {
 		return c.Error()
 	}
@@ -948,7 +1078,7 @@ func (c *tlsConn) verifyIssuerSubject(cfg *Config) (err error) {
 			cSubject = C.CString(cfg.ServerCertSubject)
 			defer C.free(unsafe.Pointer(cSubject))
 		}
-		if 0 != C.tls_validate_issuer_and_subject(C.tls_lp_t(c.tls), cIssuer, cSubject) {
+		if 0 != C.tls_validate_issuer_and_subject((*C.tls_t)(c.tls), cIssuer, cSubject) {
 			return c.Error()
 		}
 	}
@@ -957,7 +1087,7 @@ func (c *tlsConn) verifyIssuerSubject(cfg *Config) (err error) {
 
 func (c *tlsConn) String() (desc string) {
 	var cDesc *C.char
-	C.tls_description(C.tls_lp_t(c.tls), &cDesc)
+	C.tls_description((*C.tls_t)(c.tls), &cDesc)
 	desc = C.GoString(cDesc)
 	C.free(unsafe.Pointer(cDesc))
 	return
@@ -969,11 +1099,11 @@ type Client struct {
 }
 
 func (c *Client) checkConnection() (err error) {
-	if C.tls_connected(C.tls_lp_t(c.tls)) == C.int(1) {
+	if C.tls_connected((*C.tls_t)(c.tls)) == C.int(1) {
 		return
 	}
-	for C.tls_connected(C.tls_lp_t(c.tls)) != C.int(1) {
-		cRet := C.tls_handshake(C.tls_lp_t(c.tls))
+	for C.tls_connected((*C.tls_t)(c.tls)) != C.int(1) {
+		cRet := C.tls_handshake((*C.tls_t)(c.tls))
 		if cRet == 0 {
 			break
 		}
@@ -995,7 +1125,7 @@ func (c *Client) Write(b []byte) (n int, err error) {
 	if err = c.checkConnection(); err != nil {
 		return
 	}
-	cRet := C.tls_write(C.tls_lp_t(c.tls), (*C.char)(unsafe.Pointer(&b[0])), C.int(len(b)))
+	cRet := C.tls_write((*C.tls_t)(c.tls), (*C.char)(unsafe.Pointer(&b[0])), C.int(len(b)))
 	if cRet <= 0 {
 		return 0, c.Error()
 	}
@@ -1010,7 +1140,7 @@ func (c *Client) Read(b []byte) (n int, err error) {
 		if err = c.checkConnection(); err != nil {
 			return
 		}
-		cRet := C.tls_read(C.tls_lp_t(c.tls), (*C.char)(unsafe.Pointer(&b[0])), C.int(len(b)))
+		cRet := C.tls_read((*C.tls_t)(c.tls), (*C.char)(unsafe.Pointer(&b[0])), C.int(len(b)))
 		if cRet > 0 {
 			return int(cRet), nil
 		}
@@ -1023,24 +1153,16 @@ func (c *Client) Read(b []byte) (n int, err error) {
 	}
 }
 
-// NewClient(connection, tlsConfig, timeoutDuration)
-func NewClient(nc net.Conn, args ...interface{}) (conn net.Conn, err error) {
-	if len(args) == 0 || args[0] == nil {
-		return nc, nil
-	}
+func NewClient(nc net.Conn, cfg *Config, timeout time.Duration, shiftDeadline bool, address string) (conn net.Conn, err error) {
 	if !supported {
 		return nil, errors.New(SupportedErrMsg())
 	}
-	var cfg *Config
-	var ok bool
-	if cfg, ok = args[0].(*Config); !ok {
-		return nil, fmt.Errorf("invalid configuration parameter of type %T", args)
-	}
+
 	if cfg.Connect == ConnUnencrypted {
 		return nc, nil
 	}
 
-	var cUser, cSecret *C.char
+	var cUser, cSecret, cHostname *C.char
 	context := defaultContext
 	if cfg.Connect == ConnPSK {
 		cUser = C.CString(cfg.PSKIdentity)
@@ -1053,24 +1175,25 @@ func NewClient(nc net.Conn, args ...interface{}) (conn net.Conn, err error) {
 		context = pskContext
 	}
 
-	var timeout time.Duration
-	if len(args) > 1 {
-		if timeout, ok = args[1].(time.Duration); !ok {
-			return nil, fmt.Errorf("invalid timeout parameter of type %T", args)
+	if url, err := uri.New(address, nil); err == nil {
+		hostname := url.Host()
+		if nil == net.ParseIP(hostname) {
+			cHostname = C.CString(hostname)
+			defer C.free(unsafe.Pointer(cHostname))
 		}
-	} else {
-		timeout = 3 * time.Second
 	}
 
+	// for TLS we overwrite the timeoutMode and force it to move on every read or write
 	c := &Client{
 		tlsConn: tlsConn{
-			conn:    nc,
-			buf:     make([]byte, 4096),
-			tls:     unsafe.Pointer(C.tls_new_client(C.SSL_CTX_LP(context), cUser, cSecret)),
-			timeout: timeout,
+			conn:          nc,
+			buf:           make([]byte, 4096),
+			tls:           unsafe.Pointer(C.tls_new_client(C.SSL_CTX_LP(context), cUser, cSecret, cHostname)),
+			timeout:       timeout,
+			shiftDeadline: shiftDeadline,
 		},
 	}
-	runtime.SetFinalizer(c, func(c *Client) { C.tls_free(C.tls_lp_t(c.tls)) })
+	runtime.SetFinalizer(c, func(c *Client) { C.tls_free((*C.tls_t)(c.tls)) })
 
 	if !c.ready() {
 		return nil, c.Error()
@@ -1095,11 +1218,11 @@ type Server struct {
 }
 
 func (s *Server) checkConnection() (err error) {
-	if C.tls_connected(C.tls_lp_t(s.tls)) == C.int(1) {
+	if C.tls_connected((*C.tls_t)(s.tls)) == C.int(1) {
 		return
 	}
 	for {
-		cRet := C.tls_accept(C.tls_lp_t(s.tls))
+		cRet := C.tls_accept((*C.tls_t)(s.tls))
 		if cRet == 0 {
 			break
 		}
@@ -1121,10 +1244,11 @@ func (s *Server) Write(b []byte) (n int, err error) {
 	if err = s.checkConnection(); err != nil {
 		return
 	}
-	cRet := C.tls_write(C.tls_lp_t(s.tls), (*C.char)(unsafe.Pointer(&b[0])), C.int(len(b)))
+	cRet := C.tls_write((*C.tls_t)(s.tls), (*C.char)(unsafe.Pointer(&b[0])), C.int(len(b)))
 	if cRet <= 0 {
 		return 0, s.Error()
 	}
+
 	return len(b), s.flushTLS()
 }
 
@@ -1133,7 +1257,7 @@ func (s *Server) Read(b []byte) (n int, err error) {
 		if err = s.checkConnection(); err != nil {
 			return
 		}
-		cRet := C.tls_read(C.tls_lp_t(s.tls), (*C.char)(unsafe.Pointer(&b[0])), C.int(len(b)))
+		cRet := C.tls_read((*C.tls_t)(s.tls), (*C.char)(unsafe.Pointer(&b[0])), C.int(len(b)))
 		if cRet > 0 {
 			return int(cRet), nil
 		}
@@ -1146,18 +1270,9 @@ func (s *Server) Read(b []byte) (n int, err error) {
 	}
 }
 
-// NewServer(connection, tlsConfig, pendingbufer, timeoutSeconds)
-func NewServer(nc net.Conn, args ...interface{}) (conn net.Conn, err error) {
-	if len(args) == 0 || args[0] == nil {
-		return nc, nil
-	}
+func NewServer(nc net.Conn, cfg *Config, b []byte, timeout time.Duration, shiftDeadline bool) (conn net.Conn, err error) {
 	if !supported {
 		return nil, errors.New(SupportedErrMsg())
-	}
-	var cfg *Config
-	var ok bool
-	if cfg, ok = args[0].(*Config); !ok {
-		return nil, fmt.Errorf("invalid configuration parameter of type %T", args)
 	}
 
 	var cUser, cSecret *C.char
@@ -1176,36 +1291,23 @@ func NewServer(nc net.Conn, args ...interface{}) (conn net.Conn, err error) {
 		context = defaultContext
 	}
 
-	var timeout time.Duration
-	if len(args) > 2 {
-		if timeout, ok = args[2].(time.Duration); !ok {
-			return nil, fmt.Errorf("invalid timeout parameter of type %T", args)
-		}
-	} else {
-		timeout = 3 * time.Second
-	}
-
+	// for TLS we overwrite the timeoutMode and force it to move on every read or write
 	s := &Server{
 		tlsConn: tlsConn{
-			conn:    nc,
-			buf:     make([]byte, 4096),
-			tls:     unsafe.Pointer(C.tls_new_server(C.SSL_CTX_LP(context), cUser, cSecret)),
-			timeout: timeout,
+			conn:          nc,
+			buf:           make([]byte, 4096),
+			tls:           unsafe.Pointer(C.tls_new_server(C.SSL_CTX_LP(context), cUser, cSecret)),
+			timeout:       timeout,
+			shiftDeadline: shiftDeadline,
 		},
 	}
-	runtime.SetFinalizer(s, func(s *Server) { C.tls_free(C.tls_lp_t(s.tls)) })
+	runtime.SetFinalizer(s, func(s *Server) { C.tls_free((*C.tls_t)(s.tls)) })
 
 	if !s.ready() {
 		return nil, s.Error()
 	}
 
-	if len(args) > 1 {
-		if b, ok := args[1].([]byte); !ok {
-			return nil, fmt.Errorf("invalid pending buffer parameter of type %T", args)
-		} else {
-			C.tls_send(C.tls_lp_t(s.tls), (*C.char)(unsafe.Pointer(&b[0])), C.int(len(b)))
-		}
-	}
+	C.tls_send((*C.tls_t)(s.tls), (*C.char)(unsafe.Pointer(&b[0])), C.int(len(b)))
 
 	if err = s.checkConnection(); err != nil {
 		s.conn.Close()

@@ -1,6 +1,6 @@
 /*
 ** Zabbix
-** Copyright (C) 2001-2020 Zabbix SIA
+** Copyright (C) 2001-2022 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -22,8 +22,6 @@
 #include "log.h"
 
 /******************************************************************************
- *                                                                            *
- * Function: get_swapinfo                                                     *
  *                                                                            *
  * Purpose: get swap usage statistics                                         *
  *                                                                            *
@@ -167,12 +165,9 @@ static int	SYSTEM_SWAP_PUSED(AGENT_REQUEST *request, AGENT_RESULT *result)
 	}
 
 	if (0 == total)
-	{
-		SET_MSG_RESULT(result, zbx_strdup(NULL, "Cannot calculate percentage because total is zero."));
-		return SYSINFO_RET_FAIL;
-	}
-
-	SET_DBL_RESULT(result, 100.0 * (double)(total - free1) / (double)total);
+		SET_DBL_RESULT(result, 0.0);
+	else
+		SET_DBL_RESULT(result, 100.0 * (double)(total - free1) / (double)total);
 
 	return SYSINFO_RET_OK;
 }
@@ -189,12 +184,9 @@ static int	SYSTEM_SWAP_PFREE(AGENT_REQUEST *request, AGENT_RESULT *result)
 	}
 
 	if (0 == total)
-	{
-		SET_MSG_RESULT(result, zbx_strdup(NULL, "Cannot calculate percentage because total is zero."));
-		return SYSINFO_RET_FAIL;
-	}
-
-	SET_DBL_RESULT(result, 100.0 * (double)free1 / (double)total);
+		SET_DBL_RESULT(result, 100.0);
+	else
+		SET_DBL_RESULT(result, 100.0 * (double)free1 / (double)total);
 
 	return SYSINFO_RET_OK;
 }

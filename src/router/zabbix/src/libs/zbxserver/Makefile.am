@@ -1,19 +1,24 @@
 ## Process this file with automake to produce Makefile.in
 
-noinst_LIBRARIES = libzbxserver.a libzbxserver_server.a libzbxserver_proxy.a
+noinst_LIBRARIES = libzbxserver.a
 
 libzbxserver_a_SOURCES = \
-	evalfunc.c evalfunc.h \
+	evalfunc_common.c \
+	evalfunc_common.h \
+	evalfunc.c \
+	evalfunc.h \
+	anomalystl.c \
+	anomalystl.h \
 	expression.c \
-	macrofunc.c macrofunc.h \
-	zabbix_stats.c zabbix_stats.h
+	expression.h \
+	macrofunc.c \
+	macrofunc.h \
+	zabbix_stats.c \
+	get_host_from_event.c \
+	get_host_from_event.h \
+	zabbix_users.c \
+	zabbix_users.h \
+	calc_checks_eval.c \
+	evaluate_simple.c
 
-libzbxserver_server_a_SOURCES = \
-	zabbix_stats_server.c zabbix_stats.h
-
-libzbxserver_proxy_a_SOURCES = \
-	zabbix_stats_proxy.c zabbix_stats.h
-
-libzbxserver_a_CFLAGS = -I@top_srcdir@/src/libs/zbxdbcache @LIBXML2_CFLAGS@
-
-libzbxserver_server_a_CFLAGS = -I@top_srcdir@/src/libs/zbxdbcache
+libzbxserver_a_CFLAGS = -I$(top_srcdir)/src/libs/zbxdbcache $(LIBXML2_CFLAGS)

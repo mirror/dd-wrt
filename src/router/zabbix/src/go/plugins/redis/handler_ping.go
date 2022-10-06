@@ -1,6 +1,6 @@
 /*
 ** Zabbix
-** Copyright (C) 2001-2020 Zabbix SIA
+** Copyright (C) 2001-2022 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -29,7 +29,7 @@ const (
 )
 
 // pingHandler executes 'PING' command and returns pingOk if a connection is alive or pingFailed otherwise.
-func (p *Plugin) pingHandler(conn redisClient, params []string) (interface{}, error) {
+func pingHandler(conn redisClient, _ map[string]string) (interface{}, error) {
 	var res string
 
 	if _ = conn.Query(radix.Cmd(&res, "PING")); res != "PONG" {

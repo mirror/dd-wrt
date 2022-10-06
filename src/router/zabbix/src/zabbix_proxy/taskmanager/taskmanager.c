@@ -1,6 +1,6 @@
 /*
 ** Zabbix
-** Copyright (C) 2001-2020 Zabbix SIA
+** Copyright (C) 2001-2022 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -17,27 +17,32 @@
 ** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 **/
 
-#include "common.h"
-#include "daemon.h"
+#include "taskmanager.h"
+
+#include "zbxnix.h"
 #include "zbxself.h"
 #include "zbxtasks.h"
 #include "log.h"
-#include "db.h"
+#include "zbxdiag.h"
+#include "zbxrtc.h"
+#include "proxy.h"
+#include "zbxcomms.h"
 #include "dbcache.h"
-#include "zbxcrypto.h"
 
 #include "../../zabbix_server/scripts/scripts.h"
-#include "taskmanager.h"
+#include "../../zabbix_server/trapper/trapper_item_test.h"
+#include "../../zabbix_server/poller/checks_snmp.h"
 
 #define ZBX_TM_PROCESS_PERIOD		5
 #define ZBX_TM_CLEANUP_PERIOD		SEC_PER_HOUR
 
-extern unsigned char	process_type, program_type;
-extern int		server_num, process_num;
+extern ZBX_THREAD_LOCAL unsigned char	process_type;
+extern unsigned char			program_type;
+extern ZBX_THREAD_LOCAL int		server_num, process_num;
+extern int				CONFIG_PROXYMODE;
+extern char 				*CONFIG_HOSTNAME;
 
 /******************************************************************************
- *                                                                            *
- * Function: tm_execute_remote_command                                        *
  *                                                                            *
  * Purpose: execute remote command task                                       *
  *                                                                            *
@@ -127,8 +132,11 @@ static int	tm_execute_remote_command(zbx_uint64_t taskid, int clock, int ttl, in
 		ZBX_DBROW2UINT64(alertid, row[11]);
 	}
 
-	if (SUCCEED != (ret = zbx_script_execute(&script, &host, 0 == alertid ? &info : NULL, error, sizeof(error))))
+	if (SUCCEED != (ret = zbx_script_execute(&script, &host, NULL, 0 == alertid ? &info : NULL,
+			error, sizeof(error), NULL)))
+	{
 		task->data = zbx_tm_remote_command_result_create(parent_taskid, ret, error);
+	}
 	else
 		task->data = zbx_tm_remote_command_result_create(parent_taskid, ret, info);
 
@@ -152,8 +160,6 @@ finish:
 }
 
 /******************************************************************************
- *                                                                            *
- * Function: tm_process_check_now                                             *
  *                                                                            *
  * Purpose: process check now tasks for item rescheduling                     *
  *                                                                            *
@@ -208,14 +214,114 @@ static int	tm_process_check_now(zbx_vector_uint64_t *taskids)
 
 /******************************************************************************
  *                                                                            *
- * Function: tm_process_tasks                                                 *
+ * Purpose: process data task with json contents                              *
+ *                                                                            *
+ * Return value: SUCCEED - the data task was executed                         *
+ *               FAIL    - otherwise                                          *
+ *                                                                            *
+ ******************************************************************************/
+static int	tm_execute_data_json(int type, const char *data, char **info)
+{
+	struct zbx_json_parse	jp_data;
+
+	if (SUCCEED != zbx_json_brackets_open(data, &jp_data))
+	{
+		*info = zbx_strdup(*info, zbx_json_strerror());
+		return FAIL;
+	}
+
+	switch (type)
+	{
+		case ZBX_TM_DATA_TYPE_TEST_ITEM:
+			return zbx_trapper_item_test_run(&jp_data, 0, info);
+		case ZBX_TM_DATA_TYPE_DIAGINFO:
+			return zbx_diag_get_info(&jp_data, info);
+	}
+
+	THIS_SHOULD_NEVER_HAPPEN;
+
+	*info = zbx_strdup(*info, "Unknown task data type");
+	return FAIL;
+}
+
+/******************************************************************************
+ *                                                                            *
+ * Purpose: process data task                                                 *
+ *                                                                            *
+ * Return value: SUCCEED - the data task was executed                         *
+ *               FAIL    - otherwise                                          *
+ *                                                                            *
+ ******************************************************************************/
+static int	tm_execute_data(zbx_ipc_async_socket_t *rtc, zbx_uint64_t taskid, int clock, int ttl, int now)
+{
+	DB_ROW			row;
+	DB_RESULT		result;
+	zbx_tm_task_t		*task = NULL;
+	int			ret = FAIL, data_type;
+	char			*info = NULL;
+	zbx_uint64_t		parent_taskid;
+
+	result = DBselect("select parent_taskid,data,type"
+				" from task_data"
+				" where taskid=" ZBX_FS_UI64,
+				taskid);
+
+	if (NULL == (row = DBfetch(result)))
+		goto finish;
+
+	task = zbx_tm_task_create(0, ZBX_TM_TASK_DATA_RESULT, ZBX_TM_STATUS_NEW, time(NULL), 0, 0);
+	ZBX_STR2UINT64(parent_taskid, row[0]);
+
+	if (0 != ttl && clock + ttl < now)
+	{
+		task->data = zbx_tm_data_result_create(parent_taskid, FAIL, "The task has been expired.");
+		goto finish;
+	}
+
+	switch (data_type = atoi(row[2]))
+	{
+		case ZBX_TM_DATA_TYPE_TEST_ITEM:
+		case ZBX_TM_DATA_TYPE_DIAGINFO:
+			ret = tm_execute_data_json(data_type, row[1], &info);
+			break;
+		case ZBX_TM_DATA_TYPE_ACTIVE_PROXY_CONFIG_RELOAD:
+			if (0 != (program_type & ZBX_PROGRAM_TYPE_PROXY_ACTIVE))
+				ret = zbx_ipc_async_socket_send(rtc, ZBX_RTC_CONFIG_CACHE_RELOAD, NULL, 0);
+			break;
+		default:
+			task->data = zbx_tm_data_result_create(parent_taskid, FAIL, "Unknown task.");
+			goto finish;
+	}
+
+	task->data = zbx_tm_data_result_create(parent_taskid, ret, info);
+
+	zbx_free(info);
+finish:
+	DBfree_result(result);
+
+	DBbegin();
+
+	if (NULL != task)
+	{
+		zbx_tm_save_task(task);
+		zbx_tm_task_free(task);
+	}
+
+	DBexecute("update task set status=%d where taskid=" ZBX_FS_UI64, ZBX_TM_STATUS_DONE, taskid);
+
+	DBcommit();
+
+	return ret;
+}
+
+/******************************************************************************
  *                                                                            *
  * Purpose: process task manager tasks depending on task type                 *
  *                                                                            *
  * Return value: The number of successfully processed tasks                   *
  *                                                                            *
  ******************************************************************************/
-static int	tm_process_tasks(int now)
+static int	tm_process_tasks(zbx_ipc_async_socket_t *rtc, int now)
 {
 	DB_ROW			row;
 	DB_RESULT		result;
@@ -229,9 +335,9 @@ static int	tm_process_tasks(int now)
 	result = DBselect("select taskid,type,clock,ttl"
 				" from task"
 				" where status=%d"
-					" and type in (%d, %d)"
+					" and type in (%d, %d, %d)"
 				" order by taskid",
-			ZBX_TM_STATUS_NEW, ZBX_TM_TASK_REMOTE_COMMAND, ZBX_TM_TASK_CHECK_NOW);
+			ZBX_TM_STATUS_NEW, ZBX_TM_TASK_REMOTE_COMMAND, ZBX_TM_TASK_CHECK_NOW, ZBX_TM_TASK_DATA);
 
 	while (NULL != (row = DBfetch(result)))
 	{
@@ -248,6 +354,10 @@ static int	tm_process_tasks(int now)
 				break;
 			case ZBX_TM_TASK_CHECK_NOW:
 				zbx_vector_uint64_append(&check_now_taskids, taskid);
+				break;
+			case ZBX_TM_TASK_DATA:
+				if (SUCCEED == tm_execute_data(rtc, taskid, clock, ttl, now))
+					processed_num++;
 				break;
 			default:
 				THIS_SHOULD_NEVER_HAPPEN;
@@ -266,8 +376,6 @@ static int	tm_process_tasks(int now)
 
 /******************************************************************************
  *                                                                            *
- * Function: tm_remove_old_tasks                                              *
- *                                                                            *
  * Purpose: remove old done/expired tasks                                     *
  *                                                                            *
  ******************************************************************************/
@@ -279,12 +387,45 @@ static void	tm_remove_old_tasks(int now)
 	DBcommit();
 }
 
+/******************************************************************************
+ *                                                                            *
+ * Purpose: create config cache reload request to be sent to the server       *
+ *          (only from passive proxy)                                         *
+ *                                                                            *
+ ******************************************************************************/
+static void	force_config_sync(void)
+{
+	zbx_tm_task_t	*task;
+	zbx_uint64_t	taskid;
+	struct zbx_json	j;
+
+	taskid = DBget_maxid("task");
+
+	DBbegin();
+
+	task = zbx_tm_task_create(taskid, ZBX_TM_PROXYDATA, ZBX_TM_STATUS_NEW, (int)time(NULL), 0, 0);
+
+	zbx_json_init(&j, 1024);
+	zbx_json_addstring(&j, ZBX_PROTO_TAG_PROXY_NAME, CONFIG_HOSTNAME, ZBX_JSON_TYPE_STRING);
+	zbx_json_close(&j);
+
+	task->data = zbx_tm_data_create(taskid, j.buffer, j.buffer_size, ZBX_TM_DATA_TYPE_PROXY_HOSTNAME);
+
+	zbx_tm_save_task(task);
+
+	DBcommit();
+
+	zbx_tm_task_free(task);
+	zbx_json_free(&j);
+}
+
 ZBX_THREAD_ENTRY(taskmanager_thread, args)
 {
 	static int	cleanup_time = 0;
 
-	double	sec1, sec2;
-	int	tasks_num, sleeptime, nextcheck;
+	double			sec1, sec2;
+	int			tasks_num, sleeptime, nextcheck;
+	zbx_ipc_async_socket_t	rtc;
 
 	process_type = ((zbx_thread_args_t *)args)->process_type;
 	server_num = ((zbx_thread_args_t *)args)->server_num;
@@ -293,7 +434,9 @@ ZBX_THREAD_ENTRY(taskmanager_thread, args)
 	zabbix_log(LOG_LEVEL_INFORMATION, "%s #%d started [%s #%d]", get_program_type_string(program_type),
 			server_num, get_process_type_string(process_type), process_num);
 
-#if defined(HAVE_POLARSSL) || defined(HAVE_GNUTLS) || defined(HAVE_OPENSSL)
+	update_selfmon_counter(ZBX_PROCESS_STATE_BUSY);
+
+#if defined(HAVE_GNUTLS) || defined(HAVE_OPENSSL)
 	zbx_tls_init_child();
 #endif
 	zbx_setproctitle("%s [connecting to the database]", get_process_type_string(process_type));
@@ -305,16 +448,34 @@ ZBX_THREAD_ENTRY(taskmanager_thread, args)
 
 	zbx_setproctitle("%s [started, idle %d sec]", get_process_type_string(process_type), sleeptime);
 
+	zbx_rtc_subscribe(&rtc, process_type, process_num);
+
 	while (ZBX_IS_RUNNING())
 	{
-		zbx_sleep_loop(sleeptime);
+		zbx_uint32_t	rtc_cmd;
+		unsigned char	*rtc_data = NULL;
+
+		if (SUCCEED == zbx_rtc_wait(&rtc, &rtc_cmd, &rtc_data, sleeptime) && 0 != rtc_cmd)
+		{
+#ifdef HAVE_NETSNMP
+			if (ZBX_RTC_SNMP_CACHE_RELOAD == rtc_cmd)
+				zbx_clear_cache_snmp(process_type, process_num);
+#endif
+			if (ZBX_RTC_CONFIG_CACHE_RELOAD == rtc_cmd && ZBX_PROXYMODE_PASSIVE == CONFIG_PROXYMODE)
+				force_config_sync();
+
+			zbx_free(rtc_data);
+
+			if (ZBX_RTC_SHUTDOWN == rtc_cmd)
+				break;
+		}
 
 		sec1 = zbx_time();
 		zbx_update_env(sec1);
 
 		zbx_setproctitle("%s [processing tasks]", get_process_type_string(process_type));
 
-		tasks_num = tm_process_tasks((int)sec1);
+		tasks_num = tm_process_tasks(&rtc, (int)sec1);
 		if (ZBX_TM_CLEANUP_PERIOD <= sec1 - cleanup_time)
 		{
 			tm_remove_old_tasks((int)sec1);

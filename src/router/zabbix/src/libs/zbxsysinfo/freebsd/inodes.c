@@ -1,6 +1,6 @@
 /*
 ** Zabbix
-** Copyright (C) 2001-2020 Zabbix SIA
+** Copyright (C) 2001-2022 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -17,10 +17,11 @@
 ** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 **/
 
+#include "inodes.h"
+
 #include "common.h"
 #include "sysinfo.h"
 #include "log.h"
-#include "inodes.h"
 
 int	get_fs_inode_stat(const char *fs, zbx_uint64_t *itotal, zbx_uint64_t *ifree, zbx_uint64_t *iused, double *pfree,
 		double *pused, const char *mode, char **error)
@@ -54,13 +55,10 @@ int	get_fs_inode_stat(const char *fs, zbx_uint64_t *itotal, zbx_uint64_t *ifree,
 		*pfree = (100.0 *  s.ZBX_FFREE) / total;
 		*pused = 100.0 - (double)(100.0 * s.ZBX_FFREE) / total;
 	}
-	else
+	else if (NULL != mode && (0 == strcmp(mode, "pfree") || 0 == strcmp(mode, "pused")))
 	{
-		if (0 == strcmp(mode, "pfree") || 0 == strcmp(mode, "pused"))
-		{
-			*error = zbx_strdup(NULL, "Cannot calculate percentage because total is zero.");
-			return SYSINFO_RET_FAIL;
-		}
+		*error = zbx_strdup(NULL, "Cannot calculate percentage because total is zero.");
+		return SYSINFO_RET_FAIL;
 	}
 	return SYSINFO_RET_OK;
 }

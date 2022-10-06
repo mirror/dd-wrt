@@ -1,6 +1,6 @@
 /*
 ** Zabbix
-** Copyright (C) 2001-2020 Zabbix SIA
+** Copyright (C) 2001-2022 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -20,7 +20,7 @@
 #ifndef ZABBIX_HOUSEKEEPER_H
 #define ZABBIX_HOUSEKEEPER_H
 
-#include "threads.h"
+#include "zbxthreads.h"
 
 extern int	CONFIG_HOUSEKEEPING_FREQUENCY;
 extern int	CONFIG_PROXY_LOCAL_BUFFER;

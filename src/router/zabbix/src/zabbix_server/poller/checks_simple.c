@@ -1,6 +1,6 @@
 /*
 ** Zabbix
-** Copyright (C) 2001-2020 Zabbix SIA
+** Copyright (C) 2001-2022 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -17,11 +17,11 @@
 ** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 **/
 
-#include "checks_simple_vmware.h"
 #include "checks_simple.h"
+
+#include "checks_simple_vmware.h"
 #include "simple.h"
 #include "log.h"
-
 #include "zbxself.h"
 
 typedef int	(*vmfunc_t)(AGENT_REQUEST *, const char *, const char *, AGENT_RESULT *);
@@ -43,24 +43,38 @@ zbx_vmcheck_t;
 
 static zbx_vmcheck_t	vmchecks[] =
 {
+	{"alarms.get", VMCHECK_FUNC(check_vcenter_alarms_get)},
+	{"cluster.alarms.get", VMCHECK_FUNC(check_vcenter_cluster_alarms_get)},
 	{"cluster.discovery", VMCHECK_FUNC(check_vcenter_cluster_discovery)},
+	{"cluster.property", VMCHECK_FUNC(check_vcenter_cluster_property)},
 	{"cluster.status", VMCHECK_FUNC(check_vcenter_cluster_status)},
+	{"cluster.tags.get", VMCHECK_FUNC(check_vcenter_cluster_tags_get)},
+	{"cl.perfcounter", VMCHECK_FUNC(check_vcenter_cl_perfcounter)},
 	{"version", VMCHECK_FUNC(check_vcenter_version)},
 	{"fullname", VMCHECK_FUNC(check_vcenter_fullname)},
+	{"datastore.alarms.get", VMCHECK_FUNC(check_vcenter_datastore_alarms_get)},
 	{"datastore.discovery", VMCHECK_FUNC(check_vcenter_datastore_discovery)},
+	{"datastore.tags.get", VMCHECK_FUNC(check_vcenter_datastore_tags_get)},
 	{"datastore.read", VMCHECK_FUNC(check_vcenter_datastore_read)},
+	{"datastore.property", VMCHECK_FUNC(check_vcenter_datastore_property)},
 	{"datastore.size", VMCHECK_FUNC(check_vcenter_datastore_size)},
 	{"datastore.write", VMCHECK_FUNC(check_vcenter_datastore_write)},
 	{"datastore.hv.list", VMCHECK_FUNC(check_vcenter_datastore_hv_list)},
-
+	{"dvswitch.discovery", VMCHECK_FUNC(check_vcenter_dvswitch_discovery)},
+	{"dvswitch.fetchports.get", VMCHECK_FUNC(check_vcenter_dvswitch_fetchports_get)},
+	{"hv.alarms.get", VMCHECK_FUNC(check_vcenter_hv_alarms_get)},
 	{"hv.cluster.name", VMCHECK_FUNC(check_vcenter_hv_cluster_name)},
+	{"hv.connectionstate", VMCHECK_FUNC(check_vcenter_hv_connectionstate)},
 	{"hv.cpu.usage", VMCHECK_FUNC(check_vcenter_hv_cpu_usage)},
+	{"hv.cpu.usage.perf", VMCHECK_FUNC(check_vcenter_hv_cpu_usage_perf)},
+	{"hv.cpu.utilization", VMCHECK_FUNC(check_vcenter_hv_cpu_utilization)},
 	{"hv.datacenter.name", VMCHECK_FUNC(check_vcenter_hv_datacenter_name)},
 	{"hv.datastore.discovery", VMCHECK_FUNC(check_vcenter_hv_datastore_discovery)},
 	{"hv.datastore.read", VMCHECK_FUNC(check_vcenter_hv_datastore_read)},
 	{"hv.datastore.size", VMCHECK_FUNC(check_vcenter_hv_datastore_size)},
 	{"hv.datastore.write", VMCHECK_FUNC(check_vcenter_hv_datastore_write)},
 	{"hv.datastore.list", VMCHECK_FUNC(check_vcenter_hv_datastore_list)},
+	{"hv.datastore.multipath", VMCHECK_FUNC(check_vcenter_hv_datastore_multipath)},
 	{"hv.discovery", VMCHECK_FUNC(check_vcenter_hv_discovery)},
 	{"hv.fullname", VMCHECK_FUNC(check_vcenter_hv_fullname)},
 	{"hv.hw.cpu.num", VMCHECK_FUNC(check_vcenter_hv_hw_cpu_num)},
@@ -69,25 +83,42 @@ static zbx_vmcheck_t	vmchecks[] =
 	{"hv.hw.cpu.threads", VMCHECK_FUNC(check_vcenter_hv_hw_cpu_threads)},
 	{"hv.hw.memory", VMCHECK_FUNC(check_vcenter_hv_hw_memory)},
 	{"hv.hw.model", VMCHECK_FUNC(check_vcenter_hv_hw_model)},
+	{"hv.hw.serialnumber", VMCHECK_FUNC(check_vcenter_hv_hw_serialnumber)},
 	{"hv.hw.uuid", VMCHECK_FUNC(check_vcenter_hv_hw_uuid)},
 	{"hv.hw.vendor", VMCHECK_FUNC(check_vcenter_hv_hw_vendor)},
 	{"hv.memory.size.ballooned", VMCHECK_FUNC(check_vcenter_hv_memory_size_ballooned)},
 	{"hv.memory.used", VMCHECK_FUNC(check_vcenter_hv_memory_used)},
+	{"hv.net.if.discovery", VMCHECK_FUNC(check_vcenter_hv_net_if_discovery)},
 	{"hv.network.in", VMCHECK_FUNC(check_vcenter_hv_network_in)},
 	{"hv.network.out", VMCHECK_FUNC(check_vcenter_hv_network_out)},
+	{"hv.network.linkspeed", VMCHECK_FUNC(check_vcenter_hv_network_linkspeed)},
+	{"hv.tags.get", VMCHECK_FUNC(check_vcenter_hv_tags_get)},
 	{"hv.perfcounter", VMCHECK_FUNC(check_vcenter_hv_perfcounter)},
+	{"hv.power", VMCHECK_FUNC(check_vcenter_hv_power)},
+	{"hv.property", VMCHECK_FUNC(check_vcenter_hv_property)},
 	{"hv.sensor.health.state", VMCHECK_FUNC(check_vcenter_hv_sensor_health_state)},
 	{"hv.status", VMCHECK_FUNC(check_vcenter_hv_status)},
+	{"hv.maintenance", VMCHECK_FUNC(check_vcenter_hv_maintenance)},
 	{"hv.uptime", VMCHECK_FUNC(check_vcenter_hv_uptime)},
 	{"hv.version", VMCHECK_FUNC(check_vcenter_hv_version)},
+	{"hv.sensors.get", VMCHECK_FUNC(check_vcenter_hv_sensors_get)},
+	{"hv.hw.sensors.get", VMCHECK_FUNC(check_vcenter_hv_hw_sensors_get)},
 	{"hv.vm.num", VMCHECK_FUNC(check_vcenter_hv_vm_num)},
 
+	{"vm.alarms.get", VMCHECK_FUNC(check_vcenter_vm_alarms_get)},
+	{"vm.attribute", VMCHECK_FUNC(check_vcenter_vm_attribute)},
 	{"vm.cluster.name", VMCHECK_FUNC(check_vcenter_vm_cluster_name)},
 	{"vm.cpu.num", VMCHECK_FUNC(check_vcenter_vm_cpu_num)},
+	{"vm.consolidationneeded", VMCHECK_FUNC(check_vcenter_vm_consolidationneeded)},
 	{"vm.cpu.ready", VMCHECK_FUNC(check_vcenter_vm_cpu_ready)},
 	{"vm.cpu.usage", VMCHECK_FUNC(check_vcenter_vm_cpu_usage)},
+	{"vm.cpu.usage.perf", VMCHECK_FUNC(check_vcenter_vm_cpu_usage_perf)},
+	{"vm.cpu.latency", VMCHECK_FUNC(check_vcenter_vm_cpu_latency)},
+	{"vm.cpu.readiness", VMCHECK_FUNC(check_vcenter_vm_cpu_readiness)},
+	{"vm.cpu.swapwait", VMCHECK_FUNC(check_vcenter_vm_cpu_swapwait)},
 	{"vm.datacenter.name", VMCHECK_FUNC(check_vcenter_vm_datacenter_name)},
 	{"vm.discovery", VMCHECK_FUNC(check_vcenter_vm_discovery)},
+	{"vm.guest.osuptime", VMCHECK_FUNC(check_vcenter_vm_guest_uptime)},
 	{"vm.hv.name", VMCHECK_FUNC(check_vcenter_vm_hv_name)},
 	{"vm.memory.size", VMCHECK_FUNC(check_vcenter_vm_memory_size)},
 	{"vm.memory.size.ballooned", VMCHECK_FUNC(check_vcenter_vm_memory_size_ballooned)},
@@ -97,14 +128,27 @@ static zbx_vmcheck_t	vmchecks[] =
 	{"vm.memory.size.usage.host", VMCHECK_FUNC(check_vcenter_vm_memory_size_usage_host)},
 	{"vm.memory.size.private", VMCHECK_FUNC(check_vcenter_vm_memory_size_private)},
 	{"vm.memory.size.shared", VMCHECK_FUNC(check_vcenter_vm_memory_size_shared)},
+	{"vm.memory.size.consumed", VMCHECK_FUNC(check_vcenter_vm_memory_size_consumed)},
+	{"vm.memory.usage", VMCHECK_FUNC(check_vcenter_vm_memory_usage)},
+	{"vm.guest.memory.size.swapped", VMCHECK_FUNC(check_vcenter_vm_guest_memory_size_swapped)},
 	{"vm.net.if.discovery", VMCHECK_FUNC(check_vcenter_vm_net_if_discovery)},
 	{"vm.net.if.in", VMCHECK_FUNC(check_vcenter_vm_net_if_in)},
 	{"vm.net.if.out", VMCHECK_FUNC(check_vcenter_vm_net_if_out)},
+	{"vm.net.if.usage", VMCHECK_FUNC(check_vcenter_vm_net_if_usage)},
 	{"vm.perfcounter", VMCHECK_FUNC(check_vcenter_vm_perfcounter)},
 	{"vm.powerstate", VMCHECK_FUNC(check_vcenter_vm_powerstate)},
+	{"vm.property", VMCHECK_FUNC(check_vcenter_vm_property)},
+	{"vm.snapshot.get", VMCHECK_FUNC(check_vcenter_vm_snapshot_get)},
+	{"vm.state", VMCHECK_FUNC(check_vcenter_vm_state)},
 	{"vm.storage.committed", VMCHECK_FUNC(check_vcenter_vm_storage_committed)},
 	{"vm.storage.unshared", VMCHECK_FUNC(check_vcenter_vm_storage_unshared)},
 	{"vm.storage.uncommitted", VMCHECK_FUNC(check_vcenter_vm_storage_uncommitted)},
+	{"vm.tags.get", VMCHECK_FUNC(check_vcenter_vm_tags_get)},
+	{"vm.storage.readoio", VMCHECK_FUNC(check_vcenter_vm_storage_readoio)},
+	{"vm.storage.writeoio", VMCHECK_FUNC(check_vcenter_vm_storage_writeoio)},
+	{"vm.storage.totalwritelatency", VMCHECK_FUNC(check_vcenter_vm_storage_totalwritelatency)},
+	{"vm.storage.totalreadlatency", VMCHECK_FUNC(check_vcenter_vm_storage_totalreadlatency)},
+	{"vm.tools", VMCHECK_FUNC(check_vcenter_vm_tools)},
 	{"vm.uptime", VMCHECK_FUNC(check_vcenter_vm_uptime)},
 	{"vm.vfs.dev.discovery", VMCHECK_FUNC(check_vcenter_vm_vfs_dev_discovery)},
 	{"vm.vfs.dev.read", VMCHECK_FUNC(check_vcenter_vm_vfs_dev_read)},
@@ -112,12 +156,17 @@ static zbx_vmcheck_t	vmchecks[] =
 	{"vm.vfs.fs.discovery", VMCHECK_FUNC(check_vcenter_vm_vfs_fs_discovery)},
 	{"vm.vfs.fs.size", VMCHECK_FUNC(check_vcenter_vm_vfs_fs_size)},
 
+	{"dc.alarms.get", VMCHECK_FUNC(check_vcenter_dc_alarms_get)},
+	{"dc.discovery", VMCHECK_FUNC(check_vcenter_dc_discovery)},
+	{"dc.tags.get", VMCHECK_FUNC(check_vcenter_dc_tags_get)},
+
+	{"rp.cpu.usage", VMCHECK_FUNC(check_vcenter_rp_cpu_usage)},
+	{"rp.memory", VMCHECK_FUNC(check_vcenter_rp_memory)},
+
 	{NULL, NULL}
 };
 
 /******************************************************************************
- *                                                                            *
- * Function: get_vmware_function                                              *
  *                                                                            *
  * Purpose: Retrieves a handler of the item key                               *
  *                                                                            *
@@ -147,7 +196,7 @@ static int	get_vmware_function(const char *key, vmfunc_t *vmfunc)
 	return FAIL;
 }
 
-int	get_value_simple(DC_ITEM *item, AGENT_RESULT *result, zbx_vector_ptr_t *add_results)
+int	get_value_simple(const DC_ITEM *item, AGENT_RESULT *result, zbx_vector_ptr_t *add_results)
 {
 	AGENT_REQUEST	request;
 	vmfunc_t	vmfunc;

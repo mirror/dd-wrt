@@ -1,6 +1,6 @@
 /*
 ** Zabbix
-** Copyright (C) 2001-2020 Zabbix SIA
+** Copyright (C) 2001-2022 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -39,20 +39,31 @@
 #define get_rkey(request)		(request)->key
 #define get_rparams_num(request)	(request)->nparam
 #define get_rparam(request, num)	((request)->nparam > num ? (request)->params[num] : NULL)
+#define get_rparam_type(request, num)	((request)->nparam > num ? (request)->types[num] : \
+		REQUEST_PARAMETER_TYPE_UNDEFINED)
 
 /* flags for command */
 #define CF_HAVEPARAMS		0x01	/* item accepts either optional or mandatory parameters */
 #define CF_MODULE		0x02	/* item is defined in a loadable module */
 #define CF_USERPARAMETER	0x04	/* item is defined as user parameter */
 
+typedef enum
+{
+	REQUEST_PARAMETER_TYPE_UNDEFINED = 0,
+	REQUEST_PARAMETER_TYPE_STRING,
+	REQUEST_PARAMETER_TYPE_ARRAY
+}
+zbx_request_parameter_type_t;
+
 /* agent request structure */
 typedef struct
 {
-	char		*key;
-	int		nparam;
-	char		**params;
-	zbx_uint64_t	lastlogsize;
-	int		mtime;
+	char				*key;
+	int				nparam;
+	char				**params;
+	zbx_uint64_t			lastlogsize;
+	int				mtime;
+	zbx_request_parameter_type_t	*types;
 }
 AGENT_REQUEST;
 
@@ -85,7 +96,7 @@ typedef struct
 	char		*text;
 	char		*msg;		/* possible error message */
 	zbx_log_t	*log;
-	int	 	type;		/* flags: see AR_* above */
+	int		type;		/* flags: see AR_* above */
 	int		mtime;		/* meta information */
 }
 AGENT_RESULT;

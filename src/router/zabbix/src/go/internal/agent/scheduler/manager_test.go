@@ -1,6 +1,6 @@
 /*
 ** Zabbix
-** Copyright (C) 2001-2020 Zabbix SIA
+** Copyright (C) 2001-2022 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -27,12 +27,12 @@ import (
 	"testing"
 	"time"
 
+	"git.zabbix.com/ap/plugin-support/conf"
+	"git.zabbix.com/ap/plugin-support/log"
+	"git.zabbix.com/ap/plugin-support/plugin"
 	"zabbix.com/internal/agent"
 	"zabbix.com/internal/agent/alias"
-	"zabbix.com/pkg/conf"
 	"zabbix.com/pkg/itemutil"
-	"zabbix.com/pkg/log"
-	"zabbix.com/pkg/plugin"
 )
 
 // getNextCheck calculates simplified nextcheck based on the specified delay string and current time
@@ -124,6 +124,22 @@ func (p *mockRunnerPlugin) Stop() {
 	p.call("$stop")
 }
 
+type mockPassiveRunnerPlugin struct {
+	plugin.Base
+	mockPlugin
+}
+
+func (p *mockPassiveRunnerPlugin) Export(key string, params []string, ctx plugin.ContextProvider) (result interface{}, err error) {
+	return
+}
+func (p *mockPassiveRunnerPlugin) Start() {
+	p.call("$start")
+}
+
+func (p *mockPassiveRunnerPlugin) Stop() {
+	p.call("$stop")
+}
+
 type watchTracker interface {
 	watched() []*plugin.Request
 }
@@ -136,7 +152,6 @@ type mockWatcherPlugin struct {
 
 func (p *mockWatcherPlugin) Watch(requests []*plugin.Request, ctx plugin.ContextProvider) {
 	p.call("$watch")
-	log.Debugf("WATCH %s %v", p.Name(), requests)
 	p.requests = requests
 }
 
@@ -283,6 +298,23 @@ func (m *mockManager) mockTasks() {
 				}
 				p.enqueueTask(mockTask)
 				m.clients[index[t]].exporters[t.item.itemid] = mockTask
+			case *directExporterTask:
+				mockTask := &mockExporterTask{
+					exporterTask: exporterTask{
+						taskBase: taskBase{
+							plugin:    task.getPlugin(),
+							scheduled: getNextcheck(t.item.delay, m.now).Add(priorityExporterTaskNs),
+							index:     -1,
+							active:    task.isActive(),
+							recurring: true,
+						},
+						item:   t.item,
+						client: t.client,
+						meta:   t.meta,
+					},
+					sink: m.sink,
+				}
+				p.enqueueTask(mockTask)
 			case *starterTask:
 				mockTask := &mockStarterTask{
 					taskBase: taskBase{
@@ -458,7 +490,7 @@ func (t *mockCollectorTask) reschedule(now time.Time) (err error) {
 }
 
 func (t *mockCollectorTask) getWeight() int {
-	return t.plugin.capacity
+	return t.plugin.maxCapacity
 }
 
 type mockStarterTask struct {
@@ -476,7 +508,7 @@ func (t *mockStarterTask) reschedule(now time.Time) (err error) {
 }
 
 func (t *mockStarterTask) getWeight() int {
-	return t.plugin.capacity
+	return t.plugin.maxCapacity
 }
 
 type mockStopperTask struct {
@@ -494,7 +526,7 @@ func (t *mockStopperTask) reschedule(now time.Time) (err error) {
 }
 
 func (t *mockStopperTask) getWeight() int {
-	return t.plugin.capacity
+	return t.plugin.maxCapacity
 }
 
 type mockWatcherTask struct {
@@ -516,7 +548,7 @@ func (t *mockWatcherTask) reschedule(now time.Time) (err error) {
 }
 
 func (t *mockWatcherTask) getWeight() int {
-	return t.plugin.capacity
+	return t.plugin.maxCapacity
 }
 
 // plugin.ContextProvider interface
@@ -557,7 +589,7 @@ func (t *mockConfigerTask) reschedule(now time.Time) (err error) {
 }
 
 func (t *mockConfigerTask) getWeight() int {
-	return t.plugin.capacity
+	return t.plugin.maxCapacity
 }
 
 func checkExporterTasks(t *testing.T, m *Manager, clientID uint64, items []*clientItem) {
@@ -635,7 +667,7 @@ func TestTaskCreate(t *testing.T) {
 
 	var cache resultCacheMock
 	update := updateRequest{
-		clientID: 1,
+		clientID: agent.MaxBuiltinClientID + 1,
 		sink:     &cache,
 		requests: make([]*plugin.Request, 0),
 	}
@@ -651,14 +683,13 @@ func TestTaskCreate(t *testing.T) {
 			Mtime:       &mtime,
 		})
 	}
-
 	manager.processUpdateRequest(&update, time.Now())
 
 	if len(manager.pluginQueue) != 3 {
 		t.Errorf("Expected %d plugins queued while got %d", 3, len(manager.pluginQueue))
 	}
 
-	checkExporterTasks(t, manager, 1, items)
+	checkExporterTasks(t, manager, agent.MaxBuiltinClientID+1, items)
 }
 
 func TestTaskUpdate(t *testing.T) {
@@ -688,7 +719,7 @@ func TestTaskUpdate(t *testing.T) {
 
 	var cache resultCacheMock
 	update := updateRequest{
-		clientID: 1,
+		clientID: agent.MaxBuiltinClientID + 1,
 		sink:     &cache,
 		requests: make([]*plugin.Request, 0),
 	}
@@ -726,7 +757,7 @@ func TestTaskUpdate(t *testing.T) {
 		t.Errorf("Expected %d plugins queued while got %d", 3, len(manager.pluginQueue))
 	}
 
-	checkExporterTasks(t, manager, 1, items)
+	checkExporterTasks(t, manager, agent.MaxBuiltinClientID+1, items)
 }
 
 func TestTaskUpdateInvalidInterval(t *testing.T) {
@@ -749,7 +780,7 @@ func TestTaskUpdateInvalidInterval(t *testing.T) {
 
 	var cache resultCacheMock
 	update := updateRequest{
-		clientID: 1,
+		clientID: agent.MaxBuiltinClientID + 1,
 		sink:     &cache,
 		requests: make([]*plugin.Request, 0),
 	}
@@ -812,7 +843,7 @@ func TestTaskDelete(t *testing.T) {
 
 	var cache resultCacheMock
 	update := updateRequest{
-		clientID: 1,
+		clientID: agent.MaxBuiltinClientID + 1,
 		sink:     &cache,
 		requests: make([]*plugin.Request, 0),
 	}
@@ -848,7 +879,7 @@ func TestTaskDelete(t *testing.T) {
 		t.Errorf("Expected %d tasks queued while got %d", 0, len(manager.plugins["debug3"].tasks))
 	}
 
-	checkExporterTasks(t, manager, 1, items)
+	checkExporterTasks(t, manager, agent.MaxBuiltinClientID+1, items)
 }
 
 func TestSchedule(t *testing.T) {
@@ -878,7 +909,7 @@ func TestSchedule(t *testing.T) {
 
 	var cache resultCacheMock
 	update := updateRequest{
-		clientID: 1,
+		clientID: agent.MaxBuiltinClientID + 1,
 		sink:     &cache,
 		requests: make([]*plugin.Request, 0),
 	}
@@ -915,7 +946,7 @@ func TestScheduleCapacity(t *testing.T) {
 	manager.mockInit(t)
 
 	p := manager.plugins["debug2"]
-	p.capacity = 2
+	p.maxCapacity = 2
 
 	items := []*clientItem{
 		&clientItem{itemid: 1, delay: "1", key: "debug1"},
@@ -931,7 +962,7 @@ func TestScheduleCapacity(t *testing.T) {
 
 	var cache resultCacheMock
 	update := updateRequest{
-		clientID: 1,
+		clientID: agent.MaxBuiltinClientID + 1,
 		sink:     &cache,
 		requests: make([]*plugin.Request, 0),
 	}
@@ -981,7 +1012,7 @@ func TestScheduleUpdate(t *testing.T) {
 
 	var cache resultCacheMock
 	update := updateRequest{
-		clientID: 1,
+		clientID: agent.MaxBuiltinClientID + 1,
 		sink:     &cache,
 		requests: make([]*plugin.Request, 0),
 	}
@@ -1044,7 +1075,7 @@ func TestCollectorSchedule(t *testing.T) {
 
 	var cache resultCacheMock
 	update := updateRequest{
-		clientID: 1,
+		clientID: agent.MaxBuiltinClientID + 1,
 		sink:     &cache,
 		requests: make([]*plugin.Request, 0),
 	}
@@ -1093,7 +1124,7 @@ func TestCollectorScheduleUpdate(t *testing.T) {
 
 	var cache resultCacheMock
 	update := updateRequest{
-		clientID: 1,
+		clientID: agent.MaxBuiltinClientID + 1,
 		sink:     &cache,
 		requests: make([]*plugin.Request, 0),
 	}
@@ -1166,7 +1197,7 @@ func TestRunner(t *testing.T) {
 
 	var cache resultCacheMock
 	update := updateRequest{
-		clientID: 1,
+		clientID: agent.MaxBuiltinClientID + 1,
 		sink:     &cache,
 		requests: make([]*plugin.Request, 0),
 	}
@@ -1228,7 +1259,6 @@ func TestRunner(t *testing.T) {
 	manager.mockTasks()
 	manager.iterate(t, 1)
 	manager.checkPluginTimeline(t, plugins, calls, 1)
-
 }
 
 func checkWatchRequests(t *testing.T, p plugin.Accessor, requests []*plugin.Request) {
@@ -1276,7 +1306,7 @@ func TestWatcher(t *testing.T) {
 
 	var cache resultCacheMock
 	update := updateRequest{
-		clientID: 1,
+		clientID: agent.MaxBuiltinClientID + 1,
 		sink:     &cache,
 		requests: make([]*plugin.Request, 0),
 	}
@@ -1364,7 +1394,7 @@ func TestCollectorExporterSchedule(t *testing.T) {
 
 	var cache resultCacheMock
 	update := updateRequest{
-		clientID: 1,
+		clientID: agent.MaxBuiltinClientID + 1,
 		sink:     &cache,
 		requests: make([]*plugin.Request, 0),
 	}
@@ -1417,7 +1447,7 @@ func TestRunnerWatcher(t *testing.T) {
 
 	var cache resultCacheMock
 	update := updateRequest{
-		clientID: 1,
+		clientID: agent.MaxBuiltinClientID + 1,
 		sink:     &cache,
 		requests: make([]*plugin.Request, 0),
 	}
@@ -1504,7 +1534,7 @@ func TestMultiCollectorExporterSchedule(t *testing.T) {
 
 	var cache resultCacheMock
 	update := updateRequest{
-		clientID: 1,
+		clientID: agent.MaxBuiltinClientID + 1,
 		sink:     &cache,
 		requests: make([]*plugin.Request, 0),
 	}
@@ -1521,7 +1551,7 @@ func TestMultiCollectorExporterSchedule(t *testing.T) {
 		})
 	}
 	manager.update(&update)
-	update.clientID = 2
+	update.clientID = agent.MaxBuiltinClientID + 2
 	manager.update(&update)
 	manager.mockTasks()
 	manager.iterate(t, 5)
@@ -1533,7 +1563,7 @@ func TestMultiCollectorExporterSchedule(t *testing.T) {
 	manager.iterate(t, 5)
 	manager.checkPluginTimeline(t, plugins, calls, 5)
 
-	update.clientID = 1
+	update.clientID = agent.MaxBuiltinClientID + 1
 	manager.update(&update)
 	manager.mockTasks()
 	manager.iterate(t, 5)
@@ -1564,7 +1594,7 @@ func TestMultiRunnerWatcher(t *testing.T) {
 
 	var cache resultCacheMock
 	update := updateRequest{
-		clientID: 1,
+		clientID: agent.MaxBuiltinClientID + 1,
 		sink:     &cache,
 		requests: make([]*plugin.Request, 0),
 	}
@@ -1581,35 +1611,35 @@ func TestMultiRunnerWatcher(t *testing.T) {
 		})
 	}
 	manager.update(&update)
-	update.clientID = 2
+	update.clientID = agent.MaxBuiltinClientID + 2
 	manager.update(&update)
 	manager.mockTasks()
 	manager.iterate(t, 5)
 	manager.checkPluginTimeline(t, plugins, calls, 5)
 
-	update.clientID = 1
+	update.clientID = agent.MaxBuiltinClientID + 1
 	manager.update(&update)
-	update.clientID = 2
+	update.clientID = agent.MaxBuiltinClientID + 2
 	update.requests = update.requests[:0]
 	manager.update(&update)
 	manager.mockTasks()
 	manager.iterate(t, 5)
 	manager.checkPluginTimeline(t, plugins, calls, 5)
 
-	update.clientID = 1
+	update.clientID = agent.MaxBuiltinClientID + 1
 	manager.update(&update)
 	manager.mockTasks()
 	manager.iterate(t, 5)
 	manager.checkPluginTimeline(t, plugins, calls, 5)
 
 	update.requests = update.requests[:1]
-	update.clientID = 2
+	update.clientID = agent.MaxBuiltinClientID + 2
 	manager.update(&update)
 	manager.mockTasks()
 	manager.iterate(t, 5)
 	manager.checkPluginTimeline(t, plugins, calls, 5)
 
-	update.clientID = 1
+	update.clientID = agent.MaxBuiltinClientID + 1
 	manager.update(&update)
 	manager.mockTasks()
 	manager.iterate(t, 5)
@@ -1623,7 +1653,7 @@ func TestPassiveRunner(t *testing.T) {
 	plugin.ClearRegistry()
 	plugins := make([]plugin.Accessor, 3)
 	for i := range plugins {
-		plugins[i] = &mockRunnerPlugin{Base: plugin.Base{}, mockPlugin: mockPlugin{now: &manager.now}}
+		plugins[i] = &mockPassiveRunnerPlugin{Base: plugin.Base{}, mockPlugin: mockPlugin{now: &manager.now}}
 		name := fmt.Sprintf("debug%d", i+1)
 		plugin.RegisterMetrics(plugins[i], name, name, "Debug.")
 	}
@@ -1643,7 +1673,7 @@ func TestPassiveRunner(t *testing.T) {
 
 	var cache resultCacheMock
 	update := updateRequest{
-		clientID: 0,
+		clientID: agent.PassiveChecksClientID,
 		sink:     &cache,
 		requests: make([]*plugin.Request, 0),
 	}
@@ -1734,7 +1764,7 @@ func TestConfigurator(t *testing.T) {
 
 	var cache resultCacheMock
 	update := updateRequest{
-		clientID: 1,
+		clientID: agent.MaxBuiltinClientID + 1,
 		sink:     &cache,
 		requests: make([]*plugin.Request, 0),
 	}
@@ -1767,4 +1797,105 @@ func TestConfigurator(t *testing.T) {
 	manager.mockTasks()
 	manager.iterate(t, 5)
 	manager.checkPluginTimeline(t, plugins, calls, 5)
+}
+
+func Test_getCapacity(t *testing.T) {
+	type args struct {
+		optsRaw interface{}
+	}
+	tests := []struct {
+		name string
+		args args
+		want int
+	}{
+		{
+			"default",
+			args{
+				&conf.Node{
+					Name:  "Test",
+					Nodes: []interface{}{},
+				},
+			},
+			100,
+		},
+		{
+			"both_cap",
+			args{
+				&conf.Node{
+					Name: "Test",
+					Nodes: []interface{}{
+						&conf.Node{
+							Name: "Capacity",
+							Nodes: []interface{}{
+								&conf.Value{Value: []byte("10")},
+							},
+						},
+						&conf.Node{
+							Name: "System",
+							Nodes: []interface{}{
+								&conf.Node{
+									Name: "Capacity",
+									Nodes: []interface{}{
+										&conf.Value{Value: []byte("50")},
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			50,
+		},
+		{
+			"depriceted_cap",
+			args{
+				&conf.Node{
+					Name: "Test",
+					Nodes: []interface{}{
+						&conf.Node{
+							Name: "Capacity",
+							Nodes: []interface{}{
+								&conf.Value{Value: []byte("10")},
+							},
+						},
+					},
+				},
+			},
+			10,
+		},
+		{
+			"system_cap",
+			args{
+				&conf.Node{
+					Name: "Test",
+					Nodes: []interface{}{
+						&conf.Node{
+							Name: "System",
+							Nodes: []interface{}{
+								&conf.Node{
+									Name: "Capacity",
+									Nodes: []interface{}{
+										&conf.Value{Value: []byte("50")},
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			50,
+		},
+		{
+			"nil",
+			args{nil},
+			100,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got, _ := getPluginOptions(tt.args.optsRaw, "test"); got != tt.want {
+				t.Errorf("getCapacity() = %v, want %v", got, tt.want)
+			}
+		})
+	}
 }

@@ -1,6 +1,6 @@
 /*
 ** Zabbix
-** Copyright (C) 2001-2020 Zabbix SIA
+** Copyright (C) 2001-2022 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -18,11 +18,7 @@
 **/
 
 #include "common.h"
-
-#include "threads.h"
-#include "comms.h"
-#include "cfg.h"
-#include "log.h"
+#include "zbxcomms.h"
 #include "zbxgetopt.h"
 #include "zbxcrypto.h"
 
@@ -34,13 +30,27 @@ const char	*progname = NULL;
 const char	title_message[] = "zabbix_get";
 const char	syslog_app_name[] = "zabbix_get";
 const char	*usage_message[] = {
-	"-s host-name-or-IP", "[-p port-number]", "[-I IP-address]", "-k item-key", NULL,
-#if defined(HAVE_POLARSSL) || defined(HAVE_GNUTLS) || defined(HAVE_OPENSSL)
-	"-s host-name-or-IP", "[-p port-number]", "[-I IP-address]", "--tls-connect cert", "--tls-ca-file CA-file",
-	"[--tls-crl-file CRL-file]", "[--tls-agent-cert-issuer cert-issuer]", "[--tls-agent-cert-subject cert-subject]",
-	"--tls-cert-file cert-file", "--tls-key-file key-file", "-k item-key", NULL,
-	"-s host-name-or-IP", "[-p port-number]", "[-I IP-address]", "--tls-connect psk",
-	"--tls-psk-identity PSK-identity", "--tls-psk-file PSK-file", "-k item-key", NULL,
+	"-s host-name-or-IP", "[-p port-number]", "[-I IP-address]", "[-t timeout]", "-k item-key", NULL,
+#if defined(HAVE_GNUTLS) || defined(HAVE_OPENSSL)
+	"-s host-name-or-IP", "[-p port-number]", "[-I IP-address]", "[-t timeout]", "--tls-connect cert",
+	"--tls-ca-file CA-file", "[--tls-crl-file CRL-file]", "[--tls-agent-cert-issuer cert-issuer]",
+	"[--tls-agent-cert-subject cert-subject]", "--tls-cert-file cert-file", "--tls-key-file key-file",
+#if defined(HAVE_OPENSSL)
+	"[--tls-cipher13 cipher-string]",
+#endif
+#if defined(HAVE_GNUTLS) || defined(HAVE_OPENSSL)
+	"[--tls-cipher cipher-string]",
+#endif
+	"-k item-key", NULL,
+	"-s host-name-or-IP", "[-p port-number]", "[-I IP-address]", "[-t timeout]", "--tls-connect psk",
+	"--tls-psk-identity PSK-identity", "--tls-psk-file PSK-file",
+#if defined(HAVE_OPENSSL)
+	"[--tls-cipher13 cipher-string]",
+#endif
+#if defined(HAVE_GNUTLS) || defined(HAVE_OPENSSL)
+	"[--tls-cipher cipher-string]",
+#endif
+	"-k item-key", NULL,
 #endif
 	"-h", NULL,
 	"-V", NULL,
@@ -48,6 +58,13 @@ const char	*usage_message[] = {
 };
 
 unsigned char	program_type	= ZBX_PROGRAM_TYPE_GET;
+
+#define CONFIG_GET_TIMEOUT_MIN		1
+#define CONFIG_GET_TIMEOUT_MAX		30
+#define CONFIG_GET_TIMEOUT_MIN_STR	ZBX_STR(CONFIG_GET_TIMEOUT_MIN)
+#define CONFIG_GET_TIMEOUT_MAX_STR	ZBX_STR(CONFIG_GET_TIMEOUT_MAX)
+
+static int	CONFIG_GET_TIMEOUT = CONFIG_GET_TIMEOUT_MAX;
 
 const char	*help_message[] = {
 	"Get data from Zabbix agent.",
@@ -58,13 +75,17 @@ const char	*help_message[] = {
 	"                             (default: " ZBX_DEFAULT_AGENT_PORT_STR ")",
 	"  -I --source-address IP-address   Specify source IP address",
 	"",
+	"  -t --timeout seconds       Specify timeout. Valid range: " CONFIG_GET_TIMEOUT_MIN_STR "-"
+			CONFIG_GET_TIMEOUT_MAX_STR " seconds",
+	"                             (default: " CONFIG_GET_TIMEOUT_MAX_STR " seconds)",
+	"",
 	"  -k --key item-key          Specify key of the item to retrieve value for",
 	"",
 	"  -h --help                  Display this help message",
 	"  -V --version               Display version number",
 	"",
 	"TLS connection options:",
-#if defined(HAVE_POLARSSL) || defined(HAVE_GNUTLS) || defined(HAVE_OPENSSL)
+#if defined(HAVE_GNUTLS) || defined(HAVE_OPENSSL)
 	"  --tls-connect value        How to connect to agent. Values:",
 	"                               unencrypted - connect without encryption",
 	"                                             (default)",
@@ -94,13 +115,27 @@ const char	*help_message[] = {
 	"",
 	"  --tls-psk-file PSK-file    Full pathname of a file containing the pre-shared",
 	"                             key",
+#if defined(HAVE_OPENSSL)
+	"",
+	"  --tls-cipher13             Cipher string for OpenSSL 1.1.1 or newer for",
+	"                             TLS 1.3. Override the default ciphersuite",
+	"                             selection criteria. This option is not available",
+	"                             if OpenSSL version is less than 1.1.1",
+#endif
+#if defined(HAVE_GNUTLS) || defined(HAVE_OPENSSL)
+	"",
+	"  --tls-cipher               GnuTLS priority string (for TLS 1.2 and up) or",
+	"                             OpenSSL cipher string (only for TLS 1.2).",
+	"                             Override the default ciphersuite selection",
+	"                             criteria",
+#endif
 #else
 	"  Not available. This 'zabbix_get' was compiled without TLS support",
 #endif
 	"",
 	"Example(s):",
 	"  zabbix_get -s 127.0.0.1 -p " ZBX_DEFAULT_AGENT_PORT_STR " -k \"system.cpu.load[all,avg1]\"",
-#if defined(HAVE_POLARSSL) || defined(HAVE_GNUTLS) || defined(HAVE_OPENSSL)
+#if defined(HAVE_GNUTLS) || defined(HAVE_OPENSSL)
 	"",
 	"  zabbix_get -s 127.0.0.1 -p " ZBX_DEFAULT_AGENT_PORT_STR " -k \"system.cpu.load[all,avg1]\" \\",
 	"    --tls-connect cert --tls-ca-file /home/zabbix/zabbix_ca_file \\",
@@ -133,8 +168,19 @@ char	*CONFIG_TLS_KEY_FILE		= NULL;
 char	*CONFIG_TLS_PSK_IDENTITY	= NULL;
 char	*CONFIG_TLS_PSK_FILE		= NULL;
 
+char	*CONFIG_TLS_CIPHER_CERT13	= NULL;	/* not used in zabbix_get, just for linking with tls.c */
+char	*CONFIG_TLS_CIPHER_CERT		= NULL;	/* not used in zabbix_get, just for linking with tls.c */
+char	*CONFIG_TLS_CIPHER_PSK13	= NULL;	/* not used in zabbix_get, just for linking with tls.c */
+char	*CONFIG_TLS_CIPHER_PSK		= NULL;	/* not used in zabbix_get, just for linking with tls.c */
+char	*CONFIG_TLS_CIPHER_ALL13	= NULL;	/* not used in zabbix_get, just for linking with tls.c */
+char	*CONFIG_TLS_CIPHER_ALL		= NULL;	/* not used in zabbix_get, just for linking with tls.c */
+char	*CONFIG_TLS_CIPHER_CMD13	= NULL;	/* parameter '--tls-cipher13' from zabbix_get command line */
+char	*CONFIG_TLS_CIPHER_CMD		= NULL;	/* parameter '--tls-cipher' from zabbix_get command line */
+
 int	CONFIG_PASSIVE_FORKS		= 0;	/* not used in zabbix_get, just for linking with tls.c */
 int	CONFIG_ACTIVE_FORKS		= 0;	/* not used in zabbix_get, just for linking with tls.c */
+
+int	CONFIG_TCP_MAX_BACKLOG_SIZE	= SOMAXCONN;
 
 /* COMMAND LINE OPTIONS */
 
@@ -145,6 +191,7 @@ struct zbx_option	longopts[] =
 	{"port",			1,	NULL,	'p'},
 	{"key",				1,	NULL,	'k'},
 	{"source-address",		1,	NULL,	'I'},
+	{"timeout",			1,	NULL,	't'},
 	{"help",			0,	NULL,	'h'},
 	{"version",			0,	NULL,	'V'},
 	{"tls-connect",			1,	NULL,	'1'},
@@ -156,11 +203,13 @@ struct zbx_option	longopts[] =
 	{"tls-key-file",		1,	NULL,	'7'},
 	{"tls-psk-identity",		1,	NULL,	'8'},
 	{"tls-psk-file",		1,	NULL,	'9'},
+	{"tls-cipher13",		1,	NULL,	'A'},
+	{"tls-cipher",			1,	NULL,	'B'},
 	{NULL}
 };
 
 /* short options */
-static char	shortopts[] = "s:p:k:I:hV";
+static char	shortopts[] = "s:p:k:I:t:hV";
 
 /* end of COMMAND LINE OPTIONS */
 
@@ -168,15 +217,9 @@ static char	shortopts[] = "s:p:k:I:hV";
 
 /******************************************************************************
  *                                                                            *
- * Function: get_signal_handler                                               *
- *                                                                            *
  * Purpose: process signals                                                   *
  *                                                                            *
  * Parameters: sig - signal ID                                                *
- *                                                                            *
- * Return value:                                                              *
- *                                                                            *
- * Comments:                                                                  *
  *                                                                            *
  ******************************************************************************/
 static void	get_signal_handler(int sig)
@@ -187,7 +230,7 @@ static void	get_signal_handler(int sig)
 	if (SIGALRM == sig)
 		zbx_error("Timeout while executing operation");
 
-#if defined(HAVE_POLARSSL) || defined(HAVE_GNUTLS) || defined(HAVE_OPENSSL)
+#if defined(HAVE_GNUTLS) || defined(HAVE_OPENSSL)
 	if (ZBX_TCP_SEC_UNENCRYPTED != configured_tls_connect_mode)
 		zbx_tls_free_on_signal();
 #endif
@@ -197,8 +240,6 @@ static void	get_signal_handler(int sig)
 #endif /* not WINDOWS */
 
 /******************************************************************************
- *                                                                            *
- * Function: get_value                                                        *
  *                                                                            *
  * Purpose: connect to Zabbix agent, receive and print value                  *
  *                                                                            *
@@ -220,7 +261,7 @@ static int	get_value(const char *source_ip, const char *host, unsigned short por
 			tls_arg1 = NULL;
 			tls_arg2 = NULL;
 			break;
-#if defined(HAVE_POLARSSL) || defined(HAVE_GNUTLS) || defined(HAVE_OPENSSL)
+#if defined(HAVE_GNUTLS) || defined(HAVE_OPENSSL)
 		case ZBX_TCP_SEC_TLS_CERT:
 			tls_arg1 = CONFIG_TLS_SERVER_CERT_ISSUER;
 			tls_arg2 = CONFIG_TLS_SERVER_CERT_SUBJECT;
@@ -235,12 +276,12 @@ static int	get_value(const char *source_ip, const char *host, unsigned short por
 			return FAIL;
 	}
 
-	if (SUCCEED == (ret = zbx_tcp_connect(&s, source_ip, host, port, GET_SENDER_TIMEOUT,
+	if (SUCCEED == (ret = zbx_tcp_connect(&s, source_ip, host, port, CONFIG_GET_TIMEOUT,
 			configured_tls_connect_mode, tls_arg1, tls_arg2)))
 	{
 		if (SUCCEED == (ret = zbx_tcp_send(&s, key)))
 		{
-			if (0 < (bytes_received = zbx_tcp_recv_ext(&s, 0)))
+			if (0 < (bytes_received = zbx_tcp_recv_ext(&s, 0, 0)))
 			{
 				if (0 == strcmp(s.buffer, ZBX_NOTSUPPORTED) && sizeof(ZBX_NOTSUPPORTED) < s.read_bytes)
 				{
@@ -275,19 +316,6 @@ static int	get_value(const char *source_ip, const char *host, unsigned short por
 	return ret;
 }
 
-/******************************************************************************
- *                                                                            *
- * Function: main                                                             *
- *                                                                            *
- * Purpose: main function                                                     *
- *                                                                            *
- * Parameters:                                                                *
- *                                                                            *
- * Return value:                                                              *
- *                                                                            *
- * Comments:                                                                  *
- *                                                                            *
- ******************************************************************************/
 int	main(int argc, char **argv)
 {
 	int		i, ret = SUCCEED;
@@ -296,8 +324,12 @@ int	main(int argc, char **argv)
 #if defined(_WINDOWS)
 	char		*error = NULL;
 #endif
+	/* see description of 'optarg' in 'man 3 getopt' */
+	char		*zbx_optarg = NULL;
 
-#if !defined(_WINDOWS) && (defined(HAVE_POLARSSL) || defined(HAVE_GNUTLS) || defined(HAVE_OPENSSL))
+	/* see description of 'optind' in 'man 3 getopt' */
+	int		zbx_optind = 0;
+#if !defined(_WINDOWS) && (defined(HAVE_GNUTLS) || defined(HAVE_OPENSSL))
 	if (SUCCEED != zbx_coredump_disable())
 	{
 		zbx_error("cannot disable core dump, exiting...");
@@ -307,7 +339,8 @@ int	main(int argc, char **argv)
 	progname = get_program_name(argv[0]);
 
 	/* parse the command-line */
-	while ((char)EOF != (ch = (char)zbx_getopt_long(argc, argv, shortopts, longopts, NULL)))
+	while ((char)EOF != (ch = (char)zbx_getopt_long(argc, argv, shortopts, longopts, NULL, &zbx_optarg,
+			&zbx_optind)))
 	{
 		opt_count[(unsigned char)ch]++;
 
@@ -328,15 +361,29 @@ int	main(int argc, char **argv)
 				if (NULL == source_ip)
 					source_ip = zbx_strdup(NULL, zbx_optarg);
 				break;
+			case 't':
+				if (FAIL == is_uint_n_range(zbx_optarg, ZBX_MAX_UINT64_LEN, &CONFIG_GET_TIMEOUT,
+						sizeof(CONFIG_GET_TIMEOUT), CONFIG_GET_TIMEOUT_MIN,
+						CONFIG_GET_TIMEOUT_MAX))
+				{
+					zbx_error("Invalid timeout, valid range %d:%d seconds", CONFIG_GET_TIMEOUT_MIN,
+							CONFIG_GET_TIMEOUT_MAX);
+					exit(EXIT_FAILURE);
+				}
+				break;
 			case 'h':
-				help();
+				zbx_help();
 				exit(EXIT_SUCCESS);
 				break;
 			case 'V':
-				version();
+				zbx_version();
+#if defined(HAVE_GNUTLS) || defined(HAVE_OPENSSL)
+				printf("\n");
+				zbx_tls_version();
+#endif
 				exit(EXIT_SUCCESS);
 				break;
-#if defined(HAVE_POLARSSL) || defined(HAVE_GNUTLS) || defined(HAVE_OPENSSL)
+#if defined(HAVE_GNUTLS) || defined(HAVE_OPENSSL)
 			case '1':
 				CONFIG_TLS_CONNECT = zbx_strdup(CONFIG_TLS_CONNECT, zbx_optarg);
 				break;
@@ -364,6 +411,18 @@ int	main(int argc, char **argv)
 			case '9':
 				CONFIG_TLS_PSK_FILE = zbx_strdup(CONFIG_TLS_PSK_FILE, zbx_optarg);
 				break;
+			case 'A':
+#if defined(HAVE_OPENSSL)
+				CONFIG_TLS_CIPHER_CMD13 = zbx_strdup(CONFIG_TLS_CIPHER_CMD13, zbx_optarg);
+#elif defined(HAVE_GNUTLS)
+				zbx_error("parameter \"--tls-cipher13\" can be used with OpenSSL 1.1.1 or newer."
+						" zabbix_get was compiled with GnuTLS");
+				exit(EXIT_FAILURE);
+#endif
+				break;
+			case 'B':
+				CONFIG_TLS_CIPHER_CMD = zbx_strdup(CONFIG_TLS_CIPHER_CMD, zbx_optarg);
+				break;
 #else
 			case '1':
 			case '2':
@@ -374,13 +433,15 @@ int	main(int argc, char **argv)
 			case '7':
 			case '8':
 			case '9':
+			case 'A':
+			case 'B':
 				zbx_error("TLS parameters cannot be used: 'zabbix_get' was compiled without TLS"
 						" support");
 				exit(EXIT_FAILURE);
 				break;
 #endif
 			default:
-				usage();
+				zbx_usage();
 				exit(EXIT_FAILURE);
 				break;
 		}
@@ -397,7 +458,7 @@ int	main(int argc, char **argv)
 
 	if (NULL == host || NULL == key)
 	{
-		usage();
+		zbx_usage();
 		ret = FAIL;
 	}
 
@@ -440,9 +501,10 @@ int	main(int argc, char **argv)
 	if (NULL != CONFIG_TLS_CONNECT || NULL != CONFIG_TLS_CA_FILE || NULL != CONFIG_TLS_CRL_FILE ||
 			NULL != CONFIG_TLS_SERVER_CERT_ISSUER || NULL != CONFIG_TLS_SERVER_CERT_SUBJECT ||
 			NULL != CONFIG_TLS_CERT_FILE || NULL != CONFIG_TLS_KEY_FILE ||
-			NULL != CONFIG_TLS_PSK_IDENTITY || NULL != CONFIG_TLS_PSK_FILE)
+			NULL != CONFIG_TLS_PSK_IDENTITY || NULL != CONFIG_TLS_PSK_FILE ||
+			NULL != CONFIG_TLS_CIPHER_CMD13 || NULL != CONFIG_TLS_CIPHER_CMD)
 	{
-#if defined(HAVE_POLARSSL) || defined(HAVE_GNUTLS) || defined(HAVE_OPENSSL)
+#if defined(HAVE_GNUTLS) || defined(HAVE_OPENSSL)
 		zbx_tls_validate_config();
 
 		if (ZBX_TCP_SEC_UNENCRYPTED != configured_tls_connect_mode)
@@ -467,7 +529,7 @@ out:
 	zbx_free(host);
 	zbx_free(key);
 	zbx_free(source_ip);
-#if defined(HAVE_POLARSSL) || defined(HAVE_GNUTLS) || defined(HAVE_OPENSSL)
+#if defined(HAVE_GNUTLS) || defined(HAVE_OPENSSL)
 	if (ZBX_TCP_SEC_UNENCRYPTED != configured_tls_connect_mode)
 	{
 		zbx_tls_free();
