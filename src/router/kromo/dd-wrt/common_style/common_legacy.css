@@ -63,6 +63,7 @@ input[disabled], select[disabled], .off {
   text-decoration: underline;
   color: #04c;
 }
+
 div.bulle {
   position: absolute;
   visibility: hidden;

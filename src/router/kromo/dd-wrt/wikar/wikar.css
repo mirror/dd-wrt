@@ -286,6 +286,28 @@ dd.definition {
 #help h2 {
   margin-right: .4em;
 }
+
+#logout {
+  position: absolute;
+  margin-top: -3px !important;
+  right: .1rem;
+  z-index: 1;
+  cursor: pointer;
+  background: none !important;
+  border: 0 !important;
+}
+.logout {
+  color: var(--tx-c, --v9-9);
+  transition: all 400ms ease-in-out;
+  cursor: pointer;
+  width: 20px;
+  height: 20px;
+}
+.logout:hover {
+  color: var(--v1-6, #f66);
+}
+
+
 .warning {
   padding: .725em;
   border-radius: 4px;
