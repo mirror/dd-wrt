@@ -189,7 +189,6 @@ pre {
   font-size: 12px;
   font-family: monospace;
   overflow: auto;
-  margin: 0 0 .5em 0;
   padding: 8px 4px;
   line-height: 1.42857;
   white-space: pre-wrap;
@@ -202,6 +201,25 @@ table, .table {
 }
 .table.raid {
   margin-top: .4em;
+}
+#logout {
+  position: absolute;
+  margin-top: -3px !important;
+  right: .1rem;
+  z-index: 1;
+  cursor: pointer;
+  background: none !important;
+  border: 0 !important;
+}
+.logout {
+  color: var(--tx-c, --v9-9);
+  transition: all 400ms ease-in-out;
+  cursor: pointer;
+  width: 20px;
+  height: 20px;
+}
+.logout:hover {
+  color: var(--v1-6, #f66);
 }
 .table.weekdays {
   margin-left: -1.3rem;
@@ -501,7 +519,7 @@ input.num {
 input.button[onclick*='delete'] {
   margin: -.1rem .5em 0 .362em;
 }
-input.button[onclick*="to_delete"] {
+input.button[onclick*='to_delete'] {
   margin: -.1rem .5em 0 .4rem;
 }
 input.button[onclick*='FilterSummary'] {
