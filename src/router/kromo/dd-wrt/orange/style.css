@@ -1,1 +1,1 @@
-<% do_style(); %>
+<% do_style("style/orange/colorscheme.css", "style/common_core_rules.css"); %>
