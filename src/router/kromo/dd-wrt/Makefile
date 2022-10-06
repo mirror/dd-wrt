@@ -1193,7 +1193,6 @@ endif
 	-repaccss $(INSTALLDIR)/www/style/wikar
 	-repaccss $(INSTALLDIR)/www/style/xirian
 	-repaccss $(INSTALLDIR)/www/style/yellow
-	-cp common_style/common_core_rules.css.compressed $(INSTALLDIR)/www/style/common_core_rules.css
 
 removeobsolete:
 	cd $(INSTALLDIR)/www  &&  find . -iname "CVS" | xargs rm -rf
