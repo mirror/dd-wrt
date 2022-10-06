@@ -1193,6 +1193,27 @@ endif
 	-repaccss $(INSTALLDIR)/www/style/wikar
 	-repaccss $(INSTALLDIR)/www/style/xirian
 	-repaccss $(INSTALLDIR)/www/style/yellow
+ifeq ($(CONFIG_ELEGANT),y)
+	cp elegant/style.css $(INSTALLDIR)/www/style/elegant
+endif
+ifeq ($(CONFIG_RED),y)
+	cp red/style.css $(INSTALLDIR)/www/style/red
+endif
+ifeq ($(CONFIG_BLUE),y)
+	cp blue/style.css $(INSTALLDIR)/www/style/blue
+endif
+ifeq ($(CONFIG_YELLOW),y)
+	cp yellow/style.css $(INSTALLDIR)/www/style/yellow
+endif
+ifeq ($(CONFIG_CYAN),y)
+	cp cyan/style.css $(INSTALLDIR)/www/style/cyan
+endif
+ifeq ($(CONFIG_GREEN),y)
+	cp green/style.css $(INSTALLDIR)/www/style/green
+endif
+ifeq ($(CONFIG_ORANGE),y)
+	cp orange/style.css $(INSTALLDIR)/www/style/orange
+endif
 
 removeobsolete:
 	cd $(INSTALLDIR)/www  &&  find . -iname "CVS" | xargs rm -rf
