@@ -2526,6 +2526,7 @@ static int do_syslog(unsigned char method, struct mime_handler *handler, char *u
 
 	websWrite(stream, "<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Strict//EN\" \"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd\">\n"	//
 		  "<html>\n" "<head>\n" "<meta http-equiv=\"Content-Type\" content=\"application/xhtml+xml; charset=%s\" />\n"	//
+		  "<script type=\"text/javascript\" src=\"common.js\"></script>\n"	//
 		  "<script type=\"text/javascript\" src=\"lang_pack/english.js\"></script>\n"
 		  , charset) ;
 #ifdef HAVE_LANGUAGE
