@@ -17,6 +17,7 @@
  "openvpncl_client"  "Client Public Key"  "NULL"   "FALSE" "0"
  "openvpncl_key"  "Client Private Key"  "NULL"   "FALSE" "0"
  "openvpncl_pkcs12"  "Client PKSC12 Cert"  "NULL"   "FALSE" "0"
+ "openvpncl_pkcs" "Toggle to show PKCS12" "CHOICE" "2" "0" "1" "FALSE" "0"
  "openvpncl_static"  "Client Static Key"  "NULL"   "FALSE" "0"
  "openvpncl_proto" "Tunnel Protocol" "CHOICE" "6" "udp4" "udp6" "udp" "tcp4-client" "tcp6-client" "tcp-client" "FALSE" "0"
  "openvpncl_mtu" "TUN MTU" "NULL" "FALSE" "0"
@@ -50,6 +51,6 @@
  "openvpncl_pass" "Password" "NULL" "FALSE" "0"
  "openvpncl_wdog_pingip" "Watchdog ping address" "NULL" "FALSE" "0"
  "openvpncl_wdog_sleept" "Watchdog ping interval" "RANGE"  "10"  "60"  "FALSE" "0"
- "openvpncl_tls_btn" "TLS key choice" "CHOICE" "2" "0" "1" "FALSE" "0"
+ "openvpncl_tls_btn" "TLS key choice" "CHOICE" "4" "3" "0" "1" "2" "FALSE" "0"
  "openvpncl_mit" "CVE Mitigation" "CHOICE" "2" "0" "1" "FALSE" "0"
  
