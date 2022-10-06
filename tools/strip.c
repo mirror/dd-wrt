@@ -33,25 +33,25 @@ main(int argc, char *argv[])
 				if (buf[i]=='\r'||buf[i]=='\n') continue;
 				if (buf[i]==' ') 
 				{
-					buf[i]='\r';
-					buf[i+1]='\n';
-					buf[i+2]=0;
+					buf[i]='\n';
+					buf[i+1]=0;
 				}
 				else break;
 			}	
 			if (buf[0]=='\r' || buf[0]=='\n')
 				continue;
 			ptr=strstr(buf, "//");
-
-			if (ptr!=NULL && (ptr > buf+1 && ptr[-1]!= '\'')  && !strstr(buf,"//-->") && !strstr(buf,"//<![CDATA") && !strstr(buf,"//]]")) 
+			if (ptr!=NULL && !strstr(buf,"//-->") && !strstr(buf,"//<![CDATA") && !strstr(buf,"//]]")) 
 			{
+			if (ptr > buf+1 && ptr[-1]== '\'')
+			    goto skip;
 				if(!(buf!=ptr && *(ptr-1)==':'))
 				{
-					*ptr='\r';
-					*(ptr+1)='\n';
-					*(ptr+2)=0;
+					*ptr='\n';
+					*(ptr+1)=0;
 				}
 			}	
+			skip:;
 			if (buf[0]=='\r' || buf[0]=='\n')
 				continue;	
 			if (buf[0]=='{' /*|| buf[0]=='}'*/)
