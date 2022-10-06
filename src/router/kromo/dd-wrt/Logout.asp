@@ -4,7 +4,7 @@
 function do_logout()
 {
 	var p = window.location.protocol + '//';
-	window.location = p + 'logout:password@' + window.location.host + '/';
+	window.location = p + 'logout:password@' + window.location.host + '/index.asp';
 }
 addEvent(window, "load", function() {
 	setTimeout(do_logout, 2000);

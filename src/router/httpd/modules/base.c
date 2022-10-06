@@ -2837,6 +2837,7 @@ static struct mime_handler mime_handlers[] = {
 	{ "Factory_Defaults*", "text/html", no_cache, NULL, do_ej, do_auth2, NO_HEADER, IGNORE_OPTIONS },
 	{ "config*", "text/html", no_cache, NULL, do_ej, do_auth2, NO_HEADER, IGNORE_OPTIONS },
 #endif
+	{ "Logout.asp", "text/html", no_cache, NULL, do_ej, NULL, NO_HEADER, IGNORE_OPTIONS },
 
 	{ "changepass.asp", "text/html", no_cache, NULL, do_ej, do_auth_changepass, NO_HEADER, IGNORE_OPTIONS },
 #ifdef HAVE_REGISTER
