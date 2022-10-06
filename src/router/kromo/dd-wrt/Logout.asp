@@ -1,13 +1,13 @@
 <% do_pagehead(""); %>
 	<script type="text/javascript">
 	//<![CDATA[
-function logout()
+function do_logout()
 {
 	var p = window.location.protocol + '//';
-	window.location = 'logout:password@' + p + '/';
+	window.location = p + 'logout:password@/';
 }
 addEvent(window, "load", function() {
-	setTimeout(logout, 2000);
+	setTimeout(do_logout, 2000);
 });
 	//]]>
 	</script>
