@@ -122,3 +122,9 @@ table#radio_table tr td, .table_row_bg td {
 .syslog-padding {
   padding: .906em;
 }
+.syslog_legend {
+  margin-left: unset !important;
+}
+.syslog_bd {
+  line-height: normal !important;
+}
