@@ -2526,32 +2526,7 @@ static int do_syslog(unsigned char method, struct mime_handler *handler, char *u
 
 	websWrite(stream, "<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Strict//EN\" \"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd\">\n"	//
 		  "<html>\n" "<head>\n" "<meta http-equiv=\"Content-Type\" content=\"application/xhtml+xml; charset=%s\" />\n"	//
-		  "<script type=\"text/javascript\" src=\"common.js\"></script>\n"	//
-		  "<script type=\"text/javascript\" src=\"lang_pack/english.js\"></script>\n"
 		  , charset) ;
-#ifdef HAVE_LANGUAGE
-		  if (!nvram_match("language", "english"))
-			websWrite(stream,"<script type=\"text/javascript\" src=\"lang_pack/language.js\"></script>\n");
-#endif
-#if 0
-	char *style = nvram_safe_get("router_style");
-	if (!style)
-	    style="elegant";
-	websWrite(stream, "<link type=\"text/css\" rel=\"stylesheet\" href=\"style/%s/style.css\" />\n<!--[if IE]><link type=\"text/css\" rel=\"stylesheet\" href=\"style/common_style_ie.css\" /><![endif]-->\n", style);
-#ifdef HAVE_MICRO
-	websWrite(stream, "<link type=\"text/css\" rel=\"stylesheet\" href=\"style/elegant/fresh.css\" />\n");
-#else
-	if (!strcmp(style, "blue") || !strcmp(style, "cyan") || !strcmp(style, "elegant") || !strcmp(style, "carlson") || !strcmp(style, "green") || !strcmp(style, "orange") || !strcmp(style, "red")
-	    || !strcmp(style, "yellow")) {
-		websWrite(stream, "<link type=\"text/css\" rel=\"stylesheet\" href=\"style/elegant/fresh.css\" />\n");
-		if (style_dark != NULL && !strcmp(style_dark, "1")) {
-			websWrite(stream, "<link type=\"text/css\" rel=\"stylesheet\" href=\"style/elegant/fresh-dark.css\" />\n");
-		}
-	} else {
-		style_dark = NULL;
-	}
-#endif
-#endif
 	websWrite(stream,	//
 		  "<link type=\"text/css\" rel=\"stylesheet\" href=\"style/syslogd/syslogd.css\" />\n"	//
 		  "%s"		//
@@ -2564,7 +2539,6 @@ static int do_syslog(unsigned char method, struct mime_handler *handler, char *u
 		  "<link type=\"text/css\" rel=\"stylesheet\" href=\"style/syslogd/syslogd_dark.css\" />\n" : "",	//
 		  _tran_string(buf, sizeof(buf), "share.sysloglegend"));
 
-	do_ddwrt_inspired_themes(stream);
 	if (nvram_matchi("syslogd_enable", 1)) {
 		FILE *fp = fopen(filename, "r");
 		if (fp != NULL) {
