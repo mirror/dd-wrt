@@ -47,7 +47,7 @@ static char *wfgets(char *buf, int len, webs_t fp, int *eof);
 size_t wfwrite(void *buf, size_t size, size_t n, webs_t fp);
 static size_t wfread(void *buf, size_t size, size_t n, webs_t fp);
 static int wfclose(webs_t fp);
-static int wfflush(webs_t fp);
+int wfflush(webs_t fp);
 static int do_file_attach(struct mime_handler *handler, char *path, webs_t stream, char *attachment);
 
 static int download_wireguard_config(unsigned char method, struct mime_handler *handler, char *path, webs_t wp)
