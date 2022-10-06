@@ -48,7 +48,7 @@ int main(int argc, char *argv[])
 		int flen = !strncmp(&mem[i], "<% ", 3) ? 3 : !strncmp(&mem[i], "<%% ", 4) ? 4 : 0;
 		if (flen) {
 			int a = 0;
-			for (a = i + flen; a < i + 64; a++) {
+			for (a = i + flen; a < i + 128; a++) {
 				if (!strncmp(&mem[a], " %>", 3) || !strncmp(&mem[a], " %%>", 4)) {
 					char name[64];
 					char *cut = strstr(&mem[i + flen], "(");
