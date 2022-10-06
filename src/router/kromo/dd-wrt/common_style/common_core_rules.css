@@ -1,4 +1,3 @@
-@import url("/style/<% nvg("router_style"); %>/colorscheme.css");
 ::selection {
   background: var(--ac-0);
   color: var(--tx-c);
