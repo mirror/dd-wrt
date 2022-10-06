@@ -18,7 +18,7 @@ for (i=0;i<len;i++)
 if (i==0 && buf[i]==0xa)i++;
 if (buf[i]=='/' && buf[i+1]=='/')
     {
-    if (i>2 && buf[i-1]==':')
+    if (i>2 && (buf[i-1]==':' || buf[i-1]=='\''))
 	continue;
     while(buf[i]!=0xa)i++;
     continue;
