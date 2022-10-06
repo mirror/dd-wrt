@@ -1195,6 +1195,10 @@ endif
 	-repaccss $(INSTALLDIR)/www/style/yellow
 ifeq ($(CONFIG_ELEGANT),y)
 	cp elegant/style.css $(INSTALLDIR)/www/style/elegant
+	cp elegant/fresh.css $(INSTALLDIR)/www/style/elegant
+endif
+ifeq ($(CONFIG_ANTAIRA),y)
+	cp elegant/fresh.css $(INSTALLDIR)/www/style/elegant
 endif
 ifeq ($(CONFIG_RED),y)
 	cp red/style.css $(INSTALLDIR)/www/style/red
@@ -1213,6 +1217,18 @@ ifeq ($(CONFIG_GREEN),y)
 endif
 ifeq ($(CONFIG_ORANGE),y)
 	cp orange/style.css $(INSTALLDIR)/www/style/orange
+endif
+ifeq ($(CONFIG_BRAINSLAYER),y)
+	cp brainslayer/style.css $(INSTALLDIR)/www/style/brainslayer
+endif
+ifeq ($(CONFIG_XIRIAN),y)
+	cp xirian/style.css $(INSTALLDIR)/www/style/xirian
+endif
+ifeq ($(CONFIG_KROMO),y)
+	cp kromo/style.css $(INSTALLDIR)/www/style/kromo
+endif
+ifeq ($(CONFIG_WIKAR),y)
+	cp wikar/style.css $(INSTALLDIR)/www/style/wikar
 endif
 
 removeobsolete:
