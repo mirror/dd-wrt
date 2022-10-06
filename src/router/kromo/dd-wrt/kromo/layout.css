@@ -357,6 +357,26 @@ table[summary='ports forwarding table'] input[size='10'] {
 #help a:hover, a[title='Geotool'] {
   text-decoration: underline;
 }
+
+#logout {
+  position: absolute;
+  margin-top: -3px !important;
+  right: .1rem;
+  z-index: 1;
+  cursor: pointer;
+  background: none !important;
+  border: 0 !important;
+}
+.logout {
+  color: #fff3b3;
+  transition: all 400ms ease-in-out;
+  cursor: pointer;
+  width: 20px;
+  height: 20px;
+}
+.logout:hover {
+  color: #115b80;
+}
 .submitFooter {
   padding: 4px 12px;
   margin: 0;
