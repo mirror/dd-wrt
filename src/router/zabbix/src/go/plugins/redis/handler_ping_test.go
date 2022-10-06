@@ -1,6 +1,6 @@
 /*
 ** Zabbix
-** Copyright (C) 2001-2020 Zabbix SIA
+** Copyright (C) 2001-2022 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -21,21 +21,19 @@ package redis
 
 import (
 	"fmt"
-	"github.com/mediocregopher/radix/v3"
 	"reflect"
 	"testing"
-	"zabbix.com/pkg/plugin"
+
+	"github.com/mediocregopher/radix/v3"
 )
 
 func TestPlugin_pingHandler(t *testing.T) {
-	impl.Configure(&plugin.GlobalOptions{}, nil)
-
 	stubConn := radix.Stub("", "", func(args []string) interface{} {
 		return "PONG"
 	})
 	defer stubConn.Close()
 
-	conn := &redisConn{
+	conn := &RedisConn{
 		client: stubConn,
 	}
 
@@ -44,7 +42,7 @@ func TestPlugin_pingHandler(t *testing.T) {
 	})
 	defer brokenStubConn.Close()
 
-	brokenConn := &redisConn{
+	brokenConn := &RedisConn{
 		client: brokenStubConn,
 	}
 
@@ -53,38 +51,34 @@ func TestPlugin_pingHandler(t *testing.T) {
 	})
 	closedStubConn.Close()
 
-	closedConn := &redisConn{
+	closedConn := &RedisConn{
 		client: closedStubConn,
 	}
 
 	type args struct {
 		conn   redisClient
-		params []string
+		params map[string]string
 	}
 	tests := []struct {
 		name    string
-		p       *Plugin
 		args    args
 		want    interface{}
 		wantErr bool
 	}{
 		{
 			fmt.Sprintf("pingHandler should return %d if connection is ok", pingOk),
-			&impl,
 			args{conn: conn},
 			pingOk,
 			false,
 		},
 		{
 			fmt.Sprintf("pingHandler should return %d if PING answers wrong", pingFailed),
-			&impl,
 			args{conn: brokenConn},
 			pingFailed,
 			false,
 		},
 		{
 			fmt.Sprintf("pingHandler should return %d if connection failed", pingFailed),
-			&impl,
 			args{conn: closedConn},
 			pingFailed,
 			false,
@@ -92,7 +86,7 @@ func TestPlugin_pingHandler(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := tt.p.pingHandler(tt.args.conn, tt.args.params)
+			got, err := pingHandler(tt.args.conn, tt.args.params)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("Plugin.pingHandler() error = %v, wantErr %v", err, tt.wantErr)
 				return

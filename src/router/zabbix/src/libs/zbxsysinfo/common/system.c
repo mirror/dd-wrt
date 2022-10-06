@@ -1,6 +1,6 @@
 /*
 ** Zabbix
-** Copyright (C) 2001-2020 Zabbix SIA
+** Copyright (C) 2001-2022 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -17,17 +17,18 @@
 ** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 **/
 
-#include "common.h"
 #include "system.h"
 
+#include "common.h"
+#include "zbxsysinfo_common.h"
+
 #if defined(_WINDOWS) || defined(__MINGW32__)
+#	include "sysinfo.h"
 #	include "perfmon.h"
 #	pragma comment(lib, "user32.lib")
 #endif
 
 /******************************************************************************
- *                                                                            *
- * Function: SYSTEM_LOCALTIME                                                 *
  *                                                                            *
  * Comments: Thread-safe                                                      *
  *                                                                            *
@@ -81,7 +82,7 @@ int	SYSTEM_USERS_NUM(AGENT_REQUEST *request, AGENT_RESULT *result)
 	ZBX_UNUSED(request);
 
 	zbx_snprintf(counter_path, sizeof(counter_path), "\\%u\\%u",
-			(unsigned int)get_builtin_counter_index(PCI_TERMINAL_SERVICES),
+			(unsigned int)get_builtin_object_index(PCI_TOTAL_SESSIONS),
 			(unsigned int)get_builtin_counter_index(PCI_TOTAL_SESSIONS));
 
 	request_tmp.nparam = 1;

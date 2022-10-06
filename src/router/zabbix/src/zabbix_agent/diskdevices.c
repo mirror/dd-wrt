@@ -1,6 +1,6 @@
 /*
 ** Zabbix
-** Copyright (C) 2001-2020 Zabbix SIA
+** Copyright (C) 2001-2022 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -19,11 +19,11 @@
 
 #ifndef _WINDOWS
 
-#include "common.h"
 #include "diskdevices.h"
+
 #include "stats.h"
 #include "log.h"
-#include "mutexs.h"
+#include "zbxmutexs.h"
 
 extern zbx_mutex_t		diskstats_lock;
 #define LOCK_DISKSTATS		zbx_mutex_lock(diskstats_lock)

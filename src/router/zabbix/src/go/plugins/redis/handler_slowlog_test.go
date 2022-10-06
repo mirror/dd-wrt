@@ -1,6 +1,6 @@
 /*
 ** Zabbix
-** Copyright (C) 2001-2020 Zabbix SIA
+** Copyright (C) 2001-2022 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -21,10 +21,10 @@ package redis
 
 import (
 	"errors"
-	"github.com/mediocregopher/radix/v3"
 	"reflect"
 	"testing"
-	"zabbix.com/pkg/plugin"
+
+	"github.com/mediocregopher/radix/v3"
 )
 
 func Test_getLastSlowlogId(t *testing.T) {
@@ -76,53 +76,49 @@ func Test_getLastSlowlogId(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := getLastSlowlogId(tt.args.slowlog)
+			got, err := getLastSlowlogID(tt.args.slowlog)
 			if (err != nil) != tt.wantErr {
-				t.Errorf("getLastSlowlogId() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf("getLastSlowlogID() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
 			if got != tt.want {
-				t.Errorf("getLastSlowlogId() = %v, want %v", got, tt.want)
+				t.Errorf("getLastSlowlogID() = %v, want %v", got, tt.want)
 			}
 		})
 	}
 }
 
 func TestPlugin_slowlogHandler(t *testing.T) {
-	impl.Configure(&plugin.GlobalOptions{}, nil)
-
 	stubConn := radix.Stub("", "", func(args []string) interface{} {
 		return errors.New("cannot fetch data")
 	})
 
 	defer stubConn.Close()
 
-	conn := &redisConn{
+	conn := &RedisConn{
 		client: stubConn,
 	}
 
 	type args struct {
 		conn   redisClient
-		params []string
+		params map[string]string
 	}
 	tests := []struct {
 		name    string
-		p       *Plugin
 		args    args
 		want    interface{}
 		wantErr bool
 	}{
 		{
 			"Should fail if error occurred",
-			&impl,
-			args{conn: conn, params: []string{"", "WantErr"}},
+			args{conn: conn, params: map[string]string{}},
 			nil,
 			true,
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := tt.p.slowlogHandler(tt.args.conn, tt.args.params)
+			got, err := slowlogHandler(tt.args.conn, tt.args.params)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("Plugin.slowlogHandler() error = %v, wantErr %v", err, tt.wantErr)
 				return

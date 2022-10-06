@@ -1,6 +1,6 @@
 /*
 ** Zabbix
-** Copyright (C) 2001-2020 Zabbix SIA
+** Copyright (C) 2001-2022 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -20,14 +20,12 @@
 #ifndef ZABBIX_TRAPPER_ACTIVE_H
 #define ZABBIX_TRAPPER_ACTIVE_H
 
-#include "common.h"
-#include "db.h"
-#include "comms.h"
+#include "zbxcomms.h"
 #include "zbxjson.h"
 
 extern int	CONFIG_TIMEOUT;
 
 int	send_list_of_active_checks(zbx_socket_t *sock, char *request);
-int	send_list_of_active_checks_json(zbx_socket_t *sock, struct zbx_json_parse *json);
+int	send_list_of_active_checks_json(zbx_socket_t *sock, struct zbx_json_parse *jp);
 
 #endif

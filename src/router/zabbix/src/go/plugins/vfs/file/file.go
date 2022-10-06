@@ -1,6 +1,6 @@
 /*
 ** Zabbix
-** Copyright (C) 2001-2020 Zabbix SIA
+** Copyright (C) 2001-2022 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -20,14 +20,15 @@
 package file
 
 import (
-	"zabbix.com/pkg/conf"
-	"zabbix.com/pkg/plugin"
-	"zabbix.com/pkg/std"
+	"git.zabbix.com/ap/plugin-support/conf"
+	"git.zabbix.com/ap/plugin-support/plugin"
+	"git.zabbix.com/ap/plugin-support/std"
 )
 
 type Options struct {
-	Timeout  int `conf:"optional,range=1:30"`
-	Capacity int `conf:"optional,range=1:100"`
+	plugin.SystemOptions `conf:"optional,name=System"`
+	Timeout              int `conf:"optional,range=1:30"`
+	Capacity             int `conf:"optional,range=1:100"`
 }
 
 // Plugin -
@@ -53,6 +54,16 @@ func (p *Plugin) Export(key string, params []string, ctx plugin.ContextProvider)
 		return p.exportTime(params)
 	case "vfs.file.regexp":
 		return p.exportRegexp(params)
+	case "vfs.file.regmatch":
+		return p.exportRegmatch(params)
+	case "vfs.file.md5sum":
+		return p.exportMd5sum(params)
+	case "vfs.file.owner":
+		return p.exportOwner(params)
+	case "vfs.file.permissions":
+		return p.exportPermissions(params)
+	case "vfs.file.get":
+		return p.exportGet(params)
 	default:
 		return nil, plugin.UnsupportedMetricError
 	}
@@ -82,5 +93,10 @@ func init() {
 		"vfs.file.exists", "Returns if file exists or not.",
 		"vfs.file.time", "Returns file time information.",
 		"vfs.file.size", "Returns file size.",
-		"vfs.file.regexp", "Find string in a file.")
+		"vfs.file.regexp", "Find string in a file.",
+		"vfs.file.regmatch", "Find string in a file.",
+		"vfs.file.md5sum", "Returns MD5 checksum of file.",
+		"vfs.file.owner", "Returns the ownership of a file.",
+		"vfs.file.permissions", "Returns 4-digit string containing octal number with Unix permissions.",
+		"vfs.file.get", "Return json object with information about a file.")
 }

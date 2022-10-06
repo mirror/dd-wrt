@@ -24,7 +24,7 @@ PROGNAME = $(TARGETDIR)\$(TARGETNAME).$(TARGETEXT)
 PDBS = $(TARGETDIR)\$(TARGETNAME).pdb $(TARGETNAME).$(TARGETEXT).pdb
 
 ADD_CFLAGS = $(ADD_CFLAGS) /D WITH_AGENT_METRICS /D WITH_COMMON_METRICS \
-	/D WITH_SPECIFIC_METRICS /D WITH_HOSTNAME_METRIC /D WITH_SIMPLE_METRICS \
+	/D WITH_SPECIFIC_METRICS /D WITH_HOSTNAME_METRIC /D WITH_SIMPLE_METRICS /D WITH_HTTP_METRICS \
 	/Zi /D DEFAULT_CONFIG_FILE="\"C:\\zabbix_agentd.conf\"" \
 	/Fd$(TARGETNAME).$(TARGETEXT).pdb
 
@@ -37,39 +37,44 @@ ADD_RFLAGS = /d "ZABBIX_AGENT"
 OBJS = \
 	..\..\..\src\libs\zbxalgo\algodefs.o \
 	..\..\..\src\libs\zbxalgo\vector.o \
-	..\..\..\src\libs\zbxcommon\alias.o \
 	..\..\..\src\libs\zbxcommon\comms.o \
 	..\..\..\src\libs\zbxcommon\iprange.o \
 	..\..\..\src\libs\zbxcommon\misc.o \
-	..\..\..\src\libs\zbxcommon\variant.o \
 	..\..\..\src\libs\zbxcommon\str.o \
-	..\..\..\src\libs\zbxcommon\xml.o \
-	..\..\..\src\libs\zbxcommon\zbxgetopt.o \
 	..\..\..\src\libs\zbxcommon\file.o \
+	..\..\..\src\libs\zbxcommon\time.o \
+	..\..\..\src\libs\zbxcommshigh\commshigh.o \
 	..\..\..\src\libs\zbxcomms\comms.o \
 	..\..\..\src\libs\zbxcomms\telnet.o \
 	..\..\..\src\libs\zbxcompress\compress.o \
 	..\..\..\src\libs\zbxconf\cfg.o \
 	..\..\..\src\libs\zbxcrypto\base64.o \
-	..\..\..\src\libs\zbxcrypto\md5.o \
+	..\..\..\src\libs\zbxgetopt\getopt.o \
+	..\..\..\src\libs\zbxhash\md5.o \
+	..\..\..\src\libs\zbxhash\sha256crypt.o \
+	..\..\..\src\libs\zbxcrypto\crypto.o \
 	..\..\..\src\libs\zbxjson\json.o \
 	..\..\..\src\libs\zbxjson\json_parser.o \
 	..\..\..\src\libs\zbxjson\jsonpath.o \
 	..\..\..\src\libs\zbxlog\log.o \
-	..\..\..\src\libs\zbxsys\mutexs.o \
-	..\..\..\src\libs\zbxsys\symbols.o \
-	..\..\..\src\libs\zbxsys\threads.o \
+	..\..\..\src\libs\zbxmutexs\mutexs.o \
+	..\..\..\src\libs\zbxsymbols\symbols.o \
+	..\..\..\src\libs\zbxthreads\threads.o \
 	..\..\..\src\libs\zbxexec\execute.o \
+	..\..\..\src\libs\zbxhash\zbxhash.o \
 	..\..\..\src\libs\zbxhttp\http.o \
 	..\..\..\src\libs\zbxhttp\punycode.o \
 	..\..\..\src\libs\zbxhttp\urlencode.o \
 	..\..\..\src\libs\zbxsysinfo\agent\agent.o \
-	..\..\..\src\libs\zbxsysinfo\common\common.o \
+	..\..\..\src\libs\zbxsysinfo\agent\modbus.o \
+	..\..\..\src\libs\zbxsysinfo\common\zbxsysinfo_common.o \
 	..\..\..\src\libs\zbxsysinfo\common\cpu.o \
 	..\..\..\src\libs\zbxsysinfo\common\dir.o \
 	..\..\..\src\libs\zbxsysinfo\common\file.o \
 	..\..\..\src\libs\zbxsysinfo\common\http.o \
+	..\..\..\src\libs\zbxsysinfo\common\http_metrics.o \
 	..\..\..\src\libs\zbxsysinfo\common\net.o \
+	..\..\..\src\libs\zbxsysinfo\common\dns.o \
 	..\..\..\src\libs\zbxsysinfo\common\system.o \
 	..\..\..\src\libs\zbxsysinfo\common\zabbix_stats.o \
 	..\..\..\src\libs\zbxsysinfo\simple\ntp.o \
@@ -80,6 +85,7 @@ OBJS = \
 	..\..\..\src\libs\zbxsysinfo\win32\memory.o \
 	..\..\..\src\libs\zbxsysinfo\win32\net.o \
 	..\..\..\src\libs\zbxsysinfo\win32\pdhmon.o \
+	..\..\..\src\libs\zbxsysinfo\win32\registry.o \
 	..\..\..\src\libs\zbxsysinfo\win32\proc.o \
 	..\..\..\src\libs\zbxsysinfo\win32\services.o \
 	..\..\..\src\libs\zbxsysinfo\win32\swap.o \
@@ -90,23 +96,28 @@ OBJS = \
 	..\..\..\src\libs\zbxsysinfo\win32\software.o \
 	..\..\..\src\libs\zbxsysinfo\win32\system.o \
 	..\..\..\src\libs\zbxsysinfo\win32\hostname.o \
+	..\..\..\src\libs\zbxsysinfo\alias\alias.o \
+	..\..\..\src\libs\zbxvariant\variant.o \
 	..\..\..\src\libs\zbxwin32\perfmon.o \
 	..\..\..\src\libs\zbxwin32\service.o \
 	..\..\..\src\zabbix_agent\active.o \
 	..\..\..\src\zabbix_agent\cpustat.o \
 	..\..\..\src\zabbix_agent\eventlog.o \
 	..\..\..\src\zabbix_agent\listener.o \
+	..\..\..\src\zabbix_agent\logfiles\persistent_state.o \
 	..\..\..\src\zabbix_agent\logfiles\logfiles.o \
 	..\..\..\src\zabbix_agent\perfstat.o \
 	..\..\..\src\zabbix_agent\stats.o \
 	..\..\..\src\zabbix_agent\zabbix_agentd.o \
 	..\..\..\src\zabbix_agent\zbxconf.o \
 	..\..\..\src\libs\zbxregexp\zbxregexp.o \
+	..\..\..\src\libs\zbxxml\xml.o \
 	..\..\..\src\libs\zbxwin32\fatal.o \
 	..\..\..\src\libs\zbxwin32\disk.o
 
-LIBS = ws2_32.lib psapi.lib pdh.lib Wldap32.lib advapi32.lib uuid.lib Iphlpapi.lib delayimp.lib wevtapi.lib
+LIBS = ws2_32.lib psapi.lib pdh.lib Wldap32.lib advapi32.lib uuid.lib Iphlpapi.lib delayimp.lib wevtapi.lib $(LIBS)
 
 !INCLUDE Makefile_pcre.inc
 !INCLUDE Makefile_tls.inc
+!INCLUDE Makefile_modbus.inc
 !INCLUDE Makefile_targets.inc

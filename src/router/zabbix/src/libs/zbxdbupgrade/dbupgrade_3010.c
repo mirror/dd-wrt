@@ -1,6 +1,6 @@
 /*
 ** Zabbix
-** Copyright (C) 2001-2020 Zabbix SIA
+** Copyright (C) 2001-2022 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -17,9 +17,9 @@
 ** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 **/
 
-#include "common.h"
-#include "db.h"
 #include "dbupgrade.h"
+
+#include "zbxdbhigh.h"
 #include "log.h"
 
 /*
@@ -214,7 +214,6 @@ typedef struct
 }
 zbx_object_events_t;
 
-
 /* source events hashset support */
 static zbx_hash_t	DBpatch_3010021_trigger_events_hash_func(const void *data)
 {
@@ -241,10 +240,7 @@ static int	DBpatch_3010021_trigger_events_compare_func(const void *d1, const voi
 	return 0;
 }
 
-
 /******************************************************************************
- *                                                                            *
- * Function: DBpatch_3010021_update_event_recovery                            *
  *                                                                            *
  * Purpose: set events.r_eventid field with corresponding recovery event id   *
  *                                                                            *
@@ -448,8 +444,6 @@ out:
 
 /******************************************************************************
  *                                                                            *
- * Function: DBpatch_3010024_validate_action                                  *
- *                                                                            *
  * Purpose: checks if the action must be disabled or its operations converted *
  *          to recovery operations                                            *
  *                                                                            *
@@ -616,7 +610,7 @@ static int	DBpatch_3010024(void)
 		char	*sql = NULL;
 		size_t	sql_alloc = 0, sql_offset = 0;
 
-		DBbegin_multiple_update(&sql, &sql_alloc, &sql_offset);
+		zbx_DBbegin_multiple_update(&sql, &sql_alloc, &sql_offset);
 
 		if (0 != actionids_disable.values_num)
 		{
@@ -644,7 +638,7 @@ static int	DBpatch_3010024(void)
 			zbx_strcpy_alloc(&sql, &sql_alloc, &sql_offset, ";\n");
 		}
 
-		DBend_multiple_update(&sql, &sql_alloc, &sql_offset);
+		zbx_DBend_multiple_update(&sql, &sql_alloc, &sql_offset);
 
 		if (ZBX_DB_OK > DBexecute("%s", sql))
 			ret = FAIL;
@@ -677,8 +671,6 @@ static int	DBpatch_3010025(void)
 #define ZBX_3010026_PARSE_OP		1
 
 /******************************************************************************
- *                                                                            *
- * Function: DBpatch_3010026_get_conditionids                                 *
  *                                                                            *
  * Purpose: get success condition identifiers                                 *
  *                                                                            *
@@ -759,8 +751,6 @@ static void	DBpatch_3010026_get_conditionids(zbx_uint64_t actionid, const char *
 
 /******************************************************************************
  *                                                                            *
- * Function: DBpatch_3010026_expression_skip_whitespace                       *
- *                                                                            *
  * Purpose: skips whitespace characters                                       *
  *                                                                            *
  * Parameters: expression - [IN] the expression to process                    *
@@ -778,8 +768,6 @@ static size_t	DBpatch_3010026_expression_skip_whitespace(const char *expression,
 }
 
 /******************************************************************************
- *                                                                            *
- * Function: DBpatch_3010026_expression_get_token                             *
  *                                                                            *
  * Purpose: gets the next expression token starting with offset               *
  *                                                                            *
@@ -843,8 +831,6 @@ static int	DBpatch_3010026_expression_get_token(const char *expression, int offs
 
 /******************************************************************************
  *                                                                            *
- * Function: DBpatch_3010026_expression_validate_value                        *
- *                                                                            *
  * Purpose: checks if the value does not match any filter value               *
  *                                                                            *
  * Parameters: expression - [IN] the expression to process                    *
@@ -871,8 +857,6 @@ static int	DBpatch_3010026_expression_validate_value(const char *expression, zbx
 
 /******************************************************************************
  *                                                                            *
- * Function: DBpatch_3010026_expression_cut_substring                         *
- *                                                                            *
  * Purpose: cuts substring from the expression                                *
  *                                                                            *
  * Parameters: expression - [IN] the expression to process                    *
@@ -887,8 +871,6 @@ static void	DBpatch_3010026_expression_cut_substring(char *expression, zbx_strlo
 
 /******************************************************************************
  *                                                                            *
- * Function: DBpatch_3010026_expression_move_location                         *
- *                                                                            *
  * Purpose: location by the specified offset                                  *
  *                                                                            *
  * Parameters: location  - [IN] the location to adjust                        *
@@ -902,8 +884,6 @@ static void	DBpatch_3010026_expression_move_location(zbx_strloc_t *location, int
 }
 
 /******************************************************************************
- *                                                                            *
- * Function: DBpatch_3010026_expression_remove_values_impl                    *
  *                                                                            *
  * Purpose: removes values specified in filter from the location              *
  *                                                                            *
@@ -1016,8 +996,6 @@ static int	DBpatch_3010026_expression_remove_values_impl(char *expression, zbx_s
 
 /******************************************************************************
  *                                                                            *
- * Function: DBpatch_3010026_expression_remove_values                         *
- *                                                                            *
  * Purpose: removes values specified in filter from the location              *
  *                                                                            *
  * Parameters: expression - [IN] the expression to process                    *
@@ -1052,7 +1030,7 @@ static int	DBpatch_3010026(void)
 	zbx_vector_uint64_create(&conditionids);
 	zbx_vector_uint64_create(&actionids);
 	zbx_vector_str_create(&filter);
-	DBbegin_multiple_update(&sql, &sql_alloc, &sql_offset);
+	zbx_DBbegin_multiple_update(&sql, &sql_alloc, &sql_offset);
 
 	result = DBselect("select actionid,eventsource,evaltype,formula,name from actions");
 
@@ -1091,7 +1069,7 @@ static int	DBpatch_3010026(void)
 			goto out;
 	}
 
-	DBend_multiple_update(&sql, &sql_alloc, &sql_offset);
+	zbx_DBend_multiple_update(&sql, &sql_alloc, &sql_offset);
 
 	if (16 < sql_offset)	/* in ORACLE always present begin..end; */
 	{
@@ -1607,7 +1585,7 @@ static int	DBpatch_3010079(void)
 	char			*sql = NULL;
 	size_t			sql_alloc = 0, sql_offset = 0;
 
-	DBbegin_multiple_update(&sql, &sql_alloc, &sql_offset);
+	zbx_DBbegin_multiple_update(&sql, &sql_alloc, &sql_offset);
 
 	result = DBselect("select p.eventid,e.clock,e.ns"
 			" from problem p,events e"
@@ -1624,7 +1602,7 @@ static int	DBpatch_3010079(void)
 			goto out;
 	}
 
-	DBend_multiple_update(&sql, &sql_alloc, &sql_offset);
+	zbx_DBend_multiple_update(&sql, &sql_alloc, &sql_offset);
 
 	if (16 < sql_offset)
 	{

@@ -1,6 +1,6 @@
 /*
 ** Zabbix
-** Copyright (C) 2001-2020 Zabbix SIA
+** Copyright (C) 2001-2022 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -33,6 +33,7 @@ extern int CONFIG_MAX_LINES_PER_SECOND;
 typedef ZBX_ACTIVE_METRIC* ZBX_ACTIVE_METRIC_LP;
 typedef zbx_vector_ptr_t * zbx_vector_ptr_lp_t;
 typedef char * char_lp_t;
+typedef zbx_vector_pre_persistent_t * zbx_vector_pre_persistent_lp_t;
 
 ZBX_ACTIVE_METRIC *new_metric(char *key, zbx_uint64_t lastlogsize, int mtime, int flags)
 {
@@ -43,8 +44,9 @@ ZBX_ACTIVE_METRIC *new_metric(char *key, zbx_uint64_t lastlogsize, int mtime, in
 	metric->key_orig = zbx_strdup(NULL, key);
 	metric->lastlogsize = lastlogsize;
 	metric->mtime = mtime;
-	metric->flags = flags;
+	metric->flags = (unsigned char)flags;
 	metric->skip_old_data = (0 != metric->lastlogsize ? 0 : 1);
+	metric->persistent_file_name = NULL;	// initialized but not used in Agent2
 	return metric;
 }
 
@@ -62,7 +64,6 @@ void metric_get_meta(ZBX_ACTIVE_METRIC *metric, zbx_uint64_t *lastlogsize, int *
 void metric_set_unsupported(ZBX_ACTIVE_METRIC *metric)
 {
 	metric->state = ITEM_STATE_NOTSUPPORTED;
-	metric->refresh_unsupported = 0;
 	metric->error_count = 0;
 	metric->start_time = 0.0;
 	metric->processed_bytes = 0;
@@ -79,7 +80,6 @@ int metric_set_supported(ZBX_ACTIVE_METRIC *metric, zbx_uint64_t lastlogsize_sen
 		if (ITEM_STATE_NOTSUPPORTED == metric->state)
 		{
 			metric->state = ITEM_STATE_NORMAL;
-			metric->refresh_unsupported = 0;
 		}
 
 		if (lastlogsize_sent != metric->lastlogsize || mtime_sent != metric->mtime ||
@@ -97,6 +97,9 @@ void	metric_free(ZBX_ACTIVE_METRIC *metric)
 {
 	int	i;
 
+	if (NULL == metric)
+		return;
+
 	zbx_free(metric->key);
 	zbx_free(metric->key_orig);
 
@@ -104,6 +107,7 @@ void	metric_free(ZBX_ACTIVE_METRIC *metric)
 		zbx_free(metric->logfiles[i].filename);
 
 	zbx_free(metric->logfiles);
+	zbx_free(metric->persistent_file_name);
 	zbx_free(metric);
 }
 
@@ -172,17 +176,36 @@ static void free_log_result(log_result_t *result)
 	zbx_free(result);
 }
 
-int	process_value_cb(const char *server, unsigned short port, const char *host, const char *key,
+int	process_value_cb(zbx_vector_ptr_t *addrs, zbx_vector_ptr_t *agent2_result, const char *host, const char *key,
 		const char *value, unsigned char state, zbx_uint64_t *lastlogsize, const int *mtime,
 		unsigned long *timestamp, const char *source, unsigned short *severity, unsigned long *logeventid,
 		unsigned char flags)
 {
-	log_result_t *result = (log_result_t *)server;
+	ZBX_UNUSED(addrs);
+
+	log_result_t *result = (log_result_t *)agent2_result;
 	if (result->values.values_num == result->slots)
 		return FAIL;
 
 	add_log_value(result, value, state, *lastlogsize, *mtime);
 	return SUCCEED;
+}
+
+static zbx_vector_pre_persistent_lp_t new_prep_vec(void)
+{
+	zbx_vector_pre_persistent_lp_t vect;
+
+	vect = (zbx_vector_pre_persistent_lp_t)zbx_malloc(NULL, sizeof(zbx_vector_pre_persistent_t));
+	zbx_vector_pre_persistent_create(vect);
+	return vect;
+}
+
+static void free_prep_vec(zbx_vector_pre_persistent_lp_t vect)
+{
+	// In Agent2 this vector is expected to be empty because 'persistent directory' parameter is not allowed.
+	// Therefore a simplified cleanup is used.
+	zbx_vector_pre_persistent_destroy(vect);
+	zbx_free(vect);
 }
 */
 import "C"
@@ -210,6 +233,7 @@ type ResultWriter interface {
 }
 
 type LogItem struct {
+	LastTs  time.Time // the last log value timestamp + 1ns
 	Results []*LogResult
 	Output  ResultWriter
 }
@@ -226,12 +250,24 @@ func NewActiveMetric(key string, params []string, lastLogsize uint64, mtime int3
 	flags := MetricFlagNew | MetricFlagPersistent
 	switch key {
 	case "log":
+		if len(params) >= 9 && params[8] != "" {
+			return nil, errors.New("The ninth parameter (persistent directory) is not supported by Agent2.")
+		}
 		flags |= MetricFlagLogLog
 	case "logrt":
+		if len(params) >= 9 && params[8] != "" {
+			return nil, errors.New("The ninth parameter (persistent directory) is not supported by Agent2.")
+		}
 		flags |= MetricFlagLogLogrt
 	case "log.count":
+		if len(params) >= 8 && params[7] != "" {
+			return nil, errors.New("The eighth parameter (persistent directory) is not supported by Agent2.")
+		}
 		flags |= MetricFlagLogCount | MetricFlagLogLog
 	case "logrt.count":
+		if len(params) >= 8 && params[7] != "" {
+			return nil, errors.New("The eighth parameter (persistent directory) is not supported by Agent2.")
+		}
 		flags |= MetricFlagLogCount | MetricFlagLogLogrt
 	case "eventlog":
 		flags |= MetricFlagLogEventlog
@@ -258,14 +294,20 @@ func ProcessLogCheck(data unsafe.Pointer, item *LogItem, refresh int, cblob unsa
 	result := C.new_log_result(C.int(item.Output.PersistSlotsAvailable()))
 
 	var cerrmsg *C.char
-	ret := C.process_log_check(C.char_lp_t(unsafe.Pointer(result)), 0, C.zbx_vector_ptr_lp_t(cblob),
-		C.ZBX_ACTIVE_METRIC_LP(data), C.zbx_process_value_func_t(C.process_value_cb), &clastLogsizeSent, &cmtimeSent,
-		&cerrmsg)
+	cprepVec := C.new_prep_vec() // In Agent2 it is always empty vector. Not used but required for linking.
+	ret := C.process_log_check(nil, C.zbx_vector_ptr_lp_t(unsafe.Pointer(result)), C.zbx_vector_ptr_lp_t(cblob),
+		C.ZBX_ACTIVE_METRIC_LP(data), C.zbx_process_value_func_t(C.process_value_cb), &clastLogsizeSent,
+		&cmtimeSent, &cerrmsg, cprepVec)
+	C.free_prep_vec(cprepVec)
 
 	// add cached results
 	var cvalue *C.char
 	var clastlogsize C.zbx_uint64_t
 	var cstate, cmtime C.int
+	logTs := time.Now()
+	if logTs.Before(item.LastTs) {
+		logTs = item.LastTs
+	}
 	for i := 0; C.get_log_value(result, C.int(i), &cvalue, &cstate, &clastlogsize, &cmtime) != C.FAIL; i++ {
 		var value string
 		var err error
@@ -277,14 +319,18 @@ func ProcessLogCheck(data unsafe.Pointer, item *LogItem, refresh int, cblob unsa
 
 		r := &LogResult{
 			Value:       &value,
-			Ts:          time.Now(),
+			Ts:          logTs,
 			Error:       err,
 			LastLogsize: uint64(clastlogsize),
 			Mtime:       int(cmtime),
 		}
+
 		item.Results = append(item.Results, r)
+		logTs = logTs.Add(time.Nanosecond)
 	}
 	C.free_log_result(result)
+
+	item.LastTs = logTs
 
 	if ret == C.FAIL {
 		C.metric_set_unsupported(C.ZBX_ACTIVE_METRIC_LP(data))

@@ -1,6 +1,6 @@
 /*
 ** Zabbix
-** Copyright (C) 2001-2020 Zabbix SIA
+** Copyright (C) 2001-2022 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -29,7 +29,7 @@ int	SYSTEM_UPTIME(AGENT_REQUEST *request, AGENT_RESULT *result)
 	int		ret;
 
 	zbx_snprintf(counter_path, sizeof(counter_path), "\\%u\\%u",
-			(unsigned int)get_builtin_counter_index(PCI_SYSTEM),
+			(unsigned int)get_builtin_object_index(PCI_SYSTEM_UP_TIME),
 			(unsigned int)get_builtin_counter_index(PCI_SYSTEM_UP_TIME));
 
 	request_tmp.nparam = 1;

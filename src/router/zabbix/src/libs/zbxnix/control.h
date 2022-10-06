@@ -1,6 +1,6 @@
 /*
 ** Zabbix
-** Copyright (C) 2001-2020 Zabbix SIA
+** Copyright (C) 2001-2022 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -20,12 +20,8 @@
 #ifndef ZABBIX_CONTROL_H
 #define ZABBIX_CONTROL_H
 
-#include "common.h"
-
 #define ZBX_RTC_LOG_SCOPE_FLAG	0x80
 #define ZBX_RTC_LOG_SCOPE_PROC	0
 #define ZBX_RTC_LOG_SCOPE_PID	1
 
-int	parse_rtc_options(const char *opt, unsigned char program_type, int *message);
-
-#endif
+#endif /* ZABBIX_CONTROL_H */

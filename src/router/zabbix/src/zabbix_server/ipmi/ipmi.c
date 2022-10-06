@@ -1,6 +1,6 @@
 /*
 ** Zabbix
-** Copyright (C) 2001-2020 Zabbix SIA
+** Copyright (C) 2001-2022 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -17,23 +17,19 @@
 ** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 **/
 
-#include "common.h"
+#include "ipmi.h"
+
+#include "config.h"
 
 #ifdef HAVE_OPENIPMI
 
 #include "log.h"
-#include "zbxserialize.h"
-#include "dbcache.h"
-
 #include "zbxipcservice.h"
 #include "ipmi_protocol.h"
 #include "checks_ipmi.h"
 #include "zbxserver.h"
-#include "ipmi.h"
 
 /******************************************************************************
- *                                                                            *
- * Function: zbx_ipmi_port_expand_macros                                      *
  *                                                                            *
  * Purpose: expands user macros in IPMI port value and converts the result to *
  *          to unsigned short value                                           *
@@ -53,7 +49,7 @@ int	zbx_ipmi_port_expand_macros(zbx_uint64_t hostid, const char *port_orig, unsi
 	int	ret = SUCCEED;
 
 	tmp = zbx_strdup(NULL, port_orig);
-	substitute_simple_macros(NULL, NULL, NULL, NULL, &hostid, NULL, NULL, NULL, NULL,
+	zbx_substitute_simple_macros(NULL, NULL, NULL, NULL, &hostid, NULL, NULL, NULL, NULL, NULL, NULL, NULL,
 			&tmp, MACRO_TYPE_COMMON, NULL, 0);
 
 	if (FAIL == is_ushort(tmp, port) || 0 == *port)
@@ -68,8 +64,6 @@ int	zbx_ipmi_port_expand_macros(zbx_uint64_t hostid, const char *port_orig, unsi
 }
 
 /******************************************************************************
- *                                                                            *
- * Function: zbx_ipmi_execute_command                                         *
  *                                                                            *
  * Purpose: executes IPMI command                                             *
  *                                                                            *
@@ -86,7 +80,7 @@ int	zbx_ipmi_execute_command(const DC_HOST *host, const char *command, char *err
 {
 	zbx_ipc_socket_t	ipmi_socket;
 	zbx_ipc_message_t	message;
-	char			*errmsg = NULL, sensor[ITEM_IPMI_SENSOR_LEN_MAX], *value = NULL;
+	char			*errmsg = NULL, sensor[ZBX_ITEM_IPMI_SENSOR_LEN_MAX], *value = NULL;
 	zbx_uint32_t		data_len;
 	unsigned char		*data = NULL;
 	int			ret = FAIL, op;
@@ -119,8 +113,9 @@ int	zbx_ipmi_execute_command(const DC_HOST *host, const char *command, char *err
 		goto cleanup;
 	}
 
-	data_len = zbx_ipmi_serialize_request(&data, host->hostid, interface.addr, interface.port, host->ipmi_authtype,
-			host->ipmi_privilege, host->ipmi_username, host->ipmi_password, sensor, op);
+	data_len = zbx_ipmi_serialize_request(&data, host->hostid, host->hostid, interface.addr, interface.port,
+			host->ipmi_authtype, host->ipmi_privilege, host->ipmi_username, host->ipmi_password, sensor, op,
+			NULL);
 
 	if (FAIL == zbx_ipc_socket_write(&ipmi_socket, ZBX_IPC_IPMI_SCRIPT_REQUEST, data, data_len))
 	{
@@ -153,6 +148,79 @@ cleanup:
 	zbx_ipc_socket_close(&ipmi_socket);
 
 out:
+	zabbix_log(LOG_LEVEL_DEBUG, "End of %s():%s", __func__, zbx_result_string(ret));
+
+	return ret;
+}
+
+/******************************************************************************
+ *                                                                            *
+ * Purpose: test IPMI item                                                    *
+ *                                                                            *
+ * Parameters: item - [IN] IPMI item                                          *
+ *             info - [OUT] result or error reason                            *
+ *                                                                            *
+ * Return value: SUCCEED - the test executed without errors                   *
+ *               FAIL    - otherwise                                          *
+ *                                                                            *
+ ******************************************************************************/
+int	zbx_ipmi_test_item(const DC_ITEM *item, char **info)
+{
+	zbx_ipc_socket_t	ipmi_socket;
+	zbx_ipc_message_t	message;
+	char			*errmsg = NULL, *value = NULL;
+	zbx_uint32_t		data_len;
+	unsigned char		*data = NULL;
+	int			ret = FAIL;
+	zbx_timespec_t		ts;
+
+	zabbix_log(LOG_LEVEL_DEBUG, "In %s() host:\"%s\"", __func__, item->host.host);
+
+	if (FAIL == zbx_ipc_socket_open(&ipmi_socket, ZBX_IPC_SERVICE_IPMI, SEC_PER_MIN, &errmsg))
+	{
+		zabbix_log(LOG_LEVEL_CRIT, "cannot connect to IPMI service: %s", errmsg);
+		exit(EXIT_FAILURE);
+	}
+
+	data_len = zbx_ipmi_serialize_request(&data, item->host.hostid, item->host.hostid, item->interface.addr,
+			item->interface.port, item->host.ipmi_authtype, item->host.ipmi_privilege,
+			item->host.ipmi_username, item->host.ipmi_password, item->ipmi_sensor, 0, item->key);
+
+	zbx_ipc_message_init(&message);
+
+	if (FAIL == zbx_ipc_socket_write(&ipmi_socket, ZBX_IPC_IPMI_VALUE_REQUEST, data, data_len))
+	{
+		*info = zbx_strdup(NULL, "cannot send script request message to IPMI service");
+		goto cleanup;
+	}
+
+	if (FAIL == zbx_ipc_socket_read(&ipmi_socket, &message))
+	{
+		*info = zbx_strdup(NULL, "cannot read script request response from IPMI service");
+		goto cleanup;
+	}
+
+	if (ZBX_IPC_IPMI_VALUE_RESULT != message.code)
+	{
+		*info = zbx_dsprintf(NULL, "invalid response code:%u received from IPMI service", message.code);
+		goto cleanup;
+	}
+
+	zbx_ipmi_deserialize_result(message.data, &ts, &ret, &value);
+
+	if (NULL != value)
+	{
+		*info = value;
+		value = NULL;
+	}
+	else
+		*info = zbx_strdup(NULL, "no value");
+cleanup:
+	zbx_free(value);
+	zbx_free(data);
+	zbx_ipc_message_clean(&message);
+	zbx_ipc_socket_close(&ipmi_socket);
+
 	zabbix_log(LOG_LEVEL_DEBUG, "End of %s():%s", __func__, zbx_result_string(ret));
 
 	return ret;

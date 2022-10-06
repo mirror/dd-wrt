@@ -1,6 +1,6 @@
 /*
 ** Zabbix
-** Copyright (C) 2001-2020 Zabbix SIA
+** Copyright (C) 2001-2022 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -22,7 +22,7 @@ package zbxlib
 /*
 #include "common.h"
 #include "sysinfo.h"
-#include "comms.h"
+#include "zbxcomms.h"
 #include "perfmon.h"
 #include "../src/zabbix_agent/metrics.h"
 
@@ -30,30 +30,46 @@ package zbxlib
 #cgo LDFLAGS: ${SRCDIR}/../../../../build/mingw/output/misc.o
 #cgo LDFLAGS: ${SRCDIR}/../../../../build/mingw/output/str.o
 #cgo LDFLAGS: ${SRCDIR}/../../../../build/mingw/output/file.o
-#cgo LDFLAGS: ${SRCDIR}/../../../../build/mingw/output/alias.o
+#cgo LDFLAGS: ${SRCDIR}/../../../../build/mingw/output/time.o
 #cgo LDFLAGS: ${SRCDIR}/../../../../build/mingw/output/fatal.o
+#cgo LDFLAGS: ${SRCDIR}/../../../../build/mingw/output/disk.o
 #cgo LDFLAGS: ${SRCDIR}/../../../../build/mingw/output/threads.o
 #cgo LDFLAGS: ${SRCDIR}/../../../../build/mingw/output/iprange.o
+#cgo LDFLAGS: ${SRCDIR}/../../../../build/mingw/output/zbxhash.o
 #cgo LDFLAGS: ${SRCDIR}/../../../../build/mingw/output/md5.o
 #cgo LDFLAGS: ${SRCDIR}/../../../../build/mingw/output/sysinfo.o
 #cgo LDFLAGS: ${SRCDIR}/../../../../build/mingw/output/vector.o
 #cgo LDFLAGS: ${SRCDIR}/../../../../build/mingw/output/zbxregexp.o
 #cgo LDFLAGS: ${SRCDIR}/../../../../build/mingw/output/algodefs.o
+#cgo LDFLAGS: ${SRCDIR}/../../../../build/mingw/output/persistent_state.o
 #cgo LDFLAGS: ${SRCDIR}/../../../../build/mingw/output/logfiles.o
+#cgo LDFLAGS: ${SRCDIR}/../../../../build/mingw/output/json.o
+#cgo LDFLAGS: ${SRCDIR}/../../../../build/mingw/output/json_parser.o
+#cgo LDFLAGS: ${SRCDIR}/../../../../build/mingw/output/jsonpath.o
+#cgo LDFLAGS: ${SRCDIR}/../../../../build/mingw/output/sha256crypt.o
+#cgo LDFLAGS: ${SRCDIR}/../../../../build/mingw/output/variant.o
 #cgo LDFLAGS: ${SRCDIR}/../../../../build/mingw/output/sysinfo_system.o
+#cgo LDFLAGS: ${SRCDIR}/../../../../build/mingw/output/sysinfo_dns.o
+#cgo LDFLAGS: ${SRCDIR}/../../../../build/mingw/output/sysinfo_file.o
+#cgo LDFLAGS: ${SRCDIR}/../../../../build/mingw/output/sysinfo_dir.o
+#cgo LDFLAGS: ${SRCDIR}/../../../../build/mingw/output/sysinfo_alias.o
 #cgo LDFLAGS: ${SRCDIR}/../../../../build/mingw/output/eventlog.o
 #cgo openssl LDFLAGS: ${SRCDIR}/../../../../build/mingw/output/tls_version.o
-#cgo LDFLAGS: -lpcre -lDbghelp -lpsapi -lws2_32 -lWevtapi
+#cgo LDFLAGS: -lDbghelp -lpsapi -lws2_32 -lWevtapi -ldnsapi
+#cgo pcre  LDFLAGS: -lpcre
+#cgo pcre2 LDFLAGS: -lpcre2-8
 #cgo openssl LDFLAGS: -lssl -lcrypto
 #cgo LDFLAGS: -Wl,--end-group
 
 int CONFIG_TIMEOUT = 3;
 int CONFIG_MAX_LINES_PER_SECOND = 20;
 int CONFIG_EVENTLOG_MAX_LINES_PER_SECOND = 20;
-char *CONFIG_HOSTNAME = NULL;
+char ZBX_THREAD_LOCAL *CONFIG_HOSTNAME = NULL;
 int	CONFIG_UNSAFE_USER_PARAMETERS= 0;
 int	CONFIG_ENABLE_REMOTE_COMMANDS= 0;
 char *CONFIG_SOURCE_IP = NULL;
+
+int	CONFIG_TCP_MAX_BACKLOG_SIZE	= SOMAXCONN;
 
 const char	*progname = NULL;
 const char	title_message[] = "agent";
@@ -61,6 +77,7 @@ const char	*usage_message[] = {};
 const char	*help_message[] = {};
 
 ZBX_METRIC	parameters_common[] = {NULL};
+ZBX_METRIC	parameters_common_local[] = {NULL};
 
 #define ZBX_MESSAGE_BUF_SIZE	1024
 
@@ -95,6 +112,11 @@ int	PERF_COUNTER(AGENT_REQUEST *request, AGENT_RESULT *result)
 }
 
 DWORD	get_builtin_counter_index(zbx_builtin_counter_ref_t counter_ref)
+{
+	return 0;
+}
+
+DWORD	get_builtin_object_index(zbx_builtin_counter_ref_t object_ref)
 {
 	return 0;
 }

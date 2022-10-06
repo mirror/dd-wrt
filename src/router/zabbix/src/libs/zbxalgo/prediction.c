@@ -1,6 +1,6 @@
 /*
 ** Zabbix
-** Copyright (C) 2001-2020 Zabbix SIA
+** Copyright (C) 2001-2022 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -17,10 +17,10 @@
 ** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 **/
 
+#include "zbxalgo.h"
+
 #include "common.h"
 #include "log.h"
-
-#include "zbxalgo.h"
 
 #define DB_INFINITY	(1e12 - 1e-4)
 
@@ -592,7 +592,7 @@ while(0)
 					ZBX_MATRIX_EL(coefficients, first_nonzero, 0));
 	}
 
-	radius = lower_bound = 1.0 / lower_bound;
+	radius = 1.0 / lower_bound;
 
 	/* Weierstrass (Durand-Kerner) method */
 	while (ZBX_MAX_ITERATIONS >= ++iteration && !roots_ok)
@@ -624,7 +624,7 @@ while(0)
 			Re(z) = Re(ZBX_MATRIX_ROW(roots, i));
 			Im(z) = Im(ZBX_MATRIX_ROW(roots, i));
 
-			/* subtract from z every one of denominator_multiplicands and multiplicate them */
+			/* subtract from z every one of denominator_multiplicands and multiply them */
 			Re(denominator) = highest_degree_coefficient;
 			Im(denominator) = 0.0;
 
@@ -670,7 +670,7 @@ while(0)
 				Im(ZBX_MATRIX_ROW(updates, i)) = (Im(polynomial) * Re(denominator) -
 						Re(polynomial) * Im(denominator)) / temp;
 			}
-			else	/* Denominator is zero iff two or more root approximations are equal. */
+			else	/* Denominator is zero if two or more root approximations are equal. */
 				/* Since root approximations are initially different their equality means that they */
 				/* converged to a multiple root (hopefully) and no updates are required in this case. */
 			{
@@ -737,9 +737,9 @@ static int	zbx_polynomial_minmax(double now, double time, zbx_mode_t mode, zbx_m
 	if (SUCCEED != (res = zbx_polynomial_roots(derivative, derivative_roots)))
 		goto out;
 
-	/* choose min and max among now, now + time and derivative roots inbetween (these are potential local extrema) */
-	/* we ignore imaginary part of roots, this means that more calculations will be made, */
-	/* but result will not be affected and we wont need a boundary on minimal imaginary part that differs from zero */
+	/* Choose min and max among now, now + time and derivative roots in between (these are potential local      */
+	/* extrema). We ignore imaginary part of roots. This means that more calculations will be made, but result  */
+	/* will not be affected and we won't need a boundary on minimal imaginary part that differs from zero.      */
 
 	min = zbx_polynomial_value(now, coefficients);
 	tmp = zbx_polynomial_value(now + time, coefficients);
@@ -998,6 +998,11 @@ double	zbx_forecast(double *t, double *x, int n, double now, double time, zbx_fi
 
 		THIS_SHOULD_NEVER_HAPPEN;
 		return ZBX_MATH_ERROR;
+	}
+	else if (FIT_POLYNOMIAL == fit)
+	{
+		if ((unsigned)n <= k)
+			return ZBX_MATH_ERROR;
 	}
 
 	zbx_matrix_struct_alloc(&coefficients);

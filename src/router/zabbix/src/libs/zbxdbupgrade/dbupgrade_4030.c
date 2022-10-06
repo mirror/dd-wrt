@@ -1,6 +1,6 @@
 /*
 ** Zabbix
-** Copyright (C) 2001-2020 Zabbix SIA
+** Copyright (C) 2001-2022 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -17,9 +17,9 @@
 ** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 **/
 
-#include "common.h"
-#include "db.h"
 #include "dbupgrade.h"
+
+#include "zbxdbhigh.h"
 
 /*
  * 4.4 development database patches
@@ -434,11 +434,7 @@ out:
 
 static int	DBpatch_4030028(void)
 {
-#ifdef HAVE_IBM_DB2
-	return DBdrop_index("media_type", "media_type_1");
-#else
 	return SUCCEED;
-#endif
 }
 
 static int	DBpatch_4030029(void)
@@ -450,11 +446,7 @@ static int	DBpatch_4030029(void)
 
 static int	DBpatch_4030030(void)
 {
-#ifdef HAVE_IBM_DB2
-	return DBcreate_index("media_type", "media_type_1", "name", 1);
-#else
 	return SUCCEED;
-#endif
 }
 
 static int	DBpatch_4030031(void)

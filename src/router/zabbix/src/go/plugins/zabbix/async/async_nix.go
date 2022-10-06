@@ -1,8 +1,9 @@
+//go:build !windows
 // +build !windows
 
 /*
 ** Zabbix
-** Copyright (C) 2001-2020 Zabbix SIA
+** Copyright (C) 2001-2022 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -36,8 +37,5 @@ func getMetrics() []string {
 		"system.sw.os", "Operating system information.",
 		"system.swap.in", "Swap in (from device into memory) statistics.",
 		"system.swap.out", "Swap out (from memory onto device) statistics.",
-		"vfs.file.md5sum", "MD5 checksum of file.",
-		"vfs.file.regmatch", "Find string in a file.",
-		"vfs.fs.discovery", "List of mounted filesystems. Used for low-level discovery.",
 	}
 }

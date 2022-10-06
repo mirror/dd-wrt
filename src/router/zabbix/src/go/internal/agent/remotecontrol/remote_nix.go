@@ -1,8 +1,9 @@
+//go:build !windows
 // +build !windows
 
 /*
 ** Zabbix
-** Copyright (C) 2001-2020 Zabbix SIA
+** Copyright (C) 2001-2022 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -29,14 +30,14 @@ import (
 	"syscall"
 	"time"
 
-	"zabbix.com/pkg/log"
+	"git.zabbix.com/ap/plugin-support/log"
 )
 
-func New(path string) (conn *Conn, err error) {
+func New(path string, timeout time.Duration) (conn *Conn, err error) {
 	c := Conn{}
 	if path != "" {
 		if _, tmperr := os.Stat(path); !os.IsNotExist(tmperr) {
-			if _, err = SendCommand(path, "version"); err == nil {
+			if _, err = SendCommand(path, "version", timeout); err == nil {
 				return nil, fmt.Errorf("An agent is already using control socket %s", path)
 			}
 			if err = os.Remove(path); err != nil {
@@ -54,14 +55,14 @@ func New(path string) (conn *Conn, err error) {
 	return &c, nil
 }
 
-func SendCommand(path string, command string) (reply string, err error) {
+func SendCommand(path string, command string, timeout time.Duration) (reply string, err error) {
 	var conn net.Conn
-	if conn, err = net.DialTimeout("unix", path, time.Second); err != nil {
+	if conn, err = net.DialTimeout("unix", path, timeout); err != nil {
 		return
 	}
 	defer conn.Close()
 
-	if err = conn.SetDeadline(time.Now().Add(time.Second)); err != nil {
+	if err = conn.SetDeadline(time.Now().Add(timeout)); err != nil {
 		return
 	}
 	if _, err = conn.Write([]byte(command + "\n")); err != nil {

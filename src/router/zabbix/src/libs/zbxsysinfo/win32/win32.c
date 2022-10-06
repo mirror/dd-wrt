@@ -1,6 +1,6 @@
 /*
 ** Zabbix
-** Copyright (C) 2001-2020 Zabbix SIA
+** Copyright (C) 2001-2022 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -17,10 +17,10 @@
 ** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 **/
 
+#include "zbxwinservice.h"
+
 #include "common.h"
 #include "sysinfo.h"
-
-#include "service.h"
 
 ZBX_METRIC	parameters_specific[] =
 /*	KEY			FLAG		FUNCTION		TEST PARAMETERS */
@@ -39,6 +39,7 @@ ZBX_METRIC	parameters_specific[] =
 
 	{"vm.memory.size",	CF_HAVEPARAMS,	VM_MEMORY_SIZE,		"free"},
 
+	{"proc.get",		CF_HAVEPARAMS,	PROC_GET,		"svchost.exe"},
 	{"proc.num",		CF_HAVEPARAMS,	PROC_NUM,		"svchost.exe"},
 
 	{"system.cpu.util",	CF_HAVEPARAMS,	SYSTEM_CPU_UTIL,	"all,system,avg1"},
@@ -61,12 +62,17 @@ ZBX_METRIC	parameters_specific[] =
 	{"services",		CF_HAVEPARAMS,	SERVICES,		NULL},
 	{"perf_counter",	CF_HAVEPARAMS,	PERF_COUNTER,		"\\System\\Processes"},
 	{"perf_counter_en",	CF_HAVEPARAMS,	PERF_COUNTER_EN,	"\\System\\Processes"},
+	{"perf_instance.discovery",	CF_HAVEPARAMS,	PERF_INSTANCE_DISCOVERY,	"Processor"},
+	{"perf_instance_en.discovery",	CF_HAVEPARAMS,	PERF_INSTANCE_DISCOVERY_EN,	"Processor"},
 	{"proc_info",		CF_HAVEPARAMS,	PROC_INFO,		"svchost.exe"},
 
 	{"__UserPerfCounter",	CF_HAVEPARAMS,	USER_PERF_COUNTER,	""},
 
 	{"wmi.get",		CF_HAVEPARAMS,	WMI_GET,		"root\\cimv2,select Caption from Win32_OperatingSystem"},
 	{"wmi.getall",		CF_HAVEPARAMS,	WMI_GETALL,		"root\\cimv2,select * from Win32_OperatingSystem"},
+
+	{"registry.data",		CF_HAVEPARAMS,	REGISTRY_DATA,		NULL},
+	{"registry.get",		CF_HAVEPARAMS,	REGISTRY_GET,		NULL},
 
 	{NULL}
 };

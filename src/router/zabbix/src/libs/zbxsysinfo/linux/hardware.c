@@ -1,6 +1,6 @@
 /*
 ** Zabbix
-** Copyright (C) 2001-2020 Zabbix SIA
+** Copyright (C) 2001-2022 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -17,20 +17,19 @@
 ** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 **/
 
-#include "../common/common.h"
+#include "hardware.h"
+
+#include "../common/zbxsysinfo_common.h"
 #include "sysinfo.h"
 #include <sys/mman.h>
 #include <setjmp.h>
 #include <signal.h>
 #include "zbxalgo.h"
-#include "hardware.h"
 #include "zbxregexp.h"
 #include "log.h"
 
-
 static ZBX_THREAD_LOCAL volatile char sigbus_handler_set;
 static ZBX_THREAD_LOCAL sigjmp_buf sigbus_jmp_buf;
-
 
 static void sigbus_handler(int signal)
 {
@@ -123,7 +122,14 @@ static size_t	get_chassis_type(char *buf, int bufsize, int type)
 		"Compact PCI",
 		"Advanced TCA",
 		"Blade",
-		"Blade Enclosure",	/* 0x1d (MAX_CHASSIS_TYPE) */
+		"Blade Enclosure",
+		"Tablet",
+		"Convertible",
+		"Detachable",
+		"IoT Gateway",
+		"Embedded PC",
+		"Mini PC",
+		"Stick PC"		/* 0x24 (MAX_CHASSIS_TYPE) */
 	};
 
 	type = CHASSIS_TYPE_BITS & type;
@@ -322,9 +328,9 @@ int	SYSTEM_HW_CHASSIS(AGENT_REQUEST *request, AGENT_RESULT *result)
 	return ret;
 }
 
-static zbx_uint64_t	get_cpu_max_freq(int cpu_num)
+static zbx_uint64_t	get_cpu_max_freq(int cpu_num, int *status)
 {
-	zbx_uint64_t	freq = FAIL;
+	zbx_uint64_t	freq = ZBX_MAX_UINT64;
 	char		filename[MAX_STRING_LEN];
 	FILE		*f;
 
@@ -335,10 +341,14 @@ static zbx_uint64_t	get_cpu_max_freq(int cpu_num)
 	if (NULL != f)
 	{
 		if (1 != fscanf(f, ZBX_FS_UI64, &freq))
-			freq = FAIL;
+			*status = FAIL;
+		else
+			*status = SUCCEED;
 
 		fclose(f);
 	}
+	else
+		*status = FAIL;
 
 	return freq;
 }
@@ -347,14 +357,14 @@ static size_t	print_freq(char *buffer, size_t size, int filter, int cpu, zbx_uin
 {
 	size_t	offset = 0;
 
-	if (HW_CPU_SHOW_MAXFREQ == filter && FAIL != (int)maxfreq)
+	if (HW_CPU_SHOW_MAXFREQ == filter && ZBX_MAX_UINT64 != maxfreq)
 	{
 		if (HW_CPU_ALL_CPUS == cpu)
 			offset += zbx_snprintf(buffer + offset, size - offset, " " ZBX_FS_UI64 "MHz", maxfreq / 1000);
 		else
 			offset += zbx_snprintf(buffer + offset, size - offset, " " ZBX_FS_UI64, maxfreq * 1000);
 	}
-	else if (HW_CPU_SHOW_CURFREQ == filter && FAIL != (int)curfreq)
+	else if (HW_CPU_SHOW_CURFREQ == filter && ZBX_MAX_UINT64 != curfreq)
 	{
 		if (HW_CPU_ALL_CPUS == cpu)
 			offset += zbx_snprintf(buffer + offset, size - offset, " " ZBX_FS_UI64 "MHz", curfreq);
@@ -363,10 +373,10 @@ static size_t	print_freq(char *buffer, size_t size, int filter, int cpu, zbx_uin
 	}
 	else if (HW_CPU_SHOW_ALL == filter)
 	{
-		if (FAIL != (int)curfreq)
+		if (ZBX_MAX_UINT64 != curfreq)
 			offset += zbx_snprintf(buffer + offset, size - offset, " working at " ZBX_FS_UI64 "MHz", curfreq);
 
-		if (FAIL != (int)maxfreq)
+		if (ZBX_MAX_UINT64 != maxfreq)
 			offset += zbx_snprintf(buffer + offset, size - offset, " (maximum " ZBX_FS_UI64 "MHz)", maxfreq / 1000);
 	}
 
@@ -376,7 +386,7 @@ static size_t	print_freq(char *buffer, size_t size, int filter, int cpu, zbx_uin
 int     SYSTEM_HW_CPU(AGENT_REQUEST *request, AGENT_RESULT *result)
 {
 	int		ret = SYSINFO_RET_FAIL, filter, cpu, cur_cpu = -1, offset = 0;
-	zbx_uint64_t	maxfreq = FAIL, curfreq = FAIL;
+	zbx_uint64_t	maxfreq = ZBX_MAX_UINT64, curfreq = ZBX_MAX_UINT64;
 	char		line[MAX_STRING_LEN], name[MAX_STRING_LEN], tmp[MAX_STRING_LEN], buffer[MAX_BUFFER_LEN], *param;
 	FILE		*f;
 
@@ -432,7 +442,7 @@ int     SYSTEM_HW_CPU(AGENT_REQUEST *request, AGENT_RESULT *result)
 			if (-1 != cur_cpu && (HW_CPU_ALL_CPUS == cpu || cpu == cur_cpu))	/* print info about the previous cpu */
 				offset += print_freq(buffer + offset, sizeof(buffer) - offset, filter, cpu, maxfreq, curfreq);
 
-			curfreq = FAIL;
+			curfreq = ZBX_MAX_UINT64;
 			cur_cpu = atoi(tmp);
 
 			if (HW_CPU_ALL_CPUS != cpu && cpu != cur_cpu)
@@ -441,10 +451,14 @@ int     SYSTEM_HW_CPU(AGENT_REQUEST *request, AGENT_RESULT *result)
 			if (HW_CPU_ALL_CPUS == cpu || HW_CPU_SHOW_ALL == filter)
 				offset += zbx_snprintf(buffer + offset, sizeof(buffer) - offset, "\nprocessor %d:", cur_cpu);
 
-			if ((HW_CPU_SHOW_ALL == filter || HW_CPU_SHOW_MAXFREQ == filter) &&
-					FAIL != (int)(maxfreq = get_cpu_max_freq(cur_cpu)))
+			if (HW_CPU_SHOW_ALL == filter || HW_CPU_SHOW_MAXFREQ == filter)
 			{
-				ret = SYSINFO_RET_OK;
+				int	max_freq_status;
+
+				maxfreq = get_cpu_max_freq(cur_cpu, &max_freq_status);
+
+				if (SUCCEED == max_freq_status)
+					ret = SYSINFO_RET_OK;
 			}
 		}
 

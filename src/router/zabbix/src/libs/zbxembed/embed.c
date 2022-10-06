@@ -1,6 +1,6 @@
 /*
 ** Zabbix
-** Copyright (C) 2001-2020 Zabbix SIA
+** Copyright (C) 2001-2022 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -17,17 +17,17 @@
 ** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 **/
 
-#include "common.h"
 #include "log.h"
-#include "zbxjson.h"
 #include "zbxembed.h"
-#include "embed.h"
+
 #include "httprequest.h"
 #include "zabbix.h"
+#include "global.h"
+#include "console.h"
+#include "embed_xml.h"
+#include "embed.h"
 
-#include "duktape.h"
-
-#define ZBX_ES_MEMORY_LIMIT	(1024 * 1024 * 10)
+#define ZBX_ES_MEMORY_LIMIT	(1024 * 1024 * 64)
 #define ZBX_ES_TIMEOUT		10
 
 #define ZBX_ES_STACK_LIMIT	1000
@@ -39,8 +39,6 @@
 #define ZBX_ES_SCRIPT_FOOTER	"\n}"
 
 /******************************************************************************
- *                                                                            *
- * Function: es_handle_error                                                  *
  *                                                                            *
  * Purpose: fatal error handler                                               *
  *                                                                            *
@@ -123,7 +121,126 @@ static void	es_free(void *udata, void *ptr)
 
 /******************************************************************************
  *                                                                            *
- * Function: zbx_es_check_timeout                                             *
+ * Purpose: decodes 3-byte utf-8 sequence                                     *
+ *                                                                            *
+ * Parameters: ptr - [IN] pointer to the 3 byte sequence                      *
+ *             out - [OUT] the decoded value                                  *
+ *                                                                            *
+ * Return value: SUCCEED                                                      *
+ *               FAIL                                                         *
+ *                                                                            *
+ ******************************************************************************/
+static int	utf8_decode_3byte_sequence(const char *ptr, zbx_uint32_t *out)
+{
+	*out = ((unsigned char)*ptr++ & 0xFu) << 12;
+	if (0x80 != (*ptr & 0xC0))
+		return FAIL;
+
+	*out |= ((unsigned char)*ptr++ & 0x3Fu) << 6;
+	if (0x80 != (*ptr & 0xC0))
+		return FAIL;
+
+	*out |= ((unsigned char)*ptr & 0x3Fu);
+
+	return SUCCEED;
+}
+
+/******************************************************************************
+ *                                                                            *
+ * Purpose: decodes duktape string into utf-8                                 *
+ *                                                                            *
+ * Parameters: duk_str - [IN] pointer to the first char of NULL terminated    *
+ *                       Duktape string                                       *
+ *             out_str - [OUT] on success, pointer to pointer to the first    *
+ *                       char of allocated NULL terminated UTF8 string        *
+ *                                                                            *
+ * Return value: SUCCEED                                                      *
+ *               FAIL                                                         *
+ *                                                                            *
+ ******************************************************************************/
+int	es_duktape_string_decode(const char *duk_str, char **out_str)
+{
+	const char	*in, *end;
+	char		*out;
+	size_t		len;
+
+	len = strlen(duk_str);
+	out = *out_str = zbx_malloc(*out_str, len + 1);
+	end = duk_str + len;
+
+	for (in = duk_str; in < end;)
+	{
+		if (0x7f >= (unsigned char)*in)
+		{
+			*out++ = *in++;
+			continue;
+		}
+
+		if (0xdf >= (unsigned char)*in)
+		{
+			if (2 > end - in)
+				goto fail;
+
+			*out++ = *in++;
+			*out++ = *in++;
+			continue;
+		}
+
+		if (0xef >= (unsigned char)*in)
+		{
+			zbx_uint32_t	c1, c2, u;
+
+			if (3 > end - in || FAIL == utf8_decode_3byte_sequence(in, &c1))
+				goto fail;
+
+			if (0xd800 > c1 || 0xdbff < c1)
+			{
+				/* normal 3-byte sequence */
+				*out++ = *in++;
+				*out++ = *in++;
+				*out++ = *in++;
+				continue;
+			}
+
+			/* decode unicode supplementary character represented as surrogate pair */
+			in += 3;
+			if (3 > end - in || FAIL == utf8_decode_3byte_sequence(in, &c2) || 0xdc00 > c2 || 0xdfff < c2)
+				goto fail;
+
+			u = 0x10000 + ((((zbx_uint32_t)c1 & 0x3ff) << 10) | (c2 & 0x3ff));
+			*out++ = (char)(0xf0 |  u >> 18);
+			*out++ = (char)(0x80 | (u >> 12 & 0x3f));
+			*out++ = (char)(0x80 | (u >> 6 & 0x3f));
+			*out++ = (char)(0x80 | (u & 0x3f));
+			in += 3;
+			continue;
+		}
+
+		/* duktape can use the four-byte UTF-8 style supplementary character sequence */
+		if (0xf0 >= (unsigned char)*in)
+		{
+			if (4 > end - in)
+				goto fail;
+
+			*out++ = *in++;
+			*out++ = *in++;
+			*out++ = *in++;
+			*out++ = *in++;
+			continue;
+		}
+
+		goto fail;
+	}
+	*out = '\0';
+
+	return SUCCEED;
+fail:
+	zbx_free(*out_str);
+
+	return FAIL;
+}
+
+/******************************************************************************
  *                                                                            *
  * Purpose: timeout checking callback                                         *
  *                                                                            *
@@ -132,15 +249,13 @@ int	zbx_es_check_timeout(void *udata)
 {
 	zbx_es_env_t	*env = (zbx_es_env_t *)udata;
 
-	if (time(NULL) - env->start_time > env->timeout)
+	if (time(NULL) - env->start_time.sec > env->timeout)
 		return 1;
 
 	return 0;
 }
 
 /******************************************************************************
- *                                                                            *
- * Function: zbx_es_init                                                      *
  *                                                                            *
  * Purpose: initializes embedded scripting engine                             *
  *                                                                            *
@@ -151,8 +266,6 @@ void	zbx_es_init(zbx_es_t *es)
 }
 
 /******************************************************************************
- *                                                                            *
- * Function: zbx_es_destroy                                                   *
  *                                                                            *
  * Purpose: destroys embedded scripting engine                                *
  *                                                                            *
@@ -168,8 +281,6 @@ void	zbx_es_destroy(zbx_es_t *es)
 }
 
 /******************************************************************************
- *                                                                            *
- * Function: zbx_es_init_env                                                  *
  *                                                                            *
  * Purpose: initializes embedded scripting engine environment                 *
  *                                                                            *
@@ -204,10 +315,15 @@ int	zbx_es_init_env(zbx_es_t *es, char **error)
 	/* initialize Zabbix object */
 	zbx_es_init_zabbix(es, error);
 
+	/* initialize console object */
+	zbx_es_init_console(es, error);
+
 	/* remove Duktape object */
 	duk_push_global_object(es->env->ctx);
 	duk_del_prop_string(es->env->ctx, -1, "Duktape");
 	duk_pop(es->env->ctx);
+
+	es_init_global_functions(es);
 
 	/* put environment object to be accessible from duktape C calls */
 	duk_push_global_stash(es->env->ctx);
@@ -219,8 +335,11 @@ int	zbx_es_init_env(zbx_es_t *es, char **error)
 		return FAIL;
 	}
 
-	/* initialize CurlHttpRequest prototype */
+	/* initialize HttpRequest prototype */
 	if (FAIL == zbx_es_init_httprequest(es, error))
+		goto out;
+
+	if (FAIL == zbx_es_init_xml(es, error))
 		goto out;
 
 	es->env->timeout = ZBX_ES_TIMEOUT;
@@ -228,6 +347,7 @@ int	zbx_es_init_env(zbx_es_t *es, char **error)
 out:
 	if (SUCCEED != ret)
 	{
+		zbx_es_debug_disable(es);
 		zbx_free(es->env->error);
 		zbx_free(es->env);
 	}
@@ -239,8 +359,6 @@ out:
 }
 
 /******************************************************************************
- *                                                                            *
- * Function: zbx_es_destroy_env                                               *
  *                                                                            *
  * Purpose: destroys initialized embedded scripting engine environment        *
  *                                                                            *
@@ -265,6 +383,7 @@ int	zbx_es_destroy_env(zbx_es_t *es, char **error)
 	}
 
 	duk_destroy_heap(es->env->ctx);
+	zbx_es_debug_disable(es);
 	zbx_free(es->env->error);
 	zbx_free(es->env);
 
@@ -277,8 +396,6 @@ out:
 }
 
 /******************************************************************************
- *                                                                            *
- * Function: zbx_es_ready                                                     *
  *                                                                            *
  * Purpose: checks if the scripting engine environment is initialized         *
  *                                                                            *
@@ -294,8 +411,6 @@ int	zbx_es_is_env_initialized(zbx_es_t *es)
 }
 
 /******************************************************************************
- *                                                                            *
- * Function: zbx_es_fatal_error                                               *
  *                                                                            *
  * Purpose: checks if fatal error has occurred                                *
  *                                                                            *
@@ -320,8 +435,6 @@ int	zbx_es_fatal_error(zbx_es_t *es)
 
 /******************************************************************************
  *                                                                            *
- * Function: zbx_es_compile                                                   *
- *                                                                            *
  * Purpose: compiles script into bytecode                                     *
  *                                                                            *
  * Parameters: es     - [IN] the embedded scripting engine                    *
@@ -333,7 +446,7 @@ int	zbx_es_fatal_error(zbx_es_t *es)
  * Return value: SUCCEED                                                      *
  *               FAIL                                                         *
  *                                                                            *
- * Comments: The this function allocates the bytecode array, which must be    *
+ * Comments: this function allocates the bytecode array, which must be        *
  *           freed by the caller after being used.                            *
  *                                                                            *
  ******************************************************************************/
@@ -404,17 +517,15 @@ out:
 
 /******************************************************************************
  *                                                                            *
- * Function: zbx_es_execute                                                   *
- *                                                                            *
  * Purpose: executes script                                                   *
  *                                                                            *
- * Parameters: es     - [IN] the embedded scripting engine                    *
- *             script - [IN] the script to execute                            *
- *             code   - [IN] the precompiled bytecode                         *
- *             size   - [IN] the size of precompiled bytecode                 *
- *             param  - [IN] the parameter to pass to the script              *
- *             output - [OUT] the result value                                *
- *             error  - [OUT] the error message                               *
+ * Parameters: es         - [IN] the embedded scripting engine                *
+ *             script     - [IN] the script to execute                        *
+ *             code       - [IN] the precompiled bytecode                     *
+ *             size       - [IN] the size of precompiled bytecode             *
+ *             param      - [IN] the parameter to pass to the script          *
+ *             script_ret - [OUT] the result value                            *
+ *             error      - [OUT] the error message                           *
  *                                                                            *
  * Return value: SUCCEED                                                      *
  *               FAIL                                                         *
@@ -425,13 +536,21 @@ out:
  *           bytecode parameters.                                             *
  *                                                                            *
  ******************************************************************************/
-int	zbx_es_execute(zbx_es_t *es, const char *script, const char *code, int size, const char *param, char **output,
-	char **error)
+int	zbx_es_execute(zbx_es_t *es, const char *script, const char *code, int size, const char *param,
+	char **script_ret, char **error)
 {
 	void		*buffer;
 	volatile int	ret = FAIL;
 
-	zabbix_log(LOG_LEVEL_DEBUG, "In %s()", __func__);
+	zabbix_log(LOG_LEVEL_DEBUG, "In %s() param:%s", __func__, param);
+
+	zbx_timespec(&es->env->start_time);
+
+	if (NULL != es->env->json)
+	{
+		zbx_json_clean(es->env->json);
+		zbx_json_addarray(es->env->json, "logs");
+	}
 
 	if (SUCCEED == zbx_es_fatal_error(es))
 	{
@@ -451,8 +570,6 @@ int	zbx_es_execute(zbx_es_t *es, const char *script, const char *code, int size,
 	memcpy(buffer, code, size);
 	duk_load_function(es->env->ctx);
 	duk_push_string(es->env->ctx, param);
-
-	es->env->start_time = time(NULL);
 
 	if (DUK_EXEC_SUCCESS != duk_pcall(es->env->ctx, 1))
 	{
@@ -479,30 +596,66 @@ int	zbx_es_execute(zbx_es_t *es, const char *script, const char *code, int size,
 		goto out;
 	}
 
-	if (0 == duk_check_type(es->env->ctx, -1, DUK_TYPE_UNDEFINED))
+	if (NULL != script_ret || SUCCEED == ZBX_CHECK_LOG_LEVEL(LOG_LEVEL_DEBUG))
 	{
-		if (0 != duk_check_type(es->env->ctx, -1, DUK_TYPE_NULL))
-			*output = NULL;
-		else
-			*output = zbx_strdup(NULL, duk_safe_to_string(es->env->ctx, -1));
+		if (0 == duk_check_type(es->env->ctx, -1, DUK_TYPE_UNDEFINED))
+		{
+			if (0 != duk_check_type(es->env->ctx, -1, DUK_TYPE_NULL))
+			{
+				ret = SUCCEED;
 
-		zabbix_log(LOG_LEVEL_DEBUG, "%s() output:'%s'", __func__, ZBX_NULL2EMPTY_STR(*output));
-		ret = SUCCEED;
+				if (NULL != script_ret)
+					*script_ret = NULL;
+
+				zabbix_log(LOG_LEVEL_DEBUG, "%s() output: null", __func__);
+			}
+			else
+			{
+				char	*output = NULL;
+
+				if (SUCCEED != (ret = es_duktape_string_decode(
+						duk_safe_to_string(es->env->ctx, -1), &output)))
+				{
+					*error = zbx_strdup(*error, "could not convert return value to utf8");
+				}
+				else
+					zabbix_log(LOG_LEVEL_DEBUG, "%s() output:'%s'", __func__, output);
+
+				if (SUCCEED == ret && NULL != script_ret)
+					*script_ret = output;
+				else
+					zbx_free(output);
+			}
+		}
+		else
+		{
+			if (NULL == script_ret)
+			{
+				zabbix_log(LOG_LEVEL_DEBUG, "%s(): undefined return value", __func__);
+				ret = SUCCEED;
+			}
+			else
+				*error = zbx_strdup(*error, "undefined return value");
+		}
 	}
 	else
-		*error = zbx_strdup(*error, "undefined return value");
+		ret = SUCCEED;
 
 	duk_pop(es->env->ctx);
 	es->env->rt_error_num = 0;
 out:
+	if (NULL != es->env->json)
+	{
+		zbx_json_close(es->env->json);
+		zbx_json_adduint64(es->env->json, "ms", zbx_get_duration_ms(&es->env->start_time));
+	}
+
 	zabbix_log(LOG_LEVEL_DEBUG, "End of %s():%s %s", __func__, zbx_result_string(ret), ZBX_NULL2EMPTY_STR(*error));
 
 	return ret;
 }
 
 /******************************************************************************
- *                                                                            *
- * Function: zbx_es_set_timeout                                               *
  *                                                                            *
  * Purpose: sets script execution timeout                                     *
  *                                                                            *
@@ -513,4 +666,118 @@ out:
 void	zbx_es_set_timeout(zbx_es_t *es, int timeout)
 {
 	es->env->timeout = timeout;
+}
+
+void	zbx_es_debug_enable(zbx_es_t *es)
+{
+	if (NULL == es->env->json)
+	{
+		es->env->json = zbx_malloc(NULL, sizeof(struct zbx_json));
+		zbx_json_init(es->env->json, ZBX_JSON_STAT_BUF_LEN);
+	}
+}
+
+const char	*zbx_es_debug_info(const zbx_es_t *es)
+{
+	if (NULL == es->env->json)
+		return NULL;
+
+	return es->env->json->buffer;
+}
+
+void	zbx_es_debug_disable(zbx_es_t *es)
+{
+	if (NULL == es->env->json)
+		return;
+
+	zbx_json_free(es->env->json);
+	zbx_free(es->env->json);
+}
+
+/******************************************************************************
+ *                                                                            *
+ * Purpose: executes command (script in form of a text)                       *
+ *                                                                            *
+ * Parameters: command       - [IN] the command in form of a text             *
+ *             param         - [IN] the script parameters                     *
+ *             timeout       - [IN] the timeout for the execution (seconds)   *
+ *             result        - [OUT] the result of an execution               *
+ *             error         - [OUT] the error message                        *
+ *             max_error_len - [IN] the maximum length of an error            *
+ *             debug         - [OUT] the debug data (optional)                *
+ *                                                                            *
+ * Return value: SUCCEED                                                      *
+ *               FAIL                                                         *
+ *                                                                            *
+ ******************************************************************************/
+int	zbx_es_execute_command(const char *command, const char *param, int timeout, char **result,
+		char *error, size_t max_error_len, char **debug)
+{
+	int		size, ret = SUCCEED;
+	char		*code = NULL, *errmsg = NULL;
+	zbx_es_t	es;
+
+	zabbix_log(LOG_LEVEL_DEBUG, "In %s()", __func__);
+
+	zbx_es_init(&es);
+	if (FAIL == zbx_es_init_env(&es, &errmsg))
+	{
+		zbx_snprintf(error, max_error_len, "cannot initialize scripting environment: %s", errmsg);
+		zbx_free(errmsg);
+		ret = FAIL;
+		goto failure;
+	}
+
+	if (NULL != debug)
+		zbx_es_debug_enable(&es);
+
+	if (FAIL == zbx_es_compile(&es, command, &code, &size, &errmsg))
+	{
+		zbx_snprintf(error, max_error_len, "cannot compile script: %s", errmsg);
+		zbx_free(errmsg);
+		ret = FAIL;
+		goto out;
+	}
+
+	if (0 != timeout)
+		zbx_es_set_timeout(&es, timeout);
+
+	if (FAIL == zbx_es_execute(&es, NULL, code, size, param, result, &errmsg))
+	{
+		zbx_snprintf(error, max_error_len, "cannot execute script: %s", errmsg);
+		zbx_free(errmsg);
+		ret = FAIL;
+		goto out;
+	}
+out:
+	if (NULL != debug)
+		*debug = zbx_strdup(NULL, zbx_es_debug_info(&es));
+
+	if (FAIL == zbx_es_destroy_env(&es, &errmsg))
+	{
+		zabbix_log(LOG_LEVEL_WARNING, "cannot destroy embedded scripting engine environment: %s", errmsg);
+		zbx_free(errmsg);
+	}
+
+	zbx_free(code);
+	zbx_free(errmsg);
+failure:
+	zabbix_log(LOG_LEVEL_DEBUG, "End of %s():%s", __func__, zbx_result_string(ret));
+
+	return ret;
+}
+
+zbx_es_env_t	*zbx_es_get_env(duk_context *ctx)
+{
+	zbx_es_env_t	*env;
+
+	duk_push_global_stash(ctx);
+
+	if (1 != duk_get_prop_string(ctx, -1, "\xff""\xff""zbx_env"))
+		return NULL;
+
+	env = (zbx_es_env_t *)duk_to_pointer(ctx, -1);
+	duk_pop(ctx);
+
+	return env;
 }

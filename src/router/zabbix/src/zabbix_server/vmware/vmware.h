@@ -1,6 +1,6 @@
 /*
 ** Zabbix
-** Copyright (C) 2001-2020 Zabbix SIA
+** Copyright (C) 2001-2022 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -19,8 +19,10 @@
 #ifndef ZABBIX_VMWARE_H
 #define ZABBIX_VMWARE_H
 
-#include "common.h"
-#include "threads.h"
+#include "config.h"
+#include "zbxthreads.h"
+#include "zbxalgo.h"
+#include "zbxjson.h"
 
 /* the vmware service state */
 #define ZBX_VMWARE_STATE_NEW		0x001
@@ -28,13 +30,6 @@
 #define ZBX_VMWARE_STATE_FAILED		0x004
 
 #define ZBX_VMWARE_STATE_MASK		0x0FF
-
-#define ZBX_VMWARE_STATE_UPDATING	0x100
-#define ZBX_VMWARE_STATE_UPDATING_PERF	0x200
-#define ZBX_VMWARE_STATE_REMOVING	0x400
-
-#define ZBX_VMWARE_STATE_BUSY		(ZBX_VMWARE_STATE_UPDATING | ZBX_VMWARE_STATE_UPDATING_PERF \
-							| ZBX_VMWARE_STATE_REMOVING)
 
 /* the vmware performance counter state */
 #define ZBX_VMWARE_COUNTER_NEW		0x00
@@ -50,7 +45,8 @@ typedef struct
 }
 zbx_str_uint64_pair_t;
 
-ZBX_VECTOR_DECL(str_uint64_pair, zbx_str_uint64_pair_t)
+ZBX_PTR_VECTOR_DECL(str_uint64_pair, zbx_str_uint64_pair_t)
+int	zbx_str_uint64_pair_name_compare(const void *p1, const void *p2);
 
 /* performance counter data */
 typedef struct
@@ -96,28 +92,132 @@ zbx_vmware_perf_entity_t;
 
 typedef struct
 {
-	char			*name;
-	char			*uuid;
-	char			*id;
-	zbx_uint64_t		capacity;
-	zbx_uint64_t		free_space;
-	zbx_uint64_t		uncommitted;
-	zbx_vector_str_t	hv_uuids;
+	zbx_uint64_t	partitionid;
+	char		*diskname;
+}
+zbx_vmware_diskextent_t;
+
+ZBX_PTR_VECTOR_DECL(vmware_diskextent, zbx_vmware_diskextent_t *)
+
+#define ZBX_VMWARE_DS_NONE		0
+#define ZBX_VMWARE_DS_MOUNTED		1
+#define ZBX_VMWARE_DS_ACCESSIBLE	2
+#define ZBX_VMWARE_DS_READ		4
+#define ZBX_VMWARE_DS_WRITE		8
+#define ZBX_VMWARE_DS_READWRITE		(ZBX_VMWARE_DS_READ | ZBX_VMWARE_DS_WRITE)
+#define ZBX_VMWARE_DS_READ_FILTER	(ZBX_VMWARE_DS_MOUNTED | ZBX_VMWARE_DS_ACCESSIBLE | ZBX_VMWARE_DS_READ)
+#define ZBX_VMWARE_DS_WRITE_FILTER	(ZBX_VMWARE_DS_MOUNTED | ZBX_VMWARE_DS_ACCESSIBLE | ZBX_VMWARE_DS_READWRITE)
+
+typedef struct
+{
+	char				*uuid;
+	char				*name;
+	char				*id;
+	zbx_uint64_t			capacity;
+	zbx_uint64_t			free_space;
+	zbx_uint64_t			uncommitted;
+	zbx_vector_str_uint64_pair_t	hv_uuids_access;
+	zbx_vector_vmware_diskextent_t	diskextents;
+	zbx_vector_str_t		alarm_ids;
 }
 zbx_vmware_datastore_t;
 
+int	vmware_ds_uuid_compare(const void *d1, const void *d2);
 int	vmware_ds_name_compare(const void *d1, const void *d2);
 ZBX_PTR_VECTOR_DECL(vmware_datastore, zbx_vmware_datastore_t *)
 
-#define ZBX_VMWARE_DEV_TYPE_NIC		1
-#define ZBX_VMWARE_DEV_TYPE_DISK	2
+typedef struct
+{
+	zbx_uint64_t	partitionid;
+	int		multipath_total;
+	int		multipath_active;
+}
+zbx_vmware_hvdisk_t;
+
+ZBX_VECTOR_DECL(vmware_hvdisk, zbx_vmware_hvdisk_t)
+
+typedef struct
+{
+	char				*name;
+	char				*uuid;
+	zbx_vector_vmware_hvdisk_t	hvdisks;
+}
+zbx_vmware_dsname_t;
+
+int	vmware_dsname_compare(const void *d1, const void *d2);
+ZBX_PTR_VECTOR_DECL(vmware_dsname, zbx_vmware_dsname_t *)
+
+typedef struct
+{
+	char			*name;
+	char			*id;
+	zbx_vector_str_t	alarm_ids;
+}
+zbx_vmware_datacenter_t;
+int	vmware_dc_id_compare(const void *d1, const void *d2);
+ZBX_PTR_VECTOR_DECL(vmware_datacenter, zbx_vmware_datacenter_t *)
+
+typedef struct
+{
+	char			*uuid;
+	char			*id;
+	char			*name;
+}
+zbx_vmware_dvswitch_t;
+int	vmware_dvs_uuid_compare(const void *d1, const void *d2);
+ZBX_PTR_VECTOR_DECL(vmware_dvswitch, zbx_vmware_dvswitch_t *)
+
+#define ZBX_VMWARE_DEV_TYPE_NIC				1
+#define ZBX_VMWARE_DEV_TYPE_DISK			2
+#define ZBX_VMWARE_DEV_PROPS_IFMAC			0
+#define ZBX_VMWARE_DEV_PROPS_IFCONNECTED		1
+#define ZBX_VMWARE_DEV_PROPS_IFTYPE			2
+#define ZBX_VMWARE_DEV_PROPS_IFBACKINGDEVICE		3
+#define ZBX_VMWARE_DEV_PROPS_IFDVSWITCH_UUID		4
+#define ZBX_VMWARE_DEV_PROPS_IFDVSWITCH_PORTGROUP	5
+#define ZBX_VMWARE_DEV_PROPS_IFDVSWITCH_PORT		6
+#define ZBX_VMWARE_DEV_PROPS_NUM			7
+
 typedef struct
 {
 	int	type;
 	char	*instance;
 	char	*label;
+	char	**props;
 }
 zbx_vmware_dev_t;
+
+#define ZBX_DUPLEX_FULL		0
+#define ZBX_DUPLEX_HALF		1
+
+/* hypervisor physical NIC data */
+typedef struct
+{
+	char		*name;
+	zbx_uint64_t	speed;
+	int		duplex;
+	char		*driver;
+	char		*mac;
+}
+zbx_vmware_pnic_t;
+
+int	vmware_pnic_compare(const void *v1, const void *v2);
+ZBX_PTR_VECTOR_DECL(vmware_pnic, zbx_vmware_pnic_t *)
+
+/* Alarm data */
+typedef struct
+{
+	char	*key;
+	char	*name;
+	char	*system_name;
+	char	*description;
+	char	*overall_status;
+	char	*time;
+	int	enabled;
+	int	acknowledged;
+}
+zbx_vmware_alarm_t;
+ZBX_PTR_VECTOR_DECL(vmware_alarm, zbx_vmware_alarm_t *)
 
 /* file system data */
 typedef struct
@@ -128,29 +228,44 @@ typedef struct
 }
 zbx_vmware_fs_t;
 
+typedef struct
+{
+	char		*name;
+	char		*value;
+}
+zbx_vmware_custom_attr_t;
+ZBX_PTR_VECTOR_DECL(vmware_custom_attr, zbx_vmware_custom_attr_t *)
+int	vmware_custom_attr_compare_name(const void *a1, const void *a2);
+
 /* the vmware virtual machine data */
 typedef struct
 {
-	char			*uuid;
-	char			*id;
-	char			**props;
-	zbx_vector_ptr_t	devs;
-	zbx_vector_ptr_t	file_systems;
+	char				*uuid;
+	char				*id;
+	char				**props;
+	zbx_vector_ptr_t		devs;
+	zbx_vector_ptr_t		file_systems;
+	unsigned int			snapshot_count;
+	zbx_vector_vmware_custom_attr_t	custom_attrs;
+	zbx_vector_str_t		alarm_ids;
 }
 zbx_vmware_vm_t;
 
 /* the vmware hypervisor data */
 typedef struct
 {
-	char			*uuid;
-	char			*id;
-	char			*clusterid;
-	char			*datacenter_name;
-	char			*parent_name;
-	char			*parent_type;
-	char			**props;
-	zbx_vector_str_t	ds_names;
-	zbx_vector_ptr_t	vms;
+	char				*uuid;
+	char				*id;
+	char				*clusterid;
+	char				*datacenter_name;
+	char				*parent_name;
+	char				*parent_type;
+	char				*ip;
+	char				**props;
+	zbx_vector_vmware_dsname_t	dsnames;
+	zbx_vector_ptr_t		vms;
+	zbx_vector_vmware_pnic_t	pnics;
+	zbx_vector_str_t		alarm_ids;
 }
 zbx_vmware_hv_t;
 
@@ -165,18 +280,33 @@ zbx_vmware_vm_index_t;
 /* the vmware cluster data */
 typedef struct
 {
-	char	*id;
-	char	*name;
-	char	*status;
+	char			*id;
+	char			*name;
+	char			*status;
+	zbx_vector_str_t	alarm_ids;
 }
 zbx_vmware_cluster_t;
+
+/* the vmware resource pool data */
+typedef struct
+{
+	char			*id;
+	char			*parentid;
+	char			*path;
+	zbx_uint64_t		vm_num;
+}
+zbx_vmware_resourcepool_t;
+
+int	vmware_resourcepool_compare_id(const void *r1, const void *r2);
+ZBX_PTR_VECTOR_DECL(vmware_resourcepool, zbx_vmware_resourcepool_t *)
 
 /* the vmware eventlog state */
 typedef struct
 {
 	zbx_uint64_t	last_key;	/* lastlogsize when vmware.eventlog[] item was polled last time */
 	unsigned char	skip_old;	/* skip old event log records */
-
+	unsigned char	oom;		/* no enough memory to store new events */
+	zbx_uint64_t	req_sz;		/* memory size required to store events */
 }
 zbx_vmware_eventlog_state_t;
 
@@ -194,14 +324,111 @@ typedef struct
 {
 	char	*error;
 
-	zbx_hashset_t			hvs;
-	zbx_hashset_t			vms_index;
-	zbx_vector_ptr_t		clusters;
-	zbx_vector_ptr_t		events;			/* vector of pointers to zbx_vmware_event_t structures */
-	int				max_query_metrics;	/* max count of Datastore perfCounters in one request */
-	zbx_vector_vmware_datastore_t	datastores;
+	zbx_hashset_t				hvs;
+	zbx_hashset_t				vms_index;
+	zbx_vector_ptr_t			clusters;
+	zbx_vector_ptr_t			events;			/* vector of pointers to zbx_vmware_event_t structures */
+	int					max_query_metrics;	/* max count of Datastore perfCounters in one request */
+	zbx_vector_vmware_datastore_t		datastores;
+	zbx_vector_vmware_datacenter_t		datacenters;
+	zbx_vector_vmware_resourcepool_t	resourcepools;
+	zbx_vector_vmware_dvswitch_t		dvswitches;
+	zbx_vector_vmware_alarm_t		alarms;
+	zbx_vector_str_t			alarm_ids;
 }
 zbx_vmware_data_t;
+
+typedef enum
+{
+	VMWARE_OBJECT_PROPERTY,
+	VMWARE_DVSWITCH_FETCH_DV_PORTS
+}
+zbx_vmware_custom_query_type_t;
+
+typedef struct
+{
+	char	*name;
+	char	*value;
+}
+zbx_vmware_custquery_param_t;
+ZBX_PTR_VECTOR_DECL(custquery_param, zbx_vmware_custquery_param_t)
+void	zbx_vmware_cq_param_free(zbx_vmware_custquery_param_t cq_param);
+
+/* the vmware custom request */
+typedef struct
+{
+	/* entity type: HostSystem, VirtualMachine etc */
+	char				*soap_type;
+
+	/* queried object id: host-18, vm-15 etc */
+	char				*id;
+
+	/* id of query: "summary.totalMemory" etc */
+	char				*key;
+
+	/* the mode of output value for custom query */
+	char				*mode;
+
+	/* the type of query OBJECT or DVSWITCH */
+	zbx_vmware_custom_query_type_t	query_type;
+
+	/* the fields name and values of query */
+	zbx_vector_custquery_param_t	*query_params;
+
+	/* timestamp when the entity was pooled last time */
+	time_t				last_pooled;
+
+	/* the result of query */
+	char				*value;
+
+#define ZBX_VMWARE_CQ_NEW	0
+#define ZBX_VMWARE_CQ_READY	1
+#define ZBX_VMWARE_CQ_ERROR	2
+#define ZBX_VMWARE_CQ_PAUSED	4
+#define ZBX_VMWARE_CQ_SEPARATE	8
+	/* the state of query */
+	unsigned char			state;
+
+	/* error information */
+	char				*error;
+}
+zbx_vmware_cust_query_t;
+
+/* the vmware tags data */
+typedef struct
+{
+	char	*name;
+	char	*description;
+	char	*category;
+	char	*id;
+}
+zbx_vmware_tag_t;
+ZBX_PTR_VECTOR_DECL(vmware_tag, zbx_vmware_tag_t *)
+
+/* the vmware tags data for entity (hv, vm etc) */
+typedef struct
+{
+	char	*id;
+	char	*type;
+}
+zbx_vmware_obj_id_t;
+
+typedef struct
+{
+	char			*uuid;
+	zbx_vmware_obj_id_t	*obj_id;
+	char			*error;
+	zbx_vector_vmware_tag_t	tags;
+}
+zbx_vmware_entity_tags_t;
+ZBX_PTR_VECTOR_DECL(vmware_entity_tags, zbx_vmware_entity_tags_t *)
+
+typedef struct
+{
+	char				*error;
+	zbx_vector_vmware_entity_tags_t	entity_tags;
+}
+zbx_vmware_data_tags_t;
 
 /* the vmware service data */
 typedef struct
@@ -217,7 +444,6 @@ typedef struct
 	int				state;
 
 	int				lastcheck;
-	int				lastperfcheck;
 
 	/* The last vmware service access time. If a service is not accessed for a day it is removed */
 	int				lastaccess;
@@ -225,10 +451,14 @@ typedef struct
 	/* the vmware service instance version */
 	char				*version;
 
+	/* the vmware service instance version numeric */
+	unsigned short			major_version;
+	unsigned short			minor_version;
+
 	/* the vmware service instance fullname */
 	char				*fullname;
 
-	/* the performance counters */
+	/* the performance counters dictionary */
 	zbx_hashset_t			counters;
 
 	/* list of entities to monitor with performance counters */
@@ -239,6 +469,15 @@ typedef struct
 
 	/* lastlogsize when vmware.eventlog[] item was polled last time and skip old flag*/
 	zbx_vmware_eventlog_state_t	eventlog;
+
+	/* list of custom queries to monitor */
+	zbx_hashset_t			cust_queries;
+
+	/* linked jobs count */
+	int				jobs_num;
+
+	/* the vmware entity (vm, hv etc) and linked tags */
+	zbx_vmware_data_tags_t		data_tags;
 }
 zbx_vmware_service_t;
 
@@ -250,8 +489,22 @@ typedef struct
 {
 	zbx_vector_ptr_t	services;
 	zbx_hashset_t		strpool;
+	zbx_uint64_t		strpool_sz;
+	zbx_binary_heap_t	jobs_queue;
 }
 zbx_vmware_t;
+
+typedef struct
+{
+	int			nextcheck;
+#define ZBX_VMWARE_UPDATE_CONF		1
+#define ZBX_VMWARE_UPDATE_PERFCOUNTERS	2
+#define ZBX_VMWARE_UPDATE_REST_TAGS	3
+	int			type;
+	int			expired;
+	zbx_vmware_service_t	*service;
+}
+zbx_vmware_job_t;
 
 /* the vmware collector statistics */
 typedef struct
@@ -270,16 +523,34 @@ void	zbx_vmware_lock(void);
 void	zbx_vmware_unlock(void);
 
 int	zbx_vmware_get_statistics(zbx_vmware_stats_t *stats);
+char	*zbx_vmware_get_vm_resourcepool_path(zbx_vector_vmware_resourcepool_t *rp, char *id);
 
 #if defined(HAVE_LIBXML2) && defined(HAVE_LIBCURL)
 
+int	zbx_vmware_service_update(zbx_vmware_service_t *service);
+int	zbx_vmware_service_update_perf(zbx_vmware_service_t *service);
+int	zbx_vmware_service_update_tags(zbx_vmware_service_t *service);
+void	zbx_vmware_service_remove(zbx_vmware_service_t *service);
+void	zbx_vmware_job_create(zbx_vmware_t *vmw, zbx_vmware_service_t *service, int job_type);
+int	zbx_vmware_job_remove(zbx_vmware_job_t *job);
+void	zbx_vmware_shared_tags_error_set(const char *error, zbx_vmware_data_tags_t *data_tags);
+void	zbx_vmware_shared_tags_replace(const zbx_vector_vmware_entity_tags_t *src,
+		zbx_vector_vmware_entity_tags_t *dst);
+
 zbx_vmware_service_t	*zbx_vmware_get_service(const char* url, const char* username, const char* password);
 
-int	zbx_vmware_service_get_counterid(zbx_vmware_service_t *service, const char *path, zbx_uint64_t *counterid);
+int	zbx_vmware_service_get_counterid(zbx_vmware_service_t *service, const char *path, zbx_uint64_t *counterid,
+		int *unit);
 int	zbx_vmware_service_add_perf_counter(zbx_vmware_service_t *service, const char *type, const char *id,
 		zbx_uint64_t counterid, const char *instance);
 zbx_vmware_perf_entity_t	*zbx_vmware_service_get_perf_entity(zbx_vmware_service_t *service, const char *type,
 		const char *id);
+
+zbx_vmware_cust_query_t *zbx_vmware_service_add_cust_query(zbx_vmware_service_t *service, const char *type,
+		const char *id, const char *key, zbx_vmware_custom_query_type_t query_type, const char *mode,
+		zbx_vector_custquery_param_t *query_params);
+zbx_vmware_cust_query_t	*zbx_vmware_service_get_cust_query(zbx_vmware_service_t *service, const char *type,
+		const char *id, const char *key, zbx_vmware_custom_query_type_t query_type, const char *mode);
 
 /* hypervisor properties */
 #define ZBX_VMWARE_HVPROP_OVERALL_CPU_USAGE		0
@@ -298,8 +569,15 @@ zbx_vmware_perf_entity_t	*zbx_vmware_service_get_perf_entity(zbx_vmware_service_
 #define ZBX_VMWARE_HVPROP_VERSION			13
 #define ZBX_VMWARE_HVPROP_NAME				14
 #define ZBX_VMWARE_HVPROP_STATUS			15
+#define ZBX_VMWARE_HVPROP_MAINTENANCE			16
+#define ZBX_VMWARE_HVPROP_SENSOR			17
+#define ZBX_VMWARE_HVPROP_NET_NAME			18
+#define ZBX_VMWARE_HVPROP_PARENT			19
+#define ZBX_VMWARE_HVPROP_CONNECTIONSTATE		20
+#define ZBX_VMWARE_HVPROP_HW_SERIALNUMBER		21
+#define ZBX_VMWARE_HVPROP_HW_SENSOR			22
 
-#define ZBX_VMWARE_HVPROPS_NUM				16
+#define ZBX_VMWARE_HVPROPS_NUM				23
 
 /* virtual machine properties */
 #define ZBX_VMWARE_VMPROP_CPU_NUM			0
@@ -318,8 +596,20 @@ zbx_vmware_perf_entity_t	*zbx_vmware_service_get_perf_entity(zbx_vmware_service_
 #define ZBX_VMWARE_VMPROP_STORAGE_UNSHARED		13
 #define ZBX_VMWARE_VMPROP_STORAGE_UNCOMMITTED		14
 #define ZBX_VMWARE_VMPROP_UPTIME			15
+#define ZBX_VMWARE_VMPROP_IPADDRESS			16
+#define ZBX_VMWARE_VMPROP_GUESTHOSTNAME			17
+#define ZBX_VMWARE_VMPROP_GUESTFAMILY			18
+#define ZBX_VMWARE_VMPROP_GUESTFULLNAME			19
+#define ZBX_VMWARE_VMPROP_FOLDER			20
+#define ZBX_VMWARE_VMPROP_SNAPSHOT			21
+#define ZBX_VMWARE_VMPROP_DATASTOREID			22
+#define ZBX_VMWARE_VMPROP_CONSOLIDATION_NEEDED		23
+#define ZBX_VMWARE_VMPROP_RESOURCEPOOL			24
+#define ZBX_VMWARE_VMPROP_TOOLS_VERSION			25
+#define ZBX_VMWARE_VMPROP_TOOLS_RUNNING_STATUS		26
+#define ZBX_VMWARE_VMPROP_STATE				27
 
-#define ZBX_VMWARE_VMPROPS_NUM				16
+#define ZBX_VMWARE_VMPROPS_NUM				28
 
 /* vmware service types */
 #define ZBX_VMWARE_TYPE_UNKNOWN	0
@@ -330,6 +620,29 @@ zbx_vmware_perf_entity_t	*zbx_vmware_service_get_perf_entity(zbx_vmware_service_
 #define ZBX_VMWARE_SOAP_FOLDER		"Folder"
 #define ZBX_VMWARE_SOAP_CLUSTER		"ClusterComputeResource"
 #define ZBX_VMWARE_SOAP_DEFAULT		"VMware"
+#define ZBX_VMWARE_SOAP_DS		"Datastore"
+#define ZBX_VMWARE_SOAP_HV		"HostSystem"
+#define ZBX_VMWARE_SOAP_VM		"VirtualMachine"
+#define ZBX_VMWARE_SOAP_DC		"Datacenter"
+#define ZBX_VMWARE_SOAP_RESOURCEPOOL	"ResourcePool"
+#define ZBX_VMWARE_SOAP_DVS		"VmwareDistributedVirtualSwitch"
+
+/* Indicates the unit of measure represented by a counter or statistical value */
+#define ZBX_VMWARE_UNIT_UNDEFINED		0
+#define ZBX_VMWARE_UNIT_JOULE			1
+#define ZBX_VMWARE_UNIT_KILOBYTES		2
+#define ZBX_VMWARE_UNIT_KILOBYTESPERSECOND	3
+#define ZBX_VMWARE_UNIT_MEGABYTES		4
+#define ZBX_VMWARE_UNIT_MEGABYTESPERSECOND	5
+#define ZBX_VMWARE_UNIT_MEGAHERTZ		6
+#define ZBX_VMWARE_UNIT_MICROSECOND		7
+#define ZBX_VMWARE_UNIT_MILLISECOND		8
+#define ZBX_VMWARE_UNIT_NUMBER			9
+#define ZBX_VMWARE_UNIT_PERCENT			10
+#define ZBX_VMWARE_UNIT_SECOND			11
+#define ZBX_VMWARE_UNIT_TERABYTES		12
+#define ZBX_VMWARE_UNIT_WATT			13
+#define ZBX_VMWARE_UNIT_CELSIUS			14
 
 #endif	/* defined(HAVE_LIBXML2) && defined(HAVE_LIBCURL) */
 

@@ -1,6 +1,6 @@
 /*
 ** Zabbix
-** Copyright (C) 2001-2020 Zabbix SIA
+** Copyright (C) 2001-2022 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -22,8 +22,9 @@ package serverlistener
 import (
 	"time"
 
+	"git.zabbix.com/ap/plugin-support/log"
+	"zabbix.com/internal/agent"
 	"zabbix.com/internal/agent/scheduler"
-	"zabbix.com/pkg/log"
 )
 
 const notsupported = "ZBX_NOTSUPPORTED"
@@ -41,8 +42,10 @@ func (pc *passiveCheck) formatError(msg string) (data []byte) {
 }
 
 func (pc *passiveCheck) handleCheck(data []byte) {
+	// the timeout is one minute to allow agent connections (with max timeout of 30s) safely execute
+	const timeoutForSinglePassiveChecks = time.Minute
 	// direct passive check timeout is handled by the scheduler
-	s, err := pc.scheduler.PerformTask(string(data), time.Minute)
+	s, err := pc.scheduler.PerformTask(string(data), timeoutForSinglePassiveChecks, agent.PassiveChecksClientID)
 
 	if err != nil {
 		log.Debugf("sending passive check response: %s: '%s' to '%s'", notsupported, err.Error(), pc.conn.Address())

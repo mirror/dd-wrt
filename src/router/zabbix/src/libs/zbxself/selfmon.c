@@ -1,6 +1,6 @@
 /*
 ** Zabbix
-** Copyright (C) 2001-2020 Zabbix SIA
+** Copyright (C) 2001-2022 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -17,12 +17,14 @@
 ** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 **/
 
+#include "selfmon.h"
+
 #include "zbxself.h"
 #include "common.h"
 
 #ifndef _WINDOWS
-#	include "mutexs.h"
-#	include "ipc.h"
+#	include "zbxmutexs.h"
+#	include "zbxnix.h"
 #	include "log.h"
 
 #	define MAX_HISTORY	60
@@ -44,7 +46,7 @@ typedef struct
 	/* the current process state (see ZBX_PROCESS_STATE_* defines) */
 	unsigned char	state;
 }
-zxb_stat_process_cache_t;
+zbx_stat_process_cache_t;
 
 /* process state statistics */
 typedef struct
@@ -59,7 +61,7 @@ typedef struct
 	zbx_uint64_t			counter_used[ZBX_PROCESS_STATE_COUNT];
 
 	/* the process state cache */
-	zxb_stat_process_cache_t	cache;
+	zbx_stat_process_cache_t	cache;
 }
 zbx_stat_process_t;
 
@@ -86,7 +88,6 @@ static int			shm_id;
 static zbx_mutex_t	sm_lock = ZBX_MUTEX_NULL;
 #endif
 
-extern char	*CONFIG_FILE;
 extern int	CONFIG_POLLER_FORKS;
 extern int	CONFIG_UNREACHABLE_POLLER_FORKS;
 extern int	CONFIG_IPMIPOLLER_FORKS;
@@ -118,21 +119,22 @@ extern int	CONFIG_PREPROCESSOR_FORKS;
 extern int	CONFIG_LLDMANAGER_FORKS;
 extern int	CONFIG_LLDWORKER_FORKS;
 extern int	CONFIG_ALERTDB_FORKS;
+extern int	CONFIG_HISTORYPOLLER_FORKS;
+extern int	CONFIG_AVAILMAN_FORKS;
+extern int	CONFIG_SERVICEMAN_FORKS;
+extern int	CONFIG_TRIGGERHOUSEKEEPER_FORKS;
+extern int	CONFIG_ODBCPOLLER_FORKS;
 
-extern unsigned char	process_type;
-extern int		process_num;
+extern ZBX_THREAD_LOCAL unsigned char	process_type;
+extern ZBX_THREAD_LOCAL int		process_num;
 
 /******************************************************************************
  *                                                                            *
- * Function: get_process_type_forks                                           *
- *                                                                            *
  * Purpose: Returns number of processes depending on process type             *
  *                                                                            *
- * Parameters: process_type - [IN] process type; ZBX_PROCESS_TYPE_*           *
+ * Parameters: proc_type - [IN] process type; ZBX_PROCESS_TYPE_*              *
  *                                                                            *
  * Return value: number of processes                                          *
- *                                                                            *
- * Author: Alexander Vladishev                                                *
  *                                                                            *
  ******************************************************************************/
 int	get_process_type_forks(unsigned char proc_type)
@@ -201,28 +203,32 @@ int	get_process_type_forks(unsigned char proc_type)
 			return CONFIG_LLDWORKER_FORKS;
 		case ZBX_PROCESS_TYPE_ALERTSYNCER:
 			return CONFIG_ALERTDB_FORKS;
+		case ZBX_PROCESS_TYPE_HISTORYPOLLER:
+			return CONFIG_HISTORYPOLLER_FORKS;
+		case ZBX_PROCESS_TYPE_AVAILMAN:
+			return CONFIG_AVAILMAN_FORKS;
+		case ZBX_PROCESS_TYPE_SERVICEMAN:
+			return CONFIG_SERVICEMAN_FORKS;
+		case ZBX_PROCESS_TYPE_TRIGGERHOUSEKEEPER:
+			return CONFIG_TRIGGERHOUSEKEEPER_FORKS;
+		case ZBX_PROCESS_TYPE_ODBCPOLLER:
+			return CONFIG_ODBCPOLLER_FORKS;
 	}
 
-	THIS_SHOULD_NEVER_HAPPEN;
-	exit(EXIT_FAILURE);
+	return get_component_process_type_forks(proc_type);
 }
 
 #ifndef _WINDOWS
 /******************************************************************************
  *                                                                            *
- * Function: init_selfmon_collector                                           *
- *                                                                            *
  * Purpose: Initialize structures and prepare state                           *
  *          for self-monitoring collector                                     *
- *                                                                            *
- * Author: Alexander Vladishev                                                *
  *                                                                            *
  ******************************************************************************/
 int	init_selfmon_collector(char **error)
 {
 	size_t		sz, sz_array, sz_process[ZBX_PROCESS_TYPE_COUNT], sz_total;
 	char		*p;
-	struct tms	buf;
 	unsigned char	proc_type;
 	int		proc_num, process_forks, ret = FAIL;
 
@@ -261,12 +267,7 @@ int	init_selfmon_collector(char **error)
 	collector = (zbx_selfmon_collector_t *)p; p += sz;
 	collector->process = (zbx_stat_process_t **)p; p += sz_array;
 	collector->ticks_per_sec = sysconf(_SC_CLK_TCK);
-
-	if (-1 == (collector->ticks_sync = times(&buf)))
-	{
-		*error = zbx_dsprintf(*error, "cannot get process times: %s", zbx_strerror(errno));
-		exit(EXIT_FAILURE);
-	}
+	collector->ticks_sync = 0;
 
 	for (proc_type = 0; ZBX_PROCESS_TYPE_COUNT > proc_type; proc_type++)
 	{
@@ -276,9 +277,7 @@ int	init_selfmon_collector(char **error)
 		process_forks = get_process_type_forks(proc_type);
 		for (proc_num = 0; proc_num < process_forks; proc_num++)
 		{
-			collector->process[proc_type][proc_num].cache.ticks = collector->ticks_sync;
-			collector->process[proc_type][proc_num].cache.state = ZBX_PROCESS_STATE_BUSY;
-			collector->process[proc_type][proc_num].cache.ticks_flush = collector->ticks_sync;
+			collector->process[proc_type][proc_num].cache.state = ZBX_PROCESS_STATE_IDLE;
 		}
 	}
 
@@ -291,11 +290,7 @@ out:
 
 /******************************************************************************
  *                                                                            *
- * Function: free_selfmon_collector                                           *
- *                                                                            *
  * Purpose: Free memory allocated for self-monitoring collector               *
- *                                                                            *
- * Author: Alexander Vladishev                                                *
  *                                                                            *
  ******************************************************************************/
 void	free_selfmon_collector(void)
@@ -307,13 +302,8 @@ void	free_selfmon_collector(void)
 
 	LOCK_SM;
 
+	(void)shmdt(collector);
 	collector = NULL;
-
-	if (-1 == shmctl(shm_id, IPC_RMID, 0))
-	{
-		zabbix_log(LOG_LEVEL_WARNING, "cannot remove shared memory for self-monitoring collector: %s",
-				zbx_strerror(errno));
-	}
 
 	UNLOCK_SM;
 
@@ -324,11 +314,7 @@ void	free_selfmon_collector(void)
 
 /******************************************************************************
  *                                                                            *
- * Function: update_selfmon_counter                                           *
- *                                                                            *
  * Parameters: state - [IN] new process state; ZBX_PROCESS_STATE_*            *
- *                                                                            *
- * Author: Alexander Vladishev                                                *
  *                                                                            *
  ******************************************************************************/
 void	update_selfmon_counter(unsigned char state)
@@ -347,6 +333,14 @@ void	update_selfmon_counter(unsigned char state)
 	{
 		zabbix_log(LOG_LEVEL_WARNING, "cannot get process times: %s", zbx_strerror(errno));
 		process->cache.state = state;
+		return;
+	}
+
+	if (0 == process->cache.ticks_flush)
+	{
+		process->cache.ticks_flush = ticks;
+		process->cache.state = state;
+		process->cache.ticks = ticks;
 		return;
 	}
 
@@ -385,13 +379,6 @@ void	update_selfmon_counter(unsigned char state)
 	process->cache.ticks = ticks;
 }
 
-/******************************************************************************
- *                                                                            *
- * Function: collect_selfmon_stats                                            *
- *                                                                            *
- * Author: Alexander Vladishev                                                *
- *                                                                            *
- ******************************************************************************/
 void	collect_selfmon_stats(void)
 {
 	zbx_stat_process_t	*process;
@@ -401,6 +388,18 @@ void	collect_selfmon_stats(void)
 	int			proc_num, process_forks, index, last;
 
 	zabbix_log(LOG_LEVEL_DEBUG, "In %s()", __func__);
+
+	if (-1 == (ticks = times(&buf)))
+	{
+		zabbix_log(LOG_LEVEL_WARNING, "cannot get process times: %s", zbx_strerror(errno));
+		goto out;
+	}
+
+	if (0 == collector->ticks_sync)
+	{
+		collector->ticks_sync = ticks;
+		goto out;
+	}
 
 	if (MAX_HISTORY <= (index = collector->first + collector->count))
 		index -= MAX_HISTORY;
@@ -414,12 +413,6 @@ void	collect_selfmon_stats(void)
 		last += MAX_HISTORY;
 
 	LOCK_SM;
-
-	if (-1 == (ticks = times(&buf)))
-	{
-		zabbix_log(LOG_LEVEL_WARNING, "cannot get process times: %s", zbx_strerror(errno));
-		goto unlock;
-	}
 
 	ticks_done = ticks - collector->ticks_sync;
 
@@ -454,15 +447,13 @@ void	collect_selfmon_stats(void)
 	}
 
 	collector->ticks_sync = ticks;
-unlock:
-	UNLOCK_SM;
 
+	UNLOCK_SM;
+out:
 	zabbix_log(LOG_LEVEL_DEBUG, "End of %s()", __func__);
 }
 
 /******************************************************************************
- *                                                                            *
- * Function: get_selfmon_stats                                                *
  *                                                                            *
  * Purpose: calculate statistics for selected process                         *
  *                                                                            *
@@ -474,11 +465,9 @@ unlock:
  *             value        - [OUT] a pointer to a variable that receives     *
  *                                  requested statistics                      *
  *                                                                            *
- * Author: Alexander Vladishev                                                *
- *                                                                            *
  ******************************************************************************/
-void	get_selfmon_stats(unsigned char proc_type, unsigned char aggr_func, int proc_num,
-		unsigned char state, double *value)
+void	get_selfmon_stats(unsigned char proc_type, unsigned char aggr_func, int proc_num, unsigned char state,
+		double *value)
 {
 	unsigned int	total = 0, counter = 0;
 	unsigned char	s;
@@ -514,14 +503,18 @@ void	get_selfmon_stats(unsigned char proc_type, unsigned char aggr_func, int pro
 	for (; proc_num < process_forks; proc_num++)
 	{
 		zbx_stat_process_t	*process;
-		unsigned short		one_total = 0, one_counter;
+		unsigned int		one_total = 0, one_counter;
 
 		process = &collector->process[proc_type][proc_num];
 
 		for (s = 0; s < ZBX_PROCESS_STATE_COUNT; s++)
-			one_total += process->h_counter[s][current] - process->h_counter[s][collector->first];
+		{
+			one_total += (unsigned short)(process->h_counter[s][current] -
+					process->h_counter[s][collector->first]);
+		}
 
-		one_counter = process->h_counter[state][current] - process->h_counter[state][collector->first];
+		one_counter = (unsigned short)(process->h_counter[state][current] -
+				process->h_counter[state][collector->first]);
 
 		switch (aggr_func)
 		{
@@ -557,8 +550,6 @@ unlock:
 
 /******************************************************************************
  *                                                                            *
- * Function: zbx_get_all_process_stats                                        *
- *                                                                            *
  * Purpose: retrieves internal metrics of all running processes based on      *
  *          process type                                                      *
  *                                                                            *
@@ -592,19 +583,22 @@ int	zbx_get_all_process_stats(zbx_process_info_t *stats)
 		for (proc_num = 0; proc_num < stats[proc_type].count; proc_num++)
 		{
 			zbx_stat_process_t	*process;
-			unsigned short		one_total = 0, busy_counter, idle_counter;
+			unsigned int		one_total = 0, busy_counter, idle_counter;
 			unsigned char		s;
 
 			process = &collector->process[proc_type][proc_num];
 
 			for (s = 0; s < ZBX_PROCESS_STATE_COUNT; s++)
-				one_total += process->h_counter[s][current] - process->h_counter[s][collector->first];
+			{
+				one_total += (unsigned short)(process->h_counter[s][current] -
+						process->h_counter[s][collector->first]);
+			}
 
-			busy_counter = process->h_counter[ZBX_PROCESS_STATE_BUSY][current] -
-					process->h_counter[ZBX_PROCESS_STATE_BUSY][collector->first];
+			busy_counter = (unsigned short)(process->h_counter[ZBX_PROCESS_STATE_BUSY][current] -
+					process->h_counter[ZBX_PROCESS_STATE_BUSY][collector->first]);
 
-			idle_counter = process->h_counter[ZBX_PROCESS_STATE_IDLE][current] -
-					process->h_counter[ZBX_PROCESS_STATE_IDLE][collector->first];
+			idle_counter = (unsigned short)(process->h_counter[ZBX_PROCESS_STATE_IDLE][current] -
+					process->h_counter[ZBX_PROCESS_STATE_IDLE][collector->first]);
 
 			total_avg += one_total;
 			counter_avg_busy += busy_counter;
@@ -657,13 +651,9 @@ static int	sleep_remains;
 
 /******************************************************************************
  *                                                                            *
- * Function: zbx_sleep_loop                                                   *
- *                                                                            *
  * Purpose: sleeping process                                                  *
  *                                                                            *
  * Parameters: sleeptime - [IN] required sleeptime, in seconds                *
- *                                                                            *
- * Author: Alexander Vladishev                                                *
  *                                                                            *
  ******************************************************************************/
 void	zbx_sleep_loop(int sleeptime)
@@ -680,21 +670,6 @@ void	zbx_sleep_loop(int sleeptime)
 		sleep(1);
 	}
 	while (0 < --sleep_remains);
-
-	update_selfmon_counter(ZBX_PROCESS_STATE_BUSY);
-}
-
-void	zbx_sleep_forever(void)
-{
-	sleep_remains = 1;
-
-	update_selfmon_counter(ZBX_PROCESS_STATE_IDLE);
-
-	do
-	{
-		sleep(1);
-	}
-	while (0 != sleep_remains);
 
 	update_selfmon_counter(ZBX_PROCESS_STATE_BUSY);
 }

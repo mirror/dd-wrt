@@ -1,6 +1,6 @@
 /*
 ** Zabbix
-** Copyright (C) 2001-2020 Zabbix SIA
+** Copyright (C) 2001-2022 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -104,6 +104,7 @@ do									\
 }									\
 while (0)
 
+/* AR_META is always excluded */
 #define UNSET_RESULT_EXCLUDING(res, exc_type) 					\
 										\
 do										\
@@ -164,6 +165,10 @@ extern int	CONFIG_UNSAFE_USER_PARAMETERS;
 #define ZBX_PROC_STAT_DISK	4
 #define ZBX_PROC_STAT_TRACE	5
 
+#define ZBX_PROC_MODE_PROCESS	0
+#define ZBX_PROC_MODE_THREAD	1
+#define ZBX_PROC_MODE_SUMMARY	2
+
 #define ZBX_DO_SUM		0
 #define ZBX_DO_MAX		1
 #define ZBX_DO_MIN		2
@@ -192,13 +197,33 @@ int	get_diskstat(const char *devname, zbx_uint64_t *dstat);
 #define PROCESS_MODULE_COMMAND	0x2
 #define PROCESS_WITH_ALIAS	0x4
 
+typedef enum
+{
+	ZBX_KEY_ACCESS_ALLOW,
+	ZBX_KEY_ACCESS_DENY
+}
+zbx_key_access_rule_type_t;
+
 void	init_metrics(void);
 int	add_metric(ZBX_METRIC *metric, char *error, size_t max_error_len);
+int	add_metric_local(ZBX_METRIC *metric, char *error, size_t max_error_len);
+void	free_metrics_ext(ZBX_METRIC **metrics);
 void	free_metrics(void);
+
+void	init_key_access_rules(void);
+void	finalize_key_access_rules_configuration(void);
+int	add_key_access_rule(const char *parameter, char *pattern, zbx_key_access_rule_type_t type);
+int	check_key_access_rules(const char *metric);
+int	check_request_access_rules(AGENT_REQUEST *request);
+void	free_key_access_rules(void);
 
 int	process(const char *in_command, unsigned flags, AGENT_RESULT *result);
 
-int	add_user_parameter(const char *key, char *command, char *error, size_t max_error_len);
+void	set_user_parameter_dir(const char *path);
+int	add_user_parameter(const char *itemkey, char *command, char *error, size_t max_error_len);
+void	remove_user_parameters(void);
+void	get_metrics_copy(ZBX_METRIC **metrics);
+void	set_metrics(ZBX_METRIC *metrics);
 int	add_user_module(const char *key, int (*function)(void));
 void	test_parameters(void);
 void	test_parameter(const char *key);
@@ -227,11 +252,13 @@ zbx_uint64_t	get_kstat_numeric_value(const kstat_named_t *kn);
 int	GET_SENSOR(AGENT_REQUEST *request, AGENT_RESULT *result);
 int	KERNEL_MAXFILES(AGENT_REQUEST *request, AGENT_RESULT *result);
 int	KERNEL_MAXPROC(AGENT_REQUEST *request, AGENT_RESULT *result);
+int	KERNEL_OPENFILES(AGENT_REQUEST *request, AGENT_RESULT *result);
 
 #ifdef ZBX_PROCSTAT_COLLECTOR
 int	PROC_CPU_UTIL(AGENT_REQUEST *request, AGENT_RESULT *result);
 #endif
 
+int	PROC_GET(AGENT_REQUEST *request, AGENT_RESULT *result);
 int	PROC_MEM(AGENT_REQUEST *request, AGENT_RESULT *result);
 int	PROC_NUM(AGENT_REQUEST *request, AGENT_RESULT *result);
 int	NET_IF_IN(AGENT_REQUEST *request, AGENT_RESULT *result);
@@ -240,7 +267,9 @@ int	NET_IF_TOTAL(AGENT_REQUEST *request, AGENT_RESULT *result);
 int	NET_IF_COLLISIONS(AGENT_REQUEST *request, AGENT_RESULT *result);
 int	NET_IF_DISCOVERY(AGENT_REQUEST *request, AGENT_RESULT *result);
 int	NET_TCP_LISTEN(AGENT_REQUEST *request, AGENT_RESULT *result);
+int	NET_TCP_SOCKET_COUNT(AGENT_REQUEST *request, AGENT_RESULT *result);
 int	NET_UDP_LISTEN(AGENT_REQUEST *request, AGENT_RESULT *result);
+int	NET_UDP_SOCKET_COUNT(AGENT_REQUEST *request, AGENT_RESULT *result);
 int	SYSTEM_CPU_SWITCHES(AGENT_REQUEST *request, AGENT_RESULT *result);
 int	SYSTEM_CPU_INTR(AGENT_REQUEST *request, AGENT_RESULT *result);
 int	SYSTEM_CPU_LOAD(AGENT_REQUEST *request, AGENT_RESULT *result);
@@ -274,6 +303,8 @@ int	VM_MEMORY_SIZE(AGENT_REQUEST *request, AGENT_RESULT *result);
 int	USER_PERF_COUNTER(AGENT_REQUEST *request, AGENT_RESULT *result);
 int	PERF_COUNTER(AGENT_REQUEST *request, AGENT_RESULT *result);
 int	PERF_COUNTER_EN(AGENT_REQUEST *request, AGENT_RESULT *result);
+int	PERF_INSTANCE_DISCOVERY(AGENT_REQUEST *request, AGENT_RESULT *result);
+int	PERF_INSTANCE_DISCOVERY_EN(AGENT_REQUEST *request, AGENT_RESULT *result);
 int	SERVICE_DISCOVERY(AGENT_REQUEST *request, AGENT_RESULT *result);
 int	SERVICE_INFO(AGENT_REQUEST *request, AGENT_RESULT *result);
 int	SERVICE_STATE(AGENT_REQUEST *request, AGENT_RESULT *result);
@@ -283,6 +314,8 @@ int	NET_IF_LIST(AGENT_REQUEST *request, AGENT_RESULT *result);
 int	WMI_GET(AGENT_REQUEST *request, AGENT_RESULT *result);
 int	WMI_GETALL(AGENT_REQUEST *request, AGENT_RESULT *result);
 int	VM_VMEMORY_SIZE(AGENT_REQUEST *request, AGENT_RESULT *result);
+int	REGISTRY_DATA(AGENT_REQUEST *request, AGENT_RESULT *result);
+int	REGISTRY_GET(AGENT_REQUEST *request, AGENT_RESULT *result);
 #endif
 
 #ifdef _AIX
@@ -323,10 +356,12 @@ zbx_mpoint_t;
 
 #define ZBX_LLD_MACRO_FSNAME		"{#FSNAME}"
 #define ZBX_LLD_MACRO_FSTYPE		"{#FSTYPE}"
+#define ZBX_LLD_MACRO_FSLABEL		"{#FSLABEL}"
 #define ZBX_LLD_MACRO_FSDRIVETYPE	"{#FSDRIVETYPE}"
 
 #define ZBX_SYSINFO_TAG_FSNAME			"fsname"
 #define ZBX_SYSINFO_TAG_FSTYPE			"fstype"
+#define ZBX_SYSINFO_TAG_FSLABEL			"fslabel"
 #define ZBX_SYSINFO_TAG_FSDRIVETYPE		"fsdrivetype"
 #define ZBX_SYSINFO_TAG_BYTES			"bytes"
 #define ZBX_SYSINFO_TAG_INODES			"inodes"
@@ -335,6 +370,23 @@ zbx_mpoint_t;
 #define ZBX_SYSINFO_TAG_USED			"used"
 #define ZBX_SYSINFO_TAG_PFREE			"pfree"
 #define ZBX_SYSINFO_TAG_PUSED			"pused"
+
+#define ZBX_SYSINFO_FILE_TAG_TYPE		"type"
+#define ZBX_SYSINFO_FILE_TAG_BASENAME		"basename"
+#define ZBX_SYSINFO_FILE_TAG_PATHNAME		"pathname"
+#define ZBX_SYSINFO_FILE_TAG_DIRNAME		"dirname"
+#define ZBX_SYSINFO_FILE_TAG_USER		"user"
+#define ZBX_SYSINFO_FILE_TAG_GROUP		"group"
+#define ZBX_SYSINFO_FILE_TAG_PERMISSIONS	"permissions"
+#define ZBX_SYSINFO_FILE_TAG_SID		"SID"
+#define ZBX_SYSINFO_FILE_TAG_UID		"uid"
+#define ZBX_SYSINFO_FILE_TAG_GID		"gid"
+#define ZBX_SYSINFO_FILE_TAG_SIZE		"size"
+#define ZBX_SYSINFO_FILE_TAG_TIME		"time"
+#define ZBX_SYSINFO_FILE_TAG_TIMESTAMP		"timestamp"
+#define ZBX_SYSINFO_FILE_TAG_TIME_ACCESS	"access"
+#define ZBX_SYSINFO_FILE_TAG_TIME_MODIFY	"modify"
+#define ZBX_SYSINFO_FILE_TAG_TIME_CHANGE	"change"
 
 int	zbx_execute_threaded_metric(zbx_metric_func_t metric_func, AGENT_REQUEST *request, AGENT_RESULT *result);
 void	zbx_mpoints_free(zbx_mpoint_t *mpoint);
@@ -352,5 +404,13 @@ void	zbx_mpoints_free(zbx_mpoint_t *mpoint);
 #define ZBX_MUTEX_LOGGING_DENIED	2
 zbx_uint32_t get_thread_global_mutex_flag(void);
 #endif
+
+#ifndef _WINDOWS
+int	hostname_handle_params(AGENT_REQUEST *request, AGENT_RESULT *result, char *hostname);
+#endif
+
+void		zbx_add_alias(const char *name, const char *value);
+void		zbx_alias_list_free(void);
+const char	*zbx_alias_get(const char *orig);
 
 #endif

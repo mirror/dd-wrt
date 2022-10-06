@@ -1,6 +1,6 @@
 /*
 ** Zabbix
-** Copyright (C) 2001-2020 Zabbix SIA
+** Copyright (C) 2001-2022 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -86,6 +86,8 @@ const int	INTERFACE_TYPE_PRIORITY[INTERFACE_TYPE_COUNT] =
 
 static ZBX_THREAD_LOCAL volatile sig_atomic_t	zbx_timed_out;	/* 0 - no timeout occurred, 1 - SIGALRM took place */
 
+double	ZBX_DOUBLE_EPSILON = 2.22e-16;
+
 #ifdef _WINDOWS
 
 char	ZABBIX_SERVICE_NAME[ZBX_SERVICE_NAME_LEN] = APPLICATION_NAME;
@@ -124,15 +126,9 @@ out:
 
 /******************************************************************************
  *                                                                            *
- * Function: get_program_name                                                 *
- *                                                                            *
  * Purpose: return program name without path                                  *
  *                                                                            *
- * Parameters: path                                                           *
- *                                                                            *
  * Return value: program name without path                                    *
- *                                                                            *
- * Author: Eugene Grigorjev                                                   *
  *                                                                            *
  ******************************************************************************/
 const char	*get_program_name(const char *path)
@@ -150,11 +146,7 @@ const char	*get_program_name(const char *path)
 
 /******************************************************************************
  *                                                                            *
- * Function: zbx_timespec                                                     *
- *                                                                            *
  * Purpose: Gets the current time.                                            *
- *                                                                            *
- * Author: Alexander Vladishev                                                *
  *                                                                            *
  * Comments: Time in seconds since midnight (00:00:00),                       *
  *           January 1, 1970, coordinated universal time (UTC).               *
@@ -273,13 +265,9 @@ void	zbx_timespec(zbx_timespec_t *ts)
 
 /******************************************************************************
  *                                                                            *
- * Function: zbx_time                                                         *
- *                                                                            *
  * Purpose: Gets the current time.                                            *
  *                                                                            *
  * Return value: Time in seconds                                              *
- *                                                                            *
- * Author: Eugene Grigorjev                                                   *
  *                                                                            *
  * Comments: Time in seconds since midnight (00:00:00),                       *
  *           January 1, 1970, coordinated universal time (UTC).               *
@@ -296,13 +284,9 @@ double	zbx_time(void)
 
 /******************************************************************************
  *                                                                            *
- * Function: zbx_current_time                                                 *
- *                                                                            *
  * Purpose: Gets the current time including UTC offset                        *
  *                                                                            *
  * Return value: Time in seconds                                              *
- *                                                                            *
- * Author: Eugene Grigorjev                                                   *
  *                                                                            *
  ******************************************************************************/
 double	zbx_current_time(void)
@@ -312,20 +296,16 @@ double	zbx_current_time(void)
 
 /******************************************************************************
  *                                                                            *
- * Function: is_leap_year                                                     *
- *                                                                            *
  * Return value:  SUCCEED - year is a leap year                               *
  *                FAIL    - year is not a leap year                           *
  *                                                                            *
  ******************************************************************************/
-static int	is_leap_year(int year)
+int	zbx_is_leap_year(int year)
 {
 	return 0 == year % 4 && (0 != year % 100 || 0 == year % 400) ? SUCCEED : FAIL;
 }
 
 /******************************************************************************
- *                                                                            *
- * Function: zbx_get_time                                                     *
  *                                                                            *
  * Purpose:                                                                   *
  *     get current time and store it in memory locations provided by caller   *
@@ -361,39 +341,108 @@ void	zbx_get_time(struct tm *tm, long *milliseconds, zbx_timezone_t *tz)
 #endif
 	if (NULL != tz)
 	{
-#ifdef HAVE_TM_TM_GMTOFF
-#	define ZBX_UTC_OFF	tm->tm_gmtoff
-#else
-#	define ZBX_UTC_OFF	offset
-		long		offset;
-		struct tm	tm_utc;
+		long	offset;
 #if defined(_WINDOWS) || defined(__MINGW32__)
-		tm_utc = *gmtime(&current_time.time);	/* gmtime() cannot return NULL if called with valid parameter */
+		offset = zbx_get_timezone_offset(current_time.time, tm);
 #else
-		gmtime_r(&current_time.tv_sec, &tm_utc);
+		offset = zbx_get_timezone_offset(current_time.tv_sec, tm);
 #endif
-		offset = (tm->tm_yday - tm_utc.tm_yday) * SEC_PER_DAY + (tm->tm_hour - tm_utc.tm_hour) * SEC_PER_HOUR +
-				(tm->tm_min - tm_utc.tm_min) * SEC_PER_MIN;	/* assuming seconds are equal */
-
-		while (tm->tm_year > tm_utc.tm_year)
-			offset += (SUCCEED == is_leap_year(tm_utc.tm_year++) ? SEC_PER_YEAR + SEC_PER_DAY : SEC_PER_YEAR);
-
-		while (tm->tm_year < tm_utc.tm_year)
-			offset -= (SUCCEED == is_leap_year(--tm_utc.tm_year) ? SEC_PER_YEAR + SEC_PER_DAY : SEC_PER_YEAR);
-#endif
-		tz->tz_sign = (0 <= ZBX_UTC_OFF ? '+' : '-');
-		tz->tz_hour = labs(ZBX_UTC_OFF) / SEC_PER_HOUR;
-		tz->tz_min = (labs(ZBX_UTC_OFF) - tz->tz_hour * SEC_PER_HOUR) / SEC_PER_MIN;
+		tz->tz_sign = (0 <= offset ? '+' : '-');
+		tz->tz_hour = labs(offset) / SEC_PER_HOUR;
+		tz->tz_min = (labs(offset) - tz->tz_hour * SEC_PER_HOUR) / SEC_PER_MIN;
 		/* assuming no remaining seconds like in historic Asia/Riyadh87, Asia/Riyadh88 and Asia/Riyadh89 */
-#undef ZBX_UTC_OFF
 	}
 }
 
 /******************************************************************************
  *                                                                            *
- * Function: zbx_utc_time                                                     *
+ * Purpose: get time offset from UTC                                          *
  *                                                                            *
- * Purpose: get UTC time from time from broken down time elements             *
+ * Parameters: t  - [IN] input time to calculate offset with                  *
+ *             tm - [OUT] broken-down representation of the current time      *
+ *                                                                            *
+ * Return value: Time offset from UTC in seconds                              *
+ *                                                                            *
+ ******************************************************************************/
+long	zbx_get_timezone_offset(time_t t, struct tm *tm)
+{
+	long		offset;
+#ifndef HAVE_TM_TM_GMTOFF
+	struct tm	tm_utc;
+#endif
+
+	*tm = *localtime(&t);
+
+#ifdef HAVE_TM_TM_GMTOFF
+	offset = tm->tm_gmtoff;
+#else
+#if defined(_WINDOWS) || defined(__MINGW32__)
+	tm_utc = *gmtime(&t);
+#else
+	gmtime_r(&t, &tm_utc);
+#endif
+	offset = (tm->tm_yday - tm_utc.tm_yday) * SEC_PER_DAY +
+			(tm->tm_hour - tm_utc.tm_hour) * SEC_PER_HOUR +
+			(tm->tm_min - tm_utc.tm_min) * SEC_PER_MIN;	/* assuming seconds are equal */
+
+	while (tm->tm_year > tm_utc.tm_year)
+		offset += (SUCCEED == zbx_is_leap_year(tm_utc.tm_year++) ? SEC_PER_YEAR + SEC_PER_DAY : SEC_PER_YEAR);
+
+	while (tm->tm_year < tm_utc.tm_year)
+		offset -= (SUCCEED == zbx_is_leap_year(--tm_utc.tm_year) ? SEC_PER_YEAR + SEC_PER_DAY : SEC_PER_YEAR);
+#endif
+
+	return offset;
+}
+
+/******************************************************************************
+ *                                                                            *
+ * Purpose: get broken-down representation of the time in specified time zone *
+ *                                                                            *
+ * Parameters: time - [IN] input time                                         *
+ *             tz   - [IN] time zone                                          *
+ *                                                                            *
+ * Return value: broken-down representation of the time in specified time zone*
+ *                                                                            *
+ ******************************************************************************/
+struct tm	*zbx_localtime(const time_t *time, const char *tz)
+{
+#if defined(HAVE_GETENV) && defined(HAVE_PUTENV) && defined(HAVE_UNSETENV) && defined(HAVE_TZSET) && \
+		!defined(_WINDOWS) && !defined(__MINGW32__)
+	char		*old_tz;
+	struct tm	*tm;
+
+	if (NULL == tz || 0 == strcmp(tz, "system"))
+		return localtime(time);
+
+	if (NULL != (old_tz = getenv("TZ")))
+		old_tz = zbx_strdup(NULL, old_tz);
+
+	setenv("TZ", tz, 1);
+
+	tzset();
+	tm = localtime(time);
+
+	if (NULL != old_tz)
+	{
+		setenv("TZ", old_tz, 1);
+		zbx_free(old_tz);
+	}
+	else
+		unsetenv("TZ");
+
+	tzset();
+
+	return tm;
+#else
+	ZBX_UNUSED(tz);
+	return localtime(time);
+#endif
+}
+
+/******************************************************************************
+ *                                                                            *
+ * Purpose: get UTC time from broken down time elements                       *
  *                                                                            *
  * Parameters:                                                                *
  *     year  - [IN] year (1970-...)                                           *
@@ -432,18 +481,14 @@ int	zbx_utc_time(int year, int mon, int mday, int hour, int min, int sec, int *t
 
 /******************************************************************************
  *                                                                            *
- * Function: zbx_day_in_month                                                 *
- *                                                                            *
  * Purpose: returns number of days in a month                                 *
  *                                                                            *
  * Parameters:                                                                *
- *     year  - [IN] year                                                      *
+ *     year  - [IN]                                                           *
  *     mon   - [IN] month (1-12)                                              *
  *                                                                            *
  * Return value: 28-31 depending on number of days in the month, defaults to  *
  *               30 if the month is outside of allowed range                  *
- *                                                                            *
- * Author: Alexander Vladishev                                                *
  *                                                                            *
  ******************************************************************************/
 int	zbx_day_in_month(int year, int mon)
@@ -452,20 +497,35 @@ int	zbx_day_in_month(int year, int mon)
 	static const unsigned char	month[12] = { 31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31 };
 
 	if (1 <= mon && mon <= 12)	/* add one day in February of a leap year */
-		return month[mon - 1] + (2 == mon && SUCCEED == is_leap_year(year) ? 1 : 0);
+		return month[mon - 1] + (2 == mon && SUCCEED == zbx_is_leap_year(year) ? 1 : 0);
 
 	return 30;
 }
 
 /******************************************************************************
  *                                                                            *
- * Function: zbx_calloc2                                                      *
+ * Purpose: get duration in milliseconds since time stamp till current time   *
+ *                                                                            *
+ * Parameters:                                                                *
+ *     ts - [IN] time from when duration should be counted                    *
+ *                                                                            *
+ * Return value: duration in milliseconds since time stamp till current time  *
+ *                                                                            *
+ ******************************************************************************/
+zbx_uint64_t	zbx_get_duration_ms(const zbx_timespec_t *ts)
+{
+	zbx_timespec_t	now;
+
+	zbx_timespec(&now);
+
+	return (now.sec - ts->sec) * 1e3 + (now.ns - ts->ns) / 1e6;
+}
+
+/******************************************************************************
  *                                                                            *
  * Purpose: allocates nmemb * size bytes of memory and fills it with zeros    *
  *                                                                            *
  * Return value: returns a pointer to the newly allocated memory              *
- *                                                                            *
- * Author: Eugene Grigorjev, Rudolfs Kreicbergs                               *
  *                                                                            *
  ******************************************************************************/
 void	*zbx_calloc2(const char *filename, int line, void *old, size_t nmemb, size_t size)
@@ -498,13 +558,9 @@ void	*zbx_calloc2(const char *filename, int line, void *old, size_t nmemb, size_
 
 /******************************************************************************
  *                                                                            *
- * Function: zbx_malloc2                                                      *
- *                                                                            *
  * Purpose: allocates size bytes of memory                                    *
  *                                                                            *
  * Return value: returns a pointer to the newly allocated memory              *
- *                                                                            *
- * Author: Eugene Grigorjev                                                   *
  *                                                                            *
  ******************************************************************************/
 void	*zbx_malloc2(const char *filename, int line, void *old, size_t size)
@@ -537,14 +593,10 @@ void	*zbx_malloc2(const char *filename, int line, void *old, size_t size)
 
 /******************************************************************************
  *                                                                            *
- * Function: zbx_realloc2                                                     *
- *                                                                            *
  * Purpose: changes the size of the memory block pointed to by old            *
  *          to size bytes                                                     *
  *                                                                            *
  * Return value: returns a pointer to the newly allocated memory              *
- *                                                                            *
- * Author: Eugene Grigorjev                                                   *
  *                                                                            *
  ******************************************************************************/
 void	*zbx_realloc2(const char *filename, int line, void *old, size_t size)
@@ -588,8 +640,6 @@ char	*zbx_strdup2(const char *filename, int line, char *old, const char *str)
 
 /****************************************************************************************
  *                                                                                      *
- * Function: zbx_guaranteed_memset                                                      *
- *                                                                                      *
  * Purpose: For overwriting sensitive data in memory.                                   *
  *          Similar to memset() but should not be optimized out by a compiler.          *
  *                                                                                      *
@@ -611,11 +661,7 @@ void	*zbx_guaranteed_memset(void *v, int c, size_t n)
 
 /******************************************************************************
  *                                                                            *
- * Function: __zbx_zbx_setproctitle                                           *
- *                                                                            *
  * Purpose: set process title                                                 *
- *                                                                            *
- * Author: Eugene Grigorjev                                                   *
  *                                                                            *
  ******************************************************************************/
 void	zbx_setproctitle(const char *fmt, ...)
@@ -640,16 +686,12 @@ void	zbx_setproctitle(const char *fmt, ...)
 
 /******************************************************************************
  *                                                                            *
- * Function: check_time_period                                                *
- *                                                                            *
  * Purpose: check if current time is within given period                      *
  *                                                                            *
  * Parameters: period - [IN] preprocessed time period                         *
  *             tm     - [IN] broken-down time for comparison                  *
  *                                                                            *
  * Return value: FAIL - out of period, SUCCEED - within the period            *
- *                                                                            *
- * Author: Alexei Vladishev                                                   *
  *                                                                            *
  ******************************************************************************/
 static int	check_time_period(const zbx_time_period_t period, struct tm *tm)
@@ -665,8 +707,6 @@ static int	check_time_period(const zbx_time_period_t period, struct tm *tm)
 
 /******************************************************************************
  *                                                                            *
- * Function: get_current_delay                                                *
- *                                                                            *
  * Purpose: return delay value that is currently applicable                   *
  *                                                                            *
  * Parameters: default_delay  - [IN] default delay value, can be overridden   *
@@ -675,8 +715,6 @@ static int	check_time_period(const zbx_time_period_t period, struct tm *tm)
  *                                                                            *
  * Return value: delay value - either default or minimum delay value          *
  *                             out of all applicable intervals                *
- *                                                                            *
- * Author: Alexei Vladishev, Alexander Vladishev, Aleksandrs Saveljevs        *
  *                                                                            *
  ******************************************************************************/
 static int	get_current_delay(int default_delay, const zbx_flexible_interval_t *flex_intervals, time_t now)
@@ -699,8 +737,6 @@ static int	get_current_delay(int default_delay, const zbx_flexible_interval_t *f
 
 /******************************************************************************
  *                                                                            *
- * Function: get_next_delay_interval                                          *
- *                                                                            *
  * Purpose: return time when next delay settings take effect                  *
  *                                                                            *
  * Parameters: flex_intervals - [IN] preprocessed flexible intervals          *
@@ -709,8 +745,6 @@ static int	get_current_delay(int default_delay, const zbx_flexible_interval_t *f
  *                                                                            *
  * Return value: SUCCEED - there is a next interval                           *
  *               FAIL - otherwise (in this case, next_interval is unaffected) *
- *                                                                            *
- * Author: Alexei Vladishev, Alexander Vladishev, Aleksandrs Saveljevs        *
  *                                                                            *
  ******************************************************************************/
 static int	get_next_delay_interval(const zbx_flexible_interval_t *flex_intervals, time_t now, time_t *next_interval)
@@ -758,8 +792,6 @@ static int	get_next_delay_interval(const zbx_flexible_interval_t *flex_intervals
 }
 
 /******************************************************************************
- *                                                                            *
- * Function: time_parse                                                       *
  *                                                                            *
  * Purpose: parses time of day                                                *
  *                                                                            *
@@ -810,8 +842,6 @@ static int	time_parse(int *time, const char *text, int len, int *parsed_len)
 }
 
 /******************************************************************************
- *                                                                            *
- * Function: time_period_parse                                                *
  *                                                                            *
  * Purpose: parses time period                                                *
  *                                                                            *
@@ -872,15 +902,13 @@ static int	time_period_parse(zbx_time_period_t *period, const char *text, int le
 	if (period->start_time >= period->end_time)
 		return FAIL;
 
-	if (0 != (len -= parsed_len))
+	if (0 != (len - parsed_len))
 		return FAIL;
 
 	return SUCCEED;
 }
 
 /******************************************************************************
- *                                                                            *
- * Function: zbx_check_time_period                                            *
  *                                                                            *
  * Purpose: validate time period and check if specified time is within it     *
  *                                                                            *
@@ -898,14 +926,14 @@ static int	time_period_parse(zbx_time_period_t *period, const char *text, int le
  * Comments:   !!! Don't forget to sync code with PHP !!!                     *
  *                                                                            *
  ******************************************************************************/
-int	zbx_check_time_period(const char *period, time_t time, int *res)
+int	zbx_check_time_period(const char *period, time_t time, const char *tz, int *res)
 {
 	int			res_total = FAIL;
 	const char		*next;
 	struct tm		*tm;
 	zbx_time_period_t	tp;
 
-	tm = localtime(&time);
+	tm = zbx_localtime(&time, tz);
 
 	next = strchr(period, ';');
 	while  (SUCCEED == time_period_parse(&tp, period, (NULL == next ? (int)strlen(period) : (int)(next - period))))
@@ -928,8 +956,6 @@ int	zbx_check_time_period(const char *period, time_t time, int *res)
 
 /******************************************************************************
  *                                                                            *
- * Function: flexible_interval_free                                           *
- *                                                                            *
  * Purpose: frees flexible interval                                           *
  *                                                                            *
  * Parameters: interval - [IN] flexible interval                              *
@@ -947,8 +973,6 @@ static void	flexible_interval_free(zbx_flexible_interval_t *interval)
 }
 
 /******************************************************************************
- *                                                                            *
- * Function: flexible_interval_parse                                          *
  *                                                                            *
  * Purpose: parses flexible interval                                          *
  *                                                                            *
@@ -981,8 +1005,6 @@ static int	flexible_interval_parse(zbx_flexible_interval_t *interval, const char
 
 /******************************************************************************
  *                                                                            *
- * Function: calculate_dayofweek                                              *
- *                                                                            *
  * Purpose: calculates day of week                                            *
  *                                                                            *
  * Parameters: year - [IN] the year (>1752)                                   *
@@ -1004,8 +1026,6 @@ static int	calculate_dayofweek(int year, int mon, int mday)
 
 /******************************************************************************
  *                                                                            *
- * Function: scheduler_filter_free                                            *
- *                                                                            *
  * Purpose: frees scheduler interval filter                                   *
  *                                                                            *
  * Parameters: filter - [IN] scheduler interval filter                        *
@@ -1023,8 +1043,6 @@ static void	scheduler_filter_free(zbx_scheduler_filter_t *filter)
 }
 
 /******************************************************************************
- *                                                                            *
- * Function: scheduler_interval_free                                          *
  *                                                                            *
  * Purpose: frees scheduler interval                                          *
  *                                                                            *
@@ -1050,8 +1068,6 @@ static void	scheduler_interval_free(zbx_scheduler_interval_t *interval)
 }
 
 /******************************************************************************
- *                                                                            *
- * Function: scheduler_parse_filter_r                                         *
  *                                                                            *
  * Purpose: parses text string into scheduler filter                          *
  *                                                                            *
@@ -1175,8 +1191,6 @@ static int	scheduler_parse_filter_r(zbx_scheduler_filter_t **filter, const char 
 
 /******************************************************************************
  *                                                                            *
- * Function: scheduler_parse_filter                                           *
- *                                                                            *
  * Purpose: parses text string into scheduler filter                          *
  *                                                                            *
  * Parameters: filter  - [IN/OUT] the first filter                            *
@@ -1206,8 +1220,6 @@ static int	scheduler_parse_filter(zbx_scheduler_filter_t **filter, const char *t
 }
 
 /******************************************************************************
- *                                                                            *
- * Function: scheduler_interval_parse                                         *
  *                                                                            *
  * Purpose: parses scheduler interval                                         *
  *                                                                            *
@@ -1297,8 +1309,6 @@ static int	scheduler_interval_parse(zbx_scheduler_interval_t *interval, const ch
 
 /******************************************************************************
  *                                                                            *
- * Function: scheduler_get_nearest_filter_value                               *
- *                                                                            *
  * Purpose: gets the next nearest value that satisfies the filter chain       *
  *                                                                            *
  * Parameters: filter - [IN] the filter chain                                 *
@@ -1350,8 +1360,6 @@ static int	scheduler_get_nearest_filter_value(const zbx_scheduler_filter_t *filt
 
 /******************************************************************************
  *                                                                            *
- * Function: scheduler_get_wday_nextcheck                                     *
- *                                                                            *
  * Purpose: calculates the next day that satisfies the week day filter        *
  *                                                                            *
  * Parameters: interval - [IN] the scheduler interval                         *
@@ -1395,8 +1403,6 @@ static int	scheduler_get_wday_nextcheck(const zbx_scheduler_interval_t *interval
 
 /******************************************************************************
  *                                                                            *
- * Function: scheduler_validate_wday_filter                                   *
- *                                                                            *
  * Purpose: checks if the specified date satisfies week day filter            *
  *                                                                            *
  * Parameters: interval - [IN] the scheduler interval                         *
@@ -1439,8 +1445,6 @@ static int	scheduler_validate_wday_filter(const zbx_scheduler_interval_t *interv
 
 /******************************************************************************
  *                                                                            *
- * Function: scheduler_get_day_nextcheck                                      *
- *                                                                            *
  * Purpose: calculates the next day that satisfies month and week day filters *
  *                                                                            *
  * Parameters: interval - [IN] the scheduler interval                         *
@@ -1465,10 +1469,10 @@ static int	scheduler_get_day_nextcheck(const zbx_scheduler_interval_t *interval,
 	if (NULL == interval->mdays)
 		return scheduler_get_wday_nextcheck(interval, tm);
 
-	/* iterate through month days until week day filter matches or we have ran out of month days */
+	/* iterate through month days until week day filter matches or we have run out of month days */
 	while (SUCCEED == scheduler_get_nearest_filter_value(interval->mdays, &tm->tm_mday))
 	{
-		/* check if the date is still valid - we haven't ran out of month days */
+		/* check if the date is still valid - we haven't run out of month days */
 		if (tm->tm_mday > zbx_day_in_month(tm->tm_year + 1970, tm->tm_mon + 1))
 			break;
 
@@ -1477,7 +1481,7 @@ static int	scheduler_get_day_nextcheck(const zbx_scheduler_interval_t *interval,
 
 		tm->tm_mday++;
 
-		/* check if the date is still valid - we haven't ran out of month days */
+		/* check if the date is still valid - we haven't run out of month days */
 		if (tm->tm_mday > zbx_day_in_month(tm->tm_year + 1970, tm->tm_mon + 1))
 			break;
 	}
@@ -1486,8 +1490,6 @@ static int	scheduler_get_day_nextcheck(const zbx_scheduler_interval_t *interval,
 }
 
 /******************************************************************************
- *                                                                            *
- * Function: scheduler_get_filter_nextcheck                                   *
  *                                                                            *
  * Purpose: calculates the time/day that satisfies the specified filter       *
  *                                                                            *
@@ -1554,8 +1556,6 @@ static int	scheduler_get_filter_nextcheck(const zbx_scheduler_interval_t *interv
 
 /******************************************************************************
  *                                                                            *
- * Function: scheduler_apply_day_filter                                       *
- *                                                                            *
  * Purpose: applies day filter to the specified time/day calculating the next *
  *          scheduled check                                                   *
  *                                                                            *
@@ -1589,8 +1589,6 @@ static void	scheduler_apply_day_filter(zbx_scheduler_interval_t *interval, struc
 
 /******************************************************************************
  *                                                                            *
- * Function: scheduler_apply_hour_filter                                      *
- *                                                                            *
  * Purpose: applies hour filter to the specified time/day calculating the     *
  *          next scheduled check                                              *
  *                                                                            *
@@ -1621,8 +1619,6 @@ static void	scheduler_apply_hour_filter(zbx_scheduler_interval_t *interval, stru
 
 /******************************************************************************
  *                                                                            *
- * Function: scheduler_apply_minute_filter                                    *
- *                                                                            *
  * Purpose: applies minute filter to the specified time/day calculating the   *
  *          next scheduled check                                              *
  *                                                                            *
@@ -1650,8 +1646,6 @@ static void	scheduler_apply_minute_filter(zbx_scheduler_interval_t *interval, st
 
 /******************************************************************************
  *                                                                            *
- * Function: scheduler_apply_second_filter                                    *
- *                                                                            *
  * Purpose: applies second filter to the specified time/day calculating the   *
  *          next scheduled check                                              *
  *                                                                            *
@@ -1672,8 +1666,6 @@ static void	scheduler_apply_second_filter(zbx_scheduler_interval_t *interval, st
 }
 
 /******************************************************************************
- *                                                                            *
- * Function: scheduler_find_dst_change                                        *
  *                                                                            *
  * Purpose: finds daylight saving change time inside specified time period    *
  *                                                                            *
@@ -1723,8 +1715,6 @@ static time_t	scheduler_find_dst_change(time_t time_start, time_t time_end)
 
 /******************************************************************************
  *                                                                            *
- * Function: scheduler_tm_inc                                                 *
- *                                                                            *
  * Purpose: increment struct tm value by one second                           *
  *                                                                            *
  * Parameters: tm - [IN/OUT] the tm structure to increment                    *
@@ -1757,8 +1747,6 @@ static void	scheduler_tm_inc(struct tm *tm)
 }
 
 /******************************************************************************
- *                                                                            *
- * Function: scheduler_get_nextcheck                                          *
  *                                                                            *
  * Purpose: finds the next timestamp satisfying one of intervals.             *
  *                                                                            *
@@ -1818,8 +1806,6 @@ static time_t	scheduler_get_nextcheck(zbx_scheduler_interval_t *interval, time_t
 
 /******************************************************************************
  *                                                                            *
- * Function: parse_user_macro                                                 *
- *                                                                            *
  * Purpose: parses user macro and finds it's length                           *
  *                                                                            *
  * Parameters: str  - [IN] string to check                                    *
@@ -1835,8 +1821,11 @@ static int	parse_user_macro(const char *str, int *len)
 {
 	int	macro_r, context_l, context_r;
 
-	if ('{' != *str || '$' != *(str + 1) || SUCCEED != zbx_user_macro_parse(str, &macro_r, &context_l, &context_r))
+	if ('{' != *str || '$' != *(str + 1) || SUCCEED != zbx_user_macro_parse(str, &macro_r, &context_l, &context_r,
+			NULL))
+	{
 		return FAIL;
+	}
 
 	*len = macro_r + 1;
 
@@ -1844,8 +1833,6 @@ static int	parse_user_macro(const char *str, int *len)
 }
 
 /******************************************************************************
- *                                                                            *
- * Function: parse_simple_interval                                            *
  *                                                                            *
  * Purpose: parses user macro and finds it's length                           *
  *                                                                            *
@@ -1876,8 +1863,6 @@ static int	parse_simple_interval(const char *str, int *len, char sep, int *value
 }
 
 /******************************************************************************
- *                                                                            *
- * Function: zbx_validate_interval                                            *
  *                                                                            *
  * Purpose: validate update interval, flexible and scheduling intervals       *
  *                                                                            *
@@ -1998,8 +1983,6 @@ int	zbx_validate_interval(const char *str, char **error)
 
 /******************************************************************************
  *                                                                            *
- * Function: zbx_interval_preproc                                             *
- *                                                                            *
  * Purpose: parses item and low-level discovery rule update intervals         *
  *                                                                            *
  * Parameters: interval_str     - [IN] update interval string to parse        *
@@ -2102,7 +2085,20 @@ fail:
 
 /******************************************************************************
  *                                                                            *
- * Function: zbx_custom_interval_free                                         *
+ * Purpose: check if custom interval contains scheduling interval             *
+ *                                                                            *
+ * Parameters: custom_intervals - [IN] custom intervals                       *
+ *                                                                            *
+ * Return value: SUCCEED if custom interval contains scheduling interval      *
+ *               FAIL otherwise                                               *
+ *                                                                            *
+ ******************************************************************************/
+int	zbx_custom_interval_is_scheduling(const zbx_custom_interval_t *custom_intervals)
+{
+	return NULL == custom_intervals->scheduling ? FAIL : SUCCEED;
+}
+
+/******************************************************************************
  *                                                                            *
  * Purpose: frees custom update intervals                                     *
  *                                                                            *
@@ -2118,8 +2114,6 @@ void	zbx_custom_interval_free(zbx_custom_interval_t *custom_intervals)
 
 /******************************************************************************
  *                                                                            *
- * Function: calculate_item_nextcheck                                         *
- *                                                                            *
  * Purpose: calculate nextcheck timestamp for item                            *
  *                                                                            *
  * Parameters: seed             - [IN] the seed value applied to delay to     *
@@ -2131,8 +2125,6 @@ void	zbx_custom_interval_free(zbx_custom_interval_t *custom_intervals)
  *             now              - [IN] current timestamp                      *
  *                                                                            *
  * Return value: nextcheck value                                              *
- *                                                                            *
- * Author: Alexei Vladishev, Aleksandrs Saveljevs                             *
  *                                                                            *
  * Comments: if item check is forbidden with delay=0 (default and flexible),  *
  *           a timestamp very far in the future is returned                   *
@@ -2156,7 +2148,7 @@ int	calculate_item_nextcheck(zbx_uint64_t seed, int item_type, int simple_interv
 	}
 	else
 	{
-		int	current_delay = 0, attempt = 0;
+		int	current_delay, attempt = 0;
 		time_t	next_interval, t, tmax, scheduled_check = 0;
 
 		/* first try to parse out and calculate scheduled intervals */
@@ -2221,8 +2213,6 @@ int	calculate_item_nextcheck(zbx_uint64_t seed, int item_type, int simple_interv
 }
 /******************************************************************************
  *                                                                            *
- * Function: calculate_item_nextcheck_unreachable                             *
- *                                                                            *
  * Purpose: calculate nextcheck timestamp for item on unreachable host        *
  *                                                                            *
  * Parameters: simple_interval  - [IN] default delay value, can be overridden *
@@ -2273,17 +2263,13 @@ int	calculate_item_nextcheck_unreachable(int simple_interval, const zbx_custom_i
 }
 /******************************************************************************
  *                                                                            *
- * Function: calculate_proxy_nextcheck                                        *
- *                                                                            *
  * Purpose: calculate nextcheck timestamp for passive proxy                   *
  *                                                                            *
- * Parameters: hostid - [IN] host identificator from database                 *
+ * Parameters: hostid - [IN] host identifier from database                    *
  *             delay  - [IN] default delay value, can be overridden           *
  *             now    - [IN] current timestamp                                *
  *                                                                            *
  * Return value: nextcheck value                                              *
- *                                                                            *
- * Author: Alexander Vladishev                                                *
  *                                                                            *
  ******************************************************************************/
 time_t	calculate_proxy_nextcheck(zbx_uint64_t hostid, unsigned int delay, time_t now)
@@ -2300,16 +2286,12 @@ time_t	calculate_proxy_nextcheck(zbx_uint64_t hostid, unsigned int delay, time_t
 
 /******************************************************************************
  *                                                                            *
- * Function: is_ip4                                                           *
- *                                                                            *
  * Purpose: is string IPv4 address                                            *
  *                                                                            *
  * Parameters: ip - string                                                    *
  *                                                                            *
  * Return value: SUCCEED - is IPv4 address                                    *
  *               FAIL - otherwise                                             *
- *                                                                            *
- * Author: Alexei Vladishev, Alexander Vladishev                              *
  *                                                                            *
  ******************************************************************************/
 int	is_ip4(const char *ip)
@@ -2353,16 +2335,12 @@ int	is_ip4(const char *ip)
 
 /******************************************************************************
  *                                                                            *
- * Function: is_ip6                                                           *
- *                                                                            *
  * Purpose: is string IPv6 address                                            *
  *                                                                            *
  * Parameters: ip - string                                                    *
  *                                                                            *
  * Return value: SUCCEED - is IPv6 address                                    *
  *               FAIL - otherwise                                             *
- *                                                                            *
- * Author: Alexander Vladishev                                                *
  *                                                                            *
  ******************************************************************************/
 int	is_ip6(const char *ip)
@@ -2419,16 +2397,12 @@ int	is_ip6(const char *ip)
 
 /******************************************************************************
  *                                                                            *
- * Function: is_supported_ip                                                  *
- *                                                                            *
  * Purpose: is string IP address of supported version                         *
  *                                                                            *
  * Parameters: ip - string                                                    *
  *                                                                            *
  * Return value: SUCCEED - is IP address                                      *
  *               FAIL - otherwise                                             *
- *                                                                            *
- * Author: Alexander Vladishev                                                *
  *                                                                            *
  ******************************************************************************/
 int	is_supported_ip(const char *ip)
@@ -2444,16 +2418,12 @@ int	is_supported_ip(const char *ip)
 
 /******************************************************************************
  *                                                                            *
- * Function: is_ip                                                            *
- *                                                                            *
  * Purpose: is string IP address                                              *
  *                                                                            *
  * Parameters: ip - string                                                    *
  *                                                                            *
  * Return value: SUCCEED - is IP address                                      *
  *               FAIL - otherwise                                             *
- *                                                                            *
- * Author: Alexander Vladishev                                                *
  *                                                                            *
  ******************************************************************************/
 int	is_ip(const char *ip)
@@ -2462,8 +2432,6 @@ int	is_ip(const char *ip)
 }
 
 /******************************************************************************
- *                                                                            *
- * Function: zbx_validate_hostname                                            *
  *                                                                            *
  * Purpose: check if string is a valid internet hostname                      *
  *                                                                            *
@@ -2481,7 +2449,7 @@ int	is_ip(const char *ip)
 int	zbx_validate_hostname(const char *hostname)
 {
 	int		component;	/* periods ('.') are only allowed when they serve to delimit components */
-	int		len = MAX_ZBX_DNSNAME_LEN;
+	int		len = ZBX_MAX_DNSNAME_LEN;
 	const char	*p;
 
 	/* the first character must be an alphanumeric character */
@@ -2507,8 +2475,6 @@ int	zbx_validate_hostname(const char *hostname)
 }
 
 /******************************************************************************
- *                                                                            *
- * Function: ip_in_list                                                       *
  *                                                                            *
  * Purpose: check if ip matches range of ip addresses                         *
  *                                                                            *
@@ -2568,16 +2534,12 @@ out:
 
 /******************************************************************************
  *                                                                            *
- * Function: int_in_list                                                      *
- *                                                                            *
  * Purpose: check if integer matches a list of integers                       *
  *                                                                            *
  * Parameters: list  - integers [i1-i2,i3,i4,i5-i6] (10-25,45,67-699)         *
  *             value - integer to check                                       *
  *                                                                            *
  * Return value: FAIL - out of period, SUCCEED - within the period            *
- *                                                                            *
- * Author: Alexei Vladishev                                                   *
  *                                                                            *
  ******************************************************************************/
 int	int_in_list(char *list, int value)
@@ -2636,8 +2598,6 @@ int	zbx_double_compare(double a, double b)
 
 /******************************************************************************
  *                                                                            *
- * Function: is_double_suffix                                                 *
- *                                                                            *
  * Purpose: check if the string is double                                     *
  *                                                                            *
  * Parameters: str   - string to check                                        *
@@ -2646,8 +2606,6 @@ int	zbx_double_compare(double a, double b)
  *                                                                            *
  * Return value:  SUCCEED - the string is double                              *
  *                FAIL - otherwise                                            *
- *                                                                            *
- * Author: Alexei Vladishev                                                   *
  *                                                                            *
  * Comments: the function automatically processes suffixes K, M, G, T and     *
  *           s, m, h, d, w                                                    *
@@ -2682,28 +2640,10 @@ static int	is_double_valid_syntax(const char *str)
 	if (FAIL == zbx_number_parse(str, &len))
 		return FAIL;
 
-	str += len;
-
-	if ('e' == *str || 'E' == *str)		/* check exponential part */
-	{
-		str++;
-
-		if ('-' == *str || '+' == *str)	/* check exponent sign */
-			str++;
-
-		if (0 == isdigit(*str))		/* check exponent */
-			return FAIL;
-
-		while (0 != isdigit(*str))
-			str++;
-	}
-
-	return '\0' == *str ? SUCCEED : FAIL;
+	return '\0' == *(str + len) ? SUCCEED : FAIL;
 }
 
 /******************************************************************************
- *                                                                            *
- * Function: is_double                                                        *
  *                                                                            *
  * Purpose: validate and optionally convert a string to a number of type      *
  *         'double'                                                           *
@@ -2716,8 +2656,6 @@ static int	is_double_valid_syntax(const char *str)
  *                          was converted if 'value' is not NULL              *
  *                FAIL - the string does not represent a valid 'double' or    *
  *                       its value is outside of valid range                  *
- *                                                                            *
- * Author: Alexei Vladishev, Aleksandrs Saveljevs                             *
  *                                                                            *
  ******************************************************************************/
 int	is_double(const char *str, double *value)
@@ -2745,8 +2683,6 @@ int	is_double(const char *str, double *value)
 
 /******************************************************************************
  *                                                                            *
- * Function: is_time_suffix                                                   *
- *                                                                            *
  * Purpose: check if the string is a non-negative integer with or without     *
  *          supported time suffix                                             *
  *                                                                            *
@@ -2757,8 +2693,6 @@ int	is_double(const char *str, double *value)
  *                                                                            *
  * Return value: SUCCEED - the string is valid and within reasonable limits   *
  *               FAIL    - otherwise                                          *
- *                                                                            *
- * Author: Aleksandrs Saveljevs, Vladimir Levijev                             *
  *                                                                            *
  * Comments: the function automatically processes suffixes s, m, h, d, w      *
  *                                                                            *
@@ -2847,8 +2781,6 @@ int	_wis_uint(const wchar_t *wide_string)
 
 /******************************************************************************
  *                                                                            *
- * Function: is_uint_n_range                                                  *
- *                                                                            *
  * Purpose: check if the string is unsigned integer within the specified      *
  *          range and optionally store it into value parameter                *
  *                                                                            *
@@ -2863,8 +2795,6 @@ int	_wis_uint(const wchar_t *wide_string)
  * Return value:  SUCCEED - the string is unsigned integer                    *
  *                FAIL - the string is not a number or its value is outside   *
  *                       the specified range                                  *
- *                                                                            *
- * Author: Alexander Vladishev, Andris Zeila                                  *
  *                                                                            *
  ******************************************************************************/
 int	is_uint_n_range(const char *str, size_t n, void *value, size_t size, zbx_uint64_t min, zbx_uint64_t max)
@@ -2908,8 +2838,6 @@ int	is_uint_n_range(const char *str, size_t n, void *value, size_t size, zbx_uin
 }
 
 /******************************************************************************
- *                                                                            *
- * Function: is_hex_n_range                                                   *
  *                                                                            *
  * Purpose: check if the string is unsigned hexadecimal integer within the    *
  *          specified range and optionally store it into value parameter      *
@@ -2973,16 +2901,12 @@ int	is_hex_n_range(const char *str, size_t n, void *value, size_t size, zbx_uint
 
 /******************************************************************************
  *                                                                            *
- * Function: is_boolean                                                       *
- *                                                                            *
  * Purpose: check if the string is boolean                                    *
  *                                                                            *
  * Parameters: str - string to check                                          *
  *                                                                            *
  * Return value:  SUCCEED - the string is boolean                             *
  *                FAIL - otherwise                                            *
- *                                                                            *
- * Author: Aleksandrs Saveljevs                                               *
  *                                                                            *
  ******************************************************************************/
 int	is_boolean(const char *str, zbx_uint64_t *value)
@@ -3015,16 +2939,12 @@ int	is_boolean(const char *str, zbx_uint64_t *value)
 
 /******************************************************************************
  *                                                                            *
- * Function: is_uoct                                                          *
- *                                                                            *
  * Purpose: check if the string is unsigned octal                             *
  *                                                                            *
  * Parameters: str - string to check                                          *
  *                                                                            *
  * Return value:  SUCCEED - the string is unsigned octal                      *
  *                FAIL - otherwise                                            *
- *                                                                            *
- * Author: Alexander Vladishev                                                *
  *                                                                            *
  ******************************************************************************/
 int	is_uoct(const char *str)
@@ -3053,8 +2973,6 @@ int	is_uoct(const char *str)
 
 /******************************************************************************
  *                                                                            *
- * Function: is_uhex                                                          *
- *                                                                            *
  * Purpose: check if the string is unsigned hexadecimal representation of     *
  *          data in the form "0-9, a-f or A-F"                                *
  *                                                                            *
@@ -3062,8 +2980,6 @@ int	is_uoct(const char *str)
  *                                                                            *
  * Return value:  SUCCEED - the string is unsigned hexadecimal                *
  *                FAIL - otherwise                                            *
- *                                                                            *
- * Author: Alexander Vladishev                                                *
  *                                                                            *
  ******************************************************************************/
 int	is_uhex(const char *str)
@@ -3092,8 +3008,6 @@ int	is_uhex(const char *str)
 
 /******************************************************************************
  *                                                                            *
- * Function: is_hex_string                                                    *
- *                                                                            *
  * Purpose: check if the string is a hexadecimal representation of data in    *
  *          the form "F4 CE 46 01 0C 44 8B F4\nA0 2C 29 74 5D 3F 13 49\n"     *
  *                                                                            *
@@ -3101,8 +3015,6 @@ int	is_uhex(const char *str)
  *                                                                            *
  * Return value:  SUCCEED - the string is formatted like the example above    *
  *                FAIL - otherwise                                            *
- *                                                                            *
- * Author: Aleksandrs Saveljevs                                               *
  *                                                                            *
  ******************************************************************************/
 int	is_hex_string(const char *str)
@@ -3131,8 +3043,6 @@ int	is_hex_string(const char *str)
 }
 
 /******************************************************************************
- *                                                                            *
- * Function: get_nearestindex                                                 *
  *                                                                            *
  * Purpose: get nearest index position of sorted elements in array            *
  *                                                                            *
@@ -3179,11 +3089,7 @@ int	get_nearestindex(const void *p, size_t sz, int num, zbx_uint64_t id)
 
 /******************************************************************************
  *                                                                            *
- * Function: uint64_array_add                                                 *
- *                                                                            *
  * Purpose: add uint64 value to dynamic array                                 *
- *                                                                            *
- * Author: Alexander Vladishev                                                *
  *                                                                            *
  ******************************************************************************/
 int	uint64_array_add(zbx_uint64_t **values, int *alloc, int *num, zbx_uint64_t value, int alloc_step)
@@ -3214,13 +3120,6 @@ int	uint64_array_add(zbx_uint64_t **values, int *alloc, int *num, zbx_uint64_t v
 	return index;
 }
 
-/******************************************************************************
- *                                                                            *
- * Function: uint64_array_exists                                              *
- *                                                                            *
- * Author: Alexander Vladishev                                                *
- *                                                                            *
- ******************************************************************************/
 int	uint64_array_exists(const zbx_uint64_t *values, int num, zbx_uint64_t value)
 {
 	int	index;
@@ -3234,11 +3133,7 @@ int	uint64_array_exists(const zbx_uint64_t *values, int num, zbx_uint64_t value)
 
 /******************************************************************************
  *                                                                            *
- * Function: uint64_array_remove                                              *
- *                                                                            *
  * Purpose: remove uint64 values from array                                   *
- *                                                                            *
- * Author: Alexander Vladishev                                                *
  *                                                                            *
  ******************************************************************************/
 void	uint64_array_remove(zbx_uint64_t *values, int *num, const zbx_uint64_t *rm_values, int rm_num)
@@ -3285,8 +3180,6 @@ zbx_uint64_t	suffix2factor(char c)
 
 /******************************************************************************
  *                                                                            *
- * Function: str2uint64                                                       *
- *                                                                            *
  * Purpose: convert string to 64bit unsigned integer                          *
  *                                                                            *
  * Parameters: str   - string to convert                                      *
@@ -3294,8 +3187,6 @@ zbx_uint64_t	suffix2factor(char c)
  *                                                                            *
  * Return value:  SUCCEED - the string is unsigned integer                    *
  *                FAIL - otherwise                                            *
- *                                                                            *
- * Author: Alexander Vladishev                                                *
  *                                                                            *
  * Comments: the function automatically processes suffixes K, M, G, T         *
  *                                                                            *
@@ -3325,15 +3216,11 @@ int	str2uint64(const char *str, const char *suffixes, zbx_uint64_t *value)
 
 /******************************************************************************
  *                                                                            *
- * Function: str2double                                                       *
- *                                                                            *
  * Purpose: convert string to double                                          *
  *                                                                            *
  * Parameters: str - string to convert                                        *
  *                                                                            *
  * Return value: converted double value                                       *
- *                                                                            *
- * Author: Alexei Vladishev                                                   *
  *                                                                            *
  * Comments: the function automatically processes suffixes K, M, G, T and     *
  *           s, m, h, d, w                                                    *
@@ -3350,12 +3237,8 @@ double	str2double(const char *str)
 
 /******************************************************************************
  *                                                                            *
- * Function: is_hostname_char                                                 *
- *                                                                            *
  * Return value:  SUCCEED - the char is allowed in the host name              *
  *                FAIL - otherwise                                            *
- *                                                                            *
- * Author: Alexander Vladishev                                                *
  *                                                                            *
  * Comments: in host name allowed characters: '0-9a-zA-Z. _-'                 *
  *           !!! Don't forget to sync the code with PHP !!!                   *
@@ -3374,12 +3257,8 @@ int	is_hostname_char(unsigned char c)
 
 /******************************************************************************
  *                                                                            *
- * Function: is_key_char                                                      *
- *                                                                            *
  * Return value:  SUCCEED - the char is allowed in the item key               *
  *                FAIL - otherwise                                            *
- *                                                                            *
- * Author: Alexander Vladishev                                                *
  *                                                                            *
  * Comments: in key allowed characters: '0-9a-zA-Z._-'                        *
  *           !!! Don't forget to sync the code with PHP !!!                   *
@@ -3398,12 +3277,8 @@ int	is_key_char(unsigned char c)
 
 /******************************************************************************
  *                                                                            *
- * Function: is_function_char                                                 *
- *                                                                            *
  * Return value:  SUCCEED - the char is allowed in the trigger function       *
  *                FAIL - otherwise                                            *
- *                                                                            *
- * Author: Alexander Vladishev                                                *
  *                                                                            *
  * Comments: in trigger function allowed characters: 'a-z'                    *
  *           !!! Don't forget to sync the code with PHP !!!                   *
@@ -3419,12 +3294,8 @@ int	is_function_char(unsigned char c)
 
 /******************************************************************************
  *                                                                            *
- * Function: is_macro_char                                                    *
- *                                                                            *
  * Return value:  SUCCEED - the char is allowed in the macro name             *
  *                FAIL - otherwise                                            *
- *                                                                            *
- * Author: Alexander Vladishev                                                *
  *                                                                            *
  * Comments: allowed characters in macro names: '0-9A-Z._'                    *
  *           !!! Don't forget to sync the code with PHP !!!                   *
@@ -3445,8 +3316,6 @@ int	is_macro_char(unsigned char c)
 }
 
 /******************************************************************************
- *                                                                            *
- * Function: is_discovery_macro                                               *
  *                                                                            *
  * Purpose: checks if the name is a valid discovery macro                     *
  *                                                                            *
@@ -3474,43 +3343,30 @@ int	is_discovery_macro(const char *name)
 
 /******************************************************************************
  *                                                                            *
- * Function: is_time_function                                                 *
+ * Purpose: Returns function type based on its name                           *
  *                                                                            *
- * Return value:  SUCCEED - given function is time-based                      *
- *                FAIL - otherwise                                            *
- *                                                                            *
- * Author: Aleksandrs Saveljevs                                               *
+ * Return value:  Function type.                                              *
  *                                                                            *
  ******************************************************************************/
-int	is_time_function(const char *func)
+zbx_function_type_t	zbx_get_function_type(const char *func)
 {
-	return str_in_list("nodata,date,dayofmonth,dayofweek,time,now", func, ',');
+	if (0 == strncmp(func, "trend", 5))
+		return ZBX_FUNCTION_TYPE_TRENDS;
+
+	if (0 == strncmp(func, "baseline", 8))
+		return ZBX_FUNCTION_TYPE_TRENDS;
+
+	if (0 == strcmp(func, "nodata"))
+		return ZBX_FUNCTION_TYPE_TIMER;
+
+	return ZBX_FUNCTION_TYPE_HISTORY;
 }
 
 /******************************************************************************
- *                                                                            *
- * Function: is_snmp_type                                                     *
- *                                                                            *
- * Return value:  SUCCEED  - the given type is one of regular SNMP types      *
- *                FAIL - otherwise                                            *
- *                                                                            *
- * Author: Aleksandrs Saveljevs                                               *
- *                                                                            *
- ******************************************************************************/
-int	is_snmp_type(unsigned char type)
-{
-	return ITEM_TYPE_SNMPv1 == type || ITEM_TYPE_SNMPv2c == type || ITEM_TYPE_SNMPv3 == type ? SUCCEED : FAIL;
-}
-
-/******************************************************************************
- *                                                                            *
- * Function: make_hostname                                                    *
  *                                                                            *
  * Purpose: replace all not-allowed hostname characters in the string         *
  *                                                                            *
  * Parameters: host - the target C-style string                               *
- *                                                                            *
- * Author: Dmitry Borovikov                                                   *
  *                                                                            *
  * Comments: the string must be null-terminated, otherwise not secure!        *
  *                                                                            *
@@ -3530,15 +3386,7 @@ void	make_hostname(char *host)
 
 /******************************************************************************
  *                                                                            *
- * Function: get_interface_type_by_item_type                                  *
- *                                                                            *
- * Purpose:                                                                   *
- *                                                                            *
- * Parameters:                                                                *
- *                                                                            *
  * Return value: Interface type                                               *
- *                                                                            *
- * Author: Alexander Vladishev                                                *
  *                                                                            *
  * Comments: !!! Don't forget to sync the code with PHP !!!                   *
  *                                                                            *
@@ -3549,9 +3397,7 @@ unsigned char	get_interface_type_by_item_type(unsigned char type)
 	{
 		case ITEM_TYPE_ZABBIX:
 			return INTERFACE_TYPE_AGENT;
-		case ITEM_TYPE_SNMPv1:
-		case ITEM_TYPE_SNMPv2c:
-		case ITEM_TYPE_SNMPv3:
+		case ITEM_TYPE_SNMP:
 		case ITEM_TYPE_SNMPTRAP:
 			return INTERFACE_TYPE_SNMP;
 		case ITEM_TYPE_IPMI:
@@ -3562,8 +3408,10 @@ unsigned char	get_interface_type_by_item_type(unsigned char type)
 		case ITEM_TYPE_EXTERNAL:
 		case ITEM_TYPE_SSH:
 		case ITEM_TYPE_TELNET:
-		case ITEM_TYPE_HTTPAGENT:
+		case ITEM_TYPE_SCRIPT:
 			return INTERFACE_TYPE_ANY;
+		case ITEM_TYPE_HTTPAGENT:
+			return INTERFACE_TYPE_OPT;
 		default:
 			return INTERFACE_TYPE_UNKNOWN;
 	}
@@ -3571,16 +3419,12 @@ unsigned char	get_interface_type_by_item_type(unsigned char type)
 
 /******************************************************************************
  *                                                                            *
- * Function: calculate_sleeptime                                              *
- *                                                                            *
  * Purpose: calculate sleep time for Zabbix processes                         *
  *                                                                            *
  * Parameters: nextcheck     - [IN] next check or -1 (FAIL) if nothing to do  *
  *             max_sleeptime - [IN] maximum sleep time, in seconds            *
  *                                                                            *
  * Return value: sleep time, in seconds                                       *
- *                                                                            *
- * Author: Alexander Vladishev                                                *
  *                                                                            *
  ******************************************************************************/
 int	calculate_sleeptime(int nextcheck, int max_sleeptime)
@@ -3602,8 +3446,6 @@ int	calculate_sleeptime(int nextcheck, int max_sleeptime)
 }
 
 /******************************************************************************
- *                                                                            *
- * Function: parse_serveractive_element                                       *
  *                                                                            *
  * Purpose: parse a ServerActive element like "IP<:port>" or "[IPv6]<:port>"  *
  *                                                                            *
@@ -3704,52 +3546,39 @@ int	zbx_alarm_timed_out(void)
 	return (0 == zbx_timed_out ? FAIL : SUCCEED);
 }
 
+/* Since 2.26 the GNU C Library will detect when /etc/resolv.conf has been modified and reload the changed */
+/* configuration. For performance reasons manual reloading should be avoided when unnecessary. */
+#if !defined(_WINDOWS) && defined(HAVE_RESOLV_H) && defined(__GLIBC__) && __GLIBC__ == 2 && __GLIBC_MINOR__ < 26
 /******************************************************************************
  *                                                                            *
- * Function: zbx_create_token                                                 *
+ * Purpose: react to "/etc/resolv.conf" update                                *
  *                                                                            *
- * Purpose: creates semi-unique token based on the seed and current timestamp *
- *                                                                            *
- * Parameters:  seed - [IN] the seed                                          *
- *                                                                            *
- * Return value: Hexadecimal token string, must be freed by caller            *
- *                                                                            *
- * Comments: if you change token creation algorithm do not forget to adjust   *
- *           ZBX_DATA_SESSION_TOKEN_SIZE definition                           *
+ * Comments: it is intended to call this function in the end of each process  *
+ *           main loop. The purpose of calling it at the end (instead of the  *
+ *           beginning of main loop) is to let the first initialization of    *
+ *           libc resolver proceed internally.                                *
  *                                                                            *
  ******************************************************************************/
-char	*zbx_create_token(zbx_uint64_t seed)
+static void	update_resolver_conf(void)
 {
-	const char	*hex = "0123456789abcdef";
-	zbx_timespec_t	ts;
-	md5_state_t	state;
-	md5_byte_t	hash[MD5_DIGEST_SIZE];
-	int		i;
-	char		*token, *ptr;
+#define ZBX_RESOLV_CONF_FILE	"/etc/resolv.conf"
 
-	ptr = token = (char *)zbx_malloc(NULL, ZBX_DATA_SESSION_TOKEN_SIZE + 1);
+	static time_t	mtime = 0;
+	zbx_stat_t	buf;
 
-	zbx_timespec(&ts);
-
-	zbx_md5_init(&state);
-	zbx_md5_append(&state, (const md5_byte_t *)&seed, (int)sizeof(seed));
-	zbx_md5_append(&state, (const md5_byte_t *)&ts, (int)sizeof(ts));
-	zbx_md5_finish(&state, hash);
-
-	for (i = 0; i < MD5_DIGEST_SIZE; i++)
+	if (0 == zbx_stat(ZBX_RESOLV_CONF_FILE, &buf) && mtime != buf.st_mtime)
 	{
-		*ptr++ = hex[hash[i] >> 4];
-		*ptr++ = hex[hash[i] & 15];
+		mtime = buf.st_mtime;
+
+		if (0 != res_init())
+			zabbix_log(LOG_LEVEL_WARNING, "update_resolver_conf(): res_init() failed");
 	}
 
-	*ptr = '\0';
-
-	return token;
+#undef ZBX_RESOLV_CONF_FILE
 }
+#endif
 
 /******************************************************************************
- *                                                                            *
- * Function: zbx_update_env                                                   *
  *                                                                            *
  * Purpose: throttling of update "/etc/resolv.conf" and "stdio" to the new    *
  *          log file after rotation                                           *
@@ -3766,41 +3595,114 @@ void	zbx_update_env(double time_now)
 	{
 		time_update = time_now;
 		zbx_handle_log();
-#if !defined(_WINDOWS) && defined(HAVE_RESOLV_H)
-		zbx_update_resolver_conf();
+#if !defined(_WINDOWS) && defined(HAVE_RESOLV_H) && defined(__GLIBC__) && __GLIBC__ == 2 && __GLIBC_MINOR__ < 26
+		update_resolver_conf();
 #endif
 	}
 }
 
 /******************************************************************************
  *                                                                            *
- * Function: zbx_dc_get_agent_item_nextcheck                                  *
- *                                                                            *
- * Purpose: calculate item nextcheck for zabix agent type items               *
+ * Purpose: calculate item nextcheck for Zabbix agent type items              *
  *                                                                            *
  ******************************************************************************/
-int	zbx_get_agent_item_nextcheck(zbx_uint64_t itemid, const char *delay, unsigned char state, int now,
-		int refresh_unsupported, int *nextcheck, char **error)
+int	zbx_get_agent_item_nextcheck(zbx_uint64_t itemid, const char *delay, int now,
+		int *nextcheck, int *scheduling, char **error)
 {
-	if (ITEM_STATE_NORMAL == state)
-	{
-		int			simple_interval;
-		zbx_custom_interval_t	*custom_intervals;
+	int			simple_interval;
+	zbx_custom_interval_t	*custom_intervals;
 
-		if (SUCCEED != zbx_interval_preproc(delay, &simple_interval, &custom_intervals, error))
-		{
-			*nextcheck = ZBX_JAN_2038;
-			return FAIL;
-		}
-
-		*nextcheck = calculate_item_nextcheck(itemid, ITEM_TYPE_ZABBIX, simple_interval, custom_intervals, now);
-		zbx_custom_interval_free(custom_intervals);
-	}
-	else	/* for items notsupported for other reasons use refresh_unsupported interval */
+	if (SUCCEED != zbx_interval_preproc(delay, &simple_interval, &custom_intervals, error))
 	{
-		*nextcheck = calculate_item_nextcheck(itemid, ITEM_TYPE_ZABBIX, refresh_unsupported, NULL, now);
+		*nextcheck = ZBX_JAN_2038;
+		return FAIL;
 	}
+
+	if (NULL != custom_intervals->scheduling)
+		*scheduling = SUCCEED;
+	else
+		*scheduling = FAIL;
+
+	*nextcheck = calculate_item_nextcheck(itemid, ITEM_TYPE_ZABBIX, simple_interval, custom_intervals, now);
+	zbx_custom_interval_free(custom_intervals);
 
 	return SUCCEED;
 }
 
+/******************************************************************************
+ *                                                                            *
+ * Purpose: calculate report nextcheck                                        *
+ *                                                                            *
+ * Parameters: now        - [IN] the current timestamp                        *
+ *             cycle      - [IN] the report cycle                             *
+ *             weekdays   - [IN] the week days report should be prepared,     *
+ *                               bitmask (0x01 - Monday, 0x02 - Tuesday...)   *
+ *             start_time - [IN] the report start time in seconds after       *
+ *                               midnight                                     *
+ *             tz         - [IN] the report starting timezone                 *
+ *                                                                            *
+ * Return value: The timestamp when the report must be prepared or -1 if an   *
+ *               error occurred.                                              *
+ *                                                                            *
+ ******************************************************************************/
+int	zbx_get_report_nextcheck(int now, unsigned char cycle, unsigned char weekdays, int start_time,
+		const char *tz)
+{
+	struct tm	*tm;
+	time_t		yesterday = now - SEC_PER_DAY;
+	int		nextcheck, tm_hour, tm_min, tm_sec;
+
+	if (NULL == (tm = zbx_localtime(&yesterday, tz)))
+		return -1;
+
+	tm_sec = start_time % 60;
+	start_time /= 60;
+	tm_min = start_time % 60;
+	start_time /= 60;
+	tm_hour = start_time;
+
+	do
+	{
+		/* handle midnight startup times */
+		if (0 == tm->tm_sec && 0 == tm->tm_min && 0 == tm->tm_hour)
+			zbx_tm_add(tm, 1, ZBX_TIME_UNIT_DAY);
+
+		switch (cycle)
+		{
+			case ZBX_REPORT_CYCLE_YEARLY:
+				zbx_tm_round_up(tm, ZBX_TIME_UNIT_YEAR);
+				break;
+			case ZBX_REPORT_CYCLE_MONTHLY:
+				zbx_tm_round_up(tm, ZBX_TIME_UNIT_MONTH);
+				break;
+			case ZBX_REPORT_CYCLE_WEEKLY:
+				if (0 == weekdays)
+					return -1;
+				zbx_tm_round_up(tm, ZBX_TIME_UNIT_DAY);
+
+				while (0 == (weekdays & (1 << (tm->tm_wday + 6) % 7)))
+					zbx_tm_add(tm, 1, ZBX_TIME_UNIT_DAY);
+
+				break;
+			case ZBX_REPORT_CYCLE_DAILY:
+				zbx_tm_round_up(tm, ZBX_TIME_UNIT_DAY);
+				break;
+		}
+
+		tm->tm_sec = tm_sec;
+		tm->tm_min = tm_min;
+		tm->tm_hour = tm_hour;
+
+		nextcheck = (int)mktime(tm);
+	}
+	while (-1 != nextcheck && nextcheck <= now);
+
+	return nextcheck;
+}
+
+void	zbx_free_tag(zbx_tag_t *tag)
+{
+	zbx_free(tag->tag);
+	zbx_free(tag->value);
+	zbx_free(tag);
+}

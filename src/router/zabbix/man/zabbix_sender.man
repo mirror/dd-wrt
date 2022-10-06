@@ -33,7 +33,7 @@
 .
 .  hy \\n(HY
 ..
-.TH ZABBIX_SENDER 1 "2019\-07\-10" Zabbix
+.TH ZABBIX_SENDER 1 "2022\-01\-06" Zabbix
 .if n .ad l
 .SH NAME
 zabbix_sender \- Zabbix sender utility
@@ -46,6 +46,8 @@ zabbix_sender \- Zabbix sender utility
 .IR port ]
 .RB [ \-I
 .IR IP\-address ]
+.RB [ \-t
+.IR timeout ]
 .B \-s
 .I host
 .B \-k
@@ -61,9 +63,12 @@ zabbix_sender \- Zabbix sender utility
 .IR port ]
 .RB [ \-I
 .IR IP\-address ]
+.RB [ \-t
+.IR timeout ]
 .RB [ \-s
 .IR host ]
 .RB [ \-T ]
+.RB [ \-N ]
 .RB [ \-r ]
 .B \-i
 .I input\-file
@@ -78,6 +83,8 @@ zabbix_sender \- Zabbix sender utility
 .IR port ]
 .RB [ \-I
 .IR IP-address ]
+.RB [ \-t
+.IR timeout ]
 .RB [ \-s
 .IR host ]
 .B \-k
@@ -95,9 +102,12 @@ zabbix_sender \- Zabbix sender utility
 .IR port ]
 .RB [ \-I
 .IR IP-address ]
+.RB [ \-t
+.IR timeout ]
 .RB [ \-s
 .IR host ]
 .RB [ \-T ]
+.RB [ \-N ]
 .RB [ \-r ]
 .B \-i
 .I input-file
@@ -110,6 +120,8 @@ zabbix_sender \- Zabbix sender utility
 .IR port ]
 .RB [ \-I
 .IR IP\-address ]
+.RB [ \-t
+.IR timeout ]
 .B \-s
 .I host
 .B \-\-tls\-connect
@@ -126,6 +138,10 @@ zabbix_sender \- Zabbix sender utility
 .I cert\-file
 .B \-\-tls\-key\-file
 .I key\-file
+.RB [ \-\-tls\-cipher13
+.IR cipher\-string ]
+.RB [ \-\-tls\-cipher
+.IR cipher\-string ]
 .B \-k
 .I key
 .B \-o
@@ -139,6 +155,8 @@ zabbix_sender \- Zabbix sender utility
 .IR port ]
 .RB [ \-I
 .IR IP\-address ]
+.RB [ \-t
+.IR timeout ]
 .RB [ \-s
 .IR host ]
 .B \-\-tls\-connect
@@ -155,7 +173,12 @@ zabbix_sender \- Zabbix sender utility
 .I cert\-file
 .B \-\-tls\-key\-file
 .I key\-file
+.RB [ \-\-tls\-cipher13
+.IR cipher\-string ]
+.RB [ \-\-tls\-cipher
+.IR cipher\-string ]
 .RB [ \-T ]
+.RB [ \-N ]
 .RB [ \-r ]
 .B \-i
 .I input\-file
@@ -170,6 +193,8 @@ zabbix_sender \- Zabbix sender utility
 .IR port ]
 .RB [ \-I
 .IR IP\-address ]
+.RB [ \-t
+.IR timeout ]
 .RB [ \-s
 .IR host ]
 .B \-\-tls\-connect
@@ -186,6 +211,10 @@ zabbix_sender \- Zabbix sender utility
 .I cert\-file
 .B \-\-tls\-key\-file
 .I key\-file
+.RB [ \-\-tls\-cipher13
+.IR cipher\-string ]
+.RB [ \-\-tls\-cipher
+.IR cipher\-string ]
 .B \-k
 .I key
 .B \-o
@@ -201,6 +230,8 @@ zabbix_sender \- Zabbix sender utility
 .IR port ]
 .RB [ \-I
 .IR IP\-address ]
+.RB [ \-t
+.IR timeout ]
 .RB [ \-s
 .IR host ]
 .B \-\-tls\-connect
@@ -217,7 +248,12 @@ zabbix_sender \- Zabbix sender utility
 .I cert\-file
 .B \-\-tls\-key\-file
 .I key\-file
+.RB [ \-\-tls\-cipher13
+.IR cipher\-string ]
+.RB [ \-\-tls\-cipher
+.IR cipher\-string ]
 .RB [ \-T ]
+.RB [ \-N ]
 .RB [ \-r ]
 .B \-i
 .I input\-file
@@ -230,6 +266,8 @@ zabbix_sender \- Zabbix sender utility
 .IR port ]
 .RB [ \-I
 .IR IP\-address ]
+.RB [ \-t
+.IR timeout ]
 .B \-s
 .I host
 .B \-\-tls\-connect
@@ -238,6 +276,10 @@ zabbix_sender \- Zabbix sender utility
 .I PSK\-identity
 .B \-\-tls\-psk\-file
 .I PSK\-file
+.RB [ \-\-tls\-cipher13
+.IR cipher\-string ]
+.RB [ \-\-tls\-cipher
+.IR cipher\-string ]
 .B \-k
 .I key
 .B \-o
@@ -251,6 +293,8 @@ zabbix_sender \- Zabbix sender utility
 .IR port ]
 .RB [ \-I
 .IR IP\-address ]
+.RB [ \-t
+.IR timeout ]
 .RB [ \-s
 .IR host ]
 .B \-\-tls\-connect
@@ -259,7 +303,12 @@ zabbix_sender \- Zabbix sender utility
 .I PSK\-identity
 .B \-\-tls\-psk\-file
 .I PSK\-file
+.RB [ \-\-tls\-cipher13
+.IR cipher\-string ]
+.RB [ \-\-tls\-cipher
+.IR cipher\-string ]
 .RB [ \-T ]
+.RB [ \-N ]
 .RB [ \-r ]
 .B \-i
 .I input\-file
@@ -274,6 +323,8 @@ zabbix_sender \- Zabbix sender utility
 .IR port ]
 .RB [ \-I
 .IR IP-address ]
+.RB [ \-t
+.IR timeout ]
 .RB [ \-s
 .IR host ]
 .B \-\-tls\-connect
@@ -282,6 +333,10 @@ zabbix_sender \- Zabbix sender utility
 .I PSK\-identity
 .B \-\-tls\-psk\-file
 .I PSK\-file
+.RB [ \-\-tls\-cipher13
+.IR cipher\-string ]
+.RB [ \-\-tls\-cipher
+.IR cipher\-string ]
 .B \-k
 .I key
 .B \-o
@@ -297,6 +352,8 @@ zabbix_sender \- Zabbix sender utility
 .IR port ]
 .RB [ \-I
 .IR IP-address ]
+.RB [ \-t
+.IR timeout ]
 .RB [ \-s
 .IR host ]
 .B \-\-tls\-connect
@@ -305,7 +362,12 @@ zabbix_sender \- Zabbix sender utility
 .I PSK\-identity
 .B \-\-tls\-psk\-file
 .I PSK\-file
+.RB [ \-\-tls\-cipher13
+.IR cipher\-string ]
+.RB [ \-\-tls\-cipher
+.IR cipher\-string ]
 .RB [ \-T ]
+.RB [ \-N ]
 .RB [ \-r ]
 .B \-i
 .I input\-file
@@ -327,6 +389,7 @@ By default
 does not read any configuration file.
 Only parameters \fBHostname\fR, \fBServerActive\fR, \fBSourceIP\fR, \fBTLSConnect\fR, \fBTLSCAFile\fR, \fBTLSCRLFile\fR,
 \fBTLSServerCertIssuer\fR, \fBTLSServerCertSubject\fR, \fBTLSCertFile\fR, \fBTLSKeyFile\fR, \fBTLSPSKIdentity\fR and \fBTLSPSKFile\fR are supported.
+Hostname defined through \fBHostnameItem\fR parameter will not be picked up, in this case the hostname should be specified via command line (see -s option).
 All addresses defined in the agent \fBServerActive\fR configuration parameter are used for sending data.
 If sending of batch data fails to one address, the following batches are not sent to this address.
 .IP "\fB\-z\fR, \fB\-\-zabbix\-server\fR \fIserver\fR"
@@ -340,6 +403,8 @@ When used together with \fB\-\-config\fR, overrides the port entries of \fBServe
 .IP "\fB\-I\fR, \fB\-\-source\-address\fR \fIIP\-address\fR"
 Specify source IP address.
 When used together with \fB\-\-config\fR, overrides \fBSourceIP\fR parameter specified in agentd configuration file.
+.IP "\fB\-t\fR, \fB\-\-timeout\fR \fIseconds\fR"
+Specify timeout. Valid range: 1\-300 seconds (default: 60)
 .IP "\fB\-s\fR, \fB\-\-host\fR \fIhost\fR"
 Specify host name the item belongs to (as registered in Zabbix frontend).
 Host IP address and DNS name will not work.
@@ -401,6 +466,17 @@ For more details please see option \fB\-\-input\-file\fR.
 
 If a timestamped value is sent for a host that is in a “no data” maintenance type then this value will be dropped; however, it is possible to send a timestamped value in for an expired maintenance period and it will be accepted. 
 
+.IP "\fB\-N\fR, \fB\-\-with\-ns\fR"
+This option can be only used with \fB\-\-with\-timestamps\fR option.
+
+Each line of the input file must contain 5 whitespace delimited entries: \fB<hostname> <key> <timestamp> <ns> <value>\fR.
+
+An example of a line of the input file:
+
+\fB "Linux DB3" db.connections 1429533600 7402561 43\fR
+
+For more details please see option \fB\-\-input\-file\fR.
+
 .IP "\fB\-r\fR, \fB\-\-real\-time\fR"
 Send values one by one as soon as they are received.
 This can be used when reading from standard input.
@@ -439,6 +515,10 @@ Full pathname of a file containing the private key.
 PSK\-identity string.
 .IP "\fB\-\-tls\-psk\-file\fR \fIPSK\-file\fR"
 Full pathname of a file containing the pre-shared key.
+.IP "\fB\-\-tls\-cipher13\fR \fIcipher\-string\fR"
+Cipher string for OpenSSL 1.1.1 or newer for TLS 1.3. Override the default ciphersuite selection criteria. This option is not available if OpenSSL version is less than 1.1.1.
+.IP "\fB\-\-tls\-cipher\fR \fIcipher\-string\fR"
+GnuTLS priority string (for TLS 1.2 and up) or OpenSSL cipher string (only for TLS 1.2). Override the default ciphersuite selection criteria.
 .IP "\fB\-v\fR, \fB\-\-verbose\fR"
 Verbose mode, \fB\-vv\fR for more details.
 .IP "\fB\-h\fR, \fB\-\-help\fR"
@@ -510,6 +590,5 @@ Documentation
 .BR zabbix_proxy (8),
 .BR zabbix_server (8),
 .BR zabbix_js (1),
-.BR zabbix_agent2 (8)
-.SH AUTHOR
-Alexei Vladishev <alex@zabbix.com>
+.BR zabbix_agent2 (8),
+.BR zabbix_web_service (8)

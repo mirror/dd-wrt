@@ -1,6 +1,6 @@
 /*
 ** Zabbix
-** Copyright (C) 2001-2020 Zabbix SIA
+** Copyright (C) 2001-2022 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -21,7 +21,7 @@
 #include "zbxtypes.h"
 
 #if defined(_WINDOWS) || defined(__MINGW32__)
-#include "symbols.h"
+#include "zbxsymbols.h"
 
 int	__zbx_open(const char *pathname, int flags)
 {
@@ -79,8 +79,6 @@ void	find_cr_lf_szbyte(const char *encoding, const char **cr, const char **lf, s
 }
 
 /******************************************************************************
- *                                                                            *
- * Function: zbx_read                                                         *
  *                                                                            *
  * Purpose: Read one text line from a file descriptor into buffer             *
  *                                                                            *
@@ -150,13 +148,21 @@ int	zbx_is_regular_file(const char *path)
 	return FAIL;
 }
 
-#ifndef _WINDOWS
-int	zbx_get_file_time(const char *path, zbx_file_time_t *time)
+#if !(defined(_WINDOWS) || defined(__MINGW32__))
+int	zbx_get_file_time(const char *path, int sym, zbx_file_time_t *time)
 {
 	zbx_stat_t	buf;
 
-	if (0 != zbx_stat(path, &buf))
-		return FAIL;
+	if (0 != sym)
+	{
+		if (0 != lstat(path, &buf))
+			return FAIL;
+	}
+	else
+	{
+		if (0 != zbx_stat(path, &buf))
+			return FAIL;
+	}
 
 	time->access_time = (zbx_fs_time_t)buf.st_atime;
 	time->modification_time = (zbx_fs_time_t)buf.st_mtime;
@@ -164,6 +170,51 @@ int	zbx_get_file_time(const char *path, zbx_file_time_t *time)
 
 	return SUCCEED;
 }
+
+char	*zbx_fgets(char *buffer, int size, FILE *fp)
+{
+	char	*s;
+
+	do
+	{
+		errno = 0;
+		s = fgets(buffer, size, fp);
+	}
+	while (EINTR == errno && NULL == s);
+
+	return s;
+}
+
+/******************************************************************************
+ *                                                                            *
+ * Purpose: call write in a loop, iterating until all the data is written.    *
+ *                                                                            *
+ * Parameters: fd      - [IN] descriptor                                      *
+ *             buf     - [IN] buffer to write                                 *
+ *             n       - [IN] bytes count to write                            *
+ *                                                                            *
+ * Return value: SUCCEED - n bytes successfully written                       *
+ *               FAIL    - less than n bytes are written                      *
+ *                                                                            *
+ ******************************************************************************/
+int	zbx_write_all(int fd, const char *buf, size_t n)
+{
+	while (0 < n)
+	{
+		ssize_t	ret;
+
+		if (-1 != (ret = write(fd, buf, n)))
+		{
+			buf += ret;
+			n -= (size_t)ret;
+		}
+		else if (EINTR != errno)
+			return FAIL;
+	}
+
+	return SUCCEED;
+}
+
 #else	/* _WINDOWS */
 static	int	get_file_time_stat(const char *path, zbx_file_time_t *time)
 {
@@ -182,17 +233,30 @@ static	int	get_file_time_stat(const char *path, zbx_file_time_t *time)
 	return SUCCEED;
 }
 
-int	zbx_get_file_time(const char *path, zbx_file_time_t *time)
+int	zbx_get_file_time(const char *path, int sym, zbx_file_time_t *time)
 {
 	int			f = -1, ret = SUCCEED;
 	intptr_t		h;
 	ZBX_FILE_BASIC_INFO	info;
+	HANDLE			sym_handle = NULL;
+	wchar_t			*wpath = NULL;
 
-	if (NULL == zbx_GetFileInformationByHandleEx || -1 == (f = zbx_open(path, O_RDONLY)))
-		return get_file_time_stat(path, time); /* fall back to stat() */
+	if (0 == sym || NULL == zbx_GetFileInformationByHandleEx)
+	{
+		if (NULL == zbx_GetFileInformationByHandleEx || -1 == (f = zbx_open(path, O_RDONLY)))
+			return get_file_time_stat(path, time); /* fall back to stat() */
 
-	if (-1 == (h = _get_osfhandle(f)) ||
-			0 == zbx_GetFileInformationByHandleEx((HANDLE)h, zbx_FileBasicInfo, &info, sizeof(info)))
+		if (-1 == (h = _get_osfhandle(f)) ||
+				0 == zbx_GetFileInformationByHandleEx((HANDLE)h, zbx_FileBasicInfo, &info, sizeof(info)))
+		{
+			ret = FAIL;
+			goto out;
+		}
+	}
+	else if (NULL == (wpath = zbx_utf8_to_unicode(path)) || INVALID_HANDLE_VALUE == (sym_handle = CreateFile(wpath,
+			GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_WRITE, NULL, OPEN_EXISTING,
+			FILE_FLAG_BACKUP_SEMANTICS | FILE_FLAG_OPEN_REPARSE_POINT, NULL)) ||
+			0 == zbx_GetFileInformationByHandleEx(sym_handle, zbx_FileBasicInfo, &info, sizeof(info)))
 	{
 		ret = FAIL;
 		goto out;
@@ -210,8 +274,13 @@ int	zbx_get_file_time(const char *path, zbx_file_time_t *time)
 #undef SEC_TO_UNIX_EPOCH
 
 out:
+	zbx_free(wpath);
+
 	if (-1 != f)
 		close(f);
+
+	if (NULL != sym_handle)
+		CloseHandle(sym_handle);
 
 	return ret;
 }

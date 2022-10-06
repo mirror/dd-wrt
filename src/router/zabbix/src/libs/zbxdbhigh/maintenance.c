@@ -1,6 +1,6 @@
 /*
 ** Zabbix
-** Copyright (C) 2001-2020 Zabbix SIA
+** Copyright (C) 2001-2022 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -18,11 +18,9 @@
 **/
 
 #include "common.h"
-#include "db.h"
+#include "zbxdbhigh.h"
 
 /******************************************************************************
- *                                                                            *
- * Function: zbx_db_lock_maintenanceids                                       *
  *                                                                            *
  * Purpose: lock maintenances in database                                     *
  *                                                                            *
@@ -58,8 +56,6 @@ int	zbx_db_lock_maintenanceids(zbx_vector_uint64_t *maintenanceids)
 			maintenanceids->values_num);
 #if defined(HAVE_MYSQL)
 	zbx_strcpy_alloc(&sql, &sql_alloc, &sql_offset, " order by maintenanceid lock in share mode");
-#elif defined(HAVE_IBM_DB2)
-	zbx_strcpy_alloc(&sql, &sql_alloc, &sql_offset, " order by maintenanceid with rs use and keep share locks");
 #elif defined(HAVE_ORACLE)
 	/* Row level shared locks are not supported in Oracle. Table lock in share mode leads to deadlock on */
 	/* event_suppress insertion due to locking that occurs in order to satisfy foreign key constraint.   */

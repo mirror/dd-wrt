@@ -1,6 +1,6 @@
 /*
 ** Zabbix
-** Copyright (C) 2001-2020 Zabbix SIA
+** Copyright (C) 2001-2022 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -24,6 +24,8 @@ import (
 	"encoding/json"
 	"regexp"
 	"strings"
+
+	"git.zabbix.com/ap/plugin-support/zbxerr"
 
 	"github.com/mediocregopher/radix/v3"
 )
@@ -60,6 +62,7 @@ func parseRedisInfo(info string) (res redisInfo, err error) {
 			if _, ok := res[section]; !ok {
 				res[section] = make(infoKeySpace)
 			}
+
 			continue
 		}
 
@@ -70,14 +73,12 @@ func parseRedisInfo(info string) (res redisInfo, err error) {
 		}
 
 		key := infoKey(kv[0])
-		value := strings.TrimSpace(string(kv[1]))
+		value := strings.TrimSpace(kv[1])
 
 		// Followed sections has a bit more complicated format.
 		// E.g: dbXXX: keys=XXX,expires=XXX
 		if section == "Keyspace" || section == "Commandstats" ||
-			(section == "Replication" &&
-				redisSlaveMetricRE.MatchString(string(key))) {
-
+			(section == "Replication" && redisSlaveMetricRE.MatchString(string(key))) {
 			extKeySpace := make(infoExtKeySpace)
 
 			for _, ksParams := range strings.Split(value, ",") {
@@ -86,12 +87,14 @@ func parseRedisInfo(info string) (res redisInfo, err error) {
 			}
 
 			res[section][key] = extKeySpace
+
 			continue
 		}
 
 		if len(section) == 0 {
-			return nil, errorInvalidFormat
+			return nil, zbxerr.ErrorCannotParseResult
 		}
+
 		res[section][key] = value
 	}
 
@@ -100,40 +103,30 @@ func parseRedisInfo(info string) (res redisInfo, err error) {
 	}
 
 	if len(res) == 0 {
-		return nil, errorEmptyResult
+		return nil, zbxerr.ErrorEmptyResult
 	}
 
-	return
+	return res, nil
 }
 
 // infoHandler gets an output of 'INFO' command, parses it and returns it in JSON format.
-func (p *Plugin) infoHandler(conn redisClient, params []string) (interface{}, error) {
-	var (
-		res     string
-		section infoSection
-	)
+func infoHandler(conn redisClient, params map[string]string) (interface{}, error) {
+	var res string
 
-	if len(params) > 1 && len(params[1]) > 0 {
-		section = infoSection(strings.ToLower(params[1]))
-	} else {
-		section = "default"
-	}
+	section := infoSection(strings.ToLower(params["Section"]))
 
 	if err := conn.Query(radix.Cmd(&res, "INFO", string(section))); err != nil {
-		p.Errf(err.Error())
-		return nil, errorCannotFetchData
+		return nil, zbxerr.ErrorCannotFetchData.Wrap(err)
 	}
 
 	redisInfo, err := parseRedisInfo(res)
 	if err != nil {
-		p.Errf(err.Error())
-		return nil, errorCannotParseData
+		return nil, err
 	}
 
 	jsonRes, err := json.Marshal(redisInfo)
 	if err != nil {
-		p.Errf(err.Error())
-		return nil, errorCannotMarshalJson
+		return nil, zbxerr.ErrorCannotMarshalJSON.Wrap(err)
 	}
 
 	return string(jsonRes), nil

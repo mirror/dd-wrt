@@ -1,6 +1,6 @@
 /*
 ** Zabbix
-** Copyright (C) 2001-2020 Zabbix SIA
+** Copyright (C) 2001-2022 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -35,7 +35,7 @@ int	SYSTEM_SWAP_SIZE(AGENT_REQUEST *request, AGENT_RESULT *result)
 	swapdev = get_rparam(request, 0);
 	mode = get_rparam(request, 1);
 
-	if (NULL != swapdev && '\0' != *swapdev && 0 != strcmp(swapdev, "all"))	/* default parameter */
+	if (NULL != swapdev && '\0' != *swapdev && 0 != strcmp(swapdev, "all"))
 	{
 		SET_MSG_RESULT(result, zbx_strdup(NULL, "Invalid first parameter."));
 		return SYSINFO_RET_FAIL;
@@ -48,15 +48,25 @@ int	SYSTEM_SWAP_SIZE(AGENT_REQUEST *request, AGENT_RESULT *result)
 	}
 
 	if (NULL == mode || '\0' == *mode || 0 == strcmp(mode, "free"))
+	{
 		SET_UI64_RESULT(result, info.freeswap * (zbx_uint64_t)info.mem_unit);
+	}
 	else if (0 == strcmp(mode, "total"))
+	{
 		SET_UI64_RESULT(result, info.totalswap * (zbx_uint64_t)info.mem_unit);
+	}
 	else if (0 == strcmp(mode, "used"))
+	{
 		SET_UI64_RESULT(result, (info.totalswap - info.freeswap) * (zbx_uint64_t)info.mem_unit);
+	}
 	else if (0 == strcmp(mode, "pfree"))
-		SET_DBL_RESULT(result, info.totalswap ? 100.0 * (info.freeswap / (double)info.totalswap) : 0.0);
+	{
+		SET_DBL_RESULT(result, 0 != info.totalswap ? 100.0 * (info.freeswap / (double)info.totalswap) : 100.0);
+	}
 	else if (0 == strcmp(mode, "pused"))
-		SET_DBL_RESULT(result, info.totalswap ? 100.0 - 100.0 * (info.freeswap / (double)info.totalswap) : 0.0);
+	{
+		SET_DBL_RESULT(result, 0 != info.totalswap ? 100.0 - 100.0 * (info.freeswap / (double)info.totalswap) : 0.0);
+	}
 	else
 	{
 		SET_MSG_RESULT(result, zbx_strdup(NULL, "Invalid second parameter."));

@@ -1,6 +1,6 @@
 /*
 ** Zabbix
-** Copyright (C) 2001-2020 Zabbix SIA
+** Copyright (C) 2001-2022 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -41,6 +41,8 @@ const (
 	sysBlkdevLocation = "/sys/dev/block/"
 	devtypePrefix     = "DEVTYPE="
 	diskstatLocation  = "/proc/diskstats"
+	devTypeRom        = 5
+	devTypeRomString  = "rom"
 )
 
 type devRecord struct {
@@ -61,23 +63,49 @@ func (p *Plugin) getDiscovery() (out string, err error) {
 
 	devs := make([]*devRecord, 0)
 	for _, entry := range entries {
-		if stat, tmperr := os.Stat(devLocation + entry.Name()); tmperr == nil {
+		bypass := 0
+		devname := devLocation + entry.Name()
+		if stat, tmperr := os.Stat(devname); tmperr == nil {
 			if stat.Mode()&os.ModeType == os.ModeDevice {
 				dev := &devRecord{Name: entry.Name()}
 				if sysfs {
-					rdev := stat.Sys().(*syscall.Stat_t).Rdev
-					filename := fmt.Sprintf("%s%d:%d/uevent", sysBlkdevLocation, unix.Major(rdev), unix.Minor(rdev))
-					if file, tmperr := os.Open(filename); tmperr == nil {
-						scanner := bufio.NewScanner(file)
-						for scanner.Scan() {
-							if strings.HasPrefix(scanner.Text(), devtypePrefix) {
-								dev.Type = scanner.Text()[len(devtypePrefix):]
+					//nolint:unconvert
+					rdev := uint64(stat.Sys().(*syscall.Stat_t).Rdev)
+					dirname := fmt.Sprintf("%s%d:%d/", sysBlkdevLocation, unix.Major(rdev), unix.Minor(rdev))
+
+					if lstat, tmperr := os.Lstat(devname); tmperr == nil {
+						filename := dirname + "/device/type"
+						if file, tmperr := os.Open(filename); tmperr == nil {
+							var devtype int
+
+							if _, tmperr = fmt.Fscanf(file, "%d\n", &devtype); tmperr == nil {
+								if devtype == devTypeRom {
+									dev.Type = devTypeRomString
+									if lstat.Mode()&os.ModeSymlink != 0 {
+										bypass = 1
+									}
+								}
 							}
+							file.Close()
 						}
-						file.Close()
+					}
+
+					if dev.Type == "" {
+						filename := dirname + "uevent"
+						if file, tmperr := os.Open(filename); tmperr == nil {
+							scanner := bufio.NewScanner(file)
+							for scanner.Scan() {
+								if strings.HasPrefix(scanner.Text(), devtypePrefix) {
+									dev.Type = scanner.Text()[len(devtypePrefix):]
+								}
+							}
+							file.Close()
+						}
 					}
 				}
-				devs = append(devs, dev)
+				if bypass == 0 {
+					devs = append(devs, dev)
+				}
 			}
 		}
 	}
@@ -118,7 +146,8 @@ func (p *Plugin) getDeviceName(name string) (devName string, err error) {
 		if minor, err = strconv.ParseUint(fields[1], 10, 32); err != nil {
 			return
 		}
-		rdev := stat.Sys().(*syscall.Stat_t).Rdev
+		//nolint:unconvert
+		rdev := uint64(stat.Sys().(*syscall.Stat_t).Rdev)
 		if uint64(unix.Major(rdev)) == major && uint64(unix.Minor(rdev)) == minor {
 			return fields[2], nil
 		}
@@ -163,7 +192,8 @@ func (p *Plugin) scanDeviceStats(name string, buf *bytes.Buffer) (devstats *devS
 		}
 		var stat os.FileInfo
 		if stat, err = os.Stat(name); err == nil {
-			rdev = stat.Sys().(*syscall.Stat_t).Rdev
+			//nolint:unconvert
+			rdev = uint64(stat.Sys().(*syscall.Stat_t).Rdev)
 		}
 	}
 

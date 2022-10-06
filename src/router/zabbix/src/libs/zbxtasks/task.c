@@ -1,6 +1,6 @@
 /*
 ** Zabbix
-** Copyright (C) 2001-2020 Zabbix SIA
+** Copyright (C) 2001-2022 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -17,18 +17,14 @@
 ** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 **/
 
-#include <assert.h>
-
 #include "common.h"
 #include "log.h"
-
-#include "db.h"
+#include "zbxdbhigh.h"
 #include "zbxjson.h"
+
 #include "zbxtasks.h"
 
 /******************************************************************************
- *                                                                            *
- * Function: tm_remote_command_clear                                          *
  *                                                                            *
  * Purpose: frees remote command task resources                               *
  *                                                                            *
@@ -46,8 +42,6 @@ static void	tm_remote_command_clear(zbx_tm_remote_command_t *data)
 
 /******************************************************************************
  *                                                                            *
- * Function: tm_remote_command_result_clear                                   *
- *                                                                            *
  * Purpose: frees remote command result task resources                        *
  *                                                                            *
  * Parameters: data - [IN] the remote command result task data                *
@@ -60,7 +54,29 @@ static void	tm_remote_command_result_clear(zbx_tm_remote_command_result_t *data)
 
 /******************************************************************************
  *                                                                            *
- * Function: zbx_tm_task_clear                                                *
+ * Purpose: frees data result task resources                                  *
+ *                                                                            *
+ * Parameters: data - [IN] the data result task data                          *
+ *                                                                            *
+ ******************************************************************************/
+static void	tm_data_result_clear(zbx_tm_data_result_t *data)
+{
+	zbx_free(data->info);
+}
+
+/******************************************************************************
+ *                                                                            *
+ * Purpose: frees data task resources                                         *
+ *                                                                            *
+ * Parameters: data - [IN] the data task                                      *
+ *                                                                            *
+ ******************************************************************************/
+static void	tm_data_clear(zbx_tm_data_t *data)
+{
+	zbx_free(data->data);
+}
+
+/******************************************************************************
  *                                                                            *
  * Purpose: frees task resources                                              *
  *                                                                            *
@@ -82,6 +98,13 @@ void	zbx_tm_task_clear(zbx_tm_task_t *task)
 			case ZBX_TM_TASK_CHECK_NOW:
 				/* nothing to clear */
 				break;
+			case ZBX_TM_TASK_DATA:
+			case ZBX_TM_PROXYDATA:
+				tm_data_clear((zbx_tm_data_t *)task->data);
+				break;
+			case ZBX_TM_TASK_DATA_RESULT:
+				tm_data_result_clear((zbx_tm_data_result_t *)task->data);
+				break;
 			default:
 				THIS_SHOULD_NEVER_HAPPEN;
 		}
@@ -92,8 +115,6 @@ void	zbx_tm_task_clear(zbx_tm_task_t *task)
 }
 
 /******************************************************************************
- *                                                                            *
- * Function: zbx_tm_task_free                                                 *
  *                                                                            *
  * Purpose: frees task and its resources                                      *
  *                                                                            *
@@ -107,8 +128,6 @@ void	zbx_tm_task_free(zbx_tm_task_t *task)
 }
 
 /******************************************************************************
- *                                                                            *
- * Function: zbx_tm_remote_command_create                                     *
  *                                                                            *
  * Purpose: create a remote command task data                                 *
  *                                                                            *
@@ -153,8 +172,6 @@ zbx_tm_remote_command_t	*zbx_tm_remote_command_create(int command_type, const ch
 
 /******************************************************************************
  *                                                                            *
- * Function: zbx_tm_remote_command_result_create                              *
- *                                                                            *
  * Purpose: create a remote command result task data                          *
  *                                                                            *
  * Parameters: parent_taskid - [IN] the parent task identifier                *
@@ -179,8 +196,6 @@ zbx_tm_remote_command_result_t	*zbx_tm_remote_command_result_create(zbx_uint64_t
 
 /******************************************************************************
  *                                                                            *
- * Function: zbx_tm_check_now_create                                          *
- *                                                                            *
  * Purpose: create a check now task data                                      *
  *                                                                            *
  * Parameters: itemid - [IN] the item identifier                              *
@@ -200,7 +215,54 @@ zbx_tm_check_now_t	*zbx_tm_check_now_create(zbx_uint64_t itemid)
 
 /******************************************************************************
  *                                                                            *
- * Function: zbx_tm_task_create                                               *
+ * Purpose: create a data task                                                *
+ *                                                                            *
+ * Parameters: parent_taskid - [IN] parent task identifier                    *
+ *             str           - [IN] data depending on type                    *
+ *             len           - [IN] length of data                            *
+ *             type          - [IN] type of data task                         *
+ *                                                                            *
+ * Return value: The created data task.                                       *
+ *                                                                            *
+ ******************************************************************************/
+zbx_tm_data_t	*zbx_tm_data_create(zbx_uint64_t parent_taskid, const char *str, size_t len, int type)
+{
+	zbx_tm_data_t	*data;
+
+	data = (zbx_tm_data_t *)zbx_malloc(NULL, sizeof(zbx_tm_data_t));
+	data->data = zbx_malloc(NULL, (size_t)len + 1);
+	memcpy(data->data, str, (size_t)len);
+	data->data[len] = '\0';
+	data->parent_taskid = parent_taskid;
+	data->type = type;
+
+	return data;
+}
+
+/******************************************************************************
+ *                                                                            *
+ * Purpose: create a data result task data                                    *
+ *                                                                            *
+ * Parameters: parent_taskid - [IN] the parent task identifier                *
+ *             status        - [IN] the data task execution status            *
+ *             info          - [IN] the data task execution result            *
+ *                                                                            *
+ * Return value: The created data task result.                                *
+ *                                                                            *
+ ******************************************************************************/
+zbx_tm_data_result_t	*zbx_tm_data_result_create(zbx_uint64_t parent_taskid, int status, const char *info)
+{
+	zbx_tm_data_result_t	*data;
+
+	data = (zbx_tm_data_result_t *)zbx_malloc(NULL, sizeof(zbx_tm_data_result_t));
+	data->status = status;
+	data->parent_taskid = parent_taskid;
+	data->info = zbx_strdup(NULL, ZBX_NULL2EMPTY_STR(info));
+
+	return data;
+}
+
+/******************************************************************************
  *                                                                            *
  * Purpose: create a new task                                                 *
  *                                                                            *
@@ -233,8 +295,6 @@ zbx_tm_task_t	*zbx_tm_task_create(zbx_uint64_t taskid, unsigned char type, unsig
 }
 
 /******************************************************************************
- *                                                                            *
- * Function: tm_save_remote_command_tasks                                     *
  *                                                                            *
  * Purpose: saves remote command task data in database                        *
  *                                                                            *
@@ -280,8 +340,6 @@ static int	tm_save_remote_command_tasks(zbx_tm_task_t **tasks, int tasks_num)
 
 /******************************************************************************
  *                                                                            *
- * Function: tm_save_remote_command_result_tasks                              *
- *                                                                            *
  * Purpose: saves remote command result task data in database                 *
  *                                                                            *
  * Parameters: tasks     - [IN] the tasks                                     *
@@ -323,8 +381,6 @@ static int	tm_save_remote_command_result_tasks(zbx_tm_task_t **tasks, int tasks_
 
 /******************************************************************************
  *                                                                            *
- * Function: tm_save_check_now_tasks                                          *
- *                                                                            *
  * Purpose: saves remote command task data in database                        *
  *                                                                            *
  * Parameters: tasks     - [IN] the tasks                                     *
@@ -364,7 +420,90 @@ static int	tm_save_check_now_tasks(zbx_tm_task_t **tasks, int tasks_num)
 
 /******************************************************************************
  *                                                                            *
- * Function: tm_save_tasks                                                    *
+ * Purpose: saves data task in database                                       *
+ *                                                                            *
+ * Parameters: tasks     - [IN] the tasks                                     *
+ *             tasks_num - [IN] the number of tasks to process                *
+ *                                                                            *
+ * Return value: SUCCEED - the data was saved successfully                    *
+ *               FAIL    - otherwise                                          *
+ *                                                                            *
+ * Comments: The tasks array can contain mixture of task types.               *
+ *                                                                            *
+ ******************************************************************************/
+static int	tm_save_data_tasks(zbx_tm_task_t **tasks, int tasks_num)
+{
+	int		i, ret;
+	zbx_db_insert_t	db_insert;
+	zbx_tm_data_t	*data;
+
+	zbx_db_insert_prepare(&db_insert, "task_data", "taskid", "type", "data", "parent_taskid", NULL);
+
+	for (i = 0; i < tasks_num; i++)
+	{
+		const zbx_tm_task_t	*task = tasks[i];
+
+		switch (task->type)
+		{
+			case ZBX_TM_TASK_DATA:
+			case ZBX_TM_PROXYDATA:
+				data = (zbx_tm_data_t *)task->data;
+
+				if (0 == data->parent_taskid)
+					data->parent_taskid = task->taskid;
+
+				zbx_db_insert_add_values(&db_insert, task->taskid, data->type, data->data,
+						data->parent_taskid);
+		}
+	}
+
+	ret = zbx_db_insert_execute(&db_insert);
+	zbx_db_insert_clean(&db_insert);
+
+	return ret;
+}
+
+/******************************************************************************
+ *                                                                            *
+ * Purpose: saves data task result in database                                *
+ *                                                                            *
+ * Parameters: tasks     - [IN] the tasks                                     *
+ *             tasks_num - [IN] the number of tasks to process                *
+ *                                                                            *
+ * Return value: SUCCEED - the data was saved successfully                    *
+ *               FAIL    - otherwise                                          *
+ *                                                                            *
+ * Comments: The tasks array can contain mixture of task types.               *
+ *                                                                            *
+ ******************************************************************************/
+static int	tm_save_data_result_tasks(zbx_tm_task_t **tasks, int tasks_num)
+{
+	int			i, ret;
+	zbx_db_insert_t		db_insert;
+	zbx_tm_data_result_t	*data;
+
+	zbx_db_insert_prepare(&db_insert, "task_result", "taskid", "status", "parent_taskid", "info", NULL);
+
+	for (i = 0; i < tasks_num; i++)
+	{
+		const zbx_tm_task_t	*task = tasks[i];
+
+		switch (task->type)
+		{
+			case ZBX_TM_TASK_DATA_RESULT:
+				data = (zbx_tm_data_result_t *)task->data;
+				zbx_db_insert_add_values(&db_insert, task->taskid, data->status, data->parent_taskid,
+						data->info);
+		}
+	}
+
+	ret = zbx_db_insert_execute(&db_insert);
+	zbx_db_insert_clean(&db_insert);
+
+	return ret;
+}
+
+/******************************************************************************
  *                                                                            *
  * Purpose: saves tasks into database                                         *
  *                                                                            *
@@ -377,7 +516,8 @@ static int	tm_save_check_now_tasks(zbx_tm_task_t **tasks, int tasks_num)
  ******************************************************************************/
 static int	tm_save_tasks(zbx_tm_task_t **tasks, int tasks_num)
 {
-	int		i, ret, remote_command_num = 0, remote_command_result_num = 0, check_now_num = 0, ids_num = 0;
+	int		i, ret, remote_command_num = 0, remote_command_result_num = 0, check_now_num = 0, ids_num = 0,
+			data_num = 0, data_result_num = 0;
 	zbx_uint64_t	taskid;
 	zbx_db_insert_t	db_insert;
 
@@ -402,6 +542,13 @@ static int	tm_save_tasks(zbx_tm_task_t **tasks, int tasks_num)
 				break;
 			case ZBX_TM_TASK_CHECK_NOW:
 				check_now_num++;
+				break;
+			case ZBX_TM_TASK_DATA:
+			case ZBX_TM_PROXYDATA:
+				data_num++;
+				break;
+			case ZBX_TM_TASK_DATA_RESULT:
+				data_result_num++;
 				break;
 			default:
 				THIS_SHOULD_NEVER_HAPPEN;
@@ -435,12 +582,16 @@ static int	tm_save_tasks(zbx_tm_task_t **tasks, int tasks_num)
 	if (SUCCEED == ret && 0 != check_now_num)
 		ret = tm_save_check_now_tasks(tasks, tasks_num);
 
+	if (SUCCEED == ret && 0 != data_num)
+		ret = tm_save_data_tasks(tasks, tasks_num);
+
+	if (SUCCEED == ret && 0 != data_result_num)
+		ret = tm_save_data_result_tasks(tasks, tasks_num);
+
 	return ret;
 }
 
 /******************************************************************************
- *                                                                            *
- * Function: zbx_tm_save_tasks                                                *
  *                                                                            *
  * Purpose: saves tasks and their data into database                          *
  *                                                                            *
@@ -457,8 +608,6 @@ void	zbx_tm_save_tasks(zbx_vector_ptr_t *tasks)
 }
 
 /******************************************************************************
- *                                                                            *
- * Function: zbx_tm_save_task                                                 *
  *                                                                            *
  * Purpose: saves task and its data into database                             *
  *                                                                            *
@@ -482,8 +631,6 @@ int	zbx_tm_save_task(zbx_tm_task_t *task)
 }
 
 /******************************************************************************
- *                                                                            *
- * Function: zbx_tm_update_task_status                                        *
  *                                                                            *
  * Purpose: update status of the specified tasks in database                  *
  *                                                                            *
@@ -522,8 +669,6 @@ void	zbx_tm_update_task_status(zbx_vector_ptr_t *tasks, int status)
 
 /******************************************************************************
  *                                                                            *
- * Function: tm_json_serialize_task                                           *
- *                                                                            *
  * Purpose: serializes common task data in json format                        *
  *                                                                            *
  * Parameters: json - [OUT] the json data                                     *
@@ -538,8 +683,6 @@ static void	tm_json_serialize_task(struct zbx_json *json, const zbx_tm_task_t *t
 }
 
 /******************************************************************************
- *                                                                            *
- * Function: tm_json_serialize_remote_command                                 *
  *                                                                            *
  * Purpose: serializes remote command data in json format                     *
  *                                                                            *
@@ -565,8 +708,6 @@ static void	tm_json_serialize_remote_command(struct zbx_json *json, const zbx_tm
 
 /******************************************************************************
  *                                                                            *
- * Function: tm_json_serialize_remote_command_result                          *
- *                                                                            *
  * Purpose: serializes remote command result data in json format              *
  *                                                                            *
  * Parameters: json - [OUT] the json data                                     *
@@ -583,8 +724,6 @@ static void	tm_json_serialize_remote_command_result(struct zbx_json *json,
 
 /******************************************************************************
  *                                                                            *
- * Function: tm_json_serialize_check_now                                      *
- *                                                                            *
  * Purpose: serializes check now data in json format                          *
  *                                                                            *
  * Parameters: json - [OUT] the json data                                     *
@@ -598,7 +737,35 @@ static void	tm_json_serialize_check_now(struct zbx_json *json, const zbx_tm_chec
 
 /******************************************************************************
  *                                                                            *
- * Function: zbx_tm_json_serialize_tasks                                      *
+ * Purpose: serializes data task in json format                               *
+ *                                                                            *
+ * Parameters: json - [OUT] the json data                                     *
+ *             data - [IN] the data task to serialize                         *
+ *                                                                            *
+ ******************************************************************************/
+static void	tm_json_serialize_data(struct zbx_json *json, const zbx_tm_data_t *data)
+{
+	zbx_json_adduint64(json, ZBX_PROTO_TAG_DATA_TYPE, data->type);
+	zbx_json_adduint64(json, ZBX_PROTO_TAG_PARENT_TASKID, data->parent_taskid);
+	zbx_json_addstring(json, ZBX_PROTO_TAG_DATA, data->data, ZBX_JSON_TYPE_STRING);
+}
+
+/******************************************************************************
+ *                                                                            *
+ * Purpose: serializes data task result in json format                        *
+ *                                                                            *
+ * Parameters: json - [OUT] the json data                                     *
+ *             data - [IN] the data task result to serialize                  *
+ *                                                                            *
+ ******************************************************************************/
+static void	tm_json_serialize_data_result(struct zbx_json *json, const zbx_tm_data_result_t *data)
+{
+	zbx_json_addint64(json, ZBX_PROTO_TAG_STATUS, data->status);
+	zbx_json_addstring(json, ZBX_PROTO_TAG_INFO, data->info, ZBX_JSON_TYPE_STRING);
+	zbx_json_adduint64(json, ZBX_PROTO_TAG_PARENT_TASKID, data->parent_taskid);
+}
+
+/******************************************************************************
  *                                                                            *
  * Purpose: serializes remote command data in json format                     *
  *                                                                            *
@@ -630,6 +797,13 @@ void	zbx_tm_json_serialize_tasks(struct zbx_json *json, const zbx_vector_ptr_t *
 			case ZBX_TM_TASK_CHECK_NOW:
 				tm_json_serialize_check_now(json, (zbx_tm_check_now_t *)task->data);
 				break;
+			case ZBX_TM_TASK_DATA:
+			case ZBX_TM_PROXYDATA:
+				tm_json_serialize_data(json, (zbx_tm_data_t *)task->data);
+				break;
+			case ZBX_TM_TASK_DATA_RESULT:
+				tm_json_serialize_data_result(json, (zbx_tm_data_result_t *)task->data);
+				break;
 			default:
 				THIS_SHOULD_NEVER_HAPPEN;
 				break;
@@ -642,8 +816,6 @@ void	zbx_tm_json_serialize_tasks(struct zbx_json *json, const zbx_vector_ptr_t *
 }
 
 /******************************************************************************
- *                                                                            *
- * Function: tm_json_deserialize_remote_command                               *
  *                                                                            *
  * Purpose: deserializes remote command from json data                        *
  *                                                                            *
@@ -731,8 +903,6 @@ out:
 
 /******************************************************************************
  *                                                                            *
- * Function: tm_json_deserialize_remote_command_result                        *
- *                                                                            *
  * Purpose: deserializes remote command result from json data                 *
  *                                                                            *
  * Parameters: jp - [IN] the json data                                        *
@@ -773,8 +943,6 @@ out:
 
 /******************************************************************************
  *                                                                            *
- * Function: tm_json_deserialize_check_now                                    *
- *                                                                            *
  * Purpose: deserializes check now from json data                             *
  *                                                                            *
  * Parameters: jp - [IN] the json data                                        *
@@ -799,7 +967,85 @@ static zbx_tm_check_now_t	*tm_json_deserialize_check_now(const struct zbx_json_p
 
 /******************************************************************************
  *                                                                            *
- * Function: tm_json_deserialize_task                                         *
+ * Purpose: deserializes data task from json                                  *
+ *                                                                            *
+ * Parameters: jp - [IN] the json                                             *
+ *                                                                            *
+ * Return value: The deserialized data task or NULL if deserialization        *
+ *               failed.                                                      *
+ *                                                                            *
+ ******************************************************************************/
+static zbx_tm_data_t	*tm_json_deserialize_data(const struct zbx_json_parse *jp)
+{
+	char		*str = NULL, value[MAX_ID_LEN + 1];
+	size_t		str_alloc = 0;
+	zbx_tm_data_t	*data = NULL;
+	zbx_uint64_t	parent_taskid;
+	int		type;
+
+	if (SUCCEED != zbx_json_value_by_name_dyn(jp, ZBX_PROTO_TAG_DATA, &str, &str_alloc, NULL))
+		goto out;
+
+	if (SUCCEED != zbx_json_value_by_name(jp, ZBX_PROTO_TAG_PARENT_TASKID, value, sizeof(value), NULL) ||
+			SUCCEED != is_uint64(value, &parent_taskid))
+	{
+		goto out;
+	}
+
+	if (SUCCEED != zbx_json_value_by_name(jp, ZBX_PROTO_TAG_DATA_TYPE, value, sizeof(value), NULL))
+	{
+		goto out;
+	}
+	type = atoi(value);
+
+	data = zbx_tm_data_create(parent_taskid, str, (int)strlen(str), type);
+out:
+	zbx_free(str);
+
+	return data;
+}
+
+/******************************************************************************
+ *                                                                            *
+ * Purpose: deserializes data task result from json                           *
+ *                                                                            *
+ * Parameters: jp - [IN] the json                                             *
+ *                                                                            *
+ * Return value: The deserialized data task result or NULL if deserialization *
+ *               failed.                                                      *
+ *                                                                            *
+ ******************************************************************************/
+static zbx_tm_data_result_t	*tm_json_deserialize_data_result(const struct zbx_json_parse *jp)
+{
+	char			value[MAX_STRING_LEN];
+	int			status;
+	zbx_uint64_t		parent_taskid;
+	char			*info = NULL;
+	size_t			info_alloc = 0;
+	zbx_tm_data_result_t	*data = NULL;
+
+	if (SUCCEED != zbx_json_value_by_name(jp, ZBX_PROTO_TAG_STATUS, value, sizeof(value), NULL))
+		goto out;
+
+	status = atoi(value);
+
+	if (SUCCEED != zbx_json_value_by_name(jp, ZBX_PROTO_TAG_PARENT_TASKID, value, sizeof(value), NULL) ||
+			SUCCEED != is_uint64(value, &parent_taskid))
+	{
+		goto out;
+	}
+
+	if (SUCCEED != zbx_json_value_by_name_dyn(jp, ZBX_PROTO_TAG_INFO, &info, &info_alloc, NULL))
+		goto out;
+
+	data = zbx_tm_data_result_create(parent_taskid, status, info);
+out:
+	zbx_free(info);
+
+	return data;
+}
+
+/******************************************************************************
  *                                                                            *
  * Purpose: deserializes common task data from json data                      *
  *                                                                            *
@@ -832,8 +1078,6 @@ static zbx_tm_task_t	*tm_json_deserialize_task(const struct zbx_json_parse *jp)
 }
 
 /******************************************************************************
- *                                                                            *
- * Function: zbx_tm_json_deserialize_tasks                                    *
  *                                                                            *
  * Purpose: deserializes tasks from json data                                 *
  *                                                                            *
@@ -875,6 +1119,13 @@ void	zbx_tm_json_deserialize_tasks(const struct zbx_json_parse *jp, zbx_vector_p
 			case ZBX_TM_TASK_CHECK_NOW:
 				task->data = tm_json_deserialize_check_now(&jp_task);
 				break;
+			case ZBX_TM_TASK_DATA:
+			case ZBX_TM_PROXYDATA:
+				task->data = tm_json_deserialize_data(&jp_task);
+				break;
+			case ZBX_TM_TASK_DATA_RESULT:
+				task->data = tm_json_deserialize_data_result(&jp_task);
+				break;
 			default:
 				THIS_SHOULD_NEVER_HAPPEN;
 				break;
@@ -889,4 +1140,107 @@ void	zbx_tm_json_deserialize_tasks(const struct zbx_json_parse *jp, zbx_vector_p
 
 		zbx_vector_ptr_append(tasks, task);
 	}
+}
+
+/******************************************************************************
+ *                                                                            *
+ * Purpose: insert task and its data in database                              *
+ *                                                                            *
+ * Parameters: data         - [IN] task data                                  *
+ *             len          - [IN] length of data                             *
+ *             proxy_hostid - [IN] proxy identifier                           *
+ *                                                                            *
+ * Return value: The created data task id or 0 on failure.                    *
+ *                                                                            *
+ ******************************************************************************/
+static zbx_uint64_t	zbx_create_task_data(const char *data, size_t len, zbx_uint64_t proxy_hostid)
+{
+	zbx_tm_task_t	*task;
+	zbx_uint64_t	taskid;
+
+	taskid = DBget_maxid("task");
+
+	task = zbx_tm_task_create(taskid, ZBX_TM_TASK_DATA, ZBX_TM_STATUS_NEW, time(NULL), ZBX_DATA_TTL, proxy_hostid);
+
+	task->data = zbx_tm_data_create(task->taskid, data, len, ZBX_TM_DATA_TYPE_TEST_ITEM);
+
+	DBbegin();
+
+	if (FAIL == zbx_tm_save_task(task))
+		taskid = 0;
+
+	DBcommit();
+
+	zbx_tm_task_free(task);
+
+	return taskid;
+}
+
+/******************************************************************************
+ *                                                                            *
+ * Purpose: wait for task result                                              *
+ *                                                                            *
+ * Parameters: taskid - [IN] task identifier                                  *
+ *             info   - [OUT] task result or error reason                     *
+ *                                                                            *
+ * Return value: SUCCEED - if task was executed without errors                *
+ *               FAIL    - otherwise                                          *
+ *                                                                            *
+ ******************************************************************************/
+static int	zbx_tm_task_result_wait(zbx_uint64_t taskid, char **info)
+{
+	DB_RESULT	result;
+	DB_ROW		row;
+	int		ret, time_start;
+
+	for (time_start = time(NULL); ZBX_DATA_TTL > time(NULL) - time_start; sleep(1))
+	{
+		result = DBselect("select status,info"
+				" from task_result"
+				" where parent_taskid=" ZBX_FS_UI64,
+				taskid);
+
+		if (NULL != (row = DBfetch(result)))
+		{
+			*info = zbx_strdup(NULL, row[1]);
+
+			if (SUCCEED != (ret = atoi(row[0])))
+				ret = FAIL;
+
+			DBfree_result(result);
+			return ret;
+		}
+
+		DBfree_result(result);
+	}
+
+	*info = zbx_strdup(NULL, "Timeout while waiting for result.");
+
+	return FAIL;
+}
+
+/******************************************************************************
+ *                                                                            *
+ * Purpose: wait for task result                                              *
+ *                                                                            *
+ * Parameters: data         - [IN] task data                                  *
+ *             len          - [IN] length of data                             *
+ *             proxy_hostid - [IN] proxy identifier                           *
+ *             info         - [OUT] task result or error reason               *
+ *                                                                            *
+ * Return value: SUCCEED - if task was executed without errors                *
+ *               FAIL    - otherwise                                          *
+ *                                                                            *
+ ******************************************************************************/
+int	zbx_tm_execute_task_data(const char *data, size_t len, zbx_uint64_t proxy_hostid, char **info)
+{
+	zbx_uint64_t	taskid;
+
+	if (0 == (taskid = zbx_create_task_data(data, len, proxy_hostid)))
+	{
+		*info = zbx_strdup(NULL, "Cannot create task.");
+		return FAIL;
+	}
+
+	return zbx_tm_task_result_wait(taskid, info);
 }

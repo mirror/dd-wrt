@@ -1,6 +1,6 @@
 /*
 ** Zabbix
-** Copyright (C) 2001-2020 Zabbix SIA
+** Copyright (C) 2001-2022 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -17,9 +17,9 @@
 ** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 **/
 
-#include "common.h"
-#include "db.h"
 #include "dbupgrade.h"
+
+#include "zbxdbhigh.h"
 #include "zbxtasks.h"
 #include "zbxregexp.h"
 #include "log.h"
@@ -778,114 +778,65 @@ static int	DBpatch_3050069(void)
 
 	return SUCCEED;
 }
-/* remove references to table that is about to be renamed, this is required on IBM DB2 */
 
 static int	DBpatch_3050070(void)
 {
-#ifdef HAVE_IBM_DB2
-	return DBdrop_foreign_key("group_prototype", 2);
-#else
 	return SUCCEED;
-#endif
 }
 
 static int	DBpatch_3050071(void)
 {
-#ifdef HAVE_IBM_DB2
-	return DBdrop_foreign_key("group_discovery", 1);
-#else
 	return SUCCEED;
-#endif
 }
 
 static int	DBpatch_3050072(void)
 {
-#ifdef HAVE_IBM_DB2
-	return DBdrop_foreign_key("scripts", 2);
-#else
 	return SUCCEED;
-#endif
 }
 
 static int	DBpatch_3050073(void)
 {
-#ifdef HAVE_IBM_DB2
-	return DBdrop_foreign_key("opcommand_grp", 2);
-#else
 	return SUCCEED;
-#endif
 }
 
 static int	DBpatch_3050074(void)
 {
-#ifdef HAVE_IBM_DB2
-	return DBdrop_foreign_key("opgroup", 2);
-#else
 	return SUCCEED;
-#endif
 }
 
 static int	DBpatch_3050075(void)
 {
-#ifdef HAVE_IBM_DB2
-	return DBdrop_foreign_key("config", 2);
-#else
 	return SUCCEED;
-#endif
 }
 
 static int	DBpatch_3050076(void)
 {
-#ifdef HAVE_IBM_DB2
-	return DBdrop_foreign_key("hosts_groups", 2);
-#else
 	return SUCCEED;
-#endif
 }
 
 static int	DBpatch_3050077(void)
 {
-#ifdef HAVE_IBM_DB2
-	return DBdrop_foreign_key("rights", 2);
-#else
 	return SUCCEED;
-#endif
 }
 
 static int	DBpatch_3050078(void)
 {
-#ifdef HAVE_IBM_DB2
-	return DBdrop_foreign_key("maintenances_groups", 2);
-#else
 	return SUCCEED;
-#endif
 }
 
 static int	DBpatch_3050079(void)
 {
-#ifdef HAVE_IBM_DB2
-	return DBdrop_foreign_key("tag_filter", 2);
-#else
 	return SUCCEED;
-#endif
 }
 
 static int	DBpatch_3050080(void)
 {
-#ifdef HAVE_IBM_DB2
-	return DBdrop_foreign_key("corr_condition_group", 2);
-#else
 	return SUCCEED;
-#endif
 }
 
 static int	DBpatch_3050081(void)
 {
-#ifdef HAVE_IBM_DB2
-	return DBdrop_foreign_key("widget_field", 2);
-#else
 	return SUCCEED;
-#endif
 }
 
 /* groups is reserved keyword since MySQL 8.0 */
@@ -900,159 +851,77 @@ static int	DBpatch_3050083(void)
 	return DBrename_index("hstgrp", "groups_1", "hstgrp_1", "name", 0);
 }
 
-/* restore references after renaming table on IBM DB2 */
-
 static int	DBpatch_3050084(void)
 {
-#ifdef HAVE_IBM_DB2
-	const ZBX_FIELD	field = {"groupid", NULL, "hstgrp", "groupid", 0, 0, 0, 0};
-
-	return DBadd_foreign_key("group_prototype", 2, &field);
-#else
 	return SUCCEED;
-#endif
 }
 
 static int	DBpatch_3050085(void)
 {
-#ifdef HAVE_IBM_DB2
-	const ZBX_FIELD	field = {"groupid", NULL, "hstgrp", "groupid", 0, 0, 0, ZBX_FK_CASCADE_DELETE};
-
-	return DBadd_foreign_key("group_discovery", 1, &field);
-#else
 	return SUCCEED;
-#endif
 }
 
 static int	DBpatch_3050086(void)
 {
-#ifdef HAVE_IBM_DB2
-	const ZBX_FIELD	field = {"groupid", NULL, "hstgrp", "groupid", 0, 0, 0, 0};
-
-	return DBadd_foreign_key("scripts", 2, &field);
-#else
 	return SUCCEED;
-#endif
 }
 
 static int	DBpatch_3050087(void)
 {
-#ifdef HAVE_IBM_DB2
-	const ZBX_FIELD	field = {"groupid", NULL, "hstgrp", "groupid", 0, 0, 0, 0};
-
-	return DBadd_foreign_key("opcommand_grp", 2, &field);
-#else
 	return SUCCEED;
-#endif
 }
 
 static int	DBpatch_3050088(void)
 {
-#ifdef HAVE_IBM_DB2
-	const ZBX_FIELD	field = {"groupid", NULL, "hstgrp", "groupid", 0, 0, 0, 0};
-
-	return DBadd_foreign_key("opgroup", 2, &field);
-#else
 	return SUCCEED;
-#endif
 }
 
 static int	DBpatch_3050089(void)
 {
-#ifdef HAVE_IBM_DB2
-	const ZBX_FIELD	field = {"discovery_groupid", NULL, "hstgrp", "groupid", 0, 0, 0, 0};
-
-	return DBadd_foreign_key("config", 2, &field);
-#else
 	return SUCCEED;
-#endif
 }
 
 static int	DBpatch_3050090(void)
 {
-#ifdef HAVE_IBM_DB2
-	const ZBX_FIELD	field = {"groupid", NULL, "hstgrp", "groupid", 0, 0, 0, ZBX_FK_CASCADE_DELETE};
-
-	return DBadd_foreign_key("hosts_groups", 2, &field);
-#else
 	return SUCCEED;
-#endif
 }
 
 static int	DBpatch_3050091(void)
 {
-#ifdef HAVE_IBM_DB2
-	const ZBX_FIELD	field = {"id",	NULL, "hstgrp", "groupid", 0, 0, 0, ZBX_FK_CASCADE_DELETE};
-
-	return DBadd_foreign_key("rights", 2, &field);
-#else
 	return SUCCEED;
-#endif
 }
 
 static int	DBpatch_3050092(void)
 {
-#ifdef HAVE_IBM_DB2
-	const ZBX_FIELD	field = {"groupid", NULL, "hstgrp", "groupid", 0, 0, 0, ZBX_FK_CASCADE_DELETE};
-
-	return DBadd_foreign_key("maintenances_groups", 2, &field);
-#else
 	return SUCCEED;
-#endif
 }
 
 static int	DBpatch_3050093(void)
 {
-#ifdef HAVE_IBM_DB2
-	const ZBX_FIELD	field = {"groupid", NULL, "hstgrp", "groupid", 0, 0, 0, ZBX_FK_CASCADE_DELETE};
-
-	return DBadd_foreign_key("tag_filter", 2, &field);
-#else
 	return SUCCEED;
-#endif
 }
 
 static int	DBpatch_3050094(void)
 {
-#ifdef HAVE_IBM_DB2
-	const ZBX_FIELD	field = {"groupid", NULL, "hstgrp", "groupid", 0, ZBX_TYPE_ID, ZBX_NOTNULL, 0};
-
-	return DBadd_foreign_key("corr_condition_group", 2, &field);
-#else
 	return SUCCEED;
-#endif
 }
 
 static int	DBpatch_3050095(void)
 {
-#ifdef HAVE_IBM_DB2
-	const ZBX_FIELD	field = {"value_groupid", NULL, "hstgrp", "groupid", 0, 0, 0, ZBX_FK_CASCADE_DELETE};
-
-	return DBadd_foreign_key("widget_field", 2, &field);
-#else
 	return SUCCEED;
-#endif
 }
-
-/* function is reserved keyword since MySQL 8.0 */
 
 static int	DBpatch_3050096(void)
 {
-#ifdef HAVE_IBM_DB2
-	return DBdrop_foreign_key("functions", 1);
-#else
 	return SUCCEED;
-#endif
 }
 
 static int	DBpatch_3050097(void)
 {
-#ifdef HAVE_IBM_DB2
-	return DBdrop_index("functions", "functions_2");
-#else
 	return SUCCEED;
-#endif
 }
+
+/* function is reserved keyword since MySQL 8.0 */
 
 static int	DBpatch_3050098(void)
 {
@@ -1063,22 +932,12 @@ static int	DBpatch_3050098(void)
 
 static int	DBpatch_3050099(void)
 {
-#ifdef HAVE_IBM_DB2
-	return DBcreate_index("functions", "functions_2", "itemid,name,parameter", 0);
-#else
 	return SUCCEED;
-#endif
 }
 
 static int	DBpatch_3050100(void)
 {
-#ifdef HAVE_IBM_DB2
-	const ZBX_FIELD	field = {"itemid", NULL, "items", "itemid", 0, 0, 0, ZBX_FK_CASCADE_DELETE};
-
-	return DBadd_foreign_key("functions", 1, &field);
-#else
 	return SUCCEED;
-#endif
 }
 
 static int	DBpatch_3050101(void)
@@ -1301,7 +1160,7 @@ static int	DBpatch_3050118(void)
 	if (0 == (program_type & ZBX_PROGRAM_TYPE_SERVER))
 		return SUCCEED;
 
-	DBbegin_multiple_update(&sql, &sql_alloc, &sql_offset);
+	zbx_DBbegin_multiple_update(&sql, &sql_alloc, &sql_offset);
 
 	result = DBselect(
 			"select e.eventid,t.priority"
@@ -1321,7 +1180,7 @@ static int	DBpatch_3050118(void)
 		if (SUCCEED != (ret = DBexecute_overflowed_sql(&sql, &sql_alloc, &sql_offset)))
 			goto out;
 	}
-	DBend_multiple_update(&sql, &sql_alloc, &sql_offset);
+	zbx_DBend_multiple_update(&sql, &sql_alloc, &sql_offset);
 
 	if (16 < sql_offset && ZBX_DB_OK > DBexecute("%s", sql))
 		ret = FAIL;
@@ -1343,7 +1202,7 @@ static int	DBpatch_3050119(void)
 	if (0 == (program_type & ZBX_PROGRAM_TYPE_SERVER))
 		return SUCCEED;
 
-	DBbegin_multiple_update(&sql, &sql_alloc, &sql_offset);
+	zbx_DBbegin_multiple_update(&sql, &sql_alloc, &sql_offset);
 
 	result = DBselect(
 			"select p.eventid,t.priority"
@@ -1363,7 +1222,7 @@ static int	DBpatch_3050119(void)
 			goto out;
 	}
 
-	DBend_multiple_update(&sql, &sql_alloc, &sql_offset);
+	zbx_DBend_multiple_update(&sql, &sql_alloc, &sql_offset);
 
 	if (16 < sql_offset && ZBX_DB_OK > DBexecute("%s", sql))
 		ret = FAIL;
@@ -1390,7 +1249,7 @@ static int	DBpatch_3050120(void)
 	sql = zbx_malloc(NULL, sql_alloc);
 	zbx_hashset_create(&eventids, 1000, ZBX_DEFAULT_UINT64_HASH_FUNC, ZBX_DEFAULT_UINT64_COMPARE_FUNC);
 
-	DBbegin_multiple_update(&sql, &sql_alloc, &sql_offset);
+	zbx_DBbegin_multiple_update(&sql, &sql_alloc, &sql_offset);
 
 	result = DBselect("select acknowledgeid,eventid,action from acknowledges order by clock");
 	while (NULL != (row = DBfetch(result)))
@@ -1417,7 +1276,7 @@ static int	DBpatch_3050120(void)
 			goto out;
 	}
 
-	DBend_multiple_update(&sql, &sql_alloc, &sql_offset);
+	zbx_DBend_multiple_update(&sql, &sql_alloc, &sql_offset);
 
 	if (16 < sql_offset && ZBX_DB_OK > DBexecute("%s", sql))
 		ret = FAIL;
@@ -1467,7 +1326,7 @@ static int	DBpatch_3050122(void)
 	char		*sql = NULL;
 	size_t		sql_alloc = 0, sql_offset = 0;
 
-	DBbegin_multiple_update(&sql, &sql_alloc, &sql_offset);
+	zbx_DBbegin_multiple_update(&sql, &sql_alloc, &sql_offset);
 
 	result = DBselect("select functionid,parameter from functions where name='logsource'");
 
@@ -1515,19 +1374,19 @@ static int	DBpatch_3050122(void)
 		zbx_strncpy_alloc(&processed_parameter, &param_alloc, &param_offset, orig_param + param_pos + param_len,
 				sep_pos - param_pos - param_len + 1);
 
-		if (FUNCTION_PARAM_LEN < (current_len = zbx_strlen_utf8(processed_parameter)))
+		if (ZBX_DBPATCH_FUNCTION_PARAM_LEN < (current_len = zbx_strlen_utf8(processed_parameter)))
 		{
 			zabbix_log(LOG_LEVEL_WARNING, "Cannot convert parameter \"%s\" of trigger function logsource"
 					" (functionid: %s) to regexp during database upgrade. The converted"
 					" value is too long for field \"parameter\" - " ZBX_FS_SIZE_T " characters."
 					" Allowed length is %d characters.",
-					row[1], row[0], (zbx_fs_size_t)current_len, FUNCTION_PARAM_LEN);
+					row[1], row[0], (zbx_fs_size_t)current_len, ZBX_DBPATCH_FUNCTION_PARAM_LEN);
 
 			zbx_free(processed_parameter);
 			continue;
 		}
 
-		db_parameter_esc = DBdyn_escape_string_len(processed_parameter, FUNCTION_PARAM_LEN);
+		db_parameter_esc = DBdyn_escape_string_len(processed_parameter, ZBX_DBPATCH_FUNCTION_PARAM_LEN);
 		zbx_free(processed_parameter);
 
 		zbx_snprintf_alloc(&sql, &sql_alloc, &sql_offset,
@@ -1540,7 +1399,7 @@ static int	DBpatch_3050122(void)
 			goto out;
 	}
 
-	DBend_multiple_update(&sql, &sql_alloc, &sql_offset);
+	zbx_DBend_multiple_update(&sql, &sql_alloc, &sql_offset);
 
 	if (16 < sql_offset)
 	{
@@ -2154,4 +2013,3 @@ DBPATCH_ADD(3050161, 0, 1)
 DBPATCH_ADD(3050162, 0, 1)
 
 DBPATCH_END()
-

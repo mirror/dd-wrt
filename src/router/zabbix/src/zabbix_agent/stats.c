@@ -1,6 +1,6 @@
 /*
 ** Zabbix
-** Copyright (C) 2001-2020 Zabbix SIA
+** Copyright (C) 2001-2022 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -17,25 +17,19 @@
 ** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 **/
 
-#include "common.h"
 #include "stats.h"
-#include "log.h"
-#include "zbxconf.h"
 
-#ifndef _WINDOWS
-#	include "diskdevices.h"
-#endif
-#include "cfg.h"
-#include "mutexs.h"
+#include "log.h"
+
+#include "zbxmutexs.h"
 
 #ifdef _WINDOWS
-#	include "service.h"
+#	include "zbxwinservice.h"
 #	include "perfstat.h"
 /* defined in sysinfo lib */
 extern int get_cpu_num_win32(void);
 #else
-#	include "daemon.h"
-#	include "ipc.h"
+#	include "zbxnix.h"
 #endif
 
 ZBX_COLLECTOR_DATA	*collector = NULL;
@@ -52,14 +46,10 @@ zbx_mutex_t		diskstats_lock = ZBX_MUTEX_NULL;
 
 /******************************************************************************
  *                                                                            *
- * Function: zbx_get_cpu_num                                                  *
- *                                                                            *
  * Purpose: returns the number of processors which are currently online       *
  *          (i.e., available).                                                *
  *                                                                            *
  * Return value: number of CPUs                                               *
- *                                                                            *
- * Author: Eugene Grigorjev                                                   *
  *                                                                            *
  ******************************************************************************/
 static int	zbx_get_cpu_num(void)
@@ -126,11 +116,7 @@ return_one:
 
 /******************************************************************************
  *                                                                            *
- * Function: init_collector_data                                              *
- *                                                                            *
  * Purpose: Allocate memory for collector                                     *
- *                                                                            *
- * Author: Eugene Grigorjev                                                   *
  *                                                                            *
  * Comments: Unix version allocates memory as shared.                         *
  *                                                                            *
@@ -138,7 +124,7 @@ return_one:
 int	init_collector_data(char **error)
 {
 	int	cpu_count, ret = FAIL;
-	size_t	sz, sz_cpu;
+	size_t	sz, sz_cpu, sz_cpu_phys_util = 0;
 
 	zabbix_log(LOG_LEVEL_DEBUG, "In %s()", __func__);
 
@@ -156,8 +142,12 @@ int	init_collector_data(char **error)
 	collector->cpus.count = cpu_count;
 #else
 	sz_cpu = sizeof(ZBX_SINGLE_CPU_STAT_DATA) * (cpu_count + 1);
+#ifdef _AIX
+	sz_cpu = ZBX_SIZE_T_ALIGN8(sz_cpu);
+	sz_cpu_phys_util = ZBX_SIZE_T_ALIGN8(sizeof(ZBX_CPU_UTIL_PCT_AIX)) * MAX_COLLECTOR_HISTORY * (cpu_count + 1);
+#endif
 
-	if (-1 == (shm_id = zbx_shm_create(sz + sz_cpu)))
+	if (-1 == (shm_id = zbx_shm_create(sz + sz_cpu + sz_cpu_phys_util)))
 	{
 		*error = zbx_strdup(*error, "cannot allocate shared memory for collector");
 		goto out;
@@ -179,6 +169,13 @@ int	init_collector_data(char **error)
 	collector->cpus.cpu = (ZBX_SINGLE_CPU_STAT_DATA *)((char *)collector + sz);
 	collector->cpus.count = cpu_count;
 	collector->diskstat_shmid = ZBX_NONEXISTENT_SHMID;
+#ifdef _AIX
+	collector->cpus_phys_util.counters = (ZBX_CPU_UTIL_PCT_AIX *)((char *)collector + sz + sz_cpu);
+	collector->cpus_phys_util.row_num = MAX_COLLECTOR_HISTORY;
+	collector->cpus_phys_util.column_num = cpu_count + 1;	/* each CPU + total for all CPUs */
+	collector->cpus_phys_util.h_latest = 0;
+	collector->cpus_phys_util.h_count = 0;
+#endif
 
 #ifdef ZBX_PROCSTAT_COLLECTOR
 	zbx_procstat_init();
@@ -191,6 +188,12 @@ int	init_collector_data(char **error)
 #ifdef _AIX
 	memset(&collector->vmstat, 0, sizeof(collector->vmstat));
 #endif
+
+#if defined(HAVE_KSTAT_H) && defined(HAVE_VMINFO_T_UPDATES)
+	if (SUCCEED != zbx_kstat_init(&collector->kstat, error))
+		goto out;
+#endif
+
 	ret = SUCCEED;
 #ifndef _WINDOWS
 out:
@@ -202,11 +205,7 @@ out:
 
 /******************************************************************************
  *                                                                            *
- * Function: free_collector_data                                              *
- *                                                                            *
  * Purpose: Free memory allocated for collector                               *
- *                                                                            *
- * Author: Eugene Grigorjev                                                   *
  *                                                                            *
  * Comments: Unix version allocated memory as shared.                         *
  *                                                                            *
@@ -232,17 +231,17 @@ void	free_collector_data(void)
 		collector->diskstat_shmid = ZBX_NONEXISTENT_SHMID;
 	}
 
-	if (-1 == shmctl(shm_id, IPC_RMID, 0))
-		zabbix_log(LOG_LEVEL_WARNING, "cannot remove shared memory for collector: %s", zbx_strerror(errno));
-
 	zbx_mutex_destroy(&diskstats_lock);
 #endif
+
+#if defined(HAVE_KSTAT_H) && defined(HAVE_VMINFO_T_UPDATES)
+	zbx_kstat_destroy();
+#endif
+
 	collector = NULL;
 }
 
 /******************************************************************************
- *                                                                            *
- * Function: diskstat_shm_init                                                *
  *                                                                            *
  * Purpose: Allocate shared memory for collecting disk statistics             *
  *                                                                            *
@@ -278,8 +277,6 @@ void	diskstat_shm_init(void)
 }
 
 /******************************************************************************
- *                                                                            *
- * Function: diskstat_shm_reattach                                            *
  *                                                                            *
  * Purpose: If necessary, reattach to disk statistics shared memory segment.  *
  *                                                                            *
@@ -320,8 +317,6 @@ void	diskstat_shm_reattach(void)
 }
 
 /******************************************************************************
- *                                                                            *
- * Function: diskstat_shm_extend                                              *
  *                                                                            *
  * Purpose: create a new, larger disk statistics shared memory segment and    *
  *          copy data from the old one.                                       *
@@ -394,11 +389,7 @@ void	diskstat_shm_extend(void)
 
 /******************************************************************************
  *                                                                            *
- * Function: collector_thread                                                 *
- *                                                                            *
  * Purpose: Collect system information                                        *
- *                                                                            *
- * Author: Eugene Grigorjev                                                   *
  *                                                                            *
  ******************************************************************************/
 ZBX_THREAD_ENTRY(collector_thread, args)
@@ -430,7 +421,12 @@ ZBX_THREAD_ENTRY(collector_thread, args)
 		collect_perfstat();
 #else
 		if (0 != CPU_COLLECTOR_STARTED(collector))
+		{
 			collect_cpustat(&(collector->cpus));
+#ifdef _AIX
+			collect_cpustat_physical(&collector->cpus_phys_util);
+#endif
+		}
 
 		if (0 != DISKDEVICE_COLLECTOR_STARTED(collector))
 			collect_stats_diskdevices();
@@ -443,6 +439,10 @@ ZBX_THREAD_ENTRY(collector_thread, args)
 #ifdef _AIX
 		if (1 == collector->vmstat.enabled)
 			collect_vmstat_data(&collector->vmstat);
+#endif
+
+#if defined(HAVE_KSTAT_H) && defined(HAVE_VMINFO_T_UPDATES)
+		zbx_kstat_collect(&collector->kstat);
 #endif
 		zbx_setproctitle("collector [idle 1 sec]");
 		zbx_sleep(1);

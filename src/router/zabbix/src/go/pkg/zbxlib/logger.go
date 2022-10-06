@@ -1,6 +1,6 @@
 /*
 ** Zabbix
-** Copyright (C) 2001-2020 Zabbix SIA
+** Copyright (C) 2001-2022 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -22,13 +22,17 @@ package zbxlib
 import (
 	"C"
 )
-import "zabbix.com/pkg/log"
+import "git.zabbix.com/ap/plugin-support/log"
+
+const c_info = 127
 
 //export handleZabbixLog
 func handleZabbixLog(clevel C.int, cmessage *C.char) {
 	message := C.GoString(cmessage)
 	switch int(clevel) {
-	case log.Empty:
+	case log.None:
+	case log.Info, c_info:
+		log.Infof(message)
 	case log.Crit:
 		log.Critf(message)
 	case log.Err:
@@ -39,7 +43,5 @@ func handleZabbixLog(clevel C.int, cmessage *C.char) {
 		log.Debugf(message)
 	case log.Trace:
 		log.Tracef(message)
-	case log.Info:
-		log.Infof(message)
 	}
 }

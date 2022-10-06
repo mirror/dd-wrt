@@ -1,8 +1,9 @@
+//go:build linux && amd64
 // +build linux,amd64
 
 /*
 ** Zabbix
-** Copyright (C) 2001-2020 Zabbix SIA
+** Copyright (C) 2001-2022 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -26,7 +27,8 @@ import (
 	"regexp"
 	"testing"
 
-	"zabbix.com/pkg/std"
+	"git.zabbix.com/ap/plugin-support/std"
+	"zabbix.com/pkg/zbxregexp"
 )
 
 func TestExecuteRegex(t *testing.T) {
@@ -54,7 +56,7 @@ func TestExecuteRegex(t *testing.T) {
 	for _, c := range tests {
 		t.Run(c.input, func(t *testing.T) {
 			rx, _ := regexp.Compile(c.pattern)
-			r, m := impl.executeRegex([]byte(c.input), rx, []byte(c.output))
+			r, m := zbxregexp.ExecuteRegex([]byte(c.input), rx, []byte(c.output))
 			if !m && c.match {
 				t.Errorf("expected match while returned false")
 			}
