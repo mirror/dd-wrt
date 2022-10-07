@@ -35,7 +35,7 @@ function do_logout() {
 }
 
 addEvent(window, "load", function() {
-	setTimeout(do_logout, 2000);
+	setTimeout(do_logout, 5000);
 });
 	//]]>
 	</script>
