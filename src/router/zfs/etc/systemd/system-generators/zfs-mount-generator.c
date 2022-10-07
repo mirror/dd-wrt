@@ -193,7 +193,7 @@ fopenat(int dirfd, const char *pathname, int flags,
 	return (fdopen(fd, stream_mode));
 }
 
-#define	my_strndupa(x,y)	strncpy(alloca(y),x,y)
+#define	my_strndupa(x,y)	strlcpy(alloca(y),x,y)
 
 static int
 line_worker(char *line, const char *cachefile)
