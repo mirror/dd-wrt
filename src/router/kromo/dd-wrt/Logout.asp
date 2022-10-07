@@ -18,11 +18,19 @@ function do_logout() {
   } else {
     alert ("Your browser doesn't support XMLHTTPREQUEST");
   }
-  xhr_object.open ('GET', document.location.protocol + '//' + document.location.hostname + '/index.asp', false, 'logout', (new Date()).getTime().toString());
+  if (document.location.port != "") {
+	xhr_object.open ('GET', document.location.protocol + '//' + document.location.hostname + ':' + document.location.port + '/index.asp', false, 'logout', (new Date()).getTime().toString());
+  } else {
+	xhr_object.open ('GET', document.location.protocol + '//' + document.location.hostname + '/index.asp', false, 'logout', (new Date()).getTime().toString());  
+  }
   xhr_object.send ("");
   xhr_object = null;
 
-  document.location = document.location.protocol + '//' + document.location.hostname + '/index.asp'; 
+  if (document.location.port != "") {
+	document.location = document.location.protocol + '//' + document.location.hostname + ':' + document.location.port + '/index.asp'; 
+  } else {
+	document.location = document.location.protocol + '//' + document.location.hostname + '/index.asp'; 
+  }
   return false;
 }
 
