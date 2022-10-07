@@ -244,7 +244,7 @@ chksum_benchmark(void)
 #endif
 
 	chksum_stat_t *cs;
-	uint64_t max = 0;
+	uint64_t max;
 	uint32_t id, cbid = 0, id_save;
 	const zfs_impl_t *blake3 = zfs_impl_get_ops("blake3");
 	const zfs_impl_t *sha256 = zfs_impl_get_ops("sha256");
@@ -282,7 +282,7 @@ chksum_benchmark(void)
 
 	/* sha256 */
 	id_save = sha256->getid();
-	for (id = 0; id < sha256->getcnt(); id++) {
+	for (max = 0, id = 0; id < sha256->getcnt(); id++) {
 		sha256->setid(id);
 		cs = &chksum_stat_data[cbid++];
 		cs->init = 0;
@@ -300,7 +300,7 @@ chksum_benchmark(void)
 
 	/* sha512 */
 	id_save = sha512->getid();
-	for (id = 0; id < sha512->getcnt(); id++) {
+	for (max = 0, id = 0; id < sha512->getcnt(); id++) {
 		sha512->setid(id);
 		cs = &chksum_stat_data[cbid++];
 		cs->init = 0;
@@ -318,7 +318,7 @@ chksum_benchmark(void)
 
 	/* blake3 */
 	id_save = blake3->getid();
-	for (id = 0; id < blake3->getcnt(); id++) {
+	for (max = 0, id = 0; id < blake3->getcnt(); id++) {
 		blake3->setid(id);
 		cs = &chksum_stat_data[cbid++];
 		cs->init = abd_checksum_blake3_tmpl_init;

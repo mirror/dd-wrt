@@ -1175,7 +1175,7 @@ dump_snapshot(zfs_handle_t *zhp, void *arg)
 			return (-1);
 	}
 
-	(void) strcpy(sdd->prevsnap, thissnap);
+	(void) strlcpy(sdd->prevsnap, thissnap, sizeof (sdd->prevsnap));
 	sdd->prevsnap_obj = zfs_prop_get_int(zhp, ZFS_PROP_OBJSETID);
 	zfs_close(zhp);
 	return (err);
@@ -1736,7 +1736,7 @@ zfs_send_resume_impl_cb_impl(libzfs_handle_t *hdl, sendflags_t *flags,
 	(void) nvlist_lookup_uint64(resume_nvl, "fromguid", &fromguid);
 
 	if (flags->saved) {
-		(void) strcpy(name, toname);
+		(void) strlcpy(name, toname, sizeof (name));
 	} else {
 		error = guid_to_name(hdl, toname, toguid, B_FALSE, name);
 		if (error != 0) {
@@ -2880,7 +2880,7 @@ recv_rename(libzfs_handle_t *hdl, const char *name, const char *tryname,
 		goto out;
 
 	if (tryname) {
-		(void) strcpy(newname, tryname);
+		(void) strlcpy(newname, tryname, ZFS_MAX_DATASET_NAME_LEN);
 		if (flags->verbose) {
 			(void) printf("attempting rename %s to %s\n",
 			    name, newname);
@@ -4331,7 +4331,7 @@ zfs_receive_one(libzfs_handle_t *hdl, int infd, const char *tosnap,
 		err = nvlist_lookup_string(rcvprops,
 		    zfs_prop_to_name(ZFS_PROP_KEYLOCATION), &keylocation);
 		if (err == 0) {
-			strcpy(tmp_keylocation, keylocation);
+			strlcpy(tmp_keylocation, keylocation, MAXNAMELEN);
 			(void) nvlist_remove_all(rcvprops,
 			    zfs_prop_to_name(ZFS_PROP_KEYLOCATION));
 		}
@@ -4387,7 +4387,7 @@ zfs_receive_one(libzfs_handle_t *hdl, int infd, const char *tosnap,
 			 * prepend a path separator.
 			 */
 			int len = strlen(drrb->drr_toname);
-			cp = malloc(len + 2);
+			cp = umem_alloc(len + 2, UMEM_NOFAIL);
 			cp[0] = '/';
 			(void) strcpy(&cp[1], drrb->drr_toname);
 			chopprefix = cp;
@@ -4440,7 +4440,8 @@ zfs_receive_one(libzfs_handle_t *hdl, int infd, const char *tosnap,
 	 */
 	(void) strlcpy(destsnap, tosnap, sizeof (destsnap));
 	(void) strlcat(destsnap, chopprefix, sizeof (destsnap));
-	free(cp);
+	if (cp != NULL)
+		umem_free(cp, strlen(cp) + 1);
 	if (!zfs_name_valid(destsnap, ZFS_TYPE_SNAPSHOT)) {
 		err = zfs_error(hdl, EZFS_INVALIDNAME, errbuf);
 		goto out;
@@ -4498,18 +4499,20 @@ zfs_receive_one(libzfs_handle_t *hdl, int infd, const char *tosnap,
 		(void) snprintf(errbuf, sizeof (errbuf), dgettext(TEXT_DOMAIN,
 		    "cannot receive new filesystem stream"));
 
-		(void) strcpy(name, destsnap);
+		(void) strlcpy(name, destsnap, sizeof (name));
 		cp = strrchr(name, '/');
 		if (cp)
 			*cp = '\0';
 		if (cp &&
 		    !zfs_dataset_exists(hdl, name, ZFS_TYPE_DATASET)) {
 			char suffix[ZFS_MAX_DATASET_NAME_LEN];
-			(void) strcpy(suffix, strrchr(destsnap, '/'));
+			(void) strlcpy(suffix, strrchr(destsnap, '/'),
+			    sizeof (suffix));
 			if (guid_to_name(hdl, name, parent_snapguid,
 			    B_FALSE, destsnap) == 0) {
 				*strchr(destsnap, '@') = '\0';
-				(void) strcat(destsnap, suffix);
+				(void) strlcat(destsnap, suffix,
+				    sizeof (destsnap) - strlen(destsnap));
 			}
 		}
 	} else {
@@ -4527,7 +4530,7 @@ zfs_receive_one(libzfs_handle_t *hdl, int infd, const char *tosnap,
 			    "cannot receive incremental stream"));
 		}
 
-		(void) strcpy(name, destsnap);
+		(void) strlcpy(name, destsnap, sizeof (name));
 		*strchr(name, '@') = '\0';
 
 		/*
@@ -4539,16 +4542,18 @@ zfs_receive_one(libzfs_handle_t *hdl, int infd, const char *tosnap,
 		    strlen(sendfs)) != '\0' && *chopprefix != '@')) &&
 		    !zfs_dataset_exists(hdl, name, ZFS_TYPE_DATASET)) {
 			char snap[ZFS_MAX_DATASET_NAME_LEN];
-			(void) strcpy(snap, strchr(destsnap, '@'));
+			(void) strlcpy(snap, strchr(destsnap, '@'),
+			    sizeof (snap));
 			if (guid_to_name(hdl, name, drrb->drr_fromguid,
 			    B_FALSE, destsnap) == 0) {
 				*strchr(destsnap, '@') = '\0';
-				(void) strcat(destsnap, snap);
+				(void) strlcat(destsnap, snap,
+				    sizeof (destsnap) - strlen(destsnap));
 			}
 		}
 	}
 
-	(void) strcpy(name, destsnap);
+	(void) strlcpy(name, destsnap, sizeof (name));
 	*strchr(name, '@') = '\0';
 
 	redacted = DMU_GET_FEATUREFLAGS(drrb->drr_versioninfo) &
@@ -4635,6 +4640,33 @@ zfs_receive_one(libzfs_handle_t *hdl, int infd, const char *tosnap,
 		if ((zhp = zfs_open(hdl, name,
 		    ZFS_TYPE_FILESYSTEM | ZFS_TYPE_VOLUME)) == NULL) {
 			err = -1;
+			goto out;
+		}
+
+		/*
+		 * When receiving full/newfs on existing dataset, then it
+		 * should be done with "-F" flag. Its enforced for initial
+		 * receive in previous checks in this function.
+		 * Similarly, on resuming full/newfs recv on existing dataset,
+		 * it should be done with "-F" flag.
+		 *
+		 * When dataset doesn't exist, then full/newfs recv is done on
+		 * newly created dataset and it's marked INCONSISTENT. But
+		 * When receiving on existing dataset, recv is first done on
+		 * %recv and its marked INCONSISTENT. Existing dataset is not
+		 * marked INCONSISTENT.
+		 * Resume of full/newfs receive with dataset not INCONSISTENT
+		 * indicates that its resuming newfs on existing dataset. So,
+		 * enforce "-F" flag in this case.
+		 */
+		if (stream_resumingnewfs &&
+		    !zfs_prop_get_int(zhp, ZFS_PROP_INCONSISTENT) &&
+		    !flags->force) {
+			zfs_close(zhp);
+			zfs_error_aux(hdl, dgettext(TEXT_DOMAIN,
+			    "Resuming recv on existing destination '%s'\n"
+			    "must specify -F to overwrite it"), name);
+			err = zfs_error(hdl, EZFS_RESUME_EXISTS, errbuf);
 			goto out;
 		}
 
@@ -4903,7 +4935,7 @@ zfs_receive_one(libzfs_handle_t *hdl, int infd, const char *tosnap,
 	if (err == 0 && snapprops_nvlist) {
 		zfs_cmd_t zc = {"\0"};
 
-		(void) strcpy(zc.zc_name, destsnap);
+		(void) strlcpy(zc.zc_name, destsnap, sizeof (zc.zc_name));
 		zc.zc_cookie = B_TRUE; /* received */
 		zcmd_write_src_nvlist(hdl, &zc, snapprops_nvlist);
 		(void) zfs_ioctl(hdl, ZFS_IOC_SET_PROP, &zc);
@@ -5077,6 +5109,19 @@ zfs_receive_one(libzfs_handle_t *hdl, int infd, const char *tosnap,
 			    "The zfs software on the sending system must "
 			    "be updated."));
 			(void) zfs_error(hdl, EZFS_BADSTREAM, errbuf);
+			break;
+		case ZFS_ERR_RESUME_EXISTS:
+			cp = strchr(destsnap, '@');
+			if (newfs) {
+				/* it's the containing fs that exists */
+				*cp = '\0';
+			}
+			zfs_error_aux(hdl, dgettext(TEXT_DOMAIN,
+			    "Resuming recv on existing dataset without force"));
+			(void) zfs_error_fmt(hdl, EZFS_RESUME_EXISTS,
+			    dgettext(TEXT_DOMAIN, "cannot resume recv %s"),
+			    destsnap);
+			*cp = '@';
 			break;
 		case EBUSY:
 			if (hastoken) {
