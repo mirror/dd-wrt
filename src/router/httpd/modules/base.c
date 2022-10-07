@@ -2539,8 +2539,7 @@ static int do_syslog(unsigned char method, struct mime_handler *handler, char *u
 	websWrite(stream, "<link type=\"text/css\" rel=\"stylesheet\" href=\"style/%s/colorscheme.css\" />\n", style);
 	if (style_dark != NULL && !strcmp(style_dark, "1")) {
 		websWrite(wp, "<link type=\"text/css\" rel=\"stylesheet\" href=\"style/syslogd/syslogd_dark.css\" />\n");
-	}
-	if (style_dark = NULL && !strcmp(style_dark, "0")) {
+	} else {
 		websWrite(wp, "<link type=\"text/css\" rel=\"stylesheet\" href=\"style/syslogd/syslogd.css\" />\n");
 	}
 	else {
