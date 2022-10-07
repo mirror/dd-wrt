@@ -27,9 +27,9 @@ function do_logout() {
   xhr_object = null;
 
   if (document.location.port != "") {
-	document.location = document.location.protocol + '//' + document.location.hostname + ':' + document.location.port + '/index.asp'; 
+	document.location = document.location.protocol + '//' + document.location.hostname + ':' + document.location.port + '/'; 
   } else {
-	document.location = document.location.protocol + '//' + document.location.hostname + '/index.asp'; 
+	document.location = document.location.protocol + '//' + document.location.hostname + '/'; 
   }
   return false;
 }
