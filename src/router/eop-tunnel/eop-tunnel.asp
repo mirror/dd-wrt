@@ -117,19 +117,19 @@ function changedpbr(F, index, value) {
 }
 
 function changeproto(F, index, value, brvalue) {
-if (value == 1) {
-	show_layer_ext(F, "idmtik" + index, true);
-} else {
-	show_layer_ext(F, "idmtik" + index, false);
-}
+	if (value == 1) {
+		show_layer_ext(F, "idmtik" + index, true);
+	} else {
+		show_layer_ext(F, "idmtik" + index, false);
+	}
 
-if (value == 2) {
-	show_layer_ext(F, "idwireguard" + index, true);
-	show_layer_ext(F, "idl2support" + index, false);
-	show_layer_ext(F, "idwginput" + index, true);
-	show_layer_ext(F, "idlocalip" + index, false);
-	show_layer_ext(F, "idbridged" + index, false);
-} else {
+	if (value == 2) {
+		show_layer_ext(F, "idwireguard" + index, true);
+		show_layer_ext(F, "idl2support" + index, false);
+		show_layer_ext(F, "idwginput" + index, true);
+		show_layer_ext(F, "idlocalip" + index, false);
+		show_layer_ext(F, "idbridged" + index, false);
+	} else {
 		show_layer_ext(F, "idwireguard" + index, false);
 		show_layer_ext(F, "idl2support" + index, true);
 		show_layer_ext(F, "idwginput" + index, false);
@@ -153,6 +153,7 @@ function failover_show(F, index, value) {
 		show_layer_ext(F, "idoet" + index + "_wdog2", true);
 	}
 }
+
 function wdog_show(F, index, value) {
 	if (value == 1) {
 		show_layer_ext(F, "idoet" + index + "_failgrp", false);
@@ -175,8 +176,6 @@ addEvent(window, "unload", function() {
 });
 	//]]>
 	</script>
-	//added to do screen refresh but gives nasty screen flicker need intelligent way to only refresh status window auto refresh div jquery
-	//<meta http-equiv="refresh" content="30" />
 	</head>
 
 	<body class="gui">
@@ -204,7 +203,7 @@ addEvent(window, "unload", function() {
 								<div id="footer" class="submitFooter">
 									<script type="text/javascript">
 									//<![CDATA[
-									submitFooterButton(1,1);
+									submitFooterButton(1,1,0,0,1,0);
 									//]]>
 									</script>
 								</div>
