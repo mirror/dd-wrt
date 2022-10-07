@@ -5,6 +5,7 @@
 #include <linux/version.h>
 #include <linux/module.h>
 #include <linux/netfilter_ipv4/ip_tables.h>
+#include <linux/udp.h>
 #include <net/ip.h>
 #include "xt_WGOBFS.h"
 #include "wg.h"
