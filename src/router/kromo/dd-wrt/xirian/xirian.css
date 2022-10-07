@@ -115,26 +115,17 @@ h2, h3 {
 [title*='Chain']:hover, [title*='Monitoring']:hover {
   color: #1c81b3;
 }
-
 #logout {
   position: absolute;
-  right: .1rem;
-  z-index: 1;
+  margin-top: 2px !important;
+  right: .4rem;
   cursor: pointer;
   background: none !important;
   border: 0 !important;
 }
-.logout {
-  color: var(--tx-c, --v9-9);
-  transition: all 400ms ease-in-out;
-  cursor: pointer;
-  width: 20px;
-  height: 20px;
-}
 .logout:hover {
-  color: var(--v1-6, #f66);
+  fill: #f66;
 }
-
 textarea {
   background: #f0f0f4;
   padding: 4px;

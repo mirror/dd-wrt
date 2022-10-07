@@ -2533,23 +2533,33 @@ static int do_syslog(unsigned char method, struct mime_handler *handler, char *u
 		  if (!nvram_match("language", "english"))
 			websWrite(stream,"<script type=\"text/javascript\" src=\"lang_pack/language.js\"></script>\n");
 #endif
+	char *style = nvram_safe_get("router_style");
+	if (!style)
+		style="elegant";
+	websWrite(stream, "<link type=\"text/css\" rel=\"stylesheet\" href=\"style/%s/colorscheme.css\" />\n", style);
+	if (style_dark != NULL && !strcmp(style_dark, "1")) {
+		websWrite(wp, "<link type=\"text/css\" rel=\"stylesheet\" href=\"style/syslogd/syslogd_dark.css\" />\n");
+	}
+	if (style_dark = NULL && !strcmp(style_dark, "0")) {
+		websWrite(wp, "<link type=\"text/css\" rel=\"stylesheet\" href=\"style/syslogd/syslogd.css\" />\n");
+	}
+	else {
+		style_dark = NULL;
+	}
 	websWrite(stream,	//
-		  "<link type=\"text/css\" rel=\"stylesheet\" href=\"style/syslogd/syslogd.css\" />\n"	//
 		  "%s"		//
 		  "</head>\n<body class=\"syslog_bd\">\n"	//
 		  "<fieldset class=\"syslog_bg\">"	//
 		  "<legend class=\"syslog_legend\">"	//
 		  "%s"		//
-		  "</legend>",	//
-		  (style_dark != NULL && !strcmp(style_dark, "1")) ?	//
-		  "<link type=\"text/css\" rel=\"stylesheet\" href=\"style/syslogd/syslogd_dark.css\" />\n" : "",	//
-		  _tran_string(buf, sizeof(buf), "share.sysloglegend"));
+		  "</legend>", _tran_string(buf, sizeof(buf), "share.sysloglegend"));
 
+	do_ddwrt_inspired_themes(stream);
 	if (nvram_matchi("syslogd_enable", 1)) {
 		FILE *fp = fopen(filename, "r");
 		if (fp != NULL) {
 			char line[1024];
-			websWrite(stream, "<div style=\"height: 750px; overflow-y: auto; overflow-x: hidden;\"><table>");
+			websWrite(stream, "<div style=\"height: 750px; overflow-y: auto; overflow-x: hidden;\"><table><tbody>");
 			while (fgets(line, sizeof(line), fp) != NULL) {
 				count++;
 				if (offset <= count && ((offset + 50) > count)) {	// show 100 lines
@@ -2568,7 +2578,7 @@ static int do_syslog(unsigned char method, struct mime_handler *handler, char *u
 					}
 				}
 			}
-			websWrite(stream, "</table></div>");
+			websWrite(stream, "</tbody></table></div>");
 
 			fclose(fp);
 		}

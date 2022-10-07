@@ -129,3 +129,9 @@ table#radio_table tr td, .table_row_bg td {
 .syslog_bd {
   line-height: normal !important;
 }
+.logout {
+  transition: all 400ms ease-in-out;
+  cursor: pointer;
+  width: 20px;
+  height: 20px;
+}
