@@ -1,23 +1,30 @@
+html {
+  font-family: Tahoma,Arial,sans-serif;
+  font-size: 1em;
+}
 .syslog_bd {
-  background: transparent;
   color: #111;
-  font-size: 14px;
-  overflow-x: hidden;
-  margin-top: .906em;
-  line-height: 1.4
+  margin: .906em;
+  font-size: 75%;
 }
 .syslog_bg {
   background: #f6f6f6;
-  padding: .3rem;
-  padding-top: .1rem;
-  margin: -.8rem -.7rem 0 -.7rem;
+  padding: .1rem .3rem .3rem;
+  margin: -.8rem -.7rem 0;
 }
 .syslog_bg div:focus-visible {
   outline: 0;
 }
+fieldset {
+  border: 1px solid #ccc;
+  border: 1px solid #333;
+  padding: .725em;
+  border-radius: 4px;
+}
 .syslog_legend {
   background-color: transparent;
-  margin-left: .362em;
+  font-weight: 700;
+  padding: 0 .272em;
 }
 .syslog_bg tr:not([class]):hover {
   background-color: #ccc;
@@ -30,7 +37,7 @@ tr.syslog_bg_yellow:hover {
   background-color: #dbba02;
 }
 .syslog_bg_red {
-  background-color: #ff6666;
+  background-color: #f66;
 }
 tr.syslog_bg_red:hover {
   background-color: #fc5a5a;
@@ -43,4 +50,9 @@ tr.syslog_bg_green:hover {
 }
 .syslog_text_dark {
   color: #000;
+}
+table {
+  margin: 0 auto;
+  width: 100%;
+  border-spacing: 1px;
 }

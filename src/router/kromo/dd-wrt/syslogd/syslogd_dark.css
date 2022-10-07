@@ -1,7 +1,10 @@
+fieldset {
+  border: 1px solid #333;
+}
 .syslog_bd {
   background: transparent;
   color: #aaa;
-  font-size: 14px
+  font-size: 14px;
 }
 .syslog_bg {
   background: #111;

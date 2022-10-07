@@ -422,7 +422,7 @@ addEvent(window, "unload", function() {
 									</div>		
 									<div class="setting">
 										<div class="label"><% tran("share.passwd"); %></div>
-										<input size="27" id="pptpd_client_srvpass" name="pptpd_client_srvpass" type="password" autocomplete="new-password" value="<% nvg("pptpd_client_srvpass"); %>" />
+										<input size="27" id="pptpd_client_srvpass" name="pptpd_client_srvpass" type="password" autocomplete="new-password" value="<% nvg("pptpd_client_srvpass"); %>" />&nbsp;
 										<input type="checkbox" name="_wl_unmask" value="0" onclick="setElementMask('pptpd_client_srvpass', this.checked)" />&nbsp;<% tran("share.unmask"); %>
 									</div>
 									<div class="setting">		
