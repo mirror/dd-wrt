@@ -742,7 +742,7 @@ static int match_one(const char *pattern, int patternlen, const char *string)
 	return 0;
 }
 
-static int do_file_2(struct mime_handler *handler, char *path, webs_t stream, char *attach)	//jimmy, https, 8/4/2003
+static int do_file_2(unsigned char method, struct mime_handler *handler, char *path, webs_t stream, char *attach)	//jimmy, https, 8/4/2003
 {
 	size_t len;
 	FILE *web = _getWebsFile(stream, path, &len);
@@ -750,6 +750,8 @@ static int do_file_2(struct mime_handler *handler, char *path, webs_t stream, ch
 		return -1;
 	if (handler && !handler->send_headers) {
 		send_headers(stream, 200, "OK", handler->extra_header, handler->mime_type, len, attach, 0);
+		if (method == METHOD_HEAD)
+			return 0;
 	}
 	if (DO_SSL(stream)) {
 		char *buffer = malloc(4096);
@@ -777,12 +779,12 @@ int
 //do_file(char *path, FILE *stream)
 do_file(unsigned char method, struct mime_handler *handler, char *path, webs_t stream)	//jimmy, https, 8/4/2003
 {
-	return do_file_2(handler, path, stream, NULL);
+	return do_file_2(method, handler, path, stream, NULL);
 }
 
 static int do_file_attach(struct mime_handler *handler, char *path, webs_t stream, char *attachment)	//jimmy, https, 8/4/2003
 {
-	return do_file_2(handler, path, stream, attachment);
+	return do_file_2(METHOD_GET, handler, path, stream, attachment);
 }
 
 static int check_connect_type_vap(char *prefix, webs_t wp)
@@ -992,6 +994,8 @@ static void *handle_request(void *arg)
 		method_type = METHOD_POST;
 	if (!strcasecmp(method, "options"))
 		method_type = METHOD_OPTIONS;
+//	if (!strcasecmp(method, "head"))
+//		method_type = METHOD_HEAD;
 
 	if (method_type == METHOD_INVALID) {
 		send_error(conn_fp, 0, 501, live_translate(conn_fp, "share.not_implemented"), NULL, live_translate(conn_fp, "share.method_unimpl"), method);
@@ -1274,6 +1278,10 @@ static void *handle_request(void *arg)
 		if (!match(handler->pattern, file))
 			continue;
 		airbag_setpostinfo(handler->pattern);
+		if (method_type == METHOD_HEAD && handler->output != do_file) {
+			send_error(conn_fp, 0, 501, live_translate(conn_fp, "share.not_implemented"), NULL, live_translate(conn_fp, "share.method_unimpl"), method);
+			goto out;
+		}
 		if (IS_REGISTERED(conn_fp) && !changepassword && handler->auth && (!handler->handle_options || method_type != METHOD_OPTIONS)) {
 
 			if (authorization)
