@@ -1405,7 +1405,6 @@ void add_active_mac(webs_t wp)
 	sprintf(acmac, "%s_active_mac", ifname);
 	fprintf(stderr, "result %s", buf);
 	nvram_set(acmac, buf);
-	nvram_commit();
 	if (!strcmp(ifname, "wl0"))
 		nvram_set("wl_active_mac", buf);
 	debug_free(buf);
