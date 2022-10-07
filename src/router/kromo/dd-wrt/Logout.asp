@@ -19,33 +19,42 @@ function do_logout() {
     alert ("Your browser doesn't support XMLHTTPREQUEST");
   }
   if (document.location.port != "") {
-	xhr_object.open ('GET', document.location.protocol + '//' + document.location.hostname + ':' + document.location.port + '/index.asp', false, 'logout', (new Date()).getTime().toString());
+		xhr_object.open ('GET', document.location.protocol + '//' + document.location.hostname + ':' + document.location.port + '/index.asp', false, 'logout', (new Date()).getTime().toString());
   } else {
-	xhr_object.open ('GET', document.location.protocol + '//' + document.location.hostname + '/index.asp', false, 'logout', (new Date()).getTime().toString());  
+		xhr_object.open ('GET', document.location.protocol + '//' + document.location.hostname + '/index.asp', false, 'logout', (new Date()).getTime().toString());  
   }
   xhr_object.send ("");
   xhr_object = null;
 
   if (document.location.port != "") {
-	document.location = document.location.protocol + '//' + document.location.hostname + ':' + document.location.port + '/'; 
+		document.location = document.location.protocol + '//' + document.location.hostname + ':' + document.location.port + '/'; 
   } else {
-	document.location = document.location.protocol + '//' + document.location.hostname + '/'; 
+		document.location = document.location.protocol + '//' + document.location.hostname + '/'; 
   }
   return false;
 }
 
 addEvent(window, "load", function() {
-	setTimeout(do_logout, 5000);
+	setTimeout(do_logout, 4000);
 });
 	//]]>
 	</script>
 </head>
 
-	<body>
-		<div class="message">
-			<form>
-				<% tran("logout.message"); %><br />
-			</form>
+	<body class="gui">
+		<div id="wrapper">
+			<div id="content">
+				<div id="header">
+					<div id="logo" style="margin: 0 auto;">
+						<h1>DD-WRT Control Panel</h1>
+					</div>
+					<div class="message" style="width:450px;">
+						<form id="bye_bye">
+							<% tran("logout.message"); %><br><br>
+						</form>
+					</div>
+				</div>
+			</div>
 		</div>
 	</body>
 </html>
