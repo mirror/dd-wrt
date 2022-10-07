@@ -143,6 +143,7 @@ struct mime_handler {
 #define METHOD_GET 1
 #define METHOD_POST 2
 #define METHOD_OPTIONS 3
+#define METHOD_HEAD 4
 
 typedef struct {
 	const char *path;	/* Web page URL path */
