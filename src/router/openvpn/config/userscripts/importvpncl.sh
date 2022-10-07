@@ -1,14 +1,14 @@
 #!/bin/sh
-# version: 0.5.0 beta, 13-sept-2022, by eibgrad
+# version: 0.5.1 beta, 3-oct-2022, by eibgrad
 # for help download full script from eibgrads pastebin: curl -kLs bit.ly/ddwrt-installer|tr -d '\r'|sh -s 2gg5ZdRY
 VAR_LIST='openvpncl_adv=0 openvpncl_auth=none openvpncl_blockmulticast=0 openvpncl_bridge=0 openvpncl_ca= openvpncl_certtype=0 openvpncl_cipher= \
 openvpncl_client= openvpncl_config= openvpncl_dc1=CHACHA20-POLY1305 openvpncl_dc2=AES-128-GCM openvpncl_dc3=AES-256-GCM openvpncl_enable=0 \
 openvpncl_fragment= openvpncl_fw=1 openvpncl_ip= openvpncl_key= openvpncl_killswitch=0 openvpncl_lzo=off openvpncl_mask= openvpncl_mit=1 openvpncl_mssfix=0 \
 openvpncl_mtu=1400 openvpncl_multirem=0 openvpncl_nat=1 openvpncl_pkcs12= openvpncl_proto=udp4 openvpncl_randomsrv=0 openvpncl_remoteip=0.0.0.0 \
-openvpncl_remoteport=1194 openvpncl_route= openvpncl_scramble=off openvpncl_scrmblpw=o54a72ReutDK openvpncl_spbr=0 openvpncl_splitdns=0 openvpncl_tls_btn=0 \
+openvpncl_remoteport=1194 openvpncl_route= openvpncl_scramble=off openvpncl_scrmblpw=o54a72ReutDK openvpncl_spbr=0 openvpncl_splitdns=0 openvpncl_tls_btn=3 \
 openvpncl_tlsauth= openvpncl_tlscip=0 openvpncl_tuntap=tun openvpncl_upauth=0 openvpncl_wdog=0 openvpncl_wdog_pingip=8.8.8.8 openvpncl_wdog_sleept=30'
 UNVAR_LIST='openvpncl_pass openvpncl_remoteip2 openvpncl_remoteip3 openvpncl_remoteip4 openvpncl_remoteip5 openvpncl_remoteport2 \
-openvpncl_remoteport3 openvpncl_remoteport4 openvpncl_remoteport5 openvpncl_static openvpncl_statickey openvpncl_user'
+openvpncl_remoteport3 openvpncl_remoteport4 openvpncl_remoteport5 openvpncl_static openvpncl_user'
 PROTOCOL_LIST='udp udp4 udp6 tcp tcp4 tcp6 tcp-client tcp4-client tcp6-client'
 CIPHER_LIST='CHACHA20-POLY1305 AES-256-GCM AES-192-GCM AES-128-GCM AES-256-CBC AES-192-CBC AES-128-CBC'
 AUTH_LIST='sha512 sha256 sha1 md5 md4 none'
@@ -204,7 +204,8 @@ case $dir in
 '<cert>') nvram set openvpncl_client="$(get_textblock cert)";;
 '<key>') nvram set openvpncl_key="$(get_textblock key)";;
 '<pkcs12>') nvram set openvpncl_pkcs12="$(get_textblock pkcs12)";;
-'<secret>') nvram set openvpncl_static="$(get_textblock secret)";;
+'<secret>') nvram set openvpncl_static="$(get_textblock secret)"
+nvram set openvpncl_tls_btn='2';;
 '<tls-auth>') nvram set openvpncl_tlsauth="$(get_textblock tls-auth)"
 nvram set openvpncl_tls_btn='0';;
 '<tls-crypt>') nvram set openvpncl_tlsauth="$(get_textblock tls-crypt)"
