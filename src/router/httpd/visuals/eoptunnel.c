@@ -389,11 +389,11 @@ EJ_VISIBLE void ej_show_eop_tunnels(webs_t wp, int argc, char_t ** argv)
 				{
 					show_caption(wp, "label", "eoip.wireguard_failstate", NULL);
 					websWrite(wp, "<input class=\"spaceradio\" type=\"radio\" value=\"0\" name=\"%s\" %s />", temp, (nvram_default_matchi(temp, 0, 0) ? "checked=\"checked\"" : ""));
-					show_caption_simple(wp, "eoip.wireguard_standby");
+					show_caption(wp, NULL, "eoip.wireguard_standby", "&nbsp;");
 					websWrite(wp, "<input class=\"spaceradio\" type=\"radio\" value=\"2\" name=\"%s\" %s />", temp, (nvram_default_matchi(temp, 2, 0) ? "checked=\"checked\"" : ""));
-					show_caption_simple(wp, "eoip.wireguard_running");
+					show_caption(wp, NULL, "eoip.wireguard_running", "&nbsp;");
 					websWrite(wp, "<input class=\"spaceradio\" type=\"radio\" value=\"1\" name=\"%s\" %s />", temp, (nvram_default_matchi(temp, 1, 0) ? "checked=\"checked\"" : ""));
-					show_caption(wp, NULL, "eoip.wireguard_failed", "&nbsp;");
+					show_caption_simple(wp, "eoip.wireguard_failed");
 				}
 				websWrite(wp, "</div>\n");
 				//end tunnel state
@@ -438,7 +438,7 @@ EJ_VISIBLE void ej_show_eop_tunnels(webs_t wp, int argc, char_t ** argv)
 				int peer;
 				for (peer = 0; peer < peers; peer++) {
 
-					websWrite(wp, "<br /><fieldset>\n");	//added <br>
+					websWrite(wp, "<br><fieldset>\n");
 
 					//name legend
 					snprintf(temp, sizeof(temp), "oet%d_namep%d", tun, peer);
@@ -503,7 +503,7 @@ EJ_VISIBLE void ej_show_eop_tunnels(webs_t wp, int argc, char_t ** argv)
 					}
 					websWrite(wp, "</div>\n");
 					websWrite(wp, "</div>\n");	// end show/hide idclconfig
-					websWrite(wp, "</fieldset>\n");
+					websWrite(wp, "</fieldset><br>\n");
 
 					snprintf(temp, sizeof(temp), "oet%d_endpoint%d", tun, peer);
 					websWrite(wp, "<div class=\"setting\">\n");
@@ -658,7 +658,7 @@ EJ_VISIBLE void ej_show_eop_tunnels(webs_t wp, int argc, char_t ** argv)
 							fclose(svg);
 							websWrite(wp, "<div class=\"setting\">\n");
 							wfputs(buf, wp);
-							websWrite(wp, "</br><script type=\"text/javascript\">\n");
+							websWrite(wp, "<br><script type=\"text/javascript\">\n");
 							websWrite(wp, "//<![CDATA[\n");
 							websWrite(wp,
 								  "document.write(\"<input class=\\\"button\\\" type=\\\"button\\\" name=\\\"config_button\\\" value=\\\"\" + sbutton.download_config + \"\\\" onclick=\\\"window.location.href='/wireguard_config_oet%d_peer%d.conf';\\\" />\");\n",
@@ -725,7 +725,7 @@ EJ_VISIBLE void ej_show_eop_tunnels(webs_t wp, int argc, char_t ** argv)
 					websWrite(wp, "</fieldset>\n");
 				}
 
-				websWrite(wp, "<br />\n");	//added <br>
+				websWrite(wp, "<br>\n");
 
 				websWrite(wp, "<div class=\"center\">\n");
 				{
@@ -737,7 +737,7 @@ EJ_VISIBLE void ej_show_eop_tunnels(webs_t wp, int argc, char_t ** argv)
 				}
 				websWrite(wp, "</div>\n");
 
-				websWrite(wp, "<br />\n");	//added <br>
+				websWrite(wp, "<br>\n");
 
 #endif
 			}
@@ -825,7 +825,7 @@ EJ_VISIBLE void ej_show_eop_tunnels(webs_t wp, int argc, char_t ** argv)
 		websWrite(wp, "show_layer_ext(document.eop.oet%d_en, 'idoet%d_spbr',%s);\n", tun, tun, nvram_nmatchi(0, "oet%d_spbr", tun) ? "false" : "true");
 		websWrite(wp, "show_layer_ext(document.eop.oet%d_en, 'idoet%d_dpbr',%s);\n", tun, tun, nvram_nmatchi(0, "oet%d_dpbr", tun) ? "false" : "true");
 		websWrite(wp, "//]]>\n</script>\n");
-		websWrite(wp, "</fieldset><br/>\n");
+		websWrite(wp, "</fieldset><br>\n");
 	}
 	websWrite(wp, "<div class=\"center\">\n");
 	{
@@ -855,7 +855,7 @@ EJ_VISIBLE void ej_show_eop_tunnels(webs_t wp, int argc, char_t ** argv)
 	//this.form only for *elements* to refer to the form, use 'this' or 'document.eop' or better document.forms['eop']  without an element
 	websWrite(wp, "show_layer_ext(this, 'idwgimport', false);\n");
 	websWrite(wp, "//]]>\n</script>\n");
-	websWrite(wp, "<br />\n");
+	websWrite(wp, "<br>\n");
 
 }
 #endif
