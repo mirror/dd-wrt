@@ -83,7 +83,7 @@ static uint64_t zio_buf_cache_frees[SPA_MAXBLOCKSIZE >> SPA_MINBLOCKSHIFT];
 #endif
 
 /* Mark IOs as "slow" if they take longer than 30 seconds */
-static int zio_slow_io_ms = (30 * MILLISEC);
+static uint_t zio_slow_io_ms = (30 * MILLISEC);
 
 #define	BP_SPANB(indblkshift, level) \
 	(((uint64_t)1) << ((level) * ((indblkshift) - SPA_BLKPTRSHIFT)))
@@ -114,9 +114,15 @@ static int zio_slow_io_ms = (30 * MILLISEC);
  * fragmented systems, which may have very few free segments of this size,
  * and may need to load new metaslabs to satisfy 128K allocations.
  */
-int zfs_sync_pass_deferred_free = 2; /* defer frees starting in this pass */
-static int zfs_sync_pass_dont_compress = 8; /* don't compress s. i. t. p. */
-static int zfs_sync_pass_rewrite = 2; /* rewrite new bps s. i. t. p. */
+
+/* defer frees starting in this pass */
+uint_t zfs_sync_pass_deferred_free = 2;
+
+/* don't compress starting in this pass */
+static uint_t zfs_sync_pass_dont_compress = 8;
+
+/* rewrite new bps starting in this pass */
+static uint_t zfs_sync_pass_rewrite = 2;
 
 /*
  * An allocating zio is one that either currently has the DVA allocate
@@ -1197,7 +1203,6 @@ zio_free(spa_t *spa, uint64_t txg, const blkptr_t *bp)
 	 */
 	if (BP_IS_EMBEDDED(bp))
 		return;
-	metaslab_check_free(spa, bp);
 
 	/*
 	 * Frees that are for the currently-syncing txg, are not going to be
@@ -1214,6 +1219,7 @@ zio_free(spa_t *spa, uint64_t txg, const blkptr_t *bp)
 	    txg != spa->spa_syncing_txg ||
 	    (spa_sync_pass(spa) >= zfs_sync_pass_deferred_free &&
 	    !spa_feature_is_active(spa, SPA_FEATURE_LOG_SPACEMAP))) {
+		metaslab_check_free(spa, bp);
 		bplist_append(&spa->spa_free_bplist[txg & TXG_MASK], bp);
 	} else {
 		VERIFY3P(zio_free_sync(NULL, spa, txg, bp, 0), ==, NULL);
@@ -1640,7 +1646,7 @@ zio_write_compress(zio_t *zio)
 	blkptr_t *bp = zio->io_bp;
 	uint64_t lsize = zio->io_lsize;
 	uint64_t psize = zio->io_size;
-	int pass = 1;
+	uint32_t pass = 1;
 
 	/*
 	 * If our children haven't all reached the ready stage,
@@ -3917,7 +3923,7 @@ zio_vdev_io_done(zio_t *zio)
 
 	ops->vdev_op_io_done(zio);
 
-	if (unexpected_error)
+	if (unexpected_error && vd->vdev_remove_wanted == B_FALSE)
 		VERIFY(vdev_probe(vd, zio) == NULL);
 
 	return (zio);
@@ -5051,13 +5057,13 @@ ZFS_MODULE_PARAM(zfs_zio, zio_, slow_io_ms, INT, ZMOD_RW,
 ZFS_MODULE_PARAM(zfs_zio, zio_, requeue_io_start_cut_in_line, INT, ZMOD_RW,
 	"Prioritize requeued I/O");
 
-ZFS_MODULE_PARAM(zfs, zfs_, sync_pass_deferred_free,  INT, ZMOD_RW,
+ZFS_MODULE_PARAM(zfs, zfs_, sync_pass_deferred_free,  UINT, ZMOD_RW,
 	"Defer frees starting in this pass");
 
-ZFS_MODULE_PARAM(zfs, zfs_, sync_pass_dont_compress, INT, ZMOD_RW,
+ZFS_MODULE_PARAM(zfs, zfs_, sync_pass_dont_compress, UINT, ZMOD_RW,
 	"Don't compress starting in this pass");
 
-ZFS_MODULE_PARAM(zfs, zfs_, sync_pass_rewrite, INT, ZMOD_RW,
+ZFS_MODULE_PARAM(zfs, zfs_, sync_pass_rewrite, UINT, ZMOD_RW,
 	"Rewrite new bps starting in this pass");
 
 ZFS_MODULE_PARAM(zfs_zio, zio_, dva_throttle_enabled, INT, ZMOD_RW,

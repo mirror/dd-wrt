@@ -29,7 +29,8 @@
  * of zfs_impl.h defines.
  *
  * It's ment for easier maintaining multiple implementations of
- * algorithms.
+ * algorithms. Look into blake3_impl.c, sha256_impl.c or sha512_impl.c
+ * for reference.
  */
 
 #include <sys/zfs_context.h>
@@ -121,10 +122,10 @@ generic_impl_getname(void)
 
 /* set implementation by id */
 static void
-generic_impl_setid(uint32_t impl)
+generic_impl_setid(uint32_t id)
 {
 	generic_impl_init();
-	switch (impl) {
+	switch (id) {
 	case IMPL_FASTEST:
 		atomic_swap_32(&generic_impl_chosen, IMPL_FASTEST);
 		break;
@@ -132,8 +133,8 @@ generic_impl_setid(uint32_t impl)
 		atomic_swap_32(&generic_impl_chosen, IMPL_CYCLE);
 		break;
 	default:
-		ASSERT3U(impl, <, generic_supp_impls_cnt);
-		atomic_swap_32(&generic_impl_chosen, impl);
+		ASSERT3U(id, <, generic_supp_impls_cnt);
+		atomic_swap_32(&generic_impl_chosen, id);
 		break;
 	}
 }
