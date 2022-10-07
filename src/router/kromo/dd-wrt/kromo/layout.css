@@ -360,11 +360,12 @@ table[summary='ports forwarding table'] input[size='10'] {
 
 #logout {
   position: absolute;
-  margin-top: -3px !important;
+  margin-top: -5px !important;
   right: .1rem;
   z-index: 1;
   cursor: pointer;
   border: 0 !important;
+  scale: 0.7;
 }
 .logout {
   color: #fff3b3;
