@@ -2163,8 +2163,9 @@ static int do_trial_logo(unsigned char method, struct mime_handler *handler, cha
 
 static int do_logout_asp(unsigned char method, struct mime_handler *handler, char *url, webs_t stream)
 {
-	do_ej(method, handler, "Logout.asp", stream);
+	int ret = do_ej(method, handler, "Logout.asp", stream);
 	websDone(stream, 200);
+	return ret;
 }
 
 /*
