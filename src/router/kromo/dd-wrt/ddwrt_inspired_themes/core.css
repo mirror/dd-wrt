@@ -213,10 +213,13 @@ body.about-bg a:hover {
 .help-bg dd {
   border-bottom: 0.0648rem dotted var(--fg-5);
 }
-body div.message {
-  background-color: var(--bg-1);
+body .message {
+  background-color: var(--bg-2);
   border-color: var(--bg-3);
   border-radius: 4px;
+}
+#logout {
+  margin-top: -4px !important;
 }
 .popup,
 .popup_bg,
