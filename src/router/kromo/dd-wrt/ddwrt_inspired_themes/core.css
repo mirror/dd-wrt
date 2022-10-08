@@ -137,7 +137,7 @@ body input[disabled]:hover {
 .button.red_btn:disabled,
 .button.red_btn:disabled:hover {
   background: var(--v1-4) !important;
-  border-color: var(--v1-5) !important;
+  border-color: var(--v1-6) !important;
 }
 .button.green_btn {
   background: var(--v4-2);
@@ -151,6 +151,12 @@ body input[disabled]:hover {
   border-color: var(--v4-3) !important;
   box-shadow: 0 0 10px 0 var(--v4-3) !important;
   color: var(--v9-9) !important;
+}
+.button.green_btn:disabled,
+.button.green_btn:disabled:hover {
+  background: var(--v4-2) !important;
+  border-color: var(--v4-4) !important;
+  box-shadow: none !important;
 }
 .button.brown_btn {
   background: var(--v2-2);
