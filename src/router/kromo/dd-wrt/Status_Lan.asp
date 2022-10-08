@@ -1,4 +1,4 @@
-<% do_pagehead("status_lan.titl"); %>
+<% do_pagehead_nopwc("status_lan.titl"); %>
 	<script type="text/javascript">
 	//<![CDATA[
 

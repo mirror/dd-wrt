@@ -1,4 +1,4 @@
-<% do_pagehead(""); %>
+<% do_pagehead_nopwc(""); %>
 	<title><% nvg("router_name"); %></title>
 
 	<script type="text/javascript">

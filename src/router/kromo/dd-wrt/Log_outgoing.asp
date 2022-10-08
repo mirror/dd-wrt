@@ -1,4 +1,4 @@
-<% do_pagehead("log_out.titl"); %>
+<% do_pagehead_nopwc("log_out.titl"); %>
 	<script type="text/javascript">
 	//<![CDATA[
 addEvent(window, "load", function() {
