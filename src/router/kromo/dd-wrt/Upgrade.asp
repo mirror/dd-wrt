@@ -26,11 +26,12 @@ function upgrade(F,id) {
 		F.upgrade_file.value = upgrade_file;
 		//$(F.id).setAttribute('action', 'olupgrade.cgi');
 		//$(F.id).setAttribute('enctype', '');
+		document.getElementsByName("Upgrade_b")[0].disabled = false;
 		F.action = 'olupgrade.cgi';
 		F.removeAttribute('enctype');
 		$('submit_button').remove();
 	} else if (F.file.value == "") {
-		alert(errmsg.err60);
+		document.getElementsByName("Upgrade_b")[0].disabled = true;
 		return false;
 	}
 
@@ -51,7 +52,7 @@ function getUpgrades(F) {
 	$('submit_action').value = 'Apply';
 	$('submit_action').name = 'action';
 	F.change_action.value = 'gozila_cgi';
-	F.submit_button.value = 'Upgrade';
+	F.submit_button.value = sbutton.upgrade;
 	F.submit_type.value = 'get_upgrades';
 	F.submit();
 }
