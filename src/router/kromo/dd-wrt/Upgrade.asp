@@ -52,7 +52,7 @@ function getUpgrades(F) {
 	$('submit_action').value = 'Apply';
 	$('submit_action').name = 'action';
 	F.change_action.value = 'gozila_cgi';
-	F.submit_button.value = 'Upgrades';
+	F.submit_button.value = 'Upgrade';
 	F.submit_type.value = 'get_upgrades';
 	F.submit();
 }
