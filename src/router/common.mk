@@ -128,6 +128,9 @@ endif
 ifeq ($(CONFIG_SQUID),y)
 	-cp ${shell $(ARCH)-linux-gcc -print-file-name=libatomic.so.1} $(ARCH)-uclibc/target/lib/libatomic.so.1 
 endif
+ifeq ($(CONFIG_OPENSSL),y)
+	-cp ${shell $(ARCH)-linux-gcc -print-file-name=libatomic.so.1} $(ARCH)-uclibc/target/lib/libatomic.so.1 
+endif
 ifeq ($(CONFIG_FREERADIUS),y)
 	-cp ${shell $(ARCH)-linux-gcc -print-file-name=libatomic.so.1} $(ARCH)-uclibc/target/lib/libatomic.so.1 
 endif
