@@ -12,7 +12,7 @@ fieldset {
   margin: -.8rem -.7rem 0 -.7rem;
 }
 .syslog_bg tr:not([class]):hover {
-  background: #222;
+  background: var(--bg-2, #222);
   color: #eee;
 }
 .syslog_legend {

@@ -527,7 +527,7 @@ input.button[onclick*='FilterSummary'] {
   margin-top: -.1rem;
 }
 /* submitfooter buttons */
-.button.green_btn {
+.button.green_btn, .button.green_btn:disabled {
   background: #166f2a;
   border-color: #1a6d2d;
   color: #fff;
