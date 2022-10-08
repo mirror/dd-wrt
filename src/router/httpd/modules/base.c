@@ -2539,7 +2539,7 @@ static int do_syslog(unsigned char method, struct mime_handler *handler, char *u
 	    || !strcmp(style, "yellow")) {
 		websWrite(stream, "<link type=\"text/css\" rel=\"stylesheet\" href=\"style/%s/colorscheme.css\" />\n", style);
 	} else {
-		websWrite(stream, "<link type=\"text/css\" rel=\"stylesheet\" href=\"style/elegant/colorscheme.css\" />\n", style);
+		websWrite(stream, "<link type=\"text/css\" rel=\"stylesheet\" href=\"style/elegant/colorscheme.css\" />\n");
 	}
 	websWrite(stream, "<link type=\"text/css\" rel=\"stylesheet\" href=\"style/syslogd/syslogd.css\" />\n");
 	if (style_dark != NULL && !strcmp(style_dark, "1")) {
