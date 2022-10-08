@@ -1,4 +1,4 @@
-<%% do_pagehead("wl_filter.titl"); %%>
+<%% do_pagehead_nopwc("wl_filter.titl"); %%>
 	<script type="text/javascript">
 	//<![CDATA[
 function to_submit(F) {

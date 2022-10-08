@@ -1,4 +1,4 @@
-<% do_pagehead("status_conn.titl"); %>
+<% do_pagehead_nopwc("status_conn.titl"); %>
 <script type="text/javascript">
 //<![CDATA[
 function openGeotool(IP) {

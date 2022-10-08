@@ -1,4 +1,4 @@
-<% do_pagehead("routetbl.titl"); %>
+<% do_pagehead_nopwc("routetbl.titl"); %>
 	<script type="text/javascript">
 	//<![CDATA[
 addEvent(window, "load", function() {
@@ -68,3 +68,4 @@ addEvent(window, "load", function() {
 		</form>
 	</body>
 </html>
+do_pagehead_nopwc(

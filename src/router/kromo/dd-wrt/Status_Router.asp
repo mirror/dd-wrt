@@ -1,4 +1,4 @@
-<% do_pagehead("status_router.titl"); %>
+<% do_pagehead_nopwc("status_router.titl"); %>
 	<script type="text/javascript">
 	//<![CDATA[
 

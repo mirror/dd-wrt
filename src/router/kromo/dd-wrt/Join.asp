@@ -1,4 +1,4 @@
-<% do_pagehead("join.titl"); %>
+<% do_pagehead_nopwc("join.titl"); %>
 	<script type="text/javascript">
 	//<![CDATA[
 

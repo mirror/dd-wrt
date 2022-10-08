@@ -1,4 +1,4 @@
-<% do_pagehead("upgrad.titl"); %>
+<% do_pagehead_nopwc("upgrad.titl"); %>
 	<script type="text/javascript">
 	//<![CDATA[
 
