@@ -1140,6 +1140,7 @@ processlangfiles:
 	../../../../tools/process_langfile $(INSTALLDIR)/www/lang_pack/english.js $(INSTALLDIR)/www/lang_pack/*.js
 
 optimizefiles:
+	cp elegant/colorscheme.css $(INSTALLDIR)/www/style/elegant
 	../../../../tools/write4 $(INSTALLDIR)/www/*.asp
 	../../../../tools/write4 $(INSTALLDIR)/www/*.htm
 	../../../../tools/write4 $(INSTALLDIR)/www/*.html
