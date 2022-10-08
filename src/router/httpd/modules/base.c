@@ -2542,9 +2542,6 @@ static int do_syslog(unsigned char method, struct mime_handler *handler, char *u
 	} else {
 		websWrite(stream, "<link type=\"text/css\" rel=\"stylesheet\" href=\"style/syslogd/syslogd.css\" />\n");
 	}
-	else {
-		style_dark = NULL;
-	}
 	websWrite(stream,	//
 		  "%s"		//
 		  "</head>\n<body class=\"syslog_bd\">\n"	//
