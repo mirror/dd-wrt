@@ -68,4 +68,3 @@ addEvent(window, "load", function() {
 		</form>
 	</body>
 </html>
-do_pagehead_nopwc(

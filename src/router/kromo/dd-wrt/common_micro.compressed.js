@@ -1100,6 +1100,10 @@ function toggle_layer_ext(obj,id1,id2,_75){
 show_layer_ext(obj,id1,_75);
 show_layer_ext(obj,id2,!_75);
 };
+function lgout(){
+document.forms[0].action.value="Logout";
+document.forms[0].submit();
+};
 function comma(n){
 n=""+n;
 var p=n;
