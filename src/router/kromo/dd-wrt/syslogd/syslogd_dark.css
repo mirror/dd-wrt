@@ -8,6 +8,7 @@ fieldset {
 }
 .syslog_bg {
   background: #111;
+  border-color: var(--bg-4, #333);
   padding: .3rem;
   margin: -.8rem -.7rem 0 -.7rem;
 }

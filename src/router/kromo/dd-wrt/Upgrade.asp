@@ -1,4 +1,4 @@
-<% do_pagehead_nopwc("upgrad.titl"); %>
+<% do_pagehead("upgrad.titl"); %>
 	<script type="text/javascript">
 	//<![CDATA[
 
@@ -32,7 +32,7 @@ function upgrade(F,id) {
 		$('submit_button').remove();
 	} else if (F.file.value == "") {
 		document.getElementsByName("Upgrade_b")[0].disabled = true;
-		return false;
+		return;
 	}
 
 	choose_disable(F.Upgrade_b);
@@ -52,7 +52,7 @@ function getUpgrades(F) {
 	$('submit_action').value = 'Apply';
 	$('submit_action').name = 'action';
 	F.change_action.value = 'gozila_cgi';
-	F.submit_button.value = sbutton.upgrade;
+	F.submit_button.value = 'Upgrades';
 	F.submit_type.value = 'get_upgrades';
 	F.submit();
 }
