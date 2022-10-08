@@ -2538,8 +2538,6 @@ static int do_syslog(unsigned char method, struct mime_handler *handler, char *u
 	if (!strcmp(style, "blue") || !strcmp(style, "cyan") || !strcmp(style, "elegant") || !strcmp(style, "carlson") || !strcmp(style, "green") || !strcmp(style, "orange") || !strcmp(style, "red")
 	    || !strcmp(style, "yellow")) {
 		websWrite(stream, "<link type=\"text/css\" rel=\"stylesheet\" href=\"style/%s/colorscheme.css\" />\n", style);
-	} else {
-		websWrite(stream, "<link type=\"text/css\" rel=\"stylesheet\" href=\"style/elegant/colorscheme.css\" />\n");
 	}
 	websWrite(stream, "<link type=\"text/css\" rel=\"stylesheet\" href=\"style/syslogd/syslogd.css\" />\n");
 	if (!strcmp(style, "blue") || !strcmp(style, "cyan") || !strcmp(style, "elegant") || !strcmp(style, "carlson") || !strcmp(style, "green") || !strcmp(style, "orange") || !strcmp(style, "red")
