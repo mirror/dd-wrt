@@ -206,6 +206,7 @@ input[type='radio'] {
 .button {
   margin: 2px 4px 4px 0;
   padding: .06em .6em;
+  border-radius: 4px;
   cursor: pointer;
 }
 input.button[onclick*='delete'] {
@@ -217,6 +218,9 @@ input.button[onclick*='delete'] {
 [name='Info'] .submitFooter,
 #contents.syslog-padding .submitFooter {
   margin: 0;
+}
+.syslog-padding {
+  padding: .93em !important;
 }
 .submitFooter {
   padding: 4px 12px;
@@ -231,7 +235,7 @@ input.button[onclick*='delete'] {
 .submitFooter .button {
   padding: 0 1rem;
   margin: .362em;
-  height: 1.533rem;
+  height: 1.333rem;
 }
 .button[name='refresh_button'] {
   background-color: #e9e9ed;
@@ -241,7 +245,7 @@ input.button[onclick*='delete'] {
   position: absolute;
   top: 2em;
   right: 1em;
-  width: 32.609em;
+  width: 35.609em;
   text-align: right;
   color: #fff;
 }
@@ -388,6 +392,7 @@ iframe#syslog {
   left: 0;
   top: 1rem;
   position: relative;
+  margin-bottom: .906em;
 }
 input, select {
   border: 1px solid #8f8f9d;

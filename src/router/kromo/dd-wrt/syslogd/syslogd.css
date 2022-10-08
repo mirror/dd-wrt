@@ -11,6 +11,7 @@ html {
   background: #f6f6f6;
   padding: .1rem .3rem .3rem;
   margin: -.8rem -.7rem 0;
+  border-color: #ccc;
 }
 .syslog_bg div:focus-visible {
   outline: 0;
@@ -25,6 +26,7 @@ fieldset {
   background-color: transparent;
   font-weight: 700;
   padding: 0 .272em;
+  color: var(--lg-c, #111);
 }
 .syslog_bg tr:not([class]):hover {
   background-color: #ccc;
