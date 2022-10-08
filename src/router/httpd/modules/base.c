@@ -2527,16 +2527,20 @@ static int do_syslog(unsigned char method, struct mime_handler *handler, char *u
 	websWrite(stream, "<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Strict//EN\" \"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd\">\n"	//
 		  "<html>\n" "<head>\n" "<meta http-equiv=\"Content-Type\" content=\"application/xhtml+xml; charset=%s\" />\n"	//
 		  "<script type=\"text/javascript\" src=\"common.js\"></script>\n"	//
-		  "<script type=\"text/javascript\" src=\"lang_pack/english.js\"></script>\n"
-		  , charset) ;
+		  "<script type=\"text/javascript\" src=\"lang_pack/english.js\"></script>\n", charset);
 #ifdef HAVE_LANGUAGE
-		  if (!nvram_match("language", "english"))
-			websWrite(stream,"<script type=\"text/javascript\" src=\"lang_pack/language.js\"></script>\n");
+	if (!nvram_match("language", "english"))
+		websWrite(stream, "<script type=\"text/javascript\" src=\"lang_pack/language.js\"></script>\n");
 #endif
 	char *style = nvram_safe_get("router_style");
 	if (!style)
-		style="elegant";
-	websWrite(stream, "<link type=\"text/css\" rel=\"stylesheet\" href=\"style/%s/colorscheme.css\" />\n", style);
+		style = "elegant";
+	if (!strcmp(style, "blue") || !strcmp(style, "cyan") || !strcmp(style, "elegant") || !strcmp(style, "carlson") || !strcmp(style, "green") || !strcmp(style, "orange") || !strcmp(style, "red")
+	    || !strcmp(style, "yellow")) {
+		websWrite(stream, "<link type=\"text/css\" rel=\"stylesheet\" href=\"style/%s/colorscheme.css\" />\n", style);
+	} else {
+		websWrite(stream, "<link type=\"text/css\" rel=\"stylesheet\" href=\"style/elegant/colorscheme.css\" />\n", style);
+	}
 	websWrite(stream, "<link type=\"text/css\" rel=\"stylesheet\" href=\"style/syslogd/syslogd.css\" />\n");
 	if (style_dark != NULL && !strcmp(style_dark, "1")) {
 		websWrite(stream, "<link type=\"text/css\" rel=\"stylesheet\" href=\"style/syslogd/syslogd_dark.css\" />\n");
