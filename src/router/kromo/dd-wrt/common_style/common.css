@@ -213,14 +213,14 @@ table, .table {
   border: 0 !important;
 }
 .logout {
-  color: var(--tx-c, --v9-9);
+  fill: var(--v9-9, --tx-c);
   transition: all 400ms ease-in-out;
   cursor: pointer;
   width: 20px;
   height: 20px;
 }
 .logout:hover {
-  color: var(--v1-6, #f66);
+  fill: var(--v1-6, #f66);
 }
 .table.weekdays {
   margin-left: -1.3rem;
@@ -527,7 +527,8 @@ input.button[onclick*='FilterSummary'] {
   margin-top: -.1rem;
 }
 /* submitfooter buttons */
-.button.green_btn, .button.green_btn:disabled {
+.button.green_btn,
+.button.green_btn:disabled:hover {
   background: #166f2a;
   border-color: #1a6d2d;
   color: #fff;
