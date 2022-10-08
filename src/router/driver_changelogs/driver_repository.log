@@ -1,4 +1,8 @@
 ------------------------------------------------------------------------
+r6808 | brainslayer | 2022-10-08 16:06:48 +0700 (Sat, 08 Oct 2022) | 1 line
+
+wifi: cfg80211: fix ieee80211_data_to_8023_exthdr handling of small packets
+------------------------------------------------------------------------
 r6807 | brainslayer | 2022-10-07 14:12:27 +0700 (Fri, 07 Oct 2022) | 1 line
 
 brcmfmac: Support multiple station interface series
