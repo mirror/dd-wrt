@@ -1,4 +1,4 @@
-<%% do_pagehead("survey.titl"); %%>
+<%% do_pagehead_nopwc("survey.titl"); %%>
 	<script type="text/javascript">
 	//<![CDATA[
 

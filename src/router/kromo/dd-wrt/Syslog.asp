@@ -1,4 +1,4 @@
-<% do_pagehead("service.syslog_srv"); %>
+<% do_pagehead_nopwc("service.syslog_srv"); %>
 	<script type="text/javascript">
 	//<![CDATA[
 
@@ -12,6 +12,7 @@ function do_refresh() {
 	var f = document.getElementById('syslog');
 	f.src = load_file(count);
 }
+
 function do_show_prev() {
 	if( count > 49 )
 		count = Number(count) - 50;

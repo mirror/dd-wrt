@@ -1,4 +1,4 @@
-<% do_pagehead(""); %>
+<% do_pagehead_nopwc(""); %>
 	<script type="text/javascript">
 	//<![CDATA[
 
