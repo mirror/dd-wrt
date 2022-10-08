@@ -296,16 +296,12 @@ iframe#syslog {
   max-width: 82%;
   position: relative;
   height: 811px;
+  margin-bottom: .906em;
 }
 #mainno .submitFooter {
   margin: 4.2rem 18em;
   min-width: 79.888%;
   max-width: 80.999%;
-}
-input.button[onclick*='do_show']:not([value*='Month']) {
-  margin: 2.8em .5em;
-  position: relative;
-  left: 2em;
 }
 .progressbar {
   visibility: visible;

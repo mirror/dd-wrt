@@ -55,21 +55,15 @@ addEvent(window, "unload", function() {
 						  <!-- see syslogd dir stylesheets for .syslog_bg padding/margins -->
 							<script type="text/javascript">
 								//<![CDATA[
-								document.write("<iframe id=\"syslog\" src=\"" + load_file(0) + "\" width=\"100%\" height=\"805\" frameborder=\"0\" type=\"text/html\"></iframe>");
+								document.write("<iframe id=\"syslog\" src=\"" + load_file(0) + "\" width=\"100%\" height=\"810\" frameborder=\"0\" type=\"text/html\"></iframe>");
 								//]]>
 							</script>
-							<!-- add padding margin so that prev/next buttons are dead dcenter of perceived space between log/footer -->
-							<div class="center" style="padding-bottom: 1.5em; margin-top: -1.1em">
-								<script type="text/javascript">
-								//<![CDATA[
-								document.write("<input class=\"button\" type=\"button\" value=\"" + sbutton.prev + "\" onclick=\"do_show_prev();\">");
-								document.write("<input class=\"button\" type=\"button\" value=\"" + sbutton.next + "\" onclick=\"do_show_next();\">");
-								//]]>
-								</script>
 							</div>
 							<div class="submitFooter nostick">
 								<script type="text/javascript">
 								//<![CDATA[
+								document.write("<input class=\"button\" type=\"button\" value=\"" + sbutton.prev + "\" onclick=\"do_show_prev();\">");
+								document.write("<input class=\"button\" type=\"button\" value=\"" + sbutton.next + "\" onclick=\"do_show_next();\">");
 								var autoref = <% nvem("refresh_time","0","sbutton.refres","sbutton.autorefresh"); %>;
 								submitFooterButton(0,0,0,autoref);
 								//]]>
