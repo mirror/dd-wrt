@@ -1,4 +1,4 @@
-<% do_pagehead("filterSum.titl"); %>
+<% do_pagehead_nopwc("filterSum.titl"); %>
 	<script type="text/javascript">
 	//<![CDATA[
 

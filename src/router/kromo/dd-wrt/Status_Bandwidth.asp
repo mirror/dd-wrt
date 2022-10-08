@@ -1,4 +1,4 @@
-<% do_pagehead("status_band.titl"); %>
+<% do_pagehead_nopwc("status_band.titl"); %>
 	<script type="text/javascript">
 	//<![CDATA[
 

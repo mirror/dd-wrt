@@ -1,4 +1,4 @@
-<%% do_pagehead("wl_active.titl"); %%>
+<%% do_pagehead_nopwc("wl_active.titl"); %%>
 	<script type="text/javascript">
 	//<![CDATA[
 

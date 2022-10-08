@@ -1,4 +1,4 @@
-<% do_pagehead("status_inet.dataadmin"); %>
+<% do_pagehead_nopwc("status_inet.dataadmin"); %>
 	<script type="text/javascript">
 	//<![CDATA[
 function ttraff_restore_submit(F) {

@@ -1172,11 +1172,6 @@ function toggle_layer_ext(obj, id1, id2, state) {
 	show_layer_ext(obj, id2, !state)
 }
 
-function lgout() {
-	document.forms[0].action.value = "Logout";
-	document.forms[0].submit();
-}
-
 function comma(n) {
 	n = '' + n;
 	var p = n;

@@ -1,4 +1,4 @@
-<% do_pagehead("status_wireless.titl"); %>
+<% do_pagehead_nopwc("status_wireless.titl"); %>
 	<script type="text/javascript">
 	//<![CDATA[
 
