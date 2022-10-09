@@ -56,13 +56,12 @@ POSSIBILITY OF SUCH DAMAGE.
 	<text id='grid_txt2' x='100%' y='148' fill='gray' text-anchor='end'>--</text>
 	<text id='grid_txt1' x='100%' y='73' fill='gray' text-anchor='end'>--</text>
 
-
 	<line id='axis_x' x1='2' y1='299' x2='700' y2='299' stroke='#111' stroke-opacity='0.8' />
 	<line id='axis_y' x1='1' y1='300' x2='1' y2='0' stroke='#111' stroke-opacity='0.8' />
 </g>
-<script type="text/ecmascript" xlink:href="/lang_pack/english.js" />
-<script type="text/ecmascript" xlink:href="/lang_pack/language.js" />
-<script type="text/ecmascript">
+<!--<script type="text/ecmascript" xlink:href="/lang_pack/english.js" />
+<script type="text/ecmascript" xlink:href="/lang_pack/language.js" /> -->
+<script type="text/javascript">
 <![CDATA[
 if (typeof getURL == 'undefined') {
 	getURL = function(url, callback) {
@@ -81,15 +80,16 @@ if (typeof getURL == 'undefined') {
 		var http_request = null;
 		if (typeof XMLHttpRequest != 'undefined') {
 			http_request = new XMLHttpRequest();
-		} else{ if (typeof ActiveXObject != 'undefined') {
-			try {
-				http_request = new ActiveXObject('Msxml2.XMLHTTP');
-			} catch (e) {
+		} else{
+			if (typeof ActiveXObject != 'undefined') {
 				try {
-					http_request = new ActiveXObject('Microsoft.XMLHTTP');
-				} catch (e) {}
+					http_request = new ActiveXObject('Msxml2.XMLHTTP');
+				} catch (e) {
+					try {
+						http_request = new ActiveXObject('Microsoft.XMLHTTP');
+					} catch (e) {}
+				}
 			}
-		}
 		}
 		if (!http_request) {
 			throw 'Both getURL and XMLHttpRequest are undefined';
@@ -126,8 +126,7 @@ var scale_type = status_band.follow;
 
 var fetch_url='';
 
-function init(evt)
-{
+function init(evt) {
 	fetch_url=location.search.split('?');
 	fetch_url='/fetchif.cgi?' + fetch_url[fetch_url.length-1];
 	SVGDoc = evt.target.ownerDocument;
@@ -138,8 +137,7 @@ function init(evt)
 	setInterval('fetch_data()', 1000);
 };
 
-function do_translation()
-{
+function do_translation() {
 	SVGDoc.getElementById('graph_in_lbl').firstChild.data = status_band.strin;
 	SVGDoc.getElementById('graph_out_lbl').firstChild.data = status_band.strout;
 	SVGDoc.getElementById('switch_unit').firstChild.data = status_band.chg_unit + unit + '/s';
@@ -148,20 +146,17 @@ function do_translation()
 	SVGDoc.getElementById('collect_initial').firstChild.data = status_band.chg_collect_initial;
 };
 
-function switch_unit(event)
-{
+function switch_unit(event) {
 	unit = (unit == 'kbit') ? "kbyte" : 'kbit'; 
 	SVGDoc.getElementById('switch_unit').firstChild.data = status_band.chg_unit + unit + '/s';
 };
 
-function switch_scale(event)
-{
+function switch_scale(event) {
 	scale_type = (scale_type == status_band.up) ? status_band.follow : status_band.up;
 	SVGDoc.getElementById('switch_scale').firstChild.data = status_band.chg_scale + ' (' + scale_type + ')';
 };
 
-function fetch_data()
-{
+function fetch_data() {
 	if (fetch_url) {
 		getURL(fetch_url, plot_data);
 	} else {
@@ -169,8 +164,7 @@ function fetch_data()
 	}
 };
 
-function plot_data(obj)
-{
+function plot_data(obj) {
 	if (!obj.success) return handle_error();
 	if (!obj.content) return handle_error();
 
@@ -182,12 +176,11 @@ function plot_data(obj)
 	data=data[1].split(/\s+|:/);
 	while (data[0]!=parseInt(data[0])) {
 		data.shift();
-		
 		if (0==data.length) return;
 	}
 	var ifin=parseInt(data[0]);
 	var ifout=parseInt(data[8]);
-	
+
 	if (!isNumber(ifin) || !isNumber(ifout)) {
 		return handle_error();
 	}
@@ -201,7 +194,7 @@ function plot_data(obj)
 	last_ugmt = ugmt;
 	last_ifin = ifin;
 	last_ifout = ifout;
-	
+
 	switch (plot_in.length) {
 	case 0:
 		SVGDoc.getElementById("collect_initial").setAttributeNS(null, 'visibility', 'visible');
@@ -233,15 +226,16 @@ function plot_data(obj)
 	if (scale_type == status_band.up) {
 		if (plot_in[index_plot] > max) max = plot_in[index_plot];
 		if (plot_out[index_plot] > max) max = plot_out[index_plot];
-	} else { if (scale_type == status_band.follow) {
-		i = 0;
-		max = 0;
-		while (i < plot_in.length) {
-			if (plot_in[i] > max) max = plot_in[i];
-			if (plot_out[i] > max) max = plot_out[i];
-			i++;
+	} else {
+		if (scale_type == status_band.follow) {
+			i = 0;
+			max = 0;
+			while (i < plot_in.length) {
+				if (plot_in[i] > max) max = plot_in[i];
+				if (plot_out[i] > max) max = plot_out[i];
+				i++;
+			}
 		}
-	}
 	}
 
 	var rmax=makeRoundMax(max);
@@ -275,8 +269,7 @@ function plot_data(obj)
 	SVGDoc.getElementById('graph_out').setAttributeNS(null, 'd', path_out);
 };
 
-function makeRoundMax(max)
-{
+function makeRoundMax(max) {
 	if (unit == share.bytes) {
 		rmax = 1250;
 		i = 0;
@@ -298,43 +291,36 @@ function makeRoundMax(max)
 			} else {
 				rmax *= 2;
 			}
-			
 			if (i == 8) rmax *= 1.024;
 		}
 	}
 	return rmax;
 };
 
-function handle_error()
-{
+function handle_error() {
 	SVGDoc.getElementById("error").setAttributeNS(null, 'visibility', 'visible');
 };
 
-function isNumber(a)
-{
+function isNumber(a) {
 	return typeof a == 'number' && isFinite(a);
 };
 
-function formatSpeed(speed, unit)
-{
+function formatSpeed(speed, unit) {
 	if (unit == 'kbit') return formatSpeedBytes(speed);
 	if (unit == 'kbyte') return formatSpeedBits(speed);
 };
 
-function formatSpeedBits(speed)
-{
+function formatSpeedBits(speed) {
 	if (speed < 125000) return Math.round(speed / 125) + " kbit/s";
 	if (speed < 125000000) return Math.round(speed / 1250)/100 + " Mbit/s";
 	return Math.round(speed / 1250000)/100 + " Gbit/s";  
 };
 
-function formatSpeedBytes(speed)
-{
+function formatSpeedBytes(speed) {
 	if (speed < 1000000) return Math.round(speed / 10)/100 + " " + share.kbytes + "/s";
 	if (speed < 1000000000) return Math.round(speed / 10000)/100 + " " + share.mbytes + "/s";
 	return Math.round(speed / 10000000)/100 + " " + share.mbytes + "/s";
 };
-
 ]]>
 </script>
 </svg>
