@@ -57,6 +57,11 @@ system.themes = [{
 		group: 'Base'
 	},
 	{
+		value: 'dd-wrt-dark;logo-white.png',
+		text: 'DD-WRT Dark',
+		group: 'Base'
+	},
+	{
 		value: 'metro-blue',
 		text: 'Metro Blue',
 		group: 'Metro'
