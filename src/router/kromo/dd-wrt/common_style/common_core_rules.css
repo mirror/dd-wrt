@@ -19,7 +19,7 @@
   color: var(--tx-c);
   outline: 0;
 }
-legend, .syslog_legend {
+legend {
   color: var(--lg-c);
 }
 #help a, #help a:hover, .meter .text {
@@ -51,4 +51,7 @@ select:focus-within {
   box-shadow: 0 0 5px 1px var(--ac-2);
   border: 1px solid var(--ac-2);
   outline: 0;
+}
+.logout:hover {
+  fill: var(--lo-h);
 }
