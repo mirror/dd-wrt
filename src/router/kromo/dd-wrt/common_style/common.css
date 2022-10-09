@@ -213,14 +213,11 @@ table, .table {
   border: 0 !important;
 }
 .logout {
-  fill: var(--v9-9, --tx-c);
+  fill: var(--tx-c);
   transition: all 400ms ease-in-out;
   cursor: pointer;
   width: 20px;
   height: 20px;
-}
-.logout:hover {
-  fill: var(--v1-6, #f66);
 }
 .table.weekdays {
   margin-left: -1.3rem;
