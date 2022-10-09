@@ -1241,6 +1241,9 @@ endif
 ifeq ($(CONFIG_XIRIAN),y)
 	cp xirian/style.css $(INSTALLDIR)/www/style/xirian
 endif
+ifeq ($(CONFIG_BRAINSLAYER),y)
+	cp brainslayer/style.css $(INSTALLDIR)/www/style/brainslayer
+endif
 ifeq ($(CONFIG_KROMO),y)
 	cp kromo/style.css $(INSTALLDIR)/www/style/kromo
 endif
