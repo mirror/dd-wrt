@@ -26,13 +26,12 @@ function upgrade(F,id) {
 		F.upgrade_file.value = upgrade_file;
 		//$(F.id).setAttribute('action', 'olupgrade.cgi');
 		//$(F.id).setAttribute('enctype', '');
-		document.getElementsByName("Upgrade_b")[0].disabled = false;
 		F.action = 'olupgrade.cgi';
 		F.removeAttribute('enctype');
 		$('submit_button').remove();
 	} else if (F.file.value == "") {
-		document.getElementsByName("Upgrade_b")[0].disabled = true;
-		return;
+		alert(errmsg.err60);
+		return false;
 	}
 
 	choose_disable(F.Upgrade_b);
