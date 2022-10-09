@@ -1221,8 +1221,22 @@ endif
 ifeq ($(CONFIG_ORANGE),y)
 	cp orange/style.css $(INSTALLDIR)/www/style/orange
 endif
+ifneq ($(CONFIG_ORANGE),y)
+ifeq ($(CONFIG_ELEGANT),y)
+ifeq ($(CONFIG_RED),y)
+ifeq ($(CONFIG_BLUE),y)
+ifeq ($(CONFIG_CYAN),y)
+ifeq ($(CONFIG_YELLOW),y)
+ifeq ($(CONFIG_GREEN),y)
 ifeq ($(CONFIG_BRAINSLAYER),y)
-	cp brainslayer/style.css $(INSTALLDIR)/www/style/brainslayer
+	cp orange/style.css $(INSTALLDIR)/www/style/orange
+endif
+endif
+endif
+endif
+endif
+endif
+endif
 endif
 ifeq ($(CONFIG_XIRIAN),y)
 	cp xirian/style.css $(INSTALLDIR)/www/style/xirian
