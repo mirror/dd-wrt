@@ -279,6 +279,12 @@ iperf_get_test_repeating_payload(struct iperf_test *ipt)
 }
 
 int
+iperf_get_test_bind_port(struct iperf_test *ipt)
+{
+    return ipt->bind_port;
+}
+
+int
 iperf_get_test_server_port(struct iperf_test *ipt)
 {
     return ipt->server_port;
@@ -411,6 +417,12 @@ iperf_get_test_congestion_control(struct iperf_test* ipt)
     return ipt->congestion;
 }
 
+int
+iperf_get_test_mss(struct iperf_test *ipt)
+{
+    return ipt->settings->mss;
+}
+
 /************** Setter routines for some fields inside iperf_test *************/
 
 void
@@ -519,6 +531,12 @@ void
 iperf_set_test_burst(struct iperf_test *ipt, int burst)
 {
     ipt->settings->burst = burst;
+}
+
+void
+iperf_set_test_bind_port(struct iperf_test *ipt, int bind_port)
+{
+    ipt->bind_port = bind_port;
 }
 
 void
@@ -767,6 +785,11 @@ iperf_set_test_congestion_control(struct iperf_test* ipt, char* cc)
     ipt->congestion = strdup(cc);
 }
 
+void
+iperf_set_test_mss(struct iperf_test *ipt, int mss)
+{
+    ipt->settings->mss = mss;
+}
 
 /********************** Get/set test protocol structure ***********************/
 
@@ -1055,14 +1078,15 @@ iperf_parse_arguments(struct iperf_test *test, int argc, char **argv)
 	{"connect-timeout", required_argument, NULL, OPT_CONNECT_TIMEOUT},
         {"idle-timeout", required_argument, NULL, OPT_IDLE_TIMEOUT},
         {"rcv-timeout", required_argument, NULL, OPT_RCV_TIMEOUT},
-        {"debug", no_argument, NULL, 'd'},
+        {"snd-timeout", required_argument, NULL, OPT_SND_TIMEOUT},
+        {"debug", optional_argument, NULL, 'd'},
         {"help", no_argument, NULL, 'h'},
         {NULL, 0, NULL, 0}
     };
     int flag;
     int portno;
     int blksize;
-    int server_flag, client_flag, rate_flag, duration_flag, rcv_timeout_flag;
+    int server_flag, client_flag, rate_flag, duration_flag, rcv_timeout_flag, snd_timeout_flag;
     char *endptr;
 #if defined(HAVE_CPU_AFFINITY)
     char* comma;
@@ -1074,7 +1098,7 @@ iperf_parse_arguments(struct iperf_test *test, int argc, char **argv)
     int rcv_timeout_in = 0;
 
     blksize = 0;
-    server_flag = client_flag = rate_flag = duration_flag = rcv_timeout_flag = 0;
+    server_flag = client_flag = rate_flag = duration_flag = rcv_timeout_flag = snd_timeout_flag =0;
 #if defined(HAVE_SSL)
     char *client_username = NULL, *client_rsa_public_key = NULL, *server_rsa_private_key = NULL;
 #endif /* HAVE_SSL */
@@ -1284,8 +1308,8 @@ iperf_parse_arguments(struct iperf_test *test, int argc, char **argv)
                 if (iperf_parse_hostname(test, optarg, &p, &p1)) {
 #if defined(HAVE_SO_BINDTODEVICE)
                     /* Get rid of the hostname we saved earlier. */
-                    free(iperf_get_test_server_hostname(test));
-                    iperf_set_test_server_hostname(test, p);
+                    free(iperf_get_test_bind_address(test));
+                    iperf_set_test_bind_address(test, p);
                     iperf_set_test_bind_dev(test, p1);
 #else /* HAVE_SO_BINDTODEVICE */
                     i_errno = IEBINDDEVNOSUPPORT;
@@ -1424,6 +1448,16 @@ iperf_parse_arguments(struct iperf_test *test, int argc, char **argv)
                 test->settings->rcv_timeout.usecs = (rcv_timeout_in % SEC_TO_mS) * mS_TO_US;
                 rcv_timeout_flag = 1;
 	        break;
+#if defined(HAVE_TCP_USER_TIMEOUT)
+            case OPT_SND_TIMEOUT:
+                test->settings->snd_timeout = atoi(optarg);
+                if (test->settings->snd_timeout < 0 || test->settings->snd_timeout > MAX_TIME * SEC_TO_mS) {
+                    i_errno = IESNDTIMEOUT;
+                    return -1;
+                }
+                snd_timeout_flag = 1;
+	        break;
+#endif /* HAVE_TCP_USER_TIMEOUT */
             case 'A':
 #if defined(HAVE_CPU_AFFINITY)
                 test->affinity = strtol(optarg, &endptr, 0);
@@ -1461,6 +1495,12 @@ iperf_parse_arguments(struct iperf_test *test, int argc, char **argv)
 		break;
 	    case 'd':
 		test->debug = 1;
+                test->debug_level = DEBUG_LEVEL_MAX;
+                if (optarg) {
+                    test->debug_level = atoi(optarg);
+                    if (test->debug_level < 0)
+                        test->debug_level = DEBUG_LEVEL_MAX;
+                }
 		break;
 	    case 'I':
 		test->pidfile = strdup(optarg);
@@ -1652,7 +1692,7 @@ iperf_parse_arguments(struct iperf_test *test, int argc, char **argv)
             iperf_size_t file_bytes = st.st_size;
             test->settings->bytes = file_bytes;
             if (test->debug)
-                printf("End condition set to file-size: %d bytes\n", test->settings->bytes);
+                printf("End condition set to file-size: %"PRIu64" bytes\n", test->settings->bytes);
         }
         // if failing to read file stat, it should fallback to default duration mode
     }
@@ -1718,6 +1758,14 @@ int iperf_open_logfile(struct iperf_test *test)
     }
 
     return 0;
+}
+
+void iperf_close_logfile(struct iperf_test *test)
+{
+    if (test->outfile && test->outfile != stdout) {
+        fclose(test->outfile);
+        test->outfile = NULL;
+    }
 }
 
 int
@@ -2083,10 +2131,8 @@ send_parameters(struct iperf_test *test)
 	if (test->server_affinity != -1)
 	    cJSON_AddNumberToObject(j, "server_affinity", test->server_affinity);
 	cJSON_AddNumberToObject(j, "time", test->duration);
-	if (test->settings->bytes)
-	    cJSON_AddNumberToObject(j, "num", test->settings->bytes);
-	if (test->settings->blocks)
-	    cJSON_AddNumberToObject(j, "blockcount", test->settings->blocks);
+        cJSON_AddNumberToObject(j, "num", test->settings->bytes);
+        cJSON_AddNumberToObject(j, "blockcount", test->settings->blocks);
 	if (test->settings->mss)
 	    cJSON_AddNumberToObject(j, "MSS", test->settings->mss);
 	if (test->no_delay)
@@ -2196,8 +2242,10 @@ get_parameters(struct iperf_test *test)
 	    test->server_affinity = j_p->valueint;
 	if ((j_p = cJSON_GetObjectItem(j, "time")) != NULL)
 	    test->duration = j_p->valueint;
+        test->settings->bytes = 0;
 	if ((j_p = cJSON_GetObjectItem(j, "num")) != NULL)
 	    test->settings->bytes = j_p->valueint;
+        test->settings->blocks = 0;
 	if ((j_p = cJSON_GetObjectItem(j, "blockcount")) != NULL)
 	    test->settings->blocks = j_p->valueint;
 	if ((j_p = cJSON_GetObjectItem(j, "MSS")) != NULL)
@@ -2673,6 +2721,7 @@ iperf_new_test()
 
     test->bitrate_limit_intervals_traffic_bytes = (iperf_size_t *) malloc(sizeof(iperf_size_t) * MAX_INTERVAL);
     if (!test->bitrate_limit_intervals_traffic_bytes) {
+        free(test->settings);
         free(test);
 	i_errno = IENEWTEST;
 	return NULL;
@@ -2732,6 +2781,7 @@ iperf_defaults(struct iperf_test *testp)
     testp->remote_congestion_used = NULL;
     testp->server_port = PORT;
     testp->ctrl_sck = -1;
+    testp->listener = -1;
     testp->prot_listener = -1;
     testp->other_side_has_retransmits = 0;
 
@@ -2917,10 +2967,7 @@ iperf_free_test(struct iperf_test *test)
     if (test->logfile) {
 	free(test->logfile);
 	test->logfile = NULL;
-	if (test->outfile && test->outfile != stdout) {
-	    fclose(test->outfile);
-	    test->outfile = NULL;
-	}
+        iperf_close_logfile(test);
     }
 
     if (test->server_output_text) {
@@ -3014,6 +3061,7 @@ iperf_reset_test(struct iperf_test *test)
     test->state = 0;
 
     test->ctrl_sck = -1;
+    test->listener = -1;
     test->prot_listener = -1;
 
     test->bytes_sent = 0;
@@ -4343,6 +4391,10 @@ iperf_add_stream(struct iperf_test *test, struct iperf_stream *sp)
         sp->id = 1;
     } else {
         // for (n = test->streams, i = 2; n->next; n = n->next, ++i);
+        // NOTE: this would ideally be set to 1, however this will not
+        //       be changed since it is not causing a significant problem
+        //       and changing it would break multi-stream tests between old
+        //       and new iperf3 versions.
         i = 2;
         SLIST_FOREACH(n, &test->streams, streams) {
             prev = n;
@@ -4435,7 +4487,8 @@ diskfile_recv(struct iperf_stream *sp)
 
     r = sp->rcv2(sp);
     if (r > 0) {
-	(void) write(sp->diskfile_fd, sp->buffer, r);
+	// NOTE: Currently ignoring the return value of writing to disk
+	(void) (write(sp->diskfile_fd, sp->buffer, r) + 1);
     }
     return r;
 }
