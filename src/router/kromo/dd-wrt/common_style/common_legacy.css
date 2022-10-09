@@ -40,6 +40,9 @@
 input.button {
   cursor: pointer;
 }
+input[type='file'] {
+  max-width: 400px;
+}
 input.button[disabled],
 input[disabled], select[disabled], .off {
   cursor: default;

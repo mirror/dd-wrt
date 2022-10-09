@@ -463,6 +463,9 @@ input.num {
   text-align: center;
   vertical-align: middle;
 }
+input[type='file'] {
+  max-width: 400px;
+}
 .button {
   border: 1px solid;
   padding: 0 1rem .05em;
