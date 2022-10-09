@@ -1,5 +1,5 @@
 /*
- * style-name: DD-WRT Inspired Themes v6.2.1
+ * style-name: DD-WRT Inspired Themes v6.2.2
  * copyright: (c) Style-it-themes: the-j0k3r
  * license: MIT https://git.io/JrzcO
  * home-url: https: //github.com/style-it-themes/dd-wrt-inspired-themes
@@ -152,7 +152,6 @@ body input[disabled]:hover {
   box-shadow: 0 0 10px 0 var(--v4-3) !important;
   color: var(--v9-9) !important;
 }
-.button.green_btn:disabled,
 .button.green_btn:disabled:hover {
   background: var(--v4-2) !important;
   border-color: var(--v4-4) !important;
@@ -226,6 +225,12 @@ body .message {
 }
 #logout {
   margin-top: -4px !important;
+}
+.logout {
+  fill: var(--v9-9);
+}
+.logout:hover {
+  fill: var(--v0-9);
 }
 .popup,
 .popup_bg,
