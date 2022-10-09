@@ -101,15 +101,14 @@ struct iperf_interval_results
     /* Just placeholders, never accessed. */
     char *tcpInfo;
 #endif
-    int interval_retrans;
-    int interval_sacks;
-    int snd_cwnd;
-    int snd_wnd;
+    long interval_retrans;
+    long snd_cwnd;
+    long snd_wnd;
     TAILQ_ENTRY(iperf_interval_results) irlistentries;
     void     *custom_data;
-    int rtt;
-    int rttvar;
-    int pmtu;
+    long rtt;
+    long rttvar;
+    long pmtu;
 };
 
 struct iperf_stream_result
@@ -119,16 +118,14 @@ struct iperf_stream_result
     iperf_size_t bytes_received_this_interval;
     iperf_size_t bytes_sent_this_interval;
     iperf_size_t bytes_sent_omit;
-    int stream_prev_total_retrans;
-    int stream_retrans;
-    int stream_prev_total_sacks;
-    int stream_sacks;
-    int stream_max_rtt;
-    int stream_min_rtt;
-    int stream_sum_rtt;
+    long stream_prev_total_retrans;
+    long stream_retrans;
+    long stream_max_rtt;
+    long stream_min_rtt;
+    long stream_sum_rtt;
     int stream_count_rtt;
-    int stream_max_snd_cwnd;
-    int stream_max_snd_wnd;
+    long stream_max_snd_cwnd;
+    long stream_max_snd_wnd;
     struct iperf_time start_time;
     struct iperf_time end_time;
     struct iperf_time start_time_fixed;
@@ -169,6 +166,7 @@ struct iperf_settings
 #endif // HAVE_SSL
     int	      connect_timeout;	    /* socket connection timeout, in ms */
     int       idle_timeout;         /* server idle time timeout */
+    unsigned int snd_timeout; /* Timeout for sending tcp messages in active mode, in us */
     struct iperf_time rcv_timeout;  /* Timeout for receiving messages in active mode, in us */
 };
 
@@ -258,6 +256,15 @@ enum iperf_mode {
 	BIDIRECTIONAL = -1
 };
 
+enum debug_level {
+    DEBUG_LEVEL_ERROR = 1,
+    DEBUG_LEVEL_WARN = 2,
+    DEBUG_LEVEL_INFO = 3,
+    DEBUG_LEVEL_DEBUG = 4,
+    DEBUG_LEVEL_MAX = 4
+};
+
+
 struct iperf_test
 {
     char      role;                             /* 'c' lient or 's' erver */
@@ -312,6 +319,7 @@ struct iperf_test
     int	      json_output;                      /* -J option - JSON output */
     int	      zerocopy;                         /* -Z option - use sendfile */
     int       debug;				/* -d option - enable debug */
+    enum      debug_level debug_level;          /* -d option option - level of debug messages to show */
     int	      get_server_output;		/* --get-server-output */
     int	      udp_counters_64bit;		/* --use-64-bit-udp-counters */
     int       forceflush; /* --forceflush - flushing output at every interval */
@@ -421,5 +429,13 @@ struct iperf_test
 #define TIMESTAMP_FORMAT "%c "
 
 extern int gerror; /* error value from getaddrinfo(3), for use in internal error handling */
+
+/* UDP "connect" message and reply (textual value for Wireshark, etc. readability - legacy was numeric) */
+#define UDP_CONNECT_MSG 0x36373839          // "6789" - legacy value was 123456789
+#define UDP_CONNECT_REPLY 0x39383736        // "9876" - legacy value was 987654321
+#define LEGACY_UDP_CONNECT_REPLY 987654321  // Old servers may still reply with the legacy value
+
+/* In Reverse mode, maximum number of packets to wait for "accept" response - to handle out of order packets */
+#define MAX_REVERSE_OUT_OF_ORDER_PACKETS 2
 
 #endif /* !__IPERF_H */

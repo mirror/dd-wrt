@@ -25,7 +25,7 @@
 
 # Initialize the autoconf system for the specified tool, version and mailing list
 AC_PREREQ([2.00])
-AC_INIT([iperf],[3.11],[https://github.com/esnet/iperf],[iperf],[https://software.es.net/iperf/])
+AC_INIT([iperf],[3.12],[https://github.com/esnet/iperf],[iperf],[https://software.es.net/iperf/])
 m4_include([config/ax_check_openssl.m4])
 m4_include([config/iperf_config_static_bin.m4])
 AC_LANG(C)
@@ -167,6 +167,18 @@ AC_COMPILE_IFELSE(
   iperf3_cv_header_tcp_congestion=no))
 if test "x$iperf3_cv_header_tcp_congestion" = "xyes"; then
     AC_DEFINE([HAVE_TCP_CONGESTION], [1], [Have TCP_CONGESTION sockopt.])
+fi
+
+# Check for TCP_USER_TIMEOUT sockopt (believed to be Linux 2.6.37+ only)
+AC_CACHE_CHECK([TCP_USER_TIMEOUT socket option],
+[iperf3_cv_header_tcp_user_timeout],
+AC_COMPILE_IFELSE(
+  [AC_LANG_PROGRAM([[#include <netinet/tcp.h>]],
+                   [[int foo = TCP_USER_TIMEOUT;]])],
+  iperf3_cv_header_tcp_user_timeout=yes,
+  iperf3_cv_header_tcp_user_timeout=no))
+if test "x$iperf3_cv_header_tcp_user_timeout" = "xyes"; then
+    AC_DEFINE([HAVE_TCP_USER_TIMEOUT], [1], [Have TCP_USER_TIMEOUT sockopt.])
 fi
 
 # Check for IPv6 flowlabel support (believed to be Linux only)

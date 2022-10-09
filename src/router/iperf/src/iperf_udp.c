@@ -152,7 +152,7 @@ iperf_udp_recv(struct iperf_stream *sp)
 	    sent_time.usecs = usec;
 	}
 
-	if (sp->test->debug)
+	if (sp->test->debug_level >= DEBUG_LEVEL_DEBUG)
 	    fprintf(stderr, "pcount %" PRIu64 " packet_count %d\n", pcount, sp->packet_count);
 
 	/*
@@ -285,7 +285,7 @@ iperf_udp_send(struct iperf_stream *sp)
     sp->result->bytes_sent += r;
     sp->result->bytes_sent_this_interval += r;
 
-    if (sp->test->debug)
+    if (sp->test->debug_level >=  DEBUG_LEVEL_DEBUG)
 	printf("sent %d bytes of %d, total %" PRIu64 "\n", r, sp->settings->blksize, sp->result->bytes_sent);
 
     return r;
@@ -394,7 +394,7 @@ int
 iperf_udp_accept(struct iperf_test *test)
 {
     struct sockaddr_storage sa_peer;
-    int       buf;
+    unsigned int buf;
     socklen_t len;
     int       sz, s;
     int	      rc;
@@ -481,7 +481,7 @@ iperf_udp_accept(struct iperf_test *test)
     test->max_fd = (test->max_fd < test->prot_listener) ? test->prot_listener : test->max_fd;
 
     /* Let the client know we're ready "accept" another UDP "stream" */
-    buf = 987654321;		/* any content will work here */
+    buf = UDP_CONNECT_REPLY;
     if (write(s, &buf, sizeof(buf)) < 0) {
         i_errno = IESTREAMWRITE;
         return -1;
@@ -523,11 +523,13 @@ iperf_udp_listen(struct iperf_test *test)
 int
 iperf_udp_connect(struct iperf_test *test)
 {
-    int s, buf, sz;
+    int s, sz;
+    unsigned int buf;
 #ifdef SO_RCVTIMEO
     struct timeval tv;
 #endif
     int rc;
+    int i, max_len_wait_for_reply;
 
     /* Create and bind our local socket. */
     if ((s = netdial(test->settings->domain, Pudp, test->bind_address, test->bind_dev, test->bind_port, test->server_hostname, test->server_port, -1)) < 0) {
@@ -593,7 +595,10 @@ iperf_udp_connect(struct iperf_test *test)
      * Write a datagram to the UDP stream to let the server know we're here.
      * The server learns our address by obtaining its peer's address.
      */
-    buf = 123456789;		/* this can be pretty much anything */
+    buf = UDP_CONNECT_MSG;
+    if (test->debug) {
+        printf("Sending Connect message to Socket %d\n", s);
+    }
     if (write(s, &buf, sizeof(buf)) < 0) {
         // XXX: Should this be changed to IESTREAMCONNECT?
         i_errno = IESTREAMWRITE;
@@ -601,9 +606,24 @@ iperf_udp_connect(struct iperf_test *test)
     }
 
     /*
-     * Wait until the server replies back to us.
+     * Wait until the server replies back to us with the "accept" response.
      */
-    if ((sz = recv(s, &buf, sizeof(buf), 0)) < 0) {
+    i = 0;
+    max_len_wait_for_reply = sizeof(buf);
+    if (test->reverse) /* In reverse mode allow few packets to have the "accept" response - to handle out of order packets */
+        max_len_wait_for_reply += MAX_REVERSE_OUT_OF_ORDER_PACKETS * test->settings->blksize;
+    do {
+        if ((sz = recv(s, &buf, sizeof(buf), 0)) < 0) {
+            i_errno = IESTREAMREAD;
+            return -1;
+        }
+        if (test->debug) {
+            printf("Connect received for Socket %d, sz=%d, buf=%x, i=%d, max_len_wait_for_reply=%d\n", s, sz, buf, i, max_len_wait_for_reply);
+        }
+        i += sz;
+    } while (buf != UDP_CONNECT_REPLY && buf != LEGACY_UDP_CONNECT_REPLY && i < max_len_wait_for_reply);
+
+    if (buf != UDP_CONNECT_REPLY  && buf != LEGACY_UDP_CONNECT_REPLY) {
         i_errno = IESTREAMREAD;
         return -1;
     }
