@@ -339,7 +339,7 @@ function to_submit(F) {
 				</div>
 				<div id="floatKiller"></div>
 				<div id="statusInfo">
-					<div class="info"><% tran("share.firmware"); %>:&nbsp;
+					<div class="info"><% tran("share.firmware"); %>: &nbsp;
 						<script type="text/javascript">
 						//<![CDATA[
 						document.write("<a title=\"" + share.about + "\" href=\"javascript:openAboutWindow()\"><% get_firmware_version(); %></a>");

@@ -1,5 +1,5 @@
 /*
- * style-name: DD-WRT Inspired Themes v6.2.2
+ * style-name: DD-WRT Inspired Themes v6.1.2
  * copyright: (c) Style-it-themes: the-j0k3r
  * license: MIT https://git.io/JrzcO
  * home-url: https: //github.com/style-it-themes/dd-wrt-inspired-themes
@@ -646,7 +646,7 @@ span.title3d {
   color: var(--v9-7);
 }
 a {
-  color: var(--v0-8);
+  color: var(--v9-8);
 }
 a:hover,
 a:focus-within {

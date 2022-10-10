@@ -684,7 +684,7 @@ function initChannelProperties() {
 				</div>
 				<div id="floatKiller"></div>
 				<div id="statusInfo">
-					<div class="info"><% tran("share.firmware"); %>: 
+					<div class="info"><% tran("share.firmware"); %>:  
 						<script type="text/javascript">
 						//<![CDATA[
 						document.write("<a title=\"" + share.about + "\" href=\"javascript:openAboutWindow()\"><% get_firmware_version(); %></a>");
