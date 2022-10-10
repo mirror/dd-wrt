@@ -31,7 +31,7 @@
 #include <linux/types.h>
 #include <linux/version.h>
 
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(3,7,0)
+#if 0 //LINUX_VERSION_CODE >= KERNEL_VERSION(3,7,0)
 #include <linux/in6.h>
 #else
 #ifndef __ANDROID__
