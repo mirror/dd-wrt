@@ -159,6 +159,18 @@ form[name='macfilter'] td[align='left'] {
   padding: 0 1rem;
   height: 1.433rem;
 }
+#mainno .submitFooter {
+  margin: 3.7rem 19em .906em;
+  min-width: 78.333%;
+}
+@media screen and (width: 100vw) {
+  #mainno .submitFooter {
+    max-width: 80.3%;
+  }
+}
+.syslog-padding {
+  padding: .93em;
+}
 fieldset {
   padding: .725em;
   margin: 0;
@@ -296,12 +308,6 @@ iframe#syslog {
   max-width: 82%;
   position: relative;
   height: 811px;
-  margin-bottom: .906em;
-}
-#mainno .submitFooter {
-  margin: 4.2rem 18em;
-  min-width: 79.888%;
-  max-width: 80.999%;
 }
 .progressbar {
   visibility: visible;

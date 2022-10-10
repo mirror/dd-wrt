@@ -386,6 +386,9 @@ fieldset legend {
   text-align: center;
   border-radius: 4px;
 }
+#mainno .submitFooter {
+  margin: -.4rem .906em 1rem;
+}
 .stick {
   position: sticky;
   bottom: 0;

@@ -1,1 +1,1 @@
-<% do_style("style/common_legacy.css", "style/buttons.css", "style/xirian/xirian.css"); %>
+<% do_style("style/xirian/xirian.css", "style/common_legacy.css", "style/buttons.css"); %>

@@ -215,12 +215,14 @@ input.button[onclick*='delete'] {
 .gui .submitFooter {
   margin: 0 300px 0 0;
 }
-[name='Info'] .submitFooter,
-#contents.syslog-padding .submitFooter {
+#mainno .submitFooter {
+  margin: -.7em .9em .906em;
+}
+[name='Info'] .submitFooter {
   margin: 0;
 }
 .syslog-padding {
-  padding: .93em !important;
+  padding: .93em;
 }
 .submitFooter {
   padding: 4px 12px;
@@ -390,16 +392,11 @@ iframe[src*='/graph_if.svg'] {
 }
 iframe#syslog {
   left: 0;
-  top: 1rem;
+  top: .906rem;
   position: relative;
-  margin-bottom: .906em;
 }
 input, select {
   border: 1px solid #8f8f9d;
-}
-input.button[onclick*='do_show']:not([value*='Month']) {
-  margin: 1.2em 0 0 .362em;
-  position: relative;
 }
 .three_column {
   width: 217px;

@@ -1,1 +1,1 @@
-<% do_style("style/common_legacy.css", "style/buttons.css", "style/brainslayer/colors.css", "style/brainslayer/brainslayer.css"); %>
+<% do_style("style/brainslayer/brainslayer.css", "style/brainslayer/colors.css", "style/common_legacy.css", "style/buttons.css"); %>

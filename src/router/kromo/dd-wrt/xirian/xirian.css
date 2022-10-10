@@ -56,6 +56,7 @@ div.infopage #header {
 }
 #contents.syslog-padding {
   width: initial;
+  padding: .906em .93em 0;
 }
 #contentsInfo {
   width: 87.471em;
@@ -69,9 +70,12 @@ div.infopage #header {
   float: right;
   width: 49%;
 }
-h2, h3 {
+h2 {
   margin: 0 0 12px 0;
   font-size: 12px;
+}
+#help h2 {
+  margin: -1px 0 12px 0;
 }
 #menu {
   border-top: 1px solid #ccc;
@@ -165,7 +169,7 @@ input {
   margin-right: 1px;
 }
 .button {
-  padding: .12rem .5rem;
+  padding: .12rem 1rem;
   margin-right: .2rem;
 }
 .button:hover {
@@ -241,7 +245,7 @@ form {
 h2 {
   background: #bbc;
   border: 1px solid #bbc;
-  padding: 1px 4px;
+  padding: 4px;
   border-radius: 4px;
 }
 pre {
@@ -276,7 +280,7 @@ table, .table {
 }
 table th {
   background: #bbc;
-  border: 1px solid 99b;
+  border: 1px solid #99b;
   padding: 1px 4px;
   border-radius: 3px;
   font-weight: normal;
@@ -307,14 +311,14 @@ table#radio_table {
   text-align: center;
 }
 #help {
-  width: 21em;
+  width: 21.3em;
   padding: .906em 0 0;
 }
 #help a {
   display: block;
   position: absolute;
-  top: .999em;
-  right: 1em;
+  top: 1.2em;
+  right: .5em;
   text-align: right;
   text-transform: lowercase;
 }
@@ -368,8 +372,11 @@ table#radio_table {
     #eee, #eee 2px,
     #ccd 1px, #ccd 3px );
 }
+#mainno .submitFooter {
+  margin: -.4rem .906em 1rem;
+}
 .submitFooter .button {
-  padding: .2rem .5rem;
+  padding: .1rem 1rem;
   margin: .362em;
 }
 div.setting {
