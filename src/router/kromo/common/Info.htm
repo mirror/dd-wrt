@@ -288,7 +288,7 @@ function refresh(F) {
 										document.write("<span id=\"wan_mac\" class=\"link\" style=\"cursor:pointer;\" title=\"" + share.oui + "\" onclick=\"getOUIFromMAC('<% nvg("wan_hwaddr"); %>')\" >");
 										document.write("<% nvg("wan_hwaddr"); %>\n</span>");
 										//]]>
-										</script>&nbsp;
+										</script>
 									</div>
 									<div class="setting">
 										<div class="label">LAN MAC</div>
@@ -297,7 +297,7 @@ function refresh(F) {
 										document.write("<span id=\"lan_mac\" class=\"link\" style=\"cursor:pointer;\" title=\"" + share.oui + "\" onclick=\"getOUIFromMAC('<% nvg("lan_hwaddr"); %>')\" >");
 										document.write("<% nvg("lan_hwaddr"); %>\n</span>");
 										//]]>
-										</script>&nbsp;
+										</script>
 									</div>
 									<% ifndef("HASWIFI", "<!--"); %>
 									<div class="setting">
@@ -308,20 +308,20 @@ function refresh(F) {
 										document.write("<% show_wl_mac(); %>");
 										document.write("</span>");
 										//]]>
-										</script>&nbsp;
+										</script>
 									</div>
 									<% ifndef("HASWIFI", "-->"); %>
 									<div class="setting" id="ipv6">
 										<div class="label">WAN IPv6</div>
-										<span id="wan_ipv6addr"><% nvram_status_get("wan_ipv6addr"); %></span>&nbsp;
+										<span id="wan_ipv6addr"><% nvram_status_get("wan_ipv6addr"); %></span>
 									</div>
 									<div class="setting">
 										<div class="label">WAN IPv4</div>
-										<span id="wan_ipaddr"><% nvram_status_get("wan_ipaddr"); %></span>&nbsp;
+										<span id="wan_ipaddr"><% nvram_status_get("wan_ipaddr"); %></span>
 									</div>
 									<div class="setting">
 										<div class="label">LAN IP</div>
-										<span id="lan_ip"><% nvg("lan_ipaddr"); %></span>&nbsp;
+										<span id="lan_ip"><% nvg("lan_ipaddr"); %></span>
 									</div>
 								</fieldset><br />
 								<% ifndef("HASWIFI", "<!--"); %>
@@ -330,7 +330,7 @@ function refresh(F) {
 									<% show_wifiselect(); %>
 									<div class="setting">
 										<div class="label"><% tran("wl_basic.radio"); %></div>
-										<span id="wl_radio"><% get_radio_statejs(); %></span>&nbsp;
+										<span id="wl_radio"><% get_radio_statejs(); %></span>
 									</div>
 									<div class="setting">
 										<div class="label"><% tran("share.mode"); %></div>

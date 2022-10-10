@@ -448,8 +448,9 @@ td .meter {
   position: absolute;
 }
 /*! fix spacing between dd-wrt link above paypal and top*/
-.center a[href='http://www.dd-wrt.com/'] {
+.center a[href] {
   line-height: 2.2;
+  outline: 0;
 }
 input {
   padding: 4px;
