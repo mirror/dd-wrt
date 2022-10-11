@@ -2467,6 +2467,9 @@ static int show_virtualssid(webs_t wp, char *prefix)
 #endif
 	int count = 1;
 
+#ifdef HAVE_MADWIFI
+	if ((is_mac80211(prefix) && getmaxvaps(prefix) > 1) || !is_mac80211(prefix))
+#endif
 	websWrite(wp, "<h2><script type=\"text/javascript\">Capture(wl_basic.h2_vi)</script></h2>\n");
 	foreach(var, vifs, next) {
 #ifdef HAVE_GUESTPORT
@@ -2817,7 +2820,6 @@ static int show_virtualssid(webs_t wp, char *prefix)
 		}
 	}
 
-	websWrite(wp, "<div class=\"center\">\n");
 #ifdef HAVE_MADWIFI
 	if (gpfound == 0 && ((is_mac80211(prefix) && count < getmaxvaps(prefix)) || (!is_mac80211(prefix) && count < 8)))
 #elif HAVE_RT2880
@@ -2828,6 +2830,7 @@ static int show_virtualssid(webs_t wp, char *prefix)
 		max = 3;
 	if (count < max && gpfound == 0)
 #endif
+	websWrite(wp, "<div class=\"center\">\n");
 		websWrite(wp,
 			  "<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<input class=\\\"button\\\" type=\\\"button\\\" value=\\\"\" + wl_basic.add + \"\\\" onclick=\\\"$('gp_modify').value='add';vifs_add_submit(this.form,'%s')\\\" />\");\n//]]>\n</script>\n",
 			  prefix);
