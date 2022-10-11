@@ -132,15 +132,15 @@ EJ_VISIBLE void ej_get_firmware_version(webs_t wp, int argc, char_t ** argv)
 		websWrite(wp, "Carlson Wireless v5.3 (%s)", SVN_REVISION);
 #elif HAVE_IMMERSIVE
 		if (argc == 2) {
-			websWrite(wp, " Build date %s", date);
+			websWrite(wp, "Build date %s", date);
 		} else {
-			websWrite(wp, " SUPPORT %s (%s)", SVN_REVISION, date);
+			websWrite(wp, "SUPPORT %s (%s)", SVN_REVISION, date);
 		}
 #elif HAVE_HDWIFI
 		if (argc == 2) {
-			websWrite(wp, " Build date %s", date);
+			websWrite(wp, "Build date %s", date);
 		} else {
-			websWrite(wp, " HDWIFI r%s (%s)", SVN_REVISION, date);
+			websWrite(wp, "HDWIFI r%s (%s)", SVN_REVISION, date);
 		}
 #elif HAVE_IPR
 		websWrite(wp, "IPR-CP v1.0 (%s)", SVN_REVISION);
