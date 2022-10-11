@@ -413,6 +413,7 @@ static int __init ar7240_flash_init(void)
 		dir_parts[FULLFLASH].size = mtd->size;	// linux + nvram = phy size
 		if (!sqsfound) {
 		dir_parts[LINUX].name = "dummy";
+		dir_parts[DDWRT].name = "dummy2";
 		dir_parts[NVRAM].offset = mtd->size - (mtd->erasesize * 3);
 		dir_parts[NVRAM].size = mtd->erasesize*2;
 		dir_parts[BOARD_CONFIG].offset = mtd->size - mtd->erasesize;
