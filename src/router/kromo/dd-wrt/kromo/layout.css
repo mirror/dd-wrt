@@ -267,7 +267,7 @@ h2, h3 {
   padding-left: 13.6rem;
 }
 .syslog-padding {
-  padding: .906em;
+  padding: .94em;
 }
 .warning {
   padding: .725em;
@@ -357,7 +357,6 @@ table[summary='ports forwarding table'] input[size='10'] {
 #help a:hover, a[title='Geotool'] {
   text-decoration: underline;
 }
-
 #logout {
   background: none !important;
   border: 0 !important;
@@ -372,6 +371,9 @@ table[summary='ports forwarding table'] input[size='10'] {
   margin: 0;
   text-align: center;
   border-radius: 2px;
+}
+#mainno .submitFooter {
+  margin: -1.7em .906em .906em;
 }
 .stick {
   position: sticky;
