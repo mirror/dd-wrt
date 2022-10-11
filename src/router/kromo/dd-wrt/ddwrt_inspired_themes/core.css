@@ -324,10 +324,6 @@ input.button[onclick*='gen_wg_key'],
 input.button[onclick*='gen_wg_psk'] {
   margin: 0 0 6px;
 }
-input.button[onclick*='show_prev'],
-input.button[onclick*='show_next'] {
-  margin: -0.333rem 0.362rem 0 0;
-}
 input.button[onclick*='add_peer'] {
   margin: 0 0 -8px;
 }
@@ -455,7 +451,6 @@ textarea:focus-visible {
 .syslog_bg {
   background: var(--syslog-bg);
   color: var(--v9-7);
-  padding-top: 0.1rem;
 }
 .syslog_bg tr:hover {
   background: var(--bg-2);

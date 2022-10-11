@@ -115,22 +115,12 @@ div.bulle, table.bulle, td.bulle {
 }
 .nostick {
   position: unset;
-  bottom: unset;
 }
 table tr th[sortdir] {
 	cursor: pointer;
 }
 table#radio_table tr td, .table_row_bg td {
   height: 18px;
-}
-.syslog-padding {
-  padding: .906em;
-}
-.syslog_legend {
-  margin-left: unset !important;
-}
-.syslog_bd {
-  line-height: normal !important;
 }
 .logout {
   transition: all 400ms ease-in-out;
