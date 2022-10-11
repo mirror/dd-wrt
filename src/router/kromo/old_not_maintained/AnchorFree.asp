@@ -330,7 +330,7 @@ No amendment or modification hereof shall be valid or binding upon the parties u
 				</div>
 				<div id="floatKiller"></div>
 				<div id="statusInfo">
-				<div class="info"><% tran("share.firmware"); %>: 
+				<div class="info"><% tran("share.firmware"); %>:&nbsp;
 					<script type="text/javascript">
 					//<![CDATA[
 					document.write("<a title=\"" + share.about + "\" href=\"javascript:openAboutWindow()\"><% get_firmware_version(); %></a>");
