@@ -3380,7 +3380,6 @@ void start_nvram(void)
 	nvram_seti("filter_id", 1);
 	nvram_set("ddns_change", "");
 	nvram_unset("action_service");
-	nvram_unset("custom_configs");
 	nvram_set("wan_get_domain", "");
 
 #ifdef HAVE_BRCMROUTER
