@@ -1,4 +1,4 @@
-<% do_pagehead_nopwc("diag.titl"); %>
+<% do_pagehead("diag.titl"); %>
 	<script type="text/javascript">
 	//<![CDATA[
 
