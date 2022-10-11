@@ -361,10 +361,16 @@ table[summary='ports forwarding table'] input[size='10'] {
   background: none !important;
   border: 0 !important;
   position: absolute;
-  margin-top: -5px !important;
+  margin-top: -4px !important;
   right: .1rem;
   z-index: 1;
   cursor: pointer;
+}
+.logout {
+  transition: all 400ms ease-in-out;
+  cursor: pointer;
+  width: 20px;
+  height: 20px;
 }
 .submitFooter {
   padding: 4px 12px;
