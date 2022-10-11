@@ -91,12 +91,12 @@ EJ_VISIBLE void ej_get_firmware_version(webs_t wp, int argc, char_t ** argv)
 	sprintf(date, "%s", BUILD_DATE);
 #endif
 #ifdef HAVE_BUFFALO
-	websWrite(wp, " DD-WRT v3.0-r%s %s%s (" BUILD_DATE ")", SVN_REVISION, nvram_safe_get("dist_type"), DIST_OPT);
+	websWrite(wp, "DD-WRT v3.0-r%s %s%s (" BUILD_DATE ")", SVN_REVISION, nvram_safe_get("dist_type"), DIST_OPT);
 #else
 
 #ifdef HAVE_REGISTER
 	if (wp->isregistered && !wp->isregistered_real) {
-		websWrite(wp, " Click here to ACTIVATE %d Hour Trial", getTrialCount());
+		websWrite(wp, "Click here to ACTIVATE %d Hour Trial", getTrialCount());
 	} else
 #endif
 	{
@@ -108,7 +108,7 @@ EJ_VISIBLE void ej_get_firmware_version(webs_t wp, int argc, char_t ** argv)
 #else
 #define V "Excellent"
 #endif
-		websWrite(wp, " Excel Networks (%s series) V 2.10", V);
+		websWrite(wp, "Excel Networks (%s series) V 2.10", V);
 #undef V
 #elif HAVE_ESPOD
 #ifdef HAVE_SUB3
@@ -123,9 +123,9 @@ EJ_VISIBLE void ej_get_firmware_version(webs_t wp, int argc, char_t ** argv)
 #define V "MIMO"
 #endif
 		if (argc == 2) {
-			websWrite(wp, " ESPOD v1.0611 (%s) / ESPOD %s Series", date, V);
+			websWrite(wp, "ESPOD v1.0611 (%s) / ESPOD %s Series", date, V);
 		} else {
-			websWrite(wp, " ESPOD v1.0611 (%s)</a><div>\");document.write(\"<div class=\\\"info\\\">Device: ESPOD %s Series<a>", date, V);
+			websWrite(wp, "ESPOD v1.0611 (%s)</a><div>\");document.write(\"<div class=\\\"info\\\">Device: ESPOD %s Series<a>", date, V);
 		}
 #undef V
 #elif HAVE_CARLSONWIRELESS
@@ -143,69 +143,69 @@ EJ_VISIBLE void ej_get_firmware_version(webs_t wp, int argc, char_t ** argv)
 			websWrite(wp, " HDWIFI r%s (%s)", SVN_REVISION, date);
 		}
 #elif HAVE_IPR
-		websWrite(wp, " IPR-CP v1.0 (%s)", SVN_REVISION);
+		websWrite(wp, "IPR-CP v1.0 (%s)", SVN_REVISION);
 #elif HAVE_ONNET_BLANK
-		websWrite(wp, " Enterprise AP (%s)", date);
+		websWrite(wp, "Enterprise AP (%s)", date);
 #elif HAVE_ONNET
 		if (nvram_match("DD_BOARD", "Atheros Hornet")) {
-			websWrite(wp, " OTAi 9331 (%s)", date);
+			websWrite(wp, "OTAi 9331 (%s)", date);
 		} else if (nvram_match("DD_BOARD", "Compex WPE72")) {
-			websWrite(wp, " OTAi 724 (%s)", date);
+			websWrite(wp, "OTAi 724 (%s)", date);
 		} else if (nvram_match("DD_BOARD", "ACCTON AC622")) {
 			if (iscpe()) {
-				websWrite(wp, " OTAi 724S (%s)", date);
+				websWrite(wp, "OTAi 724S (%s)", date);
 			} else {
-				websWrite(wp, " OTAi 724AP (%s)", date);
+				websWrite(wp, "OTAi 724AP (%s)", date);
 			}
 		} else if (nvram_match("DD_BOARD", "ACCTON AC722")) {
 			if (iscpe()) {
-				websWrite(wp, " OTAi 724S (%s)", date);
+				websWrite(wp, "OTAi 724S (%s)", date);
 			} else {
-				websWrite(wp, " OTAi 724AP (%s)", date);
+				websWrite(wp, "OTAi 724AP (%s)", date);
 			}
 		} else if (nvram_match("DD_BOARD", "Compex WP546")) {
-			websWrite(wp, " OTAi 724S (%s)", date);
+			websWrite(wp, "OTAi 724S (%s)", date);
 		} else if (nvram_match("DD_BOARD", "Compex MMS344")) {
-			websWrite(wp, " OTAi DBDC344 (%s)", date);
+			websWrite(wp, "OTAi DBDC344 (%s)", date);
 		} else if (nvram_match("DD_BOARD", "Yuncore XD3200")) {
-			websWrite(wp, " OTAi 9563-AC (%s)", date);
+			websWrite(wp, "OTAi 9563-AC (%s)", date);
 		} else if (nvram_match("DD_BOARD", "Yuncore XD9531")) {
-			websWrite(wp, " OTAi 9531 (%s)", date);
+			websWrite(wp, "OTAi 9531 (%s)", date);
 		} else if (nvram_match("DD_BOARD", "Yuncore SR3200")) {
-			websWrite(wp, " OTAi 1200-AC (%s)", date);
+			websWrite(wp, "OTAi 1200-AC (%s)", date);
 		} else if (nvram_match("DD_BOARD", "Yuncore CPE890")) {
-			websWrite(wp, " OTAi 5900-AC (%s)", date);
+			websWrite(wp, "OTAi 5900-AC (%s)", date);
 		} else if (nvram_match("DD_BOARD", "Alfa AP120C")) {
 			websWrite(wp, "OTAi 600dbdc (%s)", date);
 		} else if (nvram_match("DD_BOARD", "Yuncore CPE880")) {
 			websWrite(wp, "OTAi-9334 (%s)", date);
 		} else {
-			websWrite(wp, " OTAi %s (%s)", nvram_safe_get("DD_BOARD"), date);
+			websWrite(wp, "OTAi %s (%s)", nvram_safe_get("DD_BOARD"), date);
 		}
 #elif HAVE_RAYTRONIK
-		websWrite(wp, " RN-150M %s %s%s", MINOR_VERSION, nvram_safe_get("dist_type"), DIST_OPT);
+		websWrite(wp, "RN-150M %s %s%s", MINOR_VERSION, nvram_safe_get("dist_type"), DIST_OPT);
 #elif HAVE_KORENRON
-		websWrite(wp, " KORENRON %s %s%s", MINOR_VERSION, nvram_safe_get("dist_type"), DIST_OPT);
+		websWrite(wp, "KORENRON %s %s%s", MINOR_VERSION, nvram_safe_get("dist_type"), DIST_OPT);
 #elif HAVE_TESTEM
-		websWrite(wp, " TESTEM %s %s%s", MINOR_VERSION, nvram_safe_get("dist_type"), DIST_OPT);
+		websWrite(wp, "TESTEM %s %s%s", MINOR_VERSION, nvram_safe_get("dist_type"), DIST_OPT);
 #elif HAVE_ANTAIRA
-		websWrite(wp, " Antaira r%s (" BUILD_DATE ")", SVN_REVISION);
+		websWrite(wp, "Antaira r%s (" BUILD_DATE ")", SVN_REVISION);
 #elif HAVE_SANSFIL
-		websWrite(wp, " SANSFIL %s %s%s", MINOR_VERSION, nvram_safe_get("dist_type"), DIST_OPT);
+		websWrite(wp, "SANSFIL %s %s%s", MINOR_VERSION, nvram_safe_get("dist_type"), DIST_OPT);
 #elif HAVE_HOBBIT
-		websWrite(wp, " HQ-NDS %s %s%s", MINOR_VERSION, nvram_safe_get("dist_type"), DIST_OPT);
+		websWrite(wp, "HQ-NDS %s %s%s", MINOR_VERSION, nvram_safe_get("dist_type"), DIST_OPT);
 #elif HAVE_ERC
-		websWrite(wp, " RemoteEngineer FW 1.1 r%s (" BUILD_DATE ")", SVN_REVISION);
+		websWrite(wp, "RemoteEngineer FW 1.1 r%s (" BUILD_DATE ")", SVN_REVISION);
 #elif HAVE_IDEXX
 #ifdef HAVE_IDEXX_WORLD
-		websWrite(wp, " DD-WRT v3.0-r%s %s%s (" BUILD_DATE ") WW", SVN_REVISION, nvram_safe_get("dist_type"), DIST_OPT);
+		websWrite(wp, "DD-WRT v3.0-r%s %s%s (" BUILD_DATE ") WW", SVN_REVISION, nvram_safe_get("dist_type"), DIST_OPT);
 #else
-		websWrite(wp, " DD-WRT v3.0-r%s %s%s (" BUILD_DATE ") US", SVN_REVISION, nvram_safe_get("dist_type"), DIST_OPT);
+		websWrite(wp, "DD-WRT v3.0-r%s %s%s (" BUILD_DATE ") US", SVN_REVISION, nvram_safe_get("dist_type"), DIST_OPT);
 #endif
 #elif HAVE_TMK
-		websWrite(wp, " KMT-WAS 3.0 r%s (" BUILD_DATE ") std", SVN_REVISION);
+		websWrite(wp, "KMT-WAS 3.0 r%s (" BUILD_DATE ") std", SVN_REVISION);
 #else
-		websWrite(wp, " DD-WRT v3.0-r%s %s%s (" BUILD_DATE ")", SVN_REVISION, nvram_safe_get("dist_type"), DIST_OPT);
+		websWrite(wp, "DD-WRT v3.0-r%s %s%s (" BUILD_DATE ")", SVN_REVISION, nvram_safe_get("dist_type"), DIST_OPT);
 #endif
 	}
 #endif
