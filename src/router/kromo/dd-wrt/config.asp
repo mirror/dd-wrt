@@ -1,4 +1,4 @@
-<% do_pagehead_nopwc("config.titl"); %>
+<% do_pagehead("config.titl"); %>
 	<script type="text/javascript">
 	//<![CDATA[
 
