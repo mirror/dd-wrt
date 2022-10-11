@@ -179,6 +179,10 @@ body .value_error:focus {
 .center a[href] {
   color: #115b80;
 }
+.logout {
+	fill: #115b80;
+	cursor: pointer;
+}
 .logout:hover {
-  color: #c51515;
+  fill: #f66;
 }
