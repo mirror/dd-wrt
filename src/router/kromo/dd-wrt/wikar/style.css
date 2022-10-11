@@ -1,1 +1,1 @@
-<% do_style("style/buttons.css", "style/common_legacy.css", "style/wikar/wikar.css"); %>
+<% do_style("style/wikar/wikar.css", "style/common_legacy.css", style/buttons.css"); %>
