@@ -198,6 +198,7 @@ addEvent(window, "load", function() {
 	show_layer_ext(document.setup.openvpncl_pkcs, 'idpkcs12n', <% nvem("openvpncl_pkcs", "0", "1", "1"); %> == 1);
 	show_layer_ext(document.setup.openvpncl_enable, 'idstatic', <% nvem("openvpncl_tls_btn", "2", "1", "0"); %> == 1);
 	//show_layer_ext(document.setup.openvpncl_enable, 'idstatkey', <% nvem("openvpncl_keytype", "1", "1", "0"); %> == 1);
+	show_layer_ext(document.setup.setherserver_enable, 'idsether', <% nvem("setherserver_enable", "1", "1", "0"); %> == 1);
 
 		update = new StatusbarUpdate();
 		update.start();
