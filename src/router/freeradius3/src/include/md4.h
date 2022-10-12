@@ -1,5 +1,5 @@
 /**
- * $Id: 21317f2c7277af9dcaf20ef3722e2f7e8b10ef91 $
+ * $Id: 1492bd4a5c2e219a8cf19bc9870f54c9c7c57d1e $
  *
  * @note license is LGPL, but largely derived from a public domain source.
  *
@@ -10,7 +10,7 @@
 #ifndef _FR_MD4_H
 #define _FR_MD4_H
 
-RCSIDH(md4_h, "$Id: 21317f2c7277af9dcaf20ef3722e2f7e8b10ef91 $")
+RCSIDH(md4_h, "$Id: 1492bd4a5c2e219a8cf19bc9870f54c9c7c57d1e $")
 
 #ifdef HAVE_INTTYPES_H
 #  include <inttypes.h>
@@ -25,6 +25,10 @@ RCSIDH(md4_h, "$Id: 21317f2c7277af9dcaf20ef3722e2f7e8b10ef91 $")
 #endif
 
 #include <string.h>
+
+#ifdef WITH_FIPS
+#undef HAVE_OPENSSL_MD4_H
+#endif
 
 #ifdef HAVE_OPENSSL_MD4_H
 #  include <openssl/md4.h>

@@ -1,7 +1,7 @@
 /*
  * stats.c	Internal statistics handling.
  *
- * Version:	$Id: f36d04aef8269b84078cad71d6cbaee875fe7671 $
+ * Version:	$Id: 8fe3e4a58ac0c95f0e8b54cc6e2fddc86dfca0a4 $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -21,7 +21,7 @@
  * Copyright 2008  Alan DeKok <aland@deployingradius.com>
  */
 
-RCSID("$Id: f36d04aef8269b84078cad71d6cbaee875fe7671 $")
+RCSID("$Id: 8fe3e4a58ac0c95f0e8b54cc6e2fddc86dfca0a4 $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/rad_assert.h>
@@ -35,7 +35,7 @@ RCSID("$Id: f36d04aef8269b84078cad71d6cbaee875fe7671 $")
 static struct timeval	start_time;
 static struct timeval	hup_time;
 
-#define FR_STATS_INIT { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 	\
+#define FR_STATS_INIT { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,	\
 				 { 0, 0, 0, 0, 0, 0, 0, 0 }}
 
 fr_stats_t radius_auth_stats = FR_STATS_INIT;
@@ -339,6 +339,36 @@ void request_stats_final(REQUEST *request)
  done:
 #endif /* WITH_PROXY */
 
+
+	if (request->max_time) {
+		rad_listen_t *listener = request->listener;
+		RADCLIENT *client = request->client;
+
+		switch (request->packet->code) {
+		case PW_CODE_ACCESS_REQUEST:
+			FR_STATS_INC(auth, unresponsive_child);
+			break;
+
+#ifdef WITH_ACCOUNTING
+		case PW_CODE_ACCOUNTING_REQUEST:
+			FR_STATS_INC(acct, unresponsive_child);
+			break;
+#endif
+#ifdef WITH_COA
+		case PW_CODE_COA_REQUEST:
+			FR_STATS_INC(coa, unresponsive_child);
+			break;
+
+		case PW_CODE_DISCONNECT_REQUEST:
+			FR_STATS_INC(dsc, unresponsive_child);
+			break;
+#endif
+
+		default:
+			break;
+		}
+	}
+
 	request->master_state = REQUEST_COUNTED;
 }
 
@@ -361,6 +391,7 @@ static fr_stats2vp authvp[] = {
 	{ PW_FREERADIUS_TOTAL_AUTH_INVALID_REQUESTS, offsetof(fr_stats_t, total_bad_authenticators) },
 	{ PW_FREERADIUS_TOTAL_AUTH_DROPPED_REQUESTS, offsetof(fr_stats_t, total_packets_dropped) },
 	{ PW_FREERADIUS_TOTAL_AUTH_UNKNOWN_TYPES, offsetof(fr_stats_t, total_unknown_types) },
+	{ PW_FREERADIUS_TOTAL_AUTH_CONFLICTS, offsetof(fr_stats_t, total_conflicts) },
 	{ 0, 0 }
 };
 
@@ -397,6 +428,7 @@ static fr_stats2vp acctvp[] = {
 	{ PW_FREERADIUS_TOTAL_ACCT_INVALID_REQUESTS, offsetof(fr_stats_t, total_bad_authenticators) },
 	{ PW_FREERADIUS_TOTAL_ACCT_DROPPED_REQUESTS, offsetof(fr_stats_t, total_packets_dropped) },
 	{ PW_FREERADIUS_TOTAL_ACCT_UNKNOWN_TYPES, offsetof(fr_stats_t, total_unknown_types) },
+	{ PW_FREERADIUS_TOTAL_ACCT_CONFLICTS, offsetof(fr_stats_t, total_conflicts) },
 	{ 0, 0 }
 };
 

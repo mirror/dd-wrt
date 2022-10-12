@@ -1,12 +1,8 @@
-AC_PREREQ([2.53])
+AC_PREREQ([2.68])
 AC_INIT(rlm_rest.c)
 AC_REVISION($Revision$)
-AC_DEFUN(modname,[rlm_rest])
+FR_INIT_MODULE([rlm_rest])
 AC_CONFIG_HEADER(config.h)
-m4_include([m4/libcurl_check_config.m4])
-
-AC_ARG_WITH([]modname,
-[  --with-[]modname              build []modname. (default=yes)])
 
 if test x$with_[]modname != xno; then
 

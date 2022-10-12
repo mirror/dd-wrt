@@ -1,6 +1,6 @@
 # -*- text -*-
 #
-#  $Id: 8ff95a9e9a652c2df9f992b0eb528084b6a7a2dc $
+#  $Id: 947a42db8233545238794f32bff131206d866fa3 $
 
 # Realm module, for proxying.
 #
@@ -14,6 +14,11 @@
 #			  The special cases of "DEFAULT"
 #			  and "NULL" are allowed, too.
 #	delimiter      -  must be a single character
+
+#
+#  For dynamic home servers, see doc/configuration/dynamic_home_servers.md,
+#  and the script in mods-config/realm/freeradius-naptr-to-home-server.sh
+#
 
 #  'realm/username'
 #

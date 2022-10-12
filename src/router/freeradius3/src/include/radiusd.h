@@ -16,7 +16,7 @@
 #ifndef RADIUSD_H
 #define RADIUSD_H
 /**
- * $Id: 094af09c1db2c7c068e6e602798f985c905b07cb $
+ * $Id: c3e8cdd142ad2b74729e92b9b907afe3f545b578 $
  *
  * @file radiusd.h
  * @brief Structures, prototypes and global variables for the FreeRADIUS server.
@@ -24,7 +24,7 @@
  * @copyright 1999-2000,2002-2008  The FreeRADIUS server project
  */
 
-RCSIDH(radiusd_h, "$Id: 094af09c1db2c7c068e6e602798f985c905b07cb $")
+RCSIDH(radiusd_h, "$Id: c3e8cdd142ad2b74729e92b9b907afe3f545b578 $")
 
 #include <freeradius-devel/libradius.h>
 #include <freeradius-devel/radpaths.h>
@@ -276,6 +276,8 @@ struct rad_request {
 #endif
 
 	RAD_LISTEN_TYPE		priority;
+
+	bool			max_time;	//!< did we hit max time?
 
 	bool			in_request_hash;
 #ifdef WITH_PROXY

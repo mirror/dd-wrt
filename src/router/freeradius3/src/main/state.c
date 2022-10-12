@@ -15,7 +15,7 @@
  */
 
 /**
- * $Id: f201d51202d32dfcbaac7ac1db664de6a6ef27fa $
+ * $Id: 3694fe6aa68ce350cad317d4bf5acae10ea7c035 $
  *
  * @brief Multi-packet state handling
  * @file main/state.c
@@ -24,7 +24,7 @@
  *
  * @copyright 2014 The FreeRADIUS server project
  */
-RCSID("$Id: f201d51202d32dfcbaac7ac1db664de6a6ef27fa $")
+RCSID("$Id: 3694fe6aa68ce350cad317d4bf5acae10ea7c035 $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/state.h>
@@ -64,6 +64,8 @@ struct fr_state_t {
 };
 
 static fr_state_t global_state;
+
+#define STATE_FREE(_x) if (_x != &global_state) talloc_free(_x)
 
 #ifdef HAVE_PTHREAD_H
 
@@ -182,14 +184,14 @@ fr_state_t *fr_state_init(TALLOC_CTX *ctx)
 
 #ifdef HAVE_PTHREAD_H
 	if (pthread_mutex_init(&state->mutex, NULL) != 0) {
-		talloc_free(state);
+		STATE_FREE(state);
 		return NULL;
 	}
 #endif
 
 	state->tree = rbtree_create(NULL, state_entry_cmp, NULL, 0);
 	if (!state->tree) {
-		talloc_free(state);
+		STATE_FREE(state);
 		return NULL;
 	}
 
@@ -214,7 +216,7 @@ void fr_state_delete(fr_state_t *state)
 	rbtree_free(my_tree);
 	PTHREAD_MUTEX_UNLOCK(&state->mutex);
 
-	if (state != &global_state) talloc_free(state);
+	STATE_FREE(state);
 }
 
 /*
@@ -572,14 +574,8 @@ void fr_state_discard(REQUEST *request, RADIUS_PACKET *original)
 
 	PTHREAD_MUTEX_LOCK(&state->mutex);
 	entry = fr_state_find(state, request->server, original);
-	if (!entry) {
-		PTHREAD_MUTEX_UNLOCK(&state->mutex);
-		return;
-	}
-
-	state_entry_free(state, entry);
+	if (entry) state_entry_free(state, entry);
 	PTHREAD_MUTEX_UNLOCK(&state->mutex);
-	return;
 }
 
 /*

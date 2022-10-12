@@ -1,7 +1,7 @@
 /*
  * command.c	Command socket processing.
  *
- * Version:	$Id: ea1b40e200981b2eac568406cb16f82f52ab361e $
+ * Version:	$Id: 030416f051676f9da7572556ca39198e882528dd $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -27,6 +27,7 @@
 #include <freeradius-devel/modcall.h>
 #include <freeradius-devel/md5.h>
 #include <freeradius-devel/channel.h>
+#include <freeradius-devel/connection.h>
 
 #include <libgen.h>
 #ifdef HAVE_INTTYPES_H
@@ -46,6 +47,7 @@
 
 #include <pwd.h>
 #include <grp.h>
+#include <ctype.h>
 
 typedef struct fr_command_table_t fr_command_table_t;
 
@@ -1646,75 +1648,98 @@ static RADCLIENT *get_client(rad_listen_t *listener, int argc, char *argv[])
 
 #ifdef WITH_PROXY
 static home_server_t *get_home_server(rad_listen_t *listener, int argc,
-				    char *argv[], int *last)
+				      char *argv[], int *last)
 {
-	int myarg;
+	int myarg = 2;
 	home_server_t *home;
 	uint16_t port;
 	int proto = IPPROTO_UDP;
 	fr_ipaddr_t ipaddr, src_ipaddr;
 
 	if (argc < 2) {
-		cprintf_error(listener, "Must specify <ipaddr> <port> [udp|tcp]\n");
+		cprintf_error(listener, "Must specify <ipaddr> <port> [udp|tcp] OR <name> <type>\n");
 		return NULL;
 	}
 
-	if (ip_hton(&ipaddr, AF_UNSPEC, argv[0], false) < 0) {
-		cprintf_error(listener, "Failed parsing IP address; %s\n",
-			fr_strerror());
-		return NULL;
-	}
-
-	memset(&src_ipaddr, 0, sizeof(src_ipaddr));
-	src_ipaddr.af = ipaddr.af;
-
-	port = atoi(argv[1]);
-
-	myarg = 2;
-
-	while (myarg < argc) {
-		if (strcmp(argv[myarg], "udp") == 0) {
-			proto = IPPROTO_UDP;
-			myarg++;
-			continue;
+	if (isdigit(*argv[1])) {
+		if (ip_hton(&ipaddr, AF_UNSPEC, argv[0], false) < 0) {
+			cprintf_error(listener, "Failed parsing IP address; %s\n",
+				      fr_strerror());
+			return NULL;
 		}
+
+		memset(&src_ipaddr, 0, sizeof(src_ipaddr));
+		src_ipaddr.af = ipaddr.af;
+
+		port = atoi(argv[1]);
+
+		while (myarg < argc) {
+			if (strcmp(argv[myarg], "udp") == 0) {
+				proto = IPPROTO_UDP;
+				myarg++;
+				continue;
+			}
 
 #ifdef WITH_TCP
-		if (strcmp(argv[myarg], "tcp") == 0) {
-			proto = IPPROTO_TCP;
-			myarg++;
-			continue;
-		}
+			if (strcmp(argv[myarg], "tcp") == 0) {
+				proto = IPPROTO_TCP;
+				myarg++;
+				continue;
+			}
 #endif
 
-		/*
-		 *	Allow the caller to specify src, too.
-		 */
-		if (strcmp(argv[myarg], "src") == 0) {
-			if ((myarg + 2) < argc) {
-				cprintf_error(listener, "You must specify an address after 'src' \n");
-				return NULL;
-			}
+			/*
+			 *	Allow the caller to specify src, too.
+			 */
+			if (strcmp(argv[myarg], "src") == 0) {
+				if ((myarg + 2) < argc) {
+					cprintf_error(listener, "You must specify an address after 'src' \n");
+					return NULL;
+				}
 
-			if (ip_hton(&src_ipaddr, ipaddr.af, argv[myarg + 1], false) < 0) {
-				cprintf_error(listener, "Failed parsing IP address; %s\n",
-					      fr_strerror());
-				return NULL;
-			}
+				if (ip_hton(&src_ipaddr, ipaddr.af, argv[myarg + 1], false) < 0) {
+					cprintf_error(listener, "Failed parsing IP address; %s\n",
+						      fr_strerror());
+					return NULL;
+				}
 
-			myarg += 2;
+				myarg += 2;
 			continue;
+			}
+
+			/*
+			 *	Unknown argument.  Leave it for the caller.
+			 */
+			break;
 		}
 
-		/*
-		 *	Unknown argument.  Leave it for the caller.
-		 */
-		break;
+		home = home_server_find_bysrc(&ipaddr, port, proto, &src_ipaddr);
+	} else {
+		int type;
+
+		static const FR_NAME_NUMBER home_server_types[] = {
+			{ "auth",		HOME_TYPE_AUTH },
+			{ "acct",		HOME_TYPE_ACCT },
+			{ "auth+acct",		HOME_TYPE_AUTH_ACCT },
+			{ "coa",		HOME_TYPE_COA },
+#ifdef WITH_COA_TUNNEL
+			{ "auth+coa",		HOME_TYPE_AUTH_COA },
+			{ "auth+acct+coa",	HOME_TYPE_AUTH_ACCT_COA },
+#endif
+			{ NULL, 0 }
+		};
+
+		type = fr_str2int(home_server_types, argv[1], HOME_TYPE_INVALID);
+		if (type == HOME_TYPE_INVALID) {
+			cprintf_error(listener, "Invalid home server type '%s'\n", argv[1]);
+			return NULL;
+		}
+
+		home = home_server_byname(argv[0], type);
 	}
 
-	home = home_server_find_bysrc(&ipaddr, port, proto, &src_ipaddr);
 	if (!home) {
-		cprintf_error(listener, "No such home server\n");
+		cprintf_error(listener, "No such home server - %s %s\n", argv[0], argv[1]);
 		return NULL;
 	}
 
@@ -1905,15 +1930,21 @@ static rad_listen_t *get_socket(rad_listen_t *listener, int argc,
 
 static int command_inject_to(rad_listen_t *listener, int argc, char *argv[])
 {
-	fr_command_socket_t *sock = listener->data;
+	fr_command_socket_t *sock;
 	listen_socket_t *data;
 	rad_listen_t *found;
+
+	if (listener->recv == command_tcp_recv) {
+		cprintf_error(listener, "Cannot inject from command socket over TCP");
+		return CMD_FAIL;
+	}
 
 	found = get_socket(listener, argc, argv, NULL);
 	if (!found) {
 		return 0;
 	}
 
+	sock = listener->data;
 	data = found->data;
 	sock->inject_listener = found;
 	sock->dst_ipaddr = data->my_ipaddr;
@@ -1925,13 +1956,19 @@ static int command_inject_to(rad_listen_t *listener, int argc, char *argv[])
 static int command_inject_from(rad_listen_t *listener, int argc, char *argv[])
 {
 	RADCLIENT *client;
-	fr_command_socket_t *sock = listener->data;
+	fr_command_socket_t *sock;
 
 	if (argc < 1) {
 		cprintf_error(listener, "No <ipaddr> was given\n");
 		return 0;
 	}
 
+	if (listener->recv == command_tcp_recv) {
+		cprintf_error(listener, "Cannot inject from command socket over TCP");
+		return CMD_FAIL;
+	}
+
+	sock = listener->data;
 	if (!sock->inject_listener) {
 		cprintf_error(listener, "You must specify \"inject to\" before using \"inject from\"\n");
 		return 0;
@@ -1960,7 +1997,7 @@ static int command_inject_file(rad_listen_t *listener, int argc, char *argv[])
 	static int inject_id = 0;
 	int ret;
 	bool filedone;
-	fr_command_socket_t *sock = listener->data;
+	fr_command_socket_t *sock;
 	rad_listen_t *fake;
 	RADIUS_PACKET *packet;
 	vp_cursor_t cursor;
@@ -1974,6 +2011,12 @@ static int command_inject_file(rad_listen_t *listener, int argc, char *argv[])
 		return 0;
 	}
 
+	if (listener->recv == command_tcp_recv) {
+		cprintf_error(listener, "Cannot inject from command socket over TCP");
+		return CMD_FAIL;
+	}
+
+	sock = listener->data;
 	if (!sock->inject_listener) {
 		cprintf_error(listener, "You must specify \"inject to\" before using \"inject file\"\n");
 		return 0;
@@ -2364,6 +2407,9 @@ static int command_print_stats(rad_listen_t *listener, fr_stats_t *stats,
 
 	if (server) {
 		cprintf(listener, "timeouts\t%" PRIu64 "\n", stats->total_timeouts);
+	} else {
+		cprintf(listener, "conflicts\t%" PRIu64 "\n", stats->total_conflicts);
+		cprintf(listener, "unresponsive_child\t%" PRIu64 "\n", stats->unresponsive_child);
 	}
 
 	cprintf(listener, "last_packet\t%" PRId64 "\n", (int64_t) stats->last_packet);
@@ -2647,6 +2693,46 @@ static int command_stats_socket(rad_listen_t *listener, int argc, char *argv[])
 
 	return command_print_stats(listener, &sock->stats, auth, 0);
 }
+
+static int command_stats_pool(rad_listen_t *listener, UNUSED int argc, UNUSED char *argv[])
+{
+	CONF_SECTION *cs;
+	module_instance_t *mi;
+	fr_connection_pool_stats_t const *stats;
+
+	if (argc < 1) {
+		cprintf_error(listener, "Must specify <name>\n");
+		return CMD_FAIL;
+	}
+
+	cs = cf_section_find("modules");
+	if (!cs) return CMD_FAIL;
+
+	mi = module_find(cs, argv[0]);
+	if (!mi) {
+		cprintf_error(listener, "No such module \"%s\"\n", argv[0]);
+		return CMD_FAIL;
+	}
+
+	stats = fr_connection_pool_stats(mi->cs);
+	if (!stats) {
+		cprintf_error(listener, "Module %s has no pool statistics", argv[0]);
+		return CMD_FAIL;
+	}
+
+	cprintf(listener, "last_checked\t\t%zu\n", stats->last_checked);
+	cprintf(listener, "last_opened\t\t%zu\n", stats->last_opened);
+	cprintf(listener, "last_closed\t\t%zu\n", stats->last_closed);
+	cprintf(listener, "last_failed\t\t%zu\n", stats->last_failed);
+	cprintf(listener, "last_throttled\t\t%zu\n", stats->last_throttled);
+	cprintf(listener, "total_opened\t\t%" PRIu64 "\n", stats->opened);
+	cprintf(listener, "total_closed\t\t%" PRIu64 "\n", stats->closed);
+	cprintf(listener, "total_failed\t\t%" PRIu64 "\n", stats->failed);
+	cprintf(listener, "num_open\t\t%u\n", stats->num);
+	cprintf(listener, "num_in_use\t\t%u\n", stats->active);
+
+	return CMD_OK;
+}
 #endif	/* WITH_STATS */
 
 
@@ -2847,6 +2933,11 @@ static fr_command_table_t command_table_stats[] = {
 	  "stats home_server [<ipaddr>|auth|acct|coa|disconnect] <port> [udp|tcp] [src <ipaddr>] - show statistics for given home server (ipaddr and port), or for all home servers (auth or acct)",
 	  command_stats_home_server, NULL },
 #endif
+
+	{ "pool", FR_READ,
+	  "pool <name> "
+	  "- show pool statistics for given module",
+	  command_stats_pool, NULL },
 
 #ifdef HAVE_PTHREAD_H
 	{ "queue", FR_READ,

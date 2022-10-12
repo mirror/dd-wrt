@@ -1,10 +1,7 @@
-AC_PREREQ([2.53])
+AC_PREREQ([2.68])
 AC_INIT(rlm_python.c)
 AC_REVISION($Revision$)
-AC_DEFUN(modname,[rlm_python])
-
-AC_ARG_WITH([]modname,
-[  --with-[]modname              build []modname. (default=yes)])
+FR_INIT_MODULE([rlm_python], [support for embedded Python2])
 
 if test x$with_[]modname != xno; then
 
@@ -66,6 +63,13 @@ if test x$with_[]modname != xno; then
 		;;
 	  esac ]
 	)
+
+	if test x$fail = x; then
+		PY_MAJOR_VER=`${PYTHON_BIN} -x 'import sys ; print(sys.version[[0]])'`
+		if test $PY_MAJOR_VER -ne 2; then
+			fail="not-python2"
+		fi
+	fi
 
 	if test x$fail = x; then
 		PY_PREFIX=`${PYTHON_BIN} -c 'import sys ; print(sys.prefix)'`

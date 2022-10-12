@@ -1,7 +1,7 @@
 /*
  * mppe_keys.c
  *
- * Version:     $Id: 4f5b6a8e716251453141d49747ea25768c402ee6 $
+ * Version:     $Id: 385441c62ff409762aefdea20900f7606bbeb05e $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -22,13 +22,17 @@
  * Authors: Henrik Eriksson <henriken@axis.com> & Lars Viklund <larsv@axis.com>
  */
 
-RCSID("$Id: 4f5b6a8e716251453141d49747ea25768c402ee6 $")
+RCSID("$Id: 385441c62ff409762aefdea20900f7606bbeb05e $")
 USES_APPLE_DEPRECATED_API	/* OpenSSL API has been deprecated by Apple */
 
 #include "eap_tls.h"
 #include <openssl/ssl.h>
 #include <openssl/hmac.h>
 #include <freeradius-devel/openssl3.h>
+
+#if OPENSSL_VERSION_NUMBER >= 0x30000000L
+#include <openssl/provider.h>
+#endif
 
 /*
  *	TLS P_hash from RFC 2246/5246 section 5
@@ -45,10 +49,6 @@ static void P_hash(EVP_MD const *evp_md,
 
 	ctx_a = HMAC_CTX_new();
 	ctx_out = HMAC_CTX_new();
-#ifdef EVP_MD_CTX_FLAG_NON_FIPS_ALLOW
-	HMAC_CTX_set_flags(ctx_a, EVP_MD_CTX_FLAG_NON_FIPS_ALLOW);
-	HMAC_CTX_set_flags(ctx_out, EVP_MD_CTX_FLAG_NON_FIPS_ALLOW);
-#endif
 	HMAC_Init_ex(ctx_a, secret, secret_len, evp_md, NULL);
 	HMAC_Init_ex(ctx_out, secret, secret_len, evp_md, NULL);
 
@@ -102,12 +102,56 @@ static void PRF(unsigned char const *secret, unsigned int secret_len,
 	uint8_t const *s1 = secret;
 	uint8_t const *s2 = secret + (secret_len - len);
 
-	P_hash(EVP_md5(),  s1, len, seed, seed_len, out, out_len);
+	EVP_MD const *md5 = NULL;
+
+#if OPENSSL_VERSION_NUMBER >= 0x30000000L
+	EVP_MD *md5_to_free = NULL;
+
+	/*
+	 *	If we are using OpenSSL >= 3.0 and FIPS mode is
+	 *	enabled, we need to load the default provider in a
+	 *	standalone context in order to access MD5.
+	 */
+	OSSL_LIB_CTX	*libctx = NULL;
+	OSSL_PROVIDER	*default_provider = NULL;
+
+	if (EVP_default_properties_is_fips_enabled(NULL)) {
+		libctx = OSSL_LIB_CTX_new();
+		default_provider = OSSL_PROVIDER_load(libctx, "default");
+
+		if (!default_provider) {
+			ERROR("Failed loading OpenSSL default provider.");
+			return;
+		}
+
+		md5_to_free = EVP_MD_fetch(libctx, "MD5", NULL);
+		if (!md5_to_free) {
+			ERROR("Failed loading OpenSSL MD5 function.");
+			return;
+		}
+
+		md5 = md5_to_free;
+	} else {
+		md5 = EVP_md5();
+	}
+#else
+	md5 = EVP_md5();
+#endif
+
+	P_hash(md5, s1, len, seed, seed_len, out, out_len);
 	P_hash(EVP_sha1(), s2, len, seed, seed_len, buf, out_len);
 
 	for (i = 0; i < out_len; i++) {
 		out[i] ^= buf[i];
 	}
+
+#if OPENSSL_VERSION_NUMBER >= 0x30000000L
+	if (libctx) {
+		OSSL_PROVIDER_unload(default_provider);
+		OSSL_LIB_CTX_free(libctx);
+		EVP_MD_free(md5_to_free);
+	}
+#endif
 }
 
 /*

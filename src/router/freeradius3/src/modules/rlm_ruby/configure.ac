@@ -1,24 +1,15 @@
-AC_PREREQ([2.53])
+AC_PREREQ([2.68])
 AC_INIT(rlm_ruby.c)
 AC_REVISION($Revision: 1.9 $)
-AC_DEFUN(modname,[rlm_ruby])
-
-m4_include([ax_with_prog.m4])
+FR_INIT_MODULE([rlm_ruby], [support for embedded Ruby functions])
 
 AC_DEFUN([AX_WITH_RUBY],[
     AX_WITH_PROG([RUBY],[ruby],[not-found],[${PATH}:/usr/bin:/usr/local/bin])
 ])
 
-m4_include([ax_compare_version.m4])
-m4_include([ax_prog_ruby_version.m4])
-m4_include([ax_ruby_devel.m4])
-
 targetname=modname
 mod_cflags=
 mod_ldflags=
-
-AC_ARG_WITH([]modname,
-[  --with-[]modname              build []modname. (default=yes)])
 
 if test x$with_[]modname != xno; then
 	AC_PROG_CC

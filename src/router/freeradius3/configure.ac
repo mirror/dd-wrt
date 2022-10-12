@@ -20,15 +20,13 @@ dnl #  AC_OUTPUT([file...])
 dnl #
 dnl #############################################################
 
-AC_PREREQ([2.59])
+AC_PREREQ([2.68])
 export CFLAGS LIBS LDFLAGS CPPFLAGS
 
 AC_INIT([freeradius],[$]Id[$],[http://bugs.freeradius.org],,[http://www.freeradius.org])
 AC_CONFIG_MACRO_DIR([m4])
 AC_CONFIG_SRCDIR([src/main/radiusd.c])
 AC_CONFIG_HEADER([src/include/autoconf.h])
-m4_include([m4/ax_cc.m4])
-m4_include([m4/ax_prog_perl_modules.m4])
 
 dnl #############################################################
 dnl #
@@ -173,6 +171,21 @@ AC_ARG_ENABLE(verify-ptr,
 [ verify_ptr="-DWITH_VERIFY_PTR=1" ],
 )
 
+dnl #
+dnl #  Hard-code FIPS support/
+dnl #
+AC_ARG_ENABLE(fips-workaround,
+[  --enable-fips-workaround    enables local MD4, MD5, etc. functionality to avoid OpenSSL FIPS issues.],
+[ case "$enableval" in
+  no)
+    fips=""
+    ;;
+  *)
+    fips="-DWITH_FIPS=1"
+  esac ],
+[ fips="" ],
+)
+
 dnl #############################################################
 dnl #
 dnl #  0. Checks for compiler, libtool, and command line options.
@@ -183,6 +196,19 @@ dnl #
 dnl #  Get system information
 dnl #
 AC_CANONICAL_SYSTEM
+
+dnl #
+dnl #  clang etc. on OSX no longer searches the default paths for things,
+dnl #  so we have to add them back in.
+dnl #
+case "$host" in
+  *-darwin*)
+    CFLAGS="$CFLAGS -DDARWIN"
+    LDFLAGS="-L/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/lib $LDFLAGS"
+    LIBS="-F /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/System/Library/Frameworks/ -framework DirectoryService $LIBS"
+    ;;
+esac
+
 
 dnl #
 dnl #  Check for GNU cc
@@ -1258,13 +1284,13 @@ dnl #
 dnl #  Interix requires us to set -D_ALL_SOURCE, otherwise
 dnl #  getopt will be #included, but won't link.  <sigh>
 dnl #
+dnl #  On the other hand, it's 20222.  Interix has likely been dead for a decade. :(
+dnl #
 case "$host" in
   *-interix*)
     CFLAGS="$CFLAGS -D_ALL_SOURCE"
     ;;
   *-darwin*)
-    CFLAGS="$CFLAGS -DDARWIN"
-    LIBS="-framework DirectoryService $LIBS"
     AC_DEFINE([__APPLE_USE_RFC_3542], 1, [Force OSX >= 10.7 Lion to use RFC2292 IPv6 socket options])
     ;;
 esac
@@ -1895,10 +1921,10 @@ if test "x$developer" = "xyes"; then
   dnl #
   AX_CC_WEVERYTHING_FLAG
   if test "x$ax_cv_cc_weverything_flag" = "xyes"; then
-    devcflags="$devcflags -W -Weverything -Wformat=2 -Wno-missing-field-initializers -Wno-date-time -Wno-padded -Wno-gnu-zero-variadic-macro-arguments -Wno-shorten-64-to-32 -Wno-sign-conversion -Wno-conversion -Wno-switch-enum -Wno-gnu-statement-expression -Wno-extended-offsetof -Wno-cast-align -Wno-documentation-unknown-command -Wno-covered-switch-default -Wno-packed $verify_ptr"
+    devcflags="$devcflags -W -Weverything -Wformat=2 -Wno-missing-field-initializers -Wno-date-time -Wno-padded -Wno-gnu-zero-variadic-macro-arguments -Wno-shorten-64-to-32 -Wno-sign-conversion -Wno-conversion -Wno-switch-enum -Wno-gnu-statement-expression -Wno-extended-offsetof -Wno-cast-align -Wno-documentation-unknown-command -Wno-covered-switch-default -Wno-packed $verify_ptr $fips"
   else
     if test "x$GCC" = "xyes"; then
-      devcflags="$devcflags -Wshadow -Wpointer-arith -Wcast-qual -Wcast-align -Wwrite-strings -Wstrict-prototypes -Wmissing-prototypes -Wmissing-declarations -Wnested-externs -W -Wredundant-decls -Wundef -Wformat-y2k -Wno-format-extra-args -Wno-format-zero-length -Wno-cast-align -Wformat-nonliteral -Wformat-security -Wformat=2 $verify_ptr"
+      devcflags="$devcflags -Wshadow -Wpointer-arith -Wcast-qual -Wcast-align -Wwrite-strings -Wstrict-prototypes -Wmissing-prototypes -Wmissing-declarations -Wnested-externs -W -Wredundant-decls -Wundef -Wformat-y2k -Wno-format-extra-args -Wno-format-zero-length -Wno-cast-align -Wformat-nonliteral -Wformat-security -Wformat=2 $verify_ptr $fips"
       INSTALLSTRIP=""
     fi
   fi

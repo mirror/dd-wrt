@@ -1,7 +1,7 @@
 /*
  * peap.c contains the interfaces that are called from eap
  *
- * Version:     $Id: 5647f613afd5ac8238a6e577c3814681d2ce5f1e $
+ * Version:     $Id: a8589aeaea4dc61370cc6d6d5ef44743bd295183 $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -21,7 +21,7 @@
  *   Copyright 2006 The FreeRADIUS server project
  */
 
-RCSID("$Id: 5647f613afd5ac8238a6e577c3814681d2ce5f1e $")
+RCSID("$Id: a8589aeaea4dc61370cc6d6d5ef44743bd295183 $")
 USES_APPLE_DEPRECATED_API	/* OpenSSL API has been deprecated by Apple */
 
 #include "eap_peap.h"
@@ -590,6 +590,8 @@ static int CC_HINT(nonnull) eappeap_postproxy(eap_handler_t *handler, void *data
 		if ((rad_debug_lvl > 0) && fr_log_fp) {
 			fprintf(fr_log_fp, "server %s {\n", fake->server);
 		}
+
+		fake->reply->code = PW_CODE_ACCESS_ACCEPT;
 
 		/*
 		 *	Perform a post-auth stage, which will get the EAP

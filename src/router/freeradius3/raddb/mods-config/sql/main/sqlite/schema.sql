@@ -1,5 +1,5 @@
 -----------------------------------------------------------------------------
--- $Id: 9bdaf71f34013de79504b9bf6e090c8cf0e38979 $                 	   --
+-- $Id: 4625a581ab8ec3c2c3a8a08c60862e2bd97b5a49 $                 	   --
 --                                                                         --
 --  schema.sql                       rlm_sql - FreeRADIUS SQLite Module    --
 --                                                                         --
@@ -154,3 +154,11 @@ CREATE TABLE IF NOT EXISTS nas (
 	description varchar(200) DEFAULT 'RADIUS Client'
 );
 CREATE INDEX nasname ON nas(nasname);
+
+--
+-- Table structure for table 'nasreload'
+--
+CREATE TABLE IF NOT EXISTS nasreload (
+	nasipaddress varchar(15) PRIMARY KEY,
+	reloadtime datetime NOT NULL
+);
