@@ -81,7 +81,11 @@ void start_jffs2(void)
 			nvram_seti("clean_jffs2", 0);
 			nvram_commit();
 			sprintf(dev, "/dev/mtd%d", mtd);
-#if defined(HAVE_WNDR3700V4)
+#if defined(HAVE_DW02_412H)
+			itworked = eval("erase", rwpart);
+			itworked = eval("flash_erase", dev, "0", "0");
+			itworked = eval("mkfs.jffs2", "-o", "/dev/mtdblock11", "-n", "-b", "-e", "131072", "-p");
+#elif defined(HAVE_WNDR3700V4)
 			itworked = eval("erase", rwpart);
 			itworked = eval("flash_erase", dev, "0", "0");
 			itworked = eval("mkfs.jffs2", "-o", "/dev/mtdblock3", "-n", "-b", "-e", "131072", "-p");
