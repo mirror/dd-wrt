@@ -2,7 +2,7 @@
 # Copyright (C) 2019 The FreeRADIUS Server project and contributors
 # This work is licensed under CC-BY version 4.0 https://creativecommons.org/licenses/by/4.0
 #
-# Version $Id: 3c338a819e43955bf2db18276a294f1ecf55c55d $
+# Version $Id: 619fcbaeec4953b3e5d9dfc8d10ae393b89b2943 $
 #
 #	DO NOT EDIT THE FILES IN THIS DIRECTORY
 #
@@ -182,6 +182,7 @@ $INCLUDE dictionary.camiant
 $INCLUDE dictionary.centec
 $INCLUDE dictionary.checkpoint
 $INCLUDE dictionary.chillispot
+$INCLUDE dictionary.ciena
 $INCLUDE dictionary.cisco
 $INCLUDE dictionary.cisco.asa
 #
@@ -263,6 +264,7 @@ $INCLUDE dictionary.netelastic
 $INCLUDE dictionary.netscreen
 $INCLUDE dictionary.networkphysics
 $INCLUDE dictionary.nexans
+$INCLUDE dictionary.nile
 $INCLUDE dictionary.nokia
 $INCLUDE dictionary.nomadix
 $INCLUDE dictionary.nortel

@@ -30,7 +30,7 @@
 
 Summary: High-performance and highly configurable free RADIUS server
 Name: freeradius
-Version: 3.2.0
+Version: 3.2.1
 Release: 1%{?dist}
 License: GPLv2+ and LGPLv2+
 Group: System Environment/Daemons
@@ -133,6 +133,8 @@ Provides: freeradius-config
 FreeRADIUS default config files
 This package should be used as a base for a site local package
 to configure the FreeRADIUS server.
+Requires: make
+Requires: util-linux
 
 %package utils
 Group: System Environment/Daemons
@@ -163,8 +165,14 @@ SQL databases.
 Summary: LDAP support for FreeRADIUS
 Group: System Environment/Daemons
 Requires: %{name} = %{version}-%{release}
+%if 0%{?rhel} <= 8
 Requires: openldap-ltb
 BuildRequires: openldap-ltb
+%endif
+%if 0%{?rhel} >= 9
+Requires: openldap
+BuildRequires: openldap-devel
+%endif
 
 %description ldap
 This plugin provides LDAP support for the FreeRADIUS server project.
@@ -208,9 +216,15 @@ Requires: %{name} = %{version}-%{release}
 Requires: python
 BuildRequires: python-devel
 %endif
-%if 0%{?rhel} >= 8
+%if 0%{?rhel} == 8
 Requires: python2
+Requires: python3
 BuildRequires: python2-devel
+BuildRequires: python3-devel
+%endif
+%if 0%{?rhel} >= 9
+Requires: python3
+BuildRequires: python3-devel
 %endif
 
 %description python
@@ -221,7 +235,12 @@ This plugin provides Python support for the FreeRADIUS server project.
 Summary: MySQL support for FreeRADIUS
 Group: System Environment/Daemons
 Requires: %{name} = %{version}-%{release}
+%if 0%{?rhel} <= 7
 Requires: mysql
+%endif
+%if 0%{?rhel} >= 8
+Requires: mysql-libs
+%endif
 BuildRequires: mysql-devel
 
 %description mysql
@@ -647,10 +666,6 @@ fi
 %{_libdir}/freeradius/rlm_sqlippool.so
 %{_libdir}/freeradius/rlm_sql_map.so
 
-%if %{?_with_developer:1}%{!?_with_developer:0}
-%{_libdir}/freeradius/rlm_sqlhpwippool.so
-%endif
-
 %{_libdir}/freeradius/rlm_totp.so
 %{_libdir}/freeradius/rlm_unpack.so
 %{_libdir}/freeradius/rlm_unix.so
@@ -674,14 +689,14 @@ fi
 %attr(640,root,radiusd) %config(noreplace) %{_sysconfdir}/raddb/proxy.conf
 %attr(640,root,radiusd) %config(noreplace) %{_sysconfdir}/raddb/radiusd.conf
 %attr(640,root,radiusd) %config(noreplace) %{_sysconfdir}/raddb/trigger.conf
-%attr(640,root,radiusd) %config(noreplace) %{_sysconfdir}/raddb/users
+%config(noreplace) %{_sysconfdir}/raddb/users
 %dir %attr(770,root,radiusd) %{_sysconfdir}/raddb/certs
 %attr(640,root,radiusd) %config(noreplace) %{_sysconfdir}/raddb/certs/*
 %attr(750,root,radiusd) %{_sysconfdir}/raddb/certs/bootstrap
 %dir %attr(750,root,radiusd) %{_sysconfdir}/raddb/sites-available
 %attr(640,root,radiusd) %config(noreplace) %{_sysconfdir}/raddb/sites-available/*
 %dir %attr(750,root,radiusd) %{_sysconfdir}/raddb/sites-enabled
-%attr(640,root,radiusd) %config(noreplace) %{_sysconfdir}/raddb/sites-enabled/*
+%config(noreplace) %{_sysconfdir}/raddb/sites-enabled/*
 %dir %attr(750,root,radiusd) %{_sysconfdir}/raddb/policy.d
 %attr(640,root,radiusd) %config(noreplace) %{_sysconfdir}/raddb/policy.d/*
 %attr(640,root,radiusd) %config(noreplace) %{_sysconfdir}/raddb/templates.conf
@@ -698,11 +713,19 @@ fi
 %dir %attr(750,root,radiusd) %{_sysconfdir}/raddb/mods-config/preprocess
 %attr(640,root,radiusd) %config(noreplace) %{_sysconfdir}/raddb/mods-config/preprocess/*
 %if %{?el6:0}%{!?el6:1}
+%if 0%{?rhel} <= 8
 %dir %attr(750,root,radiusd) %{_sysconfdir}/raddb/mods-config/python
 %attr(640,root,radiusd) %config(noreplace) %{_sysconfdir}/raddb/mods-config/python/*
 %endif
+%if 0%{?rhel} >= 8
+%dir %attr(750,root,radiusd) %{_sysconfdir}/raddb/mods-config/python3
+%attr(640,root,radiusd) %config(noreplace) %{_sysconfdir}/raddb/mods-config/python3/*
+%endif
+%dir %attr(750,root,radiusd) %{_sysconfdir}/raddb/mods-config/realm
+%attr(-,root,radiusd) %config(noreplace) %{_sysconfdir}/raddb/mods-config/realm/*
+%endif
 %dir %attr(750,root,radiusd) %{_sysconfdir}/raddb/mods-enabled
-%attr(640,root,radiusd) %config(noreplace) %{_sysconfdir}/raddb/mods-enabled/*
+%config(noreplace) %{_sysconfdir}/raddb/mods-enabled/*
 # ruby
 %if %{?_with_rlm_ruby:1}%{!?_with_rlm_ruby:0}
 %dir %attr(750,root,radiusd) %{_sysconfdir}/raddb/mods-config/ruby
@@ -733,6 +756,9 @@ fi
 %attr(640,root,radiusd) %config(noreplace) %{_sysconfdir}/raddb/mods-config/sql/ippool-dhcp/mysql/*
 %dir %attr(750,root,radiusd) %{_sysconfdir}/raddb/mods-config/sql/main/mysql
 %attr(640,root,radiusd) %config(noreplace) %{_sysconfdir}/raddb/mods-config/sql/main/mysql/*
+%dir %attr(750,root,radiusd) %{_sysconfdir}/raddb/mods-config/sql/main/mysql/extras
+%dir %attr(750,root,radiusd) %{_sysconfdir}/raddb/mods-config/sql/main/mysql/extras/wimax
+%attr(640,root,radiusd) %config(noreplace) %{_sysconfdir}/raddb/mods-config/sql/main/mysql/extras/wimax/*
 %dir %attr(750,root,radiusd) %{_sysconfdir}/raddb/mods-config/sql/main/ndb
 %attr(640,root,radiusd) %config(noreplace) %{_sysconfdir}/raddb/mods-config/sql/main/ndb/*
 %dir %attr(750,root,radiusd) %{_sysconfdir}/raddb/mods-config/sql/moonshot-targeted-ids/mysql
@@ -751,6 +777,8 @@ fi
 %attr(640,root,radiusd) %config(noreplace) %{_sysconfdir}/raddb/mods-config/sql/ippool-dhcp/postgresql/*
 %dir %attr(750,root,radiusd) %{_sysconfdir}/raddb/mods-config/sql/main/postgresql
 %attr(640,root,radiusd) %config(noreplace) %{_sysconfdir}/raddb/mods-config/sql/main/postgresql/*
+%dir %attr(750,root,radiusd) %{_sysconfdir}/raddb/mods-config/sql/main/postgresql/extras
+%attr(640,root,radiusd) %config(noreplace) %{_sysconfdir}/raddb/mods-config/sql/main/postgresql/extras/*
 %dir %attr(750,root,radiusd) %{_sysconfdir}/raddb/mods-config/sql/moonshot-targeted-ids/postgresql
 %attr(640,root,radiusd) %config(noreplace) %{_sysconfdir}/raddb/mods-config/sql/moonshot-targeted-ids/postgresql/*
 #
@@ -845,7 +873,12 @@ fi
 %if %{?el6:0}%{!?el6:1}
 %files python
 %defattr(-,root,root)
+%if 0%{?rhel} <= 8
 %{_libdir}/freeradius/rlm_python.so
+%endif
+%if 0%{?rhel} >= 8
+%{_libdir}/freeradius/rlm_python3.so
+%endif
 %endif
 
 %files mysql

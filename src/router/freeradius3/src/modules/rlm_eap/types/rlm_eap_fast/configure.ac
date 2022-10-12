@@ -1,19 +1,10 @@
-#
-# Autoconf input file.
-#
-# Version:	$Id: 46d32a78d531992de3bed4ba4ce2b2bc31aec614 $
-#
-
-AC_PREREQ([2.53])
+AC_PREREQ([2.68])
 AC_INIT(rlm_eap_fast.c)
 AC_REVISION($Revision$)
-AC_DEFUN(modname,[rlm_eap_fast])
+FR_INIT_MODULE([rlm_eap_fast])
 
 mod_ldflags=
 mod_cflags=
-
-AC_ARG_WITH([]modname,
-[  --with-[]modname              build []modname. (default=yes)])
 
 if test x$with_[]modname != xno; then
 

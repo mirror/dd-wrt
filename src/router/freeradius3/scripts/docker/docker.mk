@@ -32,7 +32,7 @@ DOCKER_COMMIT := release_$(shell echo $(DOCKER_VERSION) | tr .- __)
 DOCKER_BUILD_ARGS :=
 #
 #  Tag name, likely "freeradius-server" for releases, or "freeradius-dev" for nightlies.
-DOCKER_TAG := freeradius-server-3.2
+DOCKER_TAG := freeradius-server
 #
 #  Repository name
 DOCKER_REPO := freeradius
@@ -72,11 +72,15 @@ docker-push: docker
 docker-tag-latest: docker
 	$(Q)docker tag $(DOCKER_REGISTRY)$(DOCKER_REPO)$(DOCKER_TAG):$(DOCKER_VERSION) $(DOCKER_REGISTRY)$(DOCKER_REPO)$(DOCKER_TAG):latest
 	$(Q)docker tag $(DOCKER_REGISTRY)$(DOCKER_REPO)$(DOCKER_TAG):$(DOCKER_VERSION)-alpine $(DOCKER_REGISTRY)$(DOCKER_REPO)$(DOCKER_TAG):latest-alpine
+	$(Q)docker tag $(DOCKER_REGISTRY)$(DOCKER_REPO)$(DOCKER_TAG):$(DOCKER_VERSION) $(DOCKER_REGISTRY)$(DOCKER_REPO)$(DOCKER_TAG):latest-3.2
+	$(Q)docker tag $(DOCKER_REGISTRY)$(DOCKER_REPO)$(DOCKER_TAG):$(DOCKER_VERSION)-alpine $(DOCKER_REGISTRY)$(DOCKER_REPO)$(DOCKER_TAG):latest-3.2-alpine
 
 .PHONY: docker-push-latest
 docker-push-latest: docker-push docker-tag-latest
 	$(Q)docker push $(DOCKER_REGISTRY)$(DOCKER_REPO)$(DOCKER_TAG):latest
 	$(Q)docker push $(DOCKER_REGISTRY)$(DOCKER_REPO)$(DOCKER_TAG):latest-alpine
+	$(Q)docker push $(DOCKER_REGISTRY)$(DOCKER_REPO)$(DOCKER_TAG):latest-3.2
+	$(Q)docker push $(DOCKER_REGISTRY)$(DOCKER_REPO)$(DOCKER_TAG):latest-3.2-alpine
 
 .PHONY: docker-publish
 docker-publish: docker-push-latest

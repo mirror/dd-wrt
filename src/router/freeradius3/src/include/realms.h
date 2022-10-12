@@ -5,11 +5,11 @@
  * realms.h	Structures, prototypes and global variables
  *		for realms
  *
- * Version:	$Id: ff57a6c469c144208cd86b0ea8be59d8ad01f1e6 $
+ * Version:	$Id: b845840cd3537f1814db618e31614b4f004f94c4 $
  *
  */
 
-RCSIDH(realms_h, "$Id: ff57a6c469c144208cd86b0ea8be59d8ad01f1e6 $")
+RCSIDH(realms_h, "$Id: b845840cd3537f1814db618e31614b4f004f94c4 $")
 
 #ifdef __cplusplus
 extern "C" {
@@ -135,6 +135,7 @@ typedef struct home_server {
 #endif
 #ifdef WITH_TLS
 	fr_tls_server_conf_t	*tls;
+	uint32_t		connect_timeout;
 #endif
 
 #ifdef WITH_STATS

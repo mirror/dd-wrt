@@ -1,17 +1,13 @@
 /*
- * $Id: 73b059f26bd08eda209ecb2ba1b8d5ccbfdebc09 $
+ * $Id: 518bc5d2ecf22b546b2cdd4845eee542fc916b25 $
  *
- * Postgresql schema for FreeRADIUS
- *
- * All field lengths need checking as some are still suboptimal. -pnixon 2003-07-13
+ * PostgreSQL schema for FreeRADIUS
  *
  */
 
 /*
  * Table structure for table 'radacct'
  *
- * Note: Column type bigserial does not exist prior to Postgres 7.2
- *       If you run an older version you need to change this to serial
  */
 CREATE TABLE IF NOT EXISTS radacct (
 	RadAcctId		bigserial PRIMARY KEY,
@@ -172,3 +168,11 @@ CREATE TABLE IF NOT EXISTS nas (
 	description		text
 );
 create index nas_nasname on nas (nasname);
+
+/*
+ * Table structure for table 'nasreload'
+ */
+CREATE TABLE IF NOT EXISTS nasreload (
+	NASIPAddress		inet PRIMARY KEY,
+	ReloadTime		timestamp with time zone NOT NULL
+);

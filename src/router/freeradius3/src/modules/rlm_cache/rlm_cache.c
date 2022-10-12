@@ -15,13 +15,13 @@
  */
 
 /**
- * $Id: 07fa098f45fd106d4beaa6e681ebab2d6583137a $
+ * $Id: 345bedd25dfe5645b66ca87f684f28c962de4286 $
  * @file rlm_cache.c
  * @brief Cache values and merge them back into future requests.
  *
  * @copyright 2012-2014 The FreeRADIUS server project
  */
-RCSID("$Id: 07fa098f45fd106d4beaa6e681ebab2d6583137a $")
+RCSID("$Id: 345bedd25dfe5645b66ca87f684f28c962de4286 $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/modules.h>
@@ -829,6 +829,7 @@ module_t rlm_cache = {
 	.detach		= mod_detach,
 	.methods = {
 		[MOD_AUTHORIZE]		= mod_cache_it,
+		[MOD_AUTHENTICATE]     	= mod_cache_it,
 		[MOD_PREACCT]		= mod_cache_it,
 		[MOD_ACCOUNTING]	= mod_cache_it,
 		[MOD_PRE_PROXY]		= mod_cache_it,

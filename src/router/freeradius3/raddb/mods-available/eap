@@ -2,7 +2,7 @@
 ##
 ##  eap.conf -- Configuration for EAP types (PEAP, TTLS, etc.)
 ##
-##	$Id: d7a8b605da40c7696ad09b67d7bc6752ba2a40de $
+##	$Id: 8fd8eb5edc69f5b72c5d3b92d90ccf018660dd4e $
 
 #######################################################################
 #
@@ -200,7 +200,7 @@ eap {
 		#  server.pem, followed by CA1.pem, followed by
 		#  CA2.pem.
 		#
-		#  When using "ca_file" or "ca_dir", the
+		#  When using "ca_file" or "ca_path", the
 		#  "certificate_file" should contain only
 		#  "server.pem".  And then you may (or may not) need
 		#  to set "auto_chain", depending on your version of
@@ -401,6 +401,13 @@ eap {
 		#  in "man 1 ciphers".
 		#
 		cipher_list = "DEFAULT"
+
+		#  Set this option to specify the allowed
+		#  TLS signature algorithms for OpenSSL 1.1.1 and above.
+		#  The format and available signature algorithms are listed
+		#  in "man 3 SSL_CTX_set1_sigalgs_list".
+		#
+		# sigalgs_list = ""
 
 		#  If enabled, OpenSSL will use server cipher list
 		#  (possibly defined by cipher_list option above)

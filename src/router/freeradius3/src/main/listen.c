@@ -1,7 +1,7 @@
 /*
  * listen.c	Handle socket stuff
  *
- * Version:	$Id: 1edb72a9c21fdf5c9b0cad3ce211307fd1cc03fa $
+ * Version:	$Id: b160d4f361ff6d56b5f56dc12c8e31363e7f13a7 $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -21,7 +21,7 @@
  * Copyright 2005  Alan DeKok <aland@ox.org>
  */
 
-RCSID("$Id: 1edb72a9c21fdf5c9b0cad3ce211307fd1cc03fa $")
+RCSID("$Id: b160d4f361ff6d56b5f56dc12c8e31363e7f13a7 $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/modules.h>
@@ -590,7 +590,16 @@ static int dual_tcp_recv(rad_listen_t *listener)
 
 #ifdef WITH_ACCOUNTING
 	case PW_CODE_ACCOUNTING_REQUEST:
-		if (listener->type != RAD_LISTEN_ACCT) goto bad_packet;
+		if (listener->type != RAD_LISTEN_ACCT) {
+			/*
+			 *	Allow auth + dual.  Disallow
+			 *	everything else.
+			 */
+			if (!((listener->type == RAD_LISTEN_AUTH) &&
+			      (listener->dual))) {
+				    goto bad_packet;
+			}
+		}
 		FR_STATS_INC(acct, total_requests);
 		fun = rad_accounting;
 		break;
@@ -3152,6 +3161,8 @@ rad_listen_t *proxy_new_listener(TALLOC_CTX *ctx, home_server_t *home, uint16_t 
 			listen_free(&this);
 			return NULL;
 		}
+
+		sock->connect_timeout = home->connect_timeout;
 
 		this->recv = proxy_tls_recv;
 		this->proxy_send = proxy_tls_send;

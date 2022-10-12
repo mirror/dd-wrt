@@ -1,5 +1,5 @@
 /**
- * $Id: 64025f4a4dca1c11b47215f2e2b6bb29d8d04938 $
+ * $Id: b7d571ac7b3ea86bbfd72e415f355ee6d76c38a7 $
  *
  * @note license is LGPL, but largely derived from a public domain source.
  *
@@ -10,7 +10,7 @@
 #ifndef _FR_MD5_H
 #define _FR_MD5_H
 
-RCSIDH(md5_h, "$Id: 64025f4a4dca1c11b47215f2e2b6bb29d8d04938 $")
+RCSIDH(md5_h, "$Id: b7d571ac7b3ea86bbfd72e415f355ee6d76c38a7 $")
 
 #ifdef HAVE_INTTYPES_H
 #  include <inttypes.h>
@@ -25,6 +25,10 @@ RCSIDH(md5_h, "$Id: 64025f4a4dca1c11b47215f2e2b6bb29d8d04938 $")
 #endif
 
 #  include <string.h>
+
+#ifdef WITH_FIPS
+#undef HAVE_OPENSSL_MD5_H
+#endif
 
 #ifdef HAVE_OPENSSL_MD5_H
 #  include <openssl/md5.h>

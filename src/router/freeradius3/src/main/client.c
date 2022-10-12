@@ -15,7 +15,7 @@
  */
 
 /**
- * $Id: 1c823405c46300e05819aeda5ab2a3341d4876f0 $
+ * $Id: b0b3e24028c9d634b1a4d51b3b0e3d2ffd8798e4 $
  * @file main/client.c
  * @brief Manage clients allowed to communicate with the server.
  *
@@ -24,7 +24,7 @@
  * @copyright 2000 Alan DeKok <aland@ox.org>
  * @copyright 2000 Miquel van Smoorenburg <miquels@cistron.nl>
  */
-RCSID("$Id: 1c823405c46300e05819aeda5ab2a3341d4876f0 $")
+RCSID("$Id: b0b3e24028c9d634b1a4d51b3b0e3d2ffd8798e4 $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/rad_assert.h>
@@ -1231,7 +1231,6 @@ RADCLIENT *client_afrom_request(RADCLIENT_LIST *clients, REQUEST *request)
 	int		i, *pi;
 	char		**p;
 	RADCLIENT	*c;
-	CONF_PAIR	*cp = NULL;
 	char		buffer[128];
 
 	vp_cursor_t	cursor;
@@ -1262,6 +1261,7 @@ RADCLIENT *client_afrom_request(RADCLIENT_LIST *clients, REQUEST *request)
 	for (i = 0; dynamic_config[i].name != NULL; i++) {
 		DICT_ATTR const *da;
 		char *strvalue = NULL;
+		CONF_PAIR *cp = NULL;
 
 		da = dict_attrbyname(dynamic_config[i].name);
 		if (!da) {
@@ -1433,6 +1433,8 @@ RADCLIENT *client_afrom_request(RADCLIENT_LIST *clients, REQUEST *request)
 	fr_cursor_first(&cursor);
 	vp = fr_cursor_remove(&cursor);
 	if (vp) {
+		CONF_PAIR *cp;
+
 		do {
 			char *value;
 
