@@ -166,7 +166,7 @@ void start_freeradius(void)
 			freeradiusdb(db);
 		}
 	}
-	if (reload_process("dnsmasq")) {
+	if (reload_process("radiusd")) {
 		_log_evalpid(radiusd_argv, NULL, 0, NULL);
 	}
 
