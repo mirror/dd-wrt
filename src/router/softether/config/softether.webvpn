@@ -6,7 +6,7 @@
 		<input class="spaceradio" type="radio" name="setherserver_enable" value="1" <% nvc("setherserver_enable", "1"); %> onclick="show_layer_ext(this, 'idsether', true)" /><% tran("share.enable"); %>&nbsp;
 		<input class="spaceradio" type="radio" name="setherserver_enable" value="0" <% nvc("setherserver_enable", "0"); %> onclick="show_layer_ext(this, 'idsether', false)" /><% tran("share.disable"); %>
 	</div>
-	<div id="sether">
+	<div id="idsether">
 		<div class="setting">
 			<div class="label"><% tran("service.softether_bridge"); %></div>
 			<input class="spaceradio" type="radio" name="setherbridge_enable" value="1" <% nvc("setherbridge_enable", "1"); %> /><% tran("share.enable"); %>&nbsp;
