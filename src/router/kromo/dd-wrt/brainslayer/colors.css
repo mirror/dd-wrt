@@ -2,11 +2,6 @@
   background-color: #955322;
   color: #fff;
 }
-:focus-visible, .button:focus-visible {
-  border: 1px solid #955322;
-  box-shadow: 0 0 5px 1px #955322;
-  outline: 0;
-}
 body {
   color: #000;
   background: #eeeae4;
@@ -86,7 +81,7 @@ th {
   border-left: 3px solid #955322 !important;
   background-color: #f9f9e9;
 }
-#menuMainList :link:hover, #menuMainList :visited:hover {
+#menuMainList :link:hover {
   color: #ec361d;
   background: #f9f9e9;
   border-left: 3px solid #955322;
@@ -113,6 +108,14 @@ th {
   border: 2px dashed #f99;
   color: #f00;
   font-weight: bold;
+}
+input.button:hover {
+  background-color: #d0d0d7;
+}
+:focus-visible, .button:focus-visible {
+  border: 1px solid #955322;
+  box-shadow: 0 0 5px 1px #955322;
+  outline: 0;
 }
 .submitFooter {
   background: repeating-linear-gradient(-45deg,
