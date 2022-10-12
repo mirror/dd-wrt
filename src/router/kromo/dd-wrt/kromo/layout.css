@@ -378,9 +378,6 @@ table[summary='ports forwarding table'] input[size='10'] {
   text-align: center;
   border-radius: 2px;
 }
-#mainno .submitFooter {
-  margin: -1.7em .906em .906em;
-}
 .stick {
   position: sticky;
   bottom: 0;
