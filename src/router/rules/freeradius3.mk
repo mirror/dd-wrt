@@ -1,5 +1,8 @@
 freeradius3-configure: libtalloc openssl libpcap
 	cd freeradius3 && mkdir -p build/make; gcc scripts/jlibtool.c -o build/make/jlibtool
+	-cd freeradius3 && libtoolize -ci --force 
+	-cd freeradius3 && aclocal
+	-cd freeradius3 && automake --add-missing
 	cd freeradius3 && autoconf && \
 	sys_lib_dlsearch_path_spec="$(ARCH)-uclibc" \
 	sys_lib_search_path_spec="$(ARCH)-uclibc" \
