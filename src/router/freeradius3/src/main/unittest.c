@@ -1,7 +1,7 @@
 /*
  * unittest.c	Unit test wrapper for the RADIUS daemon.
  *
- * Version:	$Id: 3e0a8728bb789f9a46c51cdb820eebfc692895f5 $
+ * Version:	$Id: 50935c989e0e36f61a79a25f6996d9c783e4a273 $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -21,12 +21,13 @@
  * Copyright 2013  Alan DeKok <aland@ox.org>
  */
 
-RCSID("$Id: 3e0a8728bb789f9a46c51cdb820eebfc692895f5 $")
+RCSID("$Id: 50935c989e0e36f61a79a25f6996d9c783e4a273 $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/modules.h>
 #include <freeradius-devel/state.h>
 #include <freeradius-devel/rad_assert.h>
+#include <freeradius-devel/event.h>
 
 #ifdef HAVE_GETOPT_H
 #	include <getopt.h>
@@ -53,6 +54,8 @@ char const *radiusd_version = "FreeRADIUS Version " RADIUSD_VERSION_STRING
 ", built on " __DATE__ " at " __TIME__
 #endif
 ;
+
+fr_event_list_t	*el = NULL;
 
 /*
  *	Static functions.
@@ -620,6 +623,16 @@ static bool do_xlats(char const *filename, FILE *fp)
 	return true;
 }
 
+/*
+ *	Dummy event_list_corral
+ */
+fr_event_list_t *radius_event_list_corral(UNUSED event_corral_t hint) {
+	if (!el) {
+		el = fr_event_list_create(NULL, NULL);
+	}
+
+	return el;
+}
 
 /*
  *	The main guy.
@@ -926,6 +939,8 @@ finish:
 	 *	Free the configuration items.
 	 */
 	main_config_free();
+
+	if (el) talloc_free(el);
 
 	if (memory_report) {
 		INFO("Allocated memory at time of report:");

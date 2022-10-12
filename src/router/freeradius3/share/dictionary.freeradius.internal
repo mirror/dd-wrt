@@ -4,7 +4,7 @@
 #
 #	Non Protocol Attributes used by FreeRADIUS
 #
-#	$Id: 347e3e59f35e88cb194d582be4aebb542002f063 $
+#	$Id: 590b7dae04e246f4f649c3ca77819e5504b36df6 $
 #
 
 #	The attributes number ranges are allocates as follows:
@@ -296,6 +296,7 @@ ATTRIBUTE	TOTP-Password				1196	string
 ATTRIBUTE	Proxy-Tunneled-Request-As-EAP		1197	integer
 VALUE	Proxy-Tunneled-Request-As-EAP	No			0
 VALUE	Proxy-Tunneled-Request-As-EAP	Yes			1
+ATTRIBUTE	Temp-Home-Server-String			1198	string
 
 #
 #	Range:	1200-1279
@@ -577,7 +578,7 @@ VALUE	TLS-Cache-Method		clear			3
 VALUE	TLS-Cache-Method		refresh			4
 
 
-# 1939: reserved for future cert attributes
+ATTRIBUTE	TLS-Client-Cert-X509v3-Certificate-Policies	1939 string
 
 # 1940 - 1959: reserved for TLS session caching, mostly in 4.0
 

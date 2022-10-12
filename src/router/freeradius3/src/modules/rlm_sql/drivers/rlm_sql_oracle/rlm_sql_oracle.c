@@ -19,7 +19,7 @@
  * Copyright 2000  David Kerry <davidk@snti.com>
  */
 
-RCSID("$Id: 88fd41dc66381550206e284babc8f8fb112d4639 $")
+RCSID("$Id: 9fe8a191306d6a20edb5567ddedb4d73ede5cd3d $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/rad_assert.h>
@@ -433,6 +433,13 @@ static sql_rcode_t sql_free_result(rlm_sql_handle_t *handle, UNUSED rlm_sql_conf
 
 static sql_rcode_t sql_finish_query(UNUSED rlm_sql_handle_t *handle, UNUSED rlm_sql_config_t *config)
 {
+	rlm_sql_oracle_conn_t *conn = handle->conn;
+
+	if (OCIStmtRelease(conn->query, conn->error, NULL, 0, OCI_DEFAULT) != OCI_SUCCESS ) {
+		ERROR("OCI release failed in sql_finish_query");
+		return RLM_SQL_ERROR;
+	}
+
 	return 0;
 }
 
@@ -443,6 +450,11 @@ static sql_rcode_t sql_finish_select_query(rlm_sql_handle_t *handle, UNUSED rlm_
 	TALLOC_FREE(conn->row);
 	conn->ind = NULL;	/* ind is a child of row */
 	conn->col_count = 0;
+
+	if (OCIStmtRelease (conn->query, conn->error, NULL, 0, OCI_DEFAULT) != OCI_SUCCESS ) {
+		ERROR("OCI release failed in sql_finish_query");
+		return RLM_SQL_ERROR;
+	}
 
 	return 0;
 }

@@ -18,7 +18,7 @@
 
 #ifdef WITH_TLS
 /**
- * $Id: 206f55db79802619dcdd3098f4ec8c3fa58a6cce $
+ * $Id: 7bb994b3242fada0c99823e632ca63d99ebfc47f $
  *
  * @file tls.h
  * @brief Structures and prototypes for TLS wrappers
@@ -26,7 +26,7 @@
  * @copyright 2010 Network RADIUS SARL <info@networkradius.com>
  */
 
-RCSIDH(tls_h, "$Id: 206f55db79802619dcdd3098f4ec8c3fa58a6cce $")
+RCSIDH(tls_h, "$Id: 7bb994b3242fada0c99823e632ca63d99ebfc47f $")
 
 #include <freeradius-devel/conffile.h>
 
@@ -341,6 +341,7 @@ fr_tls_status_t tls_application_data(tls_session_t *ssn, REQUEST *request);
 #define FR_TLS_EX_INDEX_STORE	 (14)
 #define FR_TLS_EX_INDEX_SSN	 (15)
 #define FR_TLS_EX_INDEX_TALLOC	 (16)
+#define FR_TLS_EX_INDEX_FIX_CERT_ORDER (17)
 
 extern int fr_tls_ex_index_certs;
 extern int fr_tls_ex_index_vps;
@@ -388,6 +389,7 @@ struct fr_tls_server_conf_t {
 	char const	*cipher_list;
 	bool		cipher_server_preference;
 	char const	*check_cert_issuer;
+	char const	*sigalgs_list;
 
 	bool     	session_cache_enable;
 	uint32_t     	session_lifetime;
@@ -402,6 +404,8 @@ struct fr_tls_server_conf_t {
 	char const	*verify_tmp_dir;
 	char const	*verify_client_cert_cmd;
 	bool		require_client_cert;
+
+	bool		fix_cert_order;
 
 	pthread_mutex_t	mutex;
 

@@ -4,7 +4,7 @@
 #		NOTE: This top-level Makefile must not
 #		use GNU-make extensions. The lower ones can.
 #
-#  Version:	$Id: 5975ab747bfabcf19690d6fef86880b6cedfdb5b $
+#  Version:	$Id: 5af6922481cb342470fd386162969aaaf2826f72 $
 #
 
 #
@@ -225,24 +225,27 @@ ifeq "$(AUTOCONF_EXISTS)" ""
 $(error You need to install autoconf to re-build the "configure" scripts)
 endif
 
-#  Configure files depend on "in" files, and on the top-level macro files
+#  Configure files depend on ".ac" files, and on the top-level macro files
 #  If there are headers, run auto-header, too.
 src/%configure: src/%configure.ac acinclude.m4 aclocal.m4 $(wildcard $(dir $@)m4/*m4) | src/freeradius-devel
 	@echo AUTOCONF $(dir $@)
-	cd $(dir $@) && $(AUTOCONF) -I $(top_builddir) -I $(top_builddir)/m4 -I $(top_builddir)/$(dir $@)m4
+	@cd $(dir $@) && \
+		$(ACLOCAL) --force -I $(top_builddir) -I $(top_builddir)/m4 && \
+		$(AUTOCONF) --force
 	@if grep AC_CONFIG_HEADERS $@ >/dev/null; then\
 		echo AUTOHEADER $@ \
-		cd $(dir $@) && $(AUTOHEADER); \
+		cd $(dir $@) && $(AUTOHEADER) --force; \
 	 fi
 
 #  "%configure" doesn't match "configure"
 configure: configure.ac $(wildcard ac*.m4) $(wildcard m4/*.m4)
 	@echo AUTOCONF $@
-	@$(AUTOCONF)
+	@$(ACLOCAL) --force
+	@$(AUTOCONF) --force
 
 src/include/autoconf.h.in: configure.ac
 	@echo AUTOHEADER $@
-	@$(AUTOHEADER)
+	@$(AUTOHEADER) --force
 
 reconfig: $(CONFIGURE_FILES) src/include/autoconf.h.in
 
@@ -263,7 +266,7 @@ CONFIGURE_ARGS	   := $(shell head -10 config.log | grep '^  \$$' | sed 's/^..../
 src/%all.mk: src/%all.mk.in src/%configure
 	@echo CONFIGURE $(dir $@)
 	@rm -f ./config.cache $(dir $<)/config.cache
-	@cd $(dir $<) && ./configure $(CONFIGURE_ARGS)
+	@cd $(dir $<) && ./configure $(CONFIGURE_ARGS) && touch $(notdir $@)
 endif
 
 .PHONY: check-includes
@@ -358,10 +361,11 @@ endif
 #
 #  Build a Debian package
 #
+DEBBUILDEXTRA = --jobs=auto
 .PHONY: deb
 deb:
 	fakeroot debian/rules debian/control #clean
-	fakeroot dpkg-buildpackage -b -uc
+	fakeroot dpkg-buildpackage $(DEBBUILDEXTRA) -b -uc
 
 #
 #  Build an RPM package
@@ -384,7 +388,7 @@ rpm: rpmbuild/SOURCES/freeradius-server-$(RADIUSD_VERSION_STRING).tar.bz2
 #
 .PHONY: warnings
 warnings:
-	@(make clean all 2>&1) | egrep -v '^/|deprecated|^In file included|: In function|   from |^HEADER|^CC|^LN' > warnings.txt
+	@(make clean all 2>&1) | egrep -v '^/|deprecated|^In file included|: In function|   from |^HEADER|^CC|^LN|^LINK' > warnings.txt
 	@wc -l warnings.txt
 
 #

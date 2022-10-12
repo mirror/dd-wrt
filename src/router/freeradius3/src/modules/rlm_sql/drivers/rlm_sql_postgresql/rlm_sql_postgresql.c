@@ -1,7 +1,7 @@
 /*
  * sql_postgresql.c		Postgresql rlm_sql driver
  *
- * Version:	$Id: a152f74099c7dffc3c693f40c33075a537c200b7 $
+ * Version:	$Id: 9114b020fc297d37ef40db5214369655e774a4d9 $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -37,7 +37,7 @@
  * Bernhard Herzog <bh@intevation.de>
  */
 
-RCSID("$Id: a152f74099c7dffc3c693f40c33075a537c200b7 $")
+RCSID("$Id: 9114b020fc297d37ef40db5214369655e774a4d9 $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/rad_assert.h>
@@ -58,6 +58,7 @@ RCSID("$Id: a152f74099c7dffc3c693f40c33075a537c200b7 $")
 typedef struct rlm_sql_postgres_config {
 	char const	*db_string;
 	bool		send_application_name;
+	char const     	*application_name;
 } rlm_sql_postgres_config_t;
 
 typedef struct rlm_sql_postgres_conn {
@@ -71,6 +72,7 @@ typedef struct rlm_sql_postgres_conn {
 
 static const CONF_PARSER driver_config[] = {
 	{ "send_application_name", FR_CONF_OFFSET(PW_TYPE_BOOLEAN, rlm_sql_postgres_config_t, send_application_name), "no" },
+	{ "application_name", FR_CONF_OFFSET(PW_TYPE_STRING, rlm_sql_postgres_config_t, application_name), NULL },
 	CONF_PARSER_TERMINATOR
 };
 
@@ -81,7 +83,8 @@ static int mod_instantiate(CONF_SECTION *conf, rlm_sql_config_t *config)
 #endif
 
 	rlm_sql_postgres_config_t	*driver;
-	char 				application_name[NAMEDATALEN];
+	char 				buffer[NAMEDATALEN];
+	char const	       		*application_name = NULL;
 	char				*db_string;
 
 #if defined(HAVE_OPENSSL_CRYPTO_H) && (defined(HAVE_PQINITOPENSSL) || defined(HAVE_PQINITSSL))
@@ -104,16 +107,22 @@ static int mod_instantiate(CONF_SECTION *conf, rlm_sql_config_t *config)
 	 *	Allow the user to set their own, or disable it
 	 */
 	if (driver->send_application_name) {
-		CONF_SECTION	*cs;
-		char const	*name;
+		if (driver->application_name && *driver->application_name) {
+			application_name = driver->application_name;
+		} else {
+			CONF_SECTION	*cs;
+			char const	*name;
 
-		cs = cf_item_parent(cf_section_to_item(conf));
+			cs = cf_item_parent(cf_section_to_item(conf));
 
-		name = cf_section_name2(cs);
-		if (!name) name = cf_section_name1(cs);
+			name = cf_section_name2(cs);
+			if (!name) name = cf_section_name1(cs);
 
-		snprintf(application_name, sizeof(application_name),
-			 "FreeRADIUS " RADIUSD_VERSION_STRING " - %s (%s)", main_config.name, name);
+			snprintf(buffer, sizeof(buffer),
+				 "FreeRADIUS " RADIUSD_VERSION_STRING " - %s (%s)", main_config.name, name);
+
+			application_name = buffer;
+		}
 	}
 
 	/*

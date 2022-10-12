@@ -25,7 +25,7 @@
 ** Function: fr_hmac_md5
 */
 
-RCSID("$Id: 88ba171aa0d3a1ba9597a8ecde17f9d9ddd39dda $")
+RCSID("$Id: 2aad490e307560874bfb6b1e8b5dffb7ebbf61ce $")
 
 #ifdef HAVE_OPENSSL_EVP_H
 #include <openssl/hmac.h>
@@ -36,7 +36,7 @@ RCSID("$Id: 88ba171aa0d3a1ba9597a8ecde17f9d9ddd39dda $")
 #include <freeradius-devel/md5.h>
 #include <freeradius-devel/openssl3.h>
 
-#ifdef HAVE_OPENSSL_EVP_H
+#if defined(HAVE_OPENSSL_EVP_H) && !defined(WITH_FIPS)
 /** Calculate HMAC using OpenSSL's MD5 implementation
  *
  * @param digest Caller digest to be filled in.

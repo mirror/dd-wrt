@@ -4,7 +4,7 @@
 /*
  * stats.h	Structures and functions for statistics.
  *
- * Version:	$Id: 6d62883d545c0f9c29da92ffcfe2281c13c9e29c $
+ * Version:	$Id: 68903f93497fb4f469d40ce440b9eb7c3eba15c8 $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -23,7 +23,7 @@
  * Copyright 2005,2006,2007,2008  The FreeRADIUS server project
  */
 
-RCSIDH(stats_h, "$Id: 6d62883d545c0f9c29da92ffcfe2281c13c9e29c $")
+RCSIDH(stats_h, "$Id: 68903f93497fb4f469d40ce440b9eb7c3eba15c8 $")
 
 #ifdef __cplusplus
 extern "C" {
@@ -44,6 +44,8 @@ typedef struct fr_stats_t {
 	uint64_t	total_no_records;
 	uint64_t	total_unknown_types;
 	uint64_t	total_timeouts;
+	uint64_t	total_conflicts;
+	uint64_t	unresponsive_child;
 	time_t		last_packet;
 	uint64_t	elapsed[8];
 } fr_stats_t;

@@ -1,7 +1,7 @@
 /*
  * tls.c
  *
- * Version:     $Id: 2b6736ac1fbc9b1ed528ad07d66d67bcf87902b8 $
+ * Version:     $Id: bd0a41169efbad8f11ea84a771cf3bba6e676046 $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -22,7 +22,7 @@
  * Copyright 2006  The FreeRADIUS server project
  */
 
-RCSID("$Id: 2b6736ac1fbc9b1ed528ad07d66d67bcf87902b8 $")
+RCSID("$Id: bd0a41169efbad8f11ea84a771cf3bba6e676046 $")
 USES_APPLE_DEPRECATED_API	/* OpenSSL API has been deprecated by Apple */
 
 #include <freeradius-devel/radiusd.h>
@@ -592,6 +592,10 @@ tls_session_t *tls_new_client_session(TALLOC_CTX *ctx, fr_tls_server_conf_t *con
 	request->reply = rad_alloc(request, false);
 
 	SSL_set_ex_data(ssn->ssl, FR_TLS_EX_INDEX_REQUEST, (void *)request);
+
+	if (conf->fix_cert_order) {
+		SSL_set_ex_data(ssn->ssl, FR_TLS_EX_INDEX_FIX_CERT_ORDER, (void *) &conf->fix_cert_order);
+	}
 
 	/*
 	 *	Add the message callback to identify what type of
@@ -1660,6 +1664,10 @@ static CONF_PARSER tls_server_config[] = {
 	{ "check_cert_issuer", FR_CONF_OFFSET(PW_TYPE_STRING, fr_tls_server_conf_t, check_cert_issuer), NULL },
 	{ "require_client_cert", FR_CONF_OFFSET(PW_TYPE_BOOLEAN, fr_tls_server_conf_t, require_client_cert), NULL },
 
+#if OPENSSL_VERSION_NUMBER >= 0x10101000L
+	{ "sigalgs_list", FR_CONF_OFFSET(PW_TYPE_STRING, fr_tls_server_conf_t, sigalgs_list), NULL },
+#endif
+
 #if OPENSSL_VERSION_NUMBER >= 0x10100000L
 	{ "reject_unknown_intermediate_ca", FR_CONF_OFFSET(PW_TYPE_BOOLEAN, fr_tls_server_conf_t, disallow_untrusted), .dflt = "no", },
 #endif
@@ -1724,6 +1732,8 @@ static CONF_PARSER tls_client_config[] = {
 	{ "cipher_list", FR_CONF_OFFSET(PW_TYPE_STRING, fr_tls_server_conf_t, cipher_list), NULL },
 	{ "check_cert_issuer", FR_CONF_OFFSET(PW_TYPE_STRING, fr_tls_server_conf_t, check_cert_issuer), NULL },
 	{ "ca_path_reload_interval", FR_CONF_OFFSET(PW_TYPE_INTEGER, fr_tls_server_conf_t, ca_path_reload_interval), "0" },
+
+	{ "fix_cert_order", FR_CONF_OFFSET(PW_TYPE_BOOLEAN, fr_tls_server_conf_t, fix_cert_order), NULL },
 
 #if OPENSSL_VERSION_NUMBER >= 0x0090800fL
 #ifndef OPENSSL_NO_ECDH
@@ -2974,12 +2984,6 @@ int cbtls_verify(int ok, X509_STORE_CTX *ctx)
 	lookup = depth;
 
 	/*
-	 *	Log client/issuing cert.  If there's an error, log
-	 *	issuing cert.
-	 */
-	if ((lookup > 1) && !my_ok) lookup = 1;
-
-	/*
 	 * Retrieve the pointer to the SSL of the connection currently treated
 	 * and the application specific data stored into the SSL object.
 	 */
@@ -2999,12 +3003,28 @@ int cbtls_verify(int ok, X509_STORE_CTX *ctx)
 	talloc_ctx = SSL_get_ex_data(ssl, FR_TLS_EX_INDEX_TALLOC);
 
 	/*
+	 *	Log client/issuing cert.  If there's an error, log
+	 *	issuing cert.
+	 *
+	 *	Inbound:   0 = client, 1 = server (intermediate CA), 2 = issuing CA
+	 *	Outbound:  0 = server, 2 = issuing CA.
+	 *
+	 *	Our array of certificates uses 0 for client, and 1 for server.  We
+	 *	also ignore subsequent certs.
+	 */
+	if (lookup > 1) {
+		if (!my_ok) lookup = 1;
+	} else {
+		lookup = (SSL_get_ex_data(ssl, FR_TLS_EX_INDEX_FIX_CERT_ORDER) != NULL);
+	}
+
+	/*
 	 *	Get the Serial Number
 	 */
 	buf[0] = '\0';
 	sn = X509_get_serialNumber(client_cert);
 
-	RDEBUG2("(TLS) Creating attributes from %s certificate", cert_names[lookup]);
+	RDEBUG2("(TLS) Creating attributes from %s certificate", cert_names[lookup ]);
  	RINDENT();
 
 	/*
@@ -4231,6 +4251,19 @@ post_ca:
 			return NULL;
 		}
 	}
+
+#if OPENSSL_VERSION_NUMBER >= 0x10101000L
+	if (conf->sigalgs_list) {
+		char *list;
+
+		memcpy(&list, &(conf->sigalgs_list), sizeof(list)); /* const issues */
+
+		if (SSL_CTX_set1_sigalgs_list(ctx, list) == 0) {
+			tls_error_log(NULL, "Failed setting signature list '%s'", conf->sigalgs_list);
+			return NULL;
+		}
+	}
+#endif
 
 	/*
 	 *	Tell OpenSSL PRETTY PLEASE MAY WE USE TLS 1.1.

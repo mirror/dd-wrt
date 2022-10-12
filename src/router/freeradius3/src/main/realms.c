@@ -1,7 +1,7 @@
 /*
  * realms.c	Realm handling code
  *
- * Version:     $Id: 0a3b8f94b86b0590951fa693198c9b702d5d8d29 $
+ * Version:     $Id: 497c8991d1eeb0514986e80196dd7a60ae0e05e8 $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -21,7 +21,7 @@
  * Copyright 2007  Alan DeKok <aland@deployingradius.com>
  */
 
-RCSID("$Id: 0a3b8f94b86b0590951fa693198c9b702d5d8d29 $")
+RCSID("$Id: 497c8991d1eeb0514986e80196dd7a60ae0e05e8 $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/realms.h>
@@ -345,8 +345,9 @@ static ssize_t xlat_home_server_dynamic(UNUSED void *instance, REQUEST *request,
 					char const *fmt, char *out, size_t outlen)
 {
 	int type;
-	char const *p;
+	char const *p, *name;
 	home_server_t *home;
+	char buffer[1024];
 
 	if (outlen < 2) return 0;
 
@@ -376,7 +377,29 @@ static ssize_t xlat_home_server_dynamic(UNUSED void *instance, REQUEST *request,
 	p = fmt;
 	while (isspace((int) *p)) p++;
 
-	home = home_server_byname(p, type);
+	/*
+	 *	Allow for dynamic strings as arguments.
+	 */
+	if (*p == '&') {
+		VALUE_PAIR *vp;
+
+		if ((radius_get_vp(&vp, request, p) < 0) || !vp ||
+		    (vp->da->type != PW_TYPE_STRING)) {
+			return -1;
+		}
+		name = vp->vp_strvalue;
+
+	} else if (*p == '%') {
+		if (radius_xlat(buffer, sizeof(buffer), request, p, NULL, NULL) < 0) {
+			return -1;
+		}
+		name = buffer;
+
+	} else {
+		name = p;
+	}
+
+	home = home_server_byname(name, type);
 	if (!home) {
 		*out = '\0';
 		return 0;
@@ -1074,10 +1097,21 @@ home_server_t *home_server_afrom_cs(TALLOC_CTX *ctx, realm_config_t *rc, CONF_SE
 		 *	Parse the SSL client configuration.
 		 */
 		if (tls) {
+			int rcode;
+
 			home->tls = tls_client_conf_parse(tls);
 			if (!home->tls) {
 				goto error;
 			}
+
+			/*
+			 *	Connection timeouts for outgoing TLS connections.
+			 */
+
+			rcode = cf_item_parse(tls, "connect_timeout", FR_ITEM_POINTER(PW_TYPE_INTEGER, &home->connect_timeout), NULL);
+			if (rcode < 0) goto error;
+
+			if (!home->connect_timeout || (home->connect_timeout > 30)) home->connect_timeout = 30;
 		}
 #endif
 	} /* end of parse home server */
@@ -2463,6 +2497,11 @@ int realms_init(CONF_SECTION *config)
 			if (dp->d_name[0] == '.') continue;
 
 			/*
+			 *	Skip the TLS configuration.
+			 */
+			if (strcmp(dp->d_name, "tls.conf") == 0) continue;
+		
+			/*
 			 *	Check for valid characters
 			 */
 			for (p = dp->d_name; *p != '\0'; p++) {
@@ -2474,7 +2513,7 @@ int realms_init(CONF_SECTION *config)
 				break;
 			}
 			if (*p != '\0') continue;
-		
+
 			snprintf(conf_file, sizeof(conf_file), "%s/%s", rc->directory, dp->d_name);
 			if (home_server_afrom_file(conf_file) < 0) {
 				ERROR("Failed reading home_server from %s - %s",
@@ -3080,8 +3119,14 @@ int home_server_afrom_file(char const *filename)
 
 	home->dynamic = true;
 
-	if (home->virtual_server || home->dual) {
-		fr_strerror_printf("Dynamic home_server '%s' cannot have 'server' or 'auth+acct'", p);
+	if (home->virtual_server) {
+		fr_strerror_printf("Dynamic home_server '%s' cannot have 'server = %s' configuration item", p, home->virtual_server);
+		talloc_free(home);
+		goto error;
+	}
+
+	if (home->dual) {
+		fr_strerror_printf("Dynamic home_server '%s' is missing 'type', or it is set to 'auth+acct'.  Please specify 'type = auth' or 'type = acct', etc.", p);
 		talloc_free(home);
 		goto error;
 	}

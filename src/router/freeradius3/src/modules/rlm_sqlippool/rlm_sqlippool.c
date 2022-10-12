@@ -15,7 +15,7 @@
  */
 
 /**
- * $Id: 5a0a6f15096a8ed2f1a1c9f4e9a48d955c87dff9 $
+ * $Id: 22e93814c701ba46fcfb4d8b348b03b092eb0dc5 $
  * @file rlm_sqlippool.c
  * @brief Allocates an IP address / prefix from pools stored in SQL.
  *
@@ -23,7 +23,7 @@
  * @copyright 2006  The FreeRADIUS server project
  * @copyright 2006  Suntel Communications
  */
-RCSID("$Id: 5a0a6f15096a8ed2f1a1c9f4e9a48d955c87dff9 $")
+RCSID("$Id: 22e93814c701ba46fcfb4d8b348b03b092eb0dc5 $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/rad_assert.h>
@@ -537,7 +537,7 @@ static int mod_instantiate(CONF_SECTION *conf, void *instance)
 	}
 
 	if (inst->allocate_clear) {
-		FR_INTEGER_BOUND_CHECK("allocate_clear_timeout", inst->allocate_clear_timeout, >, 1);
+		FR_INTEGER_BOUND_CHECK("allocate_clear_timeout", inst->allocate_clear_timeout, >=, 1);
 		FR_INTEGER_BOUND_CHECK("allocate_clear_timeout", inst->allocate_clear_timeout, <=, 2*86400);
 	}
 

@@ -15,7 +15,7 @@
  */
 
 /**
- * $Id: 2c3a1bf5ca9f7957e2f9a62c6ff507a609f56b25 $
+ * $Id: 410c5713d090d27d5c776caed1fce74356b77043 $
  *
  * @file process.c
  * @brief Defines the state machines that control how requests are processed.
@@ -24,7 +24,7 @@
  * @copyright 2012  Alan DeKok <aland@deployingradius.com>
  */
 
-RCSID("$Id: 2c3a1bf5ca9f7957e2f9a62c6ff507a609f56b25 $")
+RCSID("$Id: 410c5713d090d27d5c776caed1fce74356b77043 $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/process.h>
@@ -1028,6 +1028,8 @@ static bool request_max_time(REQUEST *request)
 			      request->number,
 			      request->component ? request->component : "<core>",
 			      request->module ? request->module : "<core>");
+			request->max_time = true;
+
 			exec_trigger(request, NULL, "server.thread.unresponsive", true);
 		}
 #endif
@@ -1827,14 +1829,33 @@ int request_receive(TALLOC_CTX *ctx, rad_listen_t *listener, RADIUS_PACKET *pack
 			      client->shortname,
 			      packet->src_port, packet->id,
 			      old_module);
-		}
 
-		/*
-		 *	Mark the old request as done.  If there's no
-		 *	child, the request will be cleaned up
-		 *	immediately.  If there is a child, we'll set a
-		 *	timer to go clean up the request.
-		 */
+#ifdef WITH_STATS
+			switch (packet->code) {
+			case PW_CODE_ACCESS_REQUEST:
+				FR_STATS_INC(auth, total_conflicts);
+				break;
+
+#ifdef WITH_ACCOUNTING
+			case PW_CODE_ACCOUNTING_REQUEST:
+				FR_STATS_INC(acct, total_conflicts);
+				break;
+#endif
+#ifdef WITH_COA
+			case PW_CODE_COA_REQUEST:
+				FR_STATS_INC(coa, total_conflicts);
+				break;
+
+			case PW_CODE_DISCONNECT_REQUEST:
+				FR_STATS_INC(dsc, total_conflicts);
+				break;
+#endif
+
+			default:
+				break;
+			}
+#endif	/* WITH_STATS */
+		}
 	} /* else the new packet is unique */
 
 	/*
@@ -3171,9 +3192,10 @@ static int request_will_proxy(REQUEST *request)
 		}
 
 		/*
-		 *	Nothing does CoA over TCP.
+		 *	Find the home server.
 		 */
 		home = home_server_find(&dst_ipaddr, dst_port, IPPROTO_UDP);
+		if (!home) home = home_server_find(&dst_ipaddr, dst_port, IPPROTO_TCP);
 		if (!home) {
 			char buffer[256];
 
@@ -4859,6 +4881,7 @@ static bool coa_max_time(REQUEST *request)
 	 */
 	if (request->child_state == REQUEST_DONE) {
 	done:
+		request->max_time = true;
 		request_done(request, FR_ACTION_MAX_TIME);
 		return true;
 	}
@@ -4895,7 +4918,8 @@ static bool coa_max_time(REQUEST *request)
 					 buffer, sizeof(buffer)),
 			       request->proxy->dst_port,
 			       mrd);
-			goto done;
+			request_done(request, FR_ACTION_DONE);
+			return true;
 		}
 
 #ifdef HAVE_PTHREAD_H

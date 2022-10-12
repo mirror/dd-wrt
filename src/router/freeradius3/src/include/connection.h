@@ -16,7 +16,7 @@
 #ifndef FR_CONNECTION_H
 #define FR_CONNECTION_H
 /**
- * $Id: fb49e28cd2a2110a43632536daf29a8fc60786a3 $
+ * $Id: e63820db84e9e3129a71ee8599280c2592f78605 $
  *
  * @file connection.h
  * @brief Structures, prototypes and global variables for server connection pools.
@@ -25,7 +25,7 @@
  * @copyright 2012  Alan DeKok <aland@deployingradius.com>
  */
 
-RCSIDH(connection_h, "$Id: fb49e28cd2a2110a43632536daf29a8fc60786a3 $")
+RCSIDH(connection_h, "$Id: e63820db84e9e3129a71ee8599280c2592f78605 $")
 
 #include <freeradius-devel/conffile.h>
 
@@ -73,22 +73,11 @@ typedef int (*fr_connection_alive_t)(void *opaque, void *connection);
 /*
  *	Pool allocation/initialisation
  */
-fr_connection_pool_t	*fr_connection_pool_init(TALLOC_CTX *ctx,
-						 CONF_SECTION *cs,
-						 void *opaque,
-						 fr_connection_create_t c,
-						 fr_connection_alive_t a,
-						 char const *log_prefix,
-						 char const *trigger_prefix);
-
 fr_connection_pool_t	*fr_connection_pool_module_init(CONF_SECTION *module,
 							void *opaque,
 							fr_connection_create_t c,
 							fr_connection_alive_t a,
 							char const *prefix);
-
-fr_connection_pool_t	*fr_connection_pool_copy(TALLOC_CTX *ctx, fr_connection_pool_t *pool, void *opaque);
-
 
 /*
  *	Pool getters
@@ -110,6 +99,28 @@ void	fr_connection_release(fr_connection_pool_t *pool, void *conn);
 void	*fr_connection_reconnect(fr_connection_pool_t *pool, void *conn);
 
 int	fr_connection_close(fr_connection_pool_t *pool, void *conn, char const *msg);
+
+typedef struct {
+	time_t		last_checked;		//!< Last time we pruned the connection pool.
+	time_t		last_opened;		//!< Last time we opened a connection.
+	time_t		last_closed;		//!< Last time we closed a connection.
+	time_t		last_failed;		//!< Last time we tried to spawn a connection but failed.
+	time_t		last_throttled;		//!< Last time we refused to spawn a connection because
+						//!< the last connection failed, or we were already spawning
+						//!< a connection.
+	time_t		last_at_max;		//!< Last time we hit the maximum number of allowed
+						//!< connections.
+
+	uint64_t	opened;	       		//!< Number of connections opened over the lifetime
+						//!< of the pool.
+	uint64_t	closed;			//!< Number of connections which were closed for this pool
+	uint64_t	failed;			//!< Number of failed connections for this pool.
+
+	uint32_t       	num;			//!< Number of connections in the pool.
+	uint32_t	active;	 		//!< Number of currently reserved connections.
+} fr_connection_pool_stats_t;
+
+fr_connection_pool_stats_t const *fr_connection_pool_stats(CONF_SECTION *cs);
 
 #ifdef __cplusplus
 }

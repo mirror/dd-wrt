@@ -2,7 +2,7 @@
 ##
 ## mods-available/sql -- SQL modules
 ##
-##	$Id: 61a4cc55d700bf204890af60d88aba497f406a06 $
+##	$Id: 7bcb664d32fecca0cd20c1d81bac13f0e1b9991b $
 
 ######################################################################
 #
@@ -110,6 +110,12 @@ sql {
 		# Send application_name to the postgres server
 		# Only supported in PG 9.0 and greater. Defaults to no.
 		send_application_name = yes
+
+		#
+		#  The default application name is "FreeRADIUS - .." with the current version.
+		#  The application name can be customized here to any non-zero value.
+		#
+#		application_name = ""
 	}
 
 	#

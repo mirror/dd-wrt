@@ -1,16 +1,13 @@
 AC_INIT(rlm_opendirectory.c)
 AC_REVISION($Revision$)
-AC_DEFUN(modname,[rlm_opendirectory])
-
-AC_ARG_WITH([]modname,
-[  --with-[]modname              build []modname. (default=yes)])
+FR_INIT_MODULE([rlm_opendirectory], [OpenDirectory support])
 
 if test x$with_[]modname != xno; then
 
 	AC_PROG_CC
 	AC_PROG_CPP
 
-	mod_ldflags="${mod_ldflags} -framework DirectoryService" 
+	mod_ldflags="${mod_ldflags} -F /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/System/Library/Frameworks -framework DirectoryService"
 	
 	FR_SMART_CHECK_INCLUDE(membership.h)
 	if test "$ac_cv_header_membership_h" != "yes"; then

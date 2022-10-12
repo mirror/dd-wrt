@@ -1,5 +1,5 @@
 ###########################################################################
-# $Id: 41fcccad1c012226d12cc721518fe91e311e55e2 $                 #
+# $Id: 84846b20c93e92ba785a9f9e49375246309b48b9 $                 #
 #                                                                         #
 #  schema.sql                       rlm_sql - FreeRADIUS SQL Module       #
 #                                                                         #
@@ -167,4 +167,13 @@ CREATE TABLE IF NOT EXISTS nas (
   description varchar(200) DEFAULT 'RADIUS Client',
   PRIMARY KEY (id),
   KEY nasname (nasname)
-);
+) ENGINE = INNODB;
+
+#
+# Table structure for table 'nasreload'
+#
+CREATE TABLE IF NOT EXISTS nasreload (
+  nasipaddress varchar(15) NOT NULL,
+  reloadtime datetime NOT NULL,
+  PRIMARY KEY (nasipaddress)
+) ENGINE = INNODB;

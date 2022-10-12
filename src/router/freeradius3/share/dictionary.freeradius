@@ -4,7 +4,7 @@
 #
 #	The FreeRADIUS Vendor-Specific dictionary.
 #
-# Version:	$Id: f6ead2eb09e66607b6567ffe584b916e47144a7c $
+# Version:	$Id: 14fed7af4e18885cf59c7f5211feb58e66c04b77 $
 #
 
 VENDOR		FreeRADIUS			11344
@@ -184,5 +184,10 @@ ATTRIBUTE	FreeRADIUS-Stats-Error			187	string
 
 ATTRIBUTE	FreeRADIUS-Stats-Client-IPv6-Address	188	ipv6addr
 ATTRIBUTE	FreeRADIUS-Stats-Server-IPv6-Address	189	ipv6addr
+
+# 190 is reserved
+
+ATTRIBUTE	FreeRADIUS-Total-Auth-Conflicts		191	integer
+ATTRIBUTE	FreeRADIUS-Total-Acct-Conflicts		192	integer
 
 END-VENDOR FreeRADIUS

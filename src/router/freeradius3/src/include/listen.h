@@ -16,7 +16,7 @@
 #ifndef LISTEN_H
 #define LISTEN_H
 /**
- * $Id: 6752e0dbd6cf974e15b04ce1c4fc52a79959e139 $
+ * $Id: e756e953b1ba68029147058498d2d030570c7f77 $
  *
  * @file listen.h
  * @brief The listener API.
@@ -178,6 +178,7 @@ typedef struct listen_socket_t {
 	tls_session_t	*ssn;
 	REQUEST		*request; /* horrible hacks */
 	VALUE_PAIR	*certs;
+	uint32_t	connect_timeout;
 	pthread_mutex_t mutex;
 	uint8_t		*data;
 	size_t		partial;
