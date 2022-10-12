@@ -54,9 +54,8 @@ div.infopage #header {
   width: 65.536em;
   padding: .8em .8em 0;
 }
-#contents.syslog-padding {
-  width: initial;
-  padding: .906em .93em 0;
+.syslog-padding {
+  padding: .906em .23em .36em;
 }
 #contentsInfo {
   width: 87.471em;
@@ -373,7 +372,11 @@ table#radio_table {
     #ccd 1px, #ccd 3px );
 }
 #mainno .submitFooter {
-  margin: -.4rem .906em 1rem;
+  margin: -.4rem .606em .906em;
+}
+#syslog {
+  width: 87.3em;
+  margin-top: -.9rem;
 }
 .submitFooter .button {
   padding: .1rem 1rem;

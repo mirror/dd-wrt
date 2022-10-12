@@ -50,9 +50,9 @@ addEvent(window, "unload", function() {
 					<div id="logo"><h1><% show_control(); %></h1></div>
 				<% do_menu("Status_Router.asp","Syslog.asp"); %>
 				</div>
-				<div id="mainno">
-					<!-- add padding to #contents so that submitfooter has padding on sides/bottom -->
-					<div id="contents" class="syslog-padding">
+				<!-- add padding to #contents so that submitfooter has padding on sides/bottom -->
+				<div id="mainno" class="syslog-padding">
+					<div id="contents">
 						  <!-- see syslogd dir stylesheets for .syslog_bg padding/margins -->
 							<script type="text/javascript">
 								//<![CDATA[

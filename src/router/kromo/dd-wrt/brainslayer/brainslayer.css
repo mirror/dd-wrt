@@ -17,6 +17,9 @@ input, select,
 option, .button {
   font-weight: bold;
 }
+input, select {
+  border-radius: 4px;
+}
 select {
   min-width: 6rem;
 }
@@ -157,16 +160,11 @@ form[name='macfilter'] td[align='left'] {
  }
 .submitFooter .button {
   padding: 0 1rem;
-  height: 1.433rem;
+  height: 1.333rem;
 }
 #mainno .submitFooter {
-  margin: 3.7rem 19em .906em;
-  min-width: 78.333%;
-}
-@media screen and (width: 100vw) {
-  #mainno .submitFooter {
-    max-width: 80.3%;
-  }
+  margin: .906em 0 0 13.6rem;
+  width: calc(81% - 1.7rem);
 }
 .syslog-padding {
   padding: .93em;
@@ -305,9 +303,10 @@ iframe[src*='/graph_if.svg'] {
 iframe#syslog {
   left: 13.55rem;
   top: 5rem;
-  max-width: 82%;
+  max-width: 81%;
   position: relative;
   height: 811px;
+  margin-bottom: 3.8rem;
 }
 .progressbar {
   visibility: visible;
