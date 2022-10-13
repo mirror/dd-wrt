@@ -108,7 +108,7 @@ int guessbootsize(void *offset, unsigned int maxscan)
 			}
 			if (!memcmp(&ofs[i+9], "ISQ-4000",8)) {
 				printk(KERN_EMERG "KT412H detected\n");
-				return 0x50000;	// uboot, lzma image            
+//				return 0x50000;	// uboot, lzma image            
 			}
 			printk(KERN_EMERG "uboot detected\n");
 			return i * 4;	// uboot, lzma image
@@ -416,10 +416,12 @@ static int __init ar7240_flash_init(void)
 		dir_parts[FULLFLASH].offset = 0;	// linux + nvram = phy size
 		dir_parts[FULLFLASH].size = mtd->size;	// linux + nvram = phy size
 		if (!sqsfound) {
+//		dir_parts[BOOT].offset = 0;
+//		dir_parts[BOOT].size = 0x50000;
 		dir_parts[LINUX].name = "dummy";
 		dir_parts[DDWRT].name = "dummy2";
-//		dir_parts[ENV].offset = 0x40000;
-//		dir_parts[ENV].size = mtd->erasesize;
+		dir_parts[ENV].offset = 0x40000;
+		dir_parts[ENV].size = mtd->erasesize;
 		dir_parts[NVRAM].offset = mtd->size - (mtd->erasesize * 3);
 		dir_parts[NVRAM].size = mtd->erasesize*2;
 		dir_parts[BOARD_CONFIG].offset = mtd->size - mtd->erasesize;
