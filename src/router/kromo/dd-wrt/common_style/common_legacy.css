@@ -42,9 +42,11 @@ input.button {
 }
 input[type='file'] {
   max-width: 400px;
+  line-height: 26px;
+  padding: 4px;
+  margin-top: -8px;
 }
-input.button[disabled],
-input[disabled], select[disabled], .off {
+[disabled], :disabled, .off {
   cursor: default;
   opacity: .6;
 }
@@ -62,11 +64,10 @@ input[disabled], select[disabled], .off {
   width: 100px;
   z-index: 0;
 }
-#help a:hover, a[title='Geotool'] {
+#help a:hover, .link {
   text-decoration: underline;
   color: #04c;
 }
-
 div.bulle {
   position: absolute;
   visibility: hidden;

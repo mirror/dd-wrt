@@ -205,7 +205,7 @@ table, .table {
 }
 #logout {
   position: absolute;
-  margin-top: -3px !important;
+  margin-top: -4px !important;
   right: .1rem;
   z-index: 1;
   cursor: pointer;
