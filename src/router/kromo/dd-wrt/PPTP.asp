@@ -180,7 +180,7 @@ addEvent(window, "load", function() {
 	show_layer_ext(document.setup.openvpn_enable, 'idsstatic', <% nvem("openvpn_tls_btn", "2", "1", "0"); %> == 1);
 	show_layer_ext(document.setup.openvpn_enable, 'idspki', <% nvem("openvpn_tls_btn", "2", "0", "1"); %> == 1);
 	show_layer_ext(document.setup.openvpn_pkcs, 'idspkcs12y', <% nvem("openvpn_pkcs", "1", "1", "0"); %> == 1);
-	show_layer_ext(document.setup.openvpnc_pkcs, 'idspkcs12n', <% nvem("openvpn_pkcs", "0", "1", "1"); %> == 1);
+	show_layer_ext(document.setup.openvpn_pkcs, 'idspkcs12n', <% nvem("openvpn_pkcs", "0", "1", "0"); %> == 1);
 	show_layer_ext(document.setup.openvpn_adv, 'idmtu', <% nvem("openvpn_adv", "1", "1", "0"); %> == 1);
 	show_layer_ext(document.setup.openvpncl_enable, 'idvpncl', <% nvem("openvpncl_enable", "1", "1", "0"); %> == 1);
 	show_layer_ext(document.setup.openvpncl_adv, 'idmtucl', <% nvem("openvpncl_adv", "1", "1", "0"); %> == 1);
@@ -195,7 +195,7 @@ addEvent(window, "load", function() {
 	show_layer_ext(document.setup.openvpncl_enable, 'idtls', <% nvem("openvpncl_tls_btn", "3", "0", "1"); %> == 1);
 	show_layer_ext(document.setup.openvpncl_enable, 'idpki', <% nvem("openvpncl_tls_btn", "2", "0", "1"); %> == 1);
 	show_layer_ext(document.setup.openvpncl_pkcs, 'idpkcs12y', <% nvem("openvpncl_pkcs", "1", "1", "0"); %> == 1);
-	show_layer_ext(document.setup.openvpncl_pkcs, 'idpkcs12n', <% nvem("openvpncl_pkcs", "0", "1", "1"); %> == 1);
+	show_layer_ext(document.setup.openvpncl_pkcs, 'idpkcs12n', <% nvem("openvpncl_pkcs", "0", "1", "0"); %> == 1);
 	show_layer_ext(document.setup.openvpncl_enable, 'idstatic', <% nvem("openvpncl_tls_btn", "2", "1", "0"); %> == 1);
 	//show_layer_ext(document.setup.openvpncl_enable, 'idstatkey', <% nvem("openvpncl_keytype", "1", "1", "0"); %> == 1);
 	show_layer_ext(document.setup.setherserver_enable, 'idsether', <% nvem("setherserver_enable", "1", "1", "0"); %> == 1);
