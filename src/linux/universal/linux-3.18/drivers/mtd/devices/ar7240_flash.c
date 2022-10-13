@@ -106,6 +106,10 @@ int guessbootsize(void *offset, unsigned int maxscan)
 				printk(KERN_EMERG "uboot detected (MMS344 Quirk)\n");
 				return (i * 4) + 0x20000;	// uboot, lzma image            
 			}
+			if (!memcmp(&ofs[i+9], "ISQ-4000",8)) {
+				printk(KERN_EMERG "KT412H detected\n");
+				return 0x50000;	// uboot, lzma image            
+			}
 			printk(KERN_EMERG "uboot detected\n");
 			return i * 4;	// uboot, lzma image
 		}
@@ -414,8 +418,8 @@ static int __init ar7240_flash_init(void)
 		if (!sqsfound) {
 		dir_parts[LINUX].name = "dummy";
 		dir_parts[DDWRT].name = "dummy2";
-		dir_parts[ENV].offset = 0x40000;
-		dir_parts[ENV].size = mtd->erasesize;
+//		dir_parts[ENV].offset = 0x40000;
+//		dir_parts[ENV].size = mtd->erasesize;
 		dir_parts[NVRAM].offset = mtd->size - (mtd->erasesize * 3);
 		dir_parts[NVRAM].size = mtd->erasesize*2;
 		dir_parts[BOARD_CONFIG].offset = mtd->size - mtd->erasesize;
