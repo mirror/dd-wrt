@@ -56,7 +56,7 @@ select:focus {
   box-shadow: 0 0 5px 1px #115b80;
 }
 input:focus-visible, textarea:focus-visible,
-select:focus-visible {
+select:focus-visible, pre:focus-visible {
   border: 1px solid #115b80;
   box-shadow: 0 0 5px 1px #115b80;
   outline: 0;
@@ -70,12 +70,12 @@ input[type='checkbox'],
 input[type='radio'] {
   accent-color: #115b80;
 }
-.button, .button[disabled]:hover {
+.button, .button[disabled]:hover, ::file-selector-button {
   background: #115b80;
   color: #fff;
   filter: brightness(1);
 }
-.button:hover {
+.button:hover, ::file-selector-button:hover {
   filter: brightness(1.2);
 }
 .button.green_btn {

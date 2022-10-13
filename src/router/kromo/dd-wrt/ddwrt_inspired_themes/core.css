@@ -223,9 +223,6 @@ body .message {
   border-color: var(--bg-3);
   border-radius: 4px;
 }
-#logout {
-  margin-top: -4px !important;
-}
 .logout {
   fill: var(--v9-9);
 }

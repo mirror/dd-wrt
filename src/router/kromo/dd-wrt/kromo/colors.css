@@ -13,7 +13,6 @@ body.gui, #header {
   text-decoration: none;
 }
 #statusInfo a:hover {
-  color: #0b3e57;
   text-decoration: underline;
 }
 body, .popup, .popup_bg {
@@ -89,9 +88,7 @@ input, select {
   box-shadow: 0 1px 1px rgba(0, 0, 0, .075) inset;
   transition: all .15s ease-in-out 0s;
 }
-#ip_count:hover, [title*='Search']:hover,
-[title*='Chain']:hover, [title*='Monitoring']:hover,
-a[title='Geotool']:hover {
+.link:hover {
   color: #1a89c0;
 }
 .progressbar {

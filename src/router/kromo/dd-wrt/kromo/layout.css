@@ -67,7 +67,7 @@ select {
   font-size: 12px;
   height: 1.6rem;
   min-width: 5.66rem;
-  border-radius: 4px;
+  border-radius: 2px;
   vertical-align: middle;
 }
 select[name='time_zone'] {
@@ -354,7 +354,7 @@ table[summary='ports forwarding table'] input[size='10'] {
   text-decoration: none;
   text-transform: lowercase;
 }
-#help a:hover, a[title='Geotool'] {
+#help a:hover, .link {
   text-decoration: underline;
 }
 #logout {
@@ -377,6 +377,9 @@ table[summary='ports forwarding table'] input[size='10'] {
   margin: 0;
   text-align: center;
   border-radius: 2px;
+}
+#mainno .submitFooter {
+  margin: -.7em 0 0;
 }
 .stick {
   position: sticky;
@@ -454,6 +457,7 @@ td .meter {
 /*! fix spacing between dd-wrt link above paypal and top*/
 .center a[href] {
   line-height: 2.2;
+  outline: 0;
 }
 .button {
   border: 0;
@@ -468,7 +472,7 @@ td .meter {
 }
 [disabled], :disabled, .off {
   cursor: default;
-  opacity: .6;
+  opacity: .8;
 }
 input[onclick*='bond_del'] {
   margin-top: -.3rem;
