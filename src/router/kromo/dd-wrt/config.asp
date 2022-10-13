@@ -7,7 +7,7 @@ function to_submit(F) {
 		alert(errmsg.err42);
 		return false;
 	}
-	F.restore_button.value = sbutton.restored;
+	F.save_button.value = sbutton.restored;
 	applyupdate(F, errmsg.err101,share.secondcharacter);
 	return true;
 }
@@ -62,7 +62,7 @@ addEvent(window, "unload", function() {
 								<script type="text/javascript">
 								//<![CDATA[
 								document.write("<input class=\"button\" type=\"button\" name=\"backup_button\" value=\"" + sbutton.backup + "\" onclick=\"window.location.href='/<% get_backup_name(); %>';\" />");
-								document.write("<input class=\"button\" type=\"button\" name=\"restore_button\" value=\"" + sbutton.restore + "\" onclick=\"to_submit(this.form);\" />");
+								document.write("<input class=\"button\" type=\"button\" name=\"save_button\" value=\"" + sbutton.restore + "\" onclick=\"to_submit(this.form);\" />");
 								//]]>
 								</script>
 							</div>
