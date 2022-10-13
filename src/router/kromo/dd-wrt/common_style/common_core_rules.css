@@ -47,7 +47,7 @@ input[type='radio'] {
 }
 input:focus, textarea:focus,
 input:focus-visible, textarea:focus-visible,
-select:focus-within {
+select:focus-within, pre:focus-visible {
   box-shadow: 0 0 5px 1px var(--ac-2);
   border: 1px solid var(--ac-2);
   outline: 0;

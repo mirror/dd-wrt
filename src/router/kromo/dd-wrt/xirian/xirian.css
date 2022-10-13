@@ -114,8 +114,7 @@ h2 {
 #menu li span, #menu li a:hover {
   background: linear-gradient(0deg, #ededed, #fff 100%);
 }
-#ip_count:hover, [title*='Search']:hover,
-[title*='Chain']:hover, [title*='Monitoring']:hover {
+.link:hover {
   color: #1c81b3;
 }
 #logout {

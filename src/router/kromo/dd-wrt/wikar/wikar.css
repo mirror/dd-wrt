@@ -140,12 +140,8 @@ body, .gui {
   animation: wut .6s ease;
 }
 @keyframes wut {
-  0% {
-    padding-bottom: .362em;
-  }
-  50%, 100% {
-    padding-bottom: 0;
-  }
+  0% { padding-bottom: .362em; }
+  50%, 100% { padding-bottom: 0; }
 }
 #menuSub {
   background-color: #000;
@@ -195,8 +191,7 @@ fieldset legend {
 .setting input {
   margin: 2px 4px 4px 0;
 }
-#ip_count:hover, [title*='Search']:hover,
-[title*='Chain']:hover, [title*='Monitoring']:hover {
+.link:hover {
   color: #483c9f;
 }
 input[type='checkbox'],
