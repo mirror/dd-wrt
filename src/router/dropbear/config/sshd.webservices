@@ -13,11 +13,6 @@
 			<input class="spaceradio" type="radio" name="sshd_forwarding" value="0" <% nvc("sshd_forwarding", "0"); %> /><% tran("share.disable"); %>
 		</div>
 		<div class="setting">
-			<div class="label"><% tran("service.ssh_password"); %></div>
-			<input class="spaceradio" type="radio" name="sshd_passwd_auth" value="1" <% nvc("sshd_passwd_auth", "1"); %> /><% tran("share.enable"); %>&nbsp;
-			<input class="spaceradio" type="radio" name="sshd_passwd_auth" value="0" <% nvc("sshd_passwd_auth", "0"); %> /><% tran("share.disable"); %>
-		</div>
-		<div class="setting">
 			<div class="label"><% tran("share.port"); %></div>
 			<input class="num" maxlength="5" size="5" name="sshd_port" onblur="valid_range(this,1,65535,share.port)" value="<% nvg("sshd_port"); %>" />
 			<span class="default">
@@ -28,8 +23,13 @@
 			</script></span>
 		</div>
 		<div class="setting">
+			<div class="label"><% tran("service.ssh_password"); %></div>
+			<input class="spaceradio" type="radio" name="sshd_passwd_auth" value="1" <% nvc("sshd_passwd_auth", "1"); %> onclick="show_layer_ext(this, 'idauthkeys', false)" /><% tran("share.enable"); %>&nbsp;
+			<input class="spaceradio" type="radio" name="sshd_passwd_auth" value="0" <% nvc("sshd_passwd_auth", "0"); %> onclick="show_layer_ext(this, 'idauthkeys', true)" /><% tran("share.disable"); %>
+		</div>
+		<div id="idauthkeys" class="setting">
 			<div class="label"><% tran("service.ssh_key"); %></div>
-			<textarea id="sshd_authorized_keys" name="sshd_authorized_keys" cols="60" rows="2" wrap="off">&nbsp;</textarea>
+			<textarea id="sshd_authorized_keys" name="sshd_authorized_keys" cols="60" rows="4" wrap="hard">&nbsp;</textarea>
 			<script type="text/javascript">
 			//<![CDATA[
 				var var_authorized_keys = fix_cr( '<% nvg("sshd_authorized_keys"); %>' );
