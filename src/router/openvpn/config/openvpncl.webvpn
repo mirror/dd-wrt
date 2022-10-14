@@ -385,7 +385,7 @@
 		<fieldset>
 			<legend><% tran("eoip.importt"); %></legend>
 			<div class="setting">
-				<div class="label"><% tran("share.choice"); %></div>
+				<div class="label"><% tran("config.mess2"); %></div>
 				<input id="vpnimportfile" type="file" accept=".conf,.ovpn" onchange="import_vpntunnel(this.form, id);" />
 			</div>
 		</fieldset>
