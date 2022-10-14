@@ -785,19 +785,13 @@ struct mac80211_info *mac80211_assoclist(char *interface)
 		ifname = strrchr(globbuf.gl_pathv[i], '/');
 		if (!ifname)
 			continue;
-		char *oldhistory = history;
-		if (oldhistory) {
-			asprintf(&history, "%s %s", oldhistory, ifname + 1);
-			free(oldhistory);
-			oldhistory = NULL;
-		} else {
-			asprintf(&history, "%s", ifname + 1);
-		}
-		char *next;
-		char ifcheck[64];
-		foreach(ifcheck, history, next) {
-			if (!strcmp(ifcheck, ifname + 1))
-				goto skip;
+		if (history) {
+			char *next;
+			char ifcheck[64];
+			foreach(ifcheck, history, next) {
+				if (!strcmp(ifcheck, ifname + 1))
+					goto skip;
+			}
 		}
 		// get noise for the actual interface
 		getNoise_mac80211_internal(ifname + 1, data.mac80211_info);
@@ -807,6 +801,15 @@ struct mac80211_info *mac80211_assoclist(char *interface)
 		if (is_ath10k(ifname + 1))
 			data.iftype = 1;
 		unl_genl_request(&unl, msg, mac80211_cb_stations, &data);
+
+		char *oldhistory = history;
+		if (oldhistory) {
+			asprintf(&history, "%s %s", oldhistory, ifname + 1);
+			free(oldhistory);
+			oldhistory = NULL;
+		} else {
+			asprintf(&history, "%s", ifname + 1);
+		}
 	      skip:;
 	}
 	if (history)
