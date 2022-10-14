@@ -598,13 +598,13 @@ config.legend="Backup Settings";
 config.mess1="Click the <em>" + sbutton.backup + "</em> button to download your current configuration settings file to disk.";
 config.h22="Restore Configuration";
 config.legend2="Restore Settings";
-config.mess2="Please select a file to restore";
+config.mess2="Select a file to restore";
 config.mess3="W A R N I N G";
 config.mess4="Only upload a backup file generated with DD-WRT's firmware and from the same model of router.<br />Do not upload any backup configuration files that were not created by this interface!";
 
 //help container
 var hconfig=new Object();
-hconfig.right2="You may backup your current configuration in case you need to reset the router back to factory default settings.<br /><br />Click the <em>" + sbutton.backup + "</em> button to backup your current configuration to a file saved to disk.<br /> Tip: Over terminal type <b>nvram show > /tmp/mybackup.txt</b> and grab that file to desktop for a human readable backup of your current configuration.";
+hconfig.right2="You may backup your current configuration in case you need to reset the router back to factory default settings.<br /><br />Tip: Over terminal type <b>nvram show > /tmp/mybackup.txt</b> and grab that file to your desktop for a human readable backup of your current configuration, which can be used for reference purposes only.";
 hconfig.right4="Click the <em>Browse...</em> button to search for a backup configuration file that you have previously saved to disk.<br /><br />Click the <em>" + sbutton.restore + "</em> button to overwrite <b>all current configuration settings</b> with the values in the backup file.";
 
 // help page
@@ -1981,7 +1981,7 @@ service.vpnd_lzoyes="Yes";
 service.vpnd_lzono="No";
 service.vpnd_lzoadaptive="Adaptive";
 service.vpnd_lzocompress="Compress";
-service.vpn_tls_btn="TLS/Static Key Choice";
+service.vpn_tls_btn="TLS / Static Key Choice";
 service.vpn_tls_crypt="TLS Crypt";
 service.vpn_tls_auth="TLS Auth";
 service.vpn_dc1="First Data Cipher";
