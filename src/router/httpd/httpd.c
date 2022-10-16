@@ -1374,9 +1374,9 @@ static void *handle_request(void *arg)
 }
 
 static void			// add by honor 2003-04-16
-get_client_ip_mac(int conn_fd, webs_t conn_fp)
+get_client_ip_mac(webs_t conn_fp)
 {
-	get_ipfromsock(conn_fd, conn_fp->http_client_ip);
+	get_ipfromsock(conn_fp->conn_fd, conn_fp->http_client_ip);
 	get_mac_from_ip(conn_fp->http_client_mac, conn_fp->http_client_ip);
 }
 
@@ -1841,7 +1841,7 @@ int main(int argc, char **argv)
 			SEM_POST(&semaphore);
 			continue;
 		}
-		get_client_ip_mac(conn_fp->conn_fd, conn_fp);
+		get_client_ip_mac(conn_fp);
 		if (check_blocklist("httpd", conn_fp->http_client_ip)) {
 			close(conn_fp->conn_fd);
 			SEM_POST(&semaphore);
