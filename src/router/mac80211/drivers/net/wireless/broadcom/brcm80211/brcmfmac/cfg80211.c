@@ -234,6 +234,48 @@ struct parsed_vndr_ies {
 	struct parsed_vndr_ie_info ie_info[VNDR_IE_PARSE_LIMIT];
 };
 
+#define WL_INTERFACE_CREATE_VER_1		1
+#define WL_INTERFACE_CREATE_VER_2		2
+#define WL_INTERFACE_CREATE_VER_3		3
+#define WL_INTERFACE_CREATE_VER_MAX		WL_INTERFACE_CREATE_VER_3
+
+#define WL_INTERFACE_MAC_DONT_USE	0x0
+#define WL_INTERFACE_MAC_USE		0x2
+
+#define WL_INTERFACE_CREATE_STA		0x0
+#define WL_INTERFACE_CREATE_AP		0x1
+
+struct wl_interface_create_v1 {
+	u16	ver;			/* structure version */
+	u32	flags;			/* flags for operation */
+	u8	mac_addr[ETH_ALEN];	/* MAC address */
+	u32	wlc_index;		/* optional for wlc index */
+};
+
+struct wl_interface_create_v2 {
+	u16	ver;			/* structure version */
+	u8	pad1[2];
+	u32	flags;			/* flags for operation */
+	u8	mac_addr[ETH_ALEN];	/* MAC address */
+	u8	iftype;			/* type of interface created */
+	u8	pad2;
+	u32	wlc_index;		/* optional for wlc index */
+};
+
+struct wl_interface_create_v3 {
+	u16 ver;			/* structure version */
+	u16 len;			/* length of structure + data */
+	u16 fixed_len;			/* length of structure */
+	u8 iftype;			/* type of interface created */
+	u8 wlc_index;			/* optional for wlc index */
+	u32 flags;			/* flags for operation */
+	u8 mac_addr[ETH_ALEN];		/* MAC address */
+	u8 bssid[ETH_ALEN];		/* optional for BSSID */
+	u8 if_index;			/* interface index request */
+	u8 pad[3];
+	u8 data[];			/* Optional for specific data */
+};
+
 static u8 nl80211_band_to_fwil(enum nl80211_band band)
 {
 	switch (band) {
@@ -521,40 +563,228 @@ static int brcmf_get_first_free_bsscfgidx(struct brcmf_pub *drvr)
 	return -ENOMEM;
 }
 
+static void brcmf_set_vif_sta_macaddr(struct brcmf_if *ifp, u8 *mac_addr)
+{
+	u8 mac_idx = ifp->drvr->sta_mac_idx;
+
+	/* set difference MAC address with locally administered bit */
+	memcpy(mac_addr, ifp->mac_addr, ETH_ALEN);
+	mac_addr[0] |= 0x02;
+	mac_addr[3] ^= mac_idx ? 0xC0 : 0xA0;
+	mac_idx++;
+	mac_idx = mac_idx % 2;
+	ifp->drvr->sta_mac_idx = mac_idx;
+}
+
+static int brcmf_cfg80211_request_sta_if(struct brcmf_if *ifp, u8 *macaddr)
+{
+	struct wl_interface_create_v1 iface_v1;
+	struct wl_interface_create_v2 iface_v2;
+	struct wl_interface_create_v3 iface_v3;
+	u32 iface_create_ver;
+	int err;
+
+	/* interface_create version 1 */
+	memset(&iface_v1, 0, sizeof(iface_v1));
+	iface_v1.ver = WL_INTERFACE_CREATE_VER_1;
+	iface_v1.flags = WL_INTERFACE_CREATE_STA |
+			 WL_INTERFACE_MAC_USE;
+	if (!is_zero_ether_addr(macaddr))
+		memcpy(iface_v1.mac_addr, macaddr, ETH_ALEN);
+	else
+		brcmf_set_vif_sta_macaddr(ifp, iface_v1.mac_addr);
+
+	err = brcmf_fil_iovar_data_get(ifp, "interface_create",
+				       &iface_v1,
+				       sizeof(iface_v1));
+	if (err) {
+		brcmf_info("failed to create interface(v1), err=%d\n",
+			   err);
+	} else {
+		brcmf_dbg(INFO, "interface created(v1)\n");
+		return 0;
+	}
+
+	/* interface_create version 2 */
+	memset(&iface_v2, 0, sizeof(iface_v2));
+	iface_v2.ver = WL_INTERFACE_CREATE_VER_2;
+	iface_v2.flags = WL_INTERFACE_MAC_USE;
+	iface_v2.iftype = WL_INTERFACE_CREATE_STA;
+	if (!is_zero_ether_addr(macaddr))
+		memcpy(iface_v2.mac_addr, macaddr, ETH_ALEN);
+	else
+		brcmf_set_vif_sta_macaddr(ifp, iface_v2.mac_addr);
+
+	err = brcmf_fil_iovar_data_get(ifp, "interface_create",
+				       &iface_v2,
+				       sizeof(iface_v2));
+	if (err) {
+		brcmf_info("failed to create interface(v2), err=%d\n",
+			   err);
+	} else {
+		brcmf_dbg(INFO, "interface created(v2)\n");
+		return 0;
+	}
+
+	/* interface_create version 3+ */
+	/* get supported version from firmware side */
+	iface_create_ver = 0;
+	err = brcmf_fil_bsscfg_int_get(ifp, "interface_create",
+				       &iface_create_ver);
+	if (err) {
+		brcmf_err("fail to get supported version, err=%d\n", err);
+		return -EOPNOTSUPP;
+	}
+
+	switch (iface_create_ver) {
+	case WL_INTERFACE_CREATE_VER_3:
+		memset(&iface_v3, 0, sizeof(iface_v3));
+		iface_v3.ver = WL_INTERFACE_CREATE_VER_3;
+		iface_v3.flags = WL_INTERFACE_MAC_USE;
+		iface_v3.iftype = WL_INTERFACE_CREATE_STA;
+		if (!is_zero_ether_addr(macaddr))
+			memcpy(iface_v3.mac_addr, macaddr, ETH_ALEN);
+		else
+			brcmf_set_vif_sta_macaddr(ifp, iface_v3.mac_addr);
+
+		err = brcmf_fil_iovar_data_get(ifp, "interface_create",
+					       &iface_v3,
+					       sizeof(iface_v3));
+
+		if (!err)
+			brcmf_dbg(INFO, "interface created(v3)\n");
+		break;
+	default:
+		brcmf_err("not support interface create(v%d)\n",
+			  iface_create_ver);
+		err = -EOPNOTSUPP;
+		break;
+	}
+
+	if (err) {
+		brcmf_info("station interface creation failed (%d)\n",
+			   err);
+		return -EIO;
+	}
+
+	return 0;
+}
+
 static int brcmf_cfg80211_request_ap_if(struct brcmf_if *ifp)
 {
+	struct wl_interface_create_v1 iface_v1;
+	struct wl_interface_create_v2 iface_v2;
+	struct wl_interface_create_v3 iface_v3;
+	u32 iface_create_ver;
 	struct brcmf_pub *drvr = ifp->drvr;
 	struct brcmf_mbss_ssid_le mbss_ssid_le;
 	int bsscfgidx;
 	int err;
 
-	memset(&mbss_ssid_le, 0, sizeof(mbss_ssid_le));
-	bsscfgidx = brcmf_get_first_free_bsscfgidx(ifp->drvr);
-	if (bsscfgidx < 0)
-		return bsscfgidx;
+	/* interface_create version 1 */
+	memset(&iface_v1, 0, sizeof(iface_v1));
+	iface_v1.ver = WL_INTERFACE_CREATE_VER_1;
+	iface_v1.flags = WL_INTERFACE_CREATE_AP |
+			 WL_INTERFACE_MAC_USE;
 
-	mbss_ssid_le.bsscfgidx = cpu_to_le32(bsscfgidx);
-	mbss_ssid_le.SSID_len = cpu_to_le32(5);
-	sprintf(mbss_ssid_le.SSID, "ssid%d" , bsscfgidx);
+	brcmf_set_vif_sta_macaddr(ifp, iface_v1.mac_addr);
 
-	err = brcmf_fil_bsscfg_data_set(ifp, "bsscfg:ssid", &mbss_ssid_le,
-					sizeof(mbss_ssid_le));
-	if (err < 0)
-		bphy_err(drvr, "setting ssid failed %d\n", err);
+	err = brcmf_fil_iovar_data_get(ifp, "interface_create",
+				       &iface_v1,
+				       sizeof(iface_v1));
+	if (err) {
+		brcmf_info("failed to create interface(v1), err=%d\n",
+			   err);
+	} else {
+		brcmf_dbg(INFO, "interface created(v1)\n");
+		return 0;
+	}
+
+	/* interface_create version 2 */
+	memset(&iface_v2, 0, sizeof(iface_v2));
+	iface_v2.ver = WL_INTERFACE_CREATE_VER_2;
+	iface_v2.flags = WL_INTERFACE_MAC_USE;
+	iface_v2.iftype = WL_INTERFACE_CREATE_AP;
+
+	brcmf_set_vif_sta_macaddr(ifp, iface_v2.mac_addr);
+
+	err = brcmf_fil_iovar_data_get(ifp, "interface_create",
+				       &iface_v2,
+				       sizeof(iface_v2));
+	if (err) {
+		brcmf_info("failed to create interface(v2), err=%d\n",
+			   err);
+	} else {
+		brcmf_dbg(INFO, "interface created(v2)\n");
+		return 0;
+	}
+
+	/* interface_create version 3+ */
+	/* get supported version from firmware side */
+	iface_create_ver = 0;
+	err = brcmf_fil_bsscfg_int_get(ifp, "interface_create",
+				       &iface_create_ver);
+	if (err) {
+		brcmf_err("fail to get supported version, err=%d\n", err);
+		return -EOPNOTSUPP;
+	}
+
+	switch (iface_create_ver) {
+	case WL_INTERFACE_CREATE_VER_3:
+		memset(&iface_v3, 0, sizeof(iface_v3));
+		iface_v3.ver = WL_INTERFACE_CREATE_VER_3;
+		iface_v3.flags = WL_INTERFACE_MAC_USE;
+		iface_v3.iftype = WL_INTERFACE_CREATE_AP;
+		brcmf_set_vif_sta_macaddr(ifp, iface_v3.mac_addr);
+
+		err = brcmf_fil_iovar_data_get(ifp, "interface_create",
+					       &iface_v3,
+					       sizeof(iface_v3));
+
+		if (!err)
+			brcmf_dbg(INFO, "interface created(v3)\n");
+		break;
+	default:
+		brcmf_err("not support interface create(v%d)\n",
+			  iface_create_ver);
+		err = -EOPNOTSUPP;
+		break;
+	}
+
+	if (err) {
+		brcmf_info("Does not support interface_create (%d)\n",
+			   err);
+		memset(&mbss_ssid_le, 0, sizeof(mbss_ssid_le));
+		bsscfgidx = brcmf_get_first_free_bsscfgidx(ifp->drvr);
+		if (bsscfgidx < 0)
+			return bsscfgidx;
+
+		mbss_ssid_le.bsscfgidx = cpu_to_le32(bsscfgidx);
+		mbss_ssid_le.SSID_len = cpu_to_le32(5);
+		sprintf(mbss_ssid_le.SSID, "ssid%d", bsscfgidx);
+
+		err = brcmf_fil_bsscfg_data_set(ifp, "bsscfg:ssid", &mbss_ssid_le,
+						sizeof(mbss_ssid_le));
+
+		if (err < 0)
+			bphy_err(drvr, "setting ssid failed %d\n", err);
+	}
 
 	return err;
 }
 
 /**
- * brcmf_ap_add_vif() - create a new AP virtual interface for multiple BSS
+ * brcmf_apsta_add_vif() - create a new AP or STA virtual interface
  *
  * @wiphy: wiphy device of new interface.
  * @name: name of the new interface.
- * @params: contains mac address for AP device.
+ * @params: contains mac address for AP or STA device.
+ * @type: interface type.
  */
 static
-struct wireless_dev *brcmf_ap_add_vif(struct wiphy *wiphy, const char *name,
-				      struct vif_params *params)
+struct wireless_dev *brcmf_apsta_add_vif(struct wiphy *wiphy, const char *name,
+					 struct vif_params *params,
+					 enum nl80211_iftype type)
 {
 	struct brcmf_cfg80211_info *cfg = wiphy_to_cfg(wiphy);
 	struct brcmf_if *ifp = netdev_priv(cfg_to_ndev(cfg));
@@ -562,18 +792,24 @@ struct wireless_dev *brcmf_ap_add_vif(struct wiphy *wiphy, const char *name,
 	struct brcmf_cfg80211_vif *vif;
 	int err;
 
+	if (type != NL80211_IFTYPE_STATION && type != NL80211_IFTYPE_AP)
+		return ERR_PTR(-EINVAL);
+
 	if (brcmf_cfg80211_vif_event_armed(cfg))
 		return ERR_PTR(-EBUSY);
 
 	brcmf_dbg(INFO, "Adding vif \"%s\"\n", name);
 
-	vif = brcmf_alloc_vif(cfg, NL80211_IFTYPE_AP);
+	vif = brcmf_alloc_vif(cfg, type);
 	if (IS_ERR(vif))
 		return (struct wireless_dev *)vif;
 
 	brcmf_cfg80211_arm_vif_event(cfg, vif);
 
-	err = brcmf_cfg80211_request_ap_if(ifp);
+	if (type == NL80211_IFTYPE_STATION)
+		err = brcmf_cfg80211_request_sta_if(ifp, params->macaddr);
+	else
+		err = brcmf_cfg80211_request_ap_if(ifp);
 	if (err) {
 		brcmf_cfg80211_arm_vif_event(cfg, NULL);
 		goto fail;
@@ -754,15 +990,15 @@ static struct wireless_dev *brcmf_cfg80211_add_iface(struct wiphy *wiphy,
 	}
 	switch (type) {
 	case NL80211_IFTYPE_ADHOC:
-	case NL80211_IFTYPE_STATION:
 	case NL80211_IFTYPE_AP_VLAN:
 	case NL80211_IFTYPE_WDS:
 	case NL80211_IFTYPE_MESH_POINT:
 		return ERR_PTR(-EOPNOTSUPP);
 	case NL80211_IFTYPE_MONITOR:
 		return brcmf_mon_add_vif(wiphy, name);
+	case NL80211_IFTYPE_STATION:
 	case NL80211_IFTYPE_AP:
-		wdev = brcmf_ap_add_vif(wiphy, name, params);
+		wdev = brcmf_apsta_add_vif(wiphy, name, params, type);
 		break;
 	case NL80211_IFTYPE_P2P_CLIENT:
 	case NL80211_IFTYPE_P2P_GO:
@@ -897,8 +1133,8 @@ s32 brcmf_notify_escan_complete(struct brcmf_cfg80211_info *cfg,
 	return err;
 }
 
-static int brcmf_cfg80211_del_ap_iface(struct wiphy *wiphy,
-				       struct wireless_dev *wdev)
+static int brcmf_cfg80211_del_apsta_iface(struct wiphy *wiphy,
+					  struct wireless_dev *wdev)
 {
 	struct brcmf_cfg80211_info *cfg = wiphy_to_cfg(wiphy);
 	struct net_device *ndev = wdev->netdev;
@@ -955,15 +1191,15 @@ int brcmf_cfg80211_del_iface(struct wiphy *wiphy, struct wireless_dev *wdev)
 
 	switch (wdev->iftype) {
 	case NL80211_IFTYPE_ADHOC:
-	case NL80211_IFTYPE_STATION:
 	case NL80211_IFTYPE_AP_VLAN:
 	case NL80211_IFTYPE_WDS:
 	case NL80211_IFTYPE_MESH_POINT:
 		return -EOPNOTSUPP;
 	case NL80211_IFTYPE_MONITOR:
 		return brcmf_mon_del_vif(wiphy, wdev);
+	case NL80211_IFTYPE_STATION:
 	case NL80211_IFTYPE_AP:
-		return brcmf_cfg80211_del_ap_iface(wiphy, wdev);
+		return brcmf_cfg80211_del_apsta_iface(wiphy, wdev);
 	case NL80211_IFTYPE_P2P_CLIENT:
 	case NL80211_IFTYPE_P2P_GO:
 	case NL80211_IFTYPE_P2P_DEVICE:
@@ -7280,7 +7516,7 @@ brcmf_txrx_stypes[NUM_NL80211_IFTYPES] = {
  *
  * p2p, mchan, and mbss:
  *
- *	#STA <= 1, #P2P-DEV <= 1, #{P2P-CL, P2P-GO} <= 1, channels = 2, 3 total
+ *	#STA <= 2, #P2P-DEV <= 1, #{P2P-CL, P2P-GO} <= 1, channels = 2, 3 total
  *	#STA <= 1, #P2P-DEV <= 1, #AP <= 1, #P2P-CL <= 1, channels = 1, 4 total
  *	#AP <= 4, matching BI, channels = 1, 4 total
  *
@@ -7331,7 +7567,7 @@ static int brcmf_setup_ifmodes(struct wiphy *wiphy, struct brcmf_if *ifp)
 		goto err;
 
 	combo[c].num_different_channels = 1 + (rsdb || (p2p && mchan));
-	c0_limits[i].max = 1 + rsdb;
+	c0_limits[i].max = 1 + (p2p && mchan);
 	c0_limits[i++].types = BIT(NL80211_IFTYPE_STATION);
 	if (mon_flag) {
 		c0_limits[i].max = 1;

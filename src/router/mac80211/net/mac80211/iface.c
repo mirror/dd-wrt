@@ -1615,7 +1615,7 @@ static void ieee80211_iface_process_skb(struct ieee80211_local *local,
 		if (sta) {
 			switch (mgmt->u.action.u.addba_req.action_code) {
 			case WLAN_ACTION_ADDBA_REQ:
-				ieee80211_process_addba_request(local, sta,
+				ieee80211_process_addba_request(sdata, local, sta,
 								mgmt, len);
 				break;
 			case WLAN_ACTION_ADDBA_RESP:

@@ -788,20 +788,17 @@ static int ieee80211_dump_station(struct wiphy *wiphy, struct net_device *dev,
 				  int idx, u8 *mac, struct station_info *sinfo)
 {
 	struct ieee80211_sub_if_data *sdata = IEEE80211_DEV_TO_SUB_IF(dev);
-	struct ieee80211_local *local = sdata->local;
 	struct sta_info *sta;
 	int ret = -ENOENT;
 
-	mutex_lock(&local->sta_mtx);
-
+	rcu_read_lock();
 	sta = sta_info_get_by_idx(sdata, idx);
 	if (sta) {
 		ret = 0;
 		memcpy(mac, sta->sta.addr, ETH_ALEN);
 		sta_set_sinfo(sta, sinfo, true);
 	}
-
-	mutex_unlock(&local->sta_mtx);
+	rcu_read_unlock();
 
 	return ret;
 }
@@ -854,7 +851,12 @@ static int ieee80211_set_monitor_channel(struct wiphy *wiphy,
 			ret = ieee80211_vif_use_channel(sdata, chandef,
 					IEEE80211_CHANCTX_EXCLUSIVE);
 		}
-	} else if (local->open_count == local->monitors) {
+		/*else{
+		ret = 0;		
+		local->_oper_chandef = *chandef;
+		ieee80211_hw_config(local, 0);
+		}*/
+	} else {
 		local->_oper_chandef = *chandef;
 		ieee80211_hw_config(local, 0);
 	}
@@ -3896,7 +3898,6 @@ static int ieee80211_cfg_get_channel(struct wiphy *wiphy,
 		*chandef = sdata->vif.bss_conf.chandef;
 		ret = 0;
 	} else if (local->open_count > 0 &&
-		   local->open_count == local->monitors &&
 		   sdata->vif.type == NL80211_IFTYPE_MONITOR) {
 		if (local->use_chanctx)
 			*chandef = local->monitor_chandef;

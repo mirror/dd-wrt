@@ -1314,7 +1314,12 @@ static struct txq_info *ieee80211_get_txq(struct ieee80211_local *local,
 
 static void ieee80211_set_skb_enqueue_time(struct sk_buff *skb)
 {
-	IEEE80211_SKB_CB(skb)->control.enqueue_time = codel_get_time();
+	struct sk_buff *next;
+	codel_time_t now = codel_get_time();
+
+	skb_list_walk_safe(skb, skb, next) {
+		IEEE80211_SKB_CB(skb)->control.enqueue_time = now;
+	}
 }
 
 static u32 codel_skb_len_func(const struct sk_buff *skb)
@@ -4527,9 +4532,11 @@ netdev_tx_t ieee80211_subif_start_xmit(struct sk_buff *skb,
 	return NETDEV_TX_OK;
 }
 
-static bool ieee80211_tx_8023(struct ieee80211_sub_if_data *sdata,
-			      struct sk_buff *skb, struct sta_info *sta,
-			      bool txpending)
+
+
+static bool __ieee80211_tx_8023(struct ieee80211_sub_if_data *sdata,
+				struct sk_buff *skb, struct sta_info *sta,
+				bool txpending)
 {
 	struct ieee80211_local *local = sdata->local;
 	struct ieee80211_tx_control control = {};
@@ -4537,14 +4544,6 @@ static bool ieee80211_tx_8023(struct ieee80211_sub_if_data *sdata,
 	struct ieee80211_sta *pubsta = NULL;
 	unsigned long flags;
 	int q = info->hw_queue;
-
-	if (sta)
-		sk_pacing_shift_update(skb->sk, local->hw.tx_sk_pacing_shift);
-
-	ieee80211_tpt_led_trig_tx(local, skb->len);
-
-	if (ieee80211_queue_skb(local, sdata, sta, skb))
-		return true;
 
 	spin_lock_irqsave(&local->queue_stop_reason_lock, flags);
 
@@ -4572,28 +4571,51 @@ static bool ieee80211_tx_8023(struct ieee80211_sub_if_data *sdata,
 	return true;
 }
 
+static bool ieee80211_tx_8023(struct ieee80211_sub_if_data *sdata,
+			      struct sk_buff *skb, struct sta_info *sta,
+			      bool txpending)
+{
+	struct ieee80211_local *local = sdata->local;
+	struct sk_buff *next;
+	bool ret = true;
+
+	if (ieee80211_queue_skb(local, sdata, sta, skb))
+		return true;
+
+	skb_list_walk_safe(skb, skb, next) {
+		skb_mark_not_on_list(skb);
+		if (!__ieee80211_tx_8023(sdata, skb, sta, txpending))
+			ret = false;
+	}
+
+	return ret;
+}
+
 static void ieee80211_8023_xmit(struct ieee80211_sub_if_data *sdata,
 				struct net_device *dev, struct sta_info *sta,
 				struct ieee80211_key *key, struct sk_buff *skb)
 {
-	struct ieee80211_tx_info *info = IEEE80211_SKB_CB(skb);
+	struct ieee80211_tx_info *info;
 	struct ieee80211_local *local = sdata->local;
 	struct tid_ampdu_tx *tid_tx;
+	struct sk_buff *seg, *next;
+	unsigned int skbs = 0, len = 0;
+	u16 queue;
 	u8 tid;
 
 	if (local->ops->wake_tx_queue) {
-		u16 queue = __ieee80211_select_queue(sdata, sta, skb);
+		queue = __ieee80211_select_queue(sdata, sta, skb);
 		skb_set_queue_mapping(skb, queue);
 #if LINUX_VERSION_IS_GEQ(4,4,0)
 		skb_get_hash(skb);
 #endif
+	} else {
+		queue = skb_get_queue_mapping(skb);
 	}
 
 	if (unlikely(test_bit(SCAN_SW_SCANNING, &local->scanning)) &&
 	    test_bit(SDATA_STATE_OFFCHANNEL, &sdata->state))
 		goto out_free;
-
-	memset(info, 0, sizeof(*info));
 
 	ieee80211_aggr_check(sdata, sta, skb);
 
@@ -4606,22 +4628,30 @@ static void ieee80211_8023_xmit(struct ieee80211_sub_if_data *sdata,
 			return;
 		}
 
-		info->flags |= IEEE80211_TX_CTL_AMPDU;
 		if (tid_tx->timeout)
 			tid_tx->last_tx = jiffies;
 	}
 
-	if (unlikely(skb->sk &&
-		     skb_shinfo(skb)->tx_flags & SKBTX_WIFI_STATUS))
-		info->ack_frame_id = ieee80211_store_ack_skb(local, skb,
-							     &info->flags, NULL);
+	if (skb_is_gso(skb)) {
+		struct sk_buff *segs;
 
-	info->hw_queue = sdata->vif.hw_queue[skb_get_queue_mapping(skb)];
+		segs = skb_gso_segment(skb, local->hw.netdev_features &
+					    ~NETIF_F_GSO_SOFTWARE);
+		if (IS_ERR(segs))
+			goto out_free;
 
-	dev_sw_netstats_tx_add(dev, 1, skb->len);
+		if (segs) {
+			consume_skb(skb);
+			skb = segs;
+		}
+	}
 
-	sta->tx_stats.bytes[skb_get_queue_mapping(skb)] += skb->len;
-	sta->tx_stats.packets[skb_get_queue_mapping(skb)]++;
+	info = IEEE80211_SKB_CB(skb);
+	memset(info, 0, sizeof(*info));
+	if (tid_tx)
+		info->flags |= IEEE80211_TX_CTL_AMPDU;
+
+	info->hw_queue = sdata->vif.hw_queue[queue];
 
 	if (sdata->vif.type == NL80211_IFTYPE_AP_VLAN)
 		sdata = container_of(sdata->bss,
@@ -4632,6 +4662,24 @@ static void ieee80211_8023_xmit(struct ieee80211_sub_if_data *sdata,
 
 	if (key)
 		info->control.hw_key = &key->conf;
+
+	skb_list_walk_safe(skb, seg, next) {
+		skbs++;
+		len += seg->len;
+		if (seg != skb)
+			memcpy(IEEE80211_SKB_CB(seg), info, sizeof(*info));
+	}
+
+	if (unlikely(skb->sk &&
+		     skb_shinfo(skb)->tx_flags & SKBTX_WIFI_STATUS))
+		info->ack_frame_id = ieee80211_store_ack_skb(local, skb,
+							     &info->flags, NULL);
+
+	dev_sw_netstats_tx_add(dev, skbs, len);
+	sta->tx_stats.packets[queue] += skbs;
+	sta->tx_stats.bytes[queue] += len;
+
+	ieee80211_tpt_led_trig_tx(local, len);
 
 	ieee80211_tx_8023(sdata, skb, sta, false);
 
@@ -4674,6 +4722,7 @@ netdev_tx_t ieee80211_subif_start_xmit_8023(struct sk_buff *skb,
 		    key->conf.cipher == WLAN_CIPHER_SUITE_TKIP))
 		goto skip_offload;
 
+	sk_pacing_shift_update(skb->sk, sdata->local->hw.tx_sk_pacing_shift);
 	ieee80211_8023_xmit(sdata, dev, sta, key, skb);
 	goto out;
 

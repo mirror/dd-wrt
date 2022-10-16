@@ -1260,7 +1260,7 @@ ieee80211_mesh_rx_probe_req(struct ieee80211_sub_if_data *sdata,
 	struct sk_buff *presp;
 	struct beacon_data *bcn;
 	struct ieee80211_mgmt *hdr;
-	struct ieee802_11_elems elems;
+	struct ieee802_11_elems *elems;
 	size_t baselen;
 	u8 *pos;
 
@@ -1269,32 +1269,34 @@ ieee80211_mesh_rx_probe_req(struct ieee80211_sub_if_data *sdata,
 	if (baselen > len)
 		return;
 
-	ieee802_11_parse_elems(pos, len - baselen, false, &elems, mgmt->bssid,
-			       NULL);
-
-	if (!elems.mesh_id)
+	elems = ieee802_11_parse_elems(pos, len - baselen, false, mgmt->bssid,
+				       NULL);
+	if (!elems)
 		return;
 
-	if (elems.mtik) {
-		memcpy(&sdata->radioname[0], &elems.mtik->radioname[0], 15);
-		if (elems.mtik->namelen && elems.mtik->namelen < 16)
-		    sdata->radioname[elems.mtik->namelen] = 0;
+	if (!elems->mesh_id)
+		goto free;
+
+	if (elems->mtik) {
+		memcpy(&sdata->radioname[0], &elems->mtik->radioname[0], 15);
+		if (elems->mtik->namelen && elems->mtik->namelen < 16)
+		    sdata->radioname[elems->mtik->namelen] = 0;
 	}
 
-	if (elems.aironet) {
-		memcpy(&sdata->radioname[0], &elems.aironet->name[0], 16);
+	if (elems->aironet) {
+		memcpy(&sdata->radioname[0], &elems->aironet->name[0], 16);
 	}
 
 	/* 802.11-2012 10.1.4.3.2 */
 	if ((!ether_addr_equal(mgmt->da, sdata->vif.addr) &&
 	     !is_broadcast_ether_addr(mgmt->da)) ||
-	    elems.ssid_len != 0)
-		return;
+	    elems->ssid_len != 0)
+		goto free;
 
-	if (elems.mesh_id_len != 0 &&
-	    (elems.mesh_id_len != ifmsh->mesh_id_len ||
-	     memcmp(elems.mesh_id, ifmsh->mesh_id, ifmsh->mesh_id_len)))
-		return;
+	if (elems->mesh_id_len != 0 &&
+	    (elems->mesh_id_len != ifmsh->mesh_id_len ||
+	     memcmp(elems->mesh_id, ifmsh->mesh_id, ifmsh->mesh_id_len)))
+		goto free;
 
 	rcu_read_lock();
 	bcn = rcu_dereference(ifmsh->beacon);
@@ -1318,6 +1320,8 @@ ieee80211_mesh_rx_probe_req(struct ieee80211_sub_if_data *sdata,
 	ieee80211_tx_skb(sdata, presp);
 out:
 	rcu_read_unlock();
+free:
+	kfree(elems);
 }
 
 static void ieee80211_mesh_rx_bcn_presp(struct ieee80211_sub_if_data *sdata,
@@ -1328,7 +1332,7 @@ static void ieee80211_mesh_rx_bcn_presp(struct ieee80211_sub_if_data *sdata,
 {
 	struct ieee80211_local *local = sdata->local;
 	struct ieee80211_if_mesh *ifmsh = &sdata->u.mesh;
-	struct ieee802_11_elems elems;
+	struct ieee802_11_elems *elems;
 	struct ieee80211_channel *channel;
 	size_t baselen;
 	int freq;
@@ -1344,54 +1348,58 @@ static void ieee80211_mesh_rx_bcn_presp(struct ieee80211_sub_if_data *sdata,
 	if (baselen > len)
 		return;
 
-	ieee802_11_parse_elems(mgmt->u.probe_resp.variable, len - baselen,
-			       false, &elems, mgmt->bssid, NULL);
+	elems = ieee802_11_parse_elems(mgmt->u.probe_resp.variable,
+				       len - baselen,
+				       false, mgmt->bssid, NULL);
+	if (!elems)
+		return;
 
-	if (elems.mtik) {
-		memcpy(&sdata->radioname[0], &elems.mtik->radioname[0], 15);
-		if (elems.mtik->namelen && elems.mtik->namelen < 16)
-		    sdata->radioname[elems.mtik->namelen] = 0;
+	if (elems->mtik) {
+		memcpy(&sdata->radioname[0], &elems->mtik->radioname[0], 15);
+		if (elems->mtik->namelen && elems->mtik->namelen < 16)
+		    sdata->radioname[elems->mtik->namelen] = 0;
 	}
 
-	if (elems.aironet) {
-		memcpy(&sdata->radioname[0], &elems.aironet->name[0], 16);
+	if (elems->aironet) {
+		memcpy(&sdata->radioname[0], &elems->aironet->name[0], 16);
 	}
 
 	/* ignore non-mesh or secure / unsecure mismatch */
-	if ((!elems.mesh_id || !elems.mesh_config) ||
-	    (elems.rsn && sdata->u.mesh.security == IEEE80211_MESH_SEC_NONE) ||
-	    (!elems.rsn && sdata->u.mesh.security != IEEE80211_MESH_SEC_NONE))
-		return;
+	if ((!elems->mesh_id || !elems->mesh_config) ||
+	    (elems->rsn && sdata->u.mesh.security == IEEE80211_MESH_SEC_NONE) ||
+	    (!elems->rsn && sdata->u.mesh.security != IEEE80211_MESH_SEC_NONE))
+		goto free;
 
 	sband = local->hw.wiphy->bands[band];
-	if (elems.ds_params)
+	if (elems->ds_params)
 		freq = ieee80211_channel_to_closest_freq(sband,
-				elems.ds_params[0], rx_status->freq);
+				elems->ds_params[0], rx_status->freq);
 	else
 		freq = rx_status->freq;
 
 	channel = ieee80211_get_channel(local->hw.wiphy, freq);
 
 	if (!channel || channel->flags & IEEE80211_CHAN_DISABLED)
-		return;
+		goto free;
 
-	if (mesh_matches_local(sdata, &elems)) {
+	if (mesh_matches_local(sdata, elems)) {
 		mpl_dbg(sdata, "rssi_threshold=%d,rx_status->signal=%d\n",
 			sdata->u.mesh.mshcfg.rssi_threshold, rx_status->signal);
 		if (!sdata->u.mesh.user_mpm ||
 		    sdata->u.mesh.mshcfg.rssi_threshold == 0 ||
 		    sdata->u.mesh.mshcfg.rssi_threshold < rx_status->signal)
-			mesh_neighbour_update(sdata, mgmt->sa, &elems,
+			mesh_neighbour_update(sdata, mgmt->sa, elems,
 					      rx_status);
 
 		if (ifmsh->csa_role != IEEE80211_MESH_CSA_ROLE_INIT &&
 		    !sdata->vif.csa_active)
-			ieee80211_mesh_process_chnswitch(sdata, &elems, true);
+			ieee80211_mesh_process_chnswitch(sdata, elems, true);
 	}
 
-	if (ifmsh->sync_ops)
-		ifmsh->sync_ops->rx_bcn_presp(sdata,
-			stype, mgmt, &elems, rx_status);
+		ifmsh->sync_ops->rx_bcn_presp(sdata, stype, mgmt, len,
+					      elems->mesh_config, rx_status);
+free:
+	kfree(elems);
 }
 
 int ieee80211_mesh_finish_csa(struct ieee80211_sub_if_data *sdata)
@@ -1483,7 +1491,7 @@ static void mesh_rx_csa_frame(struct ieee80211_sub_if_data *sdata,
 			      struct ieee80211_mgmt *mgmt, size_t len)
 {
 	struct ieee80211_if_mesh *ifmsh = &sdata->u.mesh;
-	struct ieee802_11_elems elems;
+	struct ieee802_11_elems *elems;
 	u16 pre_value;
 	bool fwd_csa = true;
 	size_t baselen;
@@ -1496,43 +1504,47 @@ static void mesh_rx_csa_frame(struct ieee80211_sub_if_data *sdata,
 	pos = mgmt->u.action.u.chan_switch.variable;
 	baselen = offsetof(struct ieee80211_mgmt,
 			   u.action.u.chan_switch.variable);
-	ieee802_11_parse_elems(pos, len - baselen, true, &elems,
-			       mgmt->bssid, NULL);
-
-	if (!mesh_matches_local(sdata, &elems))
+	elems = ieee802_11_parse_elems(pos, len - baselen, true,
+				       mgmt->bssid, NULL);
+	if (!elems)
 		return;
 
-	if (elems.mtik) {
-		memcpy(&sdata->radioname[0], &elems.mtik->radioname[0], 15);
-		if (elems.mtik->namelen && elems.mtik->namelen < 16)
-		    sdata->radioname[elems.mtik->namelen] = 0;
+	if (elems->mtik) {
+		memcpy(&sdata->radioname[0], &elems->mtik->radioname[0], 15);
+		if (elems->mtik->namelen && elems->mtik->namelen < 16)
+		    sdata->radioname[elems->mtik->namelen] = 0;
 	}
 
-	if (elems.aironet) {
-		memcpy(&sdata->radioname[0], &elems.aironet->name[0], 16);
+	if (elems->aironet) {
+		memcpy(&sdata->radioname[0], &elems->aironet->name[0], 16);
 	}
 
-	ifmsh->chsw_ttl = elems.mesh_chansw_params_ie->mesh_ttl;
+	if (!mesh_matches_local(sdata, elems))
+		goto free;
+
+	ifmsh->chsw_ttl = elems->mesh_chansw_params_ie->mesh_ttl;
 	if (!--ifmsh->chsw_ttl)
 		fwd_csa = false;
 
-	pre_value = le16_to_cpu(elems.mesh_chansw_params_ie->mesh_pre_value);
+	pre_value = le16_to_cpu(elems->mesh_chansw_params_ie->mesh_pre_value);
 	if (ifmsh->pre_value >= pre_value)
-		return;
+		goto free;
 
 	ifmsh->pre_value = pre_value;
 
 	if (!sdata->vif.csa_active &&
-	    !ieee80211_mesh_process_chnswitch(sdata, &elems, false)) {
+	    !ieee80211_mesh_process_chnswitch(sdata, elems, false)) {
 		mcsa_dbg(sdata, "Failed to process CSA action frame");
-		return;
+		goto free;
 	}
 
 	/* forward or re-broadcast the CSA frame */
 	if (fwd_csa) {
-		if (mesh_fwd_csa_frame(sdata, mgmt, len, &elems) < 0)
+		if (mesh_fwd_csa_frame(sdata, mgmt, len, elems) < 0)
 			mcsa_dbg(sdata, "Failed to forward the CSA frame");
 	}
+free:
+	kfree(elems);
 }
 
 static void ieee80211_mesh_rx_mgmt_action(struct ieee80211_sub_if_data *sdata,

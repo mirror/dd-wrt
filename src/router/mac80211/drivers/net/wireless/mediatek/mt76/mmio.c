@@ -74,12 +74,10 @@ void mt76_set_irq_mask(struct mt76_dev *dev, u32 addr,
 	dev->mmio.irqmask &= ~clear;
 	dev->mmio.irqmask |= set;
 	if (addr) {
-#ifdef CONFIG_NET_MEDIATEK_SOC_WED
 		if (mtk_wed_device_active(&dev->mmio.wed))
 			mtk_wed_device_irq_set_mask(&dev->mmio.wed,
 						    dev->mmio.irqmask);
 		else
-#endif
 			mt76_mmio_wr(dev, addr, dev->mmio.irqmask);
 	}
 	spin_unlock_irqrestore(&dev->mmio.irq_lock, flags);

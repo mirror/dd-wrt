@@ -1991,10 +1991,11 @@ ieee80211_rx_h_decrypt(struct ieee80211_rx_data *rx)
 
 		if (mmie_keyidx < NUM_DEFAULT_KEYS + NUM_DEFAULT_MGMT_KEYS ||
 		    mmie_keyidx >= NUM_DEFAULT_KEYS + NUM_DEFAULT_MGMT_KEYS +
-		    NUM_DEFAULT_BEACON_KEYS) {
-			cfg80211_rx_unprot_mlme_mgmt(rx->sdata->dev,
-						     skb->data,
-						     skb->len);
+				   NUM_DEFAULT_BEACON_KEYS) {
+			if (rx->sdata->dev)
+				cfg80211_rx_unprot_mlme_mgmt(rx->sdata->dev,
+							     skb->data,
+							     skb->len);
 			return RX_DROP_MONITOR; /* unexpected BIP keyidx */
 		}
 
@@ -2142,7 +2143,8 @@ ieee80211_rx_h_decrypt(struct ieee80211_rx_data *rx)
 	/* either the frame has been decrypted or will be dropped */
 	status->flag |= RX_FLAG_DECRYPTED;
 
-	if (unlikely(ieee80211_is_beacon(fc) && result == RX_DROP_UNUSABLE))
+	if (unlikely(ieee80211_is_beacon(fc) && result == RX_DROP_UNUSABLE &&
+		     rx->sdata->dev))
 		cfg80211_rx_unprot_mlme_mgmt(rx->sdata->dev,
 					     skb->data, skb->len);
 
@@ -3255,7 +3257,7 @@ ieee80211_rx_h_mgmt_check(struct ieee80211_rx_data *rx)
 	struct ieee80211_mgmt *mgmt = (struct ieee80211_mgmt *) rx->skb->data;
 	struct ieee80211_rx_status *status = IEEE80211_SKB_RXCB(rx->skb);
 	struct sta_info *sta = rx->sta;
-	struct ieee802_11_elems elems;
+	struct ieee802_11_elems *elems;
 	char radioname[16];
 	char *radio = NULL;
 	u8 *pos;
@@ -3290,17 +3292,20 @@ ieee80211_rx_h_mgmt_check(struct ieee80211_rx_data *rx)
 		pos = mgmt->u.beacon.variable;
 		baselen = (u8 *)pos - (u8 *)mgmt;
 		if (baselen <= len) {
-			ieee802_11_parse_elems(pos, len - baselen, false, &elems, NULL, NULL);
-			if (elems.mtik) {
-				radioname[15] = 0;
-				memcpy(&radioname[0], &elems.mtik->radioname[0], 15);
-				if (elems.mtik->namelen && elems.mtik->namelen < 16)
-					radioname[elems.mtik->namelen] = 0;
-				radio = add_radioname(sdata, &mgmt->sa[0], &radioname[0], elems.mtik->flags & (1<<2));
-			}
-			if (elems.aironet) {
-				memcpy(&radioname[0], &elems.aironet->name[0], 16);
-				radio = add_radioname(sdata, &mgmt->sa[0], &radioname[0], 0);
+			elems = ieee802_11_parse_elems(pos, len - baselen, false, NULL, NULL);
+			if (elems) {
+				if (elems->mtik) {
+					radioname[15] = 0;
+					memcpy(&radioname[0], &elems->mtik->radioname[0], 15);
+					if (elems->mtik->namelen && elems->mtik->namelen < 16)
+						radioname[elems->mtik->namelen] = 0;
+					radio = add_radioname(sdata, &mgmt->sa[0], &radioname[0], elems->mtik->flags & (1<<2));
+				}
+				if (elems->aironet) {
+					memcpy(&radioname[0], &elems->aironet->name[0], 16);
+					radio = add_radioname(sdata, &mgmt->sa[0], &radioname[0], 0);
+				}
+				kfree(elems);
 			}
 		}
 		if (sta) {
@@ -4830,7 +4835,7 @@ static bool ieee80211_invoke_fast_rx(struct ieee80211_rx_data *rx,
 
 	if (!(status->rx_flags & IEEE80211_RX_AMSDU)) {
 		if (!pskb_may_pull(skb, snap_offs + sizeof(*payload)))
-			goto drop;
+			return false;
 
 		payload = (void *)(skb->data + snap_offs);
 
@@ -4867,6 +4872,8 @@ static bool ieee80211_invoke_fast_rx(struct ieee80211_rx_data *rx,
 	/* do the header conversion - first grab the addresses */
 	ether_addr_copy(addrs.da, skb->data + fast_rx->da_offs);
 	ether_addr_copy(addrs.sa, skb->data + fast_rx->sa_offs);
+	skb_postpull_rcsum(skb, skb->data + snap_offs,
+			   sizeof(rfc1042_header) + 2);
 	/* remove the SNAP but leave the ethertype */
 	skb_pull(skb, snap_offs + sizeof(rfc1042_header));
 	/* push the addresses in front */

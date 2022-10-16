@@ -166,6 +166,21 @@ static const struct file_operations fops_turboqam = {
 	.llseek = default_llseek,
 };
 
+static int mt76x02_read_rate_txpower(struct seq_file *s, void *data)
+{
+	struct mt76x02_dev *dev = dev_get_drvdata(s->private);
+
+	mt76_seq_puts_array(s, "CCK", dev->rate_power.cck,
+			    ARRAY_SIZE(dev->rate_power.cck));
+	mt76_seq_puts_array(s, "OFDM", dev->rate_power.ofdm,
+			    ARRAY_SIZE(dev->rate_power.ofdm));
+	mt76_seq_puts_array(s, "HT", dev->rate_power.ht,
+			    ARRAY_SIZE(dev->rate_power.ht));
+	mt76_seq_puts_array(s, "VHT", dev->rate_power.vht,
+			    ARRAY_SIZE(dev->rate_power.vht));
+	return 0;
+}
+
 void mt76x02_init_debugfs(struct mt76x02_dev *dev)
 {
 	struct dentry *dir;
@@ -185,6 +200,8 @@ void mt76x02_init_debugfs(struct mt76x02_dev *dev)
 	debugfs_create_devm_seqfile(dev->mt76.dev, "txpower", dir,
 				    read_txpower);
 
+	debugfs_create_devm_seqfile(dev->mt76.dev, "rate_txpower", dir,
+				    mt76x02_read_rate_txpower);
 	debugfs_create_devm_seqfile(dev->mt76.dev, "agc", dir, read_agc);
 
 	debugfs_create_u32("tx_hang_reset", 0400, dir, &dev->tx_hang_reset);

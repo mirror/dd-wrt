@@ -649,7 +649,7 @@ static void tdma_rx_mgmt_beacon(struct ieee80211_sub_if_data *sdata, struct ieee
 	int baselen;
 	bool off_carrier = false;
 	tdma_state state = TDMA_STATUS_UNKNOW;
-	struct ieee802_11_elems elems;
+	struct ieee802_11_elems *elems;
 	u8 tie_cfg;
 	u8 tie_node_id;
 	u8 tie_state;
@@ -676,24 +676,26 @@ static void tdma_rx_mgmt_beacon(struct ieee80211_sub_if_data *sdata, struct ieee
 		return;
 	}
 
-	ieee802_11_parse_elems(mgmt->u.beacon.variable, len - baselen, false, &elems, NULL, NULL);
-	if (!elems.peering) {
+	elems = ieee802_11_parse_elems(mgmt->u.beacon.variable, len - baselen, false, NULL, NULL);
+	if (!elems)
 		return;
+	if (!elems->peering) {
+		goto free;
 	}
 	/* check SSID */
-	if ((elems.ssid_len != sdata->vif.bss_conf.ssid_len) || ((elems.ssid_len > 0) && memcmp(elems.ssid, sdata->vif.bss_conf.ssid, sdata->vif.bss_conf.ssid_len))) {
+	if ((elems->ssid_len != sdata->vif.bss_conf.ssid_len) || ((elems->ssid_len > 0) && memcmp(elems->ssid, sdata->vif.bss_conf.ssid, sdata->vif.bss_conf.ssid_len))) {
 #ifdef TDMA_DEBUG_BEACON_RX
 		printk("TDMA: Different SSID\n");
 #endif
-		return;
+		goto free;
 	}
-	start_pos = (u8 *)elems.peering;
-	ie_len = elems.peering_len;
+	start_pos = (u8 *)elems->peering;
+	ie_len = elems->peering_len;
 	if (ie_len < TDMA_MIN_IE_SIZE) {
 #ifdef TDMA_DEBUG_BEACON_RX
 		printk("TDMA: Wrong ie len - %d\n", ie_len);
 #endif
-		return;
+		goto free;
 	}
 	tie_cfg = *start_pos;
 	start_pos++;
@@ -703,7 +705,7 @@ static void tdma_rx_mgmt_beacon(struct ieee80211_sub_if_data *sdata, struct ieee
 #ifdef TDMA_DEBUG_BEACON_RX
 		printk("TDMA: Wrong IE - %d\n", tie_node_id);
 #endif
-		return;
+		goto free;
 	}
 	tie_state = *start_pos;
 	start_pos++;
@@ -722,32 +724,32 @@ static void tdma_rx_mgmt_beacon(struct ieee80211_sub_if_data *sdata, struct ieee
 #ifdef TDMA_DEBUG_BEACON_RX_ALL
 		printk("TDMA: Ignore beacons from other CPEs \n");
 #endif
-		return;
+		goto free;
 	}
 	if ((over == 2) && (ever == 2)) {
 #ifdef TDMA_DEBUG_BEACON_RX_ALL
 		printk("TDMA: Ignore beacons from other BS \n");
 #endif
-		return;
+		goto free;
 	}
 	if (((over == 2) && (ever != 3)) || ((over == 3) && (ever != 2)) || ((over < 2) && (ever != over))) {
 #ifdef TDMA_DEBUG_BEACON_RX
 		printk("TDMA: Wrong version - %d %d\n", over, ever);
 #endif
-		return;
+		goto free;
 	}
 	if (tie_node_id > tdma_get_slot_num(tdma)) {
 #ifdef TDMA_DEBUG_BEACON_RX
 		printk("TDMA: Wrong node_id \n");
 #endif
-		return;
+		goto free;
 	}
 	if ((over == 3) && (ever == 2)) {
-		if ((elems.ssid_len == 0) && !ether_addr_equal(mgmt->sa, tdma->bssid)) {
+		if ((elems->ssid_len == 0) && !ether_addr_equal(mgmt->sa, tdma->bssid)) {
 #ifdef TDMA_DEBUG_BEACON_RX_ALL
 			printk("TDMA: Ignore beacons from not our BS\n");
 #endif
-			return;
+			goto free;
 		}
 	}
 	state = TDMA_STATE(tdma);
@@ -762,7 +764,7 @@ static void tdma_rx_mgmt_beacon(struct ieee80211_sub_if_data *sdata, struct ieee
 #ifdef TDMA_DEBUG_BEACON_RX
 			printk("TDMA: Rate mismatch\n");
 #endif
-			return;
+			goto free;
 		}
 	}
 	if (tie_node_id == tdma->node_id) {
@@ -788,7 +790,7 @@ static void tdma_rx_mgmt_beacon(struct ieee80211_sub_if_data *sdata, struct ieee
 		off_carrier = true;
 		goto out;
 	}
-	sta = tdma_upd_sta_rcu(sdata, mgmt->sa, &elems, tie_state, tie_tx_ratio, tie_rx_ratio, tie_node_num, tie_cfg, tie_rate, tie_slot_size, tie_node_bitmap, tie_node_id, rx_status->signal);
+	sta = tdma_upd_sta_rcu(sdata, mgmt->sa, elems, tie_state, tie_tx_ratio, tie_rx_ratio, tie_node_num, tie_cfg, tie_rate, tie_slot_size, tie_node_bitmap, tie_node_id, rx_status->signal);
 	if (sta != NULL) {
 #ifdef TDMA_DEBUG_BEACON_RX_ALL
 		printk("TDMA: CBR (%d) time (%lu). IE_Len - %d, num_bytes - %d. Interval is - (%lu). (S %d/R %d)\n", sta->n.aid, sta->n.last_seen, (int)ie_len, num_bytes, tdma->tx_round_duration, state, tie_state);
@@ -862,6 +864,8 @@ out:
 #endif
 		tdma_reset_state(tdma);
 	}
+	free:
+	kfree(elems);
 }
 
 void ieee80211_tdma_rx_queued_mgmt(struct ieee80211_sub_if_data *sdata, struct sk_buff *skb)

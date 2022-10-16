@@ -957,17 +957,15 @@ mt7915_set_antenna(struct ieee80211_hw *hw, u32 tx_ant, u32 rx_ant)
 	if (!tx_ant || tx_ant != rx_ant || ffs(tx_ant) > max_nss)
 		return -EINVAL;
 
-	if ((BIT(hweight8(tx_ant)) - 1) != tx_ant)
-		tx_ant = BIT(ffs(tx_ant) - 1) - 1;
-
 	mutex_lock(&dev->mt76.mutex);
 
 	phy->mt76->antenna_mask = tx_ant;
 
-	if (ext_phy)
-		tx_ant <<= dev->chainshift;
-
-	phy->mt76->chainmask = tx_ant;
+	/* handle a variant of mt7916 which has 3T3R but nss2 on 5 GHz band */
+	if (is_mt7916(&dev->mt76) && ext_phy && hweight8(tx_ant) == max_nss)
+		phy->mt76->chainmask = dev->chainmask >> dev->chainshift;
+	else
+		phy->mt76->chainmask = tx_ant << (dev->chainshift * ext_phy);
 
 	mt76_set_stream_caps(phy->mt76, true, dev->mt76.turboqam);
 	mt7915_set_stream_vht_txbf_caps(phy);
@@ -1009,6 +1007,23 @@ static void mt7915_sta_statistics(struct ieee80211_hw *hw,
 	}
 	sinfo->txrate.flags = txrate->flags;
 	sinfo->filled |= BIT_ULL(NL80211_STA_INFO_TX_BITRATE);
+
+	/* offloading flows bypass networking stack, so driver counts and
+	 * reports sta statistics via NL80211_STA_INFO when WED is active.
+	 */
+	if (mtk_wed_device_active(&phy->dev->mt76.mmio.wed)) {
+		sinfo->tx_bytes = msta->wcid.stats.tx_bytes;
+		sinfo->filled |= BIT_ULL(NL80211_STA_INFO_TX_BYTES64);
+
+		sinfo->tx_packets = msta->wcid.stats.tx_packets;
+		sinfo->filled |= BIT_ULL(NL80211_STA_INFO_TX_PACKETS);
+
+		sinfo->tx_failed = msta->wcid.stats.tx_failed;
+		sinfo->filled |= BIT_ULL(NL80211_STA_INFO_TX_FAILED);
+
+		sinfo->tx_retries = msta->wcid.stats.tx_retries;
+		sinfo->filled |= BIT_ULL(NL80211_STA_INFO_TX_RETRIES);
+	}
 }
 
 static void mt7915_sta_rc_work(void *data, struct ieee80211_sta *sta)
@@ -1223,7 +1238,7 @@ static void mt7915_ethtool_worker(void *wi_data, struct ieee80211_sta *sta)
 	if (msta->vif->mt76.idx != wi->idx)
 		return;
 
-	mt76_ethtool_worker(wi, &msta->stats);
+	mt76_ethtool_worker(wi, &msta->wcid.stats);
 }
 
 static
@@ -1413,7 +1428,7 @@ mt7915_net_fill_forward_path(struct ieee80211_hw *hw,
 	path->dev = ctx->dev;
 	path->mtk_wdma.wdma_idx = wed->wdma_idx;
 	path->mtk_wdma.bss = mvif->mt76.idx;
-	path->mtk_wdma.wcid = msta->wcid.idx;
+	path->mtk_wdma.wcid = is_mt7915(&dev->mt76) ? msta->wcid.idx : 0x3ff;
 	path->mtk_wdma.queue = phy != &dev->phy;
 
 	ctx->dev = NULL;
