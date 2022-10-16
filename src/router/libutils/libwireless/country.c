@@ -974,6 +974,9 @@ static char *countries = NULL;
 
 static int checkfilter(char *filter, char *check)
 {
+	if (!issuperchannel() && !strcmp(check, "PS"))
+		return 0;
+
 	char *next;
 	char var[32];
 	if (!filter)
