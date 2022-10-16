@@ -127,8 +127,6 @@ struct mt7915_sta {
 	unsigned long jiffies;
 	unsigned long ampdu_state;
 
-	struct mt76_sta_stats stats;
-
 	struct mt76_connac_sta_key_conf bip;
 
 	struct {
@@ -359,6 +357,7 @@ enum mt7915_rdd_cmd {
 	RDD_DET_MODE,
 	RDD_RADAR_EMULATE,
 	RDD_START_TXQ = 20,
+	RDD_SET_WF_ANT = 30,
 	RDD_CAC_START = 50,
 	RDD_CAC_END,
 	RDD_NORMAL_START,
@@ -592,5 +591,7 @@ bool mt7915_debugfs_rx_log(struct mt7915_dev *dev, const void *data, int len);
 void mt7915_sta_add_debugfs(struct ieee80211_hw *hw, struct ieee80211_vif *vif,
 			    struct ieee80211_sta *sta, struct dentry *dir);
 #endif
+int mt7915_mmio_wed_init(struct mt7915_dev *dev, void *pdev_ptr,
+			 bool pci, int *irq);
 
 #endif

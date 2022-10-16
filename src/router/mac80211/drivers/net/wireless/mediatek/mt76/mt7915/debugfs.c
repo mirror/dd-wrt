@@ -23,9 +23,9 @@ mt7915_implicit_txbf_set(void *data, u64 val)
 {
 	struct mt7915_dev *dev = data;
 
-	if (test_bit(MT76_STATE_RUNNING, &dev->mphy.state))
-		return -EBUSY;
-
+	/* The existing connected stations shall reconnect to apply
+	 * new implicit txbf configuration.
+	 */
 	dev->ibf = !!val;
 
 	return mt7915_mcu_set_txbf(dev, MT_BF_TYPE_UPDATE);
@@ -1056,7 +1056,7 @@ mt7915_twt_stats(struct seq_file *s, void *data)
 }
 
 /* The index of RF registers use the generic regidx, combined with two parts:
- * WF selection [31:28] and offset [27:0].
+ * WF selection [31:24] and offset [23:0].
  */
 static int
 mt7915_rf_regval_get(void *data, u64 *val)

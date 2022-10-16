@@ -485,7 +485,7 @@ static void
 mt7915_mcu_bss_ra_tlv(struct sk_buff *skb, struct ieee80211_vif *vif,
 		      struct mt7915_phy *phy)
 {
-	int max_nss = hweight8(phy->mt76->chainmask);
+	int max_nss = hweight8(phy->mt76->antenna_mask);
 	struct bss_info_ra *ra;
 	struct tlv *tlv;
 
@@ -1306,6 +1306,9 @@ int mt7915_mcu_set_fixed_rate_ctrl(struct mt7915_dev *dev,
 	case RATE_PARAM_MMPS_UPDATE:
 		ra->mmps_mode = mt7915_mcu_get_mmps_mode(sta->smps_mode);
 		break;
+	case RATE_PARAM_SPE_UPDATE:
+		ra->spe_idx = *(u8 *)data;
+		break;
 	default:
 		break;
 	}
@@ -1349,6 +1352,18 @@ int mt7915_mcu_add_smps(struct mt7915_dev *dev, struct ieee80211_vif *vif,
 }
 
 static int
+mt7915_mcu_set_spe_idx(struct mt7915_dev *dev, struct ieee80211_vif *vif,
+		       struct ieee80211_sta *sta)
+{
+	struct mt7915_vif *mvif = (struct mt7915_vif *)vif->drv_priv;
+	struct mt76_phy *mphy = mvif->phy->mt76;
+	u8 spe_idx = mt76_connac_spe_idx(mphy->antenna_mask);
+
+	return mt7915_mcu_set_fixed_rate_ctrl(dev, vif, sta, &spe_idx,
+					      RATE_PARAM_SPE_UPDATE);
+}
+
+static int
 mt7915_mcu_add_rate_ctrl_fixed(struct mt7915_dev *dev,
 			       struct ieee80211_vif *vif,
 			       struct ieee80211_sta *sta)
@@ -1360,7 +1375,7 @@ mt7915_mcu_add_rate_ctrl_fixed(struct mt7915_dev *dev,
 	struct sta_phy phy = {};
 	int ret, nrates = 0;
 
-#define __sta_phy_bitrate_mask_check(_mcs, _gi, _he)				\
+#define __sta_phy_bitrate_mask_check(_mcs, _gi, _ht, _he)			\
 	do {									\
 		u8 i, gi = mask->control[band]._gi;				\
 		gi = (_he) ? gi : gi == NL80211_TXRATE_FORCE_SGI;		\
@@ -1373,15 +1388,17 @@ mt7915_mcu_add_rate_ctrl_fixed(struct mt7915_dev *dev,
 				continue;					\
 			nrates += hweight16(mask->control[band]._mcs[i]);	\
 			phy.mcs = ffs(mask->control[band]._mcs[i]) - 1;		\
+			if (_ht)						\
+				phy.mcs += 8 * i;				\
 		}								\
 	} while (0)
 
 	if (sta->he_cap.has_he) {
-		__sta_phy_bitrate_mask_check(he_mcs, he_gi, 1);
+		__sta_phy_bitrate_mask_check(he_mcs, he_gi, 0, 1);
 	} else if (sta->vht_cap.vht_supported) {
-		__sta_phy_bitrate_mask_check(vht_mcs, gi, 0);
+		__sta_phy_bitrate_mask_check(vht_mcs, gi, 0, 0);
 	} else if (sta->ht_cap.ht_supported) {
-		__sta_phy_bitrate_mask_check(ht_mcs, gi, 0);
+		__sta_phy_bitrate_mask_check(ht_mcs, gi, 1, 0);
 	} else {
 		nrates = hweight32(mask->control[band].legacy);
 		phy.mcs = ffs(mask->control[band].legacy) - 1;
@@ -1433,7 +1450,7 @@ mt7915_mcu_add_rate_ctrl_fixed(struct mt7915_dev *dev,
 			return ret;
 	}
 
-	return 0;
+	return mt7915_mcu_set_spe_idx(dev, vif, sta);
 }
 
 static void
@@ -2272,10 +2289,8 @@ int mt7915_mcu_init(struct mt7915_dev *dev)
 	if (ret)
 		return ret;
 
-#ifdef CONFIG_NET_MEDIATEK_SOC_WED
-	if (mtk_wed_device_active(&dev->mt76.mmio.wed))
+	if (mtk_wed_device_active(&dev->mt76.mmio.wed) && is_mt7915(&dev->mt76))
 		mt7915_mcu_wa_cmd(dev, MCU_WA_PARAM_CMD(CAPABILITY), 0, 0, 0);
-#endif
 
 	ret = mt7915_mcu_set_mwds(dev, 1);
 	if (ret)
@@ -2642,16 +2657,14 @@ int mt7915_mcu_set_chan_info(struct mt7915_phy *phy, int cmd)
 
 #ifdef CPTCFG_NL80211_TESTMODE
 	if (phy->mt76->test.tx_antenna_mask &&
-	    (phy->mt76->test.state == MT76_TM_STATE_TX_FRAMES ||
-	     phy->mt76->test.state == MT76_TM_STATE_RX_FRAMES ||
-	     phy->mt76->test.state == MT76_TM_STATE_TX_CONT)) {
+	    mt76_testmode_enabled(phy->mt76)) {
 		req.tx_streams_num = fls(phy->mt76->test.tx_antenna_mask);
 		req.rx_streams = phy->mt76->test.tx_antenna_mask;
-
-		if (phy != &dev->phy)
-			req.rx_streams >>= dev->chainshift;
 	}
 #endif
+
+	if (mt76_connac_spe_idx(phy->mt76->antenna_mask))
+		req.tx_streams_num = fls(phy->mt76->antenna_mask);
 
 	if (cmd == MCU_EXT_CMD(SET_RX_PATH) ||
 	    dev->mt76.hw->conf.flags & IEEE80211_CONF_MONITOR)
@@ -3447,8 +3460,8 @@ int mt7915_mcu_rf_regval(struct mt7915_dev *dev, u32 regidx, u32 *val, bool set)
 		__le32 ofs;
 		__le32 data;
 	} __packed req = {
-		.idx = cpu_to_le32(u32_get_bits(regidx, GENMASK(31, 28))),
-		.ofs = cpu_to_le32(u32_get_bits(regidx, GENMASK(27, 0))),
+		.idx = cpu_to_le32(u32_get_bits(regidx, GENMASK(31, 24))),
+		.ofs = cpu_to_le32(u32_get_bits(regidx, GENMASK(23, 0))),
 		.data = set ? cpu_to_le32(*val) : 0,
 	};
 	struct sk_buff *skb;

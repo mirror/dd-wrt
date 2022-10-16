@@ -2898,35 +2898,42 @@ static void ieee80211_auth_challenge(struct ieee80211_sub_if_data *sdata,
 {
 	struct ieee80211_local *local = sdata->local;
 	struct ieee80211_mgd_auth_data *auth_data = sdata->u.mgd.auth_data;
+	struct ieee802_11_elems *elems;
+	const struct element *challenge;
 	u8 *pos;
-	struct ieee802_11_elems elems;
 	u32 tx_flags = 0;
 	struct ieee80211_prep_tx_info info = {
 		.subtype = IEEE80211_STYPE_AUTH,
 	};
 
 	pos = mgmt->u.auth.variable;
-	ieee802_11_parse_elems(pos, len - (pos - (u8 *)mgmt), false, &elems,
-			       mgmt->bssid, auth_data->bss->bssid);
-	if (!elems.challenge)
+	challenge = cfg80211_find_elem(WLAN_EID_CHALLENGE, pos,
+				       len - (pos - (u8 *)mgmt));
+	if (!challenge)
 		return;
-
-	if (elems.mtik){
-		memcpy(&sdata->radioname[0], &elems.mtik->radioname[0], 15);
-		if (elems.mtik->namelen && elems.mtik->namelen < 16)
-		    sdata->radioname[elems.mtik->namelen] = 0;
+	elems = ieee802_11_parse_elems(pos, len - (pos - (u8 *)mgmt), false,
+			       mgmt->bssid, auth_data->bss->bssid);
+	if (elems) {
+		if (elems->mtik){
+			memcpy(&sdata->radioname[0], &elems->mtik->radioname[0], 15);
+			if (elems->mtik->namelen && elems->mtik->namelen < 16)
+			    sdata->radioname[elems->mtik->namelen] = 0;
+		}
+	
+		if (elems->aironet) {
+			memcpy(&sdata->radioname[0], &elems->aironet->name[0], 16);
+		}
+		kfree(elems);
 	}
-
-	if (elems.aironet) {
-		memcpy(&sdata->radioname[0], &elems.aironet->name[0], 16);
-	}
+	
 	auth_data->expected_transaction = 4;
 	drv_mgd_prepare_tx(sdata->local, sdata, &info);
 	if (ieee80211_hw_check(&local->hw, REPORTS_TX_ACK_STATUS))
 		tx_flags = IEEE80211_TX_CTL_REQ_TX_STATUS |
 			   IEEE80211_TX_INTFL_MLME_CONN_TX;
 	ieee80211_send_auth(sdata, 3, auth_data->algorithm, 0,
-			    elems.challenge - 2, elems.challenge_len + 2,
+			    (void *)challenge,
+			    challenge->datalen + sizeof(*challenge),
 			    auth_data->bss->bssid, auth_data->bss->bssid,
 			    auth_data->key, auth_data->key_len,
 			    auth_data->key_idx, tx_flags);
@@ -3337,8 +3344,11 @@ static bool ieee80211_assoc_success(struct ieee80211_sub_if_data *sdata,
 		aid = 0; /* TODO */
 	}
 	capab_info = le16_to_cpu(mgmt->u.assoc_resp.capab_info);
-	ieee802_11_parse_elems(pos, len - (pos - (u8 *)mgmt), false, elems,
-			       mgmt->bssid, assoc_data->bss->bssid);
+	elems = ieee802_11_parse_elems(pos, len - (pos - (u8 *)mgmt), false,
+				       mgmt->bssid, assoc_data->bss->bssid);
+
+	if (!elems)
+		return false;
 
 	if (elems->aid_resp)
 		aid = le16_to_cpu(elems->aid_resp->aid);
@@ -3375,7 +3385,8 @@ static bool ieee80211_assoc_success(struct ieee80211_sub_if_data *sdata,
 
 	if (!is_s1g && !elems->supp_rates) {
 		sdata_info(sdata, "no SuppRates element in AssocResp\n");
-		return false;
+		ret = false;
+		goto out;
 	}
 
 	sdata->vif.bss_conf.aid = aid;
@@ -3397,7 +3408,7 @@ static bool ieee80211_assoc_success(struct ieee80211_sub_if_data *sdata,
 	     (!(ifmgd->flags & IEEE80211_STA_DISABLE_VHT) &&
 	      (!elems->vht_cap_elem || !elems->vht_operation)))) {
 		const struct cfg80211_bss_ies *ies;
-		struct ieee802_11_elems bss_elems;
+		struct ieee802_11_elems *bss_elems;
 
 		rcu_read_lock();
 		ies = rcu_dereference(cbss->ies);
@@ -3405,27 +3416,33 @@ static bool ieee80211_assoc_success(struct ieee80211_sub_if_data *sdata,
 			bss_ies = kmemdup(ies, sizeof(*ies) + ies->len,
 					  GFP_ATOMIC);
 		rcu_read_unlock();
-		if (!bss_ies)
-			return false;
-
-		ieee802_11_parse_elems(bss_ies->data, bss_ies->len,
-				       false, &bss_elems,
-				       mgmt->bssid,
-				       assoc_data->bss->bssid);
-		if (bss_elems.mtik) {
-			memcpy(&radioname[0], &bss_elems.mtik->radioname[0], 15);
-			if (bss_elems.mtik->namelen && bss_elems.mtik->namelen < 16)
-				radioname[bss_elems.mtik->namelen] = 0;
-		        radio = add_radioname(sdata, &mgmt->sa[0], &radioname[0], bss_elems.mtik->flags & (1<<2));
+		if (!bss_ies) {
+			ret = false;
+			goto out;
 		}
-		if (bss_elems.aironet) {
-			memcpy(&radioname[0], &bss_elems.aironet->name[0], 16);
+
+		bss_elems = ieee802_11_parse_elems(bss_ies->data, bss_ies->len,
+						   false, mgmt->bssid,
+						   assoc_data->bss->bssid);
+		if (!bss_elems) {
+			ret = false;
+			goto out;
+		}
+
+		if (bss_elems->mtik) {
+			memcpy(&radioname[0], &bss_elems->mtik->radioname[0], 15);
+			if (bss_elems->mtik->namelen && bss_elems->mtik->namelen < 16)
+				radioname[bss_elems->mtik->namelen] = 0;
+		        radio = add_radioname(sdata, &mgmt->sa[0], &radioname[0], bss_elems->mtik->flags & (1<<2));
+		}
+		if (bss_elems->aironet) {
+			memcpy(&radioname[0], &bss_elems->aironet->name[0], 16);
 		        radio = add_radioname(sdata, &mgmt->sa[0], &radioname[0], 0);
 		}
 
 		if (assoc_data->wmm &&
-		    !elems->wmm_param && bss_elems.wmm_param) {
-			elems->wmm_param = bss_elems.wmm_param;
+		    !elems->wmm_param && bss_elems->wmm_param) {
+			elems->wmm_param = bss_elems->wmm_param;
 			sdata_info(sdata,
 				   "AP bug: WMM param missing from AssocResp\n");
 		}
@@ -3434,30 +3451,32 @@ static bool ieee80211_assoc_success(struct ieee80211_sub_if_data *sdata,
 		 * Also check if we requested HT/VHT, otherwise the AP doesn't
 		 * have to include the IEs in the (re)association response.
 		 */
-		if (!elems->ht_cap_elem && bss_elems.ht_cap_elem &&
+		if (!elems->ht_cap_elem && bss_elems->ht_cap_elem &&
 		    !(ifmgd->flags & IEEE80211_STA_DISABLE_HT)) {
-			elems->ht_cap_elem = bss_elems.ht_cap_elem;
+			elems->ht_cap_elem = bss_elems->ht_cap_elem;
 			sdata_info(sdata,
 				   "AP bug: HT capability missing from AssocResp\n");
 		}
-		if (!elems->ht_operation && bss_elems.ht_operation &&
+		if (!elems->ht_operation && bss_elems->ht_operation &&
 		    !(ifmgd->flags & IEEE80211_STA_DISABLE_HT)) {
-			elems->ht_operation = bss_elems.ht_operation;
+			elems->ht_operation = bss_elems->ht_operation;
 			sdata_info(sdata,
 				   "AP bug: HT operation missing from AssocResp\n");
 		}
-		if (!elems->vht_cap_elem && bss_elems.vht_cap_elem &&
+		if (!elems->vht_cap_elem && bss_elems->vht_cap_elem &&
 		    !(ifmgd->flags & IEEE80211_STA_DISABLE_VHT)) {
-			elems->vht_cap_elem = bss_elems.vht_cap_elem;
+			elems->vht_cap_elem = bss_elems->vht_cap_elem;
 			sdata_info(sdata,
 				   "AP bug: VHT capa missing from AssocResp\n");
 		}
-		if (!elems->vht_operation && bss_elems.vht_operation &&
+		if (!elems->vht_operation && bss_elems->vht_operation &&
 		    !(ifmgd->flags & IEEE80211_STA_DISABLE_VHT)) {
-			elems->vht_operation = bss_elems.vht_operation;
+			elems->vht_operation = bss_elems->vht_operation;
 			sdata_info(sdata,
 				   "AP bug: VHT operation missing from AssocResp\n");
 		}
+
+		kfree(bss_elems);
 	}
 
 	/*
@@ -3713,6 +3732,7 @@ static bool ieee80211_assoc_success(struct ieee80211_sub_if_data *sdata,
 
 	ret = true;
  out:
+	kfree(elems);
 	kfree(bss_ies);
 	return ret;
 }
@@ -3724,7 +3744,7 @@ static void ieee80211_rx_mgmt_assoc_resp(struct ieee80211_sub_if_data *sdata,
 	struct ieee80211_if_managed *ifmgd = &sdata->u.mgd;
 	struct ieee80211_mgd_assoc_data *assoc_data = ifmgd->assoc_data;
 	u16 capab_info, status_code, aid;
-	struct ieee802_11_elems elems;
+	struct ieee802_11_elems *elems;
 	int ac, uapsd_queues = -1;
 	u8 *pos;
 	bool reassoc;
@@ -3781,24 +3801,26 @@ static void ieee80211_rx_mgmt_assoc_resp(struct ieee80211_sub_if_data *sdata,
 	    fils_decrypt_assoc_resp(sdata, (u8 *)mgmt, &len, assoc_data) < 0)
 		return;
 
-	ieee802_11_parse_elems(pos, len - (pos - (u8 *)mgmt), false, &elems,
-			       mgmt->bssid, assoc_data->bss->bssid);
+	elems = ieee802_11_parse_elems(pos, len - (pos - (u8 *)mgmt), false,
+				       mgmt->bssid, assoc_data->bss->bssid);
+	if (!elems)
+		goto notify_driver;
 
-	if (elems.mtik) {
-		memcpy(&sdata->radioname[0], &elems.mtik->radioname[0], 15);
-		if (elems.mtik->namelen && elems.mtik->namelen < 16)
-		    sdata->radioname[elems.mtik->namelen] = 0;
+	if (elems->mtik) {
+		memcpy(&sdata->radioname[0], &elems->mtik->radioname[0], 15);
+		if (elems->mtik->namelen && elems->mtik->namelen < 16)
+		    sdata->radioname[elems->mtik->namelen] = 0;
 
 	}
-	if (elems.aironet) {
-		memcpy(&sdata->radioname[0], &elems.aironet->name[0], 16);
+	if (elems->aironet) {
+		memcpy(&sdata->radioname[0], &elems->aironet->name[0], 16);
 	}
 
 	if (status_code == WLAN_STATUS_ASSOC_REJECTED_TEMPORARILY &&
-	    elems.timeout_int &&
-	    elems.timeout_int->type == WLAN_TIMEOUT_ASSOC_COMEBACK) {
+	    elems->timeout_int &&
+	    elems->timeout_int->type == WLAN_TIMEOUT_ASSOC_COMEBACK) {
 		u32 tu, ms;
-		tu = le32_to_cpu(elems.timeout_int->value);
+		tu = le32_to_cpu(elems->timeout_int->value);
 		ms = tu * 1024 / 1000;
 		sdata_info(sdata,
 			   "%pM rejected association temporarily; comeback duration %u TU (%u ms)\n",
@@ -3818,7 +3840,7 @@ static void ieee80211_rx_mgmt_assoc_resp(struct ieee80211_sub_if_data *sdata,
 		event.u.mlme.reason = status_code;
 		drv_event_callback(sdata->local, sdata, &event);
 	} else {
-		if (!ieee80211_assoc_success(sdata, cbss, mgmt, len, &elems)) {
+		if (!ieee80211_assoc_success(sdata, cbss, mgmt, len, elems)) {
 			/* oops -- internal error -- send timeout for now */
 			ieee80211_destroy_assoc_data(sdata, false, false);
 			cfg80211_assoc_timeout(sdata->dev, cbss);
@@ -3848,6 +3870,7 @@ static void ieee80211_rx_mgmt_assoc_resp(struct ieee80211_sub_if_data *sdata,
 			       ifmgd->assoc_req_ies, ifmgd->assoc_req_ies_len);
 notify_driver:
 	drv_mgd_complete_tx(sdata->local, sdata, &info);
+	kfree(elems);
 }
 
 static void mlme_ieee80211_rx_bss_info(struct ieee80211_sub_if_data *sdata,
@@ -3881,7 +3904,7 @@ static void ieee80211_rx_mgmt_probe_resp(struct ieee80211_sub_if_data *sdata,
 	struct ieee80211_rx_status *rx_status = (void *) skb->cb;
 	struct ieee80211_channel *channel;
 	size_t baselen, len = skb->len;
-	struct ieee802_11_elems elems;
+	struct ieee802_11_elems *elems;
 
 	ifmgd = &sdata->u.mgd;
 
@@ -3909,16 +3932,19 @@ static void ieee80211_rx_mgmt_probe_resp(struct ieee80211_sub_if_data *sdata,
 		return;
 
 
-	ieee802_11_parse_elems(mgmt->u.probe_resp.variable, len - baselen,
-			       false, &elems, NULL, NULL);
-	if (elems.mtik) {
-		memcpy(&sdata->radioname[0], &elems.mtik->radioname[0], 15);
-		if (elems.mtik->namelen && elems.mtik->namelen < 16)
-		    sdata->radioname[elems.mtik->namelen] = 0;
+	elems = ieee802_11_parse_elems(mgmt->u.probe_resp.variable, len - baselen,
+                              false, NULL, NULL);
+	if (!elems)
+		return;
+	if (elems->mtik) {
+		memcpy(&sdata->radioname[0], &elems->mtik->radioname[0], 15);
+		if (elems->mtik->namelen && elems->mtik->namelen < 16)
+		    sdata->radioname[elems->mtik->namelen] = 0;
 	}
-	if (elems.aironet) {
-		memcpy(&sdata->radioname[0], &elems.aironet->name[0], 16);
+	if (elems->aironet) {
+		memcpy(&sdata->radioname[0], &elems->aironet->name[0], 16);
 	}
+	kfree(elems);
 	mlme_ieee80211_rx_bss_info(sdata, mgmt, len, rx_status);
 
 	if (ifmgd->associated &&
@@ -4064,7 +4090,7 @@ static void ieee80211_rx_mgmt_beacon(struct ieee80211_sub_if_data *sdata,
 	struct ieee80211_bss_conf *bss_conf = &sdata->vif.bss_conf;
 	struct ieee80211_mgmt *mgmt = (void *) hdr;
 	size_t baselen;
-	struct ieee802_11_elems elems;
+	struct ieee802_11_elems *elems;
 	struct ieee80211_local *local = sdata->local;
 	struct ieee80211_chanctx_conf *chanctx_conf;
 	struct ieee80211_channel *chan;
@@ -4111,20 +4137,21 @@ static void ieee80211_rx_mgmt_beacon(struct ieee80211_sub_if_data *sdata,
 
 	if (ifmgd->assoc_data && ifmgd->assoc_data->need_beacon &&
 	    ieee80211_rx_our_beacon(bssid, ifmgd->assoc_data->bss)) {
-		ieee802_11_parse_elems(variable,
-				       len - baselen, false, &elems,
-				       bssid,
-				       ifmgd->assoc_data->bss->bssid);
-		if (elems.mtik) {
-			memcpy(&radioname[0], &elems.mtik->radioname[0], 15);
-			if (elems.mtik->namelen && elems.mtik->namelen < 16)
-			    radioname[elems.mtik->namelen] = 0;
+		elems = ieee802_11_parse_elems(variable, len - baselen, false,
+					       bssid,
+					       ifmgd->assoc_data->bss->bssid);
+		if (!elems)
+			return;
+		if (elems->mtik) {
+			memcpy(&radioname[0], &elems->mtik->radioname[0], 15);
+			if (elems->mtik->namelen && elems->mtik->namelen < 16)
+			    radioname[elems->mtik->namelen] = 0;
 			memcpy(&sdata->radioname[0], &radioname[0], 16);
-			radio = add_radioname(sdata, &mgmt->sa[0], &radioname[0], elems.mtik->flags & (1<<2));
+			radio = add_radioname(sdata, &mgmt->sa[0], &radioname[0], elems->mtik->flags & (1<<2));
 		}
-		if (elems.aironet) {
-			memcpy(&radioname[0], &elems.aironet->name[0], 16);
-			memcpy(&sdata->radioname[0], &elems.aironet->name[0], 16);
+		if (elems->aironet) {
+			memcpy(&radioname[0], &elems->aironet->name[0], 16);
+			memcpy(&sdata->radioname[0], &elems->aironet->name[0], 16);
 			radio = add_radioname(sdata, &mgmt->sa[0], &radioname[0], 0);
 		}
 		if (!radio) {
@@ -4133,8 +4160,8 @@ static void ieee80211_rx_mgmt_beacon(struct ieee80211_sub_if_data *sdata,
 
 		mlme_ieee80211_rx_bss_info(sdata, mgmt, len, rx_status);
 
-		if (elems.dtim_period)
-			ifmgd->dtim_period = elems.dtim_period;
+		if (elems->dtim_period)
+			ifmgd->dtim_period = elems->dtim_period;
 		ifmgd->have_beacon = true;
 		ifmgd->assoc_data->need_beacon = false;
 		if (ieee80211_hw_check(&local->hw, TIMING_BEACON_ONLY)) {
@@ -4142,17 +4169,17 @@ static void ieee80211_rx_mgmt_beacon(struct ieee80211_sub_if_data *sdata,
 				le64_to_cpu(mgmt->u.beacon.timestamp);
 			sdata->vif.bss_conf.sync_device_ts =
 				rx_status->device_timestamp;
-			sdata->vif.bss_conf.sync_dtim_count = elems.dtim_count;
+			sdata->vif.bss_conf.sync_dtim_count = elems->dtim_count;
 		}
 
-		if (elems.mbssid_config_ie)
+		if (elems->mbssid_config_ie)
 			bss_conf->profile_periodicity =
-				elems.mbssid_config_ie->profile_periodicity;
+				elems->mbssid_config_ie->profile_periodicity;
 		else
 			bss_conf->profile_periodicity = 0;
 
-		if (elems.ext_capab_len >= 11 &&
-		    (elems.ext_capab[10] & WLAN_EXT_CAPA11_EMA_SUPPORT))
+		if (elems->ext_capab_len >= 11 &&
+		    (elems->ext_capab[10] & WLAN_EXT_CAPA11_EMA_SUPPORT))
 			bss_conf->ema_ap = true;
 		else
 			bss_conf->ema_ap = false;
@@ -4161,6 +4188,7 @@ static void ieee80211_rx_mgmt_beacon(struct ieee80211_sub_if_data *sdata,
 		ifmgd->assoc_data->timeout = jiffies;
 		ifmgd->assoc_data->timeout_started = true;
 		run_again(sdata, ifmgd->assoc_data->timeout);
+		kfree(elems);
 		return;
 	}
 
@@ -4192,13 +4220,15 @@ static void ieee80211_rx_mgmt_beacon(struct ieee80211_sub_if_data *sdata,
 	 */
 	if (!ieee80211_is_s1g_beacon(hdr->frame_control))
 		ncrc = crc32_be(0, (void *)&mgmt->u.beacon.beacon_int, 4);
-	ncrc = ieee802_11_parse_elems_crc(variable,
-					  len - baselen, false, &elems,
-					  care_about_ies, ncrc,
-					  mgmt->bssid, bssid);
+	elems = ieee802_11_parse_elems_crc(variable, len - baselen,
+					   false, care_about_ies, ncrc,
+					   mgmt->bssid, bssid);
+	if (!elems)
+		return;
+	ncrc = elems->crc;
 
 	if (ieee80211_hw_check(&local->hw, PS_NULLFUNC_STACK) &&
-	    ieee80211_check_tim(elems.tim, elems.tim_len, bss_conf->aid)) {
+	    ieee80211_check_tim(elems->tim, elems->tim_len, bss_conf->aid)) {
 		if (local->hw.conf.dynamic_ps_timeout > 0) {
 			if (local->hw.conf.flags & IEEE80211_CONF_PS) {
 				local->hw.conf.flags &= ~IEEE80211_CONF_PS;
@@ -4268,12 +4298,12 @@ static void ieee80211_rx_mgmt_beacon(struct ieee80211_sub_if_data *sdata,
 			le64_to_cpu(mgmt->u.beacon.timestamp);
 		sdata->vif.bss_conf.sync_device_ts =
 			rx_status->device_timestamp;
-		sdata->vif.bss_conf.sync_dtim_count = elems.dtim_count;
+		sdata->vif.bss_conf.sync_dtim_count = elems->dtim_count;
 	}
 
 	if ((ncrc == ifmgd->beacon_crc && ifmgd->beacon_crc_valid) ||
 	    ieee80211_is_s1g_short_beacon(mgmt->frame_control))
-		return;
+		goto free;
 	ifmgd->beacon_crc = ncrc;
 	ifmgd->beacon_crc_valid = true;
 
@@ -4281,12 +4311,12 @@ static void ieee80211_rx_mgmt_beacon(struct ieee80211_sub_if_data *sdata,
 
 	ieee80211_sta_process_chanswitch(sdata, rx_status->mactime,
 					 rx_status->device_timestamp,
-					 &elems, true);
+					 elems, true);
 
 	if (!(ifmgd->flags & IEEE80211_STA_DISABLE_WMM) &&
-	    ieee80211_sta_wmm_params(local, sdata, elems.wmm_param,
-				     elems.wmm_param_len,
-				     elems.mu_edca_param_set))
+	    ieee80211_sta_wmm_params(local, sdata, elems->wmm_param,
+				     elems->wmm_param_len,
+				     elems->mu_edca_param_set))
 		changed |= BSS_CHANGED_QOS;
 
 	/*
@@ -4295,7 +4325,7 @@ static void ieee80211_rx_mgmt_beacon(struct ieee80211_sub_if_data *sdata,
 	 */
 	if (!ifmgd->have_beacon) {
 		/* a few bogus AP send dtim_period = 0 or no TIM IE */
-		bss_conf->dtim_period = elems.dtim_period ?: 1;
+		bss_conf->dtim_period = elems->dtim_period ?: 1;
 
 		changed |= BSS_CHANGED_BEACON_INFO;
 		ifmgd->have_beacon = true;
@@ -4307,9 +4337,9 @@ static void ieee80211_rx_mgmt_beacon(struct ieee80211_sub_if_data *sdata,
 		ieee80211_recalc_ps_vif(sdata);
 	}
 
-	if (elems.erp_info) {
+	if (elems->erp_info) {
 		erp_valid = true;
-		erp_value = elems.erp_info[0];
+		erp_value = elems->erp_info[0];
 	} else {
 		erp_valid = false;
 	}
@@ -4328,12 +4358,12 @@ static void ieee80211_rx_mgmt_beacon(struct ieee80211_sub_if_data *sdata,
 		    memcpy(&sta->radioname[0], radio, 16);
 	}
 
-	changed |= ieee80211_recalc_twt_req(sdata, sta, &elems);
+	changed |= ieee80211_recalc_twt_req(sdata, sta, elems);
 
-	if (ieee80211_config_bw(sdata, sta, elems.ht_cap_elem,
-				elems.vht_cap_elem, elems.ht_operation,
-				elems.vht_operation, elems.he_operation,
-				elems.s1g_oper, bssid, &changed)) {
+	if (ieee80211_config_bw(sdata, sta, elems->ht_cap_elem,
+				elems->vht_cap_elem, elems->ht_operation,
+				elems->vht_operation, elems->he_operation,
+				elems->s1g_oper, bssid, &changed)) {
 		mutex_unlock(&local->sta_mtx);
 		sdata_info(sdata,
 			   "failed to follow AP %pM bandwidth change, disconnect\n",
@@ -4345,21 +4375,23 @@ static void ieee80211_rx_mgmt_beacon(struct ieee80211_sub_if_data *sdata,
 					    sizeof(deauth_buf), true,
 					    WLAN_REASON_DEAUTH_LEAVING,
 					    false);
-		return;
+		goto free;
 	}
 
-	if (sta && elems.opmode_notif)
-		ieee80211_vht_handle_opmode(sdata, sta, *elems.opmode_notif,
+	if (sta && elems->opmode_notif)
+		ieee80211_vht_handle_opmode(sdata, sta, *elems->opmode_notif,
 					    rx_status->band);
 	mutex_unlock(&local->sta_mtx);
 
 	changed |= ieee80211_handle_pwr_constr(sdata, chan, mgmt,
-					       elems.country_elem,
-					       elems.country_elem_len,
-					       elems.pwr_constr_elem,
-					       elems.cisco_dtpc_elem);
+					       elems->country_elem,
+					       elems->country_elem_len,
+					       elems->pwr_constr_elem,
+					       elems->cisco_dtpc_elem);
 
 	ieee80211_bss_info_change_notify(sdata, changed);
+free:
+	kfree(elems);
 }
 
 void ieee80211_sta_rx_queued_ext(struct ieee80211_sub_if_data *sdata,
@@ -4388,7 +4420,6 @@ void ieee80211_sta_rx_queued_mgmt(struct ieee80211_sub_if_data *sdata,
 	struct ieee80211_rx_status *rx_status;
 	struct ieee80211_mgmt *mgmt;
 	u16 fc;
-	struct ieee802_11_elems elems;
 	int ies_len;
 
 	rx_status = (struct ieee80211_rx_status *) skb->cb;
@@ -4420,6 +4451,8 @@ void ieee80211_sta_rx_queued_mgmt(struct ieee80211_sub_if_data *sdata,
 		break;
 	case IEEE80211_STYPE_ACTION:
 		if (mgmt->u.action.category == WLAN_CATEGORY_SPECTRUM_MGMT) {
+			struct ieee802_11_elems *elems;
+
 			ies_len = skb->len -
 				  offsetof(struct ieee80211_mgmt,
 					   u.action.u.chan_switch.variable);
@@ -4428,26 +4461,27 @@ void ieee80211_sta_rx_queued_mgmt(struct ieee80211_sub_if_data *sdata,
 				break;
 
 			/* CSA IE cannot be overridden, no need for BSSID */
-			ieee802_11_parse_elems(
-				mgmt->u.action.u.chan_switch.variable,
-				ies_len, true, &elems, mgmt->bssid, NULL);
+			elems = ieee802_11_parse_elems(
+					mgmt->u.action.u.chan_switch.variable,
+					ies_len, true, mgmt->bssid, NULL);
 
-			if (elems.parse_error)
-				break;
-
-			if (elems.mtik) {
-				memcpy(&sdata->radioname[0], &elems.mtik->radioname[0], 15);
-				if (elems.mtik->namelen && elems.mtik->namelen < 16)
-					sdata->radioname[elems.mtik->namelen] = 0;
+			if (elems && !elems->parse_error) {
+				if (elems->mtik) {
+					memcpy(&sdata->radioname[0], &elems->mtik->radioname[0], 15);
+					if (elems->mtik->namelen && elems->mtik->namelen < 16)
+						sdata->radioname[elems->mtik->namelen] = 0;
+				}
+				if (elems->aironet) {
+					memcpy(&sdata->radioname[0], &elems->aironet->name[0], 16);
+				}
+				ieee80211_sta_process_chanswitch(sdata,
+								 rx_status->mactime,
+								 rx_status->device_timestamp,
+								 elems, false);
+				kfree(elems);
 			}
-			if (elems.aironet) {
-				memcpy(&sdata->radioname[0], &elems.aironet->name[0], 16);
-			}
-			ieee80211_sta_process_chanswitch(sdata,
-						 rx_status->mactime,
-						 rx_status->device_timestamp,
-						 &elems, false);
 		} else if (mgmt->u.action.category == WLAN_CATEGORY_PUBLIC) {
+			struct ieee802_11_elems *elems;
 			ies_len = skb->len -
 				  offsetof(struct ieee80211_mgmt,
 					   u.action.u.ext_chan_switch.variable);
@@ -4459,30 +4493,32 @@ void ieee80211_sta_rx_queued_mgmt(struct ieee80211_sub_if_data *sdata,
 			 * extended CSA IE can't be overridden, no need for
 			 * BSSID
 			 */
-			ieee802_11_parse_elems(
-				mgmt->u.action.u.ext_chan_switch.variable,
-				ies_len, true, &elems, mgmt->bssid, NULL);
+			elems = ieee802_11_parse_elems(
+					mgmt->u.action.u.ext_chan_switch.variable,
+					ies_len, true, mgmt->bssid, NULL);
 
-			if (elems.parse_error)
-				break;
+			if (elems && !elems->parse_error) {
+				if (elems->mtik) {
+					memcpy(&sdata->radioname[0], &elems->mtik->radioname[0], 15);
+					if (elems->mtik->namelen && elems->mtik->namelen < 16)
+						sdata->radioname[elems->mtik->namelen] = 0;
+				}
+				if (elems->aironet) {
+					memcpy(&sdata->radioname[0], &elems->aironet->name[0], 16);
+				}
+				/* for the handling code pretend it was an IE */
+				elems->ext_chansw_ie =
+					&mgmt->u.action.u.ext_chan_switch.data;
 
-			if (elems.mtik) {
-				memcpy(&sdata->radioname[0], &elems.mtik->radioname[0], 15);
-				if (elems.mtik->namelen && elems.mtik->namelen < 16)
-					sdata->radioname[elems.mtik->namelen] = 0;
+				ieee80211_sta_process_chanswitch(sdata,
+								 rx_status->mactime,
+								 rx_status->device_timestamp,
+								 elems, false);
+				kfree(elems);
 			}
-			if (elems.aironet) {
-				memcpy(&sdata->radioname[0], &elems.aironet->name[0], 16);
-			}
+
 			
-			/* for the handling code pretend this was also an IE */
-			elems.ext_chansw_ie =
-				&mgmt->u.action.u.ext_chan_switch.data;
 
-			ieee80211_sta_process_chanswitch(sdata,
-						 rx_status->mactime,
-						 rx_status->device_timestamp,
-						 &elems, false);
 		}
 		break;
 	}

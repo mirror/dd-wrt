@@ -1641,7 +1641,9 @@ country US:
 	# reference: section IV-D https://docs.fcc.gov/public/attachments/FCC-16-89A1.pdf
 	# channels 1-6 EIRP=40dBm(43dBm peak)
 	(57240 - 71000 @ 2160), (40)
-
+country PS:
+	(4915 - 4990 @ 20), (40)
+	
 country UY:
 	(2402 - 2482 @ 40), (20)
 	(5170 - 5250 @ 80), (23)
