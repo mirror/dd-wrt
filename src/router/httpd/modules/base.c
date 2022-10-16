@@ -2671,7 +2671,7 @@ static int do_ttgraph(unsigned char method, struct mime_handler *handler, char *
 		send_headers(stream, 200, "OK", handler->extra_header, handler->mime_type, -1, NULL, 1);
 
 	websWrite(stream, "<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Strict//EN\" \"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd\">\n"	//
-		  "<html>\n" "<head>\n" "<meta http-equiv=\"Content-Type\" content=\"text/html; charset=%s\" />\n"	//
+		  "<html>\n" "<head>\n" "<meta http-equiv=\"Content-Type\" content=\"application/xhtml+xml; charset=%s\" />\n"	//
 		  "<title>dd-wrt traffic graph</title>\n"	//
 		  "<script type=\"text/javascript\">\n"	//
 		  "//<![CDATA[\n"	//
