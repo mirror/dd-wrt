@@ -52,14 +52,13 @@ a:hover {
   color: #5cb3ff;
 }
 h2 {
-  background: #777674;
-  border-style: 1px solid #999;
-  border-radius: 4px;
+  background-color: #777674;
   color: #fff;
   padding: 4px 12px;
   line-height: 1.42857;
-  letter-spacing: .08em;
+  letter-spacing: .123rem;
   margin: 0 0 .906em 0;
+  border-radius: 4px;
 }
 dl {
   padding: 0;
@@ -104,7 +103,7 @@ ol li {
 .note h4 {
   float: left;
   margin-top: 0;
-  padding-right: .4em;
+  padding-right: .4.1em;
   text-transform: uppercase;
   color: #077507;
 }

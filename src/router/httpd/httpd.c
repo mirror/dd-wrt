@@ -547,9 +547,10 @@ static void send_error(webs_t conn_fp, int noheader, int status, char *title, ch
 	do_error_style(conn_fp, status, title, text);
 
 	char *charset = live_translate(conn_fp, "lang_charset.set");
-	websWrite(conn_fp, "<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Strict//EN\" \"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd\">\n"	//
+	websWrite(conn_fp, "<!DOCTYPE html>\n"	//
 		  "<head>\n"	//
-		  "<meta http-equiv=\"Content-Type\" content=\"application/xhtml+xml; charset=%s\" />\n", charset);
+		  "<meta http-equiv=\"Content-Type\" content=\"text/html; charset=%s\" />\n", charset);
+	websWrite(conn_fp, "<meta name=\"viewport\" content=\"width=device-width, initial-scale=1\" />\n");
 	websWrite(conn_fp, "<title>%d %s</title></head>\n<body class=\"error_page\"><h4>%d %s</h4>\n", status, title, status, title);
 	websWrite(conn_fp, "%s\n", text);
 	websWrite(conn_fp, "</body>");
