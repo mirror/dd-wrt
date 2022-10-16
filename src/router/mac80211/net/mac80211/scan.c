@@ -9,7 +9,7 @@
  * Copyright 2007, Michael Wu <flamingice@sourmilk.net>
  * Copyright 2013-2015  Intel Mobile Communications GmbH
  * Copyright 2016-2017  Intel Deutschland GmbH
- * Copyright (C) 2018-2020 Intel Corporation
+ * Copyright (C) 2018-2021 Intel Corporation
  */
 
 #include <linux/if_arp.h>
@@ -155,7 +155,7 @@ ieee80211_bss_info_update(struct ieee80211_local *local,
 	};
 	bool signal_valid;
 	struct ieee80211_sub_if_data *scan_sdata;
-	struct ieee802_11_elems elems;
+	struct ieee802_11_elems *elems;
 	size_t baselen;
 	u8 *elements;
 
@@ -209,25 +209,27 @@ ieee80211_bss_info_update(struct ieee80211_local *local,
 	if (baselen > len)
 		return NULL;
 
-	ieee802_11_parse_elems(elements, len - baselen, false, &elems,
-			       mgmt->bssid, cbss->bssid);
+	elems = ieee802_11_parse_elems(elements, len - baselen, false,
+				       mgmt->bssid, cbss->bssid);
+	if (!elems)
+		return NULL;
 
-	if (elems.mtik) {
-		if (elems.mtik->namelen) {
-			memcpy(&local->radioname[0], &elems.mtik->radioname[0], 15);
-			if (elems.mtik->namelen && elems.mtik->namelen < 16)
-			    local->radioname[elems.mtik->namelen] = 0;
+	if (elems->mtik) {
+		if (elems->mtik->namelen) {
+			memcpy(&local->radioname[0], &elems->mtik->radioname[0], 15);
+			if (elems->mtik->namelen && elems->mtik->namelen < 16)
+			    local->radioname[elems->mtik->namelen] = 0;
 			if (scan_sdata) {
-				memcpy(&scan_sdata->radioname[0], &elems.mtik->radioname[0], 15);
-				if (elems.mtik->namelen && elems.mtik->namelen < 16)
-				    scan_sdata->radioname[elems.mtik->namelen] = 0;
+				memcpy(&scan_sdata->radioname[0], &elems->mtik->radioname[0], 15);
+				if (elems->mtik->namelen && elems->mtik->namelen < 16)
+				    scan_sdata->radioname[elems->mtik->namelen] = 0;
 			}
 		}
 	}
-	if (elems.aironet) {
-		memcpy(&local->radioname[0], &elems.aironet->name[0], 16);
+	if (elems->aironet) {
+		memcpy(&local->radioname[0], &elems->aironet->name[0], 16);
 		if (scan_sdata) {
-			memcpy(&scan_sdata->radioname[0], &elems.aironet->name[0], 16);
+			memcpy(&scan_sdata->radioname[0], &elems->aironet->name[0], 16);
 		}
 	}
 	/* In case the signal is invalid update the status */
@@ -236,14 +238,16 @@ ieee80211_bss_info_update(struct ieee80211_local *local,
 		rx_status->flag |= RX_FLAG_NO_SIGNAL_VAL;
 
 	bss = (void *)cbss->priv;
-	ieee80211_update_bss_from_elems(local, bss, &elems, rx_status, beacon);
+	ieee80211_update_bss_from_elems(local, bss, elems, rx_status, beacon);
 
 	list_for_each_entry(non_tx_cbss, &cbss->nontrans_list, nontrans_list) {
 		non_tx_bss = (void *)non_tx_cbss->priv;
 
-		ieee80211_update_bss_from_elems(local, non_tx_bss, &elems,
+		ieee80211_update_bss_from_elems(local, non_tx_bss, elems,
 						rx_status, beacon);
 	}
+
+	kfree(elems);
 
 	return bss;
 }
@@ -271,7 +275,7 @@ void ieee80211_scan_rx(struct ieee80211_local *local, struct sk_buff *skb)
 	struct ieee80211_channel *channel;
 	u8 *elements;
 	size_t baselen;
-	struct ieee802_11_elems elems;
+	struct ieee802_11_elems *elems;
 
 
 	size_t min_hdr_len = offsetof(struct ieee80211_mgmt,
@@ -343,33 +347,34 @@ void ieee80211_scan_rx(struct ieee80211_local *local, struct sk_buff *skb)
 	if (baselen > skb->len)
 		return;
 
-	ieee802_11_parse_elems(elements, skb->len - baselen, false, &elems, NULL, NULL);
-	if (elems.mtik) {
+	elems = ieee802_11_parse_elems(elements, skb->len - baselen, false, NULL, NULL);
+	if (elems->mtik) {
 		if (local)
-			memcpy(&local->radioname[0], &elems.mtik->radioname[0], 15);
+			memcpy(&local->radioname[0], &elems->mtik->radioname[0], 15);
 		if (sdata1)
-			memcpy(&sdata1->radioname[0], &elems.mtik->radioname[0], 15);
+			memcpy(&sdata1->radioname[0], &elems->mtik->radioname[0], 15);
 		if (sdata2)
-			memcpy(&sdata2->radioname[0], &elems.mtik->radioname[0], 15);
-		if (elems.mtik->namelen && elems.mtik->namelen < 16) {
+			memcpy(&sdata2->radioname[0], &elems->mtik->radioname[0], 15);
+		if (elems->mtik->namelen && elems->mtik->namelen < 16) {
 			if (sdata1)
-				sdata1->radioname[elems.mtik->namelen] = 0;
+				sdata1->radioname[elems->mtik->namelen] = 0;
 			if (sdata2)
-				sdata2->radioname[elems.mtik->namelen] = 0;
+				sdata2->radioname[elems->mtik->namelen] = 0;
 			if (local)
-				local->radioname[elems.mtik->namelen] = 0;
+				local->radioname[elems->mtik->namelen] = 0;
 		}
 	}
 
-	if (elems.aironet) {
+	if (elems->aironet) {
 		if (local)
-			memcpy(&local->radioname[0], &elems.aironet->name[0], 16);
+			memcpy(&local->radioname[0], &elems->aironet->name[0], 16);
 		if (sdata1)
-			memcpy(&sdata1->radioname[0], &elems.aironet->name[0], 16);
+			memcpy(&sdata1->radioname[0], &elems->aironet->name[0], 16);
 		if (sdata2)
-			memcpy(&sdata2->radioname[0], &elems.aironet->name[0], 16);
-	}
-
+			memcpy(&sdata2->radioname[0], &elems->aironet->name[0], 16);
+    	}
+    	kfree(elems);
+    	
 	channel = ieee80211_get_channel_khz(local->hw.wiphy,
 					ieee80211_rx_status_to_khz(rx_status));
 
@@ -520,15 +525,18 @@ static void __ieee80211_scan_completed(struct ieee80211_hw *hw, bool aborted)
 	scan_req = rcu_dereference_protected(local->scan_req,
 					     lockdep_is_held(&local->mtx));
 
-	if (scan_req != local->int_scan_req) {
-		local->scan_info.aborted = aborted;
-		cfg80211_scan_done(scan_req, &local->scan_info);
-	}
 	RCU_INIT_POINTER(local->scan_req, NULL);
 	RCU_INIT_POINTER(local->scan_sdata, NULL);
 
 	local->scanning = 0;
 	local->scan_chandef.chan = NULL;
+
+	synchronize_rcu();
+
+	if (scan_req != local->int_scan_req) {
+		local->scan_info.aborted = aborted;
+		cfg80211_scan_done(scan_req, &local->scan_info);
+	}
 
 	/* Set power back to normal operating levels. */
 	ieee80211_hw_config(local, 0);
@@ -538,9 +546,9 @@ static void __ieee80211_scan_completed(struct ieee80211_hw *hw, bool aborted)
 		drv_sw_scan_complete(local, scan_sdata);
 		ieee80211_offchannel_return(local);
 	} else {
-		if (ieee80211_hw_check(&local->hw, NEEDS_OFFCHANNEL_NULLFUNC)) {
-			ieee80211_offchannel_return(local);
-		}
+//		if (ieee80211_hw_check(&local->hw, NEEDS_OFFCHANNEL_NULLFUNC)) {
+//			ieee80211_offchannel_return(local);
+//		}
 	}
 
 	ieee80211_recalc_idle(local);
@@ -876,11 +884,11 @@ static int __ieee80211_start_scan(struct ieee80211_sub_if_data *sdata,
 
 	if (hw_scan) {
 		WARN_ON(!ieee80211_prep_hw_scan(sdata));
-		if (ieee80211_hw_check(&local->hw, NEEDS_OFFCHANNEL_NULLFUNC)) {
-			ieee80211_offchannel_stop_vifs(local);
-			/* ensure nullfunc is transmitted before leaving operating channel */
-			ieee80211_flush_queues(local, NULL, false);
-		}
+//		if (ieee80211_hw_check(&local->hw, NEEDS_OFFCHANNEL_NULLFUNC)) {
+//			ieee80211_offchannel_stop_vifs(local);
+//			/* ensure nullfunc is transmitted before leaving operating channel */
+//			ieee80211_flush_queues(local, NULL, false);
+//		}
 		rc = drv_hw_scan(local, sdata, local->hw_scan_req);
 	} else {
 		rc = ieee80211_start_sw_scan(local, sdata);
@@ -1351,9 +1359,9 @@ void ieee80211_scan_cancel(struct ieee80211_local *local)
 			drv_cancel_hw_scan(local,
 				rcu_dereference_protected(local->scan_sdata,
 						lockdep_is_held(&local->mtx)));
-			if (ieee80211_hw_check(&local->hw, NEEDS_OFFCHANNEL_NULLFUNC)) {
-				ieee80211_offchannel_return(local);
-			}
+//			if (ieee80211_hw_check(&local->hw, NEEDS_OFFCHANNEL_NULLFUNC)) {
+//				ieee80211_offchannel_return(local);
+//			}
 		}
 		goto out;
 	}

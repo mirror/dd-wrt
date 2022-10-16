@@ -10,6 +10,9 @@
 #include "mac.h"
 #include "../trace.h"
 
+static bool wed_enable;
+module_param(wed_enable, bool, 0644);
+
 static const u32 mt7915_reg[] = {
 	[INT_SOURCE_CSR]	= 0xd7010,
 	[INT_MASK_CSR]		= 0xd7014,
@@ -24,6 +27,8 @@ static const u32 mt7915_reg[] = {
 	[INFRA_MCU_ADDR_END]	= 0x7c3fffff,
 	[FW_EXCEPTION_ADDR]	= 0x219848,
 	[SWDEF_BASE_ADDR]	= 0x41f200,
+	[TXQ_WED_RING_BASE]	= 0xd7300,
+	[RXQ_WED_RING_BASE]	= 0xd7410,
 };
 
 static const u32 mt7916_reg[] = {
@@ -40,6 +45,8 @@ static const u32 mt7916_reg[] = {
 	[INFRA_MCU_ADDR_END]	= 0x7c085fff,
 	[FW_EXCEPTION_ADDR]	= 0x022050bc,
 	[SWDEF_BASE_ADDR]	= 0x411400,
+	[TXQ_WED_RING_BASE]	= 0xd7300,
+	[RXQ_WED_RING_BASE]	= 0xd7410,
 };
 
 static const u32 mt7986_reg[] = {
@@ -56,6 +63,8 @@ static const u32 mt7986_reg[] = {
 	[INFRA_MCU_ADDR_END]	= 0x7c085fff,
 	[FW_EXCEPTION_ADDR]	= 0x02204ffc,
 	[SWDEF_BASE_ADDR]	= 0x411400,
+	[TXQ_WED_RING_BASE]	= 0x24420,
+	[RXQ_WED_RING_BASE]	= 0x24520,
 };
 
 static const u32 mt7915_offs[] = {
@@ -75,6 +84,7 @@ static const u32 mt7915_offs[] = {
 	[AGG_AWSCR0]		= 0x05c,
 	[AGG_PCR0]		= 0x06c,
 	[AGG_ACR0]		= 0x084,
+	[AGG_ACR4]		= 0x08c,
 	[AGG_MRCR]		= 0x098,
 	[AGG_ATCR1]		= 0x0f0,
 	[AGG_ATCR3]		= 0x0f4,
@@ -148,6 +158,7 @@ static const u32 mt7916_offs[] = {
 	[AGG_AWSCR0]		= 0x030,
 	[AGG_PCR0]		= 0x040,
 	[AGG_ACR0]		= 0x054,
+	[AGG_ACR4]		= 0x05c,
 	[AGG_MRCR]		= 0x068,
 	[AGG_ATCR1]		= 0x1a8,
 	[AGG_ATCR3]		= 0x080,
@@ -470,6 +481,124 @@ static u32 mt7915_rmw(struct mt76_dev *mdev, u32 offset, u32 mask, u32 val)
 	return dev->bus_ops->rmw(mdev, addr, mask, val);
 }
 
+#ifdef CONFIG_NET_MEDIATEK_SOC_WED
+static int mt7915_mmio_wed_offload_enable(struct mtk_wed_device *wed)
+{
+	struct mt7915_dev *dev;
+	struct mt7915_phy *phy;
+	int ret;
+
+	dev = container_of(wed, struct mt7915_dev, mt76.mmio.wed);
+
+	spin_lock_bh(&dev->mt76.token_lock);
+	dev->mt76.token_size = wed->wlan.token_start;
+	spin_unlock_bh(&dev->mt76.token_lock);
+
+	ret = wait_event_timeout(dev->mt76.tx_wait,
+				 !dev->mt76.wed_token_count, HZ);
+	if (!ret)
+		return -EAGAIN;
+
+	phy = &dev->phy;
+	mt76_set(dev, MT_AGG_ACR4(phy->band_idx), MT_AGG_ACR_PPDU_TXS2H);
+
+	phy = dev->mt76.phys[MT_BAND1] ? dev->mt76.phys[MT_BAND1]->priv : NULL;
+	if (phy)
+		mt76_set(dev, MT_AGG_ACR4(phy->band_idx),
+			 MT_AGG_ACR_PPDU_TXS2H);
+
+	return 0;
+}
+
+static void mt7915_mmio_wed_offload_disable(struct mtk_wed_device *wed)
+{
+	struct mt7915_dev *dev;
+	struct mt7915_phy *phy;
+
+	dev = container_of(wed, struct mt7915_dev, mt76.mmio.wed);
+
+	spin_lock_bh(&dev->mt76.token_lock);
+	dev->mt76.token_size = MT7915_TOKEN_SIZE;
+	spin_unlock_bh(&dev->mt76.token_lock);
+
+	/* MT_TXD5_TX_STATUS_HOST (MPDU format) has higher priority than
+	 * MT_AGG_ACR_PPDU_TXS2H (PPDU format) even though ACR bit is set.
+	 */
+	phy = &dev->phy;
+	mt76_clear(dev, MT_AGG_ACR4(phy->band_idx), MT_AGG_ACR_PPDU_TXS2H);
+
+	phy = dev->mt76.phys[MT_BAND1] ? dev->mt76.phys[MT_BAND1]->priv : NULL;
+	if (phy)
+		mt76_clear(dev, MT_AGG_ACR4(phy->band_idx),
+			   MT_AGG_ACR_PPDU_TXS2H);
+}
+#endif
+
+int mt7915_mmio_wed_init(struct mt7915_dev *dev, void *pdev_ptr,
+			 bool pci, int *irq)
+{
+#ifdef CONFIG_NET_MEDIATEK_SOC_WED
+	struct mtk_wed_device *wed = &dev->mt76.mmio.wed;
+	int ret;
+
+	if (!wed_enable)
+		return 0;
+
+	if (pci) {
+		struct pci_dev *pci_dev = pdev_ptr;
+
+		wed->wlan.pci_dev = pci_dev;
+		wed->wlan.bus_type = MTK_WED_BUS_PCIE;
+		wed->wlan.wpdma_int = pci_resource_start(pci_dev, 0) +
+				      MT_INT_WED_SOURCE_CSR;
+		wed->wlan.wpdma_mask = pci_resource_start(pci_dev, 0) +
+				       MT_INT_WED_MASK_CSR;
+		wed->wlan.wpdma_phys = pci_resource_start(pci_dev, 0) +
+				       MT_WFDMA_EXT_CSR_BASE;
+		wed->wlan.wpdma_tx = pci_resource_start(pci_dev, 0) +
+				     MT_TXQ_WED_RING_BASE;
+		wed->wlan.wpdma_txfree = pci_resource_start(pci_dev, 0) +
+					 MT_RXQ_WED_RING_BASE;
+	} else {
+		struct platform_device *plat_dev = pdev_ptr;
+		struct resource *res;
+
+		res = platform_get_resource(plat_dev, IORESOURCE_MEM, 0);
+		if (!res)
+			return -ENOMEM;
+
+		wed->wlan.platform_dev = plat_dev;
+		wed->wlan.bus_type = MTK_WED_BUS_AXI;
+		wed->wlan.wpdma_int = res->start + MT_INT_SOURCE_CSR;
+		wed->wlan.wpdma_mask = res->start + MT_INT_MASK_CSR;
+		wed->wlan.wpdma_tx = res->start + MT_TXQ_WED_RING_BASE;
+		wed->wlan.wpdma_txfree = res->start + MT_RXQ_WED_RING_BASE;
+	}
+	wed->wlan.nbuf = 4096;
+	wed->wlan.tx_tbit[0] = is_mt7915(&dev->mt76) ? 4 : 30;
+	wed->wlan.tx_tbit[1] = is_mt7915(&dev->mt76) ? 5 : 31;
+	wed->wlan.txfree_tbit = is_mt7915(&dev->mt76) ? 1 : 2;
+	wed->wlan.token_start = MT7915_TOKEN_SIZE - wed->wlan.nbuf;
+	wed->wlan.init_buf = mt7915_wed_init_buf;
+	wed->wlan.offload_enable = mt7915_mmio_wed_offload_enable;
+	wed->wlan.offload_disable = mt7915_mmio_wed_offload_disable;
+
+	if (mtk_wed_device_attach(wed))
+		return 0;
+
+	*irq = wed->irq;
+	dev->mt76.dma_dev = wed->dev;
+
+	ret = dma_set_mask(wed->dev, DMA_BIT_MASK(32));
+	if (ret)
+		return ret;
+
+	return 1;
+#else
+	return 0;
+#endif
+}
+
 static int mt7915_mmio_init(struct mt76_dev *mdev,
 			    void __iomem *mem_base,
 			    u32 device_id)
@@ -534,7 +663,11 @@ void mt7915_dual_hif_set_irq_mask(struct mt7915_dev *dev,
 	mdev->mmio.irqmask |= set;
 
 	if (write_reg) {
-		mt76_wr(dev, MT_INT_MASK_CSR, mdev->mmio.irqmask);
+		if (mtk_wed_device_active(&mdev->mmio.wed))
+			mtk_wed_device_irq_set_mask(&mdev->mmio.wed,
+						    mdev->mmio.irqmask);
+		else
+			mt76_wr(dev, MT_INT_MASK_CSR, mdev->mmio.irqmask);
 		mt76_wr(dev, MT_INT1_MASK_CSR, mdev->mmio.irqmask);
 	}
 
@@ -553,17 +686,15 @@ static void mt7915_rx_poll_complete(struct mt76_dev *mdev,
 static void mt7915_irq_tasklet(struct tasklet_struct *t)
 {
 	struct mt7915_dev *dev = from_tasklet(dev, t, irq_tasklet);
-#ifdef CONFIG_NET_MEDIATEK_SOC_WED
 	struct mtk_wed_device *wed = &dev->mt76.mmio.wed;
-#endif
 	u32 intr, intr1, mask;
 
-#ifdef CONFIG_NET_MEDIATEK_SOC_WED
 	if (mtk_wed_device_active(wed)) {
 		mtk_wed_device_irq_set_mask(wed, 0);
+		if (dev->hif2)
+			mt76_wr(dev, MT_INT1_MASK_CSR, 0);
 		intr = mtk_wed_device_irq_get(wed, dev->mt76.mmio.irqmask);
 	} else
-#endif
 	{
 		mt76_wr(dev, MT_INT_MASK_CSR, 0);
 		if (dev->hif2)
@@ -627,13 +758,11 @@ static void mt7915_irq_tasklet(struct tasklet_struct *t)
 irqreturn_t mt7915_irq_handler(int irq, void *dev_instance)
 {
 	struct mt7915_dev *dev = dev_instance;
-#ifdef CONFIG_NET_MEDIATEK_SOC_WED
 	struct mtk_wed_device *wed = &dev->mt76.mmio.wed;
 
 	if (mtk_wed_device_active(wed)) {
 		mtk_wed_device_irq_set_mask(wed, 0);
 	} else 
-#endif
 	{
 		mt76_wr(dev, MT_INT_MASK_CSR, 0);
 		if (dev->hif2)
@@ -654,7 +783,8 @@ struct mt7915_dev *mt7915_mmio_probe(struct device *pdev,
 	static const struct mt76_driver_ops drv_ops = {
 		/* txwi_size = txd size + txp size */
 		.txwi_size = MT_TXD_SIZE + sizeof(struct mt76_connac_fw_txp),
-		.drv_flags = MT_DRV_TXWI_NO_FREE | MT_DRV_HW_MGMT_TXQ,
+		.drv_flags = MT_DRV_TXWI_NO_FREE | MT_DRV_HW_MGMT_TXQ |
+			     MT_DRV_AMSDU_OFFLOAD,
 		.survey_flags = SURVEY_INFO_TIME_TX |
 				SURVEY_INFO_TIME_RX |
 				SURVEY_INFO_TIME_BSS_RX,
