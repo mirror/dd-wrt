@@ -81,19 +81,9 @@
   }
 }
 @keyframes move-it {
-  0% {
-    transform: scale(1, 1) translateY(0);
-  }
-  10% {
-    transform: scale(1.1, .9) translateY(0);
-  }
-  30% {
-    transform: scale(.9, 1.1) translateY(-10px);
-  }
-  50% {
-    transform: scale(1, 1) translateY(0);
-  }
-  100% {
-    transform: scale(1, 1) translateY(0);
-  }
+  0% { transform: scale(1, 1) translateY(0); }
+  10% { transform: scale(1.1, .9) translateY(0); }
+  30% { transform: scale(.9, 1.1) translateY(-10px); }
+  50% { transform: scale(1, 1) translateY(0); }
+  100% { transform: scale(1, 1) translateY(0); }
 }
