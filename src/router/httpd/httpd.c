@@ -1378,7 +1378,6 @@ get_client_ip_mac(int conn_fd, webs_t conn_fp)
 {
 	get_ipfromsock(conn_fd, conn_fp->http_client_ip);
 	get_mac_from_ip(conn_fp->http_client_mac, conn_fp->http_client_ip);
-	fprintf(stderr, "client ip mac %s %s\n",conn_fp->http_client_mac, conn_fp->http_client_ip);
 }
 
 static void handle_server_sig_int(int sig)
