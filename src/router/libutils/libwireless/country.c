@@ -923,10 +923,19 @@ const char *getIsoName(char *country)
 {
 	int i;
 	for (i = 0; i < N(allCountries); i++) {
-		if (!strcmp(allCountries[i].name, country))
+		if (!strcmp(allCountries[i].name, country)) {
+
+#ifdef HAVE_SUPERCHANNEL
+			if (!issuperchannel() && !strcmp(allCountries[i].isoName, "PS"))
+				return "US";
+#else
+			if (!strcmp(check, "PS"))
+				return "US";
+#endif
 			return allCountries[i].isoName;
+		}
 	}
-	return 0;
+	return NULL;
 }
 
 const char *getCountryByIso(char *country)
@@ -936,7 +945,7 @@ const char *getCountryByIso(char *country)
 		if (!strcmp(allCountries[i].isoName, country))
 			return allCountries[i].name;
 	}
-	return 0;
+	return NULL;
 }
 
 extern int getRouterBrand(void);
@@ -979,6 +988,7 @@ static int checkfilter(char *filter, char *check)
 		return 0;
 #else
 	if (!strcmp(check, "PS"))
+		return 0;
 #endif
 
 	char *next;
