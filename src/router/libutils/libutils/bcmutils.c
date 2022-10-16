@@ -421,7 +421,7 @@ char *get_mac_from_ip(char *mac, char *ip)
 {
 	FILE *fp;
 	char line[256];
-	char ipa[50];		// ip address
+	char ipa[128];		// ip address
 	char hwa[50];		// HW address / MAC
 	char mask[50];		// ntemask 
 	char dev[50];		// interface
@@ -431,12 +431,12 @@ char *get_mac_from_ip(char *mac, char *ip)
 	if ((fp = fopen("/proc/net/arp", "rb")) == NULL)
 		return NULL;
 	char ipcopy[128];
-	char *check = strrchr(ip, ':');
+	strlcpy(ipcopy, ip, sizeof(ipcopy));
+	char *check = strrchr(ipcopy, ':');
 	if (check)
 		check++;
 	else
-		check = ip;
-	strlcpy(ipcopy, check, sizeof(ipcopy));
+	    check = ipcopy;
 
 	// Bypass header -- read until newline 
 	if (fgets(line, sizeof(line) - 1, fp) != NULL) {
@@ -453,8 +453,20 @@ char *get_mac_from_ip(char *mac, char *ip)
 			return mac;
 		}
 	}
-
 	fclose(fp);
+	fp = popen("ip -6 neigh", "rb");
+	if (fp) {
+		while (fgets(line, sizeof(line) - 1, fp)) {
+			if (sscanf(line, "%s %*s %*s %*s %s %*s %*s %*s %*s %*s %*s %*s\n", ipa, hwa) != 2)
+				continue;
+			if (strcmp(ip, ipa))
+				continue;
+			strncpy(mac, hwa, 17);
+			pclose(fp);
+			return mac;
+		}
+		pclose(fp);
+	}
 	return NULL;
 }
 
