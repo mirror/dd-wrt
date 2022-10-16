@@ -324,6 +324,7 @@ fieldset legend {
   font-weight: bold;
   margin-left: -.362em;
   padding: 0 .272em;
+  white-space: nowrap;
 }
 .setting {
   position: relative;
