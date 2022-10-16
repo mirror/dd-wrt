@@ -433,10 +433,12 @@ char *get_mac_from_ip(char *mac, char *ip)
 	char ipcopy[128];
 	strlcpy(ipcopy, ip, sizeof(ipcopy));
 	char *check = strrchr(ipcopy, ':');
-	if (check)
+	int ipv6 = 0;
+	if (check) {
+		ipv6 = strncmp(ipv6, "::ffff", 6);
 		check++;
-	else
-	    check = ipcopy;
+	} else
+		check = ipcopy;
 
 	// Bypass header -- read until newline 
 	if (fgets(line, sizeof(line) - 1, fp) != NULL) {
@@ -454,18 +456,21 @@ char *get_mac_from_ip(char *mac, char *ip)
 		}
 	}
 	fclose(fp);
-	fp = popen("ip -6 neigh", "rb");
-	if (fp) {
-		while (fgets(line, sizeof(line) - 1, fp)) {
-			if (sscanf(line, "%s %*s %*s %*s %s %*s %*s %*s %*s %*s %*s %*s\n", ipa, hwa) != 2)
-				continue;
-			if (strcmp(ip, ipa))
-				continue;
-			strncpy(mac, hwa, 17);
+
+	if (ipv6) {
+		fp = popen("ip -6 neigh", "rb");
+		if (fp) {
+			while (fgets(line, sizeof(line) - 1, fp)) {
+				if (sscanf(line, "%s %*s %*s %*s %s %*s %*s %*s %*s %*s %*s %*s\n", ipa, hwa) != 2)
+					continue;
+				if (strcmp(ip, ipa))
+					continue;
+				strncpy(mac, hwa, 17);
+				pclose(fp);
+				return mac;
+			}
 			pclose(fp);
-			return mac;
 		}
-		pclose(fp);
 	}
 	return NULL;
 }
