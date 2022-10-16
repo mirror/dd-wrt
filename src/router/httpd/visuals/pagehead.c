@@ -207,6 +207,7 @@ EJ_VISIBLE void ej_do_hpagehead(webs_t wp, int argc, char_t ** argv)	// Eko
 	websWrite(wp, "<html>\n");
 	websWrite(wp, "<head>\n");
 	websWrite(wp, "<meta http-equiv=\"Content-Type\" content=\"text/html; charset=%s\" />\n", live_translate(wp, "lang_charset.set"));
+	websWrite(wp, "<meta name=\"viewport\" content=\"width=device-width, initial-scale=1\" />\n");
 	websWrite(wp, "<link type=\"text/css\" rel=\"stylesheet\" href=\"help.css\">\n");
 	if (!strcmp(style, "blue") || !strcmp(style, "cyan") || !strcmp(style, "elegant") || !strcmp(style, "green") || !strcmp(style, "orange") || !strcmp(style, "red") || !strcmp(style, "yellow")) {
 		if (style_dark != NULL && !strcmp(style_dark, "1")) {
