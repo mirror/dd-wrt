@@ -430,6 +430,13 @@ char *get_mac_from_ip(char *mac, char *ip)
 
 	if ((fp = fopen("/proc/net/arp", "rb")) == NULL)
 		return NULL;
+	char ipcopy[128];
+	char *check = strrchr(ip, ':');
+	if (check)
+		check++;
+	else
+		check = ip;
+	strlcpy(ipcopy, check, sizeof(ipcopy));
 
 	// Bypass header -- read until newline 
 	if (fgets(line, sizeof(line) - 1, fp) != NULL) {
@@ -439,7 +446,7 @@ char *get_mac_from_ip(char *mac, char *ip)
 		while (fgets(line, sizeof(line) - 1, fp)) {
 			if (sscanf(line, "%s 0x%x 0x%x %49s %49s %49s\n", ipa, &type, &flags, hwa, mask, dev) != 6)
 				continue;
-			if (strcmp(ip, ipa))
+			if (strcmp(ipcopy, ipa))
 				continue;
 			strncpy(mac, hwa, 17);
 			fclose(fp);
@@ -1952,12 +1959,12 @@ static void addactions(char *nv, char *action)
 
 void addAction(char *action)
 {
-    addactions("action_service", action);
+	addactions("action_service", action);
 }
 
 void registerCustom(char *action)
 {
-    addactions("custom_configs", action);
+	addactions("custom_configs", action);
 }
 
 /*
