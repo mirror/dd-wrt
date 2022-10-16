@@ -27,7 +27,7 @@ static void do_pagehead(webs_t wp, int argc, char_t ** argv, int pwc)	// Eko
 	if (!nvram_match("language", "english"))
 		translate = " translate=\"no\"";
 	websWrite(wp,
-		  "<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Strict//EN\" \"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd\">\n<html%s>\n<head>\n<meta http-equiv=\"Content-Type\" content=\"text/html; charset=%s\" />\n",
+		  "<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Strict//EN\" \"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd\">\n<html%s>\n<head>\n<meta http-equiv=\"Content-Type\" content=\"application/xhtml+xml; charset=%s\" />\n",
 		  translate, charset);
 	websWrite(wp, "<meta name=\"viewport\" content=\"width=device-width, initial-scale=1\" />\n");
 #ifndef HAVE_MICRO
