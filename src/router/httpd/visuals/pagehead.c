@@ -29,6 +29,8 @@ static void do_pagehead(webs_t wp, int argc, char_t ** argv, int pwc)	// Eko
 	websWrite(wp,
 		  "<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Strict//EN\" \"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd\">\n<html%s>\n<head>\n<meta http-equiv=\"Content-Type\" content=\"application/xhtml+xml; charset=%s\" />\n",
 		  translate, charset);
+	websWrite(wp, "<html>\n" "<head>\n" "<meta http-equiv=\"Content-Type\" content=\"application/xhtml+xml; charset=%s\" />\n", live_translate(wp, "lang_charset.set"));
+	websWrite(wp, "<meta name=\"viewport\" content=\"width=device-width, initial-scale=1\" />\n");
 #ifndef HAVE_MICRO
 	websWrite(wp, "<link rel=\"icon\" href=\"favicon.ico\" type=\"image/x-icon\" />\n<link rel=\"shortcut icon\" href=\"favicon.ico\" type=\"image/x-icon\" />\n");
 #endif
@@ -120,12 +122,12 @@ EJ_VISIBLE void ej_do_hpagehead(webs_t wp, int argc, char_t ** argv)	// Eko
 	char *style_dark = nvram_safe_get("router_style_dark");
 	if (!*style)
 		style = "elegant";
-	websWrite(wp, "<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Strict//EN\" \"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd\">\n");
+	websWrite(wp, "<!DOCTYPE html>\n");
 	if (!strcmp(htitle, "doctype_only")) {
 		websWrite(wp, "<html lang=\"en\">\n");
 		websWrite(wp, "<head>\n");
 		websWrite(wp, "<title>About DD-WRT</title>\n");
-		websWrite(wp, "<meta http-equiv=\"Content-Type\" content=\"application/xhtml+xml; charset=iso-8859-1\" />\n");
+		websWrite(wp, "<meta http-equiv=\"Content-Type\" content=\"text/html; charset=iso-8859-1\" />\n");
 		websWrite(wp, "<meta name=\"viewport\" content=\"width=device-width, initial-scale=1\" />\n");
 		websWrite(wp, "<link type=\"text/css\" rel=\"stylesheet\" href=\"help/help.css\">\n");
 		if (!strcmp(style, "blue") || !strcmp(style, "cyan") || !strcmp(style, "elegant") || !strcmp(style, "green") || !strcmp(style, "orange") || !strcmp(style, "red") || !strcmp(style, "yellow")) {
