@@ -44,7 +44,7 @@ a:hover {
   color: #fff;
 }
 .navig a {
-  font-weight: bold;
+  font-weight: 900;
   text-decoration: none;
   color: #fff;
 }
@@ -102,13 +102,14 @@ ol li {
 }
 .note h4 {
   float: left;
+  font-weight: 900;
   margin-top: 0;
-  padding-right: .4.1em;
+  padding-right: .41em;
   text-transform: uppercase;
   color: #077507;
 }
 .note div {
-  margin-left: 3.3em;
+  margin-left: 3.6em;
 }
 .also {
   background: #fffade;
@@ -116,6 +117,7 @@ ol li {
 }
 .also h4 {
   float: left;
+  font-weight: 900;
   margin-top: 0;
   text-transform: uppercase;
   padding-right: 1.6em;

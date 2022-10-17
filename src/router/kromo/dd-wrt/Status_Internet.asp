@@ -194,7 +194,7 @@ addEvent(window, "unload", function() {
 								<legend><% tran("status_inet.traff_mon"); %></legend>
 									<script type="text/javascript">
 									//<![CDATA[
-									document.write("<iframe id=\"graph\" src=\"" + load_file(count) + "\" width=\"560\" height=\"370\" frameborder=\"0\" type=\"text/html\"></iframe>");
+									document.write("<iframe id=\"graph\" src=\"" + load_file(count) + "\" title=\"" + service.ttraff_legend + "\" width=\"560\" height=\"370\" frameborder=\"0\" type=\"text/html\"></iframe>");
 									//]]>
 									</script>
 									<div class="center">

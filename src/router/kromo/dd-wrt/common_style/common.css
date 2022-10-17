@@ -78,12 +78,12 @@ h1 {
   padding: .453em .906em;
 }
 #menuMainList li span {
-  font-weight: bold;
+  font-weight: 700;
   padding-bottom: .626em;
   margin-top: 0;
 }
 #menuSubList li span {
-  font-weight: normal;
+  font-weight: 700;
   padding-bottom: .543em;
   margin-top: 2px;
 }
@@ -94,10 +94,10 @@ h1 {
   background: #333;
   color: #ccc;
   border-color: #555;
-  font-weight: bold;
+  font-weight: 700;
 }
 #menuSubList li a {
-  font-weight: normal;
+  font-weight: 700;
 }
 #menuMainList li a:hover, #menuSubList li a:hover {
   margin-top: 0;
@@ -153,7 +153,7 @@ li.current {
 }
 #help dt.term {
   margin: 0 0 .362em 0;
-  font-weight: bold;
+  font-weight: 700;
 }
 #help dd.definition {
   padding-bottom: .908em;
@@ -234,7 +234,7 @@ table tr th {
   border: 1px solid #777674;
   color: #fff;
   border-radius: 3px;
-  font-weight: normal;
+  font-weight: 400;
   padding: .09em .543em;
   text-align: left;
   line-height: normal;
@@ -321,7 +321,7 @@ fieldset {
   margin: 0;
 }
 fieldset legend {
-  font-weight: bold;
+  font-weight: 700;
   margin-left: -.362em;
   padding: 0 .272em;
   white-space: nowrap;
@@ -372,14 +372,14 @@ fieldset legend {
   max-width: 72.464em;
   margin: 2em auto;
   padding: 1.812em .906em .906em;
-  font-weight: bold;
+  font-weight: 700;
   text-align: center;
 }
 .message div input {
   padding: .362em 1.087em;
   margin: 0 .362em;
   margin-top: 1.449em;
-  font-weight: normal;
+  font-weight: 400;
 }
 .submitFooter {
   padding: 4px 12px;
@@ -647,7 +647,7 @@ div.bulle, table.bulle, td.bulle {
   z-index: 10;
 }
 #score, #rating {
-  font-weight: bold;
+  font-weight: 700;
 }
 #scorebar {
   background-image: url(/images/gradient.svg);
