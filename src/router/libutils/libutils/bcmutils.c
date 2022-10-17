@@ -435,7 +435,7 @@ char *get_mac_from_ip(char *mac, char *ip)
 	char *check = strrchr(ipcopy, ':');
 	int ipv6 = 0;
 	if (check) {
-		ipv6 = strncmp(ipv6, "::ffff", 6);
+		ipv6 = strncmp(ipcopy, "::ffff", 6);
 		check++;
 	} else
 		check = ipcopy;
@@ -456,7 +456,7 @@ char *get_mac_from_ip(char *mac, char *ip)
 		}
 	}
 	fclose(fp);
-#ifdef HAVE_IPV6
+
 	if (ipv6) {
 		fp = popen("ip -6 neigh", "rb");
 		if (fp) {
@@ -472,7 +472,6 @@ char *get_mac_from_ip(char *mac, char *ip)
 			pclose(fp);
 		}
 	}
-#endif
 	return NULL;
 }
 
