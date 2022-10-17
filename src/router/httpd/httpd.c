@@ -1374,6 +1374,64 @@ static void *handle_request(void *arg)
 	return NULL;
 }
 
+char *get_mac_from_ip(char *mac, char *ip)
+{
+	FILE *fp;
+	char line[256];
+	char ipa[128];		// ip address
+	char hwa[50];		// HW address / MAC
+	char mask[50];		// ntemask 
+	char dev[50];		// interface
+	int type;		// HW type
+	int flags;		// flags
+
+	if ((fp = fopen("/proc/net/arp", "rb")) == NULL)
+		return NULL;
+	char ipcopy[128];
+	strlcpy(ipcopy, ip, sizeof(ipcopy));
+	char *check = strrchr(ipcopy, ':');
+	int ipv6 = 0;
+	if (check) {
+		ipv6 = strncmp(ipcopy, "::ffff", 6);
+		check++;
+	} else
+		check = ipcopy;
+
+	// Bypass header -- read until newline 
+	if (fgets(line, sizeof(line) - 1, fp) != NULL) {
+		// Read the ARP cache entries.
+		// IP address HW type Flags HW address Mask Device
+		// 192.168.1.1 0x1 0x2 00:90:4C:21:00:2A * eth0
+		while (fgets(line, sizeof(line) - 1, fp)) {
+			if (sscanf(line, "%s 0x%x 0x%x %49s %49s %49s\n", ipa, &type, &flags, hwa, mask, dev) != 6)
+				continue;
+			if (strcmp(ipcopy, ipa))
+				continue;
+			strncpy(mac, hwa, 17);
+			fclose(fp);
+			return mac;
+		}
+	}
+	fclose(fp);
+
+	if (ipv6) {
+		fp = popen("ip -6 neigh", "rb");
+		if (fp) {
+			while (fgets(line, sizeof(line) - 1, fp)) {
+				if (sscanf(line, "%s %*s %*s %*s %s %*s %*s %*s %*s %*s %*s %*s\n", ipa, hwa) != 2)
+					continue;
+				if (strcmp(ip, ipa))
+					continue;
+				strncpy(mac, hwa, 17);
+				pclose(fp);
+				return mac;
+			}
+			pclose(fp);
+		}
+	}
+	return NULL;
+}
+
 static void			// add by honor 2003-04-16
 get_client_ip_mac(webs_t conn_fp)
 {
