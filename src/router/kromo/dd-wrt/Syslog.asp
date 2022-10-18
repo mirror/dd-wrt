@@ -56,7 +56,7 @@ addEvent(window, "unload", function() {
 						  <!-- see syslogd dir stylesheets for .syslog_bg padding/margins -->
 							<script type="text/javascript">
 								//<![CDATA[
-								document.write("<iframe id=\"syslog\" src=\"" + load_file(0) + "\" width=\"100%\" height=\"810\" frameborder=\"0\" type=\"text/html\"></iframe>");
+								document.write("<iframe id=\"syslog\" src=\"" + load_file(0) + "\" title=\"" + share.sysloglegend + "\" width=\"100%\" height=\"810\" frameborder=\"0\" type=\"text/html\"></iframe>");
 								//]]>
 							</script>
 							</div>
