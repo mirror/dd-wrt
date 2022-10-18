@@ -112,11 +112,9 @@ nl80211-commands.inc: ../shared/nl80211.h
 	@$(NQ) ' CC  ' $@
 	$(Q)$(CC) $(CFLAGS) -c -o $@ $<
 
-ifeq ($(IW_ANDROID_BUILD),)
 iw:	$(OBJS)
 	@$(NQ) ' CC  ' iw
-	$(Q)$(CC) $(LDFLAGS) $(OBJS) $(LIBS) -o iw
-endif
+	$(CC) $(LDFLAGS) $(OBJS) $(LIBS) -o iw
 
 check:
 	$(Q)$(MAKE) all CC="REAL_CC=$(CC) CHECK=\"sparse -Wall\" cgcc"

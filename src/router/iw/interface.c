@@ -488,18 +488,6 @@ static int print_iface_handler(struct nl_msg *msg, void *arg)
 			printf("%s\t4addr: on\n", indent);
 	}
 
-	if (tb_msg[NL80211_ATTR_TXQ_STATS]) {
-		char buf[150];
-		parse_txq_stats(buf, sizeof(buf), tb_msg[NL80211_ATTR_TXQ_STATS], 1, -1, indent);
-		printf("%s\tmulticast TXQ:%s\n", indent, buf);
-	}
-
-	if (tb_msg[NL80211_ATTR_4ADDR]) {
-		uint8_t use_4addr = nla_get_u8(tb_msg[NL80211_ATTR_4ADDR]);
-		if (use_4addr)
-			printf("%s\t4addr: on\n", indent);
-	}
-
 	if (tb_msg[NL80211_ATTR_MTIKWDS]) {
 		uint8_t use_mtikwds = nla_get_u8(tb_msg[NL80211_ATTR_MTIKWDS]);
 		if (use_mtikwds)
