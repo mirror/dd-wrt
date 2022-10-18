@@ -788,13 +788,13 @@ static int do_file_attach(struct mime_handler *handler, char *path, webs_t strea
 	return do_file_2(METHOD_GET, handler, path, stream, attachment);
 }
 
-static int check_connect_type_vap(char *prefix, webs_t wp)
+static int check_connect_type_vap(char *prefix, webs_t wp, char *nvprefix)
 {
 	struct wl_assoc_mac *wlmac = NULL;
 	int count_wl = 0;
 	int i, j;
 	char temp[32];
-	sprintf(temp, "%s_web_filter", prefix);
+	sprintf(temp, "%s_web_filter", nvprefix);
 	nvram_default_geti(temp, 1);
 	if (nvram_invmatchi(temp, 0))
 		return 0;
@@ -828,7 +828,7 @@ static int check_connect_type(webs_t wp)
 		sprintf(temp, "wl%d", j);
 		char *ifname = get_wl_instance_name(j);
 #endif
-		if (check_connect_type_vap(ifname, wp))
+		if (check_connect_type_vap(ifname, wp, temp))
 			return -1;
 		char *names = nvram_nget("%s_vifs", temp);
 		char *next;
