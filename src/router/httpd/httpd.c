@@ -834,7 +834,7 @@ static int check_connect_type(webs_t wp)
 		char *next;
 		char var[32];
 		foreach(var, names, next) {
-			if (check_connect_type_vap(var, wp))
+			if (check_connect_type_vap(var, wp, var))
 				return -1;
 		}
 	}
