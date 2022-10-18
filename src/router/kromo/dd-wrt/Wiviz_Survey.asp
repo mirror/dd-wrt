@@ -2,6 +2,8 @@
 <html>
 	<head>
 		<title><% nvg("router_name"); %> - Wi-viz 2.0: Wireless Network Visualization</title>
+		<meta charset="utf-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1" />
 		<link type="text/css" rel="stylesheet" href="style/wiviz_common.css" />
 		<script type="text/javascript">
 		//<![CDATA[
