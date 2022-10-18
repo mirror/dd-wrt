@@ -32,12 +32,14 @@ input[type='checkbox'],
 input[type='radio'] {
   accent-color: var(--it-c);
 }
-.button, .button[disabled]:hover, ::file-selector-button {
+.button, .button[disabled]:hover, ::file-selector-button,
+::-webkit-file-upload-button {
   background: var(--ac-0);
   border: 1px solid var(--ac-0);
   color: var(--tx-c);
 }
-.button:hover, ::file-selector-button:hover {
+.button:hover, ::file-selector-button:hover,
+::-webkit-file-upload-button:hover {
   background: var(--ac-2);
   border: 1px solid var(--ac-2);
   color: var(--tx-c);
