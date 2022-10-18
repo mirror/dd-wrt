@@ -926,10 +926,10 @@ const char *getIsoName(char *country)
 		if (!strcmp(allCountries[i].name, country)) {
 
 #ifdef HAVE_SUPERCHANNEL
-			if (!issuperchannel() && !strcmp(country, "PS"))
+			if (!issuperchannel() && !strcmp(allCountries[i].isoName, "PS"))
 				return "US";
 #else
-			if (!strcmp(country, "PS"))
+			if (!strcmp(allCountries[i].isoName, "PS"))
 				return "US";
 #endif
 			return allCountries[i].isoName;
