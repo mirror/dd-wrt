@@ -922,11 +922,14 @@ unsigned int getCountry(char *country)
 const char *getIsoName(char *country)
 {
 	int i;
+#ifdef HAVE_SUPERCHANNEL
+	int sc = issuperchannel();
+#endif
 	for (i = 0; i < N(allCountries); i++) {
 		if (!strcmp(allCountries[i].name, country)) {
 
 #ifdef HAVE_SUPERCHANNEL
-			if (!issuperchannel() && !strcmp(allCountries[i].isoName, "PS"))
+			if (!sc && !strcmp(allCountries[i].isoName, "PS"))
 				return "US";
 #else
 			if (!strcmp(allCountries[i].isoName, "PS"))
@@ -981,10 +984,10 @@ static int isValidCountry(char *region, char *country)
 
 static char *countries = NULL;
 
-static int checkfilter(char *filter, char *check)
+static int checkfilter(char *filter, char *check, int sc)
 {
 #ifdef HAVE_SUPERCHANNEL
-	if (!issuperchannel() && !strcmp(check, "PS"))
+	if (!sc && !strcmp(check, "PS"))
 		return 0;
 #else
 	if (!strcmp(check, "PS"))
@@ -1005,6 +1008,11 @@ static int checkfilter(char *filter, char *check)
 char *getCountryList(char *filter)
 {
 	int i;
+#ifdef HAVE_SUPERCHANNEL
+	int sc = issuperchannel();
+#else
+	int sc = 0;
+#endif
 #ifdef HAVE_BUFFALO
 	char country[80];
 	char *region = getUEnv("region");
@@ -1015,7 +1023,7 @@ char *getCountryList(char *filter)
 	if (countries == NULL) {
 		int count = 0;
 		for (i = 0; i < N(allCountries); i++) {
-			if (!checkfilter(filter, allCountries[i].isoName))
+			if (!checkfilter(filter, allCountries[i].isoName,sc))
 				continue;
 #ifdef HAVE_BUFFALO
 			sprintf(country, "%s", allCountries[i].isoName);
@@ -1035,7 +1043,7 @@ char *getCountryList(char *filter)
 		countries = safe_malloc(count);
 		bzero(countries, count);
 		for (i = 0; i < N(allCountries); i++) {
-			if (!checkfilter(filter, allCountries[i].isoName))
+			if (!checkfilter(filter, allCountries[i].isoName,sc))
 				continue;
 #ifdef HAVE_BUFFALO
 			sprintf(country, "%s", allCountries[i].isoName);
