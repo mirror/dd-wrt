@@ -2670,9 +2670,10 @@ static int do_ttgraph(unsigned char method, struct mime_handler *handler, char *
 	if (handler && !handler->send_headers)
 		send_headers(stream, 200, "OK", handler->extra_header, handler->mime_type, -1, NULL, 1);
 
-	websWrite(stream, "<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Strict//EN\" \"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd\">\n"	//
-		  "<html>\n" "<head>\n" "<meta http-equiv=\"Content-Type\" content=\"application/xhtml+xml; charset=%s\" />\n"	//
-		  "<title>dd-wrt traffic graph</title>\n"	//
+	websWrite(stream, "<!DOCTYPE html>\n"	//
+		  "<html>\n" "<head>\n" "<meta http-equiv=\"Content-Type\" content=\"text/html; charset=%s\" />\n"	//
+			"<meta name=\"viewport\" content=\"width=device-width, initial-scale=1\" />\n"	//
+		  "<title>DD-WRT Traffic Graph</title>\n"	//
 		  "<script type=\"text/javascript\">\n"	//
 		  "//<![CDATA[\n"	//
 		  "function Show(label) {\n"	//
@@ -2685,12 +2686,12 @@ static int do_ttgraph(unsigned char method, struct mime_handler *handler, char *
 		  "#t-graph li {position: absolute; bottom: 0; width: %dpx; z-index: 2;\n"	//
 		  "  margin: 0; padding: 0;\n"	//
 		  "  text-align: center; list-style: none;}\n"	//
-		  "#t-graph li.day {height: 298px; padding-top: 2px; border-right: 1px dotted #C4C4C4; color: #AAA;}\n"	//
-		  "#t-graph li.day_sun {height: 298px; padding-top: 2px; border-right: 1px dotted #C4C4C4; color: #E00;}\n"	//
+		  "#t-graph li.day {height: 298px; padding-top: 2px; border-right: 1px dotted #c4c4c4; color: #aaa;}\n"	//
+		  "#t-graph li.day_sun {height: 298px; padding-top: 2px; border-right: 1px dotted #c4c4c4; color: #e00;}\n"	//
 		  "#t-graph li.bar {width: 4px; border: 1px solid; border-bottom: none; color: #000;}\n"	//
 		  "#t-graph li.bar p {margin: 5px 0 0; padding: 0;}\n"	//
-		  "#t-graph li.rcvd {left: 3px; background: #228B22;}\n"	//
-		  "#t-graph li.sent {left: 8px; background: #CD0000;}\n", charset, days * COL_WIDTH, COL_WIDTH);
+		  "#t-graph li.rcvd {left: 3px; background: #228b22;}\n"	//
+		  "#t-graph li.sent {left: 8px; background: #cd0000;}\n", charset, days * COL_WIDTH, COL_WIDTH);
 
 	for (i = 0; i < days - 1; i++) {
 		websWrite(stream, "#t-graph #d%d {left: %dpx;}\n", i + 1, i * COL_WIDTH);
@@ -2698,7 +2699,7 @@ static int do_ttgraph(unsigned char method, struct mime_handler *handler, char *
 	websWrite(stream, "#t-graph #d%u {left: %upx; border-right: none;}\n", days, (days - 1) * COL_WIDTH);
 
 	websWrite(stream, "#t-graph #ticks {width: %upx; height: 300px; z-index: 1;}\n"	//
-		  "#t-graph #ticks .tick {position: relative; border-bottom: 1px solid #BBB; width: %upx;}\n"	//
+		  "#t-graph #ticks .tick {position: relative; border-bottom: 1px solid #bbb; width: %upx;}\n"	//
 		  "#t-graph #ticks .tick p {position: absolute; left: 100%%; top: -0.67em; margin: 0 0 0 0.5em;}\n"	//
 		  "#t-graph #label {width: 500px; bottom: -20px;  z-index: 1; font: 12px Tahoma, Arial, sans-serif; font-weight: bold;}\n"	//
 		  "</style>\n" "</head>\n\n", days * COL_WIDTH, days * COL_WIDTH);
