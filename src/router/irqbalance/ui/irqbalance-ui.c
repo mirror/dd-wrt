@@ -16,11 +16,16 @@
 #include "helpers.h"
 
 
+enum states {
+	STATE_TREE,
+	STATE_SETTINGS,
+	STATE_SETUP_IRQS
+};
+int state;
 int irqbalance_pid = -1;
 GList *tree = NULL;
 setup_t setup;
 GMainLoop *main_loop;
-int is_tree = 1;
 static int default_bufsz = 8192;
 
 struct msghdr * create_credentials_msg()
@@ -137,7 +142,7 @@ try_again:
 void parse_setup(char *setup_data)
 {
 	char *token, *ptr;
-	int i,j;
+	int i,j, cpu = 0;
 	char *copy;
 	irq_t *new_irq = NULL;
 	if((setup_data == NULL) || (strlen(setup_data) == 0)) return;
@@ -174,14 +179,17 @@ void parse_setup(char *setup_data)
 	if(strncmp(token, "BANNED", strlen("BANNED"))) goto out;
 	token = strtok_r(NULL, " ", &ptr);
 	for(i = strlen(token) - 1; i >= 0; i--) {
+		if (token[i] == ',')
+			continue;
 		char *map = hex_to_bitmap(token[i]);
 		for(j = 3; j >= 0; j--) {
 			if(map[j] == '1') {
 				uint64_t *banned_cpu = malloc(sizeof(uint64_t));
-				*banned_cpu = (4 * (strlen(token) - (i + 1)) + (4 - (j + 1)));
+				*banned_cpu = cpu;
 				setup.banned_cpus = g_list_append(setup.banned_cpus,
 								banned_cpu);
 			}
+			cpu++;
 		}
 		free(map);
 	
@@ -359,35 +367,122 @@ gboolean rescan_tree(gpointer data __attribute__((unused)))
 	parse_setup(setup_data);
 	char *irqbalance_data = get_data(STATS);
 	parse_into_tree(irqbalance_data);
-	if(is_tree) {
+	if(state == STATE_TREE) {
 		display_tree();
 	}
 	free(setup_data);
 	free(irqbalance_data);
 	return TRUE;
 }
-
-gboolean key_loop(gpointer data __attribute__((unused)))
-{
-	int c = getch();
-	switch(c) {
-	case 'q':
-		close_window(0);
-		break;
-	case KEY_F(3):
-		is_tree = 1;
+void scroll_window() {
+	switch(state) {
+	case STATE_TREE:
 		display_tree();
 		break;
-	case KEY_F(4):
-		is_tree = 0;
+	case STATE_SETTINGS:
 		settings();
 		break;
-	case KEY_F(5):
-		is_tree = 0;
+	case STATE_SETUP_IRQS:
 		setup_irqs();
 		break;
 	default:
 		break;
+	}
+}
+
+gboolean key_loop(gpointer data __attribute__((unused)))
+{
+	while(1) {
+		int c = getch();
+		switch(c) {
+		case 'q':
+			close_window(0);
+			break;
+		case KEY_UP:
+			if (offset > 0) {
+				offset--;
+				scroll_window();
+			}
+			break;
+		case KEY_DOWN:
+			if (offset < max_offset) {
+				offset++;
+				scroll_window();
+			}
+			break;
+		case KEY_NPAGE:
+			switch (state) {
+			case STATE_TREE:
+				offset += LINES - 5;
+				break;
+			case STATE_SETTINGS:
+				offset += LINES - 8;
+				break;
+			case STATE_SETUP_IRQS:
+				offset += LINES - 6;
+				break;
+			default:
+				break;
+			}
+			if (offset > max_offset)
+				offset = max_offset;
+			scroll_window();
+			break;
+		case KEY_PPAGE:
+			switch (state) {
+			case STATE_TREE:
+				offset -= LINES - 5;
+				break;
+			case STATE_SETTINGS:
+				offset -= LINES - 8;
+				break;
+			case STATE_SETUP_IRQS:
+				offset -= LINES - 6;
+				break;
+			default:
+				break;
+			}
+			if (offset < 0)
+				offset = 0;
+			scroll_window();
+			break;
+		case KEY_F(3):
+			if (state == STATE_SETTINGS || state == STATE_SETUP_IRQS) {
+				state = STATE_TREE;
+				offset = 0;
+				display_tree();
+			}
+			break;
+		case KEY_F(4):
+			if (state == STATE_TREE || state == STATE_SETUP_IRQS) {
+				state = STATE_SETTINGS;
+				offset = 0;
+				settings();
+			}
+			settings();
+			break;
+		case KEY_F(5):
+			if (state == STATE_TREE || state == STATE_SETTINGS) {
+				state = STATE_SETUP_IRQS;
+				offset = 0;
+				setup_irqs();
+			}
+			break;
+		case 'c':
+			if (state == STATE_SETTINGS)
+				handle_cpu_banning();
+			break;
+		case 'i':
+			if (state == STATE_SETUP_IRQS)
+				handle_irq_banning();
+			break;
+		case 's':
+			if (state == STATE_SETTINGS)
+				handle_sleep_setting();
+			break;
+		default:
+			break;
+		}
 	}
 	return TRUE;
 }
@@ -437,6 +532,7 @@ int main(int argc, char **argv)
 		}
 	}
 
+	state = STATE_TREE;
 	init();
 
 	main_loop = g_main_loop_new(NULL, FALSE);
