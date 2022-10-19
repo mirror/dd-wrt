@@ -13,7 +13,7 @@ irqbalance-configure:
 		CFLAGS="$(COPTS) $(MIPS16_OPT) $(LTO) -DNEED_PRINTF" \
 		LDFLAGS="$(LDLTO)" \
 		LIBNL3_CFLAGS="-I$(TOP)/libnl/include" \
-		LIBNL3_LIBS="-L$(TOP)/libnl/lib/.libs -lnl-3" \
+		LIBNL3_LIBS="-L$(TOP)/libnl/lib/.libs -lnl-3  -lnl-genl-3" \
 		LIBNL3GENL_CFLAGS="-I$(TOP)/libnl/include" \
 		LIBNL3GENL_LIBS="-L$(TOP)/libnl/lib/.libs -lnl-genl-3"
 
