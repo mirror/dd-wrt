@@ -398,15 +398,19 @@ select[onchange*='SelFilter'] {
 }
 .logout {
   fill: var(--v9-9);
+  outline: 0;
 }
 .logout:hover {
   fill: var(--v0-9);
 }
 #help a {
   color: var(--fg-1);
+  outline: 0;
 }
-#help a:hover {
+#help a:hover,
+#help a:focus-visible {
   color: var(--fg-1);
+  text-decoration: underline;
 }
 #help h2 {
   background: var(--v0-4);

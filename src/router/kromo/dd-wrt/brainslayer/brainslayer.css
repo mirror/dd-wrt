@@ -15,7 +15,7 @@ form {
 }
 input, select,
 option, .button {
-  font-weight: bold;
+  font-weight: 700;
 }
 input, select {
   border-radius: 4px;
@@ -51,7 +51,7 @@ input.three_column_last, input.four_column_last {
   margin-right: 0;
 }
 legend {
-  font-weight: bold;
+  font-weight: 700;
   margin-left: -.362em;
   padding: 0 .272em;
 }
@@ -69,7 +69,7 @@ h2, h3 {
   border-radius: 3px;
 }
 legend, :link, :visited {
-  font-weight: bold;
+  font-weight: 700;
 }
 hr {
   padding: 0;
@@ -204,7 +204,8 @@ fieldset {
 #menuMainList li {
   list-style: none;
 }
-#menuMainList :link, #menuMainList :visited, #menuMainList span {
+#menuMainList :link, #menuMainList span {
+  font-weight: 700;
   line-height: 1.2;
   display: block;
   text-decoration: none;
@@ -268,7 +269,7 @@ td .meter {
   z-index: 10;
 }
 #score, #rating {
-  font-weight: bold;
+  font-weight: 700;
 }
 #scorebarBorder {
   background: #fff;
@@ -321,7 +322,7 @@ iframe#syslog {
 .message {
   width: 70%;
   padding: .906em;
-  font-weight: bold;
+  font-weight: 700;
   text-align: center;
   margin: 0 auto;
 }

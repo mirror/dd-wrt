@@ -121,7 +121,7 @@ input, select {
 .warning {
   background: #fcc;
   border: 2px dashed #f99;
-  font-weight: bold;
+  font-weight: 700;
 }
 pre {
   background-color: #fff;

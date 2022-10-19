@@ -109,7 +109,7 @@ h2 {
   text-decoration: none;
 }
 #menu li span {
-  font-weight: bold;
+  font-weight: 700;
 }
 #menu li span, #menu li a:hover {
   background: linear-gradient(0deg, #ededed, #fff 100%);
@@ -268,7 +268,7 @@ fieldset fieldset {
   background-color: #bfbfd0;
 }
 fieldset legend {
-  font-weight: bold;
+  font-weight: 700;
   color: #115b80;
 }
 table, .table {
@@ -281,7 +281,7 @@ table th {
   border: 1px solid #99b;
   padding: 1px 4px;
   border-radius: 3px;
-  font-weight: normal;
+  font-weight: 400;
   line-height: normal;
 	vertical-align: bottom;
 }
@@ -329,13 +329,13 @@ table#radio_table {
   border-bottom: 1px dotted #115b80;
 }
 #help dt {
-  font-weight: bold;
+  font-weight: 700;
   margin-top: 14px;
   margin-bottom: 6px;
 }
 #help a {
   text-decoration: none;
-  font-weight: bold;
+  font-weight: 700;
 }
 #help a:hover {
   text-decoration: underline;
@@ -454,7 +454,7 @@ td .meter {
   z-index: 10;
 }
 #score, #rating {
-  font-weight: bold;
+  font-weight: 700;
 }
 #scorebarBorder {
   border: 1px solid #999;

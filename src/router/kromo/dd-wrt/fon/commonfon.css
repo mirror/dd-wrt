@@ -111,7 +111,7 @@ input.num {
 #menuMainList li span {
   position: relative;
   z-index: 1;
-  font-weight: bold;
+  font-weight: 700;
   padding-bottom: .626em;
   margin-top: 0;
 }
@@ -119,7 +119,7 @@ input.num {
   background: #fff !important;
   color: #000 !important;
   border-color: #fff #ccc #000 #fff !important;
-  font-weight: normal;
+  font-weight: 400;
   padding-bottom: .543em;
 }
 #menuMainList li a, #menuSubList li a {
@@ -129,10 +129,10 @@ input.num {
   background: #333;
   color: #999;
   border-color: #555 #222 #000 #555;
-  font-weight: bold;
+  font-weight: 700;
 }
 #menuSubList li a {
-  font-weight: normal;
+  font-weight: 400;
 }
 #menuMainList li a:hover, #menuSubList li a:hover {
   margin-top: 0;
@@ -196,7 +196,7 @@ fieldset .setting .label {
   width: 16.304em;
 }
 .warning {
-  font-weight: bold;
+  font-weight: 700;
   padding: .725em;
   border: solid .181em #f99;
   text-align: center;
@@ -207,7 +207,7 @@ fieldset {
   margin: 0;
 }
 fieldset legend {
-  font-weight: bold;
+  font-weight: 700;
   margin-left: -.362em;
   padding: 0 .272em;
   background: #fff;
@@ -219,7 +219,7 @@ table {
 }
 table tr th {
   color: #fff;
-  font-weight: normal;
+  font-weight: 400;
   border-style: solid;
   border-width: .09em;
   border-color: #ccc #666 #666 #ccc;
@@ -244,7 +244,7 @@ table td {
 }
 #help dt.term {
   margin: 0 0 .362em 0;
-  font-weight: bold;
+  font-weight: 700;
 }
 #help dd.definition {
   padding-bottom: .908em;
@@ -285,7 +285,7 @@ div.center {
   max-width: 72.464em;
   margin: 0 auto;
   padding: 1.812em;
-  font-weight: bold;
+  font-weight: 700;
   text-align: center;
   border-style: solid;
   border-color: #ddd #999 #999 #ddd;
@@ -294,7 +294,7 @@ div.center {
 }
 .message div input {
   margin-top: 1.449em;
-  font-weight: normal;
+  font-weight: 400;
 }
 .popup {
   background: #fff;
@@ -361,7 +361,7 @@ fieldset legend {
   z-index: 10;
 }
 #score, #rating, #standards {
-  font-weight: bold;
+  font-weight: 700;
 }
 #scorebar {
   background-image: url(/images/gradient.svg);

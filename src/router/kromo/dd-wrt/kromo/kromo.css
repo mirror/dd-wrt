@@ -15,7 +15,7 @@
   background: #115b80;
   color: #eee;
   border-color: #115b80;
-  font-weight: bold;
+  font-weight: 700;
 }
 #menuMainList li a:hover {
   filter: brightness(1.2);
@@ -70,12 +70,14 @@ input[type='checkbox'],
 input[type='radio'] {
   accent-color: #115b80;
 }
-.button, .button[disabled]:hover, ::file-selector-button {
+.button, .button[disabled]:hover,
+::file-selector-button, ::-webkit-file-upload-button {
   background: #115b80;
   color: #fff;
   filter: brightness(1);
 }
-.button:hover, ::file-selector-button:hover {
+.button:hover, ::file-selector-button:hover,
+::-webkit-file-upload-button:hover {
   filter: brightness(1.2);
 }
 .button.green_btn {
