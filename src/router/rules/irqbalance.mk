@@ -11,7 +11,11 @@ irqbalance-configure:
 		GLIB2_CFLAGS="-I$(TOP)/glib20/libglib/glib -I$(TOP)/glib20/libglib -I$(TOP)/glib20/libglib/build/glib -L$(INSTALLDIR)/util-linux/usr/lib" \
 		GLIB2_LIBS="-L$(TOP)/_staging_static/usr/lib -lglib-2.0" \
 		CFLAGS="$(COPTS) $(MIPS16_OPT) $(LTO) -DNEED_PRINTF" \
-		LDFLAGS="$(LDLTO)"
+		LDFLAGS="$(LDLTO)" \
+		LIBNL3_CFLAGS="-I$(TOP)/libnl/include" \
+		LIBNL3_LIBS="-L$(TOP)/libnl/lib/.libs -lnl-3" \
+		LIBNL3GENL_CFLAGS="-I$(TOP)/libnl/include" \
+		LIBNL3GENL_LIBS="-L$(TOP)/libnl/lib/.libs -lnl-genl-3"
 
 irqbalance: zlib libffi
 	$(MAKE) -C irqbalance
