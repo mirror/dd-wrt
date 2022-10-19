@@ -38,7 +38,11 @@ input[type='radio'] {
   border: 1px solid var(--ac-0);
   color: var(--tx-c);
 }
-.button:hover, ::file-selector-button:hover,
+.button:hover, ::file-selector-button:hover {
+  background: var(--ac-2);
+  border: 1px solid var(--ac-2);
+  color: var(--tx-c);
+}
 ::-webkit-file-upload-button:hover {
   background: var(--ac-2);
   border: 1px solid var(--ac-2);
