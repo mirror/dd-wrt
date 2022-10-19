@@ -688,6 +688,9 @@ int internal_getRouterBrand()
 		} else if (!strncmp(gwid, "GW6500", 6)) {
 			setRouter("Gateworks Newport GW6500");
 			return ROUTER_BOARD_GW6400;
+		} else if (!strncmp(gwid, "GW6504", 6)) {
+			setRouter("Gateworks Newport GW6504");
+			return ROUTER_BOARD_GW6400;
 		} else if (!strncmp(gwid, "GW6903", 6)) {
 			setRouter("Gateworks Newport GW6903");
 			return ROUTER_BOARD_GW2380;
