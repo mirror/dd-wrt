@@ -12,7 +12,6 @@ AC_PROG_INSTALL
 AC_PROG_AWK
 
 AC_HEADER_STDC
-AC_CHECK_HEADERS([numa.h])
 
 AC_CHECK_FUNCS(getopt_long)
 
@@ -32,7 +31,7 @@ AS_IF([test "$enable_numa" = "no"],[
   ac_cv_header_numa_h=no
   ac_cv_lib_numa_numa_available=no
 ])
-PKG_CHECK_MODULES([NUMA], [numa], [has_numa=yes], [AC_CHECK_LIB(numa, numa_available)])
+#PKG_CHECK_MODULES([NUMA], [numa], [has_numa=yes], [AC_CHECK_LIB(numa, numa_available)])
 AC_CHECK_LIB(m, floor)
 
 PKG_CHECK_MODULES([GLIB2], [glib-2.0], [], [AC_MSG_ERROR([glib-2.0 is required])])
