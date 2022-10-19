@@ -106,7 +106,7 @@ th {
   background: #fcc;
   border: 2px dashed #f99;
   color: #f00;
-  font-weight: bold;
+  font-weight: 700;
 }
 input.button:hover {
   background-color: #d0d0d7;

@@ -60,7 +60,7 @@ table {
 }
 table tr th {
   border-radius: 3px;
-  font-weight: normal;
+  font-weight: 400;
   padding: .09em .543em;
   text-align: left;
   line-height: normal;
@@ -127,6 +127,7 @@ body, .gui {
 #menuMain {
   position: relative;
   left: -4rem;
+  font-weight: 700;
 }
 #menuMainList li:first-child {
   margin-left: 3em;
@@ -134,7 +135,7 @@ body, .gui {
 #menuSubList li:first-child {
   margin-left: -.5em;
 }
-#menuMainList .current, #menuSubList span strong,
+#menuMainList .current, #menuSubList span,
 #menu li a:hover {
   border-bottom: 4px solid #0f0;
   animation: wut .6s ease;
@@ -148,6 +149,7 @@ body, .gui {
   width: 106%;
   margin: .8em 0 .6em 0;
   float: left;
+  font-weight: 700;
   height: 22px;
   padding: 6px 0 0 3px;
 }
@@ -268,7 +270,7 @@ input.button[onclick*='delete'] {
 }
 dt.term {
   margin: 0 0 .362em 0;
-  font-weight: bold;
+  font-weight: 700;
 }
 dd.definition {
   padding-bottom: .908em;
@@ -302,7 +304,7 @@ dd.definition {
   border-radius: 4px;
   background: #fcc;
   border: 2px dashed #f99;
-  font-weight: bold;
+  font-weight: 700;
   margin: 0 300px 0 0;
   text-align: center;
 }
@@ -372,7 +374,7 @@ td .meter {
   z-index: 10;
 }
 #score, #rating, #standards {
-  font-weight: bold;
+  font-weight: 700;
 }
 #scorebarBorder {
   background: #fff;
@@ -415,7 +417,7 @@ input, select {
   max-width: 72.464em;
   margin: 2em auto;
   padding: 1.812em .906em .906em;
-  font-weight: bold;
+  font-weight: 700;
   text-align: center;
   border-radius: 4px;
 }

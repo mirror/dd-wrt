@@ -108,7 +108,7 @@ pre {
 .warning {
   background: #fcc;
   border: 2px dashed #f99;
-  font-weight: bold;
+  font-weight: 700;
 }
 .setting .default {
   color: #666;

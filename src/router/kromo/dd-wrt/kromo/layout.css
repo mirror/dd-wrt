@@ -96,7 +96,7 @@ select[name*='bonding'], select[name*='schedule_'],
   z-index: 10;
 }
 #score, #rating, #standards {
-  font-weight: bold;
+  font-weight: 700;
 }
 #scorebar {
   background-image: url(/images/gradient.svg);
@@ -184,7 +184,7 @@ select[name*='bonding'], select[name*='schedule_'],
   z-index: 1;
 }
 #menuMainList li span {
-  font-weight: bold;
+  font-weight: 700;
   padding-bottom: .626em;
   margin-top: 0;
 }
@@ -192,15 +192,12 @@ select[name*='bonding'], select[name*='schedule_'],
   padding: .453em .906em;
 }
 #menuSubList li span {
-  font-weight: bold;
+  font-weight: 700;
   padding-bottom: .543em;
   margin-top: .09em;
 }
 #menuMainList li a, #menuSubList li a {
   margin-top: .09em;
-}
-#menuSubList li a {
-  font-weight: normal;
 }
 #menuMainList li a:hover, #menuSubList li a:hover {
   margin-top: 0;
@@ -280,7 +277,7 @@ fieldset {
   margin: 0;
 }
 fieldset legend {
-  font-weight: bold;
+  font-weight: 700;
   margin-left: -.362em;
   padding: 0 .272em;
 }
@@ -302,7 +299,7 @@ table#radio_table tr td {
 table tr th {
   border: 1px solid;
   border-radius: 2px;
-  font-weight: normal;
+  font-weight: 400;
   padding: .09em .543em;
   text-align: left;
   line-height: normal;
@@ -339,7 +336,7 @@ table[summary='ports forwarding table'] input[size='10'] {
 }
 #help dt.term {
   margin: 0 0 .362em 0;
-  font-weight: bold;
+  font-weight: 700;
 }
 #help dd.definition {
   padding-bottom: .908em;
@@ -354,7 +351,7 @@ table[summary='ports forwarding table'] input[size='10'] {
   text-decoration: none;
   text-transform: lowercase;
 }
-#help a:hover, .link {
+#help a:hover, #help a:focus-visible, .link, :link:hover {
   text-decoration: underline;
 }
 #logout {
@@ -407,14 +404,14 @@ table[summary='ports forwarding table'] input[size='10'] {
   max-width: 72.464em;
   margin: 2em auto;
   padding: 1.812em .906em .906em;
-  font-weight: bold;
+  font-weight: 700;
   text-align: center;
 }
 .message div input {
   padding: .362em 1.087em;
   margin: 0 .362em;
   margin-top: 1.449em;
-  font-weight: normal;
+  font-weight: 400;
 }
 .popup {
   padding: .906em;
@@ -467,9 +464,12 @@ td .meter {
   vertical-align: middle;
   cursor: pointer;
 }
-.button:hover, .button:focus {
-  text-decoration: none;
-}
+::file-selector-button, ::-webkit-file-upload-button {
+  height:1.6rem;
+  border: 0;
+  padding:.2em .6em;
+  cursor: pointer;
+} 
 [disabled], :disabled, .off {
   cursor: default;
   opacity: .8;

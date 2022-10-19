@@ -2526,6 +2526,7 @@ static int do_syslog(unsigned char method, struct mime_handler *handler, char *u
 
 	websWrite(stream, "<!DOCTYPE html>\n"	//
 		  "<html>\n" "<head>\n" "<meta http-equiv=\"Content-Type\" content=\"text/html; charset=%s\" />\n"	//
+			"<meta name=\"viewport\" content=\"width=device-width, initial-scale=1\" />\n"	//
 		  "<script type=\"text/javascript\" src=\"common.js\"></script>\n"	//
 		  "<script type=\"text/javascript\" src=\"lang_pack/english.js\"></script>\n", charset);
 #ifdef HAVE_LANGUAGE
@@ -2535,10 +2536,6 @@ static int do_syslog(unsigned char method, struct mime_handler *handler, char *u
 	char *style = nvram_safe_get("router_style");
 	if (!style)
 		style = "elegant";
-	if (!strcmp(style, "blue") || !strcmp(style, "cyan") || !strcmp(style, "elegant") || !strcmp(style, "carlson") || !strcmp(style, "green") || !strcmp(style, "orange") || !strcmp(style, "red")
-	    || !strcmp(style, "yellow")) {
-		websWrite(stream, "<link type=\"text/css\" rel=\"stylesheet\" href=\"style/%s/colorscheme.css\" />\n", style);
-	}
 	websWrite(stream, "<link type=\"text/css\" rel=\"stylesheet\" href=\"style/syslogd/syslogd.css\" />\n");
 	if (!strcmp(style, "blue") || !strcmp(style, "cyan") || !strcmp(style, "elegant") || !strcmp(style, "carlson") || !strcmp(style, "green") || !strcmp(style, "orange") || !strcmp(style, "red")
 	    || !strcmp(style, "yellow")) {
