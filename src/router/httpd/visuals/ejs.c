@@ -1359,10 +1359,8 @@ void show_bwif(webs_t wp, char *ifname, char *name)
 	char buf[128];
 	websWrite(wp, "<h2>%s - %s</h2>\n", tran_string(buf, sizeof(buf), "status_band.h2"), name);
 	websWrite(wp, "<fieldset>\n");
-	websWrite(wp, "<iframe src=\"/graph_if.svg?%s\" title=\"%s\" width=\"100%%\" height=\"275\" frameborder=\"0\" type=\"image/svg+xml\">\n", ifname, tran_string(buf, sizeof(buf), "status_band.h2"));
-	websWrite(wp, "</iframe>\n");
-	websWrite(wp, "</fieldset>\n");
-	websWrite(wp, "<br />\n");
+	websWrite(wp, "<iframe src=\"/graph_if.svg?%s\" width=\"100%%\" height=\"275\" frameborder=\"0\" type=\"image/svg+xml\">\n", ifname);
+	websWrite(wp, "</iframe>\n" "</fieldset>\n" "<br />\n");
 }
 
 EJ_VISIBLE void ej_show_bandwidth(webs_t wp, int argc, char_t ** argv)
