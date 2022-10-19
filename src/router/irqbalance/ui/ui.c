@@ -3,9 +3,13 @@
 #include <string.h>
 #include "ui.h"
 
+int offset;
+int max_offset;
 
 GList *all_cpus = NULL;
 GList *all_irqs = NULL;
+
+static char **irq_name;
 
 char *IRQ_CLASS_TO_STR[] = {
 			"Other",
@@ -134,33 +138,54 @@ void get_banned_cpu(int *cpu, void *data __attribute__((unused)))
 	all_cpus = g_list_append(all_cpus, new);
 }
 
-void print_cpu_line(cpu_ban_t *cpu, void *data)
+void print_tmp_cpu_line(cpu_ban_t *cpu, void *data __attribute__((unused)))
 {
-	int *line_offset = data;
-	if(cpu->is_banned) {
-		attrset(COLOR_PAIR(10));
-	} else {
-		attrset(COLOR_PAIR(9));
+	int line = max_offset - offset + 6;
+	if (max_offset >= offset && line < LINES - 3) {
+		if (cpu->is_changed)
+			attrset(COLOR_PAIR(3));
+		else if(cpu->is_banned)
+			attrset(COLOR_PAIR(10));
+		else
+			attrset(COLOR_PAIR(9));
+		mvprintw(line, 3, "CPU %d     ", cpu->number);
+		mvprintw(line, 19, "%s", cpu->is_banned ?
+				"YES	" :
+				"NO	 ");
 	}
-	mvprintw(*line_offset, 3, "CPU %d", cpu->number);
-	mvprintw(*line_offset, 19, "%s", cpu->is_banned ?
-			"YES	" :
-			"NO	 ");
-	(*line_offset)++;
+	max_offset++;
+}
+
+void print_cpu_line(cpu_ban_t *cpu, void *data __attribute__((unused)))
+{
+	int line = max_offset - offset + 6;
+	if (max_offset >= offset && line < LINES - 2) {
+		if(cpu->is_banned)
+			attrset(COLOR_PAIR(10));
+		else
+			attrset(COLOR_PAIR(9));
+		mvprintw(line, 3, "CPU %d     ", cpu->number);
+		mvprintw(line, 19, "%s", cpu->is_banned ?
+				"YES	" :
+				"NO	 ");
+	}
+	max_offset++;
 }
 
 void print_all_cpus()
 {
+	max_offset = 0;
 	if(all_cpus == NULL) {
 		for_each_node(tree, get_cpu, NULL);
 		for_each_int(setup.banned_cpus, get_banned_cpu, NULL);
 		all_cpus = g_list_sort(all_cpus, sort_all_cpus);
 	}
-	int *line = malloc(sizeof(int));
-	*line = 6;
 	attrset(COLOR_PAIR(2));
 	mvprintw(4, 3, "NUMBER          IS BANNED");
-	for_each_cpu(all_cpus, print_cpu_line, line);
+	for_each_cpu(all_cpus, print_cpu_line, NULL);
+	max_offset -= LINES - 8;
+	if (max_offset < 0)
+		max_offset = 0;
 }
 
 void add_banned_cpu(int *banned_cpu, void *data)
@@ -196,6 +221,7 @@ int toggle_cpu(GList *cpu_list, int cpu_number)
 	} else {
 		((cpu_ban_t *)(entry->data))->is_banned = 1;
 	}
+	((cpu_ban_t *)(entry->data))->is_changed = 1;
 	return ((cpu_ban_t *)(entry->data))->is_banned;
 }
 
@@ -240,18 +266,37 @@ void handle_cpu_banning()
 			if(position > 6) {
 				position--;
 				move(position, 19);
+			} else if (offset > 0) {
+				offset--;
+				max_offset = 0;
+				for_each_cpu(tmp, print_tmp_cpu_line, NULL);
+				max_offset -= LINES - 9;
+				if (max_offset < 0)
+					max_offset = 0;
+				move(position, 19);
 			}
 			break;
 		case KEY_DOWN:
-			if(position <= g_list_length(all_cpus) + 4) {
-				position++;
+			if(position < (size_t)(LINES - 4)) {
+				if (position <= g_list_length(all_cpus) + 4 - offset) {
+					position++;
+					move(position, 19);
+				}
+			} else if (offset < max_offset) {
+				offset++;
+				max_offset = 0;
+				for_each_cpu(tmp, print_tmp_cpu_line, NULL);
+				max_offset -= LINES - 9;
+				if (max_offset < 0)
+					max_offset = 0;
 				move(position, 19);
 			}
 			break;
 		case '\n':
 		case '\r': {
 			attrset(COLOR_PAIR(3));
-			int banned = toggle_cpu(tmp, position - 6);
+			int banned = toggle_cpu(tmp, position + offset - 6);
+			mvprintw(position, 3, "CPU %d     ", position + offset - 6);
 			if(banned) {
 				mvprintw(position, 19, "YES");
 			} else {
@@ -264,8 +309,7 @@ void handle_cpu_banning()
 		case 27:
 			processing = 0;
 			curs_set(0);
-			/* Forget the changes */
-			tmp = g_list_copy_deep(all_cpus, copy_cpu_ban, NULL);
+			g_list_free(tmp);
 			print_all_cpus();
 			attrset(COLOR_PAIR(0));
 			mvprintw(LINES - 3, 1, "			\
@@ -273,11 +317,13 @@ void handle_cpu_banning()
 			attrset(COLOR_PAIR(5));
 			mvprintw(LINES - 2, 1,
 				"Press <S> for changing sleep setup, <C> for CPU ban setup.  ");
-			move(LINES - 1, COLS - 1);
+			show_frame();
+			show_footer();
 			refresh();
 			break;
 		case 's':
 			processing = 0;
+			g_list_free(all_cpus);
 			all_cpus = tmp;
 			curs_set(0);
 			print_all_cpus();
@@ -287,8 +333,8 @@ void handle_cpu_banning()
 			attrset(COLOR_PAIR(5));
 			mvprintw(LINES - 2, 1,
 				"Press <S> for changing sleep setup, <C> for CPU ban setup.  ");
-			attrset(COLOR_PAIR(3));
-			move(LINES - 1, COLS - 1);
+			show_frame();
+			show_footer();
 			refresh();
 			char settings_string[1024] = "settings cpus \0";
 			for_each_cpu(all_cpus, get_new_cpu_ban_values, settings_string);
@@ -302,25 +348,38 @@ void handle_cpu_banning()
 			processing = 0;
 			close_window(0);
 			break;
-		case KEY_F(3):
-			is_tree = 1;
-			processing = 0;
-			display_tree();
-			break;
-		case KEY_F(5):
-			is_tree = 0;
-			processing = 0;
-			setup_irqs();
-			break;
 		default:
 			break;
 		}
 	}
 }
 
+static int rbot, rtop;
+
+static inline void bsnl_emit(char *buf, int buflen)
+{
+	int len = strlen(buf);
+	if (len > 0) {
+		snprintf(buf + len, buflen - len, ",");
+		len++;
+	}
+	if (rbot == rtop)
+		snprintf(buf + len, buflen - len, "%d", rbot);
+	else
+		snprintf(buf + len, buflen - len, "%d-%d", rbot, rtop);
+}
+
 void copy_assigned_obj(int *number, void *data)
 {
-	snprintf(data + strlen(data), 128 - strlen(data), "%d, ", *number);
+	if (rtop == -1) {
+		rbot = rtop = *number;
+		return;
+	}
+	if (*number > rtop + 1) {
+		bsnl_emit(data, 128);
+		rbot = *number;
+	}
+	rtop = *number;
 }
 
 void print_assigned_objects_string(irq_t *irq, int *line_offset)
@@ -329,14 +388,50 @@ void print_assigned_objects_string(irq_t *irq, int *line_offset)
 		return;
 	}
 	char assigned_to[128] = "\0";
+	rtop = -1;
 	for_each_int(irq->assigned_to, copy_assigned_obj, assigned_to);
-	assigned_to[strlen(assigned_to) - 2] = '\0';
-	mvprintw(*line_offset, 36, "%s", assigned_to);
+	bsnl_emit(assigned_to, 128);
+	mvprintw(*line_offset, 68, "%s             ", assigned_to);
 }
 
-void print_irq_line(irq_t *irq, void *data)
+void get_irq_name(int end)
 {
-	int *line_offset = data;
+	int i, cpunr, len;
+	FILE *output;
+	char *cmd;
+	char buffer[128];
+
+	if (irq_name == NULL) {
+		irq_name = malloc(sizeof(char *) * LINES);
+		for (i = 4; i < LINES; i++) {
+			irq_name[i] = malloc(sizeof(char) * 50);
+			memset(irq_name[i], 0, sizeof(char) * 50);
+		}
+	}
+
+	output = popen("cat /proc/interrupts | head -1 | awk '{print NF}'", "r");
+	if (!output)
+		return;
+	fscanf(output, "%d", &cpunr);
+	pclose(output);
+
+	len = snprintf(NULL, 0, "cat /proc/interrupts | awk '{for (i=%d;i<=NF;i++)printf(\"%%s \", $i);print \"\"}' | cut -c-49", cpunr + 2);
+	cmd = alloca(sizeof(char) * (len + 1));
+	snprintf(cmd, len + 1, "cat /proc/interrupts | awk '{for (i=%d;i<=NF;i++)printf(\"%%s \", $i);print \"\"}' | cut -c-49", cpunr + 2);
+	output = popen(cmd, "r");
+	for (i = 0; i <= offset; i++)
+		fgets(buffer, 50, output);
+	for (i = 4; i < end; i++)
+		fgets(irq_name[i], 50, output);
+	pclose(output);
+}
+
+void print_tmp_irq_line(irq_t *irq, void *data __attribute__((unused)))
+{
+	int line = max_offset - offset + 4;
+	max_offset++;
+	if (line < 4 || line >= LINES - 3)
+		return;
 	switch(irq->class) {
 	case(IRQ_OTHER):
 		attrset(COLOR_PAIR(1));
@@ -362,24 +457,65 @@ void print_irq_line(irq_t *irq, void *data)
 		attrset(COLOR_PAIR(0));
 		break;
 	}
-	mvprintw(*line_offset, 3, "IRQ %d", irq->vector);
-	mvprintw(*line_offset, 19, "%s", irq->is_banned ? "YES" : "NO ");
-	print_assigned_objects_string(irq, line_offset);
-	mvprintw(*line_offset, 84, "%s",
+	mvprintw(line, 3, "IRQ %d      ", irq->vector);
+	mvprintw(line, 19, "%s", irq->is_banned ? "YES" : "NO ");
+	mvprintw(line, 36, "%s               ",
 			 irq->class < 0 ? "Unknown" : IRQ_CLASS_TO_STR[irq->class]);
-	(*line_offset)++;
+	print_assigned_objects_string(irq, &line);
+	mvprintw(line, 120, "%s", irq_name[line]);
+}
 
+void print_irq_line(irq_t *irq, void *data __attribute__((unused)))
+{
+	int line = max_offset - offset + 4;
+	max_offset++;
+	if (line < 4 || line >= LINES - 2)
+		return;
+	switch(irq->class) {
+	case(IRQ_OTHER):
+		attrset(COLOR_PAIR(1));
+		break;
+	case(IRQ_LEGACY):
+		attrset(COLOR_PAIR(2));
+		break;
+	case(IRQ_SCSI):
+		attrset(COLOR_PAIR(3));
+		break;
+	case(IRQ_VIDEO):
+		attrset(COLOR_PAIR(8));
+		break;
+	case(IRQ_ETH):
+	case(IRQ_GBETH):
+	case(IRQ_10GBETH):
+		attrset(COLOR_PAIR(9));
+		break;
+	case(IRQ_VIRT_EVENT):
+		attrset(COLOR_PAIR(10));
+		break;
+	default:
+		attrset(COLOR_PAIR(0));
+		break;
+	}
+	mvprintw(line, 3, "IRQ %d", irq->vector);
+	mvprintw(line, 19, "%s", irq->is_banned ? "YES" : "NO ");
+	mvprintw(line, 36, "%s               ",
+			 irq->class < 0 ? "Unknown" : IRQ_CLASS_TO_STR[irq->class]);
+	print_assigned_objects_string(irq, &line);
+	mvprintw(line, 120, "%s", irq_name[line]);
 }
 
 void print_all_irqs()
 {
-	int *line = malloc(sizeof(int));
-	*line = 4;
+	max_offset = 0;
 	attrset(COLOR_PAIR(0));
 	mvprintw(2, 3,
-			"NUMBER          IS BANNED        ASSIGNED TO CPUS      \
-			    CLASS");
-	for_each_irq(all_irqs, print_irq_line, line);
+			"NUMBER          IS BANNED        CLASS      \
+			    ASSIGNED TO CPUS                                    IRQ NAME");
+	get_irq_name(LINES - 2);
+	for_each_irq(all_irqs, print_irq_line, NULL);
+	max_offset -= LINES - 6;
+	if (max_offset < 0)
+		max_offset = 0;
 }
 
 int toggle_irq(GList *irq_list, int position)
@@ -395,6 +531,7 @@ int toggle_irq(GList *irq_list, int position)
 	} else {
 		((irq_t *)(entry->data))->is_banned = 1;
 	}
+	((irq_t *)(entry->data))->is_changed = 1;
 	return ((irq_t *)(entry->data))->is_banned;
 }
 
@@ -442,18 +579,38 @@ void handle_irq_banning()
 			if(position > 4) {
 				position--;
 				move(position, 19);
+			} else if (offset > 0) {
+				offset--;
+				max_offset = 0;
+				get_irq_name(LINES - 3);
+				for_each_irq(tmp, print_tmp_irq_line, NULL);
+				max_offset -= LINES - 7;
+				if (max_offset < 0)
+					max_offset = 0;
+				move(position, 19);
 			}
 			break;
 		case KEY_DOWN:
-			if(position < g_list_length(all_irqs) + 3) {
-				position++;
+			if (position < (size_t)(LINES  - 4)) {
+				if(position < g_list_length(all_irqs) + 3) {
+					position++;
+					move(position, 19);
+				}
+			} else if (offset < max_offset) {
+				offset++;
+				max_offset = 0;
+				get_irq_name(LINES - 3);
+				for_each_irq(tmp, print_tmp_irq_line, NULL);
+				max_offset -= LINES - 7;
+				if (max_offset < 0)
+					max_offset = 0;
 				move(position, 19);
 			}
 			break;
 		case '\n':
 		case '\r': {
 			attrset(COLOR_PAIR(3));
-			int banned = toggle_irq(tmp, position - 4);
+			int banned = toggle_irq(tmp, position + offset - 4);
 			if(banned) {
 				mvprintw(position, 19, "YES");
 			} else {
@@ -467,7 +624,7 @@ void handle_irq_banning()
 			processing = 0;
 			curs_set(0);
 			/* Forget the changes */
-			tmp = g_list_copy_deep(all_irqs, copy_irq, NULL);
+			g_list_free(tmp);
 			print_all_irqs();
 			attrset(COLOR_PAIR(0));
 			mvprintw(LINES - 3, 1, "			\
@@ -475,11 +632,13 @@ void handle_irq_banning()
 			attrset(COLOR_PAIR(5));
 			mvprintw(LINES - 2, 1, "Press <I> for setting up IRQ banning.\
 				");
-			move(LINES - 1, COLS - 1);
+			show_frame();
+			show_footer();
 			refresh();
 			break;
 		case 's':
 			processing = 0;
+			g_list_free(all_irqs);
 			all_irqs = tmp;
 			curs_set(0);
 			print_all_irqs();
@@ -490,7 +649,8 @@ void handle_irq_banning()
 			mvprintw(LINES - 2, 1, "Press <I> for setting up IRQ banning.\
 				");
 			attrset(COLOR_PAIR(3));
-			move(LINES - 1, COLS - 1);
+			show_frame();
+			show_footer();
 			refresh();
 			char settings_string[1024] = BAN_IRQS;
 			for_each_irq(all_irqs, get_new_irq_ban_values, settings_string);
@@ -504,20 +664,33 @@ void handle_irq_banning()
 			processing = 0;
 			close_window(0);
 			break;
-		case KEY_F(3):
-			is_tree = 1;
-			processing = 0;
-			display_tree();
-			break;
-		case KEY_F(4):
-			is_tree = 0;
-			processing = 0;
-			settings();
-			break;
 		default:
 			break;
 		}
 	}
+}
+
+void handle_sleep_setting()
+{
+	char info[128] = "Current sleep interval between rebalancing: \0";
+	uint8_t sleep_input_offset = strlen(info) + 3;
+	mvprintw(LINES - 1, 1, "Press ESC for discarding your input.\
+												");
+	attrset(COLOR_PAIR(0));
+	mvprintw(LINES - 2, 1, "			\
+												");
+	uint64_t new_sleep = get_valid_sleep_input(sleep_input_offset);
+	if(new_sleep != setup.sleep) {
+		setup.sleep = new_sleep;
+		char settings_data[128];
+		snprintf(settings_data, 128, "%s %" PRIu64, SET_SLEEP, new_sleep);
+		send_settings(settings_data);
+	}
+	attrset(COLOR_PAIR(5));
+	mvprintw(LINES - 2, 1, "Press <S> for changing sleep setup, <C> for CPU ban setup. ");
+	show_frame();
+	show_footer();
+	refresh();
 }
 
 void init()
@@ -544,11 +717,13 @@ void init()
 		init_pair(10, COLOR_MAGENTA, COLOR_BLACK);
 	}
 
+	offset = 0;
 	display_tree();
 }
 
 void close_window(int sig __attribute__((unused)))
 {
+	g_list_free(all_cpus);
 	g_list_free(setup.banned_irqs);
 	g_list_free(setup.banned_cpus);
 	g_list_free_full(tree, free);
@@ -563,60 +738,15 @@ void settings()
 	parse_setup(setup_data);
 
 	char info[128] = "Current sleep interval between rebalancing: \0";
-	uint8_t sleep_input_offset = strlen(info) + 3;
 	snprintf(info + strlen(info), 128 - strlen(info), "%" PRIu64 "\n", setup.sleep);
 	attrset(COLOR_PAIR(1));
 	mvprintw(2, 3, "%s", info);
 	print_all_cpus();
-
-	int user_input = 1;
-	while(user_input) {
-		attrset(COLOR_PAIR(5));
-		mvprintw(LINES - 2, 1,
-				 "Press <S> for changing sleep setup, <C> for CPU ban setup. ");
-		show_frame();
-		show_footer();
-		refresh();
-		int c = getch();
-		switch(c) {
-		case 's': {
-			mvprintw(LINES - 1, 1, "Press ESC for discarding your input.\
-												");
-			attrset(COLOR_PAIR(0));
-			mvprintw(LINES - 2, 1, "			\
-												");
-			uint64_t new_sleep = get_valid_sleep_input(sleep_input_offset);
-			if(new_sleep != setup.sleep) {
-				setup.sleep = new_sleep;
-				char settings_data[128];
-				snprintf(settings_data, 128, "%s %" PRIu64, SET_SLEEP, new_sleep);
-				send_settings(settings_data);
-			}
-			break;
-		}
-		case 'c':
-			handle_cpu_banning();
-			break;
-		/* We need to include window changing options as well because the
-		 * related char was eaten up by getch() already */
-		case 'q':
-			user_input = 0;
-			close_window(0);
-			break;
-		case KEY_F(3):
-			is_tree = 1;
-			user_input = 0;
-			display_tree();
-			break;
-		case KEY_F(5):
-			is_tree = 0;
-			user_input = 0;
-			setup_irqs();
-			break;
-		default:
-			break;
-		}
-	}
+	attrset(COLOR_PAIR(5));
+	mvprintw(LINES - 2, 1, "Press <S> for changing sleep setup, <C> for CPU ban setup. ");
+	show_frame();
+	show_footer();
+	refresh();
 	free(setup_data);
 }
 
@@ -631,41 +761,18 @@ void setup_irqs()
 	show_frame();
 	show_footer();
 	refresh();
-
-	int user_input = 1;
-	while(user_input) {
-		int c = getch();
-		switch(c) {
-		case 'i':
-			handle_irq_banning();
-			break;
-		case 'q':
-			user_input = 0;
-			close_window(0);
-			break;
-		case KEY_F(3):
-			is_tree = 1;
-			user_input = 0;
-			display_tree();
-			break;
-		case KEY_F(4):
-			is_tree = 0;
-			user_input = 0;
-			settings();
-			break;
-		default:
-			break;
-		}
-	}
 }
 
 void display_tree_node_irqs(irq_t *irq, void *data)
 {
 	char indent[32] = "	   \0";
-	snprintf(indent + strlen(indent), 32 - strlen(indent), "%s", (char *)data);
-	attrset(COLOR_PAIR(3));
-	printw("%sIRQ %u, IRQs since last rebalance %lu\n",
+	if (max_offset >= offset && max_offset - offset < LINES - 5) {
+		snprintf(indent + strlen(indent), 32 - strlen(indent), "%s", (char *)data);
+		attrset(COLOR_PAIR(3));
+		printw("%sIRQ %u, IRQs since last rebalance %lu\n",
 			indent, irq->vector, irq->diff);
+	}
+	max_offset++;
 }
 
 void display_tree_node(cpu_node_t *node, void *data)
@@ -711,7 +818,9 @@ void display_tree_node(cpu_node_t *node, void *data)
 	default:
 		break;
 	}
-	printw("%s", copy_to);
+	if (max_offset >= offset)
+		printw("%s", copy_to);
+	max_offset++;
 	if(g_list_length(node->irqs) > 0) {
 		for_each_irq(node->irqs, display_tree_node_irqs, indent);
 	}
@@ -728,7 +837,11 @@ void display_tree()
 	char *irqbalance_data = get_data(STATS);
 	parse_into_tree(irqbalance_data);
 	display_banned_cpus();
+	max_offset = 0;
 	for_each_node(tree, display_tree_node, NULL);
+	max_offset -= LINES - 5;
+	if (max_offset < 0)
+		max_offset = 0;
 	show_frame();
 	show_footer();
 	refresh();
