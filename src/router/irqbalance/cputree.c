@@ -38,6 +38,7 @@
 #include <glib.h>
 
 #include "irqbalance.h"
+#include "thermal.h"
 
 #ifdef HAVE_IRQBALANCEUI
 extern char *banned_cpumask_from_ui;
@@ -158,10 +159,15 @@ static void setup_banned_cpus(void)
 	cpus_or(banned_cpus, nohz_full, isolated_cpus);
 
 	cpumask_scnprintf(buffer, 4096, isolated_cpus);
-	log(TO_CONSOLE, LOG_INFO, "Isolated CPUs: %s\n", buffer);
+	log(TO_CONSOLE, LOG_INFO, "Prevent irq assignment to these isolated CPUs: %s\n", buffer);
 	cpumask_scnprintf(buffer, 4096, nohz_full);
-	log(TO_CONSOLE, LOG_INFO, "Adaptive-ticks CPUs: %s\n", buffer);
+	log(TO_CONSOLE, LOG_INFO, "Prevent irq assignment to these adaptive-ticks CPUs: %s\n", buffer);
 out:
+#ifdef HAVE_THERMAL
+	cpus_or(banned_cpus, banned_cpus, thermal_banned_cpus);
+	cpumask_scnprintf(buffer, 4096, thermal_banned_cpus);
+	log(TO_CONSOLE, LOG_INFO, "Prevent irq assignment to these thermal-banned CPUs: %s\n", buffer);
+#endif
 	cpumask_scnprintf(buffer, 4096, banned_cpus);
 	log(TO_CONSOLE, LOG_INFO, "Banned CPUs: %s\n", buffer);
 }

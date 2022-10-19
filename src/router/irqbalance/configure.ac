@@ -1,6 +1,6 @@
-AC_INIT(irqbalance,1.9.0)
-AC_PREREQ(2.12)dnl
-AM_CONFIG_HEADER(config.h)
+AC_INIT(irqbalance,1.9.1)
+AC_PREREQ(2.69)dnl
+AC_CONFIG_HEADERS(config.h)
 
 AC_CONFIG_MACRO_DIR([m4])
 AM_INIT_AUTOMAKE([foreign] [subdir-objects])
@@ -34,6 +34,28 @@ PKG_CHECK_MODULES([GLIB2], [glib-2.0], [], [AC_MSG_ERROR([glib-2.0 is required])
 #  LIBS="$LIBS $NCURSESW_LIBS"
 #  AC_SUBST([LIBS])
 #])
+
+AC_CANONICAL_HOST
+
+AC_ARG_ENABLE(thermal,
+  AS_HELP_STRING([--enable-thermal], [enable thermal event support [default=auto]]),,
+  AS_IF([test x"$host_cpu" = x"x86_64"], [enable_thermal=yes], [enable_thermal=no])
+)
+
+AS_IF([test x"$enable_thermal" = x"yes" && test x"$host_cpu" != x"x86_64"],
+  AC_MSG_ERROR([no thermal events support on $host_cpu systems.]),
+)
+
+AS_IF([test x"$enable_thermal" = x"yes"],
+  [PKG_CHECK_MODULES([LIBNL3], [libnl-3.0 libnl-genl-3.0], [have_thermal=yes],
+    AC_MSG_NOTICE([no thermal event support as libnl-3.0 is unavailable.])
+  )]
+)
+
+AS_IF([test "x$have_thermal" = xyes],
+  AC_DEFINE([HAVE_THERMAL], 1, [Build irqbalance to support thermal events])
+)
+AM_CONDITIONAL([THERMAL], [test "x$have_thermal" = xyes])
 
 AC_C_CONST
 AC_C_INLINE

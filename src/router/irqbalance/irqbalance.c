@@ -44,6 +44,7 @@
 #include <sys/socket.h>
 #endif
 #include "irqbalance.h"
+#include "thermal.h"
 
 volatile int keep_going = 1;
 int one_shot_mode;
@@ -123,6 +124,7 @@ static void parse_command_line(int argc, char **argv)
 	int opt;
 	int longind;
 	unsigned long val;
+	char *endptr;
 
 	while ((opt = getopt_long(argc, argv,
 		"odfjVi:p:s:c:l:m:t:e:",
@@ -138,8 +140,8 @@ static void parse_command_line(int argc, char **argv)
 				exit(1);
 				break;
 			case 'c':
-				deepest_cache = strtoul(optarg, NULL, 10);
-				if (deepest_cache == ULONG_MAX || deepest_cache < 1) {
+				deepest_cache = strtoul(optarg, &endptr, 10);
+				if (optarg == endptr || deepest_cache == ULONG_MAX || deepest_cache < 1) {
 					usage();
 					exit(1);
 				}
@@ -152,8 +154,8 @@ static void parse_command_line(int argc, char **argv)
 				foreground_mode=1;
 				break;
 			case 'i':
-				val = strtoull(optarg, NULL, 10);
-				if (val == ULONG_MAX) {
+				val = strtoull(optarg, &endptr, 10);
+				if (optarg == endptr || val == ULONG_MAX) {
 					usage();
 					exit(1);
 				}
@@ -170,8 +172,8 @@ static void parse_command_line(int argc, char **argv)
 				if (!strncmp(optarg, "off", strlen(optarg)))
 					power_thresh = ULONG_MAX;
 				else {
-					power_thresh = strtoull(optarg, NULL, 10);
-					if (power_thresh == ULONG_MAX) {
+					power_thresh = strtoull(optarg, &endptr, 10);
+					if (optarg == endptr || power_thresh == ULONG_MAX) {
 						usage();
 						exit(1);
 					}
@@ -188,14 +190,18 @@ static void parse_command_line(int argc, char **argv)
 				foreground_mode=1;
 				break;
 			case 't':
-				sleep_interval = strtol(optarg, NULL, 10);
-				if (sleep_interval < 1) {
+				sleep_interval = strtol(optarg, &endptr, 10);
+				if (optarg == endptr || sleep_interval < 1) {
 					usage();
 					exit(1);
 				}
 				break;
 			case 'e':
-				migrate_ratio = strtoul(optarg, NULL, 10);
+				migrate_ratio = strtoul(optarg, &endptr, 10);
+				if (optarg == endptr) {
+					usage();
+					exit(1);
+				}
 				break;
 		}
 	}
@@ -289,7 +295,7 @@ gboolean scan(gpointer data __attribute__((unused)))
 
 
 	/* cope with cpu hotplug -- detected during /proc/interrupts parsing */
-	while (need_rescan || need_rebuild) {
+	while (keep_going && (need_rescan || need_rebuild)) {
 		int try_times = 0;
 
 		need_rescan = 0;
@@ -703,6 +709,8 @@ int main(int argc, char** argv)
 		goto out;
 	}
 #endif
+	if (init_thermal())
+		log(TO_ALL, LOG_WARNING, "Failed to initialize thermal events.\n");
 	main_loop = g_main_loop_new(NULL, FALSE);
 	last_interval = sleep_interval;
 	g_timeout_add_seconds(sleep_interval, scan, NULL);
@@ -711,6 +719,7 @@ int main(int argc, char** argv)
 	g_main_loop_quit(main_loop);
 
 out:
+	deinit_thermal();
 	free_object_tree();
 	free_cl_opts();
 	free(polscript);
