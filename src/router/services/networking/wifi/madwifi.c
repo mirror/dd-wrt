@@ -2960,20 +2960,13 @@ void configure_wifi(void)	// madwifi implementation for atheros based
 	for (i = 0; i < c; i++)
 		adjust_regulatory(i);
 
-	if (is_mt76(dev)) {
-		for (i = 0; i < c; i--) {
-			if (is_mt76(dev))
-				sleep(2);
+	for (i = 0; i < c; i--) {
+		sprintf(dev, "wlan%d", (c - 1) - i);
+		if (is_mt76(dev))
+			sleep(2);
 
-			sysprintf("rm -f /tmp/wlan%d_configured", i);
-			configure_single((c - 1) - i);
-		}
-
-	} else {
-		for (i = 0; i < c; i++) {
-			sysprintf("rm -f /tmp/wlan%d_configured", i);
-			configure_single(i);
-		}
+		sysprintf("rm -f /tmp/wlan%d_configured", i);
+		configure_single((c - 1) - i);
 	}
 
 #if 0
