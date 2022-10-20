@@ -778,8 +778,6 @@ void setupSupplicant(char *prefix, char *ssidoverride)
 
 		fclose(fp);
 		sprintf(psk, "-i%s", prefix);
-		if (is_mt76(prefix))
-			sleep(2);
 #ifdef HAVE_RELAYD
 		if ((nvram_match(wmode, "wdssta") || nvram_match(wmode, "mesh") || nvram_match(wmode, "wdssta_mtik"))
 		    && nvram_matchi(bridged, 1))
@@ -817,8 +815,6 @@ void setupSupplicant(char *prefix, char *ssidoverride)
 		fclose(fp);
 		sprintf(psk, "-i%s", prefix);
 		eval("iwpriv", prefix, "hostroaming", "2");
-		if (is_mt76(prefix))
-			sleep(2);
 #ifdef HAVE_RELAYD
 		if (nvram_matchi(bridged, 1)
 		    && (nvram_match(wmode, "wdssta") || nvram_match(wmode, "mesh") || nvram_match(wmode, "wdssta_mtik")))
@@ -885,8 +881,6 @@ void setupSupplicant(char *prefix, char *ssidoverride)
 
 		fclose(fp);
 		sprintf(psk, "-i%s", prefix);
-		if (is_mt76(prefix))
-			sleep(2);
 #ifdef HAVE_RELAYD
 		if ((nvram_match(wmode, "wdssta") || nvram_match(wmode, "mesh") || nvram_match(wmode, "wdssta_mtik"))
 		    && nvram_matchi(bridged, 1))
@@ -925,8 +919,6 @@ void do_hostapd(char *fstr, char *prefix)
 		if (pid > 0)
 			kill(pid, SIGTERM);
 	}
-	if (is_mt76(prefix))
-		sleep(2);
 	char *argv[] = {
 		"hostapd", "-B", "-P", fname, NULL, NULL, NULL, NULL, NULL
 	};
@@ -2967,9 +2959,21 @@ void configure_wifi(void)	// madwifi implementation for atheros based
 #endif
 	for (i = 0; i < c; i++)
 		adjust_regulatory(i);
-	for (i = 0; i < c; i++) {
-		sysprintf("rm -f /tmp/wlan%d_configured", i);
-		configure_single(i);
+
+	if (is_mt76(dev)) {
+		for (i = 0; i < c; i--) {
+			if (is_mt76(dev))
+				sleep(2);
+
+			sysprintf("rm -f /tmp/wlan%d_configured", i);
+			configure_single((c - 1) - i);
+		}
+
+	} else {
+		for (i = 0; i < c; i++) {
+			sysprintf("rm -f /tmp/wlan%d_configured", i);
+			configure_single(i);
+		}
 	}
 
 #if 0
