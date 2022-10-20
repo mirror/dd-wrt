@@ -83,6 +83,7 @@ int dns_conf_serve_expired_reply_ttl = 3;
 struct dns_servers dns_conf_servers[DNS_MAX_SERVERS];
 char dns_conf_server_name[DNS_MAX_SERVER_NAME_LEN];
 int dns_conf_server_num;
+int dns_conf_resolv_hostname = 1;
 
 struct dns_domain_check_orders dns_conf_check_orders = {
 	.orders =
@@ -530,7 +531,8 @@ static void _config_address_destroy(radix_node_t *node, void *cbctx)
 	node->data = NULL;
 }
 
-static int _config_domain_set_rule_add_ext(char *set_name, enum domain_rule type, void *rule, unsigned int flags, int is_clear_flag)
+static int _config_domain_set_rule_add_ext(char *set_name, enum domain_rule type, void *rule, unsigned int flags,
+										   int is_clear_flag)
 {
 	struct dns_domain_set_rule *set_rule = NULL;
 	struct dns_domain_set_rule_list *set_rule_list = NULL;
@@ -2135,26 +2137,42 @@ static int _config_log_level(void *data, int argc, char *argv[])
 static void _config_setup_smartdns_domain(void)
 {
 	char hostname[DNS_MAX_CNAME_LEN];
-	/* get local host name */
-	if (getdomainname(hostname, DNS_MAX_CNAME_LEN) != 0) {
-		gethostname(hostname, DNS_MAX_CNAME_LEN);
+	char domainname[DNS_MAX_CNAME_LEN];
+
+	hostname[0] = '\0';
+	domainname[0] = '\0';
+
+	/* get local domain name */
+	if (getdomainname(domainname, DNS_MAX_CNAME_LEN - 1) == 0) {
+		/* check domain is valid */
+		if (strncmp(domainname, "(none)", DNS_MAX_CNAME_LEN - 1) == 0) {
+			domainname[0] = '\0';
+		}
 	}
 
-	/* get host name again */
-	if (strncmp(hostname, "(none)", DNS_MAX_CNAME_LEN - 1) == 0) {
-		gethostname(hostname, DNS_MAX_CNAME_LEN);
+	if (gethostname(hostname, DNS_MAX_CNAME_LEN - 1) == 0) {
+		/* check hostname is valid */
+		if (strncmp(hostname, "(none)", DNS_MAX_CNAME_LEN - 1) == 0) {
+			hostname[0] = '\0';
+		}
 	}
 
-	/* if hostname is (none), return smartdns */
-	if (strncmp(hostname, "(none)", DNS_MAX_CNAME_LEN - 1) == 0) {
-		safe_strncpy(hostname, "smartdns", DNS_MAX_CNAME_LEN);
+	if (dns_conf_resolv_hostname == 1) {
+		/* add hostname to rule table */
+		if (hostname[0] != '\0') {
+			_config_domain_rule_flag_set(hostname, DOMAIN_FLAG_SMARTDNS_DOMAIN, 0);
+		}
+
+		/* add domainname to rule table */
+		if (domainname[0] != '\0') {
+			char full_domain[DNS_MAX_CNAME_LEN];
+			snprintf(full_domain, DNS_MAX_CNAME_LEN, "%.64s.%.128s", hostname, domainname);
+			_config_domain_rule_flag_set(full_domain, DOMAIN_FLAG_SMARTDNS_DOMAIN, 0);
+		}
 	}
 
-	if (hostname[0] != '\0') {
-		_config_domain_rule_flag_set(hostname, DOMAIN_FLAG_SMARTDNS_DOMAIN, 0);
-	}
-
-	if (dns_conf_server_name[0] != '\0') {
+	/* add server name to rule table */
+	if (dns_conf_server_name[0] != '\0' && strncmp(dns_conf_server_name, "smartdns", DNS_MAX_CNAME_LEN - 1) != 0) {
 		_config_domain_rule_flag_set(dns_conf_server_name, DOMAIN_FLAG_SMARTDNS_DOMAIN, 0);
 	}
 
@@ -2163,6 +2181,7 @@ static void _config_setup_smartdns_domain(void)
 
 static struct config_item _config_item[] = {
 	CONF_STRING("server-name", (char *)dns_conf_server_name, DNS_MAX_SERVER_NAME_LEN),
+	CONF_YESNO("resolv-hostname", &dns_conf_resolv_hostname),
 	CONF_CUSTOM("bind", _config_bind_ip_udp, NULL),
 	CONF_CUSTOM("bind-tcp", _config_bind_ip_tcp, NULL),
 	CONF_CUSTOM("server", _config_server_udp, NULL),
@@ -2388,8 +2407,6 @@ static int _dns_server_load_conf_init(void)
 	hash_init(dns_domain_set_rule_table.rule_list);
 	hash_init(dns_domain_set_name_table.names);
 
-	_config_setup_smartdns_domain();
-
 	return 0;
 }
 
@@ -2472,6 +2489,7 @@ errout:
 
 static int _dns_conf_load_post(void)
 {
+	_config_setup_smartdns_domain();
 	_dns_conf_speed_check_mode_verify();
 
 	if (dns_conf_cachesize == 0 && dns_conf_response_mode == DNS_RESPONSE_MODE_FASTEST_RESPONSE) {

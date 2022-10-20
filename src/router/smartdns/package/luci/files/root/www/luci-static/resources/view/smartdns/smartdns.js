@@ -24,6 +24,7 @@
 'require view';
 'require poll';
 'require rpc';
+'require ui';
 
 var conf = 'smartdns';
 var callServiceList = rpc.declare({
@@ -32,6 +33,7 @@ var callServiceList = rpc.declare({
 	params: ['name'],
 	expect: { '': {} }
 });
+var pollAdded = false;
 
 function getServiceStatus() {
 	return L.resolveDefault(callServiceList(conf), {})
@@ -57,7 +59,6 @@ function smartdnsRenderStatus(res) {
 	var autoSetDnsmasq = uci.get_first('smartdns', 'smartdns', 'auto_set_dnsmasq');
 	var smartdnsPort = uci.get_first('smartdns', 'smartdns', 'port');
 	var dnsmasqServer = uci.get_first('dhcp', 'dnsmasq', 'server');
-	uci.unload('dhcp');
 
 	if (isRunning) {
 		renderHTML += "<span style=\"color:green;font-weight:bold\">SmartDNS - " + _("RUNNING") + "</span>";
@@ -68,9 +69,10 @@ function smartdnsRenderStatus(res) {
 
 	if (autoSetDnsmasq === '1' && smartdnsPort != '53') {
 		var matchLine = "127.0.0.1#" + smartdnsPort;
-		var dnsmasqServer = uci.get_first('dhcp', 'dnsmasq', 'server') || "";
 
-		if (dnsmasqServer.indexOf(matchLine) < 0) {
+		uci.unload('dhcp');
+		uci.load('dhcp');
+		if (dnsmasqServer == undefined || dnsmasqServer.indexOf(matchLine) < 0) {
 			renderHTML += "<br /><span style=\"color:red;font-weight:bold\">" + _("Dnsmasq Forwared To Smartdns Failure") + "</span>";
 		}
 	}
@@ -106,15 +108,16 @@ return view.extend({
 					view.innerHTML = smartdnsRenderStatus(res);
 				});
 			}
-			poll.add(renderStatus);
-			setTimeout(renderStatus, 1000);
 
-			return E('div', { class: 'cbi-map' },
-				E('div', { class: 'cbi-section' }, [
-					E('div', { id: 'service_status' },
-						_('Collecting data ...'))
-				])
-			);
+			if (pollAdded == false) {
+				poll.add(renderStatus, 1);
+				pollAdded = true;
+			}
+
+			return E('div', { class: 'cbi-section' }, [
+				E('div', { id: 'service_status' },
+					_('Collecting data ...'))
+			]);
 		}
 
 		// Basic;
@@ -297,7 +300,12 @@ return view.extend({
 			return fs.trimmed('/etc/smartdns/custom.conf');
 		};
 		o.write = function (section_id, formvalue) {
-			return fs.write('/etc/smartdns/custom.conf', formvalue.trim().replace(/\r\n/g, '\n') + '\n');
+			return this.cfgvalue(section_id).then(function (value) {
+				if (value == formvalue) {
+					return
+				}
+				return fs.write('/etc/smartdns/custom.conf', formvalue.trim().replace(/\r\n/g, '\n') + '\n');
+			});
 		};
 
 		o = s.taboption("custom", form.Flag, "coredump", _("Generate Coredump"),
@@ -436,7 +444,12 @@ return view.extend({
 			return fs.trimmed('/etc/smartdns/address.conf');
 		};
 		o.write = function (section_id, formvalue) {
-			return fs.write('/etc/smartdns/address.conf', formvalue.trim().replace(/\r\n/g, '\n') + '\n');
+			return this.cfgvalue(section_id).then(function (value) {
+				if (value == formvalue) {
+					return
+				}
+				return fs.write('/etc/smartdns/address.conf', formvalue.trim().replace(/\r\n/g, '\n') + '\n');
+			});
 		};
 
 		// IP Blacklist;
@@ -448,7 +461,12 @@ return view.extend({
 			return fs.trimmed('/etc/smartdns/blacklist-ip.conf');
 		};
 		o.write = function (section_id, formvalue) {
-			return fs.write('/etc/smartdns/blacklist-ip.conf', formvalue.trim().replace(/\r\n/g, '\n') + '\n');
+			return this.cfgvalue(section_id).then(function (value) {
+				if (value == formvalue) {
+					return
+				}
+				return fs.write('/etc/smartdns/blacklist-ip.conf', formvalue.trim().replace(/\r\n/g, '\n') + '\n');
+			});
 		};
 
 		// Doman addresss;
@@ -472,6 +490,17 @@ return view.extend({
 			window.open("https://pymumu.github.io/smartdns/#donate", '_blank');
 		};
 
+		o = s.option(form.DummyValue, "_restart", _("Restart Service"));
+		o.renderWidget = function () {
+			return E('button', {
+				'class': 'btn cbi-button cbi-button-apply',
+				'id': 'btn_restart',
+				'click': ui.createHandlerFn(this, function () {
+					return fs.exec('/etc/init.d/smartdns', ['restart'])
+						.catch(function (e) { ui.addNotification(null, E('p', e.message), 'error') });
+				})
+			}, [_("Restart")]);
+		}
 		return m.render();
 	}
 });
