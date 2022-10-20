@@ -81,6 +81,11 @@ static int get_uid_gid(int *uid, int *gid)
 		goto out;
 	}
 
+	if (result == NULL) {
+		ret = -1;
+		goto out;
+	}
+
 	*uid = result->pw_uid;
 	*gid = result->pw_gid;
 
@@ -96,7 +101,11 @@ static int drop_root_privilege(void)
 {
 	struct __user_cap_data_struct cap;
 	struct __user_cap_header_struct header;
+#ifdef _LINUX_CAPABILITY_VERSION_3
+	header.version = _LINUX_CAPABILITY_VERSION_3;
+#else
 	header.version = _LINUX_CAPABILITY_VERSION;
+#endif
 	header.pid = 0;
 	int uid = 0;
 	int gid = 0;
@@ -129,7 +138,7 @@ static void _help(void)
 	char *help = ""
 		"Usage: smartdns [OPTION]...\n"
 		"Start smartdns server.\n"
-		"  -f            run forground.\n"
+		"  -f            run foreground.\n"
 		"  -c [conf]     config file.\n"
 		"  -p [pid]      pid file path, '-' means don't create pid file.\n"
 		"  -S            ignore segment fault signal.\n"
@@ -523,7 +532,7 @@ static int _smartdns_init_pre(void)
 int main(int argc, char *argv[])
 {
 	int ret = 0;
-	int is_forground = 0;
+	int is_foreground = 0;
 	int opt = 0;
 	char config_file[MAX_LINE_LEN];
 	char pid_file[MAX_LINE_LEN];
@@ -540,7 +549,7 @@ int main(int argc, char *argv[])
 	while ((opt = getopt(argc, argv, "fhc:p:SvxN:")) != -1) {
 		switch (opt) {
 		case 'f':
-			is_forground = 1;
+			is_foreground = 1;
 			break;
 		case 'c':
 			snprintf(config_file, sizeof(config_file), "%s", optarg);
@@ -573,7 +582,7 @@ int main(int argc, char *argv[])
 		goto errout;
 	}
 
-	if (is_forground == 0) {
+	if (is_foreground == 0) {
 		if (daemon(0, 0) < 0) {
 			fprintf(stderr, "run daemon process failed, %s\n", strerror(errno));
 			return 1;
