@@ -2234,6 +2234,8 @@ void ath9k_start_supplicant(int count, char *prefix)
 			}
 			sprintf(ctrliface, "/var/run/hostapd/%s.%d", dev, ctrl);
 			sprintf(fstr, "/tmp/%s_wpa_supplicant.conf", dev);
+			if (is_mt76(dev))
+				sleep(2);
 			if (!nvram_match(wmode, "mesh") && !nvram_match(wmode, "infra")) {
 				if ((nvram_match(wmode, "wdssta") || nvram_match(wmode, "mesh") || nvram_match(wmode, "wdsta_mtik")
 				     || wet)
@@ -2255,6 +2257,8 @@ void ath9k_start_supplicant(int count, char *prefix)
 			}
 		} else {
 			sprintf(fstr, "/tmp/%s_wpa_supplicant.conf", dev);
+			if (is_mt76(dev))
+				sleep(2);
 			if (nvram_match(wmode, "sta") || nvram_match(wmode, "wdssta") || nvram_match(wmode, "wdssta_mtik") || wet || nvram_match(wmode, "infra") || nvram_match(wmode, "mesh")) {
 				if ((nvram_match(wmode, "wdssta") || nvram_match(wmode, "mesh") || nvram_match(wmode, "wdsta_mtik") || wet) && nvram_matchi(bridged, 1)) {
 					log_eval("wpa_supplicant", "-P", pid, "-b", getBridge(dev, tmp), background, "-Dnl80211", subinterface, "-c", fstr);
@@ -2308,6 +2312,8 @@ void ath9k_start_supplicant(int count, char *prefix)
 			char *m2 = nvram_safe_get(mode);
 			char bridged[32];
 			sprintf(bridged, "%s_bridged", var);
+			if (is_mt76(var))
+				sleep(2);
 			if (!strcmp(m2, "mesh")) {
 				sprintf(fstr, "/tmp/%s_wpa_supplicant.conf", var);
 				sprintf(subinterface, "-i%s", var);
