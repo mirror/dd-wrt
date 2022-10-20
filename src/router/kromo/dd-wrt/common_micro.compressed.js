@@ -417,6 +417,24 @@ function valid_name(I,M,flag) {
 	}
 	return result;
 }
+function valid_hostname(I,M,flag) {
+	var invalid = ":";
+	var len = invalid.length;
+	var i;
+	result = true;
+	if(flag & CHECK){
+	for (i=0;i<len;i++) {
+		if (!check_char(I,M, invalid.charAt(i))) {
+		    return false;
+		}
+	
+	}
+	}
+	if(flag & SPACE_NO){
+		result = check_space(I,M);
+	}
+	return result;
+}
 function valid_mask(F,N,_14){
 var _15=-1;
 var _16=-1;

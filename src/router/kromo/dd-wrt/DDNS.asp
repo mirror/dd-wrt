@@ -179,7 +179,7 @@ addEvent(window, "unload", function() {
 								</div>			
 								<div class="setting">
 									<div class="label"><% tran("share.hostname"); %></div>
-									<input name="ddns_hostname" size="35" maxlength="99" onblur="valid_name(this,share.hostname)" value="<% nvg("ddns_hostname"); %>" />
+									<input name="ddns_hostname" size="35" maxlength="99" onblur="valid_hostname(this,share.hostname)" value="<% nvg("ddns_hostname"); %>" />
 								</div>
 								<div class="setting">
 									<div class="label"><% tran("ddns.typ"); %></div>
@@ -234,7 +234,7 @@ addEvent(window, "unload", function() {
 								</div>
 								<div class="setting">
 									<div class="label"><% tran("share.hostname"); %></div>
-									<input name="ddns_hostname_2" size="35" onblur="valid_name(this,share.hostname)" value="<% nvg("ddns_hostname_2"); %>" />
+									<input name="ddns_hostname_2" size="35" onblur="valid_hostname(this,share.hostname)" value="<% nvg("ddns_hostname_2"); %>" />
 								</div>
 								<div class="setting">
 									<div class="label"><% tran("ddns.wanip"); %></div>
@@ -273,7 +273,7 @@ addEvent(window, "unload", function() {
 								</div>
 								<div class="setting">
 									<div class="label"><% tran("share.hostname"); %></div>
-									<input name="ddns_hostname_3" size="35" onblur="valid_name(this,share.hostname)" value="<% nvg("ddns_hostname_3"); %>" />
+									<input name="ddns_hostname_3" size="35" onblur="valid_hostname(this,share.hostname)" value="<% nvg("ddns_hostname_3"); %>" />
 								</div>
 								<div class="setting">
 									<div class="label"><% tran("ddns.wanip"); %></div>
@@ -312,7 +312,7 @@ addEvent(window, "unload", function() {
 								</div>
 								<div class="setting">
 									<div class="label"><% tran("share.hostname"); %></div>
-									<input name="ddns_hostname_4" size="35" onblur="valid_name(this,share.hostname)" value="<% nvg("ddns_hostname_4"); %>" />
+									<input name="ddns_hostname_4" size="35" onblur="valid_hostname(this,share.hostname)" value="<% nvg("ddns_hostname_4"); %>" />
 								</div>
 								<div class="setting">
 									<div class="label"><% tran("ddns.wanip"); %></div>
@@ -351,7 +351,7 @@ addEvent(window, "unload", function() {
 								</div>
 								<div class="setting">
 									<div class="label"><% tran("share.hostname"); %></div>
-									<input name="ddns_hostname_6" size="35" onblur="valid_name(this,share.hostname)" value="<% nvg("ddns_hostname_6"); %>" />
+									<input name="ddns_hostname_6" size="35" onblur="valid_hostname(this,share.hostname)" value="<% nvg("ddns_hostname_6"); %>" />
 								</div>
 								<div class="setting">
 									<div class="label"><% tran("ddns.typ"); %></div>
@@ -404,7 +404,7 @@ addEvent(window, "unload", function() {
 								</div>
 								<div class="setting">
 									<div class="label"><% tran("share.hostname"); %></div>
-									<input name="ddns_hostname_7" size="35" onblur="valid_name(this,share.hostname)" value="<% nvg("ddns_hostname_7"); %>" />
+									<input name="ddns_hostname_7" size="35" onblur="valid_hostname(this,share.hostname)" value="<% nvg("ddns_hostname_7"); %>" />
 								</div>
 								<div class="setting">
 									<div class="label"><% tran("ddns.wildcard"); %></div>
@@ -447,7 +447,7 @@ addEvent(window, "unload", function() {
 								</div>
 								<div class="setting">
 									<div class="label"><% tran("share.hostname"); %></div>
-									<input name="ddns_hostname_8" size="35" onblur="valid_name(this,share.hostname)" value="<% nvg("ddns_hostname_8"); %>" />
+									<input name="ddns_hostname_8" size="35" onblur="valid_hostname(this,share.hostname)" value="<% nvg("ddns_hostname_8"); %>" />
 								</div>
 								<div class="setting">
 									<div class="label"><% tran("ddns.wanip"); %></div>
@@ -486,7 +486,7 @@ addEvent(window, "unload", function() {
 								</div>
 								<div class="setting">
 									<div class="label"><% tran("share.hostname"); %></div>
-									<input name="ddns_hostname_9" size="35" onblur="valid_name(this,share.hostname)" value="<% nvg("ddns_hostname_9"); %>" />
+									<input name="ddns_hostname_9" size="35" onblur="valid_hostname(this,share.hostname)" value="<% nvg("ddns_hostname_9"); %>" />
 								</div>
 								<div class="setting">
 									<div class="label"><% tran("ddns.wanip"); %></div>
@@ -560,7 +560,7 @@ addEvent(window, "unload", function() {
 								</div>
 								<div class="setting">
 									<div class="label"><% tran("share.hostname"); %></div>
-									<input name="ddns_hostname_11" size="35" onblur="valid_name(this,share.hostname)" value="<% nvg("ddns_hostname_11"); %>" />
+									<input name="ddns_hostname_11" size="35" onblur="valid_hostname(this,share.hostname)" value="<% nvg("ddns_hostname_11"); %>" />
 								</div>
 								<div class="setting">
 									<div class="label"><% tran("ddns.wanip"); %></div>
@@ -603,7 +603,7 @@ addEvent(window, "unload", function() {
 								</div>
 								<div class="setting">
 									<div class="label"><% tran("share.hostname"); %></div>
-									<input name="ddns_hostname_5" size="35" onblur="valid_name(this,share.hostname)" value="<% nvg("ddns_hostname_5"); %>" />
+									<input name="ddns_hostname_5" size="35" onblur="valid_hostname(this,share.hostname)" value="<% nvg("ddns_hostname_5"); %>" />
 								</div>
 								<div class="setting">
 									<div class="label">URL</div>
