@@ -34,7 +34,7 @@ static u8 get_prn_insert(u8 *buf, ktime_t t, struct obfs_buf *ob, const u8 *k,
 {
         u8 r, i;
         //u64 chacha_input = (u64)t + (u64)*(u64 *)(buf + 8);
-        u64 chacha_input = t.tv64 + (u64)*(u64 *)buf;
+        u64 chacha_input = (u64)*(u64 *)&t + (u64)*(u64 *)buf;
 
         r = 0;
         while (1) {
