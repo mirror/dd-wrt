@@ -60,6 +60,7 @@ function to_submit(F) {
 	F.save_button.value = sbutton.saving;
 	apply(F);
 }
+
 function to_apply(F) {
 	submitcheck(F);
 	F.apply_button.value = sbutton.applied;
@@ -69,54 +70,52 @@ function to_apply(F) {
 function setFirewall(F, val) {
 <% ifdef("MICRO", "/"); %><% ifdef("MICRO", "*"); %>if (val != "on") { document.firewall.log_enable[1].click(); }<% ifdef("MICRO", "*"); %><% ifdef("MICRO", "/"); %>
 	if (val != "on") {
-	if(F._block_proxy){
-		F._block_proxy.checked = false;
+		if(F._block_proxy){
+			F._block_proxy.checked = false;
+		}
+		if(F._block_cookie){
+			F._block_cookie.checked = false;
+		}
+		if(F._block_java){
+			F._block_java.checked = false;
+		}
+		if(F._block_activex){
+			F._block_activex.checked = false;
+		}
+		if (F._block_wan){
+			F._block_wan.checked = false;
+		}
+		if(F._block_multicast) {
+			F._block_multicast.checked = false;
+		}
+		if(F._block_loopback){
+			F._block_loopback.checked = false;
+		}
+		if(F._block_ident){
+			F._block_ident.checked = false;
+		}
+		if(F._block_snmp){
+			F._block_snmp.checked = false;
+		}
+		if(F._arp_spoofing){
+			F._arp_spoofing.checked = false;
+		}
+		if(F._filter_tos){
+			F._filter_tos.checked = false;
+		}
+		if(F._limit_ssh){
+			F._limit_ssh.checked = false;
+		}
+		if(F._limit_telnet){
+			F._limit_telnet.checked = false;
+		}
+		if(F._limit_pptp){
+			F._limit_pptp.checked = false;
+		}
+		if(F._limit_ftp){
+			F._limit_ftp.checked = false;
+		}
 	}
-	if(F._block_cookie){
-		F._block_cookie.checked = false;
-	}
-	if(F._block_java){
-		F._block_java.checked = false;
-	}
-	if(F._block_activex){
-		F._block_activex.checked = false;
-	}
-	if (F._block_wan){
-		F._block_wan.checked = false;
-	}
-	if(F._block_multicast) {
-		F._block_multicast.checked = false;
-	}
-	if(F._block_loopback){
-		F._block_loopback.checked = false;
-	}
-	if(F._block_ident){
-		F._block_ident.checked = false;
-	}
-	if(F._block_snmp){
-		F._block_snmp.checked = false;
-	}
-	if(F._arp_spoofing){
-		F._arp_spoofing.checked = false;
-	}
-	if(F._filter_tos){
-		F._filter_tos.checked = false;
-	}
-	if(F._limit_ssh){
-		F._limit_ssh.checked = false;
-	}
-	if(F._limit_telnet){
-		F._limit_telnet.checked = false;
-	}
-	if(F._limit_pptp){
-		F._limit_pptp.checked = false;
-	}
-	if(F._limit_ftp){
-		F._limit_ftp.checked = false;
-	}
-	}
-
-
 }
 
 var update;
@@ -127,15 +126,13 @@ addEvent(window, "load", function() {
 	show_layer_ext(document.firewall.log_enable, 'idlog1', <% nvem("log_enable", "1", "1", "0"); %> == 1);
 	show_layer_ext(document.firewall.log_enable, 'idlog2', <% nvem("log_enable", "1", "1", "0"); %> == 1);
 	show_layer_ext(document.firewall.warn_enabled, 'idwarn', <% nvem("warn_enabled", "1", "1", "0"); %> == 1);
-	
+
 	update = new StatusbarUpdate();
 	update.start();
-	
 });
 
 addEvent(window, "unload", function() {
 	update.stop();
-
 });
 
 		//]]>
@@ -143,7 +140,6 @@ addEvent(window, "unload", function() {
 	</head>
 
 	<body class="gui">
-	
 		<div id="wrapper">
 			<div id="content">
 				<div id="header">
@@ -159,7 +155,7 @@ addEvent(window, "unload", function() {
 						<input type="hidden" name="action" value="Apply" />
 						<input type="hidden" name="change_action" />
 						<input type="hidden" name="submit_type" />
-						
+
 						<input type="hidden" name="block_wan" />
 						<input type="hidden" name="block_loopback" />
 						<input type="hidden" name="block_multicast" />
@@ -176,7 +172,6 @@ addEvent(window, "unload", function() {
 						<input type="hidden" name="limit_pptp" />
 						<input type="hidden" name="limit_ftp" />
 						<h2><% tran("firewall.h2"); %></h2>
-						
 						<fieldset>
 							<legend><% tran("firewall.legend"); %></legend>
 							<div class="setting">
@@ -185,7 +180,6 @@ addEvent(window, "unload", function() {
 								<input class="spaceradio" type="radio" value="off" name="filter" <% nvc("filter", "off"); %> onclick="setFirewall(this.form, this.value);" /><% tran("share.disable"); %>
 							</div>
 						</fieldset><br />
-						
 						<div id="idfilter">
 							<fieldset>
 								<legend><% tran("firewall.legend2"); %></legend>
@@ -214,21 +208,18 @@ addEvent(window, "unload", function() {
 										<input class="spaceradio" type="checkbox" value="1" name="_arp_spoofing" <% nvc("arp_spoofing", "1"); %> />
 									</div>
 								</fieldset><br />
-								
 								<fieldset>
 									<legend><% tran("firewall.legend3"); %></legend>
 										<div class="setting">
 											<div class="label"><% tran("firewall.ping"); %></div>
 											<input class="spaceradio" type="checkbox" value="1" name="_block_wan" <% nvc("block_wan", "1"); %> />
 										</div>
-										
 										<% ifndef("MULTICAST", "<!--"); %>
 										<div class="setting">
 											<div class="label"><% tran("firewall.muticast"); %></div>
 											<input class="spaceradio" type="checkbox" value="1" name="_block_multicast" <% nvc("block_multicast", "1"); %> />
 										</div>
 										<% ifndef("MULTICAST", "-->"); %>
-										
 										<div class="setting">
 											<div class="label"><% tran("filter.nat"); %></div>
 											<input class="spaceradio" type="checkbox" value="1" name="_block_loopback" <% nvc("block_loopback", "1"); %> />
