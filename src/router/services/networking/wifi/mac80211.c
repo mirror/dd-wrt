@@ -466,40 +466,12 @@ void configure_single_ath9k(int count)
 		eval("iw", wif, "interface", "add", dev, "type", "managed");
 
 		strcpy(primary, dev);
-
-		char regdomain[16];
-		char *country;
-		sprintf(regdomain, "wlan0_regdomain");
-		country = nvram_default_get(regdomain, "UNITED_STATES");
-		eval("iw", "reg", "set", "00");
-		char *iso = getIsoName(country);
-		if (!iso)
-			iso = "DE";
-		eval("iw", "reg", "set", iso);
 	} else if (!strcmp(apm, "wdssta")) {
 		eval("iw", wif, "interface", "add", dev, "type", "managed", "4addr", "on", "mtikwds", "off");
 		strcpy(primary, dev);
-		char regdomain[16];
-		char *country;
-		sprintf(regdomain, "wlan0_regdomain");
-		country = nvram_default_get(regdomain, "UNITED_STATES");
-		eval("iw", "reg", "set", "00");
-		char *iso = getIsoName(country);
-		if (!iso)
-			iso = "DE";
-		eval("iw", "reg", "set", iso);
 	} else if (!strcmp(apm, "wdssta_mtik")) {
 		eval("iw", wif, "interface", "add", dev, "type", "managed", "4addr", "on", "mtikwds", "on");
 		strcpy(primary, dev);
-		char regdomain[16];
-		char *country;
-		sprintf(regdomain, "wlan0_regdomain");
-		country = nvram_default_get(regdomain, "UNITED_STATES");
-		eval("iw", "reg", "set", "00");
-		char *iso = getIsoName(country);
-		if (!iso)
-			iso = "DE";
-		eval("iw", "reg", "set", iso);
 	} else if (!strcmp(apm, "mesh")) {
 		char akm[32];
 		sprintf(akm, "%s_akm", dev);
@@ -532,15 +504,6 @@ void configure_single_ath9k(int count)
 		}
 
 		strcpy(primary, dev);
-		char regdomain[16];
-		char *country;
-		sprintf(regdomain, "wlan0_regdomain");
-		country = nvram_default_get(regdomain, "UNITED_STATES");
-		eval("iw", "reg", "set", "00");
-		char *iso = getIsoName(country);
-		if (!iso)
-			iso = "DE";
-		eval("iw", "reg", "set", iso);
 	} else {
 		char akm[32];
 		sprintf(akm, "%s_akm", dev);
@@ -568,16 +531,6 @@ void configure_single_ath9k(int count)
 				eval("iw", "dev", dev, "ibss", "join", nvram_nget("%s_ssid", dev), freq, htmode, farg);
 			cprintf("handle ibss join");
 		}
-
-		char regdomain[16];
-		char *country;
-		sprintf(regdomain, "wlan0_regdomain");
-		country = nvram_default_get(regdomain, "UNITED_STATES");
-		eval("iw", "reg", "set", "00");
-		char *iso = getIsoName(country);
-		if (!iso)
-			iso = "DE";
-		eval("iw", "reg", "set", iso);
 	}
 
 	MAC80211DEBUG();
