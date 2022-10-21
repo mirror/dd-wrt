@@ -9,7 +9,7 @@
 #include <net/ip.h>
 #include "xt_WGOBFS.h"
 #include "wg.h"
-#include "siphash.h"
+#include "chacha8.h"
 
 #define WG_HANDSHAKE_INIT       0x01
 #define WG_HANDSHAKE_RESP       0x02
@@ -20,28 +20,28 @@
 #define WG_MIN_LEN           32
 #define MAX_RND_LEN          32
 #define MIN_RND_LEN           4
-#define SIPHASH_IN_LEN        8
-#define SIPHASH_OUT_LEN      16
 
 struct obfs_buf {
-        u8 sip[SIPHASH_OUT_LEN];
-        u8 rnd[MAX_RND_LEN];
+        u8 rnd[CHACHA8_OUTPUT_SIZE];
+        u8 chacha_out[CHACHA8_OUTPUT_SIZE];
         u8 rnd_len;
 };
 
-/* 1) Fill the allocated @buf with random bytes.
- * 2) Return a number in [min_len, max_len] at random.
- */
-static u8 get_random_insert(u8 *buf, u8 min_len, u8 max_len)
+/* get a pseudo-random string by hashing skbuff timestamp and pointer value of
+ * wg buffer */
+static u8 get_prn_insert(u8 *buf, ktime_t t, struct obfs_buf *ob, const u8 *k,
+                         const u8 min_len, const u8 max_len)
 {
         u8 r, i;
+        //u64 chacha_input = (u64)t + (u64)*(u64 *)(buf + 8);
+        u64 chacha_input = (u64)t + (u64)buf;
 
         r = 0;
         while (1) {
-                get_random_bytes_wait(buf, MAX_RND_LEN);
-                for (i = 0; i < MAX_RND_LEN; i++) {
-                        if (buf[i] >= min_len && buf[i] <= max_len) {
-                                r = buf[i];
+                chacha8_hash(chacha_input++, k, ob->rnd);
+                for (i = 0; i < CHACHA8_OUTPUT_SIZE; i++) {
+                        if (ob->rnd[i] >= min_len && ob->rnd[i] <= max_len) {
+                                r = ob->rnd[i];
                                 break;
                         }
                 }
@@ -50,13 +50,15 @@ static u8 get_random_insert(u8 *buf, u8 min_len, u8 max_len)
                         break;
         }
 
+        ob->rnd_len = r;
         return r;
 }
 
 /* Replace the all zeros mac2 with random bytes, then change the type field to
  * 0x11 or 0x12
  */
-static void obfs_mac2(u8 *buf, int data_len, const u8 *k)
+static void obfs_mac2(u8 *buf, const int data_len, struct obfs_buf *ob,
+                      const u8 *k)
 {
         u8 type;
         struct wg_message_handshake_initiation *hsi;
@@ -72,11 +74,12 @@ static void obfs_mac2(u8 *buf, int data_len, const u8 *k)
                         return;
 
                 /* Generate pseudo-random bytes as mac2.
-                 * - Siphash secret is the same 128 bits hash of --key string
-                 * - Use 8th - 16th byte of WG packet as input of siphash
-                 * - Write the 128bits output to mac2
+                 * - Use 8th - 16th byte of WG packet as input of chacha8
+                 * - Write 128bits output to mac2
                  */
-                siphash128(buf + 8, 8, k, hsi->macs.mac2);
+                chacha8_hash((const u64)(buf + 8), k, ob->chacha_out);
+                memcpy(hsi->macs.mac2, ob->chacha_out, WG_COOKIE_LEN);
+
                 /* mark the packet as need restore mac2 upon receiving */
                 buf[0] |= 0x10;
 
@@ -86,23 +89,27 @@ static void obfs_mac2(u8 *buf, int data_len, const u8 *k)
                 if (*np)
                         return;
 
-                siphash128(buf + 8, 8, k, hsr->macs.mac2);
+                chacha8_hash((const u64)(buf + 8), k, ob->chacha_out);
+                memcpy(hsr->macs.mac2, ob->chacha_out, WG_COOKIE_LEN);
                 buf[0] |= 0x10;
         }
 }
 
-static int random_drop_wg_keepalive(u8 *buf, int data_len)
+static int random_drop_wg_keepalive(u8 *buf, const int len, const u8 *key)
 {
         u8 type;
-        u8 r;
+        u8 buf_prn[CHACHA8_OUTPUT_SIZE];
+        u64 *chacha_input;
 
         type = *buf;
-        if (type != WG_DATA || data_len != 32)
+        if (type != WG_DATA || len != 32)
                 return 0;
 
-        /* probability of r > 50 is 0.8 */
-        get_random_bytes_wait(&r, 1);
-        if (r > 50)
+        /* generate a pseudo-random string by hashing last 8 bytes of keepalive
+         * message. We can assume the probability of s[0] > 50 is 0.8 */
+        chacha_input = (u64 *)(buf + len - CHACHA8_INPUT_SIZE);
+        chacha8_hash((const u64)*chacha_input, key, buf_prn);
+        if (buf_prn[0] > 50)
                 return 1;
         else
                 return 0;
@@ -115,49 +122,35 @@ static int random_drop_wg_keepalive(u8 *buf, int data_len)
  *   - Obfs the first 16 bytes of WG message.
  *
  *   - Change the length of WG message by padding a variable length random
- *     string at beginning, such that:
+ *     string at the end, such that:
  *
- *     B1 B2 B3 B4 ... Orig_WG_message
- *     Byte 1 stores length of the insertion.
+ *     Orig_WG_message B1 B2 ... Bn
+ *     Bn stores length of the padding.
  *
  */
-static void obfs_wg(u8 *buf, int len, struct obfs_buf *ob, const u8 *sip_key)
+static void obfs_wg(u8 *buf, const int len, struct obfs_buf *ob, const u8 *key)
 {
-        u8 *b, *tail, *rnd;
+        u8 *b;
         u8 rnd_len;
         int i;
+        u64 *chacha_input;
 
-        rnd = ob->rnd;
+        obfs_mac2(buf, len, ob, key);
         rnd_len = ob->rnd_len;
+        memcpy(buf + len, ob->rnd, rnd_len);
 
-        obfs_mac2(buf, len, sip_key);
-        /* Generate a 128bits pseudo-random string from last 8 bytes of WG
-         * packet. Use it to XOR with the first 16 bytes of WG message. It has
-         * message type, reserved field and counter. They look distinct.
+        /* Generate pseudo-random string from last 9 to 2 bytes of WG packet.
+         * Use it to XOR with the first 16 bytes of WG message. It has message
+         * type, reserved field and counter. They look distinct.
          */
-        siphash128(buf + len - SIPHASH_IN_LEN, SIPHASH_IN_LEN, sip_key, ob->sip);
+        chacha_input = (u64 *)(buf + len + rnd_len - CHACHA8_INPUT_SIZE - 1);
+        chacha8_hash((const u64)*chacha_input, key, ob->chacha_out);
 
-        /* The second byte of buf_prn, let's call it B, is XOR with the second
-         * byte of WG message. It is the reserved field, which value is zero
-         * therefor can be recovered without knowing B. So B can be used for
-         * other purpose. Here use it to hide rnd length. The reserved_field[0]
-         * is set to a random value to hide B.
-         */
-        buf[1] = rnd[0];
-
-        /* set the first byte of random as its length */
-        rnd[0] = rnd_len ^ ob->sip[1];
+        /* set the last byte of random as its length */
+        buf[len + rnd_len - 1] = rnd_len ^ ob->chacha_out[16];
         b = buf;
         for (i = 0; i < 16; i++, b++)
-                *b ^= ob->sip[i];
-
-        /* shift WG packet towards end, make room for padding */
-        tail = buf + len - 1;
-        b = tail + rnd_len;
-        for (i = 0; i < len; i++, tail--, b--)
-                *b = *tail;
-
-        memcpy(buf, rnd, rnd_len);
+                *b ^= ob->chacha_out[i];
 }
 
 /* make a skb writable, and if necessary, expand it */
@@ -197,22 +190,22 @@ static unsigned int xt_obfs(struct sk_buff *skb,
         buf_udp = (u8 *) udph + sizeof(struct udphdr);
         wg_data_len = ntohs(udph->len) - sizeof(struct udphdr);
 
-        if (random_drop_wg_keepalive(buf_udp, wg_data_len))
+        if (random_drop_wg_keepalive(buf_udp, wg_data_len, info->chacha_key))
                 return NF_DROP;
 
-        /* Insert a long random string if the WG packet is small, or a short
-         * random string if WG packet is big. The length of this random string
-         * has big impact on peak speed.
+        /* Insert a long pseudo-random string if the WG packet is small, or a
+         * short string if WG packet is big.
          */
         max_rnd_len = (wg_data_len > 200) ? 8 : MAX_RND_LEN;
-        rnd_len = get_random_insert(&(ob.rnd[0]), MIN_RND_LEN, max_rnd_len);
+        rnd_len = get_prn_insert(buf_udp, skb->tstamp, &ob, info->chacha_key,
+                                 MIN_RND_LEN, max_rnd_len);
         ob.rnd_len = rnd_len;
         if (prepare_skb_for_insert(skb, rnd_len))
                 return NF_DROP;
 
         udph = udp_hdr(skb);
         buf_udp = (u8 *) udph + sizeof(struct udphdr);
-        obfs_wg(buf_udp, wg_data_len, &ob, info->hash128);
+        obfs_wg(buf_udp, wg_data_len, &ob, info->chacha_key);
 
         /* packet with DiffServ 0x88 looks distinct? */
         iph = ip_hdr(skb);
@@ -240,7 +233,7 @@ static unsigned int xt_obfs(struct sk_buff *skb,
         return XT_CONTINUE;
 }
 
-static void restore_mac2(u8 *buf, int data_len)
+static void restore_mac2(u8 *buf)
 {
         struct wg_message_handshake_initiation *hsi;
         struct wg_message_handshake_response *hsr;
@@ -262,43 +255,35 @@ static void restore_mac2(u8 *buf, int data_len)
         buf[0] &= 0x0F;
 }
 
-static int restore_wg(u8 *buf, int len, const u8 *sip_key)
+static int restore_wg(u8 *buf, int len, const u8 *key)
 {
-        u8 buf_prn[16];
-        u8 *b, *head;
-        int i, wg_data_len, rnd_len;
+        u8 buf_prn[CHACHA8_OUTPUT_SIZE];
+        u8 *head;
+        int i, rnd_len;
+        u64 *chacha_input;
 
         /* Same as obfuscate, generate the same pseudo-random string from last
-         * 8 bytes of UDP packet. Need it for restoring the first 16 bytes of
-         * WG packet.
+         * 9 to 2 bytes of UDP packet. Need it for restoring the first 16 bytes
+         * of WG packet.
          */
-        siphash128(buf + len - SIPHASH_IN_LEN, SIPHASH_IN_LEN, sip_key,
-                   buf_prn);
+        chacha_input = (u64 *)(buf + len - CHACHA8_INPUT_SIZE - 1);
+        chacha8_hash((const u64)*chacha_input, key, buf_prn);
 
-        /* restore the length of random insertion */
-        buf[0] ^= buf_prn[1];
+        /* Restore the length of random padding. It is stored in the last byte
+         * of obfuscated WG.
+         */
+        buf[len - 1] ^= buf_prn[16];
 
-        rnd_len = (int) buf[0];
+        rnd_len = (int) buf[len - 1];
         if (rnd_len + WG_MIN_LEN > len)
                 return -1;
-
-        /* shift real WG packet forward to remove random bytes insertion */
-        head = buf;
-        b = buf + rnd_len;
-        wg_data_len = len - rnd_len;
-        for (i = 0; i < wg_data_len; i++, head++, b++)
-                *head = *b;
 
         /* restore the first 16 bytes of WG packet */
         head = buf;
         for (i = 0; i < 16; i++, head++)
                 *head ^= buf_prn[i];
 
-        /* restore the first byte of reserved field */
-        buf[1] = 0;
-
-        restore_mac2(buf, wg_data_len);
-
+        restore_mac2(buf);
         return rnd_len;
 }
 
@@ -325,7 +310,7 @@ static unsigned int xt_unobfs(struct sk_buff *skb,
         if (data_len < MIN_RND_LEN)
                 return NF_DROP;
 
-        rnd_len = restore_wg(buf_udp, data_len, info->hash128);
+        rnd_len = restore_wg(buf_udp, data_len, info->chacha_key);
         if (rnd_len < 0)
                 return NF_DROP;
 
@@ -422,5 +407,5 @@ module_exit(wg_obfs_target_exit);
 MODULE_LICENSE("GPL v2");
 MODULE_DESCRIPTION("Iptables obfuscation module for WireGuard");
 MODULE_AUTHOR("Wei Chen <weichen302@gmail.com>");
-MODULE_VERSION("0.1");
+MODULE_VERSION("0.2");
 MODULE_ALIAS("xt_WGOBFS");
