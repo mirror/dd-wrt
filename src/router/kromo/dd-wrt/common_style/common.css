@@ -297,8 +297,9 @@ select[onchange*='ServiceTable'] {
   height: inherit;
 }
 select[name*='bonding'], select[name*='schedule_'],
-.num[name*='openvpncl_remoteport'],
-.num[name='schedule_time'], .num[name='bonding_number'] {
+select[name='f_id'], .num[name*='openvpncl_remoteport'],
+.num[name='schedule_time'], .num[name='bonding_number'],
+.num[name*='def_hwaddr_'] {
   vertical-align: unset;
 }
 h2 {
@@ -470,11 +471,9 @@ input[type='file'] {
   margin: initial;
 }
 .button {
-  border: 1px solid;
-  padding: 0 1rem .05em;
+  padding: 0 1rem;
   margin: 0 .362em 0 0;
-  height: 1.6rem;
-  vertical-align: middle;
+  height: 1.664rem;
   cursor: pointer;
 }
 ::file-selector-button {
@@ -527,7 +526,7 @@ input.button[onclick*='delete'] {
   margin: -.1rem .5em 0 .362em;
 }
 input.button[onclick*='to_delete'] {
-  margin: -.1rem .5em 0 .4rem;
+  margin: 0 .5em 0 .4rem;
 }
 input.button[onclick*='FilterSummary'] {
   margin-top: -.1rem;
