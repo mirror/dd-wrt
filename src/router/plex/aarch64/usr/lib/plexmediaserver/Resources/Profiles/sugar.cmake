@@ -12,7 +12,6 @@ sugar_files(
   "Asus Transformer Prime TF201.xml"
   "Chrome.xml"
   "Chromecast.xml"
-  "cloudsync.xml"
   "Firefox.xml"
   "Generic.xml"
   "HTML TV App.xml"
