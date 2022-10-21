@@ -7,7 +7,6 @@
 #include <getopt.h>
 #include <xtables.h>
 #include "xt_WGOBFS.h"
-#include "siphash.c"
 
 enum {
         FLAGS_KEY    = 1 << 0,
@@ -40,17 +39,18 @@ static void wg_obfs_help(void)
                "    --obfs or --unobfs\n");
 }
 
-static void fill_sip_secret(char *sip_secret, const char *s, int len)
+/* repeat a input string until it reaches @outlen */
+static void expand_string(const char *s, int len, char *outbuf, int outlen)
 {
         int i, j;
 
         i = 0;
         while (true) {
                 for (j = 0; j < len; j++, i++) {
-                        if (i == 16)
+                        if (i == outlen)
                                 return;
 
-                        sip_secret[i] = s[j];
+                        outbuf[i] = s[j];
                 }
         }
 }
@@ -61,7 +61,7 @@ static int wg_obfs_parse(int c, char **argv, int z1, unsigned int *flags,
         struct xt_wg_obfs_info *info = (void *) (*tgt)->data;
         unsigned long len;
         const char *s = optarg;
-        char sip_secret[16];
+        char chacha_key[XT_CHACHA_KEY_SIZE];
 
         switch (c) {
         case OPT_KEY:
@@ -73,12 +73,8 @@ static int wg_obfs_parse(int c, char **argv, int z1, unsigned int *flags,
 
                 strncpy(info->key, s, XT_WGOBFS_MAX_KEY_SIZE);
                 *flags |= FLAGS_KEY;
-                fill_sip_secret(sip_secret, s, len);
-                /* both input and secret key of siphash are from --key. Secret
-                 * key cap at 16 bytes. If --key is less than 16 bytes, repeat
-                 * filling until reaches 16 bytes.
-                 */
-                siphash128(s, len, sip_secret, info->hash128);
+                expand_string(s, len, chacha_key, XT_CHACHA_KEY_SIZE);
+                memcpy(info->chacha_key, chacha_key, XT_CHACHA_KEY_SIZE);
                 return true;
         case OPT_OBFS:
                 info->mode = XT_MODE_OBFS;
