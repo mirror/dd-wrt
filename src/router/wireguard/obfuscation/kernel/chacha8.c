@@ -88,7 +88,7 @@ void chacha8_hash(const u64 nonce, const u8 key[CHACHA20_KEY_SIZE], u8 *out)
 
 	chacha20_init(&ctx, key, nonce);
 
-	for (i = 0; i < ARRAY_SIZE(x); ++i)
+	for (i = 0; i < sizeof(x)/sizeof(x[0]); ++i)
 		x[i] = ctx.state[i];
 
 	EIGHT_ROUNDS(x);
