@@ -2965,7 +2965,7 @@ void configure_wifi(void)	// madwifi implementation for atheros based
 		if (is_mt76(dev))
 			sleep(2);
 
-		sysprintf("rm -f /tmp/wlan%d_configured", i);
+		sysprintf("rm -f /tmp/wlan%d_configured", (c - 1) - i);
 		configure_single((c - 1) - i);
 	}
 
