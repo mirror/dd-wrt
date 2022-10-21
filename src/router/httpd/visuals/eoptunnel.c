@@ -128,7 +128,7 @@ EJ_VISIBLE void ej_show_eop_tunnels(webs_t wp, int argc, char_t ** argv)
 					{
 						show_caption(wp, "label", "share.key", NULL);
 						websWrite(wp,
-							  "<input type=\"password\" size=\"48\" maxlength=\"48\" name=\"%s\" onmouseover=\"this.type=\'text\'\" onmouseout=\"this.type=\'password\'\"  value=\"%s\"/>\n",
+							  "<input type=\"password\" size=\"32\" maxlength=\"32\" name=\"%s\" onmouseover=\"this.type=\'text\'\" onmouseout=\"this.type=\'password\'\"  value=\"%s\"/>\n",
 							  temp, nvram_safe_get(temp));
 					}
 					websWrite(wp, "</div>\n");
@@ -551,7 +551,7 @@ EJ_VISIBLE void ej_show_eop_tunnels(webs_t wp, int argc, char_t ** argv)
 							{
 								show_caption(wp, "label", "share.key", NULL);
 								websWrite(wp,
-									  "<input type=\"password\" size=\"48\" maxlength=\"48\" name=\"%s\" onmouseover=\"this.type=\'text\'\" onmouseout=\"this.type=\'password\'\"  value=\"%s\"/>\n",
+									  "<input type=\"password\" size=\"32\" maxlength=\"32\" name=\"%s\" onmouseover=\"this.type=\'text\'\" onmouseout=\"this.type=\'password\'\"  value=\"%s\"/>\n",
 									  temp, nvram_safe_get(temp));
 							}
 							websWrite(wp, "</div>\n");
