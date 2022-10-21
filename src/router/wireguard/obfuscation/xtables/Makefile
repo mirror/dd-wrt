@@ -10,7 +10,7 @@ CFLAGS += -fpic
 LDFLAGS = -shared
 
 TARGET = libxt_WGOBFS.so
-OBJECTS = libxt_WGOBFS.o siphash.o
+OBJECTS = libxt_WGOBFS.o
 
 
 all: $(TARGET)
