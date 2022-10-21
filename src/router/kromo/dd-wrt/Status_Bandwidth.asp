@@ -10,6 +10,10 @@ addEvent(window, "load", function() {
 		document.getElementsByName("refresh_button")[0].style.cursor = "default";
 	}
 
+	var thisTitle = service.rstats_legend;
+	document.getElementsByName('status_band')[0].setAttribute('title', thisTile);
+	document.getElementsByTagName('iframe')[0].setAttribute('title', thisTile + ' ');
+
 	update = new StatusbarUpdate();
 	update.start();
 });

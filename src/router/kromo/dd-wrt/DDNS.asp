@@ -654,7 +654,7 @@ addEvent(window, "unload", function() {
 									</script></span>
 								</div>
 							</fieldset><br />
-							<fieldset>
+							<fieldset class="dark_fs_bg">
 								<legend><% tran("ddns.statu"); %></legend>
 								<div class="setting">
 									<span id="ddns_status"><% show_ddns_status(); %></span>&nbsp;
