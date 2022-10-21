@@ -497,6 +497,10 @@ addEvent(window, "load", function () {
 		if (wl2_phytype == 'n' || wl2_phytype == 'h' || wl2_phytype == 'v' || wl2_phytype == 's')
 			InitBW2('<% nvg("wl2_nbw"); %>', document.wireless);
 	}
+
+	var thisTile = idx.h22;
+	document.getElementsByName('wireless')[0].setAttribute("title", thisTile);
+
 	update = new StatusbarUpdate();
 	update.start();
 });
@@ -650,7 +654,7 @@ function initChannelProperties() {
 				</div>
 				<div id="main">
 					<div id="contents">
-						<form name="wireless" action="apply.cgi" method="post">
+						<form title="" name="wireless" action="apply.cgi" method="post" spellcheck="false">
 							<input type="hidden" name="submit_button" value="Wireless_Basic" />
 							<input type="hidden" name="action" value="Apply" />
 							<input type="hidden" name="change_action" value="gozila_cgi" />
