@@ -34,7 +34,7 @@ static u8 get_prn_insert(u8 *buf, ktime_t t, struct obfs_buf *ob, const u8 *k,
 {
         u8 r, i;
         //u64 chacha_input = (u64)t + (u64)*(u64 *)(buf + 8);
-        u64 chacha_input = t.tv64 + (u64)buf;
+        u64 chacha_input = t.tv64 + (u64)*(u64 *)buf;
 
         r = 0;
         while (1) {
@@ -77,7 +77,7 @@ static void obfs_mac2(u8 *buf, const int data_len, struct obfs_buf *ob,
                  * - Use 8th - 16th byte of WG packet as input of chacha8
                  * - Write 128bits output to mac2
                  */
-                chacha8_hash((const u64)(buf + 8), k, ob->chacha_out);
+                chacha8_hash((const u64)*(u64 *)(buf + 8), k, ob->chacha_out);
                 memcpy(hsi->macs.mac2, ob->chacha_out, WG_COOKIE_LEN);
 
                 /* mark the packet as need restore mac2 upon receiving */
@@ -89,7 +89,7 @@ static void obfs_mac2(u8 *buf, const int data_len, struct obfs_buf *ob,
                 if (*np)
                         return;
 
-                chacha8_hash((const u64)(buf + 8), k, ob->chacha_out);
+                chacha8_hash((const u64)*(u64 *)(buf + 8), k, ob->chacha_out);
                 memcpy(hsr->macs.mac2, ob->chacha_out, WG_COOKIE_LEN);
                 buf[0] |= 0x10;
         }
