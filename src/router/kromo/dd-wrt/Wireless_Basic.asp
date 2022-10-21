@@ -498,8 +498,8 @@ addEvent(window, "load", function () {
 			InitBW2('<% nvg("wl2_nbw"); %>', document.wireless);
 	}
 
-	var thisTile = idx.h22;
-	document.getElementsByName('wireless')[0].setAttribute("title", thisTile);
+	var thisTitle = idx.h22;
+	document.getElementsByName('wireless')[0].setAttribute("title", thisTitle);
 
 	update = new StatusbarUpdate();
 	update.start();
