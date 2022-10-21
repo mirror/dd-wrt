@@ -318,8 +318,6 @@ void configure_single_ath9k(int count)
 	ismt7615 = is_mt7615(dev);
 	ismt7915 = is_mt7915(dev);
 	ismt7921 = is_mt7921(dev);
-	if (is_mt76(dev))
-		sleep(2);
 	// sprintf(regdomain, "%s_regdomain", dev);
 	// country = nvram_default_get(regdomain, "US");
 	// sysprintf("iw reg set %s", getIsoName(country));
