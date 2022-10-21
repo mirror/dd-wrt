@@ -1,0 +1,8 @@
+[
+	{
+		"id": "music_video_path",
+		"label": "Local music video path",
+		"type": "text",
+		"default": ""
+	}
+]
