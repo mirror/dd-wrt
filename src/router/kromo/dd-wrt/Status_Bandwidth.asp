@@ -12,7 +12,12 @@ addEvent(window, "load", function() {
 
 	var thisTitle = service.rstats_legend;
 	document.getElementsByName('status_band')[0].setAttribute('title', thisTitle);
-	document.getElementsByTagName('iframe')[0].setAttribute('title', thisTitle);
+	var iframes = document.getElementsByTagName('iframe');
+	if (iframes.length > 0) {
+		for (var i = 0; i < iframes.length; i++) {
+			document.getElementsByTagName('iframe')[i].setAttribute('title', thisTitle);
+		}
+	}
 
 	update = new StatusbarUpdate();
 	update.start();
