@@ -2961,7 +2961,6 @@ void configure_wifi(void)	// madwifi implementation for atheros based
 		adjust_regulatory(i);
 
 	for (i = 0; i < c; i++) {
-		sprintf(dev, "wlan%d", (c - 1) - i);
 		sysprintf("rm -f /tmp/wlan%d_configured", (c - 1) - i);
 		configure_single((c - 1) - i);
 	}
