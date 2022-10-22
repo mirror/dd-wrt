@@ -473,7 +473,7 @@ input[type='file'] {
 .button {
   padding: 0 1rem;
   margin: 0 .362em 0 0;
-  height: 1.664rem;
+  height: 1.6rem;
   cursor: pointer;
 }
 ::file-selector-button {
