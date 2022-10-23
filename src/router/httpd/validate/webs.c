@@ -1233,31 +1233,31 @@ _8021xprv
 			nvram_set(oname, oif);
 			nvram_nset(prefix, "%s_owe_ifname", oif);
 		}
-		char akm[128] = { 0  };
+		char akm[128] = { 0 };
 		if (nvram_nmatch("1", "%s_psk", prefix))
-			strspcattach( akm, "psk");
+			strspcattach(akm, "psk");
 		if (nvram_nmatch("1", "%s_psk2", prefix))
-			strspcattach( akm, "psk2");
+			strspcattach(akm, "psk2");
 		if (nvram_nmatch("1", "%s_psk2-sha256", prefix))
-			strspcattach( akm, "psk2-sha256");
+			strspcattach(akm, "psk2-sha256");
 		if (nvram_nmatch("1", "%s_psk3", prefix))
-			strspcattach( akm, "psk3");
+			strspcattach(akm, "psk3");
 		if (nvram_nmatch("1", "%s_wpa", prefix))
-			strspcattach( akm, "wpa");
+			strspcattach(akm, "wpa");
 		if (nvram_nmatch("1", "%s_wpa2", prefix))
-			strspcattach( akm, "wpa2");
+			strspcattach(akm, "wpa2");
 		if (nvram_nmatch("1", "%s_wpa2-sha256", prefix))
-			strspcattach( akm, "wpa2-sha256");
+			strspcattach(akm, "wpa2-sha256");
 		if (nvram_nmatch("1", "%s_wpa3", prefix))
-			strspcattach( akm, "wpa3");
+			strspcattach(akm, "wpa3");
 		if (nvram_nmatch("1", "%s_owe", prefix))
-			strspcattach( akm, "owe");
+			strspcattach(akm, "owe");
 		if (nvram_nmatch("1", "%s_wpa3-192", prefix)) {
-			strspcattach( akm, "wpa3-192");
+			strspcattach(akm, "wpa3-192");
 			nvram_nset("1", "%s_gcmp-256", prefix);
 		}
 		if (nvram_nmatch("1", "%s_wpa3-128", prefix)) {
-			strspcattach( akm, "wpa3-128");
+			strspcattach(akm, "wpa3-128");
 			nvram_nset("1", "%s_gcmp", prefix);
 		}
 
@@ -1278,29 +1278,29 @@ _8021xprv
 		_copytonv_prefix(wp, "wpa3-128", prefix);
 		char akm[128] = { 0, 0 };
 		if (nvram_nmatch("1", "%s_leap", prefix))
-			strspcattach( akm, "leap");
+			strspcattach(akm, "leap");
 		if (nvram_nmatch("1", "%s_peap", prefix))
-			strspcattach( akm, "peap");
+			strspcattach(akm, "peap");
 		if (nvram_nmatch("1", "%s_tls", prefix))
-			strspcattach( akm, "tls");
+			strspcattach(akm, "tls");
 		if (nvram_nmatch("1", "%s_ttls", prefix))
-			strspcattach( akm, "ttls");
+			strspcattach(akm, "ttls");
 		if (nvram_nmatch("1", "%s_802.1x", prefix))
-			strspcattach( akm, "802.1x");
+			strspcattach(akm, "802.1x");
 		if (nvram_nmatch("1", "%s_wpa", prefix))
-			strspcattach( akm, "wpa");
+			strspcattach(akm, "wpa");
 		if (nvram_nmatch("1", "%s_wpa2", prefix))
-			strspcattach( akm, "wpa2");
+			strspcattach(akm, "wpa2");
 		if (nvram_nmatch("1", "%s_wpa2-sha256", prefix))
-			strspcattach( akm, "wpa2-sha256");
+			strspcattach(akm, "wpa2-sha256");
 		if (nvram_nmatch("1", "%s_wpa3", prefix))
-			strspcattach( akm, "wpa3");
+			strspcattach(akm, "wpa3");
 		if (nvram_nmatch("1", "%s_wpa3-192", prefix)) {
-			strspcattach( akm, "wpa3-192");
+			strspcattach(akm, "wpa3-192");
 			nvram_nset("1", "%s_gcmp-192", prefix);
 		}
 		if (nvram_nmatch("1", "%s_wpa3-128", prefix)) {
-			strspcattach( akm, "wpa3-128");
+			strspcattach(akm, "wpa3-128");
 			nvram_nset("1", "%s_gcmp", prefix);
 		}
 		nvram_set(n2, akm);
@@ -1863,13 +1863,12 @@ void validate_avahi(webs_t wp, char *value, struct variable *v)
 #endif
 
 #ifdef HAVE_SSHD
-void ssh_downloadkey (webs_t wp)
+void ssh_downloadkey(webs_t wp)
 {
 	//egc generating and adding SSH key
 	char cmd[128] = { 0 };
 	int replace = websGetVari(wp, "sshd_replace", 0);
 	int keylength = websGetVari(wp, "sshd_keylength", 2048);
-	char buf[1024] = { 0 };
 	char pubkey[1024] = { 0 };
 	FILE *fp;
 	int i = 0;
@@ -1880,32 +1879,32 @@ void ssh_downloadkey (webs_t wp)
 		dd_loginfo("ssh_key_export", "ERROR: Could not execute command %s\n", cmd);
 		return;
 	}
-	while (fgets(buf, 1024, fp) != NULL) {
+	while (fgets(pubkey, sizeof(pubkey) - 1, fp) != NULL) {
 		i++;
 		if (i == 2) {
-			strncpy(pubkey, buf, sizeof(pubkey));
 			break;
 		}
+		pubkey[0] = 0;
 	}
 	pclose(fp);
-	
+
 	// make openssh key
 	dd_loginfo("ssh_key_export", "Key is generated, now converting to OpenSSH\n");
-	eval ("/usr/sbin/dropbearconvert", "dropbear", "openssh", "/tmp/id_rsa", "/tmp/id_rsa_ssh");
+	eval("/usr/sbin/dropbearconvert", "dropbear", "openssh", "/tmp/id_rsa", "/tmp/id_rsa_ssh");
 
 	char *key = nvram_safe_get("sshd_authorized_keys");
 	//replace or add key to existing
 	if (replace == 0 && *key) {
 		//add keys
-		char buf1[4096] = { 0 };
+		char buf[4096] = { 0 };
 		//dd_loginfo("ssh_key_export", "Adding key, replace %d\n key:%s \npubkey: %s \n", replace, key, pubkey);
-		//snprintf(buf1, sizeof(buf1), "%s%s", key, pubkey);  //make sure key starts on new line
-		if (key[strlen(key)-1] != '\n') {
-			snprintf(buf1, sizeof(buf1), "%s\n%s", key, pubkey);
+		//snprintf(buf, sizeof(buf), "%s%s", key, pubkey);  //make sure key starts on new line
+		if (key[strlen(key) - 1] != '\n') {
+			snprintf(buf, sizeof(buf1), "%s\n%s", key, pubkey);
 		} else {
-			snprintf(buf1, sizeof(buf1), "%s%s", key, pubkey);
+			snprintf(buf, sizeof(buf1), "%s%s", key, pubkey);
 		}
-		nvram_set("sshd_authorized_keys", buf1);
+		nvram_set("sshd_authorized_keys", buf);
 	} else {
 		//replace key
 		//dd_loginfo("ssh_key_export", "Replace key, replace %d \n", replace);
@@ -3689,7 +3688,7 @@ void remove_vifs_single(char *prefix, int vap)
 		foreach(word, vifs, next) {
 			if (gp == elements - 1)
 				break;
-				strspcattach(copy,word);
+			strspcattach(copy, word);
 			gp++;
 		}
 		nvram_set(wif, copy);
