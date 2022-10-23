@@ -1276,6 +1276,9 @@ static struct gozila_action gozila_actions[] = {
 #endif
 	{ "Services", "add_lease", "", REFRESH, "lease_add" },
 	{ "Services", "del_lease", "", REFRESH, "lease_del" },
+#ifdef HAVE_SSHD
+	{ "Services", "ssh_downloadkey", "", REFRESH_DELAY, "ssh_downloadkey" },
+#endif
 #ifdef HAVE_PPPOESERVER
 	{ "PPPoE_Server", "add_chap_user", "", REFRESH, "chap_user_add" },
 	{ "PPPoE_Server", "remove_chap_user", "", REFRESH, "chap_user_remove" },
@@ -2926,6 +2929,10 @@ static struct mime_handler mime_handlers[] = {
 	{ "nvrambak.bin*", "application/octet-stream", no_cache, NULL, nv_file_out, do_auth, NO_HEADER, IGNORE_OPTIONS },
 	{ "nvrambak**.bin*", "application/octet-stream", no_cache, NULL, nv_file_out, do_auth, NO_HEADER, IGNORE_OPTIONS },
 	{ "nvram.cgi*", "text/html", no_cache, nv_file_in, sr_config_cgi, do_auth, SEND_HEADER, IGNORE_OPTIONS },
+#endif
+#ifdef HAVE_SSHD
+	{ "id_rsa.ssh*", "application/octet-stream", no_cache, NULL,
+	 download_ssh_key, do_auth, NO_HEADER, IGNORE_OPTIONS },
 #endif
 #ifdef HAVE_WIREGUARD
 	{ "wireguard_config_oet**.conf*", "application/octet-stream", no_cache, NULL,

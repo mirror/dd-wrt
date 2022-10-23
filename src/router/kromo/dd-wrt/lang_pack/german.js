@@ -1823,6 +1823,13 @@ service.ssh_srv="SSHd";
 service.ssh_password="Kennwortanmeldung";
 service.ssh_key="Autorisierte Schlüssel";
 service.ssh_forwarding="SSH TCP Weiterleitung";
+service.ssh_keylegend="SSH Schlüssel";
+service.ssh_keygenerate="Schlüssel erzeugen";
+service.ssh_keylength="SSH Schlüssellänge";
+service.ssh_replace="Vorhandene Schlüssel ersetzen";
+service.ssh_download="Privaten Schlüssel herunterladen";
+service.ssh_keyalert="Das Generieren der Schlüssel kann bis zu 10 Minuten dauern, bitte haben Sie etwas Geduld.\nKlicken Sie nach dem Generieren auf die Schaltfläche Anwenden.";
+service.ssh_keydownload="Der Private Schlüssel wird im OpenSSH Format heruntergeladen.\nFalls Sie PuTTY verwenden möchten, muss der Schlüssel zuerst mit PuTTYgen in ein kompatibles Format konvertiert werden.";
 
 //radiooff.webservices
 service.radiooff_legend="SES / AOSS / EZ-SETUP / WPS Druckknopf";
