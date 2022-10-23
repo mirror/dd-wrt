@@ -2208,6 +2208,7 @@ void start_restore_defaults(void)
 			fclose(fmem);
 		}
 #endif
+
 		/*
 		 * these unsets are important for routers where we can't erase nvram
 		 * and only software restore defaults 
@@ -3383,6 +3384,10 @@ void start_nvram(void)
 	nvram_set("ddns_change", "");
 	nvram_unset("action_service");
 	nvram_set("wan_get_domain", "");
+
+#ifdef HAVE_SSHD
+	nvram_unset("sshd_keyready");  //egc reset SSH key ready as the private key file /tmp/id_rsa_ssh is gone after reboot so cannot be downloaded anymore
+#endif
 
 #ifdef HAVE_BRCMROUTER
 	nvram_seti("wl_active_add_mac", 0);

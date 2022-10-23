@@ -75,6 +75,10 @@ void start_sshd(void)
 		return;
 	empty_dir_check();
 	int changed = 0;
+	//egc
+	if (!nvram_matchi("sshd_keyready", 1)) { //if private key has been downloaded delete
+		unlink("/tmp/id_rsa_ssh");
+	}
 
 	if (write_key_file(NVRAM_RSA_KEY_NAME, RSA_HOST_KEY_FILE, 0600) == -1) {
 		generate_dropbear_rsa_host_key();

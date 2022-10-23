@@ -2050,6 +2050,13 @@ service.ssh_srv="Enable Daemon";
 service.ssh_password="Password Login";
 service.ssh_key="Authorized Keys";
 service.ssh_forwarding="SSH TCP Forwarding";
+service.ssh_keylegend="SSH Key(s)";
+service.ssh_keygenerate="Generate Key";
+service.ssh_keylength="SSH key length";
+service.ssh_replace="Replace existing Key(s)";
+service.ssh_download="Download Key";
+service.ssh_keyalert="Key generation can take up to 10 minutes or more, so be patient. Apply after Generation.";
+service.ssh_keydownload="The private key is downloaded in OpenSSH format.\nIf you want to use PuTTY, the key must first be converted to a compatible format with PuTTYgen.";
 
 //radiooff.webservices
 service.radiooff_legend="SES / AOSS / EZ-SETUP / WPS Button";

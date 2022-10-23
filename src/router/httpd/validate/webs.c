@@ -1862,6 +1862,64 @@ void validate_avahi(webs_t wp, char *value, struct variable *v)
 }
 #endif
 
+#ifdef HAVE_SSHD
+void ssh_downloadkey (webs_t wp)
+{
+	//egc generating and adding SSH key
+	char cmd[128] = { 0 };
+	int replace = websGetVari(wp, "sshd_replace", 0);
+	int keylength = websGetVari(wp, "sshd_keylength", 2048);
+	char buf[1024] = { 0 };
+	char pubkey[1024] = { 0 };
+	FILE *fp;
+	int i = 0;
+
+	sprintf(cmd, "/usr/sbin/dropbearkey -t rsa -s %d -f /tmp/id_rsa", keylength);
+	dd_loginfo("ssh_key_export", "Starting key generation with keylength:%d and replace:%d\n", keylength, replace);
+	if ((fp = popen(cmd, "r")) == NULL) {
+		dd_loginfo("ssh_key_export", "ERROR: Could not execute command %s\n", cmd);
+		return;
+	}
+	while (fgets(buf, 1024, fp) != NULL) {
+		i++;
+		if (i == 2) {
+			strncpy(pubkey, buf, sizeof(pubkey));
+			break;
+		}
+	}
+	pclose(fp);
+	
+	// make openssh key
+	dd_loginfo("ssh_key_export", "Key is generated, now converting to OpenSSH\n");
+	eval ("/usr/sbin/dropbearconvert", "dropbear", "openssh", "/tmp/id_rsa", "/tmp/id_rsa_ssh");
+
+	//replace or add key to existing
+	if (replace == 0) {
+		//add keys
+		char *key = nvram_safe_get("sshd_authorized_keys");
+		char buf1[4096] = { 0 };
+		//dd_loginfo("ssh_key_export", "Adding key, replace %d\n key:%s \npubkey: %s \n", replace, key, pubkey);
+		//snprintf(buf1, sizeof(buf1), "%s%s", key, pubkey);  //make sure key starts on new line
+		if (key[strlen(key)-1] != '\n') {
+			snprintf(buf1, sizeof(buf1), "%s\n%s", key, pubkey);
+		} else {
+			snprintf(buf1, sizeof(buf1), "%s%s", key, pubkey);
+		}
+		nvram_set("sshd_authorized_keys", buf1);
+	} else {
+		//replace key
+		//dd_loginfo("ssh_key_export", "Replace key, replace %d \n", replace);
+		nvram_set("sshd_authorized_keys", pubkey);
+	}
+
+	unlink("/tmp/id_rsa");
+	nvram_seti("sshd_keyready", 1);
+	nvram_seti("sshd_replace", replace);
+	nvram_seti("sshd_keylength", keylength);
+	return;
+}
+#endif
+
 //egc
 #ifdef HAVE_OPENVPN
 void import_vpntunnel(webs_t wp)

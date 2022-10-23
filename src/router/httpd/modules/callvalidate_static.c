@@ -219,6 +219,9 @@ static struct callmap gozila_map[] = {
 #ifdef HAVE_OPENVPN
 	{ "import_vpntunnel", &import_vpntunnel },
 #endif
+#ifdef HAVE_SSHD
+	{ "ssh_downloadkey", &ssh_downloadkey },
+#endif
 	{ "save_wifi", &save_wifi },
 	{ "save_wifi", &save_wifi },
 	{ "dhcp_release", &dhcp_release },

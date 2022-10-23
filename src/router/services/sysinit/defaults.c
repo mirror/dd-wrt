@@ -2466,6 +2466,9 @@ struct nvram_param srouter_defaults[] = {
 	{ "syslogd_enable", "0" },
 	{ "klogd_enable", "0" },
 	{ "syslogd_rem_ip", "" },
+	{ "sshd_keylength", "2048" },
+	{ "sshd_replace", "0" },
+
 #ifdef HAVE_ONNET
 	{ "tcp_congestion_control", "vegas" },
 #endif
