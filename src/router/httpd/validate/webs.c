@@ -1893,10 +1893,10 @@ void ssh_downloadkey (webs_t wp)
 	dd_loginfo("ssh_key_export", "Key is generated, now converting to OpenSSH\n");
 	eval ("/usr/sbin/dropbearconvert", "dropbear", "openssh", "/tmp/id_rsa", "/tmp/id_rsa_ssh");
 
+	char *key = nvram_safe_get("sshd_authorized_keys");
 	//replace or add key to existing
-	if (replace == 0) {
+	if (replace == 0 && *key) {
 		//add keys
-		char *key = nvram_safe_get("sshd_authorized_keys");
 		char buf1[4096] = { 0 };
 		//dd_loginfo("ssh_key_export", "Adding key, replace %d\n key:%s \npubkey: %s \n", replace, key, pubkey);
 		//snprintf(buf1, sizeof(buf1), "%s%s", key, pubkey);  //make sure key starts on new line
