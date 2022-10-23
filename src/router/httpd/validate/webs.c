@@ -1900,9 +1900,9 @@ void ssh_downloadkey(webs_t wp)
 		//dd_loginfo("ssh_key_export", "Adding key, replace %d\n key:%s \npubkey: %s \n", replace, key, pubkey);
 		//snprintf(buf, sizeof(buf), "%s%s", key, pubkey);  //make sure key starts on new line
 		if (key[strlen(key) - 1] != '\n') {
-			snprintf(buf, sizeof(buf1), "%s\n%s", key, pubkey);
+			snprintf(buf, sizeof(buf), "%s\n%s", key, pubkey);
 		} else {
-			snprintf(buf, sizeof(buf1), "%s%s", key, pubkey);
+			snprintf(buf, sizeof(buf), "%s%s", key, pubkey);
 		}
 		nvram_set("sshd_authorized_keys", buf);
 	} else {
