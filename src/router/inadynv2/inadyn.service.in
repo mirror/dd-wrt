@@ -1,0 +1,16 @@
+[Unit]
+Description=Internet Dynamic DNS Client
+Documentation=man:inadyn
+Documentation=man:inadyn.conf
+Documentation=file:@DOCDIR@/README.md
+ConditionPathExists=@SYSCONFDIR@/inadyn.conf
+After=network-online.target
+Requires=network-online.target
+
+[Service]
+Type=simple
+EnvironmentFile=-@SYSCONFDIR@/default/inadyn
+ExecStart=@SBINDIR@/inadyn --foreground --syslog $INADYN_OPTS $INADYN_ARGS
+
+[Install]
+WantedBy=multi-user.target
