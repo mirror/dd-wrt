@@ -25,6 +25,9 @@
 
 #include "webs.h"
 #include "nvram_backup.c"
+#ifdef HAVE_SSHD
+#include "ssh_exportkey.c"
+#endif
 #ifdef HAVE_WIREGUARD
 #include "wireguard_config.c"
 #endif
