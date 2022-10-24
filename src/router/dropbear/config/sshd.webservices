@@ -40,16 +40,14 @@
 				<option value="2048" <% nvram_selected("sshd_keylength","2048"); %>>2048</option>
 				<option value="3072" <% nvram_selected("sshd_keylength","3072"); %>>3072</option>
 				<option value="4096" <% nvram_selected("sshd_keylength","4096"); %>>4096</option>
-				</select>
-			</div>
-			<div class="setting">
+				</select>&nbsp;&nbsp;
 				<script type="text/javascript">
 				//<![CDATA[
-					document.write("<input class=\"button\" type=\"button\" name=\"config_button\" value=\"" + service.ssh_keygenerate + "\" onclick=\"generate_sshkey(this.form);\">");
+				document.write("<input class=\"button\" style="vertical-align: -.1rem;" type=\"button\" name=\"config_button\" value=\"" + service.ssh_keygenerate + "\" onclick=\"generate_sshkey(this.form);\">");
 				//]]>
 				</script>
-			</div>
-			<div id="idssh_keyready">
+			</div><br>
+			<div id="idssh_keyready" class="padding-left">
 				<div class="setting">
 					<script type="text/javascript">
 					//<![CDATA[
@@ -60,7 +58,7 @@
 			</div>
 			<div class="setting">
 				<div class="label"><% tran("service.ssh_key"); %></div>
-				<textarea id="sshd_authorized_keys" name="sshd_authorized_keys" cols="60" rows="4" wrap="off">&nbsp;</textarea>
+				<textarea id="sshd_authorized_keys" name="sshd_authorized_keys" cols="60" rows="2" wrap="off">&nbsp;</textarea>
 				<script type="text/javascript">
 				//<![CDATA[
 					var var_authorized_keys = fix_cr( '<% nvg("sshd_authorized_keys"); %>' );

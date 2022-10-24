@@ -548,7 +548,8 @@ input.button[onclick*='FilterSummary'] {
   box-shadow: 0 0 5px 1px #35ee00;
   outline: 0;
 }
-.button.brown_btn {
+.button.brown_btn,
+.button.brown_btn:disabled:hover {
   background: #6f4816;
   border-color: #755416;
   color: #fff;
