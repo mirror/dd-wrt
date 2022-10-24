@@ -47,7 +47,6 @@
  * inadyn scripts by lawnmowerguy1 
  */
 
-char service[32];
 char _username[] = "ddns_username_XX";
 char _passwd[] = "ddns_passwd_XX";
 char _hostname[] = "ddns_hostname_XX";
@@ -56,7 +55,7 @@ char _wildcard[] = "ddns_wildcard_XX";
 char _url[] = "ddns_url_XX";
 char _conf[] = "ddns_conf_XX";
 
-int init_ddns(void)
+int init_ddns(FILE * fp)
 {
 
 	int flag = nvram_geti("ddns_enable");
@@ -67,74 +66,121 @@ int init_ddns(void)
 		break;
 
 	case 1:
-		if (nvram_matchi("ddns_dyndnstype", 2))
-			strcpy(service, "statdns@dyndns.org");
-		else if (nvram_matchi("ddns_dyndnstype", 3))
-			strcpy(service, "custom@dyndns.org");
-		else
-			strcpy(service, "dyndns@dyndns.org");
+		if (fp) {
+			if (nvram_matchi("ddns_dyndnstype", 2))
+				fprintf(fp, "provider statdns@dyndns.org {\n");
+			else if (nvram_matchi("ddns_dyndnstype", 3))
+				fprintf(fp, "provider custom@dyndns.org {\n");
+			else
+				fprintf(fp, "provider dyndns@dyndns.org {\n");
 
+			fprintf(fp, "username = %s\n", nvram_safe_get("ddns_username"));
+			fprintf(fp, "password = %s\n", nvram_safe_get("ddns_passwd"));
+			fprintf(fp, "hostname = %s\n", nvram_safe_get("ddns_hostname"));
+			fprintf(fp, "}\n");
+		}
 		snprintf(_username, sizeof(_username), "%s", "ddns_username");
 		snprintf(_passwd, sizeof(_passwd), "%s", "ddns_passwd");
 		snprintf(_hostname, sizeof(_hostname), "%s", "ddns_hostname");
-		snprintf(_dyndnstype, sizeof(_dyndnstype), "%s", "ddns_dyndnstype");
-		snprintf(_wildcard, sizeof(_wildcard), "%s", "ddns_wildcard");
+//              snprintf(_dyndnstype, sizeof(_dyndnstype), "%s", "ddns_dyndnstype");
+//              snprintf(_wildcard, sizeof(_wildcard), "%s", "ddns_wildcard");
 		break;
 
 	case 2:
-		strcpy(service, "default@freedns.afraid.org");
-
+		if (fp) {
+			fprintf(fp, "provider default@freedns.afraid.org {\n");
+			fprintf(fp, "username = %s\n", nvram_safe_get("ddns_username_2"));
+			fprintf(fp, "password = %s\n", nvram_safe_get("ddns_passwd_2"));
+			fprintf(fp, "hostname = %s\n", nvram_safe_get("ddns_hostname_2"));
+			fprintf(fp, "}\n");
+		}
 		snprintf(_username, sizeof(_username), "%s", "ddns_username_2");
 		snprintf(_passwd, sizeof(_passwd), "%s", "ddns_passwd_2");
 		snprintf(_hostname, sizeof(_hostname), "%s", "ddns_hostname_2");
+
 		break;
 
 	case 3:
-		strcpy(service, "default@zoneedit.com");
 
+		if (fp) {
+			fprintf(fp, "provider default@zoneedit.com	 {\n");
+			fprintf(fp, "username = %s\n", nvram_safe_get("ddns_username_3"));
+			fprintf(fp, "password = %s\n", nvram_safe_get("ddns_passwd_3"));
+			fprintf(fp, "hostname = %s\n", nvram_safe_get("ddns_hostname_3"));
+			fprintf(fp, "}\n");
+		}
 		snprintf(_username, sizeof(_username), "%s", "ddns_username_3");
 		snprintf(_passwd, sizeof(_passwd), "%s", "ddns_passwd_3");
 		snprintf(_hostname, sizeof(_hostname), "%s", "ddns_hostname_3");
 		break;
 
 	case 4:
-		strcpy(service, "default@no-ip.com");
 
+		if (fp) {
+			fprintf(fp, "provider default@no-ip.com	 {\n");
+			fprintf(fp, "username = %s\n", nvram_safe_get("ddns_username_4"));
+			fprintf(fp, "password = %s\n", nvram_safe_get("ddns_passwd_4"));
+			fprintf(fp, "hostname = %s\n", nvram_safe_get("ddns_hostname_4"));
+			fprintf(fp, "}\n");
+		}
 		snprintf(_username, sizeof(_username), "%s", "ddns_username_4");
 		snprintf(_passwd, sizeof(_passwd), "%s", "ddns_passwd_4");
 		snprintf(_hostname, sizeof(_hostname), "%s", "ddns_hostname_4");
 		break;
 
 	case 5:
-		strcpy(service, "custom@http_svr_basic_auth");
 
+		if (fp) {
+			fprintf(fp, "custom namecheap {\n");
+			fprintf(fp, "username = %s\n", nvram_safe_get("ddns_username_5"));
+			fprintf(fp, "password = %s\n", nvram_safe_get("ddns_passwd_5"));
+			fprintf(fp, "hostname = %s\n", nvram_safe_get("ddns_hostname_5"));
+			fprintf(fp, "ddns-server = %s\n", nvram_safe_get("ddns_url"));
+			fprintf(fp, "ddns-path = %s\n", nvram_safe_get("ddns_conf"));
+			fprintf(fp, "}\n");
+		}
 		snprintf(_username, sizeof(_username), "%s", "ddns_username_5");
 		snprintf(_passwd, sizeof(_passwd), "%s", "ddns_passwd_5");
 		snprintf(_hostname, sizeof(_hostname), "%s", "ddns_hostname_5");
-		snprintf(_url, sizeof(_url), "%s", "ddns_url");
-		snprintf(_conf, sizeof(_conf), "%s", "ddns_conf");
+
 		break;
 
 	case 6:
-		strcpy(service, "dyndns@3322.org");
 
+		if (fp) {
+			fprintf(fp, "provider dyndns@3322.org {\n");
+			fprintf(fp, "username = %s\n", nvram_safe_get("ddns_username_6"));
+			fprintf(fp, "password = %s\n", nvram_safe_get("ddns_passwd_6"));
+			fprintf(fp, "hostname = %s\n", nvram_safe_get("ddns_hostname_6"));
+			fprintf(fp, "}\n");
+		}
 		snprintf(_username, sizeof(_username), "%s", "ddns_username_6");
 		snprintf(_passwd, sizeof(_passwd), "%s", "ddns_passwd_6");
 		snprintf(_hostname, sizeof(_hostname), "%s", "ddns_hostname_6");
-		snprintf(_dyndnstype, sizeof(_dyndnstype), "%s", "ddns_dyndnstype_6");
-		snprintf(_wildcard, sizeof(_wildcard), "%s", "ddns_wildcard_6");
+
+		//???
+//              snprintf(_dyndnstype, sizeof(_dyndnstype), "%s", "ddns_dyndnstype_6");
+//              snprintf(_wildcard, sizeof(_wildcard), "%s", "ddns_wildcard_6");
 		break;
 
 	case 7:
-		strcpy(service, "default@easydns.com");
 
+		if (fp) {
+			fprintf(fp, "provider default@easydns.com {\n");
+			fprintf(fp, "username = %s\n", nvram_safe_get("ddns_username_7"));
+			fprintf(fp, "password = %s\n", nvram_safe_get("ddns_passwd_7"));
+			fprintf(fp, "hostname = %s\n", nvram_safe_get("ddns_hostname_7"));
+			fprintf(fp, "}\n");
+		}
 		snprintf(_username, sizeof(_username), "%s", "ddns_username_7");
 		snprintf(_passwd, sizeof(_passwd), "%s", "ddns_passwd_7");
 		snprintf(_hostname, sizeof(_hostname), "%s", "ddns_hostname_7");
-		snprintf(_wildcard, sizeof(_wildcard), "%s", "ddns_wildcard_7");
+
+//      ???
+//              snprintf(_wildcard, sizeof(_wildcard), "%s", "ddns_wildcard_7");
 		break;
 
-	case 8:
+/*	case 8:
 		strcpy(service, "default@tzo.com");
 
 		snprintf(_username, sizeof(_username), "%s", "ddns_username_8");
@@ -157,13 +203,20 @@ int init_ddns(void)
 		snprintf(_passwd, sizeof(_passwd), "%s", "ddns_passwd_10");
 		snprintf(_hostname, sizeof(_username), "%s", "ddns_username_10");
 		break;
-
+*/
 	case 11:
-		strcpy(service, "default@duiadns.net");
 
+		if (fp) {
+			fprintf(fp, "provider default@duiadns.net {\n");
+			fprintf(fp, "username = %s\n", nvram_safe_get("ddns_username_11"));
+			fprintf(fp, "password = %s\n", nvram_safe_get("ddns_passwd_11"));
+			fprintf(fp, "hostname = %s\n", nvram_safe_get("ddns_hostname_11"));
+			fprintf(fp, "}\n");
+		}
 		snprintf(_username, sizeof(_username), "%s", "ddns_username_11");
 		snprintf(_passwd, sizeof(_passwd), "%s", "ddns_passwd_11");
 		snprintf(_hostname, sizeof(_hostname), "%s", "ddns_hostname_11");
+
 		break;
 
 	default:
@@ -177,12 +230,6 @@ void start_ddns(void)
 {
 	int ret;
 	FILE *fp;
-
-	/*
-	 * Get correct username, password and hostname 
-	 */
-	if (init_ddns() < 0)
-		return;
 
 	/*
 	 * We don't want to update, if user don't input below field 
@@ -231,11 +278,18 @@ void start_ddns(void)
 	 * Generate ddns configuration file 
 	 */
 	if ((fp = fopen("/tmp/ddns/inadyn.conf", "w"))) {
+		if (nvram_matchi("ddns_enable", 7))
+			fprintf(fp, "period %s\n", "900");	// check ip
+		else
+			fprintf(fp, "period %s\n", "600");	// check ip
+		fprintf(fp, "forced-update %d\n", nvram_geti("ddns_force") * 24 * 60 * 60);	// force 
+		fprintf(fp, "cache-dir %s\n", "/tmp/ddns");	// cache dir
+		if (init_ddns(fp) < 0)
+			return;
+
+/*	
 		fprintf(fp, "--background");
 		fprintf(fp, " --dyndns_system %s", service);	// service
-		// now direct, in the config file it breaks with complex passwords
-		// fprintf(fp, " -u %s", nvram_safe_get(_username));    // username/email
-		// fprintf(fp, " -p %s", nvram_safe_get(_passwd));      // password
 		fprintf(fp, " -a %s", nvram_safe_get(_hostname));	// alias/hostname
 		if (nvram_matchi("ddns_enable", 1)
 		    || nvram_matchi("ddns_enable", 6)
@@ -245,20 +299,10 @@ void start_ddns(void)
 		}
 		if (nvram_matchi("ddns_enable", 7))
 			fprintf(fp, " --update_period_sec %s", "900");	// check ip
-		// every 15
-		// mins
 		else
 			fprintf(fp, " --update_period_sec %s", "600");	// check ip
-		// every 6
-		// mins
-		// fprintf (fp, " --forced_update_period %s", "2419200"); //force
-		// update after 28days
 		fprintf(fp, " --forced_update_period %d", nvram_geti("ddns_force") * 24 * 60 * 60);	// force 
-		// update 
-		// after 
-		// 28days
 		fprintf(fp, " --log_file %s", "/tmp/ddns/ddns.log");	// log to
-		// file
 		fprintf(fp, " --cache_dir %s", "/tmp/ddns");	// cache dir
 		fprintf(fp, " --exec %s", "ddns_success");	// run after update
 		if (nvram_matchi("ddns_enable", 5)) {
@@ -268,6 +312,7 @@ void start_ddns(void)
 			if (nvram_invmatch(_conf, ""))
 				fprintf(fp, " %s", nvram_safe_get(_conf));
 		}
+*/
 		fprintf(fp, "\n");
 		fclose(fp);
 	} else {
@@ -283,9 +328,7 @@ void start_ddns(void)
 		nvram2file("ddns_cache", "/tmp/ddns/inadyn_ip.cache");
 		nvram2file("ddns_time", "/tmp/ddns/inadyn_time.cache");
 	}
-	// call uname and pass directly, otherwise complex usernames (with # i.e.) does not work
-	// we are on a single user system.
-	dd_logstart("ddns", eval("inadyn", "-u", nvram_safe_get(_username), "-p", nvram_safe_get(_passwd), "--input_file", "/tmp/ddns/inadyn.conf"));
+	dd_logstart("ddns", eval("inadyn", "-e", "ddns_success", "--exec-mode=compat", "-f", "/tmp/ddns/inadyn.conf"));
 
 	cprintf("done\n");
 
@@ -311,7 +354,7 @@ int ddns_success_main(int argc, char *argv[])
 	char buf2[80];
 	FILE *fp;
 
-	init_ddns();
+	init_ddns(NULL);
 
 	if ((fp = fopen("/tmp/ddns/inadyn_ip.cache", "r"))) {
 		fgets(buf, sizeof(buf), fp);
