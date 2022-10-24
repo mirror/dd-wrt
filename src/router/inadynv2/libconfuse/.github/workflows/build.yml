@@ -1,0 +1,50 @@
+name: Bob the Builder
+
+# Run on all branches, including all pull requests, except the 'dev'
+# branch since that's where we run Coverity Scan (limited tokens/day)
+on:
+  push:
+    branches:
+      - '**'
+      - '!dev'
+  pull_request:
+    branches:
+      - '**'
+
+jobs:
+  build:
+    # Verify we can build on latest Ubuntu with both gcc and clang
+    name: ${{ matrix.compiler }}
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        compiler: [gcc, clang]
+      fail-fast: false
+    env:
+      MAKEFLAGS: -j3
+      CC: ${{ matrix.compiler }}
+    steps:
+      - name: Install dependencies
+        run: |
+          sudo apt-get -y update
+          sudo apt-get -y install tree doxygen autopoint
+      - uses: actions/checkout@v2
+      - name: Configure
+        run: |
+          ./autogen.sh
+          ./configure --prefix= --disable-silent-rules
+      - name: Build
+        run: |
+          make
+      - name: Install to ~/tmp and Inspect
+        run: |
+          DESTDIR=~/tmp make install-strip
+          tree ~/tmp
+      - name: Run Unit Tests
+        run: |
+          make check || (cat test/test-suite.log; false)
+      - name: Upload Test Results
+        uses: actions/upload-artifact@v2
+        with:
+          name: libconfuse-test-${{ matrix.compiler }}
+          path: test/*

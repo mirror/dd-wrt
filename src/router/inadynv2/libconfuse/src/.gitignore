@@ -1,0 +1,7 @@
+.deps
+.libs
+*confuse*.lo
+lexer.c
+*lexer*.lo
+*libconfuse*.la
+*.o
