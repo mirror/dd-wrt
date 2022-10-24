@@ -1,0 +1,28 @@
+Microsoft Visual Studio Solution File, Format Version 7.00
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libConfuse", "libConfuse\libConfuse.vcproj", "{073826D0-615E-4065-906E-4867AD9FA290}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "cfgtest", "cfgtest\cfgtest.vcproj", "{99461085-21CE-4044-8818-31E3B84CCF09}"
+EndProject
+Global
+	GlobalSection(SolutionConfiguration) = preSolution
+		ConfigName.0 = Debug
+		ConfigName.1 = Release
+	EndGlobalSection
+	GlobalSection(ProjectDependencies) = postSolution
+		{99461085-21CE-4044-8818-31E3B84CCF09}.0 = {073826D0-615E-4065-906E-4867AD9FA290}
+	EndGlobalSection
+	GlobalSection(ProjectConfiguration) = postSolution
+		{073826D0-615E-4065-906E-4867AD9FA290}.Debug.ActiveCfg = Release|Win32
+		{073826D0-615E-4065-906E-4867AD9FA290}.Debug.Build.0 = Release|Win32
+		{073826D0-615E-4065-906E-4867AD9FA290}.Release.ActiveCfg = Release|Win32
+		{073826D0-615E-4065-906E-4867AD9FA290}.Release.Build.0 = Release|Win32
+		{99461085-21CE-4044-8818-31E3B84CCF09}.Debug.ActiveCfg = Release|Win32
+		{99461085-21CE-4044-8818-31E3B84CCF09}.Debug.Build.0 = Release|Win32
+		{99461085-21CE-4044-8818-31E3B84CCF09}.Release.ActiveCfg = Release|Win32
+		{99461085-21CE-4044-8818-31E3B84CCF09}.Release.Build.0 = Release|Win32
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+	EndGlobalSection
+	GlobalSection(ExtensibilityAddIns) = postSolution
+	EndGlobalSection
+EndGlobal

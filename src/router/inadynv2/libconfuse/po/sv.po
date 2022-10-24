@@ -1,0 +1,160 @@
+# Swedish translations for libConfuse.
+# Svenska översättningar för libConfuse.
+# Copyright (c) 2002-2017  Martin Hedenfalk <martin@bzero.se>
+# This file is distributed under the same license as the libConfuse package.
+# Martin Hedenfalk <martin@bzero.se>, 2002.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: libconfuse 3.0\n"
+"Report-Msgid-Bugs-To: https://github.com/libconfuse/libconfuse/issues\n"
+"POT-Creation-Date: 2020-06-22 11:38+0200\n"
+"PO-Revision-Date: 2016-03-03 01:50+0100\n"
+"Last-Translator: Joachim Nilsson <troglobit@gmail.com>\n"
+"Language-Team: None <troglobit@gmail.com>\n"
+"Language: sv\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=ISO-8859-1\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+#: src/confuse.c:326 src/confuse.c:347 src/confuse.c:2295
+#, c-format
+msgid "no such option '%s'"
+msgstr "finns ingen flagga '%s'"
+
+#: src/confuse.c:328
+#, fuzzy, c-format
+msgid "no sub-section '%s' in '%s'"
+msgstr "finns inget avsnitt '%s' i '%s'"
+
+#: src/confuse.c:330
+#, c-format
+msgid "no sub-section title/index for '%s'"
+msgstr "finns inget avsnitt med titel/index '%s'"
+
+#: src/confuse.c:756
+#, c-format
+msgid "duplicate option '%s' not allowed"
+msgstr "flaggan '%s' har dubletter"
+
+#: src/confuse.c:924
+#, c-format
+msgid "found duplicate title '%s'"
+msgstr "titeln '%s' har dubletter"
+
+#: src/confuse.c:951
+#, c-format
+msgid "invalid integer value for option '%s'"
+msgstr "felaktigt heltalsvärde för flaggan '%s'"
+
+#: src/confuse.c:955
+#, c-format
+msgid "integer value for option '%s' is out of range"
+msgstr "heltalsvärdet för flaggan '%s' är för stort"
+
+#: src/confuse.c:973
+#, c-format
+msgid "invalid floating point value for option '%s'"
+msgstr "felaktigt flyttalsvärde för flaggan '%s'"
+
+#: src/confuse.c:977
+#, c-format
+msgid "floating point value for option '%s' is out of range"
+msgstr "flyttalsvärdet för flaggan '%s' är utanför tillåten gräns"
+
+#: src/confuse.c:1063
+#, c-format
+msgid "invalid boolean value for option '%s'"
+msgstr "felaktigt boolskt värde för flaggan '%s'"
+
+#: src/confuse.c:1262
+#, c-format
+msgid "dropping deprecated configuration option '%s'"
+msgstr "ignorerar utdaterad konfigurationsflagga '%s'"
+
+#: src/confuse.c:1265
+#, c-format
+msgid "found deprecated option '%s', please update configuration file."
+msgstr "utdaterad flagga '%s' hittad, vänligen uppdatera konfigurationsfilen."
+
+#: src/confuse.c:1296
+msgid "premature end of file"
+msgstr "för tidigt filslut"
+
+#: src/confuse.c:1317
+msgid "unexpected closing brace"
+msgstr "oväntad avslutande måsvinge"
+
+#: src/confuse.c:1338 src/confuse.c:1418 src/confuse.c:1445 src/confuse.c:1468
+#: src/confuse.c:1583 src/confuse.c:1627
+#, c-format
+msgid "unexpected token '%s'"
+msgstr "oväntat värde '%s'"
+
+#: src/confuse.c:1380
+#, c-format
+msgid "attempt to append to non-list option '%s'"
+msgstr "försök att lägga till värden till en icke-lista ('%s')"
+
+#: src/confuse.c:1393
+#, c-format
+msgid "missing equal sign after option '%s'"
+msgstr "saknar likamed-tecken efter '%s'"
+
+#: src/confuse.c:1475
+#, c-format
+msgid "missing opening brace for section '%s'"
+msgstr "öppningsparentes saknas för sektion '%s'"
+
+#: src/confuse.c:1502
+#, c-format
+msgid "missing title for section '%s'"
+msgstr "titel till sektion '%s' saknas"
+
+#: src/confuse.c:1514
+#, c-format
+msgid "missing parenthesis for function '%s'"
+msgstr "parentes saknas i anropet till funktionen '%s'"
+
+#: src/confuse.c:1536 src/confuse.c:1549
+#, c-format
+msgid "syntax error in call of function '%s'"
+msgstr "syntaktiskt fel i anrop till funktionen '%s'"
+
+#: src/confuse.c:1643
+#, c-format
+msgid "Internal error in cfg_parse_internal(), unknown state %d"
+msgstr "Internt fel i cfg_parse_internal(), okänt tillstånd %d"
+
+#: src/confuse.c:2007
+msgid "wrong number of arguments to cfg_include()"
+msgstr "fel antal argument till cfg_include()"
+
+#: src/lexer.l:163
+#, c-format
+msgid "invalid octal number '%s'"
+msgstr "otillåtet oktalt nummer '%s'"
+
+#: src/lexer.l:169
+#, c-format
+msgid "bad escape sequence '%s'"
+msgstr "felaktig sekvens '%s'"
+
+#: src/lexer.l:240
+msgid "unterminated string constant"
+msgstr "oavslutad teckensträng"
+
+#: src/lexer.l:313
+msgid "includes nested too deeply"
+msgstr "inkluderingsfiler för djupt nästlade"
+
+#: src/lexer.l:325
+#, c-format
+msgid "%s: Not found in search path"
+msgstr "%s: Saknas i den givna sökvägen"
+
+#: src/lexer.l:334
+#, c-format
+msgid "%s: Failed tilde expand"
+msgstr "%s: Kunde inte expandera"
