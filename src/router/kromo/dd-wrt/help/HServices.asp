@@ -39,6 +39,8 @@
 				<% tran("hservice.page6"); %>
 				<dt><% tran("service.ssh_legend"); %></dt>
 				<% tran("hservice.page7"); %>
+				<dt><% tran("service.ssh_keylegend"); %></dt>
+				<% tran("hservice.sshclient"); %>
 				<dt><% tran("service.syslog_legend"); %></dt>
 				<% tran("hservice.page8"); %>
 				<dt><% tran("service.telnet_legend"); %></dt>
