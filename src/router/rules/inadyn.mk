@@ -28,7 +28,7 @@ inadyn:
 	$(MAKE) -C inadynv2
 
 inadyn-install:
-	install -D inadyn/bin/linux/inadyn $(INSTALLDIR)/inadyn/usr/sbin/inadyn
+	install -D inadyn/src/inadyn $(INSTALLDIR)/inadyn/usr/sbin/inadyn
 	$(STRIP) $(INSTALLDIR)/inadyn/usr/sbin/inadyn
 
 inadyn-clean:
