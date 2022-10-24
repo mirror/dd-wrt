@@ -2051,11 +2051,11 @@ service.ssh_srv="Enable Daemon";
 service.ssh_password="Password Login";
 service.ssh_key="Authorized Keys";
 service.ssh_forwarding="SSH TCP Forwarding";
-service.ssh_keylegend="Key Generation";
+service.ssh_keylegend="SSH Key(s)";
 service.ssh_keygenerate="Generate Key";
 service.ssh_keylength="Key Length";
 service.ssh_replace="Replace Existing Key(s)";
-service.ssh_download="Download Key";
+service.ssh_download="Download Private Key";
 service.ssh_keyalert="Be patient, key generation can take up to 10 minutes or more. Click the " + sbutton.apply + " button after generation has completed.";
 service.ssh_keydownload="The private key is downloaded in the OpenSSH format.\nIf you wish to use PuTTY, the key must first be converted to a compatible format with PuTTYgen.";
 
