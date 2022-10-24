@@ -1292,7 +1292,7 @@ hidx.sas="The setup assistant guides you through the basic setup steps to config
 
 //help page
 hidx.intro="<dd>The Setup screen is the first screen you will see when accessing the router. For a basic working router configuration while using only the settings on this screen is possible. Some Internet Service Providers (ISPs) will require that you enter specific information, such as a username, password, IP address, default gateway address, or a DNS IP address. This information can be obtained from your ISP, if required.<br /><br /><div class=\"note\"><h4>Note:</h4><div>After you have configured these settings, you should set a new password for the router using the <a href=\"HManagement.asp\">Management</a> screen. This will enhance security by protecting the router from unauthorized changes. All users that try to access the router's Web interface or Setup Wizard will be prompted to enter the router's login credentials.</div></div></dd>";
-hidx.wanctype="<dd>The router supports several connection types:<ul><li>" + share.disabled + "</li><li>" + idx.static_ip + "</li><li>" + idx.dhcp + "</li><li>" + idx.dhcp_auth + "</li><li>PPPoE</li><li>" + idx.pppoe_dual + "</li><li>PPTP</li><li>L2TP</li><li>" + idx.heartbeat_sig + "</li><li>" + idx.iphone_tether + "</li><li>" + idx.mobile_bb + "</li></ul><br />The connection type can be selected from the dropdown menu labeled <em>" + idx.conn_type + "</em>. The information required and available features will differ depending on what kind of connection type you select.<br /><br /><div class=\"note\"><h4>Note:</h4><div>Some cable providers require a specific MAC address for connection to the Internet. To learn more about this, click the System tab. Then click the Help more... link, and read about the <a href=\"HWanMAC.asp\">MAC Address Cloning</a> feature.</div></div></dd>";
+hidx.wanctype="<dd>The router supports several connection types:<ul><li>" + share.disabled + "</li><li>" + idx.static_ip + "</li><li>" + idx.dhcp + "</li><li>" + idx.dhcp_auth + "</li><li>PPPoE</li><li>" + idx.pppoe_dual + "</li><li>PPTP</li><li>L2TP</li><li>" + idx.heartbeat_sig + "</li><li>" + idx.iphone_tether + "</li><li>" + idx.mobile_bb + "</li></ul><br />The connection type can be selected from the dropdown menu labeled <em>" + idx.conn_type + "</em>. The information required and available features will differ depending on what kind of connection type you select.<br /><br /><div class=\"note\"><h4>Note:</h4><div>Some cable providers require a specific MAC address for connection to the Internet. To learn more about this, click the System tab. Then click the Help " + share.more + " link, and read about the <a href=\"HWanMAC.asp\">MAC Address Cloning</a> feature.</div></div></dd>";
 hidx.ignwandns="<dd>This option plugs a known DNS leak that may occur with some ISP DNS servers. Any ISP DNS servers and alternatively those configured <em>" + idx_static.dns + "</em> are added to the router's <b>/tmp/resolv.dnsmasq</b></dd>";
 hidx.rname="<dd>This entry defines how the router is identified on your LAN.</dd>";
 hidx.hname="<dd>This entry is necessary for some ISPs and can be provided by them.</dd>";
@@ -2008,6 +2008,7 @@ service.softether_config="Configuration";
 var hservice=new Object();
 hservice.right1="Before enabling storage for Client Lease DB into JFFS2 flash storage, JFFS2 support <b>must be enabled</b>. JFFS2 Support is located on the Administration / Management tab.";
 hservice.right2="The servers you define within the <b><em>" + service.dns_smartdns_option + "</em></b> below will be used exclusively.";
+hservice.sshshelp="To generate a key, choose the desired keysize, then click the <em>" + service.ssh_keygenerate + "</em> button to begin. Click OK and be patient. After key generation has completed you can choose to download the private key in the default OpenSSH format by clicking the <em>" + service.ssh_download + "</em> button. For further information click the " + share.more + " above to open the Services help page";
 
 hservice.page1="<dd>The DHCP assigns IP addresses to your local devices. While the main configuration is on the setup page you can program some nifty special functions here.<ul class=\"wide\"><li>Used domain – You can select here which domain the DHCP clients should get as their local domain. This can be the WAN domain set on the Setup screen or the LAN domain which can be set here.</li><li>LAN Domain – You can define here your local LAN domain which is used as local domain for dnsmasq and DHCP service if chosen above.</li><li>Static Leases – If you want to assign certain hosts a specific address then you can define them here. This is also the way to add hosts with a fixed address to the router's local DNS service (dnsmasq).</li></ul><br />There are some extra options you can set by entering them in <em>Additional Options</em>.</dd>";
 hservice.page2="<dd>dnsmasq is a local DNS and DHCP server. It will resolve all host names known to the router from DHCP (dynamic and static) as well as forwarding and caching DNS entries from remote DNS servers. dnsmasq will always appear enabled here if either <em>DHCP Server</em> or <em>Use dnsmasq for DNS</em> is enabled on the Basic Setup page.<br />There are some extra options you can set by entering them in <em>Additional Options</em>. For instance:<br /><br /><ul class=\"wide\"><li>Static allocation: dhcp-host=AB:CD:EF:11:22:33,192.168.0.10,myhost,myhost.domain,12h</li><li>Max leases number: dhcp-lease-max=2</li><li>DHCP server IP range: dhcp-range=192.168.0.110,192.168.0.111,12h</li></ul><br /><div class=\"note\"><h4>Note:</h4><div>All options are saved in /tmp/dnsmasq.conf file. The format of this file consists of one option per line.<br />The complete list of available options : <a href=\"http:\/\/thekelleys.org.uk/dnsmasq/docs/dnsmasq-man.html\" target=\"_new\">dnsmasq manual</a>.</div></div></dd>";
@@ -2025,9 +2026,9 @@ hservice.dnsmasq_cachesize="<dd>Defines how many cached entries dnsmasq stores (
 //hservice.page5=" – Specifies which IP/port kaid will use to listen for controller UIs.</li></ul><br /><div class=\"note\"><h4>Note:</h4><div>Xbox must be connected directly via one of the Ethernet ports of the router.</div></div></dd>";
 hservice.page6="<dd>RFlow Collector is a traffic monitoring and management tool that allows to watch a complete network of DD-WRT routers.<br /><ul class=\"wide\"><li>RFlow Default port is 2055</li><li>MACupd Default port is 2056</li><li>Interval = 10 seems messages will be sent to server each 10 seconds</li><li>Interface : choose which interface to monitor</li></ul><br /><div class=\"note\"><h4>Note:</h4><div>For each RFlow and MACupd server IP : enter the IP address of the listening server (win32 PC with RFlow Collector).</div></div></dd>";
 hservice.page7="<dd>Enabling SSHd allows you to access your router's Linux OS with an SSH client (Putty works well on Windows, for example).<ul class=\"wide\"><li>Password login – allow login with the router password (username is <tt>root</tt>)</li><li>SSHd Port – the port number for SSHd (default is 22)</li><li>Authorized Keys – here you paste your public keys to enable key-based login (more secure than a simple password)</li></ul></dd>";
+hservice.sshclient="For Putty:\nConvert the private key-file with PuttyGen as follows:<ul class=\"wide\"><li>Conversions</li><li>Select <em>Import key</em> from menu then (browse for directory where you saved the previusly downloaded id_rsa.ssh key and select it.</li><li>Click <em>Save private key and enter e.g. id_rsa.ppk, your key is now ready to be used in PuTTY</li></ul>PuTTY key import:\n <ul><li>Click SSH to expand</li><li>Click Auth</li><li>Under Private key file for authentication, click <em>Browse...</em> Select the e.g. id_rsa.ppk you previously converted and Save your PuTTY profile.";
 hservice.page8="<dd>Enable Syslogd to capture system messages. By default they will be collected in the local file \/var\/log\/messages. To send them to another system, enter the IP address of a remote syslog server.</dd>";
 hservice.page9="<dd>Enable the telnet server to connect to the router with telnet. The username is <tt>root</tt> and the password is the current router's password.<br /><br /><div class=\"note\"><h4>Note:</h4><div>If you are using the router in an untrusted environment e.g. a public hotspot, it is strongly recommended to use SSHd and deactivate telnet.</div></div></dd><dd>Check all values and click the <em>" + sbutton.save + "</em> button to save your settings. Click the <em>" + sbutton.cancel + "</em> button to cancel your unsaved changes. Click the <em>" + sbutton.reboot + "</em> button to reboot your router immediately.</dd>";
-
 //help container
 var hstatus_vpn=new Object();
 hstatus_vpn.right1="<b>Policy-based Routing</b>:<br />Add IPs / NETs in the following format 0.0.0.0/0 to force clients to use the tunnel as the default gateway. Enter one IP / NET per line.<br /><b>IP Address / Netmask</b>:<br />Must be set when using DHCP-Proxy mode and local TAP is NOT bridged</i>";
@@ -2050,13 +2051,13 @@ service.ssh_srv="Enable Daemon";
 service.ssh_password="Password Login";
 service.ssh_key="Authorized Keys";
 service.ssh_forwarding="SSH TCP Forwarding";
-service.ssh_keylegend="SSH Key(s)";
+service.ssh_keylegend="Key Generation";
 service.ssh_keygenerate="Generate Key";
-service.ssh_keylength="SSH key length";
-service.ssh_replace="Replace existing Key(s)";
-service.ssh_download="Download Private Key";
-service.ssh_keyalert="Key generation can take up to 10 minutes or more, so be patient. Apply after Generation.";
-service.ssh_keydownload="The private key is downloaded in OpenSSH format.\nIf you want to use PuTTY, the key must first be converted to a compatible format with PuTTYgen.";
+service.ssh_keylength="Key Length";
+service.ssh_replace="Replace Existing Key(s)";
+service.ssh_download="Download Key";
+service.ssh_keyalert="Be patient, key generation can take up to 10 minutes or more. Click the " + sbutton.apply + " button after generation has completed.";
+service.ssh_keydownload="The private key is downloaded in the OpenSSH format.\nIf you wish to use PuTTY, the key must first be converted to a compatible format with PuTTYgen.";
 
 //radiooff.webservices
 service.radiooff_legend="SES / AOSS / EZ-SETUP / WPS Button";
@@ -2196,7 +2197,7 @@ eoip.tunnel="Tunnel";
 eoip.legend="Ethernet and IP Tunneling";
 eoip.proto="Protocol Type";
 eoip.mtik="Mikrotik";
-eoip.genkey="Generate Key";
+eoip.genkey=service.ssh_keygenerate;
 eoip.wireguard="WireGuard";
 eoip.wireguard_oet_spbr_ip="Source for PBR";
 eoip.wireguard_oet_dpbr_ip="Destination for PBR";

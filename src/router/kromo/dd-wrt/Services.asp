@@ -106,53 +106,53 @@ var update;
 
 addEvent(window, "load", function() {
 	stickControl(<% nvg("sticky_footer"); %>);
-		show_layer_ext(document.setup.tor_enable, 'idtor', <% nvem("tor_enable", "1", "1", "0"); %> == 1);
-		show_layer_ext(document.setup.zabbix_enable, 'idzabbix', <% nvem("zabbix_enable", "1", "1", "0"); %> == 1);
-		show_layer_ext(document.setup.mdns_enable, 'idmdns', <% nvem("mdns_enable", "1", "1", "0"); %> == 1);
-		show_layer_ext(document.setup.sshd_enable, 'idssh', <% nvem("sshd_enable", "1", "1", "0"); %> == 1);
-		show_layer_ext(document.setup.sshd_enable, 'idssh_keyready', <% nvem("sshd_keyready", "1", "1", "0"); %> == 1);
-		show_layer_ext(document.setup.dnsmasq_enable, 'iddnsmasq', <% nvem("dnsmasq_enable", "1", "1", "0"); %> == 1);
-		show_layer_ext(document.setup.kaid_enable, 'idkaid', <% nvem("kaid_enable", "1", "1", "0"); %> == 1);
-		show_layer_ext(document.setup.snmpd_enable, 'idsnmp', <% nvem("snmpd_enable", "1", "1", "0"); %> == 1);
-		show_layer_ext(document.setup.rflow_enable, 'idrflow', <% nvem("rflow_enable", "1", "1", "0"); %> == 1);
-		show_layer_ext(document.setup.macupd_enable, 'idMACupd', <% nvem("macupd_enable", "1", "1", "0"); %> == 1);
-		show_layer_ext(document.setup.pptpd_enable, 'idpptp', <% nvem("pptpd_enable", "1", "1", "0"); %> == 1);
-		show_layer_ext(document.setup.pptpd_client_enable, 'idpptpcli', <% nvem("pptpd_client_enable", "1", "1", "0"); %> == 1);
-		show_layer_ext(document.setup.syslogd_enable, 'idsyslog', <% nvem("syslogd_enable", "1", "1", "0"); %> == 1);
-		show_layer_ext(document.setup.nstx_ipenable, 'idnstxip', <% nvem("nstx_ipenable", "1", "1", "0"); %> == 1);
-		show_layer_ext(document.setup.nstxd_enable, 'idnstx', <% nvem("nstxd_enable", "1", "1", "0"); %> == 1);
-		show_layer_ext(document.setup.oet1_en, 'idoet', <% nvem("oet1_en", "1", "1", "0"); %> == 1);
-		show_layer_ext(document.setup.radiooff_button, 'idradiooff', <% nvem("radiooff_button", "1", "1", "0"); %> == 1);
-		show_layer_ext(document.setup.usb_enable, 'idusb', <% nvem("usb_enable", "1", "1", "0"); %> == 1);
-		show_layer_ext(document.setup.usb_storage, 'idusbstor', <% nvem("usb_storage", "1", "1", "0"); %> == 1);
-		show_layer_ext(document.setup.gps, 'idgps', <% nvem("gps", "1", "1", "0"); %> == 1);
-		show_layer_ext(document.setup.mactelnetd_enable, 'idmactelnetd', <% nvem("mactelnetd_enable", "1", "1", "0"); %> == 1);
-		if (document.setup.dns_crypt) {
-			show_layer_ext(document.setup.dnsmasq_enable, 'iddns_crypt', <% nvem("dns_crypt", "1", "1", "0"); %> == 1);
+	show_layer_ext(document.setup.tor_enable, 'idtor', <% nvem("tor_enable", "1", "1", "0"); %> == 1);
+	show_layer_ext(document.setup.zabbix_enable, 'idzabbix', <% nvem("zabbix_enable", "1", "1", "0"); %> == 1);
+	show_layer_ext(document.setup.mdns_enable, 'idmdns', <% nvem("mdns_enable", "1", "1", "0"); %> == 1);
+	show_layer_ext(document.setup.sshd_enable, 'idssh', <% nvem("sshd_enable", "1", "1", "0"); %> == 1);
+	show_layer_ext(document.setup.sshd_enable, 'idssh_keyready', <% nvem("sshd_keyready", "1", "1", "0"); %> == 1);
+	show_layer_ext(document.setup.dnsmasq_enable, 'iddnsmasq', <% nvem("dnsmasq_enable", "1", "1", "0"); %> == 1);
+	show_layer_ext(document.setup.kaid_enable, 'idkaid', <% nvem("kaid_enable", "1", "1", "0"); %> == 1);
+	show_layer_ext(document.setup.snmpd_enable, 'idsnmp', <% nvem("snmpd_enable", "1", "1", "0"); %> == 1);
+	show_layer_ext(document.setup.rflow_enable, 'idrflow', <% nvem("rflow_enable", "1", "1", "0"); %> == 1);
+	show_layer_ext(document.setup.macupd_enable, 'idMACupd', <% nvem("macupd_enable", "1", "1", "0"); %> == 1);
+	show_layer_ext(document.setup.pptpd_enable, 'idpptp', <% nvem("pptpd_enable", "1", "1", "0"); %> == 1);
+	show_layer_ext(document.setup.pptpd_client_enable, 'idpptpcli', <% nvem("pptpd_client_enable", "1", "1", "0"); %> == 1);
+	show_layer_ext(document.setup.syslogd_enable, 'idsyslog', <% nvem("syslogd_enable", "1", "1", "0"); %> == 1);
+	show_layer_ext(document.setup.nstx_ipenable, 'idnstxip', <% nvem("nstx_ipenable", "1", "1", "0"); %> == 1);
+	show_layer_ext(document.setup.nstxd_enable, 'idnstx', <% nvem("nstxd_enable", "1", "1", "0"); %> == 1);
+	show_layer_ext(document.setup.oet1_en, 'idoet', <% nvem("oet1_en", "1", "1", "0"); %> == 1);
+	show_layer_ext(document.setup.radiooff_button, 'idradiooff', <% nvem("radiooff_button", "1", "1", "0"); %> == 1);
+	show_layer_ext(document.setup.usb_enable, 'idusb', <% nvem("usb_enable", "1", "1", "0"); %> == 1);
+	show_layer_ext(document.setup.usb_storage, 'idusbstor', <% nvem("usb_storage", "1", "1", "0"); %> == 1);
+	show_layer_ext(document.setup.gps, 'idgps', <% nvem("gps", "1", "1", "0"); %> == 1);
+	show_layer_ext(document.setup.mactelnetd_enable, 'idmactelnetd', <% nvem("mactelnetd_enable", "1", "1", "0"); %> == 1);
+	if (document.setup.dns_crypt) {
+		show_layer_ext(document.setup.dnsmasq_enable, 'iddns_crypt', <% nvem("dns_crypt", "1", "1", "0"); %> == 1);
+	}
+	if (document.setup.smartdns) {
+		show_layer_ext(document.setup.dnsmasq_enable, 'idsmartdns', <% nvem("smartdns", "1", "1", "0"); %> == 1);
+	}
+	if (document.setup.lighttpd_enable) {
+		show_layer_ext(document.setup.lighttpd_enable, 'lighttpdconfig', <% nvem("lighttpd_enable", "1", "1", "0"); %> == 1);
+	}
+	if(document.setup.rstats_enable) {
+		rstats_select = '*user';
+		path_input = '<% nvg("rstats_path"); %>';
+		switch (path_input) {
+			case '':
+			case '*nvram':
+			case '/jffs/':
+			case '/tmp/mnt/smbshare/':
+			rstats_select = path_input;
+			break;
 		}
-		if (document.setup.smartdns) {
-			show_layer_ext(document.setup.dnsmasq_enable, 'idsmartdns', <% nvem("smartdns", "1", "1", "0"); %> == 1);
-		}
-		if (document.setup.lighttpd_enable) {
-			show_layer_ext(document.setup.lighttpd_enable, 'lighttpdconfig', <% nvem("lighttpd_enable", "1", "1", "0"); %> == 1);
-		}
-		if(document.setup.rstats_enable) {
-			rstats_select = '*user';
-			path_input = '<% nvg("rstats_path"); %>';
-			switch (path_input) {
-				case '':
-				case '*nvram':
-				case '/jffs/':
-				case '/tmp/mnt/smbshare/':
-				rstats_select = path_input;
-				break;
-			}
-			document.setup.rstats_select.value=rstats_select;
-			(rstats_select == '*user') ? document.setup.u_path.value=path_input : document.setup.u_path.value='';
+		document.setup.rstats_select.value=rstats_select;
+		(rstats_select == '*user') ? document.setup.u_path.value=path_input : document.setup.u_path.value='';
 			
-			setRstatsVal(document.setup);
-			show_layer_ext(document.setup.rstats_enable, 'idrstats', <% nvem("rstats_enable", "1", "1", "0"); %> == 1);
-		}
+		setRstatsVal(document.setup);
+		show_layer_ext(document.setup.rstats_enable, 'idrstats', <% nvem("rstats_enable", "1", "1", "0"); %> == 1);
+	}
 		
 	update = new StatusbarUpdate();
 	update.start();
@@ -212,6 +212,8 @@ addEvent(window, "unload", function() {
 							<dt class="term"><% tran("service.dns_smartdns"); %>:</dt>
 							<dt class="term"><% tran("service.dns_smartdns_use_dns"); %></dt>
 							<dd class="definition"><% tran("hservice.right2"); %></dd>
+							<dt class="term"><% tran("service.ssh_keylegend"); %></dt>
+							<dd class="definition"><% tran("hservice.sshshelp"); %></dd>
 						</dl><br />
 						<a href="javascript:openHelpWindow<% ifdef("EXTHELP","Ext"); %>('HServices.asp');"><% tran("share.more"); %></a>
 					</div>
