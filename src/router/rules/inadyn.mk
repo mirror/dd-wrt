@@ -24,7 +24,7 @@ inadyn-configure:
 		AR_FLAGS="cru $(LTOPLUGIN)" \
 		RANLIB="$(ARCH)-linux-ranlib $(LTOPLUGIN)"
 
-	cd inadynv2/build_ssl && ../configure --prefix=/usr \
+	-cd inadynv2/build_ssl && ../configure --prefix=/usr \
 		--disable-reduced \
 		--enable-ssl \
 		--enable-openssl \
