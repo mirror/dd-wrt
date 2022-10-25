@@ -770,7 +770,8 @@ DLLIMPORT cfg_errfunc_t __export cfg_set_error_function(cfg_t *cfg, cfg_errfunc_
 /** Show a parser error. Any user-defined error reporting function is called.
  * @see cfg_set_error_function
  */
-DLLIMPORT void __export cfg_error(cfg_t *cfg, const char *fmt, ...);
+#define cfg_error(cfg, fmt, ...) do { } while(0)
+//DLLIMPORT void __export cfg_error(cfg_t *cfg, const char *fmt, ...);
 
 /** Returns the option comment
  * @param opt The option structure (eg, as returned from cfg_getopt())
