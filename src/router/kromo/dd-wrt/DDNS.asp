@@ -321,12 +321,13 @@ addEvent(window, "unload", function() {
 									</script></span>
 								</div>
 							</fieldset><br />
+							<% nvsm("ddns_enable","0","<!--"); %>
 							<fieldset class="dark_fs_bg">
 								<legend><% tran("ddns.statu"); %></legend>
 								<div class="setting">
 									<span id="ddns_status"><% show_ddns_status(); %></span>&nbsp;
 								</div>
-								<% nvsm("ddns_enable","0","-->"); %>
+							<% nvsm("ddns_enable","0","-->"); %>
 							</fieldset><br />
 							<div id="footer" class="submitFooter">
 							 <script type="text/javascript">
