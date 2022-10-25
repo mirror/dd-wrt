@@ -97,21 +97,21 @@ addEvent(window, "unload", function() {
 										</script>
 										<option value="6" <% nvsm("ddns_enable", "6", "selected"); %> >3322.org</option>
 										<option value="18" <% nvsm("ddns_enable", "18", "selected"); %> >ChangeIP</option>
-										<option value="20" <% nvsm("ddns_enable", "21", "selected"); %> >Cloudflare</option>
-										<option value="21" <% nvsm("ddns_enable", "22", "selected"); %> >CloudXNS</option>
-										<option value="22" <% nvsm("ddns_enable", "23", "selected"); %> >ddnss.de</option>
-										<option value="23" <% nvsm("ddns_enable", "24", "selected"); %> >DHIS.org</option>
+										<option value="21" <% nvsm("ddns_enable", "21", "selected"); %> >Cloudflare</option>
+										<option value="22" <% nvsm("ddns_enable", "22", "selected"); %> >CloudXNS</option>
+										<option value="23" <% nvsm("ddns_enable", "23", "selected"); %> >ddnss.de</option>
+										<option value="24" <% nvsm("ddns_enable", "24", "selected"); %> >DHIS.org</option>
 										<option value="8" <% nvsm("ddns_enable", "8", "selected"); %> >DNS-O-Matic</option>
-										<option value="24" <% nvsm("ddns_enable", "25", "selected"); %> >DNSExit.com</option>
-										<option value="25" <% nvsm("ddns_enable", "26", "selected"); %> >DNSPod</option>
-										<option value="26" <% nvsm("ddns_enable", "27", "selected"); %> >Duck DNS</option>
+										<option value="25" <% nvsm("ddns_enable", "25", "selected"); %> >DNSExit.com</option>
+										<option value="26" <% nvsm("ddns_enable", "26", "selected"); %> >DNSPod</option>
+										<option value="27" <% nvsm("ddns_enable", "27", "selected"); %> >Duck DNS</option>
 										<option value="11" <% nvsm("ddns_enable", "11", "selected"); %> >duiadns.net</option>
 										<option value="1" <% nvsm("ddns_enable", "1", "selected"); %> >DynDNS.org</option>
 										<option value="17" <% nvsm("ddns_enable", "17", "selected"); %> >Dynu Systems</option>
 										<option value="7" <% nvsm("ddns_enable", "7", "selected"); %> >easyDNS.com</option>
 										<option value="2" <% nvsm("ddns_enable", "2", "selected"); %> >freedns.afraid.org</option>
-										<option value="27" <% nvsm("ddns_enable", "28", "selected"); %> >FreeMyIP</option>
-										<option value="28" <% nvsm("ddns_enable", "29", "selected"); %> >Gira</option>
+										<option value="28" <% nvsm("ddns_enable", "28", "selected"); %> >FreeMyIP</option>
+										<option value="29" <% nvsm("ddns_enable", "29", "selected"); %> >Gira</option>
 										<option value="16" <% nvsm("ddns_enable", "16", "selected"); %> >Google Domains</option>
 										<option value="10" <% nvsm("ddns_enable", "10", "selected"); %> >he.net</option>
 										<option value="15" <% nvsm("ddns_enable", "15", "selected"); %> >Loopia</option>
@@ -119,11 +119,11 @@ addEvent(window, "unload", function() {
 										<option value="14" <% nvsm("ddns_enable", "14", "selected"); %> >nsupdate.info</option>
 										<option value="19" <% nvsm("ddns_enable", "19", "selected"); %> >OVH</option>
 										<option value="9" <% nvsm("ddns_enable", "9", "selected"); %> >selfHOST</option>
-										<option value="29" <% nvsm("ddns_enable", "30", "selected"); %> >Sitelutions</option>
+										<option value="30" <% nvsm("ddns_enable", "30", "selected"); %> >Sitelutions</option>
 										<option value="13" <% nvsm("ddns_enable", "13", "selected"); %> >spDYN</option>
-										<option value="13" <% nvsm("ddns_enable", "20", "selected"); %> >Strato</option>
+										<option value="20" <% nvsm("ddns_enable", "20", "selected"); %> >Strato</option>
 										<option value="12" <% nvsm("ddns_enable", "12", "selected"); %> >tunnelbroker.net</option>
-										<option value="30" <% nvsm("ddns_enable", "31", "selected"); %> >Yandex</option>
+										<option value="31" <% nvsm("ddns_enable", "31", "selected"); %> >Yandex</option>
 										<option value="3" <% nvsm("ddns_enable", "3", "selected"); %> >ZoneEdit.com</option>
 										<script type="text/javascript">
 										//<![CDATA[
