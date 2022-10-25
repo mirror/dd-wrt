@@ -96,10 +96,11 @@ function download_sshkey(F) {
 }
 
 function generate_sshkey(F) {
-	alert(service.ssh_keyalert);
-	F.change_action.value="gozila_cgi";
-	F.submit_type.value = "ssh_downloadkey";
-	apply(F);
+	if (confirm(service.ssh_keyalert) == true) {
+		F.change_action.value="gozila_cgi";
+		F.submit_type.value = "ssh_downloadkey";
+		apply(F);
+	}
 }
 
 var update;
