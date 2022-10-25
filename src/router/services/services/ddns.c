@@ -99,10 +99,12 @@ int init_ddns(FILE * fp)
 		snprintf(_username, sizeof(_username), "%s", "ddns_username");
 		snprintf(_passwd, sizeof(_passwd), "%s", "ddns_passwd");
 		snprintf(_hostname, sizeof(_hostname), "%s", "ddns_hostname");
+		snprintf(_wildcard, sizeof(_hostname), "%s", "ddns_wildcard");
 	} else {
 		snprintf(_username, sizeof(_username), "%s_%d", "ddns_username", flag);
 		snprintf(_passwd, sizeof(_passwd), "%s_%d", "ddns_passwd", flag);
 		snprintf(_hostname, sizeof(_hostname), "%s_%d", "ddns_hostname", flag);
+		snprintf(_wildcard, sizeof(_hostname), "%s_%d", "ddns_wildcard", flag);
 	}
 	if (fp) {
 		if (flag == 5)
@@ -112,7 +114,7 @@ int init_ddns(FILE * fp)
 		fprintf(fp, "username = %s\n", nvram_safe_get(_username));
 		fprintf(fp, "password = %s\n", nvram_safe_get(_passwd));
 		fprintf(fp, "hostname = %s\n", nvram_safe_get(_hostname));
-		if (nvram_nmatch("1", "ddns_wildcard_%d", flag))
+		if (nvram_match(_wildcard, "1"))
 			fprintf(fp, "wildcard = true\n");
 		if (flag == 5) {
 			fprintf(fp, "ddns-server = %s\n", nvram_safe_get("ddns_url"));
