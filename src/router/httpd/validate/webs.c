@@ -5693,16 +5693,14 @@ void ddns_save_value(webs_t wp)
 		sprintf(_username, "ddns_username_%d", i);
 		sprintf(_passwd, "ddns_passwd_%d", i);
 		sprintf(_hostname, "ddns_hostname_%d", i);
-		sprintf(_hostname, "ddns_ssl_%d", i);
 		nvram_unset(_username);
 		nvram_unset(_passwd);
 		nvram_unset(_hostname);
-		nvram_unset(_ssl);
 	}
 	sprintf(_username, "ddns_username_%d", enable);
 	sprintf(_passwd, "ddns_passwd_%d", enable);
 	sprintf(_hostname, "ddns_hostname_%d", enable);
-	sprintf(_ssl, "ddns_ssl_%d", enable);
+	sprintf(_ssl, "ddns_ssl", enable);
 
 	switch (enable) {
 	case 0:
