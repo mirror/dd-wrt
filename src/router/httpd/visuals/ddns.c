@@ -54,7 +54,7 @@ EJ_VISIBLE void ej_get_ddns_value(webs_t wp, int argc, char_t ** argv)
 	if (argc == 0)
 		return;
 	if (!strcmp(enable, "1"))
-		websWrite(wp, "%s", nvram_safe_get("%s", argv[0]));
+		websWrite(wp, "%s", nvram_safe_get(argv[0]));
 	else
 		websWrite(wp, "%s", nvram_nget("%s_%s", argv[0], enable));
 	return;
