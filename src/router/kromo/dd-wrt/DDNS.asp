@@ -310,6 +310,7 @@ addEvent(window, "unload", function() {
 								<% nvsm("ddns_enable","0","-->"); %>
 
 							</fieldset><br />
+							<% nvsm("ddns_enable","0","<!--"); %>
 							<fieldset>
 								<legend><% tran("share.option"); %></legend>
 								<div class="setting">
@@ -323,6 +324,7 @@ addEvent(window, "unload", function() {
 									</script></span>
 								</div>
 							</fieldset><br />
+							<% nvsm("ddns_enable","0","-->"); %>
 							<% nvsm("ddns_enable","0","<!--"); %>
 							<fieldset class="dark_fs_bg">
 								<legend><% tran("ddns.statu"); %></legend>
