@@ -5673,16 +5673,7 @@ static void getddns_userdata(int enable, char *_username, char *_passwd, char *_
 		sprintf(_passwd, "ddns_passwd");
 		sprintf(_hostname, "ddns_hostname");
 		break;
-	case 2:
-	case 3:		// zoneedit
-	case 4:		// no-ip
-	case 5:
-	case 6:
-	case 7:
-	case 8:		// tzo
-	case 9:		// dynSIP
-	case 10:		// dtdns
-	case 11:		//duiadns
+	default:
 		// 3322 dynamic : added botho 30/07/06
 		// easydns
 		sprintf(_username, "ddns_username_%d", enable);
@@ -5710,13 +5701,12 @@ void ddns_save_value(webs_t wp)
 	char _wan_ip[] = "ddns_wan_ip";
 
 	int enable = websGetVari(wp, "ddns_enable", -1);
-	if (enable > 11 || enable < 0) {
+	if (enable > 30 || enable < 0) {
 		return;
 	}
-	int gethash = 0;
 
 	int i;
-	for (i = 1; i < 12; i++) {
+	for (i = 1; i < 31; i++) {
 		if (i == enable)
 			continue;
 		getddns_userdata(i, _username, _passwd, _hostname);
@@ -5737,10 +5727,6 @@ void ddns_save_value(webs_t wp)
 
 		snprintf(_dyndnstype, sizeof(_dyndnstype), "ddns_dyndnstype");
 		snprintf(_wildcard, sizeof(_wildcard), "ddns_wildcard");
-		break;
-	case 2:
-		// afraid
-		gethash = 1;
 		break;
 	case 5:
 		// custom
@@ -5783,20 +5769,7 @@ void ddns_save_value(webs_t wp)
 	if (strcmp(passwd, TMP_PASSWD)) {
 		nvram_set(_passwd, passwd);
 	}
-	if (gethash && !strchr(hostname, ',')) {
-		char hostn[128];
-		char *hash = request_freedns(username, nvram_safe_get(_passwd));
-
-		if (hash) {
-			sprintf(hostn, "%s,%s", hostname, hash);
-			nvram_set(_hostname, hostn);
-			debug_free(hash);
-		} else {
-			nvram_set(_hostname, "User/Password wrong");
-		}
-	} else
-		nvram_set(_hostname, hostname);
-
+	nvram_set(_hostname, hostname);
 	nvram_set(_dyndnstype, dyndnstype);
 	nvram_set(_wildcard, wildcard);
 	nvram_set(_custom, custom);
