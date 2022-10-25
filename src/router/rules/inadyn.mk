@@ -17,6 +17,7 @@ inadyn-configure:
 	cd inadynv2/build && ../configure --prefix=/usr \
 		--enable-reduced \
 		--disable-ssl \
+		--localstatedir=/tmp \
 		--host=$(ARCH)-linux-elf \
 		CFLAGS="$(COPTS) $(MIPS16_OPT) $(LTO) -ffunction-sections -fdata-sections -Wl,--gc-sections" \
 		confuse_CFLAGS="-I$(TOP)/inadynv2/libconfuse/src" \
@@ -28,6 +29,7 @@ inadyn-configure:
 		--disable-reduced \
 		--enable-ssl \
 		--enable-openssl \
+		--localstatedir=/tmp \
 		--host=$(ARCH)-linux-elf \
 		CFLAGS="$(COPTS) $(MIPS16_OPT) $(LTO) -ffunction-sections -fdata-sections -Wl,--gc-sections" \
 		OpenSSL_CFLAGS="-I$(TOP)/openssl/include" \
