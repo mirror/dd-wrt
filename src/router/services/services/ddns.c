@@ -126,7 +126,7 @@ int init_ddns(FILE * fp)
 			fprintf(fp, "ddns-path = %s\n", nvram_safe_get("ddns_conf"));
 		}
 		if (nvram_match("ddns_wan_ip", "1")) {
-			fprintf(fp, "checkip-command = /sbin/service checkwanip main\n");
+			fprintf(fp, "checkip-command = \"/sbin/service checkwanip main\"\n");
 		}
 		fprintf(fp, "}\n");
 	}
