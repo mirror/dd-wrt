@@ -96,18 +96,17 @@ int init_ddns(FILE * fp)
 		"default@pdd.yandex.ru",
 	};
 	char *provider = providers[flag];
+	snprintf(_ssl, sizeof(_hostname), "%s", "ddns_ssl");
 	if (flag == 1) {
 		snprintf(_username, sizeof(_username), "%s", "ddns_username");
 		snprintf(_passwd, sizeof(_passwd), "%s", "ddns_passwd");
 		snprintf(_hostname, sizeof(_hostname), "%s", "ddns_hostname");
 		snprintf(_wildcard, sizeof(_hostname), "%s", "ddns_wildcard");
-		snprintf(_ssl, sizeof(_hostname), "%s", "ddns_ssl");
 	} else {
 		snprintf(_username, sizeof(_username), "%s_%d", "ddns_username", flag);
 		snprintf(_passwd, sizeof(_passwd), "%s_%d", "ddns_passwd", flag);
 		snprintf(_hostname, sizeof(_hostname), "%s_%d", "ddns_hostname", flag);
 		snprintf(_wildcard, sizeof(_hostname), "%s_%d", "ddns_wildcard", flag);
-		snprintf(_ssl, sizeof(_hostname), "%s_%d", "ddns_ssl", flag);
 	}
 	if (fp) {
 		if (flag == 5)
@@ -118,7 +117,7 @@ int init_ddns(FILE * fp)
 		fprintf(fp, "password = %s\n", nvram_safe_get(_passwd));
 		fprintf(fp, "hostname = %s\n", nvram_safe_get(_hostname));
 #ifdef HAVE_OPENSSL
-		fprintf(fp, "ssl = %s\n", nvram_match(_ssl, "1")?"true":"false");
+		fprintf(fp, "ssl = %s\n", nvram_match(_ssl, "1") ? "true" : "false");
 #endif
 		if (nvram_match(_wildcard, "1"))
 			fprintf(fp, "wildcard = true\n");
@@ -138,7 +137,7 @@ void start_ddns(void)
 {
 	int ret;
 	FILE *fp;
-	
+
 	nvram_set("ddns_status", "0");
 
 	/*
@@ -153,11 +152,9 @@ void start_ddns(void)
 	    strcmp(nvram_safe_get("ddns_username_buf"), nvram_safe_get(_username)) ||
 	    strcmp(nvram_safe_get("ddns_passwd_buf"), nvram_safe_get(_passwd)) ||
 	    strcmp(nvram_safe_get("ddns_hostname_buf"), nvram_safe_get(_hostname)) ||
-	    strcmp(nvram_safe_get("ddns_wildcard_buf"), nvram_safe_get(_wildcard)) ||
-	    strcmp(nvram_safe_get("ddns_url_buf"), nvram_safe_get(_url)) || 
-	    strcmp(nvram_safe_get("ddns_conf_buf"), nvram_safe_get(_conf)) || 
+	    strcmp(nvram_safe_get("ddns_wildcard_buf"), nvram_safe_get(_wildcard)) || strcmp(nvram_safe_get("ddns_url_buf"), nvram_safe_get(_url)) || strcmp(nvram_safe_get("ddns_conf_buf"), nvram_safe_get(_conf)) ||
 #ifdef HAVE_OPENSSL
-	    strcmp(nvram_safe_get("ddns_ssl_buf"), nvram_safe_get(_ssl)) || 
+	    strcmp(nvram_safe_get("ddns_ssl_buf"), nvram_safe_get(_ssl)) ||
 #endif
 	    strcmp(nvram_safe_get("ddns_custom_buf"), nvram_safe_get("ddns_custom_5"))) {
 		/*
