@@ -135,16 +135,16 @@ addEvent(window, "unload", function() {
 								<% nvsm("ddns_enable","5","<!--"); %>
 								<div class="setting">
 									<div class="label"><% tran("share.usrname"); %></div>
-									<input name="ddns_username" size="35" maxlength="64" onblur="valid_name(this,share.usrname)" value="<% nvg("ddns_username"); %>" />
+									<input name="ddns_username" size="35" maxlength="64" onblur="valid_name(this,share.usrname)" value="<% get_ddns_value("ddns_username"); %>" />
 								</div>
 								<div class="setting">
 		  							<div class="label"><% tran("share.passwd"); %></div>
-									<input type="password" autocomplete="new-password" id="ddns_passwd" name="ddns_passwd" size="35" maxlength="64" onblur="valid_name(this,share.passwd)" value="<% nvg("ddns_passwd"); %>" />&nbsp;&nbsp;&nbsp;
+									<input type="password" autocomplete="new-password" id="ddns_passwd" name="ddns_passwd" size="35" maxlength="64" onblur="valid_name(this,share.passwd)" value="<% get_ddns_value("ddns_passwd"); %>" />&nbsp;&nbsp;&nbsp;
 									<input type="checkbox" name="ddns_passwd_unmask" value="0" onclick="setElementMask('ddns_passwd', this.checked)" >&nbsp;<% tran("share.unmask"); %></input>
 								</div>			
 								<div class="setting">
 									<div class="label"><% tran("share.hostname"); %></div>
-									<input name="ddns_hostname" size="35" maxlength="99" onblur="valid_hostname(this,share.hostname)" value="<% nvg("ddns_hostname"); %>" />
+									<input name="ddns_hostname" size="35" maxlength="99" onblur="valid_hostname(this,share.hostname)" value="<% get_ddns_value("ddns_hostname"); %>" />
 								</div>
 								<% nvsm("ddns_enable","5","-->"); %>
 
@@ -169,7 +169,7 @@ addEvent(window, "unload", function() {
 								<% nvsm("ddns_enable","31","<!--"); %>
 								<div class="setting">
 									<div class="label"><% tran("ddns.wildcard"); %></div>
-									<input type="checkbox" value="1" name="ddns_wildcard" <% nvc("ddns_wildcard", "1"); %> />
+									<input type="checkbox" value="1" name="ddns_wildcard" <% ddns_checked("ddns_wildcard", "1"); %> />
 								</div>
 								<% nvsm("ddns_enable","0","-->"); %>
 								<% nvsm("ddns_enable","2","-->"); %>
@@ -224,20 +224,20 @@ addEvent(window, "unload", function() {
 								<% nvsm("ddns_enable","31","<!--"); %>
 								<div class="setting">
 									<div class="label"><% tran("ddns.system"); %></div>
-									<input name="ddns_custom" size="35" maxlength="32" value="<% nvg("ddns_custom"); %>" />
+									<input name="ddns_custom" size="35" maxlength="32" value="<% get_ddns_value("ddns_custom"); %>" />
 								</div>
 								<div class="setting">
 									<div class="label"><% tran("share.usrname"); %></div>
-									<input name="ddns_username" size="35" maxlength="64" onblur="valid_name(this,share.usrname)" value="<% nvg("ddns_username"); %>" />
+									<input name="ddns_username" size="35" maxlength="64" onblur="valid_name(this,share.usrname)" value="<% get_ddns_value("ddns_username"); %>" />
 								</div>
 								<div class="setting">
 									<div class="label"><% tran("share.passwd"); %></div>
-									<input type="password" autocomplete="new-password" id="ddns_passwd" name="ddns_passwd" size="35" maxlength="32" onblur="valid_name(this,share.passwd)" value="<% nvg("ddns_passwd"); %>" />&nbsp;&nbsp;&nbsp;
+									<input type="password" autocomplete="new-password" id="ddns_passwd" name="ddns_passwd" size="35" maxlength="32" onblur="valid_name(this,share.passwd)" value="<% get_ddns_value("ddns_passwd"); %>" />&nbsp;&nbsp;&nbsp;
 									<input type="checkbox" name="ddns_passwd_unmask" value="0" onclick="setElementMask('ddns_passwd', this.checked)" >&nbsp;<% tran("share.unmask"); %></input>
 								</div>
 								<div class="setting">
 									<div class="label"><% tran("share.hostname"); %></div>
-									<input name="ddns_hostname" size="35" onblur="valid_hostname(this,share.hostname)" value="<% nvg("ddns_hostname"); %>" />
+									<input name="ddns_hostname" size="35" onblur="valid_hostname(this,share.hostname)" value="<% get_ddns_value("ddns_hostname"); %>" />
 								</div>
 								<div class="setting">
 									<div class="label">URL</div>
