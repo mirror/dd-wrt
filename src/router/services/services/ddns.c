@@ -59,51 +59,43 @@ int init_ddns(FILE * fp)
 {
 
 	int flag = nvram_geti("ddns_enable");
-
-	if (fp) {
-		switch (flag) {
-		case 0:	// ddns disabled
-			return -1;
-			break;
-		case 1:
-			fprintf(fp, "provider default@dyndns.org {\n");
-			break;
-		case 2:
-			fprintf(fp, "provider default@freedns.afraid.org {\n");
-			break;
-		case 3:
-			fprintf(fp, "provider default@zoneedit.com	 {\n");
-			break;
-		case 4:
-			fprintf(fp, "provider default@no-ip.com	 {\n");
-			break;
-		case 5:
-			fprintf(fp, "custom namecheap {\n");
-			break;
-		case 6:
-			fprintf(fp, "provider dyndns@3322.org {\n");
-			break;
-		case 7:
-			fprintf(fp, "provider default@easydns.com {\n");
-			break;
-		case 8:
-			fprintf(fp, "provider default@dnsomatic.com {\n");
-			break;
-		case 9:
-			fprintf(fp, "provider default@selfhost.de {\n");
-			break;
-		case 10:
-			fprintf(fp, "provider default@he.net {\n");
-			break;
-		case 11:
-			fprintf(fp, "provider default@duiadns.net {\n");
-
-			break;
-
-		default:
-			return -1;
-		}
-	}
+	if (flag > 31 || flag < 1)
+		return -1;
+	char *providers[] = {
+		NULL,
+		"default@dyndns.org",
+		"default@freedns.afraid.org",
+		"default@zoneedit.com",
+		"default@no-ip.com",
+		NULL,
+		"dyndns@3322.org",
+		"default@easydns.com",
+		"default@dnsomatic.com",
+		"default@selfhost.de",
+		"dyndns@he.net",
+		"default@duiadns.net",
+		"default@tunnelbroker.net",
+		"default@spdyn.de",
+		"ipv4@nsupdate.info",
+		"default@loopia.com",
+		"default@domains.google.com",
+		"default@dynu.com",
+		"default@changeip.com",
+		"default@ovh.com",
+		"default@strato.com",
+		"default@cloudflare.com",
+		"default@cloudxns.com",
+		"default@ddnss.de",
+		"default@dhis.org",
+		"default@dnsexit.com",
+		"default@dnspod.cn",
+		"default@duckdns.org",
+		"default@freemyip.com",
+		"default@gira.de",
+		"default@sitelutions.com",
+		"default@pdd.yandex.ru",
+	};
+	char *provider = providers[flag];
 	if (flag == 1) {
 		snprintf(_username, sizeof(_username), "%s", "ddns_username");
 		snprintf(_passwd, sizeof(_passwd), "%s", "ddns_passwd");
@@ -118,6 +110,10 @@ int init_ddns(FILE * fp)
 		}
 	} else {
 		if (fp) {
+			if (flag == 5)
+				fprintf(fp, "custom namecheap {\n");
+			else
+				fprintf(fp, "provider %s {\n", provider);
 			fprintf(fp, "username = %s\n", nvram_nget("ddns_username_%d", flag));
 			fprintf(fp, "password = %s\n", nvram_nget("ddns_passwd_%d", flag));
 			fprintf(fp, "hostname = %s\n", nvram_nget("ddns_hostname_%d", flag));
@@ -149,31 +145,15 @@ void start_ddns(void)
 
 	mkdir("/tmp/ddns", 0744);
 
-	if (strcmp(nvram_safe_get("ddns_enable_buf"), nvram_safe_get("ddns_enable")) ||	// ddns 
-	    // mode 
-	    // change
-	    strcmp(nvram_safe_get("ddns_username_buf"), nvram_safe_get(_username)) ||	// ddns 
-	    // username 
-	    // chane
-	    strcmp(nvram_safe_get("ddns_passwd_buf"), nvram_safe_get(_passwd)) ||	// ddns 
-	    // password 
-	    // change
-	    strcmp(nvram_safe_get("ddns_hostname_buf"), nvram_safe_get(_hostname)) ||	// ddns 
-	    // hostname 
-	    // change
-	    strcmp(nvram_safe_get("ddns_dyndnstype_buf"), nvram_safe_get(_dyndnstype)) ||	// ddns 
-	    // dyndnstype 
-	    // change
-	    strcmp(nvram_safe_get("ddns_wildcard_buf"), nvram_safe_get(_wildcard)) ||	// ddns 
-	    // wildcard 
-	    // change
-	    strcmp(nvram_safe_get("ddns_url_buf"), nvram_safe_get(_url)) ||	// ddns 
-	    // url 
-	    // change
-	    strcmp(nvram_safe_get("ddns_conf_buf"), nvram_safe_get(_conf)) ||	// ddns 
-	    // conf 
-	    // change
-	    strcmp(nvram_safe_get("ddns_custom_5_buf"), nvram_safe_get("ddns_custom_5"))) {
+	if (strcmp(nvram_safe_get("ddns_enable_buf"), nvram_safe_get("ddns_enable")) ||
+	    strcmp(nvram_safe_get("ddns_username_buf"), nvram_safe_get(_username)) ||
+	    strcmp(nvram_safe_get("ddns_passwd_buf"), nvram_safe_get(_passwd)) ||
+	    strcmp(nvram_safe_get("ddns_hostname_buf"), nvram_safe_get(_hostname)) ||
+	    strcmp(nvram_safe_get("ddns_dyndnstype_buf"), nvram_safe_get(_dyndnstype)) ||
+	    strcmp(nvram_safe_get("ddns_wildcard_buf"), nvram_safe_get(_wildcard)) ||
+	    strcmp(nvram_safe_get("ddns_url_buf"), nvram_safe_get(_url)) ||
+	    strcmp(nvram_safe_get("ddns_conf_buf"), nvram_safe_get(_conf)) ||
+	    strcmp(nvram_safe_get("ddns_custom_buf"), nvram_safe_get("ddns_custom"))) {
 		/*
 		 * If the user changed anything in the GUI, delete all cache and log 
 		 */
@@ -189,11 +169,11 @@ void start_ddns(void)
 	 */
 	if ((fp = fopen("/tmp/ddns/inadyn.conf", "w"))) {
 		if (nvram_matchi("ddns_enable", 7))
-			fprintf(fp, "period %s\n", "900");	// check ip
+			fprintf(fp, "period %s\n", "900");
 		else
-			fprintf(fp, "period %s\n", "600");	// check ip
-		fprintf(fp, "forced-update %d\n", nvram_geti("ddns_force") * 24 * 60 * 60);	// force 
-		fprintf(fp, "cache-dir %s\n", "/tmp/ddns");	// cache dir
+			fprintf(fp, "period %s\n", "600");
+		fprintf(fp, "forced-update %d\n", nvram_geti("ddns_force") * 24 * 60 * 60);
+		fprintf(fp, "cache-dir %s\n", "/tmp/ddns");
 		if (init_ddns(fp) < 0)
 			return;
 
@@ -208,9 +188,9 @@ void start_ddns(void)
 				fprintf(fp, " --wildcard");
 		}
 		if (nvram_matchi("ddns_enable", 7))
-			fprintf(fp, " --update_period_sec %s", "900");	// check ip
+			fprintf(fp, " --update_period_sec %s", "900");	
 		else
-			fprintf(fp, " --update_period_sec %s", "600");	// check ip
+			fprintf(fp, " --update_period_sec %s", "600");	
 		fprintf(fp, " --forced_update_period %d", nvram_geti("ddns_force") * 24 * 60 * 60);	// force 
 		fprintf(fp, " --log_file %s", "/tmp/ddns/ddns.log");	// log to
 		fprintf(fp, " --cache_dir %s", "/tmp/ddns");	// cache dir
@@ -238,7 +218,8 @@ void start_ddns(void)
 		nvram2file("ddns_cache", "/tmp/ddns/inadyn_ip.cache");
 		nvram2file("ddns_time", "/tmp/ddns/inadyn_time.cache");
 	}
-	dd_logstart("ddns", eval("inadyn", "-e", "ddns_success", "--exec-mode=compat", "-f", "/tmp/ddns/inadyn.conf"));
+	dd_logstart("ddns",
+		    eval("inadyn", "-e", "ddns_success", "--exec-mode=compat", "-f", "/tmp/ddns/inadyn.conf"));
 
 	cprintf("done\n");
 
