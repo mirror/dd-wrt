@@ -10,7 +10,11 @@ inadyn-configure:
 	$(MAKE) -C inadynv2/libconfuse
 
 	cd inadynv2 && ./autogen.sh
-	cd inadynv2 && ./configure --prefix=/usr \
+
+	mkdir -p $(TOP)/inadynv2/build
+	mkdir -p $(TOP)/inadynv2/build_ssl
+	
+	cd inadynv2/build && ../configure --prefix=/usr \
 		--enable-reduced \
 		--disable-ssl \
 		--host=$(ARCH)-linux-elf \
@@ -20,20 +24,38 @@ inadyn-configure:
 		AR_FLAGS="cru $(LTOPLUGIN)" \
 		RANLIB="$(ARCH)-linux-ranlib $(LTOPLUGIN)"
 
-	$(MAKE) -C inadynv2
-
+	cd inadynv2/build_ssl && ../configure --prefix=/usr \
+		--disable-reduced \
+		--enable-ssl \
+		--enable-openssl \
+		--host=$(ARCH)-linux-elf \
+		CFLAGS="$(COPTS) $(MIPS16_OPT) $(LTO) -ffunction-sections -fdata-sections -Wl,--gc-sections" \
+		OpenSSL_CFLAGS="-I$(TOP)/openssl/include" \
+		OpenSSL_LIBS="-L$(TOP)/openssl -lssl -lcrypto" \
+		confuse_CFLAGS="-I$(TOP)/inadynv2/libconfuse/src" \
+		confuse_LIBS="-L$(TOP)/inadynv2/libconfuse/src/.libs -lconfuse" \
+		AR_FLAGS="cru $(LTOPLUGIN)" \
+		RANLIB="$(ARCH)-linux-ranlib $(LTOPLUGIN)"
 
 inadyn:
 	$(MAKE) -C inadynv2/libconfuse
-	$(MAKE) -C inadynv2
+ifeq ($(CONFIG_OPENSSL),y)
+	$(MAKE) -C inadynv2/build_ssl
+else
+	$(MAKE) -C inadynv2/build
+endif
 
 inadyn-install:
-	install -D inadynv2/src/inadyn $(INSTALLDIR)/inadyn/usr/sbin/inadyn
-	$(STRIP) $(INSTALLDIR)/inadyn/usr/sbin/inadyn
+ifeq ($(CONFIG_OPENSSL),y)
+	install -D inadynv2/build_ssl/src/inadyn $(INSTALLDIR)/inadyn/usr/sbin/inadyn
+else
+	install -D inadynv2/build/src/inadyn $(INSTALLDIR)/inadyn/usr/sbin/inadyn
+endif
 
 inadyn-clean:
 	$(MAKE) -C inadynv2/libconfuse clean
-	$(MAKE) -C inadynv2 clean
+	$(MAKE) -C inadynv2/build_ssl clean
+	$(MAKE) -C inadynv2/build clean
 
 
 
