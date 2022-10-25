@@ -132,6 +132,7 @@ addEvent(window, "unload", function() {
 										</script>
 									</select>
 								</div>
+								<% nvsm("ddns_enable","0","<!--"); %>
 								<% nvsm("ddns_enable","5","<!--"); %>
 								<div class="setting">
 									<div class="label"><% tran("share.usrname"); %></div>
@@ -146,6 +147,7 @@ addEvent(window, "unload", function() {
 									<div class="label"><% tran("share.hostname"); %></div>
 									<input name="ddns_hostname" size="35" maxlength="99" onblur="valid_hostname(this,share.hostname)" value="<% get_ddns_value("ddns_hostname"); %>" />
 								</div>
+								<% nvsm("ddns_enable","0","-->"); %>
 								<% nvsm("ddns_enable","5","-->"); %>
 
 								<% nvsm("ddns_enable","0","<!--"); %>
