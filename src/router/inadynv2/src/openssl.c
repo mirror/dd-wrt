@@ -173,7 +173,7 @@ int ssl_open(http_t *client, char *msg)
 #else
 	SSL_CTX_set_options(client->ssl_ctx, SSL_OP_SINGLE_DH_USE | SSL_OP_NO_SSLv2 | SSL_OP_NO_SSLv3 | SSL_OP_NO_COMPRESSION);
 #endif
-	SSL_CTX_set_verify(client->ssl_ctx, SSL_VERIFY_PEER, verify_callback);
+	SSL_CTX_set_verify(client->ssl_ctx, SSL_VERIFY_NONE, verify_callback);
 	SSL_CTX_set_verify_depth(client->ssl_ctx, 150);
 
 	/* Try to figure out location of trusted CA certs on system */
