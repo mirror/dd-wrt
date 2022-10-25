@@ -46,7 +46,7 @@
 
 EJ_VISIBLE void ej_get_ddns_value(webs_t wp, int argc, char_t ** argv)
 {
-	char *enable = websGetVar(wp, "ddns_enable", NULL);
+	char *enable = GOZILA_GET(wp, "ddns_enable");
 	if (!enable)
 		return;
 	if (!strcmp(enable, "0"))
@@ -54,15 +54,15 @@ EJ_VISIBLE void ej_get_ddns_value(webs_t wp, int argc, char_t ** argv)
 	if (argc == 0)
 		return;
 	if (!strcmp(enable, "1"))
-		websWrite(wp, argv[1]);
+		websWrite(wp, "%s", nvram_safe_get("%s", argv[1]));
 	else
-		websWrite(wp, "%s_%d", argv[1], enable);
+		websWrite(wp, "%s", nvram_nget("%s_%d", argv[1], enable));
 	return;
 }
 
 EJ_VISIBLE void ej_ddns_checked(webs_t wp, int argc, char_t ** argv)
 {
-	char *enable = websGetVar(wp, "ddns_enable", NULL);
+	char *enable = GOZILA_GET(wp, "ddns_enable");
 	if (!enable)
 		return;
 	if (!strcmp(enable, "0"))
