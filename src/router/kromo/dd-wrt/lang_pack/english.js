@@ -628,6 +628,7 @@ ddns.options="Additional Options";
 ddns.forceupd="Force Update Interval";
 ddns.wanip="Use External IP Check";
 ddns.hlp="DDNS Service";
+ddns.ssl="Use SSL";
 
 var ddnsm=new Object();
 ddnsm.all_closed="The DDNS server is currently closed";
