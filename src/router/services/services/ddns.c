@@ -65,53 +65,29 @@ int init_ddns(FILE * fp)
 		case 0:	// ddns disabled
 			return -1;
 			break;
-
 		case 1:
-//                      if (nvram_matchi("ddns_dyndnstype", 2))
-//                              fprintf(fp, "provider statdns@dyndns.org {\n");
-//                      else if (nvram_matchi("ddns_dyndnstype", 3))
-//                              fprintf(fp, "provider custom@dyndns.org {\n");
-//                      else
 			fprintf(fp, "provider default@dyndns.org {\n");
-
-//              snprintf(_dyndnstype, sizeof(_dyndnstype), "%s", "ddns_dyndnstype");
 			break;
-
 		case 2:
 			fprintf(fp, "provider default@freedns.afraid.org {\n");
-
 			break;
-
 		case 3:
-
 			fprintf(fp, "provider default@zoneedit.com	 {\n");
 			break;
-
 		case 4:
-
 			fprintf(fp, "provider default@no-ip.com	 {\n");
 			break;
-
 		case 5:
 			fprintf(fp, "custom namecheap {\n");
 			break;
-
 		case 6:
-
 			fprintf(fp, "provider dyndns@3322.org {\n");
-			//???
-//              snprintf(_dyndnstype, sizeof(_dyndnstype), "%s", "ddns_dyndnstype_6");
 			break;
-
 		case 7:
-
 			fprintf(fp, "provider default@easydns.com {\n");
-
 			break;
-
 		case 8:
 			fprintf(fp, "provider default@dnsomatic.com {\n");
-
 			break;
 		case 9:
 			fprintf(fp, "provider default@selfhost.de {\n");
@@ -120,7 +96,6 @@ int init_ddns(FILE * fp)
 			fprintf(fp, "provider default@he.net {\n");
 			break;
 		case 11:
-
 			fprintf(fp, "provider default@duiadns.net {\n");
 
 			break;
