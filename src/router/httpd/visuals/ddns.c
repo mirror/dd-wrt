@@ -67,7 +67,7 @@ EJ_VISIBLE void ej_ddns_checked(webs_t wp, int argc, char_t ** argv)
 		return;
 	if (!strcmp(enable, "0"))
 		return;
-	if (argc == 0)
+	if (argc < 2)
 		return;
 	if (!strcmp(enable, "1")) {
 		if (nvram_match(argv[0], argv[1])) {
