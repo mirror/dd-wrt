@@ -100,35 +100,29 @@ int init_ddns(FILE * fp)
 		snprintf(_username, sizeof(_username), "%s", "ddns_username");
 		snprintf(_passwd, sizeof(_passwd), "%s", "ddns_passwd");
 		snprintf(_hostname, sizeof(_hostname), "%s", "ddns_hostname");
-		if (fp) {
-			fprintf(fp, "provider %s {\n", provider);
-			fprintf(fp, "username = %s\n", nvram_safe_get("ddns_username"));
-			fprintf(fp, "password = %s\n", nvram_safe_get("ddns_passwd"));
-			fprintf(fp, "hostname = %s\n", nvram_safe_get("ddns_hostname"));
-			if (nvram_match("ddns_wildcard", "1"))
-				fprintf(fp, "wildcard = true\n");
-			fprintf(fp, "}\n");
-		}
 	} else {
-		if (fp) {
-			if (flag == 5)
-				fprintf(fp, "custom namecheap {\n");
-			else
-				fprintf(fp, "provider %s {\n", provider);
-			fprintf(fp, "username = %s\n", nvram_nget("ddns_username_%d", flag));
-			fprintf(fp, "password = %s\n", nvram_nget("ddns_passwd_%d", flag));
-			fprintf(fp, "hostname = %s\n", nvram_nget("ddns_hostname_%d", flag));
-			if (nvram_nmatch("1", "ddns_wildcard_%d", flag))
-				fprintf(fp, "wildcard = true\n");
-			if (flag == 5) {
-				fprintf(fp, "ddns-server = %s\n", nvram_safe_get("ddns_url"));
-				fprintf(fp, "ddns-path = %s\n", nvram_safe_get("ddns_conf"));
-			}
-			fprintf(fp, "}\n");
-		}
 		snprintf(_username, sizeof(_username), "%s_%d", "ddns_username", flag);
 		snprintf(_passwd, sizeof(_passwd), "%s_%d", "ddns_passwd", flag);
 		snprintf(_hostname, sizeof(_hostname), "%s_%d", "ddns_hostname", flag);
+	}
+	if (fp) {
+		if (flag == 5)
+			fprintf(fp, "custom namecheap {\n");
+		else
+			fprintf(fp, "provider %s {\n", provider);
+		fprintf(fp, "username = %s\n", nvram_safe_get(_username));
+		fprintf(fp, "password = %s\n", nvram_safe_get(_passwd));
+		fprintf(fp, "hostname = %s\n", nvram_safe_get(_hostname));
+		if (nvram_nmatch("1", "ddns_wildcard_%d", flag))
+			fprintf(fp, "wildcard = true\n");
+		if (flag == 5) {
+			fprintf(fp, "ddns-server = %s\n", nvram_safe_get("ddns_url"));
+			fprintf(fp, "ddns-path = %s\n", nvram_safe_get("ddns_conf"));
+		}
+		if (nvram_match("ddns_wan_ip", "1")) {
+			fprintf(fp, "checkip-command = /sbin/service checkwanip main\n");
+		}
+		fprintf(fp, "}\n");
 	}
 	return 0;
 }
@@ -152,9 +146,7 @@ void start_ddns(void)
 	    strcmp(nvram_safe_get("ddns_hostname_buf"), nvram_safe_get(_hostname)) ||
 	    strcmp(nvram_safe_get("ddns_dyndnstype_buf"), nvram_safe_get(_dyndnstype)) ||
 	    strcmp(nvram_safe_get("ddns_wildcard_buf"), nvram_safe_get(_wildcard)) ||
-	    strcmp(nvram_safe_get("ddns_url_buf"), nvram_safe_get(_url)) ||
-	    strcmp(nvram_safe_get("ddns_conf_buf"), nvram_safe_get(_conf)) ||
-	    strcmp(nvram_safe_get("ddns_custom_buf"), nvram_safe_get("ddns_custom_5"))) {
+	    strcmp(nvram_safe_get("ddns_url_buf"), nvram_safe_get(_url)) || strcmp(nvram_safe_get("ddns_conf_buf"), nvram_safe_get(_conf)) || strcmp(nvram_safe_get("ddns_custom_buf"), nvram_safe_get("ddns_custom_5"))) {
 		/*
 		 * If the user changed anything in the GUI, delete all cache and log 
 		 */
@@ -219,8 +211,7 @@ void start_ddns(void)
 		nvram2file("ddns_cache", "/tmp/ddns/inadyn_ip.cache");
 		nvram2file("ddns_time", "/tmp/ddns/inadyn_time.cache");
 	}
-	dd_logstart("ddns",
-		    eval("inadyn", "-e", "ddns_success", "--exec-mode=compat", "-f", "/tmp/ddns/inadyn.conf"));
+	dd_logstart("ddns", eval("inadyn", "-e", "ddns_success", "--exec-mode=compat", "-f", "/tmp/ddns/inadyn.conf"));
 
 	cprintf("done\n");
 
@@ -238,6 +229,30 @@ void stop_ddns(void)
 	cprintf("done\n");
 
 	return;
+}
+
+int checkwanip_main(int argc, char *argv[])
+{
+	char new_ip_str[32];
+	int wan_link = check_wan_link(0);
+	char *wan_ipaddr = NULL;
+	if (nvram_match("wan_proto", "pptp")) {
+		wan_ipaddr = wan_link ? nvram_safe_get("pptp_get_ip") : nvram_safe_get("wan_ipaddr");
+	} else if (!strcmp(nvram_safe_get("wan_proto"), "pppoe")) {
+		wan_ipaddr = wan_link ? nvram_safe_get("wan_ipaddr") : "0.0.0.0";
+	} else if (!strcmp(nvram_safe_get("wan_proto"), "3g")) {
+		wan_ipaddr = wan_link ? nvram_safe_get("wan_ipaddr") : "0.0.0.0";
+	} else if (nvram_match("wan_proto", "l2tp")) {
+		wan_ipaddr = wan_link ? nvram_safe_get("l2tp_get_ip") : nvram_safe_get("wan_ipaddr");
+	} else if (nvram_match("wan_proto", "disabled")) {
+		wan_ipaddr = "0.0.0.0";
+	} else {
+		wan_ipaddr = nvram_safe_get("wan_ipaddr");
+	}
+	if (!strcmp(wan_ipaddr, "0.0.0.0")) {
+		return -1;
+	}
+	fprintf(stdout, "%s\n", wan_ipaddr);
 }
 
 int ddns_success_main(int argc, char *argv[])
