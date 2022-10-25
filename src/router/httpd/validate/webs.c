@@ -5617,6 +5617,7 @@ void base64_encode(const unsigned char *in, size_t inlen, unsigned char *out, si
 		*out = '\0';
 }
 
+#if 0
 char *request_freedns(char *user, char *password)
 {
 	unsigned char final[32];
@@ -5662,6 +5663,7 @@ char *request_freedns(char *user, char *password)
 	hash[i] = 0;
 	return hash;
 }
+#endif
 
 static void getddns_userdata(int enable, char *_username, char *_passwd, char *_hostname)
 {
