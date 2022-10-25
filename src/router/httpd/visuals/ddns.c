@@ -44,6 +44,24 @@
 
 // #include "libbb.h"
 
+EJ_VISIBLE void ej_get_ddns_value(webs_t wp, int argc, char_t ** argv)
+{
+	char *enable = websGetVar(wp, "ddns_enable", NULL);
+	if (!enable)
+	    return;
+	if (!strcmp(enable, "0"))
+	    return;
+	if (argc == 0)
+	    return;
+	if (!strcmp(enable, "1"))	
+	    websWrite(wp, argv[1]);
+	else
+	    websWrite(wp, "%s_%d", argv[1], enable);
+	return;
+}
+
+
+
 EJ_VISIBLE void ej_show_ddns_status(webs_t wp, int argc, char_t ** argv)
 {
 	char buff[512];
