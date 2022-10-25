@@ -263,6 +263,7 @@ int checkwanip_main(int argc, char *argv[])
 		return -1;
 	}
 	fprintf(stdout, "%s\n", wan_ipaddr);
+	return 0;
 }
 
 int ddns_success_main(int argc, char *argv[])
