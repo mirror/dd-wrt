@@ -626,6 +626,7 @@ ddns.options="Erweiterte DDNS Optionen";
 ddns.forceupd="Erzwinge Update Intervall";
 ddns.wanip="Externer IP Check";
 ddns.hlp="DDNS Service";
+ddns.ssl="Nutze SSL";
 
 
 ddnsm.all_closed="DDNS-Server ist aktuell geschlossen";
