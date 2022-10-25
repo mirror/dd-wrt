@@ -632,6 +632,7 @@ ddnsm.all_closed="DDNS-Server ist aktuell geschlossen";
 ddnsm.all_resolving="Domainnamen auflösen";
 ddnsm.all_errresolv="Namensauflösung fehlgeschlagen";
 ddnsm.all_connecting="Mit Server verbinden";
+ddnsm.all_success="Erfolgreich";
 ddnsm.all_connectfail="Verbindung mit Server fehlgeschlagen";
 ddnsm.all_disabled="DDNS-Funktion ist abgeschaltet";
 ddnsm.all_noip="Keine WAN-Verbindung";
