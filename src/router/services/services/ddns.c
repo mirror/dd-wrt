@@ -101,6 +101,7 @@ int init_ddns(FILE * fp)
 		snprintf(_passwd, sizeof(_passwd), "%s", "ddns_passwd");
 		snprintf(_hostname, sizeof(_hostname), "%s", "ddns_hostname");
 		if (fp) {
+			fprintf(fp, "provider %s {\n", provider);
 			fprintf(fp, "username = %s\n", nvram_safe_get("ddns_username"));
 			fprintf(fp, "password = %s\n", nvram_safe_get("ddns_passwd"));
 			fprintf(fp, "hostname = %s\n", nvram_safe_get("ddns_hostname"));
@@ -153,7 +154,7 @@ void start_ddns(void)
 	    strcmp(nvram_safe_get("ddns_wildcard_buf"), nvram_safe_get(_wildcard)) ||
 	    strcmp(nvram_safe_get("ddns_url_buf"), nvram_safe_get(_url)) ||
 	    strcmp(nvram_safe_get("ddns_conf_buf"), nvram_safe_get(_conf)) ||
-	    strcmp(nvram_safe_get("ddns_custom_buf"), nvram_safe_get("ddns_custom"))) {
+	    strcmp(nvram_safe_get("ddns_custom_buf"), nvram_safe_get("ddns_custom_5"))) {
 		/*
 		 * If the user changed anything in the GUI, delete all cache and log 
 		 */
