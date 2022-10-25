@@ -5665,28 +5665,6 @@ char *request_freedns(char *user, char *password)
 }
 #endif
 
-static void getddns_userdata(int enable, char *_username, char *_passwd, char *_hostname)
-{
-
-	switch (enable) {
-	case 1:
-		// dyndns
-		sprintf(_username, "ddns_username");
-		sprintf(_passwd, "ddns_passwd");
-		sprintf(_hostname, "ddns_hostname");
-		break;
-	default:
-		// 3322 dynamic : added botho 30/07/06
-		// easydns
-		sprintf(_username, "ddns_username_%d", enable);
-		sprintf(_passwd, "ddns_passwd_%d", enable);
-		sprintf(_hostname, "ddns_hostname_%d", enable);
-
-		break;
-	}
-
-}
-
 void ddns_save_value(webs_t wp)
 {
 	char *username, *passwd, *hostname, *dyndnstype, *wildcard, *custom, *conf, *url, *wan_ip;
@@ -5703,20 +5681,24 @@ void ddns_save_value(webs_t wp)
 	char _wan_ip[] = "ddns_wan_ip";
 
 	int enable = websGetVari(wp, "ddns_enable", -1);
-	if (enable > 30 || enable < 0) {
+	if (enable > 31 || enable < 0) {
 		return;
 	}
 
 	int i;
-	for (i = 1; i < 31; i++) {
+	for (i = 1; i < 32; i++) {
 		if (i == enable)
 			continue;
-		getddns_userdata(i, _username, _passwd, _hostname);
+		sprintf(_username, "ddns_username_%d",i);
+		sprintf(_passwd, "ddns_passwd_%d",i);
+		sprintf(_hostname, "ddns_hostname_%d",i);
 		nvram_unset(_username);
 		nvram_unset(_passwd);
 		nvram_unset(_hostname);
 	}
-	getddns_userdata(enable, _username, _passwd, _hostname);
+	sprintf(_username, "ddns_username_%d",enable);
+	sprintf(_passwd, "ddns_passwd_%d",enable);
+	sprintf(_hostname, "ddns_hostname_%d",enable);
 
 	switch (enable) {
 	case 0:
@@ -5726,7 +5708,6 @@ void ddns_save_value(webs_t wp)
 		break;
 	case 1:
 		// dyndns
-
 		snprintf(_dyndnstype, sizeof(_dyndnstype), "ddns_dyndnstype");
 		snprintf(_wildcard, sizeof(_wildcard), "ddns_wildcard");
 		break;
@@ -5738,7 +5719,6 @@ void ddns_save_value(webs_t wp)
 		break;
 	case 6:
 		// 3322 dynamic : added botho 30/07/06
-		snprintf(_dyndnstype, sizeof(_dyndnstype), "ddns_dyndnstype_%d", enable);
 		snprintf(_wildcard, sizeof(_wildcard), "ddns_wildcard_%d", enable);
 		break;
 	case 7:
@@ -5747,12 +5727,11 @@ void ddns_save_value(webs_t wp)
 		break;
 	}
 
-	username = websGetVar(wp, _username, NULL);
-	passwd = websGetVar(wp, _passwd, NULL);
-	hostname = websGetVar(wp, _hostname, NULL);
-	dyndnstype = websGetVar(wp, _dyndnstype, NULL);
-	wildcard = websGetVar(wp, _wildcard, NULL);
-	custom = websGetVar(wp, _custom, NULL);
+	username = websGetVar(wp, "ddns_username", NULL);
+	passwd = websGetVar(wp, "ddns_passwd", NULL);
+	hostname = websGetVar(wp, "ddns_hostname", NULL);
+	wildcard = websGetVar(wp, "ddns_wildcard", NULL);
+	custom = websGetVar(wp, "ddns_custom", NULL);
 	conf = websGetVar(wp, _conf, NULL);
 	url = websGetVar(wp, _url, NULL);
 	force = websGetVari(wp, _force, 0);
@@ -5772,7 +5751,6 @@ void ddns_save_value(webs_t wp)
 		nvram_set(_passwd, passwd);
 	}
 	nvram_set(_hostname, hostname);
-	nvram_set(_dyndnstype, dyndnstype);
 	nvram_set(_wildcard, wildcard);
 	nvram_set(_custom, custom);
 	nvram_set(_conf, conf);
