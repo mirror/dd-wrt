@@ -37,7 +37,11 @@ int  log_level (char *level);
 void logitf     (int prio, const char *fmt, ...);
 void vlogit    (int prio, const char *fmt, va_list args);
 
+#ifdef DROP_LOG
 #define logit(p, ...) do if ((p) <= MAX_LOG_LEVEL) logitf((p), __VA_ARGS__); while (0)
+#else
+#define logit(p, ...) do { } while (0)
+#endif
 
 #endif /* INADYN_LOG_H_ */
 
