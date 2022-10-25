@@ -60,169 +60,104 @@ int init_ddns(FILE * fp)
 
 	int flag = nvram_geti("ddns_enable");
 
-	switch (flag) {
-	case 0:		// ddns disabled
-		return -1;
-		break;
+	if (fp) {
+		switch (flag) {
+		case 0:	// ddns disabled
+			return -1;
+			break;
 
-	case 1:
-		if (fp) {
-			if (nvram_matchi("ddns_dyndnstype", 2))
-				fprintf(fp, "provider statdns@dyndns.org {\n");
-			else if (nvram_matchi("ddns_dyndnstype", 3))
-				fprintf(fp, "provider custom@dyndns.org {\n");
-			else
-				fprintf(fp, "provider dyndns@dyndns.org {\n");
+		case 1:
+//                      if (nvram_matchi("ddns_dyndnstype", 2))
+//                              fprintf(fp, "provider statdns@dyndns.org {\n");
+//                      else if (nvram_matchi("ddns_dyndnstype", 3))
+//                              fprintf(fp, "provider custom@dyndns.org {\n");
+//                      else
+			fprintf(fp, "provider default@dyndns.org {\n");
 
-			fprintf(fp, "username = %s\n", nvram_safe_get("ddns_username"));
-			fprintf(fp, "password = %s\n", nvram_safe_get("ddns_passwd"));
-			fprintf(fp, "hostname = %s\n", nvram_safe_get("ddns_hostname"));
-			fprintf(fp, "}\n");
+//              snprintf(_dyndnstype, sizeof(_dyndnstype), "%s", "ddns_dyndnstype");
+			break;
+
+		case 2:
+			fprintf(fp, "provider default@freedns.afraid.org {\n");
+
+			break;
+
+		case 3:
+
+			fprintf(fp, "provider default@zoneedit.com	 {\n");
+			break;
+
+		case 4:
+
+			fprintf(fp, "provider default@no-ip.com	 {\n");
+			break;
+
+		case 5:
+			fprintf(fp, "custom namecheap {\n");
+			break;
+
+		case 6:
+
+			fprintf(fp, "provider dyndns@3322.org {\n");
+			//???
+//              snprintf(_dyndnstype, sizeof(_dyndnstype), "%s", "ddns_dyndnstype_6");
+			break;
+
+		case 7:
+
+			fprintf(fp, "provider default@easydns.com {\n");
+
+			break;
+
+		case 8:
+			fprintf(fp, "provider default@dnsomatic.com {\n");
+
+			break;
+		case 9:
+			fprintf(fp, "provider default@selfhost.de {\n");
+			break;
+		case 10:
+			fprintf(fp, "provider default@he.net {\n");
+			break;
+		case 11:
+
+			fprintf(fp, "provider default@duiadns.net {\n");
+
+			break;
+
+		default:
+			return -1;
 		}
+	}
+	if (flag == 1) {
 		snprintf(_username, sizeof(_username), "%s", "ddns_username");
 		snprintf(_passwd, sizeof(_passwd), "%s", "ddns_passwd");
 		snprintf(_hostname, sizeof(_hostname), "%s", "ddns_hostname");
-//              snprintf(_dyndnstype, sizeof(_dyndnstype), "%s", "ddns_dyndnstype");
-//              snprintf(_wildcard, sizeof(_wildcard), "%s", "ddns_wildcard");
-		break;
-
-	case 2:
 		if (fp) {
-			fprintf(fp, "provider default@freedns.afraid.org {\n");
-			fprintf(fp, "username = %s\n", nvram_safe_get("ddns_username_2"));
-			fprintf(fp, "password = %s\n", nvram_safe_get("ddns_passwd_2"));
-			fprintf(fp, "hostname = %s\n", nvram_safe_get("ddns_hostname_2"));
+			fprintf(fp, "username = %s\n", nvram_safe_get("ddns_username"));
+			fprintf(fp, "password = %s\n", nvram_safe_get("ddns_passwd"));
+			fprintf(fp, "hostname = %s\n", nvram_safe_get("ddns_hostname"));
+			if (nvram_match("ddns_wildcard", "1"))
+				fprintf(fp, "wildcard = true\n");
 			fprintf(fp, "}\n");
 		}
-		snprintf(_username, sizeof(_username), "%s", "ddns_username_2");
-		snprintf(_passwd, sizeof(_passwd), "%s", "ddns_passwd_2");
-		snprintf(_hostname, sizeof(_hostname), "%s", "ddns_hostname_2");
-
-		break;
-
-	case 3:
-
+	} else {
 		if (fp) {
-			fprintf(fp, "provider default@zoneedit.com	 {\n");
-			fprintf(fp, "username = %s\n", nvram_safe_get("ddns_username_3"));
-			fprintf(fp, "password = %s\n", nvram_safe_get("ddns_passwd_3"));
-			fprintf(fp, "hostname = %s\n", nvram_safe_get("ddns_hostname_3"));
+			fprintf(fp, "username = %s\n", nvram_nget("ddns_username_%d", flag));
+			fprintf(fp, "password = %s\n", nvram_nget("ddns_passwd_%d", flag));
+			fprintf(fp, "hostname = %s\n", nvram_nget("ddns_hostname_%d", flag));
+			if (nvram_nmatch("1", "ddns_wildcard_%d", flag))
+				fprintf(fp, "wildcard = true\n");
+			if (flag == 5) {
+				fprintf(fp, "ddns-server = %s\n", nvram_safe_get("ddns_url"));
+				fprintf(fp, "ddns-path = %s\n", nvram_safe_get("ddns_conf"));
+			}
 			fprintf(fp, "}\n");
 		}
-		snprintf(_username, sizeof(_username), "%s", "ddns_username_3");
-		snprintf(_passwd, sizeof(_passwd), "%s", "ddns_passwd_3");
-		snprintf(_hostname, sizeof(_hostname), "%s", "ddns_hostname_3");
-		break;
-
-	case 4:
-
-		if (fp) {
-			fprintf(fp, "provider default@no-ip.com	 {\n");
-			fprintf(fp, "username = %s\n", nvram_safe_get("ddns_username_4"));
-			fprintf(fp, "password = %s\n", nvram_safe_get("ddns_passwd_4"));
-			fprintf(fp, "hostname = %s\n", nvram_safe_get("ddns_hostname_4"));
-			fprintf(fp, "}\n");
-		}
-		snprintf(_username, sizeof(_username), "%s", "ddns_username_4");
-		snprintf(_passwd, sizeof(_passwd), "%s", "ddns_passwd_4");
-		snprintf(_hostname, sizeof(_hostname), "%s", "ddns_hostname_4");
-		break;
-
-	case 5:
-
-		if (fp) {
-			fprintf(fp, "custom namecheap {\n");
-			fprintf(fp, "username = %s\n", nvram_safe_get("ddns_username_5"));
-			fprintf(fp, "password = %s\n", nvram_safe_get("ddns_passwd_5"));
-			fprintf(fp, "hostname = %s\n", nvram_safe_get("ddns_hostname_5"));
-			fprintf(fp, "ddns-server = %s\n", nvram_safe_get("ddns_url"));
-			fprintf(fp, "ddns-path = %s\n", nvram_safe_get("ddns_conf"));
-			fprintf(fp, "}\n");
-		}
-		snprintf(_username, sizeof(_username), "%s", "ddns_username_5");
-		snprintf(_passwd, sizeof(_passwd), "%s", "ddns_passwd_5");
-		snprintf(_hostname, sizeof(_hostname), "%s", "ddns_hostname_5");
-
-		break;
-
-	case 6:
-
-		if (fp) {
-			fprintf(fp, "provider dyndns@3322.org {\n");
-			fprintf(fp, "username = %s\n", nvram_safe_get("ddns_username_6"));
-			fprintf(fp, "password = %s\n", nvram_safe_get("ddns_passwd_6"));
-			fprintf(fp, "hostname = %s\n", nvram_safe_get("ddns_hostname_6"));
-			fprintf(fp, "}\n");
-		}
-		snprintf(_username, sizeof(_username), "%s", "ddns_username_6");
-		snprintf(_passwd, sizeof(_passwd), "%s", "ddns_passwd_6");
-		snprintf(_hostname, sizeof(_hostname), "%s", "ddns_hostname_6");
-
-		//???
-//              snprintf(_dyndnstype, sizeof(_dyndnstype), "%s", "ddns_dyndnstype_6");
-//              snprintf(_wildcard, sizeof(_wildcard), "%s", "ddns_wildcard_6");
-		break;
-
-	case 7:
-
-		if (fp) {
-			fprintf(fp, "provider default@easydns.com {\n");
-			fprintf(fp, "username = %s\n", nvram_safe_get("ddns_username_7"));
-			fprintf(fp, "password = %s\n", nvram_safe_get("ddns_passwd_7"));
-			fprintf(fp, "hostname = %s\n", nvram_safe_get("ddns_hostname_7"));
-			fprintf(fp, "}\n");
-		}
-		snprintf(_username, sizeof(_username), "%s", "ddns_username_7");
-		snprintf(_passwd, sizeof(_passwd), "%s", "ddns_passwd_7");
-		snprintf(_hostname, sizeof(_hostname), "%s", "ddns_hostname_7");
-
-//      ???
-//              snprintf(_wildcard, sizeof(_wildcard), "%s", "ddns_wildcard_7");
-		break;
-
-/*	case 8:
-		strcpy(service, "default@tzo.com");
-
-		snprintf(_username, sizeof(_username), "%s", "ddns_username_8");
-		snprintf(_passwd, sizeof(_passwd), "%s", "ddns_passwd_8");
-		snprintf(_hostname, sizeof(_hostname), "%s", "ddns_hostname_8");
-		break;
-
-	case 9:
-		strcpy(service, "default@dynsip.org");
-
-		snprintf(_username, sizeof(_username), "%s", "ddns_username_9");
-		snprintf(_passwd, sizeof(_passwd), "%s", "ddns_passwd_9");
-		snprintf(_hostname, sizeof(_hostname), "%s", "ddns_hostname_9");
-		break;
-
-	case 10:
-		strcpy(service, "default@dtdns.com");
-
-		snprintf(_username, sizeof(_username), "%s", "ddns_username_10");
-		snprintf(_passwd, sizeof(_passwd), "%s", "ddns_passwd_10");
-		snprintf(_hostname, sizeof(_username), "%s", "ddns_username_10");
-		break;
-*/
-	case 11:
-
-		if (fp) {
-			fprintf(fp, "provider default@duiadns.net {\n");
-			fprintf(fp, "username = %s\n", nvram_safe_get("ddns_username_11"));
-			fprintf(fp, "password = %s\n", nvram_safe_get("ddns_passwd_11"));
-			fprintf(fp, "hostname = %s\n", nvram_safe_get("ddns_hostname_11"));
-			fprintf(fp, "}\n");
-		}
-		snprintf(_username, sizeof(_username), "%s", "ddns_username_11");
-		snprintf(_passwd, sizeof(_passwd), "%s", "ddns_passwd_11");
-		snprintf(_hostname, sizeof(_hostname), "%s", "ddns_hostname_11");
-
-		break;
-
-	default:
-		return -1;
+		snprintf(_username, sizeof(_username), "%s_%d", "ddns_username", flag);
+		snprintf(_passwd, sizeof(_passwd), "%s_%d", "ddns_passwd", flag);
+		snprintf(_hostname, sizeof(_hostname), "%s_%d", "ddns_hostname", flag);
 	}
-
 	return 0;
 }
 
