@@ -5689,16 +5689,16 @@ void ddns_save_value(webs_t wp)
 	for (i = 1; i < 32; i++) {
 		if (i == enable)
 			continue;
-		sprintf(_username, "ddns_username_%d",i);
-		sprintf(_passwd, "ddns_passwd_%d",i);
-		sprintf(_hostname, "ddns_hostname_%d",i);
+		sprintf(_username, "ddns_username_%d", i);
+		sprintf(_passwd, "ddns_passwd_%d", i);
+		sprintf(_hostname, "ddns_hostname_%d", i);
 		nvram_unset(_username);
 		nvram_unset(_passwd);
 		nvram_unset(_hostname);
 	}
-	sprintf(_username, "ddns_username_%d",enable);
-	sprintf(_passwd, "ddns_passwd_%d",enable);
-	sprintf(_hostname, "ddns_hostname_%d",enable);
+	sprintf(_username, "ddns_username_%d", enable);
+	sprintf(_passwd, "ddns_passwd_%d", enable);
+	sprintf(_hostname, "ddns_hostname_%d", enable);
 
 	switch (enable) {
 	case 0:
