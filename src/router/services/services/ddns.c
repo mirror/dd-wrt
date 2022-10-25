@@ -50,7 +50,6 @@
 char _username[] = "ddns_username_XX";
 char _passwd[] = "ddns_passwd_XX";
 char _hostname[] = "ddns_hostname_XX";
-char _dyndnstype[] = "ddns_dyndnstype_XX";
 char _wildcard[] = "ddns_wildcard_XX";
 char _url[] = "ddns_url_XX";
 char _conf[] = "ddns_conf_XX";
@@ -144,9 +143,10 @@ void start_ddns(void)
 	    strcmp(nvram_safe_get("ddns_username_buf"), nvram_safe_get(_username)) ||
 	    strcmp(nvram_safe_get("ddns_passwd_buf"), nvram_safe_get(_passwd)) ||
 	    strcmp(nvram_safe_get("ddns_hostname_buf"), nvram_safe_get(_hostname)) ||
-	    strcmp(nvram_safe_get("ddns_dyndnstype_buf"), nvram_safe_get(_dyndnstype)) ||
 	    strcmp(nvram_safe_get("ddns_wildcard_buf"), nvram_safe_get(_wildcard)) ||
-	    strcmp(nvram_safe_get("ddns_url_buf"), nvram_safe_get(_url)) || strcmp(nvram_safe_get("ddns_conf_buf"), nvram_safe_get(_conf)) || strcmp(nvram_safe_get("ddns_custom_buf"), nvram_safe_get("ddns_custom_5"))) {
+	    strcmp(nvram_safe_get("ddns_url_buf"), nvram_safe_get(_url)) || 
+	    strcmp(nvram_safe_get("ddns_conf_buf"), nvram_safe_get(_conf)) || 
+	    strcmp(nvram_safe_get("ddns_custom_buf"), nvram_safe_get("ddns_custom_5"))) {
 		/*
 		 * If the user changed anything in the GUI, delete all cache and log 
 		 */
@@ -279,7 +279,6 @@ int ddns_success_main(int argc, char *argv[])
 	nvram_set("ddns_username_buf", nvram_safe_get(_username));
 	nvram_set("ddns_passwd_buf", nvram_safe_get(_passwd));
 	nvram_set("ddns_hostname_buf", nvram_safe_get(_hostname));
-	nvram_set("ddns_dyndnstype_buf", nvram_safe_get(_dyndnstype));
 	nvram_set("ddns_wildcard_buf", nvram_safe_get(_wildcard));
 	nvram_set("ddns_conf_buf", nvram_safe_get(_conf));
 	nvram_set("ddns_url_buf", nvram_safe_get(_url));
