@@ -5667,7 +5667,7 @@ char *request_freedns(char *user, char *password)
 
 void ddns_save_value(webs_t wp)
 {
-	char *username, *passwd, *hostname, *dyndnstype, *wildcard, *custom, *conf, *url, *wan_ip;
+	char *username, *passwd, *hostname, *dyndnstype, *wildcard, *custom, *conf, *url, *wan_ip, *ssl;
 	int force;
 	char _username[] = "ddns_username_XX";
 	char _passwd[] = "ddns_passwd_XX";
@@ -5678,6 +5678,7 @@ void ddns_save_value(webs_t wp)
 	char _conf[] = "ddns_conf";
 	char _url[] = "ddns_url";
 	char _force[] = "ddns_force";
+	char _ssl[] = "ddns_ssl";
 	char _wan_ip[] = "ddns_wan_ip";
 
 	int enable = websGetVari(wp, "ddns_enable", -1);
@@ -5692,13 +5693,16 @@ void ddns_save_value(webs_t wp)
 		sprintf(_username, "ddns_username_%d", i);
 		sprintf(_passwd, "ddns_passwd_%d", i);
 		sprintf(_hostname, "ddns_hostname_%d", i);
+		sprintf(_hostname, "ddns_ssl_%d", i);
 		nvram_unset(_username);
 		nvram_unset(_passwd);
 		nvram_unset(_hostname);
+		nvram_unset(_ssl);
 	}
 	sprintf(_username, "ddns_username_%d", enable);
 	sprintf(_passwd, "ddns_passwd_%d", enable);
 	sprintf(_hostname, "ddns_hostname_%d", enable);
+	sprintf(_ssl, "ddns_ssl_%d", enable);
 
 	switch (enable) {
 	case 0:
@@ -5732,6 +5736,7 @@ void ddns_save_value(webs_t wp)
 	hostname = websGetVar(wp, "ddns_hostname", NULL);
 	wildcard = websGetVar(wp, "ddns_wildcard", NULL);
 	custom = websGetVar(wp, "ddns_custom", NULL);
+	ssl = websGetVar(wp, "ddns_ssl", NULL);
 	conf = websGetVar(wp, _conf, NULL);
 	url = websGetVar(wp, _url, NULL);
 	force = websGetVari(wp, _force, 0);
@@ -5757,6 +5762,7 @@ void ddns_save_value(webs_t wp)
 	nvram_set(_url, url);
 	nvram_seti(_force, force);
 	nvram_set(_wan_ip, wan_ip);
+	nvram_set(_ssl, ssl);
 
 }
 
