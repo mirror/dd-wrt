@@ -190,15 +190,7 @@ addEvent(window, "unload", function() {
 								<% nvsm("ddns_enable","29","-->"); %>
 								<% nvsm("ddns_enable","30","-->"); %>
 								<% nvsm("ddns_enable","31","-->"); %>
-
-								<% nvsm("ddns_enable","5","<!--"); %>
-								<div class="setting">
-									<div class="label"><% tran("ddns.wanip"); %></div>
-									<input class="spaceradio" type="radio" value="0" name="ddns_wan_ip" <% nvc("ddns_wan_ip","0"); %> /><% tran("share.yes"); %>&nbsp;
-									<input class="spaceradio" type="radio" value="1" name="ddns_wan_ip" <% nvc("ddns_wan_ip","1"); %> /><% tran("share.no"); %>
-								</div>
-								<% nvsm("ddns_enable","5","-->"); %>
-
+								
 								<% nvsm("ddns_enable","0","<!--"); %>
 								<% nvsm("ddns_enable","1","<!--"); %>
 								<% nvsm("ddns_enable","2","<!--"); %>
@@ -267,11 +259,6 @@ addEvent(window, "unload", function() {
 									//]]>
 									</script>
 								</div>
-								<div class="setting">
-									<div class="label"><% tran("ddns.wanip"); %></div>
-									<input class="spaceradio" type="radio" value="0" name="ddns_wan_ip" <% nvc("ddns_wan_ip","0"); %> /><% tran("share.yes"); %>&nbsp;
-									<input class="spaceradio" type="radio" value="1" name="ddns_wan_ip" <% nvc("ddns_wan_ip","1"); %> /><% tran("share.no"); %>
-								</div>
 								<% nvsm("ddns_enable","0","-->"); %>
 								<% nvsm("ddns_enable","1","-->"); %>
 								<% nvsm("ddns_enable","2","-->"); %>
@@ -303,6 +290,23 @@ addEvent(window, "unload", function() {
 								<% nvsm("ddns_enable","29","-->"); %>
 								<% nvsm("ddns_enable","30","-->"); %>
 								<% nvsm("ddns_enable","31","-->"); %>
+								<% nvsm("ddns_enable","0","<!--"); %>
+								<div class="setting">
+									<div class="label"><% tran("ddns.wanip"); %></div>
+									<input class="spaceradio" type="radio" value="0" name="ddns_wan_ip" <% nvc("ddns_wan_ip","0"); %> /><% tran("share.yes"); %>&nbsp;
+									<input class="spaceradio" type="radio" value="1" name="ddns_wan_ip" <% nvc("ddns_wan_ip","1"); %> /><% tran("share.no"); %>
+								</div>
+								<% nvsm("ddns_enable","0","-->"); %>
+								<% nvsm("ddns_enable","0","<!--"); %>
+								<% ifndef("OPENSSL","<!--"); %>
+								<div class="setting">
+									<div class="label"><% tran("ddns.ssl"); %></div>
+									<input class="spaceradio" type="radio" value="1" name="ddns_ssl" <% nvc("ddns_ssl","1"); %> /><% tran("share.yes"); %>&nbsp;
+									<input class="spaceradio" type="radio" value="0" name="ddns_ssl" <% nvc("ddns_ssl","0"); %> /><% tran("share.no"); %>
+								</div>
+								<% ifndef("OPENSSL","-->"); %>
+								<% nvsm("ddns_enable","0","-->"); %>
+
 							</fieldset><br />
 							<fieldset>
 								<legend><% tran("share.option"); %></legend>
