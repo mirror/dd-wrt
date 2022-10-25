@@ -173,7 +173,7 @@ CAFILE1="/etc/ssl/certs/ca-certificates.crt"
 CAFILE2="/etc/pki/tls/certs/ca-bundle.trust.crt"
 
 if test "x$ac_enable_reduced" = "xyes"; then
-      CPPFLAGS="$CPPFLAGS -DMAX_LOG_LEVEL=LOG_ERR -DDROP_VERBOSE_STRINGS -DDROP_CHECK_CONFIG"
+      CPPFLAGS="$CPPFLAGS -DMAX_LOG_LEVEL=LOG_ERR -DDROP_VERBOSE_STRINGS -DDROP_CHECK_CONFIG -DDROP_LOG"
 fi
 
 # Add OS-specific flags
