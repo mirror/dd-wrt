@@ -172,11 +172,11 @@ void start_ddns(void)
 	 */
 	if ((fp = fopen("/tmp/ddns/inadyn.conf", "w"))) {
 		if (nvram_matchi("ddns_enable", 7))
-			fprintf(fp, "period %s\n", "900");
+			fprintf(fp, "period = %s\n", "900");
 		else
-			fprintf(fp, "period %s\n", "600");
-		fprintf(fp, "forced-update %d\n", nvram_geti("ddns_force") * 24 * 60 * 60);
-		fprintf(fp, "cache-dir %s\n", "/tmp/ddns");
+			fprintf(fp, "period = %s\n", "600");
+		fprintf(fp, "forced-update = %d\n", nvram_geti("ddns_force") * 24 * 60 * 60);
+		fprintf(fp, "cache-dir = %s\n", "/tmp/ddns");
 		if (init_ddns(fp) < 0)
 			return;
 
