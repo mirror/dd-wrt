@@ -2081,69 +2081,13 @@ struct nvram_param srouter_defaults[] = {
 	// for dyndns
 	{ "ddns_enable", "0" },	/* 0:Disable 1:dyndns 2:afraid 3:zoneedit
 				 * 4:no-ip 5:custom 6:3322.org */
+	{ "ddns_ssl", "0" },	/* 0:Disable 1:dyndns 2:afraid 3:zoneedit
+				 * 4:no-ip 5:custom 6:3322.org */
 	{ "ddns_wan_ip", "1" },
-	{ "ddns_username", "" },
-	{ "ddns_passwd", "" },
-	{ "ddns_hostname", "" },
-	{ "ddns_dyndnstype", "" },
-	{ "ddns_wildcard", "" },
-	// for afraid.org 
-	{ "ddns_username_2", "" },
-	{ "ddns_passwd_2", "" },
-	{ "ddns_hostname_2", "" },
-	// for zoneedit 
-	{ "ddns_username_3", "" },
-	{ "ddns_passwd_3", "" },
-	{ "ddns_hostname_3", "" },
-	// for no-ip 
-	{ "ddns_username_4", "" },
-	{ "ddns_passwd_4", "" },
-	{ "ddns_hostname_4", "" },
-	// for custom 
-	{ "ddns_username_5", "" },
-	{ "ddns_passwd_5", "" },
-	{ "ddns_hostname_5", "" },
-	{ "ddns_custom_5", "" },
-	{ "ddns_conf", "" },
-	{ "ddns_url", "" },
-	// for 3322.org 
-	{ "ddns_username_6", "" },
-	{ "ddns_passwd_6", "" },
-	{ "ddns_hostname_6", "" },
-	{ "ddns_dyndnstype_6", "" },
-	{ "ddns_wildcard_6", "" },
-	// for easyDNS.com 
-	{ "ddns_username_7", "" },
-	{ "ddns_passwd_7", "" },
-	{ "ddns_hostname_7", "" },
-	{ "ddns_wildcard_7", "" },
-	// for tzo.com 
-	{ "ddns_username_8", "" },
-	{ "ddns_passwd_8", "" },
-	{ "ddns_hostname_8", "" },
-	// dynsip
-	{ "ddns_username_9", "" },
-	{ "ddns_passwd_9", "" },
-	{ "ddns_hostname_9", "" },
-
-	{ "ddns_username_10", "" },
-	{ "ddns_passwd_10", "" },
-
-	// duiadns
-	{ "ddns_username_11", "" },
-	{ "ddns_passwd_11", "" },
-	{ "ddns_hostname_11", "" },
-
 	/*
 	 * for last value 
 	 */
-	{ "ddns_enable_buf", "" },
-	{ "ddns_username_buf", "" },
-	{ "ddns_passwd_buf", "" },
-	{ "ddns_hostname_buf", "" },
 	{ "ddns_force", "10" },
-	{ "ddns_cache", "" },	/* DDNS cache */
-	{ "ddns_time", "" },	/* DDNS time */
 
 	{ "skip_amd_check", "0" },	/* 0:Disable 1:Enable */
 	{ "skip_intel_check", "0" },	/* 0:Disable 1:Enable */
