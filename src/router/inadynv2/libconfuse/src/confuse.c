@@ -1230,7 +1230,7 @@ DLLIMPORT cfg_print_filter_func_t cfg_set_print_filter_func(cfg_t *cfg, cfg_prin
 	return old;
 }
 
-DLLIMPORT void cfg_error(cfg_t *cfg, const char *fmt, ...)
+/*DLLIMPORT void cfg_error(cfg_t *cfg, const char *fmt, ...)
 {
 	va_list ap;
 
@@ -1249,6 +1249,7 @@ DLLIMPORT void cfg_error(cfg_t *cfg, const char *fmt, ...)
 
 	va_end(ap);
 }
+*/
 
 static int call_function(cfg_t *cfg, cfg_opt_t *opt, cfg_opt_t *funcopt)
 {
