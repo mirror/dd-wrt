@@ -221,7 +221,7 @@ void start_ddns(void)
 		nvram2file("ddns_cache", "/tmp/ddns/inadyn_ip.cache");
 		nvram2file("ddns_time", "/tmp/ddns/inadyn_time.cache");
 	}
-	dd_logstart("ddns", eval("inadyn", "-e", "ddns_success", "--exec-mode=compat", "-f", "/tmp/ddns/inadyn.conf", "-P", "/var/run/inadyn.pid"));
+	dd_logstart("ddns", eval("inadyn", "-e", "ddns_success", "--exec-mode=compat", "-f", "/tmp/ddns/inadyn.conf", "-P", "/var/run/inadyn.pid", "-l", "notice"));
 
 	cprintf("done\n");
 
