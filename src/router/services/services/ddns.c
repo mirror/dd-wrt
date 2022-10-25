@@ -84,7 +84,7 @@ int init_ddns(FILE * fp)
 		"default@ovh.com",
 		"default@strato.com",
 		"default@cloudflare.com",
-		"default@cloudxns.com",
+		"default@cloudxns.net",
 		"default@ddnss.de",
 		"default@dhis.org",
 		"default@dnsexit.com",
