@@ -634,6 +634,7 @@ ddnsm.all_closed="The DDNS server is currently closed";
 ddnsm.all_resolving="Resolving domain name";
 ddnsm.all_errresolv="Domain name resolve failed";
 ddnsm.all_connecting="Connecting to server";
+ddnsm.all_success="Success";
 ddnsm.all_connectfail="Connect to server failed";
 ddnsm.all_disabled="DDNS function is disabled";
 ddnsm.all_noip="No WAN connection";
