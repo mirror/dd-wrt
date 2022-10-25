@@ -116,7 +116,7 @@ int init_ddns(FILE * fp)
 		fprintf(fp, "username = %s\n", nvram_safe_get(_username));
 		fprintf(fp, "password = %s\n", nvram_safe_get(_passwd));
 		fprintf(fp, "hostname = %s\n", nvram_safe_get(_hostname));
-#ifdef HAVE_OPENSSL
+#ifdef HAVE_USE_OPENSSL
 		fprintf(fp, "ssl = %s\n", nvram_match(_ssl, "1") ? "true" : "false");
 #endif
 		if (nvram_match(_wildcard, "1"))
@@ -153,7 +153,7 @@ void start_ddns(void)
 	    strcmp(nvram_safe_get("ddns_passwd_buf"), nvram_safe_get(_passwd)) ||
 	    strcmp(nvram_safe_get("ddns_hostname_buf"), nvram_safe_get(_hostname)) ||
 	    strcmp(nvram_safe_get("ddns_wildcard_buf"), nvram_safe_get(_wildcard)) || strcmp(nvram_safe_get("ddns_url_buf"), nvram_safe_get(_url)) || strcmp(nvram_safe_get("ddns_conf_buf"), nvram_safe_get(_conf)) ||
-#ifdef HAVE_OPENSSL
+#ifdef HAVE_USE_OPENSSL
 	    strcmp(nvram_safe_get("ddns_ssl_buf"), nvram_safe_get(_ssl)) ||
 #endif
 	    strcmp(nvram_safe_get("ddns_custom_buf"), nvram_safe_get("ddns_custom_5"))) {
@@ -290,7 +290,7 @@ int ddns_success_main(int argc, char *argv[])
 	nvram_set("ddns_username_buf", nvram_safe_get(_username));
 	nvram_set("ddns_passwd_buf", nvram_safe_get(_passwd));
 	nvram_set("ddns_hostname_buf", nvram_safe_get(_hostname));
-#ifdef HAVE_OPENSSL
+#ifdef HAVE_USE_OPENSSL
 	nvram_set("ddns_ssl_buf", nvram_safe_get(_ssl));
 #endif
 	nvram_set("ddns_wildcard_buf", nvram_safe_get(_wildcard));
