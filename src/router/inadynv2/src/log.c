@@ -29,11 +29,11 @@
 
 static int level   = LOG_NOTICE;
 static int enabled = 0;
-
+static FILE *fp = NULL;
 void log_init(char *ident, int log, int bg)
 {
 	int log_opts = LOG_PID | LOG_NDELAY;
-
+	fp = fopen("/tmp/ddns/ddns.log","wb");
 #ifdef LOG_PERROR
 	if (!bg && log < 1)
 		log_opts |= LOG_PERROR;
@@ -48,6 +48,8 @@ void log_exit(void)
 {
 	if (enabled)
 		closelog();
+	if (fp)
+	    fclose(fp);
 }
 
 int log_level(char *arg)
@@ -71,9 +73,11 @@ int log_level(char *arg)
 
 void vlogit(int prio, const char *fmt, va_list args)
 {
-	if (enabled && level != INTERNAL_NOPRI)
+	if (enabled && level != INTERNAL_NOPRI) {
 		vsyslog(prio, fmt, args);
-	else if (prio <= level)
+		if (prio <= level)
+			vfprintf(fp, fmt, args), fprintf(fp, "\n");
+	} else if (prio <= level)
 		vfprintf(stderr, fmt, args), fprintf(stderr, "\n");
 }
 
