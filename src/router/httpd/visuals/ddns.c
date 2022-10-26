@@ -47,40 +47,29 @@
 EJ_VISIBLE void ej_get_ddns_value(webs_t wp, int argc, char_t ** argv)
 {
 	char *enable = GOZILA_GET(wp, "ddns_enable");
-	if (!enable)
-		return;
-	if (!strcmp(enable, "0"))
-		return;
-	if (argc == 0)
-		return;
-	if (!strcmp(enable, "1"))
-		websWrite(wp, "%s", nvram_safe_get(argv[0]));
-	else
-		websWrite(wp, "%s", nvram_nget("%s_%s", argv[0], enable));
+	if (argc == 0 || !enable || !strcmp(enable, "0"))
+		if (!strcmp(enable, "1"))
+			websWrite(wp, "%s", nvram_safe_get(argv[0]));
+		else
+			websWrite(wp, "%s", nvram_nget("%s_%s", argv[0], enable));
 	return;
 }
 
 EJ_VISIBLE void ej_ddns_checked(webs_t wp, int argc, char_t ** argv)
 {
 	char *enable = GOZILA_GET(wp, "ddns_enable");
-	if (!enable)
+	char var[32];
+	if (argc < 2 || !enable || !strcmp(enable, "0"))
 		return;
-	if (!strcmp(enable, "0"))
-		return;
-	if (argc < 2)
-		return;
-	if (!strcmp(enable, "1")) {
-		if (nvram_match(argv[0], argv[1])) {
-			websWrite(wp, "checked=\"checked\"");
-		}
-	} else {
-		char var[32];
-		sprintf(var, "%s_%s", argv[0], enable);
-		if (nvram_match(var, argv[1])) {
-			websWrite(wp, "checked=\"checked\"");
-		}
-	}
 
+	if (!strcmp(enable, "1")) {
+		strlcpy(var, argv[0], sizeof(var));
+	} else {
+		snprintf(var, sizeof(32) - 1, "%s_%s", argv[0], enable);
+	}
+	if (nvram_match(var, argv[1])) {
+		websWrite(wp, "checked=\"checked\"");
+	}
 	return;
 }
 
