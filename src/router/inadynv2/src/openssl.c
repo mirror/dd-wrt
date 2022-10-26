@@ -70,8 +70,8 @@ static int verify_callback(int preverify_ok, X509_STORE_CTX *ctx)
 	}
 
 	if (!preverify_ok) {
-		logit(LOG_ERR, "Certificate verification error:num=%d:%s:depth=%d:%s",
-		      err, X509_verify_cert_error_string(err), depth, buf);
+//		logit(LOG_ERR, "Certificate verification error:num=%d:%s:depth=%d:%s",
+//		      err, X509_verify_cert_error_string(err), depth, buf);
 		if (broken_rtc && err == X509_V_ERR_CERT_NOT_YET_VALID)
 			preverify_ok = 1;
 	}
@@ -82,7 +82,7 @@ static int verify_callback(int preverify_ok, X509_STORE_CTX *ctx)
 	 */
 	if (!preverify_ok && (err == X509_V_ERR_UNABLE_TO_GET_ISSUER_CERT)) {
 		X509_NAME_oneline(X509_get_issuer_name(cert), buf, sizeof(buf));
-		logit(LOG_ERR, "issuer= %s", buf);
+//		logit(LOG_ERR, "issuer= %s", buf);
 	}
 
 	if (secure_ssl)
