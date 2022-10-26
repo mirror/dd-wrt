@@ -166,7 +166,6 @@ li.current {
   right: .901em;
   text-align: right;
   text-decoration: none;
-  text-transform: lowercase;
 }
 .info a {
   text-decoration: none;
@@ -341,7 +340,7 @@ fieldset legend {
 }
 .setting .label {
   float: left;
-  width: 20.6em;
+  width: 19.444em;
   /* temporary for polish extra long strings */
   overflow: hidden;
   text-overflow: ellipsis;
@@ -356,7 +355,7 @@ fieldset legend {
 }
 /* this applies to CPU Features label results and MAC Clone button */
 .padding-left {
-  padding-left: 15.42rem;
+  padding-left: 14.6rem;
 }
 
 /* commands tab, output box label */
