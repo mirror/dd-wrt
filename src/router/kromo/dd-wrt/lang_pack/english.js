@@ -25,7 +25,7 @@ share.time="Time";
 share.interipaddr="WAN IP Address";
 // choice dd-wrt.c line 1442
 share.choice="Please Choose";
-share.more="More...";
+share.more="more...";
 share.help="Help";
 share.enable="Enable";
 share.enabled="Enabled";
@@ -2006,6 +2006,20 @@ service.softether_client=idx.ntp_client;
 service.softether_server=nas.proftpd_srv_label;
 service.softether_config="Configuration";
 
+//sshd.webservices
+service.ssh_legend="Secure Shell (SSH)";
+service.ssh_srv="Enable Daemon";
+service.ssh_password="Password Login";
+service.ssh_key="Authorized Keys";
+service.ssh_forwarding="SSH TCP Forwarding";
+service.ssh_keylegend="Key Handling";
+service.ssh_keygenerate="Generate Key";
+service.ssh_keylength="Key Length";
+service.ssh_replace="Replace Existing Key(s)";
+service.ssh_download="Download Private Key";
+service.ssh_keyalert="Be patient, key generation can take up to 10 minutes or more. Click the " + sbutton.apply + " button after generation has completed.";
+service.ssh_keydownload="The private key is downloaded in the OpenSSH format.\nIf you wish to use PuTTY, the key must first be converted to a compatible format with PuTTYgen.";
+
 //help page
 var hservice=new Object();
 hservice.right1="Before enabling storage for Client Lease DB into JFFS2 flash storage, JFFS2 support <b>must be enabled</b>. JFFS2 Support is located on the Administration / Management tab.";
@@ -2031,6 +2045,7 @@ hservice.page7="<dd>Enabling SSHd allows you to access your router's Linux OS wi
 hservice.sshclient="<dd><b>For PuTTY:</b><br />Convert the private key-file with PuttyGen as follows:<ul class=\"wide\"><li>Conversions</li><li>Select <em>Import key</em> from menu then browse for directory where you saved the previusly downloaded id_rsa.ssh key and select it.</li><li>Click <em>Save private key</em> and enter e.g. id_rsa.ppk as a filename, your key is now ready to be used in PuTTY.</li></ul><br /><b>PuTTY key import:</b><ul class=\"wide\"><li>Click SSH to expand options</li><li>Click Auth</li><li>Under Private key file for authentication, click the <em>Browse...</em> button then select the id_rsa.ppk you had previously converted and Save your PuTTY profile.</dd>";
 hservice.page8="<dd>Enable Syslogd to capture system messages. By default they will be collected in the local file \/var\/log\/messages. To send them to another system, enter the IP address of a remote syslog server.</dd>";
 hservice.page9="<dd>Enable the telnet server to connect to the router with telnet. The username is <tt>root</tt> and the password is the current router's password.<br /><br /><div class=\"note\"><h4>Note:</h4><div>If you are using the router in an untrusted environment e.g. a public hotspot, it is strongly recommended to use SSHd and deactivate telnet.</div></div></dd><dd>Check all values and click the <em>" + sbutton.save + "</em> button to save your settings. Click the <em>" + sbutton.cancel + "</em> button to cancel your unsaved changes. Click the <em>" + sbutton.reboot + "</em> button to reboot your router immediately.</dd>";
+
 //help container
 var hstatus_vpn=new Object();
 hstatus_vpn.right1="<b>Policy-based Routing</b>:<br />Add IPs / NETs in the following format 0.0.0.0/0 to force clients to use the tunnel as the default gateway. Enter one IP / NET per line.<br /><b>IP Address / Netmask</b>:<br />Must be set when using DHCP-Proxy mode and local TAP is NOT bridged</i>";
@@ -2046,20 +2061,6 @@ hstatus_vpn.page2="<dd>A VPN client enables you to connect to VPN servers compat
 //vnc.repeater
 service.vncrepeater_legend="Virtual Network Computing (VNC)";
 service.vncrepeater="Enable Repeater";
-
-//sshd.webservices
-service.ssh_legend="Secure Shell (SSH)";
-service.ssh_srv="Enable Daemon";
-service.ssh_password="Password Login";
-service.ssh_key="Authorized Keys";
-service.ssh_forwarding="SSH TCP Forwarding";
-service.ssh_keylegend="Key Handling";
-service.ssh_keygenerate="Generate Key";
-service.ssh_keylength="Key Length";
-service.ssh_replace="Replace Existing Key(s)";
-service.ssh_download="Download Private Key";
-service.ssh_keyalert="Be patient, key generation can take up to 10 minutes or more. Click the " + sbutton.apply + " button after generation has completed.";
-service.ssh_keydownload="The private key is downloaded in the OpenSSH format.\nIf you wish to use PuTTY, the key must first be converted to a compatible format with PuTTYgen.";
 
 //radiooff.webservices
 service.radiooff_legend="SES / AOSS / EZ-SETUP / WPS Button";
