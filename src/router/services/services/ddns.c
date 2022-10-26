@@ -138,8 +138,6 @@ void start_ddns(void)
 	int ret;
 	FILE *fp;
 
-	nvram_set("ddns_status", "0");
-
 	/*
 	 * We don't want to update, if user don't input below field 
 	 */
@@ -296,7 +294,6 @@ int ddns_success_main(int argc, char *argv[])
 	nvram_set("ddns_conf_buf", nvram_safe_get(_conf));
 	nvram_set("ddns_url_buf", nvram_safe_get(_url));
 	nvram_set("ddns_custom_5_buf", nvram_safe_get("ddns_custom_5"));
-	nvram_set("ddns_status", "1");
 
 	nvram_async_commit();
 
