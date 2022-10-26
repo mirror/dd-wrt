@@ -665,7 +665,7 @@ out:
  *
  * Return:	0 on success, otherwise error
  */
-int ksmbd_vfs_getattr(const struct path *path, struct kstat *stat)
+int ksmbd_vfs_getattr(struct path *path, struct kstat *stat)
 {
 	int err;
 
