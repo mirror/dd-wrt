@@ -176,33 +176,6 @@ void start_ddns(void)
 		fprintf(fp, "forced-update = %d\n", nvram_geti("ddns_force") * 24 * 60 * 60);
 		if (init_ddns(fp) < 0)
 			return;
-
-/*	
-		fprintf(fp, "--background");
-		fprintf(fp, " --dyndns_system %s", service);	// service
-		fprintf(fp, " -a %s", nvram_safe_get(_hostname));	// alias/hostname
-		if (nvram_matchi("ddns_enable", 1)
-		    || nvram_matchi("ddns_enable", 6)
-		    || nvram_matchi("ddns_enable", 7)) {
-			if (nvram_matchi(_wildcard, 1))
-				fprintf(fp, " --wildcard");
-		}
-		if (nvram_matchi("ddns_enable", 7))
-			fprintf(fp, " --update_period_sec %s", "900");	
-		else
-			fprintf(fp, " --update_period_sec %s", "600");	
-		fprintf(fp, " --forced_update_period %d", nvram_geti("ddns_force") * 24 * 60 * 60);	// force 
-		fprintf(fp, " --log_file %s", "/tmp/ddns/ddns.log");	// log to
-		fprintf(fp, " --cache_dir %s", "/tmp/ddns");	// cache dir
-		fprintf(fp, " --exec %s", "ddns_success");	// run after update
-		if (nvram_matchi("ddns_enable", 5)) {
-			fprintf(fp, " --dyndns_server_name %s", nvram_safe_get("ddns_custom_5"));
-			if (nvram_invmatch(_url, ""))
-				fprintf(fp, " --dyndns_server_url %s", nvram_safe_get(_url));
-			if (nvram_invmatch(_conf, ""))
-				fprintf(fp, " %s", nvram_safe_get(_conf));
-		}
-*/
 		fprintf(fp, "\n");
 		fclose(fp);
 	} else {
