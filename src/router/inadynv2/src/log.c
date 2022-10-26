@@ -75,8 +75,10 @@ void vlogit(int prio, const char *fmt, va_list args)
 {
 	if (enabled && level != INTERNAL_NOPRI) {
 		vsyslog(prio, fmt, args);
-		if (prio <= level)
+		if (prio <= level) {
 			vfprintf(fp, fmt, args), fprintf(fp, "\n");
+			fflush(fp);
+			}
 	} else if (prio <= level)
 		vfprintf(stderr, fmt, args), fprintf(stderr, "\n");
 }
