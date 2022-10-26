@@ -11,6 +11,7 @@
 #include "../ksmbd_netlink.h"
 
 struct ksmbd_share_config;
+struct ksmbd_conn;
 struct ksmbd_user;
 
 struct ksmbd_tree_connect {
@@ -40,7 +41,8 @@ static inline int test_tree_conn_flag(struct ksmbd_tree_connect *tree_conn,
 struct ksmbd_session;
 
 static struct ksmbd_tree_conn_status
-ksmbd_tree_conn_connect(struct ksmbd_session *sess, char *share_name);
+ksmbd_tree_conn_connect(struct ksmbd_conn *conn, struct ksmbd_session *sess,
+			const char *share_name);
 
 static int ksmbd_tree_conn_disconnect(struct ksmbd_session *sess,
 			       struct ksmbd_tree_connect *tree_conn);

@@ -17,7 +17,7 @@ static int ksmbd_validate_filename(char *filename);
 
 static int parse_stream_name(char *filename, char **stream_name, int *s_type);
 
-static char *convert_to_nt_pathname(char *filename);
+static char *convert_to_nt_pathname(const char *filename);
 
 static int get_nlink(struct kstat *st);
 
@@ -25,7 +25,8 @@ static void ksmbd_conv_path_to_unix(char *path);
 static void ksmbd_strip_last_slash(char *path);
 static void ksmbd_conv_path_to_windows(char *path);
 
-static char *ksmbd_extract_sharename(char *treename);
+static char *ksmbd_casefold_sharename(struct unicode_map *um, const char *name);
+static char *ksmbd_extract_sharename(struct unicode_map *um, const char *treename);
 
 static char *convert_to_unix_name(struct ksmbd_share_config *share, const char *name);
 
