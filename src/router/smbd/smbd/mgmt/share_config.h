@@ -9,6 +9,7 @@
 #include <linux/workqueue.h>
 #include <linux/hashtable.h>
 #include <linux/path.h>
+#include <linux/unicode.h>
 
 struct ksmbd_share_config {
 	char			*name;
@@ -74,7 +75,8 @@ static inline void ksmbd_share_config_put(struct ksmbd_share_config *share)
 	__ksmbd_share_config_put(share);
 }
 
-static struct ksmbd_share_config *ksmbd_share_config_get(char *name);
+static struct ksmbd_share_config *ksmbd_share_config_get(struct unicode_map *um,
+						  const char *name);
 static bool ksmbd_share_veto_filename(struct ksmbd_share_config *share,
 			       const char *filename);
 static void ksmbd_share_configs_cleanup(void);

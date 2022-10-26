@@ -476,7 +476,7 @@ int ksmbd_vfs_read(struct ksmbd_work *work, struct ksmbd_file *fp, size_t count,
 
 	if (work->conn->connection_type) {
 		if (!(fp->daccess & (FILE_READ_DATA_LE | FILE_EXECUTE_LE))) {
-			pr_err("no right to read(%s)\n", FP_FILENAME(fp));
+			pr_err("no right to read(%pD)\n", fp->filp);
 			return -EACCES;
 		}
 	}
@@ -602,7 +602,7 @@ int ksmbd_vfs_write(struct ksmbd_work *work, struct ksmbd_file *fp,
 
 	if (sess->conn->connection_type) {
 		if (!(fp->daccess & FILE_WRITE_DATA_LE)) {
-			pr_err("no right to write(%s)\n", FP_FILENAME(fp));
+			pr_err("no right to write(%pD)\n", fp->filp);
 			err = -EACCES;
 			goto out;
 		}
@@ -649,8 +649,8 @@ int ksmbd_vfs_write(struct ksmbd_work *work, struct ksmbd_file *fp,
 	if (sync) {
 		err = vfs_fsync_range(filp, offset, offset + *written, 0);
 		if (err < 0)
-			pr_err("fsync failed for filename = %s, err = %d\n",
-			       FP_FILENAME(fp), err);
+			pr_err("fsync failed for filename = %pD, err = %d\n",
+			       fp->filp, err);
 	}
 
 out:
@@ -665,7 +665,7 @@ out:
  *
  * Return:	0 on success, otherwise error
  */
-int ksmbd_vfs_getattr(struct path *path, struct kstat *stat)
+int ksmbd_vfs_getattr(const struct path *path, struct kstat *stat)
 {
 	int err;
 
@@ -1339,6 +1339,9 @@ int ksmbd_vfs_truncate(struct ksmbd_work *work,
 	int err = 0;
 	struct file *filp;
 
+	if (size < 0)
+		return -EINVAL;
+
 	filp = fp->filp;
 
 	/* Do we need to break any of a levelII oplock? */
@@ -1466,7 +1469,11 @@ ssize_t ksmbd_vfs_getxattr(struct user_namespace *user_ns,
  */
 int ksmbd_vfs_setxattr(struct user_namespace *user_ns,
 		       struct dentry *dentry, const char *attr_name,
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 0, 0)
+		       void *attr_value, size_t attr_size, int flags)
+#else
 		       const void *attr_value, size_t attr_size, int flags)
+#endif
 {
 	int err;
 
@@ -2004,7 +2011,7 @@ int ksmbd_vfs_fqar_lseek(struct ksmbd_file *fp, loff_t start, loff_t length,
 	*out_count = 0;
 	end = start + length;
 	while (start < end && *out_count < in_count) {
-		extent_start = f->f_op->llseek(f, start, SEEK_DATA);
+		extent_start = vfs_llseek(f, start, SEEK_DATA);
 		if (extent_start < 0) {
 			if (extent_start != -ENXIO)
 				ret = (int)extent_start;
@@ -2014,7 +2021,7 @@ int ksmbd_vfs_fqar_lseek(struct ksmbd_file *fp, loff_t start, loff_t length,
 		if (extent_start >= end)
 			break;
 
-		extent_end = f->f_op->llseek(f, extent_start, SEEK_HOLE);
+		extent_end = vfs_llseek(f, extent_start, SEEK_HOLE);
 		if (extent_end < 0) {
 			if (extent_end != -ENXIO)
 				ret = (int)extent_end;
@@ -2146,7 +2153,15 @@ err_out:
 }
 #endif
 
-#if LINUX_VERSION_CODE < KERNEL_VERSION(3, 11, 0)
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 1, 0)
+static bool __dir_empty(struct dir_context *ctx, const char *name, int namlen,
+				   loff_t offset,
+				   u64 ino,
+				   unsigned int d_type)
+{
+	struct ksmbd_readdir_data *buf;
+	buf = container_of(ctx, struct ksmbd_readdir_data, ctx);
+#elif LINUX_VERSION_CODE < KERNEL_VERSION(3, 11, 0)
 static int __dir_empty(void *arg,
 				   const char *name,
 				   int namlen,
@@ -2179,9 +2194,7 @@ static int __dir_empty(struct dir_context *ctx,
 #endif
 	buf->dirent_count++;
 
-	if (buf->dirent_count > 2)
-		return -ENOTEMPTY;
-	return 0;
+	return buf->dirent_count <= 2;
 }
 
 /**
@@ -2218,7 +2231,17 @@ int ksmbd_vfs_empty_dir(struct ksmbd_file *fp)
 	return err;
 }
 
-#if LINUX_VERSION_CODE < KERNEL_VERSION(3, 11, 0)
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 1, 0)
+static bool __caseless_lookup(struct dir_context *ctx, const char *name,
+			     int namlen,
+			     loff_t offset,
+			     u64 ino,
+			     unsigned int d_type)
+{
+	struct ksmbd_readdir_data *buf;
+	int cmp = -EINVAL;
+	buf = container_of(ctx, struct ksmbd_readdir_data, ctx);
+#elif LINUX_VERSION_CODE < KERNEL_VERSION(3, 11, 0)
 static int __caseless_lookup(void *arg,
 			     const char *name,
 			     int namlen,
@@ -2227,6 +2250,7 @@ static int __caseless_lookup(void *arg,
 			     unsigned d_type)
 {
 	struct ksmbd_readdir_data *buf = arg; 
+	int cmp = -EINVAL;
 #elif LINUX_VERSION_CODE < KERNEL_VERSION(3, 19, 0)
 static int __caseless_lookup(void *arg,
 			     const char *name,
@@ -2237,6 +2261,7 @@ static int __caseless_lookup(void *arg,
 {
 	struct dir_context *ctx = arg;
 	struct ksmbd_readdir_data *buf;
+	int cmp = -EINVAL;
 	buf = container_of(ctx, struct ksmbd_readdir_data, ctx);
 #else
 static int __caseless_lookup(struct dir_context *ctx,
@@ -2247,17 +2272,40 @@ static int __caseless_lookup(struct dir_context *ctx,
 			     unsigned int d_type)
 {
 	struct ksmbd_readdir_data *buf;
+	int cmp = -EINVAL;
 	buf = container_of(ctx, struct ksmbd_readdir_data, ctx);
 #endif
 
 	if (buf->used != namlen)
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 1, 0)
+		return true;
+#else
 		return 0;
-	if (!strncasecmp((char *)buf->private, name, namlen)) {
+#endif
+	if (IS_ENABLED(CONFIG_UNICODE) && buf->um) {
+		const struct qstr q_buf = {.name = buf->private,
+					   .len = buf->used};
+		const struct qstr q_name = {.name = name,
+					    .len = namlen};
+
+		cmp = utf8_strncasecmp(buf->um, &q_buf, &q_name);
+	}
+	if (cmp < 0)
+		cmp = strncasecmp((char *)buf->private, name, namlen);
+	if (!cmp) {
 		memcpy((char *)buf->private, name, namlen);
 		buf->dirent_count = 1;
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 1, 0)
+		return false;
+#else
 		return -EEXIST;
+#endif
 	}
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 1, 0)
+	return true;
+#else
 	return 0;
+#endif
 }
 
 /**
@@ -2268,7 +2316,8 @@ static int __caseless_lookup(struct dir_context *ctx,
  *
  * Return:	0 on success, otherwise error
  */
-static int ksmbd_vfs_lookup_in_dir(struct path *dir, char *name, size_t namelen)
+static int ksmbd_vfs_lookup_in_dir(const struct path *dir, char *name,
+				   size_t namelen, struct unicode_map *um)
 {
 	int ret;
 	struct file *dfilp;
@@ -2282,6 +2331,7 @@ static int ksmbd_vfs_lookup_in_dir(struct path *dir, char *name, size_t namelen)
 		.private	= name,
 		.used		= namelen,
 		.dirent_count	= 0,
+		.um		= um,
 	};
 
 	dfilp = dentry_open(dir, flags, current_cred());
@@ -2350,7 +2400,8 @@ int ksmbd_vfs_kern_path(struct ksmbd_work *work, char *name,
 				break;
 
 			err = ksmbd_vfs_lookup_in_dir(&parent, filename,
-						      filename_len);
+						      filename_len,
+						      work->conn->um);
 			path_put(&parent);
 			if (err)
 				goto out;
@@ -2425,7 +2476,8 @@ int ksmbd_vfs_kern_path(struct ksmbd_work *work, char *name,
 				break;
 
 			err = ksmbd_vfs_lookup_in_dir(&parent, filename,
-						      filename_len);
+						      filename_len,
+						      work->conn->um);
 			if (err) {
 				path_put(&parent);
 				goto out;
@@ -2655,11 +2707,11 @@ int ksmbd_vfs_copy_file_ranges(struct ksmbd_work *work,
 	*total_size_written = 0;
 
 	if (!(src_fp->daccess & (FILE_READ_DATA_LE | FILE_EXECUTE_LE))) {
-		pr_err("no right to read(%s)\n", FP_FILENAME(src_fp));
+		pr_err("no right to read(%pD)\n", src_fp->filp);
 		return -EACCES;
 	}
 	if (!(dst_fp->daccess & (FILE_WRITE_DATA_LE | FILE_APPEND_DATA_LE))) {
-		pr_err("no right to write(%s)\n", FP_FILENAME(dst_fp));
+		pr_err("no right to write(%pD)\n", dst_fp->filp);
 		return -EACCES;
 	}
 

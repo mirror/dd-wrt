@@ -15,7 +15,7 @@
 #include "unicode.h"
 #include "vfs_cache.h"
 
-#define KSMBD_VERSION	"3.4.4"
+#define KSMBD_VERSION	"3.4.6"
 
 
 #if LINUX_VERSION_CODE < KERNEL_VERSION(3, 11, 0)

@@ -204,13 +204,13 @@ static void posix_state_to_acl(struct posix_acl_state *state,
 		struct posix_acl_entry *pace);
 static int compare_sids(const struct smb_sid *ctsid, const struct smb_sid *cwsid);
 static bool smb_inherit_flags(int flags, bool is_dir);
-static int smb_inherit_dacl(struct ksmbd_conn *conn, struct path *path,
+static int smb_inherit_dacl(struct ksmbd_conn *conn, const struct path *path,
 		unsigned int uid, unsigned int gid);
-static int smb_check_perm_dacl(struct ksmbd_conn *conn, struct path *path,
+static int smb_check_perm_dacl(struct ksmbd_conn *conn, const struct path *path,
 		__le32 *pdaccess, int uid);
 static int store_init_posix_acl(struct inode *inode, umode_t perm);
 static int set_info_sec(struct ksmbd_conn *conn, struct ksmbd_tree_connect *tcon,
-		 struct path *path, struct smb_ntsd *pntsd, int ntsd_len,
+		 const struct path *path, struct smb_ntsd *pntsd, int ntsd_len,
 		bool type_check);
 static void id_to_sid(unsigned int cid, uint sidtype, struct smb_sid *ssid);
 static void ksmbd_init_domain(u32 *sub_auth);
