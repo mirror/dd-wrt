@@ -46,15 +46,6 @@
 				document.write("<input class=\"button\" style=\"vertical-align: -.1rem;\" type=\"button\" name=\"config_button\" value=\"" + service.ssh_keygenerate + "\" onclick=\"generate_sshkey(this.form);\">");
 				//]]>
 				</script>
-			</div><br>
-			<div id="idssh_keyready" class="padding-left">
-				<div class="setting">
-					<script type="text/javascript">
-					//<![CDATA[
-						document.write("<input class=\"button green_btn\" type=\"button\" name=\"config_button\" value=\"" + service.ssh_download + "\" onclick=\"download_sshkey(this.form);\">");
-					//]]>
-					</script>
-				</div>
 			</div>
 			<div class="setting">
 				<div class="label"><% tran("service.ssh_key"); %></div>
@@ -63,6 +54,13 @@
 				//<![CDATA[
 					var var_authorized_keys = fix_cr( '<% nvg("sshd_authorized_keys"); %>' );
 					document.getElementById("sshd_authorized_keys").value = var_authorized_keys;
+				//]]>
+				</script>
+			</div>
+			<div id="idssh_keyready" class="center">
+				<script type="text/javascript">
+				//<![CDATA[
+				document.write("<input class=\"button green_btn\" type=\"button\" name=\"config_button\" value=\"" + service.ssh_download + "\" onclick=\"download_sshkey(this.form);\">");
 				//]]>
 				</script>
 			</div>
