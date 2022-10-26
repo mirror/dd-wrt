@@ -108,8 +108,14 @@ EJ_VISIBLE void ej_show_ddns_status(webs_t wp, int argc, char_t ** argv)
 	 * type=\"text/javascript\">Capture(ddnsm.all_noip)</script>"); return; } 
 	 */
 
-	if (nvram_match("ddns_status", "1")) {
-		websWrite(wp, "%s", live_translate(wp, "ddnsm.all_success"));
+	if ((fp = fopen("/tmp/ddns/ddns.log", "r"))) {
+		/*
+		 * Just dump the log file onto the web page 
+		 */
+		while (fgets(buff, sizeof(buff), fp)) {
+			websWrite(wp, "%s <br />", buff);
+		}
+		fclose(fp);
 	} else {
 		websWrite(wp, "%s", live_translate(wp, "ddnsm.all_connecting"));
 		return;
