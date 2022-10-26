@@ -176,7 +176,6 @@ void start_ddns(void)
 		else
 			fprintf(fp, "period = %s\n", "600");
 		fprintf(fp, "forced-update = %d\n", nvram_geti("ddns_force") * 24 * 60 * 60);
-		fprintf(fp, "cache-dir = %s\n", "/tmp/ddns");
 		if (init_ddns(fp) < 0)
 			return;
 
@@ -221,7 +220,7 @@ void start_ddns(void)
 		nvram2file("ddns_cache", "/tmp/ddns/inadyn_ip.cache");
 		nvram2file("ddns_time", "/tmp/ddns/inadyn_time.cache");
 	}
-	dd_logstart("ddns", eval("inadyn", "-e", "ddns_success", "--exec-mode=compat", "-f", "/tmp/ddns/inadyn.conf", "-P", "/var/run/inadyn.pid", "-l", "notice"));
+	dd_logstart("ddns", eval("inadyn", "--cache-dir=/tmp/ddns", "-e", "ddns_success", "--exec-mode=compat", "-f", "/tmp/ddns/inadyn.conf", "-P", "/var/run/inadyn.pid", "-l", "notice"));
 
 	cprintf("done\n");
 
