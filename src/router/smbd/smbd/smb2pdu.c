@@ -2374,7 +2374,7 @@ out:
 	return err;
 }
 
-static int smb2_create_truncate(const struct path *path)
+static int smb2_create_truncate(struct path *path)
 {
 	int rc = vfs_truncate(path, 0);
 
