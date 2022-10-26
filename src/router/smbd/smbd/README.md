@@ -21,7 +21,6 @@ CIFSD is an opensource In-kernel CIFS/SMB3 server created by Namjae Jeon for Lin
 This code was developed in participation with the Protocol Freedom Information Foundation.
 
 Please see
-* http://protocolfreedom.org/
 * http://samba.org/samba/PFIF/
 for more details.
 

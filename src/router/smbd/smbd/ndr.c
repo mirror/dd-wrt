@@ -344,6 +344,10 @@ int ndr_encode_posix_acl(struct ndr *n,
 {
 	unsigned int ref_id = 0x00020000;
 	int ret;
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 0, 0)
+	vfsuid_t vfsuid;
+	vfsgid_t vfsgid;
+#endif
 
 	n->offset = 0;
 	n->length = 1024;
@@ -372,11 +376,21 @@ int ndr_encode_posix_acl(struct ndr *n,
 		return ret;
 
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 12, 0)
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 0, 0)
+	vfsuid = i_uid_into_vfsuid(user_ns, inode);
+	ret = ndr_write_int64(n, from_kuid(&init_user_ns, vfsuid_into_kuid(vfsuid)));
+#else
 	ret = ndr_write_int64(n, from_kuid(&init_user_ns, i_uid_into_mnt(user_ns, inode)));
+#endif
 	if (ret)
 		return ret;
 
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 0, 0)
+	vfsgid = i_gid_into_vfsgid(user_ns, inode);
+	ret = ndr_write_int64(n, from_kgid(&init_user_ns, vfsgid_into_kgid(vfsgid)));
+#else
 	ret = ndr_write_int64(n, from_kgid(&init_user_ns, i_gid_into_mnt(user_ns, inode)));
+#endif
 	if (ret)
 		return ret;
 #else

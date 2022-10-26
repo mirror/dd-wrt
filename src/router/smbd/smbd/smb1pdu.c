@@ -457,7 +457,7 @@ int smb_tree_connect_andx(struct ksmbd_work *work)
 		status.ret = KSMBD_TREE_CONN_STATUS_ERROR;
 		goto out_err;
 	}
-	name = ksmbd_extract_sharename(treename);
+	name = ksmbd_extract_sharename(conn->um, treename);
 	if (IS_ERR(name)) {
 		status.ret = KSMBD_TREE_CONN_STATUS_ERROR;
 		goto out_err;
@@ -487,7 +487,7 @@ int smb_tree_connect_andx(struct ksmbd_work *work)
 		goto out_err;
 	}
 
-	status = ksmbd_tree_conn_connect(sess, name);
+	status = ksmbd_tree_conn_connect(conn, sess, name);
 	if (status.ret == KSMBD_TREE_CONN_STATUS_OK)
 		rsp_hdr->Tid = cpu_to_le16(status.tree_conn->id);
 	else

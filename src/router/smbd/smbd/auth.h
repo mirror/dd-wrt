@@ -33,9 +33,10 @@
 
 struct ksmbd_session;
 struct ksmbd_conn;
+struct ksmbd_work;
 struct kvec;
 
-static int ksmbd_crypt_message(struct ksmbd_conn *conn, struct kvec *iov,
+static int ksmbd_crypt_message(struct ksmbd_work *work, struct kvec *iov,
 			unsigned int nvec, int enc);
 static void ksmbd_copy_gss_neg_header(void *buf);
 static int ksmbd_auth_ntlm(struct ksmbd_session *sess, char *pw_buf, char *cryptkey);
