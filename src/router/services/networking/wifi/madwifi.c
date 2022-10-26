@@ -2933,11 +2933,12 @@ void configure_wifi(void)	// madwifi implementation for atheros based
 		sprintf(regdomain, "wlan0_regdomain");
 		country = nvram_default_get(regdomain, "UNITED_STATES");
 		eval("iw", "reg", "set", "00");
+		sleep(1);
 		char *iso = getIsoName(country);
-
 		if (!iso)
 			iso = "DE";
 		eval("iw", "reg", "set", iso);
+		sleep(1);
 /*		eval("touch", "/tmp/.crdalock");	// create lock file
 		int i = 40;	// max wait 4 sec
 		while (i--) {
