@@ -5672,7 +5672,6 @@ void ddns_save_value(webs_t wp)
 	char _username[] = "ddns_username_XX";
 	char _passwd[] = "ddns_passwd_XX";
 	char _hostname[] = "ddns_hostname_XX";
-	char _dyndnstype[] = "ddns_dyndnstype_XX";
 	char _wildcard[] = "ddns_wildcard_XX";
 	char _custom[] = "ddns_custom_XX";
 	char _path[] = "ddns_path_XX";
@@ -5701,6 +5700,8 @@ void ddns_save_value(webs_t wp)
 	sprintf(_hostname, "ddns_hostname_%d", enable);
 	sprintf(_ssl, "ddns_ssl", enable);
 	snprintf(_wildcard, sizeof(_wildcard), "ddns_wildcard_%d", enable);
+	snprintf(_custom, sizeof(_custom), "ddns_custom_%d", enable);
+	snprintf(_path, sizeof(_path), "ddns_path_%d",enable);
 
 	switch (enable) {
 	case 0:
@@ -5710,13 +5711,7 @@ void ddns_save_value(webs_t wp)
 		break;
 	case 1:
 		// dyndns
-		snprintf(_dyndnstype, sizeof(_dyndnstype), "ddns_dyndnstype");
 		snprintf(_wildcard, sizeof(_wildcard), "ddns_wildcard");
-		break;
-	case 5:
-		// custom
-		snprintf(_custom, sizeof(_custom), "ddns_custom_%d", enable);
-		snprintf(_path, sizeof(_path), "ddns_path_%d",enable);
 		break;
 	}
 
