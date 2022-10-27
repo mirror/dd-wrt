@@ -104,7 +104,7 @@ h2 {
   height: 23px;
   line-height: 23px;
   margin: 0;
-  padding: 0 8px;
+  padding: 0 12px;
   border-right: 1px solid #ccc;
   text-decoration: none;
 }
@@ -114,7 +114,10 @@ h2 {
 #menu li span, #menu li a:hover {
   background: linear-gradient(0deg, #ededed, #fff 100%);
 }
-.link:hover {
+.link {
+  color: #115b80;
+}
+#help a:hover, .link:hover {
   color: #1c81b3;
 }
 #logout {
@@ -166,6 +169,9 @@ input {
   margin-left: 1px;
   margin-right: 1px;
 }
+input[type="file"] {
+  line-height: initial !important;
+}
 .button {
   padding: .12rem 1rem;
   margin-right: .2rem;
@@ -175,6 +181,9 @@ input {
 }
 .button[disabled]:hover {
   background: #e9e9ed;
+}
+.button[style*='vertical-align: -.1rem'] {
+  vertical-align: unset !important;
 }
 .num[name*='lease'][size='10'] {
   margin-right: 4px;
