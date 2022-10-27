@@ -76,11 +76,13 @@ input[type='radio'] {
   color: #fff;
   filter: brightness(1);
 }
-.button:hover, ::file-selector-button:hover,
+.button:hover, ::file-selector-button:hover {
+  filter: brightness(1.2);
+}
 ::-webkit-file-upload-button:hover {
   filter: brightness(1.2);
 }
-.button.green_btn {
+.button.green_btn, .button.green_btn:disabled:hover {
   background: #166f2a;
   color: #fff;
 }
@@ -92,7 +94,7 @@ input[type='radio'] {
   box-shadow: 0 0 5px 1px #199235;
   outline: 0;
 }
-.button.brown_btn {
+.button.brown_btn, .button.brown_btn:disabled:hover {
   background: #6f4816;
   color: #fff;
 }
@@ -104,8 +106,7 @@ input[type='radio'] {
   box-shadow: 0 0 5px 1px #ff8400;
   outline: 0;
 }
-.button.red_btn,
-.button.red_btn:disabled:hover {
+.button.red_btn, .button.red_btn:disabled:hover {
   background: #c00;
   color: #f8f8f8;
 }

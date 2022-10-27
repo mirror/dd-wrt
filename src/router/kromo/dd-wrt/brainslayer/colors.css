@@ -16,7 +16,11 @@ input[type='checkbox'],
 input[type='radio'] {
   accent-color: #f00;
 }
-.link:hover {
+.link {
+  text-decoration: underline;
+  color: #000;
+}
+#help a:hover, .link:hover {
   color: #f00;
 }
 .popup_bg {
@@ -36,21 +40,9 @@ h1 {
 h2, legend {
   color: #ec361d;
 }
-h3 {
-  color: #b26c38;
-}
-h2, h3 {
+h2 {
   background-color: #e3ddd5;
   border: 1px solid #eeeae4;
-}
-:link {
-  color: #554fa0;
-}
-:visited {
-  color: #090051;
-}
-:link:hover, :visited:hover {
-  color: #5b52cb;
 }
 fieldset {
   background-color: #f6f6f6;
@@ -108,6 +100,9 @@ th {
   color: #f00;
   font-weight: 700;
 }
+input.button, input.button:disabled:hover {
+  background-color: #e9e9ed
+}
 input.button:hover {
   background-color: #d0d0d7;
 }
@@ -122,7 +117,7 @@ input.button:hover {
     #f1d496 2px, #f1d496 3px);
   border: 1px solid #bb9273;
 }
-.submitFooter .button {
+.submitFooter .button, .submitFooter .button:disabled:hover {
   background-color: #e9e9ed;
   border: 1px solid #8f8f9d;
   border-radius: 4px;
