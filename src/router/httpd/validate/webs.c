@@ -5700,6 +5700,7 @@ void ddns_save_value(webs_t wp)
 	sprintf(_passwd, "ddns_passwd_%d", enable);
 	sprintf(_hostname, "ddns_hostname_%d", enable);
 	sprintf(_ssl, "ddns_ssl", enable);
+	snprintf(_wildcard, sizeof(_wildcard), "ddns_wildcard_%d", enable);
 
 	switch (enable) {
 	case 0:
@@ -5716,14 +5717,6 @@ void ddns_save_value(webs_t wp)
 		// custom
 		snprintf(_custom, sizeof(_custom), "ddns_custom_%d", enable);
 		snprintf(_path, sizeof(_path), "ddns_path_%d",enable);
-		break;
-	case 6:
-		// 3322 dynamic : added botho 30/07/06
-		snprintf(_wildcard, sizeof(_wildcard), "ddns_wildcard_%d", enable);
-		break;
-	case 7:
-		// easydns
-		snprintf(_wildcard, sizeof(_wildcard), "ddns_wildcard_%d", enable);
 		break;
 	}
 
