@@ -46,8 +46,8 @@ input[type='file'] {
   padding: 4px;
   margin-top: -8px;
 }
-[disabled], :disabled, .off {
-  cursor: default;
+:disabled, .off {
+  cursor: default !important;
   opacity: .6;
 }
 #tablePwdCheck tr th {
@@ -63,10 +63,6 @@ input[type='file'] {
   position: absolute;
   width: 100px;
   z-index: 0;
-}
-#help a:hover, .link {
-  text-decoration: underline;
-  color: #04c;
 }
 div.bulle {
   position: absolute;
@@ -128,4 +124,7 @@ table#radio_table tr td, .table_row_bg td {
   cursor: pointer;
   width: 20px;
   height: 20px;
+}
+.iplookup {
+  overflow-x: hidden;
 }

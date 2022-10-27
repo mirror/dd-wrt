@@ -17,8 +17,19 @@ input, select,
 option, .button {
   font-weight: 700;
 }
+.button[style*='vertical-align: -.1rem'] {
+  vertical-align: .1rem !important;
+  margin-left: -.3rem;
+  padding: 0 16px 2px
+}
 input, select {
   border-radius: 4px;
+}
+#firmware input[type='file'] {
+  margin-top: unset;
+}
+#firmware .setting:nth-child(3) .label {
+  margin-top: .8rem !important;
 }
 select {
   min-width: 6rem;
@@ -61,14 +72,14 @@ h1, h4 {
 h1 {
   padding-left: .4em;
 }
-h2, h3 {
+h2 {
   padding: 4px 12px;
   line-height: 1.42857;
   letter-spacing: .123rem;
   margin: 0 0 .906em 0;
   border-radius: 3px;
 }
-legend, :link, :visited {
+legend {
   font-weight: 700;
 }
 hr {

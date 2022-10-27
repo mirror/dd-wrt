@@ -26,12 +26,12 @@ p {
 h1 {
   font-size: 24px;
 }
-h2, h3, th {
+h2, th {
   background: #e9e9ed;
   border: 1px solid #8f8f9d;
   color: #2b226f;
 }
-h2, h3 {
+h2 {
   padding: 4px 12px;
   line-height: 1.42857;
   letter-spacing: .123rem;
@@ -239,6 +239,15 @@ input.button[onclick*='delete'] {
 .button[name='refresh_button'] {
   background-color: #e9e9ed;
   border-radius: 4px;
+}
+.button[style*='vertical-align: -.1rem'] {
+  vertical-align: unset !important;
+}
+#firmware input[type='file'] {
+  margin-top: unset;
+}
+#firmware .setting:nth-child(3) .label {
+  margin-top: .8rem;
 }
 #statusInfo {
   position: absolute;
