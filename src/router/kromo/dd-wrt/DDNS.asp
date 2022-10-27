@@ -229,6 +229,10 @@ addEvent(window, "unload", function() {
 									<input name="ddns_custom" size="35" maxlength="32" value="<% get_ddns_value("ddns_custom"); %>" />
 								</div>
 								<div class="setting">
+									<div class="label">Path</div>
+									<input name="ddns_path" size="35" maxlength="32" value="<% get_ddns_value("ddns_path"); %>" />
+								</div>
+								<div class="setting">
 									<div class="label"><% tran("share.usrname"); %></div>
 									<input name="ddns_username" size="35" maxlength="64" onblur="valid_name(this,share.usrname)" value="<% get_ddns_value("ddns_username"); %>" />
 								</div>
@@ -240,26 +244,6 @@ addEvent(window, "unload", function() {
 								<div class="setting">
 									<div class="label"><% tran("share.hostname"); %></div>
 									<input name="ddns_hostname" size="35" onblur="valid_hostname(this,share.hostname)" value="<% get_ddns_value("ddns_hostname"); %>" />
-								</div>
-								<div class="setting">
-									<div class="label">URL</div>
-									<textarea cols="60" rows="2" id="ddns_url" name="ddns_url"></textarea>
-									<script type="text/javascript">
-									//<![CDATA[
-										var ddns_url = fix_cr( '<% nvg("ddns_url"); %>' );
-										document.getElementById("ddns_url").value = ddns_url;						
-									//]]>
-									</script>
-								</div>
-								<div class="setting">
-									<div class="label"><% tran("ddns.options"); %></div>
-									<textarea cols="60" rows="4" id="ddns_conf" name="ddns_conf"></textarea>
-									<script type="text/javascript">
-									//<![CDATA[
-										var ddns_conf = fix_cr( '<% nvg("ddns_conf"); %>' );
-										document.getElementById("ddns_conf").value = ddns_conf;
-									//]]>
-									</script>
 								</div>
 								<% nvsm("ddns_enable","0","-->"); %>
 								<% nvsm("ddns_enable","1","-->"); %>
