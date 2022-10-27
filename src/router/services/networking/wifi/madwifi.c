@@ -2933,23 +2933,10 @@ void configure_wifi(void)	// madwifi implementation for atheros based
 		sprintf(regdomain, "wlan0_regdomain");
 		country = nvram_default_get(regdomain, "UNITED_STATES");
 		eval("iw", "reg", "set", "00");
-		sleep(1);
 		char *iso = getIsoName(country);
 		if (!iso)
 			iso = "DE";
 		eval("iw", "reg", "set", iso);
-		sleep(1);
-/*		eval("touch", "/tmp/.crdalock");	// create lock file
-		int i = 40;	// max wait 4 sec
-		while (i--) {
-			FILE *fp = fopen("/tmp/.crdalock", "rb");
-			if (!fp)
-				break;
-			fclose(fp);
-			usleep(100 * 1000);	// wait 100 ms
-		}
-		unlink("/tmp/.crdalock");	// delete lock file, no matter if crda still running. 4 sec is enough
-*/
 #if defined(HAVE_ONNET) && defined(HAVE_ATH10K_CT)
 		if (nvram_geti("ath10k-ct") != nvram_geti("wlan10k-ct_bak")) {
 			fprintf(stderr, "Switching ATH10K driver, rebooting now...\n");
@@ -2958,14 +2945,13 @@ void configure_wifi(void)	// madwifi implementation for atheros based
 #endif
 	}
 #endif
-	for (i = 0; i < c; i++)
+	for (i = 0; i < c; i++) {
 		adjust_regulatory(i);
-
+	}
 	for (i = 0; i < c; i++) {
 		sysprintf("rm -f /tmp/wlan%d_configured", (c - 1) - i);
 		configure_single((c - 1) - i);
 	}
-
 #if 0
 	int dead = 10 * 60;	// after 30 seconds, we can assume that something is hanging
 	while (dead--) {
