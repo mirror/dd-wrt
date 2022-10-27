@@ -5733,7 +5733,7 @@ void ddns_save_value(webs_t wp)
 	wildcard = websGetVar(wp, "ddns_wildcard", NULL);
 	custom = websGetVar(wp, "ddns_custom", NULL);
 	ssl = websGetVar(wp, "ddns_ssl", NULL);
-	path = websGetVar(wp, _path, NULL);
+	path = websGetVar(wp, "ddns_path", NULL);
 	force = websGetVari(wp, _force, 0);
 	wan_ip = websGetVar(wp, _wan_ip, NULL);
 
