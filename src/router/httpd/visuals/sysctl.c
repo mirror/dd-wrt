@@ -65,8 +65,8 @@ static void showsysctl(char *path, char *nvname, char *name, char *sysval, void 
 			*p = 0;
 		websWrite(wp, "<fieldset>\n" "<legend>%s</legend>\n", title);
 	}
-	websWrite(wp, "<div class=\"setting\">\n" //
-								"<div class=\"label\" style=\"width: 22.6em\">%s</div>\n", name);
+	websWrite(wp, "<div class=\"setting\">\n"	//
+		  "<div class=\"label\" style=\"width: 22.6em\">%s</div>\n", name);
 	websWrite(wp, "<input maxlength=\"100\" size=\"40\" name=\"%s\" value=\"%s\" />\n", nvname, sysval);
 	websWrite(wp, "</div>\n");
 	p->cnt++;

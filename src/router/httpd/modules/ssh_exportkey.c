@@ -54,8 +54,9 @@ static int wfclose(webs_t fp);
 int wfflush(webs_t fp);
 static int do_file_attach(struct mime_handler *handler, char *path, webs_t stream, char *attachment);
 
-static int download_ssh_key(unsigned char method, struct mime_handler *handler, char *path, webs_t wp) {
-	
+static int download_ssh_key(unsigned char method, struct mime_handler *handler, char *path, webs_t wp)
+{
+
 	char fname[128];
 	snprintf(fname, sizeof(fname), "%s", path);
 	char dname[128];
@@ -66,7 +67,7 @@ static int download_ssh_key(unsigned char method, struct mime_handler *handler, 
 	p = strstr(dname, "/");
 	if (p)
 		return -1;
-	
+
 	p = strstr(dname, ".");
 	if (p)
 		*p = '_';
