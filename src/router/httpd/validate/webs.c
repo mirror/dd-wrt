@@ -5667,7 +5667,7 @@ char *request_freedns(char *user, char *password)
 
 void ddns_save_value(webs_t wp)
 {
-	char *username, *passwd, *hostname, *dyndnstype, *wildcard, *custom, *conf, *url, *wan_ip, *ssl;
+	char *username, *passwd, *hostname, *dyndnstype, *wildcard, *custom, *path, *wan_ip, *ssl;
 	int force;
 	char _username[] = "ddns_username_XX";
 	char _passwd[] = "ddns_passwd_XX";
@@ -5675,8 +5675,7 @@ void ddns_save_value(webs_t wp)
 	char _dyndnstype[] = "ddns_dyndnstype_XX";
 	char _wildcard[] = "ddns_wildcard_XX";
 	char _custom[] = "ddns_custom_XX";
-	char _conf[] = "ddns_conf";
-	char _url[] = "ddns_url";
+	char _path[] = "ddns_path_XX";
 	char _force[] = "ddns_force";
 	char _ssl[] = "ddns_ssl";
 	char _wan_ip[] = "ddns_wan_ip";
@@ -5716,8 +5715,7 @@ void ddns_save_value(webs_t wp)
 	case 5:
 		// custom
 		snprintf(_custom, sizeof(_custom), "ddns_custom_%d", enable);
-		snprintf(_conf, sizeof(_conf), "ddns_conf");
-		snprintf(_url, sizeof(_url), "ddns_url");
+		snprintf(_path, sizeof(_path), "ddns_path_%d",enable);
 		break;
 	case 6:
 		// 3322 dynamic : added botho 30/07/06
@@ -5735,8 +5733,7 @@ void ddns_save_value(webs_t wp)
 	wildcard = websGetVar(wp, "ddns_wildcard", NULL);
 	custom = websGetVar(wp, "ddns_custom", NULL);
 	ssl = websGetVar(wp, "ddns_ssl", NULL);
-	conf = websGetVar(wp, _conf, NULL);
-	url = websGetVar(wp, _url, NULL);
+	path = websGetVar(wp, _path, NULL);
 	force = websGetVari(wp, _force, 0);
 	wan_ip = websGetVar(wp, _wan_ip, NULL);
 
@@ -5756,8 +5753,7 @@ void ddns_save_value(webs_t wp)
 	nvram_set(_hostname, hostname);
 	nvram_set(_wildcard, wildcard);
 	nvram_set(_custom, custom);
-	nvram_set(_conf, conf);
-	nvram_set(_url, url);
+	nvram_set(_path, path);
 	nvram_seti(_force, force);
 	nvram_set(_wan_ip, wan_ip);
 	nvram_set(_ssl, ssl);
