@@ -1650,7 +1650,7 @@ static void apply_cgi(webs_t wp, char_t * urlPrefix, char_t * webDir, int arg, c
 	cprintf("get change_action = %s\n", value);
 
 	if (value && !strcmp(value, "gozila_cgi")) {
-		fprintf(stderr, "[GOZILLA_APPLY] %s %s %s\n", websGetVar(wp, "submit_button", NULL), websGetVar(wp, "submit_type", NULL), websGetVar(wp, "call", "no call defined"));
+//		fprintf(stderr, "[GOZILLA_APPLY] %s %s %s\n", websGetVar(wp, "submit_button", NULL), websGetVar(wp, "submit_type", NULL), websGetVar(wp, "call", "no call defined"));
 		gozila_cgi(wp, urlPrefix, webDir, arg, url, path, handler);
 		return;
 	}
