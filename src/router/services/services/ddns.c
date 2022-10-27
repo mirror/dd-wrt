@@ -120,8 +120,8 @@ int init_ddns(FILE * fp)
 		if (nvram_match(_wildcard, "1"))
 			fprintf(fp, "wildcard = true\n");
 		if (flag == 5) {
-			fprintf(fp, "ddns-server = \"%s\"\n", nvram_safe_get("ddns_custom"));
-			fprintf(fp, "ddns-path = \"%s\"\n", nvram_safe_get("ddns_path"));
+			fprintf(fp, "ddns-server = \"%s\"\n", nvram_safe_get("ddns_custom_5"));
+			fprintf(fp, "ddns-path = \"%s\"\n", nvram_safe_get("ddns_path_5"));
 		}
 		if (nvram_match("ddns_wan_ip", "1")) {
 			fprintf(fp, "checkip-command = \"/sbin/service checkwanip main\"\n");
@@ -263,8 +263,8 @@ int ddns_success_main(int argc, char *argv[])
 	nvram_set("ddns_ssl_buf", nvram_safe_get(_ssl));
 #endif
 	nvram_set("ddns_wildcard_buf", nvram_safe_get(_wildcard));
-	nvram_set("ddns_custom_5_buf", nvram_safe_get("ddns_custom_5"));
-	nvram_set("ddns_path_5_buf", nvram_safe_get("ddns_path_5"));
+	nvram_set("ddns_custom_buf", nvram_safe_get("ddns_custom_5"));
+	nvram_set("ddns_path_buf", nvram_safe_get("ddns_path_5"));
 
 	nvram_async_commit();
 
