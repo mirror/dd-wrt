@@ -52,8 +52,6 @@ char _passwd[] = "ddns_passwd_XX";
 char _hostname[] = "ddns_hostname_XX";
 char _wildcard[] = "ddns_wildcard_XX";
 char _ssl[] = "ddns_ssl_XX";
-char _url[] = "ddns_url_XX";
-char _conf[] = "ddns_conf_XX";
 
 int init_ddns(FILE * fp)
 {
@@ -122,8 +120,8 @@ int init_ddns(FILE * fp)
 		if (nvram_match(_wildcard, "1"))
 			fprintf(fp, "wildcard = true\n");
 		if (flag == 5) {
-			fprintf(fp, "ddns-server = \"%s\"\n", nvram_safe_get("ddns_url"));
-			fprintf(fp, "ddns-path = \"%s\"\n", nvram_safe_get("ddns_conf"));
+			fprintf(fp, "ddns-server = \"%s\"\n", nvram_safe_get("ddns_custom"));
+			fprintf(fp, "ddns-path = \"%s\"\n", nvram_safe_get("ddns_path"));
 		}
 		if (nvram_match("ddns_wan_ip", "1")) {
 			fprintf(fp, "checkip-command = \"/sbin/service checkwanip main\"\n");
@@ -150,10 +148,11 @@ void start_ddns(void)
 	    strcmp(nvram_safe_get("ddns_username_buf"), nvram_safe_get(_username)) ||
 	    strcmp(nvram_safe_get("ddns_passwd_buf"), nvram_safe_get(_passwd)) ||
 	    strcmp(nvram_safe_get("ddns_hostname_buf"), nvram_safe_get(_hostname)) ||
-	    strcmp(nvram_safe_get("ddns_wildcard_buf"), nvram_safe_get(_wildcard)) || strcmp(nvram_safe_get("ddns_url_buf"), nvram_safe_get(_url)) || strcmp(nvram_safe_get("ddns_conf_buf"), nvram_safe_get(_conf)) ||
+	    strcmp(nvram_safe_get("ddns_wildcard_buf"), nvram_safe_get(_wildcard)) || 
 #ifdef HAVE_USE_OPENSSL
 	    strcmp(nvram_safe_get("ddns_ssl_buf"), nvram_safe_get(_ssl)) ||
 #endif
+	    strcmp(nvram_safe_get("ddns_path_buf"), nvram_safe_get("ddns_path_5")) ||
 	    strcmp(nvram_safe_get("ddns_custom_buf"), nvram_safe_get("ddns_custom_5"))) {
 		/*
 		 * If the user changed anything in the GUI, delete all cache and log 
@@ -264,9 +263,8 @@ int ddns_success_main(int argc, char *argv[])
 	nvram_set("ddns_ssl_buf", nvram_safe_get(_ssl));
 #endif
 	nvram_set("ddns_wildcard_buf", nvram_safe_get(_wildcard));
-	nvram_set("ddns_conf_buf", nvram_safe_get(_conf));
-	nvram_set("ddns_url_buf", nvram_safe_get(_url));
 	nvram_set("ddns_custom_5_buf", nvram_safe_get("ddns_custom_5"));
+	nvram_set("ddns_path_5_buf", nvram_safe_get("ddns_path_5"));
 
 	nvram_async_commit();
 
