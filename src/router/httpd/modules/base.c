@@ -1418,12 +1418,11 @@ static int gozila_cgi(webs_t wp, char_t * urlPrefix, char_t * webDir, int arg, c
 								 * renew,
 								 * release
 								 * ..... */
-
-	fprintf(stderr, "submit_button=[%s] submit_type=[%s]\n", submit_button, submit_type);
+	dd_logdebug("httpd", "submit_button=[%s] submit_type=[%s]\n", submit_button, submit_type);
 	act = handle_gozila_action(submit_button, submit_type);
 
 	if (act) {
-		fprintf(stderr, "name=[%s] type=[%s] service=[%s] action=[%d]\n", act->name, act->type, act->service, act->action);
+		dd_logdebug("httpd", "name=[%s] type=[%s] service=[%s] action=[%d]\n", act->name, act->type, act->service, act->action);
 		action = act->action;
 		if (act->goname) {
 			start_gozila(act->goname, wp);
@@ -1650,7 +1649,7 @@ static void apply_cgi(webs_t wp, char_t * urlPrefix, char_t * webDir, int arg, c
 	cprintf("get change_action = %s\n", value);
 
 	if (value && !strcmp(value, "gozila_cgi")) {
-//		fprintf(stderr, "[GOZILLA_APPLY] %s %s %s\n", websGetVar(wp, "submit_button", NULL), websGetVar(wp, "submit_type", NULL), websGetVar(wp, "call", "no call defined"));
+		dd_logdebug("httpd", "[GOZILLA_APPLY] %s %s %s\n", websGetVar(wp, "submit_button", NULL), websGetVar(wp, "submit_type", NULL), websGetVar(wp, "call", "no call defined"));
 		gozila_cgi(wp, urlPrefix, webDir, arg, url, path, handler);
 		return;
 	}
@@ -1688,7 +1687,7 @@ static void apply_cgi(webs_t wp, char_t * urlPrefix, char_t * webDir, int arg, c
 		nvram_seti("is_default", 0);
 		nvram_seti("is_modified", 1);
 		if (act) {
-			fprintf(stderr, "%s:submit_button=[%s] service=[%s] action=[%d]\n", value, act->name, act->service, act->action);
+			dd_logdebug("httpd", "%s:submit_button=[%s] service=[%s] action=[%d]\n", value, act->name, act->service, act->action);
 
 			if ((act->action == SYS_RESTART)
 			    || (act->action == SERVICE_RESTART)) {
