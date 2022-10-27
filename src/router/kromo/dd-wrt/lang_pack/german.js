@@ -1647,8 +1647,8 @@ service.ssh_keygenerate="Schlüssel erzeugen";
 service.ssh_keylength="SSH Schlüssellänge";
 service.ssh_replace="Vorhandene(n) Schlüssel ersetzen";
 service.ssh_download="Privaten Schlüssel herunterladen";
-service.ssh_keyalert="Das Generieren der Schlüssel kann bis zu 10 Minuten dauern, bitte haben Sie etwas Geduld.\nKlicken Sie nach dem Generieren auf die Schaltfläche Anwenden.";
-service.ssh_keydownload="Der Private Schlüssel wird im OpenSSH Format heruntergeladen.\nFalls Sie PuTTY verwenden möchten, muss der Schlüssel zuerst mit PuTTYgen in ein kompatibles Format konvertiert werden.";
+service.ssh_keyalert="Das Generieren der Schlüssel kann bis zu 10 Minuten dauern, bitte haben Sie etwas Geduld.\nKlicken Sie nach dem Generieren auf die Schaltfläche Privaten Schlüssel herunterladen.";
+service.ssh_keydownload="Klicken Sie nach dem Generieren auf die Schaltfläche Anwenden.\nDer Private Schlüssel wird im OpenSSH Format heruntergeladen.\nFalls Sie PuTTY verwenden möchten, muss der Schlüssel zuerst mit PuTTYgen in ein kompatibles Format konvertiert werden.";
 
 //help page
 hservice.right1="Bevor Sie das Speichern der Clientzuweisungs-DB im JFFS2-Flashspeicher aktivieren, muss die JFFS2-Unterstützung <b>aktiviert</b> werden. Die JFFS2-Unterstützung befindet sich auf der Registerkarte Administration / Management.";
