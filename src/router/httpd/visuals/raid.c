@@ -533,7 +533,7 @@ EJ_VISIBLE void ej_show_raid(webs_t wp, int argc, char_t ** argv)
 			websWrite(wp, "</tr>\n");
 			midx++;
 		}
-		
+
 		websWrite(wp, "<tr>\n");
 		websWrite(wp, "<td>&nbsp;</td>\n");
 		websWrite(wp, "<td class=\"center\">\n");
@@ -559,8 +559,7 @@ EJ_VISIBLE void ej_show_raid(webs_t wp, int argc, char_t ** argv)
 		  "<tr>\n" "<th><script type=\"text/javascript\">Capture(nas.drive)</script></th>\n"
 		  "<th><script type=\"text/javascript\">Capture(idx.label)</script></th>\n"
 		  "<th><script type=\"text/javascript\">Capture(nas.fs)</script></th>\n"
-			"<th class=\"center\" width=\"10%%\"><script type=\"text/javascript\">Capture(share.actiontbl)</script></th>\n"
-			"</tr>\n</thead><tbody>");
+		  "<th class=\"center\" width=\"10%%\"><script type=\"text/javascript\">Capture(share.actiontbl)</script></th>\n" "</tr>\n</thead><tbody>");
 	int idx = 0;
 	if (drives) {
 		foreach(drive, drives, dnext) {

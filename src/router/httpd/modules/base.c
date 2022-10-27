@@ -2528,7 +2528,7 @@ static int do_syslog(unsigned char method, struct mime_handler *handler, char *u
 
 	websWrite(stream, "<!DOCTYPE html>\n"	//
 		  "<html>\n" "<head>\n" "<meta http-equiv=\"Content-Type\" content=\"text/html; charset=%s\" />\n"	//
-			"<meta name=\"viewport\" content=\"width=device-width, initial-scale=1\" />\n"	//
+		  "<meta name=\"viewport\" content=\"width=device-width, initial-scale=1\" />\n"	//
 		  "<script type=\"text/javascript\" src=\"common.js\"></script>\n"	//
 		  "<script type=\"text/javascript\" src=\"lang_pack/english.js\"></script>\n", charset);
 #ifdef HAVE_LANGUAGE
@@ -2671,7 +2671,7 @@ static int do_ttgraph(unsigned char method, struct mime_handler *handler, char *
 
 	websWrite(stream, "<!DOCTYPE html>\n"	//
 		  "<html>\n" "<head>\n" "<meta http-equiv=\"Content-Type\" content=\"text/html; charset=%s\" />\n"	//
-			"<meta name=\"viewport\" content=\"width=device-width, initial-scale=1\" />\n"	//
+		  "<meta name=\"viewport\" content=\"width=device-width, initial-scale=1\" />\n"	//
 		  "<title>DD-WRT Traffic Graph</title>\n"	//
 		  "<script type=\"text/javascript\">\n"	//
 		  "//<![CDATA[\n"	//
