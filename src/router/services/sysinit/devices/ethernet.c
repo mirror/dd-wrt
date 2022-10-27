@@ -80,6 +80,7 @@ static char *pcidrivers[] = {
 	"i40e",
 	"i40evf",
 	"igb",
+	"igc",
 	"igbvf",
 	"ipg",
 	"ixgb",
