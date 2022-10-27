@@ -113,17 +113,17 @@ int init_ddns(FILE * fp)
 			fprintf(fp, "custom namecheap {\n");
 		else
 			fprintf(fp, "provider %s {\n", provider);
-		fprintf(fp, "username = %s\n", nvram_safe_get(_username));
-		fprintf(fp, "password = %s\n", nvram_safe_get(_passwd));
-		fprintf(fp, "hostname = %s\n", nvram_safe_get(_hostname));
+		fprintf(fp, "username = \"%s\"\n", nvram_safe_get(_username));
+		fprintf(fp, "password = \"%s\"\n", nvram_safe_get(_passwd));
+		fprintf(fp, "hostname = \"%s\"\n", nvram_safe_get(_hostname));
 #ifdef HAVE_USE_OPENSSL
 		fprintf(fp, "ssl = %s\n", nvram_match(_ssl, "1") ? "true" : "false");
 #endif
 		if (nvram_match(_wildcard, "1"))
 			fprintf(fp, "wildcard = true\n");
 		if (flag == 5) {
-			fprintf(fp, "ddns-server = %s\n", nvram_safe_get("ddns_url"));
-			fprintf(fp, "ddns-path = %s\n", nvram_safe_get("ddns_conf"));
+			fprintf(fp, "ddns-server = \"%s\"\n", nvram_safe_get("ddns_url"));
+			fprintf(fp, "ddns-path = \"%s\"\n", nvram_safe_get("ddns_conf"));
 		}
 		if (nvram_match("ddns_wan_ip", "1")) {
 			fprintf(fp, "checkip-command = \"/sbin/service checkwanip main\"\n");
