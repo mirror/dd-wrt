@@ -545,7 +545,7 @@ static int rule_poeswitch(char *name)
 #ifdef HAVE_USB
 static int rule_usb_rc(char *name)
 {
-	return !nvram_match("rc_usb","");
+	return !nvram_match("rc_usb", "");
 }
 #endif
 

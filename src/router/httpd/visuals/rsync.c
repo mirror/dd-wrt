@@ -121,12 +121,8 @@ EJ_VISIBLE void ej_rsync_sharepaths(webs_t wp, int argc, char_t ** argv)
 			websWrite(wp, "<option value=\"%s\" rel='{\"fstype\":\"\",\"perms\":[\"%s\"],\"avail\":0}' selected>[not available!]</option>\n", cs->mp, cs->mp);
 		}
 		websWrite(wp, "</select></td>\n");
-		websWrite(wp,
-			  "<td style=\"width: 1%%;\"><input type=\"text\" name=\"rsyncshare_subdir%s\" id=\"rsyncshare_subdir%s\" value=\"%s\" style=\"width: 150px;\"/></td>\n",
-			  number, number, cs->sd);
-		websWrite(wp,
-			  "<td style=\"width: 1%%;\"><input type=\"text\" name=\"rsyncshare_label%s\" id=\"rsyncshare_label%s\" value=\"%s\" style=\"width: 100px;\" /></td>\n",
-			  number, number, cs->label);
+		websWrite(wp, "<td style=\"width: 1%%;\"><input type=\"text\" name=\"rsyncshare_subdir%s\" id=\"rsyncshare_subdir%s\" value=\"%s\" style=\"width: 150px;\"/></td>\n", number, number, cs->sd);
+		websWrite(wp, "<td style=\"width: 1%%;\"><input type=\"text\" name=\"rsyncshare_label%s\" id=\"rsyncshare_label%s\" value=\"%s\" style=\"width: 100px;\" /></td>\n", number, number, cs->label);
 		websWrite(wp,
 			  "<script type=\"text/javascript\">document.write(\"<td class=\\\"center\\\" title=\\\"\" + sbutton.del + \"\\\"><input type=\\\"button\\\" class=\\\"remove\\\" aria-label=\\\"\" + sbutton.del + \"\\\" name=\\\"rsyncshare_del%s\\\" style=\\\"width: 100%%;\\\" onclick=\\\"removersyncShare(this);\\\" />\")</script>\n",
 			  number);
