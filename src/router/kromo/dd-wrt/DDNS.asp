@@ -230,7 +230,7 @@ addEvent(window, "unload", function() {
 								</div>
 								<div class="setting">
 									<div class="label">Path</div>
-									<input name="ddns_path" size="35" maxlength="32" value="<% get_ddns_value("ddns_path"); %>" />
+									<input name="ddns_path" size="35" maxlength="64" value="<% get_ddns_value("ddns_path"); %>" />
 								</div>
 								<div class="setting">
 									<div class="label"><% tran("share.usrname"); %></div>
