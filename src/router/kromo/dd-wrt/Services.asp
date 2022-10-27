@@ -99,7 +99,7 @@ function generate_sshkey(F) {
 	if (confirm(service.ssh_keyalert) == true) {
 		F.change_action.value="gozila_cgi";
 		F.submit_type.value = "ssh_downloadkey";
-		apply(F);
+		applytake(F);
 	}
 }
 
