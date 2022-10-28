@@ -508,6 +508,7 @@ static int i40e_ptp_set_timestamp_mode(struct i40e_pf *pf,
 			   I40E_PRTTSYN_CTL1_UDP_ENA_MASK;
 		config->rx_filter = HWTSTAMP_FILTER_PTP_V2_EVENT;
 		break;
+	case HWTSTAMP_FILTER_NTP_ALL:
 	case HWTSTAMP_FILTER_ALL:
 	default:
 		return -ERANGE;
