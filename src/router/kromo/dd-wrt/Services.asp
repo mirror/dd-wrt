@@ -100,6 +100,7 @@ function generate_sshkey(F) {
 		F.change_action.value="gozila_cgi";
 		F.submit_type.value = "ssh_downloadkey";
 		applytake(F);
+		document.getElementById(id="idssh_keyready").disabled = false;
 	}
 }
 
@@ -111,9 +112,9 @@ addEvent(window, "load", function() {
 	show_layer_ext(document.setup.zabbix_enable, 'idzabbix', <% nvem("zabbix_enable", "1", "1", "0"); %> == 1);
 	show_layer_ext(document.setup.mdns_enable, 'idmdns', <% nvem("mdns_enable", "1", "1", "0"); %> == 1);
 	show_layer_ext(document.setup.sshd_enable, 'idssh', <% nvem("sshd_enable", "1", "1", "0"); %> == 1);
-	show_layer_ext(document.setup.sshd_enable, 'idssh_keyready', <% nvem("sshd_keyready", "1", "1", "0"); %> == 1);
+	//show_layer_ext(document.setup.sshd_enable, 'idssh_keyready', <% nvem("sshd_keyready", "1", "1", "0"); %> == 1);
 	show_layer_ext(document.setup.dnsmasq_enable, 'iddnsmasq', <% nvem("dnsmasq_enable", "1", "1", "0"); %> == 1);
-	show_layer_ext(document.setup.kaid_enable, 'idkaid', <% nvem("kaid_enable", "1", "1", "0"); %> == 1);
+	//show_layer_ext(document.setup.kaid_enable, 'idkaid', <% nvem("kaid_enable", "1", "1", "0"); %> == 1);
 	show_layer_ext(document.setup.snmpd_enable, 'idsnmp', <% nvem("snmpd_enable", "1", "1", "0"); %> == 1);
 	show_layer_ext(document.setup.rflow_enable, 'idrflow', <% nvem("rflow_enable", "1", "1", "0"); %> == 1);
 	show_layer_ext(document.setup.macupd_enable, 'idMACupd', <% nvem("macupd_enable", "1", "1", "0"); %> == 1);

@@ -801,7 +801,7 @@ function openHelpWindowExt(url) {
 
 function openAboutWindow() {
 	var width = 750;
-	var height = 650;
+	var height = 850;
 	var top = Math.floor((screen.availHeight - height - 10) / 2);
 	var left = Math.floor((screen.availWidth - width) / 2);
 	var win = window.open("About.htm", 'DDWRT_About', 'top=' + top + ',left=' + left + ',width=' + width + ',height=' + height + ",resizable=no,scrollbars=no,statusbar=no");

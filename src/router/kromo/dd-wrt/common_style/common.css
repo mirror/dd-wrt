@@ -175,6 +175,9 @@ li.current {
   text-decoration: underline;
   outline: 0;
 }
+.link {
+  cursor: pointer;
+}
 textarea {
   padding: 4px;
   font-size: 12px;
@@ -475,8 +478,8 @@ input[type='file'] {
   height: 1.6rem;
   cursor: pointer;
 }
-::file-selector-button, ::-webkit-file-upload-button:hover {
-  height: 1.4rem;
+::file-selector-button, ::-webkit-file-upload-button {
+  height: 1.6rem;
   padding: 0 .4rem;
   border-radius: 4px;
   cursor: pointer;
