@@ -26,8 +26,6 @@
 #define IGC_DEV_ID_I225_IT			0x0D9F
 #define IGC_DEV_ID_I225_BLANK_NVM		0x15FD
 
-#define IGC_FUNC_0				0
-
 /* Function pointers for the MAC. */
 struct igc_mac_operations {
 	s32 (*check_for_link)(struct igc_hw *hw);
