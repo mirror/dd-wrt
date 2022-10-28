@@ -1782,6 +1782,7 @@ service.vpnd_dhcpbl="Blockiere DHCP über den Tunnel";
 service.vpnd_blockmulticast="Blockiere multicast über den Tunnel";
 service.vpnd_dh="Benutze ECDH anstelle von DH.PEM";
 service.vpnd_static="Statischer Schlüssel";
+service.vpnd_export="Exportiere Klient Konfiguration";
 service.vpn_redirgate="Push Client Route";
 service.vpn_defgateway="Standardgateway";
 service.vpn_srvroute="Servers subnet";
