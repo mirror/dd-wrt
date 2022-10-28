@@ -1,7 +1,7 @@
 /*
    Definitions of key bindings.
 
-   Copyright (C) 2005-2021
+   Copyright (C) 2005-2022
    Free Software Foundation, Inc.
 
    Written by:
@@ -180,9 +180,6 @@ static name_keymap_t command_names[] = {
 #endif
 #ifdef ENABLE_VFS_SFTP
     ADD_KEYMAP_NAME (ConnectSftp),
-#endif
-#ifdef ENABLE_VFS_SMB
-    ADD_KEYMAP_NAME (ConnectSmb),
 #endif
     ADD_KEYMAP_NAME (PanelInfo),
 #ifdef ENABLE_BACKGROUND

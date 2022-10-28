@@ -20,9 +20,9 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Midnight Commander\n"
 "Report-Msgid-Bugs-To: http://www.midnight-commander.org/\n"
-"POT-Creation-Date: 2021-08-15 16:03+0200\n"
-"PO-Revision-Date: 2021-07-26 20:16+0000\n"
-"Last-Translator: Transifex Bot <>\n"
+"POT-Creation-Date: 2022-03-27 14:08+0200\n"
+"PO-Revision-Date: 2010-12-29 10:19+0000\n"
+"Last-Translator: Ettore Atalan <atalanttore@googlemail.com>, 2015-2021\n"
 "Language-Team: German (http://www.transifex.com/mc/mc/language/de/)\n"
 "Language: de\n"
 "MIME-Version: 1.0\n"
@@ -678,12 +678,6 @@ msgstr "Schaltet Subshell-Unterstützung ab"
 
 msgid "Log ftp dialog to specified file"
 msgstr "FTP-Dialog in die angegebene Datei protokollieren"
-
-msgid "Set debug level"
-msgstr "Debugging-Level setzen"
-
-msgid "<integer>"
-msgstr "<integer>"
 
 msgid "Launches the file viewer on a file"
 msgstr "Startet den Ansichtsmodus für eine Datei"
@@ -1648,7 +1642,7 @@ msgstr ""
 "Ein benutzerfreundlicher Texteditor,\n"
 "geschrieben für Midnight Commander."
 
-msgid "Copyright (C) 1996-2021 the Free Software Foundation"
+msgid "Copyright (C) 1996-2022 the Free Software Foundation"
 msgstr ""
 
 msgid "About"
@@ -2182,19 +2176,6 @@ msgid "Background jobs"
 msgstr "Hintergrundaufgaben"
 
 #, c-format
-msgid "Password for \\\\%s\\%s"
-msgstr "Passwort für \\\\%s\\%s"
-
-msgid "Domain:"
-msgstr "Domain:"
-
-msgid "Username:"
-msgstr "Benutzername:"
-
-msgid "SMB authentication"
-msgstr "SMB-Authentifikation"
-
-#, c-format
 msgid ""
 "Cannot chdir to \"%s\"\n"
 "%s"
@@ -2514,9 +2495,6 @@ msgstr "SFTP zu Server"
 
 msgid "Shell link to machine"
 msgstr "Shell-Verbindung zu Server"
-
-msgid "SMB link to machine"
-msgstr "SMB-Verbindung zu Server"
 
 msgid "Undelete files on an ext2 file system"
 msgstr "Löschen von Dateien auf einem Ext2-Dateisystem rückgängig machen"
@@ -3099,8 +3077,8 @@ msgstr "&Baum"
 msgid "&Listing format..."
 msgstr "&Listenformat..."
 
-msgid "&Sort order..."
-msgstr "&Sortierreihenfolge..."
+msgid "S&ort order..."
+msgstr ""
 
 msgid "&Filter..."
 msgstr "&Filter..."
@@ -3114,11 +3092,8 @@ msgstr "FT&P-Verbindung..."
 msgid "S&hell link..."
 msgstr "S&hell-Verbindung..."
 
-msgid "S&FTP link..."
-msgstr "S&FTP-Verbindung..."
-
-msgid "SM&B link..."
-msgstr "S&MB-Verbindung..."
+msgid "&SFTP link..."
+msgstr ""
 
 msgid "Paneli&ze"
 msgstr "Anordnen"
@@ -3332,7 +3307,7 @@ msgid "&Find recursively"
 msgstr "Rek&ursiv durchsuchen"
 
 msgid "Follow s&ymlinks"
-msgstr ""
+msgstr "S&ymlinks folgen"
 
 msgid "S&kip hidden"
 msgstr "Versteckte überspringen"
@@ -4049,6 +4024,10 @@ msgstr "Gebaut mit ncursesw %s\n"
 msgid "Built with ncursesw (unknown version)"
 msgstr "Gebaut mit ncursesw (unbekannte Version)"
 
+#, c-format
+msgid "Built with libssh2 %d.%d.%d\n"
+msgstr ""
+
 msgid "Virtual File Systems:"
 msgstr "Virtuelles Dateisystem:"
 
@@ -4182,12 +4161,17 @@ msgid ""
 "%s:\n"
 "%s"
 msgstr ""
+"Kann Archiv %s nicht öffnen\n"
+"%s:\n"
+"%s"
 
 #, c-format
 msgid ""
 "EXTFS virtual file system:\n"
 "%s"
 msgstr ""
+"Virtuelles Dateisystem EXTFS:\n"
+"%s"
 
 #, c-format
 msgid "Warning: cannot open %s directory\n"
@@ -4362,6 +4346,8 @@ msgid ""
 "SFS virtual file system:\n"
 "%s"
 msgstr ""
+"Virtuelles Dateisystem SFS:\n"
+"%s"
 
 #, c-format
 msgid "%s: Warning: file %s not found\n"
@@ -4423,6 +4409,9 @@ msgid ""
 "%s (%s)\n"
 "to the list of known hosts."
 msgstr ""
+"Dauerhaft hinzugefügt\n"
+"%s (%s)\n"
+"zur Liste der bekannten Hosts."
 
 msgid "sftp: cannot get the remote host key"
 msgstr ""
@@ -4451,6 +4440,11 @@ msgid ""
 "Are you sure you want to add it to the list of known hosts and continue "
 "connecting?"
 msgstr ""
+"%s (%s)\n"
+"wurde in der Liste der bekannten Hosts gefunden, aber\n"
+"DIE SCHLÜSSEL STIMMEN NICHT ÜBEREIN! DIES KÖNNTE EIN MITM-ANGRIFF SEIN!\n"
+"Sind Sie sicher, dass Sie ihn zur Liste der bekannten Hosts hinzufügen und "
+"die Verbindung fortsetzen möchten?"
 
 msgid "sftp: host key verification failed"
 msgstr ""
@@ -4470,7 +4464,7 @@ msgid "sftp: Password is empty."
 msgstr "sftp: Passwort ist leer."
 
 msgid "sftp: failure establishing SSH session"
-msgstr ""
+msgstr "sftp: Fehler beim Herstellen der SSH-Sitzung"
 
 msgid "sftp: No file handler data present for reading file"
 msgstr "sftp: Kein Dateihandler zum Lesen der Datei vorhanden"
@@ -4485,33 +4479,6 @@ msgstr "sftp: Auflisten... %s (Strg+G zum Unterbrechen)"
 
 msgid "sftp: Listing done."
 msgstr "sftp: Auflisten beendet."
-
-#, c-format
-msgid "reconnect to %s failed"
-msgstr "Wieder verbinden mit %s fehlgeschlagen"
-
-msgid "Authentication failed"
-msgstr "Authentifikation fehlgeschlagen"
-
-#, c-format
-msgid "Error %s creating directory %s"
-msgstr "Fehler %s beim Erstellen des Verzeichnisses %s"
-
-#, c-format
-msgid "Error %s removing directory %s"
-msgstr "Fehler %s beim Löschen des Verzeichnisses %s"
-
-#, c-format
-msgid "%s opening remote file %s"
-msgstr "%s beim Öffnen von entfernter Datei %s"
-
-#, c-format
-msgid "%s removing remote file %s"
-msgstr "%s beim Löschen von entfernter Datei %s"
-
-#, c-format
-msgid "%s renaming files\n"
-msgstr "%s beim Umbenennen von Dateien\n"
 
 #, c-format
 msgid ""

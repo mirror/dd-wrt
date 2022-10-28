@@ -3,16 +3,16 @@
 # This file is distributed under the same license as the mc package.
 #
 # Translators:
-# heskjestad <cato@heskjestad.xyz>, 2021
+# heskjestad <cato@heskjestad.xyz>, 2021-2022
 # heskjestad <cato@heskjestad.xyz>, 2019-2021
 # Slava Zanko <slavazanko@gmail.com>, 2011
 msgid ""
 msgstr ""
 "Project-Id-Version: Midnight Commander\n"
 "Report-Msgid-Bugs-To: http://www.midnight-commander.org/\n"
-"POT-Creation-Date: 2021-08-15 16:03+0200\n"
-"PO-Revision-Date: 2021-07-29 12:31+0000\n"
-"Last-Translator: heskjestad <cato@heskjestad.xyz>\n"
+"POT-Creation-Date: 2022-03-27 14:08+0200\n"
+"PO-Revision-Date: 2010-12-29 10:19+0000\n"
+"Last-Translator: heskjestad <cato@heskjestad.xyz>, 2021-2022\n"
 "Language-Team: Norwegian Bokmål (http://www.transifex.com/mc/mc/language/"
 "nb/)\n"
 "Language: nb\n"
@@ -665,12 +665,6 @@ msgstr "Slå av støtte for underskall"
 
 msgid "Log ftp dialog to specified file"
 msgstr "Logg FTP-dialogen til angitt fil"
-
-msgid "Set debug level"
-msgstr "Velg feilsøkingsnivå"
-
-msgid "<integer>"
-msgstr "<heltall>"
 
 msgid "Launches the file viewer on a file"
 msgstr "Vis innholdet til en fil"
@@ -1637,8 +1631,8 @@ msgstr ""
 "Et brukervennlig skriveprogram\n"
 "skrevet for Midnight Commander."
 
-msgid "Copyright (C) 1996-2021 the Free Software Foundation"
-msgstr "Opphavsrett (C) 1996-2021 the Free Software Foundation"
+msgid "Copyright (C) 1996-2022 the Free Software Foundation"
+msgstr "Opphavsrett (C) 1996-2022 the Free Software Foundation"
 
 msgid "About"
 msgstr "Om"
@@ -2172,19 +2166,6 @@ msgid "Background jobs"
 msgstr "Bakgrunnsjobber"
 
 #, c-format
-msgid "Password for \\\\%s\\%s"
-msgstr "Passord for \\\\%s\\%s"
-
-msgid "Domain:"
-msgstr "Domene:"
-
-msgid "Username:"
-msgstr "Brukernavn:"
-
-msgid "SMB authentication"
-msgstr "SMB-autentisering"
-
-#, c-format
 msgid ""
 "Cannot chdir to \"%s\"\n"
 "%s"
@@ -2504,9 +2485,6 @@ msgstr "Koble til SFTP"
 
 msgid "Shell link to machine"
 msgstr "Koble til skall"
-
-msgid "SMB link to machine"
-msgstr "Koble til SMB"
 
 msgid "Undelete files on an ext2 file system"
 msgstr "Gjenopprett filer i et ext2-filsystem"
@@ -3087,7 +3065,7 @@ msgstr "&Tre"
 msgid "&Listing format..."
 msgstr "&Utlistingsformat ..."
 
-msgid "&Sort order..."
+msgid "S&ort order..."
 msgstr "Sorterings&rekkefølge ..."
 
 msgid "&Filter..."
@@ -3102,11 +3080,8 @@ msgstr "Koble til FT&P ..."
 msgid "S&hell link..."
 msgstr "Koble til &skall ..."
 
-msgid "S&FTP link..."
+msgid "&SFTP link..."
 msgstr "K&oble til SFTP ..."
-
-msgid "SM&B link..."
-msgstr "Koble til SM&B ..."
 
 msgid "Paneli&ze"
 msgstr "&Vis lagt til i panel"
@@ -4041,6 +4016,10 @@ msgstr "Bruker ncursesw %s\n"
 msgid "Built with ncursesw (unknown version)"
 msgstr "Bruker ncursesw (ukjent versjon)"
 
+#, c-format
+msgid "Built with libssh2 %d.%d.%d\n"
+msgstr "Bygget med libssh2 %d.%d.%d\n"
+
 msgid "Virtual File Systems:"
 msgstr "Virtuelle filsystem:"
 
@@ -4497,33 +4476,6 @@ msgstr "sftp: (Ctrl + G avbryter) Lister ut ... %s"
 
 msgid "sftp: Listing done."
 msgstr "sftp: Utlisting ferdig."
-
-#, c-format
-msgid "reconnect to %s failed"
-msgstr "klarte ikke koble til %s på nytt"
-
-msgid "Authentication failed"
-msgstr "Autentisering mislyktes"
-
-#, c-format
-msgid "Error %s creating directory %s"
-msgstr "Feilen «%s» oppstod under oppretting av mappa %s"
-
-#, c-format
-msgid "Error %s removing directory %s"
-msgstr "Feilen «%s» oppstod under sletting av mappa %s"
-
-#, c-format
-msgid "%s opening remote file %s"
-msgstr "%s ved åpning av ekstern fil %s"
-
-#, c-format
-msgid "%s removing remote file %s"
-msgstr "%s ved sletting av ekstern fil %s"
-
-#, c-format
-msgid "%s renaming files\n"
-msgstr "%s ved endring av filnavn\n"
 
 #, c-format
 msgid ""

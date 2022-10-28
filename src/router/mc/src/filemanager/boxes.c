@@ -1,7 +1,7 @@
 /*
    Some misc dialog boxes for the program.
 
-   Copyright (C) 1994-2021
+   Copyright (C) 1994-2022
    Free Software Foundation, Inc.
 
    Written by:
@@ -52,9 +52,6 @@
 #ifdef ENABLE_VFS_FTP
 #include "src/vfs/ftpfs/ftpfs.h"
 #endif /* ENABLE_VFS_FTP */
-#ifdef ENABLE_VFS_SMB
-#include "src/vfs/smbfs/smbfs.h"
-#endif /* ENABLE_VFS_SMB */
 
 #include "lib/util.h"           /* Q_() */
 #include "lib/widget.h"
@@ -280,7 +277,9 @@ appearance_box_callback (Widget * w, Widget * sender, widget_msg_t msg, int parm
     switch (msg)
     {
     case MSG_INIT:
+#ifdef ENABLE_SHADOWS
         if (!tty_use_colors ())
+#endif
         {
             Widget *shadow;
 
@@ -1318,68 +1317,5 @@ jobs_box (void)
     widget_destroy (WIDGET (jobs_dlg));
 }
 #endif /* ENABLE_BACKGROUND */
-
-/* --------------------------------------------------------------------------------------------- */
-
-#ifdef ENABLE_VFS_SMB
-struct smb_authinfo *
-vfs_smb_get_authinfo (const char *host, const char *share, const char *domain, const char *user)
-{
-    char *label;
-    struct smb_authinfo *return_value = NULL;
-
-    if (domain == NULL)
-        domain = "";
-    if (user == NULL)
-        user = "";
-
-    label = g_strdup_printf (_("Password for \\\\%s\\%s"), host, share);
-
-    {
-        char *ret_domain, *ret_user, *ret_password;
-
-        quick_widget_t quick_widgets[] = {
-            /* *INDENT-OFF* */
-            QUICK_LABEL (label, NULL),
-            QUICK_SEPARATOR (TRUE),
-            QUICK_START_COLUMNS,
-                QUICK_LABEL (N_("Domain:"), NULL),
-                QUICK_SEPARATOR (FALSE),
-                QUICK_LABEL (N_("Username:"), NULL),
-                QUICK_SEPARATOR (FALSE),
-                QUICK_LABEL (N_("Password:"), NULL),
-            QUICK_NEXT_COLUMN,
-                QUICK_INPUT (domain, "auth_domain", &ret_domain, NULL, FALSE, FALSE, INPUT_COMPLETE_HOSTNAMES),
-                QUICK_SEPARATOR (FALSE),
-                QUICK_INPUT (user, "auth_name", &ret_user, NULL, FALSE, FALSE, INPUT_COMPLETE_USERNAMES),
-                QUICK_SEPARATOR (FALSE),
-                QUICK_INPUT ("", "auth_password", &ret_password, NULL, TRUE, FALSE, INPUT_COMPLETE_NONE),
-            QUICK_STOP_COLUMNS,
-            QUICK_BUTTONS_OK_CANCEL,
-            QUICK_END
-            /* *INDENT-ON* */
-        };
-
-        quick_dialog_t qdlg = {
-            -1, -1, 40,
-            N_("SMB authentication"), "[Smb Authinfo]",
-            quick_widgets, NULL, NULL
-        };
-
-        if (quick_dialog (&qdlg) != B_CANCEL)
-        {
-            return_value = vfs_smb_authinfo_new (host, share, ret_domain, ret_user, ret_password);
-
-            g_free (ret_domain);
-            g_free (ret_user);
-            g_free (ret_password);
-        }
-    }
-
-    g_free (label);
-
-    return return_value;
-}
-#endif /* ENABLE_VFS_SMB */
 
 /* --------------------------------------------------------------------------------------------- */

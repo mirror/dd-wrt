@@ -3,16 +3,16 @@
 # This file is distributed under the same license as the mc package.
 #
 # Translators:
-# Piotr Drąg <piotrdrag@gmail.com>, 2011-2021
+# Piotr Drąg <piotrdrag@gmail.com>, 2011-2022
 # Slava Zanko <slavazanko@gmail.com>, 2011
 # Waldemar Stoczkowski, 2021
 msgid ""
 msgstr ""
 "Project-Id-Version: Midnight Commander\n"
 "Report-Msgid-Bugs-To: http://www.midnight-commander.org/\n"
-"POT-Creation-Date: 2021-08-15 16:03+0200\n"
-"PO-Revision-Date: 2021-07-27 11:29+0000\n"
-"Last-Translator: Piotr Drąg <piotrdrag@gmail.com>\n"
+"POT-Creation-Date: 2022-03-27 14:08+0200\n"
+"PO-Revision-Date: 2010-12-29 10:19+0000\n"
+"Last-Translator: Piotr Drąg <piotrdrag@gmail.com>, 2011-2022\n"
 "Language-Team: Polish (http://www.transifex.com/mc/mc/language/pl/)\n"
 "Language: pl\n"
 "MIME-Version: 1.0\n"
@@ -668,12 +668,6 @@ msgstr "Wyłącza obsługę podpowłoki"
 
 msgid "Log ftp dialog to specified file"
 msgstr "Zapisuje dziennik FTP do podanego pliku"
-
-msgid "Set debug level"
-msgstr "Ustawia poziom debugowania"
-
-msgid "<integer>"
-msgstr "<liczba-całkowita>"
 
 msgid "Launches the file viewer on a file"
 msgstr "Uruchamia podgląd pliku"
@@ -1640,8 +1634,8 @@ msgstr ""
 "Łatwy w obsłudze edytor tekstu,\n"
 "napisany dla programu Midnight Commander."
 
-msgid "Copyright (C) 1996-2021 the Free Software Foundation"
-msgstr "Copyright © 1996-2021 Free Software Foundation"
+msgid "Copyright (C) 1996-2022 the Free Software Foundation"
+msgstr "Copyright © 1996-2022 Free Software Foundation"
 
 msgid "About"
 msgstr "O programie"
@@ -2174,19 +2168,6 @@ msgid "Background jobs"
 msgstr "Zadania w tle"
 
 #, c-format
-msgid "Password for \\\\%s\\%s"
-msgstr "Hasło dla \\\\%s\\%s"
-
-msgid "Domain:"
-msgstr "Domena:"
-
-msgid "Username:"
-msgstr "Nazwa użytkownika:"
-
-msgid "SMB authentication"
-msgstr "Uwierzytelnianie SMB"
-
-#, c-format
 msgid ""
 "Cannot chdir to \"%s\"\n"
 "%s"
@@ -2506,9 +2487,6 @@ msgstr "Połączenie SFTP z komputerem"
 
 msgid "Shell link to machine"
 msgstr "Połączenie po powłoce z komputerem"
-
-msgid "SMB link to machine"
-msgstr "Połączenie SMB z komputerem"
 
 msgid "Undelete files on an ext2 file system"
 msgstr "Odtwórz pliki na systemie plików ext2"
@@ -3090,7 +3068,7 @@ msgstr "&Drzewo"
 msgid "&Listing format..."
 msgstr "&Format wyświetlania…"
 
-msgid "&Sort order..."
+msgid "S&ort order..."
 msgstr "Porządek s&ortowania…"
 
 msgid "&Filter..."
@@ -3105,11 +3083,8 @@ msgstr "Połączenie FT&P…"
 msgid "S&hell link..."
 msgstr "Połączenie po po&włoce…"
 
-msgid "S&FTP link..."
-msgstr "Połączenie S&FTP…"
-
-msgid "SM&B link..."
-msgstr "Połączenie SM&B…"
+msgid "&SFTP link..."
+msgstr "Połączenie SF&TP…"
 
 msgid "Paneli&ze"
 msgstr "Filtru&j"
@@ -4055,6 +4030,10 @@ msgstr "Zbudowano za pomocą biblioteki ncursesw %s\n"
 msgid "Built with ncursesw (unknown version)"
 msgstr "Zbudowano za pomocą biblioteki ncursesw (nieznana wersja)"
 
+#, c-format
+msgid "Built with libssh2 %d.%d.%d\n"
+msgstr "Zbudowano za pomocą biblioteki libssh2 %d.%d.%d\n"
+
 msgid "Virtual File Systems:"
 msgstr "Wirtualne systemy plików:"
 
@@ -4511,33 +4490,6 @@ msgstr "sftp: (Ctrl-G przerywa) wyświetlanie listy… %s"
 
 msgid "sftp: Listing done."
 msgstr "sftp: ukończono wyświetlanie listy."
-
-#, c-format
-msgid "reconnect to %s failed"
-msgstr "ponowne połączenie z %s się nie powiodło"
-
-msgid "Authentication failed"
-msgstr "Uwierzytelnienie się nie powiodło"
-
-#, c-format
-msgid "Error %s creating directory %s"
-msgstr "Błąd %s podczas tworzenia katalogu %s"
-
-#, c-format
-msgid "Error %s removing directory %s"
-msgstr "Błąd %s podczas usuwania katalogu %s"
-
-#, c-format
-msgid "%s opening remote file %s"
-msgstr "%s podczas otwierania zdalnego pliku %s"
-
-#, c-format
-msgid "%s removing remote file %s"
-msgstr "%s podczas usuwania zdalnego pliku %s"
-
-#, c-format
-msgid "%s renaming files\n"
-msgstr "%s podczas zmieniania nazw plików\n"
 
 #, c-format
 msgid ""

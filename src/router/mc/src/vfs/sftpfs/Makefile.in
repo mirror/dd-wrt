@@ -108,6 +108,10 @@ am__aclocal_m4_deps = $(top_srcdir)/m4/gettext.m4 \
 	$(top_srcdir)/m4.include/gnulib/sys_types_h.m4 \
 	$(top_srcdir)/m4.include/ax_path_lib_pcre.m4 \
 	$(top_srcdir)/m4.include/dx_doxygen.m4 \
+	$(top_srcdir)/m4.include/ax_require_defined.m4 \
+	$(top_srcdir)/m4.include/ax_check_compile_flag.m4 \
+	$(top_srcdir)/m4.include/ax_append_flag.m4 \
+	$(top_srcdir)/m4.include/ax_append_compile_flags.m4 \
 	$(top_srcdir)/m4.include/mc-cflags.m4 \
 	$(top_srcdir)/m4.include/ax_gcc_func_attribute.m4 \
 	$(top_srcdir)/m4.include/mc-check-search-type.m4 \
@@ -133,7 +137,6 @@ am__aclocal_m4_deps = $(top_srcdir)/m4/gettext.m4 \
 	$(top_srcdir)/m4.include/vfs/mc-vfs-undelfs.m4 \
 	$(top_srcdir)/m4.include/vfs/mc-vfs-tarfs.m4 \
 	$(top_srcdir)/m4.include/vfs/mc-vfs-cpiofs.m4 \
-	$(top_srcdir)/m4.include/vfs/mc-vfs-samba.m4 \
 	$(top_srcdir)/m4.include/mc-version.m4 \
 	$(top_srcdir)/m4.include/mc-tests.m4 \
 	$(top_srcdir)/m4.include/mc-i18n.m4 \
@@ -149,7 +152,7 @@ CONFIG_CLEAN_VPATH_FILES =
 LTLIBRARIES = $(noinst_LTLIBRARIES)
 libvfs_sftpfs_la_LIBADD =
 am_libvfs_sftpfs_la_OBJECTS = config_parser.lo connection.lo dir.lo \
-	file.lo init.lo internal.lo vfs_class.lo vfs_subclass.lo
+	file.lo internal.lo sftpfs.lo
 libvfs_sftpfs_la_OBJECTS = $(am_libvfs_sftpfs_la_OBJECTS)
 AM_V_lt = $(am__v_lt_@AM_V@)
 am__v_lt_ = $(am__v_lt_@AM_DEFAULT_V@)
@@ -172,9 +175,8 @@ depcomp = $(SHELL) $(top_srcdir)/config/depcomp
 am__maybe_remake_depfiles = depfiles
 am__depfiles_remade = ./$(DEPDIR)/config_parser.Plo \
 	./$(DEPDIR)/connection.Plo ./$(DEPDIR)/dir.Plo \
-	./$(DEPDIR)/file.Plo ./$(DEPDIR)/init.Plo \
-	./$(DEPDIR)/internal.Plo ./$(DEPDIR)/vfs_class.Plo \
-	./$(DEPDIR)/vfs_subclass.Plo
+	./$(DEPDIR)/file.Plo ./$(DEPDIR)/internal.Plo \
+	./$(DEPDIR)/sftpfs.Plo
 am__mv = mv -f
 COMPILE = $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) \
 	$(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS)
@@ -417,11 +419,10 @@ pdfdir = @pdfdir@
 prefix = @prefix@
 program_transform_name = @program_transform_name@
 psdir = @psdir@
+runstatedir = @runstatedir@
 sbindir = @sbindir@
 sharedstatedir = @sharedstatedir@
-smbconfigdir = @smbconfigdir@
 srcdir = @srcdir@
-subdirs = @subdirs@
 sysconfdir = @sysconfdir@
 target_alias = @target_alias@
 top_build_prefix = @top_build_prefix@
@@ -434,10 +435,8 @@ libvfs_sftpfs_la_SOURCES = \
 	connection.c \
 	dir.c \
 	file.c \
-	init.c init.h \
 	internal.c internal.h \
-	vfs_class.c \
-	vfs_subclass.c
+	sftpfs.c sftpfs.h
 
 all: all-am
 
@@ -497,10 +496,8 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/connection.Plo@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/dir.Plo@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/file.Plo@am__quote@ # am--include-marker
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/init.Plo@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/internal.Plo@am__quote@ # am--include-marker
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/vfs_class.Plo@am__quote@ # am--include-marker
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/vfs_subclass.Plo@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/sftpfs.Plo@am__quote@ # am--include-marker
 
 $(am__depfiles_remade):
 	@$(MKDIR_P) $(@D)
@@ -664,10 +661,8 @@ distclean: distclean-am
 	-rm -f ./$(DEPDIR)/connection.Plo
 	-rm -f ./$(DEPDIR)/dir.Plo
 	-rm -f ./$(DEPDIR)/file.Plo
-	-rm -f ./$(DEPDIR)/init.Plo
 	-rm -f ./$(DEPDIR)/internal.Plo
-	-rm -f ./$(DEPDIR)/vfs_class.Plo
-	-rm -f ./$(DEPDIR)/vfs_subclass.Plo
+	-rm -f ./$(DEPDIR)/sftpfs.Plo
 	-rm -f Makefile
 distclean-am: clean-am distclean-compile distclean-generic \
 	distclean-tags
@@ -717,10 +712,8 @@ maintainer-clean: maintainer-clean-am
 	-rm -f ./$(DEPDIR)/connection.Plo
 	-rm -f ./$(DEPDIR)/dir.Plo
 	-rm -f ./$(DEPDIR)/file.Plo
-	-rm -f ./$(DEPDIR)/init.Plo
 	-rm -f ./$(DEPDIR)/internal.Plo
-	-rm -f ./$(DEPDIR)/vfs_class.Plo
-	-rm -f ./$(DEPDIR)/vfs_subclass.Plo
+	-rm -f ./$(DEPDIR)/sftpfs.Plo
 	-rm -f Makefile
 maintainer-clean-am: distclean-am maintainer-clean-generic
 

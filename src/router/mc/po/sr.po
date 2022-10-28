@@ -9,9 +9,9 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Midnight Commander\n"
 "Report-Msgid-Bugs-To: http://www.midnight-commander.org/\n"
-"POT-Creation-Date: 2021-08-15 16:03+0200\n"
-"PO-Revision-Date: 2021-07-26 20:16+0000\n"
-"Last-Translator: Transifex Bot <>\n"
+"POT-Creation-Date: 2022-03-27 14:08+0200\n"
+"PO-Revision-Date: 2010-12-29 10:19+0000\n"
+"Last-Translator: Slava Zanko <slavazanko@gmail.com>, 2011\n"
 "Language-Team: Serbian (http://www.transifex.com/mc/mc/language/sr/)\n"
 "Language: sr\n"
 "MIME-Version: 1.0\n"
@@ -649,12 +649,6 @@ msgstr "Искључује подршку за подљуске"
 
 msgid "Log ftp dialog to specified file"
 msgstr "Бележи садржај фтп прозорчета у задану датотеку"
-
-msgid "Set debug level"
-msgstr "Подешава ниво прочишћавања"
-
-msgid "<integer>"
-msgstr ""
 
 msgid "Launches the file viewer on a file"
 msgstr "Покреће прегледач датотека над датотеком"
@@ -1615,7 +1609,7 @@ msgstr ""
 "Уређивач текста наклоњен кориснику\n"
 "написан за Поноћног наредника."
 
-msgid "Copyright (C) 1996-2021 the Free Software Foundation"
+msgid "Copyright (C) 1996-2022 the Free Software Foundation"
 msgstr ""
 
 msgid "About"
@@ -2148,19 +2142,6 @@ msgid "Background jobs"
 msgstr "Позадински послови"
 
 #, c-format
-msgid "Password for \\\\%s\\%s"
-msgstr "Лозинка за „\\\\%s\\%s“"
-
-msgid "Domain:"
-msgstr "Домен:"
-
-msgid "Username:"
-msgstr "Корисник:"
-
-msgid "SMB authentication"
-msgstr "СМБ потврђивање идентитета"
-
-#, c-format
 msgid ""
 "Cannot chdir to \"%s\"\n"
 "%s"
@@ -2476,9 +2457,6 @@ msgstr "СФТП на рачунар"
 
 msgid "Shell link to machine"
 msgstr "Веза љуске на рачунар"
-
-msgid "SMB link to machine"
-msgstr "СМБ веза на рачунар"
 
 msgid "Undelete files on an ext2 file system"
 msgstr "Поништите брисање датотека на екст2 систему датотека"
@@ -3049,8 +3027,8 @@ msgstr "&Стабло"
 msgid "&Listing format..."
 msgstr ""
 
-msgid "&Sort order..."
-msgstr "Редослед &ређања..."
+msgid "S&ort order..."
+msgstr ""
 
 msgid "&Filter..."
 msgstr "&Пропусник..."
@@ -3064,11 +3042,8 @@ msgstr "&ФТП веза..."
 msgid "S&hell link..."
 msgstr "Веза &љуске..."
 
-msgid "S&FTP link..."
-msgstr "&СФТП веза..."
-
-msgid "SM&B link..."
-msgstr "СМ&Б веза..."
+msgid "&SFTP link..."
+msgstr ""
 
 msgid "Paneli&ze"
 msgstr "Претвори &у окно"
@@ -4001,6 +3976,10 @@ msgstr ""
 msgid "Built with ncursesw (unknown version)"
 msgstr ""
 
+#, c-format
+msgid "Built with libssh2 %d.%d.%d\n"
+msgstr ""
+
 msgid "Virtual File Systems:"
 msgstr "Виртуелни систем датотека:"
 
@@ -4433,33 +4412,6 @@ msgstr "sftp: (Ктрл-Г прекида) Исписујем... %s"
 
 msgid "sftp: Listing done."
 msgstr "sftp: Исписивање је готово."
-
-#, c-format
-msgid "reconnect to %s failed"
-msgstr "поновно повезивање на „%s“ није успело"
-
-msgid "Authentication failed"
-msgstr "Потврђивање идентитета није успело"
-
-#, c-format
-msgid "Error %s creating directory %s"
-msgstr "Грешка „%s“ прављења директоријума „%s“"
-
-#, c-format
-msgid "Error %s removing directory %s"
-msgstr "Грешка „%s“ уклањања директоријума „%s“"
-
-#, c-format
-msgid "%s opening remote file %s"
-msgstr "„%s“ отвара удаљену датотеку „%s“"
-
-#, c-format
-msgid "%s removing remote file %s"
-msgstr "„%s“ уклања удаљену датотеку „%s“"
-
-#, c-format
-msgid "%s renaming files\n"
-msgstr "„%s“ преименује датотеке\n"
 
 #, c-format
 msgid ""

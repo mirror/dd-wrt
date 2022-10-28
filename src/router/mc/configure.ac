@@ -36,7 +36,7 @@ dnl ############################################################################
 dnl Check for compiler
 dnl ############################################################################
 
-AC_PROG_CC_STDC
+AC_PROG_CC
 AM_PROG_CC_C_O
 
 mc_CHECK_CFLAGS
@@ -53,7 +53,7 @@ fi
 AC_ARG_ENABLE([werror],
     AS_HELP_STRING([--enable-werror], [Handle all compiler warnings as errors]))
 if test "x$enable_werror" = xyes; then
-    mc_CHECK_ONE_CFLAG([-Werror])
+    AX_APPEND_COMPILE_FLAGS([-Werror], [mc_configured_cflags])
 fi
 
 dnl Compiler can generate warnings for unrecognized flags added to CFLAGS
@@ -310,13 +310,6 @@ if test x$with_mmap != xno; then
 	AC_DEFINE(HAVE_MMAP, 1)
     fi
 fi
-
-dnl Sequent wants getprocessstats
-AC_CHECK_LIB(seq, get_process_stats, [
-	LIBS="$LIBS -lseq"
-	AC_DEFINE(HAVE_GET_PROCESS_STATS, 1,
-		  [Define if you have function `get_process_stats' and
-have to use that instead of gettimeofday])])
 
 mc_GET_FS_INFO
 
@@ -651,8 +644,6 @@ src/vfs/sftpfs/Makefile
 src/vfs/local/Makefile
 
 src/vfs/sfs/Makefile
-
-src/vfs/smbfs/Makefile
 
 src/vfs/tar/Makefile
 

@@ -27,6 +27,7 @@ SYNTAXFILES =			\
 	diff.syntax		\
 	dlink.syntax		\
 	dos.syntax		\
+	dot.syntax		\
 	ebuild.syntax		\
 	eiffel.syntax		\
 	erlang.syntax		\
@@ -80,6 +81,7 @@ SYNTAXFILES =			\
 	slang.syntax		\
 	smalltalk.syntax	\
 	spec.syntax		\
+	spice.syntax		\
 	sql.syntax		\
 	strace.syntax 		\
 	swift.syntax		\
