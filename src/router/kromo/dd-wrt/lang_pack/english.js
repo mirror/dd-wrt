@@ -1952,6 +1952,7 @@ service.vpnd_dhcpbl="Block DHCP Across the Tunnel";
 service.vpnd_blockmulticast="Block Multicast Across the Tunnel";
 service.vpnd_dh="Use ECDH Instead of DH.PEM";
 service.vpnd_static="Static Key";
+service.vpnd_export="Export Client Config";
 service.vpn_redirgate="Push Client Route";
 service.vpn_defgateway="Default Gateway";
 service.vpn_srvroute="Servers Subnet";
