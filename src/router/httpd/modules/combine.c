@@ -31,6 +31,9 @@
 #ifdef HAVE_WIREGUARD
 #include "wireguard_config.c"
 #endif
+#ifdef HAVE_OPENVPN
+#include "ovpncl_config.c"
+#endif
 #include "cgi.c"
 #include "ej.c"
 #include "base.c"
