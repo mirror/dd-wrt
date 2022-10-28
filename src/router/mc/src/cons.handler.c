@@ -1,7 +1,7 @@
 /*
    Client interface for General purpose Linux console save/restore server
 
-   Copyright (C) 1994-2021
+   Copyright (C) 1994-2022
    Free Software Foundation, Inc.
 
    This file is part of the Midnight Commander.
@@ -241,7 +241,13 @@ handle_console_linux (console_action_t action)
             return;
         }
         /* Send command to the console handler */
-        status = write (pipefd1[1], &action, 1);
+        {
+            /* Convert enum (i.e. int) to char to write the correct value
+             * (the least byte) regardless of machine endianness. */
+            char act = (char) action;
+
+            status = write (pipefd1[1], &act, 1);
+        }
         if (action != CONSOLE_DONE)
         {
             /* Wait the console handler to do its job */

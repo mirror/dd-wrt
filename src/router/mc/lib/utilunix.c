@@ -1,7 +1,7 @@
 /*
    Various utilities - Unix variants
 
-   Copyright (C) 1994-2021
+   Copyright (C) 1994-2022
    Free Software Foundation, Inc.
 
    Written by:
@@ -79,10 +79,6 @@ struct sigaction startup_handler;
 
 #define UID_CACHE_SIZE 200
 #define GID_CACHE_SIZE 30
-
-/* Pipes are guaranteed to be able to hold at least 4096 bytes */
-/* More than that would be unportable */
-#define MAX_PIPE_SIZE 4096
 
 /*** file scope type declarations ****************************************************************/
 
@@ -988,18 +984,6 @@ canonicalize_pathname (char *path)
 {
     custom_canonicalize_pathname (path, CANON_PATH_ALL);
 }
-
-/* --------------------------------------------------------------------------------------------- */
-
-#ifdef HAVE_GET_PROCESS_STATS
-int
-gettimeofday (struct timeval *tp, void *tzp)
-{
-    (void) tzp;
-
-    return get_process_stats (tp, PS_SELF, 0, 0);
-}
-#endif /* HAVE_GET_PROCESS_STATS */
 
 /* --------------------------------------------------------------------------------------------- */
 

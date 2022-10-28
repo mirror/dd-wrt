@@ -100,12 +100,10 @@ host_triplet = @host@
 @ENABLE_VFS_SFTP_TRUE@am__append_10 = sftpfs/libvfs-sftpfs.la
 @ENABLE_VFS_SFS_TRUE@am__append_11 = sfs
 @ENABLE_VFS_SFS_TRUE@am__append_12 = sfs/libvfs-sfs.la
-@ENABLE_VFS_SMB_TRUE@am__append_13 = smbfs
-@ENABLE_VFS_SMB_TRUE@am__append_14 = smbfs/libvfs-smbfs.la
-@ENABLE_VFS_TAR_TRUE@am__append_15 = tar
-@ENABLE_VFS_TAR_TRUE@am__append_16 = tar/libvfs-tar.la
-@ENABLE_VFS_UNDELFS_TRUE@am__append_17 = undelfs
-@ENABLE_VFS_UNDELFS_TRUE@am__append_18 = undelfs/libvfs-undelfs.la
+@ENABLE_VFS_TAR_TRUE@am__append_13 = tar
+@ENABLE_VFS_TAR_TRUE@am__append_14 = tar/libvfs-tar.la
+@ENABLE_VFS_UNDELFS_TRUE@am__append_15 = undelfs
+@ENABLE_VFS_UNDELFS_TRUE@am__append_16 = undelfs/libvfs-undelfs.la
 subdir = src/vfs
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/m4/gettext.m4 \
@@ -126,6 +124,10 @@ am__aclocal_m4_deps = $(top_srcdir)/m4/gettext.m4 \
 	$(top_srcdir)/m4.include/gnulib/sys_types_h.m4 \
 	$(top_srcdir)/m4.include/ax_path_lib_pcre.m4 \
 	$(top_srcdir)/m4.include/dx_doxygen.m4 \
+	$(top_srcdir)/m4.include/ax_require_defined.m4 \
+	$(top_srcdir)/m4.include/ax_check_compile_flag.m4 \
+	$(top_srcdir)/m4.include/ax_append_flag.m4 \
+	$(top_srcdir)/m4.include/ax_append_compile_flags.m4 \
 	$(top_srcdir)/m4.include/mc-cflags.m4 \
 	$(top_srcdir)/m4.include/ax_gcc_func_attribute.m4 \
 	$(top_srcdir)/m4.include/mc-check-search-type.m4 \
@@ -151,7 +153,6 @@ am__aclocal_m4_deps = $(top_srcdir)/m4/gettext.m4 \
 	$(top_srcdir)/m4.include/vfs/mc-vfs-undelfs.m4 \
 	$(top_srcdir)/m4.include/vfs/mc-vfs-tarfs.m4 \
 	$(top_srcdir)/m4.include/vfs/mc-vfs-cpiofs.m4 \
-	$(top_srcdir)/m4.include/vfs/mc-vfs-samba.m4 \
 	$(top_srcdir)/m4.include/mc-version.m4 \
 	$(top_srcdir)/m4.include/mc-tests.m4 \
 	$(top_srcdir)/m4.include/mc-i18n.m4 \
@@ -168,7 +169,7 @@ LTLIBRARIES = $(noinst_LTLIBRARIES)
 libmc_vfs_la_DEPENDENCIES = local/libvfs-local.la $(am__append_2) \
 	$(am__append_4) $(am__append_6) $(am__append_8) \
 	$(am__append_10) $(am__append_12) $(am__append_14) \
-	$(am__append_16) $(am__append_18)
+	$(am__append_16)
 am_libmc_vfs_la_OBJECTS = plugins_init.lo
 libmc_vfs_la_OBJECTS = $(am_libmc_vfs_la_OBJECTS)
 AM_V_lt = $(am__v_lt_@AM_V@)
@@ -252,8 +253,7 @@ am__define_uniq_tagged_files = \
   done | $(am__uniquify_input)`
 ETAGS = etags
 CTAGS = ctags
-DIST_SUBDIRS = local cpio extfs fish ftpfs sftpfs sfs smbfs tar \
-	undelfs
+DIST_SUBDIRS = local cpio extfs fish ftpfs sftpfs sfs tar undelfs
 am__DIST_COMMON = $(srcdir)/Makefile.in $(top_srcdir)/config/depcomp
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
 am__relativize = \
@@ -476,11 +476,10 @@ pdfdir = @pdfdir@
 prefix = @prefix@
 program_transform_name = @program_transform_name@
 psdir = @psdir@
+runstatedir = @runstatedir@
 sbindir = @sbindir@
 sharedstatedir = @sharedstatedir@
-smbconfigdir = @smbconfigdir@
 srcdir = @srcdir@
-subdirs = @subdirs@
 sysconfdir = @sysconfdir@
 target_alias = @target_alias@
 top_build_prefix = @top_build_prefix@
@@ -491,11 +490,11 @@ AM_CPPFLAGS = $(GLIB_CFLAGS) -I$(top_srcdir)
 libmc_vfs_la_SOURCES = plugins_init.c plugins_init.h
 SUBDIRS = local $(am__append_1) $(am__append_3) $(am__append_5) \
 	$(am__append_7) $(am__append_9) $(am__append_11) \
-	$(am__append_13) $(am__append_15) $(am__append_17)
+	$(am__append_13) $(am__append_15)
 libmc_vfs_la_LIBADD = local/libvfs-local.la $(am__append_2) \
 	$(am__append_4) $(am__append_6) $(am__append_8) \
 	$(am__append_10) $(am__append_12) $(am__append_14) \
-	$(am__append_16) $(am__append_18)
+	$(am__append_16)
 all: all-recursive
 
 .SUFFIXES:

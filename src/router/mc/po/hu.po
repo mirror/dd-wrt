@@ -12,9 +12,9 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Midnight Commander\n"
 "Report-Msgid-Bugs-To: http://www.midnight-commander.org/\n"
-"POT-Creation-Date: 2021-08-15 16:03+0200\n"
-"PO-Revision-Date: 2021-07-26 20:16+0000\n"
-"Last-Translator: Transifex Bot <>\n"
+"POT-Creation-Date: 2022-03-27 14:08+0200\n"
+"PO-Revision-Date: 2010-12-29 10:19+0000\n"
+"Last-Translator: András Tőrös <toros.andras04@gmail.com>, 2020\n"
 "Language-Team: Hungarian (http://www.transifex.com/mc/mc/language/hu/)\n"
 "Language: hu\n"
 "MIME-Version: 1.0\n"
@@ -647,12 +647,6 @@ msgstr "Háttér-shell használatának letiltása"
 
 msgid "Log ftp dialog to specified file"
 msgstr "FTP-párbeszéd naplózása megadott fájlba"
-
-msgid "Set debug level"
-msgstr "Nyomkövetési (debug) szint beállítása"
-
-msgid "<integer>"
-msgstr ""
 
 msgid "Launches the file viewer on a file"
 msgstr "Fájlmegjelenítés indítása a megadott fájlon"
@@ -1615,7 +1609,7 @@ msgstr ""
 "Felhasználóbarát szövegszerkesztő\n"
 "a Midnight Commander-hez készítve"
 
-msgid "Copyright (C) 1996-2021 the Free Software Foundation"
+msgid "Copyright (C) 1996-2022 the Free Software Foundation"
 msgstr ""
 
 msgid "About"
@@ -2147,19 +2141,6 @@ msgid "Background jobs"
 msgstr "Háttérfolyamatok"
 
 #, c-format
-msgid "Password for \\\\%s\\%s"
-msgstr "\\\\%s\\%s jelszava:"
-
-msgid "Domain:"
-msgstr "Tartomány:"
-
-msgid "Username:"
-msgstr "Felhasználónév:"
-
-msgid "SMB authentication"
-msgstr "SMB hitelesítés"
-
-#, c-format
 msgid ""
 "Cannot chdir to \"%s\"\n"
 "%s"
@@ -2475,9 +2456,6 @@ msgstr "SFTP célgép"
 
 msgid "Shell link to machine"
 msgstr "Shell-kapcsolat egy másik géppel"
-
-msgid "SMB link to machine"
-msgstr "SMB-kapcsolat"
 
 msgid "Undelete files on an ext2 file system"
 msgstr "Törölt fájlok visszaállítása Ext2 fájlrendszeren"
@@ -3053,8 +3031,8 @@ msgstr "Köny&vtárfa"
 msgid "&Listing format..."
 msgstr ""
 
-msgid "&Sort order..."
-msgstr "&Rendezési mód..."
+msgid "S&ort order..."
+msgstr ""
 
 msgid "&Filter..."
 msgstr "&Szűrő..."
@@ -3068,11 +3046,8 @@ msgstr "&FTP-kapcsolat..."
 msgid "S&hell link..."
 msgstr "Sh&ell-kapcsolat..."
 
-msgid "S&FTP link..."
-msgstr "S&FTP link..."
-
-msgid "SM&B link..."
-msgstr "SM&B-kapcsolat..."
+msgid "&SFTP link..."
+msgstr ""
 
 msgid "Paneli&ze"
 msgstr "Panelra helye&zés"
@@ -4003,6 +3978,10 @@ msgstr ""
 msgid "Built with ncursesw (unknown version)"
 msgstr ""
 
+#, c-format
+msgid "Built with libssh2 %d.%d.%d\n"
+msgstr ""
+
 msgid "Virtual File Systems:"
 msgstr "Virtuális fájlrendszerek:"
 
@@ -4435,33 +4414,6 @@ msgstr "sftp: %s listázása... (megszakítás: Ctrl-G)"
 
 msgid "sftp: Listing done."
 msgstr "sftp: A listázás kész."
-
-#, c-format
-msgid "reconnect to %s failed"
-msgstr "%s: újrakapcsolódás sikertelen"
-
-msgid "Authentication failed"
-msgstr "Azonosítás sikertelen"
-
-#, c-format
-msgid "Error %s creating directory %s"
-msgstr "%s könyvtár létrehozása: %s hiba"
-
-#, c-format
-msgid "Error %s removing directory %s"
-msgstr "%s könyvtár törlése: %s hiba"
-
-#, c-format
-msgid "%s opening remote file %s"
-msgstr "%s távoli fájl megnyitása: %s"
-
-#, c-format
-msgid "%s removing remote file %s"
-msgstr "%s távoli fájl törlése: %s"
-
-#, c-format
-msgid "%s renaming files\n"
-msgstr "%s: a fájlok átnevezésekor\n"
 
 #, c-format
 msgid ""

@@ -1,7 +1,7 @@
 /*
    Init VFS plugins.
 
-   Copyright (C) 2011-2021
+   Copyright (C) 2011-2022
    Free Software Foundation, Inc.
 
    Written by:
@@ -55,15 +55,11 @@
 #endif
 
 #ifdef ENABLE_VFS_SFTP
-#include "sftpfs/init.h"
+#include "sftpfs/sftpfs.h"
 #endif
 
 #ifdef ENABLE_VFS_SFS
 #include "sfs/sfs.h"
-#endif
-
-#ifdef ENABLE_VFS_SMB
-#include "smbfs/smbfs.h"
 #endif
 
 #ifdef ENABLE_VFS_TAR
@@ -122,10 +118,6 @@ vfs_plugins_init (void)
 #ifdef ENABLE_VFS_FISH
     vfs_init_fish ();
 #endif /* ENABLE_VFS_FISH */
-#ifdef ENABLE_VFS_SMB
-    vfs_init_smbfs ();
-#endif /* ENABLE_VFS_SMB */
-
 }
 
 /* --------------------------------------------------------------------------------------------- */

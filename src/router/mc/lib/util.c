@@ -1,7 +1,7 @@
 /*
    Various utilities
 
-   Copyright (C) 1994-2021
+   Copyright (C) 1994-2022
    Free Software Foundation, Inc.
 
    Written by:
@@ -35,12 +35,12 @@
 #include <config.h>
 
 #include <ctype.h>
+#include <stddef.h>             /* ptrdiff_t */
 #include <limits.h>
 #include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <sys/time.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <unistd.h>
@@ -1522,7 +1522,7 @@ mc_time_elapsed (gint64 * timestamp, gint64 delay)
 {
     gint64 now;
 
-    now = g_get_real_time ();
+    now = g_get_monotonic_time ();
 
     if (now >= *timestamp && now < *timestamp + delay)
         return FALSE;

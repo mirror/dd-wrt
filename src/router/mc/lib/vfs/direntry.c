@@ -1,7 +1,7 @@
 /*
    Directory cache support
 
-   Copyright (C) 1998-2021
+   Copyright (C) 1998-2022
    Free Software Foundation, Inc.
 
    Written by:
@@ -870,7 +870,7 @@ vfs_s_dir_uptodate (struct vfs_class *me, struct vfs_s_inode *ino)
         return 0;
     }
 
-    tim = g_get_real_time ();
+    tim = g_get_monotonic_time ();
 
     return (tim < ino->timestamp);
 }

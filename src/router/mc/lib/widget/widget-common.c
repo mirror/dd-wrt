@@ -1,7 +1,7 @@
 /*
    Widgets for the Midnight Commander
 
-   Copyright (C) 1994-2021
+   Copyright (C) 1994-2022
    Free Software Foundation, Inc.
 
    Authors:
@@ -573,7 +573,8 @@ widget_replace (Widget * old_w, Widget * new_w)
     {
         GList *l;
 
-        for (l = group_get_widget_next_of (holder); widget_is_focusable (WIDGET (l->data));
+        for (l = group_get_widget_next_of (holder);
+             !widget_is_focusable (WIDGET (l->data)) && l != holder;
              l = group_get_widget_next_of (l))
             ;
 

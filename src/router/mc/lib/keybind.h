@@ -1,9 +1,6 @@
 #ifndef MC__KEYBIND_H
 #define MC__KEYBIND_H
 
-#include <sys/types.h>
-#include <sys/time.h>           /* time_t */
-
 #include "lib/global.h"
 
 /*** typedefs(not structures) and defined constants **********************************************/
@@ -157,7 +154,6 @@ enum
     CK_ConnectFish,
     CK_ConnectFtp,
     CK_ConnectSftp,
-    CK_ConnectSmb,
     CK_PanelInfo,
     CK_Jobs,
     CK_OptionsLayout,

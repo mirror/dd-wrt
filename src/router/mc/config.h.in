@@ -37,9 +37,6 @@
 /* Support for SFTP filesystem */
 #undef ENABLE_VFS_SFTP
 
-/* Define to enable VFS over SMB */
-#undef ENABLE_VFS_SMB
-
 /* Support for tar filesystem */
 #undef ENABLE_VFS_TAR
 
@@ -114,10 +111,6 @@
 
 /* Define if the GNU gettext() function is already present or preinstalled. */
 #undef HAVE_GETTEXT
-
-/* Define if you have function `get_process_stats' and have to use that
-   instead of gettimeofday */
-#undef HAVE_GET_PROCESS_STATS
 
 /* Defined if gmodule functionality is supported */
 #undef HAVE_GMODULE
