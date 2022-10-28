@@ -57,10 +57,10 @@
 				//]]>
 				</script>
 			</div>
-			<div class="center">
+			<div id=\"idssh_keyready\" class="center">
 				<script type="text/javascript">
 				//<![CDATA[
-				document.write("<input id=\"idssh_keyready\" class=\"button green_btn\" type=\"button\" aria-label=\"" + service.ssh_download + "\" name=\"config_button\" value=\"" + service.ssh_download + "\" onclick=\"download_sshkey(this.form);\">");
+				document.write("<input class=\"button green_btn\" type=\"button\" aria-label=\"" + service.ssh_download + "\" name=\"config_button\" value=\"" + service.ssh_download + "\" onclick=\"download_sshkey(this.form);\">");
 				//]]>
 				</script>
 			</div>
