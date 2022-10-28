@@ -4793,7 +4793,7 @@ static int igc_probe(struct pci_dev *pdev,
 	adapter->ei = *ei;
 
 	/* print pcie link status and MAC address */
-//	pcie_print_link_status(pdev);
+	pcie_print_link_status(pdev);
 	netdev_info(netdev, "MAC: %pM\n", netdev->dev_addr);
 
 	return 0;
