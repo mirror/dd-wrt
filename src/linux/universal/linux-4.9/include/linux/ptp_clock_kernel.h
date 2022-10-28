@@ -39,6 +39,15 @@ struct ptp_clock_request {
 };
 
 struct system_device_crosststamp;
+
+/**
+ * struct ptp_system_timestamp - system time corresponding to a PHC timestamp
+ */
+struct ptp_system_timestamp {
+	struct timespec64 pre_ts;
+	struct timespec64 post_ts;
+};
+
 /**
  * struct ptp_clock_info - decribes a PTP hardware clock
  *
@@ -58,7 +67,14 @@ struct system_device_crosststamp;
  *
  * clock operations
  *
+ * @adjfine:  Adjusts the frequency of the hardware clock.
+ *            parameter scaled_ppm: Desired frequency offset from
+ *            nominal frequency in parts per million, but with a
+ *            16 bit binary fractional field.
+ *
  * @adjfreq:  Adjusts the frequency of the hardware clock.
+ *            This method is deprecated.  New drivers should implement
+ *            the @adjfine method instead.
  *            parameter delta: Desired frequency offset from nominal frequency
  *            in parts per billion
  *
@@ -67,6 +83,14 @@ struct system_device_crosststamp;
  *
  * @gettime64:  Reads the current time from the hardware clock.
  *              parameter ts: Holds the result.
+ *
+ * @gettimex64:  Reads the current time from the hardware clock and optionally
+ *               also the system clock.
+ *               parameter ts: Holds the PHC timestamp.
+ *               parameter sts: If not NULL, it holds a pair of timestamps from
+ *               the system clock. The first reading is made right before
+ *               reading the lowest bits of the PHC timestamp and the second
+ *               reading immediately follows that.
  *
  * @getcrosststamp:  Reads the current time from the hardware clock and
  *                   system clock simultaneously.
@@ -108,9 +132,12 @@ struct ptp_clock_info {
 	int n_pins;
 	int pps;
 	struct ptp_pin_desc *pin_config;
+	int (*adjfine)(struct ptp_clock_info *ptp, long scaled_ppm);
 	int (*adjfreq)(struct ptp_clock_info *ptp, s32 delta);
 	int (*adjtime)(struct ptp_clock_info *ptp, s64 delta);
 	int (*gettime64)(struct ptp_clock_info *ptp, struct timespec64 *ts);
+	int (*gettimex64)(struct ptp_clock_info *ptp, struct timespec64 *ts,
+			  struct ptp_system_timestamp *sts);
 	int (*getcrosststamp)(struct ptp_clock_info *ptp,
 			      struct system_device_crosststamp *cts);
 	int (*settime64)(struct ptp_clock_info *p, const struct timespec64 *ts);
@@ -201,5 +228,17 @@ extern int ptp_clock_index(struct ptp_clock *ptp);
 
 int ptp_find_pin(struct ptp_clock *ptp,
 		 enum ptp_pin_function func, unsigned int chan);
+
+static inline void ptp_read_system_prets(struct ptp_system_timestamp *sts)
+{
+	if (sts)
+		ktime_get_real_ts64(&sts->pre_ts);
+}
+
+static inline void ptp_read_system_postts(struct ptp_system_timestamp *sts)
+{
+	if (sts)
+		ktime_get_real_ts64(&sts->post_ts);
+}
 
 #endif
