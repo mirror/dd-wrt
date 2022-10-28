@@ -459,6 +459,7 @@ addEvent(window, "unload", function() {
 							<dd class="definition"><% tran("hstatus_vpn.right2"); %></dd>
 							<dt class="term"><% tran("service.vpn_legend"); %></dt>
 							<dd class="definition"><% tran("hstatus_vpn.right1"); %></dd>
+							<dd class="definition"><% tran("hstatus_vpn.cfg_xp"); %></dd>
 							<dt class="term"><% tran("eoip.wireguard_lanac"); %></dt>
 							<dd class="definition"><% tran("hstatus_vpn.right4"); %></dd>
 						</dl><br />

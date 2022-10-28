@@ -710,7 +710,7 @@ win.focus();
 };
 function openAboutWindow(){
 var _27=750;
-var _28=650;
+var _28=850;
 var top=Math.floor((screen.availHeight-_28-10)/2);
 var _29=Math.floor((screen.availWidth-_27)/2);
 var win=window.open("About.htm","DDWRT_About","top="+top+",left="+_29+",width="+_27+",height="+_28+",resizable=no,scrollbars=no,statusbar=no");
