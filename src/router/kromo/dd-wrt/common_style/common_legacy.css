@@ -128,3 +128,6 @@ table#radio_table tr td, .table_row_bg td {
 .iplookup {
   overflow-x: hidden;
 }
+.link {
+  cursor: pointer;
+}

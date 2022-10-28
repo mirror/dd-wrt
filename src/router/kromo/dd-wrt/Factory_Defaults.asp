@@ -20,8 +20,6 @@ function to_apply(F) {
 var update;
 
 addEvent(window, "load", function() {
-	stickControl(<% nvg("sticky_footer"); %>);
-
 	update = new StatusbarUpdate();
 	update.start();
 });
