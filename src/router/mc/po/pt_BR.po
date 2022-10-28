@@ -13,9 +13,9 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Midnight Commander\n"
 "Report-Msgid-Bugs-To: http://www.midnight-commander.org/\n"
-"POT-Creation-Date: 2021-08-15 16:03+0200\n"
-"PO-Revision-Date: 2021-07-26 20:16+0000\n"
-"Last-Translator: Transifex Bot <>\n"
+"POT-Creation-Date: 2022-03-27 14:08+0200\n"
+"PO-Revision-Date: 2010-12-29 10:19+0000\n"
+"Last-Translator: Mauro Hemerly Gazzani <mauro.hemerly@gmail.com>, 2017\n"
 "Language-Team: Portuguese (Brazil) (http://www.transifex.com/mc/mc/language/"
 "pt_BR/)\n"
 "Language: pt_BR\n"
@@ -659,12 +659,6 @@ msgstr "Desabilita suporte à sub interpretadores de comandos"
 
 msgid "Log ftp dialog to specified file"
 msgstr "Acessar diálogo FTP para um arquivo específico"
-
-msgid "Set debug level"
-msgstr "Definir nível de depuração"
-
-msgid "<integer>"
-msgstr ""
 
 msgid "Launches the file viewer on a file"
 msgstr "Lança o visualizador de arquivos"
@@ -1585,7 +1579,7 @@ msgid ""
 "written for the Midnight Commander."
 msgstr ""
 
-msgid "Copyright (C) 1996-2021 the Free Software Foundation"
+msgid "Copyright (C) 1996-2022 the Free Software Foundation"
 msgstr ""
 
 msgid "About"
@@ -2116,19 +2110,6 @@ msgid "Background jobs"
 msgstr ""
 
 #, c-format
-msgid "Password for \\\\%s\\%s"
-msgstr "Senha para \\\\%s\\%s"
-
-msgid "Domain:"
-msgstr "Domínio:"
-
-msgid "Username:"
-msgstr " Nome de usuário:"
-
-msgid "SMB authentication"
-msgstr ""
-
-#, c-format
 msgid ""
 "Cannot chdir to \"%s\"\n"
 "%s"
@@ -2442,9 +2423,6 @@ msgstr ""
 
 msgid "Shell link to machine"
 msgstr "Link de shell para máquina"
-
-msgid "SMB link to machine"
-msgstr ""
 
 msgid "Undelete files on an ext2 file system"
 msgstr ""
@@ -3002,8 +2980,8 @@ msgstr "&Árvore"
 msgid "&Listing format..."
 msgstr ""
 
-msgid "&Sort order..."
-msgstr "&Ordem..."
+msgid "S&ort order..."
+msgstr ""
 
 msgid "&Filter..."
 msgstr "&Filtro..."
@@ -3017,11 +2995,8 @@ msgstr "Ligação FT&P..."
 msgid "S&hell link..."
 msgstr ""
 
-msgid "S&FTP link..."
+msgid "&SFTP link..."
 msgstr ""
-
-msgid "SM&B link..."
-msgstr "Ligação SM&B..."
 
 msgid "Paneli&ze"
 msgstr ""
@@ -3934,6 +3909,10 @@ msgstr ""
 msgid "Built with ncursesw (unknown version)"
 msgstr ""
 
+#, c-format
+msgid "Built with libssh2 %d.%d.%d\n"
+msgstr ""
+
 msgid "Virtual File Systems:"
 msgstr ""
 
@@ -4367,33 +4346,6 @@ msgstr ""
 
 msgid "sftp: Listing done."
 msgstr ""
-
-#, c-format
-msgid "reconnect to %s failed"
-msgstr "reconectar a %s falhou"
-
-msgid "Authentication failed"
-msgstr "Falha na autenticação"
-
-#, c-format
-msgid "Error %s creating directory %s"
-msgstr "Erro %s criando diretório %s"
-
-#, c-format
-msgid "Error %s removing directory %s"
-msgstr "Erro %s removendo diretório %s"
-
-#, c-format
-msgid "%s opening remote file %s"
-msgstr "%s abrindo arquivo remoto %s"
-
-#, c-format
-msgid "%s removing remote file %s"
-msgstr "%s removendo arquivo remoto %s"
-
-#, c-format
-msgid "%s renaming files\n"
-msgstr "%s renomeando arquivos\n"
 
 #, c-format
 msgid ""

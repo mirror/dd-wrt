@@ -4,16 +4,16 @@
 #
 # Translators:
 # Kimmo Kujansuu <mrkujansuu@gmail.com>, 2021
-# Nikolay Korotkiy <sikmir@gmail.com>, 2017-2019
+# Nikolay Korotkiy <sikmir@disroot.org>, 2017-2019
 # Slava Zanko <slavazanko@gmail.com>, 2011
 # hondakassi <kasvain@gmail.com>, 2015
 msgid ""
 msgstr ""
 "Project-Id-Version: Midnight Commander\n"
 "Report-Msgid-Bugs-To: http://www.midnight-commander.org/\n"
-"POT-Creation-Date: 2021-08-15 16:03+0200\n"
-"PO-Revision-Date: 2021-07-26 20:16+0000\n"
-"Last-Translator: Transifex Bot <>\n"
+"POT-Creation-Date: 2022-03-27 14:08+0200\n"
+"PO-Revision-Date: 2010-12-29 10:19+0000\n"
+"Last-Translator: Kimmo Kujansuu <mrkujansuu@gmail.com>, 2021\n"
 "Language-Team: Finnish (http://www.transifex.com/mc/mc/language/fi/)\n"
 "Language: fi\n"
 "MIME-Version: 1.0\n"
@@ -664,12 +664,6 @@ msgstr "Poistaa subshell tuen käytöstä"
 
 msgid "Log ftp dialog to specified file"
 msgstr "Kirjaa ftp kyselyt tiedostoon"
-
-msgid "Set debug level"
-msgstr "Aseta debug-taso"
-
-msgid "<integer>"
-msgstr "<integer>"
 
 msgid "Launches the file viewer on a file"
 msgstr "Käynnistää tiedoston katseluohjelman"
@@ -1597,8 +1591,8 @@ msgstr ""
 "Midnight Commanderille kirjoitettu\n"
 "käyttäjäystävällinen tekstieditori."
 
-msgid "Copyright (C) 1996-2021 the Free Software Foundation"
-msgstr "Copyright (C) 1996-2021 the Free Software Foundation"
+msgid "Copyright (C) 1996-2022 the Free Software Foundation"
+msgstr ""
 
 msgid "About"
 msgstr "Tietoja"
@@ -2118,19 +2112,6 @@ msgid "Background jobs"
 msgstr "Taustatyöt"
 
 #, c-format
-msgid "Password for \\\\%s\\%s"
-msgstr "Salasana käyttäjälle \\\\%s\\%s"
-
-msgid "Domain:"
-msgstr "Verkkotunnus:"
-
-msgid "Username:"
-msgstr "Käyttäjätunnus:"
-
-msgid "SMB authentication"
-msgstr "SMB-todennus"
-
-#, c-format
 msgid ""
 "Cannot chdir to \"%s\"\n"
 "%s"
@@ -2441,9 +2422,6 @@ msgid "SFTP to machine"
 msgstr ""
 
 msgid "Shell link to machine"
-msgstr ""
-
-msgid "SMB link to machine"
 msgstr ""
 
 msgid "Undelete files on an ext2 file system"
@@ -2990,8 +2968,8 @@ msgstr "&Puu"
 msgid "&Listing format..."
 msgstr "&Luettelomuoto..."
 
-msgid "&Sort order..."
-msgstr "&Järjestys"
+msgid "S&ort order..."
+msgstr ""
 
 msgid "&Filter..."
 msgstr "&Suodata..."
@@ -3005,11 +2983,8 @@ msgstr "FT&P linkki..."
 msgid "S&hell link..."
 msgstr "S&hell linkki..."
 
-msgid "S&FTP link..."
-msgstr "S&FTP linkki..."
-
-msgid "SM&B link..."
-msgstr "SM&B linkki..."
+msgid "&SFTP link..."
+msgstr ""
 
 msgid "Paneli&ze"
 msgstr ""
@@ -3905,6 +3880,10 @@ msgstr " Luotu ncursesw %s\n"
 msgid "Built with ncursesw (unknown version)"
 msgstr "Luotu ncursesw (tuntematon versio)"
 
+#, c-format
+msgid "Built with libssh2 %d.%d.%d\n"
+msgstr ""
+
 msgid "Virtual File Systems:"
 msgstr ""
 
@@ -4322,33 +4301,6 @@ msgstr ""
 
 msgid "sftp: Listing done."
 msgstr ""
-
-#, c-format
-msgid "reconnect to %s failed"
-msgstr "uudelleenyritys kohteeseen %s epäonnistui"
-
-msgid "Authentication failed"
-msgstr "Authenkaatio epäonnistui"
-
-#, c-format
-msgid "Error %s creating directory %s"
-msgstr "Virhe %s luotaessa kansiota %s"
-
-#, c-format
-msgid "Error %s removing directory %s"
-msgstr "Virhe %s poistaessa hakemistoa %s"
-
-#, c-format
-msgid "%s opening remote file %s"
-msgstr "%s avautuva palvelintiedosto %s"
-
-#, c-format
-msgid "%s removing remote file %s"
-msgstr "%s poistaa palvelintiedostoa %s"
-
-#, c-format
-msgid "%s renaming files\n"
-msgstr "%s uudelleennimeää tiedostoja\n"
 
 #, c-format
 msgid ""

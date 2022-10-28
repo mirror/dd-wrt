@@ -100,11 +100,8 @@ bin_PROGRAMS = mc$(EXEEXT)
 @ENABLE_MCLIB_FALSE@am__append_7 = \
 @ENABLE_MCLIB_FALSE@	$(top_builddir)/lib/libmc.la
 
-
-# this is a hack for linking with own samba library in simple way
-@ENABLE_VFS_SMB_TRUE@am__append_8 = vfs/smbfs/helpers/libsamba.a
-@CHARSET_TRUE@am__append_9 = selcodepage.c selcodepage.h
-@ENABLE_BACKGROUND_TRUE@am__append_10 = background.c background.h
+@CHARSET_TRUE@am__append_8 = selcodepage.c selcodepage.h
+@ENABLE_BACKGROUND_TRUE@am__append_9 = background.c background.h
 subdir = src
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/m4/gettext.m4 \
@@ -125,6 +122,10 @@ am__aclocal_m4_deps = $(top_srcdir)/m4/gettext.m4 \
 	$(top_srcdir)/m4.include/gnulib/sys_types_h.m4 \
 	$(top_srcdir)/m4.include/ax_path_lib_pcre.m4 \
 	$(top_srcdir)/m4.include/dx_doxygen.m4 \
+	$(top_srcdir)/m4.include/ax_require_defined.m4 \
+	$(top_srcdir)/m4.include/ax_check_compile_flag.m4 \
+	$(top_srcdir)/m4.include/ax_append_flag.m4 \
+	$(top_srcdir)/m4.include/ax_append_compile_flags.m4 \
 	$(top_srcdir)/m4.include/mc-cflags.m4 \
 	$(top_srcdir)/m4.include/ax_gcc_func_attribute.m4 \
 	$(top_srcdir)/m4.include/mc-check-search-type.m4 \
@@ -150,7 +151,6 @@ am__aclocal_m4_deps = $(top_srcdir)/m4/gettext.m4 \
 	$(top_srcdir)/m4.include/vfs/mc-vfs-undelfs.m4 \
 	$(top_srcdir)/m4.include/vfs/mc-vfs-tarfs.m4 \
 	$(top_srcdir)/m4.include/vfs/mc-vfs-cpiofs.m4 \
-	$(top_srcdir)/m4.include/vfs/mc-vfs-samba.m4 \
 	$(top_srcdir)/m4.include/mc-version.m4 \
 	$(top_srcdir)/m4.include/mc-tests.m4 \
 	$(top_srcdir)/m4.include/mc-i18n.m4 \
@@ -190,7 +190,7 @@ am__v_lt_0 = --silent
 am__v_lt_1 = 
 am_mc_OBJECTS = main.$(OBJEXT)
 mc_OBJECTS = $(am_mc_OBJECTS)
-mc_DEPENDENCIES = libinternal.la $(am__append_7) $(am__append_8)
+mc_DEPENDENCIES = libinternal.la $(am__append_7)
 AM_V_P = $(am__v_P_@AM_V@)
 am__v_P_ = $(am__v_P_@AM_DEFAULT_V@)
 am__v_P_0 = false
@@ -500,11 +500,10 @@ pdfdir = @pdfdir@
 prefix = @prefix@
 program_transform_name = @program_transform_name@
 psdir = @psdir@
+runstatedir = @runstatedir@
 sbindir = @sbindir@
 sharedstatedir = @sharedstatedir@
-smbconfigdir = @smbconfigdir@
 srcdir = @srcdir@
-subdirs = @subdirs@
 sysconfdir = @sysconfdir@
 target_alias = @target_alias@
 top_build_prefix = @top_build_prefix@
@@ -524,7 +523,7 @@ AM_CPPFLAGS = -DSYSCONFDIR=\""$(sysconfdir)/@PACKAGE@/"\" \
 libinternal_la_LIBADD = filemanager/libmcfilemanager.la \
 	vfs/libmc-vfs.la viewer/libmcviewer.la $(DIFFLIB) $(EDITLIB) \
 	$(SUBSHELLLIB) $(am__append_6)
-mc_LDADD = libinternal.la $(am__append_7) $(am__append_8) -lintl
+mc_LDADD = libinternal.la $(am__append_7) -lintl
 SRC_mc_conssaver = \
 	cons.handler.c consaver/cons.saver.h
 
@@ -535,8 +534,8 @@ libinternal_la_SOURCES = $(SRC_mc_conssaver) args.c args.h clipboard.c \
 	clipboard.h events_init.c events_init.h execute.c execute.h \
 	file_history.c file_history.h help.c help.h history.h keymap.c \
 	keymap.h learn.c learn.h setup.c setup.h textconf.c textconf.h \
-	usermenu.c usermenu.h util.c util.h $(am__append_9) \
-	$(am__append_10)
+	usermenu.c usermenu.h util.c util.h $(am__append_8) \
+	$(am__append_9)
 EXTRA_DIST = $(SRC_maintainer) $(SRC_charset)
 all: all-recursive
 

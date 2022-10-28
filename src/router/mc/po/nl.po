@@ -14,9 +14,10 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Midnight Commander\n"
 "Report-Msgid-Bugs-To: http://www.midnight-commander.org/\n"
-"POT-Creation-Date: 2021-08-15 16:03+0200\n"
-"PO-Revision-Date: 2021-07-26 20:16+0000\n"
-"Last-Translator: Transifex Bot <>\n"
+"POT-Creation-Date: 2022-03-27 14:08+0200\n"
+"PO-Revision-Date: 2010-12-29 10:19+0000\n"
+"Last-Translator: Richard E. van der Luit <nippur@fedoraproject.org>, "
+"2012-2015,2017,2020\n"
 "Language-Team: Dutch (http://www.transifex.com/mc/mc/language/nl/)\n"
 "Language: nl\n"
 "MIME-Version: 1.0\n"
@@ -665,12 +666,6 @@ msgstr "Schakelt subshell-ondersteuning uit"
 
 msgid "Log ftp dialog to specified file"
 msgstr "Schrijf FTP-log naar aangegeven bestand"
-
-msgid "Set debug level"
-msgstr "Debugniveau instellen"
-
-msgid "<integer>"
-msgstr "<integer>"
 
 msgid "Launches the file viewer on a file"
 msgstr "Start de bestandviewer voor een bestand"
@@ -1628,7 +1623,7 @@ msgstr ""
 "Een gebruikersvriendelijke tekstbewerker\n"
 "geschreven voor de Midnight Commander"
 
-msgid "Copyright (C) 1996-2021 the Free Software Foundation"
+msgid "Copyright (C) 1996-2022 the Free Software Foundation"
 msgstr ""
 
 msgid "About"
@@ -2164,19 +2159,6 @@ msgid "Background jobs"
 msgstr "Achtergrondtaken"
 
 #, c-format
-msgid "Password for \\\\%s\\%s"
-msgstr "Wachtwoord voor \\\\%s\\%s"
-
-msgid "Domain:"
-msgstr "Domein:"
-
-msgid "Username:"
-msgstr " Gebruikersnaam:"
-
-msgid "SMB authentication"
-msgstr "SMB-authenticatie"
-
-#, c-format
 msgid ""
 "Cannot chdir to \"%s\"\n"
 "%s"
@@ -2496,9 +2478,6 @@ msgstr "SFTP naar machine"
 
 msgid "Shell link to machine"
 msgstr "Shell-link naar machine"
-
-msgid "SMB link to machine"
-msgstr "SMB-link naar machine"
 
 msgid "Undelete files on an ext2 file system"
 msgstr "Herstellen van gewiste bestanden op een ext2-bestandssysteem "
@@ -3081,8 +3060,8 @@ msgstr "&Boom"
 msgid "&Listing format..."
 msgstr "&Lijstformaat..."
 
-msgid "&Sort order..."
-msgstr "&Sorteervolgorde...     "
+msgid "S&ort order..."
+msgstr ""
 
 msgid "&Filter..."
 msgstr "&Filter...              "
@@ -3096,11 +3075,8 @@ msgstr "FT&P-Verbinding...      "
 msgid "S&hell link..."
 msgstr "S&hellverbinding...    "
 
-msgid "S&FTP link..."
-msgstr "S&FTP-link..."
-
-msgid "SM&B link..."
-msgstr "SM&B-Verbinding..."
+msgid "&SFTP link..."
+msgstr ""
 
 msgid "Paneli&ze"
 msgstr "Als vens&ter"
@@ -4033,6 +4009,10 @@ msgstr "Built met ncursesw %s\n"
 msgid "Built with ncursesw (unknown version)"
 msgstr "Built met ncursesw (onbekende versie)"
 
+#, c-format
+msgid "Built with libssh2 %d.%d.%d\n"
+msgstr ""
+
 msgid "Virtual File Systems:"
 msgstr "Virtuele bestandssystemen (VFS):"
 
@@ -4467,33 +4447,6 @@ msgstr "sftp: (Ctrl-G break) Weergave lijst... %s"
 
 msgid "sftp: Listing done."
 msgstr "sftp: Klaar met opsomming."
-
-#, c-format
-msgid "reconnect to %s failed"
-msgstr "opnieuw verbinden met %s mislukt"
-
-msgid "Authentication failed"
-msgstr "Authenticatie mislukt"
-
-#, c-format
-msgid "Error %s creating directory %s"
-msgstr "Fout %s bij het maken van map %s"
-
-#, c-format
-msgid "Error %s removing directory %s"
-msgstr "Fout %s bij het verwijderen van map %s"
-
-#, c-format
-msgid "%s opening remote file %s"
-msgstr "Fout %s bij het openen van remote bestand %s"
-
-#, c-format
-msgid "%s removing remote file %s"
-msgstr "%s verwijderen remote bestand %s"
-
-#, c-format
-msgid "%s renaming files\n"
-msgstr "%s hernoemen bestanden\n"
 
 #, c-format
 msgid ""
