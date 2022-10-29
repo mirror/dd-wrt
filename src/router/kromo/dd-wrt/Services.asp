@@ -93,6 +93,7 @@ function download_sshkey(F) {
 	window.location.href='/id_rsa.ssh';
 	alert(service.ssh_keydownload);
 	window.location.reload();
+	document.getElementById("idssh_keyready").disabled = true;
 }
 
 function generate_sshkey(F) {
@@ -100,7 +101,7 @@ function generate_sshkey(F) {
 		F.change_action.value="gozila_cgi";
 		F.submit_type.value = "ssh_downloadkey";
 		applytake(F);
-		document.getElementById(id="idssh_keyready").disabled = false;
+		document.getElementById("idssh_keyready").disabled = false;
 	}
 }
 
