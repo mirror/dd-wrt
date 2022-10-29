@@ -189,8 +189,8 @@ EJ_VISIBLE void ej_do_hpagehead(webs_t wp, int argc, char_t ** argv)	// Eko
 		websWrite(wp, "#credits {\n");
 		websWrite(wp, "  height: auto;\n");
 		websWrite(wp, "  font-size: 20px;\n");
-		websWrite(wp, "  color: #f6be00;\n");
-		websWrite(wp, "  background: linear-gradient(to bottom, #ce9f00, #ffc516);\n");
+		websWrite(wp, "  color: #8c6c00;\n");
+		websWrite(wp, "  background: linear-gradient(to bottom, #8c6c00, #b98b02);\n");
 		websWrite(wp, "  -webkit-text-fill-color: transparent;\n");
 		websWrite(wp, "  -webkit-background-clip: text;\n");
 		websWrite(wp, "  animation: foolywood 35s linear infinite;\n");

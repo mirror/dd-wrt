@@ -475,7 +475,8 @@ td .meter {
   padding:.2em .6em;
   cursor: pointer;
 } 
-[disabled], :disabled, .off {
+:disabled, .off {
+  filter: grayscale(1) !important;
   cursor: default;
   opacity: .8;
 }

@@ -229,7 +229,7 @@ addEvent(window, "unload", function() {
 									<input name="ddns_custom" size="35" maxlength="32" value="<% get_ddns_value("ddns_custom"); %>" />
 								</div>
 								<div class="setting">
-									<div class="label">Path</div>
+									<div class="label"><% tran("service.samba3_share_path"); %></div>
 									<input name="ddns_path" size="35" maxlength="64" value="<% get_ddns_value("ddns_path"); %>" />
 								</div>
 								<div class="setting">
