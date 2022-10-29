@@ -543,3 +543,6 @@ td.bulle {
   padding: .09em;
   border: 0;
 }
+.link {
+  cursor: pointer;
+}
