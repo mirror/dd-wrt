@@ -19,6 +19,7 @@
   border-color: #333 !important;
 }
 #credits {
+  color: #f6be00;
   background: linear-gradient(to bottom, #f6be00, #ffcf2c) !important;
   -webkit-text-fill-color: transparent !important;
   -webkit-background-clip: text !important;
