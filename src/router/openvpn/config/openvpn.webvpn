@@ -393,6 +393,13 @@
 					</script>
 				</div>
 			</div>
-		</div>
+		</div><br>
+		<div class="setting">
+			<script type="text/javascript">
+			//<![CDATA[
+				document.write("<input class=\"button green_btn\" type=\"button\" name=\"config_button\" value=\"" + service.vpnd_export + "\" onclick=\"window.location.href='/ovpncl_config.ovpn';\">");
+			//]]>
+			</script>
+		</div><br>
 	</div>
 </fieldset><br/>
