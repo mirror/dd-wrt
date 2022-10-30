@@ -286,6 +286,10 @@ void shutdown_system(void)
 		sleep(1);
 		dd_loginfo("init", "Sending SIGTERM to all processes\n");
 		kill(-1, SIGTERM);
+#ifdef HAVE_TRANSMISSION
+		dd_loginfo("init", "Waitng some seconds to give programs time to flush\n");
+		sleep(10);
+#endif
 		sync();
 		unmount_fs();	// try to unmount a first time
 		dd_loginfo("init", "Sending SIGKILL to all processes\n");
