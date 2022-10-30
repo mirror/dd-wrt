@@ -187,10 +187,10 @@ void addrtostr(struct in6_addr const *addr, char *str, size_t str_size)
 int check_rdnss_presence(struct AdvRDNSS *rdnss, struct in6_addr *addr)
 {
 	while (rdnss) {
-		if (!memcmp(&rdnss->AdvRDNSSAddr1, addr, sizeof(struct in6_addr)) ||
-		    !memcmp(&rdnss->AdvRDNSSAddr2, addr, sizeof(struct in6_addr)) ||
-		    !memcmp(&rdnss->AdvRDNSSAddr3, addr, sizeof(struct in6_addr)))
-			return 1; /* rdnss address found in the list */
+		for (int i = 0; i < rdnss->AdvRDNSSNumber; i++) {
+			if (!memcmp(&rdnss->AdvRDNSSAddr[i], addr, sizeof(struct in6_addr)))
+				return 1; /* rdnss address found in the list */
+		}
 		rdnss = rdnss->next;
 	}
 	return 0;

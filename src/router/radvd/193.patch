@@ -1,0 +1,257 @@
+From 746ec1e5918759cbd78cd1c2d8a46babf345bece Mon Sep 17 00:00:00 2001
+From: WenChao1Hou <wenchao.hou@outlook.com>
+Date: Sun, 30 Oct 2022 21:08:31 +0800
+Subject: [PATCH] RDNSS section support more ipv6 aaddrss
+
+RFC 6106 recommended that the number of RDNSS addresses thatshould be learned and maintained through the RDNSS RA option should be limited to three.  RFC 8106 removes that recommendation; thus, the number of RDNSS addresses to maintain is determined by an implementer's local policy.The number of RDNSS addresses to maintain is determined by the user's own profile
+---
+ defaults.h  |  4 +---
+ gram.y      | 26 +++++++++-----------------
+ interface.c |  1 +
+ process.c   | 45 +++++++++++----------------------------------
+ radvd.h     |  4 +---
+ radvdump.c  | 11 ++---------
+ send.c      | 21 +++++++++++++++------
+ util.c      |  8 ++++----
+ 8 files changed, 44 insertions(+), 76 deletions(-)
+
+diff --git a/defaults.h b/defaults.h
+index efd64276..eca6a70a 100644
+--- a/defaults.h
++++ b/defaults.h
+@@ -205,9 +205,7 @@ struct nd_opt_rdnss_info_local {
+ 	uint8_t nd_opt_rdnssi_len;
+ 	uint16_t nd_opt_rdnssi_pref_flag_reserved;
+ 	uint32_t nd_opt_rdnssi_lifetime;
+-	struct in6_addr nd_opt_rdnssi_addr1;
+-	struct in6_addr nd_opt_rdnssi_addr2;
+-	struct in6_addr nd_opt_rdnssi_addr3;
++	struct in6_addr nd_opt_rdnssi_addr[];
+ };
+ /* pref/flag/reserved field : yyyyx00000000000 (big endian) - 00000000yyyyx000 (little indian); where yyyy = pref, x = flag */
+ #if BYTE_ORDER == BIG_ENDIAN
+diff --git a/gram.y b/gram.y
+index 23a9f24f..89053361 100644
+--- a/gram.y
++++ b/gram.y
+@@ -786,24 +786,15 @@ rdnssaddr	: IPV6ADDR
+ 				rdnss_init_defaults(rdnss, iface);
+ 			}
+ 
+-			switch (rdnss->AdvRDNSSNumber) {
+-				case 0:
+-					memcpy(&rdnss->AdvRDNSSAddr1, $1, sizeof(struct in6_addr));
+-					rdnss->AdvRDNSSNumber++;
+-					break;
+-				case 1:
+-					memcpy(&rdnss->AdvRDNSSAddr2, $1, sizeof(struct in6_addr));
+-					rdnss->AdvRDNSSNumber++;
+-					break;
+-				case 2:
+-					memcpy(&rdnss->AdvRDNSSAddr3, $1, sizeof(struct in6_addr));
+-					rdnss->AdvRDNSSNumber++;
+-					break;
+-				default:
+-					flog(LOG_CRIT, "too many addresses in RDNSS section");
+-					ABORT;
++			rdnss->AdvRDNSSNumber++;
++			rdnss->AdvRDNSSAddr =
++				realloc(rdnss->AdvRDNSSAddr,
++					rdnss->AdvRDNSSNumber * sizeof(struct in6_addr));
++			if (rdnss->AdvRDNSSAddr == NULL) {
++				flog(LOG_CRIT, "realloc failed: %s", strerror(errno));
++				ABORT;
+ 			}
+-
++			memcpy(&rdnss->AdvRDNSSAddr[rdnss->AdvRDNSSNumber - 1], $1, sizeof(struct in6_addr));
+ 		}
+ 		;
+ 
+@@ -1066,6 +1057,7 @@ static void cleanup(void)
+ 	}
+ 
+ 	if (rdnss) {
++		free(rdnss->AdvRDNSSAddr);
+ 		free(rdnss);
+ 		rdnss = 0;
+ 	}
+diff --git a/interface.c b/interface.c
+index 1417d580..d9807854 100644
+--- a/interface.c
++++ b/interface.c
+@@ -420,6 +420,7 @@ static void free_iface_list(struct Interface *iface)
+ 		while (rdnss) {
+ 			struct AdvRDNSS *next_rdnss = rdnss->next;
+ 
++			free(rdnss->AdvRDNSSAddr);
+ 			free(rdnss);
+ 			rdnss = next_rdnss;
+ 		}
+diff --git a/process.c b/process.c
+index 66fb2578..c161414a 100644
+--- a/process.c
++++ b/process.c
+@@ -322,44 +322,21 @@ static void process_ra(struct Interface *iface, unsigned char *msg, int len, str
+ 			break;
+ 		case ND_OPT_RDNSS_INFORMATION: {
+ 			char rdnss_str[INET6_ADDRSTRLEN];
+-			struct AdvRDNSS *rdnss = 0;
+ 			struct nd_opt_rdnss_info_local *rdnssinfo = (struct nd_opt_rdnss_info_local *)opt_str;
+ 			if (len < sizeof(*rdnssinfo))
+ 				return;
+-			int count = rdnssinfo->nd_opt_rdnssi_len;
+-
+-			/* Check the RNDSS addresses received */
+-			switch (count) {
+-			case 7:
+-				rdnss = iface->AdvRDNSSList;
+-				if (!check_rdnss_presence(rdnss, &rdnssinfo->nd_opt_rdnssi_addr3)) {
+-					/* no match found in iface->AdvRDNSSList */
+-					addrtostr(&rdnssinfo->nd_opt_rdnssi_addr3, rdnss_str, sizeof(rdnss_str));
+-					flog(LOG_WARNING, "RDNSS address %s received on %s from %s is not advertised by us",
+-					     rdnss_str, iface->props.name, addr_str);
+-				}
+-			/* FALLTHROUGH */
+-			case 5:
+-				rdnss = iface->AdvRDNSSList;
+-				if (!check_rdnss_presence(rdnss, &rdnssinfo->nd_opt_rdnssi_addr2)) {
+-					/* no match found in iface->AdvRDNSSList */
+-					addrtostr(&rdnssinfo->nd_opt_rdnssi_addr2, rdnss_str, sizeof(rdnss_str));
+-					flog(LOG_WARNING, "RDNSS address %s received on %s from %s is not advertised by us",
+-					     rdnss_str, iface->props.name, addr_str);
+-				}
+-			/* FALLTHROUGH */
+-			case 3:
+-				rdnss = iface->AdvRDNSSList;
+-				if (!check_rdnss_presence(rdnss, &rdnssinfo->nd_opt_rdnssi_addr1)) {
+-					/* no match found in iface->AdvRDNSSList */
+-					addrtostr(&rdnssinfo->nd_opt_rdnssi_addr1, rdnss_str, sizeof(rdnss_str));
+-					flog(LOG_WARNING, "RDNSS address %s received on %s from %s is not advertised by us",
+-					     rdnss_str, iface->props.name, addr_str);
+-				}
+ 
+-				break;
+-			default:
+-				flog(LOG_ERR, "invalid len %i in RDNSS option on %s from %s", count, iface->props.name, addr_str);
++			if (rdnssinfo->nd_opt_rdnssi_len > 2) {
++				for (int i = 0; i < (rdnssinfo->nd_opt_rdnssi_len - 1) / 2; i++) {
++					if (!check_rdnss_presence(iface->AdvRDNSSList, &rdnssinfo->nd_opt_rdnssi_addr[i])) {
++						addrtostr(&rdnssinfo->nd_opt_rdnssi_addr[i], rdnss_str, sizeof(rdnss_str));
++						flog(LOG_WARNING, "RDNSS address %s received on %s from %s is not advertised by us",
++						     rdnss_str, iface->props.name, addr_str);
++					}
++				}
++			} else {
++				flog(LOG_ERR, "invalid len %i in RDNSS option on %s from %s",
++				     rdnssinfo->nd_opt_rdnssi_len, iface->props.name, addr_str);
+ 			}
+ 
+ 			break;
+diff --git a/radvd.h b/radvd.h
+index 0fa04562..6f5928d8 100644
+--- a/radvd.h
++++ b/radvd.h
+@@ -198,9 +198,7 @@ struct AdvRDNSS {
+ 	int AdvRDNSSNumber;
+ 	uint32_t AdvRDNSSLifetime;
+ 	int FlushRDNSSFlag;
+-	struct in6_addr AdvRDNSSAddr1;
+-	struct in6_addr AdvRDNSSAddr2;
+-	struct in6_addr AdvRDNSSAddr3;
++	struct in6_addr *AdvRDNSSAddr;
+ 
+ 	struct AdvRDNSS *next;
+ };
+diff --git a/radvdump.c b/radvdump.c
+index b6fd600f..0c4527bb 100644
+--- a/radvdump.c
++++ b/radvdump.c
+@@ -402,15 +402,8 @@ static void print_ff(unsigned char *msg, int len, struct sockaddr_in6 *addr, int
+ 
+ 			printf("\n\tRDNSS");
+ 
+-			addrtostr(&rdnss_info->nd_opt_rdnssi_addr1, prefix_str, sizeof(prefix_str));
+-			printf(" %s", prefix_str);
+-
+-			if (rdnss_info->nd_opt_rdnssi_len >= 5) {
+-				addrtostr(&rdnss_info->nd_opt_rdnssi_addr2, prefix_str, sizeof(prefix_str));
+-				printf(" %s", prefix_str);
+-			}
+-			if (rdnss_info->nd_opt_rdnssi_len >= 7) {
+-				addrtostr(&rdnss_info->nd_opt_rdnssi_addr3, prefix_str, sizeof(prefix_str));
++			for (int i = 0; i < (rdnss_info->nd_opt_rdnssi_len - 1) / 2; i++) {
++				addrtostr(&rdnss_info->nd_opt_rdnssi_addr[i], prefix_str, sizeof(prefix_str));
+ 				printf(" %s", prefix_str);
+ 			}
+ 
+diff --git a/send.c b/send.c
+index fecdf460..04c3ef84 100644
+--- a/send.c
++++ b/send.c
+@@ -584,8 +584,10 @@ static struct safe_buffer_list *add_ra_options_route(struct safe_buffer_list *sb
+ static struct safe_buffer_list *add_ra_options_rdnss(struct safe_buffer_list *sbl, struct Interface const *iface,
+ 						     struct AdvRDNSS const *rdnss, int cease_adv, struct in6_addr const *dest)
+ {
++	struct safe_buffer *rdnss_addr = new_safe_buffer();
+ 	while (rdnss) {
+ 		struct nd_opt_rdnss_info_local rdnssinfo;
++		rdnss_addr->used = 0;
+ 
+ 		if (!cease_adv && !schedule_option_rdnss(dest, iface, rdnss)) {
+ 			rdnss = rdnss->next;
+@@ -594,6 +596,12 @@ static struct safe_buffer_list *add_ra_options_rdnss(struct safe_buffer_list *sb
+ 
+ 		memset(&rdnssinfo, 0, sizeof(rdnssinfo));
+ 
++		size_t const bytes = sizeof(rdnssinfo) + sizeof(struct in6_addr) * rdnss->AdvRDNSSNumber;
++		if (bytes > (256 * 8)) {
++			flog(LOG_ERR, "RDNSS too long for RA option, must be < 2048 bytes.  Exiting.");
++			exit(1);
++		}
++
+ 		rdnssinfo.nd_opt_rdnssi_type = ND_OPT_RDNSS_INFORMATION;
+ 		rdnssinfo.nd_opt_rdnssi_len = 1 + 2 * rdnss->AdvRDNSSNumber;
+ 		rdnssinfo.nd_opt_rdnssi_pref_flag_reserved = 0;
+@@ -604,16 +612,17 @@ static struct safe_buffer_list *add_ra_options_rdnss(struct safe_buffer_list *sb
+ 			rdnssinfo.nd_opt_rdnssi_lifetime = htonl(rdnss->AdvRDNSSLifetime);
+ 		}
+ 
+-		memcpy(&rdnssinfo.nd_opt_rdnssi_addr1, &rdnss->AdvRDNSSAddr1, sizeof(struct in6_addr));
+-		memcpy(&rdnssinfo.nd_opt_rdnssi_addr2, &rdnss->AdvRDNSSAddr2, sizeof(struct in6_addr));
+-		memcpy(&rdnssinfo.nd_opt_rdnssi_addr3, &rdnss->AdvRDNSSAddr3, sizeof(struct in6_addr));
+-
+ 		sbl = safe_buffer_list_append(sbl);
+-		safe_buffer_append(sbl->sb, &rdnssinfo,
+-				   sizeof(rdnssinfo) - (3 - rdnss->AdvRDNSSNumber) * sizeof(struct in6_addr));
++		safe_buffer_append(sbl->sb, &rdnssinfo, sizeof(rdnssinfo));
++		for (int i = 0; i < rdnss->AdvRDNSSNumber; i++) { 
++			safe_buffer_append(rdnss_addr, &rdnss->AdvRDNSSAddr[i], sizeof(struct in6_addr));
++		}
++		safe_buffer_append(sbl->sb, rdnssbuf->buffer, rdnssbuf->used);
++		safe_buffer_free(rdnssbuf);
+ 
+ 		rdnss = rdnss->next;
+ 	}
++	safe_buffer_free(rdnss_addr);
+ 
+ 	return sbl;
+ }
+diff --git a/util.c b/util.c
+index b160cc96..ea6c1950 100644
+--- a/util.c
++++ b/util.c
+@@ -187,10 +187,10 @@ void addrtostr(struct in6_addr const *addr, char *str, size_t str_size)
+ int check_rdnss_presence(struct AdvRDNSS *rdnss, struct in6_addr *addr)
+ {
+ 	while (rdnss) {
+-		if (!memcmp(&rdnss->AdvRDNSSAddr1, addr, sizeof(struct in6_addr)) ||
+-		    !memcmp(&rdnss->AdvRDNSSAddr2, addr, sizeof(struct in6_addr)) ||
+-		    !memcmp(&rdnss->AdvRDNSSAddr3, addr, sizeof(struct in6_addr)))
+-			return 1; /* rdnss address found in the list */
++		for (int i = 0; i < rdnss->AdvRDNSSNumber; i++) {
++			if (!memcmp(&rdnss->AdvRDNSSAddr[i], addr, sizeof(struct in6_addr)))
++				return 1; /* rdnss address found in the list */
++		}
+ 		rdnss = rdnss->next;
+ 	}
+ 	return 0;

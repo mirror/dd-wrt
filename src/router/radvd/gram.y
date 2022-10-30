@@ -623,24 +623,15 @@ rdnssaddr	: IPV6ADDR
 				rdnss_init_defaults(rdnss, iface);
 			}
 
-			switch (rdnss->AdvRDNSSNumber) {
-				case 0:
-					memcpy(&rdnss->AdvRDNSSAddr1, $1, sizeof(struct in6_addr));
-					rdnss->AdvRDNSSNumber++;
-					break;
-				case 1:
-					memcpy(&rdnss->AdvRDNSSAddr2, $1, sizeof(struct in6_addr));
-					rdnss->AdvRDNSSNumber++;
-					break;
-				case 2:
-					memcpy(&rdnss->AdvRDNSSAddr3, $1, sizeof(struct in6_addr));
-					rdnss->AdvRDNSSNumber++;
-					break;
-				default:
-					flog(LOG_CRIT, "too many addresses in RDNSS section");
-					ABORT;
+			rdnss->AdvRDNSSNumber++;
+			rdnss->AdvRDNSSAddr =
+				realloc(rdnss->AdvRDNSSAddr,
+					rdnss->AdvRDNSSNumber * sizeof(struct in6_addr));
+			if (rdnss->AdvRDNSSAddr == NULL) {
+				flog(LOG_CRIT, "realloc failed: %s", strerror(errno));
+				ABORT;
 			}
-
+			memcpy(&rdnss->AdvRDNSSAddr[rdnss->AdvRDNSSNumber - 1], $1, sizeof(struct in6_addr));
 		}
 		;
 
@@ -921,6 +912,7 @@ static void cleanup(void)
 	}
 
 	if (rdnss) {
+		free(rdnss->AdvRDNSSAddr);
 		free(rdnss);
 		rdnss = 0;
 	}
