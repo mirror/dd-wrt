@@ -389,6 +389,7 @@ EJ_VISIBLE void ej_nvram_else_selmatch(webs_t wp, int argc, char_t ** argv)
 
 	return;
 }
+EJALIAS(ej_nvram_else_selmatch, ej_nvesm);
 
 EJ_VISIBLE void ej_selchecked(webs_t wp, int argc, char_t ** argv)
 {
