@@ -34,6 +34,7 @@ share.disabled="Disabled";
 //not set used in src/router/openvpn/config2/openvpn.webvpn
 share.notset="Not Set";
 share.usrname="Username";
+share.token="Token";
 share.passwd="Password";
 share.hostname="Hostname";
 share.advanced="Advanced Settings";
@@ -2194,7 +2195,7 @@ service.antaira_agent_enable="Enable Agent";
 service.antaira_agent_cloud_url="Cloud URL";
 service.antaira_agent_connect_url="Connect URL";
 service.antaira_agent_configuration_url="Configuration URL";
-service.antaira_agent_token="Token";
+service.antaira_agent_token=share.token;
 
 // ** eop-tunnel.asp **//
 var eoip=new Object();
