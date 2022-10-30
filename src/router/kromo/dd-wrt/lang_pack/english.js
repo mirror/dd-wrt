@@ -219,6 +219,7 @@ share.subquarter="Eighth (2.5 MHz)";
 share.seealso="See also";
 share.never="never";
 share.unknown="Unknown";
+share.empty="Empty";
 share.expired="expired";
 share.logout="Logout";
 share.nmounted="Not mounted";
@@ -616,14 +617,14 @@ hconfig.page3="<dd>Click the <i>Browse...</i> button to search for a backup conf
 var ddns=new Object();
 ddns.titl="Dynamic DNS";
 ddns.h2="Dynamic Domain Name System (DDNS)";
-ddns.legend="DDNS";
+ddns.legend="DDNS Configuration";
 ddns.srv="Enable Service";
 ddns.emailaddr="Email Address";
 ddns.typ="Type";
 ddns.custom="Custom";
 ddns.wildcard="Wildcard";
 ddns.statu="Service Status";
-ddns.system="DYNDNS Server";
+ddns.system="Dynamic DNS Server";
 ddns.options="Additional Options";
 ddns.forceupd="Force Update Interval";
 ddns.wanip="Use External IP Check";
@@ -647,7 +648,7 @@ hddns.right4="Type an integer number in the box to set the force update interval
 
 //help page
 hddns.page1="<dd>The router offers a Dynamic Domain Name System (DDNS) feature. DDNS lets you assign a fixed host and domain name to a dynamic external IP address. It is useful when you are hosting your own website, or any other server behind the router which is accessible via the Internet. To use this feature, you need to sign up for DDNS service at e.g. <a href=\"http:\/\/www.dyndns.org\" target=\"_new\">www.dyndns.org</a>, one of the several DDNS service provider supported by DD-WRT.</dd>";
-hddns.page2="<dd>To disable DDNS service, keep the default setting, <em>" + share.disable + "</em>. To enable DDNS service, follow these instructions:<ol class=\"wide\"><li>Sign up for DDNS service at <a href=\"http:\/\/www.dyndns.org\" target=\"_new\">www.dyndns.org</a>, and write down your User Name, Password, and Host Name information.</li><li>On the DDNS screen, select the <i>DynDNS.org</i> option from the drop down menu.</li><li>Complete the <em>" + share.usrname + "</em>, <em>" + share.passwd + "</em>, and <em>" + share.hostname + "</em> fields.</li><li>Click the <em>" + sbutton.save + "</em> button to save your changes. Click the <em>" + sbutton.cancel + "</em> button to cancel unsaved changes.</li></ol><br />You can now access your router from the Internet with the domain you have chosen.</dd>";
+hddns.page2="<dd>To disable DDNS service, keep the default setting, <em>" + share.disable + "</em>. To enable DDNS service, follow these instructions:<ol class=\"wide\"><li>Sign up for DDNS service at e.g. <a href=\"http:\/\/www.dyndns.org\" target=\"_new\">www.dyndns.org</a>, and write down your User Name, Password, and Host Name information.</li><li>On the DDNS screen, select the <i>DynDNS.org</i> option from the drop down menu.</li><li>Complete the <em>" + share.usrname + "</em>, <em>" + share.passwd + "</em>, and <em>" + share.hostname + "</em> fields.</li><li>Click the <em>" + sbutton.save + "</em> button to save your changes. Click the <em>" + sbutton.cancel + "</em> button to cancel unsaved changes.</li></ol><br />You can now access your router from the Internet with the domain you have chosen.</dd>";
 hddns.page3="<dd>The <em>Static</em> DNS service is similar to the <em>Dynamic</em> DNS service, in that it allows a hostname such as yourname.dyndns.org to point to your IP address. Unlike a <em>Dynamic</em> DNS host, a <em>Static</em> DNS host does not expire after 35 days without updates, but updates take longer to propagate though the DNS system.<br />DynDNS' <em>Custom</em> DNS service provides a managed primary DNS solution, giving you complete control over an entire domain name and providing a unified primary/secondary DNS service. A web-based interface provides two levels of control over your domain, catering to average or power users.</dd>";
 hddns.page4="<dd>Enabling the wildcard feature for your host causes *.yourhost.dyndns.org to be aliased to the same IP address as yourhost.dyndns.org. This feature is useful if you want to be able to use, for example, www.yourhost.dyndns.org and still reach your hostname.</dd>";
 hddns.page5="<dd>Type an integer number in the box to set the force update interval (in days). Force update is an update which will be done although your IP address is still the same. Force update is required, especially for non donator of dyndns.org users, in order to avoid the host name of being deleted.</dd>";
