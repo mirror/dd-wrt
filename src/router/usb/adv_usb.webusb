@@ -21,6 +21,12 @@
 		<div class="setting">
 			<div class="label"><% tran("usb.drive_ra"); %></div>
 			<input class="num" maxlength="8" size="6" name="drive_ra" value="<% nvg("drive_ra"); %>" />&nbsp;<% tran("usb.drive_ra_sectors"); %>
+			<span class="default">
+			<script type="text/javascript">
+			//<![CDATA[
+			document.write("(" + share.deflt + "256)");
+			//]]>
+			</script></span>
 		</div>
 		<% ifndef("USBADV", "-->"); %>
 		<% ifndef("USBIP", "<!--"); %>
