@@ -1277,7 +1277,7 @@ static struct gozila_action gozila_actions[] = {
 	{ "Services", "add_lease", "", REFRESH, "lease_add" },
 	{ "Services", "del_lease", "", REFRESH, "lease_del" },
 #ifdef HAVE_SSHD
-	{ "Services", "ssh_downloadkey", "", REFRESH_DELAY, "ssh_downloadkey" },
+	{ "Services", "ssh_downloadkey", "", REFRESH, "ssh_downloadkey" },
 #endif
 #ifdef HAVE_PPPOESERVER
 	{ "PPPoE_Server", "add_chap_user", "", REFRESH, "chap_user_add" },
