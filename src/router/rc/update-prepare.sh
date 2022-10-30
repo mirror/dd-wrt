@@ -72,7 +72,7 @@ do
 done
 for i in /bin/busybox /bin/sh /bin/mount /bin/umount /bin/sync /bin/ls /bin/cat /bin/ps /bin/cp /bin/login /bin/mv /sbin/reboot \
 		/sbin/pivot_root /usr/sbin/chroot /bin/dd /bin/sleep /bin/echo /sbin/mtd /sbin/hotplug2 \
-	/sbin/rc /sbin/hdparm /sbin/event /sbin/startservice /sbin/stopservice /sbin/write /sbin/ledtool \
+	/sbin/rc /sbin/hdparm /sbin/event /sbin/startservice /sbin/stopservice /sbin/service /sbin/write /sbin/ledtool \
 	/usr/sbin/httpd /sbin/service /usr/sbin/writetool /sbin/watchdog \
 	/usr/sbin/sdparm /usr/sbin/wpa_supplicant  /usr/sbin/hostapd  /usr/sbin/wpad /usr/bin/killall
 do
@@ -90,22 +90,22 @@ mount -t sysfs sys ${R}sys
 mount -o remount,ro /usr/local
 umount /usr/local
 cp -av /dev ${R}/
-stopservice snmp
-stopservice transmission
-stopservice plex
-stopservice freeradius
-stopservice pppoeserver
-stopservice upnp
-stopservice olsrd
-stopservice rsync
-stopservice nfs
-stopservice dnsmasq
-stopservice syslog
-stopservice smartd
-stopservice sshd
-stopservice telnetd
+service snmp stop
+service transmission stop
+service plex stop
+service freeradius stop
+service pppoeserver stop
+service upnp stop
+service olsrd stop
+service rsync stop
+service nfs stop
+service dnsmasq stop
+service syslog stop
+service smartd stop
+service sshd stop
+service telnetd stop
 #not nice, but works.
-for i in /tmp/services/* ; do echo `basename $i .0` ; done | grep -v "httpd" | while read service ; do stopservice $service ; done
+for i in /tmp/services/* ; do echo `basename $i .0` ; done | grep -v "httpd" | while read service ; do service $service stop ; done
 killall process_monitor
 killall mstpd
 killall resetbutton
