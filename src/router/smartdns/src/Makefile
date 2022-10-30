@@ -42,6 +42,13 @@ ifeq ($(SSL), yes)
 override LDFLAGS += -lssl -lcrypto
 override CFLAGS += -DHAVE_OPENSSL
 endif
+
+ifdef WITH_NFTSET
+override CFLAGS += -DWITH_NFTSET
+override LDFLAGS += -lnftables
+endif
+
+
 .PHONY: all clean
 
 all: $(BIN)
