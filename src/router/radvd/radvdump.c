@@ -371,8 +371,15 @@ static void print_ff(unsigned char *msg, int len, struct sockaddr_in6 *addr, int
 
 			printf("\n\tRDNSS");
 
-			for (int i = 0; i < (rdnss_info->nd_opt_rdnssi_len - 1) / 2; i++) {
-				addrtostr(&rdnss_info->nd_opt_rdnssi_addr[i], prefix_str, sizeof(prefix_str));
+			addrtostr(&rdnss_info->nd_opt_rdnssi_addr1, prefix_str, sizeof(prefix_str));
+			printf(" %s", prefix_str);
+
+			if (rdnss_info->nd_opt_rdnssi_len >= 5) {
+				addrtostr(&rdnss_info->nd_opt_rdnssi_addr2, prefix_str, sizeof(prefix_str));
+				printf(" %s", prefix_str);
+			}
+			if (rdnss_info->nd_opt_rdnssi_len >= 7) {
+				addrtostr(&rdnss_info->nd_opt_rdnssi_addr3, prefix_str, sizeof(prefix_str));
 				printf(" %s", prefix_str);
 			}
 
