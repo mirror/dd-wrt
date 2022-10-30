@@ -476,9 +476,8 @@ td .meter {
   cursor: pointer;
 } 
 :disabled, .off {
-  filter: grayscale(1) !important;
   cursor: default;
-  opacity: .8;
+  opacity: .6;
 }
 input[onclick*='bond_del'] {
   margin-top: -.3rem;
