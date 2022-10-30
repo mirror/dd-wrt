@@ -112,7 +112,10 @@ int init_ddns(FILE * fp)
 		else
 			fprintf(fp, "provider %s {\n", provider);
 		fprintf(fp, "username = \"%s\"\n", nvram_safe_get(_username));
-		fprintf(fp, "password = \"%s\"\n", nvram_safe_get(_passwd));
+		if (flag == 27)
+			fprintf(fp, "password = \"nopasswd\"\n");
+		else
+			fprintf(fp, "password = \"%s\"\n", nvram_safe_get(_passwd));
 		fprintf(fp, "hostname = \"%s\"\n", nvram_safe_get(_hostname));
 #ifdef HAVE_USE_OPENSSL
 		fprintf(fp, "ssl = %s\n", nvram_match(_ssl, "1") ? "true" : "false");
@@ -147,13 +150,11 @@ void start_ddns(void)
 	if (strcmp(nvram_safe_get("ddns_enable_buf"), nvram_safe_get("ddns_enable")) ||
 	    strcmp(nvram_safe_get("ddns_username_buf"), nvram_safe_get(_username)) ||
 	    strcmp(nvram_safe_get("ddns_passwd_buf"), nvram_safe_get(_passwd)) ||
-	    strcmp(nvram_safe_get("ddns_hostname_buf"), nvram_safe_get(_hostname)) ||
-	    strcmp(nvram_safe_get("ddns_wildcard_buf"), nvram_safe_get(_wildcard)) || 
+	    strcmp(nvram_safe_get("ddns_hostname_buf"), nvram_safe_get(_hostname)) || strcmp(nvram_safe_get("ddns_wildcard_buf"), nvram_safe_get(_wildcard)) ||
 #ifdef HAVE_USE_OPENSSL
 	    strcmp(nvram_safe_get("ddns_ssl_buf"), nvram_safe_get(_ssl)) ||
 #endif
-	    strcmp(nvram_safe_get("ddns_path_buf"), nvram_safe_get("ddns_path_5")) ||
-	    strcmp(nvram_safe_get("ddns_custom_buf"), nvram_safe_get("ddns_custom_5"))) {
+	    strcmp(nvram_safe_get("ddns_path_buf"), nvram_safe_get("ddns_path_5")) || strcmp(nvram_safe_get("ddns_custom_buf"), nvram_safe_get("ddns_custom_5"))) {
 		/*
 		 * If the user changed anything in the GUI, delete all cache and log 
 		 */
