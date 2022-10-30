@@ -1272,6 +1272,17 @@ var windo = {
 
 };
 
+function set_disable_state(obj, id, state) {
+	if (!obj) return;
+	if (state) {
+		disabled = 'true';
+	} else {
+		disabled = 'false';
+	}
+	// Set state disabled
+	eval("document.getElementById('" + id + "').disabled=" + disabled);
+}
+
 function show_layer_ext(obj, id, state) {
 	if (!obj) return;
 	if (state) {
