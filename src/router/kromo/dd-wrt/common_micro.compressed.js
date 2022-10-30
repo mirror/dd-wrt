@@ -1090,6 +1090,15 @@ return {height:document.documentElement.clientHeight,width:document.documentElem
 }
 return {Height:document.body.clientHeight,width:document.body.clientWidth};
 }};
+function set_disable_state(obj, id, state) {
+if (!obj) return;
+if (state) {
+disabled = 'true';
+} else {
+disabled = 'false';
+}
+eval("document.getElementById('" + id + "').disabled=" + disabled);
+}
 function show_layer_ext(obj,id,_74){
 if(!obj){
 return;
