@@ -580,8 +580,8 @@ EJ_VISIBLE void ej_show_raid(webs_t wp, int argc, char_t ** argv)
 			websWrite(wp, "<td>\n");
 			websWrite(wp, "<select id=\"format%d\" name=\"format%d\" onchange=\"drive_fs_changed(this.form,%d, this.form.format%d.selectedIndex)\">\n", idx, idx, idx, idx);
 			websWrite(wp, "<script type=\"text/javascript\">\n//<![CDATA[\n");
-			websWrite(wp, "document.write(\"<option value=\\\"unk\\\" >Unknown</option>\");\n");
-			websWrite(wp, "document.write(\"<option value=\\\"unk\\\" >Empty</option>\");\n", !strcmp(fs, "Empty") ? "selected=\\\"selected\\\"" : "");
+			websWrite(wp, "document.write(\"<option value=\\\"unk\\\" >\" + share.unknown + \"</option>\");\n");
+			websWrite(wp, "document.write(\"<option value=\\\"unk\\\" >\" + share.empty + \"</option>\");\n", !strcmp(fs, "Empty") ? "selected=\\\"selected\\\"" : "");
 			websWrite(wp, "document.write(\"<option value=\\\"unk\\\" %s>Partition</option>\");\n", !strcmp(fs, "Partition") ? "selected=\\\"selected\\\"" : "");
 			websWrite(wp, "document.write(\"<option value=\\\"ext2\\\" %s >EXT2</option>\");\n", !strcmp(fs, "EXT2") ? "selected=\\\"selected\\\"" : "");
 			websWrite(wp, "document.write(\"<option value=\\\"ext3\\\" %s >EXT3</option>\");\n", !strcmp(fs, "EXT3") ? "selected=\\\"selected\\\"" : "");
@@ -618,7 +618,7 @@ EJ_VISIBLE void ej_show_raid(webs_t wp, int argc, char_t ** argv)
 			else if (!strcmp(fs, "ZFS") && zfs)
 				dis = 0;
 			websWrite(wp,
-				  "<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<input class=\\\"button red_btn\\\" id=\\\"drive_format%d\\\" name=\\\"format_drive\\\" type=\\\"button\\\" value=\\\"\" + nas.format + \"\\\" onclick=drive_format_submit(this.form,%d,\\\"%s\\\") %s />\");\n//]]>\n</script>\n",
+				  "<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<input class=\\\"button margin-0 red_btn\\\" id=\\\"drive_format%d\\\" name=\\\"format_drive\\\" type=\\\"button\\\" value=\\\"\" + nas.format + \"\\\" onclick=drive_format_submit(this.form,%d,\\\"%s\\\") %s />\");\n//]]>\n</script>\n",
 				  idx, idx, drive, !dis ? "" : "disabled=\\\"true\\\"");
 			websWrite(wp, "</td>\n");
 			websWrite(wp, "</tr>\n");
