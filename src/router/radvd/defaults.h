@@ -182,9 +182,7 @@ struct nd_opt_rdnss_info_local {
 	uint8_t nd_opt_rdnssi_len;
 	uint16_t nd_opt_rdnssi_pref_flag_reserved;
 	uint32_t nd_opt_rdnssi_lifetime;
-	struct in6_addr nd_opt_rdnssi_addr1;
-	struct in6_addr nd_opt_rdnssi_addr2;
-	struct in6_addr nd_opt_rdnssi_addr3;
+	struct in6_addr nd_opt_rdnssi_addr[];
 };
 /* pref/flag/reserved field : yyyyx00000000000 (big endian) - 00000000yyyyx000 (little indian); where yyyy = pref, x = flag */
 #if BYTE_ORDER == BIG_ENDIAN
