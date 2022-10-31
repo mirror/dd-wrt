@@ -24,7 +24,7 @@
 			<span class="default">
 			<script type="text/javascript">
 			//<![CDATA[
-			document.write("(" + share.deflt + "256)");
+			document.write("(" + share.deflt + ": 256)");
 			//]]>
 			</script></span>
 		</div>
