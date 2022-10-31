@@ -2020,7 +2020,7 @@ service.ssh_keygenerate="Generate Key";
 service.ssh_keylength="Key Length";
 service.ssh_replace="Replace Existing Key(s)";
 service.ssh_download="Download Private Key";
-service.ssh_keyalert="Be patient, key generation can take up to 10 minutes or more.\nAfter succesful generation the " + service.ssh_download + " button will appear to download the private key file.";
+service.ssh_keyalert="Be patient, key generation can take up to 10 minutes or more.\nAfter succesful generation the " + service.ssh_download + " button will become available to allow you to download the private key file.";
 service.ssh_keydownload="Click the " + sbutton.apply + " button after downloading to restart SSHD!\nThe private key is downloaded in the OpenSSH format.\nIf you wish to use PuTTY, the key must first be converted to a compatible format with PuTTYgen (see help more...).";
 
 //help page
