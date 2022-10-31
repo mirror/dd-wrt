@@ -5735,7 +5735,7 @@ void ddns_save_value(webs_t wp)
 
 	nvram_seti("ddns_enable", enable);
 	nvram_set(_username, username);
-	if (strcmp(passwd, TMP_PASSWD)) {
+	if (passwd && strcmp(passwd, TMP_PASSWD)) {
 		nvram_set(_passwd, passwd);
 	}
 	nvram_set(_hostname, hostname);
