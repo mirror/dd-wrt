@@ -5,20 +5,24 @@
 function ddns_check(F,T) {
 	if(F.ddns_enable.value == 0) {
 		return true;
-	} 
+	}
+	enable = eval("F.ddns_enable");
 	username = eval("F.ddns_username");
 	passwd = eval("F.ddns_passwd");
 	hostname = eval("F.ddns_hostname");
+	
 	
 	if(username.value == "") {
 		alert(errmsg.err0);
 		username.focus();
 		return false;
 	}
+	if (enable.value != "27") {
 	if(passwd.value == "") {
 		alert(errmsg.err6);
 		passwd.focus();
 		return false;
+	}
 	}
 	if(hostname.value == "") {
 		alert(errmsg.err7);
@@ -135,7 +139,7 @@ addEvent(window, "unload", function() {
 								<% nvsm("ddns_enable","0","<!--"); %>
 								<% nvsm("ddns_enable","5","<!--"); %>
 								<div class="setting">
-									<div class="label"><% tran("share.usrname"); %></div>
+									<div class="label"><script type="text/javascript"><% nvesm("ddns_enable","27","Capture(share.token);","Capture(share.usrname);"); %></script></div>
 									<input name="ddns_username" size="35" maxlength="64" onblur="valid_name(this,<% nvesm("ddns_enable","27","share.token","share.usrname"); %>)" value="<% get_ddns_value("ddns_username"); %>" />
 								</div>
 								<% nvsm("ddns_enable","0","-->"); %>
