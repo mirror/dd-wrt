@@ -32,6 +32,7 @@ tt {
 a, .link {
   text-decoration: none;
   color: #33f;
+  cursor: pointer;
 }
 a:hover, .link:hover {
   text-decoration: underline;
