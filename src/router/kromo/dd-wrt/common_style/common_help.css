@@ -29,11 +29,11 @@ tt {
   width: 314px;
   mix-blend-mode: darken;
 }
-a {
+a, .link {
   text-decoration: none;
   color: #33f;
 }
-a:hover {
+a:hover, .link:hover {
   text-decoration: underline;
   color: #33f;
 }
