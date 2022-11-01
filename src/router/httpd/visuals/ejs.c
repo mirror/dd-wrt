@@ -378,18 +378,46 @@ EJ_VISIBLE void ej_nvram_else_selmatch(webs_t wp, int argc, char_t ** argv)
 	if (!type) {
 		if (nvram_match(argv[0], argv[1])) {
 			websWrite(wp, argv[2]);
-		} else
-			websWrite(wp, argv[3]);
+			return;
+		}
 	} else {
 		if (!strcmp(type, argv[1])) {
 			websWrite(wp, argv[2]);
-		} else
-			websWrite(wp, argv[3]);
+			return;
+		}
 	}
+	websWrite(wp, argv[3]);
 
 	return;
 }
+
 EJALIAS(ej_nvram_else_selmatch, ej_nvesm);
+
+EJ_VISIBLE void ej_nvram_else_listselmatch(webs_t wp, int argc, char_t ** argv)
+{
+	char value[64];
+	char *next;
+	char *list = argv[1];
+	char *type;
+
+	type = GOZILA_GET(wp, argv[0]);
+	foreach(value, list, next) {
+		if (!type) {
+			if (nvram_match(argv[0], value)) {
+				websWrite(wp, argv[2]);
+				return;
+			}
+		} else {
+			if (!strcmp(type, value)) {
+				websWrite(wp, argv[2]);
+				return;
+			}
+		}
+	}
+	websWrite(wp, argv[3]);
+}
+
+EJALIAS(ej_nvram_else_listselmatch, ej_nvelsm);
 
 EJ_VISIBLE void ej_selchecked(webs_t wp, int argc, char_t ** argv)
 {
