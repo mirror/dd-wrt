@@ -322,44 +322,21 @@ static void process_ra(struct Interface *iface, unsigned char *msg, int len, str
 			break;
 		case ND_OPT_RDNSS_INFORMATION: {
 			char rdnss_str[INET6_ADDRSTRLEN];
-			struct AdvRDNSS *rdnss = 0;
 			struct nd_opt_rdnss_info_local *rdnssinfo = (struct nd_opt_rdnss_info_local *)opt_str;
 			if (len < sizeof(*rdnssinfo))
 				return;
-			int count = rdnssinfo->nd_opt_rdnssi_len;
 
-			/* Check the RNDSS addresses received */
-			switch (count) {
-			case 7:
-				rdnss = iface->AdvRDNSSList;
-				if (!check_rdnss_presence(rdnss, &rdnssinfo->nd_opt_rdnssi_addr3)) {
-					/* no match found in iface->AdvRDNSSList */
-					addrtostr(&rdnssinfo->nd_opt_rdnssi_addr3, rdnss_str, sizeof(rdnss_str));
-					flog(LOG_WARNING, "RDNSS address %s received on %s from %s is not advertised by us",
-					     rdnss_str, iface->props.name, addr_str);
+			if (rdnssinfo->nd_opt_rdnssi_len > 2) {
+				for (int i = 0; i < (rdnssinfo->nd_opt_rdnssi_len - 1) / 2; i++) {
+					if (!check_rdnss_presence(iface->AdvRDNSSList, &rdnssinfo->nd_opt_rdnssi_addr[i])) {
+						addrtostr(&rdnssinfo->nd_opt_rdnssi_addr[i], rdnss_str, sizeof(rdnss_str));
+						flog(LOG_WARNING, "RDNSS address %s received on %s from %s is not advertised by us",
+						     rdnss_str, iface->props.name, addr_str);
+					}
 				}
-			/* FALLTHROUGH */
-			case 5:
-				rdnss = iface->AdvRDNSSList;
-				if (!check_rdnss_presence(rdnss, &rdnssinfo->nd_opt_rdnssi_addr2)) {
-					/* no match found in iface->AdvRDNSSList */
-					addrtostr(&rdnssinfo->nd_opt_rdnssi_addr2, rdnss_str, sizeof(rdnss_str));
-					flog(LOG_WARNING, "RDNSS address %s received on %s from %s is not advertised by us",
-					     rdnss_str, iface->props.name, addr_str);
-				}
-			/* FALLTHROUGH */
-			case 3:
-				rdnss = iface->AdvRDNSSList;
-				if (!check_rdnss_presence(rdnss, &rdnssinfo->nd_opt_rdnssi_addr1)) {
-					/* no match found in iface->AdvRDNSSList */
-					addrtostr(&rdnssinfo->nd_opt_rdnssi_addr1, rdnss_str, sizeof(rdnss_str));
-					flog(LOG_WARNING, "RDNSS address %s received on %s from %s is not advertised by us",
-					     rdnss_str, iface->props.name, addr_str);
-				}
-
-				break;
-			default:
-				flog(LOG_ERR, "invalid len %i in RDNSS option on %s from %s", count, iface->props.name, addr_str);
+			} else {
+				flog(LOG_ERR, "invalid len %i in RDNSS option on %s from %s",
+				     rdnssinfo->nd_opt_rdnssi_len, iface->props.name, addr_str);
 			}
 
 			break;
