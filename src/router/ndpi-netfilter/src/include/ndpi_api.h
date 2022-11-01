@@ -1050,10 +1050,10 @@ NDPI_STATIC   int ndpi_load_categories_file(struct ndpi_detection_module_struct 
   NDPI_STATIC u_int8_t ndpi_is_safe_ssl_cipher(u_int32_t cipher);
   NDPI_STATIC u_int16_t ndpi_guess_host_protocol_id(struct ndpi_detection_module_struct *ndpi_struct,
 					struct ndpi_flow_struct *flow);
-  NDPI_STATIC int ndpi_has_human_readeable_string(struct ndpi_detection_module_struct *ndpi_struct,
-				      char *buffer, u_int buffer_size,
-				      u_int8_t min_string_match_len, /* Will return 0 if no string > min_string_match_len have been found */
-				      char *outbuf, u_int outbuf_len);
+//  NDPI_STATIC int ndpi_has_human_readeable_string(struct ndpi_detection_module_struct *ndpi_struct,
+//				      char *buffer, u_int buffer_size,
+//				      u_int8_t min_string_match_len, /* Will return 0 if no string > min_string_match_len have been found */
+//				      char *outbuf, u_int outbuf_len);
   /* Return a flow info string (summarized). Does only work for DNS/HTTP/TLS/QUIC. */
   NDPI_STATIC const char* ndpi_get_flow_info(struct ndpi_flow_struct const * const flow,
                                  ndpi_protocol const * const l7_protocol);
