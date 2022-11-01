@@ -125,9 +125,11 @@ ifneq ($(CONFIG_POUND),y)
 ifneq ($(CONFIG_IPETH),y)
 ifneq ($(CONFIG_VPNC),y)
 ifneq ($(CONFIG_TOR),y)
+ifneq ($(CONFIG_DDNS),y)
 ifneq ($(CONFIG_ANCHORFREE),y)
 ifeq ($(CONFIG_MATRIXSSL),y)
 	rm -f openssl/*.so*
+endif
 endif
 endif
 endif
