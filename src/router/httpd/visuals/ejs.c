@@ -369,6 +369,23 @@ EJ_VISIBLE void ej_nvram_selmatch(webs_t wp, int argc, char_t ** argv)
 
 EJALIAS(ej_nvram_selmatch, ej_nvsm);
 
+EJ_VISIBLE void ej_nvram_listselmatch(webs_t wp, int argc, char_t ** argv)
+{
+	char value[64];
+	char *next;
+	char *list = argv[1];
+
+	foreach(value, list, next) {
+		if (nvram_selmatch(wp, argv[0], value)) {
+			websWrite(wp, argv[2]);
+			return;
+		}
+	}
+	return;
+}
+
+EJALIAS(ej_nvram_listselmatch, ej_nvlsm);
+
 EJ_VISIBLE void ej_nvram_else_selmatch(webs_t wp, int argc, char_t ** argv)
 {
 	char *type;
