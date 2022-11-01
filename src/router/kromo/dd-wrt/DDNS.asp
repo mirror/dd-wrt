@@ -12,17 +12,19 @@ function ddns_check(F,T) {
 	hostname = eval("F.ddns_hostname");
 	
 	
-	if(username.value == "") {
-		alert(errmsg.err0);
-		username.focus();
-		return false;
+	if (enable.value != "28") {
+		if(username.value == "") {
+			alert(errmsg.err0);
+			username.focus();
+			return false;
+		}
 	}
 	if (enable.value != "27") {
-	if(passwd.value == "") {
-		alert(errmsg.err6);
-		passwd.focus();
-		return false;
-	}
+		if(passwd.value == "") {
+			alert(errmsg.err6);
+			passwd.focus();
+			return false;
+		}
 	}
 	if(hostname.value == "") {
 		alert(errmsg.err7);
@@ -150,8 +152,8 @@ addEvent(window, "unload", function() {
 								<% nvsm("ddns_enable","27","<!--"); %>
 								<% nvsm("ddns_enable","5","<!--"); %>
 								<div class="setting">
-		  							<div class="label"><% tran("share.passwd"); %></div>
-									<input type="password" autocomplete="new-password" id="ddns_passwd" name="ddns_passwd" size="35" maxlength="64" onblur="valid_name(this,share.passwd)" value="<% get_ddns_value("ddns_passwd"); %>" />&nbsp;&nbsp;&nbsp;
+		  							<div class="label"><script type="text/javascript"><% nvesm("ddns_enable","28","Capture(share.token);","Capture(share.passwd);"); %></script></div>
+									<input type="password" autocomplete="new-password" id="ddns_passwd" name="ddns_passwd" size="35" maxlength="64" onblur="valid_name(this,<% nvesm("ddns_enable","28","share.token","share.passwd"); %>))" value="<% get_ddns_value("ddns_passwd"); %>" />&nbsp;&nbsp;&nbsp;
 									<input type="checkbox" name="ddns_passwd_unmask" value="0" onclick="setElementMask('ddns_passwd', this.checked)" >&nbsp;<% tran("share.unmask"); %></input>
 								</div>			
 								<% nvsm("ddns_enable","0","-->"); %>
