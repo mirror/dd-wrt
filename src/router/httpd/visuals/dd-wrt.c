@@ -1446,9 +1446,10 @@ EJ_VISIBLE void ej_show_usb_diskinfo(webs_t wp, int argc, char_t ** argv)
 	}
 	websWrite(wp, "</div>");
 
-	if (!mounted)
+	if (!mounted) {
 		websWrite(wp, "%s", live_translate(wp, "status_router.notavail"));
-
+		websWrite(wp, "<br>");
+	}
 	return;
 }
 #endif
@@ -1468,9 +1469,10 @@ EJ_VISIBLE void ej_show_mmc_cardinfo(webs_t wp, int argc, char_t ** argv)
 				websWrite(wp, "%s<br />", buff);
 		}
 		fclose(fp);
-	} else
+	} else {
 		show_caption_simple(wp, "status_router.notavail");
-
+		websWrite(wp, "<br>");
+	}
 	return;
 }
 #endif
