@@ -3139,7 +3139,7 @@ void start_firewall6(void)
 			eval("iptables", "-I", "INPUT", "-p", "icmp", "-s", ip, "-j", "ACCEPT");
 	}
 
-	if (nvram_match("ipv6_typ", "ipv6in4") || nvram_match("ipv6_typ", "ipv6native"))
+	if (nvram_match("ipv6_typ", "ipv6in4") || nvram_match("ipv6_typ", "ipv6native") || nvram_match("ipv6_typ", "ipv6pd"))
 		eval("ip6tables", "-A", "INPUT", "-p", "udp", "--dport", "546", "-j", "ACCEPT");
 
 	if (nvram_invmatch("filter", "off"))
