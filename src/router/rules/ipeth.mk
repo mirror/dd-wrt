@@ -58,7 +58,9 @@ ifneq ($(CONFIG_ASTERISK),y)
 ifneq ($(CONFIG_AIRCRACK),y)
 ifneq ($(CONFIG_POUND),y)
 ifneq ($(CONFIG_OPENVPN),y)
+ifneq ($(CONFIG_DDNS),y)
 	rm -f openssl/*.so*
+endif
 endif
 endif
 endif
