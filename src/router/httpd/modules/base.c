@@ -2298,7 +2298,7 @@ static char *getLanguageName()
 
 static char *scanfile(webs_t wp, char *buf, const char *tran)
 {
-	char *temp = malloc(256);
+	char *temp = malloc(512);
 	char *temp2;
 	char *temp1;
 	size_t filelen;
@@ -2315,7 +2315,7 @@ static char *scanfile(webs_t wp, char *buf, const char *tran)
 		int prev = 0;
 		for (i = 0; i < filelen; i++) {
 		      again:;
-			if (count < 256) {
+			if (count < 512) {
 				prev = val;
 				val = getc(fp);
 				if (val == EOF) {
