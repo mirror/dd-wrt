@@ -1,9 +1,11 @@
-From 746ec1e5918759cbd78cd1c2d8a46babf345bece Mon Sep 17 00:00:00 2001
+From 6ac66c1b9716125c91941587eb0e926a1891a991 Mon Sep 17 00:00:00 2001
 From: WenChao1Hou <wenchao.hou@outlook.com>
 Date: Sun, 30 Oct 2022 21:08:31 +0800
 Subject: [PATCH] RDNSS section support more ipv6 aaddrss
 
 RFC 6106 recommended that the number of RDNSS addresses thatshould be learned and maintained through the RDNSS RA option should be limited to three.  RFC 8106 removes that recommendation; thus, the number of RDNSS addresses to maintain is determined by an implementer's local policy.The number of RDNSS addresses to maintain is determined by the user's own profile
+
+Signed-off-by: WenChao1Hou <wenchao.hou@outlook.com>
 ---
  defaults.h  |  4 +---
  gram.y      | 26 +++++++++-----------------
@@ -185,7 +187,7 @@ index b6fd600f..0c4527bb 100644
  			}
  
 diff --git a/send.c b/send.c
-index fecdf460..04c3ef84 100644
+index fecdf460..9f48bf8f 100644
 --- a/send.c
 +++ b/send.c
 @@ -584,8 +584,10 @@ static struct safe_buffer_list *add_ra_options_route(struct safe_buffer_list *sb
@@ -227,8 +229,8 @@ index fecdf460..04c3ef84 100644
 +		for (int i = 0; i < rdnss->AdvRDNSSNumber; i++) { 
 +			safe_buffer_append(rdnss_addr, &rdnss->AdvRDNSSAddr[i], sizeof(struct in6_addr));
 +		}
-+		safe_buffer_append(sbl->sb, rdnssbuf->buffer, rdnssbuf->used);
-+		safe_buffer_free(rdnssbuf);
++		safe_buffer_append(sbl->sb, rdnss_addr->buffer, rdnss_addr->used);
++		safe_buffer_free(rdnss_addr);
  
  		rdnss = rdnss->next;
  	}
