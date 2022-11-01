@@ -138,11 +138,13 @@ addEvent(window, "unload", function() {
 								</div>
 								<% nvsm("ddns_enable","0","<!--"); %>
 								<% nvsm("ddns_enable","5","<!--"); %>
+								<% nvsm("ddns_enable","28","<!--"); %>
 								<div class="setting">
 									<div class="label"><script type="text/javascript"><% nvesm("ddns_enable","27","Capture(share.token);","Capture(share.usrname);"); %></script></div>
 									<input name="ddns_username" size="35" maxlength="64" onblur="valid_name(this,<% nvesm("ddns_enable","27","share.token","share.usrname"); %>)" value="<% get_ddns_value("ddns_username"); %>" />
 								</div>
 								<% nvsm("ddns_enable","0","-->"); %>
+								<% nvsm("ddns_enable","28","-->"); %>
 								<% nvsm("ddns_enable","5","-->"); %>
 								<% nvsm("ddns_enable","0","<!--"); %>
 								<% nvsm("ddns_enable","27","<!--"); %>
