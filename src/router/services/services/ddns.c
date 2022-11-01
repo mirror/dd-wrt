@@ -111,7 +111,8 @@ int init_ddns(FILE * fp)
 			fprintf(fp, "custom namecheap {\n");
 		else
 			fprintf(fp, "provider %s {\n", provider);
-		fprintf(fp, "username = \"%s\"\n", nvram_safe_get(_username));
+		if (flag != 28)
+			fprintf(fp, "username = \"%s\"\n", nvram_safe_get(_username));
 		if (flag == 27)
 			fprintf(fp, "password = \"nopasswd\"\n");
 		else
