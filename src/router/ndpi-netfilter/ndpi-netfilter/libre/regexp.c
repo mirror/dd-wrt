@@ -41,7 +41,9 @@
   #define malloc(foo) kmalloc(foo,GFP_ATOMIC)
 #else
   #define printk(format,args...) printf(format,##args)
+#ifndef _ASM_POSIX_TYPES_H
   typedef size_t __kernel_size_t;
+#endif
 #endif
 
 void ndpi_regerror(char * s)

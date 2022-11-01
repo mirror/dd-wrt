@@ -116,7 +116,7 @@ NDPI_STATIC  void ndpi_set_detected_protocol(struct ndpi_detection_module_struct
   NDPI_STATIC u_int8_t ndpi_is_ipv6(const ndpi_ip_addr_t *ip);
 
   NDPI_STATIC char* ndpi_get_proto_by_id(struct ndpi_detection_module_struct *ndpi_mod, u_int id);
-  NDPI_STATIC u_int16_t ndpi_get_proto_by_name(struct ndpi_detection_module_struct *ndpi_mod, const char *name);
+//  NDPI_STATIC u_int16_t ndpi_get_proto_by_name(struct ndpi_detection_module_struct *ndpi_mod, const char *name);
 
   NDPI_STATIC u_int16_t ndpi_guess_protocol_id(struct ndpi_detection_module_struct *ndpi_struct,
 					  struct ndpi_flow_struct *flow,
