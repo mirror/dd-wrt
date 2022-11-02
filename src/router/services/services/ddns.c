@@ -111,7 +111,7 @@ int init_ddns(FILE * fp)
 			fprintf(fp, "custom namecheap {\n");
 		else
 			fprintf(fp, "provider %s {\n", provider);
-		if (flag != 28)
+		if (flag != 28 && flag != 11)
 			fprintf(fp, "username = \"%s\"\n", nvram_safe_get(_username));
 		if (flag == 27)
 			fprintf(fp, "password = \"nopasswd\"\n");
@@ -140,11 +140,9 @@ void start_ddns(void)
 	int ret;
 	FILE *fp;
 
-	/*
-	 * We don't want to update, if user don't input below field 
-	 */
-	if (nvram_match(_username, "") || nvram_match(_passwd, "") || nvram_match(_hostname, ""))
-		return;
+	int flag = nvram_geti("ddns_enable");
+	if (flag > 31 || flag < 1)
+		return -1;
 
 	mkdir("/tmp/ddns", 0744);
 
