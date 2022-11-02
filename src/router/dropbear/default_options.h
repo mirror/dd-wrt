@@ -187,11 +187,11 @@ If you test it please contact the Dropbear author */
 /* Enable Curve25519 for key exchange. This is another elliptic
  * curve method with good security properties. Increases binary size
  * by ~8kB on x86-64 */
-#define DROPBEAR_CURVE25519 0
+#define DROPBEAR_CURVE25519 1
 
 /* Enable elliptic curve Diffie Hellman key exchange, see note about
  * ECDSA above */
-#define DROPBEAR_ECDH 0
+#define DROPBEAR_ECDH 1
 
 /* Group14 (2048 bit) is recommended. Group1 is less secure (1024 bit) though
    is the only option for interoperability with some older SSH programs */
