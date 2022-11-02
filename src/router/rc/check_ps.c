@@ -76,7 +76,7 @@ static int check_ddns(void)
 {
 	char wan_if_buffer[33];
 
-	if (nvram_match("wan_proto", "disabled") || !*(safe_get_wan_face(wan_if_buffer)))	// todo: add upstream 
+	if (nvram_match("ddns_enable", "0") || nvram_match("wan_proto", "disabled") || !*(safe_get_wan_face(wan_if_buffer)))	// todo: add upstream 
 		return 0;
 	return !search_process("inadyn", 1);
 }
@@ -159,7 +159,7 @@ struct mon mons[] = {
 	{ "openvpn", M_LAN, "openvpncl_enable", "1", NULL, NULL, NULL },
 #endif
 #endif
-	{ "ddns", M_WAN, "ddns_enable", "1", NULL, NULL, &check_ddns },
+	{ "ddns", M_WAN, NULL, NULL, NULL, NULL, &check_ddns },
 #ifdef HAVE_ANTAIRA_AGENT
 	{ "antaira_agent", M_LAN, "antaira_agent_enable", "1", NULL, NULL, &check_antaira_agent },
 #endif
