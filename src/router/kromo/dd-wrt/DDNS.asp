@@ -170,7 +170,7 @@ addEvent(window, "unload", function() {
 								</div>
 								<div class="setting">
 									<div class="label"><% tran("service.samba3_share_path"); %></div>
-									<input name="ddns_path" size="35" maxlength="64" value="<% get_ddns_value("ddns_path"); %>" />
+									<input name="ddns_path" size="35" maxlength="255" value="<% get_ddns_value("ddns_path"); %>" />
 								</div>
 								<div class="setting">
 									<div class="label"><% tran("share.usrname"); %></div>
@@ -178,7 +178,7 @@ addEvent(window, "unload", function() {
 								</div>
 								<div class="setting">
 									<div class="label"><% tran("share.passwd"); %></div>
-									<input type="password" autocomplete="new-password" id="ddns_passwd" name="ddns_passwd" size="35" maxlength="32" onblur="valid_name(this,share.passwd)" value="<% get_ddns_value("ddns_passwd"); %>" />&nbsp;&nbsp;&nbsp;
+									<input type="password" autocomplete="new-password" id="ddns_passwd" name="ddns_passwd" size="35" maxlength="64" onblur="valid_name(this,share.passwd)" value="<% get_ddns_value("ddns_passwd"); %>" />&nbsp;&nbsp;&nbsp;
 									<input type="checkbox" name="ddns_passwd_unmask" value="0" onclick="setElementMask('ddns_passwd', this.checked)" >&nbsp;<% tran("share.unmask"); %></input>
 								</div>
 								<div class="setting">
