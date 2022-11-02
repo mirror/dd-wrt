@@ -12,7 +12,7 @@ function ddns_check(F,T) {
 	hostname = eval("F.ddns_hostname");
 	
 	
-	if (enable.value != "28") {
+	if (enable.value != "28" && enable.value != "11") {
 		if(username.value == "") {
 			alert(errmsg.err0);
 			username.focus();
