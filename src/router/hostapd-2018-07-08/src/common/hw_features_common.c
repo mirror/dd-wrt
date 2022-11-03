@@ -365,6 +365,7 @@ int hostapd_set_freq_params(struct hostapd_freq_params *data,
 			    int vht_oper_chwidth, int center_segment0,
 			    int center_segment1, u32 vht_caps)
 {
+	int base0,base1;
 	os_memset(data, 0, sizeof(*data));
 	data->mode = mode;
 	data->freq = freq;
@@ -376,11 +377,16 @@ int hostapd_set_freq_params(struct hostapd_freq_params *data,
 	data->center_freq2 = 0;
 	data->bandwidth = sec_channel_offset ? 40 : 20;
 	wpa_printf(MSG_DEBUG,"vht: %d vhtwidth: %d seg0 %d seg1 %d mode %d, freq = %d, channel = %d, ht_enable = %d vht_enable = %d, sec_channel_offset %d width %d",data->vht_enabled, vht_oper_chwidth,center_segment0,center_segment1,mode, freq, channel,ht_enabled,vht_enabled, sec_channel_offset, vht_oper_chwidth);
+	if (center_segment0 >= 182 && center_segment0 <= 196)
+		base0 = 4000;
+	else
+		base0 = 5000;
+
 	if (data->vht_enabled) switch (vht_oper_chwidth) {
 	case VHT_CHANWIDTH_USE_HT:
 		if (center_segment1 ||
 		    (center_segment0 != 0 &&
-		     5000 + center_segment0 * 5 != data->center_freq1 &&
+		     base0 + center_segment0 * 5 != data->center_freq1 &&
 		     2407 + center_segment0 * 5 != data->center_freq1))
 			return -1;
 		break;
@@ -393,7 +399,7 @@ int hostapd_set_freq_params(struct hostapd_freq_params *data,
 		if (center_segment1 == center_segment0 + 4 ||
 		    center_segment1 == center_segment0 - 4)
 			return -1;
-		data->center_freq2 = 5000 + center_segment1 * 5;
+		data->center_freq2 = base1 + center_segment1 * 5;
 		/* fall through */
 	case VHT_CHANWIDTH_80MHZ:
 		data->bandwidth = 80;
@@ -416,7 +422,7 @@ int hostapd_set_freq_params(struct hostapd_freq_params *data,
 				center_segment0 = 138;
 			else if (channel <= 161)
 				center_segment0 = 155;
-			data->center_freq1 = 5000 + center_segment0 * 5;
+			data->center_freq1 = base0 + center_segment0 * 5;
 		} else {
 			/*
 			 * Note: HT/VHT config and params are coupled. Check if
@@ -428,7 +434,7 @@ int hostapd_set_freq_params(struct hostapd_freq_params *data,
 			    center_segment0 == channel + 2 ||
 			    center_segment0 == channel - 2 ||
 			    center_segment0 == channel - 6)
-				data->center_freq1 = 5000 + center_segment0 * 5;
+				data->center_freq1 = base0 + center_segment0 * 5;
 			else
 				return -1;
 			wpa_printf(MSG_DEBUG, "center freq1 = %d\n",data->center_freq1);
@@ -464,7 +470,7 @@ int hostapd_set_freq_params(struct hostapd_freq_params *data,
 		    center_segment0 == channel - 6 ||
 		    center_segment0 == channel - 10 ||
 		    center_segment0 == channel - 14)
-			data->center_freq1 = 5000 + center_segment0 * 5;
+			data->center_freq1 = base0 + center_segment0 * 5;
 		else {
 			wpa_printf(MSG_ERROR,
 				   "conflict with ht40 band config (center %d == channel %d) ",center_segment0, channel);
