@@ -52,8 +52,8 @@ char _passwd[] = "ddns_passwd_XX";
 char _hostname[] = "ddns_hostname_XX";
 char _wildcard[] = "ddns_wildcard_XX";
 char _ssl[] = "ddns_ssl_XX";
-
-int init_ddns(FILE * fp)
+char _cache_file[128];
+static int init_ddns(FILE * fp)
 {
 
 	int flag = nvram_geti("ddns_enable");
@@ -100,11 +100,13 @@ int init_ddns(FILE * fp)
 		snprintf(_passwd, sizeof(_passwd), "%s", "ddns_passwd");
 		snprintf(_hostname, sizeof(_hostname), "%s", "ddns_hostname");
 		snprintf(_wildcard, sizeof(_hostname), "%s", "ddns_wildcard");
+		snprintf(_cachefile, sizeof(_cachefile), "/tmp/ddns/%s.cache", nvram_safe_get("ddns_hostname"));
 	} else {
 		snprintf(_username, sizeof(_username), "%s_%d", "ddns_username", flag);
 		snprintf(_passwd, sizeof(_passwd), "%s_%d", "ddns_passwd", flag);
 		snprintf(_hostname, sizeof(_hostname), "%s_%d", "ddns_hostname", flag);
 		snprintf(_wildcard, sizeof(_hostname), "%s_%d", "ddns_wildcard", flag);
+		snprintf(_cachefile, sizeof(_cachefile), "/tmp/ddns/%s.cache", nvram_nget("ddns_hostname_%d",flag));
 	}
 	if (fp) {
 		if (flag == 5)
@@ -146,23 +148,6 @@ void start_ddns(void)
 
 	mkdir("/tmp/ddns", 0744);
 
-	if (strcmp(nvram_safe_get("ddns_enable_buf"), nvram_safe_get("ddns_enable")) ||
-	    strcmp(nvram_safe_get("ddns_username_buf"), nvram_safe_get(_username)) ||
-	    strcmp(nvram_safe_get("ddns_passwd_buf"), nvram_safe_get(_passwd)) ||
-	    strcmp(nvram_safe_get("ddns_hostname_buf"), nvram_safe_get(_hostname)) || strcmp(nvram_safe_get("ddns_wildcard_buf"), nvram_safe_get(_wildcard)) ||
-#ifdef HAVE_USE_OPENSSL
-	    strcmp(nvram_safe_get("ddns_ssl_buf"), nvram_safe_get(_ssl)) ||
-#endif
-	    strcmp(nvram_safe_get("ddns_path_buf"), nvram_safe_get("ddns_path_5")) || strcmp(nvram_safe_get("ddns_custom_buf"), nvram_safe_get("ddns_custom_5"))) {
-		/*
-		 * If the user changed anything in the GUI, delete all cache and log 
-		 */
-		nvram_unset("ddns_cache");
-		nvram_unset("ddns_time");
-		unlink("/tmp/ddns/ddns.log");
-		unlink("/tmp/ddns/inadyn_ip.cache");
-		unlink("/tmp/ddns/inadyn_time.cache");
-	}
 
 	/*
 	 * Generate ddns configuration file 
@@ -182,13 +167,27 @@ void start_ddns(void)
 		return;
 	}
 
+	if (strcmp(nvram_safe_get("ddns_enable_buf"), nvram_safe_get("ddns_enable")) ||
+	    strcmp(nvram_safe_get("ddns_username_buf"), nvram_safe_get(_username)) ||
+	    strcmp(nvram_safe_get("ddns_passwd_buf"), nvram_safe_get(_passwd)) ||
+	    strcmp(nvram_safe_get("ddns_hostname_buf"), nvram_safe_get(_hostname)) || strcmp(nvram_safe_get("ddns_wildcard_buf"), nvram_safe_get(_wildcard)) ||
+#ifdef HAVE_USE_OPENSSL
+	    strcmp(nvram_safe_get("ddns_ssl_buf"), nvram_safe_get(_ssl)) ||
+#endif
+	    strcmp(nvram_safe_get("ddns_path_buf"), nvram_safe_get("ddns_path_5")) || strcmp(nvram_safe_get("ddns_custom_buf"), nvram_safe_get("ddns_custom_5"))) {
+		/*
+		 * If the user changed anything in the GUI, delete all cache and log 
+		 */
+		nvram_unset("ddns_cache");
+		unlink("/tmp/ddns/ddns.log");
+		unlink(_cache_file);
+	}
+
 	/*
 	 * Restore cache data to file from NV 
 	 */
-	if (nvram_invmatch("ddns_cache", "")
-	    && nvram_invmatch("ddns_time", "")) {
-		nvram2file("ddns_cache", "/tmp/ddns/inadyn_ip.cache");
-		nvram2file("ddns_time", "/tmp/ddns/inadyn_time.cache");
+	if (nvram_invmatch("ddns_cache", "")) {
+		nvram2file("ddns_cache", _cache_file);
 	}
 	dd_logstart("ddns", eval("inadyn", "--cache-dir=/tmp/ddns", "-e", "ddns_success", "--exec-mode=compat", "-f", "/tmp/ddns/inadyn.conf", "-P", "/var/run/inadyn.pid", "-l", "notice"));
 
@@ -201,9 +200,11 @@ void stop_ddns(void)
 {
 	int ret;
 	stop_process("inadyn", "dynamic dns daemon");
+	if (init_ddns(NULL) == 0)
+	{
+		unlink(_cache_file);
+	}
 	unlink("/tmp/ddns/ddns.log");
-	unlink("/tmp/ddns/inadyn_ip.cache");
-	unlink("/tmp/ddns/inadyn_time.cache");
 
 	cprintf("done\n");
 
@@ -241,18 +242,13 @@ int ddns_success_main(int argc, char *argv[])
 	char buf2[80];
 	FILE *fp;
 
-	init_ddns(NULL);
+	if (init_ddns(NULL) == 0) {
 
-	if ((fp = fopen("/tmp/ddns/inadyn_ip.cache", "r"))) {
+	if ((fp = fopen(_cache_file, "r"))) {
 		fgets(buf, sizeof(buf), fp);
 		fclose(fp);
 		nvram_set("ddns_cache", buf);
 	}
-
-	if ((fp = fopen("/tmp/ddns/inadyn_time.cache", "r"))) {
-		fgets(buf2, sizeof(buf2), fp);
-		fclose(fp);
-		nvram_set("ddns_time", buf2);
 	}
 
 	nvram_set("ddns_enable_buf", nvram_safe_get("ddns_enable"));
