@@ -844,12 +844,12 @@ enum hostapd_hw_mode ieee80211_freq_to_channel_ext(unsigned int freq,
 
 
 
-	if (fcast >= 4940 && fcast < 4990) {
+/*	if (fcast >= 4940 && fcast < 4990) {
 		*channel = (fcast - 4940) * 2 + !!((fcast % 5) == 2);
-		*op_class = 0; /* TODO */
+		*op_class = 0;
 		return HOSTAPD_MODE_IEEE80211A;
 	}
-
+*/
 	if (fcast >= 4800 && fcast < 5005) {
 		*channel = (fcast - 4000) / 5;
 		*op_class = 0; /* TODO */
