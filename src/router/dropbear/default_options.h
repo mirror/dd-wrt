@@ -172,8 +172,8 @@ If you test it please contact the Dropbear author */
    binary size - around 7,5kB on x86-64 */
 #define DROPBEAR_ED25519 1
 
-#define DROPBEAR_SK_ECDSA 1
-#define DROPBEAR_SK_ED25519 1
+#define DROPBEAR_SK_ECDSA 0
+#define DROPBEAR_SK_ED25519 0
 
 #define DROPBEAR_DEFAULT_RSA_SIZE 2048
 
