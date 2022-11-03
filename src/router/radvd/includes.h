@@ -76,12 +76,7 @@
 #include <sys/sysctl.h>
 #endif
 
-#if !defined(__GLIBC__) && defined(linux)
-#include <linux/if.h>
-#define IF_NAMESIZE IFNAMSIZ
-#else
 #include <net/if.h>
-#endif
 
 #ifdef HAVE_NET_IF_DL_H
 #include <net/if_dl.h>
