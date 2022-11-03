@@ -100,13 +100,13 @@ static int init_ddns(FILE * fp)
 		snprintf(_passwd, sizeof(_passwd), "%s", "ddns_passwd");
 		snprintf(_hostname, sizeof(_hostname), "%s", "ddns_hostname");
 		snprintf(_wildcard, sizeof(_hostname), "%s", "ddns_wildcard");
-		snprintf(_cachefile, sizeof(_cachefile), "/tmp/ddns/%s.cache", nvram_safe_get("ddns_hostname"));
+		snprintf(_cache_file, sizeof(_cache_file), "/tmp/ddns/%s.cache", nvram_safe_get("ddns_hostname"));
 	} else {
 		snprintf(_username, sizeof(_username), "%s_%d", "ddns_username", flag);
 		snprintf(_passwd, sizeof(_passwd), "%s_%d", "ddns_passwd", flag);
 		snprintf(_hostname, sizeof(_hostname), "%s_%d", "ddns_hostname", flag);
 		snprintf(_wildcard, sizeof(_hostname), "%s_%d", "ddns_wildcard", flag);
-		snprintf(_cachefile, sizeof(_cachefile), "/tmp/ddns/%s.cache", nvram_nget("ddns_hostname_%d",flag));
+		snprintf(_cache_file, sizeof(_cache_file), "/tmp/ddns/%s.cache", nvram_nget("ddns_hostname_%d",flag));
 	}
 	if (fp) {
 		if (flag == 5)
