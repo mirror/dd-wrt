@@ -185,6 +185,8 @@ unsigned int ieee80211_ieee2mhz(unsigned int chan)
 		return ((2407) + chan * 5);
 	else if (chan < 27)
 		return ((2512) + ((chan - 15) * 20));
+	if (chan >= 182 && chan <= 196)
+		return ((4000) + (chan * 5));
 	else
 		return ((5000) + (chan * 5));
 }
