@@ -89,8 +89,8 @@ int ieee80211_frequency_to_channel(int freq)
 		return 15;
 	else if (freq > 2484 && freq < 4000 )
 		return (15 + ((freq - 2512) / 20)) & 0xff;
-	else if (freq < 4990 && freq > 4940)
-		return ((freq * 10) + (((freq % 5) == 2) ? 5 : 0) - 49400) / 5;
+//	else if (freq < 4990 && freq > 4940)
+//		return ((freq * 10) + (((freq % 5) == 2) ? 5 : 0) - 49400) / 5;
 	else if (freq > 4800 && freq < 5005)
 		return (freq - 4000) / 5;
 	else if (freq <= 45000) /* DMG band lower limit */
