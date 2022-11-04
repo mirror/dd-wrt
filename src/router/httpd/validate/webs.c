@@ -5711,6 +5711,9 @@ void ddns_save_value(webs_t wp)
 		break;
 	case 1:
 		// dyndns
+		sprintf(_username, "ddns_username");
+		sprintf(_passwd, "ddns_passwd");
+		sprintf(_hostname, "ddns_hostname");
 		snprintf(_wildcard, sizeof(_wildcard), "ddns_wildcard");
 		break;
 	}
