@@ -178,7 +178,7 @@ TIMEZONE_TO_TZSTRING allTimezones[] = {
 	,
 	{ "America/Bahia", "<-03>3" }
 	,
-	{ "America/Bahia_Banderas", "CST6CDT,M4.1.0,M10.5.0" }
+	{ "America/Bahia_Banderas", "CST6" }
 	,
 	{ "America/Barbados", "AST4" }
 	,
@@ -212,7 +212,7 @@ TIMEZONE_TO_TZSTRING allTimezones[] = {
 	,
 	{ "America/Chicago", "CST6CDT,M3.2.0,M11.1.0" }
 	,
-	{ "America/Chihuahua", "MST7MDT,M4.1.0,M10.5.0" }
+	{ "America/Chihuahua", "CST6" }
 	,
 	{ "America/Coral_Harbour", "EST5" }
 	,
@@ -334,23 +334,23 @@ TIMEZONE_TO_TZSTRING allTimezones[] = {
 	,
 	{ "America/Matamoros", "CST6CDT,M3.2.0,M11.1.0" }
 	,
-	{ "America/Mazatlan", "MST7MDT,M4.1.0,M10.5.0" }
+	{ "America/Mazatlan", "MST7" }
 	,
 	{ "America/Mendoza", "<-03>3" }
 	,
 	{ "America/Menominee", "CST6CDT,M3.2.0,M11.1.0" }
 	,
-	{ "America/Merida", "CST6CDT,M4.1.0,M10.5.0" }
+	{ "America/Merida", "CST6" }
 	,
 	{ "America/Metlakatla", "AKST9AKDT,M3.2.0,M11.1.0" }
 	,
-	{ "America/Mexico_City", "CST6CDT,M4.1.0,M10.5.0" }
+	{ "America/Mexico_City", "CST6" }
 	,
 	{ "America/Miquelon", "<-03>3<-02>,M3.2.0,M11.1.0" }
 	,
 	{ "America/Moncton", "AST4ADT,M3.2.0,M11.1.0" }
 	,
-	{ "America/Monterrey", "CST6CDT,M4.1.0,M10.5.0" }
+	{ "America/Monterrey", "CST6" }
 	,
 	{ "America/Montevideo", "<-03>3" }
 	,
@@ -376,7 +376,7 @@ TIMEZONE_TO_TZSTRING allTimezones[] = {
 	,
 	{ "America/Nuuk", "<-03>3<-02>,M3.5.0/-2,M10.5.0/-1" }
 	,
-	{ "America/Ojinaga", "MST7MDT,M3.2.0,M11.1.0" }
+	{ "America/Ojinaga", "CST6" }
 	,
 	{ "America/Panama", "EST5" }
 	,
@@ -496,7 +496,7 @@ TIMEZONE_TO_TZSTRING allTimezones[] = {
 	,
 	{ "Asia/Almaty", "<+06>-6" }
 	,
-	{ "Asia/Amman", "EET-2EEST,M3.5.4/24,M10.5.5/1" }
+	{ "Asia/Amman", "<+03>-3" }
 	,
 	{ "Asia/Anadyr", "<+12>-12" }
 	,
@@ -542,7 +542,7 @@ TIMEZONE_TO_TZSTRING allTimezones[] = {
 	,
 	{ "Asia/Dacca", "<+06>-6" }
 	,
-	{ "Asia/Damascus", "EET-2EEST,M3.5.5/0,M10.5.5/0" }
+	{ "Asia/Damascus", "<+03>-3" }
 	,
 	{ "Asia/Dhaka", "<+06>-6" }
 	,
@@ -554,11 +554,11 @@ TIMEZONE_TO_TZSTRING allTimezones[] = {
 	,
 	{ "Asia/Famagusta", "EET-2EEST,M3.5.0/3,M10.5.0/4" }
 	,
-	{ "Asia/Gaza", "EET-2EEST,M3.4.4/48,M10.4.4/49" }
+	{ "Asia/Gaza", "EET-2EEST,M3.4.4/50,M10.4.4/50" }
 	,
 	{ "Asia/Harbin", "CST-8" }
 	,
-	{ "Asia/Hebron", "EET-2EEST,M3.4.4/48,M10.4.4/49" }
+	{ "Asia/Hebron", "EET-2EEST,M3.4.4/50,M10.4.4/50" }
 	,
 	{ "Asia/Ho_Chi_Minh", "<+07>-7" }
 	,
@@ -658,7 +658,7 @@ TIMEZONE_TO_TZSTRING allTimezones[] = {
 	,
 	{ "Asia/Tbilisi", "<+04>-4" }
 	,
-	{ "Asia/Tehran", "<+0330>-3:30<+0430>,J79/24,J263/24" }
+	{ "Asia/Tehran", "<+0330>-3:30" }
 	,
 	{ "Asia/Tel_Aviv", "IST-2IDT,M3.4.4/26,M10.5.0" }
 	,
@@ -902,6 +902,8 @@ TIMEZONE_TO_TZSTRING allTimezones[] = {
 	,
 	{ "Europe/Kirov", "<+03>-3" }
 	,
+	{ "Europe/Kyiv", "EET-2EEST,M3.5.0/3,M10.5.0/4" }
+	,
 	{ "Europe/Lisbon", "WET0WEST,M3.5.0/1,M10.5.0" }
 	,
 	{ "Europe/Ljubljana", "CET-1CEST,M3.5.0,M10.5.0/3" }
@@ -1014,7 +1016,7 @@ TIMEZONE_TO_TZSTRING allTimezones[] = {
 	,
 	{ "Indian/Reunion", "<+04>-4" }
 	,
-	{ "Iran", "<+0330>-3:30<+0430>,J79/24,J263/24" }
+	{ "Iran", "<+0330>-3:30" }
 	,
 	{ "Israel", "IST-2IDT,M3.4.4/26,M10.5.0" }
 	,
@@ -1028,9 +1030,9 @@ TIMEZONE_TO_TZSTRING allTimezones[] = {
 	,
 	{ "Mexico/BajaNorte", "PST8PDT,M3.2.0,M11.1.0" }
 	,
-	{ "Mexico/BajaSur", "MST7MDT,M4.1.0,M10.5.0" }
+	{ "Mexico/BajaSur", "MST7" }
 	,
-	{ "Mexico/General", "CST6CDT,M4.1.0,M10.5.0" }
+	{ "Mexico/General", "CST6" }
 	,
 	{ "NZ", "NZST-12NZDT,M9.5.0,M4.1.0/3" }
 	,
@@ -1040,7 +1042,7 @@ TIMEZONE_TO_TZSTRING allTimezones[] = {
 	,
 	{ "PRC", "CST-8" }
 	,
-	{ "Pacific/Apia", "<+13>-13<+14>,M9.5.0/3,M4.1.0/4" }
+	{ "Pacific/Apia", "<+13>-13" }
 	,
 	{ "Pacific/Auckland", "NZST-12NZDT,M9.5.0,M4.1.0/3" }
 	,
@@ -1058,7 +1060,7 @@ TIMEZONE_TO_TZSTRING allTimezones[] = {
 	,
 	{ "Pacific/Fakaofo", "<+13>-13" }
 	,
-	{ "Pacific/Fiji", "<+12>-12<+13>,M11.2.0,M1.2.3/99" }
+	{ "Pacific/Fiji", "<+12>-12" }
 	,
 	{ "Pacific/Funafuti", "<+12>-12" }
 	,
@@ -1073,6 +1075,8 @@ TIMEZONE_TO_TZSTRING allTimezones[] = {
 	{ "Pacific/Honolulu", "HST10" }
 	,
 	{ "Pacific/Johnston", "HST10" }
+	,
+	{ "Pacific/Kanton", "<+13>-13" }
 	,
 	{ "Pacific/Kiritimati", "<+14>-14" }
 	,
