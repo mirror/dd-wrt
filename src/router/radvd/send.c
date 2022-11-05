@@ -454,10 +454,8 @@ static struct safe_buffer_list *add_ra_options_route(struct safe_buffer_list *sb
 static struct safe_buffer_list *add_ra_options_rdnss(struct safe_buffer_list *sbl, struct Interface const *iface,
 						     struct AdvRDNSS const *rdnss, int cease_adv, struct in6_addr const *dest)
 {
-	struct safe_buffer *rdnss_addr = new_safe_buffer();
 	while (rdnss) {
 		struct nd_opt_rdnss_info_local rdnssinfo;
-		rdnss_addr->used = 0;
 
 		if (!cease_adv && !schedule_option_rdnss(dest, iface, rdnss)) {
 			rdnss = rdnss->next;
@@ -465,12 +463,6 @@ static struct safe_buffer_list *add_ra_options_rdnss(struct safe_buffer_list *sb
 		}
 
 		memset(&rdnssinfo, 0, sizeof(rdnssinfo));
-
-		size_t const bytes = sizeof(rdnssinfo) + sizeof(struct in6_addr) * rdnss->AdvRDNSSNumber;
-		if (bytes > (256 * 8)) {
-			flog(LOG_ERR, "RDNSS too long for RA option, must be < 2048 bytes.  Exiting.");
-			exit(1);
-		}
 
 		rdnssinfo.nd_opt_rdnssi_type = ND_OPT_RDNSS_INFORMATION;
 		rdnssinfo.nd_opt_rdnssi_len = 1 + 2 * rdnss->AdvRDNSSNumber;
@@ -482,17 +474,16 @@ static struct safe_buffer_list *add_ra_options_rdnss(struct safe_buffer_list *sb
 			rdnssinfo.nd_opt_rdnssi_lifetime = htonl(rdnss->AdvRDNSSLifetime);
 		}
 
+		memcpy(&rdnssinfo.nd_opt_rdnssi_addr1, &rdnss->AdvRDNSSAddr1, sizeof(struct in6_addr));
+		memcpy(&rdnssinfo.nd_opt_rdnssi_addr2, &rdnss->AdvRDNSSAddr2, sizeof(struct in6_addr));
+		memcpy(&rdnssinfo.nd_opt_rdnssi_addr3, &rdnss->AdvRDNSSAddr3, sizeof(struct in6_addr));
+
 		sbl = safe_buffer_list_append(sbl);
-		safe_buffer_append(sbl->sb, &rdnssinfo, sizeof(rdnssinfo));
-		for (int i = 0; i < rdnss->AdvRDNSSNumber; i++) { 
-			safe_buffer_append(rdnss_addr, &rdnss->AdvRDNSSAddr[i], sizeof(struct in6_addr));
-		}
-		safe_buffer_append(sbl->sb, rdnss_addr->buffer, rdnss_addr->used);
-		safe_buffer_free(rdnss_addr);
+		safe_buffer_append(sbl->sb, &rdnssinfo,
+				   sizeof(rdnssinfo) - (3 - rdnss->AdvRDNSSNumber) * sizeof(struct in6_addr));
 
 		rdnss = rdnss->next;
 	}
-	safe_buffer_free(rdnss_addr);
 
 	return sbl;
 }

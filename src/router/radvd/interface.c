@@ -403,7 +403,6 @@ static void free_iface_list(struct Interface *iface)
 		while (rdnss) {
 			struct AdvRDNSS *next_rdnss = rdnss->next;
 
-			free(rdnss->AdvRDNSSAddr);
 			free(rdnss);
 			rdnss = next_rdnss;
 		}
