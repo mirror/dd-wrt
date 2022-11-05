@@ -181,7 +181,9 @@ struct AdvRDNSS {
 	int AdvRDNSSNumber;
 	uint32_t AdvRDNSSLifetime;
 	int FlushRDNSSFlag;
-	struct in6_addr *AdvRDNSSAddr;
+	struct in6_addr AdvRDNSSAddr1;
+	struct in6_addr AdvRDNSSAddr2;
+	struct in6_addr AdvRDNSSAddr3;
 
 	struct AdvRDNSS *next;
 };
