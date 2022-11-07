@@ -10,8 +10,7 @@ function ddns_check(F,T) {
 	username = eval("F.ddns_username");
 	passwd = eval("F.ddns_passwd");
 	hostname = eval("F.ddns_hostname");
-	
-	
+
 	if (enable.value != "28" && enable.value != "11") {
 		if(username.value == "") {
 			alert(errmsg.err0);
@@ -154,7 +153,7 @@ addEvent(window, "unload", function() {
 								<% nvlsm("ddns_enable","0 5","<!--"); %>
 								<div class="setting">
 									<div class="label"><% tran("share.hostname"); %></div>
-									<input name="ddns_hostname" size="35" maxlength="99" onblur="valid_hostname(this,share.hostname)" value="<% get_ddns_value("ddns_hostname"); %>" />
+									<input name="ddns_hostname" size="35" maxlength="255" onblur="valid_hostname(this,share.hostname)" value="<% get_ddns_value("ddns_hostname"); %>" />
 								</div>
 								<% nvlsm("ddns_enable","0 5","-->"); %>
 								<% nvlsm("ddns_enable","0 2 3 4 5 11 18 19 20 21 22 23 24 25 26 27 28 29 30 31","<!--"); %>
