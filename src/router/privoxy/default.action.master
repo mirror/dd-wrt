@@ -21,7 +21,7 @@
 #                 and enhancements are better placed in user.action,
 #                 the match-all section has been moved to match-all.action.
 #
-#  Copyright   :  Written by and Copyright (C) 2001-2021 the
+#  Copyright   :  Written by and Copyright (C) 2001-2022 the
 #                 Privoxy team. https://www.privoxy.org/
 #
 # Feedback welcome, for details please have a look at:
@@ -119,7 +119,7 @@
 # the domain syntax above. A comprehensive discussion of regular expressions
 # wouldn't fit here.
 #
-# Perl compatible regular expressions are used. See the pcre/docs/ direcory or
+# Perl compatible regular expressions are used. See the pcre/docs/ directory or
 # man perlre (also available at http://perldoc.perl.org/perlre.html) for
 # details. The appendix to our User Manual also has some detail.
 #
@@ -232,7 +232,7 @@
 #    not pixels!)
 #    If the option "first" is given, the first frame of the animation
 #    is used as the replacement. If "last" is given, the last frame of
-#    the animation is used instead, which propably makes more sense for
+#    the animation is used instead, which probably makes more sense for
 #    most banner animations, but also has the risk of not showing the
 #    entire last frame (if it is only a delta to an earlier frame).
 #
@@ -712,6 +712,8 @@ ada*.
 adri*.
 # URL = https://adguard.com/
 adguard.com/
+# URL = https://adfd.org/austausch/
+adfd.org/
 
 #############################################################################
 # Generic block patterns by path:
@@ -771,9 +773,6 @@ support./(.*/)?track
 .gov
 .hs-*.de
 .fh-*.de
-#MASTER# REMARKS: Try to avoid harmless names in non-commercial organizations. Added 10/24/06
-# URL = http://www.gnu.org/graphics/gnu-head-banner.png
-.org/.*(image|banner)
 
 #############################################################################
 # Catch-all for false-positives that are just TOO obvious to let go
@@ -954,6 +953,12 @@ ih.adscale.de/
 #MASTER# BLOCK-REFERRER: https://www.ksta.de/ratgeber/digital/plattform-moodle-streikt-viele-schueler-koennen-nicht-arbeiten---gebauer-weiss-von-nichts-37913640
 # Blocked URL = https://api.theadex.com/collector/v1/d/285/5184/cmframe/Lw0EHAiwAxA2GAIUhAK0AXaMBA?c=4248866896491805402
 api.theadex.com/
+# Blocked URL = https://odb.outbrain.com/utils/get?url=https%3A%2F%2Fwww.ksta.de%2Fratgeber%2Fgesundheit%2Fhausaerztin-erklaert-milder-verlauf-bei-einer-omikron-infektion---was-heisst-das--39393164&idx=0&rand=18368&key=NANOWDGT01&widgetJSId=AR_2&va=true&et=true&format=html&pdobuid=-1&adblck=false&abwl=false&px=205&py=1389&vpd=0&cw=940&activeTab=true&darkMode=false&settings=true&recs=true&version=2000570&sig=bvSz55IV&apv=false&osLang=en-CA&winW=1350&winH=621&scrW=1366&scrH=768&dpr=1&secured=true&cnsntv2=CPSvfxSPSvfxSAGABCENB9CgAP_AAEAAAAYgIXBVJD7dTWlAMHZ5GNpkCYAU1sAUIOQCCBCAAwAFAEGA8IAC0SACEEQABAACAQAAgRABAAAEEABUAECgQAAEAQEkAAQAhAAIAAJEAAEQAgAQAAoIAAAAAAAIAAABCgSAkBiQQ8LGRGAghIAwQgAQwAABgIACAAMASAAYABAAAAIAAABAAgIEEELoAIELgEQkC0ABAAFQAMgAcgA8AEAAMgAaQBEAEUAJgATwArABvADmAH4AQgAhoBEAESAJYAUoAtwBhwD7AP0AgYBFACNAEpALmAYoA2gBuADiAHoAPkAhsBIgCdgFDgLzAYMAyQBpwDWQHBAPHAhCEACAAkAXQAyECBgaAOAFYALgAhgB-AHyASIAnYMABAOoIgDABWAEMAPwA-QCRAE7CAAIAJBUAUAJgAXAB-AJBAXmMgBgBMgH2AfgC8xgAEAsQ6BsABUADIAHIAPgBAADIAGgAPoAiACKAEwAJ4AVgAuABfADeAHMAPwAhoBEAESAJYATAAowBSgCxAFuAMMAaMA-wD9AIGARQAiwBKQCxAFzAMUAbQA3ABxADqAHoAQ2Ai8BIICRAE7AKHAXmAwYBiQDJAGWANOAcWA8cB-I4AeAAgAC4AJAAyABoAIiAXoAwAB5AD5AIQAXQAyEBpoDbCEBQADIATAAuABfADeALGAfYB-AEUAJSAXMAxQBtADqAHoASCAkQBbQDEgHjgQoIABgAEABoALEAYABdADbCUBYABAAGQAOAAfACIAEwALgAXwBDQCIAIkAUYApQBbgD8AMUAbgA6gB8gEXgJEAXmAywkADAAuAGQBdBSBOABUADIAHIAPgBAADIAGkARABFACYAE8AKQAXwA5gB-AENAIgAiQBRgClAFiALcAaMA-wD9AIsASkAuYBigDaAG4APQAi8BIgCdgFDgLzAZIAywBrIDggHjgQhKACgALgAkACsAGQAsQBgADyALoAaaBAwAAA.YAAAAAAAAAAA&cmpStat=1&ccpaStat=0&ref=https%3A%2F%2Fwww.ksta.de%2Fhtml%2Fdumont-consent%2Findex.html%3Fparam%3DeyJyZWRpcmVjdFVybCI6Ii9yYXRnZWJlci9nZXN1bmRoZWl0L2hhdXNhZXJ6dGluLWVya2xhZXJ0LW1pbGRlci12ZXJsYXVmLWJlaS1laW5lci1vbWlrcm9uLWluZmVrdGlvbi0tLXdhcy1oZWlzc3QtZGFzLS0zOTM5MzE2ND9jYj0xNjQzMDgyNTMxNDU5JmRtY2lkPXNtX3R3X3B1IiwicmVmZXJyZXIiOiIiLCJzdWJkb21haW4iOiJ3d3cifQ%3D%3D
+odb.outbrain.com/
+# Blocked URL = https://elsa.memoinsights.com/t?pid=62012a7a19351c07620394e0&url=https%3A%2F%2Farstechnica.com%2Ftech-policy%2F2022%2F08%2Fthe-women-calling-out-apples-handling-of-misconduct-claims%2F&author%5B%5D=Financial%20Times&title=The%20women%20calling%20out%20Apple%E2%80%99s%20handling%20of%20misconduct%20claims&date=2022-08-04T13%3A39%3A42Z&referrer=&ref_url=&page_url=https%3A%2F%2Farstechnica.com%2Ftech-policy%2F2022%2F08%2Fthe-women-calling-out-apples-handling-of-misconduct-claims%2F%3Fcomments%3D1&cb=MEMO.API.callbacks.cbakynzcplf&v=v3.0.6&t=5000&e=5000&s=7362
+elsa.memoinsights.com/t
+# Blocked URL = https://ups.xplosion.de/ctx?event_id=ctx_json&_sid=24141&hostSiteUrl=https://www.presseportal.de/blaulicht/pm/12415/5302821&referrer=&userAgent=Mozilla/5.0%20(X11;%20FreeBSD%20amd64;%20rv:91.0)%20Gecko/20100101%20Firefox/91.0&userLang=en-CA&gdpr=1&gdpr_consent=[...]
+ups.xplosion.de/
 
 {+block{Might be a web-bug that is an image.} -handle-as-empty-document +handle-as-image}
 #MASTER# BLOCK-REFERRER: http://versiontracker.com and many others. 10/20/06
@@ -1951,7 +1956,7 @@ www.peereboom.us/adsuck/
 #MASTER# REMARKS: Ebay enlarge picture function doesn't work.
 # URL = http://include.ebaystatic.com/v4js/en_GB/e637i/SYS-LIGER_Omniture_e637i10177164_5_en_GB.js
 include.ebaystatic.com/.*omniture.*\.js
-#MASTER# REMARKS: Allow Yahoo news and mail javascipt pages
+#MASTER# REMARKS: Allow Yahoo news and mail javascript pages
 # URL = http://l.yimg.com/d/combo?news/p/common/generic/news/p/common/generic/popular-searches-min-12622.js&news/p/common/generic/ads-min-11050.js&news/p/common/generic/foundation/popup-min-12622.js
 .yimg.com/d/combo\?
 #MASTER# REMARKS: Page formatting problems when .css files are blocked
@@ -2042,6 +2047,10 @@ metrics.sr.ht/
 nlnet.nl/
 # URL = https://adv-archiv.dfn-cert.de/adv/2021-2222/
 adv-archiv.dfn-cert.de/
+# URL = https://pinkstinks.de/werbung-ohne-diskriminierung/
+pinkstinks.de/
+# URL = https://www.eff.org/files/styles/teaser/public/banner_library/repro-rights-hd-3b.jpg?itok=uCnCHOj5
+.eff.org/
 
 
 #############################################################################
@@ -2265,6 +2274,19 @@ idp.springer.com/
 .microsoftonline.com/
 # URL = https://www.zeit.de/zustimmung?url=https%3A%2F%2Fwww.zeit.de%2F2021%2F46%2Fchristian-drosten-coronavirus-virologie-pandemie-wissenschaft-impfung%2Fseite-4
 .zeit.de/zustimmung
+# URL = https://07.hagalil.com/www/delivery/ajs.php?zoneid=14&cb=35782002576&charset=UTF-8&loc=https%3A//www.hagalil.com/2021/12/rechtes-von-a-z-5/
+.hagalil.com/
+# URL = https://twitter.com/mariowitte/status/1479481418887663624?ref_src=twsrc%5Etfw%7Ctwcamp%5Etweetembed%7Ctwterm%5E1479481418887663624%7Ctwgr%5E%7Ctwcon%5Es1_&ref_url=https%3A%2F%2Ffuturezone.at%2Fprodukte%2Fcanon-toner-kopierschutz-gefaelscht-chips-chipmangel%2F401865218
+twitter.com/.*/status/
+#MASTER# REMARKS: There are lots of Nitter instances with onion addresses ...
+# URL = http://vfaomgh4jxphpbdfizkm5gbtjahmei234giqj4facbwhrfjtcldauqad.onion/mariowitte/status/1479481418887663624?ref_src=twsrc%5Etfw%7Ctwcamp%5Etweetembed%7Ctwterm%5E1479481418887663624%7Ctwgr%5E%7Ctwcon%5Es1_&ref_url=https%3A%2F%2Ffuturezone.at%2Fprodukte%2Fcanon-toner-kopierschutz-gefaelscht-chips-chipmangel%2F401865218
+.onion/.*/status/
+# URL = https://admin.gandi.net/dashboard/api/v5/login?redirect=https%3A%2F%2Fadmin.gandi.net%2Fdashboard%3Flocale%3Dde
+.gandi.net/
+# URL = https://launchpad.net/+openid-callback?starting_url=https%3A%2F%2Fanswers.launchpad.net%2Fdvdbackup%2F%2Bquestion%2F702512&janrain_nonce=2022-08-03T13%3A11%3A13ZnhmdLK...
+launchpad.net/
+# URL = https://consent.youtube.com/m?continue=https%3A%2F%2Fwww.youtube.com%2Fplaylist%3Flist%3DPLeF8ZihVdpFfttOtsot131byFrDVztt8T%26cbrd%3D1%26cbrd%3D1&gl=AT&m=0&pc=yt&hl=en&src=1
+consent.youtube.com/
 
 {+redirect{s@.*url=@http://@} -block}
 # Sticky Actions = +redirect -block
@@ -2436,11 +2458,17 @@ kggp.de/
 .plasmaservice.de/
 # URL = http://www.black-mosquito.org/index.php/kein-mensch-ist-illegal-fight-racism-now-40-aufkleber.html
 .black-mosquito.org/
+# URL = https://freebsdfoundation.org/about-us/board-of-directors/
+freebsdfoundation.org/
+# URL = https://freiheitsfoo.de/2022/10/03/wahlplakat-show-nds-ltw-2022/
+.freiheitsfoo.de/
 
 {-filter{banners-by-link}}
 # Sticky Actions = -filter{banners-by-link}
 # URL = http://www.encyclopediadramatica.com/Advertisement
 .encyclopediadramatica.com/
+# URL = https://www.eff.org/deeplinks/2022/03/eff-investigation-mystery-gps-tracker-supporters-car
+.eff.org/
 
 #----------------------------------------------------------------------------
 # These don't work without the referrer information:

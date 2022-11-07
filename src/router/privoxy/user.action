@@ -5,6 +5,9 @@
 #  Purpose     :  User-maintained actions file, see
 #                 https://www.privoxy.org/user-manual/actions-file.html
 #
+#  Copyright   :  Written by and Copyright (C) 2002-2022 the
+#                 Privoxy team. https://www.privoxy.org/
+#
 ######################################################################
 
 # This is the place to add your personal exceptions and additions to
@@ -193,6 +196,11 @@ www.example.com/nasty-ads/sponsor.gif
 #
 #{+block{Facebook "like" and similar tracking URLs.}}
 #www.facebook.com/(extern|plugins)/(login_status|like(box)?|activity|fan)\.php
+
+# Hide cookie and privacy information banner on the Bundeswehr website.
+# The relevant parts seem to work without accepting cookies.
+# {+filter{bundeswehr.de}}
+# .bundeswehr.de/
 
 ######### Examples for SSL actions #########
 # Following section enables TLS/SSL filtering for all sites defined by pattern and requested by HTTPS.
