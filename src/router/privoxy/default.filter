@@ -4,7 +4,7 @@
 #
 #  Purpose     :  Rules to process the content of web pages
 #
-#  Copyright   :  Written by and Copyright (C) 2001-2021 the
+#  Copyright   :  Written by and Copyright (C) 2001-2022 the
 #                 Privoxy team. https://www.privoxy.org/
 #
 #                 This program is free software; you can redistribute it
@@ -717,6 +717,17 @@ s@(background:\#[a-f\d]{3})( url\(\"http://www.blogblog.com/rounders[^\"]*\"\).*
 # Do the feed filtering magic as described above.
 s@<title(?:\s+type=\'text\')?>([^<]*)(?:\.\.\.)?\s*</title>\s*\
 (<content(?:\s+type=\'(?:html|text)\')?>\s*\1)@<title></title>$2@ig
+
+
+#################################################################################
+#
+# bundeswehr.de: Hide the cookie and privacy info banner on bundeswehr.de.
+#
+#                The relevant parts of the page work without accepting cookies.
+#
+#################################################################################
+FILTER: bundeswehr.de Hide the cookie and privacy info banner on bundeswehr.de
+s@<div class="privacy-protection-banner__container"@$0 style="display: none"@
 
 #################################################################################
 #
