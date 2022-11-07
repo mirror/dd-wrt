@@ -4,7 +4,7 @@
 <head>
   <title>Appendix</title>
   <meta name="GENERATOR" content="Modular DocBook HTML Stylesheet Version 1.79">
-  <link rel="HOME" title="Privoxy 3.0.32 User Manual" href="index.html">
+  <link rel="HOME" title="Privoxy 3.0.33 User Manual" href="index.html">
   <link rel="PREVIOUS" title="See Also" href="seealso.html">
   <link rel="STYLESHEET" type="text/css" href="../p_doc.css">
   <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
@@ -14,7 +14,7 @@
   <div class="NAVHEADER">
     <table summary="Header navigation table" width="100%" border="0" cellpadding="0" cellspacing="0">
       <tr>
-        <th colspan="3" align="center">Privoxy 3.0.32 User Manual</th>
+        <th colspan="3" align="center">Privoxy 3.0.33 User Manual</th>
       </tr>
       <tr>
         <td width="10%" align="left" valign="bottom"><a href="seealso.html" accesskey="P">Prev</a></td>
@@ -202,7 +202,7 @@
       these. If not, you will get a friendly error message. Internet access is not necessary either.</p>
       <ul>
         <li>
-          <p>Privoxy main page:</p><a name="AEN6347" id="AEN6347"></a>
+          <p>Privoxy main page:</p><a name="AEN6475" id="AEN6475"></a>
           <blockquote class="BLOCKQUOTE">
             <p><a href="http://config.privoxy.org/" target="_top">http://config.privoxy.org/</a></p>
           </blockquote>
@@ -211,7 +211,7 @@
           "APPLICATION">Privoxy</span>)</p>
         </li>
         <li>
-          <p>View and toggle client tags:</p><a name="AEN6355" id="AEN6355"></a>
+          <p>View and toggle client tags:</p><a name="AEN6483" id="AEN6483"></a>
           <blockquote class="BLOCKQUOTE">
             <p><a href="http://config.privoxy.org/client-tags" target=
             "_top">http://config.privoxy.org/client-tags</a></p>
@@ -219,21 +219,21 @@
         </li>
         <li>
           <p>Show information about the current configuration, including viewing and editing of actions
-          files:</p><a name="AEN6360" id="AEN6360"></a>
+          files:</p><a name="AEN6488" id="AEN6488"></a>
           <blockquote class="BLOCKQUOTE">
             <p><a href="http://config.privoxy.org/show-status" target=
             "_top">http://config.privoxy.org/show-status</a></p>
           </blockquote>
         </li>
         <li>
-          <p>Show the browser's request headers:</p><a name="AEN6365" id="AEN6365"></a>
+          <p>Show the browser's request headers:</p><a name="AEN6493" id="AEN6493"></a>
           <blockquote class="BLOCKQUOTE">
             <p><a href="http://config.privoxy.org/show-request" target=
             "_top">http://config.privoxy.org/show-request</a></p>
           </blockquote>
         </li>
         <li>
-          <p>Show which actions apply to a URL and why:</p><a name="AEN6370" id="AEN6370"></a>
+          <p>Show which actions apply to a URL and why:</p><a name="AEN6498" id="AEN6498"></a>
           <blockquote class="BLOCKQUOTE">
             <p><a href="http://config.privoxy.org/show-url-info" target=
             "_top">http://config.privoxy.org/show-url-info</a></p>
@@ -242,15 +242,15 @@
         <li>
           <p>Toggle Privoxy on or off. This feature can be turned off/on in the main <tt class="FILENAME">config</tt>
           file. When toggled <span class="QUOTE">"off"</span>, <span class="QUOTE">"Privoxy"</span> continues to run,
-          but only as a pass-through proxy, with no actions taking place:</p><a name="AEN6378" id="AEN6378"></a>
+          but only as a pass-through proxy, with no actions taking place:</p><a name="AEN6506" id="AEN6506"></a>
           <blockquote class="BLOCKQUOTE">
             <p><a href="http://config.privoxy.org/toggle" target="_top">http://config.privoxy.org/toggle</a></p>
           </blockquote>
-          <p>Short cuts. Turn off, then on:</p><a name="AEN6382" id="AEN6382"></a>
+          <p>Short cuts. Turn off, then on:</p><a name="AEN6510" id="AEN6510"></a>
           <blockquote class="BLOCKQUOTE">
             <p><a href="http://config.privoxy.org/toggle?set=disable" target=
             "_top">http://config.privoxy.org/toggle?set=disable</a></p>
-          </blockquote><a name="AEN6385" id="AEN6385"></a>
+          </blockquote><a name="AEN6513" id="AEN6513"></a>
           <blockquote class="BLOCKQUOTE">
             <p><a href="http://config.privoxy.org/toggle?set=enable" target=
             "_top">http://config.privoxy.org/toggle?set=enable</a></p>
@@ -369,33 +369,33 @@
       <table border="0" bgcolor="#E0E0E0" width="100%">
         <tr>
           <td>
-            <pre class="SCREEN"> Matches for http://www.google.com:
+            <pre class="SCREEN">  Matches for http://www.google.com:
 
- In file: default.action <span class="GUIBUTTON">[ View ]</span> <span class="GUIBUTTON">[ Edit ]</span>
+  In file: default.action <span class="GUIBUTTON">[ View ]</span> <span class="GUIBUTTON">[ Edit ]</span>
 
- {+change-x-forwarded-for{block}
- +deanimate-gifs {last}
- +fast-redirects {check-decoded-url}
- +filter {refresh-tags}
- +filter {img-reorder}
- +filter {banners-by-size}
- +filter {webbugs}
- +filter {jumping-windows}
- +filter {ie-exploits}
- +hide-from-header {block}
- +hide-referrer {forge}
- +session-cookies-only
- +set-image-blocker {pattern}
-/
+  {+change-x-forwarded-for{block}
+   +deanimate-gifs {last}
+   +fast-redirects {check-decoded-url}
+   +filter {refresh-tags}
+   +filter {img-reorder}
+   +filter {banners-by-size}
+   +filter {webbugs}
+   +filter {jumping-windows}
+   +filter {ie-exploits}
+   +hide-from-header {block}
+   +hide-referrer {forge}
+   +session-cookies-only
+   +set-image-blocker {pattern} }
+  /
 
- { -session-cookies-only }
- .google.com
+  { -session-cookies-only }
+  .google.com
 
- { -fast-redirects }
- .google.com
+  { -fast-redirects }
+  .google.com
 
-In file: user.action <span class="GUIBUTTON">[ View ]</span> <span class="GUIBUTTON">[ Edit ]</span>
-(no matches in this file)</pre>
+  In file: user.action <span class="GUIBUTTON">[ View ]</span> <span class="GUIBUTTON">[ Edit ]</span>
+  (no matches in this file)</pre>
           </td>
         </tr>
       </table>
@@ -435,108 +435,9 @@ In file: user.action <span class="GUIBUTTON">[ View ]</span> <span class="GUIBUT
       <table border="0" bgcolor="#E0E0E0" width="100%">
         <tr>
           <td>
-            <pre class="SCREEN"> Final results:
+            <pre class="SCREEN">  Final results:
 
- -add-header
- -block
- +change-x-forwarded-for{block}
- -client-header-filter{hide-tor-exit-notation}
- -content-type-overwrite
- -crunch-client-header
- -crunch-if-none-match
- -crunch-incoming-cookies
- -crunch-outgoing-cookies
- -crunch-server-header
- +deanimate-gifs {last}
- -downgrade-http-version
- -fast-redirects
- -filter {js-events}
- -filter {content-cookies}
- -filter {all-popups}
- -filter {banners-by-link}
- -filter {tiny-textforms}
- -filter {frameset-borders}
- -filter {demoronizer}
- -filter {shockwave-flash}
- -filter {quicktime-kioskmode}
- -filter {fun}
- -filter {crude-parental}
- -filter {site-specifics}
- -filter {js-annoyances}
- -filter {html-annoyances}
- +filter {refresh-tags}
- -filter {unsolicited-popups}
- +filter {img-reorder}
- +filter {banners-by-size}
- +filter {webbugs}
- +filter {jumping-windows}
- +filter {ie-exploits}
- -filter {google}
- -filter {yahoo}
- -filter {msn}
- -filter {blogspot}
- -filter {no-ping}
- -force-text-mode
- -handle-as-empty-document
- -handle-as-image
- -hide-accept-language
- -hide-content-disposition
- +hide-from-header {block}
- -hide-if-modified-since
- +hide-referrer {forge}
- -hide-user-agent
- -limit-connect
- -overwrite-last-modified
- -prevent-compression
- -redirect
- -server-header-filter{xml-to-html}
- -server-header-filter{html-to-xml}
- -session-cookies-only
- +set-image-blocker {pattern}</pre>
-          </td>
-        </tr>
-      </table>
-      <p>Notice the only difference here to the previous listing, is to <span class="QUOTE">"fast-redirects"</span> and
-      <span class="QUOTE">"session-cookies-only"</span>, which are activated specifically for this site in our
-      configuration, and thus show in the <span class="QUOTE">"Final Results"</span>.</p>
-      <p>Now another example, <span class="QUOTE">"ad.doubleclick.net"</span>:</p>
-      <table border="0" bgcolor="#E0E0E0" width="100%">
-        <tr>
-          <td>
-            <pre class="SCREEN"> { +block{Domains starts with "ad"} }
-  ad*.
-
- { +block{Domain contains "ad"} }
-  .ad.
-
- { +block{Doubleclick banner server} +handle-as-image }
-  .[a-vx-z]*.doubleclick.net</pre>
-          </td>
-        </tr>
-      </table>
-      <p>We'll just show the interesting part here - the explicit matches. It is matched three different times. Two
-      <span class="QUOTE">"+block{}"</span> sections, and a <span class="QUOTE">"+block{} +handle-as-image"</span>,
-      which is the expanded form of one of our aliases that had been defined as: <span class=
-      "QUOTE">"+block-as-image"</span>. (<a href="actions-file.html#ALIASES"><span class="QUOTE">"Aliases"</span></a>
-      are defined in the first section of the actions file and typically used to combine more than one action.)</p>
-      <p>Any one of these would have done the trick and blocked this as an unwanted image. This is unnecessarily
-      redundant since the last case effectively would also cover the first. No point in taking chances with these guys
-      though ;-) Note that if you want an ad or obnoxious URL to be invisible, it should be defined as <span class=
-      "QUOTE">"ad.doubleclick.net"</span> is done here -- as both a <a href="actions-file.html#BLOCK"><span class=
-      "QUOTE">"+block{}"</span></a> <span class="emphasis"><i class="EMPHASIS">and</i></span> an <a href=
-      "actions-file.html#HANDLE-AS-IMAGE"><span class="QUOTE">"+handle-as-image"</span></a>. The custom alias
-      <span class="QUOTE">"<tt class="LITERAL">+block-as-image</tt>"</span> just simplifies the process and make it
-      more readable.</p>
-      <p>One last example. Let's try <span class="QUOTE">"http://www.example.net/adsl/HOWTO/"</span>. This one is
-      giving us problems. We are getting a blank page. Hmmm ...</p>
-      <table border="0" bgcolor="#E0E0E0" width="100%">
-        <tr>
-          <td>
-            <pre class="SCREEN"> Matches for http://www.example.net/adsl/HOWTO/:
-
- In file: default.action <span class="GUIBUTTON">[ View ]</span> <span class="GUIBUTTON">[ Edit ]</span>
-
- {-add-header
+  -add-header
   -block
   +change-x-forwarded-for{block}
   -client-header-filter{hide-tor-exit-notation}
@@ -546,9 +447,9 @@ In file: user.action <span class="GUIBUTTON">[ View ]</span> <span class="GUIBUT
   -crunch-incoming-cookies
   -crunch-outgoing-cookies
   -crunch-server-header
-  +deanimate-gifs
+  +deanimate-gifs {last}
   -downgrade-http-version
-  +fast-redirects {check-decoded-url}
+  -fast-redirects
   -filter {js-events}
   -filter {content-cookies}
   -filter {all-popups}
@@ -580,19 +481,118 @@ In file: user.action <span class="GUIBUTTON">[ View ]</span> <span class="GUIBUT
   -handle-as-image
   -hide-accept-language
   -hide-content-disposition
-  +hide-from-header{block}
-  +hide-referer{forge}
+  +hide-from-header {block}
+  -hide-if-modified-since
+  +hide-referrer {forge}
   -hide-user-agent
+  -limit-connect
   -overwrite-last-modified
-  +prevent-compression
+  -prevent-compression
   -redirect
   -server-header-filter{xml-to-html}
   -server-header-filter{html-to-xml}
-  +session-cookies-only
-  +set-image-blocker{blank} }
-   /
+  -session-cookies-only
+  +set-image-blocker {pattern}</pre>
+          </td>
+        </tr>
+      </table>
+      <p>Notice the only difference here to the previous listing, is to <span class="QUOTE">"fast-redirects"</span> and
+      <span class="QUOTE">"session-cookies-only"</span>, which are activated specifically for this site in our
+      configuration, and thus show in the <span class="QUOTE">"Final Results"</span>.</p>
+      <p>Now another example, <span class="QUOTE">"ad.doubleclick.net"</span>:</p>
+      <table border="0" bgcolor="#E0E0E0" width="100%">
+        <tr>
+          <td>
+            <pre class="SCREEN">  { +block{Domains starts with "ad"} }
+  ad*.
 
- { +block{Path contains "ads".} +handle-as-image }
+  { +block{Domain contains "ad"} }
+  .ad.
+
+  { +block{Doubleclick banner server} +handle-as-image }
+  .[a-vx-z]*.doubleclick.net</pre>
+          </td>
+        </tr>
+      </table>
+      <p>We'll just show the interesting part here - the explicit matches. It is matched three different times. Two
+      <span class="QUOTE">"+block{}"</span> sections, and a <span class="QUOTE">"+block{} +handle-as-image"</span>,
+      which is the expanded form of one of our aliases that had been defined as: <span class=
+      "QUOTE">"+block-as-image"</span>. (<a href="actions-file.html#ALIASES"><span class="QUOTE">"Aliases"</span></a>
+      are defined in the first section of the actions file and typically used to combine more than one action.)</p>
+      <p>Any one of these would have done the trick and blocked this as an unwanted image. This is unnecessarily
+      redundant since the last case effectively would also cover the first. No point in taking chances with these guys
+      though ;-) Note that if you want an ad or obnoxious URL to be invisible, it should be defined as <span class=
+      "QUOTE">"ad.doubleclick.net"</span> is done here -- as both a <a href="actions-file.html#BLOCK"><span class=
+      "QUOTE">"+block{}"</span></a> <span class="emphasis"><i class="EMPHASIS">and</i></span> an <a href=
+      "actions-file.html#HANDLE-AS-IMAGE"><span class="QUOTE">"+handle-as-image"</span></a>. The custom alias
+      <span class="QUOTE">"<tt class="LITERAL">+block-as-image</tt>"</span> just simplifies the process and make it
+      more readable.</p>
+      <p>One last example. Let's try <span class="QUOTE">"http://www.example.net/adsl/HOWTO/"</span>. This one is
+      giving us problems. We are getting a blank page. Hmmm ...</p>
+      <table border="0" bgcolor="#E0E0E0" width="100%">
+        <tr>
+          <td>
+            <pre class="SCREEN">  Matches for http://www.example.net/adsl/HOWTO/:
+
+  In file: default.action <span class="GUIBUTTON">[ View ]</span> <span class="GUIBUTTON">[ Edit ]</span>
+
+  {-add-header
+   -block
+   +change-x-forwarded-for{block}
+   -client-header-filter{hide-tor-exit-notation}
+   -content-type-overwrite
+   -crunch-client-header
+   -crunch-if-none-match
+   -crunch-incoming-cookies
+   -crunch-outgoing-cookies
+   -crunch-server-header
+   +deanimate-gifs
+   -downgrade-http-version
+   +fast-redirects {check-decoded-url}
+   -filter {js-events}
+   -filter {content-cookies}
+   -filter {all-popups}
+   -filter {banners-by-link}
+   -filter {tiny-textforms}
+   -filter {frameset-borders}
+   -filter {demoronizer}
+   -filter {shockwave-flash}
+   -filter {quicktime-kioskmode}
+   -filter {fun}
+   -filter {crude-parental}
+   -filter {site-specifics}
+   -filter {js-annoyances}
+   -filter {html-annoyances}
+   +filter {refresh-tags}
+   -filter {unsolicited-popups}
+   +filter {img-reorder}
+   +filter {banners-by-size}
+   +filter {webbugs}
+   +filter {jumping-windows}
+   +filter {ie-exploits}
+   -filter {google}
+   -filter {yahoo}
+   -filter {msn}
+   -filter {blogspot}
+   -filter {no-ping}
+   -force-text-mode
+   -handle-as-empty-document
+   -handle-as-image
+   -hide-accept-language
+   -hide-content-disposition
+   +hide-from-header{block}
+   +hide-referer{forge}
+   -hide-user-agent
+   -overwrite-last-modified
+   +prevent-compression
+   -redirect
+   -server-header-filter{xml-to-html}
+   -server-header-filter{html-to-xml}
+   +session-cookies-only
+   +set-image-blocker{blank} }
+  /
+
+  { +block{Path contains "ads".} +handle-as-image }
   /ads</pre>
           </td>
         </tr>
@@ -609,7 +609,7 @@ In file: user.action <span class="GUIBUTTON">[ View ]</span> <span class="GUIBUT
       <table border="0" bgcolor="#E0E0E0" width="100%">
         <tr>
           <td>
-            <pre class="SCREEN"> { -block }
+            <pre class="SCREEN">  { -block }
   /adsl</pre>
           </td>
         </tr>
@@ -621,8 +621,8 @@ In file: user.action <span class="GUIBUTTON">[ View ]</span> <span class="GUIBUT
       <table border="0" bgcolor="#E0E0E0" width="100%">
         <tr>
           <td>
-            <pre class="SCREEN"> { +block{Path starts with "ads".} +handle-as-image }
- /ads</pre>
+            <pre class="SCREEN">  { +block{Path starts with "ads".} +handle-as-image }
+  /ads</pre>
           </td>
         </tr>
       </table>
@@ -635,12 +635,12 @@ In file: user.action <span class="GUIBUTTON">[ View ]</span> <span class="GUIBUT
       <table border="0" bgcolor="#E0E0E0" width="100%">
         <tr>
           <td>
-            <pre class="SCREEN"> { shop }
- .quietpc.com
- .worldpay.com   # for quietpc.com
- .jungle.com
- .scan.co.uk
- .forbes.com</pre>
+            <pre class="SCREEN">  { shop }
+  .quietpc.com
+  .worldpay.com   # for quietpc.com
+  .jungle.com
+  .scan.co.uk
+  .forbes.com</pre>
           </td>
         </tr>
       </table>
@@ -650,11 +650,11 @@ In file: user.action <span class="GUIBUTTON">[ View ]</span> <span class="GUIBUT
       <table border="0" bgcolor="#E0E0E0" width="100%">
         <tr>
           <td>
-            <pre class="SCREEN"> { -filter }
- # Disable ALL filter actions for sites in this section
- .forbes.com
- developer.ibm.com
- localhost</pre>
+            <pre class="SCREEN">  { -filter }
+  # Disable ALL filter actions for sites in this section
+  .forbes.com
+  developer.ibm.com
+  localhost</pre>
           </td>
         </tr>
       </table>
@@ -670,10 +670,10 @@ In file: user.action <span class="GUIBUTTON">[ View ]</span> <span class="GUIBUT
       <table border="0" bgcolor="#E0E0E0" width="100%">
         <tr>
           <td>
-            <pre class="SCREEN"> { fragile }
- # Handle with care: easy to break
- mail.google.
- mybank.example.com</pre>
+            <pre class="SCREEN">  { fragile }
+  # Handle with care: easy to break
+  mail.google.
+  mybank.example.com</pre>
           </td>
         </tr>
       </table>

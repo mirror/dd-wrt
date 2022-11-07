@@ -247,19 +247,14 @@ PCRS_SRC     = @STATIC_PCRS_ONLY@pcrs.c
 PCRS_OBJS    = @STATIC_PCRS_ONLY@$(PCRS_SRC:.c=.@OBJEXT@)
 PCRS_HDRS    = @STATIC_PCRS_ONLY@$(PCRS_SRC:.c=.h)
 
-PCRE_SRC     = @STATIC_PCRE_ONLY@pcre/get.c pcre/maketables.c pcre/study.c pcre/pcre.c
-PCRE_OBJS    = @STATIC_PCRE_ONLY@$(PCRE_SRC:.c=.@OBJEXT@)
-PCRE_HDRS    = @STATIC_PCRE_ONLY@pcre/config.h pcre/chartables.c pcre/internal.h pcre/pcre.h
-
 # No REGEX (maybe because dynamically linked pcreposix):
 REGEX_SRC    =
-@STATIC_PCRE_ONLY@REGEX_SRC = pcre/pcreposix.c
 
 REGEX_OBJS   = $(REGEX_SRC:.c=.@OBJEXT@)
 REGEX_HDRS   = $(REGEX_SRC:.c=.h)
 
 # Dependencies introduced by #include "project.h".
-PROJECT_H_DEPS = project.h $(REGEX_HDRS) $(PCRS_HDRS) @STATIC_PCRE_ONLY@pcre/pcre.h
+PROJECT_H_DEPS = project.h $(REGEX_HDRS) $(PCRS_HDRS)
 
 # Socket libraries for platforms that need them explicitly defined
 SOCKET_LIB   = @SOCKET_LIB@
@@ -267,9 +262,9 @@ SOCKET_LIB   = @SOCKET_LIB@
 # PThreads library, if needed.
 PTHREAD_LIB  = @PTHREAD_ONLY@@PTHREAD_LIB@
 
-SRCS         = $(C_SRC) $(CLIENT_TAG_SRC) $(FUZZ_SRC) $(W32_SRC)  $(PCRS_SRC)  $(PCRE_SRC)  $(REGEX_SRC) $(SSL_SRC) $(MBEDTLS_SRC) $(OPENSSL_SRC)
-OBJS         = $(C_OBJS) $(CLIENT_TAG_OBJS) $(FUZZ_OBJS) $(W32_OBJS) $(PCRS_OBJS) $(PCRE_OBJS) $(REGEX_OBJS) $(SSL_OBJS) $(MBEDTLS_OBJS) $(OPENSSL_OBJS)
-HDRS         = $(C_HDRS) $(W32_HDRS) $(PCRS_HDRS) $(PCRE_OBJS) $(REGEX_HDRS) $(SSL_HDRS) $(MBEDTLS_HDRS) $(OPENSSL_HDRS)
+SRCS         = $(C_SRC) $(CLIENT_TAG_SRC) $(FUZZ_SRC) $(W32_SRC) $(PCRS_SRC) $(REGEX_SRC) $(SSL_SRC) $(MBEDTLS_SRC) $(OPENSSL_SRC)
+OBJS         = $(C_OBJS) $(CLIENT_TAG_OBJS) $(FUZZ_OBJS) $(W32_OBJS) $(PCRS_OBJS) $(REGEX_OBJS) $(SSL_OBJS) $(MBEDTLS_OBJS) $(OPENSSL_OBJS)
+HDRS         = $(C_HDRS) $(W32_HDRS) $(PCRS_HDRS) $(REGEX_HDRS) $(SSL_HDRS) $(MBEDTLS_HDRS) $(OPENSSL_HDRS)
 LIBS         = @LIBS@ $(W32_LIB) $(SOCKET_LIB) $(PTHREAD_LIB)
 
 
@@ -287,8 +282,7 @@ SPECIAL_CFLAGS = @SPECIAL_CFLAGS@
 # Add your flags here
 OTHER_CFLAGS =
 
-CFLAGS = @CFLAGS@ @CPPFLAGS@ $(OTHER_CFLAGS) $(SPECIAL_CFLAGS) -Wall \
-         @STATIC_PCRE_ONLY@ -Ipcre
+CFLAGS = @CFLAGS@ @CPPFLAGS@ $(OTHER_CFLAGS) $(SPECIAL_CFLAGS) -Wall
 
 LDFLAGS = @LDFLAGS@ $(DEBUG_CFLAGS) $(SPECIAL_CFLAGS)
 
@@ -753,27 +747,12 @@ openssl.@OBJEXT@: openssl.c ssl.h ssl_common.h config.h $(PROJECT_H_DEPS) encode
 ssl_common.@OBJEXT@: ssl_common.c ssl.h ssl_common.h config.h $(PROJECT_H_DEPS) errlog.h miscutil.h
 
 # PCRS
-pcrs.@OBJEXT@: pcrs.c pcrs.h config.h @STATIC_PCRE_ONLY@pcre/pcre.h
-
-# PCRE
-pcre/get.@OBJEXT@:        pcre/get.c        pcre/config.h pcre/internal.h pcre/pcre.h
-pcre/maketables.@OBJEXT@: pcre/maketables.c pcre/config.h pcre/internal.h pcre/pcre.h
-pcre/pcre.@OBJEXT@:       pcre/pcre.c       pcre/config.h pcre/internal.h pcre/pcre.h pcre/chartables.c
-pcre/pcreposix.@OBJEXT@:  pcre/pcreposix.c  pcre/config.h pcre/internal.h pcre/pcre.h pcre/pcreposix.h
-pcre/study.@OBJEXT@:      pcre/study.c      pcre/config.h pcre/internal.h pcre/pcre.h
-
-# An auxiliary program makes the PCRE default character table source
-
-pcre/chartables.c:   pcre/dftables@EXEEXT@
-		pcre/dftables@EXEEXT@ >pcre/chartables.c
-
-pcre/dftables@EXEEXT@:       pcre/dftables.c pcre/maketables.c pcre/pcre.h pcre/internal.h pcre/config.h
-		$(CC) -o pcre/dftables@EXEEXT@ $(CFLAGS) pcre/dftables.c
+pcrs.@OBJEXT@: pcrs.c pcrs.h config.h
 
 # Win32
-w32log.@OBJEXT@: w32log.c errlog.h config.h jcc.h loadcfg.h miscutil.h pcre/pcre.h pcre/pcreposix.h pcrs.h project.h w32log.h w32taskbar.h win32.h
+w32log.@OBJEXT@: w32log.c errlog.h config.h jcc.h loadcfg.h miscutil.h pcrs.h project.h w32log.h w32taskbar.h win32.h
 w32taskbar.@OBJEXT@: w32taskbar.c config.h w32log.h w32taskbar.h
-win32.@OBJEXT@: win32.c config.h jcc.h loadcfg.h pcre/pcre.h pcre/pcreposix.h pcrs.h project.h w32log.h win32.h w32svrapi.h
+win32.@OBJEXT@: win32.c config.h jcc.h loadcfg.h pcrs.h project.h w32log.h win32.h w32svrapi.h
 
 w32.res: w32.rc w32res.h icons/radar-01.ico icons/radar-02.ico icons/radar-03.ico icons/radar-04.ico icons/radar-05.ico icons/radar-06.ico icons/radar-07.ico icons/radar-08.ico icons/idle.ico icons/privoxy.ico config.h
 	windres -F pe-i386 -D__MINGW32__=0.2 -O coff -i $< -o $@
@@ -1001,7 +980,7 @@ install: CONF_DEST LOG_DEST PID_DEST check_doc GROUP_T
                $(SED) 's+%GROUP%+$(GROUP_T)+' >slackware/rc.privoxy ;\
 			$(INSTALL) $(INSTALL_P) slackware/rc.privoxy $(DESTDIR)/etc/rc.d/ ;\
                $(ECHO) "Installing for Slackware." ;\
-               $(ECHO) "Dont forget to add the rc.privoxy to rc.local if you want it started at every boot" ;\
+               $(ECHO) "Don't forget to add the rc.privoxy to rc.local if you want it started at every boot" ;\
 		elif [ -d $(DESTDIR)/etc/init.d ] && [ -w $(DESTDIR)/etc/init.d ] ; then \
 			$(ECHO) "Installing generic init script to $(DESTDIR)/etc/init.d/privoxy" ;\
 			$(ECHO) "Please check that the PATHs are correct, and edit if needed." ;\

@@ -4,7 +4,7 @@
 <head>
   <title>Filter Files</title>
   <meta name="GENERATOR" content="Modular DocBook HTML Stylesheet Version 1.79">
-  <link rel="HOME" title="Privoxy 3.0.32 User Manual" href="index.html">
+  <link rel="HOME" title="Privoxy 3.0.33 User Manual" href="index.html">
   <link rel="PREVIOUS" title="Actions Files" href="actions-file.html">
   <link rel="NEXT" title="Privoxy's Template Files" href="templates.html">
   <link rel="STYLESHEET" type="text/css" href="../p_doc.css">
@@ -15,7 +15,7 @@
   <div class="NAVHEADER">
     <table summary="Header navigation table" width="100%" border="0" cellpadding="0" cellspacing="0">
       <tr>
-        <th colspan="3" align="center">Privoxy 3.0.32 User Manual</th>
+        <th colspan="3" align="center">Privoxy 3.0.33 User Manual</th>
       </tr>
       <tr>
         <td width="10%" align="left" valign="bottom"><a href="actions-file.html" accesskey="P">Prev</a></td>
@@ -77,7 +77,7 @@
     <table border="0" bgcolor="#E0E0E0" width="100%">
       <tr>
         <td>
-          <pre class="SCREEN">FILTER: foo Replace all "foo" with "bar"</pre>
+          <pre class="SCREEN">  FILTER: foo Replace all "foo" with "bar"</pre>
         </td>
       </tr>
     </table>
@@ -112,7 +112,7 @@
       <table border="0" bgcolor="#E0E0E0" width="100%">
         <tr>
           <td>
-            <pre class="SCREEN">s/foo/bar/</pre>
+            <pre class="SCREEN">  s/foo/bar/</pre>
           </td>
         </tr>
       </table>
@@ -123,7 +123,7 @@
       <table border="0" bgcolor="#E0E0E0" width="100%">
         <tr>
           <td>
-            <pre class="SCREEN">s/foo/bar/g</pre>
+            <pre class="SCREEN">  s/foo/bar/g</pre>
           </td>
         </tr>
       </table>
@@ -131,8 +131,8 @@
       <table border="0" bgcolor="#E0E0E0" width="100%">
         <tr>
           <td>
-            <pre class="SCREEN">FILTER: foo Replace all "foo" with "bar"
-s/foo/bar/g</pre>
+            <pre class="SCREEN">  FILTER: foo Replace all "foo" with "bar"
+  s/foo/bar/g</pre>
           </td>
         </tr>
       </table>
@@ -141,11 +141,11 @@ s/foo/bar/g</pre>
       <table border="0" bgcolor="#E0E0E0" width="100%">
         <tr>
           <td>
-            <pre class="SCREEN">FILTER: js-annoyances Get rid of particularly annoying JavaScript abuse
+            <pre class="SCREEN">  FILTER: js-annoyances Get rid of particularly annoying JavaScript abuse
 
-# Get rid of JavaScript referrer tracking. Test page: http://www.randomoddness.com/untitled.htm
-#
-s|(&lt;script.*)document\.referrer(.*&lt;/script&gt;)|$1"Not Your Business!"$2|Usg</pre>
+  # Get rid of JavaScript referrer tracking. Test page: http://www.randomoddness.com/untitled.htm
+  #
+  s|(&lt;script.*)document\.referrer(.*&lt;/script&gt;)|$1"Not Your Business!"$2|Usg</pre>
           </td>
         </tr>
       </table>
@@ -198,9 +198,9 @@ s|(&lt;script.*)document\.referrer(.*&lt;/script&gt;)|$1"Not Your Business!"$2|U
       <table border="0" bgcolor="#E0E0E0" width="100%">
         <tr>
           <td>
-            <pre class="SCREEN"># The status bar is for displaying link targets, not pointless blahblah
-#
-s/window\.status\s*=\s*(['"]).*?\1/dUmMy=1/ig</pre>
+            <pre class="SCREEN">  # The status bar is for displaying link targets, not pointless blahblah
+  #
+  s/window\.status\s*=\s*(['"]).*?\1/dUmMy=1/ig</pre>
           </td>
         </tr>
       </table>
@@ -220,9 +220,9 @@ s/window\.status\s*=\s*(['"]).*?\1/dUmMy=1/ig</pre>
       <table border="0" bgcolor="#E0E0E0" width="100%">
         <tr>
           <td>
-            <pre class="SCREEN"># Kill OnUnload popups. Yummy. Test: http://www.zdnet.com/zdsubs/yahoo/tree/yfs.html
-#
-s/(&lt;body [^&gt;]*)onunload(.*&gt;)/$1never$2/iU</pre>
+            <pre class="SCREEN">  # Kill OnUnload popups. Yummy. Test: http://www.zdnet.com/zdsubs/yahoo/tree/yfs.html
+  #
+  s/(&lt;body [^&gt;]*)onunload(.*&gt;)/$1never$2/iU</pre>
           </td>
         </tr>
       </table>
@@ -240,11 +240,11 @@ s/(&lt;body [^&gt;]*)onunload(.*&gt;)/$1never$2/iU</pre>
       <table border="0" bgcolor="#E0E0E0" width="100%">
         <tr>
           <td>
-            <pre class="SCREEN">FILTER: fun Fun text replacements
+            <pre class="SCREEN">  FILTER: fun Fun text replacements
 
-# Spice the daily news:
-#
-s/microsoft(?!\.com)/MicroSuck/ig</pre>
+  # Spice the daily news:
+  #
+  s/microsoft(?!\.com)/MicroSuck/ig</pre>
           </td>
         </tr>
       </table>
@@ -255,20 +255,20 @@ s/microsoft(?!\.com)/MicroSuck/ig</pre>
       <table border="0" bgcolor="#E0E0E0" width="100%">
         <tr>
           <td>
-            <pre class="SCREEN"># Buzzword Bingo (example for extended regex syntax)
-#
-s* industry[ -]leading \
-|  cutting[ -]edge \
-|  customer[ -]focused \
-|  market[ -]driven \
-|  award[ -]winning # Comments are OK, too! \
-|  high[ -]performance \
-|  solutions[ -]based \
-|  unmatched \
-|  unparalleled \
-|  unrivalled \
-*&lt;font color="red"&gt;&lt;b&gt;BINGO!&lt;/b&gt;&lt;/font&gt; \
-*igx</pre>
+            <pre class="SCREEN">  # Buzzword Bingo (example for extended regex syntax)
+  #
+  s* industry[ -]leading \
+  |  cutting[ -]edge \
+  |  customer[ -]focused \
+  |  market[ -]driven \
+  |  award[ -]winning # Comments are OK, too! \
+  |  high[ -]performance \
+  |  solutions[ -]based \
+  |  unmatched \
+  |  unparalleled \
+  |  unrivalled \
+  *&lt;font color="red"&gt;&lt;b&gt;BINGO!&lt;/b&gt;&lt;/font&gt; \
+  *igx</pre>
           </td>
         </tr>
       </table>
@@ -528,29 +528,30 @@ s* industry[ -]leading \
       <table border="0" bgcolor="#E0E0E0" width="100%">
         <tr>
           <td>
-            <pre class="SCREEN">EXTERNAL-FILTER: cat Pointless example filter that doesn't actually modify the content
-/bin/cat
+            <pre class=
+            "SCREEN">  EXTERNAL-FILTER: cat Pointless example filter that doesn't actually modify the content
+  /bin/cat
 
-# Incorrect reimplementation of the filter above in POSIX shell.
-#
-# Note that it's a single job that spans multiple lines, the line
-# breaks are not passed to the shell, thus the semicolons are required.
-#
-# If the script isn't trivial, it is recommended to put it into an external file.
-#
-# In general, writing external filters entirely in POSIX shell is not
-# considered a good idea.
-EXTERNAL-FILTER: cat2 Pointless example filter that despite its name may actually modify the content
-while read line; \
-do \
-  echo "$line"; \
-done
+  # Incorrect reimplementation of the filter above in POSIX shell.
+  #
+  # Note that it's a single job that spans multiple lines, the line
+  # breaks are not passed to the shell, thus the semicolons are required.
+  #
+  # If the script isn't trivial, it is recommended to put it into an external file.
+  #
+  # In general, writing external filters entirely in POSIX shell is not
+  # considered a good idea.
+  EXTERNAL-FILTER: cat2 Pointless example filter that despite its name may actually modify the content
+  while read line; \
+  do \
+    echo "$line"; \
+  done
 
-EXTERNAL-FILTER: rotate-image Rotate an image by 180 degree. Test filter with limited value.
-/usr/local/bin/convert - -rotate 180 -
+  EXTERNAL-FILTER: rotate-image Rotate an image by 180 degree. Test filter with limited value.
+  /usr/local/bin/convert - -rotate 180 -
 
-EXTERNAL-FILTER: citation-needed Adds a "[citation needed]" tag to an image. The coordinates may need adjustment.
-/usr/local/bin/convert - -pointsize 16 -fill white  -annotate +17+418 "[citation needed]" -</pre>
+  EXTERNAL-FILTER: citation-needed Adds a "[citation needed]" tag to an image. The coordinates may need adjustment.
+  /usr/local/bin/convert - -pointsize 16 -fill white  -annotate +17+418 "[citation needed]" -</pre>
           </td>
         </tr>
       </table>

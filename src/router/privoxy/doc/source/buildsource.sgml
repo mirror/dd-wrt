@@ -33,8 +33,8 @@
 </para>
 
 <screen>
- tar xzvf privoxy-&p-version;<![%p-not-stable;[-beta]]><![%p-stable;[-stable]]>-src.tar.gz
- cd privoxy-&p-version;<![%p-not-stable;[-beta]]><![%p-stable;[-stable]]>
+tar xzvf privoxy-&p-version;<![%p-not-stable;[-beta]]><![%p-stable;[-stable]]>-src.tar.gz
+cd privoxy-&p-version;<![%p-not-stable;[-beta]]><![%p-stable;[-stable]]>
 </screen>
 
 <para>
@@ -42,8 +42,8 @@
 </para>
 
 <screen>
-  cd &lt;root-dir>
-  git clone https://www.privoxy.org/git/privoxy.git
+cd &lt;root-dir>
+git clone https://www.privoxy.org/git/privoxy.git
 </screen>
 
 <para>
@@ -77,13 +77,13 @@
  <filename>/etc/passwd</filename> might then look like:
 </para>
 
- <screen>  privoxy:*:7777:7777:privoxy proxy:/no/home:/no/shell</screen>
+<screen>privoxy:*:7777:7777:privoxy proxy:/no/home:/no/shell</screen>
 
 <para>
  And then <filename>/etc/group</filename>, like:
 </para>
 
- <screen>  privoxy:*:7777:</screen>
+<screen>privoxy:*:7777:</screen>
 
 <para>
  Some binary packages may do this for you.
@@ -93,22 +93,23 @@
  Then, to build from either unpacked tarball or Git checkout:
 </para>
 
- <screen>
- autoheader
- autoconf
- ./configure      # (--help to see options)
- make             # (the make from GNU, sometimes called gmake)
- su               # Possibly required
- make -n install  # (to see where all the files will go)
- make -s install  # (to really install, -s to silence output)</screen>
+<screen>
+autoheader
+autoconf
+./configure      # (--help to see options)
+make             # (the make from GNU, sometimes called gmake)
+su               # Possibly required
+make -n install  # (to see where all the files will go)
+make -s install  # (to really install, -s to silence output)
+</screen>
 
 <para>
   Using GNU <command>make</command>, you can have the first four steps
   automatically done for you by just typing:
 </para>
 
- <screen>
-  make
+<screen>
+make
 </screen>
 
 <para>
@@ -120,8 +121,9 @@
  users cannot easily bypass the proxy (e.g. <quote>Go There Anyway</quote>), or
  alter their own configurations, <command>configure</command> like this:
 </para>
- <screen>
- ./configure  --disable-toggle  --disable-editor  --disable-force</screen>
+<screen>
+./configure  --disable-toggle  --disable-editor  --disable-force
+</screen>
 <para>
  Note that all of these options can also be disabled through the configuration file.
 </para>
@@ -149,8 +151,8 @@
  on the <command>make</command> command line, but be sure both already exist:
 </para>
 
- <screen>
- make -s install  USER=privoxy GROUP=privoxy</screen>
+<screen>
+make -s install  USER=privoxy GROUP=privoxy</screen>
 
 <para>
  The default installation path for <command>make install</command> is

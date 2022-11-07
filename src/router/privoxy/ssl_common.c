@@ -290,8 +290,8 @@ extern void free_certificate_chain(struct client_state *csp)
    /* Cleaning buffers */
    memset(csp->server_certs_chain.info_buf, 0,
       sizeof(csp->server_certs_chain.info_buf));
-   memset(csp->server_certs_chain.file_buf, 0,
-      sizeof(csp->server_certs_chain.file_buf));
+   freez(csp->server_certs_chain.file_buf);
+
    csp->server_certs_chain.next = NULL;
 
    /* Freeing memory in whole linked list */
@@ -299,6 +299,11 @@ extern void free_certificate_chain(struct client_state *csp)
    {
       struct certs_chain *cert_for_free = cert;
       cert = cert->next;
+
+      /* Cleaning buffers */
+      memset(cert_for_free->info_buf, 0, sizeof(cert_for_free->info_buf));
+      freez(cert_for_free->file_buf);
+
       freez(cert_for_free);
    }
 }

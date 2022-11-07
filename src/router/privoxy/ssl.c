@@ -3,10 +3,11 @@
  * File        :  $Source: /cvsroot/ijbswa/current/ssl.c,v $
  *
  * Purpose     :  File with TLS/SSL extension. Contains methods for
- *                creating, using and closing TLS/SSL connections.
+ *                creating, using and closing TLS/SSL connections
+ *                using mbedTLS.
  *
  * Copyright   :  Written by and Copyright (c) 2017-2020 Vaclav Svec. FIT CVUT.
- *                Copyright (C) 2018-2020 by Fabian Keil <fk@fabiankeil.de>
+ *                Copyright (C) 2018-2021 by Fabian Keil <fk@fabiankeil.de>
  *
  *                This program is free software; you can redistribute it
  *                and/or modify it under the terms of the GNU General
@@ -1706,6 +1707,7 @@ static int ssl_verify_callback(void *csp_void, mbedtls_x509_crt *crt,
    struct certs_chain  *last = &(csp->server_certs_chain);
    size_t olen = 0;
    int ret = 0;
+   size_t pem_buffer_length;
 
    /*
     * Searching for last item in certificates linked list
@@ -1721,14 +1723,33 @@ static int ssl_verify_callback(void *csp_void, mbedtls_x509_crt *crt,
    last->next = malloc_or_die(sizeof(struct certs_chain));
    last->next->next = NULL;
    memset(last->next->info_buf, 0, sizeof(last->next->info_buf));
-   memset(last->next->file_buf, 0, sizeof(last->next->file_buf));
+   last->next->file_buf = NULL;
+
+   ret = mbedtls_pem_write_buffer(PEM_BEGIN_CRT, PEM_END_CRT, crt->raw.p,
+      crt->raw.len, NULL, 0, &olen);
+   if (MBEDTLS_ERR_BASE64_BUFFER_TOO_SMALL != ret)
+   {
+      log_error(LOG_LEVEL_ERROR,
+         "Failed to figure out the required X509 PEM certificate buffer size");
+      return -1;
+   }
+   pem_buffer_length = olen;
+
+   last->file_buf = malloc(pem_buffer_length);
+   if (last->file_buf == NULL)
+   {
+      log_error(LOG_LEVEL_ERROR,
+         "Failed to allocate %lu bytes to store the X509 PEM certificate",
+         pem_buffer_length);
+      return -1;
+   }
 
    /*
     * Saving certificate file into buffer
     */
    if ((ret = mbedtls_pem_write_buffer(PEM_BEGIN_CRT, PEM_END_CRT,
       crt->raw.p, crt->raw.len, (unsigned char *)last->file_buf,
-      sizeof(last->file_buf)-1, &olen)) != 0)
+      pem_buffer_length, &olen)) != 0)
    {
       char err_buf[ERROR_BUF_SIZE];
 
@@ -1956,7 +1977,7 @@ static int *get_ciphersuites_from_string(const char *parameter_string)
    size_t parameter_len = strlen(parameter_string);
 
    ciphersuites_string = zalloc_or_die(parameter_len + 1);
-   strncpy(ciphersuites_string, parameter_string, parameter_len);
+   strlcpy(ciphersuites_string, parameter_string, parameter_len + 1);
    ciphersuites_index = ciphersuites_string;
 
    while (*ciphersuites_index)

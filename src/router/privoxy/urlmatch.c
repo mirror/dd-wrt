@@ -1206,9 +1206,9 @@ jb_err create_pattern_spec(struct pattern_spec *pattern, char *buf)
       const unsigned flag;
    } tag_pattern[] = {
       { "TAG:",              4, PATTERN_SPEC_TAG_PATTERN},
- #ifdef FEATURE_CLIENT_TAGS
+#ifdef FEATURE_CLIENT_TAGS
       { "CLIENT-TAG:",      11, PATTERN_SPEC_CLIENT_TAG_PATTERN},
- #endif
+#endif
       { "NO-REQUEST-TAG:",  15, PATTERN_SPEC_NO_REQUEST_TAG_PATTERN},
       { "NO-RESPONSE-TAG:", 16, PATTERN_SPEC_NO_RESPONSE_TAG_PATTERN}
    };
@@ -1263,6 +1263,17 @@ void free_pattern_spec(struct pattern_spec *pattern)
    if (pattern == NULL) return;
 
    freez(pattern->spec);
+
+   if (!(pattern->flags & PATTERN_SPEC_URL_PATTERN))
+   {
+      if (pattern->pattern.tag_regex)
+      {
+         regfree(pattern->pattern.tag_regex);
+         freez(pattern->pattern.tag_regex);
+      }
+      return;
+   }
+
 #ifdef FEATURE_PCRE_HOST_PATTERNS
    if (pattern->pattern.url_spec.host_regex)
    {
@@ -1278,11 +1289,6 @@ void free_pattern_spec(struct pattern_spec *pattern)
    {
       regfree(pattern->pattern.url_spec.preg);
       freez(pattern->pattern.url_spec.preg);
-   }
-   if (pattern->pattern.tag_regex)
-   {
-      regfree(pattern->pattern.tag_regex);
-      freez(pattern->pattern.tag_regex);
    }
 }
 

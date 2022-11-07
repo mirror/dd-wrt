@@ -1,4 +1,4 @@
-#        Sample Configuration File for Privoxy 3.0.32
+#        Sample Configuration File for Privoxy 3.0.33
 #
 # Copyright (C) 2001-2021 Privoxy Developers https://www.privoxy.org/
 #
@@ -592,7 +592,7 @@ logfile logfile
 #      each request as it happens. 1, 1024, 4096 and 8192 are
 #      recommended so that you will notice when things go wrong. The
 #      other levels are probably only of interest if you are hunting
-#      down a specific problem. They can produce a hell of an output
+#      down a specific problem. They can produce a lot of output
 #      (especially 16).
 #
 #      If you are used to the more verbose settings, simply enable
@@ -610,10 +610,17 @@ logfile logfile
 #      you read the log messages, you may even be able to solve the
 #      problem on your own.
 #
-#debug     1 # Log the destination for each request.
+#debug     1 # Log the destination for each request. See also debug 1024.
+#debug     2 # show each connection status
+#debug     4 # show tagging-related messages
+#debug     8 # show header parsing
+#debug   128 # debug redirects
+#debug   256 # debug GIF de-animation
+#debug   512 # Common Log Format
 #debug  1024 # Log the destination for requests Privoxy didn't let through, and the reason why.
 #debug  4096 # Startup banner and warnings
 #debug  8192 # Non-fatal errors
+#debug 65536 # Log applying actions
 #
 #  3.2. single-threaded
 #  =====================
@@ -764,8 +771,8 @@ logfile logfile
 #      consider using access control lists (ACL's, see below), and/or
 #      a firewall.
 #
-#      If you open Privoxy to untrusted users, you will also want to
-#      make sure that the following actions are disabled:
+#      If you open Privoxy to untrusted users, you should also make
+#      sure that the following actions are disabled:
 #      enable-edit-actions and enable-remote-toggle
 #
 #  Example:
@@ -1457,8 +1464,8 @@ enable-proxy-authentication-forwarding 0
 #      might want to make some exceptions:
 #
 #        forward         192.168.*.*/     .
-#        forward            10.*.*.*/     .
-#        forward           127.*.*.*/     .
+#        forward          10.*.*.*/       .
+#        forward         127.*.*.*/       .
 #
 #      Unencrypted connections to systems in these address ranges
 #      will be as (un)secure as the local network is, but the
@@ -1471,7 +1478,7 @@ enable-proxy-authentication-forwarding 0
 #      network by using their names, you will need additional
 #      exceptions that look like this:
 #
-#       forward           localhost/     .
+#        forward           localhost/     .
 #
 #
 #  5.3. forwarded-connect-retries
@@ -1831,11 +1838,11 @@ tolerate-pipelining 1
 #      speedups. There are also a few privacy implications you should
 #      be aware of.
 #
-#      If this option is effective, outgoing connections are shared
+#      If this option is enabled, outgoing connections are shared
 #      between clients (if there are more than one) and closing the
-#      browser that initiated the outgoing connection does no longer
-#      affect the connection between Privoxy and the server unless
-#      the client's request hasn't been completed yet.
+#      browser that initiated the outgoing connection does not affect
+#      the connection between Privoxy and the server unless the
+#      client's request hasn't been completed yet.
 #
 #      If the outgoing connection is idle, it will not be closed
 #      until either Privoxy's or the server's timeout is reached.
@@ -1896,6 +1903,15 @@ tolerate-pipelining 1
 #      If you aren't using an occasionally slow proxy like Tor,
 #      reducing it to a few seconds should be fine.
 #
+#      +-----------------------------------------------------+
+#      |                       Warning                       |
+#      |-----------------------------------------------------|
+#      |When a TLS library is being used to read or write    |
+#      |data from a socket with https-inspection enabled the |
+#      |socket-timeout currently isn't applied and the       |
+#      |timeout used depends on the library (which may not   |
+#      |even use a timeout).                                 |
+#      +-----------------------------------------------------+
 #  Example:
 #
 #      socket-timeout 300
@@ -1917,11 +1933,9 @@ socket-timeout 300
 #
 #      128
 #
-#  Effect if unset:
+#  Notes:
 #
 #      Connections are served until a resource limit is reached.
-#
-#  Notes:
 #
 #      Privoxy creates one thread (or process) for every incoming
 #      client connection that isn't rejected based on the access
@@ -1952,11 +1966,15 @@ socket-timeout 300
 #      limit below the one enforced by the operating system.
 #
 #      One most POSIX-compliant systems Privoxy can't properly deal
-#      with more than FD_SETSIZE file descriptors at the same time
-#      and has to reject connections if the limit is reached. This
-#      will likely change in a future version, but currently this
-#      limit can't be increased without recompiling Privoxy with a
-#      different FD_SETSIZE limit.
+#      with more than FD_SETSIZE file descriptors if Privoxy has been
+#      configured to use select() and has to reject connections if
+#      the limit is reached. When using select() this limit therefore
+#      can't be increased without recompiling Privoxy with a
+#      different FD_SETSIZE limit unless Privoxy is running on
+#      Windows with _WIN32 defined.
+#
+#      When Privoxy has been configured to use poll() the FD_SETSIZE
+#      limit does not apply.
 #
 #  Example:
 #
@@ -2169,19 +2187,18 @@ socket-timeout 300
 #
 #  Examples:
 #
-#          # Best speed (compared to the other levels)
-#          compression-level 1
+#        # Best speed (compared to the other levels)
+#        compression-level 1
 #
-#          # Best compression
-#          compression-level 9
+#        # Best compression
+#        compression-level 9
 #
-#          # No compression. Only useful for testing as the added header
-#          # slightly increases the amount of data that has to be sent.
-#          # If your benchmark shows that using this compression level
-#          # is superior to using no compression at all, the benchmark
-#          # is likely to be flawed.
-#          compression-level 0
-#
+#        # No compression. Only useful for testing as the added header
+#        # slightly increases the amount of data that has to be sent.
+#        # If your benchmark shows that using this compression level
+#        # is superior to using no compression at all, the benchmark
+#        # is likely to be flawed.
+#        compression-level 0
 #
 #compression-level 1
 #
@@ -2332,7 +2349,6 @@ socket-timeout 300
 #            client-tag-lifetime 180
 #
 #
-#
 #  6.18. trust-x-forwarded-for
 #  ============================
 #
@@ -2378,7 +2394,6 @@ socket-timeout 300
 #            # Allow systems that can reach Privoxy to provide the client
 #            # IP address with a X-Forwarded-For header.
 #            trust-x-forwarded-for 1
-#
 #
 #
 #  6.19. receive-buffer-size
@@ -2570,9 +2585,17 @@ socket-timeout 300
 #      is used when Privoxy generates certificates for intercepted
 #      requests.
 #
-#      Note that the password is shown on the CGI page so don't reuse
-#      an important one.
-#
+#      +-----------------------------------------------------+
+#      |                       Warning                       |
+#      |-----------------------------------------------------|
+#      |Note that the password is shown on the CGI page so   |
+#      |don't reuse an important one.                        |
+#      |                                                     |
+#      |If disclosure of the password is a compliance issue  |
+#      |consider blocking the relevant CGI requests after    |
+#      |enabling the enforce-blocks and                      |
+#      |allow-cgi-request-crunching.                         |
+#      +-----------------------------------------------------+
 #  Example:
 #
 #      ca-password blafasel
@@ -2668,63 +2691,60 @@ socket-timeout 300
 #  Examples:
 #
 #          # Explicitly set a couple of ciphers with names used by MbedTLS
-#          cipher-list cipher-list TLS-ECDHE-RSA-WITH-CHACHA20-POLY1305-SHA256:\
-#          TLS-ECDHE-ECDSA-WITH-CHACHA20-POLY1305-SHA256:\
-#          TLS-DHE-RSA-WITH-CHACHA20-POLY1305-SHA256:\
-#          TLS-ECDHE-ECDSA-WITH-AES-128-GCM-SHA256:\
-#          TLS-ECDHE-ECDSA-WITH-AES-256-GCM-SHA384:\
-#          TLS-ECDHE-ECDSA-WITH-AES-256-CCM:\
-#          TLS-ECDHE-ECDSA-WITH-AES-256-CCM-8:\
-#          TLS-ECDHE-ECDSA-WITH-AES-128-CCM:\
-#          TLS-ECDHE-ECDSA-WITH-AES-128-CCM-8:\
-#          TLS-ECDHE-ECDSA-WITH-CAMELLIA-128-GCM-SHA256:\
-#          TLS-ECDHE-ECDSA-WITH-CAMELLIA-256-GCM-SHA384:\
-#          TLS-ECDHE-RSA-WITH-AES-128-GCM-SHA256:\
-#          TLS-ECDHE-RSA-WITH-AES-256-GCM-SHA384:\
-#          TLS-ECDHE-RSA-WITH-CAMELLIA-128-GCM-SHA256:\
-#          TLS-ECDHE-RSA-WITH-CAMELLIA-256-GCM-SHA384:\
-#          TLS-DHE-RSA-WITH-AES-256-GCM-SHA384:\
-#          TLS-DHE-RSA-WITH-AES-128-GCM-SHA256:\
-#          TLS-DHE-RSA-WITH-AES-256-CCM:\
-#          TLS-DHE-RSA-WITH-AES-256-CCM-8:\
-#          TLS-DHE-RSA-WITH-AES-128-CCM:\
-#          TLS-DHE-RSA-WITH-AES-128-CCM-8:\
-#          TLS-DHE-RSA-WITH-CAMELLIA-128-GCM-SHA256:\
-#          TLS-DHE-RSA-WITH-CAMELLIA-256-GCM-SHA384:\
-#          TLS-ECDH-RSA-WITH-AES-128-GCM-SHA256:\
-#          TLS-ECDH-RSA-WITH-AES-256-GCM-SHA384:\
-#          TLS-ECDH-RSA-WITH-CAMELLIA-128-GCM-SHA256:\
-#          TLS-ECDH-RSA-WITH-CAMELLIA-256-GCM-SHA384:\
-#          TLS-ECDH-ECDSA-WITH-AES-128-GCM-SHA256:\
-#          TLS-ECDH-ECDSA-WITH-AES-256-GCM-SHA384:\
-#          TLS-ECDH-ECDSA-WITH-CAMELLIA-128-GCM-SHA256:\
-#          TLS-ECDH-ECDSA-WITH-CAMELLIA-256-GCM-SHA384
-#
+#        cipher-list cipher-list TLS-ECDHE-RSA-WITH-CHACHA20-POLY1305-SHA256:\
+#        TLS-ECDHE-ECDSA-WITH-CHACHA20-POLY1305-SHA256:\
+#        TLS-DHE-RSA-WITH-CHACHA20-POLY1305-SHA256:\
+#        TLS-ECDHE-ECDSA-WITH-AES-128-GCM-SHA256:\
+#        TLS-ECDHE-ECDSA-WITH-AES-256-GCM-SHA384:\
+#        TLS-ECDHE-ECDSA-WITH-AES-256-CCM:\
+#        TLS-ECDHE-ECDSA-WITH-AES-256-CCM-8:\
+#        TLS-ECDHE-ECDSA-WITH-AES-128-CCM:\
+#        TLS-ECDHE-ECDSA-WITH-AES-128-CCM-8:\
+#        TLS-ECDHE-ECDSA-WITH-CAMELLIA-128-GCM-SHA256:\
+#        TLS-ECDHE-ECDSA-WITH-CAMELLIA-256-GCM-SHA384:\
+#        TLS-ECDHE-RSA-WITH-AES-128-GCM-SHA256:\
+#        TLS-ECDHE-RSA-WITH-AES-256-GCM-SHA384:\
+#        TLS-ECDHE-RSA-WITH-CAMELLIA-128-GCM-SHA256:\
+#        TLS-ECDHE-RSA-WITH-CAMELLIA-256-GCM-SHA384:\
+#        TLS-DHE-RSA-WITH-AES-256-GCM-SHA384:\
+#        TLS-DHE-RSA-WITH-AES-128-GCM-SHA256:\
+#        TLS-DHE-RSA-WITH-AES-256-CCM:\
+#        TLS-DHE-RSA-WITH-AES-256-CCM-8:\
+#        TLS-DHE-RSA-WITH-AES-128-CCM:\
+#        TLS-DHE-RSA-WITH-AES-128-CCM-8:\
+#        TLS-DHE-RSA-WITH-CAMELLIA-128-GCM-SHA256:\
+#        TLS-DHE-RSA-WITH-CAMELLIA-256-GCM-SHA384:\
+#        TLS-ECDH-RSA-WITH-AES-128-GCM-SHA256:\
+#        TLS-ECDH-RSA-WITH-AES-256-GCM-SHA384:\
+#        TLS-ECDH-RSA-WITH-CAMELLIA-128-GCM-SHA256:\
+#        TLS-ECDH-RSA-WITH-CAMELLIA-256-GCM-SHA384:\
+#        TLS-ECDH-ECDSA-WITH-AES-128-GCM-SHA256:\
+#        TLS-ECDH-ECDSA-WITH-AES-256-GCM-SHA384:\
+#        TLS-ECDH-ECDSA-WITH-CAMELLIA-128-GCM-SHA256:\
+#        TLS-ECDH-ECDSA-WITH-CAMELLIA-256-GCM-SHA384
 #
 #          # Explicitly set a couple of ciphers with names used by OpenSSL
-#          cipher-list ECDHE-RSA-AES256-GCM-SHA384:\
-#          ECDHE-ECDSA-AES256-GCM-SHA384:\
-#          DH-DSS-AES256-GCM-SHA384:\
-#          DHE-DSS-AES256-GCM-SHA384:\
-#          DH-RSA-AES256-GCM-SHA384:\
-#          DHE-RSA-AES256-GCM-SHA384:\
-#          ECDH-RSA-AES256-GCM-SHA384:\
-#          ECDH-ECDSA-AES256-GCM-SHA384:\
-#          ECDHE-RSA-AES128-GCM-SHA256:\
-#          ECDHE-ECDSA-AES128-GCM-SHA256:\
-#          DH-DSS-AES128-GCM-SHA256:\
-#          DHE-DSS-AES128-GCM-SHA256:\
-#          DH-RSA-AES128-GCM-SHA256:\
-#          DHE-RSA-AES128-GCM-SHA256:\
-#          ECDH-RSA-AES128-GCM-SHA256:\
-#          ECDH-ECDSA-AES128-GCM-SHA256:\
-#          ECDHE-RSA-AES256-GCM-SHA384:\
-#          AES128-SHA
-#
+#        cipher-list ECDHE-RSA-AES256-GCM-SHA384:\
+#        ECDHE-ECDSA-AES256-GCM-SHA384:\
+#        DH-DSS-AES256-GCM-SHA384:\
+#        DHE-DSS-AES256-GCM-SHA384:\
+#        DH-RSA-AES256-GCM-SHA384:\
+#        DHE-RSA-AES256-GCM-SHA384:\
+#        ECDH-RSA-AES256-GCM-SHA384:\
+#        ECDH-ECDSA-AES256-GCM-SHA384:\
+#        ECDHE-RSA-AES128-GCM-SHA256:\
+#        ECDHE-ECDSA-AES128-GCM-SHA256:\
+#        DH-DSS-AES128-GCM-SHA256:\
+#        DHE-DSS-AES128-GCM-SHA256:\
+#        DH-RSA-AES128-GCM-SHA256:\
+#        DHE-RSA-AES128-GCM-SHA256:\
+#        ECDH-RSA-AES128-GCM-SHA256:\
+#        ECDH-ECDSA-AES128-GCM-SHA256:\
+#        ECDHE-RSA-AES256-GCM-SHA384:\
+#        AES128-SHA
 #
 #          # Use keywords instead of explicitly naming the ciphers (Does not work with MbedTLS)
-#          cipher-list ALL:!EXPORT:!EXPORT40:!EXPORT56:!aNULL:!LOW:!RC4:@STRENGTH
-#
+#        cipher-list ALL:!EXPORT:!EXPORT40:!EXPORT56:!aNULL:!LOW:!RC4:@STRENGTH
 #
 #
 #  7.7. trusted-cas-file
@@ -2787,40 +2807,28 @@ socket-timeout 300
 #
 #log-buffer-size 1
 #
-#
-#
 #  log-max-lines is the maximum number of lines held in the log
 #  buffer. See above.
 #
 #log-max-lines 200
-#
-#
 #
 #  If "log-highlight-messages" is set to 1, Privoxy will highlight
 #  portions of the log messages with a bold-faced font:
 #
 #log-highlight-messages 1
 #
-#
-#
 #  The font used in the console window:
 #
 #log-font-name Comic Sans MS
-#
-#
 #
 #  Font size used in the console window:
 #
 #log-font-size 8
 #
-#
-#
 #  "show-on-task-bar" controls whether or not Privoxy will appear as
 #  a button on the Task bar when minimized:
 #
 #show-on-task-bar 0
-#
-#
 #
 #  If "close-button-minimizes" is set to 1, the Windows close button
 #  will minimize Privoxy instead of closing the program (close with
@@ -2828,13 +2836,10 @@ socket-timeout 300
 #
 #close-button-minimizes 1
 #
-#
-#
 #  The "hide-console" option is specific to the MS-Win console
 #  version of Privoxy. If this option is used, Privoxy will
 #  disconnect from and hide the command console.
 #
 #hide-console
-#
 #
 #

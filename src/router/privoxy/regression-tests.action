@@ -26,7 +26,7 @@
 #############################################################################
 
 {{settings}}
-for-privoxy-version=3.0.29
+for-privoxy-version=3.0.33
 
 # Some dependencies Privoxy-Regression-Test should know about:
 #
@@ -836,6 +836,10 @@ TAG:^Proxy-Authorization header forwarding$
 # Fetch Test = http://p.p/favicon.ico
 # Fetch Test = http://p.p/robots.txt
 # Fetch Test = http://p.p/send-banner
+# Fetch Test = http://p.p/send-banner?type=r
+# Fetch Test = http://p.p/send-banner?type=auto
+# Fetch Test = http://p.p/send-banner?type=blank
+# Fetch Test = http://p.p/send-banner?type=pattern
 # Trusted CGI Request = http://p.p/send-stylesheet
 # Fetch Test = http://p.p/send-stylesheet
 # Expect Status Code = 403
@@ -849,6 +853,7 @@ TAG:^Proxy-Authorization header forwarding$
 # Fetch Test = http://p.p/toggle-client-tag
 # Expect Status Code = 403
 # Level = 24
+# Fetch Test = http://p.p/wpad.dat
 
 # Trusted CGI Request = http://p.p/edit-actions
 # Expect Status Code = 302
@@ -898,6 +903,11 @@ TAG:^Proxy-Authorization header forwarding$
 # Trusted CGI Request = http://p.p/edit-actions-section-swap
 # Level = 12
 # Trusted CGI Request = http://p.p/send-stylesheet
+
+# CVE-2021-20217
+# Fetch Test = http://config.privoxy.org/?1&0
+# OVE-20210203-0001
+# Fetch Test = http://config.privoxy.org/show-url-info?url=0%%0A0
 
 # The following tests depend on Privoxy being configured to deliver the user manual
 

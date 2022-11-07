@@ -3,7 +3,8 @@
  * File        :  $Source: /cvsroot/ijbswa/current/openssl.c,v $
  *
  * Purpose     :  File with TLS/SSL extension. Contains methods for
- *                creating, using and closing TLS/SSL connections.
+ *                creating, using and closing TLS/SSL connections
+ *                using OpenSSL (or LibreSSL).
  *
  * Copyright   :  Written by and Copyright (c) 2020 Maxim Antonov <mantonov@gmail.com>
  *                Copyright (C) 2017 Vaclav Svec. FIT CVUT.
@@ -267,12 +268,12 @@ extern int ssl_recv_data(struct ssl_attr *ssl_attr, unsigned char *buf, size_t m
  *********************************************************************/
 static int ssl_store_cert(struct client_state *csp, X509 *crt)
 {
-   long len = 0;
+   long len;
    struct certs_chain  *last = &(csp->server_certs_chain);
    int ret = 0;
    BIO *bio = BIO_new(BIO_s_mem());
    EVP_PKEY *pkey = NULL;
-   char *bio_mem_data = 0;
+   char *bio_mem_data = NULL;
    char *encoded_text;
    long l;
    const ASN1_INTEGER *bs;
@@ -301,7 +302,7 @@ static int ssl_store_cert(struct client_state *csp, X509 *crt)
    last->next = malloc_or_die(sizeof(struct certs_chain));
    last->next->next = NULL;
    memset(last->next->info_buf, 0, sizeof(last->next->info_buf));
-   memset(last->next->file_buf, 0, sizeof(last->next->file_buf));
+   last->next->file_buf = NULL;
 
    /*
     * Saving certificate file into buffer
@@ -315,15 +316,18 @@ static int ssl_store_cert(struct client_state *csp, X509 *crt)
 
    len = BIO_get_mem_data(bio, &bio_mem_data);
 
-   if (len > (sizeof(last->file_buf) - 1))
+   last->file_buf = malloc((size_t)len + 1);
+   if (last->file_buf == NULL)
    {
       log_error(LOG_LEVEL_ERROR,
-         "X509 PEM cert len %ld is larger than buffer len %lu",
-         len, sizeof(last->file_buf) - 1);
-      len = sizeof(last->file_buf) - 1;
+         "Failed to allocate %lu bytes to store the X509 PEM certificate",
+         len + 1);
+      ret = -1;
+      goto exit;
    }
 
    strncpy(last->file_buf, bio_mem_data, (size_t)len);
+   last->file_buf[len] = '\0';
    BIO_free(bio);
    bio = BIO_new(BIO_s_mem());
    if (!bio)
@@ -500,8 +504,12 @@ static int ssl_store_cert(struct client_state *csp, X509 *crt)
       case EVP_PKEY_DSA:
          ret = BIO_printf(bio, "\n%-" BC "s: %d bits", "DSA key size", EVP_PKEY_bits(pkey));
          break;
+      case EVP_PKEY_EC:
+         ret = BIO_printf(bio, "\n%-" BC "s: %d bits", "EC key size", EVP_PKEY_bits(pkey));
+         break;
       default:
-         ret = BIO_printf(bio, "\n%-" BC "s: %d bits", "non-RSA/DSA key size", EVP_PKEY_bits(pkey));
+         ret = BIO_printf(bio, "\n%-" BC "s: %d bits", "non-RSA/DSA/EC key size",
+            EVP_PKEY_bits(pkey));
          break;
    }
    if (ret <= 0)
@@ -1746,6 +1754,8 @@ static int generate_host_certificate(struct client_state *csp)
    cert_options cert_opt;
    char cert_valid_from[VALID_DATETIME_BUFLEN];
    char cert_valid_to[VALID_DATETIME_BUFLEN];
+   const char *common_name;
+   enum { CERT_PARAM_COMMON_NAME_MAX = 64 };
 
    /* Paths to keys and certificates needed to create certificate */
    cert_opt.issuer_key  = NULL;
@@ -1856,13 +1866,20 @@ static int generate_host_certificate(struct client_state *csp)
    subject_name = X509_NAME_new();
    if (!subject_name)
    {
-      log_ssl_errors(LOG_LEVEL_ERROR, "RSA key memory allocation failure");
+      log_ssl_errors(LOG_LEVEL_ERROR, "X509 memory allocation failure");
       ret = -1;
       goto exit;
    }
 
+   /*
+    * Make sure OpenSSL doesn't reject the common name due to its length.
+    * The clients should only care about the Subject Alternative Name anyway
+    * and we always use the real host name for that.
+    */
+   common_name = (strlen(csp->http->host) > CERT_PARAM_COMMON_NAME_MAX) ?
+      CGI_SITE_2_HOST : csp->http->host;
    if (!X509_NAME_add_entry_by_txt(subject_name, CERT_PARAM_COMMON_NAME_FCODE,
-         MBSTRING_ASC, (void *)csp->http->host, -1, -1, 0))
+         MBSTRING_ASC, (void *)common_name, -1, -1, 0))
    {
       log_ssl_errors(LOG_LEVEL_ERROR,
          "X509 subject name (code: %s, val: %s) error",
@@ -1871,7 +1888,7 @@ static int generate_host_certificate(struct client_state *csp)
       goto exit;
    }
    if (!X509_NAME_add_entry_by_txt(subject_name, CERT_PARAM_ORGANIZATION_FCODE,
-         MBSTRING_ASC, (void *)csp->http->host, -1, -1, 0))
+         MBSTRING_ASC, (void *)common_name, -1, -1, 0))
    {
       log_ssl_errors(LOG_LEVEL_ERROR,
          "X509 subject name (code: %s, val: %s) error",
@@ -1880,7 +1897,7 @@ static int generate_host_certificate(struct client_state *csp)
       goto exit;
    }
    if (!X509_NAME_add_entry_by_txt(subject_name, CERT_PARAM_ORG_UNIT_FCODE,
-         MBSTRING_ASC, (void *)csp->http->host, -1, -1, 0))
+         MBSTRING_ASC, (void *)common_name, -1, -1, 0))
    {
       log_ssl_errors(LOG_LEVEL_ERROR,
          "X509 subject name (code: %s, val: %s) error",
@@ -1893,7 +1910,7 @@ static int generate_host_certificate(struct client_state *csp)
    {
       log_ssl_errors(LOG_LEVEL_ERROR,
          "X509 subject name (code: %s, val: %s) error",
-         CERT_PARAM_COUNTRY_FCODE, csp->http->host);
+         CERT_PARAM_COUNTRY_FCODE, CERT_PARAM_COUNTRY_CODE);
       ret = -1;
       goto exit;
    }

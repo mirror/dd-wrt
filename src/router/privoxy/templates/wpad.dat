@@ -1,0 +1,11 @@
+function FindProxyForURL(url, host) {
+    var proxy = "PROXY @my-ip-address@:@my-port@; DIRECT";
+    var direct = "DIRECT";
+    if (isPlainHostName(host)) {
+        return direct;
+    }
+    if (url.substring(0, 4) == "ftp:" || url.substring(0, 6) == "rsync:") {
+        return direct;
+    }
+    return proxy;
+}

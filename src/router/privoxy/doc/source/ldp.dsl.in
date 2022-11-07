@@ -29,10 +29,15 @@
 ;; see http://docbook.sourceforge.net/projects/dsssl/doc/print.html
 ;;
 
+(define %indent-programlisting-lines%
+  ;; Indent lines in a 'ProgramListing'?
+  ;; "#f" or string to be used as the indent on 'programlisting'
+  "  ")
+
 (define %indent-screen-lines%
   ;; Indent lines in a 'Screen'?
   ;; "#f" or string to be used as the indent on 'screen'
-  "")
+  "  ")
 
 (define %callout-fancy-bug%
   ;; Use fancy callout bugs?
@@ -277,6 +282,16 @@
 (declare-characteristic preserve-sdata?
   "UNREGISTERED::James Clark//Characteristic::preserve-sdata?"
   #t)
+
+(define %indent-programlisting-lines%
+  ;; Indent lines in a 'ProgramListing'?
+  ;; "#f" or string to be used as the indent on 'programlisting'
+  "  ")
+
+(define %indent-screen-lines%
+  ;; Indent lines in a 'Screen'?
+  ;; "#f" or string to be used as the indent on 'screen'
+  "  ")
 
 ;; put the legal notice in a separate file
 (define %generate-legalnotice-link%

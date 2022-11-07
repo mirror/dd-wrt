@@ -3,7 +3,7 @@
 
  Purpose     :  Entity included in other project documents.
 
- Copyright (C) 2001-2020 Privoxy Developers https://www.privoxy.org/
+ Copyright (C) 2001-2021 Privoxy Developers https://www.privoxy.org/
  See LICENSE.
 
  ======================================================================
@@ -100,6 +100,7 @@ Current Privoxy Team:
  Wan-Teh Chang
  Sam Chen
  Ramkumar Chinchani
+ Gwyn Ciesla
  Billy Crook
  Fr&eacute;d&eacute;ric Crozat
  Matthew Daley
@@ -138,6 +139,7 @@ Current Privoxy Team:
  Stefan Huehner
  Basil Hussain
  Peter Hyman
+ Artem Ivanov
  Derek Jennings
  Andrew Jones
  Julien Joubert
@@ -199,6 +201,7 @@ Current Privoxy Team:
  Sam
  Saperski
  Bart Schelstraete
+ Richard Schneidt
  Gregory Seidman
  Atman Sense
  Mark Seward
@@ -242,6 +245,7 @@ Current Privoxy Team:
  Yang Xia
  Jarry Xu
  Oliver Yeoh
+ Wen Yue
  Yossi Zahn
  Jamie Zawinski
  Zepard

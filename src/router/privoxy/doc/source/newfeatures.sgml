@@ -54,7 +54,7 @@
 
  <listitem>
   <para>
-     Supports https inspection which allows to filter https requests.
+     Supports https inspection which allows to filter https requests and responses.
   </para>
  </listitem>
 
