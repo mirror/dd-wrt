@@ -995,12 +995,35 @@ static void build_request_line(struct client_state *csp, const struct forward_sp
     * Rebuild the request line.
     */
    freez(*request_line);
-   *request_line = strdup(http->gpc);
-   string_append(request_line, " ");
+#ifdef FEATURE_HTTPS_INSPECTION
+   if (fwd != NULL && fwd->forward_host &&
+       fwd->type != FORWARD_WEBSERVER && client_use_ssl(csp))
+   {
+      *request_line = strdup("CONNECT ");
+   }
+   else
+#endif
+   {
+      *request_line = strdup(http->gpc);
+      string_append(request_line, " ");
+   }
 
    if (fwd != NULL && fwd->forward_host && fwd->type != FORWARD_WEBSERVER)
    {
-      string_append(request_line, http->url);
+#ifdef FEATURE_HTTPS_INSPECTION
+      if (client_use_ssl(csp))
+      {
+         char port_string[10];
+
+         string_append(request_line, http->host);
+         snprintf(port_string, sizeof(port_string), ":%d", http->port);
+         string_append(request_line, port_string);
+      }
+      else
+#endif
+      {
+         string_append(request_line, http->url);
+      }
    }
    else
    {
@@ -2057,12 +2080,13 @@ static int read_http_request_body(struct client_state *csp)
 
    if (to_read != 0)
    {
-      log_error(LOG_LEVEL_CONNECT, "Not enough request body has been read: expected %llu more bytes",
-         csp->expected_client_content_length);
+      log_error(LOG_LEVEL_CONNECT,
+         "Not enough request body has been read: expected %lu more bytes",
+         to_read);
       return 1;
    }
-   log_error(LOG_LEVEL_CONNECT, "The last %llu bytes of the request body have been read",
-      csp->expected_client_content_length);
+   log_error(LOG_LEVEL_CONNECT,
+      "The last %d bytes of the request body have been read", len);
    return 0;
 }
 
@@ -2182,6 +2206,7 @@ static int send_http_request(struct client_state *csp)
          update_client_headers(csp, to_send_len))
       {
          log_error(LOG_LEVEL_HEADER, "Error updating client headers");
+         freez(to_send);
          return 1;
       }
       csp->expected_client_content_length = 0;
@@ -2206,6 +2231,10 @@ static int send_http_request(struct client_state *csp)
    {
       log_error(LOG_LEVEL_CONNECT, "Failed sending request headers to: %s: %E",
          csp->http->hostport);
+      if (filter_client_body)
+      {
+         freez(to_send);
+      }
       return 1;
    }
 
@@ -2497,9 +2526,10 @@ static int send_https_request(struct client_state *csp)
 
 /*********************************************************************
  *
- * Function    :  receive_encrypted_request
+ * Function    :  receive_encrypted_request_headers
  *
- * Description :  Receives an encrypted request.
+ * Description :  Receives the encrypted request headers when
+ *                https-inspecting.
  *
  * Parameters  :
  *          1  :  csp = Current client state (buffers, headers, etc...)
@@ -2508,7 +2538,7 @@ static int send_https_request(struct client_state *csp)
  *                JB_ERR_PARSE or JB_ERR_MEMORY otherwise
  *
  *********************************************************************/
-static jb_err receive_encrypted_request(struct client_state *csp)
+static jb_err receive_encrypted_request_headers(struct client_state *csp)
 {
    char buf[BUFFER_SIZE];
    int len;
@@ -2516,7 +2546,7 @@ static jb_err receive_encrypted_request(struct client_state *csp)
 
    do
    {
-      log_error(LOG_LEVEL_HEADER, "Reading encrypted headers");
+      log_error(LOG_LEVEL_HEADER, "Waiting for encrypted client headers");
       if (!is_ssl_pending(&(csp->ssl_client_attr)) &&
           !data_is_available(csp->cfd, csp->config->socket_timeout))
       {
@@ -2652,9 +2682,10 @@ static jb_err change_encrypted_request_destination(struct client_state *csp)
 
 /*********************************************************************
  *
- * Function    :  process_encrypted_request
+ * Function    :  process_encrypted_request_headers
  *
- * Description :  Receives and parses an encrypted request.
+ * Description :  Receives and parses the encrypted headers send
+ *                by the client when https-inspecting.
  *
  * Parameters  :
  *          1  :  csp = Current client state (buffers, headers, etc...)
@@ -2663,7 +2694,7 @@ static jb_err change_encrypted_request_destination(struct client_state *csp)
  *                JB_ERR_PARSE or JB_ERR_MEMORY otherwise
  *
  *********************************************************************/
-static jb_err process_encrypted_request(struct client_state *csp)
+static jb_err process_encrypted_request_headers(struct client_state *csp)
 {
    char *p;
    char *request_line;
@@ -2680,7 +2711,7 @@ static jb_err process_encrypted_request(struct client_state *csp)
       csp->flags |= CSP_FLAG_CLIENT_CONNECTION_KEEP_ALIVE;
    }
 #endif
-   err = receive_encrypted_request(csp);
+   err = receive_encrypted_request_headers(csp);
    if (err != JB_ERR_OK)
    {
       if (csp->client_iob->cur == NULL ||
@@ -2775,6 +2806,8 @@ static jb_err process_encrypted_request(struct client_state *csp)
          "Failed to get the encrypted request destination");
       ssl_send_data_delayed(&(csp->ssl_client_attr),
          (const unsigned char *)CHEADER, strlen(CHEADER), get_write_delay(csp));
+      destroy_list(headers);
+
       return JB_ERR_PARSE;
    }
 
@@ -2847,8 +2880,7 @@ static jb_err process_encrypted_request(struct client_state *csp)
       return JB_ERR_PARSE;
    }
 
-   log_error(LOG_LEVEL_HEADER, "Encrypted request processed");
-   log_applied_actions(csp->action);
+   log_error(LOG_LEVEL_HEADER, "Encrypted request headers processed");
    log_error(LOG_LEVEL_REQUEST, "https://%s%s", csp->http->hostport,
       csp->http->path);
 
@@ -2914,7 +2946,7 @@ static void continue_https_chat(struct client_state *csp)
 {
    const struct forward_spec *fwd;
 
-   if (JB_ERR_OK != process_encrypted_request(csp))
+   if (JB_ERR_OK != process_encrypted_request_headers(csp))
    {
       csp->flags &= ~CSP_FLAG_CLIENT_CONNECTION_KEEP_ALIVE;
       return;
@@ -2954,6 +2986,8 @@ static void continue_https_chat(struct client_state *csp)
       return;
    }
 
+   log_applied_actions(csp->action);
+
    log_error(LOG_LEVEL_CONNECT,
       "Reusing server socket %d connected to %s. Requests already sent: %u.",
       csp->server_connection.sfd, csp->server_connection.host,
@@ -2972,6 +3006,7 @@ static void continue_https_chat(struct client_state *csp)
          csp->cfd);
       return;
    }
+   csp->server_connection.request_sent = time(NULL);
    csp->server_connection.requests_sent_total++;
    handle_established_connection(csp);
    freez(csp->receive_buffer);
@@ -2985,7 +3020,8 @@ static void continue_https_chat(struct client_state *csp)
  * Function    :  handle_established_connection
  *
  * Description :  Shuffle data between client and server once the
- *                connection has been established.
+ *                connection has been established and the request
+ *                has been sent.
  *
  * Parameters  :
  *          1  :  csp = Current client state (buffers, headers, etc...)
@@ -3061,6 +3097,18 @@ static void handle_established_connection(struct client_state *csp)
 
    for (;;)
    {
+#ifdef FEATURE_HTTPS_INSPECTION
+      if (server_use_ssl(csp) && is_ssl_pending(&(csp->ssl_server_attr)))
+      {
+         /*
+          * It's possible that the TLS library already consumed all the
+          * data the server intends to send. If that happens poll() and
+          * select() will no longer see the data as available so we have
+          * to skip the calls.
+          */
+         goto server_wants_to_talk;
+      }
+#endif
 #ifndef HAVE_POLL
       FD_ZERO(&rfds);
 #ifdef FEATURE_CONNECTION_KEEP_ALIVE
@@ -3147,7 +3195,7 @@ static void handle_established_connection(struct client_state *csp)
       n = select((int)maxfd + 1, &rfds, NULL, NULL, &timeout);
 #endif /* def HAVE_POLL */
 
-      /*server or client not responding in timeout */
+      /* Server or client not responding in timeout */
       if (n == 0)
       {
          log_error(LOG_LEVEL_CONNECT, "Socket timeout %d reached: %s",
@@ -3334,6 +3382,9 @@ static void handle_established_connection(struct client_state *csp)
       if (FD_ISSET(csp->server_connection.sfd, &rfds))
 #endif /* HAVE_POLL */
       {
+#ifdef FEATURE_HTTPS_INSPECTION
+         server_wants_to_talk:
+#endif
 #ifdef FEATURE_CONNECTION_KEEP_ALIVE
          /*
           * If we are buffering content, we don't want to eat up to
@@ -3538,8 +3589,8 @@ static void handle_established_connection(struct client_state *csp)
                               (const unsigned char *) ((p != NULL) ? p : csp->iob->cur),
                               csp->content_length, get_write_delay(csp)) < 0))
                      {
-                        log_error(LOG_LEVEL_ERROR, "write modified content to "
-                           "client over TLS/SSL failed");
+                        log_error(LOG_LEVEL_ERROR,
+                           "Failed to send the modified content to the client over TLS");
                         freez(hdr);
                         freez(p);
                         mark_server_socket_tainted(csp);
@@ -3570,8 +3621,8 @@ static void handle_established_connection(struct client_state *csp)
             }
 
             /*
-             * This is NOT the body, so
-             * Let's pretend the server just sent us a blank line.
+             * This is not the body, so let's pretend the server just sent
+             * us a blank line.
              */
             snprintf(csp->receive_buffer, csp->receive_buffer_size, "\r\n");
             len = (int)strlen(csp->receive_buffer);
@@ -3865,6 +3916,18 @@ static void handle_established_connection(struct client_state *csp)
             }
 
             /*
+             * Disable redirect checkers, so that they will be only run
+             * again if the user also enables them through tags.
+             *
+             * From a performance point of view it doesn't matter,
+             * but it prevents duplicated log messages.
+             */
+#ifdef FEATURE_FAST_REDIRECTS
+            csp->action->flags &= ~ACTION_FAST_REDIRECTS;
+#endif
+            csp->action->flags &= ~ACTION_REDIRECT;
+
+            /*
              * We have now received the entire server header,
              * filter it and send the result to the client
              */
@@ -4119,9 +4182,6 @@ static void chat(struct client_state *csp)
       return;
    }
 
-   /* decide how to route the HTTP request */
-   fwd = forward_url(csp, http);
-
 #ifdef FEATURE_HTTPS_INSPECTION
    /*
     * Setting flags to use old solution with SSL tunnel and to disable
@@ -4224,10 +4284,6 @@ static void chat(struct client_state *csp)
 #endif
    }
 
-
-   freez(csp->headers->first->str);
-   build_request_line(csp, fwd, &csp->headers->first->str);
-
    /*
     * We have a request. Check if one of the crunchers wants it
     * unless the client wants to use TLS/SSL in which case we
@@ -4246,7 +4302,60 @@ static void chat(struct client_state *csp)
       return;
    }
 
+#ifdef FEATURE_HTTPS_INSPECTION
+   if (client_use_ssl(csp) && !use_ssl_tunnel)
+   {
+      int ret;
+      /*
+       * Creating a SSL proxy.
+       *
+       * By sending the CSUCCEED message we're lying to the client as
+       * the connection hasn't actually been established yet. We don't
+       * establish the connection until we have seen and parsed the
+       * encrypted client headers.
+       */
+      if (write_socket_delayed(csp->cfd, CSUCCEED,
+            strlen(CSUCCEED), get_write_delay(csp)) != 0)
+      {
+         log_error(LOG_LEVEL_ERROR, "Sending SUCCEED to client failed");
+         return;
+      }
+
+      ret = create_client_ssl_connection(csp);
+      if (ret != 0)
+      {
+         log_error(LOG_LEVEL_ERROR,
+            "Failed to open a secure connection with the client");
+         return;
+      }
+      if (JB_ERR_OK != process_encrypted_request_headers(csp))
+      {
+         close_client_ssl_connection(csp);
+         return;
+      }
+      /*
+       * We have an encrypted request. Check if one of the crunchers now
+       * wants it (for example because the previously invisible path was
+       * required to match).
+       */
+      if (crunch_response_triggered(csp, crunchers_all))
+      {
+         /*
+          * Yes. The client got the crunch response and we're done here.
+          */
+         return;
+      }
+   }
+#endif
+
    log_applied_actions(csp->action);
+
+   /* decide how to route the HTTP request */
+   fwd = forward_url(csp, http);
+
+   freez(csp->headers->first->str);
+   build_request_line(csp, fwd, &csp->headers->first->str);
+
    if (fwd->forward_host)
    {
       log_error(LOG_LEVEL_CONNECT, "via [%s]:%d to: %s",
@@ -4294,51 +4403,7 @@ static void chat(struct client_state *csp)
          mark_connection_closed(&csp->server_connection);
       }
 #endif /* def FEATURE_CONNECTION_KEEP_ALIVE */
-#ifdef FEATURE_HTTPS_INSPECTION
-      if (client_use_ssl(csp) && !use_ssl_tunnel)
-      {
-         int ret;
-         /*
-          * Creating a SSL proxy.
-          *
-          * By sending the CSUCCEED message we're lying to the client as
-          * the connection hasn't actually been established yet. We don't
-          * establish the connection until we have seen and parsed the
-          * encrypted client headers.
-          */
-         if (write_socket_delayed(csp->cfd, CSUCCEED,
-               strlen(CSUCCEED), get_write_delay(csp)) != 0)
-         {
-            log_error(LOG_LEVEL_ERROR, "Sending SUCCEED to client failed");
-            return;
-         }
 
-         ret = create_client_ssl_connection(csp);
-         if (ret != 0)
-         {
-            log_error(LOG_LEVEL_ERROR,
-               "Failed to open a secure connection with the client");
-            return;
-         }
-         if (JB_ERR_OK != process_encrypted_request(csp))
-         {
-            close_client_ssl_connection(csp);
-            return;
-         }
-         /*
-          * We have an encrypted request. Check if one of the crunchers now
-          * wants it (for example because the previously invisible path was
-          * required to match).
-          */
-         if (crunch_response_triggered(csp, crunchers_all))
-         {
-            /*
-             * Yes. The client got the crunch response and we're done here.
-             */
-            return;
-         }
-      }
-#endif
       /*
        * Connecting to destination server
        */
@@ -4834,6 +4899,22 @@ static void serve(struct client_state *csp)
 #endif
             close_socket(csp->server_connection.sfd);
             mark_connection_closed(&csp->server_connection);
+#ifdef FEATURE_HTTPS_INSPECTION
+            if (continue_chatting && client_use_ssl(csp))
+            {
+               /*
+                * Close the client socket as well as Privoxy currently
+                * can't establish a new server connection when the client
+                * socket is reused and would drop the connection in
+                * continue_https_chat() anyway.
+                */
+               continue_chatting = 0;
+               csp->flags &= ~CSP_FLAG_CLIENT_CONNECTION_KEEP_ALIVE;
+               log_error(LOG_LEVEL_CONNECT,
+                  "Client socket %d is no longer usable. "
+                  "The server socket has been closed.", csp->cfd);
+            }
+#endif
          }
       }
 
@@ -5751,15 +5832,18 @@ static jb_socket bind_port_helper(const char *haddr, int hport, int backlog)
                "can't bind to %s:%d: There may be another Privoxy "
                "or some other proxy running on port %d",
                bind_address, hport, hport);
+            exit(-1);
 
          case -2:
             log_error(LOG_LEVEL_FATAL,
                "can't bind to %s:%d: The hostname is not resolvable",
                bind_address, hport);
+            exit(-1);
 
          default:
             log_error(LOG_LEVEL_FATAL, "can't bind to %s:%d: %E",
                bind_address, hport);
+            exit(-1);
       }
 
       /* shouldn't get here */
@@ -6029,7 +6113,7 @@ static void listen_loop(void)
       if ((0 != config->max_client_connections)
          && (active_threads >= config->max_client_connections))
       {
-         log_error(LOG_LEVEL_CONNECT,
+         log_error(LOG_LEVEL_ERROR,
             "Rejecting connection from %s. Maximum number of connections reached.",
             csp->ip_addr_str);
          write_socket_delayed(csp->cfd, TOO_MANY_CONNECTIONS_RESPONSE,
@@ -6065,7 +6149,7 @@ static void listen_loop(void)
          }
 #endif
 
-#if defined(_WIN32) && !defined(_CYGWIN) && !defined(SELECTED_ONE_OPTION)
+#if defined(_WIN32) && !defined(SELECTED_ONE_OPTION)
 #define SELECTED_ONE_OPTION
          child_id = _beginthread(
             (void (*)(void *))serve,
@@ -6198,6 +6282,8 @@ static void listen_loop(void)
 #ifdef FEATURE_GRACEFUL_TERMINATION
 
    log_error(LOG_LEVEL_INFO, "Graceful termination requested.");
+
+   close_ports_helper(bfds);
 
    unload_current_config_file();
    unload_current_actions_file();

@@ -4,7 +4,7 @@
 <head>
   <title>The Main Configuration File</title>
   <meta name="GENERATOR" content="Modular DocBook HTML Stylesheet Version 1.79">
-  <link rel="HOME" title="Privoxy 3.0.32 User Manual" href="index.html">
+  <link rel="HOME" title="Privoxy 3.0.33 User Manual" href="index.html">
   <link rel="PREVIOUS" title="Privoxy Configuration" href="configuration.html">
   <link rel="NEXT" title="Actions Files" href="actions-file.html">
   <link rel="STYLESHEET" type="text/css" href="../p_doc.css">
@@ -15,7 +15,7 @@
   <div class="NAVHEADER">
     <table summary="Header navigation table" width="100%" border="0" cellpadding="0" cellspacing="0">
       <tr>
-        <th colspan="3" align="center">Privoxy 3.0.32 User Manual</th>
+        <th colspan="3" align="center">Privoxy 3.0.33 User Manual</th>
       </tr>
       <tr>
         <td width="10%" align="left" valign="bottom"><a href="configuration.html" accesskey="P">Prev</a></td>
@@ -573,7 +573,7 @@
               <p>A debug level of 1 is informative because it will show you each request as it happens. <span class=
               "emphasis"><i class="EMPHASIS">1, 1024, 4096 and 8192 are recommended</i></span> so that you will notice
               when things go wrong. The other levels are probably only of interest if you are hunting down a specific
-              problem. They can produce a hell of an output (especially 16).</p>
+              problem. They can produce a lot of output (especially 16).</p>
               <p>If you are used to the more verbose settings, simply enable the debug lines below again.</p>
               <p>If you want to use pure CLF (Common Log Format), you should set <span class="QUOTE">"debug 512"</span>
               <span class="emphasis"><i class="EMPHASIS">ONLY</i></span> and not enable anything else.</p>
@@ -708,8 +708,8 @@
               behaves differently.</p>
               <p>If you configure <span class="APPLICATION">Privoxy</span> to be reachable from the network, consider
               using <a href="config.html#ACLS">access control lists</a> (ACL's, see below), and/or a firewall.</p>
-              <p>If you open <span class="APPLICATION">Privoxy</span> to untrusted users, you will also want to make
-              sure that the following actions are disabled: <tt class="LITERAL"><a href=
+              <p>If you open <span class="APPLICATION">Privoxy</span> to untrusted users, you should also make sure
+              that the following actions are disabled: <tt class="LITERAL"><a href=
               "config.html#ENABLE-EDIT-ACTIONS">enable-edit-actions</a></tt> and <tt class="LITERAL"><a href=
               "config.html#ENABLE-REMOTE-TOGGLE">enable-remote-toggle</a></tt></p>
             </dd>
@@ -1438,7 +1438,7 @@
               <table border="0" bgcolor="#E0E0E0" width="90%">
                 <tr>
                   <td>
-                    <pre class="SCREEN"> forward           localhost/     .</pre>
+                    <pre class="SCREEN">  forward           localhost/     .</pre>
                   </td>
                 </tr>
               </table>
@@ -1837,8 +1837,8 @@
             <dd>
               <p>Note that reusing connections doesn't necessary cause speedups. There are also a few privacy
               implications you should be aware of.</p>
-              <p>If this option is effective, outgoing connections are shared between clients (if there are more than
-              one) and closing the browser that initiated the outgoing connection does no longer affect the connection
+              <p>If this option is enabled, outgoing connections are shared between clients (if there are more than
+              one) and closing the browser that initiated the outgoing connection does not affect the connection
               between <span class="APPLICATION">Privoxy</span> and the server unless the client's request hasn't been
               completed yet.</p>
               <p>If the outgoing connection is idle, it will not be closed until either <span class=
@@ -1887,6 +1887,21 @@
             <dd>
               <p>The default is quite high and you probably want to reduce it. If you aren't using an occasionally slow
               proxy like Tor, reducing it to a few seconds should be fine.</p>
+              <div class="WARNING">
+                <table class="WARNING" border="1" width="90%">
+                  <tr>
+                    <td align="center"><b>Warning</b></td>
+                  </tr>
+                  <tr>
+                    <td align="left">
+                      <p>When a TLS library is being used to read or write data from a socket with <tt class=
+                      "LITERAL"><a href="actions-file.html#HTTPS-INSPECTION" target="_top">https-inspection</a></tt>
+                      enabled the socket-timeout currently isn't applied and the timeout used depends on the library
+                      (which may not even use a timeout).</p>
+                    </td>
+                  </tr>
+                </table>
+              </div>
             </dd>
             <dt>Example:</dt>
             <dd>
@@ -1912,12 +1927,9 @@
             <dd>
               <p>128</p>
             </dd>
-            <dt>Effect if unset:</dt>
-            <dd>
-              <p>Connections are served until a resource limit is reached.</p>
-            </dd>
             <dt>Notes:</dt>
             <dd>
+              <p>Connections are served until a resource limit is reached.</p>
               <p><span class="APPLICATION">Privoxy</span> creates one thread (or process) for every incoming client
               connection that isn't rejected based on the access control settings.</p>
               <p>If the system is powerful enough, <span class="APPLICATION">Privoxy</span> can theoretically deal with
@@ -1937,9 +1949,13 @@
               <p>Obviously using this option only makes sense if you choose a limit below the one enforced by the
               operating system.</p>
               <p>One most POSIX-compliant systems <span class="APPLICATION">Privoxy</span> can't properly deal with
-              more than FD_SETSIZE file descriptors at the same time and has to reject connections if the limit is
-              reached. This will likely change in a future version, but currently this limit can't be increased without
-              recompiling <span class="APPLICATION">Privoxy</span> with a different FD_SETSIZE limit.</p>
+              more than FD_SETSIZE file descriptors if <span class="APPLICATION">Privoxy</span> has been configured to
+              use select() and has to reject connections if the limit is reached. When using select() this limit
+              therefore can't be increased without recompiling <span class="APPLICATION">Privoxy</span> with a
+              different FD_SETSIZE limit unless <span class="APPLICATION">Privoxy</span> is running on Windows with
+              _WIN32 defined.</p>
+              <p>When <span class="APPLICATION">Privoxy</span> has been configured to use poll() the FD_SETSIZE limit
+              does not apply.</p>
             </dd>
             <dt>Example:</dt>
             <dd>
@@ -2134,18 +2150,18 @@
               <table border="0" bgcolor="#E0E0E0" width="90%">
                 <tr>
                   <td>
-                    <pre class="SCREEN">    # Best speed (compared to the other levels)
-    compression-level 1
+                    <pre class="SCREEN">  # Best speed (compared to the other levels)
+  compression-level 1
 
-    # Best compression
-    compression-level 9
+  # Best compression
+  compression-level 9
 
-    # No compression. Only useful for testing as the added header
-    # slightly increases the amount of data that has to be sent.
-    # If your benchmark shows that using this compression level
-    # is superior to using no compression at all, the benchmark
-    # is likely to be flawed.
-    compression-level 0</pre>
+  # No compression. Only useful for testing as the added header
+  # slightly increases the amount of data that has to be sent.
+  # If your benchmark shows that using this compression level
+  # is superior to using no compression at all, the benchmark
+  # is likely to be flawed.
+  compression-level 0</pre>
                   </td>
                 </tr>
               </table>
@@ -2513,7 +2529,21 @@
             <dd>
               <p>This directive specifies the password for the CA keyfile that is used when Privoxy generates
               certificates for intercepted requests.</p>
-              <p>Note that the password is shown on the CGI page so don't reuse an important one.</p>
+              <div class="WARNING">
+                <table class="WARNING" border="1" width="90%">
+                  <tr>
+                    <td align="center"><b>Warning</b></td>
+                  </tr>
+                  <tr>
+                    <td align="left">
+                      <p>Note that the password is shown on the CGI page so don't reuse an important one.</p>
+                      <p>If disclosure of the password is a compliance issue consider blocking the relevant CGI
+                      requests after enabling the <a href="config.html#ENFORCE-BLOCKS">enforce-blocks</a> and <a href=
+                      "config.html#ALLOW-CGI-REQUEST-CRUNCHING">allow-cgi-request-crunching</a>.</p>
+                    </td>
+                  </tr>
+                </table>
+              </div>
             </dd>
             <dt>Example:</dt>
             <dd>
@@ -2624,38 +2654,37 @@
                 <tr>
                   <td>
                     <pre class="SCREEN">    # Explicitly set a couple of ciphers with names used by MbedTLS
-    cipher-list cipher-list TLS-ECDHE-RSA-WITH-CHACHA20-POLY1305-SHA256:\
-TLS-ECDHE-ECDSA-WITH-CHACHA20-POLY1305-SHA256:\
-TLS-DHE-RSA-WITH-CHACHA20-POLY1305-SHA256:\
-TLS-ECDHE-ECDSA-WITH-AES-128-GCM-SHA256:\
-TLS-ECDHE-ECDSA-WITH-AES-256-GCM-SHA384:\
-TLS-ECDHE-ECDSA-WITH-AES-256-CCM:\
-TLS-ECDHE-ECDSA-WITH-AES-256-CCM-8:\
-TLS-ECDHE-ECDSA-WITH-AES-128-CCM:\
-TLS-ECDHE-ECDSA-WITH-AES-128-CCM-8:\
-TLS-ECDHE-ECDSA-WITH-CAMELLIA-128-GCM-SHA256:\
-TLS-ECDHE-ECDSA-WITH-CAMELLIA-256-GCM-SHA384:\
-TLS-ECDHE-RSA-WITH-AES-128-GCM-SHA256:\
-TLS-ECDHE-RSA-WITH-AES-256-GCM-SHA384:\
-TLS-ECDHE-RSA-WITH-CAMELLIA-128-GCM-SHA256:\
-TLS-ECDHE-RSA-WITH-CAMELLIA-256-GCM-SHA384:\
-TLS-DHE-RSA-WITH-AES-256-GCM-SHA384:\
-TLS-DHE-RSA-WITH-AES-128-GCM-SHA256:\
-TLS-DHE-RSA-WITH-AES-256-CCM:\
-TLS-DHE-RSA-WITH-AES-256-CCM-8:\
-TLS-DHE-RSA-WITH-AES-128-CCM:\
-TLS-DHE-RSA-WITH-AES-128-CCM-8:\
-TLS-DHE-RSA-WITH-CAMELLIA-128-GCM-SHA256:\
-TLS-DHE-RSA-WITH-CAMELLIA-256-GCM-SHA384:\
-TLS-ECDH-RSA-WITH-AES-128-GCM-SHA256:\
-TLS-ECDH-RSA-WITH-AES-256-GCM-SHA384:\
-TLS-ECDH-RSA-WITH-CAMELLIA-128-GCM-SHA256:\
-TLS-ECDH-RSA-WITH-CAMELLIA-256-GCM-SHA384:\
-TLS-ECDH-ECDSA-WITH-AES-128-GCM-SHA256:\
-TLS-ECDH-ECDSA-WITH-AES-256-GCM-SHA384:\
-TLS-ECDH-ECDSA-WITH-CAMELLIA-128-GCM-SHA256:\
-TLS-ECDH-ECDSA-WITH-CAMELLIA-256-GCM-SHA384
-   </pre>
+  cipher-list cipher-list TLS-ECDHE-RSA-WITH-CHACHA20-POLY1305-SHA256:\
+  TLS-ECDHE-ECDSA-WITH-CHACHA20-POLY1305-SHA256:\
+  TLS-DHE-RSA-WITH-CHACHA20-POLY1305-SHA256:\
+  TLS-ECDHE-ECDSA-WITH-AES-128-GCM-SHA256:\
+  TLS-ECDHE-ECDSA-WITH-AES-256-GCM-SHA384:\
+  TLS-ECDHE-ECDSA-WITH-AES-256-CCM:\
+  TLS-ECDHE-ECDSA-WITH-AES-256-CCM-8:\
+  TLS-ECDHE-ECDSA-WITH-AES-128-CCM:\
+  TLS-ECDHE-ECDSA-WITH-AES-128-CCM-8:\
+  TLS-ECDHE-ECDSA-WITH-CAMELLIA-128-GCM-SHA256:\
+  TLS-ECDHE-ECDSA-WITH-CAMELLIA-256-GCM-SHA384:\
+  TLS-ECDHE-RSA-WITH-AES-128-GCM-SHA256:\
+  TLS-ECDHE-RSA-WITH-AES-256-GCM-SHA384:\
+  TLS-ECDHE-RSA-WITH-CAMELLIA-128-GCM-SHA256:\
+  TLS-ECDHE-RSA-WITH-CAMELLIA-256-GCM-SHA384:\
+  TLS-DHE-RSA-WITH-AES-256-GCM-SHA384:\
+  TLS-DHE-RSA-WITH-AES-128-GCM-SHA256:\
+  TLS-DHE-RSA-WITH-AES-256-CCM:\
+  TLS-DHE-RSA-WITH-AES-256-CCM-8:\
+  TLS-DHE-RSA-WITH-AES-128-CCM:\
+  TLS-DHE-RSA-WITH-AES-128-CCM-8:\
+  TLS-DHE-RSA-WITH-CAMELLIA-128-GCM-SHA256:\
+  TLS-DHE-RSA-WITH-CAMELLIA-256-GCM-SHA384:\
+  TLS-ECDH-RSA-WITH-AES-128-GCM-SHA256:\
+  TLS-ECDH-RSA-WITH-AES-256-GCM-SHA384:\
+  TLS-ECDH-RSA-WITH-CAMELLIA-128-GCM-SHA256:\
+  TLS-ECDH-RSA-WITH-CAMELLIA-256-GCM-SHA384:\
+  TLS-ECDH-ECDSA-WITH-AES-128-GCM-SHA256:\
+  TLS-ECDH-ECDSA-WITH-AES-256-GCM-SHA384:\
+  TLS-ECDH-ECDSA-WITH-CAMELLIA-128-GCM-SHA256:\
+  TLS-ECDH-ECDSA-WITH-CAMELLIA-256-GCM-SHA384</pre>
                   </td>
                 </tr>
               </table>
@@ -2663,25 +2692,24 @@ TLS-ECDH-ECDSA-WITH-CAMELLIA-256-GCM-SHA384
                 <tr>
                   <td>
                     <pre class="SCREEN">    # Explicitly set a couple of ciphers with names used by OpenSSL
-cipher-list ECDHE-RSA-AES256-GCM-SHA384:\
-ECDHE-ECDSA-AES256-GCM-SHA384:\
-DH-DSS-AES256-GCM-SHA384:\
-DHE-DSS-AES256-GCM-SHA384:\
-DH-RSA-AES256-GCM-SHA384:\
-DHE-RSA-AES256-GCM-SHA384:\
-ECDH-RSA-AES256-GCM-SHA384:\
-ECDH-ECDSA-AES256-GCM-SHA384:\
-ECDHE-RSA-AES128-GCM-SHA256:\
-ECDHE-ECDSA-AES128-GCM-SHA256:\
-DH-DSS-AES128-GCM-SHA256:\
-DHE-DSS-AES128-GCM-SHA256:\
-DH-RSA-AES128-GCM-SHA256:\
-DHE-RSA-AES128-GCM-SHA256:\
-ECDH-RSA-AES128-GCM-SHA256:\
-ECDH-ECDSA-AES128-GCM-SHA256:\
-ECDHE-RSA-AES256-GCM-SHA384:\
-AES128-SHA
-   </pre>
+  cipher-list ECDHE-RSA-AES256-GCM-SHA384:\
+  ECDHE-ECDSA-AES256-GCM-SHA384:\
+  DH-DSS-AES256-GCM-SHA384:\
+  DHE-DSS-AES256-GCM-SHA384:\
+  DH-RSA-AES256-GCM-SHA384:\
+  DHE-RSA-AES256-GCM-SHA384:\
+  ECDH-RSA-AES256-GCM-SHA384:\
+  ECDH-ECDSA-AES256-GCM-SHA384:\
+  ECDHE-RSA-AES128-GCM-SHA256:\
+  ECDHE-ECDSA-AES128-GCM-SHA256:\
+  DH-DSS-AES128-GCM-SHA256:\
+  DHE-DSS-AES128-GCM-SHA256:\
+  DH-RSA-AES128-GCM-SHA256:\
+  DHE-RSA-AES128-GCM-SHA256:\
+  ECDH-RSA-AES128-GCM-SHA256:\
+  ECDH-ECDSA-AES128-GCM-SHA256:\
+  ECDHE-RSA-AES256-GCM-SHA384:\
+  AES128-SHA</pre>
                   </td>
                 </tr>
               </table>
@@ -2690,8 +2718,7 @@ AES128-SHA
                   <td>
                     <pre class=
                     "SCREEN">    # Use keywords instead of explicitly naming the ciphers (Does not work with MbedTLS)
-    cipher-list ALL:!EXPORT:!EXPORT40:!EXPORT56:!aNULL:!LOW:!RC4:@STRENGTH
-   </pre>
+  cipher-list ALL:!EXPORT:!EXPORT40:!EXPORT56:!aNULL:!LOW:!RC4:@STRENGTH</pre>
                   </td>
                 </tr>
               </table>

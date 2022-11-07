@@ -1187,7 +1187,7 @@ LRESULT CALLBACK LogWindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lPara
 
       case WM_SHOWWINDOW:
          g_bShowLogWindow = wParam;
-      case WM_SIZE:
+      case WM_SIZE:  /* note: implicit-fallthrough */
          /* Resize the logging window to fit the new frame */
          if (g_hwndLogBox)
          {

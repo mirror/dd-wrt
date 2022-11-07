@@ -76,6 +76,10 @@ LDFLAGS="${LDFLAGS} -fstack-protector-strong"
 LDFLAGS="${LDFLAGS} -Wl,--nxcompat"
 # https://en.wikipedia.org/wiki/Data_Execution_Prevention
 #   Enable DEP with -Wl,--nxcompat
+# also called NX or nxcompat for "no execute"  see: https://en.wikipedia.org/wiki/NX_bit
+#   $ peflags -v privoxy.exe
+#   privoxy.exe: coff(0x0106[+executable_image,+line_nums_stripped,+32bit_machine]) pe(0x0140[+dynamicbase,+nxcompat])
+
 
 LDFLAGS="${LDFLAGS} -Wl,--dynamicbase,--export-all-symbols"
 # https://en.wikipedia.org/wiki/Address_space_layout_randomization
@@ -126,15 +130,15 @@ CFLAGS="${CFLAGS} -Wshadow"
 # why does the mingw library _not_ include .a files for libpcre?
 # *sigh* build my own pcre so I can do static linking
 # Get the 8.x PCRE library from  https://ftp.pcre.org/pub/pcre/
-inc="/source/pcre-8.44/"
-lib="/source/pcre-8.44/.libs"
+inc="/source/pcre-8.45/"
+lib="/source/pcre-8.45/.libs"
 CPPFLAGS="${CPPFLAGS} -I${inc}"
 LDFLAGS="${LDFLAGS} -L${lib}"
 
 # mbedtls
 # Get the 2.16.x mbedtls library from  https://github.com/ARMmbed/mbedtls/tags
-inc="/source/mbedtls-2.16.9/include"
-lib="/source/mbedtls-2.16.9/library"
+inc="/source/mbedtls-2.16.11/include"
+lib="/source/mbedtls-2.16.11/library"
 MITMOPT="--with-mbedtls"
 CPPFLAGS="${CPPFLAGS} -I${inc}"
 LDFLAGS="${LDFLAGS} -L${lib}"
@@ -158,11 +162,11 @@ echo "LDFLAGS=${LDFLAGS}"
 #    --target: only used to build a cross-compiling toolchain.
 
 ./configure  --host=i686-w64-mingw32  --enable-mingw32  --enable-zlib \
+             --enable-extended-statistics \
+             --enable-pcre-host-patterns \
              --enable-static-linking \
              --enable-strptime-sanity-checks \
              --disable-pthread  \
-             --enable-extended-statistics \
-             --enable-pcre-host-patterns \
              --with-brotli  \
              --with-mbedtls \
              --with-docbook=yes

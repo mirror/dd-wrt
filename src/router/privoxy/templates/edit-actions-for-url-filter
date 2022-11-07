@@ -22,7 +22,7 @@
   <td class="dis1" align="center" valign="middle"><input type="radio" name="filter_r@index@" value="N" @this-filter-n@></td>
   <td class="noc1" align="center" valign="middle"><input type="radio" name="filter_r@index@" value="X" @this-filter-x@></td>
   <td class="action">
-    <input type="hidden" name="filter_t@index@" value="@abbr-filter-type@">
+    <input type="hidden" name="filter_t@index@" value="@abbr-action-type@">
     <input type="hidden" name="filter_n@index@" value="@name@">
     <a href="@user-manual@@actions-help-prefix@@anchor@">@filter-type@</a> @name@
   </td>

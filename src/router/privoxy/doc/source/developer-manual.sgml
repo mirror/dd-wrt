@@ -5,7 +5,7 @@
 <!entity p-intro SYSTEM "privoxy.sgml">
 <!entity history SYSTEM "history.sgml">
 <!entity seealso SYSTEM "seealso.sgml">
-<!entity p-version "3.0.32">
+<!entity p-version "3.0.33">
 <!entity p-status "stable">
 <!entity % p-not-stable "IGNORE">
 <!entity % p-stable "INCLUDE">
@@ -2057,7 +2057,7 @@ fk@t520 ~ $privoxy-regression-test.pl --test-number 785 --verbose --debug 4
 2020-12-14 12:17:56: Ooops. Expected removal but: 'Referer: https://p.p/' is still there.
 2020-12-14 12:17:56: Failure for test 785 (0/13/5). Header 'Referer: https://p.p/' and tag 'hide-referrer{conditional-block}'
 2020-12-14 12:17:56: Executed 1 regression tests. Skipped 1201. 0 successes, 1 failures.
-     </programlisting>
+</programlisting>
      <para>
       Use the if the <command>--privoxy-address</command> option if the
       http_proxy environment variable isn't configured and you don't want
@@ -2257,7 +2257,7 @@ $ afl-fuzz -i input/ -o output/ -f bla.filter -m none privoxy --fuzz filter bla.
       </listitem>
       <listitem>
        <para>
-         Update the code status (CODE_STATUS="xxx") in configure.in to one of
+         Update the code status (CODE_STATUS="xxx") in <filename>configure.in</filename> to one of
          "alpha", "beta" or "stable".
        </para>
       </listitem>
@@ -2280,7 +2280,7 @@ $ ./configure                # rebuild GNUmakefile
        <para>
         If action file processing has changed and is not backward-compatible,
         make sure the "for-privoxy-version=x.y.z" minimum version number in
-        default.action.master has been updated:
+        <filename>default.action.master</filename> has been updated:
        </para>
         <programlisting>
 {{settings}}
@@ -2294,12 +2294,12 @@ for-privoxy-version=3.0.11
         Create the change log:
        </para>
        <programlisting>
-  $ git tag
-  #   to see the tags
-  $ git log [last release tag]..master &gt; /tmp/log
-  #   get the commit log since the last release
-  $ utils/makeChangeLog /tmp/log &gt; /tmp/change.log
-  #   reformat the commit log
+$ git tag
+#   to see the tags
+$ git log [last release tag]..master &gt; /tmp/log
+#   get the commit log since the last release
+$ utils/makeChangeLog /tmp/log &gt; /tmp/change.log
+#   reformat the commit log
 </programlisting>
        <para>
         Edit <filename>/tmp/change.log</filename> to remove trivial
@@ -2322,7 +2322,7 @@ for-privoxy-version=3.0.11
         <filename>doc/source/changelog.sgml</filename>:
        </para>
        <programlisting>
-  $ utils/changelog2doc.pl /tmp/change.log &gt;| doc/source/changelog.sgml
+$ utils/changelog2doc.pl /tmp/change.log &gt;| doc/source/changelog.sgml
 </programlisting>
       </listitem>
       <listitem>
@@ -2333,13 +2333,18 @@ for-privoxy-version=3.0.11
       </listitem>
       <listitem>
        <para>
+        Update the announcement at <filename>doc/webserver/announce.txt</filename>.
+       </para>
+      </listitem>
+      <listitem>
+       <para>
         All documentation should be rebuilt:
        <programlisting>
-  $ make man
-  $ make dok
-  $ make dok-man
-  $ make dok-tidy
-  $ make config-file
+$ make man
+$ make dok
+$ make dok-man
+$ make dok-tidy
+$ make config-file
 </programlisting>
         Finished docs should be then be committed to Git (for those
         without the ability to build these). Some docs may require
@@ -2412,11 +2417,11 @@ for-privoxy-version=3.0.11
      </para>
 
       <programlisting>
-  mkdir dist # delete or choose different name if it already exists
-  cd dist
-  git clone https://www.privoxy.org/git/privoxy.git
-  cd privoxy
-  git checkout v_X_Y_Z
+mkdir dist # delete or choose different name if it already exists
+cd dist
+git clone https://www.privoxy.org/git/privoxy.git
+cd privoxy
+git checkout v_X_Y_Z
 </programlisting>
 
     <para>
@@ -2566,13 +2571,13 @@ for-privoxy-version=3.0.11
         packages" above). Then run from that directory:
       </para>
         <programlisting>
-  autoheader && autoconf && ./configure
+autoheader && autoconf && ./configure
 </programlisting>
       <para>
         Then do:
       </para>
         <programlisting>
-  make tarball-dist
+make tarball-dist
 </programlisting>
     </sect3>
 
@@ -2591,17 +2596,32 @@ for-privoxy-version=3.0.11
         First, <emphasis>make sure that you have freshly exported the right
         version into an empty directory</emphasis>. (See "Building and releasing
         packages" above).
-        <!-- XXX  ??? are we still basing releases off a tarball???
-          -->
       </para>
+
+      <para>
+        Check that you have the current versions of the
+        <ulink url="https://sourceforge.net/projects/nsis/files/NSIS%203/">
+                    NSIS installer</ulink>,
+        <ulink url="https://ftp.pcre.org/pub/pcre/">PCRE library</ulink>,
+        <ulink url="https://tls.mbed.org/download">MBED TLS library</ulink>,
+        <ulink url="https://github.com/google/brotli/releases">
+                    Brotli library</ulink>,
+        and that the <emphasis>MAKENSIS</emphasis> evar in
+        <filename>windows/GNUMakefile</filename>
+        points to the NSIS installer program.  (See the
+        <ulink url="../user-manual/installation.html#WINBUILD-CYGWIN">
+        <emphasis>Building from Source / Windows</emphasis></ulink>
+        section of the User Manual for details.)
+      </para>
+
       <para>
         Then you can build the package.  This is fully automated, and is
         controlled by <filename>windows/GNUmakefile</filename>.
         All you need to do is:
       </para>
       <programlisting>
-  cd windows
-  make
+cd windows
+make
 </programlisting>
       <para>
         Now you can manually rename <filename>privoxy_setup.exe</filename> to
@@ -2611,8 +2631,8 @@ for-privoxy-version=3.0.11
         GPG sign the installer and zip file,
       </para>
       <programlisting>
-  $ gpg --armor --detach --sign <filename>privoxy_setup_X.Y.Z.exe</filename>
-  $ gpg --armor --detach --sign <filename>privoxy_X.Y.Z.zip</filename>
+gpg --armor --detach --sign <filename>privoxy_setup_X.Y.Z.exe</filename>
+gpg --armor --detach --sign <filename>privoxy_X.Y.Z.zip</filename>
 </programlisting>
       <para>
         and upload the files to SourceForge.
@@ -2629,62 +2649,62 @@ for-privoxy-version=3.0.11
        Using git-buildpackage we start with a clone of the last Debian version:
       </para>
       <programlisting>
-  gbp clone https://salsa.debian.org/debian/privoxy.git
-  cd privoxy
+gbp clone https://salsa.debian.org/debian/privoxy.git
+cd privoxy
 </programlisting>
       <para>
        or if the repository is already there
       </para>
       <programlisting>
-  cd privoxy
-  gbp pull
+cd privoxy
+gbp pull
 </programlisting>
       <para>
        Now import the newly released upstream tarball via debian/watch file:
       </para>
       <programlisting>
-  gbp import-orig --uscan
+gbp import-orig --uscan
 </programlisting>
       <para>
        Next update all Debian quilt patches to the new version:
       </para>
       <programlisting>
-  while quilt push; do quilt refresh; done
+while quilt push; do quilt refresh; done
 </programlisting>
       <para>
        If some patch is no longer required (because it is already merged
        upstream), it can be removed using
       </para>
       <programlisting>
-  quilt delete XX_patchname.patch
-  git rm debian/patches/XX_patchname.patch
+quilt delete XX_patchname.patch
+git rm debian/patches/XX_patchname.patch
 </programlisting>
       <para>
        If the patch needs modification, you can apply, edit and update it with
       </para>
       <programlisting>
-  quilt push -f
-  quilt edit some_file
-  quilt refresh
+quilt push -f
+quilt edit some_file
+quilt refresh
 </programlisting>
       <para>
        until
       </para>
       <programlisting>
-  while quilt push; do quilt refresh; done
+while quilt push; do quilt refresh; done
 </programlisting>
       <para>
        succeeds. Then you can
       </para>
       <programlisting>
-  quilt pop -a
+quilt pop -a
 </programlisting>
       <para>
        Now add a new entry to the debian/changelog representing the new
        version:
       </para>
       <programlisting>
-  dch -v &p-version;-1
+dch -v &p-version;-1
 </programlisting>
       <para>
        and describe what you did before and don't forget to git commit all
@@ -2694,26 +2714,26 @@ for-privoxy-version=3.0.11
        Now you can build the package on the local machine using
       </para>
       <programlisting>
-  gbp buildpackage -us -uc
+gbp buildpackage -us -uc
 </programlisting>
       <para>
        You should check for warnings using
       </para>
       <programlisting>
-  lintian -iI ../build-area/privoxy_&p-version;-1_amd64.changes
+lintian -iI ../build-area/privoxy_&p-version;-1_amd64.changes
 </programlisting>
       <para>
        Maybe rebuild the package in different defined cowbuilder environments
        like
       </para>
       <programlisting>
-  sudo cowbuilder --build --basepath /var/cache/pbuilder/base.cow ../build-area/privoxy_&p-version;-1.dsc
+sudo cowbuilder --build --basepath /var/cache/pbuilder/base.cow ../build-area/privoxy_&p-version;-1.dsc
 </programlisting>
       <para>
        And try to run autopackage testing suite on the result:
       </para>
       <programlisting>
-  autopkgtest /var/cache/pbuilder/result/privoxy_&p-version;-1_amd64.changes -s -- schroot sid
+autopkgtest /var/cache/pbuilder/result/privoxy_&p-version;-1_amd64.changes -s -- schroot sid
 </programlisting>
       <para>
        Or just push the changes to salsa.debian.org, where a CI pipeline is
@@ -2726,8 +2746,8 @@ for-privoxy-version=3.0.11
        Then sign both files:
       </para>
       <programlisting>
-  gpg --detach-sign --armor privoxy_&p-version;-1_i386.deb
-  gpg --detach-sign --armor privoxy_&p-version;-1_amd64.deb
+gpg --detach-sign --armor privoxy_&p-version;-1_i386.deb
+gpg --detach-sign --armor privoxy_&p-version;-1_amd64.deb
 </programlisting>
       <para>
        Create a README file containing the recent block from debian/changelog
@@ -2743,34 +2763,34 @@ for-privoxy-version=3.0.11
        run the following commands:
       </para>
       <programlisting>
-  sudo apt install build-essential devscripts
-  sudo apt-get build-dep privoxy
+sudo apt install build-essential devscripts
+sudo apt-get build-dep privoxy
 </programlisting>
       <para>
        After this enter the checked out privoxy git tree and check that all
        (new) build dependencies are met:
       </para>
       <programlisting>
-  dpkg-checkbuilddeps
+dpkg-checkbuilddeps
 </programlisting>
       <para>
        If something is missing, just add it using
       </para>
       <programlisting>
-  sudo apt install foobar
+sudo apt install foobar
 </programlisting>
       <para>
        Now you may update debian/changelog, especially the version number
        using
       </para>
       <programlisting>
-  dch
+dch
 </programlisting>
       <para>
        and finally build the package:
       </para>
       <programlisting>
-  debuild -us -uc -b
+debuild -us -uc -b
 </programlisting>
       <para>
        If everything went okay, you may find the resulting Debian package in
@@ -2780,15 +2800,15 @@ for-privoxy-version=3.0.11
        You may want to clean up the build tree using
       </para>
       <programlisting>
-  debian/rules clean
+debian/rules clean
 </programlisting>
       <para>
        And maybe repair some artefacts using one or both of the following
        commands:
       </para>
       <programlisting>
-  git reset --hard
-  git clean -fd
+git reset --hard
+git clean -fd
 </programlisting>
     </sect4>
     </sect3>
@@ -2812,8 +2832,9 @@ for-privoxy-version=3.0.11
           follows into a folder parallel to the exported privoxy source:
         </para>
           <programlisting>
-  cvs -z3 -d:pserver:anonymous@ijbswa.cvs.sourceforge.net:/cvsroot/ijbswa co OSXPackageBuilder
+cvs -z3 -d:pserver:anonymous@ijbswa.cvs.sourceforge.net:/cvsroot/ijbswa co OSXPackageBuilder
 </programlisting>
+<!-- FIXME  cvs is no more!!! -->
         <para>
           The module contains complete instructions on its usage in the file
           <filename>OS X Package Builder HOWTO.txt</filename>.
@@ -2839,14 +2860,15 @@ for-privoxy-version=3.0.11
           exported privoxy source:
         </para>
           <programlisting>
-  cvs -z3 -d:pserver:anonymous@ijbswa.cvs.sourceforge.net:/cvsroot/ijbswa co osxsetup
+cvs -z3 -d:pserver:anonymous@ijbswa.cvs.sourceforge.net:/cvsroot/ijbswa co osxsetup
 </programlisting>
+<!--  FIXME  cvs is no more -->
         <para>
           Then run:
         </para>
           <programlisting>
-  cd osxsetup
-  build
+cd osxsetup
+build
 </programlisting>
         <para>
           This will run <filename>autoheader</filename>, <filename>autoconf</filename>
@@ -2861,7 +2883,7 @@ for-privoxy-version=3.0.11
         name, you can then create the distributable zip file with the command:
         </para>
           <programlisting>
-  zip -r privoxyosx_setup_x.y.z.zip Privoxy.pkg
+zip -r privoxyosx_setup_x.y.z.zip Privoxy.pkg
 </programlisting>
         <para>
           You can then upload this file directly to the Files section of the
@@ -2883,8 +2905,9 @@ for-privoxy-version=3.0.11
           exported privoxy source:
         </para>
           <programlisting>
-  cvs -z3 -d:pserver:anonymous@ijbswa.cvs.sourceforge.net:/cvsroot/ijbswa co macsetup
+cvs -z3 -d:pserver:anonymous@ijbswa.cvs.sourceforge.net:/cvsroot/ijbswa co macsetup
 </programlisting>
+<!-- FIXME  cvs is no more -->
         <para>
           The module contains complete instructions on its usage in its
           <filename>README</filename> file. The end result will be the
@@ -2988,7 +3011,7 @@ for-privoxy-version=3.0.11
     SGML files, do:
    </para>
     <programlisting>
-  make dok
+make dok && make dok-tidy
 </programlisting>
    <para>
     That will generate <filename>doc/webserver/user-manual</filename>,
@@ -3013,7 +3036,7 @@ for-privoxy-version=3.0.11
     If these are docs in the stable branch, then do:
    </para>
     <programlisting>
-  make webserver
+make webserver
 </programlisting>
    <para>
     This will do the upload to the SourceForge webserver (which is manually

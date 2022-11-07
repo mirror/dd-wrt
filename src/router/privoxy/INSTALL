@@ -39,8 +39,8 @@ compiler like gcc are required.
 
 When building from a source tarball, first unpack the source:
 
- tar xzvf privoxy-3.0.32-stable-src.tar.gz
- cd privoxy-3.0.32-stable
+  tar xzvf privoxy-3.0.33-stable-src.tar.gz
+  cd privoxy-3.0.33-stable
 
 To build the development version, you can get the source code by doing:
 
@@ -71,13 +71,13 @@ Some binary packages may do this for you.
 
 Then, to build from either unpacked tarball or Git checkout:
 
- autoheader
- autoconf
- ./configure      # (--help to see options)
- make             # (the make from GNU, sometimes called gmake)
- su               # Possibly required
- make -n install  # (to see where all the files will go)
- make -s install  # (to really install, -s to silence output)
+  autoheader
+  autoconf
+  ./configure      # (--help to see options)
+  make             # (the make from GNU, sometimes called gmake)
+  su               # Possibly required
+  make -n install  # (to see where all the files will go)
+  make -s install  # (to really install, -s to silence output)
 
 Using GNU make, you can have the first four steps automatically done for you by
 just typing:
@@ -90,7 +90,7 @@ To build an executable with security enhanced features so that users cannot
 easily bypass the proxy (e.g. "Go There Anyway"), or alter their own
 configurations, configure like this:
 
- ./configure  --disable-toggle  --disable-editor  --disable-force
+  ./configure  --disable-toggle  --disable-editor  --disable-force
 
 Note that all of these options can also be disabled through the configuration
 file.
@@ -110,7 +110,7 @@ be run as this same user to insure write access to configuration and log files!
 Alternately, you can specify user and group on the make command line, but be
 sure both already exist:
 
- make -s install  USER=privoxy GROUP=privoxy
+  make -s install  USER=privoxy GROUP=privoxy
 
 The default installation path for make install is /usr/local. This may of
 course be customized with the various ./configure path options. If you are

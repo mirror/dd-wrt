@@ -710,6 +710,8 @@ adlibris.
 ada*.
 # URL = https://www.adrianschmutzler.net/
 adri*.
+# URL = https://adguard.com/
+adguard.com/
 
 #############################################################################
 # Generic block patterns by path:
@@ -1009,9 +1011,15 @@ tag.crsspxl.com/
 #MASTER# BLOCK-REFERRER: https://www.heise.de/news/Komplettausfall-Youtube-Gmail-und-andere-Google-Dienste-nicht-erreichbar-4989007.html
 # Blocked URL = https://eu-tlp03.kameleoon.com/visit.gif?lp=1&spt=1607679917743&p=c2l0...kNvdW50PTA%3D
 eu-tlp03.kameleoon.com/
+#MASTER# BLOCK-REFERRER: https://www.heise.de/news/Ex-EuGH-Richterin-gegen-flaechendeckende-Scans-auf-Kinderpornografie-6000260.html
+# Blocked URL = https://eu-tlp01.kameleoon.eu/visit.gif?lp=3&spt=1616489479420&p=c2...udD0w
+eu-tlp01.kameleoon.eu/
 #MASTER# BLOCK-REFERRER: https://www.ksta.de/ratgeber/digital/plattform-moodle-streikt-viele-schueler-koennen-nicht-arbeiten---gebauer-weiss-von-nichts-37913640
 # Blocked = https://lb46.s400.meetrics.net/data?/3lBMFQ7WAUkzF3MGRuQAAASVAK56BBPbAAREA/BAGAAAACfVBMAACHBA6BACxBASCACjAArCACfAA3CACfAADDACxAAPDACQAAoDACiAAAEACiAAZEAChAAlEACyAA9EACRAAKFACgAAWFACiAAiFAC8DAKFACQAA9EACRAAxEACQAAlEACgAAZEACSAAoDACRAAPDACPAADDACRAAfCAChAASCACUBAGCACyEA6BACrEAGCAC/BASCACvRA3CACQAAoDACSAAAEACRAANEACQAAxEACSAAWFACRAA6FACPAAHGACSAAfGACOAAQHACRAAoHACSAANIACRAA+IACNAAiJACQAAfKACRAA4KACRAAcLACQAA1LACRAAZMACeAAlMAC1AAyMACDTABMACiAA1LACwAAoLACzAAcLACyAAQLACiAAELACgAA4KACSAArKACSAAfKACPAATKACSAAHKACPAAuJACQAAWJACSAAKJACRAABIACOAAoHACRAAQHACRAA3GACQAArGACiAAfGACJEArGACRAA3GACQAAEHACSAAQHACQAAcHACW/AoHACCBA0HACzAABIACRAANIACNAAxIACSAAKJACRAAiJACQAAuJACQAATKACRAAELACmAA1LACLAANMACSAAyMAChAAvNACQAAgOACRAA4OACPAAQPACTAABQACRAAmQACOAA+QACRAAKRACRAAjRACRAA7RACSAAHSACRAAgSACOAAsSACSAAETACQAARTAChAAdTACoCApTACeLA1TACRAABUACzBAOUAC4CAaUAPHYATVAhWAJAAAAPnAAPVAfWAGAAAARksFAQtjF/unwTA
 .s400.meetrics.net/
+#MASTER# BLOCK-REFERRER: https://arstechnica.com/gadgets/2021/04/xinuos-finishes-picking-up-scos-mantle-by-suing-red-hat-and-ibm/
+# Blocked URL = https://fpa-events.arstechnica.com/plogger/?rand=1617351238373&plid=36453403&idsite=arstechnica.com&url=https%3A%2F%2Farstechnica.com%2Fgadgets%2F2021%2F04%2Fxinuos-finishes-picking-up-scos-mantle-by-suing-red-hat-and-ibm%2F&urlref=&screen=1366x768%7C1366x768%7C24&data=%7B%7D&sid=1&surl=https%3A%2F%2Farstechnica.com%2Fgadgets%2F2021%2F04%2Fxinuos-finishes-picking-up-scos-mantle-by-suing-red-hat-and-ibm%2F&sref=&sts=1617351085989&slts=0&date=Fri+Apr+02+2021+10%3A13%3A58+GMT%2B0200+(CEST)&action=heartbeat&inc=4&tt=4371&pvid=50890683&u=pid%3Df5e180d3fca67aa29521f1510e59850b
+fpa-events.arstechnica.com/
 
 
 #############################################################################
@@ -2030,6 +2038,10 @@ belco24.de/
 .tagesschau.de/
 # URL = https://metrics.sr.ht/graph
 metrics.sr.ht/
+# URL = https://nlnet.nl/logo/banner.png
+nlnet.nl/
+# URL = https://adv-archiv.dfn-cert.de/adv/2021-2222/
+adv-archiv.dfn-cert.de/
 
 
 #############################################################################
@@ -2247,6 +2259,12 @@ issue.freebsdfoundation.org/
 .linkedin.com/
 # URL = https://www.golem.de/sonstiges/zustimmung/auswahl.html?from=https%3A%2F%2Fwww.golem.de%2Fnews%2Flinux-rust-wandert-ins-system-2102-154041.html
 .golem.de/
+# URL = https://idp.springer.com/authorize?response_type=cookie&client_id=springerlink&redirect_uri=http%3A%2F%2Flink.springer.com%2Fchapter%2F10.1007%2F978-3-319-00948-3_4
+idp.springer.com/
+# URL = https://login.microsoftonline.com/common/oauth2/authorize?client_id=00000006-0000-0ff1-ce00-000000000000&response_mode=form_post&response_type=code%20id_token&scope=openid%20profile&state=OpenIdConnect.AuthenticationProperties%3DPVPUdMPDQIWzMIsGOsfeSSwP9nHxMVzXDpwiEjukrVUCKS8OhdDdPhwWoL-M6sb8ft25tA0k8CUQIi-GyfgdmiNoSPRaGCiGLfB8TnvS5OR-1ri16BlPJrQzzv9yBIv_IkuFid0AvW5PYlXFpg1kgByUkEkVfnMK1_bOTPU7CpI&nonce=637504532331900462.Y2Y0YzJhYjEtYTdkMS00NTI1LTgxNDMtYjBhY2NmNWQ4MDg4NWQ5ODY4ZjItMzBjZi00Nzk5LTgzMDAtOGNmMjg5ZThhZmM1&redirect_uri=https%3A%2F%2Fportal.microsoft.com%2Flanding&ui_locales=pl-PL&mkt=pl-PL&client-request-id=843ff515-5e48-4fa8-a22b-edd72858073a&x-client-SKU=ID_NET45&x-client-ver=6.6.0.0
+.microsoftonline.com/
+# URL = https://www.zeit.de/zustimmung?url=https%3A%2F%2Fwww.zeit.de%2F2021%2F46%2Fchristian-drosten-coronavirus-virologie-pandemie-wissenschaft-impfung%2Fseite-4
+.zeit.de/zustimmung
 
 {+redirect{s@.*url=@http://@} -block}
 # Sticky Actions = +redirect -block

@@ -54,51 +54,51 @@
       <table border="0" bgcolor="#E0E0E0" width="100%">
         <tr>
           <td>
-            <pre class="PROGRAMLISTING">fk@t520 ~/git/privoxy $git checkout master
-Switched to branch 'master'
-Your branch is up to date with 'origin/master'.
-# Make sure you have the latest changes
-fk@t520 ~/git/privoxy $git pull
-Already up to date.
-# Create a local banch for changes
-fk@t520 ~/git/privoxy $git checkout -b local-branch
-Switched to a new branch 'local-branch'
-# Create some change
-fk@t520 ~/git/privoxy $gmake dok dok-tidy
-[...]
-# Review your change
-fk@t520 ~/git/privoxy $git diff
-[...]
-# Commit your changes if they look goood
-fk@t520 ~/git/privoxy $git commit -m "developer-manual: Regenerate" doc/webserver/
-[local-branch 1abb7316] developer-manual: Regenerate
- 1 file changed, 2 insertions(+), 2 deletions(-)
-# Review your commit
-fk@t520 ~/git/privoxy $git show
-[...]
-# Go to the master branch
-fk@t520 ~/git/privoxy $git checkout master
-Switched to branch 'master'
-Your branch is up to date with 'origin/master'.
-# Make sure you are still in sync
-fk@t520 ~/git/privoxy $git pull
-[...]
-Already up to date.
-# Apply the commit you made to the local-branch
-fk@t520 ~/git/privoxy $git cherry-pick local-branch
-[master 046e85e2] developer-manual: Regenerate
- Date: Tue Dec 15 05:10:07 2020 +0100
- 1 file changed, 2 insertions(+), 2 deletions(-)
-# Make sure the history looks as expected
-fk@t520 ~/git/privoxy $git log -p
-# Finally push your change to the Privoxy repository
-fk@t520 ~/git/privoxy $git push
-[...]
-# Go back to the local branch
-fk@t520 ~/git/privoxy $git checkout local-branch
-# Rebase on top of master and continue hacking
-fk@t520 ~/git/privoxy $git rebase master
-Successfully rebased and updated refs/heads/local-branch.</pre>
+            <pre class="PROGRAMLISTING">  fk@t520 ~/git/privoxy $git checkout master
+  Switched to branch 'master'
+  Your branch is up to date with 'origin/master'.
+  # Make sure you have the latest changes
+  fk@t520 ~/git/privoxy $git pull
+  Already up to date.
+  # Create a local banch for changes
+  fk@t520 ~/git/privoxy $git checkout -b local-branch
+  Switched to a new branch 'local-branch'
+  # Create some change
+  fk@t520 ~/git/privoxy $gmake dok dok-tidy
+  [...]
+  # Review your change
+  fk@t520 ~/git/privoxy $git diff
+  [...]
+  # Commit your changes if they look goood
+  fk@t520 ~/git/privoxy $git commit -m "developer-manual: Regenerate" doc/webserver/
+  [local-branch 1abb7316] developer-manual: Regenerate
+   1 file changed, 2 insertions(+), 2 deletions(-)
+  # Review your commit
+  fk@t520 ~/git/privoxy $git show
+  [...]
+  # Go to the master branch
+  fk@t520 ~/git/privoxy $git checkout master
+  Switched to branch 'master'
+  Your branch is up to date with 'origin/master'.
+  # Make sure you are still in sync
+  fk@t520 ~/git/privoxy $git pull
+  [...]
+  Already up to date.
+  # Apply the commit you made to the local-branch
+  fk@t520 ~/git/privoxy $git cherry-pick local-branch
+  [master 046e85e2] developer-manual: Regenerate
+   Date: Tue Dec 15 05:10:07 2020 +0100
+   1 file changed, 2 insertions(+), 2 deletions(-)
+  # Make sure the history looks as expected
+  fk@t520 ~/git/privoxy $git log -p
+  # Finally push your change to the Privoxy repository
+  fk@t520 ~/git/privoxy $git push
+  [...]
+  # Go back to the local branch
+  fk@t520 ~/git/privoxy $git checkout local-branch
+  # Rebase on top of master and continue hacking
+  fk@t520 ~/git/privoxy $git rebase master
+  Successfully rebased and updated refs/heads/local-branch.</pre>
           </td>
         </tr>
       </table>

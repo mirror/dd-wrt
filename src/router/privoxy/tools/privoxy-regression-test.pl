@@ -372,7 +372,7 @@ sub tokenize($) {
     my ($token, $value) = (undef, undef);
 
     # Remove leading and trailing white space and a
-    # a leading <pre> which is part of the first line.
+    # leading <pre> which is part of the first line.
     s@^\s*(<pre>)?@@;
     s@\s*$@@;
 

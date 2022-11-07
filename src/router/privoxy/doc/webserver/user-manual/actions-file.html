@@ -4,7 +4,7 @@
 <head>
   <title>Actions Files</title>
   <meta name="GENERATOR" content="Modular DocBook HTML Stylesheet Version 1.79">
-  <link rel="HOME" title="Privoxy 3.0.32 User Manual" href="index.html">
+  <link rel="HOME" title="Privoxy 3.0.33 User Manual" href="index.html">
   <link rel="PREVIOUS" title="The Main Configuration File" href="config.html">
   <link rel="NEXT" title="Filter Files" href="filter-file.html">
   <link rel="STYLESHEET" type="text/css" href="../p_doc.css">
@@ -15,7 +15,7 @@
   <div class="NAVHEADER">
     <table summary="Header navigation table" width="100%" border="0" cellpadding="0" cellspacing="0">
       <tr>
-        <th colspan="3" align="center">Privoxy 3.0.32 User Manual</th>
+        <th colspan="3" align="center">Privoxy 3.0.33 User Manual</th>
       </tr>
       <tr>
         <td width="10%" align="left" valign="bottom"><a href="config.html" accesskey="P">Prev</a></td>
@@ -245,9 +245,9 @@
             <pre class="SCREEN">  { +<tt class="LITERAL">handle-as-image</tt>  +<tt class=
             "LITERAL">block{Banner ads.}</tt> }
   # Block these as if they were images. Send no block page.
-   banners.example.com
-   media.example.com/.*banners
-   .example.com/images/ads/</pre>
+  banners.example.com
+  media.example.com/.*banners
+  .example.com/images/ads/</pre>
           </td>
         </tr>
       </table>
@@ -526,17 +526,17 @@
         <table border="0" bgcolor="#E0E0E0" width="100%">
           <tr>
             <td>
-              <pre class="SCREEN"># If the admin defined the client-specific-tag circumvent-blocks,
-# and the request comes from a client that previously requested
-# the tag to be set, overrule all previous +block actions that
-# are enabled based on URL to CLIENT-TAG patterns.
-{-block}
-CLIENT-TAG:^circumvent-blocks$
+              <pre class="SCREEN">  # If the admin defined the client-specific-tag circumvent-blocks,
+  # and the request comes from a client that previously requested
+  # the tag to be set, overrule all previous +block actions that
+  # are enabled based on URL to CLIENT-TAG patterns.
+  {-block}
+  CLIENT-TAG:^circumvent-blocks$
 
-# This section is not overruled because it's located after
-# the previous one.
-{+block{Nobody is supposed to request this.}}
-example.org/blocked-example-page</pre>
+  # This section is not overruled because it's located after
+  # the previous one.
+  {+block{Nobody is supposed to request this.}}
+  example.org/blocked-example-page</pre>
             </td>
           </tr>
         </table>
@@ -603,7 +603,7 @@ example.org/blocked-example-page</pre>
   -<tt class="REPLACEABLE"><i>name</i></tt>{<tt class=
 "REPLACEABLE"><i>param</i></tt>}   # remove the parameter <tt class=
 "REPLACEABLE"><i>param</i></tt> from the list of parameters
-                # If it was the last one left, disable the action.
+                 # If it was the last one left, disable the action.
   <tt class=
 "REPLACEABLE"><i>-name</i></tt>          # disable this action completely and remove all parameters from the list</pre>
               </td>
@@ -658,16 +658,16 @@ example.org/blocked-example-page</pre>
               <table border="0" bgcolor="#E0E0E0" width="90%">
                 <tr>
                   <td>
-                    <pre class="SCREEN"># Add a DNT ("Do not track") header to all requests,
-# event to those that already have one.
-#
-# This is just an example, not a recommendation.
-#
-# There is no reason to believe that user-tracking websites care
-# about the DNT header and depending on the User-Agent, adding the
-# header may make user-tracking easier.
-{+add-header{DNT: 1}}
-/</pre>
+                    <pre class="SCREEN">  # Add a DNT ("Do not track") header to all requests,
+  # event to those that already have one.
+  #
+  # This is just an example, not a recommendation.
+  #
+  # There is no reason to believe that user-tracking websites care
+  # about the DNT header and depending on the User-Agent, adding the
+  # header may make user-tracking easier.
+  {+add-header{DNT: 1}}
+  /</pre>
                   </td>
                 </tr>
               </table>
@@ -725,18 +725,18 @@ example.org/blocked-example-page</pre>
               <table border="0" bgcolor="#E0E0E0" width="90%">
                 <tr>
                   <td>
-                    <pre class="SCREEN">{+block{No nasty stuff for you.}}
-# Block and replace with "blocked" page
- .nasty-stuff.example.com
+                    <pre class="SCREEN">  {+block{No nasty stuff for you.}}
+  # Block and replace with "blocked" page
+  .nasty-stuff.example.com
 
-{+block{Doubleclick banners.} +handle-as-image}
-# Block and replace with image
- .ad.doubleclick.net
- .ads.r.us/banners/
+  {+block{Doubleclick banners.} +handle-as-image}
+  # Block and replace with image
+  .ad.doubleclick.net
+  .ads.r.us/banners/
 
-{+block{Layered ads.} +handle-as-empty-document}
-# Block and then ignore
- adserver.example.net/.*\.js$</pre>
+  {+block{Layered ads.} +handle-as-empty-document}
+  # Block and then ignore
+  adserver.example.net/.*\.js$</pre>
                   </td>
                 </tr>
               </table>
@@ -785,7 +785,7 @@ example.org/blocked-example-page</pre>
               <table border="0" bgcolor="#E0E0E0" width="90%">
                 <tr>
                   <td>
-                    <pre class="SCREEN">+change-x-forwarded-for{block}</pre>
+                    <pre class="SCREEN">  +change-x-forwarded-for{block}</pre>
                   </td>
                 </tr>
               </table>
@@ -840,9 +840,9 @@ example.org/blocked-example-page</pre>
               <table border="0" bgcolor="#E0E0E0" width="90%">
                 <tr>
                   <td>
-                    <pre class="SCREEN"># Hide Tor exit notation in Host and Referer Headers
-{+client-header-filter{hide-tor-exit-notation}}
-/</pre>
+                    <pre class="SCREEN">  # Hide Tor exit notation in Host and Referer Headers
+  {+client-header-filter{hide-tor-exit-notation}}
+  /</pre>
                   </td>
                 </tr>
               </table>
@@ -888,9 +888,9 @@ example.org/blocked-example-page</pre>
               <table border="0" bgcolor="#E0E0E0" width="90%">
                 <tr>
                   <td>
-                    <pre class="SCREEN"># Remove "test" everywhere in the request body
-{+client-body-filter{remove-test}}
-/</pre>
+                    <pre class="SCREEN">  # Remove "test" everywhere in the request body
+  {+client-body-filter{remove-test}}
+  /</pre>
                   </td>
                 </tr>
               </table>
@@ -932,63 +932,63 @@ example.org/blocked-example-page</pre>
               <table border="0" bgcolor="#E0E0E0" width="90%">
                 <tr>
                   <td>
-                    <pre class="SCREEN"># Tag every request with the User-Agent header
-{+client-header-tagger{user-agent}}
-/
+                    <pre class="SCREEN">  # Tag every request with the User-Agent header
+  {+client-header-tagger{user-agent}}
+  /
 
-# Tagging itself doesn't change the action
-# settings, sections with TAG patterns do:
-#
-# If it's a download agent, use a different forwarding proxy,
-# show the real User-Agent and make sure resume works.
-{+forward-override{forward-socks5 10.0.0.2:2222 .} \
- -hide-if-modified-since      \
- -overwrite-last-modified     \
- -hide-user-agent             \
- -filter                      \
- -deanimate-gifs              \
-}
-TAG:^User-Agent: NetBSD-ftp/
-TAG:^User-Agent: Novell ZYPP Installer
-TAG:^User-Agent: RPM APT-HTTP/
-TAG:^User-Agent: fetch libfetch/
-TAG:^User-Agent: Ubuntu APT-HTTP/
-TAG:^User-Agent: MPlayer/</pre>
+  # Tagging itself doesn't change the action
+  # settings, sections with TAG patterns do:
+  #
+  # If it's a download agent, use a different forwarding proxy,
+  # show the real User-Agent and make sure resume works.
+  {+forward-override{forward-socks5 10.0.0.2:2222 .} \
+   -hide-if-modified-since      \
+   -overwrite-last-modified     \
+   -hide-user-agent             \
+   -filter                      \
+   -deanimate-gifs              \
+  }
+  TAG:^User-Agent: NetBSD-ftp/
+  TAG:^User-Agent: Novell ZYPP Installer
+  TAG:^User-Agent: RPM APT-HTTP/
+  TAG:^User-Agent: fetch libfetch/
+  TAG:^User-Agent: Ubuntu APT-HTTP/
+  TAG:^User-Agent: MPlayer/</pre>
                   </td>
                 </tr>
               </table>
               <table border="0" bgcolor="#E0E0E0" width="90%">
                 <tr>
                   <td>
-                    <pre class="SCREEN"># Tag all requests with the Range header set
-{+client-header-tagger{range-requests}}
-/
+                    <pre class="SCREEN">  # Tag all requests with the Range header set
+  {+client-header-tagger{range-requests}}
+  /
 
-# Disable filtering for the tagged requests.
-#
-# With filtering enabled Privoxy would remove the Range headers
-# to be able to filter the whole response. The downside is that
-# it prevents clients from resuming downloads or skipping over
-# parts of multimedia files.
-{-filter -deanimate-gifs}
-TAG:^RANGE-REQUEST$</pre>
+  # Disable filtering for the tagged requests.
+  #
+  # With filtering enabled Privoxy would remove the Range headers
+  # to be able to filter the whole response. The downside is that
+  # it prevents clients from resuming downloads or skipping over
+  # parts of multimedia files.
+  {-filter -deanimate-gifs}
+  TAG:^RANGE-REQUEST$</pre>
                   </td>
                 </tr>
               </table>
               <table border="0" bgcolor="#E0E0E0" width="90%">
                 <tr>
                   <td>
-                    <pre class="SCREEN"># Tag all requests with the client IP address
-#
-# (Technically the client IP address isn't included in the
-# client headers but client-header taggers can set it anyway.
-# For details see the tagger in default.filter)
-{+client-header-tagger{client-ip-address}}
-/
+                    <pre class="SCREEN">  # Tag all requests with the client IP address
+  #
+  # (Technically the client IP address isn't included in the
+  # client headers but client-header taggers can set it anyway.
+  # For details see the tagger in default.filter)
+  {+client-header-tagger{client-ip-address}}
+  /
 
-# Change forwarding settings for requests coming from address 10.0.0.1
-{+forward-override{forward-socks5 127.0.1.2:2222 .}}
-TAG:^IP-ADDRESS: 10\.0\.0\.1$</pre>
+  # Change forwarding settings for requests coming from address 10.0.0.1
+  {+forward-override{forward-socks5 127.0.1.2:2222 .}}
+  TAG:^IP-ADDRESS: 10\.0\.0\.1$</pre>
                   </td>
                 </tr>
               </table>
@@ -1050,14 +1050,14 @@ TAG:^IP-ADDRESS: 10\.0\.0\.1$</pre>
               <table border="0" bgcolor="#E0E0E0" width="90%">
                 <tr>
                   <td>
-                    <pre class="SCREEN"># Check if www.example.net/ really uses valid XHTML
-{ +content-type-overwrite{application/xml} }
-www.example.net/
+                    <pre class="SCREEN">  # Check if www.example.net/ really uses valid XHTML
+  { +content-type-overwrite{application/xml} }
+  www.example.net/
 
-# but leave the content type unmodified if the URL looks like a style sheet
-{-content-type-overwrite}
-www.example.net/.*\.css$
-www.example.net/.*style</pre>
+  # but leave the content type unmodified if the URL looks like a style sheet
+  {-content-type-overwrite}
+  www.example.net/.*\.css$
+  www.example.net/.*style</pre>
                   </td>
                 </tr>
               </table>
@@ -1114,9 +1114,9 @@ www.example.net/.*style</pre>
               <table border="0" bgcolor="#E0E0E0" width="90%">
                 <tr>
                   <td>
-                    <pre class="SCREEN"># Block the non-existent "Privacy-Violation:" client header
-{ +crunch-client-header{Privacy-Violation:} }
-/</pre>
+                    <pre class="SCREEN">  # Block the non-existent "Privacy-Violation:" client header
+  { +crunch-client-header{Privacy-Violation:} }
+  /</pre>
                   </td>
                 </tr>
               </table>
@@ -1163,12 +1163,12 @@ www.example.net/.*style</pre>
               <table border="0" bgcolor="#E0E0E0" width="90%">
                 <tr>
                   <td>
-                    <pre class="SCREEN"># Let the browser revalidate cached documents but don't
-# allow the server to use the revalidation headers for user tracking.
-{+hide-if-modified-since{-60} \
- +overwrite-last-modified{randomize} \
- +crunch-if-none-match}
-/</pre>
+                    <pre class="SCREEN">  # Let the browser revalidate cached documents but don't
+  # allow the server to use the revalidation headers for user tracking.
+  {+hide-if-modified-since{-60} \
+   +overwrite-last-modified{randomize} \
+   +crunch-if-none-match}
+  /</pre>
                   </td>
                 </tr>
               </table>
@@ -1214,7 +1214,7 @@ www.example.net/.*style</pre>
               <table border="0" bgcolor="#E0E0E0" width="90%">
                 <tr>
                   <td>
-                    <pre class="SCREEN">+crunch-incoming-cookies</pre>
+                    <pre class="SCREEN">  +crunch-incoming-cookies</pre>
                   </td>
                 </tr>
               </table>
@@ -1272,9 +1272,9 @@ www.example.net/.*style</pre>
               <table border="0" bgcolor="#E0E0E0" width="90%">
                 <tr>
                   <td>
-                    <pre class="SCREEN"># Crunch server headers that try to prevent caching
-{ +crunch-server-header{no-cache} }
-/</pre>
+                    <pre class="SCREEN">  # Crunch server headers that try to prevent caching
+  { +crunch-server-header{no-cache} }
+  /</pre>
                   </td>
                 </tr>
               </table>
@@ -1319,7 +1319,7 @@ www.example.net/.*style</pre>
               <table border="0" bgcolor="#E0E0E0" width="90%">
                 <tr>
                   <td>
-                    <pre class="SCREEN">+crunch-outgoing-cookies</pre>
+                    <pre class="SCREEN">  +crunch-outgoing-cookies</pre>
                   </td>
                 </tr>
               </table>
@@ -1362,7 +1362,7 @@ www.example.net/.*style</pre>
               <table border="0" bgcolor="#E0E0E0" width="90%">
                 <tr>
                   <td>
-                    <pre class="SCREEN">+deanimate-gifs{last}</pre>
+                    <pre class="SCREEN">  +deanimate-gifs{last}</pre>
                   </td>
                 </tr>
               </table>
@@ -1405,7 +1405,7 @@ www.example.net/.*style</pre>
               <table border="0" bgcolor="#E0E0E0" width="90%">
                 <tr>
                   <td>
-                    <pre class="SCREEN">+delay-response{100}</pre>
+                    <pre class="SCREEN">  +delay-response{100}</pre>
                   </td>
                 </tr>
               </table>
@@ -1451,8 +1451,8 @@ www.example.net/.*style</pre>
               <table border="0" bgcolor="#E0E0E0" width="90%">
                 <tr>
                   <td>
-                    <pre class="SCREEN">{+downgrade-http-version}
-problem-host.example.com</pre>
+                    <pre class="SCREEN">  {+downgrade-http-version}
+  problem-host.example.com</pre>
                   </td>
                 </tr>
               </table>
@@ -1514,7 +1514,7 @@ problem-host.example.com</pre>
               <table border="0" bgcolor="#E0E0E0" width="90%">
                 <tr>
                   <td>
-                    <pre class="SCREEN">+external-filter{fancy-filter}</pre>
+                    <pre class="SCREEN">  +external-filter{fancy-filter}</pre>
                   </td>
                 </tr>
               </table>
@@ -1591,11 +1591,11 @@ problem-host.example.com</pre>
               <table border="0" bgcolor="#E0E0E0" width="90%">
                 <tr>
                   <td>
-                    <pre class="SCREEN"> { +fast-redirects{simple-check} }
-   one.example.com
+                    <pre class="SCREEN">  { +fast-redirects{simple-check} }
+  one.example.com
 
- { +fast-redirects{check-decoded-url} }
-   another.example.com/testing</pre>
+  { +fast-redirects{check-decoded-url} }
+  another.example.com/testing</pre>
                   </td>
                 </tr>
               </table>
@@ -1681,7 +1681,7 @@ problem-host.example.com</pre>
                 <tr>
                   <td>
                     <pre class=
-                    "SCREEN">+filter{js-annoyances}       # Get rid of particularly annoying JavaScript abuse.</pre>
+                    "SCREEN">  +filter{js-annoyances}       # Get rid of particularly annoying JavaScript abuse.</pre>
                   </td>
                 </tr>
               </table>
@@ -1690,7 +1690,7 @@ problem-host.example.com</pre>
                 <tr>
                   <td>
                     <pre class=
-                    "SCREEN">+filter{js-events}           # Kill JavaScript event bindings and timers (Radically destructive! Only for extra nasty sites).</pre>
+                    "SCREEN">  +filter{js-events}           # Kill JavaScript event bindings and timers (Radically destructive! Only for extra nasty sites).</pre>
                   </td>
                 </tr>
               </table>
@@ -1699,7 +1699,7 @@ problem-host.example.com</pre>
                 <tr>
                   <td>
                     <pre class=
-                    "SCREEN">+filter{html-annoyances}     # Get rid of particularly annoying HTML abuse.</pre>
+                    "SCREEN">  +filter{html-annoyances}     # Get rid of particularly annoying HTML abuse.</pre>
                   </td>
                 </tr>
               </table>
@@ -1708,7 +1708,7 @@ problem-host.example.com</pre>
                 <tr>
                   <td>
                     <pre class=
-                    "SCREEN">+filter{content-cookies}     # Kill cookies that come in the HTML or JS content.</pre>
+                    "SCREEN">  +filter{content-cookies}     # Kill cookies that come in the HTML or JS content.</pre>
                   </td>
                 </tr>
               </table>
@@ -1717,7 +1717,7 @@ problem-host.example.com</pre>
                 <tr>
                   <td>
                     <pre class=
-                    "SCREEN">+filter{refresh-tags}        # Kill automatic refresh tags if refresh time is larger than 9 seconds.</pre>
+                    "SCREEN">  +filter{refresh-tags}        # Kill automatic refresh tags if refresh time is larger than 9 seconds.</pre>
                   </td>
                 </tr>
               </table>
@@ -1725,7 +1725,7 @@ problem-host.example.com</pre>
               <table border="0" bgcolor="#E0E0E0" width="90%">
                 <tr>
                   <td>
-                    <pre class="SCREEN">+filter{unsolicited-popups}  # Disable only unsolicited pop-up windows.</pre>
+                    <pre class="SCREEN">  +filter{unsolicited-popups}  # Disable only unsolicited pop-up windows.</pre>
                   </td>
                 </tr>
               </table>
@@ -1733,7 +1733,7 @@ problem-host.example.com</pre>
               <table border="0" bgcolor="#E0E0E0" width="90%">
                 <tr>
                   <td>
-                    <pre class="SCREEN">+filter{all-popups}          # Kill all popups in JavaScript and HTML.</pre>
+                    <pre class="SCREEN">  +filter{all-popups}          # Kill all popups in JavaScript and HTML.</pre>
                   </td>
                 </tr>
               </table>
@@ -1742,7 +1742,7 @@ problem-host.example.com</pre>
                 <tr>
                   <td>
                     <pre class=
-                    "SCREEN">+filter{img-reorder}         # Reorder attributes in &lt;img&gt; tags to make the banners-by-* filters more effective.</pre>
+                    "SCREEN">  +filter{img-reorder}         # Reorder attributes in &lt;img&gt; tags to make the banners-by-* filters more effective.</pre>
                   </td>
                 </tr>
               </table>
@@ -1750,7 +1750,7 @@ problem-host.example.com</pre>
               <table border="0" bgcolor="#E0E0E0" width="90%">
                 <tr>
                   <td>
-                    <pre class="SCREEN">+filter{banners-by-size}     # Kill banners by size.</pre>
+                    <pre class="SCREEN">  +filter{banners-by-size}     # Kill banners by size.</pre>
                   </td>
                 </tr>
               </table>
@@ -1759,7 +1759,7 @@ problem-host.example.com</pre>
                 <tr>
                   <td>
                     <pre class=
-                    "SCREEN">+filter{banners-by-link}     # Kill banners by their links to known clicktrackers.</pre>
+                    "SCREEN">  +filter{banners-by-link}     # Kill banners by their links to known clicktrackers.</pre>
                   </td>
                 </tr>
               </table>
@@ -1768,7 +1768,7 @@ problem-host.example.com</pre>
                 <tr>
                   <td>
                     <pre class=
-                    "SCREEN">+filter{webbugs}             # Squish WebBugs (1x1 invisible GIFs used for user tracking).</pre>
+                    "SCREEN">  +filter{webbugs}             # Squish WebBugs (1x1 invisible GIFs used for user tracking).</pre>
                   </td>
                 </tr>
               </table>
@@ -1777,7 +1777,7 @@ problem-host.example.com</pre>
                 <tr>
                   <td>
                     <pre class=
-                    "SCREEN">+filter{tiny-textforms}      # Extend those tiny textareas up to 40x80 and kill the hard wrap.</pre>
+                    "SCREEN">  +filter{tiny-textforms}      # Extend those tiny textareas up to 40x80 and kill the hard wrap.</pre>
                   </td>
                 </tr>
               </table>
@@ -1786,7 +1786,7 @@ problem-host.example.com</pre>
                 <tr>
                   <td>
                     <pre class=
-                    "SCREEN">+filter{jumping-windows}     # Prevent windows from resizing and moving themselves.</pre>
+                    "SCREEN">  +filter{jumping-windows}     # Prevent windows from resizing and moving themselves.</pre>
                   </td>
                 </tr>
               </table>
@@ -1795,7 +1795,7 @@ problem-host.example.com</pre>
                 <tr>
                   <td>
                     <pre class=
-                    "SCREEN">+filter{frameset-borders}    # Give frames a border and make them resizable.</pre>
+                    "SCREEN">  +filter{frameset-borders}    # Give frames a border and make them resizable.</pre>
                   </td>
                 </tr>
               </table>
@@ -1804,7 +1804,7 @@ problem-host.example.com</pre>
                 <tr>
                   <td>
                     <pre class=
-                    "SCREEN">+filter{iframes}             # Removes all detected iframes. Should only be enabled for individual sites.</pre>
+                    "SCREEN">  +filter{iframes}             # Removes all detected iframes. Should only be enabled for individual sites.</pre>
                   </td>
                 </tr>
               </table>
@@ -1813,7 +1813,7 @@ problem-host.example.com</pre>
                 <tr>
                   <td>
                     <pre class=
-                    "SCREEN">+filter{demoronizer}         # Fix MS's non-standard use of standard charsets.</pre>
+                    "SCREEN">  +filter{demoronizer}         # Fix MS's non-standard use of standard charsets.</pre>
                   </td>
                 </tr>
               </table>
@@ -1821,7 +1821,7 @@ problem-host.example.com</pre>
               <table border="0" bgcolor="#E0E0E0" width="90%">
                 <tr>
                   <td>
-                    <pre class="SCREEN">+filter{shockwave-flash}     # Kill embedded Shockwave Flash objects.</pre>
+                    <pre class="SCREEN">  +filter{shockwave-flash}     # Kill embedded Shockwave Flash objects.</pre>
                   </td>
                 </tr>
               </table>
@@ -1829,7 +1829,7 @@ problem-host.example.com</pre>
               <table border="0" bgcolor="#E0E0E0" width="90%">
                 <tr>
                   <td>
-                    <pre class="SCREEN">+filter{quicktime-kioskmode} # Make Quicktime movies saveable.</pre>
+                    <pre class="SCREEN">  +filter{quicktime-kioskmode} # Make Quicktime movies saveable.</pre>
                   </td>
                 </tr>
               </table>
@@ -1838,7 +1838,7 @@ problem-host.example.com</pre>
                 <tr>
                   <td>
                     <pre class=
-                    "SCREEN">+filter{fun}                 # Text replacements for subversive browsing fun!</pre>
+                    "SCREEN">  +filter{fun}                 # Text replacements for subversive browsing fun!</pre>
                   </td>
                 </tr>
               </table>
@@ -1847,7 +1847,7 @@ problem-host.example.com</pre>
                 <tr>
                   <td>
                     <pre class=
-                    "SCREEN">+filter{crude-parental}      # Crude parental filtering. Note that this filter doesn't work reliably.</pre>
+                    "SCREEN">  +filter{crude-parental}      # Crude parental filtering. Note that this filter doesn't work reliably.</pre>
                   </td>
                 </tr>
               </table>
@@ -1856,7 +1856,7 @@ problem-host.example.com</pre>
                 <tr>
                   <td>
                     <pre class=
-                    "SCREEN">+filter{ie-exploits}         # Disable some known Internet Explorer bug exploits.</pre>
+                    "SCREEN">  +filter{ie-exploits}         # Disable some known Internet Explorer bug exploits.</pre>
                   </td>
                 </tr>
               </table>
@@ -1865,7 +1865,7 @@ problem-host.example.com</pre>
                 <tr>
                   <td>
                     <pre class=
-                    "SCREEN">+filter{site-specifics}      # Cure for site-specific problems. Don't apply generally!</pre>
+                    "SCREEN">  +filter{site-specifics}      # Cure for site-specific problems. Don't apply generally!</pre>
                   </td>
                 </tr>
               </table>
@@ -1874,7 +1874,7 @@ problem-host.example.com</pre>
                 <tr>
                   <td>
                     <pre class=
-                    "SCREEN">+filter{no-ping}             # Removes non-standard ping attributes in &lt;a&gt; and &lt;area&gt; tags.</pre>
+                    "SCREEN">  +filter{no-ping}             # Removes non-standard ping attributes in &lt;a&gt; and &lt;area&gt; tags.</pre>
                   </td>
                 </tr>
               </table>
@@ -1883,7 +1883,7 @@ problem-host.example.com</pre>
                 <tr>
                   <td>
                     <pre class=
-                    "SCREEN">+filter{github}              # Removes the annoying "Sign-Up" banner and the Cookie disclaimer.</pre>
+                    "SCREEN">  +filter{github}              # Removes the annoying "Sign-Up" banner and the Cookie disclaimer.</pre>
                   </td>
                 </tr>
               </table>
@@ -1892,7 +1892,7 @@ problem-host.example.com</pre>
                 <tr>
                   <td>
                     <pre class=
-                    "SCREEN">+filter{google}              # CSS-based block for Google text ads. Also removes a width limitation and the toolbar advertisement.</pre>
+                    "SCREEN">  +filter{google}              # CSS-based block for Google text ads. Also removes a width limitation and the toolbar advertisement.</pre>
                   </td>
                 </tr>
               </table>
@@ -1900,7 +1900,7 @@ problem-host.example.com</pre>
               <table border="0" bgcolor="#E0E0E0" width="90%">
                 <tr>
                   <td>
-                    <pre class="SCREEN">+filter{imdb}                # Removes some ads on IMDb.</pre>
+                    <pre class="SCREEN">  +filter{imdb}                # Removes some ads on IMDb.</pre>
                   </td>
                 </tr>
               </table>
@@ -1909,7 +1909,7 @@ problem-host.example.com</pre>
                 <tr>
                   <td>
                     <pre class=
-                    "SCREEN">+filter{yahoo}               # CSS-based block for Yahoo text ads. Also removes a width limitation.</pre>
+                    "SCREEN">  +filter{yahoo}               # CSS-based block for Yahoo text ads. Also removes a width limitation.</pre>
                   </td>
                 </tr>
               </table>
@@ -1918,7 +1918,7 @@ problem-host.example.com</pre>
                 <tr>
                   <td>
                     <pre class=
-                    "SCREEN">+filter{msn}                 # CSS-based block for MSN text ads. Also removes tracking URLs and a width limitation.</pre>
+                    "SCREEN">  +filter{msn}                 # CSS-based block for MSN text ads. Also removes tracking URLs and a width limitation.</pre>
                   </td>
                 </tr>
               </table>
@@ -1927,7 +1927,7 @@ problem-host.example.com</pre>
                 <tr>
                   <td>
                     <pre class=
-                    "SCREEN">+filter{blogspot}            # Cleans up some Blogspot blogs. Read the fine print before using this.</pre>
+                    "SCREEN">  +filter{blogspot}            # Cleans up some Blogspot blogs. Read the fine print before using this.</pre>
                   </td>
                 </tr>
               </table>
@@ -1936,7 +1936,7 @@ problem-host.example.com</pre>
                 <tr>
                   <td>
                     <pre class=
-                    "SCREEN">+filter{sourceforge}         # Reduces the amount of ads for proprietary software on SourceForge.</pre>
+                    "SCREEN">  +filter{sourceforge}         # Reduces the amount of ads for proprietary software on SourceForge.</pre>
                   </td>
                 </tr>
               </table>
@@ -1993,7 +1993,7 @@ problem-host.example.com</pre>
               <table border="0" bgcolor="#E0E0E0" width="90%">
                 <tr>
                   <td>
-                    <pre class="SCREEN">+force-text-mode</pre>
+                    <pre class="SCREEN">  +force-text-mode</pre>
                   </td>
                 </tr>
               </table>
@@ -2086,21 +2086,21 @@ problem-host.example.com</pre>
               <table border="0" bgcolor="#E0E0E0" width="90%">
                 <tr>
                   <td>
-                    <pre class="SCREEN"># Use an ssh tunnel for requests previously tagged as
-# <span class="QUOTE">"User-Agent: fetch libfetch/2.0"</span> and make sure
-# resuming downloads continues to work.
-#
-# This way you can continue to use Tor for your normal browsing,
-# without overloading the Tor network with your FreeBSD ports updates
-# or downloads of bigger files like ISOs.
-#
-# Note that HTTP headers are easy to fake and therefore their
-# values are as (un)trustworthy as your clients and users.
-{+forward-override{forward-socks5 10.0.0.2:2222 .} \
- -hide-if-modified-since      \
- -overwrite-last-modified     \
-}
-TAG:^User-Agent: fetch libfetch/2\.0$</pre>
+                    <pre class="SCREEN">  # Use an ssh tunnel for requests previously tagged as
+  # <span class="QUOTE">"User-Agent: fetch libfetch/2.0"</span> and make sure
+  # resuming downloads continues to work.
+  #
+  # This way you can continue to use Tor for your normal browsing,
+  # without overloading the Tor network with your FreeBSD ports updates
+  # or downloads of bigger files like ISOs.
+  #
+  # Note that HTTP headers are easy to fake and therefore their
+  # values are as (un)trustworthy as your clients and users.
+  {+forward-override{forward-socks5 10.0.0.2:2222 .} \
+   -hide-if-modified-since      \
+   -overwrite-last-modified     \
+  }
+  TAG:^User-Agent: fetch libfetch/2\.0$</pre>
                   </td>
                 </tr>
               </table>
@@ -2150,10 +2150,10 @@ TAG:^User-Agent: fetch libfetch/2\.0$</pre>
               <table border="0" bgcolor="#E0E0E0" width="90%">
                 <tr>
                   <td>
-                    <pre class="SCREEN"># Block all documents on example.org that end with ".js",
-# but send an empty document instead of the usual HTML message.
-{+block{Blocked JavaScript} +handle-as-empty-document}
-example.org/.*\.js$</pre>
+                    <pre class="SCREEN">  # Block all documents on example.org that end with ".js",
+  # but send an empty document instead of the usual HTML message.
+  {+block{Blocked JavaScript} +handle-as-empty-document}
+  example.org/.*\.js$</pre>
                   </td>
                 </tr>
               </table>
@@ -2204,16 +2204,16 @@ example.org/.*\.js$</pre>
               <table border="0" bgcolor="#E0E0E0" width="90%">
                 <tr>
                   <td>
-                    <pre class="SCREEN"># Generic image extensions:
-#
-{+handle-as-image}
-/.*\.(gif|jpg|jpeg|png|bmp|ico)$
+                    <pre class="SCREEN">  # Generic image extensions:
+  #
+  {+handle-as-image}
+  /.*\.(gif|jpg|jpeg|png|bmp|ico)$
 
-# These don't look like images, but they're banners and should be
-# blocked as images:
-#
-{+block{Nasty banners.} +handle-as-image}
-nasty-banner-server.example.com/junk.cgi\?output=trash</pre>
+  # These don't look like images, but they're banners and should be
+  # blocked as images:
+  #
+  {+block{Nasty banners.} +handle-as-image}
+  nasty-banner-server.example.com/junk.cgi\?output=trash</pre>
                   </td>
                 </tr>
               </table>
@@ -2262,11 +2262,11 @@ nasty-banner-server.example.com/junk.cgi\?output=trash</pre>
               <table border="0" bgcolor="#E0E0E0" width="90%">
                 <tr>
                   <td>
-                    <pre class="SCREEN"># Pretend to use Canadian language settings.
-{+hide-accept-language{en-ca} \
-+hide-user-agent{Mozilla/5.0 (X11; U; OpenBSD i386; en-CA; rv:1.8.0.4) Gecko/20060628 Firefox/1.5.0.4} \
-}
-/</pre>
+                    <pre class="SCREEN">  # Pretend to use Canadian language settings.
+  {+hide-accept-language{en-ca} \
+  +hide-user-agent{Mozilla/5.0 (X11; U; OpenBSD i386; en-CA; rv:1.8.0.4) Gecko/20060628 Firefox/1.5.0.4} \
+  }
+  /</pre>
                   </td>
                 </tr>
               </table>
@@ -2318,11 +2318,12 @@ nasty-banner-server.example.com/junk.cgi\?output=trash</pre>
               <table border="0" bgcolor="#E0E0E0" width="90%">
                 <tr>
                   <td>
-                    <pre class="SCREEN"># Disarm the download link in Sourceforge's patch tracker
-{ -filter \
- +content-type-overwrite{text/plain}\
- +hide-content-disposition{block} }
- .sourceforge.net/tracker/download\.php</pre>
+                    <pre class="SCREEN">  # Disarm the download link in Sourceforge's patch tracker
+  { -filter \
+    +content-type-overwrite{text/plain} \
+    +hide-content-disposition{block} \
+  }
+  .sourceforge.net/tracker/download\.php</pre>
                   </td>
                 </tr>
               </table>
@@ -2377,11 +2378,11 @@ nasty-banner-server.example.com/junk.cgi\?output=trash</pre>
               <table border="0" bgcolor="#E0E0E0" width="90%">
                 <tr>
                   <td>
-                    <pre class="SCREEN"># Let the browser revalidate but make tracking based on the time less likely.
-{+hide-if-modified-since{-60} \
- +overwrite-last-modified{randomize} \
- +crunch-if-none-match}
-/</pre>
+                    <pre class="SCREEN">  # Let the browser revalidate but make tracking based on the time less likely.
+  {+hide-if-modified-since{-60} \
+   +overwrite-last-modified{randomize} \
+   +crunch-if-none-match}
+  /</pre>
                   </td>
                 </tr>
               </table>
@@ -2424,7 +2425,7 @@ nasty-banner-server.example.com/junk.cgi\?output=trash</pre>
               <table border="0" bgcolor="#E0E0E0" width="90%">
                 <tr>
                   <td>
-                    <pre class="SCREEN">+hide-from-header{block}</pre>
+                    <pre class="SCREEN">  +hide-from-header{block}</pre>
                   </td>
                 </tr>
               </table>
@@ -2432,7 +2433,7 @@ nasty-banner-server.example.com/junk.cgi\?output=trash</pre>
               <table border="0" bgcolor="#E0E0E0" width="90%">
                 <tr>
                   <td>
-                    <pre class="SCREEN">+hide-from-header{spam-me-senseless@sittingduck.example.com}</pre>
+                    <pre class="SCREEN">  +hide-from-header{spam-me-senseless@sittingduck.example.com}</pre>
                   </td>
                 </tr>
               </table>
@@ -2505,7 +2506,7 @@ nasty-banner-server.example.com/junk.cgi\?output=trash</pre>
               <table border="0" bgcolor="#E0E0E0" width="90%">
                 <tr>
                   <td>
-                    <pre class="SCREEN">+hide-referrer{forge}</pre>
+                    <pre class="SCREEN">  +hide-referrer{forge}</pre>
                   </td>
                 </tr>
               </table>
@@ -2513,7 +2514,7 @@ nasty-banner-server.example.com/junk.cgi\?output=trash</pre>
               <table border="0" bgcolor="#E0E0E0" width="90%">
                 <tr>
                   <td>
-                    <pre class="SCREEN">+hide-referrer{http://www.yahoo.com/}</pre>
+                    <pre class="SCREEN">  +hide-referrer{http://www.yahoo.com/}</pre>
                   </td>
                 </tr>
               </table>
@@ -2575,7 +2576,7 @@ nasty-banner-server.example.com/junk.cgi\?output=trash</pre>
                 <tr>
                   <td>
                     <pre class=
-                    "SCREEN">+hide-user-agent{Mozilla/5.0 (X11; ElectroBSD i386; rv:78.0) Gecko/20100101 Firefox/78.0}</pre>
+                    "SCREEN">  +hide-user-agent{Mozilla/5.0 (X11; ElectroBSD i386; rv:78.0) Gecko/20100101 Firefox/78.0}</pre>
                   </td>
                 </tr>
               </table>
@@ -2606,8 +2607,8 @@ nasty-banner-server.example.com/junk.cgi\?output=trash</pre>
             <dt>Notes:</dt>
             <dd>
               <p>This action allows <span class="APPLICATION">Privoxy</span> to filter encrypted requests and
-              responses. For this to work <span class="APPLICATION">Privoxy</span> has to generate a certificate and
-              send it to the client which has to accept it.</p>
+              responses. For this to work <span class="APPLICATION">Privoxy</span> has to generate a certificate for
+              the web site and send it to the client which has to accept it.</p>
               <p>Before this works the directives in the <tt class="LITERAL"><a href=
               "config.html#HTTPS-INSPECTION-DIRECTIVES" target="_top">HTTPS inspection section</a></tt> of the config
               file have to be configured.</p>
@@ -2621,8 +2622,8 @@ nasty-banner-server.example.com/junk.cgi\?output=trash</pre>
               <table border="0" bgcolor="#E0E0E0" width="90%">
                 <tr>
                   <td>
-                    <pre class="SCREEN">{+https-inspection}
-www.example.com</pre>
+                    <pre class="SCREEN">  {+https-inspection}
+  www.example.com</pre>
                   </td>
                 </tr>
               </table>
@@ -2667,9 +2668,8 @@ www.example.com</pre>
               <table border="0" bgcolor="#E0E0E0" width="90%">
                 <tr>
                   <td>
-                    <pre class="SCREEN">    {+ignore-certificate-errors}
-    www.example.org
-   </pre>
+                    <pre class="SCREEN">      {+ignore-certificate-errors}
+      www.example.org</pre>
                   </td>
                 </tr>
               </table>
@@ -2717,11 +2717,11 @@ www.example.com</pre>
               <table border="0" bgcolor="#E0E0E0" width="90%">
                 <tr>
                   <td>
-                    <pre class="SCREEN">+limit-connect{443}                   # Port 443 is OK.
-+limit-connect{80,443}                # Ports 80 and 443 are OK.
-+limit-connect{-3, 7, 20-100, 500-}   # Ports less than 3, 7, 20 to 100 and above 500 are OK.
-+limit-connect{-}                     # All ports are OK
-+limit-connect{,}                     # No HTTPS/SSL traffic is allowed</pre>
+                    <pre class="SCREEN">  +limit-connect{443}                   # Port 443 is OK.
+  +limit-connect{80,443}                # Ports 80 and 443 are OK.
+  +limit-connect{-3, 7, 20-100, 500-}   # Ports less than 3, 7, 20 to 100 and above 500 are OK.
+  +limit-connect{-}                     # All ports are OK
+  +limit-connect{,}                     # No HTTPS/SSL traffic is allowed</pre>
                   </td>
                 </tr>
               </table>
@@ -2773,7 +2773,7 @@ www.example.com</pre>
               <table border="0" bgcolor="#E0E0E0" width="90%">
                 <tr>
                   <td>
-                    <pre class="SCREEN">+limit-cookie-lifetime{60}</pre>
+                    <pre class="SCREEN">  +limit-cookie-lifetime{60}</pre>
                   </td>
                 </tr>
               </table>
@@ -2829,23 +2829,23 @@ www.example.com</pre>
               <table border="0" bgcolor="#E0E0E0" width="90%">
                 <tr>
                   <td>
-                    <pre class="SCREEN"># Selectively turn off compression, and enable a filter
-#
-{ +filter{tiny-textforms} +prevent-compression }
-# Match only these sites
- .google.
- sourceforge.net
- sf.net
+                    <pre class="SCREEN">  # Selectively turn off compression, and enable a filter
+  #
+  { +filter{tiny-textforms} +prevent-compression }
+  # Match only these sites
+  .google.
+  sourceforge.net
+  sf.net
 
-# Or instead, we could set a universal default:
-#
-{ +prevent-compression }
- / # Match all sites
+  # Or instead, we could set a universal default:
+  #
+  { +prevent-compression }
+  / # Match all sites
 
-# Then maybe make exceptions for broken sites:
-#
-{ -prevent-compression }
-.compusa.com/</pre>
+  # Then maybe make exceptions for broken sites:
+  #
+  { -prevent-compression }
+  .compusa.com/</pre>
                   </td>
                 </tr>
               </table>
@@ -2903,11 +2903,12 @@ www.example.com</pre>
               <table border="0" bgcolor="#E0E0E0" width="90%">
                 <tr>
                   <td>
-                    <pre class="SCREEN"># Let the browser revalidate without being tracked across sessions
-{ +hide-if-modified-since{-60} \
- +overwrite-last-modified{randomize} \
- +crunch-if-none-match}
-/</pre>
+                    <pre class="SCREEN">  # Let the browser revalidate without being tracked across sessions
+  { +hide-if-modified-since{-60} \
+    +overwrite-last-modified{randomize} \
+    +crunch-if-none-match \
+  }
+  /</pre>
                   </td>
                 </tr>
               </table>
@@ -2960,50 +2961,50 @@ www.example.com</pre>
               <table border="0" bgcolor="#E0E0E0" width="90%">
                 <tr>
                   <td>
-                    <pre class="SCREEN"># Replace example.com's style sheet with another one
-{ +redirect{http://localhost/css-replacements/example.com.css} }
- example.com/stylesheet\.css
+                    <pre class="SCREEN">  # Replace example.com's style sheet with another one
+  { +redirect{http://localhost/css-replacements/example.com.css} }
+  example.com/stylesheet\.css
 
-# Create a short, easy to remember nickname for a favorite site
-# (relies on the browser to accept and forward invalid URLs to <span class="APPLICATION">Privoxy</span>)
-{ +redirect{https://www.privoxy.org/user-manual/actions-file.html} }
- a
+  # Create a short, easy to remember nickname for a favorite site
+  # (relies on the browser to accept and forward invalid URLs to <span class="APPLICATION">Privoxy</span>)
+  { +redirect{https://www.privoxy.org/user-manual/actions-file.html} }
+  a
 
-# Always use the expanded view for Undeadly.org articles
-# (Note the $ at the end of the URL pattern to make sure
-# the request for the rewritten URL isn't redirected as well)
-{+redirect{s@$@&amp;mode=expanded@}}
-undeadly.org/cgi\?action=article&amp;sid=\d*$
+  # Always use the expanded view for Undeadly.org articles
+  # (Note the $ at the end of the URL pattern to make sure
+  # the request for the rewritten URL isn't redirected as well)
+  {+redirect{s@$@&amp;mode=expanded@}}
+  undeadly.org/cgi\?action=article&amp;sid=\d*$
 
-# Redirect Google search requests to MSN
-{+redirect{s@^http://[^/]*/search\?q=([^&amp;]*).*@http://search.msn.com/results.aspx?q=$1@}}
-.google.com/search
+  # Redirect Google search requests to MSN
+  {+redirect{s@^http://[^/]*/search\?q=([^&amp;]*).*@http://search.msn.com/results.aspx?q=$1@}}
+  .google.com/search
 
-# Redirect MSN search requests to Yahoo
-{+redirect{s@^http://[^/]*/results\.aspx\?q=([^&amp;]*).*@http://search.yahoo.com/search?p=$1@}}
-search.msn.com//results\.aspx\?q=
+  # Redirect MSN search requests to Yahoo
+  {+redirect{s@^http://[^/]*/results\.aspx\?q=([^&amp;]*).*@http://search.yahoo.com/search?p=$1@}}
+  search.msn.com//results\.aspx\?q=
 
-# Redirect http://example.com/&amp;bla=fasel&amp;toChange=foo (and any other value but "bar")
-# to       http://example.com/&amp;bla=fasel&amp;toChange=bar
-#
-# The URL pattern makes sure that the following request isn't redirected again.
-{+redirect{s@toChange=[^&amp;]+@toChange=bar@}}
-example.com/.*toChange=(?!bar)
+  # Redirect http://example.com/&amp;bla=fasel&amp;toChange=foo (and any other value but "bar")
+  # to       http://example.com/&amp;bla=fasel&amp;toChange=bar
+  #
+  # The URL pattern makes sure that the following request isn't redirected again.
+  {+redirect{s@toChange=[^&amp;]+@toChange=bar@}}
+  example.com/.*toChange=(?!bar)
 
-# Add a shortcut to look up illumos bugs
-{+redirect{s@^http://i([0-9]+)/.*@https://www.illumos.org/issues/$1@}}
-# Redirected URL = http://i4974/
-# Redirect Destination = https://www.illumos.org/issues/4974
-i[0-9][0-9][0-9][0-9]*/
+  # Add a shortcut to look up illumos bugs
+  {+redirect{s@^http://i([0-9]+)/.*@https://www.illumos.org/issues/$1@}}
+  # Redirected URL = http://i4974/
+  # Redirect Destination = https://www.illumos.org/issues/4974
+  i[0-9][0-9][0-9][0-9]*/
 
-# Redirect requests for the old Tor Hidden Service of the Privoxy website to the new one
-{+redirect{s@^http://jvauzb4sb3bwlsnc.onion/@http://l3tczdiiwoo63iwxty4lhs6p7eaxop5micbn7vbliydgv63x5zrrrfyd.onion/@}}
-jvauzb4sb3bwlsnc.onion/
+  # Redirect requests for the old Tor Hidden Service of the Privoxy website to the new one
+  {+redirect{s@^http://jvauzb4sb3bwlsnc.onion/@http://l3tczdiiwoo63iwxty4lhs6p7eaxop5micbn7vbliydgv63x5zrrrfyd.onion/@}}
+  jvauzb4sb3bwlsnc.onion/
 
-# Redirect remote requests for this manual
-# to the local version delivered by Privoxy
-{+redirect{s@^http://www@http://config@}}
-www.privoxy.org/user-manual/</pre>
+  # Redirect remote requests for this manual
+  # to the local version delivered by Privoxy
+  {+redirect{s@^http://www@http://config@}}
+  www.privoxy.org/user-manual/</pre>
                   </td>
                 </tr>
               </table>
@@ -3049,11 +3050,11 @@ www.privoxy.org/user-manual/</pre>
               <table border="0" bgcolor="#E0E0E0" width="90%">
                 <tr>
                   <td>
-                    <pre class="SCREEN">{+server-header-filter{html-to-xml}}
-example.org/xml-instance-that-is-delivered-as-html
+                    <pre class="SCREEN">  {+server-header-filter{html-to-xml}}
+  example.org/xml-instance-that-is-delivered-as-html
 
-{+server-header-filter{xml-to-html}}
-example.org/instance-that-is-delivered-as-xml-but-is-not</pre>
+  {+server-header-filter{xml-to-html}}
+  example.org/instance-that-is-delivered-as-xml-but-is-not</pre>
                   </td>
                 </tr>
               </table>
@@ -3100,17 +3101,17 @@ example.org/instance-that-is-delivered-as-xml-but-is-not</pre>
               <table border="0" bgcolor="#E0E0E0" width="90%">
                 <tr>
                   <td>
-                    <pre class="SCREEN"># Tag every request with the content type declared by the server
-{+server-header-tagger{content-type}}
-/
+                    <pre class="SCREEN">  # Tag every request with the content type declared by the server
+  {+server-header-tagger{content-type}}
+  /
 
-# If the response has a tag starting with 'image/' enable an external
-# filter that only applies to images.
-#
-# Note that the filter is not available by default, it's just a
-# <tt class="LITERAL"><a href="filter-file.html#EXTERNAL-FILTER-SYNTAX">silly example</a></tt>.
-{+external-filter{rotate-image} +force-text-mode}
-TAG:^image/</pre>
+  # If the response has a tag starting with 'image/' enable an external
+  # filter that only applies to images.
+  #
+  # Note that the filter is not available by default, it's just a
+  # <tt class="LITERAL"><a href="filter-file.html#EXTERNAL-FILTER-SYNTAX">silly example</a></tt>.
+  {+external-filter{rotate-image} +force-text-mode}
+  TAG:^image/</pre>
                   </td>
                 </tr>
               </table>
@@ -3146,9 +3147,9 @@ TAG:^image/</pre>
                 <tr>
                   <td>
                     <pre class=
-                    "SCREEN"># Suppress tag produced by range-requests client-header tagger for requests coming from address 10.0.0.1
-{+suppress-tag{RANGE-REQUEST}}
-TAG:^IP-ADDRESS: 10\.0\.0\.1$</pre>
+                    "SCREEN">  # Suppress tag produced by range-requests client-header tagger for requests coming from address 10.0.0.1
+  {+suppress-tag{RANGE-REQUEST}}
+  TAG:^IP-ADDRESS: 10\.0\.0\.1$</pre>
                   </td>
                 </tr>
               </table>
@@ -3210,7 +3211,7 @@ TAG:^IP-ADDRESS: 10\.0\.0\.1$</pre>
               <table border="0" bgcolor="#E0E0E0" width="90%">
                 <tr>
                   <td>
-                    <pre class="SCREEN">+session-cookies-only</pre>
+                    <pre class="SCREEN">  +session-cookies-only</pre>
                   </td>
                 </tr>
               </table>
@@ -3283,7 +3284,7 @@ TAG:^IP-ADDRESS: 10\.0\.0\.1$</pre>
               <table border="0" bgcolor="#E0E0E0" width="90%">
                 <tr>
                   <td>
-                    <pre class="SCREEN">+set-image-blocker{pattern}</pre>
+                    <pre class="SCREEN">  +set-image-blocker{pattern}</pre>
                   </td>
                 </tr>
               </table>
@@ -3291,7 +3292,7 @@ TAG:^IP-ADDRESS: 10\.0\.0\.1$</pre>
               <table border="0" bgcolor="#E0E0E0" width="90%">
                 <tr>
                   <td>
-                    <pre class="SCREEN">+set-image-blocker{http://www.freebsd.org/gifs/dae_up3.gif}</pre>
+                    <pre class="SCREEN">  +set-image-blocker{http://www.freebsd.org/gifs/dae_up3.gif}</pre>
                   </td>
                 </tr>
               </table>
@@ -3299,7 +3300,7 @@ TAG:^IP-ADDRESS: 10\.0\.0\.1$</pre>
               <table border="0" bgcolor="#E0E0E0" width="90%">
                 <tr>
                   <td>
-                    <pre class="SCREEN">+set-image-blocker{http://config.privoxy.org/send-banner?type=pattern}</pre>
+                    <pre class="SCREEN">  +set-image-blocker{http://config.privoxy.org/send-banner?type=pattern}</pre>
                   </td>
                 </tr>
               </table>
@@ -3344,40 +3345,40 @@ TAG:^IP-ADDRESS: 10\.0\.0\.1$</pre>
       <table border="0" bgcolor="#E0E0E0" width="100%">
         <tr>
           <td>
-            <pre class="SCREEN"> # Useful custom aliases we can use later.
- #
- # Note the (required!) section header line and that this section
- # must be at the top of the actions file!
- #
- {{alias}}
+            <pre class="SCREEN">  # Useful custom aliases we can use later.
+  #
+  # Note the (required!) section header line and that this section
+  # must be at the top of the actions file!
+  #
+  {{alias}}
 
- # These aliases just save typing later:
- # (Note that some already use other aliases!)
- #
- +crunch-all-cookies = +<a href="actions-file.html#CRUNCH-INCOMING-COOKIES">crunch-incoming-cookies</a> +<a href=
+  # These aliases just save typing later:
+  # (Note that some already use other aliases!)
+  #
+  +crunch-all-cookies = +<a href="actions-file.html#CRUNCH-INCOMING-COOKIES">crunch-incoming-cookies</a> +<a href=
 "actions-file.html#CRUNCH-OUTGOING-COOKIES">crunch-outgoing-cookies</a>
- -crunch-all-cookies = -<a href="actions-file.html#CRUNCH-INCOMING-COOKIES">crunch-incoming-cookies</a> -<a href=
+  -crunch-all-cookies = -<a href="actions-file.html#CRUNCH-INCOMING-COOKIES">crunch-incoming-cookies</a> -<a href=
 "actions-file.html#CRUNCH-OUTGOING-COOKIES">crunch-outgoing-cookies</a>
- +block-as-image      = +block{Blocked image.} +handle-as-image
- allow-all-cookies   = -crunch-all-cookies -<a href=
+  +block-as-image     = +block{Blocked image.} +handle-as-image
+  allow-all-cookies   = -crunch-all-cookies -<a href=
 "actions-file.html#SESSION-COOKIES-ONLY">session-cookies-only</a> -<a href=
 "actions-file.html#FILTER-CONTENT-COOKIES">filter{content-cookies}</a>
 
- # These aliases define combinations of actions
- # that are useful for certain types of sites:
- #
- fragile     = -<a href="actions-file.html#BLOCK">block</a> -<a href=
+  # These aliases define combinations of actions
+  # that are useful for certain types of sites:
+  #
+  fragile     = -<a href="actions-file.html#BLOCK">block</a> -<a href=
 "actions-file.html#FILTER">filter</a> -crunch-all-cookies -<a href=
 "actions-file.html#FAST-REDIRECTS">fast-redirects</a> -<a href=
 "actions-file.html#HIDE-REFERER">hide-referrer</a> -<a href=
 "actions-file.html#PREVENT-COMPRESSION">prevent-compression</a>
 
- shop        = -crunch-all-cookies -<a href="actions-file.html#FILTER-ALL-POPUPS">filter{all-popups}</a>
+  shop        = -crunch-all-cookies -<a href="actions-file.html#FILTER-ALL-POPUPS">filter{all-popups}</a>
 
- # Short names for other aliases, for really lazy people ;-)
- #
- c0 = +crunch-all-cookies
- c1 = -crunch-all-cookies</pre>
+  # Short names for other aliases, for really lazy people ;-)
+  #
+  c0 = +crunch-all-cookies
+  c1 = -crunch-all-cookies</pre>
           </td>
         </tr>
       </table>
@@ -3386,26 +3387,26 @@ TAG:^IP-ADDRESS: 10\.0\.0\.1$</pre>
       <table border="0" bgcolor="#E0E0E0" width="100%">
         <tr>
           <td>
-            <pre class="SCREEN"> # These sites are either very complex or very keen on
- # user data and require minimal interference to work:
- #
- {fragile}
- .office.microsoft.com
- .windowsupdate.microsoft.com
- # Gmail is really mail.google.com, not gmail.com
- mail.google.com
+            <pre class="SCREEN">  # These sites are either very complex or very keen on
+  # user data and require minimal interference to work:
+  #
+  {fragile}
+  .office.microsoft.com
+  .windowsupdate.microsoft.com
+  # Gmail is really mail.google.com, not gmail.com
+  mail.google.com
 
- # Shopping sites:
- # Allow cookies (for setting and retrieving your customer data)
- #
- {shop}
- .quietpc.com
- .worldpay.com   # for quietpc.com
- mybank.example.com
+  # Shopping sites:
+  # Allow cookies (for setting and retrieving your customer data)
+  #
+  {shop}
+  .quietpc.com
+  .worldpay.com   # for quietpc.com
+  mybank.example.com
 
- # These shops require pop-ups:
- #
- {-filter{all-popups} -filter{unsolicited-popups}}
+  # These shops require pop-ups:
+  #
+  {-filter{all-popups} -filter{unsolicited-popups}}
   .dabs.com
   .overclockers.co.uk</pre>
           </td>
@@ -3441,12 +3442,12 @@ TAG:^IP-ADDRESS: 10\.0\.0\.1$</pre>
         <table border="0" bgcolor="#E0E0E0" width="100%">
           <tr>
             <td>
-              <pre class="SCREEN">{ \
- +<a href="actions-file.html#CHANGE-X-FORWARDED-FOR">change-x-forwarded-for{block}</a> \
- +<a href="actions-file.html#HIDE-FROM-HEADER">hide-from-header{block}</a> \
- +<a href="actions-file.html#SET-IMAGE-BLOCKER">set-image-blocker{pattern}</a> \
-}
-/ # Match all URLs</pre>
+              <pre class="SCREEN">  { \
+   +<a href="actions-file.html#CHANGE-X-FORWARDED-FOR">change-x-forwarded-for{block}</a> \
+   +<a href="actions-file.html#HIDE-FROM-HEADER">hide-from-header{block}</a> \
+   +<a href="actions-file.html#SET-IMAGE-BLOCKER">set-image-blocker{pattern}</a> \
+  }
+  / # Match all URLs</pre>
             </td>
           </tr>
         </table>
@@ -3464,11 +3465,11 @@ TAG:^IP-ADDRESS: 10\.0\.0\.1$</pre>
         <table border="0" bgcolor="#E0E0E0" width="100%">
           <tr>
             <td>
-              <pre class="SCREEN">##########################################################################
-# Settings -- Don't change! For internal Privoxy use ONLY.
-##########################################################################
-{{settings}}
-for-privoxy-version=3.0.11</pre>
+              <pre class="SCREEN">  ##########################################################################
+  # Settings -- Don't change! For internal Privoxy use ONLY.
+  ##########################################################################
+  {{settings}}
+  for-privoxy-version=3.0.11</pre>
             </td>
           </tr>
         </table>
@@ -3477,30 +3478,30 @@ for-privoxy-version=3.0.11</pre>
         <table border="0" bgcolor="#E0E0E0" width="100%">
           <tr>
             <td>
-              <pre class="SCREEN">##########################################################################
-# Aliases
-##########################################################################
-{{alias}}
+              <pre class="SCREEN">  ##########################################################################
+  # Aliases
+  ##########################################################################
+  {{alias}}
 
- # These aliases just save typing later:
- # (Note that some already use other aliases!)
- #
- +crunch-all-cookies = +<a href="actions-file.html#CRUNCH-INCOMING-COOKIES">crunch-incoming-cookies</a> +<a href=
+   # These aliases just save typing later:
+   # (Note that some already use other aliases!)
+   #
+   +crunch-all-cookies = +<a href="actions-file.html#CRUNCH-INCOMING-COOKIES">crunch-incoming-cookies</a> +<a href=
 "actions-file.html#CRUNCH-OUTGOING-COOKIES">crunch-outgoing-cookies</a>
- -crunch-all-cookies = -<a href="actions-file.html#CRUNCH-INCOMING-COOKIES">crunch-incoming-cookies</a> -<a href=
+   -crunch-all-cookies = -<a href="actions-file.html#CRUNCH-INCOMING-COOKIES">crunch-incoming-cookies</a> -<a href=
 "actions-file.html#CRUNCH-OUTGOING-COOKIES">crunch-outgoing-cookies</a>
- +block-as-image      = +block{Blocked image.} +handle-as-image
- mercy-for-cookies   = -crunch-all-cookies -<a href=
+   +block-as-image     = +block{Blocked image.} +handle-as-image
+   mercy-for-cookies   = -crunch-all-cookies -<a href=
 "actions-file.html#SESSION-COOKIES-ONLY">session-cookies-only</a> -<a href=
 "actions-file.html#FILTER-CONTENT-COOKIES">filter{content-cookies}</a>
 
- # These aliases define combinations of actions
- # that are useful for certain types of sites:
- #
- fragile     = -<a href="actions-file.html#BLOCK">block</a> -<a href=
+   # These aliases define combinations of actions
+   # that are useful for certain types of sites:
+   #
+   fragile     = -<a href="actions-file.html#BLOCK">block</a> -<a href=
 "actions-file.html#FILTER">filter</a> -crunch-all-cookies -<a href=
 "actions-file.html#FAST-REDIRECTS">fast-redirects</a> -<a href="actions-file.html#HIDE-REFERER">hide-referrer</a>
- shop        = -crunch-all-cookies -<a href="actions-file.html#FILTER-ALL-POPUPS">filter{all-popups}</a></pre>
+   shop        = -crunch-all-cookies -<a href="actions-file.html#FILTER-ALL-POPUPS">filter{all-popups}</a></pre>
             </td>
           </tr>
         </table>
@@ -3511,16 +3512,16 @@ for-privoxy-version=3.0.11</pre>
         <table border="0" bgcolor="#E0E0E0" width="100%">
           <tr>
             <td>
-              <pre class="SCREEN">##########################################################################
-# Exceptions for sites that'll break under the default action set:
-##########################################################################
+              <pre class="SCREEN">  ##########################################################################
+  # Exceptions for sites that'll break under the default action set:
+  ##########################################################################
 
-# "Fragile" Use a minimum set of actions for these sites (see alias above):
-#
-{ fragile }
-.office.microsoft.com           # surprise, surprise!
-.windowsupdate.microsoft.com
-mail.google.com</pre>
+  # "Fragile" Use a minimum set of actions for these sites (see alias above):
+  #
+  { fragile }
+  .office.microsoft.com           # surprise, surprise!
+  .windowsupdate.microsoft.com
+  mail.google.com</pre>
             </td>
           </tr>
         </table>
@@ -3529,13 +3530,13 @@ mail.google.com</pre>
         <table border="0" bgcolor="#E0E0E0" width="100%">
           <tr>
             <td>
-              <pre class="SCREEN"># Shopping sites:
-#
-{ shop }
-.quietpc.com
-.worldpay.com   # for quietpc.com
-.jungle.com
-.scan.co.uk</pre>
+              <pre class="SCREEN">  # Shopping sites:
+  #
+  { shop }
+  .quietpc.com
+  .worldpay.com   # for quietpc.com
+  .jungle.com
+  .scan.co.uk</pre>
             </td>
           </tr>
         </table>
@@ -3545,13 +3546,13 @@ mail.google.com</pre>
         <table border="0" bgcolor="#E0E0E0" width="100%">
           <tr>
             <td>
-              <pre class="SCREEN">{ -<a href="actions-file.html#FAST-REDIRECTS">fast-redirects</a> }
-login.yahoo.com
-edit.*.yahoo.com
-.google.com
-.altavista.com/.*(like|url|link):http
-.altavista.com/trans.*urltext=http
-.nytimes.com</pre>
+              <pre class="SCREEN">  { -<a href="actions-file.html#FAST-REDIRECTS">fast-redirects</a> }
+  login.yahoo.com
+  edit.*.yahoo.com
+  .google.com
+  .altavista.com/.*(like|url|link):http
+  .altavista.com/trans.*urltext=http
+  .nytimes.com</pre>
             </td>
           </tr>
         </table>
@@ -3565,15 +3566,15 @@ edit.*.yahoo.com
         <table border="0" bgcolor="#E0E0E0" width="100%">
           <tr>
             <td>
-              <pre class="SCREEN">##########################################################################
-# Images:
-##########################################################################
+              <pre class="SCREEN">  ##########################################################################
+  # Images:
+  ##########################################################################
 
-# Define which file types will be treated as images, in case they get
-# blocked further down this file:
-#
-{ +<a href="actions-file.html#HANDLE-AS-IMAGE">handle-as-image</a> }
-/.*\.(gif|jpe?g|png|bmp|ico)$</pre>
+  # Define which file types will be treated as images, in case they get
+  # blocked further down this file:
+  #
+  { +<a href="actions-file.html#HANDLE-AS-IMAGE">handle-as-image</a> }
+  /.*\.(gif|jpe?g|png|bmp|ico)$</pre>
             </td>
           </tr>
         </table>
@@ -3591,16 +3592,16 @@ edit.*.yahoo.com
         <table border="0" bgcolor="#E0E0E0" width="100%">
           <tr>
             <td>
-              <pre class="SCREEN"># Known ad generators:
-#
-{ +block-as-image }
-ar.atwola.com
-.ad.doubleclick.net
-.ad.*.doubleclick.net
-.a.yimg.com/(?:(?!/i/).)*$
-.a[0-9].yimg.com/(?:(?!/i/).)*$
-bs*.gsanet.com
-.qkimg.net</pre>
+              <pre class="SCREEN">  # Known ad generators:
+  #
+  { +block-as-image }
+  ar.atwola.com
+  .ad.doubleclick.net
+  .ad.*.doubleclick.net
+  .a.yimg.com/(?:(?!/i/).)*$
+  .a[0-9].yimg.com/(?:(?!/i/).)*$
+  bs*.gsanet.com
+  .qkimg.net</pre>
             </td>
           </tr>
         </table>
@@ -3617,23 +3618,23 @@ bs*.gsanet.com
         <table border="0" bgcolor="#E0E0E0" width="100%">
           <tr>
             <td>
-              <pre class="SCREEN">##########################################################################
-# Block these fine banners:
-##########################################################################
-{ <a href="actions-file.html#BLOCK">+block{Banner ads.}</a> }
+              <pre class="SCREEN">  ##########################################################################
+  # Block these fine banners:
+  ##########################################################################
+  { <a href="actions-file.html#BLOCK">+block{Banner ads.}</a> }
 
-# Generic patterns:
-#
-ad*.
-.*ads.
-banner?.
-count*.
-/.*count(er)?\.(pl|cgi|exe|dll|asp|php[34]?)
-/(?:.*/)?(publicite|werbung|rekla(ma|me|am)|annonse|maino(kset|nta|s)?)/
+  # Generic patterns:
+  #
+  ad*.
+  .*ads.
+  banner?.
+  count*.
+  /.*count(er)?\.(pl|cgi|exe|dll|asp|php[34]?)
+  /(?:.*/)?(publicite|werbung|rekla(ma|me|am)|annonse|maino(kset|nta|s)?)/
 
-# Site-specific patterns (abbreviated):
-#
-.hitbox.com</pre>
+  # Site-specific patterns (abbreviated):
+  #
+  .hitbox.com</pre>
             </td>
           </tr>
         </table>
@@ -3658,28 +3659,28 @@ count*.
         <table border="0" bgcolor="#E0E0E0" width="100%">
           <tr>
             <td>
-              <pre class="SCREEN">##########################################################################
-# Save some innocent victims of the above generic block patterns:
-##########################################################################
+              <pre class="SCREEN">  ##########################################################################
+  # Save some innocent victims of the above generic block patterns:
+  ##########################################################################
 
-# By domain:
-#
-{ -<a href="actions-file.html#BLOCK">block</a> }
-adv[io]*.  # (for advogato.org and advice.*)
-adsl.      # (has nothing to do with ads)
-adobe.     # (has nothing to do with ads either)
-ad[ud]*.   # (adult.* and add.*)
-.edu       # (universities don't host banners (yet!))
-.*loads.   # (downloads, uploads etc)
+  # By domain:
+  #
+  { -<a href="actions-file.html#BLOCK">block</a> }
+  adv[io]*.  # (for advogato.org and advice.*)
+  adsl.      # (has nothing to do with ads)
+  adobe.     # (has nothing to do with ads either)
+  ad[ud]*.   # (adult.* and add.*)
+  .edu       # (universities don't host banners (yet!))
+  .*loads.   # (downloads, uploads etc)
 
-# By path:
-#
-/.*loads/
+  # By path:
+  #
+  /.*loads/
 
-# Site-specific:
-#
-www.globalintersec.com/adv # (adv = advanced)
-www.ugu.com/sui/ugu/adv</pre>
+  # Site-specific:
+  #
+  www.globalintersec.com/adv # (adv = advanced)
+  www.ugu.com/sui/ugu/adv</pre>
             </td>
           </tr>
         </table>
@@ -3690,14 +3691,14 @@ www.ugu.com/sui/ugu/adv</pre>
         <table border="0" bgcolor="#E0E0E0" width="100%">
           <tr>
             <td>
-              <pre class="SCREEN"># Don't filter code!
-#
-{ -<a href="actions-file.html#FILTER">filter</a> }
-/(.*/)?cvs
-bugzilla.
-developer.
-wiki.
-.sourceforge.net</pre>
+              <pre class="SCREEN">  # Don't filter code!
+  #
+  { -<a href="actions-file.html#FILTER">filter</a> }
+  /(.*/)?cvs
+  bugzilla.
+  developer.
+  wiki.
+  .sourceforge.net</pre>
             </td>
           </tr>
         </table>
@@ -3720,7 +3721,7 @@ wiki.
         <table border="0" bgcolor="#E0E0E0" width="100%">
           <tr>
             <td>
-              <pre class="SCREEN"># My user.action file. &lt;fred@example.com&gt;</pre>
+              <pre class="SCREEN">  # My user.action file. &lt;fred@example.com&gt;</pre>
             </td>
           </tr>
         </table>
@@ -3729,34 +3730,34 @@ wiki.
         <table border="0" bgcolor="#E0E0E0" width="100%">
           <tr>
             <td>
-              <pre class="SCREEN"># Aliases are local to the file they are defined in.
-# (Re-)define aliases for this file:
-#
-{{alias}}
-#
-# These aliases just save typing later, and the alias names should
-# be self explanatory.
-#
-+crunch-all-cookies = +crunch-incoming-cookies +crunch-outgoing-cookies
--crunch-all-cookies = -crunch-incoming-cookies -crunch-outgoing-cookies
- allow-all-cookies  = -crunch-all-cookies -session-cookies-only
- allow-popups       = -filter{all-popups}
-+block-as-image     = +block{Blocked as image.} +handle-as-image
--block-as-image     = -block
+              <pre class="SCREEN">  # Aliases are local to the file they are defined in.
+  # (Re-)define aliases for this file:
+  #
+  {{alias}}
+  #
+  # These aliases just save typing later, and the alias names should
+  # be self explanatory.
+  #
+  +crunch-all-cookies = +crunch-incoming-cookies +crunch-outgoing-cookies
+  -crunch-all-cookies = -crunch-incoming-cookies -crunch-outgoing-cookies
+   allow-all-cookies  = -crunch-all-cookies -session-cookies-only
+   allow-popups       = -filter{all-popups}
+  +block-as-image     = +block{Blocked as image.} +handle-as-image
+  -block-as-image     = -block
 
-# These aliases define combinations of actions that are useful for
-# certain types of sites:
-#
-fragile     = -block -crunch-all-cookies -filter -fast-redirects -hide-referrer
-shop        = -crunch-all-cookies allow-popups
+  # These aliases define combinations of actions that are useful for
+  # certain types of sites:
+  #
+  fragile     = -block -crunch-all-cookies -filter -fast-redirects -hide-referrer
+  shop        = -crunch-all-cookies allow-popups
 
-# Allow ads for selected useful free sites:
-#
-allow-ads   = -block -filter{banners-by-size} -filter{banners-by-link}
+  # Allow ads for selected useful free sites:
+  #
+  allow-ads   = -block -filter{banners-by-size} -filter{banners-by-link}
 
-# Alias for specific file types that are text, but might have conflicting
-# MIME types. We want the browser to force these to be text documents.
-handle-as-text = -<a href="actions-file.html#FILTER">filter</a> +-<a href=
+  # Alias for specific file types that are text, but might have conflicting
+  # MIME types. We want the browser to force these to be text documents.
+  handle-as-text = -<a href="actions-file.html#FILTER">filter</a> +-<a href=
 "actions-file.html#CONTENT-TYPE-OVERWRITE">content-type-overwrite{text/plain}</a> +-<a href=
 "actions-file.html#FORCE-TEXT-MODE">force-text-mode</a> -<a href=
 "actions-file.html#HIDE-CONTENT-DISPOSITION">hide-content-disposition</a></pre>
@@ -3770,11 +3771,11 @@ handle-as-text = -<a href="actions-file.html#FILTER">filter</a> +-<a href=
         <table border="0" bgcolor="#E0E0E0" width="100%">
           <tr>
             <td>
-              <pre class="SCREEN">{ allow-all-cookies }
- sourceforge.net
- .yahoo.com
- .msdn.microsoft.com
- .redhat.com</pre>
+              <pre class="SCREEN">  { allow-all-cookies }
+  sourceforge.net
+  .yahoo.com
+  .msdn.microsoft.com
+  .redhat.com</pre>
             </td>
           </tr>
         </table>
@@ -3782,8 +3783,8 @@ handle-as-text = -<a href="actions-file.html#FILTER">filter</a> +-<a href=
         <table border="0" bgcolor="#E0E0E0" width="100%">
           <tr>
             <td>
-              <pre class="SCREEN">{ -<a href="actions-file.html#FILTER">filter</a> }
- .your-home-banking-site.com</pre>
+              <pre class="SCREEN">  { -<a href="actions-file.html#FILTER">filter</a> }
+  .your-home-banking-site.com</pre>
             </td>
           </tr>
         </table>
@@ -3791,16 +3792,16 @@ handle-as-text = -<a href="actions-file.html#FILTER">filter</a> +-<a href=
         <table border="0" bgcolor="#E0E0E0" width="100%">
           <tr>
             <td>
-              <pre class="SCREEN"># Technical documentation is likely to contain strings that might
-# erroneously get altered by the JavaScript-oriented filters:
-#
-.tldp.org
-/(.*/)?selfhtml/
+              <pre class="SCREEN">  # Technical documentation is likely to contain strings that might
+  # erroneously get altered by the JavaScript-oriented filters:
+  #
+  .tldp.org
+  /(.*/)?selfhtml/
 
-# And this stupid host sends streaming video with a wrong MIME type,
-# so that Privoxy thinks it is getting HTML and starts filtering:
-#
-stupid-server.example.com/</pre>
+  # And this stupid host sends streaming video with a wrong MIME type,
+  # so that Privoxy thinks it is getting HTML and starts filtering:
+  #
+  stupid-server.example.com/</pre>
             </td>
           </tr>
         </table>
@@ -3813,9 +3814,9 @@ stupid-server.example.com/</pre>
         <table border="0" bgcolor="#E0E0E0" width="100%">
           <tr>
             <td>
-              <pre class="SCREEN">{ +<a href="actions-file.html#BLOCK">block</a>{Nasty ads.} }
- www.example.com/nasty-ads/sponsor\.gif
- another.example.net/more/junk/here/</pre>
+              <pre class="SCREEN">  { +<a href="actions-file.html#BLOCK">block</a>{Nasty ads.} }
+  www.example.com/nasty-ads/sponsor\.gif
+  another.example.net/more/junk/here/</pre>
             </td>
           </tr>
         </table>
@@ -3828,11 +3829,11 @@ stupid-server.example.com/</pre>
         <table border="0" bgcolor="#E0E0E0" width="100%">
           <tr>
             <td>
-              <pre class="SCREEN">{ +block-as-image }
- .doubleclick.net
- .fastclick.net
- /Realmedia/ads/
- ar.atwola.com/</pre>
+              <pre class="SCREEN">  { +block-as-image }
+  .doubleclick.net
+  .fastclick.net
+  /Realmedia/ads/
+  ar.atwola.com/</pre>
             </td>
           </tr>
         </table>
@@ -3846,10 +3847,10 @@ stupid-server.example.com/</pre>
         <table border="0" bgcolor="#E0E0E0" width="100%">
           <tr>
             <td>
-              <pre class="SCREEN">{ fragile }
- .forbes.com
- webmail.example.com
- .mybank.com</pre>
+              <pre class="SCREEN">  { fragile }
+  .forbes.com
+  webmail.example.com
+  .mybank.com</pre>
             </td>
           </tr>
         </table>
@@ -3859,8 +3860,8 @@ stupid-server.example.com/</pre>
         <table border="0" bgcolor="#E0E0E0" width="100%">
           <tr>
             <td>
-              <pre class="SCREEN">{ +<a href="actions-file.html#FILTER-FUN">filter{fun}</a> }
- / # For ALL sites!</pre>
+              <pre class="SCREEN">  { +<a href="actions-file.html#FILTER-FUN">filter{fun}</a> }
+  / # For ALL sites!</pre>
             </td>
           </tr>
         </table>
@@ -3874,10 +3875,10 @@ stupid-server.example.com/</pre>
         <table border="0" bgcolor="#E0E0E0" width="100%">
           <tr>
             <td>
-              <pre class="SCREEN">{ allow-ads }
- .sourceforge.net
- .slashdot.org
- .osdn.net</pre>
+              <pre class="SCREEN">  { allow-ads }
+  .sourceforge.net
+  .slashdot.org
+  .osdn.net</pre>
             </td>
           </tr>
         </table>
@@ -3891,8 +3892,8 @@ stupid-server.example.com/</pre>
         <table border="0" bgcolor="#E0E0E0" width="100%">
           <tr>
             <td>
-              <pre class="SCREEN">{ handle-as-text }
- /.*\.sh$</pre>
+              <pre class="SCREEN">  { handle-as-text }
+  /.*\.sh$</pre>
             </td>
           </tr>
         </table>
@@ -3904,8 +3905,8 @@ stupid-server.example.com/</pre>
         <table border="0" bgcolor="#E0E0E0" width="100%">
           <tr>
             <td>
-              <pre class="SCREEN">{ +<a href="actions-file.html#SET-IMAGE-BLOCKER">set-image-blocker{blank}</a> }
-/ # ALL sites</pre>
+              <pre class="SCREEN">  { +<a href="actions-file.html#SET-IMAGE-BLOCKER">set-image-blocker{blank}</a> }
+  / # ALL sites</pre>
             </td>
           </tr>
         </table>

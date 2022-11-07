@@ -14,7 +14,7 @@
 <!entity p-authors SYSTEM "p-authors.sgml">
 <!entity config SYSTEM "p-config.sgml">
 <!entity changelog SYSTEM "changelog.sgml">
-<!entity p-version "3.0.32">
+<!entity p-version "3.0.33">
 <!entity p-status "stable">
 <!entity % p-authors-formal "INCLUDE"> <!-- include additional text, etc  -->
 <!entity % p-not-stable "IGNORE">
@@ -342,42 +342,42 @@ How to install the binary packages depends on your operating system:
         Run the setup program and from View / Category select:
       </para>
       <screen>
-  Devel
-    autoconf 2.5
-    automake 1.15
-    binutils
-    cmake
-    gcc-core
-    gcc-g++
-    git
-    make
-    mingw64-i686-gcc-core
-    mingw64-i686-zlib
-  Editors
-    vim
-  Libs
-    libxslt: GNOME XSLT library (runtime)
-  Net
-    curl
-    openssh
-  Text
-    docbook-dssl
-    docbook-sgml31
-    docbook-utils
-    openjade
-  Utils
-    gnupg
-  Web
-    w3m
+Devel
+  autoconf 2.5
+  automake 1.15
+  binutils
+  cmake
+  gcc-core
+  gcc-g++
+  git
+  make
+  mingw64-i686-gcc-core
+  mingw64-i686-zlib
+Editors
+  vim
+Libs
+  libxslt: GNOME XSLT library (runtime)
+Net
+  curl
+  openssh
+Text
+  docbook-dssl
+  docbook-sgml31
+  docbook-utils
+  openjade
+Utils
+  gnupg
+Web
+  w3m
 </screen>
 
       <para>
         If you haven't already downloaded the Privoxy source code, get it now:
       </para>
       <screen>
-  mkdir &lt;root-dir>
-  cd &lt;root-dir>
-  git clone https://www.privoxy.org/git/privoxy.git
+mkdir &lt;root-dir>
+cd &lt;root-dir>
+git clone https://www.privoxy.org/git/privoxy.git
 </screen>
 
       <para>
@@ -387,10 +387,10 @@ How to install the binary packages depends on your operating system:
         unzip into &lt;root-dir> and build the software:
       </para>
       <screen>
-  cd &lt;root-dir>
-  cd tidy-html5-x.y.z/build/cmake
-  cmake ../.. -DCMAKE_BUILD_TYPE=Release -DBUILD_SHARED_LIB:BOOL=OFF -DCMAKE_INSTALL_PREFIX=/usr/local
-  make && make install
+cd &lt;root-dir>
+cd tidy-html5-x.y.z/build/cmake
+cmake ../.. -DCMAKE_BUILD_TYPE=Release -DBUILD_SHARED_LIB:BOOL=OFF -DCMAKE_INSTALL_PREFIX=/usr/local
+make && make install
 </screen>
 
       <para>
@@ -398,13 +398,92 @@ How to install the binary packages depends on your operating system:
             <!-- FIXME:  which version(s) are known to work? -->
         <ulink url="https://sourceforge.net/projects/nsis/files/NSIS%203/">
                     https://sourceforge.net/projects/nsis/files/NSIS%203/</ulink>
-        and extract the NSIS directory to <literal>privoxy/windows</literal>.
-        Then edit the windows/GNUmakefile to set the location of the NSIS executable - eg:
+        and extract the NSIS directory to <literal>/&lt;root-dir>/nsis/</literal>.
+        Then edit the <filename>windows/GNUmakefile</filename> to set the location
+        of the NSIS executable - eg:
       </para>
       <screen>
 # Path to NSIS
-MAKENSIS = ./nsis/makensis.exe
+MAKENSIS = /&lt;root-dir>/nsis/makensis.exe
 </screen>
+
+      <para>
+        Get the latest 8.x PCRE code from
+        <ulink url="https://ftp.pcre.org/pub/pcre/">PCRE
+                    https://ftp.pcre.org/pub/pcre/</ulink>
+        and build the static PCRE libraries with
+
+        <screen>
+export CFLAGS="-O2 -fstack-protector-strong -D_FORTIFY_SOURCE=2"
+export LDFLAGS="-fstack-protector-strong"
+export CPPFLAGS="-DPCRE_STATIC"
+
+./configure  --host=i686-w64-mingw32 \
+             --prefix=/usr/local/i686-w64-mingw32 \
+             --enable-utf  --enable-unicode-properties \
+             --enable-jit \
+             --enable-newline-is-anycrlf \
+             --enable-pcre16 \
+             --enable-pcre32 \
+             --disable-pcregrep-libbz2 \
+             --disable-pcregrep-libz \
+             --disable-pcretest-libreadline \
+             --disable-stack-for-recursion  \
+             --enable-static --disable-shared \
+  &&  make
+</screen>
+      </para>
+
+
+      <para>
+        If you want to be able to have Privoxy do TLS Inspection, get the latest
+        2.16.x MBED-TLS library source code from
+        <ulink url="https://github.com/ARMmbed/mbedtls/tags">
+                    https://github.com/ARMmbed/mbedtls/tags</ulink>,
+        extract the tar file into <literal>&lt;root-dir&gt;</literal>
+        and build the static libraries with
+        <programlisting>
+export WINDOWS_BUILD=1
+#  build for a Windows platform
+
+unset DEBUG
+
+export CC=i686-w64-mingw32-gcc
+export LD=i686-w64-mingw32-gcc
+export CFLAGS="-O2 -fstack-protector-strong -D_FORTIFY_SOURCE=2"
+export LDFLAGS="${LDFLAGS} -fstack-protector-strong"
+
+make lib
+#  build the libraries
+</programlisting>
+      </para>
+
+
+      <para>
+        Get the brotli library from
+        <ulink url="https://github.com/google/brotli/releases">
+                    https://github.com/google/brotli/releases</ulink>
+        and build the static libraries with
+        <programlisting>
+./bootstrap
+#  to create the GNU autotools files
+
+autoconf
+
+export CFLAGS="-O2 -fstack-protector-strong -D_FORTIFY_SOURCE=2"
+export LDFLAGS="${LDFLAGS} -fstack-protector-strong"
+
+./configure  --host=i686-w64-mingw32 \
+             --prefix=/usr/local/i686-w64-mingw32 \
+             --enable-static   \
+             --disable-shared  \
+             --with-gnu-ld     \
+             --disable-silent-rules \
+  && make
+</programlisting>
+      </para>
+
+
 
       </sect4>
 
@@ -414,8 +493,8 @@ MAKENSIS = ./nsis/makensis.exe
         To build just the Privoxy executable and not the whole installation package, do:
       </para>
       <programlisting>
-  cd &lt;root-dir>/privoxy
-  ./windows/MYconfigure && make
+cd &lt;root-dir>/privoxy
+./windows/MYconfigure && make
 </programlisting>
 
       <para>
@@ -423,10 +502,10 @@ MAKENSIS = ./nsis/makensis.exe
         for building software, so the process is:
       </para>
       <programlisting>
-  $ autoheader              # creates config.h.in
-  $ autoconf                # uses config.h.in to create the configure shell script
-  $ ./configure [options]   # creates GNUmakefile
-  $ make        [options]   # builds the program
+autoheader              # creates config.h.in
+autoconf                # uses config.h.in to create the configure shell script
+./configure [options]   # creates GNUmakefile
+make        [options]   # builds the program
 </programlisting>
 
       <para>
@@ -439,7 +518,8 @@ MAKENSIS = ./nsis/makensis.exe
   --enable-zlib
   --enable-static-linking
   --disable-pthread
-  --disable-dynamic-pcre
+  --with-brotli
+  --with-mbedtls
 </literallayout>
 
       <para>
@@ -448,11 +528,11 @@ MAKENSIS = ./nsis/makensis.exe
       </para>
 
       <programlisting>
-  $ export CFLAGS="-O2"              # set gcc optimization level
-  $ export LDFLAGS="-Wl,--nxcompat"  # Enable DEP
-  $ ./configure --host=i686-w64-mingw32 --enable-mingw32  --enable-zlib \
-  >             --enable-static-linking --disable-pthread --disable-dynamic-pcre
-  $ make                             # build Privoxy
+$ export CFLAGS="-O2"              # set gcc optimization level
+$ export LDFLAGS="-Wl,--nxcompat"  # Enable DEP
+$ ./configure --host=i686-w64-mingw32 --enable-mingw32  --enable-zlib \
+>             --enable-static-linking --disable-pthread
+$ make                             # build Privoxy
 </programlisting>
 
       <para>
@@ -592,8 +672,9 @@ MAKENSIS = ./nsis/makensis.exe
     use, filtering, you will need to force compression off. Example:
    </para>
  <screen>
-  { +<link linkend="filter">filter</link>{google}  +<link linkend="prevent-compression">prevent-compression</link> }
-   .google.</screen>
+{ +<link linkend="filter">filter</link>{google}  +<link linkend="prevent-compression">prevent-compression</link> }
+.google.
+</screen>
    <para>
     Or if you use a number of filters, or filter many sites, you may just want
     to turn off compression for all sites in
@@ -1134,7 +1215,7 @@ MAKENSIS = ./nsis/makensis.exe
  file.
 </para>
  <screen>
- # /etc/init.d/privoxy start
+# /etc/init.d/privoxy start
 </screen>
 </sect2>
 
@@ -1155,7 +1236,7 @@ MAKENSIS = ./nsis/makensis.exe
  To start <application>Privoxy</application> manually, run:
 </para>
  <screen>
- # service privoxy onestart
+# service privoxy onestart
 </screen>
 </sect2>
 
@@ -1183,7 +1264,7 @@ Click on the &my-app; Icon to start <application>Privoxy</application>. If no co
 Example Unix startup command:
 </para>
  <screen>
- # /usr/sbin/privoxy --user privoxy /etc/privoxy/config
+# /usr/sbin/privoxy --user privoxy /etc/privoxy/config
 </screen>
 <para>
  Note that if you installed <application>Privoxy</application> through
@@ -2002,12 +2083,13 @@ for details.
  might look like:
 </para>
 
- <screen>
-  { +<literal>handle-as-image</literal>  +<literal>block{Banner ads.}</literal> }
-  # Block these as if they were images. Send no block page.
-   banners.example.com
-   media.example.com/.*banners
-   .example.com/images/ads/</screen>
+<screen>
+{ +<literal>handle-as-image</literal>  +<literal>block{Banner ads.}</literal> }
+# Block these as if they were images. Send no block page.
+banners.example.com
+media.example.com/.*banners
+.example.com/images/ads/
+</screen>
 
 <para>
  You can trace this process for URL patterns and any given URL by visiting <ulink
@@ -2545,8 +2627,9 @@ example.org/blocked-example-page</screen>
    <quote>disabled</quote>. Syntax:
   </para>
    <screen>
-  +<replaceable class="function">name</replaceable>        # enable action <replaceable class="parameter">name</replaceable>
-  -<replaceable class="function">name</replaceable>        # disable action <replaceable class="parameter">name</replaceable></screen>
++<replaceable class="function">name</replaceable>        # enable action <replaceable class="parameter">name</replaceable>
+-<replaceable class="function">name</replaceable>        # disable action <replaceable class="parameter">name</replaceable>
+</screen>
   <para>
    Example: <literal>+handle-as-image</literal>
   </para>
@@ -2558,10 +2641,11 @@ example.org/blocked-example-page</screen>
    Parameterized, where some value is required in order to enable this type of action.
    Syntax:
   </para>
-   <screen>
-  +<replaceable class="function">name</replaceable>{<replaceable class="parameter">param</replaceable>}  # enable action and set parameter to <replaceable class="parameter">param</replaceable>,
-               # overwriting parameter from previous match if necessary
-  -<replaceable class="function">name</replaceable>         # disable action. The parameter can be omitted</screen>
+  <screen>
++<replaceable class="function">name</replaceable>{<replaceable class="parameter">param</replaceable>}  # enable action and set parameter to <replaceable class="parameter">param</replaceable>,
+             # overwriting parameter from previous match if necessary
+-<replaceable class="function">name</replaceable>         # disable action. The parameter can be omitted
+</screen>
   <para>
    Note that if the URL matches multiple positive forms of a parameterized action,
    the last match wins, i.e. the params from earlier matches are simply ignored.
@@ -2580,11 +2664,12 @@ example.org/blocked-example-page</screen>
    that can be executed for the same request repeatedly, like adding multiple
    headers, or filtering through multiple filters. Syntax:
   </para>
-   <screen>
-  +<replaceable class="function">name</replaceable>{<replaceable class="parameter">param</replaceable>}   # enable action and add <replaceable class="parameter">param</replaceable> to the list of parameters
-  -<replaceable class="function">name</replaceable>{<replaceable class="parameter">param</replaceable>}   # remove the parameter <replaceable class="parameter">param</replaceable> from the list of parameters
-                # If it was the last one left, disable the action.
-  <replaceable class="parameter">-name</replaceable>          # disable this action completely and remove all parameters from the list</screen>
+  <screen>
++<replaceable class="function">name</replaceable>{<replaceable class="parameter">param</replaceable>}   # enable action and add <replaceable class="parameter">param</replaceable> to the list of parameters
+-<replaceable class="function">name</replaceable>{<replaceable class="parameter">param</replaceable>}   # remove the parameter <replaceable class="parameter">param</replaceable> from the list of parameters
+               # If it was the last one left, disable the action.
+<replaceable class="parameter">-name</replaceable>          # disable this action completely and remove all parameters from the list
+</screen>
   <para>
    Examples: <literal>+add-header{X-Fun-Header: Some text}</literal> and
    <literal>+filter{html-annoyances}</literal>
@@ -2784,18 +2869,20 @@ example.org/blocked-example-page</screen>
  <varlistentry>
   <term>Example usage (section):</term>
   <listitem>
-     <screen>{+block{No nasty stuff for you.}}
+     <screen>
+{+block{No nasty stuff for you.}}
 # Block and replace with "blocked" page
- .nasty-stuff.example.com
+.nasty-stuff.example.com
 
 {+block{Doubleclick banners.} +handle-as-image}
 # Block and replace with image
- .ad.doubleclick.net
- .ads.r.us/banners/
+.ad.doubleclick.net
+.ads.r.us/banners/
 
 {+block{Layered ads.} +handle-as-empty-document}
 # Block and then ignore
- adserver.example.net/.*\.js$</screen>
+adserver.example.net/.*\.js$
+</screen>
   </listitem>
  </varlistentry>
 
@@ -4062,11 +4149,12 @@ problem-host.example.com</screen>
   <term>Example usage:</term>
   <listitem>
      <screen>
- { +fast-redirects{simple-check} }
-   one.example.com
+{ +fast-redirects{simple-check} }
+one.example.com
 
- { +fast-redirects{check-decoded-url} }
-   another.example.com/testing</screen>
+{ +fast-redirects{check-decoded-url} }
+another.example.com/testing
+</screen>
   </listitem>
  </varlistentry>
 
@@ -4872,11 +4960,14 @@ new action
  <varlistentry>
   <term>Example usage:</term>
   <listitem>
-     <screen># Disarm the download link in Sourceforge's patch tracker
+     <screen>
+# Disarm the download link in Sourceforge's patch tracker
 { -filter \
- +content-type-overwrite{text/plain}\
- +hide-content-disposition{block} }
- .sourceforge.net/tracker/download\.php</screen>
+  +content-type-overwrite{text/plain} \
+  +hide-content-disposition{block} \
+}
+.sourceforge.net/tracker/download\.php
+</screen>
   </listitem>
  </varlistentry>
 </variablelist>
@@ -5266,8 +5357,8 @@ new action
   <listitem>
    <para>
     This action allows &my-app; to filter encrypted requests and responses.
-    For this to work &my-app; has to generate a certificate and send it
-    to the client which has to accept it.
+    For this to work &my-app; has to generate a certificate for the web site
+    and send it to the client which has to accept it.
    </para>
    <para>
     Before this works the directives in the
@@ -5364,7 +5455,7 @@ www.example.com</screen>
    <screen>
     {+ignore-certificate-errors}
     www.example.org
-   </screen>
+</screen>
   </listitem>
  </varlistentry>
 </variablelist>
@@ -5621,19 +5712,20 @@ www.example.com</screen>
 #
 { +filter{tiny-textforms} +prevent-compression }
 # Match only these sites
- .google.
- sourceforge.net
- sf.net
+.google.
+sourceforge.net
+sf.net
 
 # Or instead, we could set a universal default:
 #
 { +prevent-compression }
- / # Match all sites
+/ # Match all sites
 
 # Then maybe make exceptions for broken sites:
 #
 { -prevent-compression }
-.compusa.com/</screen>
+.compusa.com/
+</screen>
   </listitem>
  </varlistentry>
 
@@ -5725,11 +5817,14 @@ new action
  <varlistentry>
   <term>Example usage:</term>
   <listitem>
-     <screen># Let the browser revalidate without being tracked across sessions
+     <screen>
+# Let the browser revalidate without being tracked across sessions
 { +hide-if-modified-since{-60} \
- +overwrite-last-modified{randomize} \
- +crunch-if-none-match}
-/</screen>
+  +overwrite-last-modified{randomize} \
+  +crunch-if-none-match \
+}
+/
+</screen>
   </listitem>
  </varlistentry>
 </variablelist>
@@ -5820,14 +5915,15 @@ new action
  <varlistentry>
   <term>Example usages:</term>
   <listitem>
-    <screen># Replace example.com's style sheet with another one
+    <screen>
+# Replace example.com's style sheet with another one
 { +redirect{http://localhost/css-replacements/example.com.css} }
- example.com/stylesheet\.css
+example.com/stylesheet\.css
 
 # Create a short, easy to remember nickname for a favorite site
 # (relies on the browser to accept and forward invalid URLs to &my-app;)
 { +redirect{https://www.privoxy.org/user-manual/actions-file.html} }
- a
+a
 
 # Always use the expanded view for Undeadly.org articles
 # (Note the $ at the end of the URL pattern to make sure
@@ -6358,32 +6454,33 @@ TAG:^IP-ADDRESS: 10\.0\.0\.1$
 </para>
 
  <screen>
- # Useful custom aliases we can use later.
- #
- # Note the (required!) section header line and that this section
- # must be at the top of the actions file!
- #
- {{alias}}
+# Useful custom aliases we can use later.
+#
+# Note the (required!) section header line and that this section
+# must be at the top of the actions file!
+#
+{{alias}}
 
- # These aliases just save typing later:
- # (Note that some already use other aliases!)
- #
- +crunch-all-cookies = +<link linkend="CRUNCH-INCOMING-COOKIES">crunch-incoming-cookies</link> +<link linkend="CRUNCH-OUTGOING-COOKIES">crunch-outgoing-cookies</link>
- -crunch-all-cookies = -<link linkend="CRUNCH-INCOMING-COOKIES">crunch-incoming-cookies</link> -<link linkend="CRUNCH-OUTGOING-COOKIES">crunch-outgoing-cookies</link>
- +block-as-image      = +block{Blocked image.} +handle-as-image
- allow-all-cookies   = -crunch-all-cookies -<link linkend="SESSION-COOKIES-ONLY">session-cookies-only</link> -<link linkend="FILTER-CONTENT-COOKIES">filter{content-cookies}</link>
+# These aliases just save typing later:
+# (Note that some already use other aliases!)
+#
++crunch-all-cookies = +<link linkend="CRUNCH-INCOMING-COOKIES">crunch-incoming-cookies</link> +<link linkend="CRUNCH-OUTGOING-COOKIES">crunch-outgoing-cookies</link>
+-crunch-all-cookies = -<link linkend="CRUNCH-INCOMING-COOKIES">crunch-incoming-cookies</link> -<link linkend="CRUNCH-OUTGOING-COOKIES">crunch-outgoing-cookies</link>
++block-as-image     = +block{Blocked image.} +handle-as-image
+allow-all-cookies   = -crunch-all-cookies -<link linkend="SESSION-COOKIES-ONLY">session-cookies-only</link> -<link linkend="FILTER-CONTENT-COOKIES">filter{content-cookies}</link>
 
- # These aliases define combinations of actions
- # that are useful for certain types of sites:
- #
- fragile     = -<link linkend="BLOCK">block</link> -<link linkend="FILTER">filter</link> -crunch-all-cookies -<link linkend="FAST-REDIRECTS">fast-redirects</link> -<link linkend="HIDE-REFERER">hide-referrer</link> -<link linkend="PREVENT-COMPRESSION">prevent-compression</link>
+# These aliases define combinations of actions
+# that are useful for certain types of sites:
+#
+fragile     = -<link linkend="BLOCK">block</link> -<link linkend="FILTER">filter</link> -crunch-all-cookies -<link linkend="FAST-REDIRECTS">fast-redirects</link> -<link linkend="HIDE-REFERER">hide-referrer</link> -<link linkend="PREVENT-COMPRESSION">prevent-compression</link>
 
- shop        = -crunch-all-cookies -<link linkend="FILTER-ALL-POPUPS">filter{all-popups}</link>
+shop        = -crunch-all-cookies -<link linkend="FILTER-ALL-POPUPS">filter{all-popups}</link>
 
- # Short names for other aliases, for really lazy people ;-)
- #
- c0 = +crunch-all-cookies
- c1 = -crunch-all-cookies</screen>
+# Short names for other aliases, for really lazy people ;-)
+#
+c0 = +crunch-all-cookies
+c1 = -crunch-all-cookies
+</screen>
 
 <para>
  ...and put them to use. These sections would appear in the lower part of an
@@ -6392,28 +6489,29 @@ TAG:^IP-ADDRESS: 10\.0\.0\.1$
 </para>
 
  <screen>
- # These sites are either very complex or very keen on
- # user data and require minimal interference to work:
- #
- {fragile}
- .office.microsoft.com
- .windowsupdate.microsoft.com
- # Gmail is really mail.google.com, not gmail.com
- mail.google.com
+# These sites are either very complex or very keen on
+# user data and require minimal interference to work:
+#
+{fragile}
+.office.microsoft.com
+.windowsupdate.microsoft.com
+# Gmail is really mail.google.com, not gmail.com
+mail.google.com
 
- # Shopping sites:
- # Allow cookies (for setting and retrieving your customer data)
- #
- {shop}
- .quietpc.com
- .worldpay.com   # for quietpc.com
- mybank.example.com
+# Shopping sites:
+# Allow cookies (for setting and retrieving your customer data)
+#
+{shop}
+.quietpc.com
+.worldpay.com   # for quietpc.com
+mybank.example.com
 
- # These shops require pop-ups:
- #
- {-filter{all-popups} -filter{unsolicited-popups}}
-  .dabs.com
-  .overclockers.co.uk</screen>
+# These shops require pop-ups:
+#
+{-filter{all-popups} -filter{unsolicited-popups}}
+.dabs.com
+.overclockers.co.uk
+</screen>
 
 <para>
  Aliases like <quote>shop</quote> and <quote>fragile</quote> are typically used for
@@ -6522,7 +6620,7 @@ for-privoxy-version=3.0.11</screen>
  #
  +crunch-all-cookies = +<link linkend="CRUNCH-INCOMING-COOKIES">crunch-incoming-cookies</link> +<link linkend="CRUNCH-OUTGOING-COOKIES">crunch-outgoing-cookies</link>
  -crunch-all-cookies = -<link linkend="CRUNCH-INCOMING-COOKIES">crunch-incoming-cookies</link> -<link linkend="CRUNCH-OUTGOING-COOKIES">crunch-outgoing-cookies</link>
- +block-as-image      = +block{Blocked image.} +handle-as-image
+ +block-as-image     = +block{Blocked image.} +handle-as-image
  mercy-for-cookies   = -crunch-all-cookies -<link linkend="SESSION-COOKIES-ONLY">session-cookies-only</link> -<link linkend="FILTER-CONTENT-COOKIES">filter{content-cookies}</link>
 
  # These aliases define combinations of actions
@@ -6822,10 +6920,11 @@ handle-as-text = -<link linkend="FILTER">filter</link> +-<link linkend="content-
 
  <screen>
 { allow-all-cookies }
- sourceforge.net
- .yahoo.com
- .msdn.microsoft.com
- .redhat.com</screen>
+sourceforge.net
+.yahoo.com
+.msdn.microsoft.com
+.redhat.com
+</screen>
 
 <para>
  Your bank is allergic to some filter, but you don't know which, so you disable them all:
@@ -6833,7 +6932,8 @@ handle-as-text = -<link linkend="FILTER">filter</link> +-<link linkend="content-
 
  <screen>
 { -<link linkend="FILTER">filter</link> }
- .your-home-banking-site.com</screen>
+.your-home-banking-site.com
+</screen>
 
 <para>
  Some file types you may not want to filter for various reasons:
@@ -6864,8 +6964,9 @@ stupid-server.example.com/</screen>
 
  <screen>
 { +<link linkend="BLOCK">block</link>{Nasty ads.} }
- www.example.com/nasty-ads/sponsor\.gif
- another.example.net/more/junk/here/</screen>
+www.example.com/nasty-ads/sponsor\.gif
+another.example.net/more/junk/here/
+</screen>
 
 <para>
  The URLs of dynamically generated banners, especially from large banner
@@ -6881,10 +6982,11 @@ stupid-server.example.com/</screen>
 
  <screen>
 { +block-as-image }
- .doubleclick.net
- .fastclick.net
- /Realmedia/ads/
- ar.atwola.com/</screen>
+.doubleclick.net
+.fastclick.net
+/Realmedia/ads/
+ar.atwola.com/
+</screen>
 
 <para>
  Now you noticed that the default configuration breaks Forbes Magazine,
@@ -6900,9 +7002,10 @@ stupid-server.example.com/</screen>
 
 <screen>
 { fragile }
- .forbes.com
- webmail.example.com
- .mybank.com</screen>
+.forbes.com
+webmail.example.com
+.mybank.com
+</screen>
 
 <para>
  You like the <quote>fun</quote> text replacements in <filename>default.filter</filename>,
@@ -6913,7 +7016,8 @@ stupid-server.example.com/</screen>
 
 <screen>
 { +<link linkend="filter-fun">filter{fun}</link> }
- / # For ALL sites!</screen>
+/ # For ALL sites!
+</screen>
 
 <para>
  Note that the above is not really a good idea: There are exceptions
@@ -6932,9 +7036,10 @@ stupid-server.example.com/</screen>
 
 <screen>
 { allow-ads }
- .sourceforge.net
- .slashdot.org
- .osdn.net</screen>
+.sourceforge.net
+.slashdot.org
+.osdn.net
+</screen>
 
 <para>
  Note that <literal>allow-ads</literal> has been aliased to
@@ -6952,7 +7057,8 @@ stupid-server.example.com/</screen>
 
 <screen>
 { handle-as-text }
- /.*\.sh$</screen>
+/.*\.sh$
+</screen>
 
 <para>
  <filename>user.action</filename> is generally the best place to define
@@ -8036,11 +8142,11 @@ Requests</title>
 <sect2 id="license"><title>License</title>
 
 <sect3 id="gplv2"><title>GNU General Public License version 2</title>
- <screen><![ RCDATA [ &GPLv2; ]]></screen>
+ <literallayout class="Monospaced"><![ RCDATA [ &GPLv2; ]]></literallayout>
 </sect3>
 
 <sect3 id="gplv3"><title>GNU General Public License version 3</title>
- <screen><![ RCDATA [ &GPLv3; ]]></screen>
+ <literallayout class="Monospaced"><![ RCDATA [ &GPLv3; ]]></literallayout>
 </sect3>
 
 <sect3 id="third-party-licenses"><title>Third-party licenses and copyrights</title>
@@ -8644,11 +8750,11 @@ Requests</title>
 </para>
 
  <screen>
- Matches for http://www.google.com:
+Matches for http://www.google.com:
 
- In file: default.action <guibutton>[ View ]</guibutton> <guibutton>[ Edit ]</guibutton>
+In file: default.action <guibutton>[ View ]</guibutton> <guibutton>[ Edit ]</guibutton>
 
- {+change-x-forwarded-for{block}
+{+change-x-forwarded-for{block}
  +deanimate-gifs {last}
  +fast-redirects {check-decoded-url}
  +filter {refresh-tags}
@@ -8660,14 +8766,14 @@ Requests</title>
  +hide-from-header {block}
  +hide-referrer {forge}
  +session-cookies-only
- +set-image-blocker {pattern}
+ +set-image-blocker {pattern} }
 /
 
- { -session-cookies-only }
- .google.com
+{ -session-cookies-only }
+.google.com
 
- { -fast-redirects }
- .google.com
+{ -fast-redirects }
+.google.com
 
 In file: user.action <guibutton>[ View ]</guibutton> <guibutton>[ Edit ]</guibutton>
 (no matches in this file)
@@ -8730,64 +8836,64 @@ In file: user.action <guibutton>[ View ]</guibutton> <guibutton>[ Edit ]</guibut
 </para>
 
  <screen>
- Final results:
+Final results:
 
- -add-header
- -block
- +change-x-forwarded-for{block}
- -client-header-filter{hide-tor-exit-notation}
- -content-type-overwrite
- -crunch-client-header
- -crunch-if-none-match
- -crunch-incoming-cookies
- -crunch-outgoing-cookies
- -crunch-server-header
- +deanimate-gifs {last}
- -downgrade-http-version
- -fast-redirects
- -filter {js-events}
- -filter {content-cookies}
- -filter {all-popups}
- -filter {banners-by-link}
- -filter {tiny-textforms}
- -filter {frameset-borders}
- -filter {demoronizer}
- -filter {shockwave-flash}
- -filter {quicktime-kioskmode}
- -filter {fun}
- -filter {crude-parental}
- -filter {site-specifics}
- -filter {js-annoyances}
- -filter {html-annoyances}
- +filter {refresh-tags}
- -filter {unsolicited-popups}
- +filter {img-reorder}
- +filter {banners-by-size}
- +filter {webbugs}
- +filter {jumping-windows}
- +filter {ie-exploits}
- -filter {google}
- -filter {yahoo}
- -filter {msn}
- -filter {blogspot}
- -filter {no-ping}
- -force-text-mode
- -handle-as-empty-document
- -handle-as-image
- -hide-accept-language
- -hide-content-disposition
- +hide-from-header {block}
- -hide-if-modified-since
- +hide-referrer {forge}
- -hide-user-agent
- -limit-connect
- -overwrite-last-modified
- -prevent-compression
- -redirect
- -server-header-filter{xml-to-html}
- -server-header-filter{html-to-xml}
- -session-cookies-only
- +set-image-blocker {pattern}
+-add-header
+-block
++change-x-forwarded-for{block}
+-client-header-filter{hide-tor-exit-notation}
+-content-type-overwrite
+-crunch-client-header
+-crunch-if-none-match
+-crunch-incoming-cookies
+-crunch-outgoing-cookies
+-crunch-server-header
++deanimate-gifs {last}
+-downgrade-http-version
+-fast-redirects
+-filter {js-events}
+-filter {content-cookies}
+-filter {all-popups}
+-filter {banners-by-link}
+-filter {tiny-textforms}
+-filter {frameset-borders}
+-filter {demoronizer}
+-filter {shockwave-flash}
+-filter {quicktime-kioskmode}
+-filter {fun}
+-filter {crude-parental}
+-filter {site-specifics}
+-filter {js-annoyances}
+-filter {html-annoyances}
++filter {refresh-tags}
+-filter {unsolicited-popups}
++filter {img-reorder}
++filter {banners-by-size}
++filter {webbugs}
++filter {jumping-windows}
++filter {ie-exploits}
+-filter {google}
+-filter {yahoo}
+-filter {msn}
+-filter {blogspot}
+-filter {no-ping}
+-force-text-mode
+-handle-as-empty-document
+-handle-as-image
+-hide-accept-language
+-hide-content-disposition
++hide-from-header {block}
+-hide-if-modified-since
++hide-referrer {forge}
+-hide-user-agent
+-limit-connect
+-overwrite-last-modified
+-prevent-compression
+-redirect
+-server-header-filter{xml-to-html}
+-server-header-filter{html-to-xml}
+-session-cookies-only
++set-image-blocker {pattern}
 </screen>
 
 <para>
@@ -8802,14 +8908,14 @@ In file: user.action <guibutton>[ View ]</guibutton> <guibutton>[ Edit ]</guibut
 </para>
 
  <screen>
- { +block{Domains starts with "ad"} }
-  ad*.
+{ +block{Domains starts with "ad"} }
+ad*.
 
- { +block{Domain contains "ad"} }
-  .ad.
+{ +block{Domain contains "ad"} }
+.ad.
 
- { +block{Doubleclick banner server} +handle-as-image }
-  .[a-vx-z]*.doubleclick.net
+{ +block{Doubleclick banner server} +handle-as-image }
+.[a-vx-z]*.doubleclick.net
 </screen>
 
 <para>
@@ -8843,68 +8949,68 @@ In file: user.action <guibutton>[ View ]</guibutton> <guibutton>[ Edit ]</guibut
 </para>
 
  <screen>
- Matches for http://www.example.net/adsl/HOWTO/:
+Matches for http://www.example.net/adsl/HOWTO/:
 
- In file: default.action <guibutton>[ View ]</guibutton> <guibutton>[ Edit ]</guibutton>
+In file: default.action <guibutton>[ View ]</guibutton> <guibutton>[ Edit ]</guibutton>
 
- {-add-header
-  -block
-  +change-x-forwarded-for{block}
-  -client-header-filter{hide-tor-exit-notation}
-  -content-type-overwrite
-  -crunch-client-header
-  -crunch-if-none-match
-  -crunch-incoming-cookies
-  -crunch-outgoing-cookies
-  -crunch-server-header
-  +deanimate-gifs
-  -downgrade-http-version
-  +fast-redirects {check-decoded-url}
-  -filter {js-events}
-  -filter {content-cookies}
-  -filter {all-popups}
-  -filter {banners-by-link}
-  -filter {tiny-textforms}
-  -filter {frameset-borders}
-  -filter {demoronizer}
-  -filter {shockwave-flash}
-  -filter {quicktime-kioskmode}
-  -filter {fun}
-  -filter {crude-parental}
-  -filter {site-specifics}
-  -filter {js-annoyances}
-  -filter {html-annoyances}
-  +filter {refresh-tags}
-  -filter {unsolicited-popups}
-  +filter {img-reorder}
-  +filter {banners-by-size}
-  +filter {webbugs}
-  +filter {jumping-windows}
-  +filter {ie-exploits}
-  -filter {google}
-  -filter {yahoo}
-  -filter {msn}
-  -filter {blogspot}
-  -filter {no-ping}
-  -force-text-mode
-  -handle-as-empty-document
-  -handle-as-image
-  -hide-accept-language
-  -hide-content-disposition
-  +hide-from-header{block}
-  +hide-referer{forge}
-  -hide-user-agent
-  -overwrite-last-modified
-  +prevent-compression
-  -redirect
-  -server-header-filter{xml-to-html}
-  -server-header-filter{html-to-xml}
-  +session-cookies-only
-  +set-image-blocker{blank} }
-   /
+{-add-header
+ -block
+ +change-x-forwarded-for{block}
+ -client-header-filter{hide-tor-exit-notation}
+ -content-type-overwrite
+ -crunch-client-header
+ -crunch-if-none-match
+ -crunch-incoming-cookies
+ -crunch-outgoing-cookies
+ -crunch-server-header
+ +deanimate-gifs
+ -downgrade-http-version
+ +fast-redirects {check-decoded-url}
+ -filter {js-events}
+ -filter {content-cookies}
+ -filter {all-popups}
+ -filter {banners-by-link}
+ -filter {tiny-textforms}
+ -filter {frameset-borders}
+ -filter {demoronizer}
+ -filter {shockwave-flash}
+ -filter {quicktime-kioskmode}
+ -filter {fun}
+ -filter {crude-parental}
+ -filter {site-specifics}
+ -filter {js-annoyances}
+ -filter {html-annoyances}
+ +filter {refresh-tags}
+ -filter {unsolicited-popups}
+ +filter {img-reorder}
+ +filter {banners-by-size}
+ +filter {webbugs}
+ +filter {jumping-windows}
+ +filter {ie-exploits}
+ -filter {google}
+ -filter {yahoo}
+ -filter {msn}
+ -filter {blogspot}
+ -filter {no-ping}
+ -force-text-mode
+ -handle-as-empty-document
+ -handle-as-image
+ -hide-accept-language
+ -hide-content-disposition
+ +hide-from-header{block}
+ +hide-referer{forge}
+ -hide-user-agent
+ -overwrite-last-modified
+ +prevent-compression
+ -redirect
+ -server-header-filter{xml-to-html}
+ -server-header-filter{html-to-xml}
+ +session-cookies-only
+ +set-image-blocker{blank} }
+/
 
- { +block{Path contains "ads".} +handle-as-image }
-  /ads
+{ +block{Path contains "ads".} +handle-as-image }
+/ads
 </screen>
 
 <para>
@@ -8922,8 +9028,8 @@ In file: user.action <guibutton>[ View ]</guibutton> <guibutton>[ Edit ]</guibut
 </para>
 
  <screen>
- { -block }
-  /adsl
+{ -block }
+/adsl
 </screen>
 
 <para>
@@ -8939,8 +9045,8 @@ In file: user.action <guibutton>[ View ]</guibutton> <guibutton>[ Edit ]</guibut
 </para>
 
  <screen>
- { +block{Path starts with "ads".} +handle-as-image }
- /ads
+{ +block{Path starts with "ads".} +handle-as-image }
+/ads
 </screen>
 
 <para>
@@ -8956,12 +9062,12 @@ In file: user.action <guibutton>[ View ]</guibutton> <guibutton>[ Edit ]</guibut
 </para>
 
  <screen>
- { shop }
- .quietpc.com
- .worldpay.com   # for quietpc.com
- .jungle.com
- .scan.co.uk
- .forbes.com
+{ shop }
+.quietpc.com
+.worldpay.com   # for quietpc.com
+.jungle.com
+.scan.co.uk
+.forbes.com
 </screen>
 
 <para>
@@ -8971,11 +9077,11 @@ In file: user.action <guibutton>[ View ]</guibutton> <guibutton>[ Edit ]</guibut
 </para>
 
  <screen>
- { -filter }
- # Disable ALL filter actions for sites in this section
- .forbes.com
- developer.ibm.com
- localhost
+{ -filter }
+# Disable ALL filter actions for sites in this section
+.forbes.com
+developer.ibm.com
+localhost
 </screen>
 
 <para>
@@ -9001,10 +9107,11 @@ In file: user.action <guibutton>[ View ]</guibutton> <guibutton>[ Edit ]</guibut
 </para>
 
  <screen>
- { fragile }
- # Handle with care: easy to break
- mail.google.
- mybank.example.com</screen>
+{ fragile }
+# Handle with care: easy to break
+mail.google.
+mybank.example.com
+</screen>
 
 
 <para>

@@ -80,12 +80,12 @@ dnl release and no new release is near.
 
 VERSION_MAJOR=3
 VERSION_MINOR=0
-VERSION_POINT=32
+VERSION_POINT=33
 CODE_STATUS="stable"
 
 dnl Timestamp (date +%s) used by the mtree-spec target.
 dnl Should be updated before releases but forgetting it isn't critical.
-SOURCE_DATE_EPOCH=1613992573
+SOURCE_DATE_EPOCH=1636218132
 
 dnl =================================================================
 dnl Substitute the version numbers
@@ -160,6 +160,24 @@ AC_ARG_WITH(debug,
 AC_ARG_WITH(assertions, [  --with-assertions       Enable assertions])
 if test "x$with_assertions" != "xyes"; then
     CFLAGS="$CFLAGS -DNDEBUG"
+fi
+
+AC_ARG_WITH(asan, [  --with-asan       Enable AddressSanitizer. Requires compiler support.])
+if test "x$with_asan" = "xyes"; then
+    CFLAGS="$CFLAGS -fsanitize=address"
+    LDFLAGS="$LDFLAGS -fsanitize=address"
+fi
+
+AC_ARG_WITH(asan, [  --with-msan       Enable MemorySanitizer. Requires compiler support.])
+if test "x$with_msan" = "xyes"; then
+    CFLAGS="$CFLAGS -fsanitize=memory"
+    LDFLAGS="$LDFLAGS -fsanitize=memory"
+fi
+
+AC_ARG_WITH(usan, [  --with-usan       Enable UndefinedBehaviorSanitizer. Requires compiler support.])
+if test "x$with_usan" = "xyes"; then
+    CFLAGS="$CFLAGS -fsanitize=undefined"
+    LDFLAGS="$LDFLAGS -fsanitize=undefined"
 fi
 
 dnl =================================================================
@@ -343,16 +361,6 @@ fi
 AC_SUBST(W3M)
 AC_SUBST(DB2HTML)
 
-dnl If we use rpm, we need to check where %_topdir is
-AC_CHECK_PROGS(RPMBIN,rpm,false)
-if test $RPMBIN != false; then
-		RPM_BASE=`rpm --eval "%{_topdir}"`
-		if test "$RPM_BASE" = ""; then
-			RPM_BASE=/usr/src/redhat
-		fi
-fi
-AC_SUBST(RPM_BASE)
-
 dnl prefer openjade to jade
 dnl Check for jade, so we can build the documentation
 AC_CHECK_PROGS(JADEBIN,openjade jade,false)
@@ -451,9 +459,10 @@ AC_ARG_ENABLE(pthread,
 [  --disable-pthread               Don't use POSIX threads (pthreads)],
 [if test $enableval = no; then
   # Disable pthreads
-  if test $have_pthread = yes; then
+  if test $have_pthread = yes -a $target_type != mingw; then
      AC_MSG_WARN([pthreads seem to be available but you are using --disable-pthread.])
      AC_MSG_WARN([This is almost always a mistake and can render Privoxy unacceptable slow.])
+     AC_MSG_WARN([Also various Privoxy features only work when using threads and won't even compile without them.])
   fi
   have_pthread=no
 fi])
@@ -761,8 +770,6 @@ AC_CHECK_HEADERS([ \
 ])
 
 dnl Checks for library functions.
-dnl bcopy is for PCRE
-AC_CHECK_FUNCS([bcopy])
 AC_PROG_GCC_TRADITIONAL
 AC_TYPE_SIGNAL
 AC_CHECK_FUNCS([ \
@@ -985,6 +992,12 @@ AC_ARG_ENABLE(pcre-host-patterns,
   AC_DEFINE(FEATURE_PCRE_HOST_PATTERNS)
 fi])
 
+AC_ARG_ENABLE(pcre-jit-compilation,
+[  --disable-pcre-jit-compilation     Don't let pcrs use pcre JIT compilation even if pcre supports it.],
+[if test $enableval != yes; then
+  AC_DEFINE(DISABLE_PCRE_JIT_COMPILATION)
+fi])
+
 AC_ARG_ENABLE(external-filters,
 [  --enable-external-filters       Allow to filter content with scripts and programs. Experimental.],
 [if test $enableval = yes; then
@@ -1103,14 +1116,7 @@ if test $have_pcre = "yes"; then
     AC_DEFINE(FEATURE_DYNAMIC_PCRE,1,[Define to dynamically link to pcre.])
   fi
 else
-  AC_MSG_WARN([You are using the static PCRE code which is out of date and scheduled for removal, for details see:
-    https://sourceforge.net/p/ijbswa/mailman/ijbswa-developers/thread/20080511195555.2dc6cfdc@fabiankeil.de/])
-  AC_MSG_WARN([The removal will likely occur before the 3.0.33 release.])
-  pcre_dyn=no
-  # STATIC_PCRE is a name pcre needs to statically link on Windows.
-  # Privoxy itself no longer uses it.
-  AC_DEFINE(STATIC_PCRE,1,[Define to statically link to internal outdated pcre on Windows.])
-  STATIC_PCRE_ONLY=
+  AC_MSG_ERROR(pcre library not detected.)
 fi
 
 AC_DEFINE(FEATURE_CONNECTION_KEEP_ALIVE)

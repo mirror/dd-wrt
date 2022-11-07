@@ -17,7 +17,6 @@
   README
   user-manual
   webserver/index.sgml
-  announce.sgml
 
 -->
 
@@ -126,7 +125,7 @@
     url="../user-manual/config.html#DEBUG">debug options</ulink> are enabled
     (all of them):
    </para>
-    <literallayout>debug     1 # Log the destination for each request Privoxy let through.
+    <literallayout>debug     1 # Log the destination for each request. See also debug 1024.
             #   See also debug 1024.
 debug     2 # show each connection status
 debug     4 # show tagging-related messages
@@ -158,6 +157,9 @@ debug 65536 # Log applying actions</literallayout>
     Note that Privoxy log files may contain sensitive information so please don't
     submit any logfiles you didn't read first. You can mask sensitive information
     as long as it's clear that you removed something.
+   </para>
+   <para>
+    Please clear the browser cache before reproducing the problem.
    </para>
   </listitem>
 

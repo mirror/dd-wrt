@@ -81,27 +81,26 @@
       <table border="0" bgcolor="#E0E0E0" width="100%">
         <tr>
           <td>
-            <pre class="PROGRAMLISTING"># Run all the tests
-fk@t520 ~ $privoxy-regression-test.pl
-2020-12-14 12:16:32: Asking Privoxy for the number of action files available ...
-2020-12-14 12:16:32: Gathering regression tests from 9 action file(s) delivered by Privoxy 3.0.30.
-2020-12-14 12:16:32: Executing regression tests ...
-2020-12-14 12:16:41: Ooops. Expected removal but: 'Referer: https://p.p/' is still there.
-2020-12-14 12:16:41: Failure for test 785. Header 'Referer: https://p.p/' and tag 'hide-referrer{conditional-block}'
-2020-12-14 12:16:41: Ooops. Got: 'Referer: https://p.p/' while expecting: 'Referer: http://p.p/'
-2020-12-14 12:16:41: Failure for test 791. Header 'Referer: https://p.p/' and tag 'hide-referrer{conditional-forge}'
-2020-12-14 12:16:44: Executed 1087 regression tests. Skipped 115. 1085 successes, 2 failures.
-# Repeat one of the failing tests and get a curl command to quickly reproduce the problem
-# without causing too much log noise.
-fk@t520 ~ $privoxy-regression-test.pl --test-number 785 --verbose --debug 4
-2020-12-14 12:17:55: Asking Privoxy for the number of action files available ...
-[...]
-2020-12-14 12:17:56: Executing regression tests ...
-2020-12-14 12:17:56: Executing: curl --include  -H 'Proxy-Connection:'  -H 'Connection: close'  -s  -S  --user-agent 'Privoxy-Regression-Test 0.7.2'  --max-time '5'  --globoff  -H 'X-Privoxy-Control: hide-referrer{conditional-block}' -H 'Referer: https://p.p/'  http://p.p/show-request 2&#62;&#38;1
-2020-12-14 12:17:56: Ooops. Expected removal but: 'Referer: https://p.p/' is still there.
-2020-12-14 12:17:56: Failure for test 785 (0/13/5). Header 'Referer: https://p.p/' and tag 'hide-referrer{conditional-block}'
-2020-12-14 12:17:56: Executed 1 regression tests. Skipped 1201. 0 successes, 1 failures.
-     </pre>
+            <pre class="PROGRAMLISTING">  # Run all the tests
+  fk@t520 ~ $privoxy-regression-test.pl
+  2020-12-14 12:16:32: Asking Privoxy for the number of action files available ...
+  2020-12-14 12:16:32: Gathering regression tests from 9 action file(s) delivered by Privoxy 3.0.30.
+  2020-12-14 12:16:32: Executing regression tests ...
+  2020-12-14 12:16:41: Ooops. Expected removal but: 'Referer: https://p.p/' is still there.
+  2020-12-14 12:16:41: Failure for test 785. Header 'Referer: https://p.p/' and tag 'hide-referrer{conditional-block}'
+  2020-12-14 12:16:41: Ooops. Got: 'Referer: https://p.p/' while expecting: 'Referer: http://p.p/'
+  2020-12-14 12:16:41: Failure for test 791. Header 'Referer: https://p.p/' and tag 'hide-referrer{conditional-forge}'
+  2020-12-14 12:16:44: Executed 1087 regression tests. Skipped 115. 1085 successes, 2 failures.
+  # Repeat one of the failing tests and get a curl command to quickly reproduce the problem
+  # without causing too much log noise.
+  fk@t520 ~ $privoxy-regression-test.pl --test-number 785 --verbose --debug 4
+  2020-12-14 12:17:55: Asking Privoxy for the number of action files available ...
+  [...]
+  2020-12-14 12:17:56: Executing regression tests ...
+  2020-12-14 12:17:56: Executing: curl --include  -H 'Proxy-Connection:'  -H 'Connection: close'  -s  -S  --user-agent 'Privoxy-Regression-Test 0.7.2'  --max-time '5'  --globoff  -H 'X-Privoxy-Control: hide-referrer{conditional-block}' -H 'Referer: https://p.p/'  http://p.p/show-request 2&#62;&#38;1
+  2020-12-14 12:17:56: Ooops. Expected removal but: 'Referer: https://p.p/' is still there.
+  2020-12-14 12:17:56: Failure for test 785 (0/13/5). Header 'Referer: https://p.p/' and tag 'hide-referrer{conditional-block}'
+  2020-12-14 12:17:56: Executed 1 regression tests. Skipped 1201. 0 successes, 1 failures.</pre>
           </td>
         </tr>
       </table>
@@ -116,56 +115,56 @@ fk@t520 ~ $privoxy-regression-test.pl --test-number 785 --verbose --debug 4
       <table border="0" bgcolor="#E0E0E0" width="100%">
         <tr>
           <td>
-            <pre class="PROGRAMLISTING"># Compile Privoxy with instrumentation for afl
-$ export CC=afl-clang
-$ export CFLAGS="-fsanitize=address -ggdb"
-$ export CPPFLAGS=-I/usr/local/include/
-$ export LDFLAGS="-fsanitize=address -L/usr/local/lib"
-$ export AFL_USE_ASAN=1
-$ export AFL_HARDEN=1
-$ ./configure --with-debug --enable-extended-host-patterns --enable-accept-filter --enable-no-gifs --enable-compression --enable-strptime-sanity-checks --enable-external-filters --enable-fuzz
+            <pre class="PROGRAMLISTING">  # Compile Privoxy with instrumentation for afl
+  $ export CC=afl-clang
+  $ export CFLAGS="-fsanitize=address -ggdb"
+  $ export CPPFLAGS=-I/usr/local/include/
+  $ export LDFLAGS="-fsanitize=address -L/usr/local/lib"
+  $ export AFL_USE_ASAN=1
+  $ export AFL_HARDEN=1
+  $ ./configure --with-debug --enable-extended-host-patterns --enable-accept-filter --enable-no-gifs --enable-compression --enable-strptime-sanity-checks --enable-external-filters --enable-fuzz
 
-$ ./privoxy --fuzz
-Privoxy version 3.0.24 (http://www.privoxy.org/)
-Usage: ./privoxy [--config-test] [--chroot] [--help] [--no-daemon] [--pidfile pidfile] [--pre-chroot-nslookup hostname] [--user user[.group]] [--version] [configfile]
-       ./privoxy --fuzz fuzz-mode ./path/to/fuzzed/input [--stfu]
+  $ ./privoxy --fuzz
+  Privoxy version 3.0.24 (http://www.privoxy.org/)
+  Usage: ./privoxy [--config-test] [--chroot] [--help] [--no-daemon] [--pidfile pidfile] [--pre-chroot-nslookup hostname] [--user user[.group]] [--version] [configfile]
+         ./privoxy --fuzz fuzz-mode ./path/to/fuzzed/input [--stfu]
 
-Supported fuzz modes and the expected input:
- action: Text to parse as action file.
- client-request: Client request to parse. Currently incomplete
- client-header: Client header to parse.
- chunked-transfer-encoding: Chunk-encoded data to dechunk.
- deflate: deflate-compressed data to decompress.
- filter: Text to parse as filter file.
- gif: gif to deanimate.
- gzip: gzip-compressed data to decompress.
- pcrs-substitute: A pcrs-substitute to compile. Not a whole pcrs job! Example: Bla $1 bla C $3 blah.
- server-header: Server header to parse.
- server-response: Server response to parse.
+  Supported fuzz modes and the expected input:
+   action: Text to parse as action file.
+   client-request: Client request to parse. Currently incomplete
+   client-header: Client header to parse.
+   chunked-transfer-encoding: Chunk-encoded data to dechunk.
+   deflate: deflate-compressed data to decompress.
+   filter: Text to parse as filter file.
+   gif: gif to deanimate.
+   gzip: gzip-compressed data to decompress.
+   pcrs-substitute: A pcrs-substitute to compile. Not a whole pcrs job! Example: Bla $1 bla C $3 blah.
+   server-header: Server header to parse.
+   server-response: Server response to parse.
 
-The following fuzz modes read data from stdin if the 'file' is '-'
- client-request
- client-header
- chunked-transfer-encoding
- deflate
- gif
- gzip
- pcrs-substitute
- server-header
- server-response
+  The following fuzz modes read data from stdin if the 'file' is '-'
+   client-request
+   client-header
+   chunked-transfer-encoding
+   deflate
+   gif
+   gzip
+   pcrs-substitute
+   server-header
+   server-response
 
-Aborting
+  Aborting
 
-$ export ASAN_OPTIONS='abort_on_error=1'
-$ mkdir input output
-$ echo '$1 bla fasel $2' &#62; input/pcrs
-$ afl-fuzz -i input -o output -m none ~/git/privoxy/privoxy --fuzz pcrs-substitute - --stfu
+  $ export ASAN_OPTIONS='abort_on_error=1'
+  $ mkdir input output
+  $ echo '$1 bla fasel $2' &#62; input/pcrs
+  $ afl-fuzz -i input -o output -m none ~/git/privoxy/privoxy --fuzz pcrs-substitute - --stfu
 
-$ cat &#62;input/pcrs.txt
-FILTER: bla fasel
-s@(.{1})[432](\d+)@$1$2$hostname@UgisT
+  $ cat &#62;input/pcrs.txt
+  FILTER: bla fasel
+  s@(.{1})[432](\d+)@$1$2$hostname@UgisT
 
-$ afl-fuzz -i input/ -o output/ -f bla.filter -m none privoxy --fuzz filter bla.filter --stfu</pre>
+  $ afl-fuzz -i input/ -o output/ -f bla.filter -m none privoxy --fuzz filter bla.filter --stfu</pre>
           </td>
         </tr>
       </table>
