@@ -58,6 +58,8 @@ void start_privoxy(void)
 	if (nvram_matchi("privoxy_transp_enable", 1)) {
 		sysprintf("iptables -t nat -D PREROUTING -p tcp ! -d %s --dport 80 -j DNAT --to %s:8118", wan, ip);
 		sysprintf("iptables -t nat -I PREROUTING -p tcp ! -d %s --dport 80 -j DNAT --to %s:8118", wan, ip);
+		sysprintf("iptables -t nat -D PREROUTING -p tcp ! -d %s --dport 443 -j DNAT --to %s:8118", wan, ip);
+		sysprintf("iptables -t nat -I PREROUTING -p tcp ! -d %s --dport 443 -j DNAT --to %s:8118", wan, ip);
 		sysprintf("iptables -t nat -D PREROUTING -p tcp -s %s/%s -d %s --dport %s -j ACCEPT", ip, mask, ip, webif_port);
 		sysprintf("iptables -t nat -I PREROUTING -p tcp -s %s/%s -d %s --dport %s -j ACCEPT", ip, mask, ip, webif_port);
 		sysprintf("iptables -t nat -D PREROUTING -p tcp -s %s -d %s --dport %s -j DROP", ip, ip, webif_port);
@@ -67,6 +69,8 @@ void start_privoxy(void)
 		if (*transp) {
 			sysprintf("iptables -t nat -D PREROUTING -p tcp -s %s --dport 80 -j ACCEPT", transp);
 			sysprintf("iptables -t nat -I PREROUTING -p tcp -s %s --dport 80 -j ACCEPT", transp);
+			sysprintf("iptables -t nat -D PREROUTING -p tcp -s %s --dport 443 -j ACCEPT", transp);
+			sysprintf("iptables -t nat -I PREROUTING -p tcp -s %s --dport 443 -j ACCEPT", transp);
 		}
 		mode = 1;
 		getIfLists(vifs, 256);
@@ -137,11 +141,13 @@ void stop_privoxy(void)
 	char vifs[256];
 
 	sysprintf("iptables -t nat -D PREROUTING -p tcp ! -d %s --dport 80 -j DNAT --to %s:8118", wan, ip);
+	sysprintf("iptables -t nat -D PREROUTING -p tcp ! -d %s --dport 443 -j DNAT --to %s:8118", wan, ip);
 	sysprintf("iptables -t nat -D PREROUTING -p tcp -s %s/%s -d %s --dport %s -j ACCEPT", ip, mask, ip, webif_port);
 	sysprintf("iptables -t nat -D PREROUTING -p tcp -s %s -d %s --dport %s -j DROP", ip, ip, webif_port);
-	if (*transp)
+	if (*transp) {
 		sysprintf("iptables -t nat -D PREROUTING -p tcp -s %s --dport 80 -j ACCEPT");
-
+		sysprintf("iptables -t nat -D PREROUTING -p tcp -s %s --dport 443 -j ACCEPT");
+	}
 	getIfLists(vifs, 256);
 	char vif_ip[32];
 	foreach(var, vifs, next) {
