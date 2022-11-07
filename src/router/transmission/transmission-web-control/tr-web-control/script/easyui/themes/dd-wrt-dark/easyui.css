@@ -3085,12 +3085,12 @@ input[type="checkbox"] {
   accent-color: #30519c;
 }
 #torrent_upload_form {
-	margin: 0 .362em 1em 0;
-	height: 1.6rem;
-	cursor: pointer;
+  margin: 0 .362em 1em 0;
+  height: 1.6rem;
+  cursor: pointer;
 }
 ::file-selector-button {
-	height: 1.9rem;
+  height: 1.9rem;
   padding: 0 1rem .05em;
 }
 button, button[disabled]:hover,
@@ -3118,7 +3118,7 @@ button, button[disabled]:hover,
   color: #fff !important;
 }
 #btn-UserLabel-remove .tr-icon-delete::before {
-	color: #f00 !important;
+  color: #f00 !important;
 }
 fieldset {
   background-color: #222;
@@ -3130,25 +3130,25 @@ legend {
   color: #6384cf;
 }
 input {
-	padding: 4px;
-	font-size: 12px;
-	line-height: 1.42857;
-	border-radius: 4px;
+  padding: 4px;
+  font-size: 12px;
+  line-height: 1.42857;
+  border-radius: 4px;
 }
 hr {
   border-bottom: 1px dotted #555;
 }
 .torrent-progress {
-	height: 18px !important;
+  height: 18px !important;
   background: #777;
-	border: 1px solid #454545 !important;
+  border: 1px solid #454545 !important;
   border-radius: 4px !important;
 }
 .torrent-progress-download {
-	background-color: #30519c !important;
+  background-color: #30519c !important;
 }
 .torrent-progress-seed {
-	background-color: #228b22 !important;
+  background-color: #228b22 !important;
 }
 .panel {
   overflow: hidden;
@@ -6247,12 +6247,12 @@ input[type="checkbox"] {
   accent-color: #30519c;
 }
 #torrent_upload_form {
-	margin: 0 .362em 1em 0;
-	height: 1.6rem;
-	cursor: pointer;
+  margin: 0 .362em 1em 0;
+  height: 1.6rem;
+  cursor: pointer;
 }
 ::file-selector-button {
-	height: 1.9rem;
+  height: 1.9rem;
   padding: 0 1rem .05em;
 }
 button, button[disabled]:hover,
@@ -6279,7 +6279,7 @@ button, button[disabled]:hover,
   color: #fff !important;
 }
 #btn-UserLabel-remove .tr-icon-delete::before {
-	color: #f00 !important;
+  color: #f00 !important;
 }
 fieldset {
   background-color: #222;
@@ -6291,25 +6291,25 @@ legend {
   color: #6384cf;
 }
 input {
-	padding: 4px;
-	font-size: 12px;
-	line-height: 1.42857;
-	border-radius: 4px;
+  padding: 4px;
+  font-size: 12px;
+  line-height: 1.42857;
+  border-radius: 4px;
 }
 hr {
   border-bottom: 1px dotted #555;
 }
 .torrent-progress {
-	height: 18px !important;
+  height: 18px !important;
   background: #777;
-	border: 1px solid #454545 !important;
+  border: 1px solid #454545 !important;
   border-radius: 4px !important;
 }
 .torrent-progress-download {
-	background-color: #30519c !important;
+  background-color: #30519c !important;
 }
 .torrent-progress-seed {
-	background-color: #228b22 !important;
+  background-color: #228b22 !important;
 }
 #dialog-torrent-add {
   height: 368px !important;
@@ -6333,8 +6333,8 @@ hr {
   color: #fff !important;
 }
 .webui-popover.top > .webui-arrow::after, .webui-popover.top-right > .webui-arrow::after, .webui-popover.top-left > .webui-arrow::after {
-	border-top-color: #1a1a1a !important;
+  border-top-color: #1a1a1a !important;
 }
 .webui-popover.top > .webui-arrow, .webui-popover.top-right > .webui-arrow, .webui-popover.top-left > .webui-arrow {
-	border-top-color: #222 !important;
+  border-top-color: #222 !important;
 }
