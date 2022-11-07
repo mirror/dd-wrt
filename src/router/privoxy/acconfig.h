@@ -10,7 +10,7 @@
  *                introduced because the compile command line started
  *                getting ludicrously long with feature defines.
  *
- * Copyright   :  Written by and Copyright (C) 2001-2014 the
+ * Copyright   :  Written by and Copyright (C) 2001-2021 the
  *                Privoxy team. https://www.privoxy.org/
  *
  *                Based on the Internet Junkbuster originally written
@@ -71,6 +71,11 @@
  * Don't bother to change this here! Use configure instead.
  */
 #undef FEATURE_DYNAMIC_PCRE
+
+/*
+ * Should pcrs use pcre JIT compilation if it's supported?
+ */
+#undef DISABLE_PCRE_JIT_COMPILATION
 
 /*
  * Should pcrs be statically built in instead of linkling with libpcrs?

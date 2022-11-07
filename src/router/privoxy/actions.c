@@ -1111,14 +1111,16 @@ static const char *filter_type_to_string(enum filter_type filter_type)
       return "client-header tagger";
    case FT_SERVER_HEADER_TAGGER:
       return "server-header tagger";
-#ifdef FEATURE_EXTERNAL_FILTERS
-   case FT_EXTERNAL_CONTENT_FILTER:
-      return "external content filter";
-#endif
    case FT_SUPPRESS_TAG:
       return "suppress tag filter";
    case FT_CLIENT_BODY_FILTER:
       return "client body filter";
+   case FT_ADD_HEADER:
+      return "add-header action";
+#ifdef FEATURE_EXTERNAL_FILTERS
+   case FT_EXTERNAL_CONTENT_FILTER:
+      return "external content filter";
+#endif
    case FT_INVALID_FILTER:
       return "invalid filter type";
    }
@@ -1210,7 +1212,7 @@ static int action_spec_is_valid(struct client_state *csp, const struct action_sp
  *
  * Function    :  load_one_actions_file
  *
- * Description :  Read and parse a action file and add to files
+ * Description :  Read and parse an action file and add to files
  *                list.
  *
  * Parameters  :
@@ -1644,7 +1646,7 @@ int load_one_actions_file(struct client_state *csp, int fileid)
  *
  * Function    :  actions_to_text
  *
- * Description :  Converts a actionsfile entry from the internal
+ * Description :  Converts an actionsfile entry from the internal
  *                structure into a text line.  The output is split
  *                into one line for each action with line continuation.
  *
@@ -1730,7 +1732,7 @@ char * actions_to_text(const struct action_spec *action)
  *
  * Function    :  actions_to_html
  *
- * Description :  Converts a actionsfile entry from numeric form
+ * Description :  Converts an actionsfile entry from numeric form
  *                ("mask" and "add") to a <br>-separated HTML string
  *                in which each action is linked to its chapter in
  *                the user manual.
@@ -1933,7 +1935,7 @@ char *current_action_to_html(const struct client_state *csp,
  *
  * Function    :  action_to_line_of_text
  *
- * Description :  Converts a action spec to a single text line
+ * Description :  Converts an action spec to a single text line
  *                listing the enabled actions.
  *
  * Parameters  :

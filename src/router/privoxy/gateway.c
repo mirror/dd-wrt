@@ -1360,7 +1360,7 @@ static jb_socket socks5_connect(const struct forward_spec *fwd,
          }
          else if (sbuf[3] != '\x01')
          {
-             errstr = "SOCKS5 reply contains unsupported address type";
+            errstr = "SOCKS5 reply contains unsupported address type";
          }
          if (errstr == NULL)
          {

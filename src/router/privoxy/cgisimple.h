@@ -84,6 +84,9 @@ extern jb_err cgi_send_default_favicon (struct client_state *csp,
 extern jb_err cgi_send_stylesheet(struct client_state *csp,
                                   struct http_response *rsp,
                                   const struct map *parameters);
+extern jb_err cgi_send_wpad(struct client_state *csp,
+                            struct http_response *rsp,
+                            const struct map *parameters);
 extern jb_err cgi_send_url_info_osd(struct client_state *csp,
                                     struct http_response *rsp,
                                     const struct map *parameters);

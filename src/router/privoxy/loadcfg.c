@@ -1592,7 +1592,7 @@ struct configuration_spec * load_config(void)
             if (config->receive_buffer_size < BUFFER_SIZE)
             {
                log_error(LOG_LEVEL_INFO,
-                  "receive-buffer-size %lu seems low and may cause problems."
+                  "receive-buffer-size %lu seems low and may cause problems. "
                   "Consider setting it to at least %d.",
                   config->receive_buffer_size, BUFFER_SIZE);
             }
@@ -1602,7 +1602,7 @@ struct configuration_spec * load_config(void)
  * single-threaded 0|1
  * *************************************************************************/
          case hash_single_threaded :
-            config->multi_threaded =  0 == parse_toggle_state(cmd, arg);
+            config->multi_threaded = 0 == parse_toggle_state(cmd, arg);
             break;
 
 /* *************************************************************************

@@ -111,13 +111,13 @@
       <table border="0" bgcolor="#E0E0E0" width="100%">
         <tr>
           <td>
-            <pre class="SCREEN"># Allow all cookies for Yahoo login:
-#
-{ -<a href="../user-manual/actions-file.html#CRUNCH-INCOMING-COOKIES" target=
+            <pre class="SCREEN">  # Allow all cookies for Yahoo login:
+  #
+  { -<a href="../user-manual/actions-file.html#CRUNCH-INCOMING-COOKIES" target=
 "_top">crunch-incoming-cookies</a> -<a href="../user-manual/actions-file.html#CRUNCH-OUTGOING-COOKIES" target=
 "_top">crunch-outgoing-cookies</a> -<a href="../user-manual/actions-file.html#SESSION-COOKIES-ONLY" target=
 "_top">session-cookies-only</a> }
-.login.yahoo.com</pre>
+  .login.yahoo.com</pre>
           </td>
         </tr>
       </table>
@@ -128,11 +128,11 @@
       <table border="0" bgcolor="#E0E0E0" width="100%">
         <tr>
           <td>
-            <pre class="SCREEN"># Gmail is a _fragile_ site:
-#
-{ <tt class="LITERAL">fragile</tt> }
- # Gmail is ...
- mail.google.com</pre>
+            <pre class="SCREEN">  # Gmail is a _fragile_ site:
+  #
+  { <tt class="LITERAL">fragile</tt> }
+  # Gmail is ...
+  mail.google.com</pre>
           </td>
         </tr>
       </table>
@@ -393,7 +393,7 @@
         <tr>
           <td>
             <pre class=
-            "SCREEN"> { -crunch-incoming-cookies -crunch-outgoing-cookies -session-cookies-only -filter{content-cookies} }
+            "SCREEN">  { -crunch-incoming-cookies -crunch-outgoing-cookies -session-cookies-only -filter{content-cookies} }
   .example.com</pre>
           </td>
         </tr>
@@ -421,16 +421,16 @@
       <table border="0" bgcolor="#E0E0E0" width="100%">
         <tr>
           <td>
-            <pre class="SCREEN"> ############################################################
- # Blacklist
- ############################################################
- { <a href="../user-manual/actions-file.html#BLOCK" target="_top">+block</a> }
- / # Block *all* URLs
+            <pre class="SCREEN">  ############################################################
+  # Blacklist
+  ############################################################
+  { <a href="../user-manual/actions-file.html#BLOCK" target="_top">+block</a> }
+  / # Block *all* URLs
 
- ############################################################
- # Whitelist
- ############################################################
- { <a href="../user-manual/actions-file.html#BLOCK" target="_top">-block</a> }
+  ############################################################
+  # Whitelist
+  ############################################################
+  { <a href="../user-manual/actions-file.html#BLOCK" target="_top">-block</a> }
   kids.example.com
   toys.example.com
   games.example.com</pre>
@@ -463,9 +463,9 @@
       <table border="0" bgcolor="#E0E0E0" width="100%">
         <tr>
           <td>
-            <pre class="SCREEN"> # Unblock everybody, everywhere
- { <a href="../user-manual/actions-file.html#BLOCK" target="_top">-block</a> }
- / # UN-Block *all* URLs</pre>
+            <pre class="SCREEN">  # Unblock everybody, everywhere
+  { <a href="../user-manual/actions-file.html#BLOCK" target="_top">-block</a> }
+  / # UN-Block *all* URLs</pre>
           </td>
         </tr>
       </table>
@@ -473,13 +473,13 @@
       <table border="0" bgcolor="#E0E0E0" width="100%">
         <tr>
           <td>
-            <pre class="SCREEN"> # Unblock everybody, everywhere, and turn off appropriate filtering, etc
- { <a href="../user-manual/actions-file.html#BLOCK" target="_top">-block</a> \
-  <a href="../user-manual/actions-file.html#FILTER-BANNERS-BY-SIZE" target="_top">-filter{banners-by-size}</a> \
-  <a href="../user-manual/actions-file.html#FILTER-BANNERS-BY-LINK" target="_top">-filter{banners-by-link}</a> \
-  <tt class="LITERAL">allow-popups</tt> \
- }
- / # UN-Block *all* URLs and allow ads</pre>
+            <pre class="SCREEN">  # Unblock everybody, everywhere, and turn off appropriate filtering, etc
+  { <a href="../user-manual/actions-file.html#BLOCK" target="_top">-block</a> \
+    <a href="../user-manual/actions-file.html#FILTER-BANNERS-BY-SIZE" target="_top">-filter{banners-by-size}</a> \
+    <a href="../user-manual/actions-file.html#FILTER-BANNERS-BY-LINK" target="_top">-filter{banners-by-link}</a> \
+    <tt class="LITERAL">allow-popups</tt> \
+  }
+  / # UN-Block *all* URLs and allow ads</pre>
           </td>
         </tr>
       </table>
@@ -510,7 +510,7 @@
       <table border="0" bgcolor="#E0E0E0" width="100%">
         <tr>
           <td>
-            <pre class="SCREEN"> ./configure  --disable-toggle  --disable-editor  --disable-force</pre>
+            <pre class="SCREEN">  ./configure  --disable-toggle  --disable-editor  --disable-force</pre>
           </td>
         </tr>
       </table>

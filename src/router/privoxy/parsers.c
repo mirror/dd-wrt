@@ -1301,6 +1301,17 @@ jb_err sed(struct client_state *csp, int filter_server_headers)
       v++;
    }
 
+   if (filter_server_headers &&
+      (csp->flags & CSP_FLAG_SERVER_CONTENT_LENGTH_SET) &&
+      (csp->flags & CSP_FLAG_CHUNKED))
+   {
+      /* RFC 2616 4.4 3 */
+      log_error(LOG_LEVEL_HEADER, "Ignoring the Content-Length header "
+         "sent by the server as the response is chunk-encoded.");
+      csp->flags &= ~CSP_FLAG_CONTENT_LENGTH_SET;
+      csp->expected_content_length = 0;
+   }
+
    /* place additional headers on the csp->headers list */
    while ((err == JB_ERR_OK) && (*f))
    {
@@ -4617,7 +4628,10 @@ static jb_err parse_time_header(const char *header, time_t *result)
     * through sed() which requires a header name followed by
     * a colon.
     */
-   assert(header_time != NULL);
+   if (header_time == NULL)
+   {
+      return JB_ERR_PARSE;
+   }
 
    header_time++;
    if (*header_time == ' ')

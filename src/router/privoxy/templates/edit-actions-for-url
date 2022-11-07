@@ -138,18 +138,6 @@ function set_image_blocker_param_disable(tf)
     }
 }
 
-function show_add_header_opts(tf)
-{
-    if (document.getElementById) {
-        target = document.getElementById("add_header_opts");
-    } else if (document.all) {
-        target = document.add_header_opts;
-    } else {
-        return;
-    }
-    target.style.display = (tf ? "" : "none");
-}
-
 function show_deanimate_opts(tf)
 {
     if (document.getElementById) {
@@ -285,27 +273,29 @@ function show_limit_connect_opts(tf)
       <th>Action</th>
       <th>Description</th>
     </tr>
+@add-header-params@
     <tr class="bg1" align="left" valign="top">
       <td class="en1" align="center" valign="middle"><input type="radio"
-        name="add_header" id="add_header_y" value="Y" @add-header-y@
-        onclick="show_add_header_opts(true)"></td>
+        name="new_string_action_H_r0" value="Y"
+        ></td>
       <td class="dis1" align="center" valign="middle"><input type="radio"
-        name="add_header" value="N" @add-header-n@
-        onclick="show_add_header_opts(false)"></td>
+        name="new_string_action_H_r0" value="N"
+        ></td>
       <td class="noc1" align="center" valign="middle"><input type="radio"
-        name="add_header" value="X" @add-header-x@
-        onclick="show_add_header_opts(false)"></td>
+        name="new_string_action_H_r0" value="X" checked
+        ></td>
       <td class="action"><a href="@user-manual@@actions-help-prefix@ADD-HEADER">add-header</a></td>
       <td>Adds HTTP headers.</td>
     </tr>
-    <tr class="bg1" align="left" valign="top" id="add_header_opts">
+    <tr class="bg1" align="left" valign="top" id="add-header_opts">
       <td class="en1">&nbsp;</td>
       <td class="dis1">&nbsp;</td>
       <td class="noc1">&nbsp;</td>
       <td>&nbsp;</td>
-      <td>Editing the settings for this option, or turning
-        it on if it was off, is not yet supported using this web-based
-        editor.</td>
+      <td>HTTP client header to add:<br>
+        <input type="hidden" name="new_string_action_H_t0" value="H">
+        <input type="text" name="new_string_action_H_n0" size="40" value="">
+      </td>
     </tr>
     <tr class="bg1" align="left" valign="top">
       <td class="en1" align="center" valign="middle"><input type="radio"
@@ -1158,13 +1148,13 @@ function show_limit_connect_opts(tf)
 @suppress-tag-params@
     <tr class="bg1" align="left" valign="top">
       <td class="en1" align="center" valign="middle"><input type="radio"
-        name="new_string_filter_r0" value="Y"
+        name="new_string_action_U_r0" value="Y"
         ></td>
       <td class="dis1" align="center" valign="middle"><input type="radio"
-        name="new_string_filter_r0" value="N"
+        name="new_string_action_U_r0" value="N"
         ></td>
       <td class="noc1" align="center" valign="middle"><input type="radio"
-        name="new_string_filter_r0" value="X" checked
+        name="new_string_action_U_r0" value="X" checked
         ></td>
       <td class="action"><a href="@user-manual@@actions-help-prefix@SUPPRESS-TAG">suppress-tag</a></td>
       <td>Suppress tag.</td>
@@ -1175,8 +1165,8 @@ function show_limit_connect_opts(tf)
       <td class="noc1">&nbsp;</td>
       <td>&nbsp;</td>
       <td>Tag to suppress:<br>
-        <input type="hidden" name="new_string_filter_t0" value="U">
-        <input type="text" name="new_string_filter_n0" size="40" value="">
+        <input type="hidden" name="new_string_action_U_t0" value="U">
+        <input type="text" name="new_string_action_U_n0" size="40" value="">
       </td>
     </tr>
     <tr class="bg1" align="left" valign="top">
@@ -1293,7 +1283,6 @@ if (document.getElementById) {
     document.getElementById("hide_referrer_param").disabled = !(document.getElementById("hide_referrer_mode_set").checked);
     document.getElementById("set_image_blocker_param").disabled = !(document.getElementById("set_image_blocker_mode_set").checked);
 
-    show_add_header_opts    (document.getElementById("add_header_y").checked);
     show_deanimate_opts     (document.getElementById("deanimate_gifs_y").checked);
     show_hide_from_header_opts(document.getElementById("hide_from_header_y").checked);
     show_hide_referrer_opts (document.getElementById("hide_referrer_y").checked);
@@ -1307,7 +1296,6 @@ if (document.getElementById) {
     document.myform.hide_referrer_param.disabled = !(document.myform.hide_referrer_mode_set.checked);
     document.myform.set_image_blocker_param.disabled = !(document.myform.set_image_blocker_mode_set.checked);
 
-    show_add_header_opts    (document.myform.add_header_y.checked);
     show_deanimate_opts     (document.myform.deanimate_gifs_y.checked);
     show_hide_from_header_opts (document.myform.hide_from_header_y.checked);
     show_hide_referrer_opts (document.myform.hide_referrer_y.checked);

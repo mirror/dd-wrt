@@ -1277,19 +1277,7 @@ struct http_response *redirect_url(struct client_state *csp)
       new_url = get_last_url(old_url, redirect_mode);
       freez(old_url);
    }
-
-   /*
-    * Disable redirect checkers, so that they
-    * will be only run more than once if the user
-    * also enables them through tags.
-    *
-    * From a performance point of view
-    * it doesn't matter, but the duplicated
-    * log messages are annoying.
-    */
-   csp->action->flags &= ~ACTION_FAST_REDIRECTS;
 #endif /* def FEATURE_FAST_REDIRECTS */
-   csp->action->flags &= ~ACTION_REDIRECT;
 
    /* Did any redirect action trigger? */
    if (new_url)

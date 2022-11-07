@@ -8,7 +8,7 @@
  *                project.  Does not define any variables or functions
  *                (though it does declare some macros).
  *
- * Copyright   :  Written by and Copyright (C) 2001-2014 the
+ * Copyright   :  Written by and Copyright (C) 2001-2021 the
  *                Privoxy team. https://www.privoxy.org/
  *
  *                Based on the Internet Junkbuster originally written
@@ -49,7 +49,6 @@
 * Macros for SSL structures
 */
 #define CERT_INFO_BUF_SIZE         4096
-#define CERT_FILE_BUF_SIZE         16384
 #define ISSUER_NAME_BUF_SIZE       2048
 #define HASH_OF_HOST_BUF_SIZE      16
 #endif /* FEATURE_HTTPS_INSPECTION */
@@ -363,7 +362,7 @@ struct http_request
  */
 typedef struct certs_chain {
    char info_buf[CERT_INFO_BUF_SIZE];    /* text info about properties of certificate               */
-   char file_buf[CERT_FILE_BUF_SIZE];    /* buffer for whole certificate - format to save in file   */
+   char *file_buf;                       /* buffer for whole certificate - format to save in file   */
    struct certs_chain *next;             /* next certificate in chain of trust                      */
 } certs_chain_t;
 #endif
@@ -1297,16 +1296,17 @@ enum filter_type
    FT_SERVER_HEADER_TAGGER = 4,
    FT_SUPPRESS_TAG = 5,
    FT_CLIENT_BODY_FILTER = 6,
+   FT_ADD_HEADER = 7,
 #ifdef FEATURE_EXTERNAL_FILTERS
-   FT_EXTERNAL_CONTENT_FILTER = 7,
+   FT_EXTERNAL_CONTENT_FILTER = 8,
 #endif
    FT_INVALID_FILTER       = 42,
 };
 
 #ifdef FEATURE_EXTERNAL_FILTERS
-#define MAX_FILTER_TYPES        8
+#define MAX_FILTER_TYPES        9
 #else
-#define MAX_FILTER_TYPES        7
+#define MAX_FILTER_TYPES        8
 #endif
 
 /**

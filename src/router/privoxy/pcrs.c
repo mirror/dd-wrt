@@ -670,10 +670,14 @@ pcrs_job *pcrs_compile(const char *pattern, const char *substitute, const char *
 
 
 #ifdef PCRE_STUDY_JIT_COMPILE
+#ifdef DISABLE_PCRE_JIT_COMPILATION
+#warning PCRE_STUDY_JIT_COMPILE is supported but Privoxy has been configured not to use it
+#else
    if (!(flags & PCRS_DYNAMIC))
    {
       pcre_study_options = PCRE_STUDY_JIT_COMPILE;
    }
+#endif
 #endif
 
    /*

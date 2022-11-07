@@ -4,7 +4,7 @@
 <!entity p-intro SYSTEM "privoxy.sgml">
 <!entity contacting SYSTEM "contacting.sgml">
 <!entity buildsource SYSTEM "buildsource.sgml">
-<!entity p-version "3.0.32">
+<!entity p-version "3.0.33">
 <!entity p-status "stable">
 <!entity % p-not-stable "IGNORE">
 <!entity % p-stable "INCLUDE">
@@ -17,7 +17,7 @@
 
  Purpose     :  README for Privoxy
 
- Copyright (C) 2001-2020 Privoxy Developers https://www.privoxy.org/
+ Copyright (C) 2001-2021 Privoxy Developers https://www.privoxy.org/
  See LICENSE.
 
  ========================================================================
@@ -78,7 +78,7 @@
  *
  * Purpose     :  Give a short intro about Privoxy.
  *
- * Copyright   :  Written by and Copyright (C) 2001-2020 the
+ * Copyright   :  Written by and Copyright (C) 2001-2021 the
  *                Privoxy team. https://www.privoxy.org/
  *
  *                Based on the Internet Junkbuster originally written

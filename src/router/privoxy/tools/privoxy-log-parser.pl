@@ -43,15 +43,17 @@ use warnings;
 use Getopt::Long;
 
 use constant {
-    PRIVOXY_LOG_PARSER_VERSION => '0.9.3',
+    PRIVOXY_LOG_PARSER_VERSION => '0.9.4',
     # Feel free to mess with these ...
     DEFAULT_BACKGROUND => 'black',  # Choose registered colour (like 'black')
     DEFAULT_TEXT_COLOUR => 'white', # Choose registered colour (like 'black')
     HEADER_DEFAULT_COLOUR => 'yellow',
     REGISTER_HEADERS_WITH_THE_SAME_COLOUR => 1,
 
+    CLI_OPTION_DETECT_INACTIVITY => 0,
     CLI_OPTION_DEFAULT_TO_HTML_OUTPUT => 0,
     CLI_OPTION_TITLE => 'Privoxy-Log-Parser in da house',
+    CLI_OPTION_INACTIVITY_THRESHOLD => 100,
     CLI_OPTION_KEEP_DATE => 0,
     CLI_OPTION_NO_EMBEDDED_CSS => 0,
     CLI_OPTION_NO_MSECS => 0,
@@ -62,6 +64,7 @@ use constant {
     CLI_OPTION_STRICT_CHECKS => 0,
     CLI_OPTION_UNBREAK_LINES_ONLY => 0,
     CLI_OPTION_URL_STATISTICS_THRESHOLD => 0,
+    CLI_OPTION_PASSED_REQUEST_STATISTICS_THRESHOLD => 0,
     CLI_OPTION_HOST_STATISTICS_THRESHOLD => 0,
     CLI_OPTION_SHOW_COMPLETE_REQUEST_DISTRIBUTION => 0,
 
@@ -1622,9 +1625,10 @@ sub handle_loglevel_connect($) {
         $c = highlight_matched_host($c, '(?<=for )[^\s]+');
         $c =~ s@(?<=in slot )(\d+)@$h{'Number'}$1$h{'Standard'}@;
 
-    } elsif ($c =~ m/^Socket/) {
+    } elsif ($c =~ m/^Socket \d+ (already|closed)/) {
 
         # Socket 16 already forgotten or never remembered.
+        # Socket 9 closed while waiting for client headers
         $c =~ s@(?<=Socket )(\d+)@$h{'Number'}$1$h{'Standard'}@;
 
     } elsif ($c =~ m/^The connection to/) {
@@ -1889,6 +1893,22 @@ sub handle_loglevel_connect($) {
 
         # Complete client request followed by 59 bytes of pipelined data received.
         $c =~ s@(?<=followed by )(\d+)@$h{'Number'}$1$h{'Standard'}@;
+
+    } elsif ($c =~ m/^The peer notified us that the connection on socket/) {
+
+        # The peer notified us that the connection on socket 11 is going to be closed
+        $c =~ s@(?<=socket )(\d+)@$h{'Number'}$1$h{'Standard'}@;
+
+    } elsif ($c =~ m/^Client socket \d is no longer usable/) {
+
+        # Client socket 7 is no longer usable. The server socket has been closed.
+        $c =~ s@(?<=socket )(\d+)@$h{'Number'}$1$h{'Standard'}@;
+
+    } elsif ($c =~ m/^Socket timeout \d+ reached/) {
+
+        # Socket timeout 3 reached: http://127.0.0.1:20000/no-filter/chunked-content/36
+        $c =~ s@(?<=timeout )(\d+)@$h{'Number'}$1$h{'Standard'}@;
+        $c = highlight_matched_url($c, "(?<=reached: ).*")
 
     } elsif ($c =~ m/^Looks like we / or
              $c =~ m/^Unsetting keep-alive flag/ or
@@ -2194,17 +2214,25 @@ sub gather_loglevel_clf_stats($) {
 }
 
 sub gather_loglevel_request_stats($$) {
-    my $c = shift;
+    my $request_url = shift;
     my $thread = shift;
     our %stats;
+    our %cli_options;
 
     $stats{requests}++;
+    if ($cli_options{'passed-request-statistics-threshold'} != 0) {
+        # If the request get blocked we'll decrement
+        # in gather_loglevel_crunch_stats()
+        chomp $request_url;
+        $stats{'passed-request-url'}{$request_url}++;
+    }
 }
 
 sub gather_loglevel_crunch_stats($$) {
     my $c = shift;
     my $thread = shift;
     our %stats;
+    our %cli_options;
 
     $stats{crunches}++;
 
@@ -2223,6 +2251,15 @@ sub gather_loglevel_crunch_stats($$) {
     } elsif ($c =~ m/^Connection failure:/) {
         # Connection failure: http://127.0.0.1:8080/
         $stats{'connection-failure'}++;
+    }
+    if ($cli_options{'passed-request-statistics-threshold'} != 0) {
+        $c =~ m/^[^:]+: (.*)/;
+        if ($stats{'passed-request-url'}{$1}) {
+            $stats{'passed-request-url'}{$1}-- ;
+            if ($stats{'passed-request-url'}{$1} == 0) {
+                delete($stats{'passed-request-url'}{$1});
+            }
+        }
     }
 }
 
@@ -2405,7 +2442,7 @@ sub print_stats() {
         ")\n";
     print "Client connections: " .  $stats{'closed-client-connections'} . "\n";
     if ($stats{'content-size-total'}) {
-        print "Bytes of content transfered to the client: " .  $stats{'content-size-total'} . "\n";
+        print "Bytes of content transferred to the client: " .  $stats{'content-size-total'} . "\n";
     }
     my $lines_printed = 0;
     print "Client requests per connection distribution:\n";
@@ -2444,7 +2481,7 @@ sub print_stats() {
         print "HTTP version distribution unknown. No CLF message parsed yet. Is 'debug 512' enabled?\n";
     }
     if (exists $stats{'status-code'}) {
-        print "HTTP status codes:\n";
+        print "HTTP status codes according to 'debug 512' (status codes sent by the server may differ):\n";
         foreach my $status_code (sort {$stats{'status-code'}{$b} <=> $stats{'status-code'}{$a}} keys %{$stats{'status-code'}}) {
             printf "%8d : %-8d\n",  $stats{'status-code'}{$status_code}, $status_code;
         }
@@ -2465,6 +2502,19 @@ sub print_stats() {
         }
     }
 
+    if ($cli_options{'passed-request-statistics-threshold'} == 0) {
+        print "Passed request statistics are disabled. Increase --passed-request-statistics-threshold to enable them.\n";
+    } else {
+        print "Requested requests that were passed:\n";
+        foreach my $passed_url (sort {$stats{'passed-request-url'}{$b} <=> $stats{'passed-request-url'}{$a}}
+                                keys %{$stats{'passed-request-url'}}) {
+            if ($stats{'passed-request-url'}{$passed_url} < $cli_options{'passed-request-statistics-threshold'}) {
+                print "Skipped statistics for passed URLs below the treshold.\n";
+                last;
+            }
+            printf "%d : %s\n", $stats{'passed-request-url'}{$passed_url}, $passed_url;
+        }
+    }
     if ($cli_options{'host-statistics-threshold'} == 0) {
         print "Host statistics are disabled. Increase --host-statistics-threshold to enable them.\n";
     } else {
@@ -2650,7 +2700,7 @@ sub parse_loop() {
 
 sub stats_loop() {
 
-    my ($day, $time_stamp, $msecs, $thread, $log_level, $content);
+    my ($day, $time_stamp, $thread, $log_level, $content);
     my $strict_checks = cli_option_is_set('strict-checks');
     my %log_level_handlers = (
          'Connect:'           => \&gather_loglevel_connect_stats,
@@ -2698,6 +2748,75 @@ sub stats_loop() {
 
 }
 
+# Convert a timestamp like 18:07:28.733 into milliseconds
+sub time_stamp_to_msecs($) {
+    my $time_stamp = shift;
+
+    if ($time_stamp =~ /(\d\d):(\d\d):(\d\d)\.(\d{3})/) {
+        my ($hours, $minutes, $seconds, $msecs) = ($1, $2, $3, $4);
+
+        $msecs += $seconds * 1000;
+        $msecs += $minutes * 1000 * 60;
+        $msecs += $hours   * 1000 * 60 * 60;
+
+        return $msecs;
+    }
+    return undef;
+}
+
+sub inactivity_detection_loop() {
+
+    our %cli_options;
+    my ($date, $time_stamp, $thread, $log_level, $content);
+    my ($msecs, $previous_msecs, $inactivity);
+    my $inactivity_threshold = $cli_options{'inactivity-threshold'};
+    my $previous_date;
+    my $log_messages_out_of_order = 0;
+
+    while (<>) {
+        ($date, $time_stamp, $thread, $log_level, $content) = split(/ /, $_, 5);
+
+        next if (not defined($log_level));
+        next if ($time_stamp eq "-");
+        $msecs = time_stamp_to_msecs($time_stamp);
+        unless (defined $msecs) {
+            print "Failed to convert $time_stamp into milliseconds\n";
+            print "$_";
+            next;
+        }
+        unless (defined $previous_msecs) {
+            $previous_msecs = $msecs;
+            $previous_date = $date;
+            print "$_";
+            next;
+        }
+        $inactivity = $msecs - $previous_msecs;
+        if ($inactivity < 0) {
+            # This can happen if there's a high load in which case
+            # a Privoxy thread may be moved off schedule between
+            # getting the timestamp for the log message and actually
+            # writing it.
+            $log_messages_out_of_order++;
+        }
+        if ($inactivity > $inactivity_threshold) {
+            if ($previous_date eq $date) {
+                print "Detected inactivity: $inactivity msecs\n";
+            } else {
+                # While we could include the date in the timestamp
+                # we currently don't.
+                print "Detected date change. Timestamp difference ignored.\n";
+            }
+        }
+        print "$_";
+        $previous_msecs = $msecs;
+        $previous_date = $date;
+    }
+    if ($log_messages_out_of_order) {
+        print "At least $log_messages_out_of_order messages were written out of the chronological order.\n";
+        print "This can result in false positives. Consider sorting the log first.\n";
+    }
+}
+
 sub unbreak_lines_only_loop() {
     my $log_messages_reached = 0;
     while (<>) {
@@ -2734,6 +2853,8 @@ sub VersionMessage {
 sub get_cli_options() {
 
     our %cli_options = (
+        'detect-inactivity'        => CLI_OPTION_DETECT_INACTIVITY,
+        'inactivity-threshold'     => CLI_OPTION_INACTIVITY_THRESHOLD,
         'html-output'              => CLI_OPTION_DEFAULT_TO_HTML_OUTPUT,
         'title'                    => CLI_OPTION_TITLE,
         'keep-date'                => CLI_OPTION_KEEP_DATE,
@@ -2747,10 +2868,13 @@ sub get_cli_options() {
         'url-statistics-threshold' => CLI_OPTION_URL_STATISTICS_THRESHOLD,
         'unbreak-lines-only'       => CLI_OPTION_UNBREAK_LINES_ONLY,
         'host-statistics-threshold'=> CLI_OPTION_HOST_STATISTICS_THRESHOLD,
+        'passed-request-statistics-threshold' => CLI_OPTION_PASSED_REQUEST_STATISTICS_THRESHOLD,
         'show-complete-request-distribution' => CLI_OPTION_SHOW_COMPLETE_REQUEST_DISTRIBUTION,
     );
 
     GetOptions (
+        'detect-inactivity'        => \$cli_options{'detect-inactivity'},
+        'inactivity-threshold=i'   => \$cli_options{'inactivity-threshold'},
         'html-output'              => \$cli_options{'html-output'},
         'title'                    => \$cli_options{'title'},
         'keep-date'                => \$cli_options{'keep-date'},
@@ -2764,6 +2888,7 @@ sub get_cli_options() {
         'unbreak-lines-only'       => \$cli_options{'unbreak-lines-only'},
         'url-statistics-threshold=i'=> \$cli_options{'url-statistics-threshold'},
         'host-statistics-threshold=i'=> \$cli_options{'host-statistics-threshold'},
+        'passed-request-statistics-threshold=i' => \$cli_options{'passed-request-statistics-threshold'},
         'show-complete-request-distribution' => \$cli_options{'show-complete-request-distribution'},
         'version'                  => sub { VersionMessage && exit(0) },
         'help'                     => \&help,
@@ -2785,6 +2910,8 @@ sub help() {
     print << "    EOF"
 
 Options and their default values if they have any:
+    [--detect-innactivity]
+    [--inactivity-threshold $cli_options{'inactivity-threshold'}]
     [--host-statistics-threshold $cli_options{'host-statistics-threshold'}]
     [--html-output]
     [--no-embedded-css]
@@ -2796,6 +2923,7 @@ Options and their default values if they have any:
     [--statistics]
     [--unbreak-lines-only]
     [--url-statistics-threshold $cli_options{'url-statistics-threshold'}]
+    [--passed-request-statistics-threshold $cli_options{'passed-request-statistics-threshold'}]
     [--title $cli_options{'title'}]
     [--version]
 see "perldoc $0" for more information
@@ -2813,18 +2941,18 @@ sub main() {
     set_background(DEFAULT_BACKGROUND);
     prepare_our_stuff();
 
-    print_intro();
-
     # XXX: should explicitly reject incompatible argument combinations
     if (cli_option_is_set('unbreak-lines-only')) {
         unbreak_lines_only_loop();
     } elsif (cli_option_is_set('statistics')) {
         stats_loop();
+    } elsif (cli_option_is_set('detect-inactivity')) {
+        inactivity_detection_loop();
     } else {
+        print_intro();
         parse_loop();
+        print_outro();
     }
-
-    print_outro();
 }
 
 main();
@@ -2835,7 +2963,8 @@ B<privoxy-log-parser> - A parser and syntax-highlighter for Privoxy log messages
 
 =head1 SYNOPSIS
 
-B<privoxy-log-parser> [B<--html-output>]
+B<privoxy-log-parser> [B<--detect-inactivity>] [B<--inactivity-threshold msecs>]
+[B<--html-output>]
 [B<--no-msecs>] [B<--no-syntax-higlighting>] [B<--statistics>]
 [B<--shorten-thread-ids>] [B<--show-ineffective-filters>]
 [B<--url-statistics-threshold>] [B<--version>]
@@ -2862,14 +2991,22 @@ will hide the "filter foo caused 0 hits" message.
 
 =head1 OPTIONS
 
+[B<--detect-inactivity>] Instead of syntax highlighting, detect periods
+of log inactivity of more than the amount of milliseconds specified with
+the B<--inactivity-threshold> option. Mainly useful for debugging.
+
 [B<--host-statistics-threshold>] Only show the request count for a host
 if it's above or equal to the given threshold. If the threshold is 0, host
 statistics are disabled.
 
-[B<--html-output>] Use HTML and CSS for the syntax highlighting. If this option is
+[B<--html-output>] Use HTML and CSS when syntax highlighting. If this option is
 omitted, ANSI escape sequences are used unless B<--no-syntax-highlighting> is active.
 This option is only intended to make embedding log excerpts in web pages easier.
 It does not escape any input!
+
+[B<--inactivity-threshold msecs>] Specifies the number of milliseconds between
+log messages to consider inactivity when running in [B<--detect-inactivity>]
+mode.
 
 [B<--keep-date>] Don't remove the date when printing highlighted log messages.
 Useful when parsing multiple log files at once.
@@ -2880,6 +3017,10 @@ Useful when parsing multiple log files at once.
 the filtered output is piped into less in which case the ANSI control
 codes don't work, or if the terminal itself doesn't support the control
 codes.
+
+[B<--passed-request-statistics-threshold>] Only show the request count for
+a passed requests if it's above or equal to the given threshold. If the
+threshold is 0, passed request statistics are disabled.
 
 [B<--shorten-thread-ids>] Shorten the thread ids to a three-digit decimal number.
 Note that the mapping from thread ids to shortened ids is created at run-time

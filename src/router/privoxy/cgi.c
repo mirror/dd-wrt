@@ -7,7 +7,7 @@
  *                This only contains the framework functions, the
  *                actual handler functions are declared elsewhere.
  *
- * Copyright   :  Written by and Copyright (C) 2001-2020
+ * Copyright   :  Written by and Copyright (C) 2001-2021
  *                members of the Privoxy team. https://www.privoxy.org/
  *
  *                Based on the Internet Junkbuster originally written
@@ -221,6 +221,9 @@ static const struct cgi_dispatcher cgi_dispatchers[] = {
    { "user-manual",
           cgi_send_user_manual,
           NULL, TRUE /* Send user-manual */ },
+   { "wpad.dat",
+         cgi_send_wpad,
+         NULL, TRUE /* Send wpad.dat proxy autoconfiguration file */ },
    { NULL, /* NULL Indicates end of list and default page */
          cgi_error_404,
          NULL, TRUE /* Unknown CGI page */ }
@@ -1196,7 +1199,8 @@ jb_err cgi_error_no_template(const struct client_state *csp,
       ").</p>\n"
       "</body>\n"
       "</html>\n";
-   const size_t body_size = strlen(body_prefix) + strlen(template_name) + strlen(body_suffix) + 1;
+   size_t body_size = strlen(body_prefix) + strlen(body_suffix) + 1;
+   const char *encoded_template_name;
 
    assert(csp);
    assert(rsp);
@@ -1210,9 +1214,17 @@ jb_err cgi_error_no_template(const struct client_state *csp,
    rsp->head_length = 0;
    rsp->is_static = 0;
 
+   encoded_template_name = html_encode(template_name);
+   if (encoded_template_name == NULL)
+   {
+      return JB_ERR_MEMORY;
+   }
+
+   body_size += strlen(encoded_template_name);
    rsp->body = malloc_or_die(body_size);
    strlcpy(rsp->body, body_prefix, body_size);
-   strlcat(rsp->body, template_name, body_size);
+   strlcat(rsp->body, encoded_template_name, body_size);
+   freez(encoded_template_name);
    strlcat(rsp->body, body_suffix, body_size);
 
    rsp->status = strdup(status);

@@ -27,7 +27,7 @@ ChangeLog for Privoxy 3.0.32
   - Obsolete pcre: Prevent invalid memory accesses with an invalid
     pattern passed to pcre_compile(). Note that the obsolete pcre code
     is scheduled to be removed before the 3.0.33 release. There has been
-    a warning since since 2008 already.
+    a warning since 2008 already.
     Commit 28512e5b624. OVE-20210222-0001.
     Reported by: Joshua Rogers (Opera)
 
@@ -63,7 +63,7 @@ ChangeLog for Privoxy 3.0.32
     fail to open a local file.
 
 - General improvements:
-  - Log the TLS version and the the cipher when debug 2 is enabled..
+  - Log the TLS version and the the cipher when debug 2 is enabled.
   - ssl_send_certificate_error(): Respect HEAD requests by not sending a body.
   - ssl_send_certificate_error(): End the body with a single new line.
   - serve(): Increase the chances that the host is logged when closing
