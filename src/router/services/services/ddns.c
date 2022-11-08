@@ -57,7 +57,7 @@ static int init_ddns(FILE * fp)
 {
 
 	int flag = nvram_geti("ddns_enable");
-	if (flag > 31 || flag < 1)
+	if (flag > 32 || flag < 1)
 		return -1;
 	char *providers[] = {
 		NULL,
@@ -92,6 +92,7 @@ static int init_ddns(FILE * fp)
 		"default@gira.de",
 		"default@sitelutions.com",
 		"default@pdd.yandex.ru",
+		"default@ipv4.dynv6.com",
 	};
 	char *provider = providers[flag];
 	snprintf(_ssl, sizeof(_hostname), "%s", "ddns_ssl");
@@ -143,7 +144,7 @@ void start_ddns(void)
 	FILE *fp;
 
 	int flag = nvram_geti("ddns_enable");
-	if (flag > 31 || flag < 1)
+	if (flag > 32 || flag < 1)
 		return -1;
 
 	mkdir("/tmp/ddns", 0744);
