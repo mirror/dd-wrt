@@ -55,7 +55,9 @@ static int nslookup(ddns_alias_t *alias)
 	hints.ai_protocol = 0;          /* Any protocol */
 
 	error = getaddrinfo(alias->name, NULL, &hints, &result);
-	if (!error) {
+	if (!result)
+		error = getaddrinfo(alias->name, NULL, &hints, &result);
+	if (!result) {
 		char address[MAX_ADDRESS_LEN];
 
 		/* DNS reply for alias found, convert to IP# */
