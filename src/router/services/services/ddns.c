@@ -132,7 +132,6 @@ static int init_ddns(FILE * fp)
 			idx++;
 		}
 		fprintf(fp, "}\n");
-		fprintf(fp, "hostname = \" %s \"\n", nvram_safe_get(_hostname));
 #ifdef HAVE_USE_OPENSSL
 		fprintf(fp, "ssl = %s\n", nvram_match(_ssl, "1") ? "true" : "false");
 #endif
