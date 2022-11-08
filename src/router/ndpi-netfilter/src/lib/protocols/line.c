@@ -25,7 +25,7 @@
 
 #include "ndpi_api.h"
 
-extern int is_valid_rtp_payload_type(uint8_t type);
+NDPI_STATIC int is_valid_rtp_payload_type(uint8_t type);
 
 static void ndpi_int_line_add_connection(struct ndpi_detection_module_struct * const ndpi_struct,
                                          struct ndpi_flow_struct * const flow)

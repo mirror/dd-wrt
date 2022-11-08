@@ -425,7 +425,7 @@ int main(int argc,char **argv) {
   ofd = fd ? fd:stdout;
 
   fprintf(ofd,"/*\n\n\tDon't edit this file!\n\n\tchange *.yaml files\n\n */\n\n");
-  fprintf(ofd,"ndpi_network host_protocol_list[] = {\n");
+  fprintf(ofd,"NDPI_STATIC ndpi_network host_protocol_list[] = {\n");
 
   for(i=0; i <= NDPI_LAST_IMPLEMENTED_PROTOCOL; i++) {
 	struct net_cidr_list *nl = net_cidr_list[i];

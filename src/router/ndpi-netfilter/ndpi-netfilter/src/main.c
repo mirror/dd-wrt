@@ -68,7 +68,7 @@
 
 #include "../lib/third_party/include/ndpi_patricia.h"
 
-extern ndpi_protocol_match host_match[];
+NDPI_STATIC ndpi_protocol_match host_match[];
 
 /* Only for debug! */
 //#define NDPI_IPPORT_DEBUG
@@ -1934,7 +1934,7 @@ struct xt_ndpi_mtinfo *info = par->matchinfo;
 
 #if LINUX_VERSION_CODE < KERNEL_VERSION(4,8,0)
 
-char *ndpi_proto_to_str(char *buf,size_t size,ndpi_protocol_nf *p,ndpi_mod_str_t *ndpi_str)
+NDPI_STATIC char *ndpi_proto_to_str(char *buf,size_t size,ndpi_protocol_nf *p,ndpi_mod_str_t *ndpi_str)
 {
 const char *t_app,*t_mast;
 buf[0] = '\0';

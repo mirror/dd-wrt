@@ -831,7 +831,7 @@ static ndpi_network host_protocol_list[] = {
 
 /* ****************************************************** */
 
-ndpi_protocol_match host_match[] =
+NDPI_STATIC ndpi_protocol_match host_match[] =
   {
    { "dmqdd6hw24ucf.cloudfront.net",                      "AmazonVideo",      NDPI_PROTOCOL_AMAZON_VIDEO, NDPI_PROTOCOL_CATEGORY_VIDEO, NDPI_PROTOCOL_FUN, NDPI_PROTOCOL_DEFAULT_LEVEL },
    { "d25xi40x97liuc.cloudfront.net",                     "AmazonVideo",      NDPI_PROTOCOL_AMAZON_VIDEO, NDPI_PROTOCOL_CATEGORY_VIDEO, NDPI_PROTOCOL_FUN, NDPI_PROTOCOL_DEFAULT_LEVEL },

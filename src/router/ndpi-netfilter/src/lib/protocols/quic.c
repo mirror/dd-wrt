@@ -55,7 +55,7 @@ NDPI_STATIC int processClientServerHello(struct ndpi_detection_module_struct *nd
 NDPI_STATIC int http_process_user_agent(struct ndpi_detection_module_struct *ndpi_struct,
                                    struct ndpi_flow_struct *flow,
                                    const u_int8_t *ua_ptr, u_int16_t ua_ptr_len);
-extern int is_valid_rtp_payload_type(uint8_t type);
+NDPI_STATIC int is_valid_rtp_payload_type(uint8_t type);
 
 /* Versions */
 #define V_1		0x00000001

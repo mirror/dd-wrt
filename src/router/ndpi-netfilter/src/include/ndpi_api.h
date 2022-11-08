@@ -303,11 +303,12 @@ NDPI_STATIC   ndpi_protocol ndpi_detection_giveup(struct ndpi_detection_module_s
    * @return void
    *
    */
-NDPI_STATIC   void ndpi_process_extra_packet(struct ndpi_detection_module_struct *ndpi_struct,
+NDPI_STATIC void ndpi_process_extra_packet(struct ndpi_detection_module_struct *ndpi_struct,
 				 struct ndpi_flow_struct *flow,
 				 const unsigned char *packet,
 				 const unsigned short packetlen,
-				 const u_int64_t packet_time_ms);
+				 const u_int64_t packet_time_ms,
+				 const struct ndpi_flow_input_info *input_info);
 
   /**
    * Processes one packet and returns the ID of the detected protocol.
@@ -321,11 +322,12 @@ NDPI_STATIC   void ndpi_process_extra_packet(struct ndpi_detection_module_struct
    * @return the detected ID of the protocol
    *
    */
-NDPI_STATIC   ndpi_protocol ndpi_detection_process_packet(struct ndpi_detection_module_struct *ndpi_struct,
+NDPI_STATIC  ndpi_protocol ndpi_detection_process_packet(struct ndpi_detection_module_struct *ndpi_struct,
 					      struct ndpi_flow_struct *flow,
 					      const unsigned char *packet,
 					      const unsigned short packetlen,
-					      const u_int64_t packet_time_ms);
+					      const u_int64_t packet_time_ms,
+					      const struct ndpi_flow_input_info *input_info);
   /**
    * Get the main protocol of the passed flows for the detected module
    *

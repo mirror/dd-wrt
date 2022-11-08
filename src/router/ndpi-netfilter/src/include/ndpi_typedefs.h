@@ -1592,10 +1592,6 @@ struct ndpi_flow_struct {
     } discord;
 
     struct {
-      char client_ip[16];
-    } discord;
-
-    struct {
       char version[32];
     } ubntac2;
 

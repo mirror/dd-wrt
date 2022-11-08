@@ -48,7 +48,7 @@
 
 /* #define SMTP_DEBUG 1 */
 
-extern void switch_extra_dissection_to_tls(struct ndpi_detection_module_struct *ndpi_struct,
+NDPI_STATIC void switch_extra_dissection_to_tls(struct ndpi_detection_module_struct *ndpi_struct,
 					   struct ndpi_flow_struct *flow);
 
 static void ndpi_int_mail_smtp_add_connection(struct ndpi_detection_module_struct
@@ -403,7 +403,7 @@ void ndpi_search_mail_smtp_tcp(struct ndpi_detection_module_struct *ndpi_struct,
 
 /* **************************************** */
 
-int ndpi_extra_search_mail_smtp_tcp(struct ndpi_detection_module_struct *ndpi_struct,
+NDPI_STATIC int ndpi_extra_search_mail_smtp_tcp(struct ndpi_detection_module_struct *ndpi_struct,
 				    struct ndpi_flow_struct *flow)
 {
   struct ndpi_packet_struct *packet = ndpi_get_packet_struct(ndpi_struct);
