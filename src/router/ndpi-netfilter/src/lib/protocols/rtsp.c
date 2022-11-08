@@ -30,10 +30,10 @@
 
 
 static void ndpi_int_rtsp_add_connection(struct ndpi_detection_module_struct *ndpi_struct,
-					 struct ndpi_flow_struct *flow/* , */
-					 /* ndpi_protocol_type_t protocol_type */)
+					 struct ndpi_flow_struct *flow)
 {
-  ndpi_set_detected_protocol(ndpi_struct, flow, NDPI_PROTOCOL_RTSP, NDPI_PROTOCOL_UNKNOWN, NDPI_CONFIDENCE_DPI);
+  ndpi_set_detected_protocol_keeping_master(ndpi_struct, flow, NDPI_PROTOCOL_RTSP,
+					    NDPI_CONFIDENCE_DPI);
 }
 
 /* this function searches for a rtsp-"handshake" over tcp or udp. */
@@ -109,7 +109,7 @@ void init_rtsp_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int
   ndpi_set_bitmask_protocol_detection("RTSP", ndpi_struct, detection_bitmask, *id,
 				      NDPI_PROTOCOL_RTSP,
 				      ndpi_search_rtsp_tcp_udp,
-				      NDPI_SELECTION_BITMASK_PROTOCOL_V4_V6_TCP_OR_UDP_WITH_PAYLOAD,
+				      NDPI_SELECTION_BITMASK_PROTOCOL_V4_V6_TCP_OR_UDP_WITH_PAYLOAD_WITHOUT_RETRANSMISSION,
 				      SAVE_DETECTION_BITMASK_AS_UNKNOWN,
 				      ADD_TO_DETECTION_BITMASK);
   *id += 1;

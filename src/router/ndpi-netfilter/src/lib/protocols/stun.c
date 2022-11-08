@@ -36,34 +36,42 @@
 
 /* ************************************************************ */
 
+int ndpi_stun_cache_enable=
+#ifndef __KERNEL__
+	1;
+#else
+	0;
+#endif
 
 /* ************************************************************ */
 
-NDPI_STATIC u_int32_t get_stun_lru_key(struct ndpi_packet_struct *packet, u_int8_t rev) {
+NDPI_STATIC u_int32_t get_stun_lru_key(struct ndpi_flow_struct *flow, u_int8_t rev) {
   if(rev)
-    return(ntohl(packet->iph->daddr) + ntohs(packet->udp->dest));
+    return(ntohl(flow->s_address.v4) + ntohs(flow->s_port));
   else
-    return(ntohl(packet->iph->saddr) + ntohs(packet->udp->source));
+    return(ntohl(flow->c_address.v4) + ntohs(flow->c_port));
 }
 
 /* ************************************************************ */
 
 NDPI_STATIC void ndpi_int_stun_add_connection(struct ndpi_detection_module_struct *ndpi_struct,
-				  struct ndpi_flow_struct *flow,
-				  u_int proto, u_int app_proto) {
+					 struct ndpi_flow_struct *flow,
+					 u_int app_proto) {
+  struct ndpi_packet_struct *packet = ndpi_get_packet_struct(ndpi_struct);
   ndpi_confidence_t confidence = NDPI_CONFIDENCE_DPI;
 
-  struct ndpi_packet_struct *packet = ndpi_get_packet_struct(ndpi_struct);
+  if(app_proto == NDPI_PROTOCOL_UNKNOWN) {
+    if(flow->guessed_protocol_id_by_ip == NDPI_PROTOCOL_GOOGLE)
+      app_proto = NDPI_PROTOCOL_HANGOUT_DUO;
+    else if(flow->guessed_protocol_id_by_ip == NDPI_PROTOCOL_FACEBOOK)
+      app_proto = NDPI_PROTOCOL_FACEBOOK_VOIP;
+  }
 
-  if(ndpi_stun_cache_enable && ndpi_struct->stun_cache == NULL)
-    ndpi_struct->stun_cache = ndpi_lru_cache_init(1024);
-
-  if(ndpi_struct->stun_cache
+  if(ndpi_stun_cache_enable && ndpi_struct->stun_cache
      && packet->iph
-     && packet->udp
      && (app_proto != NDPI_PROTOCOL_UNKNOWN)
      ) /* Cache flow sender info */ {
-    u_int32_t key = get_stun_lru_key(packet, 0);
+    u_int32_t key = get_stun_lru_key(flow, 0);
     u_int16_t cached_proto;
 
     if(ndpi_lru_find_cache(ndpi_struct->stun_cache, key,

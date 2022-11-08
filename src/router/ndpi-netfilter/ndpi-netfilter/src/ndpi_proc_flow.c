@@ -74,6 +74,31 @@ static inline int add_opt_str(char *buf,size_t l,size_t size,char c,char *str) {
 	strcpy(buf,str);
 	return nc;
 }
+static int ndpi_confidence_level(ndpi_confidence_t confidence)
+{
+  switch(confidence) {
+  case NDPI_CONFIDENCE_UNKNOWN:
+    return 0;
+  case NDPI_CONFIDENCE_MATCH_BY_PORT:
+    return 1;
+  case NDPI_CONFIDENCE_MATCH_BY_IP:
+    return 2;
+  case NDPI_CONFIDENCE_USERDEF:
+    return 3;
+  case NDPI_CONFIDENCE_DPI_PARTIAL:
+    return 4;
+  case NDPI_CONFIDENCE_DPI_PARTIAL_CACHE:
+    return 5;
+  case NDPI_CONFIDENCE_DPI_CACHE:
+    return 6;
+  case NDPI_CONFIDENCE_DPI:
+    return 7;
+  case NDPI_CONFIDENCE_NBPF:
+    return 8;
+  default:
+    return 0;
+  }
+}
 
 size_t ndpi_dump_opt(char *buf, size_t bufsize,
 		struct nf_ct_ext_ndpi *ct)
@@ -89,7 +114,7 @@ size_t ndpi_dump_opt(char *buf, size_t bufsize,
 			if(!(flag & 0x10) && ct->confidence != NDPI_CONFIDENCE_UNKNOWN && l < bufsize-4) {
 			    if(l) buf[l++] = ' ';
 			    buf[l] = 'L'; buf[l+1] = '=';
-			    buf[l+2] = (char)('0' + (ct->confidence & 7));
+			    buf[l+2] = (char)('0' + ndpi_confidence_level(ct->confidence));
 			    l += 3;
 			    flag |= 0x10;
 			}

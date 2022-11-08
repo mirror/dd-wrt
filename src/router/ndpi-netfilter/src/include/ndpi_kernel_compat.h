@@ -37,6 +37,7 @@ typedef size_t socklen_t;
 NDPI_STATIC const char *
 inet_ntop (int af, const void *src, char *dst, socklen_t size);
 NDPI_STATIC int inet_pton(int af, const char *src, void *dst);
+NDPI_STATIC uint32_t inet_addr(const char *ip);
 NDPI_STATIC int atoi(const char *);
 NDPI_STATIC long int atol(const char *);
 

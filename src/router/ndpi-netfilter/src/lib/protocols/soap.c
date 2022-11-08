@@ -27,14 +27,9 @@
 static void ndpi_int_soap_add_connection(struct ndpi_detection_module_struct *ndpi_struct,
                                          struct ndpi_flow_struct *flow)
 {
-  if (flow->guessed_host_protocol_id == NDPI_PROTOCOL_HTTP)
-  {
-    ndpi_set_detected_protocol(ndpi_struct, flow, NDPI_PROTOCOL_SOAP, NDPI_PROTOCOL_HTTP,
-                               NDPI_CONFIDENCE_DPI);
-  } else {
-    ndpi_set_detected_protocol(ndpi_struct, flow, flow->guessed_host_protocol_id, NDPI_PROTOCOL_SOAP,
-                               NDPI_CONFIDENCE_DPI);
-  }
+  NDPI_LOG_INFO(ndpi_struct, "found Soap\n");
+  ndpi_set_detected_protocol_keeping_master(ndpi_struct, flow, NDPI_PROTOCOL_SOAP,
+					    NDPI_CONFIDENCE_DPI);
 }
 
 void ndpi_search_soap(struct ndpi_detection_module_struct *ndpi_struct,
@@ -89,7 +84,7 @@ void init_soap_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int
 {
   ndpi_set_bitmask_protocol_detection(
     "SOAP", ndpi_struct, detection_bitmask, *id,
-    NDPI_PROTOCOL_SOAP, ndpi_search_soap, NDPI_SELECTION_BITMASK_PROTOCOL_V4_V6_TCP_WITH_PAYLOAD,
+    NDPI_PROTOCOL_SOAP, ndpi_search_soap, NDPI_SELECTION_BITMASK_PROTOCOL_V4_V6_TCP_WITH_PAYLOAD_WITHOUT_RETRANSMISSION,
     SAVE_DETECTION_BITMASK_AS_UNKNOWN, ADD_TO_DETECTION_BITMASK);
   *id += 1;
 }

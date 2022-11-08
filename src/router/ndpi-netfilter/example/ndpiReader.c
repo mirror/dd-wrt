@@ -20,7 +20,7 @@
 
 #include "ndpi_config.h"
 
-#ifdef linux
+#ifdef __linux__
 #ifndef _GNU_SOURCE
 #define _GNU_SOURCE
 #endif
@@ -40,7 +40,6 @@
 #include <ws2tcpip.h>
 #include <process.h>
 #include <io.h>
-#define getopt getopt____
 #else
 #include <unistd.h>
 #include <netinet/in.h>
@@ -58,7 +57,9 @@
 #include <math.h>
 #include <sys/stat.h>
 #include <fcntl.h>
+#ifndef _MSC_BUILD
 #include <libgen.h>
+#endif
 #include <errno.h>
 
 #include "reader_util.h"
@@ -96,6 +97,7 @@ u_int8_t verbose = 0, enable_flow_stats = 0;
 int nDPI_LogLevel = 0;
 char *_debug_protocols = NULL;
 static u_int8_t stats_flag = 0;
+ndpi_init_prefs init_prefs = ndpi_no_prefs;
 u_int8_t human_readeable_string_len = 5;
 u_int8_t max_num_udp_dissected_pkts = 24 /* 8 is enough for most protocols, Signal and SnapchatCall require more */, max_num_tcp_dissected_pkts = 80 /* due to telnet */;
 static u_int32_t pcap_analysis_duration = (u_int32_t)-1;
@@ -106,7 +108,7 @@ static u_int16_t num_loops = 1;
 static u_int8_t shutdown_app = 0, quiet_mode = 0;
 static u_int8_t num_threads = 1;
 static struct timeval startup_time, begin, end;
-#ifdef linux
+#ifdef __linux__
 static int core_affinity[MAX_NUM_READER_THREADS];
 #endif
 static struct timeval pcap_start = { 0, 0}, pcap_end = { 0, 0 };
@@ -120,10 +122,11 @@ static time_t capture_until = 0;
 static u_int32_t num_flows;
 static struct ndpi_detection_module_struct *ndpi_info_mod = NULL;
 
-extern u_int8_t enable_doh_dot_detection, enable_ja3_plus;
+extern u_int8_t enable_doh_dot_detection;
 extern u_int32_t max_num_packets_per_flow, max_packet_payload_dissection, max_num_reported_top_payloads;
 extern u_int16_t min_pattern_len, max_pattern_len;
 extern void ndpi_self_check_host_match(); /* Self check function */
+u_int8_t dump_internal_stats;
 
 struct flow_info {
   struct ndpi_flow_info *flow;
@@ -246,7 +249,6 @@ void test_lib(); /* Forward */
 
 extern void ndpi_report_payload_stats();
 
-static int rep_mini = 0; 
 /* ********************************** */
 
 // #define DEBUG_TRACE
@@ -310,7 +312,7 @@ void ndpiCheckHostStringMatch(char *testChar) {
   if(!testChar)
     return;
 
-  ndpi_str = ndpi_init_detection_module(enable_ja3_plus ? ndpi_enable_ja3_plus : ndpi_no_prefs);
+  ndpi_str = ndpi_init_detection_module(init_prefs);
   ndpi_finalize_initialization(ndpi_str);
 
   // Display ALL Host strings ie host_match[] ?
@@ -440,7 +442,7 @@ static void help(u_int long_help) {
          "-i <file|device> "
 #endif
          "[-f <filter>][-s <duration>][-m <duration>][-b <num bin clusters>]\n"
-         "          [-p <protos>][-l <loops> [-q][-d][-J][-h][-H][-D][-e <len>][-t][-v <level>]\n"
+         "          [-p <protos>][-l <loops> [-q][-d][-h][-H][-D][-e <len>][-E][-t][-v <level>]\n"
          "          [-n <threads>][-w <file>][-c <file>][-C <file>][-j <file>][-x <file>]\n"
          "          [-r <file>][-j <file>][-S <file>][-T <num>][-U <num>] [-x <domain>][-z]\n"
          "          [-a <mode>]\n\n"
@@ -458,7 +460,7 @@ static void help(u_int long_help) {
          "  -k <file>                 | Specify a file to write serialized detection results\n"
          "  -K <format>               | Specify the serialization format for `-k'\n"
          "                            | Valid formats are tlv, csv or json (default)\n"
-#ifdef linux
+#ifdef __linux__
          "  -g <id:id...>             | Thread affinity mask (one core id per thread)\n"
 #endif
          "  -a <mode>                 | Generates option values for GUIs\n"
@@ -467,6 +469,7 @@ static void help(u_int long_help) {
          "                            | 2 - List known risks\n"
          "  -d                        | Disable protocol guess and use only DPI\n"
          "  -e <len>                  | Min human readeable string match len. Default %u\n"
+	 "  -E                        | Track flow payload\n"
          "  -q                        | Quiet mode\n"
          "  -F                        | Enable flow stats\n"
          "  -t                        | Dissect GTP/TZSP tunnels\n"
@@ -503,6 +506,7 @@ static void help(u_int long_help) {
          "  -x <domain>               | Check domain name [Test only]\n"
          "  -I                        | Ignore VLAN id for flow hash calculation\n"
          "  -z                        | Enable JA3+\n"
+         "  -A                        | Dump internal statistics (LRU caches / Patricia trees / Ahocarasick automas / ...\n"
          ,
          human_readeable_string_len,
          min_pattern_len, max_pattern_len, max_num_packets_per_flow, max_packet_payload_dissection,
@@ -523,9 +527,14 @@ static void help(u_int long_help) {
 #endif
 
   if(long_help) {
+    printf("\n\nSize of nDPI Flow structure: %u\n"
+           "Sizeof of nDPI Flow protocol union: %zu\n",
+           ndpi_detection_get_sizeof_ndpi_flow_struct(),
+           sizeof(((struct ndpi_flow_struct *)0)->protos));
+
     NDPI_PROTOCOL_BITMASK all;
 
-    ndpi_info_mod = ndpi_init_detection_module(ndpi_no_prefs);
+    ndpi_info_mod = ndpi_init_detection_module(init_prefs);
     printf("\n\nnDPI supported protocols:\n");
     printf("%3s %-22s %-10s %-8s %-12s %s\n",
 	   "Id", "Protocol", "Layer_4", "Nw_Proto", "Breed", "Category");
@@ -535,33 +544,6 @@ static void help(u_int long_help) {
     ndpi_set_protocol_detection_bitmask2(ndpi_info_mod, &all);
 
     ndpi_dump_protocols(ndpi_info_mod);
-    if(getenv("DUMP_HOST")) {
-	ndpi_finalize_initialization(ndpi_info_mod);
-  	ac_automata_dump( ndpi_automa_host(ndpi_info_mod), NULL);
-	exit(0);
-    }
-    if(getenv("DUMP_AUTOMA")) {
-	char *ac_name[] = {
-		"host",
-		"content",
-		"tls_cert_subject",
-		"malicious_ja3",
-		"malicious_sha1",
-		"risky_domain",
-		"end"
-	};
-
-	void **ac_list;
-	int i;
-	ndpi_finalize_initialization(ndpi_info_mod);
-	ac_list = ndpi_get_automata(ndpi_info_mod);
-	for(i=0; ac_list[i] != (void *)1; i++) {
-	    if(ac_list[i]) {
-		printf("====== %s\n",ac_name[i]);
-	  	ac_automata_dump( ac_list[i], NULL);
-	    }
-	}
-    }
 
     printf("\n\nnDPI supported risks:\n");
     ndpi_dump_risks_score();
@@ -655,8 +637,7 @@ int cmpFlows(const void *_a, const void *_b) {
   struct ndpi_flow_info *fb = ((struct flow_info*)_b)->flow;
   uint64_t a_size = fa->src2dst_bytes + fa->dst2src_bytes;
   uint64_t b_size = fb->src2dst_bytes + fb->dst2src_bytes;
-  if(!rep_mini)
-    if(a_size != b_size)
+  if(a_size != b_size)
       return a_size < b_size ? 1 : -1;
 
   // copy from ndpi_workflow_node_cmp();
@@ -667,10 +648,6 @@ int cmpFlows(const void *_a, const void *_b) {
   if(htons(fa->src_port) < htons(fb->src_port)) return(-1); else { if(htons(fa->src_port) > htons(fb->src_port)) return(1); }
   if(htonl(fa->dst_ip)   < htonl(fb->dst_ip)  ) return(-1); else { if(htonl(fa->dst_ip)   > htonl(fb->dst_ip)  ) return(1); }
   if(htons(fa->dst_port) < htons(fb->dst_port)) return(-1); else { if(htons(fa->dst_port) > htons(fb->dst_port)) return(1); }
-  if(rep_mini) {
-    if(fa->src2dst_packets < fb->src2dst_packets) return -1; else if(fa->src2dst_packets > fb->src2dst_packets) return 1;
-    if(fa->dst2src_packets < fb->dst2src_packets) return -1; else if(fa->dst2src_packets > fb->dst2src_packets) return 1;
-  }
   return(0);
 }
 
@@ -685,7 +662,7 @@ void extcap_config() {
   ndpi_proto_defaults_t *proto_defaults;
 #endif
 
-  ndpi_info_mod = ndpi_init_detection_module(ndpi_no_prefs);
+  ndpi_info_mod = ndpi_init_detection_module(init_prefs);
 #if 0
   ndpi_num_supported_protocols = ndpi_get_ndpi_num_supported_protocols(ndpi_info_mod);
   proto_defaults = ndpi_get_proto_defaults(ndpi_info_mod);
@@ -764,7 +741,7 @@ void extcap_capture() {
 void printCSVHeader() {
   if(!csv_fp) return;
 
-  fprintf(csv_fp, "#flow_id,protocol,first_seen,last_seen,duration,src_ip,src_port,dst_ip,dst_port,ndpi_proto_num,ndpi_proto,server_name_sni,");
+  fprintf(csv_fp, "#flow_id,protocol,first_seen,last_seen,duration,src_ip,src_port,dst_ip,dst_port,ndpi_proto_num,ndpi_proto,proto_by_ip,server_name_sni,");
   fprintf(csv_fp, "c_to_s_pkts,c_to_s_bytes,c_to_s_goodput_bytes,s_to_c_pkts,s_to_c_bytes,s_to_c_goodput_bytes,");
   fprintf(csv_fp, "data_ratio,str_data_ratio,c_to_s_goodput_ratio,s_to_c_goodput_ratio,");
 
@@ -791,7 +768,7 @@ void printCSVHeader() {
   fprintf(csv_fp, "server_info,");
   fprintf(csv_fp, "tls_version,ja3c,tls_client_unsafe,");
   fprintf(csv_fp, "ja3s,tls_server_unsafe,");
-  fprintf(csv_fp, "tls_alpn,tls_supported_versions,");
+  fprintf(csv_fp, "advertised_alpns,negotiated_alpn,tls_supported_versions,");
 #if 0
   fprintf(csv_fp, "tls_issuerDN,tls_subjectDN,");
 #endif
@@ -815,7 +792,7 @@ static void parseOptions(int argc, char **argv) {
 #ifndef USE_DPDK
   char *__pcap_file = NULL;
   int thread_id, do_capture = 0;
-#ifdef linux
+#ifdef __linux__
   char *bind_mask = NULL;
   u_int num_cores = sysconf(_SC_NPROCESSORS_ONLN);
 #endif
@@ -832,7 +809,7 @@ static void parseOptions(int argc, char **argv) {
   }
 #endif
 
-  while((opt = getopt_long(argc, argv, "a:b:e:c:C:dDf:g:i:Ij:k:K:S:hHp:pP:l:r:s:tu:v:V:n:Jrp:x:w:zq0123:456:7:89:m:T:U:",
+  while((opt = getopt_long(argc, argv, "a:Ab:e:Ec:C:dDf:g:i:Ij:k:K:S:hHp:pP:l:r:s:tu:v:V:n:rp:x:w:zq0123:456:7:89:m:T:U:",
                            longopts, &option_idx)) != EOF) {
 #ifdef DEBUG_TRACE
     if(trace) fprintf(trace, " #### Handling option -%c [%s] #### \n", opt, optarg ? optarg : "");
@@ -841,6 +818,10 @@ static void parseOptions(int argc, char **argv) {
     switch (opt) {
     case 'a':
       ndpi_generate_options(atoi(optarg));
+      break;
+
+    case 'A':
+      dump_internal_stats = 1;
       break;
 
     case 'b':
@@ -858,6 +839,10 @@ static void parseOptions(int argc, char **argv) {
 
     case 'e':
       human_readeable_string_len = atoi(optarg);
+      break;
+
+    case 'E':
+      init_prefs |= ndpi_track_flow_payload;
       break;
 
     case 'i':
@@ -887,7 +872,7 @@ static void parseOptions(int argc, char **argv) {
       break;
 
 #ifndef USE_DPDK
-#ifdef linux
+#ifdef __linux__
     case 'g':
       bind_mask = optarg;
       break;
@@ -1075,7 +1060,7 @@ static void parseOptions(int argc, char **argv) {
       break;
 
     case 'z':
-      enable_ja3_plus = 1;
+      init_prefs |= ndpi_enable_ja3_plus;
       break;
 
     default:
@@ -1088,11 +1073,14 @@ static void parseOptions(int argc, char **argv) {
     }
   }
 
-  if ((serialization_fp == NULL && serialization_format != ndpi_serialization_format_unknown) ||
-      (serialization_fp != NULL && serialization_format == ndpi_serialization_format_unknown))
+  if (serialization_fp == NULL && serialization_format != ndpi_serialization_format_unknown)
   {
-    printf("Serializing detection results to a file requires command line arguments -k AND -K\n");
+    printf("Serializing detection results to a file requires command line arguments `-k'\n");
     exit(1);
+  }
+  if (serialization_fp != NULL && serialization_format == ndpi_serialization_format_unknown)
+  {
+    serialization_format = ndpi_serialization_format_json;
   }
 
   if(extcap_exit)
@@ -1125,7 +1113,7 @@ static void parseOptions(int argc, char **argv) {
     }
   }
 
-#ifdef linux
+#ifdef __linux__
 #ifndef USE_DPDK
   for(thread_id = 0; thread_id < num_threads; thread_id++)
     core_affinity[thread_id] = -1;
@@ -1304,9 +1292,11 @@ static void printFlow(u_int32_t id, struct ndpi_flow_info *flow, u_int16_t threa
             ndpi_protocol2id(ndpi_thread_info[thread_id].workflow->ndpi_struct,
                              flow->detected_protocol, buf, sizeof(buf)));
 
-    fprintf(csv_fp, "%s,%s,",
+    fprintf(csv_fp, "%s,%s,%s,",
             ndpi_protocol2name(ndpi_thread_info[thread_id].workflow->ndpi_struct,
                                flow->detected_protocol, buf, sizeof(buf)),
+            ndpi_get_proto_name(ndpi_thread_info[thread_id].workflow->ndpi_struct,
+                                flow->detected_protocol.protocol_by_ip),
             flow->host_server_name);
 
     fprintf(csv_fp, "%u,%llu,%llu,", flow->src2dst_packets,
@@ -1352,8 +1342,9 @@ static void printFlow(u_int32_t id, struct ndpi_flow_info *flow, u_int16_t threa
             (flow->ssh_tls.ja3_server[0] != '\0')   ? flow->ssh_tls.ja3_server : "",
             (flow->ssh_tls.ja3_server[0] != '\0')   ? is_unsafe_cipher(flow->ssh_tls.server_unsafe_cipher) : "0");
 
-    fprintf(csv_fp, "%s,%s,",
-            flow->ssh_tls.tls_alpn                  ? flow->ssh_tls.tls_alpn : "",
+    fprintf(csv_fp, "%s,%s,%s,",
+            flow->ssh_tls.advertised_alpns          ? flow->ssh_tls.advertised_alpns : "",
+            flow->ssh_tls.negotiated_alpn           ? flow->ssh_tls.negotiated_alpn : "",
             flow->ssh_tls.tls_supported_versions    ? flow->ssh_tls.tls_supported_versions : ""
             );
 
@@ -1390,10 +1381,7 @@ static void printFlow(u_int32_t id, struct ndpi_flow_info *flow, u_int16_t threa
 
   if(csv_fp || (verbose > 1)) {
 #if 1
-  if(!rep_mini)
 	fprintf(out, "\t%u", id);
-     else
-	fprintf(out, "\t");
 #else
     fprintf(out, "\t%u(%u)", id, flow->flow_id);
 #endif
@@ -1424,36 +1412,38 @@ static void printFlow(u_int32_t id, struct ndpi_flow_info *flow, u_int16_t threa
     if(flow->tunnel_type != ndpi_no_tunnel)
       fprintf(out, "%s:", ndpi_tunnel2str(flow->tunnel_type));
 
-    fprintf(out, "%s/%s]",
+    fprintf(out, "%s/%s][IP: %u/%s]",
 	    ndpi_protocol2id(ndpi_thread_info[thread_id].workflow->ndpi_struct,
 			     flow->detected_protocol, buf, sizeof(buf)),
 	    ndpi_protocol2name(ndpi_thread_info[thread_id].workflow->ndpi_struct,
-			       flow->detected_protocol, buf1, sizeof(buf1)));
+			       flow->detected_protocol, buf1, sizeof(buf1)),
+	    flow->detected_protocol.protocol_by_ip,
+	    ndpi_get_proto_name(ndpi_thread_info[thread_id].workflow->ndpi_struct,
+				flow->detected_protocol.protocol_by_ip));
 
     fprintf(out, "[%s]",
 	    ndpi_is_encrypted_proto(ndpi_thread_info[thread_id].workflow->ndpi_struct,
 				    flow->detected_protocol) ? "Encrypted" : "ClearText");
 
     fprintf(out, "[Confidence: %s]", ndpi_confidence_get_name(flow->confidence));
+    /* If someone wants to have the num_dissector_calls variable per flow, he can print it here.
+       Disabled by default to avoid too many diffs in the unit tests...
+    */
+#if 0
+    fprintf(out, "[Num calls: %d]", flow->num_dissector_calls);
+#endif
 
-    if(!rep_mini && flow->detected_protocol.category != 0)
+    if(flow->detected_protocol.category != 0)
       fprintf(out, "[cat: %s/%u]",
 	      ndpi_category_get_name(ndpi_thread_info[thread_id].workflow->ndpi_struct,
 				     flow->detected_protocol.category),
 	      (unsigned int)flow->detected_protocol.category);
 
-if(!rep_mini) {
     fprintf(out, "[%u pkts/%llu bytes ", flow->src2dst_packets, (long long unsigned int) flow->src2dst_bytes);
     fprintf(out, "%s %u pkts/%llu bytes]",
 	    (flow->dst2src_packets > 0) ? "<->" : "->",
 	    flow->dst2src_packets, (long long unsigned int) flow->dst2src_bytes);
-} else {
-    fprintf(out, "[%u pkts/%llu bytes ", flow->src2dst_packets, (long long unsigned int) flow->src2dst_goodput_bytes);
-    fprintf(out, "%s %u pkts/%llu bytes]",
-	    (flow->dst2src_packets > 0) ? "<->" : "->",
-	    flow->dst2src_packets, (long long unsigned int) flow->dst2src_goodput_bytes);
-}
-if(!rep_mini) {
+
     fprintf(out, "[Goodput ratio: %.0f/%.0f]",
 	    100.0*((float)flow->src2dst_goodput_bytes / (float)(flow->src2dst_bytes+1)),
 	    100.0*((float)flow->dst2src_goodput_bytes / (float)(flow->dst2src_bytes+1)));
@@ -1494,6 +1484,53 @@ if(!rep_mini) {
         }
         break;
 
+      case INFO_SOFTETHER:
+        if (flow->softether.ip[0] != '\0')
+        {
+          fprintf(out, "[Client IP: %s]", flow->softether.ip);
+        }
+        if (flow->softether.port[0] != '\0')
+        {
+          fprintf(out, "[Client Port: %s]", flow->softether.port);
+        }
+        if (flow->softether.hostname[0] != '\0')
+        {
+          fprintf(out, "[Hostname: %s]", flow->softether.hostname);
+        }
+        if (flow->softether.fqdn[0] != '\0')
+        {
+          fprintf(out, "[FQDN: %s]", flow->softether.fqdn);
+        }
+        break;
+
+      case INFO_TIVOCONNECT:
+        if (flow->tivoconnect.identity_uuid[0] != '\0')
+        {
+          fprintf(out, "[UUID: %s]", flow->tivoconnect.identity_uuid);
+        }
+        if (flow->tivoconnect.machine[0] != '\0')
+        {
+          fprintf(out, "[Machine: %s]", flow->tivoconnect.machine);
+        }
+        if (flow->tivoconnect.platform[0] != '\0')
+        {
+          fprintf(out, "[Platform: %s]", flow->tivoconnect.platform);
+        }
+        if (flow->tivoconnect.services[0] != '\0')
+        {
+          fprintf(out, "[Services: %s]", flow->tivoconnect.services);
+        }
+        break;
+
+      case INFO_NATPMP:
+        if (flow->natpmp.internal_port != 0 && flow->natpmp.ip[0] != '\0')
+        {
+            fprintf(out, "[Result: %u][Internal Port: %u][External Port: %u][External Address: %s]",
+                    flow->natpmp.result_code, flow->natpmp.internal_port, flow->natpmp.external_port,
+                    flow->natpmp.ip);
+        }
+        break;
+
       case INFO_FTP_IMAP_POP_SMTP:
         if (flow->ftp_imap_pop_smtp.username[0] != '\0')
         {
@@ -1506,20 +1543,20 @@ if(!rep_mini) {
           }
         }
         break;
-
-      case INFO_TLS_QUIC_ALPN_VERSION:
-        fprintf(out, "[ALPN: %s][TLS Supported Versions: %s]",
-                flow->tls_quic.alpn, flow->tls_quic.tls_supported_versions);
-        break;
-
-      case INFO_TLS_QUIC_ALPN_ONLY:
-        fprintf(out, "[ALPN: %s]", flow->tls_quic.alpn);
-        break;
     }
+
+    if(flow->ssh_tls.advertised_alpns)
+        fprintf(out, "[(Advertised) ALPNs: %s]", flow->ssh_tls.advertised_alpns);
+
+    if(flow->ssh_tls.negotiated_alpn)
+        fprintf(out, "[(Negotiated) ALPN: %s]", flow->ssh_tls.negotiated_alpn);
+
+    if(flow->ssh_tls.tls_supported_versions)
+      fprintf(out, "[TLS Supported Versions: %s]", flow->ssh_tls.tls_supported_versions);
 
     if(flow->flow_extra_info[0] != '\0') fprintf(out, "[%s]", flow->flow_extra_info);
 
-    if(!rep_mini && (flow->src2dst_packets+flow->dst2src_packets) > 5) {
+    if((flow->src2dst_packets+flow->dst2src_packets) > 5) {
       if(flow->iat_c_to_s && flow->iat_s_to_c) {
 	float data_ratio = ndpi_data_ratio(flow->src2dst_bytes, flow->dst2src_bytes);
 
@@ -1541,7 +1578,7 @@ if(!rep_mini) {
       }
     }
 
-    if(!rep_mini && flow->http.url[0] != '\0') {
+    if(flow->http.url[0] != '\0') {
       ndpi_risk_enum risk = ndpi_validate_url(flow->http.url);
 
       if(risk != NDPI_NO_RISK)
@@ -1597,19 +1634,18 @@ if(!rep_mini) {
     if(flow->ssh_tls.tls_subjectDN) fprintf(out, "[Subject: %s]", flow->ssh_tls.tls_subjectDN);
 
     if(flow->ssh_tls.encrypted_sni.esni) {
+      char unknown_cipher[8];
       fprintf(out, "[ESNI: %s]", flow->ssh_tls.encrypted_sni.esni);
-      fprintf(out, "[ESNI Cipher: %s]", ndpi_cipher2str(flow->ssh_tls.encrypted_sni.cipher_suite));
+      fprintf(out, "[ESNI Cipher: %s]",
+              ndpi_cipher2str(flow->ssh_tls.encrypted_sni.cipher_suite, unknown_cipher));
     }
 
-    if((flow->detected_protocol.master_protocol == NDPI_PROTOCOL_TLS)
-       || (flow->detected_protocol.app_protocol == NDPI_PROTOCOL_TLS)) {
-      if(flow->ssh_tls.sha1_cert_fingerprint_set) {
-	fprintf(out, "[Certificate SHA-1: ");
-	for(i=0; i<20; i++)
-	  fprintf(out, "%s%02X", (i > 0) ? ":" : "",
-		  flow->ssh_tls.sha1_cert_fingerprint[i] & 0xFF);
-	fprintf(out, "]");
-      }
+    if(flow->ssh_tls.sha1_cert_fingerprint_set) {
+      fprintf(out, "[Certificate SHA-1: ");
+      for(i=0; i<20; i++)
+        fprintf(out, "%s%02X", (i > 0) ? ":" : "",
+                flow->ssh_tls.sha1_cert_fingerprint[i] & 0xFF);
+      fprintf(out, "]");
     }
 
 #ifdef HEURISTICS_CODE
@@ -1621,8 +1657,8 @@ if(!rep_mini) {
     if(flow->ssh_tls.notBefore && flow->ssh_tls.notAfter) {
       char notBefore[32], notAfter[32];
       struct tm a, b;
-      struct tm *before = gmtime_r(&flow->ssh_tls.notBefore, &a);
-      struct tm *after  = gmtime_r(&flow->ssh_tls.notAfter, &b);
+      struct tm *before = ndpi_gmtime_r(&flow->ssh_tls.notBefore, &a);
+      struct tm *after  = ndpi_gmtime_r(&flow->ssh_tls.notAfter, &b);
 
       strftime(notBefore, sizeof(notBefore), "%Y-%m-%d %H:%M:%S", before);
       strftime(notAfter, sizeof(notAfter), "%Y-%m-%d %H:%M:%S", after);
@@ -1630,7 +1666,11 @@ if(!rep_mini) {
       fprintf(out, "[Validity: %s - %s]", notBefore, notAfter);
     }
 
-    if(flow->ssh_tls.server_cipher != '\0') fprintf(out, "[Cipher: %s]", ndpi_cipher2str(flow->ssh_tls.server_cipher));
+    char unknown_cipher[8];
+    if(flow->ssh_tls.server_cipher != '\0')
+    {
+      fprintf(out, "[Cipher: %s]", ndpi_cipher2str(flow->ssh_tls.server_cipher, unknown_cipher));
+    }
     if(flow->bittorent_hash != NULL) fprintf(out, "[BT Hash: %s]", flow->bittorent_hash);
     if(flow->dhcp_fingerprint != NULL) fprintf(out, "[DHCP Fingerprint: %s]", flow->dhcp_fingerprint);
     if(flow->dhcp_class_ident) fprintf(out, "[DHCP Class Ident: %s]",
@@ -1639,7 +1679,6 @@ if(!rep_mini) {
     if(flow->has_human_readeable_strings) fprintf(out, "[PLAIN TEXT (%s)]",
                                                  flow->human_readeable_string_buffer);
     if(flow->nf_mark) fprintf(out, "[NFMARK 0x%X]", flow->nf_mark);
-} // rep_mini
 
 #ifdef DIRECTION_BINS
     print_bin(out, "Plen c2s", &flow->payload_len_bin_src2dst);
@@ -1648,6 +1687,17 @@ if(!rep_mini) {
     print_bin(out, "Plen Bins", &flow->payload_len_bin);
 #endif
 
+    if(flow->flow_payload && (flow->flow_payload_len > 0)) {
+      u_int i;
+      
+      printf("[Payload: ");
+
+      for(i=0; i<flow->flow_payload_len; i++)
+	printf("%c", isspace(flow->flow_payload[i]) ? '.' : flow->flow_payload[i]);
+	
+      printf("]");
+    }
+    
     fprintf(out, "\n");
   }
 }
@@ -1657,69 +1707,17 @@ static void printFlowSerialized(u_int16_t thread_id,
 {
   char *json_str = NULL;
   u_int32_t json_str_len = 0;
-  ndpi_serializer * const serializer = &ndpi_thread_info[thread_id].workflow->ndpi_serializer;
+  ndpi_serializer * const serializer = &flow->ndpi_flow_serializer;
   //float data_ratio = ndpi_data_ratio(flow->src2dst_bytes, flow->dst2src_bytes);
   double f = (double)flow->first_seen_ms, l = (double)flow->last_seen_ms;
-  u_int8_t known_tls;
-  char buf[64];
   float data_ratio = ndpi_data_ratio(flow->src2dst_bytes, flow->dst2src_bytes);
 
-  ndpi_reset_serializer(serializer);
-
   ndpi_serialize_string_uint32(serializer, "flow_id", flow->flow_id);
-  ndpi_serialize_string_uint32(serializer, "l4_protocol", flow->protocol);
-  ndpi_serialize_string_float(serializer, "first_seen_ms", f, "%.3f");
-  ndpi_serialize_string_float(serializer, "last_seen_ms", l, "%.3f");
-  ndpi_serialize_string_float(serializer, "duration_ms", (l-f)/1000.0, "%.3f");
-  ndpi_serialize_string_string(serializer, "src_name", flow->src_name);
-  ndpi_serialize_string_string(serializer, "dst_name", flow->dst_name);
-  ndpi_serialize_string_uint32(serializer, "src_port", ntohs(flow->src_port));
-  ndpi_serialize_string_uint32(serializer, "dst_port", ntohs(flow->dst_port));
-  ndpi_serialize_string_uint32(serializer, "ip_version", flow->ip_version);
+  ndpi_serialize_string_double(serializer, "first_seen", f / 1000., "%.3f");
+  ndpi_serialize_string_double(serializer, "last_seen", l / 1000., "%.3f");
+  ndpi_serialize_string_double(serializer, "duration", (l-f)/1000.0, "%.3f");
   ndpi_serialize_string_uint32(serializer, "vlan_id", flow->vlan_id);
   ndpi_serialize_string_uint32(serializer, "bidirectional", flow->bidirectional);
-  ndpi_serialize_string_uint32(serializer, "encrypted",
-                               ndpi_is_encrypted_proto(ndpi_thread_info[thread_id].workflow->ndpi_struct,
-                                                       flow->detected_protocol));
-  ndpi_serialize_string_string(serializer, "confidence",
-                               ndpi_confidence_get_name(flow->confidence));
-  ndpi_serialize_string_uint32(serializer, "category_id",
-                               flow->detected_protocol.category);
-  ndpi_serialize_string_string(
-    serializer, "category_name",
-    ndpi_category_get_name(
-      ndpi_thread_info[thread_id].workflow->ndpi_struct,
-      flow->detected_protocol.category
-    )
-  );
-
-  ndpi_serialize_string_string(serializer, "l7_protocol_id",
-                               ndpi_protocol2id(ndpi_thread_info[thread_id].workflow->ndpi_struct,
-                               flow->detected_protocol, buf, sizeof(buf)));
-  ndpi_serialize_string_string(serializer, "l7_protocol_name",
-                               ndpi_protocol2name(ndpi_thread_info[thread_id].workflow->ndpi_struct,
-                               flow->detected_protocol, buf, sizeof(buf)));
-  ndpi_serialize_start_of_list(serializer, "risks");
-  if (flow->risk != NDPI_NO_RISK)
-  {
-    u_int32_t i;
-
-    for(i = 0; i < NDPI_MAX_RISK; ++i)
-    {
-      if (NDPI_ISSET_BIT(flow->risk, i) != 0)
-      {
-        ndpi_serialize_string_string(serializer, "str", ndpi_risk2str(i));
-      }
-    }
-  }
-  ndpi_serialize_end_of_list(serializer);
-  {
-    u_int16_t cli_score, srv_score;
-    ndpi_serialize_string_uint32(serializer, "risks_score",
-                                 ndpi_risk2score(flow->risk, &cli_score, &srv_score));
-  }
-  ndpi_serialize_string_string(serializer, "host_server_name",
-                               flow->host_server_name);
 
   /* XFER Packets/Bytes */
   ndpi_serialize_start_of_block(serializer, "xfer");
@@ -1820,130 +1818,6 @@ static void printFlowSerialized(u_int16_t thread_id,
   ndpi_serialize_string_uint32(serializer, "c_to_s_init_win", flow->c_to_s_init_win);
   ndpi_serialize_string_uint32(serializer, "s_to_c_init_win", flow->s_to_c_init_win);
 
-  /* Protocol specific serialization */
-  ndpi_serialize_start_of_block(serializer, "l7_protocol_data");
-  if (flow->ssh_tls.server_info[0] != '\0')
-  {
-    ndpi_serialize_string_string(serializer, "server_info", flow->ssh_tls.server_info);
-  }
-
-  if (flow->ssh_tls.server_names != NULL)
-  {
-    ndpi_serialize_string_string(serializer, "server_names", flow->ssh_tls.server_names);
-  }
-
-  if (flow->ssh_tls.ssl_version != 0)
-  {
-    ndpi_ssl_version2str(buf, sizeof(buf), flow->ssh_tls.ssl_version, &known_tls);
-    ndpi_serialize_string_string(serializer, "version", buf);
-  }
-
-  if (flow->ssh_tls.ja3_client[0] != '\0')
-  {
-    ndpi_serialize_string_string(serializer, "ja3_client", flow->ssh_tls.ja3_client);
-  }
-
-  if (flow->ssh_tls.ja3_server[0] != '\0')
-  {
-    ndpi_serialize_string_string(serializer, "ja3_server", flow->ssh_tls.ja3_server);
-  }
-
-  if (flow->ssh_tls.tls_issuerDN != NULL)
-  {
-    ndpi_serialize_string_string(serializer, "issuerDN", flow->ssh_tls.tls_issuerDN);
-  }
-
-  if (flow->ssh_tls.tls_subjectDN != NULL)
-  {
-    ndpi_serialize_string_string(serializer, "subjectDN", flow->ssh_tls.tls_subjectDN);
-  }
-
-  if (flow->ssh_tls.client_hassh[0] != '\0')
-  {
-    ndpi_serialize_string_string(serializer, "client_hassh", flow->ssh_tls.client_hassh);
-  }
-
-  if (flow->ssh_tls.server_hassh[0] != '\0')
-  {
-    ndpi_serialize_string_string(serializer, "server_hassh", flow->ssh_tls.server_hassh);
-  }
-
-  if (flow->http.user_agent[0] != '\0')
-  {
-    ndpi_serialize_string_string(serializer, "user_agent", flow->http.user_agent);
-  }
-
-  if (flow->http.url[0] != '\0')
-  {
-    ndpi_risk_enum risk = ndpi_validate_url(flow->http.url);
-    if (risk != NDPI_NO_RISK)
-    {
-      NDPI_SET_BIT(flow->risk, risk);
-    }
-
-    ndpi_serialize_string_string(serializer, "url", flow->http.url);
-    ndpi_serialize_string_uint32(serializer, "code", flow->http.response_status_code);
-    if (flow->http.request_content_type[0] != '\0')
-    {
-      ndpi_serialize_string_string(serializer, "req_content_type",
-                                   flow->http.request_content_type);
-    }
-
-    if (flow->http.content_type[0] != '\0')
-    {
-      ndpi_serialize_string_string(serializer, "content_type",
-                                   flow->http.content_type);
-    }
-  }
-
-  switch (flow->info_type)
-  {
-    case INFO_INVALID:
-      break;
-
-    case INFO_GENERIC:
-      if (flow->info[0] != '\0')
-      {
-        ndpi_serialize_string_string(serializer, "info", flow->info);
-      }
-      break;
-
-    case INFO_KERBEROS:
-      if (flow->kerberos.domain[0] != '\0' ||
-          flow->kerberos.hostname[0] != '\0' ||
-          flow->kerberos.username[0] != '\0')
-      {
-        ndpi_serialize_string_string(serializer, "domain",
-                                     flow->kerberos.domain);
-        ndpi_serialize_string_string(serializer, "hostname",
-                                     flow->kerberos.hostname);
-        ndpi_serialize_string_string(serializer, "username",
-                                     flow->kerberos.username);
-      }
-      break;
-
-    case INFO_FTP_IMAP_POP_SMTP:
-      ndpi_serialize_string_string(serializer, "username",
-                                   flow->ftp_imap_pop_smtp.username);
-      ndpi_serialize_string_string(serializer, "password",
-                                   flow->ftp_imap_pop_smtp.password);
-      ndpi_serialize_string_uint32(serializer, "auth_failed",
-                                   flow->ftp_imap_pop_smtp.auth_failed);
-      break;
-
-    case INFO_TLS_QUIC_ALPN_VERSION:
-      ndpi_serialize_string_string(serializer, "alpn", flow->tls_quic.alpn);
-      ndpi_serialize_string_string(serializer, "supported_versions",
-                                   flow->tls_quic.tls_supported_versions);
-      break;
-
-    case INFO_TLS_QUIC_ALPN_ONLY:
-      ndpi_serialize_string_string(serializer, "alpn", flow->tls_quic.alpn);
-      break;
-  }
-
-  ndpi_serialize_end_of_block(serializer);
-
   json_str = ndpi_serializer_get_buffer(serializer, &json_str_len);
   if (json_str == NULL || json_str_len == 0)
   {
@@ -2023,6 +1897,7 @@ static void node_proto_guess_walker(const void *node, ndpi_VISIT which, int dept
     ndpi_thread_info[thread_id].workflow->stats.protocol_counter_bytes[proto] += flow->src2dst_bytes + flow->dst2src_bytes;
     ndpi_thread_info[thread_id].workflow->stats.protocol_flows[proto]++;
     ndpi_thread_info[thread_id].workflow->stats.flow_confidence[flow->confidence]++;
+    ndpi_thread_info[thread_id].workflow->stats.num_dissector_calls += flow->num_dissector_calls;
   }
 }
 
@@ -2576,6 +2451,11 @@ static void setupDetection(u_int16_t thread_id, pcap_t * pcap_handle) {
     ndpi_load_malicious_sha1_file(ndpi_thread_info[thread_id].workflow->ndpi_struct, _maliciousSHA1Path);
 
 //  set_ndpi_debug_function(ndpi_thread_info[thread_id].workflow->ndpi_struct, debug_printf);
+  /* Enable/disable/configure LRU caches here */
+#ifndef __KERNEL__
+  ndpi_set_lru_cache_size(ndpi_thread_info[thread_id].workflow->ndpi_struct,
+			  NDPI_LRUCACHE_BITTORRENT, 32768);
+#endif
   ndpi_finalize_initialization(ndpi_thread_info[thread_id].workflow->ndpi_struct);
 
   if(enable_doh_dot_detection)
@@ -3377,14 +3257,14 @@ static void printFlowsStats() {
                     || (all_flows[i].flow->detected_protocol.app_protocol == NDPI_PROTOCOL_TLS)
                     || (all_flows[i].flow->detected_protocol.app_protocol == NDPI_PROTOCOL_DOH_DOT)
                     )
-                   && all_flows[i].flow->ssh_tls.tls_alpn /* ALPN */
+                   && all_flows[i].flow->ssh_tls.advertised_alpns /* ALPN */
                    ) {
                   if(check_bin_doh_similarity(&bins[i], &s))
                     printf("[DoH (%f distance)]", s);
                   else
                     printf("[NO DoH (%f distance)]", s);
                 } else {
-                  if(all_flows[i].flow->ssh_tls.tls_alpn == NULL)
+                  if(all_flows[i].flow->ssh_tls.advertised_alpns == NULL)
                     printf("[NO DoH check: missing ALPN]");
                 }
               }
@@ -3532,6 +3412,20 @@ static void printResults(u_int64_t processing_time_usec, u_int64_t setup_time_us
 
     for(i = 0; i < sizeof(cumulative_stats.flow_confidence)/sizeof(cumulative_stats.flow_confidence[0]); i++)
       cumulative_stats.flow_confidence[i] += ndpi_thread_info[thread_id].workflow->stats.flow_confidence[i];
+
+    cumulative_stats.num_dissector_calls += ndpi_thread_info[thread_id].workflow->stats.num_dissector_calls;
+
+    /* LRU caches */
+    for(i = 0; i < NDPI_LRUCACHE_MAX; i++)
+      ndpi_get_lru_cache_stats(ndpi_thread_info[thread_id].workflow->ndpi_struct, i, &cumulative_stats.lru_stats[i]);
+
+    /* Automas */
+    for(i = 0; i < NDPI_AUTOMA_MAX; i++)
+      ndpi_get_automa_stats(ndpi_thread_info[thread_id].workflow->ndpi_struct, i, &cumulative_stats.automa_stats[i]);
+
+    /* Patricia trees */
+    for(i = 0; i < NDPI_PTREE_MAX; i++)
+      ndpi_get_patricia_stats(ndpi_thread_info[thread_id].workflow->ndpi_struct, i, &cumulative_stats.patricia_stats[i]);
   }
 
   if(cumulative_stats.total_wire_bytes == 0)
@@ -3639,6 +3533,68 @@ static void printResults(u_int64_t processing_time_usec, u_int64_t setup_time_us
 	  printf("\tConfidence: %-10s %-13llu (flows)\n", ndpi_confidence_get_name(i),
 		 (long long unsigned int)cumulative_stats.flow_confidence[i]);
       }
+
+      if(dump_internal_stats) {
+	if(cumulative_stats.ndpi_flow_count)
+	  printf("\tNum dissector calls:   %-13llu (%.2f diss/flow)\n",
+	         (long long unsigned int)cumulative_stats.num_dissector_calls,
+	         cumulative_stats.num_dissector_calls / (float)cumulative_stats.ndpi_flow_count);
+
+	printf("\tLRU cache ookla:      %llu/%llu/%llu (insert/search/found)\n",
+	       (long long unsigned int)cumulative_stats.lru_stats[NDPI_LRUCACHE_OOKLA].n_insert,
+	       (long long unsigned int)cumulative_stats.lru_stats[NDPI_LRUCACHE_OOKLA].n_search,
+	       (long long unsigned int)cumulative_stats.lru_stats[NDPI_LRUCACHE_OOKLA].n_found);
+	printf("\tLRU cache bittorrent: %llu/%llu/%llu (insert/search/found)\n",
+	       (long long unsigned int)cumulative_stats.lru_stats[NDPI_LRUCACHE_BITTORRENT].n_insert,
+	       (long long unsigned int)cumulative_stats.lru_stats[NDPI_LRUCACHE_BITTORRENT].n_search,
+	       (long long unsigned int)cumulative_stats.lru_stats[NDPI_LRUCACHE_BITTORRENT].n_found);
+	printf("\tLRU cache zoom:       %llu/%llu/%llu (insert/search/found)\n",
+	       (long long unsigned int)cumulative_stats.lru_stats[NDPI_LRUCACHE_ZOOM].n_insert,
+	       (long long unsigned int)cumulative_stats.lru_stats[NDPI_LRUCACHE_ZOOM].n_search,
+	       (long long unsigned int)cumulative_stats.lru_stats[NDPI_LRUCACHE_ZOOM].n_found);
+	printf("\tLRU cache stun:       %llu/%llu/%llu (insert/search/found)\n",
+	       (long long unsigned int)cumulative_stats.lru_stats[NDPI_LRUCACHE_STUN].n_insert,
+	       (long long unsigned int)cumulative_stats.lru_stats[NDPI_LRUCACHE_STUN].n_search,
+	       (long long unsigned int)cumulative_stats.lru_stats[NDPI_LRUCACHE_STUN].n_found);
+	printf("\tLRU cache tls_cert:   %llu/%llu/%llu (insert/search/found)\n",
+	       (long long unsigned int)cumulative_stats.lru_stats[NDPI_LRUCACHE_TLS_CERT].n_insert,
+	       (long long unsigned int)cumulative_stats.lru_stats[NDPI_LRUCACHE_TLS_CERT].n_search,
+	       (long long unsigned int)cumulative_stats.lru_stats[NDPI_LRUCACHE_TLS_CERT].n_found);
+	printf("\tLRU cache mining:     %llu/%llu/%llu (insert/search/found)\n",
+	       (long long unsigned int)cumulative_stats.lru_stats[NDPI_LRUCACHE_MINING].n_insert,
+	       (long long unsigned int)cumulative_stats.lru_stats[NDPI_LRUCACHE_MINING].n_search,
+	       (long long unsigned int)cumulative_stats.lru_stats[NDPI_LRUCACHE_MINING].n_found);
+	printf("\tLRU cache msteams:    %llu/%llu/%llu (insert/search/found)\n",
+	       (long long unsigned int)cumulative_stats.lru_stats[NDPI_LRUCACHE_MSTEAMS].n_insert,
+	       (long long unsigned int)cumulative_stats.lru_stats[NDPI_LRUCACHE_MSTEAMS].n_search,
+	       (long long unsigned int)cumulative_stats.lru_stats[NDPI_LRUCACHE_MSTEAMS].n_found);
+
+	printf("\tAutoma host:          %llu/%llu (search/found)\n",
+	       (long long unsigned int)cumulative_stats.automa_stats[NDPI_AUTOMA_HOST].n_search,
+	       (long long unsigned int)cumulative_stats.automa_stats[NDPI_AUTOMA_HOST].n_found);
+	printf("\tAutoma domain:        %llu/%llu (search/found)\n",
+	       (long long unsigned int)cumulative_stats.automa_stats[NDPI_AUTOMA_DOMAIN].n_search,
+	       (long long unsigned int)cumulative_stats.automa_stats[NDPI_AUTOMA_DOMAIN].n_found);
+	printf("\tAutoma tls cert:      %llu/%llu (search/found)\n",
+	       (long long unsigned int)cumulative_stats.automa_stats[NDPI_AUTOMA_TLS_CERT].n_search,
+	       (long long unsigned int)cumulative_stats.automa_stats[NDPI_AUTOMA_TLS_CERT].n_found);
+	printf("\tAutoma risk mask:     %llu/%llu (search/found)\n",
+	       (long long unsigned int)cumulative_stats.automa_stats[NDPI_AUTOMA_RISK_MASK].n_search,
+	       (long long unsigned int)cumulative_stats.automa_stats[NDPI_AUTOMA_RISK_MASK].n_found);
+	printf("\tAutoma common alpns:  %llu/%llu (search/found)\n",
+	       (long long unsigned int)cumulative_stats.automa_stats[NDPI_AUTOMA_COMMON_ALPNS].n_search,
+	       (long long unsigned int)cumulative_stats.automa_stats[NDPI_AUTOMA_COMMON_ALPNS].n_found);
+
+	printf("\tPatricia risk mask:   %llu/%llu (search/found)\n",
+	       (long long unsigned int)cumulative_stats.patricia_stats[NDPI_PTREE_RISK_MASK].n_search,
+	       (long long unsigned int)cumulative_stats.patricia_stats[NDPI_PTREE_RISK_MASK].n_found);
+	printf("\tPatricia risk:        %llu/%llu (search/found)\n",
+	       (long long unsigned int)cumulative_stats.patricia_stats[NDPI_PTREE_RISK].n_search,
+	       (long long unsigned int)cumulative_stats.patricia_stats[NDPI_PTREE_RISK].n_found);
+	printf("\tPatricia protocols:   %llu/%llu (search/found)\n",
+	       (long long unsigned int)cumulative_stats.patricia_stats[NDPI_PTREE_PROTOCOLS].n_search,
+	       (long long unsigned int)cumulative_stats.patricia_stats[NDPI_PTREE_PROTOCOLS].n_found);
+      }
     }
 
     if(results_file) {
@@ -3663,6 +3619,68 @@ static void printResults(u_int64_t processing_time_usec, u_int64_t setup_time_us
 	  fprintf(results_file, "Confidence %-17s: %llu (flows)\n",
 		  ndpi_confidence_get_name(i),
 		  (long long unsigned int)cumulative_stats.flow_confidence[i]);
+      }
+
+      if(dump_internal_stats) {
+	if(cumulative_stats.ndpi_flow_count)
+	  fprintf(results_file, "Num dissector calls: %llu (%.2f diss/flow)\n",
+	          (long long unsigned int)cumulative_stats.num_dissector_calls,
+	          cumulative_stats.num_dissector_calls / (float)cumulative_stats.ndpi_flow_count);
+
+	fprintf(results_file, "LRU cache ookla:      %llu/%llu/%llu (insert/search/found)\n",
+		(long long unsigned int)cumulative_stats.lru_stats[NDPI_LRUCACHE_OOKLA].n_insert,
+		(long long unsigned int)cumulative_stats.lru_stats[NDPI_LRUCACHE_OOKLA].n_search,
+		(long long unsigned int)cumulative_stats.lru_stats[NDPI_LRUCACHE_OOKLA].n_found);
+	fprintf(results_file, "LRU cache bittorrent: %llu/%llu/%llu (insert/search/found)\n",
+		(long long unsigned int)cumulative_stats.lru_stats[NDPI_LRUCACHE_BITTORRENT].n_insert,
+		(long long unsigned int)cumulative_stats.lru_stats[NDPI_LRUCACHE_BITTORRENT].n_search,
+		(long long unsigned int)cumulative_stats.lru_stats[NDPI_LRUCACHE_BITTORRENT].n_found);
+	fprintf(results_file, "LRU cache zoom:       %llu/%llu/%llu (insert/search/found)\n",
+		(long long unsigned int)cumulative_stats.lru_stats[NDPI_LRUCACHE_ZOOM].n_insert,
+		(long long unsigned int)cumulative_stats.lru_stats[NDPI_LRUCACHE_ZOOM].n_search,
+		(long long unsigned int)cumulative_stats.lru_stats[NDPI_LRUCACHE_ZOOM].n_found);
+	fprintf(results_file, "LRU cache stun:       %llu/%llu/%llu (insert/search/found)\n",
+		(long long unsigned int)cumulative_stats.lru_stats[NDPI_LRUCACHE_STUN].n_insert,
+		(long long unsigned int)cumulative_stats.lru_stats[NDPI_LRUCACHE_STUN].n_search,
+		(long long unsigned int)cumulative_stats.lru_stats[NDPI_LRUCACHE_STUN].n_found);
+	fprintf(results_file, "LRU cache tls_cert:   %llu/%llu/%llu (insert/search/found)\n",
+		(long long unsigned int)cumulative_stats.lru_stats[NDPI_LRUCACHE_TLS_CERT].n_insert,
+		(long long unsigned int)cumulative_stats.lru_stats[NDPI_LRUCACHE_TLS_CERT].n_search,
+		(long long unsigned int)cumulative_stats.lru_stats[NDPI_LRUCACHE_TLS_CERT].n_found);
+	fprintf(results_file, "LRU cache mining:     %llu/%llu/%llu (insert/search/found)\n",
+		(long long unsigned int)cumulative_stats.lru_stats[NDPI_LRUCACHE_MINING].n_insert,
+		(long long unsigned int)cumulative_stats.lru_stats[NDPI_LRUCACHE_MINING].n_search,
+		(long long unsigned int)cumulative_stats.lru_stats[NDPI_LRUCACHE_MINING].n_found);
+	fprintf(results_file, "LRU cache msteams:    %llu/%llu/%llu (insert/search/found)\n",
+		(long long unsigned int)cumulative_stats.lru_stats[NDPI_LRUCACHE_MSTEAMS].n_insert,
+		(long long unsigned int)cumulative_stats.lru_stats[NDPI_LRUCACHE_MSTEAMS].n_search,
+		(long long unsigned int)cumulative_stats.lru_stats[NDPI_LRUCACHE_MSTEAMS].n_found);
+
+	fprintf(results_file, "Automa host:          %llu/%llu (search/found)\n",
+		(long long unsigned int)cumulative_stats.automa_stats[NDPI_AUTOMA_HOST].n_search,
+		(long long unsigned int)cumulative_stats.automa_stats[NDPI_AUTOMA_HOST].n_found);
+	fprintf(results_file, "Automa domain:        %llu/%llu (search/found)\n",
+		(long long unsigned int)cumulative_stats.automa_stats[NDPI_AUTOMA_DOMAIN].n_search,
+		(long long unsigned int)cumulative_stats.automa_stats[NDPI_AUTOMA_DOMAIN].n_found);
+	fprintf(results_file, "Automa tls cert:      %llu/%llu (search/found)\n",
+		(long long unsigned int)cumulative_stats.automa_stats[NDPI_AUTOMA_TLS_CERT].n_search,
+		(long long unsigned int)cumulative_stats.automa_stats[NDPI_AUTOMA_TLS_CERT].n_found);
+	fprintf(results_file, "Automa risk mask:     %llu/%llu (search/found)\n",
+		(long long unsigned int)cumulative_stats.automa_stats[NDPI_AUTOMA_RISK_MASK].n_search,
+		(long long unsigned int)cumulative_stats.automa_stats[NDPI_AUTOMA_RISK_MASK].n_found);
+	fprintf(results_file, "Automa common alpns:  %llu/%llu (search/found)\n",
+		(long long unsigned int)cumulative_stats.automa_stats[NDPI_AUTOMA_COMMON_ALPNS].n_search,
+		(long long unsigned int)cumulative_stats.automa_stats[NDPI_AUTOMA_COMMON_ALPNS].n_found);
+
+	fprintf(results_file, "Patricia risk mask:   %llu/%llu (search/found)\n",
+		(long long unsigned int)cumulative_stats.patricia_stats[NDPI_PTREE_RISK_MASK].n_search,
+		(long long unsigned int)cumulative_stats.patricia_stats[NDPI_PTREE_RISK_MASK].n_found);
+	fprintf(results_file, "Patricia risk:        %llu/%llu (search/found)\n",
+		(long long unsigned int)cumulative_stats.patricia_stats[NDPI_PTREE_RISK].n_search,
+		(long long unsigned int)cumulative_stats.patricia_stats[NDPI_PTREE_RISK].n_found);
+	fprintf(results_file, "Patricia protocols:   %llu/%llu (search/found)\n",
+		(long long unsigned int)cumulative_stats.patricia_stats[NDPI_PTREE_PROTOCOLS].n_search,
+		(long long unsigned int)cumulative_stats.patricia_stats[NDPI_PTREE_PROTOCOLS].n_found);
       }
 
       fprintf(results_file, "\n");
@@ -4067,7 +4085,7 @@ void * processing_thread(void *_thread_id) {
   char pcap_error_buffer[PCAP_ERRBUF_SIZE];
 #endif
 
-#if defined(linux) && defined(HAVE_PTHREAD_SETAFFINITY_NP)
+#if defined(__linux__) && defined(HAVE_PTHREAD_SETAFFINITY_NP)
   if(core_affinity[thread_id] >= 0) {
     cpu_set_t cpuset;
 
@@ -4343,7 +4361,7 @@ static void dgaUnitTest() {
   };
   int debug = 0, i;
   NDPI_PROTOCOL_BITMASK all;
-  struct ndpi_detection_module_struct *ndpi_str = ndpi_init_detection_module(enable_ja3_plus ? ndpi_enable_ja3_plus : ndpi_no_prefs);
+  struct ndpi_detection_module_struct *ndpi_str = ndpi_init_detection_module(init_prefs);
 
   assert(ndpi_str != NULL);
 
@@ -4356,12 +4374,12 @@ static void dgaUnitTest() {
 
   for(i=0; non_dga[i] != NULL; i++) {
     if(debug) printf("Checking non DGA %s\n", non_dga[i]);
-    assert(ndpi_check_dga_name(ndpi_str, NULL, (char*)non_dga[i], 1) == 0);
+    assert(ndpi_check_dga_name(ndpi_str, NULL, (char*)non_dga[i], 1, 1) == 0);
   }
 
   for(i=0; dga[i] != NULL; i++) {
     if(debug) printf("Checking DGA %s\n", non_dga[i]);
-    assert(ndpi_check_dga_name(ndpi_str, NULL, (char*)dga[i], 1) == 1);
+    assert(ndpi_check_dga_name(ndpi_str, NULL, (char*)dga[i], 1, 1) == 1);
   }
 
   ndpi_exit_detection_module(ndpi_str);
@@ -5021,8 +5039,9 @@ void compressedBitmapUnitTest() {
 void zscoreUnitTest() {
   u_int32_t values[] = { 1, 3, 3, 4, 5, 2, 6, 7, 30, 16 };
   u_int32_t i;
-  u_int32_t num_outliers, num = sizeof(values) / sizeof(u_int32_t);
-  bool outliers[num], do_trace = false;
+  u_int32_t num_outliers;
+  u_int32_t const num = NDPI_ARRAY_LENGTH(values);
+  bool outliers[NDPI_ARRAY_LENGTH(values)], do_trace = false;
 
   num_outliers = ndpi_find_outliers(values, outliers, num);
 
@@ -5039,11 +5058,7 @@ void zscoreUnitTest() {
 /**
    @brief MAIN FUNCTION
 **/
-#ifdef APP_HAS_OWN_MAIN
-int original_main(int argc, char **argv) {
-#else
   int main(int argc, char **argv) {
-#endif
     int i, skip_unit_tests = 0;
 
 #ifdef DEBUG_TRACE
@@ -5102,14 +5117,12 @@ int original_main(int argc, char **argv) {
 
     gettimeofday(&startup_time, NULL);
     memset(ndpi_thread_info, 0, sizeof(ndpi_thread_info));
-    if(getenv("REP_MINI"))
-	    rep_mini = 1;
 
     if(getenv("AHO_DEBUG"))
       ac_automata_enable_debug(1);
     parseOptions(argc, argv);
 
-    ndpi_info_mod = ndpi_init_detection_module(enable_ja3_plus ? ndpi_enable_ja3_plus : ndpi_no_prefs);
+    ndpi_info_mod = ndpi_init_detection_module(init_prefs);
 
     if(ndpi_info_mod == NULL) return -1;
 
@@ -5153,7 +5166,20 @@ int original_main(int argc, char **argv) {
     return 0;
   }
 
-#ifdef WIN32
+#ifdef _MSC_BUILD
+int WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nShowCmd)
+{
+  if (AttachConsole(ATTACH_PARENT_PROCESS)) {
+    freopen("CONIN$", "r", stdin);
+    freopen("CONOUT$", "w", stdout);
+    freopen("CONOUT$", "w", stderr);
+  }
+
+  return main(__argc, __argv);
+}
+#endif
+
+#if defined(WIN32) && !defined(_MSC_BUILD)
 #ifndef __GNUC__
 #define EPOCHFILETIME (116444736000000000i64)
 #else

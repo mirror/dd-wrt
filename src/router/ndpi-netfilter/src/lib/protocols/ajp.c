@@ -58,12 +58,7 @@ static void set_ajp_detected(struct ndpi_detection_module_struct *ndpi_struct,
            struct ndpi_flow_struct *flow) {
 
   if(flow->detected_protocol_stack[0] == NDPI_PROTOCOL_UNKNOWN) {
-    ndpi_search_tcp_or_udp(ndpi_struct, flow);
-
-    /* If no custom protocol has been detected */
-    /* if(flow->detected_protocol_stack[0] == NDPI_PROTOCOL_UNKNOWN) */
-      ndpi_int_reset_protocol(flow);
-      ndpi_set_detected_protocol(ndpi_struct, flow, NDPI_PROTOCOL_AJP, flow->guessed_host_protocol_id, NDPI_CONFIDENCE_DPI);
+      ndpi_set_detected_protocol(ndpi_struct, flow, NDPI_PROTOCOL_AJP, NDPI_PROTOCOL_UNKNOWN, NDPI_CONFIDENCE_DPI);
   }
 }
 
@@ -139,7 +134,7 @@ void init_ajp_dissector(struct ndpi_detection_module_struct *ndpi_struct,
 {
   ndpi_set_bitmask_protocol_detection("AJP", ndpi_struct, detection_bitmask,
     *id, NDPI_PROTOCOL_AJP, ndpi_search_ajp,
-    NDPI_SELECTION_BITMASK_PROTOCOL_V4_V6_TCP_WITH_PAYLOAD,
+    NDPI_SELECTION_BITMASK_PROTOCOL_V4_V6_TCP_WITH_PAYLOAD_WITHOUT_RETRANSMISSION,
     SAVE_DETECTION_BITMASK_AS_UNKNOWN,
     ADD_TO_DETECTION_BITMASK);
 

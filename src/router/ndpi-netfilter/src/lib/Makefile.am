@@ -30,7 +30,9 @@ libndpi_a_SOURCES = ndpi_content_match.c.inc \
 		     ndpi_serializer.c \
 		     ndpi_community_id.c \
 		     ndpi_geoip.c \
+		     protocols/activision.c \
 		     protocols/afp.c \
+		     protocols/alicloud.c \
 		     protocols/ajp.c \
 		     protocols/aimini.c \
 		     protocols/among_us.c \
@@ -38,6 +40,7 @@ libndpi_a_SOURCES = ndpi_content_match.c.inc \
 		     protocols/applejuice.c \
 		     protocols/apple_push.c \
 		     protocols/armagetron.c \
+		     protocols/avast.c \
 		     protocols/avast_securedns.c \
 		     protocols/ayiya.c \
 		     protocols/amqp.c \
@@ -54,6 +57,7 @@ libndpi_a_SOURCES = ndpi_content_match.c.inc \
 		     protocols/collectd.c \
 		     protocols/corba.c \
 		     protocols/crossfire.c \
+		     protocols/crynet.c \
 		     protocols/csgo.c \
 		     protocols/dcerpc.c \
 		     protocols/dhcp.c \
@@ -61,6 +65,7 @@ libndpi_a_SOURCES = ndpi_content_match.c.inc \
 		     protocols/diameter.c \
 		     protocols/directconnect.c \
 		     protocols/directdownloadlink.c \
+		     protocols/discord.c \
 		     protocols/dns.c \
 		     protocols/dnscrypt.c \
 		     protocols/dnp3.c \
@@ -69,7 +74,9 @@ libndpi_a_SOURCES = ndpi_content_match.c.inc \
 		     protocols/dropbox.c \
 		     protocols/eaq.c \
 		     protocols/edonkey.c \
+		     protocols/elasticsearch.c \
 		     protocols/ethernet_ip.c \
+		     protocols/fastcgi.c \
 		     protocols/fasttrack.c \
 		     protocols/fiesta.c \
 		     protocols/fix.c \
@@ -98,9 +105,11 @@ libndpi_a_SOURCES = ndpi_content_match.c.inc \
 		     protocols/jabber.c \
 		     protocols/kakaotalk_voice.c \
 		     protocols/kerberos.c \
+		     protocols/kismet.c \
 		     protocols/kontiki.c \
 		     protocols/ldap.c \
 		     protocols/lotus_notes.c \
+		     protocols/line.c \
 		     protocols/lisp.c \
 		     protocols/mail_imap.c \
 		     protocols/mail_pop.c \
@@ -116,7 +125,9 @@ libndpi_a_SOURCES = ndpi_content_match.c.inc \
 		     protocols/mpegdash.c \
 		     protocols/mqtt.c \
 		     protocols/mssql_tds.c \
+		     protocols/munin.c \
 		     protocols/mysql.c \
+		     protocols/natpmp.c \
 		     protocols/nats.c \
 		     protocols/nest_log_sink.c \
 		     protocols/netbios.c \
@@ -157,6 +168,7 @@ libndpi_a_SOURCES = ndpi_content_match.c.inc \
 		     protocols/snmp_proto.c \
 		     protocols/soap.c \
 		     protocols/socks45.c \
+		     protocols/softether.c \
 		     protocols/sopcast.c \
 		     protocols/spotify.c \
 		     protocols/ssdp.c \
@@ -165,6 +177,7 @@ libndpi_a_SOURCES = ndpi_content_match.c.inc \
 		     protocols/stealthnet.c \
 		     protocols/steam.c \
 		     protocols/stun.c \
+		     protocols/syncthing.c \
 		     protocols/syslog.c \
 		     protocols/tcp_udp.c \
 		     protocols/teamspeak.c \
@@ -177,6 +190,7 @@ libndpi_a_SOURCES = ndpi_content_match.c.inc \
 		     protocols/threema.c \
 		     protocols/teredo.c \
 		     protocols/riotgames.c \
+		     protocols/tivoconnect.c \
 		     protocols/tvuplayer.c \
 		     protocols/tocaboca.c \
 		     protocols/ubntac2.c \

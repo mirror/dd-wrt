@@ -164,7 +164,7 @@ static int inet_pton4(const char *src, unsigned char *dst)
 	memcpy(dst, tmp, INADDRSZ);
 	return (1);
 }
-static uint32_t inet_addr(const char *ip) {
+uint32_t inet_addr(const char *ip) {
 	uint32_t r;
 	if(inet_pton4(ip,(char *)&r)) return r;
 	return 0;
