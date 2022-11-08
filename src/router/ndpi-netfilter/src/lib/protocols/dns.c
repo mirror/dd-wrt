@@ -194,6 +194,27 @@ static uint32_t dns_validchar[8] =
 
 /* *********************************************** */
 
+static char* dns_error_code2string(u_int16_t error_code, char *buf, u_int buf_len) {
+  switch(error_code) {
+  case 0: return((char*)"NOERROR");
+  case 1: return((char*)"FORMERR");
+  case 2: return((char*)"SERVFAIL");
+  case 3: return((char*)"NXDOMAIN");
+  case 4: return((char*)"NOTIMP");
+  case 5: return((char*)"REFUSED");
+  case 6: return((char*)"YXDOMAIN");
+  case 7: return((char*)"XRRSET");
+  case 8: return((char*)"NOTAUTH");
+  case 9: return((char*)"NOTZONE");
+    
+  default:
+    snprintf(buf, buf_len, "%u", error_code);
+    return(buf);
+  }
+}
+
+/* *********************************************** */
+  
 static int search_valid_dns(struct ndpi_detection_module_struct *ndpi_struct,
 			    struct ndpi_flow_struct *flow,
 			    struct ndpi_dns_packet_header *dns_header,
@@ -251,12 +272,31 @@ static int search_valid_dns(struct ndpi_detection_module_struct *ndpi_struct,
     }
   } else {
     /* DNS Reply */
+
+    if(flow->protos.dns.query_type == 0) {
+      /* In case we missed the query packet... */
+
+      while(x+2 < packet->payload_packet_len) {
+	if(packet->payload[x] == '\0') {
+          x++;
+          flow->protos.dns.query_type = get16(&x, packet->payload);
+#ifdef DNS_DEBUG
+          NDPI_LOG_DBG2(ndpi_struct, "query_type=%2d\n", flow->protos.dns.query_type);
+	  printf("[DNS] [request] query_type=%d\n", flow->protos.dns.query_type);
+#endif
+	  break;
+	} else
+	  x++;
+      }
+    }
+    
     flow->protos.dns.reply_code = dns_header->flags & 0x0F;
 
     if(flow->protos.dns.reply_code != 0) {
-      char str[32];
+      char str[32], buf[16];
 
-      snprintf(str, sizeof(str), "DNS Error Code %d", flow->protos.dns.reply_code);
+      snprintf(str, sizeof(str), "DNS Error Code %s",
+	       dns_error_code2string(flow->protos.dns.reply_code, buf, sizeof(buf)));
       ndpi_set_risk(ndpi_struct, flow, NDPI_ERROR_CODE_DETECTED, str);
     } else {
       if(ndpi_isset_risk(ndpi_struct, flow, NDPI_SUSPICIOUS_DGA_DOMAIN)) {
@@ -369,6 +409,9 @@ static int search_valid_dns(struct ndpi_detection_module_struct *ndpi_struct,
 static int search_dns_again(struct ndpi_detection_module_struct *ndpi_struct, struct ndpi_flow_struct *flow) {
   /* possibly dissect the DNS reply */
   ndpi_search_dns(ndpi_struct, flow);
+
+  if(flow->protos.dns.num_answers != 0)
+    return(0);
 
   /* Possibly more processing */
   return(1);
@@ -527,21 +570,21 @@ static void ndpi_search_dns(struct ndpi_detection_module_struct *ndpi_struct, st
     if(j > 0) {
       ndpi_protocol_match_result ret_match;
 
-      ndpi_check_dga_name(ndpi_struct, flow, flow->host_server_name, 1);
-
       ret.app_protocol = ndpi_match_host_subprotocol(ndpi_struct, flow,
 						     flow->host_server_name,
 						     strlen(flow->host_server_name),
 						     &ret_match,
 						     NDPI_PROTOCOL_DNS);
 
-      if(ret_match.protocol_category != NDPI_PROTOCOL_CATEGORY_UNSPECIFIED)
-	flow->category = ret_match.protocol_category;
+      /* Category is always NDPI_PROTOCOL_CATEGORY_NETWORK, regardless of the subprotocol */
+      flow->category = NDPI_PROTOCOL_CATEGORY_NETWORK;
 
       if(ret.app_protocol == NDPI_PROTOCOL_UNKNOWN)
 	ret.master_protocol = checkDNSSubprotocol(s_port, d_port);
       else
 	ret.master_protocol = NDPI_PROTOCOL_DNS;
+
+      ndpi_check_dga_name(ndpi_struct, flow, flow->host_server_name, 1, 0);
     }
 
     /* Report if this is a DNS query or reply */
@@ -551,12 +594,12 @@ static void ndpi_search_dns(struct ndpi_detection_module_struct *ndpi_struct, st
       /* In this case we say that the protocol has been detected just to let apps carry on with their activities */
       ndpi_set_detected_protocol(ndpi_struct, flow, ret.app_protocol, ret.master_protocol, NDPI_CONFIDENCE_DPI);
 
-      /* This is necessary to inform the core to call this dissector again */
-      flow->check_extra_packets = 1;
-
-      /* Don't use just 1 as in TCP DNS more packets could be returned (e.g. ACK). */
-      flow->max_extra_packets_to_check = 5;
-      flow->extra_packets_func = search_dns_again;
+      /* We have never triggered extra-dissection for LLMNR. Keep the old behaviour */
+      if(ret.master_protocol != NDPI_PROTOCOL_LLMNR) {
+        /* Don't use just 1 as in TCP DNS more packets could be returned (e.g. ACK). */
+        flow->max_extra_packets_to_check = 5;
+        flow->extra_packets_func = search_dns_again;
+      }
       return; /* The response will set the verdict */
     }
 

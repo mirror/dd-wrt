@@ -38,7 +38,6 @@
 #include <ws2tcpip.h>
 #include <process.h>
 #include <io.h>
-#include <getopt.h>   /* getopt from: http://www.pwilson.net/sample.html. */
 #include <process.h>  /* for getpid() and the exec..() family */
 #include <stdint.h>
 #include <time.h>
@@ -54,6 +53,12 @@
 #define gettimeofday mingw_gettimeofday
 #endif
 
+#ifdef _MSC_BUILD
+#define strncasecmp _strnicmp
+#define strcasecmp _stricmp
+#define strdup _strdup
+#endif
+
 extern char* strsep(char **sp, char *sep);
 
 typedef unsigned char  u_char;
@@ -65,8 +70,6 @@ typedef u_short        u_int16_t;
 typedef uint           u_int32_t;
 typedef uint           u_int;
 typedef unsigned       __int64 u_int64_t;
-
-#define gmtime_r(a, b)                  memcpy(b, gmtime(a), sizeof(struct tm))
 
 #define timegm                          _mkgmtime
 

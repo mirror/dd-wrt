@@ -82,9 +82,11 @@ struct pcre_struct {
  * Please keep this strcture in sync with
  * `struct ndpi_str_hash` in src/include/ndpi_typedefs.h
  */
+
 typedef struct ndpi_str_hash_private {
   unsigned int hash;
   void *value;
+  // u_int8_t private_data[1]; /* Avoid error C2466 and do not initiate private data with 0  */
   UT_hash_handle hh;
 } ndpi_str_hash_private;
 #if defined(__STDC_VERSION__) && __STDC_VERSION__ >= 201112L
@@ -279,82 +281,6 @@ u_int8_t ndpi_ips_match(u_int32_t src, u_int32_t dst,
   return(ndpi_net_match(src, net, num_bits) || ndpi_net_match(dst, net, num_bits));
 }
 
-/* ****************************************** */
-
-#if defined(WIN32) && !defined(__MINGW32__)
-/* http://opensource.apple.com/source/Libc/Libc-186/string.subproj/strcasecmp.c */
-
-/*
- * This array is designed for mapping upper and lower case letter
- * together for a case independent comparison.  The mappings are
- * based upon ascii character sequences.
- */
-static const u_char charmap[] = {
-  '\000', '\001', '\002', '\003', '\004', '\005', '\006', '\007',
-  '\010', '\011', '\012', '\013', '\014', '\015', '\016', '\017',
-  '\020', '\021', '\022', '\023', '\024', '\025', '\026', '\027',
-  '\030', '\031', '\032', '\033', '\034', '\035', '\036', '\037',
-  '\040', '\041', '\042', '\043', '\044', '\045', '\046', '\047',
-  '\050', '\051', '\052', '\053', '\054', '\055', '\056', '\057',
-  '\060', '\061', '\062', '\063', '\064', '\065', '\066', '\067',
-  '\070', '\071', '\072', '\073', '\074', '\075', '\076', '\077',
-  '\100', '\141', '\142', '\143', '\144', '\145', '\146', '\147',
-  '\150', '\151', '\152', '\153', '\154', '\155', '\156', '\157',
-  '\160', '\161', '\162', '\163', '\164', '\165', '\166', '\167',
-  '\170', '\171', '\172', '\133', '\134', '\135', '\136', '\137',
-  '\140', '\141', '\142', '\143', '\144', '\145', '\146', '\147',
-  '\150', '\151', '\152', '\153', '\154', '\155', '\156', '\157',
-  '\160', '\161', '\162', '\163', '\164', '\165', '\166', '\167',
-  '\170', '\171', '\172', '\173', '\174', '\175', '\176', '\177',
-  '\200', '\201', '\202', '\203', '\204', '\205', '\206', '\207',
-  '\210', '\211', '\212', '\213', '\214', '\215', '\216', '\217',
-  '\220', '\221', '\222', '\223', '\224', '\225', '\226', '\227',
-  '\230', '\231', '\232', '\233', '\234', '\235', '\236', '\237',
-  '\240', '\241', '\242', '\243', '\244', '\245', '\246', '\247',
-  '\250', '\251', '\252', '\253', '\254', '\255', '\256', '\257',
-  '\260', '\261', '\262', '\263', '\264', '\265', '\266', '\267',
-  '\270', '\271', '\272', '\273', '\274', '\275', '\276', '\277',
-  '\300', '\301', '\302', '\303', '\304', '\305', '\306', '\307',
-  '\310', '\311', '\312', '\313', '\314', '\315', '\316', '\317',
-  '\320', '\321', '\322', '\323', '\324', '\325', '\326', '\327',
-  '\330', '\331', '\332', '\333', '\334', '\335', '\336', '\337',
-  '\340', '\341', '\342', '\343', '\344', '\345', '\346', '\347',
-  '\350', '\351', '\352', '\353', '\354', '\355', '\356', '\357',
-  '\360', '\361', '\362', '\363', '\364', '\365', '\366', '\367',
-  '\370', '\371', '\372', '\373', '\374', '\375', '\376', '\377',
-};
-
-int strcasecmp(const char *s1, const char *s2) {
-  register const u_char *cm = charmap,
-    *us1 = (const u_char *)s1,
-    *us2 = (const u_char *)s2;
-
-  while (cm[*us1] == cm[*us2++])
-    if(*us1++ == '\0')
-      return (0);
-  return (cm[*us1] - cm[*--us2]);
-}
-
-/* ****************************************** */
-
-int strncasecmp(const char *s1, const char *s2, size_t n) {
-  if(n != 0) {
-    register const u_char *cm = charmap,
-      *us1 = (const u_char *)s1,
-      *us2 = (const u_char *)s2;
-
-    do {
-      if(cm[*us1] != cm[*us2++])
-	return (cm[*us1] - cm[*--us2]);
-      if(*us1++ == '\0')
-	break;
-    } while (--n != 0);
-  }
-  return (0);
-}
-
-#endif
-
 /* **************************************** */
 
 u_int8_t ndpi_is_safe_ssl_cipher(u_int32_t cipher) {
@@ -388,7 +314,7 @@ u_int8_t ndpi_is_safe_ssl_cipher(u_int32_t cipher) {
 
 /* ***************************************************** */
 
-NDPI_STATIC const char* ndpi_cipher2str(u_int32_t cipher) {
+NDPI_STATIC const char* ndpi_cipher2str(u_int32_t cipher, char unknown_cipher[8]) {
   switch(cipher) {
   case TLS_NULL_WITH_NULL_NULL:	return("TLS_NULL_WITH_NULL_NULL");
   case TLS_RSA_EXPORT_WITH_RC4_40_MD5:	return("TLS_RSA_EXPORT_WITH_RC4_40_MD5");
@@ -755,10 +681,8 @@ NDPI_STATIC const char* ndpi_cipher2str(u_int32_t cipher) {
 
   default:
     {
-      static char buf[8];
-
-      ndpi_snprintf(buf, sizeof(buf), "0X%04X", cipher);
-      return(buf);
+      ndpi_snprintf(unknown_cipher, 8, "0X%04X", cipher);
+      return(unknown_cipher);
     }
   }
 }
@@ -882,15 +806,27 @@ int ndpi_has_human_readeable_string(struct ndpi_detection_module_struct *ndpi_st
 static const char* ndpi_get_flow_info_by_proto_id(struct ndpi_flow_struct const * const flow,
                                                   u_int16_t proto_id) {
   switch (proto_id) {
-  case NDPI_PROTOCOL_DNS:
-  case NDPI_PROTOCOL_HTTP:
-    return flow->host_server_name;
-    
-  case NDPI_PROTOCOL_QUIC:
-  case NDPI_PROTOCOL_TLS:
-    if(flow->protos.tls_quic.hello_processed != 0)
-      return flow->host_server_name;        
-    break;
+    case NDPI_PROTOCOL_WHOIS_DAS:
+    case NDPI_PROTOCOL_MAIL_SMTP:
+    case NDPI_PROTOCOL_NETBIOS:
+    case NDPI_PROTOCOL_SSDP:
+    case NDPI_PROTOCOL_MDNS:
+    case NDPI_PROTOCOL_STUN:
+    case NDPI_PROTOCOL_DNS:
+    case NDPI_PROTOCOL_DHCP:
+    case NDPI_PROTOCOL_XIAOMI:
+    case NDPI_PROTOCOL_SD_RTN:
+    case NDPI_PROTOCOL_COLLECTD:
+    case NDPI_PROTOCOL_HTTP:
+    case NDPI_PROTOCOL_HTTP_CONNECT:
+    case NDPI_PROTOCOL_HTTP_PROXY:
+      return flow->host_server_name;
+
+    case NDPI_PROTOCOL_QUIC:
+    case NDPI_PROTOCOL_TLS:
+      if(flow->protos.tls_quic.hello_processed != 0)
+        return flow->host_server_name;
+      break;
   }
   
   return NULL;
@@ -1196,33 +1132,138 @@ void ndpi_serialize_proto(struct ndpi_detection_module_struct *ndpi_struct,
 {
   char buf[64];
 
-  ndpi_serialize_start_of_block(serializer, "ndpi");
   ndpi_serialize_risk(serializer, risk);
   ndpi_serialize_confidence(serializer, confidence);
   ndpi_serialize_string_string(serializer, "proto", ndpi_protocol2name(ndpi_struct, l7_protocol, buf, sizeof(buf)));
+  ndpi_serialize_string_string(serializer, "proto_id", ndpi_protocol2id(ndpi_struct, l7_protocol, buf, sizeof(buf)));
+  ndpi_serialize_string_string(serializer, "proto_by_ip", ndpi_get_proto_name(ndpi_struct,
+                                                                              l7_protocol.protocol_by_ip));
+  ndpi_serialize_string_uint32(serializer, "proto_by_ip_id", l7_protocol.protocol_by_ip);
+  ndpi_serialize_string_uint32(serializer, "encrypted", ndpi_is_encrypted_proto(ndpi_struct, l7_protocol));
   ndpi_protocol_breed_t breed =
     ndpi_get_proto_breed(ndpi_struct,
                          (l7_protocol.app_protocol != NDPI_PROTOCOL_UNKNOWN ? l7_protocol.app_protocol : l7_protocol.master_protocol));
   ndpi_serialize_string_string(serializer, "breed", ndpi_get_proto_breed_name(ndpi_struct, breed));
   if(l7_protocol.category != NDPI_PROTOCOL_CATEGORY_UNSPECIFIED)
+  {
+    ndpi_serialize_string_uint32(serializer, "category_id", l7_protocol.category);
     ndpi_serialize_string_string(serializer, "category", ndpi_category_get_name(ndpi_struct, l7_protocol.category));
-  ndpi_serialize_end_of_block(serializer);
+  }
 }
 #endif
 
 /* ********************************** */
 
 #ifndef __KERNEL__
+
+static void ndpi_tls2json(ndpi_serializer *serializer, struct ndpi_flow_struct *flow)
+{
+  if(flow->protos.tls_quic.ssl_version)
+  {
+    char buf[64];
+    char notBefore[32], notAfter[32];
+    struct tm a, b, *before = NULL, *after = NULL;
+    u_int i, off;
+    u_int8_t unknown_tls_version;
+    char version[16], unknown_cipher[8];
+
+    ndpi_ssl_version2str(version, sizeof(version), flow->protos.tls_quic.ssl_version, &unknown_tls_version);
+
+    if(flow->protos.tls_quic.notBefore)
+    {
+      before = ndpi_gmtime_r((const time_t *)&flow->protos.tls_quic.notBefore, &a);
+    }
+    if(flow->protos.tls_quic.notAfter)
+    {
+      after = ndpi_gmtime_r((const time_t *)&flow->protos.tls_quic.notAfter, &b);
+    }
+
+    if(!unknown_tls_version)
+    {
+      ndpi_serialize_start_of_block(serializer, "tls");
+      ndpi_serialize_string_string(serializer, "version", version);
+
+      if(flow->protos.tls_quic.server_names)
+      {
+        ndpi_serialize_string_string(serializer, "server_names",
+                                     flow->protos.tls_quic.server_names);
+      }
+
+      if(before)
+      {
+        strftime(notBefore, sizeof(notBefore), "%Y-%m-%d %H:%M:%S", before);
+        ndpi_serialize_string_string(serializer, "notbefore", notBefore);
+      }
+
+      if(after)
+      {
+        strftime(notAfter, sizeof(notAfter), "%Y-%m-%d %H:%M:%S", after);
+        ndpi_serialize_string_string(serializer, "notafter", notAfter);
+      }
+
+      ndpi_serialize_string_string(serializer, "ja3", flow->protos.tls_quic.ja3_client);
+      ndpi_serialize_string_string(serializer, "ja3s", flow->protos.tls_quic.ja3_server);
+      ndpi_serialize_string_uint32(serializer, "unsafe_cipher", flow->protos.tls_quic.server_unsafe_cipher);
+      ndpi_serialize_string_string(serializer, "cipher",
+                                   ndpi_cipher2str(flow->protos.tls_quic.server_cipher, unknown_cipher));
+
+      if(flow->protos.tls_quic.issuerDN)
+      {
+        ndpi_serialize_string_string(serializer, "issuerDN", flow->protos.tls_quic.issuerDN);
+      }
+      if(flow->protos.tls_quic.subjectDN)
+      {
+        ndpi_serialize_string_string(serializer, "subjectDN", flow->protos.tls_quic.subjectDN);
+      }
+      if(flow->protos.tls_quic.advertised_alpns)
+      {
+        ndpi_serialize_string_string(serializer, "advertised_alpns", flow->protos.tls_quic.advertised_alpns);
+      }
+      if(flow->protos.tls_quic.negotiated_alpn)
+      {
+        ndpi_serialize_string_string(serializer, "negotiated_alpn", flow->protos.tls_quic.negotiated_alpn);
+      }
+      if(flow->protos.tls_quic.tls_supported_versions)
+      {
+        ndpi_serialize_string_string(serializer, "tls_supported_versions", flow->protos.tls_quic.tls_supported_versions);
+      }
+
+      if(flow->protos.tls_quic.sha1_certificate_fingerprint[0] != '\0')
+      {
+        for(i=0, off=0; i<20; i++)
+        {
+          int rc = ndpi_snprintf(&buf[off], sizeof(buf)-off,"%s%02X", (i > 0) ? ":" : "",
+                               flow->protos.tls_quic.sha1_certificate_fingerprint[i] & 0xFF);
+
+          if(rc <= 0) break; else off += rc;
+        }
+
+        ndpi_serialize_string_string(serializer, "fingerprint", buf);
+      }
+
+      ndpi_serialize_end_of_block(serializer);
+    }
+  }
+}
+
 /* NOTE: serializer must have been already initialized */
 int ndpi_dpi2json(struct ndpi_detection_module_struct *ndpi_struct,
 		  struct ndpi_flow_struct *flow,
 		  ndpi_protocol l7_protocol,
 		  ndpi_serializer *serializer) {
   char buf[64];
+  char const *host_server_name;
 
   if(flow == NULL) return(-1);
 
+  ndpi_serialize_start_of_block(serializer, "ndpi");
   ndpi_serialize_proto(ndpi_struct, serializer, flow->risk, flow->confidence, l7_protocol);
+
+  host_server_name = ndpi_get_flow_info(flow, &l7_protocol);
+  if (host_server_name != NULL)
+  {
+    ndpi_serialize_string_string(serializer, "hostname", host_server_name);
+  }
 
   switch(l7_protocol.master_protocol ? l7_protocol.master_protocol : l7_protocol.app_protocol) {
   case NDPI_PROTOCOL_IP_ICMP:
@@ -1233,7 +1274,6 @@ int ndpi_dpi2json(struct ndpi_detection_module_struct *ndpi_struct,
 
   case NDPI_PROTOCOL_DHCP:
     ndpi_serialize_start_of_block(serializer, "dhcp");
-    ndpi_serialize_string_string(serializer, "hostname", flow->host_server_name);
     ndpi_serialize_string_string(serializer, "fingerprint", flow->protos.dhcp.fingerprint);
     ndpi_serialize_string_string(serializer, "class_ident", flow->protos.dhcp.class_ident);
     ndpi_serialize_end_of_block(serializer);
@@ -1259,10 +1299,14 @@ int ndpi_dpi2json(struct ndpi_detection_module_struct *ndpi_struct,
     }
     break;
 
+  case NDPI_PROTOCOL_COLLECTD:
+    ndpi_serialize_start_of_block(serializer, "collectd");
+    ndpi_serialize_string_string(serializer, "client_username", flow->protos.collectd.client_username);
+    ndpi_serialize_end_of_block(serializer);
+    break;
+
   case NDPI_PROTOCOL_DNS:
     ndpi_serialize_start_of_block(serializer, "dns");
-    if(flow->host_server_name[0] != '\0')
-      ndpi_serialize_string_string(serializer, "query", flow->host_server_name);
     ndpi_serialize_string_uint32(serializer, "num_queries", flow->protos.dns.num_queries);
     ndpi_serialize_string_uint32(serializer, "num_answers", flow->protos.dns.num_answers);
     ndpi_serialize_string_uint32(serializer, "reply_code",  flow->protos.dns.reply_code);
@@ -1283,7 +1327,6 @@ int ndpi_dpi2json(struct ndpi_detection_module_struct *ndpi_struct,
 
   case NDPI_PROTOCOL_MDNS:
     ndpi_serialize_start_of_block(serializer, "mdns");
-    ndpi_serialize_string_string(serializer, "answer", flow->host_server_name);
     ndpi_serialize_end_of_block(serializer);
     break;
 
@@ -1301,6 +1344,51 @@ int ndpi_dpi2json(struct ndpi_detection_module_struct *ndpi_struct,
     ndpi_serialize_end_of_block(serializer);
     break;
 
+  case NDPI_PROTOCOL_SOFTETHER:
+    ndpi_serialize_start_of_block(serializer, "softether");
+    ndpi_serialize_string_string(serializer, "client_ip", flow->protos.softether.ip);
+    ndpi_serialize_string_string(serializer, "client_port", flow->protos.softether.port);
+    ndpi_serialize_string_string(serializer, "hostname", flow->protos.softether.hostname);
+    ndpi_serialize_string_string(serializer, "fqdn", flow->protos.softether.fqdn);
+    ndpi_serialize_end_of_block(serializer);
+    break;
+
+  case NDPI_PROTOCOL_NATPMP:
+    ndpi_serialize_start_of_block(serializer, "natpmp");
+    ndpi_serialize_string_uint32(serializer, "result", flow->protos.natpmp.result_code);
+    ndpi_serialize_string_uint32(serializer, "internal_port", flow->protos.natpmp.internal_port);
+    ndpi_serialize_string_uint32(serializer, "external_port", flow->protos.natpmp.external_port);
+    inet_ntop(AF_INET, &flow->protos.natpmp.external_address.ipv4, buf, sizeof(buf));
+    ndpi_serialize_string_string(serializer, "external_address", buf);
+    ndpi_serialize_end_of_block(serializer);
+    break;
+
+  case NDPI_PROTOCOL_RSH:
+    ndpi_serialize_start_of_block(serializer, "rsh");
+    ndpi_serialize_string_string(serializer, "client_username", flow->protos.rsh.client_username);
+    ndpi_serialize_string_string(serializer, "server_username", flow->protos.rsh.server_username);
+    ndpi_serialize_string_string(serializer, "command", flow->protos.rsh.command);
+    ndpi_serialize_end_of_block(serializer);
+    break;
+
+  case NDPI_PROTOCOL_SNMP:
+    ndpi_serialize_start_of_block(serializer, "snmp");
+    ndpi_serialize_string_uint32(serializer, "version", flow->protos.snmp.version);
+    ndpi_serialize_string_uint32(serializer, "primitive", flow->protos.snmp.primitive);
+    ndpi_serialize_string_uint32(serializer, "error_status", flow->protos.snmp.error_status);
+    ndpi_serialize_end_of_block(serializer);
+    break;
+
+  case NDPI_PROTOCOL_STUN:
+    ndpi_serialize_start_of_block(serializer, "stun");
+    ndpi_serialize_string_uint32(serializer, "num_pkts", flow->stun.num_pkts);
+    ndpi_serialize_string_uint32(serializer, "num_binding_requests",
+                                 flow->stun.num_binding_requests);
+    ndpi_serialize_string_uint32(serializer, "num_processed_pkts",
+                                 flow->stun.num_processed_pkts);
+    ndpi_serialize_end_of_block(serializer);
+    break;
+
   case NDPI_PROTOCOL_TELNET:
     ndpi_serialize_start_of_block(serializer, "telnet");
     ndpi_serialize_string_string(serializer, "username", flow->protos.telnet.username);
@@ -1308,42 +1396,61 @@ int ndpi_dpi2json(struct ndpi_detection_module_struct *ndpi_struct,
     ndpi_serialize_end_of_block(serializer);
     break;
 
+  case NDPI_PROTOCOL_TFTP:
+    ndpi_serialize_start_of_block(serializer, "tftp");
+    ndpi_serialize_string_string(serializer, "filename", flow->protos.tftp.filename);
+    ndpi_serialize_end_of_block(serializer);
+    break;
+
+  case NDPI_PROTOCOL_TIVOCONNECT:
+    ndpi_serialize_start_of_block(serializer, "tivoconnect");
+    ndpi_serialize_string_string(serializer, "identity_uuid", flow->protos.tivoconnect.identity_uuid);
+    ndpi_serialize_string_string(serializer, "machine", flow->protos.tivoconnect.machine);
+    ndpi_serialize_string_string(serializer, "platform", flow->protos.tivoconnect.platform);
+    ndpi_serialize_string_string(serializer, "services", flow->protos.tivoconnect.services);
+    ndpi_serialize_end_of_block(serializer);
+    break;
+
   case NDPI_PROTOCOL_HTTP:
+  case NDPI_PROTOCOL_HTTP_CONNECT:
+  case NDPI_PROTOCOL_HTTP_PROXY:
     ndpi_serialize_start_of_block(serializer, "http");
-    if(flow->host_server_name[0] != '\0')
-      ndpi_serialize_string_string(serializer, "hostname", flow->host_server_name);
     if(flow->http.url != NULL) {
-      ndpi_serialize_string_string(serializer,   "url", flow->http.url);
-      ndpi_serialize_string_uint32(serializer,   "code", flow->http.response_status_code);
-      ndpi_serialize_string_string(serializer,   "content_type", flow->http.content_type);
-      ndpi_serialize_string_string(serializer,   "user_agent", flow->http.user_agent);
+      ndpi_risk_enum risk = ndpi_validate_url(flow->http.url);
+      if (risk != NDPI_NO_RISK)
+      {
+        NDPI_SET_BIT(flow->risk, risk);
+      }
+      ndpi_serialize_string_string(serializer, "url", flow->http.url);
+      ndpi_serialize_string_uint32(serializer, "code", flow->http.response_status_code);
+      ndpi_serialize_string_string(serializer, "content_type", flow->http.content_type);
+      ndpi_serialize_string_string(serializer, "user_agent", flow->http.user_agent);
+    }
+    if (flow->http.request_content_type != NULL)
+    {
+      ndpi_serialize_string_string(serializer, "request_content_type",
+                                   flow->http.request_content_type);
+    }
+    if (flow->http.detected_os != NULL)
+    {
+      ndpi_serialize_string_string(serializer, "detected_os",
+                                   flow->http.detected_os);
+    }
+    if (flow->http.nat_ip != NULL)
+    {
+      ndpi_serialize_string_string(serializer, "nat_ip",
+                                   flow->http.nat_ip);
     }
     ndpi_serialize_end_of_block(serializer);
     break;
 
   case NDPI_PROTOCOL_QUIC:
     ndpi_serialize_start_of_block(serializer, "quic");
-    if(flow->host_server_name[0] != '\0')
-      ndpi_serialize_string_string(serializer, "client_requested_server_name",
-                                   flow->host_server_name);
-    if(flow->protos.tls_quic.server_names)
-      ndpi_serialize_string_string(serializer, "server_names", flow->protos.tls_quic.server_names);
     if(flow->http.user_agent)
       ndpi_serialize_string_string(serializer, "user_agent", flow->http.user_agent);
-    if(flow->protos.tls_quic.ssl_version) {
-      u_int8_t unknown_tls_version;
-      char version[16];
 
-      ndpi_ssl_version2str(version, sizeof(version), flow->protos.tls_quic.ssl_version, &unknown_tls_version);
+    ndpi_tls2json(serializer, flow);
 
-      if(!unknown_tls_version)
-	ndpi_serialize_string_string(serializer, "version", version);
-      if(flow->protos.tls_quic.alpn)
-        ndpi_serialize_string_string(serializer, "alpn", flow->protos.tls_quic.alpn);
-      ndpi_serialize_string_string(serializer, "ja3", flow->protos.tls_quic.ja3_client);
-      if(flow->protos.tls_quic.tls_supported_versions)
-        ndpi_serialize_string_string(serializer, "tls_supported_versions", flow->protos.tls_quic.tls_supported_versions);
-    }
     ndpi_serialize_end_of_block(serializer);
     break;
 
@@ -1351,6 +1458,8 @@ int ndpi_dpi2json(struct ndpi_detection_module_struct *ndpi_struct,
     ndpi_serialize_start_of_block(serializer, "imap");
     ndpi_serialize_string_string(serializer,  "user", flow->l4.tcp.ftp_imap_pop_smtp.username);
     ndpi_serialize_string_string(serializer,  "password", flow->l4.tcp.ftp_imap_pop_smtp.password);
+    ndpi_serialize_string_uint32(serializer, "auth_failed",
+                                 flow->l4.tcp.ftp_imap_pop_smtp.auth_failed);
     ndpi_serialize_end_of_block(serializer);
     break;
 
@@ -1358,6 +1467,8 @@ int ndpi_dpi2json(struct ndpi_detection_module_struct *ndpi_struct,
     ndpi_serialize_start_of_block(serializer, "pop");
     ndpi_serialize_string_string(serializer,  "user", flow->l4.tcp.ftp_imap_pop_smtp.username);
     ndpi_serialize_string_string(serializer,  "password", flow->l4.tcp.ftp_imap_pop_smtp.password);
+    ndpi_serialize_string_uint32(serializer, "auth_failed",
+                                 flow->l4.tcp.ftp_imap_pop_smtp.auth_failed);
     ndpi_serialize_end_of_block(serializer);
     break;
 
@@ -1365,6 +1476,8 @@ int ndpi_dpi2json(struct ndpi_detection_module_struct *ndpi_struct,
     ndpi_serialize_start_of_block(serializer, "smtp");
     ndpi_serialize_string_string(serializer,  "user", flow->l4.tcp.ftp_imap_pop_smtp.username);
     ndpi_serialize_string_string(serializer,  "password", flow->l4.tcp.ftp_imap_pop_smtp.password);
+    ndpi_serialize_string_uint32(serializer, "auth_failed",
+                                 flow->l4.tcp.ftp_imap_pop_smtp.auth_failed);
     ndpi_serialize_end_of_block(serializer);
     break;
 
@@ -1374,6 +1487,14 @@ int ndpi_dpi2json(struct ndpi_detection_module_struct *ndpi_struct,
     ndpi_serialize_string_string(serializer,  "password", flow->l4.tcp.ftp_imap_pop_smtp.password);
     ndpi_serialize_string_uint32(serializer,  "auth_failed", flow->l4.tcp.ftp_imap_pop_smtp.auth_failed);
     ndpi_serialize_end_of_block(serializer);
+    break;
+
+  case NDPI_PROTOCOL_DISCORD:
+    if (l7_protocol.master_protocol != NDPI_PROTOCOL_TLS) {
+      ndpi_serialize_start_of_block(serializer, "discord");
+      ndpi_serialize_string_string(serializer, "client_ip", flow->protos.discord.client_ip);
+      ndpi_serialize_end_of_block(serializer);
+    }
     break;
 
   case NDPI_PROTOCOL_DISCORD:
@@ -1395,70 +1516,11 @@ int ndpi_dpi2json(struct ndpi_detection_module_struct *ndpi_struct,
 
   case NDPI_PROTOCOL_TLS:
   case NDPI_PROTOCOL_DTLS:
-    if(flow->protos.tls_quic.ssl_version) {
-      char notBefore[32], notAfter[32];
-      struct tm a, b, *before = NULL, *after = NULL;
-      u_int i, off;
-      u_int8_t unknown_tls_version;
-      char version[16];
-
-      ndpi_ssl_version2str(version, sizeof(version), flow->protos.tls_quic.ssl_version, &unknown_tls_version);
-
-      if(flow->protos.tls_quic.notBefore)
-        before = gmtime_r((const time_t *)&flow->protos.tls_quic.notBefore, &a);
-      if(flow->protos.tls_quic.notAfter)
-        after  = gmtime_r((const time_t *)&flow->protos.tls_quic.notAfter, &b);
-
-      if(!unknown_tls_version) {
-	ndpi_serialize_start_of_block(serializer, "tls");
-	ndpi_serialize_string_string(serializer, "version", version);
-	ndpi_serialize_string_string(serializer, "client_requested_server_name",
-				     flow->host_server_name);
-	if(flow->protos.tls_quic.server_names)
-	  ndpi_serialize_string_string(serializer, "server_names", flow->protos.tls_quic.server_names);
-
-	if(before) {
-          strftime(notBefore, sizeof(notBefore), "%Y-%m-%d %H:%M:%S", before);
-          ndpi_serialize_string_string(serializer, "notbefore", notBefore);
-        }
-
-	if(after) {
-	  strftime(notAfter, sizeof(notAfter), "%Y-%m-%d %H:%M:%S", after);
-          ndpi_serialize_string_string(serializer, "notafter", notAfter);
-        }
-	ndpi_serialize_string_string(serializer, "ja3", flow->protos.tls_quic.ja3_client);
-	ndpi_serialize_string_string(serializer, "ja3s", flow->protos.tls_quic.ja3_server);
-	ndpi_serialize_string_uint32(serializer, "unsafe_cipher", flow->protos.tls_quic.server_unsafe_cipher);
-	ndpi_serialize_string_string(serializer, "cipher", ndpi_cipher2str(flow->protos.tls_quic.server_cipher));
-
-	if(flow->protos.tls_quic.issuerDN)
-	  ndpi_serialize_string_string(serializer, "issuerDN", flow->protos.tls_quic.issuerDN);
-
-	if(flow->protos.tls_quic.subjectDN)
-	  ndpi_serialize_string_string(serializer, "subjectDN", flow->protos.tls_quic.subjectDN);
-
-	if(flow->protos.tls_quic.alpn)
-	  ndpi_serialize_string_string(serializer, "alpn", flow->protos.tls_quic.alpn);
-
-	if(flow->protos.tls_quic.tls_supported_versions)
-	  ndpi_serialize_string_string(serializer, "tls_supported_versions", flow->protos.tls_quic.tls_supported_versions);
-
-	if(flow->protos.tls_quic.sha1_certificate_fingerprint[0] != '\0') {
-	  for(i=0, off=0; i<20; i++) {
-	    int rc = ndpi_snprintf(&buf[off], sizeof(buf)-off,"%s%02X", (i > 0) ? ":" : "",
-			      flow->protos.tls_quic.sha1_certificate_fingerprint[i] & 0xFF);
-
-	    if(rc <= 0) break; else off += rc;
-	  }
-
-	  ndpi_serialize_string_string(serializer, "fingerprint", buf);
-	}
-
-	ndpi_serialize_end_of_block(serializer);
-      }
-    }
+    ndpi_tls2json(serializer, flow);
     break;
   } /* switch */
+
+  ndpi_serialize_end_of_block(serializer); // "ndpi"
 
   return(0);
 }
@@ -1475,10 +1537,7 @@ int ndpi_flow2json(struct ndpi_detection_module_struct *ndpi_struct,
 		   u_int16_t src_port, u_int16_t dst_port,
 		   ndpi_protocol l7_protocol,
 		   ndpi_serializer *serializer) {
-  char src_name[32], dst_name[32];
-
-  if(ndpi_init_serializer(serializer, ndpi_serialization_format_json) == -1)
-    return(-1);
+  char src_name[32] = {'\0'}, dst_name[32] = {'\0'};
 
   if(ip_version == 4) {
     inet_ntop(AF_INET, &src_v4, src_name, sizeof(src_name));
@@ -1492,8 +1551,10 @@ int ndpi_flow2json(struct ndpi_detection_module_struct *ndpi_struct,
 
   ndpi_serialize_string_string(serializer, "src_ip", src_name);
   ndpi_serialize_string_string(serializer, "dest_ip", dst_name);
-  if(src_port) ndpi_serialize_string_uint32(serializer, "src_port", src_port);
-  if(dst_port) ndpi_serialize_string_uint32(serializer, "dst_port", dst_port);
+  if(src_port) ndpi_serialize_string_uint32(serializer, "src_port", ntohs(src_port));
+  if(dst_port) ndpi_serialize_string_uint32(serializer, "dst_port", ntohs(dst_port));
+
+  ndpi_serialize_string_uint32(serializer, "ip", ip_version);
 
   switch(l4_protocol) {
   case IPPROTO_TCP:
@@ -1604,7 +1665,7 @@ static int ndpi_is_xss_injection(char* query) {
 #ifdef HAVE_PCRE
 
 static void ndpi_compile_rce_regex() {
-  const char *pcreErrorStr;
+  const char *pcreErrorStr = NULL;
   int pcreErrorOffset;
 
   for(int i = 0; i < N_RCE_REGEX; i++) {
@@ -1942,6 +2003,10 @@ const char* ndpi_risk2str(ndpi_risk_enum risk) {
     return("Unidirectional Traffic");
     break;
 
+  case NDPI_HTTP_OBSOLETE_SERVER:
+    return("HTTP Obsolete Server");
+    break;
+
   default:
     ndpi_snprintf(buf, sizeof(buf), "%d", (int)risk);
     return(buf);
@@ -1966,6 +2031,14 @@ const char* ndpi_severity2str(ndpi_risk_severity s) {
 
   case NDPI_RISK_SEVERE:
     return("Severe");
+    break;
+
+  case NDPI_RISK_CRITICAL:
+    return("Critical");
+    break;
+    
+  case NDPI_RISK_EMERGENCY:
+    return("Emergency");
     break;
   }
 
@@ -2006,6 +2079,14 @@ u_int16_t ndpi_risk2score(ndpi_risk risk,
 
       case NDPI_RISK_SEVERE:
 	val = NDPI_SCORE_RISK_SEVERE;
+	break;
+
+      case NDPI_RISK_CRITICAL:
+	val = NDPI_SCORE_RISK_CRITICAL;
+	break;
+
+      case NDPI_RISK_EMERGENCY:
+	val = NDPI_SCORE_RISK_EMERGENCY;
 	break;
       }
 
@@ -2206,16 +2287,18 @@ static u_int64_t ndpi_host_ip_risk_ptree_match(struct ndpi_detection_module_stru
 /* Check isuerDN exception */
 u_int8_t ndpi_check_issuerdn_risk_exception(struct ndpi_detection_module_struct *ndpi_str,
 					    char *issuerDN) {
-  ndpi_list *head = ndpi_str->trusted_issuer_dn;
-
+  if(issuerDN != NULL) {
+    ndpi_list *head = ndpi_str->trusted_issuer_dn;
+    
     while(head != NULL) {
       if(strcmp(issuerDN, head->value) == 0)
 	return(1); /* This is a trusted DN */
       else
 	head = head->next;
+    }
   }
   
-    return(0 /* no exception */);
+  return(0 /* no exception */);
 }
 
 /* ********************************************************************************* */
@@ -2224,23 +2307,27 @@ u_int8_t ndpi_check_issuerdn_risk_exception(struct ndpi_detection_module_struct 
 static u_int8_t ndpi_check_hostname_risk_exception(struct ndpi_detection_module_struct *ndpi_str,
 						   struct ndpi_flow_struct *flow,
 						   char *hostname) {
-  ndpi_automa *automa = &ndpi_str->host_risk_mask_automa;
-  u_int8_t ret = 0;
-  
-  if(automa->ac_automa) {
-    AC_TEXT_t ac_input_text;
-    AC_REP_t match;
+  if(hostname == NULL)
+    return(0);
+  else {
+    ndpi_automa *automa = &ndpi_str->host_risk_mask_automa;
+    u_int8_t ret = 0;
     
-    ac_input_text.astring = hostname, ac_input_text.length = strlen(hostname);
-    ac_input_text.option = 0;
-    
-    if(ac_automata_search(automa->ac_automa, &ac_input_text, &match) > 0) {
-      if(flow) flow->risk_mask &= match.number64;
-      ret = 1;
+    if(automa->ac_automa) {
+      AC_TEXT_t ac_input_text;
+      AC_REP_t match;
+      
+      ac_input_text.astring = hostname, ac_input_text.length = strlen(hostname);
+      ac_input_text.option = 0;
+      
+      if(ac_automata_search(automa->ac_automa, &ac_input_text, &match) > 0) {
+	if(flow) flow->risk_mask &= match.number64;
+	ret = 1;
+      }
     }
+    
+    return(ret);
   }
-  
-  return(ret);
 }
 
 /* ********************************************************************************* */
@@ -2260,7 +2347,7 @@ static u_int8_t ndpi_check_ipv4_exception(struct ndpi_detection_module_struct *n
   return((r != (u_int64_t)-1) ? 1 : 0);
 }
 
-  /* ********************************************************************************* */
+/* ********************************************************************************* */
 
 static void ndpi_handle_risk_exceptions(struct ndpi_detection_module_struct *ndpi_str,
 					struct ndpi_flow_struct *flow) {
@@ -2287,8 +2374,8 @@ static void ndpi_handle_risk_exceptions(struct ndpi_detection_module_struct *ndp
   /* TODO: add IPv6 support */
   if(!flow->ip_risk_mask_evaluated) {
     if(flow->is_ipv6 == 0) {
-      ndpi_check_ipv4_exception(ndpi_str, flow, flow->saddr /* Source */);
-      ndpi_check_ipv4_exception(ndpi_str, flow, flow->daddr /* Destination */);
+      ndpi_check_ipv4_exception(ndpi_str, flow, flow->c_address.v4 /* Client */);
+      ndpi_check_ipv4_exception(ndpi_str, flow, flow->s_address.v4 /* Server */);
     }
 
     flow->ip_risk_mask_evaluated = 1;
@@ -2503,8 +2590,8 @@ void load_common_alpns(struct ndpi_detection_module_struct *ndpi_str) {
 
     /* QUIC ALPNs */
     "h3-T051", "h3-T050",
-    "h3-32", "h3-30", "h3-29", "h3-28", "h3-27", "h3-24", "h3-22",
-    "hq-30", "hq-29", "hq-28", "hq-27",
+    "h3-34", "h3-33", "h3-32", "h3-31", "h3-30", "h3-29", "h3-28", "h3-27", "h3-24", "h3-22",
+    "hq-34", "hq-33", "hq-32", "hq-31", "hq-30", "hq-29", "hq-28", "hq-27", "hq-interop",
     "h3-fb-05", "h1q-fb",
     "doq-i00",
 
@@ -2615,6 +2702,19 @@ int ndpi_vsnprintf(char * str, size_t size, char const * format, va_list va_args
 #endif
 }
 
+/* ******************************************* */
+#ifndef __KERNEL__
+struct tm *ndpi_gmtime_r(const time_t *timep,
+                         struct tm *result)
+{
+#ifdef WIN32
+  gmtime_s(result, timep);
+  return result;
+#else
+  return gmtime_r(timep, result);
+#endif
+}
+#endif
 /* ******************************************* */
 
 int ndpi_snprintf(char * str, size_t size, char const * format, ...) {
@@ -2731,4 +2831,69 @@ u_int8_t ndpi_check_flow_risk_exceptions(struct ndpi_detection_module_struct *nd
   
   return(0);
 }
+
 #endif
+/* ******************************************* */
+
+int64_t ndpi_asn1_ber_decode_length(const unsigned char *payload, int payload_len, u_int16_t *value_len)
+{
+  unsigned int value, i;
+
+  if(payload_len <= 0)
+    return -1;
+
+  /* Malformed */
+  if(payload[0] == 0xFF)
+    return -1;
+
+  /* Definite, short */
+  if(payload[0] <= 0x80) {
+    *value_len = 1;
+    return payload[0];
+  }
+  /* Indefinite, unsupported */
+  if((payload[0] & 0x7F) == 0)
+    return -1;
+
+  *value_len = payload[0] & 0x7F;
+  /* We support only 4 additional length octets */
+  if(*value_len > 4 ||
+     payload_len <= *value_len + 1)
+    return -1;
+
+  value = 0;
+  for (i = 1; i <= *value_len; i++) {
+    value |= (unsigned int)payload[i] << ((*value_len) - i) * 8;
+  }
+  (*value_len) += 1;
+  return value;
+}
+
+/* ******************************************* */
+
+char* ndpi_intoav4(unsigned int addr, char* buf, u_int16_t bufLen) {
+  char *cp;
+  int n;
+
+  cp = &buf[bufLen];
+  *--cp = '\0';
+
+  n = 4;
+  do {
+    u_int byte = addr & 0xff;
+
+    *--cp = byte % 10 + '0';
+    byte /= 10;
+    if(byte > 0) {
+      *--cp = byte % 10 + '0';
+      byte /= 10;
+      if(byte > 0)
+	*--cp = byte + '0';
+    }
+    if(n > 1)
+      *--cp = '.';
+    addr >>= 8;
+  } while (--n > 0);
+
+  return(cp);
+}

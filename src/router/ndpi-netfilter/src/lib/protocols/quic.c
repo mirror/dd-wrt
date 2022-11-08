@@ -55,6 +55,7 @@ NDPI_STATIC int processClientServerHello(struct ndpi_detection_module_struct *nd
 NDPI_STATIC int http_process_user_agent(struct ndpi_detection_module_struct *ndpi_struct,
                                    struct ndpi_flow_struct *flow,
                                    const u_int8_t *ua_ptr, u_int16_t ua_ptr_len);
+extern int is_valid_rtp_payload_type(uint8_t type);
 
 /* Versions */
 #define V_1		0x00000001
@@ -482,7 +483,7 @@ static int tls13_hkdf_expand_label_context(struct ndpi_detection_module_struct *
 
   memcpy(&info_data[info_len], &context_length, 1);
   info_len += 1;
-  if(context_length) {
+  if(context_length && context_hash != NULL) {
     memcpy(&info_data[info_len], context_hash, context_length);
     info_len += context_length;
   }
@@ -1347,9 +1348,9 @@ static void process_tls(struct ndpi_detection_module_struct *ndpi_struct,
   flow->protos.tls_quic.ssl_version = 0x0304;
 
   /* DNS-over-QUIC: ALPN is "doq" or "doq-XXX" (for drafts versions) */
-  if(flow->protos.tls_quic.alpn &&
-     strncmp(flow->protos.tls_quic.alpn, "doq", 3) == 0) {
-    NDPI_LOG_DBG(ndpi_struct, "Found DOQ (ALPN: [%s])\n", flow->protos.tls_quic.alpn);
+  if(flow->protos.tls_quic.advertised_alpns &&
+     strncmp(flow->protos.tls_quic.advertised_alpns, "doq", 3) == 0) {
+    NDPI_LOG_DBG(ndpi_struct, "Found DOQ (ALPN: [%s])\n", flow->protos.tls_quic.advertised_alpns);
     ndpi_set_detected_protocol(ndpi_struct, flow, NDPI_PROTOCOL_DOH_DOT, NDPI_PROTOCOL_QUIC, NDPI_CONFIDENCE_DPI);
   }
 }
@@ -1408,7 +1409,7 @@ static void process_chlo(struct ndpi_detection_module_struct *ndpi_struct,
       flow->protos.tls_quic.hello_processed = 1; /* Allow matching of custom categories */
 
       ndpi_check_dga_name(ndpi_struct, flow,
-                          flow->host_server_name, 1);
+                          flow->host_server_name, 1, 0);
 
       if(ndpi_is_valid_hostname(flow->host_server_name,
 				strlen(flow->host_server_name)) == 0) {
@@ -1450,6 +1451,67 @@ static void process_chlo(struct ndpi_detection_module_struct *ndpi_struct,
   }
 }
 
+static int may_be_0rtt(struct ndpi_detection_module_struct *ndpi_struct,
+		       struct ndpi_flow_struct *flow)
+{
+  struct ndpi_packet_struct *packet = ndpi_get_packet_struct(ndpi_struct);
+  uint32_t version;
+  u_int8_t first_byte;
+  u_int8_t pub_bit1, pub_bit2, pub_bit3, pub_bit4;
+  u_int8_t dest_conn_id_len, source_conn_id_len;
+
+  /* First byte + version + dest_conn_id_len */
+  if(packet->payload_packet_len < 5 + 1) {
+    NDPI_LOG_DBG2(ndpi_struct, "Pkt too short\n");
+    return 0;
+  }
+
+  first_byte = packet->payload[0];
+  pub_bit1 = ((first_byte & 0x80) != 0);
+  pub_bit2 = ((first_byte & 0x40) != 0);
+  pub_bit3 = ((first_byte & 0x20) != 0);
+  pub_bit4 = ((first_byte & 0x10) != 0);
+
+  version = ntohl(*((u_int32_t *)&packet->payload[1]));
+
+  /* IETF versions, Long header, fixed bit (ignore QUIC-bit-greased case), 0RTT */
+
+  if(!(is_version_quic(version) &&
+       pub_bit1 && pub_bit2)) {
+    NDPI_LOG_DBG2(ndpi_struct, "Invalid header or version\n");
+    return 0;
+  }
+  if(!is_version_quic_v2(version) &&
+     (pub_bit3 != 0 || pub_bit4 != 1)) {
+    NDPI_LOG_DBG2(ndpi_struct, "Version 0x%x not 0-RTT Packet\n", version);
+    return 0;
+  }
+  if(is_version_quic_v2(version) &&
+     (pub_bit3 != 1 || pub_bit4 != 0)) {
+    NDPI_LOG_DBG2(ndpi_struct, "Version 0x%x not 0-RTT Packet\n", version);
+    return 0;
+  }
+
+  /* Check that CIDs lengths are valid */
+  dest_conn_id_len = packet->payload[5];
+  if(packet->payload_packet_len <= 5 + 1 + dest_conn_id_len) {
+    NDPI_LOG_DBG2(ndpi_struct, "Dcid too short\n");
+    return 0;
+  }
+  source_conn_id_len = packet->payload[5 + 1 + dest_conn_id_len];
+  if(packet->payload_packet_len <= 5 + 1 + dest_conn_id_len + 1 + source_conn_id_len) {
+    NDPI_LOG_DBG2(ndpi_struct, "Scid too short\n");
+    return 0;
+  }
+  if(dest_conn_id_len > QUIC_MAX_CID_LENGTH ||
+     source_conn_id_len > QUIC_MAX_CID_LENGTH) {
+    NDPI_LOG_DBG2(ndpi_struct, "Version 0x%x invalid CIDs length %u %u\n",
+                  version, dest_conn_id_len, source_conn_id_len);
+    return 0;
+  }
+
+  return 1;
+}
 
 static int may_be_initial_pkt(struct ndpi_detection_module_struct *ndpi_struct,
 			      uint32_t *version)
@@ -1565,12 +1627,6 @@ static int eval_extra_processing(struct ndpi_detection_module_struct *ndpi_struc
   return 0;
 }
 
-static int is_valid_rtp_payload_type(uint8_t type)
-{
-  /* https://www.iana.org/assignments/rtp-parameters/rtp-parameters.xhtml */
-  return type <= 34 || (type >= 96 && type <= 127);
-}
-
 static void ndpi_search_quic(struct ndpi_detection_module_struct *ndpi_struct,
 			     struct ndpi_flow_struct *flow);
 static int ndpi_search_quic_extra(struct ndpi_detection_module_struct *ndpi_struct,
@@ -1642,7 +1698,7 @@ static void ndpi_search_quic(struct ndpi_detection_module_struct *ndpi_struct,
   uint32_t clear_payload_len = 0;
   const u_int8_t *crypto_data;
   uint64_t crypto_data_len;
-  int is_quic;
+  int is_initial_quic, ret;
 
   NDPI_LOG_DBG2(ndpi_struct, "search QUIC\n");
 
@@ -1654,12 +1710,32 @@ static void ndpi_search_quic(struct ndpi_detection_module_struct *ndpi_struct,
    *    CHLO/ClientHello message and we need (only) it to sub-classify
    *    the flow.
    *    Detecting QUIC sessions where the first captured packet is not a
-   *    CHLO/CH is VERY hard. Let's try avoiding it and let's see if
-   *    anyone complains...
+   *    CHLO/CH is VERY hard. Let try only 1 easy case:
+   *    * out-of-order 0-RTT, i.e 0-RTT packets received before the Initial;
+   *      in that case, keep looking for the Initial
+   *    Avoid the generic cases and let's see if anyone complains...
    */
 
-  is_quic = may_be_initial_pkt(ndpi_struct, &version);
-  if(!is_quic) {
+  is_initial_quic = may_be_initial_pkt(ndpi_struct, &version);
+  if(!is_initial_quic) {
+    if(!is_ch_reassembler_pending(flow)) { /* Better safe than sorry */
+      ret = may_be_0rtt(ndpi_struct, flow);
+      if(ret == 1) {
+        NDPI_LOG_DBG(ndpi_struct, "Found 0-RTT, keep looking for Initial\n");
+        flow->l4.udp.quic_0rtt_found = 1;
+        if(flow->packet_counter >= 3) {
+          /* We haven't still found an Initial.. give up */
+          NDPI_LOG_INFO(ndpi_struct, "QUIC 0RTT\n");
+          ndpi_set_detected_protocol(ndpi_struct, flow, NDPI_PROTOCOL_QUIC, NDPI_PROTOCOL_UNKNOWN, NDPI_CONFIDENCE_DPI);
+        }
+        return;
+      } else if(flow->l4.udp.quic_0rtt_found == 1) {
+        /* Unknown packet (probably an Handshake one) after a 0-RTT */
+        NDPI_LOG_INFO(ndpi_struct, "QUIC 0RTT (without Initial)\n");
+        ndpi_set_detected_protocol(ndpi_struct, flow, NDPI_PROTOCOL_QUIC, NDPI_PROTOCOL_UNKNOWN, NDPI_CONFIDENCE_DPI);
+        return;
+      }
+    }
     NDPI_EXCLUDE_PROTO(ndpi_struct, flow);
     return;
   }
@@ -1715,7 +1791,6 @@ static void ndpi_search_quic(struct ndpi_detection_module_struct *ndpi_struct,
    * 7) We need to process other packets than (the first) ClientHello/CHLO?
    */
   if(eval_extra_processing(ndpi_struct, flow, version)) {
-    flow->check_extra_packets = 1;
     flow->max_extra_packets_to_check = 24; /* TODO */
     flow->extra_packets_func = ndpi_search_quic_extra;
   } else if(!crypto_data) {

@@ -657,26 +657,30 @@ ndpi_timer_clear(pkt_timeval *a)
 /**
  * \brief Calculate the milliseconds representation of a timeval.
  * \param ts Timeval
- * \return unsigned int - Milliseconds
+ * \return unsigned int (64bit) - Milliseconds
  */
-unsigned int
+u_int64_t
 ndpi_timeval_to_milliseconds(pkt_timeval ts)
 {
-  unsigned int result = ts.tv_usec / 1000 + ts.tv_sec * 1000;
-  return result;
+  u_int64_t sec = ts.tv_sec;
+  u_int64_t usec = ts.tv_usec;
+  return usec / 1000 + sec * 1000;
 }
 
 /**
  * \brief Calculate the microseconds representation of a timeval.
  * \param ts Timeval
- * \return unsigned int - Milliseconds
+ * \return unsigned int (64bit) - Microseconds
  */
-unsigned int
+u_int64_t
 ndpi_timeval_to_microseconds(pkt_timeval ts)
 {
-  unsigned int result = ts.tv_usec + ts.tv_sec * 1000 * 1000;
-  return result;
+  u_int64_t sec = ts.tv_sec;
+  u_int64_t usec = ts.tv_usec;
+  return usec + sec * 1000 * 1000;;
 }
+
+/* **************************************** */
 
 void
 ndpi_log_timestamp(char *log_ts, uint32_t log_ts_len)
@@ -688,7 +692,7 @@ ndpi_log_timestamp(char *log_ts, uint32_t log_ts_len)
 
   gettimeofday(&tv, NULL);
   nowtime = tv.tv_sec;
-#ifdef WIN32
+#if defined(WIN32) || defined(_MSC_VER)
   /* localtime() on Windows is thread-safe */
   struct tm * nowtm_r_ptr = localtime(&nowtime);
   nowtm_r = *nowtm_r_ptr;

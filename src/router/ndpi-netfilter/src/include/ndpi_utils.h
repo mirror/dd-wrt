@@ -57,6 +57,10 @@ NDPI_STATIC u_int8_t ndpi_ends_with(char *str, char *ends);
 #ifndef NDPI_CFFI_PREPROCESSING
 NDPI_STATIC int ndpi_vsnprintf(char * str, size_t size, char const * format, va_list va_args);
 NDPI_STATIC int ndpi_snprintf(char * str, size_t size, char const * format, ...);
+#ifndef __KERNEL__
+NDPI_STATIC struct tm *ndpi_gmtime_r(const time_t *timep,
+                         struct tm *result);
+#endif
 #endif
 
 #endif

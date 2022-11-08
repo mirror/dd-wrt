@@ -28,8 +28,6 @@
 
 static void cacheMiningHostTwins(struct ndpi_detection_module_struct *ndpi_struct,
 				 u_int32_t host_keys /* network byte order */) {
-  if(ndpi_struct->mining_cache == NULL) ndpi_struct->mining_cache = ndpi_lru_cache_init(1024);
-  
   if(ndpi_struct->mining_cache)
     ndpi_lru_add_to_cache(ndpi_struct->mining_cache, host_keys, NDPI_PROTOCOL_MINING);
 }
@@ -67,7 +65,7 @@ static void ndpi_search_mining_udp(struct ndpi_detection_module_struct *ndpi_str
     }
   }
   
-  ndpi_exclude_protocol(ndpi_struct, flow, NDPI_PROTOCOL_MINING, __FILE__, __FUNCTION__, __LINE__);  
+  NDPI_EXCLUDE_PROTO(ndpi_struct, flow);
 }
 
 /* ************************************************************************** */
@@ -159,7 +157,7 @@ static void ndpi_search_mining_tcp(struct ndpi_detection_module_struct *ndpi_str
     }
   }
 
-  ndpi_exclude_protocol(ndpi_struct, flow, NDPI_PROTOCOL_MINING, __FILE__, __FUNCTION__, __LINE__);
+  NDPI_EXCLUDE_PROTO(ndpi_struct, flow);
 }
 
 /* ************************************************************************** */

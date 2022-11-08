@@ -31,11 +31,6 @@
 extern "C" {
 #endif
 
-  /* The #define below is used for apps that dynamically link with nDPI to make
-     sure that datastructures and in sync across versions
-  */
-#define NDPI_API_VERSION                      7577
-
 #define SIZEOF_FLOW_STRUCT                    ( sizeof(struct ndpi_flow_struct) )
 
 #define NDPI_DETECTION_ONLY_IPV4              ( 1 << 0 )
@@ -908,6 +903,28 @@ NDPI_STATIC   int ndpi_load_categories_file(struct ndpi_detection_module_struct 
                            ndpi_protocol_breed_t breed, uint8_t level,
                            u_int8_t add_ends_with);
   /**
+   * Get the automa statistics
+   *
+   * @par     The automata initialized with ndpi_init_automa();
+   *
+   */
+
+  NDPI_STATIC void ndpi_automa_get_stats(void *_automa, struct ndpi_automa_stats *stats);
+
+  /**
+   * Get the statistics of one of the automas used internally by the library
+   *
+   * @par     ndpi_mod = the detection module
+   * @par     automa_type = of which automa we want the stats
+   * @par     stats = buffer where to save the stats
+   * @return  0 in case of no error, or -1 if an error occurred.
+   *
+   */
+
+  NDPI_STATIC int ndpi_get_automa_stats(struct ndpi_detection_module_struct *ndpi_struct,
+			    automa_type automa_type,
+			    struct ndpi_automa_stats *stats);
+  /**
    * Add a string to match to an automata
    *
    * @par     The automata initialized with ndpi_init_automa();
@@ -998,6 +1015,23 @@ NDPI_STATIC   int ndpi_load_categories_file(struct ndpi_detection_module_struct 
   NDPI_STATIC u_int8_t ndpi_lru_find_cache(struct ndpi_lru_cache *c, u_int32_t key,
 			       u_int16_t *value, u_int8_t clean_key_when_found);
   NDPI_STATIC void ndpi_lru_add_to_cache(struct ndpi_lru_cache *c, u_int32_t key, u_int16_t value);
+  NDPI_STATIC void ndpi_lru_get_stats(struct ndpi_lru_cache *c, struct ndpi_lru_cache_stats *stats);
+
+  NDPI_STATIC int ndpi_get_lru_cache_stats(struct ndpi_detection_module_struct *ndpi_struct,
+			       lru_cache_type cache_type,
+			       struct ndpi_lru_cache_stats *stats);
+
+  NDPI_STATIC int ndpi_get_lru_cache_size(struct ndpi_detection_module_struct *ndpi_struct,
+			      lru_cache_type cache_type,
+			      u_int32_t *num_entries);
+  NDPI_STATIC int ndpi_set_lru_cache_size(struct ndpi_detection_module_struct *ndpi_struct,
+			      lru_cache_type cache_type,
+			      u_int32_t num_entries);
+
+  NDPI_STATIC int ndpi_set_opportunistic_tls(struct ndpi_detection_module_struct *ndpi_struct,
+				 u_int16_t proto, int value);
+  NDPI_STATIC int ndpi_get_opportunistic_tls(struct ndpi_detection_module_struct *ndpi_struct,
+				 u_int16_t proto);
 
   /**
    * Find a protocol id associated with a string automata
@@ -1070,7 +1104,7 @@ NDPI_STATIC   int ndpi_load_categories_file(struct ndpi_detection_module_struct 
   NDPI_STATIC int ndpi_load_ipv4_ptree(struct ndpi_detection_module_struct *ndpi_str,
 			   const char *path, u_int16_t protocol_id);
 #ifndef __KERNEL__    
-  NDPI_STATIC const char* ndpi_cipher2str(u_int32_t cipher);
+  NDPI_STATIC const char* ndpi_cipher2str(u_int32_t cipher, char unknown_cipher[8]);
   NDPI_STATIC const char* ndpi_tunnel2str(ndpi_packet_tunnel tt);
   NDPI_STATIC int ndpi_has_human_readeable_string(struct ndpi_detection_module_struct *ndpi_struct,
 				      char *buffer, u_int buffer_size,
@@ -1121,6 +1155,11 @@ NDPI_STATIC   int ndpi_load_categories_file(struct ndpi_detection_module_struct 
   NDPI_STATIC ndpi_prefix_t *ndpi_patricia_get_node_prefix(ndpi_patricia_node_t *node);
   NDPI_STATIC u_int16_t ndpi_patricia_get_node_bits(ndpi_patricia_node_t *node);
   NDPI_STATIC u_int16_t ndpi_patricia_get_maxbits(ndpi_patricia_tree_t *tree);
+  NDPI_STATIC void ndpi_patricia_get_stats(ndpi_patricia_tree_t *tree, struct ndpi_patricia_tree_stats *stats);
+
+  NDPI_STATIC int ndpi_get_patricia_stats(struct ndpi_detection_module_struct *ndpi_struct,
+                              ptree_type ptree_type,
+                              struct ndpi_patricia_tree_stats *stats);
 
   /* ptree (trie) API - a wrapper on top of Patricia that seamlessly handle IPv4 and IPv6 */
   NDPI_STATIC ndpi_ptree_t* ndpi_ptree_create(void);
@@ -1137,7 +1176,7 @@ NDPI_STATIC   int ndpi_load_categories_file(struct ndpi_detection_module_struct 
   /* DGA */
   NDPI_STATIC int ndpi_check_dga_name(struct ndpi_detection_module_struct *ndpi_str,
 			  struct ndpi_flow_struct *flow,
-			  char *name, u_int8_t is_hostname);
+			  char *name, u_int8_t is_hostname, u_int8_t check_subproto);
 #ifndef __KERNEL__    
 
   /* Serializer (supports JSON, TLV, CSV) */
@@ -1222,6 +1261,16 @@ NDPI_STATIC   int ndpi_load_categories_file(struct ndpi_detection_module_struct 
    * @return 0 on success, a negative number otherwise
    */
   NDPI_STATIC int ndpi_serialize_uint32_float(ndpi_serializer *serializer, u_int32_t key, float value, const char *format /* e.f. "%.2f" */);
+
+  /**
+   * Serialize a 32-bit unsigned int key and a double value
+   * @param serializer The serializer handle
+   * @param key The field name or ID
+   * @param value The field value
+   * @param format The double value format
+   * @return 0 on success, a negative number otherwise
+   */
+  NDPI_STATIC int ndpi_serialize_uint32_double(ndpi_serializer *serializer, u_int32_t key, double value, const char *format /* e.f. "%.2f" */);
 
   /**
    * Serialize a 32-bit unsigned int key and a string value
@@ -1378,6 +1427,8 @@ NDPI_STATIC   int ndpi_load_categories_file(struct ndpi_detection_module_struct 
    */
   NDPI_STATIC int ndpi_serialize_string_raw(ndpi_serializer *_serializer, const char *key, const char *_value, u_int16_t vlen);
 
+
+
   /**
    * Serialize an unterminated string key and a float value
    * @param serializer The serializer handle
@@ -1398,6 +1449,17 @@ NDPI_STATIC   int ndpi_load_categories_file(struct ndpi_detection_module_struct 
    * @return 0 on success, a negative number otherwise
    */
   NDPI_STATIC int ndpi_serialize_string_float(ndpi_serializer *serializer, const char *key, float value, const char *format /* e.f. "%.2f" */);
+
+  /**
+   * Serialize an unterminated string key and a double value
+   * @param serializer The serializer handle
+   * @param key The field name or ID
+   * @param klen The key length
+   * @param value The field value
+   * @param format The double format
+   * @return 0 on success, a negative number otherwise
+   */
+  NDPI_STATIC ndpi_serialize_binary_double(ndpi_serializer *_serializer, const char *key, u_int16_t klen, double value, const char *format /* e.f. "%.2f" */);
 
   /**
    * Serialize an unterminated string key and a boolean value (JSON/CSV only, not supported by TLV)
@@ -1580,6 +1642,7 @@ NDPI_STATIC   int ndpi_load_categories_file(struct ndpi_detection_module_struct 
   NDPI_STATIC int ndpi_deserialize_value_int32(ndpi_deserializer *deserializer, int32_t *value);
   NDPI_STATIC int ndpi_deserialize_value_int64(ndpi_deserializer *deserializer, int64_t *value);
   NDPI_STATIC int ndpi_deserialize_value_float(ndpi_deserializer *deserializer, float *value);
+  NDPI_STATIC int ndpi_deserialize_value_double(ndpi_deserializer *deserializer, double *value);
   NDPI_STATIC int ndpi_deserialize_value_string(ndpi_deserializer *deserializer, ndpi_string *value);
 
   NDPI_STATIC int ndpi_deserialize_clone_item(ndpi_deserializer *deserializer, ndpi_serializer *serializer);
@@ -1687,8 +1750,8 @@ NDPI_STATIC   int ndpi_load_categories_file(struct ndpi_detection_module_struct 
   NDPI_STATIC void ndpi_hll_reset(struct ndpi_hll *hll);
 
   /* Add values */
-  NDPI_STATIC void ndpi_hll_add(struct ndpi_hll *hll, const char *data, size_t data_len);
-  NDPI_STATIC void ndpi_hll_add_number(struct ndpi_hll *hll, u_int32_t value) ;
+  NDPI_STATIC int ndpi_hll_add(struct ndpi_hll *hll, const char *data, size_t data_len);
+  NDPI_STATIC int ndpi_hll_add_number(struct ndpi_hll *hll, u_int32_t value) ;
 
   /* Get cardinality estimation */
   NDPI_STATIC double ndpi_hll_count(struct ndpi_hll *hll);

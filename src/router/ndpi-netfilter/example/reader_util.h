@@ -162,9 +162,10 @@ enum info_type {
     INFO_INVALID = 0,
     INFO_GENERIC,
     INFO_KERBEROS,
+    INFO_SOFTETHER,
+    INFO_TIVOCONNECT,
     INFO_FTP_IMAP_POP_SMTP,
-    INFO_TLS_QUIC_ALPN_VERSION,
-    INFO_TLS_QUIC_ALPN_ONLY,
+    INFO_NATPMP,
 };
 
 // flow tracking
@@ -204,6 +205,7 @@ typedef struct ndpi_flow_info {
   // result only, not used for flow identification
   ndpi_protocol detected_protocol;
   ndpi_confidence_t confidence;
+  u_int16_t num_dissector_calls;
 
   // Flow data analysis
   pkt_timeval src2dst_last_pkt_time, dst2src_last_pkt_time, flow_last_pkt_time;
@@ -214,10 +216,6 @@ typedef struct ndpi_flow_info {
   union {
     char info[256];
     struct {
-      char alpn[128];
-      char tls_supported_versions[128];
-    } tls_quic;
-    struct {
       unsigned char auth_failed;
       char username[127];
       char password[128];
@@ -227,7 +225,27 @@ typedef struct ndpi_flow_info {
       char hostname[85];
       char username[86];
     } kerberos;
+    struct {
+      char ip[16];
+      char port[6];
+      char hostname[48];
+      char fqdn[48];
+    } softether;
+    struct {
+      char identity_uuid[36];
+      char machine[48];
+      char platform[32];
+      char services[48];
+    } tivoconnect;
+    struct  {
+      uint16_t result_code;
+      uint16_t internal_port;
+      uint16_t external_port;
+      char ip[16];
+    } natpmp;
   };
+
+  ndpi_serializer ndpi_flow_serializer;
 
   char flow_extra_info[16];
   char host_server_name[80]; /* Hostname/SNI */
@@ -240,7 +258,7 @@ typedef struct ndpi_flow_info {
     u_int16_t ssl_version;
     char server_info[64],
       client_hassh[33], server_hassh[33], *server_names,
-      *tls_alpn, *tls_supported_versions,
+      *advertised_alpns, *negotiated_alpn, *tls_supported_versions,
       *tls_issuerDN, *tls_subjectDN,
       ja3_client[33], ja3_server[33],
       sha1_cert_fingerprint[20];
@@ -277,6 +295,10 @@ typedef struct ndpi_flow_info {
 #else
   struct ndpi_bin payload_len_bin;
 #endif
+
+  /* Flow payload */
+  u_int16_t flow_payload_len;
+  char *flow_payload;  
 } ndpi_flow_info_t;
 
 
@@ -297,6 +319,11 @@ typedef struct ndpi_stats {
   u_int16_t max_packet_len;
   u_int64_t dpi_packet_count[3];
   u_int64_t flow_confidence[NDPI_CONFIDENCE_MAX];
+  u_int64_t num_dissector_calls;
+
+  struct ndpi_lru_cache_stats lru_stats[NDPI_LRUCACHE_MAX];
+  struct ndpi_automa_stats automa_stats[NDPI_AUTOMA_MAX];
+  struct ndpi_patricia_tree_stats patricia_stats[NDPI_PTREE_MAX];
 } ndpi_stats_t;
 
 
@@ -336,7 +363,7 @@ typedef struct ndpi_workflow {
   u_int32_t num_allocated_flows;
 
   /* CSV,TLV,JSON serialization interface */
-  ndpi_serializer ndpi_serializer;
+  ndpi_serialization_format ndpi_serialization_format;
 } ndpi_workflow_t;
 
 

@@ -13,14 +13,19 @@ AS_IF([test "${with_only_libndpi+set}" = set],[
   EXTRA_TARGETS=""
 ])
 
+PWD=`pwd`
+
+
 AC_ARG_WITH(sanitizer,     AS_HELP_STRING([--with-sanitizer], [Build with support for address, undefined and leak sanitizer]))
 AC_ARG_WITH(thread-sanitizer, AS_HELP_STRING([--with-thread-sanitizer], [Build with support for thread sanitizer]))
+AC_ARG_WITH(memory-sanitizer, AS_HELP_STRING([--with-memory-sanitizer], [Build with support for memory sanitizer]))
 AC_ARG_ENABLE(fuzztargets, AS_HELP_STRING([--enable-fuzztargets], [Enable fuzz targets]),[enable_fuzztargets=$enableval],[enable_fuzztargets=no])
 AC_ARG_ENABLE(gprof, AS_HELP_STRING([--enable-gprof], [Enable CPU/HEAP profiling with gperftools]),[enable_gprof=$enableval],[enable_gprof=no])
 AC_ARG_ENABLE(code-coverage, AS_HELP_STRING([--enable-code-coverage], [Generate Code Coverage report]))
 AC_ARG_WITH(local-libgcrypt,  AS_HELP_STRING([--with-local-libgcrypt], [Build with libgcrypt (if present) instead of the enclosed gcrypt light]))
 AC_ARG_ENABLE(tls-sigs, AS_HELP_STRING([--enable-tls-sigs], [Enable TLS Client signature algorithm dissection. Rarely used, but requires significantly more memory.]))
 AC_ARG_ENABLE(npcap, AS_HELP_STRING([--disable-npcap], [msys2 only: Disable linkage against the wpcap/npcap import library in windows/WpdPack/Lib.]))
+AC_ARG_WITH(nbpf-path, AS_HELP_STRING([--with-nbpf-path], [nBPF library custom path; default: ${PWD}/../PF_RING/userland/nbpf]),[NBPF_HOME=$withval],[NBPF_HOME=${PWD}/../PF_RING/userland/nbpf])
 
 AS_IF([test "x$enable_fuzztargets" = "xyes"], [BUILD_FUZZTARGETS=1], [BUILD_FUZZTARGETS=0])
 AM_CONDITIONAL([BUILD_FUZZTARGETS], [test "x$enable_fuzztargets" = "xyes"])
@@ -28,25 +33,41 @@ AM_CONDITIONAL([BUILD_FUZZTARGETS], [test "x$enable_fuzztargets" = "xyes"])
 AS_IF([test "${with_sanitizer+set}" = set -a "${with_thread_sanitizer+set}" = set],[
   AC_MSG_ERROR([Configure options `--with-sanitizer' and `--with_thread_sanitizer' can not used at the same time.])
 ])
-AS_IF([test "${with_sanitizer+set}" = set -o "${with_thread_sanitizer+set}" = set],[
-  CFLAGS="${CFLAGS} -O0 -g3"
+AS_IF([test "${with_sanitizer+set}" = set -a "${with_memory_sanitizer+set}" = set],[
+  AC_MSG_ERROR([Configure options `--with-sanitizer' and `--with_memory_sanitizer' can not used at the same time.])
+])
+AS_IF([test "${with_thread_sanitizer+set}" = set -a "${with_memory_sanitizer+set}" = set],[
+  AC_MSG_ERROR([Configure options `--with_thread_sanitizer' and `--with_memory_sanitizer' can not used at the same time.])
+])
+AS_IF([test "${with_sanitizer+set}" = set -o "${with_thread_sanitizer+set}" = set -o "${with_memory_sanitizer+set}" = set],[
+  NDPI_CFLAGS="${NDPI_CFLAGS} -O0 -g3"
 ],[
-  CFLAGS="${CFLAGS} -g"
+  NDPI_CFLAGS="${NDPI_CFLAGS} -O2"
+])
+AS_IF([test "${with_sanitizer+set}" = set -o "${with_thread_sanitizer+set}" = set -o "${with_memory_sanitizer+set}" = set],[
+  AS_IF([test "x$enable_gprof" = "xyes"], [
+    AC_MSG_ERROR([Configure options `--with-sanitizer' / `--with_thread_sanitizer' / `--with_memory_sanitizer' can not used together with `--enable-gprof'.])
+  ])
 ])
 
 AS_IF([test "${with_sanitizer+set}" = set],[
-  CFLAGS="${CFLAGS} -fsanitize=address -fsanitize=undefined -fno-sanitize=alignment -fsanitize=leak -fno-omit-frame-pointer"
-  LDFLAGS="${LDFLAGS} -fsanitize=address -fsanitize=undefined -fno-sanitize=alignment -fsanitize=leak"
+  NDPI_CFLAGS="${NDPI_CFLAGS} -fsanitize=address -fsanitize=undefined -fno-sanitize=alignment -fsanitize=leak -fno-omit-frame-pointer"
+  NDPI_LDFLAGS="${NDPI_LDFLAGS} -fsanitize=address -fsanitize=undefined -fno-sanitize=alignment -fsanitize=leak"
 ])
 
 AS_IF([test "${with_thread_sanitizer+set}" = set],[
-  CFLAGS="${CFLAGS} -fsanitize=thread -fno-omit-frame-pointer"
-  LDFLAGS="${LDFLAGS} -fsanitize=thread"
+  NDPI_CFLAGS="${NDPI_CFLAGS} -fsanitize=thread -fno-omit-frame-pointer"
+  NDPI_LDFLAGS="${NDPI_LDFLAGS} -fsanitize=thread"
+])
+
+AS_IF([test "${with_memory_sanitizer+set}" = set],[
+  NDPI_CFLAGS="${NDPI_CFLAGS} -fsanitize=memory -fsanitize-memory-track-origins -fno-omit-frame-pointer"
+  NDPI_LDFLAGS="${NDPI_LDFLAGS} -fsanitize=memory"
 ])
 
 AS_IF([test "x${enable_code_coverage}" = "xyes"],[
-  CFLAGS="${CFLAGS} -fprofile-arcs -ftest-coverage"
-  LDFLAGS="${LDFLAGS} --coverage"
+  NDPI_CFLAGS="${NDPI_CFLAGS} -fprofile-arcs -ftest-coverage"
+  NDPI_LDFLAGS="${NDPI_LDFLAGS} --coverage"
 ])
 
 AS_IF([test "${enable_npcap+set}" = set],[DISABLE_NPCAP=1],[DISABLE_NPCAP=0])
@@ -95,7 +116,7 @@ if test -d ".git" || test -r ".git"; then
 
      A=`git log src/include/ndpi_typedefs.h|wc -l`
      B=`git log src/include/ndpi_protocol_ids.h|wc -l`
-     C=`git log src/include/ndpi_api.h.in|wc -l`
+     C=`git log src/include/ndpi_api.h|wc -l`
      NDPI_API_VERSION=$((A+B+C))
 else
      GIT_RELEASE="${PACKAGE_VERSION}"
@@ -144,7 +165,7 @@ AS_IF([test "x${enable_tls_sigs}" = "xyes"],[
   HANDLE_TLS_SIGS=""
 ])
 
-CFLAGS="-W -Wall -Wno-unused-parameter -Wno-unused-function -Wno-address-of-packed-member ${CFLAGS}"
+NDPI_CFLAGS="-W -Wall -Wno-unused-parameter -Wno-unused-function -Wno-address-of-packed-member ${NDPI_CFLAGS}"
 
 AC_CHECK_HEADERS([netinet/in.h stdint.h stdlib.h string.h unistd.h math.h float.h])
 AC_CHECK_LIB([m], [sqrt], [], [LIBM="-lm"])
@@ -155,6 +176,7 @@ if test "x$ac_cv_lib_rrd_rrd_fetch_r" = xyes; then :
    EXTRA_TARGETS="$EXTRA_TARGETS rrdtool"
 fi
 
+ADDITIONAL_INCS=
 ADDITIONAL_LIBS="$LIBM"
 PCAP_HOME=$HOME/PF_RING/userland
 
@@ -179,15 +201,23 @@ fi
 
 MACHINE=`uname -m`
 
-CUSTOM_NDPI=
+NBPF_ENABLED=0
+AC_MSG_CHECKING([PF_RING nBPF ($NBPF_HOME)])
+LIBNBPF=${NBPF_HOME}/libnbpf.a
+if test -f ${LIBNBPF}; then :
+   ADDITIONAL_LIBS="${ADDITIONAL_LIBS} ${LIBNBPF}"
+   ADDITIONAL_INCS="${ADDITIONAL_INCS} -I${NBPF_HOME}"
+   AC_DEFINE_UNQUOTED(HAVE_NBPF, "1", [PF_RING nBPF is present])
+   AC_MSG_RESULT(yes)
+   NBPF_ENABLED=1
+else
+   AC_MSG_RESULT(no)
+fi
 
+CUSTOM_NDPI=
 if test -d ../nDPI-custom; then :
    CUSTOM_NDPI="-DCUSTOM_NDPI_PROTOCOLS"
    AC_MSG_RESULT([Compiling with custom nDPI protocols])
-fi
-
-if test -d ../ndpi-pro; then :
-   with_maxminddb=1
 fi
 
 case "$host" in
@@ -197,16 +227,16 @@ case "$host" in
       case "$host" in
         x86_64-*)
           BUILD_MINGW_X64=1
-          LDFLAGS="${LDFLAGS} -L/mingw64/lib"
+          NDPI_LDFLAGS="${NDPI_LDFLAGS} -L/mingw64/lib"
         ;;
         i686-*)
-          LDFLAGS="${LDFLAGS} -L/mingw32/lib"
+          NDPI_LDFLAGS="${NDPI_LDFLAGS} -L/mingw32/lib"
         ;;
         *)
           AC_MSG_ERROR([Unsupported MingW cross compiler.])
         ;;
       esac
-      CFLAGS="-D__USE_MINGW_ANSI_STDIO -D__STDC_FORMAT_MACROS ${CFLAGS}"
+      NDPI_CFLAGS="-D__USE_MINGW_ANSI_STDIO -D__STDC_FORMAT_MACROS ${NDPI_CFLAGS}"
       LIBS="${LIBS} -lws2_32"
       BUILD_MINGW=1
       EXE_SUFFIX=".exe"
@@ -287,7 +317,7 @@ AS_IF([test "x$enable_gprof" = "xyes"], [
     ])
     GPROF_ENABLED=1
     GPROF_LIBS="-ltcmalloc_and_profiler"
-    GPROF_CFLAGS="${pkg_cv_PROFILER_CFLAGS} ${pkg_cv_TCMALLOC_CFLAGS}"
+    GPROF_CFLAGS="-g3 -fvisibility=default -fno-omit-frame-pointer ${pkg_cv_PROFILER_CFLAGS} ${pkg_cv_TCMALLOC_CFLAGS}"
 ])
 
 AC_CHECK_LIB(pthread, pthread_setaffinity_np, AC_DEFINE_UNQUOTED(HAVE_PTHREAD_SETAFFINITY_NP, 1, [libc has pthread_setaffinity_np]))
@@ -333,7 +363,7 @@ dnl>   ADDITIONAL_LIBS="${ADDITIONAL_LIBS} -lcurl"
 dnl>   AC_DEFINE_UNQUOTED(HAVE_CURL, 1, [curl is present])
 dnl> fi
 
-AC_CONFIG_FILES([Makefile example/Makefile example/Makefile.dpdk tests/Makefile tests/unit/Makefile tests/performance/Makefile tests/dga/Makefile rrdtool/Makefile influxdb/Makefile libndpi.pc src/include/ndpi_define.h src/lib/Makefile fuzz/Makefile src/include/ndpi_api.h doc/Doxyfile.cfg])
+AC_CONFIG_FILES([Makefile example/Makefile example/Makefile.dpdk tests/Makefile tests/unit/Makefile tests/performance/Makefile tests/dga/Makefile rrdtool/Makefile influxdb/Makefile libndpi.pc src/include/ndpi_define.h src/lib/Makefile fuzz/Makefile doc/Doxyfile.cfg])
 AC_CONFIG_FILES([tests/do.sh], [chmod +x tests/do.sh])
 AC_CONFIG_HEADERS(src/include/ndpi_config.h)
 AC_SUBST(GIT_RELEASE)
@@ -344,6 +374,7 @@ AC_SUBST(NDPI_VERSION_SHORT)
 AC_SUBST(PCAP_INC)
 AC_SUBST(PCAP_LIB)
 AC_SUBST(LIBRRD)
+AC_SUBST(ADDITIONAL_INCS)
 AC_SUBST(ADDITIONAL_LIBS)
 AC_SUBST(DL_LIB)
 AC_SUBST(DPDK_TARGET)
@@ -361,7 +392,10 @@ AC_SUBST(GPROF_LIBS)
 AC_SUBST(GPROF_ENABLED)
 AC_SUBST(USE_HOST_LIBGCRYPT)
 AC_SUBST(PCRE_ENABLED)
+AC_SUBST(NBPF_ENABLED)
 AC_SUBST(HANDLE_TLS_SIGS)
 AC_SUBST(DISABLE_NPCAP)
 AC_SUBST(EXE_SUFFIX)
+AC_SUBST(NDPI_CFLAGS)
+AC_SUBST(NDPI_LDFLAGS)
 AC_OUTPUT
