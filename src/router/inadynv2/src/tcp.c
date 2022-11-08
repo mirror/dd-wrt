@@ -149,11 +149,8 @@ int tcp_init(tcp_sock_t *tcp, char *msg)
 		snprintf(port, sizeof(port), "%d", tcp->port);
 
 		s = getaddrinfo(tcp->remote_host, port, &hints, &servinfo);
-		if (!servinfo)
-			s = getaddrinfo(tcp->remote_host, port, &hints, &servinfo);
-
-		if (!servinfo) {
-			logit(LOG_WARNING, "Failed resolving hostname (port %d) %s: %s", port, tcp->remote_host, gai_strerror(s));
+		if (s != 0 || !servinfo) {
+			logit(LOG_WARNING, "Failed resolving hostname %s: %s", tcp->remote_host, gai_strerror(s));
 			rc = RC_TCP_INVALID_REMOTE_ADDR;
 			break;
 		}
