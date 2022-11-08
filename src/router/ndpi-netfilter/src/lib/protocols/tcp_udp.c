@@ -21,8 +21,6 @@
 
 #include "ndpi_api.h"
 
-/* ndpi_main.c */
-NDPI_STATIC  u_int8_t  ndpi_is_tor_flow(struct ndpi_detection_module_struct *ndpi_struct, struct ndpi_flow_struct *flow);
 
 u_int ndpi_search_tcp_or_udp_raw(struct ndpi_detection_module_struct *ndpi_struct,
 				 struct ndpi_flow_struct *flow,
@@ -40,7 +38,7 @@ u_int ndpi_search_tcp_or_udp_raw(struct ndpi_detection_module_struct *ndpi_struc
   }
 
   if(flow)
-    return(flow->guessed_host_protocol_id);
+    return(flow->guessed_protocol_id_by_ip);
   else {
     host.s_addr = htonl(saddr);
     if((rc = ndpi_network_ptree_match(ndpi_struct, &host)) != NDPI_PROTOCOL_UNKNOWN)
@@ -59,11 +57,6 @@ void ndpi_search_tcp_or_udp(struct ndpi_detection_module_struct *ndpi_struct, st
 
   if(flow->host_server_name[0] != '\0')
     return;
-
-  if(ndpi_is_tor_flow(ndpi_struct, flow)) {
-    ndpi_set_detected_protocol(ndpi_struct, flow, NDPI_PROTOCOL_TOR, NDPI_PROTOCOL_UNKNOWN, NDPI_CONFIDENCE_DPI);
-    return;
-  }
 
   if(packet->udp) sport = ntohs(packet->udp->source), dport = ntohs(packet->udp->dest);
   else if(packet->tcp) sport = ntohs(packet->tcp->source), dport = ntohs(packet->tcp->dest);

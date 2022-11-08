@@ -17,6 +17,7 @@ u_int8_t enable_protocol_guess = 1, enable_payload_analyzer = 0;
 u_int8_t enable_flow_stats = 0;
 u_int8_t human_readeable_string_len = 5;
 u_int8_t max_num_udp_dissected_pkts = 16 /* 8 is enough for most protocols, Signal requires more */, max_num_tcp_dissected_pkts = 80 /* due to telnet */;
+ndpi_init_prefs init_prefs = ndpi_track_flow_payload | ndpi_enable_ja3_plus;
 
 int bufferToFile(const char * name, const uint8_t *Data, size_t Size) {
   FILE * fd;
@@ -79,7 +80,6 @@ int LLVMFuzzerTestOneInput(const uint8_t *Data, size_t Size) {
   if (pkts == NULL) {
     remove(pcap_path);
     free(pcap_path);
-    ndpi_term_serializer(&workflow->ndpi_serializer);
     return 0;
   }
   if (ndpi_is_datalink_supported(pcap_datalink(pkts)) == 0)
@@ -88,7 +88,6 @@ int LLVMFuzzerTestOneInput(const uint8_t *Data, size_t Size) {
     pcap_close(pkts);
     remove(pcap_path);
     free(pcap_path);
-    ndpi_term_serializer(&workflow->ndpi_serializer);
     return 0;
   }
 

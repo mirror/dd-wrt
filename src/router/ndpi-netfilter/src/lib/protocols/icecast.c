@@ -60,14 +60,12 @@ void ndpi_search_icecast_tcp(struct ndpi_detection_module_struct *ndpi_struct, s
     }
   }
 
-  if(flow == NULL) return;
-    
-  if((packet->packet_direction == flow->setup_packet_direction)
+  if(ndpi_current_pkt_from_client_to_server(packet, flow)
       && (flow->packet_counter < 10)) {
     return;
   }
 
-  if(packet->packet_direction != flow->setup_packet_direction) {
+  if(ndpi_current_pkt_from_server_to_client(packet, flow)) {
     /* server answer, now test Server for Icecast */
 
     ndpi_parse_packet_line_info(ndpi_struct, flow);
@@ -94,7 +92,7 @@ void init_icecast_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_
   ndpi_set_bitmask_protocol_detection("IceCast", ndpi_struct, detection_bitmask, *id,
 				      NDPI_PROTOCOL_ICECAST,
 				      ndpi_search_icecast_tcp,
-				      NDPI_SELECTION_BITMASK_PROTOCOL_V4_V6_TCP_WITH_PAYLOAD,
+				      NDPI_SELECTION_BITMASK_PROTOCOL_V4_V6_TCP_WITH_PAYLOAD_WITHOUT_RETRANSMISSION,
 				      SAVE_DETECTION_BITMASK_AS_UNKNOWN,
 				      ADD_TO_DETECTION_BITMASK);
 

@@ -25,7 +25,10 @@
 
 #if defined(__has_feature)
 #if __has_feature(memory_sanitizer)
-#warning "MBEDTLS_AESNI_C is known to cause spurious error reports with some memory sanitizers as they do not understand the assembly code."
+/* Using "#pragma message" instead of "#warning" to allow compilation with -Werror.
+   This pragma directive should be supported from every compilers supporting also memory sanitizer
+*/
+#pragma message "MBEDTLS_AESNI_C is known to cause spurious error reports with some memory sanitizers as they do not understand the assembly code."
 #endif
 #endif
 
@@ -55,6 +58,38 @@ static int mbedtls_aesni_has_support( unsigned int what )
 
 #if defined(linux) || defined(__linux__)
   unsigned int eax, ebx, ecx, edx;
+
+#ifndef __KERNEL__
+  if(what == MBEDTLS_AESNI_AES) {
+    /*
+      NOTE
+      
+      This code is necessary as __get_cpuid() is not reliable
+      Example with Intel(R) Celeron(R) CPU N2930 (that has NO AES-NI)
+      the code based on __get_cpuid() reports that AES-NI is present
+      and thus nDPI crashes on such platform.
+     */
+    FILE *fd = fopen("/proc/cpuinfo", "r");
+
+    if(fd != NULL) {
+      char *line = NULL;
+      size_t len = 0;
+      int found = 0;
+
+      while(getline(&line, &len, fd) != -1) {
+        if(strstr(line, "aes")) {
+          /* printf("FOUND %s", line); */
+          found = 1;
+          break;
+        }
+      }
+
+      free(line);
+      fclose(fd);
+      return(found);
+    }
+  }
+#endif
 
   if (__get_cpuid(1, &eax, &ebx, &ecx, &edx) == 0)
   {
