@@ -5963,7 +5963,7 @@ static void ndpi_reconcile_protocols(struct ndpi_detection_module_struct *ndpi_s
 
 /* ********************************************************************************* */
 
-u_int32_t ndpi_ip_port_hash_funct(u_int32_t ip, u_int16_t port) {
+NDPI_STATIC u_int32_t ndpi_ip_port_hash_funct(u_int32_t ip, u_int16_t port) {
   return(ip + 3 * port);
 }
 
@@ -6181,7 +6181,7 @@ ndpi_protocol ndpi_detection_giveup(struct ndpi_detection_module_struct *ndpi_st
 
 /* ********************************************************************************* */
 
-void ndpi_process_extra_packet(struct ndpi_detection_module_struct *ndpi_str, struct ndpi_flow_struct *flow,
+NDPI_STATIC void ndpi_process_extra_packet(struct ndpi_detection_module_struct *ndpi_str, struct ndpi_flow_struct *flow,
 			       const unsigned char *packet_data, const unsigned short packetlen,
 			       const u_int64_t current_time_ms,
 			       const struct ndpi_flow_input_info *input_info) {
