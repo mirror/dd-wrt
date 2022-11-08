@@ -8,7 +8,6 @@
 #include "third_party/src/gcrypt_light.c"
 #include "third_party/src/btlib.c"
 
-
 #undef NDPI_CURRENT_PROTO
 #include "protocols/afp.c"
 #undef NDPI_CURRENT_PROTO
@@ -365,4 +364,26 @@
 #include "protocols/avast.c"
 #undef NDPI_CURRENT_PROTO
 #include "protocols/alicloud.c"
+#undef NDPI_CURRENT_PROTO
+#include "protocols/activision.c"
+#undef NDPI_CURRENT_PROTO
+#include "protocols/crynet.c"
+#undef NDPI_CURRENT_PROTO
+#include "protocols/elasticsearch.c"
+#undef NDPI_CURRENT_PROTO
+#include "protocols/fastcgi.c"
+#undef NDPI_CURRENT_PROTO
+#include "protocols/kismet.c"
+#undef NDPI_CURRENT_PROTO
+#include "protocols/line.c"
+#undef NDPI_CURRENT_PROTO
+#include "protocols/munin.c"
+#undef NDPI_CURRENT_PROTO
+#include "protocols/natpmp.c"
+#undef NDPI_CURRENT_PROTO
+#include "protocols/softether.c"
+#undef NDPI_CURRENT_PROTO
+#include "protocols/syncthing.c"
+#undef NDPI_CURRENT_PROTO
+#include "protocols/tivoconnect.c"
 #undef NDPI_CURRENT_PROTO

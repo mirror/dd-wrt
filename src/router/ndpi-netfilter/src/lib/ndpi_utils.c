@@ -741,7 +741,7 @@ static int ndpi_find_non_eng_bigrams(struct ndpi_detection_module_struct *ndpi_s
 
 /* #define PRINT_STRINGS 1 */
 
-int ndpi_has_human_readeable_string(struct ndpi_detection_module_struct *ndpi_struct,
+NDPI_STATIC int ndpi_has_human_readeable_string(struct ndpi_detection_module_struct *ndpi_struct,
 				    char *buffer, u_int buffer_size,
 				    u_int8_t min_string_match_len,
 				    char *outbuf, u_int outbuf_len) {

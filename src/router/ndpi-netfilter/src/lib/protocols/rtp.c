@@ -71,7 +71,7 @@ static u_int8_t isValidMSRTPType(u_int8_t payloadType) {
   }
 }
 
-int is_valid_rtp_payload_type(uint8_t type)
+NDPI_STATIC int is_valid_rtp_payload_type(uint8_t type)
 {
   /* https://www.iana.org/assignments/rtp-parameters/rtp-parameters.xhtml */
   return type <= 34 || (type >= 96 && type <= 127);

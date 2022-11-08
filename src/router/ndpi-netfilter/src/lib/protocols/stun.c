@@ -36,7 +36,7 @@
 
 /* ************************************************************ */
 
-int ndpi_stun_cache_enable=
+static int stun_ndpi_stun_cache_enable=
 #ifndef __KERNEL__
 	1;
 #else
@@ -67,7 +67,7 @@ NDPI_STATIC void ndpi_int_stun_add_connection(struct ndpi_detection_module_struc
       app_proto = NDPI_PROTOCOL_FACEBOOK_VOIP;
   }
 
-  if(ndpi_stun_cache_enable && ndpi_struct->stun_cache
+  if(stun_ndpi_stun_cache_enable && ndpi_struct->stun_cache
      && packet->iph
      && (app_proto != NDPI_PROTOCOL_UNKNOWN)
      ) /* Cache flow sender info */ {

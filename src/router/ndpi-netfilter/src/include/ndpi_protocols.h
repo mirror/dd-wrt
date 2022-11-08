@@ -260,6 +260,17 @@ NDPI_STATIC void ndpi_search_discord(struct ndpi_detection_module_struct *ndpi_s
 NDPI_STATIC void ndpi_search_avast(struct ndpi_detection_module_struct *ndpi_struct, struct ndpi_flow_struct *flow);
 NDPI_STATIC void ndpi_search_avast_securedns(struct ndpi_detection_module_struct *ndpi_struct, struct ndpi_flow_struct *flow);
 NDPI_STATIC void ndpi_search_alicloud(struct ndpi_detection_module_struct *ndpi_struct, struct ndpi_flow_struct *flow);
+NDPI_STATIC void ndpi_search_activision(struct ndpi_detection_module_struct *ndpi_struct, struct ndpi_flow_struct *flow);
+NDPI_STATIC void ndpi_search_crynet(struct ndpi_detection_module_struct *ndpi_struct, struct ndpi_flow_struct *flow);
+NDPI_STATIC void ndpi_search_elasticsearch(struct ndpi_detection_module_struct *ndpi_struct, struct ndpi_flow_struct *flow);
+NDPI_STATIC void ndpi_search_line(struct ndpi_detection_module_struct *ndpi_struct, struct ndpi_flow_struct *flow);
+NDPI_STATIC void ndpi_search_munin(struct ndpi_detection_module_struct *ndpi_struct, struct ndpi_flow_struct *flow);
+NDPI_STATIC void ndpi_search_natpmp(struct ndpi_detection_module_struct *ndpi_struct, struct ndpi_flow_struct *flow);
+NDPI_STATIC void ndpi_search_softether(struct ndpi_detection_module_struct *ndpi_struct, struct ndpi_flow_struct *flow);
+NDPI_STATIC void ndpi_search_syncthing(struct ndpi_detection_module_struct *ndpi_struct, struct ndpi_flow_struct *flow);
+NDPI_STATIC void ndpi_search_tivoconnect(struct ndpi_detection_module_struct *ndpi_struct, struct ndpi_flow_struct *flow);
+NDPI_STATIC void ndpi_search_kismet(struct ndpi_detection_module_struct *ndpi_struct, struct ndpi_flow_struct *flow);
+NDPI_STATIC void ndpi_search_fastcgi(struct ndpi_detection_module_struct *ndpi_struct, struct ndpi_flow_struct *flow);
 
 
 
@@ -464,6 +475,6 @@ NDPI_STATIC void init_munin_dissector(struct ndpi_detection_module_struct *ndpi_
 NDPI_STATIC void init_elasticsearch_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id, NDPI_PROTOCOL_BITMASK *detection_bitmask);
 
 /* ndpi_main.c */
-extern u_int32_t ndpi_ip_port_hash_funct(u_int32_t ip, u_int16_t port);
+NDPI_STATIC  u_int32_t ndpi_ip_port_hash_funct(u_int32_t ip, u_int16_t port);
 
 #endif /* __NDPI_PROTOCOLS_H__ */

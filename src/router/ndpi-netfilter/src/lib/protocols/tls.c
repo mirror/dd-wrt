@@ -784,7 +784,7 @@ static void processCertificateElements(struct ndpi_detection_module_struct *ndpi
 /* **************************************** */
 
 /* See https://blog.catchpoint.com/2017/05/12/dissecting-tls-using-wireshark/ */
-int processCertificate(struct ndpi_detection_module_struct *ndpi_struct,
+NDPI_STATIC int processCertificate(struct ndpi_detection_module_struct *ndpi_struct,
 		       struct ndpi_flow_struct *flow) {
   struct ndpi_packet_struct *packet = ndpi_get_packet_struct(ndpi_struct);
   int is_dtls = packet->udp ? 1 : 0;
@@ -1303,7 +1303,7 @@ static void tlsInitExtraPacketProcessing(struct ndpi_detection_module_struct *nd
 
 /* **************************************** */
 
-void switch_extra_dissection_to_tls(struct ndpi_detection_module_struct *ndpi_struct,
+NDPI_STATIC void switch_extra_dissection_to_tls(struct ndpi_detection_module_struct *ndpi_struct,
 				    struct ndpi_flow_struct *flow)
 {
 #ifdef DEBUG_TLS

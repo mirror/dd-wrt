@@ -29,7 +29,7 @@
 
 // #define FTP_DEBUG
 
-extern void switch_extra_dissection_to_tls(struct ndpi_detection_module_struct *ndpi_struct,
+NDPI_STATIC void switch_extra_dissection_to_tls(struct ndpi_detection_module_struct *ndpi_struct,
 					   struct ndpi_flow_struct *flow);
 
 /* *************************************************************** */

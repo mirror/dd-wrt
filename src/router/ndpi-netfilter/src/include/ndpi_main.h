@@ -176,11 +176,11 @@ NDPI_STATIC  u_int8_t is_a_common_alpn(struct ndpi_detection_module_struct *ndpi
 NDPI_STATIC  char *ndpi_hostname_sni_set(struct ndpi_flow_struct *flow, const u_int8_t *value, size_t value_len);
 NDPI_STATIC  char *ndpi_user_agent_set(struct ndpi_flow_struct *flow, const u_int8_t *value, size_t value_len);
 
-  int64_t ndpi_asn1_ber_decode_length(const unsigned char *payload, int payload_len, u_int16_t *value_len);
-  char* ndpi_intoav4(unsigned int addr, char* buf, u_int16_t bufLen);
-  int ndpi_current_pkt_from_client_to_server(const struct ndpi_packet_struct *packet, const struct ndpi_flow_struct *flow);
-  int ndpi_current_pkt_from_server_to_client(const struct ndpi_packet_struct *packet, const struct ndpi_flow_struct *flow);
-  int ndpi_seen_flow_beginning(const struct ndpi_flow_struct *flow);
+  NDPI_STATIC int64_t ndpi_asn1_ber_decode_length(const unsigned char *payload, int payload_len, u_int16_t *value_len);
+  NDPI_STATIC char* ndpi_intoav4(unsigned int addr, char* buf, u_int16_t bufLen);
+  NDPI_STATIC int ndpi_current_pkt_from_client_to_server(const struct ndpi_packet_struct *packet, const struct ndpi_flow_struct *flow);
+  NDPI_STATIC int ndpi_current_pkt_from_server_to_client(const struct ndpi_packet_struct *packet, const struct ndpi_flow_struct *flow);
+  NDPI_STATIC int ndpi_seen_flow_beginning(const struct ndpi_flow_struct *flow);
 
 #ifdef __cplusplus
 }
