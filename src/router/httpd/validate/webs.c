@@ -5680,12 +5680,12 @@ void ddns_save_value(webs_t wp)
 	char _wan_ip[] = "ddns_wan_ip";
 
 	int enable = websGetVari(wp, "ddns_enable", -1);
-	if (enable > 31 || enable < 0) {
+	if (enable > 32 || enable < 0) {
 		return;
 	}
 
 	int i;
-	for (i = 1; i < 32; i++) {
+	for (i = 1; i < 33; i++) {
 		if (i == enable)
 			continue;
 		sprintf(_username, "ddns_username_%d", i);
