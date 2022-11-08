@@ -120,7 +120,19 @@ static int init_ddns(FILE * fp)
 			fprintf(fp, "password = \"nopasswd\"\n");
 		else
 			fprintf(fp, "password = \"%s\"\n", nvram_safe_get(_passwd));
-		fprintf(fp, "hostname = { %s }\n", nvram_safe_get(_hostname));
+		char *next;
+		char var[128];
+		char *hn = nvram_safe_get(_hostname);
+		fprintf(fp, "hostname = {");
+		int idx = 0;
+		foreach(var, hn, next) {
+			if (idx)
+			    fprintf(fp, ", ");
+			fprintf(fp, "\"%s\"",var);
+			idx++;
+		}
+		fprintf(fp, "}\n");
+		fprintf(fp, "hostname = \" %s \"\n", nvram_safe_get(_hostname));
 #ifdef HAVE_USE_OPENSSL
 		fprintf(fp, "ssl = %s\n", nvram_match(_ssl, "1") ? "true" : "false");
 #endif
