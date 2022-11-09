@@ -107,6 +107,8 @@ void start_freeradius(void)
 		struct radiusclientdb *db = loadradiusclientdb();
 		if (db) {
 			fp = fopen("/jffs/etc/freeradius/clients.conf", "wb");
+			if (!fp)
+				return;
 			system("touch /jffs/etc/freeradius/clients.manual");
 			fprintf(fp, "$INCLUDE clients.manual\n");
 
@@ -128,6 +130,8 @@ void start_freeradius(void)
 		struct radiusdb *db = loadradiusdb();
 		if (db) {
 			fp = fopen("/jffs/etc/freeradius/mods-config/files/authorize", "wb");
+			if (!fp)
+				return;
 			system("touch /jffs/etc/freeradius/users.manual");
 			system("touch /jffs/etc/freeradius/mods-config/files/users.manual");
 			fprintf(fp, "$INCLUDE users.manual\n");
