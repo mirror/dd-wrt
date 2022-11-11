@@ -131,3 +131,10 @@ table#radio_table tr td, .table_row_bg td {
 .link {
   cursor: pointer;
 }
+#ddns_status {
+  display: block;
+  max-height: 10rem;
+  overflow-y: auto;
+  margin-right: -.4rem;
+  line-height: 1.6;
+}

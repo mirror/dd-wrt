@@ -276,6 +276,9 @@ fieldset {
 fieldset fieldset {
   background-color: #bfbfd0;
 }
+.dark_fs_bg {
+  background-color: #d5d5e4;
+}
 fieldset legend {
   font-weight: 700;
   color: #115b80;
