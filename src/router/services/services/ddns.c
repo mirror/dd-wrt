@@ -107,7 +107,7 @@ static int init_ddns(FILE * fp)
 		snprintf(_passwd, sizeof(_passwd), "%s_%d", "ddns_passwd", flag);
 		snprintf(_hostname, sizeof(_hostname), "%s_%d", "ddns_hostname", flag);
 		snprintf(_wildcard, sizeof(_hostname), "%s_%d", "ddns_wildcard", flag);
-		snprintf(_cache_file, sizeof(_cache_file), "/tmp/ddns/%s.cache", nvram_nget("ddns_hostname_%d",flag));
+		snprintf(_cache_file, sizeof(_cache_file), "/tmp/ddns/%s.cache", nvram_nget("ddns_hostname_%d", flag));
 	}
 	if (fp) {
 		if (flag == 5)
@@ -127,8 +127,8 @@ static int init_ddns(FILE * fp)
 		int idx = 0;
 		foreach(var, hn, next) {
 			if (idx)
-			    fprintf(fp, ", ");
-			fprintf(fp, "\"%s\"",var);
+				fprintf(fp, ", ");
+			fprintf(fp, "\"%s\"", var);
 			idx++;
 		}
 		fprintf(fp, "}\n");
@@ -159,7 +159,6 @@ void start_ddns(void)
 		return -1;
 
 	mkdir("/tmp/ddns", 0744);
-
 
 	/*
 	 * Generate ddns configuration file 
@@ -212,11 +211,11 @@ void stop_ddns(void)
 {
 	int ret;
 	stop_process("inadyn", "dynamic dns daemon");
-	if (init_ddns(NULL) == 0)
-	{
+	if (init_ddns(NULL) == 0) {
 		unlink(_cache_file);
 	}
 	unlink("/tmp/ddns/ddns.log");
+	unlink("/tmp/ddns/inadyn.conf");
 
 	cprintf("done\n");
 
@@ -255,12 +254,11 @@ int ddns_success_main(int argc, char *argv[])
 	FILE *fp;
 
 	if (init_ddns(NULL) == 0) {
-
-	if ((fp = fopen(_cache_file, "r"))) {
-		fgets(buf, sizeof(buf), fp);
-		fclose(fp);
-		nvram_set("ddns_cache", buf);
-	}
+		if ((fp = fopen(_cache_file, "r"))) {
+			fgets(buf, sizeof(buf), fp);
+			fclose(fp);
+			nvram_set("ddns_cache", buf);
+		}
 	}
 
 	nvram_set("ddns_enable_buf", nvram_safe_get("ddns_enable"));
