@@ -91,7 +91,7 @@ cert_parse_bincert(ProxyContext * const proxy_context,
 
     const uint32_t now_u32 = (uint32_t) time(NULL);
 
-    if (now_u32 < ts_begin) {
+/*    if (now_u32 < ts_begin) {
         if (proxy_context->ignore_timestamps != 0) {
             logger_noformat(proxy_context, LOG_WARNING,
                             "Clock might be off - "
@@ -101,7 +101,7 @@ cert_parse_bincert(ProxyContext * const proxy_context,
                             "This certificate has not been activated yet");
             return -1;
         }
-    }
+    }*/
     if (now_u32 > ts_end) {
         logger_noformat(proxy_context, LOG_INFO,
                         "This certificate has expired");
@@ -419,7 +419,7 @@ cert_query_cb(int result, char type, int count, int ttl,
                             "Safety margin wider than the certificate validity period");
             safe_end = ts_begin;
         }
-        if (now_u32 < ts_begin || now_u32 > safe_end) {
+        if (/*now_u32 < ts_begin || */ now_u32 > safe_end) {
             logger(proxy_context, LOG_WARNING,
                    "The certificate is not valid for the given safety margin (%lu-%lu not within [%lu..%lu])",
                    (unsigned long) now_u32, (unsigned long) proxy_context->test_cert_margin,
