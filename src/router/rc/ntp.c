@@ -58,9 +58,6 @@ static struct syncservice service[] = {
 #ifdef HAVE_TOR
 	{ "tor_enable", "tor" },
 #endif
-#ifdef HAVE_UNBOUND
-	{ "recursive_dns", "unbound" },
-#endif
 };
 
 static void sync_daemons(void)
