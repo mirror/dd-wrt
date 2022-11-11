@@ -668,3 +668,10 @@ div.bulle, table.bulle, td.bulle {
 .iplookup {
   overflow-x: hidden;
 }
+#ddns_status {
+  display: block;
+  max-height: 10rem;
+  overflow-y: auto;
+  margin-right: -.4rem;
+  line-height: 1.6;
+}

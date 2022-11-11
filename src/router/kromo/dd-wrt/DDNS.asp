@@ -202,10 +202,9 @@ addEvent(window, "unload", function() {
 								</div>
 								<% ifndef("OPENSSL","-->"); %>
 								<% nvsm("ddns_enable","0","-->"); %>
-
-							</fieldset><br />
+							</fieldset>
 							<% nvsm("ddns_enable","0","<!--"); %>
-							<fieldset>
+							<br /><fieldset>
 								<legend><% tran("share.option"); %></legend>
 								<div class="setting">
 									<div class="label"><% tran("ddns.forceupd"); %></div>
@@ -223,7 +222,7 @@ addEvent(window, "unload", function() {
 							<fieldset class="dark_fs_bg">
 								<legend><% tran("ddns.statu"); %></legend>
 								<div class="setting">
-									<span id="ddns_status"><% show_ddns_status(); %></span>&nbsp;
+									<span id="ddns_status"><% show_ddns_status(); %></span>
 								</div>
 							<% nvsm("ddns_enable","0","-->"); %>
 							</fieldset><br />
