@@ -88,7 +88,7 @@ static int do_ntp(void)		// called from ntp_main and
 	gettimeofday(&now, NULL);
 	update_timezone();
 	servers = nvram_safe_get("ntp_server");
-	if (*servers == 0 || nvram_matchi("dns_crypt", 1)) {
+	if (*servers == 0) {
 		servers = "2.pool.ntp.org 212.18.3.19 88.99.174.22";
 	}
 
