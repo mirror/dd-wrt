@@ -192,10 +192,6 @@ void start_ddns(void)
 		nvram_unset("ddns_cache");
 		unlink("/tmp/ddns/ddns.log");
 		unlink(_cache_file);
-
-		if (nvram_matchi("ddns_enable", 0)) {
-			unlink("/tmp/ddns/inadyn.conf");
-		}
 	}
 
 	/*
@@ -217,6 +213,9 @@ void stop_ddns(void)
 	stop_process("inadyn", "dynamic dns daemon");
 	if (init_ddns(NULL) == 0) {
 		unlink(_cache_file);
+	}
+	if (nvram_matchi("ddns_enable", 0)) {
+		unlink("/tmp/ddns/inadyn.conf");
 	}
 	unlink("/tmp/ddns/ddns.log");
 
