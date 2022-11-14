@@ -1,0 +1,10 @@
+Copyright 1991, 1992, 1994, 1998, 1999, 2002   William D. Norcott
+License to freely use and distribute this software is hereby granted 
+by the author, subject to the condition that this copyright notice 
+remains intact.  The author retains the exclusive right to publish 
+derivative works based on this work, including, but not limited to,
+revised versions of this work
+
+Other contributors:
+Don Capps       (Network Appliance)        capps@iozone.org
+

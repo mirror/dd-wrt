@@ -55,7 +55,7 @@
 /* Middle Endian */
 #define ENDIAN_4  4
 
-int junk, *junkp;
+int junk1, *junkp;
 
 
 #ifdef HAVE_ANSIC_C
@@ -91,7 +91,7 @@ void do_label(int,char *,int,int);
 /*	  column							*/
 /************************************************************************/
 
-char libbif_version[] = "Libbif Version $Revision: 3.31 $";
+char libbif_version[] = "Libbif Version $Revision: 3.33 $";
 #endif
 
 #define BOF 0x9
@@ -227,6 +227,7 @@ void
 do_header(int fd) /* Stick the BOF at the beginning of the file */
 {
 #else
+void
 do_header(fd) 
 int fd;
 {
@@ -240,7 +241,7 @@ int fd;
 	bof.lo_version=0x0;
 	bof.hi_filetype=WORKSHEET;
 	bof.lo_filetype=0x0;
-	junk=write(fd,&bof,sizeof(struct bof_record));
+	junk1=write(fd,&bof,sizeof(struct bof_record));
 }
 
 /*
@@ -251,6 +252,7 @@ void
 do_int(int fd,int val, int row, int column)
 {
 #else
+void
 do_int(fd,val,row,column)
 int fd,val,row,column;
 {
@@ -272,7 +274,7 @@ int fd,val,row,column;
         intrec.lo_column=(char)(s_column>>8)&0xff;
         intrec.hi_data=(val & 0xff);
         intrec.lo_data=(val & 0xff00)>>8;
-	junk=write(fd,&intrec,13);
+	junk1=write(fd,&intrec,13);
 }
 
 /* Note: This routine converts Big Endian to Little Endian 
@@ -287,6 +289,7 @@ void
 do_float(int fd, double value, int row, int column)
 {
 #else
+void
 do_float(fd, value, row, column)
 int fd;
 double value;
@@ -358,8 +361,8 @@ int row,column;
 	   dptr[7]=0;
 	   printf("Excel output not supported on this architecture.\n");
 	}
-	junk=write(fd,&floatrec,11); /* Don't write floatrec. Padding problems */
-	junk=write(fd,&floatrec.data,8); /* Write value seperately */
+	junk1=write(fd,&floatrec,11); /* Don't write floatrec. Padding problems */
+	junk1=write(fd,&floatrec.data,8); /* Write value seperately */
 }
 
 /*
@@ -370,6 +373,7 @@ void
 do_label(int fd, char *string, int row, int column)
 {
 #else
+void
 do_label(fd, string, row, column)
 int fd;
 char *string;
@@ -401,7 +405,7 @@ int row,column;
 	i=strlen(string);
 	strcpy(labelrec.str_array,string);
 
-	junk=write(fd,&labelrec,sizeof(struct label_record));
+	junk1=write(fd,&labelrec,sizeof(struct label_record));
 
 }
 
@@ -413,12 +417,13 @@ void
 do_eof(int fd) 
 {
 #else
+void
 do_eof(fd) 
 int fd;
 {
 #endif
 	char buf[]={0x0a,0x00,0x00,0x00};
-	junk=write(fd,buf,4);
+	junk1=write(fd,buf,4);
 }
 	
 /* 
