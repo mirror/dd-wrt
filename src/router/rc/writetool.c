@@ -145,8 +145,8 @@ int main(int argc, char *argv[])
 	}
 	struct pte *nvram = &presentlayout[2];
 	fseek(out, nvram->start * 512, SEEK_SET);
-	uint32_t len = nvram->length * 512;
-	if (len) {
+	uint32_t nvlen = nvram->length * 512;
+	if (nvlen) {
 		if (nvram->start == newlayout[2].start) {
 			if (nvram->length > newlayout[2].length) {
 				// if old nvram partition size is bigger than the new partition to be written, we keep the old partition entry as is
@@ -165,12 +165,12 @@ int main(int argc, char *argv[])
 				}
 			}
 		} else {
-			fprintf(stderr, "read nvram from old offset %d with len %d\n", nvram->start * 512, len);
-			copy(out, nvram->start * 512, newlayout[2].start * 512, len);
+			fprintf(stderr, "read nvram from old offset %d with len %d\n", nvram->start * 512, nvlen);
+			copy(out, nvram->start * 512, newlayout[2].start * 512, nvlen);
 		}
 	}
 	fseek(in, 0, SEEK_END);
-	len = ftell(in);
+	uint32_t len = ftell(in);
 	fseek(in, 0, SEEK_SET);
 	fseek(out, 0, SEEK_SET);
 	char *buf = malloc(65536);
@@ -183,9 +183,9 @@ int main(int argc, char *argv[])
 	fread(buf, len % 65536, 1, in);
 	fwrite(buf, len % 65536, 1, out);
 	free(buf);
-	if (newlayout[2].start > 0) {
-		copy(out, nvram->start * 512, newlayout[2].start * 512, len);
-	}
+//	if (newlayout[2].start > 0) {
+//		copy(out, nvram->start * 512, newlayout[2].start * 512, nvlen);
+//	}
 	fclose(out);
 	fclose(in);
 }
