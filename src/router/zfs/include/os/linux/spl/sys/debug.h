@@ -54,8 +54,21 @@
 #define	__maybe_unused __attribute__((unused))
 #endif
 
+/*
+ * Without this, we see warnings from objtool during normal Linux builds when
+ * the kernel is built with CONFIG_STACK_VALIDATION=y:
+ *
+ * warning: objtool: tsd_create() falls through to next function __list_add()
+ * warning: objtool: .text: unexpected end of section
+ *
+ * Until the toolchain stops doing this, we must only define this attribute on
+ * spl_panic() when doing static analysis.
+ */
+#if defined(__COVERITY__) || defined(__clang_analyzer__)
+__attribute__((__noreturn__))
+#endif
 extern void spl_panic(const char *file, const char *func, int line,
-    const char *fmt, ...) __attribute__((__noreturn__));
+    const char *fmt, ...);
 extern void spl_dumpstack(void);
 
 static inline int
@@ -158,6 +171,17 @@ do {									\
 		    "failed (0 == %lld)\n",				\
 		    (long long) (_verify3_right));			\
 	} while (0)
+
+#define	VERIFY_IMPLY(A, B) \
+	((void)(likely((!(A)) || (B)) ||				\
+	    spl_assert("(" #A ") implies (" #B ")",			\
+	    "unknown", __FUNCTION__, __LINE__)))
+
+#define	VERIFY_EQUIV(A, B) \
+	((void)(likely(!!(A) == !!(B)) || 				\
+	    spl_assert("(" #A ") is equivalent to (" #B ")",		\
+	    "unknown", __FUNCTION__, __LINE__)))
+
 #endif
 /*
  * Debugging disabled (--disable-debug)
@@ -179,6 +203,12 @@ do {									\
 #define	EQUIV(A, B)		\
 	((void) sizeof ((uintptr_t)(A)), (void) sizeof ((uintptr_t)(B)))
 
+#define	VERIFY_EQUIV(A, B)		\
+	((void) sizeof ((uintptr_t)(A)), (void) sizeof ((uintptr_t)(B)))
+
+#define	VERIFY_IMPLY(A, B)		\
+	((void) sizeof ((uintptr_t)(A)), (void) sizeof ((uintptr_t)(B)))
+
 /*
  * Debugging enabled (--enable-debug)
  */
@@ -190,24 +220,8 @@ do {									\
 #define	ASSERT3P	VERIFY3P
 #define	ASSERT0		VERIFY0
 #define	ASSERT		VERIFY
-#define	IMPLY(A, B) \
-<<<<<<< HEAD
-	((void)(likely((!(A)) || (B)) ||				\
-	    spl_assert("(" #A ") implies (" #B ")",			\
-	    __FILE__, __FUNCTION__, __LINE__)))
-#define	EQUIV(A, B) \
-	((void)(likely(!!(A) == !!(B)) || 				\
-	    spl_assert("(" #A ") is equivalent to (" #B ")",		\
-	    __FILE__, __FUNCTION__, __LINE__)))
-=======
-	((void)(likely((!(A)) || (B)) || \
-	    spl_panic("unknown", __FUNCTION__, __LINE__, \
-	    "(" #A ") implies (" #B ")")))
-#define	EQUIV(A, B) \
-	((void)(likely(!!(A) == !!(B)) || \
-	    spl_panic("unknown", __FUNCTION__, __LINE__, \
-	    "(" #A ") is equivalent to (" #B ")")))
->>>>>>> 1558cf3c6 (latest update)
+#define	IMPLY		VERIFY_IMPLY
+#define	EQUIV		VERIFY_EQUIV
 
 #endif /* NDEBUG */
 
