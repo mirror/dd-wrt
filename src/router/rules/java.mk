@@ -1,7 +1,7 @@
 java-configure: zlib
 	cd $(TOP)/java/classpath && ./configure \
 	--host=$(ARCH)-linux CC="$(ARCH)-linux-uclibc-gcc" \
-	CFLAGS="$(COPTS) $(MIPS16_OPT) -DNEED_PRINTF" \
+	CFLAGS=" $(COPTS) $(LTO) $(MIPS16_OPT) -DNEED_PRINTF" \
 	CCASFLAGS="$(COPTS) -DNEED_PRINTF" \
 	--with-gmp="$(TOP)/gmp" \
 	--prefix=/usr \
@@ -14,12 +14,14 @@ java-configure: zlib
 	--disable-gconf-peer \
 	--disable-gjdoc \
 	--disable-examples \
-	--with-antlr-jar=$(TOP)/java/antlr/antlr-3.4-complete.jar
+	--with-antlr-jar=$(TOP)/java/antlr/antlr-3.4-complete.jar \
+	AR_FLAGS="cru $(LTOPLUGIN)" \
+	RANLIB="$(ARCH)-linux-ranlib $(LTOPLUGIN)"
 	
 	cd $(TOP)/java/jamvm && ./autogen.sh 
 	cd $(TOP)/java/jamvm && ./configure \
 	--host=$(ARCH)-linux CC="$(ARCH)-linux-uclibc-gcc" \
-	CFLAGS="$(COPTS) -I$(TOP)/zlib -L$(TOP)/zlib -DNEED_PRINTF" \
+	CFLAGS="$(COPTS) $(LTO) -I$(TOP)/zlib -L$(TOP)/zlib -DNEED_PRINTF" \
 	CCASFLAGS="$(COPTS) -DNEED_PRINTF" \
 	--with-java-runtime-library=gnuclasspath \
 	--with-classpath-install-dir=/usr \
@@ -27,7 +29,9 @@ java-configure: zlib
 	--libdir=/usr/lib \
 	--disable-int-inlining \
 	--disable-shared \
-	--without-pic
+	--without-pic \
+	AR_FLAGS="cru $(LTOPLUGIN)" \
+	RANLIB="$(ARCH)-linux-ranlib $(LTOPLUGIN)"
 
 #	cd $(TOP)/java/cacao && ./configure \
 #	--host=$(ARCH)-linux CC="$(ARCH)-linux-uclibc-gcc" \
