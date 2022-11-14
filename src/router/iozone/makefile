@@ -1,5 +1,5 @@
 #
-# Version $Revision: 1.155 $
+# Version $Revision: 1.157 $
 #
 # The makefile for building all versions of iozone for all supported
 # platforms
@@ -14,7 +14,8 @@
 #GCC	= gcc
 #CCS	= /usr/ccs/bin/cc
 #NACC	= /opt/ansic/bin/cc
-CFLAGS	= -DNEED_PRINTF -fcommon
+CFLAGS	= -DNEED_PRINTF -fcommon $(COPTS) $(MIPS16_OPT) $(LTO)
+LDFLAGS = $(LDLTO)
 #S10GCCFLAGS    = -m64
 #S10CCFLAGS     = -m64
 #FLAG64BIT      = -m64
@@ -94,8 +95,8 @@ clean:
 	rm -f *.o iozone fileop pit_server
 
 rpm:
-	cp ../../iozone*.tar /usr/src/red*/SO*
-	rpmbuild -ba spec.in
+	cp ../../iozone*.tar /home/capps/rpmbuild/SOURCES/
+	rpmbuild  -ba --buildroot /home/capps/rpmbuild/BUILDROOT spec.in
 
 
 #
@@ -172,10 +173,10 @@ hpux_no_ansi:	iozone_hpux_no.o  libbif.o
 # GNU 'C' compiler Linux build with threads, largefiles, async I/O 
 #
 linux:	iozone_linux.o libasync.o libbif.o fileop_linux.o pit_server.o
-	$(CC)  -O3 -DNEED_PRINTF $(LDFLAGS) iozone_linux.o libasync.o libbif.o -lpthread \
+	$(CC)  -O3 -DNEED_PRINTF $(CFLAGS) $(LDFLAGS) iozone_linux.o libasync.o libbif.o -lpthread \
 		-lrt -o iozone
-	$(CC)  -O3 -DNEED_PRINTF -Dlinux fileop_linux.o -o fileop
-	$(CC)  -O3 -DNEED_PRINTF -Dlinux pit_server.o -o pit_server
+	$(CC)  -O3 -DNEED_PRINTF -Dlinux $(CFLAGS) fileop_linux.o -o fileop
+	$(CC)  -O3 -DNEED_PRINTF -Dlinux $(CFLAGS) pit_server.o -o pit_server
 
 #
 # GNU 'C' compiler Linux build for powerpc chip with threads, largefiles, async I/O 

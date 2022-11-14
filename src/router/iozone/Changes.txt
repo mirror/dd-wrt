@@ -2663,8 +2663,25 @@ Improvements for building under Android
 Revision 3.486
 Fix compiler warning on Android.
 =============================================================================
-Revision 3.487
-NDK build for Android
+Revision 3.488
+Improve the Yates/Knuth method for shuffle.
+=============================================================================
+Revision 3.489
+Fix gcc-10 warning about no-common.
+=============================================================================
+Revision 3.490
+Fix compiler warning when HAVE_ANSIC is not defined
+=============================================================================
+Revision 3.491
+Fix CFLAGS issue from Fedora maintainer.
+=============================================================================
+Revision 3.492
+Improve the -+M option's compression pattern so that the achieved 
+compressibility is closer to the value specifed in the -+a option.
+=============================================================================
+Revision 3.493
+Move memorey allocaiton of main buffer to after the getopt, else 
+the -S can cause issues later.
 =============================================================================
 
 

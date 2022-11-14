@@ -7,7 +7,7 @@
 /************************************************************************/
 /*      Enhancements by:						*/
 /*	 	Don Capps (capps@iozone.org)				*/
-/* 		7417 Crenshaw						*/
+/* 		7417 Crenshaw Dr.					*/
 /* 		Plano, TX 75025						*/
 /*  									*/
 /************************************************************************/
@@ -60,7 +60,7 @@
 
 
 /* The version number */
-#define THISVERSION "        Version $Revision: 3.487 $"
+#define THISVERSION "        Version $Revision: 3.493 $"
 
 #if defined(Windows)
 #define NO_THREADS
@@ -1832,7 +1832,7 @@ long long rest_val;
 void stop_child_send();
 void stop_child_send();
 void child_send();
-long compressible_rand(void);
+void compressible_rand_16_int(int *);
 void new_touch_dedup(char *, int);
 
 
@@ -1841,6 +1841,7 @@ void new_touch_dedup(char *, int);
 /*   MAIN () 							*/
 /*								*/
 /****************************************************************/
+int negatives, positives;
 
 int
 main(argc,argv) 
@@ -1933,43 +1934,6 @@ char **argv;
 #endif
 #endif
 
-        /********************************************************/
-        /* Allocate and align buffer with beginning of the 	*/
-        /* on chip data cache. 					*/
-        /********************************************************/
-
-     	buffer = (char *) alloc_mem((long long)(MAXBUFFERSIZE + (2 * cache_size)),(int)0);
-	if(buffer == 0) {
-        	perror("Memory allocation failed:");
-        	exit(1);
-        }
-
-#ifdef _64BIT_ARCH_
-     	buffer = (char *) ((long long )(buffer + cache_size ) & 
-		~(cache_size-1));
-#else
-     	buffer = (char *) ((long)(buffer + cache_size ) & 
-		~((long)cache_size-1));
-#endif
-	mainbuffer = buffer;
-
-	/* de-dup input buf */
-     	buffer1 = (char *) alloc_mem((long long)(MAXBUFFERSIZE + (2 * cache_size)),(int)0);
-	if(buffer1 == 0) {
-        	perror("Memory allocation failed:");
-        	exit(1);
-        }
-
-#ifdef _64BIT_ARCH_
-     	buffer1 = (char *) ((long long )(buffer1 + cache_size ) & 
-		~(cache_size-1));
-#else
-     	buffer1 = (char *) ((long)(buffer1 + cache_size ) & 
-		~((long)cache_size-1));
-#endif
-	dedup_ibuf = buffer1;
-
-	dedup_temp = mainbuffer;
 
 	fetchon++;  /* By default, prefetch the CPU cache lines associated with the buffer */
   	strcpy(filename,default_filename); 	/* Init default filename */
@@ -3097,6 +3061,43 @@ char **argv;
 			exit(255);
 		}
 	}
+        /********************************************************/
+        /* Allocate and align buffer with beginning of the 	*/
+        /* on chip data cache. 					*/
+        /********************************************************/
+
+     	buffer = (char *) alloc_mem((long long)(MAXBUFFERSIZE + (2 * cache_size)),(int)0);
+	if(buffer == 0) {
+        	perror("Memory allocation failed:");
+        	exit(1);
+        }
+
+#ifdef _64BIT_ARCH_
+     	buffer = (char *) ((long long )(buffer + cache_size ) & 
+		~(cache_size-1));
+#else
+     	buffer = (char *) ((long)(buffer + cache_size ) & 
+		~((long)cache_size-1));
+#endif
+	mainbuffer = buffer;
+
+	/* de-dup input buf */
+     	buffer1 = (char *) alloc_mem((long long)(MAXBUFFERSIZE + (2 * cache_size)),(int)0);
+	if(buffer1 == 0) {
+        	perror("Memory allocation failed:");
+        	exit(1);
+        }
+
+#ifdef _64BIT_ARCH_
+     	buffer1 = (char *) ((long long )(buffer1 + cache_size ) & 
+		~(cache_size-1));
+#else
+     	buffer1 = (char *) ((long)(buffer1 + cache_size ) & 
+		~((long)cache_size-1));
+#endif
+	dedup_ibuf = buffer1;
+
+	dedup_temp = mainbuffer;
 	touch_dedup(buffer1, MAXBUFFERSIZE);
 	base_time=(long)time_so_far();
 	get_resolution(); 		/* Get clock resolution */
@@ -4122,7 +4123,7 @@ throughput_test()
 #endif
 		if(!barray[xx])
 		{
-			barray[xx]=(char *) alloc_mem((long long)(MAXBUFFERSIZE+cache_size),(int)0);
+			barray[xx]=(char *) alloc_mem((long long)(MAXBUFFERSIZE+(2 * cache_size)),(int)0);
 			if(barray[xx] == 0) {
         		   perror("Memory allocation failed:");
         		   exit(26);
@@ -4373,7 +4374,7 @@ waitout:
 	   for(xx = 0; xx< num_child ; xx++){	/* Create the children */
 		if(!barray[xx])
 		{
-			barray[xx]=(char *) alloc_mem((long long)(MAXBUFFERSIZE+cache_size),(int)0);
+			barray[xx]=(char *) alloc_mem((long long)(MAXBUFFERSIZE+( 2 * cache_size)),(int)0);
 			if(barray[xx] == 0) {
         		   perror("Memory allocation failed:");
         		   exit(26);
@@ -4618,7 +4619,7 @@ next0:
 	   for(xx = 0; xx< num_child ; xx++){	/* Create the children */
 		if(!barray[xx])
 		{
-			barray[xx]=(char *) alloc_mem((long long)(MAXBUFFERSIZE+cache_size),(int)0);
+			barray[xx]=(char *) alloc_mem((long long)(MAXBUFFERSIZE+(2 * cache_size)),(int)0);
 			if(barray[xx] == 0) {
         		   perror("Memory allocation failed:");
         		   exit(26);
@@ -4853,7 +4854,7 @@ jumpend4:
 		chid=xx;
 		if(!barray[xx])
 		{
-			barray[xx]=(char *) alloc_mem((long long)(MAXBUFFERSIZE+cache_size),(int)0);
+			barray[xx]=(char *) alloc_mem((long long)(MAXBUFFERSIZE+(2 * cache_size)),(int)0);
 			if(barray[xx] == 0) {
         		   perror("Memory allocation failed:");
         		   exit(26);
@@ -5093,7 +5094,7 @@ next1:
 		chid=xx;
 		if(!barray[xx])
 		{
-			barray[xx]=(char *) alloc_mem((long long)(MAXBUFFERSIZE+cache_size),(int)0);
+			barray[xx]=(char *) alloc_mem((long long)(MAXBUFFERSIZE+(2 * cache_size)),(int)0);
 			if(barray[xx] == 0) {
         		   perror("Memory allocation failed:");
         		   exit(26);
@@ -5327,7 +5328,7 @@ next2:
 		chid=xx;
 		if(!barray[xx])
 		{
-			barray[xx]=(char *) alloc_mem((long long)(MAXBUFFERSIZE+cache_size),(int)0);
+			barray[xx]=(char *) alloc_mem((long long)(MAXBUFFERSIZE+(2 * cache_size)),(int)0);
 			if(barray[xx] == 0) {
         		   perror("Memory allocation failed:");
         		   exit(26);
@@ -5562,7 +5563,7 @@ next3:
 		chid=xx;
 		if(!barray[xx])
 		{
-			barray[xx]=(char *) alloc_mem((long long)(MAXBUFFERSIZE+cache_size),(int)0);
+			barray[xx]=(char *) alloc_mem((long long)(MAXBUFFERSIZE+(2 * cache_size)),(int)0);
 			if(barray[xx] == 0) {
         		   perror("Memory allocation failed:");
         		   exit(26);
@@ -5792,7 +5793,7 @@ next4:
 		chid=xx;
 		if(!barray[xx])
 		{
-			barray[xx]=(char *) alloc_mem((long long)(MAXBUFFERSIZE+cache_size),(int)0);
+			barray[xx]=(char *) alloc_mem((long long)(MAXBUFFERSIZE+(2 * cache_size)),(int)0);
 			if(barray[xx] == 0) {
         		   perror("Memory allocation failed:");
         		   exit(26);
@@ -6022,7 +6023,7 @@ next5:
 		chid=xx;
 		if(!barray[xx])
 		{
-			barray[xx]=(char *) alloc_mem((long long)(MAXBUFFERSIZE+cache_size),(int)0);
+			barray[xx]=(char *) alloc_mem((long long)(MAXBUFFERSIZE+(2 * cache_size)),(int)0);
 			if(barray[xx] == 0) {
         		   perror("Memory allocation failed:");
         		   exit(26);
@@ -6255,7 +6256,7 @@ next6:
 		chid=xx;
 		if(!barray[xx])
 		{
-			barray[xx]=(char *) alloc_mem((long long)(MAXBUFFERSIZE+cache_size),(int)0);
+			barray[xx]=(char *) alloc_mem((long long)(MAXBUFFERSIZE+(2 * cache_size)),(int)0);
 			if(barray[xx] == 0) {
         		   perror("Memory allocation failed:");
         		   exit(26);
@@ -6490,7 +6491,7 @@ next7:
 		chid=xx;
 		if(!barray[xx])
 		{
-			barray[xx]=(char *) alloc_mem((long long)(MAXBUFFERSIZE+cache_size),(int)0);
+			barray[xx]=(char *) alloc_mem((long long)(MAXBUFFERSIZE+(2 * cache_size)),(int)0);
 			if(barray[xx] == 0) {
         		   perror("Memory allocation failed:");
         		   exit(26);
@@ -6715,7 +6716,7 @@ next8:
 	   for(xx = 0; xx< num_child ; xx++){	/* Create the children */
 		if(!barray[xx])
 		{
-			barray[xx]=(char *) alloc_mem((long long)(MAXBUFFERSIZE+cache_size),(int)0);
+			barray[xx]=(char *) alloc_mem((long long)(MAXBUFFERSIZE+(2 * cache_size)),(int)0);
 			if(barray[xx] == 0) {
         		   perror("Memory allocation failed:");
         		   exit(26);
@@ -6945,7 +6946,7 @@ next9:
 	   for(xx = 0; xx< num_child ; xx++){	/* Create the children */
 		if(!barray[xx])
 		{
-			barray[xx]=(char *) alloc_mem((long long)(MAXBUFFERSIZE+cache_size),(int)0);
+			barray[xx]=(char *) alloc_mem((long long)(MAXBUFFERSIZE+(2 * cache_size)),(int)0);
 			if(barray[xx] == 0) {
         		   perror("Memory allocation failed:");
         		   exit(26);
@@ -9326,7 +9327,7 @@ long long *data1, *data2;
             for(i = 0; i < numrecs64; i++){
                 recnum[i] = i;
             }
-            for(i = 0; i < numrecs64; i++) {
+            for(i = numrecs64-1; i >= 0; i--) {
                 long long tmp;
 #ifdef MERSENNE
       	       big_rand=genrand64_int64();
@@ -9347,7 +9348,7 @@ long long *data1, *data2;
 #endif
 #endif
 #endif
-               big_rand = big_rand%numrecs64;
+               big_rand = big_rand % (i+1);
                tmp = recnum[i];
                recnum[i] = recnum[big_rand];
                recnum[big_rand] = tmp;
@@ -17697,7 +17698,7 @@ void *x;
             for(i = 0; i < numrecs64; i++){
                 recnum[i] = i;
             }
-            for(i = 0; i < numrecs64; i++) {
+            for(i = numrecs64-1; i >= 0; i--) {
                 long long tmp = recnum[i];
 #ifdef MERSENNE
       	       big_rand = genrand64_int64();
@@ -17718,7 +17719,7 @@ void *x;
 #endif
 #endif
 #endif
-               big_rand = big_rand%numrecs64;
+               big_rand = big_rand % (i+1);
                tmp = recnum[i];
                recnum[i] = recnum[big_rand];
                recnum[big_rand] = tmp;
@@ -18336,7 +18337,7 @@ thread_ranwrite_test( x)
             for(i = 0; i < numrecs64; i++){
                 recnum[i] = i;
             }
-            for(i = 0; i < numrecs64; i++) {
+            for(i = numrecs64-1; i >= 0; i--) {
                 long long tmp = recnum[i];
 #ifdef MERSENNE
       	       big_rand = genrand64_int64();
@@ -18357,7 +18358,7 @@ thread_ranwrite_test( x)
 #endif
 #endif
 #endif
-               big_rand = big_rand%numrecs64;
+               big_rand = big_rand % (i+1);
                tmp = recnum[i];
                recnum[i] = recnum[big_rand];
                recnum[big_rand] = tmp;
@@ -24538,22 +24539,67 @@ special_gen_new_buf(char *ibuf, char *obuf, long seed, int size, int percent,
         return(0);
 }
 
-long 
-compressible_rand(void)
+/* This is problematic as the zeros are not adjacent, which means that the 
+ * compression algorithm won't save any space as the dictionay index and count
+ * would ocupy the same space as the original int of zero. 
+ */
+#ifdef GOOFY
+int 
+old_compressible_rand(void)
 {
         /* zero_pct:[0,100] */
         int toss = ((((double)rand()/((double)MAX_RAND+(double)1))*100+1));
         if (toss>zero_pct) 
 	{
+		negatives++;
                 return (long)(((double)rand()/((double)MAX_RAND+(double)1))*MAX_RAND)+1;
                                /* [1,MAX_RAND]. avoid zeros because  */
                                /* zeros are used for compressibility control  */
         } 
 	else 
 	{
+		positives++;
                 return 0;
         }
 }
+#endif
+/*
+ * Compress 16 ints at a time so that there is sufficient compressible
+ * content so as to permit compression algorithms to work.  i.e. there
+ * is sufficient compression to more than compensate for the dictionay
+ * index and the reference count.
+ */
+void
+compressible_rand_16_int(int *L_ptr)
+{
+        /* zero_pct:[0,100] */
+	int k;
+        int toss = ((lrand48()>>3)%100)+1;
+        if (toss>zero_pct)
+        {
+		/* Fill in 16 ints with data */
+		for(k=0;k<16;k++)
+		{
+		    negatives++;
+		    L_ptr[k]=(int)rand();
+		}
+                return;
+        }
+        else
+        {
+		/* Fill in 16 ints with zeros so that compression algorithms 
+ 		 * will see the savings and engage. Without having a bunch of 
+ 		 * adjacent zeros the compression will dis-engage.
+		 */
+		for(k=0;k<16;k++)
+		{
+		    positives++;
+		    L_ptr[k]=0;
+		}
+                return;
+        }
+}
+
 
 /* 
  * Used to touch all of the buffers so that the CPU data
@@ -24565,14 +24611,29 @@ new_touch_dedup(char *i, int size)
 {
         register int x;
         register int *ip;
+	int *L_ptr;
         ip = (int *)i;
         /* To make sure every fileset generates different dedup patterns */
         srand(DEDUPSEED+dedup_mseed);
 
+	L_ptr = ip;
         for(x=0;x<(int)(size/sizeof(int));x++)
         {
-                if ( zero_pct >= 0 ) {
-                        *ip=compressible_rand(); /* fill initial buffer  */
+		L_ptr = ip;
+                if ( zero_pct >= 0 ) 
+		{
+		    /* Have compressible_rand_16_int() fill in 16 ints at a 
+                     * time so that we have adjacent zeros or adjacent random 
+                     * numbers. 
+		     * One needs to do this or the zeros won't compress as the
+		     * dictionary entry would take the same space as a single 
+		     * int 
+		     */
+		    /* fill initial buffer with groups of 16 bytes of
+                     * compressible or non-compressible data 
+                     */
+		    if((x % 16) == 0)
+                        compressible_rand_16_int(L_ptr); 
                 }
                 ip++;
         }
@@ -26201,6 +26262,7 @@ touch_dedup(char *i, int size)
         register int *ip;
 	if(N_special)
 	{
+	/* printf("Size ========= %d\n",size);*/
 		new_touch_dedup(i, size);
 		return;
 	}
@@ -26247,7 +26309,9 @@ gen_new_buf(char *ibuf, char *obuf, long seed, int size, int percent,
 
 	if(N_special)
 	{
-		ret = special_gen_new_buf(ibuf, obuf, seed, size, percent, percent_interior, percent_compress, all);
+		ret = special_gen_new_buf(ibuf, obuf, seed, size, percent, 
+		    percent_interior, percent_compress, all);
+		/* printf("Pos: %d Neg: %d\n",positives, negatives);*/
 		return(ret);
 	}
 		
