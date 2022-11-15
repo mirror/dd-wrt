@@ -1,0 +1,159 @@
+#! /usr/bin/env php
+<?php
+// This file is part of BOINC.
+// http://boinc.berkeley.edu
+// Copyright (C) 2012 University of California
+//
+// BOINC is free software; you can redistribute it and/or modify it
+// under the terms of the GNU Lesser General Public License
+// as published by the Free Software Foundation,
+// either version 3 of the License, or (at your option) any later version.
+//
+// BOINC is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+// See the GNU Lesser General Public License for more details.
+//
+// You should have received a copy of the GNU Lesser General Public License
+// along with BOINC.  If not, see <http://www.gnu.org/licenses/>.
+
+// Stage an input file: namely,
+// - move or copy it to the download hierarchy
+// - compute its md5
+// - make a gzipped version if needed
+//
+// Usage (from project dir):
+//
+// bin/stage_file [options] path
+//
+// options:
+// --gzip       Make a gzipped version of the file.
+//              Use this if you specify <gzip> in the <file_info>
+// --copy       Copy the file (default is to move it)
+//
+// -- verbose
+//
+// path         The file to be staged.
+//              If it's a directory, stage all the files in that dir
+
+function error_exit($msg) {
+    echo $msg;
+    exit(1);
+}
+
+if (!file_exists("html/inc/dir_hier.inc")
+    || !file_exists("config.xml")
+) {
+    error_exit("This script must be run in the project directory.\n");
+}
+
+$dir = getcwd();
+chdir("html/inc");
+require_once("dir_hier.inc");
+require_once("util_basic.inc");
+chdir($dir);
+
+function usage() {
+    error_exit("usage: stage_file [--gzip] [--copy] path
+    --gzip      make a gzipped version of file for compressed download
+                (use with <gzip/> in the input template)
+    --copy      copy the file (default is to move it)
+    --verbose   verbose output
+    path        The file to stage; if directory, stage all files in that dir
+");
+}
+
+function stage_file($path) {
+    global $download_dir, $fanout, $copy, $gzip, $verbose;
+
+    if (!file_exists($path)) error_exit("no such file: $path\n");
+    $file = basename($path);
+    $dl_path = dir_hier_path($file, $download_dir, $fanout);
+
+    if ($verbose) {
+        echo "staging $file to $dl_path\n";
+    }
+
+    switch (check_download_file($path, $dl_path)) {
+    case 0:
+        // file is already there; no need to copy
+        if ($verbose) {
+            echo "    file already exists as $dl_path\n";
+        }
+        break;
+    case 1:
+        // need to copy or move
+        if ($copy) {
+            $ret = copy($path, $dl_path);
+            if (!$ret) error_exit("    copy failed\n");
+            if ($verbose) echo "    copied file\n";
+        } else {
+            $ret = rename($path, $dl_path);
+            if (!$ret) error_exit("    copy failed\n");
+            if ($verbose) echo "    moved file\n";
+        }
+        touch("$dl_path.md5");
+        break;
+    case -1:
+        error_exit("
+There is already a file in your project's download directory with that name,
+but with different contents.
+This is not allowed by BOINC, which requires that files be immutable.
+Please use a different file name.
+");
+        break;
+    }
+
+    // make gzipped version if needed
+    //
+    if ($gzip) {
+        $dl_gzip_path = "$dl_path.gz";
+        if (!file_exists($dl_gzip_path)) {
+            $output = system("gzip -c $dl_path > $dl_gzip_path", $retval);
+            if ($retval) {
+                error_exit("failed to gzip file: $output\n");
+            }
+            if ($verbose) echo "    created .gzip file $dl_gzip_path\n";
+        }
+    }
+}
+
+$fanout = parse_config(get_config(), "<uldl_dir_fanout>");
+if (!$fanout) error_exit("can't find <uldl_dir_fanout> in config.xml");
+$download_dir = parse_config(get_config(), "<download_dir>");
+if (!$download_dir) error_exit("can't find <download_dir> in config.xml");
+if ($argc < 2) usage();
+
+$gzip = false;
+$copy = false;
+$verbose = false;
+
+for ($i=1; $i<$argc-1; $i++) {
+    switch($argv[$i]) {
+    case "--gzip":
+        $gzip = true;
+        break;
+    case "--copy":
+        $copy = true;
+        break;
+    case "--verbose":
+        $verbose = true;
+        break;
+    default:
+        usage();
+    }
+}
+
+$path = $argv[$argc-1];
+if (is_dir($path)) {
+    $d = opendir($path);
+    while ($f = readdir($d)) {
+        $p = "$path/$f";
+        if (!is_file($p)) continue;
+        stage_file($p);
+    }
+} else {
+    stage_file($path);
+}
+
+?>

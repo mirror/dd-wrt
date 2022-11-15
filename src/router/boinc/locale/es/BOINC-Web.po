@@ -1,0 +1,966 @@
+# BOINC website localization template
+# Copyright (C) 2017 University of California
+# 
+# This file is distributed under the same license as BOINC.
+# 
+# Translators:
+# Alonso Lara (AlonsoLP) <alonso.lara.plana@gmail.com>, 2017
+# Alonso Lara (AlonsoLP) <alonso.lara.plana@gmail.com>, 2017-2018
+# Antonio Regidor García <chikitosan@gmail.com>, 2015
+# el buve, 2015
+# fco.aguilarm <fco.aguilarm@gmail.com>, 2015
+# Jorge Núñez López <ssaludv@gmail.com>, 2017
+# juanda097 <juanda097@protonmail.ch>, 2016
+# Liliana Faouen <liliana.faouen@gmail.com>, 2017
+# Santiago Arada <leonudo@gmail.com>, 2017
+# Yoel CM <vladevil@gmail.com>, 2015
+msgid ""
+msgstr ""
+"Project-Id-Version: BOINC\n"
+"Report-Msgid-Bugs-To: BOINC translation team <boinc_loc@ssl.berkeley.edu>\n"
+"POT-Creation-Date: 2017-07-04 11:20 UTC\n"
+"PO-Revision-Date: 2018-07-26 20:56+0000\n"
+"Last-Translator: Alonso Lara (AlonsoLP) <alonso.lara.plana@gmail.com>\n"
+"Language-Team: Spanish (http://www.transifex.com/boinc/boinc/language/es/)\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: es\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+"X-Poedit-SourceCharset: utf-8\n"
+
+msgid "LANG_NAME_NATIVE"
+msgstr "Español"
+
+msgid "LANG_NAME_INTERNATIONAL"
+msgstr "Spanish"
+
+#: doc/account_managers.inc:7
+msgid ""
+"BAM! assists you in creating and managing your BOINC project accounts and "
+"helps you with setting preferences, joining or creating teams, connecting "
+"your computers to projects, and much more.  Whether you're a new or an "
+"existing BOINC user, BAM will help you get the most out of BOINC."
+msgstr "BAM! te ayuda a crear y administrar tus cuentas de proyecto de BOINC y a establecer preferencias, unirte o crear equipos, conectando tus computadoras a los proyectos, y mucho más. Tanto si eres un usuario de BOINC nuevo o antiguo, BAM te ayudará a sacar el máximo provecho de BOINC."
+
+#: doc/account_managers.inc:13
+msgid ""
+"GridRepublic members run a screensaver that allows their computers to work "
+"on public-interest research projects when the machines are not otherwise in "
+"use. This screensaver does not affect performance of the host computer any "
+"more than an ordinary screensaver does."
+msgstr "Los miembros de GridRepublic ejecutan un salvapantallas que permite a sus computadoras trabajar en proyectos de investigación de interés público cuando las máquinas no están en uso. Este protector de pantalla no afecta al rendimiento de la computadora anfitriona como tampoco lo hace un protector de pantalla normal."
+
+#: doc/docutil.php:21
+msgid "Search"
+msgstr "Buscar"
+
+#: doc/docutil.php:107
+msgid "Return to BOINC main page"
+msgstr "Volver a la página principal de BOINC"
+
+#: doc/docutil.php:118
+#, php-format
+msgid "This page is %stranslatable%s."
+msgstr "Esta página es %straducible%s."
+
+#: doc/download.php:42
+msgid ""
+"BOINC is a program that lets you donate your idle computer time to science "
+"projects like SETI@home, Climateprediction.net, Rosetta@home, World "
+"Community Grid, and many others."
+msgstr "BOINC es un programa que le permite donar el tiempo en que su computador está inactivo a proyectos científicos como SETI@home, Climateprediction.net, Rosetta@home, World Community Grid y muchos otros."
+
+#: doc/download.php:44
+msgid ""
+"After installing BOINC on your computer, you can connect it to as many of "
+"these projects as you like."
+msgstr "Tras instalar BOINC en su computador, puede conectarlo con tantos proyectos como quiera."
+
+#: doc/download.php:46
+msgid ""
+"You may run this software on a computer only if you own the computer or have"
+" the permission of its owner."
+msgstr "Puede ejecutar este programa en un computador sólo si es de su propiedad o tiene permiso de su propietario."
+
+#: doc/download.php:51
+msgid ""
+"We recommend that you download BOINC from the Google Play Store or Amazon "
+"Appstore, not from here."
+msgstr "Le recomendamos que descargue BOINC de Google Play o Amazon Appstore, no de aquí."
+
+#: doc/download.php:86
+msgid "System requirements"
+msgstr "Requisitos del sistema"
+
+#: doc/download.php:87
+msgid "Release notes"
+msgstr "Notas de la versión"
+
+#: doc/download.php:88 doc/index.php:122
+msgid "Help"
+msgstr "Ayuda"
+
+#: doc/download.php:89
+msgid "All versions"
+msgstr "Todas las versiones"
+
+#: doc/download.php:90
+msgid "Version history"
+msgstr "Historial de las versiones"
+
+#: doc/download.php:91
+msgid "GPU computing"
+msgstr "Computación con GPU"
+
+#: doc/download.php:111
+msgid "BOINC: compute for science"
+msgstr "BOINC: computar para la ciencia"
+
+#: doc/index.php:29
+msgid "Computing power"
+msgstr "Potencia de cálculo"
+
+#: doc/index.php:37
+msgid "Top 100 volunteers"
+msgstr "Los 100 mejores voluntarios"
+
+#: doc/index.php:38
+msgid "Statistics"
+msgstr "Estadísticas"
+
+#: doc/index.php:67
+msgid "24-hour average:"
+msgstr "Promedio de 24 horas:"
+
+#: doc/index.php:67
+msgid "PetaFLOPS."
+msgstr "PetaFLOPS."
+
+#: doc/index.php:69
+msgid "Active:"
+msgstr "Activos:"
+
+#: doc/index.php:69
+msgid "volunteers,"
+msgstr "voluntarios,"
+
+#: doc/index.php:69
+msgid "computers.\n"
+msgstr "computadoras.\n"
+
+#: doc/index.php:76
+msgid "News"
+msgstr "Noticias"
+
+#: doc/index.php:81
+msgid "Database not available; please try again later."
+msgstr "Base de datos no disponible; Por favor, inténtelo de nuevo más tarde."
+
+#. "Volunteer" is used as a verb
+#: doc/index.php:90
+msgid "Volunteer"
+msgstr "Ayudar"
+
+#: doc/index.php:92
+msgid ""
+"Use the idle time on your computer (Windows, Mac, Linux, or Android) to cure"
+" diseases, study global warming, discover pulsars, and do many other types "
+"of scientific research.  It's safe, secure, and easy:"
+msgstr "Use el tiempo en que su computador (Windows, Mac, Linux o Android) está inactivo para curar enfermedades, estudiar el calentamiento global, descubrir púlsares y muchos otros tipos de investigaciones científicas. Es seguro y fácil:"
+
+#: doc/index.php:95
+msgid "Download"
+msgstr "Descargar"
+
+#: doc/index.php:98
+msgid ""
+"For Android devices, get the BOINC app from the Google Play Store; for "
+"Kindle, get it from the Amazon App Store."
+msgstr "Para dispositivos Android, obtén la aplicación BOINC desde la Google Play Store; Para Kindle, obtenga de la Amazon App Store."
+
+#: doc/index.php:102
+msgid ""
+"You can choose to support %1 projects %2 such as %3, %4, and %5, among many "
+"others."
+msgstr "Usted puede elegir apoyar %1 proyectos %2 tales como %3, %4, y %5, entre muchos otros."
+
+#: doc/index.php:109
+msgid ""
+"If you run several projects, try an %1 account manager %2 such as %3 "
+"GridRepublic %4 or %5 BAM! %6. "
+msgstr "Si participa en diversos proyectos, pruebe un %1 administrador de cuentas %2 tales como %3 GridRepublic %4 o %5 BAM! %6. "
+
+#: doc/index.php:116
+msgid "Learn more:"
+msgstr "Aprende más:"
+
+#: doc/index.php:119
+msgid "Message boards"
+msgstr "Foros"
+
+#: doc/index.php:120
+msgid "Projects"
+msgstr "Proyectos"
+
+#: doc/index.php:121
+msgid "Manual"
+msgstr "Manual"
+
+#: doc/index.php:123
+msgid "Add-ons"
+msgstr "Complementos"
+
+#: doc/index.php:124
+msgid "Links"
+msgstr "Enlaces"
+
+#: doc/index.php:129
+msgid "Other ways to help:"
+msgstr "Otras maneras de ayudar:"
+
+#: doc/index.php:132
+msgid "Overview"
+msgstr "Visión general"
+
+#: doc/index.php:133
+msgid "Translate"
+msgstr "Traducir"
+
+#: doc/index.php:134
+msgid "Test"
+msgstr "Prueba"
+
+#: doc/index.php:135
+msgid "Document"
+msgstr "Documentación"
+
+#: doc/index.php:136
+msgid "Publicize"
+msgstr "Divulgar"
+
+#: doc/index.php:137
+msgid "Report bugs"
+msgstr "Informar errores"
+
+#: doc/index.php:147
+msgid "High-throughput computing with BOINC"
+msgstr "Computación de alto rendimiento con BOINC"
+
+#: doc/index.php:150
+msgid ""
+"%1 Scientists %2: use BOINC to create a %3 volunteer computing project %4, "
+"giving you the power of thousands of CPUs and GPUs."
+msgstr "%1 Los científicos %2: usan BOINC para crear un %3 proyecto de cómputo voluntario  %4, otorgándole el poder de miles de UCP y GPU."
+
+#: doc/index.php:154
+msgid ""
+"%1 Universities %2: use BOINC to create a %3 Virtual Campus Supercomputing "
+"Center %4."
+msgstr "%1 Universidades %2: utiliza BOINC para crear un %3 Centro Virtual de Supercomputación %4"
+
+#: doc/index.php:159
+msgid "%1 Companies %2: use BOINC for %3 desktop Grid computing %4."
+msgstr "%1 Las compañías %2: usan BOINC para %3 la computación grid de escritorio %4."
+
+#: doc/index.php:164
+msgid "Documentation"
+msgstr "Documentación"
+
+#: doc/index.php:165
+msgid "BOINC and Docker"
+msgstr "BOINC y Docker"
+
+#: doc/index.php:173
+msgid "Software development"
+msgstr "Desarrollo de programas"
+
+#: doc/index.php:176
+msgid ""
+"BOINC is a software platform for volunteer computing. It includes client, "
+"server, and web components, and APIs for connecting other components."
+msgstr "BOINC es una plataforma de software para la computación voluntaria. Incluye componentes cliente, servidor y web y API para conectar otros componentes."
+
+#: doc/index.php:179
+msgid "Source code"
+msgstr "Código fuente"
+
+#: doc/index.php:180
+msgid "Building BOINC"
+msgstr "Construyendo BOINC"
+
+#: doc/index.php:182
+msgid "Design documents"
+msgstr "Diseñar documentos"
+
+#: doc/index.php:185
+msgid ""
+"We're always looking for programmers to help us maintain and develop BOINC."
+msgstr "Siempre estamos buscando programadores que nos ayuden a mantener y desarrollar BOINC."
+
+#: doc/index.php:188
+msgid "Development process"
+msgstr "Proceso de desarrollo"
+
+#: doc/index.php:189
+msgid "Development tasks"
+msgstr "Tareas de desarrollo"
+
+#: doc/index.php:192
+msgid "BOINC is distributed under the LGPL open-source license."
+msgstr "BOINC se distribuye bajo la licencia open-source LGPL."
+
+#: doc/index.php:200
+msgid "The BOINC project"
+msgstr "El proyecto BOINC"
+
+#: doc/index.php:203
+msgid ""
+"BOINC is a community-based project.  Everyone is welcome to participate."
+msgstr "BOINC es un proyecto comunitario. Todos son bienvenidos a participar."
+
+#: doc/index.php:207
+msgid "Email lists"
+msgstr "Listas de correo"
+
+#: doc/index.php:208
+msgid "Events"
+msgstr "Eventos"
+
+#: doc/index.php:209
+msgid "Graphics"
+msgstr "Gráficos"
+
+#: doc/index.php:210
+msgid "Governance"
+msgstr "Gobernancia"
+
+#: doc/help.php:7
+msgid "Live help via Skype or email"
+msgstr "Ayuda en vivo vía Skype o correo electrónico"
+
+#: doc/help.php:11
+msgid ""
+"BOINC Live Help lets get one-on-one help from an experienced BOINC user, who"
+" can answer questions about BOINC, help you install and use BOINC, and "
+"troubleshoot problems."
+msgstr "La ayuda en linea de BOINC te permite obtener ayuda personalizada de un usuario de BOINC experimentado, que puede responder preguntas sobre BOINC, ayudarle a instalar y usar BOINC y solucionar problemas."
+
+#: doc/help.php:14
+msgid "You can communicate with a helper"
+msgstr "Puede comunicarse con un ayudante"
+
+#: doc/help.php:16
+msgid "by email"
+msgstr "por correo electrónico"
+
+#: doc/help.php:18
+msgid ""
+"\n"
+"by voice, using %1 Skype %2, a free Internet-based telephone system. If you don't already have Skype, you can %3 download and install it now %4.  When you're finished, return to this page."
+msgstr "\nmediante voz, utilizando %1 Skype %2, un sistema telefónico gratis basado en internet Si aún no tiene Skype, puede %3 descargarlo e instalarlo ahora %4.  Cuando haya terminado, regrese a esta página."
+
+#: doc/help.php:25
+msgid "using Skype chat"
+msgstr "usando Skype chat"
+
+#: doc/help.php:28
+msgid ""
+"Volunteers speaking many languages are available. Please select a language "
+"(number of helpers is shown):"
+msgstr "Voluntarios que hablan muchos idiomas están disponibles. Por favor, seleccione un idioma (el número de ayudantes se muestra):"
+
+#: doc/help.php:43
+msgid "Be a Help Volunteer"
+msgstr "Sea un ayudante voluntario"
+
+#: doc/help.php:46
+#, php-format
+msgid ""
+"If you're an experienced BOINC user, we encourage you to %sbecome a Help "
+"Volunteer%s.  It's a great way to help the cause of scientific research and "
+"volunteer computing - and it's fun!"
+msgstr "Si es un usuario de BOINC con experiencia, le animamos a %sser ayudante voluntario%s. Es una estupenda manera de ayudar a la causa de la investigación científica y la computación voluntaria. ¡Y es interesante!"
+
+#: doc/help.php:52
+#, php-format
+msgid ""
+"If you're already a Help Volunteer: to edit your settings, %sclick here%s."
+msgstr "Si ya es ayudante voluntario: %spulse aquí%s para cambiar sus preferencias."
+
+#: doc/help_funcs.php:136
+msgid ""
+"BOINC helpers are unpaid volunteers.  Their advice is not endorsed by BOINC."
+msgstr "Los ayudantes de BOINC son voluntarios no remunerados. Su consejo no es respaldado por BOINC."
+
+#: doc/help_funcs.php:139
+msgid ""
+"%1 Never %2 give email address or password information to BOINC helpers."
+msgstr "Nunca proporcione su dirección de correo electrónico o contraseña a los ayudantes de BOINC."
+
+#: doc/projects.php:151
+msgid "Unknown"
+msgstr "Desconocido"
+
+#: doc/download_util.inc:88
+msgid ""
+"We recommend that you also install %1 VirtualBox %2, so your computer can "
+"work on science projects that require it."
+msgstr "Recomendamos que también instale %1 VirtualBox %2, así su computadora podrá trabajar en los proyectos científicos que lo requieran."
+
+#: doc/download_util.inc:90
+msgid "Learn more about VirtualBox."
+msgstr "Saber más de VirtualBox."
+
+#: doc/download_util.inc:104
+msgid "Download BOINC + VirtualBox"
+msgstr "Bajar BOINC y VirtualBox"
+
+#. "for %s" identifies the operating system, e.g. "for Windows"
+#: doc/download_util.inc:108 doc/download_util.inc:124
+#, php-format
+msgid "for %s"
+msgstr "para %s"
+
+#: doc/download_util.inc:111 doc/download_util.inc:127
+#, php-format
+msgid "BOINC %s"
+msgstr "BOINC %s"
+
+#: doc/download_util.inc:113
+#, php-format
+msgid "VirtualBox %s"
+msgstr "VirtualBox %s"
+
+#: doc/download_util.inc:122
+msgid "Download BOINC"
+msgstr "Descargar BOINC"
+
+#: doc/projects.inc:17
+msgid "Distributed sensing"
+msgstr "Sensores distribuidos"
+
+#: doc/projects.inc:22
+msgid "University of Southern California"
+msgstr "Universidad del Sur de California"
+
+#: doc/projects.inc:23
+msgid "Seismology"
+msgstr "Sismología"
+
+#: doc/projects.inc:24
+msgid ""
+"Quake-Catcher Network uses sensors attached to computers and smartphones to "
+"detect seismic waves."
+msgstr "Quake-Catcher Network utiliza sensores conectados a computadoras y teléfonos inteligentes para detectar ondas sísmicas."
+
+#: doc/projects.inc:32
+msgid "BOINC Poland Foundation"
+msgstr "Fundación BOINC Polonia"
+
+#: doc/projects.inc:33
+msgid "Environmental research"
+msgstr "Investigación medioambiental"
+
+#: doc/projects.inc:34
+msgid ""
+"Radioactive@Home is creating a free and continuously updated map of "
+"radiation levels using sensors connected to volunteers' computers.  You must"
+" buy a sensor to participate."
+msgstr "Radioactive@Home está creando un mapa de niveles de radiación gratuito y conmtinuamente actualizado usando sensores conectados a los ordenadores de los voluntarios. Debes de comprar un sensor para participar."
+
+#: doc/projects.inc:43
+msgid "Cognitive science and artifical intelligence"
+msgstr "Ciencia cognitiva e inteligencia artificial"
+
+#: doc/projects.inc:49
+msgid "Cognitive Science"
+msgstr "Ciencia cognitiva"
+
+#: doc/projects.inc:50
+msgid ""
+"MindModeling@Home uses computational cognitive process modeling to better "
+"understand the human mind, and specifically to study the mechanisms and "
+"processes that enable and moderate human performance and learning."
+msgstr "MindModeling@Home usa el modelado computacional de procesos cognitivos para entender mejor la mente humana, y específicamente para estudiar los mecánismos y procesos que permíten y moderan el desempeño humano y el aprendizaje."
+
+#: doc/projects.inc:68 doc/projects.inc:474 doc/projects.inc:598
+#: doc/projects.inc:608 doc/projects.inc:664
+msgid "Independent"
+msgstr "Independiente"
+
+#: doc/projects.inc:69
+msgid "Artificial intelligence"
+msgstr "Inteligencia artificial"
+
+#: doc/projects.inc:70
+msgid ""
+"Parse and convert semantic nets for use in FreeHAL, an artificial "
+"intelligence that uses semantic networks, stemmers, part of speech "
+"databases, and part of speech taggers in order to imitate human behavior in "
+"conversations."
+msgstr "Analiza sintáticamente y convierte redes semánticas para usarlas en FreeHAL, una inteligencia artificial que usa redes semánticas, lematizadores, bases de datos de categorías gramaticales y etiquetadores de categorías gramaticales con el fin de imitar el comportamiento humano en las conversaciones."
+
+#: doc/projects.inc:80
+msgid "Biology and Medicine"
+msgstr "Biología y medicina"
+
+#: doc/projects.inc:86
+msgid "Medical physiology"
+msgstr "Fisiología médica"
+
+#: doc/projects.inc:87
+msgid ""
+"DENIS@Home does cardiac electrophysiological simulations, studying the "
+"electrical activity of the heart."
+msgstr "DENIS@Home realiza simulaciones electrofisiológicas cardíacas, estudiando la actividad eléctrica del corazón."
+
+#: doc/projects.inc:96
+msgid "Molecular biology"
+msgstr "Biología molecular"
+
+#: doc/projects.inc:97
+msgid ""
+"RNA World seeks to identify, analyze, structurally predict and design RNA "
+"molecules on the basis of established bioinformatics software."
+msgstr "RNA World busca identificar, analizar, estructuralmente predecir y diseñar moléculas de ARN sobre la base de programas bioinformáticos establecidos."
+
+#: doc/projects.inc:105
+msgid "University College Dublin"
+msgstr "Colegio Universitario de Dublín"
+
+#: doc/projects.inc:106
+msgid "Antimalarial drug discovery"
+msgstr "Descubrimiento de medicamentos antimalaria"
+
+#: doc/projects.inc:107
+msgid ""
+"The parasite that causes malaria continues to evolve resistance to available"
+" medication. We therefore urgently need to discover new drugs, targeting new"
+" proteins in the parasite. The FiND@Home project is aimed at finding these "
+"new targets."
+msgstr "El parásito que causa la malaria continúa desarrollando resistencia a la medicación disponible. Por lo tanto, necesitamos urgentemente descubrir nuevos fármacos, dirigidos a nuevas proteínas en el parásito. El proyecto FiND@Home tiene como objetivo encontrar estos nuevos objetivos."
+
+#: doc/projects.inc:145
+msgid "Barcelona Biomedical Research Park (PRBB)"
+msgstr "Parque de Investigación Biomédica de Barcelona (PRBB)"
+
+#: doc/projects.inc:146
+msgid "Molecular simulations of proteins"
+msgstr "Simulaciones moleculares de proteínas"
+
+#: doc/projects.inc:147
+msgid ""
+"GPUGrid.net opens novel computational scenarios by the first full-atom "
+"molecular dynamics code (CellMD) specially optimized to run on NVIDIA GPUs. "
+"New biomedical applications suddenly become possible giving a new role to "
+"computational biology for biomedical research."
+msgstr "GPUGrid.net abre nuevas posibilidades computacionales con el primer código de dinámica molecular a nivel atómico (CellMD) optimizado para ejecutarse en las GPU NVIDIA. De repente se han vuelto posibles nuevas aplicaciones biomédicas, lo que le da un nuevo papel a la biología computacional para la investigación biomédica."
+
+#: doc/projects.inc:209
+msgid "University of Washington"
+msgstr "Universidad de Washington"
+
+#: doc/projects.inc:210
+msgid "Biology"
+msgstr "Biología"
+
+#: doc/projects.inc:211
+msgid ""
+"Determine the 3-dimensional shapes of proteins in research that may "
+"ultimately lead to finding cures for some major human diseases. By running "
+"Rosetta@home you will help us speed up and extend our research in ways we "
+"couldn't possibly attempt without your help. You will also be helping our "
+"efforts at designing new proteins to fight diseases such as HIV, malaria, "
+"cancer, and Alzheimer's"
+msgstr "Determina las formas 3-dimensionales de proteínas en investigación que podrían culminar en el descubrimiento de curas para algunas de las enfermedades humanas más importantes. Al ejecutar Rosetta@home nos ayudará a acelerar y extender nuestra investigación en formas que simplemente no podríamos intentar sin su ayuda. Además estará apoyando nuestros esfuerzos en el diseño de nuevas proteínas para combatir enfermedades como el VIH, la malaria, el cáncer y el Alzheimer."
+
+#: doc/projects.inc:229
+msgid "Earth Sciences"
+msgstr "Ciencias de la Tierra"
+
+#: doc/projects.inc:241
+msgid "Oxford University"
+msgstr "Universidad de Oxford"
+
+#: doc/projects.inc:242
+msgid "Climate study"
+msgstr "Estudio del clima"
+
+#: doc/projects.inc:243
+msgid ""
+"Investigate the approximations that have to be made in state-of-the-art "
+"climate models. By running the model thousands of times we hope to find out "
+"how the model responds to slight tweaks to these approximations - slight "
+"enough to not make the approximations any less realistic. This will allow us"
+" to improve our understanding of how sensitive our models are to small "
+"changes and also to things like changes in carbon dioxide and the sulphur "
+"cycle. This will allow us to explore how climate may change in the next "
+"century under a wide range of different scenarios."
+msgstr "Investiga las aproximaciones que han de hacerse en los modelos climáticos más avanzados. Ejecutando el modelo miles de veces esperamos averiguar cómo responde a ligeros ajustes de estas aproximaciones (lo bastante pequeñas para no hacer las aproximaciones menos realistas). Esto nos permitirá mejorar nuestro conocimiento sobre la sensibilidad de nuestros modelos a cambios pequeños y también a cosas como cambios en el dióxido de carbono y en el ciclo del azufre. Esto nos permitirá explorar cómo puede que cambie el clima en el próximo siglo en un rango amplio de casos."
+
+#: doc/projects.inc:251
+msgid "Physical Science"
+msgstr "Ciencias físicas"
+
+#: doc/projects.inc:276 doc/projects.inc:325 doc/projects.inc:335
+#: doc/projects.inc:345
+msgid "Astronomy"
+msgstr "Astronomía"
+
+#: doc/projects.inc:277
+msgid ""
+"TheSkyNet POGS is an astronomy project studying 16 different properties of "
+"galaxies, including brightness, mass, amount of dust and how fast stars are "
+"forming. We are using your processing power to conduct pixel-by-pixel "
+"calculations on multi-wavelength (ultraviolet, optical and near-infrared "
+"light) images of galaxies to produce an atlas that will help astronomers to "
+"better understand the distant universe."
+msgstr "TheSkyNet POGS es un proyecto astronómico que estudia 16 propiedades diferentes de las galaxias, incluyendo brillo, masa, cantidad de polvo y la rápidez de formación de las estrellas. Nosotros utilizamos su capacidad de procesamiento para conducir cálculos pixel por pixel en múltiples longitudes de onda (ultravioleta, luz visible y cercana al infrarojo) de imágenes de galaxias para producir un atlas que ayudará a los astrónomos a entender mejor el distante universo."
+
+#: doc/projects.inc:287 doc/projects.inc:373
+msgid "Astrophysics"
+msgstr "Astrofísica"
+
+#: doc/projects.inc:288
+msgid ""
+"The aim of the project is to derive shapes and spin for a significant part "
+"of the asteroid population. As input data, we use any asteroid photometry "
+"that is available. The results are asteroid convex shape models with the "
+"direction of the spin axis and the rotation period."
+msgstr "El objetivo del proyecto es derivar formas y giros de una parte significativa de la población de asteroides. Como datos de entrada, utilizamos cualquier fotometría de asteroides disponible. Los resultados son modelos de forma convexa de asteroides con la dirección del eje de giro y el punto de rotación."
+
+#: doc/projects.inc:324
+msgid "University of Illinois at Urbana-Champaign"
+msgstr "Universidad de Illinois en Urbana-Champaign"
+
+#: doc/projects.inc:326
+msgid ""
+"The goal of Cosmology@Home is to search for the model that best describes "
+"our Universe and to find the range of models that agree with the available "
+"astronomical particle physics data."
+msgstr "El objetivo de Cosmology@Home es buscar el modelo que describa mejor nuestro universo y encontrar la serie de modelos que concuerden con los datos astronómicos y de física de partículas disponibles."
+
+#: doc/projects.inc:336
+msgid ""
+"Universe@Home aims to create the first database of the simulated stellar "
+"content of the Universe, from the earliest stars to the most exotic black "
+"hole binaries."
+msgstr "Universe@Home tiene como objetivo crear la primer base de datos de contenido estelar simulado del Universo, desde las primeras estrellas hasta los más exóticos hoyos negros binarios. "
+
+#: doc/projects.inc:339
+msgid "Do research in physics and astronomy"
+msgstr "Investiga en física y astronomía"
+
+#: doc/projects.inc:344
+msgid "Rensselaer Polytechnic Institute"
+msgstr "Instituto Politécnico Rensselaer"
+
+#: doc/projects.inc:346
+msgid ""
+"The goal of Milkyway@Home is to create a highly accurate three dimensional "
+"model of the Milky Way galaxy using data gathered by the Sloan Digital Sky "
+"Survey."
+msgstr "El objetivo de Milkyway@Home es crear un modelo tridimensional de alta precisión de la Vía Láctea usando datos recolectados por el Sloan Digital Sky Survey."
+
+#: doc/projects.inc:349
+msgid "Study the structure of the Milky Way galaxy"
+msgstr "Estudia la estructura de la Vía Láctea"
+
+#: doc/projects.inc:354
+msgid "Leiden University, The Netherlands"
+msgstr "Universidad de Leiden, los Países Bajos"
+
+#: doc/projects.inc:355
+msgid "Chemistry"
+msgstr "Química"
+
+#: doc/projects.inc:356
+msgid ""
+"Surface science calculations using Classical Dynamics.  Leiden Classical "
+"allows volunteers, students and other scientist to submit their personal "
+"calculations to the grid. Each user has his own personal queue for Classical"
+" Dynamics jobs. In this way students have used the grid to simulate liquid "
+"argon, or to test the validity of the ideal gas law by actually doing the "
+"simulations through the grid."
+msgstr "Cálculos de ciencia de superficies usando dinámica clásica. Leiden Classical permite a voluntarios, estudiantes y otros científicos enviar sus cálculos personales a la red. Cada usuario tiene su propia cola personal de tareas de dinámica clásica. Los estudiantes han usado el grid de esta manera para simular argón líquido o comprobar la validez de la ley de los gases ideales haciendo simulaciones reales mediante la red."
+
+#: doc/projects.inc:359
+msgid "Help students do atomic simulations"
+msgstr "Ayuda a estudiantes a hacer simulaciones atómicas"
+
+#: doc/projects.inc:372
+msgid ""
+"University of Wisconsin - Milwaukee (USA), Max Planck Institute for "
+"Gravitational Physics - Hanover (Germany)"
+msgstr "Universidad de Wisconsin - Milwaukee (EEUU), Instituto Max Planck de Física Gravitacional - Hanover (Alemania)"
+
+#: doc/projects.inc:374
+msgid ""
+"Einstein@Home uses your computer's idle time to search for weak "
+"astrophysical signals from spinning neutron stars (often called pulsars) "
+"using data from the LIGO gravitational-wave detectors, the Arecibo radio "
+"telescope, and the Fermi gamma-ray satellite."
+msgstr "Einstein@Home utiliza los tiempos inactivos de su computadora para buscar señales astrofísicas débiles de estrellas de neutrones giratorias (también llamadas púlsares) usando datos de los detectores de ondas gravitaciones LIGO, el radio telescopio de Arecibo, y el satélite de rayo-gamma Fermi."
+
+#: doc/projects.inc:377
+msgid "Help detect pulsars and gravitational waves"
+msgstr "Ayuda a detectar púlsares y ondas gravitacionales"
+
+#: doc/projects.inc:390
+msgid "CERN (European Organization for Nuclear Research)"
+msgstr "CERN (Organización Europea para la Investigación Nuclear)"
+
+#: doc/projects.inc:391
+msgid "Physics"
+msgstr "Física"
+
+#: doc/projects.inc:392
+msgid ""
+"The Large Hadron Collider (LHC) is a particle accelerator at CERN, the "
+"European Organization for Nuclear Research, the world's largest particle "
+"physics laboratory.  It is the most powerful instrument ever built to "
+"investigate on particles proprieties. LHC@home runs simulations to improve "
+"the design of LHC and its detectors."
+msgstr "El Gran Colisionador de Hadrones (LHC, por sus siglas en inglés) es un acelerador de partículas del CERN, la Organización Europea para la Investigación Nuclear, el mayor laboratorio de física de partículas del mundo. Es el instrumento más potente jamás construido para investigar las propiedades de las partículas. LHC@home ejecuta simulaciones para mejorar el diseño del LHC y sus detectores."
+
+#: doc/projects.inc:395
+msgid "Improve the design of the Large Hadron Collider"
+msgstr "Mejora el diseño del Gran Colisionador de Hadrones"
+
+#: doc/projects.inc:420
+msgid "University of California, Berkeley"
+msgstr "Universidad de California en Berkeley"
+
+#: doc/projects.inc:421
+msgid "Astrophysics, astrobiology"
+msgstr "Astrofísica y astrobiología"
+
+#: doc/projects.inc:422
+msgid ""
+"SETI (Search for Extraterrestrial Intelligence) is a scientific area whose "
+"goal is to detect intelligent life outside Earth. One approach, known as "
+"radio SETI, uses radio telescopes to listen for narrow-bandwidth radio "
+"signals from space. Such signals are not known to occur naturally, so a "
+"detection would provide evidence of extraterrestrial technology."
+msgstr "La búsqueda de inteligencia extraterrestre (SETI, por sus siglas en inglés) es un campo científico cuyo objetivo es detectar vida inteligente fuera de la Tierra. Un enfoque, conocido como radioSETI, usa radiotelescopios para escuchar señales de radio del espacio de banda estrecha. No se conocen señales de ese tipo que ocurran de forma natural, por lo que una detección nos daría una evidencia de tecnología extraterrestre."
+
+#: doc/projects.inc:425
+msgid "Search for evidence of extra-terrestrial life"
+msgstr "Busca evidencia de vida extraterrestre"
+
+#: doc/projects.inc:449
+msgid "Multiple applications"
+msgstr "Varias aplicaciones"
+
+#: doc/projects.inc:455
+msgid "Molecular biology, Computer Science"
+msgstr "Biología molecular, Ciencias Computacionales"
+
+#: doc/projects.inc:456
+msgid ""
+"The Citizen Science Grid is dedicated to supporting a wide range of research"
+" and educational projects using volunteer computing and citizen science."
+msgstr "The Citizen Science Grid se dedica a apoyar un amplio campo de investigación y proyectos educativos utilizando cómputo voluntario y ciencia ciudadana."
+
+#: doc/projects.inc:459
+msgid "Support science from the University of North Dakota"
+msgstr "Apoya la ciencia desde la Universidad de Dakota del Norte"
+
+#: doc/projects.inc:464
+msgid "Chinese Academy of Sciences"
+msgstr "Academia China de las Ciencias"
+
+#: doc/projects.inc:465
+msgid "Physics, biochemistry, and others"
+msgstr "Física, bioquímica y otros"
+
+#: doc/projects.inc:466
+msgid ""
+"CAS@home is hosted by the Computing Centre of the Institute of High Energy "
+"Physics (IHEP), Chinese Academy of Sciences, for Chinese scientists with "
+"projects studying protein structure, nanotechnology, cancer genomics, and "
+"high energy physics."
+msgstr "CAS@home es organizado por el Centro de Informática del Instituto de Física de Altas Energías (IHEP) de la Academia China de Ciencias, para científicos chinos con proyectos de estructura de proteínas, nanotecnología, genómica del cáncer y física de alta energía."
+
+#: doc/projects.inc:469
+msgid "Help Chinese researchers"
+msgstr "Ayuda a investigadores chinos"
+
+#: doc/projects.inc:475
+msgid "Mathematics, physics, evolution"
+msgstr "Matemáticas, física y evolución"
+
+#: doc/projects.inc:476
+msgid ""
+"Yoyo@home is an adapter between BOINC and several existing volunteer "
+"computing projects: ECM, Muon, Evolution@home, and distributed.net"
+msgstr "Yoyo@home es un adaptador entre BOINC y varios proyectos de computación voluntaria existentes: ECM, Muon, Evolution@home y distributed.net"
+
+#: doc/projects.inc:479
+msgid "Do research in math, physics, and evolution"
+msgstr "Investiga en matemáticas, física, y evolución"
+
+#: doc/projects.inc:504
+msgid "IBM Corporate Citizenship"
+msgstr "Ciudadanía Corporativa de IBM"
+
+#: doc/projects.inc:505
+msgid "Medical, environmental and other humanitarian research"
+msgstr "Investigación humanitaria en medicina, medio ambiente y otros campos"
+
+#: doc/projects.inc:506
+msgid ""
+"To further critical non-profit research on some of humanity's most pressing "
+"problems by creating the world's largest volunteer computing grid.  Research"
+" includes HIV-AIDS, cancer, tropical and neglected diseases, solar energy, "
+"clean water and many more."
+msgstr "Desarrollar investigaciones cruciales sin ánimo de lucro sobre algunos de los problemas más acuciantes de la humanidad creando la mayor red de computación voluntaria del mundo. Los campos de investigación incluyen el SIDA-VIH, el cáncer, las enfermedades tropicales y olvidadas, la energía solar, la depuración del agua y muchos otros."
+
+#: doc/projects.inc:509
+msgid "Do biomedical and environmental research"
+msgstr "Lleva a cabo investigaciones biomédicas y ambientales"
+
+#: doc/projects.inc:514
+msgid "Mathematics, computing, and games"
+msgstr "Matemáticas, computación y juegos"
+
+#: doc/projects.inc:540 doc/projects.inc:609 doc/projects.inc:665
+#: doc/projects.inc:675 doc/projects.inc:685
+msgid "Mathematics"
+msgstr "Matemáticas"
+
+#: doc/projects.inc:541
+msgid ""
+"NumberFields@home searches for fields with special properties. The primary "
+"application of this research is in the realm of algebraic number theory. "
+"Number theorists can mine the data for interesting patterns to help them "
+"formulate conjectures about number fields. Ultimately, this research will "
+"lead to a deeper understanding of the profound properties of numbers, the "
+"basic building blocks of all mathematics."
+msgstr "NumberFields@home busca campos de propiedades especiales. La aplicación primaria de esta investigación es en el campo de la teoría algebraica de números. Los teóricos de números pueden minar los datos en búsqueda de patrones interesantes para ayudarles a formular conjeturas sobre campos numéricos. Finalmente, esta investigación llevará a adentrarse más en una comprensión de las propiedades más profundas de los números, los bloques básicos de construcción de todas las matemáticas."
+
+#: doc/projects.inc:544
+msgid "Do research in algebraic number theory"
+msgstr "Investiga la teoría algebraica de números"
+
+#: doc/projects.inc:560
+msgid "Computer Science"
+msgstr "Informática"
+
+#: doc/projects.inc:561
+msgid ""
+"Solve hard and practically important problems (discrete functions inversion "
+"problems, discrete optimization, bioinformatics, etc.) that can be "
+"effectively reduced to Boolean satisfiability problem."
+msgstr "Resuelve problemas difíciles y importantes a la práctica (funciones discretas problemas de inversión, optimización discreta, bioinformática, etc.) que se puede reducir de manera efectiva a un problema satisfacibilidad Boole."
+
+#: doc/projects.inc:564
+msgid "Study computational complexity"
+msgstr "Estudia la complejidad computacional"
+
+#: doc/projects.inc:589
+msgid "Cryptography and combinatorics"
+msgstr "Criptografía y combinatoria"
+
+#: doc/projects.inc:590 doc/projects.inc:593
+msgid "Run applications from distributed.net"
+msgstr "Ejecuta aplicaciones desde distributed.net"
+
+#: doc/projects.inc:599
+msgid "Cryptography"
+msgstr "Criptografía"
+
+#: doc/projects.inc:600
+msgid ""
+"Attempt to decode 3 original Enigma messages. The signals were intercepted "
+"in the North Atlantic in 1942 and are believed to be unbroken."
+msgstr "Intenta descifrar tres mensajes originales de Enigma. Las señales se interceptaron en el Atlántico Norte en 1942 y se cree que están por descifrar."
+
+#: doc/projects.inc:603
+msgid "Decode WWII submarine messages"
+msgstr "Decodifica mensajes submarinos de la Segunda Guerra Mundial"
+
+#: doc/projects.inc:610
+msgid "Study the Collatz Conjecture, an unsolved conjecture in mathematics"
+msgstr "Estudia la Conjetura de Collatz, una conjetura matemática no resuelta"
+
+#: doc/projects.inc:613
+msgid "Study the Collatz Conjecture"
+msgstr "Estudia la Conjetura de Collatz"
+
+#: doc/projects.inc:618
+msgid "California State University Fullerton"
+msgstr "Universidad Estatal de California Fullerton"
+
+#: doc/projects.inc:619
+msgid "Factorization of large integers"
+msgstr "Factorización de enteros grandes"
+
+#: doc/projects.inc:620
+msgid ""
+"NFS@Home is a research project that uses Internet-connected computers to do "
+"the lattice sieving step in the Number Field Sieve factorization of large "
+"integers. As a young school student, you gained your first experience at "
+"breaking an integer into prime factors, such as 15 = 3 * 5 or 35 = 5 * 7. "
+"NFS@Home is a continuation of that experience, only with integers that are "
+"hundreds of digits long."
+msgstr "NFS@Home es un proyecto de investigación que usa computadores conectados con Internet para hacer el paso del cribado de red en la factorización de enteros grandes mediante la criba de cuerpos numéricos. Seguramente usted tuvo su primera experiencia con la descomposición de enteros en factores primos cuando estudiaba en la escuela primaria, haciendo descomposiciones como  15 = 3 * 5 o 35 = 5 * 7. NFS@Home es una continuación de esa experiencia, sólo que con enteros de cientos de cifras."
+
+#: doc/projects.inc:623
+msgid "Study the factorization of large integers"
+msgstr "Estudia la factorización de enteros grandes"
+
+#: doc/projects.inc:666
+msgid ""
+"Primegrid has multiple projects searching for different forms of very large "
+"prime numbers, including searching for the largest known prime number."
+msgstr "Primegrid tiene muchos proyectos, que buscan números primos muy grandes de distintos tipos, incluida la búsqueda del mayor número primo conocido."
+
+#: doc/projects.inc:669
+msgid "Search for large prime numbers"
+msgstr "Busca números primos grandes"
+
+#: doc/projects.inc:674
+msgid "Hochschule RheinMain University of Applied Sciences"
+msgstr "Universidad Hochschule RheinMain de Ciencias Aplicadas"
+
+#: doc/projects.inc:676
+msgid ""
+"Search for counterexamples to two conjectures related to the identification "
+"of prime numbers"
+msgstr "Busca contraejemplos de dos conjeturas relacionadas con la identificación de números primos"
+
+#: doc/projects.inc:679
+msgid "Study the properties of prime numbers"
+msgstr "Estudia las propiedades los números primos"
+
+#: doc/projects.inc:684
+msgid "MTA-SZTAKI Laboratory of Parallel and Distributed Systems (Hungary)"
+msgstr "Laboratorio MTA-SZTAKI de Sistemas Paralelos y Distribuidos (Hungría)"
+
+#: doc/projects.inc:686
+msgid ""
+"Find all the generalized binary number systems (in which bases are matrices "
+"and digits are vectors) up to dimension 11."
+msgstr "Encontrar todos los sistemas numéricos binarios generalizados (en los que las bases son matrices y las cifras son vectores) hasta la dimensión 11."
+
+#: doc/projects.inc:689
+msgid "Study number theory"
+msgstr "Estudia la teoría de números"
+
+#: doc/projects.inc:746
+msgid ""
+"Testing and comparison of heuristic methods for getting separations of "
+"parallel algorithms working in the CAD system for designing logic control "
+"systems"
+msgstr "Prueba y comparación de métodos heurísticos para obtener separaciones de algorítmos paralelos que trabajan en un sistema CAD para el diseño de sistemas lógicos de control"
+
+#: html/inc/news.inc:41
+msgid "Discuss"
+msgstr "Discusión"
+
+#: html/inc/news.inc:112
+#, php-format
+msgid "News is available as an %sRSS feed%s"
+msgstr "Las noticias están disponibles en formato %sRSS feed%s"
