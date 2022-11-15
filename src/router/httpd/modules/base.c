@@ -2935,7 +2935,7 @@ static struct mime_handler mime_handlers[] = {
 	{ "nvram.cgi*", "text/html", no_cache, nv_file_in, sr_config_cgi, do_auth, SEND_HEADER, IGNORE_OPTIONS },
 #endif
 #ifdef HAVE_SSHD
-	{ "id_rsa.ssh*", "application/octet-stream", no_cache, NULL,
+	{ "id_ecdsa.ssh*", "application/octet-stream", no_cache, NULL,
 	 download_ssh_key, do_auth, NO_HEADER, IGNORE_OPTIONS },
 #endif
 #ifdef HAVE_WIREGUARD
