@@ -189,6 +189,7 @@ struct dns_client {
 	/* query list */
 	struct list_head dns_request_list;
 	pthread_cond_t run_cond;
+	atomic_t run_period;
 	atomic_t dns_server_num;
 
 	/* ECS */
@@ -1333,7 +1334,12 @@ static int _dns_client_server_pending(char *server_ip, int port, dns_server_type
 
 	pthread_mutex_lock(&pending_server_mutex);
 	list_add_tail(&pending->list, &pending_servers);
+	atomic_set(&client.run_period, 1);
 	pthread_mutex_unlock(&pending_server_mutex);
+
+	pthread_mutex_lock(&client.domain_map_lock);
+	pthread_cond_signal(&client.run_cond);
+	pthread_mutex_unlock(&client.domain_map_lock);
 	return 0;
 errout:
 	if (pending) {
@@ -3171,11 +3177,13 @@ int dns_client_query(const char *domain, int qtype, dns_client_callback callback
 	}
 
 	pthread_mutex_lock(&client.domain_map_lock);
-	if (list_empty(&client.dns_request_list)) {
-		pthread_cond_signal(&client.run_cond);
-	}
+	if (hash_hashed(&query->domain_node)) {
+		if (list_empty(&client.dns_request_list)) {
+			pthread_cond_signal(&client.run_cond);
+		}
 
-	list_add_tail(&query->dns_request_list, &client.dns_request_list);
+		list_add_tail(&query->dns_request_list, &client.dns_request_list);
+	}
 	pthread_mutex_unlock(&client.domain_map_lock);
 
 	tlog(TLOG_INFO, "send request %s, qtype %d, id %d\n", domain, qtype, query->sid);
@@ -3308,6 +3316,12 @@ static void _dns_client_add_pending_servers(void)
 	dely = 0;
 
 	pthread_mutex_lock(&pending_server_mutex);
+	if (list_empty(&pending_servers)) {
+		atomic_set(&client.run_period, 0);
+	} else {
+		atomic_set(&client.run_period, 1);
+	}
+
 	list_for_each_entry_safe(pending, tmp, &pending_servers, list)
 	{
 		list_add(&pending->retry_list, &retry_list);
@@ -3478,7 +3492,7 @@ static void *_dns_client_work(void *arg)
 		}
 
 		pthread_mutex_lock(&client.domain_map_lock);
-		if (list_empty(&client.dns_request_list)) {
+		if (list_empty(&client.dns_request_list) && atomic_read(&client.run_period) == 0) {
 			pthread_cond_wait(&client.run_cond, &client.domain_map_lock);
 			expect_time = get_tick_count();
 			pthread_mutex_unlock(&client.domain_map_lock);
@@ -3561,6 +3575,7 @@ int dns_client_init(void)
 	memset(&client, 0, sizeof(client));
 	pthread_attr_init(&attr);
 	atomic_set(&client.dns_server_num, 0);
+	atomic_set(&client.run_period, 0);
 
 	epollfd = epoll_create1(EPOLL_CLOEXEC);
 	if (epollfd < 0) {
