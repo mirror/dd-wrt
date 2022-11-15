@@ -12,7 +12,7 @@
     #error archfound i686
 
 // ARM
-#elif defined(__aarch64__) || defined(_M_ARM64)
+#elif defined(__aarch64__) || defined(__arm64__) || defined(_M_ARM64)
     #error archfound aarch64
 #elif defined(__arm__) || defined(__arm) || defined(_M_ARM) || defined(__TARGET_ARCH_ARM)
     #if defined(__ARM64_ARCH_8__) || defined(__ARMv8__) || defined(__ARMv8_A__)
@@ -36,7 +36,7 @@
     #if defined(__64BIT__) || defined(__powerpc64__) || defined(__ppc64__)
         #if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
             #error archfound powerpc64le
-        #else 
+        #else
             #error archfound powerpc64
         #endif
     #else
@@ -94,11 +94,12 @@
     #error archfound rs6000
 
 // RISC-V
-#elif defined(__riscv) 
+#elif defined(__riscv)
     #if __riscv_xlen == 64
         #error archfound riscv64
     #elif __riscv_xlen == 32
         #error archfound riscv32
+    #endif
 
 // return 'unrecognized' if we do not know what architecture this is
 #else
