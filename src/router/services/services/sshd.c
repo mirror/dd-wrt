@@ -45,20 +45,20 @@
 #include <rc.h>
 #include <services.h>
 
-#define ECDSA_HOST_KEY_FILE	"/tmp/root/.ssh/ssh_host_ecdsa_key"
+#define ED25519_HOST_KEY_FILE	"/tmp/root/.ssh/ssh_host_ed25519_key"
 #define TMP_HOST_KEY_FILE	"/tmp/tmp_host_key"
 #define AUTHORIZED_KEYS_FILE	"/tmp/root/.ssh/authorized_keys"
-#define NVRAM_ECDSA_KEY_NAME      "sshd_ecdsa_host_key"
+#define NVRAM_ED25519_KEY_NAME      "sshd_ed25519_host_key"
 
 static void empty_dir_check(void);
 static int write_key_file(char *keyname, char *keyfile, int chmodval);
-static int generate_dropbear_ecdsa_host_key(void);
+static int generate_dropbear_ed25519_host_key(void);
 void stop_sshd(void);
 
 char *sshd_deps(void)
 {
 
-	return "sshd_enable http_username http_passwd " NVRAM_ECDSA_KEY_NAME " sshd_authorized_keys sshd_port sshd_passwd_auth sshd_forwarding";
+	return "sshd_enable http_username http_passwd " NVRAM_ED25519_KEY_NAME " sshd_authorized_keys sshd_port sshd_passwd_auth sshd_forwarding";
 }
 
 char *sshd_proc(void)
@@ -78,15 +78,15 @@ void start_sshd(void)
 	int changed = 0;
 	//egc
 	if (!nvram_matchi("sshd_keyready", 1)) { //if private key has been downloaded delete
-		unlink("/tmp/id_ecdsa_ssh");
+		unlink("/tmp/id_ed25519_ssh");
 	}
 
-	if (write_key_file(NVRAM_ECDSA_KEY_NAME, ECDSA_HOST_KEY_FILE, 0600) == -1) {
-		generate_dropbear_ecdsa_host_key();
-		write_key_file(NVRAM_ECDSA_KEY_NAME, ECDSA_HOST_KEY_FILE, 0600);
+	if (write_key_file(NVRAM_ED25519_KEY_NAME, ED25519_HOST_KEY_FILE, 0600) == -1) {
+		generate_dropbear_ed25519_host_key();
+		write_key_file(NVRAM_ED25519_KEY_NAME, ED25519_HOST_KEY_FILE, 0600);
 		changed = 1;
 	}
-	eval("dropbearconvert", "openssh", "dropbear", ECDSA_HOST_KEY_FILE, ECDSA_HOST_KEY_FILE);
+	eval("dropbearconvert", "openssh", "dropbear", ED25519_HOST_KEY_FILE, ED25519_HOST_KEY_FILE);
 	nvram_unset("sshd_dss_host_key");
 	if (changed)
 		nvram_commit();
@@ -100,7 +100,7 @@ void start_sshd(void)
 	sshd_argv[a++] = "/tmp/loginprompt";
 #endif
 	sshd_argv[a++] = "-r";
-	sshd_argv[a++] = ECDSA_HOST_KEY_FILE;
+	sshd_argv[a++] = ED25519_HOST_KEY_FILE;
 	sshd_argv[a++] = "-p";
 	sshd_argv[a++] = nvram_safe_get("sshd_port");
 	if (!nvram_matchi("sshd_passwd_auth", 1))
@@ -168,15 +168,15 @@ static int write_key_file(char *keyname, char *keyfile, int chmodval)
 	return 0;
 }
 
-static int generate_dropbear_ecdsa_host_key(void)
+static int generate_dropbear_ed25519_host_key(void)
 {
 	FILE *fp = (void *)0;
 	char *buf = malloc(4096);
 	int ret = -1;
 
-	eval("dropbearkey", "-t", "ecdsa", "-s", "521", "-f", ECDSA_HOST_KEY_FILE);
+	eval("dropbearkey", "-t", "ed25519", "-f", ED25519_HOST_KEY_FILE);
 
-	eval("dropbearconvert", "dropbear", "openssh", ECDSA_HOST_KEY_FILE, TMP_HOST_KEY_FILE);
+	eval("dropbearconvert", "dropbear", "openssh", ED25519_HOST_KEY_FILE, TMP_HOST_KEY_FILE);
 
 	fp = fopen(TMP_HOST_KEY_FILE, "r");
 
@@ -194,7 +194,7 @@ static int generate_dropbear_ecdsa_host_key(void)
 	}
 
 	buf[ret] = 0;		// terminate by 0. buf isnt initialized
-	nvram_set(NVRAM_ECDSA_KEY_NAME, buf);
+	nvram_set(NVRAM_ED25519_KEY_NAME, buf);
 	free(buf);
 
 	fclose(fp);
