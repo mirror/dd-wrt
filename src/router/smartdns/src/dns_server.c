@@ -28,6 +28,7 @@
 #include "fast_ping.h"
 #include "hashtable.h"
 #include "list.h"
+#include "nftset.h"
 #include "tlog.h"
 #include "util.h"
 #include <errno.h>
@@ -332,6 +333,15 @@ static void *_dns_server_get_dns_rule(struct dns_request *request, enum domain_r
 	}
 
 	return request->domain_rule.rules[rule];
+}
+
+static int _dns_server_is_dns_rule_extact_match(struct dns_request *request, enum domain_rule rule)
+{
+	if (rule >= DOMAIN_RULE_MAX || request == NULL) {
+		return 0;
+	}
+
+	return request->domain_rule.is_sub_rule[rule] == 0;
 }
 
 static void _dns_server_set_dualstack_selection(struct dns_request *request)
@@ -905,10 +915,57 @@ static int _dns_server_reply_udp(struct dns_request *request, struct dns_server_
 								 unsigned char *inpacket, int inpacket_len)
 {
 	int send_len = 0;
+	struct iovec iovec[1];
+	struct msghdr msg;
+	struct cmsghdr *cmsg;
+	char msg_control[64];
+
 	if (atomic_read(&server.run) == 0 || inpacket == NULL || inpacket_len <= 0) {
 		return -1;
 	}
 
+	iovec[0].iov_base = inpacket;
+	iovec[0].iov_len = inpacket_len;
+	memset(msg_control, 0, sizeof(msg_control));
+	msg.msg_iov = iovec;
+	msg.msg_iovlen = 1;
+	msg.msg_control = msg_control;
+	msg.msg_controllen = sizeof(msg_control);
+	msg.msg_flags = 0;
+	msg.msg_name = &request->addr;
+	msg.msg_namelen = request->addr_len;
+
+	cmsg = CMSG_FIRSTHDR(&msg);
+	if (request->localaddr.ss_family == AF_INET) {
+		struct sockaddr_in *s4 = (struct sockaddr_in *)&request->localaddr;
+		cmsg->cmsg_level = SOL_IP;
+		cmsg->cmsg_type = IP_PKTINFO;
+		cmsg->cmsg_len = CMSG_LEN(sizeof(struct in_pktinfo));
+		msg.msg_controllen = CMSG_SPACE(sizeof(struct in_pktinfo));
+
+		struct in_pktinfo *pktinfo = (struct in_pktinfo *)CMSG_DATA(cmsg);
+		memset(pktinfo, 0, sizeof(*pktinfo));
+		pktinfo->ipi_spec_dst = s4->sin_addr;
+	} else if (request->localaddr.ss_family == AF_INET6) {
+		struct sockaddr_in6 *s6 = (struct sockaddr_in6 *)&request->localaddr;
+		cmsg->cmsg_level = IPPROTO_IPV6;
+		cmsg->cmsg_type = IPV6_PKTINFO;
+		cmsg->cmsg_len = CMSG_LEN(sizeof(struct in6_pktinfo));
+		msg.msg_controllen = CMSG_SPACE(sizeof(struct in6_pktinfo));
+
+		struct in6_pktinfo *pktinfo = (struct in6_pktinfo *)CMSG_DATA(cmsg);
+		memset(pktinfo, 0, sizeof(*pktinfo));
+		pktinfo->ipi6_addr = s6->sin6_addr;
+	} else {
+		goto use_send;
+	}
+
+	send_len = sendmsg(udpserver->head.fd, &msg, 0);
+	if (send_len == inpacket_len) {
+		return 0;
+	}
+
+use_send:
 	send_len = sendto(udpserver->head.fd, inpacket, inpacket_len, 0, &request->addr, request->addr_len);
 	if (send_len != inpacket_len) {
 		tlog(TLOG_ERROR, "send failed, %s", strerror(errno));
@@ -1341,15 +1398,19 @@ static int _dns_server_setup_ipset_nftset_packet(struct dns_server_post_context 
 	if (!rule_flags || (rule_flags->flags & DOMAIN_FLAG_IPSET_IGN) == 0) {
 		ipset_rule = _dns_server_get_dns_rule(request, DOMAIN_RULE_IPSET);
 	}
+
 	if (!rule_flags || (rule_flags->flags & DOMAIN_FLAG_IPSET_IPV4_IGN) == 0) {
 		ipset_rule_v4 = _dns_server_get_dns_rule(request, DOMAIN_RULE_IPSET_IPV4);
 	}
+
 	if (!rule_flags || (rule_flags->flags & DOMAIN_FLAG_IPSET_IPV6_IGN) == 0) {
 		ipset_rule_v6 = _dns_server_get_dns_rule(request, DOMAIN_RULE_IPSET_IPV6);
 	}
+
 	if (!rule_flags || (rule_flags->flags & DOMAIN_FLAG_NFTSET_IP_IGN) == 0) {
 		nftset_ip = _dns_server_get_dns_rule(request, DOMAIN_RULE_NFTSET_IP);
 	}
+
 	if (!rule_flags || (rule_flags->flags & DOMAIN_FLAG_NFTSET_IP6_IGN) == 0) {
 		nftset_ip6 = _dns_server_get_dns_rule(request, DOMAIN_RULE_NFTSET_IP6);
 	}
@@ -1373,21 +1434,19 @@ static int _dns_server_setup_ipset_nftset_packet(struct dns_server_post_context 
 				rule = ipset_rule_v4 ? ipset_rule_v4 : ipset_rule;
 				if (rule != NULL) {
 					/* add IPV4 to ipset */
-					ipset_add(rule->ipsetname, addr, DNS_RR_A_LEN, request->ip_ttl * 2);
 					tlog(TLOG_DEBUG, "IPSET-MATCH: domain: %s, ipset: %s, IP: %d.%d.%d.%d", request->domain,
 						 rule->ipsetname, addr[0], addr[1], addr[2], addr[3]);
+					ipset_add(rule->ipsetname, addr, DNS_RR_A_LEN, request->ip_ttl * 2);
 				}
 
-#ifdef WITH_NFTSET
 				if (nftset_ip != NULL) {
 					/* add IPV4 to ipset */
-					nftset_add(nftset_ip->familyname, nftset_ip->nfttablename, nftset_ip->nftsetname, addr,
-							   DNS_RR_A_LEN, request->ip_ttl * 2);
 					tlog(TLOG_DEBUG, "NFTSET-MATCH: domain: %s, nftset: %s %s %s, IP: %d.%d.%d.%d", request->domain,
 						 nftset_ip->familyname, nftset_ip->nfttablename, nftset_ip->nftsetname, addr[0], addr[1],
 						 addr[2], addr[3]);
+					nftset_add(nftset_ip->familyname, nftset_ip->nfttablename, nftset_ip->nftsetname, addr,
+							   DNS_RR_A_LEN, request->ip_ttl * 2);					
 				}
-#endif
 			} break;
 			case DNS_T_AAAA: {
 				unsigned char addr[16];
@@ -1399,27 +1458,26 @@ static int _dns_server_setup_ipset_nftset_packet(struct dns_server_post_context 
 
 				rule = ipset_rule_v6 ? ipset_rule_v6 : ipset_rule;
 				if (rule != NULL) {
-					ipset_add(rule->ipsetname, addr, DNS_RR_AAAA_LEN, request->ip_ttl * 2);
 					tlog(TLOG_DEBUG,
 						 "IPSET-MATCH: domain: %s, ipset: %s, IP: "
 						 "%.2x%.2x:%.2x%.2x:%.2x%.2x:%.2x%.2x:%.2x%.2x:%.2x%.2x:%.2x%.2x:%.2x%.2x",
 						 request->domain, rule->ipsetname, addr[0], addr[1], addr[2], addr[3], addr[4], addr[5],
 						 addr[6], addr[7], addr[8], addr[9], addr[10], addr[11], addr[12], addr[13], addr[14],
 						 addr[15]);
+					ipset_add(rule->ipsetname, addr, DNS_RR_AAAA_LEN, request->ip_ttl * 2);
 				}
-#ifdef WITH_NFTSET
+
 				if (nftset_ip6 != NULL) {
 					/* add IPV6 to ipset */
-					nftset_add(nftset_ip6->familyname, nftset_ip6->nfttablename, nftset_ip6->nftsetname, addr,
-							   DNS_RR_AAAA_LEN, request->ip_ttl * 2);
 					tlog(TLOG_DEBUG,
 						 "NFTSET-MATCH: domain: %s, nftset: %s %s %s, IP: "
 						 "%.2x%.2x:%.2x%.2x:%.2x%.2x:%.2x%.2x:%.2x%.2x:%.2x%.2x:%.2x%.2x:%.2x%.2x",
 						 request->domain, nftset_ip6->familyname, nftset_ip6->nfttablename, nftset_ip6->nftsetname,
 						 addr[0], addr[1], addr[2], addr[3], addr[4], addr[5], addr[6], addr[7], addr[8], addr[9],
 						 addr[10], addr[11], addr[12], addr[13], addr[14], addr[15]);
+					nftset_add(nftset_ip6->familyname, nftset_ip6->nfttablename, nftset_ip6->nftsetname, addr,
+							   DNS_RR_AAAA_LEN, request->ip_ttl * 2);
 				}
-#endif
 			} break;
 			default:
 				break;
@@ -2497,6 +2555,10 @@ static int _dns_server_process_answer(struct dns_request *request, const char *d
 	}
 
 	request->remote_server_fail = 0;
+	if (request->rcode == DNS_RC_SERVFAIL) {
+		request->rcode = packet->head.rcode;
+	}
+
 	for (j = 1; j < DNS_RRS_END; j++) {
 		rrs = dns_get_rrs_start(packet, j, &rr_count);
 		for (i = 0; i < rr_count && rrs; i++, rrs = dns_get_rrs_next(packet, rrs)) {
@@ -2585,6 +2647,10 @@ static int _dns_server_passthrough_rule_check(struct dns_request *request, const
 	}
 
 	request->remote_server_fail = 0;
+	if (request->rcode == DNS_RC_SERVFAIL) {
+		request->rcode = packet->head.rcode;
+	}
+
 	for (j = 1; j < DNS_RRS_END; j++) {
 		rrs = dns_get_rrs_start(packet, j, &rr_count);
 		for (i = 0; i < rr_count && rrs; i++, rrs = dns_get_rrs_next(packet, rrs)) {
@@ -2853,6 +2919,7 @@ static void _dns_server_query_end(struct dns_request *request)
 		request->has_ping_result = 1;
 		_dns_server_request_complete(request);
 	}
+
 out:
 	_dns_server_request_release(request);
 }
@@ -3318,7 +3385,7 @@ static void _dns_server_update_rule_by_flags(struct dns_request *request)
 	}
 }
 
-static int _dns_server_get_rules(unsigned char *key, uint32_t key_len, void *value, void *arg)
+static int _dns_server_get_rules(unsigned char *key, uint32_t key_len, int is_subkey, void *value, void *arg)
 {
 	struct rule_walk_args *walk_args = arg;
 	struct dns_request *request = walk_args->args;
@@ -3334,6 +3401,7 @@ static int _dns_server_get_rules(unsigned char *key, uint32_t key_len, void *val
 		}
 
 		request->domain_rule.rules[i] = domain_rule->rules[i];
+		request->domain_rule.is_sub_rule[i] = is_subkey;
 		walk_args->key[i] = key;
 		walk_args->key_len[i] = key_len;
 	}
@@ -3870,6 +3938,10 @@ static int _dns_server_process_smartdns_domain(struct dns_request *request)
 	/* get domain rule flag */
 	rule_flag = _dns_server_get_dns_rule(request, DOMAIN_RULE_FLAGS);
 	if (rule_flag == NULL) {
+		return -1;
+	}
+
+	if (_dns_server_is_dns_rule_extact_match(request, DOMAIN_RULE_FLAGS) == 0) {
 		return -1;
 	}
 
