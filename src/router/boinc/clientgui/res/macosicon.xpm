@@ -1,0 +1,50 @@
+/* XPM */
+static const char *MacOS_xpm[] = {
+/* columns rows colors chars-per-pixel */
+"14 14 14 1",
+"= c #295A9C",
+"O c #4A7394",
+"% c #213152",
+"# c #C6D6E7",
+"X c #424A52",
+"o c #6384BD",
+"* c #314A84",
+"$ c #6B8CBD",
+"+ c #181829",
+"  c None",
+". c #5A6B73",
+"& c #A5ADB5",
+"- c #9CB5CE",
+"@ c #B5CEEF",
+/* pixels */
+"       .X     ",
+"oOooooO+@#@@@@",
+"OooOo$%.#&$@@@",
+"ooo*oo+@@..#@@",
+"ooo=o*X@@&-@@@",
+"ooo$$%$@@@@@@@",
+"Ooooo%&#@@@@@@",
+"ooooo+%X.@@#@@",
+"ooo$$OO%X#@@@@",
+"oo*=Oo$X.-.%-@",
+"Ooo==*=%+%.-#@",
+"ooooooo%.#@@@@",
+"Ooooooo*X@@#@@",
+"       #%     "
+};
+// This file is part of BOINC.
+// http://boinc.berkeley.edu
+// Copyright (C) 2013 University of California
+//
+// BOINC is free software; you can redistribute it and/or modify it
+// under the terms of the GNU Lesser General Public License
+// as published by the Free Software Foundation,
+// either version 3 of the License, or (at your option) any later version.
+//
+// BOINC is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+// See the GNU Lesser General Public License for more details.
+//
+// You should have received a copy of the GNU Lesser General Public License
+// along with BOINC.  If not, see <http://www.gnu.org/licenses/>.

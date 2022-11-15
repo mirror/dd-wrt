@@ -1,0 +1,53 @@
+/* XPM */
+static const char *Linux_xpm[] = {
+/* columns rows colors chars-per-pixel */
+"14 14 17 1",
+". c #8F8979",
+"o c #2E281A",
+"+ c #514D44",
+"> c #A47610",
+"  c None",
+"@ c #3E3E3C",
+": c #F9F9F9",
+"% c #C39B1C",
+"& c #B1A995",
+"# c #BEBBB7",
+"= c #CBC7BF",
+"- c #E8DAB2",
+"* c #736C58",
+"; c #EBEAE6",
+"O c #999894",
+"$ c #EAB81B",
+"X c #0E0E0D",
+/* pixels */
+"     .XoO     ",
+"     XXXX     ",
+"     +@.X#    ",
+"     +$%o&    ",
+"     *%&+*    ",
+"    .=-;OX#   ",
+"   =+:::-Xo   ",
+"   *#;:::.XO  ",
+"   o::;::&X@  ",
+"  #*;:::;&X+  ",
+" -$$*;::;%o$  ",
+" $$$%.::=%$$- ",
+" $$$$.O*X$$$- ",
+"  =$>.&&O>%   "
+};
+// This file is part of BOINC.
+// http://boinc.berkeley.edu
+// Copyright (C) 2013 University of California
+//
+// BOINC is free software; you can redistribute it and/or modify it
+// under the terms of the GNU Lesser General Public License
+// as published by the Free Software Foundation,
+// either version 3 of the License, or (at your option) any later version.
+//
+// BOINC is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+// See the GNU Lesser General Public License for more details.
+//
+// You should have received a copy of the GNU Lesser General Public License
+// along with BOINC.  If not, see <http://www.gnu.org/licenses/>.

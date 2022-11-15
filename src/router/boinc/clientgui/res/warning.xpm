@@ -1,0 +1,79 @@
+/* XPM */
+static const char *warning_xpm[] = {
+/* columns rows colors chars-per-pixel */
+"48 48 9 1",
+"@ c Black",
+"o c #A6A800",
+"+ c #8A8C00",
+"$ c #B8BA00",
+"  c None",
+"O c #6E7000",
+"X c #DCDF00",
+". c #C00000",
+"# c #373800",
+/* pixels */
+"                                                ",
+"                                                ",
+"                                                ",
+"                                                ",
+"                                                ",
+"                                                ",
+"                                                ",
+"                      .                         ",
+"                     ...                        ",
+"                     ...                        ",
+"                    .....                       ",
+"                   ...X..                       ",
+"                   ..XXX..                      ",
+"                  ...XXX...                     ",
+"                  ..XXXXX..                     ",
+"                 ..XXXXXX...                    ",
+"                ...XXoO+XX..                    ",
+"                ..XXXO@#XXX..                   ",
+"               ..XXXXO@#XXX...                  ",
+"              ...XXXXO@#XXXX..                  ",
+"              ..XXXXXO@#XXXX...                 ",
+"             ...XXXXXo@OXXXXX..                 ",
+"            ...XXXXXXo@OXXXXXX..                ",
+"            ..XXXXXXX$@OXXXXXX...               ",
+"           ...XXXXXXXX@XXXXXXXX..               ",
+"          ...XXXXXXXXXXXXXXXXXX...              ",
+"          ..XXXXXXXXXXOXXXXXXXXX..              ",
+"         ...XXXXXXXXXO@#XXXXXXXXX..             ",
+"         ..XXXXXXXXXXX#XXXXXXXXXX...            ",
+"        ...XXXXXXXXXXXXXXXXXXXXXXX..            ",
+"       ...XXXXXXXXXXXXXXXXXXXXXXXX...           ",
+"       ..............................           ",
+"       ..............................           ",
+"                                                ",
+"                                                ",
+"                                                ",
+"                                                ",
+"                                                ",
+"                                                ",
+"                                                ",
+"                                                ",
+"                                                ",
+"                                                ",
+"                                                ",
+"                                                ",
+"                                                ",
+"                                                ",
+"                                                "
+};
+// This file is part of BOINC.
+// http://boinc.berkeley.edu
+// Copyright (C) 2013 University of California
+//
+// BOINC is free software; you can redistribute it and/or modify it
+// under the terms of the GNU Lesser General Public License
+// as published by the Free Software Foundation,
+// either version 3 of the License, or (at your option) any later version.
+//
+// BOINC is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+// See the GNU Lesser General Public License for more details.
+//
+// You should have received a copy of the GNU Lesser General Public License
+// along with BOINC.  If not, see <http://www.gnu.org/licenses/>.

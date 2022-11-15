@@ -1,0 +1,3906 @@
+# BOINC manager localization template
+# Copyright (C) 2022 University of California
+# 
+# This file is distributed under the same license as BOINC.
+# 
+# Translators:
+# Christian Beer <christian.beer@posteo.de>, 2018
+# Ido Zahavy <goldenwelf@gmail.com>, 2017
+# Nir Klig <nirklig@gmail.com>, 2017
+# Seggev Shoresh, 2017
+# Shmuel Shwartz, 2016-2017
+# Tal Regev <tal.regev@gmail.com>, 2021-2022
+# Yaron Shahrabani <sh.yaron@gmail.com>, 2020,2022
+# Yosef Kaner <ykaner12@gmail.com>, 2018
+msgid ""
+msgstr ""
+"Project-Id-Version: BOINC\n"
+"Report-Msgid-Bugs-To: BOINC translation team <boinc_loc@ssl.berkeley.edu>\n"
+"POT-Creation-Date: 2022-04-30 23:50 UTC\n"
+"PO-Revision-Date: 2015-02-08 15:28+0000\n"
+"Last-Translator: Yaron Shahrabani <sh.yaron@gmail.com>, 2020,2022\n"
+"Language-Team: Hebrew (http://www.transifex.com/boinc/boinc/language/he/)\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: he\n"
+"Plural-Forms: nplurals=4; plural=(n == 1 && n % 1 == 0) ? 0 : (n == 2 && n % 1 == 0) ? 1: (n % 10 == 0 && n % 1 == 0 && n > 10) ? 2 : 3;\n"
+"X-Poedit-SourceCharset: utf-8\n"
+
+#: clientgui/AccountInfoPage.cpp:326
+#, c-format
+msgid "Identify your account at %s"
+msgstr "הזדהות באמצעות חשבונך ב־%s"
+
+#: clientgui/AccountInfoPage.cpp:335
+msgid ""
+"Please enter your account information\n"
+"(to create an account, visit the project's web site)"
+msgstr "נא למלא את פרטי חשבונך\n(כדי ליצור חשבון, יש להיכנס לאתר המיזם)"
+
+#: clientgui/AccountInfoPage.cpp:339
+msgid ""
+"This project is not currently accepting new accounts.\n"
+"You can add it only if you already have an account."
+msgstr "מיזם זה אינו מקבל חשבונות חדשים כרגע.\nניתן להוסיף אותו אם כבר יש לך חשבון."
+
+#: clientgui/AccountInfoPage.cpp:343
+msgid "Are you already running this project?"
+msgstr "האם מיזם זה כבר רץ אצלך?"
+
+#: clientgui/AccountInfoPage.cpp:347
+msgid "&No, new user"
+msgstr "&לא, משתמש חדש"
+
+#: clientgui/AccountInfoPage.cpp:350
+msgid "&Yes, existing user"
+msgstr "&כן, משתמש קיים"
+
+#: clientgui/AccountInfoPage.cpp:366 clientgui/AccountInfoPage.cpp:588
+msgid "&Password:"
+msgstr "&סיסמה:"
+
+#: clientgui/AccountInfoPage.cpp:373 clientgui/AccountInfoPage.cpp:612
+msgid "Choose a &password:"
+msgstr "בחר &סיסמה:"
+
+#: clientgui/AccountInfoPage.cpp:376
+msgid "C&onfirm password:"
+msgstr "וו&דא סיסמה:"
+
+#: clientgui/AccountInfoPage.cpp:383
+#, c-format
+msgid "Are you already running %s?"
+msgstr "האם אתה מריץ כבר %s?"
+
+#: clientgui/AccountInfoPage.cpp:412
+msgid "&Username:"
+msgstr "&שם משתמש:"
+
+#: clientgui/AccountInfoPage.cpp:441
+msgid "&Email address or LDAP ID:"
+msgstr "&כתובת דוא\"ל או תעודת LDAP:"
+
+#: clientgui/AccountInfoPage.cpp:445
+msgid "&Email address:"
+msgstr "&כתובת דוא״ל:"
+
+#: clientgui/AccountInfoPage.cpp:453
+#, c-format
+msgid "minimum length %d"
+msgstr "אורך מינימלי %d"
+
+#: clientgui/AccountInfoPage.cpp:460
+msgid "Forgot your password?"
+msgstr "שכחת את הסיסמה?"
+
+#: clientgui/AccountInfoPage.cpp:467
+msgid ""
+"If you have not yet registered with this account manager,\n"
+"please do so before proceeding.  Click on the link below\n"
+"to register or to retrieve a forgotten password."
+msgstr "אם עדיין לא נרשמת עם מנהל החשבונות, אנא \nעשה זאת לפני שתמשיך. לחץ על הקישור למטה\nבכדי להירשם או לשחזר סיסמה שנשכחה."
+
+#: clientgui/AccountInfoPage.cpp:470
+msgid "Account manager web site"
+msgstr "אתר האינטרנט של מנהל החשבון"
+
+#: clientgui/AccountInfoPage.cpp:512
+msgid "Add project"
+msgstr "הוספת מיזם"
+
+#: clientgui/AccountInfoPage.cpp:514
+msgid "Update account manager"
+msgstr "עדכן מנהל חשבונות"
+
+#: clientgui/AccountInfoPage.cpp:516
+msgid "Use account manager"
+msgstr "השתמש במנהל חשבונות"
+
+#: clientgui/AccountInfoPage.cpp:523
+msgid "Please enter a user name."
+msgstr "אנא הכנס שם משתמש."
+
+#: clientgui/AccountInfoPage.cpp:525
+msgid "Please enter an email address."
+msgstr "אנא הכנס כתובת דואר אלקטרוני."
+
+#: clientgui/AccountInfoPage.cpp:535
+#, c-format
+msgid "Please enter a password of at least %d characters."
+msgstr "אנא הכנס סיסמה בת לפחות %d תווים."
+
+#: clientgui/AccountInfoPage.cpp:545
+msgid ""
+"The password and confirmation password do not match. Please type them again."
+msgstr "הסיסמה וסיסמת האימות אינן תואמות. נא להזין אותן מחדש."
+
+#: clientgui/AccountManagerInfoPage.cpp:269
+msgid "Choose an account manager"
+msgstr "בחירת מנהל חשבונות"
+
+#: clientgui/AccountManagerInfoPage.cpp:272
+msgid ""
+"To choose an account manager, click its name or \n"
+"type its URL below."
+msgstr "כדי לבחור מנהל חשבון, יש ללחוץ על השם או \nלהקליד את הכתובת להלן. "
+
+#: clientgui/AccountManagerInfoPage.cpp:276
+msgid "Account manager details:"
+msgstr "פרטי מנהל החשבון:"
+
+#: clientgui/AccountManagerInfoPage.cpp:280
+msgid "Account manager &URL:"
+msgstr "&כתובת מנהל החשבון:"
+
+#: clientgui/AccountManagerInfoPage.cpp:284
+msgid "Open web page"
+msgstr "פתיחת דף אינטרנט"
+
+#: clientgui/AccountManagerInfoPage.cpp:287
+msgid "Visit this account manager's web site"
+msgstr "בקר באתר האינטרנט של מנהל חשבון זה"
+
+#. %s is the project name
+#. i.e. 'BOINC', 'GridRepublic'
+#: clientgui/AccountManagerProcessingPage.cpp:186
+#: clientgui/AccountManagerPropertiesPage.cpp:192
+#, c-format
+msgid "Communicating with %s."
+msgstr "מתקשר עם %s."
+
+#: clientgui/AccountManagerProcessingPage.cpp:193
+#: clientgui/AccountManagerPropertiesPage.cpp:199
+msgid "Communicating with server."
+msgstr "מתקשר עם שרת."
+
+#: clientgui/AccountManagerProcessingPage.cpp:198
+#: clientgui/AccountManagerPropertiesPage.cpp:204
+msgid "Please wait..."
+msgstr "נא להמתין…"
+
+#: clientgui/AccountManagerProcessingPage.cpp:325
+msgid "An internal server error has occurred.\n"
+msgstr "התרחשה שגיאת שרת פנימי.\n"
+
+#: clientgui/AdvancedFrame.cpp:101
+msgid "Connected"
+msgstr "מחובר"
+
+#: clientgui/AdvancedFrame.cpp:109
+msgid "Disconnected"
+msgstr "מנותק"
+
+#: clientgui/AdvancedFrame.cpp:327
+#, c-format
+msgid "New %s window..."
+msgstr "חלון %s חדש..."
+
+#: clientgui/AdvancedFrame.cpp:331
+#, c-format
+msgid "Open another %s window"
+msgstr "פתח חלון %s נוסף"
+
+#: clientgui/AdvancedFrame.cpp:342
+msgid "Select computer...\tCtrl+Shift+I"
+msgstr "בחר מחשב...\tCtrl+Shift+I"
+
+#: clientgui/AdvancedFrame.cpp:343
+msgid "Connect to a BOINC client on another computer"
+msgstr "התחבר אל לקוח BOINC במחשב אחר"
+
+#: clientgui/AdvancedFrame.cpp:347
+msgid "Shut down connected client..."
+msgstr "כבה מחשב מחובר..."
+
+#: clientgui/AdvancedFrame.cpp:348
+msgid "Shut down the currently connected BOINC client"
+msgstr "כבה את לקוח BOINC המחובר כרגע"
+
+#: clientgui/AdvancedFrame.cpp:353 clientgui/sg_BoincSimpleFrame.cpp:145
+#, c-format
+msgid "Close the %s window"
+msgstr "סגור את חלון %s"
+
+#: clientgui/AdvancedFrame.cpp:356 clientgui/sg_BoincSimpleFrame.cpp:148
+msgid "&Close window"
+msgstr "סגור חלון"
+
+#: clientgui/AdvancedFrame.cpp:365 clientgui/AdvancedFrame.cpp:370
+#: clientgui/AdvancedFrame.cpp:375 clientgui/sg_BoincSimpleFrame.cpp:157
+#: clientgui/sg_BoincSimpleFrame.cpp:162
+#, c-format
+msgid "Exit %s"
+msgstr "יציאה מ־%s"
+
+#: clientgui/AdvancedFrame.cpp:389 clientgui/sg_BoincSimpleFrame.cpp:176
+msgid "Preferences..."
+msgstr "העדפות..."
+
+#: clientgui/AdvancedFrame.cpp:398
+msgid "&Notices\tCtrl+Shift+N"
+msgstr "&התראות\tCtrl+Shift+N"
+
+#: clientgui/AdvancedFrame.cpp:399
+msgid "Show notices"
+msgstr "הצג הודעות"
+
+#: clientgui/AdvancedFrame.cpp:404
+msgid "&Projects\tCtrl+Shift+P"
+msgstr "&מיזמים\tCtrl+Shift+P"
+
+#: clientgui/AdvancedFrame.cpp:405
+msgid "Show projects"
+msgstr "הצג מיזמים"
+
+#: clientgui/AdvancedFrame.cpp:410
+msgid "&Tasks\tCtrl+Shift+T"
+msgstr "&משימות\t Ctrl+Shift+T"
+
+#: clientgui/AdvancedFrame.cpp:411
+msgid "Show tasks"
+msgstr "הצג משימות"
+
+#: clientgui/AdvancedFrame.cpp:416
+msgid "Trans&fers\tCtrl+Shift+X"
+msgstr "ה&עברות\tCtrl+Shift+X"
+
+#: clientgui/AdvancedFrame.cpp:417
+msgid "Show file transfers"
+msgstr "הצג העברות קבצים"
+
+#: clientgui/AdvancedFrame.cpp:422
+msgid "&Statistics\tCtrl+Shift+S"
+msgstr "&סטטיסטיקות\tCtrl+Shift+S"
+
+#: clientgui/AdvancedFrame.cpp:423
+msgid "Show statistics"
+msgstr "הצג סטטיסטיקות"
+
+#: clientgui/AdvancedFrame.cpp:428
+msgid "&Disk\tCtrl+Shift+D"
+msgstr "&דיסק\tCtrl+Shift+D"
+
+#: clientgui/AdvancedFrame.cpp:429
+msgid "Show disk usage"
+msgstr "הצג ניצול דיסק"
+
+#: clientgui/AdvancedFrame.cpp:436
+msgid "Simple &View...\tCtrl+Shift+V"
+msgstr "&תצוגה פשוטה...\tCtrl+Shift+V"
+
+#: clientgui/AdvancedFrame.cpp:437
+msgid "Switch to the Simple View"
+msgstr "החלף לתצוגה פשוטה"
+
+#: clientgui/AdvancedFrame.cpp:451 clientgui/AdvancedFrame.cpp:475
+#: clientgui/sg_BoincSimpleFrame.cpp:231 clientgui/sg_BoincSimpleFrame.cpp:255
+msgid "&Add project..."
+msgstr "הו&ספת מיזם…"
+
+#: clientgui/AdvancedFrame.cpp:452 clientgui/AdvancedFrame.cpp:476
+#: clientgui/sg_BoincSimpleFrame.cpp:232 clientgui/sg_BoincSimpleFrame.cpp:256
+msgid "Add a project"
+msgstr "הוספת מיזם"
+
+#: clientgui/AdvancedFrame.cpp:456 clientgui/sg_BoincSimpleFrame.cpp:236
+msgid "&Use account manager..."
+msgstr "&השתמש במנהל חשבונות..."
+
+#: clientgui/AdvancedFrame.cpp:457 clientgui/sg_BoincSimpleFrame.cpp:237
+msgid "Use an account manager to control this computer."
+msgstr "השתמש במנהל חשבונות כדי לנהל מחשב זה"
+
+#: clientgui/AdvancedFrame.cpp:461 clientgui/sg_BoincSimpleFrame.cpp:241
+#, c-format
+msgid "&Synchronize with %s"
+msgstr "&סנכרון מול %s"
+
+#: clientgui/AdvancedFrame.cpp:465 clientgui/sg_BoincSimpleFrame.cpp:245
+#, c-format
+msgid "Get current settings from %s"
+msgstr "משיכת הגדרות נוכחיות מ־%s"
+
+#: clientgui/AdvancedFrame.cpp:479 clientgui/sg_BoincSimpleFrame.cpp:259
+#, c-format
+msgid "S&top using %s..."
+msgstr "&הפסק שימוש ב-%s..."
+
+#: clientgui/AdvancedFrame.cpp:485 clientgui/sg_BoincSimpleFrame.cpp:265
+msgid "Remove this computer from account manager control."
+msgstr "הסר מחשב משליטת מנהל חשבונות."
+
+#: clientgui/AdvancedFrame.cpp:491
+msgid "Run CPU &benchmarks"
+msgstr "הרץ &הערכת ביצועים למעבד הגרפי"
+
+#: clientgui/AdvancedFrame.cpp:492
+msgid "Run tests that measure CPU speed"
+msgstr "הרץ בדיקות למדידת מהירות יחידת עיבוד מרכזית"
+
+#: clientgui/AdvancedFrame.cpp:496
+msgid "Retry pending transfers"
+msgstr "נסה מחדש העברות "
+
+#: clientgui/AdvancedFrame.cpp:497
+msgid "Retry deferred file transfers and task requests"
+msgstr "נסה מחדש העברת קבצים ובקשת משימות נדחות"
+
+#: clientgui/AdvancedFrame.cpp:502 clientgui/sg_BoincSimpleFrame.cpp:271
+msgid "Event Log...\tCtrl+Shift+E"
+msgstr "יומן אירועים...\tCtrl+Shift+E"
+
+#: clientgui/AdvancedFrame.cpp:503
+msgid "Show diagnostic messages"
+msgstr "הצג הודעות אבחון"
+
+#: clientgui/AdvancedFrame.cpp:511
+msgid "&Run always"
+msgstr "&הרץ תמיד"
+
+#: clientgui/AdvancedFrame.cpp:512
+msgid "Allow work regardless of preferences"
+msgstr "אפשר עבודה ללא קשר להעדפות"
+
+#: clientgui/AdvancedFrame.cpp:516
+msgid "Run based on &preferences"
+msgstr "ה&רץ לפי העדפות"
+
+#: clientgui/AdvancedFrame.cpp:517
+msgid "Allow work according to preferences"
+msgstr "אפשר עבודה בהתאם להעדפות"
+
+#: clientgui/AdvancedFrame.cpp:521
+msgid "&Suspend"
+msgstr "ה&שהה"
+
+#: clientgui/AdvancedFrame.cpp:522
+msgid "Stop work regardless of preferences"
+msgstr "עצור עבודה ללא קשר להעדפות"
+
+#: clientgui/AdvancedFrame.cpp:547
+msgid "Use GPU always"
+msgstr "השתמש תמיד במעבד הגרפי"
+
+#: clientgui/AdvancedFrame.cpp:548
+msgid "Allow GPU work regardless of preferences"
+msgstr "אפשר עבודת מעבד גרפי ללא קשר להעדפות"
+
+#: clientgui/AdvancedFrame.cpp:552
+msgid "Use GPU based on preferences"
+msgstr "השתמש במעבד הגרפי בהתאם להעדפות"
+
+#: clientgui/AdvancedFrame.cpp:553
+msgid "Allow GPU work according to preferences"
+msgstr "אפשר עבודת מעבד גרפי בהתאם להעדפות"
+
+#: clientgui/AdvancedFrame.cpp:557
+msgid "Suspend GPU"
+msgstr "השהה מעבד גרפי"
+
+#: clientgui/AdvancedFrame.cpp:558
+msgid "Stop GPU work regardless of preferences"
+msgstr "עצור עבודת מעבד גרפי ללא קשר להעדפות"
+
+#: clientgui/AdvancedFrame.cpp:582
+msgid "Network activity always"
+msgstr "פעילות רשת תמיד"
+
+#: clientgui/AdvancedFrame.cpp:583
+msgid "Allow network activity regardless of preferences"
+msgstr "אפשר פעילות רשת ללא קשר להגדרות"
+
+#: clientgui/AdvancedFrame.cpp:587
+msgid "Network activity based on preferences"
+msgstr "פעילות רשת בהתאם להעדפות"
+
+#: clientgui/AdvancedFrame.cpp:588
+msgid "Allow network activity according to preferences"
+msgstr "אפשר פעילות רשת בהתאם להעדפות"
+
+#: clientgui/AdvancedFrame.cpp:592
+msgid "Suspend network activity"
+msgstr "השהה פעילות רשת"
+
+#: clientgui/AdvancedFrame.cpp:593
+msgid "Stop network activity"
+msgstr "הפסק פעילות רשת"
+
+#: clientgui/AdvancedFrame.cpp:602 clientgui/sg_BoincSimpleFrame.cpp:216
+msgid "Computing &preferences..."
+msgstr "&העדפות חישוב..."
+
+#: clientgui/AdvancedFrame.cpp:603 clientgui/sg_BoincSimpleFrame.cpp:217
+msgid "Configure computing preferences"
+msgstr "הגדר העדפות חישוב"
+
+#: clientgui/AdvancedFrame.cpp:608
+msgid "Exclusive applications..."
+msgstr "יישומים בלעדיים..."
+
+#: clientgui/AdvancedFrame.cpp:609
+msgid "Configure exclusive applications"
+msgstr "הגדר יישומים בלעדיים"
+
+#: clientgui/AdvancedFrame.cpp:614
+msgid "Select columns..."
+msgstr "בחר עמודות..."
+
+#: clientgui/AdvancedFrame.cpp:615
+msgid "Select which columns to display"
+msgstr "בחר איזו עמודות להציג"
+
+#: clientgui/AdvancedFrame.cpp:619
+msgid "Event Log options...\tCtrl+Shift+F"
+msgstr "אפשרויות יומן אירועים...\tCtrl+Shift+F"
+
+#: clientgui/AdvancedFrame.cpp:620
+msgid "Enable or disable various diagnostic messages"
+msgstr "הפעל או בטל הודעות אבחון מגוונות"
+
+#: clientgui/AdvancedFrame.cpp:624 clientgui/sg_BoincSimpleFrame.cpp:222
+msgid "&Other options..."
+msgstr "&אפשרויות נוספות..."
+
+#: clientgui/AdvancedFrame.cpp:625
+msgid "Configure display options and network settings"
+msgstr "הגדר אפשרויות תצוגה והגדרות רשת"
+
+#: clientgui/AdvancedFrame.cpp:630
+msgid "Read config files"
+msgstr "קרא קבצי תצורה"
+
+#: clientgui/AdvancedFrame.cpp:631
+msgid ""
+"Read configuration info from cc_config.xml and any app_config.xml files"
+msgstr "קרא מידע תצורה מ-cc_config.xml ומכל קבצי app_config.xml"
+
+#: clientgui/AdvancedFrame.cpp:635
+msgid "Read local prefs file"
+msgstr "קרא קובץ העדפות מקומי"
+
+#: clientgui/AdvancedFrame.cpp:636
+msgid "Read preferences from global_prefs_override.xml."
+msgstr "קרא נתוני העדפות מ-global_prefs_override.xml."
+
+#: clientgui/AdvancedFrame.cpp:644 clientgui/sg_BoincSimpleFrame.cpp:279
+#, c-format
+msgid "%s &help"
+msgstr "&עזרה של %s"
+
+#: clientgui/AdvancedFrame.cpp:648 clientgui/sg_BoincSimpleFrame.cpp:283
+#, c-format
+msgid "Show information about %s"
+msgstr "הצג מידע אודות %s"
+
+#: clientgui/AdvancedFrame.cpp:658 clientgui/sg_BoincSimpleFrame.cpp:293
+#, c-format
+msgid "&%s help"
+msgstr "ע&זרה של %s"
+
+#: clientgui/AdvancedFrame.cpp:662 clientgui/sg_BoincSimpleFrame.cpp:297
+#, c-format
+msgid "Show information about the %s"
+msgstr "הצג מידע אודות ה-%s"
+
+#: clientgui/AdvancedFrame.cpp:673 clientgui/sg_BoincSimpleFrame.cpp:307
+#, c-format
+msgid "%s &web site"
+msgstr "האתר של %s"
+
+#: clientgui/AdvancedFrame.cpp:677
+#, c-format
+msgid "See more information about %s on the web"
+msgstr "לצפייה במידע מקוון נוסף על %s"
+
+#: clientgui/AdvancedFrame.cpp:688 clientgui/AdvancedFrame.cpp:692
+#: clientgui/sg_BoincSimpleFrame.cpp:322 clientgui/sg_BoincSimpleFrame.cpp:326
+#, c-format
+msgid "Check for new %s version"
+msgstr "בדוק אם קיימת גרסה חדשה עבור %s"
+
+#: clientgui/AdvancedFrame.cpp:704 clientgui/sg_BoincSimpleFrame.cpp:338
+msgid "Report Issue"
+msgstr "דיווח על תקלה"
+
+#: clientgui/AdvancedFrame.cpp:705 clientgui/sg_BoincSimpleFrame.cpp:339
+msgid "Report bug or enhancement request"
+msgstr "דיווח על תקלה או בקשת הרחבה"
+
+#: clientgui/AdvancedFrame.cpp:710 clientgui/BOINCTaskBar.cpp:541
+#: clientgui/sg_BoincSimpleFrame.cpp:344
+#, c-format
+msgid "&About %s..."
+msgstr "&אודות %s..."
+
+#: clientgui/AdvancedFrame.cpp:716 clientgui/sg_BoincSimpleFrame.cpp:350
+msgid "Licensing and copyright information."
+msgstr "מידע על רשיון וזכויות יוצרים."
+
+#: clientgui/AdvancedFrame.cpp:723 clientgui/sg_BoincSimpleFrame.cpp:357
+msgid "&File"
+msgstr "&קובץ"
+
+#: clientgui/AdvancedFrame.cpp:727 clientgui/sg_BoincSimpleFrame.cpp:361
+msgid "&View"
+msgstr "&תצוגה"
+
+#: clientgui/AdvancedFrame.cpp:731
+msgid "&Activity"
+msgstr "&פעילות"
+
+#: clientgui/AdvancedFrame.cpp:735 clientgui/sg_BoincSimpleFrame.cpp:365
+msgid "&Options"
+msgstr "&אפשרויות"
+
+#: clientgui/AdvancedFrame.cpp:739 clientgui/sg_BoincSimpleFrame.cpp:369
+msgid "&Tools"
+msgstr "&כלים"
+
+#: clientgui/AdvancedFrame.cpp:743 clientgui/sg_BoincSimpleFrame.cpp:373
+#: clientgui/wizardex.cpp:383 clientgui/wizardex.cpp:390
+msgid "&Help"
+msgstr "&עזרה"
+
+#: clientgui/AdvancedFrame.cpp:1347
+#, c-format
+msgid "%s - Shut down the current client..."
+msgstr "%s - מכבה את הלקוח הנוכחי..."
+
+#: clientgui/AdvancedFrame.cpp:1356
+#, c-format
+msgid ""
+"%s will shut down the current client\n"
+"and prompt you for another host to connect to."
+msgstr "%s יסגור את הלקוח הנוכחי\nויבקש ממך מחשב מארח אחר להתחבר אליו."
+
+#: clientgui/AdvancedFrame.cpp:1750 clientgui/DlgAbout.cpp:121
+#, c-format
+msgid "%s"
+msgstr "%s"
+
+#: clientgui/AdvancedFrame.cpp:1760
+#, c-format
+msgid "%s has successfully added %s"
+msgstr "%s הוסיף בהצלחה את %s"
+
+#: clientgui/AdvancedFrame.cpp:1907
+#, c-format
+msgid "%s - (%s)"
+msgstr "%s - (%s)"
+
+#: clientgui/AdvancedFrame.cpp:1911
+#, c-format
+msgid "Connecting to %s"
+msgstr "מתחבר ל-%s"
+
+#: clientgui/AdvancedFrame.cpp:1914
+#, c-format
+msgid "Connected to %s (%s)"
+msgstr "מחובר ל-%s (%s)"
+
+#: clientgui/AlreadyExistsPage.cpp:184
+msgid "Username already in use"
+msgstr "שם משתמש כבר בשימוש"
+
+#: clientgui/AlreadyExistsPage.cpp:187
+msgid ""
+"An account with that username already exists and has a\n"
+"different password than the one you entered.\n"
+"\n"
+"Please visit the project's web site and follow the instructions there."
+msgstr "חשבון עם שם המשתמש הזה כבר קיים ויש לו\nסיסמה שונה מזו שהזנת.\n\nאנא היכנס לאתר המיזם ועקוב אחר ההוראות שם."
+
+#: clientgui/AlreadyExistsPage.cpp:191
+msgid "Email address already in use"
+msgstr "כתובת דוא\"ל כבר בשימוש"
+
+#: clientgui/AlreadyExistsPage.cpp:194
+msgid ""
+"An account with that email address already exists and has a\n"
+"different password than the one you entered.\n"
+"\n"
+"Please visit the project's web site and follow the instructions there."
+msgstr "חשבון עם כתובת הדוא\"ל הזאת כבר קיים ויש לו\nסיסמה שונה מזו שהזנת.\n\nאנא היכנס לאתר המיזם ועקוב אחר ההוראות שם."
+
+#: clientgui/AsyncRPC.cpp:1080
+msgid "Communicating with BOINC client.  Please wait ..."
+msgstr "מתקשר עם לקוח BOINC. אנא המתן..."
+
+#: clientgui/AsyncRPC.cpp:1083
+#, c-format
+msgid "&Quit %s"
+msgstr "&הפסק %s"
+
+#: clientgui/AsyncRPC.cpp:1085
+#, c-format
+msgid "E&xit %s"
+msgstr "&צא מ-%s"
+
+#: clientgui/AsyncRPC.cpp:1089
+#, c-format
+msgid "%s - Communication"
+msgstr "%s - תיקשורת"
+
+#: clientgui/AsyncRPC.cpp:1105 clientgui/DlgAdvPreferencesBase.cpp:183
+#: clientgui/DlgDiagnosticLogFlags.cpp:128 clientgui/DlgExclusiveApps.cpp:151
+#: clientgui/DlgHiddenColumns.cpp:108 clientgui/sg_DlgPreferences.cpp:360
+msgid "Cancel"
+msgstr "ביטול"
+
+#: clientgui/BOINCBaseFrame.cpp:495
+#, c-format
+msgid "%s - Connection Error"
+msgstr "%s - שגיאת התחברות"
+
+#: clientgui/BOINCBaseFrame.cpp:550
+#, c-format
+msgid "%s - Connection Failed"
+msgstr "%s - כשל בהתחברות"
+
+#: clientgui/BOINCBaseFrame.cpp:559
+#, c-format
+msgid ""
+"%s is not able to connect to a %s client.\n"
+"Would you like to try to connect again?"
+msgstr "%s אינו מצליח להתחבר ללקוח %s.\nתרצה לנסות להתחבר שוב?"
+
+#: clientgui/BOINCBaseFrame.cpp:595
+#, c-format
+msgid "%s - Daemon Start Failed"
+msgstr "%s - השרת נכשל בהתחלת התהליך"
+
+#: clientgui/BOINCBaseFrame.cpp:605
+#, c-format
+msgid ""
+"%s is not able to start a %s client.\n"
+"Please launch the Control Panel->Administrative Tools->Services applet and start the BOINC service."
+msgstr "%s לא מצליח להפעיל את לקוח %s.\nאנא הרץ את יישומון לוח הבקרה->כלי ניהול->שירותים והפעל את שירות BOINC."
+
+#: clientgui/BOINCBaseFrame.cpp:611
+#, c-format
+msgid ""
+"%s is not able to start a %s client.\n"
+"Please run the client and try again."
+msgstr "%s אינו מצליח להפעיל את תוכנת הלקוח %s. \nאנא הרץ את תוכנת הלקוח ונסה שוב. "
+
+#: clientgui/BOINCBaseFrame.cpp:657
+#, c-format
+msgid "%s - Connection Status"
+msgstr "%s - מצב החיבור"
+
+#: clientgui/BOINCBaseFrame.cpp:668
+#, c-format
+msgid ""
+"%s is not currently connected to a %s client.\n"
+"Please use the 'Advanced\\Select Computer...' menu option to connect up to a %s client.\n"
+"To connect up to your local computer please use 'localhost' as the host name."
+msgstr "%s אינו מחובר כעת ללקוח %s.\nאנא השתמש באפשרות התפריט 'מתקדם/בחר מחשב...' כדי להתחבר ללקוח %s.\nכדי להתחבר למחשב המקומי, אנא השתמש ב-'localhost' כשם המחשב."
+
+#: clientgui/BOINCBaseFrame.cpp:983
+#, c-format
+msgid "%s - Stop using %s"
+msgstr "%s - הפסק שימוש ב-%s"
+
+#: clientgui/BOINCBaseFrame.cpp:988
+#, c-format
+msgid ""
+"If you stop using %s,\n"
+"you'll keep all your current projects,\n"
+"but you'll have to manage projects manually.\n"
+"\n"
+"Do you want to stop using %s?"
+msgstr "אם תתנתק מ-%s,\nתוכל לשמור את כל המיזמים הנוכחיים שלך,\nאבל תצטרך לנהל אותם ידנית.\n\nהאם אתה בטוח שברצונך להתנתק מ-%s?"
+
+#. Create the web sites task group
+#: clientgui/BOINCBaseView.cpp:789
+msgid "Project web pages"
+msgstr "דפי האינטרנט של המיזם"
+
+#: clientgui/BOINCClientManager.cpp:532
+#, c-format
+msgid "%s - Unexpected Exit"
+msgstr "%s - יציאה לא צפוייה"
+
+#: clientgui/BOINCClientManager.cpp:542
+#, c-format
+msgid ""
+"The %s client has exited unexpectedly 3 times within the last %d minutes.\n"
+"Would you like to restart it again?"
+msgstr "לקוח ה-%s ביצע יציאה לא צפויה 3 פעמים במשך %d הדקות האחרונות.\nתרצה להתחיל אותו מחדש?"
+
+#: clientgui/BOINCDialupManager.cpp:61
+#, c-format
+msgid "%s - Network Status"
+msgstr "%s - מצב הרשת"
+
+#: clientgui/BOINCDialupManager.cpp:237
+#, c-format
+msgid ""
+"%s needs to connect to the Internet.\n"
+"May it do so now?"
+msgstr "%s צריך להתחבר לאינטרנט.\nהאם לאפשר לו כעת?"
+
+#: clientgui/BOINCDialupManager.cpp:250
+#, c-format
+msgid "%s is connecting to the Internet."
+msgstr "%s מתחבר לאינטרנט."
+
+#: clientgui/BOINCDialupManager.cpp:299
+#, c-format
+msgid "%s has successfully connected to the Internet."
+msgstr "%s התחבר לאינטרנט בהצלחה."
+
+#: clientgui/BOINCDialupManager.cpp:327
+#, c-format
+msgid "%s failed to connect to the Internet."
+msgstr "%s כשל בהתחברות לאינטרנט."
+
+#: clientgui/BOINCDialupManager.cpp:368
+#, c-format
+msgid ""
+"%s has detected it is now connected to the Internet.\n"
+"Updating all projects and retrying all transfers."
+msgstr "%s זיהה שהוא מחובר לאינטרנט.\nמעדכן את כל המיזמים ומנסה לבצע העברות מחדש."
+
+#: clientgui/BOINCDialupManager.cpp:413
+#, c-format
+msgid "%s has successfully disconnected from the Internet."
+msgstr "%s התנתק מהאינטרנט בהצלחה."
+
+#: clientgui/BOINCDialupManager.cpp:429
+#, c-format
+msgid "%s failed to disconnected from the Internet."
+msgstr "%s כשל בהתנתקות מהאינטרנט."
+
+#: clientgui/BOINCGUIApp.cpp:348
+#, c-format
+msgid ""
+"You currently are not authorized to manage %s.\n"
+"\n"
+"To run %s as this user, please:\n"
+"- reinstall %s answering \"Yes\" to the question about non-administrative users\n"
+" or\n"
+"- contact your administrator to add you to the 'boinc_master' user group."
+msgstr "כרגע אין לך הרשאה לנהל את %s.\n\nכדי להפעיל את %s בתור המשתמש הזה, נא:\n- להתקין את %s מחדש ולענות „כן” על השאלה בנוגע למשתמשים שאינם מנהלים\n או\n- ליצור קשר עם מנהלי המערכת כדי להוסיף אותך לקבוצת המשתמשים ‚boinc_master’."
+
+#: clientgui/BOINCGUIApp.cpp:356
+#, c-format
+msgid ""
+"%s ownership or permissions are not set properly; please reinstall %s.\n"
+"(Error code %d"
+msgstr "הבעלות או ההרשאות של %s אינן מוגדרות כראוי; אנא התקן מחדש את %s.\n(קוד שגיאה: %d"
+
+#: clientgui/BOINCGUIApp.cpp:362
+msgid " at "
+msgstr "ב-"
+
+#: clientgui/BOINCGUIApp.cpp:365 clientgui/MainDocument.cpp:2521
+#: clientgui/MainDocument.cpp:2580 clientgui/ViewTransfers.cpp:871
+msgid ")"
+msgstr ")"
+
+#: clientgui/BOINCGUIApp.cpp:395
+msgid ""
+"A reboot is required in order for BOINC to run properly.\n"
+"Please reboot your computer and try again."
+msgstr "איתחול נחוץ כדי ש-BOINC ירוץ בצורה תקינה.\nאנא אתחל את המחשב ונסה שוב לאחר מכן."
+
+#: clientgui/BOINCGUIApp.cpp:396 clientgui/DlgAbout.cpp:158
+msgid "BOINC Manager"
+msgstr "BOINC Manager"
+
+#: clientgui/BOINCGUIApp.cpp:615
+msgid "BOINC Manager was started by the operating system automatically"
+msgstr "BOINC Manager הופעל אוטומטית על ידי המערכת הפעלה"
+
+#: clientgui/BOINCGUIApp.cpp:617
+msgid "Startup BOINC so only the system tray icon is visible"
+msgstr "הפעל את BOINC כך שניתן יהיה לראות רק את הסמל בשורת המשימות."
+
+#: clientgui/BOINCGUIApp.cpp:619
+msgid "Directory containing the BOINC Client executable"
+msgstr "תיקייה המכילה את קבצי ההפעלה של לקוח BOINC"
+
+#: clientgui/BOINCGUIApp.cpp:620
+msgid "BOINC data directory"
+msgstr "תיקיית קבצי המידע של BOINC"
+
+#: clientgui/BOINCGUIApp.cpp:622
+msgid "Host name or IP address"
+msgstr "שם מחשב או כתובת IP"
+
+#: clientgui/BOINCGUIApp.cpp:623
+msgid "GUI RPC port number"
+msgstr "מספר הפורט של פרוצדורת קריאה מרוחקת לממשק משתמש גרפי"
+
+#: clientgui/BOINCGUIApp.cpp:624
+msgid "Password"
+msgstr "סיסמה"
+
+#: clientgui/BOINCGUIApp.cpp:625
+msgid "Startup BOINC with these optional arguments"
+msgstr "הפעל BOINC עם הגדרות אופציונליות אלו"
+
+#: clientgui/BOINCGUIApp.cpp:626
+msgid "disable BOINC security users and permissions"
+msgstr "נטרל את משתמשי האבטחה וההרשאות של BOINC"
+
+#: clientgui/BOINCGUIApp.cpp:627
+msgid "set skin debugging mode to enable skin manager error messages"
+msgstr "הפעל מצב איתור שגיאות מראה בכדי לאפשר הודעות שגיאה ממנהל המראה"
+
+#: clientgui/BOINCGUIApp.cpp:628
+msgid "multiple instances of BOINC Manager allowed"
+msgstr "ריבוי עותקי BOINC Manager מאושר"
+
+#: clientgui/BOINCGUIApp.cpp:630
+msgid "Not used: workaround for bug in XCode 4.2"
+msgstr "לא בשימוש: מעקף לבאג ב-XCode 4.2"
+
+#: clientgui/BOINCGUIApp.cpp:632
+msgid "Don't run the client"
+msgstr "אל תריץ את הלקוח. "
+
+#. These are just special tags so deal with them in a special way
+#: clientgui/BOINCGUIApp.cpp:901
+msgid "(Automatic Detection)"
+msgstr "(זיהויי אוטומטי)"
+
+#: clientgui/BOINCGUIApp.cpp:902
+msgid "(Unknown)"
+msgstr "(לא ידוע)"
+
+#: clientgui/BOINCGUIApp.cpp:903
+msgid "(User Defined)"
+msgstr "(מוגדר ע\"י משתמש)"
+
+#: clientgui/BOINCTaskBar.cpp:519
+#, c-format
+msgid "Open %s Web..."
+msgstr "פתח את אתר %s..."
+
+#: clientgui/BOINCTaskBar.cpp:526
+#, c-format
+msgid "Open %s..."
+msgstr "פתח את %s..."
+
+#: clientgui/BOINCTaskBar.cpp:533 clientgui/BOINCTaskBar.cpp:631
+#: clientgui/BOINCTaskBar.cpp:636
+msgid "Snooze"
+msgstr "השהה עיבוד"
+
+#: clientgui/BOINCTaskBar.cpp:535 clientgui/BOINCTaskBar.cpp:650
+#: clientgui/BOINCTaskBar.cpp:655
+msgid "Snooze GPU"
+msgstr "השהה עיבוד מעבד גרפי"
+
+#: clientgui/BOINCTaskBar.cpp:553
+msgid "E&xit"
+msgstr "י&ציאה"
+
+#: clientgui/BOINCTaskBar.cpp:626 clientgui/ViewProjects.cpp:788
+#: clientgui/ViewWork.cpp:874 clientgui/sg_BoincSimpleFrame.cpp:961
+#: clientgui/sg_ProjectCommandPopup.cpp:125
+#: clientgui/sg_TaskCommandPopup.cpp:118
+msgid "Resume"
+msgstr "המשך"
+
+#: clientgui/BOINCTaskBar.cpp:646
+msgid "Resume GPU"
+msgstr "המשך שימוש במעבד הגרפי"
+
+#: clientgui/BOINCTaskBar.cpp:717
+msgid "Computing is enabled"
+msgstr "החישוב מאופשר"
+
+#: clientgui/BOINCTaskBar.cpp:721
+msgid "Computing is suspended - "
+msgstr "החישוב מושהה - "
+
+#: clientgui/BOINCTaskBar.cpp:731
+msgid "GPU computing is enabled"
+msgstr "חישובי מעבד גרפי מאופשרים"
+
+#: clientgui/BOINCTaskBar.cpp:734
+msgid "GPU computing is suspended - "
+msgstr "חישובי מעבד גרפי מושהים - "
+
+#: clientgui/BOINCTaskBar.cpp:743
+msgid "Network is enabled"
+msgstr "רשת מופעלת"
+
+#: clientgui/BOINCTaskBar.cpp:746
+msgid "Network is suspended - "
+msgstr "רשת מושהית"
+
+#: clientgui/BOINCTaskBar.cpp:754
+msgid "Reconnecting to client."
+msgstr "מתחבר מחדש ללקוח."
+
+#: clientgui/BOINCTaskBar.cpp:756
+msgid "Not connected to a client."
+msgstr "לא מחובר ללקוח."
+
+#: clientgui/BOINCTaskBar.cpp:809
+#, c-format
+msgid "%s Notices"
+msgstr "התראות %s"
+
+#: clientgui/BOINCTaskBar.cpp:815
+msgid "There are new notices - click to view."
+msgstr "קיימות התראות חדשות - לחץ לצפייה."
+
+#: clientgui/CompletionErrorPage.cpp:199
+msgid "Failed to add project"
+msgstr "הוספת המיזם נכשלה"
+
+#: clientgui/CompletionErrorPage.cpp:204
+msgid "Failed to update account manager"
+msgstr "נכשל בעדכון מנהל חשבונות"
+
+#: clientgui/CompletionErrorPage.cpp:208
+msgid "Failed to remove account manager"
+msgstr "נכשל בהסרת מנהל חשבונות"
+
+#: clientgui/CompletionErrorPage.cpp:212
+msgid "Failed to add account manager"
+msgstr "כשל בהוספת מנהל חשבונות"
+
+#: clientgui/CompletionErrorPage.cpp:221
+msgid ""
+"Please try again later.\n"
+"\n"
+"Click Finish to close."
+msgstr "אנא נסה שנית מאוחר יותר.\n\nלחץ סיים כדי לסגור."
+
+#: clientgui/CompletionErrorPage.cpp:225 clientgui/CompletionPage.cpp:215
+#: clientgui/CompletionPage.cpp:235 clientgui/CompletionPage.cpp:266
+msgid "Click Finish to close."
+msgstr "לחץ סיום כדי לסגור."
+
+#: clientgui/CompletionErrorPage.cpp:234
+msgid "Messages from server:"
+msgstr "הודעות משרת:"
+
+#: clientgui/CompletionPage.cpp:200
+msgid "Project added"
+msgstr "מיזם הוסף"
+
+#: clientgui/CompletionPage.cpp:206
+msgid "This project has been successfully added."
+msgstr "מיזם זה הוסף בהצלחה."
+
+#: clientgui/CompletionPage.cpp:211
+msgid ""
+"When you click Finish, your web browser will go to a page where\n"
+"you can set your account name and preferences."
+msgstr "כשתלחץ 'סיום', דפדפן האינטרנט שלך יעבור לדף בו\nתוכל להגדיר את שם המשתמש שלך והעדפות."
+
+#: clientgui/CompletionPage.cpp:225
+#, c-format
+msgid "Update from %s completed."
+msgstr "עדכון מ-%s הושלם."
+
+#: clientgui/CompletionPage.cpp:229
+msgid "Update completed."
+msgstr "עדכון הושלם."
+
+#. Attach Completed
+#: clientgui/CompletionPage.cpp:240
+msgid "Now using account manager"
+msgstr "משתמש כעת במנהל חשבונות"
+
+#: clientgui/CompletionPage.cpp:245
+#, c-format
+msgid "Welcome to %s!"
+msgstr "ברוך הבא ל-%s!"
+
+#: clientgui/CompletionPage.cpp:256
+#, c-format
+msgid "You are now using %s to manage accounts."
+msgstr "התחלת להשתמש ב-%s לניהול חשבונות."
+
+#: clientgui/CompletionPage.cpp:260
+msgid "You are now using this account manager."
+msgstr "אתה משתמש כעת במנהל חשבונות זה."
+
+#: clientgui/DlgAbout.cpp:115
+#, c-format
+msgid "About %s"
+msgstr "אודות %s"
+
+#: clientgui/DlgAbout.cpp:177
+msgid "Version:"
+msgstr "גרסה:"
+
+#: clientgui/DlgAbout.cpp:185
+msgid "wxWidgets Version:"
+msgstr "גרסת wxWidgets:"
+
+#: clientgui/DlgAbout.cpp:193
+msgid "Copyright:"
+msgstr "זכויות יוצרים:"
+
+#: clientgui/DlgAbout.cpp:197
+msgid ""
+"(C) 2003-2020 University of California, Berkeley.\n"
+"All Rights Reserved."
+msgstr "(C) 2003-2020 אונברסיטת קליפורניה, ברקלי.\nכל הזכויות שמורות."
+
+#: clientgui/DlgAbout.cpp:202
+#, c-format
+msgid "%s is distributed under the GNU Lesser General Public License v3.0."
+msgstr "%s מופץ תחת תנאי גרסה 3.0 של הרישיון הציבורי הכללי המוקטן מבית GNU."
+
+#: clientgui/DlgAbout.cpp:214
+msgid "For more information, visit "
+msgstr "למידע נוסף, בקר"
+
+#: clientgui/DlgAbout.cpp:226 clientgui/DlgExitMessage.cpp:185
+#: clientgui/DlgGenericMessage.cpp:120 clientgui/DlgSelectComputer.cpp:163
+msgid "&OK"
+msgstr "&אישור"
+
+#: clientgui/DlgAdvPreferences.cpp:667 clientgui/sg_DlgPreferences.cpp:787
+msgid "Invalid number"
+msgstr "מספר לא תקף"
+
+#: clientgui/DlgAdvPreferences.cpp:668 clientgui/sg_DlgPreferences.cpp:788
+msgid "Invalid time, value must be between 0:00 and 24:00, format is HH:MM"
+msgstr "זמן לא תקף, ערך חייב להיות בין 0:00 ל- 24:00, בתצורה של דד:שש"
+
+#: clientgui/DlgAdvPreferences.cpp:669 clientgui/sg_DlgPreferences.cpp:789
+msgid "Start time must be different from end time"
+msgstr "זמן התחלה חייב להיות שונה מזמן הסיום"
+
+#: clientgui/DlgAdvPreferences.cpp:670
+msgid "Number must be between 0 and 10"
+msgstr "מספר חייב להיות בין 0 ל-10"
+
+#: clientgui/DlgAdvPreferences.cpp:671 clientgui/sg_DlgPreferences.cpp:790
+msgid "Number must be between 0 and 100"
+msgstr "מספר חייב להיות בין 0 ל-100"
+
+#: clientgui/DlgAdvPreferences.cpp:672
+msgid "Number must be between 1 and 100"
+msgstr "מספר חייב להיות בין 1 ל-100"
+
+#: clientgui/DlgAdvPreferences.cpp:936 clientgui/sg_DlgPreferences.cpp:861
+msgid "invalid input value detected"
+msgstr "זוהה ערך מוזן לא נכון"
+
+#: clientgui/DlgAdvPreferences.cpp:948 clientgui/sg_DlgPreferences.cpp:873
+msgid "Validation Error"
+msgstr "תקלת אימות"
+
+#: clientgui/DlgAdvPreferences.cpp:1132 clientgui/sg_DlgPreferences.cpp:1207
+msgid ""
+"Changing to use the local preferences defined on this page. This will "
+"override your web-based preferences, even if you subsequently make changes "
+"there. Do you want to proceed?"
+msgstr "החלפת השימוש להעדפות המקומיות שמצוינות בעמוד הזה. פעולה זו תדרוס את ההגדרות המקוונות שלך, אפילו אם יתבצעו שם שינויים. להמשיך?"
+
+#: clientgui/DlgAdvPreferences.cpp:1136 clientgui/DlgAdvPreferences.cpp:1177
+#: clientgui/sg_DlgPreferences.cpp:1199 clientgui/sg_DlgPreferences.cpp:1211
+msgid "Confirmation"
+msgstr "אימות"
+
+#: clientgui/DlgAdvPreferences.cpp:1176
+msgid "Discard local preferences and use web-based preferences?"
+msgstr "להתעלם מהעדפות מקומיות ולהשתמש בהעדפות מבוססות רשת?"
+
+#: clientgui/DlgAdvPreferencesBase.cpp:61
+#, c-format
+msgid "%s - Computing preferences"
+msgstr "%s - העדפות חישוב"
+
+#: clientgui/DlgAdvPreferencesBase.cpp:88 clientgui/sg_DlgPreferences.cpp:163
+msgid ""
+"Using local preferences.\n"
+"Click \"Use web prefs\" to use web-based preferences from"
+msgstr "משתמש בהעדפות מקומיות. \nלחץ \"השתמש בהעדפות רשת\" כדי להשתמש בהעדפות מבוססות רשת "
+
+#: clientgui/DlgAdvPreferencesBase.cpp:96 clientgui/sg_DlgPreferences.cpp:171
+msgid "Using web-based preferences from"
+msgstr "משתמש בהעדפות מבוססות אינטרנט מ"
+
+#: clientgui/DlgAdvPreferencesBase.cpp:113 clientgui/sg_DlgPreferences.cpp:189
+msgid "Set values and click Save to use local preferences instead."
+msgstr "הגדר ערכים ולחץ \"שמור\" כדי להשתמש בהעדפות מקומיות במקום."
+
+#: clientgui/DlgAdvPreferencesBase.cpp:121 clientgui/sg_DlgPreferences.cpp:217
+msgid "Use web prefs"
+msgstr "השתמש בהעדפות רשת"
+
+#: clientgui/DlgAdvPreferencesBase.cpp:122 clientgui/sg_DlgPreferences.cpp:218
+msgid "Restore web-based preferences and close the dialog."
+msgstr "שחזר העדפות מבוססות אינטרנט וסגור חלון זה."
+
+#: clientgui/DlgAdvPreferencesBase.cpp:151
+#: clientgui/DlgAdvPreferencesBase.cpp:722
+msgid "Computing"
+msgstr "חישוב"
+
+#. Network schedule
+#: clientgui/DlgAdvPreferencesBase.cpp:155
+#: clientgui/DlgAdvPreferencesBase.cpp:924
+msgid "Network"
+msgstr "רשת"
+
+#: clientgui/DlgAdvPreferencesBase.cpp:159
+msgid "Disk and memory"
+msgstr "דיסק וזיכרון"
+
+#: clientgui/DlgAdvPreferencesBase.cpp:163
+msgid "Daily schedules"
+msgstr "לו\"ז יומי"
+
+#: clientgui/DlgAdvPreferencesBase.cpp:176
+#: clientgui/DlgDiagnosticLogFlags.cpp:120 clientgui/DlgExclusiveApps.cpp:146
+#: clientgui/DlgHiddenColumns.cpp:100 clientgui/sg_DlgPreferences.cpp:353
+msgid "Save"
+msgstr "שמור"
+
+#: clientgui/DlgAdvPreferencesBase.cpp:177 clientgui/sg_DlgPreferences.cpp:354
+msgid "Save all values and close the dialog."
+msgstr "שמור את כל הערכים וסגור את החלון"
+
+#: clientgui/DlgAdvPreferencesBase.cpp:184 clientgui/sg_DlgPreferences.cpp:361
+msgid "Close the dialog without saving."
+msgstr "סגור את החלון ללא שמירה"
+
+#: clientgui/DlgAdvPreferencesBase.cpp:190 clientgui/DlgExclusiveApps.cpp:157
+#: clientgui/Localization.cpp:35 clientgui/Localization.cpp:121
+#: clientgui/Localization.cpp:139 clientgui/sg_BoincSimpleFrame.cpp:997
+#: clientgui/sg_DlgPreferences.cpp:370
+msgid "Help"
+msgstr "עזרה"
+
+#: clientgui/DlgAdvPreferencesBase.cpp:191
+msgid "Shows the preferences web page."
+msgstr "מציג את עמוד האינטרנט של ההעדפות"
+
+#: clientgui/DlgAdvPreferencesBase.cpp:253
+#: clientgui/DlgAdvPreferencesBase.cpp:501
+msgid "Usage limits"
+msgstr "הגבלות שימוש"
+
+#: clientgui/DlgAdvPreferencesBase.cpp:258
+#, no-c-format
+msgid ""
+"Keep some CPUs free for other applications. Example: 75% means use 6 cores "
+"on an 8-core CPU."
+msgstr "השאר כמה יחידות עיבוד פנויות לתוכנות אחרות. למשל: 75% אומר שימוש ב-6 יחידות עיבוד מתוך 8 שקיימים במעבד."
+
+#: clientgui/DlgAdvPreferencesBase.cpp:260
+#: clientgui/DlgAdvPreferencesBase.cpp:272 clientgui/sg_DlgPreferences.cpp:286
+msgid "Use at most"
+msgstr "השתמש לכל היותר ב-"
+
+#: clientgui/DlgAdvPreferencesBase.cpp:265
+#, no-c-format
+msgid "% of the CPUs"
+msgstr "% מיחידות העיבוד"
+
+#: clientgui/DlgAdvPreferencesBase.cpp:270 clientgui/sg_DlgPreferences.cpp:284
+#, no-c-format
+msgid ""
+"Suspend/resume computing every few seconds to reduce CPU temperature and "
+"energy usage. Example: 75% means compute for 3 seconds, wait for 1 second, "
+"and repeat."
+msgstr "השעה/המשך חישובים כל כמה שניות כדי לצמצם טמפרטורת מעבד וניצול אנרגיה. לדוגמא: 75% פירושו חשב למשך 3 שניות, חכה למשך שנייה 1 וחזור."
+
+#: clientgui/DlgAdvPreferencesBase.cpp:277 clientgui/sg_DlgPreferences.cpp:291
+#, no-c-format
+msgid "% of CPU time"
+msgstr "% מזמן המעבד"
+
+#: clientgui/DlgAdvPreferencesBase.cpp:284
+msgid "When to suspend"
+msgstr "מתי להשעות"
+
+#: clientgui/DlgAdvPreferencesBase.cpp:290 clientgui/sg_DlgPreferences.cpp:239
+msgid "Suspend when computer is on battery"
+msgstr "השהה כאשר המחשב על סוללה"
+
+#: clientgui/DlgAdvPreferencesBase.cpp:293 clientgui/sg_DlgPreferences.cpp:235
+msgid ""
+"Check this to suspend computing on portables when running on battery power."
+msgstr "סמן את זה כדי להשהות חישוב במכשירים ניידים כאשר משתמשים בסוללה"
+
+#: clientgui/DlgAdvPreferencesBase.cpp:299 clientgui/sg_DlgPreferences.cpp:253
+msgid "Suspend when computer is in use"
+msgstr "השהה כאשר המחשב נמצא בשימוש"
+
+#: clientgui/DlgAdvPreferencesBase.cpp:302 clientgui/sg_DlgPreferences.cpp:249
+msgid ""
+"Check this to suspend computing and file transfers when you're using the "
+"computer."
+msgstr "סמן את זה כדי להשהות חישוב והעברת קבצים כאשר אתה משתמש במחשב"
+
+#: clientgui/DlgAdvPreferencesBase.cpp:308
+msgid "Suspend GPU computing when computer is in use"
+msgstr "השהה עיבוד גרפי כאשר המחשב נמצא בשימוש"
+
+#: clientgui/DlgAdvPreferencesBase.cpp:311
+msgid "Check this to suspend GPU computing when you're using the computer."
+msgstr "סמן את זה כדי להשהות את החישוב הגרפי כאשר אתה משתמש במחשב"
+
+#. min idle time
+#: clientgui/DlgAdvPreferencesBase.cpp:316 clientgui/sg_DlgPreferences.cpp:264
+msgid "This determines when the computer is considered 'in use'."
+msgstr "זה מגדיר מתי המחשב מוגדר 'בשימוש'"
+
+#. context: 'In use' means mouse/keyboard input in last ___ minutes
+#: clientgui/DlgAdvPreferencesBase.cpp:321 clientgui/sg_DlgPreferences.cpp:268
+msgid "'In use' means mouse/keyboard input in last"
+msgstr "'בשימוש' משמע עכבר/מקלדת שומש ב"
+
+#. context: 'In use' means mouse/keyboard input in last ___ minutes
+#. context: Switch between tasks every ___ minutes
+#: clientgui/DlgAdvPreferencesBase.cpp:332
+#: clientgui/DlgAdvPreferencesBase.cpp:349
+#: clientgui/DlgAdvPreferencesBase.cpp:451 clientgui/sg_DlgPreferences.cpp:276
+msgid "minutes"
+msgstr "דקות"
+
+#. suspend after max idle time
+#: clientgui/DlgAdvPreferencesBase.cpp:339
+msgid "This allows some computers to enter low-power mode when not in use."
+msgstr "זה מאפשר לחלק מהמחשבים להיכנס למצב שימוש נמוך בחשמל כאשר לא בשימוש"
+
+#: clientgui/DlgAdvPreferencesBase.cpp:343
+msgid "Suspend when no mouse/keyboard input in last"
+msgstr "השהה כאשר אין  קלט מהעכבר/מקלדת למשך"
+
+#: clientgui/DlgAdvPreferencesBase.cpp:361
+msgid "Suspend when non-BOINC CPU usage is above"
+msgstr "השהה כאשר שימוש עיבוד בתוכנות אחרות עולה על"
+
+#: clientgui/DlgAdvPreferencesBase.cpp:363
+msgid "Suspend computing when your computer is busy running other programs."
+msgstr "השהה חישובים כאשר המחשב שלך עסוק בהרצת יישומים אחרים."
+
+#: clientgui/DlgAdvPreferencesBase.cpp:377
+msgid "To suspend by time of day, see the \"Daily Schedules\" section."
+msgstr "כדי להשעות לפי שעה ביום, ראה את סעיף 'לו\"ז יומי'."
+
+#. Context: heading for a group of miscellaneous preferences
+#: clientgui/DlgAdvPreferencesBase.cpp:387
+#: clientgui/DlgAdvPreferencesBase.cpp:554
+msgid "Other"
+msgstr "אחר"
+
+#. buffer sizes
+#: clientgui/DlgAdvPreferencesBase.cpp:393
+msgid "Store at least enough tasks to keep the computer busy for this long."
+msgstr "אחסן לפחות מספיק מטלות כדי להשאיר את המחשב עסוק לפרק זמן זה."
+
+#. context: Store at least ___ days of work
+#: clientgui/DlgAdvPreferencesBase.cpp:397
+msgid "Store at least"
+msgstr "אחסן לפחות"
+
+#. context: Store at least ___ days of work
+#. context: Store up to an additional ___ days of work
+#: clientgui/DlgAdvPreferencesBase.cpp:408
+#: clientgui/DlgAdvPreferencesBase.cpp:430
+msgid "days of work"
+msgstr "ימי עבודה"
+
+#: clientgui/DlgAdvPreferencesBase.cpp:414
+msgid ""
+"Store additional tasks above the minimum level.  Determines how much work is"
+" requested when contacting a project."
+msgstr "אחסן מטלות נוספות מעבר לרמה המינימלית. קובע כמה עבודה מתבקשת בעת יצירת קשר עם מיזם."
+
+#. context: Store up to an additional ___ days of work
+#: clientgui/DlgAdvPreferencesBase.cpp:418
+msgid "Store up to an additional"
+msgstr "אחסן עד עוד"
+
+#: clientgui/DlgAdvPreferencesBase.cpp:437
+#, c-format
+msgid "If you run several projects, %s may switch between them this often."
+msgstr "אם אתה מריץ מספר מיזמים, %s עלול להחליף ביניהם בלעיתים קרובות."
+
+#. context: Switch between tasks every ___ minutes
+#: clientgui/DlgAdvPreferencesBase.cpp:442
+msgid "Switch between tasks every"
+msgstr "החלף בין משימות כל"
+
+#: clientgui/DlgAdvPreferencesBase.cpp:457
+msgid ""
+"This controls how often tasks save their state to disk, so that they later "
+"can be continued from that point."
+msgstr "זה שולט באיזו תדירות מטלות שומרות את המצב שלהן לדיסק, כך שניתן יהיה להמשיך אותן מאוחר יותר מאותה הנקודה."
+
+#. context: Request tasks to checkpoint at most every ___ seconds
+#: clientgui/DlgAdvPreferencesBase.cpp:461
+msgid "Request tasks to checkpoint at most every"
+msgstr "בקש ממטלות לבצע נקודת מכוון לכל היותר כל"
+
+#. context: Request tasks to checkpoint at most every ___ seconds
+#: clientgui/DlgAdvPreferencesBase.cpp:470
+msgid "seconds"
+msgstr "שניות"
+
+#. upload/download rates
+#: clientgui/DlgAdvPreferencesBase.cpp:507
+msgid "Limit the download rate of file transfers."
+msgstr "הגבל קצב הורדה של העברת קבצים."
+
+#: clientgui/DlgAdvPreferencesBase.cpp:508
+msgid "Limit download rate to"
+msgstr "הגבל קצב הורדה ל-"
+
+#: clientgui/DlgAdvPreferencesBase.cpp:512
+#: clientgui/DlgAdvPreferencesBase.cpp:521
+msgid "KB/second"
+msgstr "קילובייט/שנייה"
+
+#: clientgui/DlgAdvPreferencesBase.cpp:516
+msgid "Limit the upload rate of file transfers."
+msgstr "הגבל קצב העלאה של העברת קבצים"
+
+#: clientgui/DlgAdvPreferencesBase.cpp:517
+msgid "Limit upload rate to"
+msgstr "הגבל קצב העלאה ל-"
+
+#: clientgui/DlgAdvPreferencesBase.cpp:528
+#, c-format
+msgid "Example: %s should transfer at most 2000 MB of data every 30 days."
+msgstr "לדוגמא: %s צריך להעביר לכל היותר 2000 MB של נתונים כל 30 יום."
+
+#: clientgui/DlgAdvPreferencesBase.cpp:530
+msgid "Limit usage to"
+msgstr "הגבל שימוש ל- "
+
+#: clientgui/DlgAdvPreferencesBase.cpp:534
+msgid "MB every"
+msgstr "מ\"ב כל"
+
+#: clientgui/DlgAdvPreferencesBase.cpp:538
+msgid "days"
+msgstr "ימים"
+
+#: clientgui/DlgAdvPreferencesBase.cpp:543
+msgid "To limit transfers by time of day, see the \"Daily Schedules\" section."
+msgstr "כדי להגביל לפי שעה ביום, ראה את סעיף 'לו\"ז יומי'."
+
+#: clientgui/DlgAdvPreferencesBase.cpp:560
+#, c-format
+msgid ""
+"Check this only if your Internet provider modifies image files. Skipping "
+"verification reduces the security of %s."
+msgstr "סמן את זה אך ורק אם ספק האינטרנט משנה את קבצי התמונה. דילוג על אימות מפחית את האבטחה של %s."
+
+#: clientgui/DlgAdvPreferencesBase.cpp:562
+msgid "Skip data verification for image files"
+msgstr "דלג על בדיקת מידע לקובצי התמונות"
+
+#: clientgui/DlgAdvPreferencesBase.cpp:566
+msgid "Confirm before connecting to Internet"
+msgstr "אשר לפני התחברות לאינטרנט"
+
+#: clientgui/DlgAdvPreferencesBase.cpp:567
+#: clientgui/DlgAdvPreferencesBase.cpp:571
+msgid "Useful only if you have a modem, ISDN or VPN connection."
+msgstr "שימושי רק אם יש לך חיבור מודם, ISDN או VPN"
+
+#: clientgui/DlgAdvPreferencesBase.cpp:570
+msgid "Disconnect when done"
+msgstr "התנתק בסיום"
+
+#: clientgui/DlgAdvPreferencesBase.cpp:597 clientgui/ViewResources.cpp:118
+msgid "Disk"
+msgstr "דיסק"
+
+#: clientgui/DlgAdvPreferencesBase.cpp:602
+#, c-format
+msgid "%s will use the most restrictive of these settings:"
+msgstr "%s ישתמש במגבילות ביותר מבין הגדרות אלו:"
+
+#: clientgui/DlgAdvPreferencesBase.cpp:608 clientgui/sg_DlgPreferences.cpp:335
+#, c-format
+msgid "Limit the total amount of disk space used by %s."
+msgstr "הגבל את שטח הדיסק הכולל שבשימוש ע\"י %s."
+
+#: clientgui/DlgAdvPreferencesBase.cpp:611
+#: clientgui/DlgAdvPreferencesBase.cpp:635 clientgui/sg_DlgPreferences.cpp:338
+msgid "Use no more than"
+msgstr "השתמש לכל היותר ב-"
+
+#: clientgui/DlgAdvPreferencesBase.cpp:615
+msgid "GB"
+msgstr "GB"
+
+#: clientgui/DlgAdvPreferencesBase.cpp:620
+#, c-format
+msgid ""
+"Limit disk usage to leave this much free space on the volume where %s stores"
+" data."
+msgstr "הגבל שימוש בשטח דיסק כדי להשאיר כמות זו של שטח פנוי במחיצה בה %s מאחסן נתונים."
+
+#: clientgui/DlgAdvPreferencesBase.cpp:623
+msgid "Leave at least"
+msgstr "השאר לפחות"
+
+#: clientgui/DlgAdvPreferencesBase.cpp:627
+msgid "GB free"
+msgstr "ג\"ב פנוי"
+
+#: clientgui/DlgAdvPreferencesBase.cpp:632
+#, c-format
+msgid ""
+"Limit the percentage of disk space used by %s on the volume where it stores "
+"data."
+msgstr "הגבל את אחוז השימוש בדיסק ל-%s בדיסק בו הוא מאוחסן"
+
+#: clientgui/DlgAdvPreferencesBase.cpp:640
+#, no-c-format
+msgid "% of total"
+msgstr "% מהסך הכללי"
+
+#: clientgui/DlgAdvPreferencesBase.cpp:647
+msgid "Memory"
+msgstr "זיכרון"
+
+#: clientgui/DlgAdvPreferencesBase.cpp:652
+#, c-format
+msgid "Limit the memory used by %s when you're using the computer."
+msgstr "הגבל את שימוש הזיכרון ל-%s כאשר אתה משתמש במחשב"
+
+#: clientgui/DlgAdvPreferencesBase.cpp:654
+msgid "When computer is in use, use at most"
+msgstr "כאשר המחשב נמצא בשימוש, השתמש לכל היותר"
+
+#: clientgui/DlgAdvPreferencesBase.cpp:660
+#: clientgui/DlgAdvPreferencesBase.cpp:672
+#: clientgui/DlgAdvPreferencesBase.cpp:688
+#, no-c-format
+msgid "%"
+msgstr "%"
+
+#: clientgui/DlgAdvPreferencesBase.cpp:665
+#, c-format
+msgid "Limit the memory used by %s when you're not using the computer."
+msgstr "הגבל את שימוש הזיכרון ל-%s כאשר אתה לא משתמש במחשב"
+
+#: clientgui/DlgAdvPreferencesBase.cpp:667
+msgid "When computer is not in use, use at most"
+msgstr "כאשר המחשב לא נמצא בשימוש, השתמש לכל היותר"
+
+#: clientgui/DlgAdvPreferencesBase.cpp:676
+msgid "Leave non-GPU tasks in memory while suspended"
+msgstr "השאר משימות לא גרפיות בזיכרון בזמן השהיה"
+
+#: clientgui/DlgAdvPreferencesBase.cpp:677
+msgid ""
+"If checked, suspended tasks stay in memory, and resume with no work lost. If"
+" unchecked, suspended tasks are removed from memory, and resume from their "
+"last checkpoint."
+msgstr "אם מסומן, משימות מושעות יישארו בזיכרון, ויחזרו לפעול ללא איבוד תוצאות. אם לא מסומן, משימות מושעות ימחקו מהזיכרון (RAM), ויחזרו לפעולה מנקודת הגיבוי האחרונה שלהן. "
+
+#: clientgui/DlgAdvPreferencesBase.cpp:681
+#, c-format
+msgid "Limit the swap space (page file) used by %s."
+msgstr "הגבל את קבצי הדפדוף (page files) בשימוש של %s."
+
+#: clientgui/DlgAdvPreferencesBase.cpp:683
+msgid "Page/swap file: use at most"
+msgstr "קבצי דפדוף / החלפה: השתמש לכל היותר"
+
+#: clientgui/DlgAdvPreferencesBase.cpp:708 clientgui/sg_DlgPreferences.cpp:295
+msgid "and"
+msgstr "ו"
+
+#: clientgui/DlgAdvPreferencesBase.cpp:709
+msgid "to"
+msgstr "ל-"
+
+#: clientgui/DlgAdvPreferencesBase.cpp:729 clientgui/sg_DlgPreferences.cpp:296
+msgid "Compute only during a particular period each day."
+msgstr "חשב רק בזמן מסוים של כל יום."
+
+#: clientgui/DlgAdvPreferencesBase.cpp:732 clientgui/sg_DlgPreferences.cpp:299
+msgid "Compute only between"
+msgstr "חשב רק בין"
+
+#: clientgui/DlgAdvPreferencesBase.cpp:756
+#: clientgui/DlgAdvPreferencesBase.cpp:940
+msgid "Day-of-week override"
+msgstr "מעקף יום בשבוע"
+
+#: clientgui/DlgAdvPreferencesBase.cpp:765
+#: clientgui/DlgAdvPreferencesBase.cpp:944
+msgid "Override the times above on the selected days:"
+msgstr "עקוף את הזמנים הנ\"ל בימים הנבחרים:"
+
+#: clientgui/DlgAdvPreferencesBase.cpp:788
+#: clientgui/DlgAdvPreferencesBase.cpp:961
+msgid "Monday"
+msgstr "שני"
+
+#: clientgui/DlgAdvPreferencesBase.cpp:815
+#: clientgui/DlgAdvPreferencesBase.cpp:976
+msgid "Friday"
+msgstr "שישי"
+
+#: clientgui/DlgAdvPreferencesBase.cpp:830
+#: clientgui/DlgAdvPreferencesBase.cpp:989
+msgid "Tuesday"
+msgstr "שלישי"
+
+#: clientgui/DlgAdvPreferencesBase.cpp:845
+#: clientgui/DlgAdvPreferencesBase.cpp:1004
+msgid "Saturday"
+msgstr "שבת"
+
+#: clientgui/DlgAdvPreferencesBase.cpp:858
+#: clientgui/DlgAdvPreferencesBase.cpp:1017
+msgid "Wednesday"
+msgstr "רביעי"
+
+#: clientgui/DlgAdvPreferencesBase.cpp:873
+#: clientgui/DlgAdvPreferencesBase.cpp:1032
+msgid "Sunday"
+msgstr "ראשון"
+
+#: clientgui/DlgAdvPreferencesBase.cpp:886
+#: clientgui/DlgAdvPreferencesBase.cpp:1045
+msgid "Thursday"
+msgstr "חמישי"
+
+#: clientgui/DlgAdvPreferencesBase.cpp:928 clientgui/sg_DlgPreferences.cpp:317
+msgid "Transfer files only during a particular period each day."
+msgstr "העבר קבצים רק במהלך תקופה מסוימת בכל יום."
+
+#: clientgui/DlgAdvPreferencesBase.cpp:930 clientgui/sg_DlgPreferences.cpp:319
+msgid "Transfer files only between"
+msgstr "העבר קבצים רק בין"
+
+#: clientgui/DlgDiagnosticLogFlags.cpp:66
+#, c-format
+msgid "%s Diagnostic Log Flags"
+msgstr "דגלוני אבחון יומן %s"
+
+#: clientgui/DlgDiagnosticLogFlags.cpp:84
+msgid ""
+"These flags enable various types of diagnostic messages in the Event Log."
+msgstr "דגלונים אלו מאפשרים מגוון סוגים של הודעות ניתוח מצב ביומן האירועים."
+
+#: clientgui/DlgDiagnosticLogFlags.cpp:100
+msgid "More info ..."
+msgstr "עוד מידע ..."
+
+#: clientgui/DlgDiagnosticLogFlags.cpp:121 clientgui/DlgHiddenColumns.cpp:101
+msgid "Save all values and close the dialog"
+msgstr "שמור את כל הערכים וסגור את החלון"
+
+#: clientgui/DlgDiagnosticLogFlags.cpp:124 clientgui/DlgHiddenColumns.cpp:104
+msgid "Defaults"
+msgstr "ברירות מחדל"
+
+#: clientgui/DlgDiagnosticLogFlags.cpp:125 clientgui/DlgHiddenColumns.cpp:105
+msgid "Restore default settings"
+msgstr "שחזר הגדרות ברירת מחדל"
+
+#: clientgui/DlgDiagnosticLogFlags.cpp:129 clientgui/DlgHiddenColumns.cpp:109
+msgid "Close the dialog without saving"
+msgstr "סגור את החלון ללא שמירה"
+
+#: clientgui/DlgDiagnosticLogFlags.cpp:132
+msgid "Apply"
+msgstr "החל"
+
+#: clientgui/DlgDiagnosticLogFlags.cpp:133
+msgid "Save all values"
+msgstr "שמור את כל הערכים"
+
+#: clientgui/DlgEventLog.cpp:227
+#, c-format
+msgid "%s - Event Log"
+msgstr "%s - יומן אירועים"
+
+#. Create List Pane Items
+#: clientgui/DlgEventLog.cpp:237 clientgui/ViewMessages.cpp:117
+#: clientgui/ViewProjects.cpp:251 clientgui/ViewStatistics.cpp:411
+#: clientgui/ViewStatistics.cpp:1988 clientgui/ViewTransfers.cpp:209
+#: clientgui/ViewWork.cpp:260
+msgid "Project"
+msgstr "מיזם"
+
+#: clientgui/DlgEventLog.cpp:238 clientgui/ViewMessages.cpp:118
+msgid "Time"
+msgstr "זמן"
+
+#: clientgui/DlgEventLog.cpp:239 clientgui/ViewMessages.cpp:119
+msgid "Message"
+msgstr "הודעה"
+
+#: clientgui/DlgEventLog.cpp:330 clientgui/DlgEventLog.cpp:380
+msgid "&Show only this project"
+msgstr "&הצג מיזם זה בלבד"
+
+#: clientgui/DlgEventLog.cpp:334 clientgui/DlgItemProperties.cpp:74
+msgid "Copy &All"
+msgstr "שמור &הכל"
+
+#: clientgui/DlgEventLog.cpp:336 clientgui/DlgEventLog.cpp:340
+#: clientgui/ViewMessages.cpp:89
+msgid "Copy all the messages to the clipboard."
+msgstr "העתק את כל ההודעות ללוח."
+
+#: clientgui/DlgEventLog.cpp:345 clientgui/DlgItemProperties.cpp:77
+msgid "Copy &Selected"
+msgstr "העתק &נבחר"
+
+#: clientgui/DlgEventLog.cpp:348 clientgui/DlgEventLog.cpp:356
+#: clientgui/ViewMessages.cpp:97
+msgid ""
+"Copy the selected messages to the clipboard. You can select multiple "
+"messages by holding down the shift or command key while clicking on "
+"messages."
+msgstr "העתק הודעות נבחרות ללוח. באפשרותך לבחור הודעות מרובות על ידי לחיצה ממושכת על לחצן shift או command בזמן הלחיצה על ההודעות."
+
+#: clientgui/DlgEventLog.cpp:350 clientgui/DlgEventLog.cpp:358
+#: clientgui/ViewMessages.cpp:99
+msgid ""
+"Copy the selected messages to the clipboard. You can select multiple "
+"messages by holding down the shift or control key while clicking on "
+"messages."
+msgstr "העתק הודעות נבחרות ללוח. באפשרותך לבחור הודעות מרובות על ידי לחיצה ממושכת על לחצן shift או control בזמן הלחיצה על ההודעות."
+
+#: clientgui/DlgEventLog.cpp:365 clientgui/DlgItemProperties.cpp:81
+msgid "&Close"
+msgstr "&סגור"
+
+#: clientgui/DlgEventLog.cpp:374
+msgid "Show all &messages"
+msgstr "הראה הכל &הודעות"
+
+#: clientgui/DlgEventLog.cpp:375 clientgui/DlgEventLog.cpp:377
+msgid "Show messages for all projects"
+msgstr "הצג הודעות מכל המיזמים"
+
+#: clientgui/DlgEventLog.cpp:381 clientgui/DlgEventLog.cpp:383
+msgid "Show only the messages for the selected project"
+msgstr "הצג את ההודעות הקשורות למיזם הנבחר בלבד"
+
+#: clientgui/DlgExclusiveApps.cpp:60
+#, c-format
+msgid "%s - Exclusive Applications"
+msgstr "%s - יישומים בלעדיים"
+
+#: clientgui/DlgExclusiveApps.cpp:72
+msgid ""
+"Suspend processor and network usage when these applications are running:"
+msgstr "השהה שימוש במעבד וברשת כאשר רצים היישומים הבאים:"
+
+#: clientgui/DlgExclusiveApps.cpp:80 clientgui/DlgExclusiveApps.cpp:104
+msgid "Add..."
+msgstr "הוסף..."
+
+#: clientgui/DlgExclusiveApps.cpp:81 clientgui/DlgExclusiveApps.cpp:105
+msgid "Add an application to this list"
+msgstr "הוסף יישום לרשימה זו"
+
+#: clientgui/DlgExclusiveApps.cpp:86 clientgui/DlgExclusiveApps.cpp:110
+#: clientgui/ViewProjects.cpp:230 clientgui/sg_ProjectCommandPopup.cpp:90
+msgid "Remove"
+msgstr "הסר"
+
+#: clientgui/DlgExclusiveApps.cpp:87 clientgui/DlgExclusiveApps.cpp:111
+msgid "Remove an application from this list"
+msgstr "הסר יישום מרשימה זו"
+
+#: clientgui/DlgExclusiveApps.cpp:96
+msgid "Suspend GPU usage when these applications are running:"
+msgstr "השעה שימוש במעבד גרפי כאשר יישומים אלה פועלים:"
+
+#: clientgui/DlgExclusiveApps.cpp:122
+msgid "For advanced options, refer to "
+msgstr "לאפשרויות מתקדמות, עבור ל "
+
+#: clientgui/DlgExclusiveApps.cpp:147
+msgid "save all values and close the dialog"
+msgstr "שמור את כל הערכים וסגור את החלון"
+
+#: clientgui/DlgExclusiveApps.cpp:152
+msgid "close the dialog without saving"
+msgstr "סגור את החלון ללא שמירה"
+
+#: clientgui/DlgExclusiveApps.cpp:158
+msgid "shows the preferences web page"
+msgstr "מציג את עמוד האינטרנט של ההעדפות"
+
+#. TODO: fill in the default directory for MSW
+#. TODO: fill in the default directory for Linux
+#: clientgui/DlgExclusiveApps.cpp:303 clientgui/DlgExclusiveApps.cpp:309
+#: clientgui/DlgExclusiveApps.cpp:315
+msgid "Choose application or enter file name"
+msgstr "נא לבחור יישום או למלא את שם הקובץ"
+
+#: clientgui/DlgExclusiveApps.cpp:335
+msgid "Name of application to add?"
+msgstr "שם היישום להוספה?"
+
+#: clientgui/DlgExclusiveApps.cpp:335
+msgid "Add exclusive app"
+msgstr "הוסף יישום בלעדי"
+
+#: clientgui/DlgExclusiveApps.cpp:365
+#, c-format
+msgid "'%s' is already in the list."
+msgstr "'%s' כבר קיים ברשימה."
+
+#: clientgui/DlgExclusiveApps.cpp:366
+msgid "Add Exclusive App"
+msgstr "הוסף יישום בלעדי"
+
+#: clientgui/DlgExitMessage.cpp:84
+#, c-format
+msgid "%s - Exit Confirmation"
+msgstr "%s - אישור יציאה"
+
+#: clientgui/DlgExitMessage.cpp:132
+#, c-format
+msgid ""
+"You have requested to exit the %s,\n"
+"which allows you to view and manage\n"
+"the tasks running on your computer.\n"
+"\n"
+"If you also want to stop running the tasks,\n"
+"choose from the following options:"
+msgstr "ביקשת לצאת מה-%s,\nאשר מאפשר לך לצפות ולנהל\nאת היישומים הרצים על המשחב שלך.\n\nאם אתה רוצה להפסיק להריץ את היישומים,\nבחר זאת מהאפשרויות הבאות:"
+
+#: clientgui/DlgExitMessage.cpp:138
+#, c-format
+msgid ""
+"This will shut down %s and its tasks until the\n"
+"%s is run again.\n"
+"\n"
+"In most cases, it is better just to close the %s window\n"
+"rather than to exit the application; that will allow %s to run its\n"
+"tasks at the times you selected in your preferences."
+msgstr "פעולה זו תכבה את %s ואת המשימות שלו עד\nש־%s יופעל מחדש.\n\nברוב המקרים, עדיף פשוט לסגור את החלון של %s\nמאשר לצאת מהיישום, ככה יתאפשר ל־%s להריץ את\nהמשימות שלו בחלונות הזמן שהגדרת בהעדפות שלך."
+
+#: clientgui/DlgExitMessage.cpp:146
+#, c-format
+msgid ""
+"This will shut down %s and its tasks until either the\n"
+"%s or the %s screen saver is run again.\n"
+"\n"
+"In most cases, it is better just to close the %s window\n"
+"rather than to exit the application; that will allow %s to run its\n"
+"tasks at the times you selected in your preferences."
+msgstr "זה יכבה את %s ואתת המשימות שלו עד ש\n%s או השומר מסך של %s יופעל מחדש. \n\nברוב המקרים, עדיף פשוט לסגור את החלון של %s\nמאשר לצאת מהאפליקציה; זה יאפשר ל%s להריץ את \nהמשימות שלו לפי הזמנים שבחרת בהעדפות שלך. "
+
+#: clientgui/DlgExitMessage.cpp:165
+#, c-format
+msgid "Stop running tasks when exiting the %s"
+msgstr "הפסק להריץ משימות כאשר יוצאים מ-%s"
+
+#: clientgui/DlgExitMessage.cpp:177
+msgid "Remember this decision and do not show this dialog."
+msgstr "זכור אפשרות זו ואל תציג חלון זה."
+
+#: clientgui/DlgExitMessage.cpp:190 clientgui/DlgGenericMessage.cpp:125
+#: clientgui/DlgOptions.cpp:440 clientgui/DlgSelectComputer.cpp:168
+#: clientgui/wizardex.cpp:387
+msgid "&Cancel"
+msgstr "&ביטול"
+
+#: clientgui/DlgGenericMessage.cpp:112
+msgid "Don't show this dialog again."
+msgstr "אל תציג חלון זה שוב."
+
+#: clientgui/DlgHiddenColumns.cpp:64
+#, c-format
+msgid "%s Column Selection"
+msgstr "%s בחירת עמודות"
+
+#: clientgui/DlgHiddenColumns.cpp:77
+#, c-format
+msgid "Select which columns %s should show."
+msgstr "בחר אילו עמודות %s נדרש להציג"
+
+#: clientgui/DlgHiddenColumns.cpp:357
+msgid ""
+"Are you sure you want to reset all list columns to the default "
+"configurations?"
+msgstr "האם אתה בטוח שברצונך לאפס את כל העמודות ברשימה לתצורות ברירת המחדל?"
+
+#: clientgui/DlgHiddenColumns.cpp:358
+msgid "Confirm defaults"
+msgstr "אשר ברירות מחדל"
+
+#: clientgui/DlgItemProperties.cpp:206 clientgui/DlgItemProperties.cpp:209
+#: clientgui/DlgItemProperties.cpp:212 clientgui/DlgItemProperties.cpp:215
+msgid "Don't request tasks for "
+msgstr "אל תבקש משימות עבור "
+
+#: clientgui/DlgItemProperties.cpp:206
+msgid "Project preference"
+msgstr "העדפת מיזם"
+
+#: clientgui/DlgItemProperties.cpp:209
+msgid "Account manager preference"
+msgstr "העדפות מנהל חשבון"
+
+#: clientgui/DlgItemProperties.cpp:212
+msgid "Project has no apps for "
+msgstr "למיזם אין אפליקציות ל-"
+
+#: clientgui/DlgItemProperties.cpp:215
+msgid "Client configuration excludes "
+msgstr "תצורת הלקוח מחריגה"
+
+#: clientgui/DlgItemProperties.cpp:221
+#, c-format
+msgid "%s task request deferred for"
+msgstr "בקשה ממטלת %s להידחות למשך"
+
+#: clientgui/DlgItemProperties.cpp:225
+#, c-format
+msgid "%s task request deferral interval"
+msgstr "משך הדחייה בבקשה ממטלת %s"
+
+#. set dialog title
+#: clientgui/DlgItemProperties.cpp:259
+msgid "Properties of project "
+msgstr "מאפייני מיזם"
+
+#. layout controls
+#: clientgui/DlgItemProperties.cpp:263 clientgui/DlgOptions.cpp:258
+msgid "General"
+msgstr "כללי"
+
+#: clientgui/DlgItemProperties.cpp:264
+msgid "URL"
+msgstr "כתובת אינטרנט (URL)"
+
+#: clientgui/DlgItemProperties.cpp:265
+msgid "User name"
+msgstr "שם משתמש"
+
+#: clientgui/DlgItemProperties.cpp:266
+msgid "Team name"
+msgstr "שם הצוות"
+
+#: clientgui/DlgItemProperties.cpp:267 clientgui/ViewProjects.cpp:256
+msgid "Resource share"
+msgstr "שתוף משאבים"
+
+#: clientgui/DlgItemProperties.cpp:269
+msgid "Scheduler RPC deferred for"
+msgstr "תזמון RPC נדחה ל-"
+
+#: clientgui/DlgItemProperties.cpp:272
+msgid "File downloads deferred for"
+msgstr "הורדת קבצים נדחתה ל-"
+
+#: clientgui/DlgItemProperties.cpp:275
+msgid "File uploads deferred for"
+msgstr "העלאת קבצים נדחתה ל-"
+
+#: clientgui/DlgItemProperties.cpp:277
+msgid "Disk usage"
+msgstr "שימוש בדיסק"
+
+#: clientgui/DlgItemProperties.cpp:278
+msgid "Computer ID"
+msgstr "זהות המחשב"
+
+#: clientgui/DlgItemProperties.cpp:280
+msgid "Non CPU intensive"
+msgstr "ללא דרישת מעבד"
+
+#: clientgui/DlgItemProperties.cpp:280 clientgui/DlgItemProperties.cpp:282
+#: clientgui/DlgItemProperties.cpp:283 clientgui/DlgItemProperties.cpp:285
+#: clientgui/DlgItemProperties.cpp:288 clientgui/DlgItemProperties.cpp:297
+#: clientgui/DlgItemProperties.cpp:300 clientgui/DlgItemProperties.cpp:303
+msgid "yes"
+msgstr "כן"
+
+#: clientgui/DlgItemProperties.cpp:282
+msgid "Suspended via GUI"
+msgstr "הושהה בעזרת הממשק הגרפי"
+
+#: clientgui/DlgItemProperties.cpp:282 clientgui/DlgItemProperties.cpp:283
+msgid "no"
+msgstr "לא"
+
+#: clientgui/DlgItemProperties.cpp:283
+msgid "Don't request tasks"
+msgstr "אל תבקש משימות"
+
+#: clientgui/DlgItemProperties.cpp:285
+msgid "Scheduler call in progress"
+msgstr "מתבצעת פנייה למתזמן"
+
+#: clientgui/DlgItemProperties.cpp:288
+msgid "Trickle-up pending"
+msgstr "טפטוף-מעלה ממתין"
+
+#: clientgui/DlgItemProperties.cpp:291 clientgui/DlgItemProperties.cpp:293
+msgid "Host location"
+msgstr "מיקום המחשב"
+
+#: clientgui/DlgItemProperties.cpp:293
+msgid "default"
+msgstr "ברירת מחדל"
+
+#: clientgui/DlgItemProperties.cpp:297
+msgid "Added via account manager"
+msgstr "התווסף באמצעות מנהל חשבונות"
+
+#: clientgui/DlgItemProperties.cpp:300
+msgid "Remove when tasks done"
+msgstr "הסר כאשר משימות הושלמו"
+
+#: clientgui/DlgItemProperties.cpp:303
+msgid "Ended"
+msgstr "נגמר"
+
+#: clientgui/DlgItemProperties.cpp:305
+msgid "Tasks completed"
+msgstr "משימות סוימו"
+
+#: clientgui/DlgItemProperties.cpp:306
+msgid "Tasks failed"
+msgstr "משימות נכשלו"
+
+#: clientgui/DlgItemProperties.cpp:308
+msgid "Credit"
+msgstr "ניקוד"
+
+#: clientgui/DlgItemProperties.cpp:309
+msgid "User"
+msgstr "משתמש"
+
+#: clientgui/DlgItemProperties.cpp:312 clientgui/DlgItemProperties.cpp:320
+#, c-format
+msgid "%s total, %s average"
+msgstr "%s סך הכל, %s בממוצע"
+
+#: clientgui/DlgItemProperties.cpp:317
+msgid "Host"
+msgstr "מחשב"
+
+#: clientgui/DlgItemProperties.cpp:327
+msgid "Scheduling"
+msgstr "תזמון"
+
+#: clientgui/DlgItemProperties.cpp:328
+msgid "Scheduling priority"
+msgstr "עדיפות תזמון"
+
+#: clientgui/DlgItemProperties.cpp:329
+msgid "CPU"
+msgstr "מעבד"
+
+#: clientgui/DlgItemProperties.cpp:353
+msgid "Duration correction factor"
+msgstr "גורם תיקון הזמן"
+
+#: clientgui/DlgItemProperties.cpp:361
+msgid "Last scheduler reply"
+msgstr "תגובה אחרונה מהמתזמן"
+
+#: clientgui/DlgItemProperties.cpp:371
+msgid "Properties of task "
+msgstr "מאפייני משימה"
+
+#: clientgui/DlgItemProperties.cpp:383 clientgui/ViewWork.cpp:266
+msgid "Application"
+msgstr "יישום"
+
+#: clientgui/DlgItemProperties.cpp:384 clientgui/ViewWork.cpp:267
+msgid "Name"
+msgstr "שם"
+
+#: clientgui/DlgItemProperties.cpp:385
+msgid "State"
+msgstr "מצב"
+
+#: clientgui/DlgItemProperties.cpp:388
+msgid "Received"
+msgstr "התקבל"
+
+#: clientgui/DlgItemProperties.cpp:391
+msgid "Report deadline"
+msgstr "מועד אחרון לדיווח"
+
+#: clientgui/DlgItemProperties.cpp:393
+msgid "Resources"
+msgstr "משאבים"
+
+#: clientgui/DlgItemProperties.cpp:396
+msgid "Estimated computation size"
+msgstr "נפח חישוב משוער"
+
+#: clientgui/DlgItemProperties.cpp:411
+msgid "Keywords"
+msgstr "מילות מפתח"
+
+#: clientgui/DlgItemProperties.cpp:417 clientgui/DlgItemProperties.cpp:444
+msgid "CPU time"
+msgstr "זמן מעבד"
+
+#: clientgui/DlgItemProperties.cpp:418
+msgid "CPU time since checkpoint"
+msgstr "זמן עיבוד מאז ביקורת אחרונה"
+
+#: clientgui/DlgItemProperties.cpp:420 clientgui/DlgItemProperties.cpp:445
+msgid "Elapsed time"
+msgstr "זמן שחלף"
+
+#: clientgui/DlgItemProperties.cpp:422
+msgid "Estimated time remaining"
+msgstr "זמן משוער שנשאר"
+
+#: clientgui/DlgItemProperties.cpp:423
+msgid "Fraction done"
+msgstr "החלק שהושלם"
+
+#: clientgui/DlgItemProperties.cpp:424
+msgid "Virtual memory size"
+msgstr "גודל זיכרון וירטואלי"
+
+#: clientgui/DlgItemProperties.cpp:425
+msgid "Working set size"
+msgstr "גודל שטח עבודה"
+
+#: clientgui/DlgItemProperties.cpp:427
+msgid "Directory"
+msgstr "תיקייה"
+
+#: clientgui/DlgItemProperties.cpp:430
+msgid "Process ID"
+msgstr "זהות יישום"
+
+#: clientgui/DlgItemProperties.cpp:436 clientgui/DlgItemProperties.cpp:438
+#: clientgui/DlgItemProperties.cpp:440
+msgid "Progress rate"
+msgstr "קצב התקדמות"
+
+#: clientgui/DlgItemProperties.cpp:436
+msgid "per hour"
+msgstr "בשעה"
+
+#: clientgui/DlgItemProperties.cpp:438
+msgid "per minute"
+msgstr "בדקה"
+
+#: clientgui/DlgItemProperties.cpp:440
+msgid "per second"
+msgstr "בשנייה"
+
+#: clientgui/DlgItemProperties.cpp:448
+msgid "Executable"
+msgstr "קובץ הרצה"
+
+#: clientgui/DlgItemProperties.cpp:513 clientgui/ViewWork.cpp:1143
+#: clientgui/sg_TaskPanel.cpp:821
+msgid "Local: "
+msgstr "מקומי:"
+
+#: clientgui/DlgOptions.cpp:134 clientgui/DlgOptions.cpp:140
+msgid "Options"
+msgstr "אפשרויות"
+
+#: clientgui/DlgOptions.cpp:183
+msgid "Language:"
+msgstr "שפה:"
+
+#: clientgui/DlgOptions.cpp:190
+msgid "What language should BOINC use?"
+msgstr "באיזו שפה על BOINC להשתמש?"
+
+#: clientgui/DlgOptions.cpp:194
+msgid "Notice reminder interval:"
+msgstr "מרווח התזכורות להתראות:"
+
+#: clientgui/DlgOptions.cpp:201
+msgid "How often should BOINC remind you of new notices?"
+msgstr "באיזו תכיפות על BOINC להזכיר שיש התראות חדשות?"
+
+#: clientgui/DlgOptions.cpp:206
+msgid "Run Manager at login?"
+msgstr "להפעיל את המנהל בעת הפעלת המחשב?"
+
+#: clientgui/DlgOptions.cpp:212
+msgid "Run the BOINC Manager when you log on."
+msgstr "הרץ את BOINC Manager כאשר אתה מתחבר."
+
+#: clientgui/DlgOptions.cpp:217
+msgid "Run the client?"
+msgstr "להריץ את תוכנת הלקוח?"
+
+#: clientgui/DlgOptions.cpp:223
+msgid "Run the client when launching the Manager."
+msgstr "יש להפעיל את תכנית הלקוח בעת הפעלת המנהל."
+
+#: clientgui/DlgOptions.cpp:227
+msgid "Enable Manager exit dialog?"
+msgstr "לאפשר חלון יציאה מהמנהל?"
+
+#: clientgui/DlgOptions.cpp:233
+msgid "Display the exit dialog when shutting down the Manager."
+msgstr "מציג את חלון היציאה כאשר מכבים את המנהל."
+
+#: clientgui/DlgOptions.cpp:237
+msgid "Enable Client shutdown dialog?"
+msgstr "הפעל חלון כיבוי הלקוח?"
+
+#: clientgui/DlgOptions.cpp:243
+msgid "Display confirmation dialog when shutting down the connected client."
+msgstr "הצג חלון אישור כאשר מכבים את הלקוח המחובר."
+
+#: clientgui/DlgOptions.cpp:248
+msgid "Show status in menu bar?"
+msgstr "להציג את המצב בסרגל התפריטים?"
+
+#: clientgui/DlgOptions.cpp:254
+msgid "Display a status icon in the system menu bar."
+msgstr "הצגת סמל מצב בסרגל התפריטים של המערכת."
+
+#: clientgui/DlgOptions.cpp:266
+msgid "Dial-up and Virtual Private Network settings"
+msgstr "הגדרות חייגן ורשת וירטואלית פרטית"
+
+#: clientgui/DlgOptions.cpp:280
+msgid "&Set Default"
+msgstr "&הגדר ברירת מחדל"
+
+#: clientgui/DlgOptions.cpp:285
+msgid "&Clear Default"
+msgstr "&מחק ברירת מחדל"
+
+#: clientgui/DlgOptions.cpp:292
+msgid "Default Connection:"
+msgstr "חיבור ברירת מחדל:"
+
+#: clientgui/DlgOptions.cpp:299
+msgid "Connections"
+msgstr "חיבורים"
+
+#: clientgui/DlgOptions.cpp:308
+msgid "Connect via HTTP proxy server"
+msgstr "התחבר באמצעות שרת מתווך HTTP"
+
+#: clientgui/DlgOptions.cpp:312
+msgid "HTTP Proxy Server Configuration"
+msgstr "תצורת שרת מתווך HTTP"
+
+#: clientgui/DlgOptions.cpp:320 clientgui/DlgOptions.cpp:384
+msgid "Address:"
+msgstr "כתובת:"
+
+#: clientgui/DlgOptions.cpp:328 clientgui/DlgOptions.cpp:392
+#: clientgui/ProxyPage.cpp:340 clientgui/ProxyPage.cpp:360
+msgid "Port:"
+msgstr "פורט:"
+
+#: clientgui/DlgOptions.cpp:336 clientgui/DlgOptions.cpp:400
+msgid "Don't use proxy for:"
+msgstr "אל תמשתש בשרת מתווך עבור:"
+
+#: clientgui/DlgOptions.cpp:343 clientgui/DlgOptions.cpp:407
+msgid "Leave these blank if not needed"
+msgstr "השאר ריק אם לא נחוץ"
+
+#: clientgui/DlgOptions.cpp:349 clientgui/DlgOptions.cpp:413
+#: clientgui/ProxyPage.cpp:343 clientgui/ProxyPage.cpp:363
+msgid "User Name:"
+msgstr "שם משתמש"
+
+#: clientgui/DlgOptions.cpp:357 clientgui/DlgOptions.cpp:421
+#: clientgui/DlgSelectComputer.cpp:152 clientgui/ProxyPage.cpp:346
+#: clientgui/ProxyPage.cpp:366
+msgid "Password:"
+msgstr "סיסמה:"
+
+#: clientgui/DlgOptions.cpp:364
+msgid "HTTP Proxy"
+msgstr "שרת מתווך HTTP"
+
+#: clientgui/DlgOptions.cpp:372
+msgid "Connect via SOCKS proxy server"
+msgstr "התחבר באמצעות שרת מתווך SOCKS"
+
+#: clientgui/DlgOptions.cpp:376
+msgid "SOCKS Proxy Server Configuration"
+msgstr "תצורת שרת מתווך SOCKS"
+
+#: clientgui/DlgOptions.cpp:428
+msgid "SOCKS Proxy"
+msgstr "שרת מתווך SOCKS"
+
+#: clientgui/DlgOptions.cpp:436
+msgid "&Save"
+msgstr "&שמור"
+
+#: clientgui/DlgOptions.cpp:626
+msgid "always"
+msgstr "תמיד"
+
+#: clientgui/DlgOptions.cpp:627
+msgid "1 hour"
+msgstr "שעה אחת"
+
+#: clientgui/DlgOptions.cpp:628
+msgid "6 hours"
+msgstr "6 שעות"
+
+#: clientgui/DlgOptions.cpp:629
+msgid "1 day"
+msgstr "יום אחד"
+
+#: clientgui/DlgOptions.cpp:630
+msgid "1 week"
+msgstr "שבוע אחד"
+
+#: clientgui/DlgOptions.cpp:631
+msgid "never"
+msgstr "אף פעם"
+
+#: clientgui/DlgOptions.cpp:733
+#, c-format
+msgid "%s - Language Selection"
+msgstr "%s - בחירת שפה"
+
+#: clientgui/DlgOptions.cpp:740
+#, c-format
+msgid ""
+"The %s's language has been changed.  In order for this change to take "
+"effect, you must restart the %s."
+msgstr "שפת ברירת המחדל של %s שונתה, על מנת ששינוי זה יכנס לתוקף עליך לאתחל את %s."
+
+#: clientgui/DlgSelectComputer.cpp:91
+#, c-format
+msgid "%s - Select Computer"
+msgstr "%s - בחר מחשב"
+
+#: clientgui/DlgSelectComputer.cpp:125
+#, c-format
+msgid ""
+"Another instance of %s is already running \n"
+"on this computer.  Please select a client to monitor."
+msgstr "עותק אחר של %s כבר רץ \nעל מחשב זה. אנא בחר לקוח לניטור."
+
+#: clientgui/DlgSelectComputer.cpp:143
+msgid "Host name:"
+msgstr "שם המחשב:"
+
+#: clientgui/Localization.cpp:31 clientgui/Localization.cpp:69
+msgid "Message boards"
+msgstr "לוחות הודעות"
+
+#: clientgui/Localization.cpp:33
+msgid "Correspond with other users on the SETI@home message boards"
+msgstr "התכתב עם משתמשים אחרים על גבי לוחות ההודעות של SETI@home"
+
+#: clientgui/Localization.cpp:37
+msgid "Ask questions and report problems"
+msgstr "שאל שאלות ודווח על תקלות"
+
+#: clientgui/Localization.cpp:39 clientgui/Localization.cpp:81
+#: clientgui/Localization.cpp:111 clientgui/Localization.cpp:129
+msgid "Your account"
+msgstr "החשבון שלך"
+
+#: clientgui/Localization.cpp:41 clientgui/Localization.cpp:87
+#: clientgui/Localization.cpp:113
+msgid "View your account information and credit totals"
+msgstr "הצג מידע על החשבון שלך וסיכום נקודות"
+
+#: clientgui/Localization.cpp:43
+msgid "Your preferences"
+msgstr "ההעדפות שלך"
+
+#: clientgui/Localization.cpp:45
+msgid "View and modify your SETI@home account profile and preferences"
+msgstr "מראה ומשנה את פרופיל החשבון והעדפות שלך ב-SETI@home"
+
+#: clientgui/Localization.cpp:47 clientgui/Localization.cpp:89
+msgid "Your results"
+msgstr "התוצאות שלך"
+
+#: clientgui/Localization.cpp:49 clientgui/Localization.cpp:91
+msgid "View your last week (or more) of computational results and work"
+msgstr "הצג את התוצאות החישוב  והעבודה שלך מהשבוע שעבר (או יותר)"
+
+#: clientgui/Localization.cpp:51 clientgui/Localization.cpp:93
+msgid "Your computers"
+msgstr "המחשבים שלך"
+
+#: clientgui/Localization.cpp:53
+msgid "View a listing of all the computers on which you are running SETI@Home"
+msgstr "הצג רשימה של כל המחשבים שמריצים את SETI@home"
+
+#: clientgui/Localization.cpp:55 clientgui/Localization.cpp:97
+msgid "Your team"
+msgstr "הצוות שלך"
+
+#: clientgui/Localization.cpp:57 clientgui/Localization.cpp:99
+msgid "View information about your team"
+msgstr "הצג מידע אודות הצוות שלך"
+
+#: clientgui/Localization.cpp:61
+msgid "Common questions"
+msgstr "שאלות נפוצות"
+
+#: clientgui/Localization.cpp:63
+msgid "Read the Einstein@Home Frequently Asked Question list"
+msgstr "קרא את רשימת השאלות הנפוצות של Einstein@Home"
+
+#: clientgui/Localization.cpp:65
+msgid "Screensaver info"
+msgstr "מידע על השומר מסך"
+
+#: clientgui/Localization.cpp:67
+msgid "Read a detailed description of the Einstein@Home screensaver"
+msgstr "קרא תאור מפורט אודות שומר המסך של Einstein@Home"
+
+#: clientgui/Localization.cpp:71
+msgid ""
+"Correspond with admins and other users on the Einstein@Home message boards"
+msgstr "התכתב עם מנהלים ומשתמשים אחרים על גבי לוחות ההודעות של Einstein@home"
+
+#: clientgui/Localization.cpp:73
+msgid "Einstein status"
+msgstr "מצב Einstein"
+
+#: clientgui/Localization.cpp:75
+msgid "Current status of the Einstein@Home server"
+msgstr "המצב הנוכחי של שרת ה-Einstein@Home"
+
+#: clientgui/Localization.cpp:77
+msgid "Report problems"
+msgstr "דווח על תקלות"
+
+#: clientgui/Localization.cpp:79
+msgid "A link to the Einstein@Home problems and bug reports message board"
+msgstr "קישור ללוח ההודעות על דיווחי שגיאות ותקלות של  Einstein@Home"
+
+#: clientgui/Localization.cpp:83
+msgid "View and modify your Einstein@Home account profile and preferences"
+msgstr "הצג ושנה את פרופיל החשבון והעדפות שלך ב-Einstein@Home"
+
+#: clientgui/Localization.cpp:85
+msgid "Account summary"
+msgstr "סיכום החשבון"
+
+#: clientgui/Localization.cpp:95
+msgid ""
+"View a listing of all the computers on which you are running Einstein@Home"
+msgstr "הצג את כל המחשבים שמריצים את Einstein@Home"
+
+#: clientgui/Localization.cpp:101
+msgid "LIGO project"
+msgstr "מיזם LIGO"
+
+#: clientgui/Localization.cpp:103
+msgid ""
+"The home page of the Laser Interferometer Gravitational-wave Observatory "
+"(LIGO) project"
+msgstr "דף הבית של מיזם מצפה מד-התאבכות לייזר של גל-כבידה (LIGO)"
+
+#: clientgui/Localization.cpp:105
+msgid "GEO-600 project"
+msgstr "מיזם GEO-600"
+
+#: clientgui/Localization.cpp:107
+msgid "The home page of the GEO-600 project"
+msgstr "עמוד הבית של מיזם ה-GEO-600"
+
+#: clientgui/Localization.cpp:115 clientgui/Localization.cpp:133
+#: clientgui/ViewProjects.cpp:253 clientgui/ViewStatistics.cpp:441
+msgid "Team"
+msgstr "צוות"
+
+#: clientgui/Localization.cpp:117
+msgid "Info about your Team"
+msgstr "מידע אודות הצוות שלך"
+
+#: clientgui/Localization.cpp:123
+msgid "Get help for climateprediction.net"
+msgstr "קבל עזרה מ-climateprediction.net"
+
+#: clientgui/Localization.cpp:125
+msgid "News"
+msgstr "חדשות"
+
+#: clientgui/Localization.cpp:127
+msgid "climateprediction.net News"
+msgstr "חדשות climateprediction.net"
+
+#: clientgui/Localization.cpp:131
+msgid "View your account information, credits, and trickles"
+msgstr "צפה במידע החשבון שלך, נקודות זכות וטפטופים"
+
+#: clientgui/Localization.cpp:135
+msgid "Info about your team"
+msgstr "מידע אודות הצוות שלך"
+
+#: clientgui/Localization.cpp:141
+msgid "Search for help in our help system"
+msgstr "חפש עזרה במערכת העזרה שלנו"
+
+#: clientgui/Localization.cpp:143
+msgid "Global Statistics"
+msgstr "סטטיסטיקות גלובליות"
+
+#: clientgui/Localization.cpp:145
+msgid "Summary statistics for World Community Grid"
+msgstr "סטטיסטיקות מתומצתות על World Community Grid"
+
+#: clientgui/Localization.cpp:147
+msgid "My Grid"
+msgstr "ה-Grid שלי"
+
+#: clientgui/Localization.cpp:149
+msgid "Your statistics and settings"
+msgstr "הסטטיסטיקות והגדרות שלך"
+
+#: clientgui/Localization.cpp:151
+msgid "Device Profiles"
+msgstr "פרופילי התקנים"
+
+#: clientgui/Localization.cpp:153
+msgid "Update your device settings"
+msgstr "עדכן את הגדרות ההתקנים שלך"
+
+#: clientgui/Localization.cpp:155
+msgid "Research"
+msgstr "מחקר"
+
+#: clientgui/Localization.cpp:157
+msgid "Learn about the projects hosted at World Community Grid"
+msgstr "למד אודות המיזמים של World Community Grid"
+
+#: clientgui/MainDocument.cpp:1299
+msgid "Version Update"
+msgstr "עדכון גרסה"
+
+#: clientgui/MainDocument.cpp:1308
+#, c-format
+msgid "A new version of %s is available. You can download it here: %s"
+msgstr "גרסא חדשה של %s זמינה. באפשרותך להוריד אותה כאן: %s"
+
+#: clientgui/MainDocument.cpp:1311
+#, c-format
+msgid "There is no new version of %s available for download."
+msgstr "לא נמצאה גרסה חדשה של %s להורדה. "
+
+#: clientgui/MainDocument.cpp:1315
+#, c-format
+msgid "%s is not connected to the client"
+msgstr "%s אינו מחובר ללקוח"
+
+#: clientgui/MainDocument.cpp:1860
+msgid "Missing application"
+msgstr "ישום חסר"
+
+#: clientgui/MainDocument.cpp:1861
+msgid ""
+"Please download and install the CoRD application from "
+"http://cord.sourceforge.net"
+msgstr "נא להוריד ולהתקין את היישום CoRD מהאתר http://cord.sourceforge.net"
+
+#: clientgui/MainDocument.cpp:2469
+msgid "on batteries"
+msgstr "פועל על סוללות"
+
+#: clientgui/MainDocument.cpp:2470
+msgid "computer is in use"
+msgstr "המחשב בשימוש"
+
+#: clientgui/MainDocument.cpp:2471
+msgid "user request"
+msgstr "בקשת משתמש"
+
+#: clientgui/MainDocument.cpp:2472
+msgid "time of day"
+msgstr "זמן של היום"
+
+#: clientgui/MainDocument.cpp:2473
+msgid "CPU benchmarks in progress"
+msgstr "הערכת ביצועי מעבד מתבצעת"
+
+#: clientgui/MainDocument.cpp:2474
+msgid "need disk space - check preferences"
+msgstr "יש צורך בשטח דיסק - בדוק העדפות"
+
+#: clientgui/MainDocument.cpp:2475
+msgid "computer is not in use"
+msgstr "המחשב אינו בשימוש"
+
+#: clientgui/MainDocument.cpp:2476
+msgid "starting up"
+msgstr "מתחיל"
+
+#: clientgui/MainDocument.cpp:2477
+msgid "an exclusive app is running"
+msgstr "יישום בלעדי רץ כרגע"
+
+#: clientgui/MainDocument.cpp:2478
+msgid "CPU is busy"
+msgstr "מעבד תפוס"
+
+#: clientgui/MainDocument.cpp:2479
+msgid "network bandwidth limit exceeded"
+msgstr "חריגה מהגבלת רוחב הפס של הרשת"
+
+#: clientgui/MainDocument.cpp:2480
+msgid "requested by operating system"
+msgstr "נתבקש ע\"י מערכת ההפעלה"
+
+#: clientgui/MainDocument.cpp:2482
+msgid "unknown reason"
+msgstr "סיבה לא ידועה"
+
+#: clientgui/MainDocument.cpp:2504
+msgid "GPU missing, "
+msgstr "מעבד גרפי חסר."
+
+#: clientgui/MainDocument.cpp:2511
+msgid "New"
+msgstr "חדש"
+
+#: clientgui/MainDocument.cpp:2515
+msgid "Download failed"
+msgstr "הורדה נכשלה"
+
+#: clientgui/MainDocument.cpp:2517
+msgid "Downloading"
+msgstr "מוריד"
+
+#: clientgui/MainDocument.cpp:2519 clientgui/MainDocument.cpp:2578
+msgid " (suspended - "
+msgstr "(מושהה - "
+
+#: clientgui/MainDocument.cpp:2527
+msgid "Project suspended by user"
+msgstr "מיזם הושהה על ידי המשתמש"
+
+#: clientgui/MainDocument.cpp:2529
+msgid "Task suspended by user"
+msgstr "משימה הושתה על ידי המשתמש"
+
+#. an NCI process can be running even though computation is suspended
+#. (because of <dont_suspend_nci>
+#: clientgui/MainDocument.cpp:2534
+msgid "Suspended - "
+msgstr "מושהה -"
+
+#: clientgui/MainDocument.cpp:2537
+msgid "GPU suspended - "
+msgstr "עיבוד גרפי מושהה"
+
+#: clientgui/MainDocument.cpp:2541
+msgid "Waiting for memory"
+msgstr "ממתין לזיכרון"
+
+#: clientgui/MainDocument.cpp:2543
+msgid "Waiting for shared memory"
+msgstr "ממתין לזיכרון משותף"
+
+#: clientgui/MainDocument.cpp:2545
+msgid "Running"
+msgstr "רץ"
+
+#: clientgui/MainDocument.cpp:2547
+msgid " (non-CPU-intensive)"
+msgstr "(ללא דרישת מעבד)"
+
+#: clientgui/MainDocument.cpp:2550
+msgid "Waiting to run"
+msgstr "ממתין להרצה"
+
+#: clientgui/MainDocument.cpp:2552 clientgui/MainDocument.cpp:2555
+msgid "Ready to start"
+msgstr "מוכן להתחיל"
+
+#: clientgui/MainDocument.cpp:2559
+msgid "Postponed: "
+msgstr "נידחה:"
+
+#: clientgui/MainDocument.cpp:2562
+msgid "Postponed"
+msgstr "נידחה"
+
+#: clientgui/MainDocument.cpp:2566
+msgid "Waiting for network access"
+msgstr "מחכה לגישה לאינטרנט"
+
+#: clientgui/MainDocument.cpp:2570
+msgid "Computation error"
+msgstr "שגיאת עיבוד"
+
+#: clientgui/MainDocument.cpp:2574
+msgid "Upload failed"
+msgstr "העלאה נכשלה"
+
+#: clientgui/MainDocument.cpp:2576
+msgid "Uploading"
+msgstr "מעלה"
+
+#: clientgui/MainDocument.cpp:2587
+msgid "Aborted by user"
+msgstr "בוטל על ידי המשתמש"
+
+#: clientgui/MainDocument.cpp:2590
+msgid "Aborted by project"
+msgstr "בוטל על ידי המיזם"
+
+#: clientgui/MainDocument.cpp:2593
+msgid "Aborted: not started by deadline"
+msgstr "בוטל: לא התחיל לפני התאריך האחרון לביצוע"
+
+#: clientgui/MainDocument.cpp:2596
+msgid "Aborted: task disk limit exceeded"
+msgstr "מבוטל: חריגה בהגבלת שימוש בדיסק"
+
+#: clientgui/MainDocument.cpp:2599
+msgid "Aborted: run time limit exceeded"
+msgstr "מבוטל: חריגה בהגבלת זמן עובדה"
+
+#: clientgui/MainDocument.cpp:2602
+msgid "Aborted: memory limit exceeded"
+msgstr "מבוטל: חריגה בהגבלת זיכרון"
+
+#: clientgui/MainDocument.cpp:2605
+msgid "Aborted"
+msgstr "בוטל"
+
+#: clientgui/MainDocument.cpp:2610
+msgid "Acknowledged"
+msgstr "אושר"
+
+#: clientgui/MainDocument.cpp:2612
+msgid "Ready to report"
+msgstr "מוכן לדיווח"
+
+#: clientgui/MainDocument.cpp:2614
+#, c-format
+msgid "Error: invalid state '%d'"
+msgstr "שגיאה: מצב לא חוקי '%d'"
+
+#: clientgui/NoInternetConnectionPage.cpp:179
+msgid "No Internet connection"
+msgstr "אין חיבור לאינטרנט"
+
+#: clientgui/NoInternetConnectionPage.cpp:182
+msgid "Please connect to the Internet and try again."
+msgstr "אנא התחבר לאינטרנט ונסה שוב."
+
+#: clientgui/NotDetectedPage.cpp:181
+msgid "Project not found"
+msgstr "המיזם לא נמצא"
+
+#: clientgui/NotDetectedPage.cpp:184
+msgid ""
+"The URL you supplied is not that of a BOINC-based project.\n"
+"\n"
+"Please check the URL and try again."
+msgstr "כתובת האינטרנט שהזנת אינה של מיזם מבוסס BOINC.\n\nאנא בדוק את הכתובת ונסה שוב."
+
+#: clientgui/NotDetectedPage.cpp:188
+msgid "Account manager not found"
+msgstr "מנהל חשבונות לא נמצא"
+
+#: clientgui/NotDetectedPage.cpp:191
+msgid ""
+"The URL you supplied is not that of a BOINC-based account\n"
+"manager.\n"
+"\n"
+"Please check the URL and try again."
+msgstr "כתובת האינטרנט שהזנת אינה של מנהל חשבונות מבוסס BOINC.\n\nאנא בדוק את הכתובת ונסה שוב."
+
+#: clientgui/NotFoundPage.cpp:181
+msgid "Login Failed."
+msgstr "התחברות נכשלה."
+
+#: clientgui/NotFoundPage.cpp:185
+msgid "Check the username and password, and try again."
+msgstr "בדוק את שם המשתמש והסיסמה, ונסה שוב."
+
+#: clientgui/NotFoundPage.cpp:189
+msgid "Check the email address and password, and try again."
+msgstr "בדוק את כתובת הדוא\"ל והסיסמה, ונסה שוב."
+
+#: clientgui/NoticeListCtrl.cpp:235
+msgid "more..."
+msgstr "עוד..."
+
+#: clientgui/ProjectInfoPage.cpp:230
+msgid "Choose a project"
+msgstr "בחר מיזם"
+
+#: clientgui/ProjectInfoPage.cpp:235
+msgid "To choose a project, click its name or type its URL below."
+msgstr "כדי לבחור מיזם, לחץ על השם שלו או רשום את כתובת האינטרנט שלו למטה."
+
+#: clientgui/ProjectInfoPage.cpp:251
+msgid "Categories:"
+msgstr "קטגוריות:"
+
+#: clientgui/ProjectInfoPage.cpp:271 clientgui/sg_ProjectPanel.cpp:90
+msgid "Projects:"
+msgstr "מיזמים:"
+
+#: clientgui/ProjectInfoPage.cpp:283
+msgid "Project details"
+msgstr "פרטי המיזם"
+
+#: clientgui/ProjectInfoPage.cpp:293
+msgid "Research area:"
+msgstr "אזור מחקר:"
+
+#: clientgui/ProjectInfoPage.cpp:303
+msgid "Organization:"
+msgstr "ארגון:"
+
+#: clientgui/ProjectInfoPage.cpp:313
+msgid "Web site:"
+msgstr "אתר אינטרנט:"
+
+#: clientgui/ProjectInfoPage.cpp:324
+msgid "Supported systems:"
+msgstr "מערכות תומכות:"
+
+#: clientgui/ProjectInfoPage.cpp:331
+msgid "Supports Microsoft Windows"
+msgstr "יש תמיכה ב־Windows מבית Microsoft"
+
+#: clientgui/ProjectInfoPage.cpp:335
+msgid "Supports Mac OS X"
+msgstr "יש תמיכה ב־OS X מבית Mac"
+
+#: clientgui/ProjectInfoPage.cpp:339
+msgid "Supports Linux on Intel"
+msgstr "יש תמיכה בלינוקס על גבי Intel"
+
+#: clientgui/ProjectInfoPage.cpp:343
+msgid "Supports Android"
+msgstr "יש תמיכה ב־Android"
+
+#: clientgui/ProjectInfoPage.cpp:347
+msgid "Supports FreeBSD"
+msgstr "יש תמיכה ב־FreeBSD"
+
+#: clientgui/ProjectInfoPage.cpp:351
+msgid "Supports Linux on ARM (e.g. Raspberry Pi)"
+msgstr "יש תמיכה בלינוקס על גבי ARM (כמו למשל Raspberry Pi)"
+
+#: clientgui/ProjectInfoPage.cpp:355
+msgid "Supports NVIDIA GPUs"
+msgstr "יש תמיכה במעבדים גרפיים מבית NVIDIA"
+
+#: clientgui/ProjectInfoPage.cpp:359
+msgid "Supports AMD GPUs"
+msgstr "יש תמיכה במעבדים גרפיים מבית AMD"
+
+#: clientgui/ProjectInfoPage.cpp:363
+msgid "Supports Intel GPUs"
+msgstr "יש תמיכה במעבדים גרפיים מבית Intel"
+
+#: clientgui/ProjectInfoPage.cpp:367
+msgid "Supports VirtualBox"
+msgstr "יש תמיכה ב־VirtualBox"
+
+#: clientgui/ProjectInfoPage.cpp:377
+msgid "Project URL:"
+msgstr "כתובת האינטרנט של המיזם:"
+
+#: clientgui/ProjectInfoPage.cpp:520 clientgui/ProjectInfoPage.cpp:754
+#: clientgui/ProjectInfoPage.cpp:758
+msgid "All"
+msgstr "הכל"
+
+#: clientgui/ProjectInfoPage.cpp:803
+msgid ""
+"This project may not have work for your type of computer.  Do you want to "
+"add it anyway?"
+msgstr "ייתכן ולמיזם זה אין עבודה לסוג המחשב שלך. האם תרצה להוסיפו בכל זאת?"
+
+#: clientgui/ProjectInfoPage.cpp:862
+msgid "You already added this project. Please choose a different project."
+msgstr "כבר הוספת מיזם זה. אנא בחר מיזם אחר."
+
+#: clientgui/ProjectProcessingPage.cpp:320
+#: clientgui/ProjectPropertiesPage.cpp:333
+msgid ""
+"Communicating with project\n"
+"Please wait..."
+msgstr "מתקשר עם המיזם\nאנא המתן..."
+
+#: clientgui/ProjectProcessingPage.cpp:517
+msgid "Required files not found on the server."
+msgstr "קבצים דרושים לא נמצאו על השרת."
+
+#: clientgui/ProjectProcessingPage.cpp:520
+#: clientgui/ProjectProcessingPage.cpp:593
+msgid "An internal server error has occurred."
+msgstr "התרחשה שגיאת שרת פנימית."
+
+#: clientgui/ProjectWelcomePage.cpp:228
+#, c-format
+msgid "Welcome to %s."
+msgstr "ברוך הבא ל-%s."
+
+#: clientgui/ProjectWelcomePage.cpp:231
+msgid "You have volunteered to compute for this project:"
+msgstr "התנדבת לבצע חישובים עבור מיזם זה:"
+
+#: clientgui/ProjectWelcomePage.cpp:232
+msgid "Name:"
+msgstr "שם:"
+
+#: clientgui/ProjectWelcomePage.cpp:234
+msgid "URL:"
+msgstr "כתובת אינטרנט:"
+
+#: clientgui/ProjectWelcomePage.cpp:238
+msgid "To continue, click Next."
+msgstr "כדי להמשיך, לחץ 'הבא'."
+
+#: clientgui/ProxyInfoPage.cpp:194
+msgid "Network communication failure"
+msgstr "תקשורת לרשת נכשלה"
+
+#: clientgui/ProxyInfoPage.cpp:198
+msgid ""
+"The World Community Grid - BOINC software failed to communicate\n"
+"over the Internet. The most likely reasons are:\n"
+"\n"
+"1) Connectivity problem.  Check your network or modem connection\n"
+"and then click Back to try again.\n"
+"\n"
+"2) Personal firewall software is blocking the World Community\n"
+"Grid - BOINC software.  Configure your personal firewall to let\n"
+"BOINC and BOINC Manager communicate on port 80 and port 443,\n"
+"then click Back to try again.\n"
+"\n"
+"3) You are using a proxy server.\n"
+"Click Next to configure BOINC's proxy settings."
+msgstr "תוכנת ה-World Community Grid - BOINC לא הצליחה לתקשר\nדרך האינטרנט. הסיבות הסבירות ביותר הן:\n\n1) בעיית קישוריות. בדוק את חיבור הרשת או המודם שלך\nולאחר מכן לחץ 'הקודם' כדי לנסות שוב.\n\n2) תוכנת חומת-אש אישית חוסמת את תוכנת World Community\nGrid - BOINC. הגדר את תצורת חומת-האש האישית שלך כך שתאפשר \nל-BOINC ול-BOINC Manager לתקשר על גבי פיתחה (port) 80 ופיתחה 443,\nולאחר מכן לחץ 'הקודם' כדי לנסות שוב.\n\n3) אתה משתמש בשרת מתווך (proxy).\nלחץ 'הבא' כדי לקבוע את תצורת שרת מתווך של BOINC."
+
+#: clientgui/ProxyInfoPage.cpp:202
+msgid ""
+"BOINC failed to communicate on the Internet.\n"
+"The most likely reasons are:\n"
+"\n"
+"1) Connectivity problem.  Check your network\n"
+"or modem connection and then click Back to try again.\n"
+"\n"
+"2) Personal firewall software is blocking BOINC.\n"
+"Configure your personal firewall to let BOINC and\n"
+"BOINC Manager communicate on port 80,\n"
+"then click Back to try again.\n"
+"\n"
+"3) You are using a proxy server.\n"
+"Click Next to configure BOINC's proxy settings."
+msgstr "BOINC לא הצליחה לתקשר דרך האינטרנט. \nהסיבות הסבירות ביותר הן:\n\n1) בעיית קישוריות. בדוק את חיבור הרשת \nאו המודם שלך ולאחר מכן לחץ 'הקודם' כדי לנסות שוב.\n\n2) תוכנת חומת-אש אישית חוסמת את BOINC. \nהגדר את תצורת את חומת-האש האישית שלך כך שתאפשר ל-BOINC \nול-BOINC Manager לתקשר על גבי פיתחה (port) 80,\nולאחר מכן לחץ 'הקודם' כדי לנסות שוב.\n\n3) אתה משתמש בשרת מתווך (proxy).\nלחץ 'הבא' כדי לקבוע את תצורת שרת מתווך של BOINC."
+
+#: clientgui/ProxyPage.cpp:331
+msgid "Proxy configuration"
+msgstr "תצורת שרת מתווך"
+
+#: clientgui/ProxyPage.cpp:334
+msgid "HTTP proxy"
+msgstr "שרת מתווך HTTP"
+
+#: clientgui/ProxyPage.cpp:337 clientgui/ProxyPage.cpp:357
+msgid "Server:"
+msgstr "שרת:"
+
+#: clientgui/ProxyPage.cpp:350
+msgid "Autodetect"
+msgstr "זיהוי אוטומטי"
+
+#: clientgui/ProxyPage.cpp:354
+msgid "SOCKS proxy"
+msgstr "שרת מתווך SOCKS"
+
+#: clientgui/TermsOfUsePage.cpp:230
+msgid "Terms of Use"
+msgstr "תנאי השימוש"
+
+#: clientgui/TermsOfUsePage.cpp:234
+msgid "Please read the following terms of use:"
+msgstr "אנא קרא את תנאי השימוש הבאים:"
+
+#: clientgui/TermsOfUsePage.cpp:248
+msgid "I agree to the terms of use."
+msgstr "אני מסכים לתנאי השימוש."
+
+#: clientgui/TermsOfUsePage.cpp:254
+msgid "I do not agree to the terms of use."
+msgstr "אני אינני מסכים לתנאי השימוש."
+
+#: clientgui/UnavailablePage.cpp:183
+msgid "Project temporarily unavailable"
+msgstr "זמנית המיזם לא זמין"
+
+#: clientgui/UnavailablePage.cpp:186
+msgid ""
+"The project is temporarily unavailable.\n"
+"\n"
+"Please try again later."
+msgstr "זמנית המיזם אינו זמין.\n\nאנא נסה במועד מאוחר יותר."
+
+#: clientgui/UnavailablePage.cpp:190
+msgid "Account manager temporarily unavailable"
+msgstr "זמנית מנהל החשבונות אינו זמין"
+
+#: clientgui/UnavailablePage.cpp:193
+msgid ""
+"The account manager is temporarily unavailable.\n"
+"\n"
+"Please try again later."
+msgstr "זמנית מנהל החשבונות אינו זמין.\n\nאנא נסה במועד באוחר יותר."
+
+#: clientgui/ValidateAccountKey.cpp:68
+msgid "Please specify an account key to continue."
+msgstr "אנא הזן קוד חשבון כדי להמשיך."
+
+#: clientgui/ValidateAccountKey.cpp:71
+msgid "Invalid Account Key; please enter a valid Account Key"
+msgstr "קוד חשבון לא נכון; אנא הזן קוד חשבון תקף"
+
+#: clientgui/ValidateAccountKey.cpp:82 clientgui/ValidateEmailAddress.cpp:86
+msgid "Validation conflict"
+msgstr "סתירת אימות"
+
+#: clientgui/ValidateEmailAddress.cpp:72
+msgid "Please specify an email address"
+msgstr "אנא הזן כתובת דוא\"ל"
+
+#: clientgui/ValidateEmailAddress.cpp:75
+msgid "Invalid email address; please enter a valid email address"
+msgstr "כתובת דוא\"ל לא חוקית; אנא הזן כתובת דוא\"ל חוקית"
+
+#: clientgui/ValidateURL.cpp:69
+msgid "Missing URL"
+msgstr "כתובת אינטרנט חסרה"
+
+#: clientgui/ValidateURL.cpp:70
+msgid ""
+"Please specify a URL.\n"
+"For example:\n"
+"http://www.example.com/"
+msgstr "אנא הזן כתובת אתר.\nלדוגמא:\nhttp://www.example.com/"
+
+#: clientgui/ValidateURL.cpp:83 clientgui/ValidateURL.cpp:87
+#: clientgui/ValidateURL.cpp:91 clientgui/ValidateURL.cpp:103
+#: clientgui/ValidateURL.cpp:107 clientgui/ValidateURL.cpp:110
+msgid "Invalid URL"
+msgstr "כתובת אתר לא חוקית"
+
+#: clientgui/ValidateURL.cpp:84 clientgui/ValidateURL.cpp:88
+#: clientgui/ValidateURL.cpp:92
+msgid ""
+"Please specify a valid URL.\n"
+"For example:\n"
+"http://boincproject.example.com"
+msgstr "אנא הזן כתובת אתר חוקית.\nלדוגמא:\nhttp://boincproject.example.com"
+
+#: clientgui/ValidateURL.cpp:104 clientgui/ValidateURL.cpp:108
+#, c-format
+msgid "'%s' does not contain a valid host name."
+msgstr "'%s אינו מכיל שם מחשב תקף."
+
+#: clientgui/ValidateURL.cpp:111
+#, c-format
+msgid "'%s' does not contain a valid path."
+msgstr "'%s' אינו מכיל נתיב תקף."
+
+#. Setup View
+#: clientgui/ViewMessages.cpp:84 clientgui/ViewProjects.cpp:198
+#: clientgui/ViewStatistics.cpp:1957 clientgui/ViewTransfers.cpp:183
+#: clientgui/ViewWork.cpp:207
+msgid "Commands"
+msgstr "פקודות"
+
+#: clientgui/ViewMessages.cpp:88
+msgid "Copy all messages"
+msgstr "העתק את כל ההודעות"
+
+#: clientgui/ViewMessages.cpp:95
+msgid "Copy selected messages"
+msgstr "העתק הודעות נבחרות"
+
+#: clientgui/ViewMessages.cpp:106 clientgui/ViewMessages.cpp:502
+msgid "Show only this project"
+msgstr "הצג מיזם זה בלבד"
+
+#: clientgui/ViewMessages.cpp:107 clientgui/ViewMessages.cpp:503
+msgid "Show only the messages for the selected project."
+msgstr "הצג את ההודעות הקשורות למיזם הנבחר בלבד."
+
+#: clientgui/ViewMessages.cpp:164
+msgid "Messages"
+msgstr "הודעות"
+
+#: clientgui/ViewMessages.cpp:187
+msgid "Copying all messages to the clipboard..."
+msgstr "מעתיק את כל ההודעות ללוח..."
+
+#: clientgui/ViewMessages.cpp:223
+msgid "Copying selected messages to the clipboard..."
+msgstr "מעתיק הודעות נבחרות ללוח..."
+
+#: clientgui/ViewMessages.cpp:286
+msgid "Filtering messages..."
+msgstr "מסנן הודעות..."
+
+#: clientgui/ViewMessages.cpp:494
+msgid "Show all messages"
+msgstr "הצג את כל ההודעות"
+
+#: clientgui/ViewMessages.cpp:495
+msgid "Show messages for all projects."
+msgstr "הצג הודעות לכל המיזמים."
+
+#: clientgui/ViewNotices.cpp:58 clientgui/sg_DlgMessages.cpp:124
+msgid "Fetching notices; please wait..."
+msgstr "מקבל הודעות; אנא המתן..."
+
+#: clientgui/ViewNotices.cpp:65 clientgui/sg_DlgMessages.cpp:132
+msgid "There are no notices at this time."
+msgstr "אין התראות להציג בשלב זה."
+
+#: clientgui/ViewNotices.cpp:99 clientgui/sg_BoincSimpleFrame.cpp:979
+msgid "Notices"
+msgstr "התראות"
+
+#: clientgui/ViewProjects.cpp:202 clientgui/sg_ProjectCommandPopup.cpp:66
+msgid "Update"
+msgstr "עדכן"
+
+#: clientgui/ViewProjects.cpp:203 clientgui/sg_ProjectCommandPopup.cpp:67
+msgid ""
+"Report all completed tasks, get latest credit, get latest preferences, and "
+"possibly get more tasks."
+msgstr "דווח את כל המשימות שהושלמו, קבל את הניקוד העדכני, קבל את ההעדפות המעודכנות וככל הנראה קבל עוד משימות. ."
+
+#: clientgui/ViewProjects.cpp:209 clientgui/ViewProjects.cpp:792
+#: clientgui/ViewWork.cpp:232 clientgui/ViewWork.cpp:880
+#: clientgui/sg_BoincSimpleFrame.cpp:960
+#: clientgui/sg_ProjectCommandPopup.cpp:72
+#: clientgui/sg_ProjectCommandPopup.cpp:128
+#: clientgui/sg_TaskCommandPopup.cpp:72 clientgui/sg_TaskCommandPopup.cpp:122
+msgid "Suspend"
+msgstr "השהה"
+
+#: clientgui/ViewProjects.cpp:210 clientgui/ViewProjects.cpp:792
+#: clientgui/sg_ProjectCommandPopup.cpp:73
+#: clientgui/sg_ProjectCommandPopup.cpp:129
+msgid "Suspend tasks for this project."
+msgstr "השהה משימות של מיזם זה."
+
+#: clientgui/ViewProjects.cpp:216 clientgui/ViewProjects.cpp:811
+#: clientgui/sg_ProjectCommandPopup.cpp:78
+#: clientgui/sg_ProjectCommandPopup.cpp:136
+msgid "No new tasks"
+msgstr "אין משימות חדשות"
+
+#: clientgui/ViewProjects.cpp:217 clientgui/sg_ProjectCommandPopup.cpp:79
+msgid "Don't get new tasks for this project."
+msgstr "אל תקבל משימות חדשות למיזם זה."
+
+#: clientgui/ViewProjects.cpp:223 clientgui/sg_ProjectCommandPopup.cpp:84
+msgid "Reset project"
+msgstr "אתחל מיזם"
+
+#: clientgui/ViewProjects.cpp:224 clientgui/sg_ProjectCommandPopup.cpp:85
+msgid ""
+"Delete all files and tasks associated with this project, and get new tasks."
+"  You can update the project first to report any completed tasks."
+msgstr "מחק את כל הקבצים והמשימות המשוייכים למיזם זה וקבל חדשים. באפשרותך לעדכן קודם את המיזם בכדי לדווח משימות שהושלמו."
+
+#: clientgui/ViewProjects.cpp:231 clientgui/sg_ProjectCommandPopup.cpp:91
+msgid ""
+"Remove this project.  Tasks in progress will be lost (use 'Update' first to "
+"report any completed tasks)."
+msgstr "הסר מיזם זה. משימות בפעולה יאבדו (תחילה השתמש ב'עדכן' על מנת לדווח משימות שהושלמו)."
+
+#: clientgui/ViewProjects.cpp:237 clientgui/ViewWork.cpp:246
+#: clientgui/sg_ProjectCommandPopup.cpp:96
+#: clientgui/sg_TaskCommandPopup.cpp:84
+msgid "Properties"
+msgstr "מאפיינים"
+
+#: clientgui/ViewProjects.cpp:238 clientgui/sg_ProjectCommandPopup.cpp:97
+msgid "Show project details."
+msgstr "הצג פרטים על המיזם."
+
+#: clientgui/ViewProjects.cpp:252 clientgui/ViewStatistics.cpp:426
+msgid "Account"
+msgstr "חשבון"
+
+#: clientgui/ViewProjects.cpp:254
+msgid "Work done"
+msgstr "עבודה שהסתיימה"
+
+#: clientgui/ViewProjects.cpp:255
+msgid "Avg. work done"
+msgstr "ממוצע העבודה שהסתיימה"
+
+#: clientgui/ViewProjects.cpp:257 clientgui/ViewTransfers.cpp:215
+#: clientgui/ViewWork.cpp:262
+msgid "Status"
+msgstr "מצב"
+
+#: clientgui/ViewProjects.cpp:336
+msgid "Projects"
+msgstr "מיזמים"
+
+#: clientgui/ViewProjects.cpp:517 clientgui/sg_ProjectCommandPopup.cpp:229
+#, c-format
+msgid "Are you sure you want to reset project '%s'?"
+msgstr "האם אתה בטוח שברצונך לאפס את המיזם '%s'?"
+
+#: clientgui/ViewProjects.cpp:523 clientgui/sg_ProjectCommandPopup.cpp:235
+msgid "Reset Project"
+msgstr "אפס את המיזם"
+
+#: clientgui/ViewProjects.cpp:571 clientgui/sg_ProjectCommandPopup.cpp:266
+#, c-format
+msgid "Are you sure you want to remove project '%s'?"
+msgstr "האם אתה בטוח שברצונך להסיר את המיזם '%s'?"
+
+#: clientgui/ViewProjects.cpp:577 clientgui/sg_ProjectCommandPopup.cpp:272
+msgid "Remove Project"
+msgstr "הסר מיזם"
+
+#: clientgui/ViewProjects.cpp:788 clientgui/sg_ProjectCommandPopup.cpp:126
+msgid "Resume tasks for this project."
+msgstr "המשך משימות של מיזם זה."
+
+#: clientgui/ViewProjects.cpp:807 clientgui/sg_ProjectCommandPopup.cpp:133
+msgid "Allow new tasks"
+msgstr "אפשר משימות חדשות"
+
+#: clientgui/ViewProjects.cpp:807 clientgui/sg_ProjectCommandPopup.cpp:134
+msgid "Allow fetching new tasks for this project."
+msgstr "אפשר קבלת משימות חדשות למיזם זה."
+
+#: clientgui/ViewProjects.cpp:811 clientgui/sg_ProjectCommandPopup.cpp:137
+msgid "Don't fetch new tasks for this project."
+msgstr "אל תקבל משימות חדשות למיזם זה."
+
+#: clientgui/ViewProjects.cpp:1115
+msgid "Requested by user"
+msgstr "התבקש על ידי המשתמש"
+
+#: clientgui/ViewProjects.cpp:1116
+msgid "To fetch work"
+msgstr "Pyydetään työtä"
+
+#: clientgui/ViewProjects.cpp:1117
+msgid "To report completed tasks"
+msgstr "לדווח על משימות מוכנות"
+
+#: clientgui/ViewProjects.cpp:1118
+msgid "To send trickle-up message"
+msgstr "כדי לשלוח הודעת טפטוף עולה"
+
+#: clientgui/ViewProjects.cpp:1119
+msgid "Requested by account manager"
+msgstr "התבקש על ידי מנהל חשבונות"
+
+#: clientgui/ViewProjects.cpp:1120
+msgid "Project initialization"
+msgstr "אתמול מיזם"
+
+#: clientgui/ViewProjects.cpp:1121
+msgid "Requested by project"
+msgstr "התבקש על ידי המיזם"
+
+#: clientgui/ViewProjects.cpp:1122
+msgid "Unknown reason"
+msgstr "סיבה לא ידועה"
+
+#: clientgui/ViewProjects.cpp:1136
+msgid "Suspended by user"
+msgstr "הושהה על ידי המשתמש"
+
+#: clientgui/ViewProjects.cpp:1139
+msgid "Won't get new tasks"
+msgstr "לא מקבל משימות חדשות"
+
+#: clientgui/ViewProjects.cpp:1142
+msgid "Project ended - OK to remove"
+msgstr "המיזם הסתיים - לחץ 'אישור' כדי להסיר"
+
+#: clientgui/ViewProjects.cpp:1145
+msgid "Will remove when tasks done"
+msgstr "יוסר עם השלמת המשימות"
+
+#: clientgui/ViewProjects.cpp:1148
+msgid "Scheduler request pending"
+msgstr "ממתין לבקשת מתזמן"
+
+#: clientgui/ViewProjects.cpp:1154
+msgid "Scheduler request in progress"
+msgstr "בקשת מתזמן בתהליך"
+
+#: clientgui/ViewProjects.cpp:1157
+msgid "Trickle up message pending"
+msgstr "הודעת טפטוף עולה ממתינה"
+
+#: clientgui/ViewProjects.cpp:1163
+msgid "Communication deferred"
+msgstr "התקשרות נדחתה"
+
+#: clientgui/ViewResources.cpp:62
+msgid "Total disk usage"
+msgstr "ניצול דיסק כללי"
+
+#: clientgui/ViewResources.cpp:83
+msgid "Disk usage by BOINC projects"
+msgstr "ניצול הדיסק על ידי מיזמי BOINC"
+
+#: clientgui/ViewResources.cpp:227
+msgid "no projects: 0 bytes used"
+msgstr "אין מיזמים: שימוש ב-0 בייטים"
+
+#: clientgui/ViewResources.cpp:261
+msgid "used by BOINC: "
+msgstr "בשימוש על ידי BOINC:"
+
+#: clientgui/ViewResources.cpp:271
+msgid "free, available to BOINC: "
+msgstr "פנוי, זמין ל-BOINC:"
+
+#: clientgui/ViewResources.cpp:279
+msgid "free, not available to BOINC: "
+msgstr "פנוי, לא זמין ל-BOINC:"
+
+#: clientgui/ViewResources.cpp:289
+msgid "free: "
+msgstr "פנוי:"
+
+#: clientgui/ViewResources.cpp:298
+msgid "used by other programs: "
+msgstr "בשימוש על ידי תוכנות אחרות:"
+
+#: clientgui/ViewStatistics.cpp:1184
+msgid "User Total"
+msgstr "סה\"כ למשתמש"
+
+#: clientgui/ViewStatistics.cpp:1185
+msgid "User Average"
+msgstr "ממוצע למשתמש"
+
+#: clientgui/ViewStatistics.cpp:1186
+msgid "Host Total"
+msgstr "סה\"כ למחשב"
+
+#: clientgui/ViewStatistics.cpp:1187
+msgid "Host Average"
+msgstr "ממוצע למחשב"
+
+#: clientgui/ViewStatistics.cpp:1334
+#, c-format
+msgid "Last update: %.0f days ago"
+msgstr "עדכון אחרון: לפני %.0f ימים"
+
+#: clientgui/ViewStatistics.cpp:1961
+msgid "Show user total"
+msgstr "הצג סה\"כ למשתמש"
+
+#: clientgui/ViewStatistics.cpp:1962
+msgid "Show total credit for user"
+msgstr "הצג את סך כל הניקוד למשתמש"
+
+#: clientgui/ViewStatistics.cpp:1968
+msgid "Show user average"
+msgstr "הצג ממוצע למשתמש"
+
+#: clientgui/ViewStatistics.cpp:1969
+msgid "Show average credit for user"
+msgstr "הצג ניקוד ממוצע למשתמש"
+
+#: clientgui/ViewStatistics.cpp:1975
+msgid "Show host total"
+msgstr "הצג סה\"כ למחשב"
+
+#: clientgui/ViewStatistics.cpp:1976
+msgid "Show total credit for host"
+msgstr "הצג את סך כל הניקוד למחשב"
+
+#: clientgui/ViewStatistics.cpp:1982
+msgid "Show host average"
+msgstr "הצג ממוצע למחשב"
+
+#: clientgui/ViewStatistics.cpp:1983
+msgid "Show average credit for host"
+msgstr "הצג ניקוד ממוצע למחשב"
+
+#: clientgui/ViewStatistics.cpp:1992
+msgid "< &Previous project"
+msgstr "< &המיזם הקודם"
+
+#: clientgui/ViewStatistics.cpp:1993
+msgid "Show chart for previous project"
+msgstr "הצג תרשים למיזם הקודם"
+
+#: clientgui/ViewStatistics.cpp:1998
+msgid "&Next project >"
+msgstr "&המיזם הבא >"
+
+#: clientgui/ViewStatistics.cpp:1999
+msgid "Show chart for next project"
+msgstr "הצג תרשים למיזם הבא"
+
+#: clientgui/ViewStatistics.cpp:2005 clientgui/ViewStatistics.cpp:2375
+msgid "Hide project list"
+msgstr "הסתר רשימת מיזמים"
+
+#: clientgui/ViewStatistics.cpp:2006 clientgui/ViewStatistics.cpp:2375
+msgid "Use entire area for graphs"
+msgstr "השתמש בכל השטח עבור הגרפים"
+
+#: clientgui/ViewStatistics.cpp:2011
+msgid "Mode view"
+msgstr "מצב תצוגה"
+
+#: clientgui/ViewStatistics.cpp:2015
+msgid "One project"
+msgstr "מיזם יחיד"
+
+#: clientgui/ViewStatistics.cpp:2016
+msgid "Show one chart with selected project"
+msgstr "הצג תרשים אחד עם המיזם הנבחר"
+
+#: clientgui/ViewStatistics.cpp:2022
+msgid "All projects (separate)"
+msgstr "כל המיזמים (בנפרד)"
+
+#: clientgui/ViewStatistics.cpp:2023
+msgid "Show all projects, one chart per project"
+msgstr "הצג את כל המיזמים, תרשים אחד לכל מיזם"
+
+#: clientgui/ViewStatistics.cpp:2029
+msgid "All projects (together)"
+msgstr "כל המיזמים (ביחד)"
+
+#: clientgui/ViewStatistics.cpp:2030
+msgid "Show one chart with all projects"
+msgstr "הצג תרשים אחד עם כל המיזמים"
+
+#: clientgui/ViewStatistics.cpp:2036
+msgid "All projects (sum)"
+msgstr "כל המיזמים (סיכום)"
+
+#: clientgui/ViewStatistics.cpp:2037
+msgid "Show one chart with sum of projects"
+msgstr "הצג תרשים אחד עם סיכום המיזמים"
+
+#: clientgui/ViewStatistics.cpp:2058
+msgid "Statistics"
+msgstr "סטטיסטיקות"
+
+#: clientgui/ViewStatistics.cpp:2379
+msgid "Show project list"
+msgstr "הצג רשימת מיזמים"
+
+#: clientgui/ViewStatistics.cpp:2379
+msgid "Uses smaller area for graphs"
+msgstr "משתמש בשטח קטן יותר עבור הגרפים"
+
+#: clientgui/ViewTransfers.cpp:187
+msgid "Retry Now"
+msgstr "נסה מחדש כעת"
+
+#: clientgui/ViewTransfers.cpp:188
+msgid "Retry the file transfer now"
+msgstr "נסה העברת קבצים כעת"
+
+#: clientgui/ViewTransfers.cpp:194
+msgid "Abort Transfer"
+msgstr "בטל העברה"
+
+#: clientgui/ViewTransfers.cpp:195
+msgid "Abort this file transfer.  You won't get credit for the task."
+msgstr "בטל את העברת קובץ זו. לא תקבל נקודות זכות עבור המשימה."
+
+#: clientgui/ViewTransfers.cpp:210
+msgid "File"
+msgstr "קובץ"
+
+#: clientgui/ViewTransfers.cpp:211 clientgui/ViewWork.cpp:261
+msgid "Progress"
+msgstr "התקדמות"
+
+#: clientgui/ViewTransfers.cpp:212
+msgid "Size"
+msgstr "גודל"
+
+#: clientgui/ViewTransfers.cpp:213 clientgui/ViewWork.cpp:263
+msgid "Elapsed"
+msgstr "עבר"
+
+#: clientgui/ViewTransfers.cpp:214
+msgid "Speed"
+msgstr "מהירות"
+
+#: clientgui/ViewTransfers.cpp:295
+msgid "Transfers"
+msgstr "העברות"
+
+#: clientgui/ViewTransfers.cpp:372
+msgid "Network activity is suspended - "
+msgstr "פעילות הרשת מושהת - "
+
+#: clientgui/ViewTransfers.cpp:374
+msgid ""
+".\n"
+"You can enable it using the Activity menu."
+msgstr ".\nאתה יכול לאפשר אותה בעזרת תפריט 'פעילות'."
+
+#: clientgui/ViewTransfers.cpp:377
+msgid "BOINC"
+msgstr "BOINC"
+
+#: clientgui/ViewTransfers.cpp:431
+#, c-format
+msgid ""
+"Are you sure you want to abort this file transfer '%s'?\n"
+"NOTE: Aborting a transfer will invalidate a task and you\n"
+"will not receive credit for it."
+msgstr "אתה בטוח שברצונך לבטל את העברת הקובץ '%s'?\nשים לב: ביטול העברת הקובץ יגרום לפסילת המשימה ולכן\nלא תקבל עליה ניקוד."
+
+#: clientgui/ViewTransfers.cpp:437
+msgid "Abort File Transfer"
+msgstr "בטל העברת קובץ"
+
+#: clientgui/ViewTransfers.cpp:849
+msgid "Upload"
+msgstr "Lähetä"
+
+#: clientgui/ViewTransfers.cpp:849
+msgid "Download"
+msgstr "הורדה"
+
+#: clientgui/ViewTransfers.cpp:853
+msgid "retry in "
+msgstr "נסה שנית ב-"
+
+#: clientgui/ViewTransfers.cpp:855
+msgid "failed"
+msgstr "epäonnistui"
+
+#: clientgui/ViewTransfers.cpp:858
+msgid "suspended"
+msgstr "hyllytetty"
+
+#: clientgui/ViewTransfers.cpp:863
+msgid "active"
+msgstr "aktiivinen"
+
+#: clientgui/ViewTransfers.cpp:865
+msgid "pending"
+msgstr "ממתין"
+
+#: clientgui/ViewTransfers.cpp:871
+msgid " (project backoff: "
+msgstr "(נסיגת מיזם:"
+
+#: clientgui/ViewWork.cpp:211 clientgui/ViewWork.cpp:856
+msgid "Show active tasks"
+msgstr "הצג משימות פעילות"
+
+#: clientgui/ViewWork.cpp:212 clientgui/ViewWork.cpp:857
+msgid "Show only active tasks."
+msgstr "הצג משימות פעילות בלבד"
+
+#: clientgui/ViewWork.cpp:218 clientgui/ViewWork.cpp:897
+#: clientgui/sg_TaskCommandPopup.cpp:66 clientgui/sg_TaskCommandPopup.cpp:155
+msgid "Show graphics"
+msgstr "הצג גרפיקה"
+
+#: clientgui/ViewWork.cpp:219 clientgui/ViewWork.cpp:898
+#: clientgui/sg_TaskCommandPopup.cpp:67 clientgui/sg_TaskCommandPopup.cpp:156
+msgid "Show application graphics in a window."
+msgstr "הצג גרפיקת יישום בחלון חדש."
+
+#: clientgui/ViewWork.cpp:225
+msgid "Show VM Console"
+msgstr "הצג קונסולת מכונה וירטואלית (VM)"
+
+#: clientgui/ViewWork.cpp:226
+msgid "Show VM Console in a window."
+msgstr "הצג קונסולת מכונה וירטואלית (VM) בחלון"
+
+#: clientgui/ViewWork.cpp:233
+msgid "Suspend work for this result."
+msgstr "השהה עבודה לתוצאה זו."
+
+#: clientgui/ViewWork.cpp:239 clientgui/sg_TaskCommandPopup.cpp:78
+msgid "Abort"
+msgstr "בטל"
+
+#: clientgui/ViewWork.cpp:240
+msgid "Abandon work on the result. You will get no credit for it."
+msgstr "בטל את העבודה על תוצאה זו. אתה לא תקבל שום ניקוד תמורתה."
+
+#: clientgui/ViewWork.cpp:247 clientgui/sg_TaskCommandPopup.cpp:85
+msgid "Show task details."
+msgstr "הצג מידע על המשימה."
+
+#: clientgui/ViewWork.cpp:264
+msgid "Remaining (estimated)"
+msgstr "זמן שנותר (הערכה)"
+
+#: clientgui/ViewWork.cpp:265
+msgid "Deadline"
+msgstr "מועד אחרון לדיווח"
+
+#: clientgui/ViewWork.cpp:351
+msgid "Tasks"
+msgstr "משימות"
+
+#: clientgui/ViewWork.cpp:564
+#, c-format
+msgid ""
+"Are you sure you want to abort this task '%s'?\n"
+"(Progress: %s, Status: %s)"
+msgstr "האם אתה בטוח שברצונך לבטל את המשימה '%s'?\n(התקדמות: %s, מצב: %s)"
+
+#: clientgui/ViewWork.cpp:570
+#, c-format
+msgid "Are you sure you want to abort these %d tasks?"
+msgstr "האם אתה בטוח שברצונך לבטל את %d המשימות הללו?"
+
+#: clientgui/ViewWork.cpp:575 clientgui/sg_TaskCommandPopup.cpp:283
+msgid "Abort task"
+msgstr "בטל משימה"
+
+#: clientgui/ViewWork.cpp:850
+msgid "Show all tasks"
+msgstr "הצג את כל המשימות"
+
+#: clientgui/ViewWork.cpp:851
+msgid "Show all tasks."
+msgstr "הצג את כל המשימות."
+
+#: clientgui/ViewWork.cpp:875 clientgui/sg_TaskCommandPopup.cpp:119
+msgid "Resume work for this task."
+msgstr "המשך עבודה עבור משימה זו."
+
+#: clientgui/ViewWork.cpp:881 clientgui/sg_TaskCommandPopup.cpp:123
+msgid "Suspend work for this task."
+msgstr "השהה עבודה עבור משימה זו."
+
+#: clientgui/ViewWork.cpp:889 clientgui/sg_TaskCommandPopup.cpp:149
+msgid "Stop graphics"
+msgstr "הסתר גרפיקה"
+
+#: clientgui/ViewWork.cpp:890 clientgui/sg_TaskCommandPopup.cpp:150
+msgid "Close application graphics window."
+msgstr "סגור חלון גרפיקת היישום."
+
+#: clientgui/WizardAttach.cpp:572
+msgid "Do you really want to cancel?"
+msgstr "האם אתה בטוח שברצונך לבטל?"
+
+#: clientgui/WizardAttach.cpp:573
+msgid "Question"
+msgstr "שאלה"
+
+#: clientgui/sg_BoincSimpleFrame.cpp:194
+msgid "Skin"
+msgstr "מראה"
+
+#: clientgui/sg_BoincSimpleFrame.cpp:196
+msgid "Select the appearance of the user interface."
+msgstr "בחר את המראה של ממשק המשתמש."
+
+#: clientgui/sg_BoincSimpleFrame.cpp:206
+msgid "Advanced View...\tCtrl+Shift+A"
+msgstr "תצוגה מתקדמת...\tCtrl+Shift+A"
+
+#: clientgui/sg_BoincSimpleFrame.cpp:207
+msgid "Display the advanced graphical interface."
+msgstr "הצג ממשק גרפי מתקדם."
+
+#: clientgui/sg_BoincSimpleFrame.cpp:223
+msgid "Configure display options and proxy settings"
+msgstr "הגדר אפשרויות תצוגה ושרת מתווך"
+
+#: clientgui/sg_BoincSimpleFrame.cpp:272
+msgid "Display diagnostic messages."
+msgstr "הצג הודעות אבחון"
+
+#: clientgui/sg_BoincSimpleFrame.cpp:311
+#, c-format
+msgid "Show information about BOINC and %s"
+msgstr "הצג מידע אודות BOINC ו-%s"
+
+#: clientgui/sg_BoincSimpleFrame.cpp:535
+msgid "Default"
+msgstr "ברירת מחדל"
+
+#: clientgui/sg_BoincSimpleFrame.cpp:962
+msgid "Suspend Computing"
+msgstr "השהה חישובים"
+
+#: clientgui/sg_BoincSimpleFrame.cpp:963
+msgid "Resume Computing"
+msgstr "המשך חישובים"
+
+#: clientgui/sg_BoincSimpleFrame.cpp:980
+msgid "Open a window to view notices from projects or BOINC"
+msgstr "פתח חלון לצפיה בהתראות ממיזמים או מ-BOINC"
+
+#: clientgui/sg_BoincSimpleFrame.cpp:1001 clientgui/sg_DlgPreferences.cpp:373
+#, c-format
+msgid "Get help with %s"
+msgstr "קבל עזרה עם %s"
+
+#: clientgui/sg_DlgMessages.cpp:146
+msgid "Close"
+msgstr "&סגור"
+
+#: clientgui/sg_DlgMessages.cpp:394
+#, c-format
+msgid "%s - Notices"
+msgstr "%s - התראות"
+
+#: clientgui/sg_DlgPreferences.cpp:208
+msgid ""
+"For additional settings, select Computing Preferences in the Advanced View."
+msgstr "להגדרות נוספות, בחר העדפות עיבוד בתצוגה מורחבת."
+
+#: clientgui/sg_DlgPreferences.cpp:346
+msgid "GB of disk space"
+msgstr "ג\"ב מתוך שטח הדיסק"
+
+#: clientgui/sg_DlgPreferences.cpp:1117
+#, c-format
+msgid "%s - Computing Preferences"
+msgstr "%s - העדפות חישוב"
+
+#: clientgui/sg_DlgPreferences.cpp:1198
+msgid "Discard all local preferences and use web-based preferences?"
+msgstr "להתעלם מכל ההעדפות המקומיות ולהשתמש בהעדפות מבוססות אינטרנט?"
+
+#: clientgui/sg_ProjectPanel.cpp:73
+msgid "Add Project"
+msgstr "הוסף מיזם"
+
+#: clientgui/sg_ProjectPanel.cpp:74
+msgid "Synchronize"
+msgstr "סנכרן"
+
+#: clientgui/sg_ProjectPanel.cpp:75
+msgid "Work done for this project"
+msgstr "העבודה הסתיימה למיזם זה"
+
+#: clientgui/sg_ProjectPanel.cpp:77
+msgid "Volunteer for any or all of 30+ projects in many areas of science"
+msgstr "התנדב לאחד מלמעלה מ-30 מיזמים, או יותר, בתחומי מדע שונים"
+
+#: clientgui/sg_ProjectPanel.cpp:78
+msgid "Synchronize projects with account manager system"
+msgstr "סנכרן את המיזמים עם מערכת מנהל חשבונות"
+
+#. TODO: Might want better wording for Project Selection Combo Box tooltip
+#: clientgui/sg_ProjectPanel.cpp:125
+msgid "Select a project to access with the controls below"
+msgstr "בחר מיזם על מנת לגשת אליו עם בקרי השליטה מטה"
+
+#: clientgui/sg_ProjectPanel.cpp:146
+msgid "Project Web Pages"
+msgstr "דפי האינטרנט של המיזם"
+
+#: clientgui/sg_ProjectPanel.cpp:150
+msgid "Project Commands"
+msgstr "פקודות מיזם"
+
+#: clientgui/sg_ProjectPanel.cpp:279
+#, c-format
+msgid "Pop up a menu of web sites for project %s"
+msgstr "הקפצת תפריט של אתרים עבור המיזם %s"
+
+#: clientgui/sg_ProjectPanel.cpp:281
+#, c-format
+msgid "Pop up a menu of commands to apply to project %s"
+msgstr "הקפץ תפריט של פקודות ליישום על מיזם %s"
+
+#: clientgui/sg_TaskCommandPopup.cpp:73
+msgid "Suspend this task."
+msgstr "השהה משימה זו."
+
+#: clientgui/sg_TaskCommandPopup.cpp:79
+msgid "Abandon this task. You will get no credit for it."
+msgstr "נטוש משימה זו. לא תקבלו עבורה שום נקודות זכות."
+
+#: clientgui/sg_TaskCommandPopup.cpp:278
+#, c-format
+msgid ""
+"Are you sure you want to abort this task '%s'?\n"
+"(Progress: %.1lf%%, Status: %s)"
+msgstr "אתה בטוח שאתה רוצה לבטל את הישום '%s'?\n(התקדמות: %.1lf%%, מצב: %s)"
+
+#: clientgui/sg_TaskPanel.cpp:461
+msgid "You don't have any projects.  Please Add a Project."
+msgstr "אין לך מיזמים. אנא הוסף מיזם."
+
+#: clientgui/sg_TaskPanel.cpp:462
+msgid "Not available"
+msgstr "לא זמין"
+
+#: clientgui/sg_TaskPanel.cpp:473
+msgid "Tasks:"
+msgstr "משימות:"
+
+#. TODO: Might want better wording for Task Selection Combo Box tooltip
+#: clientgui/sg_TaskPanel.cpp:479
+msgid "Select a task to access"
+msgstr "בחר משימה אליה ברצונך לגשת"
+
+#. what project the task is from, e.g. "From: SETI@home"
+#: clientgui/sg_TaskPanel.cpp:491
+msgid "From:"
+msgstr "מ:"
+
+#: clientgui/sg_TaskPanel.cpp:545
+msgid "This task's progress"
+msgstr "התקדמות משימה זו"
+
+#: clientgui/sg_TaskPanel.cpp:563
+msgid "Task Commands"
+msgstr "פקודות משימה"
+
+#: clientgui/sg_TaskPanel.cpp:564
+msgid "Pop up a menu of commands to apply to this task"
+msgstr "הקפץ תפריט של פקודות ליישם עבור משימה זו"
+
+#: clientgui/sg_TaskPanel.cpp:699
+#, c-format
+msgid "Application: %s"
+msgstr "יישום: %s"
+
+#: clientgui/sg_TaskPanel.cpp:722
+#, c-format
+msgid "%.3f%%"
+msgstr "%.3f%%"
+
+#: clientgui/sg_TaskPanel.cpp:730
+msgid "Application: Not available"
+msgstr "יישום: לא זמין"
+
+#: clientgui/sg_TaskPanel.cpp:830
+msgid "Not Available"
+msgstr "לא זמין"
+
+#: clientgui/sg_TaskPanel.cpp:845
+#, c-format
+msgid "Elapsed: %s"
+msgstr "זמן שחלף: %s"
+
+#: clientgui/sg_TaskPanel.cpp:859
+#, c-format
+msgid "Remaining (estimated): %s"
+msgstr "זמן שנותר: %s"
+
+#: clientgui/sg_TaskPanel.cpp:874
+#, c-format
+msgid "Status: %s"
+msgstr "מצב: %s"
+
+#: clientgui/sg_TaskPanel.cpp:1208
+msgid "Retrieving current status."
+msgstr "מאחזר מצב נוכחי."
+
+#: clientgui/sg_TaskPanel.cpp:1214
+msgid "Downloading work from the server."
+msgstr "מוריד עבודה מהשרת."
+
+#: clientgui/sg_TaskPanel.cpp:1219
+msgid "Processing Suspended:  Running On Batteries."
+msgstr "חישוב מושהה: עובד על סוללות."
+
+#: clientgui/sg_TaskPanel.cpp:1221
+msgid "Processing Suspended:  User Active."
+msgstr "חישוב מושהה: משתמש פעיל."
+
+#: clientgui/sg_TaskPanel.cpp:1223
+msgid "Processing Suspended:  User paused processing."
+msgstr "חישוב מושהה: המשתמש השהה חישובים."
+
+#: clientgui/sg_TaskPanel.cpp:1225
+msgid "Processing Suspended:  Time of Day."
+msgstr "החישוב מושהה: זמן היום."
+
+#: clientgui/sg_TaskPanel.cpp:1227
+msgid "Processing Suspended:  Benchmarks Running."
+msgstr "חישוב מושהה: מבחני ביצועים רצים."
+
+#: clientgui/sg_TaskPanel.cpp:1229
+msgid "Processing Suspended:  need disk space."
+msgstr "חישוב מושהה: נדרש עוד שטח אחסון."
+
+#: clientgui/sg_TaskPanel.cpp:1231
+msgid "Processing Suspended."
+msgstr "חישוב מושהה."
+
+#: clientgui/sg_TaskPanel.cpp:1235
+msgid "Waiting to contact project servers."
+msgstr "ממתין ליצירת קשר עם שרתי המיזם."
+
+#: clientgui/sg_TaskPanel.cpp:1239 clientgui/sg_TaskPanel.cpp:1248
+msgid "Retrieving current status"
+msgstr "מאחזר מצב נוכחי"
+
+#: clientgui/sg_TaskPanel.cpp:1243
+msgid "No work available to process"
+msgstr "אין עבודה זמינה לעיבוד"
+
+#: clientgui/sg_TaskPanel.cpp:1245
+msgid "Unable to connect to the core client"
+msgstr "לא מצליח להתחבר ללקוח הליבה."
+
+#: clientgui/wizardex.cpp:386 clientgui/wizardex.cpp:559
+msgid "&Next >"
+msgstr "&הבא >"
+
+#: clientgui/wizardex.cpp:392
+msgid "< &Back"
+msgstr "< ה&קודם"
+
+#: clientgui/wizardex.cpp:559
+msgid "&Finish"
+msgstr "&סיום"
+
+#: clientgui/mac/Mac_GUI.cpp:35
+msgid "Services"
+msgstr "שירותים"
+
+#: clientgui/mac/Mac_GUI.cpp:36
+#, c-format
+msgid "Hide %s"
+msgstr "הסתר %s"
+
+#: clientgui/mac/Mac_GUI.cpp:37
+msgid "Hide Others"
+msgstr "הסתר את האחרים"
+
+#: clientgui/mac/Mac_GUI.cpp:38
+msgid "Show All"
+msgstr "הצג הכל"
+
+#: clientgui/mac/Mac_GUI.cpp:39
+#, c-format
+msgid "Quit %s"
+msgstr "הפסק %s"
