@@ -37,9 +37,9 @@
 			<div class="setting">
 				<div class="label"><% tran("service.ssh_keylength"); %></div>
 				<select name="sshd_keylength">
-				<option value="2048" <% nvram_selected("sshd_keylength","2048"); %>>2048</option>
-				<option value="3072" <% nvram_selected("sshd_keylength","3072"); %>>3072</option>
-				<option value="4096" <% nvram_selected("sshd_keylength","4096"); %>>4096</option>
+				<option value="256" <% nvram_selected("sshd_keylength","256"); %>>256</option>
+				<option value="384" <% nvram_selected("sshd_keylength","384"); %>>384</option>
+				<option value="521" <% nvram_selected("sshd_keylength","521"); %>>521</option>
 				</select>&nbsp;&nbsp;
 				<script type="text/javascript">
 				//<![CDATA[
