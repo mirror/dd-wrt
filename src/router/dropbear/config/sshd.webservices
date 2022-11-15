@@ -35,12 +35,6 @@
 				<input class="spaceradio" type="radio" name="sshd_replace" value="0" <% nvc("sshd_replace", "0"); %> /><% tran("share.disable"); %>
 			</div>
 			<div class="setting">
-				<div class="label"><% tran("service.ssh_keylength"); %></div>
-				<select name="sshd_keylength">
-				<option value="256" <% nvram_selected("sshd_keylength","256"); %>>256</option>
-				<option value="384" <% nvram_selected("sshd_keylength","384"); %>>384</option>
-				<option value="521" <% nvram_selected("sshd_keylength","521"); %>>521</option>
-				</select>&nbsp;&nbsp;
 				<script type="text/javascript">
 				//<![CDATA[
 				document.write("<input class=\"button\" aria-label=\"" + service.ssh_keygenerate + "\" style=\"vertical-align: -.1rem;\" type=\"button\" name=\"config_button\" value=\"" + service.ssh_keygenerate + "\" onclick=\"generate_sshkey(this.form);\">");
