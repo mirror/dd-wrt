@@ -1873,8 +1873,8 @@ void ssh_downloadkey(webs_t wp)
 	FILE *fp;
 	int i = 0;
 
-	sprintf(cmd, "/usr/sbin/dropbearkey -t ecdsa -s %d -f /tmp/id_ecdsa", keylength);
-	dd_loginfo("ssh_key_export", "Starting key generation with keylength:%d and replace:%d\n", keylength, replace);
+	sprintf(cmd, "/usr/sbin/dropbearkey -t ed25519 -f /tmp/id_ed25519");
+	dd_loginfo("ssh_key_export", "Starting key generation and replace:%d\n", replace);
 	if ((fp = popen(cmd, "r")) == NULL) {
 		dd_loginfo("ssh_key_export", "ERROR: Could not execute command %s\n", cmd);
 		return;
@@ -1890,7 +1890,7 @@ void ssh_downloadkey(webs_t wp)
 
 	// make openssh key
 	dd_loginfo("ssh_key_export", "Key is generated, now converting to OpenSSH\n");
-	eval("/usr/sbin/dropbearconvert", "dropbear", "openssh", "/tmp/id_ecdsa", "/tmp/id_ecdsa_ssh");
+	eval("/usr/sbin/dropbearconvert", "dropbear", "openssh", "/tmp/id_ed25519", "/tmp/id_ed25519_ssh");
 
 	char *key = nvram_safe_get("sshd_authorized_keys");
 	//replace or add key to existing
@@ -1911,7 +1911,7 @@ void ssh_downloadkey(webs_t wp)
 		nvram_set("sshd_authorized_keys", pubkey);
 	}
 
-	unlink("/tmp/id_ecdsa");
+	unlink("/tmp/id_ed25519");
 	nvram_seti("sshd_keyready", 1);
 	nvram_seti("sshd_replace", replace);
 	nvram_seti("sshd_keylength", keylength);
