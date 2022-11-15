@@ -47,8 +47,8 @@ zlib:
 
 zlib-install:
 	install -D zlib/libz.so.1.2.12.zlib-ng $(INSTALLDIR)/zlib/usr/lib/libz.so.1.2.12
-	cd $(INSTALLDIR)/zlib/usr/lib ; ln -s libz.so.1.2.12 libz.so.1  ; true
-	cd $(INSTALLDIR)/zlib/usr/lib ; ln -s libz.so.1.2.12 libz.so  ; true
+	cd $(INSTALLDIR)/zlib/usr/lib ; ln -s -f libz.so.1.2.12 libz.so.1  ; true
+	cd $(INSTALLDIR)/zlib/usr/lib ; ln -s -f libz.so.1.2.12 libz.so  ; true
 
 zlib-clean:
 	if [ -e "$(ZLIB_PKG_BUILD_DIR)/Makefile" ]; then $(MAKE) -C zlib clean ; fi
