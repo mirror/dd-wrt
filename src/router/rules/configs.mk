@@ -260,7 +260,7 @@ obj-$(CONFIG_TOR) += xz zstd zlib libucontext openssl libevent tor
 obj-$(CONFIG_RSTP) += rstp
 obj-$(CONFIG_OPENLLDP) += openlldp
 obj-$(CONFIG_WGETS) += wgets
-obj-$(CONFIG_USB) += usb disktype
+obj-$(CONFIG_USB) += p910nd usb disktype
 obj-$(CONFIG_USB_ADVANCED) += hdparm
 ifeq ($(CONFIG_X86),y)
 obj-$(CONFIG_USB_ADVANCED) += sdparm
