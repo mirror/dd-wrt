@@ -3,7 +3,7 @@ PKG_INSTALL:=1
 MAKE_FLAGS+=VERBOSE=1
 
 ZLIB_PKG_BUILD_DIR=$(TOP)/zlib
-ZLIB_CMAKE_OPTIONS=-DZLIB_COMPAT=ON
+ZLIB_CMAKE_OPTIONS=-DZLIB_COMPAT=ON -DZLIB_ENABLE_TESTS=OFF -DZLIBNG_ENABLE_TESTS=OFF
 ZLIB_STAGING_DIR=$(TOP)/_staging/usr
 ZLIB_EXTRA_CFLAGS=-I$(TOP)/_staging/usr/include $(COPTS) $(MIPS16_OPT)
 ZLIB_EXTRA_LDFLAGS=-L$(TOP)/_staging/usr/lib $(COPTS) $(MIPS16_OPT)
@@ -46,9 +46,9 @@ zlib:
 	rm -f zlib/libz.a
 
 zlib-install:
-	install -D zlib/libz.so.1.2.11 $(INSTALLDIR)/zlib/usr/lib/libz.so.1.2.11
-	cd $(INSTALLDIR)/zlib/usr/lib ; ln -s libz.so.1.2.11 libz.so.1  ; true
-	cd $(INSTALLDIR)/zlib/usr/lib ; ln -s libz.so.1.2.11 libz.so  ; true
+	install -D zlib/libz.so.1.2.12.zlib-ng $(INSTALLDIR)/zlib/usr/lib/libz.so.1.2.12
+	cd $(INSTALLDIR)/zlib/usr/lib ; ln -s libz.so.1.2.12 libz.so.1  ; true
+	cd $(INSTALLDIR)/zlib/usr/lib ; ln -s libz.so.1.2.12 libz.so  ; true
 
 zlib-clean:
 	if [ -e "$(ZLIB_PKG_BUILD_DIR)/Makefile" ]; then $(MAKE) -C zlib clean ; fi
