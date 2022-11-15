@@ -37,6 +37,8 @@ boinc-install:
 
 #	$(MAKE) -C boinc install DESTDIR=$(INSTALLDIR)/boinc
 	rm -rf $(INSTALLDIR)/boinc/usr/include
+	rm -f $(INSTALLDIR)/boinc/usr/bin/boinc
+	cd $(INSTALLDIR)/boinc/usr/bin/boinc && ln -s boinc_clien boinct
 #	rm -rf $(INSTALLDIR)/boinc/usr/bin
 #	rm -rf $(INSTALLDIR)/boinc/usr/share
 	rm -rf $(INSTALLDIR)/boinc/usr/lib/pkgconfig
