@@ -1,4 +1,4 @@
-irqbalance-configure:
+irqbalance-configure: libnl
 	cd irqbalance && ./autogen.sh
 	cd irqbalance && ./configure --disable-numa --prefix=/usr \
 		--with-libcap_ng=no \
@@ -17,7 +17,7 @@ irqbalance-configure:
 		LIBNL3GENL_CFLAGS="-I$(TOP)/libnl/include" \
 		LIBNL3GENL_LIBS="-L$(TOP)/libnl/lib/.libs -lnl-genl-3"
 
-irqbalance: zlib libffi
+irqbalance: zlib libffi libnl
 	$(MAKE) -C irqbalance
 
 irqbalance-clean: 
