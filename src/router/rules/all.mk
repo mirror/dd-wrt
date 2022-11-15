@@ -352,6 +352,7 @@ include rules/avahi.mk
 include rules/prepare.mk
 include rules/libcares.mk
 include rules/antaira-agent.mk
+include rules/boinc.mk
 
 #
 # Generic rules
