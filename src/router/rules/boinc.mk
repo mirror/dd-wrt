@@ -26,7 +26,7 @@ boinc: zlib openssl curl
 	$(MAKE) -C boinc
 
 boinc-clean:
-	@true
+	$(MAKE) -C boinc clean
 
 boinc-install:
 	$(MAKE) -C boinc install DESTDIR=$(INSTALLDIR)/boinc
