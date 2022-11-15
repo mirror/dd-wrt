@@ -41,7 +41,7 @@ zlib-configure:
 	$(call CMakeClean,$(ZLIB_PKG_BUILD_DIR))
 	$(call CMakeConfigure,$(ZLIB_PKG_BUILD_DIR),$(ZLIB_STAGING_DIR),$(ZLIB_CMAKE_OPTIONS),$(ZLIB_EXTRA_CFLAGS),$(ZLIB_EXTRA_LDFLAGS),.) 
 	cp -f $(TOP)/zlib/zlib.h $(TOP)/zlib/include
-	cp -f $(TOP)/zlib/zlib_name_mangeling.h $(TOP)/zlib/include
+	cp -f $(TOP)/zlib/zlib_name_mangling.h $(TOP)/zlib/include
 	cp -f $(TOP)/zlib/zconf.h $(TOP)/zlib/include
 
 zlib:
@@ -49,7 +49,7 @@ zlib:
 	rm -f zlib/libz.a
 	mkdir $(TOP)/zlib/include
 	cp -f $(TOP)/zlib/zlib.h $(TOP)/zlib/include
-	cp -f $(TOP)/zlib/zlib_name_mangeling.h $(TOP)/zlib/include
+	cp -f $(TOP)/zlib/zlib_name_mangling.h $(TOP)/zlib/include
 	cp -f $(TOP)/zlib/zconf.h $(TOP)/zlib/include
 
 zlib-install:
