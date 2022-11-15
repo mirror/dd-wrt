@@ -174,7 +174,7 @@ static int generate_dropbear_ecdsa_host_key(void)
 	char *buf = malloc(4096);
 	int ret = -1;
 
-	eval("dropbearkey", "-t", "ecdsa", "-f", ECDSA_HOST_KEY_FILE);
+	eval("dropbearkey", "-t", "ecdsa", "-s", "521", "-f", ECDSA_HOST_KEY_FILE);
 
 	eval("dropbearconvert", "dropbear", "openssh", ECDSA_HOST_KEY_FILE, TMP_HOST_KEY_FILE);
 
