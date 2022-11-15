@@ -1,3 +1,12 @@
+ZLIB_NG_2.1.0 {
+  global:
+    zng_deflateInit;
+    zng_deflateInit2;
+    zng_inflateBackInit;
+    zng_inflateInit;
+    zng_inflateInit2;
+};
+
 ZLIB_NG_2.0.0 {
   global:
     zng_adler32;
@@ -66,7 +75,6 @@ ZLIB_NG_2.0.0 {
     zng_zcfree;
     zng_z_errmsg;
     zng_gz_error;
-    zng_gz_intmax;
     _*;
 };
 
@@ -85,7 +93,6 @@ ZLIB_NG_GZ_2.0.0 {
     zng_gzfread;
     zng_gzfwrite;
     zng_gzgetc;
-    zng_gzgetc_;
     zng_gzgets;
     zng_gzoffset;
     zng_gzoffset64;

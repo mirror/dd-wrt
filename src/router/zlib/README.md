@@ -18,15 +18,15 @@ Features
 
 * Zlib compatible API with support for dual-linking
 * Modernized native API based on zlib API for ease of porting
-* Modern C99 syntax and a clean code layout
-* Deflate medium and quick algorithms based on Intels zlib fork
+* Modern C11 syntax and a clean code layout
+* Deflate medium and quick algorithms based on Intel’s zlib fork
 * Support for CPU intrinsics when available
-  * Adler32 implementation using SSSE3, AVX2, Neon & VSX
-  * CRC32-B implementation using PCLMULQDQ & ACLE
+  * Adler32 implementation using SSSE3, AVX2, AVX512, AVX512-VNNI, Neon, VMX & VSX
+  * CRC32-B implementation using PCLMULQDQ, VPCLMULQDQ, ACLE, & IBM Z
   * Hash table implementation using CRC32-C intrinsics on x86 and ARM
-  * Slide hash implementations using SSE2, AVX2, Neon & VSX
-  * Compare256/258 implementations using SSE4.2 & AVX2
-  * Inflate chunk copying using SSE2, AVX2 & Neon
+  * Slide hash implementations using SSE2, AVX2, Neon, VMX & VSX
+  * Compare256 implementations using SSE2, AVX2, Neon, & POWER9
+  * Inflate chunk copying using SSE2, AVX, Neon & VSX
   * Support for hardware-accelerated deflate using IBM Z DFLTCC
 * Unaligned memory read/writes and large bit buffer improvements
 * Includes improvements from Cloudflare and Intel forks
@@ -119,8 +119,9 @@ Build Options
 | WITH_OPTIM               | --without-optimizations  | Build with optimisations                                                              | ON      |
 | WITH_NEW_STRATEGIES      | --without-new-strategies | Use new strategies                                                                    | ON      |
 | WITH_NATIVE_INSTRUCTIONS | --native                 | Compiles with full instruction set supported on this host (gcc/clang -march=native)   | OFF     |
-| WITH_SANITIZER           | --with-sanitizer         | Build with sanitizer (memory, address, undefined)                                     | OFF     |
-| WITH_FUZZERS             | --with-fuzzers           | Build test/fuzz                                                                       | OFF     |
+| WITH_SANITIZER           |                          | Build with sanitizer (memory, address, undefined)                                     | OFF     |
+| WITH_FUZZERS             |                          | Build test/fuzz                                                                       | OFF     |
+| WITH_BENCHMARKS          |                          | Build test/benchmarks                                                                 | OFF     |
 | WITH_MAINTAINER_WARNINGS |                          | Build with project maintainer warnings                                                | OFF     |
 | WITH_CODE_COVERAGE       |                          | Enable code coverage reporting                                                        | OFF     |
 
@@ -141,7 +142,7 @@ with zlib, then zlib-ng will temporarily be used instead by the program,
 without risking system-wide instability.
 
 ```
-LD_PRELOAD=/opt/zlib-ng/libz.so.1.2.11.zlib-ng /usr/bin/program
+LD_PRELOAD=/opt/zlib-ng/libz.so.1.2.12.zlib-ng /usr/bin/program
 ```
 
 ### Cmake
@@ -159,6 +160,20 @@ To install zlib-ng system-wide using the configure script:
 ```
 make install
 ```
+
+### Vcpkg
+
+Alternatively, you can build and install zlib-ng using the [vcpkg](https://github.com/Microsoft/vcpkg/) dependency manager:
+
+```sh or powershell
+git clone https://github.com/Microsoft/vcpkg.git
+cd vcpkg
+./bootstrap-vcpkg.sh # "./bootstrap-vcpkg.bat" for powershell
+./vcpkg integrate install
+./vcpkg install zlib-ng
+```
+
+The zlib-ng port in vcpkg is kept up to date by Microsoft team members and community contributors. If the version is out of date, please [create an issue or pull request](https://github.com/Microsoft/vcpkg) on the vcpkg repository.
 
 Contributing
 ------------
@@ -192,29 +207,34 @@ Advanced Build Options
 
 | CMake                           | configure             | Description                                                         | Default                |
 |:--------------------------------|:----------------------|:--------------------------------------------------------------------|------------------------|
-| ZLIB_DUAL_LINK                  |                       | Dual link tests with system zlib                                    | OFF                    |
-| UNALIGNED_OK                    |                       | Allow unaligned reads                                               | ON (x86, arm)          |
-|                                 | --force-sse2          | Skip runtime check for SSE2 instructions (Always on for x86_64)     | OFF (x86)              |
+| FORCE_SSE2                      | --force-sse2          | Skip runtime check for SSE2 instructions (Always on for x86_64)     | OFF (x86)              |
+| FORCE_TZCNT                     | --force-tzcnt         | Skip runtime check for TZCNT instructions                           | OFF                    |
 | WITH_AVX2                       |                       | Build with AVX2 intrinsics                                          | ON                     |
+| WITH_AVX512                     |                       | Build with AVX512 intrinsics                                        | ON                     |
+| WITH_AVX512VNNI                 |                       | Build with AVX512VNNI intrinsics                                    | ON                     |
 | WITH_SSE2                       |                       | Build with SSE2 intrinsics                                          | ON                     |
-| WITH_SSE4                       |                       | Build with SSE4 intrinsics                                          | ON                     |
+| WITH_SSE41                      |                       | Build with SSE41 intrinsics                                         | ON                     |
+| WITH_SSE42                      |                       | Build with SSE42 intrinsics                                         | ON                     |
 | WITH_PCLMULQDQ                  |                       | Build with PCLMULQDQ intrinsics                                     | ON                     |
+| WITH_VPCLMULQDQ                 | --without-vpclmulqdq  | Build with VPCLMULQDQ intrinsics                                    | ON                     |
 | WITH_ACLE                       | --without-acle        | Build with ACLE intrinsics                                          | ON                     |
 | WITH_NEON                       | --without-neon        | Build with NEON intrinsics                                          | ON                     |
-| WITH_POWER8                     |                       | Build with POWER8 optimisations                                     | ON                     |
+| WITH_ALTIVEC                    | --without-altivec     | Build with AltiVec (VMX) intrinsics                                 | ON                     |
+| WITH_POWER8                     | --without-power8      | Build with POWER8 optimisations                                     | ON                     |
+| WITH_CRC32_VX                   | --without-crc32-vx    | Build with vectorized CRC32 on IBM Z                                | ON                     |
 | WITH_DFLTCC_DEFLATE             | --with-dfltcc-deflate | Build with DFLTCC intrinsics for compression on IBM Z               | OFF                    |
 | WITH_DFLTCC_INFLATE             | --with-dfltcc-inflate | Build with DFLTCC intrinsics for decompression on IBM Z             | OFF                    |
-| WITH_UNALIGNED                  |                       | Allow optimizations that use unaligned reads if safe on current arch| ON                     |
+| WITH_UNALIGNED                  | --without-unaligned   | Allow optimizations that use unaligned reads if safe on current arch| ON                     |
 | WITH_INFLATE_STRICT             |                       | Build with strict inflate distance checking                         | OFF                    |
 | WITH_INFLATE_ALLOW_INVALID_DIST |                       | Build with zero fill for inflate invalid distances                  | OFF                    |
 | INSTALL_UTILS                   |                       | Copy minigzip and minideflate during install                        | OFF                    |
+| ZLIBNG_ENABLE_TESTS             |                       | Test zlib-ng specific API                                           | ON                     |
 
 
 Related Projects
 ----------------
 
-* Fork of the popular minigzip                  https://github.com/zlib-ng/minizip-ng
+* Fork of the popular minizip                   https://github.com/zlib-ng/minizip-ng
 * Python tool to benchmark minigzip/minideflate https://github.com/zlib-ng/deflatebench
 * Python tool to benchmark pigz                 https://github.com/zlib-ng/pigzbench
 * 3rd party patches for zlib-ng compatibility   https://github.com/zlib-ng/patches
-
