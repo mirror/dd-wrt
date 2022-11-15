@@ -1,0 +1,13 @@
+{
+    "name": "boinc-libs",
+    "version-string": "7.20.2",
+    "dependencies":
+    [
+        {
+          "name": "curl",
+          "features": ["schannel"],
+          "default-features": false
+        },
+        "openssl"
+    ]   
+}

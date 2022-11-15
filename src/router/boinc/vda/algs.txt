@@ -1,0 +1,114 @@
+things we need to do:
+- decide what nodes to decode and encode
+- of the resulting (and existing) chunks,
+  decide which to keep on the server
+- decide what uploads and downloads to start
+
+==============================
+
+MC::classify()
+    classify nodes as PRESENT/RECOVERABLE/UNRECOVERABLE,
+    and compute recovery sets and recovery cost
+
+    NOTE: recovery cost should take into account uploads in progress
+        (treat them as zero cost)
+
+    for each chunk C
+        C.new_present_on_server = C.present_on_server
+        if C.status == PRESENT and need more replicas or download in progress
+            C.keep_present = true
+
+// set need_recon, needed_by_parent, keep_present, need_present
+//
+MC::decide_reconstruct
+    if some child is UNREC
+        if PRESENT
+            need_recon = true
+        else if RECOVERABLE
+            need_present = true
+            for children C in recovery set
+                if C is PRESENT
+                    C.keep_present = true
+                else
+                    C.need_present = true;
+    if needed_by_parent
+        need_recon = true
+    if need_recon and not bottom-level
+        mark N PRESENT children as needed_by_parent
+    if keep_present
+        mark N PRESENT children as keep_present
+    if not bottom-level
+        recurse 
+
+// - do encoding and decoding;
+// - delete all meta-chunk files when done;
+// - delete unneeded chunks
+// - set new_present_on_server
+//
+MC::reconstruct_and_cleanup
+    recurse
+    if need_recon
+        decode
+        this.expand()
+        if !needed_by_parent
+            delete this
+    if bottom level
+        npresent = M
+        for each child C
+            if C.status != UNREC && !C.keep_present
+                if !keep_present or npresent > N
+                    delete C
+                    npresent--
+                    C.new_present_on_server = false
+            
+
+// called if this unit has been reconstructed.
+// Expand (i.e. encode) it if needed, and recurse.
+// Clean up unneeded files.
+//
+MC::expand
+    if bottom-level
+        if some child C is not PRESENT and needs more replicas
+            encode
+        for each child C
+            if need more replicas or download in progress
+                C.new_present_on_server = true
+            else
+                C.new_present_on_server = false
+                delete C
+    else
+        if some child is UNREC
+            encode
+            for each child C with status != UNREC
+                delete C
+            for each child C with status == UNREC
+                C.expand()
+                delete C
+
+start_xfers_and_update_db
+    for each chunk C
+        if C.new_present_on_server and need more replicas
+            start downloads of C
+        if C.need_present
+            start upload(s) of C
+        if C.new_present_on_server != C.present_on_server
+            C.update()
+
+MC::compute_min_failures
+    recurse
+    present, recoverable: lists of chunks
+    if bottom-level
+        for each child C
+            if C.new_present_on_server
+                add C to present
+            else if C has N replicas
+                C.min_failures = N
+                add C to recoverable
+    else
+        for each child C
+            if PRESENT, add C to present
+            if RECO, add C to recoverable
+    if size(present) >= N
+        status = PRESENT
+        min_failures = INT_MAX
+    else if size(present) + size(recoverable)

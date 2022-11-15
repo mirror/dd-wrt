@@ -1,0 +1,179 @@
+#! /usr/bin/env php
+<?php
+
+// FIRST WHACK AT A REMOTE JOB SUBMISSION TOOL; NOT FINISHED
+
+
+require_once("submit.inc");
+
+define("PROJECT", "http://casathome.ihep.ac.cn/");
+define("APP_NAME", "uppercase");
+define("LOCAL_DIR", "");
+
+function usage() {
+   global $argv; 
+   echo "
+Usage:
+$argv[0] submit sequence_file    (submit 1 job, print batch ID)
+$argv[0] query batch_id          (get the status of a specific batch)
+$argv[0] query app_name          (get the status of batches for given app )
+$argv[0] query all               (get the status of all batches)
+$argv[0] get_output batch_id     (show URL of output file)
+$argv[0] abort batch_id          (abort a batch)
+$argv[0] retire batch_id         (retire a batch)
+";
+    exit(1);
+}
+
+function get_auth() {
+    return trim(file_get_contents(LOCAL_DIR."auth"));
+}
+
+function handle_submit() {
+    global $argc, $argv;
+    if ($argc != 3) usage();
+    //if (!is_file($argv[2])) die("seq file missing");
+    $req->project = PROJECT;
+    $req->authenticator = get_auth();
+    $req->app_name = APP_NAME;
+    $req->batch_name = "foobar";
+
+    $f->source = $argv[2];
+    $job->input_files = array($f);
+    $job->rsc_fpops_est = 1e12;
+    $job->command_line = "";
+    $req->jobs[] = $job;
+    list($id, $errmsg) = boinc_submit_batch($req);
+    if ($errmsg) {
+        echo "Error: $errmsg\n";
+        exit(1);
+    } else {
+        echo "batch ID: $id\n";
+    }
+}
+
+date_default_timezone_set('Asia/Chongqing');
+
+function local_time_str($x) {
+    if ($x == 0) return "---";
+    return date('j M Y, H:i T', $x);
+}
+
+function print_batch($batch) {
+    echo "ID: $batch->id
+    creation time: ".local_time_str($batch->create_time)."
+    # jobs: $batch->njobs
+    fraction done: $batch->fraction_done
+    # error jobs: $batch->nerror_jobs
+    state: ";
+    switch ($batch->state) {
+    case 1: echo "In progress\n"; break;
+    case 2: echo "Completed\n"; break;
+    case 3: echo "Aborted\n"; break;
+    case 4: echo "Retired\n"; break;
+    }
+    echo "    completion time: ".local_time_str($batch->completion_time)."
+    credit estimate: $batch->credit_estimate
+    granted credit: $batch->credit_canonical
+    name: $batch->name
+    app: $batch->app_name
+";
+}
+
+function print_state($batch) {
+    $status="none";
+    switch ($batch->state) {
+    case 1: $status = "In progress";break;
+    case 2: $status = "Completed";break;
+    case 3: $status = "Aborted";break;
+    case 4: $status = "Retired";break;
+    }
+    echo "ID: $batch->id $status\n";
+}
+
+function handle_query() {
+    global $argc, $argv;
+    if ($argc != 3) usage();
+
+    $req->project = PROJECT;
+    $req->authenticator = get_auth();
+    list($batches, $errmsg) = boinc_query_batches($req);
+    if ($errmsg) {
+        echo "Error: $errmsg\n";
+        exit(1);
+    }
+    if ($argv[2] == 'all') {
+        foreach ($batches as $batch) {
+            //print_batch($batch);
+            print_state($batch);
+        }
+    } else if (is_numeric($argv[2])) {
+        $batch_id = $argv[2];
+        foreach ($batches as $batch) {
+            if ($batch->id == $batch_id) {
+                //print_batch($batch);
+                print_state($batch);
+            }
+        }
+    } else {
+        $app_name = $argv[2];
+        foreach ($batches as $batch) {
+            if ($batch->app_name == $app_name) {
+                //print_batch($batch);
+                print_state($batch);
+            }
+        }
+    }
+}
+
+function handle_get_output() {
+    global $argc, $argv;
+    if ($argc != 3) usage();
+    $req->project = PROJECT;
+    $req->authenticator = get_auth();
+    $req->batch_id = $argv[2];
+    $url = boinc_get_output_files($req);
+    echo "Zipped output files are at $url\n";
+}
+
+function handle_abort() {
+    global $argc, $argv;
+    if ($argc != 3) usage();
+    $req->project = PROJECT;
+    $req->authenticator = get_auth();
+    $req->batch_id = $argv[2];
+    $errmsg = boinc_abort_batch($req);
+    if ($errmsg) {
+        echo "Error: $errmsg\n";
+        exit(1);
+    } else {
+        echo "Batch aborted\n";
+    }
+}
+
+function handle_retire() {
+    global $argc, $argv;
+    if ($argc != 3) usage();
+    $req->project = PROJECT;
+    $req->authenticator = get_auth();
+    $req->batch_id = $argv[2];
+    $errmsg = boinc_retire_batch($req);
+    if ($errmsg) {
+        echo "Error: $errmsg\n";
+        exit(1);
+    } else {
+        echo "Batch retired\n";
+    }
+}
+
+if ($argc < 3) usage();
+switch ($argv[1]) {
+case "submit": handle_submit(); break;
+case "query": handle_query(); break;
+case "get_output": handle_get_output(); break;
+case "abort": handle_abort(); break;
+case "retire": handle_retire(); break;
+default: usage();
+}
+   
+?>

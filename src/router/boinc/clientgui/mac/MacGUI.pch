@@ -1,0 +1,105 @@
+// This file is part of BOINC.
+// http://boinc.berkeley.edu
+// Copyright (C) 2017 University of California
+//
+// BOINC is free software; you can redistribute it and/or modify it
+// under the terms of the GNU Lesser General Public License
+// as published by the Free Software Foundation,
+// either version 3 of the License, or (at your option) any later version.
+//
+// BOINC is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+// See the GNU Lesser General Public License for more details.
+//
+// You should have received a copy of the GNU Lesser General Public License
+// along with BOINC.  If not, see <http://www.gnu.org/licenses/>.
+
+#ifndef _MACGUI_H_
+#define _MACGUI_H_
+/*
+ *  MacGUI.pch
+ *  BOINCManager precompiled headers file for Mac
+ */
+
+// To use the debugging features of the Development (Debug) build of
+// wxCocoa (trace, Asserts, etc.):
+// (1) Set USE_DEBUG_WXMAC and wxUSE_LOG_TRACE as desired in this source file.
+// (2) In the Project menu, set the Active Target to "mgr_boinc".
+// (3) In the Product menu, select "Build" or "Build For Running", or click on the
+//      "Run" icon at top left of the Xcode toolbar.
+//
+// This assumes wxWidgets-3.0 was built using the buildWxMac.sh script.
+//
+// NOTE: normally, wxWidgets internal asserts are always enabled when running the
+// Development build, and USE_DEBUG_WXMAC affects only wxAssert() calls in the
+// BOINC Manager code.  However, you can disable ALL wxAssert() calls by BOTH:
+// [1] calling wxSetAssertHandler(NULL) in the code AND 
+// [2] setting USE_DEBUG_WXMAC to 1.
+// (While setting USE_DEBUG_WXMAC to 1 seems counterintuitive in this case, it
+// is needed because wxSetAssertHandler() is ignored when wxDEBUG_LEVEL==0.)
+
+// Set USE_DEBUG_WXMAC to 0 to disable wxAssert() calls in Manager Development builds.
+// Set USE_DEBUG_WXMAC to 1 to enable wxAssert() calls in Manager Development builds.
+// See the note above for a special exception.
+//
+#define USE_DEBUG_WXMAC 1
+
+// Set wxUSE_LOG_TRACE to 0 to disable wxLogTrace() calls in Manager Development builds.
+// Set both USE_DEBUG_WXMAC to 1 and wxUSE_LOG_TRACE to 1 to enable wxLogTrace() calls
+// in Manager Development builds.
+//
+// We are now building wxWidgets with wxDEBUG_LEVEL set to 0 in deployment builds, so all 
+// debugging, including wxLogTrace() calls, is always disabled in Manager Deployment builds.
+#define wxUSE_LOG_TRACE 0
+
+#define __WXOSX_COCOA__
+#define __WX__
+#define wxUSE_BASE 1
+#define MACOS_CLASSIC
+#define __WXMAC_XCODE__ 1
+#define SCI_LEXER
+#define WX_PRECOMP 1
+#define wxUSE_UNICODE_UTF8 1
+
+#define TARGET_COCOA 1
+#define wxUSE_UNICODE 1
+#define HAVE_WCSLEN 1
+
+#include <wchar.h>
+
+
+#ifdef _DEBUG
+#undef wxDEBUG_LEVEL
+#define wxDEBUG_LEVEL USE_DEBUG_WXMAC
+#else
+#define wxDEBUG_LEVEL 0
+#endif
+
+#include <wx/wxprec.h>
+#include "stdwx.h"
+
+// Allow the BOINC definitions of these instead of the wxWidgets ones
+#undef PACKAGE_BUGREPORT
+#undef PACKAGE_NAME
+#undef PACKAGE_STRING
+#undef PACKAGE_TARNAME
+#undef PACKAGE_VERSION
+
+#include "config.h"
+
+#include <stdlib.h>
+
+// system() is deprecated in Mac OS 10.10.
+// Apple says to call posix_spawn instead.
+#undef system
+#define system(x) callPosixSpawn(x)
+
+extern int callPosixSpawn(const char *cmdline);
+
+// Prototypes for Mac_GUI.cpp
+Boolean Mac_Authorize(void);
+// void MacLocalizeBOINCMenu();
+Boolean IsWindowOnScreen(int iLeft, int iTop, int iWidth, int iHeight);
+
+#endif
