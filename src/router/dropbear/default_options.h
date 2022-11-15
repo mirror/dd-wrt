@@ -163,6 +163,13 @@ If you test it please contact the Dropbear author */
  * SSH2 RFC Draft requires dss, recommends rsa */
 #define DROPBEAR_RSA 1
 #define DROPBEAR_DSS 0
+
+/* Newer SSH implementations use SHA256 for RSA signatures. SHA1
+ * support is required to communicate with some older implementations.
+ * It will be removed in future due to SHA1 insecurity, it can be
+ * disabled with DROPBEAR_RSA_SHA1 set to 0 */
+#define DROPBEAR_RSA_SHA1 1
+
 /* ECDSA is significantly faster than RSA or DSS. Compiling in ECC
  * code (either ECDSA or ECDH) increases binary size - around 30kB
  * on x86-64 */
@@ -172,8 +179,7 @@ If you test it please contact the Dropbear author */
    binary size - around 7,5kB on x86-64 */
 #define DROPBEAR_ED25519 1
 
-#define DROPBEAR_SK_ECDSA 0
-#define DROPBEAR_SK_ED25519 0
+#define DROPBEAR_SK_KEYS 0
 
 #define DROPBEAR_DEFAULT_RSA_SIZE 2048
 
