@@ -90,7 +90,7 @@ function to_apply(F) {
 
 function download_sshkey(F) {
 	//alert(" F:" + F.name );
-	window.location.href='/id_rsa.ssh';
+	window.location.href='/id_ed25519.ssh';
 	alert(service.ssh_keydownload);
 	window.location.reload();
 }
