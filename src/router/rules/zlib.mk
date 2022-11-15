@@ -44,6 +44,10 @@ zlib-configure:
 zlib:
 	$(MAKE) -C zlib
 	rm -f zlib/libz.a
+	mkdir $(TOP)/zlib/include
+	cp -f $(TOP)/zlib/zlib.h $(TOP)/zlib/include
+	cp -f $(TOP)/zlib/zlib_name_mangeling.h $(TOP)/zlib/include
+	cp -f $(TOP)/zlib/zconf.h $(TOP)/zlib/include
 
 zlib-install:
 	install -D zlib/libz.so.1.2.12.zlib-ng $(INSTALLDIR)/zlib/usr/lib/libz.so.1.2.12
