@@ -40,6 +40,7 @@ endif
 zlib-configure:
 	$(call CMakeClean,$(ZLIB_PKG_BUILD_DIR))
 	$(call CMakeConfigure,$(ZLIB_PKG_BUILD_DIR),$(ZLIB_STAGING_DIR),$(ZLIB_CMAKE_OPTIONS),$(ZLIB_EXTRA_CFLAGS),$(ZLIB_EXTRA_LDFLAGS),.) 
+	rm -rf $(TOP)/zlib/include
 	-mkdir -p $(TOP)/zlib/include
 	cp -f $(TOP)/zlib/zlib.h $(TOP)/zlib/include
 	cp -f $(TOP)/zlib/zlib_name_mangling.h $(TOP)/zlib/include
@@ -48,6 +49,7 @@ zlib-configure:
 zlib:
 	$(MAKE) -C zlib
 	rm -f zlib/libz.a
+	rm -rf $(TOP)/zlib/include
 	-mkdir -p $(TOP)/zlib/include
 	cp -f $(TOP)/zlib/zlib.h $(TOP)/zlib/include
 	cp -f $(TOP)/zlib/zlib_name_mangling.h $(TOP)/zlib/include
