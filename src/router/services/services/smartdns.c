@@ -81,11 +81,11 @@ void start_smartdns(void)
 				fclose(fpcheck);
 				usejffs = 1;
 			}
-			if (usejffs)
-				fprintf(fp, "dnsmasq-lease-file /jffs/dnsmasq.leases\n");
-			else
-				fprintf(fp, "dnsmasq-lease-file /tmp/dnsmasq.leases\n");
 		}
+		if (usejffs)
+			fprintf(fp, "dnsmasq-lease-file /jffs/dnsmasq.leases\n");
+		else
+			fprintf(fp, "dnsmasq-lease-file /tmp/dnsmasq.leases\n");
 	}
 //egc: do we really need these certificates and if so are these the right ones?
 #ifdef HAVE_HTTPS
