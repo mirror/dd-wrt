@@ -74,10 +74,11 @@ void start_smartdns(void)
 	if (!nvram_matchi("dns_dnsmasq", 1) && !nvram_matchi("dhcpd_usenvram", 1)) {
 		int usejffs = 0;
 		if (jffs_mounted() && nvram_matchi("dhcpd_usejffs", 1)) {
-			if (!(fp = fopen("/jffs/dnsmasq.leases", "a"))) {
+			FILE *fpcheck;
+			if (!(fpcheck = fopen("/jffs/dnsmasq.leases", "a"))) {
 				usejffs = 0;
 			} else {
-				fclose(fp);
+				fclose(fpcheck);
 				usejffs = 1;
 			}
 			if (usejffs)
