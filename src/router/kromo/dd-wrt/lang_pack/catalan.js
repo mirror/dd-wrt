@@ -534,7 +534,7 @@ ddnsm.all_disabled="Funció DDNS està deshabilitada";
 ddnsm.all_noip="Cap connexió WAN";
 
 //help container
-hddns.right2="DDNS us permet accedir la vostra xarxa utilitzant noms de domini en lloc d'adreçes IP. El gestor de servei canvia les adreçes IP i actualitza la vostra informació de domini dinàmicament. Heu d'enregistrar per serveis a través de DynDNS.org, freedns.affraid.org, ZoneEdit.com, No-IP.com, o altre servei de DNS dinàmic similar.";
+hddns.right2="DDNS us permet accedir la vostra xarxa utilitzant noms de domini en lloc d'adreçes IP. El gestor de servei canvia les adreçes IP i actualitza la vostra informació de domini dinàmicament. Heu d'enregistrar per serveis a través de DynDNS.org, freedns.afraid.org, ZoneEdit.com, No-IP.com, o altre servei de DNS dinàmic similar.";
 hddns.right4="Tecleu un nombre enter en la caixa per establir l'interval d'actualització forçada (en dies). Actualitzacions només es deben performar automàticament quan la vostra direcció ha canviada. Sigueu conscient de la política d'abús d'actualització del vostre proveïdor de DNA per evitar tenir el vostre nom de host o domini bloquejat.";
 
 
