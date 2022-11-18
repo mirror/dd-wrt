@@ -12,7 +12,7 @@ set(CMAKE_MACOSX_RPATH 1)
 # Configuration items that affect the global compiler environment standards
 # should be issued before the "project" command.
 if(NOT CMAKE_C_STANDARD)
-    set(CMAKE_C_STANDARD 11)          # The C standard whose features are requested to build this target
+    set(CMAKE_C_STANDARD 99)          # The C standard whose features are requested to build this target
 endif()
 if(NOT CMAKE_C_STANDARD_REQUIRED)
     set(CMAKE_C_STANDARD_REQUIRED ON) # Boolean describing whether the value of C_STANDARD is a requirement
