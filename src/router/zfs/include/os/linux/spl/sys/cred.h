@@ -50,6 +50,16 @@ extern struct task_struct init_task;
 #define	SGID_TO_KGID(x)		(KGIDT_INIT(x))
 #define	KGIDP_TO_SGIDP(x)	(&(x)->val)
 
+#else /* HAVE_KUIDGID_T */
+
+#define	KUID_TO_SUID(x)		(x)
+#define	KGID_TO_SGID(x)		(x)
+#define	SUID_TO_KUID(x)		(x)
+#define	SGID_TO_KGID(x)		(x)
+#define	KGIDP_TO_SGIDP(x)	(x)
+
+#endif /* HAVE_KUIDGID_T */
+
 /* Check if the user ns is the initial one */
 static inline boolean_t
 zfs_is_init_userns(struct user_namespace *user_ns)
@@ -126,15 +136,6 @@ static inline gid_t zfs_vfsgid_to_gid(struct user_namespace *mnt_userns,
 	return (__kgid_val(make_kgid(fs_userns, gid)));
 }
 
-#else /* HAVE_KUIDGID_T */
-
-#define	KUID_TO_SUID(x)		(x)
-#define	KGID_TO_SGID(x)		(x)
-#define	SUID_TO_KUID(x)		(x)
-#define	SGID_TO_KGID(x)		(x)
-#define	KGIDP_TO_SGIDP(x)	(x)
-
-#endif /* HAVE_KUIDGID_T */
 
 extern void crhold(cred_t *cr);
 extern void crfree(cred_t *cr);

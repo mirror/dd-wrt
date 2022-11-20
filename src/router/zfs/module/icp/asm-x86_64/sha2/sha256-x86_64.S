@@ -21,6 +21,9 @@
 
 #if defined(__x86_64)
 
+#define _ASM
+#include <sys/asm_linkage.h>
+
 .text
 
 .align	64
@@ -70,7 +73,8 @@ K256:
 .type	zfs_sha256_transform_x64,@function
 .align	16
 zfs_sha256_transform_x64:
-.cfi_startproc	
+.cfi_startproc
+	ENDBR
 	movq	%rsp,%rax
 .cfi_def_cfa_register	%rax
 	pushq	%rbx
@@ -1415,7 +1419,7 @@ zfs_sha256_transform_x64:
 	leaq	(%rsi),%rsp
 .cfi_def_cfa_register	%rsp
 .Lepilogue:
-	.byte	0xf3,0xc3
+	RET
 .cfi_endproc	
 .size	zfs_sha256_transform_x64,.-zfs_sha256_transform_x64
 
@@ -1423,7 +1427,8 @@ zfs_sha256_transform_x64:
 .type	zfs_sha256_transform_shani,@function
 .align	64
 zfs_sha256_transform_shani:
-.cfi_startproc	
+.cfi_startproc
+	ENDBR
 	leaq	K256+128(%rip),%rcx
 	movdqu	(%rdi),%xmm1
 	movdqu	16(%rdi),%xmm2
@@ -1625,14 +1630,15 @@ zfs_sha256_transform_shani:
 
 	movdqu	%xmm1,(%rdi)
 	movdqu	%xmm2,16(%rdi)
-	.byte	0xf3,0xc3
+	RET
 .cfi_endproc	
 .size	zfs_sha256_transform_shani,.-zfs_sha256_transform_shani
 .globl	zfs_sha256_transform_ssse3
 .type	zfs_sha256_transform_ssse3,@function
 .align	64
 zfs_sha256_transform_ssse3:
-.cfi_startproc	
+.cfi_startproc
+	ENDBR
 	movq	%rsp,%rax
 .cfi_def_cfa_register	%rax
 	pushq	%rbx
@@ -2737,14 +2743,15 @@ zfs_sha256_transform_ssse3:
 	leaq	(%rsi),%rsp
 .cfi_def_cfa_register	%rsp
 .Lepilogue_ssse3:
-	.byte	0xf3,0xc3
+	RET
 .cfi_endproc	
 .size	zfs_sha256_transform_ssse3,.-zfs_sha256_transform_ssse3
 .globl	zfs_sha256_transform_avx
 .type	zfs_sha256_transform_avx,@function
 .align	64
 zfs_sha256_transform_avx:
-.cfi_startproc	
+.cfi_startproc
+	ENDBR
 	movq	%rsp,%rax
 .cfi_def_cfa_register	%rax
 	pushq	%rbx
@@ -3812,14 +3819,15 @@ zfs_sha256_transform_avx:
 	leaq	(%rsi),%rsp
 .cfi_def_cfa_register	%rsp
 .Lepilogue_avx:
-	.byte	0xf3,0xc3
+	RET
 .cfi_endproc	
 .size	zfs_sha256_transform_avx,.-zfs_sha256_transform_avx
 .globl	zfs_sha256_transform_avx2
 .type	zfs_sha256_transform_avx2,@function
 .align	64
 zfs_sha256_transform_avx2:
-.cfi_startproc	
+.cfi_startproc
+	ENDBR
 	movq	%rsp,%rax
 .cfi_def_cfa_register	%rax
 	pushq	%rbx
@@ -5098,7 +5106,7 @@ zfs_sha256_transform_avx2:
 	leaq	(%rsi),%rsp
 .cfi_def_cfa_register	%rsp
 .Lepilogue_avx2:
-	.byte	0xf3,0xc3
+	RET
 .cfi_endproc	
 .size	zfs_sha256_transform_avx2,.-zfs_sha256_transform_avx2
 #if defined(__ELF__)
