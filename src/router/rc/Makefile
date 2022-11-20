@@ -745,6 +745,9 @@ endif
 ifeq ($(CONFIG_DIR615I),y)
 CFLAGS += -DHAVE_DIR615I
 endif
+ifeq ($(CONFIG_WA850RE),y)
+CFLAGS += -DHAVE_WA850RE
+endif
 ifeq ($(CONFIG_DIR615),y)
 CFLAGS += -DHAVE_DIR615
 endif
@@ -753,6 +756,9 @@ CFLAGS += -DHAVE_TEW632BRP
 endif
 ifeq ($(CONFIG_UBNTM),y)
 CFLAGS += -DHAVE_UBNTM -DHAVE_WLANLED -D_GNU_SOURCE  -I$(TOP)/libubox -I$(TOP)/libnl-tiny/include
+endif
+ifeq ($(CONFIG_WA850RE),y)
+CFLAGS += -DHAVE_WA850RE -DHAVE_WLANLED -D_GNU_SOURCE  -I$(TOP)/libubox -I$(TOP)/libnl-tiny/include
 endif
 ifeq ($(CONFIG_DAP3410),y)
 CFLAGS += -DHAVE_DAP3410
@@ -1191,6 +1197,9 @@ ifeq ($(CONFIG_GPIOWATCHER),y)
 	cd $(INSTALLDIR)/sbin && ln -sf rc gpiowatcher
 endif
 ifeq ($(CONFIG_UBNTM),y)
+	cd $(INSTALLDIR)/sbin && ln -sf rc wlanled
+endif
+ifeq ($(CONFIG_WA850RE),y)
 	cd $(INSTALLDIR)/sbin && ln -sf rc wlanled
 endif
 ifeq ($(CONFIG_PERU),y)
