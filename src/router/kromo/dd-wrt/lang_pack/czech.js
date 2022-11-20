@@ -583,7 +583,7 @@ ddnsm.all_noip="Žádné WAN spojení";
 
 //help container
 //
-hddns.right2="DDNS vám umožní připojit se do vaší sítě pomocí doménového jména namísto IP adresy. Řízení služby mění IP adresu a aktualizuje vaši doménu dynamicky. Musíte si přihlásit do služby přes DynDNS.org, freedns.affraid.org, ZoneEdit.com, No-IP.com, nebo do podobných poskytovatelů služby dynamické DNS.";
+hddns.right2="DDNS vám umožní připojit se do vaší sítě pomocí doménového jména namísto IP adresy. Řízení služby mění IP adresu a aktualizuje vaši doménu dynamicky. Musíte si přihlásit do služby přes DynDNS.org, freedns.afraid.org, ZoneEdit.com, No-IP.com, nebo do podobných poskytovatelů služby dynamické DNS.";
 hddns.right4="Zadejte celočíselnou hodnotu do pole k nastavení pevného intervalu aktualizace (ve dnech). Aktualizace by měla proběhnout automaticky pouze v případě, že se vaše IP adresa změnila. Uvědomte si zásady zneužívání aktualizací poskytovatele DNS, abyste zabránili blokování názvu hostitele nebo domény.";
 
 //help page

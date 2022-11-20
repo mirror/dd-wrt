@@ -644,7 +644,7 @@ ddnsm.all_noip="No WAN connection";
 
 //help container
 var hddns=new Object();
-hddns.right2="DDNS allows you to access your network using domain names instead of IP addresses. The service manager changes IP addresses and updates your domain information dynamically. You must sign up for services through e.g. DynDNS.org, freedns.affraid.org or other similar dynamic DNS service.";
+hddns.right2="DDNS allows you to access your network using domain names instead of IP addresses. The service manager changes IP addresses and updates your domain information dynamically. You must sign up for services through e.g. DynDNS.org, freedns.afraid.org or other similar dynamic DNS service.";
 hddns.right4="Type an integer number in the box to set the force update interval (in days). Updates should only be performed automatically when your IP address has changed. Be aware of your DNS provider's update abuse policy to avoid having your hostname or domain blocked.";
 
 //help page

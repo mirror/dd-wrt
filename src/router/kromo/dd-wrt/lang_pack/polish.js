@@ -577,7 +577,7 @@ ddnsm.all_noip="Brak połączenia z WAN";
 
 //help container
 
-hddns.right2="DDNS umożliwia dostęp do twojej sieci przy użyciu nazw domen zamiast adresów IP. Menedżer usług zmieniający adresy IP i dynamicznie aktualizujący informacje o Twojej domenie. Musisz zarejestrować się w usługach za pośrednictwem DynDNS.org, freedns.affraid.org, ZoneEdit.com, No-IP.com lub innej podobnej usługi dynamicznego DNS.";
+hddns.right2="DDNS umożliwia dostęp do twojej sieci przy użyciu nazw domen zamiast adresów IP. Menedżer usług zmieniający adresy IP i dynamicznie aktualizujący informacje o Twojej domenie. Musisz zarejestrować się w usługach za pośrednictwem DynDNS.org, freedns.afraid.org, ZoneEdit.com, No-IP.com lub innej podobnej usługi dynamicznego DNS.";
 hddns.right4="Wpisz liczbę całkowitą w polu, aby ustawić interwał wymuszonej aktualizacji (w dniach). Aktualizacje powinny być wykonywane automatycznie dopiero po zmianie adresu IP. Uważaj na zasady dotyczące nadużyć dostawcy DDNS dotyczące nadużyć, aby uniknąć zablokowania Twojej nazwy hosta lub domeny.";
 
 //help page
