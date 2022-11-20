@@ -287,6 +287,8 @@ static struct gpio_led generic_leds_gpio[] __initdata = {
 	 .gpio = 0,
 #ifdef CONFIG_WPE72
 	 .active_low = 1,
+#elif CONFIG_WA850RE
+	 .active_low = 1,
 #else
 	 .active_low = 0,
 #endif
@@ -296,6 +298,8 @@ static struct gpio_led generic_leds_gpio[] __initdata = {
 	 .name = "generic_1",
 	 .gpio = 1,
 #ifdef CONFIG_WPE72
+	 .active_low = 1,
+#elif CONFIG_WA850RE
 	 .active_low = 1,
 #elif CONFIG_XD3200
 	 .active_low = 1,
@@ -310,12 +314,20 @@ static struct gpio_led generic_leds_gpio[] __initdata = {
 	{
 	 .name = "generic_2",
 	 .gpio = 2,
+#ifdef CONFIG_WA850RE
+	 .active_low = 1,
+#else
 	 .active_low = 0,
+#endif
 	 },
 	{
 	 .name = "generic_3",
 	 .gpio = 3,
+#ifdef CONFIG_WA850RE
+	 .active_low = 1,
+#else
 	 .active_low = 0,
+#endif
 	 },
 #endif
 	{
