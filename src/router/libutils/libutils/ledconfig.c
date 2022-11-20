@@ -359,6 +359,9 @@ static void getledconfig(struct ledconfig *cfg)
 #elif HAVE_WR810N
 		cfg->diag_gpio = GPIO_LOW | 0xd;
 		cfg->usb_power = 0xb;
+#elif HAVE_WA860RE
+		cfg->diag_gpio_disabled = GPIO_LOW | 0xf;
+		cfg->diag_gpio = GPIO_LOW | 0xc;
 #elif HAVE_WA850RE
 		cfg->diag_gpio = GPIO_LOW | 0xf;
 #elif HAVE_WR841V8
