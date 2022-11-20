@@ -1866,6 +1866,9 @@ ifeq ($(CONFIG_WR841V8),y)
 
 	-./tools/tplink/mktplinkfw -B TL-WA901NDv3 -N "TP-LINK Technologies" -V "ver. 1.0" -k $(ARCH)-uclibc/vmlinux.tpl -r $(ARCH)-uclibc/root.fs -o mips-uclibc/tplink-WA901NDv3-firmware.bin
 	-./tools/trx_n -m 40000000 -o $(ARCH)-uclibc/WA901NDv3-firmware.bin mips-uclibc/tplink-WA901NDv3-firmware.bin
+
+	-./tools/tplink/mktplinkfw -B TL-WA850REv1 -N "TP-LINK Technologies" -V "ver. 1.0" -k $(ARCH)-uclibc/vmlinux.tpl -r $(ARCH)-uclibc/root.fs -o mips-uclibc/tplink-WA850REv1-firmware.bin
+	-./tools/trx_n -m 40000000 -o $(ARCH)-uclibc/WA850REv1-firmware.bin mips-uclibc/tplink-WA850REv1-firmware.bin
 endif
 ifeq ($(CONFIG_WR810N),y)
 	-./tools/tplink/mktplinkfw -B TL-WR810Nv1 -N "TP-LINK Technologies" -V "ver. 1.0" -k $(ARCH)-uclibc/vmlinux.tpl -r $(ARCH)-uclibc/root.fs -o mips-uclibc/tplink-WR810Nv1-firmware.bin
