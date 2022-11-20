@@ -231,7 +231,7 @@ void start_sysinit(void)
 #endif
 #ifdef HAVE_WA850RE
 		if (!nvram_matchi("wlanled", 0))
-			eval("/sbin/wlanled", "-l", "generic_0:-94", "-l", "generic_1:-87", "-l", "generic_2:-80", "-l", "generic_3:-73", "generic_4:-65");
+			eval("/sbin/wlanled", "-L", "generic_0:-94", "-L", "generic_1:-87", "-L", "generic_2:-80", "-L", "generic_3:-73", "-L", "generic_4:-65");
 #endif
 	/*
 	 * Set a sane date 
