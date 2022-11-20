@@ -2347,6 +2347,11 @@ int internal_getRouterBrand()
 	nvram_default_get("wlan0_txantenna", "3");
 	setRouter("TP-Link TL-WR841ND v9");
 	return ROUTER_BOARD_PB42;
+#elif HAVE_WA850RE
+	nvram_default_get("wlan0_rxantenna", "3");
+	nvram_default_get("wlan0_txantenna", "3");
+	setRouter("TP-Link TL-WA850RE v1");
+	return ROUTER_BOARD_PB42;
 #elif HAVE_WA901V3
 	nvram_default_get("wlan0_rxantenna", "3");
 	nvram_default_get("wlan0_txantenna", "3");
