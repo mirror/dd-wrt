@@ -188,6 +188,8 @@ void start_sysinit(void)
 	setSwitchLED(14, 0x4);
 	setSwitchLED(15, 0x8);
 	setSwitchLED(16, 0x10);
+#elif HAVE_WA860RE
+	setEthLED(20, "eth0");
 #elif HAVE_WA850RE
 	setEthLED(20, "eth0");
 #elif HAVE_WR841V8
@@ -225,6 +227,8 @@ void start_sysinit(void)
 	setWirelessLedGeneric(0, 8);
 #elif HAVE_DIR632
 	setWirelessLedPhy0(0);
+#elif HAVE_WA860RE
+	setWirelessLedGeneric(0, 2);
 #elif HAVE_DIR615I
 	setWirelessLedGeneric(0, 13);
 #endif
