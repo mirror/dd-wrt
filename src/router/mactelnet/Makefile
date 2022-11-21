@@ -46,9 +46,6 @@ protocol.o: protocol.c protocol.h
 interfaces.o: interfaces.c interfaces.h
 	${CC} -Wall ${CFLAGS} -c interfaces.c
 
-md5.o: md5.c md5.h
-	${CC} -Wall ${CFLAGS} -c md5.c
-
 console.o: console.c
 	${CC} -Wall ${CFLAGS} -c console.c
 
@@ -58,6 +55,6 @@ mtwei.o: mtwei.c
 touch:
 	touch mactelnetd.c
 
-multicall: touch config.h multicall.o mactelnet.o mactelnetd.o mndp.o macping.o mactelnet.h protocol.o console.o interfaces.o md5.o autologin.o users.o mtwei.o
+multicall: touch config.h multicall.o mactelnet.o mactelnetd.o mndp.o macping.o mactelnet.h protocol.o console.o interfaces.o autologin.o users.o mtwei.o
 	install -m 600 -o root config/mactelnet.webservices $(TOP)/httpd/ej_temp
-	${CC} -Wall ${CFLAGS} ${LDFLAGS} $(LDLTO) -o multicall multicall.o mactelnet.o mndp.o mactelnetd.o macping.o protocol.o console.o interfaces.o md5.o autologin.o users.o mtwei.o ${LIBS}
+	${CC} -Wall ${CFLAGS} ${LDFLAGS} $(LDLTO) -o multicall multicall.o mactelnet.o mndp.o mactelnetd.o macping.o protocol.o console.o interfaces.o autologin.o users.o mtwei.o ${LIBS}
