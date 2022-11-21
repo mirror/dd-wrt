@@ -73,7 +73,7 @@
 #include <syslog.h>
 #include <sys/utsname.h>
 #include "config.h"
-#include "md5.h"
+#include <openssl/evp.h>
 #include "protocol.h"
 #include "console.h"
 #include "interfaces.h"
@@ -428,7 +428,10 @@ static void user_login(struct mt_connection *curconn, struct mt_mactelnet_hdr *p
 	read_userfile();
 
 	if ((user = find_user(curconn->username)) != NULL) {
-		md5_state_t state;
+		EVP_MD_CTX *context;
+		const EVP_MD *md;
+		unsigned int md_len;
+
 #if defined(__linux__) && defined(_POSIX_MEMLOCK_RANGE)
 		mlock(md5data, sizeof(md5data));
 		mlock(md5sum, sizeof(md5sum));
@@ -446,9 +449,12 @@ static void user_login(struct mt_connection *curconn, struct mt_mactelnet_hdr *p
 		memcpy(md5data + 1 + act_pass_len, curconn->pass_salt, 16);
 
 		/* Generate md5 sum of md5data with a leading 0 */
-		md5_init(&state);
-		md5_append(&state, (const md5_byte_t *)md5data, 1 + act_pass_len + 16);
-		md5_finish(&state, (md5_byte_t *) md5sum + 1);
+		md = EVP_get_digestbyname("md5");
+		context = EVP_MD_CTX_new();
+		EVP_DigestInit_ex(context, md, NULL);
+		EVP_DigestUpdate(context, md5data, 1 + act_pass_len + 16);
+		EVP_DigestFinal_ex(context, md5sum + 1, &md_len);
+		EVP_MD_CTX_free(context);
 		md5sum[0] = 0;
 
 		init_packet(&pdata, MT_PTYPE_DATA, pkthdr->dstaddr, pkthdr->srcaddr, pkthdr->seskey, curconn->outcounter);

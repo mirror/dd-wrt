@@ -16,7 +16,7 @@
     with this program; if not, write to the Free Software Foundation, Inc.,
     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 */
-#define _BSD_SOURCE
+#define _DEFAULT_SOURCE
 #include <locale.h>
 #include <stdlib.h>
 #include <stdio.h>
@@ -50,7 +50,7 @@
 #include <sys/mman.h>
 #endif
 #include "config.h"
-#include "md5.h"
+#include <openssl/evp.h>
 #include "mtwei.h"
 #include "protocol.h"
 #include "console.h"
@@ -74,6 +74,7 @@ static mtwei_state_t mtwei;
 BIGNUM *private_key;
 static uint8_t public_key[MTWEI_PUBKEY_LEN];
 static uint8_t server_key[MTWEI_PUBKEY_LEN];
+static enum auth_mode_t auth_mode = AUTH_MODE_MD5;
 static int running = 1;
 
 static unsigned char use_raw_socket = 0;
@@ -92,6 +93,7 @@ static int mndp_timeout = 0;
 
 static int is_a_tty = 1;
 static int quiet_mode = 0;
+static int force_md5 = 0;
 static int batch_mode = 0;
 static int no_autologin = 0;
 
@@ -207,7 +209,7 @@ static int send_udp(struct mt_packet *packet, int retransmit) {
 	return sent_bytes;
 }
 
-static void send_auth(char *username, char *password) {
+static void send_auth(char *login, char *password) {
 	struct mt_packet data;
 	unsigned short width = 0;
 	unsigned short height = 0;
@@ -215,18 +217,19 @@ static void send_auth(char *username, char *password) {
 	char hashdata[100];
 	unsigned char hashsum[32], pubkey[33];
 	int plen, act_pass_len;
-	md5_state_t state;
+	EVP_MD_CTX *context;
+    const EVP_MD *md;
+	unsigned int md_len;
 
 #if defined(__linux__) && defined(_POSIX_MEMLOCK_RANGE)
 	mlock(hashdata, sizeof(hashdata));
 	mlock(hashsum, sizeof(hashdata));
-	mlock(&state, sizeof(state));
 #endif
 
 	/* calculate the actual password's length */
 	act_pass_len = strnlen(password, 82);
 
-	if (server_key[0] == 1) { /* Server hasn't sent the key, use the old MD5 algorithm */
+	if (force_md5 == 1 || auth_mode == AUTH_MODE_MD5) {
 		/* Concat string of 0 + password + pass_salt */
 		hashdata[0] = 0;
 		memcpy(hashdata + 1, password, act_pass_len);
@@ -234,19 +237,31 @@ static void send_auth(char *username, char *password) {
 		memcpy(hashdata + 1 + act_pass_len, pass_salt, 16);
 
 		/* Generate md5 sum of md5data with a leading 0 */
-		md5_init(&state);
-		md5_append(&state, (const md5_byte_t *)hashdata, 1 + act_pass_len + 16);
-		md5_finish(&state, (md5_byte_t *)hashsum + 1);
+		md = EVP_get_digestbyname("md5");
+		context = EVP_MD_CTX_new();
+		EVP_DigestInit_ex(context, md, NULL);
+		EVP_DigestUpdate(context, hashdata, 1 + act_pass_len + 16);
+		EVP_DigestFinal_ex(context, hashsum + 1, &md_len);
+		EVP_MD_CTX_free(context);
 		hashsum[0] = 0;
 	} else {
-		mtwei_id(username, password, pass_salt, hashdata);
-		mtwei_docrypto(&mtwei, private_key, server_key, public_key, hashdata, hashsum);
+		/* Discard console parameters that may be present on login to generate crypto stuff */
+		char *username, *str;
+
+		str = username = (char *)malloc(MT_MNDP_MAX_STRING_SIZE);
+		strncpy(username, login, MT_MNDP_MAX_STRING_SIZE);
+		username = strsep(&username, "+");
+
+		mtwei_id(username, password, pass_salt, (uint8_t *)hashdata);
+		mtwei_docrypto(&mtwei, private_key, server_key, public_key, (uint8_t *)hashdata, hashsum);
+
+		free(str);
 	}
 
 	/* Send combined packet to server */
 	init_packet(&data, MT_PTYPE_DATA, srcmac, dstmac, sessionkey, outcounter);
-	plen = add_control_packet(&data, MT_CPTYPE_PASSWORD, hashsum, server_key[0] == 255 ? 17 : 32);
-	plen += add_control_packet(&data, MT_CPTYPE_USERNAME, username, strlen(username));
+	plen = add_control_packet(&data, MT_CPTYPE_PASSWORD, hashsum, auth_mode == AUTH_MODE_MD5 ? 17 : 32);
+	plen += add_control_packet(&data, MT_CPTYPE_USERNAME, login, strlen(login));
 	plen += add_control_packet(&data, MT_CPTYPE_TERM_TYPE, terminal, strlen(terminal));
 	
 	if (is_a_tty && get_terminal_size(&width, &height) != -1) {
@@ -329,10 +344,12 @@ static int handle_packet(unsigned char *data, int data_len) {
 			if (cpkt.cptype == MT_CPTYPE_PASSSALT) {
 				/* check validity, server sends exactly 49 (or 16 for legacy auth) bytes */
 				if (cpkt.length == sizeof(pass_salt)) {
+					auth_mode = AUTH_MODE_MD5;
 					memcpy(pass_salt, cpkt.data, sizeof(pass_salt));
 					send_auth(username, password);
 				} else if (cpkt.length == sizeof(pass_salt) + sizeof(server_key)) {
-				        memcpy(server_key, cpkt.data, sizeof(server_key));
+					auth_mode = AUTH_MODE_EC_SRP;
+					memcpy(server_key, cpkt.data, sizeof(server_key));
 					memcpy(pass_salt, cpkt.data + sizeof(server_key), sizeof(pass_salt));
 					send_auth(username, password);
 				} else {
@@ -490,7 +507,7 @@ int mactelnet_main (int argc, char **argv) {
 	setlocale(LC_ALL, "");
 
 	while (1) {
-		c = getopt(argc, argv, "lnqt:u:p:U:vh?BAa:");
+		c = getopt(argc, argv, "lnqot:u:p:U:vh?BAa:");
 
 		if (c == -1) {
 			break;
@@ -538,6 +555,10 @@ int mactelnet_main (int argc, char **argv) {
 
 			case 'q':
 				quiet_mode = 1;
+				break;
+
+			case 'o':
+				force_md5 = 1;
 				break;
 
 			case 'l':
@@ -589,6 +610,7 @@ int mactelnet_main (int argc, char **argv) {
 			"  -U <user>      Drop privileges to this user. Used in conjunction with -n\n"
 			"                 for security.\n"
 			"  -q             Quiet mode.\n"
+			"  -o             Force old authentication algorithm.\n"
 			"  -h             This help.\n"
 			"\n"), AUTOLOGIN_PATH);
 		}
@@ -706,10 +728,9 @@ int mactelnet_main (int argc, char **argv) {
 #endif
 	mtwei_init(&mtwei);
 	private_key = mtwei_keygen(&mtwei, public_key);
-	memset(server_key, 255, sizeof(server_key));
 
 	/* stop output buffering */
-	setvbuf(stdout, (char*)NULL, _IONBF, 0);
+	setvbuf(stdout, (char *)NULL, _IONBF, 0);
 
 	if (!quiet_mode) {
 		printf(_("Connecting to %s..."), _ether_ntoa((struct ether_addr *)dstmac));
@@ -739,9 +760,16 @@ int mactelnet_main (int argc, char **argv) {
 
 	init_packet(&data, MT_PTYPE_DATA, srcmac, dstmac, sessionkey, 0);
 	outcounter += add_control_packet(&data, MT_CPTYPE_BEGINAUTH, NULL, 0);
-	strcpy(loginkey, username);
-	memcpy(loginkey + strlen(username) + 1, public_key, sizeof(public_key));
-	outcounter += add_control_packet(&data, MT_CPTYPE_PASSSALT, loginkey, sizeof(public_key) + strlen(username) + 1);
+
+	if (force_md5 == 0) {
+		if (strlen(username) + 1 + sizeof(public_key) >= sizeof(loginkey)) {
+			fprintf(stderr, "Username too long\n");
+			exit(1);
+		}
+		strcpy((char *)loginkey, username);
+		memcpy(loginkey + strlen(username) + 1, public_key, sizeof(public_key));
+		outcounter += add_control_packet(&data, MT_CPTYPE_PASSSALT, loginkey, sizeof(public_key) + strlen(username) + 1);
+	}
 
 	/* TODO: handle result of send_udp */
 	result = send_udp(&data, 1);
