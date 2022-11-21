@@ -753,6 +753,7 @@ int mactelnet_main (int argc, char **argv) {
 	}
 	if (!quiet_mode) {
 		printf(_("done\n"));
+		printf(_("Escape key ^]\n"));
 	}
 
 	/* Handle first received packet */
@@ -805,6 +806,11 @@ int mactelnet_main (int argc, char **argv) {
 				int datalen;
 
 				datalen = read(STDIN_FILENO, &keydata, sizeof(keydata));
+				if (keydata[0] == '\035') {
+					terminal_gone = 1;
+					running = 0;
+					continue;
+				}
 
 				if (datalen > 0) {
 					/* Data received, transmit to server */
