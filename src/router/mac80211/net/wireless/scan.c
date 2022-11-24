@@ -1854,7 +1854,7 @@ cfg80211_get_bss_channel(struct wiphy *wiphy, const u8 *ie, size_t ielen,
 	}
 
 	sband = wiphy->bands[channel->band];
-	freq = ieee80211_channel_to_closest_freq_khz(sband, channel_number, MHZ_TO_KHZ(channel->center_freq));
+	freq = ieee80211_channel_to_closest_freq_khz(sband, channel_number, channel->center_freq);
 	alt_channel = ieee80211_get_channel_khz(wiphy, freq);
 	if (!alt_channel) {
 		if (channel->band == NL80211_BAND_2GHZ) {
