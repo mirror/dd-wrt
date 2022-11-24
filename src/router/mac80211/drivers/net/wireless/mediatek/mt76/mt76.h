@@ -695,6 +695,8 @@ struct mt76_phy {
 	enum mt76_dfs_state dfs_state;
 	ktime_t survey_time;
 
+	u32 aggr_stats[32];
+
 	struct mt76_hw_cap cap;
 	struct mt76_sband sband_2g;
 	struct mt76_sband sband_5g;
@@ -789,8 +791,6 @@ struct mt76_dev {
 	struct list_head wcid_list;
 
 	u32 rev;
-
-	u32 aggr_stats[32];
 
 	struct tasklet_struct pre_tbtt_tasklet;
 	int beacon_int;
@@ -1158,6 +1158,7 @@ void mt76_update_survey(struct mt76_phy *phy);
 void mt76_update_survey_active_time(struct mt76_phy *phy, ktime_t time);
 int mt76_get_survey(struct ieee80211_hw *hw, int idx,
 		    struct survey_info *survey);
+int mt76_rx_signal(u8 chain_mask, s8 *chain_signal);
 void mt76_set_stream_caps(struct mt76_phy *phy, bool vht, bool turboqam);
 
 int mt76_rx_aggr_start(struct mt76_dev *dev, struct mt76_wcid *wcid, u8 tid,

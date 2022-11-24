@@ -12,6 +12,7 @@
 
 static bool wed_enable;
 module_param(wed_enable, bool, 0644);
+MODULE_PARM_DESC(wed_enable, "Enable Wireless Ethernet Dispatch support");
 
 static const u32 mt7915_reg[] = {
 	[INT_SOURCE_CSR]	= 0xd7010,
@@ -25,7 +26,22 @@ static const u32 mt7915_reg[] = {
 	[WFDMA_EXT_CSR_ADDR]	= 0xd7000,
 	[CBTOP1_PHY_END]	= 0x77ffffff,
 	[INFRA_MCU_ADDR_END]	= 0x7c3fffff,
-	[FW_EXCEPTION_ADDR]	= 0x219848,
+	[FW_ASSERT_STAT_ADDR]	= 0x219848,
+	[FW_EXCEPT_TYPE_ADDR]	= 0x21987c,
+	[FW_EXCEPT_COUNT_ADDR]	= 0x219848,
+	[FW_CIRQ_COUNT_ADDR]	= 0x216f94,
+	[FW_CIRQ_IDX_ADDR]	= 0x216ef8,
+	[FW_CIRQ_LISR_ADDR]	= 0x2170ac,
+	[FW_TASK_ID_ADDR]	= 0x216f90,
+	[FW_TASK_IDX_ADDR]	= 0x216f9c,
+	[FW_TASK_QID1_ADDR]	= 0x219680,
+	[FW_TASK_QID2_ADDR]	= 0x219760,
+	[FW_TASK_START_ADDR]	= 0x219558,
+	[FW_TASK_END_ADDR]	= 0x219554,
+	[FW_TASK_SIZE_ADDR]	= 0x219560,
+	[FW_LAST_MSG_ID_ADDR]	= 0x216f70,
+	[FW_EINT_INFO_ADDR]	= 0x219818,
+	[FW_SCHED_INFO_ADDR]	= 0x219828,
 	[SWDEF_BASE_ADDR]	= 0x41f200,
 	[TXQ_WED_RING_BASE]	= 0xd7300,
 	[RXQ_WED_RING_BASE]	= 0xd7410,
@@ -43,7 +59,22 @@ static const u32 mt7916_reg[] = {
 	[WFDMA_EXT_CSR_ADDR]	= 0xd7000,
 	[CBTOP1_PHY_END]	= 0x7fffffff,
 	[INFRA_MCU_ADDR_END]	= 0x7c085fff,
-	[FW_EXCEPTION_ADDR]	= 0x022050bc,
+	[FW_ASSERT_STAT_ADDR]	= 0x02204c14,
+	[FW_EXCEPT_TYPE_ADDR]	= 0x022051a4,
+	[FW_EXCEPT_COUNT_ADDR]	= 0x022050bc,
+	[FW_CIRQ_COUNT_ADDR]	= 0x022001ac,
+	[FW_CIRQ_IDX_ADDR]	= 0x02204f84,
+	[FW_CIRQ_LISR_ADDR]	= 0x022050d0,
+	[FW_TASK_ID_ADDR]	= 0x0220406c,
+	[FW_TASK_IDX_ADDR]	= 0x0220500c,
+	[FW_TASK_QID1_ADDR]	= 0x022028c8,
+	[FW_TASK_QID2_ADDR]	= 0x02202a38,
+	[FW_TASK_START_ADDR]	= 0x0220286c,
+	[FW_TASK_END_ADDR]	= 0x02202870,
+	[FW_TASK_SIZE_ADDR]	= 0x02202878,
+	[FW_LAST_MSG_ID_ADDR]	= 0x02204fe8,
+	[FW_EINT_INFO_ADDR]	= 0x0220525c,
+	[FW_SCHED_INFO_ADDR]	= 0x0220516c,
 	[SWDEF_BASE_ADDR]	= 0x411400,
 	[TXQ_WED_RING_BASE]	= 0xd7300,
 	[RXQ_WED_RING_BASE]	= 0xd7410,
@@ -61,7 +92,22 @@ static const u32 mt7986_reg[] = {
 	[WFDMA_EXT_CSR_ADDR]	= 0x27000,
 	[CBTOP1_PHY_END]	= 0x7fffffff,
 	[INFRA_MCU_ADDR_END]	= 0x7c085fff,
-	[FW_EXCEPTION_ADDR]	= 0x02204ffc,
+	[FW_ASSERT_STAT_ADDR]	= 0x02204b54,
+	[FW_EXCEPT_TYPE_ADDR]	= 0x022050dc,
+	[FW_EXCEPT_COUNT_ADDR]	= 0x02204ffc,
+	[FW_CIRQ_COUNT_ADDR]	= 0x022001ac,
+	[FW_CIRQ_IDX_ADDR]	= 0x02204ec4,
+	[FW_CIRQ_LISR_ADDR]	= 0x02205010,
+	[FW_TASK_ID_ADDR]	= 0x02204fac,
+	[FW_TASK_IDX_ADDR]	= 0x02204f4c,
+	[FW_TASK_QID1_ADDR]	= 0x02202814,
+	[FW_TASK_QID2_ADDR]	= 0x02202984,
+	[FW_TASK_START_ADDR]	= 0x022027b8,
+	[FW_TASK_END_ADDR]	= 0x022027bc,
+	[FW_TASK_SIZE_ADDR]	= 0x022027c4,
+	[FW_LAST_MSG_ID_ADDR]	= 0x02204f28,
+	[FW_EINT_INFO_ADDR]	= 0x02205194,
+	[FW_SCHED_INFO_ADDR]	= 0x022051a4,
 	[SWDEF_BASE_ADDR]	= 0x411400,
 	[TXQ_WED_RING_BASE]	= 0x24420,
 	[RXQ_WED_RING_BASE]	= 0x24520,
@@ -457,6 +503,14 @@ static u32 __mt7915_reg_addr(struct mt7915_dev *dev, u32 addr)
 	return mt7915_reg_map_l2(dev, addr);
 }
 
+void mt7915_memcpy_fromio(struct mt7915_dev *dev, void *buf, u32 offset,
+			  size_t len)
+{
+	u32 addr = __mt7915_reg_addr(dev, offset);
+
+	memcpy_fromio(buf, dev->mt76.mmio.regs + addr, len);
+}
+
 static u32 mt7915_rr(struct mt76_dev *mdev, u32 offset)
 {
 	struct mt7915_dev *dev = container_of(mdev, struct mt7915_dev, mt76);
@@ -747,10 +801,9 @@ static void mt7915_irq_tasklet(struct tasklet_struct *t)
 		u32 val = mt76_rr(dev, MT_MCU_CMD);
 
 		mt76_wr(dev, MT_MCU_CMD, val);
-		if (val & MT_MCU_CMD_ERROR_MASK) {
-			dev->reset_state = val;
-			queue_work(dev->mt76.wq, &dev->reset_work);
-			wake_up(&dev->reset_wait);
+		if (val & (MT_MCU_CMD_ERROR_MASK | MT_MCU_CMD_WDT_MASK)) {
+			dev->recovery.state = val;
+			mt7915_reset(dev);
 		}
 	}
 }

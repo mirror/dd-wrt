@@ -129,6 +129,17 @@ struct mt7915_mcu_background_chain_ctrl {
 	u8 rsv[2];
 } __packed;
 
+struct mt7915_mcu_sr_ctrl {
+	u8 action;
+	u8 argnum;
+	u8 band_idx;
+	u8 status;
+	u8 drop_ta_idx;
+	u8 sta_idx;	/* 256 sta */
+	u8 rsv[2];
+	__le32 val;
+} __packed;
+
 struct mt7915_mcu_eeprom {
 	u8 buffer_mode;
 	u8 format;
@@ -160,15 +171,17 @@ struct mt7915_mcu_mib {
 
 enum mt7915_chan_mib_offs {
 	/* mt7915 */
-	MIB_BUSY_TIME = 14,
 	MIB_TX_TIME = 81,
 	MIB_RX_TIME,
 	MIB_OBSS_AIRTIME = 86,
+	MIB_NON_WIFI_TIME,
+	MIB_TXOP_INIT_COUNT,
+
 	/* mt7916 */
-	MIB_BUSY_TIME_V2 = 0,
 	MIB_TX_TIME_V2 = 6,
 	MIB_RX_TIME_V2 = 8,
-	MIB_OBSS_AIRTIME_V2 = 490
+	MIB_OBSS_AIRTIME_V2 = 490,
+	MIB_NON_WIFI_TIME_V2
 };
 
 struct edca {
@@ -407,6 +420,17 @@ enum {
 #define RATE_CFG_HE_LTF			GENMASK(31, 28)
 
 enum {
+	SPR_ENABLE = 0x1,
+	SPR_ENABLE_SD = 0x3,
+	SPR_ENABLE_MODE = 0x5,
+	SPR_ENABLE_DPD = 0x23,
+	SPR_ENABLE_TX = 0x25,
+	SPR_SET_SRG_BITMAP = 0x80,
+	SPR_SET_PARAM = 0xc2,
+	SPR_SET_SIGA = 0xdc,
+};
+
+enum {
 	THERMAL_PROTECT_PARAMETER_CTRL,
 	THERMAL_PROTECT_BASIC_INFO,
 	THERMAL_PROTECT_ENABLE,
@@ -448,6 +472,8 @@ enum {
 	SER_SET_RECOVER_L3_TX_ABORT,
 	SER_SET_RECOVER_L3_TX_DISABLE,
 	SER_SET_RECOVER_L3_BF,
+	SER_SET_RECOVER_FULL,
+	SER_SET_SYSTEM_ASSERT,
 	/* action */
 	SER_ENABLE = 2,
 	SER_RECOVER
