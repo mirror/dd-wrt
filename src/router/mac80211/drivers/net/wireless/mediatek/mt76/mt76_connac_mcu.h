@@ -63,7 +63,7 @@ struct mt76_connac2_mcu_txd {
 } __packed __aligned(4);
 
 /**
- * struct mt76_connac2_mcu_uni_txd - mcu command descriptor for firmware v3
+ * struct mt76_connac2_mcu_uni_txd - mcu command descriptor for connac2 and connac3
  * @txd: hardware descriptor
  * @len: total length not including txd
  * @cid: command identifier
@@ -121,11 +121,13 @@ struct mt76_connac2_mcu_rxd {
 
 	u8 eid;
 	u8 seq;
-	u8 rsv[2];
-
+	u8 option;
+	u8 rsv;
 	u8 ext_eid;
 	u8 rsv1[2];
 	u8 s2d_index;
+
+	u8 tlv[0];
 };
 
 struct mt76_connac2_patch_hdr {
@@ -391,7 +393,8 @@ struct sta_rec_phy {
 	u8 ampdu;
 	u8 rts_policy;
 	u8 rcpi;
-	u8 rsv[2];
+	u8 max_ampdu_len; /* connac3 */
+	u8 rsv[1];
 } __packed;
 
 struct sta_rec_he_6g_capa {
@@ -452,8 +455,8 @@ struct sta_rec_bf {
 	u8 ibf_dbw;
 	u8 ibf_ncol;
 	u8 ibf_nrow;
-	u8 nrow_bw160;
-	u8 ncol_bw160;
+	u8 nrow_gt_bw80;
+	u8 ncol_gt_bw80;
 	u8 ru_start_idx;
 	u8 ru_end_idx;
 
@@ -779,6 +782,8 @@ enum {
 	STA_REC_BFEE,
 	STA_REC_PHY = 0x15,
 	STA_REC_HE_6G = 0x17,
+	STA_REC_HDRT = 0x28,
+	STA_REC_HDR_TRANS = 0x2B,
 	STA_REC_MAX_NUM
 };
 
@@ -946,6 +951,9 @@ enum {
 	DEV_INFO_MAX_NUM
 };
 
+#define MCU_UNI_CMD_EVENT                       BIT(1)
+#define MCU_UNI_CMD_UNSOLICITED_EVENT           BIT(2)
+
 /* event table */
 enum {
 	MCU_EVENT_TARGET_ADDRESS_LEN = 0x01,
@@ -980,6 +988,17 @@ enum {
 	MCU_EXT_EVENT_BCC_NOTIFY = 0x75,
 	MCU_EXT_EVENT_MURU_CTRL = 0x9f,
 };
+
+/* unified event table */
+enum {
+	MCU_UNI_EVENT_RESULT = 0x01,
+	MCU_UNI_EVENT_FW_LOG_2_HOST = 0x04,
+	MCU_UNI_EVENT_IE_COUNTDOWN = 0x09,
+	MCU_UNI_EVENT_RDD_REPORT = 0x11,
+};
+
+#define MCU_UNI_CMD_EVENT			BIT(1)
+#define MCU_UNI_CMD_UNSOLICITED_EVENT		BIT(2)
 
 enum {
 	MCU_Q_QUERY,
@@ -1063,10 +1082,11 @@ enum {
 
 #define MCU_CMD_ACK				BIT(0)
 #define MCU_CMD_UNI				BIT(1)
-#define MCU_CMD_QUERY				BIT(2)
+#define MCU_CMD_SET				BIT(2)
 
 #define MCU_CMD_UNI_EXT_ACK			(MCU_CMD_ACK | MCU_CMD_UNI | \
-						 MCU_CMD_QUERY)
+						 MCU_CMD_SET)
+#define MCU_CMD_UNI_QUERY_ACK			(MCU_CMD_ACK | MCU_CMD_UNI)
 
 #define __MCU_CMD_FIELD_ID			GENMASK(7, 0)
 #define __MCU_CMD_FIELD_EXT_ID			GENMASK(15, 8)
@@ -1074,6 +1094,7 @@ enum {
 #define __MCU_CMD_FIELD_UNI			BIT(17)
 #define __MCU_CMD_FIELD_CE			BIT(18)
 #define __MCU_CMD_FIELD_WA			BIT(19)
+#define __MCU_CMD_FIELD_WM			BIT(20)
 
 #define MCU_CMD(_t)				FIELD_PREP(__MCU_CMD_FIELD_ID,		\
 							   MCU_CMD_##_t)
@@ -1094,6 +1115,16 @@ enum {
 #define MCU_WA_PARAM_CMD(_t)			(MCU_WA_CMD(WA_PARAM) | \
 						 FIELD_PREP(__MCU_CMD_FIELD_EXT_ID, \
 							    MCU_WA_PARAM_CMD_##_t))
+
+#define MCU_WM_UNI_CMD(_t)			(MCU_UNI_CMD(_t) |		\
+						 __MCU_CMD_FIELD_WM)
+#define MCU_WM_UNI_CMD_QUERY(_t)		(MCU_UNI_CMD(_t) |		\
+						 __MCU_CMD_FIELD_QUERY |	\
+						 __MCU_CMD_FIELD_WM)
+#define MCU_WA_UNI_CMD(_t)			(MCU_UNI_CMD(_t) |		\
+						 __MCU_CMD_FIELD_WA)
+#define MCU_WMWA_UNI_CMD(_t)			(MCU_WM_UNI_CMD(_t) |		\
+						 __MCU_CMD_FIELD_WA)
 
 enum {
 	MCU_EXT_CMD_EFUSE_ACCESS = 0x01,
@@ -1148,10 +1179,33 @@ enum {
 	MCU_UNI_CMD_DEV_INFO_UPDATE = 0x01,
 	MCU_UNI_CMD_BSS_INFO_UPDATE = 0x02,
 	MCU_UNI_CMD_STA_REC_UPDATE = 0x03,
+	MCU_UNI_CMD_EDCA_UPDATE = 0x04,
 	MCU_UNI_CMD_SUSPEND = 0x05,
 	MCU_UNI_CMD_OFFLOAD = 0x06,
 	MCU_UNI_CMD_HIF_CTRL = 0x07,
+	MCU_UNI_CMD_BAND_CONFIG = 0x08,
+	MCU_UNI_CMD_REPT_MUAR = 0x09,
+	MCU_UNI_CMD_WSYS_CONFIG = 0x0b,
+	MCU_UNI_CMD_REG_ACCESS = 0x0d,
+	MCU_UNI_CMD_POWER_CREL = 0x0f,
+	MCU_UNI_CMD_RX_HDR_TRANS = 0x12,
+	MCU_UNI_CMD_SER = 0x13,
+	MCU_UNI_CMD_TWT = 0x14,
+	MCU_UNI_CMD_RDD_CTRL = 0x19,
+	MCU_UNI_CMD_GET_MIB_INFO = 0x22,
 	MCU_UNI_CMD_SNIFFER = 0x24,
+	MCU_UNI_CMD_SR = 0x25,
+	MCU_UNI_CMD_ROC = 0x27,
+	MCU_UNI_CMD_TXPOWER = 0x2b,
+	MCU_UNI_CMD_EFUSE_CTRL = 0x2d,
+	MCU_UNI_CMD_RA = 0x2f,
+	MCU_UNI_CMD_MURU = 0x31,
+	MCU_UNI_CMD_BF = 0x33,
+	MCU_UNI_CMD_CHANNEL_SWITCH = 0x34,
+	MCU_UNI_CMD_THERMAL = 0x35,
+	MCU_UNI_CMD_VOW = 0x37,
+	MCU_UNI_CMD_RRO = 0x57,
+	MCU_UNI_CMD_OFFCH_SCAN_CTRL = 0x58,
 };
 
 enum {
@@ -1201,14 +1255,23 @@ enum {
 
 enum {
 	UNI_BSS_INFO_BASIC = 0,
+	UNI_BSS_INFO_RA = 1,
 	UNI_BSS_INFO_RLM = 2,
 	UNI_BSS_INFO_BSS_COLOR = 4,
 	UNI_BSS_INFO_HE_BASIC = 5,
 	UNI_BSS_INFO_BCN_CONTENT = 7,
+	UNI_BSS_INFO_BCN_CSA = 8,
+	UNI_BSS_INFO_BCN_BCC = 9,
+	UNI_BSS_INFO_BCN_MBSSID = 10,
+	UNI_BSS_INFO_RATE = 11,
 	UNI_BSS_INFO_QBSS = 15,
+	UNI_BSS_INFO_SEC = 16,
+	UNI_BSS_INFO_TXCMD = 18,
 	UNI_BSS_INFO_UAPSD = 19,
 	UNI_BSS_INFO_PS = 21,
 	UNI_BSS_INFO_BCNFT = 22,
+	UNI_BSS_INFO_OFFLOAD = 25,
+	UNI_BSS_INFO_MLD = 26,
 };
 
 enum {
@@ -1736,10 +1799,14 @@ int mt76_connac_mcu_uni_add_dev(struct mt76_phy *phy,
 int mt76_connac_mcu_sta_ba(struct mt76_dev *dev, struct mt76_vif *mvif,
 			   struct ieee80211_ampdu_params *params,
 			   int cmd, bool enable, bool tx);
+int mt76_connac_mcu_uni_set_chctx(struct mt76_phy *phy,
+				  struct mt76_vif *vif,
+				  struct ieee80211_chanctx_conf *ctx);
 int mt76_connac_mcu_uni_add_bss(struct mt76_phy *phy,
 				struct ieee80211_vif *vif,
 				struct mt76_wcid *wcid,
-				bool enable);
+				bool enable,
+				struct ieee80211_chanctx_conf *ctx);
 int mt76_connac_mcu_sta_cmd(struct mt76_phy *phy,
 			    struct mt76_sta_cmd_info *info);
 void mt76_connac_mcu_beacon_loss_iter(void *priv, u8 *mac,

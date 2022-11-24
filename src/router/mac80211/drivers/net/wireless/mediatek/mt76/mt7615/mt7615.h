@@ -51,6 +51,7 @@
 #define MT7663_FIRMWARE_N9		"mediatek/mt7663_n9_rebb.bin"
 
 #define MT7615_EEPROM_SIZE		1024
+#define MT7663_EEPROM_SIZE		1536
 #define MT7615_TOKEN_SIZE		4096
 
 #define MT_FRAC_SCALE		12
@@ -469,10 +470,12 @@ void mt7615_init_work(struct mt7615_dev *dev);
 int mt7615_mcu_restart(struct mt76_dev *dev);
 void mt7615_update_channel(struct mt76_phy *mphy);
 bool mt7615_mac_wtbl_update(struct mt7615_dev *dev, int idx, u32 mask);
-void mt7615_mac_reset_counters(struct mt7615_dev *dev);
+void mt7615_mac_reset_counters(struct mt7615_phy *phy);
 void mt7615_mac_cca_stats_reset(struct mt7615_phy *phy);
 void mt7615_mac_set_scs(struct mt7615_phy *phy, bool enable);
 void mt7615_mac_enable_nf(struct mt7615_dev *dev, bool ext_phy);
+void mt7615_mac_enable_rtscts(struct mt7615_dev *dev,
+			      struct ieee80211_vif *vif, bool enable);
 void mt7615_mac_sta_poll(struct mt7615_dev *dev);
 int mt7615_mac_write_txwi(struct mt7615_dev *dev, __le32 *txwi,
 			  struct sk_buff *skb, struct mt76_wcid *wcid,
