@@ -348,6 +348,7 @@ void ieee80211_scan_rx(struct ieee80211_local *local, struct sk_buff *skb)
 		return;
 
 	elems = ieee802_11_parse_elems(elements, skb->len - baselen, false, NULL, NULL);
+	if (elems) {
 	if (elems->mtik) {
 		if (local)
 			memcpy(&local->radioname[0], &elems->mtik->radioname[0], 15);
@@ -374,7 +375,7 @@ void ieee80211_scan_rx(struct ieee80211_local *local, struct sk_buff *skb)
 			memcpy(&sdata2->radioname[0], &elems->aironet->name[0], 16);
     	}
     	kfree(elems);
-    	
+    	}
 	channel = ieee80211_get_channel_khz(local->hw.wiphy,
 					ieee80211_rx_status_to_khz(rx_status));
 
