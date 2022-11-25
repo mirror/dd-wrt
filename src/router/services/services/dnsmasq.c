@@ -912,6 +912,8 @@ void start_dnsmasq(void)
 #endif
 	if (!strstr(addoptions, "cache-size="))
 		fprintf(fp, "cache-size=%d\n", nvram_default_geti("dnsmasq_cachesize", 1500));
+	if (!strstr(addoptions, "dns-forward-max="))
+		fprintf(fp, "dns-forward-max=%d\n", nvram_default_geti("dnsmasq_forward_max", 150));
 	if (nvram_matchi("dnsmasq_ms_telemetry", 1))
 		add_ms_telemetry(fp);
 	if (nvram_matchi("dnsmasq_ubnt_telemetry", 1))
