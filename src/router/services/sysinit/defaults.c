@@ -2223,6 +2223,7 @@ struct nvram_param srouter_defaults[] = {
 	{ "dnsmasq_strict", "0" },
 	{ "dnsmasq_rc", "0" },
 	{ "dnsmasq_cachesize", "1500" },
+	{ "dnsmasq_forward_max", "150" },
 	{ "dnsmasq_add_mac", "0" },
 	{ "dhcpd_usejffs", "0" },
 #ifdef HAVE_POWERNOC_WOAP54G
