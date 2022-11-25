@@ -605,16 +605,8 @@ ok:
 		 * it may be inexistent.
 		 */
 		i = max_t(int, i, (prandom_u32() & 7) * 2);
-		WRITE_ONCE(table_perturb[index], READ_ONCE(table_perturb[index]) + i + 2);
+		WRITE_ONCE(table_perturb[index], (READ_ONCE(table_perturb[index]) + i + 2) & ~1);
 		
-		/* If our first attempt found a candidate, skip next candidate
-		 * in 1/16 of cases to add some noise.
-		 */
-		if (!i && !(prandom_u32() % 16))
-			i = 2;
-
-		WRITE_ONCE(table_perturb[index], READ_ONCE(table_perturb[index]) + (i + 2) & ~1);
-
 		/* Head lock still held and bh's disabled */
 		inet_bind_hash(sk, tb, port);
 		if (sk_unhashed(sk)) {

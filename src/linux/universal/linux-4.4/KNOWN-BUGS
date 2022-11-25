@@ -1,0 +1,39 @@
+KNOWN BUGS
+==========
+
+After end of 4.4-stable maintainance, CIP project maintains 4.4 kernel
+tree. We try to fix as man bugs as possible, but sometimes backport
+from mainline is not feasible or not done by the stable team, and
+sometimes backport from 4.9-stable to 4.4-st is not feasible or not
+done for other reasons.
+
+In major cases this happens, we'll try to add notes here. Detailed
+per-patch status is available at
+git@gitlab.com:cip-project/cip-kernel/lts-commit-list.git file
+v4.4.org, or can be pulled from git history.
+
+Not all speculation fixes from 4.9.306, 4.9.310 and 4.9.319 were
+merged here. These affect mostly x86 and arm64 architectures.
+
+Random rewrite from 4.9.320 was not backported. We have seen no good
+explanation why it is needed, and it is rather intrusive.
+
+These commits were not backported and may need more investigation:
+
+be8173bc1 | mm: fix race between MADV_FREE reclaim and blkdev direct IO read
+08cf860b8 | lightnvm: disable the subsystem
+
+4.9.326:
+
+dd3fdf3b3 | net: ping6: Fix memleak in ipv6_renew_options()
+ac17e88ff | selinux: Clean up initialization of isec->sclass
+4ec11eb72 | selinux: Convert isec->lock into a spinlock
+c00fcec32 | selinux: fix error initialization in inode_doinit_with_dentry(
+381595049 | selinux: fix inode_doinit_with_dentry() LABEL_INVALID error ha
+2a6005425 | ext4: fix extent status tree race in writeback error recovery
+
+4.9.327:
+
+cec1c921f | btrfs: reject log replay if there is unsupported RO compat flag
+d1f0467fd | btrfs: check if root is readonly while setting security xattr
+

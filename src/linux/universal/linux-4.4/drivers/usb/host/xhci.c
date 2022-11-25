@@ -212,10 +212,11 @@ static int xhci_start(struct xhci_hcd *xhci)
 	xhci_fake_doorbell(xhci, 1);
 #endif /* CONFIG_BCM47XX */
 
-	if (!ret)
+	if (!ret) {
 		/* clear state flags. Including dying, halted or removing */
 		xhci->xhc_state = 0;
-
+		xhci->run_graceperiod = jiffies + msecs_to_jiffies(500);
+	}
 	return ret;
 }
 
