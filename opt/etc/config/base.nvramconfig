@@ -131,6 +131,7 @@
  "recursive_dns"  "DNS Recursive"  "CHOICE" "2"  "0"  "1"  "FALSE" "0"
  "dnsmasq_options"  "DNS Masq"  "NULL"  "TRUE" "0"
  "dnsmasq_cachesize"  "DNS Cache Size"  "RANGE"  "0" "99999999" "FALSE" "0"
+ "dnsmasq_forward_max"  "DNS Forward Max"  "RANGE"  "0" "99999999" "FALSE" "0"
  "dns_crypt"  "DNS Crypt"  "CHOICE" "2" "0"  "1"  "FALSE" "0"
  "dns_crypt_resolver" "DNS Crypt Resolver" "NULL"  "FALSE" "0"
  "local_dns"  "Local DNS"  "CHOICE" "2" "0"  "1"  "FALSE" "0"
