@@ -1,0 +1,3 @@
+include:
+  - https://gitlab.com/cip-project/cip-testing/linux-cip-pipelines/raw/master/linux-cip-pipeline.yml
+  - https://gitlab.com/cip-project/cip-testing/linux-cip-pipelines/raw/master/trees/linux-4.4.y-st.yml
