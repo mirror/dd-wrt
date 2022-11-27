@@ -403,11 +403,7 @@ void configure_single_ath9k(int count)
 		sysprintf("echo 0 > /sys/kernel/debug/ieee80211/%s/brcmfmac/turboqam", wif);
 	}
 	MAC80211DEBUG();
-#ifdef HAVE_ATH10K
 	if (is_ath10k(dev)) {
-		if (has_wave2(dev)) {
-			sysprintf("echo %s > /sys/kernel/debug/ieee80211/%s/ath10k/dynamic_auto_burst", nvram_default_get(wl_autoburst, "0"), wif);
-		}
 		if (has_qboost(dev)) {
 			sysprintf("echo %s > /sys/kernel/debug/ieee80211/%s/ath10k/qboost_enable", nvram_default_get(wl_qboost, "0"), wif);
 			if (has_qboost_tdma(dev)) {
@@ -415,9 +411,7 @@ void configure_single_ath9k(int count)
 			}
 		}
 		sysprintf("echo %s > /sys/kernel/debug/ieee80211/%s/ath10k/ani_enable", nvram_default_get(wl_intmit, "0"), wif);
-	} else
-#endif
-	if (is_ath9k(dev))
+	} else if (is_ath9k(dev))
 		sysprintf("echo %s > /sys/kernel/debug/ieee80211/%s/ath9k/ani", nvram_default_get(wl_intmit, "1"), wif);
 #ifdef HAVE_REGISTER
 	int cpeonly = iscpe();
@@ -666,6 +660,11 @@ void configure_single_ath9k(int count)
 		eval("iw", "dev", dev, "set", "compr", "zstd", threshold);
 	} else {
 		eval("iw", "dev", dev, "set", "compr", "off");
+	}
+	if (is_ath10k(dev)) {
+		if (has_wave2(dev)) {
+			sysprintf("echo %s > /sys/kernel/debug/ieee80211/%s/ath10k/dynamic_auto_burst", nvram_default_get(wl_autoburst, "0"), wif);
+		}
 	}
 
 }
