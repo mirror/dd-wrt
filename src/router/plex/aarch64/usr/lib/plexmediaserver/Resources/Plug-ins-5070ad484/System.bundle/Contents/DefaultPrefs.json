@@ -1,0 +1,18 @@
+[
+  {
+    "id"      : "PO_RGN",
+    "label"   : "PO_RGN_LBL",
+    "type"    : "enum",
+    "values"  : ["PO_RGN_AUTO", "PO_RGN_US", "PO_RGN_CA", "PO_RGN_GB", "PO_RGN_NL", "PO_RGN_DE", "PO_RGN_FR", "PO_RGN_AU", "PO_RGN_DK", "PO_RGN_NO", "PO_RGN_SE", "PO_RGN_FI", "PO_RGN_BE", "PO_RGN_AT", "PO_RGN_RU", "PO_RGN_MX", "PO_RGN_BR", "PO_RGN_KO"],
+    "default" : "PO_RGN_AUTO"
+  },
+  
+  {
+    "id"      : "DEV_MODE",
+    "label"   : "",
+    "type"    : "bool",
+    "default" : "false",
+    "hidden"  : "true"
+  }
+  
+]
