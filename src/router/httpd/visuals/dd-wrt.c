@@ -2919,6 +2919,7 @@ static void internal_ej_show_wireless_single(webs_t wp, char *prefix)
 	char wl_isolate[32];
 	char wl_intmit[32];
 	char wl_qboost[32];
+	char wl_autoburst[32];
 	char wl_sifs_trigger_time[32];
 	char wl_noise_immunity[32];
 	char wl_ofdm_weak_det[32];
@@ -3219,6 +3220,7 @@ static void internal_ej_show_wireless_single(webs_t wp, char *prefix)
 	sprintf(wl_xr, "%s_xr", prefix);
 	sprintf(wl_intmit, "%s_intmit", prefix);
 	sprintf(wl_qboost, "%s_qboost", prefix);
+	sprintf(wl_autoburst, "%s_autoburst", prefix);
 	sprintf(wl_sifs_trigger_time, "%s_sifs_trigger_time", prefix);
 	sprintf(wl_noise_immunity, "%s_noise_immunity", prefix);
 	sprintf(wl_ofdm_weak_det, "%s_ofdm_weak_det", prefix);
@@ -3259,6 +3261,9 @@ static void internal_ej_show_wireless_single(webs_t wp, char *prefix)
 			showRadio(wp, "wl_basic.intmit", wl_intmit);
 		} else {
 			showAutoOption(wp, "wl_basic.intmit", wl_intmit, 0);
+		}
+		if (has_wave2(prefix)) {
+				showRadio(wp, "wl_basic.dynamic_auto_bursting", wl_autoburst);
 		}
 		if (has_qboost(prefix)) {
 			if (has_qboost_tdma(prefix)) {
@@ -4033,6 +4038,7 @@ static void internal_ej_show_wireless_single(webs_t wp, char *prefix)
 	sprintf(wl_xr, "%s_xr", prefix);
 	sprintf(wl_intmit, "%s_intmit", prefix);
 	sprintf(wl_qboost, "%s_qboost", prefix);
+	sprintf(wl_autoburst, "%s_autoburst", prefix);
 	sprintf(wl_sifs_trigger_time, "%s_sifs_trigger_time", prefix);
 	sprintf(wl_noise_immunity, "%s_noise_immunity", prefix);
 	sprintf(wl_ofdm_weak_det, "%s_ofdm_weak_det", prefix);
@@ -4560,6 +4566,9 @@ static void internal_ej_show_wireless_single(webs_t wp, char *prefix)
 			showRadio(wp, "wl_basic.intmit", wl_intmit);
 		} else {
 			showAutoOption(wp, "wl_basic.intmit", wl_intmit, 0);
+		}
+		if (has_wave2(prefix)) {
+				showRadio(wp, "wl_basic.dynamic_auto_bursting", wl_autoburst);
 		}
 		if (has_qboost(prefix)) {
 			if (has_qboost_tdma(prefix)) {
