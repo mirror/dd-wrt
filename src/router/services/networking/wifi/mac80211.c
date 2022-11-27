@@ -284,12 +284,9 @@ void configure_single_ath9k(int count)
 	char dev[10];
 	char wif[10];
 	int phy_idx = get_ath9k_phy_idx(count);
-	char wl[32];
-	char bw[32];
 	char channel[32];
 	char ssid[32];
 	char net[32];
-	char atf[32];
 	char wifivifs[32];
 	char broadcast[32];
 	char sens[32];
@@ -340,7 +337,7 @@ void configure_single_ath9k(int count)
 	if (!strcmp(netmode, "disabled"))
 		return;
 	MAC80211DEBUG();
-	if (is_ath10k(dev) && has_fwswitch(dev)) {
+	if (isath10k && has_fwswitch(dev)) {
 		char fwtype[32];
 		char fwtype_use[32];
 		sprintf(fwtype, "%s_fwtype", dev);
@@ -356,63 +353,8 @@ void configure_single_ath9k(int count)
 			sysprintf("echo fw-reload > /sys/kernel/debug/ieee80211/%s/ath10k/simulate_fw_crash", wif);
 		}
 	}
-	MAC80211DEBUG();
-	if (has_airtime_fairness(dev)) {
-		sprintf(atf, "%s_atf", dev);
-		sysprintf("echo %d > /sys/kernel/debug/ieee80211/%s/airtime_flags", nvram_default_matchi(atf, 1, 1) ? 3 : 0, wif);
-	}
-	MAC80211DEBUG();
-	// set channelbw ht40 is also 20!
-	sprintf(bw, "%s_channelbw", dev);
-	char *driver = "ath9k";
-	int bwmax = 20;
-	int bwmin = 2;
-	if (isath5k) {
-		driver = "ath5k";
-		bwmax = 40;
-	} else if (isath10k)
-		driver = "ath10k";
-	else if (ismt7615 || ismt7915 || ismt7921) {
-		bwmin = 5;
-		driver = "mt76";
-	}
-	int chanbw = nvram_geti(bw);
-	if (chanbw < bwmin)
-		chanbw = bwmin;
-	if (chanbw > bwmax)
-		chanbw = bwmax;
-	setchanbw(wif, driver, chanbw);
 
-	char wl_intmit[32];
-	sprintf(wl_intmit, "%s_intmit", dev);
-	char wl_qboost[32];
-	sprintf(wl_qboost, "%s_qboost", dev);
-	char wl_autoburst[32];
-	sprintf(wl_autoburst, "%s_autoburst", dev);
-	char wl_sifs_trigger_time[32];
-	sprintf(wl_sifs_trigger_time, "%s_sifs_trigger_time", dev);
-	if (nvram_nmatch("1", "%s_turbo_qam", dev)) {
-		sysprintf("echo 1 > /sys/kernel/debug/ieee80211/%s/ath10k/turboqam", wif);
-		sysprintf("echo 1 > /sys/kernel/debug/ieee80211/%s/mt76/turboqam", wif);
-		sysprintf("echo 1 > /sys/kernel/debug/ieee80211/%s/brcmfmac/turboqam", wif);
-		sysprintf("echo 1 > /sys/kernel/debug/ieee80211/%s/turboqam", wif);
-	} else {
-		sysprintf("echo 0 > /sys/kernel/debug/ieee80211/%s/ath10k/turboqam", wif);
-		sysprintf("echo 0 > /sys/kernel/debug/ieee80211/%s/mt76/turboqam", wif);
-		sysprintf("echo 0 > /sys/kernel/debug/ieee80211/%s/turboqam", wif);
-		sysprintf("echo 0 > /sys/kernel/debug/ieee80211/%s/brcmfmac/turboqam", wif);
-	}
 	MAC80211DEBUG();
-	if (is_ath10k(dev)) {
-		if (has_qboost(dev)) {
-			sysprintf("echo %s > /sys/kernel/debug/ieee80211/%s/ath10k/qboost_enable", nvram_default_get(wl_qboost, "0"), wif);
-			if (has_qboost_tdma(dev)) {
-				sysprintf("echo %s > /sys/kernel/debug/ieee80211/%s/ath10k/sifs_trigger_time", nvram_default_get(wl_sifs_trigger_time, "0"), wif);
-			}
-		}
-		sysprintf("echo %s > /sys/kernel/debug/ieee80211/%s/ath10k/ani_enable", nvram_default_get(wl_intmit, "0"), wif);
-	} else if (is_ath9k(dev))
-		sysprintf("echo %s > /sys/kernel/debug/ieee80211/%s/ath9k/ani", nvram_default_get(wl_intmit, "1"), wif);
 #ifdef HAVE_REGISTER
 	int cpeonly = iscpe();
 #else
@@ -453,6 +395,7 @@ void configure_single_ath9k(int count)
 	if (!has_ad(dev))
 		mac80211_set_antennas(dev, txchain, rxchain);
 
+	char wl[32];
 	sprintf(wl, "wlan%d_mode", count);
 	apm = nvram_default_get(wl, "ap");
 
@@ -2321,6 +2264,17 @@ void ath9k_start_supplicant(int count, char *prefix)
 	sprintf(wl_autoburst, "%s_autoburst", dev);
 	char wl_sifs_trigger_time[32];
 	sprintf(wl_sifs_trigger_time, "%s_sifs_trigger_time", dev);
+	if (nvram_nmatch("1", "%s_turbo_qam", dev)) {
+		sysprintf("echo 1 > /sys/kernel/debug/ieee80211/%s/ath10k/turboqam", wif);
+		sysprintf("echo 1 > /sys/kernel/debug/ieee80211/%s/mt76/turboqam", wif);
+		sysprintf("echo 1 > /sys/kernel/debug/ieee80211/%s/brcmfmac/turboqam", wif);
+		sysprintf("echo 1 > /sys/kernel/debug/ieee80211/%s/turboqam", wif);
+	} else {
+		sysprintf("echo 0 > /sys/kernel/debug/ieee80211/%s/ath10k/turboqam", wif);
+		sysprintf("echo 0 > /sys/kernel/debug/ieee80211/%s/mt76/turboqam", wif);
+		sysprintf("echo 0 > /sys/kernel/debug/ieee80211/%s/turboqam", wif);
+		sysprintf("echo 0 > /sys/kernel/debug/ieee80211/%s/brcmfmac/turboqam", wif);
+	}
 	if (is_ath10k(dev)) {
 		if (has_qboost(dev)) {
 			sysprintf("echo %s > /sys/kernel/debug/ieee80211/%s/ath10k/qboost_enable", nvram_default_get(wl_qboost, "0"), wif);
@@ -2333,6 +2287,46 @@ void ath9k_start_supplicant(int count, char *prefix)
 		}
 		sysprintf("echo %s > /sys/kernel/debug/ieee80211/%s/ath10k/ani_enable", nvram_default_get(wl_intmit, "0"), wif);
 	}
+	if (is_ath9k(dev))
+		sysprintf("echo %s > /sys/kernel/debug/ieee80211/%s/ath9k/ani", nvram_default_get(wl_intmit, "1"), wif);
+
 	MAC80211DEBUG();
+	if (has_airtime_fairness(dev)) {
+		char atf[32];
+		sprintf(atf, "%s_atf", dev);
+		sysprintf("echo %d > /sys/kernel/debug/ieee80211/%s/airtime_flags", nvram_default_matchi(atf, 1, 1) ? 3 : 0, wif);
+	}
+	MAC80211DEBUG();
+	char bw[32];
+	int isath5k = 0;
+	int isath10k = 0;
+	int ismt7615 = 0;
+	int ismt7915 = 0;
+	int ismt7921 = 0;
+	isath5k = is_ath5k(dev);
+	isath10k = is_ath10k(dev);
+	ismt7615 = is_mt7615(dev);
+	ismt7915 = is_mt7915(dev);
+	ismt7921 = is_mt7921(dev);
+	// set channelbw ht40 is also 20!
+	sprintf(bw, "%s_channelbw", dev);
+	char *driver = "ath9k";
+	int bwmax = 20;
+	int bwmin = 2;
+	if (isath5k) {
+		driver = "ath5k";
+		bwmax = 40;
+	} else if (isath10k)
+		driver = "ath10k";
+	else if (ismt7615 || ismt7915 || ismt7921) {
+		bwmin = 5;
+		driver = "mt76";
+	}
+	int chanbw = nvram_geti(bw);
+	if (chanbw < bwmin)
+		chanbw = bwmin;
+	if (chanbw > bwmax)
+		chanbw = bwmax;
+	setchanbw(wif, driver, chanbw);
 }
 #endif
