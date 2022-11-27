@@ -661,12 +661,6 @@ void configure_single_ath9k(int count)
 	} else {
 		eval("iw", "dev", dev, "set", "compr", "off");
 	}
-	if (is_ath10k(dev)) {
-		if (has_wave2(dev)) {
-			sysprintf("echo %s > /sys/kernel/debug/ieee80211/%s/ath10k/dynamic_auto_burst", nvram_default_get(wl_autoburst, "0"), wif);
-		}
-	}
-
 }
 
 void get_pairwise(char *prefix, char *pwstring, char *grpstring, int isadhoc, int ismesh);
@@ -2319,6 +2313,11 @@ void ath9k_start_supplicant(int count, char *prefix)
 		}
 	}
 	sysprintf("iw phy %s set txpower fixed %d", wif, nvram_default_geti(power, 16) * 100);
+	if (is_ath10k(dev)) {
+		if (has_wave2(dev)) {
+			sysprintf("echo %s > /sys/kernel/debug/ieee80211/%s/ath10k/dynamic_auto_burst", nvram_default_get(wl_autoburst, "0"), wif);
+		}
+	}
 	MAC80211DEBUG();
 }
 #endif
