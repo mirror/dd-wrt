@@ -3095,6 +3095,7 @@ wl_basic.sifstime="OFDM SIFS Time";
 wl_basic.preambletime="OFDM Preamble Time";
 wl_basic.multicast="Multicast Forwarding";
 wl_basic.intmit="Noise Immunity";
+wl_basic.dynamic_auto_bursting="Dynamic Auto Bursting";
 wl_basic.qboost_tdma="QCA Q-Boost / TDMA";
 wl_basic.qboost="QCA Q-Boost";
 wl_basic.sifs_trigger_time="SIFS Trigger Time";
