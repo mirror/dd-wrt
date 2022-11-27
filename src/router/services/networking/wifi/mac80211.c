@@ -2313,6 +2313,10 @@ void ath9k_start_supplicant(int count, char *prefix)
 		}
 	}
 	sysprintf("iw phy %s set txpower fixed %d", wif, nvram_default_geti(power, 16) * 100);
+	char wl_qboost[32];
+	sprintf(wl_qboost, "%s_qboost", dev);
+	char wl_autoburst[32];
+	sprintf(wl_autoburst, "%s_autoburst", dev);
 	if (is_ath10k(dev)) {
 		if (has_qboost(dev)) {
 			sysprintf("echo %s > /sys/kernel/debug/ieee80211/%s/ath10k/qboost_enable", nvram_default_get(wl_qboost, "0"), wif);
