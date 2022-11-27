@@ -2314,6 +2314,12 @@ void ath9k_start_supplicant(int count, char *prefix)
 	}
 	sysprintf("iw phy %s set txpower fixed %d", wif, nvram_default_geti(power, 16) * 100);
 	if (is_ath10k(dev)) {
+		if (has_qboost(dev)) {
+			sysprintf("echo %s > /sys/kernel/debug/ieee80211/%s/ath10k/qboost_enable", nvram_default_get(wl_qboost, "0"), wif);
+			if (has_qboost_tdma(dev)) {
+				sysprintf("echo %s > /sys/kernel/debug/ieee80211/%s/ath10k/sifs_trigger_time", nvram_default_get(wl_sifs_trigger_time, "0"), wif);
+			}
+		}
 		if (has_wave2(dev)) {
 			sysprintf("echo %s > /sys/kernel/debug/ieee80211/%s/ath10k/dynamic_auto_burst", nvram_default_get(wl_autoburst, "0"), wif);
 		}
