@@ -36,13 +36,13 @@ install: gsp_updater i2cset i2cget i2cdump
 	install -m 0644 -o $(INSTOWNER) -g $(INSTGROUP) gsc_2387_v46.txt $(INSTALLDIR)/etc/gsc_2387_v46.txt
 	install -m 0644 -o $(INSTOWNER) -g $(INSTGROUP) gsc_2388_v51.txt $(INSTALLDIR)/etc/gsc_2388_v51.txt
 	install -m 0644 -o $(INSTOWNER) -g $(INSTGROUP) gsc_2391_v51.txt $(INSTALLDIR)/etc/gsc_2391_v51.txt
-	install -m 0644 -o $(INSTOWNER) -g $(INSTGROUP) gsc_51xx_v50.txt $(INSTALLDIR)/etc/gsc_51xx_v50.txt
-	install -m 0644 -o $(INSTOWNER) -g $(INSTGROUP) gsc_52xx_v50.txt $(INSTALLDIR)/etc/gsc_52xx_v50.txt
-	install -m 0644 -o $(INSTOWNER) -g $(INSTGROUP) gsc_53xx_v50.txt $(INSTALLDIR)/etc/gsc_53xx_v50.txt
-	install -m 0644 -o $(INSTOWNER) -g $(INSTGROUP) gsc_54xx_v50.txt $(INSTALLDIR)/etc/gsc_54xx_v50.txt
-	install -m 0644 -o $(INSTOWNER) -g $(INSTGROUP) gsc_551x_v50.txt $(INSTALLDIR)/etc/gsc_551x_v50.txt
-	install -m 0644 -o $(INSTOWNER) -g $(INSTGROUP) gsc_552x_v50.txt $(INSTALLDIR)/etc/gsc_552x_v50.txt
-	install -m 0644 -o $(INSTOWNER) -g $(INSTGROUP) gsc_553x_v50.txt $(INSTALLDIR)/etc/gsc_553x_v50.txt
+	install -m 0644 -o $(INSTOWNER) -g $(INSTGROUP) gsc_51xx_v52.txt $(INSTALLDIR)/etc/gsc_51xx_v52.txt
+	install -m 0644 -o $(INSTOWNER) -g $(INSTGROUP) gsc_52xx_v52.txt $(INSTALLDIR)/etc/gsc_52xx_v52.txt
+	install -m 0644 -o $(INSTOWNER) -g $(INSTGROUP) gsc_53xx_v52.txt $(INSTALLDIR)/etc/gsc_53xx_v52.txt
+	install -m 0644 -o $(INSTOWNER) -g $(INSTGROUP) gsc_54xx_v52.txt $(INSTALLDIR)/etc/gsc_54xx_v52.txt
+	install -m 0644 -o $(INSTOWNER) -g $(INSTGROUP) gsc_551x_v52.txt $(INSTALLDIR)/etc/gsc_551x_v52.txt
+	install -m 0644 -o $(INSTOWNER) -g $(INSTGROUP) gsc_552x_v52.txt $(INSTALLDIR)/etc/gsc_552x_v52.txt
+	install -m 0644 -o $(INSTOWNER) -g $(INSTGROUP) gsc_553x_v52.txt $(INSTALLDIR)/etc/gsc_553x_v52.txt
 	install -m 0644 -o $(INSTOWNER) -g $(INSTGROUP) gsc_630x_v61.txt $(INSTALLDIR)/etc/gsc_610x_v61.txt
 	install -m 0644 -o $(INSTOWNER) -g $(INSTGROUP) gsc_630x_v61.txt $(INSTALLDIR)/etc/gsc_620x_v61.txt
 	install -m 0644 -o $(INSTOWNER) -g $(INSTGROUP) gsc_630x_v61.txt $(INSTALLDIR)/etc/gsc_630x_v61.txt
