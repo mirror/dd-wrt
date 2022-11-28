@@ -327,6 +327,26 @@ static int nvram_critical_internal(char *name, int ommit)
 			return 1;
 		}
 	}
+	if (!strcmp(name, "lan_hwaddr")) {
+		nvram_unset(name);
+		return 1;
+	}
+	if (!strcmp(name, "wlan0_hwaddr")) {
+		nvram_unset(name);
+		return 1;
+	}
+	if (!strcmp(name, "wlan1_hwaddr")) {
+		nvram_unset(name);
+		return 1;
+	}
+	if (!strcmp(name, "wlan2_hwaddr")) {
+		nvram_unset(name);
+		return 1;
+	}
+	if (!strcmp(name, "wlan3_hwaddr")) {
+		nvram_unset(name);
+		return 1;
+	}
 	if (strncmp(name, "sb/", 3) && strncmp(name, "pci/", 4) && strncmp(name, "pcie/", 5) && strncmp(name, "0:", 2) && strncmp(name, "1:", 2) && strncmp(name, "2:", 2) && strncmp(name, "3:", 2)
 	    && !strstr(name, "_hwaddr"))
 		return 0;
