@@ -32,10 +32,10 @@ install: gsp_updater i2cset i2cget i2cdump
 	install -m 0644 -o $(INSTOWNER) -g $(INSTGROUP) gsc_2382_v50.txt $(INSTALLDIR)/etc/gsc_2382_v50.txt
 	install -m 0644 -o $(INSTOWNER) -g $(INSTGROUP) gsc_2383_v50.txt $(INSTALLDIR)/etc/gsc_2383_v50.txt
 	install -m 0644 -o $(INSTOWNER) -g $(INSTGROUP) gsc_2384_v35.txt $(INSTALLDIR)/etc/gsc_2384_v35.txt
-	install -m 0644 -o $(INSTOWNER) -g $(INSTGROUP) gsc_2386_v50.txt $(INSTALLDIR)/etc/gsc_2386_v50.txt
+	install -m 0644 -o $(INSTOWNER) -g $(INSTGROUP) gsc_2386_v51.txt $(INSTALLDIR)/etc/gsc_2386_v51.txt
 	install -m 0644 -o $(INSTOWNER) -g $(INSTGROUP) gsc_2387_v46.txt $(INSTALLDIR)/etc/gsc_2387_v46.txt
-	install -m 0644 -o $(INSTOWNER) -g $(INSTGROUP) gsc_2388_v50.txt $(INSTALLDIR)/etc/gsc_2388_v50.txt
-	install -m 0644 -o $(INSTOWNER) -g $(INSTGROUP) gsc_2391_v50.txt $(INSTALLDIR)/etc/gsc_2391_v50.txt
+	install -m 0644 -o $(INSTOWNER) -g $(INSTGROUP) gsc_2388_v51.txt $(INSTALLDIR)/etc/gsc_2388_v51.txt
+	install -m 0644 -o $(INSTOWNER) -g $(INSTGROUP) gsc_2391_v51.txt $(INSTALLDIR)/etc/gsc_2391_v51.txt
 	install -m 0644 -o $(INSTOWNER) -g $(INSTGROUP) gsc_51xx_v50.txt $(INSTALLDIR)/etc/gsc_51xx_v50.txt
 	install -m 0644 -o $(INSTOWNER) -g $(INSTGROUP) gsc_52xx_v50.txt $(INSTALLDIR)/etc/gsc_52xx_v50.txt
 	install -m 0644 -o $(INSTOWNER) -g $(INSTGROUP) gsc_53xx_v50.txt $(INSTALLDIR)/etc/gsc_53xx_v50.txt
