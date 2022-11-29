@@ -32,7 +32,7 @@ define kernelfeatures
 		sed -i 's/\CONFIG_IP_SET=m/# CONFIG_IP_SET is not set/g' $(LINUXDIR)/.config; \
 	fi
 	if [ "$(CONFIG_NOEXTIRQ)" = "y" ]; then \
-	sed -i 's/\noinitrd/noextirq noinitrd/g' $(LINUXDIR)/.config; \
+		sed -i 's/noinitrd/noextirq noinitrd/g' $(LINUXDIR)/.config; \
 	fi
 	if [ "$(CONFIG_LIBMBIM)" = "y" ]; then \
 		sed -i 's/\# CONFIG_USB_NET_CDC_NCM is not set/CONFIG_USB_NET_CDC_NCM=m/g' $(LINUXDIR)/.config; \
