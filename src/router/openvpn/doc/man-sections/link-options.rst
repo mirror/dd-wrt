@@ -330,7 +330,7 @@ the local and the remote host.
   value for ``n``. Satellite links in particular often require this.
 
   If you run OpenVPN at ``--verb 4``, you will see the message
-  "PID_ERR replay-window backtrack occurred [x]" every time the maximum sequence
+  "Replay-window backtrack occurred [x]" every time the maximum sequence
   number backtrack seen thus far increases. This can be used to calibrate
   ``n``.
 

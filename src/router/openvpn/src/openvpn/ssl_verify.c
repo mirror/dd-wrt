@@ -1397,14 +1397,7 @@ verify_user_pass(struct user_pass *up, struct tls_multi *multi,
 #ifdef MANAGEMENT_DEF_AUTH
         if (man_def_auth != KMDA_UNDEF)
         {
-            if (skip_auth)
-            {
-                ks->mda_status = ACF_DISABLED;
-            }
-            else
-            {
-                ks->authenticated = KS_AUTH_DEFERRED;
-            }
+            ks->authenticated = KS_AUTH_DEFERRED;
         }
 #endif
         if ((session->opt->ssl_flags & SSLF_USERNAME_AS_COMMON_NAME))

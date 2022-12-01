@@ -585,8 +585,7 @@ tls_crypt_v2_extract_client_key(struct buffer *buf,
 
     if (BLEN(&wrapped_client_key) < sizeof(net_len))
     {
-        msg(D_TLS_ERRORS, "Can not read tls-crypt-v2 client key length");
-        return false;
+        msg(D_TLS_ERRORS, "failed to read length");
     }
     memcpy(&net_len, BEND(&wrapped_client_key) - sizeof(net_len),
            sizeof(net_len));
