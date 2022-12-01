@@ -177,5 +177,3 @@ typedef uint16_t in_port_t;
     #define HAVE_INET_NTOP
     #define HAVE_INET_PTON
 #endif
-
-#define HAVE_CONFIG_VERSION_H 1

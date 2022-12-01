@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 #
 # run OpenVPN client against ``test reference'' server
 # - check that ping, http, ... via tunnel works
@@ -9,12 +9,8 @@
 # - writable current directory to create subdir for logs
 # - t_client.rc in current directory OR source dir that specifies tests
 # - for "ping4" checks: fping binary in $PATH
-# - for "ping6" checks: fping (4.0+) or fping6 binary in $PATH
+# - for "ping6" checks: fping6 binary in $PATH
 #
-
-# by changing this to 1 we can force automated builds to fail
-# that are expected to have all the prerequisites
-TCLIENT_SKIP_RC="${TCLIENT_SKIP_RC:-77}"
 
 srcdir="${srcdir:-.}"
 top_builddir="${top_builddir:-..}"
@@ -25,28 +21,25 @@ elif [ -r "${srcdir}"/t_client.rc ] ; then
 else
     echo "$0: cannot find 't_client.rc' in build dir ('${top_builddir}')" >&2
     echo "$0: or source directory ('${srcdir}'). SKIPPING TEST." >&2
-    exit "${TCLIENT_SKIP_RC}"
+    exit 77
 fi
 
 # Check for external dependencies
-FPING="fping"
-FPING6="fping6"
 which fping > /dev/null
 if [ $? -ne 0 ]; then
     echo "$0: fping is not available in \$PATH" >&2
-    exit "${TCLIENT_SKIP_RC}"
+    exit 77
 fi
 which fping6 > /dev/null
 if [ $? -ne 0 ]; then
-    echo "$0: fping6 is not available in \$PATH, assuming fping 4.0 or later" >&2
-    FPING="fping -4"
-    FPING6="fping -6"
+    echo "$0: fping6 is not available in \$PATH" >&2
+    exit 77
 fi
 
 KILL_EXEC=`which kill`
 if [ $? -ne 0 ]; then
     echo "$0: kill not found in \$PATH" >&2
-    exit "${TCLIENT_SKIP_RC}"
+    exit 77
 fi
 
 if [ ! -x "${top_builddir}/src/openvpn/openvpn" ]
@@ -63,12 +56,12 @@ fi
 
 if [ -z "$CA_CERT" ] ; then
     echo "CA_CERT not defined in 't_client.rc'. SKIP test." >&2
-    exit "${TCLIENT_SKIP_RC}"
+    exit 77
 fi
 
 if [ -z "$TEST_RUN_LIST" ] ; then
     echo "TEST_RUN_LIST empty, no tests defined.  SKIP test." >&2
-    exit "${TCLIENT_SKIP_RC}"
+    exit 77
 fi
 
 # Ensure PREFER_KSU is in a known state
@@ -98,7 +91,7 @@ else
     then
         echo "$0: this test must run be as root, or RUN_SUDO=... " >&2
         echo "      must be set correctly in 't_client.rc'. SKIP." >&2
-        exit "${TCLIENT_SKIP_RC}"
+        exit 77
     else
         # We have to use sudo. Make sure that we (hopefully) do not have
         # to ask the users password during the test. This is done to
@@ -108,7 +101,7 @@ else
 	    echo "$0: $RUN_SUDO $KILL_EXEC -0 succeeded, good."
 	else
 	    echo "$0: $RUN_SUDO $KILL_EXEC -0 failed, cannot go on. SKIP." >&2
-	    exit "${TCLIENT_SKIP_RC}"
+	    exit 77
 	fi
     fi
 fi
@@ -223,8 +216,8 @@ run_ping_tests()
     if [ -z "$targetlist" ] ; then return ; fi
 
     case $proto in
-	4) cmd="$FPING" ;;
-	6) cmd="$FPING6" ;;
+	4) cmd=fping ;;
+	6) cmd=fping6 ;;
 	*) echo "internal error in run_ping_tests arg 1: '$proto'" >&2
 	   exit 1 ;;
     esac

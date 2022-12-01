@@ -393,14 +393,9 @@ static char *auth_challenge; /* GLOBAL */
 #endif
 
 void
-enable_auth_user_pass()
-{
-    auth_user_pass_enabled = true;
-}
-
-void
 auth_user_pass_setup(const char *auth_file, const struct static_challenge_info *sci)
 {
+    auth_user_pass_enabled = true;
     if (!auth_user_pass.defined && !auth_token.defined)
     {
 #ifdef ENABLE_MANAGEMENT
@@ -2393,13 +2388,20 @@ key_method_2_write(struct buffer *buf, struct tls_multi *multi,
         {
             goto error;
         }
-        /* save username for auth-token which may get pushed later */
-        if (session->opt->pull && up != &auth_token)
+        /* if auth-nocache was specified, the auth_user_pass object reaches
+         * a "complete" state only after having received the push-reply
+         * message. The push message might contain an auth-token that needs
+         * the username of auth_user_pass.
+         *
+         * For this reason, skip the purge operation here if no push-reply
+         * message has been received yet.
+         *
+         * This normally happens upon first negotiation only.
+         */
+        if (!session->opt->pull)
         {
-            strncpynt(auth_token.username, up->username, USER_PASS_LEN);
+            purge_user_pass(&auth_user_pass, false);
         }
-        /* respect auth-nocache */
-        purge_user_pass(&auth_user_pass, false);
     }
     else
     {
@@ -4137,4 +4139,10 @@ print_data:
 
 done:
     return BSTR(&out);
+}
+
+void
+ssl_clean_user_pass(void)
+{
+    purge_user_pass(&auth_user_pass, false);
 }
