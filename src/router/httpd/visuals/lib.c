@@ -129,7 +129,7 @@ EJ_VISIBLE void ej_get_firmware_version(webs_t wp, int argc, char_t ** argv)
 		}
 #undef V
 #elif HAVE_CARLSONWIRELESS
-		websWrite(wp, "Carlson Wireless v5.3 (%s)", SVN_REVISION);
+		websWrite(wp, "Carlson Wireless v6.2 (%s)", SVN_REVISION);
 #elif HAVE_IMMERSIVE
 		if (argc == 2) {
 			websWrite(wp, "Build date %s", date);
