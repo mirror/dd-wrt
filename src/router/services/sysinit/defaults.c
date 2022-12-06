@@ -140,7 +140,7 @@ struct nvram_param srouter_defaults[] = {
 	{ "ntp_server", "ntp0.fau.de" },	/* NTP server *//* Modify */
 #elif HAVE_DDLAN
 	{ "ntp_server", "10.0.0.1" },	/* NTP server *//* Modify */
-#ifdef HAVE_CARLSONWIRELESS
+#elif HAVE_CARLSONWIRELESS
 	{ "ntp_server", "pool.ntp.org" },	/* NTP server *//* Modify */
 #else
 	{ "ntp_server", "" },	/* NTP server *//* Modify */
