@@ -173,7 +173,11 @@ void setRouter(char *name)
 	nvram_set(NVROUTER_ALT, "ESPOD ES-3680");
 #endif
 #elif HAVE_CARLSONWIRELESS
+#ifdef HAVE_LAGUNA
+	nvram_set(NVROUTER_ALT, "LH-ST (Rev.2)");
+#else
 	nvram_set(NVROUTER_ALT, "LH-135/270 ST");
+#endif
 #elif HAVE_IPR
 	nvram_set(NVROUTER_ALT, "IPR-DATKS-501");
 #elif defined(HAVE_ANTAIRA) && defined(HAVE_FMS2111)

@@ -131,6 +131,8 @@ struct nvram_param srouter_defaults[] = {
 	{ "time_zone", "Europe/Brussels" },
 #elif HAVE_ONNET
 	{ "time_zone", "Asia/Dubai" },
+#elif HAVE_CARLSONWIRELESS
+	{ "time_zone", "Etc/Zulu" },
 #else
 	{ "time_zone", "Europe/Berlin" },
 #endif
@@ -138,6 +140,8 @@ struct nvram_param srouter_defaults[] = {
 	{ "ntp_server", "ntp0.fau.de" },	/* NTP server *//* Modify */
 #elif HAVE_DDLAN
 	{ "ntp_server", "10.0.0.1" },	/* NTP server *//* Modify */
+#ifdef HAVE_CARLSONWIRELESS
+	{ "ntp_server", "pool.ntp.org" },	/* NTP server *//* Modify */
 #else
 	{ "ntp_server", "" },	/* NTP server *//* Modify */
 #endif
@@ -260,7 +264,11 @@ struct nvram_param srouter_defaults[] = {
 	{ "wlan2_regdomain", "GERMANY" },	/* LAN IP address */
 	{ "wlan3_regdomain", "GERMANY" },	/* LAN IP address */
 #elif HAVE_CARLSONWIRELESS
+#ifdef HAVE_LAGUNA
+	{ "lan_ipaddr", "192.168.3.20" },	/* LAN ip address */
+#else
 	{ "lan_ipaddr", "192.168.2.20" },	/* LAN ip address */
+#endif
 	{ "wlan0_regdomain", "UNITED_STATES_(PUBLIC_SAFETY)" },	/* wlan0 regulatory domain */
 	{ "wlan1_regdomain", "UNITED_STATES_(PUBLIC_SAFETY)" },	/* wlan0 regulatory domain */
 	{ "wlan2_regdomain", "UNITED_STATES_(PUBLIC_SAFETY)" },	/* wlan0 regulatory domain */
@@ -679,7 +687,11 @@ struct nvram_param srouter_defaults[] = {
 #ifdef HAVE_IDEXX
 	{ "dhcp_start", "192.168.1.2" },	/* First assignable DHCP address */
 #elif HAVE_CARLSONWIRELESS
+#ifdef HAVE_LAGUNA
 	{ "dhcp_start", "192.168.2.30" },	/* First assignable DHCP address */
+#else
+	{ "dhcp_start", "192.168.2.30" },	/* First assignable DHCP address */
+#endif
 #else
 	{ "dhcp_start", "192.168.1.64" },	/* First assignable DHCP address */
 #endif
@@ -1065,8 +1077,8 @@ struct nvram_param srouter_defaults[] = {
 	{ "wlan0_ssid", "nextmedia" },	/* Service set ID (network name) */
 #elif defined(HAVE_CARLSONWIRELESS)
 	{ "wl0_ifname", "wlan0" },	/* Wireless interface name) */
-	{ "wl0_ssid", "Carlson" },	/* Service set ID (network name) */
-	{ "wlan0_ssid", "Carlson" },	/* Service set ID (network name) */
+	{ "wl0_ssid", "Carlson-STv2" },	/* Service set ID (network name) */
+	{ "wlan0_ssid", "Carlson-STv2" },	/* Service set ID (network name) */
 	{ "wlan0_nctrlsb", "upper" },	/* wlan0 11n sub channel */
 	{ "wlan0_ccmp", "1" },	/* wlan0 encryption type */
 	{ "wlan0_security_mode", "psk" },	/* wlan0 encryption type */
@@ -1327,7 +1339,11 @@ struct nvram_param srouter_defaults[] = {
 #elif HAVE_TRIMAX
 	{ "wlan0_mode", "ap" },	/* AP mode (ap|sta|wds) */
 #elif HAVE_CARLSONWIRELES
+#ifdef HAVE_LAGUNA
+	{ "wlan0_mode", "ap" },		/* AP mode (wdsap) */
+#else
 	{ "wlan0_mode", "wdsap" },	/* AP mode (wdsap) */
+#endif
 #elif HAVE_RAYTRONIK
 	{ "wlan0_mode", "wdsap" },	/* AP mode (wdsap) */
 	{ "wlan0_channelbw", "2040" },	/* LAN IP address */
@@ -1820,7 +1836,11 @@ struct nvram_param srouter_defaults[] = {
 	{ "erc_reset", "1" },
 #endif
 #elif  HAVE_CARLSONWIRELESS
+#ifdef HAVE_LAGUNA
+	{ "router_name", "CWT-LH-STv2" },	/* Router name) */
+#else
 	{ "router_name", "CWT" },	/* Router name) */
+#endif
 #elif HAVE_IPR
 	{ "router_name", "IPR" },
 #elif HAVE_KORENRON
