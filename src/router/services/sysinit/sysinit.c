@@ -2450,7 +2450,11 @@ void start_restore_defaults(void)
 #ifdef HAVE_SPUTNIK
 		nvram_set("lan_ipaddr", "192.168.180.1");
 #elif HAVE_CARLSONWIRELESS
+#ifdef HAVE_LAGUNA
+		nvram_set("lan_ipaddr", "192.168.3.20");
+#else
 		nvram_set("lan_ipaddr", "192.168.2.20");
+#endif
 #elif HAVE_BUFFALO
 		nvram_set("lan_ipaddr", "192.168.11.1");
 #elif HAVE_IDEXX
