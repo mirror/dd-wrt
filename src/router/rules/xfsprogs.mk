@@ -22,14 +22,19 @@ xfsprogs-clean:
 	make -C xfsprogs clean
 
 xfsprogs-install:
-	-make -C xfsprogs install DESTDIR=$(INSTALLDIR)/xfsprogs PKG_SBIN_DIR=/usr/sbin PKG_ROOT_SBIN_DIR=/sbin PKG_ROOT_LIB_DIR=/lib PKG_LIB_DIR=/usr/lib	\
-		PKG_MAN_DIR=/usr/man \
-		PKG_LOCALE_DIR=/usr/share/locale \
-		PKG_DOC_DIR=/usr/share/doc/xfsprogs
-	rm -rf $(INSTALLDIR)/xfsprogs/usr/share
-	rm -rf $(INSTALLDIR)/xfsprogs/usr/man
-	rm -rf $(INSTALLDIR)/xfsprogs/usr/include
-	rm -rf $(INSTALLDIR)/xfsprogs/usr
-#	rm -rf $(INSTALLDIR)/xfsprogs/lib
-#	rm -f $(INSTALLDIR)/xfsprogs/sbin/fsck.xfs
-#	rm -f $(INSTALLDIR)/xfsprogs/sbin/xfs_repair
+	mkdir -p $(INSTALLDIR)/xfsprogs/lib
+	mkdir -p $(INSTALLDIR)/xfsprogs/usr/sbin
+	cp -a $(TOP)/xfsprogs/fsck/xfs_fsck.sh $(INSTALLDIR)/xfsprogs/usr/sbin/fsck.xfs
+	cp -a $(TOP)/xfsprogs/mkfs/mkfs.xfs $(INSTALLDIR)/xfsprogs/usr/sbin/mkfs.xfs
+	cp -a $(TOP)/xfsprogs/repair/xfs_repair $(INSTALLDIR)/xfsprogs/usr/sbin/xfs_repair
+	cp -a $(TOP)/xfsprogs/libxcmd/.libs/*.so $(INSTALLDIR)/xfsprogs/lib
+	cp -a $(TOP)/xfsprogs/libxcmd/.libs/*.so.* $(INSTALLDIR)/xfsprogs/lib
+	cp -a $(TOP)/xfsprogs/libfrog/.libs/*.so $(INSTALLDIR)/xfsprogs/lib
+	cp -a $(TOP)/xfsprogs/libfrog/.libs/*.so.* $(INSTALLDIR)/xfsprogs/lib
+	cp -a $(TOP)/xfsprogs/libhandle/.libs/*.so $(INSTALLDIR)/xfsprogs/lib
+	cp -a $(TOP)/xfsprogs/libhandle/.libs/*.so.* $(INSTALLDIR)/xfsprogs/lib
+	cp -a $(TOP)/xfsprogs/libxcmd/.libs/*.so $(INSTALLDIR)/xfsprogs/lib
+	cp -a $(TOP)/xfsprogs/libxcmd/.libs/*.so.* $(INSTALLDIR)/xfsprogs/lib
+	cp -a $(TOP)/xfsprogs/libxfs/.libs/*.so $(INSTALLDIR)/xfsprogs/lib
+	cp -a $(TOP)/xfsprogs/libxfs/.libs/*.so.* $(INSTALLDIR)/xfsprogs/lib
+
