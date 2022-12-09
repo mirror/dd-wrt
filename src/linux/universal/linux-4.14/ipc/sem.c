@@ -2066,6 +2066,7 @@ static long do_semtimedop(int semid, struct sembuf __user *tsops,
 		 * scenarios where we were awakened externally, during the
 		 * window between wake_q_add() and wake_up_q().
 		 */
+		rcu_read_lock();
 		error = READ_ONCE(queue.status);
 		if (error != -EINTR) {
 			/*
@@ -2075,10 +2076,10 @@ static long do_semtimedop(int semid, struct sembuf __user *tsops,
 			 * overwritten by the previous owner of the semaphore.
 			 */
 			smp_mb();
+			rcu_read_unlock();
 			goto out_free;
 		}
 
-		rcu_read_lock();
 		locknum = sem_lock(sma, sops, nsops);
 
 		if (!ipc_valid_object(&sma->sem_perm))
