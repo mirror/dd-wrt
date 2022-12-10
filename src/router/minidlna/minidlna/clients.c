@@ -87,6 +87,7 @@ struct client_type_s client_types[] =
 	  "SEC_HHP_BD",
 	  EUserAgent
 	},
+
 	/* Samsung Series [Q] TVs work with milliseconds for bookmarks */
 	/* User-Agent: DLNADOC/1.50 SEC_HHP_[TV] Samsung Q7 Series (49)/1.0 */
 	{ ESamsungSeriesQ,

@@ -211,6 +211,8 @@ extern volatile uint32_t runtime_flags;
 #define META_MASK             0x2000
 #define META_MEDIA_MASK       0x4000
 #define NO_ALBUM_ART_MASK     0x8000
+#define ALT_VIDEO_TITLE_MASK  0x10000
+#define ALT_AUDIO_TITLE_MASK  0x20000
 
 #define SETFLAG(mask)	runtime_flags |= mask
 #define GETFLAG(mask)	(runtime_flags & mask)
