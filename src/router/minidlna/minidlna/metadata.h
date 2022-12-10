@@ -25,6 +25,7 @@
 #define __METADATA_H__
 
 typedef struct metadata_s {
+	char *       _title;
 	char *       title;
 	char *       artist;
 	char *       creator;

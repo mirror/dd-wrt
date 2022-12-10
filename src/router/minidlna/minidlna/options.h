@@ -65,6 +65,8 @@ enum upnpconfigoptions {
 	META_KEEP,			/* keep metadata for fast rebuilding of the database */
 	META_KEEP_MEDIA, 		/* keep the metadata with the media in a .meta folder */
 	NO_ALBUM_ART, 			/* do not scan or store album art */
+	ENABLE_VIDEO_ALT_TITLES,   /* Add serial seasons and episodes metadata info into titles */
+	ENABLE_AUDIO_ALT_TITLES,   /* Add audio discs and tracks metadata info into titles */
 };
 
 /* readoptionsfile()

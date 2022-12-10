@@ -254,6 +254,7 @@ free_metadata(metadata_t *m, uint32_t flags)
 {
 	if( flags & FLAG_TITLE )
 		free(m->title);
+		free(m->_title);
 	if( flags & FLAG_ARTIST )
 		free(m->artist);
 	if( flags & FLAG_ALBUM )
@@ -478,13 +479,23 @@ GetAudioMetadata(const char *path, const char *name)
 
 	album_art = find_album_art(path, song.image, song.image_size);
 
+    if ( GETFLAG(ALT_AUDIO_TITLE_MASK) && song.disc > 0 && song.track > 0 )
+    {
+        xasprintf(&m._title, "%d/%02d - %s", song.disc, song.track, m.title);
+        DPRINTF(E_DEBUG, L_METADATA, "SET Disk/Track found for Audio: '%d/%02d - %s'\n", song.disc, song.track, m.title);
+    }
+    else
+    {
+        xasprintf(&m._title, "%s", m.title);
+        DPRINTF(E_DEBUG, L_METADATA, "Alternative title disabled or no Disk/Track found for Audio: '%s'\n", m._title);
+    }
 	ret = sql_exec(db, "INSERT into DETAILS"
 	                   " (PATH, SIZE, TIMESTAMP, DURATION, CHANNELS, BITRATE, SAMPLERATE, DATE,"
 	                   "  TITLE, CREATOR, ARTIST, ALBUM, GENRE, COMMENT, DISC, TRACK, DLNA_PN, MIME, ALBUM_ART) "
 	                   "VALUES"
 	                   " (%Q, %lld, %lld, '%s', %d, %d, %d, %Q, %Q, %Q, %Q, %Q, %Q, %Q, %d, %d, %Q, '%s', %lld);",
 	                   path, (long long)file.st_size, (long long)file.st_mtime, m.duration, song.channels, song.bitrate,
-	                   song.samplerate, m.date, m.title, m.creator, m.artist, m.album, m.genre, m.comment, song.disc,
+	                   song.samplerate, m.date, m._title, m.creator, m.artist, m.album, m.genre, m.comment, song.disc,
 	                   song.track, m.dlna_pn, song.mime?song.mime:m.mime, album_art);
 	if( ret != SQLITE_OK )
 	{
@@ -1675,6 +1686,17 @@ video_no_dlna:
 	freetags(&video);
 	lav_close(ctx);
 
+
+    if ( GETFLAG(ALT_VIDEO_TITLE_MASK) && m.disc > 0 && m.track > 0 )
+    {
+        xasprintf(&m._title, "S%02dE%02d - %s", m.disc, m.track, m.title);
+        DPRINTF(E_DEBUG, L_METADATA, "SET Season/Episode for Video: 'S%02dE%02d - %s'\n", m.disc, m.track, m.title);
+    }
+    else
+    {
+        xasprintf(&m._title, "%s", m.title);
+        DPRINTF(E_DEBUG, L_METADATA, "Alternative title disabled or no Season/Episode found for Video: '%s'\n", m._title);
+    }
 	ret = sql_exec(db, "INSERT into DETAILS"
 	                   " (PATH, SIZE, TIMESTAMP, DURATION, DATE, CHANNELS, BITRATE, SAMPLERATE, RESOLUTION,"
 	                   "  TITLE, CREATOR, ARTIST, GENRE, COMMENT, DLNA_PN, MIME, ALBUM_ART, DISC, TRACK) "
@@ -1682,7 +1704,7 @@ video_no_dlna:
 	                   " (%Q, %lld, %lld, %Q, %Q, %u, %u, %u, %Q, '%q', %Q, %Q, %Q, %Q, %Q, '%q', %lld, %u, %u);",
 	                   path, (long long)file.st_size, (long long)file.st_mtime, m.duration,
 	                   m.date, m.channels, m.bitrate, m.frequency, m.resolution,
-	                   m.title, m.creator, m.artist, m.genre, m.comment, m.dlna_pn,
+	                   m._title, m.creator, m.artist, m.genre, m.comment, m.dlna_pn,
 	                   m.mime, album_art, m.disc, m.track);
 	if( ret != SQLITE_OK )
 	{
