@@ -129,7 +129,7 @@ select_del(struct event *ev, int flags)
 	if (max_fd == ev->fd)
 		max_fd = -1;
 
-	if (ev->index < --nevents) {
+	if (nevents > 0 && ev->index < --nevents) {
 		struct event *ev0;
 
 		ev0 = events[nevents];
