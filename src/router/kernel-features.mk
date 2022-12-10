@@ -3,6 +3,7 @@ define kernelfeatures
 	echo "CONFIG_INOTIFY_USER=y" >> $(LINUXDIR)/.config
 	echo "# CONFIG_RANDOM_TRUST_BOOTLOADER is not set" >> $(LINUXDIR)/.config
 	echo "CONFIG_RANDOM_TRUST_CPU=y" >> $(LINUXDIR)/.config
+	echo "CONFIG_INET_TABLE_PERTURB_ORDER=16" >> $(LINUXDIR)/.config
 	echo "# CONFIG_WARN_ALL_UNSEEDED_RANDOM is not set" >> $(LINUXDIR)/.config
 	if [ "$(CONFIG_IPSET)" = "y" ]; then \
 		sed -i 's/\# CONFIG_NETFILTER_XT_SET is not set/CONFIG_NETFILTER_XT_SET=y/g' $(LINUXDIR)/.config; \
