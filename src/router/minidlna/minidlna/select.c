@@ -103,8 +103,10 @@ select_add(struct event *ev)
 	if (max_fd != -1 && max_fd < ev->fd)
 		max_fd = ev->fd;
 
-	events[nevents] = ev;
-	ev->index = nevents++;
+	if (nevents < FD_SETSIZE) {
+		events[nevents] = ev;
+		ev->index = nevents++;
+	}
 
 	assert(nevents < FD_SETSIZE);
 
