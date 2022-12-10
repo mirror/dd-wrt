@@ -83,6 +83,7 @@ select_fini(void)
 
 	free(events);
 	events = NULL;
+	nevents = 0;
 }
 
 static int
