@@ -76,7 +76,7 @@ static int check_ddns(void)
 {
 	char wan_if_buffer[33];
 
-	if (nvram_match("ddns_enable", "0")  || nvram_invmatch("wan_up", "1") || nvram_match("wan_proto", "disabled") || !*(safe_get_wan_face(wan_if_buffer)))	// todo: add upstream 
+	if (nvram_match("ddns_enable", "0")  || nvram_invmatch("wanup", "1") || nvram_match("wan_proto", "disabled") || !*(safe_get_wan_face(wan_if_buffer)))	// todo: add upstream 
 		return 0;
 	return !search_process("inadyn", 1);
 }
