@@ -160,15 +160,15 @@ This looks for the default `.conf` file, to check any file, use:
         username    = ian
         password    = secret
         hostname    = flemming.no-ip.com
-		user-agent  = inadyn/2.2
-	}
+        user-agent  = inadyn/2.2
+    }
 
     # With multiple usernames at the same provider, index with :#
     provider no-ip.com:2 {
         username       = james
         password       = bond
         hostname       = spectre.no-ip.com
-		checkip-ssl    = false
+        checkip-ssl    = false
         checkip-server = api.ipify.org
     }
 
@@ -186,6 +186,7 @@ This looks for the default `.conf` file, to check any file, use:
         username = your_username
         password = your_password
     }
+
     # Wildcard subdomains - notice the quotes (required!)
     provider domains.google.com:2 {
         hostname = "*.mydomain.com"
@@ -198,7 +199,7 @@ This looks for the default `.conf` file, to check any file, use:
         username    = futurekid
         password    = dreoadsad/+dsad21321    # update-key-in-advanced-tab
         hostname    = 1234534245321           # tunnel-id
-	}
+    }
 
     # dynv6.com update using a custom checkip-command, which works
     # if you have access to an Internet-connected interface.  Make
@@ -298,7 +299,7 @@ A custom DDNS provider can be setup like this:
         ddns-server    = update.example.com
         ddns-path      = "/update?hostname="
         hostname       = myhostname.example.net
-	}
+    }
 
 The following variables can be substituted into the configuration:
 
@@ -340,14 +341,25 @@ under an API section, or similar.
         ddns-server = members.dyndns.org
         ddns-path   = "/nic/update?hostname=%h.dyndns.org&myip=%i"
         hostname    = { YOURHOST, alias }
-	}
+    }
 
 Here a fully custom `ddns-path` with format specifiers are used, see the
 `inadyn.conf(5)` man page for details on this.
 
+Another example:
+
+    # Custom configuration for dnsmadeeasy
+    custom dyn {
+        username    = DNSMADEEASYUSERNAME
+        password    = DNSMADEEASYPASSWORDFORTHISHOST
+        ddns-server = cp.dnsmadeeasy.com
+        ddns-path   = "/servlet/updateip?username=%u&password=%p&id=DNSMADEEASYHOSTID&ip=%i"
+        hostname    = HOST
+    }      
+
 When using the generic plugin you should first inspect the response from
 the DDNS provider.  By default Inadyn looks for a `200 HTTP` response OK
-code and the strings `"good"`, `"OK"`, `"true"`, or `"updated"` in the
+code and the strings `"good"`, `"OK"`, `"true"`, `"success"`, or `"updated"` in the
 HTTP response body.  If the DDNS provider returns something else you can
 add a list of possible `ddns-response = { Arrr, kilroy }`, or just a
 single `ddns-response = Cool` -- if your provider does give any response
@@ -460,6 +472,7 @@ a few useful options that are recommended to use:
 
 You may want to remove the `--prefix=/usr` option.
 
+
 ### SSL/TLS Support
 
 By default inadyn tries to build with GnuTLS for HTTPS support.  GnuTLS
@@ -478,6 +491,16 @@ For more details on the OpenSSL and GNU GPL license issue, see:
 
   * <https://lists.debian.org/debian-legal/2004/05/msg00595.html>
   * <https://people.gnome.org/~markmc/openssl-and-the-gpl>
+
+
+### Static Build
+
+Some people want to build statically, to do this with `autoconf` add the
+following `LDFLAGS=` *after* the configure script.  You may also need to
+add `LIBS=...`, which will depend on your particular system:
+
+    ./configure LDFLAGS="-static" ...
+
 
 ### RedHat, Fedora, CentOS
 
@@ -508,6 +531,11 @@ simply call `systemctl` to enable and start `inadyn`:
 Check that it started properly by inspecting the system log, or:
 
     $ sudo systemctl status inadyn.service
+
+To stop the service:
+
+    $ sudo systemctl stop   inadyn.service
+
 
 ### Embedded applications
 
