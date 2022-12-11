@@ -141,6 +141,27 @@ enum tca_id {
 
 #define TCA_ID_MAX __TCA_ID_MAX
 
+#ifndef TC_LINKLAYER_MASK
+enum tc_link_layer {
+	TC_LINKLAYER_UNAWARE, /* Indicate unaware old iproute2 util */
+	TC_LINKLAYER_ETHERNET,
+	TC_LINKLAYER_ATM,
+};
+#define TC_LINKLAYER_MASK 0x0F /* limit use to lower 4 bits */
+
+struct compat_tc_ratespec {
+	unsigned char	cell_log;
+	__u8		linklayer; /* lower 4 bits */
+	unsigned short	overhead;
+	short		cell_align;
+	unsigned short	mpu;
+	__u32		rate;
+};
+
+#else
+#define compat_tc_ratespec tc_ratespec
+#endif
+
 struct tc_police {
 	__u32			index;
 	int			action;
@@ -153,8 +174,8 @@ struct tc_police {
 	__u32			limit;
 	__u32			burst;
 	__u32			mtu;
-	struct tc_ratespec	rate;
-	struct tc_ratespec	peakrate;
+	struct compat_tc_ratespec	rate;
+	struct compat_tc_ratespec	peakrate;
 	int			refcnt;
 	int			bindcnt;
 	__u32			capab;

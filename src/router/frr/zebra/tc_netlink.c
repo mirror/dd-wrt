@@ -94,7 +94,7 @@ static inline uint32_t tc_get_handle(struct zebra_dplane_ctx *ctx,
 	return tc_make_handle(major, minor);
 }
 
-static void tc_calc_rate_table(struct tc_ratespec *ratespec, uint32_t *table,
+static void tc_calc_rate_table(struct compat_tc_ratespec *ratespec, uint32_t *table,
 			       uint32_t mtu)
 {
 	if (mtu == 0)
@@ -235,6 +235,19 @@ static ssize_t netlink_qdisc_msg_encode(int cmd, struct zebra_dplane_ctx *ctx,
 	return NLMSG_ALIGN(req->n.nlmsg_len);
 }
 
+enum {
+	COMPAT_TCA_HTB_UNSPEC,
+	COMPAT_TCA_HTB_PARMS,
+	COMPAT_TCA_HTB_INIT,
+	COMPAT_TCA_HTB_CTAB,
+	COMPAT_TCA_HTB_RTAB,
+	COMPAT_TCA_HTB_DIRECT_QLEN,
+	COMPAT_TCA_HTB_RATE64,
+	COMPAT_TCA_HTB_CEIL64,
+	COMPAT_TCA_HTB_PAD,
+	COMPAT___TCA_HTB_MAX,
+};
+
 /*
  * Traffic control class encoding
  */
@@ -302,19 +315,19 @@ static ssize_t netlink_tclass_msg_encode(int cmd, struct zebra_dplane_ctx *ctx,
 	nest = nl_attr_nest(&req->n, datalen, TCA_OPTIONS);
 
 	if (rate >> 32 != 0) {
-		nl_attr_put(&req->n, datalen, TCA_HTB_CEIL64, &rate,
+		nl_attr_put(&req->n, datalen, COMPAT_TCA_HTB_CEIL64, &rate,
 			    sizeof(rate));
 	}
 
 	if (ceil >> 32 != 0) {
-		nl_attr_put(&req->n, datalen, TCA_HTB_CEIL64, &ceil,
+		nl_attr_put(&req->n, datalen, COMPAT_TCA_HTB_CEIL64, &ceil,
 			    sizeof(ceil));
 	}
 
-	nl_attr_put(&req->n, datalen, TCA_HTB_PARMS, &htb_opt, sizeof(htb_opt));
+	nl_attr_put(&req->n, datalen, COMPAT_TCA_HTB_PARMS, &htb_opt, sizeof(htb_opt));
 
-	nl_attr_put(&req->n, datalen, TCA_HTB_RTAB, rtab, sizeof(rtab));
-	nl_attr_put(&req->n, datalen, TCA_HTB_CTAB, ctab, sizeof(ctab));
+	nl_attr_put(&req->n, datalen, COMPAT_TCA_HTB_RTAB, rtab, sizeof(rtab));
+	nl_attr_put(&req->n, datalen, COMPAT_TCA_HTB_CTAB, ctab, sizeof(ctab));
 	nl_attr_nest_end(&req->n, nest);
 
 	return NLMSG_ALIGN(req->n.nlmsg_len);
