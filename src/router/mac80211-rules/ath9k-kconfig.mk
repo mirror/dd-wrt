@@ -221,6 +221,8 @@ ifeq ($(CONFIG_MT7921),y)
 endif
 ifeq ($(CONFIG_MT7996),y)
 	echo "CPTCFG_MT7996E=m" >> $(MAC80211_PATH)/.config_temp
+else
+	echo "# CPTCFG_MT7996E is not set" >> $(MAC80211_PATH)/.config_temp
 endif
 else
 ifeq ($(CONFIG_MT7615),y)
@@ -236,6 +238,8 @@ ifeq ($(CONFIG_MT7921),y)
 endif
 ifeq ($(CONFIG_MT7996),y)
 	echo "CPTCFG_MT7996E=m" >> $(MAC80211_PATH)/.config_temp
+else
+	echo "# CPTCFG_MT7996E is not set" >> $(MAC80211_PATH)/.config_temp
 endif
 endif
 ifeq ($(CONFIG_X86),y)
