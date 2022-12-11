@@ -200,7 +200,7 @@ void start_ddns(void)
 	if (nvram_invmatch("ddns_cache", "")) {
 		nvram2file("ddns_cache", _cache_file);
 	}
-	dd_logstart("ddns", eval("inadyn", "--cache-dir=/tmp/ddns", "-e", "ddns_success", "--exec-mode=compat", "-f", "/tmp/ddns/inadyn.conf", "-P", "/var/run/inadyn.pid", "-l", "notice"));
+	dd_logstart("ddns", eval("inadyn", "--cache-dir=/tmp/ddns", "-e", "ddns_success", "--exec-mode=compat", "-f", "/tmp/ddns/inadyn.conf", "-P", "/var/run/inadyn.pid", "-l", "notice", "-t", "30"));
 
 	cprintf("done\n");
 
