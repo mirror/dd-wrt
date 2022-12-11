@@ -518,7 +518,7 @@ EXPORT_SYMBOL_GPL(inet_unhash);
  * give more isolation and privacy, at the expense of 256kB of kernel
  * memory.
  */
-#define INET_TABLE_PERTURB_SHIFT 16
+#define INET_TABLE_PERTURB_SHIFT 8
 #define INET_TABLE_PERTURB_SIZE (1 << INET_TABLE_PERTURB_SHIFT)
 static u32 *table_perturb;
 
