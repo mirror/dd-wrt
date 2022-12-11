@@ -844,8 +844,7 @@ static int isis_spf_process_lsp(struct isis_spftree *spftree,
 
 lspfragloop:
 	if (lsp->hdr.seqno == 0) {
-		zlog_warn(
-			"isis_spf_process_lsp(): lsp with 0 seq_num - ignore");
+		zlog_warn("%s: lsp with 0 seq_num - ignore", __func__);
 		return ISIS_WARNING;
 	}
 
@@ -1780,7 +1779,8 @@ void isis_run_spf(struct isis_spftree *spftree)
 		break;
 	case SPFTREE_COUNT:
 		zlog_err(
-			"isis_run_spf should never be called with SPFTREE_COUNT as argument!");
+			"%s should never be called with SPFTREE_COUNT as argument!",
+			__func__);
 		exit(1);
 	}
 
@@ -1938,7 +1938,7 @@ int _isis_spf_schedule(struct isis_area *area, int level,
 			area->area_tag, level, diff, func, file, line);
 	}
 
-	thread_cancel(&area->t_rlfa_rib_update);
+	THREAD_OFF(area->t_rlfa_rib_update);
 	if (area->spf_delay_ietf[level - 1]) {
 		/* Need to call schedule function also if spf delay is running
 		 * to

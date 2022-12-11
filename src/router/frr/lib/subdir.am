@@ -465,11 +465,7 @@ SUFFIXES += _clippy.c
 # xrelfo, the ELF xref extractor
 
 
-if DEV_BUILD
 XRELFO_FLAGS = -Wlog-format -Wlog-args
-else
-XRELFO_FLAGS =
-endif
 
 SUFFIXES += .xref
 %.xref: % $(CLIPPY)

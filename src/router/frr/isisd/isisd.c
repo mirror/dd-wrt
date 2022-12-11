@@ -90,6 +90,7 @@ DEFINE_MTYPE_STATIC(ISISD, ISIS_NAME, "ISIS process name");
 DEFINE_MTYPE_STATIC(ISISD, ISIS_AREA, "ISIS area");
 DEFINE_MTYPE(ISISD, ISIS_AREA_ADDR,   "ISIS area address");
 DEFINE_MTYPE(ISISD, ISIS_ACL_NAME,    "ISIS access-list name");
+DEFINE_MTYPE(ISISD, ISIS_PLIST_NAME, "ISIS prefix-list name");
 
 DEFINE_QOBJ_TYPE(isis_area);
 
@@ -224,6 +225,12 @@ struct isis *isis_new(const char *vrf_name)
 
 void isis_finish(struct isis *isis)
 {
+	struct isis_area *area;
+	struct listnode *node, *nnode;
+
+	for (ALL_LIST_ELEMENTS(isis->area_list, node, nnode, area))
+		isis_area_destroy(area);
+
 	struct vrf *vrf = NULL;
 
 	listnode_delete(im->isis, isis);
@@ -273,6 +280,13 @@ void isis_area_del_circuit(struct isis_area *area, struct isis_circuit *circuit)
 	isis_csm_state_change(ISIS_DISABLE, circuit, area);
 }
 
+static void delete_area_addr(void *arg)
+{
+	struct area_addr *addr = (struct area_addr *)arg;
+
+	XFREE(MTYPE_ISIS_AREA_ADDR, addr);
+}
+
 struct isis_area *isis_area_create(const char *area_tag, const char *vrf_name)
 {
 	struct isis_area *area;
@@ -318,6 +332,8 @@ struct isis_area *isis_area_create(const char *area_tag, const char *vrf_name)
 	area->circuit_list = list_new();
 	area->adjacency_list = list_new();
 	area->area_addrs = list_new();
+	area->area_addrs->del = delete_area_addr;
+
 	if (!CHECK_FLAG(im->options, F_ISIS_UNIT_TEST))
 		thread_add_timer(master, lsp_tick, area, 1, &area->t_tick);
 	flags_initialize(&area->flags);
@@ -481,16 +497,11 @@ void isis_area_destroy(struct isis_area *area)
 {
 	struct listnode *node, *nnode;
 	struct isis_circuit *circuit;
-	struct area_addr *addr;
 
 	QOBJ_UNREG(area);
 
 	if (fabricd)
 		fabricd_finish(area->fabricd);
-
-	/* Disable MPLS if necessary before flooding LSP */
-	if (IS_MPLS_TE(area->mta))
-		area->mta->status = disable;
 
 	if (area->circuit_list) {
 		for (ALL_LIST_ELEMENTS(area->circuit_list, node, nnode,
@@ -499,6 +510,9 @@ void isis_area_destroy(struct isis_area *area)
 
 		list_delete(&area->circuit_list);
 	}
+	if (area->flags.free_idcs)
+		list_delete(&area->flags.free_idcs);
+
 	list_delete(&area->adjacency_list);
 
 	lsp_db_fini(&area->lspdb[0]);
@@ -510,14 +524,16 @@ void isis_area_destroy(struct isis_area *area)
 
 	isis_sr_area_term(area);
 
+	isis_mpls_te_term(area);
+
 	spftree_area_del(area);
 
 	if (area->spf_timer[0])
 		isis_spf_timer_free(THREAD_ARG(area->spf_timer[0]));
-	thread_cancel(&area->spf_timer[0]);
+	THREAD_OFF(area->spf_timer[0]);
 	if (area->spf_timer[1])
 		isis_spf_timer_free(THREAD_ARG(area->spf_timer[1]));
-	thread_cancel(&area->spf_timer[1]);
+	THREAD_OFF(area->spf_timer[1]);
 
 	spf_backoff_free(area->spf_delay_ietf[0]);
 	spf_backoff_free(area->spf_delay_ietf[1]);
@@ -525,11 +541,7 @@ void isis_area_destroy(struct isis_area *area)
 	if (!CHECK_FLAG(im->options, F_ISIS_UNIT_TEST))
 		isis_redist_area_finish(area);
 
-	for (ALL_LIST_ELEMENTS(area->area_addrs, node, nnode, addr)) {
-		list_delete_node(area->area_addrs, node);
-		XFREE(MTYPE_ISIS_AREA_ADDR, addr);
-	}
-	area->area_addrs = NULL;
+	list_delete(&area->area_addrs);
 
 	for (int i = SPF_PREFIX_PRIO_CRITICAL; i <= SPF_PREFIX_PRIO_MEDIUM;
 	     i++) {
@@ -541,10 +553,10 @@ void isis_area_destroy(struct isis_area *area)
 	isis_lfa_tiebreakers_clear(area, ISIS_LEVEL1);
 	isis_lfa_tiebreakers_clear(area, ISIS_LEVEL2);
 
-	thread_cancel(&area->t_tick);
-	thread_cancel(&area->t_lsp_refresh[0]);
-	thread_cancel(&area->t_lsp_refresh[1]);
-	thread_cancel(&area->t_rlfa_rib_update);
+	THREAD_OFF(area->t_tick);
+	THREAD_OFF(area->t_lsp_refresh[0]);
+	THREAD_OFF(area->t_lsp_refresh[1]);
+	THREAD_OFF(area->t_rlfa_rib_update);
 
 	thread_cancel_event(master, area);
 
@@ -554,9 +566,10 @@ void isis_area_destroy(struct isis_area *area)
 
 	area_mt_finish(area);
 
-	if (listcount(area->isis->area_list) == 0) {
-		isis_finish(area->isis);
-	}
+	if (area->rlfa_plist_name[0])
+		XFREE(MTYPE_ISIS_PLIST_NAME, area->rlfa_plist_name[0]);
+	if (area->rlfa_plist_name[1])
+		XFREE(MTYPE_ISIS_PLIST_NAME, area->rlfa_plist_name[1]);
 
 	XFREE(MTYPE_ISIS_AREA, area);
 
@@ -3094,12 +3107,12 @@ static void area_resign_level(struct isis_area *area, int level)
 	if (area->spf_timer[level - 1])
 		isis_spf_timer_free(THREAD_ARG(area->spf_timer[level - 1]));
 
-	thread_cancel(&area->spf_timer[level - 1]);
+	THREAD_OFF(area->spf_timer[level - 1]);
 
 	sched_debug(
 		"ISIS (%s): Resigned from L%d - canceling LSP regeneration timer.",
 		area->area_tag, level);
-	thread_cancel(&area->t_lsp_refresh[level - 1]);
+	THREAD_OFF(area->t_lsp_refresh[level - 1]);
 	area->lsp_regenerate_pending[level - 1] = 0;
 }
 

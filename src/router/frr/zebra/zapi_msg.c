@@ -1606,13 +1606,14 @@ static struct nexthop *nexthop_from_zapi(const struct zapi_nexthop *api_nh,
 		/* Special handling for IPv4 routes sourced from EVPN:
 		 * the nexthop and associated MAC need to be installed.
 		 */
-		if (CHECK_FLAG(flags, ZEBRA_FLAG_EVPN_ROUTE)) {
+		if (CHECK_FLAG(api_nh->flags, ZAPI_NEXTHOP_FLAG_EVPN)) {
 			memset(&vtep_ip, 0, sizeof(vtep_ip));
 			vtep_ip.ipa_type = IPADDR_V4;
 			memcpy(&(vtep_ip.ipaddr_v4), &(api_nh->gate.ipv4),
 			       sizeof(struct in_addr));
 			zebra_rib_queue_evpn_route_add(
 				api_nh->vrf_id, &api_nh->rmac, &vtep_ip, p);
+			SET_FLAG(nexthop->flags, NEXTHOP_FLAG_EVPN);
 		}
 		break;
 	case NEXTHOP_TYPE_IPV6:
@@ -1639,13 +1640,14 @@ static struct nexthop *nexthop_from_zapi(const struct zapi_nexthop *api_nh,
 		/* Special handling for IPv6 routes sourced from EVPN:
 		 * the nexthop and associated MAC need to be installed.
 		 */
-		if (CHECK_FLAG(flags, ZEBRA_FLAG_EVPN_ROUTE)) {
+		if (CHECK_FLAG(api_nh->flags, ZAPI_NEXTHOP_FLAG_EVPN)) {
 			memset(&vtep_ip, 0, sizeof(vtep_ip));
 			vtep_ip.ipa_type = IPADDR_V6;
 			memcpy(&vtep_ip.ipaddr_v6, &(api_nh->gate.ipv6),
 			       sizeof(struct in6_addr));
 			zebra_rib_queue_evpn_route_add(
 				api_nh->vrf_id, &api_nh->rmac, &vtep_ip, p);
+			SET_FLAG(nexthop->flags, NEXTHOP_FLAG_EVPN);
 		}
 		break;
 	case NEXTHOP_TYPE_BLACKHOLE:
@@ -2032,7 +2034,7 @@ static void zread_route_add(ZAPI_HANDLER_ARGS)
 	struct nhg_backup_info *bnhg = NULL;
 	int ret;
 	vrf_id_t vrf_id;
-	struct nhg_hash_entry nhe;
+	struct nhg_hash_entry nhe, *n = NULL;
 
 	s = msg;
 	if (zapi_route_decode(s, &api) < 0) {
@@ -2050,17 +2052,10 @@ static void zread_route_add(ZAPI_HANDLER_ARGS)
 			   (int)api.message, api.flags);
 
 	/* Allocate new route. */
-	re = XCALLOC(MTYPE_RE, sizeof(struct route_entry));
-	re->type = api.type;
-	re->instance = api.instance;
-	re->flags = api.flags;
-	re->uptime = monotime(NULL);
-	re->vrf_id = vrf_id;
-
-	if (api.tableid)
-		re->table = api.tableid;
-	else
-		re->table = zvrf->table_id;
+	re = zebra_rib_route_entry_new(
+		vrf_id, api.type, api.instance, api.flags, api.nhgid,
+		api.tableid ? api.tableid : zvrf->table_id, api.metric, api.mtu,
+		api.distance, api.tag);
 
 	if (!CHECK_FLAG(api.message, ZAPI_MESSAGE_NHG)
 	    && (!CHECK_FLAG(api.message, ZAPI_MESSAGE_NEXTHOP)
@@ -2085,9 +2080,6 @@ static void zread_route_add(ZAPI_HANDLER_ARGS)
 				&api.prefix);
 	}
 
-	if (CHECK_FLAG(api.message, ZAPI_MESSAGE_NHG))
-		re->nhe_id = api.nhgid;
-
 	if (!re->nhe_id
 	    && (!zapi_read_nexthops(client, &api.prefix, api.nexthops,
 				    api.flags, api.message, api.nexthop_num,
@@ -2102,15 +2094,6 @@ static void zread_route_add(ZAPI_HANDLER_ARGS)
 		XFREE(MTYPE_RE, re);
 		return;
 	}
-
-	if (CHECK_FLAG(api.message, ZAPI_MESSAGE_DISTANCE))
-		re->distance = api.distance;
-	if (CHECK_FLAG(api.message, ZAPI_MESSAGE_METRIC))
-		re->metric = api.metric;
-	if (CHECK_FLAG(api.message, ZAPI_MESSAGE_TAG))
-		re->tag = api.tag;
-	if (CHECK_FLAG(api.message, ZAPI_MESSAGE_MTU))
-		re->mtu = api.mtu;
 
 	if (CHECK_FLAG(api.message, ZAPI_MESSAGE_OPAQUE)) {
 		re->opaque =
@@ -2159,9 +2142,10 @@ static void zread_route_add(ZAPI_HANDLER_ARGS)
 		zebra_nhe_init(&nhe, afi, ng->nexthop);
 		nhe.nhg.nexthop = ng->nexthop;
 		nhe.backup_info = bnhg;
+		n = zebra_nhe_copy(&nhe, 0);
 	}
-	ret = rib_add_multipath_nhe(afi, api.safi, &api.prefix, src_p,
-				    re, &nhe, false);
+	ret = rib_add_multipath_nhe(afi, api.safi, &api.prefix, src_p, re, n,
+				    false);
 
 	/*
 	 * rib_add_multipath_nhe only fails in a couple spots
@@ -2490,7 +2474,6 @@ static void zread_mpls_labels_add(ZAPI_HANDLER_ARGS)
 {
 	struct stream *s;
 	struct zapi_labels zl;
-	int ret;
 
 	/* Get input stream.  */
 	s = msg;
@@ -2508,12 +2491,7 @@ static void zread_mpls_labels_add(ZAPI_HANDLER_ARGS)
 	if (zapi_labels_validate(&zl) < 0)
 		return;
 
-	ret = mpls_zapi_labels_process(true, zvrf, &zl);
-	if (ret < 0) {
-		if (IS_ZEBRA_DEBUG_RECV)
-			zlog_debug("%s: Error processing zapi request",
-				   __func__);
-	}
+	mpls_zapi_labels_process(true, zvrf, &zl);
 }
 
 /*
@@ -2530,7 +2508,6 @@ static void zread_mpls_labels_delete(ZAPI_HANDLER_ARGS)
 {
 	struct stream *s;
 	struct zapi_labels zl;
-	int ret;
 
 	/* Get input stream.  */
 	s = msg;
@@ -2545,12 +2522,7 @@ static void zread_mpls_labels_delete(ZAPI_HANDLER_ARGS)
 		return;
 
 	if (zl.nexthop_num > 0) {
-		ret = mpls_zapi_labels_process(false /*delete*/, zvrf, &zl);
-		if (ret < 0) {
-			if (IS_ZEBRA_DEBUG_RECV)
-				zlog_debug("%s: Error processing zapi request",
-					   __func__);
-		}
+		mpls_zapi_labels_process(false /*delete*/, zvrf, &zl);
 	} else {
 		mpls_lsp_uninstall_all_vrf(zvrf, zl.type, zl.local_label);
 

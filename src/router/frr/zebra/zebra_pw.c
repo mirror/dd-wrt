@@ -221,7 +221,7 @@ void zebra_pw_install_failure(struct zebra_pw *pw, int pwstatus)
 			pw->vrf_id, pw->ifname, PW_INSTALL_RETRY_INTERVAL);
 
 	/* schedule to retry later */
-	thread_cancel(&pw->install_retry_timer);
+	THREAD_OFF(pw->install_retry_timer);
 	thread_add_timer(zrouter.master, zebra_pw_install_retry, pw,
 			 PW_INSTALL_RETRY_INTERVAL, &pw->install_retry_timer);
 

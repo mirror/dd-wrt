@@ -195,7 +195,7 @@ is in a vrf, enter the interface command with the vrf keyword at the end.
    Set the MLD last member query count. The default value is 2. 'no' form of
    this command is used to configure back to the default value.
 
-.. clicmd:: ipv6 MLD last-member-query-interval (1-65535)
+.. clicmd:: ipv6 mld last-member-query-interval (1-65535)
 
    Set the MLD last member query interval in deciseconds. The default value is
    10 deciseconds. 'no' form of this command is used to to configure back to the
@@ -292,6 +292,10 @@ PIM protocol state
 
    Display upstream information for S,G's and the RPF data associated with them.
 
+.. clicmd:: show ipv6 pim [vrf NAME] interface traffic [WORD] [json]
+
+   Display information about the number of PIM protocol packets sent/received
+   on an interface.
 
 MLD state
 ---------
@@ -321,6 +325,9 @@ MLD state
    a MLDv2 querier.  MLDv1 joins are recorded as "untracked" and shown in the
    ``NonTrkSeen`` output column.
 
+.. clicmd:: show ipv6 mld [vrf NAME] groups [json]
+
+   Display MLD group information.
 
 General multicast routing state
 -------------------------------
@@ -381,9 +388,24 @@ Clear commands reset various variables.
    packet count, byte count and wrong interface to 0 and start count
    up from this spot.
 
+.. clicmd:: clear ipv6 pim interfaces
+
+   Reset PIMv6 interfaces.
+
+.. clicmd:: clear ipv6 pim [vrf NAME] interface traffic
+
+   When this command is issued, resets the information about the 
+   number of PIM protocol packets sent/received on an interface.
+
 .. clicmd:: clear ipv6 pim oil
 
    Rescan PIMv6 OIL (output interface list).
+
+.. clicmd:: clear ipv6 pim [vrf NAME] bsr-data
+
+   This command will clear the BSM scope data struct. This command also
+   removes the next hop tracking for the bsr and resets the upstreams
+   for the dynamically learnt RPs.
 
 PIMv6 Debug Commands
 ====================
@@ -426,3 +448,11 @@ the config was written out.
 .. clicmd:: debug pimv6 zebra
 
    This gathers data about events from zebra that come up through the ZAPI.
+
+.. clicmd:: debug mroute6
+
+   This turns on debugging for PIMv6 interaction with kernel MFC cache.
+
+.. clicmd:: debug mroute6 detail
+
+   This turns on detailed debugging for PIMv6 interaction with kernel MFC cache.

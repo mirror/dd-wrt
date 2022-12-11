@@ -454,8 +454,7 @@ int main(int argc, char **argv)
 		}
 		case 'l':
 			listnode_add_sort_nodup(addresses, optarg);
-		/* listenon implies -n */
-		/* fallthru */
+			break;
 		case 'n':
 			no_fib_flag = 1;
 			break;
@@ -511,6 +510,8 @@ int main(int argc, char **argv)
 					 - strlen(bgpd_di.startinfo),
 				 ", bgp@%s:%d", address, bm->port);
 	}
+
+	bgp_if_init();
 
 	frr_config_fork();
 	/* must be called after fork() */

@@ -280,6 +280,8 @@ DECLARE_QOBJ_TYPE(route_map);
 #define IS_MATCH_ORIGIN(C)                                                     \
 	(strmatch(C, "frr-bgp-route-map:match-origin"))
 #define IS_MATCH_RPKI(C) (strmatch(C, "frr-bgp-route-map:rpki"))
+#define IS_MATCH_RPKI_EXTCOMMUNITY(C)                                          \
+	(strmatch(C, "frr-bgp-route-map:rpki-extcommunity"))
 #define IS_MATCH_PROBABILITY(C)                                                \
 	(strmatch(C, "frr-bgp-route-map:probability"))
 #define IS_MATCH_SRC_VRF(C)                                                    \
@@ -387,6 +389,8 @@ DECLARE_QOBJ_TYPE(route_map);
 	(strmatch(A, "frr-bgp-route-map:set-evpn-gateway-ip-ipv4"))
 #define IS_SET_BGP_EVPN_GATEWAY_IP_IPV6(A)                                     \
 	(strmatch(A, "frr-bgp-route-map:set-evpn-gateway-ip-ipv6"))
+#define IS_SET_BGP_L3VPN_NEXTHOP_ENCAPSULATION(A)                              \
+	(strmatch(A, "frr-bgp-route-map:set-l3vpn-nexthop-encapsulation"))
 
 enum ecommunity_lb_type {
 	EXPLICIT_BANDWIDTH,
@@ -482,9 +486,9 @@ struct route_map *route_map_lookup_warn_noexist(struct vty *vty, const char *nam
 extern route_map_result_t route_map_apply_ext(struct route_map *map,
 					      const struct prefix *prefix,
 					      void *match_object,
-					      void *set_object);
+					      void *set_object, int *pref);
 #define route_map_apply(map, prefix, object)                                   \
-	route_map_apply_ext(map, prefix, object, object)
+	route_map_apply_ext(map, prefix, object, object, NULL)
 
 extern void route_map_add_hook(void (*func)(const char *));
 extern void route_map_delete_hook(void (*func)(const char *));

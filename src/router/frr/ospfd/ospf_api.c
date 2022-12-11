@@ -1,6 +1,7 @@
 /*
  * API message handling module for OSPF daemon and client.
  * Copyright (C) 2001, 2002 Ralph Keller
+ * Copyright (c) 2022, LabN Consulting, L.L.C.
  *
  * This file is part of GNU Zebra.
  *
@@ -531,16 +532,17 @@ struct msg *new_msg_originate_request(uint32_t seqnum, struct in_addr ifaddr,
 	return msg_new(MSG_ORIGINATE_REQUEST, omsg, seqnum, omsglen);
 }
 
-struct msg *new_msg_delete_request(uint32_t seqnum, struct in_addr area_id,
+struct msg *new_msg_delete_request(uint32_t seqnum, struct in_addr addr,
 				   uint8_t lsa_type, uint8_t opaque_type,
-				   uint32_t opaque_id)
+				   uint32_t opaque_id, uint8_t flags)
 {
 	struct msg_delete_request dmsg;
-	dmsg.area_id = area_id;
+	dmsg.addr = addr;
 	dmsg.lsa_type = lsa_type;
 	dmsg.opaque_type = opaque_type;
 	dmsg.opaque_id = htonl(opaque_id);
 	memset(&dmsg.pad, 0, sizeof(dmsg.pad));
+	dmsg.flags = flags;
 
 	return msg_new(MSG_DELETE_REQUEST, &dmsg, seqnum,
 		       sizeof(struct msg_delete_request));
@@ -680,6 +682,14 @@ struct msg *new_msg_reachable_change(uint32_t seqnum, uint16_t nadd,
 	len = sizeof(*nmsg) + insz * (nadd + nremove);
 
 	return msg_new(MSG_REACHABLE_CHANGE, nmsg, seqnum, len);
+}
+
+struct msg *new_msg_router_id_change(uint32_t seqnum, struct in_addr router_id)
+{
+	struct msg_router_id_change rmsg = {.router_id = router_id};
+
+	return msg_new(MSG_ROUTER_ID_CHANGE, &rmsg, seqnum,
+		       sizeof(struct msg_router_id_change));
 }
 
 #endif /* SUPPORT_OSPF_API */

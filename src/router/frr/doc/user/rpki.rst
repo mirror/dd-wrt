@@ -120,7 +120,7 @@ The following commands are independent of a specific cache server.
 
    The default value is 600 seconds.
 
-.. clicmd:: rpki cache (A.B.C.D|WORD) PORT [SSH_USERNAME] [SSH_PRIVKEY_PATH] [SSH_PUBKEY_PATH] [KNOWN_HOSTS_PATH] [source A.B.C.D] PREFERENCE
+.. clicmd:: rpki cache (A.B.C.D|WORD) PORT [SSH_USERNAME] [SSH_PRIVKEY_PATH] [KNOWN_HOSTS_PATH] [source A.B.C.D] preference (1-255)
 
 
    Add a cache server to the socket. By default, the connection between router
@@ -137,14 +137,8 @@ The following commands are independent of a specific cache server.
    SSH_USERNAME
       SSH username to establish an SSH connection to the cache server.
 
-
    SSH_PRIVKEY_PATH
       Local path that includes the private key file of the router.
-
-
-   SSH_PUBKEY_PATH
-      Local path that includes the public key file of the router.
-
 
    KNOWN_HOSTS_PATH
       Local path that includes the known hosts file. The default value depends
@@ -184,6 +178,12 @@ Validating BGP Updates
         match rpki valid
         set local-preference 500
 
+.. clicmd:: match rpki-extcommunity notfound|invalid|valid
+
+   Create a clause for a route map to match prefixes with the specified RPKI
+   state, that is derived from the Origin Validation State extended community
+   attribute (OVS). OVS extended community is non-transitive and is exchanged
+   only between iBGP peers.
 
 .. _debugging:
 

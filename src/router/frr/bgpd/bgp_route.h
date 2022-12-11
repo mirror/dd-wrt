@@ -37,6 +37,7 @@ enum bgp_show_type {
 	bgp_show_type_normal,
 	bgp_show_type_regexp,
 	bgp_show_type_prefix_list,
+	bgp_show_type_access_list,
 	bgp_show_type_filter_list,
 	bgp_show_type_route_map,
 	bgp_show_type_neighbor,
@@ -233,6 +234,12 @@ struct bgp_path_info_extra {
 	 * Set to NULL if route is not imported from another bgp instance.
 	 */
 	struct bgp *bgp_orig;
+
+	/*
+	 * Original bgp session to know if the session is a
+	 * connected EBGP session or not
+	 */
+	struct peer *peer_orig;
 
 	/*
 	 * Nexthop in context of original bgp instance. Needed
@@ -468,12 +475,16 @@ struct bgp_aggregate {
 		 ? 0                                                           \
 		 : ((nhlen) < IPV6_MAX_BYTELEN ? AFI_IP : AFI_IP6))
 
+#define BGP_ATTR_MP_NEXTHOP_LEN_IP6(attr)                                      \
+	((attr)->mp_nexthop_len == BGP_ATTR_NHLEN_IPV6_GLOBAL ||               \
+	 (attr)->mp_nexthop_len == BGP_ATTR_NHLEN_IPV6_GLOBAL_AND_LL ||        \
+	 (attr)->mp_nexthop_len == BGP_ATTR_NHLEN_VPNV6_GLOBAL ||              \
+	 (attr)->mp_nexthop_len == BGP_ATTR_NHLEN_VPNV6_GLOBAL_AND_LL)
+
 #define BGP_ATTR_NEXTHOP_AFI_IP6(attr)                                         \
-	(!CHECK_FLAG(attr->flag, ATTR_FLAG_BIT(BGP_ATTR_NEXT_HOP))             \
-	 && ((attr)->mp_nexthop_len == BGP_ATTR_NHLEN_IPV6_GLOBAL              \
-	     || (attr)->mp_nexthop_len == BGP_ATTR_NHLEN_IPV6_GLOBAL_AND_LL    \
-	     || (attr)->mp_nexthop_len == BGP_ATTR_NHLEN_VPNV6_GLOBAL          \
-	     || (attr)->mp_nexthop_len == BGP_ATTR_NHLEN_VPNV6_GLOBAL_AND_LL))
+	(!CHECK_FLAG(attr->flag, ATTR_FLAG_BIT(BGP_ATTR_NEXT_HOP)) &&          \
+	 BGP_ATTR_MP_NEXTHOP_LEN_IP6(attr))
+
 #define BGP_PATH_COUNTABLE(BI)                                                 \
 	(!CHECK_FLAG((BI)->flags, BGP_PATH_HISTORY)                            \
 	 && !CHECK_FLAG((BI)->flags, BGP_PATH_REMOVED))
@@ -597,18 +608,34 @@ static inline bool bgp_check_advertise(struct bgp *bgp, struct bgp_dest *dest)
  */
 static inline bool bgp_check_withdrawal(struct bgp *bgp, struct bgp_dest *dest)
 {
-	struct bgp_path_info *pi;
+	struct bgp_path_info *pi, *selected = NULL;
 
 	if (!BGP_SUPPRESS_FIB_ENABLED(bgp))
 		return false;
 
 	for (pi = bgp_dest_get_bgp_path_info(dest); pi; pi = pi->next) {
-		if (CHECK_FLAG(pi->flags, BGP_PATH_SELECTED))
+		if (CHECK_FLAG(pi->flags, BGP_PATH_SELECTED)) {
+			selected = pi;
 			continue;
+		}
 
 		if (pi->sub_type != BGP_ROUTE_NORMAL)
 			return true;
 	}
+
+	/*
+	 * pi is selected and bgp is dealing with a static route
+	 * ( ie a network statement of some sort ).  FIB installed
+	 * is irrelevant
+	 *
+	 * I am not sure what the above for loop is wanted in this
+	 * manner at this point.  But I do know that if I have
+	 * a static route that is selected and it's the one
+	 * being checked for should I withdrawal we do not
+	 * want to withdraw the route on installation :)
+	 */
+	if (selected && selected->sub_type == BGP_ROUTE_STATIC)
+		return false;
 
 	if (CHECK_FLAG(dest->flags, BGP_NODE_FIB_INSTALLED))
 		return false;
@@ -827,7 +854,7 @@ extern int bgp_show_table_rd(struct vty *vty, struct bgp *bgp, safi_t safi,
 			     struct bgp_table *table, struct prefix_rd *prd,
 			     enum bgp_show_type type, void *output_arg,
 			     bool use_json);
-extern int bgp_best_path_select_defer(struct bgp *bgp, afi_t afi, safi_t safi);
+extern void bgp_best_path_select_defer(struct bgp *bgp, afi_t afi, safi_t safi);
 extern bool bgp_update_martian_nexthop(struct bgp *bgp, afi_t afi, safi_t safi,
 				       uint8_t type, uint8_t stype,
 				       struct attr *attr, struct bgp_dest *dest);

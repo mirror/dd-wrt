@@ -1180,7 +1180,7 @@ void isis_sr_stop(struct isis_area *area)
 		 area->area_tag);
 
 	/* Disable any re-attempt to connect to Label Manager */
-	thread_cancel(&srdb->t_start_lm);
+	THREAD_OFF(srdb->t_start_lm);
 
 	/* Uninstall all local Adjacency-SIDs. */
 	for (ALL_LIST_ELEMENTS(area->srdb.adj_sids, node, nnode, sra))
@@ -1252,6 +1252,9 @@ void isis_sr_area_term(struct isis_area *area)
 	/* Stop Segment Routing */
 	if (area->srdb.enabled)
 		isis_sr_stop(area);
+
+	/* Free Adjacency SID list */
+	list_delete(&srdb->adj_sids);
 
 	/* Clear Prefix-SID configuration. */
 	while (srdb_prefix_cfg_count(&srdb->config.prefix_sids) > 0) {

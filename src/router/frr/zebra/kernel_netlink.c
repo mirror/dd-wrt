@@ -47,6 +47,7 @@
 #include "zebra/rt_netlink.h"
 #include "zebra/if_netlink.h"
 #include "zebra/rule_netlink.h"
+#include "zebra/tc_netlink.h"
 #include "zebra/netconf_netlink.h"
 #include "zebra/zebra_errors.h"
 
@@ -111,6 +112,18 @@ static const struct message nlmsg_str[] = {{RTM_NEWROUTE, "RTM_NEWROUTE"},
 					   {RTM_GETNEXTHOP, "RTM_GETNEXTHOP"},
 					   {RTM_NEWNETCONF, "RTM_NEWNETCONF"},
 					   {RTM_DELNETCONF, "RTM_DELNETCONF"},
+					   {RTM_NEWTUNNEL, "RTM_NEWTUNNEL"},
+					   {RTM_DELTUNNEL, "RTM_DELTUNNEL"},
+					   {RTM_GETTUNNEL, "RTM_GETTUNNEL"},
+					   {RTM_NEWQDISC, "RTM_NEWQDISC"},
+					   {RTM_DELQDISC, "RTM_DELQDISC"},
+					   {RTM_GETQDISC, "RTM_GETQDISC"},
+					   {RTM_NEWTCLASS, "RTM_NEWTCLASS"},
+					   {RTM_DELTCLASS, "RTM_DELTCLASS"},
+					   {RTM_GETTCLASS, "RTM_GETTCLASS"},
+					   {RTM_NEWTFILTER, "RTM_NEWTFILTER"},
+					   {RTM_DELTFILTER, "RTM_DELTFILTER"},
+					   {RTM_GETTFILTER, "RTM_GETTFILTER"},
 					   {0}};
 
 static const struct message rtproto_str[] = {
@@ -287,9 +300,20 @@ static int netlink_recvbuf(struct nlsock *nl, uint32_t newsize)
 	return 0;
 }
 
+static const char *group2str(uint32_t group)
+{
+	switch (group) {
+	case RTNLGRP_TUNNEL:
+		return "RTNLGRP_TUNNEL";
+	default:
+		return "UNKNOWN";
+	}
+}
+
 /* Make socket for Linux netlink interface. */
 static int netlink_socket(struct nlsock *nl, unsigned long groups,
-			  unsigned long ext_groups, ns_id_t ns_id)
+			  uint32_t ext_groups[], uint8_t ext_group_size,
+			  ns_id_t ns_id)
 {
 	int ret;
 	struct sockaddr_nl snl;
@@ -308,18 +332,30 @@ static int netlink_socket(struct nlsock *nl, unsigned long groups,
 		snl.nl_family = AF_NETLINK;
 		snl.nl_groups = groups;
 
+		if (ext_group_size) {
+			uint8_t i;
+
+			for (i = 0; i < ext_group_size; i++) {
 #if defined SOL_NETLINK
-		if (ext_groups) {
-			ret = setsockopt(sock, SOL_NETLINK,
-					 NETLINK_ADD_MEMBERSHIP, &ext_groups,
-					 sizeof(ext_groups));
-			if (ret < 0) {
+				ret = setsockopt(sock, SOL_NETLINK,
+						 NETLINK_ADD_MEMBERSHIP,
+						 &ext_groups[i],
+						 sizeof(ext_groups[i]));
+				if (ret < 0) {
+					zlog_notice(
+						"can't setsockopt NETLINK_ADD_MEMBERSHIP for group %s(%u), this linux kernel does not support it: %s(%d)",
+						group2str(ext_groups[i]),
+						ext_groups[i],
+						safe_strerror(errno), errno);
+				}
+#else
 				zlog_notice(
-					"can't setsockopt NETLINK_ADD_MEMBERSHIP: %s(%d)",
-					safe_strerror(errno), errno);
+					"Unable to use NETLINK_ADD_MEMBERSHIP via SOL_NETLINK for %s(%u) since the linux kernel does not support the socket option",
+					group2str(ext_groups[i]),
+					ext_groups[i]);
+#endif
 			}
 		}
-#endif
 
 		/* Bind the socket to the netlink structure for anything. */
 		ret = bind(sock, (struct sockaddr *)&snl, sizeof(snl));
@@ -393,8 +429,10 @@ static int netlink_information_fetch(struct nlmsghdr *h, ns_id_t ns_id,
 	case RTM_DELADDR:
 	case RTM_NEWNETCONF:
 	case RTM_DELNETCONF:
+	case RTM_NEWTUNNEL:
+	case RTM_DELTUNNEL:
+	case RTM_GETTUNNEL:
 		return 0;
-
 	default:
 		/*
 		 * If we have received this message then
@@ -995,12 +1033,18 @@ static int netlink_parse_error(const struct nlsock *nl, struct nlmsghdr *h,
 		return 1;
 	}
 
-	/* Deal with errors that occur because of races in link handling. */
-	if (is_cmd
-	    && ((msg_type == RTM_DELROUTE
-		 && (-errnum == ENODEV || -errnum == ESRCH))
-		|| (msg_type == RTM_NEWROUTE
-		    && (-errnum == ENETDOWN || -errnum == EEXIST)))) {
+	/*
+	 * Deal with errors that occur because of races in link handling
+	 * or types are not supported in kernel.
+	 */
+	if (is_cmd &&
+	    ((msg_type == RTM_DELROUTE &&
+	      (-errnum == ENODEV || -errnum == ESRCH)) ||
+	     (msg_type == RTM_NEWROUTE &&
+	      (-errnum == ENETDOWN || -errnum == EEXIST)) ||
+	     ((msg_type == RTM_NEWTUNNEL || msg_type == RTM_DELTUNNEL ||
+	       msg_type == RTM_GETTUNNEL) &&
+	      (-errnum == EOPNOTSUPP)))) {
 		if (IS_ZEBRA_DEBUG_KERNEL)
 			zlog_debug("%s: error: %s type=%s(%u), seq=%u, pid=%u",
 				   nl->name, safe_strerror(-errnum),
@@ -1585,14 +1629,21 @@ static enum netlink_msg_status nl_put_msg(struct nl_batch *bth,
 
 	case DPLANE_OP_INTF_ADDR_ADD:
 	case DPLANE_OP_INTF_ADDR_DEL:
-	case DPLANE_OP_INTF_NETCONFIG:
 	case DPLANE_OP_NONE:
 		return FRR_NETLINK_ERROR;
+
+	case DPLANE_OP_INTF_NETCONFIG:
+		return netlink_put_intf_netconfig(bth, ctx);
 
 	case DPLANE_OP_INTF_INSTALL:
 	case DPLANE_OP_INTF_UPDATE:
 	case DPLANE_OP_INTF_DELETE:
 		return netlink_put_intf_update_msg(bth, ctx);
+
+	case DPLANE_OP_TC_INSTALL:
+	case DPLANE_OP_TC_UPDATE:
+	case DPLANE_OP_TC_DELETE:
+		return netlink_put_tc_update_msg(bth, ctx);
 	}
 
 	return FRR_NETLINK_ERROR;
@@ -1729,7 +1780,8 @@ void kernel_init(struct zebra_ns *zns)
 	snprintf(zns->netlink.name, sizeof(zns->netlink.name),
 		 "netlink-listen (NS %u)", zns->ns_id);
 	zns->netlink.sock = -1;
-	if (netlink_socket(&zns->netlink, groups, ext_groups, zns->ns_id) < 0) {
+	if (netlink_socket(&zns->netlink, groups, &ext_groups, 1, zns->ns_id) <
+	    0) {
 		zlog_err("Failure to create %s socket",
 			 zns->netlink.name);
 		exit(-1);
@@ -1740,7 +1792,7 @@ void kernel_init(struct zebra_ns *zns)
 	snprintf(zns->netlink_cmd.name, sizeof(zns->netlink_cmd.name),
 		 "netlink-cmd (NS %u)", zns->ns_id);
 	zns->netlink_cmd.sock = -1;
-	if (netlink_socket(&zns->netlink_cmd, 0, 0, zns->ns_id) < 0) {
+	if (netlink_socket(&zns->netlink_cmd, 0, 0, 0, zns->ns_id) < 0) {
 		zlog_err("Failure to create %s socket",
 			 zns->netlink_cmd.name);
 		exit(-1);
@@ -1753,7 +1805,7 @@ void kernel_init(struct zebra_ns *zns)
 		 sizeof(zns->netlink_dplane_out.name), "netlink-dp (NS %u)",
 		 zns->ns_id);
 	zns->netlink_dplane_out.sock = -1;
-	if (netlink_socket(&zns->netlink_dplane_out, 0, 0, zns->ns_id) < 0) {
+	if (netlink_socket(&zns->netlink_dplane_out, 0, 0, 0, zns->ns_id) < 0) {
 		zlog_err("Failure to create %s socket",
 			 zns->netlink_dplane_out.name);
 		exit(-1);
@@ -1766,7 +1818,7 @@ void kernel_init(struct zebra_ns *zns)
 		 sizeof(zns->netlink_dplane_in.name), "netlink-dp-in (NS %u)",
 		 zns->ns_id);
 	zns->netlink_dplane_in.sock = -1;
-	if (netlink_socket(&zns->netlink_dplane_in, dplane_groups, 0,
+	if (netlink_socket(&zns->netlink_dplane_in, dplane_groups, 0, 0,
 			   zns->ns_id) < 0) {
 		zlog_err("Failure to create %s socket",
 			 zns->netlink_dplane_in.name);
@@ -1873,7 +1925,7 @@ static void kernel_nlsock_fini(struct nlsock *nls)
 
 void kernel_terminate(struct zebra_ns *zns, bool complete)
 {
-	thread_cancel(&zns->t_netlink);
+	THREAD_OFF(zns->t_netlink);
 
 	kernel_nlsock_fini(&zns->netlink);
 

@@ -1661,7 +1661,7 @@ void ospf6_asbr_redistribute_remove(int type, ifindex_t ifindex,
 
 DEFPY (ospf6_redistribute,
        ospf6_redistribute_cmd,
-       "redistribute " FRR_REDIST_STR_OSPF6D "[{metric (0-16777214)|metric-type (1-2)$metric_type|route-map WORD$rmap_str}]",
+       "redistribute " FRR_REDIST_STR_OSPF6D "[{metric (0-16777214)|metric-type (1-2)$metric_type|route-map RMAP_NAME$rmap_str}]",
        "Redistribute\n"
        FRR_REDIST_HELP_STR_OSPF6D
        "Metric for redistributed routes\n"
@@ -1715,7 +1715,7 @@ DEFPY (ospf6_redistribute,
 
 DEFUN (no_ospf6_redistribute,
        no_ospf6_redistribute_cmd,
-       "no redistribute " FRR_REDIST_STR_OSPF6D "[{metric (0-16777214)|metric-type (1-2)|route-map WORD}]",
+       "no redistribute " FRR_REDIST_STR_OSPF6D "[{metric (0-16777214)|metric-type (1-2)|route-map RMAP_NAME}]",
        NO_STR
        "Redistribute\n"
        FRR_REDIST_HELP_STR_OSPF6D
@@ -1893,7 +1893,7 @@ static void ospf6_redistribute_default_set(struct ospf6 *ospf6, int originate)
 /* Default Route originate. */
 DEFPY (ospf6_default_route_originate,
        ospf6_default_route_originate_cmd,
-       "default-information originate [{always$always|metric (0-16777214)$mval|metric-type (1-2)$mtype|route-map WORD$rtmap}]",
+       "default-information originate [{always$always|metric (0-16777214)$mval|metric-type (1-2)$mtype|route-map RMAP_NAME$rtmap}]",
        "Control distribution of default route\n"
        "Distribute a default route\n"
        "Always advertise default route\n"
@@ -1951,7 +1951,7 @@ DEFPY (ospf6_default_route_originate,
 
 DEFPY (no_ospf6_default_information_originate,
        no_ospf6_default_information_originate_cmd,
-       "no default-information originate [{always|metric (0-16777214)|metric-type (1-2)|route-map WORD}]",
+       "no default-information originate [{always|metric (0-16777214)|metric-type (1-2)|route-map RMAP_NAME}]",
        NO_STR
        "Control distribution of default information\n"
        "Distribute a default route\n"
@@ -3168,6 +3168,14 @@ void ospf6_external_aggregator_free(struct ospf6_external_aggr_rt *aggr)
 	if (OSPF6_EXTERNAL_RT_COUNT(aggr))
 		hash_clean(aggr->match_extnl_hash,
 			ospf6_aggr_unlink_external_info);
+
+	if (aggr->route) {
+		if (aggr->route->route_option)
+			XFREE(MTYPE_OSPF6_EXTERNAL_INFO,
+			      aggr->route->route_option);
+
+		ospf6_route_delete(aggr->route);
+	}
 
 	if (IS_OSPF6_DEBUG_AGGR)
 		zlog_debug("%s: Release the aggregator Address(%pFX)",

@@ -1672,7 +1672,7 @@ Configuring Peers
 
 .. clicmd:: bgp fast-external-failover
 
-   This command causes bgp to not take down ebgp peers immediately
+   This command causes bgp to take down ebgp peers immediately
    when a link flaps.  `bgp fast-external-failover` is the default
    and will not be displayed as part of a `show run`.  The no form
    of the command turns off this ability.
@@ -2334,11 +2334,8 @@ setting BGP communities attribute to the updates.
     exit-address-family
    !
    bgp community-list 70 permit 7675:70
-   bgp community-list 70 deny
    bgp community-list 80 permit 7675:80
-   bgp community-list 80 deny
    bgp community-list 90 permit 7675:90
-   bgp community-list 90 deny
    !
    route-map RMAP permit 10
     match community 70
@@ -2493,6 +2490,9 @@ Extended Community Lists
    there is no matched entry, deny will be returned. When `extcommunity` is
    empty it matches to any routes.
 
+   A special handling for ``internet`` community is applied. It matches
+   any community.
+
 .. clicmd:: bgp extcommunity-list expanded NAME permit|deny LINE
 
    This command defines a new expanded extcommunity-list. `line` is a string
@@ -2643,6 +2643,70 @@ Large Communities in Route Map
 Note that the large expanded community is only used for `match` rule, not for
 `set` actions.
 
+.. _bgp-roles-and-only-to-customers:
+
+BGP Roles and Only to Customers
+-------------------------------
+
+BGP roles are defined in :rfc:`9234` and provide an easy way to route leaks
+prevention, detection and mitigation.
+
+To enable its mechanics, you must set your local role to reflect your type of
+peering relationship with your neighbor. Possible values of ``LOCAL-ROLE`` are:
+
+- provider
+- rs-server
+- rs-client
+- customer
+- peer
+
+The local Role value is negotiated with the new BGP Role capability with a
+built-in check of the corresponding value. In case of mismatch the new OPEN
+Roles Mismatch Notification <2, 11> would be sent.
+
+The correct Role pairs are:
+
+* Provider - Customer
+* Peer - Peer
+* RS-Server - RS-Client
+
+.. code-block:: shell
+
+   ~# vtysh -c 'show bgp neighbor' | grep 'Role'
+     Local Role: customer
+     Neighbor Role: provider
+       Role: advertised and received
+
+If strict-mode is set BGP session won't become established until BGP neighbor
+set local Role on its side. This configuration parameter is defined in
+:rfc:`9234` and used to enforce corresponding configuration at your
+counter-part side. Default value - disabled.
+
+Routes that sent from provider, rs-server, or peer local-role (or if received
+by customer, rs-clinet, or peer local-role) will be marked with a new
+Only to Customer (OTC) attribute.
+
+Routes with this attribute can only be sent to your neighbor if your
+local-role is provider or rs-server. Routes with this attribute can be
+received only if your local-role is customer or rs-client.
+
+In case of peer-peer relationship routes can be received only if
+OTC value is equal to your neighbor AS number.
+
+All these rules with OTC help to detect and mitigate route leaks and
+happened automatically if local-role is set.
+
+.. clicmd:: neighbor PEER local-role LOCAL-ROLE [strict-mode]
+
+   This command set your local-role to ``LOCAL-ROLE``:
+   <provider|rs-server|rs-client|customer|peer>.
+
+   This role helps to detect and prevent route leaks.
+
+   If ``strict-mode`` is set, your neighbor must send you Capability with the
+   value of his role (by setting local-role on his side). Otherwise, a Role
+   Mismatch Notification will be sent.
+
 .. _bgp-l3vpn-vrfs:
 
 L3VPN VRFs
@@ -2655,6 +2719,25 @@ SAFI neighbors in the *default*, i.e., non VRF, BGP instance. VRF MPLS labels
 are reached using *core* MPLS labels which are distributed using LDP or BGP
 labeled unicast.  *bgpd* also supports inter-VRF route leaking.
 
+
+L3VPN over GRE interfaces
+^^^^^^^^^^^^^^^^^^^^^^^^^
+
+In MPLS-VPN or SRv6-VPN, an L3VPN next-hop entry requires that the path
+chosen respectively contains a labelled path or a valid SID IPv6 address.
+Otherwise the L3VPN entry will not be installed. It is possible to ignore
+that check when the path chosen by the next-hop uses a GRE interface, and
+there is a route-map configured at inbound side of ipv4-vpn or ipv6-vpn
+address family with following syntax:
+
+.. clicmd:: set l3vpn next-hop encapsulation gre
+
+The incoming BGP L3VPN entry is accepted, provided that the next hop of the
+L3VPN entry uses a path that takes the GRE tunnel as outgoing interface. The
+remote endpoint should be configured just behind the GRE tunnel; remote
+device configuration may vary depending whether it acts at edge endpoint or
+not: in any case, the expectation is that incoming MPLS traffic received at
+this endpoint should be considered as a valid path for L3VPN.
 
 .. _bgp-vrf-route-leaking:
 
@@ -2762,6 +2845,34 @@ address-family:
    `import vpn` and `export vpn` statements for the two VRF's involved.
    The CLI will disallow attempts to configure incompatible leaking
    modes.
+
+.. clicmd:: bgp retain route-target all
+
+It is possible to retain or not VPN prefixes that are not imported by local
+VRF configuration. This can be done via the following command in the context
+of the global VPNv4/VPNv6 family. This command defaults to on and is not
+displayed.
+The `no bgp retain route-target all` form of the command is displayed.
+
+.. clicmd:: neighbor <A.B.C.D|X:X::X:X|WORD> soo EXTCOMMUNITY
+
+Without this command, SoO extended community attribute is configured using
+an inbound route map that sets the SoO value during the update process.
+With the introduction of the new BGP per-neighbor Site-of-Origin (SoO) feature,
+two new commands configured in sub-modes under router configuration mode
+simplify the SoO value configuration.
+
+If we configure SoO per neighbor at PEs, the SoO community is automatically
+added for all routes from the CPEs. Routes are validated and prevented from
+being sent back to the same CPE (e.g.: multi-site). This is especially needed
+when using ``as-override`` or ``allowas-in`` to prevent routing loops.
+
+.. clicmd:: mpls bgp forwarding
+
+It is possible to permit BGP install VPN prefixes without transport labels,
+by issuing the following command under the interface configuration context.
+This configuration will install VPN prefixes originated from an e-bgp session,
+and with the next-hop directly connected.
 
 .. _bgp-l3vpn-srv6:
 
@@ -3365,6 +3476,12 @@ Debugging
    Display Listen sockets and the vrf that created them.  Useful for debugging of when
    listen is not working and this is considered a developer debug statement.
 
+.. clicmd:: debug bgp allow-martian
+
+   Enable or disable BGP accepting martian nexthops from a peer.  Please note
+   this is not an actual debug command and this command is also being deprecated
+   and will be removed soon.  The new command is :clicmd:`bgp allow-martian-nexthop`
+
 .. clicmd:: debug bgp bfd
 
    Enable or disable debugging for BFD events. This will show BFD integration
@@ -3731,6 +3848,10 @@ structure is extended with :clicmd:`show bgp [afi] [safi]`.
 
    If the ``json`` option is specified, output is displayed in JSON format.
 
+.. clicmd:: show [ip] bgp [afi] [safi] [all] access-list WORD [wide|json]
+
+   Display routes that match the specified access-list.
+
 .. clicmd:: show [ip] bgp [afi] [safi] [all] filter-list WORD [wide|json]
 
    Display routes that match the specified AS-Path filter-list.
@@ -4005,6 +4126,12 @@ starting the daemon and the configuration gets saved, the option will persist
 unless removed from the configuration with the negating command prior to the
 configuration write operation.  At this point in time non SAFI_UNICAST BGP
 data is not properly withdrawn from zebra when this command is issued.
+
+.. clicmd:: bgp allow-martian-nexthop
+
+When a peer receives a martian nexthop as part of the NLRI for a route
+permit the nexthop to be used as such, instead of rejecting and resetting
+the connection.
 
 .. clicmd:: bgp send-extra-data zebra
 

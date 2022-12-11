@@ -386,9 +386,7 @@ static void display_l3vni(struct vty *vty, struct bgp *bgp_vrf,
 		json_object_int_add(json, "vni", bgp_vrf->l3vni);
 		json_object_string_add(json, "type", "L3");
 		json_object_string_add(json, "inKernel", "True");
-		json_object_string_add(
-			json, "rd",
-			prefix_rd2str(&bgp_vrf->vrf_prd, buf1, RD_ADDRSTRLEN));
+		json_object_string_addf(json, "rd", "%pRD", &bgp_vrf->vrf_prd);
 		json_object_string_addf(json, "originatorIp", "%pI4",
 					&bgp_vrf->originator_ip);
 		json_object_string_add(json, "advertiseGatewayMacip", "n/a");
@@ -412,8 +410,7 @@ static void display_l3vni(struct vty *vty, struct bgp *bgp_vrf,
 		vty_out(vty, "  Type: %s\n", "L3");
 		vty_out(vty, "  Tenant VRF: %s\n",
 			vrf_id_to_name(bgp_vrf->vrf_id));
-		vty_out(vty, "  RD: %s\n",
-			prefix_rd2str(&bgp_vrf->vrf_prd, buf1, RD_ADDRSTRLEN));
+		vty_out(vty, "  RD: %pRD\n", &bgp_vrf->vrf_prd);
 		vty_out(vty, "  Originator IP: %pI4\n",
 			&bgp_vrf->originator_ip);
 		vty_out(vty, "  Advertise-gw-macip : %s\n", "n/a");
@@ -471,7 +468,6 @@ static void display_l3vni(struct vty *vty, struct bgp *bgp_vrf,
 
 static void display_vni(struct vty *vty, struct bgpevpn *vpn, json_object *json)
 {
-	char buf1[RD_ADDRSTRLEN];
 	char *ecom_str;
 	struct listnode *node, *nnode;
 	struct ecommunity *ecom;
@@ -488,9 +484,7 @@ static void display_vni(struct vty *vty, struct bgpevpn *vpn, json_object *json)
 		json_object_string_add(json, "type", "L2");
 		json_object_string_add(json, "inKernel",
 				       is_vni_live(vpn) ? "True" : "False");
-		json_object_string_add(
-			json, "rd",
-			prefix_rd2str(&vpn->prd, buf1, sizeof(buf1)));
+		json_object_string_addf(json, "rd", "%pRD", &vpn->prd);
 		json_object_string_addf(json, "originatorIp", "%pI4",
 					&vpn->originator_ip);
 		json_object_string_addf(json, "mcastGroup", "%pI4",
@@ -531,8 +525,7 @@ static void display_vni(struct vty *vty, struct bgpevpn *vpn, json_object *json)
 		vty_out(vty, "  Type: %s\n", "L2");
 		vty_out(vty, "  Tenant-Vrf: %s\n",
 			vrf_id_to_name(vpn->tenant_vrf_id));
-		vty_out(vty, "  RD: %s\n",
-			prefix_rd2str(&vpn->prd, buf1, sizeof(buf1)));
+		vty_out(vty, "  RD: %pRD\n", &vpn->prd);
 		vty_out(vty, "  Originator IP: %pI4\n", &vpn->originator_ip);
 		vty_out(vty, "  Mcast group: %pI4\n", &vpn->mcast_grp);
 		if (!vpn->advertise_gw_macip &&
@@ -614,13 +607,9 @@ static void show_esi_routes(struct bgp *bgp,
 	for (dest = bgp_table_top(es->route_table); dest;
 	     dest = bgp_route_next(dest)) {
 		int add_prefix_to_json = 0;
-		char prefix_str[BUFSIZ];
 		json_object *json_paths = NULL;
 		json_object *json_prefix = NULL;
 		const struct prefix *p = bgp_dest_get_prefix(dest);
-
-		prefix2str((struct prefix_evpn *)p, prefix_str,
-			   sizeof(prefix_str));
 
 		if (json)
 			json_prefix = json_object_new_object();
@@ -661,14 +650,14 @@ static void show_esi_routes(struct bgp *bgp,
 
 		if (json) {
 			if (add_prefix_to_json) {
-				json_object_string_add(json_prefix, "prefix",
-						       prefix_str);
+				json_object_string_addf(json_prefix, "prefix",
+							"%pFX", p);
 				json_object_int_add(json_prefix, "prefixLen",
 						    p->prefixlen);
 				json_object_object_add(json_prefix, "paths",
 						       json_paths);
-				json_object_object_add(json, prefix_str,
-						       json_prefix);
+				json_object_object_addf(json, json_prefix,
+							"%pFX", p);
 			} else {
 				json_object_free(json_paths);
 				json_object_free(json_prefix);
@@ -800,13 +789,9 @@ static void show_vni_routes(struct bgp *bgp, struct bgpevpn *vpn, int type,
 		const struct prefix_evpn *evp =
 			(const struct prefix_evpn *)bgp_dest_get_prefix(dest);
 		int add_prefix_to_json = 0;
-		char prefix_str[BUFSIZ];
 		json_object *json_paths = NULL;
 		json_object *json_prefix = NULL;
 		const struct prefix *p = bgp_dest_get_prefix(dest);
-
-		prefix2str((struct prefix_evpn *)bgp_dest_get_prefix(dest),
-			   prefix_str, sizeof(prefix_str));
 
 		if (type && evp->prefix.route_type != type)
 			continue;
@@ -861,14 +846,14 @@ static void show_vni_routes(struct bgp *bgp, struct bgpevpn *vpn, int type,
 
 		if (json) {
 			if (add_prefix_to_json) {
-				json_object_string_add(json_prefix, "prefix",
-						       prefix_str);
+				json_object_string_addf(json_prefix, "prefix",
+							"%pFX", p);
 				json_object_int_add(json_prefix, "prefixLen",
 						    p->prefixlen);
 				json_object_object_add(json_prefix, "paths",
 						       json_paths);
-				json_object_object_add(json, prefix_str,
-						       json_prefix);
+				json_object_object_addf(json, json_prefix,
+							"%pFX", p);
 			} else {
 				json_object_free(json_paths);
 				json_object_free(json_prefix);
@@ -949,9 +934,7 @@ static void show_l3vni_entry(struct vty *vty, struct bgp *bgp,
 		json_object_string_add(json_vni, "inKernel", "True");
 		json_object_string_addf(json_vni, "originatorIp", "%pI4",
 					&bgp->originator_ip);
-		json_object_string_add(
-			json_vni, "rd",
-			prefix_rd2str(&bgp->vrf_prd, buf2, RD_ADDRSTRLEN));
+		json_object_string_addf(json_vni, "rd", "%pRD", &bgp->vrf_prd);
 		json_object_string_add(json_vni, "advertiseGatewayMacip",
 				       "n/a");
 		json_object_string_add(json_vni, "advertiseSviMacIp", "n/a");
@@ -967,8 +950,8 @@ static void show_l3vni_entry(struct vty *vty, struct bgp *bgp,
 			json_vni, "rmac",
 			prefix_mac2str(&bgp->rmac, buf2, sizeof(buf2)));
 	} else {
-		vty_out(vty, "%-1s %-10u %-4s %-21s", buf1, bgp->l3vni, "L3",
-			prefix_rd2str(&bgp->vrf_prd, buf2, RD_ADDRSTRLEN));
+		vty_out(vty, "%-1s %-10u %-4s %-21pRD", buf1, bgp->l3vni, "L3",
+			&bgp->vrf_prd);
 	}
 
 	for (ALL_LIST_ELEMENTS(bgp->vrf_import_rtl, node, nnode, ecom)) {
@@ -1020,12 +1003,11 @@ static void show_l3vni_entry(struct vty *vty, struct bgp *bgp,
 
 		/* If there are multiple export RTs we break here and show only
 		 * one */
-		if (!json)
+		if (!json) {
+			vty_out(vty, "%-37s", vrf_id_to_name(bgp->vrf_id));
 			break;
+		}
 	}
-
-	if (!json)
-		vty_out(vty, "%-37s", vrf_id_to_name(bgp->vrf_id));
 
 	if (json) {
 		char vni_str[VNI_STR_LEN];
@@ -1047,7 +1029,6 @@ static void show_vni_entry(struct hash_bucket *bucket, void *args[])
 	json_object *json_export_rtl = NULL;
 	struct bgpevpn *vpn = (struct bgpevpn *)bucket->data;
 	char buf1[10];
-	char buf2[RD_ADDRSTRLEN];
 	char rt_buf[25];
 	char *ecom_str;
 	struct listnode *node, *nnode;
@@ -1074,9 +1055,7 @@ static void show_vni_entry(struct hash_bucket *bucket, void *args[])
 		json_object_string_add(json_vni, "type", "L2");
 		json_object_string_add(json_vni, "inKernel",
 				       is_vni_live(vpn) ? "True" : "False");
-		json_object_string_add(
-			json_vni, "rd",
-			prefix_rd2str(&vpn->prd, buf2, sizeof(buf2)));
+		json_object_string_addf(json_vni, "rd", "%pRD", &vpn->prd);
 		json_object_string_addf(json_vni, "originatorIp", "%pI4",
 					&vpn->originator_ip);
 		json_object_string_addf(json_vni, "mcastGroup", "%pI4",
@@ -1106,8 +1085,8 @@ static void show_vni_entry(struct hash_bucket *bucket, void *args[])
 			json_object_string_add(json_vni, "advertiseSviMacIp",
 					       "Disabled");
 	} else {
-		vty_out(vty, "%-1s %-10u %-4s %-21s", buf1, vpn->vni, "L2",
-			prefix_rd2str(&vpn->prd, buf2, RD_ADDRSTRLEN));
+		vty_out(vty, "%-1s %-10u %-4s %-21pRD", buf1, vpn->vni, "L2",
+			&vpn->prd);
 	}
 
 	for (ALL_LIST_ELEMENTS(vpn->import_rtl, node, nnode, ecom)) {
@@ -1159,12 +1138,12 @@ static void show_vni_entry(struct hash_bucket *bucket, void *args[])
 
 		/* If there are multiple export RTs we break here and show only
 		 * one */
-		if (!json)
+		if (!json) {
+			vty_out(vty, "%-37s",
+				vrf_id_to_name(vpn->tenant_vrf_id));
 			break;
+		}
 	}
-
-	if (!json)
-		vty_out(vty, "%-37s", vrf_id_to_name(vpn->tenant_vrf_id));
 
 	if (json) {
 		char vni_str[VNI_STR_LEN];
@@ -1190,7 +1169,6 @@ static int bgp_show_ethernet_vpn(struct vty *vty, struct prefix_rd *prd,
 	int rd_header;
 	int header = 1;
 	char rd_str[RD_ADDRSTRLEN];
-	char buf[BUFSIZ];
 	int no_display;
 
 	unsigned long output_count = 0;
@@ -1353,20 +1331,17 @@ static int bgp_show_ethernet_vpn(struct vty *vty, struct prefix_rd *prd,
 
 				json_prefix_info = json_object_new_object();
 
-				prefix2str((struct prefix_evpn *)p, buf,
-					   BUFSIZ);
-
-				json_object_string_addf(
-					json_prefix_info, "prefix", "%pFX",
-					(struct prefix_evpn *)p);
+				json_object_string_addf(json_prefix_info,
+							"prefix", "%pFX", p);
 
 				json_object_int_add(json_prefix_info,
 						    "prefixLen", p->prefixlen);
 
 				json_object_object_add(json_prefix_info,
 					"paths", json_array);
-				json_object_object_add(json_nroute, buf,
-					json_prefix_info);
+				json_object_object_addf(json_nroute,
+							json_prefix_info,
+							"%pFX", p);
 				json_array = NULL;
 			}
 		}
@@ -1940,7 +1915,7 @@ DEFUN(show_bgp_l2vpn_evpn_com,
 /* For testing purpose, static route of EVPN RT-5. */
 DEFUN(evpnrt5_network,
       evpnrt5_network_cmd,
-      "network <A.B.C.D/M|X:X::X:X/M> rd ASN:NN_OR_IP-ADDRESS:NN ethtag WORD label WORD esi WORD gwip <A.B.C.D|X:X::X:X> routermac WORD [route-map WORD]",
+      "network <A.B.C.D/M|X:X::X:X/M> rd ASN:NN_OR_IP-ADDRESS:NN ethtag WORD label WORD esi WORD gwip <A.B.C.D|X:X::X:X> routermac WORD [route-map RMAP_NAME]",
       "Specify a network to announce via BGP\n"
       "IP prefix\n"
       "IPv6 prefix\n"
@@ -2574,7 +2549,6 @@ static void evpn_show_route_rd_macip(struct vty *vty, struct bgp *bgp,
 	safi_t safi;
 	uint32_t path_cnt = 0;
 	json_object *json_paths = NULL;
-	char prefix_str[BUFSIZ];
 
 	afi = AFI_L2VPN;
 	safi = SAFI_EVPN;
@@ -2592,8 +2566,6 @@ static void evpn_show_route_rd_macip(struct vty *vty, struct bgp *bgp,
 
 		return;
 	}
-
-	prefix2str(&p, prefix_str, sizeof(prefix_str));
 
 	/* Prefix and num paths displayed once per prefix. */
 	route_vty_out_detail_header(vty, bgp, dest, prd, afi, safi, json);
@@ -2619,7 +2591,7 @@ static void evpn_show_route_rd_macip(struct vty *vty, struct bgp *bgp,
 
 	if (json && path_cnt) {
 		if (path_cnt)
-			json_object_object_add(json, prefix_str, json_paths);
+			json_object_object_addf(json, json_paths, "%pFX", &p);
 		json_object_int_add(json, "numPaths", path_cnt);
 	} else {
 		vty_out(vty, "\nDisplayed %u paths for requested prefix\n",
@@ -2645,15 +2617,12 @@ static void evpn_show_route_rd(struct vty *vty, struct bgp *bgp,
 	afi_t afi;
 	safi_t safi;
 	uint32_t prefix_cnt, path_cnt;
-	char rd_str[RD_ADDRSTRLEN];
 	json_object *json_rd = NULL;
 	int add_rd_to_json = 0;
 
 	afi = AFI_L2VPN;
 	safi = SAFI_EVPN;
 	prefix_cnt = path_cnt = 0;
-
-	prefix_rd2str(prd, rd_str, sizeof(rd_str));
 
 	rd_dest = bgp_node_lookup(bgp->rib[afi][safi], (struct prefix *)prd);
 	if (!rd_dest)
@@ -2667,7 +2636,7 @@ static void evpn_show_route_rd(struct vty *vty, struct bgp *bgp,
 
 	if (json) {
 		json_rd = json_object_new_object();
-		json_object_string_add(json_rd, "rd", rd_str);
+		json_object_string_addf(json_rd, "rd", "%pRD", prd);
 	}
 
 	bgp_dest_unlock_node(rd_dest);
@@ -2678,11 +2647,7 @@ static void evpn_show_route_rd(struct vty *vty, struct bgp *bgp,
 			(const struct prefix_evpn *)bgp_dest_get_prefix(dest);
 		json_object *json_prefix = NULL;
 		json_object *json_paths = NULL;
-		char prefix_str[BUFSIZ];
 		int add_prefix_to_json = 0;
-
-		prefix2str((struct prefix_evpn *)evp, prefix_str,
-			   sizeof(prefix_str));
 
 		if (type && evp->prefix.route_type != type)
 			continue;
@@ -2739,8 +2704,8 @@ static void evpn_show_route_rd(struct vty *vty, struct bgp *bgp,
 			if (add_prefix_to_json) {
 				json_object_object_add(json_prefix, "paths",
 						       json_paths);
-				json_object_object_add(json_rd, prefix_str,
-						       json_prefix);
+				json_object_object_addf(json_rd, json_prefix,
+							"%pFX", evp);
 			} else {
 				json_object_free(json_paths);
 				json_object_free(json_prefix);
@@ -2752,7 +2717,7 @@ static void evpn_show_route_rd(struct vty *vty, struct bgp *bgp,
 
 	if (json) {
 		if (add_rd_to_json)
-			json_object_object_add(json, rd_str, json_rd);
+			json_object_object_addf(json, json_rd, "%pRD", prd);
 		else {
 			json_object_free(json_rd);
 			json_rd = NULL;
@@ -2798,7 +2763,6 @@ static void evpn_show_route_rd_all_macip(struct vty *vty, struct bgp *bgp,
 		json_object *json_prefix = NULL; /* prefix within an RD */
 		json_object *json_rd = NULL;     /* holds all prefixes for RD */
 		char rd_str[RD_ADDRSTRLEN];
-		char prefix_str[BUFSIZ];
 		int add_rd_to_json = 0;
 		struct prefix_evpn ep;
 		const struct prefix *rd_destp = bgp_dest_get_prefix(rd_dest);
@@ -2825,8 +2789,6 @@ static void evpn_show_route_rd_all_macip(struct vty *vty, struct bgp *bgp,
 
 		const struct prefix *p = bgp_dest_get_prefix(dest);
 
-		prefix2str(p, prefix_str, sizeof(prefix_str));
-
 		pi = bgp_dest_get_bgp_path_info(dest);
 		if (pi) {
 			/* RD header - per RD. */
@@ -2838,8 +2800,8 @@ static void evpn_show_route_rd_all_macip(struct vty *vty, struct bgp *bgp,
 		if (json) {
 			json_prefix = json_object_new_object();
 			json_paths = json_object_new_array();
-			json_object_string_add(json_prefix, "prefix",
-					       prefix_str);
+			json_object_string_addf(json_prefix, "prefix", "%pFX",
+						p);
 			json_object_int_add(json_prefix, "prefixLen",
 					    p->prefixlen);
 		} else
@@ -2873,8 +2835,8 @@ static void evpn_show_route_rd_all_macip(struct vty *vty, struct bgp *bgp,
 		if (json) {
 			json_object_object_add(json_prefix, "paths",
 					       json_paths);
-			json_object_object_add(json_rd, prefix_str,
-					       json_prefix);
+			json_object_object_addf(json_rd, json_prefix, "%pFX",
+						p);
 			if (add_rd_to_json)
 				json_object_object_add(json, rd_str, json_rd);
 			else {
@@ -2954,12 +2916,8 @@ static void evpn_show_all_routes(struct vty *vty, struct bgp *bgp, int type,
 			const struct prefix_evpn *evp =
 				(const struct prefix_evpn *)bgp_dest_get_prefix(
 					dest);
-			char prefix_str[BUFSIZ];
 			int add_prefix_to_json = 0;
 			const struct prefix *p = bgp_dest_get_prefix(dest);
-
-			prefix2str((struct prefix_evpn *)p, prefix_str,
-				   sizeof(prefix_str));
 
 			if (type && evp->prefix.route_type != type)
 				continue;
@@ -2992,8 +2950,8 @@ static void evpn_show_all_routes(struct vty *vty, struct bgp *bgp, int type,
 			if (json) {
 				json_prefix = json_object_new_object();
 				json_paths = json_object_new_array();
-				json_object_string_add(json_prefix, "prefix",
-						       prefix_str);
+				json_object_string_addf(json_prefix, "prefix",
+							"%pFX", p);
 				json_object_int_add(json_prefix, "prefixLen",
 						    p->prefixlen);
 			}
@@ -3038,9 +2996,9 @@ static void evpn_show_all_routes(struct vty *vty, struct bgp *bgp, int type,
 					json_object_object_add(json_prefix,
 							       "paths",
 							       json_paths);
-					json_object_object_add(json_rd,
-							       prefix_str,
-							       json_prefix);
+					json_object_object_addf(json_rd,
+								json_prefix,
+								"%pFX", p);
 				} else {
 					json_object_free(json_prefix);
 					json_object_free(json_paths);
@@ -3334,7 +3292,6 @@ static void evpn_unset_advertise_autort_rfc8365(struct bgp *bgp)
 
 static void write_vni_config(struct vty *vty, struct bgpevpn *vpn)
 {
-	char buf1[RD_ADDRSTRLEN];
 	char *ecom_str;
 	struct listnode *node, *nnode;
 	struct ecommunity *ecom;
@@ -3342,8 +3299,7 @@ static void write_vni_config(struct vty *vty, struct bgpevpn *vpn)
 	if (is_vni_configured(vpn)) {
 		vty_out(vty, "  vni %d\n", vpn->vni);
 		if (is_rd_configured(vpn))
-			vty_out(vty, "   rd %s\n",
-				prefix_rd2str(&vpn->prd, buf1, sizeof(buf1)));
+			vty_out(vty, "   rd %pRD\n", &vpn->prd);
 
 		if (is_import_rt_configured(vpn)) {
 			for (ALL_LIST_ELEMENTS(vpn->import_rtl, node, nnode,
@@ -3812,7 +3768,7 @@ DEFUN_HIDDEN (no_bgp_evpn_advertise_vni_subnet,
 
 DEFUN (bgp_evpn_advertise_type5,
        bgp_evpn_advertise_type5_cmd,
-       "advertise " BGP_AFI_CMD_STR "" BGP_SAFI_CMD_STR " [gateway-ip] [route-map WORD]",
+       "advertise " BGP_AFI_CMD_STR "" BGP_SAFI_CMD_STR " [gateway-ip] [route-map RMAP_NAME]",
        "Advertise prefix routes\n"
        BGP_AFI_HELP_STR
        BGP_SAFI_HELP_STR
@@ -4035,6 +3991,9 @@ DEFUN (no_bgp_evpn_advertise_type5,
 	int idx_safi = 0;
 	afi_t afi = 0;
 	safi_t safi = 0;
+
+	if (!bgp_vrf)
+		return CMD_WARNING;
 
 	argv_find_and_parse_afi(argv, argc, &idx_afi, &afi);
 	argv_find_and_parse_safi(argv, argc, &idx_safi, &safi);
@@ -4344,9 +4303,15 @@ DEFUN(show_bgp_l2vpn_evpn_vni,
 								 : "Disabled");
 			json_object_string_add(
 				json, "flooding",
-				bgp_evpn->vxlan_flood_ctrl
-						== VXLAN_FLOOD_HEAD_END_REPL
+				bgp_evpn->vxlan_flood_ctrl ==
+						VXLAN_FLOOD_HEAD_END_REPL
 					? "Head-end replication"
+					: "Disabled");
+			json_object_string_add(
+				json, "vxlanFlooding",
+				bgp_evpn->vxlan_flood_ctrl ==
+						VXLAN_FLOOD_HEAD_END_REPL
+					? "Enabled"
 					: "Disabled");
 			json_object_int_add(json, "numVnis", num_vnis);
 			json_object_int_add(json, "numL2Vnis", num_l2vnis);
@@ -4361,9 +4326,14 @@ DEFUN(show_bgp_l2vpn_evpn_vni,
 			vty_out(vty, "Advertise All VNI flag: %s\n",
 				is_evpn_enabled() ? "Enabled" : "Disabled");
 			vty_out(vty, "BUM flooding: %s\n",
-				bgp_evpn->vxlan_flood_ctrl
-						== VXLAN_FLOOD_HEAD_END_REPL
+				bgp_evpn->vxlan_flood_ctrl ==
+						VXLAN_FLOOD_HEAD_END_REPL
 					? "Head-end replication"
+					: "Disabled");
+			vty_out(vty, "VXLAN flooding: %s\n",
+				bgp_evpn->vxlan_flood_ctrl ==
+						VXLAN_FLOOD_HEAD_END_REPL
+					? "Enabled"
 					: "Disabled");
 			vty_out(vty, "Number of L2 VNIs: %u\n", num_l2vnis);
 			vty_out(vty, "Number of L3 VNIs: %u\n", num_l3vnis);
@@ -5710,7 +5680,6 @@ DEFUN (show_bgp_vrf_l3vni_info,
        JSON_STR)
 {
 	char buf[ETHER_ADDR_STRLEN];
-	char buf1[INET6_ADDRSTRLEN];
 	int idx_vrf = 3;
 	const char *name = NULL;
 	struct bgp *bgp = NULL;
@@ -5774,8 +5743,7 @@ DEFUN (show_bgp_vrf_l3vni_info,
 		for (ALL_LIST_ELEMENTS_RO(bgp->vrf_import_rtl, node, ecom))
 			vty_out(vty, "%s  ", ecommunity_str(ecom));
 		vty_out(vty, "\n");
-		vty_out(vty, "  RD: %s\n",
-			prefix_rd2str(&bgp->vrf_prd, buf1, RD_ADDRSTRLEN));
+		vty_out(vty, "  RD: %pRD\n", &bgp->vrf_prd);
 	} else {
 		json_object_string_add(json, "vrf", name);
 		json_object_string_addf(json, "local-ip", "%pI4",
@@ -5809,9 +5777,7 @@ DEFUN (show_bgp_vrf_l3vni_info,
 				json_import_rts,
 				json_object_new_string(ecommunity_str(ecom)));
 		json_object_object_add(json, "import-rts", json_import_rts);
-		json_object_string_add(
-			json, "rd",
-			prefix_rd2str(&bgp->vrf_prd, buf1, RD_ADDRSTRLEN));
+		json_object_string_addf(json, "rd", "%pRD", &bgp->vrf_prd);
 	}
 
 	if (uj)
@@ -6044,6 +6010,7 @@ DEFUN(no_bgp_evpn_ead_es_rt, no_bgp_evpn_ead_es_rt_cmd,
 
 	if (!bgp_evpn_rt_matches_existing(bgp_mh_info->ead_es_export_rtl,
 					  ecomdel)) {
+		ecommunity_free(&ecomdel);
 		vty_out(vty,
 			"%% RT specified does not match EAD-ES RT configuration\n");
 		return CMD_WARNING;
@@ -6178,6 +6145,7 @@ DEFUN (no_bgp_evpn_vni_rt,
 
 	if (rt_type == RT_TYPE_IMPORT) {
 		if (!bgp_evpn_rt_matches_existing(vpn->import_rtl, ecomdel)) {
+			ecommunity_free(&ecomdel);
 			vty_out(vty,
 				"%% RT specified does not match configuration for this VNI\n");
 			return CMD_WARNING;
@@ -6185,6 +6153,7 @@ DEFUN (no_bgp_evpn_vni_rt,
 		evpn_unconfigure_import_rt(bgp, vpn, ecomdel);
 	} else if (rt_type == RT_TYPE_EXPORT) {
 		if (!bgp_evpn_rt_matches_existing(vpn->export_rtl, ecomdel)) {
+			ecommunity_free(&ecomdel);
 			vty_out(vty,
 				"%% RT specified does not match configuration for this VNI\n");
 			return CMD_WARNING;
@@ -6204,6 +6173,7 @@ DEFUN (no_bgp_evpn_vni_rt,
 		}
 
 		if (!found_ecomdel) {
+			ecommunity_free(&ecomdel);
 			vty_out(vty,
 				"%% RT specified does not match configuration for this VNI\n");
 			return CMD_WARNING;
@@ -6280,7 +6250,6 @@ static int vni_cmp(const void **a, const void **b)
 void bgp_config_write_evpn_info(struct vty *vty, struct bgp *bgp, afi_t afi,
 				safi_t safi)
 {
-	char buf1[RD_ADDRSTRLEN];
 	char buf2[INET6_ADDRSTRLEN];
 
 	if (bgp->advertise_all_vni)
@@ -6446,8 +6415,7 @@ void bgp_config_write_evpn_info(struct vty *vty, struct bgp *bgp, afi_t afi,
 		}
 	}
 	if (CHECK_FLAG(bgp->vrf_flags, BGP_VRF_RD_CFGD))
-		vty_out(vty, "  rd %s\n",
-			prefix_rd2str(&bgp->vrf_prd, buf1, sizeof(buf1)));
+		vty_out(vty, "  rd %pRD\n", &bgp->vrf_prd);
 
 	/* import route-target */
 	if (CHECK_FLAG(bgp->vrf_flags, BGP_VRF_IMPORT_RT_CFGD)) {

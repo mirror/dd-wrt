@@ -527,7 +527,7 @@ struct stream *bpacket_reformat_for_peer(struct bpacket *pkt,
 			   && !CHECK_FLAG(vec->flags,
 					  BPKT_ATTRVEC_FLAGS_RMAP_NH_UNCHANGED)
 			   && !peer_af_flag_check(
-				   peer, nhafi, paf->safi,
+				   peer, paf->afi, paf->safi,
 				   PEER_FLAG_NEXTHOP_UNCHANGED)) {
 			/* NOTE: not handling case where NH has new AFI
 			 */
@@ -1142,7 +1142,12 @@ void subgroup_default_update_packet(struct update_subgroup *subgrp,
 
 	(void)bpacket_queue_add(SUBGRP_PKTQ(subgrp), s, &vecarr);
 	subgroup_trigger_write(subgrp);
-	subgrp->scount++;
+
+	if (!CHECK_FLAG(subgrp->sflags,
+			SUBGRP_STATUS_PEER_DEFAULT_ORIGINATED)) {
+		subgrp->scount++;
+		SET_FLAG(subgrp->sflags, SUBGRP_STATUS_PEER_DEFAULT_ORIGINATED);
+	}
 }
 
 void subgroup_default_withdraw_packet(struct update_subgroup *subgrp)
@@ -1235,7 +1240,12 @@ void subgroup_default_withdraw_packet(struct update_subgroup *subgrp)
 
 	(void)bpacket_queue_add(SUBGRP_PKTQ(subgrp), s, NULL);
 	subgroup_trigger_write(subgrp);
-	subgrp->scount--;
+
+	if (CHECK_FLAG(subgrp->sflags, SUBGRP_STATUS_PEER_DEFAULT_ORIGINATED)) {
+		subgrp->scount--;
+		UNSET_FLAG(subgrp->sflags,
+			   SUBGRP_STATUS_PEER_DEFAULT_ORIGINATED);
+	}
 }
 
 static void
