@@ -548,7 +548,7 @@ usage(boolean_t requested)
 	    (strcmp(current_command->name, "get") == 0) ||
 	    (strcmp(current_command->name, "list") == 0))) {
 
-		(void) fprintf(fp,
+		(void) fprintf(fp, "%s",
 		    gettext("\nthe following properties are supported:\n"));
 
 		(void) fprintf(fp, "\n\t%-19s  %s   %s\n\n",
@@ -5429,7 +5429,13 @@ print_zpool_dir_scripts(char *dirpath)
 	if ((dir = opendir(dirpath)) != NULL) {
 		/* print all the files and directories within directory */
 		while ((ent = readdir(dir)) != NULL) {
-			sprintf(fullpath, "%s/%s", dirpath, ent->d_name);
+			if (snprintf(fullpath, sizeof (fullpath), "%s/%s",
+			    dirpath, ent->d_name) >= sizeof (fullpath)) {
+				(void) fprintf(stderr,
+				    gettext("internal error: "
+				    "ZPOOL_SCRIPTS_PATH too large.\n"));
+				exit(1);
+			}
 
 			/* Print the scripts */
 			if (stat(fullpath, &dir_stat) == 0)
