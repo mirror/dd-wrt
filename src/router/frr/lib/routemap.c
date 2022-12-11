@@ -812,17 +812,13 @@ int route_map_mark_updated(const char *name)
 	return (ret);
 }
 
-static int route_map_clear_updated(struct route_map *map)
+static void route_map_clear_updated(struct route_map *map)
 {
-	int ret = -1;
-
 	if (map) {
 		map->to_be_processed = false;
 		if (map->deleted)
 			route_map_free_map(map);
 	}
-
-	return (ret);
 }
 
 /* Lookup route map.  If there isn't route map create one and return
@@ -1063,7 +1059,6 @@ static int vty_show_route_map(struct vty *vty, const char *name, bool use_json)
 
 		if (map) {
 			vty_show_route_map_entry(vty, map, json_proto);
-			return CMD_SUCCESS;
 		} else if (!use_json) {
 			vty_out(vty, "%s: 'route-map %s' not found\n",
 				frr_protonameinst, name);
@@ -1895,12 +1890,7 @@ route_map_get_index(struct route_map *map, const struct prefix *prefix,
 static int route_map_candidate_list_cmp(struct route_map_index *idx1,
 					struct route_map_index *idx2)
 {
-	if (!idx1)
-		return -1;
-	if (!idx2)
-		return 1;
-
-	return (idx1->pref - idx2->pref);
+	return idx1->pref - idx2->pref;
 }
 
 /*
@@ -2540,7 +2530,8 @@ void route_map_notify_pentry_dependencies(const char *affected_name,
 */
 route_map_result_t route_map_apply_ext(struct route_map *map,
 				       const struct prefix *prefix,
-				       void *match_object, void *set_object)
+				       void *match_object, void *set_object,
+				       int *pref)
 {
 	static int recursion = 0;
 	enum route_map_cmd_result_t match_ret = RMAP_NOMATCH;
@@ -2676,7 +2667,7 @@ route_map_result_t route_map_apply_ext(struct route_map *map,
 						ret = route_map_apply_ext(
 							nextrm, prefix,
 							match_object,
-							set_object);
+							set_object, NULL);
 						recursion--;
 					}
 
@@ -2720,6 +2711,13 @@ route_map_apply_end:
 		zlog_debug("Route-map: %s, prefix: %pFX, result: %s",
 			   (map ? map->name : "null"), prefix,
 			   route_map_result_str(ret));
+
+	if (pref) {
+		if (index != NULL && ret == RMAP_PERMITMATCH)
+			*pref = index->pref;
+		else
+			*pref = 65536;
+	}
 
 	return (ret);
 }
@@ -3270,7 +3268,7 @@ void route_map_counter_decrement(struct route_map *map)
 }
 
 DEFUN_HIDDEN(show_route_map_pfx_tbl, show_route_map_pfx_tbl_cmd,
-	     "show route-map WORD prefix-table",
+	     "show route-map RMAP_NAME prefix-table",
 	     SHOW_STR
 	     "route-map\n"
 	     "route-map name\n"

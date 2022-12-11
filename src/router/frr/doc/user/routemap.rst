@@ -244,7 +244,9 @@ Route Map Set Command
    Set a tag on the matched route. This tag value can be from (1-4294967295).
    Additionally if you have compiled with the :option:`--enable-realms`
    configure option. Tag values from (1-255) are sent to the Linux kernel as a
-   realm value. Then route policy can be applied. See the tc man page.
+   realm value. Then route policy can be applied. See the tc man page.  As
+   a note realms cannot currently be used with the installation of nexthops
+   as nexthop groups in the linux kernel.
 
 .. clicmd:: set ip next-hop IPV4_ADDRESS
 
@@ -337,6 +339,9 @@ Route Map Set Command
    Set the color of a SR-TE Policy to be applied to a learned route. The SR-TE
    Policy is uniquely determined by the color and the BGP nexthop.
 
+.. clicmd:: set l3vpn next-hop encapsulation gre
+
+   Accept L3VPN traffic over GRE encapsulation.
 
 .. _route-map-call-command:
 

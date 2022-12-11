@@ -324,6 +324,7 @@ struct gm_if {
 	unsigned int cur_query_intv_trig; /* ms */
 	unsigned int cur_max_resp;	  /* ms */
 	enum gm_version cur_version;
+	int cur_lmqc; /* last member query count in ds */
 
 	/* this value (positive, default 10ms) defines our "timing tolerance":
 	 * - added to deadlines for expiring joins
@@ -352,6 +353,7 @@ struct gm_if {
 #if PIM_IPV == 6
 extern void gm_ifp_update(struct interface *ifp);
 extern void gm_ifp_teardown(struct interface *ifp);
+extern void gm_group_delete(struct gm_if *gm_ifp);
 #else
 static inline void gm_ifp_update(struct interface *ifp)
 {

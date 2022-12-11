@@ -4071,7 +4071,7 @@ int zebra_vxlan_dp_network_mac_add(struct interface *ifp,
 	}
 
 	/* If local MAC on a down local ES translate the network-mac-add
-	 * to a local-inactive-mac-add
+	 * to a local-active-mac-add
 	 */
 	if (IS_ZEBRA_DEBUG_VXLAN || IS_ZEBRA_DEBUG_EVPN_MH_MAC)
 		zlog_debug("dpAdd local-nw-MAC %pEA VID %u", macaddr, vid);
@@ -5148,10 +5148,9 @@ int zebra_vxlan_if_update(struct interface *ifp, uint16_t chgflags)
 			return 0;
 
 		/* Inform BGP, if there is a change of interest. */
-		if (chgflags
-			& (ZEBRA_VXLIF_MASTER_CHANGE |
-			   ZEBRA_VXLIF_LOCAL_IP_CHANGE |
-			   ZEBRA_VXLIF_MCAST_GRP_CHANGE))
+		if (chgflags &
+		    (ZEBRA_VXLIF_MASTER_CHANGE | ZEBRA_VXLIF_LOCAL_IP_CHANGE |
+		     ZEBRA_VXLIF_MCAST_GRP_CHANGE | ZEBRA_VXLIF_VLAN_CHANGE))
 			zebra_evpn_send_add_to_client(zevpn);
 
 		/* If there is a valid new master or a VLAN mapping change,
@@ -5295,10 +5294,6 @@ int zebra_vxlan_process_vrf_vni_cmd(struct zebra_vrf *zvrf, vni_t vni,
 			   add ? "ADD" : "DEL");
 
 	if (add) {
-
-		/* Remove L2VNI if present */
-		zebra_vxlan_handle_vni_transition(zvrf, vni, add);
-
 		/* check if the vni is already present under zvrf */
 		if (zvrf->l3vni) {
 			snprintf(err, err_str_sz,
@@ -5313,6 +5308,9 @@ int zebra_vxlan_process_vrf_vni_cmd(struct zebra_vrf *zvrf, vni_t vni,
 				 "VNI is already configured as L3-VNI");
 			return -1;
 		}
+
+		/* Remove L2VNI if present */
+		zebra_vxlan_handle_vni_transition(zvrf, vni, add);
 
 		/* add the L3-VNI to the global table */
 		zl3vni = zl3vni_add(vni, zvrf_id(zvrf));
@@ -6283,8 +6281,7 @@ static int zebra_evpn_cfg_clean_up(struct zserv *client)
  */
 extern void zebra_vxlan_handle_result(struct zebra_dplane_ctx *ctx)
 {
-	/* TODO -- anything other than freeing the context? */
-	dplane_ctx_fini(&ctx);
+	return;
 }
 
 /* Cleanup BGP EVPN configuration upon client disconnect */

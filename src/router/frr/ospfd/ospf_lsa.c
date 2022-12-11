@@ -188,6 +188,7 @@ struct ospf_lsa *ospf_lsa_new(void)
 	new->refresh_list = -1;
 	new->vrf_id = VRF_DEFAULT;
 	new->to_be_acknowledged = 0;
+	new->opaque_zero_len_delete = 0;
 
 	return new;
 }
@@ -1761,7 +1762,7 @@ static struct ospf_lsa *ospf_handle_exnl_lsa_lsId_chg(struct ospf *ospf,
 	struct as_external_lsa *al;
 	struct in_addr mask;
 	struct ospf_lsa *new;
-	struct external_info ei_summary;
+	struct external_info ei_summary = {};
 	struct external_info *ei_old;
 
 	lsa = ospf_lsdb_lookup_by_id(ospf->lsdb, OSPF_AS_EXTERNAL_LSA,
@@ -1978,9 +1979,8 @@ static struct ospf_lsa *ospf_lsa_translated_nssa_new(struct ospf *ospf,
 	if (type7->area->suppress_fa) {
 		extnew->e[0].fwd_addr.s_addr = 0;
 		if (IS_DEBUG_OSPF_NSSA)
-			zlog_debug(
-				"ospf_lsa_translated_nssa_new(): Suppress forwarding address for %pI4",
-				&ei.p.prefix);
+			zlog_debug("%s: Suppress forwarding address for %pI4",
+				   __func__, &ei.p.prefix);
 	} else
 		extnew->e[0].fwd_addr.s_addr = ext->e[0].fwd_addr.s_addr;
 	new->data->ls_seqnum = type7->data->ls_seqnum;
@@ -2103,9 +2103,8 @@ struct ospf_lsa *ospf_translated_nssa_refresh(struct ospf *ospf,
 	/* do we have type7? */
 	if (!type7) {
 		if (IS_DEBUG_OSPF_NSSA)
-			zlog_debug(
-				"ospf_translated_nssa_refresh(): no Type-7 found for Type-5 LSA Id %pI4",
-				&type5->data->id);
+			zlog_debug("%s: no Type-7 found for Type-5 LSA Id %pI4",
+				   __func__, &type5->data->id);
 		return NULL;
 	}
 
@@ -2113,8 +2112,8 @@ struct ospf_lsa *ospf_translated_nssa_refresh(struct ospf *ospf,
 	if (type5 == NULL || !CHECK_FLAG(type5->flags, OSPF_LSA_LOCAL_XLT)) {
 		if (IS_DEBUG_OSPF_NSSA)
 			zlog_debug(
-				"ospf_translated_nssa_refresh(): No translated Type-5 found for Type-7 with Id %pI4",
-				&type7->data->id);
+				"%s: No translated Type-5 found for Type-7 with Id %pI4",
+				__func__, &type7->data->id);
 		return NULL;
 	}
 
@@ -2131,8 +2130,8 @@ struct ospf_lsa *ospf_translated_nssa_refresh(struct ospf *ospf,
 	if ((new = ospf_lsa_translated_nssa_new(ospf, type7)) == NULL) {
 		if (IS_DEBUG_OSPF_NSSA)
 			zlog_debug(
-				"ospf_translated_nssa_refresh(): Could not translate Type-7 for %pI4 to Type-5",
-				&type7->data->id);
+				"%s: Could not translate Type-7 for %pI4 to Type-5",
+				__func__, &type7->data->id);
 		return NULL;
 	}
 
@@ -2142,10 +2141,9 @@ struct ospf_lsa *ospf_translated_nssa_refresh(struct ospf *ospf,
 	}
 
 	if (!(new = ospf_lsa_install(ospf, NULL, new))) {
-		flog_warn(
-			EC_OSPF_LSA_INSTALL_FAILURE,
-			"ospf_translated_nssa_refresh(): Could not install translated LSA, Id %pI4",
-			&type7->data->id);
+		flog_warn(EC_OSPF_LSA_INSTALL_FAILURE,
+			  "%s: Could not install translated LSA, Id %pI4",
+			  __func__, &type7->data->id);
 		return NULL;
 	}
 
@@ -2205,7 +2203,7 @@ struct ospf_lsa *ospf_external_lsa_originate(struct ospf *ospf,
 	   */
 
 	if (ospf->router_id.s_addr == INADDR_ANY) {
-		if (IS_DEBUG_OSPF_EVENT)
+		if (ei && IS_DEBUG_OSPF_EVENT)
 			zlog_debug(
 				"LSA[Type5:%pI4]: deferring AS-external-LSA origination, router ID is zero",
 				&ei->p.prefix);
@@ -2214,7 +2212,7 @@ struct ospf_lsa *ospf_external_lsa_originate(struct ospf *ospf,
 
 	/* Create new AS-external-LSA instance. */
 	if ((new = ospf_external_lsa_new(ospf, ei, NULL)) == NULL) {
-		if (IS_DEBUG_OSPF_EVENT)
+		if (ei && IS_DEBUG_OSPF_EVENT)
 			zlog_debug(
 				"LSA[Type5:%pI4]: Could not originate AS-external-LSA",
 				&ei->p.prefix);
@@ -2434,7 +2432,7 @@ void ospf_external_lsa_flush(struct ospf *ospf, uint8_t type,
 	}
 
 	if (IS_DEBUG_OSPF(lsa, LSA_FLOODING))
-		zlog_debug("ospf_external_lsa_flush(): stop");
+		zlog_debug("%s: stop", __func__);
 }
 
 void ospf_external_lsa_refresh_default(struct ospf *ospf)
@@ -3024,7 +3022,7 @@ int ospf_check_nbr_status(struct ospf *ospf)
 }
 
 
-static void ospf_maxage_lsa_remover(struct thread *thread)
+void ospf_maxage_lsa_remover(struct thread *thread)
 {
 	struct ospf *ospf = THREAD_ARG(thread);
 	struct ospf_lsa *lsa, *old;
@@ -3515,7 +3513,8 @@ int ospf_lsa_different(struct ospf_lsa *l1, struct ospf_lsa *l2,
 	    && CHECK_FLAG((l1->flags ^ l2->flags), OSPF_LSA_RECEIVED))
 		return 1; /* May be a stale LSA in the LSBD */
 
-	assert(l1->size > OSPF_LSA_HEADER_SIZE);
+	if (l1->size == OSPF_LSA_HEADER_SIZE)
+		return 0; /* nothing to compare */
 
 	p1 = (char *)l1->data;
 	p2 = (char *)l2->data;
@@ -3626,7 +3625,7 @@ void ospf_flush_self_originated_lsas_now(struct ospf *ospf)
 	 * without conflicting to other threads.
 	 */
 	if (ospf->t_maxage != NULL) {
-		OSPF_TIMER_OFF(ospf->t_maxage);
+		THREAD_OFF(ospf->t_maxage);
 		thread_execute(master, ospf_maxage_lsa_remover, ospf, 0);
 	}
 
@@ -3902,8 +3901,9 @@ void ospf_refresher_register_lsa(struct ospf *ospf, struct ospf_lsa *lsa)
 	if (lsa->refresh_list < 0) {
 		int delay;
 		int min_delay =
-			OSPF_LS_REFRESH_TIME - (2 * OSPF_LS_REFRESH_JITTER);
-		int max_delay = OSPF_LS_REFRESH_TIME - OSPF_LS_REFRESH_JITTER;
+			ospf->lsa_refresh_timer - (2 * OSPF_LS_REFRESH_JITTER);
+		int max_delay =
+			ospf->lsa_refresh_timer - OSPF_LS_REFRESH_JITTER;
 
 		/* We want to refresh the LSA within OSPF_LS_REFRESH_TIME which
 		 * is
@@ -3936,8 +3936,8 @@ void ospf_refresher_register_lsa(struct ospf *ospf, struct ospf_lsa *lsa)
 
 		if (IS_DEBUG_OSPF(lsa, LSA_REFRESH))
 			zlog_debug(
-				"LSA[Refresh:Type%d:%pI4]: ospf_refresher_register_lsa(): setting refresh_list on lsa %p (slod %d)",
-				lsa->data->type, &lsa->data->id,
+				"LSA[Refresh:Type%d:%pI4]: %s: setting refresh_list on lsa %p (slot %d)",
+				lsa->data->type, &lsa->data->id, __func__,
 				(void *)lsa, index);
 	}
 }
@@ -3969,7 +3969,7 @@ void ospf_lsa_refresh_walker(struct thread *t)
 	struct list *lsa_to_refresh = list_new();
 
 	if (IS_DEBUG_OSPF(lsa, LSA_REFRESH))
-		zlog_debug("LSA[Refresh]: ospf_lsa_refresh_walker(): start");
+		zlog_debug("LSA[Refresh]: %s: start", __func__);
 
 
 	i = ospf->lsa_refresh_queue.index;
@@ -3986,16 +3986,14 @@ void ospf_lsa_refresh_walker(struct thread *t)
 		% OSPF_LSA_REFRESHER_SLOTS;
 
 	if (IS_DEBUG_OSPF(lsa, LSA_REFRESH))
-		zlog_debug(
-			"LSA[Refresh]: ospf_lsa_refresh_walker(): next index %d",
-			ospf->lsa_refresh_queue.index);
+		zlog_debug("LSA[Refresh]: %s: next index %d", __func__,
+			   ospf->lsa_refresh_queue.index);
 
 	for (; i != ospf->lsa_refresh_queue.index;
 	     i = (i + 1) % OSPF_LSA_REFRESHER_SLOTS) {
 		if (IS_DEBUG_OSPF(lsa, LSA_REFRESH))
-			zlog_debug(
-				"LSA[Refresh]: ospf_lsa_refresh_walker(): refresh index %d",
-				i);
+			zlog_debug("LSA[Refresh]: %s: refresh index %d",
+				   __func__, i);
 
 		refresh_list = ospf->lsa_refresh_queue.qs[i];
 
@@ -4008,10 +4006,9 @@ void ospf_lsa_refresh_walker(struct thread *t)
 					       lsa)) {
 				if (IS_DEBUG_OSPF(lsa, LSA_REFRESH))
 					zlog_debug(
-						"LSA[Refresh:Type%d:%pI4]: ospf_lsa_refresh_walker(): refresh lsa %p (slot %d)",
-						lsa->data->type,
-						&lsa->data->id,
-						(void *)lsa, i);
+						"LSA[Refresh:Type%d:%pI4]: %s: refresh lsa %p (slot %d)",
+						lsa->data->type, &lsa->data->id,
+						__func__, (void *)lsa, i);
 
 				assert(lsa->lock > 0);
 				list_delete_node(refresh_list, node);
@@ -4037,7 +4034,7 @@ void ospf_lsa_refresh_walker(struct thread *t)
 	list_delete(&lsa_to_refresh);
 
 	if (IS_DEBUG_OSPF(lsa, LSA_REFRESH))
-		zlog_debug("LSA[Refresh]: ospf_lsa_refresh_walker(): end");
+		zlog_debug("LSA[Refresh]: %s: end", __func__);
 }
 
 /* Flush the LSAs for the specific area */

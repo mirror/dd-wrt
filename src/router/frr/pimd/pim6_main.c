@@ -119,9 +119,7 @@ static const struct frr_yang_module_info *const pim6d_yang_modules[] = {
 
 /* clang-format off */
 FRR_DAEMON_INFO(pim6d, PIM6,
-	.vty_port = 0,
-	.flags = FRR_NO_SPLIT_CONFIG,
-
+	.vty_port = PIM6D_VTY_PORT,
 	.proghelp = "Protocol Independent Multicast (RFC7761) for IPv6",
 
 	.signals = pim6d_signals,
@@ -161,8 +159,6 @@ int main(int argc, char **argv, char **envp)
 	}
 
 	pim_router_init();
-	/* TODO PIM6: temporary enable all debugs, remove later in PIMv6 work */
-	router->debugs = ~0U;
 
 	access_list_init();
 	prefix_list_init();

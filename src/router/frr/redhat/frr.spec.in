@@ -24,6 +24,7 @@
 %{!?with_pam:           %global  with_pam           0 }
 %{!?with_pbrd:          %global  with_pbrd          1 }
 %{!?with_pimd:          %global  with_pimd          1 }
+%{!?with_pim6d:         %global  with_pim6d         0 }
 %{!?with_vrrpd:         %global  with_vrrpd         1 }
 %{!?with_rtadv:         %global  with_rtadv         1 }
 %{!?with_watchfrr:      %global  with_watchfrr      1 }
@@ -81,6 +82,7 @@
 # if CentOS / RedHat and version < 7, then disable PIMd (too old, won't work)
 %if 0%{?rhel} && 0%{?rhel} < 7
     %global  with_pimd  0
+    %global  with_pim6d 0
 %endif
 
 # misc internal defines
@@ -100,6 +102,12 @@
     %define daemon_pimd pimd
 %else
     %define daemon_pimd ""
+%endif
+
+%if %{with_pim6d}
+    %define daemon_pim6d pim6d
+%else
+    %define daemon_pim6d ""
 %endif
 
 %if %{with_pbrd}
@@ -150,7 +158,7 @@
     %define daemon_pathd ""
 %endif
 
-%define all_daemons %{daemon_list} %{daemon_ldpd} %{daemon_pimd} %{daemon_nhrpd} %{daemon_eigrpd} %{daemon_babeld} %{daemon_watchfrr} %{daemon_pbrd} %{daemon_bfdd} %{daemon_vrrpd} %{daemon_pathd}
+%define all_daemons %{daemon_list} %{daemon_ldpd} %{daemon_pimd} %{daemon_pim6d} %{daemon_nhrpd} %{daemon_eigrpd} %{daemon_babeld} %{daemon_watchfrr} %{daemon_pbrd} %{daemon_bfdd} %{daemon_vrrpd} %{daemon_pathd}
 
 #release sub-revision (the two digits after the CONFDATE)
 %{!?release_rev:        %global  release_rev        01 }
@@ -342,6 +350,11 @@ routing state through standard SNMP MIBs.
 %else
     --disable-pimd \
 %endif
+%if %{with_pim6d}
+    --enable-pim6d \
+%else
+    --disable-pim6d \
+%endif
 %if %{with_pbrd}
     --enable-pbrd \
 %else
@@ -396,9 +409,6 @@ routing state through standard SNMP MIBs.
     --disable-bgp-vnc \
 %endif
     --enable-isisd \
-%if "%{initsystem}" == "systemd"
-    --enable-systemd \
-%endif
     --enable-rpki \
 %if %{with_bfdd}
     --enable-bfdd \
@@ -666,6 +676,9 @@ fi
 %if %{with_pimd}
     %{_sbindir}/pimd
 %endif
+%if %{with_pim6d}
+    %{_sbindir}/pim6d
+%endif
 %if %{with_pbrd}
     %{_sbindir}/pbrd
 %endif
@@ -779,30 +792,30 @@ sed -i 's/ -M rpki//' %{_sysconfdir}/frr/daemons
 
 
 %changelog
-* Wed Jul 13 2022 Martin Winter <mwinter@opensourcerouting.org> - %{version}
 
-* Tue Aug 30 2022 Donatas Abraitis <donatas@opensourcerouting.org> - 8.3.1
-- bgpd
--    Do not announce routes that are conditionally withdrawn (a gap between conditional advertisement interval)
--    Fix crash for `show bgp l2vpn evpn route rd`
--    Do not overwrite the Link-Local address with another interface for the next-hop cache
--    Call a hook when the as-path filter is replaced
--    Fix memory leak when cleaning up MPLS labels
-- isisd
--    Fix memory leak when deleting adjacency
-- ldpd
--    Fix crash when hold time is configured to 65535
-- ospfd
--    Fix crash when the router is running in GR helper mode and receives a new LSA
-- pimd
--    Fix memory leak for `show ip pim interface`
--    Allow the same group/source route to be configured on more than one interface
-- vtysh
--    Handle CTRL+Z without exiting the VTY shell
--    Ignore `end` when parsing frr.conf (This causes BGP sessions to start only after 10 minutes)
-- zebra
--    Avoid buffer overflow when parsing nested route attributes for SR-IPv6
--    Fix missing VNI transition, e.g.: `show evpn vni detail`
+* Thu Nov 17 2022 Martin Winter <mwinter@opensourcerouting.org> - %{version}
+
+* Thu Nov 17 2022 Jafar Al-Gharaibeh <jafar@atcorp.com> - 8.4.1
+- zebra: reuse netinet/if_ether.h to avoid redefinition of struct ethhdr
+- zebra: fix build without AF_MPLS
+- ospfd: get route-map name for default-information originate
+- ospfd: allow unnumbered and numbered addresses to co-exist better
+- ospfd: prevent from crashing when processing external lsa
+- bgpd: fix "storing the address of local variable"
+- bgpd: rpki was decrementing the node lock one time too many
+- bgpd: do not send Deconfig/Shutdown message when restarting
+- pimd: convert zlog_warn to debug
+
+* Tue Nov 01 2022 Jafar Al-Gharaibeh <jafar@atcorp.com> - 8.4
+- New BGP command (neighbor PEER soo) to configure SoO to prevent routing loops and suboptimal routing on dual-homed sites.
+- Command debug bgp allow-martian replaced to bgp allow-martian-nexthop because previously we allowed using martian next-hops when debug is turned on.
+- Implement BGP Prefix Origin Validation State Extended Community rfc8097
+- Implement Route Leak Prevention and Detection Using Roles in UPDATE and OPEN Messages rfc9234
+- BMP L3VPN support
+- PIMv6 support
+- MLD support
+- New command to enable using reserved IPv4 ranges as normal addresses for BGP next-hops, interface addresses, etc.
+- For a full list of bug fixes, please refer to https://frrouting.org/release/
 
 * Wed Jul 13 2022 Jafar Al-Gharaibeh <jafar@atcorp.com> - 8.3
 - General:

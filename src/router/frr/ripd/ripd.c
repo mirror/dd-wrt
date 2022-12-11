@@ -144,7 +144,7 @@ static void rip_garbage_collect(struct thread *t)
 	rinfo = THREAD_ARG(t);
 
 	/* Off timeout timer. */
-	RIP_TIMER_OFF(rinfo->t_timeout);
+	THREAD_OFF(rinfo->t_timeout);
 
 	/* Get route_node pointer. */
 	rp = rinfo->rp;
@@ -226,14 +226,14 @@ struct rip_info *rip_ecmp_replace(struct rip *rip, struct rip_info *rinfo_new)
 		if (tmp_rinfo == rinfo)
 			continue;
 
-		RIP_TIMER_OFF(tmp_rinfo->t_timeout);
-		RIP_TIMER_OFF(tmp_rinfo->t_garbage_collect);
+		THREAD_OFF(tmp_rinfo->t_timeout);
+		THREAD_OFF(tmp_rinfo->t_garbage_collect);
 		list_delete_node(list, node);
 		rip_info_free(tmp_rinfo);
 	}
 
-	RIP_TIMER_OFF(rinfo->t_timeout);
-	RIP_TIMER_OFF(rinfo->t_garbage_collect);
+	THREAD_OFF(rinfo->t_timeout);
+	THREAD_OFF(rinfo->t_garbage_collect);
 	memcpy(rinfo, rinfo_new, sizeof(struct rip_info));
 
 	if (rip_route_rte(rinfo)) {
@@ -262,12 +262,12 @@ struct rip_info *rip_ecmp_delete(struct rip *rip, struct rip_info *rinfo)
 	struct route_node *rp = rinfo->rp;
 	struct list *list = (struct list *)rp->info;
 
-	RIP_TIMER_OFF(rinfo->t_timeout);
+	THREAD_OFF(rinfo->t_timeout);
 
 	if (listcount(list) > 1) {
 		/* Some other ECMP entries still exist. Just delete this entry.
 		 */
-		RIP_TIMER_OFF(rinfo->t_garbage_collect);
+		THREAD_OFF(rinfo->t_garbage_collect);
 		listnode_delete(list, rinfo);
 		if (rip_route_rte(rinfo)
 		    && CHECK_FLAG(rinfo->flags, RIP_RTF_FIB))
@@ -313,7 +313,7 @@ static void rip_timeout(struct thread *t)
 static void rip_timeout_update(struct rip *rip, struct rip_info *rinfo)
 {
 	if (rinfo->metric != RIP_METRIC_INFINITY) {
-		RIP_TIMER_OFF(rinfo->t_timeout);
+		THREAD_OFF(rinfo->t_timeout);
 		thread_add_timer(master, rip_timeout, rinfo, rip->timeout_time,
 				 &rinfo->t_timeout);
 	}
@@ -659,8 +659,8 @@ static void rip_rte_process(struct rte *rte, struct sockaddr_in *from,
 					assert(newinfo.metric
 					       != RIP_METRIC_INFINITY);
 
-					RIP_TIMER_OFF(rinfo->t_timeout);
-					RIP_TIMER_OFF(rinfo->t_garbage_collect);
+					THREAD_OFF(rinfo->t_timeout);
+					THREAD_OFF(rinfo->t_garbage_collect);
 					memcpy(rinfo, &newinfo,
 					       sizeof(struct rip_info));
 					rip_timeout_update(rip, rinfo);
@@ -996,6 +996,7 @@ static size_t rip_auth_md5_ah_write(struct stream *s, struct rip_interface *ri,
 				    struct key *key)
 {
 	size_t doff = 0;
+	static uint32_t seq = 0;
 
 	assert(s && ri && ri->auth_type == RIP_AUTH_MD5);
 
@@ -1028,7 +1029,7 @@ static size_t rip_auth_md5_ah_write(struct stream *s, struct rip_interface *ri,
 	/* RFC2080: The value used in the sequence number is
 	   arbitrary, but two suggestions are the time of the
 	   message's creation or a simple message counter. */
-	stream_putl(s, time(NULL));
+	stream_putl(s, ++seq);
 
 	/* Reserved field must be zero. */
 	stream_putl(s, 0);
@@ -1081,10 +1082,9 @@ static void rip_auth_md5_set(struct stream *s, struct rip_interface *ri,
 
 	/* Check packet length. */
 	if (len < (RIP_HEADER_SIZE + RIP_RTE_SIZE)) {
-		flog_err(
-			EC_RIP_PACKET,
-			"rip_auth_md5_set(): packet length %ld is less than minimum length.",
-			len);
+		flog_err(EC_RIP_PACKET,
+			 "%s: packet length %ld is less than minimum length.",
+			 __func__, len);
 		return;
 	}
 
@@ -1450,9 +1450,8 @@ static int rip_send_packet(uint8_t *buf, int size, struct sockaddr_in *to,
 			inet_ntop(AF_INET, &sin.sin_addr, dst, sizeof(dst));
 		}
 #undef ADDRESS_SIZE
-		zlog_debug("rip_send_packet %pI4 > %s (%s)",
-			   &ifc->address->u.prefix4, dst,
-			   ifc->ifp->name);
+		zlog_debug("%s %pI4 > %s (%s)", __func__,
+			   &ifc->address->u.prefix4, dst, ifc->ifp->name);
 	}
 
 	if (CHECK_FLAG(ifc->flags, ZEBRA_IFA_SECONDARY)) {
@@ -1614,7 +1613,7 @@ void rip_redistribute_delete(struct rip *rip, int type, int sub_type,
 				RIP_TIMER_ON(rinfo->t_garbage_collect,
 					     rip_garbage_collect,
 					     rip->garbage_time);
-				RIP_TIMER_OFF(rinfo->t_timeout);
+				THREAD_OFF(rinfo->t_timeout);
 				rinfo->flags |= RIP_RTF_CHANGED;
 
 				if (IS_RIP_DEBUG_EVENT)
@@ -1771,8 +1770,8 @@ static void rip_read(struct thread *t)
 	/* If this packet come from unknown interface, ignore it. */
 	if (ifp == NULL) {
 		zlog_info(
-			"rip_read: cannot find interface for packet from %pI4 port %d (VRF %s)",
-			&from.sin_addr, ntohs(from.sin_port),
+			"%s: cannot find interface for packet from %pI4 port %d (VRF %s)",
+			__func__, &from.sin_addr, ntohs(from.sin_port),
 			rip->vrf_name);
 		return;
 	}
@@ -1785,8 +1784,8 @@ static void rip_read(struct thread *t)
 
 	if (ifc == NULL) {
 		zlog_info(
-			"rip_read: cannot find connected address for packet from %pI4 port %d on interface %s (VRF %s)",
-			&from.sin_addr, ntohs(from.sin_port),
+			"%s: cannot find connected address for packet from %pI4 port %d on interface %s (VRF %s)",
+			__func__, &from.sin_addr, ntohs(from.sin_port),
 			ifp->name, rip->vrf_name);
 		return;
 	}
@@ -2506,7 +2505,7 @@ static void rip_update(struct thread *t)
 
 	/* Triggered updates may be suppressed if a regular update is due by
 	   the time the triggered update would be sent. */
-	RIP_TIMER_OFF(rip->t_triggered_interval);
+	THREAD_OFF(rip->t_triggered_interval);
 	rip->trigger = 0;
 
 	/* Register myself. */
@@ -2553,7 +2552,7 @@ static void rip_triggered_update(struct thread *t)
 	int interval;
 
 	/* Cancel interval timer. */
-	RIP_TIMER_OFF(rip->t_triggered_interval);
+	THREAD_OFF(rip->t_triggered_interval);
 	rip->trigger = 0;
 
 	/* Logging triggered update. */
@@ -2603,7 +2602,7 @@ void rip_redistribute_withdraw(struct rip *rip, int type)
 		rinfo->metric = RIP_METRIC_INFINITY;
 		RIP_TIMER_ON(rinfo->t_garbage_collect, rip_garbage_collect,
 			     rip->garbage_time);
-		RIP_TIMER_OFF(rinfo->t_timeout);
+		THREAD_OFF(rinfo->t_timeout);
 		rinfo->flags |= RIP_RTF_CHANGED;
 
 		if (IS_RIP_DEBUG_EVENT) {
@@ -2785,7 +2784,7 @@ void rip_event(struct rip *rip, enum rip_event event, int sock)
 		thread_add_read(master, rip_read, rip, sock, &rip->t_read);
 		break;
 	case RIP_UPDATE_EVENT:
-		RIP_TIMER_OFF(rip->t_update);
+		THREAD_OFF(rip->t_update);
 		jitter = rip_update_jitter(rip->update_time);
 		thread_add_timer(master, rip_update, rip,
 				 sock ? 2 : rip->update_time + jitter,
@@ -2915,8 +2914,8 @@ void rip_ecmp_disable(struct rip *rip)
 			if (tmp_rinfo == rinfo)
 				continue;
 
-			RIP_TIMER_OFF(tmp_rinfo->t_timeout);
-			RIP_TIMER_OFF(tmp_rinfo->t_garbage_collect);
+			THREAD_OFF(tmp_rinfo->t_timeout);
+			THREAD_OFF(tmp_rinfo->t_garbage_collect);
 			list_delete_node(list, node);
 			rip_info_free(tmp_rinfo);
 		}
@@ -3508,8 +3507,8 @@ static void rip_instance_disable(struct rip *rip)
 			rip_zebra_ipv4_delete(rip, rp);
 
 		for (ALL_LIST_ELEMENTS_RO(list, listnode, rinfo)) {
-			RIP_TIMER_OFF(rinfo->t_timeout);
-			RIP_TIMER_OFF(rinfo->t_garbage_collect);
+			THREAD_OFF(rinfo->t_timeout);
+			THREAD_OFF(rinfo->t_garbage_collect);
 			rip_info_free(rinfo);
 		}
 		list_delete(&list);
@@ -3521,12 +3520,12 @@ static void rip_instance_disable(struct rip *rip)
 	rip_redistribute_disable(rip);
 
 	/* Cancel RIP related timers. */
-	RIP_TIMER_OFF(rip->t_update);
-	RIP_TIMER_OFF(rip->t_triggered_update);
-	RIP_TIMER_OFF(rip->t_triggered_interval);
+	THREAD_OFF(rip->t_update);
+	THREAD_OFF(rip->t_triggered_update);
+	THREAD_OFF(rip->t_triggered_interval);
 
 	/* Cancel read thread. */
-	thread_cancel(&rip->t_read);
+	THREAD_OFF(rip->t_read);
 
 	/* Close RIP socket. */
 	close(rip->sock);
@@ -3552,9 +3551,17 @@ static int rip_vrf_new(struct vrf *vrf)
 
 static int rip_vrf_delete(struct vrf *vrf)
 {
+	struct rip *rip;
+
 	if (IS_RIP_DEBUG_EVENT)
 		zlog_debug("%s: VRF deleted: %s(%u)", __func__, vrf->name,
 			   vrf->vrf_id);
+
+	rip = rip_lookup_by_vrf_name(vrf->name);
+	if (!rip)
+		return 0;
+
+	rip_clean(rip);
 
 	return 0;
 }

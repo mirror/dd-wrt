@@ -71,9 +71,6 @@ struct thread_master *master;
 /* Route retain mode flag. */
 int retain_mode = 0;
 
-/* Allow non-frr entities to delete frr routes */
-int allow_delete = 0;
-
 int graceful_restart;
 
 bool v6_rr_semantics = false;
@@ -105,8 +102,12 @@ const struct option longopts[] = {
 #endif /* HAVE_NETLINK */
 	{0}};
 
-zebra_capabilities_t _caps_p[] = {
-	ZCAP_NET_ADMIN, ZCAP_SYS_ADMIN, ZCAP_NET_RAW,
+zebra_capabilities_t _caps_p[] = {ZCAP_NET_ADMIN, ZCAP_SYS_ADMIN,
+				  ZCAP_NET_RAW,
+#ifdef HAVE_DPDK
+				  ZCAP_IPC_LOCK,  ZCAP_READ_SEARCH,
+				  ZCAP_SYS_RAWIO
+#endif
 };
 
 /* zebra privileges to run with */
@@ -228,6 +229,7 @@ void zebra_finalize(struct thread *dummy)
 
 	zebra_router_terminate();
 
+	ns_terminate();
 	frr_fini();
 	exit(0);
 }
@@ -332,7 +334,7 @@ int main(int argc, char **argv)
 			// batch_mode = 1;
 			break;
 		case 'a':
-			allow_delete = 1;
+			zrouter.allow_delete = true;
 			break;
 		case 'e': {
 			unsigned long int parsed_multipath =

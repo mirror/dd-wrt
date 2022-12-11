@@ -70,14 +70,14 @@
 static void update_group_checkin(struct update_group *updgrp)
 {
 	updgrp->id = ++bm->updgrp_idspace;
-	updgrp->uptime = bgp_clock();
+	updgrp->uptime = monotime(NULL);
 }
 
 static void update_subgroup_checkin(struct update_subgroup *subgrp,
 				    struct update_group *updgrp)
 {
 	subgrp->id = ++bm->subgrp_idspace;
-	subgrp->uptime = bgp_clock();
+	subgrp->uptime = monotime(NULL);
 }
 
 static void sync_init(struct update_subgroup *subgrp,
@@ -91,7 +91,8 @@ static void sync_init(struct update_subgroup *subgrp,
 	bgp_adv_fifo_init(&subgrp->sync->withdraw);
 	bgp_adv_fifo_init(&subgrp->sync->withdraw_low);
 	subgrp->hash =
-		hash_create(baa_hash_key, baa_hash_cmp, "BGP SubGroup Hash");
+		hash_create(bgp_advertise_attr_hash_key,
+			    bgp_advertise_attr_hash_cmp, "BGP SubGroup Hash");
 
 	/* We use a larger buffer for subgrp->work in the event that:
 	 * - We RX a BGP_UPDATE where the attributes alone are just
@@ -115,8 +116,11 @@ static void sync_init(struct update_subgroup *subgrp,
 static void sync_delete(struct update_subgroup *subgrp)
 {
 	XFREE(MTYPE_BGP_SYNCHRONISE, subgrp->sync);
-	if (subgrp->hash)
+	if (subgrp->hash) {
+		hash_clean(subgrp->hash,
+			   (void (*)(void *))bgp_advertise_attr_free);
 		hash_free(subgrp->hash);
+	}
 	subgrp->hash = NULL;
 	if (subgrp->work)
 		stream_free(subgrp->work);
@@ -159,6 +163,13 @@ static void conf_copy(struct peer *dst, struct peer *src, afi_t afi,
 	dst->local_as = src->local_as;
 	dst->change_local_as = src->change_local_as;
 	dst->shared_network = src->shared_network;
+	dst->local_role = src->local_role;
+
+	if (src->soo[afi][safi]) {
+		ecommunity_free(&dst->soo[afi][safi]);
+		dst->soo[afi][safi] = ecommunity_dup(src->soo[afi][safi]);
+	}
+
 	memcpy(&(dst->nexthop), &(src->nexthop), sizeof(struct bgp_nexthop));
 
 	dst->group = src->group;
@@ -243,6 +254,8 @@ static void conf_release(struct peer *src, afi_t afi, safi_t safi)
 	XFREE(MTYPE_BGP_FILTER_NAME, srcfilter->advmap.cname);
 
 	XFREE(MTYPE_BGP_PEER_HOST, src->host);
+
+	ecommunity_free(&src->soo[afi][safi]);
 }
 
 static void peer2_updgrp_copy(struct update_group *updgrp, struct peer_af *paf)
@@ -310,6 +323,7 @@ static void *updgrp_hash_alloc(void *p)
  *       15. If peer is configured to be a lonesoul, peer ip address
  *       16. Local-as should match, if configured.
  *       17. maximum-prefix-out
+ *       18. Local-role should also match, if configured.
  *      )
  */
 static unsigned int updgrp_hash_key_make(const void *p)
@@ -416,17 +430,30 @@ static unsigned int updgrp_hash_key_make(const void *p)
 	    || CHECK_FLAG(peer->af_flags[afi][safi], PEER_FLAG_MAX_PREFIX_OUT))
 		key = jhash_1word(jhash(peer->host, strlen(peer->host), SEED2),
 				  key);
+	/*
+	 * Multiple sessions with the same neighbor should get their own
+	 * update-group if they have different roles.
+	 */
+	key = jhash_1word(peer->local_role, key);
+
+	if (peer->soo[afi][safi]) {
+		char *soo_str = ecommunity_str(peer->soo[afi][safi]);
+
+		key = jhash_1word(jhash(soo_str, strlen(soo_str), SEED1), key);
+	}
 
 	if (bgp_debug_neighbor_events(peer)) {
 		zlog_debug(
-			"%pBP Update Group Hash: sort: %d UpdGrpFlags: %u UpdGrpAFFlags: %u",
-			peer, peer->sort, peer->flags & PEER_UPDGRP_FLAGS,
-			flags & PEER_UPDGRP_AF_FLAGS);
+			"%pBP Update Group Hash: sort: %d UpdGrpFlags: %ju UpdGrpAFFlags: %ju",
+			peer, peer->sort,
+			(intmax_t)CHECK_FLAG(peer->flags, PEER_UPDGRP_FLAGS),
+			(intmax_t)CHECK_FLAG(flags, PEER_UPDGRP_AF_FLAGS));
 		zlog_debug(
 			"%pBP Update Group Hash: addpath: %u UpdGrpCapFlag: %u UpdGrpCapAFFlag: %u route_adv: %u change local as: %u",
 			peer, (uint32_t)peer->addpath_type[afi][safi],
-			peer->cap & PEER_UPDGRP_CAP_FLAGS,
-			peer->af_cap[afi][safi] & PEER_UPDGRP_AF_CAP_FLAGS,
+			CHECK_FLAG(peer->cap, PEER_UPDGRP_CAP_FLAGS),
+			CHECK_FLAG(peer->af_cap[afi][safi],
+				   PEER_UPDGRP_AF_CAP_FLAGS),
 			peer->v_routeadv, peer->change_local_as);
 		zlog_debug(
 			"%pBP Update Group Hash: max packet size: %u pmax_out: %u Peer Group: %s rmap out: %s",
@@ -460,14 +487,14 @@ static unsigned int updgrp_hash_key_make(const void *p)
 			peer->shared_network &&
 				peer_afi_active_nego(peer, AFI_IP6));
 		zlog_debug(
-			"%pBP Update Group Hash: Lonesoul: %u ORF prefix: %u ORF old: %u max prefix out: %u",
-			peer, CHECK_FLAG(peer->flags, PEER_FLAG_LONESOUL),
+			"%pBP Update Group Hash: Lonesoul: %d ORF prefix: %u ORF old: %u max prefix out: %ju",
+			peer, !!CHECK_FLAG(peer->flags, PEER_FLAG_LONESOUL),
 			CHECK_FLAG(peer->af_cap[afi][safi],
 				   PEER_CAP_ORF_PREFIX_SM_RCV),
 			CHECK_FLAG(peer->af_cap[afi][safi],
 				   PEER_CAP_ORF_PREFIX_SM_OLD_RCV),
-			CHECK_FLAG(peer->af_flags[afi][safi],
-				   PEER_FLAG_MAX_PREFIX_OUT));
+			(intmax_t)CHECK_FLAG(peer->af_flags[afi][safi],
+					     PEER_FLAG_MAX_PREFIX_OUT));
 		zlog_debug("%pBP Update Group Hash key: %u", peer, key);
 	}
 	return key;
@@ -535,6 +562,10 @@ static bool updgrp_hash_cmp(const void *p1, const void *p2)
 		return false;
 
 	if (pe1->group != pe2->group)
+		return false;
+
+	/* Roles can affect filtering */
+	if (pe1->local_role != pe2->local_role)
 		return false;
 
 	/* route-map names should be the same */
@@ -1475,7 +1506,24 @@ static int updgrp_policy_update_walkcb(struct update_group *updgrp, void *arg)
 					"u%" PRIu64 ":s%" PRIu64" announcing default upon default routemap %s change",
 					updgrp->id, subgrp->id,
 					ctx->policy_name);
-			subgroup_default_originate(subgrp, 0);
+			if (route_map_lookup_by_name(ctx->policy_name)) {
+				/*
+				 * When there is change in routemap, this flow
+				 * is triggered. the routemap is still present
+				 * in lib, hence its a update flow. The flag
+				 * needs to be unset.
+				 */
+				UNSET_FLAG(subgrp->sflags,
+					   SUBGRP_STATUS_DEFAULT_ORIGINATE);
+				subgroup_default_originate(subgrp, 0);
+			} else {
+				/*
+				 * This is a explicit withdraw, since the
+				 * routemap is not present in routemap lib. need
+				 * to pass 1 for withdraw arg.
+				 */
+				subgroup_default_originate(subgrp, 1);
+			}
 		}
 		update_subgroup_set_needs_refresh(subgrp, 0);
 	}
@@ -1522,7 +1570,7 @@ static int update_group_periodic_merge_walkcb(struct update_group *updgrp,
  *             update groups.
  */
 void update_group_policy_update(struct bgp *bgp, enum bgp_policy_type ptype,
-				const char *pname, int route_update,
+				const char *pname, bool route_update,
 				int start_event)
 {
 	struct updwalk_context ctx;
@@ -1853,6 +1901,13 @@ update_group_default_originate_route_map_walkcb(struct update_group *updgrp,
 		safi = SUBGRP_SAFI(subgrp);
 
 		if (peer->default_rmap[afi][safi].name) {
+			/*
+			 * When there is change in routemap this flow will
+			 * be triggered. We need to unset the Flag to ensure
+			 * the update flow gets triggered.
+			 */
+			UNSET_FLAG(subgrp->sflags,
+				   SUBGRP_STATUS_DEFAULT_ORIGINATE);
 			subgroup_default_originate(subgrp, 0);
 		}
 	}
@@ -1868,7 +1923,7 @@ void update_group_refresh_default_originate_route_map(struct thread *thread)
 	bgp = THREAD_ARG(thread);
 	update_group_walk(bgp, update_group_default_originate_route_map_walkcb,
 			  reason);
-	thread_cancel(&bgp->t_rmap_def_originate_eval);
+	THREAD_OFF(bgp->t_rmap_def_originate_eval);
 	bgp_unlock(bgp);
 }
 

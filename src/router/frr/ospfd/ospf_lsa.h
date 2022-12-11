@@ -123,6 +123,9 @@ struct ospf_lsa {
 
 	/*For topo chg detection in HELPER role*/
 	bool to_be_acknowledged;
+
+	/* send maxage with no data */
+	bool opaque_zero_len_delete;
 };
 
 /* OSPF LSA Link Type. */
@@ -354,4 +357,5 @@ extern void ospf_check_and_gen_init_seq_lsa(struct ospf_interface *oi,
 					    struct ospf_lsa *lsa);
 extern void ospf_flush_lsa_from_area(struct ospf *ospf, struct in_addr area_id,
 				     int type);
+extern void ospf_maxage_lsa_remover(struct thread *thread);
 #endif /* _ZEBRA_OSPF_LSA_H */

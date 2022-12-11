@@ -178,15 +178,17 @@ struct route_entry {
 /* meta-queue structure:
  * sub-queue 0: nexthop group objects
  * sub-queue 1: EVPN/VxLAN objects
- * sub-queue 2: connected
- * sub-queue 3: kernel
- * sub-queue 4: static
- * sub-queue 5: RIP, RIPng, OSPF, OSPF6, IS-IS, EIGRP, NHRP
- * sub-queue 6: iBGP, eBGP
- * sub-queue 7: any other origin (if any) typically those that
+ * sub-queue 2: Early Route Processing
+ * sub-queue 3: Early Label Processing
+ * sub-queue 4: connected
+ * sub-queue 5: kernel
+ * sub-queue 6: static
+ * sub-queue 7: RIP, RIPng, OSPF, OSPF6, IS-IS, EIGRP, NHRP
+ * sub-queue 8: iBGP, eBGP
+ * sub-queue 9: any other origin (if any) typically those that
  *              don't generate routes
  */
-#define MQ_SIZE 8
+#define MQ_SIZE 10
 struct meta_queue {
 	struct list *subq[MQ_SIZE];
 	uint32_t size; /* sum of lengths of all subqueues */
@@ -342,6 +344,12 @@ extern void _route_entry_dump(const char *func, union prefixconstptr pp,
 			      union prefixconstptr src_pp,
 			      const struct route_entry *re);
 
+struct route_entry *
+zebra_rib_route_entry_new(vrf_id_t vrf_id, int type, uint8_t instance,
+			  uint32_t flags, uint32_t nhe_id, uint32_t table_id,
+			  uint32_t metric, uint32_t mtu, uint8_t distance,
+			  route_tag_t tag);
+
 #define ZEBRA_RIB_LOOKUP_ERROR -1
 #define ZEBRA_RIB_FOUND_EXACT 0
 #define ZEBRA_RIB_FOUND_NOGATE 1
@@ -454,9 +462,7 @@ int zebra_rib_queue_evpn_rem_vtep_add(vrf_id_t vrf_id, vni_t vni,
 int zebra_rib_queue_evpn_rem_vtep_del(vrf_id_t vrf_id, vni_t vni,
 				      struct in_addr vtep_ip);
 
-extern void meta_queue_free(struct meta_queue *mq);
-extern void rib_meta_queue_free_vrf(struct meta_queue *mq,
-				    struct zebra_vrf *zvrf);
+extern void meta_queue_free(struct meta_queue *mq, struct zebra_vrf *zvrf);
 extern int zebra_rib_labeled_unicast(struct route_entry *re);
 extern struct route_table *rib_table_ipv6;
 
@@ -579,6 +585,7 @@ static inline void rib_tables_iter_cleanup(rib_tables_iter_t *iter)
 
 DECLARE_HOOK(rib_update, (struct route_node * rn, const char *reason),
 	     (rn, reason));
+DECLARE_HOOK(rib_shutdown, (struct route_node * rn), (rn));
 
 /*
  * Access installed/fib nexthops, which may be a subset of the

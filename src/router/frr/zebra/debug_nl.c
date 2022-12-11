@@ -543,6 +543,8 @@ const char *rtm_rta2str(int type)
 		return "MFC_STATS";
 	case RTA_NH_ID:
 		return "NH_ID";
+	case RTA_EXPIRES:
+		return "EXPIRES";
 	default:
 		return "UNKNOWN";
 	}
@@ -1070,9 +1072,11 @@ next_rta:
 
 static void nlroute_dump(struct rtmsg *rtm, size_t msglen)
 {
+	struct rta_mfc_stats *mfc_stats;
 	struct rtattr *rta;
 	size_t plen;
 	uint32_t u32v;
+	uint64_t u64v;
 
 	/* Get the first attribute and go from there. */
 	rta = RTM_RTA(rtm);
@@ -1083,8 +1087,9 @@ next_rta:
 
 	plen = RTA_PAYLOAD(rta);
 	zlog_debug("    rta [len=%d (payload=%zu) type=(%d) %s]", rta->rta_len,
-		   plen, rta->rta_type, rtm_rta2str(rta->rta_type));
-	switch (rta->rta_type) {
+		   plen, rta->rta_type & NLA_TYPE_MASK,
+		   rtm_rta2str(rta->rta_type & NLA_TYPE_MASK));
+	switch (rta->rta_type & NLA_TYPE_MASK) {
 	case RTA_IIF:
 	case RTA_OIF:
 	case RTA_PRIORITY:
@@ -1092,6 +1097,11 @@ next_rta:
 	case RTA_NH_ID:
 		u32v = *(uint32_t *)RTA_DATA(rta);
 		zlog_debug("      %u", u32v);
+		break;
+
+	case RTA_EXPIRES:
+		u64v = *(uint64_t *)RTA_DATA(rta);
+		zlog_debug("      %" PRIu64, u64v);
 		break;
 
 	case RTA_GATEWAY:
@@ -1110,6 +1120,14 @@ next_rta:
 		default:
 			break;
 		}
+		break;
+
+	case RTA_MFC_STATS:
+		mfc_stats = (struct rta_mfc_stats *)RTA_DATA(rta);
+		zlog_debug("      pkts=%ju bytes=%ju wrong_if=%ju",
+			   (uintmax_t)mfc_stats->mfcs_packets,
+			   (uintmax_t)mfc_stats->mfcs_bytes,
+			   (uintmax_t)mfc_stats->mfcs_wrong_if);
 		break;
 
 	default:
@@ -1518,6 +1536,24 @@ next_rta:
 	goto next_rta;
 }
 
+static const char *tcm_nltype2str(int nltype)
+{
+	switch (nltype) {
+	case RTM_NEWQDISC:
+	case RTM_DELQDISC:
+		return "qdisc";
+	case RTM_NEWTCLASS:
+	case RTM_DELTCLASS:
+		return "tclass";
+	case RTM_NEWTFILTER:
+	case RTM_DELTFILTER:
+		return "tfilter";
+	default:
+		/* should never hit */
+		return "unknown";
+	}
+}
+
 static void nlncm_dump(const struct netconfmsg *ncm, size_t msglen)
 {
 	const struct rtattr *rta;
@@ -1577,6 +1613,8 @@ void nl_dump(void *msg, size_t msglen)
 	struct ifinfomsg *ifi;
 	struct tunnel_msg *tnlm;
 	struct fib_rule_hdr *frh;
+	struct tcmsg *tcm;
+
 	char fbuf[128];
 	char ibuf[128];
 
@@ -1710,6 +1748,21 @@ next_header:
 		zlog_debug(" ncm [family=%s (%d)]",
 			   af_type2str(ncm->ncm_family), ncm->ncm_family);
 		nlncm_dump(ncm, nlmsg->nlmsg_len - NLMSG_LENGTH(sizeof(*ncm)));
+		break;
+
+	case RTM_NEWQDISC:
+	case RTM_DELQDISC:
+	case RTM_NEWTCLASS:
+	case RTM_DELTCLASS:
+	case RTM_NEWTFILTER:
+	case RTM_DELTFILTER:
+		tcm = NLMSG_DATA(nlmsg);
+		zlog_debug(
+			" tcm [type=%s family=%s (%d) ifindex=%d handle=%04x:%04x]",
+			tcm_nltype2str(nlmsg->nlmsg_type),
+			af_type2str(tcm->tcm_family), tcm->tcm_family,
+			tcm->tcm_ifindex, tcm->tcm_handle >> 16,
+			tcm->tcm_handle & 0xffff);
 		break;
 
 	default:

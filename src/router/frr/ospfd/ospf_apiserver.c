@@ -1,6 +1,7 @@
 /*
  * Server side of OSPF API.
  * Copyright (C) 2001, 2002 Ralph Keller
+ * Copyright (c) 2022, LabN Consulting, L.L.C.
  *
  * This file is part of GNU Zebra.
  *
@@ -317,12 +318,12 @@ void ospf_apiserver_free(struct ospf_apiserver *apiserv)
 	struct listnode *node;
 
 	/* Cancel read and write threads. */
-	thread_cancel(&apiserv->t_sync_read);
+	THREAD_OFF(apiserv->t_sync_read);
 #ifdef USE_ASYNC_READ
-	thread_cancel(&apiserv->t_async_read);
+	THREAD_OFF(apiserv->t_async_read);
 #endif /* USE_ASYNC_READ */
-	thread_cancel(&apiserv->t_sync_write);
-	thread_cancel(&apiserv->t_async_write);
+	THREAD_OFF(apiserv->t_sync_write);
+	THREAD_OFF(apiserv->t_async_write);
 
 	/* Unregister all opaque types that application registered
 	   and flush opaque LSAs if still in LSDB. */
@@ -377,7 +378,7 @@ void ospf_apiserver_read(struct thread *thread)
 		apiserv->t_sync_read = NULL;
 
 		if (IS_DEBUG_OSPF_EVENT)
-			zlog_debug("API: ospf_apiserver_read: Peer: %pI4/%u",
+			zlog_debug("API: %s: Peer: %pI4/%u", __func__,
 				   &apiserv->peer_sync.sin_addr,
 				   ntohs(apiserv->peer_sync.sin_port));
 	}
@@ -387,13 +388,13 @@ void ospf_apiserver_read(struct thread *thread)
 		apiserv->t_async_read = NULL;
 
 		if (IS_DEBUG_OSPF_EVENT)
-			zlog_debug("API: ospf_apiserver_read: Peer: %pI4/%u",
+			zlog_debug("API: %s: Peer: %pI4/%u", __func__,
 				   &apiserv->peer_async.sin_addr,
 				   ntohs(apiserv->peer_async.sin_port));
 	}
 #endif /* USE_ASYNC_READ */
 	else {
-		zlog_warn("ospf_apiserver_read: Unknown fd(%d)", fd);
+		zlog_warn("%s: Unknown fd(%d)", __func__, fd);
 		ospf_apiserver_free(apiserv);
 		return;
 	}
@@ -401,9 +402,8 @@ void ospf_apiserver_read(struct thread *thread)
 	/* Read message from fd. */
 	msg = msg_read(fd);
 	if (msg == NULL) {
-		zlog_warn(
-			"ospf_apiserver_read: read failed on fd=%d, closing connection",
-			fd);
+		zlog_warn("%s: read failed on fd=%d, closing connection",
+			  __func__, fd);
 
 		/* Perform cleanup. */
 		ospf_apiserver_free(apiserv);
@@ -437,20 +437,19 @@ void ospf_apiserver_sync_write(struct thread *thread)
 
 	/* Sanity check */
 	if (fd != apiserv->fd_sync) {
-		zlog_warn("ospf_apiserver_sync_write: Unknown fd=%d", fd);
+		zlog_warn("%s: Unknown fd=%d", __func__, fd);
 		goto out;
 	}
 
 	if (IS_DEBUG_OSPF_EVENT)
-		zlog_debug("API: ospf_apiserver_sync_write: Peer: %pI4/%u",
+		zlog_debug("API: %s: Peer: %pI4/%u", __func__,
 			   &apiserv->peer_sync.sin_addr,
 			   ntohs(apiserv->peer_sync.sin_port));
 
 	/* Check whether there is really a message in the fifo. */
 	msg = msg_fifo_pop(apiserv->out_sync_fifo);
 	if (!msg) {
-		zlog_warn(
-			"API: ospf_apiserver_sync_write: No message in Sync-FIFO?");
+		zlog_warn("API: %s: No message in Sync-FIFO?", __func__);
 		return;
 	}
 
@@ -463,8 +462,7 @@ void ospf_apiserver_sync_write(struct thread *thread)
 	msg_free(msg);
 
 	if (rc < 0) {
-		zlog_warn("ospf_apiserver_sync_write: write failed on fd=%d",
-			  fd);
+		zlog_warn("%s: write failed on fd=%d", __func__, fd);
 		goto out;
 	}
 
@@ -499,20 +497,19 @@ void ospf_apiserver_async_write(struct thread *thread)
 
 	/* Sanity check */
 	if (fd != apiserv->fd_async) {
-		zlog_warn("ospf_apiserver_async_write: Unknown fd=%d", fd);
+		zlog_warn("%s: Unknown fd=%d", __func__, fd);
 		goto out;
 	}
 
 	if (IS_DEBUG_OSPF_EVENT)
-		zlog_debug("API: ospf_apiserver_async_write: Peer: %pI4/%u",
+		zlog_debug("API: %s: Peer: %pI4/%u", __func__,
 			   &apiserv->peer_async.sin_addr,
 			   ntohs(apiserv->peer_async.sin_port));
 
 	/* Check whether there is really a message in the fifo. */
 	msg = msg_fifo_pop(apiserv->out_async_fifo);
 	if (!msg) {
-		zlog_warn(
-			"API: ospf_apiserver_async_write: No message in Async-FIFO?");
+		zlog_warn("API: %s: No message in Async-FIFO?", __func__);
 		return;
 	}
 
@@ -525,8 +522,7 @@ void ospf_apiserver_async_write(struct thread *thread)
 	msg_free(msg);
 
 	if (rc < 0) {
-		zlog_warn("ospf_apiserver_async_write: write failed on fd=%d",
-			  fd);
+		zlog_warn("%s: write failed on fd=%d", __func__, fd);
 		goto out;
 	}
 
@@ -574,8 +570,7 @@ int ospf_apiserver_serv_sock_family(unsigned short port, int family)
 	/* Listen socket under queue length 3. */
 	rc = listen(accept_sock, 3);
 	if (rc < 0) {
-		zlog_warn("ospf_apiserver_serv_sock_family: listen: %s",
-			  safe_strerror(errno));
+		zlog_warn("%s: listen: %s", __func__, safe_strerror(errno));
 		close(accept_sock); /* Close socket */
 		return rc;
 	}
@@ -607,8 +602,7 @@ void ospf_apiserver_accept(struct thread *thread)
 	/* Accept connection for synchronous messages */
 	new_sync_sock = sockunion_accept(accept_sock, &su);
 	if (new_sync_sock < 0) {
-		zlog_warn("ospf_apiserver_accept: accept: %s",
-			  safe_strerror(errno));
+		zlog_warn("%s: accept: %s", __func__, safe_strerror(errno));
 		return;
 	}
 
@@ -621,16 +615,15 @@ void ospf_apiserver_accept(struct thread *thread)
 	ret = getpeername(new_sync_sock, (struct sockaddr *)&peer_sync,
 			  &peerlen);
 	if (ret < 0) {
-		zlog_warn("ospf_apiserver_accept: getpeername: %s",
+		zlog_warn("%s: getpeername: %s", __func__,
 			  safe_strerror(errno));
 		close(new_sync_sock);
 		return;
 	}
 
 	if (IS_DEBUG_OSPF_EVENT)
-		zlog_debug("API: ospf_apiserver_accept: New peer: %pI4/%u",
-			   &peer_sync.sin_addr,
-			   ntohs(peer_sync.sin_port));
+		zlog_debug("API: %s: New peer: %pI4/%u", __func__,
+			   &peer_sync.sin_addr, ntohs(peer_sync.sin_port));
 
 	/* Create new socket for asynchronous messages. */
 	peer_async = peer_sync;
@@ -639,18 +632,16 @@ void ospf_apiserver_accept(struct thread *thread)
 	/* Check if remote port number to make reverse connection is valid one.
 	 */
 	if (ntohs(peer_async.sin_port) == ospf_apiserver_getport()) {
-		zlog_warn(
-			"API: ospf_apiserver_accept: Peer(%pI4/%u): Invalid async port number?",
-			&peer_async.sin_addr,
-			ntohs(peer_async.sin_port));
+		zlog_warn("API: %s: Peer(%pI4/%u): Invalid async port number?",
+			  __func__, &peer_async.sin_addr,
+			  ntohs(peer_async.sin_port));
 		close(new_sync_sock);
 		return;
 	}
 
 	new_async_sock = socket(AF_INET, SOCK_STREAM, 0);
 	if (new_async_sock < 0) {
-		zlog_warn("ospf_apiserver_accept: socket: %s",
-			  safe_strerror(errno));
+		zlog_warn("%s: socket: %s", __func__, safe_strerror(errno));
 		close(new_sync_sock);
 		return;
 	}
@@ -659,8 +650,7 @@ void ospf_apiserver_accept(struct thread *thread)
 		      sizeof(struct sockaddr_in));
 
 	if (ret < 0) {
-		zlog_warn("ospf_apiserver_accept: connect: %s",
-			  safe_strerror(errno));
+		zlog_warn("%s: connect: %s", __func__, safe_strerror(errno));
 		close(new_sync_sock);
 		close(new_async_sock);
 		return;
@@ -671,8 +661,7 @@ void ospf_apiserver_accept(struct thread *thread)
 	/* Make the asynchronous channel write-only. */
 	ret = shutdown(new_async_sock, SHUT_RD);
 	if (ret < 0) {
-		zlog_warn("ospf_apiserver_accept: shutdown: %s",
-			  safe_strerror(errno));
+		zlog_warn("%s: shutdown: %s", __func__, safe_strerror(errno));
 		close(new_sync_sock);
 		close(new_async_sock);
 		return;
@@ -727,12 +716,13 @@ static int ospf_apiserver_send_msg(struct ospf_apiserver *apiserv,
 	case MSG_ISM_CHANGE:
 	case MSG_NSM_CHANGE:
 	case MSG_REACHABLE_CHANGE:
+	case MSG_ROUTER_ID_CHANGE:
 		fifo = apiserv->out_async_fifo;
 		fd = apiserv->fd_async;
 		event = OSPF_APISERVER_ASYNC_WRITE;
 		break;
 	default:
-		zlog_warn("ospf_apiserver_send_msg: Unknown message type %d",
+		zlog_warn("%s: Unknown message type %d", __func__,
 			  msg->hdr.msgtype);
 		return -1;
 	}
@@ -757,7 +747,7 @@ int ospf_apiserver_send_reply(struct ospf_apiserver *apiserv, uint32_t seqnr,
 	int ret;
 
 	if (!msg) {
-		zlog_warn("ospf_apiserver_send_reply: msg_new failed");
+		zlog_warn("%s: msg_new failed", __func__);
 #ifdef NOTYET
 		/* Cannot allocate new message. What should we do? */
 		ospf_apiserver_free(apiserv);
@@ -809,8 +799,11 @@ int ospf_apiserver_handle_msg(struct ospf_apiserver *apiserv, struct msg *msg)
 	case MSG_SYNC_NSM:
 		rc = ospf_apiserver_handle_sync_nsm(apiserv, msg);
 		break;
+	case MSG_SYNC_ROUTER_ID:
+		rc = ospf_apiserver_handle_sync_router_id(apiserv, msg);
+		break;
 	default:
-		zlog_warn("ospf_apiserver_handle_msg: Unknown message type: %d",
+		zlog_warn("%s: Unknown message type: %d", __func__,
 			  msg->hdr.msgtype);
 		rc = -1;
 	}
@@ -841,8 +834,7 @@ int ospf_apiserver_register_opaque_type(struct ospf_apiserver *apiserv,
 		originator_func = ospf_apiserver_lsa11_originator;
 		break;
 	default:
-		zlog_warn("ospf_apiserver_register_opaque_type: lsa_type(%d)",
-			  lsa_type);
+		zlog_warn("%s: lsa_type(%d)", __func__, lsa_type);
 		return OSPF_API_ILLEGALLSATYPE;
 	}
 
@@ -1013,8 +1005,8 @@ void ospf_apiserver_notify_ready_type9(struct ospf_apiserver *apiserv)
 					0, OSPF_OPAQUE_LINK_LSA, r->opaque_type,
 					oi->address->u.prefix4);
 				if (!msg) {
-					zlog_warn(
-						"apiserver_notify_ready_type9: msg_new failed");
+					zlog_warn("%s: msg_new failed",
+						  __func__);
 #ifdef NOTYET
 					/* Cannot allocate new message. What
 					 * should we do? */
@@ -1062,8 +1054,8 @@ void ospf_apiserver_notify_ready_type10(struct ospf_apiserver *apiserv)
 					0, OSPF_OPAQUE_AREA_LSA, r->opaque_type,
 					area->area_id);
 				if (!msg) {
-					zlog_warn(
-						"apiserver_notify_ready_type10: msg_new failed");
+					zlog_warn("%s: msg_new failed",
+						  __func__);
 #ifdef NOTYET
 					/* Cannot allocate new message. What
 					 * should we do? */
@@ -1105,8 +1097,7 @@ void ospf_apiserver_notify_ready_type11(struct ospf_apiserver *apiserv)
 						   r->opaque_type, noarea_id);
 
 			if (!msg) {
-				zlog_warn(
-					"apiserver_notify_ready_type11: msg_new failed");
+				zlog_warn("%s: msg_new failed", __func__);
 #ifdef NOTYET
 				/* Cannot allocate new message. What should we
 				 * do? */
@@ -1229,8 +1220,7 @@ static int apiserver_sync_callback(struct ospf_lsa *lsa, void *p_arg,
 			MSG_LSA_UPDATE_NOTIFY, seqnum, ifaddr, area_id,
 			lsa->flags & OSPF_LSA_SELF, lsa->data);
 		if (!msg) {
-			zlog_warn(
-				"apiserver_sync_callback: new_msg_update failed");
+			zlog_warn("%s: new_msg_update failed", __func__);
 #ifdef NOTYET
 			/* Cannot allocate new message. What should we do? */
 			/*        ospf_apiserver_free (apiserv);*/ /* Do nothing
@@ -1479,6 +1469,23 @@ int ospf_apiserver_handle_sync_nsm(struct ospf_apiserver *apiserv,
 }
 
 
+int ospf_apiserver_handle_sync_router_id(struct ospf_apiserver *apiserv,
+					 struct msg *msg)
+{
+	struct ospf *ospf = ospf_lookup_by_vrf_id(VRF_DEFAULT);
+	uint32_t seqnum = msg_get_seq(msg);
+	struct msg *m;
+	int _rc, rc = 0;
+
+	m = new_msg_router_id_change(seqnum, ospf->router_id);
+	rc = ospf_apiserver_send_msg(apiserv, m);
+	msg_free(m);
+
+	/* Send a reply back to client with return code */
+	_rc = ospf_apiserver_send_reply(apiserv, seqnum, rc);
+	return rc ? rc : _rc;
+}
+
 /* -----------------------------------------------------------
  * Following are functions to originate or update LSA
  * from an application.
@@ -1512,7 +1519,7 @@ struct ospf_lsa *ospf_apiserver_opaque_lsa_new(struct ospf_area *area,
 
 	/* Create a stream for internal opaque LSA */
 	if ((s = stream_new(OSPF_MAX_LSA_SIZE)) == NULL) {
-		zlog_warn("ospf_apiserver_opaque_lsa_new: stream_new failed");
+		zlog_warn("%s: stream_new failed", __func__);
 		return NULL;
 	}
 
@@ -1605,7 +1612,7 @@ int ospf_apiserver_handle_originate_request(struct ospf_apiserver *apiserv,
 	case OSPF_OPAQUE_LINK_LSA:
 		oi = ospf_apiserver_if_lookup_by_addr(omsg->ifaddr);
 		if (!oi) {
-			zlog_warn("apiserver_originate: unknown interface %pI4",
+			zlog_warn("%s: unknown interface %pI4", __func__,
 				  &omsg->ifaddr);
 			rc = OSPF_API_NOSUCHINTERFACE;
 			goto out;
@@ -1616,7 +1623,7 @@ int ospf_apiserver_handle_originate_request(struct ospf_apiserver *apiserv,
 	case OSPF_OPAQUE_AREA_LSA:
 		area = ospf_area_lookup_by_area_id(ospf, omsg->area_id);
 		if (!area) {
-			zlog_warn("apiserver_originate: unknown area %pI4",
+			zlog_warn("%s: unknown area %pI4", __func__,
 				  &omsg->area_id);
 			rc = OSPF_API_NOSUCHAREA;
 			goto out;
@@ -1628,9 +1635,8 @@ int ospf_apiserver_handle_originate_request(struct ospf_apiserver *apiserv,
 		break;
 	default:
 		/* We can only handle opaque types here */
-		zlog_warn(
-			"apiserver_originate: Cannot originate non-opaque LSA type %d",
-			data->type);
+		zlog_warn("%s: Cannot originate non-opaque LSA type %d",
+			  __func__, data->type);
 		rc = OSPF_API_ILLEGALLSATYPE;
 		goto out;
 	}
@@ -1641,9 +1647,8 @@ int ospf_apiserver_handle_originate_request(struct ospf_apiserver *apiserv,
 
 	if (!apiserver_is_opaque_type_registered(apiserv, lsa_type,
 						 opaque_type)) {
-		zlog_warn(
-			"apiserver_originate: LSA-type(%d)/Opaque-type(%d): Not registered",
-			lsa_type, opaque_type);
+		zlog_warn("%s: LSA-type(%d)/Opaque-type(%d): Not registered",
+			  __func__, lsa_type, opaque_type);
 		rc = OSPF_API_OPAQUETYPENOTREGISTERED;
 		goto out;
 	}
@@ -1763,9 +1768,8 @@ int ospf_apiserver_originate1(struct ospf_lsa *lsa, struct ospf_lsa *old)
 		 */
 		assert(!ospf_opaque_is_owned(old));
 		if (IS_LSA_MAX_SEQ(old)) {
-			flog_warn(
-				EC_OSPF_LSA_INSTALL_FAILURE,
-				"ospf_apiserver_originate1: old LSA at maxseq");
+			flog_warn(EC_OSPF_LSA_INSTALL_FAILURE,
+				  "%s: old LSA at maxseq", __func__);
 			return -1;
 		}
 		lsa->data->ls_seqnum = lsa_seqnum_increment(old);
@@ -1847,9 +1851,8 @@ struct ospf_lsa *ospf_apiserver_lsa_refresher(struct ospf_lsa *lsa)
 
 	apiserv = lookup_apiserver_by_lsa(lsa);
 	if (!apiserv) {
-		zlog_warn(
-			"ospf_apiserver_lsa_refresher: LSA[%s]: No apiserver?",
-			dump_lsa_key(lsa));
+		zlog_warn("%s: LSA[%s]: No apiserver?", __func__,
+			  dump_lsa_key(lsa));
 		lsa->data->ls_age =
 			htons(OSPF_LSA_MAXAGE); /* Flush it anyway. */
 		goto out;
@@ -1867,8 +1870,7 @@ struct ospf_lsa *ospf_apiserver_lsa_refresher(struct ospf_lsa *lsa)
 		new = ospf_apiserver_opaque_lsa_new(lsa->area, lsa->oi,
 						    lsa->data);
 		if (!new) {
-			zlog_warn(
-				"ospf_apiserver_lsa_refresher: Cannot create a new LSA?");
+			zlog_warn("%s: Cannot create a new LSA?", __func__);
 			goto out;
 		}
 	} else {
@@ -1886,9 +1888,8 @@ struct ospf_lsa *ospf_apiserver_lsa_refresher(struct ospf_lsa *lsa)
 
 	/* Install LSA into LSDB. */
 	if (ospf_lsa_install(ospf, new->oi, new) == NULL) {
-		flog_warn(
-			EC_OSPF_LSA_INSTALL_FAILURE,
-			"ospf_apiserver_lsa_refresher: ospf_lsa_install failed");
+		flog_warn(EC_OSPF_LSA_INSTALL_FAILURE,
+			  "%s: ospf_lsa_install failed", __func__);
 		ospf_lsa_unlock(&new);
 		goto out;
 	}
@@ -1923,6 +1924,7 @@ int ospf_apiserver_handle_delete_request(struct ospf_apiserver *apiserv,
 	struct msg_delete_request *dmsg;
 	struct ospf_lsa *old;
 	struct ospf_area *area = NULL;
+	struct ospf_interface *oi = NULL;
 	struct in_addr id;
 	int lsa_type, opaque_type;
 	int rc = 0;
@@ -1937,11 +1939,20 @@ int ospf_apiserver_handle_delete_request(struct ospf_apiserver *apiserv,
 	/* Lookup area for link-local and area-local opaque LSAs */
 	switch (dmsg->lsa_type) {
 	case OSPF_OPAQUE_LINK_LSA:
+		oi = ospf_apiserver_if_lookup_by_addr(dmsg->addr);
+		if (!oi) {
+			zlog_warn("%s: unknown interface %pI4", __func__,
+				  &dmsg->addr);
+			rc = OSPF_API_NOSUCHINTERFACE;
+			goto out;
+		}
+		area = oi->area;
+		break;
 	case OSPF_OPAQUE_AREA_LSA:
-		area = ospf_area_lookup_by_area_id(ospf, dmsg->area_id);
+		area = ospf_area_lookup_by_area_id(ospf, dmsg->addr);
 		if (!area) {
-			zlog_warn("ospf_apiserver_lsa_delete: unknown area %pI4",
-				  &dmsg->area_id);
+			zlog_warn("%s: unknown area %pI4", __func__,
+				  &dmsg->addr);
 			rc = OSPF_API_NOSUCHAREA;
 			goto out;
 		}
@@ -1951,9 +1962,8 @@ int ospf_apiserver_handle_delete_request(struct ospf_apiserver *apiserv,
 		area = NULL;
 		break;
 	default:
-		zlog_warn(
-			"ospf_apiserver_lsa_delete: Cannot delete non-opaque LSA type %d",
-			dmsg->lsa_type);
+		zlog_warn("%s: Cannot delete non-opaque LSA type %d", __func__,
+			  dmsg->lsa_type);
 		rc = OSPF_API_ILLEGALLSATYPE;
 		goto out;
 	}
@@ -1964,9 +1974,8 @@ int ospf_apiserver_handle_delete_request(struct ospf_apiserver *apiserv,
 
 	if (!apiserver_is_opaque_type_registered(apiserv, lsa_type,
 						 opaque_type)) {
-		zlog_warn(
-			"ospf_apiserver_lsa_delete: LSA-type(%d)/Opaque-type(%d): Not registered",
-			lsa_type, opaque_type);
+		zlog_warn("%s: LSA-type(%d)/Opaque-type(%d): Not registered",
+			  __func__, lsa_type, opaque_type);
 		rc = OSPF_API_OPAQUETYPENOTREGISTERED;
 		goto out;
 	}
@@ -1982,11 +1991,15 @@ int ospf_apiserver_handle_delete_request(struct ospf_apiserver *apiserv,
 	 */
 	old = ospf_lsa_lookup(ospf, area, dmsg->lsa_type, id, ospf->router_id);
 	if (!old) {
-		zlog_warn(
-			"ospf_apiserver_lsa_delete: LSA[Type%d:%pI4] not in LSDB",
-			dmsg->lsa_type, &id);
+		zlog_warn("%s: LSA[Type%d:%pI4] not in LSDB", __func__,
+			  dmsg->lsa_type, &id);
 		rc = OSPF_API_NOSUCHLSA;
 		goto out;
+	}
+
+	if (IS_DEL_ZERO_LEN_LSA(dmsg)) {
+		/* minimize the size of the withdrawal: */
+		old->opaque_zero_len_delete = 1;
 	}
 
 	/* Schedule flushing of LSA from LSDB */
@@ -2092,7 +2105,7 @@ int ospf_apiserver_new_if(struct interface *ifp)
 
 	if (ifp->name[0] == '\0') {
 		/* interface has empty name */
-		zlog_warn("ospf_apiserver_new_if: interface has no name?");
+		zlog_warn("%s: interface has no name?", __func__);
 		return 0;
 	}
 
@@ -2103,7 +2116,7 @@ int ospf_apiserver_new_if(struct interface *ifp)
 
 	if (ifp->name[0] == '\0') {
 		/* interface has empty name */
-		zlog_warn("ospf_apiserver_new_if: interface has no name?");
+		zlog_warn("%s: interface has no name?", __func__);
 		return 0;
 	}
 
@@ -2112,9 +2125,8 @@ int ospf_apiserver_new_if(struct interface *ifp)
 	if (!oi) {
 		/* This interface is known to Zebra but not to OSPF daemon yet.
 		 */
-		zlog_warn(
-			"ospf_apiserver_new_if: interface %s not known to OSPFd?",
-			ifp->name);
+		zlog_warn("%s: interface %s not known to OSPFd?", __func__,
+			  ifp->name);
 		return 0;
 	}
 
@@ -2132,9 +2144,8 @@ int ospf_apiserver_del_if(struct interface *ifp)
 	struct ospf_interface *oi;
 
 	/* zlog_warn for debugging */
-	zlog_warn("ospf_apiserver_del_if");
-	zlog_warn("ifp name=%s status=%d index=%d", ifp->name, ifp->status,
-		  ifp->ifindex);
+	zlog_warn("%s ifp name=%s status=%d index=%d", __func__, ifp->name,
+		  ifp->status, ifp->ifindex);
 
 	oi = ospf_apiserver_if_lookup_by_ifp(ifp);
 
@@ -2157,20 +2168,19 @@ void ospf_apiserver_ism_change(struct ospf_interface *oi, int old_state)
 	/* Tell clients about interface change */
 
 	/* zlog_warn for debugging */
-	zlog_warn("ospf_apiserver_ism_change");
+	zlog_warn("%s", __func__);
 	if (listcount(apiserver_list) > 0) {
 		ospf_apiserver_clients_notify_ism_change(oi);
 	}
 
-	zlog_warn("oi->ifp->name=%s", oi->ifp->name);
-	zlog_warn("old_state=%d", old_state);
-	zlog_warn("oi->state=%d", oi->state);
+	zlog_warn("%s oi->ifp->name=%s old_state=%d oi->state=%d", __func__,
+		  oi->ifp->name, old_state, oi->state);
 }
 
 void ospf_apiserver_nsm_change(struct ospf_neighbor *nbr, int old_status)
 {
 	/* Neighbor status changed, tell clients about it */
-	zlog_warn("ospf_apiserver_nsm_change");
+	zlog_warn("%s", __func__);
 	if (listcount(apiserver_list) > 0) {
 		ospf_apiserver_clients_notify_nsm_change(nbr);
 	}
@@ -2278,7 +2288,8 @@ void ospf_apiserver_clients_notify_ready_type9(struct ospf_interface *oi)
 					oi->address->u.prefix4);
 				if (!msg) {
 					zlog_warn(
-						"ospf_apiserver_clients_notify_ready_type9: new_msg_ready_notify failed");
+						"%s: new_msg_ready_notify failed",
+						__func__);
 #ifdef NOTYET
 					/* Cannot allocate new message. What
 					 * should we do? */
@@ -2322,7 +2333,8 @@ void ospf_apiserver_clients_notify_ready_type10(struct ospf_area *area)
 					area->area_id);
 				if (!msg) {
 					zlog_warn(
-						"ospf_apiserver_clients_notify_ready_type10: new_msg_ready_nofity failed");
+						"%s: new_msg_ready_nofity failed",
+						__func__);
 #ifdef NOTYET
 					/* Cannot allocate new message. What
 					 * should we do? */
@@ -2368,7 +2380,8 @@ void ospf_apiserver_clients_notify_ready_type11(struct ospf *top)
 					id_null);
 				if (!msg) {
 					zlog_warn(
-						"ospf_apiserver_clients_notify_ready_type11: new_msg_ready_notify failed");
+						"%s: new_msg_ready_notify failed",
+						__func__);
 #ifdef NOTYET
 					/* Cannot allocate new message. What
 					 * should we do? */
@@ -2427,8 +2440,7 @@ void ospf_apiserver_clients_notify_ism_change(struct ospf_interface *oi)
 
 	msg = new_msg_ism_change(0, ifaddr, area_id, oi->state);
 	if (!msg) {
-		zlog_warn(
-			"apiserver_clients_notify_ism_change: msg_new failed");
+		zlog_warn("%s: msg_new failed", __func__);
 		return;
 	}
 
@@ -2451,8 +2463,7 @@ void ospf_apiserver_clients_notify_nsm_change(struct ospf_neighbor *nbr)
 	msg = new_msg_nsm_change(0, ifaddr, nbraddr, nbr->router_id,
 				 nbr->state);
 	if (!msg) {
-		zlog_warn(
-			"apiserver_clients_notify_nsm_change: msg_new failed");
+		zlog_warn("%s: msg_new failed", __func__);
 		return;
 	}
 
@@ -2487,8 +2498,7 @@ static int apiserver_clients_lsa_change_notify(uint8_t msgtype,
 					ifaddr, area_id,
 					lsa->flags & OSPF_LSA_SELF, lsa->data);
 	if (!msg) {
-		zlog_warn(
-			"apiserver_clients_lsa_change_notify: msg_new failed");
+		zlog_warn("%s: msg_new failed", __func__);
 		return -1;
 	}
 
@@ -2676,6 +2686,21 @@ void ospf_apiserver_notify_reachable(struct route_table *ort,
 		XFREE(MTYPE_OSPF_APISERVER, abuf);
 	if (dbuf)
 		XFREE(MTYPE_OSPF_APISERVER, dbuf);
+}
+
+
+void ospf_apiserver_clients_notify_router_id_change(struct in_addr router_id)
+{
+	struct msg *msg;
+
+	msg = new_msg_router_id_change(0, router_id);
+	if (!msg) {
+		zlog_warn("%s: new_msg_router_id_change failed", __func__);
+		return;
+	}
+
+	ospf_apiserver_clients_notify_all(msg);
+	msg_free(msg);
 }
 
 
