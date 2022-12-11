@@ -165,7 +165,7 @@ int main(int argc, char *argv[])
 				}
 			}
 		} else {
-			fprintf(stderr, "read nvram from old offset %d with len %d\n", nvram->start * 512, nvlen);
+			fprintf(stderr, "read nvram from old offset %d with len %d and write to offset %d\n", nvram->start * 512, nvlen, newlayout[2].start * 512);
 			copy(out, nvram->start * 512, newlayout[2].start * 512, nvlen);
 		}
 	}
