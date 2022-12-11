@@ -323,17 +323,17 @@ blake3_param_get(char *buffer, zfs_kernel_param_t *unused)
 
 	/* cycling */
 	fmt = IMPL_FMT(impl, IMPL_CYCLE);
-	cnt += sprintf(buffer + cnt, fmt, "cycle");
+	cnt += kmem_scnprintf(buffer + cnt, PAGE_SIZE - cnt, fmt, "cycle");
 
 	/* list fastest */
 	fmt = IMPL_FMT(impl, IMPL_FASTEST);
-	cnt += sprintf(buffer + cnt, fmt, "fastest");
+	cnt += kmem_scnprintf(buffer + cnt, PAGE_SIZE - cnt, fmt, "fastest");
 
 	/* list all supported implementations */
 	generic_impl_init();
 	for (uint32_t i = 0; i < generic_supp_impls_cnt; ++i) {
 		fmt = IMPL_FMT(impl, i);
-		cnt += sprintf(buffer + cnt, fmt,
+		cnt += kmem_scnprintf(buffer + cnt, PAGE_SIZE - cnt, fmt,
 		    generic_supp_impls[i]->name);
 	}
 

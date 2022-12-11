@@ -1586,8 +1586,6 @@ send_merge_thread(void *arg)
 		}
 		range_free(front_ranges[i]);
 	}
-	if (range == NULL)
-		range = kmem_zalloc(sizeof (*range), KM_SLEEP);
 	range->eos_marker = B_TRUE;
 	bqueue_enqueue_flush(&smt_arg->q, range, 1);
 	spl_fstrans_unmark(cookie);
@@ -1714,8 +1712,10 @@ enqueue_range(struct send_reader_thread_arg *srta, bqueue_t *q, dnode_t *dn,
 	struct send_range *range = range_alloc(range_type, dn->dn_object,
 	    blkid, blkid + count, B_FALSE);
 
-	if (blkid == DMU_SPILL_BLKID)
+	if (blkid == DMU_SPILL_BLKID) {
+		ASSERT3P(bp, !=, NULL);
 		ASSERT3U(BP_GET_TYPE(bp), ==, DMU_OT_SA);
+	}
 
 	switch (range_type) {
 	case HOLE:

@@ -1007,8 +1007,23 @@ send_print_verbose(FILE *fout, const char *tosnap, const char *fromsnap,
 			(void) fprintf(fout, dgettext(TEXT_DOMAIN,
 			    "incremental\t%s\t%s"), fromsnap, tosnap);
 		} else {
+/*
+ * Workaround for GCC 12+ with UBSan enabled deficencies.
+ *
+ * GCC 12+ invoked with -fsanitize=undefined incorrectly reports the code
+ * below as violating -Wformat-overflow.
+ */
+#if defined(__GNUC__) && !defined(__clang__) && \
+	defined(ZFS_UBSAN_ENABLED) && defined(HAVE_FORMAT_OVERFLOW)
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wformat-overflow"
+#endif
 			(void) fprintf(fout, dgettext(TEXT_DOMAIN,
 			    "full\t%s"), tosnap);
+#if defined(__GNUC__) && !defined(__clang__) && \
+	defined(ZFS_UBSAN_ENABLED) && defined(HAVE_FORMAT_OVERFLOW)
+#pragma GCC diagnostic pop
+#endif
 		}
 		(void) fprintf(fout, "\t%llu", (longlong_t)size);
 	} else {
@@ -1028,8 +1043,23 @@ send_print_verbose(FILE *fout, const char *tosnap, const char *fromsnap,
 		if (size != 0) {
 			char buf[16];
 			zfs_nicebytes(size, buf, sizeof (buf));
+/*
+ * Workaround for GCC 12+ with UBSan enabled deficencies.
+ *
+ * GCC 12+ invoked with -fsanitize=undefined incorrectly reports the code
+ * below as violating -Wformat-overflow.
+ */
+#if defined(__GNUC__) && !defined(__clang__) && \
+	defined(ZFS_UBSAN_ENABLED) && defined(HAVE_FORMAT_OVERFLOW)
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wformat-overflow"
+#endif
 			(void) fprintf(fout, dgettext(TEXT_DOMAIN,
 			    " estimated size is %s"), buf);
+#if defined(__GNUC__) && !defined(__clang__) && \
+	defined(ZFS_UBSAN_ENABLED) && defined(HAVE_FORMAT_OVERFLOW)
+#pragma GCC diagnostic pop
+#endif
 		}
 	}
 	(void) fprintf(fout, "\n");
@@ -1259,7 +1289,7 @@ dump_filesystem(zfs_handle_t *zhp, send_dump_data_t *sdd)
 			if (snap != NULL)
 				rv = dump_snapshot(snap, sdd);
 			else
-				rv = -1;
+				rv = errno;
 		}
 
 		/* Dump tosnap. */
@@ -1271,7 +1301,7 @@ dump_filesystem(zfs_handle_t *zhp, send_dump_data_t *sdd)
 			if (snap != NULL)
 				rv = dump_snapshot(snap, sdd);
 			else
-				rv = -1;
+				rv = errno;
 		}
 	}
 
