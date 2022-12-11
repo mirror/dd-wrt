@@ -494,6 +494,12 @@ static void detect_wireless_devices(int mask)
 			rmmod("mt7921-common");
 		}
 		total += wificnt;
+		wificnt = 0;
+		wificnt += detectchange("mt7996e");
+		if (!wificnt) {
+			rmmod("mt7996e");
+		}
+		total += wificnt;
 		if (!total) {
 			rmmod("mt76-usb");
 			rmmod("mt76_usb");
