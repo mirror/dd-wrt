@@ -95,7 +95,7 @@ static int init_ddns(FILE * fp)
 		"default@ipv4.dynv6.com",
 	};
 	char *provider = providers[flag];
-	snprintf(_ssl, sizeof(_hostname), "%s", "ddns_ssl");
+	snprintf(_ssl, sizeof(_ssl), "%s", "ddns_ssl");
 	if (flag == 1) {
 		snprintf(_username, sizeof(_username), "%s", "ddns_username");
 		snprintf(_passwd, sizeof(_passwd), "%s", "ddns_passwd");
