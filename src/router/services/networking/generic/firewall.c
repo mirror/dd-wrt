@@ -3125,7 +3125,7 @@ void start_firewall6(void)
 
 	eval("ip6tables", "-A", "INPUT", "-m", "state", "--state", "RELATED,ESTABLISHED", "-j", "ACCEPT");
 	eval("ip6tables", "-A", "INPUT", "-p", "icmpv6", "--icmpv6-type", "echo-request", "-j", "ACCEPT", "-m", "limit", "--limit", "30/minute");
-	eval("ip6tables", "-A", "INPUT", "-d", "fe80::/64", "-p", "udp", "--dport", "546", "-m", "state", "--state", "NEW", "-j", "ACCEPT");
+	eval("ip6tables", "-A", "INPUT", "-s", "fe80::/64", "-j", "ACCEPT");
 	eval("ip6tables", "-A", "INPUT", "-i", "br0", "-j", "ACCEPT");
 	eval("ip6tables", "-A", "INPUT", "!", "-i", "lo0", "-s", "::1/128", "-j", "DROP");
 	eval("ip6tables", "-A", "OUTPUT", "-s", "::1/128", "-j", "DROP");
@@ -3143,6 +3143,9 @@ void start_firewall6(void)
 		if (*ip && strcmp(ip, "0.0.0.0") != 0)
 			eval("iptables", "-I", "INPUT", "-p", "icmp", "-s", ip, "-j", "ACCEPT");
 	}
+
+	if (nvram_match("ipv6_typ", "ipv6in4") || nvram_match("ipv6_typ", "ipv6native") || nvram_match("ipv6_typ", "ipv6pd"))
+	eval("ip6tables", "-A", "INPUT", "-p", "udp", "--dport", "546", "-j", "ACCEPT");
 
 	if (nvram_invmatch("filter", "off"))
 		eval("ip6tables", "-A", "INPUT", "-j", nvram_matchi("block_wan", 1) ? "DROP" : "ACCEPT");
