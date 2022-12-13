@@ -1,6 +1,7 @@
 #!/bin/sh
 nv=/usr/sbin/nvram
 ipt=/usr/sbin/iptables
+ip6t=/usr/sbin/ip6tables
 tunnels=$($nv get oet_tunnels)
 #WAN_IF="$(ip route | awk '/^default/{print $NF}')"
 WAN_IF=$(get_wanface)
@@ -165,6 +166,15 @@ for i in $(seq 1 $tunnels); do
 				$ipt -I INPUT -i $WAN_IF -p udp --dport $($nv get oet${i}_port) -j ACCEPT >/dev/null 2>&1
 				$ipt -I FORWARD -i oet${i} $FW_STATE -j ACCEPT >/dev/null 2>&1
 				$ipt -I INPUT -i oet${i} $FW_STATE -j ACCEPT >/dev/null 2>&1
+				#For IPv6
+				if [[ $($nv get ipv6_enable) -eq 1 ]]; then
+					echo "$ip6t -D INPUT -i $WAN_IF -p udp --dport $($nv get oet${i}_port) -j ACCEPT" >> $WGDELRT
+					echo "$ip6t -D FORWARD -i oet${i} $FW_STATE -j ACCEPT" >> $WGDELRT
+					echo "$ip6t -D INPUT -i oet${i} $FW_STATE -j ACCEPT" >> $WGDELRT
+					$ip6t -I INPUT -i $WAN_IF -p udp --dport $($nv get oet${i}_port) -j ACCEPT >/dev/null 2>&1
+					$ip6t -I FORWARD -i oet${i} $FW_STATE -j ACCEPT >/dev/null 2>&1
+					$ip6t -I INPUT -i oet${i} $FW_STATE -j ACCEPT >/dev/null 2>&1
+				fi
 				logger -p user.info "WireGuard Inbound Firewall deactivated on oet${i}"
 			fi
 
