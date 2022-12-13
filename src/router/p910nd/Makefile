@@ -29,9 +29,6 @@ MANDIR = /usr/share/man/man8
 $(PROG):	p910nd.c
 	$(CC) -o $@ $^ $(CFLAGS) $(COPTS) $(MIPS16_OPT) $(LTO) $(DEFINES) $(LIBS)
 
-strip: $(PROG)
-	$(STRIP) -s $(PROG)
-
 install: $(PROG) $(CONFIG) $(INITSCRIPT) $(MANPAGE)
 	mkdir -p $(DESTDIR)$(BINDIR) $(DESTDIR)$(CONFIGDIR) \
 		$(DESTDIR)$(SCRIPTDIR) $(DESTDIR)$(MANDIR)
