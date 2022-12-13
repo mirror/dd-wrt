@@ -248,7 +248,7 @@ NDPI_STATIC void ndpi_search_smpp_tcp(struct ndpi_detection_module_struct *ndpi_
 NDPI_STATIC void ndpi_search_soap(struct ndpi_detection_module_struct *ndpi_struct, struct ndpi_flow_struct *flow);
 NDPI_STATIC void ndpi_search_socks(struct ndpi_detection_module_struct *ndpi_struct, struct ndpi_flow_struct *flow);
 NDPI_STATIC void ndpi_search_teredo(struct ndpi_detection_module_struct *ndpi_struct, struct ndpi_flow_struct *flow);
-NDPI_STATIC void ndpi_search_tls_tcp_memory(struct ndpi_detection_module_struct *ndpi_struct, struct ndpi_flow_struct *flow);
+NDPI_STATIC int ndpi_search_tls_tcp_memory(struct ndpi_detection_module_struct *ndpi_struct, struct ndpi_flow_struct *flow);
 NDPI_STATIC void ndpi_search_toca_boca(struct ndpi_detection_module_struct *ndpi_struct, struct ndpi_flow_struct *flow);
 NDPI_STATIC void ndpi_search_ultrasurf(struct ndpi_detection_module_struct *ndpi_struct, struct ndpi_flow_struct *flow);
 NDPI_STATIC void ndpi_search_vxlan(struct ndpi_detection_module_struct *ndpi_struct, struct ndpi_flow_struct *flow);

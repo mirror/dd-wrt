@@ -2817,8 +2817,9 @@ static void __net_exit ndpi_net_exit(struct net *net)
 #if LINUX_VERSION_CODE < KERNEL_VERSION(4, 8, 0)
 	net->ct.label_words = n->labels_word;
 #endif
+#if defined(CONFIG_NF_CONNTRACK_LABELS)
 	net->ct.labels_used--;
-
+#endif
 #if   LINUX_VERSION_CODE >= KERNEL_VERSION(5, 19, 0)
 	struct nf_ct_iter_data iter_data = {
 		.net    = net,
@@ -3098,7 +3099,9 @@ static int __net_init ndpi_net_init(struct net *net)
 		n->labels_word = ACCESS_ONCE(net->ct.label_words);
 		net->ct.label_words = 2;
 #endif
+#if defined(CONFIG_NF_CONNTRACK_LABELS)
 		net->ct.labels_used++;
+#endif
 #endif
 		if( ndpi_enable_flow &&
 		    nf_register_net_hooks(net, nf_nat_ipv4_ops,
