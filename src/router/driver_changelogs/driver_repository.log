@@ -1,4 +1,8 @@
 ------------------------------------------------------------------------
+r6870 | brainslayer | 2022-12-13 18:46:18 +0600 (Tue, 13 Dec 2022) | 1 line
+
+dupcheck for 9984
+------------------------------------------------------------------------
 r6869 | brainslayer | 2022-12-13 14:47:06 +0600 (Tue, 13 Dec 2022) | 1 line
 
 mt7615 dbdc cards seem to have 2.4 only on phy0, so do not use it in dualband config
