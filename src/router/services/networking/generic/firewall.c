@@ -57,7 +57,6 @@
 #endif				/* DEVELOPE_ENV */
 #include <services.h>
 
-
 /*
  * Same as the file "linux/netfilter_ipv4/ipt_webstr.h" 
  */
@@ -3124,7 +3123,7 @@ void start_firewall6(void)
 #endif
 
 	eval("ip6tables", "-A", "INPUT", "-m", "state", "--state", "RELATED,ESTABLISHED", "-j", "ACCEPT");
-	eval("ip6tables", "-A", "INPUT", "-p", "icmpv6", "--icmpv6-type", "echo-request", "-j", "ACCEPT", "-m", "limit", "--limit", "30/minute");
+	eval("ip6tables", "-A", "INPUT", "-p", "ipv6-icmp", "-j", "ACCEPT", "-m", "limit", "--limit", "30/minute");
 	eval("ip6tables", "-A", "INPUT", "-s", "fe80::/64", "-j", "ACCEPT");
 	eval("ip6tables", "-A", "INPUT", "-i", "br0", "-j", "ACCEPT");
 	eval("ip6tables", "-A", "INPUT", "!", "-i", "lo0", "-s", "::1/128", "-j", "DROP");
@@ -3145,7 +3144,7 @@ void start_firewall6(void)
 	}
 
 	if (nvram_match("ipv6_typ", "ipv6in4") || nvram_match("ipv6_typ", "ipv6native") || nvram_match("ipv6_typ", "ipv6pd"))
-	eval("ip6tables", "-A", "INPUT", "-p", "udp", "--dport", "546", "-j", "ACCEPT");
+		eval("ip6tables", "-A", "INPUT", "-p", "udp", "--dport", "546", "-j", "ACCEPT");
 
 	if (nvram_invmatch("filter", "off"))
 		eval("ip6tables", "-A", "INPUT", "-j", nvram_matchi("block_wan", 1) ? "DROP" : "ACCEPT");
@@ -3163,7 +3162,7 @@ void start_firewall6(void)
 
 	if (nvram_match("ipv6_typ", "ipv6in4"))
 		eval("ip6tables", "-A", "FORWARD", "-o", "ip6tun", "-j", "ACCEPT");
-	eval("ip6tables", "-A", "FORWARD", "-p", "icmpv6", "--icmpv6-type", "echo-request", "-m", "limit", "--limit", "2/s", "-j", "ACCEPT");
+	eval("ip6tables", "-A", "FORWARD", "-p", "ipv6-icmp", "-j", "ACCEPT", "-m", "limit", "--limit", "30/minute");
 
 	if (nvram_invmatch("filter", "off")) {
 		if (nvram_matchi("block_wan", 1)) {
