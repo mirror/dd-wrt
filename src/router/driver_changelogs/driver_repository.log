@@ -1,4 +1,8 @@
 ------------------------------------------------------------------------
+r6869 | brainslayer | 2022-12-13 14:47:06 +0600 (Tue, 13 Dec 2022) | 1 line
+
+mt7615 dbdc cards seem to have 2.4 only on phy0, so do not use it in dualband config
+------------------------------------------------------------------------
 r6868 | brainslayer | 2022-12-13 14:37:34 +0600 (Tue, 13 Dec 2022) | 1 line
 
 fix disable 5ghz caps
