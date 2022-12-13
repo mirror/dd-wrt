@@ -46,10 +46,17 @@ static int stun_ndpi_stun_cache_enable=
 /* ************************************************************ */
 
 NDPI_STATIC u_int32_t get_stun_lru_key(struct ndpi_flow_struct *flow, u_int8_t rev) {
-  if(rev)
-    return(ntohl(flow->s_address.v4) + ntohs(flow->s_port));
-  else
-    return(ntohl(flow->c_address.v4) + ntohs(flow->c_port));
+  if(rev) {
+    if(flow->is_ipv6)
+      return ndpi_quick_hash(flow->s_address.v6, 16) + ntohs(flow->s_port);
+    else
+      return ntohl(flow->s_address.v4) + ntohs(flow->s_port);
+  } else {
+    if(flow->is_ipv6)
+      return ndpi_quick_hash(flow->c_address.v6, 16) + ntohs(flow->c_port);
+    else
+      return ntohl(flow->c_address.v4) + ntohs(flow->c_port);
+  }
 }
 
 /* ************************************************************ */
@@ -57,7 +64,6 @@ NDPI_STATIC u_int32_t get_stun_lru_key(struct ndpi_flow_struct *flow, u_int8_t r
 NDPI_STATIC void ndpi_int_stun_add_connection(struct ndpi_detection_module_struct *ndpi_struct,
 					 struct ndpi_flow_struct *flow,
 					 u_int app_proto) {
-  struct ndpi_packet_struct *packet = ndpi_get_packet_struct(ndpi_struct);
   ndpi_confidence_t confidence = NDPI_CONFIDENCE_DPI;
 
   if(app_proto == NDPI_PROTOCOL_UNKNOWN) {
@@ -68,7 +74,6 @@ NDPI_STATIC void ndpi_int_stun_add_connection(struct ndpi_detection_module_struc
   }
 
   if(stun_ndpi_stun_cache_enable && ndpi_struct->stun_cache
-     && packet->iph
      && (app_proto != NDPI_PROTOCOL_UNKNOWN)
      ) /* Cache flow sender info */ {
     u_int32_t key = get_stun_lru_key(flow, 0);
@@ -100,8 +105,7 @@ NDPI_STATIC void ndpi_int_stun_add_connection(struct ndpi_detection_module_struc
 	  /* No sense to add STUN, but only subprotocols */
 
 #ifdef DEBUG_LRU
-	  printf("[LRU] ADDING %u / %u.%u [%u -> %u]\n", key, proto, app_proto,
-		 ntohs(packet->udp->source), ntohs(packet->udp->dest));
+	  printf("[LRU] ADDING %u / %u.%u\n", key, proto, app_proto);
 #endif
 
 	  ndpi_lru_add_to_cache(ndpi_struct->stun_cache, key, app_proto);
@@ -190,7 +194,7 @@ static ndpi_int_stun_t ndpi_int_check_stun(struct ndpi_detection_module_struct *
     return(NDPI_IS_NOT_STUN);
   }
 
-  if(ndpi_struct->stun_cache && packet->iph) { /* TODO: ipv6 */
+  if(ndpi_struct->stun_cache) {
     u_int16_t proto;
     u_int32_t key = get_stun_lru_key(flow, 0);
     rc = ndpi_lru_find_cache(ndpi_struct->stun_cache, key, &proto,

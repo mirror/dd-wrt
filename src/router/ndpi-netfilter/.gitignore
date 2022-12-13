@@ -56,9 +56,12 @@
 /fuzz/.deps/
 /fuzz/Makefile
 /fuzz/fuzz_ndpi_reader
-/fuzz/fuzz_ndpi_reader_with_main
 /fuzz/fuzz_process_packet
-/fuzz/fuzz_process_packet_with_main
+/fuzz/fuzz_ndpi_reader_alloc_fail
+/fuzz/fuzz_quic_get_crypto_data
+/fuzz/fuzz_ndpi_reader_alloc_fail_seed_corpus.zip
+/fuzz/fuzz_ndpi_reader_seed_corpus.zip
+/fuzz/fuzz_quic_get_crypto_data_seed_corpus.zip
 /influxdb/Makefile
 /libndpi.pc
 /libtool

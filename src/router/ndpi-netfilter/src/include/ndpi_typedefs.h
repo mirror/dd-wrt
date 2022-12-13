@@ -1487,14 +1487,14 @@ struct ndpi_flow_struct {
     ndpi_http_method method;
     u_int8_t request_version; /* 0=1.0 and 1=1.1. Create an enum for this? */
     u_int16_t response_status_code; /* 200, 404, etc. */
-    char *url, *content_type /* response */, *request_content_type /* e.g. for POST */, *user_agent;
+    char *url, *content_type /* response */, *request_content_type /* e.g. for POST */, *user_agent, *server;
     char *detected_os; /* Via HTTP/QUIC User-Agent */
     char *nat_ip; /* Via HTTP X-Forwarded-For */
   } http;
 
   /*
      Put outside of the union to avoid issues in case the protocol
-     is remapped to somethign pther than Kerberos due to a faulty
+     is remapped to something other than Kerberos due to a faulty
      dissector
   */
   struct {
@@ -1717,7 +1717,7 @@ struct ndpi_flow_struct {
 _Static_assert(sizeof(((struct ndpi_flow_struct *)0)->protos) <= 208,
                "Size of the struct member protocols increased to more than 208 bytes, "
                "please check if this change is necessary.");
-_Static_assert(sizeof(struct ndpi_flow_struct) <= 928,
+_Static_assert(sizeof(struct ndpi_flow_struct) <= 936,
                "Size of the flow struct increased to more than 928 bytes, "
                "please check if this change is necessary.");
 #endif

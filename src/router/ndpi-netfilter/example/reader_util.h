@@ -183,7 +183,7 @@ typedef struct ndpi_flow_info {
   u_int32_t nf_mark;
   ndpi_packet_tunnel tunnel_type;
   struct ndpi_flow_struct *ndpi_flow;
-  char src_name[48], dst_name[48];
+  char src_name[INET6_ADDRSTRLEN], dst_name[INET6_ADDRSTRLEN];
   u_int8_t ip_version;
   u_int32_t cwr_count, src2dst_cwr_count, dst2src_cwr_count;
   u_int32_t ece_count, src2dst_ece_count, dst2src_ece_count;
@@ -276,7 +276,7 @@ typedef struct ndpi_flow_info {
   } ssh_tls;
 
   struct {
-    char url[256], request_content_type[64], content_type[64], user_agent[256];
+    char url[256], request_content_type[64], content_type[64], user_agent[256], server[128];
     u_int response_status_code;
   } http;
 
@@ -423,6 +423,10 @@ extern int nDPI_LogLevel;
   }
 #else
 #define LOG(...) {}
+#endif
+
+#ifndef LINKTYPE_LINUX_SLL2
+#define LINKTYPE_LINUX_SLL2 276
 #endif
 
 #endif

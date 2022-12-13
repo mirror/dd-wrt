@@ -230,8 +230,10 @@ NDPI_STATIC int ndpi_init_serializer_ll(ndpi_serializer *_serializer,
     /* nothing to do */
 
   } else if (fmt == ndpi_serialization_format_csv) {
-    if (ndpi_init_serializer_buffer(&serializer->header, NDPI_SERIALIZER_DEFAULT_HEADER_SIZE) != 0)
+    if (ndpi_init_serializer_buffer(&serializer->header, NDPI_SERIALIZER_DEFAULT_HEADER_SIZE) != 0) {
+      ndpi_term_serializer(_serializer);
       return(-1);
+    }
 
   } else /* ndpi_serialization_format_tlv */ {
     serializer->buffer.data[0]   = 1; /* version */
@@ -2410,6 +2412,8 @@ NDPI_STATIC int ndpi_deserialize_key_string(ndpi_deserializer *_deserializer,
   int size;
 
   expected = sizeof(u_int8_t) /* type */;
+  key->str = NULL;
+  key->str_len = 0;
   if(buff_diff < expected) return(-2);
 
   kt = ndpi_deserialize_get_key_subtype(deserializer);
@@ -2435,6 +2439,7 @@ NDPI_STATIC int ndpi_deserialize_value_uint32(ndpi_deserializer *_deserializer,
   int size;
 
   expected = sizeof(u_int8_t) /* type */;
+  *value = 0;
   if(buff_diff < expected) return(-2);
 
   kt = ndpi_deserialize_get_key_subtype(deserializer);
@@ -2518,6 +2523,7 @@ NDPI_STATIC int ndpi_deserialize_value_int32(ndpi_deserializer *_deserializer,
   int size;
 
   expected = sizeof(u_int8_t) /* type */;
+  *value = 0;
   if(buff_diff < expected) return(-2);
 
   kt = ndpi_deserialize_get_key_subtype(deserializer);
@@ -2564,6 +2570,7 @@ NDPI_STATIC int ndpi_deserialize_value_int64(ndpi_deserializer *_deserializer,
   int rc;
 
   expected = sizeof(u_int8_t) /* type */;
+  *value = 0;
   if(buff_diff < expected) return(-2);
 
   kt = ndpi_deserialize_get_key_subtype(deserializer);
@@ -2599,6 +2606,7 @@ NDPI_STATIC int ndpi_deserialize_value_float(ndpi_deserializer *_deserializer,
   int size;
 
   expected = sizeof(u_int8_t) /* type */;
+  *value = 0;
   if(buff_diff < expected) return(-2);
 
   kt = ndpi_deserialize_get_key_subtype(deserializer);
@@ -2630,6 +2638,7 @@ int ndpi_deserialize_value_double(ndpi_deserializer *_deserializer,
   int size;
 
   expected = sizeof(u_int8_t) /* type */;
+  *value = 0;
   if(buff_diff < expected) return(-2);
 
   kt = ndpi_deserialize_get_key_subtype(deserializer);
@@ -2662,6 +2671,8 @@ NDPI_STATIC int ndpi_deserialize_value_string(ndpi_deserializer *_deserializer,
   int size;
 
   expected = sizeof(u_int8_t) /* type */;
+  value->str = NULL;
+  value->str_len = 0;
   if(buff_diff < expected) return(-2);
 
   kt = ndpi_deserialize_get_key_subtype(deserializer);
