@@ -208,6 +208,9 @@ static void ndpi_validate_http_content(struct ndpi_detection_module_struct *ndpi
 
     NDPI_LOG_DBG(ndpi_struct, "\n");
   }
+
+  if((flow->http.user_agent == NULL) || (flow->http.user_agent[0] == '\0'))
+    ndpi_set_risk(ndpi_struct, flow, NDPI_HTTP_SUSPICIOUS_USER_AGENT, "Empty or missing User-Agent");
 }
 
 /* *********************************************** */
@@ -451,8 +454,8 @@ static void ndpi_check_user_agent(struct ndpi_detection_module_struct *ndpi_stru
   char *double_slash;
 
   if((!ua) || (ua[0] == '\0'))
-    return;
-
+    return;  
+  
   if (ua_len > 12)
   {
     size_t i, upper_case_count = 0;
@@ -600,12 +603,10 @@ NDPI_STATIC int http_process_user_agent(struct ndpi_detection_module_struct *ndp
     }
   }
 
-  if (ndpi_user_agent_set(flow, ua_ptr, ua_ptr_len) != NULL)
-  {
+  if(ndpi_user_agent_set(flow, ua_ptr, ua_ptr_len) != NULL)
     ndpi_check_user_agent(ndpi_struct, flow, flow->http.user_agent, ua_ptr_len);
-  } else {
-    NDPI_LOG_DBG2(ndpi_struct, "Could not set HTTP user agent\n");
-  }
+  else
+    NDPI_LOG_DBG2(ndpi_struct, "Could not set HTTP user agent\n");  
 
   NDPI_LOG_DBG2(ndpi_struct, "User Agent Type line found %.*s\n",
 		ua_ptr_len, ua_ptr);
@@ -883,6 +884,17 @@ static void check_content_type_and_change_protocol(struct ndpi_detection_module_
 	  flow->http.content_type[packet->content_line.len] = '\0';
 
 	  flow->guessed_category = flow->category = ndpi_http_check_content(ndpi_struct, flow);
+	}
+      }
+
+      if((flow->http.server == NULL) && (packet->server_line.len > 0)) {
+	int len = packet->server_line.len + 1;
+	
+	flow->http.server = ndpi_malloc(len);
+	if(flow->http.server) {
+	  strncpy(flow->http.server, (char*)packet->server_line.ptr,
+		  packet->server_line.len);
+	  flow->http.server[packet->server_line.len] = '\0';
 	}
       }
     }
@@ -1375,6 +1387,7 @@ static void ndpi_check_http_tcp(struct ndpi_detection_module_struct *ndpi_struct
       }
     }
 
+    check_content_type_and_change_protocol(ndpi_struct, flow);
     NDPI_EXCLUDE_PROTO(ndpi_struct, flow);
     http_bitmask_exclude_other(flow);
   } else if((flow->l4.tcp.http_stage == 1) || (flow->l4.tcp.http_stage == 2)) {

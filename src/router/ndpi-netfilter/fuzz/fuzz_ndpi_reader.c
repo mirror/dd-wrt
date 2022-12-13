@@ -18,26 +18,45 @@ u_int8_t enable_flow_stats = 0;
 u_int8_t human_readeable_string_len = 5;
 u_int8_t max_num_udp_dissected_pkts = 16 /* 8 is enough for most protocols, Signal requires more */, max_num_tcp_dissected_pkts = 80 /* due to telnet */;
 ndpi_init_prefs init_prefs = ndpi_track_flow_payload | ndpi_enable_ja3_plus;
+int enable_malloc_bins = 0;
+int malloc_size_stats = 0;
+int max_malloc_bins = 0;
+struct ndpi_bin malloc_bins; /* unused */
 
-int bufferToFile(const char * name, const uint8_t *Data, size_t Size) {
-  FILE * fd;
-  if (remove(name) != 0) {
-    if (errno != ENOENT) {
-      perror("remove failed");
-      return -1;
-    }
-  }
-  fd = fopen(name, "wb");
+#ifdef ENABLE_MEM_ALLOC_FAILURES
+
+static int mem_alloc_state = 0;
+
+static int fastrand ()
+{
+  if(!mem_alloc_state) return 1; /* No failures */
+  mem_alloc_state = (214013 * mem_alloc_state + 2531011);
+  return (mem_alloc_state >> 16) & 0x7FFF;
+}
+
+static void *malloc_wrapper(size_t size) {
+  return (fastrand () % 16) ? malloc (size) : NULL;
+}
+static void free_wrapper(void *freeable) {
+  free(freeable);
+}
+
+#endif
+
+FILE *bufferToFile(const uint8_t *Data, size_t Size) {
+  FILE *fd;
+  fd = tmpfile();
   if (fd == NULL) {
-    perror("open failed");
-    return -2;
+    perror("Error tmpfile");
+    return NULL;
   }
   if (fwrite (Data, 1, Size, fd) != Size) {
+    perror("Error fwrite");
     fclose(fd);
-    return -3;
+    return NULL;
   }
-  fclose(fd);
-  return 0;
+  rewind(fd);
+  return fd;
 }
 
 int LLVMFuzzerTestOneInput(const uint8_t *Data, size_t Size) {
@@ -47,8 +66,8 @@ int LLVMFuzzerTestOneInput(const uint8_t *Data, size_t Size) {
   int r;
   char errbuf[PCAP_ERRBUF_SIZE];
   NDPI_PROTOCOL_BITMASK all;
-  char * pcap_path = tempnam("/tmp", "fuzz-ndpi-reader");
   u_int i;
+  FILE *fd;
 
   if (prefs == NULL) {
     prefs = calloc(sizeof(struct ndpi_workflow_prefs), 1);
@@ -72,28 +91,40 @@ int LLVMFuzzerTestOneInput(const uint8_t *Data, size_t Size) {
     memset(workflow->stats.protocol_flows, 0,
 	   sizeof(workflow->stats.protocol_flows));
     ndpi_finalize_initialization(workflow->ndpi_struct);
+#ifdef ENABLE_MEM_ALLOC_FAILURES
+    set_ndpi_malloc(malloc_wrapper);
+    set_ndpi_free(free_wrapper);
+    /* Don't fail memory allocations until init phase is done */
+#endif
   }
 
-  bufferToFile(pcap_path, Data, Size);
+#ifdef ENABLE_MEM_ALLOC_FAILURES
+  mem_alloc_state = Size;
+#endif
 
-  pkts = pcap_open_offline(pcap_path, errbuf);
+  fd = bufferToFile(Data, Size);
+  if (fd == NULL)
+    return 0;
+
+  pkts = pcap_fopen_offline(fd, errbuf);
   if (pkts == NULL) {
-    remove(pcap_path);
-    free(pcap_path);
+    fclose(fd);
     return 0;
   }
   if (ndpi_is_datalink_supported(pcap_datalink(pkts)) == 0)
   {
     /* Do not fail if the datalink type is not supported (may happen often during fuzzing). */
     pcap_close(pkts);
-    remove(pcap_path);
-    free(pcap_path);
     return 0;
   }
 
   workflow->pcap_handle = pkts;
   /* Init flow tree */
   workflow->ndpi_flows_root = ndpi_calloc(workflow->prefs.num_roots, sizeof(void *));
+  if(!workflow->ndpi_flows_root) {
+    pcap_close(pkts);
+    return 0;
+  }
 
   header = NULL;
   r = pcap_next_ex(pkts, &header, &pkt);
@@ -118,69 +149,5 @@ int LLVMFuzzerTestOneInput(const uint8_t *Data, size_t Size) {
     ndpi_tdestroy(workflow->ndpi_flows_root[i], ndpi_flow_info_freer);
   ndpi_free(workflow->ndpi_flows_root);
 
-  remove(pcap_path);
-  free(pcap_path);
-
   return 0;
 }
-
-#ifdef BUILD_MAIN
-int main(int argc, char ** argv)
-{
-  FILE * pcap_file;
-  long pcap_file_size;
-  uint8_t * pcap_buffer;
-  int test_retval;
-
-  if (argc != 2) {
-    fprintf(stderr, "usage: %s: [pcap-file]\n",
-            (argc > 0 ? argv[0] : "fuzz_ndpi_reader_with_main"));
-    return 1;
-  }
-
-  pcap_file = fopen(argv[1], "r");
-  if (pcap_file == NULL) {
-    perror("fopen failed");
-    return 1;
-  }
-
-  if (fseek(pcap_file, 0, SEEK_END) != 0) {
-    perror("fseek(SEEK_END) failed");
-    fclose(pcap_file);
-    return 1;
-  }
-
-  pcap_file_size = ftell(pcap_file);
-  if (pcap_file_size < 0) {
-    perror("ftell failed");
-    fclose(pcap_file);
-    return 1;
-  }
-
-  if (fseek(pcap_file, 0, SEEK_SET) != 0) {
-    perror("fseek(0, SEEK_SET)  failed");
-    fclose(pcap_file);
-    return 1;
-  }
-
-  pcap_buffer = malloc(pcap_file_size);
-  if (pcap_buffer == NULL) {
-    perror("malloc failed");
-    fclose(pcap_file);
-    return 1;
-  }
-
-  if (fread(pcap_buffer, sizeof(*pcap_buffer), pcap_file_size, pcap_file) != (size_t)pcap_file_size) {
-    perror("fread failed");
-    fclose(pcap_file);
-    free(pcap_buffer);
-    return 1;
-  }
-
-  test_retval = LLVMFuzzerTestOneInput(pcap_buffer, pcap_file_size);
-  fclose(pcap_file);
-  free(pcap_buffer);
-
-  return test_retval;
-}
-#endif

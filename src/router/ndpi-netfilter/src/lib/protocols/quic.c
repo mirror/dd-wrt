@@ -180,7 +180,7 @@ static int is_version_with_encrypted_header(uint32_t version)
     ((version & 0xFFFFFF00) == 0x51303500) /* Q05X */ ||
     ((version & 0xFFFFFF00) == 0x54303500) /* T05X */;
 }
-static int is_version_with_tls(uint32_t version)
+int is_version_with_tls(uint32_t version)
 {
   return is_version_quic(version) ||
     ((version & 0xFFFFFF00) == 0x54303500) /* T05X */;
@@ -490,8 +490,10 @@ static int tls13_hkdf_expand_label_context(struct ndpi_detection_module_struct *
 #endif
 
   *out = (uint8_t *)ndpi_malloc(out_len);
-  if(!*out)
+  if(!*out) {
+    ndpi_free(info_data);
     return 0;
+  }
   err = hkdf_expand(md, secret->data, secret->data_len, info_data, info_len, *out, out_len);
   ndpi_free(info_data);
 
@@ -668,8 +670,15 @@ static int quic_pp_cipher_prepare(struct ndpi_detection_module_struct *ndpi_stru
 static int quic_ciphers_prepare(struct ndpi_detection_module_struct *ndpi_struct,
 				quic_ciphers *ciphers, int hash_algo, int cipher_algo, int cipher_mode, uint8_t *secret, u_int32_t version)
 {
-  return quic_hp_cipher_prepare(ndpi_struct, &ciphers->hp_cipher, hash_algo, cipher_algo, secret, version) &&
-    quic_pp_cipher_prepare(ndpi_struct, &ciphers->pp_cipher, hash_algo, cipher_algo, cipher_mode, secret, version);
+  int ret;
+
+  ret = quic_hp_cipher_prepare(ndpi_struct, &ciphers->hp_cipher, hash_algo, cipher_algo, secret, version);
+  if(ret != 1)
+    return ret;
+  ret = quic_pp_cipher_prepare(ndpi_struct, &ciphers->pp_cipher, hash_algo, cipher_algo, cipher_mode, secret, version);
+  if(ret != 1)
+    quic_hp_cipher_reset(&ciphers->hp_cipher);
+  return ret;
 }
 /**
  * Given a header protection cipher, a buffer and the packet number offset,
@@ -1027,7 +1036,7 @@ static void update_reasm_buf_bitmap(u_int8_t *buffer_bitmap,
 				    const u_int32_t recv_pos,
 				    const u_int32_t recv_len)
 {
-  if (!recv_len || !buffer_bitmap_size || recv_pos + recv_len > buffer_bitmap_size * 8)
+  if (!recv_len || !buffer_bitmap_size || !buffer_bitmap || recv_pos + recv_len > buffer_bitmap_size * 8)
     return;
   const u_int32_t start_byte = recv_pos / 8;
   const u_int32_t end_byte = (recv_pos + recv_len - 1) / 8;
@@ -1052,6 +1061,9 @@ static int is_reasm_buf_complete(const u_int8_t *buffer_bitmap,
   const u_int32_t remaining_bits = buffer_len % 8;
   u_int32_t i;
 
+  if (!buffer_bitmap)
+    return 0;
+
   for(i = 0; i < complete_bytes; i++)
     if (buffer_bitmap[i] != 0xff)
       return 0;
@@ -1072,7 +1084,8 @@ static int __reassemble(struct ndpi_flow_struct *flow, const u_int8_t *frag,
 
   if(!flow->l4.udp.quic_reasm_buf) {
     flow->l4.udp.quic_reasm_buf = (uint8_t *)ndpi_malloc(max_quic_reasm_buffer_len);
-    flow->l4.udp.quic_reasm_buf_bitmap = (uint8_t *)ndpi_calloc(quic_reasm_buffer_bitmap_len, sizeof(uint8_t));
+    if(!flow->l4.udp.quic_reasm_buf_bitmap)
+      flow->l4.udp.quic_reasm_buf_bitmap = (uint8_t *)ndpi_calloc(quic_reasm_buffer_bitmap_len, sizeof(uint8_t));
     if(!flow->l4.udp.quic_reasm_buf || !flow->l4.udp.quic_reasm_buf_bitmap)
       return -1; /* Memory error */
     flow->l4.udp.quic_reasm_buf_last_pos = 0;
@@ -1140,11 +1153,11 @@ static const uint8_t *get_reassembled_crypto_data(struct ndpi_detection_module_s
   return NULL;
 }
 
-static const uint8_t *get_crypto_data(struct ndpi_detection_module_struct *ndpi_struct,
-				      struct ndpi_flow_struct *flow,
-				      uint32_t version,
-				      u_int8_t *clear_payload, uint32_t clear_payload_len,
-				      uint64_t *crypto_data_len)
+const uint8_t *get_crypto_data(struct ndpi_detection_module_struct *ndpi_struct,
+			       struct ndpi_flow_struct *flow,
+			       uint32_t version,
+			       u_int8_t *clear_payload, uint32_t clear_payload_len,
+			       uint64_t *crypto_data_len)
 {
   const u_int8_t *crypto_data = NULL;
   uint32_t counter;
@@ -1236,12 +1249,12 @@ static const uint8_t *get_crypto_data(struct ndpi_detection_module_struct *ndpi_
       case 0x06:
         NDPI_LOG_DBG2(ndpi_struct, "CRYPTO frame\n");
         counter += 1;
-        if(counter > clear_payload_len ||
-           counter + quic_len_buffer_still_required(clear_payload[counter]) > clear_payload_len)
+        if(counter >= clear_payload_len ||
+           counter + quic_len_buffer_still_required(clear_payload[counter]) >= clear_payload_len)
           return NULL;
         counter += quic_len(&clear_payload[counter], &frag_offset);
-        if(counter > clear_payload_len ||
-           counter + quic_len_buffer_still_required(clear_payload[counter]) > clear_payload_len)
+        if(counter >= clear_payload_len ||
+           counter + quic_len_buffer_still_required(clear_payload[counter]) >= clear_payload_len)
           return NULL;
         counter += quic_len(&clear_payload[counter], &frag_len);
         if(frag_len + counter > clear_payload_len) {
@@ -1319,10 +1332,11 @@ static uint8_t *get_clear_payload(struct ndpi_detection_module_struct *ndpi_stru
 
   return clear_payload;
 }
-static void process_tls(struct ndpi_detection_module_struct *ndpi_struct,
-			struct ndpi_flow_struct *flow,
-			const u_int8_t *crypto_data, uint32_t crypto_data_len,
-			uint32_t version)
+
+void process_tls(struct ndpi_detection_module_struct *ndpi_struct,
+		 struct ndpi_flow_struct *flow,
+		 const u_int8_t *crypto_data, uint32_t crypto_data_len,
+		 uint32_t version)
 {
   struct ndpi_packet_struct *packet = ndpi_get_packet_struct(ndpi_struct);
 
@@ -1354,14 +1368,9 @@ static void process_tls(struct ndpi_detection_module_struct *ndpi_struct,
     ndpi_set_detected_protocol(ndpi_struct, flow, NDPI_PROTOCOL_DOH_DOT, NDPI_PROTOCOL_QUIC, NDPI_CONFIDENCE_DPI);
   }
 }
-
-#ifndef MIN
-#define MIN(a,b) ((a) < (b) ? (a):(b))
-#endif
-
-static void process_chlo(struct ndpi_detection_module_struct *ndpi_struct,
-			 struct ndpi_flow_struct *flow,
-			 const u_int8_t *crypto_data, uint32_t crypto_data_len)
+void process_chlo(struct ndpi_detection_module_struct *ndpi_struct,
+		  struct ndpi_flow_struct *flow,
+		  const u_int8_t *crypto_data, uint32_t crypto_data_len)
 {
   const uint8_t *tag;
   uint32_t i;

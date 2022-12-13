@@ -1127,6 +1127,7 @@ NDPI_STATIC   int ndpi_load_categories_file(struct ndpi_detection_module_struct 
 		     ndpi_serializer *serializer);
 #endif
 
+  NDPI_STATIC char *ndpi_get_ip_proto_name(u_int16_t ip_proto, char *name, unsigned int name_len);
   NDPI_STATIC void ndpi_md5(const u_char *data, size_t data_len, u_char hash[16]);
   NDPI_STATIC u_int32_t ndpi_quick_hash(unsigned char *str, u_int str_len);
 

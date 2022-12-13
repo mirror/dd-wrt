@@ -58,6 +58,10 @@
 #include <net/netfilter/nf_nat.h>
 #include <linux/ktime.h>
 
+#if LINUX_VERSION_CODE < KERNEL_VERSION(4,12,0)
+#define IP_CT_UNTRACKED IP_CT_NUMBER
+#endif
+
 #define BT_ANNOUNCE
 
 #include "ndpi_config.h"
@@ -868,22 +872,6 @@ ndpi_alloc_flow (struct nf_ct_ext_ndpi *ct_ndpi)
 		pr_info(" flow new ct_ndpi %8p\n", ct_ndpi);
         return flow;
 }
-#ifndef NF_CT_CUSTOM
-
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(4,19,0)
-static struct nf_ct_hook ndpi_nf_ct_hook={NULL,NULL,NULL};
-static const struct nf_ct_hook *ndpi_nf_ct_hook_old=NULL;
-#endif
-
-static void (*ndpi_nf_ct_destroy)(struct nf_conntrack *) = NULL;
-
-static void ndpi_destroy_conntrack(struct nf_conntrack *nfct) {
-	struct nf_conn *ct = (struct nf_conn *)nfct;
-
-	nf_ndpi_free_flow(ct);
-        if(ndpi_nf_ct_destroy) ndpi_nf_ct_destroy(nfct);
-}
-#endif
 
 /*****************************************************************/
 
@@ -1700,6 +1688,23 @@ ndpi_mt(const struct sk_buff *skb, struct xt_action_param *par)
 		    if( flow->packet_counter > max_packet_unk && !flow->extra_packets_func) {
 			COUNTER(ndpi_p_c_end_max);
 		    	detect_complete = 1;
+			if(proto.app_protocol == NDPI_PROTOCOL_UNKNOWN) {
+			    u_int8_t proto_guessed;
+			    ndpi_protocol p_old = proto;
+			    proto = ndpi_detection_giveup(n->ndpi_struct, flow, 1, &proto_guessed);
+			    if(_DBG_TRACE_DPI &&
+			           (p_old.app_protocol != proto.app_protocol ||
+				    p_old.master_protocol != proto.master_protocol ||
+				    confidence != flow->confidence))
+				packet_trace(skb,ct,ct_ndpi," detection_giveup"," app,master [%u,%u]->[%u,%u] c %u->%u\n",
+						p_old.app_protocol,p_old.master_protocol,
+						proto.app_protocol,proto.master_protocol,
+						confidence,flow->confidence);
+			    ct_ndpi->proto.app_protocol = proto.app_protocol;
+			    ct_ndpi->proto.master_protocol = proto.master_protocol;
+			    ct_ndpi->confidence = confidence = flow->confidence;
+			    c_proto->proto = pack_proto(proto);
+			}
 		    	if(_DBG_TRACE_DDONE)
 		    	    packet_trace(skb,ct,ct_ndpi," Stop: max packet"," %d, free flow",max_packet_unk);
 		    	set_detect_done(ct_ndpi);
@@ -2327,8 +2332,8 @@ static void bt_port_gc(unsigned long data) {
 			if( atomic_read(&n->acc_work) > 0 ||
 			    atomic_read(&n->acc_rem)  > 0 )
 				ndpi_delete_acct(n,1);
+			n->acc_gc = jiffies + 5*HZ;
 		    }
-		    n->acc_gc = jiffies + 5*HZ;
 		}
 	    }
 	}
@@ -2809,12 +2814,11 @@ static void __net_exit ndpi_net_exit(struct net *net)
 	}
 
 
-#ifndef NF_CT_CUSTOM
 #if LINUX_VERSION_CODE < KERNEL_VERSION(4, 8, 0)
 	net->ct.label_words = n->labels_word;
 #endif
 	net->ct.labels_used--;
-#endif
+
 #if   LINUX_VERSION_CODE >= KERNEL_VERSION(5, 19, 0)
 	struct nf_ct_iter_data iter_data = {
 		.net    = net,
@@ -3140,53 +3144,6 @@ static int __net_init ndpi_net_init(struct net *net)
 	return -ENOMEM;
 }
 
-#ifndef NF_CT_CUSTOM
-DEFINE_SPINLOCK(ndpi_hook_mutex);
-
-static void replace_nf_destroy(void)
-{
-	spin_lock(&ndpi_hook_mutex);
-	{
-#if LINUX_VERSION_CODE < KERNEL_VERSION(4,19,0)
-	ndpi_nf_ct_destroy = rcu_dereference_protected(nf_ct_destroy,lockdep_is_held(&ndpi_hook_mutex));
-	BUG_ON(ndpi_nf_ct_destroy == NULL);
-        rcu_assign_pointer(nf_ct_destroy, ndpi_destroy_conntrack);
-#else
-	const struct nf_ct_hook *hook;
-	hook = rcu_dereference_protected(nf_ct_hook,lockdep_is_held(&ndpi_hook_mutex));
-	BUG_ON(hook == NULL);
-	ndpi_nf_ct_hook_old = hook;
-	ndpi_nf_ct_hook = *hook;
-	ndpi_nf_ct_destroy = hook->destroy;
-	ndpi_nf_ct_hook.destroy = ndpi_destroy_conntrack;
-	rcu_assign_pointer(nf_ct_hook,&ndpi_nf_ct_hook);
-#endif
-	}
-	spin_unlock(&ndpi_hook_mutex);
-	synchronize_rcu();
-}
-
-static void restore_nf_destroy(void)
-{
-	spin_lock(&ndpi_hook_mutex);
-	{
-#if LINUX_VERSION_CODE < KERNEL_VERSION(4,19,0)
-	void (*destroy)(struct nf_conntrack *);
-	destroy = rcu_dereference_protected(nf_ct_destroy,lockdep_is_held(&ndpi_hook_mutex));
-	BUG_ON(destroy != ndpi_destroy_conntrack);
-	rcu_assign_pointer(nf_ct_destroy,ndpi_nf_ct_destroy);
-#else
-	const struct nf_ct_hook *hook;
-	hook = rcu_dereference_protected(nf_ct_hook,lockdep_is_held(&ndpi_hook_mutex));
-	BUG_ON(hook != &ndpi_nf_ct_hook);
-	rcu_assign_pointer(nf_ct_hook,ndpi_nf_ct_hook_old);
-#endif
-	}
-	spin_unlock(&ndpi_hook_mutex);
-	synchronize_rcu();
-	WRITE_ONCE(ndpi_nf_ct_destroy,NULL);
-}
-#else
 static struct nf_ct_ext_type ndpi_extend = {
 #if LINUX_VERSION_CODE < KERNEL_VERSION(4,8,0)
        .seq_print = seq_print_ndpi,
@@ -3194,8 +3151,8 @@ static struct nf_ct_ext_type ndpi_extend = {
        .destroy   = nf_ndpi_free_flow,
        .len    = sizeof(struct nf_ct_ext_labels),
        .align  = __alignof__(uint32_t),
+       .id     = 0,
 };
-#endif
 
 static struct pernet_operations ndpi_net_ops = {
         .init   = ndpi_net_init,
@@ -3234,7 +3191,13 @@ static int __init ndpi_mt_init(void)
 	}
 	nf_ct_ext_id_ndpi = ndpi_extend.id;
 #else
-	nf_ct_ext_id_ndpi = NF_CT_EXT_LABELS;
+	ndpi_extend.id = nf_ct_ext_id_ndpi = NF_CT_EXT_LABELS;
+	nf_ct_extend_unregister(&ndpi_extend);
+	ret = nf_ct_extend_register(&ndpi_extend);
+	if(ret < 0) {
+		pr_err("xt_ndpi: can't nf_ct_extend_register.\n");
+		return -EBUSY;
+	}
 #endif
 
 	ret = register_pernet_subsys(&ndpi_net_ops);
@@ -3288,9 +3251,6 @@ static int __init ndpi_mt_init(void)
 	if(!bt_hash_tmo || bt_hash_tmo < 900) bt_hash_tmo = 900;
 	if( bt_hash_tmo > 3600) bt_hash_tmo = 3600;
 
-#ifndef NF_CT_CUSTOM
-	replace_nf_destroy();
-#endif
 	pr_info("xt_ndpi v1.2 ndpi %s"
 #ifdef NDPI_DETECTION_SUPPORT_IPV6
 		" IPv6=YES"
@@ -3345,9 +3305,7 @@ unreg_match:
 unreg_pernet:
 	unregister_pernet_subsys(&ndpi_net_ops);
 unreg_ext:
-#ifdef NF_CT_CUSTOM
 	nf_ct_extend_unregister(&ndpi_extend);
-#endif
        	return ret;
 }
 
@@ -3357,11 +3315,7 @@ static void __exit ndpi_mt_exit(void)
 	xt_unregister_target(&ndpi_tg_reg);
 	xt_unregister_match(&ndpi_mt_reg);
 	unregister_pernet_subsys(&ndpi_net_ops);
-#ifdef NF_CT_CUSTOM
 	nf_ct_extend_unregister(&ndpi_extend);
-#else
-	restore_nf_destroy();
-#endif
         kmem_cache_destroy (bt_port_cache);
         kmem_cache_destroy (osdpi_id_cache);
         kmem_cache_destroy (osdpi_flow_cache);
