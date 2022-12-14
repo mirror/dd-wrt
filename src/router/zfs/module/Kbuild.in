@@ -471,10 +471,8 @@ zfs-objs            += $(addprefix zfs/,$(ZFS_OBJS)) $(addprefix os/linux/zfs/,$
 zfs-$(CONFIG_X86)   += $(addprefix zfs/,$(ZFS_OBJS_X86))
 zfs-$(CONFIG_UML_X86)+= $(addprefix zfs/,$(ZFS_OBJS_X86))
 zfs-$(CONFIG_ARM64) += $(addprefix zfs/,$(ZFS_OBJS_ARM64))
-ifeq ($(CONFIG_ALTIVEC),y)
 zfs-$(CONFIG_PPC)   += $(addprefix zfs/,$(ZFS_OBJS_PPC_PPC64))
 zfs-$(CONFIG_PPC64) += $(addprefix zfs/,$(ZFS_OBJS_PPC_PPC64))
-endif
 
 # Suppress incorrect warnings from versions of objtool which are not
 # aware of x86 EVEX prefix instructions used for AVX512.
