@@ -29,7 +29,7 @@ libzfs_core_la_LIBADD = \
 
 libzfs_core_la_LIBADD += $(LTLIBINTL)
 
-libzfs_core_la_LDFLAGS = -pthread
+libzfs_core_la_LDFLAGS = -pthread -latomic
 
 if !ASAN_ENABLED
 libzfs_core_la_LDFLAGS += -Wl,-z,defs
