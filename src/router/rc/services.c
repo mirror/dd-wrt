@@ -669,7 +669,6 @@ static void handle_pptp(void)
 	restart_f("openvpnserver");
 	restart_f("openvpn");
 	restart("firewall");
-	restart_f("dnsmasq");
 #endif
 #ifdef HAVE_ANTAIRA_AGENT
 	restart_f("antaira_agent");
