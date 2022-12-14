@@ -612,6 +612,7 @@ void start_openvpnserver(void)
 	/* egc: delete interface as listen interface to DNSMasq */
 	if (nvram_match("openvpn_tuntap", "tun")) {
 		fprintf(fp, "nvram unset dnsmasq_addifvpn\n");
+		fprintf(fp, "service dnsmasq restart\n");
 	}
 /*      if ((nvram_matchi("openvpn_dhcpbl",1)
                         && nvram_match("openvpn_tuntap", "tap")
