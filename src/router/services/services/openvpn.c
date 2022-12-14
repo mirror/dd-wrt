@@ -567,6 +567,10 @@ void start_openvpnserver(void)
 		fprintf(fp, "restart firewall\n");
 		fprintf(fp, "sleep 5\n");
 	}
+	/* egc: add interface as listen interface to DNSMasq via nvram parameter dnsmasq_addifvpn */
+	if (nvram_match("openvpn_tuntap", "tun")) {
+		fprintf(fp, "nvram set dnsmasq_addifvpn=$dev\n");
+	}
 	create_openvpnserverrules(fp);
 	fclose(fp);
 	fp = fopen("/tmp/openvpn/route-down.sh", "wb");
@@ -604,6 +608,10 @@ void start_openvpnserver(void)
 		fprintf(fp, "iptables -t nat -D POSTROUTING -s $(nvram get openvpn_net)/$(nvram get openvpn_tunmask) -o $(get_wanface) -j MASQUERADE\n");
 	if (nvram_matchi("openvpn_allowcnlan", 1))
 		fprintf(fp, "iptables -t nat -D POSTROUTING -o br+ -s $(nvram get openvpn_net)/$(nvram get openvpn_tunmask) -j MASQUERADE\n");
+	/* egc: delete interface as listen interface to DNSMasq */
+	if (nvram_match("openvpn_tuntap", "tun")) {
+		fprintf(fp, "nvram unset dnsmasq_addifvpn\n");
+	}
 /*      if ((nvram_matchi("openvpn_dhcpbl",1)
                         && nvram_match("openvpn_tuntap", "tap")
                         && nvram_matchi("openvpn_proxy",0))

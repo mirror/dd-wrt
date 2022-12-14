@@ -641,11 +641,13 @@ void start_dnsmasq(void)
 				char *ipaddr = nvram_nget("%s_ipaddr", var);
 				if (*ipaddr && strcmp(ipaddr, "0.0.0.0"))
 					fprintf(fp, ",%s", var);
-
 			}
 		}
 		if (nvram_exists("dnsmasq_addif")) {
 			fprintf(fp, ",%s", nvram_safe_get("dnsmasq_addif"));
+		}
+		if (nvram_exists("dnsmasq_addifvpn")) {
+			fprintf(fp, ",%s", nvram_safe_get("dnsmasq_addifvpn"));
 		}
 	}
 	int mdhcpcount = 0;
