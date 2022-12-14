@@ -570,6 +570,7 @@ void start_openvpnserver(void)
 	/* egc: add interface as listen interface to DNSMasq via nvram parameter dnsmasq_addifvpn */
 	if (nvram_match("openvpn_tuntap", "tun")) {
 		fprintf(fp, "nvram set dnsmasq_addifvpn=$dev\n");
+		fprintf(fp, "service dnsmasq restart\n");
 	}
 	create_openvpnserverrules(fp);
 	fclose(fp);
