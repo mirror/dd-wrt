@@ -86,10 +86,10 @@ for i in $(seq 1 $tunnels); do
 			for p in $(seq 0 $peers); do
 					# oet${i}_aip_rten${p} #nvram variable to allow routing of Allowed IP's, 1=add route
 					if [[ $($nv get oet${i}_aip_rten${p}) -eq 1 ]]; then
-						#replace 0.0.0.0/0 with 0.0.0.0/1,128.0.0.0/1
-						for aip in $($nv get oet${i}_aip${p} | sed "s/0.0.0.0\\/0/0.0.0.0\\/1,128.0.0.0\\/1/g" | sed "s/,/ /g"); do
+						#replace 0.0.0.0/0 with 0.0.0.0/1,128.0.0.0/1 and ::/0 with ::/1, 8000::/1
+						for aip in $($nv get oet${i}_aip${p} | sed "s/0.0.0.0\\/0/0.0.0.0\\/1,128.0.0.0\\/1/g" | sed "s/::\\/0/::\\/1,8000::\\/1/g" | sed "s/,/ /g"); do
 							# check if PBR is set then skip default gateway, if default route without endpoint then warning
-							if [[ ! -z "$(echo $aip |  grep -e '/0\|/1')" ]]; then
+							if [[ ! -z "$(echo $aip | sed -e 's/\/128//g' | grep -e '/0\|/1')" ]]; then
 								if [[ $($nv get oet${i}_spbr) -eq 1 ]]; then
 									continue
 								elif [ $($nv get oet${i}_endpoint${p}) -eq 0 ]; then
