@@ -2161,7 +2161,7 @@ int filtersync_main(int argc, char *argv[])
 	int changed = 0;
 	FILE *fd;
 	if ((fd = fopen(IPTABLES_RULE_STAT, "r")) == NULL) {
-	    return;
+	    return 0;
 	}
 	fclose(fd);
 	/*
