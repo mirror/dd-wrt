@@ -274,7 +274,7 @@ static int update_bitmap(int mode, int seq)
 	 */
 	if ((fd = fopen(IPTABLES_RULE_STAT, "r")) == NULL) {
 		cprintf("Can't open %s\n", IPTABLES_RULE_STAT);
-		exit(1);
+		return -1;
 	}
 	fgets(buf, sizeof(buf), fd);
 
@@ -311,7 +311,7 @@ static int update_bitmap(int mode, int seq)
 	 */
 	if ((fd = fopen(IPTABLES_RULE_STAT, "w")) == NULL) {
 		cprintf("Can't open %s\n", IPTABLES_RULE_STAT);
-		exit(1);
+		return -1;
 	}
 	for (k = 1; k < i; k++)
 		fprintf(fd, "%d,", array[k]);
@@ -2047,6 +2047,10 @@ static int update_filter(int mode, int seq)
 	int ord;
 	lock();
 	ord = update_bitmap(mode, seq);
+	if (ord == -1) {
+	    unlock();
+	    return -1;
+	}
 	sprintf(target_ip, "grp_%d", seq);
 	sprintf(order, "%d", ord * 1 + 1);
 	/*
@@ -2170,9 +2174,7 @@ int filtersync_main(int argc, char *argv[])
 			changed = 1;
 	}
 #ifdef HAVE_SFE
-	fprintf(stderr, "stop sfe\n");
 	if (changed && nvram_match("sfe", "1")) {
-	fprintf(stderr, "stop sfe2\n");
 		stop_sfe();
 	}
 #endif
@@ -2184,9 +2186,7 @@ int filtersync_main(int argc, char *argv[])
 		DEBUG("seq=%d, ret=%d\n", seq, ret);
 	}
 #ifdef HAVE_SFE
-	fprintf(stderr, "start sfe\n");
 	if (changed && nvram_match("sfe", "1")) {
-	fprintf(stderr, "start sfe2\n");
 		start_sfe();
 	}
 #endif
