@@ -150,7 +150,7 @@ static void va_save2file(char *prefix, const char *fmt, va_list args)
 	FILE *fp;
 	if ((fp = fopen(IPTABLES_SAVE_FILE, "a")) == NULL) {
 		printf("Can't open /tmp/.ipt\n");
-		exit(1);
+		return;
 	}
 
 	if (prefix)
@@ -1933,7 +1933,7 @@ static void lan2wan_chains(char *lan_cclass)
 	 */
 	if ((ifd = fopen(IPTABLES_RULE_STAT, "w")) == NULL) {
 		cprintf("Can't open %s\n", IPTABLES_RULE_STAT);
-		exit(1);
+		return;
 	}
 
 	/*
@@ -1941,7 +1941,7 @@ static void lan2wan_chains(char *lan_cclass)
 	 */
 	if ((cfd = fopen(CRONTAB, "w")) == NULL) {
 		cprintf("Can't open %s\n", CRONTAB);
-		exit(1);
+		return;
 	}
 	// fprintf (cfd, "PATH=/sbin:/bin:/usr/sbin:/usr/bin\n\n");
 
@@ -2159,6 +2159,11 @@ int filtersync_main(int argc, char *argv[])
 	int seq;
 	int ret;
 	int changed = 0;
+	FILE *fd;
+	if ((fd = fopen(IPTABLES_RULE_STAT, "r")) == NULL) {
+	    return;
+	}
+	fclose(fd);
 	/*
 	 * Get local calendar time 
 	 */
@@ -2173,6 +2178,7 @@ int filtersync_main(int argc, char *argv[])
 		if (if_tod_intime(seq) > 0)
 			changed = 1;
 	}
+
 #ifdef HAVE_SFE
 	if (changed && nvram_match("sfe", "1")) {
 		stop_sfe();
