@@ -2170,8 +2170,11 @@ int filtersync_main(int argc, char *argv[])
 			changed = 1;
 	}
 #ifdef HAVE_SFE
-	if (changed && nvram_match("sfe", "1"))
+	fprintf(stderr, "stop sfe\n");
+	if (changed && nvram_match("sfe", "1")) {
+	fprintf(stderr, "stop sfe2\n");
 		stop_sfe();
+	}
 #endif
 	for (seq = 1; seq <= NR_RULES; seq++) {
 		if (if_tod_intime(seq) > 0)
@@ -2181,8 +2184,11 @@ int filtersync_main(int argc, char *argv[])
 		DEBUG("seq=%d, ret=%d\n", seq, ret);
 	}
 #ifdef HAVE_SFE
-	if (changed && nvram_match("sfe", "1"))
+	fprintf(stderr, "start sfe\n");
+	if (changed && nvram_match("sfe", "1")) {
+	fprintf(stderr, "start sfe2\n");
 		start_sfe();
+	}
 #endif
 	return 0;
 }
