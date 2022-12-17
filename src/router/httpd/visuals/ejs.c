@@ -737,9 +737,11 @@ static struct defrule s_conditions[] = {
 #endif
 #endif
 	{ "POESWITCH", rule_poeswitch },
+#if !defined(ARCH_broadcom) || defined(HAVE_BCMMODERN)
 	{ "FA", rule_fa },
 	{ "CTF", rule_ctf },
 	{ "SFE", rule_sfe },
+#endif
 	{ NULL, NULL }
 };
 
