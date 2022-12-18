@@ -21,6 +21,28 @@
 #include <linux/mtd/partitions.h>
 #include <asm/setup.h>
 
+struct squashfs_super_block {
+	__le32			s_magic;
+	__le32			inodes;
+	__le32			mkfs_time;
+	__le32			block_size;
+	__le32			fragments;
+	__le16			compression;
+	__le16			block_log;
+	__le16			flags;
+	__le16			no_ids;
+	__le16			s_major;
+	__le16			s_minor;
+	__le64			root_inode;
+	__le64			bytes_used;
+	__le64			id_table_start;
+	__le64			xattr_id_table_start;
+	__le64			inode_table_start;
+	__le64			directory_table_start;
+	__le64			fragment_table_start;
+	__le64			lookup_table_start;
+};
+
 static bool node_has_compatible(struct device_node *pp)
 {
 	return of_get_property(pp, "compatible", NULL);
@@ -37,8 +59,9 @@ static int parse_ofpart_partitions(struct mtd_info *master,
 	const char *partname;
 	const char *owrtpart = "ubi";
 	struct device_node *pp;
-	int nr_parts, i, ret = 0;
+	int nr_parts, i, ret = 0, len;
 	bool dedicated = true;
+	struct squashfs_super_block sb;
 
 
 	/* Pull of_node from the master device node */
@@ -143,6 +166,32 @@ static int parse_ofpart_partitions(struct mtd_info *master,
 
 		if (of_get_property(pp, "lock", &len))
 			parts[i].mask_flags |= MTD_POWERUP_LOCK;
+#ifdef CONFIG_ARCH_QCOM
+		if (!strcmp(partname, "linux") || !strcmp(partname, "linux2")) {
+			int offset = parts[i].offset;
+			while ((offset + master->erasesize) < master->size) {
+				mtd_read(master, offset, sizeof(sb), &len, (void *)&sb);
+				if (le32_to_cpu(sb.s_magic) == SQUASHFS_MAGIC) {
+					len = le64_to_cpu(sb.bytes_used);
+					len += (offset & 0x000fffff);
+					len += (master->erasesize - 1);
+					len &= ~(master->erasesize - 1);
+					len -= (offset & 0x000fffff);
+					printk(KERN_EMERG "found squashfs at %X with len of %d bytes\n", offset, len);
+					i++;
+					parts[i].offset = offset;
+					if (!strcmp(partname, "linux2"))
+						parts[i].name = "rootfs2";
+					else
+						parts[i].name = "rootfs";
+					parts[i].size = len;
+					parts[i].mask_flags = 0;
+					break;
+				}
+				offset += 4096;
+			}
+		}
+#endif
 
 		#ifdef CONFIG_SOC_IMX6
 		// for ventana, we hack a nvram partition into the layout
