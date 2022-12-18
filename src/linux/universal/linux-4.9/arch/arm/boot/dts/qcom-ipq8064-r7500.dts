@@ -214,11 +214,6 @@
 				label = "linux";
 				reg = <0x1340000 0x1800000>;
 			};
-
-			rootfs@1580000 {
-				label = "rootfs";
-				reg = <0x1580000 0x15c0000>;
-			};
 			
 			nvram@2B40000 {
 				label = "nvram";
