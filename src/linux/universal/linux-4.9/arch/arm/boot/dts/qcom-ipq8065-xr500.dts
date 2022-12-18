@@ -3,7 +3,7 @@
 #include <dt-bindings/input/input.h>
 
 / {
-	model = "Netgear XR500";
+	model = "Netgear XR500 Nighthawk X4S";
 	compatible = "netgear,xr500", "qcom,ipq8065", "qcom,ipq8064";
 
 	memory@0 {
@@ -344,27 +344,27 @@
 
 			linux@1480000 {
 				label = "linux";
-				reg = <0x1480000 0x3000000>;
+				reg = <0x1480000 0x1E00000>;
 			};
 
 			rootfs@16c0000 {
 				label = "rootfs";
-				reg = <0x16c0000 0x2dc0000>;
+				reg = <0x16c0000 0x1bc0000>;
 			};
 			
-			nvram@4480000 {
+			nvram@3280000 {
 				label = "nvram";
-				reg = <0x4480000 0x0200000>;
+				reg = <0x3280000 0x0200000>;
 			};
 
-			ddwrt@4680000 {
+			ddwrt@4000000 {
 				label = "ddwrt";
-				reg = <0x4680000 0xa000000>;
+				reg = <0x4000000 0xA680000>;
 			};
 
 			reserved@e680000 {
 				label = "reserved";
-				reg = <0xe680000 0x6c0000>;
+				reg = <0xe680000 0x780000>;
 				read-only;
 			};
 			};
@@ -506,10 +506,10 @@
 			gpios = <&qcom_pinmux 24 0>;
 		};
 
-		esata {
-			label = "r7X00:white:esata";
-			gpios = <&qcom_pinmux 7 0>;
-		};
+//		esata {
+//			label = "r7X00:white:esata";
+//			gpios = <&qcom_pinmux 26 0>;
+//		};
 
 		power {
 			label = "r7X00:white:power";
