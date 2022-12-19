@@ -171,6 +171,10 @@ static int parse_ofpart_partitions(struct mtd_info *master,
 			int offset = parts[i].offset;
 			while ((offset + master->erasesize) < master->size) {
 				mtd_read(master, offset, sizeof(sb), &len, (void *)&sb);
+				if (le32_to_cpu(sb.s_magic) == 0x23494255) {
+					printk(KERN_EMERG "found ubi at %X, skipping scan\n", offset);
+					break; // skip if ubifs has been found
+				}
 				if (le32_to_cpu(sb.s_magic) == SQUASHFS_MAGIC) {
 					len = le64_to_cpu(sb.bytes_used);
 					len += (offset & 0x000fffff);
