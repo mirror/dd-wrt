@@ -149,10 +149,6 @@
 				compatible = "denx,fit";
 				reg = <0x001c0000 0x01e20000>;
 			};
-			partition10@4c0000 {
-				label = "rootfs";
-				reg = <0x004c0000 0x01b20000>;
-			};
 			partition11@1fe0000 {
 				label = "nvram";
 				reg = <0x01fe0000 0x020000>;
