@@ -13,8 +13,9 @@ exfat-utils-clean:
 exfat-utils-install:
 	make -C exfat-utils install DESTDIR=$(INSTALLDIR)/exfat-utils
 	rm -rf $(INSTALLDIR)/exfat-utils/usr/share
-	rm -f $(INSTALLDIR)/exfat-utils/usr/sbin/dumpexfat
-#	rm -f $(INSTALLDIR)/exfat-utils/usr/sbin/exfatlabel
+	rm -f $(INSTALLDIR)/exfat-utils/usr/sbin/dump.exfat
+	rm -f $(INSTALLDIR)/exfat-utils/usr/sbin/exfatlabel
+	rm -f $(INSTALLDIR)/exfat-utils/usr/sbin/exfat2img
 	rm -f $(INSTALLDIR)/exfat-utils/usr/lib/*.a
 	rm -f $(INSTALLDIR)/exfat-utils/usr/lib/*.la
 
