@@ -1,0 +1,11 @@
+// Copyright 2021 The Android Open Source Project
+
+cc_binary {
+    name: "exfat2img",
+
+    srcs: [
+        "exfat2img.c",
+    ],
+    defaults: ["exfatprogs-defaults"],
+    static_libs: ["libexfat"],
+}

@@ -5,9 +5,16 @@ tune.exfat \- adjust tunable filesystem parameters on an exFAT filesystem
 .B tune.exfat
 [
 .B \-l
+.I print-label
 ] [
-.B \-L volume_label
-.I volume_label
+.B \-L
+.I set-label
+] [
+.B \-i
+.I print-serial
+] [
+.B \-I
+.I set-serial
 ] [
 .B \-v
 ]
@@ -20,15 +27,20 @@ adjust tunable ondisk parameters of an existing exFAT filesystem.
 .PP
 .SH OPTIONS
 .TP
-.BI \-l
+.BI \-l " print-label"
 Print the volume label of the exFAT filesystem.
 .TP
-.BI \-L" volume_label"
+.BI \-L " set-label"
 Set the volume label of the filesystem to the provided argument.
+.TP
+.BI \-i " print-serial"
+Print the volume serial of the exFAT filesystem.
+.TP
+.BI \-I " set-serial"
+Set the volume serial of the filesystem to the provided argument.
 .TP
 .BI \-v
 Prints verbose debugging information while extracting or tuning parameters of the exFAT filesystem.
 .TP
 .B \-V
 Prints the version number and exits.
-.TP

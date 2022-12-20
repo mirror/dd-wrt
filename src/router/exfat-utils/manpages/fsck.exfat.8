@@ -4,6 +4,8 @@ fsck.exfat \- check an exFAT filesystem
 .SH SYNOPSIS
 .B fsck.exfat
 [
+.B \-a
+] [
 .B \-n
 ] [
 .B \-r
@@ -12,6 +14,8 @@ fsck.exfat \- check an exFAT filesystem
 ] [
 .B \-y
 ] [
+.B \-b
+] [
 .B \-v
 ]
 .I device
@@ -19,16 +23,47 @@ fsck.exfat \- check an exFAT filesystem
 .B fsck.exfat \-V
 .SH DESCRIPTION
 .B fsck.exfat
-checks an exFAT filesystem and repairs the filesytem
-depending on the options passed.
+checks an exFAT filesystem and repairs the filesystem
+depending on the options passed. The following corruptions can be repaired, and see the option, '-s'.
+.IP -
+Boot sector has invalid parameters. If backup boot sector is valid, replace the boot sector with it.
+.IP -
+Cluster is marked as free but belonged to a file, or vise versa. The bitmap for the cluster is marked properly.
+.IP -
+File size is abnormally large considering the count of clusters. The size is changed.
+.IP -
+File size is abnormally small considering the count of clusters. The remaining clusters are deleted.
+.IP -
+File's cluster chain has an invalid cluster number. The number are changed to EOF, and the file size is also changed.
+.IP -
+File's cluster chain contains a loop. The loop is broken.
+.IP -
+Files share the same cluster.  Cluster chains for files except one are broken.
+.IP -
+Start cluster number is invalid. The cluster number and file size are changed to 0.
+.IP -
+Checksum value of direcotry entry set is invalid. Directory entry set is deleted.
+.IP -
+Bad hash value of a file name. The hash value is changed properly.
+.IP -
+Fields of directory entry set have invalid values. Directory entry set is deleted.
 .PP
 .SH OPTIONS
+.TP
+.BI \-a
+This  option  does  the same thing as the -p option.  It is provided for backwards compatibility only;  it  is  suggested  that people use -p option whenever possible.
 .TP
 .BI \-n
 Check the filesystem but do not attempt to repair the filesystem.
 .TP
+.BI \-p
+Repair the filesystem without user interaction if it can be done safely.
+.TP
 .BI \-r
 Repair the filesystem interactively.
+.TP
+.BI \-s
+Create files in /LOST+FOUND for orphan clusters. These files have clusters allocated but not belonged to any files when reparing the filesystem. clusters unused and contiguous in bitmap are allocated to the same file.
 .TP
 .BI \-v
 Prints verbose debugging information while checking the exFAT filesystem.
@@ -39,6 +74,15 @@ Prints the version number and exits.
 .B \-y
 Repair the filesystem answering yes to all questions.
 .TP
+.B \-b
+Try to repair the filesystem even if the exFAT filesystem is not found.
+
+.SH EXAMPLES
+.PP
+repair a corrupted device and create files in /LOST+FOUND, which have clusters allocated but not belonged to any files when reparing the device.
+.EX
+.RB "$" " fsck.exfat -p -s /dev/sda1"
+
 .SH SEE ALSO
 .BR fsck (8),
 .BR fstab (5),

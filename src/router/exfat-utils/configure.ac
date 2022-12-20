@@ -14,7 +14,7 @@ AC_CONFIG_SRCDIR([config.h.in])
 AC_CONFIG_HEADER([config.h])
 AC_CONFIG_MACRO_DIR([m4])
 AC_CONFIG_AUX_DIR([build-aux])
-AM_INIT_AUTOMAKE([foreign tar-pax subdir-objects])
+AM_INIT_AUTOMAKE([foreign tar-pax dist-xz subdir-objects])
 
 AC_LANG([C])
 AC_PROG_CC
@@ -30,6 +30,9 @@ AC_CONFIG_FILES([
 	mkfs/Makefile
 	fsck/Makefile
 	tune/Makefile
+	label/Makefile
+	dump/Makefile
+	exfat2img/Makefile
 ])
 
 AC_OUTPUT

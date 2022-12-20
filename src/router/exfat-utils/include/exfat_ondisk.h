@@ -39,12 +39,13 @@
 #define DENTRY_SIZE_BITS	5
 /* exFAT allows 8388608(256MB) directory entries */
 #define MAX_EXFAT_DENTRIES	8388608
+#define MIN_FILE_DENTRIES	3
 
 /* dentry types */
 #define MSDOS_DELETED		0xE5	/* deleted mark */
 #define MSDOS_UNUSED		0x00	/* end of directory */
 
-#define EXFAT_UNUSED		0x00	/* end of directory */
+#define EXFAT_LAST		0x00	/* end of directory */
 #define EXFAT_DELETE		~(0x80)
 #define IS_EXFAT_DELETED(x)	((x) < 0x80) /* deleted file (0x01~0x7F) */
 #define EXFAT_INVAL		0x80	/* invalid value */
@@ -93,7 +94,7 @@
 #define EXFAT_BAD_CLUSTER		(0xFFFFFFF7U)
 #define EXFAT_FREE_CLUSTER		(0)
 #define EXFAT_FIRST_CLUSTER		(2)
-#define EXFAT_REVERVED_CLUSTERS		(2)
+#define EXFAT_RESERVED_CLUSTERS		(2)
 
 
 /* EXFAT BIOS parameter block (64 bytes) */
@@ -131,17 +132,6 @@ struct pbr {
 	__le16 signature;
 };
 
-/* Extended Boot Sector */
-struct exbs {
-	__u8 zero[510];
-	__le16 signature;
-};
-
-/* Extended Boot Record (8 sectors) */
-struct expbr {
-	struct exbs eb[8];
-};
-
 #define VOLUME_LABEL_MAX_LEN	11
 #define ENTRY_NAME_MAX		15
 
@@ -167,8 +157,10 @@ struct exfat_dentry {
 			__le16 access_date;
 			__u8 create_time_ms;
 			__u8 modify_time_ms;
-			__u8 access_time_ms;
-			__u8 reserved2[9];
+			__u8 create_tz;
+			__u8 modify_tz;
+			__u8 access_tz;
+			__u8 reserved2[7];
 		} __attribute__((packed)) file; /* file directory entry */
 		struct {
 			__u8 flags;

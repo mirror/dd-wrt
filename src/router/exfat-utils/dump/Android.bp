@@ -1,0 +1,11 @@
+// Copyright 2021 The Android Open Source Project
+
+cc_binary {
+    name: "dump.exfat",
+
+    srcs: [
+        "dump.c",
+    ],
+    defaults: ["exfatprogs-defaults"],
+    static_libs: ["libexfat"],
+}

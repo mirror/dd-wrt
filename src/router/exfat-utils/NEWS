@@ -1,3 +1,97 @@
+exfatprogs 1.2.0 - released 2022-10-28
+======================================
+
+CHANGES :
+ * fsck.exfat: Keep traveling files even if there is a corrupted
+directory entry set.
+ * fsck.exfat: Introduce the option "b" to recover a boot sector even
+if an exFAT filesystem is not found.
+ * fsck.exfat: Introduce the option "s" to create files in
+"/LOST+FOUND", which have clusters allocated but was not belonged to
+any files.
+ * fsck.exfat: Rename '.' and '..' entry name to the one user want.
+
+NEW FEATURES :
+ * fsck.exfat: Repair corruptions of an exFAT filesystem. Please refer
+to fsck.exfat manpage to see what kind of corruptions can be repaired.
+ * exfat2img: Dump metadata of an exFAT filesystem. Please refer to
+exfat2img manpage to see how to use it.
+
+BUG FIXES:
+ * fsck.exfat: Fix an infinite loop while traveling files.
+ * tune.exfat: Fix bitmap entry corruption when adding new volume lablel.
+
+exfatprogs 1.1.3 - released 2021-11-11
+======================================
+
+CHANGES :
+ * mkfs.exfat: ensure that the cluster size is greater than or
+   equal than the sector size.
+ * mkfs.exfat: replace lseek() + write() with pwrite().
+
+BUG FIXES :
+ * mkfs.exfat: prevent an integer overflow when computing the FAT
+   length.
+ * fsck.exfat: fix a double free memory error.
+
+exfatprogs 1.1.2 - released 2021-05-20
+======================================
+
+CHANGES :
+ * mkfs.exfat: set 0x80 to DriveSelect of the boot sector
+
+BUG FIXES :
+ * Fix issues on 4KB logical sector devices
+ * Fix issues when the sector size of of a file system is different from
+   that of a block device.
+
+exfatprogs 1.1.1 - released 2021-04-21
+======================================
+
+CHANGES :
+ * mkfs.exfat: adjust the boundary alignment calculations to compensate
+   for the volume offset.
+
+NEW FEATURES :
+ * mkfs.exfat: add the "--pack-bitmap" option to relocate the allocation
+   bitmap to allow the FAT and the bitmap to share the same allocation
+   unit on flash media.
+
+BUG FIXES :
+ * Fix wrong bit operations on 64-bit big.
+ * Fix memory leaks in error paths.
+
+exfatprogs 1.1.0 - released 2021-02-09
+======================================
+
+CHANGES :
+ * fsck.exfat: recover corrupted boot region.
+
+NEW FEATURES :
+ * exfatlabel: Print or Set volume label and serial.
+ * dump.exfat: Show the on-disk metadata information and the statistics.
+
+BUG FIXES :
+ * set _FILE_OFFSET_BITS=64 for Android build.
+
+exfatprogs 1.0.4 - released 2020-07-31
+======================================
+
+CHANGES :
+ * fsck.exfat: display sector, cluster, and volume sizes in the human
+   readable format.
+ * fsck.exfat: reduce the elapsed time using read-ahead.
+
+NEW FEATURES :
+ * mkfs.exfat: generate pseudo unique serials while creating filesystems.
+ * mkfs.exfat: add the "-b" option to align the start offset of FAT and
+   data clusters.
+ * fsck.exfat: repair zero-byte files which have the NoFatChain attribute.
+
+BUG FIXES :
+ * Fix memory leaks on error handling paths.
+ * fsck.exfat: fix the bug that cannot access space beyond 2TB.
+
 exfatprogs 1.0.3 - released 2020-05-12
 ======================================
 

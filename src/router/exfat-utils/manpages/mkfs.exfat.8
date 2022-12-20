@@ -4,6 +4,9 @@ mkfs.exfat \- create an exFAT filesystem
 .SH SYNOPSIS
 .B mkfs.exfat
 [
+.B \-b
+.I boundary_alignment
+] [
 .B \-c
 .I cluster_size
 ] [
@@ -13,6 +16,8 @@ mkfs.exfat \- create an exFAT filesystem
 ] [
 .B \-L
 .I volume_label
+] [
+.B \-\-pack\-bitmap
 ] [
 .B \-v
 ]
@@ -36,24 +41,70 @@ SCSI disk, use:
 .PP
 .SH OPTIONS
 .TP
-.BI \-c " cluster_size"
-Specify the cluster size. Cluster size can be specified in m/M for megabytes
-and k/K for kilobytes.
+.BR \-b ", " \-\-boundary\-align =\fIalignment\fR
+Specifies the alignment for the FAT and the start of the cluster heap.
+The \fIalignment\fR argument is specified in bytes or may be specified with
+\fBm\fR/\fBM\fR suffix for mebibytes or \fBk\fR/\fBK\fR suffix for kibibytes
+and should be a power of two.
+Some media like SD cards need this for optimal performance and endurance,
+in which case \fIalignment\fR should be set to half of the card's native
+boundary unit size.
+If the card's native boundary unit size is not known, refer to the following
+table of boundary unit sizes recommended by the SD Card Association.
+.\" source: SD Specifications Part 2: File System Specification Version 3.00
+.TS
+center;
+cb1s6cbcb,nnnn.
+Card Capacity Range	Cluster Size	Boundary Unit
+_
+	\[<=]8 MiB	8 KiB	8 KiB
+>8 MiB	\[<=]64 MiB	16 KiB	16 KiB
+>64 MiB	\[<=]256 MiB	16 KiB	32 KiB
+>256 MiB	\[<=]1 GiB	16 KiB	64 KiB
+>1 GiB	\[<=]2 GiB	32 KiB	64 KiB
+>2 GiB	\[<=]32 GiB	32 KiB	4 MiB
+>32 GiB	\[<=]128 GiB	128 KiB	16 MiB
+>128 GiB	\[<=]512 GiB	256 KiB	32 MiB
+>512 GiB	\[<=]2 TiB	512 KiB	64 MiB
+.TE
 .TP
-.BI \-f
-Performs a full format. This zeros the entire disk device while
-creating the exFAT filesystem.
+.BR \-c ", " \-\-cluster\-size =\fIsize\fR
+Specifies the cluster size of the exFAT file system.
+The \fIsize\fR argument is specified in bytes or may be specified with
+\fBm\fR/\fBM\fR suffix for mebibytes or \fBk\fR/\fBK\fR suffix for kibibytes
+and must be a power of two.
 .TP
-.BI \-h
+.BR \-f ", " \-\-full\-format
+Performs a full format.
+This zeros the entire disk device while creating the exFAT filesystem.
+.TP
+.BR \-h ", " \-\-help
 Prints the help and exit.
 .TP
-.BI \-L " volume_label"
-Specifies the volume label associated with the exFAT filesystem.
+.BR \-L ", " \-\-volume\-label =\fIlabel\fR
+Specifies the volume label to be associated with the exFAT filesystem.
 .TP
-.BI \-v
+.B \-\-pack\-bitmap
+Attempts to relocate the exFAT allocation bitmap so that it ends at the
+alignment boundary immediately following the FAT rather than beginning at that
+boundary.
+This strictly violates the SD card specification but may improve performance
+and endurance on SD cards and other flash media not designed for use with exFAT
+by allowing file-system metadata updates to touch fewer flash allocation units.
+Furthermore, many SD cards and other flash devices specially optimize the
+allocation unit where the FAT resides so as to support tiny writes with reduced
+write amplification but expect only larger writes in subsequent allocation
+units \[em] where the exFAT bitmap would be placed by default.
+Specifying \fB\-\-pack\-bitmap\fR attempts to avoid the potential problems
+associated with issuing many small writes to the bitmap by making it share an
+allocation unit with the FAT.
+If there is insufficient space for the bitmap there, then this option will have
+no effect, and the bitmap will be aligned at the boundary as by default.
+.TP
+.BR \-v ", " \-\-verbose
 Prints verbose debugging information while creating the exFAT filesystem.
 .TP
-.B \-V
+.BR \-V ", " \-\-version
 Prints the version number and exits.
 .SH SEE ALSO
 .BR mkfs (8),

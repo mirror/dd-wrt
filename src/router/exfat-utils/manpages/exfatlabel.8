@@ -1,0 +1,34 @@
+.TH exfatlabel 8
+.SH NAME
+exfatlabel \- Get or Set volume label or volume serial of an exFAT filesystem
+.SH SYNOPSIS
+.B exfatlabel
+[
+.B \-i
+] [
+.B \-V
+]
+.I device
+[
+.I label_string or serial_value
+]
+.br
+.B exfatlabel \-V
+.SH DESCRIPTION
+.B exfatlabel
+Print or set volume label of an existing exFAT filesystem.
+
+If there is a
+.I label_string
+in the argument of exfatlabel, it will be written to the volume
+label field on a given device. If not, exfatlabel will just print
+it after reading the volume label field from the given device. If -i
+or --volume-serial is given, it will switch to volume serial mode.
+.PP
+.SH OPTIONS
+.TP
+.BI \-i\ \-\-volume-serial
+Switch to volume serial mode.
+.TP
+.B \-V
+Prints the version number and exits.
