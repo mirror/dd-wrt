@@ -13,7 +13,6 @@ brctl:			brctl.o brctl_cmd.o brctl_disp.o ../libbridge/libbridge.a
 			$(CC) $(LDFLAGS) -o brctl brctl.o brctl_cmd.o brctl_disp.o ../libbridge/libbridge.a
 
 clean:
-			rcsclean *
 			rm -f *~
 			rm -f *.o
 			rm -f brctl

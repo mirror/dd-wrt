@@ -3,7 +3,6 @@ CC := $(CC) -Wall -c $(COPTS) -DNEED_PRINTF -D_GNU_SOURCE $(MIPS16_OPT) $(LTO) -
 all:			libbridge.a
 
 clean:
-			rcsclean *
 			rm -f *~
 			rm -f *.o
 			rm -f libbridge.a
