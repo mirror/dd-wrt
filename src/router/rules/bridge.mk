@@ -3,10 +3,7 @@ bridge:
 
 bridge-clean:
 	@echo "Cleaning bridge"
-	@if [ -e bridge/libbridge/libbridge.a ]; then\
-		rm bridge/brctl/*.o bridge/libbridge/*.a bridge/libbridge/*.o;\
-	else echo "Nothing to clean";\
-	fi;
+	$(MAKE) -C bridge clean
 
 bridge-install:
 	install -D bridge/brctl/brctl $(INSTALLDIR)/bridge/usr/sbin/brctl
