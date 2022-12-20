@@ -1,4 +1,4 @@
-CC := $(CC) -Wall -c $(COPTS) -DNEED_PRINTF -D_GNU_SOURCE $(MIPS16_OPT) -ffunction-sections -fdata-sections -Wl,--gc-sections
+CC := $(CC) -Wall -c $(COPTS) -DNEED_PRINTF -D_GNU_SOURCE $(MIPS16_OPT) $(LTO) -ffunction-sections -fdata-sections -Wl,--gc-sections
 
 all:			libbridge.a
 
@@ -9,8 +9,8 @@ clean:
 			rm -f libbridge.a
 
 libbridge.a:		libbridge_devif.o libbridge_if.o libbridge_init.o libbridge_misc.o
-			$(AR) rcs libbridge.a libbridge_devif.o libbridge_if.o libbridge_init.o libbridge_misc.o
-			$(RANLIB) libbridge.a
+			$(AR) rcs $(LTOPLUGIN) libbridge.a libbridge_devif.o libbridge_if.o libbridge_init.o libbridge_misc.o
+			$(RANLIB) $(LTOPLUGIN) libbridge.a
 
 
 libbridge_devif.o:	libbridge_devif.c libbridge.h libbridge_private.h
