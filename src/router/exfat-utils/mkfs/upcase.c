@@ -506,8 +506,7 @@ int exfat_create_upcase_table(struct exfat_blk_dev *bd)
 {
 	int nbytes;
 
-	lseek(bd->dev_fd, finfo.ut_byte_off, SEEK_SET);
-	nbytes = write(bd->dev_fd, upcase_table, EXFAT_UPCASE_TABLE_SIZE);
+	nbytes = pwrite(bd->dev_fd, upcase_table, EXFAT_UPCASE_TABLE_SIZE, finfo.ut_byte_off);
 	if (nbytes != EXFAT_UPCASE_TABLE_SIZE)
 		return -1;
 
