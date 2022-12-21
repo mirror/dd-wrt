@@ -103,7 +103,7 @@ static int make_ovpncl_config(char *ovnpcl_fname) {
 			sprintf(dataciphers, "%s", nvram_safe_get("openvpn_dc3"));
 		}
 		fprintf(f1, "data-ciphers %s\n", dataciphers);
-		
+		fprintf(f1, "#Block IPv6, newer clients could default to IPv6\npull-filter ignore \"route-ipv6\"\npull-filter ignore \"ifconfig-ipv6\"\nblock-ipv6\n");
 		switch (nvram_geti("openvpn_tls_btn"))
 		{
 			case 0:
