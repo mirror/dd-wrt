@@ -274,6 +274,17 @@ EJ_VISIBLE void ej_show_eop_tunnels(webs_t wp, int argc, char_t ** argv)
 				}
 				websWrite(wp, "</div>\n");
 
+				//egc full wan access, NAT over WAN, nvram param: oet%d_wanac, Checkbox
+				snprintf(temp, sizeof(temp), "oet%d_wanac", tun);
+				websWrite(wp, "<div class=\"setting\">\n");
+				{
+					show_caption(wp, "label", "service.vpnd_allowcnwan", NULL);
+					websWrite(wp, "<input type=\"hidden\" name=\"%s\" id=\"%s\" value=\"0\" />\n", temp, temp);
+					websWrite(wp, "<input class=\"spaceradio\" type=\"checkbox\" name=\"%s\" value=\"1\" %s />\n", temp, (nvram_default_matchi(temp, 1, 1) ? "checked=\"checked\"" : ""));
+				}
+				websWrite(wp, "</div>\n");
+				//end WAN access
+
 				//egc full lan access, NAT over br0 nvram param: oet%d_lanac, Checkbox
 				snprintf(temp, sizeof(temp), "oet%d_lanac", tun);
 				websWrite(wp, "<div class=\"setting\">\n");

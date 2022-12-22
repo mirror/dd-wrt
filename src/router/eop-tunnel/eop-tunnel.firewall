@@ -6,6 +6,8 @@ tunnels=$($nv get oet_tunnels)
 #WAN_IF="$(ip route | awk '/^default/{print $NF}')"
 WAN_IF=$(get_wanface)
 FW_STATE="-m state --state NEW"
+ipv6_enable=$($nv get ipv6_enable)
+wan_ipaddr=$($nv get wan_ipaddr)
 for i in $(seq 1 $tunnels); do
 	if [[ -e "/tmp/oet/pid/f${i}.pid" ]]; then
 		FW_CHAIN="pbr-oet${i}"
@@ -78,6 +80,23 @@ for i in $(seq 1 $tunnels); do
 			#add NAT out for DDWRT client
 			if [[ $($nv get oet${i}_natout) -eq 1 ]]; then
 				$ipt -t nat -I POSTROUTING -o oet${i} -j SNAT --to $($nv get oet${i}_ipaddr) >/dev/null 2>&1
+			fi
+			#allow internet access via WAN
+			if [[ "$($nv get oet${i}_wanac)" != "0" ]]; then
+				for addrmask in $($nv get oet${i}_ipaddrmask | sed "s/,/ /g") ; do
+					case $addrmask in
+					  *.*) #IPv4
+						echo "$ipt -D POSTROUTING -t nat -s $addrmask -o $WAN_IF -j SNAT --to $wan_ipaddr" >> $WGDELRT
+						$ipt -I POSTROUTING -t nat -s $addrmask -o $WAN_IF -j SNAT --to $wan_ipaddr
+						logger -p user.info "WireGuard IPv4 internet access for $addrmask enabled"
+						;;
+					  *:*) #IPv6
+						echo "$ip6t -D POSTROUTING -t nat -s $addrmask -o $WAN_IF -j MASQUERADE" >> $WGDELRT
+						$ip6t -I POSTROUTING -t nat -s $addrmask -o $WAN_IF -j MASQUERADE
+						logger -p user.info "WireGuard IPv6 internet access for $addrmask enabled"
+						;;
+					esac
+				done
 			fi
 			#add NAT via br0 to allow seamless LAN access
 			if [[ $($nv get oet${i}_lanac) -eq 1 ]]; then
@@ -167,7 +186,7 @@ for i in $(seq 1 $tunnels); do
 				$ipt -I FORWARD -i oet${i} $FW_STATE -j ACCEPT >/dev/null 2>&1
 				$ipt -I INPUT -i oet${i} $FW_STATE -j ACCEPT >/dev/null 2>&1
 				#For IPv6
-				if [[ $($nv get ipv6_enable) -eq 1 ]]; then
+				if [[ $ipv6_enable -eq 1 ]]; then
 					echo "$ip6t -D INPUT -i $WAN_IF -p udp --dport $($nv get oet${i}_port) -j ACCEPT" >> $WGDELRT
 					echo "$ip6t -D FORWARD -i oet${i} $FW_STATE -j ACCEPT" >> $WGDELRT
 					echo "$ip6t -D INPUT -i oet${i} $FW_STATE -j ACCEPT" >> $WGDELRT
