@@ -1,0 +1,44 @@
+#
+#  Plex Extension Framework
+#  Copyright (C) 2008-2012 Plex, Inc. (James Clarke, Elan Feingold). All Rights Reserved.
+#
+
+from common_templates import MediaProxyContainer
+from common_records import Person, Review
+
+
+class MetadataModel(Template.Model, Template.Abstract):
+  require_key_and_rating_key = True
+
+  guid_args = [
+    'lang'
+  ]
+  genres                = Template.Set(Template.String())
+  tags                  = Template.Set(Template.String())
+  collections           = Template.Set(Template.String())
+  reviews               = Template.Set(Review())
+  duration              = Template.Integer()
+  rating                = Template.Float()
+  audience_rating       = Template.Float()
+  rating_image          = Template.String()
+  audience_rating_image = Template.String()
+  original_title        = Template.String()
+  title_sort            = Template.String()
+  rating_count          = Template.Integer()
+  
+  # Interface settings
+  
+  key                   = Template.String()
+  key.is_synthetic
+  
+  rating_key            = Template.String()
+  rating_key.is_synthetic
+  
+  source_title          = Template.String()
+  source_title.is_synthetic
+  
+  collections.exclude_from_interface
+  
+  genres.xml_tag        = 'Genre'
+  tags.xml_tag          = 'Tag'
+  
