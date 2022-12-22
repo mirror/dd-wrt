@@ -1,0 +1,82 @@
+RE_IVA_ID = Regex('.*\((.+)\).*')
+RE_LANG = Regex('lang=([a-z]{2})')
+RE_BITRATES = Regex('bitrates=([\d,]+)')
+RE_DURATION = Regex('duration=([\d]+)')
+RE_ADAPTIVE = Regex('adaptive=([\d]+)')
+RE_DTS = Regex('dts=([\d]+)')
+
+ADAPTIVE_FORMATS = {11: ('mp4', Container.MPEGTS, Protocol.HLS), 14: ('mpd', Container.MP4, Protocol.DASH)}  # HLS and DASH respectively
+
+####################################################################################################
+def MediaObjectsForURL(url):
+
+  iva_id = RE_IVA_ID.match(url).groups(0)[0]
+  try: lang = RE_LANG.search(url).group(1)
+  except: lang = 'xx'
+  try: duration = int(RE_DURATION.search(url).group(1))
+  except: duration = 0
+
+  try: 
+    bitrates_avail = RE_BITRATES.search(url).group(1).split(',')
+    bitrates_avail = [int(b) for b in bitrates_avail]
+  except: 
+    bitrates_avail = []
+  bitrates = find_bitrates(bitrates_avail)
+
+  try: adaptive = int(RE_ADAPTIVE.search(url).group(1))
+  except: adaptive = 0
+
+  try: dts = int(RE_DTS.search(url).group(1))
+  except: dts = 0
+
+  media = []
+  for (bitrate, width, height) in bitrates:
+    part = PartObject(key='/services/iva/assets/%s/video.mp4?bitrate=%d' % (iva_id, bitrate), container=Container.MP4, optimized_for_streaming=True, duration=duration*1000)
+    part.streams.append(VideoStreamObject(codec=VideoCodec.H264, bitrate=bitrate, width=width, height=height))
+    part.streams.append(AudioStreamObject(codec=AudioCodec.AAC, channels=2, language_code=lang))
+    media.append(MediaObject(parts=[part], container=Container.MP4, video_codec=VideoCodec.H264, audio_codec=AudioCodec.AAC, duration=duration*1000, bitrate=bitrate, width=width, height=height))
+
+  return media
+
+
+####################################################################################################
+def find_bitrates(bitrates_avail):
+
+  # Apply some logic to pick the best three bitrates and avoid creating too many items.
+  # Limit bitrates to the ones supported for MP4, cf http://www.internetvideoarchive.com/video-api/
+  #
+  mp4_bitrates = [80, 212, 450, 750, 1500, 2500]
+  bitrates_avail = sorted(list(set(bitrates_avail) & set(mp4_bitrates)))
+
+  # We're not given resolution, but we'd like to pass back a size so clients can display it nicely ("720p" e.g.).
+  res = {80 : (80, 320, 240),
+         212 : (212, 320, 240),
+         450 : (450, 640, 480),
+         750 : (750, 640, 480),
+         1500 : (1500, 1280, 720),
+         2500 : (2500, 1920, 1080)}
+
+  bitrates = []
+
+  # No bitrates, let's make some up.
+  if len(bitrates_avail) == 0:
+    bitrates = [res[450], res[1500], res[2500]]
+
+  # Fewer than three, just use what we were given.
+  elif len(bitrates_avail) <= 3:
+    bitrates = [res[b] for b in bitrates_avail]
+
+  # Pick three good ones.  
+  else:
+
+    # Best and second best quality.
+    bitrates.append(res[bitrates_avail.pop()])
+    bitrates.append(res[bitrates_avail.pop()])
+    
+    # Worst quality better than 212kbps.
+    for low in bitrates_avail:
+      if low > 212:
+        bitrates.append(res[low])
+        break
+
+  return bitrates
