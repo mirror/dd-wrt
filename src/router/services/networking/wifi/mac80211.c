@@ -2282,8 +2282,10 @@ void ath9k_start_supplicant(int count, char *prefix)
 				sysprintf("echo %s > /sys/kernel/debug/ieee80211/%s/ath10k/sifs_trigger_time", nvram_default_get(wl_sifs_trigger_time, "0"), wif);
 			}
 		}
-		if (has_wave2(dev)) {
-			sysprintf("echo %s > /sys/kernel/debug/ieee80211/%s/ath10k/dynamic_auto_burst", nvram_default_get(wl_autoburst, "0"), wif);
+		if (nvram_match("experimental", "1")) {
+			if (has_wave2(dev)) {
+				sysprintf("echo %s > /sys/kernel/debug/ieee80211/%s/ath10k/dynamic_auto_burst", nvram_default_get(wl_autoburst, "0"), wif);
+			}
 		}
 		sysprintf("echo %s > /sys/kernel/debug/ieee80211/%s/ath10k/ani_enable", nvram_default_get(wl_intmit, "0"), wif);
 	}
