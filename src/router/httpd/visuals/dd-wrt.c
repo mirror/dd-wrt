@@ -3262,8 +3262,10 @@ static void internal_ej_show_wireless_single(webs_t wp, char *prefix)
 		} else {
 			showAutoOption(wp, "wl_basic.intmit", wl_intmit, 0);
 		}
-		if (has_wave2(prefix)) {
+		if (nvram_match("experimental", "1")) {
+			if (has_wave2(prefix)) {
 				showRadio(wp, "wl_basic.dynamic_auto_bursting", wl_autoburst);
+			}
 		}
 		if (has_qboost(prefix)) {
 			if (has_qboost_tdma(prefix)) {
@@ -4567,8 +4569,10 @@ static void internal_ej_show_wireless_single(webs_t wp, char *prefix)
 		} else {
 			showAutoOption(wp, "wl_basic.intmit", wl_intmit, 0);
 		}
-		if (has_wave2(prefix)) {
+		if (nvram_match("experimental", "1")) {
+			if (has_wave2(prefix)) {
 				showRadio(wp, "wl_basic.dynamic_auto_bursting", wl_autoburst);
+			}
 		}
 		if (has_qboost(prefix)) {
 			if (has_qboost_tdma(prefix)) {

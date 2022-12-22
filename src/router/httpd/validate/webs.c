@@ -4992,7 +4992,9 @@ static void save_prefix(webs_t wp, char *prefix)
 	copytonv_prefix(wp, "subf", prefix);
 	copytonv_prefix(wp, "mubf", prefix);
 	copytonv_prefix(wp, "qboost", prefix);
-	copytonv_prefix(wp, "autoburst", prefix);
+	if (nvram_match("experimental", "1")) {
+		copytonv_prefix(wp, "autoburst", prefix);
+	}
 	copytonv_prefix(wp, "sifs_trigger_time", prefix);
 #endif
 	copytonv_prefix(wp, "wmm", prefix);
