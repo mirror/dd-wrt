@@ -126,6 +126,7 @@ for i in $(seq 1 $tunnels); do
 			fi
 			peers=$(($($nv get oet${i}_peers) - 1))
 			$nv set oet${i}_bridged=0
+			$nv set oet${i}_nat=0
 			for p in $(seq 0 $peers); do
 				PSKARG1=
 				PSKARG2=

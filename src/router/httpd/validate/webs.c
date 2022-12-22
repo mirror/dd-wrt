@@ -1982,6 +1982,7 @@ void tunnel_save(webs_t wp)
 		copytonv(wp, "oet%d_rtupscript", i);
 		copytonv(wp, "oet%d_rtdownscript", i);
 		copytonv(wp, "oet%d_fwmark", i);
+		copytonv(wp, "oet%d_wanac", i);
 		copytonv(wp, "oet%d_lanac", i);
 		copytonv(wp, "oet%d_killswitch", i);
 		copytonv(wp, "oet%d_spbr", i);
@@ -2242,7 +2243,8 @@ void add_tunnel(webs_t wp)
 	default_set("rtupscript", "");
 	default_set("rtdownscript", "");
 	default_set("fwmark", "");
-	default_set("lanac", "0");
+	default_seti("wanac", 1);
+	default_seti("lanac", 0);
 	default_seti("killswitch", 0);
 	default_seti("spbr", 0);
 	default_seti("dnspbr", 0);
@@ -2382,6 +2384,7 @@ void del_tunnel(webs_t wp)
 		copytunvalue("rtupscript", i, i - 1);
 		copytunvalue("rtdownscript", i, i - 1);
 		copytunvalue("fwmark", i, i - 1);
+		copytunvalue("wanac", i, i - 1);
 		copytunvalue("lanac", i, i - 1);
 		copytunvalue("killswitch", i, i - 1);
 		copytunvalue("spbr", i, i - 1);
@@ -2435,6 +2438,7 @@ void del_tunnel(webs_t wp)
 	deltunvalue("rtupscript", tunnels);
 	deltunvalue("rtdownscript", tunnels);
 	deltunvalue("fwmark", tunnels);
+	deltunvalue("wanac", tunnels);
 	deltunvalue("lanac", tunnels);
 	deltunvalue("killswitch", tunnels);
 	deltunvalue("spbr", tunnels);
