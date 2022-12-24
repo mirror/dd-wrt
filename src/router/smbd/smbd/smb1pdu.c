@@ -334,6 +334,7 @@ int smb_session_disconnect(struct ksmbd_work *work)
 	ksmbd_conn_wait_idle(conn);
 
 	ksmbd_tree_conn_session_logoff(sess);
+	xa_erase(&conn->sessions, sess->id);
 	ksmbd_session_destroy(sess);
 	work->sess = NULL;
 
@@ -742,6 +743,7 @@ int smb_rename(struct ksmbd_work *work)
 	struct ksmbd_share_config *share = work->tcon->share_conf;
 	bool is_unicode = is_smbreq_unicode(&req->hdr);
 	char *oldname, *newname;
+	struct ksmbd_file *fp = NULL;
 	int oldname_len;
 	struct path path;
 	bool file_present = true;
@@ -794,14 +796,29 @@ int smb_rename(struct ksmbd_work *work)
 	}
 
 	ksmbd_debug(SMB, "rename %s -> %s\n", oldname, newname);
-	rc = ksmbd_vfs_rename_slowpath(work, oldname, newname);
-	if (rc) {
-		rsp->hdr.Status.CifsError = STATUS_NO_MEMORY;
+	rc = ksmbd_vfs_kern_path(work, oldname, LOOKUP_NO_SYMLINKS, &path, 1);
+	if (rc)
+		goto out;
+
+	fp = ksmbd_vfs_dentry_open(work, &path, O_RDONLY, 0, false);
+	if (IS_ERR(fp)) {
+		fp = NULL;
+		path_put(&path);
 		goto out;
 	}
+
+	rc = ksmbd_vfs_fp_rename(work, fp, newname);
+	if (rc) {
+		rsp->hdr.Status.CifsError = STATUS_NO_MEMORY;
+		path_put(&path);
+		goto out;
+	}
+	path_put(&path);
 	rsp->hdr.WordCount = 0;
 	rsp->ByteCount = 0;
 out:
+	if (fp)
+		ksmbd_close_fd(work, fp->volatile_id);
 	kfree(oldname);
 	kfree(newname);
 	return rc;
