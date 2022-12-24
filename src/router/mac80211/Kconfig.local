@@ -868,6 +868,9 @@ config BACKPORTED_MT7915E
 config BACKPORTED_MT7921E
 	tristate
 	default MT7921E
+config BACKPORTED_MT7996E
+	tristate
+	default MT7996E
 config BACKPORTED_WLAN_VENDOR_MICROCHIP
 	tristate
 	default WLAN_VENDOR_MICROCHIP

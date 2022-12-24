@@ -35,6 +35,7 @@
 				 FIELD_PREP(MT_QFLAG_WED_TYPE, _type) | \
 				 FIELD_PREP(MT_QFLAG_WED_RING, _n))
 #define MT_WED_Q_TX(_n)		__MT_WED_Q(MT76_WED_Q_TX, _n)
+#define MT_WED_Q_RX(_n)		__MT_WED_Q(MT76_WED_Q_RX, _n)
 #define MT_WED_Q_TXFREE		__MT_WED_Q(MT76_WED_Q_TXFREE, 0)
 
 struct mt76_dev;
@@ -56,6 +57,7 @@ enum mt76_bus_type {
 enum mt76_wed_type {
 	MT76_WED_Q_TX,
 	MT76_WED_Q_TXFREE,
+	MT76_WED_Q_RX,
 };
 
 struct mt76_bus_ops {
@@ -273,9 +275,15 @@ struct mt76_sta_stats {
 	u64 tx_nss[4];		/* 1, 2, 3, 4 */
 	u64 tx_mcs[16];		/* mcs idx */
 	u64 tx_bytes;
+	/* WED TX */
 	u32 tx_packets;
 	u32 tx_retries;
 	u32 tx_failed;
+	/* WED RX */
+	u64 rx_bytes;
+	u32 rx_packets;
+	u32 rx_errors;
+	u32 rx_drops;
 };
 
 enum mt76_wcid_flags {
@@ -341,7 +349,10 @@ struct mt76_txwi_cache {
 	struct list_head list;
 	dma_addr_t dma_addr;
 
-	struct sk_buff *skb;
+	union {
+		struct sk_buff *skb;
+		void *ptr;
+	};
 };
 
 struct mt76_rx_tid {
@@ -441,7 +452,7 @@ struct mt76_driver_ops {
 	bool (*rx_check)(struct mt76_dev *dev, void *data, int len);
 
 	void (*rx_skb)(struct mt76_dev *dev, enum mt76_rxq_id q,
-		       struct sk_buff *skb);
+		       struct sk_buff *skb, u32 *info);
 
 	void (*rx_poll_complete)(struct mt76_dev *dev, enum mt76_rxq_id q);
 
@@ -723,6 +734,13 @@ struct mt76_phy {
 	} rx_amsdu[__MT_RXQ_MAX];
 
 	struct mt76_freq_range_power *frp;
+
+	struct {
+		struct led_classdev cdev;
+		char name[32];
+		bool al;
+		u8 pin;
+	} leds;
 };
 
 struct mt76_dev {
@@ -737,6 +755,7 @@ struct mt76_dev {
 	const u32 *cipher_suites;
 	u32 n_cipher_suites;
 
+	spinlock_t wed_lock;
 	spinlock_t lock;
 	spinlock_t cc_lock;
 
@@ -763,6 +782,7 @@ struct mt76_dev {
 	struct sk_buff_head rx_skb[__MT_RXQ_MAX];
 
 	struct list_head txwi_cache;
+	struct list_head rxwi_cache;
 	struct mt76_queue *q_mcu[__MT_MCUQ_MAX];
 	struct mt76_queue q_rx[__MT_RXQ_MAX];
 	const struct mt76_queue_ops *queue_ops;
@@ -776,6 +796,10 @@ struct mt76_dev {
 	u16 wed_token_count;
 	u16 token_count;
 	u16 token_size;
+
+	spinlock_t rx_token_lock;
+	struct idr rx_token;
+	u16 rx_token_size;
 
 	wait_queue_head_t tx_wait;
 	/* spinclock used to protect wcid pktid linked list */
@@ -803,11 +827,6 @@ struct mt76_dev {
 	enum nl80211_dfs_regions region;
 
 	u32 debugfs_reg;
-
-	struct led_classdev led_cdev;
-	char led_name[32];
-	bool led_al;
-	u8 led_pin;
 
 	u8 csa_complete;
 
@@ -1102,8 +1121,9 @@ static inline bool mt76_is_skb_pktid(u8 pktid)
 static inline u8 mt76_tx_power_nss_delta(u8 nss)
 {
 	static const u8 nss_delta[4] = { 0, 6, 9, 12 };
+	u8 idx = nss - 1;
 
-	return nss_delta[nss - 1];
+	return (idx < ARRAY_SIZE(nss_delta)) ? nss_delta[idx] : 0;
 }
 
 static inline bool mt76_testmode_enabled(struct mt76_phy *phy)
@@ -1256,6 +1276,8 @@ mt76_tx_status_get_hw(struct mt76_dev *dev, struct sk_buff *skb)
 }
 
 void mt76_put_txwi(struct mt76_dev *dev, struct mt76_txwi_cache *t);
+void mt76_put_rxwi(struct mt76_dev *dev, struct mt76_txwi_cache *t);
+struct mt76_txwi_cache *mt76_get_rxwi(struct mt76_dev *dev);
 void mt76_rx_complete(struct mt76_dev *dev, struct sk_buff_head *frames,
 		      struct napi_struct *napi);
 void mt76_rx_poll_complete(struct mt76_dev *dev, enum mt76_rxq_id q,
@@ -1400,6 +1422,9 @@ struct mt76_txwi_cache *
 mt76_token_release(struct mt76_dev *dev, int token, bool *wake);
 int mt76_token_consume(struct mt76_dev *dev, struct mt76_txwi_cache **ptxwi);
 void __mt76_set_tx_blocked(struct mt76_dev *dev, bool blocked);
+struct mt76_txwi_cache *mt76_rx_token_release(struct mt76_dev *dev, int token);
+int mt76_rx_token_consume(struct mt76_dev *dev, void *ptr,
+			  struct mt76_txwi_cache *r, dma_addr_t phys);
 
 static inline void mt76_set_tx_blocked(struct mt76_dev *dev, bool blocked)
 {

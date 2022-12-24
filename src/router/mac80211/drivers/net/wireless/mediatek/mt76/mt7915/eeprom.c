@@ -110,18 +110,23 @@ static int mt7915_eeprom_load(struct mt7915_dev *dev)
 	} else {
 		u8 free_block_num;
 		u32 block_num, i;
+		u32 eeprom_blk_size = MT7915_EEPROM_BLOCK_SIZE;
 
-		mt7915_mcu_get_eeprom_free_block(dev, &free_block_num);
-		/* efuse info not enough */
+		ret = mt7915_mcu_get_eeprom_free_block(dev, &free_block_num);
+		if (ret < 0)
+			return ret;
+
+		/* efuse info isn't enough */
 		if (free_block_num >= 29)
 			return -EINVAL;
 
 		/* read eeprom data from efuse */
-		block_num = DIV_ROUND_UP(eeprom_size,
-					 MT7915_EEPROM_BLOCK_SIZE);
-		for (i = 0; i < block_num; i++)
-			mt7915_mcu_get_eeprom(dev,
-					      i * MT7915_EEPROM_BLOCK_SIZE);
+		block_num = DIV_ROUND_UP(eeprom_size, eeprom_blk_size);
+		for (i = 0; i < block_num; i++) {
+			ret = mt7915_mcu_get_eeprom(dev, i * eeprom_blk_size);
+			if (ret < 0)
+				return ret;
+		}
 	}
 
 	return mt7915_check_eeprom(dev);
@@ -131,9 +136,10 @@ static void mt7915_eeprom_parse_band_config(struct mt7915_phy *phy)
 {
 	struct mt7915_dev *dev = phy->dev;
 	u8 *eeprom = dev->mt76.eeprom.data;
+	u8 band = phy->mt76->band_idx;
 	u32 val;
 
-	val = eeprom[MT_EE_WIFI_CONF + phy->band_idx];
+	val = eeprom[MT_EE_WIFI_CONF + band];
 	val = FIELD_GET(MT_EE_WIFI_CONF0_BAND_SEL, val);
 
 	if (!is_mt7915(&dev->mt76)) {
@@ -153,7 +159,7 @@ static void mt7915_eeprom_parse_band_config(struct mt7915_phy *phy)
 			return;
 		}
 	} else if (val == MT_EE_BAND_SEL_DEFAULT && dev->dbdc_support) {
-		val = phy->band_idx ? MT_EE_BAND_SEL_5GHZ : MT_EE_BAND_SEL_2GHZ;
+		val = band ? MT_EE_BAND_SEL_5GHZ : MT_EE_BAND_SEL_2GHZ;
 	}
 
 	switch (val) {
@@ -179,6 +185,7 @@ void mt7915_eeprom_parse_hw_cap(struct mt7915_dev *dev,
 {
 	u8 path, nss, nss_max = 4, *eeprom = dev->mt76.eeprom.data;
 	struct mt76_phy *mphy = phy->mt76;
+	u8 band = phy->mt76->band_idx;
 
 	mt7915_eeprom_parse_band_config(phy);
 
@@ -188,7 +195,7 @@ void mt7915_eeprom_parse_hw_cap(struct mt7915_dev *dev,
 				 eeprom[MT_EE_WIFI_CONF]);
 	} else {
 		path = FIELD_GET(MT_EE_WIFI_CONF0_TX_PATH,
-				 eeprom[MT_EE_WIFI_CONF + phy->band_idx]);
+				 eeprom[MT_EE_WIFI_CONF + band]);
 	}
 
 	if (!path || path > 4)
@@ -201,12 +208,12 @@ void mt7915_eeprom_parse_hw_cap(struct mt7915_dev *dev,
 			path = min_t(u8, path, 2);
 			nss = FIELD_GET(MT_EE_WIFI_CONF3_TX_PATH_B0,
 					eeprom[MT_EE_WIFI_CONF + 3]);
-			if (phy->band_idx)
+			if (band)
 				nss = FIELD_GET(MT_EE_WIFI_CONF3_TX_PATH_B1,
 						eeprom[MT_EE_WIFI_CONF + 3]);
 		} else {
 			nss = FIELD_GET(MT_EE_WIFI_CONF_STREAM_NUM,
-					eeprom[MT_EE_WIFI_CONF + 2 + phy->band_idx]);
+					eeprom[MT_EE_WIFI_CONF + 2 + band]);
 		}
 
 		if (!is_mt7986(&dev->mt76))
@@ -218,7 +225,7 @@ void mt7915_eeprom_parse_hw_cap(struct mt7915_dev *dev,
 	nss = min_t(u8, min_t(u8, nss_max, nss), path);
 
 	mphy->chainmask = BIT(path) - 1;
-	if (phy->band_idx)
+	if (band)
 		mphy->chainmask <<= dev->chainshift;
 	mphy->antenna_mask = BIT(nss) - 1;
 	dev->chainmask |= mphy->chainmask;

@@ -184,6 +184,13 @@ enum mt7915_chan_mib_offs {
 	MIB_NON_WIFI_TIME_V2
 };
 
+struct mt7915_mcu_txpower_sku {
+	u8 format_id;
+	u8 limit_type;
+	u8 band_idx;
+	s8 txpower_sku[MT7915_SKU_RATE_NUM];
+} __packed;
+
 struct edca {
 	u8 queue;
 	u8 set;
@@ -420,6 +427,14 @@ enum {
 #define RATE_CFG_HE_LTF			GENMASK(31, 28)
 
 enum {
+	TX_POWER_LIMIT_ENABLE,
+	TX_POWER_LIMIT_TABLE = 0x4,
+	TX_POWER_LIMIT_INFO = 0x7,
+	TX_POWER_LIMIT_FRAME = 0x11,
+	TX_POWER_LIMIT_FRAME_MIN = 0x12,
+};
+
+enum {
 	SPR_ENABLE = 0x1,
 	SPR_ENABLE_SD = 0x3,
 	SPR_ENABLE_MODE = 0x5,
@@ -500,5 +515,17 @@ enum {
 					 sizeof(struct bss_info_bcn_mbss) + \
 					 sizeof(struct bss_info_bcn_cont) + \
 					 sizeof(struct bss_info_inband_discovery))
+
+static inline s8
+mt7915_get_power_bound(struct mt7915_phy *phy, s8 txpower)
+{
+	struct mt76_phy *mphy = phy->mt76;
+	int n_chains = hweight8(mphy->antenna_mask);
+
+	txpower = mt76_get_sar_power(mphy, mphy->chandef.chan, txpower * 2);
+	txpower -= mt76_tx_power_nss_delta(n_chains);
+
+	return txpower;
+}
 
 #endif
