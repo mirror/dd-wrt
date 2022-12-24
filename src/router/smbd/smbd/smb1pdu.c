@@ -596,7 +596,6 @@ smb_get_name(struct ksmbd_share_config *share, const char *src,
 		const int maxlen, struct ksmbd_work *work, bool converted)
 {
 	struct smb_hdr *req_hdr = (struct smb_hdr *)work->request_buf;
-	struct smb_hdr *rsp_hdr = (struct smb_hdr *)work->response_buf;
 	bool is_unicode = is_smbreq_unicode(req_hdr);
 	char *name, *wild_card_pos;
 
@@ -608,12 +607,6 @@ smb_get_name(struct ksmbd_share_config *share, const char *src,
 		if (IS_ERR(name)) {
 			ksmbd_debug(SMB, "failed to get name %ld\n",
 				PTR_ERR(name));
-			if (PTR_ERR(name) == -ENOMEM) {
-				printk(KERN_ERR "Out of memory in %s:%d\n", __func__,__LINE__);
-				rsp_hdr->Status.CifsError = STATUS_NO_MEMORY;
-			} else
-				rsp_hdr->Status.CifsError =
-					STATUS_OBJECT_NAME_INVALID;
 			return name;
 		}
 	}
@@ -878,6 +871,7 @@ int smb_handle_negotiate(struct ksmbd_work *work)
 
 	if (conn->use_spnego == false) {
 		neg_rsp->EncryptionKeyLength = CIFS_CRYPTO_KEY_SIZE;
+		neg_rsp->Capabilities &= ~cpu_to_le32(CAP_EXTENDED_SECURITY);
 		neg_rsp->ByteCount = cpu_to_le16(CIFS_CRYPTO_KEY_SIZE);
 		/* initialize random server challenge */
 		get_random_bytes(conn->ntlmssp.cryptkey, sizeof(__u64));
@@ -911,8 +905,9 @@ static int build_sess_rsp_noextsec(struct ksmbd_conn *conn,
 		struct smb_com_session_setup_req_no_secext *req,
 		struct smb_com_session_setup_old_resp *rsp)
 {
-	int offset, err = 0;
+	int offset, err = 0, len;
 	char *name;
+	__le16 str[32];
 
 	/* Build response. We don't use extended security (yet), so wct is 3 */
 	rsp->hdr.WordCount = 3;
@@ -996,6 +991,29 @@ no_password_check:
 	/* this is an ANDx command ? */
 	rsp->AndXReserved = 0;
 	rsp->AndXOffset = cpu_to_le16(get_rfc1002_len(&rsp->hdr));
+
+	/* 1 byte padding for word alignment */
+	offset = 1;
+
+	memset(str, 0 , sizeof(str));
+
+	len = smb_strtoUTF16(str, "Unix", 4, conn->local_nls);
+	len = UNICODE_LEN(len + 1);
+	memcpy(rsp->NativeOS + offset, str, len);
+	offset += len;
+
+	len = smb_strtoUTF16(str, "ksmbd", 5, conn->local_nls);
+	len = UNICODE_LEN(len + 1);
+	memcpy(rsp->NativeOS + offset, str, len);
+	offset += len;
+
+	len = smb_strtoUTF16(str, "WORKGROUP", 9, conn->local_nls);
+	len = UNICODE_LEN(len + 1);
+	memcpy(rsp->NativeOS + offset, str, len);
+	offset += len;
+
+	rsp->ByteCount = cpu_to_le16(offset);
+	inc_rfc1001_len(&rsp->hdr, offset);
 
 	if (req->AndXCommand != SMB_NO_MORE_ANDX_COMMAND) {
 		/* adjust response */
@@ -1583,6 +1601,7 @@ int smb_locking_andx(struct ksmbd_work *work)
 			if (!(filp->f_mode & FMODE_READ)) {
 				rsp->hdr.Status.CifsError =
 					STATUS_ACCESS_DENIED;
+				locks_free_lock(flock);
 				goto out;
 			}
 			cmd = F_SETLKW;
@@ -1592,6 +1611,7 @@ int smb_locking_andx(struct ksmbd_work *work)
 			if (!(filp->f_mode & FMODE_WRITE)) {
 				rsp->hdr.Status.CifsError =
 					STATUS_ACCESS_DENIED;
+				locks_free_lock(flock);
 				goto out;
 			}
 			cmd = F_SETLKW;
@@ -1617,15 +1637,15 @@ int smb_locking_andx(struct ksmbd_work *work)
 
 		if (offset > loff_max) {
 			pr_err("Invalid lock range requested\n");
-			rsp->hdr.Status.CifsError =
-				STATUS_INVALID_LOCK_RANGE;
+			rsp->hdr.Status.CifsError = STATUS_INVALID_LOCK_RANGE;
+			locks_free_lock(flock);
 			goto out;
 		}
 
 		if (offset > 0 && length > (loff_max - offset) + 1) {
 			pr_err("Invalid lock range requested\n");
-			rsp->hdr.Status.CifsError =
-				STATUS_INVALID_LOCK_RANGE;
+			rsp->hdr.Status.CifsError = STATUS_INVALID_LOCK_RANGE;
+			locks_free_lock(flock);
 			goto out;
 		}
 
@@ -1643,8 +1663,10 @@ int smb_locking_andx(struct ksmbd_work *work)
 
 		smb_lock = smb_lock_init(flock, cmd, req->LockType, offset,
 			length, &lock_list);
-		if (!smb_lock)
+		if (!smb_lock) {
+			locks_free_lock(flock);
 			goto out;
+		}
 	}
 
 	list_for_each_entry_safe(smb_lock, tmp, &lock_list, llist) {
@@ -1862,6 +1884,7 @@ out_check_cl_unlck:
 			fp->cflock_cnt = 0;
 		} else if (err == -ENOENT) {
 			rsp->hdr.Status.CifsError = STATUS_RANGE_NOT_LOCKED;
+			locks_free_lock(flock);
 			goto out;
 		}
 		locks_free_lock(flock);
@@ -1940,12 +1963,8 @@ int smb_trans(struct ksmbd_work *work)
 	int str_len_uni;
 	int ret = 0, nbytes = 0;
 	int param_len = 0;
-	int id, buf_len;
+	int id;
 	int padding;
-
-	buf_len = le16_to_cpu(req->MaxDataCount);
-	buf_len = min((int)(KSMBD_IPC_MAX_PAYLOAD -
-				sizeof(struct smb_com_trans_rsp)), buf_len);
 
 	if (req->SetupCount)
 		setup_bytes_count = 2 * req->SetupCount;
