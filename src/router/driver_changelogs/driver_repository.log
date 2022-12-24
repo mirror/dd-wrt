@@ -1,4 +1,12 @@
 ------------------------------------------------------------------------
+r6879 | brainslayer | 2022-12-24 06:22:09 +0600 (Sat, 24 Dec 2022) | 1 line
+
+renable some usefull fw features which have been compiled out before
+------------------------------------------------------------------------
+r6878 | brainslayer | 2022-12-24 06:11:43 +0600 (Sat, 24 Dec 2022) | 1 line
+
+renable some usefull fw features which have been compiled out before
+------------------------------------------------------------------------
 r6877 | brainslayer | 2022-12-21 16:17:09 +0600 (Wed, 21 Dec 2022) | 1 line
 
 tryout patch by dave taht for wrong codel parameters
