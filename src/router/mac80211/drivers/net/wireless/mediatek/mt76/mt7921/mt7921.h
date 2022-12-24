@@ -171,6 +171,7 @@ struct mt7921_vif {
 	struct ewma_rssi rssi;
 
 	struct ieee80211_tx_queue_params queue_params[IEEE80211_NUM_ACS];
+	struct ieee80211_chanctx_conf *ctx;
 };
 
 struct mib_stats {
@@ -223,7 +224,7 @@ struct mt7921_clc {
 	u8 type;
 	u8 rsv[8];
 	u8 data[];
-};
+} __packed;
 
 struct mt7921_phy {
 	struct mt76_phy *mt76;
@@ -469,7 +470,7 @@ void mt7921_tx_worker(struct mt76_worker *w);
 void mt7921_tx_token_put(struct mt7921_dev *dev);
 bool mt7921_rx_check(struct mt76_dev *mdev, void *data, int len);
 void mt7921_queue_rx_skb(struct mt76_dev *mdev, enum mt76_rxq_id q,
-			 struct sk_buff *skb);
+			 struct sk_buff *skb, u32 *info);
 void mt7921_sta_ps(struct mt76_dev *mdev, struct ieee80211_sta *sta, bool ps);
 void mt7921_stats_work(struct work_struct *work);
 void mt7921_set_stream_he_caps(struct mt7921_phy *phy);
@@ -553,6 +554,7 @@ int mt7921_mcu_uni_add_beacon_offload(struct mt7921_dev *dev,
 #ifdef CONFIG_ACPI
 int mt7921_init_acpi_sar(struct mt7921_dev *dev);
 int mt7921_init_acpi_sar_power(struct mt7921_phy *phy, bool set_default);
+u8 mt7921_acpi_get_flags(struct mt7921_phy *phy);
 #else
 static inline int
 mt7921_init_acpi_sar(struct mt7921_dev *dev)
@@ -562,6 +564,12 @@ mt7921_init_acpi_sar(struct mt7921_dev *dev)
 
 static inline int
 mt7921_init_acpi_sar_power(struct mt7921_phy *phy, bool set_default)
+{
+	return 0;
+}
+
+static inline u8
+mt7921_acpi_get_flags(struct mt7921_phy *phy)
 {
 	return 0;
 }

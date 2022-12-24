@@ -133,12 +133,17 @@ mt7615_eeprom_parse_hw_band_cap(struct mt7615_dev *dev)
 		break;
 	case MT_EE_DBDC:
 		dev->dbdc_support = true;
-		fallthrough;
+		dev->mphy.cap.has_2ghz = true;
+		break;
 	default:
 		dev->mphy.cap.has_2ghz = true;
 		dev->mphy.cap.has_5ghz = true;
 		break;
 	}
+	if (dev->mt76.disable_2ghz)
+	    dev->mphy.cap.has_2ghz = false;
+	if (dev->mt76.disable_5ghz)
+	    dev->mphy.cap.has_5ghz = false;
 }
 
 static void mt7615_eeprom_parse_hw_cap(struct mt7615_dev *dev)

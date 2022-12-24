@@ -43,6 +43,7 @@ enum reg_rev {
 	SWDEF_BASE_ADDR,
 	TXQ_WED_RING_BASE,
 	RXQ_WED_RING_BASE,
+	RXQ_WED_DATA_RING_BASE,
 	__MT_REG_MAX,
 };
 
@@ -588,9 +589,14 @@ enum offs_rev {
 #define MT_WFDMA0_GLO_CFG_OMIT_RX_INFO_PFET2	BIT(21)
 
 #define MT_WFDMA0_RST_DTX_PTR		MT_WFDMA0(0x20c)
+
+#define MT_WFDMA0_EXT0_CFG		MT_WFDMA0(0x2b0)
+#define MT_WFDMA0_EXT0_RXWB_KEEP	BIT(10)
+
 #define MT_WFDMA0_PRI_DLY_INT_CFG0	MT_WFDMA0(0x2f0)
 #define MT_WFDMA0_PRI_DLY_INT_CFG1	MT_WFDMA0(0x2f4)
 #define MT_WFDMA0_PRI_DLY_INT_CFG2	MT_WFDMA0(0x2f8)
+#define MT_WPDMA_GLO_CFG		MT_WFDMA0(0x208)
 
 /* WFDMA1 */
 #define MT_WFDMA1_BASE			0xd5000
@@ -686,6 +692,7 @@ enum offs_rev {
 
 #define MT_TXQ_WED_RING_BASE		__REG(TXQ_WED_RING_BASE)
 #define MT_RXQ_WED_RING_BASE		__REG(RXQ_WED_RING_BASE)
+#define MT_RXQ_WED_DATA_RING_BASE	__REG(RXQ_WED_DATA_RING_BASE)
 
 #define MT_INT_SOURCE_CSR		__REG(INT_SOURCE_CSR)
 #define MT_INT_MASK_CSR			__REG(INT_MASK_CSR)
@@ -796,7 +803,6 @@ enum offs_rev {
 #define MT_CBTOP1_PHY_START		0x70000000
 #define MT_CBTOP1_PHY_END		__REG(CBTOP1_PHY_END)
 #define MT_CBTOP2_PHY_START		0xf0000000
-#define MT_CBTOP2_PHY_END		0xffffffff
 #define MT_INFRA_MCU_START		0x7c000000
 #define MT_INFRA_MCU_END		__REG(INFRA_MCU_ADDR_END)
 #define MT_CONN_INFRA_OFFSET(p)		((p) - MT_INFRA_BASE)
@@ -1048,6 +1054,7 @@ enum offs_rev {
 
 #define MT_LED_CTRL(_n)			MT_LED_PHYS(0x00 + ((_n) * 4))
 #define MT_LED_CTRL_KICK		BIT(7)
+#define MT_LED_CTRL_BAND		BIT(4)
 #define MT_LED_CTRL_BLINK_MODE		BIT(2)
 #define MT_LED_CTRL_POLARITY		BIT(1)
 
@@ -1055,11 +1062,18 @@ enum offs_rev {
 #define MT_LED_TX_BLINK_ON_MASK		GENMASK(7, 0)
 #define MT_LED_TX_BLINK_OFF_MASK        GENMASK(15, 8)
 
+#define MT_LED_STATUS_0(_n)		MT_LED_PHYS(0x20 + ((_n) * 8))
+#define MT_LED_STATUS_1(_n)		MT_LED_PHYS(0x24 + ((_n) * 8))
+#define MT_LED_STATUS_OFF		GENMASK(31, 24)
+#define MT_LED_STATUS_ON		GENMASK(23, 16)
+#define MT_LED_STATUS_DURATION		GENMASK(15, 0)
+
 #define MT_LED_EN(_n)			MT_LED_PHYS(0x40 + ((_n) * 4))
 
+#define MT_LED_GPIO_MUX0		0x70005050 /* GPIO 1 and GPIO 2 */
+#define MT_LED_GPIO_MUX1		0x70005054 /* GPIO 14 and 15 */
 #define MT_LED_GPIO_MUX2                0x70005058 /* GPIO 18 */
-#define MT_LED_GPIO_MUX3                0x7000505C /* GPIO 26 */
-#define MT_LED_GPIO_SEL_MASK            GENMASK(11, 8)
+#define MT_LED_GPIO_MUX3		0x7000505c /* GPIO 26 */
 
 /* MT TOP */
 #define MT_TOP_BASE			0x18060000
@@ -1178,6 +1192,10 @@ enum offs_rev {
 #define MT_WF_PHY_RXTD12_MT7916(_phy)	MT_WF_PHY(0x8230 + ((_phy) << 20))
 #define MT_WF_PHY_RXTD12_IRPI_SW_CLR_ONLY	BIT(18)
 #define MT_WF_PHY_RXTD12_IRPI_SW_CLR		BIT(29)
+
+#define MT_WF_PHY_TPC_CTRL_STAT(_phy)		MT_WF_PHY(0xe7a0 + ((_phy) << 16))
+#define MT_WF_PHY_TPC_CTRL_STAT_MT7916(_phy)	MT_WF_PHY(0xe7a0 + ((_phy) << 20))
+#define MT_WF_PHY_TPC_POWER			GENMASK(15, 8)
 
 #define MT_MCU_WM_CIRQ_BASE			0x89010000
 #define MT_MCU_WM_CIRQ(ofs)			(MT_MCU_WM_CIRQ_BASE + (ofs))
