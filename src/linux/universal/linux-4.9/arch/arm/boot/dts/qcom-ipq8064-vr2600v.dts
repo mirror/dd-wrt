@@ -263,7 +263,6 @@
 
 		pcie1: pci@1b700000 {
 			status = "ok";
-			force_gen1 = <1>;
 		};
 
 		mdio0: mdio {
