@@ -1,4 +1,8 @@
 ------------------------------------------------------------------------
+r6880 | brainslayer | 2022-12-24 15:44:39 +0600 (Sat, 24 Dec 2022) | 1 line
+
+merge latest git and remove indirection
+------------------------------------------------------------------------
 r6879 | brainslayer | 2022-12-24 06:22:09 +0600 (Sat, 24 Dec 2022) | 1 line
 
 renable some usefull fw features which have been compiled out before
