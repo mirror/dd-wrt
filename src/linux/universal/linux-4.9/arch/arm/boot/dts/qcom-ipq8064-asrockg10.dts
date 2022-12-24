@@ -134,7 +134,6 @@
 
 		pcie1: pci@1b700000 {
 			status = "ok";
-			force_gen1 = <1>;
 		};
 
 		nand@1ac00000 {
@@ -273,4 +272,38 @@
 
 &adm_dma {
 	status = "ok";
+};
+
+&pcie0 {
+	status = "okay";
+
+	bridge@0,0 {
+		reg = <0x00000000 0 0 0 0>;
+		#address-cells = <3>;
+		#size-cells = <2>;
+		ranges;
+
+		wifi5g: wifi@1,0 {
+			reg = <0x00010000 0 0 0 0>;
+			compatible = "qcom,ath10k";
+			qcom,ath10k-calibration-variant = "ASRock-G10";
+		};
+	};
+};
+
+&pcie1 {
+	status = "okay";
+
+	bridge@0,0 {
+		reg = <0x00000000 0 0 0 0>;
+		#address-cells = <3>;
+		#size-cells = <2>;
+		ranges;
+
+		wifi2g: wifi@1,0 {
+			reg = <0x00010000 0 0 0 0>;
+			compatible = "qcom,ath10k";
+			qcom,ath10k-calibration-variant = "ASRock-G10";
+		};
+	};
 };
