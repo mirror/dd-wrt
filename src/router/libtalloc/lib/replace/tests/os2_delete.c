@@ -2,7 +2,7 @@
   test readdir/unlink pattern that OS/2 uses
   tridge@samba.org July 2005
 */
-
+#define NEED_PRINTF
 #include <stdio.h>
 #include <stdlib.h>
 #include <sys/stat.h>
