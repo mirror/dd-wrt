@@ -1,6 +1,6 @@
 igmp-proxy-configure:
 	cd igmp-proxy && ./autogen.sh
-	cd igmp-proxy && ./configure --host=$(ARCH)-linux-elf CFLAGS="$(COPTS) $(MIPS16_OPT) $(LTO) -I$(TOP)/kernel_headers/$(KERNELRELEASE)/include -ffunction-sections -fdata-sections -Wl,--gc-sections -std=gnu99"
+	cd igmp-proxy && ./configure --host=$(ARCH)-linux CFLAGS="$(COPTS) $(MIPS16_OPT) $(LTO) -I$(TOP)/kernel_headers/$(KERNELRELEASE)/include -ffunction-sections -fdata-sections -Wl,--gc-sections -std=gnu99"
 
 igmp-proxy-clean:
 	make -C igmp-proxy clean

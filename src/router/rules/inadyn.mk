@@ -2,7 +2,7 @@ inadyn-configure:
 	cd inadynv2/libconfuse && ./autogen.sh
 	cd inadynv2/libconfuse && ./configure --prefix=/usr \
 					--disable-examples \
-					--host=$(ARCH)-linux-elf \
+					--host=$(ARCH)-linux \
 					CFLAGS="$(COPTS) $(MIPS16_OPT) $(LTO) -ffunction-sections -fdata-sections -Wl,--gc-sections" \
 					AR_FLAGS="cru $(LTOPLUGIN)" \
 					RANLIB="$(ARCH)-linux-ranlib $(LTOPLUGIN)"
@@ -18,7 +18,7 @@ inadyn-configure:
 		--enable-reduced \
 		--disable-ssl \
 		--localstatedir=/tmp \
-		--host=$(ARCH)-linux-elf \
+		--host=$(ARCH)-linux \
 		CFLAGS="$(COPTS) $(MIPS16_OPT) $(LTO) -ffunction-sections -fdata-sections -Wl,--gc-sections" \
 		confuse_CFLAGS="-I$(TOP)/inadynv2/libconfuse/src" \
 		confuse_LIBS="-L$(TOP)/inadynv2/libconfuse/src/.libs -lconfuse" \
@@ -30,7 +30,7 @@ inadyn-configure:
 		--enable-ssl \
 		--enable-openssl \
 		--localstatedir=/tmp \
-		--host=$(ARCH)-linux-elf \
+		--host=$(ARCH)-linux \
 		CFLAGS="$(COPTS) $(MIPS16_OPT) $(LTO) -ffunction-sections -fdata-sections -Wl,--gc-sections" \
 		OpenSSL_CFLAGS="-I$(TOP)/openssl/include" \
 		OpenSSL_LIBS="-L$(TOP)/openssl -lssl -lcrypto" \

@@ -32,7 +32,7 @@ CHILLIEXTRAFLAGS=$(CHILLICOOVAEXTRAFLAGS)
 
 chillispot-configure:
 	cd $(CHILLIDIR) && ./bootstrap
-	cd $(CHILLIDIR) &&  rm -rf config.{cache,status} && ./configure $(CHILLIEXTRAFLAGS) --host=$(ARCH)-linux-elf  \
+	cd $(CHILLIDIR) &&  rm -rf config.{cache,status} && ./configure $(CHILLIEXTRAFLAGS) --host=$(ARCH)-linux  \
 	    CFLAGS="$(COPTS) $(LTO) $(MIPS16_OPT) $(CHILLIEXTRA_CFLAGS) -fcommon -DHAVE_MALLOC=1 -Drpl_malloc=malloc -ffunction-sections -fdata-sections -Wl,--gc-sections" \
 	    LDFLAGS="$(LDLTO) -ffunction-sections -fdata-sections -Wl,--gc-sections" \
 	    AR_FLAGS="cru $(LTOPLUGIN)" \
