@@ -36,6 +36,15 @@
 #include <standards.h>
 #endif
 
+/*
+ * Needs to be defined before std*.h and string*.h are included
+ * As it's also needed when Python.h is the first header we
+ * require a global -D__STDC_WANT_LIB_EXT1__=1
+ */
+#ifndef __STDC_WANT_LIB_EXT1__
+#error -D__STDC_WANT_LIB_EXT1__=1 required
+#endif
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdarg.h>
@@ -53,7 +62,7 @@
 #ifdef HAVE_INTTYPES_H
 #define __STDC_FORMAT_MACROS
 #include <inttypes.h>
-#elif HAVE_STDINT_H
+#elif defined(HAVE_STDINT_H)
 #include <stdint.h>
 /* force off HAVE_INTTYPES_H so that roken doesn't try to include both,
    which causes a warning storm on irix */
@@ -157,6 +166,10 @@
 
 #ifdef HAVE_BSD_UNISTD_H
 #include <bsd/unistd.h>
+#endif
+
+#ifdef HAVE_UNISTD_H
+#include <unistd.h>
 #endif
 
 #ifdef HAVE_STRING_H
@@ -269,14 +282,14 @@ char *rep_strndup(const char *s, size_t n);
 size_t rep_strnlen(const char *s, size_t n);
 #endif
 
-#if !HAVE_DECL_ENVIRON
-#ifdef __APPLE__
-#include <crt_externs.h>
-#define environ (*_NSGetEnviron())
-#else
+#if !defined(HAVE_DECL_ENVIRON)
+# ifdef __APPLE__
+#   include <crt_externs.h>
+#   define environ (*_NSGetEnviron())
+# else /* __APPLE__ */
 extern char **environ;
-#endif
-#endif
+# endif /* __APPLE */
+#endif /* !defined(HAVE_DECL_ENVIRON) */
 
 #ifndef HAVE_SETENV
 #define setenv rep_setenv
@@ -434,8 +447,13 @@ int rep_dlclose(void *handle);
 /* prototype is in system/network.h */
 #endif
 
+/* for old gcc releases that don't have the feature test macro __has_attribute */
+#ifndef __has_attribute
+#define __has_attribute(x) 0
+#endif
+
 #ifndef PRINTF_ATTRIBUTE
-#ifdef HAVE___ATTRIBUTE__
+#if __has_attribute(format) || (__GNUC__ >= 3)
 /** Use gcc attribute to check printf fns.  a1 is the 1-based index of
  * the parameter containing the format, and a2 the index of the first
  * argument. Note that some gcc 2.x versions don't handle this
@@ -447,7 +465,7 @@ int rep_dlclose(void *handle);
 #endif
 
 #ifndef _DEPRECATED_
-#ifdef HAVE___ATTRIBUTE__
+#if __has_attribute(deprecated) || (__GNUC__ >= 3)
 #define _DEPRECATED_ __attribute__ ((deprecated))
 #else
 #define _DEPRECATED_
@@ -685,7 +703,7 @@ int rep_strerror_r(int errnum, char *buf, size_t buflen);
 #ifdef HAVE__Bool
 #define bool _Bool
 #else
-typedef int bool;
+#error Need a real boolean type
 #endif
 #endif
 
@@ -798,38 +816,54 @@ typedef unsigned long long ptrdiff_t ;
 #define __location__ __FILE__ ":" __LINESTR__
 #endif
 
-/** 
- * zero a structure 
+/**
+ * Zero a structure.
  */
-#define ZERO_STRUCT(x) memset((char *)&(x), 0, sizeof(x))
-
-/** 
- * zero a structure given a pointer to the structure 
- */
-#define ZERO_STRUCTP(x) do { if ((x) != NULL) memset((char *)(x), 0, sizeof(*(x))); } while(0)
-
-/** 
- * zero a structure given a pointer to the structure - no zero check 
- */
-#define ZERO_STRUCTPN(x) memset((char *)(x), 0, sizeof(*(x)))
-
-/* zero an array - note that sizeof(array) must work - ie. it must not be a
-   pointer */
-#define ZERO_ARRAY(x) memset((char *)(x), 0, sizeof(x))
+#define ZERO_STRUCT(x) memset_s((char *)&(x), sizeof(x), 0, sizeof(x))
 
 /**
- * work out how many elements there are in a static array 
+ * Zero a structure given a pointer to the structure.
  */
+#define ZERO_STRUCTP(x) do { \
+	if ((x) != NULL) { \
+		memset_s((char *)(x), sizeof(*(x)), 0, sizeof(*(x))); \
+	} \
+} while(0)
+
+/**
+ * Zero a structure given a pointer to the structure - no zero check
+ */
+#define ZERO_STRUCTPN(x) memset_s((char *)(x), sizeof(*(x)), 0, sizeof(*(x)))
+
+/**
+ * Zero an array - note that sizeof(array) must work - ie. it must not be a
+ * pointer
+ */
+#define ZERO_ARRAY(x) memset_s((char *)(x), sizeof(x), 0, sizeof(x))
+
+/**
+ * Zero a given len of an array
+ */
+#define ZERO_ARRAY_LEN(x, l) memset_s((char *)(x), (l), 0, (l))
+
+/**
+ * Work out how many elements there are in a static array.
+ */
+#ifdef ARRAY_SIZE
+#undef ARRAY_SIZE
+#endif
 #define ARRAY_SIZE(a) (sizeof(a)/sizeof(a[0]))
 
-/** 
- * pointer difference macro 
+/**
+ * Remove an array element by moving the rest one down
+ */
+#define ARRAY_DEL_ELEMENT(a,i,n) \
+if((i)<((n)-1)){memmove(&((a)[(i)]),&((a)[(i)+1]),(sizeof(*(a))*((n)-(i)-1)));}
+
+/**
+ * Pointer difference macro
  */
 #define PTR_DIFF(p1,p2) ((ptrdiff_t)(((const char *)(p1)) - (const char *)(p2)))
-
-#if MMAP_BLACKLIST
-#undef HAVE_MMAP
-#endif
 
 #ifdef __COMPAR_FN_T
 #define QSORT_CAST (__compar_fn_t)
@@ -847,13 +881,8 @@ typedef unsigned long long ptrdiff_t ;
 #define MAX_DNS_NAME_LENGTH 256 /* Actually 255 but +1 for terminating null. */
 #endif
 
-#ifndef HAVE_CRYPT
-char *ufc_crypt(const char *key, const char *salt);
-#define crypt ufc_crypt
-#else
 #ifdef HAVE_CRYPT_H
 #include <crypt.h>
-#endif
 #endif
 
 /* these macros gain us a few percent of speed on gcc */
@@ -925,6 +954,26 @@ void rep_setproctitle(const char *fmt, ...) PRINTF_ATTRIBUTE(1, 2);
 void rep_setproctitle_init(int argc, char *argv[], char *envp[]);
 #endif
 
+#ifndef HAVE_MEMSET_S
+#define memset_s rep_memset_s
+int rep_memset_s(void *dest, size_t destsz, int ch, size_t count);
+#endif
+
+#ifndef HAVE_GETPROGNAME
+#define getprogname rep_getprogname
+const char *rep_getprogname(void);
+#endif
+
+#ifndef HAVE_COPY_FILE_RANGE
+#define copy_file_range rep_copy_file_range
+ssize_t rep_copy_file_range(int fd_in,
+			    loff_t *off_in,
+			    int fd_out,
+			    loff_t *off_out,
+			    size_t len,
+			    unsigned int flags);
+#endif /* HAVE_COPY_FILE_RANGE */
+
 #ifndef FALL_THROUGH
 # ifdef HAVE_FALLTHROUGH_ATTRIBUTE
 #  define FALL_THROUGH __attribute__ ((fallthrough))
@@ -933,10 +982,75 @@ void rep_setproctitle_init(int argc, char *argv[], char *envp[]);
 # endif /* HAVE_FALLTHROUGH_ATTRIBUTE */
 #endif /* FALL_THROUGH */
 
-bool nss_wrapper_enabled(void);
-bool nss_wrapper_hosts_enabled(void);
-bool socket_wrapper_enabled(void);
-bool uid_wrapper_enabled(void);
+struct __rep_cwrap_enabled_state {
+	const char *fnname;
+	bool cached;
+	bool retval;
+};
+
+static inline bool __rep_cwrap_enabled_fn(struct __rep_cwrap_enabled_state *state)
+{
+	bool (*__wrapper_enabled_fn)(void) = NULL;
+
+	if (state->cached) {
+		return state->retval;
+	}
+	state->retval = false;
+	state->cached = true;
+
+	__wrapper_enabled_fn = (bool (*)(void))dlsym(RTLD_DEFAULT, state->fnname);
+	if (__wrapper_enabled_fn == NULL) {
+		return state->retval;
+	}
+
+	state->retval = __wrapper_enabled_fn();
+	return state->retval;
+}
+
+static inline bool nss_wrapper_enabled(void)
+{
+	struct __rep_cwrap_enabled_state state = {
+		.fnname = "nss_wrapper_enabled",
+	};
+	return __rep_cwrap_enabled_fn(&state);
+}
+static inline bool nss_wrapper_hosts_enabled(void)
+{
+	struct __rep_cwrap_enabled_state state = {
+		.fnname = "nss_wrapper_hosts_enabled",
+	};
+	return __rep_cwrap_enabled_fn(&state);
+}
+static inline bool socket_wrapper_enabled(void)
+{
+	struct __rep_cwrap_enabled_state state = {
+		.fnname = "socket_wrapper_enabled",
+	};
+	return __rep_cwrap_enabled_fn(&state);
+}
+static inline bool uid_wrapper_enabled(void)
+{
+	struct __rep_cwrap_enabled_state state = {
+		.fnname = "uid_wrapper_enabled",
+	};
+	return __rep_cwrap_enabled_fn(&state);
+}
+
+static inline bool _hexcharval(char c, uint8_t *val)
+{
+	if ((c >= '0') && (c <= '9')) { *val = c - '0';      return true; }
+	if ((c >= 'a') && (c <= 'f')) {	*val = c - 'a' + 10; return true; }
+	if ((c >= 'A') && (c <= 'F')) { *val = c - 'A' + 10; return true; }
+	return false;
+}
+
+static inline bool hex_byte(const char *in, uint8_t *out)
+{
+	uint8_t hi=0, lo=0;
+	bool ok = _hexcharval(in[0], &hi) && _hexcharval(in[1], &lo);
+	*out = (hi<<4)+lo;
+	return ok;
+}
 
 /* Needed for Solaris atomic_add_XX functions. */
 #if defined(HAVE_SYS_ATOMIC_H)

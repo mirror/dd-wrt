@@ -53,7 +53,7 @@ ssize_t rep_getxattr (const char *path, const char *name, void *value, size_t si
 	return getxattr(path, name, value, size);
 #else
 
-/* So that we do not recursivly call this function */
+/* So that we do not recursively call this function */
 #undef getxattr
 	int options = 0;
 	return getxattr(path, name, value, size, 0, options);
@@ -127,7 +127,7 @@ ssize_t rep_fgetxattr (int filedes, const char *name, void *value, size_t size)
 	return fgetxattr(filedes, name, value, size);
 #else
 
-/* So that we do not recursivly call this function */
+/* So that we do not recursively call this function */
 #undef fgetxattr
 	int options = 0;
 	return fgetxattr(filedes, name, value, size, 0, options);
@@ -353,7 +353,7 @@ ssize_t rep_listxattr (const char *path, char *list, size_t size)
 #ifndef XATTR_ADDITIONAL_OPTIONS
 	return listxattr(path, list, size);
 #else
-/* So that we do not recursivly call this function */
+/* So that we do not recursively call this function */
 #undef listxattr
 	int options = 0;
 	return listxattr(path, list, size, options);
@@ -386,7 +386,7 @@ ssize_t rep_flistxattr (int filedes, char *list, size_t size)
 #ifndef XATTR_ADDITIONAL_OPTIONS
 	return flistxattr(filedes, list, size);
 #else
-/* So that we do not recursivly call this function */
+/* So that we do not recursively call this function */
 #undef flistxattr
 	int options = 0;
 	return flistxattr(filedes, list, size, options);
@@ -419,7 +419,7 @@ int rep_removexattr (const char *path, const char *name)
 #ifndef XATTR_ADDITIONAL_OPTIONS
 	return removexattr(path, name);
 #else
-/* So that we do not recursivly call this function */
+/* So that we do not recursively call this function */
 #undef removexattr
 	int options = 0;
 	return removexattr(path, name, options);
@@ -469,7 +469,7 @@ int rep_fremovexattr (int filedes, const char *name)
 #ifndef XATTR_ADDITIONAL_OPTIONS
 	return fremovexattr(filedes, name);
 #else
-/* So that we do not recursivly call this function */
+/* So that we do not recursively call this function */
 #undef fremovexattr
 	int options = 0;
 	return fremovexattr(filedes, name, options);
@@ -515,19 +515,44 @@ int rep_fremovexattr (int filedes, const char *name)
 
 int rep_setxattr (const char *path, const char *name, const void *value, size_t size, int flags)
 {
+	int retval = -1;
 #if defined(HAVE_XATTR_XATTR)
 #ifndef XATTR_ADDITIONAL_OPTIONS
-	return setxattr(path, name, value, size, flags);
+	retval = setxattr(path, name, value, size, flags);
+	if (retval < 0) {
+		if (errno == ENOSPC || errno == E2BIG) {
+			errno = ENAMETOOLONG;
+		}
+	}
+	return retval;
 #else
-/* So that we do not recursivly call this function */
+/* So that we do not recursively call this function */
 #undef setxattr
-	int options = 0;
-	return setxattr(path, name, value, size, 0, options);
+	retval = setxattr(path, name, value, size, 0, flags);
+	if (retval < 0) {
+		if (errno == E2BIG) {
+			errno = ENAMETOOLONG;
+		}
+	}
+	return retval;
 #endif
 #elif defined(HAVE_XATTR_EA)
-	return setea(path, name, value, size, flags);
+	if (flags) {
+		retval = getea(path, name, NULL, 0);
+		if (retval < 0) {
+			if (flags & XATTR_REPLACE && errno == ENOATTR) {
+				return -1;
+			}
+		} else {
+			if (flags & XATTR_CREATE) {
+				errno = EEXIST;
+				return -1;
+			}
+		}
+	}
+	retval = setea(path, name, value, size, 0);
+	return retval;
 #elif defined(HAVE_XATTR_EXTATTR)
-	int retval = 0;
 	int attrnamespace;
 	const char *attrname;
 
@@ -571,19 +596,24 @@ int rep_setxattr (const char *path, const char *name, const void *value, size_t 
 	if (flags & XATTR_CREATE) myflags |= ATTR_CREATE;
 	if (flags & XATTR_REPLACE) myflags |= ATTR_REPLACE;
 
-	return attr_set(path, attrname, (const char *)value, size, myflags);
+	retval = attr_set(path, attrname, (const char *)value, size, myflags);
+	if (retval < 0) {
+		if (errno == E2BIG) {
+			errno = ENAMETOOLONG;
+		}
+	}
+	return retval;
 #elif defined(HAVE_ATTROPEN)
-	int ret = -1;
 	int myflags = O_RDWR;
 	int attrfd;
 	if (flags & XATTR_CREATE) myflags |= O_EXCL;
 	if (!(flags & XATTR_REPLACE)) myflags |= O_CREAT;
 	attrfd = solaris_attropen(path, name, myflags, (mode_t) SOLARIS_ATTRMODE);
 	if (attrfd >= 0) {
-		ret = solaris_write_xattr(attrfd, value, size);
+		retval = solaris_write_xattr(attrfd, value, size);
 		close(attrfd);
 	}
-	return ret;
+	return retval;
 #else
 	errno = ENOSYS;
 	return -1;
@@ -592,19 +622,44 @@ int rep_setxattr (const char *path, const char *name, const void *value, size_t 
 
 int rep_fsetxattr (int filedes, const char *name, const void *value, size_t size, int flags)
 {
+	int retval = -1;
 #if defined(HAVE_XATTR_XATTR)
 #ifndef XATTR_ADDITIONAL_OPTIONS
-	return fsetxattr(filedes, name, value, size, flags);
+	retval = fsetxattr(filedes, name, value, size, flags);
+	if (retval < 0) {
+		if (errno == ENOSPC) {
+			errno = ENAMETOOLONG;
+		}
+	}
+	return retval;
 #else
-/* So that we do not recursivly call this function */
+/* So that we do not recursively call this function */
 #undef fsetxattr
-	int options = 0;
-	return fsetxattr(filedes, name, value, size, 0, options);
+	retval = fsetxattr(filedes, name, value, size, 0, flags);
+	if (retval < 0) {
+		if (errno == E2BIG) {
+			errno = ENAMETOOLONG;
+		}
+	}
+	return retval;
 #endif
 #elif defined(HAVE_XATTR_EA)
-	return fsetea(filedes, name, value, size, flags);
+	if (flags) {
+		retval = fgetea(filedes, name, NULL, 0);
+		if (retval < 0) {
+			if (flags & XATTR_REPLACE && errno == ENOATTR) {
+				return -1;
+			}
+		} else {
+			if (flags & XATTR_CREATE) {
+				errno = EEXIST;
+				return -1;
+			}
+		}
+	}
+	retval = fsetea(filedes, name, value, size, 0);
+	return retval;
 #elif defined(HAVE_XATTR_EXTATTR)
-	int retval = 0;
 	int attrnamespace;
 	const char *attrname;
 
@@ -650,17 +705,16 @@ int rep_fsetxattr (int filedes, const char *name, const void *value, size_t size
 
 	return attr_setf(filedes, attrname, (const char *)value, size, myflags);
 #elif defined(HAVE_ATTROPEN)
-	int ret = -1;
 	int myflags = O_RDWR | O_XATTR;
 	int attrfd;
 	if (flags & XATTR_CREATE) myflags |= O_EXCL;
 	if (!(flags & XATTR_REPLACE)) myflags |= O_CREAT;
 	attrfd = solaris_openat(filedes, name, myflags, (mode_t) SOLARIS_ATTRMODE);
 	if (attrfd >= 0) {
-		ret = solaris_write_xattr(attrfd, value, size);
+		retval = solaris_write_xattr(attrfd, value, size);
 		close(attrfd);
 	}
-	return ret;
+	return retval;
 #else
 	errno = ENOSYS;
 	return -1;
