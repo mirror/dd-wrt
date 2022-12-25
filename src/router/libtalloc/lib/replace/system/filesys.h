@@ -107,15 +107,25 @@
 #include <sys/uio.h>
 #endif
 
-/* mutually exclusive (SuSE 8.2) */
-#if defined(HAVE_SYS_XATTR_H)
-#include <sys/xattr.h>
-#elif defined(HAVE_ATTR_XATTR_H)
-#include <attr/xattr.h>
-#elif defined(HAVE_SYS_ATTRIBUTES_H)
+/*
+ * Veritas File System.  Often in addition to native.
+ * Quotas different.
+ */
+#if defined(HAVE_SYS_FS_VX_QUOTA_H)
+#define VXFS_QUOTA
+#endif
+
+#if HAVE_SYS_ATTRIBUTES_H
 #include <sys/attributes.h>
-#elif defined(HAVE_ATTR_ATTRIBUTES_H)
+#elif HAVE_ATTR_ATTRIBUTES_H
 #include <attr/attributes.h>
+#endif
+
+/* mutually exclusive (SuSE 8.2) */
+#if HAVE_ATTR_XATTR_H
+#include <attr/xattr.h>
+#elif HAVE_SYS_XATTR_H
+#include <sys/xattr.h>
 #endif
 
 #ifdef HAVE_SYS_EA_H
@@ -197,10 +207,6 @@
 
 #ifdef _WIN32
 #define mkdir(d,m) _mkdir(d)
-#endif
-
-#ifdef DISABLE_OPATH
-#undef O_PATH
 #endif
 
 /*

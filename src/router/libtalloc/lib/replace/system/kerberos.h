@@ -29,11 +29,11 @@
 
 #ifdef HAVE_KRB5
 
-#ifdef HAVE_KRB5_H
+#if HAVE_KRB5_H
 #include <krb5.h>
 #endif
 
-#ifdef HAVE_COM_ERR_H
+#if HAVE_COM_ERR_H
 #include <com_err.h>
 #endif
 

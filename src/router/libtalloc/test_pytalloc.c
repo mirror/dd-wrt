@@ -30,31 +30,25 @@
 #include <talloc.h>
 #include <pytalloc.h>
 
-static PyObject *testpytalloc_new(PyTypeObject *mod,
-		PyObject *Py_UNUSED(ignored))
+static PyObject *testpytalloc_new(PyTypeObject *mod)
 {
 	char *obj = talloc_strdup(NULL, "This is a test string");;
 	return pytalloc_steal(pytalloc_GetObjectType(), obj);
 }
 
-static PyObject *testpytalloc_get_object_type(PyObject *mod,
-		PyObject *Py_UNUSED(ignored))
-{
+static PyObject *testpytalloc_get_object_type(PyObject *mod) {
 	PyObject *type = (PyObject *)pytalloc_GetObjectType();
 	Py_INCREF(type);
 	return type;
 }
 
-static PyObject *testpytalloc_base_new(PyTypeObject *mod,
-		PyObject *Py_UNUSED(ignored))
+static PyObject *testpytalloc_base_new(PyTypeObject *mod)
 {
 	char *obj = talloc_strdup(NULL, "This is a test string for a BaseObject");;
 	return pytalloc_steal(pytalloc_GetBaseObjectType(), obj);
 }
 
-static PyObject *testpytalloc_base_get_object_type(PyObject *mod,
-		PyObject *Py_UNUSED(ignored))
-{
+static PyObject *testpytalloc_base_get_object_type(PyObject *mod) {
 	PyObject *type = (PyObject *)pytalloc_GetBaseObjectType();
 	Py_INCREF(type);
 	return type;
@@ -95,7 +89,7 @@ static PyMethodDef test_talloc_methods[] = {
 		"call pytalloc_reference_ex"},
 	{ "base_reference", (PyCFunction)testpytalloc_base_reference, METH_VARARGS,
 		"call pytalloc_reference_ex"},
-	{0}
+	{ NULL }
 };
 
 static PyTypeObject DObject_Type;

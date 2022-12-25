@@ -21,36 +21,36 @@ from wafsamba.samba_abi import (
     normalise_signature,
     )
 
-from io import StringIO
+from cStringIO import StringIO
 
 
 class NormaliseSignatureTests(TestCase):
 
     def test_function_simple(self):
-        self.assertEqual("int (const struct GUID *, const struct GUID *)",
+        self.assertEquals("int (const struct GUID *, const struct GUID *)",
             normalise_signature("$2 = {int (const struct GUID *, const struct GUID *)} 0xe871 <GUID_compare>"))
 
     def test_maps_Bool(self):
         # Some types have different internal names
-        self.assertEqual("bool (const struct GUID *)",
+        self.assertEquals("bool (const struct GUID *)",
             normalise_signature("$1 = {_Bool (const struct GUID *)} 0xe75b <GUID_all_zero>"))
 
     def test_function_keep(self):
-        self.assertEqual(
+        self.assertEquals(
             "enum ndr_err_code (struct ndr_push *, int, const union winreg_Data *)",
             normalise_signature("enum ndr_err_code (struct ndr_push *, int, const union winreg_Data *)"))
 
     def test_struct_constant(self):
-        self.assertEqual(
+        self.assertEquals(
             'uuid = {time_low = 0, time_mid = 0, time_hi_and_version = 0, clock_seq = "\\000", node = "\\000\\000\\000\\000\\000"}, if_version = 0',
             normalise_signature('$239 = {uuid = {time_low = 0, time_mid = 0, time_hi_and_version = 0, clock_seq = "\\000", node = "\\000\\000\\000\\000\\000"}, if_version = 0}'))
 
     def test_incomplete_sequence(self):
         # Newer versions of gdb insert these incomplete sequence elements
-        self.assertEqual(
+        self.assertEquals(
             'uuid = {time_low = 2324192516, time_mid = 7403, time_hi_and_version = 4553, clock_seq = "\\237\\350", node = "\\b\\000+\\020H`"}, if_version = 2',
             normalise_signature('$244 = {uuid = {time_low = 2324192516, time_mid = 7403, time_hi_and_version = 4553, clock_seq = "\\237", <incomplete sequence \\350>, node = "\\b\\000+\\020H`"}, if_version = 2}'))
-        self.assertEqual(
+        self.assertEquals(
             'uuid = {time_low = 2324192516, time_mid = 7403, time_hi_and_version = 4553, clock_seq = "\\237\\350", node = "\\b\\000+\\020H`"}, if_version = 2',
             normalise_signature('$244 = {uuid = {time_low = 2324192516, time_mid = 7403, time_hi_and_version = 4553, clock_seq = "\\237\\350", node = "\\b\\000+\\020H`"}, if_version = 2}'))
 
@@ -62,14 +62,10 @@ class WriteVscriptTests(TestCase):
         abi_write_vscript(f, "MYLIB", "1.0", [], {
             "old": "1.0",
             "new": "1.0"}, ["*"])
-        self.assertEqual(f.getvalue(), """\
+        self.assertEquals(f.getvalue(), """\
 1.0 {
 \tglobal:
 \t\t*;
-\tlocal:
-\t\t_end;
-\t\t__bss_start;
-\t\t_edata;
 };
 """)
 
@@ -79,7 +75,7 @@ class WriteVscriptTests(TestCase):
         abi_write_vscript(f, "MYLIB", "1.0", ["0.1"], {
             "old": "0.1",
             "new": "1.0"}, ["*"])
-        self.assertEqual(f.getvalue(), """\
+        self.assertEquals(f.getvalue(), """\
 MYLIB_0.1 {
 \tglobal:
 \t\told;
@@ -88,10 +84,6 @@ MYLIB_0.1 {
 1.0 {
 \tglobal:
 \t\t*;
-\tlocal:
-\t\t_end;
-\t\t__bss_start;
-\t\t_edata;
 };
 """)
 
@@ -101,15 +93,12 @@ MYLIB_0.1 {
             "exc_old": "0.1",
             "old": "0.1",
             "new": "1.0"}, ["!exc_*"])
-        self.assertEqual(f.getvalue(), """\
+        self.assertEquals(f.getvalue(), """\
 1.0 {
 \tglobal:
 \t\t*;
 \tlocal:
 \t\texc_*;
-\t\t_end;
-\t\t__bss_start;
-\t\t_edata;
 };
 """)
 
@@ -120,15 +109,12 @@ MYLIB_0.1 {
             "exc_bar": "1.0",
             "other": "1.0"
             }, ["pub_*", "!exc_*"])
-        self.assertEqual(f.getvalue(), """\
+        self.assertEquals(f.getvalue(), """\
 1.0 {
 \tglobal:
 \t\tpub_*;
 \tlocal:
 \t\texc_*;
-\t\t_end;
-\t\t__bss_start;
-\t\t_edata;
 \t\t*;
 };
 """)

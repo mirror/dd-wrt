@@ -3,24 +3,22 @@
 APPNAME = 'libreplace'
 VERSION = '1.2.1'
 
-import sys
-import os
+blddir = 'bin'
+
+import Logs, sys, os
 
 # find the buildtools directory
-top = '.'
-while not os.path.exists(top+'/buildtools') and len(top.split('/')) < 5:
-    top = top + '/..'
-sys.path.insert(0, top + '/buildtools/wafsamba')
+srcdir = '.'
+while not os.path.exists(srcdir+'/buildtools') and len(srcdir.split('/')) < 5:
+    srcdir = srcdir + '/..'
+sys.path.insert(0, srcdir + '/buildtools/wafsamba')
 
-out = 'bin'
-
-import wafsamba
-from wafsamba import samba_dist
-from waflib import Options, Utils, Logs, Context
+import wafsamba, samba_dist
+import Options, Utils
 
 samba_dist.DIST_DIRS('lib/replace buildtools:buildtools third_party/waf:third_party/waf')
 
-def options(opt):
+def set_options(opt):
     opt.BUILTIN_DEFAULT('NONE')
     opt.PRIVATE_EXTENSION_DEFAULT('')
     opt.RECURSE('buildtools/wafsamba')
@@ -31,18 +29,17 @@ def configure(conf):
 
     conf.env.standalone_replace = conf.IN_LAUNCH_DIR()
 
-    conf.DEFINE('BOOL_DEFINED', 1)
     conf.DEFINE('HAVE_LIBREPLACE', 1)
     conf.DEFINE('LIBREPLACE_NETWORK_CHECKS', 1)
 
     conf.CHECK_HEADERS('linux/types.h crypt.h locale.h acl/libacl.h compat.h')
     conf.CHECK_HEADERS('acl/libacl.h attr/xattr.h compat.h ctype.h dustat.h')
     conf.CHECK_HEADERS('fcntl.h fnmatch.h glob.h history.h krb5.h langinfo.h')
-    conf.CHECK_HEADERS('locale.h ndir.h pwd.h')
+    conf.CHECK_HEADERS('libaio.h locale.h ndir.h pwd.h')
     conf.CHECK_HEADERS('shadow.h sys/acl.h')
     conf.CHECK_HEADERS('sys/attributes.h attr/attributes.h sys/capability.h sys/dir.h sys/epoll.h')
     conf.CHECK_HEADERS('port.h')
-    conf.CHECK_HEADERS('sys/fcntl.h sys/filio.h sys/filsys.h sys/fs/s5param.h')
+    conf.CHECK_HEADERS('sys/fcntl.h sys/filio.h sys/filsys.h sys/fs/s5param.h sys/fs/vx/quota.h')
     conf.CHECK_HEADERS('sys/id.h sys/ioctl.h sys/ipc.h sys/mman.h sys/mode.h sys/ndir.h sys/priv.h')
     conf.CHECK_HEADERS('sys/resource.h sys/security.h sys/shm.h sys/statfs.h sys/statvfs.h sys/termio.h')
     conf.CHECK_HEADERS('sys/vfs.h sys/xattr.h termio.h termios.h sys/file.h')
@@ -68,7 +65,7 @@ def configure(conf):
                         headers='sys/inotify.h')
 
     conf.CHECK_HEADERS('security/pam_appl.h zlib.h asm/unistd.h')
-    conf.CHECK_HEADERS('sys/unistd.h alloca.h float.h')
+    conf.CHECK_HEADERS('aio.h sys/unistd.h alloca.h float.h')
 
     conf.SET_TARGET_TYPE('tirpc', 'EMPTY')
 
@@ -95,28 +92,28 @@ def configure(conf):
     if not conf.CONFIG_SET('HAVE_RPC_RPC_H'):
             Logs.warn('No rpc/rpc.h header found, tirpc or libntirpc missing?')
 
-    # This file is decprecated with glibc >= 2.30 so we need to check if it
-    # includes a deprecation warning:
-    # #warning "The <sys/sysctl.h> header is deprecated and will be removed."
-    conf.CHECK_CODE('''
-                    #include <sys/sysctl.h>
-                    int main(void) { return 0; }
-                    ''',
-                    define='HAVE_SYS_SYSCTL_H',
-                    cflags=['-Werror=cpp'],
-                    addmain=False,
-                    msg='Checking for header sys/sysctl.h')
+    conf.SET_TARGET_TYPE('nsl', 'EMPTY')
+    conf.CHECK_HEADERS('rpc/rpc.h rpcsvc/yp_prot.h', lib='tirpc')
+    if not conf.CONFIG_SET('HAVE_RPCSVC_YP_PROT_H'):
+        if conf.CHECK_CFG(package='libnsl', args='--cflags --libs',
+                          msg='Checking for libnsl',
+                          uselib_store='NSL'):
+            conf.SET_TARGET_TYPE('nsl', 'SYSLIB')
+            conf.CHECK_HEADERS('rpc/rpc.h rpcsvc/yp_prot.h', lib='tirpc nsl')
+        else:
+            conf.SET_TARGET_TYPE('nsl', 'SYSLIB')
+    conf.CHECK_HEADERS('rpcsvc/nis.h rpcsvc/ypclnt.h', lib='tirpc nsl')
 
+    conf.CHECK_HEADERS('sys/sysctl.h')
     conf.CHECK_HEADERS('sys/fileio.h sys/filesys.h sys/dustat.h sys/sysmacros.h')
     conf.CHECK_HEADERS('xfs/libxfs.h netgroup.h')
 
-    conf.CHECK_HEADERS('valgrind.h valgrind/valgrind.h')
-    conf.CHECK_HEADERS('valgrind/memcheck.h valgrind/helgrind.h')
+    conf.CHECK_HEADERS('valgrind.h valgrind/valgrind.h valgrind/memcheck.h')
     conf.CHECK_HEADERS('nss_common.h nsswitch.h ns_api.h')
     conf.CHECK_HEADERS('sys/extattr.h sys/ea.h sys/proplist.h sys/cdefs.h')
     conf.CHECK_HEADERS('utmp.h utmpx.h lastlog.h')
     conf.CHECK_HEADERS('syscall.h sys/syscall.h inttypes.h')
-    conf.CHECK_HEADERS('sys/atomic.h stdatomic.h')
+    conf.CHECK_HEADERS('sys/atomic.h')
     conf.CHECK_HEADERS('libgen.h')
 
     if conf.CHECK_CFLAGS('-Wno-format-truncation'):
@@ -137,7 +134,6 @@ def configure(conf):
                     }
                     ''',
                     'HAVE_PRCTL',
-                    addmain=False,
                     headers='sys/prctl.h',
                     msg='Checking for prctl syscall')
 
@@ -153,9 +149,8 @@ def configure(conf):
                     msg='Checking for O_DIRECT flag to open(2)')
 
     conf.CHECK_TYPES('"long long" intptr_t uintptr_t ptrdiff_t comparison_fn_t')
-    if not conf.CHECK_TYPE('bool', define='HAVE_BOOL'):
-        if not conf.CHECK_TYPE('_Bool', define='HAVE__Bool'):
-            raise Errors.WafError('Samba requires a genuine boolean type')
+    conf.CHECK_TYPE('_Bool', define='HAVE__Bool')
+    conf.CHECK_TYPE('bool', define='HAVE_BOOL')
 
     conf.CHECK_TYPE('int8_t', 'char')
     conf.CHECK_TYPE('uint8_t', 'unsigned char')
@@ -192,52 +187,10 @@ def configure(conf):
     conf.CHECK_TYPE_IN('sig_atomic_t', 'signal.h', define='HAVE_SIG_ATOMIC_T_TYPE')
     conf.CHECK_FUNCS('sigsetmask siggetmask sigprocmask sigblock sigaction sigset')
 
-    # Those functions are normally available in libc
-    if not conf.CHECK_FUNCS('''
-                            inet_ntoa
-                            inet_aton
-                            inet_ntop
-                            inet_pton
-                            connect
-                            gethostbyname
-                            getaddrinfo
-                            getnameinfo
-                            freeaddrinfo
-                            gai_strerror
-                            socketpair''',
-                            headers='sys/socket.h netinet/in.h arpa/inet.h netdb.h'):
-        conf.CHECK_FUNCS_IN('''
-                            inet_ntoa
-                            inet_aton
-                            inet_ntop
-                            inet_pton
-                            connect
-                            gethostbyname
-                            getaddrinfo
-                            getnameinfo
-                            freeaddrinfo
-                            gai_strerror
-                            socketpair''',
-                            'socket nsl',
-                            headers='sys/socket.h netinet/in.h arpa/inet.h netdb.h')
-        conf.DEFINE('REPLACE_REQUIRES_LIBSOCKET_LIBNSL', 1)
-
-    conf.CHECK_FUNCS('memset_s memset_explicit')
-
-    conf.CHECK_CODE('''
-                    #include <string.h>
-
-                    int main(void)
-                    {
-                        char buf[] = "This is some content";
-                        memset(buf, '\0', sizeof(buf)); __asm__ volatile("" : : "g"(&buf) : "memory");
-                        return 0;
-                    }
-                    ''',
-                    define='HAVE_GCC_VOLATILE_MEMORY_PROTECTION',
-                    addmain=False,
-                    msg='Checking for volatile memory protection',
-                    local_include=False)
+    conf.CHECK_FUNCS_IN('''inet_ntoa inet_aton inet_ntop inet_pton connect gethostbyname
+                           getaddrinfo getnameinfo freeaddrinfo gai_strerror socketpair''',
+                        'socket nsl', checklibc=True,
+                        headers='sys/socket.h netinet/in.h arpa/inet.h netdb.h')
 
     # Some old Linux systems have broken header files and
     # miss the IPV6_V6ONLY define in netinet/in.h,
@@ -300,52 +253,12 @@ def configure(conf):
                     msg='Checking for __sync_fetch_and_add compiler builtin')
 
     conf.CHECK_CODE('''
-                    int i;
-                    (void)__sync_add_and_fetch(&i, 1);
-                    ''',
-                    'HAVE___SYNC_ADD_AND_FETCH',
-                    msg='Checking for __sync_add_and_fetch compiler builtin')
-
-    conf.CHECK_CODE('''
                     int32_t i;
                     atomic_add_32(&i, 1);
                     ''',
                     'HAVE_ATOMIC_ADD_32',
                     headers='stdint.h sys/atomic.h',
                     msg='Checking for atomic_add_32 compiler builtin')
-
-    conf.CHECK_CODE('''
-                    uint32_t i,j;
-                    j = __atomic_add_fetch(&i,1,__ATOMIC_SEQ_CST)
-                    ''',
-                    'HAVE___ATOMIC_ADD_FETCH',
-                    headers='stdint.h',
-                    msg='Checking for __atomic_add_fetch compiler builtin')
-
-    conf.CHECK_CODE('''
-                    uint32_t i,j;
-                    __atomic_load(&i,&j,__ATOMIC_SEQ_CST)
-                    ''',
-                    'HAVE___ATOMIC_ADD_LOAD',
-                    headers='stdint.h',
-                    msg='Checking for __atomic_load compiler builtin')
-
-    # Check for thread fence. */
-    tf = conf.CHECK_CODE('atomic_thread_fence(memory_order_seq_cst);',
-                         'HAVE_ATOMIC_THREAD_FENCE',
-                         headers='stdatomic.h',
-                         msg='Checking for atomic_thread_fence(memory_order_seq_cst) in stdatomic.h')
-    if not tf:
-        tf = conf.CHECK_CODE('__atomic_thread_fence(__ATOMIC_SEQ_CST);',
-                             'HAVE___ATOMIC_THREAD_FENCE',
-                             msg='Checking for __atomic_thread_fence(__ATOMIC_SEQ_CST)')
-    if not tf:
-        # __sync_synchronize() is available since 2005 in gcc.
-        tf = conf.CHECK_CODE('__sync_synchronize();',
-                             'HAVE___SYNC_SYNCHRONIZE',
-                             msg='Checking for __sync_synchronize')
-    if tf:
-        conf.DEFINE('HAVE_ATOMIC_THREAD_FENCE_SUPPORT', 1)
 
     conf.CHECK_CODE('''
                     #define FALL_THROUGH __attribute__((fallthrough))
@@ -381,7 +294,6 @@ def configure(conf):
                     'HAVE_FALLTHROUGH_ATTRIBUTE',
                     addmain=False,
                     strict=True,
-                    cflags=['-Werror=missing-declarations'],
                     msg='Checking for fallthrough attribute')
 
     # these may be builtins, so we need the link=False strategy
@@ -410,7 +322,6 @@ def configure(conf):
     conf.CHECK_FUNCS('link readlink symlink realpath snprintf vsnprintf')
     conf.CHECK_FUNCS('asprintf vasprintf setenv unsetenv strnlen strtoull __strtoull')
     conf.CHECK_FUNCS('strtouq strtoll __strtoll strtoq memalign posix_memalign')
-    conf.CHECK_FUNCS('fmemopen')
 
     if conf.CONFIG_SET('HAVE_MEMALIGN'):
         conf.CHECK_DECLS('memalign', headers='malloc.h')
@@ -454,7 +365,7 @@ def configure(conf):
                 msg="Checking whether we can use SO_PEERCRED to get socket credentials",
                 headers='sys/types.h sys/socket.h')
 
-    #Some OS (ie. freebsd) return EINVAL if the conversion could not be done, it's not what we expect
+    #Some OS (ie. freebsd) return EINVAL if the convertion could not be done, it's not what we expect
     #Let's detect those cases
     if conf.CONFIG_SET('HAVE_STRTOLL'):
         conf.CHECK_CODE('''
@@ -471,20 +382,12 @@ def configure(conf):
                         define = 'HAVE_BSD_STRTOLL',
                         )
     conf.CHECK_FUNCS('if_nametoindex strerror_r')
-    conf.CHECK_FUNCS('syslog')
+    conf.CHECK_FUNCS('getdirentries getdents syslog')
     conf.CHECK_FUNCS('gai_strerror get_current_dir_name')
     conf.CHECK_FUNCS('timegm getifaddrs freeifaddrs mmap setgroups syscall setsid')
     conf.CHECK_FUNCS('getgrent_r getgrgid_r getgrnam_r getgrouplist getpagesize')
     conf.CHECK_FUNCS('getpwent_r getpwnam_r getpwuid_r epoll_create')
     conf.CHECK_FUNCS('port_create')
-    conf.CHECK_FUNCS('getprogname')
-    if not conf.CHECK_FUNCS('copy_file_range'):
-        conf.CHECK_CODE('''
-syscall(SYS_copy_file_range,0,NULL,0,NULL,0,0);
-                        ''',
-                        'HAVE_SYSCALL_COPY_FILE_RANGE',
-                        headers='sys/syscall.h unistd.h',
-                        msg='Checking whether we have copy_file_range system call')
 
     conf.SET_TARGET_TYPE('attr', 'EMPTY')
 
@@ -515,28 +418,11 @@ syscall(SYS_copy_file_range,0,NULL,0,NULL,0,0);
     conf.CHECK_C_PROTOTYPE('dlopen', 'void *dlopen(const char* filename, unsigned int flags)',
                            define='DLOPEN_TAKES_UNSIGNED_FLAGS', headers='dlfcn.h dl.h')
 
-    #
-    # Check for clock_gettime and fdatasync
-    #
-    # First check libc to avoid linking libreplace against librt.
-    #
-    if conf.CHECK_FUNCS('fdatasync'):
+    if conf.CHECK_FUNCS_IN('fdatasync', 'rt', checklibc=True):
         # some systems are missing the declaration
         conf.CHECK_DECLS('fdatasync')
-    else:
-        if conf.CHECK_FUNCS_IN('fdatasync', 'rt'):
-            # some systems are missing the declaration
-            conf.CHECK_DECLS('fdatasync')
 
-    has_clock_gettime = False
-    if conf.CHECK_FUNCS('clock_gettime'):
-        has_clock_gettime = True
-
-    if not has_clock_gettime:
-        if conf.CHECK_FUNCS_IN('clock_gettime', 'rt', checklibc=True):
-            has_clock_gettime = True
-
-    if has_clock_gettime:
+    if conf.CHECK_FUNCS_IN('clock_gettime', 'rt', checklibc=True):
         for c in ['CLOCK_MONOTONIC', 'CLOCK_PROCESS_CPUTIME_ID', 'CLOCK_REALTIME']:
             conf.CHECK_CODE('''
                 #if TIME_WITH_SYS_TIME
@@ -610,11 +496,6 @@ syscall(SYS_copy_file_range,0,NULL,0,NULL,0,0);
     PTHREAD_LDFLAGS='error'
 
     if PTHREAD_LDFLAGS == 'error':
-        # Check if pthread_attr_init() is provided by libc first!
-        if conf.CHECK_FUNCS('pthread_attr_init'):
-            PTHREAD_CFLAGS='-D_REENTRANT'
-            PTHREAD_LDFLAGS=''
-    if PTHREAD_LDFLAGS == 'error':
         if conf.CHECK_FUNCS_IN('pthread_attr_init', 'pthread'):
             PTHREAD_CFLAGS='-D_REENTRANT -D_POSIX_PTHREAD_SEMANTICS'
             PTHREAD_LDFLAGS='-lpthread'
@@ -626,7 +507,10 @@ syscall(SYS_copy_file_range,0,NULL,0,NULL,0,0);
         if conf.CHECK_FUNCS_IN('pthread_attr_init', 'c_r'):
             PTHREAD_CFLAGS='-D_THREAD_SAFE -pthread'
             PTHREAD_LDFLAGS='-pthread'
-
+    if PTHREAD_LDFLAGS == 'error':
+        if conf.CHECK_FUNCS('pthread_attr_init'):
+            PTHREAD_CFLAGS='-D_REENTRANT'
+            PTHREAD_LDFLAGS='-lpthread'
     # especially for HP-UX, where the CHECK_FUNC macro fails to test for
     # pthread_attr_init. On pthread_mutex_lock it works there...
     if PTHREAD_LDFLAGS == 'error':
@@ -667,32 +551,17 @@ syscall(SYS_copy_file_range,0,NULL,0,NULL,0,0);
              conf.CONFIG_SET('HAVE_PTHREAD_MUTEX_CONSISTENT_NP'))):
             conf.DEFINE('HAVE_ROBUST_MUTEXES', 1)
 
-    # __thread is available since 2002 in gcc.
-    conf.CHECK_CODE('''
-        __thread int tls;
-
-        int main(void) {
-            return 0;
-        }
-        ''',
-        'HAVE___THREAD',
-        addmain=False,
-        msg='Checking for __thread local storage')
-
     conf.CHECK_FUNCS_IN('crypt', 'crypt', checklibc=True)
     conf.CHECK_FUNCS_IN('crypt_r', 'crypt', checklibc=True)
-    conf.CHECK_FUNCS_IN('crypt_rn', 'crypt', checklibc=True)
 
     conf.CHECK_VARIABLE('rl_event_hook', define='HAVE_DECL_RL_EVENT_HOOK', always=True,
                         headers='readline.h readline/readline.h readline/history.h')
-    conf.CHECK_VARIABLE('program_invocation_short_name', headers='errno.h')
 
     conf.CHECK_DECLS('snprintf vsnprintf asprintf vasprintf')
 
     conf.CHECK_DECLS('errno', headers='errno.h', reverse=True)
     conf.CHECK_DECLS('EWOULDBLOCK', headers='errno.h')
-    conf.CHECK_DECLS('environ', reverse=True, headers='unistd.h')
-    conf.CHECK_DECLS('getgrent_r getpwent_r', reverse=True, headers='pwd.h grp.h')
+    conf.CHECK_DECLS('environ getgrent_r getpwent_r', reverse=True, headers='pwd.h grp.h')
     conf.CHECK_DECLS('pread pwrite setenv setresgid setresuid', reverse=True)
 
     if conf.CONFIG_SET('HAVE_EPOLL_CREATE') and conf.CONFIG_SET('HAVE_SYS_EPOLL_H'):
@@ -710,7 +579,7 @@ syscall(SYS_copy_file_range,0,NULL,0,NULL,0,0);
     conf.CHECK_FUNCS('strptime')
     conf.CHECK_DECLS('strptime', headers='time.h')
     conf.CHECK_CODE('''#define LIBREPLACE_CONFIGURE_TEST_STRPTIME
-                       #include "tests/strptime.c"''',
+                       #include "test/strptime.c"''',
                        define='HAVE_WORKING_STRPTIME',
                        execute=True,
                        addmain=False,
@@ -725,25 +594,25 @@ syscall(SYS_copy_file_range,0,NULL,0,NULL,0,0);
                            define='HAVE_GETTIMEOFDAY_TZ_VOID',
                            headers='sys/time.h')
 
-    conf.CHECK_CODE('#include "tests/snprintf.c"',
+    conf.CHECK_CODE('#include "test/snprintf.c"',
                     define="HAVE_C99_VSNPRINTF",
                     execute=True,
                     addmain=False,
                     msg="Checking for C99 vsnprintf")
 
-    conf.CHECK_CODE('#include "tests/shared_mmap.c"',
+    conf.CHECK_CODE('#include "test/shared_mmap.c"',
                     addmain=False, add_headers=False, execute=True,
                     define='HAVE_SHARED_MMAP',
                     msg="Checking for HAVE_SHARED_MMAP")
 
-    conf.CHECK_CODE('#include "tests/shared_mremap.c"',
+    conf.CHECK_CODE('#include "test/shared_mremap.c"',
                     addmain=False, add_headers=False, execute=True,
                     define='HAVE_MREMAP',
                     msg="Checking for HAVE_MREMAP")
 
     # OpenBSD (and I've heard HPUX) doesn't sync between mmap and write.
     # FIXME: Anything other than a 0 or 1 exit code should abort configure!
-    conf.CHECK_CODE('#include "tests/incoherent_mmap.c"',
+    conf.CHECK_CODE('#include "test/incoherent_mmap.c"',
                     addmain=False, add_headers=False, execute=True,
                     define='HAVE_INCOHERENT_MMAP',
                     msg="Checking for HAVE_INCOHERENT_MMAP")
@@ -766,6 +635,8 @@ syscall(SYS_copy_file_range,0,NULL,0,NULL,0,0);
 
     conf.CHECK_CODE('mkdir("foo",0777)', define='HAVE_MKDIR_MODE', headers='sys/stat.h')
 
+    conf.CHECK_STRUCTURE_MEMBER('struct stat', 'st_mtim.tv_nsec', define='HAVE_STAT_TV_NSEC',
+                                headers='sys/stat.h')
     # we need the st_rdev test under two names
     conf.CHECK_STRUCTURE_MEMBER('struct stat', 'st_rdev',
                                 define='HAVE_STRUCT_STAT_ST_RDEV',
@@ -839,7 +710,7 @@ syscall(SYS_copy_file_range,0,NULL,0,NULL,0,0);
                            #include "snprintf.c"
                            #include "getifaddrs.c"
                            #define getifaddrs_test main
-                           #include "tests/getifaddrs.c"
+                           #include "test/getifaddrs.c"
                            ''' % method,
                            method,
                            lib='nsl socket' + bsd_for_strlcpy,
@@ -866,8 +737,8 @@ REPLACEMENT_FUNCTIONS = {
                   'strsep', 'strtok_r', 'strtoll', 'strtoull', 'setenv', 'unsetenv',
                   'utime', 'utimes', 'dup2', 'chown', 'link', 'readlink',
                   'symlink', 'lchown', 'realpath', 'memmem', 'vdprintf',
-                  'dprintf', 'get_current_dir_name', 'copy_file_range',
-                  'strerror_r', 'clock_gettime', 'memset_s'],
+                  'dprintf', 'get_current_dir_name',
+                  'strerror_r', 'clock_gettime'],
     'timegm.c': ['timegm'],
     # Note: C99_VSNPRINTF is not a function, but a special condition
     # for replacement
@@ -883,30 +754,28 @@ def build(bld):
 
     REPLACE_HOSTCC_SOURCE = ''
 
-    for filename in REPLACEMENT_FUNCTIONS.keys():
-        for function in REPLACEMENT_FUNCTIONS[filename]:
+    for filename, functions in REPLACEMENT_FUNCTIONS.iteritems():
+        for function in functions:
             if not bld.CONFIG_SET('HAVE_%s' % function.upper()):
                 REPLACE_HOSTCC_SOURCE += ' %s' % filename
                 break
 
     extra_libs = ''
     if bld.CONFIG_SET('HAVE_LIBBSD'): extra_libs += ' bsd'
-    if bld.CONFIG_SET('HAVE_LIBRT'): extra_libs += ' rt'
-    if bld.CONFIG_SET('REPLACE_REQUIRES_LIBSOCKET_LIBNSL'): extra_libs += ' socket nsl'
-
-    if not bld.CONFIG_SET('HAVE_CLOSEFROM'):
-        REPLACE_HOSTCC_SOURCE += ' closefrom.c'
 
     bld.SAMBA_SUBSYSTEM('LIBREPLACE_HOSTCC',
         REPLACE_HOSTCC_SOURCE,
         use_hostcc=True,
         use_global_deps=False,
-        group='hostcc_base_build_main',
+        cflags='-D_SAMBA_HOSTCC_',
+        group='compiler_libraries',
         deps = extra_libs
     )
 
     REPLACE_SOURCE = REPLACE_HOSTCC_SOURCE
+    REPLACE_SOURCE += ' cwrap.c'
 
+    if not bld.CONFIG_SET('HAVE_CRYPT'):         REPLACE_SOURCE += ' crypt.c'
     if not bld.CONFIG_SET('HAVE_DLOPEN'):        REPLACE_SOURCE += ' dlfcn.c'
     if not bld.CONFIG_SET('HAVE_POLL'):          REPLACE_SOURCE += ' poll.c'
 
@@ -933,22 +802,22 @@ def build(bld):
                       # at the moment:
                       # hide_symbols=bld.BUILTIN_LIBRARY('replace'),
                       private_library=True,
-                      provide_builtin_linking=True,
-                      deps='dl attr' + extra_libs)
+                      deps='crypt dl nsl socket rt attr' + extra_libs)
 
-    replace_test_cflags = ''
+    replace_test_cflags="-Wno-format-zero-length"
     if bld.CONFIG_SET('HAVE_WNO_FORMAT_TRUNCATION'):
         replace_test_cflags += " -Wno-format-truncation"
     bld.SAMBA_SUBSYSTEM('replace-test',
-                        source='''tests/testsuite.c tests/strptime.c
-                        tests/os2_delete.c tests/getifaddrs.c''',
+                        source='''test/testsuite.c test/strptime.c
+                        test/os2_delete.c test/getifaddrs.c''',
                         deps='replace',
                         cflags=replace_test_cflags)
 
-    bld.SAMBA_BINARY('replace_testsuite',
-                     source='tests/main.c',
-                     deps='replace replace-test',
-                     install=False)
+    if bld.env.standalone_replace:
+        bld.SAMBA_BINARY('replace_testsuite',
+                         source='test/main.c',
+                         deps='replace replace-test',
+                         install=False)
 
     # build replacements for stdint.h and stdbool.h if needed
     bld.SAMBA_GENERATOR('replace_stdint_h',
@@ -963,24 +832,6 @@ def build(bld):
                         enabled = not bld.CONFIG_SET('HAVE_STDBOOL_H'))
 
     bld.SAMBA_SUBSYSTEM('samba_intl', source='', use_global_deps=False,deps=bld.env.intl_libs)
-
-def testonly(ctx):
-    '''run talloc testsuite'''
-    import samba_utils
-
-    samba_utils.ADD_LD_LIBRARY_PATH('bin/shared')
-    samba_utils.ADD_LD_LIBRARY_PATH('bin/shared/private')
-
-    cmd = os.path.join(Context.g_module.out, 'replace_testsuite')
-    ret = samba_utils.RUN_COMMAND(cmd)
-    print("testsuite returned %d" % ret)
-    sys.exit(ret)
-
-# WAF doesn't build the unit tests for this, maybe because they don't link with talloc?
-# This forces it
-def test(ctx):
-    Options.commands.append('build')
-    Options.commands.append('testonly')
 
 def dist():
     '''makes a tarball for distribution'''

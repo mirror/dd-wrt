@@ -3,22 +3,18 @@
    Python Talloc Module
    Copyright (C) Jelmer Vernooij <jelmer@samba.org> 2010-2011
 
-     ** NOTE! The following LGPL license applies to the talloc
-     ** library. This does NOT imply that all of Samba is released
-     ** under the LGPL
+   This program is free software; you can redistribute it and/or modify
+   it under the terms of the GNU General Public License as published by
+   the Free Software Foundation; either version 3 of the License, or
+   (at your option) any later version.
 
-   This library is free software; you can redistribute it and/or
-   modify it under the terms of the GNU Lesser General Public
-   License as published by the Free Software Foundation; either
-   version 3 of the License, or (at your option) any later version.
-
-   This library is distributed in the hope that it will be useful,
+   This program is distributed in the hope that it will be useful,
    but WITHOUT ANY WARRANTY; without even the implied warranty of
-   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-   Lesser General Public License for more details.
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+   GNU General Public License for more details.
 
-   You should have received a copy of the GNU Lesser General Public
-   License along with this library; if not, see <http://www.gnu.org/licenses/>.
+   You should have received a copy of the GNU General Public License
+   along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
 #include <Python.h>
@@ -27,6 +23,12 @@
 #include "pytalloc_private.h"
 
 static PyTypeObject TallocObject_Type;
+
+#if PY_MAJOR_VERSION >= 3
+#define PyStr_FromFormat PyUnicode_FromFormat
+#else
+#define PyStr_FromFormat PyString_FromFormat
+#endif
 
 /* print a talloc tree report for a talloc python object */
 static PyObject *pytalloc_report_full(PyObject *self, PyObject *args)
@@ -41,15 +43,14 @@ static PyObject *pytalloc_report_full(PyObject *self, PyObject *args)
 	} else {
 		talloc_report_full(pytalloc_get_mem_ctx(py_obj), stdout);
 	}
-	Py_RETURN_NONE;
+	return Py_None;
 }
 
 /* enable null tracking */
-static PyObject *pytalloc_enable_null_tracking(PyObject *self,
-		PyObject *Py_UNUSED(ignored))
+static PyObject *pytalloc_enable_null_tracking(PyObject *self)
 {
 	talloc_enable_null_tracking();
-	Py_RETURN_NONE;
+	return Py_None;
 }
 
 /* return the number of talloc blocks */
@@ -74,7 +75,7 @@ static PyMethodDef talloc_methods[] = {
 		"enable tracking of the NULL object"},
 	{ "total_blocks", (PyCFunction)pytalloc_total_blocks, METH_VARARGS,
 		"return talloc block count"},
-	{0}
+	{ NULL }
 };
 
 /**
@@ -85,7 +86,7 @@ static PyObject *pytalloc_default_repr(PyObject *obj)
 	pytalloc_Object *talloc_obj = (pytalloc_Object *)obj;
 	PyTypeObject *type = (PyTypeObject*)PyObject_Type(obj);
 
-	return PyUnicode_FromFormat("<%s talloc object at %p>",
+	return PyStr_FromFormat("<%s talloc object at %p>",
 				type->tp_name, talloc_obj->ptr);
 }
 
@@ -165,7 +166,7 @@ static PyObject *pytalloc_base_default_repr(PyObject *obj)
 	pytalloc_BaseObject *talloc_obj = (pytalloc_BaseObject *)obj;
 	PyTypeObject *type = (PyTypeObject*)PyObject_Type(obj);
 
-	return PyUnicode_FromFormat("<%s talloc based object at %p>",
+	return PyStr_FromFormat("<%s talloc based object at %p>",
 				type->tp_name, talloc_obj->ptr);
 }
 
@@ -280,22 +281,12 @@ static PyObject *module_init(void)
 		return NULL;
 
 	Py_INCREF(&TallocObject_Type);
-	if (PyModule_AddObject(m, "Object", (PyObject *)&TallocObject_Type)) {
-		goto err;
-	}
+	PyModule_AddObject(m, "Object", (PyObject *)&TallocObject_Type);
 	Py_INCREF(&TallocBaseObject_Type);
-	if (PyModule_AddObject(m, "BaseObject", (PyObject *)&TallocBaseObject_Type)) {
-		goto err;
-	}
+	PyModule_AddObject(m, "BaseObject", (PyObject *)&TallocBaseObject_Type);
 	Py_INCREF(&TallocGenericObject_Type);
-	if (PyModule_AddObject(m, "GenericObject", (PyObject *)&TallocGenericObject_Type)) {
-		goto err;
-	}
+	PyModule_AddObject(m, "GenericObject", (PyObject *)&TallocGenericObject_Type);
 	return m;
-
-err:
-	Py_DECREF(m);
-	return NULL;
 }
 
 #if PY_MAJOR_VERSION >= 3
