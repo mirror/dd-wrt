@@ -1,0 +1,151 @@
+.\" Pound - the reverse-proxy load-balancer
+.\" Copyright (C) 2002-2010 Apsis GmbH
+.\" Copyright (C) 2018-2022 Sergey Poznyakoff
+.\"
+.\" Pound is free software; you can redistribute it and/or modify
+.\" it under the terms of the GNU General Public License as published by
+.\" the Free Software Foundation; either version 3 of the License, or
+.\" (at your option) any later version.
+.\"
+.\" Pound is distributed in the hope that it will be useful,
+.\" but WITHOUT ANY WARRANTY; without even the implied warranty of
+.\" MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+.\" GNU General Public License for more details.
+.\"
+.\" You should have received a copy of the GNU General Public License
+.\" along with pound.  If not, see <http://www.gnu.org/licenses/>.
+.TH POUNDCTL 8 "December 19, 2022" "poundctl" "System Manager's Manual"
+.SH NAME
+poundctl \- control the pound daemon
+.SH SYNOPSIS
+.B poundctl
+[\fB\-c \fIFILE\fR]
+[\fB\-i \fIN\fR]
+[\fB\-j\fR]
+[\fB\-s \fISOCKET\fR]
+[\fB\-h\fR]
+\fICOMMAND\fR
+[\fB/\fIL\fB/\fIS\fB/\fIB\fR]
+[\fIARG\fR]
+.SH DESCRIPTION
+Displays status and controls various objects in the running instance
+of
+.BR pound (8)
+proxy server.
+.PP
+The program communicates with the running
+.BR pound
+program via a UNIX \fIcontrol socket\fR.  The
+.B pound.cfg
+file must contain a
+.B Control
+statement for this to work.  By default,
+.B poundctl
+will open the default
+.B pound.cfg
+file, look up for this statement and use the pathname defined by it as
+the control socket file.  This can be altered in two ways.  First, if
+using the configuration file in a non-standard location, the pathname
+of this file can be given to the program using the
+.B \-c
+command line option.  Secondly, the socket name can be supplied in the
+command line explicitly, using the
+.B \-s
+option.
+.PP
+The \fICOMMAND\fR argument instructs the program what action it
+is supposed to perform.  Missing \fICOMMAND\fR is equivalent to
+.BR list .
+All commands take the \fB/\fIL\fB/\fIS\fB/\fIB\fR argument, which
+specifies the
+.B pound
+object to apply the command to.  Here, \fIL\fR, \fIS\fR, and \fIB\fR
+stand for the numbers of \fIlistener\fR, \fIservice\fR and
+\fIbackend\fR, correspondingly.  Depending on the command, either
+\fIB\fR or both /\fIS\fR/\fIB\fR/ may be omitted.  For example,
+the following command will disable backend 2 in service 1 of listener 0:
+.PP
+.EX
+poundctl disable /0/1/2
+.EE
+.PP
+In contrast, the following command disables the listener 0 itself:
+.PP
+.EX
+poundctl disable /0
+.EE
+.PP
+A dash in place of \fIL\fR stands for global scope.  Thus, e.g.:
+.PP
+.EX
+poundctl disable /-/1
+.EE
+.PP
+disables the service 1 defined in the global scope of
+.BR pound.cfg .
+.PP
+The following commands are available:
+.TP
+\fBlist\fR \fB/\fIL\fB/\fIS\fB/\fIB\fR
+List status of the given object and its subordinates.  Without
+argument, shows all listeners and underlying objects.
+.TP
+\fBenable\fR \fB/\fIL\fB/\fIS\fB/\fIB\fR
+Enable listener, service, or backend.
+.TP
+\fBon\fR \fB/\fIL\fB/\fIS\fB/\fIB\fR
+Same as \fBenable\fR.
+.TP
+\fBdisable\fR \fB/\fIL\fB/\fIS\fB/\fIB\fR
+Disable listener, service, or backend.
+.TP
+\fBoff\fR \fB/\fIL\fB/\fIS\fB/\fIB\fR
+Same as \fBdisable\fR.
+.TP
+\fBdelete\fR \fB/\fIL\fB/\fIS\fR \fIKEY\fR
+Delete session with the given key.  Notice that backend may not be
+specified.
+.TP
+\fBadd\fR \fB/\fIL\fB/\fIS\fB/\fIB\fR \fIKEY\fR
+Add session with given key.
+.SH OPTIONS
+.TP
+\fB\-c \fIFILE\fR
+Location of \fBpound\fR configuration file.
+.TP
+\fB\-i \fIN\fR
+Sets indentation level for JSON output.
+.TP
+\fB\-j\fr
+JSON output format.
+.TP
+\fB\-h\fR
+Shows a short help output and exit.
+.TP
+\fB\-s \fISOCKET\fR
+Sets control socket pathname.
+.SH SEE ALSO
+.BR pound (8).
+.SH AUTHOR
+Written by Robert Segall, Apsis GmbH, and Sergey Poznyakoff.
+.SH "REPORTING BUGS"
+Report bugs to <gray@gnu.org>.  You may also use github issue tracker
+at https://github.com/graygnuorg/pound/issues.
+.SH COPYRIGHT
+Copyright \(co 2002-2010 Apsis GmbH.
+.br
+Copyright \(co 2018-2022 Sergey Poznyakoff
+.sp
+.na
+License GPLv3+: GNU GPL version 3 or later <http://gnu.org/licenses/gpl.html>
+.sp
+.ad
+This is free software: you are free to change and redistribute it.
+There is NO WARRANTY, to the extent permitted by law.
+.\" Local variables:
+.\" eval: (add-hook 'write-file-hooks 'time-stamp)
+.\" time-stamp-start: ".TH [A-Z_][A-Z0-9_.\\-]* [0-9] \""
+.\" time-stamp-format: "%:B %:d, %:y"
+.\" time-stamp-end: "\""
+.\" time-stamp-line-limit: 20
+.\" end:

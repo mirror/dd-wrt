@@ -1,0 +1,76 @@
+# This file is part of pound testsuite. -*- autotest -*-
+# Copyright (C) 2022 Sergey Poznyakoff
+#
+# Pound is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 3 of the License, or
+# (at your option) any later version.
+#
+# Pound is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with pound.  If not, see <http://www.gnu.org/licenses/>.
+
+AT_SETUP([Redirect])
+AT_KEYWORDS([redirect])
+PT_CHECK([ListenHTTP
+	Service
+		Redirect "http://example.org"
+	End
+End
+],
+[GET /foo/bar
+end
+
+302
+location: http://example.org/foo/bar
+end
+])
+
+PT_CHECK([ListenHTTP
+	Service
+		Redirect 301 "http://example.org"
+	End
+End
+],
+[GET /foo/bar
+end
+
+301
+location: http://example.org/foo/bar
+end
+])
+
+PT_CHECK([ListenHTTP
+	Service
+		Redirect "http://example.org/"
+	End
+End
+],
+[GET /foo/bar
+end
+
+302
+location: http://example.org
+end
+])
+
+PT_CHECK([[ListenHTTP
+	Service
+		URL "^/([^/]+)/(.*)"
+		Redirect "http://example.org/$2/$1"
+	End
+End
+]],
+[GET /foo/bar
+end
+
+302
+location: http://example.org/bar/foo
+end
+])
+
+AT_CLEANUP

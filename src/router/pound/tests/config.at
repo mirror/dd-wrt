@@ -1,0 +1,188 @@
+# This file is part of pound testsuite. -*- autotest -*-
+# Copyright (C) 2022 Sergey Poznyakoff
+#
+# Pound is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 3 of the License, or
+# (at your option) any later version.
+#
+# Pound is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with pound.  If not, see <http://www.gnu.org/licenses/>.
+
+AT_SETUP([Configuration file syntax])
+AT_KEYWORDS([config cfg])
+
+PT_CONF([# General syntax
+# Comment line
+user "root" # inline comment
+
+group "root"
+
+Service
+	Backend
+		Address 127.0.0.1
+		Port 8080
+	End
+End
+])
+
+PT_CONF([# Case-insensitive keywords
+# Comment line
+USER "root" # inline comment
+
+GROUP "root"
+
+SERVICE
+	BACKEND
+		ADDRESS 127.0.0.1
+		PORT 8080
+	END
+END
+])
+
+PT_CONF([user "root"
+# Unrecognized keyword
+FooBar 10
+group "root"
+],
+[1],
+[],
+[pound: pound.cfg:3.1-6: unrecognized keyword
+])
+
+PT_CONF([# Missing argument
+user
+group "0"
+],
+[1],
+[],
+[pound: pound.cfg:2.4-3: expected quoted string, but found end of line
+])
+
+PT_CONF([# Mistyped argument
+user 10
+],
+[1],
+[],
+[pound: pound.cfg:2.6-7: expected quoted string, but found number
+])
+
+PT_CONF([# Extra argument
+user "root" 10
+],
+[1],
+[],
+[pound: pound.cfg:2.13-14: unexpected number
+])
+
+PT_CONF([# Unrecognized escape
+user "foo\Bar"
+],
+[0],
+[],
+[pound: pound.cfg:2.11: unrecognized escape character
+])
+
+PT_CONF([# Boolean arguments
+Daemon 0
+Daemon false
+Daemon off
+Daemon no
+
+Daemon 1
+Daemon true
+Daemon on
+Daemon yes
+])
+
+PT_CONF([# Invalid boolean value
+Daemon whatever
+],
+[1],
+[],
+[pound: pound.cfg:2.8-15: not a boolean value
+pound: pound.cfg:2.8-15: valid booleans are: 1, yes, true, on for true value, and 0, no, false, off for false value
+])
+
+PT_CONF([# Mandatory parameters
+Service
+	Backend
+	End
+End
+],
+[1],
+[],
+[pound: pound.cfg:3.9-4.11: Backend missing Address declaration
+])
+
+PT_CONF([# Mandatory parameters
+Service
+	Backend
+		Address 127.0.0.1
+	End
+End
+],
+[1],
+[],
+[pound: pound.cfg:3.9-5.11: Backend missing Port declaration
+])
+
+PT_CONF([# Keyword ordering
+Service
+	Backend
+		Port 80
+		Address 127.0.0.1
+	End
+End
+],
+[1],
+[],
+[pound: pound.cfg:4.17-20: Address statement should precede Port
+])
+
+PT_CONF([# Superfluous statement
+Service
+	Backend
+		Address "/tmp/pound.sock"
+		Port 80
+	End
+End
+],
+[1],
+[],
+[pound: pound.cfg:5.22-23: Port is not applicable to this address family
+])
+
+PT_CONF([# UNIX socket
+Service
+	Backend
+		Address "/tmp/pound.sock"
+	End
+End
+])
+
+PT_CONF([# Optional argument
+Service "LOCAL"
+	Backend
+		Address "/tmp/pound.sock"
+	End
+End
+])
+
+PT_CONF([# Missing end statement
+Service
+	Backend
+		Address "/tmp/pound.sock"
+	End
+],
+[1],
+[],
+[pound: pound.cfg:2.7: unexpected end of file
+])
+
+AT_CLEANUP
