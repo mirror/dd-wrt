@@ -547,7 +547,7 @@ long long int rep_strtoll(const char *str, char **endptr, int base)
 	if (errno == EINVAL) {
 		if (base == 0 || (base >1 && base <37)) {
 			/* Base was ok so it's because we were not
-			 * able to make the convertion.
+			 * able to make the conversion.
 			 * Let's reset errno.
 			 */
 			errno = saved_errno;
@@ -583,7 +583,7 @@ unsigned long long int rep_strtoull(const char *str, char **endptr, int base)
 	if (errno == EINVAL) {
 		if (base == 0 || (base >1 && base <37)) {
 			/* Base was ok so it's because we were not
-			 * able to make the convertion.
+			 * able to make the conversion.
 			 * Let's reset errno.
 			 */
 			errno = saved_errno;
@@ -947,3 +947,137 @@ void rep_setproctitle_init(int argc, char *argv[], char *envp[])
 {
 }
 #endif
+
+#ifndef HAVE_MEMSET_S
+# ifndef RSIZE_MAX
+#  define RSIZE_MAX (SIZE_MAX >> 1)
+# endif
+
+int rep_memset_s(void *dest, size_t destsz, int ch, size_t count)
+{
+	if (dest == NULL) {
+		return EINVAL;
+	}
+
+	if (destsz > RSIZE_MAX ||
+	    count > RSIZE_MAX ||
+	    count > destsz) {
+		return ERANGE;
+	}
+
+#if defined(HAVE_MEMSET_EXPLICIT)
+	memset_explicit(dest, destsz, ch, count);
+#else /* HAVE_MEMSET_EXPLICIT */
+	memset(dest, ch, count);
+# if defined(HAVE_GCC_VOLATILE_MEMORY_PROTECTION)
+	/* See http://llvm.org/bugs/show_bug.cgi?id=15495 */
+	__asm__ volatile("" : : "g"(dest) : "memory");
+# endif /* HAVE_GCC_VOLATILE_MEMORY_PROTECTION */
+#endif /* HAVE_MEMSET_EXPLICIT */
+
+	return 0;
+}
+#endif /* HAVE_MEMSET_S */
+
+#ifndef HAVE_GETPROGNAME
+# ifndef HAVE_PROGRAM_INVOCATION_SHORT_NAME
+# define PROGNAME_SIZE 32
+static char rep_progname[PROGNAME_SIZE];
+# endif /* HAVE_PROGRAM_INVOCATION_SHORT_NAME */
+
+const char *rep_getprogname(void)
+{
+#ifdef HAVE_PROGRAM_INVOCATION_SHORT_NAME
+	return program_invocation_short_name;
+#else /* HAVE_PROGRAM_INVOCATION_SHORT_NAME */
+	FILE *fp = NULL;
+	char cmdline[4096] = {0};
+	char *p = NULL;
+	pid_t pid;
+	size_t nread;
+	int len;
+	int rc;
+
+	if (rep_progname[0] != '\0') {
+		return rep_progname;
+	}
+
+	len = snprintf(rep_progname, sizeof(rep_progname), "%s", "<unknown>");
+	if (len <= 0) {
+		return NULL;
+	}
+
+	pid = getpid();
+	if (pid <= 1 || pid == (pid_t)-1) {
+		return NULL;
+	}
+
+	len = snprintf(cmdline,
+		       sizeof(cmdline),
+		       "/proc/%u/cmdline",
+		       (unsigned int)pid);
+	if (len <= 0 || len == sizeof(cmdline)) {
+		return NULL;
+	}
+
+	fp = fopen(cmdline, "r");
+	if (fp == NULL) {
+		return NULL;
+	}
+
+	nread = fread(cmdline, 1, sizeof(cmdline) - 1, fp);
+
+	rc = fclose(fp);
+	if (rc != 0) {
+		return NULL;
+	}
+
+	if (nread == 0) {
+		return NULL;
+	}
+
+	cmdline[nread] = '\0';
+
+	p = strrchr(cmdline, '/');
+	if (p != NULL) {
+		p++;
+	} else {
+		p = cmdline;
+	}
+
+	len = strlen(p);
+	if (len > PROGNAME_SIZE) {
+		p[PROGNAME_SIZE - 1] = '\0';
+	}
+
+	(void)snprintf(rep_progname, sizeof(rep_progname), "%s", p);
+
+	return rep_progname;
+#endif /* HAVE_PROGRAM_INVOCATION_SHORT_NAME */
+}
+#endif /* HAVE_GETPROGNAME */
+
+#ifndef HAVE_COPY_FILE_RANGE
+# ifdef HAVE_SYSCALL_COPY_FILE_RANGE
+# include <sys/syscall.h>
+# endif
+ssize_t rep_copy_file_range(int fd_in,
+			    loff_t *off_in,
+			    int fd_out,
+			    loff_t *off_out,
+			    size_t len,
+			    unsigned int flags)
+{
+# ifdef HAVE_SYSCALL_COPY_FILE_RANGE
+	return syscall(__NR_copy_file_range,
+		       fd_in,
+		       off_in,
+		       fd_out,
+		       off_out,
+		       len,
+		       flags);
+# endif /* HAVE_SYSCALL_COPY_FILE_RANGE */
+	errno = ENOSYS;
+	return -1;
+}
+#endif /* HAVE_COPY_FILE_RANGE */

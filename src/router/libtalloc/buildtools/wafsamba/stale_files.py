@@ -14,7 +14,9 @@ nodes/tasks, in which case the method will have to be modified
 to exclude some folders for example.
 """
 
-import Logs, Build, os, samba_utils, Options, Utils
+from waflib import Logs, Build, Options, Utils, Errors
+import os
+from wafsamba import samba_utils
 from Runner import Parallel
 
 old_refill_task_list = Parallel.refill_task_list
@@ -46,7 +48,7 @@ def replace_refill_task_list(self):
 
     # paranoia
     if bin_base[-4:] != '/bin':
-        raise Utils.WafError("Invalid bin base: %s" % bin_base)
+        raise Errors.WafError("Invalid bin base: %s" % bin_base)
 
     # obtain the expected list of files
     expected = []
@@ -67,7 +69,7 @@ def replace_refill_task_list(self):
                                 objpath = os.path.normpath(output.abspath(bld.env))
                                 expected.append(objpath)
                     for t in tlist:
-                        if ttype in ['LIBRARY','MODULE']:
+                        if ttype in ['LIBRARY', 'PLUGIN', 'MODULE']:
                             t = samba_utils.apply_pattern(t, bld.env.shlib_PATTERN)
                         if ttype == 'PYTHON':
                             t = samba_utils.apply_pattern(t, bld.env.pyext_PATTERN)

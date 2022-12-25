@@ -4,15 +4,15 @@
 # library use
 
 import os
-import Utils
-from TaskGen import feature, before, after
+from waflib import Utils, Errors
+from waflib.TaskGen import feature, before, after
 from samba_utils import LIB_PATH, MODE_755, install_rpath, build_rpath
 
 @feature('install_bin')
 @after('apply_core')
 @before('apply_link', 'apply_obj_vars')
 def install_binary(self):
-    '''install a binary, taking account of the different rpath varients'''
+    '''install a binary, taking account of the different rpath variants'''
     bld = self.bld
 
     # get the ldflags we will use for install and build
@@ -45,7 +45,7 @@ def install_binary(self):
 
     # tell waf to install the right binary
     bld.install_as(os.path.join(install_path, orig_target),
-                   os.path.join(self.path.abspath(bld.env), self.target),
+                   self.path.find_or_declare(self.target),
                    chmod=MODE_755)
 
 
@@ -54,7 +54,7 @@ def install_binary(self):
 @after('apply_core')
 @before('apply_link', 'apply_obj_vars')
 def install_library(self):
-    '''install a library, taking account of the different rpath varients'''
+    '''install a library, taking account of the different rpath variants'''
     if getattr(self, 'done_install_library', False):
         return
 
@@ -62,9 +62,6 @@ def install_library(self):
 
     default_env = bld.all_envs['default']
     try:
-        if self.env['IS_EXTRA_PYTHON']:
-            bld.all_envs['default'] = bld.all_envs['extrapython']
-
         install_ldflags = install_rpath(self)
         build_ldflags   = build_rpath(bld)
 
@@ -121,7 +118,7 @@ def install_library(self):
             install_name = bld.make_libname(target_name, version=self.vnum)
             install_link = bld.make_libname(target_name, version=vnum_base)
             inst_name    = bld.make_libname(t.target)
-            if not self.private_library:
+            if not self.private_library or not t.env.SONAME_ST:
                 # only generate the dev link for non-bundled libs
                 dev_link     = bld.make_libname(target_name)
         elif getattr(self, 'soname', ''):
@@ -143,8 +140,9 @@ def install_library(self):
 
         # tell waf to install the library
         bld.install_as(os.path.join(install_path, install_name),
-                       os.path.join(self.path.abspath(bld.env), inst_name),
+                       self.path.find_or_declare(inst_name),
                        chmod=MODE_755)
+
         if install_link and install_link != install_name:
             # and the symlink if needed
             bld.symlink_as(os.path.join(install_path, install_link), os.path.basename(install_name))
@@ -158,7 +156,7 @@ def install_library(self):
 @after('apply_implib')
 @before('apply_vnum')
 def apply_soname(self):
-    '''install a library, taking account of the different rpath varients'''
+    '''install a library, taking account of the different rpath variants'''
 
     if self.env.SONAME_ST and getattr(self, 'soname', ''):
         self.env.append_value('LINKFLAGS', self.env.SONAME_ST % self.soname)
@@ -227,7 +225,7 @@ def symlink_bin(self):
         return
 
     if not self.link_task.outputs or not self.link_task.outputs[0]:
-        raise Utils.WafError('no outputs found for %s in symlink_bin' % self.name)
+        raise Errors.WafError('no outputs found for %s in symlink_bin' % self.name)
     binpath = self.link_task.outputs[0].abspath(self.env)
     bldpath = os.path.join(self.bld.env.BUILD_DIRECTORY, self.link_task.outputs[0].name)
 
