@@ -50,6 +50,7 @@ libtalloc-configure:
 			--sysconfdir=/etc \
 			--localstatedir=/var \
 			--cross-compile \
+			--disable-python \
 			--cross-answers=$(TOP)/libtalloc/cache.txt \
 			--disable-rpath \
 			--disable-rpath-install \
