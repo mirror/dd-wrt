@@ -5,7 +5,10 @@
 
 subunit_start_test duplicate_symbols
 
-if ./buildtools/bin/waf build --dup-symbol-check; then
+PYTHONHASHSEED=1
+export PYTHONHASHSEED
+
+if $PYTHON ./buildtools/bin/waf build --dup-symbol-check; then
 	subunit_pass_test duplicate_symbols
 else
 	echo | subunit_fail_test duplicate_symbols

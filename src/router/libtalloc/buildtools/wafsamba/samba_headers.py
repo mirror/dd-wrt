@@ -1,8 +1,8 @@
 # specialist handling of header files for Samba
 
 import os, re, sys, fnmatch
-import Build, Logs, Utils
-from samba_utils import TO_LIST, os_path_relpath
+from waflib import Build, Logs, Utils, Errors
+from samba_utils import TO_LIST
 
 
 def header_install_path(header, header_path):
@@ -42,7 +42,7 @@ def create_public_header(task):
     if os.path.exists(tgt):
         os.unlink(tgt)
 
-    relsrc = os_path_relpath(src, task.env.TOPDIR)
+    relsrc = os.path.relpath(src, task.env.TOPDIR)
 
     infile  = open(src, mode='r')
     outfile = open(tgt, mode='w')
@@ -99,7 +99,7 @@ def create_public_header(task):
         os.unlink(tgt)
         sys.stderr.write("%s:%u:Error: unable to resolve public header %s (maybe try one of %s)\n" % (
             os.path.relpath(src, os.getcwd()), linenumber, hpath, suggested))
-        raise Utils.WafError("Unable to resolve header path '%s' in public header '%s' in directory %s" % (
+        raise Errors.WafError("Unable to resolve header path '%s' in public header '%s' in directory %s" % (
             hpath, relsrc, task.env.RELPATH))
     infile.close()
     outfile.close()
@@ -148,11 +148,12 @@ def PUBLIC_HEADERS(bld, public_headers, header_path=None, public_headers_install
         else:
             h_name =  h
             inst_name = os.path.basename(h)
-        relpath1 = os_path_relpath(bld.srcnode.abspath(), bld.curdir)
-        relpath2 = os_path_relpath(bld.curdir, bld.srcnode.abspath())
+        curdir = bld.path.abspath()
+        relpath1 = os.path.relpath(bld.srcnode.abspath(), curdir)
+        relpath2 = os.path.relpath(curdir, bld.srcnode.abspath())
         targetdir = os.path.normpath(os.path.join(relpath1, bld.env.build_public_headers, inst_path))
-        if not os.path.exists(os.path.join(bld.curdir, targetdir)):
-            raise Utils.WafError("missing source directory %s for public header %s" % (targetdir, inst_name))
+        if not os.path.exists(os.path.join(curdir, targetdir)):
+            raise Errors.WafError("missing source directory %s for public header %s" % (targetdir, inst_name))
         target = os.path.join(targetdir, inst_name)
 
         # the source path of the header, relative to the top of the source tree

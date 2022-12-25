@@ -54,11 +54,6 @@
 #include <valgrind.h>
 #endif
 
-/* use this to force every realloc to change the pointer, to stress test
-   code that might not cope */
-#define ALWAYS_REALLOC 0
-
-
 #define MAX_TALLOC_SIZE 0x10000000
 
 #define TALLOC_FLAG_FREE 0x01
@@ -317,6 +312,11 @@ struct talloc_chunk {
 	struct talloc_pool_hdr *pool;
 };
 
+union talloc_chunk_cast_u {
+	uint8_t *ptr;
+	struct talloc_chunk *chunk;
+};
+
 /* 16 byte alignment seems to keep everyone happy */
 #define TC_ALIGN16(s) (((s)+15)&~15)
 #define TC_HDR_SIZE TC_ALIGN16(sizeof(struct talloc_chunk))
@@ -387,7 +387,13 @@ _PUBLIC_ void talloc_set_log_fn(void (*log_fn)(const char *message))
 }
 
 #ifdef HAVE_CONSTRUCTOR_ATTRIBUTE
-void talloc_lib_init(void) __attribute__((constructor));
+#define CONSTRUCTOR __attribute__((constructor))
+#elif defined(HAVE_PRAGMA_INIT)
+#define CONSTRUCTOR
+#pragma init (talloc_lib_init)
+#endif
+#if defined(HAVE_CONSTRUCTOR_ATTRIBUTE) || defined(HAVE_PRAGMA_INIT)
+void talloc_lib_init(void) CONSTRUCTOR;
 void talloc_lib_init(void)
 {
 	uint32_t random_value;
@@ -611,16 +617,25 @@ struct talloc_pool_hdr {
 	size_t poolsize;
 };
 
+union talloc_pool_hdr_cast_u {
+	uint8_t *ptr;
+	struct talloc_pool_hdr *hdr;
+};
+
 #define TP_HDR_SIZE TC_ALIGN16(sizeof(struct talloc_pool_hdr))
 
 static inline struct talloc_pool_hdr *talloc_pool_from_chunk(struct talloc_chunk *c)
 {
-	return (struct talloc_pool_hdr *)((char *)c - TP_HDR_SIZE);
+	union talloc_chunk_cast_u tcc = { .chunk = c };
+	union talloc_pool_hdr_cast_u tphc = { tcc.ptr - TP_HDR_SIZE };
+	return tphc.hdr;
 }
 
 static inline struct talloc_chunk *talloc_chunk_from_pool(struct talloc_pool_hdr *h)
 {
-	return (struct talloc_chunk *)((char *)h + TP_HDR_SIZE);
+	union talloc_pool_hdr_cast_u tphc = { .hdr = h };
+	union talloc_chunk_cast_u tcc = { .ptr = tphc.ptr + TP_HDR_SIZE };
+	return tcc.chunk;
 }
 
 static inline void *tc_pool_end(struct talloc_pool_hdr *pool_hdr)
@@ -668,6 +683,7 @@ static inline struct talloc_chunk *tc_alloc_pool(struct talloc_chunk *parent,
 						     size_t size, size_t prefix_len)
 {
 	struct talloc_pool_hdr *pool_hdr = NULL;
+	union talloc_chunk_cast_u tcc;
 	size_t space_left;
 	struct talloc_chunk *result;
 	size_t chunk_size;
@@ -698,7 +714,10 @@ static inline struct talloc_chunk *tc_alloc_pool(struct talloc_chunk *parent,
 		return NULL;
 	}
 
-	result = (struct talloc_chunk *)((char *)pool_hdr->end + prefix_len);
+	tcc = (union talloc_chunk_cast_u) {
+		.ptr = ((uint8_t *)pool_hdr->end) + prefix_len
+	};
+	result = tcc.chunk;
 
 #if defined(DEVELOPER) && defined(VALGRIND_MAKE_MEM_UNDEFINED)
 	VALGRIND_MAKE_MEM_UNDEFINED(pool_hdr->end, chunk_size);
@@ -750,7 +769,8 @@ static inline void *__talloc_with_prefix(const void *context,
 	}
 
 	if (tc == NULL) {
-		char *ptr;
+		uint8_t *ptr = NULL;
+		union talloc_chunk_cast_u tcc;
 
 		/*
 		 * Only do the memlimit check/update on actual allocation.
@@ -764,7 +784,8 @@ static inline void *__talloc_with_prefix(const void *context,
 		if (unlikely(ptr == NULL)) {
 			return NULL;
 		}
-		tc = (struct talloc_chunk *)(ptr + prefix_len);
+		tcc = (union talloc_chunk_cast_u) { .ptr = ptr + prefix_len };
+		tc = tcc.chunk;
 		tc->flags = talloc_magic;
 		tc->pool  = NULL;
 
@@ -1418,6 +1439,8 @@ static inline int talloc_unreference(const void *context, const void *ptr)
   remove a specific parent context from a pointer. This is a more
   controlled variant of talloc_free()
 */
+
+/* coverity[ -tainted_data_sink : arg-1 ] */
 _PUBLIC_ int talloc_unlink(const void *context, void *ptr)
 {
 	struct talloc_chunk *tc_p, *new_p, *tc_c;
@@ -1811,19 +1834,11 @@ _PUBLIC_ void *_talloc_realloc(const void *context, void *ptr, size_t size, cons
 		return NULL;
 	}
 
-	if (tc->limit && (size > tc->size)) {
-		if (!talloc_memlimit_check(tc->limit, (size - tc->size))) {
-			errno = ENOMEM;
-			return NULL;
-		}
-	}
-
 	/* handle realloc inside a talloc_pool */
 	if (unlikely(tc->flags & TALLOC_FLAG_POOLMEM)) {
 		pool_hdr = tc->pool;
 	}
 
-#if (ALWAYS_REALLOC == 0)
 	/* don't shrink if we have less than 1k to gain */
 	if (size < tc->size && tc->limit == NULL) {
 		if (pool_hdr) {
@@ -1857,7 +1872,6 @@ _PUBLIC_ void *_talloc_realloc(const void *context, void *ptr, size_t size, cons
 		 */
 		return ptr;
 	}
-#endif
 
 	/*
 	 * by resetting magic we catch users of the old memory
@@ -1876,32 +1890,6 @@ _PUBLIC_ void *_talloc_realloc(const void *context, void *ptr, size_t size, cons
 	 */
 	_talloc_chunk_set_free(tc, NULL);
 
-#if ALWAYS_REALLOC
-	if (pool_hdr) {
-		new_ptr = tc_alloc_pool(tc, size + TC_HDR_SIZE, 0);
-		pool_hdr->object_count--;
-
-		if (new_ptr == NULL) {
-			new_ptr = malloc(TC_HDR_SIZE+size);
-			malloced = true;
-			new_size = size;
-		}
-
-		if (new_ptr) {
-			memcpy(new_ptr, tc, MIN(tc->size,size) + TC_HDR_SIZE);
-			TC_INVALIDATE_FULL_CHUNK(tc);
-		}
-	} else {
-		/* We're doing malloc then free here, so record the difference. */
-		old_size = tc->size;
-		new_size = size;
-		new_ptr = malloc(size + TC_HDR_SIZE);
-		if (new_ptr) {
-			memcpy(new_ptr, tc, MIN(tc->size, size) + TC_HDR_SIZE);
-			free(tc);
-		}
-	}
-#else
 	if (pool_hdr) {
 		struct talloc_chunk *pool_tc;
 		void *next_tc = tc_next_chunk(tc);
@@ -1998,6 +1986,25 @@ _PUBLIC_ void *_talloc_realloc(const void *context, void *ptr, size_t size, cons
 		new_ptr = tc_alloc_pool(tc, size + TC_HDR_SIZE, 0);
 
 		if (new_ptr == NULL) {
+			/*
+			 * Couldn't allocate from pool (pool size
+			 * counts as already allocated for memlimit
+			 * purposes). We must check memory limit
+			 * before any real malloc.
+			 */
+			if (tc->limit) {
+				/*
+				 * Note we're doing an extra malloc,
+				 * on top of the pool size, so account
+				 * for size only, not the difference
+				 * between old and new size.
+				 */
+				if (!talloc_memlimit_check(tc->limit, size)) {
+					_talloc_chunk_set_not_free(tc);
+					errno = ENOMEM;
+					return NULL;
+				}
+			}
 			new_ptr = malloc(TC_HDR_SIZE+size);
 			malloced = true;
 			new_size = size;
@@ -2013,10 +2020,22 @@ _PUBLIC_ void *_talloc_realloc(const void *context, void *ptr, size_t size, cons
 		/* We're doing realloc here, so record the difference. */
 		old_size = tc->size;
 		new_size = size;
+		/*
+		 * We must check memory limit
+		 * before any real realloc.
+		 */
+		if (tc->limit && (size > old_size)) {
+			if (!talloc_memlimit_check(tc->limit,
+					(size - old_size))) {
+				_talloc_chunk_set_not_free(tc);
+				errno = ENOMEM;
+				return NULL;
+			}
+		}
 		new_ptr = realloc(tc, size + TC_HDR_SIZE);
 	}
 got_new_ptr:
-#endif
+
 	if (unlikely(!new_ptr)) {
 		/*
 		 * Ok, this is a strange spot.  We have to put back
@@ -2413,9 +2432,14 @@ _PUBLIC_ void *_talloc_zero(const void *ctx, size_t size, const char *name)
 */
 _PUBLIC_ void *_talloc_memdup(const void *t, const void *p, size_t size, const char *name)
 {
-	void *newp = _talloc_named_const(t, size, name);
+	void *newp = NULL;
 
-	if (likely(newp)) {
+	if (likely(size > 0) && unlikely(p == NULL)) {
+		return NULL;
+	}
+
+	newp = _talloc_named_const(t, size, name);
+	if (likely(newp != NULL) && likely(size > 0)) {
 		memcpy(newp, p, size);
 	}
 
