@@ -1,0 +1,4 @@
+# @configure_input@                                     -*- shell-script -*-
+
+PATH=@abs_builddir@:@abs_top_builddir@/src:$srcdir:$PATH
+HARNESS="@abs_srcdir@/poundharness.pl"

@@ -1,0 +1,206 @@
+Pound -- history of user-visible changes. 2022-12-19
+See the end of file for copying conditions.
+
+Pound is a continuation of the software originally developed by
+Robert Segall at Apsis GmbH, which was officially discontinued
+on 2022-09-19.  See the README.md file for details.
+
+Please send pound bug reports to <gray@gnu.org>
+
+Version 4.1.91 (git)
+
+* Rewrite periodic tasks
+
+The timer thread is rewritten completely in order to do periodic
+operations (such as backend probing and session expiration)
+precisely when needed and lower the incurred CPU usage.
+
+Whenever a backend is marked as dead, a periodic job is scheduled
+for "alive_to" seconds from the current time, which will probe the
+backend and either mark it as alive (if it responds) or reschedule
+itself for a later time (if it does not).  Thus, no unnecessary
+iterations over listeners/servers/backends occur.
+
+Sessions are kept on per-service basis in a combined structure
+consisting of a hash table (to quickly look-up a session) and
+a doubly-linked list (to provide for session expiration).  Sessions
+within the latter are sorted by their expiration time.  A periodic
+job is scheduled to the expiration time of the first session in the
+list, i.e. the least recently used one.  When the job has removed the
+expired session, it reschedules itself to the expiration time of the
+next session (which becomes first in the list), if any.
+
+* The "haport" feature has been removed.
+
+* Rewrite control interface
+
+The new control interface uses REST API.
+
+* Rewrite poundctl
+
+Version 4.1, 2022-12-10
+
+* Worker Model
+
+Each incoming request is processed by a specific worker, i.e. a
+thread in the running program.  The number of running workers is
+controlled by three configuration parameters.  WorkerMinCount
+defines the minimum number of workers that should always be running
+(5, by default). Another parameter, WorkerMaxCount sets the
+upper limit on the number of running workers (defaults to 128).
+
+At each given moment, a worker can be in one of two states: idle
+or active (processing a request).  If an incoming request
+arrives when all running workers are active, and total number of
+workers is less than maximum, a new thread is started and the new
+request is handed to it.  If the number of active workers has already
+reached maximum, the new request is added to the request queue, where
+it will wait for a worker to become available to process it.
+
+The third parameter, WorkerIdleTimeout, specifies maximum time
+a thread is allowed to spend in the idle state.  If a worker
+remains idle longer than that and total number of workers is greater
+than the allotted minimum, the idle worker is terminated.  The default
+value for WorkerIdleTimeout is 30 seconds.
+
+* URL expansion in Redirect statement
+
+URL argument to the Redirect statement can contain references to
+parethesized subexpressions in the most recently matched URL statement
+of the enclosing Service.  References are of the form $N, where N
+is the number of the parenthesized subgroup.  To insert literal $
+sign, use $$.
+
+* New statement: PIDFile
+
+Defines the name of the PID file.  The -p command line option
+overrides this setting.
+
+* New statement: ACME
+
+The ACME statement creates a service specially crafted for answering
+ACME HTTP-01 challenge requests.  It takes a single argument,
+specifying a directory where ACME challenges are stored.  It is
+supposed that another program is started periodically, which checks
+for certificates approaching their expiration, issues renewal requests
+and stores the obtained ACME challenges in that directory.
+
+The statement can appear in ListenHTTP block.
+
+Example usage:
+
+  ListenHTTP
+    ACME "/var/www/acme"
+    ...
+  End
+
+* New statement: Host
+
+The "Host" statement is provided to facilitate handling of virtual
+services.  The statement:
+
+  Host "example.com"
+
+is equivalent to:
+
+  HeadRequire "Host:[[:space:]]*example\\.com"
+
+* ACLs
+
+Access control lists (ACLs) allow you to make some services available
+for users coming from certain IP ranges.  There are two kinds of ACLs:
+named and unnamed.  Named ACLs are defined in the global scope, using
+the following syntax:
+
+  ACL "name"
+     "CIDR"
+     ...
+  End
+
+where ... denotes more CIDR lines.  A CIDR is an IPv4 or IPv6 address,
+optionally followed by a slash and network mask length.  Named ACLs
+can be referred to in Service sections using the following syntax:
+
+  Service
+     ACL "name"
+     ...
+  End
+
+This service will be used only if the request comes from IP address
+that matches the given ACL.
+
+Unnamed ACLs are defined within the service itself, as shown in the
+following example
+
+  Service
+     ACL
+	"127.0.0.1"
+	"192.0.2.0/26"
+	"203.0.113.0/24"
+     End
+     ...
+  End
+
+Semantically they are entirely equivalent to named ACLs.
+
+* Boolean operations over request matching directives
+
+By default, request matching directives are joined with an implicit
+boolean "AND".  This can be changed using the new "Match" directive,
+e.g.:
+
+  Match OR
+      HeadRequire "Host:[[:space:]]*example\\.org"
+      HeadRequire "Host:[[:space:]]*example\\.net"
+  End
+
+Match directives can be nested to any depth.
+
+Any request matching directive (including "Match") can be prefixed
+with "not", to invert its result (boolean negation).
+
+* Alternative spelling for header matching/manipulation directives
+
+For consistency, the following configuration directives have been
+provided as alternatives for existing header manipulation directives:
+
+  Old name        New name          Comment
+  --------        --------          -------
+  HeadRequire     Header            Service section
+  HeadDeny        Not Header        Service section.  See "Boolean operations".
+  HeadRemove      HeaderRemove      ListenHTTP and ListenHTTPS sections
+  AddHeader       HeaderAdd         ListenHTTP and ListenHTTPS sections
+
+The use of new names is preferred.
+
+Version 4.0, 2022-12-02
+
+* Support for OpenSSL 3.0
+
+* Added testsuite.
+
+* Fixes in configuration parsing.
+
+=========================================================================
+Copyright information:
+
+Copyright (C) 2018-2022 Sergey Poznyakoff
+
+   Permission is granted to anyone to make or distribute verbatim copies
+   of this document as received, in any medium, provided that the
+   copyright notice and this permission notice are preserved,
+   thus giving the recipient permission to redistribute in turn.
+
+   Permission is granted to distribute modified versions
+   of this document, or of portions of it,
+   under the above conditions, provided also that they
+   carry prominent notices stating who last changed them.
+
+Local variables:
+mode: outline
+paragraph-separate: "[  ]*$"
+eval: (add-hook 'write-file-hooks 'time-stamp)
+time-stamp-start: "changes. "
+time-stamp-format: "%:y-%02m-%02d"
+time-stamp-end: "\n"
+end:

@@ -1,0 +1,68 @@
+# Pound - the reverse-proxy load-balancer                -*- automake -*-
+# Copyright (C) 2002-2010 Apsis GmbH
+# Copyright (C) 2018-2022 Sergey Poznyakoff
+#
+# Pound is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 3 of the License, or
+# (at your option) any later version.
+#
+# Pound is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with pound.  If not, see <http://www.gnu.org/licenses/>.
+
+AM_CFLAGS = @PTHREAD_CFLAGS@
+
+AM_CPPFLAGS = @SSL_CPPFLAGS@ \
+ -DSYSCONFDIR=\"$(sysconfdir)\"\
+ -DLOCALSTATEDIR=\"$(localstatedir)\"
+AM_LDFLAGS  = @SSL_LDFLAGS@
+LDADD = ./libpound.a @PTHREAD_LIBS@
+
+sbin_PROGRAMS=pound
+pound_SOURCES=\
+ config.c\
+ http.c\
+ pound.c\
+ svc.c
+
+noinst_LIBRARIES = libpound.a
+libpound_a_SOURCES = json.c json.h mem.c
+
+install-exec-hook:
+	-@if test "$${EUID:-65535}" -eq 0; then \
+		for program in $(sbin_PROGRAMS); do \
+			chown @I_OWNER@:@I_GRP@ $(DESTDIR)$(sbindir)/$$program$(EXEEXT); \
+		done; \
+		for program in $(bin_PROGRAMS); do \
+			chown @I_OWNER@:@I_GRP@ $(DESTDIR)$(bindir)/$$program$(EXEEXT); \
+		done; \
+	fi
+
+noinst_HEADERS=pound.h extern.h list.h
+
+if SET_DH_AUTO
+DHSRC =
+else
+noinst_HEADERS += dh.h
+DHSRC = dh512.h dh@DH_LEN@.h
+
+dh512.h:
+	openssl dhparam -5 -C -noout 512 > dh512.h
+
+dh@DH_LEN@.h:
+	openssl dhparam -5 -C -noout @DH_LEN@ > dh@DH_LEN@.h
+
+dh.h: $(DHSRC)
+	cat $(DHSRC) > dh.h
+
+BUILT_SOURCES=dh.h $(DHSRC)
+DISTCLEANFILES=dh.h dh512.h dh1024.h dh2048.h
+endif
+
+bin_PROGRAMS=poundctl
+poundctl_SOURCES=poundctl.c

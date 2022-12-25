@@ -1,2 +1,4 @@
 #! /bin/sh
+test -d build-aux || mkdir build-aux
+perl md2txt.pl -l 4 README.md > README
 autoreconf -f -i -s

@@ -1,0 +1,59 @@
+Pound THANKS file
+
+Please see the AUTHORS file for the list of principal authors.
+
+Many people further contributed to pound by reporting problems,
+suggesting various improvements or submitting actual code.  Here is a
+list of these people.  Help me keep it complete and exempt of errors.
+
+Abner G. Jacobsen did a lot of testing in a production environment and
+contributed some very nice ideas.
+
+Akira Higuchi found a significant security issue in Pound and
+contributed the code to fix it.
+
+Albert (of Alacra) for investigating and writing the TCP_NODELAY code.
+
+Alession Cervellin packages and makes available Solaris packages for
+various Pound versions.
+
+Andreas Roedl for testing and some ideas about logging in root jails.
+
+David Couture found some nasty, lurking bugs, as well as contributing
+some serious testing on big hardware.
+
+Dmitriy Dvoinikov makes available a live-CD FreeBSD distribution that
+includes a Pound binary.
+
+Frank Denis contributed a few excellent code patches and some good ideas.
+
+Frank Schmirler	wrote WebSocket support
+
+Gurkan Sengun tested Pound on Solaris, contributed the Solaris cc
+flags and makes a Solaris pre-compiled version available on
+his Web-site (www.linuks.mine.nu)
+
+Jan-Piet Mens raised some interesting security points about the HTTPS
+implementation and brought the original idea for SSL header filtering.
+
+Jim Washington contributed the code for WebDAV and tested it.
+
+Ken Lalonde contributed very useful remarks and suggestions, as well
+as correcting a few code errors.
+
+Luuk de Boer did some serious testing and debugging of the WebDAV code
+for Microsoft servers.
+
+Maxime Yve discovered a nasty bug in the session tracking code and
+contributed the patch to fix it.
+
+Phil Lodwick contributed essential parts of the high-availability code
+and came up with some good ideas. In addition, did some serious testing
+under heavy loads.
+
+Rick O'Sullivan	did lots of useful improvements
+
+Shinji Tanaka contributed a patch for controlling logging to disk
+files. This is available at http://www.hatena-inc.co.jp/~stanaka/pound/
+
+Simon Matter packages and makes available RPMs for various Pound versions.

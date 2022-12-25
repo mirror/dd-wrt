@@ -1,0 +1,82 @@
+# This file is part of pound testsuite. -*- autotest -*-
+# Copyright (C) 2022 Sergey Poznyakoff
+#
+# Pound is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 3 of the License, or
+# (at your option) any later version.
+#
+# Pound is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with pound.  If not, see <http://www.gnu.org/licenses/>.
+AT_SETUP([HTTPS Virtual Hosts])
+AT_KEYWORDS([https virthost])
+
+AT_CHECK(
+[AT_DATA([openssl.cfg],
+[[[req]
+distinguished_name=req
+[SAN]
+subjectAltName=DNS:www.example.org,DNS:example.com,DNS:www.example.com
+]])
+
+openssl req -new -newkey rsa:2048 -days 365 -nodes -x509 \
+	-subj "/CN=www.example.org" \
+	-extensions SAN \
+	-config openssl.cfg \
+    -keyout key.pem -out crt.pem || exit 77
+
+cat crt.pem key.pem > example.pem
+],
+[0],
+[ignore],
+[ignore])
+
+PT_CHECK(
+[Service
+	HeadRequire ["Host:[[:space:]]*www\\.example\\.org"]
+        Backend
+		Address 192.168.0.10
+		Port    80
+        End
+End
+
+Service
+        HeadRequire ["Host:[[:space:]]*www\\.example\\.com"]
+        Backend
+		Address 192.168.0.11
+		Port    80
+        End
+End
+
+ListenHTTPS
+	Address 127.0.0.1
+	Port 8080
+	Cert "example.pem"
+	ClientCert 1 1
+End
+],
+[GET /echo/foo/bar
+Host: www.example.com
+end
+
+200
+x-orig-uri: /echo/foo/bar
+x-backend-number: 1
+end
+
+GET /echo/foo/bar
+Host: www.example.org
+end
+
+200
+x-orig-uri: /echo/foo/bar
+x-backend-number: 0
+end
+])
+AT_CLEANUP
+

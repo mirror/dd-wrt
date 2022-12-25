@@ -1,0 +1,141 @@
+# This file is part of pound testsuite. -*- autotest -*-
+# Copyright (C) 2022 Sergey Poznyakoff
+#
+# Pound is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 3 of the License, or
+# (at your option) any later version.
+#
+# Pound is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with pound.  If not, see <http://www.gnu.org/licenses/>.
+AT_SETUP([xHTTP])
+AT_KEYWORDS([xhttp])
+
+m4_pushdef([HTTP_EXPECT],
+[m4_pushdef([code],[$1])dnl
+m4_foreach([verb],[m4_shift($@)],[verb /echo/foo
+end
+code
+end
+
+])dnl
+m4_popdef([code])])
+
+m4_pushdef([BASIC_HTTP],[[GET], [POST], [HEAD]])
+m4_pushdef([EXT_HTTP],[[PUT], [PATCH], [DELETE]])
+m4_pushdef([WEBDAV_HTTP],[[LOCK], [UNLOCK], [PROPFIND], [PROPPATCH],
+ [SEARCH], [MKCOL], [MOVE], [COPY], [OPTIONS], [TRACE], [MKACTIVITY],
+ [CHECKOUT], [MERGE], [REPORT]])
+m4_pushdef([WEBDAV_EXT],[[SUBSCRIBE], [UNSUBSCRIBE], [NOTIFY], [BPROPFIND],
+ [BPROPPATCH], [POLL], [BMOVE], [BCOPY], [BDELETE], [CONNECT]])
+m4_pushdef([MS_RPC],[RPC_IN_DATA, RPC_OUT_DATA])
+
+PT_CHECK([# Default xHTTP setting (0)
+ListenHTTP
+	Service
+                Backend
+                        Address
+                        Port
+                End
+	End
+End],
+[HTTP_EXPECT(200, BASIC_HTTP)
+HTTP_EXPECT(501, EXT_HTTP)
+HTTP_EXPECT(501, WEBDAV_HTTP)
+HTTP_EXPECT(501, WEBDAV_EXT)
+HTTP_EXPECT(501, MS_RPC)
+])
+
+PT_CHECK([# Allow extended HTTP requests (PUT, PATCH, DELETE)
+ListenHTTP
+	xHTTP 1
+	Service
+                Backend
+                        Address
+                        Port
+                End
+	End
+End],
+[HTTP_EXPECT(200, BASIC_HTTP)
+HTTP_EXPECT(200, EXT_HTTP)
+HTTP_EXPECT(501, WEBDAV_HTTP)
+HTTP_EXPECT(501, WEBDAV_EXT)
+HTTP_EXPECT(501, MS_RPC)
+])
+
+PT_CHECK([# Additionally allow standard WebDAV requests
+ListenHTTP
+	xHTTP 2
+	Service
+                Backend
+                        Address
+                        Port
+                End
+	End
+End],
+[HTTP_EXPECT(200, BASIC_HTTP)
+HTTP_EXPECT(200, EXT_HTTP)
+HTTP_EXPECT(200, WEBDAV_HTTP)
+HTTP_EXPECT(501, WEBDAV_EXT)
+HTTP_EXPECT(501, MS_RPC)
+])
+
+PT_CHECK([# Additionally allow MS WebDAV extensions 
+ListenHTTP
+	xHTTP 3
+	Service
+                Backend
+                        Address
+                        Port
+                End
+	End
+End],
+[HTTP_EXPECT(200, BASIC_HTTP)
+HTTP_EXPECT(200, EXT_HTTP)
+HTTP_EXPECT(200, WEBDAV_HTTP)
+HTTP_EXPECT(200, WEBDAV_EXT)
+HTTP_EXPECT(501, MS_RPC)
+])
+
+PT_CHECK([# Additionally allow MS RPC verbs
+ListenHTTP
+	xHTTP 4
+	Service
+                Backend
+                        Address
+                        Port
+                End
+	End
+End],
+[HTTP_EXPECT(200, BASIC_HTTP)
+HTTP_EXPECT(200, EXT_HTTP)
+HTTP_EXPECT(200, WEBDAV_HTTP)
+HTTP_EXPECT(200, WEBDAV_EXT)
+
+# For normal processing of RPC_IN_DATA non-empty content is necessary.
+RPC_IN_DATA /echo/foo
+
+text
+end
+200
+end
+
+RPC_OUT_DATA /echo/foo
+end
+200
+end
+])
+
+AT_CLEANUP
+
+m4_popdef([MS_RPC])
+m4_popdef([WEBDAV_EXT])
+m4_popdef([WEBDAV_HTTP])
+m4_popdef([EXT_HTTP])
+m4_popdef([BASIC_HTTP])
+m4_popdef([HTTP_EXPECT])
