@@ -1,6 +1,6 @@
 iptables-new-configure:
 	cd iptables-new && ./autogen.sh
-	cd iptables-new && ./configure --host=$(ARCH)-linux-elf --prefix=/usr --libdir=/usr/lib --with-kernel=$(LINUXDIR) --enable-libipq --disable-nftables \
+	cd iptables-new && ./configure --host=$(ARCH)-linux --prefix=/usr --libdir=/usr/lib --with-kernel=$(LINUXDIR) --enable-libipq --disable-nftables \
 		CFLAGS="$(COPTS) $(MIPS16_OPT) $(LTO) -ffunction-sections -fdata-sections -Wl,--gc-sections -DNEED_PRINTF -fcommon" \
 		LDFLAGS="$(COPTS) $(MIPS16_OPT) $(LDLTO) -ffunction-sections -fdata-sections -Wl,--gc-sections -DNEED_PRINTF" \
 		AR_FLAGS="cru $(LTOPLUGIN)" \
