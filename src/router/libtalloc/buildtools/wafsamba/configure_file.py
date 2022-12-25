@@ -1,9 +1,7 @@
 # handle substitution of variables in .in files
 
-import sys
-import re
-import os
-from waflib import Build, Logs
+import re, os
+import Build, sys, Logs
 from samba_utils import SUBST_VARS_RECURSIVE
 
 def subst_at_vars(task):

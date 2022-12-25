@@ -2,9 +2,9 @@
 # using nm, producing a set of exposed defined/undefined symbols
 
 import os, re, subprocess
-from waflib import Utils, Build, Options, Logs, Errors
-from waflib.Logs import debug
-from samba_utils import TO_LIST, LOCAL_CACHE, get_tgt_list
+import Utils, Build, Options, Logs
+from Logs import debug
+from samba_utils import TO_LIST, LOCAL_CACHE, get_tgt_list, os_path_relpath
 
 # these are the data structures used in symbols.py:
 #
@@ -59,12 +59,12 @@ def symbols_extract(bld, objfiles, dynamic=False):
 
     for line in nmpipe:
         line = line.strip()
-        if line.endswith(b':'):
+        if line.endswith(':'):
             filename = line[:-1]
             ret[filename] = { "PUBLIC": set(), "UNDEFINED" : set() }
             continue
-        cols = line.split(b" ")
-        if cols == [b'']:
+        cols = line.split(" ")
+        if cols == ['']:
             continue
         # see if the line starts with an address
         if len(cols) == 3:
@@ -73,10 +73,10 @@ def symbols_extract(bld, objfiles, dynamic=False):
         else:
             symbol_type = cols[0]
             symbol = cols[1]
-        if symbol_type in b"BDGTRVWSi":
+        if symbol_type in "BDGTRVWSi":
             # its a public symbol
             ret[filename]["PUBLIC"].add(symbol)
-        elif symbol_type in b"U":
+        elif symbol_type in "U":
             ret[filename]["UNDEFINED"].add(symbol)
 
     # add to the cache
@@ -106,10 +106,10 @@ def find_ldd_path(bld, libname, binary):
     lddpipe = subprocess.Popen(['ldd', binary], stdout=subprocess.PIPE).stdout
     for line in lddpipe:
         line = line.strip()
-        cols = line.split(b" ")
-        if len(cols) < 3 or cols[1] != b"=>":
+        cols = line.split(" ")
+        if len(cols) < 3 or cols[1] != "=>":
             continue
-        if cols[0].startswith(b"libc."):
+        if cols[0].startswith("libc."):
             # save this one too
             bld.env.libc_path = cols[2]
         if cols[0].startswith(libname):
@@ -119,9 +119,8 @@ def find_ldd_path(bld, libname, binary):
 
 
 # some regular expressions for parsing readelf output
-re_sharedlib = re.compile(b'Shared library: \[(.*)\]')
-# output from readelf could be `Library rpath` or `Libray runpath`
-re_rpath     = re.compile(b'Library (rpath|runpath): \[(.*)\]')
+re_sharedlib = re.compile('Shared library: \[(.*)\]')
+re_rpath     = re.compile('Library rpath: \[(.*)\]')
 
 def get_libs(bld, binname):
     '''find the list of linked libraries for any binary or library
@@ -147,8 +146,7 @@ def get_libs(bld, binname):
             libs.add(m.group(1))
         m = re_rpath.search(line)
         if m:
-            # output from Popen is always bytestr even in py3
-            rpath.extend(m.group(2).split(b":"))
+            rpath.extend(m.group(1).split(":"))
 
     ret = set()
     for lib in libs:
@@ -252,7 +250,7 @@ def build_symbol_sets(bld, tgt_list):
             bld.env.public_symbols[name] = bld.env.public_symbols[name].union(t.public_symbols)
         else:
             bld.env.public_symbols[name] = t.public_symbols
-        if t.samba_type in ['LIBRARY', 'PLUGIN']:
+        if t.samba_type == 'LIBRARY':
             for dep in t.add_objects:
                 t2 = bld.get_tgen_by_name(dep)
                 bld.ASSERT(t2 is not None, "Library '%s' has unknown dependency '%s'" % (name, dep))
@@ -265,7 +263,7 @@ def build_symbol_sets(bld, tgt_list):
             bld.env.used_symbols[name] = bld.env.used_symbols[name].union(t.used_symbols)
         else:
             bld.env.used_symbols[name] = t.used_symbols
-        if t.samba_type in ['LIBRARY', 'PLUGIN']:
+        if t.samba_type == 'LIBRARY':
             for dep in t.add_objects:
                 t2 = bld.get_tgen_by_name(dep)
                 bld.ASSERT(t2 is not None, "Library '%s' has unknown dependency '%s'" % (name, dep))
@@ -281,7 +279,7 @@ def build_library_dict(bld, tgt_list):
     bld.env.library_dict = {}
 
     for t in tgt_list:
-        if t.samba_type in [ 'LIBRARY', 'PLUGIN', 'PYTHON' ]:
+        if t.samba_type in [ 'LIBRARY', 'PYTHON' ]:
             linkpath = os.path.realpath(t.link_task.outputs[0].abspath(bld.env))
             bld.env.library_dict[linkpath] = t.sname
 
@@ -296,7 +294,7 @@ def build_syslib_sets(bld, tgt_list):
     syslibs = {}
     objmap = {}
     for t in tgt_list:
-        if getattr(t, 'uselib', []) and t.samba_type in [ 'LIBRARY', 'PLUGIN', 'BINARY', 'PYTHON' ]:
+        if getattr(t, 'uselib', []) and t.samba_type in [ 'LIBRARY', 'BINARY', 'PYTHON' ]:
             for lib in t.uselib:
                 if lib in ['PYEMBED', 'PYEXT']:
                     lib = "python"
@@ -386,10 +384,10 @@ def build_library_names(bld, tgt_list):
         t.in_library = []
 
     for t in tgt_list:
-        if t.samba_type in ['LIBRARY', 'PLUGIN']:
+        if t.samba_type in [ 'LIBRARY' ]:
             for obj in t.samba_deps_extended:
                 t2 = bld.get_tgen_by_name(obj)
-                if t2 and t2.samba_type in [ 'SUBSYSTEM', 'BUILTIN', 'ASN1' ]:
+                if t2 and t2.samba_type in [ 'SUBSYSTEM', 'ASN1' ]:
                     if not t.sname in t2.in_library:
                         t2.in_library.append(t.sname)
     bld.env.done_build_library_names = True
@@ -412,7 +410,7 @@ def check_library_deps(bld, t):
             if dep2 == name and t.in_library != t2.in_library:
                 Logs.warn("WARNING: mutual dependency %s <=> %s" % (name, real_name(t2.sname)))
                 Logs.warn("Libraries should match. %s != %s" % (t.in_library, t2.in_library))
-                # raise Errors.WafError("illegal mutual dependency")
+                # raise Utils.WafError("illegal mutual dependency")
 
 
 def check_syslib_collisions(bld, tgt_list):
@@ -432,7 +430,7 @@ def check_syslib_collisions(bld, tgt_list):
                 Logs.error("ERROR: Target '%s' has symbols '%s' which is also in syslib '%s'" % (t.sname, common, lib))
                 has_error = True
     if has_error:
-        raise Errors.WafError("symbols in common with system libraries")
+        raise Utils.WafError("symbols in common with system libraries")
 
 
 def check_dependencies(bld, t):
@@ -548,7 +546,7 @@ def symbols_whyneeded(task):
 
     why = Options.options.WHYNEEDED.split(":")
     if len(why) != 2:
-        raise Errors.WafError("usage: WHYNEEDED=TARGET:DEPENDENCY")
+        raise Utils.WafError("usage: WHYNEEDED=TARGET:DEPENDENCY")
     target = why[0]
     subsystem = why[1]
 
@@ -581,7 +579,7 @@ def report_duplicate(bld, binname, sym, libs, fail_on_error):
         else:
             libnames.append(lib)
     if fail_on_error:
-        raise Errors.WafError("%s: Symbol %s linked in multiple libraries %s" % (binname, sym, libnames))
+        raise Utils.WafError("%s: Symbol %s linked in multiple libraries %s" % (binname, sym, libnames))
     else:
         print("%s: Symbol %s linked in multiple libraries %s" % (binname, sym, libnames))
 
@@ -617,7 +615,7 @@ def symbols_dupcheck(task, fail_on_error=False):
     build_library_dict(bld, tgt_list)
     for t in tgt_list:
         if t.samba_type == 'BINARY':
-            binname = os.path.relpath(t.link_task.outputs[0].abspath(bld.env), os.getcwd())
+            binname = os_path_relpath(t.link_task.outputs[0].abspath(bld.env), os.getcwd())
             symbols_dupcheck_binary(bld, binname, fail_on_error)
 
 
