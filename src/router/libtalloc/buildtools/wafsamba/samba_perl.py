@@ -1,6 +1,6 @@
-import Utils
-from Configure import conf
-
+from waflib import Utils
+from waflib.Configure import conf
+from samba_utils import get_string
 done = {}
 
 @conf
@@ -9,13 +9,16 @@ def SAMBA_CHECK_PERL(conf, mandatory=True, version=(5,0,0)):
         return
     done["done"] = True
     conf.find_program('perl', var='PERL', mandatory=mandatory)
-    conf.check_tool('perl')
+    conf.load('perl')
     path_perl = conf.find_program('perl')
     conf.env.PERL_SPECIFIED = (conf.env.PERL != path_perl)
     conf.check_perl_version(version)
 
     def read_perl_config_var(cmd):
-        return Utils.to_list(Utils.cmd_output([conf.env.PERL, '-MConfig', '-e', cmd]))
+        output = Utils.cmd_output([conf.env.get_flat('PERL'), '-MConfig', '-e', cmd])
+        if not isinstance(output, str):
+            output = get_string(output)
+        return Utils.to_list(output)
 
     def check_perl_config_var(var):
         conf.start_msg("Checking for perl $Config{%s}:" % var)
@@ -25,7 +28,6 @@ def SAMBA_CHECK_PERL(conf, mandatory=True, version=(5,0,0)):
             return v
         except IndexError:
             conf.end_msg(False, 'YELLOW')
-            pass
         return None
 
     vendor_prefix = check_perl_config_var('vendorprefix')
