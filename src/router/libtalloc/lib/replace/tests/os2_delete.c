@@ -22,14 +22,12 @@
 
 static int test_readdir_os2_delete_ret;
 
-#define FAILED(d) (printf("failure: readdir [\nFailed for %s - %d = %s\n]\n", d, errno, strerror(errno)), test_readdir_os2_delete_ret = 1)
-
 #ifdef NEED_PRINTF
- #define FAILED(d) (printf("failure: readdir [\nFailed for %s - %d = %s\n]\n", d, errno, strerror(errno)), test_readdir_os2_delete_ret = 1)
+#define FAILED(d) (printf("failure: readdir [\nFailed for %s - %d = %s\n]\n", d, errno, strerror(errno)), test_readdir_os2_delete_ret = 1)
 
 #define FAILED2(d) (printf("failure: readdir [\nFailed for %s - %d = %s\n]\n", d, errno, strerror(errno)), test_readdir_os2_delete_ret = 1)
 #else
-#define FAILED(d) do {} while(0)
+#define FAILED(d) do { } while(0)
 #define FAILED2(d) 0
 #endif
 
@@ -47,7 +45,7 @@ static void cleanup(void)
 	if (system("rm -rf " TESTDIR)) {
 		FAILED("system");
 	}
-	mkdir(TESTDIR, 0700) == 0 || FAILED("mkdir");
+	mkdir(TESTDIR, 0700) == 0 || FAILED2("mkdir");
 }
 
 static void create_files(void)
@@ -91,7 +89,7 @@ static int os2_delete(DIR *d)
 	for (j=0; j<MIN(i, DELETE_SIZE); j++) {
 		char fname[40];
 		snprintf(fname, sizeof(fname), TESTDIR "/%s", names[j]);
-		unlink(fname) == 0 || FAILED("unlink");
+		unlink(fname) == 0 || FAILED2("unlink");
 	}
 
 	/* seek to just after the deletion */
@@ -121,9 +119,9 @@ int test_readdir_os2_delete(void)
 
 	/* skip past . and .. */
 	de = readdir(d);
-	strcmp(de->d_name, ".") == 0 || FAILED("match .");
+	strcmp(de->d_name, ".") == 0 || FAILED2("match .");
 	de = readdir(d);
-	strcmp(de->d_name, "..") == 0 || FAILED("match ..");
+	strcmp(de->d_name, "..") == 0 || FAILED2("match ..");
 
 	while (1) {
 		int n = os2_delete(d);
@@ -134,7 +132,7 @@ int test_readdir_os2_delete(void)
 
 	fprintf(stderr, "Deleted %d files of %d\n", total_deleted, NUM_FILES);
 
-	rmdir(TESTDIR) == 0 || FAILED("rmdir");
+	rmdir(TESTDIR) == 0 || FAILED2("rmdir");
 
 	if (system("rm -rf " TESTDIR) == -1) {
 		FAILED("system");
