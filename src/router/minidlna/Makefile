@@ -20,7 +20,7 @@ FFMPEG_VER=3.1
 #SUBDIRS += zlib-1.2.7
 SUBDIRS += ffmpeg-$(FFMPEG_VER)
 SUBDIRS += libogg-1.3.5
-SUBDIRS += libexif-0.6.19
+SUBDIRS += libexif-0.6.24
 SUBDIRS += flac-1.4.2
 SUBDIRS += libvorbis-1.3.7
 SUBDIRS += jpeg-8
@@ -103,8 +103,8 @@ libogg:
 	fi
 
 libexif:
-	if [ ! -f ./libexif-0.6.19/Makefile ];then \
-	cd libexif-0.6.19 && (./configure --host=$(HOST) --disable-shared  CC="ccache $(CROSS_COMPILE)gcc"  CFLAGS="$(COPTS) $(MIPS16_OPT) $(LTO)  -ffunction-sections -fdata-sections -Wl,--gc-sections" AR_FLAGS="cru $(LTOPLUGIN)" RANLIB="$(ARCH)-linux-ranlib $(LTOPLUGIN)"); \
+	if [ ! -f ./libexif-0.6.24/Makefile ];then \
+	cd libexif-0.6.24 && (./configure --host=$(HOST) --disable-shared  CC="ccache $(CROSS_COMPILE)gcc"  CFLAGS="$(COPTS) $(MIPS16_OPT) $(LTO)  -ffunction-sections -fdata-sections -Wl,--gc-sections" AR_FLAGS="cru $(LTOPLUGIN)" RANLIB="$(ARCH)-linux-ranlib $(LTOPLUGIN)"); \
 	fi
 
 libjpeg:
@@ -173,7 +173,7 @@ clean:
 copy: 
 	cp ./libvorbis-1.3.7/lib/.libs/libvorbis.a	./lib/libvorbis.a && \
 	cp ./flac-1.4.2/src/libFLAC/.libs/libFLAC-static.a		./lib/libFLAC.a && \
-	cp ./libexif-0.6.19/libexif/.libs/libexif.a 		./lib/libexif.a  && \
+	cp ./libexif-0.6.24/libexif/.libs/libexif.a 		./lib/libexif.a  && \
 	cp ./libogg-1.3.5/src/.libs/libogg.a		./lib/libogg.a && \
 	cp ./ffmpeg-$(FFMPEG_VER)/libavutil/libavutil.a		./lib/libavutil.a && \
 #	cp ./ffmpeg-$(FFMPEG_VER)/libavdevice/libavdevice.a		./lib/libavdevice.a && \
@@ -185,7 +185,7 @@ copy:
 
 distclean:
 	-cd ./libogg-1.3.5/	&& make distclean 
-	-cd ./libexif-0.6.19/	&& make distclean
+	-cd ./libexif-0.6.24/	&& make distclean
 	-cd ./sqlite-3.6.22/	&& make distclean
 	-cd ./libvorbis-1.3.7/	&& make distclean
 	-cd ./libid3tag-0.15.1b/	&& make distclean
