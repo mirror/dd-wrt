@@ -21,7 +21,7 @@ FFMPEG_VER=3.1
 SUBDIRS += ffmpeg-$(FFMPEG_VER)
 SUBDIRS += libogg-1.3.0
 SUBDIRS += libexif-0.6.19
-SUBDIRS += flac
+SUBDIRS += flac-1.4.2
 SUBDIRS += libvorbis-1.3.3
 SUBDIRS += jpeg-8
 SUBDIRS += sqlite-3.6.22
@@ -91,7 +91,7 @@ ffmpeg:
 		--disable-protocols $(FFMPEG_CONFIGURE_PROTOCOLS) \
 		--disable-asm --disable-altivec \
 		--disable-postproc --disable-avfilter \
-		--extra-cflags="$(COPTS) $(MIPS16_OPT) -fcommon -ffunction-sections -fdata-sections -fPIC -D_GNU_SOURCE -I$(TOP)/zlib $(LTO)" \
+		--extra-cflags="$(COPTS) $(MIPS16_OPT) -ffunction-sections -fdata-sections -fPIC -D_GNU_SOURCE -I$(TOP)/zlib $(LTO)" \
 		--extra-ldflags="-ffunction-sections -fdata-sections -Wl,--gc-sections -fPIC $(LDLTO)" \
 		--extra-libs="-L$(TOP)/zlib -lz" \
 		--enable-zlib --disable-debug --prefix=''); \
@@ -131,8 +131,8 @@ libvorbis:
 					); \
 	fi
 flac:
-	if [ ! -f ./flac-1.2.1/Makefile ];then \
-	cd flac-1.2.1 && ./autogen.sh && (./configure --disable-shared --host=$(HOST) --disable-altivec  CC="ccache $(CROSS_COMPILE)gcc" \
+	if [ ! -f ./flac-1.4.2/Makefile ];then \
+	cd flac-1.4.2 && ./autogen.sh && (./configure --disable-shared --host=$(HOST) --disable-altivec  CC="ccache $(CROSS_COMPILE)gcc" \
 				CFLAGS="$(COPTS) $(MIPS16_OPT) -I$(MINI_DLNA_PATH)/libogg-1.3.0/include/  -ffunction-sections -fdata-sections -Wl,--gc-sections $(LTO)" \
 				CPPFLAGS="$(COPTS) $(MIPS16_OPT) -I$(MINI_DLNA_PATH)/libogg-1.3.0/include/  -ffunction-sections -fdata-sections -Wl,--gc-sections $(LTO)" \
 				CXXFLAGS="$(COPTS) $(MIPS16_OPT) -I$(MINI_DLNA_PATH)/libogg-1.3.0/include/  -ffunction-sections -fdata-sections -Wl,--gc-sections $(LTO)" \
@@ -144,7 +144,7 @@ flac:
 libid3tag:
 	if [ ! -f ./libid3tag-0.15.0b/Makefile ];then \
 	cd libid3tag-0.15.0b && (./configure --disable-shared --host=$(HOST)  CC="ccache $(CROSS_COMPILE)gcc" \
-				CPPFLAGS="$(COPTS) $(MIPS16_OPT) -fcommon -fPIC -I$(TOP)/zlib/  -ffunction-sections -fdata-sections -Wl,--gc-sections $(LTO)" \
+				CPPFLAGS="$(COPTS) $(MIPS16_OPT) -fPIC -I$(TOP)/zlib/  -ffunction-sections -fdata-sections -Wl,--gc-sections $(LTO)" \
 				LDFLAGS="-L$(TOP)/zlib/ -fPIC $(LDLTO)" \
 				AR_FLAGS="cru $(LTOPLUGIN)" RANLIB="$(ARCH)-linux-ranlib $(LTOPLUGIN)" \
 				); \
@@ -172,7 +172,7 @@ clean:
 	-rm ./lib/minidlna
 copy: 
 	cp ./libvorbis-1.3.3/lib/.libs/libvorbis.a	./lib/libvorbis.a && \
-	cp ./flac-1.2.1/src/libFLAC/.libs/libFLAC-static.a		./lib/libFLAC.a && \
+	cp ./flac-1.4.2/src/libFLAC/.libs/libFLAC-static.a		./lib/libFLAC.a && \
 	cp ./libexif-0.6.19/libexif/.libs/libexif.a 		./lib/libexif.a  && \
 	cp ./libogg-1.3.0/src/.libs/libogg.a		./lib/libogg.a && \
 	cp ./ffmpeg-$(FFMPEG_VER)/libavutil/libavutil.a		./lib/libavutil.a && \
@@ -190,7 +190,7 @@ distclean:
 	-cd ./libvorbis-1.3.3/	&& make distclean
 	-cd ./libid3tag-0.15.0b/	&& make distclean
 	-rm -f ./libid3tag-0.15.0b/Makefile
-	-cd ./flac-1.2.1/	&& make distclean
+	-cd ./flac-1.4.2/	&& make distclean
 	-cd ./ffmpeg-$(FFMPEG_VER)/	&& make distclean
 	-cd ./jpeg-8/		&& make distclean
 	-cd ./minidlna/		&& make clean

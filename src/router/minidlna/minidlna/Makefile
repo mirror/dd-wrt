@@ -26,7 +26,7 @@ CFLAGS = -Wall $(COPTS) $(MIPS16_OPT) $(LTO) -ffunction-sections -fdata-sections
          -I$(MINI_DLNA_PATH)/libvorbis-1.3.3/include/ \
          -I$(MINI_DLNA_PATH)/jpeg-8 \
          -I$(MINI_DLNA_PATH)/minidlna/avahi/ \
-         -I$(MINI_DLNA_PATH)/flac-1.2.1/include/ \
+         -I$(MINI_DLNA_PATH)/flac-1.4.2/include/ \
          -L$(MINI_DLNA_PATH)/lib \
          -L$(MINI_DLNA_PATH)/minidlna/avahi/avahi-core/.libs \
          -L$(MINI_DLNA_PATH)/minidlna/avahi/avahi-common/.libs \
