@@ -22,7 +22,7 @@ SUBDIRS += ffmpeg-$(FFMPEG_VER)
 SUBDIRS += libogg-1.3.0
 SUBDIRS += libexif-0.6.19
 SUBDIRS += flac-1.4.2
-SUBDIRS += libvorbis-1.3.3
+SUBDIRS += libvorbis-1.3.7
 SUBDIRS += jpeg-8
 SUBDIRS += sqlite-3.6.22
 SUBDIRS += libid3tag-0.15.1b
@@ -123,8 +123,8 @@ libvorbis:
 				CROSS_COMPILE=$(CROSS_COMPILE) \
 				HOST_COMPILE=$(HOST_COMPILE) \
 				MINI_DLNA_PATH=$(MINI_DLNA_PATH)				
-	if [ ! -f ./libvorbis-1.3.3/Makefile ];then \
-	cd libvorbis-1.3.3 && (./configure --host=$(HOST) --disable-shared  CC="ccache $(CROSS_COMPILE)gcc" \
+	if [ ! -f ./libvorbis-1.3.7/Makefile ];then \
+	cd libvorbis-1.3.7 && (./configure --host=$(HOST) --disable-shared  CC="ccache $(CROSS_COMPILE)gcc" \
 					CFLAGS="$(COPTS) $(MIPS16_OPT) -I$(MINI_DLNA_PATH)/libogg-1.3.0/include/  -ffunction-sections -fdata-sections -Wl,--gc-sections" \
 					LDFLAGS="-L$(MINI_DLNA_PATH)/libogg-1.3.0/src/.libs/ $(LDLTO)" \
 					AR_FLAGS="cru $(LTOPLUGIN)" RANLIB="$(ARCH)-linux-ranlib $(LTOPLUGIN)" \
@@ -171,7 +171,7 @@ clean:
 	-rm ./lib/libid3tag.a
 	-rm ./lib/minidlna
 copy: 
-	cp ./libvorbis-1.3.3/lib/.libs/libvorbis.a	./lib/libvorbis.a && \
+	cp ./libvorbis-1.3.7/lib/.libs/libvorbis.a	./lib/libvorbis.a && \
 	cp ./flac-1.4.2/src/libFLAC/.libs/libFLAC-static.a		./lib/libFLAC.a && \
 	cp ./libexif-0.6.19/libexif/.libs/libexif.a 		./lib/libexif.a  && \
 	cp ./libogg-1.3.0/src/.libs/libogg.a		./lib/libogg.a && \
@@ -187,7 +187,7 @@ distclean:
 	-cd ./libogg-1.3.0/	&& make distclean 
 	-cd ./libexif-0.6.19/	&& make distclean
 	-cd ./sqlite-3.6.22/	&& make distclean
-	-cd ./libvorbis-1.3.3/	&& make distclean
+	-cd ./libvorbis-1.3.7/	&& make distclean
 	-cd ./libid3tag-0.15.1b/	&& make distclean
 	-rm -f ./libid3tag-0.15.1b/Makefile
 	-cd ./flac-1.4.2/	&& make distclean
