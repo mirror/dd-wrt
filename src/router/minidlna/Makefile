@@ -19,7 +19,7 @@ FFMPEG_VER=3.1
 
 #SUBDIRS += zlib-1.2.7
 SUBDIRS += ffmpeg-$(FFMPEG_VER)
-SUBDIRS += libogg-1.3.0
+SUBDIRS += libogg-1.3.5
 SUBDIRS += libexif-0.6.19
 SUBDIRS += flac-1.4.2
 SUBDIRS += libvorbis-1.3.7
@@ -98,8 +98,8 @@ ffmpeg:
 	fi
 
 libogg:
-	if [ ! -f ./libogg-1.3.0/Makefile ];then \
-	cd libogg-1.3.0 && aclocal && libtoolize && ./autogen.sh && (./configure --host=$(HOST) --disable-shared  CC="ccache $(CROSS_COMPILE)gcc"  CFLAGS="$(COPTS) $(MIPS16_OPT) $(LTO)  -ffunction-sections -fdata-sections -Wl,--gc-sections" AR_FLAGS="cru $(LTOPLUGIN)" RANLIB="$(ARCH)-linux-ranlib $(LTOPLUGIN)"); \
+	if [ ! -f ./libogg-1.3.5/Makefile ];then \
+	cd libogg-1.3.5 && aclocal && libtoolize && ./autogen.sh && (./configure --host=$(HOST) --disable-shared  CC="ccache $(CROSS_COMPILE)gcc"  CFLAGS="$(COPTS) $(MIPS16_OPT) $(LTO)  -ffunction-sections -fdata-sections -Wl,--gc-sections" AR_FLAGS="cru $(LTOPLUGIN)" RANLIB="$(ARCH)-linux-ranlib $(LTOPLUGIN)"); \
 	fi
 
 libexif:
@@ -119,24 +119,24 @@ sqlite3:
 	fi
 
 libvorbis:
-	cd libogg-1.3.0 && make TOOL_CHAIN_PATH=$(TOOL_CHAIN_PATH) \
+	cd libogg-1.3.5 && make TOOL_CHAIN_PATH=$(TOOL_CHAIN_PATH) \
 				CROSS_COMPILE=$(CROSS_COMPILE) \
 				HOST_COMPILE=$(HOST_COMPILE) \
 				MINI_DLNA_PATH=$(MINI_DLNA_PATH)				
 	if [ ! -f ./libvorbis-1.3.7/Makefile ];then \
 	cd libvorbis-1.3.7 && (./configure --host=$(HOST) --disable-shared  CC="ccache $(CROSS_COMPILE)gcc" \
-					CFLAGS="$(COPTS) $(MIPS16_OPT) -I$(MINI_DLNA_PATH)/libogg-1.3.0/include/  -ffunction-sections -fdata-sections -Wl,--gc-sections" \
-					LDFLAGS="-L$(MINI_DLNA_PATH)/libogg-1.3.0/src/.libs/ $(LDLTO)" \
+					CFLAGS="$(COPTS) $(MIPS16_OPT) -I$(MINI_DLNA_PATH)/libogg-1.3.5/include/  -ffunction-sections -fdata-sections -Wl,--gc-sections" \
+					LDFLAGS="-L$(MINI_DLNA_PATH)/libogg-1.3.5/src/.libs/ $(LDLTO)" \
 					AR_FLAGS="cru $(LTOPLUGIN)" RANLIB="$(ARCH)-linux-ranlib $(LTOPLUGIN)" \
 					); \
 	fi
 flac:
 	if [ ! -f ./flac-1.4.2/Makefile ];then \
 	cd flac-1.4.2 && ./autogen.sh && (./configure --disable-shared --host=$(HOST) --disable-altivec  CC="ccache $(CROSS_COMPILE)gcc" \
-				CFLAGS="$(COPTS) $(MIPS16_OPT) -I$(MINI_DLNA_PATH)/libogg-1.3.0/include/  -ffunction-sections -fdata-sections -Wl,--gc-sections $(LTO)" \
-				CPPFLAGS="$(COPTS) $(MIPS16_OPT) -I$(MINI_DLNA_PATH)/libogg-1.3.0/include/  -ffunction-sections -fdata-sections -Wl,--gc-sections $(LTO)" \
-				CXXFLAGS="$(COPTS) $(MIPS16_OPT) -I$(MINI_DLNA_PATH)/libogg-1.3.0/include/  -ffunction-sections -fdata-sections -Wl,--gc-sections $(LTO)" \
-				LDFLAGS="-L$(MINI_DLNA_PATH)/libogg-1.3.0/src/.libs/ $(LDLTO)" \
+				CFLAGS="$(COPTS) $(MIPS16_OPT) -I$(MINI_DLNA_PATH)/libogg-1.3.5/include/  -ffunction-sections -fdata-sections -Wl,--gc-sections $(LTO)" \
+				CPPFLAGS="$(COPTS) $(MIPS16_OPT) -I$(MINI_DLNA_PATH)/libogg-1.3.5/include/  -ffunction-sections -fdata-sections -Wl,--gc-sections $(LTO)" \
+				CXXFLAGS="$(COPTS) $(MIPS16_OPT) -I$(MINI_DLNA_PATH)/libogg-1.3.5/include/  -ffunction-sections -fdata-sections -Wl,--gc-sections $(LTO)" \
+				LDFLAGS="-L$(MINI_DLNA_PATH)/libogg-1.3.5/src/.libs/ $(LDLTO)" \
 				AR_FLAGS="cru $(LTOPLUGIN)" RANLIB="$(ARCH)-linux-ranlib $(LTOPLUGIN)" \
 				); \
 	fi
@@ -174,7 +174,7 @@ copy:
 	cp ./libvorbis-1.3.7/lib/.libs/libvorbis.a	./lib/libvorbis.a && \
 	cp ./flac-1.4.2/src/libFLAC/.libs/libFLAC-static.a		./lib/libFLAC.a && \
 	cp ./libexif-0.6.19/libexif/.libs/libexif.a 		./lib/libexif.a  && \
-	cp ./libogg-1.3.0/src/.libs/libogg.a		./lib/libogg.a && \
+	cp ./libogg-1.3.5/src/.libs/libogg.a		./lib/libogg.a && \
 	cp ./ffmpeg-$(FFMPEG_VER)/libavutil/libavutil.a		./lib/libavutil.a && \
 #	cp ./ffmpeg-$(FFMPEG_VER)/libavdevice/libavdevice.a		./lib/libavdevice.a && \
 	cp ./ffmpeg-$(FFMPEG_VER)/libavformat/libavformat.a		./lib/libavformat.a && \
@@ -184,7 +184,7 @@ copy:
 	cp ./libid3tag-0.15.1b/.libs/libid3tag.a 	./lib/libid3tag.a
 
 distclean:
-	-cd ./libogg-1.3.0/	&& make distclean 
+	-cd ./libogg-1.3.5/	&& make distclean 
 	-cd ./libexif-0.6.19/	&& make distclean
 	-cd ./sqlite-3.6.22/	&& make distclean
 	-cd ./libvorbis-1.3.7/	&& make distclean
