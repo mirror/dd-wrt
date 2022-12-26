@@ -25,7 +25,7 @@ SUBDIRS += flac-1.4.2
 SUBDIRS += libvorbis-1.3.3
 SUBDIRS += jpeg-8
 SUBDIRS += sqlite-3.6.22
-SUBDIRS += libid3tag-0.15.0b
+SUBDIRS += libid3tag-0.15.1b
 #/projects/hnd/tools/linux/hndtools-mipsel-linux-uclibc-4.2.3
 TOOL_CHAIN_PATH=$(TOOLCHAIN)
 #/home/michael/DLNA
@@ -142,8 +142,8 @@ flac:
 	fi
 
 libid3tag:
-	if [ ! -f ./libid3tag-0.15.0b/Makefile ];then \
-	cd libid3tag-0.15.0b && (./configure --disable-shared --host=$(HOST)  CC="ccache $(CROSS_COMPILE)gcc" \
+	if [ ! -f ./libid3tag-0.15.1b/Makefile ];then \
+	cd libid3tag-0.15.1b && (./configure --disable-shared --host=$(HOST)  CC="ccache $(CROSS_COMPILE)gcc" \
 				CPPFLAGS="$(COPTS) $(MIPS16_OPT) -fPIC -I$(TOP)/zlib/  -ffunction-sections -fdata-sections -Wl,--gc-sections $(LTO)" \
 				LDFLAGS="-L$(TOP)/zlib/ -fPIC $(LDLTO)" \
 				AR_FLAGS="cru $(LTOPLUGIN)" RANLIB="$(ARCH)-linux-ranlib $(LTOPLUGIN)" \
@@ -181,15 +181,15 @@ copy:
 	cp ./ffmpeg-$(FFMPEG_VER)/libavcodec/libavcodec.a		./lib/libavcodec.a && \
 	cp ./sqlite-3.6.22/.libs/libsqlite3.a 		./lib/libsqlite3.a && \
 	cp ./jpeg-8/.libs/libjpeg.a			./lib/libjpeg.a && \
-	cp ./libid3tag-0.15.0b/.libs/libid3tag.a 	./lib/libid3tag.a
+	cp ./libid3tag-0.15.1b/.libs/libid3tag.a 	./lib/libid3tag.a
 
 distclean:
 	-cd ./libogg-1.3.0/	&& make distclean 
 	-cd ./libexif-0.6.19/	&& make distclean
 	-cd ./sqlite-3.6.22/	&& make distclean
 	-cd ./libvorbis-1.3.3/	&& make distclean
-	-cd ./libid3tag-0.15.0b/	&& make distclean
-	-rm -f ./libid3tag-0.15.0b/Makefile
+	-cd ./libid3tag-0.15.1b/	&& make distclean
+	-rm -f ./libid3tag-0.15.1b/Makefile
 	-cd ./flac-1.4.2/	&& make distclean
 	-cd ./ffmpeg-$(FFMPEG_VER)/	&& make distclean
 	-cd ./jpeg-8/		&& make distclean
