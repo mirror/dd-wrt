@@ -24,7 +24,7 @@ CFLAGS = -Wall $(COPTS) $(MIPS16_OPT) $(LTO) -ffunction-sections -fdata-sections
          -I$(MINI_DLNA_PATH)/libid3tag-0.15.1b/ \
          -I$(MINI_DLNA_PATH)/libogg-1.3.5/include/ \
          -I$(MINI_DLNA_PATH)/libvorbis-1.3.7/include/ \
-         -I$(MINI_DLNA_PATH)/jpeg-8 \
+         -I$(MINI_DLNA_PATH)/libjpeg-turbo-2.1.4 \
          -I$(MINI_DLNA_PATH)/minidlna/avahi/ \
          -I$(MINI_DLNA_PATH)/flac-1.4.2/include/ \
          -L$(MINI_DLNA_PATH)/lib \
