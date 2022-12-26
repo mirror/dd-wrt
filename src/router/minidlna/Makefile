@@ -110,9 +110,9 @@ libexif:
 libjpeg:
 	if [ ! -f ./libjpeg-turbo-2.1.4/CMakeCache.txt ];then \
 	echo "$(ARCH)-linux-uclibc-gcc-ar \$$@" > libjpeg-turbo-2.1.4/$(ARCH)-linux-uclibc-gcc-ar; \
-	chmod 777 libjpeg-turbo-2.1.4/$(ARCH)-linux-gcc-ar; \
+	chmod 777 libjpeg-turbo-2.1.4/$(ARCH)-linux-uclibc-gcc-ar; \
 	echo "$(ARCH)-linux-uclibc-gcc-ranlib \$$@" > libjpeg-turbo-2.1.4/$(ARCH)-linux-uclibc-gcc-ranlib; \
-	chmod 777 libjpeg-turbo-2.1.4/$(ARCH)-linux-gcc-ranlib; \
+	chmod 777 libjpeg-turbo-2.1.4/$(ARCH)-linux-uclibc-gcc-ranlib; \
 	(cd libjpeg-turbo-2.1.4; \
 		CFLAGS="$(COPTS) $(MIPS16_OPT) $(LTO) -ffunction-sections -fdata-sections -Wl,--gc-sections" \
 		LDFLAGS="$(COPTS) $(MIPS16_OPT) $(LTO) -ffunction-sections -fdata-sections -Wl,--gc-sections" \
