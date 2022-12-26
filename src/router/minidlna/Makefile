@@ -23,7 +23,7 @@ SUBDIRS += libogg-1.3.5
 SUBDIRS += libexif-0.6.24
 SUBDIRS += flac-1.4.2
 SUBDIRS += libvorbis-1.3.7
-SUBDIRS += jpeg-8
+SUBDIRS += libjpeg-turbo-2.1.4
 SUBDIRS += sqlite-3.6.22
 SUBDIRS += libid3tag-0.15.1b
 #/projects/hnd/tools/linux/hndtools-mipsel-linux-uclibc-4.2.3
@@ -38,7 +38,7 @@ COPTS += $(MIPS16_OPT) -fPIC -fcommon
 
 # [FIXME] added by Michael Jiang.
 # The below variables  should be modified when you use different platform.
-HOST=$(ARCH)-linux-linux
+HOST=$(ARCH)-linux
 HOST_COMPILE=$(HOST)-
 CROSS_COMPILE=$(ARCH)-linux-uclibc-
 #HOST_COMPILE=mipsel-linux-linux26-
@@ -108,8 +108,8 @@ libexif:
 	fi
 
 libjpeg:
-	if [ ! -f ./jpeg-8/Makefile ];then \
-	cd jpeg-8 && (./configure --host=$(HOST) --disable-shared  CC="ccache $(CROSS_COMPILE)gcc"  CFLAGS="$(COPTS) $(MIPS16_OPT) $(LTO) -ffunction-sections -fdata-sections -Wl,--gc-sections" AR_FLAGS="cru $(LTOPLUGIN)" RANLIB="$(ARCH)-linux-ranlib $(LTOPLUGIN)"); \
+	if [ ! -f ./libjpeg-turbo-2.1.4/Makefile ];then \
+	cd libjpeg-turbo-2.1.4 && (./configure --host=$(HOST) --disable-shared  CC="ccache $(CROSS_COMPILE)gcc"  CFLAGS="$(COPTS) $(MIPS16_OPT) $(LTO) -ffunction-sections -fdata-sections -Wl,--gc-sections" AR_FLAGS="cru $(LTOPLUGIN)" RANLIB="$(ARCH)-linux-ranlib $(LTOPLUGIN)"); \
 	fi
 
 sqlite3:
@@ -180,7 +180,7 @@ copy:
 	cp ./ffmpeg-$(FFMPEG_VER)/libavformat/libavformat.a		./lib/libavformat.a && \
 	cp ./ffmpeg-$(FFMPEG_VER)/libavcodec/libavcodec.a		./lib/libavcodec.a && \
 	cp ./sqlite-3.6.22/.libs/libsqlite3.a 		./lib/libsqlite3.a && \
-	cp ./jpeg-8/.libs/libjpeg.a			./lib/libjpeg.a && \
+	cp ./libjpeg-turbo-2.1.4/.libs/libjpeg.a			./lib/libjpeg.a && \
 	cp ./libid3tag-0.15.1b/.libs/libid3tag.a 	./lib/libid3tag.a
 
 distclean:
@@ -192,7 +192,7 @@ distclean:
 	-rm -f ./libid3tag-0.15.1b/Makefile
 	-cd ./flac-1.4.2/	&& make distclean
 	-cd ./ffmpeg-$(FFMPEG_VER)/	&& make distclean
-	-cd ./jpeg-8/		&& make distclean
+	-cd ./libjpeg-turbo-2.1.4/		&& make distclean
 	-cd ./minidlna/		&& make clean
 	-rm ./lib/*.so.*
 	-rm ./lib/minidlna
