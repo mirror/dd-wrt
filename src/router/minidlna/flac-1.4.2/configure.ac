@@ -467,8 +467,8 @@ AC_SUBST(LIB_CLOCK_GETTIME)
 
 dnl Prepend defaults to CFLAGS
 AS_IF([test "x${ax_enable_debug}" = "xno"], [
-	CFLAGS="-O3 -funroll-loops $CFLAGS"
-	CXXFLAGS="-O3 $CXXFLAGS"
+	CFLAGS="$CFLAGS"
+	CXXFLAGS="$CXXFLAGS"
 ])
 
 XIPH_GCC_VERSION dnl Sets a non-zero GCC_XXX_VERSION for gcc, not clang. checks below rely on that..
