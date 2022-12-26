@@ -230,6 +230,7 @@ distclean:
 	-cd ./libid3tag-0.15.1b/	&& make distclean
 	-rm -f ./libid3tag-0.15.1b/Makefile
 	-cd ./flac-1.4.2/	&& make distclean
+	-rm -f ./flac-1.4.2/Makefile
 	-cd ./ffmpeg-$(FFMPEG_VER)/	&& make distclean
 	-cd ./libjpeg-turbo-2.1.4/	&& make clean && rm -f CMakeCache.txt
 	-cd ./minidlna/		&& make clean
