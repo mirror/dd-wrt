@@ -109,14 +109,22 @@ libexif:
 
 libjpeg:
 	if [ ! -f ./libjpeg-turbo-2.1.4/CMakeCache.txt ];then \
+	echo "$(ARCH)-linux-gcc-ar \$$@" > libjpeg-turbo-2.1.4/$(ARCH)-linux-gcc-ar; \
+	chmod 777 libjpeg-turbo-2.1.4/$(ARCH)-linux-gcc-ar; \
+	echo "$(ARCH)-linux-gcc-ranlib \$$@" > libjpeg-turbo-2.1.4/$(ARCH)-linux-gcc-ranlib; \
+	chmod 777 libjpeg-turbo-2.1.4/$(ARCH)-linux-gcc-ranlib; \
 	(cd libjpeg-turbo-2.1.4; \
 		CFLAGS="$(COPTS) $(MIPS16_OPT) $(LTO) -ffunction-sections -fdata-sections -Wl,--gc-sections" \
 		LDFLAGS="$(COPTS) $(MIPS16_OPT) $(LTO) -ffunction-sections -fdata-sections -Wl,--gc-sections" \
 		CXXFLAGS="$(COPTS) $(MIPS16_OPT) $(LTO) -ffunction-sections -fdata-sections -Wl,--gc-sections" \
-		AR_FLAGS="cru $(LTOPLUGIN)" RANLIB="$(ARCH)-linux-ranlib $(LTOPLUGIN)" \
+		AR_FLAGS="cru $(LTOPLUGIN)" \
+		RANLIB="$(ARCH)-linux-gcc-ranlib" \
+		AR="$(ARCH)-linux-gcc-ar" \
 		cmake \
 			--debug-output \
 			-DWITH_JPEG8=1 \
+			-DENABLE_SHARED=0 \
+			-DENABLE_STATIC=1 \
 			-DCMAKE_SYSTEM_NAME=Linux \
 			-DCMAKE_SYSTEM_VERSION=1 \
 			-DCMAKE_SYSTEM_PROCESSOR=$(ARCH) \
@@ -124,8 +132,9 @@ libjpeg:
 			-DCMAKE_C_FLAGS_RELEASE="-DNDEBUG" \
 			-DCMAKE_CXX_FLAGS_RELEASE="-DNDEBUG" \
 			-DCMAKE_C_COMPILER=$(CROSS_COMPILE)gcc \
-			-DCMAKE_C_COMPILER_RANLIB="$(ARCH)-linux-gcc-ranlib" \
 			-DCMAKE_AR="$(ARCH)-linux-gcc-ar" \
+			-DCMAKE_RANLIB="$(ARCH)-linux-gcc-ranlib" \
+			-DCMAKE_C_COMPILER_RANLIB="$(ARCH)-linux-gcc-ranlib" \
 			-DCMAKE_CXX_COMPILER=$(CROSS_COMPILE)g++ \
 			-DCMAKE_EXE_LINKER_FLAGS="$(COPTS) $(MIPS16_OPT) $(LTO) -ffunction-sections -fdata-sections -Wl,--gc-sections" \
 			-DCMAKE_MODULE_LINKER_FLAGS="$(COPTS) $(MIPS16_OPT) $(LTO) -ffunction-sections -fdata-sections -Wl,--gc-sections" \
