@@ -186,7 +186,11 @@ flac:
 
 libid3tag:
 	if [ ! -f ./libid3tag-0.15.1b/Makefile ];then \
-	cd libid3tag-0.15.1b && (./configure --disable-shared --host=$(HOST)  CC="ccache $(CROSS_COMPILE)gcc" \
+	cd libid3tag-0.15.1b && libtoolize -ci --force; \
+	aclocal; \
+	automake --add-missing; \
+	autoreconf -fi; \
+	(./configure --disable-shared --host=$(HOST)  CC="ccache $(CROSS_COMPILE)gcc" \
 				CPPFLAGS="$(COPTS) $(MIPS16_OPT)  -I$(TOP)/zlib/  -ffunction-sections -fdata-sections -Wl,--gc-sections $(LTO)" \
 				LDFLAGS="-L$(TOP)/zlib/ $(LDLTO)" \
 				AR_FLAGS="cru $(LTOPLUGIN)" RANLIB="$(ARCH)-linux-ranlib $(LTOPLUGIN)" \
