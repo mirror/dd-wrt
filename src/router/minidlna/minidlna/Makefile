@@ -19,11 +19,11 @@ CFLAGS = -Wall $(COPTS) $(MIPS16_OPT) $(LTO) -ffunction-sections -fdata-sections
          -I$(MINI_DLNA_PATH)/ffmpeg-3.1/libavcodec \
          -I$(MINI_DLNA_PATH)/ffmpeg-3.1/libavformat \
          -I$(MINI_DLNA_PATH)/sqlite-3.6.22 \
-         -I$(MINI_DLNA_PATH)/libexif-0.6.19 \
-         -I$(MINI_DLNA_PATH)/libid3tag-0.15.0b/include \
-         -I$(MINI_DLNA_PATH)/libid3tag-0.15.0b/ \
-         -I$(MINI_DLNA_PATH)/libogg-1.3.0/include/ \
-         -I$(MINI_DLNA_PATH)/libvorbis-1.3.3/include/ \
+         -I$(MINI_DLNA_PATH)/libexif-0.6.24 \
+         -I$(MINI_DLNA_PATH)/libid3tag-0.15.1b/include \
+         -I$(MINI_DLNA_PATH)/libid3tag-0.15.1b/ \
+         -I$(MINI_DLNA_PATH)/libogg-1.3.5/include/ \
+         -I$(MINI_DLNA_PATH)/libvorbis-1.3.7/include/ \
          -I$(MINI_DLNA_PATH)/jpeg-8 \
          -I$(MINI_DLNA_PATH)/minidlna/avahi/ \
          -I$(MINI_DLNA_PATH)/flac-1.4.2/include/ \
