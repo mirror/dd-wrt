@@ -1,7 +1,0 @@
-LIBAVFORMAT_52 {
-        global: *;
-        local:
-                ff_*_demuxer;
-                ff_*_muxer;
-                ff_*_protocol;
-};
