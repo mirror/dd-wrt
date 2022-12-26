@@ -153,11 +153,11 @@ libjpeg:
 
 sqlite3:
 	if [ ! -f ./sqlite-3.6.22/Makefile ];then \
-	cd sqlite-3.6.22 && libtoolize -ci --force \
-	cd sqlite-3.6.22 && aclocal \
-	cd sqlite-3.6.22 && automake --add-missing \
-	cd sqlite-3.6.22 && autoreconf -fi \
-	cd sqlite-3.6.22 && (./configure --host=$(HOST) --disable-shared  CC="ccache $(CROSS_COMPILE)gcc" CFLAGS="$(COPTS) $(MIPS16_OPT) $(LTO) -DSQLITE_OMIT_DEPRECATED -DSQLITE_OMIT_FLOATING_POINT -ffunction-sections -fdata-sections -Wl,--gc-sections -DSQLITE_OMIT_TRIGGERS" AR_FLAGS="cru $(LTOPLUGIN)" RANLIB="$(ARCH)-linux-ranlib $(LTOPLUGIN)" \
+	cd sqlite-3.6.22 && libtoolize -ci --force; \
+	aclocal; \
+	automake --add-missing; \
+	autoreconf -fi; \
+	(./configure --host=$(HOST) --disable-shared  CC="ccache $(CROSS_COMPILE)gcc" CFLAGS="$(COPTS) $(MIPS16_OPT) $(LTO) -DSQLITE_OMIT_DEPRECATED -DSQLITE_OMIT_FLOATING_POINT -ffunction-sections -fdata-sections -Wl,--gc-sections -DSQLITE_OMIT_TRIGGERS" AR_FLAGS="cru $(LTOPLUGIN)" RANLIB="$(ARCH)-linux-ranlib $(LTOPLUGIN)" \
 				--enable-threadsafe --enable-dynamic-extensions=no ); \
 	fi
 
