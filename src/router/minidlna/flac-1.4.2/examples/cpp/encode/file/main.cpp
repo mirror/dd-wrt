@@ -24,6 +24,7 @@
  * Complete API documentation can be found at:
  *   http://xiph.org/flac/api/
  */
+#define NEED_PRINTF
 
 #ifdef HAVE_CONFIG_H
 #  include <config.h>
