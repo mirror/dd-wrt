@@ -34,7 +34,7 @@ struct id3_compat {
 };
 
 struct id3_compat const *id3_compat_lookup(register char const *,
-					   register unsigned int);
+					   register size_t);
 
 int id3_compat_fixup(struct id3_tag *);
 
