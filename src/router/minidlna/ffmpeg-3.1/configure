@@ -988,6 +988,7 @@ THREADS_LIST='
 ARCH_LIST='
     alpha
     arm
+    aarch64
     avr32
     avr32_ap
     avr32_uc
@@ -1649,7 +1650,7 @@ mandir_default='${prefix}/share/man'
 shlibdir_default="$libdir_default"
 
 # toolchain
-ar_default="ar"
+ar_default="gcc-ar"
 cc_default="gcc"
 cc_version=\"unknown\"
 host_cc_default="gcc"
@@ -1658,7 +1659,7 @@ ln_s="ln -sf"
 nm_default="nm"
 objformat="elf"
 pkg_config_default=pkg-config
-ranlib="ranlib"
+ranlib="gcc-ranlib"
 strip_default="strip"
 yasmexe="yasm"
 nogas=":"
@@ -2173,6 +2174,9 @@ case "$arch" in
     arm*)
         arch="arm"
     ;;
+    aarch64*)
+        arch="aarch64"
+    ;;
     mips|mipsel|IP*)
         arch="mips"
     ;;
@@ -2323,6 +2327,10 @@ elif enabled bfin; then
 
     cpuflags="-mcpu=$cpu"
 
+elif enabled aarch64; then
+
+    cpuflags="-march=armv8-a"
+
 elif enabled mips; then
 
     cpuflags="-march=$cpu"
@@ -2379,7 +2387,7 @@ check_host_cflags -std=c99
 check_host_cflags -Wall
 
 case "$arch" in
-    alpha|ia64|mips|parisc|ppc|sparc)
+    alpha|ia64|aarch64|mips|parisc|ppc|sparc)
         spic=$shared
     ;;
     x86)
