@@ -33,8 +33,8 @@ MINI_DLNA_PATH=$(shell pwd)
 
 CFLAGS += $(COPTS) -ffunction-sections -fdata-sections -Wl,--gc-sections
 
-CFLAGS += $(MIPS16_OPT) -fPIC -fcommon
-COPTS += $(MIPS16_OPT) -fPIC -fcommon
+CFLAGS += $(MIPS16_OPT)  
+COPTS += $(MIPS16_OPT)  
 
 # [FIXME] added by Michael Jiang.
 # The below variables  should be modified when you use different platform.
@@ -91,8 +91,8 @@ ffmpeg:
 		--disable-protocols $(FFMPEG_CONFIGURE_PROTOCOLS) \
 		--disable-asm --disable-altivec \
 		--disable-postproc --disable-avfilter \
-		--extra-cflags="$(COPTS) $(MIPS16_OPT) -ffunction-sections -fdata-sections -fPIC -D_GNU_SOURCE -I$(TOP)/zlib $(LTO)" \
-		--extra-ldflags="-ffunction-sections -fdata-sections -Wl,--gc-sections -fPIC $(LDLTO)" \
+		--extra-cflags="$(COPTS) $(MIPS16_OPT) -ffunction-sections -fdata-sections  -D_GNU_SOURCE -I$(TOP)/zlib $(LTO)" \
+		--extra-ldflags="-ffunction-sections -fdata-sections -Wl,--gc-sections  $(LDLTO)" \
 		--extra-libs="-L$(TOP)/zlib -lz" \
 		--enable-zlib --disable-debug --prefix=''); \
 	fi
@@ -153,7 +153,7 @@ libjpeg:
 
 sqlite3:
 	if [ ! -f ./sqlite-3.6.22/Makefile ];then \
-	cd sqlite-3.6.22 && (./configure --host=$(HOST) --disable-shared  CC="ccache $(CROSS_COMPILE)gcc" CFLAGS="$(COPTS) $(MIPS16_OPT) $(LTO) -fcommon -fPIC  -ffunction-sections -fdata-sections -Wl,--gc-sections -DSQLITE_OMIT_TRIGGERS" AR_FLAGS="cru $(LTOPLUGIN)" RANLIB="$(ARCH)-linux-ranlib $(LTOPLUGIN)" \
+	cd sqlite-3.6.22 && (./configure --host=$(HOST) --disable-shared  CC="ccache $(CROSS_COMPILE)gcc" CFLAGS="$(COPTS) $(MIPS16_OPT) $(LTO) -DSQLITE_OMIT_DEPRECATED -DSQLITE_OMIT_FLOATING_POINT -ffunction-sections -fdata-sections -Wl,--gc-sections -DSQLITE_OMIT_TRIGGERS" AR_FLAGS="cru $(LTOPLUGIN)" RANLIB="$(ARCH)-linux-ranlib $(LTOPLUGIN)" \
 				--enable-threadsafe --enable-dynamic-extensions=no ); \
 	fi
 
@@ -183,8 +183,8 @@ flac:
 libid3tag:
 	if [ ! -f ./libid3tag-0.15.1b/Makefile ];then \
 	cd libid3tag-0.15.1b && (./configure --disable-shared --host=$(HOST)  CC="ccache $(CROSS_COMPILE)gcc" \
-				CPPFLAGS="$(COPTS) $(MIPS16_OPT) -fPIC -I$(TOP)/zlib/  -ffunction-sections -fdata-sections -Wl,--gc-sections $(LTO)" \
-				LDFLAGS="-L$(TOP)/zlib/ -fPIC $(LDLTO)" \
+				CPPFLAGS="$(COPTS) $(MIPS16_OPT)  -I$(TOP)/zlib/  -ffunction-sections -fdata-sections -Wl,--gc-sections $(LTO)" \
+				LDFLAGS="-L$(TOP)/zlib/ $(LDLTO)" \
 				AR_FLAGS="cru $(LTOPLUGIN)" RANLIB="$(ARCH)-linux-ranlib $(LTOPLUGIN)" \
 				); \
 	fi
