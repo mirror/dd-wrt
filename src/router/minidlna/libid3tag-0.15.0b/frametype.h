@@ -37,6 +37,6 @@ extern struct id3_frametype const id3_frametype_unknown;
 extern struct id3_frametype const id3_frametype_obsolete;
 
 struct id3_frametype const *id3_frametype_lookup(register char const *,
-						 register unsigned int);
+						 register size_t);
 
 # endif
