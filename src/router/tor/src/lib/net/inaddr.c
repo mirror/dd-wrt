@@ -66,11 +66,7 @@ tor_inet_aton(const char *str, struct in_addr *addr)
   if (b > 255) return 0;
   if (c > 255) return 0;
   if (d > 255) return 0;
-  unsigned char *buf = (unsigned char *)&addr->s_addr;
-  buf[0] = a;
-  buf[1] = b;
-  buf[2] = c;
-  buf[3] = d;
+  addr->s_addr = htonl((a<<24) | (b<<16) | (c<<8) | d);
   return 1;
 }
 
@@ -82,8 +78,12 @@ tor_inet_aton(const char *str, struct in_addr *addr)
 int
 tor_inet_ntoa(const struct in_addr *in, char *buf, size_t buf_len)
 {
-  unsigned char *b = (unsigned char *)&in->s_addr;
-  return tor_snprintf(buf, buf_len, "%d.%d.%d.%d", b[0]&0xff, b[1]&0xff, b[2]&0xff, b[3]&0xff);
+  uint32_t a = ntohl(in->s_addr);
+  return tor_snprintf(buf, buf_len, "%d.%d.%d.%d",
+                      (int)(uint8_t)((a>>24)&0xff),
+                      (int)(uint8_t)((a>>16)&0xff),
+                      (int)(uint8_t)((a>>8 )&0xff),
+                      (int)(uint8_t)((a    )&0xff));
 }
 
 /** Given <b>af</b>==AF_INET and <b>src</b> a struct in_addr, or
