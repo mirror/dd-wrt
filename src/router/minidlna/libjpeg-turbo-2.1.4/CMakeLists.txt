@@ -643,8 +643,6 @@ if(WITH_TURBOJPEG)
       target_link_libraries(tjbench m)
     endif()
 
-    add_executable(tjexample tjexample.c)
-    target_link_libraries(tjexample turbojpeg)
   endif()
 
   if(ENABLE_STATIC)
