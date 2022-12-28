@@ -80,7 +80,7 @@ ffmpeg:
 	if [ ! -f ./ffmpeg-$(FFMPEG_VER)/config.mak ]; then \
 	cd ffmpeg-$(FFMPEG_VER) && (symver_asm_label=no symver_gnu_asm=no symver=no CC="$(CC)" \
 		./configure --enable-cross-compile --arch=$(ARCH) --target_os=linux \
-		--cross-prefix=$(CROSS_COMPILE) --enable-shared --enable-gpl --disable-doc \
+		--cross-prefix=$(CROSS_COMPILE) --disable-shared --enable-static --enable-gpl --disable-doc \
 		--enable-pthreads --enable-small --disable-encoders --disable-filters \
 		--disable-muxers --disable-devices --disable-ffmpeg --disable-ffplay \
 		--disable-ffserver --disable-ffprobe --disable-avdevice --disable-swscale \
