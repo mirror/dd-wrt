@@ -190,7 +190,7 @@ libid3tag:
 	aclocal; \
 	automake --add-missing; \
 	autoreconf -fi; \
-	(./configure --disable-shared --host=$(HOST)  CC="ccache $(CROSS_COMPILE)gcc" \
+	(./configure --disable-shared --disable-dependency-tracking --host=$(HOST)  CC="ccache $(CROSS_COMPILE)gcc" \
 				CPPFLAGS="$(COPTS) $(MIPS16_OPT)  -I$(TOP)/zlib/  -ffunction-sections -fdata-sections -Wl,--gc-sections $(LTO)" \
 				LDFLAGS="-L$(TOP)/zlib/ $(LDLTO)" \
 				AR_FLAGS="cru $(LTOPLUGIN)" RANLIB="$(ARCH)-linux-ranlib $(LTOPLUGIN)" \
