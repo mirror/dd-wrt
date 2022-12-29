@@ -33,8 +33,8 @@ MINI_DLNA_PATH=$(shell pwd)
 
 CFLAGS += $(COPTS) -ffunction-sections -fdata-sections -Wl,--gc-sections
 
-CFLAGS += $(MIPS16_OPT)  
-COPTS += $(MIPS16_OPT)  
+CFLAGS += $(MIPS16_OPT) -fPIC
+COPTS += $(MIPS16_OPT) -fPIC
 
 # [FIXME] added by Michael Jiang.
 # The below variables  should be modified when you use different platform.
