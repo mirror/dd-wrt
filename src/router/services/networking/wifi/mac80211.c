@@ -339,9 +339,14 @@ void configure_single_ath9k(int count)
 	MAC80211DEBUG();
 	if (isath10k && has_fwswitch(dev)) {
 		char fwtype[32];
+		char regulatory[32];
 		char fwtype_use[32];
 		sprintf(fwtype, "%s_fwtype", dev);
 		sprintf(fwtype_use, "%s_fwtype_use", dev);
+		sprintf(regulatory, "%s_regulatory", dev);
+		if (nvram_match(regulatory, "0")) {
+			nvram_set(fwtype, "ddwrt");
+		}
 		if (!nvram_default_match(fwtype, nvram_default_get(fwtype_use, "ddwrt"), "ddwrt")) {
 			nvram_set(fwtype_use, nvram_safe_get(fwtype));
 //                      nvram_set(dualband_use, nvram_safe_get(dualband));
