@@ -3033,7 +3033,7 @@ static void internal_ej_show_wireless_single(webs_t wp, char *prefix)
 #endif
 #endif				// ! HAVE MAKSAT
 
-	if (is_ath10k(prefix) && has_fwswitch(prefix)) {
+	if (is_ath10k(prefix) && has_fwswitch(prefix) && nvram_nmatch("1", "%s_regulatory", prefix)) {
 		char fw_type[32];
 		sprintf(fw_type, "%s_fwtype", prefix);
 		char *fw_names[] = { "DD-WRT", "VANILLA" };
