@@ -2,6 +2,8 @@ inadyn-configure:
 	cd inadynv2/libconfuse && ./autogen.sh
 	cd inadynv2/libconfuse && ./configure --prefix=/usr \
 					--disable-examples \
+					--disable-shared \
+					--enable-static \
 					--host=$(ARCH)-linux \
 					CFLAGS="$(COPTS) $(MIPS16_OPT) $(LTO) -ffunction-sections -fdata-sections -Wl,--gc-sections" \
 					AR_FLAGS="cru $(LTOPLUGIN)" \
@@ -18,6 +20,8 @@ inadyn-configure:
 		--enable-reduced \
 		--disable-ssl \
 		--localstatedir=/tmp \
+		--disable-shared \
+		--enable-static \
 		--host=$(ARCH)-linux \
 		CFLAGS="$(COPTS) $(MIPS16_OPT) $(LTO) -ffunction-sections -fdata-sections -Wl,--gc-sections" \
 		confuse_CFLAGS="-I$(TOP)/inadynv2/libconfuse/src" \
@@ -29,6 +33,8 @@ inadyn-configure:
 		--disable-reduced \
 		--enable-ssl \
 		--enable-openssl \
+		--disable-shared \
+		--enable-static \
 		--localstatedir=/tmp \
 		--host=$(ARCH)-linux \
 		CFLAGS="$(COPTS) $(MIPS16_OPT) $(LTO) -ffunction-sections -fdata-sections -Wl,--gc-sections" \
