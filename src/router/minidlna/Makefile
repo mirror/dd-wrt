@@ -60,6 +60,11 @@ FFMPEG_DISABLED_DEMUXERS:=amr apc ape ass bethsoftvid bfi c93 daud dnxhd dsicin 
 FFMPEG_CONFIGURE_DEMUXERS:=$(call FFMPEG_FILTER_CONFIG,disable-demuxer,$(FFMPEG_DISABLED_DEMUXERS))
 
 
+SIMD=1
+ifeq ($(ARCH),armeb)
+SIMD=0
+endif
+
 
 all: ffmpeg libogg libexif sqlite3 libvorbis flac libid3tag libjpeg
 	for i in $(SUBDIRS); do \
@@ -123,6 +128,7 @@ libjpeg:
 		cmake \
 			--debug-output \
 			-DWITH_JPEG8=1 \
+			-DWITH_SIMD=$(SIMD) \
 			-DENABLE_SHARED=0 \
 			-DENABLE_STATIC=1 \
 			-DCMAKE_SYSTEM_NAME=Linux \
