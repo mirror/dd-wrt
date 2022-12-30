@@ -231,7 +231,6 @@
 			art: art@c80000 {
 				label = "art";
 				reg = <0x0c80000 0x0140000>;
-				read-only;
 			};
 
 			APPSBL@dc0000 {

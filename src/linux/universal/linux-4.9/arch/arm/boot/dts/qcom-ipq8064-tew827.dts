@@ -187,7 +187,6 @@
 			art: art@1200000 {
 				label = "art";
 				reg = <0x1200000 0x0140000>;
-				read-only;
 			};
 
 			firmware@1340000 {
