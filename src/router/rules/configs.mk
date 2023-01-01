@@ -393,6 +393,7 @@ obj-$(CONFIG_MEMTESTER) += memtester
 obj-$(CONFIG_PLEX) += plex
 obj-$(CONFIG_ANTAIRA_AGENT) += curl zlib openssl json-c antaira-agent
 obj-$(CONFIG_BOINC) += zlib openssl curl boinc
+obj-$(CONFIG_MUSL) += musl
 ifneq ($(CONFIG_DIST),"micro")
 obj-y+=wrtbwmon
 endif
