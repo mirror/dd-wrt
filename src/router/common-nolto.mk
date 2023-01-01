@@ -214,7 +214,7 @@ else
 		--ldlib /lib/$(MUSL_LD) \
 		--target $(ARCH)-linux-uclibc \
 		`cat /tmp/$(ARCHITECTURE)/mklibs-progs` 2>&1
-	-cp /tmp/$(ARCHITECTURE)/mklibs-out/* $(TARGETDIR)/lib
+	-cp /tmp/$(ARCHITECTURE)/lib/* $(TARGETDIR)/lib
 endif
 endif
 	../../tools/optimize_lib.sh libutils/ libutils.so libutils.a libutils_min.so $(TARGETDIR) $(TARGETDIR)/usr/lib/libutils.so  $(TOP)/libutils/libutils_ld
