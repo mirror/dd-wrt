@@ -206,7 +206,7 @@ ifneq ($(CONFIG_MUSL),y)
 		`cat /tmp/$(ARCHITECTURE)/mklibs-progs` 2>&1
 	cp /tmp/$(ARCHITECTURE)/mklibs-out/* $(TARGETDIR)/lib
 else
-	-mklibs.py -D \
+	-./mklibs/mklibs.py -D \
 		-d /tmp/$(ARCHITECTURE)/mklibs-out \
 		--sysroot $(TARGETDIR) \
 		-L /lib \
