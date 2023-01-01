@@ -61,7 +61,7 @@ export TOOLCHAIN := $(shell cd $(dir $(shell which $(CROSS_COMPILE)gcc))/arm-ope
 
 
 
-export BASEOPT:=-Os
+export BASEOPT:=-Os -fno-unwind-tables -fno-asynchronous-unwind-tables
 
 
 #ifeq ($(ARCH),arm)
