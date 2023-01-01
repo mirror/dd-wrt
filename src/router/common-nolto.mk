@@ -206,14 +206,19 @@ ifneq ($(CONFIG_MUSL),y)
 		`cat /tmp/$(ARCHITECTURE)/mklibs-progs` 2>&1
 	cp /tmp/$(ARCHITECTURE)/mklibs-out/* $(TARGETDIR)/lib
 else
+	cp mklibs/* ${shell $(ARCH)-linux-gcc -print-file-name=include}/../../../../../bin
+	rm -f /tmp/$(ARCHITECTURE)/lib/*
+	cp musl/lib/*.so $(TARGETDIR)/lib
 	-./mklibs/mklibs.py -D \
 		-d /tmp/$(ARCHITECTURE)/mklibs-out \
 		--sysroot $(TARGETDIR) \
 		-L /lib \
 		-L /usr/lib \
+		-L /usr/lib/plexmediaserver/lib \
 		--ldlib /lib/$(MUSL_LD) \
 		--target $(ARCH)-linux-uclibc \
 		`cat /tmp/$(ARCHITECTURE)/mklibs-progs` 2>&1
+
 	-cp /tmp/$(ARCHITECTURE)/lib/* $(TARGETDIR)/lib
 endif
 endif
