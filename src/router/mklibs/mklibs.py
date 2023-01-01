@@ -1,4 +1,4 @@
-#! /usr/bin/env python
+#! /usr/bin/env python3
 
 # mklibs.py: An automated way to create a minimal /lib/ directory.
 #
@@ -57,18 +57,18 @@ debuglevel = DEBUG_NORMAL
 
 def debug(level, *msg):
     if debuglevel >= level:
-        print string.join(msg)
+        print(' '.join(msg))
 
 # return a list of lines of output of the command
 def command(command, *args):
-    debug(DEBUG_SPAM, "calling", command, string.join(args))
+    debug(DEBUG_SPAM, "calling", command, ' '.join(args))
     pipe = os.popen(command + ' ' + ' '.join(args), 'r')
     output = pipe.read().strip()
     status = pipe.close() 
     if status is not None and os.WEXITSTATUS(status) != 0:
-        print "Command failed with status", os.WEXITSTATUS(status),  ":", \
-               command, string.join(args)
-	print "With output:", output
+        print("Command failed with status", os.WEXITSTATUS(status),  ":", \
+               command, ' '.join(args))
+        print("With output:", output)
         sys.exit(1)
     return [i for i in output.split('\n') if i]
 
@@ -134,6 +134,14 @@ class UndefinedSymbol(Symbol):
         super(UndefinedSymbol, self).__init__(name, version, library)
         self.weak, self.library = weak, library
 
+def symbol_is_blacklisted(name):
+    # The ARM Embedded ABI spec states symbols under this namespace as
+    # possibly appearing in output objects.
+    if name.startswith("__aeabi_"):
+        return True
+
+    return False
+
 # Return undefined symbols in an object as a set of tuples (name, weakness)
 def undefined_symbols(obj):
     if not os.access(obj, os.F_OK):
@@ -144,6 +152,9 @@ def undefined_symbols(obj):
     result = []
     for line in output:
         name, weak_string, version_string, library_string = line.split()[:4]
+
+        if symbol_is_blacklisted(name):
+            continue
 
         weak = False
         if weak_string.lower() == 'true':
@@ -162,10 +173,9 @@ def undefined_symbols(obj):
     return result
 
 class ProvidedSymbol(Symbol):
-    def __init__(self, name, version, library, default_version, weak):
+    def __init__(self, name, version, library, default_version):
         super(ProvidedSymbol, self).__init__(name, version, library)
         self.default_version = default_version
-        self.weak = weak
 
     def base_names(self):
         ret = []
@@ -206,15 +216,11 @@ def provided_symbols(obj):
         if version_string.lower() not in ('base', 'none'):
             version = version_string
 
-        weak = False
-        if weak_string.lower() == 'true':
-            weak = True
-
         default_version = False
         if default_version_string.lower() == 'true':
             default_version = True
 
-        result.append(ProvidedSymbol(name, version, library, default_version, weak))
+        result.append(ProvidedSymbol(name, version, library, default_version))
 
     return result
     
@@ -241,12 +247,8 @@ def find_lib(lib):
 # Find a PIC archive for the library
 def find_pic(lib):
     base_name = so_pattern.match(lib).group(1)
-    debug(DEBUG_VERBOSE, "lib name ", lib)
-    debug(DEBUG_VERBOSE, "base name ", base_name)
     for path in lib_path:
-	debug(DEBUG_VERBOSE, "path ", path)
         for file in glob.glob(sysroot + path + "/" + base_name + "_pic.a"):
-    	    debug(DEBUG_VERBOSE, "file ", file)
             if os.access(file, os.F_OK):
                 return resolve_link(file)
     return ""
@@ -261,12 +263,9 @@ def find_pic_map(lib):
     return ""
 
 def extract_soname(so_file):
-    debug(DEBUG_VERBOSE, "so_file ", so_file)
     soname_data = command("mklibs-readelf", "--print-soname", so_file)
     if soname_data:
-	return soname_data.pop()
-    else:
-	return os.path.basename(so_file)
+        return soname_data.pop()
     return ""
 
 def multiarch(paths):
@@ -278,7 +277,7 @@ def multiarch(paths):
     devnull.close()
     deb_host_multiarch, _ = dpkg_architecture.communicate()
     if dpkg_architecture.returncode == 0:
-        deb_host_multiarch = deb_host_multiarch.rstrip('\n')
+        deb_host_multiarch = deb_host_multiarch.decode().rstrip('\n')
         new_paths = []
         for path in paths:
             new_paths.append(
@@ -293,27 +292,27 @@ def usage(was_err):
         outfd = sys.stderr
     else:
         outfd = sys.stdout
-    print >> outfd, "Usage: mklibs [OPTION]... -d DEST FILE ..."
-    print >> outfd, "Make a set of minimal libraries for FILE(s) in DEST."
-    print >> outfd, "" 
-    print >> outfd, "  -d, --dest-dir DIRECTORY     create libraries in DIRECTORY"
-    print >> outfd, "  -D, --no-default-lib         omit default libpath (", ':'.join(default_lib_path), ")"
-    print >> outfd, "  -L DIRECTORY[:DIRECTORY]...  add DIRECTORY(s) to the library search path"
-    print >> outfd, "  -l LIBRARY                   add LIBRARY always"
-    print >> outfd, "      --ldlib LDLIB            use LDLIB for the dynamic linker"
-    print >> outfd, "      --libc-extras-dir DIRECTORY  look for libc extra files in DIRECTORY"
-    print >> outfd, "      --target TARGET          prepend TARGET- to the gcc and binutils calls"
-    print >> outfd, "      --root ROOT              search in ROOT for library rpaths"
-    print >> outfd, "      --sysroot ROOT           prepend ROOT to all paths for libraries"
-    print >> outfd, "      --gcc-options OPTIONS    pass OPTIONS to gcc"
-    print >> outfd, "      --libdir DIR             use DIR (e.g. lib64) in place of lib in default paths"
-    print >> outfd, "  -v, --verbose                explain what is being done"
-    print >> outfd, "  -h, --help                   display this help and exit"
+    print("Usage: mklibs [OPTION]... -d DEST FILE ...", file=outfd)
+    print("Make a set of minimal libraries for FILE(s, file=outfd) in DEST.", file=outfd)
+    print("" , file=outfd)
+    print("  -d, --dest-dir DIRECTORY     create libraries in DIRECTORY", file=outfd)
+    print("  -D, --no-default-lib         omit default libpath (", ':'.join(default_lib_path), ")", file=outfd)
+    print("  -L DIRECTORY[:DIRECTORY]...  add DIRECTORY(s, file=outfd) to the library search path", file=outfd)
+    print("  -l LIBRARY                   add LIBRARY always", file=outfd)
+    print("      --ldlib LDLIB            use LDLIB for the dynamic linker", file=outfd)
+    print("      --libc-extras-dir DIRECTORY  look for libc extra files in DIRECTORY", file=outfd)
+    print("      --target TARGET          prepend TARGET- to the gcc and binutils calls", file=outfd)
+    print("      --root ROOT              search in ROOT for library rpaths", file=outfd)
+    print("      --sysroot ROOT           prepend ROOT to all paths for libraries", file=outfd)
+    print("      --gcc-options OPTIONS    pass OPTIONS to gcc", file=outfd)
+    print("      --libdir DIR             use DIR (e.g. lib64, file=outfd) in place of lib in default paths", file=outfd)
+    print("  -v, --verbose                explain what is being done", file=outfd)
+    print("  -h, --help                   display this help and exit", file=outfd)
     sys.exit(was_err)
 
 def version(vers):
-    print "mklibs: version ",vers
-    print ""
+    print("mklibs: version ",vers)
+    print("")
 
 #################### main ####################
 ## Usage: ./mklibs.py [OPTION]... -d DEST FILE ...
@@ -364,8 +363,8 @@ script_pattern = re.compile("^#!\s*/")
 
 try:
     optlist, proglist = getopt.getopt(sys.argv[1:], opts, longopts)
-except getopt.GetoptError, msg:
-    print >> sys.stderr, msg
+except getopt.GetoptError as msg:
+    print(msg, file=sys.stderr)
     usage(1)
 
 for opt, arg in optlist:
@@ -373,7 +372,7 @@ for opt, arg in optlist:
         if debuglevel < DEBUG_SPAM:
             debuglevel = debuglevel + 1
     elif opt == "-L":
-        lib_path.extend(string.split(arg, ":"))
+        lib_path.extend(arg.split(":"))
     elif opt in ("-d", "--dest-dir"):
         dest_path = arg
     elif opt in ("-D", "--no-default-lib"):
@@ -392,17 +391,17 @@ for opt, arg in optlist:
     elif opt in ("-l",):
         force_libs.append(arg)
     elif opt == "--gcc-options":
-        gcc_options.extend(string.split(arg, " "))
+        gcc_options.extend(arg.split(" "))
     elif opt == "--libdir":
         libdir = arg
     elif opt in ("--help", "-h"):
-	usage(0)
+        usage(0)
         sys.exit(0)
     elif opt in ("--version", "-V"):
         version(vers)
         sys.exit(0)
     else:
-        print "WARNING: unknown option: " + opt + "\targ: " + arg
+        print("WARNING: unknown option: " + opt + "\targ: " + arg)
 
 if include_default_lib_path == "yes":
     lib_path.extend([a.replace("/lib/", "/" + libdir + "/") for a in default_lib_path])
@@ -420,42 +419,40 @@ if ldlib == "LDLIB":
 objects = {}  # map from inode to filename
 for prog in proglist:
     inode = os.stat(prog)[ST_INO]
-    if objects.has_key(inode):
+    if inode in objects:
         debug(DEBUG_SPAM, prog, "is a hardlink to", objects[inode])
     elif so_pattern.match(prog):
         debug(DEBUG_SPAM, prog, "is a library")
-    elif script_pattern.match(open(prog).read(256)):
+    elif script_pattern.match(open(prog, 'r', encoding='iso-8859-1').read(256)):
         debug(DEBUG_SPAM, prog, "is a script")
     else:
         objects[inode] = prog
 
 if not ldlib:
-    for obj in objects.values():
+    for obj in list(objects.values()):
         output = command("mklibs-readelf", "--print-interp", obj)
         if output:
             ldlib = output.pop()
-	if ldlib:
-	    break
+        if ldlib:
+            break
 
 if not ldlib:
     sys.exit("E: Dynamic linker not found, aborting.")
 
-ldlib = sysroot + ldlib
-
 debug(DEBUG_NORMAL, "I: Using", ldlib, "as dynamic linker.")
 
 # Check for rpaths
-for obj in objects.values():
+for obj in sorted(objects.values()):
     rpath_val = rpath(obj)
     if rpath_val:
         if root:
             for rpath_elem in rpath_val:
                 if not rpath_elem in lib_rpath:
                     if debuglevel >= DEBUG_VERBOSE:
-                        print "Adding rpath " + rpath_elem + " for " + obj
+                        print("Adding rpath " + rpath_elem + " for " + obj)
                     lib_rpath.append(rpath_elem)
         else:
-            print "warning: " + obj + " may need rpath, but --root not specified"
+            print("warning: " + obj + " may need rpath, but --root not specified")
 
 lib_path.extend(lib_rpath)
 
@@ -463,12 +460,12 @@ passnr = 1
 available_libs = []
 previous_pass_unresolved = set()
 while 1:
-    debug(DEBUG_NORMAL, "I: library reduction pass", `passnr`)
+    debug(DEBUG_NORMAL, "I: library reduction pass", str(passnr))
     if debuglevel >= DEBUG_VERBOSE:
-        print "Objects:",
-        for obj in objects.values():
-            print obj[string.rfind(obj, '/') + 1:],
-        print
+        print("Objects:", end=' ')
+        for obj in sorted([x[x.rfind('/') + 1:] for x in list(objects.values())]):
+            print(obj, end=' ')
+        print()
 
     passnr = passnr + 1
     # Gather all already reduced libraries and treat them as objects as well
@@ -477,20 +474,20 @@ while 1:
         obj = dest_path + "/" + lib
         small_libs.append(obj)
         inode = os.stat(obj)[ST_INO]
-        if objects.has_key(inode):
+        if inode in objects:
             debug(DEBUG_SPAM, obj, "is hardlink to", objects[inode])
         else:
             objects[inode] = obj
 
     # DEBUG
-    for obj in objects.values():
+    for obj in sorted(objects.values()):
         small_libs.append(obj)
         debug(DEBUG_VERBOSE, "Object:", obj)
 
     # calculate what symbols and libraries are needed
     needed_symbols = {}
     libraries = set(force_libs)
-    for obj in objects.values():
+    for obj in sorted(objects.values()):
         for symbol in undefined_symbols(obj):
             # Some undefined symbols in libthread_db are defined in
             # the application that uses it.  __gnu_local_gp is defined
@@ -507,15 +504,12 @@ while 1:
     present_symbols = {}
     checked_libs = small_libs
     checked_libs.extend(available_libs)
-    checked_libs.append(ldlib)
+    checked_libs.append(sysroot + "/" + ldlib)
     for lib in checked_libs:
         for symbol in provided_symbols(lib):
             debug(DEBUG_SPAM, "present_symbols adding %s" % symbol)
             names = symbol.base_names()
             for name in names:
-                if name in present_symbols:
-                    if symbol.library != present_symbols[name].library:
-                        needed_symbols[name] = UndefinedSymbol(name, True, symbol.version, symbol.library)
                 present_symbols[name] = symbol
 
     # are we finished?
@@ -527,8 +521,8 @@ while 1:
             unresolved.add(name)
             num_unresolved = num_unresolved + 1
 
-    debug (DEBUG_NORMAL, `len(needed_symbols)`, "symbols,",
-           `num_unresolved`, "unresolved")
+    debug (DEBUG_NORMAL, str(len(needed_symbols)), "symbols,",
+           str(num_unresolved), "unresolved")
 
     if num_unresolved == 0:
         break
@@ -537,7 +531,7 @@ while 1:
         # No progress in last pass. Verify all remaining symbols are weak.
         for name in unresolved:
             if not needed_symbols[name].weak:
-                print "WARNING: Unresolvable symbol %s" % name
+                print("WARNING: Unresolvable symbol %s" % name)
         break
 
     previous_pass_unresolved = unresolved
@@ -570,7 +564,7 @@ while 1:
                 library_symbols_used[lib].add(library_symbols[lib][name])
 
     # reduce libraries
-    for library in libraries:
+    for library in sorted(libraries):
         debug(DEBUG_VERBOSE, "reducing", library)
         debug(DEBUG_SPAM, "using: " + ' '.join([str(i) for i in library_symbols_used[library]]))
         so_file = find_lib(library)
@@ -583,18 +577,15 @@ while 1:
         so_file_name = os.path.basename(so_file)
         if not so_file:
             sys.exit("File not found:" + library)
-        debug(DEBUG_VERBOSE, "find pic")
-
         pic_file = find_pic(library)
-        debug(DEBUG_VERBOSE, "pic", pic_file)
         if pic_file:
             # we have a pic file, recompile
-            debug(DEBUG_VERBOSE, "extracting from:", pic_file, "so_file:", so_file)
+            debug(DEBUG_SPAM, "extracting from:", pic_file, "so_file:", so_file)
             soname = extract_soname(so_file)
             if soname == "":
                 debug(DEBUG_VERBOSE, so_file, " has no soname, copying")
                 continue
-            debug(DEBUG_VERBOSE, "soname:", soname)
+            debug(DEBUG_SPAM, "soname:", soname)
 
             symbols = set()
             extra_flags = []
@@ -610,16 +601,7 @@ while 1:
                 # may segfault in ptmalloc_init due to undefined weak reference
                 extra_pre_obj.append(sysroot + libc_extras_dir + "/soinit.o")
                 extra_post_obj.append(sysroot + libc_extras_dir + "/sofini.o")
-                symbols.add(ProvidedSymbol('__dso_handle', None, None, True, True))
-
-            if soname == "libc.so.0":
-                symbols.add(ProvidedSymbol('__uClibc_init', None, None, True, True))
-                symbols.add(ProvidedSymbol('__uClibc_fini', None, None, True, True))
-                extra_pre_obj.append("-Wl,-init,__uClibc_init")
-
-            if soname == "libpthread.so.0":
-                symbols.add(ProvidedSymbol('__pthread_initialize_minimal_internal', None, None, True, True))
-                extra_flags.append("-Wl,-z,nodelete,-z,initfirst,-init=__pthread_initialize_minimal_internal")
+                symbols.add(ProvidedSymbol('__dso_handle', None, None, True))
 
             map_file = find_pic_map(library)
             if map_file:
@@ -642,16 +624,16 @@ while 1:
             command(target + "gcc", *cmd)
 
             ## DEBUG
-            debug(DEBUG_VERBOSE, so_file, "\t", `os.stat(so_file)[ST_SIZE]`)
+            debug(DEBUG_VERBOSE, so_file, "\t", str(os.stat(so_file)[ST_SIZE]))
             debug(DEBUG_VERBOSE, dest_path + "/" + so_file_name + "-so", "\t",
-                  `os.stat(dest_path + "/" + so_file_name + "-so")[ST_SIZE]`)
+                  str(os.stat(dest_path + "/" + so_file_name + "-so")[ST_SIZE]))
 
 # Finalising libs and cleaning up
 for lib in regexpfilter(os.listdir(dest_path), "(.*)-so$"):
     os.rename(dest_path + "/" + lib + "-so", dest_path + "/" + lib)
 
 # Canonicalize library names.
-for lib in regexpfilter(os.listdir(dest_path), "(.*so[.\d]*)$"):
+for lib in sorted(regexpfilter(os.listdir(dest_path), "(.*so[.\d]*)$")):
     this_lib_path = dest_path + "/" + lib
     if os.path.islink(this_lib_path):
         debug(DEBUG_VERBOSE, "Unlinking %s." % lib)
@@ -660,17 +642,25 @@ for lib in regexpfilter(os.listdir(dest_path), "(.*so[.\d]*)$"):
     soname = extract_soname(this_lib_path)
     if soname:
         debug(DEBUG_VERBOSE, "Moving %s to %s." % (lib, soname))
-        debug(DEBUG_VERBOSE, "source ", dest_path + "/" + lib)
-        debug(DEBUG_VERBOSE, "dest ", dest_path + "/" + soname)
         os.rename(dest_path + "/" + lib, dest_path + "/" + soname)
 
 # Make sure the dynamic linker is present and is executable
+# at its correct location (and not duplicated in /lib)
 ld_file_name = os.path.basename(ldlib)
+ld_path_name = os.path.dirname(ldlib)
+ld_full_path = "../" + ldlib
 ld_file = find_lib(ld_file_name)
 
-if not os.access(dest_path + "/" + ld_file_name, os.F_OK):
-    debug(DEBUG_NORMAL, "I: stripping and copying dynamic linker.")
-    command(target + "objcopy", "--strip-unneeded -R .note -R .comment",
-            ld_file, dest_path + "/" + ld_file_name)
+if ld_path_name != "/lib":
+    if os.access(dest_path + "/" + ld_file_name, os.F_OK):
+        os.remove(dest_path + "/" + ld_file_name)
 
-os.chmod(dest_path + "/" + ld_file_name, 0755)
+if not os.path.exists(dest_path + "/../" + ld_path_name):
+    os.mkdir(dest_path + "/../" + ld_path_name)
+
+if not os.access(dest_path + "/" + ld_full_path, os.F_OK):
+    debug(DEBUG_NORMAL, "I: stripping and copying dynamic linker to " + ld_full_path)
+    command(target + "objcopy", "--strip-unneeded -R .note -R .comment",
+            ld_file, dest_path + "/" + ld_full_path)
+
+os.chmod(dest_path + "/" + ld_full_path, 0o755)

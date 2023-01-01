@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/python3
 
 # mklibs.py: An automated way to create a minimal /lib/ directory.
 #
@@ -51,9 +51,9 @@ def command(command, *args):
     output = pipe.read().strip()
     status = pipe.close()
     if status is not None and os.WEXITSTATUS(status) != 0:
-        print "Command failed with status", os.WEXITSTATUS(status),  ":", \
-               command, ' '.join(args)
-	print "With output:", output
+        print("Command failed with status", os.WEXITSTATUS(status),  ":", \
+               command, ' '.join(args))
+        print("With output:", output)
         sys.exit(1)
     return output.split('\n')
 
@@ -134,8 +134,8 @@ def multiarch(paths):
         return paths
 
 def version(vers):
-    print "mklibs: version ",vers
-    print ""
+    print("mklibs: version ",vers)
+    print("")
 
 # Clean the environment
 vers="0.12"
@@ -159,7 +159,7 @@ if include_default_lib_path:
 objects = {}  # map from inode to filename
 for prog in proglist:
     inode = os.stat(prog)[ST_INO]
-    if objects.has_key(inode):
+    if inode in objects:
         logger.debug("%s is a hardlink to %s", prog, objects[inode])
     elif so_pattern.match(prog):
         logger.debug("%s is a library", prog)
@@ -169,12 +169,12 @@ for prog in proglist:
         logger.debug("%s is no ELF", prog)
 
 if not ldlib:
-    for obj in objects.values():
+    for obj in list(objects.values()):
         output = command("mklibs-readelf", "-i", obj)
-	for x in output:
-            ldlib = x
-	if ldlib:
-	    break
+        for x in output:
+                ldlib = x
+        if ldlib:
+            break
 
 if not ldlib:
     sys.exit("E: Dynamic linker not found, aborting.")
@@ -182,7 +182,7 @@ if not ldlib:
 logger.info('Using %s as dynamic linker', ldlib)
 
 # Check for rpaths
-for obj in objects.values():
+for obj in list(objects.values()):
     rpath_val = rpath(obj)
     if rpath_val:
         if root:
@@ -208,18 +208,18 @@ while 1:
         obj = dest_path + "/" + lib
         small_libs.append(obj)
         inode = os.stat(obj)[ST_INO]
-        if objects.has_key(inode):
+        if inode in objects:
             logger.debug("%s is hardlink to %s", obj, objects[inode])
         else:
             objects[inode] = obj
 
-    for obj in objects.values():
+    for obj in list(objects.values()):
         small_libs.append(obj)
 
-    logger.verbose('Objects: %r', ' '.join([i[i.rfind('/') + 1:] for i in objects.itervalues()]))
+    logger.verbose('Objects: %r', ' '.join([i[i.rfind('/') + 1:] for i in objects.values()]))
 
     libraries = set()
-    for obj in objects.values():
+    for obj in list(objects.values()):
         libraries.update(library_depends(obj))
 
     if libraries == previous_pass_libraries:
@@ -254,12 +254,22 @@ for lib in regexpfilter(os.listdir(dest_path), "(.*-so)$"):
     os.remove(dest_path + "/" + lib)
 
 # Make sure the dynamic linker is present and is executable
-ld_file = find_lib(ldlib)
-ld_file_name = os.path.basename(ld_file)
+# at its correct location (and not duplicated in /lib)
+ld_file_name = os.path.basename(ldlib)
+ld_path_name = os.path.dirname(ldlib)
+ld_full_path = "../" + ldlib
+ld_file = find_lib(ld_file_name)
 
-if not os.access(dest_path + "/" + ld_file_name, os.F_OK):
-    logger.info("stripping and copying dynamic linker.")
+if ld_path_name != "/lib":
+    if os.access(dest_path + "/" + ld_file_name, os.F_OK):
+        os.remove(dest_path + "/" + ld_file_name)
+
+if not os.path.exists(dest_path + "/../" + ld_path_name):
+    os.mkdir(dest_path + "/../" + ld_path_name)
+
+if not os.access(dest_path + "/" + ld_full_path, os.F_OK):
+    logger.info("stripping and copying dynamic linker to " + ld_full_path)
     command(target + "objcopy", "--strip-unneeded -R .note -R .comment",
-            ld_file, dest_path + "/" + ld_file_name)
+            ld_file, dest_path + "/" + ld_full_path)
 
-os.chmod(dest_path + "/" + ld_file_name, 0755)
+os.chmod(dest_path + "/" + ld_full_path, 0o755)
