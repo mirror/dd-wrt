@@ -48,6 +48,7 @@ static const unsigned char charmaps[] =
 "utf16\0\0\312"
 "ucs4\0utf32\0\0\313"
 "ucs2\0\0\314"
+#ifdef FULL_ICONV
 "eucjp\0\0\320"
 "shiftjis\0sjis\0\0\321"
 "iso2022jp\0\0\322"
@@ -56,6 +57,7 @@ static const unsigned char charmaps[] =
 "gb2312\0\0\332"
 "big5\0bigfive\0cp950\0big5hkscs\0\0\340"
 "euckr\0ksc5601\0ksx1001\0cp949\0\0\350"
+#endif
 #include "codepages.h"
 ;
 
@@ -66,6 +68,7 @@ static const unsigned short legacy_chars[] = {
 #include "legacychars.h"
 };
 
+#ifdef FULL_ICONV
 static const unsigned short jis0208[84][94] = {
 #include "jis0208.h"
 };
@@ -85,6 +88,7 @@ static const unsigned short hkscs[] = {
 static const unsigned short ksc[93][94] = {
 #include "ksc.h"
 };
+#endif
 
 static const unsigned short rev_jis[] = {
 #include "revjis.h"
@@ -205,6 +209,7 @@ static unsigned legacy_map(const unsigned char *map, unsigned c)
 	return x < 256 ? x : legacy_chars[x-256];
 }
 
+#ifdef FULL_ICONV
 static unsigned uni_to_jis(unsigned c)
 {
 	unsigned nel = sizeof rev_jis / sizeof *rev_jis;
@@ -223,6 +228,7 @@ static unsigned uni_to_jis(unsigned c)
 		}
 	}
 }
+#endif
 
 size_t iconv(iconv_t cd, char **restrict in, size_t *restrict inb, char **restrict out, size_t *restrict outb)
 {
@@ -319,6 +325,7 @@ size_t iconv(iconv_t cd, char **restrict in, size_t *restrict inb, char **restri
 			}
 			type = scd->state;
 			continue;
+#ifdef FULL_ICONV
 		case SHIFT_JIS:
 			if (c < 128) break;
 			if (c-0xa1 <= 0xdf-0xa1) {
@@ -518,6 +525,7 @@ size_t iconv(iconv_t cd, char **restrict in, size_t *restrict inb, char **restri
 			c = ksc[c][d];
 			if (!c) goto ilseq;
 			break;
+#endif
 		default:
 			if (!c) break;
 			c = legacy_map(map, c);
@@ -559,6 +567,7 @@ size_t iconv(iconv_t cd, char **restrict in, size_t *restrict inb, char **restri
 				}
 			}
 			goto subst;
+#ifdef FULL_ICONV
 		case SHIFT_JIS:
 			if (c < 128) goto revout;
 			if (c == 0xa5) {
@@ -632,6 +641,7 @@ size_t iconv(iconv_t cd, char **restrict in, size_t *restrict inb, char **restri
 			*(*out)++ = 'B';
 			*outb -= 8;
 			break;
+#endif
 		case UCS2:
 			totype = UCS2BE;
 		case UCS2BE:

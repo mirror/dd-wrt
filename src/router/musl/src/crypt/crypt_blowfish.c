@@ -50,6 +50,17 @@
 #include <string.h>
 #include <stdint.h>
 
+#ifdef CRYPT_SIZE_HACK
+#include <errno.h>
+
+char *__crypt_blowfish(const char *key, const char *setting, char *output)
+{
+	errno = ENOSYS;
+	return NULL;
+}
+
+#else
+
 typedef uint32_t BF_word;
 typedef int32_t BF_word_signed;
 
@@ -804,3 +815,4 @@ char *__crypt_blowfish(const char *key, const char *setting, char *output)
 
 	return "*";
 }
+#endif

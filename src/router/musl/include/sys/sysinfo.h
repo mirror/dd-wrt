@@ -7,6 +7,8 @@ extern "C" {
 
 #define SI_LOAD_SHIFT 16
 
+
+#ifndef _LINUX_KERNEL_H
 struct sysinfo {
 	unsigned long uptime;
 	unsigned long loads[3];
@@ -23,12 +25,13 @@ struct sysinfo {
 	char __reserved[256];
 };
 
+
 int sysinfo (struct sysinfo *);
 int get_nprocs_conf (void);
 int get_nprocs (void);
 long get_phys_pages (void);
 long get_avphys_pages (void);
-
+#endif
 #ifdef __cplusplus
 }
 #endif
