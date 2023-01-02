@@ -73,7 +73,7 @@ int common_response(http_trans_t *trans, ddns_info_t *info, ddns_alias_t *alias)
 
 	DO(http_status_valid(trans->status));
 
-	if (strstr(body, "good") || strstr(body, "nochg"))
+	if (strstr(body, "good") || strstr(body, "nochg")  || strstr(body, "OK"))
 		return 0;
 
 	if (strstr(body, "dnserr") || strstr(body, "911"))
