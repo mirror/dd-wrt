@@ -126,7 +126,7 @@ NOSSP_OBJS = $(CRT_OBJS) $(LDSO_OBJS) $(filter \
 	%/__libc_start_main.o %/__init_tls.o %/__stack_chk_fail.o \
 	%/__set_thread_area.o %/memset.o %/memcpy.o \
 	, $(LIBC_OBJS))
-$(NOSSP_OBJS) $(NOSSP_OBJS:%.o=%.lo): CFLAGS_ALL += $(CFLAGS_NOSSP) -mno-mips16
+$(NOSSP_OBJS) $(NOSSP_OBJS:%.o=%.lo): CFLAGS_ALL += $(CFLAGS_NOSSP)
 
 $(CRT_OBJS): CFLAGS_ALL += -DCRT
 
