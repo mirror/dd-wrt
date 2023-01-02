@@ -90,6 +90,10 @@ struct ifreq {
 		char ifru_slave[IFNAMSIZ];
 		char ifru_newname[IFNAMSIZ];
 		char *ifru_data;
+		struct {
+			unsigned short weight;
+			char slave[IFNAMSIZ];	
+		} ifru_weight;
 	} ifr_ifru;
 };
 

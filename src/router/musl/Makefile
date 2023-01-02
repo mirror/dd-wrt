@@ -64,10 +64,9 @@ ALL_INCLUDES = $(sort $(INCLUDES:$(srcdir)/%=%) $(GENH:obj/%=%) $(ARCH_INCLUDES:
 EMPTY_LIB_NAMES = m rt pthread crypt util xnet resolv dl
 EMPTY_LIBS = $(EMPTY_LIB_NAMES:%=lib/lib%.a)
 CRT_LIBS = $(addprefix lib/,$(notdir $(CRT_OBJS)))
-STATIC_LIBS = lib/libc.a
 SHARED_LIBS = lib/libc.so
 TOOL_LIBS = lib/musl-gcc.specs
-ALL_LIBS = $(CRT_LIBS) $(STATIC_LIBS) $(SHARED_LIBS) $(EMPTY_LIBS) $(TOOL_LIBS)
+ALL_LIBS = $(CRT_LIBS) $(STATIC_LIBS) $(SHARED_LIBS) $(EMPTY_LIBS) $(TOOL_LIBS) lib/libssp_nonshared.a
 ALL_TOOLS = obj/musl-gcc
 
 WRAPCC_GCC = gcc
@@ -88,7 +87,7 @@ else
 
 all: $(ALL_LIBS) $(ALL_TOOLS)
 
-OBJ_DIRS = $(sort $(patsubst %/,%,$(dir $(ALL_LIBS) $(ALL_TOOLS) $(ALL_OBJS) $(GENH) $(GENH_INT))) obj/include)
+OBJ_DIRS = $(sort $(patsubst %/,%,$(dir $(ALL_LIBS) $(ALL_TOOLS) $(ALL_OBJS) $(GENH) $(GENH_INT))) obj/include obj/libssp_nonshared)
 
 $(ALL_LIBS) $(ALL_TOOLS) $(ALL_OBJS) $(ALL_OBJS:%.o=%.lo) $(GENH) $(GENH_INT): | $(OBJ_DIRS)
 
@@ -115,6 +114,8 @@ obj/crt/rcrt1.o: $(srcdir)/ldso/dlstart.c
 
 obj/crt/Scrt1.o obj/crt/rcrt1.o: CFLAGS_ALL += -fPIC
 
+obj/libssp_nonshared/__stack_chk_fail_local.o: CFLAGS_ALL += $(CFLAGS_NOSSP)
+
 OPTIMIZE_SRCS = $(wildcard $(OPTIMIZE_GLOBS:%=$(srcdir)/src/%))
 $(OPTIMIZE_SRCS:$(srcdir)/%.c=obj/%.o) $(OPTIMIZE_SRCS:$(srcdir)/%.c=obj/%.lo): CFLAGS += -O3
 
@@ -125,7 +126,7 @@ NOSSP_OBJS = $(CRT_OBJS) $(LDSO_OBJS) $(filter \
 	%/__libc_start_main.o %/__init_tls.o %/__stack_chk_fail.o \
 	%/__set_thread_area.o %/memset.o %/memcpy.o \
 	, $(LIBC_OBJS))
-$(NOSSP_OBJS) $(NOSSP_OBJS:%.o=%.lo): CFLAGS_ALL += $(CFLAGS_NOSSP)
+$(NOSSP_OBJS) $(NOSSP_OBJS:%.o=%.lo): CFLAGS_ALL += $(CFLAGS_NOSSP) -mno-mips16
 
 $(CRT_OBJS): CFLAGS_ALL += -DCRT
 
@@ -165,6 +166,11 @@ lib/libc.so: $(LOBJS) $(LDSO_OBJS)
 lib/libc.a: $(AOBJS)
 	rm -f $@
 	$(AR) rc $@ $(AOBJS)
+	$(RANLIB) $@
+
+lib/libssp_nonshared.a: obj/libssp_nonshared/__stack_chk_fail_local.o
+	rm -f $@
+	$(AR) rc $@ $<
 	$(RANLIB) $@
 
 $(EMPTY_LIBS):
@@ -210,7 +216,7 @@ $(DESTDIR)$(includedir)/%: $(srcdir)/include/%
 	$(INSTALL) -D -m 644 $< $@
 
 $(DESTDIR)$(LDSO_PATHNAME): $(DESTDIR)$(libdir)/libc.so
-	$(INSTALL) -D -l $(libdir)/libc.so $@ || true
+	$(INSTALL) -D -l libc.so $@ || true
 
 install-libs: $(ALL_LIBS:lib/%=$(DESTDIR)$(libdir)/%) $(if $(SHARED_LIBS),$(DESTDIR)$(LDSO_PATHNAME),)
 

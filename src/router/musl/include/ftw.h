@@ -21,6 +21,14 @@ extern "C" {
 #define FTW_CHDIR 4
 #define FTW_DEPTH 8
 
+#ifdef _GNU_SOURCE
+#define FTW_ACTIONRETVAL 16
+#define FTW_CONTINUE 0
+#define FTW_STOP 1
+#define FTW_SKIP_SUBTREE 2
+#define FTW_SKIP_SIBLINGS 3
+#endif
+
 struct FTW {
 	int base;
 	int level;

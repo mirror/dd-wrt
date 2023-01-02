@@ -13,6 +13,17 @@
 #include <string.h>
 #include <stdint.h>
 
+#ifdef CRYPT_SIZE_HACK
+#include <errno.h>
+
+char *__crypt_sha512(const char *key, const char *setting, char *output)
+{
+	errno = ENOSYS;
+	return NULL;
+}
+
+#else
+
 /* public domain sha512 implementation based on fips180-3 */
 /* >=2^64 bits messages are not supported (about 2000 peta bytes) */
 
@@ -369,3 +380,4 @@ char *__crypt_sha512(const char *key, const char *setting, char *output)
 		return "*";
 	return p;
 }
+#endif
