@@ -239,10 +239,10 @@ static int __init find_cfe_size(struct mtd_info *mtd, size_t size)
 	blocksize = mtd->erasesize;
 	if (blocksize < 0x10000)
 		blocksize = 0x10000;
-//      printk(KERN_EMERG "blocksize is %d\n",blocksize);
+//      printk(KERN_INFO "blocksize is %d\n",blocksize);
 	for (off = 0x10000; off < size; off += 1024) {
 		memset(buf, 0xe5, sizeof(buf));
-//              printk(KERN_EMERG "scan at 0x%08x\n",off);
+//              printk(KERN_INFO "scan at 0x%08x\n",off);
 		/*
 		 * Read into buffer 
 		 */
@@ -261,7 +261,7 @@ static int __init find_cfe_size(struct mtd_info *mtd, size_t size)
 		case TRX_MAGIC_F5D8235V3:
 		case TRX_MAGIC_QA:
 			if (get_router() == ROUTER_BELKIN_F7D3301_3302_4302 || get_router() == ROUTER_BELKIN_F5D8235V3) {
-				printk(KERN_EMERG "Found Belkin TRX magic\n");
+				printk(KERN_INFO "Found Belkin TRX magic\n");
 				goto found;
 			}
 			break;
@@ -276,12 +276,12 @@ static int __init find_cfe_size(struct mtd_info *mtd, size_t size)
 
 	}
 
-	printk(KERN_EMERG "%s: Couldn't find bootloader size\n", mtd->name);
+	printk(KERN_INFO "%s: Couldn't find bootloader size\n", mtd->name);
 	return -1;
 
 found:
-	printk(KERN_EMERG "bootloader size: %d\n", off);
-	printk(KERN_EMERG "nvram size: %d\n", NVRAM_SPACE);
+	printk(KERN_INFO "bootloader size: %d\n", off);
+	printk(KERN_INFO "nvram size: %d\n", NVRAM_SPACE);
 	return off;
 
 }
@@ -366,7 +366,7 @@ static int __init find_root(struct mtd_info *mtd, size_t size, struct mtd_partit
 
 	for (off = 0; off < size; off += 64 * 1024) {
 		memset(&trx, 0xe5, sizeof(trx));
-//              printk(KERN_EMERG "scan root at 0x%08x\n",off);
+//              printk(KERN_INFO "scan root at 0x%08x\n",off);
 
 		/*
 		 * Read into buffer 
@@ -386,14 +386,14 @@ static int __init find_root(struct mtd_info *mtd, size_t size, struct mtd_partit
 		case TRX_MAGIC_F5D8235V3:
 		case TRX_MAGIC_QA:
 			if (get_router() == ROUTER_BELKIN_F7D3301_3302_4302 || get_router() == ROUTER_BELKIN_F5D8235V3) {
-				printk(KERN_EMERG "Found Belkin TRX magic\n");
+				printk(KERN_INFO "Found Belkin TRX magic\n");
 				goto found;
 			}
 			break;
 		}
 	}
 
-	printk(KERN_EMERG "%s: Couldn't find root filesystem\n", mtd->name);
+	printk(KERN_INFO "%s: Couldn't find root filesystem\n", mtd->name);
 	return -1;
 
 found:
@@ -410,7 +410,7 @@ found:
 		return 0;
 
 	if (*((__u32 *)buf) == SQUASHFS_MAGIC) {
-		printk(KERN_EMERG "%s: Filesystem type: squashfs, size=0x%x\n", mtd->name, (u32)le64_to_cpu(sb->bytes_used));
+		printk(KERN_INFO "%s: Filesystem type: squashfs, size=0x%x\n", mtd->name, (u32)le64_to_cpu(sb->bytes_used));
 
 		/* Update the squashfs partition size based on the superblock info */
 		part->size = le64_to_cpu(sb->bytes_used);
@@ -419,42 +419,42 @@ found:
 		len += (mtd->erasesize - 1);
 		len &= ~(mtd->erasesize - 1);
 		part->size = len - part->offset;
-		printk(KERN_EMERG "partition size = %d\n", part->size);
+		printk(KERN_INFO "partition size = %d\n", part->size);
 	} else if (*((__u16 *)buf) == JFFS2_MAGIC_BITMASK) {
-		printk(KERN_EMERG "%s: Filesystem type: jffs2\n", mtd->name);
+		printk(KERN_INFO "%s: Filesystem type: jffs2\n", mtd->name);
 
 		/* Move the squashfs outside of the trx */
 		part->size = 0;
 	} else {
-		printk(KERN_EMERG "%s: Filesystem type: unknown\n", mtd->name);
+		printk(KERN_INFO "%s: Filesystem type: unknown\n", mtd->name);
 		return 0;
 	}
 
 	if (trx.len != part->offset + part->size - off) {
 		/* Update the trx offsets and length */
 		trx.len = part->offset + part->size - off;
-//              printk(KERN_EMERG "update crc32\n");
+//              printk(KERN_INFO "update crc32\n");
 		/* Update the trx crc32 */
 		for (i = (u32)&(((struct trx_header *)NULL)->flag_version); i <= trx.len; i += sizeof(buf)) {
-//                      printk(KERN_EMERG "read from %d\n",off + i);
+//                      printk(KERN_INFO "read from %d\n",off + i);
 			if (mtd_read(mtd, off + i, sizeof(buf), &len, buf) || len != sizeof(buf))
 				return 0;
 			crc = crc32_le(crc, buf, min(sizeof(buf), trx.len - i));
 		}
 		trx.crc32 = crc;
 
-//                      printk(KERN_EMERG "malloc\n",off + i);
+//                      printk(KERN_INFO "malloc\n",off + i);
 		/* read first eraseblock from the trx */
 		trx2 = block = vmalloc(mtd->erasesize);
 		if (mtd_read(mtd, off, mtd->erasesize, &len, block) || len != mtd->erasesize) {
-			printk(KERN_EMERG "Error accessing the first trx eraseblock\n");
+			printk(KERN_INFO "Error accessing the first trx eraseblock\n");
 			vfree(block);
 			return 0;
 		}
 
-		printk(KERN_EMERG "Updating TRX offsets and length:\n");
-		printk(KERN_EMERG "old trx = [0x%08x, 0x%08x, 0x%08x], len=0x%08x crc32=0x%08x\n", trx2->offsets[0], trx2->offsets[1], trx2->offsets[2], trx2->len, trx2->crc32);
-		printk(KERN_EMERG "new trx = [0x%08x, 0x%08x, 0x%08x], len=0x%08x crc32=0x%08x\n", trx.offsets[0], trx.offsets[1], trx.offsets[2], trx.len, trx.crc32);
+		printk(KERN_INFO "Updating TRX offsets and length:\n");
+		printk(KERN_INFO "old trx = [0x%08x, 0x%08x, 0x%08x], len=0x%08x crc32=0x%08x\n", trx2->offsets[0], trx2->offsets[1], trx2->offsets[2], trx2->len, trx2->crc32);
+		printk(KERN_INFO "new trx = [0x%08x, 0x%08x, 0x%08x], len=0x%08x crc32=0x%08x\n", trx.offsets[0], trx.offsets[1], trx.offsets[2], trx.len, trx.crc32);
 
 		/* Write updated trx header to the flash */
 		memcpy(block, &trx, sizeof(trx));
@@ -462,7 +462,7 @@ found:
 		erase_write(mtd, off, mtd->erasesize, block);
 		mtd_sync(mtd);
 		vfree(block);
-		printk(KERN_EMERG "Done\n");
+		printk(KERN_INFO "Done\n");
 
 		/* Write fake Netgear checksum to the flash */
 		if (get_router() == ROUTER_NETGEAR_WGR614L) {
@@ -471,7 +471,7 @@ found:
 			 */
 			block = vmalloc(mtd->erasesize);
 			if (mtd_read(mtd, WGR614_CHECKSUM_BLOCK_START, mtd->erasesize, &len, block) || len != mtd->erasesize) {
-				printk(KERN_EMERG "Error accessing the WGR614 checksum eraseblock\n");
+				printk(KERN_INFO "Error accessing the WGR614 checksum eraseblock\n");
 				vfree(block);
 			} else {
 				char imageInfo[8];
@@ -486,7 +486,7 @@ found:
 				erase_write(mtd, WGR614_CHECKSUM_BLOCK_START, mtd->erasesize, block);
 				mtd_sync(mtd);
 				vfree(block);
-				printk(KERN_EMERG "Done fixing WGR614 checksum\n");
+				printk(KERN_INFO "Done fixing WGR614 checksum\n");
 			}
 		}
 
