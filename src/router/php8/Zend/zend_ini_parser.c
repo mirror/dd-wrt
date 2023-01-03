@@ -343,6 +343,9 @@ ZEND_API zend_result zend_parse_ini_string(char *str, bool unbuffered_errors, in
 static void zval_ini_dtor(zval *zv)
 {
 	if (Z_TYPE_P(zv) == IS_STRING) {
+		if (ZEND_SYSTEM_INI) {
+			GC_MAKE_PERSISTENT_LOCAL(Z_STR_P(zv));
+		}
 		zend_string_release(Z_STR_P(zv));
 	}
 }
@@ -820,12 +823,12 @@ static const yytype_int8 yytranslate[] =
 /* YYRLINE[YYN] -- Source line where rule number YYN was defined.  */
 static const yytype_int16 yyrline[] =
 {
-       0,   310,   310,   311,   315,   322,   330,   339,   340,   344,
-     345,   349,   350,   351,   352,   353,   357,   358,   362,   363,
-     364,   368,   369,   370,   371,   372,   373,   377,   378,   379,
-     380,   381,   382,   386,   387,   388,   389,   390,   391,   392,
-     396,   400,   401,   402,   403,   404,   408,   409,   410,   411,
-     412
+       0,   313,   313,   314,   318,   325,   336,   345,   346,   350,
+     351,   355,   356,   357,   358,   359,   363,   364,   368,   369,
+     370,   374,   375,   376,   377,   378,   379,   383,   384,   385,
+     386,   387,   388,   392,   393,   394,   395,   396,   397,   398,
+     402,   406,   407,   408,   409,   410,   414,   415,   416,   417,
+     418
 };
 #endif
 
@@ -1810,6 +1813,10 @@ yyreduce:
   YY_REDUCE_PRINT (yyn);
   switch (yyn)
     {
+  case 3: /* statement_list: %empty  */
+                       { (void) ini_nerrs; }
+    break;
+
   case 4: /* statement: TC_SECTION section_string_or_value ']'  */
                                                        {
 #if DEBUG_CFG_PARSER
@@ -1826,6 +1833,9 @@ yyreduce:
 			printf("NORMAL: '%s' = '%s'\n", Z_STRVAL(yyvsp[-2]), Z_STRVAL(yyvsp[0]));
 #endif
 			ZEND_INI_PARSER_CB(&yyvsp[-2], &yyvsp[0], NULL, ZEND_INI_PARSER_ENTRY, ZEND_INI_PARSER_ARG);
+			if (ZEND_SYSTEM_INI) {
+				GC_MAKE_PERSISTENT_LOCAL(Z_STR(yyvsp[-2]));
+			}
 			zend_string_release(Z_STR(yyvsp[-2]));
 			zval_ini_dtor(&yyvsp[0]);
 		}

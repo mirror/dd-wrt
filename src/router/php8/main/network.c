@@ -836,7 +836,7 @@ php_socket_t php_network_connect_socket_to_host(const char *host, unsigned short
 				((struct sockaddr_in *)sa)->sin_port = htons(port);
 				socklen = sizeof(struct sockaddr_in);
 				if (bindto && strchr(bindto, ':')) {
-					/* IPV4 sock can not bind to IPV6 address */
+					/* IPV4 sock cannot bind to IPV6 address */
 					bindto = NULL;
 				}
 				break;
@@ -883,6 +883,12 @@ php_socket_t php_network_connect_socket_to_host(const char *host, unsigned short
 					local_address.in6.sin6_family = sa->sa_family;
 					local_address.in6.sin6_port = htons(bindport);
 				}
+			}
+#endif
+#ifdef IP_BIND_ADDRESS_NO_PORT
+			{
+				int val = 1;
+				(void) setsockopt(sock, SOL_IP, IP_BIND_ADDRESS_NO_PORT, &val, sizeof(val));
 			}
 #endif
 			if (local_address_len == 0) {
@@ -1157,7 +1163,7 @@ PHPAPI void _php_emit_fd_setsize_warning(int max_fd)
 	php_error_docref(NULL, E_WARNING,
 		"PHP needs to be recompiled with a larger value of FD_SETSIZE.\n"
 		"If this binary is from an official www.php.net package, file a bug report\n"
-		"at http://bugs.php.net, including the following information:\n"
+		"at https://github.com/php/php-src/issues, including the following information:\n"
 		"FD_SETSIZE=%d, but you are using %d.\n"
 		" --enable-fd-setsize=%d is recommended, but you may want to set it\n"
 		"to match to maximum number of sockets each script will work with at\n"
@@ -1194,7 +1200,14 @@ PHPAPI int php_poll2(php_pollfd *ufds, unsigned int nfds, int timeout)
 	}
 #endif
 
-	PHP_SAFE_MAX_FD(max_fd, nfds + 1);
+	if (!PHP_SAFE_MAX_FD(max_fd, nfds + 1)) {
+#ifdef PHP_WIN32
+		WSASetLastError(WSAEINVAL);
+#else
+		errno = ERANGE;
+#endif
+		return -1;
+	}
 
 	FD_ZERO(&rset);
 	FD_ZERO(&wset);

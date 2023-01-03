@@ -149,40 +149,6 @@ dnl Checks for library functions.
 AC_CHECK_FUNCS(getpid kill sigsetjmp)
 
 ZEND_CHECK_FLOAT_PRECISION
-
-dnl Test whether double cast to long preserves least significant bits.
-AC_MSG_CHECKING(whether double cast to long preserves least significant bits)
-
-AC_RUN_IFELSE([AC_LANG_SOURCE([[
-#include <limits.h>
-#include <stdlib.h>
-
-int main()
-{
-	if (sizeof(long) == 4) {
-		double d = (double) LONG_MIN * LONG_MIN + 2e9;
-
-		if ((long) d == 2e9 && (long) -d == -2e9) {
-			return 0;
-		}
-	} else if (sizeof(long) == 8) {
-		double correct = 18e18 - ((double) LONG_MIN * -2); /* Subtract ULONG_MAX + 1 */
-
-		if ((long) 18e18 == correct) { /* On 64-bit, only check between LONG_MAX and ULONG_MAX */
-			return 0;
-		}
-	}
-	return 1;
-}
-]])], [
-  AC_DEFINE([ZEND_DVAL_TO_LVAL_CAST_OK], 1, [Define if double cast to long preserves least significant bits])
-  AC_MSG_RESULT(yes)
-], [
-  AC_MSG_RESULT(no)
-], [
-  AC_MSG_RESULT(no)
-])
-
 ])
 
 dnl
@@ -256,7 +222,7 @@ typedef union _mm_align_test {
 
 int main()
 {
-  int i = ZEND_MM_ALIGNMENT;
+  size_t i = ZEND_MM_ALIGNMENT;
   int zeros = 0;
   FILE *fp;
 
@@ -266,7 +232,7 @@ int main()
   }
 
   fp = fopen("conftest.zend", "w");
-  fprintf(fp, "%d %d\n", ZEND_MM_ALIGNMENT, zeros);
+  fprintf(fp, "(size_t)%zu (size_t)%d %d\n", ZEND_MM_ALIGNMENT, zeros, ZEND_MM_ALIGNMENT < 4);
   fclose(fp);
 
   return 0;
@@ -274,12 +240,15 @@ int main()
 ]])], [
   LIBZEND_MM_ALIGN=`cat conftest.zend | cut -d ' ' -f 1`
   LIBZEND_MM_ALIGN_LOG2=`cat conftest.zend | cut -d ' ' -f 2`
+  LIBZEND_MM_NEED_EIGHT_BYTE_REALIGNMENT=`cat conftest.zend | cut -d ' ' -f 3`
   AC_DEFINE_UNQUOTED(ZEND_MM_ALIGNMENT, $LIBZEND_MM_ALIGN, [ ])
   AC_DEFINE_UNQUOTED(ZEND_MM_ALIGNMENT_LOG2, $LIBZEND_MM_ALIGN_LOG2, [ ])
+  AC_DEFINE_UNQUOTED(ZEND_MM_NEED_EIGHT_BYTE_REALIGNMENT, $LIBZEND_MM_NEED_EIGHT_BYTE_REALIGNMENT, [ ])
 ], [], [
   dnl Cross compilation needs something here.
-  AC_DEFINE_UNQUOTED(ZEND_MM_ALIGNMENT, 8, [ ])
-  AC_DEFINE_UNQUOTED(ZEND_MM_ALIGNMENT_LOG2, 3, [ ])
+  AC_DEFINE(ZEND_MM_ALIGNMENT, 8, [ ])
+  AC_DEFINE(ZEND_MM_ALIGNMENT_LOG2, 3, [ ])
+  AC_DEFINE(ZEND_MM_NEED_EIGHT_BYTE_REALIGNMENT, 0, [ ])
 ])
 
 AC_MSG_RESULT(done)

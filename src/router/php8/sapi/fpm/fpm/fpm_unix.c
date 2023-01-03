@@ -15,12 +15,24 @@
 #include <sys/prctl.h>
 #endif
 
+#ifdef HAVE_PROCCTL
+#include <sys/procctl.h>
+#endif
+
+#ifdef HAVE_SETPFLAGS
+#include <priv.h>
+#endif
+
 #ifdef HAVE_APPARMOR
 #include <sys/apparmor.h>
 #endif
 
 #ifdef HAVE_SYS_ACL_H
 #include <sys/acl.h>
+#endif
+
+#ifdef HAVE_SELINUX
+#include <selinux/selinux.h>
 #endif
 
 #include "fpm.h"
@@ -404,8 +416,30 @@ int fpm_unix_init_child(struct fpm_worker_pool_s *wp) /* {{{ */
 	}
 
 #ifdef HAVE_PRCTL
-	if (wp->config->process_dumpable && 0 > prctl(PR_SET_DUMPABLE, 1, 0, 0, 0)) {
-		zlog(ZLOG_SYSERROR, "[pool %s] failed to prctl(PR_SET_DUMPABLE)", wp->config->name);
+	if (wp->config->process_dumpable) {
+		int dumpable = 1;
+#ifdef HAVE_SELINUX
+		if (security_get_boolean_active("deny_ptrace") == 1) {
+			zlog(ZLOG_SYSERROR, "[pool %s] ptrace is denied", wp->config->name);
+			dumpable = 0;
+		}
+#endif
+		if (dumpable && 0 > prctl(PR_SET_DUMPABLE, 1, 0, 0, 0)) {
+			zlog(ZLOG_SYSERROR, "[pool %s] failed to prctl(PR_SET_DUMPABLE)", wp->config->name);
+		}
+	}
+#endif
+
+#ifdef HAVE_PROCCTL
+	int dumpable = PROC_TRACE_CTL_ENABLE;
+	if (wp->config->process_dumpable && -1 == procctl(P_PID, getpid(), PROC_TRACE_CTL, &dumpable)) {
+		zlog(ZLOG_SYSERROR, "[pool %s] failed to procctl(PROC_TRACE_CTL)", wp->config->name);
+	}
+#endif
+
+#ifdef HAVE_SETPFLAGS
+	if (wp->config->process_dumpable && 0 > setpflags(__PROC_PROTECT, 0)) {
+		zlog(ZLOG_SYSERROR, "[pool %s] failed to setpflags(__PROC_PROTECT)", wp->config->name);
 	}
 #endif
 
@@ -452,7 +486,7 @@ int fpm_unix_init_child(struct fpm_worker_pool_s *wp) /* {{{ */
 }
 /* }}} */
 
-int fpm_unix_init_main() /* {{{ */
+int fpm_unix_init_main(void)
 {
 	struct fpm_worker_pool_s *wp;
 	int is_root = !geteuid();
@@ -589,4 +623,3 @@ int fpm_unix_init_main() /* {{{ */
 
 	return 0;
 }
-/* }}} */

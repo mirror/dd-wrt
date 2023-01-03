@@ -143,6 +143,8 @@ extern SAPI_API sapi_globals_struct sapi_globals;
 SAPI_API void sapi_startup(sapi_module_struct *sf);
 SAPI_API void sapi_shutdown(void);
 SAPI_API void sapi_activate(void);
+SAPI_API void sapi_deactivate_module(void);
+SAPI_API void sapi_deactivate_destroy(void);
 SAPI_API void sapi_deactivate(void);
 SAPI_API void sapi_initialize_empty_request(void);
 SAPI_API void sapi_add_request_header(const char *var, unsigned int var_len, char *val, unsigned int val_len, void *arg);
@@ -236,7 +238,7 @@ struct _sapi_module_struct {
 
 	void (*register_server_variables)(zval *track_vars_array);
 	void (*log_message)(const char *message, int syslog_type_int);
-	double (*get_request_time)(void);
+	zend_result (*get_request_time)(double *request_time);
 	void (*terminate_process)(void);
 
 	char *php_ini_path_override;

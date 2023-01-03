@@ -36,7 +36,6 @@
 #include "spl_heap.h"
 #include "zend_exceptions.h"
 #include "zend_interfaces.h"
-#include "ext/standard/php_mt_rand.h"
 #include "main/snprintf.h"
 
 #ifdef COMPILE_DL_SPL
@@ -269,8 +268,11 @@ static int spl_autoload(zend_string *class_name, zend_string *lc_name, const cha
 		}
 		zend_string_release_ex(opened_path, 0);
 		if (new_op_array) {
+			uint32_t orig_jit_trace_num = EG(jit_trace_num);
+
 			ZVAL_UNDEF(&result);
 			zend_execute(new_op_array, &result);
+			EG(jit_trace_num) = orig_jit_trace_num;
 
 			destroy_op_array(new_op_array);
 			efree(new_op_array);
@@ -410,7 +412,7 @@ static zend_class_entry *spl_perform_autoload(zend_string *class_name, zend_stri
 		return NULL;
 	}
 
-	/* We don't use ZEND_HASH_FOREACH here,
+	/* We don't use ZEND_HASH_MAP_FOREACH here,
 	 * because autoloaders may be added/removed during autoloading. */
 	HashPosition pos;
 	zend_hash_internal_pointer_reset_ex(spl_autoload_functions, &pos);
@@ -464,6 +466,7 @@ PHP_FUNCTION(spl_autoload_call)
 } /* }}} */
 
 #define HT_MOVE_TAIL_TO_HEAD(ht)						        \
+	ZEND_ASSERT(!HT_IS_PACKED(ht));						        \
 	do {												        \
 		Bucket tmp = (ht)->arData[(ht)->nNumUsed-1];				\
 		memmove((ht)->arData + 1, (ht)->arData,					\
@@ -478,7 +481,7 @@ static Bucket *spl_find_registered_function(autoload_func_info *find_alfi) {
 	}
 
 	autoload_func_info *alfi;
-	ZEND_HASH_FOREACH_PTR(spl_autoload_functions, alfi) {
+	ZEND_HASH_MAP_FOREACH_PTR(spl_autoload_functions, alfi) {
 		if (autoload_func_info_equals(alfi, find_alfi)) {
 			return _p;
 		}
@@ -520,7 +523,7 @@ PHP_FUNCTION(spl_autoload_register)
 			/* Call trampoline has been cleared by zpp. Refetch it, because we want to deal
 			 * with it outselves. It is important that it is not refetched on every call,
 			 * because calls may occur from different scopes. */
-			zend_is_callable_ex(&fci.function_name, NULL, 0, NULL, &fcc, NULL);
+			zend_is_callable_ex(&fci.function_name, NULL, IS_CALLABLE_SUPPRESS_DEPRECATIONS, NULL, &fcc, NULL);
 		}
 
 		if (fcc.function_handler->type == ZEND_INTERNAL_FUNCTION &&
@@ -599,7 +602,7 @@ PHP_FUNCTION(spl_autoload_functions)
 
 	array_init(return_value);
 	if (spl_autoload_functions) {
-		ZEND_HASH_FOREACH_PTR(spl_autoload_functions, alfi) {
+		ZEND_HASH_MAP_FOREACH_PTR(spl_autoload_functions, alfi) {
 			if (alfi->closure) {
 				GC_ADDREF(alfi->closure);
 				add_next_index_object(return_value, alfi->closure);
@@ -675,7 +678,7 @@ PHP_MINFO_FUNCTION(spl)
 	array_init(&list);
 	SPL_LIST_CLASSES(&list, 0, 1, ZEND_ACC_INTERFACE)
 	strg = estrdup("");
-	ZEND_HASH_FOREACH_VAL(Z_ARRVAL_P(&list), zv) {
+	ZEND_HASH_MAP_FOREACH_VAL(Z_ARRVAL_P(&list), zv) {
 		spl_build_class_list_string(zv, &strg);
 	} ZEND_HASH_FOREACH_END();
 	zend_array_destroy(Z_ARR(list));
@@ -685,7 +688,7 @@ PHP_MINFO_FUNCTION(spl)
 	array_init(&list);
 	SPL_LIST_CLASSES(&list, 0, -1, ZEND_ACC_INTERFACE)
 	strg = estrdup("");
-	ZEND_HASH_FOREACH_VAL(Z_ARRVAL_P(&list), zv) {
+	ZEND_HASH_MAP_FOREACH_VAL(Z_ARRVAL_P(&list), zv) {
 		spl_build_class_list_string(zv, &strg);
 	} ZEND_HASH_FOREACH_END();
 	zend_array_destroy(Z_ARR(list));

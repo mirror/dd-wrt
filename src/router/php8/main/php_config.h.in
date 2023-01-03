@@ -162,6 +162,9 @@
 /* Whether to build pspell as dynamic module */
 #undef COMPILE_DL_PSPELL
 
+/* Whether to build random as dynamic module */
+#undef COMPILE_DL_RANDOM
+
 /* Whether to build readline as dynamic module */
 #undef COMPILE_DL_READLINE
 
@@ -456,6 +459,12 @@
 /* */
 #undef HAVE_CODBC
 
+/* Define to 1 if you have the <CommonCrypto/CommonRandom.h> header file. */
+#undef HAVE_COMMONCRYPTO_COMMONRANDOM_H
+
+/* Define if copy_file_range support */
+#undef HAVE_COPY_FILE_RANGE
+
 /* whether __cpuid_count is available */
 #undef HAVE_CPUID_COUNT
 
@@ -628,6 +637,9 @@
 
 /* Define to 1 if you have the `fork' function. */
 #undef HAVE_FORK
+
+/* Define to 1 if you have the `forkx' function. */
+#undef HAVE_FORKX
 
 /* do we have acl support? */
 #undef HAVE_FPM_ACL
@@ -1052,6 +1064,12 @@
 /* Libzip >= 1.3.1 with zip_libzip_version function */
 #undef HAVE_LIBZIP_VERSION
 
+/* Define to 1 if you have the <linux/filter.h> header file. */
+#undef HAVE_LINUX_FILTER_H
+
+/* Define to 1 if you have the <linux/sock_diag.h> header file. */
+#undef HAVE_LINUX_SOCK_DIAG_H
+
 /* Define to 1 if you have the `localtime_r' function. */
 #undef HAVE_LOCALTIME_R
 
@@ -1060,6 +1078,9 @@
 
 /* do we have SO_LISTENQxxx? */
 #undef HAVE_LQ_SO_LISTENQ
+
+/* do we have TCP_CONNECTION_INFO? */
+#undef HAVE_LQ_TCP_CONNECTION_INFO
 
 /* do we have TCP_INFO? */
 #undef HAVE_LQ_TCP_INFO
@@ -1079,11 +1100,17 @@
 /* whether to have multibyte string support */
 #undef HAVE_MBSTRING
 
+/* Define to 1 if you have the `memcntl' function. */
+#undef HAVE_MEMCNTL
+
 /* Define to 1 if you have the `memmem' function. */
 #undef HAVE_MEMMEM
 
 /* Define to 1 if you have the `memmove' function. */
 #undef HAVE_MEMMOVE
+
+/* Define to 1 if you have the `memrchr' function. */
+#undef HAVE_MEMRCHR
 
 /* Libzip >= 1.7.0 with zip_*_method_supported functions */
 #undef HAVE_METHOD_SUPPORTED
@@ -1111,9 +1138,6 @@
 
 /* Whether you have MySQL */
 #undef HAVE_MYSQL
-
-/* */
-#undef HAVE_MYSQLILIB
 
 /* */
 #undef HAVE_NANOSLEEP
@@ -1185,6 +1209,9 @@
 /* */
 #undef HAVE_ORALDAP
 
+/* Define to 1 if you have the <os/signpost.h> header file. */
+#undef HAVE_OS_SIGNPOST_H
+
 /* */
 #undef HAVE_PCRE_JIT_SUPPORT
 
@@ -1239,6 +1266,9 @@
 /* */
 #undef HAVE_PREAD
 
+/* do we have procctl? */
+#undef HAVE_PROCCTL
+
 /* Libzip >= 1.3.0 with zip_register_progress_callback_with_state function */
 #undef HAVE_PROGRESS_CALLBACK
 
@@ -1247,6 +1277,9 @@
 
 /* Define to 1 if the PS_STRINGS thing exists. */
 #undef HAVE_PS_STRINGS
+
+/* Define to 1 if you have the `pthread_jit_write_protect_np' function. */
+#undef HAVE_PTHREAD_JIT_WRITE_PROTECT_NP
 
 /* do we have ptrace? */
 #undef HAVE_PTRACE
@@ -1308,6 +1341,12 @@
 /* do we have select? */
 #undef HAVE_SELECT
 
+/* SElinux available */
+#undef HAVE_SELINUX
+
+/* Define to 1 if you have the <selinux/selinux.h> header file. */
+#undef HAVE_SELINUX_SELINUX_H
+
 /* */
 #undef HAVE_SEMUN
 
@@ -1322,6 +1361,9 @@
 
 /* Define to 1 if you have the `setitimer' function. */
 #undef HAVE_SETITIMER
+
+/* do we have setpflags? */
+#undef HAVE_SETPFLAGS
 
 /* Define to 1 if you have the `setpriority' function. */
 #undef HAVE_SETPRIORITY
@@ -1383,7 +1425,7 @@
 /* */
 #undef HAVE_SIMPLEXML
 
-/* Define is hash3 algo is available */
+/* Define if hash3 algo is available */
 #undef HAVE_SLOW_HASH3
 
 /* */
@@ -1728,6 +1770,10 @@
 /* */
 #undef HAVE_UODBC
 
+/* Whether faulting on write-protected memory support can be compiled for
+   userfaultfd */
+#undef HAVE_USERFAULTFD_WRITEFAULT
+
 /* Define to 1 if you have the `usleep' function. */
 #undef HAVE_USLEEP
 
@@ -1826,9 +1872,6 @@
 
 /* Whether strtok_r is declared */
 #undef MISSING_STRTOK_R_DECL
-
-/* Whether mysqlnd is enabled */
-#undef MYSQLI_USE_MYSQLND
 
 /* Enable compressed protocol support */
 #undef MYSQLND_COMPRESSION_ENABLED
@@ -2162,9 +2205,6 @@
 /* */
 #undef ZEND_DEBUG
 
-/* Define if double cast to long preserves least significant bits */
-#undef ZEND_DVAL_TO_LVAL_CAST_OK
-
 /* */
 #undef ZEND_FIBER_ASM
 
@@ -2176,6 +2216,9 @@
 
 /* */
 #undef ZEND_MM_ALIGNMENT_LOG2
+
+/* */
+#undef ZEND_MM_NEED_EIGHT_BYTE_REALIGNMENT
 
 /* Use zend signal handling */
 #undef ZEND_SIGNALS

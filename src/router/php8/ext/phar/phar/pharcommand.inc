@@ -1578,7 +1578,7 @@ class PharCommand extends CLICommand
         $use_ext = extension_loaded('phar');
         $version = array(
             'PHP Version' => phpversion(),
-            'phar.phar version' => '$Id: 1b1eeca59c5603f70d28866e59c600195d9c76c3 $',
+            'phar.phar version' => '$Id: fdc43654dd7eb031236df3c45ad54a6ec9454316 $',
             'Phar EXT version' => $use_ext ? phpversion('phar') : 'Not available',
             'Phar API version' => Phar::apiVersion(),
             'Phar-based phar archives' => true,
@@ -1598,7 +1598,7 @@ class PharCommand extends CLICommand
             if (is_bool($v)) {
                 $v = $v ? 'enabled' : 'disabled';
             }
-            printf("%-${klen}s  %s\n", $k.':', $v);
+            printf("%-{$klen}s  %s\n", $k.':', $v);
         }
     }
     // }}}

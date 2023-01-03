@@ -1419,6 +1419,10 @@ yyreduce:
                                     { phpdbg_stack_separate(yyvsp[-2].top); yyval = yyvsp[0]; }
     break;
 
+  case 4: /* input: %empty  */
+                 { (void) phpdbg_nerrs; }
+    break;
+
   case 5: /* command: parameters  */
                      { yyval.top = PHPDBG_G(parser_stack)->top; }
     break;

@@ -622,7 +622,6 @@ static zend_op_array *zend_compile(int type)
 		zend_emit_final_return(type == ZEND_USER_FUNCTION);
 		op_array->line_start = 1;
 		op_array->line_end = last_lineno;
-		zend_init_static_variables_map_ptr(op_array);
 		pass_two(op_array);
 		zend_oparray_context_end(&original_oparray_context);
 		zend_file_context_end(&original_file_context);
@@ -784,7 +783,7 @@ ZEND_API size_t zend_get_scanned_file_offset(void)
 	return offset;
 }
 
-zend_op_array *compile_string(zend_string *source_string, const char *filename)
+zend_op_array *compile_string(zend_string *source_string, const char *filename, zend_compile_position position)
 {
 	zend_lex_state original_lex_state;
 	zend_op_array *op_array = NULL;
@@ -801,7 +800,19 @@ zend_op_array *compile_string(zend_string *source_string, const char *filename)
 	filename_str = zend_string_init(filename, strlen(filename), 0);
 	zend_prepare_string_for_scanning(&tmp, filename_str);
 	zend_string_release(filename_str);
-	BEGIN(ST_IN_SCRIPTING);
+
+	switch (position) {
+		case ZEND_COMPILE_POSITION_AT_SHEBANG:
+			BEGIN(SHEBANG);
+			break;
+		case ZEND_COMPILE_POSITION_AT_OPEN_TAG:
+			BEGIN(INITIAL);
+			break;
+		case ZEND_COMPILE_POSITION_AFTER_OPEN_TAG:
+			BEGIN(ST_IN_SCRIPTING);
+			break;
+	}
+
 	op_array = zend_compile(ZEND_EVAL_CODE);
 
 	zend_restore_lexical_state(&original_lex_state);
@@ -2866,10 +2877,10 @@ yy71:
 								if (yyaccept == 79) {
 									goto yy625;
 								} else {
-									goto yy631;
+									goto yy629;
 								}
 							} else {
-								goto yy637;
+								goto yy635;
 							}
 						}
 					}
@@ -2878,40 +2889,40 @@ yy71:
 						if (yyaccept <= 84) {
 							if (yyaccept <= 83) {
 								if (yyaccept == 82) {
-									goto yy639;
+									goto yy637;
 								} else {
-									goto yy641;
+									goto yy639;
 								}
 							} else {
-								goto yy645;
+								goto yy643;
 							}
 						} else {
 							if (yyaccept <= 86) {
 								if (yyaccept == 85) {
-									goto yy648;
+									goto yy646;
 								} else {
-									goto yy655;
+									goto yy653;
 								}
 							} else {
-								goto yy661;
+								goto yy659;
 							}
 						}
 					} else {
 						if (yyaccept <= 90) {
 							if (yyaccept <= 89) {
 								if (yyaccept == 88) {
-									goto yy670;
+									goto yy668;
 								} else {
-									goto yy672;
+									goto yy670;
 								}
 							} else {
-								goto yy674;
+								goto yy672;
 							}
 						} else {
 							if (yyaccept == 91) {
-								goto yy680;
+								goto yy678;
 							} else {
-								goto yy683;
+								goto yy681;
 							}
 						}
 					}
@@ -7365,20 +7376,7 @@ yy595:
 		if (yybm[0+yych] & 8) {
 			goto yy39;
 		}
-		if (yych <= 0x1F) {
-			if (yych <= '\n') {
-				if (yych >= '\t') goto yy626;
-			} else {
-				if (yych == '\r') goto yy626;
-			}
-		} else {
-			if (yych <= '(') {
-				if (yych <= ' ') goto yy626;
-				if (yych >= '(') goto yy627;
-			} else {
-				if (yych == '\\') goto yy127;
-			}
-		}
+		if (yych == '\\') goto yy127;
 yy596:
 		YYDEBUG(596, *YYCURSOR);
 		yyleng = YYCURSOR - SCNG(yy_text);
@@ -7389,20 +7387,20 @@ yy597:
 		YYDEBUG(597, *YYCURSOR);
 		yyaccept = 4;
 		yych = *(YYMARKER = ++YYCURSOR);
-		if (yych == 'O') goto yy628;
-		if (yych == 'o') goto yy628;
+		if (yych == 'O') goto yy626;
+		if (yych == 'o') goto yy626;
 		goto yy40;
 yy598:
 		YYDEBUG(598, *YYCURSOR);
 		yych = *++YYCURSOR;
-		if (yych == 'O') goto yy629;
-		if (yych == 'o') goto yy629;
+		if (yych == 'O') goto yy627;
+		if (yych == 'o') goto yy627;
 		goto yy71;
 yy599:
 		YYDEBUG(599, *YYCURSOR);
 		yyaccept = 4;
 		yych = *(YYMARKER = ++YYCURSOR);
-		if (yych == '_') goto yy630;
+		if (yych == '_') goto yy628;
 		goto yy40;
 yy600:
 		YYDEBUG(600, *YYCURSOR);
@@ -7422,15 +7420,15 @@ yy602:
 		YYDEBUG(602, *YYCURSOR);
 		yyaccept = 4;
 		yych = *(YYMARKER = ++YYCURSOR);
-		if (yych == 'O') goto yy632;
-		if (yych == 'o') goto yy632;
+		if (yych == 'O') goto yy630;
+		if (yych == 'o') goto yy630;
 		goto yy40;
 yy603:
 		YYDEBUG(603, *YYCURSOR);
 		yyaccept = 4;
 		yych = *(YYMARKER = ++YYCURSOR);
-		if (yych == 'O') goto yy633;
-		if (yych == 'o') goto yy633;
+		if (yych == 'O') goto yy631;
+		if (yych == 'o') goto yy631;
 		goto yy40;
 yy604:
 		YYDEBUG(604, *YYCURSOR);
@@ -7450,34 +7448,34 @@ yy606:
 		YYDEBUG(606, *YYCURSOR);
 		yyaccept = 4;
 		yych = *(YYMARKER = ++YYCURSOR);
-		if (yych == '_') goto yy634;
+		if (yych == '_') goto yy632;
 		goto yy40;
 yy607:
 		YYDEBUG(607, *YYCURSOR);
 		yyaccept = 4;
 		yych = *(YYMARKER = ++YYCURSOR);
-		if (yych == 'A') goto yy635;
-		if (yych == 'a') goto yy635;
+		if (yych == 'A') goto yy633;
+		if (yych == 'a') goto yy633;
 		goto yy40;
 yy608:
 		YYDEBUG(608, *YYCURSOR);
 		yyaccept = 4;
 		yych = *(YYMARKER = ++YYCURSOR);
-		if (yych == '_') goto yy636;
+		if (yych == '_') goto yy634;
 		goto yy40;
 yy609:
 		YYDEBUG(609, *YYCURSOR);
 		yyaccept = 4;
 		yych = *(YYMARKER = ++YYCURSOR);
-		if (yych == 'E') goto yy638;
-		if (yych == 'e') goto yy638;
+		if (yych == 'E') goto yy636;
+		if (yych == 'e') goto yy636;
 		goto yy40;
 yy610:
 		YYDEBUG(610, *YYCURSOR);
 		yyaccept = 4;
 		yych = *(YYMARKER = ++YYCURSOR);
-		if (yych == 'H') goto yy640;
-		if (yych == 'h') goto yy640;
+		if (yych == 'H') goto yy638;
+		if (yych == 'h') goto yy638;
 		goto yy40;
 yy611:
 		YYDEBUG(611, *YYCURSOR);
@@ -7496,35 +7494,35 @@ yy612:
 yy613:
 		YYDEBUG(613, *YYCURSOR);
 		yych = *++YYCURSOR;
-		if (yych == 'N') goto yy642;
-		if (yych == 'n') goto yy642;
+		if (yych == 'N') goto yy640;
+		if (yych == 'n') goto yy640;
 		goto yy71;
 yy614:
 		YYDEBUG(614, *YYCURSOR);
 		yych = *++YYCURSOR;
-		if (yych == 'E') goto yy643;
-		if (yych == 'e') goto yy643;
+		if (yych == 'E') goto yy641;
+		if (yych == 'e') goto yy641;
 		goto yy71;
 yy615:
 		YYDEBUG(615, *YYCURSOR);
 		yyaccept = 4;
 		yych = *(YYMARKER = ++YYCURSOR);
-		if (yych == 'S') goto yy644;
-		if (yych == 's') goto yy644;
+		if (yych == 'S') goto yy642;
+		if (yych == 's') goto yy642;
 		goto yy40;
 yy616:
 		YYDEBUG(616, *YYCURSOR);
 		yyaccept = 4;
 		yych = *(YYMARKER = ++YYCURSOR);
-		if (yych == 'N') goto yy646;
-		if (yych == 'n') goto yy646;
+		if (yych == 'N') goto yy644;
+		if (yych == 'n') goto yy644;
 		goto yy40;
 yy617:
 		YYDEBUG(617, *YYCURSOR);
 		yyaccept = 4;
 		yych = *(YYMARKER = ++YYCURSOR);
-		if (yych == 'F') goto yy647;
-		if (yych == 'f') goto yy647;
+		if (yych == 'F') goto yy645;
+		if (yych == 'f') goto yy645;
 		goto yy40;
 yy618:
 		YYDEBUG(618, *YYCURSOR);
@@ -7561,7 +7559,7 @@ yy622:
 		if (yybm[0+yych] & 8) {
 			goto yy39;
 		}
-		if (yych == '\\') goto yy649;
+		if (yych == '\\') goto yy647;
 yy623:
 		YYDEBUG(623, *YYCURSOR);
 		yyleng = YYCURSOR - SCNG(yy_text);
@@ -7584,87 +7582,75 @@ yy625:
 }
 yy626:
 		YYDEBUG(626, *YYCURSOR);
-		++YYCURSOR;
-		YYFILL(1);
-		yych = *YYCURSOR;
-		if (yych <= '\r') {
-			if (yych <= 0x08) goto yy71;
-			if (yych <= '\n') goto yy626;
-			if (yych <= '\f') goto yy71;
-			goto yy626;
-		} else {
-			if (yych <= ' ') {
-				if (yych <= 0x1F) goto yy71;
-				goto yy626;
-			} else {
-				if (yych != '(') goto yy71;
-			}
-		}
-yy627:
-		YYDEBUG(627, *YYCURSOR);
-		++YYCURSOR;
-		yyleng = YYCURSOR - SCNG(yy_text);
-		{
-	yyless(strlen("readonly"));
-	RETURN_TOKEN_WITH_STR(T_STRING, 0);
-}
-yy628:
-		YYDEBUG(628, *YYCURSOR);
 		yyaccept = 4;
 		yych = *(YYMARKER = ++YYCURSOR);
-		if (yych == 'N') goto yy650;
-		if (yych == 'n') goto yy650;
+		if (yych == 'N') goto yy648;
+		if (yych == 'n') goto yy648;
 		goto yy40;
-yy629:
-		YYDEBUG(629, *YYCURSOR);
+yy627:
+		YYDEBUG(627, *YYCURSOR);
 		yych = *++YYCURSOR;
-		if (yych == 'M') goto yy651;
-		if (yych == 'm') goto yy651;
+		if (yych == 'M') goto yy649;
+		if (yych == 'm') goto yy649;
 		goto yy71;
-yy630:
-		YYDEBUG(630, *YYCURSOR);
+yy628:
+		YYDEBUG(628, *YYCURSOR);
 		yyaccept = 80;
 		yych = *(YYMARKER = ++YYCURSOR);
 		if (yybm[0+yych] & 8) {
 			goto yy39;
 		}
 		if (yych == '\\') goto yy127;
-yy631:
-		YYDEBUG(631, *YYCURSOR);
+yy629:
+		YYDEBUG(629, *YYCURSOR);
 		yyleng = YYCURSOR - SCNG(yy_text);
 		{
 	RETURN_TOKEN_WITH_IDENT(T_CLASS_C);
 }
+yy630:
+		YYDEBUG(630, *YYCURSOR);
+		yyaccept = 4;
+		yych = *(YYMARKER = ++YYCURSOR);
+		if (yych == 'N') goto yy650;
+		if (yych == 'n') goto yy650;
+		goto yy40;
+yy631:
+		YYDEBUG(631, *YYCURSOR);
+		yyaccept = 4;
+		yych = *(YYMARKER = ++YYCURSOR);
+		if (yych == 'M') goto yy651;
+		if (yych == 'm') goto yy651;
+		goto yy40;
 yy632:
 		YYDEBUG(632, *YYCURSOR);
 		yyaccept = 4;
 		yych = *(YYMARKER = ++YYCURSOR);
-		if (yych == 'N') goto yy652;
-		if (yych == 'n') goto yy652;
+		if (yych == '_') goto yy652;
 		goto yy40;
 yy633:
 		YYDEBUG(633, *YYCURSOR);
 		yyaccept = 4;
 		yych = *(YYMARKER = ++YYCURSOR);
-		if (yych == 'M') goto yy653;
-		if (yych == 'm') goto yy653;
+		if (yych == 'C') goto yy654;
+		if (yych == 'c') goto yy654;
 		goto yy40;
 yy634:
 		YYDEBUG(634, *YYCURSOR);
-		yyaccept = 4;
+		yyaccept = 81;
 		yych = *(YYMARKER = ++YYCURSOR);
-		if (yych == '_') goto yy654;
-		goto yy40;
+		if (yybm[0+yych] & 8) {
+			goto yy39;
+		}
+		if (yych == '\\') goto yy127;
 yy635:
 		YYDEBUG(635, *YYCURSOR);
-		yyaccept = 4;
-		yych = *(YYMARKER = ++YYCURSOR);
-		if (yych == 'C') goto yy656;
-		if (yych == 'c') goto yy656;
-		goto yy40;
+		yyleng = YYCURSOR - SCNG(yy_text);
+		{
+	RETURN_TOKEN_WITH_IDENT(T_TRAIT_C);
+}
 yy636:
 		YYDEBUG(636, *YYCURSOR);
-		yyaccept = 81;
+		yyaccept = 82;
 		yych = *(YYMARKER = ++YYCURSOR);
 		if (yybm[0+yych] & 8) {
 			goto yy39;
@@ -7674,11 +7660,11 @@ yy637:
 		YYDEBUG(637, *YYCURSOR);
 		yyleng = YYCURSOR - SCNG(yy_text);
 		{
-	RETURN_TOKEN_WITH_IDENT(T_TRAIT_C);
+	RETURN_TOKEN_WITH_IDENT(T_ENDDECLARE);
 }
 yy638:
 		YYDEBUG(638, *YYCURSOR);
-		yyaccept = 82;
+		yyaccept = 83;
 		yych = *(YYMARKER = ++YYCURSOR);
 		if (yybm[0+yych] & 8) {
 			goto yy39;
@@ -7688,204 +7674,190 @@ yy639:
 		YYDEBUG(639, *YYCURSOR);
 		yyleng = YYCURSOR - SCNG(yy_text);
 		{
-	RETURN_TOKEN_WITH_IDENT(T_ENDDECLARE);
+	RETURN_TOKEN_WITH_IDENT(T_ENDFOREACH);
 }
 yy640:
 		YYDEBUG(640, *YYCURSOR);
-		yyaccept = 83;
-		yych = *(YYMARKER = ++YYCURSOR);
-		if (yybm[0+yych] & 8) {
-			goto yy39;
-		}
-		if (yych == '\\') goto yy127;
+		yych = *++YYCURSOR;
+		if (yych == 'D') goto yy655;
+		if (yych == 'd') goto yy655;
+		goto yy71;
 yy641:
 		YYDEBUG(641, *YYCURSOR);
-		yyleng = YYCURSOR - SCNG(yy_text);
-		{
-	RETURN_TOKEN_WITH_IDENT(T_ENDFOREACH);
-}
+		yych = *++YYCURSOR;
+		if (yych == 'M') goto yy656;
+		if (yych == 'm') goto yy656;
+		goto yy71;
 yy642:
 		YYDEBUG(642, *YYCURSOR);
-		yych = *++YYCURSOR;
-		if (yych == 'D') goto yy657;
-		if (yych == 'd') goto yy657;
-		goto yy71;
-yy643:
-		YYDEBUG(643, *YYCURSOR);
-		yych = *++YYCURSOR;
-		if (yych == 'M') goto yy658;
-		if (yych == 'm') goto yy658;
-		goto yy71;
-yy644:
-		YYDEBUG(644, *YYCURSOR);
 		yyaccept = 84;
 		yych = *(YYMARKER = ++YYCURSOR);
 		if (yybm[0+yych] & 8) {
 			goto yy39;
 		}
 		if (yych == '\\') goto yy127;
-yy645:
-		YYDEBUG(645, *YYCURSOR);
+yy643:
+		YYDEBUG(643, *YYCURSOR);
 		yyleng = YYCURSOR - SCNG(yy_text);
 		{
 	RETURN_TOKEN_WITH_IDENT(T_IMPLEMENTS);
 }
-yy646:
-		YYDEBUG(646, *YYCURSOR);
+yy644:
+		YYDEBUG(644, *YYCURSOR);
 		yyaccept = 4;
 		yych = *(YYMARKER = ++YYCURSOR);
-		if (yych == 'C') goto yy659;
-		if (yych == 'c') goto yy659;
+		if (yych == 'C') goto yy657;
+		if (yych == 'c') goto yy657;
 		goto yy40;
-yy647:
-		YYDEBUG(647, *YYCURSOR);
+yy645:
+		YYDEBUG(645, *YYCURSOR);
 		yyaccept = 85;
 		yych = *(YYMARKER = ++YYCURSOR);
 		if (yybm[0+yych] & 8) {
 			goto yy39;
 		}
 		if (yych == '\\') goto yy127;
-yy648:
-		YYDEBUG(648, *YYCURSOR);
+yy646:
+		YYDEBUG(646, *YYCURSOR);
 		yyleng = YYCURSOR - SCNG(yy_text);
 		{
 	RETURN_TOKEN_WITH_IDENT(T_INSTANCEOF);
 }
-yy649:
-		YYDEBUG(649, *YYCURSOR);
+yy647:
+		YYDEBUG(647, *YYCURSOR);
 		++YYCURSOR;
 		YYFILL(1);
 		yych = *YYCURSOR;
 		if (yych <= '_') {
 			if (yych <= '@') goto yy71;
-			if (yych <= 'Z') goto yy660;
+			if (yych <= 'Z') goto yy658;
 			if (yych <= '^') goto yy71;
-			goto yy660;
+			goto yy658;
 		} else {
 			if (yych <= '`') goto yy71;
-			if (yych <= 'z') goto yy660;
+			if (yych <= 'z') goto yy658;
 			if (yych <= 0x7F) goto yy71;
-			goto yy660;
+			goto yy658;
+		}
+yy648:
+		YYDEBUG(648, *YYCURSOR);
+		yyaccept = 4;
+		yych = *(YYMARKER = ++YYCURSOR);
+		if (yych == 'C') goto yy660;
+		if (yych == 'c') goto yy660;
+		goto yy40;
+yy649:
+		YYDEBUG(649, *YYCURSOR);
+		yych = *++YYCURSOR;
+		if (yych <= '^') {
+			if (yych <= '9') {
+				if (yych <= '/') goto yy661;
+				goto yy71;
+			} else {
+				if (yych <= '@') goto yy661;
+				if (yych <= 'Z') goto yy71;
+				goto yy661;
+			}
+		} else {
+			if (yych <= '`') {
+				if (yych <= '_') goto yy71;
+				goto yy661;
+			} else {
+				if (yych <= 'z') goto yy71;
+				if (yych <= 0x7F) goto yy661;
+				goto yy71;
+			}
 		}
 yy650:
 		YYDEBUG(650, *YYCURSOR);
 		yyaccept = 4;
 		yych = *(YYMARKER = ++YYCURSOR);
-		if (yych == 'C') goto yy662;
-		if (yych == 'c') goto yy662;
+		if (yych == '_') goto yy662;
 		goto yy40;
 yy651:
 		YYDEBUG(651, *YYCURSOR);
-		yych = *++YYCURSOR;
-		if (yych <= '^') {
-			if (yych <= '9') {
-				if (yych <= '/') goto yy663;
-				goto yy71;
-			} else {
-				if (yych <= '@') goto yy663;
-				if (yych <= 'Z') goto yy71;
-				goto yy663;
-			}
-		} else {
-			if (yych <= '`') {
-				if (yych <= '_') goto yy71;
-				goto yy663;
-			} else {
-				if (yych <= 'z') goto yy71;
-				if (yych <= 0x7F) goto yy663;
-				goto yy71;
-			}
-		}
+		yyaccept = 4;
+		yych = *(YYMARKER = ++YYCURSOR);
+		if (yych == 'P') goto yy663;
+		if (yych == 'p') goto yy663;
+		goto yy40;
 yy652:
 		YYDEBUG(652, *YYCURSOR);
-		yyaccept = 4;
-		yych = *(YYMARKER = ++YYCURSOR);
-		if (yych == '_') goto yy664;
-		goto yy40;
-yy653:
-		YYDEBUG(653, *YYCURSOR);
-		yyaccept = 4;
-		yych = *(YYMARKER = ++YYCURSOR);
-		if (yych == 'P') goto yy665;
-		if (yych == 'p') goto yy665;
-		goto yy40;
-yy654:
-		YYDEBUG(654, *YYCURSOR);
 		yyaccept = 86;
 		yych = *(YYMARKER = ++YYCURSOR);
 		if (yybm[0+yych] & 8) {
 			goto yy39;
 		}
 		if (yych == '\\') goto yy127;
-yy655:
-		YYDEBUG(655, *YYCURSOR);
+yy653:
+		YYDEBUG(653, *YYCURSOR);
 		yyleng = YYCURSOR - SCNG(yy_text);
 		{
 	RETURN_TOKEN_WITH_IDENT(T_METHOD_C);
 }
+yy654:
+		YYDEBUG(654, *YYCURSOR);
+		yyaccept = 4;
+		yych = *(YYMARKER = ++YYCURSOR);
+		if (yych == 'E') goto yy664;
+		if (yych == 'e') goto yy664;
+		goto yy40;
+yy655:
+		YYDEBUG(655, *YYCURSOR);
+		yych = *++YYCURSOR;
+		if (yych == 'S') goto yy665;
+		if (yych == 's') goto yy665;
+		goto yy71;
 yy656:
 		YYDEBUG(656, *YYCURSOR);
-		yyaccept = 4;
-		yych = *(YYMARKER = ++YYCURSOR);
+		yych = *++YYCURSOR;
 		if (yych == 'E') goto yy666;
 		if (yych == 'e') goto yy666;
-		goto yy40;
+		goto yy71;
 yy657:
 		YYDEBUG(657, *YYCURSOR);
-		yych = *++YYCURSOR;
-		if (yych == 'S') goto yy667;
-		if (yych == 's') goto yy667;
-		goto yy71;
-yy658:
-		YYDEBUG(658, *YYCURSOR);
-		yych = *++YYCURSOR;
-		if (yych == 'E') goto yy668;
-		if (yych == 'e') goto yy668;
-		goto yy71;
-yy659:
-		YYDEBUG(659, *YYCURSOR);
 		yyaccept = 4;
 		yych = *(YYMARKER = ++YYCURSOR);
-		if (yych == 'E') goto yy669;
-		if (yych == 'e') goto yy669;
+		if (yych == 'E') goto yy667;
+		if (yych == 'e') goto yy667;
 		goto yy40;
-yy660:
-		YYDEBUG(660, *YYCURSOR);
+yy658:
+		YYDEBUG(658, *YYCURSOR);
 		yyaccept = 87;
 		YYMARKER = ++YYCURSOR;
 		YYFILL(1);
 		yych = *YYCURSOR;
 		if (yych <= '\\') {
 			if (yych <= '@') {
-				if (yych <= '/') goto yy661;
-				if (yych <= '9') goto yy660;
+				if (yych <= '/') goto yy659;
+				if (yych <= '9') goto yy658;
 			} else {
-				if (yych <= 'Z') goto yy660;
-				if (yych >= '\\') goto yy649;
+				if (yych <= 'Z') goto yy658;
+				if (yych >= '\\') goto yy647;
 			}
 		} else {
 			if (yych <= '`') {
-				if (yych == '_') goto yy660;
+				if (yych == '_') goto yy658;
 			} else {
-				if (yych <= 'z') goto yy660;
-				if (yych >= 0x80) goto yy660;
+				if (yych <= 'z') goto yy658;
+				if (yych >= 0x80) goto yy658;
 			}
 		}
-yy661:
-		YYDEBUG(661, *YYCURSOR);
+yy659:
+		YYDEBUG(659, *YYCURSOR);
 		yyleng = YYCURSOR - SCNG(yy_text);
 		{
 	RETURN_TOKEN_WITH_STR(T_NAME_RELATIVE, sizeof("namespace\\") - 1);
 }
-yy662:
-		YYDEBUG(662, *YYCURSOR);
+yy660:
+		YYDEBUG(660, *YYCURSOR);
 		yyaccept = 4;
 		yych = *(YYMARKER = ++YYCURSOR);
-		if (yych == 'E') goto yy671;
-		if (yych == 'e') goto yy671;
+		if (yych == 'E') goto yy669;
+		if (yych == 'e') goto yy669;
 		goto yy40;
-yy663:
-		YYDEBUG(663, *YYCURSOR);
+yy661:
+		YYDEBUG(661, *YYCURSOR);
 		++YYCURSOR;
 		yyleng = YYCURSOR - SCNG(yy_text);
 		{
@@ -7893,42 +7865,56 @@ yy663:
 	HANDLE_NEWLINES(yytext, yyleng);
 	RETURN_TOKEN_WITH_IDENT(T_YIELD_FROM);
 }
+yy662:
+		YYDEBUG(662, *YYCURSOR);
+		yyaccept = 4;
+		yych = *(YYMARKER = ++YYCURSOR);
+		if (yych == '_') goto yy671;
+		goto yy40;
+yy663:
+		YYDEBUG(663, *YYCURSOR);
+		yyaccept = 4;
+		yych = *(YYMARKER = ++YYCURSOR);
+		if (yych == 'I') goto yy673;
+		if (yych == 'i') goto yy673;
+		goto yy40;
 yy664:
 		YYDEBUG(664, *YYCURSOR);
 		yyaccept = 4;
 		yych = *(YYMARKER = ++YYCURSOR);
-		if (yych == '_') goto yy673;
+		if (yych == '_') goto yy674;
 		goto yy40;
 yy665:
 		YYDEBUG(665, *YYCURSOR);
-		yyaccept = 4;
-		yych = *(YYMARKER = ++YYCURSOR);
-		if (yych == 'I') goto yy675;
-		if (yych == 'i') goto yy675;
-		goto yy40;
-yy666:
-		YYDEBUG(666, *YYCURSOR);
-		yyaccept = 4;
-		yych = *(YYMARKER = ++YYCURSOR);
-		if (yych == '_') goto yy676;
-		goto yy40;
-yy667:
-		YYDEBUG(667, *YYCURSOR);
 		++YYCURSOR;
 		yyleng = YYCURSOR - SCNG(yy_text);
 		{
 	yyless(4);
 	RETURN_TOKEN_WITH_STR(T_STRING, 0);
 }
+yy666:
+		YYDEBUG(666, *YYCURSOR);
+		yych = *++YYCURSOR;
+		if (yych == 'N') goto yy675;
+		if (yych == 'n') goto yy675;
+		goto yy71;
+yy667:
+		YYDEBUG(667, *YYCURSOR);
+		yyaccept = 88;
+		yych = *(YYMARKER = ++YYCURSOR);
+		if (yybm[0+yych] & 8) {
+			goto yy39;
+		}
+		if (yych == '\\') goto yy127;
 yy668:
 		YYDEBUG(668, *YYCURSOR);
-		yych = *++YYCURSOR;
-		if (yych == 'N') goto yy677;
-		if (yych == 'n') goto yy677;
-		goto yy71;
+		yyleng = YYCURSOR - SCNG(yy_text);
+		{
+	RETURN_TOKEN_WITH_IDENT(T_INCLUDE_ONCE);
+}
 yy669:
 		YYDEBUG(669, *YYCURSOR);
-		yyaccept = 88;
+		yyaccept = 89;
 		yych = *(YYMARKER = ++YYCURSOR);
 		if (yybm[0+yych] & 8) {
 			goto yy39;
@@ -7938,11 +7924,11 @@ yy670:
 		YYDEBUG(670, *YYCURSOR);
 		yyleng = YYCURSOR - SCNG(yy_text);
 		{
-	RETURN_TOKEN_WITH_IDENT(T_INCLUDE_ONCE);
+	RETURN_TOKEN_WITH_IDENT(T_REQUIRE_ONCE);
 }
 yy671:
 		YYDEBUG(671, *YYCURSOR);
-		yyaccept = 89;
+		yyaccept = 90;
 		yych = *(YYMARKER = ++YYCURSOR);
 		if (yybm[0+yych] & 8) {
 			goto yy39;
@@ -7952,78 +7938,64 @@ yy672:
 		YYDEBUG(672, *YYCURSOR);
 		yyleng = YYCURSOR - SCNG(yy_text);
 		{
-	RETURN_TOKEN_WITH_IDENT(T_REQUIRE_ONCE);
+	RETURN_TOKEN_WITH_IDENT(T_FUNC_C);
 }
 yy673:
 		YYDEBUG(673, *YYCURSOR);
-		yyaccept = 90;
-		yych = *(YYMARKER = ++YYCURSOR);
-		if (yybm[0+yych] & 8) {
-			goto yy39;
-		}
-		if (yych == '\\') goto yy127;
-yy674:
-		YYDEBUG(674, *YYCURSOR);
-		yyleng = YYCURSOR - SCNG(yy_text);
-		{
-	RETURN_TOKEN_WITH_IDENT(T_FUNC_C);
-}
-yy675:
-		YYDEBUG(675, *YYCURSOR);
 		yyaccept = 4;
 		yych = *(YYMARKER = ++YYCURSOR);
-		if (yych == 'L') goto yy678;
-		if (yych == 'l') goto yy678;
+		if (yych == 'L') goto yy676;
+		if (yych == 'l') goto yy676;
 		goto yy40;
+yy674:
+		YYDEBUG(674, *YYCURSOR);
+		yyaccept = 4;
+		yych = *(YYMARKER = ++YYCURSOR);
+		if (yych == '_') goto yy677;
+		goto yy40;
+yy675:
+		YYDEBUG(675, *YYCURSOR);
+		yych = *++YYCURSOR;
+		if (yych == 'T') goto yy655;
+		if (yych == 't') goto yy655;
+		goto yy71;
 yy676:
 		YYDEBUG(676, *YYCURSOR);
 		yyaccept = 4;
 		yych = *(YYMARKER = ++YYCURSOR);
-		if (yych == '_') goto yy679;
+		if (yych == 'E') goto yy679;
+		if (yych == 'e') goto yy679;
 		goto yy40;
 yy677:
 		YYDEBUG(677, *YYCURSOR);
-		yych = *++YYCURSOR;
-		if (yych == 'T') goto yy657;
-		if (yych == 't') goto yy657;
-		goto yy71;
-yy678:
-		YYDEBUG(678, *YYCURSOR);
-		yyaccept = 4;
-		yych = *(YYMARKER = ++YYCURSOR);
-		if (yych == 'E') goto yy681;
-		if (yych == 'e') goto yy681;
-		goto yy40;
-yy679:
-		YYDEBUG(679, *YYCURSOR);
 		yyaccept = 91;
 		yych = *(YYMARKER = ++YYCURSOR);
 		if (yybm[0+yych] & 8) {
 			goto yy39;
 		}
 		if (yych == '\\') goto yy127;
-yy680:
-		YYDEBUG(680, *YYCURSOR);
+yy678:
+		YYDEBUG(678, *YYCURSOR);
 		yyleng = YYCURSOR - SCNG(yy_text);
 		{
 	RETURN_TOKEN_WITH_IDENT(T_NS_C);
 }
-yy681:
-		YYDEBUG(681, *YYCURSOR);
+yy679:
+		YYDEBUG(679, *YYCURSOR);
 		yyaccept = 4;
 		yych = *(YYMARKER = ++YYCURSOR);
-		if (yych == 'R') goto yy682;
+		if (yych == 'R') goto yy680;
 		if (yych != 'r') goto yy40;
-yy682:
-		YYDEBUG(682, *YYCURSOR);
+yy680:
+		YYDEBUG(680, *YYCURSOR);
 		yyaccept = 92;
 		yych = *(YYMARKER = ++YYCURSOR);
 		if (yybm[0+yych] & 8) {
 			goto yy39;
 		}
 		if (yych == '\\') goto yy127;
-yy683:
-		YYDEBUG(683, *YYCURSOR);
+yy681:
+		YYDEBUG(681, *YYCURSOR);
 		yyleng = YYCURSOR - SCNG(yy_text);
 		{
 	RETURN_TOKEN_WITH_IDENT(T_HALT_COMPILER);
@@ -8066,86 +8038,86 @@ yyc_ST_LOOKING_FOR_PROPERTY:
 			128, 128, 128, 128, 128, 128, 128, 128, 
 			128, 128, 128, 128, 128, 128, 128, 128, 
 		};
-		YYDEBUG(684, *YYCURSOR);
+		YYDEBUG(682, *YYCURSOR);
 		YYFILL(3);
 		yych = *YYCURSOR;
 		if (yybm[0+yych] & 64) {
-			goto yy686;
+			goto yy684;
 		}
 		if (yych <= 'Z') {
 			if (yych <= '>') {
-				if (yych == '-') goto yy687;
+				if (yych == '-') goto yy685;
 			} else {
-				if (yych <= '?') goto yy688;
-				if (yych >= 'A') goto yy689;
+				if (yych <= '?') goto yy686;
+				if (yych >= 'A') goto yy687;
 			}
 		} else {
 			if (yych <= '`') {
-				if (yych == '_') goto yy689;
+				if (yych == '_') goto yy687;
 			} else {
-				if (yych <= 'z') goto yy689;
-				if (yych >= 0x80) goto yy689;
+				if (yych <= 'z') goto yy687;
+				if (yych >= 0x80) goto yy687;
 			}
 		}
 		++YYCURSOR;
-yy685:
-		YYDEBUG(685, *YYCURSOR);
+yy683:
+		YYDEBUG(683, *YYCURSOR);
 		yyleng = YYCURSOR - SCNG(yy_text);
 		{
 	yyless(0);
 	yy_pop_state();
 	goto restart;
 }
-yy686:
-		YYDEBUG(686, *YYCURSOR);
+yy684:
+		YYDEBUG(684, *YYCURSOR);
 		++YYCURSOR;
 		YYFILL(1);
 		yych = *YYCURSOR;
 		if (yybm[0+yych] & 64) {
-			goto yy686;
+			goto yy684;
 		}
 		yyleng = YYCURSOR - SCNG(yy_text);
 		{
 	goto return_whitespace;
 }
+yy685:
+		YYDEBUG(685, *YYCURSOR);
+		yych = *++YYCURSOR;
+		if (yych == '>') goto yy688;
+		goto yy683;
+yy686:
+		YYDEBUG(686, *YYCURSOR);
+		yych = *(YYMARKER = ++YYCURSOR);
+		if (yych == '-') goto yy689;
+		goto yy683;
 yy687:
 		YYDEBUG(687, *YYCURSOR);
-		yych = *++YYCURSOR;
-		if (yych == '>') goto yy690;
-		goto yy685;
-yy688:
-		YYDEBUG(688, *YYCURSOR);
-		yych = *(YYMARKER = ++YYCURSOR);
-		if (yych == '-') goto yy691;
-		goto yy685;
-yy689:
-		YYDEBUG(689, *YYCURSOR);
 		++YYCURSOR;
 		YYFILL(1);
 		yych = *YYCURSOR;
 		if (yybm[0+yych] & 128) {
-			goto yy689;
+			goto yy687;
 		}
 		yyleng = YYCURSOR - SCNG(yy_text);
 		{
 	yy_pop_state();
 	RETURN_TOKEN_WITH_STR(T_STRING, 0);
 }
-yy690:
-		YYDEBUG(690, *YYCURSOR);
+yy688:
+		YYDEBUG(688, *YYCURSOR);
 		++YYCURSOR;
 		yyleng = YYCURSOR - SCNG(yy_text);
 		{
 	RETURN_TOKEN(T_OBJECT_OPERATOR);
 }
-yy691:
-		YYDEBUG(691, *YYCURSOR);
+yy689:
+		YYDEBUG(689, *YYCURSOR);
 		yych = *++YYCURSOR;
-		if (yych == '>') goto yy692;
+		if (yych == '>') goto yy690;
 		YYCURSOR = YYMARKER;
-		goto yy685;
-yy692:
-		YYDEBUG(692, *YYCURSOR);
+		goto yy683;
+yy690:
+		YYDEBUG(690, *YYCURSOR);
 		++YYCURSOR;
 		yyleng = YYCURSOR - SCNG(yy_text);
 		{
@@ -8189,18 +8161,18 @@ yyc_ST_BACKQUOTE:
 			128, 128, 128, 128, 128, 128, 128, 128, 
 			128, 128, 128, 128, 128, 128, 128, 128, 
 		};
-		YYDEBUG(693, *YYCURSOR);
+		YYDEBUG(691, *YYCURSOR);
 		YYFILL(2);
 		yych = *YYCURSOR;
 		if (yych <= '_') {
-			if (yych == '$') goto yy695;
+			if (yych == '$') goto yy693;
 		} else {
-			if (yych <= '`') goto yy696;
-			if (yych == '{') goto yy697;
+			if (yych <= '`') goto yy694;
+			if (yych == '{') goto yy695;
 		}
 		++YYCURSOR;
-yy694:
-		YYDEBUG(694, *YYCURSOR);
+yy692:
+		YYDEBUG(692, *YYCURSOR);
 		yyleng = YYCURSOR - SCNG(yy_text);
 		{
 	if (YYCURSOR > YYLIMIT) {
@@ -8246,60 +8218,60 @@ yy694:
 		RETURN_TOKEN(T_ERROR);
 	}
 }
-yy695:
-		YYDEBUG(695, *YYCURSOR);
+yy693:
+		YYDEBUG(693, *YYCURSOR);
 		yych = *++YYCURSOR;
 		if (yych <= '_') {
-			if (yych <= '@') goto yy694;
-			if (yych <= 'Z') goto yy698;
-			if (yych <= '^') goto yy694;
-			goto yy698;
+			if (yych <= '@') goto yy692;
+			if (yych <= 'Z') goto yy696;
+			if (yych <= '^') goto yy692;
+			goto yy696;
 		} else {
 			if (yych <= 'z') {
-				if (yych <= '`') goto yy694;
-				goto yy698;
+				if (yych <= '`') goto yy692;
+				goto yy696;
 			} else {
-				if (yych <= '{') goto yy700;
-				if (yych <= 0x7F) goto yy694;
-				goto yy698;
+				if (yych <= '{') goto yy698;
+				if (yych <= 0x7F) goto yy692;
+				goto yy696;
 			}
 		}
-yy696:
-		YYDEBUG(696, *YYCURSOR);
+yy694:
+		YYDEBUG(694, *YYCURSOR);
 		++YYCURSOR;
 		yyleng = YYCURSOR - SCNG(yy_text);
 		{
 	BEGIN(ST_IN_SCRIPTING);
 	RETURN_TOKEN('`');
 }
-yy697:
-		YYDEBUG(697, *YYCURSOR);
+yy695:
+		YYDEBUG(695, *YYCURSOR);
 		yych = *++YYCURSOR;
-		if (yych == '$') goto yy701;
-		goto yy694;
-yy698:
-		YYDEBUG(698, *YYCURSOR);
+		if (yych == '$') goto yy699;
+		goto yy692;
+yy696:
+		YYDEBUG(696, *YYCURSOR);
 		YYMARKER = ++YYCURSOR;
 		YYFILL(4);
 		yych = *YYCURSOR;
 		if (yybm[0+yych] & 128) {
-			goto yy698;
+			goto yy696;
 		}
 		if (yych <= '>') {
-			if (yych == '-') goto yy702;
+			if (yych == '-') goto yy700;
 		} else {
-			if (yych <= '?') goto yy704;
-			if (yych <= '@') goto yy699;
-			if (yych <= '[') goto yy705;
+			if (yych <= '?') goto yy702;
+			if (yych <= '@') goto yy697;
+			if (yych <= '[') goto yy703;
 		}
-yy699:
-		YYDEBUG(699, *YYCURSOR);
+yy697:
+		YYDEBUG(697, *YYCURSOR);
 		yyleng = YYCURSOR - SCNG(yy_text);
 		{
 	RETURN_TOKEN_WITH_STR(T_VARIABLE, 1);
 }
-yy700:
-		YYDEBUG(700, *YYCURSOR);
+yy698:
+		YYDEBUG(698, *YYCURSOR);
 		++YYCURSOR;
 		yyleng = YYCURSOR - SCNG(yy_text);
 		{
@@ -8307,8 +8279,8 @@ yy700:
 	enter_nesting('{');
 	RETURN_TOKEN(T_DOLLAR_OPEN_CURLY_BRACES);
 }
-yy701:
-		YYDEBUG(701, *YYCURSOR);
+yy699:
+		YYDEBUG(699, *YYCURSOR);
 		++YYCURSOR;
 		yyleng = YYCURSOR - SCNG(yy_text);
 		{
@@ -8317,21 +8289,21 @@ yy701:
 	enter_nesting('{');
 	RETURN_TOKEN(T_CURLY_OPEN);
 }
+yy700:
+		YYDEBUG(700, *YYCURSOR);
+		yych = *++YYCURSOR;
+		if (yych == '>') goto yy704;
+yy701:
+		YYDEBUG(701, *YYCURSOR);
+		YYCURSOR = YYMARKER;
+		goto yy697;
 yy702:
 		YYDEBUG(702, *YYCURSOR);
 		yych = *++YYCURSOR;
-		if (yych == '>') goto yy706;
+		if (yych == '-') goto yy705;
+		goto yy701;
 yy703:
 		YYDEBUG(703, *YYCURSOR);
-		YYCURSOR = YYMARKER;
-		goto yy699;
-yy704:
-		YYDEBUG(704, *YYCURSOR);
-		yych = *++YYCURSOR;
-		if (yych == '-') goto yy707;
-		goto yy703;
-yy705:
-		YYDEBUG(705, *YYCURSOR);
 		++YYCURSOR;
 		yyleng = YYCURSOR - SCNG(yy_text);
 		{
@@ -8339,27 +8311,27 @@ yy705:
 	yy_push_state(ST_VAR_OFFSET);
 	RETURN_TOKEN_WITH_STR(T_VARIABLE, 1);
 }
-yy706:
-		YYDEBUG(706, *YYCURSOR);
+yy704:
+		YYDEBUG(704, *YYCURSOR);
 		yych = *++YYCURSOR;
 		if (yych <= '_') {
-			if (yych <= '@') goto yy703;
-			if (yych <= 'Z') goto yy708;
-			if (yych <= '^') goto yy703;
-			goto yy708;
+			if (yych <= '@') goto yy701;
+			if (yych <= 'Z') goto yy706;
+			if (yych <= '^') goto yy701;
+			goto yy706;
 		} else {
-			if (yych <= '`') goto yy703;
-			if (yych <= 'z') goto yy708;
-			if (yych <= 0x7F) goto yy703;
-			goto yy708;
+			if (yych <= '`') goto yy701;
+			if (yych <= 'z') goto yy706;
+			if (yych <= 0x7F) goto yy701;
+			goto yy706;
 		}
-yy707:
-		YYDEBUG(707, *YYCURSOR);
+yy705:
+		YYDEBUG(705, *YYCURSOR);
 		yych = *++YYCURSOR;
-		if (yych == '>') goto yy709;
-		goto yy703;
-yy708:
-		YYDEBUG(708, *YYCURSOR);
+		if (yych == '>') goto yy707;
+		goto yy701;
+yy706:
+		YYDEBUG(706, *YYCURSOR);
 		++YYCURSOR;
 		yyleng = YYCURSOR - SCNG(yy_text);
 		{
@@ -8367,20 +8339,20 @@ yy708:
 	yy_push_state(ST_LOOKING_FOR_PROPERTY);
 	RETURN_TOKEN_WITH_STR(T_VARIABLE, 1);
 }
-yy709:
-		YYDEBUG(709, *YYCURSOR);
+yy707:
+		YYDEBUG(707, *YYCURSOR);
 		yych = *++YYCURSOR;
 		if (yych <= '_') {
-			if (yych <= '@') goto yy703;
-			if (yych <= 'Z') goto yy710;
-			if (yych <= '^') goto yy703;
+			if (yych <= '@') goto yy701;
+			if (yych <= 'Z') goto yy708;
+			if (yych <= '^') goto yy701;
 		} else {
-			if (yych <= '`') goto yy703;
-			if (yych <= 'z') goto yy710;
-			if (yych <= 0x7F) goto yy703;
+			if (yych <= '`') goto yy701;
+			if (yych <= 'z') goto yy708;
+			if (yych <= 0x7F) goto yy701;
 		}
-yy710:
-		YYDEBUG(710, *YYCURSOR);
+yy708:
+		YYDEBUG(708, *YYCURSOR);
 		++YYCURSOR;
 		yyleng = YYCURSOR - SCNG(yy_text);
 		{
@@ -8426,18 +8398,18 @@ yyc_ST_DOUBLE_QUOTES:
 			128, 128, 128, 128, 128, 128, 128, 128, 
 			128, 128, 128, 128, 128, 128, 128, 128, 
 		};
-		YYDEBUG(711, *YYCURSOR);
+		YYDEBUG(709, *YYCURSOR);
 		YYFILL(2);
 		yych = *YYCURSOR;
 		if (yych <= '#') {
-			if (yych == '"') goto yy713;
+			if (yych == '"') goto yy711;
 		} else {
-			if (yych <= '$') goto yy714;
-			if (yych == '{') goto yy715;
+			if (yych <= '$') goto yy712;
+			if (yych == '{') goto yy713;
 		}
 		++YYCURSOR;
-yy712:
-		YYDEBUG(712, *YYCURSOR);
+yy710:
+		YYDEBUG(710, *YYCURSOR);
 		yyleng = YYCURSOR - SCNG(yy_text);
 		{
 	if (GET_DOUBLE_QUOTES_SCANNED_LENGTH()) {
@@ -8491,60 +8463,60 @@ double_quotes_scan_done:
 		RETURN_TOKEN(T_ERROR);
 	}
 }
-yy713:
-		YYDEBUG(713, *YYCURSOR);
+yy711:
+		YYDEBUG(711, *YYCURSOR);
 		++YYCURSOR;
 		yyleng = YYCURSOR - SCNG(yy_text);
 		{
 	BEGIN(ST_IN_SCRIPTING);
 	RETURN_TOKEN('"');
 }
-yy714:
-		YYDEBUG(714, *YYCURSOR);
+yy712:
+		YYDEBUG(712, *YYCURSOR);
 		yych = *++YYCURSOR;
 		if (yych <= '_') {
-			if (yych <= '@') goto yy712;
-			if (yych <= 'Z') goto yy716;
-			if (yych <= '^') goto yy712;
-			goto yy716;
+			if (yych <= '@') goto yy710;
+			if (yych <= 'Z') goto yy714;
+			if (yych <= '^') goto yy710;
+			goto yy714;
 		} else {
 			if (yych <= 'z') {
-				if (yych <= '`') goto yy712;
-				goto yy716;
+				if (yych <= '`') goto yy710;
+				goto yy714;
 			} else {
-				if (yych <= '{') goto yy718;
-				if (yych <= 0x7F) goto yy712;
-				goto yy716;
+				if (yych <= '{') goto yy716;
+				if (yych <= 0x7F) goto yy710;
+				goto yy714;
 			}
 		}
-yy715:
-		YYDEBUG(715, *YYCURSOR);
+yy713:
+		YYDEBUG(713, *YYCURSOR);
 		yych = *++YYCURSOR;
-		if (yych == '$') goto yy719;
-		goto yy712;
-yy716:
-		YYDEBUG(716, *YYCURSOR);
+		if (yych == '$') goto yy717;
+		goto yy710;
+yy714:
+		YYDEBUG(714, *YYCURSOR);
 		YYMARKER = ++YYCURSOR;
 		YYFILL(4);
 		yych = *YYCURSOR;
 		if (yybm[0+yych] & 128) {
-			goto yy716;
+			goto yy714;
 		}
 		if (yych <= '>') {
-			if (yych == '-') goto yy720;
+			if (yych == '-') goto yy718;
 		} else {
-			if (yych <= '?') goto yy722;
-			if (yych <= '@') goto yy717;
-			if (yych <= '[') goto yy723;
+			if (yych <= '?') goto yy720;
+			if (yych <= '@') goto yy715;
+			if (yych <= '[') goto yy721;
 		}
-yy717:
-		YYDEBUG(717, *YYCURSOR);
+yy715:
+		YYDEBUG(715, *YYCURSOR);
 		yyleng = YYCURSOR - SCNG(yy_text);
 		{
 	RETURN_TOKEN_WITH_STR(T_VARIABLE, 1);
 }
-yy718:
-		YYDEBUG(718, *YYCURSOR);
+yy716:
+		YYDEBUG(716, *YYCURSOR);
 		++YYCURSOR;
 		yyleng = YYCURSOR - SCNG(yy_text);
 		{
@@ -8552,8 +8524,8 @@ yy718:
 	enter_nesting('{');
 	RETURN_TOKEN(T_DOLLAR_OPEN_CURLY_BRACES);
 }
-yy719:
-		YYDEBUG(719, *YYCURSOR);
+yy717:
+		YYDEBUG(717, *YYCURSOR);
 		++YYCURSOR;
 		yyleng = YYCURSOR - SCNG(yy_text);
 		{
@@ -8562,21 +8534,21 @@ yy719:
 	enter_nesting('{');
 	RETURN_TOKEN(T_CURLY_OPEN);
 }
+yy718:
+		YYDEBUG(718, *YYCURSOR);
+		yych = *++YYCURSOR;
+		if (yych == '>') goto yy722;
+yy719:
+		YYDEBUG(719, *YYCURSOR);
+		YYCURSOR = YYMARKER;
+		goto yy715;
 yy720:
 		YYDEBUG(720, *YYCURSOR);
 		yych = *++YYCURSOR;
-		if (yych == '>') goto yy724;
+		if (yych == '-') goto yy723;
+		goto yy719;
 yy721:
 		YYDEBUG(721, *YYCURSOR);
-		YYCURSOR = YYMARKER;
-		goto yy717;
-yy722:
-		YYDEBUG(722, *YYCURSOR);
-		yych = *++YYCURSOR;
-		if (yych == '-') goto yy725;
-		goto yy721;
-yy723:
-		YYDEBUG(723, *YYCURSOR);
 		++YYCURSOR;
 		yyleng = YYCURSOR - SCNG(yy_text);
 		{
@@ -8584,27 +8556,27 @@ yy723:
 	yy_push_state(ST_VAR_OFFSET);
 	RETURN_TOKEN_WITH_STR(T_VARIABLE, 1);
 }
-yy724:
-		YYDEBUG(724, *YYCURSOR);
+yy722:
+		YYDEBUG(722, *YYCURSOR);
 		yych = *++YYCURSOR;
 		if (yych <= '_') {
-			if (yych <= '@') goto yy721;
-			if (yych <= 'Z') goto yy726;
-			if (yych <= '^') goto yy721;
-			goto yy726;
+			if (yych <= '@') goto yy719;
+			if (yych <= 'Z') goto yy724;
+			if (yych <= '^') goto yy719;
+			goto yy724;
 		} else {
-			if (yych <= '`') goto yy721;
-			if (yych <= 'z') goto yy726;
-			if (yych <= 0x7F) goto yy721;
-			goto yy726;
+			if (yych <= '`') goto yy719;
+			if (yych <= 'z') goto yy724;
+			if (yych <= 0x7F) goto yy719;
+			goto yy724;
 		}
-yy725:
-		YYDEBUG(725, *YYCURSOR);
+yy723:
+		YYDEBUG(723, *YYCURSOR);
 		yych = *++YYCURSOR;
-		if (yych == '>') goto yy727;
-		goto yy721;
-yy726:
-		YYDEBUG(726, *YYCURSOR);
+		if (yych == '>') goto yy725;
+		goto yy719;
+yy724:
+		YYDEBUG(724, *YYCURSOR);
 		++YYCURSOR;
 		yyleng = YYCURSOR - SCNG(yy_text);
 		{
@@ -8612,20 +8584,20 @@ yy726:
 	yy_push_state(ST_LOOKING_FOR_PROPERTY);
 	RETURN_TOKEN_WITH_STR(T_VARIABLE, 1);
 }
-yy727:
-		YYDEBUG(727, *YYCURSOR);
+yy725:
+		YYDEBUG(725, *YYCURSOR);
 		yych = *++YYCURSOR;
 		if (yych <= '_') {
-			if (yych <= '@') goto yy721;
-			if (yych <= 'Z') goto yy728;
-			if (yych <= '^') goto yy721;
+			if (yych <= '@') goto yy719;
+			if (yych <= 'Z') goto yy726;
+			if (yych <= '^') goto yy719;
 		} else {
-			if (yych <= '`') goto yy721;
-			if (yych <= 'z') goto yy728;
-			if (yych <= 0x7F) goto yy721;
+			if (yych <= '`') goto yy719;
+			if (yych <= 'z') goto yy726;
+			if (yych <= 0x7F) goto yy719;
 		}
-yy728:
-		YYDEBUG(728, *YYCURSOR);
+yy726:
+		YYDEBUG(726, *YYCURSOR);
 		++YYCURSOR;
 		yyleng = YYCURSOR - SCNG(yy_text);
 		{
@@ -8671,14 +8643,14 @@ yyc_ST_HEREDOC:
 			128, 128, 128, 128, 128, 128, 128, 128, 
 			128, 128, 128, 128, 128, 128, 128, 128, 
 		};
-		YYDEBUG(729, *YYCURSOR);
+		YYDEBUG(727, *YYCURSOR);
 		YYFILL(2);
 		yych = *YYCURSOR;
-		if (yych == '$') goto yy731;
-		if (yych == '{') goto yy732;
+		if (yych == '$') goto yy729;
+		if (yych == '{') goto yy730;
 		++YYCURSOR;
-yy730:
-		YYDEBUG(730, *YYCURSOR);
+yy728:
+		YYDEBUG(728, *YYCURSOR);
 		yyleng = YYCURSOR - SCNG(yy_text);
 		{
 	zend_heredoc_label *heredoc_label = zend_ptr_stack_top(&SCNG(heredoc_label_stack));
@@ -8802,52 +8774,52 @@ heredoc_scan_done:
 
 	RETURN_TOKEN_WITH_VAL(T_ENCAPSED_AND_WHITESPACE);
 }
-yy731:
-		YYDEBUG(731, *YYCURSOR);
+yy729:
+		YYDEBUG(729, *YYCURSOR);
 		yych = *++YYCURSOR;
 		if (yych <= '_') {
-			if (yych <= '@') goto yy730;
-			if (yych <= 'Z') goto yy733;
-			if (yych <= '^') goto yy730;
-			goto yy733;
+			if (yych <= '@') goto yy728;
+			if (yych <= 'Z') goto yy731;
+			if (yych <= '^') goto yy728;
+			goto yy731;
 		} else {
 			if (yych <= 'z') {
-				if (yych <= '`') goto yy730;
-				goto yy733;
+				if (yych <= '`') goto yy728;
+				goto yy731;
 			} else {
-				if (yych <= '{') goto yy735;
-				if (yych <= 0x7F) goto yy730;
-				goto yy733;
+				if (yych <= '{') goto yy733;
+				if (yych <= 0x7F) goto yy728;
+				goto yy731;
 			}
 		}
-yy732:
-		YYDEBUG(732, *YYCURSOR);
+yy730:
+		YYDEBUG(730, *YYCURSOR);
 		yych = *++YYCURSOR;
-		if (yych == '$') goto yy736;
-		goto yy730;
-yy733:
-		YYDEBUG(733, *YYCURSOR);
+		if (yych == '$') goto yy734;
+		goto yy728;
+yy731:
+		YYDEBUG(731, *YYCURSOR);
 		YYMARKER = ++YYCURSOR;
 		YYFILL(4);
 		yych = *YYCURSOR;
 		if (yybm[0+yych] & 128) {
-			goto yy733;
+			goto yy731;
 		}
 		if (yych <= '>') {
-			if (yych == '-') goto yy737;
+			if (yych == '-') goto yy735;
 		} else {
-			if (yych <= '?') goto yy739;
-			if (yych <= '@') goto yy734;
-			if (yych <= '[') goto yy740;
+			if (yych <= '?') goto yy737;
+			if (yych <= '@') goto yy732;
+			if (yych <= '[') goto yy738;
 		}
-yy734:
-		YYDEBUG(734, *YYCURSOR);
+yy732:
+		YYDEBUG(732, *YYCURSOR);
 		yyleng = YYCURSOR - SCNG(yy_text);
 		{
 	RETURN_TOKEN_WITH_STR(T_VARIABLE, 1);
 }
-yy735:
-		YYDEBUG(735, *YYCURSOR);
+yy733:
+		YYDEBUG(733, *YYCURSOR);
 		++YYCURSOR;
 		yyleng = YYCURSOR - SCNG(yy_text);
 		{
@@ -8855,8 +8827,8 @@ yy735:
 	enter_nesting('{');
 	RETURN_TOKEN(T_DOLLAR_OPEN_CURLY_BRACES);
 }
-yy736:
-		YYDEBUG(736, *YYCURSOR);
+yy734:
+		YYDEBUG(734, *YYCURSOR);
 		++YYCURSOR;
 		yyleng = YYCURSOR - SCNG(yy_text);
 		{
@@ -8865,21 +8837,21 @@ yy736:
 	enter_nesting('{');
 	RETURN_TOKEN(T_CURLY_OPEN);
 }
+yy735:
+		YYDEBUG(735, *YYCURSOR);
+		yych = *++YYCURSOR;
+		if (yych == '>') goto yy739;
+yy736:
+		YYDEBUG(736, *YYCURSOR);
+		YYCURSOR = YYMARKER;
+		goto yy732;
 yy737:
 		YYDEBUG(737, *YYCURSOR);
 		yych = *++YYCURSOR;
-		if (yych == '>') goto yy741;
+		if (yych == '-') goto yy740;
+		goto yy736;
 yy738:
 		YYDEBUG(738, *YYCURSOR);
-		YYCURSOR = YYMARKER;
-		goto yy734;
-yy739:
-		YYDEBUG(739, *YYCURSOR);
-		yych = *++YYCURSOR;
-		if (yych == '-') goto yy742;
-		goto yy738;
-yy740:
-		YYDEBUG(740, *YYCURSOR);
 		++YYCURSOR;
 		yyleng = YYCURSOR - SCNG(yy_text);
 		{
@@ -8887,27 +8859,27 @@ yy740:
 	yy_push_state(ST_VAR_OFFSET);
 	RETURN_TOKEN_WITH_STR(T_VARIABLE, 1);
 }
-yy741:
-		YYDEBUG(741, *YYCURSOR);
+yy739:
+		YYDEBUG(739, *YYCURSOR);
 		yych = *++YYCURSOR;
 		if (yych <= '_') {
-			if (yych <= '@') goto yy738;
-			if (yych <= 'Z') goto yy743;
-			if (yych <= '^') goto yy738;
-			goto yy743;
+			if (yych <= '@') goto yy736;
+			if (yych <= 'Z') goto yy741;
+			if (yych <= '^') goto yy736;
+			goto yy741;
 		} else {
-			if (yych <= '`') goto yy738;
-			if (yych <= 'z') goto yy743;
-			if (yych <= 0x7F) goto yy738;
-			goto yy743;
+			if (yych <= '`') goto yy736;
+			if (yych <= 'z') goto yy741;
+			if (yych <= 0x7F) goto yy736;
+			goto yy741;
 		}
-yy742:
-		YYDEBUG(742, *YYCURSOR);
+yy740:
+		YYDEBUG(740, *YYCURSOR);
 		yych = *++YYCURSOR;
-		if (yych == '>') goto yy744;
-		goto yy738;
-yy743:
-		YYDEBUG(743, *YYCURSOR);
+		if (yych == '>') goto yy742;
+		goto yy736;
+yy741:
+		YYDEBUG(741, *YYCURSOR);
 		++YYCURSOR;
 		yyleng = YYCURSOR - SCNG(yy_text);
 		{
@@ -8915,20 +8887,20 @@ yy743:
 	yy_push_state(ST_LOOKING_FOR_PROPERTY);
 	RETURN_TOKEN_WITH_STR(T_VARIABLE, 1);
 }
-yy744:
-		YYDEBUG(744, *YYCURSOR);
+yy742:
+		YYDEBUG(742, *YYCURSOR);
 		yych = *++YYCURSOR;
 		if (yych <= '_') {
-			if (yych <= '@') goto yy738;
-			if (yych <= 'Z') goto yy745;
-			if (yych <= '^') goto yy738;
+			if (yych <= '@') goto yy736;
+			if (yych <= 'Z') goto yy743;
+			if (yych <= '^') goto yy736;
 		} else {
-			if (yych <= '`') goto yy738;
-			if (yych <= 'z') goto yy745;
-			if (yych <= 0x7F) goto yy738;
+			if (yych <= '`') goto yy736;
+			if (yych <= 'z') goto yy743;
+			if (yych <= 0x7F) goto yy736;
 		}
-yy745:
-		YYDEBUG(745, *YYCURSOR);
+yy743:
+		YYDEBUG(743, *YYCURSOR);
 		++YYCURSOR;
 		yyleng = YYCURSOR - SCNG(yy_text);
 		{
@@ -8974,23 +8946,23 @@ yyc_ST_LOOKING_FOR_VARNAME:
 			128, 128, 128, 128, 128, 128, 128, 128, 
 			128, 128, 128, 128, 128, 128, 128, 128, 
 		};
-		YYDEBUG(746, *YYCURSOR);
+		YYDEBUG(744, *YYCURSOR);
 		YYFILL(2);
 		yych = *YYCURSOR;
 		if (yych <= '_') {
-			if (yych <= '@') goto yy747;
-			if (yych <= 'Z') goto yy749;
-			if (yych >= '_') goto yy749;
+			if (yych <= '@') goto yy745;
+			if (yych <= 'Z') goto yy747;
+			if (yych >= '_') goto yy747;
 		} else {
-			if (yych <= '`') goto yy747;
-			if (yych <= 'z') goto yy749;
-			if (yych >= 0x80) goto yy749;
+			if (yych <= '`') goto yy745;
+			if (yych <= 'z') goto yy747;
+			if (yych >= 0x80) goto yy747;
 		}
-yy747:
-		YYDEBUG(747, *YYCURSOR);
+yy745:
+		YYDEBUG(745, *YYCURSOR);
 		++YYCURSOR;
-yy748:
-		YYDEBUG(748, *YYCURSOR);
+yy746:
+		YYDEBUG(746, *YYCURSOR);
 		yyleng = YYCURSOR - SCNG(yy_text);
 		{
 	yyless(0);
@@ -8998,49 +8970,49 @@ yy748:
 	yy_push_state(ST_IN_SCRIPTING);
 	goto restart;
 }
-yy749:
-		YYDEBUG(749, *YYCURSOR);
+yy747:
+		YYDEBUG(747, *YYCURSOR);
 		yych = *(YYMARKER = ++YYCURSOR);
 		if (yych <= '_') {
 			if (yych <= '@') {
-				if (yych <= '/') goto yy748;
-				if (yych <= '9') goto yy751;
-				goto yy748;
+				if (yych <= '/') goto yy746;
+				if (yych <= '9') goto yy749;
+				goto yy746;
 			} else {
-				if (yych <= '[') goto yy751;
-				if (yych <= '^') goto yy748;
-				goto yy751;
+				if (yych <= '[') goto yy749;
+				if (yych <= '^') goto yy746;
+				goto yy749;
 			}
 		} else {
 			if (yych <= '|') {
-				if (yych <= '`') goto yy748;
-				if (yych <= 'z') goto yy751;
-				goto yy748;
+				if (yych <= '`') goto yy746;
+				if (yych <= 'z') goto yy749;
+				goto yy746;
 			} else {
-				if (yych <= '}') goto yy751;
-				if (yych <= 0x7F) goto yy748;
-				goto yy751;
+				if (yych <= '}') goto yy749;
+				if (yych <= 0x7F) goto yy746;
+				goto yy749;
 			}
 		}
-yy750:
-		YYDEBUG(750, *YYCURSOR);
+yy748:
+		YYDEBUG(748, *YYCURSOR);
 		++YYCURSOR;
 		YYFILL(1);
 		yych = *YYCURSOR;
+yy749:
+		YYDEBUG(749, *YYCURSOR);
+		if (yybm[0+yych] & 128) {
+			goto yy748;
+		}
+		if (yych <= '@') goto yy750;
+		if (yych <= '[') goto yy751;
+		if (yych == '}') goto yy751;
+yy750:
+		YYDEBUG(750, *YYCURSOR);
+		YYCURSOR = YYMARKER;
+		goto yy746;
 yy751:
 		YYDEBUG(751, *YYCURSOR);
-		if (yybm[0+yych] & 128) {
-			goto yy750;
-		}
-		if (yych <= '@') goto yy752;
-		if (yych <= '[') goto yy753;
-		if (yych == '}') goto yy753;
-yy752:
-		YYDEBUG(752, *YYCURSOR);
-		YYCURSOR = YYMARKER;
-		goto yy748;
-yy753:
-		YYDEBUG(753, *YYCURSOR);
 		++YYCURSOR;
 		yyleng = YYCURSOR - SCNG(yy_text);
 		{
@@ -9087,53 +9059,53 @@ yyc_ST_VAR_OFFSET:
 			 16,  16,  16,  16,  16,  16,  16,  16, 
 			 16,  16,  16,  16,  16,  16,  16,  16, 
 		};
-		YYDEBUG(754, *YYCURSOR);
+		YYDEBUG(752, *YYCURSOR);
 		YYFILL(2);
 		yych = *YYCURSOR;
 		if (yych <= '0') {
 			if (yych <= ' ') {
 				if (yych <= '\f') {
-					if (yych <= 0x08) goto yy755;
-					if (yych <= '\n') goto yy756;
+					if (yych <= 0x08) goto yy753;
+					if (yych <= '\n') goto yy754;
 				} else {
-					if (yych <= '\r') goto yy756;
-					if (yych >= ' ') goto yy756;
+					if (yych <= '\r') goto yy754;
+					if (yych >= ' ') goto yy754;
 				}
 			} else {
 				if (yych <= '$') {
-					if (yych <= '"') goto yy757;
-					if (yych <= '#') goto yy756;
-					goto yy759;
+					if (yych <= '"') goto yy755;
+					if (yych <= '#') goto yy754;
+					goto yy757;
 				} else {
-					if (yych == '\'') goto yy756;
-					if (yych <= '/') goto yy757;
-					goto yy760;
+					if (yych == '\'') goto yy754;
+					if (yych <= '/') goto yy755;
+					goto yy758;
 				}
 			}
 		} else {
 			if (yych <= ']') {
 				if (yych <= 'Z') {
-					if (yych <= '9') goto yy762;
-					if (yych <= '@') goto yy757;
-					goto yy763;
+					if (yych <= '9') goto yy760;
+					if (yych <= '@') goto yy755;
+					goto yy761;
 				} else {
-					if (yych <= '[') goto yy757;
-					if (yych <= '\\') goto yy756;
-					goto yy764;
+					if (yych <= '[') goto yy755;
+					if (yych <= '\\') goto yy754;
+					goto yy762;
 				}
 			} else {
 				if (yych <= '`') {
-					if (yych == '_') goto yy763;
-					goto yy757;
+					if (yych == '_') goto yy761;
+					goto yy755;
 				} else {
-					if (yych <= 'z') goto yy763;
-					if (yych <= '~') goto yy757;
-					if (yych >= 0x80) goto yy763;
+					if (yych <= 'z') goto yy761;
+					if (yych <= '~') goto yy755;
+					if (yych >= 0x80) goto yy761;
 				}
 			}
 		}
-yy755:
-		YYDEBUG(755, *YYCURSOR);
+yy753:
+		YYDEBUG(753, *YYCURSOR);
 		++YYCURSOR;
 		yyleng = YYCURSOR - SCNG(yy_text);
 		{
@@ -9143,8 +9115,8 @@ yy755:
 
 	RETURN_TOKEN(T_BAD_CHARACTER);
 }
-yy756:
-		YYDEBUG(756, *YYCURSOR);
+yy754:
+		YYDEBUG(754, *YYCURSOR);
 		++YYCURSOR;
 		yyleng = YYCURSOR - SCNG(yy_text);
 		{
@@ -9154,57 +9126,57 @@ yy756:
 	ZVAL_NULL(zendlval);
 	RETURN_TOKEN_WITH_VAL(T_ENCAPSED_AND_WHITESPACE);
 }
-yy757:
-		YYDEBUG(757, *YYCURSOR);
+yy755:
+		YYDEBUG(755, *YYCURSOR);
 		++YYCURSOR;
-yy758:
-		YYDEBUG(758, *YYCURSOR);
+yy756:
+		YYDEBUG(756, *YYCURSOR);
 		yyleng = YYCURSOR - SCNG(yy_text);
 		{
 	/* Only '[' or '-' can be valid, but returning other tokens will allow a more explicit parse error */
 	RETURN_TOKEN(yytext[0]);
 }
-yy759:
-		YYDEBUG(759, *YYCURSOR);
+yy757:
+		YYDEBUG(757, *YYCURSOR);
 		yych = *++YYCURSOR;
 		if (yych <= '_') {
-			if (yych <= '@') goto yy758;
-			if (yych <= 'Z') goto yy765;
-			if (yych <= '^') goto yy758;
-			goto yy765;
+			if (yych <= '@') goto yy756;
+			if (yych <= 'Z') goto yy763;
+			if (yych <= '^') goto yy756;
+			goto yy763;
 		} else {
-			if (yych <= '`') goto yy758;
-			if (yych <= 'z') goto yy765;
-			if (yych <= 0x7F) goto yy758;
-			goto yy765;
+			if (yych <= '`') goto yy756;
+			if (yych <= 'z') goto yy763;
+			if (yych <= 0x7F) goto yy756;
+			goto yy763;
 		}
-yy760:
-		YYDEBUG(760, *YYCURSOR);
+yy758:
+		YYDEBUG(758, *YYCURSOR);
 		yyaccept = 0;
 		yych = *(YYMARKER = ++YYCURSOR);
 		if (yych <= 'X') {
 			if (yych <= 'B') {
-				if (yych <= '/') goto yy761;
-				if (yych <= '9') goto yy767;
-				if (yych >= 'B') goto yy769;
+				if (yych <= '/') goto yy759;
+				if (yych <= '9') goto yy765;
+				if (yych >= 'B') goto yy767;
 			} else {
-				if (yych == 'O') goto yy771;
-				if (yych >= 'X') goto yy772;
+				if (yych == 'O') goto yy769;
+				if (yych >= 'X') goto yy770;
 			}
 		} else {
 			if (yych <= 'b') {
-				if (yych == '_') goto yy773;
-				if (yych >= 'b') goto yy769;
+				if (yych == '_') goto yy771;
+				if (yych >= 'b') goto yy767;
 			} else {
 				if (yych <= 'o') {
-					if (yych >= 'o') goto yy771;
+					if (yych >= 'o') goto yy769;
 				} else {
-					if (yych == 'x') goto yy772;
+					if (yych == 'x') goto yy770;
 				}
 			}
 		}
-yy761:
-		YYDEBUG(761, *YYCURSOR);
+yy759:
+		YYDEBUG(759, *YYCURSOR);
 		yyleng = YYCURSOR - SCNG(yy_text);
 		{ /* Offset could be treated as a long */
 	if (yyleng < MAX_LENGTH_OF_LONG - 1 || (yyleng == MAX_LENGTH_OF_LONG - 1 && strcmp(yytext, long_min_digits) < 0)) {
@@ -9221,74 +9193,74 @@ string:
 	}
 	RETURN_TOKEN_WITH_VAL(T_NUM_STRING);
 }
-yy762:
-		YYDEBUG(762, *YYCURSOR);
+yy760:
+		YYDEBUG(760, *YYCURSOR);
 		yyaccept = 0;
 		YYMARKER = ++YYCURSOR;
 		YYFILL(1);
 		yych = *YYCURSOR;
 		if (yybm[0+yych] & 8) {
-			goto yy762;
+			goto yy760;
 		}
-		if (yych == '_') goto yy773;
-		goto yy761;
-yy763:
-		YYDEBUG(763, *YYCURSOR);
+		if (yych == '_') goto yy771;
+		goto yy759;
+yy761:
+		YYDEBUG(761, *YYCURSOR);
 		++YYCURSOR;
 		YYFILL(1);
 		yych = *YYCURSOR;
 		if (yybm[0+yych] & 16) {
-			goto yy763;
+			goto yy761;
 		}
 		yyleng = YYCURSOR - SCNG(yy_text);
 		{
 	RETURN_TOKEN_WITH_STR(T_STRING, 0);
 }
-yy764:
-		YYDEBUG(764, *YYCURSOR);
+yy762:
+		YYDEBUG(762, *YYCURSOR);
 		++YYCURSOR;
 		yyleng = YYCURSOR - SCNG(yy_text);
 		{
 	yy_pop_state();
 	RETURN_TOKEN(']');
 }
-yy765:
-		YYDEBUG(765, *YYCURSOR);
+yy763:
+		YYDEBUG(763, *YYCURSOR);
 		++YYCURSOR;
 		YYFILL(1);
 		yych = *YYCURSOR;
 		if (yych <= '^') {
 			if (yych <= '9') {
-				if (yych >= '0') goto yy765;
+				if (yych >= '0') goto yy763;
 			} else {
-				if (yych <= '@') goto yy766;
-				if (yych <= 'Z') goto yy765;
+				if (yych <= '@') goto yy764;
+				if (yych <= 'Z') goto yy763;
 			}
 		} else {
 			if (yych <= '`') {
-				if (yych <= '_') goto yy765;
+				if (yych <= '_') goto yy763;
 			} else {
-				if (yych <= 'z') goto yy765;
-				if (yych >= 0x80) goto yy765;
+				if (yych <= 'z') goto yy763;
+				if (yych >= 0x80) goto yy763;
 			}
 		}
-yy766:
-		YYDEBUG(766, *YYCURSOR);
+yy764:
+		YYDEBUG(764, *YYCURSOR);
 		yyleng = YYCURSOR - SCNG(yy_text);
 		{
 	RETURN_TOKEN_WITH_STR(T_VARIABLE, 1);
 }
-yy767:
-		YYDEBUG(767, *YYCURSOR);
+yy765:
+		YYDEBUG(765, *YYCURSOR);
 		yyaccept = 1;
 		YYMARKER = ++YYCURSOR;
 		YYFILL(1);
 		yych = *YYCURSOR;
-		if (yych <= '/') goto yy768;
-		if (yych <= '9') goto yy767;
-		if (yych == '_') goto yy773;
-yy768:
-		YYDEBUG(768, *YYCURSOR);
+		if (yych <= '/') goto yy766;
+		if (yych <= '9') goto yy765;
+		if (yych == '_') goto yy771;
+yy766:
+		YYDEBUG(766, *YYCURSOR);
 		yyleng = YYCURSOR - SCNG(yy_text);
 		{ /* Offset must be treated as a string */
 	if (yyleng == 1) {
@@ -9298,81 +9270,81 @@ yy768:
 	}
 	RETURN_TOKEN_WITH_VAL(T_NUM_STRING);
 }
+yy767:
+		YYDEBUG(767, *YYCURSOR);
+		++YYCURSOR;
+		YYFILL(1);
+		yych = *YYCURSOR;
+		if (yybm[0+yych] & 32) {
+			goto yy772;
+		}
+yy768:
+		YYDEBUG(768, *YYCURSOR);
+		YYCURSOR = YYMARKER;
+		if (yyaccept == 0) {
+			goto yy759;
+		} else {
+			goto yy766;
+		}
 yy769:
 		YYDEBUG(769, *YYCURSOR);
 		++YYCURSOR;
 		YYFILL(1);
 		yych = *YYCURSOR;
-		if (yybm[0+yych] & 32) {
-			goto yy774;
+		if (yybm[0+yych] & 64) {
+			goto yy773;
 		}
+		goto yy768;
 yy770:
 		YYDEBUG(770, *YYCURSOR);
-		YYCURSOR = YYMARKER;
-		if (yyaccept == 0) {
-			goto yy761;
-		} else {
-			goto yy768;
+		++YYCURSOR;
+		YYFILL(1);
+		yych = *YYCURSOR;
+		if (yybm[0+yych] & 128) {
+			goto yy774;
 		}
+		goto yy768;
 yy771:
 		YYDEBUG(771, *YYCURSOR);
 		++YYCURSOR;
 		YYFILL(1);
 		yych = *YYCURSOR;
-		if (yybm[0+yych] & 64) {
-			goto yy775;
-		}
-		goto yy770;
+		if (yych <= '/') goto yy768;
+		if (yych <= '9') goto yy765;
+		goto yy768;
 yy772:
 		YYDEBUG(772, *YYCURSOR);
-		++YYCURSOR;
+		yyaccept = 1;
+		YYMARKER = ++YYCURSOR;
 		YYFILL(1);
 		yych = *YYCURSOR;
-		if (yybm[0+yych] & 128) {
-			goto yy776;
+		if (yybm[0+yych] & 32) {
+			goto yy772;
 		}
-		goto yy770;
+		if (yych == '_') goto yy767;
+		goto yy766;
 yy773:
 		YYDEBUG(773, *YYCURSOR);
-		++YYCURSOR;
+		yyaccept = 1;
+		YYMARKER = ++YYCURSOR;
 		YYFILL(1);
 		yych = *YYCURSOR;
-		if (yych <= '/') goto yy770;
-		if (yych <= '9') goto yy767;
-		goto yy770;
+		if (yybm[0+yych] & 64) {
+			goto yy773;
+		}
+		if (yych == '_') goto yy769;
+		goto yy766;
 yy774:
 		YYDEBUG(774, *YYCURSOR);
 		yyaccept = 1;
 		YYMARKER = ++YYCURSOR;
 		YYFILL(1);
 		yych = *YYCURSOR;
-		if (yybm[0+yych] & 32) {
+		if (yybm[0+yych] & 128) {
 			goto yy774;
 		}
-		if (yych == '_') goto yy769;
-		goto yy768;
-yy775:
-		YYDEBUG(775, *YYCURSOR);
-		yyaccept = 1;
-		YYMARKER = ++YYCURSOR;
-		YYFILL(1);
-		yych = *YYCURSOR;
-		if (yybm[0+yych] & 64) {
-			goto yy775;
-		}
-		if (yych == '_') goto yy771;
-		goto yy768;
-yy776:
-		YYDEBUG(776, *YYCURSOR);
-		yyaccept = 1;
-		YYMARKER = ++YYCURSOR;
-		YYFILL(1);
-		yych = *YYCURSOR;
-		if (yybm[0+yych] & 128) {
-			goto yy776;
-		}
-		if (yych == '_') goto yy772;
-		goto yy768;
+		if (yych == '_') goto yy770;
+		goto yy766;
 	}
 /* *********************************** */
 yyc_SHEBANG:
@@ -9411,30 +9383,30 @@ yyc_SHEBANG:
 			128, 128, 128, 128, 128, 128, 128, 128, 
 			128, 128, 128, 128, 128, 128, 128, 128, 
 		};
-		YYDEBUG(777, *YYCURSOR);
+		YYDEBUG(775, *YYCURSOR);
 		YYFILL(2);
 		yych = *YYCURSOR;
-		if (yych == '#') goto yy779;
+		if (yych == '#') goto yy777;
 		++YYCURSOR;
-yy778:
-		YYDEBUG(778, *YYCURSOR);
+yy776:
+		YYDEBUG(776, *YYCURSOR);
 		yyleng = YYCURSOR - SCNG(yy_text);
 		{
 	yyless(0);
 	BEGIN(INITIAL);
 	goto restart;
 }
-yy779:
-		YYDEBUG(779, *YYCURSOR);
+yy777:
+		YYDEBUG(777, *YYCURSOR);
 		yych = *++YYCURSOR;
-		if (yych != '!') goto yy778;
-yy780:
-		YYDEBUG(780, *YYCURSOR);
+		if (yych != '!') goto yy776;
+yy778:
+		YYDEBUG(778, *YYCURSOR);
 		++YYCURSOR;
 		YYFILL(1);
 		yych = *YYCURSOR;
 		if (yybm[0+yych] & 128) {
-			goto yy780;
+			goto yy778;
 		}
 		++YYCURSOR;
 		yyleng = YYCURSOR - SCNG(yy_text);
@@ -9446,13 +9418,13 @@ yy780:
 	}
 /* *********************************** */
 yyc_INITIAL:
-	YYDEBUG(781, *YYCURSOR);
+	YYDEBUG(779, *YYCURSOR);
 	YYFILL(7);
 	yych = *YYCURSOR;
-	if (yych == '<') goto yy783;
+	if (yych == '<') goto yy781;
 	++YYCURSOR;
-yy782:
-	YYDEBUG(782, *YYCURSOR);
+yy780:
+	YYDEBUG(780, *YYCURSOR);
 	yyleng = YYCURSOR - SCNG(yy_text);
 	{
 	if (YYCURSOR > YYLIMIT) {
@@ -9505,19 +9477,19 @@ inline_char_handler:
 	HANDLE_NEWLINES(yytext, yyleng);
 	RETURN_TOKEN_WITH_VAL(T_INLINE_HTML);
 }
-yy783:
-	YYDEBUG(783, *YYCURSOR);
+yy781:
+	YYDEBUG(781, *YYCURSOR);
 	yych = *++YYCURSOR;
-	if (yych != '?') goto yy782;
+	if (yych != '?') goto yy780;
 	yych = *(YYMARKER = ++YYCURSOR);
 	if (yych <= 'O') {
-		if (yych == '=') goto yy785;
+		if (yych == '=') goto yy783;
 	} else {
-		if (yych <= 'P') goto yy786;
-		if (yych == 'p') goto yy786;
+		if (yych <= 'P') goto yy784;
+		if (yych == 'p') goto yy784;
 	}
-yy784:
-	YYDEBUG(784, *YYCURSOR);
+yy782:
+	YYDEBUG(782, *YYCURSOR);
 	yyleng = YYCURSOR - SCNG(yy_text);
 	{
 	if (CG(short_tags)) {
@@ -9527,8 +9499,8 @@ yy784:
 		goto inline_char_handler;
 	}
 }
-yy785:
-	YYDEBUG(785, *YYCURSOR);
+yy783:
+	YYDEBUG(783, *YYCURSOR);
 	++YYCURSOR;
 	yyleng = YYCURSOR - SCNG(yy_text);
 	{
@@ -9539,32 +9511,32 @@ yy785:
 	}
 	RETURN_TOKEN(T_OPEN_TAG_WITH_ECHO);
 }
+yy784:
+	YYDEBUG(784, *YYCURSOR);
+	yych = *++YYCURSOR;
+	if (yych == 'H') goto yy786;
+	if (yych == 'h') goto yy786;
+yy785:
+	YYDEBUG(785, *YYCURSOR);
+	YYCURSOR = YYMARKER;
+	goto yy782;
 yy786:
 	YYDEBUG(786, *YYCURSOR);
 	yych = *++YYCURSOR;
-	if (yych == 'H') goto yy788;
-	if (yych == 'h') goto yy788;
+	if (yych == 'P') goto yy787;
+	if (yych != 'p') goto yy785;
 yy787:
 	YYDEBUG(787, *YYCURSOR);
-	YYCURSOR = YYMARKER;
-	goto yy784;
-yy788:
-	YYDEBUG(788, *YYCURSOR);
-	yych = *++YYCURSOR;
-	if (yych == 'P') goto yy789;
-	if (yych != 'p') goto yy787;
-yy789:
-	YYDEBUG(789, *YYCURSOR);
 	yych = *++YYCURSOR;
 	if (yych <= '\f') {
-		if (yych <= 0x08) goto yy790;
-		if (yych <= '\n') goto yy791;
+		if (yych <= 0x08) goto yy788;
+		if (yych <= '\n') goto yy789;
 	} else {
-		if (yych <= '\r') goto yy793;
-		if (yych == ' ') goto yy791;
+		if (yych <= '\r') goto yy791;
+		if (yych == ' ') goto yy789;
 	}
-yy790:
-	YYDEBUG(790, *YYCURSOR);
+yy788:
+	YYDEBUG(788, *YYCURSOR);
 	yyleng = YYCURSOR - SCNG(yy_text);
 	{
 	/* Allow <?php followed by end of file. */
@@ -9580,25 +9552,25 @@ yy790:
 	}
 	goto inline_char_handler;
 }
-yy791:
-	YYDEBUG(791, *YYCURSOR);
+yy789:
+	YYDEBUG(789, *YYCURSOR);
 	++YYCURSOR;
-yy792:
-	YYDEBUG(792, *YYCURSOR);
+yy790:
+	YYDEBUG(790, *YYCURSOR);
 	yyleng = YYCURSOR - SCNG(yy_text);
 	{
 	HANDLE_NEWLINE(yytext[yyleng-1]);
 	BEGIN(ST_IN_SCRIPTING);
 	RETURN_OR_SKIP_TOKEN(T_OPEN_TAG);
 }
-yy793:
-	YYDEBUG(793, *YYCURSOR);
+yy791:
+	YYDEBUG(791, *YYCURSOR);
 	yych = *++YYCURSOR;
-	if (yych == '\n') goto yy791;
-	goto yy792;
+	if (yych == '\n') goto yy789;
+	goto yy790;
 /* *********************************** */
 yyc_ST_END_HEREDOC:
-	YYDEBUG(794, *YYCURSOR);
+	YYDEBUG(792, *YYCURSOR);
 	YYFILL(1);
 	++YYCURSOR;
 	yyleng = YYCURSOR - SCNG(yy_text);
@@ -9616,7 +9588,7 @@ yyc_ST_END_HEREDOC:
 }
 /* *********************************** */
 yyc_ST_NOWDOC:
-	YYDEBUG(795, *YYCURSOR);
+	YYDEBUG(793, *YYCURSOR);
 	YYFILL(1);
 	++YYCURSOR;
 	yyleng = YYCURSOR - SCNG(yy_text);
