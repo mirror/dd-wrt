@@ -129,10 +129,10 @@ static void trxsplit_create_partitions(struct mtd_info *mtd)
 			    {
 			    mtd_read(mtd, offset,32, &retlen, buf);
 
-//			    printk(KERN_EMERG "scanning squashfs at %X\n",offset);
+//			    printk(KERN_INFO "scanning squashfs at %X\n",offset);
 			    if (*((__u32 *) buf) == SQUASHFS_MAGIC)
 				    {
-				    	printk(KERN_EMERG "\nfound squashfs at %X\n",offset);
+				    	printk(KERN_INFO "\nfound squashfs at %X\n",offset);
 					trx_parts[1].offset=offset;					
 					break;
 				    } 
@@ -154,7 +154,7 @@ static void trxsplit_create_partitions(struct mtd_info *mtd)
 	
 
 //	for (i=0;i<3;i++)
-//	    printk(KERN_EMERG "partition %s: offset %08X, size %08X\n",trx_parts[i].name,trx_parts[i].offset,trx_parts[i].size);
+//	    printk(KERN_INFO "partition %s: offset %08X, size %08X\n",trx_parts[i].name,trx_parts[i].offset,trx_parts[i].size);
 	
 	/*
 	detect OSBridge 
@@ -163,7 +163,7 @@ static void trxsplit_create_partitions(struct mtd_info *mtd)
 	int bootmul=2;
 	if (strncmp(buf,"OSBRiDGE 5XLi",13)==0)
 	    {
-	    printk(KERN_EMERG "found osbridge 5XLi");
+	    printk(KERN_INFO "found osbridge 5XLi");
 	    bootmul=1;
 	    trx_parts[0].offset = 0x20000;
 	    trx_parts[0].size = (mtd->size-mtd->size-mtd->erasesize) - trx_parts[0].offset;
@@ -186,7 +186,7 @@ static void trxsplit_create_partitions(struct mtd_info *mtd)
 #endif
 	err = mtd_device_register(mtd, &boot, 1);
 //	for (i=0;i<3;i++)
-//	    printk(KERN_EMERG "partition %s: offset %08X, size %08X\n",trx_parts[i].name,trx_parts[i].offset,trx_parts[i].size);
+//	    printk(KERN_INFO "partition %s: offset %08X, size %08X\n",trx_parts[i].name,trx_parts[i].offset,trx_parts[i].size);
 	
 	err = mtd_device_register(mtd, trx_parts, 3);
 	if (err) {

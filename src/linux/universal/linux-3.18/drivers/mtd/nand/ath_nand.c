@@ -1456,7 +1456,7 @@ static int ath_nand_add_partition(ath_nand_sc_t *sc)
 				    
 #ifdef CONFIG_DW02_412H
 		if (bbuf) {
-				printk(KERN_EMERG "\nfound squashfs at 0x%llX\n",offset);
+				printk(KERN_INFO "\nfound squashfs at 0x%llX\n",offset);
 				sb = (struct squashfs_super_block *)buf;
 				dir_parts[1].offset = offset;
 				dir_parts[1].size = le64_to_cpu(sb->bytes_used);
@@ -1472,7 +1472,7 @@ static int ath_nand_add_partition(ath_nand_sc_t *sc)
 		}
 #else
 		if (bbuf) {
-				printk(KERN_EMERG "\nfound squashfs at 0x%llX\n",offset);
+				printk(KERN_INFO "\nfound squashfs at 0x%llX\n",offset);
 				sb = (struct squashfs_super_block *)buf;
 				dir_parts[2].offset = offset;
 				dir_parts[2].size = le64_to_cpu(sb->bytes_used);
@@ -1488,7 +1488,7 @@ static int ath_nand_add_partition(ath_nand_sc_t *sc)
 		}
 #endif
 		if (ubi) {
-				printk(KERN_EMERG "\nfound ubifs at 0x%llX\n",offset);
+				printk(KERN_INFO "\nfound ubifs at 0x%llX\n",offset);
 				ubi_parts[0].size = offset;
 				ubi_parts[1].offset = offset;
 				ubi_parts[1].size = mtd->size - offset;

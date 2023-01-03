@@ -602,12 +602,12 @@ static int test_page_programming(struct mtd_info * mtd, loff_t block)
 	
 	/* read it back and check pattern */
 	flash = (unsigned char *)(spidata->readaddr + block);
-	printk(KERN_EMERG "%s(): checking @ 0x%.8x ...\n",__FUNCTION__,(__u32)flash);
+	printk(KERN_INFO "%s(): checking @ 0x%.8x ...\n",__FUNCTION__,(__u32)flash);
 	for (i = 0; i < 8; i++)
 	{
 		if (flash[i*4] != (unsigned char)(i*4))
 		{
-			printk(KERN_EMERG "unexpected value @ %d: 0x%02x !!\n", i*4, flash[i*4]);
+			printk(KERN_INFO "unexpected value @ %d: 0x%02x !!\n", i*4, flash[i*4]);
 			break;
 		}
 	}
@@ -617,7 +617,7 @@ static int test_page_programming(struct mtd_info * mtd, loff_t block)
 	udelay(10);
 	
 	/* erase this block before return */
-	printk(KERN_EMERG "%s(): erasing block 0x%.8x ...\n",__FUNCTION__,(__u32)block);
+	printk(KERN_INFO "%s(): erasing block 0x%.8x ...\n",__FUNCTION__,(__u32)block);
 
 	/* we are going to erase sector, do write enable first */
 	spiflash_sendcmd(SPI_WRITE_ENABLE, 0);
