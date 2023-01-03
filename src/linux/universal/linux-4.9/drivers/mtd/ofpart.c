@@ -190,6 +190,7 @@ static int parse_ofpart_partitions(struct mtd_info *master,
 						parts[i].name = "rootfs";
 					parts[i].size = len;
 					parts[i].mask_flags = 0;
+					nr_parts++;
 					break;
 				}
 				offset += 4096;
