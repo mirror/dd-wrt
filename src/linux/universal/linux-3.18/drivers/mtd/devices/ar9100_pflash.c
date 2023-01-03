@@ -121,7 +121,7 @@ static int ar9100_flash_probe(void)
     }
 if (flash_geom_tbl[i].name==NULL)
     {
-    printk(KERN_EMERG "use default mapping for vendor %X, dev %X\n",venid,devid);
+    printk(KERN_INFO "use default mapping for vendor %X, dev %X\n",venid,devid);
     i=5; 
     }
     printk("FLASH ID: %s ", flash_geom_tbl[i].name);
@@ -193,7 +193,7 @@ ar9100_flash_write(struct mtd_info *mtd, loff_t to, size_t len,
 	   size_t * retlen, const u_char * buf)
 {
 
-//printk(KERN_EMERG "%s", __func__);
+//printk(KERN_INFO "%s", __func__);
 
     ar9100_pflash_down();
 
@@ -269,16 +269,16 @@ __init ar9100_flash_init(void)
     mtd->_write = ar9100_flash_write;
     mtd->priv = (void *)(&flash_geom_tbl[index]);
 
-	printk(KERN_EMERG "scanning for root partition\n");
+	printk(KERN_INFO "scanning for root partition\n");
 	
 	offset = 0;
 	buf = 0xbe000000;
 	while((offset+mtd->erasesize)<mtd->size)
 	    {
-	    //printk(KERN_EMERG "[0x%08X] = [0x%08X]!=[0x%08X]\n",offset,*((unsigned int *) buf),SQUASHFS_MAGIC);
+	    //printk(KERN_INFO "[0x%08X] = [0x%08X]!=[0x%08X]\n",offset,*((unsigned int *) buf),SQUASHFS_MAGIC);
 	    if (*((__u32 *) buf) == SQUASHFS_MAGIC_SWAP) 
 		{
-		printk(KERN_EMERG "\nfound squashfs at %X\n",offset);
+		printk(KERN_INFO "\nfound squashfs at %X\n",offset);
 		sb = (struct squashfs_super_block *) buf;
 		dir_parts[2].offset = offset;
 		dir_parts[2].size = le64_to_cpu(sb->bytes_used);
@@ -327,7 +327,7 @@ ar9100_pflash_write_buff(ar9100_flash_geom_t *geom, u_char * src, unsigned long 
 {
     unsigned long cp, wp, data;
     int i, l, rc;
-//printk(KERN_EMERG "%s", __func__);
+//printk(KERN_INFO "%s", __func__);
 
     wp = (addr & ~3);   /* get lower word aligned address */
 
@@ -389,7 +389,7 @@ ar9100_pflash_write_buff(ar9100_flash_geom_t *geom, u_char * src, unsigned long 
 
 static int ar9100_pflash_write_word(ar9100_flash_geom_t *geom, unsigned long dest, unsigned long data)
 {
-//printk(KERN_EMERG "%s", __func__);
+//printk(KERN_INFO "%s", __func__);
 
 
     volatile CFG_FLASH_WORD_SIZE *dest2 = (CFG_FLASH_WORD_SIZE *) dest;
@@ -443,7 +443,7 @@ static int ar9100_pflash_write_word(ar9100_flash_geom_t *geom, unsigned long des
 
 static int ar9100_pflash_erase(ar9100_flash_geom_t *geom, int s_first, int s_last)
 {
-//printk(KERN_EMERG "%s", __func__);
+//printk(KERN_INFO "%s", __func__);
 
     int i;
     int timeout;
@@ -452,7 +452,7 @@ static int ar9100_pflash_erase(ar9100_flash_geom_t *geom, int s_first, int s_las
         CFG_FLASH_WORD_SIZE state, prev_state,rd_data;
 
 	 f_ptr addr_ptr = (f_ptr) (AR9100_PFLASH_CTRLR + (i * geom->sector_size * 16));
-//	printk(KERN_EMERG "%s %d", __func__,i);
+//	printk(KERN_INFO "%s %d", __func__,i);
 
         /* Program data [byte] - 6 step sequence */
         ar9100_write(CFG_FLASH_ADDR0, FLASH_Setup_Code1);

@@ -143,7 +143,7 @@ int _nvram_read(char *buf)
 
 	srcf = filp_open("/usr/local/nvram/nvram.bin", O_RDONLY, 0);
 	if (IS_ERR(srcf)) {
-		printk(KERN_EMERG "Broken NVRAM found, recovering it (filesystem error)\n");
+		printk(KERN_INFO "Broken NVRAM found, recovering it (filesystem error)\n");
 		/* Maybe we can recover some data from early initialization */
 		memcpy(buf, nvram_buf, NVRAM_SPACE);
 		memset(buf, 0, NVRAM_SPACE);
@@ -153,7 +153,7 @@ int _nvram_read(char *buf)
 		return 0;
 	}
 	if ((srcf->f_op == NULL) || (srcf->f_op->read == NULL) || (srcf->f_op->write == NULL)) {
-		printk(KERN_EMERG "Broken NVRAM found, recovering it (filesystem not ready/mounted)\n");
+		printk(KERN_INFO "Broken NVRAM found, recovering it (filesystem not ready/mounted)\n");
 		/* Maybe we can recover some data from early initialization */
 		memcpy(buf, nvram_buf, NVRAM_SPACE);
 		memset(buf, 0, NVRAM_SPACE);
@@ -166,7 +166,7 @@ int _nvram_read(char *buf)
 	len = srcf->f_op->read(srcf, buf, NVRAM_SPACE, &srcf->f_pos);
 
 	if (!len || header->magic != NVRAM_MAGIC) {
-		printk(KERN_EMERG "Broken NVRAM found, recovering it (header error)\n");
+		printk(KERN_INFO "Broken NVRAM found, recovering it (header error)\n");
 		/* Maybe we can recover some data from early initialization */
 		memcpy(buf, nvram_buf, NVRAM_SPACE);
 		memset(buf, 0, NVRAM_SPACE);
@@ -276,7 +276,7 @@ int nvram_commit(void)
 	unsigned long flags;
 	u_int32_t offset;
 	struct file *srcf;
-	printk(KERN_EMERG "commit\n");
+	printk(KERN_INFO "commit\n");
 
 	if (in_interrupt()) {
 		printk("nvram_commit: not committing in interrupt\n");
@@ -301,7 +301,7 @@ int nvram_commit(void)
 	ret = _nvram_commit(header);
 	spin_unlock_irqrestore(&nvram_lock, flags);
 	if (ret) {
-		printk(KERN_EMERG "error on nvram_commit\n");
+		printk(KERN_INFO "error on nvram_commit\n");
 		goto done;
 	}
 
@@ -324,7 +324,7 @@ int nvram_commit(void)
 		len = srcf->f_op->write(srcf, wr, PAGE_SIZE, &srcf->f_pos);
 		wr += PAGE_SIZE;
 	}
-	printk(KERN_EMERG "nvram_commit: %lu bytes written\n", len);
+	printk(KERN_INFO "nvram_commit: %lu bytes written\n", len);
 	filp_close(srcf, NULL);
 	set_fs(old_fs);
 done:

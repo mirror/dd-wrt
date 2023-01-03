@@ -43,13 +43,13 @@ static DECLARE_MUTEX(ar7100_flash_sem);
 /* GLOBAL FUNCTIONS */
 void ar7100_flash_spi_down(void)
 {
-//printk(KERN_EMERG "spi down\n");
+//printk(KERN_INFO "spi down\n");
 	down(&ar7100_flash_sem);
 }
 
 void ar7100_flash_spi_up(void)
 {
-//printk(KERN_EMERG "spi up\n");
+//printk(KERN_INFO "spi up\n");
 	up(&ar7100_flash_sem);
 }
 
@@ -125,7 +125,7 @@ static int ar7100_flash_erase(struct mtd_info *mtd, struct erase_info *instr)
 		instr->state = MTD_ERASE_DONE;
 		instr->callback(instr);
 	}
-	//printk(KERN_EMERG "done\n");
+	//printk(KERN_INFO "done\n");
 	return 0;
 }
 
@@ -135,7 +135,7 @@ ar7100_flash_read(struct mtd_info *mtd, loff_t from, size_t len,
 {
 	uint32_t addr = from | 0xbf000000;
 
-//      printk(KERN_EMERG "read block %X:%X\n",from,len);
+//      printk(KERN_INFO "read block %X:%X\n",from,len);
 	if (!len)
 		return (0);
 	if (from + len > mtd->size)
@@ -147,7 +147,7 @@ ar7100_flash_read(struct mtd_info *mtd, loff_t from, size_t len,
 	*retlen = len;
 
 //      ar7100_flash_spi_up();
-//      printk(KERN_EMERG "read block %X:%X done\n",from,len);
+//      printk(KERN_INFO "read block %X:%X done\n",from,len);
 
 	return 0;
 }
@@ -159,7 +159,7 @@ ar7100_flash_write(struct mtd_info *mtd, loff_t to, size_t len,
 	int total = 0, len_this_lp, bytes_this_page;
 	uint32_t addr = 0;
 	u_char *mem;
-//      printk(KERN_EMERG "write block %X:%X\n",to,len);
+//      printk(KERN_INFO "write block %X:%X\n",to,len);
 
 	ar7100_flash_spi_down();
 
@@ -246,39 +246,39 @@ int guessbootsize(void *offset, unsigned int maxscan)
 	zcom=0;
 	for (i = 0; i < maxscan; i += 16384) {
 		if (ofs[i] == 0x6d000080) {
-			printk(KERN_EMERG "redboot or compatible detected\n");
+			printk(KERN_INFO "redboot or compatible detected\n");
 			return i * 4;	// redboot, lzma image
 		}
 		if (ofs[i] == 0x27051956) {
-			printk(KERN_EMERG "uboot detected\n");
+			printk(KERN_INFO "uboot detected\n");
 			return i * 4;	// uboot, lzma image
 		}
 		if (ofs[i] == 0x33373030) {
-			printk(KERN_EMERG "WNDR3700 uboot detected\n");
+			printk(KERN_INFO "WNDR3700 uboot detected\n");
 			return 0x70000;	// uboot, lzma image
 		}
 		if (ofs[i] == 0x33373031) {
-			printk(KERN_EMERG "WNDR3700v2 uboot detected\n");
+			printk(KERN_INFO "WNDR3700v2 uboot detected\n");
 			return 0x70000;	// uboot, lzma image
 		}
 		if (ofs[i] == 0x01000000 && ofs[i+1] == 0x54502D4C) {
-			printk(KERN_EMERG "tplink uboot detected\n");
+			printk(KERN_INFO "tplink uboot detected\n");
 			return i * 4;	// uboot, lzma image
 		}
 		if (ofs[i] == 0x01000000 && ofs[i+1] == 0x44442d57) {
-			printk(KERN_EMERG "tplink uboot detected\n");
+			printk(KERN_INFO "tplink uboot detected\n");
 			return i * 4;	// uboot, lzma image
 		}
 		if (ofs[i + 15] == 0x27051956) {
-			printk(KERN_EMERG "WRT160NL/E2100L uboot detected\n");
+			printk(KERN_INFO "WRT160NL/E2100L uboot detected\n");
 			return i * 4;	// uboot, lzma image
 		}
 		if (ofs[i] == SQUASHFS_MAGIC_SWAP) {
-			printk(KERN_EMERG "ZCom quirk found\n");
+			printk(KERN_INFO "ZCom quirk found\n");
 			zcom=1;
 			for (a = i; a < maxscan; a += 16384) {
 					if (ofs[a] == 0x27051956) {
-					    printk(KERN_EMERG "ZCom quirk kernel offset %d\n",a*4);
+					    printk(KERN_INFO "ZCom quirk kernel offset %d\n",a*4);
 					    zcomoffset = a * 4;
 					}
     	
@@ -312,7 +312,7 @@ static unsigned int guessflashsize(void *base)
 			break;
 		}
 	}
-	printk(KERN_EMERG "guessed flashsize = %dM\n", size >> 20);
+	printk(KERN_INFO "guessed flashsize = %dM\n", size >> 20);
 	return size;
 
 }
@@ -421,12 +421,12 @@ static int __init ar7100_flash_init(void)
 		mtd->_read = ar7100_flash_read;
 		mtd->_write = ar7100_flash_write;
 
-		printk(KERN_EMERG "scanning for root partition\n");
+		printk(KERN_INFO "scanning for root partition\n");
 
 		offset = 0;
 
 		if (!strncmp((char *)(buf + 0x295a), "myloram.bin", 11)) {
-			printk(KERN_EMERG "Compex WP543 device detected\n");
+			printk(KERN_INFO "Compex WP543 device detected\n");
 			dir_parts[0].size = 0x30000;
 			dir_parts[0].offset = 0;
 			dir_parts[7].size = mtd->size;
@@ -438,7 +438,7 @@ static int __init ar7100_flash_init(void)
 		} else {
 			int guess = guessbootsize(buf, mtd->size);
 			if (guess > 0) {
-				printk(KERN_EMERG "bootloader size = %X\n",
+				printk(KERN_INFO "bootloader size = %X\n",
 				       guess);
 				dir_parts[0].size = guess;
 				dir_parts[0].offset = 0;
@@ -449,9 +449,9 @@ static int __init ar7100_flash_init(void)
 		}
 
 		while ((offset + mtd->erasesize) < mtd->size) {
-			//printk(KERN_EMERG "[0x%08X] = [0x%08X]!=[0x%08X]\n",offset,*((unsigned int *) buf),SQUASHFS_MAGIC);
+			//printk(KERN_INFO "[0x%08X] = [0x%08X]!=[0x%08X]\n",offset,*((unsigned int *) buf),SQUASHFS_MAGIC);
 			if (*((__u32 *)buf) == SQUASHFS_MAGIC_SWAP) {
-				printk(KERN_EMERG "\nfound squashfs at %X\n",
+				printk(KERN_INFO "\nfound squashfs at %X\n",
 				       offset);
 				sb = (struct squashfs_super_block *)buf;
 				dir_parts[2].offset = offset;
@@ -535,7 +535,7 @@ static int __init ar7100_flash_init(void)
 						}
 						if (!strcmp
 						    (fis->name, "RedBoot")) {
-							printk(KERN_EMERG
+							printk(KERN_INFO
 							       "found RedBoot partition at [0x%08lX]\n",
 							       fis->flash_base);
 							dir_parts[0].size =
@@ -549,7 +549,7 @@ static int __init ar7100_flash_init(void)
 								"vmlinux", 7)
 						    || !strncmp(fis->name,
 								"kernel", 6)) {
-							printk(KERN_EMERG
+							printk(KERN_INFO
 							       "found linux partition at [0x%08lX]\n",
 							       fis->flash_base);
 							dir_parts[1].offset =

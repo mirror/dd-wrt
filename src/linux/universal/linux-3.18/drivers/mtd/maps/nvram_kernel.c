@@ -183,7 +183,7 @@ int nvram_commit(void)
 	DECLARE_WAITQUEUE(wait, current);
 	wait_queue_head_t wait_q;
 	struct erase_info erase;
-//      printk(KERN_EMERG "commit\n");
+//      printk(KERN_INFO "commit\n");
 
 	if (!nvram_mtd) {
 		printk("nvram_commit: NVRAM not found\n");
@@ -500,7 +500,7 @@ static int __init dev_nvram_init(void)
 		}
 	}
 	if (i >= 32) {
-		printk(KERN_EMERG "no nvram partition found\n");
+		printk(KERN_INFO "no nvram partition found\n");
 		nvram_mtd = NULL;
 		return -1;
 	}
