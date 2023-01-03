@@ -258,7 +258,7 @@ ltq_mtd_probe(struct platform_device *pdev)
 	cfi->addr_unlock2 ^= 1;
 
 	nr_parts = parse_mtd_partitions(ltq_mtd->mtd, ltq_probe_types, &parts, 0);
-	printk(KERN_EMERG "parse_mtd returns %d\n",nr_parts);
+	printk(KERN_INFO "parse_mtd returns %d\n",nr_parts);
 	if (nr_parts > 0) {
 		printk(KERN_INFO "ifxmips_mtd: found %d partitions from cmdline\n", err);
 		num_parts = err;

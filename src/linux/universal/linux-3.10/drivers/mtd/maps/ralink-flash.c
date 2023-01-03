@@ -331,10 +331,10 @@ int nvramsize = ralink_mtd[0]->erasesize;
 			    {
 			    int retlen;
 			    mtd_read(ralink_mtd[0],offset,4, &retlen, buf);
-//			    printk(KERN_EMERG "%X: %c %c %c %c\n",offset,buf[0],buf[1],buf[2],buf[3]);
+//			    printk(KERN_INFO "%X: %c %c %c %c\n",offset,buf[0],buf[1],buf[2],buf[3]);
 			    if (*((__u32 *) buf) == SQUASHFS_MAGIC)
 				    {
-				    	printk(KERN_EMERG "\nfound squashfs at %X\n",offset);
+				    	printk(KERN_INFO "\nfound squashfs at %X\n",offset);
 #ifdef CONFIG_RT2880_FLASH_8M 
 					rt2880_partitions[3].size=(((ralink_mtd[0]->size)-nvramsize)-0x450000);					
 					rt2880_partitions[4].offset=offset;					
@@ -416,7 +416,7 @@ int ra_mtd_write(int num, loff_t to, size_t len, const u_char *buf)
 	struct mtd_info *mtd;
 	struct erase_info ei;
 	u_char *bak = NULL;
-//	printk(KERN_EMERG "writing to partition %d, offset %d, len %d\n",num,to,len);
+//	printk(KERN_INFO "writing to partition %d, offset %d, len %d\n",num,to,len);
 #ifdef CONFIG_RT2880_FLASH_8M
         /* marklin 20080605 : return read mode for ST */
         Flash_SetModeRead();
@@ -443,7 +443,7 @@ int ra_mtd_write(int num, loff_t to, size_t len, const u_char *buf)
 		return ret;
 	}
 	if (rdlen != mtd->erasesize)
-		printk(KERN_EMERG "warning: ra_mtd_write: rdlen is not equal to erasesize\n");
+		printk(KERN_INFO "warning: ra_mtd_write: rdlen is not equal to erasesize\n");
 
 	memcpy(bak + to, buf, len);
 
@@ -479,14 +479,14 @@ int ra_mtd_read(int num, loff_t from, size_t len, u_char *buf)
         /* marklin 20080605 : return read mode for ST */
         Flash_SetModeRead();
 #endif
-//	printk(KERN_EMERG "reading from partition %d, offset %d, len %d\n",num,from,len);
+//	printk(KERN_INFO "reading from partition %d, offset %d, len %d\n",num,from,len);
 	mtd = get_mtd_device(NULL, num);
 	if (IS_ERR(mtd))
 		return (int)mtd;
 
 	ret = mtd_read(mtd, from, len, &rdlen, buf);
 	if (rdlen != len)
-		printk(KERN_EMERG "warning: ra_mtd_read: rdlen is not equal to len\n");
+		printk(KERN_INFO "warning: ra_mtd_read: rdlen is not equal to len\n");
 
 	put_mtd_device(mtd);
 	return ret;
