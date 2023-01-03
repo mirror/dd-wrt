@@ -567,9 +567,9 @@ static const yytype_int8 yytranslate[] =
 /* YYRLINE[YYN] -- Source line where rule number YYN was defined.  */
 static const yytype_uint8 yyrline[] =
 {
-       0,    79,    79,    89,    88,   106,   107,   115,   123,   127,
-     134,   145,   144,   162,   163,   171,   179,   183,   188,   196,
-     197,   201,   202,   203,   204,   205,   206,   207,   208,   209
+       0,    79,    79,    90,    89,   107,   108,   116,   124,   128,
+     135,   146,   145,   163,   164,   172,   180,   184,   189,   197,
+     198,   202,   203,   204,   205,   206,   207,   208,   209,   210
 };
 #endif
 
@@ -1229,6 +1229,7 @@ yyreduce:
                         {
 				ZVAL_COPY_VALUE(&(yyval.value), &(yyvsp[-1].value));
 				ZVAL_COPY_VALUE(parser->return_value, &(yyvsp[-1].value));
+				(void) php_json_yynerrs;
 				YYACCEPT;
 			}
     break;

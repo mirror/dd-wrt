@@ -714,7 +714,7 @@ $validCodepoints = array();
 
 foreach ($validRanges as $range) {
   for ($cp = $range[0]; $cp <= $range[1]; $cp++) {
-    if ($cp < 0xD800 || $cp > 0xDFFF) // surrogates; included in UnicodeData.txt
+    if (($cp < 0xD800 || $cp > 0xDFFF) && $cp !== 0xFEFF)
       $validCodepoints[pack('N', $cp)] = true;
   }
 }
@@ -774,6 +774,14 @@ $invalid = array(
   "\xDF" => "\x00\x00\x00%",         // should have been 2-byte
   "\xEF\xBF" => "\x00\x00\x00%",     // should have been 3-byte
   "\xF0\xBF\xBF" => "\x00\x00\x00%", // should have been 4-byte
+  "\xF1\x96" => "\x00\x00\x00%",
+  "\xF1\x96\x80" => "\x00\x00\x00%",
+  "\xF2\x94" => "\x00\x00\x00%",
+  "\xF2\x94\x80" => "\x00\x00\x00%",
+  "\xF3\x94" => "\x00\x00\x00%",
+  "\xF3\x94\x80" => "\x00\x00\x00%",
+  "\xE0\x9F" => "\x00\x00\x00%\x00\x00\x00%",
+  "\xED\xA6" => "\x00\x00\x00%\x00\x00\x00%",
 
   // Multi-byte characters which end too soon and go to ASCII
   "\xDFA" => "\x00\x00\x00%\x00\x00\x00A",
@@ -858,7 +866,20 @@ testInvalidCodepoints($invalid, 'UTF-16LE');
 testInvalidString("\x00", "\x00\x00\x00%", 'UTF-16LE', 'UTF-32BE');
 testInvalidString("A\x00\x01", "\x00\x00\x00A\x00\x00\x00%", 'UTF-16LE', 'UTF-32BE');
 
-// TODO: test handling of UTF-16 BOM
+// Test treatment of BOM
+testValidString("\xFE\xFF\x12\x34", "\x00\x00\x12\x34", 'UTF-16', 'UTF-32BE', false);
+testValidString("\xFF\xFE\x12\x34", "\x00\x00\x34\x12", 'UTF-16', 'UTF-32BE', false);
+
+// Test treatment of (illegal) codepoints between U+D800 and U+DFFF
+testValidString("\xD8\x00", "\xD8\x00", 'UCS-2BE', 'UTF-16BE', false);
+testValidString("\xDB\xFF", "\xDB\xFF", 'UCS-2BE', 'UTF-16BE', false);
+testValidString("\xDC\x00", "\xDC\x00", 'UCS-2BE', 'UTF-16BE', false);
+testValidString("\xD8\x00", "\x00\xD8", 'UCS-2BE', 'UTF-16LE', false);
+testValidString("\xDC\x00", "\x00\xDC", 'UCS-2BE', 'UTF-16LE', false);
+
+// Try codepoint over U+10FFFF
+convertInvalidString("\x00\x11\x56\x78", "\x00%", 'UCS-4BE', 'UTF-16BE');
+convertInvalidString("\x00\x11\x56\x78", "%\x00", 'UCS-4BE', 'UTF-16LE');
 
 echo "== UTF-32 ==\n";
 
@@ -914,7 +935,16 @@ testInvalidString("\x00\x01\x01", "\x00\x00\x00%", 'UTF-32LE', 'UTF-32BE');
 testInvalidString("\x00\x01",     "\x00\x00\x00%", 'UTF-32LE', 'UTF-32BE');
 testInvalidString("\x00",         "\x00\x00\x00%", 'UTF-32LE', 'UTF-32BE');
 
-// TODO: test handling of UTF-32 BOM
+// Test treatment of BOM
+testValidString("\x00\x00\xFE\xFF\x00\x00\x12\x34", "\x00\x00\x12\x34", 'UTF-32', 'UTF-32BE', false);
+testValidString("\xFF\xFE\x00\x00\x12\x34\x00\x00", "\x00\x00\x34\x12", 'UTF-32', 'UTF-32BE', false);
+
+// Test treatment of (illegal) codepoints between U+D800 and U+DFFF
+testValidString("\xD8\x00", "\x00\x00\xD8\x00", 'UCS-2BE', 'UTF-32BE', false);
+testValidString("\xDB\xFF", "\x00\x00\xDB\xFF", 'UCS-2BE', 'UTF-32BE', false);
+testValidString("\xDC\x00", "\x00\x00\xDC\x00", 'UCS-2BE', 'UTF-32BE', false);
+testValidString("\xD8\x00", "\x00\xD8\x00\x00", 'UCS-2BE', 'UTF-32LE', false);
+testValidString("\xDC\x00", "\x00\xDC\x00\x00", 'UCS-2BE', 'UTF-32LE', false);
 
 echo "== UTF-7 ==\n";
 
@@ -962,6 +992,7 @@ for ($i = 0; $i < 256; $i++) {
 testValidString('+' . encode("\x12\x34", 'UTF-16BE') . '-', "\x00\x00\x12\x34", 'UTF-7', 'UTF-32BE');
 testValidString('+' . encode("\x12\x34\x56\x78", 'UTF-16BE') . '-', "\x00\x00\x12\x34\x00\x00\x56\x78", 'UTF-7', 'UTF-32BE');
 testValidString('+' . encode("\x12\x34\x56\x78\x00\x40", 'UTF-16BE') . '-', "\x00\x00\x12\x34\x00\x00\x56\x78\x00\x00\x00\x40", 'UTF-7', 'UTF-32BE');
+testValidString('+' . encode("\xFF\xEE\xEE\xFF", 'UTF-16BE') . '-', "\x00\x00\xFF\xEE\x00\x00\xEE\xFF", 'UTF-7', 'UTF-32BE');
 
 // Surrogate pair
 testValidString('+' . encode("\x00\x01\x04\x00", 'UTF-32BE') . '-', "\x00\x01\x04\x00", 'UTF-7', 'UTF-32BE');
@@ -981,7 +1012,7 @@ testValidString('+' . encode('AB', 'ASCII') . '-+' . encode('CD', 'ASCII') . '-'
 testValidString('+' . encode('AB', 'ASCII') . '-!+' . encode('CD', 'ASCII') . '-', "\x00A\x00B\x00!\x00C\x00D", 'UTF-7', 'UTF-16BE', false);
 
 // + section terminated by a non-Base64 ASCII character which is NOT -
-for ($i = 0; $i < 128; $i++)  {
+for ($i = 0; $i < 128; $i++) {
   if ($i >= ord('A') && $i <= ord('Z'))
     continue;
   if ($i >= ord('a') && $i <= ord('z'))
@@ -994,25 +1025,43 @@ for ($i = 0; $i < 128; $i++)  {
   testValidString('+' . encode("\x12\x34", 'UTF-16BE') . $char, "\x00\x00\x12\x34\x00\x00\x00" . $char, 'UTF-7', 'UTF-32BE', false);
 }
 
+// Non-direct character followed by direct character
+testValidString('%A', '+ACU-A', 'ASCII', 'UTF-7');
+testValidString('%%A', '+ACUAJQ-A', 'ASCII', 'UTF-7');
+testValidString('%%%A', '+ACUAJQAl-A', 'ASCII', 'UTF-7');
+
 // Now let's see how UTF-7 can go BAD...
 
 function rawEncode($str) {
   return str_replace('=', '', base64_encode($str));
 }
 
+// Totally bogus byte
+testInvalidString("\xFF", "%", 'UTF-7', 'UTF-8');
+// Totally bogus codepoint... '+ACU-' is '%' in UTF-7'
+testInvalidString("\x12\x34\x56\x78", "+ACU-", 'UTF-32BE', 'UTF-7');
+
 // First, messed up UTF16 in + section
 // Second half of surrogate pair coming first
 testInvalidString('+' . rawEncode("\xDC\x01\xD8\x02") . '-', "\x00\x00\x00%\x00\x00\x00%", 'UTF-7', 'UTF-32BE');
+testInvalidString('+' . rawEncode("\x00.\xDC\x01\xD8\x02") . '-', "\x00\x00\x00.\x00\x00\x00%\x00\x00\x00%", 'UTF-7', 'UTF-32BE');
+testInvalidString('+' . rawEncode("\x00.\x00.\xDC\x01\xD8\x02") . '-', "\x00\x00\x00.\x00\x00\x00.\x00\x00\x00%\x00\x00\x00%", 'UTF-7', 'UTF-32BE');
 
 // First half of surrogate pair not followed by second half
 testInvalidString('+' . rawEncode("\xD8\x01\x00A") . '-', "\x00\x00\x00%\x00\x00\x00A", 'UTF-7', 'UTF-32BE');
 testInvalidString('+' . rawEncode("\xD8\x01\xD9\x02") . '-', "\x00\x00\x00%\x00\x00\x00%", 'UTF-7', 'UTF-32BE');
+testInvalidString('+' . rawEncode("\x00.\xD8\x01\x00A") . '-', "\x00\x00\x00.\x00\x00\x00%\x00\x00\x00A", 'UTF-7', 'UTF-32BE');
+testInvalidString('+' . rawEncode("\x00.\xD8\x01\xD9\x02") . '-', "\x00\x00\x00.\x00\x00\x00%\x00\x00\x00%", 'UTF-7', 'UTF-32BE');
+testInvalidString('+' . rawEncode("\x00.\x00.\xD8\x01\x00A") . '-', "\x00\x00\x00.\x00\x00\x00.\x00\x00\x00%\x00\x00\x00A", 'UTF-7', 'UTF-32BE');
+testInvalidString('+' . rawEncode("\x00.\x00.\xD8\x01\xD9\x02") . '-', "\x00\x00\x00.\x00\x00\x00.\x00\x00\x00%\x00\x00\x00%", 'UTF-7', 'UTF-32BE');
 
 // First half of surrogate pair appearing at end of string
 testInvalidString('+' . rawEncode("\xD8\x01") . '-', "\x00\x00\x00%", 'UTF-7', 'UTF-32BE');
+testInvalidString('+' . rawEncode("\xD8\x01"), "\x00\x00\x00%", 'UTF-7', 'UTF-32BE');
 
 // Truncated string
 testInvalidString('+' . rawEncode("\x01") . '-', "\x00\x00\x00%", 'UTF-7', 'UTF-32BE');
+testInvalidString('+l', "\x00\x00\x00%", 'UTF-7', 'UTF-32BE');
 
 // And then, messed up Base64 encoding
 
@@ -1023,6 +1072,15 @@ testInvalidString('+' . $corrupted . '-', "\x00\x00\x12\x34\x00\x00\x00%", 'UTF-
 
 // Characters which are not Base64 (and not even ASCII) appearing in Base64 section
 testInvalidString("+\x80", "\x00\x00\x00%", 'UTF-7', 'UTF-32BE');
+
+// Try codepoint over U+10FFFF; '+ACU-' is the error marker '%'
+convertInvalidString("\x12\x34\x56\x78", "+ACU-", 'UCS-4BE', 'UTF-7');
+convertInvalidString("\x00\x11\x56\x78", "+ACU-", 'UCS-4BE', 'UTF-7');
+
+// If error marker character needs to be ASCII-encoded but is able to serve as an
+// ending character for a Base64 section, no need to add an additional dash
+mb_substitute_character(0x3F); // ?
+convertInvalidString("\x1E\xBE", '+AB4?', 'UTF-7', 'UTF-7');
 
 echo "Done!\n";
 

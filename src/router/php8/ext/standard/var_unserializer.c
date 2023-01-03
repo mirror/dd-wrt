@@ -635,6 +635,20 @@ declared_property:
 				int ret = is_property_visibility_changed(obj->ce, &key);
 
 				if (EXPECTED(!ret)) {
+					if (UNEXPECTED(obj->ce->ce_flags & ZEND_ACC_NO_DYNAMIC_PROPERTIES)) {
+						zend_throw_error(NULL, "Cannot create dynamic property %s::$%s",
+							ZSTR_VAL(obj->ce->name), zend_get_unmangled_property_name(Z_STR_P(&key)));
+						zval_ptr_dtor_str(&key);
+						goto failure;
+					} else if (!(obj->ce->ce_flags & ZEND_ACC_ALLOW_DYNAMIC_PROPERTIES)) {
+						zend_error(E_DEPRECATED, "Creation of dynamic property %s::$%s is deprecated",
+							ZSTR_VAL(obj->ce->name), zend_get_unmangled_property_name(Z_STR_P(&key)));
+						if (EG(exception)) {
+							zval_ptr_dtor_str(&key);
+							goto failure;
+						}
+					}
+
 					data = zend_hash_add_new(ht, Z_STR(key), &EG(uninitialized_zval));
 				} else if (ret < 0) {
 					goto failure;
@@ -1453,20 +1467,15 @@ yy59:
 		/* Try to find class directly */
 		BG(serialize_lock)++;
 		ce = zend_lookup_class_ex(class_name, lc_name, 0);
-		zend_string_release_ex(lc_name, 0);
-		if (ce) {
-			BG(serialize_lock)--;
-			if (EG(exception)) {
-				zend_string_release_ex(class_name, 0);
-				return 0;
-			}
-			break;
-		}
 		BG(serialize_lock)--;
-
+		zend_string_release_ex(lc_name, 0);
 		if (EG(exception)) {
 			zend_string_release_ex(class_name, 0);
 			return 0;
+		}
+
+		if (ce) {
+			break;
 		}
 
 		/* Check for unserialize callback */
@@ -1479,29 +1488,15 @@ yy59:
 		/* Call unserialize callback */
 		ZVAL_STRING(&user_func, PG(unserialize_callback_func));
 
-		ZVAL_STR_COPY(&args[0], class_name);
+		ZVAL_STR(&args[0], class_name);
 		BG(serialize_lock)++;
-		if (call_user_function(NULL, NULL, &user_func, &retval, 1, args) != SUCCESS) {
-			BG(serialize_lock)--;
-			if (EG(exception)) {
-				zend_string_release_ex(class_name, 0);
-				zval_ptr_dtor(&user_func);
-				zval_ptr_dtor(&args[0]);
-				return 0;
-			}
-			php_error_docref(NULL, E_WARNING, "defined (%s) but not found", Z_STRVAL(user_func));
-			incomplete_class = 1;
-			ce = PHP_IC_ENTRY;
-			zval_ptr_dtor(&user_func);
-			zval_ptr_dtor(&args[0]);
-			break;
-		}
+		call_user_function(NULL, NULL, &user_func, &retval, 1, args);
 		BG(serialize_lock)--;
 		zval_ptr_dtor(&retval);
+
 		if (EG(exception)) {
 			zend_string_release_ex(class_name, 0);
 			zval_ptr_dtor(&user_func);
-			zval_ptr_dtor(&args[0]);
 			return 0;
 		}
 
@@ -1515,7 +1510,6 @@ yy59:
 		BG(serialize_lock)--;
 
 		zval_ptr_dtor(&user_func);
-		zval_ptr_dtor(&args[0]);
 	} while (0);
 
 	*p = YYCURSOR;

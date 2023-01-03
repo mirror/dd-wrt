@@ -53,7 +53,7 @@ void grapheme_substr_ascii(char *str, size_t str_len, int32_t f, int32_t l, char
 	*sub_str = NULL;
 
 	if(str_len > INT32_MAX) {
-		/* We can not return long strings from ICU functions, so we won't here too */
+		/* We cannot return long strings from ICU functions, so we won't here too */
 		return;
 	}
 
@@ -372,8 +372,6 @@ zend_long grapheme_strrpos_ascii(char *haystack, size_t haystack_len, char *need
 /* {{{ grapheme_get_break_iterator: get a clone of the global character break iterator */
 UBreakIterator* grapheme_get_break_iterator(void *stack_buffer, UErrorCode *status )
 {
-	int32_t buffer_size;
-
 	UBreakIterator *global_break_iterator = INTL_G( grapheme_iterator );
 
 	if ( NULL == global_break_iterator ) {
@@ -387,8 +385,12 @@ UBreakIterator* grapheme_get_break_iterator(void *stack_buffer, UErrorCode *stat
 		INTL_G(grapheme_iterator) = global_break_iterator;
 	}
 
-	buffer_size = U_BRK_SAFECLONE_BUFFERSIZE;
+#if U_ICU_VERSION_MAJOR_NUM >= 69
+	return ubrk_clone(global_break_iterator, status);
+#else
+	int32_t buffer_size = U_BRK_SAFECLONE_BUFFERSIZE;
 
 	return ubrk_safeClone(global_break_iterator, stack_buffer, &buffer_size, status);
+#endif
 }
 /* }}} */
