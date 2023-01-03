@@ -71,7 +71,7 @@ endif
 ifeq ($(CONFIG_SPEED),y)
 export BASEOPT:=-O2
 else
-export BASEOPT:=-Os -fno-unwind-tables -fno-asynchronous-unwind-tables
+export BASEOPT:=-Os -fno-unwind-tables -fno-asynchronous-unwind-tables -falign-jumps=1 -falign-labels=1 -falign-loops=1 -falign-functions=1 -fno-builtin-strlen -fno-guess-branch-probability -funsigned-char -finline-limit=0 -fno-builtin-printf
 endif
 
 
