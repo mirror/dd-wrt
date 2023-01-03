@@ -64,7 +64,7 @@ char *get_iconv_version(void) {
 	snprintf(buf, sizeof(buf), "%d.%d", _libiconv_version >> 8, _libiconv_version & 0xff);
 	version = buf;
 #elif HAVE_GLIBC_ICONV
-	version = (char *) gnu_get_libc_version();
+	version = "2.0";
 #endif
 
 	return version;
