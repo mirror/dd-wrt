@@ -417,12 +417,12 @@ static int __init ar7100_flash_init(void)
 		mtd->read = ar7100_flash_read;
 		mtd->write = ar7100_flash_write;
 
-		printk(KERN_EMERG "scanning for root partition\n");
+		printk(KERN_INFO "scanning for root partition\n");
 
 		offset = 0;
 
 		if (!strncmp((char *)(buf + 0x295a), "myloram.bin", 11)) {
-			printk(KERN_EMERG "Compex WP543 device detected\n");
+			printk(KERN_INFO "Compex WP543 device detected\n");
 			dir_parts[0].size = 0x30000;
 			dir_parts[0].offset = 0;
 			dir_parts[7].size = mtd->size;
@@ -434,7 +434,7 @@ static int __init ar7100_flash_init(void)
 		} else {
 			int guess = guessbootsize(buf, mtd->size);
 			if (guess > 0) {
-				printk(KERN_EMERG "bootloader size = %X\n",
+				printk(KERN_INFO "bootloader size = %X\n",
 				       guess);
 				dir_parts[0].size = guess;
 				dir_parts[0].offset = 0;
@@ -445,9 +445,9 @@ static int __init ar7100_flash_init(void)
 		}
 
 		while ((offset + mtd->erasesize) < mtd->size) {
-			//printk(KERN_EMERG "[0x%08X] = [0x%08X]!=[0x%08X]\n",offset,*((unsigned int *) buf),SQUASHFS_MAGIC);
+			//printk(KERN_INFO "[0x%08X] = [0x%08X]!=[0x%08X]\n",offset,*((unsigned int *) buf),SQUASHFS_MAGIC);
 			if (*((__u32 *)buf) == SQUASHFS_MAGIC_SWAP) {
-				printk(KERN_EMERG "\nfound squashfs at %X\n",
+				printk(KERN_INFO "\nfound squashfs at %X\n",
 				       offset);
 				sb = (struct squashfs_super_block *)buf;
 				dir_parts[2].offset = offset;
@@ -531,7 +531,7 @@ static int __init ar7100_flash_init(void)
 						}
 						if (!strcmp
 						    (fis->name, "RedBoot")) {
-							printk(KERN_EMERG
+							printk(KERN_INFO
 							       "found RedBoot partition at [0x%08lX]\n",
 							       fis->flash_base);
 							dir_parts[0].size =
@@ -545,7 +545,7 @@ static int __init ar7100_flash_init(void)
 								"vmlinux", 7)
 						    || !strncmp(fis->name,
 								"kernel", 6)) {
-							printk(KERN_EMERG
+							printk(KERN_INFO
 							       "found linux partition at [0x%08lX]\n",
 							       fis->flash_base);
 							dir_parts[1].offset =

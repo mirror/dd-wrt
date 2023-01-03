@@ -354,13 +354,13 @@ static int __init ar7240_flash_init(void)
 		mtd->read = ar7240_flash_read;
 		mtd->write = ar7240_flash_write;
 
-		printk(KERN_EMERG "scanning for root partition\n");
+		printk(KERN_INFO "scanning for root partition\n");
 
 		offset = 0;
 
 		int guess = guessbootsize(buf, mtd->size);
 		if (guess > 0) {
-			printk(KERN_EMERG "guessed bootloader size = %X\n",
+			printk(KERN_INFO "guessed bootloader size = %X\n",
 			       guess);
 			dir_parts[0].offset = 0;
 			dir_parts[0].size = guess;			
@@ -369,9 +369,9 @@ static int __init ar7240_flash_init(void)
 			dir_parts[1].size = 0;
 		}
 		while ((offset + mtd->erasesize) < mtd->size) {
-//                      printk(KERN_EMERG "[0x%08X] = [0x%08X]!=[0x%08X]\n",offset,*((unsigned int *) buf),SQUASHFS_MAGIC);
+//                      printk(KERN_INFO "[0x%08X] = [0x%08X]!=[0x%08X]\n",offset,*((unsigned int *) buf),SQUASHFS_MAGIC);
 			if (*((__u32 *)buf) == SQUASHFS_MAGIC_SWAP) {
-				printk(KERN_EMERG "\nfound squashfs at %X\n",
+				printk(KERN_INFO "\nfound squashfs at %X\n",
 				       offset);
 				sb = (struct squashfs_super_block *)buf;
 				dir_parts[2].offset = offset;
