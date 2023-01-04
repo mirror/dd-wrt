@@ -564,13 +564,13 @@ int main(int argc, char *argv[])
 
 	ssl_exit();
 leave:
-	log_exit();
 	free(config);
 	free(pidfile_name);
 	free(cache_dir);
 
 	if (rc)
 		logit(LOG_ERR, "Error code %d: %s", rc, error_str(rc));
+	log_exit();
 
 	return rc;
 }
