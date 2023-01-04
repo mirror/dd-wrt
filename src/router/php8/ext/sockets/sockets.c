@@ -1576,6 +1576,20 @@ PHP_FUNCTION(socket_sendto)
 }
 /* }}} */
 
+enum {
+	PORT_SK_MEMINFO_RMEM_ALLOC,
+	PORT_SK_MEMINFO_RCVBUF,
+	PORT_SK_MEMINFO_WMEM_ALLOC,
+	PORT_SK_MEMINFO_SNDBUF,
+	PORT_SK_MEMINFO_FWD_ALLOC,
+	PORT_SK_MEMINFO_WMEM_QUEUED,
+	PORT_SK_MEMINFO_OPTMEM,
+	PORT_SK_MEMINFO_BACKLOG,
+	PORT_SK_MEMINFO_DROPS,
+
+	PORT_SK_MEMINFO_VARS,
+};
+
 /* {{{ Gets socket options for the socket */
 PHP_FUNCTION(socket_get_option)
 {
@@ -1689,7 +1703,7 @@ PHP_FUNCTION(socket_get_option)
 				return;
 #ifdef SO_MEMINFO
 			case SO_MEMINFO: {
-				uint32_t minfo[SK_MEMINFO_VARS];
+				uint32_t minfo[PORT_SK_MEMINFO_VARS];
 				optlen = sizeof(minfo);
 
 				if (getsockopt(php_sock->bsd_socket, level, optname, (char*)minfo, &optlen) != 0) {
@@ -1706,15 +1720,15 @@ PHP_FUNCTION(socket_get_option)
 
 				array_init(return_value);
 
-				add_assoc_long(return_value, "rmem_alloc", minfo[SK_MEMINFO_RMEM_ALLOC]);
-				add_assoc_long(return_value, "rcvbuf", minfo[SK_MEMINFO_RCVBUF]);
-				add_assoc_long(return_value, "wmem_alloc", minfo[SK_MEMINFO_WMEM_ALLOC]);
-				add_assoc_long(return_value, "sndbuf", minfo[SK_MEMINFO_SNDBUF]);
-				add_assoc_long(return_value, "fwd_alloc", minfo[SK_MEMINFO_FWD_ALLOC]);
-				add_assoc_long(return_value, "wmem_queued", minfo[SK_MEMINFO_WMEM_QUEUED]);
-				add_assoc_long(return_value, "optmem", minfo[SK_MEMINFO_OPTMEM]);
-				add_assoc_long(return_value, "backlog", minfo[SK_MEMINFO_BACKLOG]);
-				add_assoc_long(return_value, "drops", minfo[SK_MEMINFO_DROPS]);
+				add_assoc_long(return_value, "rmem_alloc", minfo[PORT_SK_MEMINFO_RMEM_ALLOC]);
+				add_assoc_long(return_value, "rcvbuf", minfo[PORT_SK_MEMINFO_RCVBUF]);
+				add_assoc_long(return_value, "wmem_alloc", minfo[PORT_SK_MEMINFO_WMEM_ALLOC]);
+				add_assoc_long(return_value, "sndbuf", minfo[PORT_SK_MEMINFO_SNDBUF]);
+				add_assoc_long(return_value, "fwd_alloc", minfo[PORT_SK_MEMINFO_FWD_ALLOC]);
+				add_assoc_long(return_value, "wmem_queued", minfo[PORT_SK_MEMINFO_WMEM_QUEUED]);
+				add_assoc_long(return_value, "optmem", minfo[PORT_SK_MEMINFO_OPTMEM]);
+				add_assoc_long(return_value, "backlog", minfo[PORT_SK_MEMINFO_BACKLOG]);
+				add_assoc_long(return_value, "drops", minfo[PORT_SK_MEMINFO_DROPS]);
 				return;
 			}
 #endif
