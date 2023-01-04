@@ -1194,6 +1194,11 @@ extern int has_subquarter(const char *prefix);
 extern int has_fwswitch(const char *prefix);
 extern int getath9kdevicecount(void);
 #else
+static inline int isFXXN_PRO(char *ifname) {
+	return 0;
+
+}
+
 static inline int is_mac80211(const char *prefix)
 {
 	return 0;
