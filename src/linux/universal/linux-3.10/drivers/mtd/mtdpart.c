@@ -1123,7 +1123,7 @@ int ra_mtd_write(int num, loff_t to, size_t len, const u_char *buf)
 		return ret;
 	}
 	if (rdlen != mtd->erasesize)
-		printk(KERN_WARN "warning: ra_mtd_write: rdlen is not equal to erasesize\n");
+		printk(KERN_EMERG "warning: ra_mtd_write: rdlen is not equal to erasesize\n");
 
 	memcpy(bak + to, buf, len);
 
@@ -1161,7 +1161,7 @@ int ra_mtd_read(int num,int from, int len, u_char *buf)
 
 	ret = mtd_read(mtd, from, len, &rdlen, buf);
 	if (rdlen != len)
-		printk(KERN_WARN "warning: ra_mtd_read: rdlen is not equal to len\n");
+		printk(KERN_EMERG "warning: ra_mtd_read: rdlen is not equal to len\n");
 
 	put_mtd_device(mtd);
 	return ret;
