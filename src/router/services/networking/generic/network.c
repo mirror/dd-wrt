@@ -4200,7 +4200,6 @@ static void start_wan6_done(char *wan_ifname)
 		if (*p) {
 			snprintf(ip, sizeof(ip), "%s/%d", p, nvram_geti("ipv6_pf_len") ? : 64);
 			eval("ip", "-6", "addr", "add", ip, "dev", nvram_safe_get("lan_ifname"));
-			eval("ip", "-6", "addr", "add", "unreachable", ip, "dev", "lo");
 		}
 		if (nvram_match("wan_proto", "disabled")) {
 			eval("ip", "route", "add", "::/0", "dev", nvram_safe_get("lan_ifname"), "metric", "2048");
