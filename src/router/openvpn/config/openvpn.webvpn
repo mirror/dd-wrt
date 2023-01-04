@@ -254,6 +254,41 @@
 					<input class="spaceradio" type="radio" name="openvpn_mssfix" value="0" <% nvc("openvpn_mssfix", "0"); %> /><% tran("share.disable"); %>
 				</div>
 				<div class="setting">
+					<div class="label"><% tran("service.vpn_upauth"); %></div>
+					<input class="spaceradio" type="radio" name="openvpn_enuserpass" value="1" <% nvc("openvpn_enuserpass", "1"); %> onclick="show_layer_ext(this, 'iduserpass', true)"  /><% tran("share.enable"); %>&nbsp;
+					<input class="spaceradio" type="radio" name="openvpn_enuserpass" value="0" <% nvc("openvpn_enuserpass", "0"); %> onclick="show_layer_ext(this, 'iduserpass', false)" /><% tran("share.disable"); %>
+				</div>
+				<div id="iduserpass">
+				<fieldset>
+					<table class="table" id="openvpn_userpass_t" summary="OpenVPN table with username and passwords">
+						<tr>
+							<th colspan="3"><% tran("nas.proftpd_passw"); %></th>
+						</tr>
+						<tr>
+							<th width="44%"><% tran("share.usrname"); %></th>
+							<th width="44%"><% tran("share.passwd"); %></th>
+							<th width="12%" class="center"><% tran("share.actiontbl"); %></th>
+						</tr>
+						<% show_openvpnuserpass(); %>
+						<script type="text/javascript">
+						//<![CDATA[
+						var t = new SortableTable(document.getElementById('openvpn_userpass_t'), 1000);
+						//]]>
+						</script>
+						<tr>
+							<td colspan="4"></td>
+								<td class="center">
+								<script type="text/javascript">
+								//<![CDATA[
+								document.write("<input class=\"button\" type=\"button\" name=\"add_button\" value=\"" + sbutton.add + "\" onclick=\"userpass_add_submit(this.form);\" />");
+								//]]>
+								</script>
+							</td>
+						</tr>
+					</table>
+					</fieldset><br/>
+				</div>
+				<div class="setting">		
 					<div class="label"><% tran("service.vpnd_dh"); %></div>
 					<input class="spaceradio" type="radio" name="openvpn_dh_btn" value="1" <% nvc("openvpn_dh_btn", "1"); %> onclick="show_layer_ext(this, 'iddhpem', false)" /><% tran("share.enable"); %>&nbsp;
 					<input class="spaceradio" type="radio" name="openvpn_dh_btn" value="0" <% nvc("openvpn_dh_btn", "0"); %> onclick="show_layer_ext(this, 'iddhpem', true)" /><% tran("share.disable"); %>

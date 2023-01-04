@@ -122,6 +122,9 @@ static int make_ovpncl_config(char *ovnpcl_fname) {
 		if (nvram_invmatch("openvpn_key", "")) {
 			fprintf(f1, "<cert>\n%s\n</cert>\n<key>\n%s\n</key>\n", "PLACE YOUR PUBLIC CLIENT CERTIFICATE HERE", "PLACE YOUR PRIVATE CLIENT KEY HERE");
 		}
+		if (nvram_matchi("openvpn_enuserpass", 1)) {
+			fprintf(f1, "#Make file credentials.txt in the same directory and place username and password on separate lines\nauth-user-pass credentials.txt\nauth-retry interact\n");
+		}
 		//dd_loginfo("openvpncl_config", "Success file open: %s\n", ovnpcl_fname);
 		fclose(f1);
 	}

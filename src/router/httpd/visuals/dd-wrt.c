@@ -658,6 +658,30 @@ EJ_VISIBLE void ej_show_userlist(webs_t wp, int argc, char_t ** argv)
 #endif
 #endif
 
+EJ_VISIBLE void ej_show_openvpnuserpass(webs_t wp, int argc, char_t ** argv)
+{
+	int i;
+	char *sln = nvram_safe_get("openvpn_userpassnum");
+	if (sln == NULL || *(sln) == 0)  // check for NULL pointer (which should never happen in this case) or empty string
+		return;
+	int userpassnum = atoi(sln);
+	if (userpassnum == 0)
+		return;
+	char *nvuserpass = nvram_safe_get("openvpn_userpass");
+	char *userpass = strdup(nvuserpass);
+	char *originalpointer = userpass;	// strsep destroys the pointer by moving it
+	for (i = 0; i < userpassnum; i++) {
+		char *sep = strsep(&userpass, "=");
+		websWrite(wp, "<tr><td><input name=\"openvpn%d_usrname\" value=\"%s\" size=\"32\" maxlength=\"32\" onblur=\"valid_name(this,share.usrname,SPACE_NO)\" /></td>", i, sep != NULL ? sep : "");
+		sep = strsep(&userpass, " ");
+		websWrite(wp, "<td><input type=\"password\" name=\"openvpn%d_passwd\" value=\"%s\" size=\"48\" maxlength=\"64\" onmouseover=\"this.type='text'\" onmouseout=\"this.type='password'\" onblur=\"valid_name(this,share.passwd,SPACE_NO)\" /></td>", i, sep != NULL ? sep : "");
+		websWrite(wp,
+			  "<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<td class=\\\"center\\\" title=\\\"\" + sbutton.del + \"\\\"><input class=\\\"remove\\\" aria-label=\\\"\" + sbutton.del + \"\\\" type=\\\"button\\\" onclick=\\\"userpass_del_submit(this.form,%d)\\\" />\");\n//]]>\n</script>\n</td></tr>", i);
+	}
+	debug_free(originalpointer);
+	return;
+}
+
 EJ_VISIBLE void ej_show_staticleases(webs_t wp, int argc, char_t ** argv)
 {
 	int i;

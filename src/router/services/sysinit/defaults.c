@@ -3167,6 +3167,9 @@ struct nvram_param srouter_defaults[] = {
 	{ "openvpn_allowcnwan", "1" },
 	{ "openvpn_allowcnlan", "1" },
 	{ "openvpn_blockmulticast", "0" },
+	{ "openvpn_userpassnum", "0" },
+	{ "openvpn_enuserpass", "0" },
+	
 #endif
 #ifdef HAVE_ANTAIRA_AGENT
 	{ "antaira_agent_enable", "0" },

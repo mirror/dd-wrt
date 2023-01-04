@@ -226,6 +226,9 @@ void Initnvramtab()
 #ifdef HAVE_MDNS
 		{ "AVAHI", "validate_avahi", 0 },
 #endif
+#ifdef HAVE_OPENVPN
+		{ "OPENVPNUSERPASS", "validate_openvpnuserpass", 0 },
+#endif
 		{ "REBOOT", "validate_reboot", 0 },
 		{ "IPADDR", "validate_ipaddr", 0 },
 		{ "STATICLEASES", "validate_staticleases", 0 },
@@ -1092,6 +1095,9 @@ static struct gozila_action gozila_actions[] = {
 	//{ "PPTP", "import_vpntunnel", "", REFRESH, "import_vpntunnel" },
 	//{ "PPTP", "import_vpntunnel", "", NOTHING, "import_vpntunnel" },
 	{ "PPTP", "import_vpntunnel", "", REFRESH_DELAY, "import_vpntunnel" },
+	{ "PPTP", "add_userpass", "", REFRESH, "userpass_add" },
+	{ "PPTP", "del_userpass", "", REFRESH, "userpass_del" },
+
 #endif
 #ifdef HAVE_IAS
 	{ "index", "admin_card", "", RESTART, "ias_save_admincard" },

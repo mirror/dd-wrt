@@ -156,6 +156,20 @@ function changevpnpbr(F, value) {
 	}
 }
 
+function userpass_add_submit(F) {
+	F.change_action.value="gozila_cgi";
+	F.submit_type.value = "add_userpass";
+	//console.log("openvpn userpass: add_userpass");
+	F.submit();
+}
+
+function userpass_del_submit(F,I) {
+	F.change_action.value="gozila_cgi";
+	F.submit_type.value = "del_userpass";
+	F.userpass_del_value.value=I;
+	F.submit();
+}
+
 var update;
 
 addEvent(window, "load", function() {
@@ -183,6 +197,7 @@ addEvent(window, "load", function() {
 	show_layer_ext(document.setup.openvpn_pkcs, 'idspkcs12n', <% nvem("openvpn_pkcs", "0", "1", "0"); %> == 1);
 	show_layer_ext(document.setup.openvpn_adv, 'idmtu', <% nvem("openvpn_adv", "1", "1", "0"); %> == 1);
 	show_layer_ext(document.setup.openvpncl_enable, 'idvpncl', <% nvem("openvpncl_enable", "1", "1", "0"); %> == 1);
+	show_layer_ext(document.setup.openvpn_enuserpass, 'iduserpass', <% nvem("openvpn_enuserpass", "1", "1", "0"); %> == 1);
 	show_layer_ext(document.setup.openvpncl_adv, 'idmtucl', <% nvem("openvpncl_adv", "1", "1", "0"); %> == 1);
 	show_layer_ext(document.setup.openvpncl_upauth, 'idupauth', <% nvem("openvpncl_upauth", "1", "1", "0"); %> == 1);
 	show_layer_ext(document.setup.openvpncl_nat, 'idnat', <% nvem("openvpncl_tuntap", "tap", "1", "0"); %> == 1);
@@ -234,6 +249,8 @@ addEvent(window, "unload", function() {
 							<input type="hidden" name="openvpncl_splitdns" />
 							<input type="hidden" name="openvpn_fw" />
 							<input type="hidden" name="vpn_conf_file" />
+							<input type="hidden" name="userpass_del_value" />
+							<input type="hidden" name="openvpn_userpass" value="13" />
 
 							<h2><% tran("service.pptp_h2"); %></h2>
 							<fieldset>

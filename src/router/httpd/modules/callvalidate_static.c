@@ -97,6 +97,7 @@ void validate_range(webs_t wp, char *value, struct variable *v);
 void validate_reboot(webs_t wp, char *value, struct variable *v);
 void validate_remote_ip(webs_t wp, char *value, struct variable *v);
 void validate_staticleases(webs_t wp, char *value, struct variable *v);
+void validate_openvpnuserpass(webs_t wp, char *value, struct variable *v);
 void validate_static_route(webs_t wp, char *value, struct variable *v);
 void validate_pbr_rule(webs_t wp, char *value, struct variable *v);
 void validate_statics(webs_t wp, char *value, struct variable *v);
@@ -172,6 +173,10 @@ static struct callmap validate_map[] = {
 #ifdef HAVE_MDNS
 	{ "validate_avahi", &validate_avahi },
 #endif
+#ifdef HAVE_OPENVPN
+	{ "validate_openvpnuserpass", &validate_openvpnuserpass },
+#endif
+
 	{ "validate_port_trigger", &validate_port_trigger },
 	{ "validate_range", &validate_range },
 	{ "validate_reboot", &validate_reboot },
@@ -218,6 +223,8 @@ static struct callmap gozila_map[] = {
 #endif
 #ifdef HAVE_OPENVPN
 	{ "import_vpntunnel", &import_vpntunnel },
+	{ "userpass_add", &userpass_add },
+	{ "userpass_del", &userpass_del },
 #endif
 #ifdef HAVE_SSHD
 	{ "ssh_downloadkey", &ssh_downloadkey },
