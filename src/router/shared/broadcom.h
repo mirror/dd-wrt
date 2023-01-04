@@ -123,6 +123,8 @@ EJ_VISIBLE void changepass(webs_t wp);
 EJ_VISIBLE void superchannel_validate(webs_t wp);
 EJ_VISIBLE void lease_add(webs_t wp);
 EJ_VISIBLE void lease_del(webs_t wp);
+EJ_VISIBLE void userpass_add(webs_t wp);
+EJ_VISIBLE void userpass_del(webs_t wp);
 EJ_VISIBLE void chap_user_add(webs_t wp);
 EJ_VISIBLE void chap_user_remove(webs_t wp);
 EJ_VISIBLE void user_add(webs_t wp);
@@ -858,6 +860,13 @@ extern filters *get_filters_list(void);
 
 #ifdef HAVE_RFLOW
 extern void ej_show_rflowif(webs_t wp, int argc, char_t ** argv);
+#endif
+
+#ifdef HAVE_OPENVPN
+//extern void ej_show_openvpnuserpass(webs_t wp, int argc, char_t ** argv);   //see show_staticleases
+extern void validate_openvpnuserpass(webs_t wp, char *value, struct variable *v);  //see validate_staticleases
+extern void userpass_add(webs_t wp);
+extern void userpass_del(webs_t wp);
 #endif
 
 #ifndef BASEDEF
