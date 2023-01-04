@@ -79,7 +79,7 @@
 # define MAX_ADDRESS_LEN                  46
 #endif
 
-#define MAX_NUM_RESPONSES                 5
+#define MAX_NUM_RESPONSES                 9
 #define MAX_RESPONSE_LEN                  32
 
 typedef enum {

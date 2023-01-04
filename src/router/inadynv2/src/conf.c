@@ -403,7 +403,6 @@ static int set_provider_opts(cfg_t *cfg, ddns_info_t *info, int custom)
 			for (j = 0; j < NELEMS(info->server_response); j++) {
 				if (!generic_responses[j])
 					break;
-
 				strlcpy(info->server_response[j], generic_responses[j], sizeof(info->server_response[j]));
 				info->server_response_num++;
 			}
