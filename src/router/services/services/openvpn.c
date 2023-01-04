@@ -351,11 +351,11 @@ void create_openvpnserverrules(FILE * fp)
 		fprintf(fp, "iptables -t raw -D PREROUTING ! -i $dev -d $ifconfig_local/$ifconfig_netmask -j DROP\n" "iptables -t raw -I PREROUTING ! -i $dev -d $ifconfig_local/$ifconfig_netmask -j DROP\n");
 	if (nvram_match("openvpn_tuntap", "tun")) {
 		if (nvram_matchi("openvpn_allowcnwan", 1)) {
-			fprintf(fp, "iptables -t nat -D POSTROUTING -s $(nvram get openvpn_net)/$(nvram get openvpn_tunmask) -o $(get_wanface) -j MASQUERADE\n");
+			fprintf(fp, "iptables -t nat -D POSTROUTING -s $(nvram get openvpn_net)/$(nvram get openvpn_tunmask) -o $(get_wanface) -j MASQUERADE >/dev/null 2>&1\n");
 			fprintf(fp, "iptables -t nat -A POSTROUTING -s $(nvram get openvpn_net)/$(nvram get openvpn_tunmask) -o $(get_wanface) -j MASQUERADE\n");
 		}
 		if (nvram_matchi("openvpn_allowcnlan", 1)) {
-			fprintf(fp, "iptables -t nat -D POSTROUTING -o br+ -s $(nvram get openvpn_net)/$(nvram get openvpn_tunmask) -j MASQUERADE\n");
+			fprintf(fp, "iptables -t nat -D POSTROUTING -o br+ -s $(nvram get openvpn_net)/$(nvram get openvpn_tunmask) -j MASQUERADE >/dev/null 2>&1\n");
 			fprintf(fp, "iptables -t nat -A POSTROUTING -o br+ -s $(nvram get openvpn_net)/$(nvram get openvpn_tunmask) -j MASQUERADE\n");
 		}
 	}
@@ -539,10 +539,51 @@ void start_openvpnserver(void)
 		/* for QOS */
 		if (nvram_matchi("wshaper_enable", 1))
 			fprintf(fp, "passtos\n");
-	} // else //egc loading a single public server certificate is not what we want, use inline certificates
+		if (nvram_matchi("openvpn_enuserpass", 1) && nvram_invmatchi("openvpn_userpassnum", 0)) {
+			fprintf(fp, "script-security 3\n");
+			fprintf(fp, "username-as-common-name\n");
+			fprintf(fp, "verify-client-cert optional\n");  // TODO make setting, this can be require, optional or none, now optional so only password and CA file are necessary
+			fprintf(fp, "auth-user-pass-verify /tmp/openvpn/quickAuth.sh via-env\n");
+		}
+	}	// else //egc loading a single public server certificate is not what we want, use inline certificates
 		//write_nvram("/tmp/openvpn/cert.pem", "openvpn_client");
 	fprintf(fp, "%s\n", nvram_safe_get("openvpn_config"));
 	fclose(fp);
+
+	// egc make file with username and password
+	if (nvram_matchi("openvpn_enuserpass", 1) && nvram_invmatchi("openvpn_userpassnum", 0)) {
+		fp = fopen("/tmp/openvpn/openvpn-auth", "wb");
+		if (!fp) {
+			dd_loginfo("openvpn", "ERROR: Could not open %s to store usernames and passwords\n", "/tmp/openvpn/openvpn-auth");
+		} else {
+			int i;
+			int userpassnum = nvram_geti("openvpn_userpassnum");
+			char *nvuserpass = nvram_safe_get("openvpn_userpass");
+			char *userpass = strdup(nvuserpass);
+			char *originalpointer = userpass;	// strsep destroys the pointer by moving it
+			for (i = 0; i < userpassnum; i++) {
+				char *sep = strsep(&userpass, "=");
+				fprintf(fp, "%s", sep);	//printf username
+				sep = strsep(&userpass, " ");
+				fprintf(fp, " %s\n", sep);	//printf password
+			}
+			debug_free(originalpointer);
+			fclose(fp);
+		}
+		// make script to execute 
+		fp = fopen("/tmp/openvpn/quickAuth.sh", "wb");
+		if (!fp) {
+			dd_loginfo("openvpn", "ERROR: Could not open username/password authentication script %s \n", "/tmp/openvpn/quickAuth.sh");
+		} else {
+				fprintf(fp, "#!/bin/sh\n");
+				fprintf(fp, "pass=\"$(awk -v usr=$username '$1==usr { print $2 }' /tmp/openvpn/openvpn-auth)\"\n");
+				fprintf(fp, "[[ -n $pass && $pass == $password ]] && exit 0\n");
+				fprintf(fp, "exit 1\n");
+				fclose(fp);
+				chmod("/tmp/openvpn/quickAuth.sh", 0700);
+		}
+	}
+
 	fp = fopen("/tmp/openvpn/route-up.sh", "wb");
 	if (fp == NULL)
 		return;
@@ -573,7 +614,9 @@ void start_openvpnserver(void)
 		fprintf(fp, "service dnsmasq restart\n");
 	}
 	create_openvpnserverrules(fp);
+	fprintf(fp, "exit 0\n");
 	fclose(fp);
+
 	fp = fopen("/tmp/openvpn/route-down.sh", "wb");
 	if (fp == NULL)
 		return;
@@ -625,6 +668,7 @@ void start_openvpnserver(void)
                                 "then rmmod ebtable_filter\n" "\t rmmod ebtables\n");   */
 	if (nvram_match("openvpn_tuntap", "tap"))
 		fprintf(fp, "brctl delif br0 $dev\n" "ifconfig $dev down\n");
+	fprintf(fp, "exit 0\n");
 	fclose(fp);
 	chmod("/tmp/openvpn/route-up.sh", 0700);
 	chmod("/tmp/openvpn/route-down.sh", 0700);
@@ -663,6 +707,8 @@ void stop_openvpnserver(void)
 		unlink("/tmp/openvpn/route-up.sh");
 		unlink("/tmp/openvpn/route-down.sh");
 		unlink("/tmp/openvpnsrv_fw.sh");
+		unlink("/tmp/openvpn/openvpn-auth");
+		unlink("/tmp/openvpn/quickAuth.sh");
 	}
 	return;
 }

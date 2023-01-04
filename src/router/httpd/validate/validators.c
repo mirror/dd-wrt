@@ -58,6 +58,9 @@
 #include <netdb.h>
 #include <utils.h>
 
+//debug
+//#include <syslog.h>
+
 #ifdef FILTER_DEBUG
 extern FILE *debout;
 
@@ -2362,6 +2365,58 @@ char *buildmac(char *in)
 	outmac[c++] = 0;
 	return outmac;
 }
+
+EJ_VISIBLE void validate_openvpnuserpass(webs_t wp, char *value, struct variable *v)
+{
+	char openvpn_usrname[32] = "openvpnxxx_usrname";
+	char openvpn_passwd[32] = "openvpnxxx_passwd";
+	char *sln = nvram_safe_get("openvpn_userpassnum");
+	//dd_loginfo("OpenVPN", "OpenVPN userpassnum: %s\n", sln );
+	
+
+	if (*(sln) == 0)  //string is empty
+		return;
+	int userpassnum = atoi(sln);
+
+	if (userpassnum <= 0) {
+		nvram_unset("openvpn_userpass");
+		nvram_async_commit();
+		return;
+	}
+	
+	char *userpass = NULL;
+	int i;
+
+	for (i = 0; i < userpassnum; i++) {
+		if (i)
+			strcat(userpass, " ");
+		snprintf(openvpn_usrname, sizeof(openvpn_usrname), "openvpn%d_usrname", i);
+		char *usrname = websGetVar(wp, openvpn_usrname, NULL);
+
+		snprintf(openvpn_passwd, sizeof(openvpn_passwd), "openvpn%d_passwd", i);
+		char *passwd = websGetVar(wp, openvpn_passwd, NULL);
+
+		if (usrname == NULL || *(usrname) == 0 || passwd == NULL || *(passwd) == 0)
+			break;
+		if (userpass == NULL)
+			userpass = calloc(1, strlen(usrname) + 1 + strlen(passwd) + 2);
+		else
+			userpass = realloc(userpass, strlen(userpass) + strlen(usrname) + 1 + strlen(passwd) + 2);
+
+		if (!userpass)
+			return;
+		strcat(userpass, usrname);
+		strcat(userpass, "=");
+		strcat(userpass, passwd);
+	}
+	nvram_set("openvpn_userpass", userpass);
+	nvram_async_commit();
+	debug_free(userpass);
+	// also set openvpn_enuserpass
+	copytonv(wp, "openvpn_enuserpass");
+
+}
+
 
 EJ_VISIBLE void validate_staticleases(webs_t wp, char *value, struct variable *v)
 {

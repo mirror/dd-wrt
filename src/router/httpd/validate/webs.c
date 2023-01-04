@@ -1956,6 +1956,7 @@ Need parsing to get the file data out of the POST data
 		dd_loginfo("OpenVPN", "converting %s with %s\n", vpnupload_file, vpnconfig_script);
 	}
 }
+
 #endif
 
 #ifdef HAVE_EOP_TUNNEL
@@ -2986,6 +2987,22 @@ void chap_user_remove(webs_t wp)
 
 	nvram_seti("pppoeserver_enabled", var);
 	macro_rem("pppoeserver_chapsnum", "pppoeserver_chaps");
+}
+#endif
+
+#ifdef HAVE_OPENVPN
+void userpass_del(webs_t wp)
+{
+	int todel = websGetVari(wp, "userpass_del_value", 0);
+	delfrom("openvpn_userpass", "openvpn_userpassnum", todel);
+}
+
+void userpass_add(webs_t wp)
+{
+	//experimental, try to save already existing lines
+	validate_openvpnuserpass(wp, NULL, NULL);
+	
+	macro_add("openvpn_userpassnum");
 }
 #endif
 
