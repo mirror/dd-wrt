@@ -26,7 +26,7 @@
 	"username=%s&"							\
 	"password=%s&"							\
 	"subdomain=%s&"							\
-	"ip=%s&"							\
+	"ip=%s "							\
 	"HTTP/1.0\r\n"							\
 	"Host: %s\r\n"							\
 	"User-Agent: %s\r\n\r\n"
