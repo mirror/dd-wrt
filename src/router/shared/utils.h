@@ -1194,10 +1194,6 @@ extern int has_subquarter(const char *prefix);
 extern int has_fwswitch(const char *prefix);
 extern int getath9kdevicecount(void);
 #else
-static inline int isFXXN_PRO(char *ifname) {
-	return 0;
-
-}
 
 static inline int is_mac80211(const char *prefix)
 {
@@ -1453,7 +1449,14 @@ int getsocket(void);
 void closesocket(void);
 int isEMP(char *ifname);
 int isXR36(char *ifname);
+#ifdef HAVE_MADWIFI
 int isFXXN_PRO(char *ifname);
+#else
+static inline int isFXXN_PRO(char *ifname)
+{
+	return 0;
+}
+#endif
 void get3GControlDevice(void);
 int mac80211_get_maxmcs(char *interface);
 int mac80211_get_maxvhtmcs(char *interface);
