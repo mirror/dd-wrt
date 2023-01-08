@@ -1208,7 +1208,7 @@ static void clean_up_and_exit(int sig UNUSED_PARAM)
 			close(sep->se_fd);
 	}
 	remove_pidfile_std_path_and_ext("inetd");
-	exit(EXIT_SUCCESS);
+	exit_SUCCESS();
 }
 
 int inetd_main(int argc, char **argv) MAIN_EXTERNALLY_VISIBLE;
@@ -1538,7 +1538,7 @@ int inetd_main(int argc UNUSED_PARAM, char **argv)
 #if ENABLE_FEATURE_INETD_SUPPORT_BUILTIN_ECHO \
  || ENABLE_FEATURE_INETD_SUPPORT_BUILTIN_DISCARD
 # if !BB_MMU
-static const char *const cat_args[] = { "cat", NULL };
+static const char *const cat_args[] ALIGN_PTR = { "cat", NULL };
 # endif
 #endif
 

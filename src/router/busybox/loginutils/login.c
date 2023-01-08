@@ -312,7 +312,7 @@ static void alarm_handler(int sig UNUSED_PARAM)
 	/* unix API is brain damaged regarding O_NONBLOCK,
 	 * we should undo it, or else we can affect other processes */
 	ndelay_off(STDOUT_FILENO);
-	_exit(EXIT_SUCCESS);
+	_exit_SUCCESS();
 }
 
 int login_main(int argc, char **argv) MAIN_EXTERNALLY_VISIBLE;
@@ -569,7 +569,9 @@ int login_main(int argc UNUSED_PARAM, char **argv)
 
 	change_identity(pw);
 	setup_environment(pw->pw_shell,
-			(!(opt & LOGIN_OPT_p) * SETUP_ENV_CLEARENV) + SETUP_ENV_CHANGEENV,
+			(!(opt & LOGIN_OPT_p) * SETUP_ENV_CLEARENV)
+				+ SETUP_ENV_CHANGEENV
+				+ SETUP_ENV_CHDIR,
 			pw);
 
 #if ENABLE_PAM
@@ -613,7 +615,9 @@ int login_main(int argc UNUSED_PARAM, char **argv)
 	 * But without this, bash 3.0 will not enable ctrl-c either.
 	 * Maybe bash is buggy?
 	 * Need to find out what standards say about /bin/login -
-	 * should we leave SIGINT etc enabled or disabled? */
+	 * should we leave SIGINT etc enabled or disabled?
+	 * Also note: sulogin does not do it! Why?
+	 */
 	signal(SIGINT, SIG_DFL);
 
 	/* Exec login shell with no additional parameters */

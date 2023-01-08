@@ -249,19 +249,31 @@ static void get_user_strings(void)
 	}
 }
 
+static NOINLINE const char *get_homedir_or_NULL(void)
+{
+	const char *home;
+
+# if ENABLE_SHELL_ASH || ENABLE_SHELL_HUSH
+	home = state->sh_get_var ? state->sh_get_var("HOME") : getenv("HOME");
+# else
+	home = getenv("HOME");
+# endif
+	if (home != NULL && home[0] != '\0')
+		return home;
+
+	if (!got_user_strings)
+		get_user_strings();
+	return home_pwd_buf;
+}
+#endif
+
+#if ENABLE_FEATURE_EDITING_FANCY_PROMPT
 static const char *get_username_str(void)
 {
 	if (!got_user_strings)
 		get_user_strings();
 	return user_buf ? user_buf : "";
 	/* btw, bash uses "I have no name!" string if uid has no entry */
-}
-
-static NOINLINE const char *get_homedir_or_NULL(void)
-{
-	if (!got_user_strings)
-		get_user_strings();
-	return home_pwd_buf;
 }
 #endif
 
@@ -861,7 +873,7 @@ static NOINLINE unsigned complete_cmd_dir_file(const char *command, int type)
 				continue;
 		}
 # endif
-# if EDITING_HAS_get_exe_name
+# if ENABLE_SHELL_ASH || ENABLE_SHELL_HUSH
 		if (state->get_exe_name) {
 			i = 0;
 			for (;;) {
@@ -2025,7 +2037,13 @@ static void parse_and_put_prompt(const char *prmt_ptr)
 				case 'W': /* basename of cur dir */
 					if (!cwd_buf) {
 						const char *home;
+# if EDITING_HAS_sh_get_var
+						cwd_buf = state->sh_get_var
+							? xstrdup(state->sh_get_var("PWD"))
+							: xrealloc_getcwd_or_warn(NULL);
+# else
 						cwd_buf = xrealloc_getcwd_or_warn(NULL);
+# endif
 						if (!cwd_buf)
 							cwd_buf = (char *)bb_msg_unknown;
 						else if ((home = get_homedir_or_NULL()) != NULL && home[0]) {
@@ -2155,17 +2173,41 @@ static int lineedit_read_key(char *read_key_buffer, int timeout)
 #endif
 
 	fflush_all();
-	while (1) {
+	for (;;) {
 		/* Wait for input. TIMEOUT = -1 makes read_key wait even
 		 * on nonblocking stdin, TIMEOUT = 50 makes sure we won't
 		 * insist on full MB_CUR_MAX buffer to declare input like
 		 * "\xff\n",pause,"ls\n" invalid and thus won't lose "ls".
 		 *
+		 * If LI_INTERRUPTIBLE, return -1 if got EINTR in poll()
+		 * inside read_key, or if bb_got_signal != 0 (IOW: if signal
+		 * arrived before poll() is reached).
+		 *
 		 * Note: read_key sets errno to 0 on success.
 		 */
-		IF_FEATURE_EDITING_WINCH(S.ok_to_redraw = 1;)
-		ic = read_key(STDIN_FILENO, read_key_buffer, timeout);
-		IF_FEATURE_EDITING_WINCH(S.ok_to_redraw = 0;)
+		for (;;) {
+			if ((state->flags & LI_INTERRUPTIBLE) && bb_got_signal) {
+				errno = EINTR;
+				return -1;
+			}
+//FIXME: still races here with signals, but small window to poll() inside read_key
+			IF_FEATURE_EDITING_WINCH(S.ok_to_redraw = 1;)
+			/* errno = 0; - read_key does this itself */
+			ic = read_key(STDIN_FILENO, read_key_buffer, timeout);
+			IF_FEATURE_EDITING_WINCH(S.ok_to_redraw = 0;)
+			if (errno != EINTR)
+				break;
+			if (state->flags & LI_INTERRUPTIBLE) {
+				/* LI_INTERRUPTIBLE bails out on EINTR,
+				 * but nothing really guarantees that bb_got_signal
+				 * is nonzero. Follow the least surprise principle:
+				 */
+				if (bb_got_signal == 0)
+					bb_got_signal = 255;
+				goto ret;
+			}
+		}
+
 		if (errno) {
 #if ENABLE_UNICODE_SUPPORT
 			if (errno == EAGAIN && unicode_idx != 0)
@@ -2233,7 +2275,7 @@ static int lineedit_read_key(char *read_key_buffer, int timeout)
 #endif
 		break;
 	}
-
+ ret:
 	return ic;
 }
 

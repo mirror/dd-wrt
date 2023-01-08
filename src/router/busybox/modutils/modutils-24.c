@@ -955,7 +955,7 @@ arch_apply_relocation(struct obj_file *f,
 						(loc[1] & 0xFFFF);
 
 			/* Add reloc offset */
-			temp1+=v;
+			temp1 += v;
 
 			/* Store back into code */
 			loc[0] = (loc[0] & 0xFFFF0000) | temp1 >> 16;
@@ -3422,7 +3422,7 @@ static int obj_load_progbits(FILE *fp, struct obj_file *f, char *imagebase)
 
 static void hide_special_symbols(struct obj_file *f)
 {
-	static const char *const specials[] = {
+	static const char *const specials[] ALIGN_PTR = {
 		SPFX "cleanup_module",
 		SPFX "init_module",
 		SPFX "kernel_version",
@@ -3448,7 +3448,7 @@ static int obj_gpl_license(struct obj_file *f, const char **license)
 	 * linux/include/linux/module.h.  Checking for leading "GPL" will not
 	 * work, somebody will use "GPL sucks, this is proprietary".
 	 */
-	static const char *const gpl_licenses[] = {
+	static const char *const gpl_licenses[] ALIGN_PTR = {
 		"GPL",
 		"GPL v2",
 		"GPL and additional rights",

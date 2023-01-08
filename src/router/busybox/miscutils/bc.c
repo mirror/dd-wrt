@@ -2892,6 +2892,8 @@ static char peek_inbuf(void)
 	) {
 		xc_read_line(&G.input_buffer, G.prs.lex_input_fp);
 		G.prs.lex_inbuf = G.input_buffer.v;
+		// lex_next_at may point to now-freed data, update it:
+		G.prs.lex_next_at = G.prs.lex_inbuf;
 		if (G.input_buffer.len <= 1) // on EOF, len is 1 (NUL byte)
 			G.prs.lex_input_fp = NULL;
 	}
@@ -3103,7 +3105,7 @@ static BC_STATUS zbc_lex_identifier(void)
 			continue;
  match:
 		// buf starts with keyword bc_lex_kws[i]
-		if (isalnum(buf[j]) || buf[j]=='_')
+		if (isalnum(buf[j]) || buf[j] == '_')
 			continue; // "ifz" does not match "if" keyword, "if." does
 		p->lex = BC_LEX_KEY_1st_keyword + i;
 		if (!keyword_is_POSIX(i)) {
@@ -6011,7 +6013,7 @@ static BC_STATUS zxc_program_assign(char inst)
 #endif
 
 	if (ib || sc || left->t == XC_RESULT_OBASE) {
-		static const char *const msg[] = {
+		static const char *const msg[] ALIGN_PTR = {
 			"bad ibase; must be [2,16]",                 //XC_RESULT_IBASE
 			"bad obase; must be [2,"BC_MAX_OBASE_STR"]", //XC_RESULT_OBASE
 			"bad scale; must be [0,"BC_MAX_SCALE_STR"]", //XC_RESULT_SCALE

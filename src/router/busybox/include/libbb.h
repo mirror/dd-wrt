@@ -437,8 +437,8 @@ void *xrealloc(void *old, size_t size) FAST_FUNC;
 	xrealloc_vector_helper((vector), (sizeof((vector)[0]) << 8) + (shift), (idx))
 void* xrealloc_vector_helper(void *vector, unsigned sizeof_and_shift, int idx) FAST_FUNC;
 char *xstrdup(const char *s) FAST_FUNC RETURNS_MALLOC;
-char *xstrndup(const char *s, int n) FAST_FUNC RETURNS_MALLOC;
-void *xmemdup(const void *s, int n) FAST_FUNC RETURNS_MALLOC;
+char *xstrndup(const char *s, size_t n) FAST_FUNC RETURNS_MALLOC;
+void *xmemdup(const void *s, size_t n) FAST_FUNC RETURNS_MALLOC;
 void *mmap_read(int fd, size_t size) FAST_FUNC;
 void *mmap_anon(size_t size) FAST_FUNC;
 void *xmmap_anon(size_t size) FAST_FUNC;
@@ -653,6 +653,7 @@ void xsetgid(gid_t gid) FAST_FUNC;
 void xsetuid(uid_t uid) FAST_FUNC;
 void xsetegid(gid_t egid) FAST_FUNC;
 void xseteuid(uid_t euid) FAST_FUNC;
+int chdir_or_warn(const char *path) FAST_FUNC;
 void xchdir(const char *path) FAST_FUNC;
 void xfchdir(int fd) FAST_FUNC;
 void xchroot(const char *path) FAST_FUNC;
@@ -1062,6 +1063,7 @@ void die_if_ferror(FILE *file, const char *msg) FAST_FUNC;
 void die_if_ferror_stdout(void) FAST_FUNC;
 int fflush_all(void) FAST_FUNC;
 void fflush_stdout_and_exit(int retval) NORETURN FAST_FUNC;
+void fflush_stdout_and_exit_SUCCESS(void) NORETURN FAST_FUNC;
 int fclose_if_not_stdin(FILE *file) FAST_FUNC;
 FILE* xfopen(const char *filename, const char *mode) FAST_FUNC;
 /* Prints warning to stderr and returns NULL on failure: */
@@ -1285,6 +1287,8 @@ void set_task_comm(const char *comm) FAST_FUNC;
 # define re_execed_comm() 0
 # define set_task_comm(name) ((void)0)
 #endif
+void exit_SUCCESS(void) NORETURN FAST_FUNC;
+void _exit_SUCCESS(void) NORETURN FAST_FUNC;
 
 /* Helpers for daemonization.
  *
@@ -1562,6 +1566,7 @@ int ash_main(int argc, char** argv) IF_SHELL_ASH(MAIN_EXTERNALLY_VISIBLE);
 int hush_main(int argc, char** argv) IF_SHELL_HUSH(MAIN_EXTERNALLY_VISIBLE);
 /* If shell needs them, they exist even if not enabled as applets */
 int echo_main(int argc, char** argv) IF_ECHO(MAIN_EXTERNALLY_VISIBLE);
+int sleep_main(int argc, char **argv) IF_SLEEP(MAIN_EXTERNALLY_VISIBLE);
 int printf_main(int argc, char **argv) IF_PRINTF(MAIN_EXTERNALLY_VISIBLE);
 int test_main(int argc, char **argv)
 #if ENABLE_TEST || ENABLE_TEST1 || ENABLE_TEST2
@@ -1779,15 +1784,16 @@ extern void selinux_or_die(void) FAST_FUNC;
 
 
 /* setup_environment:
- * if chdir pw->pw_dir: ok: else if to_tmp == 1: goto /tmp else: goto / or die
- * if clear_env = 1: cd(pw->pw_dir), clear environment, then set
+ * if SETUP_ENV_CHDIR:
+ *   if cd(pw->pw_dir): ok: else if SETUP_ENV_TO_TMP: cd(/tmp) else: cd(/) or die
+ * if SETUP_ENV_CLEARENV: cd(pw->pw_dir), clear environment, then set
  *   TERM=(old value)
  *   USER=pw->pw_name, LOGNAME=pw->pw_name
  *   PATH=bb_default_[root_]path
  *   HOME=pw->pw_dir
  *   SHELL=shell
- * else if change_env = 1:
- *   if not root (if pw->pw_uid != 0):
+ * else if SETUP_ENV_CHANGEENV | SETUP_ENV_CHANGEENV_LOGNAME:
+ *   if not root (if pw->pw_uid != 0) or if SETUP_ENV_CHANGEENV_LOGNAME:
  *     USER=pw->pw_name, LOGNAME=pw->pw_name
  *   HOME=pw->pw_dir
  *   SHELL=shell
@@ -1796,10 +1802,11 @@ extern void selinux_or_die(void) FAST_FUNC;
  * NB: CHANGEENV and CLEARENV use setenv() - this leaks memory!
  * If setup_environment() is used is vforked child, this leaks memory _in parent too_!
  */
-#define SETUP_ENV_CHANGEENV (1 << 0)
-#define SETUP_ENV_CLEARENV  (1 << 1)
-#define SETUP_ENV_TO_TMP    (1 << 2)
-#define SETUP_ENV_NO_CHDIR  (1 << 4)
+#define SETUP_ENV_CHANGEENV         (1 << 0)
+#define SETUP_ENV_CHANGEENV_LOGNAME (1 << 1)
+#define SETUP_ENV_CLEARENV          (1 << 2)
+#define SETUP_ENV_TO_TMP            (1 << 3)
+#define SETUP_ENV_CHDIR             (1 << 4)
 void setup_environment(const char *shell, int flags, const struct passwd *pw) FAST_FUNC;
 void nuke_str(char *str) FAST_FUNC;
 #if ENABLE_FEATURE_SECURETTY && !ENABLE_PAM
@@ -1950,6 +1957,8 @@ enum {
  * (unless fd is in non-blocking mode),
  * subsequent reads will time out after a few milliseconds.
  * Return of -1 means EOF or error (errno == 0 on EOF).
+ * Nonzero errno is not preserved across the call:
+ * if there was no error, errno will be cleared to 0.
  * buffer[0] is used as a counter of buffered chars and must be 0
  * on first call.
  * timeout:
@@ -1958,6 +1967,8 @@ enum {
  * >=0: poll() for TIMEOUT milliseconds, return -1/EAGAIN on timeout
  */
 int64_t read_key(int fd, char *buffer, int timeout) FAST_FUNC;
+/* This version loops on EINTR: */
+int64_t safe_read_key(int fd, char *buffer, int timeout) FAST_FUNC;
 void read_key_ungets(char *buffer, const char *str, unsigned len) FAST_FUNC;
 
 
@@ -1970,6 +1981,7 @@ unsigned size_from_HISTFILESIZE(const char *hp) FAST_FUNC;
 #  define MAX_HISTORY 0
 # endif
 typedef const char *get_exe_name_t(int i) FAST_FUNC;
+typedef const char *sh_get_var_t(const char *name) FAST_FUNC;
 typedef struct line_input_t {
 	int flags;
 	int timeout;
@@ -1983,10 +1995,15 @@ typedef struct line_input_t {
 #  if ENABLE_SHELL_ASH || ENABLE_SHELL_HUSH
 	/* function to fetch additional application-specific names to match */
 	get_exe_name_t *get_exe_name;
-#   define EDITING_HAS_get_exe_name 1
-#  else
-#   define EDITING_HAS_get_exe_name 0
 #  endif
+# endif
+# if (ENABLE_FEATURE_USERNAME_COMPLETION || ENABLE_FEATURE_EDITING_FANCY_PROMPT) \
+  && (ENABLE_SHELL_ASH || ENABLE_SHELL_HUSH)
+	/* function to fetch value of shell variable */
+	sh_get_var_t *sh_get_var;
+#  define EDITING_HAS_sh_get_var 1
+# else
+#  define EDITING_HAS_sh_get_var 0
 # endif
 # if MAX_HISTORY
 	int cnt_history;
@@ -2011,7 +2028,8 @@ enum {
 	USERNAME_COMPLETION = 4 * ENABLE_FEATURE_USERNAME_COMPLETION,
 	VI_MODE          = 8 * ENABLE_FEATURE_EDITING_VI,
 	WITH_PATH_LOOKUP = 0x10,
-	FOR_SHELL        = DO_HISTORY | TAB_COMPLETION | USERNAME_COMPLETION,
+	LI_INTERRUPTIBLE = 0x20,
+	FOR_SHELL        = DO_HISTORY | TAB_COMPLETION | USERNAME_COMPLETION | LI_INTERRUPTIBLE,
 };
 line_input_t *new_line_input_t(int flags) FAST_FUNC;
 #if ENABLE_FEATURE_EDITING_SAVEHISTORY
@@ -2037,11 +2055,6 @@ int read_line_input(const char* prompt, char* command, int maxsize) FAST_FUNC;
 #define read_line_input(state, prompt, command, maxsize) \
 	read_line_input(prompt, command, maxsize)
 #endif
-
-#ifndef EDITING_HAS_get_exe_name
-# define EDITING_HAS_get_exe_name 0
-#endif
-
 
 #ifndef COMM_LEN
 # ifdef TASK_COMM_LEN
@@ -2337,7 +2350,7 @@ struct globals;
 /* '*const' ptr makes gcc optimize code much better.
  * Magic prevents ptr_to_globals from going into rodata.
  * If you want to assign a value, use SET_PTR_TO_GLOBALS(x) */
-extern struct globals *const ptr_to_globals;
+extern struct globals *BB_GLOBAL_CONST ptr_to_globals;
 
 #define barrier() asm volatile ("":::"memory")
 

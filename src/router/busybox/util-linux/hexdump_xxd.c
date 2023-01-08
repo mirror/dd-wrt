@@ -41,7 +41,7 @@
 //    -u          use upper case hex letters.
 
 //usage:#define xxd_trivial_usage
-//usage:       "[-pri] [-g N] [-c N] [-n LEN] [-s OFS] [-o OFS] [FILE]"
+//usage:       "[-pri] [-g N] [-c N] [-l LEN] [-s OFS] [-o OFS] [FILE]"
 //usage:#define xxd_full_usage "\n\n"
 //usage:       "Hex dump FILE (or stdin)\n"
 //usage:     "\n	-g N		Bytes per group"
@@ -55,6 +55,7 @@
 //usage:     "\n	-r		Reverse (with -p, assumes no offsets in input)"
 
 #include "libbb.h"
+#include "common_bufsiz.h"
 #include "dump.h"
 
 /* This is a NOEXEC applet. Be very careful! */
@@ -69,61 +70,110 @@
 #define OPT_c (1 << 7)
 #define OPT_o (1 << 8)
 
-static void reverse(unsigned opt, const char *filename)
+#define fillbuf bb_common_bufsiz1
+
+static void write_zeros(off_t count)
+{
+	errno = 0;
+	do {
+		unsigned sz = count < COMMON_BUFSIZE ? (unsigned)count : COMMON_BUFSIZE;
+		if (fwrite(fillbuf, 1, sz, stdout) != sz)
+			bb_simple_perror_msg_and_die("write error");
+		count -= sz;
+	} while (count != 0);
+}
+
+static void reverse(unsigned opt, const char *filename, char *opt_s)
 {
 	FILE *fp;
 	char *buf;
+	off_t cur, opt_s_ofs;
+
+	memset(fillbuf, 0, COMMON_BUFSIZE);
+	opt_s_ofs = cur = 0;
+	if (opt_s) {
+		opt_s_ofs = BB_STRTOOFF(opt_s, NULL, 0);
+		if (errno || opt_s_ofs < 0)
+			bb_error_msg_and_die("invalid number '%s'", opt_s);
+	}
 
 	fp = filename ? xfopen_for_read(filename) : stdin;
 
+ get_new_line:
 	while ((buf = xmalloc_fgetline(fp)) != NULL) {
 		char *p;
 
 		p = buf;
 		if (!(opt & OPT_p)) {
-			/* skip address */
-			while (isxdigit(*p)) p++;
+			char *end;
+			off_t ofs;
+ skip_address:
+			p = skip_whitespace(p);
+			ofs = BB_STRTOOFF(p, &end, 16);
+			if ((errno && errno != EINVAL)
+			 || ofs < 0
+			/* -s SEEK value should be added before seeking */
+			 || (ofs += opt_s_ofs) < 0
+			) {
+				bb_error_msg_and_die("invalid number '%s'", p);
+			}
+			if (ofs != cur) {
+				if (fseeko(stdout, ofs, SEEK_SET) != 0) {
+					if (ofs < cur)
+						bb_simple_perror_msg_and_die("cannot seek");
+					write_zeros(ofs - cur);
+				}
+				cur = ofs;
+			}
+			p = end;
 			/* NB: for xxd -r, first hex portion is address even without colon */
-			/* If it's there, skip it: */
-			if (*p == ':') p++;
-
-//TODO: seek (or zero-pad if unseekable) to the address position
-//NOTE: -s SEEK value should be added to the address before seeking
+			/* But if colon is there, skip it: */
+			if (*p == ':')
+				p++;
 		}
 
 		/* Process hex bytes optionally separated by whitespace */
 		for (;;) {
 			uint8_t val, c;
+			int badchar = 0;
  nibble1:
-			p = skip_whitespace(p);
-
+			if (opt & OPT_p)
+				p = skip_whitespace(p);
 			c = *p++;
 			if (isdigit(c))
 				val = c - '0';
 			else if ((c|0x20) >= 'a' && (c|0x20) <= 'f')
 				val = (c|0x20) - ('a' - 10);
 			else {
-				/* xxd V1.10 is inconsistent here.
+				/* xxd V1.10 allows one non-hexnum char:
 				 *  echo -e "31 !3 0a 0a" | xxd -r -p
 				 * is "10<a0>" (no <cr>) - "!" is ignored,
-				 * but
+				 * but stops for more than one:
 				 *  echo -e "31 !!343434\n30 0a" | xxd -r -p
 				 * is "10<cr>" - "!!" drops rest of the line.
-				 * We will ignore all invalid chars:
+				 * Note: this also covers whitespace chars:
+				 * xxxxxxxx: 3031 3233 3435 3637 3839 3a3b 3c3d 3e3f  0123456789:;<=>?
+				 *  detects this ^ - skips this one space
+				 * xxxxxxxx: 3031 3233 3435 3637 3839 3a3b 3c3d 3e3f  0123456789:;<=>?
+				 *                                     detects this ^^ - skips the rest
 				 */
-				if (c != '\0')
-					goto nibble1;
-				break;
+				if (c == '\0' || badchar)
+					break;
+				badchar++;
+				goto nibble1;
 			}
 			val <<= 4;
 
-			/* Works the same with xxd V1.10:
-			 *  echo "31 09 32 0a" | xxd -r -p
-			 *  echo "31 0 9 32 0a" | xxd -r -p
-			 * thus allow whitespace even within the byte:
-			 */
  nibble2:
-			p = skip_whitespace(p);
+			if (opt & OPT_p) {
+				/* Works the same with xxd V1.10:
+				 *  echo "31 09 32 0a" | xxd -r -p
+				 *  echo "31 0 9 32 0a" | xxd -r -p
+				 * thus allow whitespace (even multiple chars)
+				 * after byte's 1st char:
+				 */
+				p = skip_whitespace(p);
+			}
 
 			c = *p++;
 			if (isdigit(c))
@@ -132,7 +182,16 @@ static void reverse(unsigned opt, const char *filename)
 				val |= (c|0x20) - ('a' - 10);
 			else {
 				if (c != '\0') {
-					/* "...3<not_hex_char>..." ignores both chars */
+					/* "...3<not_hex_char>...": ignore "3",
+					 * skip everything up to next hexchar or newline:
+					 */
+					while (!isxdigit(*p)) {
+						if (*p == '\0') {
+							free(buf);
+							goto get_new_line;
+						}
+						p++;
+					}
 					goto nibble1;
 				}
 				/* Nibbles can join even through newline:
@@ -143,14 +202,17 @@ static void reverse(unsigned opt, const char *filename)
 				p = buf = xmalloc_fgetline(fp);
 				if (!buf)
 					break;
+				if (!(opt & OPT_p)) /* -p and !-p: different behavior */
+					goto skip_address;
 				goto nibble2;
 			}
 			putchar(val);
-		}
+			cur++;
+		} /* for(;;) */
 		free(buf);
 	}
 	//fclose(fp);
-	fflush_stdout_and_exit(EXIT_SUCCESS);
+	fflush_stdout_and_exit_SUCCESS();
 }
 
 static void print_C_style(const char *p, const char *hdr)
@@ -167,11 +229,14 @@ int xxd_main(int argc UNUSED_PARAM, char **argv)
 {
 	char buf[80];
 	dumper_t *dumper;
-	char *opt_l, *opt_s, *opt_o;
+	char *opt_l, *opt_o;
+	char *opt_s = NULL;
 	unsigned bytes = 2;
 	unsigned cols = 0;
 	unsigned opt;
 	int r;
+
+	setup_common_bufsiz();
 
 	dumper = alloc_dumper();
 
@@ -200,7 +265,7 @@ int xxd_main(int argc UNUSED_PARAM, char **argv)
 	}
 
 	if (opt & OPT_r) {
-		reverse(opt, argv[0]);
+		reverse(opt, argv[0], opt_s);
 	}
 
 	if (opt & OPT_o) {
