@@ -138,7 +138,11 @@ static int init_ddns(FILE * fp)
 	};
 #endif
 	char *provider = providers[flag];
-	char *provider6 = providers_ipv6[flag];
+	char *provider6 = NULL;
+#ifdef HAVE_IPV6
+	if (nvram_matchi("ipv6_enable",1) && nvram_matchi(_ipv6, 1))
+		provider6 = providers_ipv6[flag];
+#endif
 	snprintf(_ssl, sizeof(_ssl), "%s", "ddns_ssl");
 	if (flag == 1) {
 		snprintf(_username, sizeof(_username), "%s", "ddns_username");
@@ -161,9 +165,9 @@ static int init_ddns(FILE * fp)
 	}
 	if (fp) {
 #ifdef HAVE_IPV6
-		if (provider6 && nvram_matchi(_ipv6, 1))
+		if (provider6)
 			fprintf(fp, "allow-ipv6 = true\n");
-		if (!provider6 || !nvram_matchi(_ipv6, 1) || flag != 16) {
+		if (!provider6 || flag != 16) {
 #endif
 
 			if (flag == 5)
@@ -205,7 +209,7 @@ static int init_ddns(FILE * fp)
 
 #ifdef HAVE_IPV6
 		}
-		if (provider6 && nvram_matchi(_ipv6, 1)) {
+		if (provider6) {
 			fprintf(fp, "provider %s {\n", provider6);
 
 			if (flag != 28 && flag != 11)
