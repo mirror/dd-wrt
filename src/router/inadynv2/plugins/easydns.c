@@ -92,6 +92,7 @@ static int response(http_trans_t *trans, ddns_info_t *info, ddns_alias_t *alias)
 PLUGIN_INIT(plugin_init)
 {
 	plugin_register(&plugin);
+	plugin_register(&plugin_v6);
 }
 
 PLUGIN_EXIT(plugin_exit)
