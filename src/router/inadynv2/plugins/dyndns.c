@@ -94,8 +94,36 @@ static ddns_system_t no_ip = {
 	.server_url   = "/nic/update"
 };
 
+static ddns_system_t no_ip_v6 = {
+	.name         = "ipv6@no-ip.com",
+
+	.request      = (req_fn_t)request,
+	.response     = (rsp_fn_t)response,
+
+	.checkip_name = "ip1.dynupdate.no-ip.com",
+	.checkip_url  = "/",
+	.checkip_ssl  = DYNDNS_MY_IP_SSL,
+
+	.server_name  = "dynupdate.no-ip.com",
+	.server_url   = "/nic/update"
+};
+
 static ddns_system_t noip = {
 	.name         = "default@noip.com",
+
+	.request      = (req_fn_t)request,
+	.response     = (rsp_fn_t)response,
+
+	.checkip_name = "ip1.dynupdate.noip.com",
+	.checkip_url  = "/",
+	.checkip_ssl  = DYNDNS_MY_IP_SSL,
+
+	.server_name  = "dynupdate.noip.com",
+	.server_url   = "/nic/update"
+};
+
+static ddns_system_t noip_v6 = {
+	.name         = "ipv6@noip.com",
 
 	.request      = (req_fn_t)request,
 	.response     = (rsp_fn_t)response,
@@ -273,7 +301,9 @@ PLUGIN_INIT(plugin_init)
 	plugin_register(&dnsomatic);
 	plugin_register(&selfhost);
 	plugin_register(&no_ip);
+	plugin_register(&no_ip_v6);
 	plugin_register(&noip);
+	plugin_register(&noip_v6);
 	plugin_register(&_3322);
 	plugin_register(&henet);
 	plugin_register(&tunnelbroker);
@@ -292,7 +322,9 @@ PLUGIN_EXIT(plugin_exit)
 	plugin_unregister(&dnsomatic);
 	plugin_unregister(&selfhost);
 	plugin_unregister(&no_ip);
+	plugin_unregister(&no_ip_v6);
 	plugin_unregister(&noip);
+	plugin_unregister(&noip_v6);
 	plugin_unregister(&_3322);
 	plugin_unregister(&henet);
 	plugin_unregister(&tunnelbroker);
