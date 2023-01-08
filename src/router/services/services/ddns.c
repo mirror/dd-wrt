@@ -129,7 +129,7 @@ static int init_ddns(FILE * fp)
 		NULL,
 		NULL,
 		NULL,
-		NULL,
+		"ipv6@duckdns.org",
 		NULL,
 		"ipv6@gira.de",
 		NULL,
