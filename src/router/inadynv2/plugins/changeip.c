@@ -108,9 +108,7 @@ PLUGIN_EXIT(plugin_exit)
 {
 	plugin_unregister(&plugin);
 	plugin_unregister(&ovh);
-	plugin_unregister(&ovh_v6);
 	plugin_unregister(&strato);
-	plugin_unregister(&strato_v6);
 }
 
 /**
