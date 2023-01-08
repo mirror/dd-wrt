@@ -273,6 +273,7 @@ PLUGIN_INIT(plugin_init)
 {
 	plugin_register(&dyndns);
 	plugin_register(&dnsomatic);
+	plugin_register_v6(&dnsomatic);
 	plugin_register(&selfhost);
 	plugin_register_v6(&selfhost);
 	plugin_register(&no_ip);
