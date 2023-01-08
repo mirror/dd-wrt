@@ -48,6 +48,9 @@
  */
 
 char _username[] = "ddns_username_XX";
+#ifdef HAVE_IPV6
+char _ipv6[] = "ddns_ipv6_XX";
+#endif
 char _passwd[] = "ddns_passwd_XX";
 char _hostname[] = "ddns_hostname_XX";
 char _wildcard[] = "ddns_wildcard_XX";
@@ -95,22 +98,71 @@ static int init_ddns(FILE * fp)
 		"default@ipv4.dynv6.com",
 		"default@goip.de",
 	};
+
+#ifdef HAVE_IPV6
+	char *providers_ipv6[] = {
+		NULL,
+		NULL,
+		NULL,
+		NULL,
+		NULL,
+		NULL,
+		NULL,
+		NULL,
+		NULL,
+		NULL,
+		"ipv6tb@he.net",
+		"ipv6@duiadns.net",
+		"ipv6tb@he.net",
+		"ipv6@spdyn.de",
+		"ipv6@nsupdate.info",
+		NULL,
+		NULL,
+		NULL,
+		NULL,
+		NULL,
+		NULL,
+		"ipv6@cloudflare.com",
+		NULL,
+		NULL,
+		NULL,
+		NULL,
+		NULL,
+		NULL,
+		NULL,
+		NULL,
+		NULL,
+		NULL,
+		"default@dynv6.com",
+		"ipv6@goip.de",
+	};
+#endif
 	char *provider = providers[flag];
+	char *provider6 = providers_ipv6[flag];
 	snprintf(_ssl, sizeof(_ssl), "%s", "ddns_ssl");
 	if (flag == 1) {
 		snprintf(_username, sizeof(_username), "%s", "ddns_username");
 		snprintf(_passwd, sizeof(_passwd), "%s", "ddns_passwd");
 		snprintf(_hostname, sizeof(_hostname), "%s", "ddns_hostname");
+#ifdef HAVE_IPV6
+		snprintf(_ipv6, sizeof(_ipv6), "%s", "ddns_ipv6");
+#endif
 		snprintf(_wildcard, sizeof(_hostname), "%s", "ddns_wildcard");
 		snprintf(_cache_file, sizeof(_cache_file), "/tmp/ddns/%s.cache", nvram_safe_get("ddns_hostname"));
 	} else {
 		snprintf(_username, sizeof(_username), "%s_%d", "ddns_username", flag);
 		snprintf(_passwd, sizeof(_passwd), "%s_%d", "ddns_passwd", flag);
 		snprintf(_hostname, sizeof(_hostname), "%s_%d", "ddns_hostname", flag);
+#ifdef HAVE_IPV6
+		snprintf(_ipv6, sizeof(_ipv6), "%s_%d", "ddns_ipv6", flag);
+#endif
 		snprintf(_wildcard, sizeof(_hostname), "%s_%d", "ddns_wildcard", flag);
 		snprintf(_cache_file, sizeof(_cache_file), "/tmp/ddns/%s.cache", nvram_nget("ddns_hostname_%d", flag));
 	}
 	if (fp) {
+		if (provider6 && nvram_matchi(_ipv6, 1))
+			fprintf(fp, "allow-ipv6 = true\n");
+
 		if (flag == 5)
 			fprintf(fp, "custom namecheap {\n");
 		else
@@ -121,6 +173,7 @@ static int init_ddns(FILE * fp)
 			fprintf(fp, "password = \"nopasswd\"\n");
 		else
 			fprintf(fp, "password = \"%s\"\n", nvram_safe_get(_passwd));
+
 		char *next;
 		char var[128];
 		char *hn = nvram_safe_get(_hostname);
@@ -146,6 +199,49 @@ static int init_ddns(FILE * fp)
 			fprintf(fp, "checkip-command = \"/sbin/service checkwanip main\"\n");
 		}
 		fprintf(fp, "}\n");
+
+#ifdef HAVE_IPV6
+		if (provider6) {
+			fprintf(fp, "provider %s {\n", provider6);
+
+			if (flag != 28 && flag != 11)
+				fprintf(fp, "username = \"%s\"\n", nvram_safe_get(_username));
+			if (flag == 27)
+				fprintf(fp, "password = \"nopasswd\"\n");
+			else
+				fprintf(fp, "password = \"%s\"\n", nvram_safe_get(_passwd));
+
+			char *next;
+			char var[128];
+			char *hn = nvram_safe_get(_hostname);
+			fprintf(fp, "hostname = {");
+			int idx = 0;
+			foreach(var, hn, next) {
+				if (idx)
+					fprintf(fp, ", ");
+				fprintf(fp, "\"%s\"", var);
+				idx++;
+			}
+			fprintf(fp, "}\n");
+#ifdef HAVE_USE_OPENSSL
+			fprintf(fp, "ssl = %s\n", nvram_match(_ssl, "1") ? "true" : "false");
+#endif
+			if (nvram_match(_wildcard, "1"))
+				fprintf(fp, "wildcard = true\n");
+			if (flag == 5) {
+				fprintf(fp, "ddns-server = \"%s\"\n", nvram_safe_get("ddns_custom_5"));
+				fprintf(fp, "ddns-path = \"%s\"\n", nvram_safe_get("ddns_path_5"));
+			}
+			if (nvram_match("ddns_wan_ip", "1")) {
+				fprintf(fp, "checkip-command = \"/sbin/service checkwanip main\"\n");
+			} else {
+				fprintf(fp, "checkip-server = dns64.cloudflare-dns.com\n");
+				fprintf(fp, "checkip-path = /cdn-cgi/trace\n");
+			}
+			fprintf(fp, "}\n");
+
+		}
+#endif
 	}
 	return 0;
 }
@@ -182,6 +278,9 @@ void start_ddns(void)
 	if (strcmp(nvram_safe_get("ddns_enable_buf"), nvram_safe_get("ddns_enable")) ||
 	    strcmp(nvram_safe_get("ddns_username_buf"), nvram_safe_get(_username)) ||
 	    strcmp(nvram_safe_get("ddns_passwd_buf"), nvram_safe_get(_passwd)) ||
+#ifdef HAVE_IPV6
+	    strcmp(nvram_safe_get("ddns_ipv6_buf"), nvram_safe_get(_ipv6)) ||
+#endif
 	    strcmp(nvram_safe_get("ddns_hostname_buf"), nvram_safe_get(_hostname)) || strcmp(nvram_safe_get("ddns_wildcard_buf"), nvram_safe_get(_wildcard)) ||
 #ifdef HAVE_USE_OPENSSL
 	    strcmp(nvram_safe_get("ddns_ssl_buf"), nvram_safe_get(_ssl)) ||
@@ -243,6 +342,29 @@ int checkwanip_main(int argc, char *argv[])
 	} else {
 		wan_ipaddr = nvram_safe_get("wan_ipaddr");
 	}
+
+#ifdef HAVE_IPV6
+	char *provider = getenv("INADYN_PROVIDER");
+	/* providers like cloudflare cannot be used that way, so for cloudflare ipv6 external ip check must be used */
+	if (provider && strstr(providr, "v6")) {
+		char wan_if_buffer[33];
+		char buf[INET6_ADDRSTRLEN];
+		const char *ipv6addr = NULL;
+		if (nvram_match("ipv6_typ", "ipv6native"))
+			ipv6addr = getifaddr(buf, safe_get_wan_face(wan_if_buffer), AF_INET6, 0);
+		if (nvram_match("ipv6_typ", "ipv6in4"))
+			ipv6addr = getifaddr(buf, "ip6tun", AF_INET6, 0);
+		if (nvram_match("ipv6_typ", "ipv6pd"))
+			ipv6addr = getifaddr(buf, nvram_safe_get("lan_ifname"), AF_INET6, 0);
+		if (nvram_match("ipv6_typ", "ipv6in4") || nvram_match("ipv6_typ", "ipv6pd") || nvram_match("ipv6_typ", "ipv6native")) {
+			if (!ipv6addr)
+				ipv6addr = getifaddr(buf, safe_get_wan_face(wan_if_buffer), AF_INET6, 0);	// try wan if all other fails
+			if (ipv6addr)
+				wan_ipaddr = ipv6addr;
+		}
+	}
+#endif
+
 	if (!strcmp(wan_ipaddr, "0.0.0.0")) {
 		return -1;
 	}
@@ -268,6 +390,9 @@ int ddns_success_main(int argc, char *argv[])
 	nvram_set("ddns_username_buf", nvram_safe_get(_username));
 	nvram_set("ddns_passwd_buf", nvram_safe_get(_passwd));
 	nvram_set("ddns_hostname_buf", nvram_safe_get(_hostname));
+#ifdef HAVE_IPV6
+	nvram_set("ddns_ipv6_buf", nvram_safe_get(_ipv6));
+#endif
 #ifdef HAVE_USE_OPENSSL
 	nvram_set("ddns_ssl_buf", nvram_safe_get(_ssl));
 #endif
