@@ -140,7 +140,7 @@ static int init_ddns(FILE * fp)
 	char *provider = providers[flag];
 	char *provider6 = NULL;
 #ifdef HAVE_IPV6
-	if (nvram_matchi("ipv6_enable",1) && nvram_matchi(_ipv6, 1))
+	if (nvram_matchi("ipv6_enable", 1) && nvram_matchi(_ipv6, 1))
 		provider6 = providers_ipv6[flag];
 #endif
 	snprintf(_ssl, sizeof(_ssl), "%s", "ddns_ssl");
@@ -307,8 +307,12 @@ void start_ddns(void)
 	if (nvram_invmatch("ddns_cache", "")) {
 		nvram2file("ddns_cache", _cache_file);
 	}
-	dd_logstart("ddns", eval("inadyn", "--cache-dir=/tmp/ddns", "-e", "ddns_success", "--exec-mode=compat", "-f", "/tmp/ddns/inadyn.conf", "-P", "/var/run/inadyn.pid", "-l", "notice", "-t", "30"));
-
+	if (nvram_matchi("ddns_once", 0)) {
+		dd_logstart("ddns", eval("inadyn", "--cache-dir=/tmp/ddns", "-e", "ddns_success", "--exec-mode=compat", "-f", "/tmp/ddns/inadyn.conf", "-P", "/var/run/inadyn.pid", "-l", "notice", "-t", "30"));
+	} else {
+		nvram_setif("ddns_once", 1);
+		dd_logstart("ddns", eval("inadyn", "--cache-dir=/tmp/ddns", "-e", "ddns_success", "--exec-mode=compat", "-f", "/tmp/ddns/inadyn.conf", "-P", "/var/run/inadyn.pid", "-l", "notice"));
+	}
 	cprintf("done\n");
 
 	return;
