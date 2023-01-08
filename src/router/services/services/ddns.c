@@ -105,7 +105,7 @@ static int init_ddns(FILE * fp)
 		NULL,
 		NULL,
 		"ipv6@freedns.afraid.org",
-		NULL,
+		"ipv6@zoneedit.com",
 		"ipv6@no-ip.com",
 		NULL,
 		"ipv6@3322.org",
