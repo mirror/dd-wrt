@@ -70,7 +70,7 @@ int plugin_unregister(ddns_system_t *plugin)
 		return 0;
 	char *name = strdup(plugin->name);
 	if (strstr(name, "default@"))
-		sprintf(name, "ipv6%s", plugin->name + 8);
+		sprintf(name, "ipv6%s", plugin->name + 7);
 	TAILQ_REMOVE(&plugins, plugin, link);
 
 	ddns_system_t *plugin_v6 = plugin_find(name, 0);
