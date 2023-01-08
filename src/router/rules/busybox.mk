@@ -426,7 +426,13 @@ else
 endif
 	echo "# CONFIG_SHA3SUM is not set" >> busybox/.config
 	echo "# CONFIG_FEATURE_KMSG_SYSLOG is not set" >> busybox/.config
-	echo "CONFIG_SHA3_SMALL=1" >> busybox/.config
+	echo "CONFIG_SHA3_SMALL=3" >> busybox/.config
+	echo "CONFIG_SHA1_SMALL=3" >> busybox/.config
+	echo "CONFIG_SHA1_HWACCEL=y" >> busybox/.config
+	echo "CONFIG_SHA256_HWACCEL=y" >> busybox/.config
+	echo "# CONFIG_LOOP_CONFIGURE is not set" >> busybox/.config
+	echo "CONFIG_NO_LOOP_CONFIGURE=y" >> busybox/.config
+	echo "# CONFIG_TRY_LOOP_CONFIGURE is not set" >> busybox/.config
 
 ifeq ($(CONFIG_SMP),y)
 	sed -i 's/\# CONFIG_TASKSET is not set//g' busybox/.config
@@ -667,6 +673,10 @@ endif
 	echo "# CONFIG_FEATURE_CPIO_IGNORE_DEVNO is not set" >> busybox/.config
 	echo "# CONFIG_FEATURE_CPIO_RENUMBER_INODES is not set" >> busybox/.config
 	sed -i 's/\CONFIG_LSOF=y/# CONFIG_LSOF is not set/g' busybox/.config
+	echo "# CONFIG_TSORT is not set" >> busybox/.config
+	echo "# CONFIG_SEEDRNG is not set" >> busybox/.config
+	echo "# CONFIG_TREE is not set" >> busybox/.config
+	echo "CONFIG_ASH_SLEEP=y" >> busybox/.config
 	cd busybox && make oldconfig
 	
 #	-$(MAKE) -j 4 -C busybox STRIPTOOL=$(STRIP) PREFIX=$(INSTALLDIR)/busybox
