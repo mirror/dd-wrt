@@ -118,7 +118,7 @@ static int init_ddns(FILE * fp)
 		"ipv6@nsupdate.info",
 		NULL,
 		"ipv6@domains.google.com",
-		NULL,
+		"ipv6@dynu.com",
 		NULL,
 		"ipv6@ovh.com",
 		"ipv6@strato.com",
