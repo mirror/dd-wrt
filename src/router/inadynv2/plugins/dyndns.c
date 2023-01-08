@@ -287,7 +287,9 @@ PLUGIN_INIT(plugin_init)
 	plugin_register(&nsupdate_info_ipv6);
 	plugin_register(&loopia);
 	plugin_register(&googledomains);
+	plugin_register_v6(&googledomains);
 	plugin_register(&dynu);
+	plugin_register_v6(&dynu);
 }
 
 PLUGIN_EXIT(plugin_exit)
