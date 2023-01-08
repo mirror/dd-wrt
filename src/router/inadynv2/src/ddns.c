@@ -737,7 +737,7 @@ static int update_alias_table(ddns_t *ctx)
 				alias->last_update = time(NULL);
 
 				/* Update cache file for this entry */
-				write_cache_file(alias);
+				write_cache_file(alias, info->system->name);
 			}
 
 			/* Run command or script on successful update. */
