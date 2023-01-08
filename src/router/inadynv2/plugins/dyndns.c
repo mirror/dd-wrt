@@ -151,6 +151,19 @@ static ddns_system_t henet = {
 	.server_url   = "/nic/update"
 };
 
+static ddns_system_t henet_ipv6 = {
+	.name         = "dyndns@he.net",
+
+	.request      = (req_fn_t)request,
+	.response     = (rsp_fn_t)response,
+
+	.checkip_name = "checkipv6.dyndns.com",
+	.checkip_url  = "/",
+
+	.server_name  = "dyn.dns.he.net",
+	.server_url   = "/nic/update"
+};
+
 /* New API, see also the old compat plugin for Hurricane Electric's
  * IPv6 tunnel brokering service in tunnelbroker.c, and above.
  * For API details, see their forum posting at
@@ -296,6 +309,7 @@ PLUGIN_INIT(plugin_init)
 	plugin_register(&_3322);
 	plugin_register(&_3322_ipv6);
 	plugin_register(&henet);
+	plugin_register(&henet_ipv6);
 	plugin_register(&tunnelbroker);
 	plugin_register(&spdyn);
 	plugin_register(&spdyn_v6);
@@ -316,7 +330,9 @@ PLUGIN_EXIT(plugin_exit)
 	plugin_unregister(&no_ip);
 	plugin_unregister(&noip);
 	plugin_unregister(&_3322);
+	plugin_unregister(&_3322_ipv6);
 	plugin_unregister(&henet);
+	plugin_unregister(&henet_ipv6);
 	plugin_unregister(&tunnelbroker);
 	plugin_unregister(&spdyn);
 	plugin_unregister(&spdyn_v6);
