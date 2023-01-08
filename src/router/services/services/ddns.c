@@ -131,7 +131,7 @@ static int init_ddns(FILE * fp)
 		NULL,
 		NULL,
 		NULL,
-		NULL,
+		"ipv6@gira.de",
 		NULL,
 		NULL,
 		"default@dynv6.com",
