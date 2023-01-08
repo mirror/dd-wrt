@@ -388,7 +388,7 @@ EJALIAS(ej_nvram_listselmatch, ej_nvlsm);
 
 EJ_VISIBLE void ej_nvram_listselmatch_not_v6(webs_t wp, int argc, char_t ** argv)
 {
-#ifndef HAVE_IPV6
+#ifdef HAVE_IPV6
 	char value[64];
 	char *next;
 	char *list = argv[1];
@@ -399,6 +399,8 @@ EJ_VISIBLE void ej_nvram_listselmatch_not_v6(webs_t wp, int argc, char_t ** argv
 			return;
 		}
 	}
+#else
+	websWrite(wp, argv[2]);
 #endif
 	return;
 }
