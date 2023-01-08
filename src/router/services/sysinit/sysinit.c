@@ -2984,6 +2984,7 @@ void start_restore_defaults(void)
 	nvram_seti("ntp_success", 0);
 	nvram_seti("wanup", 0);
 	nvram_seti("sysup", 0);
+	nvram_seti("ddns_once", 0);
 	nvram_unset("rc_opt_run");
 
 	nvram_unset("ipv6_get_dns");
