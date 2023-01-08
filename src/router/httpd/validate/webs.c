@@ -5702,7 +5702,7 @@ void ddns_save_value(webs_t wp)
 	char _force[] = "ddns_force";
 	char _ssl[] = "ddns_ssl";
 	char _wan_ip[] = "ddns_wan_ip";
-	char _ipv6[] = "ddns_ipv6";
+	char _ipv6[] = "ddns_ipv6_XX";
 
 	int enable = websGetVari(wp, "ddns_enable", -1);
 	if (enable > 33 || enable < 0) {
