@@ -163,7 +163,7 @@ static int init_ddns(FILE * fp)
 #ifdef HAVE_IPV6
 		if (provider6 && nvram_matchi(_ipv6, 1))
 			fprintf(fp, "allow-ipv6 = true\n");
-		if (provider6 && nvram_matchi(_ipv6, 1) && flag != 16) {
+		if (!provider6 || !nvram_matchi(_ipv6, 1) || flag != 16) {
 #endif
 
 			if (flag == 5)
@@ -205,7 +205,7 @@ static int init_ddns(FILE * fp)
 
 #ifdef HAVE_IPV6
 		}
-		if (provider6) {
+		if (provider6 && nvram_matchi(_ipv6, 1)) {
 			fprintf(fp, "provider %s {\n", provider6);
 
 			if (flag != 28 && flag != 11)
