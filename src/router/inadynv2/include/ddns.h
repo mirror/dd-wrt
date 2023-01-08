@@ -110,6 +110,7 @@ typedef struct {
 } ddns_name_t;
 
 typedef struct {
+	int            force_addr_update;
 	int            ip_has_changed;
 	char           address[MAX_ADDRESS_LEN];
 
@@ -193,7 +194,6 @@ typedef struct {
 	int            num_iterations;
 	int            initialized;
 	int            change_persona;
-	int            force_addr_update;
 	int            use_proxy;
 	int            abort;
 
