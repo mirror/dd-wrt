@@ -105,7 +105,7 @@ static int init_ddns(FILE * fp)
 		NULL,
 		NULL,
 		NULL,
-		NULL,
+		"ipv6@no-ip.com",
 		NULL,
 		NULL,
 		NULL,
@@ -117,7 +117,7 @@ static int init_ddns(FILE * fp)
 		"ipv6@spdyn.de",
 		"ipv6@nsupdate.info",
 		NULL,
-		NULL,
+		"ipv6@domains.google.com",
 		NULL,
 		NULL,
 		"ipv6@ovh.com",
@@ -163,45 +163,48 @@ static int init_ddns(FILE * fp)
 #ifdef HAVE_IPV6
 		if (provider6 && nvram_matchi(_ipv6, 1))
 			fprintf(fp, "allow-ipv6 = true\n");
+		if (provider6 && nvram_matchi(_ipv6, 1) && flag != 16) {
 #endif
-		if (flag == 5)
-			fprintf(fp, "custom namecheap {\n");
-		else
-			fprintf(fp, "provider %s {\n", provider);
-		if (flag != 28 && flag != 11)
-			fprintf(fp, "username = \"%s\"\n", nvram_safe_get(_username));
-		if (flag == 27)
-			fprintf(fp, "password = \"nopasswd\"\n");
-		else
-			fprintf(fp, "password = \"%s\"\n", nvram_safe_get(_passwd));
 
-		char *next;
-		char var[128];
-		char *hn = nvram_safe_get(_hostname);
-		fprintf(fp, "hostname = {");
-		int idx = 0;
-		foreach(var, hn, next) {
-			if (idx)
-				fprintf(fp, ", ");
-			fprintf(fp, "\"%s\"", var);
-			idx++;
-		}
-		fprintf(fp, "}\n");
+			if (flag == 5)
+				fprintf(fp, "custom namecheap {\n");
+			else
+				fprintf(fp, "provider %s {\n", provider);
+			if (flag != 28 && flag != 11)
+				fprintf(fp, "username = \"%s\"\n", nvram_safe_get(_username));
+			if (flag == 27)
+				fprintf(fp, "password = \"nopasswd\"\n");
+			else
+				fprintf(fp, "password = \"%s\"\n", nvram_safe_get(_passwd));
+
+			char *next;
+			char var[128];
+			char *hn = nvram_safe_get(_hostname);
+			fprintf(fp, "hostname = {");
+			int idx = 0;
+			foreach(var, hn, next) {
+				if (idx)
+					fprintf(fp, ", ");
+				fprintf(fp, "\"%s\"", var);
+				idx++;
+			}
+			fprintf(fp, "}\n");
 #ifdef HAVE_USE_OPENSSL
-		fprintf(fp, "ssl = %s\n", nvram_match(_ssl, "1") ? "true" : "false");
+			fprintf(fp, "ssl = %s\n", nvram_match(_ssl, "1") ? "true" : "false");
 #endif
-		if (nvram_match(_wildcard, "1"))
-			fprintf(fp, "wildcard = true\n");
-		if (flag == 5) {
-			fprintf(fp, "ddns-server = \"%s\"\n", nvram_safe_get("ddns_custom_5"));
-			fprintf(fp, "ddns-path = \"%s\"\n", nvram_safe_get("ddns_path_5"));
-		}
-		if (nvram_match("ddns_wan_ip", "1")) {
-			fprintf(fp, "checkip-command = \"/sbin/service checkwanip main\"\n");
-		}
-		fprintf(fp, "}\n");
+			if (nvram_match(_wildcard, "1"))
+				fprintf(fp, "wildcard = true\n");
+			if (flag == 5) {
+				fprintf(fp, "ddns-server = \"%s\"\n", nvram_safe_get("ddns_custom_5"));
+				fprintf(fp, "ddns-path = \"%s\"\n", nvram_safe_get("ddns_path_5"));
+			}
+			if (nvram_match("ddns_wan_ip", "1")) {
+				fprintf(fp, "checkip-command = \"/sbin/service checkwanip main\"\n");
+			}
+			fprintf(fp, "}\n");
 
 #ifdef HAVE_IPV6
+		}
 		if (provider6) {
 			fprintf(fp, "provider %s {\n", provider6);
 
