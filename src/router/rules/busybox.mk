@@ -426,7 +426,7 @@ else
 endif
 	echo "# CONFIG_SHA3SUM is not set" >> busybox/.config
 	echo "# CONFIG_FEATURE_KMSG_SYSLOG is not set" >> busybox/.config
-	echo "CONFIG_SHA3_SMALL=3" >> busybox/.config
+	echo "CONFIG_SHA3_SMALL=1" >> busybox/.config
 	echo "CONFIG_SHA1_SMALL=3" >> busybox/.config
 	echo "CONFIG_SHA1_HWACCEL=y" >> busybox/.config
 	echo "CONFIG_SHA256_HWACCEL=y" >> busybox/.config
