@@ -134,7 +134,7 @@ static long swap_inode_boot_loader(struct super_block *sb,
 	/* Protect extent tree against block allocations via delalloc */
 	ext4_double_down_write_data_sem(inode, inode_bl);
 
-	if (inode_bl->i_nlink == 0) {
+	if (is_bad_inode(inode_bl) || !S_ISREG(inode_bl->i_mode)) {
 		/* this inode has never been used as a BOOT_LOADER */
 		set_nlink(inode_bl, 1);
 		i_uid_write(inode_bl, 0);
@@ -333,6 +333,10 @@ static int ext4_ioctl_setproject(struct file *filp, __u32 projid)
 	if (IS_NOQUOTA(inode))
 		goto out_unlock;
 
+	err = dquot_initialize(inode);
+	if (err)
+		goto out_unlock;
+
 	err = ext4_get_inode_loc(inode, &iloc);
 	if (err)
 		goto out_unlock;
@@ -344,10 +348,6 @@ static int ext4_ioctl_setproject(struct file *filp, __u32 projid)
 		goto out_unlock;
 	}
 	brelse(iloc.bh);
-
-	err = dquot_initialize(inode);
-	if (err)
-		return err;
 
 	handle = ext4_journal_start(inode, EXT4_HT_QUOTA,
 		EXT4_QUOTA_INIT_BLOCKS(sb) +
