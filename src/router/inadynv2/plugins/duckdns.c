@@ -86,7 +86,7 @@ static int request(ddns_t *ctx, ddns_info_t *info, ddns_alias_t *alias)
 				alias->address,
 				info->server_name.name,
 				info->user_agent);
-	else
+	} else {
 		return snprintf(ctx->request_buf, ctx->request_buflen,
 				DUCKDNS_UPDATE_IP_HTTP_REQUEST,
 				info->server_url,
@@ -95,6 +95,7 @@ static int request(ddns_t *ctx, ddns_info_t *info, ddns_alias_t *alias)
 				alias->address,
 				info->server_name.name,
 				info->user_agent);
+	}
 }
 
 static int response(http_trans_t *trans, ddns_info_t *info, ddns_alias_t *alias)
