@@ -66,7 +66,7 @@ EJ_VISIBLE void ej_ddns_checked(webs_t wp, int argc, char_t ** argv)
 	if (!strcmp(enable, "1")) {
 		strlcpy(var, argv[0], sizeof(var));
 	} else {
-		snprintf(var, sizeof(32) - 1, "%s_%s", argv[0], enable);
+		snprintf(var, sizeof(var) - 1, "%s_%s", argv[0], enable);
 	}
 	if (nvram_match(var, argv[1])) {
 		websWrite(wp, "checked=\"checked\"");
