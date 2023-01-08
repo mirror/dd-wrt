@@ -47,16 +47,16 @@
  * inadyn scripts by lawnmowerguy1 
  */
 
-char _username[] = "ddns_username_XX";
+static char _username[] = "ddns_username_XX";
 #ifdef HAVE_IPV6
-char _ipv6[] = "ddns_ipv6_XX";
+static char _ipv6[] = "ddns_ipv6_XX";
 #endif
-char _passwd[] = "ddns_passwd_XX";
-char _hostname[] = "ddns_hostname_XX";
-char _wildcard[] = "ddns_wildcard_XX";
-char _ssl[] = "ddns_ssl_XX";
-char _cache_file[128];
-char _cache_file_ipv6[128];
+static char _passwd[] = "ddns_passwd_XX";
+static char _hostname[] = "ddns_hostname_XX";
+static char _wildcard[] = "ddns_wildcard_XX";
+static char _ssl[] = "ddns_ssl_XX";
+static char _cache_file[128];
+static char _cache_file_ipv6[128];
 static int init_ddns(FILE * fp)
 {
 
