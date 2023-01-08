@@ -203,6 +203,13 @@ addEvent(window, "unload", function() {
 								</div>
 								<% ifndef("OPENSSL","-->"); %>
 								<% nvsm("ddns_enable","0","-->"); %>
+								<% nvlsmn6("ddns_enable","0 1 2 3 4 5 6 7 8 9 15 16 17 18 19 20 22 32 33","<!--"); %>
+								<div class="setting">
+									<div class="label"><% tran("management.ipv6_srv"); %></div>
+									<input class="spaceradio" type="radio" value="1" name="ddns_ipv6" <% nvc("ddns_ipv6","1"); %> /><% tran("share.yes"); %>&nbsp;
+									<input class="spaceradio" type="radio" value="0" name="ddns_ipv6" <% nvc("ddns_ipv6","0"); %> /><% tran("share.no"); %>
+								</div>
+								<% nvlsmn6("ddns_enable","0 1 2 3 4 5 6 7 8 9 15 16 17 18 19 20 22 32 33","-->"); %>
 							</fieldset>
 							<% nvsm("ddns_enable","0","<!--"); %>
 							<br /><fieldset>
