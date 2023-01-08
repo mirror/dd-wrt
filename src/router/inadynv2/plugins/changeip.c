@@ -63,8 +63,36 @@ static ddns_system_t ovh = {
 	.server_url   = "/nic/update"
 };
 
+static ddns_system_t ovh_v6 = {
+	.name         = "ipv6@ovh.com",
+
+	.request      = (req_fn_t)request,
+	.response     = (rsp_fn_t)response,
+
+	.checkip_name = DYNDNS_MY_IP_SERVER,
+	.checkip_url  = DYNDNS_MY_CHECKIP_URL,
+	.checkip_ssl  = DYNDNS_MY_IP_SSL,
+
+	.server_name  = "www.ovh.com",
+	.server_url   = "/nic/update"
+};
+
 static ddns_system_t strato = {
 	.name         = "default@strato.com",
+
+	.request      = (req_fn_t)request,
+	.response     = (rsp_fn_t)response,
+
+	.checkip_name = DYNDNS_MY_IP_SERVER,
+	.checkip_url  = DYNDNS_MY_CHECKIP_URL,
+	.checkip_ssl  = DYNDNS_MY_IP_SSL,
+
+	.server_name  = "dyndns.strato.com",
+	.server_url   = "/nic/update"
+};
+
+static ddns_system_t strato_v6 = {
+	.name         = "ipv6@strato.com",
 
 	.request      = (req_fn_t)request,
 	.response     = (rsp_fn_t)response,
@@ -98,14 +126,18 @@ PLUGIN_INIT(plugin_init)
 {
 	plugin_register(&plugin);
 	plugin_register(&ovh);
+	plugin_register(&ovh_v6);
 	plugin_register(&strato);
+	plugin_register(&strato_v6);
 }
 
 PLUGIN_EXIT(plugin_exit)
 {
 	plugin_unregister(&plugin);
 	plugin_unregister(&ovh);
+	plugin_unregister(&ovh_v6);
 	plugin_unregister(&strato);
+	plugin_unregister(&strato_v6);
 }
 
 /**
