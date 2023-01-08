@@ -63,8 +63,17 @@ int plugin_register_v6(ddns_system_t *plugin)
 }
 int plugin_unregister(ddns_system_t *plugin)
 {
+	char *name = strdup(plugin->name);
+	if (strstr(name, "default@"))
+		sprintf(name, "ipv6%s", plugin->name + 8);
 	TAILQ_REMOVE(&plugins, plugin, link);
 
+	ddns_system_t *plugin_v6 = plugin_find(name, 0);
+	if (plugin_v6) {
+		free(plugin_v6->name);
+		TAILQ_REMOVE(&plugins, plugin_v6, link);	
+	}
+	free(name);
 	/* XXX: Unfinished, add cleanup code here! */
 
 	return 0;
