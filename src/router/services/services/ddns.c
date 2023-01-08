@@ -126,7 +126,7 @@ static int init_ddns(FILE * fp)
 		"ipv6@cloudflare.com",
 		NULL,
 		NULL,
-		NULL,
+		"ipv6@dhis.org",
 		"ipv6@dnsexit.com",
 		NULL,
 		"ipv6@duckdns.org",
