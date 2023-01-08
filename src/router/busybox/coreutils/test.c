@@ -242,7 +242,7 @@ int depth;
 	depth--; \
 	return __res; \
 } while (0)
-static const char *const TOKSTR[] = {
+static const char *const TOKSTR[] ALIGN_PTR = {
 	"EOI",
 	"FILRD",
 	"FILWR",
@@ -859,7 +859,7 @@ static number_t primary(enum token n)
 	if (check_operator(args[1]) != EOI) { /* if args[1] != NULL */
 		if (args[2]) {
 			// coreutils also does this:
-			// if (args[3] && args[0]="-l" && args[2] is BINOP)
+			// if (args[3] && args[0] = "-l" && args[2] is BINOP)
 			//	return binop(1 /* prepended by -l */);
 			if (last_operator->op_type == BINOP)
 				unnest_msg_and_return(binop(), "<primary: binop:%lld\n");

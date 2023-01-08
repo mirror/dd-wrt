@@ -260,7 +260,6 @@ void lbb_prepare(const char *applet
 	/* Redundant for busybox (run_applet_and_exit covers that case)
 	 * but needed for "individual applet" mode */
 	if (argv[1]
-	 && !argv[2]
 	 && strcmp(argv[1], "--help") == 0
 	 && !is_prefixed_with(applet, "busybox")
 	) {
@@ -653,7 +652,7 @@ static void check_suid(int applet_no)
 # if ENABLE_FEATURE_INSTALLER
 static const char usr_bin [] ALIGN1 = "/usr/bin/";
 static const char usr_sbin[] ALIGN1 = "/usr/sbin/";
-static const char *const install_dir[] = {
+static const char *const install_dir[] ALIGN_PTR = {
 	&usr_bin [8], /* "/" */
 	&usr_bin [4], /* "/bin/" */
 	&usr_sbin[4]  /* "/sbin/" */
@@ -764,7 +763,7 @@ get_script_content(unsigned n)
 //usage:#define busybox_trivial_usage NOUSAGE_STR
 //usage:#define busybox_full_usage ""
 //applet:IF_BUSYBOX(IF_FEATURE_SH_STANDALONE(IF_FEATURE_TAB_COMPLETION(APPLET(busybox, BB_DIR_BIN, BB_SUID_MAYBE))))
-int busybox_main(int argc, char *argv[]) MAIN_EXTERNALLY_VISIBLE;
+int busybox_main(int argc, char **argv) MAIN_EXTERNALLY_VISIBLE;
 #  else
 #   define busybox_main(argc,argv) busybox_main(argv)
 static
@@ -943,9 +942,12 @@ void FAST_FUNC show_usage_if_dash_dash_help(int applet_no, char **argv)
 #  if defined APPLET_NO_echo
 	 && applet_no != APPLET_NO_echo
 #  endif
+#  if ENABLE_TEST1 || ENABLE_TEST2
+	 && argv[0][0] != '[' /* exclude [ --help ] and [[ --help ]] too */
+#  endif
 	) {
-		if (argv[1] && !argv[2] && strcmp(argv[1], "--help") == 0) {
-			/* Make "foo --help" exit with 0: */
+		if (argv[1] && strcmp(argv[1], "--help") == 0) {
+			/* Make "foo --help [...]" exit with 0: */
 			xfunc_error_retval = 0;
 			bb_show_usage();
 		}

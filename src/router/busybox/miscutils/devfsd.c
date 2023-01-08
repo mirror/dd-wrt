@@ -453,7 +453,7 @@ int devfsd_main(int argc, char **argv)
 				DEVFSD_PROTOCOL_REVISION_DAEMON, bb_msg_proto_rev, proto_rev);
 		if (DEVFSD_PROTOCOL_REVISION_DAEMON != proto_rev)
 			bb_error_msg_and_die("%s mismatch!", bb_msg_proto_rev);
-		exit(EXIT_SUCCESS); /* -v */
+		exit_SUCCESS(); /* -v */
 	}
 	/*  Tell kernel we are special(i.e. we get to see hidden entries)  */
 	xioctl(fd, DEVFSDIOC_SET_EVENT_MASK, 0);
@@ -474,7 +474,7 @@ int devfsd_main(int argc, char **argv)
 	dir_operation(SERVICE, mount_point, 0, NULL);
 
 	if (ENABLE_DEVFSD_FG_NP && no_polling)
-		exit(EXIT_SUCCESS);
+		exit_SUCCESS();
 
 	if (ENABLE_DEVFSD_VERBOSE || ENABLE_DEBUG)
 		logmode = LOGMODE_BOTH;
@@ -928,7 +928,7 @@ static void action_compat(const struct devfsd_notify_struct *info, unsigned int 
 	unsigned int i;
 	char rewind_;
 	/* 1 to 5  "scsi/" , 6 to 9 "ide/host" */
-	static const char *const fmt[] = {
+	static const char *const fmt[] ALIGN_PTR = {
 		NULL ,
 		"sg/c%db%dt%du%d",		/* scsi/generic */
 		"sd/c%db%dt%du%d",		/* scsi/disc */
@@ -976,7 +976,7 @@ static void action_compat(const struct devfsd_notify_struct *info, unsigned int 
 				rewind_ = info->devname[info->namelen - 1];
 				if (rewind_ != 'n')
 					rewind_ = '\0';
-				mode=0;
+				mode = 0;
 				if (ptr[2] ==  'l' /*108*/ || ptr[2] == 'm'/*109*/)
 					mode = ptr[2] - 107; /* 1 or 2 */
 				if (ptr[2] ==  'a')
@@ -1468,7 +1468,7 @@ const char *get_old_name(const char *devname, unsigned int namelen,
 	const char *pty1;
 	const char *pty2;
 	/* 1 to 5  "scsi/" , 6 to 9 "ide/host", 10 sbp/, 11 vcc/, 12 pty/ */
-	static const char *const fmt[] = {
+	static const char *const fmt[] ALIGN_PTR = {
 		NULL ,
 		"sg%u",			/* scsi/generic */
 		NULL,			/* scsi/disc */
@@ -1595,11 +1595,11 @@ static char *write_old_sd_name(char *buffer,
 		return buffer;
 	}
 	if ((major > 64) && (major < 72)) {
-		disc_index = ((major - 64) << 4) +(minor >> 4);
+		disc_index = ((major - 64) << 4) + (minor >> 4);
 		if (disc_index < 26)
 			sprintf(buffer, "sd%c%s", 'a' + disc_index, part);
 		else
-			sprintf(buffer, "sd%c%c%s", 'a' +(disc_index / 26) - 1, 'a' + disc_index % 26, part);
+			sprintf(buffer, "sd%c%c%s", 'a' + (disc_index / 26) - 1, 'a' + disc_index % 26, part);
 		return buffer;
 	}
 	return NULL;

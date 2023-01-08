@@ -689,6 +689,9 @@ static NOINLINE void display_process_list(int lines_rem, int scr_width)
 		lines_rem = ntop - G_scroll_ofs;
 	s = top + G_scroll_ofs;
 	while (--lines_rem >= 0) {
+		int n;
+		char *ppu;
+		char ppubuf[sizeof(int)*3 * 2 + 12];
 		char vsz_str_buf[8];
 		unsigned col;
 
@@ -699,12 +702,36 @@ static NOINLINE void display_process_list(int lines_rem, int scr_width)
 
 		smart_ulltoa5(s->vsz, vsz_str_buf, " mgtpezy");
 		/* PID PPID USER STAT VSZ %VSZ [%CPU] COMMAND */
+		n = sprintf(ppubuf, "%5u %5u %-8.8s", s->pid, s->ppid, get_cached_username(s->uid));
+		ppu = ppubuf;
+		if (n != 6+6+8) {
+			/* Format PID PPID USER part into 6+6+8 chars:
+			 * shrink PID/PPID if possible, then truncate USER
+			 */
+			char *p, *pp;
+			if (*ppu == ' ') {
+				do {
+					ppu++, n--;
+					if (n == 6+6+8)
+						goto shortened;
+				} while (*ppu == ' ');
+			}
+			pp = p = skip_non_whitespace(ppu) + 1;
+			if (*p == ' ') {
+				do
+					p++, n--;
+				while (n != 6+6+8 && *p == ' ');
+				overlapping_strcpy(pp, p); /* shrink PPID */
+			}
+			ppu[6+6+8] = '\0'; /* truncate USER */
+		}
+ shortened:
 		col = snprintf(line_buf, scr_width,
-				"\n" "%5u%6u %-8.8s %s  %.5s" FMT
+				"\n" "%s %s  %.5s" FMT
 				IF_FEATURE_TOP_SMP_PROCESS(" %3d")
 				IF_FEATURE_TOP_CPU_USAGE_PERCENTAGE(FMT)
 				" ",
-				s->pid, s->ppid, get_cached_username(s->uid),
+				ppu,
 				s->state, vsz_str_buf,
 				SHOW_STAT(pmem)
 				IF_FEATURE_TOP_SMP_PROCESS(, s->last_seen_on_cpu)
@@ -852,8 +879,11 @@ static NOINLINE void display_topmem_process_list(int lines_rem, int scr_width)
 		lines_rem = ntop - G_scroll_ofs;
 	while (--lines_rem >= 0) {
 		/* PID VSZ VSZRW RSS (SHR) DIRTY (SHR) COMMAND */
-		ulltoa6_and_space(s->pid     , &line_buf[0*6]);
+		int n = sprintf(line_buf, "%5u ", s->pid);
 		ulltoa6_and_space(s->vsz     , &line_buf[1*6]);
+		if (n > 7 || (n == 7 && line_buf[6] != ' '))
+			/* PID and VSZ are clumped together, truncate PID */
+			line_buf[5] = '.';
 		ulltoa6_and_space(s->vszrw   , &line_buf[2*6]);
 		ulltoa6_and_space(s->rss     , &line_buf[3*6]);
 		ulltoa6_and_space(s->rss_sh  , &line_buf[4*6]);
@@ -913,7 +943,7 @@ static unsigned handle_input(unsigned scan_mask, duration_t interval)
 	while (1) {
 		int32_t c;
 
-		c = read_key(STDIN_FILENO, G.kbd_input, interval * 1000);
+		c = safe_read_key(STDIN_FILENO, G.kbd_input, interval * 1000);
 		if (c == -1 && errno != EAGAIN) {
 			/* error/EOF */
 			option_mask32 |= OPT_EOF;
