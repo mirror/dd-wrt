@@ -108,7 +108,7 @@ static int init_ddns(FILE * fp)
 		"ipv6@no-ip.com",
 		NULL,
 		NULL,
-		NULL,
+		"ipv6@easydns.com",
 		NULL,
 		"ipv6@selfhost.de",
 		"ipv6tb@he.net",
