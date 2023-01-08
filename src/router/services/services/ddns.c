@@ -56,6 +56,7 @@ char _hostname[] = "ddns_hostname_XX";
 char _wildcard[] = "ddns_wildcard_XX";
 char _ssl[] = "ddns_ssl_XX";
 char _cache_file[128];
+char _cache_file_ipv6[128];
 static int init_ddns(FILE * fp)
 {
 
@@ -152,7 +153,8 @@ static int init_ddns(FILE * fp)
 		snprintf(_ipv6, sizeof(_ipv6), "%s", "ddns_ipv6");
 #endif
 		snprintf(_wildcard, sizeof(_hostname), "%s", "ddns_wildcard");
-		snprintf(_cache_file, sizeof(_cache_file), "/tmp/ddns/%s.cache", nvram_safe_get("ddns_hostname"));
+		snprintf(_cache_file, sizeof(_cache_file), "/tmp/ddns/%s-%s.cache", provider, nvram_safe_get("ddns_hostname"));
+		snprintf(_cache_file_ipv6, sizeof(_cache_file_ipv6), "/tmp/ddns/%s-%s.cache", provider6, nvram_safe_get("ddns_hostname"));
 	} else {
 		snprintf(_username, sizeof(_username), "%s_%d", "ddns_username", flag);
 		snprintf(_passwd, sizeof(_passwd), "%s_%d", "ddns_passwd", flag);
@@ -161,7 +163,8 @@ static int init_ddns(FILE * fp)
 		snprintf(_ipv6, sizeof(_ipv6), "%s_%d", "ddns_ipv6", flag);
 #endif
 		snprintf(_wildcard, sizeof(_hostname), "%s_%d", "ddns_wildcard", flag);
-		snprintf(_cache_file, sizeof(_cache_file), "/tmp/ddns/%s.cache", nvram_nget("ddns_hostname_%d", flag));
+		snprintf(_cache_file, sizeof(_cache_file), "/tmp/ddns/%s-%s.cache", provider, nvram_nget("ddns_hostname_%d", flag));
+		snprintf(_cache_file_ipv6, sizeof(_cache_file_ipv6), "/tmp/ddns/%s-%s.cache",provider6, nvram_nget("ddns_hostname_%d", flag));
 	}
 	if (fp) {
 #ifdef HAVE_IPV6
@@ -297,8 +300,10 @@ void start_ddns(void)
 		 * If the user changed anything in the GUI, delete all cache and log 
 		 */
 		nvram_unset("ddns_cache");
+		nvram_unset("ddns_cache_ipv6");
 		unlink("/tmp/ddns/ddns.log");
 		unlink(_cache_file);
+		unlink(_cache_file_ipv6);
 	}
 
 	/*
@@ -306,6 +311,9 @@ void start_ddns(void)
 	 */
 	if (nvram_invmatch("ddns_cache", "")) {
 		nvram2file("ddns_cache", _cache_file);
+	}
+	if (nvram_invmatch("ddns_cache_ipv6", "")) {
+		nvram2file("ddns_cache_ipv6", _cache_file_ipv6);
 	}
 	if (nvram_matchi("ddns_once", 0)) {
 		dd_logstart("ddns", eval("inadyn", "--cache-dir=/tmp/ddns", "-e", "ddns_success", "--exec-mode=compat", "-f", "/tmp/ddns/inadyn.conf", "-P", "/var/run/inadyn.pid", "-l", "notice", "-t", "30"));
@@ -324,6 +332,7 @@ void stop_ddns(void)
 	stop_process("inadyn", "dynamic dns daemon");
 	if (init_ddns(NULL) == 0) {
 		unlink(_cache_file);
+		unlink(_cache_file_ipv6);
 	}
 	if (nvram_matchi("ddns_enable", 0)) {
 		unlink("/tmp/ddns/inadyn.conf");
@@ -396,6 +405,11 @@ int ddns_success_main(int argc, char *argv[])
 			fgets(buf, sizeof(buf), fp);
 			fclose(fp);
 			nvram_set("ddns_cache", buf);
+		}
+		if ((fp = fopen(_cache_file_ipv6, "r"))) {
+			fgets(buf, sizeof(buf), fp);
+			fclose(fp);
+			nvram_set("ddns_cache_ipv6", buf);
 		}
 	}
 
