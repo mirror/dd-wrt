@@ -140,10 +140,6 @@ static int init_ddns(FILE * fp)
 #endif
 	char *provider = providers[flag];
 	char *provider6 = NULL;
-#ifdef HAVE_IPV6
-	if (nvram_matchi("ipv6_enable", 1) && nvram_matchi(_ipv6, 1))
-		provider6 = providers_ipv6[flag];
-#endif
 	snprintf(_ssl, sizeof(_ssl), "%s", "ddns_ssl");
 	if (flag == 1) {
 		snprintf(_username, sizeof(_username), "%s", "ddns_username");
@@ -151,6 +147,8 @@ static int init_ddns(FILE * fp)
 		snprintf(_hostname, sizeof(_hostname), "%s", "ddns_hostname");
 #ifdef HAVE_IPV6
 		snprintf(_ipv6, sizeof(_ipv6), "%s", "ddns_ipv6");
+		if (nvram_matchi("ipv6_enable", 1) && nvram_matchi(_ipv6, 1))
+			provider6 = providers_ipv6[flag];
 #endif
 		snprintf(_wildcard, sizeof(_hostname), "%s", "ddns_wildcard");
 		snprintf(_cache_file, sizeof(_cache_file), "/tmp/ddns/%s-%s.cache", provider, nvram_safe_get("ddns_hostname"));
@@ -161,6 +159,8 @@ static int init_ddns(FILE * fp)
 		snprintf(_hostname, sizeof(_hostname), "%s_%d", "ddns_hostname", flag);
 #ifdef HAVE_IPV6
 		snprintf(_ipv6, sizeof(_ipv6), "%s_%d", "ddns_ipv6", flag);
+		if (nvram_matchi("ipv6_enable", 1) && nvram_matchi(_ipv6, 1))
+			provider6 = providers_ipv6[flag];
 #endif
 		snprintf(_wildcard, sizeof(_hostname), "%s_%d", "ddns_wildcard", flag);
 		snprintf(_cache_file, sizeof(_cache_file), "/tmp/ddns/%s-%s.cache", provider, nvram_nget("ddns_hostname_%d", flag));
