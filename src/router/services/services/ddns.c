@@ -276,8 +276,7 @@ void start_ddns(void)
 	}
 
 	if (strcmp(nvram_safe_get("ddns_enable_buf"), nvram_safe_get("ddns_enable")) ||
-	    strcmp(nvram_safe_get("ddns_username_buf"), nvram_safe_get(_username)) ||
-	    strcmp(nvram_safe_get("ddns_passwd_buf"), nvram_safe_get(_passwd)) ||
+	    strcmp(nvram_safe_get("ddns_username_buf"), nvram_safe_get(_username)) || strcmp(nvram_safe_get("ddns_passwd_buf"), nvram_safe_get(_passwd)) ||
 #ifdef HAVE_IPV6
 	    strcmp(nvram_safe_get("ddns_ipv6_buf"), nvram_safe_get(_ipv6)) ||
 #endif
@@ -328,6 +327,8 @@ int checkwanip_main(int argc, char *argv[])
 {
 	char new_ip_str[32];
 	int wan_link = check_wan_link(0);
+	if (!wan_link)
+		return -1;
 	char *wan_ipaddr = NULL;
 	if (nvram_match("wan_proto", "pptp")) {
 		wan_ipaddr = wan_link ? nvram_safe_get("pptp_get_ip") : nvram_safe_get("wan_ipaddr");
@@ -339,6 +340,7 @@ int checkwanip_main(int argc, char *argv[])
 		wan_ipaddr = wan_link ? nvram_safe_get("l2tp_get_ip") : nvram_safe_get("wan_ipaddr");
 	} else if (nvram_match("wan_proto", "disabled")) {
 		wan_ipaddr = "0.0.0.0";
+		return -1;
 	} else {
 		wan_ipaddr = nvram_safe_get("wan_ipaddr");
 	}
