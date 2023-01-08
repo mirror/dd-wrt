@@ -75,7 +75,7 @@ static int nslookup(ddns_alias_t *alias)
 	return 1;
 }
 
-static void read_one(ddns_alias_t *alias, char *name, int nonslookup)
+static void read_one(ddns_alias_t *alias, const char *name, int nonslookup)
 {
 	FILE *fp;
 	char path[256];
@@ -111,7 +111,7 @@ static void read_one(ddns_alias_t *alias, char *name, int nonslookup)
 	}
 }
 
-char *cache_file(char *name, char *sysname, char *buf, size_t len)
+char *cache_file(char *name, const char *sysname, char *buf, size_t len)
 {
 	if (!buf || !name)
 		return NULL;
@@ -176,7 +176,7 @@ int read_cache_file(ddns_t *ctx)
  * Update cache with new IP
  * /var/cache/inadyn/my.server.name.cache { LAST-IPADDR } MTIME
  */
-int write_cache_file(ddns_alias_t *alias, char *name)
+int write_cache_file(ddns_alias_t *alias, const char *name)
 {
 	FILE *fp;
 	char path[256];	
