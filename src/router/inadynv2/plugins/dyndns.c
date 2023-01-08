@@ -172,6 +172,20 @@ static ddns_system_t spdyn = {
 	.server_url   = "/nic/update"
 };
 
+static ddns_system_t spdyn_v6 = {
+	.name         = "ipv6@spdyn.de",
+
+	.request      = (req_fn_t)request,
+	.response     = (rsp_fn_t)response,
+
+	.checkip_name = "checkip6.spdyn.de",
+	.checkip_url  = "/",
+	.checkip_ssl  = DDNS_CHECKIP_SSL_UNSUPPORTED,
+
+	.server_name  = "update.spdyn.de",
+	.server_url   = "/nic/update"
+};
+
 /* Note: below is IPv4 only. ipv6.nsupdate.info would work IPv6 only. */
 static ddns_system_t nsupdate_info_ipv4 = {
 	.name         = "ipv4@nsupdate.info",
@@ -264,6 +278,7 @@ PLUGIN_INIT(plugin_init)
 	plugin_register(&henet);
 	plugin_register(&tunnelbroker);
 	plugin_register(&spdyn);
+	plugin_register(&spdyn_v6);
 	plugin_register(&nsupdate_info_ipv4);
 	plugin_register(&nsupdate_info_ipv6);
 	plugin_register(&loopia);
@@ -282,6 +297,7 @@ PLUGIN_EXIT(plugin_exit)
 	plugin_unregister(&henet);
 	plugin_unregister(&tunnelbroker);
 	plugin_unregister(&spdyn);
+	plugin_unregister(&spdyn_v6);
 	plugin_unregister(&nsupdate_info_ipv4);
 	plugin_unregister(&nsupdate_info_ipv6);
 	plugin_unregister(&loopia);
