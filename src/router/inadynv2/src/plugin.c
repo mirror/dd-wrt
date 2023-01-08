@@ -59,14 +59,15 @@ int plugin_register_v6(ddns_system_t *plugin)
 	memcpy(plugin_v6, plugin, sizeof(*plugin));
 	/* default@foo.org -> ipv6@foo.org */
 	plugin_v6->name = strdup(plugin->name);
-	sprintf(plugin_v6->name, "ipv6%s", plugin->name + 8);
+	sprintf(plugin_v6->name, "ipv6%s", plugin->name + 7);
+	return plugin_register(plugin_v6);
 }
 
 int plugin_unregister(ddns_system_t *plugin)
 {
 	ddns_system_t *plugin_v4 = plugin_find(plugin->name, 0);
 	if (!plugin_v4) // already unregistered
-		return;
+		return 0;
 	char *name = strdup(plugin->name);
 	if (strstr(name, "default@"))
 		sprintf(name, "ipv6%s", plugin->name + 8);
