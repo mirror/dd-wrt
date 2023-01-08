@@ -94,19 +94,6 @@ static ddns_system_t no_ip = {
 	.server_url   = "/nic/update"
 };
 
-static ddns_system_t no_ip_v6 = {
-	.name         = "ipv6@no-ip.com",
-
-	.request      = (req_fn_t)request,
-	.response     = (rsp_fn_t)response,
-
-	.checkip_name = "ip1.dynupdate.no-ip.com",
-	.checkip_url  = "/",
-	.checkip_ssl  = DYNDNS_MY_IP_SSL,
-
-	.server_name  = "dynupdate.no-ip.com",
-	.server_url   = "/nic/update"
-};
 
 static ddns_system_t noip = {
 	.name         = "default@noip.com",
@@ -122,19 +109,6 @@ static ddns_system_t noip = {
 	.server_url   = "/nic/update"
 };
 
-static ddns_system_t noip_v6 = {
-	.name         = "ipv6@noip.com",
-
-	.request      = (req_fn_t)request,
-	.response     = (rsp_fn_t)response,
-
-	.checkip_name = "ip1.dynupdate.noip.com",
-	.checkip_url  = "/",
-	.checkip_ssl  = DYNDNS_MY_IP_SSL,
-
-	.server_name  = "dynupdate.noip.com",
-	.server_url   = "/nic/update"
-};
 
 /* http://www.pubyun.com/wiki/%E5%B8%AE%E5%8A%A9:api#%E6%8E%A5%E5%8F%A3%E5%9C%B0%E5%9D%80 */
 static ddns_system_t _3322 = {
@@ -301,9 +275,9 @@ PLUGIN_INIT(plugin_init)
 	plugin_register(&dnsomatic);
 	plugin_register(&selfhost);
 	plugin_register(&no_ip);
-	plugin_register(&no_ip_v6);
+	plugin_register_v6(&no_ip);
 	plugin_register(&noip);
-	plugin_register(&noip_v6);
+	plugin_register_v6(&noip);
 	plugin_register(&_3322);
 	plugin_register(&henet);
 	plugin_register(&tunnelbroker);
@@ -322,9 +296,7 @@ PLUGIN_EXIT(plugin_exit)
 	plugin_unregister(&dnsomatic);
 	plugin_unregister(&selfhost);
 	plugin_unregister(&no_ip);
-	plugin_unregister(&no_ip_v6);
 	plugin_unregister(&noip);
-	plugin_unregister(&noip_v6);
 	plugin_unregister(&_3322);
 	plugin_unregister(&henet);
 	plugin_unregister(&tunnelbroker);
