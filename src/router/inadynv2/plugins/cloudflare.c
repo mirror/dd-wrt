@@ -90,6 +90,27 @@ static ddns_system_t plugin = {
 	.server_url   = API_URL
 };
 
+static ddns_system_t plugin_v6 = {
+	.name         = "ipv6@cloudflare.com",
+
+	.setup        = (setup_fn_t)setup,
+	.request      = (req_fn_t)request,
+	.response     = (rsp_fn_t)response,
+
+	/*
+	 * 1.1.1.1 is chosen here due to "allow-ipv6" is default to false
+	 * www.cloudflare.com would also work but is dual stack and may return ipv6 address
+	 * use 1.1.1.1 to would force it return ipv4 by default
+	 * see examples/cloudflare-*.conf
+	 */
+	.checkip_name = "1.1.1.1",
+	.checkip_url  = "/cdn-cgi/trace",
+	.checkip_ssl  = DDNS_CHECKIP_SSL_SUPPORTED,
+
+	.server_name  = API_HOST,
+	.server_url   = API_URL
+};
+
 /*
  * filled by the setup() callback and handed to ddns_info_t
  * for use later in the request() callback .
@@ -401,11 +422,13 @@ static int response(http_trans_t *trans, ddns_info_t *info, ddns_alias_t *hostna
 PLUGIN_INIT(plugin_init)
 {
 	plugin_register(&plugin);
+	plugin_register(&plugin_v6);
 }
 
 PLUGIN_EXIT(plugin_exit)
 {
 	plugin_unregister(&plugin);
+	plugin_unregister(&plugin_v6);
 }
 
 /**
