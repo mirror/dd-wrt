@@ -345,7 +345,6 @@ int checkwanip_main(int argc, char *argv[])
 
 #ifdef HAVE_IPV6
 	char *provider = getenv("INADYN_PROVIDER");
-	/* providers like cloudflare cannot be used that way, so for cloudflare ipv6 external ip check must be used */
 	if (provider && strstr(providr, "v6")) {
 		char wan_if_buffer[33];
 		char buf[INET6_ADDRSTRLEN];
