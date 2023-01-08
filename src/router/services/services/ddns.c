@@ -160,9 +160,10 @@ static int init_ddns(FILE * fp)
 		snprintf(_cache_file, sizeof(_cache_file), "/tmp/ddns/%s.cache", nvram_nget("ddns_hostname_%d", flag));
 	}
 	if (fp) {
+#ifdef HAVE_IPV6
 		if (provider6 && nvram_matchi(_ipv6, 1))
 			fprintf(fp, "allow-ipv6 = true\n");
-
+#endif
 		if (flag == 5)
 			fprintf(fp, "custom namecheap {\n");
 		else
@@ -347,7 +348,7 @@ int checkwanip_main(int argc, char *argv[])
 
 #ifdef HAVE_IPV6
 	char *provider = getenv("INADYN_PROVIDER");
-	if (provider && strstr(providr, "v6")) {
+	if (provider && strstr(provider, "v6")) {
 		char wan_if_buffer[33];
 		char buf[INET6_ADDRSTRLEN];
 		const char *ipv6addr = NULL;
