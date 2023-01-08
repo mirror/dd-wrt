@@ -186,6 +186,19 @@ static ddns_system_t nsupdate_info_ipv4 = {
 	.server_url   = "/nic/update"
 };
 
+static ddns_system_t nsupdate_info_ipv6 = {
+	.name         = "ipv6@nsupdate.info",
+
+	.request      = (req_fn_t)request,
+	.response     = (rsp_fn_t)response,
+
+	.checkip_name = "ipv6.nsupdate.info",
+	.checkip_url  = "/myip",
+
+	.server_name  = "ipv6.nsupdate.info",
+	.server_url   = "/nic/update"
+};
+
 /*
  * Loopia supports HTTPS, for details on supported variables, see
  * https://support.loopia.com/wiki/About_the_DynDNS_support
@@ -252,6 +265,7 @@ PLUGIN_INIT(plugin_init)
 	plugin_register(&tunnelbroker);
 	plugin_register(&spdyn);
 	plugin_register(&nsupdate_info_ipv4);
+	plugin_register(&nsupdate_info_ipv6);
 	plugin_register(&loopia);
 	plugin_register(&googledomains);
 	plugin_register(&dynu);
@@ -269,6 +283,7 @@ PLUGIN_EXIT(plugin_exit)
 	plugin_unregister(&tunnelbroker);
 	plugin_unregister(&spdyn);
 	plugin_unregister(&nsupdate_info_ipv4);
+	plugin_unregister(&nsupdate_info_ipv6);
 	plugin_unregister(&loopia);
 	plugin_unregister(&googledomains);
 	plugin_unregister(&dynu);
