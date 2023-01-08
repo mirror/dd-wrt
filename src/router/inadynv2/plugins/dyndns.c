@@ -124,6 +124,19 @@ static ddns_system_t _3322 = {
 	.server_url   = "/dyndns/update"
 };
 
+static ddns_system_t _3322_ipv6 = {
+	.name         = "ipv6@3322.org",
+
+	.request      = (req_fn_t)request,
+	.response     = (rsp_fn_t)response,
+
+	.checkip_name = "checkipv6.dyndns.com",
+	.checkip_url  = "/",
+
+	.server_name  = "members.3322.org",
+	.server_url   = "/dyndns/update"
+};
+
 /* See also tunnelbroker.c for Hurricate Electric's IPv6 service */
 static ddns_system_t henet = {
 	.name         = "dyndns@he.net",
@@ -281,6 +294,7 @@ PLUGIN_INIT(plugin_init)
 	plugin_register(&noip);
 	plugin_register_v6(&noip);
 	plugin_register(&_3322);
+	plugin_register(&_3322_ipv6);
 	plugin_register(&henet);
 	plugin_register(&tunnelbroker);
 	plugin_register(&spdyn);
