@@ -103,7 +103,7 @@ static int init_ddns(FILE * fp)
 	char *providers_ipv6[] = {
 		NULL,
 		NULL,
-		NULL,
+		"ipv6@freedns.afraid.org",
 		NULL,
 		"ipv6@no-ip.com",
 		NULL,
