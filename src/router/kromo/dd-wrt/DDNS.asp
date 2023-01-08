@@ -164,6 +164,13 @@ addEvent(window, "unload", function() {
 									<input type="checkbox" value="1" name="ddns_wildcard" <% ddns_checked("ddns_wildcard", "1"); %> />
 								</div>
 								<% nvlsm("ddns_enable","0 2 3 4 5 11 18 19 20 21 22 23 24 25 26 27 28 29 30 31 32 33","-->"); %>
+								<% nvlsmn6("ddns_enable","0 1 2 3 4 5 6 7 8 9 15 16 17 18 19 20 22 32 33","<!--"); %>
+								<div class="setting">
+									<div class="label"><% tran("management.ipv6_srv"); %></div>
+									<input type="checkbox" value="1" name="ddns_ipv6" <% ddns_checked("ddns_ipv6", "1"); %> />
+								</div>
+								<% nvlsmn6("ddns_enable","0 1 2 3 4 5 6 7 8 9 15 16 17 18 19 20 22 32 33","-->"); %>
+
 								<% nvlsm("ddns_enable","0 1 2 3 4 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30 31 32 33","<!--"); %>
 								<div class="setting">
 									<div class="label"><% tran("ddns.system"); %></div>
@@ -203,13 +210,6 @@ addEvent(window, "unload", function() {
 								</div>
 								<% ifndef("OPENSSL","-->"); %>
 								<% nvsm("ddns_enable","0","-->"); %>
-								<% nvlsmn6("ddns_enable","0 1 2 3 4 5 6 7 8 9 15 16 17 18 19 20 22 32 33","<!--"); %>
-								<div class="setting">
-									<div class="label"><% tran("management.ipv6_srv"); %></div>
-									<input class="spaceradio" type="radio" value="1" name="ddns_ipv6" <% nvc("ddns_ipv6","1"); %> /><% tran("share.yes"); %>&nbsp;
-									<input class="spaceradio" type="radio" value="0" name="ddns_ipv6" <% nvc("ddns_ipv6","0"); %> /><% tran("share.no"); %>
-								</div>
-								<% nvlsmn6("ddns_enable","0 1 2 3 4 5 6 7 8 9 15 16 17 18 19 20 22 32 33","-->"); %>
 							</fieldset>
 							<% nvsm("ddns_enable","0","<!--"); %>
 							<br /><fieldset>
