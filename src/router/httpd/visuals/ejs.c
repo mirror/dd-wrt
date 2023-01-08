@@ -389,19 +389,20 @@ EJALIAS(ej_nvram_listselmatch, ej_nvlsm);
 EJ_VISIBLE void ej_nvram_listselmatch_not_v6(webs_t wp, int argc, char_t ** argv)
 {
 #ifdef HAVE_IPV6
-	char value[64];
-	char *next;
-	char *list = argv[1];
+	if (nvram_matchi("ipv6_enable", 1)) {
+		char value[64];
+		char *next;
+		char *list = argv[1];
 
-	foreach(value, list, next) {
-		if (nvram_selmatch(wp, argv[0], value)) {
-			websWrite(wp, argv[2]);
-			return;
+		foreach(value, list, next) {
+			if (nvram_selmatch(wp, argv[0], value)) {
+				websWrite(wp, argv[2]);
+				return;
+			}
 		}
-	}
-#else
-	websWrite(wp, argv[2]);
+	} else
 #endif
+		websWrite(wp, argv[2]);
 	return;
 }
 
