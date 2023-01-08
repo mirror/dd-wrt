@@ -61,8 +61,12 @@ int plugin_register_v6(ddns_system_t *plugin)
 	plugin_v6->name = strdup(plugin->name);
 	sprintf(plugin_v6->name, "ipv6%s", plugin->name + 8);
 }
+
 int plugin_unregister(ddns_system_t *plugin)
 {
+	ddns_system_t *plugin_v4 = plugin_find(plugin->name, 0);
+	if (!plugin_v4) // already unregistered
+		return;
 	char *name = strdup(plugin->name);
 	if (strstr(name, "default@"))
 		sprintf(name, "ipv6%s", plugin->name + 8);
