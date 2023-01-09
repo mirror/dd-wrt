@@ -3,7 +3,7 @@
  * targets to the scan queue.                                              *
  ***********************IMPORTANT NMAP LICENSE TERMS************************
  *                                                                         *
- * The Nmap Security Scanner is (C) 1996-2020 Insecure.Com LLC ("The Nmap  *
+ * The Nmap Security Scanner is (C) 1996-2022 Nmap Software LLC ("The Nmap *
  * Project"). Nmap is also a registered trademark of the Nmap Project.     *
  *                                                                         *
  * This program is distributed under the terms of the Nmap Public Source   *
@@ -12,9 +12,9 @@
  * file distributed with that version of Nmap or source code control       *
  * revision. More Nmap copyright/legal information is available from       *
  * https://nmap.org/book/man-legal.html, and further information on the    *
- * NPSL license itself can be found at https://nmap.org/npsl. This header  *
- * summarizes some key points from the Nmap license, but is no substitute  *
- * for the actual license text.                                            *
+ * NPSL license itself can be found at https://nmap.org/npsl/ . This       *
+ * header summarizes some key points from the Nmap license, but is no      *
+ * substitute for the actual license text.                                 *
  *                                                                         *
  * Nmap is generally free for end users to download and use themselves,    *
  * including commercial use. It is available from https://nmap.org.        *
@@ -22,14 +22,14 @@
  * The Nmap license generally prohibits companies from using and           *
  * redistributing Nmap in commercial products, but we sell a special Nmap  *
  * OEM Edition with a more permissive license and special features for     *
- * this purpose. See https://nmap.org/oem                                  *
+ * this purpose. See https://nmap.org/oem/                                 *
  *                                                                         *
  * If you have received a written Nmap license agreement or contract       *
  * stating terms other than these (such as an Nmap OEM license), you may   *
  * choose to use and redistribute Nmap under those terms instead.          *
  *                                                                         *
  * The official Nmap Windows builds include the Npcap software             *
- * (https://npcap.org) for packet capture and transmission. It is under    *
+ * (https://npcap.com) for packet capture and transmission. It is under    *
  * separate license terms which forbid redistribution without special      *
  * permission. So the official Nmap Windows builds may not be              *
  * redistributed without special permission (such as an Nmap OEM           *
@@ -54,11 +54,11 @@
  * useful, but WITHOUT ANY WARRANTY; without even the implied warranty of  *
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. Warranties,        *
  * indemnification and commercial support are all available through the    *
- * Npcap OEM program--see https://nmap.org/oem.                            *
+ * Npcap OEM program--see https://nmap.org/oem/                            *
  *                                                                         *
  ***************************************************************************/
 
-/* $Id: NewTargets.cc 38210 2021-04-27 19:22:10Z dmiller $ */
+/* $Id: NewTargets.cc 38395 2022-06-27 23:01:44Z dmiller $ */
 
 #include "NewTargets.h"
 #include "NmapOps.h"
@@ -66,28 +66,10 @@
 #include "nmap_error.h"
 
 extern NmapOps o;  /* option structure */
-NewTargets *NewTargets::new_targets;
-
-/* debug level for the adding target is: 3 */
-NewTargets *NewTargets::get (void) {
-  if (new_targets)
-    return new_targets;
-  new_targets = new NewTargets();
-  return new_targets;
-}
+NewTargets *NewTargets::new_targets = NULL;
 
 void NewTargets::free_new_targets (void) {
   delete new_targets;
-}
-
-NewTargets::NewTargets (void) {
-  Initialize();
-}
-
-void NewTargets::Initialize (void) {
-  history.clear();
-  while (!queue.empty())
-    queue.pop();
 }
 
 /* This private method is used to push new targets to the
@@ -109,7 +91,7 @@ unsigned long NewTargets::push (const char *target) {
         log_write(LOG_PLAIN, "New Targets: target %s pushed onto the queue.\n", tg.c_str());
     } else {
       if (o.debugging > 2)
-        log_write(LOG_PLAIN, "New Targets: target %s is already in the queue.\n", tg.c_str());
+        log_write(LOG_PLAIN, "New Targets: target %s was already added.\n", tg.c_str());
       /* Return 1 when the target is already in the history cache,
        * this will prevent returning 0 when the target queue is
        * empty since no target was added. */
@@ -125,6 +107,8 @@ unsigned long NewTargets::push (const char *target) {
 std::string NewTargets::read (void) {
   std::string str;
 
+  new_targets = new_targets ? new_targets : new NewTargets();
+
   /* check to see it there are targets in the queue */
   if (!new_targets->queue.empty()) {
     str = new_targets->queue.front();
@@ -134,19 +118,13 @@ std::string NewTargets::read (void) {
   return str;
 }
 
-void NewTargets::clear (void) {
-  new_targets->history.clear();
-}
-
 unsigned long NewTargets::get_number (void) {
+  new_targets = new_targets ? new_targets : new NewTargets();
   return new_targets->history.size();
 }
 
-unsigned long NewTargets::get_scanned (void) {
-  return new_targets->history.size() - new_targets->queue.size();
-}
-
 unsigned long NewTargets::get_queued (void) {
+  new_targets = new_targets ? new_targets : new NewTargets();
   return new_targets->queue.size();
 }
 
@@ -155,11 +133,8 @@ unsigned long NewTargets::get_queued (void) {
  * Returns the number of targets in the queue on success, or 0 on
  * failures or when the queue is empty. */
 unsigned long NewTargets::insert (const char *target) {
+  new_targets = new_targets ? new_targets : new NewTargets();
   if (*target) {
-    if (new_targets == NULL) {
-      error("ERROR: to add targets run with -sC or --script options.");
-      return 0;
-    }
     if (o.current_scantype == SCRIPT_POST_SCAN) {
       error("ERROR: adding targets is disabled in the Post-scanning phase.");
       return 0;

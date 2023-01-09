@@ -5,7 +5,7 @@
  *                                                                         *
  ***********************IMPORTANT NMAP LICENSE TERMS************************
  *                                                                         *
- * The Nmap Security Scanner is (C) 1996-2020 Insecure.Com LLC ("The Nmap  *
+ * The Nmap Security Scanner is (C) 1996-2022 Nmap Software LLC ("The Nmap *
  * Project"). Nmap is also a registered trademark of the Nmap Project.     *
  *                                                                         *
  * This program is distributed under the terms of the Nmap Public Source   *
@@ -14,9 +14,9 @@
  * file distributed with that version of Nmap or source code control       *
  * revision. More Nmap copyright/legal information is available from       *
  * https://nmap.org/book/man-legal.html, and further information on the    *
- * NPSL license itself can be found at https://nmap.org/npsl. This header  *
- * summarizes some key points from the Nmap license, but is no substitute  *
- * for the actual license text.                                            *
+ * NPSL license itself can be found at https://nmap.org/npsl/ . This       *
+ * header summarizes some key points from the Nmap license, but is no      *
+ * substitute for the actual license text.                                 *
  *                                                                         *
  * Nmap is generally free for end users to download and use themselves,    *
  * including commercial use. It is available from https://nmap.org.        *
@@ -24,14 +24,14 @@
  * The Nmap license generally prohibits companies from using and           *
  * redistributing Nmap in commercial products, but we sell a special Nmap  *
  * OEM Edition with a more permissive license and special features for     *
- * this purpose. See https://nmap.org/oem                                  *
+ * this purpose. See https://nmap.org/oem/                                 *
  *                                                                         *
  * If you have received a written Nmap license agreement or contract       *
  * stating terms other than these (such as an Nmap OEM license), you may   *
  * choose to use and redistribute Nmap under those terms instead.          *
  *                                                                         *
  * The official Nmap Windows builds include the Npcap software             *
- * (https://npcap.org) for packet capture and transmission. It is under    *
+ * (https://npcap.com) for packet capture and transmission. It is under    *
  * separate license terms which forbid redistribution without special      *
  * permission. So the official Nmap Windows builds may not be              *
  * redistributed without special permission (such as an Nmap OEM           *
@@ -56,7 +56,7 @@
  * useful, but WITHOUT ANY WARRANTY; without even the implied warranty of  *
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. Warranties,        *
  * indemnification and commercial support are all available through the    *
- * Npcap OEM program--see https://nmap.org/oem.                            *
+ * Npcap OEM program--see https://nmap.org/oem/                            *
  *                                                                         *
  ***************************************************************************/
 
@@ -1179,6 +1179,20 @@ bool NpingOps::getDF(){
 } /* End of getDF() */
 
 
+/** Set Reserved / Evil flag */
+int NpingOps::setRF(){
+  this->rf = true;
+  this->rf_set = true;
+  return OP_SUCCESS;
+} /* End of setRF() */
+
+
+/** Get Reserved / Evil flag */
+bool NpingOps::getRF(){
+  return this->rf;
+} /* End of getRF() */
+
+
 /* Returns true if option has been set */
 bool NpingOps::issetMF(){
   return this->mf_set;
@@ -1188,6 +1202,12 @@ bool NpingOps::issetMF(){
 /* Returns true if option has been set */
 bool NpingOps::issetDF(){
   return this->df_set;
+} /* End of isset() */
+
+
+/* Returns true if option has been set */
+bool NpingOps::issetRF(){
+  return this->rf_set;
 } /* End of isset() */
 
 
@@ -2232,7 +2252,7 @@ const char *privreq = "root privileges";
 #ifdef WIN32
     //if (!this->have_pcap)
           privreq = "Npcap, but it seems to be missing.\n\
-Npcap is available from https://npcap.org. The Npcap driver service must\n\
+Npcap is available from https://npcap.com. The Npcap driver service must\n\
 be started by an administrator before Npcap can be used. Running nping.exe\n\
 will open a UAC dialog where you can start the service if you have\n\
 administrator privileges.";
@@ -2368,9 +2388,8 @@ if( this->getMode()!=TCP_CONNECT && this->getMode()!=UDP_UNPRIV && this->getRole
              /* Try to obtain a device name from the target IP */
              if ( getNetworkInterfaceName( &ss , devbuff) != OP_SUCCESS ) {
                 /* If that didn't work, ask libpcap */
-                char errbuf[PCAP_ERRBUF_SIZE];
-                if ( (dev = pcap_lookupdev(errbuf)) == NULL)
-                    nping_fatal(QT_3, "Cannot obtain device for packet capture --> %s", errbuf);
+                if ( (dev = this->select_network_iface()) == NULL)
+                    nping_fatal(QT_3, "Cannot obtain device for packet capture");
                 else
                     this->setDevice( dev );
                 /* Libpcap gave us a device name, try to obtain it's IP */
@@ -2577,6 +2596,7 @@ bool NpingOps::canRunUDPWithoutPrivileges(){
     this->issetIdentification() ||
     this->issetMF() ||
     this->issetDF() ||
+    this->issetRF() ||
     this->issetIPv4SourceAddress() ||
     this->issetIPv6SourceAddress() ||
     this->issetIPOptions() ||

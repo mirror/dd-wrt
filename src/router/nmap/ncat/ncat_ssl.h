@@ -2,7 +2,7 @@
  * ncat_ssl.h                                                              *
  ***********************IMPORTANT NMAP LICENSE TERMS************************
  *                                                                         *
- * The Nmap Security Scanner is (C) 1996-2020 Insecure.Com LLC ("The Nmap  *
+ * The Nmap Security Scanner is (C) 1996-2022 Nmap Software LLC ("The Nmap *
  * Project"). Nmap is also a registered trademark of the Nmap Project.     *
  *                                                                         *
  * This program is distributed under the terms of the Nmap Public Source   *
@@ -11,9 +11,9 @@
  * file distributed with that version of Nmap or source code control       *
  * revision. More Nmap copyright/legal information is available from       *
  * https://nmap.org/book/man-legal.html, and further information on the    *
- * NPSL license itself can be found at https://nmap.org/npsl. This header  *
- * summarizes some key points from the Nmap license, but is no substitute  *
- * for the actual license text.                                            *
+ * NPSL license itself can be found at https://nmap.org/npsl/ . This       *
+ * header summarizes some key points from the Nmap license, but is no      *
+ * substitute for the actual license text.                                 *
  *                                                                         *
  * Nmap is generally free for end users to download and use themselves,    *
  * including commercial use. It is available from https://nmap.org.        *
@@ -21,14 +21,14 @@
  * The Nmap license generally prohibits companies from using and           *
  * redistributing Nmap in commercial products, but we sell a special Nmap  *
  * OEM Edition with a more permissive license and special features for     *
- * this purpose. See https://nmap.org/oem                                  *
+ * this purpose. See https://nmap.org/oem/                                 *
  *                                                                         *
  * If you have received a written Nmap license agreement or contract       *
  * stating terms other than these (such as an Nmap OEM license), you may   *
  * choose to use and redistribute Nmap under those terms instead.          *
  *                                                                         *
  * The official Nmap Windows builds include the Npcap software             *
- * (https://npcap.org) for packet capture and transmission. It is under    *
+ * (https://npcap.com) for packet capture and transmission. It is under    *
  * separate license terms which forbid redistribution without special      *
  * permission. So the official Nmap Windows builds may not be              *
  * redistributed without special permission (such as an Nmap OEM           *
@@ -53,11 +53,11 @@
  * useful, but WITHOUT ANY WARRANTY; without even the implied warranty of  *
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. Warranties,        *
  * indemnification and commercial support are all available through the    *
- * Npcap OEM program--see https://nmap.org/oem.                            *
+ * Npcap OEM program--see https://nmap.org/oem/                            *
  *                                                                         *
  ***************************************************************************/
 
-/* $Id: ncat_ssl.h 38085 2020-10-05 23:00:30Z dmiller $ */
+/* $Id: ncat_ssl.h 38410 2022-08-25 14:51:59Z dmiller $ */
 #ifndef NCAT_SSL_H
 #define NCAT_SSL_H
 
@@ -66,6 +66,18 @@
 #ifdef HAVE_OPENSSL
 #include <openssl/ssl.h>
 #include <openssl/err.h>
+
+/* OPENSSL_API_LEVEL per OpenSSL 3.0: decimal MMmmpp */
+#ifndef OPENSSL_API_LEVEL
+# if OPENSSL_API_COMPAT < 0x900000L
+#  define OPENSSL_API_LEVEL (OPENSSL_API_COMPAT)
+# else
+#  define OPENSSL_API_LEVEL \
+     (((OPENSSL_API_COMPAT >> 28) & 0xF) * 10000  \
+      + ((OPENSSL_API_COMPAT >> 20) & 0xFF) * 100 \
+      + ((OPENSSL_API_COMPAT >> 12) & 0xFF))
+# endif
+#endif
 
 #define NCAT_CA_CERTS_FILE "ca-bundle.crt"
 

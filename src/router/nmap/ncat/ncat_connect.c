@@ -2,7 +2,7 @@
  * ncat_connect.c -- Ncat connect mode.                                    *
  ***********************IMPORTANT NMAP LICENSE TERMS************************
  *                                                                         *
- * The Nmap Security Scanner is (C) 1996-2020 Insecure.Com LLC ("The Nmap  *
+ * The Nmap Security Scanner is (C) 1996-2022 Nmap Software LLC ("The Nmap *
  * Project"). Nmap is also a registered trademark of the Nmap Project.     *
  *                                                                         *
  * This program is distributed under the terms of the Nmap Public Source   *
@@ -11,9 +11,9 @@
  * file distributed with that version of Nmap or source code control       *
  * revision. More Nmap copyright/legal information is available from       *
  * https://nmap.org/book/man-legal.html, and further information on the    *
- * NPSL license itself can be found at https://nmap.org/npsl. This header  *
- * summarizes some key points from the Nmap license, but is no substitute  *
- * for the actual license text.                                            *
+ * NPSL license itself can be found at https://nmap.org/npsl/ . This       *
+ * header summarizes some key points from the Nmap license, but is no      *
+ * substitute for the actual license text.                                 *
  *                                                                         *
  * Nmap is generally free for end users to download and use themselves,    *
  * including commercial use. It is available from https://nmap.org.        *
@@ -21,14 +21,14 @@
  * The Nmap license generally prohibits companies from using and           *
  * redistributing Nmap in commercial products, but we sell a special Nmap  *
  * OEM Edition with a more permissive license and special features for     *
- * this purpose. See https://nmap.org/oem                                  *
+ * this purpose. See https://nmap.org/oem/                                 *
  *                                                                         *
  * If you have received a written Nmap license agreement or contract       *
  * stating terms other than these (such as an Nmap OEM license), you may   *
  * choose to use and redistribute Nmap under those terms instead.          *
  *                                                                         *
  * The official Nmap Windows builds include the Npcap software             *
- * (https://npcap.org) for packet capture and transmission. It is under    *
+ * (https://npcap.com) for packet capture and transmission. It is under    *
  * separate license terms which forbid redistribution without special      *
  * permission. So the official Nmap Windows builds may not be              *
  * redistributed without special permission (such as an Nmap OEM           *
@@ -53,11 +53,11 @@
  * useful, but WITHOUT ANY WARRANTY; without even the implied warranty of  *
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. Warranties,        *
  * indemnification and commercial support are all available through the    *
- * Npcap OEM program--see https://nmap.org/oem.                            *
+ * Npcap OEM program--see https://nmap.org/oem/                            *
  *                                                                         *
  ***************************************************************************/
 
-/* $Id: ncat_connect.c 38198 2021-03-16 02:34:35Z nnposter $ */
+/* $Id: ncat_connect.c 38410 2022-08-25 14:51:59Z dmiller $ */
 
 #include "base64.h"
 #include "nsock.h"
@@ -80,6 +80,11 @@
 #ifdef HAVE_OPENSSL
 #include <openssl/ssl.h>
 #include <openssl/err.h>
+
+/* Deprecated in OpenSSL 3.0 */
+#if OPENSSL_API_LEVEL >= 30000
+#define SSL_get_peer_certificate SSL_get1_peer_certificate
+#endif
 #endif
 
 #ifdef WIN32
@@ -660,7 +665,7 @@ static int do_proxy_socks5(void)
     size_t addrlen;
     char addrstr[INET6_ADDRSTRLEN];
     size_t bndaddrlen;
-    char bndaddr[16 + 2]; /* IPv4/IPv6 address and port */
+    char bndaddr[SOCKS5_DST_MAXLEN + 2]; /* IPv4/IPv6/hostname and port */
     size_t remainderlen;
     char* remainder;
 
@@ -918,6 +923,14 @@ static int do_proxy_socks5(void)
         break;
     case SOCKS5_ATYP_IPv6:
         bndaddrlen = 16 + 2;
+        break;
+    case SOCKS5_ATYP_NAME:
+        if (socket_buffer_readcount(&stateful_buf, socksbuf, 1) < 0) {
+            loguser("Error: malformed request response from proxy.\n");
+            close(sd);
+            return -1;
+        }
+        bndaddrlen = (unsigned char)socksbuf[0] + 2;
         break;
     default:
         loguser("Error: invalid proxy bind address type.\n");

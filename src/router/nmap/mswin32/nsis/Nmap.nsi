@@ -39,6 +39,7 @@
   !include "MUI.nsh"
   !include "AddToPath.nsh"
   !include "FileFunc.nsh"
+  !include "WordFunc.nsh"
   !include "Sections.nsh"
 
 ;--------------------------------
@@ -78,7 +79,7 @@
   VIAddVersionKey /LANG=1033 "ProductName" "${NMAP_NAME}"
   VIAddVersionKey /LANG=1033 "CompanyName" "Insecure.org"
   VIAddVersionKey /LANG=1033 "InternalName" "NmapInstaller.exe"
-  VIAddVersionKey /LANG=1033 "LegalCopyright" "Copyright (c) Insecure.Com LLC (fyodor@insecure.org)"
+  VIAddVersionKey /LANG=1033 "LegalCopyright" "Copyright (c) Nmap Software LLC (fyodor@nmap.org)"
   VIAddVersionKey /LANG=1033 "LegalTrademark" "NMAP"
   VIAddVersionKey /LANG=1033 "FileDescription" "${NMAP_NAME} installer"
 
@@ -234,8 +235,8 @@ Section "Nmap Core Files" SecCore
   File /r /x .svn ${STAGE_DIR}\licenses
   File ${STAGE_DIR}\libssh2.dll
   File ${STAGE_DIR}\zlibwapi.dll
-  File ${STAGE_DIR}\libcrypto-1_1.dll
-  File ${STAGE_DIR}\libssl-1_1.dll
+  File ${STAGE_DIR}\libcrypto-3.dll
+  File ${STAGE_DIR}\libssl-3.dll
   File /r /x mswin32 /x .svn /x ncat ${STAGE_DIR}\scripts
   File /r /x mswin32 /x .svn ${STAGE_DIR}\nselib
   File ${STAGE_DIR}\icon1.ico
@@ -265,6 +266,10 @@ Section "Npcap ${NPCAP_VERSION}" SecNpcap
   ExecWait '"$PLUGINSDIR\npcap-${NPCAP_VERSION}.exe" /loopback_support=no'
 SectionEnd
 !endif
+
+Section /o "Check online for newer Npcap" SecNewNpcap
+  ExecShell "open" "https://npcap.com/#download"
+SectionEnd
 
 Section "Network Performance Improvements" SecPerfRegistryMods
   SetOutPath "$PLUGINSDIR"
@@ -418,6 +423,18 @@ Function .onInit
 
   !insertmacro MUI_INSTALLOPTIONS_EXTRACT "final.ini"
 
+  ; Check if Npcap is already installed.
+  ReadRegStr $0 HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\NpcapInst" "DisplayVersion"
+  ${If} $0 != ""
+    ${VersionCompare} $0 ${NPCAP_VERSION} $1
+    ; If our version is not newer than the installed version, don't offer to install Npcap.
+    ${If} $1 != 2
+      SectionGetFlags ${SecNpcap} $2
+      IntOp $2 $2 & ${SECTION_OFF}
+      SectionSetFlags ${SecNpcap} $2
+    ${EndIf}
+  ${EndIf}
+
   ;Disable section checkboxes based on options. For example /ZENMAP=NO to avoid
   ;installing Zenmap.
   ${GetParameters} $0
@@ -440,6 +457,7 @@ FunctionEnd
   LangString DESC_SecCore ${LANG_ENGLISH} "Installs Nmap executable, NSE scripts and Visual C++ ${VCREDISTYEAR} runtime components"
   LangString DESC_SecRegisterPath ${LANG_ENGLISH} "Registers Nmap path to System path so you can execute it from any directory"
   LangString DESC_SecNpcap ${LANG_ENGLISH} "Installs Npcap ${NPCAP_VERSION} (required for most Nmap scans unless it is already installed)"
+  LangString DESC_SecNewNpcap ${LANG_ENGLISH} "Opens npcap.com in your web browser so you can check for a newer version of Npcap."
   LangString DESC_SecPerfRegistryMods ${LANG_ENGLISH} "Modifies Windows registry values to improve TCP connect scan performance.  Recommended."
 !ifndef NMAP_OEM
   LangString DESC_SecZenmap ${LANG_ENGLISH} "Installs Zenmap, the official Nmap graphical user interface.  Recommended."
@@ -452,6 +470,7 @@ FunctionEnd
   !insertmacro MUI_FUNCTION_DESCRIPTION_BEGIN
     !insertmacro MUI_DESCRIPTION_TEXT ${SecCore} $(DESC_SecCore)
     !insertmacro MUI_DESCRIPTION_TEXT ${SecNpcap} $(DESC_SecNpcap)
+    !insertmacro MUI_DESCRIPTION_TEXT ${SecNewNpcap} $(DESC_SecNewNpcap)
     !insertmacro MUI_DESCRIPTION_TEXT ${SecRegisterPath} $(DESC_SecRegisterPath)
     !insertmacro MUI_DESCRIPTION_TEXT ${SecPerfRegistryMods} $(DESC_SecPerfRegistryMods)
 !ifndef NMAP_OEM
@@ -519,8 +538,8 @@ Section "Uninstall"
   Delete "$INSTDIR\icon1.ico"
   Delete "$INSTDIR\libssh2.dll"
   Delete "$INSTDIR\zlibwapi.dll"
-  Delete "$INSTDIR\libcrypto-1_1.dll"
-  Delete "$INSTDIR\libssl-1_1.dll"
+  Delete "$INSTDIR\libcrypto-*dll"
+  Delete "$INSTDIR\libssl-*dll"
   Delete "$INSTDIR\npcap-*.exe"
   Delete "$INSTDIR\zenmap.exe"
   Delete "$INSTDIR\ndiff.exe"
@@ -546,7 +565,7 @@ Section "Uninstall"
   SetDetailsPrint textonly
   DetailPrint "Deleting Registry Keys..."
   SetDetailsPrint listonly
-  DeleteRegKey /ifempty HKCU "Software\${NMAP_NAME}"
+  DeleteRegKey HKCU "Software\${NMAP_NAME}"
   DeleteRegKey HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\${NMAP_NAME}"
   SetDetailsPrint textonly
   DetailPrint "Unregistering Nmap Path..."

@@ -1,4 +1,4 @@
-MAKENSIS=C:/Program Files (x86)/NSIS/makensis.exe
+MAKENSIS=C:/Program Files (x86)/NSIS3-strlen/makensis.exe
 SIGNTOOL := $(shell reg query "HKEY_LOCAL_MACHINE\\SOFTWARE\\Wow6432Node\\Microsoft\\Microsoft SDKs\\Windows\\v10.0" /v "InstallationFolder" | egrep InstallationFolder | cut -d ' ' -f13- | sed 's%\\%/%g' | tr -d '\r\n' | sed 's%$$%bin/x86/signtool.exe%')
 NMAPDIR=..
 NMAPDIR_WIN=$(shell echo '$(NMAPDIR)' | sed 's|/cygdrive/\(.\)|\1:|;s|/|\\|g')
@@ -29,7 +29,7 @@ bundle-nmap: bundle-zip bundle-nsis
 build-nmap${OEM_SUFFIX}: nmap.sln
 	cmd /c Build.bat Build "$(VCCONFIG)${OEM_SUFFIX}"
 
-stage-common: $(NMAPDIR)/CHANGELOG $(NMAPDIR)/LICENSE $(NMAPDIR)/nmap-mac-prefixes $(NMAPDIR)/nmap-os-db $(NMAPDIR)/nmap-payloads $(NMAPDIR)/nmap-protocols $(NMAPDIR)/nmap-rpc $(NMAPDIR)/nmap-service-probes $(NMAPDIR)/nmap-services $(NMAPDIR)/docs/nmap.xsl $(NMAPDIR)/nse_main.lua $(NMAPDIR)/mswin32/nmap_performance.reg $(NMAPDIR)/README-WIN32 $(NMAPDIR)/docs/3rd-party-licenses.txt icon1.ico LICENSE.formatted VC_redist.x86.exe
+stage-common: $(NMAPDIR)/CHANGELOG $(NMAPDIR)/LICENSE $(NMAPDIR)/nmap-mac-prefixes $(NMAPDIR)/nmap-os-db $(NMAPDIR)/nmap-payloads $(NMAPDIR)/nmap-protocols $(NMAPDIR)/nmap-rpc $(NMAPDIR)/nmap-service-probes $(NMAPDIR)/nmap-services $(NMAPDIR)/docs/nmap.xsl $(NMAPDIR)/nse_main.lua $(NMAPDIR)/mswin32/nmap_performance.reg $(NMAPDIR)/README-WIN32 $(NMAPDIR)/docs/3rd-party-licenses.txt icon1.ico LICENSE.formatted vc_redist.x86.exe
 	mkdir -p nmap-$(NMAP_VERSION)
 	cp $^ nmap-$(NMAP_VERSION)/
 # Use "cmd /c copy" rather than "cp" to preserve Windows ACLs. Using
@@ -48,7 +48,7 @@ stage-common: $(NMAPDIR)/CHANGELOG $(NMAPDIR)/LICENSE $(NMAPDIR)/nmap-mac-prefix
 	done
 	cp -r $(NMAPDIR)/docs/licenses nmap-$(NMAP_VERSION)/
 	rm -rf nmap-$(NMAP_VERSION)/licenses/.svn
-	cp VC_redist.x86.exe nmap-$(NMAP_VERSION)
+	cp vc_redist.x86.exe nmap-$(NMAP_VERSION)
 	cp $(NMAPDIR)/ncat/$(VCCONFIG)/ncat.exe nmap-$(NMAP_VERSION)
 	cp $(NMAPDIR)/ncat/$(VCCONFIG)/ca-bundle.crt nmap-$(NMAP_VERSION)
 	cp $(NMAPDIR)/nping/$(VCCONFIG)/nping.exe nmap-$(NMAP_VERSION)
@@ -73,7 +73,7 @@ stage-nmap-main: build-nmap${OEM_SUFFIX}
 	mkdir -p nmap-$(NMAP_VERSION)${OEM_SUFFIX}
 	cp $(VCCONFIG)${OEM_SUFFIX}/nmap.exe nmap-$(NMAP_VERSION)${OEM_SUFFIX}/
 
-sign-files: nmap-$(NMAP_VERSION)-oem/nmap.exe nmap-$(NMAP_VERSION)/nmap.exe nmap-$(NMAP_VERSION)/ncat.exe nmap-$(NMAP_VERSION)/nping.exe nmap-$(NMAP_VERSION)/ndiff.exe nmap-$(NMAP_VERSION)/zenmap.exe nmap-$(NMAP_VERSION)/libssh2.dll nmap-$(NMAP_VERSION)/libcrypto-1_1.dll nmap-$(NMAP_VERSION)/libssl-1_1.dll nmap-$(NMAP_VERSION)/zlibwapi.dll
+sign-files: nmap-$(NMAP_VERSION)-oem/nmap.exe nmap-$(NMAP_VERSION)/nmap.exe nmap-$(NMAP_VERSION)/ncat.exe nmap-$(NMAP_VERSION)/nping.exe nmap-$(NMAP_VERSION)/ndiff.exe nmap-$(NMAP_VERSION)/zenmap.exe nmap-$(NMAP_VERSION)/libssh2.dll nmap-$(NMAP_VERSION)/libcrypto-3.dll nmap-$(NMAP_VERSION)/libssl-3.dll nmap-$(NMAP_VERSION)/zlibwapi.dll
 	# TODO: evaluate whether we should also sign the Python stuff for Zenmap, Ndiff
 	"$(SIGNTOOL)" $(SIGNTOOL_ARGS) $^
 	touch sign-files

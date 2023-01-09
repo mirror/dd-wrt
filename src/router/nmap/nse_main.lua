@@ -523,7 +523,15 @@ do
       self.action_started = true
       return self:resume(timeouts);
     elseif not ok then
-      if debugging() > 0 then
+      -- Extend this to create new types of errors with custom handling.
+      -- nmap.new_try does equivalent of: error({errtype="nmap.new_try", message="TIMEOUT"})
+      if type(r1) == "table" and r1.errtype == "nmap.new_try" then
+        -- nmap.new_try "exception" is closing the script
+        if debugging() > 0 then
+          self:d("Finished %THREAD_AGAINST. Reason: %s\n", r1.message);
+        end
+        r1 = r1.message
+      elseif debugging() > 0 then
         self:d("%THREAD_AGAINST threw an error!\n%s\n", traceback(self.co, tostring(r1)));
       else
         self:set_output("ERROR: Script execution failed (use -d to debug)");
@@ -541,7 +549,10 @@ do
     elseif status == "dead" then
       if self.action_started then
         self:set_output(r1, r2);
-        self:d("Finished %THREAD_AGAINST.");
+        -- -d1 = report finished scripts. -d2 = report finished threads
+        if not self.worker or debugging() > 1 then
+          self:d("Finished %THREAD_AGAINST.");
+        end
       end
       self:close(timeouts);
     end
@@ -1041,15 +1052,15 @@ local function run (threads_iter, hosts)
       end
     end
 
+    local orphans = true
     -- Checked for timed-out scripts and hosts.
     for co, thread in pairs(waiting) do
       if thread:timed_out() then
         waiting[co], all[co], num_threads = nil, nil, num_threads-1;
-        thread:d("%THREAD %stimed out", thread.host
-            and format("%s%s ", thread.host.ip,
-                    thread.port and ":"..thread.port.number or "")
-            or "");
+        thread:d("%THREAD_AGAINST timed out")
         thread:close(timeouts, "timed out");
+      elseif not thread.worker then
+        orphans = false
       end
     end
 
@@ -1059,6 +1070,9 @@ local function run (threads_iter, hosts)
 
       if thread:resume(timeouts) then
         waiting[co] = thread;
+        if not thread.worker then
+          orphans = false
+        end
       else
         all[co], num_threads = nil, num_threads-1;
       end
@@ -1069,9 +1083,17 @@ local function run (threads_iter, hosts)
     -- Move pending threads back to running.
     for co, thread in pairs(pending) do
       pending[co], running[co] = nil, thread;
+      if not thread.worker then
+        orphans = false
+      end
     end
 
     collectgarbage "step";
+    -- If we didn't see at least one non-worker thread, then any remaining are orphaned.
+    if num_threads > 0 and orphans then
+      print_debug(1, "%d orphans left!", total)
+      break
+    end
   end
 
   progress "endTask";
