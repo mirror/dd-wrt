@@ -1,12 +1,12 @@
 <!--
     nmap.dtd
     This is the DTD for Nmap's XML output (-oX) format.
-    $Id: nmap.dtd 38215 2021-05-07 22:08:44Z dmiller $
+    $Id: nmap.dtd 38396 2022-06-28 17:40:30Z dmiller $
 
     Originally written by:
     William McVey <wam@cisco.com> <wam+nmap@wamber.net>
 
-    Now maintained by Fyodor <fyodor@insecure.org> as part of Nmap.     
+    Now maintained by Fyodor <fyodor@nmap.org> as part of Nmap.     
 
     To validate using this file, simply add a DOCTYPE line similar to:
     <!DOCTYPE nmaprun SYSTEM "nmap.dtd">
@@ -21,7 +21,7 @@
     specify "one each of this list of elements, in any order".  If there
     is a construct similar to SGML's '&' operator, please let me know.
 
-    Portions Copyright (c) 2001-2008 Insecure.Com LLC
+    Portions Copyright (c) 2001-2022 Nmap Software LLC
     Portions Copyright (c) 2001 by Cisco systems, Inc.
  
     Permission to use, copy, modify, and distribute modified and
@@ -124,8 +124,8 @@
 			task		CDATA		#REQUIRED
 			time		%attr_numeric;	#REQUIRED
 			percent		%attr_percent;	#REQUIRED
-			remaining	%attr_numeric;	#REQUIRED
-			etc		%attr_numeric;	#REQUIRED
+			remaining	%attr_numeric;	#IMPLIED
+			etc		%attr_numeric;	#IMPLIED
 >
 
 <!-- this element is written in timing.c:beginOrEndTask() -->

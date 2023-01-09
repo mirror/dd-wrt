@@ -9557,6 +9557,14 @@ table.insert(fingerprints, {
         method = 'GET'
       },
       {
+        path = '/api/',
+        method = 'GET'
+      },
+      {
+        path = '/api-docs/',
+        method = 'GET'
+      },
+      {
         path = '/app/',
         method = 'GET'
       },
@@ -10430,6 +10438,10 @@ table.insert(fingerprints, {
       },
       {
         path = '/enviamail/',
+        method = 'GET'
+      },
+      {
+        path = '/error.html',
         method = 'GET'
       },
       {

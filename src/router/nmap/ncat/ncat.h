@@ -2,7 +2,7 @@
  * ncat.h                                                                  *
  ***********************IMPORTANT NMAP LICENSE TERMS************************
  *                                                                         *
- * The Nmap Security Scanner is (C) 1996-2020 Insecure.Com LLC ("The Nmap  *
+ * The Nmap Security Scanner is (C) 1996-2022 Nmap Software LLC ("The Nmap *
  * Project"). Nmap is also a registered trademark of the Nmap Project.     *
  *                                                                         *
  * This program is distributed under the terms of the Nmap Public Source   *
@@ -11,9 +11,9 @@
  * file distributed with that version of Nmap or source code control       *
  * revision. More Nmap copyright/legal information is available from       *
  * https://nmap.org/book/man-legal.html, and further information on the    *
- * NPSL license itself can be found at https://nmap.org/npsl. This header  *
- * summarizes some key points from the Nmap license, but is no substitute  *
- * for the actual license text.                                            *
+ * NPSL license itself can be found at https://nmap.org/npsl/ . This       *
+ * header summarizes some key points from the Nmap license, but is no      *
+ * substitute for the actual license text.                                 *
  *                                                                         *
  * Nmap is generally free for end users to download and use themselves,    *
  * including commercial use. It is available from https://nmap.org.        *
@@ -21,14 +21,14 @@
  * The Nmap license generally prohibits companies from using and           *
  * redistributing Nmap in commercial products, but we sell a special Nmap  *
  * OEM Edition with a more permissive license and special features for     *
- * this purpose. See https://nmap.org/oem                                  *
+ * this purpose. See https://nmap.org/oem/                                 *
  *                                                                         *
  * If you have received a written Nmap license agreement or contract       *
  * stating terms other than these (such as an Nmap OEM license), you may   *
  * choose to use and redistribute Nmap under those terms instead.          *
  *                                                                         *
  * The official Nmap Windows builds include the Npcap software             *
- * (https://npcap.org) for packet capture and transmission. It is under    *
+ * (https://npcap.com) for packet capture and transmission. It is under    *
  * separate license terms which forbid redistribution without special      *
  * permission. So the official Nmap Windows builds may not be              *
  * redistributed without special permission (such as an Nmap OEM           *
@@ -53,11 +53,11 @@
  * useful, but WITHOUT ANY WARRANTY; without even the implied warranty of  *
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. Warranties,        *
  * indemnification and commercial support are all available through the    *
- * Npcap OEM program--see https://nmap.org/oem.                            *
+ * Npcap OEM program--see https://nmap.org/oem/                            *
  *                                                                         *
  ***************************************************************************/
 
-/* $Id: ncat.h 38272 2021-08-06 18:05:30Z dmiller $ */
+/* $Id: ncat.h 38442 2022-08-31 22:53:46Z dmiller $ */
 
 #ifndef NCAT_H_
 #define NCAT_H_
@@ -65,10 +65,6 @@
 #include "ncat_config.h"
 
 #include <nbase.h>
-
-#ifdef HAVE_OPENSSL
-#include <openssl/ssl.h>
-#endif
 
 #include "nsock.h"
 #include "util.h"
@@ -84,7 +80,7 @@
 /* Ncat information for output, etc. */
 #define NCAT_NAME "Ncat"
 #define NCAT_URL "https://nmap.org/ncat"
-#define NCAT_VERSION "7.92"
+#define NCAT_VERSION "7.93"
 
 #ifndef __GNUC__
 #ifndef __attribute__

@@ -1,4 +1,4 @@
-Nmap Public Source License Version 0.93
+Nmap Public Source License Version 0.94
 For more information on this license, see https://nmap.org/npsl/
 
 0. Preamble
@@ -81,7 +81,7 @@ and can not modify its governing terms in any way.
 
 * "License" means this document, including Exhibits.
 
-* "Licensor" means Insecure.Com LLC and its successors and assigns.
+* "Licensor" means Nmap Software LLC and its successors and assigns.
 
 * "Main License Body" means all of the terms of this document,
   excluding Exhibits.
@@ -244,7 +244,7 @@ Goods is expressly excluded.
 10. Npcap and the Official Nmap Windows Builds
 
 The official Windows Nmap builds includes the Npcap driver and library
-(https://npcap.org) for packet capture and transmission on
+(https://npcap.com) for packet capture and transmission on
 Windows. That software is under its own separate license terms rather
 than this license. Therefore anyone wishing to use or redistribute
 both pieces of software must comply with both licenses. Since Npcap

@@ -2,7 +2,7 @@
  * ncat_ssl.c -- SSL support functions.                                    *
  ***********************IMPORTANT NMAP LICENSE TERMS************************
  *                                                                         *
- * The Nmap Security Scanner is (C) 1996-2020 Insecure.Com LLC ("The Nmap  *
+ * The Nmap Security Scanner is (C) 1996-2022 Nmap Software LLC ("The Nmap *
  * Project"). Nmap is also a registered trademark of the Nmap Project.     *
  *                                                                         *
  * This program is distributed under the terms of the Nmap Public Source   *
@@ -11,9 +11,9 @@
  * file distributed with that version of Nmap or source code control       *
  * revision. More Nmap copyright/legal information is available from       *
  * https://nmap.org/book/man-legal.html, and further information on the    *
- * NPSL license itself can be found at https://nmap.org/npsl. This header  *
- * summarizes some key points from the Nmap license, but is no substitute  *
- * for the actual license text.                                            *
+ * NPSL license itself can be found at https://nmap.org/npsl/ . This       *
+ * header summarizes some key points from the Nmap license, but is no      *
+ * substitute for the actual license text.                                 *
  *                                                                         *
  * Nmap is generally free for end users to download and use themselves,    *
  * including commercial use. It is available from https://nmap.org.        *
@@ -21,14 +21,14 @@
  * The Nmap license generally prohibits companies from using and           *
  * redistributing Nmap in commercial products, but we sell a special Nmap  *
  * OEM Edition with a more permissive license and special features for     *
- * this purpose. See https://nmap.org/oem                                  *
+ * this purpose. See https://nmap.org/oem/                                 *
  *                                                                         *
  * If you have received a written Nmap license agreement or contract       *
  * stating terms other than these (such as an Nmap OEM license), you may   *
  * choose to use and redistribute Nmap under those terms instead.          *
  *                                                                         *
  * The official Nmap Windows builds include the Npcap software             *
- * (https://npcap.org) for packet capture and transmission. It is under    *
+ * (https://npcap.com) for packet capture and transmission. It is under    *
  * separate license terms which forbid redistribution without special      *
  * permission. So the official Nmap Windows builds may not be              *
  * redistributed without special permission (such as an Nmap OEM           *
@@ -53,11 +53,11 @@
  * useful, but WITHOUT ANY WARRANTY; without even the implied warranty of  *
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. Warranties,        *
  * indemnification and commercial support are all available through the    *
- * Npcap OEM program--see https://nmap.org/oem.                            *
+ * Npcap OEM program--see https://nmap.org/oem/                            *
  *                                                                         *
  ***************************************************************************/
 
-/* $Id: ncat_ssl.c 38166 2020-12-24 00:35:38Z nnposter $ */
+/* $Id: ncat_ssl.c 38416 2022-08-29 17:09:47Z dmiller $ */
 
 #include "nbase.h"
 #include "ncat_config.h"
@@ -67,7 +67,6 @@
 
 #include <stdio.h>
 #include <openssl/ssl.h>
-#include <openssl/bn.h>
 #include <openssl/err.h>
 #include <openssl/rsa.h>
 #include <openssl/rand.h>
@@ -79,6 +78,14 @@
 #define FUNC_ASN1_STRING_data ASN1_STRING_get0_data
 #else
 #define FUNC_ASN1_STRING_data ASN1_STRING_data
+#endif
+
+#if OPENSSL_API_LEVEL >= 30000
+#include <openssl/provider.h>
+/* Deprecated in OpenSSL 3.0 */
+#define SSL_get_peer_certificate SSL_get1_peer_certificate
+#else
+#include <openssl/bn.h>
 #endif
 
 /* Required for windows compilation to Eliminate APPLINK errors.
@@ -110,6 +117,15 @@ SSL_CTX *setup_ssl_listen(void)
     OpenSSL_add_all_algorithms();
     ERR_load_crypto_strings();
     SSL_load_error_strings();
+#elif OPENSSL_API_LEVEL >= 30000
+  if (NULL == OSSL_PROVIDER_load(NULL, "legacy"))
+  {
+    loguser("OpenSSL legacy provider failed to load.\n");
+  }
+  if (NULL == OSSL_PROVIDER_load(NULL, "default"))
+  {
+    loguser("OpenSSL default provider failed to load.\n");
+  }
 #endif
 
     /* RAND_status initializes the random number generator through a variety of
@@ -187,27 +203,35 @@ SSL *new_ssl(int fd)
    may be a wildcard pattern. A wildcard pattern may contain only one '*', it
    must be the entire leftmost component, and there must be at least two
    components following it. len is the length of pattern; pattern may contain
-   null bytes so that len != strlen(pattern). */
-static int wildcard_match(const char *pattern, const char *hostname, size_t len)
+   null bytes so that len != strlen(pattern); pattern may also not be null terminated.
+   hostname *must* be null-terminated. */
+static int wildcard_match(const char *pattern, const char *hostname, int len)
 {
-    if (pattern[0] == '*' && pattern[1] == '.') {
+    const char *p = pattern;
+    const char *h = hostname;
+    int remaining = len;
+    if (len > 1 && pattern[0] == '*' && pattern[1] == '.') {
         /* A wildcard pattern. */
-        const char *p, *h, *dot;
+        const char *dot;
 
         /* Skip the wildcard component. */
-        p = pattern + 2;
+        p += 2;
+        remaining -= 2;
 
         /* Ensure there are no more wildcard characters. */
-        if (memchr(p, '*', len - 2) != NULL)
+        if (memchr(p, '*', remaining) != NULL)
             return 0;
 
         /* Ensure there's at least one more dot, not counting a dot at the
            end. */
-        dot = strchr(p, '.');
-        if (dot == NULL || *(dot + 1) == '\0') {
+        dot = (const char *) memchr(p, '.', remaining);
+        if (dot == NULL /* not found */
+          || dot - p == remaining /* dot in last position */
+          || *(dot + 1) == '\0') /* dot immediately before null terminator */
+          {
             if (o.debug > 1) {
-                logdebug("Wildcard name \"%s\" doesn't have at least two"
-                    " components after the wildcard; rejecting.\n", pattern);
+                logdebug("Wildcard name \"%.*s\" doesn't have at least two"
+                    " components after the wildcard; rejecting.\n", len, pattern);
             }
             return 0;
         }
@@ -218,14 +242,12 @@ static int wildcard_match(const char *pattern, const char *hostname, size_t len)
             return 0;
         h++;
 
-        /* Compare what remains of the pattern and hostname. */
-        return len == strlen(h) + (p - pattern) && strcmp(p, h) == 0;
-    } else {
-        /* Normal string comparison. Check the name length because I'm concerned
-           about someone somehow embedding a '\0' in the subject and matching
-           against a shorter name. */
-        return len == strlen(hostname) && strcmp(pattern, hostname) == 0;
     }
+    /* Compare what remains of the pattern and hostname. */
+    /* Normal string comparison. Check the name length because I'm concerned
+       about someone somehow embedding a '\0' in the subject and matching
+       against a shorter name. */
+    return remaining == strlen(h) && strncmp(p, h, remaining) == 0;
 }
 
 /* Match a hostname against the contents of a dNSName field of the
@@ -300,11 +322,13 @@ static int cert_match_dnsname(X509 *cert, const char *hostname,
 
         gen_name = sk_GENERAL_NAME_value(gen_names, i);
         if (gen_name->type == GEN_DNS) {
+            const char *dnsname = (const char *) FUNC_ASN1_STRING_data(gen_name->d.dNSName);
+            int dnslen = ASN1_STRING_length(gen_name->d.dNSName);
             if (o.debug > 1)
-                logdebug("Checking certificate DNS name \"%s\" against \"%s\".\n", FUNC_ASN1_STRING_data(gen_name->d.dNSName), hostname);
+                logdebug("Checking certificate DNS name \"%.*s\" against \"%s\".\n", dnslen, dnsname, hostname);
             if (num_checked != NULL)
                 (*num_checked)++;
-            if (wildcard_match((char *) FUNC_ASN1_STRING_data(gen_name->d.dNSName), hostname, ASN1_STRING_length(gen_name->d.dNSName)))
+            if (wildcard_match(dnsname, hostname, dnslen))
                 return 1;
         }
     }
@@ -447,14 +471,16 @@ int ssl_post_connect_check(SSL *ssl, const char *hostname)
    "Making Certificates"; and apps/req.c in the OpenSSL source. */
 static int ssl_gen_cert(X509 **cert, EVP_PKEY **key)
 {
-    RSA *rsa = NULL;
     X509_NAME *subj;
     X509_EXTENSION *ext;
     X509V3_CTX ctx;
-    BIGNUM *bne = NULL;
     const char *commonName = "localhost";
     char dNSName[128];
-    int rc, ret=0;
+    int rc;
+#if OPENSSL_API_LEVEL < 30000
+    int ret = 0;
+    RSA *rsa = NULL;
+    BIGNUM *bne = NULL;
 
     *cert = NULL;
     *key = NULL;
@@ -483,6 +509,12 @@ static int ssl_gen_cert(X509 **cert, EVP_PKEY **key)
         RSA_free(rsa);
         goto err;
     }
+#else
+    *cert = NULL;
+    *key = EVP_RSA_gen(DEFAULT_KEY_BITS);
+    if (*key == NULL)
+        goto err;
+#endif
 
     /* Generate a certificate. */
     *cert = X509_new();

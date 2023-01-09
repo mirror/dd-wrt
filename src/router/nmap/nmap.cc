@@ -5,7 +5,7 @@
  *                                                                         *
  ***********************IMPORTANT NMAP LICENSE TERMS************************
  *                                                                         *
- * The Nmap Security Scanner is (C) 1996-2020 Insecure.Com LLC ("The Nmap  *
+ * The Nmap Security Scanner is (C) 1996-2022 Nmap Software LLC ("The Nmap *
  * Project"). Nmap is also a registered trademark of the Nmap Project.     *
  *                                                                         *
  * This program is distributed under the terms of the Nmap Public Source   *
@@ -14,9 +14,9 @@
  * file distributed with that version of Nmap or source code control       *
  * revision. More Nmap copyright/legal information is available from       *
  * https://nmap.org/book/man-legal.html, and further information on the    *
- * NPSL license itself can be found at https://nmap.org/npsl. This header  *
- * summarizes some key points from the Nmap license, but is no substitute  *
- * for the actual license text.                                            *
+ * NPSL license itself can be found at https://nmap.org/npsl/ . This       *
+ * header summarizes some key points from the Nmap license, but is no      *
+ * substitute for the actual license text.                                 *
  *                                                                         *
  * Nmap is generally free for end users to download and use themselves,    *
  * including commercial use. It is available from https://nmap.org.        *
@@ -24,14 +24,14 @@
  * The Nmap license generally prohibits companies from using and           *
  * redistributing Nmap in commercial products, but we sell a special Nmap  *
  * OEM Edition with a more permissive license and special features for     *
- * this purpose. See https://nmap.org/oem                                  *
+ * this purpose. See https://nmap.org/oem/                                 *
  *                                                                         *
  * If you have received a written Nmap license agreement or contract       *
  * stating terms other than these (such as an Nmap OEM license), you may   *
  * choose to use and redistribute Nmap under those terms instead.          *
  *                                                                         *
  * The official Nmap Windows builds include the Npcap software             *
- * (https://npcap.org) for packet capture and transmission. It is under    *
+ * (https://npcap.com) for packet capture and transmission. It is under    *
  * separate license terms which forbid redistribution without special      *
  * permission. So the official Nmap Windows builds may not be              *
  * redistributed without special permission (such as an Nmap OEM           *
@@ -56,11 +56,11 @@
  * useful, but WITHOUT ANY WARRANTY; without even the implied warranty of  *
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. Warranties,        *
  * indemnification and commercial support are all available through the    *
- * Npcap OEM program--see https://nmap.org/oem.                            *
+ * Npcap OEM program--see https://nmap.org/oem/                            *
  *                                                                         *
  ***************************************************************************/
 
-/* $Id: nmap.cc 38251 2021-07-28 20:52:01Z dmiller $ */
+/* $Id: nmap.cc 38402 2022-07-05 16:20:16Z dmiller $ */
 
 #ifdef WIN32
 #include "winfix.h"
@@ -90,6 +90,7 @@
 #include "utils.h"
 #include "xml.h"
 #include "scan_lists.h"
+#include "payload.h"
 
 #ifndef NOLUA
 #include "nse_main.h"
@@ -227,7 +228,7 @@ static void printusage() {
          "    Ex: -p22; -p1-65535; -p U:53,111,137,T:21-25,80,139,8080,S:9\n"
          "  --exclude-ports <port ranges>: Exclude the specified ports from scanning\n"
          "  -F: Fast mode - Scan fewer ports than the default scan\n"
-         "  -r: Scan ports consecutively - don't randomize\n"
+         "  -r: Scan ports sequentially - don't randomize\n"
          "  --top-ports <number>: Scan <number> most common ports\n"
          "  --port-ratio <ratio>: Scan ports more common than <ratio>\n"
          "SERVICE/VERSION DETECTION:\n"
@@ -622,6 +623,25 @@ void parse_options(int argc, char **argv) {
     {"resume", required_argument, 0, 0},
     {0, 0, 0, 0}
   };
+
+  /* Users have trouble with editors munging ascii hyphens into any of various
+   * dashes. We'll check that none of these is in the command-line first: */
+  for (arg=1; arg < argc; arg++) {
+    // Just look at the first character of each.
+    switch(argv[arg][0]) {
+      case '\xe2': // UTF-8, have to look farther
+        // U+2010 through U+2015 are the most likely
+        if (argv[arg][1] != '\x80'
+            || argv[arg][2] < '\x90'
+            || argv[arg][2] > '\x95')
+          break;
+      case '\x96': // Windows 12** en dash
+      case '\x97': // Windows 12** em dash
+        fatal("Unparseable option (dash, not '-') in argument %d", arg);
+      default:
+        break;
+    }
+  }
 
   /* OK, lets parse these args! */
   optind = 1; /* so it can be called multiple times */
@@ -1766,9 +1786,12 @@ void  apply_delayed_options() {
 // Free some global memory allocations.
 // This is used for detecting memory leaks.
 void nmap_free_mem() {
+  NewTargets::free_new_targets();
   PortList::freePortMap();
   cp_free();
   free_services();
+  freeinterfaces();
+  free_payloads();
   AllProbes::service_scan_free();
   traceroute_hop_cache_clear();
   nsock_set_default_engine(NULL);
@@ -2291,7 +2314,6 @@ int nmap_main(int argc, char *argv[]) {
 #endif
 
   addrset_free(exclude_group);
-  NewTargets::free_new_targets();
 
   if (o.inputfd != NULL)
     fclose(o.inputfd);

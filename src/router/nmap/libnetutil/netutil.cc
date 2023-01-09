@@ -4,7 +4,7 @@
  *                                                                         *
  ***********************IMPORTANT NMAP LICENSE TERMS************************
  *                                                                         *
- * The Nmap Security Scanner is (C) 1996-2020 Insecure.Com LLC ("The Nmap  *
+ * The Nmap Security Scanner is (C) 1996-2022 Nmap Software LLC ("The Nmap *
  * Project"). Nmap is also a registered trademark of the Nmap Project.     *
  *                                                                         *
  * This program is distributed under the terms of the Nmap Public Source   *
@@ -13,9 +13,9 @@
  * file distributed with that version of Nmap or source code control       *
  * revision. More Nmap copyright/legal information is available from       *
  * https://nmap.org/book/man-legal.html, and further information on the    *
- * NPSL license itself can be found at https://nmap.org/npsl. This header  *
- * summarizes some key points from the Nmap license, but is no substitute  *
- * for the actual license text.                                            *
+ * NPSL license itself can be found at https://nmap.org/npsl/ . This       *
+ * header summarizes some key points from the Nmap license, but is no      *
+ * substitute for the actual license text.                                 *
  *                                                                         *
  * Nmap is generally free for end users to download and use themselves,    *
  * including commercial use. It is available from https://nmap.org.        *
@@ -23,14 +23,14 @@
  * The Nmap license generally prohibits companies from using and           *
  * redistributing Nmap in commercial products, but we sell a special Nmap  *
  * OEM Edition with a more permissive license and special features for     *
- * this purpose. See https://nmap.org/oem                                  *
+ * this purpose. See https://nmap.org/oem/                                 *
  *                                                                         *
  * If you have received a written Nmap license agreement or contract       *
  * stating terms other than these (such as an Nmap OEM license), you may   *
  * choose to use and redistribute Nmap under those terms instead.          *
  *                                                                         *
  * The official Nmap Windows builds include the Npcap software             *
- * (https://npcap.org) for packet capture and transmission. It is under    *
+ * (https://npcap.com) for packet capture and transmission. It is under    *
  * separate license terms which forbid redistribution without special      *
  * permission. So the official Nmap Windows builds may not be              *
  * redistributed without special permission (such as an Nmap OEM           *
@@ -55,7 +55,7 @@
  * useful, but WITHOUT ANY WARRANTY; without even the implied warranty of  *
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. Warranties,        *
  * indemnification and commercial support are all available through the    *
- * Npcap OEM program--see https://nmap.org/oem.                            *
+ * Npcap OEM program--see https://nmap.org/oem/                            *
  *                                                                         *
  ***************************************************************************/
 
@@ -1391,6 +1391,7 @@ static struct interface_info *getinterfaces_dnet(int *howmany, char *errstr, siz
   return dcrn.ifaces;
 }
 
+static struct interface_info *mydevs = NULL;
 /* Returns an allocated array of struct interface_info representing the
    available interfaces. The number of interfaces is returned in *howmany. This
    function just does caching of results; the real work is done in
@@ -1398,13 +1399,10 @@ static struct interface_info *getinterfaces_dnet(int *howmany, char *errstr, siz
    On error, NULL is returned, howmany is set to -1 and the supplied
    error buffer "errstr", if not NULL, will contain an error message. */
 struct interface_info *getinterfaces(int *howmany, char *errstr, size_t errstrlen) {
-  static int initialized = 0;
-  static struct interface_info *mydevs;
   static int numifaces = 0;
 
-  if (!initialized) {
+  if (mydevs == NULL) {
     mydevs = getinterfaces_dnet(&numifaces, errstr, errstrlen);
-    initialized = 1;
   }
 
   /* These will propagate any error produced in getinterfaces_xxxx() to
@@ -1414,6 +1412,10 @@ struct interface_info *getinterfaces(int *howmany, char *errstr, size_t errstrle
   return mydevs;
 }
 
+void freeinterfaces(void) {
+  free(mydevs);
+  mydevs = NULL;
+}
 
 /* The 'dev' passed in must be at least 32 bytes long. Returns 0 on success. */
 int ipaddr2devname(char *dev, const struct sockaddr_storage *addr) {
@@ -1437,17 +1439,17 @@ int ipaddr2devname(char *dev, const struct sockaddr_storage *addr) {
 }
 
 int devname2ipaddr(char *dev, struct sockaddr_storage *addr) {
-  struct interface_info *mydevs;
-  int numdevs;
+  struct interface_info *ifaces;
+  int numifaces;
   int i;
-  mydevs = getinterfaces(&numdevs, NULL, 0);
+  ifaces = getinterfaces(&numifaces, NULL, 0);
 
-  if (!mydevs)
+  if (ifaces == NULL)
     return -1;
 
-  for (i = 0; i < numdevs; i++) {
-    if (!strcmp(dev, mydevs[i].devfullname)) {
-      *addr = mydevs[i].addr;
+  for (i = 0; i < numifaces; i++) {
+    if (!strcmp(dev, ifaces[i].devfullname)) {
+      *addr = ifaces[i].addr;
       return 0;
     }
   }

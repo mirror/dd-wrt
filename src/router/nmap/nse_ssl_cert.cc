@@ -4,7 +4,7 @@
  *                                                                         *
  ***********************IMPORTANT NMAP LICENSE TERMS************************
  *                                                                         *
- * The Nmap Security Scanner is (C) 1996-2020 Insecure.Com LLC ("The Nmap  *
+ * The Nmap Security Scanner is (C) 1996-2022 Nmap Software LLC ("The Nmap *
  * Project"). Nmap is also a registered trademark of the Nmap Project.     *
  *                                                                         *
  * This program is distributed under the terms of the Nmap Public Source   *
@@ -13,9 +13,9 @@
  * file distributed with that version of Nmap or source code control       *
  * revision. More Nmap copyright/legal information is available from       *
  * https://nmap.org/book/man-legal.html, and further information on the    *
- * NPSL license itself can be found at https://nmap.org/npsl. This header  *
- * summarizes some key points from the Nmap license, but is no substitute  *
- * for the actual license text.                                            *
+ * NPSL license itself can be found at https://nmap.org/npsl/ . This       *
+ * header summarizes some key points from the Nmap license, but is no      *
+ * substitute for the actual license text.                                 *
  *                                                                         *
  * Nmap is generally free for end users to download and use themselves,    *
  * including commercial use. It is available from https://nmap.org.        *
@@ -23,14 +23,14 @@
  * The Nmap license generally prohibits companies from using and           *
  * redistributing Nmap in commercial products, but we sell a special Nmap  *
  * OEM Edition with a more permissive license and special features for     *
- * this purpose. See https://nmap.org/oem                                  *
+ * this purpose. See https://nmap.org/oem/                                 *
  *                                                                         *
  * If you have received a written Nmap license agreement or contract       *
  * stating terms other than these (such as an Nmap OEM license), you may   *
  * choose to use and redistribute Nmap under those terms instead.          *
  *                                                                         *
  * The official Nmap Windows builds include the Npcap software             *
- * (https://npcap.org) for packet capture and transmission. It is under    *
+ * (https://npcap.com) for packet capture and transmission. It is under    *
  * separate license terms which forbid redistribution without special      *
  * permission. So the official Nmap Windows builds may not be              *
  * redistributed without special permission (such as an Nmap OEM           *
@@ -55,7 +55,7 @@
  * useful, but WITHOUT ANY WARRANTY; without even the implied warranty of  *
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. Warranties,        *
  * indemnification and commercial support are all available through the    *
- * Npcap OEM program--see https://nmap.org/oem.                            *
+ * Npcap OEM program--see https://nmap.org/oem/                            *
  *                                                                         *
  ***************************************************************************/
 
@@ -74,7 +74,6 @@
 #include <openssl/bn.h>
 #include <openssl/bio.h>
 #include <openssl/pem.h>
-#include <openssl/rsa.h>
 #include <openssl/ssl.h>
 #include <openssl/x509.h>
 #include <openssl/x509v3.h>
@@ -89,6 +88,27 @@
 #define X509_get0_notBefore X509_get_notBefore
 #define X509_get0_notAfter X509_get_notAfter
 #endif
+
+/* OPENSSL_API_LEVEL per OpenSSL 3.0: decimal MMmmpp */
+#ifndef OPENSSL_API_LEVEL
+# if OPENSSL_API_COMPAT < 0x900000L
+#  define OPENSSL_API_LEVEL (OPENSSL_API_COMPAT)
+# else
+#  define OPENSSL_API_LEVEL \
+     (((OPENSSL_API_COMPAT >> 28) & 0xF) * 10000  \
+      + ((OPENSSL_API_COMPAT >> 20) & 0xFF) * 100 \
+      + ((OPENSSL_API_COMPAT >> 12) & 0xFF))
+# endif
+#endif
+
+#if OPENSSL_API_LEVEL >= 30000
+#include <openssl/core_names.h>
+/* Deprecated in OpenSSL 3.0 */
+#define SSL_get_peer_certificate SSL_get1_peer_certificate
+#else
+#include <openssl/rsa.h>
+#endif
+
 
 /* struct tm */
 #include <time.h>
@@ -429,7 +449,7 @@ static const char *pkey_type_to_string(int type)
     return "dsa";
   case EVP_PKEY_DH:
     return "dh";
-#ifdef HAVE_OPENSSL_EC
+#ifdef EVP_PKEY_EC
   case EVP_PKEY_EC:
     return "ec";
 #endif
@@ -439,7 +459,39 @@ static const char *pkey_type_to_string(int type)
 }
 
 int lua_push_ecdhparams(lua_State *L, EVP_PKEY *pubkey) {
-#ifdef HAVE_OPENSSL_EC
+#if OPENSSL_API_LEVEL >= 30000
+  char tmp[64] = {0};
+  size_t len = 0;
+  /* This structure (ecdhparams.curve_params) comes from tls.lua */
+  lua_createtable(L, 0, 1); /* ecdhparams */
+  lua_createtable(L, 0, 2); /* curve_params */
+  if (EVP_PKEY_get_utf8_string_param(pubkey, OSSL_PKEY_PARAM_GROUP_NAME,
+        tmp, sizeof(tmp), &len)) {
+    lua_pushlstring(L, tmp, len);
+    lua_setfield(L, -2, "curve");
+    lua_pushliteral(L, "namedcurve");
+    lua_setfield(L, -2, "ec_curve_type");
+  }
+  else if (EVP_PKEY_get_utf8_string_param(pubkey, OSSL_PKEY_PARAM_EC_FIELD_TYPE,
+        tmp, sizeof(tmp), &len)) {
+    /* According to RFC 5480 section 2.1.1, explicit curves must not be used with
+       X.509. This may change in the future, but for now it doesn't seem worth it
+       to add in code to extract the extra parameters. */
+    if (0 == strncmp(tmp, "prime-field", len)) {
+      lua_pushliteral(L, "explicit_prime");
+    }
+    else if (0 == strncmp(tmp, "characteristic-two-field", len)) {
+      lua_pushliteral(L, "explicit_char2");
+    }
+    else {
+      /* Something weird happened. */
+      lua_pushlstring(L, tmp, len);
+    }
+    lua_setfield(L, -2, "ec_curve_type");
+  }
+  lua_setfield(L, -2, "curve_params");
+  return 1;
+#elif !defined(OPENSSL_NO_EC)
   EC_KEY *ec_key = EVP_PKEY_get1_EC_KEY(pubkey);
   const EC_GROUP *group = EC_KEY_get0_group(ec_key);
   int nid;
@@ -574,7 +626,7 @@ static int parse_ssl_cert(lua_State *L, X509 *cert)
 #else
   pkey_type = EVP_PKEY_type(pubkey->type);
 #endif
-#ifdef HAVE_OPENSSL_EC
+#ifdef EVP_PKEY_EC
   if (pkey_type == EVP_PKEY_EC) {
     lua_push_ecdhparams(L, pubkey);
     lua_setfield(L, -2, "ecdhparams");
@@ -582,16 +634,25 @@ static int parse_ssl_cert(lua_State *L, X509 *cert)
   else
 #endif
   if (pkey_type == EVP_PKEY_RSA) {
+#if OPENSSL_API_LEVEL < 30000
     RSA *rsa = EVP_PKEY_get1_RSA(pubkey);
     if (rsa) {
+#endif
       /* exponent */
       bignum_data_t * data = (bignum_data_t *) lua_newuserdata( L, sizeof(bignum_data_t));
       luaL_getmetatable( L, "BIGNUM" );
       lua_setmetatable( L, -2 );
-      data->should_free = false;
 #if HAVE_OPAQUE_STRUCTS
-      const BIGNUM *n, *e;
+#if OPENSSL_API_LEVEL < 30000
+      const BIGNUM *n = NULL, *e = NULL;
+      data->should_free = false;
       RSA_get0_key(rsa, &n, &e, NULL);
+#else
+      BIGNUM *n = NULL, *e = NULL;
+      data->should_free = true;
+      EVP_PKEY_get_bn_param(pubkey, OSSL_PKEY_PARAM_RSA_E, &e);
+      EVP_PKEY_get_bn_param(pubkey, OSSL_PKEY_PARAM_RSA_N, &n);
+#endif
       data->bn = (BIGNUM*) e;
 #else
       data->bn = rsa->e;
@@ -601,15 +662,21 @@ static int parse_ssl_cert(lua_State *L, X509 *cert)
       data = (bignum_data_t *) lua_newuserdata( L, sizeof(bignum_data_t));
       luaL_getmetatable( L, "BIGNUM" );
       lua_setmetatable( L, -2 );
-      data->should_free = false;
 #if HAVE_OPAQUE_STRUCTS
+#if OPENSSL_API_LEVEL < 30000
+      data->should_free = false;
+#else
+      data->should_free = true;
+#endif
       data->bn = (BIGNUM*) n;
 #else
       data->bn = rsa->n;
 #endif
       lua_setfield(L, -2, "modulus");
+#if OPENSSL_API_LEVEL < 30000
       RSA_free(rsa);
     }
+#endif
   }
   lua_pushstring(L, pkey_type_to_string(pkey_type));
   lua_setfield(L, -2, "type");
