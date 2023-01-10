@@ -317,8 +317,8 @@ void start_ddns(void)
 	}
 	if (nvram_matchi("ddns_once", 0)) {
 		dd_logstart("ddns", eval("inadyn", "--cache-dir=/tmp/ddns", "-e", "ddns_success", "--exec-mode=compat", "-f", "/tmp/ddns/inadyn.conf", "-P", "/var/run/inadyn.pid", "-l", "notice", "-t", "30"));
-	} else {
 		nvram_seti("ddns_once", 1);
+	} else {
 		dd_logstart("ddns", eval("inadyn", "--cache-dir=/tmp/ddns", "-e", "ddns_success", "--exec-mode=compat", "-f", "/tmp/ddns/inadyn.conf", "-P", "/var/run/inadyn.pid", "-l", "notice"));
 	}
 	cprintf("done\n");
