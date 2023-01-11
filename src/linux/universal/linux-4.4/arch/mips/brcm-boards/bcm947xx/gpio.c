@@ -178,7 +178,7 @@ int gpios = 0;
 
 if (iswrt350n)
 {
-	printk(KERN_EMERG "WRT350N GPIO Init\n");
+	printk(KERN_INFO "WRT350N GPIO Init\n");
 	/* For WRT350N USB LED control */
 	si_gpioreserve(gpio_sih, 0x400, GPIO_HI_PRIORITY);
 	si_gpioouten(gpio_sih, 0x400, 0x400, GPIO_HI_PRIORITY);
@@ -208,42 +208,42 @@ if ((boardnum == 1 || boardnum == 3500)
 	    && nvram_match("boardtype", "0x04CF")
 	    && (nvram_match("boardrev", "0x1213") || nvram_match("boardrev", "02")))
 {
-		printk(KERN_EMERG "WNR3500V2 GPIO Init\n");
+		printk(KERN_INFO "WNR3500V2 GPIO Init\n");
 		gpios = 1 << 1 | 1 << 2 | 1 << 3 | 1 << 7;
 }
 
 
 if ((boardnum == 0) && nvram_match("boardtype", "0xf52e") && (nvram_match("boardrev", "0x1204")))
 {
-		printk(KERN_EMERG "Buffalo D1800H init\n");
+		printk(KERN_INFO "Buffalo D1800H init\n");
 		gpios = 0;
 		isd1800h = 1;
 		isdefault = 0;
 }
 
 if (nvram_match("productid", "RT-AC66U")) {
-		printk(KERN_EMERG "Asus-RT-AC66U init\n");
+		printk(KERN_INFO "Asus-RT-AC66U init\n");
 		gpios = 0;
 		isac66 = 1;
 		isdefault = 0;
 }
 if (nvram_match("boardtype", "0xF5B2") && nvram_match("boardrev", "0x1100") && nvram_match("pci/2/1/sb20in80and160hr5ghpo", "0"))
 {
-		printk(KERN_EMERG "Asus-RT-AC66U init\n");
+		printk(KERN_INFO "Asus-RT-AC66U init\n");
 		gpios = 0;
 		isac66 = 1;
 		isdefault = 0;
 }
 
 if (nvram_match("productid", "RT-N66U")) {
-		printk(KERN_EMERG "Asus-RT-N66U init\n");
+		printk(KERN_INFO "Asus-RT-N66U init\n");
 		gpios = 0;
 		isac66 = 1;
 		isdefault = 0;
 }
 if (nvram_match("boardtype", "0xF5B2") && nvram_match("boardrev", "0x1100") && !nvram_match("pci/2/1/sb20in80and160hr5ghpo", "0"))
 {
-		printk(KERN_EMERG "Asus-RT-N66U init\n");
+		printk(KERN_INFO "Asus-RT-N66U init\n");
 		gpios = 0;
 		isac66 = 1;
 		isdefault = 0;
@@ -253,7 +253,7 @@ if ((boardnum == 42 || boardnum == 66)
 		&& nvram_match("boardtype", "0x04EF")
 		&& (nvram_match("boardrev", "0x1304") || nvram_match("boardrev", "0x1305") || nvram_match("boardrev", "0x1307")))
 {
-		printk(KERN_EMERG "WRT320N/E2000 GPIO Init\n");
+		printk(KERN_INFO "WRT320N/E2000 GPIO Init\n");
 		gpios = 1 << 2 | 1 << 3 | 1 << 4;
 }
 
@@ -261,14 +261,14 @@ if (boardnum == 42 && ((nvram_match("boot_hw_model", "WRT160N") && nvram_match("
 		|| (nvram_match("boot_hw_model", "M10") && nvram_match("boot_hw_ver", "1.0")) 
 		|| (nvram_match("boot_hw_model", "E100") && nvram_match("boot_hw_ver", "1.0")) ) )
 {
-		printk(KERN_EMERG "WRT160Nv3/M10/E1000 GPIO Init\n");
+		printk(KERN_INFO "WRT160Nv3/M10/E1000 GPIO Init\n");
 		gpios = 1 << 1 | 1 << 2 | 1 << 4;
 }
 
 if (boardnum == 42 && ((nvram_match("boot_hw_model", "WRT310N") && nvram_match("boot_hw_ver", "2.0"))
 		|| (nvram_match("boot_hw_model", "M20") && nvram_match("boot_hw_ver", "1.0")) ) )
 {
-		printk(KERN_EMERG "WRT310Nv2/M20 GPIO Init\n");
+		printk(KERN_INFO "WRT310Nv2/M20 GPIO Init\n");
 		gpios = 1 << 1 | 1 << 2 | 1 << 4;
 }
 
@@ -276,21 +276,21 @@ if (nvram_match("boardnum", "00") && nvram_match("boardrev", "0x11")
 		&& nvram_match("boardtype", "0x048e")
 		&& (nvram_match("melco_id", "32093") || nvram_match("melco_id", "32064")))
 {
-		printk(KERN_EMERG "WHR-G125 / WHR-HP-G125 GPIO Init\n");
+		printk(KERN_INFO "WHR-G125 / WHR-HP-G125 GPIO Init\n");
 		gpios = 1 << 1 | 1 << 6 | 1 << 7;
 }
 
 if (nvram_match("boardnum", "00") && nvram_match("boardrev", "0x13")
 	    && nvram_match("boardtype", "0x467"))
 {
-		printk(KERN_EMERG "WHR-G54S / WHR-HP-G54 GPIO Init\n");
+		printk(KERN_INFO "WHR-G54S / WHR-HP-G54 GPIO Init\n");
 		gpios = 1 << 1 | 1 << 6 | 1 << 7;
 }
 
 if (nvram_match("boardtype", "0x04cf") && (nvram_match("boot_hw_model", "WRT610N")
 	|| nvram_match("boot_hw_model", "E300")))
 {
-		printk(KERN_EMERG "WRT610Nv2/E3000 GPIO Init\n");
+		printk(KERN_INFO "WRT610Nv2/E3000 GPIO Init\n");
 		gpios = 1 << 0 | 1 << 3 | 1 << 5 | 1 << 7;
 }
 
@@ -299,49 +299,49 @@ if (boardnum == 42 && nvram_match("boardrev", "0x10")
 	    	|| nvram_match("boardtype", "0x0708")
 	    	|| nvram_match("boardtype", "0x0101")))
 {
-		printk(KERN_EMERG "WRT54G/GS/GL/TM GPIO Init\n");
+		printk(KERN_INFO "WRT54G/GS/GL/TM GPIO Init\n");
 		gpios = 1 << 1 | 1 << 2 | 1 << 3 | 1 << 4 | 1 << 7;
 }
 
 if (boardnum == 45 && nvram_match("boardrev", "0x1402")
 		&& nvram_match("boardtype", "0x04EC"))
 {
-		printk(KERN_EMERG "RT-N10 GPIO Init\n");
+		printk(KERN_INFO "RT-N10 GPIO Init\n");
 		gpios = 1 << 1;
 }
 
 if (boardnum == 45 && nvram_match("boardrev", "0x1102")
 		&& nvram_match("boardtype", "0x0550"))
 {
-		printk(KERN_EMERG "RT-N10U GPIO Init\n");
+		printk(KERN_INFO "RT-N10U GPIO Init\n");
 		gpios = 1 << 5;
 }
 
 if (boardnum == 45 && nvram_match("boardrev", "0x1153")
 		&& nvram_match("boardtype", "0x058e"))
 {
-		printk(KERN_EMERG "RT-N10+ D1 GPIO INIT\n");
+		printk(KERN_INFO "RT-N10+ D1 GPIO INIT\n");
 		gpios = 1 << 5;
 }
 
 if (boardnum == 1 && nvram_match("boardtype", "0xE4CD")
 		&& nvram_match("boardrev", "0x1700"))
 {
-		printk(KERN_EMERG "WNR2000v2 GPIO Init\n");
+		printk(KERN_INFO "WNR2000v2 GPIO Init\n");
 		gpios = 1 << 2 | 1 << 6 | 1 << 7 | 1 << 8;
 }
 
 if (boardnum == 45 && nvram_match("boardrev", "0x1201")
 	    && nvram_match("boardtype", "0x04CD"))
 {
-		printk(KERN_EMERG "RT-N12 GPIO Init\n");
+		printk(KERN_INFO "RT-N12 GPIO Init\n");
 		gpios = 1 << 0 | 1 << 2;
 }
 
 if (boardnum == 45 && nvram_match("boardrev", "0x1218")
 		&& nvram_match("boardtype", "0x04cf"))
 {
-		printk(KERN_EMERG "RT-N16 GPIO Init\n");
+		printk(KERN_INFO "RT-N16 GPIO Init\n");
 		gpios = 1 << 1;
 }
 
@@ -349,10 +349,10 @@ if (boardnum == 1 && nvram_match("boardrev", "0x23")
 		&& nvram_match("boardtype", "0x0472"))
 {
 		if (nvram_match("cardbus", "1")) {
-		printk(KERN_EMERG "WNR324v2 GPIO Init\n");
+		printk(KERN_INFO "WNR324v2 GPIO Init\n");
 		gpios = 1 << 2 | 1 << 3 | 1 << 7;
 		} else {
-		printk(KERN_EMERG "WNDR3300 GPIO Init\n");
+		printk(KERN_INFO "WNDR3300 GPIO Init\n");
 		gpios = 1 << 5 | 1 << 7;
 		}
 }
@@ -360,69 +360,69 @@ if (boardnum == 1 && nvram_match("boardrev", "0x23")
 if (nvram_match("boardnum", "00") && nvram_match("boardtype", "0x0101")
 		&& nvram_match("boardrev", "0x10"))
 {
-		printk(KERN_EMERG "WBR2-G54(S) GPIO Init\n");
+		printk(KERN_INFO "WBR2-G54(S) GPIO Init\n");
 		gpios = 1 << 1 | 1 << 6;
 }
 
 if (nvram_match("boardtype", "0xd4cf")
 		&& nvram_match("boardrev", "0x1204"))
 {
-		printk(KERN_EMERG "F7D4301v1 GPIO Init\n");
+		printk(KERN_INFO "F7D4301v1 GPIO Init\n");
 		gpios = 1 << 10 | 1 << 11 | 1 << 13;
 }
 
 if (nvram_match("boardtype", "0xa4cf") 
 		&& (nvram_match("boardrev", "0x1100") || nvram_match("boardrev", "0x1102")))
 {
-		printk(KERN_EMERG "F7D3301v1/3302v1/4302v1  - F5D8235v3 GPIO Init\n");
+		printk(KERN_INFO "F7D3301v1/3302v1/4302v1  - F5D8235v3 GPIO Init\n");
 		gpios = 1 << 10 | 1 << 11 | 1 << 13;
 }
 
 if (nvram_match("boot_hw_model", "E1000")
 		&& (nvram_match("boot_hw_ver", "2.0") || nvram_match("boot_hw_ver", "2.1")))
 {
-		printk(KERN_EMERG "E1000v2/v21 GPIO Init\n");
+		printk(KERN_INFO "E1000v2/v21 GPIO Init\n");
 		gpios = 1 << 6 | 1 << 7 | 1 << 8;
 }
 
 if (nvram_match("boot_hw_model", "E4200")
 		&& nvram_match("boot_hw_ver", "1.0"))
 {
-		printk(KERN_EMERG "E4200 GPIO Init\n");
+		printk(KERN_INFO "E4200 GPIO Init\n");
 		gpios = 1 << 3 | 1 << 5;
 }
 
 if (nvram_match("boardnum", "01") && nvram_match("boardtype", "0xb4cf")
 	    && nvram_match("boardrev", "0x1100"))
 {
-		printk(KERN_EMERG "WNDR3400 GPIO Init\n");
+		printk(KERN_INFO "WNDR3400 GPIO Init\n");
 		gpios = 1 << 0 | 1 << 1 | 1 << 2 | 1 << 3 | 1 << 7;
 }
 
 if (nvram_match("boardnum", "01") && nvram_match("boardtype", "0xF52C")
 	    && nvram_match("boardrev", "0x1101"))
 {
-		printk(KERN_EMERG "WNDR4000 / R6200 GPIO Init\n");
+		printk(KERN_INFO "WNDR4000 / R6200 GPIO Init\n");
 		gpios = 1 << 0 | 1 << 6 | 1 << 7;
 }
 if (nvram_match("boardnum", "4536") && nvram_match("boardtype", "0xf52e")
 	    && nvram_match("boardrev", "0x1102")) {
 		
 	if( nvram_match("pci/1/1/pa2gw1a0", "0x1DFC") ){
-	        printk(KERN_EMERG "WNDR4500 GPIO Init\n");
+	        printk(KERN_INFO "WNDR4500 GPIO Init\n");
 		gpios = 1<<0 | 1<<1 | 1<<2 | 1<<3 | 1<<4 | 1<<5 | 1<<6 | 1<<7 | 1<<8 | 1<<9 | 1<<10 | 1<<11 | 1<<14 | 1<<15;
 	}else if ( nvram_match("pci/1/1/pa2gw1a0", "0x1791") ){
-		printk(KERN_EMERG "WNDR4500V2 GPIO Init\n");
+		printk(KERN_INFO "WNDR4500V2 GPIO Init\n");
 		gpios = 1<<0 | 1<<1 | 1<<2 | 1<<3 | 1<<4 | 1<<5 | 1<<6 | 1<<7 | 1<<8 | 1<<9 | 1<<10 | 1<<11 | 1<<14 | 1<<15;
 	}else{
-		printk(KERN_EMERG "R6300 GPIO Init\n");
+		printk(KERN_INFO "R6300 GPIO Init\n");
                 gpios = 1<<0 | 1<<1 | 1<<2 | 1<<3 | 1<<4 | 1<<5 | 1<<6 | 1<<7 | 1<<8 | 1<<9 | 1<<10 | 1<<11 | 1<<15;
 	}
 }
 
 /*if (iswrt300n11)
 {
-	printk(KERN_EMERG "WRT300N v1.1 GPIO Init\n");
+	printk(KERN_INFO "WRT300N v1.1 GPIO Init\n");
 		int reset = 1 << 8;
 		sb_gpioout(gpio_sbh, reset, 0, GPIO_DRV_PRIORITY);
 		sb_gpioouten(gpio_sbh, reset, reset, GPIO_DRV_PRIORITY);
