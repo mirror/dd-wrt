@@ -146,9 +146,6 @@ static int start_services_main(int argc, char **argv)
 	start_service_f("tftpd");
 #endif
 	restart_fdelay("httpd", 2);
-#ifdef HAVE_UDHCPD
-	start_service_f("udhcpd");
-#endif
 #ifdef HAVE_UNBOUND
 	start_service_f("unbound");
 #endif
@@ -300,9 +297,6 @@ static int stop_services_main(int argc, char **argv)
 #ifdef HAVE_DNSMASQ
 	stop_service_f("dnsmasq");
 #endif
-#ifdef HAVE_UDHCPD
-	stop_service_f("udhcpd");
-#endif
 	restart_f("dns_clear_resolv");
 #ifndef HAVE_MICRO
 	stop_service_f("cron");
@@ -415,9 +409,6 @@ static int stop_services_main(int argc, char **argv)
 
 static void handle_dhcpd(void)
 {
-#ifdef HAVE_UDHCPD
-	restart_f("udhcpd");
-#endif
 	restart_f("dnsmasq");
 #ifdef HAVE_SMARTDNS
 	restart_f("smartdns");
@@ -478,9 +469,6 @@ static void handle_index(void)
 	start_service_f("ttraff");
 #ifdef HAVE_MADWIFI
 	start_service_f("stabridge");
-#endif
-#ifdef HAVE_UDHCPD
-	restart_f("udhcpd");
 #endif
 #ifdef HAVE_UNBOUND
 	restart_f("unbound");
@@ -630,9 +618,6 @@ static void handle_hotspot(void)
 #endif
 	start_service_f("radio_timer");
 	//restart dhcp as well, to fix repeater bridge save issue (dhcp disables itself here)
-#ifdef HAVE_UDHCPD
-	restart_f("udhcpd");
-#endif
 #ifdef HAVE_UNBOUND
 	restart_f("unbound");
 #endif
@@ -698,9 +683,6 @@ static void handle_services(void)
 #ifdef HAVE_PPPOERELAY
 	restart_f("pppoerelay");
 #endif
-#ifdef HAVE_UDHCPD
-	restart_f("udhcpd");
-#endif
 #ifdef HAVE_RSTATS
 	restart_f("rstats");
 #endif
@@ -720,9 +702,6 @@ static void handle_services(void)
 #endif
 #ifdef HAVE_SMARTDNS
 	restart_f("smartdns");
-#endif
-#ifdef HAVE_UDHCPD
-	restart_f("udhcpd");
 #endif
 #ifdef HAVE_CPUTEMP
 	restart_f("hwmon");
@@ -882,18 +861,12 @@ static void handle_management(void)
 #ifndef HAVE_MICRO
 	stop_service_f("cron");
 #endif
-#ifdef HAVE_UDHCPD
-	stop_service_f("udhcpd");
-#endif
 #ifdef HAVE_IPV6
 	stop_service_f("ipv6");
 #endif
 
 	stop_running_main(0, NULL);
 
-#ifdef HAVE_UDHCPD
-	start_service_f("udhcpd");
-#endif
 #ifndef HAVE_MICRO
 	start_service_f("cron");
 #endif
@@ -1287,9 +1260,6 @@ static void handle_wireless(void)
 #endif
 	start_service_f("radio_timer");
 	//restart dhcp as well, to fix repeater bridge save issue (dhcp disables itself here)
-#ifdef HAVE_UDHCPD
-	restart_f("udhcpd");
-#endif
 #ifdef HAVE_UNBOUND
 	restart_f("unbound");
 #endif
