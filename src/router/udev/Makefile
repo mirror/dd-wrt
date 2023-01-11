@@ -111,7 +111,7 @@ CROSS_COMPILE ?=
 CC = $(CROSS_COMPILE)gcc
 LD = $(CROSS_COMPILE)gcc
 AR = $(CROSS_COMPILE)ar
-RANLIB = $(CROSS_COMPILE)ranlib
+RANLIB = $(CROSS_COMPILE)ranlib $(LTOPLUGIN)
 
 CFLAGS		= -Wall -pipe -D_GNU_SOURCE -D_FILE_OFFSET_BITS=64
 WARNINGS	= -Wstrict-prototypes -Wsign-compare -Wshadow \
@@ -187,7 +187,7 @@ $(PROGRAMS): %: $(HEADERS) $(GEN_HEADERS) $(LIBUDEV) %.o
 $(LIBUDEV): $(HEADERS) $(GEN_HEADERS) $(UDEV_OBJS)
 	$(Q) rm -f $@
 	$(E) "  AR      " $@
-	$(Q) $(AR) cq $@ $(UDEV_OBJS)
+	$(Q) $(AR) cq $(LTOPLUGIN) $@ $(UDEV_OBJS)
 	$(E) "  RANLIB  " $@
 	$(Q) $(RANLIB) $@
 
