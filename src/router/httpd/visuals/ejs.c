@@ -1798,7 +1798,7 @@ EJ_VISIBLE void ej_get_service_state(webs_t wp, int argc, char_t ** argv)
 	show_caption(wp, "label", "idx.dhcp_srv", NULL);
 	if (nvram_match("lan_proto", "dhcp")) {
 		websWrite(wp, "%s", tran_string(buf, sizeof(buf), "share.enabled"));
-		if (pidof("dnsmasq") > 0 || pidof("udhcpd") > 0) {
+		if (pidof("dnsmasq") > 0) {
 			websWrite(wp, " - %s", tran_string(buf, sizeof(buf), "diag.running"));
 		} else {
 			websWrite(wp, " - %s", tran_string(buf, sizeof(buf), "diag.stopped"));
