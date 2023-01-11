@@ -1018,12 +1018,12 @@ static int dev_nvram_init(void)
 		if (!IS_ERR(nvram_mtd_temp)) {
 			if (!strcmp(nvram_mtd_temp->name, "nvram_cfe")) {
 				nvram_mtd_cfe = nvram_mtd_temp;
-				printk(KERN_EMERG "found cfe nvram\n");
+				printk(KERN_INFO "found cfe nvram\n");
 				continue;
 			}
 			if (!strcmp(nvram_mtd_temp->name, "nvram") && nvram_mtd_temp->size >= NVRAMSIZEREAL) {
 				nvram_mtd = nvram_mtd_temp;
-				printk(KERN_EMERG "found nvram\n");
+				printk(KERN_INFO "found nvram\n");
 				continue;
 			}
 			put_mtd_device(nvram_mtd_temp);
@@ -1044,7 +1044,7 @@ static int dev_nvram_init(void)
 		len = 0;
 		printk(KERN_INFO "nvram copy magic is %X\n", header->magic);
 		if (header->magic != NVRAM_MAGIC) {
-			printk(KERN_EMERG "copy cfe nvram to base nvram\n");
+			printk(KERN_INFO "copy cfe nvram to base nvram\n");
 			len = 0;
 			memset(buf, 0, NVRAMSIZEREAL);
 			mtd_read(nvram_mtd_cfe, nvram_mtd_cfe->erasesize - NVRAMSIZE, NVRAMSIZE, &len, buf + nvram_mtd->erasesize - NVRAMSIZEREAL);
