@@ -659,8 +659,8 @@ static int send_update(ddns_t *ctx, ddns_info_t *info, ddns_alias_t *alias, int 
 	if (rc) {
 		logit(LOG_WARNING, "%s error in DDNS server response:",
 		      rc == RC_DDNS_RSP_RETRY_LATER || rc == RC_DDNS_RSP_TOO_FREQUENT ? "Temporary" : "Fatal");
-		logit(LOG_WARNING, "[%d %s] %s", trans.status, trans.status_desc,
-		      trans.rsp_body != trans.rsp ? trans.rsp_body : "");
+		logit(LOG_WARNING, "[%d %s]", trans.status, trans.status_desc);
+		logit(LOG_DEBUG, "%s", trans.rsp_body != trans.rsp ? trans.rsp_body : "");
 
 		/* Update failed, force update again in ctx->cmd_check_period seconds */
 		alias->force_addr_update = 1;
