@@ -1,4 +1,8 @@
 ------------------------------------------------------------------------
+r6888 | brainslayer | 2023-01-11 12:59:05 +0600 (Wed, 11 Jan 2023) | 1 line
+
+remove dupcheck again, since it causes severe performance issues
+------------------------------------------------------------------------
 r6887 | brainslayer | 2023-01-08 16:53:31 +0600 (Sun, 08 Jan 2023) | 1 line
 
 experimental ani change
