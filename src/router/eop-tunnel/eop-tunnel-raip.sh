@@ -7,7 +7,7 @@ fset=$1
 MINTIME=$($nv get wg_mintime)
 [[ -z $MINTIME ]] && MINTIME=1
 MAXTIME=$($nv get wg_maxtime) #0 = no maxtime
-[[ -z $MAXTIME ]] && MAXTIME=90
+[[ -z $MAXTIME ]] && MAXTIME=105
 
 LOCK="/tmp/oet.lock"
 acquire_lock() { logger -p user.info "WireGuard acquiring $LOCK for $$"; while ! mkdir $LOCK >/dev/null 2>&1; do sleep 2; done; logger -p user.info "WireGuard $LOCK acquired for $$"; }
@@ -30,7 +30,7 @@ waitfortime () {
 		fi
 	done
 	if [[ $SLEEPCT -gt $MAXTIME && $MAXTIME -ne 0 ]]; then
-		logger -p user.info "WireGuard stopped waiting after $SLEEPCT seconds, trying to set routes for oet${i} anyway, is there a connection or NTP problem?"
+		logger -p user.err "WireGuard ERROR: stopped waiting after $SLEEPCT seconds, trying to set routes for oet${i} anyway, is there a connection or NTP problem?"
 	else
 		logger -p user.info "WireGuard waited $SLEEPCT seconds to set routes for oet${i}"
 	fi
