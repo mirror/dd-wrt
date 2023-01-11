@@ -116,9 +116,6 @@ struct mon mons[] = {
 #endif
 	{ "process_monitor", M_LAN, NULL, NULL, NULL, NULL, NULL },
 	{ "httpd", M_LAN, "http_enable", "1", "https_enable", "1", &check_httpd },
-#ifdef HAVE_UDHCPD
-	{ "udhcpd", M_LAN, NULL, NULL, NULL, NULL, NULL },
-#endif
 	{ "dnsmasq", M_LAN, "dnsmasq_enable", "1", NULL, NULL, NULL },
 #ifdef HAVE_SMARTDNS
 	{ "smartdns", M_WAN, "smartdns", "1", NULL, NULL, NULL },
