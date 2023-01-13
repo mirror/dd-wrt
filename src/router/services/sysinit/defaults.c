@@ -3141,7 +3141,6 @@ struct nvram_param srouter_defaults[] = {
 	{ "openvpn_config", "" },
 	{ "openvpn_dh", "" },
 	{ "openvpn_tlsauth", "" },
-	{ "openvpn_config", "" },
 	{ "openvpn_tuntap", "tun" },
 	{ "openvpn_cl2cl", "1" },
 	{ "openvpn_dupcn", "0" },
