@@ -193,8 +193,6 @@ fopenat(int dirfd, const char *pathname, int flags,
 	return (fdopen(fd, stream_mode));
 }
 
-#define	my_strndupa(x,y)	strlcpy(alloca(y),x,y)
-
 static int
 line_worker(char *line, const char *cachefile)
 {
@@ -226,9 +224,10 @@ line_worker(char *line, const char *cachefile)
 	const char *p_systemd_ignore            = strtok_r(NULL, "\t", &toktmp) ?: "-";
 	/* END CSTYLED */
 
-	const char *pool = dataset;
-	if ((toktmp = strchr(pool, '/')) != NULL)
-		pool = my_strndupa(pool, toktmp - pool);
+	size_t pool_len = strlen(dataset);
+	if ((toktmp = strchr(dataset, '/')) != NULL)
+		pool_len = toktmp - dataset;
+	const char *pool = *(tofree++) = strndup(dataset, pool_len);
 
 	if (p_nbmand == NULL) {
 		fprintf(stderr, PROGNAME "[%d]: %s: not enough tokens!\n",
@@ -736,7 +735,7 @@ end:
 	if (tofree >= tofree_all + nitems(tofree_all)) {
 		/*
 		 * This won't happen as-is:
-		 * we've got 8 slots and allocate 4 things at most.
+		 * we've got 8 slots and allocate 5 things at most.
 		 */
 		fprintf(stderr,
 		    PROGNAME "[%d]: %s: need to free %zu > %zu!\n",
