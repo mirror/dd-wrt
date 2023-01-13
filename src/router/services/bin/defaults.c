@@ -104,7 +104,7 @@ int main(int argc, char *argv[])
 		if (!strlen(srouter_defaults[i].value)) {
 			srouter_defaults[i].value = NULL;
 			int a = 0;
-			for (a = i; a < len - 1; a++) {
+			for (a = i; a < len-1; a++) {
 				srouter_defaults[a].value = srouter_defaults[a + 1].value;
 				srouter_defaults[a].name = srouter_defaults[a + 1].name;
 			}
@@ -136,8 +136,6 @@ int main(int argc, char *argv[])
 	cur = &head;
 
 	for (i = 0; i < len; i++) {
-		if (srouter_defaults[i].value == NULL)
-			continue;
 		int v = hasstored(&head, srouter_defaults[i].value);
 		if (v == -1) {
 			fprintf(stderr, "this should never happen\n");
@@ -152,8 +150,7 @@ int main(int argc, char *argv[])
 	}
 	counts = 0;
 	for (i = 0; i < len; i++) {
-		if (srouter_defaults[i].value == NULL)
-			continue;
+		fprintf(out, "%s", srouter_defaults[i].name);
 		putc(0, out);
 		int f;
 		if ((f = hasstored(&namehead, srouter_defaults[i].name)) == -1) {
