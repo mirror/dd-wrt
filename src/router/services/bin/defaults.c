@@ -71,7 +71,6 @@ void recover(void)
 			temp[a++] = c;
 		}
 		temp[a] = 0;
-//              fprintf(stderr, "name %s=%s\n", temp, values[index[i]]);
 		if (strcmp(srouter_defaults[i].value, values[index[i]])) {
 			fprintf(stderr, "error while validating\n");
 			exit(1);
@@ -94,10 +93,26 @@ int main(int argc, char *argv[])
 	struct NV head;
 	struct NV *cur = &head;
 	memset(&head, 0, sizeof(head));
+
+	struct NV namehead;
+	struct NV *namecur = &namehead;
+	memset(&namehead, 0, sizeof(namehead));
 	int counts = 0;
 	int stored = 0;
 	for (i = 0; i < len - 1; i++) {
 		int f;
+		if (!strlen(srouter_defaults[i].value)) {
+			srouter_defaults[i].value = NULL;
+			int a = 0;
+			for (a = i; a < len - 1; a++) {
+				srouter_defaults[a].value = srouter_defaults[a + 1].value;
+				srouter_defaults[a].name = srouter_defaults[a + 1].name;
+			}
+			fprintf(stderr, "name %s is empty\n", srouter_defaults[i].name);
+			len--;
+			i--;
+			continue;
+		}
 
 		if ((f = hasstored(&head, srouter_defaults[i].value)) == -1) {
 			struct NV *next = malloc(sizeof(struct NV));
@@ -110,7 +125,7 @@ int main(int argc, char *argv[])
 			cur->next = next;
 			cur = next;
 		} else {
-                        fprintf(stderr, "%s: reuse %s (%d)\n", srouter_defaults[i].name, srouter_defaults[i].value, f);
+//                        fprintf(stderr, "%s: reuse %s (%d)\n", srouter_defaults[i].name, srouter_defaults[i].value, f);
 		}
 
 	}
@@ -121,6 +136,8 @@ int main(int argc, char *argv[])
 	cur = &head;
 
 	for (i = 0; i < len; i++) {
+		if (srouter_defaults[i].value == NULL)
+			continue;
 		int v = hasstored(&head, srouter_defaults[i].value);
 		if (v == -1) {
 			fprintf(stderr, "this should never happen\n");
@@ -133,14 +150,28 @@ int main(int argc, char *argv[])
 		fprintf(out, "%s", cur->value);
 		putc(0, out);
 	}
-
+	counts = 0;
 	for (i = 0; i < len; i++) {
-		fprintf(out, "%s", srouter_defaults[i].name);
+		if (srouter_defaults[i].value == NULL)
+			continue;
 		putc(0, out);
+		int f;
+		if ((f = hasstored(&namehead, srouter_defaults[i].name)) == -1) {
+			struct NV *next = malloc(sizeof(struct NV));
+			memset(next, 0, sizeof(*next));
+			next->value = srouter_defaults[i].name;
+			next->next = NULL;
+			next->index = counts++;
+			namecur->next = next;
+			namecur = next;
+		} else {
+			fprintf(stderr, "%s: WARNING: already in use %s (%d)\n", srouter_defaults[i].name, srouter_defaults[i].value, f);
+		}
 
 	}
 
 	fclose(out);
+	fprintf(stderr, "recover\n");
 	recover();
 	return 0;
 }
