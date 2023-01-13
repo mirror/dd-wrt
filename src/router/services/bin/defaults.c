@@ -110,7 +110,7 @@ int main(int argc, char *argv[])
 			cur->next = next;
 			cur = next;
 		} else {
-//                      fprintf(stderr, "%s: reuse %s (%d)\n", srouter_defaults[i].name, srouter_defaults[i].value, f);
+                        fprintf(stderr, "%s: reuse %s (%d)\n", srouter_defaults[i].name, srouter_defaults[i].value, f);
 		}
 
 	}
