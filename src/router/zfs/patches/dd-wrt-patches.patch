@@ -127,28 +127,6 @@ Index: config/user-libuuid.m4
 +	AC_SUBST([LIBUUID], ["-luuid"])
 +	AC_DEFINE([HAVE_LIBUUID], 1, [Define if you have libuuid])
  ])
-Index: etc/systemd/system-generators/zfs-mount-generator.c
-===================================================================
---- etc/systemd/system-generators/zfs-mount-generator.c	(revision 51025)
-+++ etc/systemd/system-generators/zfs-mount-generator.c	(working copy)
-@@ -193,6 +193,8 @@ fopenat(int dirfd, const char *pathname, int flags
- 	return (fdopen(fd, stream_mode));
- }
- 
-+#define	my_strndupa(x,y)	strlcpy(alloca(y),x,y)
-+
- static int
- line_worker(char *line, const char *cachefile)
- {
-@@ -226,7 +228,7 @@ line_worker(char *line, const char *cachefile)
- 
- 	const char *pool = dataset;
- 	if ((toktmp = strchr(pool, '/')) != NULL)
--		pool = strndupa(pool, toktmp - pool);
-+		pool = my_strndupa(pool, toktmp - pool);
- 
- 	if (p_nbmand == NULL) {
- 		fprintf(stderr, PROGNAME "[%d]: %s: not enough tokens!\n",
 Index: include/os/linux/kernel/linux/vfs_compat.h
 ===================================================================
 --- include/os/linux/kernel/linux/vfs_compat.h	(revision 51025)
