@@ -75,6 +75,7 @@ void recover(void)
 			fprintf(stderr, "error while validating\n");
 			exit(1);
 		}
+		fprintf(stderr, "check: %s=%s\n", temp,values[index[i]]);
 	}
 	for (i = 0; i < stores; i++) {
 		free(values[i]);
