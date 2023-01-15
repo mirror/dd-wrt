@@ -5691,7 +5691,7 @@ char *request_freedns(char *user, char *password)
 
 void ddns_save_value(webs_t wp)
 {
-	char *username, *passwd, *hostname, *dyndnstype, *wildcard, *custom, *path, *wan_ip, *ssl, *ipv6;
+	char *username, *passwd, *hostname, *dyndnstype, *wildcard, *custom, *path, *wan_ip, *ssl, *ipv6, *ipv6_only;
 	int force;
 	char _username[] = "ddns_username_XX";
 	char _passwd[] = "ddns_passwd_XX";
@@ -5703,6 +5703,7 @@ void ddns_save_value(webs_t wp)
 	char _ssl[] = "ddns_ssl";
 	char _wan_ip[] = "ddns_wan_ip";
 	char _ipv6[] = "ddns_ipv6_XX";
+	char _ipv6_only[] = "ddns_ipv6_only_XX";
 
 	int enable = websGetVari(wp, "ddns_enable", -1);
 	if (enable > 33 || enable < 0) {
@@ -5717,15 +5718,18 @@ void ddns_save_value(webs_t wp)
 		sprintf(_passwd, "ddns_passwd_%d", i);
 		sprintf(_hostname, "ddns_hostname_%d", i);
 		sprintf(_ipv6, "ddns_ipv6_%d", i);
+		sprintf(_ipv6_only, "ddns_ipv6_only_%d", i);
 		nvram_unset(_username);
 		nvram_unset(_passwd);
 		nvram_unset(_hostname);
 		nvram_unset(_ipv6);
+		nvram_unset(_ipv6_only);
 	}
 	sprintf(_username, "ddns_username_%d", enable);
 	sprintf(_passwd, "ddns_passwd_%d", enable);
 	sprintf(_hostname, "ddns_hostname_%d", enable);
 	sprintf(_ipv6, "ddns_ipv6_%d", enable);
+	sprintf(_ipv6_only, "ddns_ipv6_only_%d", enable);
 	sprintf(_ssl, "ddns_ssl");
 	snprintf(_wildcard, sizeof(_wildcard), "ddns_wildcard_%d", enable);
 	snprintf(_custom, sizeof(_custom), "ddns_custom_%d", enable);
@@ -5743,6 +5747,7 @@ void ddns_save_value(webs_t wp)
 		sprintf(_passwd, "ddns_passwd");
 		sprintf(_hostname, "ddns_hostname");
 		sprintf(_ipv6, "ddns_ipv6");
+		sprintf(_ipv6_only, "ddns_ipv6_only");
 		snprintf(_wildcard, sizeof(_wildcard), "ddns_wildcard");
 		break;
 	}
@@ -5751,6 +5756,7 @@ void ddns_save_value(webs_t wp)
 	passwd = websGetVar(wp, "ddns_passwd", NULL);
 	hostname = websGetVar(wp, "ddns_hostname", NULL);
 	ipv6 = websGetVar(wp, "ddns_ipv6", NULL);
+	ipv6_only = websGetVar(wp, "ddns_ipv6_only", NULL);
 	wildcard = websGetVar(wp, "ddns_wildcard", NULL);
 	custom = websGetVar(wp, "ddns_custom", NULL);
 	ssl = websGetVar(wp, "ddns_ssl", NULL);
@@ -5773,6 +5779,7 @@ void ddns_save_value(webs_t wp)
 	}
 	nvram_set(_hostname, hostname);
 	nvram_set(_ipv6, ipv6);
+	nvram_set(_ipv6_only, ipv6_only);
 	nvram_set(_wildcard, wildcard);
 	nvram_set(_custom, custom);
 	nvram_set(_path, path);
