@@ -113,8 +113,10 @@ addEvent(window, "unload", function() {
 										<option value="35" <% nvsm("ddns_enable", "35", "selected"); %> >Domaindiscount24</option>
 										<option value="27" <% nvsm("ddns_enable", "27", "selected"); %> >Duck DNS</option>
 										<option value="11" <% nvsm("ddns_enable", "11", "selected"); %> >duiadns.net</option>
+										<option value="37" <% nvsm("ddns_enable", "37", "selected"); %> >dy.fi</option>
 										<option value="1" <% nvsm("ddns_enable", "1", "selected"); %> >DynDNS.org</option>
 										<option value="17" <% nvsm("ddns_enable", "17", "selected"); %> >Dynu Systems</option>
+										<option value="36" <% nvsm("ddns_enable", "36", "selected"); %> >desec.io</option>
 										<option value="32" <% nvsm("ddns_enable", "32", "selected"); %> >Dynv6 (IPV4))</option>
 										<option value="7" <% nvsm("ddns_enable", "7", "selected"); %> >easyDNS.com</option>
 										<option value="2" <% nvsm("ddns_enable", "2", "selected"); %> >freedns.afraid.org</option>
