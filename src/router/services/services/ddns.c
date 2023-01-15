@@ -50,6 +50,7 @@
 static char _username[] = "ddns_username_XX";
 #ifdef HAVE_IPV6
 static char _ipv6[] = "ddns_ipv6_XX";
+static char _ipv6_only[] = "ddns_ipv6_XX";
 #endif
 static char _passwd[] = "ddns_passwd_XX";
 static char _hostname[] = "ddns_hostname_XX";
@@ -138,39 +139,34 @@ static int init_ddns(FILE * fp)
 		"ipv6@goip.de",
 	};
 #endif
+	int ipv6_only = 0;
 	char *provider = providers[flag];
 	char *provider6 = NULL;
 	snprintf(_ssl, sizeof(_ssl), "%s", "ddns_ssl");
-	if (flag == 1) {
-		snprintf(_username, sizeof(_username), "%s", "ddns_username");
-		snprintf(_passwd, sizeof(_passwd), "%s", "ddns_passwd");
-		snprintf(_hostname, sizeof(_hostname), "%s", "ddns_hostname");
-#ifdef HAVE_IPV6
-		snprintf(_ipv6, sizeof(_ipv6), "%s", "ddns_ipv6");
-		if (nvram_matchi("ipv6_enable", 1) && nvram_matchi(_ipv6, 1))
-			provider6 = providers_ipv6[flag];
-#endif
-		snprintf(_wildcard, sizeof(_hostname), "%s", "ddns_wildcard");
-		snprintf(_cache_file, sizeof(_cache_file), "/tmp/ddns/%s-%s.cache", provider, nvram_safe_get("ddns_hostname"));
-		snprintf(_cache_file_ipv6, sizeof(_cache_file_ipv6), "/tmp/ddns/%s-%s.cache", provider6, nvram_safe_get("ddns_hostname"));
-	} else {
-		snprintf(_username, sizeof(_username), "%s_%d", "ddns_username", flag);
-		snprintf(_passwd, sizeof(_passwd), "%s_%d", "ddns_passwd", flag);
-		snprintf(_hostname, sizeof(_hostname), "%s_%d", "ddns_hostname", flag);
-#ifdef HAVE_IPV6
-		snprintf(_ipv6, sizeof(_ipv6), "%s_%d", "ddns_ipv6", flag);
-		if (nvram_matchi("ipv6_enable", 1) && nvram_matchi(_ipv6, 1))
-			provider6 = providers_ipv6[flag];
-#endif
-		snprintf(_wildcard, sizeof(_hostname), "%s_%d", "ddns_wildcard", flag);
-		snprintf(_cache_file, sizeof(_cache_file), "/tmp/ddns/%s-%s.cache", provider, nvram_nget("ddns_hostname_%d", flag));
-		snprintf(_cache_file_ipv6, sizeof(_cache_file_ipv6), "/tmp/ddns/%s-%s.cache",provider6, nvram_nget("ddns_hostname_%d", flag));
+	char postfix[32] = { 0 };
+	if (!flag == 1) {
+		sprintf(postfix, "_%d", flag);
 	}
+	snprintf(_username, sizeof(_username), "%s%s", "ddns_username", postfix);
+	snprintf(_passwd, sizeof(_passwd), "%s%s", "ddns_passwd", postfix);
+	snprintf(_hostname, sizeof(_hostname), "%s%s", "ddns_hostname", postfix);
+#ifdef HAVE_IPV6
+	snprintf(_ipv6, sizeof(_ipv6), "%s%s", "ddns_ipv6", postfix);
+	snprintf(_ipv6_only, sizeof(_ipv6_only), "%s%s", "ddns_ipv6_only", postfix);
+	if (nvram_matchi("ipv6_enable", 1) && nvram_matchi(_ipv6, 1)) {
+		provider6 = providers_ipv6[flag];
+		if (provider6)
+			ipv6_only = nvram_matchi(_ipv6_only, 1);
+	}
+#endif
+	snprintf(_wildcard, sizeof(_hostname), "%s%s", "ddns_wildcard", postfix);
+	snprintf(_cache_file, sizeof(_cache_file), "/tmp/ddns/%s-%s.cache", provider, nvram_nget("ddns_hostname%s", postfix));
+	snprintf(_cache_file_ipv6, sizeof(_cache_file_ipv6), "/tmp/ddns/%s-%s.cache", provider6, nvram_nget("ddns_hostname%s", postfix));
 	if (fp) {
 #ifdef HAVE_IPV6
 		if (provider6)
 			fprintf(fp, "allow-ipv6 = true\n");
-		if (!provider6 || flag != 16) {
+		if ((!provider6 || flag != 16) && !ipv6_only) {
 #endif
 
 			if (flag == 5)
@@ -378,7 +374,7 @@ int checkwanip_main(int argc, char *argv[])
 			ipv6addr = getifaddr(buf, "ip6tun", AF_INET6, 0);
 		if (nvram_match("ipv6_typ", "ipv6pd"))
 			ipv6addr = getifaddr(buf, safe_get_wan_face(wan_if_buffer), AF_INET6, 0);
-//			ipv6addr = getifaddr(buf, nvram_safe_get("lan_ifname"), AF_INET6, 0);
+//                      ipv6addr = getifaddr(buf, nvram_safe_get("lan_ifname"), AF_INET6, 0);
 		if (nvram_match("ipv6_typ", "ipv6in4") || nvram_match("ipv6_typ", "ipv6pd") || nvram_match("ipv6_typ", "ipv6native")) {
 			if (!ipv6addr)
 				ipv6addr = getifaddr(buf, safe_get_wan_face(wan_if_buffer), AF_INET6, 0);	// try wan if all other fails
