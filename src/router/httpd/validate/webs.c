@@ -5706,12 +5706,12 @@ void ddns_save_value(webs_t wp)
 	char _ipv6_only[] = "ddns_ipv6_only_XX";
 
 	int enable = websGetVari(wp, "ddns_enable", -1);
-	if (enable > 43 || enable < 0) {
+	if (enable > 44 || enable < 0) {
 		return;
 	}
 
 	int i;
-	for (i = 1; i < 44; i++) {
+	for (i = 1; i < 45; i++) {
 		if (i == enable)
 			continue;
 		snprintf(_username, sizeof(_username), "ddns_username_%d", i);
