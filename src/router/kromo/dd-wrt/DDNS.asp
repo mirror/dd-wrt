@@ -112,6 +112,7 @@ addEvent(window, "unload", function() {
 										<option value="26" <% nvsm("ddns_enable", "26", "selected"); %> >DNSPod</option>
 										<option value="38" <% nvsm("ddns_enable", "38", "selected"); %> >Domain-Offensive (do.de)</option>
 										<option value="35" <% nvsm("ddns_enable", "35", "selected"); %> >Domaindiscount24</option>
+										<option value="39" <% nvsm("ddns_enable", "39", "selected"); %> >Domopoli.de</option>
 										<option value="27" <% nvsm("ddns_enable", "27", "selected"); %> >Duck DNS</option>
 										<option value="11" <% nvsm("ddns_enable", "11", "selected"); %> >duiadns.net</option>
 										<option value="37" <% nvsm("ddns_enable", "37", "selected"); %> >dy.fi</option>
@@ -125,6 +126,9 @@ addEvent(window, "unload", function() {
 										<option value="33" <% nvsm("ddns_enable", "33", "selected"); %> >Goip.de</option>
 										<option value="16" <% nvsm("ddns_enable", "16", "selected"); %> >Google Domains</option>
 										<option value="10" <% nvsm("ddns_enable", "10", "selected"); %> >he.net</option>
+										<option value="41" <% nvsm("ddns_enable", "41", "selected"); %> >it's DNS (itsdns.de)</option>
+										<option value="40" <% nvsm("ddns_enable", "40", "selected"); %> >inwx.com</option>
+										<option value="42" <% nvsm("ddns_enable", "42", "selected"); %> >joker.com</option>
 										<option value="15" <% nvsm("ddns_enable", "15", "selected"); %> >Loopia</option>
 										<option value="34" <% nvsm("ddns_enable", "34", "selected"); %> >Myonlineportal.net</option>
 										<option value="4" <% nvsm("ddns_enable", "4", "selected"); %> >No-IP.com</option>
@@ -169,7 +173,7 @@ addEvent(window, "unload", function() {
 									<input type="checkbox" value="1" name="ddns_wildcard" <% ddns_checked("ddns_wildcard", "1"); %> />
 								</div>
 								<% nvlsm("ddns_enable","0 2 4 5 11 18 19 20 21 22 23 24 25 26 27 28 29 30 31 32 33 35 36","-->"); %>
-								<% nvlsmn6("ddns_enable","0 1 5 15 18 22 23 26 28 30 31 35","<!--"); %>
+								<% nvlsmn6("ddns_enable","0 1 5 15 18 22 23 26 28 30 31 35 42","<!--"); %>
 								<div class="setting">
 									<div class="label"><% tran("management.ipv6_srv"); %></div>
 									<input class="spaceradio" type="radio" value="1" name="ddns_ipv6" <% nvc("ddns_ipv6", "1"); %> onclick="show_layer_ext(this, 'idipv6', true)" /><% tran("share.enable"); %>&nbsp;
@@ -186,8 +190,8 @@ addEvent(window, "unload", function() {
 								show_layer_ext(document.dyndns.ddns_ipv6,'idipv6', <% nvem("ddns_ipv6", "1", "1", "0"); %> == 1);
 								//]]>
 								</script>
-								<% nvlsmn6("ddns_enable","0 1 5 15 18 22 23 26 28 30 31 35","-->"); %>
-								<% nvlsm("ddns_enable","0 1 2 3 4 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30 31 32 33 34 35 36 37 38","<!--"); %>
+								<% nvlsmn6("ddns_enable","0 1 5 15 18 22 23 26 28 30 31 35 42","-->"); %>
+								<% nvlsm("ddns_enable","0 1 2 3 4 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30 31 32 33 34 35 36 37 38 39 40 41 42","<!--"); %>
 								<div class="setting">
 									<div class="label"><% tran("ddns.system"); %></div>
 									<input name="ddns_custom" size="35" maxlength="32" value="<% get_ddns_value("ddns_custom"); %>" />
@@ -209,7 +213,7 @@ addEvent(window, "unload", function() {
 									<div class="label"><% tran("share.hostname"); %></div>
 									<input name="ddns_hostname" size="35" onblur="valid_hostname(this,share.hostname)" value="<% get_ddns_value("ddns_hostname"); %>" />
 								</div>
-								<% nvlsm("ddns_enable","0 1 2 3 4 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30 31 32 33 34 35 36 37 38","-->"); %>
+								<% nvlsm("ddns_enable","0 1 2 3 4 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30 31 32 33 34 35 36 37 38 39 40 41 42","-->"); %>
 								<% nvsm("ddns_enable","0","<!--"); %>
 								<div class="setting">
 									<div class="label"><% tran("ddns.wanip"); %></div>
