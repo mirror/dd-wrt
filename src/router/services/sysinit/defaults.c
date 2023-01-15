@@ -2104,6 +2104,10 @@ struct nvram_param srouter_defaults[] = {
 	{ "ddns_ssl", "0" },	/* 0:Disable 1:dyndns 2:afraid 3:zoneedit
 				 * 4:no-ip 5:custom 6:3322.org */
 	{ "ddns_wan_ip", "1" },
+#ifdef HAVE_IPV6
+	{ "ddns_ipv6", "0" },
+	{ "ddns_ipv6_only", "0" },
+#endif
 	/*
 	 * for last value 
 	 */
