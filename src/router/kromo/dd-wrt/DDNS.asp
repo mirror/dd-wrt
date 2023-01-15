@@ -167,18 +167,18 @@ addEvent(window, "unload", function() {
 								<% nvlsmn6("ddns_enable","0 1 5 15 18 22 23 26 28 30 31","<!--"); %>
 								<div class="setting">
 									<div class="label"><% tran("management.ipv6_srv"); %></div>
-									<input class="spaceradio" type="radio" value="1" name="ddns_ipv6" <% ddns_checked("ddns_ipv6", "1"); %> onclick="show_layer_ext(this, 'idipv6', true)" /><% tran("share.enable"); %>&nbsp;
-									<input class="spaceradio" type="radio" value="0" name="ddns_ipv6" <% ddns_checked("ddns_ipv6", "0"); %> onclick="show_layer_ext(this, 'idipv6', false)" /><% tran("share.disable"); %>
+									<input class="spaceradio" type="radio" value="1" name="ddns_ipv6" <% nvc("ddns_ipv6", "1"); %> onclick="show_layer_ext(this, 'idipv6', true)" /><% tran("share.enable"); %>&nbsp;
+									<input class="spaceradio" type="radio" value="0" name="ddns_ipv6" <% nvc("ddns_ipv6", "0"); %> onclick="show_layer_ext(this, 'idipv6', false)" /><% tran("share.disable"); %>
 								</div>
 								<div id="idipv6">
 									<div class="setting">
 										<div class="label"><% tran("ddns.ipv6_only"); %></div>
-										<input type="checkbox" value="1" name="ddns_ipv6_only" <% ddns_checked("ddns_ipv6_only", "1"); %> />
+										<input type="checkbox" value="1" name="ddns_ipv6_only" <% nvc("ddns_ipv6_only", "1"); %> />
 									</div>
 								</div>
 								<script type="text/javascript">
 								//<![CDATA[
-								show_layer_ext(document.dyndns.ddns_ipv6,'idipv6', <% ddns_else_match("ddns_ipv6", "1", "1", "0"); %> == 1);
+								show_layer_ext(document.dyndns.ddns_ipv6,'idipv6', <% nvem("ddns_ipv6", "1", "1", "0"); %> == 1);
 								//]]>
 								</script>
 								<% nvlsmn6("ddns_enable","0 1 5 15 18 22 23 26 28 30 31","-->"); %>
