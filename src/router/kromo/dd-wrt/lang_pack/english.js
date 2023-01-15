@@ -631,7 +631,7 @@ ddns.forceupd="Force Update Interval";
 ddns.wanip="Use External IP Check";
 ddns.hlp="DDNS Service";
 ddns.ssl="Use SSL";
-ddns.ipv6_only="Update only IPV6 Address";
+ddns.ipv6_only="Update only IPv6 Address";
 
 var ddnsm=new Object();
 ddnsm.all_closed="The DDNS server is currently closed";
