@@ -260,6 +260,19 @@ static ddns_system_t dynu = {
 	.server_url   = "/nic/update"
 };
 
+static ddns_system_t dyfi = {
+	.name         = "default@dy.fi",
+
+	.request      = (req_fn_t)request,
+	.response     = (rsp_fn_t)response,
+
+	.checkip_name = "checkip.dy.fi",
+	.checkip_url  = "/",
+^
+	.server_name  = "www.dy.fi",
+	.server_url   = "/nic/update"
+};
+
 static ddns_system_t myonlineportal = {
 	.name         = "default@myonlineportal.net",
 
@@ -320,6 +333,7 @@ PLUGIN_INIT(plugin_init)
 	plugin_register_v6(&googledomains);
 	plugin_register(&dynu);
 	plugin_register_v6(&dynu);
+	plugin_register_v6(&dyfi);
 	plugin_register(&myonlineportal);
 	plugin_register(&myonlineportal_v6);
 }
@@ -341,6 +355,7 @@ PLUGIN_EXIT(plugin_exit)
 	plugin_unregister(&loopia);
 	plugin_unregister(&googledomains);
 	plugin_unregister(&dynu);
+	plugin_unregister(&dyfi);
 	plugin_unregister(&myonlineportal);
 	plugin_unregister(&myonlineportal_v6);
 }
