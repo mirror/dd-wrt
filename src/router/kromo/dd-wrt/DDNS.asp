@@ -141,6 +141,7 @@ addEvent(window, "unload", function() {
 										<option value="13" <% nvsm("ddns_enable", "13", "selected"); %> >spDYN</option>
 										<option value="20" <% nvsm("ddns_enable", "20", "selected"); %> >Strato</option>
 										<option value="12" <% nvsm("ddns_enable", "12", "selected"); %> >tunnelbroker.net</option>
+										<option value="46" <% nvsm("ddns_enable", "46", "selected"); %> >Udmedia.de</option>
 										<option value="45" <% nvsm("ddns_enable", "45", "selected"); %> >Variomedia.de</option>
 										<option value="31" <% nvsm("ddns_enable", "31", "selected"); %> >Yandex</option>
 										<option value="3" <% nvsm("ddns_enable", "3", "selected"); %> >ZoneEdit.com</option>
@@ -194,7 +195,7 @@ addEvent(window, "unload", function() {
 								//]]>
 								</script>
 								<% nvlsmn6("ddns_enable","0 1 5 15 18 22 23 26 28 30 31 35 42","-->"); %>
-								<% nvlsm("ddns_enable","0 1 2 3 4 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30 31 32 33 34 35 36 37 38 39 40 41 42 43 44 45","<!--"); %>
+								<% nvlsm("ddns_enable","0 1 2 3 4 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30 31 32 33 34 35 36 37 38 39 40 41 42 43 44 45 46","<!--"); %>
 								<div class="setting">
 									<div class="label"><% tran("ddns.system"); %></div>
 									<input name="ddns_custom" size="35" maxlength="32" value="<% get_ddns_value("ddns_custom"); %>" />
@@ -216,7 +217,7 @@ addEvent(window, "unload", function() {
 									<div class="label"><% tran("share.hostname"); %></div>
 									<input name="ddns_hostname" size="35" onblur="valid_hostname(this,share.hostname)" value="<% get_ddns_value("ddns_hostname"); %>" />
 								</div>
-								<% nvlsm("ddns_enable","0 1 2 3 4 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30 31 32 33 34 35 36 37 38 39 40 41 42 43 44 45","-->"); %>
+								<% nvlsm("ddns_enable","0 1 2 3 4 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30 31 32 33 34 35 36 37 38 39 40 41 42 43 44 45 46","-->"); %>
 								<% nvsm("ddns_enable","0","<!--"); %>
 								<div class="setting">
 									<div class="label"><% tran("ddns.wanip"); %></div>
