@@ -312,10 +312,10 @@ void start_ddns(void)
 		nvram2file("ddns_cache_ipv6", _cache_file_ipv6);
 	}
 	if (nvram_matchi("ddns_once", 0)) {
-		dd_logstart("ddns", eval("inadyn", "--cache-dir=/tmp/ddns", "-e", "ddns_success", "--exec-mode=compat", "-f", "/tmp/ddns/inadyn.conf", "-P", "/var/run/inadyn.pid", "-l", "notice", "-t", "30"));
+		dd_logstart("ddns", eval("inadyn", "--cache-dir=/tmp/ddns", "-e", "ddns_success", "--exec-mode=compat", "-f", "/tmp/ddns/inadyn.conf", "-P", "/var/run/inadyn.pid", "-l", "notice", "-t", "30", "-C"));
 		nvram_seti("ddns_once", 1);
 	} else {
-		dd_logstart("ddns", eval("inadyn", "--cache-dir=/tmp/ddns", "-e", "ddns_success", "--exec-mode=compat", "-f", "/tmp/ddns/inadyn.conf", "-P", "/var/run/inadyn.pid", "-l", "notice"));
+		dd_logstart("ddns", eval("inadyn", "--cache-dir=/tmp/ddns", "-e", "ddns_success", "--exec-mode=compat", "-f", "/tmp/ddns/inadyn.conf", "-P", "/var/run/inadyn.pid", "-l", "notice", "-C"));
 	}
 	cprintf("done\n");
 
