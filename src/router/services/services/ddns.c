@@ -62,7 +62,7 @@ static int init_ddns(FILE * fp)
 {
 
 	int flag = nvram_geti("ddns_enable");
-	if (flag > 34 || flag < 1)
+	if (flag > 36 || flag < 1)
 		return -1;
 	char *providers[] = {
 		NULL,
@@ -99,7 +99,9 @@ static int init_ddns(FILE * fp)
 		"default@pdd.yandex.ru",
 		"default@ipv4.dynv6.com",
 		"default@goip.de",
-		"default@myonlineportal.net"
+		"default@myonlineportal.net",
+		"default@domaindiscount24.com",
+		"default@desec.io",
 	};
 
 #ifdef HAVE_IPV6
@@ -138,7 +140,9 @@ static int init_ddns(FILE * fp)
 		NULL,
 		"ipv6@dynv6.com",
 		"ipv6@goip.de",
-		"ipv6@myonlineportal.net"
+		"ipv6@myonlineportal.net",
+		NULL,
+		"ipv6@desec.io"
 	};
 #endif
 	int ipv6_only = 0;
@@ -261,7 +265,7 @@ void start_ddns(void)
 	FILE *fp;
 
 	int flag = nvram_geti("ddns_enable");
-	if (flag > 34 || flag < 1)
+	if (flag > 36 || flag < 1)
 		return -1;
 
 	mkdir("/tmp/ddns", 0744);
