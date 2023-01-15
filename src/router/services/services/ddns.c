@@ -144,7 +144,7 @@ static int init_ddns(FILE * fp)
 	char *provider6 = NULL;
 	snprintf(_ssl, sizeof(_ssl), "%s", "ddns_ssl");
 	char postfix[32] = { 0 };
-	if (!flag == 1) {
+	if (flag != 1) {
 		sprintf(postfix, "_%d", flag);
 	}
 	snprintf(_username, sizeof(_username), "%s%s", "ddns_username", postfix);
