@@ -151,8 +151,8 @@ static int init_ddns(FILE * fp)
 	snprintf(_passwd, sizeof(_passwd), "%s%s", "ddns_passwd", postfix);
 	snprintf(_hostname, sizeof(_hostname), "%s%s", "ddns_hostname", postfix);
 #ifdef HAVE_IPV6
-	snprintf(_ipv6, sizeof(_ipv6), "%s%s", "ddns_ipv6", postfix);
-	snprintf(_ipv6_only, sizeof(_ipv6_only), "%s%s", "ddns_ipv6_only", postfix);
+	snprintf(_ipv6, sizeof(_ipv6), "%s", "ddns_ipv6");
+	snprintf(_ipv6_only, sizeof(_ipv6_only), "%s", "ddns_ipv6_only");
 	if (nvram_matchi("ipv6_enable", 1) && nvram_matchi(_ipv6, 1)) {
 		provider6 = providers_ipv6[flag];
 		if (provider6)
