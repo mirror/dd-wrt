@@ -178,7 +178,7 @@ addEvent(window, "unload", function() {
 								</div>
 								<script type="text/javascript">
 								//<![CDATA[
-								show_layer_ext(document.dyndns.ddns_ipv6,'idipv6', <% nvem("ddns_ipv6", "1", "1", "0"); %> == 1);
+								show_layer_ext(document.dyndns.ddns_ipv6,'idipv6', <% ddns_else_match("ddns_ipv6", "1", "1", "0"); %> == 1);
 								//]]>
 								</script>
 								<% nvlsmn6("ddns_enable","0 1 5 15 18 22 23 26 28 30 31","-->"); %>
