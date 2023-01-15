@@ -627,7 +627,7 @@ ddns.forceupd="Erzwinge Update Intervall";
 ddns.wanip="Externer IP Check";
 ddns.hlp="DDNS Service";
 ddns.ssl="Nutze SSL";
-
+ddns.ipv6_only="Nur IPV6 Adresse Updaten";
 
 ddnsm.all_closed="DDNS-Server ist aktuell geschlossen";
 ddnsm.all_resolving="Domainnamen auflösen";
