@@ -3090,7 +3090,8 @@ int isregistered_real(void);
 static void run_firewall6(char *vifs)
 {
 	char wan_if_buffer[33];
-	char *next char var[32];
+	char *next;
+	char var[32];
 	int remotessh = 0;
 	int remotetelnet = 0;
 	int remotemanage = 0;
