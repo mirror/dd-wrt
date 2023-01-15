@@ -74,29 +74,6 @@ EJ_VISIBLE void ej_ddns_checked(webs_t wp, int argc, char_t ** argv)
 	return;
 }
 
-EJ_VISIBLE void ej_ddns_else_match(webs_t wp, int argc, char_t ** argv)
-{
-	char *enable = GOZILA_GET(wp, "ddns_enable");
-	char var[32];
-	char *type;
-	if (argc < 4 || !enable || !strcmp(enable, "0"))
-		return;
-
-	if (!strcmp(enable, "1")) {
-		strlcpy(var, argv[0], sizeof(var));
-	} else {
-		snprintf(var, sizeof(var) - 1, "%s_%s", argv[0], enable);
-	}
-
-	if (nvram_match(var, argv[1]))
-		websWrite(wp, argv[2]);
-	else
-		websWrite(wp, argv[3]);
-
-
-	return;
-}
-
 EJ_VISIBLE void ej_show_ddns_status(webs_t wp, int argc, char_t ** argv)
 {
 	char buff[512];
