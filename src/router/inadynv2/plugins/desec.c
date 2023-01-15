@@ -1,6 +1,6 @@
-/* Plugin for goip.de
+/* Plugin for desec.io
  *
- * Copyright (C) 2023       Sebastian Gottschall <s.gottschall@dd-wrt.com>
+ * Copyright (C) 2023 Sebastian Gottschall <s.gottschall@dd-wrt.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -21,22 +21,23 @@
 
 #include "plugin.h"
 
-#define GOIP_UPDATE_IP_REQUEST						\
+
+#define DESEC_UPDATE_IP_REQUEST						\
 	"GET %s?"							\
 	"username=%s&"							\
-	"password=%s&"							\
-	"subdomain=%s&"							\
-	"ip=%s "							\
+	"passwword=%s&"							\
+	"hostname=%s&"							\
+	"myipv4=%s "							\
 	"HTTP/1.0\r\n"							\
 	"Host: %s\r\n"							\
 	"User-Agent: %s\r\n\r\n"
 
-#define GOIP_UPDATE_IP6_REQUEST						\
+#define DESEC_UPDATE_IP6_REQUEST						\
 	"GET %s?"							\
 	"username=%s&"							\
-	"password=%s&"							\
-	"subdomain=%s&"							\
-	"ip6=%s "							\
+	"passwword=%s&"							\
+	"hostname=%s&"							\
+	"myipv6=%s "							\
 	"HTTP/1.0\r\n"							\
 	"Host: %s\r\n"							\
 	"User-Agent: %s\r\n\r\n"
@@ -45,7 +46,7 @@ static int request  (ddns_t       *ctx,   ddns_info_t *info, ddns_alias_t *alias
 static int response (http_trans_t *trans, ddns_info_t *info, ddns_alias_t *alias);
 
 static ddns_system_t plugin = {
-	.name         = "default@goip.de",
+	.name         = "default@desec.io",
 
 	.request      = (req_fn_t)request,
 	.response     = (rsp_fn_t)response,
@@ -54,12 +55,12 @@ static ddns_system_t plugin = {
 	.checkip_url  = DYNDNS_MY_CHECKIP_URL,
 	.checkip_ssl  = DYNDNS_MY_IP_SSL,
 
-	.server_name  = "www.goip.de",
-	.server_url   =  "/setip"
+	.server_name  = "update.desec.io",
+	.server_url   =  "/update.php"
 };
 
 static ddns_system_t plugin_v6 = {
-	.name         = "ipv6@goip.de",
+	.name         = "ipv6@desec.io",
 
 	.request      = (req_fn_t)request,
 	.response     = (rsp_fn_t)response,
@@ -68,15 +69,16 @@ static ddns_system_t plugin_v6 = {
 	.checkip_url  = "/cdn-cgi/trace",
 	.checkip_ssl  = DDNS_CHECKIP_SSL_SUPPORTED,
 
-	.server_name  = "www.goip.de",
-	.server_url   =  "/setip"
+	.server_name  = "update6.desec.io",
+	.server_url   =  "/update.php"
 };
+
 
 static int request(ddns_t *ctx, ddns_info_t *info, ddns_alias_t *alias)
 {
 	if (strstr(info->system->name, "ipv6")) {
 		return snprintf(ctx->request_buf, ctx->request_buflen,
-			GOIP_UPDATE_IP6_REQUEST,
+			DESEC_UPDATE_IP6_REQUEST,
 			info->server_url,
 			info->creds.username,
 			info->creds.password,
@@ -86,7 +88,7 @@ static int request(ddns_t *ctx, ddns_info_t *info, ddns_alias_t *alias)
 			info->user_agent);
 	} else {
 		return snprintf(ctx->request_buf, ctx->request_buflen,
-			GOIP_UPDATE_IP_REQUEST,
+			DESEC_UPDATE_IP_REQUEST,
 			info->server_url,
 			info->creds.username,
 			info->creds.password,
