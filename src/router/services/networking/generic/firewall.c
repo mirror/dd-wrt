@@ -3178,6 +3178,7 @@ static void run_firewall6(char *vifs)
 		    && strcmp(nvram_safe_get("lan_ifname"), var)) {
 			if (isstandalone(var)) {
 				eval("ip6tables", "-A", "FORWARD", "-m", "conntrack", "--ctstate", "NEW", "-i", var, "-j", "ACCEPT");
+				eval("ip6tables", "-A", "INPUT", "-i", var, "-j", "ACCEPT");
 			}
 		}
 	}
