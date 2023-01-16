@@ -29,6 +29,7 @@ static void do_pagehead(webs_t wp, int argc, char_t ** argv, int pwc)	// Eko
 	websWrite(wp,
 		  "<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Strict//EN\" \"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd\">\n<html%s>\n<head>\n<meta http-equiv=\"Content-Type\" content=\"application/xhtml+xml; charset=%s\" />\n",
 		  translate, charset);
+	websWrite(wp, "<meta name=\"robots\" content=\"noindex\" />\n");
 	websWrite(wp, "<meta name=\"viewport\" content=\"width=device-width, initial-scale=1\" />\n");
 #ifndef HAVE_MICRO
 	websWrite(wp, "<link rel=\"icon\" href=\"favicon.ico\" type=\"image/x-icon\" />\n<link rel=\"shortcut icon\" href=\"favicon.ico\" type=\"image/x-icon\" />\n");
