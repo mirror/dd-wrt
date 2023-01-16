@@ -62,7 +62,7 @@ static int init_ddns(FILE * fp)
 {
 
 	int flag = nvram_geti("ddns_enable");
-	if (flag > 50 || flag < 1)
+	if (flag > 51 || flag < 1)
 		return -1;
 	char *providers[] = {
 		NULL,
@@ -116,6 +116,7 @@ static int init_ddns(FILE * fp)
 		"default@core-networks.de",
 		"default@dnsever.com",
 		"default@dnshome.de",
+		"default@dnsmadeeasy.com",
 	};
 
 #ifdef HAVE_IPV6
@@ -171,6 +172,7 @@ static int init_ddns(FILE * fp)
 		"ipv6@core-networks.de",
 		NULL,
 		"ipv6@dnshome.de",
+		NULL,
 	};
 #endif
 	int ipv6_only = 0;
@@ -293,7 +295,7 @@ void start_ddns(void)
 	FILE *fp;
 
 	int flag = nvram_geti("ddns_enable");
-	if (flag > 50 || flag < 1)
+	if (flag > 51 || flag < 1)
 		return -1;
 
 	mkdir("/tmp/ddns", 0744);
