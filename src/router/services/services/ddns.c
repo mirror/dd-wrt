@@ -114,6 +114,7 @@ static int init_ddns(FILE * fp)
 		"default@udmedia.de",
 		"default@all-inkl.com",
 		"default@core-networks.de",
+		"default@dnsever.com",
 	};
 
 #ifdef HAVE_IPV6
@@ -167,6 +168,7 @@ static int init_ddns(FILE * fp)
 		"ipv6@udmedia.de",
 		"ipv6@all-inkl.com",
 		"ipv6@core-networks.de",
+		NULL,
 	};
 #endif
 	int ipv6_only = 0;
