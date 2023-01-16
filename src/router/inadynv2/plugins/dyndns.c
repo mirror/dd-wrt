@@ -507,7 +507,7 @@ PLUGIN_EXIT(plugin_exit)
 	plugin_unregister(&opendns);
 	plugin_unregister(&joker);
 	plugin_unregister(&schokokeks);
-	plugin_unregister(&variomedia.de);
+	plugin_unregister(&variomedia);
 	plugin_unregister(&udmedia);
 	plugin_unregister(&myonlineportal);
 	plugin_unregister(&myonlineportal_v6);
