@@ -62,7 +62,7 @@ static int init_ddns(FILE * fp)
 {
 
 	int flag = nvram_geti("ddns_enable");
-	if (flag > 46 || flag < 1)
+	if (flag > 47 || flag < 1)
 		return -1;
 	char *providers[] = {
 		NULL,
@@ -112,6 +112,7 @@ static int init_ddns(FILE * fp)
 		"default@schokokeks.org",
 		"default@variomedia.de",
 		"default@udmedia.de",
+		"default@all-inkl.com",
 	};
 
 #ifdef HAVE_IPV6
@@ -163,6 +164,7 @@ static int init_ddns(FILE * fp)
 		"ipv6@schokokeks.org",
 		"ipv6@variomedia.de",
 		"ipv6@udmedia.de",
+		"ipv6@all-inkl.com",
 	};
 #endif
 	int ipv6_only = 0;
@@ -285,7 +287,7 @@ void start_ddns(void)
 	FILE *fp;
 
 	int flag = nvram_geti("ddns_enable");
-	if (flag > 46 || flag < 1)
+	if (flag > 47 || flag < 1)
 		return -1;
 
 	mkdir("/tmp/ddns", 0744);
