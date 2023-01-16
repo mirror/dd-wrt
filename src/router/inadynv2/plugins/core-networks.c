@@ -1,4 +1,4 @@
-/* Plugin for all-inkl.com
+/* Plugin for core-networks.de
  *
  * Copyright (C) 2023 Sebastian Gottschall <s.gottschall@dd-wrt.com>
  *
@@ -21,9 +21,11 @@
 
 #include "plugin.h"
 
-#define ALL_INKL_UPDATE_IP_REQUEST						\
+#define CORE_NETWORKS_UPDATE_IP_REQUEST						\
 	"GET %s?"							\
-	"myip=%s "							\
+	"hostname=%s&"							\
+	"myip=%s&"							\
+	"%s "								\
 	"HTTP/1.0\r\n"							\
 	"Host: %s\r\n"							\
 	"Authorization: Basic %s\r\n"					\
@@ -34,7 +36,7 @@ static int request  (ddns_t       *ctx,   ddns_info_t *info, ddns_alias_t *alias
 static int response (http_trans_t *trans, ddns_info_t *info, ddns_alias_t *alias);
 
 static ddns_system_t plugin = {
-	.name         = "default@all-inkl.com",
+	.name         = "default@core-networks.de",
 
 	.request      = (req_fn_t)request,
 	.response     = (rsp_fn_t)response,
@@ -43,16 +45,24 @@ static ddns_system_t plugin = {
 	.checkip_url  = DYNDNS_MY_CHECKIP_URL,
 	.checkip_ssl  = DYNDNS_MY_IP_SSL,
 
-	.server_name  = "dyndns.kasserver.com",
+	.server_name  = "dyndns.core-networks.de",
 	.server_url   =  "/"
 };
 
 static int request(ddns_t *ctx, ddns_info_t *info, ddns_alias_t *alias)
 {
+	char *keepip;
+	if (strstr(info->system->name, "ipv6"))
+		keepip = "keepipv4=1";
+	else
+		keepip = "keepipv6=1";
+
 	return snprintf(ctx->request_buf, ctx->request_buflen,
-			ALL_INKL_UPDATE_IP_REQUEST,
+			CORE_NETWORKS_UPDATE_IP_REQUEST,
 			info->server_url,
+			alias->name,
 			alias->address,
+			keepip,
 			info->server_name.name,
 			info->creds.encoded_password,
 			info->user_agent);
@@ -60,12 +70,17 @@ static int request(ddns_t *ctx, ddns_info_t *info, ddns_alias_t *alias)
 
 static int response(http_trans_t *trans, ddns_info_t *info, ddns_alias_t *alias)
 {
+	char *rsp = trans->rsp_body;
+
 	(void)info;
 	(void)alias;
 
 	DO(http_status_valid(trans->status));
 
-	return 0;
+	if (strstr(rsp, "good"))
+		return 0;
+
+	return RC_DDNS_RSP_NOTOK;
 }
 
 PLUGIN_INIT(plugin_init)

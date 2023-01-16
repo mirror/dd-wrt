@@ -43,4 +43,5 @@ inadyn_SOURCES  += ../plugins/common.c		../plugins/changeip.c		\
 		   ../plugins/sitelutions.c	../plugins/tunnelbroker.c	\
 		   ../plugins/yandex.c		../plugins/zoneedit.c \
 		   ../plugins/goip.c		../plugins/domaindiscount24.c	\
-		   ../plugins/desec.c		../plugins/all-inkl.c
+		   ../plugins/desec.c		../plugins/all-inkl.c \
+		   ../plugins/core-networks.c
