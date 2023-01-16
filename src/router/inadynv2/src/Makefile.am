@@ -45,4 +45,5 @@ inadyn_SOURCES  += ../plugins/common.c		../plugins/changeip.c		\
 		   ../plugins/goip.c		../plugins/domaindiscount24.c	\
 		   ../plugins/desec.c		../plugins/all-inkl.c \
 		   ../plugins/core-networks.c	../plugins/dnsever.c \
-		   ../plugins/dnshome.c		../plugins/dnsmadeeasy.c
+		   ../plugins/dnshome.c		../plugins/dnsmadeeasy.c \
+		   ../plugins/dnsmax.c
