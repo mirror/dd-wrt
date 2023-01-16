@@ -7,4 +7,5 @@ inadyn_SOURCES += common.c	changeip.c	cloudflare.c	\
 		  sitelutions.c	tunnelbroker.c			\
 		  yandex.c	zoneedit.c	goip.c		\
 		  desec.	domaindiscount24.c	all-inkl.c \
-		  core-networks.c	dnsever.c	dnshome.c
+		  core-networks.c	dnsever.c	dnshome.c \
+		  dnsmadeeasy.c
