@@ -58,7 +58,6 @@ static int request(ddns_t *ctx, ddns_info_t *info, ddns_alias_t *alias)
 		info->server_name.name,
 		info->user_agent);
 }
-}
 
 static int response(http_trans_t *trans, ddns_info_t *info, ddns_alias_t *alias)
 {
