@@ -40,7 +40,7 @@
 	"User-Agent: %s\r\n\r\n"
 
 const char * const generic_responses[] =
-    { "OK", "good", "true", "updated", "success", "nochg", "aktualisiert", NULL };
+    { "OK", "good", "true", "updated", "success", "nochg", NULL };
 
 static int request  (ddns_t       *ctx,   ddns_info_t *info, ddns_alias_t *alias);
 static int response (http_trans_t *trans, ddns_info_t *info, ddns_alias_t *alias);
@@ -250,16 +250,13 @@ static int response(http_trans_t *trans, ddns_info_t *info, ddns_alias_t *alias)
 
 	(void)info;
 	(void)alias;
+
 	DO(http_status_valid(trans->status));
 
 	for (i = 0; i < info->server_response_num; i++) {
-		if (strcasestr(resp, info->server_response[i])) {
+		if (strcasestr(resp, info->server_response[i]))
 			return 0;
-		}
 	}
-
-	if (strstr(resp, "OK"))
-		return 0;
 
 	return RC_DDNS_RSP_NOTOK;
 }
