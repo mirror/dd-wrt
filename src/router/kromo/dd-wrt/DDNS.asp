@@ -186,12 +186,12 @@ addEvent(window, "unload", function() {
 									<input type="checkbox" name="ddns_passwd_unmask" value="0" onclick="setElementMask('ddns_passwd', this.checked)" >&nbsp;<% tran("share.unmask"); %></input>
 								</div>			
 								<% nvlsm("ddns_enable","0 27 5 60","-->"); %>
-								<% nvlsm("ddns_enable","0 5","<!--"); %>
+								<% nvlsm("ddns_enable","0 5 29 47 57","<!--"); %>
 								<div class="setting">
 									<div class="label"><% tran("share.hostname"); %></div>
 									<input name="ddns_hostname" size="35" maxlength="255" onblur="valid_hostname(this,share.hostname)" value="<% get_ddns_value("ddns_hostname"); %>" />
 								</div>
-								<% nvlsm("ddns_enable","0 5","-->"); %>
+								<% nvlsm("ddns_enable","0 5 29 47 57","-->"); %>
 								<% nvlsm("ddns_enable","0 2 4 5 11 18 19 20 21 22 23 24 25 26 27 28 29 30 31 32 33 35 36 47 48 49 50 51 52 53 56 57 58 60","<!--"); %>
 								<div class="setting">
 									<div class="label"><% tran("ddns.wildcard"); %></div>
