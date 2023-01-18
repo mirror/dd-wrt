@@ -413,6 +413,20 @@ static ddns_system_t dyndnsit = {
 	.server_url   = "/nic/update"
 };
 
+static ddns_system_t infomaniak = {
+	.name         = "default@infomaniak.com",
+
+	.request      = (req_fn_t)request,
+	.response     = (rsp_fn_t)response,
+
+	.checkip_name = DYNDNS_MY_IP_SERVER,
+	.checkip_url  = DYNDNS_MY_CHECKIP_URL,
+	.checkip_ssl  = DYNDNS_MY_IP_SSL,
+
+	.server_name  = "infomaniak.com",
+	.server_url   = "/nic/update"
+};
+
 static ddns_system_t myonlineportal = {
 	.name         = "default@myonlineportal.net",
 
@@ -493,6 +507,8 @@ PLUGIN_INIT(plugin_init)
 	plugin_register(&udmedia);
 	plugin_register_v6(&udmedia);
 	plugin_register(&dyndnsit);
+	plugin_register(&infomaniak);
+	plugin_register_v6(&infomaniak);
 	plugin_register(&myonlineportal);
 	plugin_register(&myonlineportal_v6);
 }
@@ -525,6 +541,7 @@ PLUGIN_EXIT(plugin_exit)
 	plugin_unregister(&variomedia);
 	plugin_unregister(&udmedia);
 	plugin_unregister(&dyndnsit);
+	plugin_unregister(&infomaniak);
 	plugin_unregister(&myonlineportal);
 	plugin_unregister(&myonlineportal_v6);
 }
