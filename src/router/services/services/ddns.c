@@ -62,7 +62,7 @@ static int init_ddns(FILE * fp)
 {
 
 	int flag = nvram_geti("ddns_enable");
-	if (flag > 59 || flag < 1)
+	if (flag > 60 || flag < 1)
 		return -1;
 	char *providers[] = {
 		NULL,
@@ -313,7 +313,7 @@ void start_ddns(void)
 	FILE *fp;
 
 	int flag = nvram_geti("ddns_enable");
-	if (flag > 59 || flag < 1)
+	if (flag > 60 || flag < 1)
 		return -1;
 
 	mkdir("/tmp/ddns", 0744);
