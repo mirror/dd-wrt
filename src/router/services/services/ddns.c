@@ -125,6 +125,7 @@ static int init_ddns(FILE * fp)
 		"default@mydns.jp",
 		"default@namecheap.com",
 		"default@oray.com",
+		"default@regfish.de",
 	};
 
 #ifdef HAVE_IPV6
@@ -189,6 +190,7 @@ static int init_ddns(FILE * fp)
 		"ipv6@mydns.jp",
 		NULL,
 		NULL,
+		"ipv6@regfish.de",
 	};
 #endif
 	int ipv6_only = 0;
