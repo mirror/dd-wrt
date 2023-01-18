@@ -122,6 +122,7 @@ addEvent(window, "unload", function() {
 										<option value="27" <% nvsm("ddns_enable", "27", "selected"); %> >Duck DNS</option>
 										<option value="11" <% nvsm("ddns_enable", "11", "selected"); %> >duiadns.net</option>
 										<option value="37" <% nvsm("ddns_enable", "37", "selected"); %> >dy.fi</option>
+										<option value="54" <% nvsm("ddns_enable", "54", "selected"); %> >DynDNS.it</option>
 										<option value="1" <% nvsm("ddns_enable", "1", "selected"); %> >DynDNS.org</option>
 										<option value="17" <% nvsm("ddns_enable", "17", "selected"); %> >Dynu Systems</option>
 										<option value="32" <% nvsm("ddns_enable", "32", "selected"); %> >Dynv6 (IPV4))</option>
@@ -184,7 +185,7 @@ addEvent(window, "unload", function() {
 									<input type="checkbox" value="1" name="ddns_wildcard" <% ddns_checked("ddns_wildcard", "1"); %> />
 								</div>
 								<% nvlsm("ddns_enable","0 2 4 5 11 18 19 20 21 22 23 24 25 26 27 28 29 30 31 32 33 35 36 47 48 49 50 51 52 53","-->"); %>
-								<% nvlsmn6("ddns_enable","0 1 5 15 18 22 23 28 30 31 35 42 49 51 52 53","<!--"); %>
+								<% nvlsmn6("ddns_enable","0 1 5 15 18 22 23 28 30 31 35 42 49 51 52 53 54","<!--"); %>
 								<div class="setting">
 									<div class="label"><% tran("management.ipv6_srv"); %></div>
 									<input class="spaceradio" type="radio" value="1" name="ddns_ipv6" <% nvc("ddns_ipv6", "1"); %> onclick="show_layer_ext(this, 'idipv6', true)" /><% tran("share.enable"); %>&nbsp;
@@ -201,8 +202,8 @@ addEvent(window, "unload", function() {
 								show_layer_ext(document.dyndns.ddns_ipv6,'idipv6', <% nvem("ddns_ipv6", "1", "1", "0"); %> == 1);
 								//]]>
 								</script>
-								<% nvlsmn6("ddns_enable","0 1 5 15 18 22 23 28 30 31 35 42 49 51 52 53","-->"); %>
-								<% nvlsm("ddns_enable","0 1 2 3 4 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30 31 32 33 34 35 36 37 38 39 40 41 42 43 44 45 46 47 48 49 50 51 52 53","<!--"); %>
+								<% nvlsmn6("ddns_enable","0 1 5 15 18 22 23 28 30 31 35 42 49 51 52 53 54","-->"); %>
+								<% nvlsm("ddns_enable","0 1 2 3 4 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30 31 32 33 34 35 36 37 38 39 40 41 42 43 44 45 46 47 48 49 50 51 52 53 54","<!--"); %>
 								<div class="setting">
 									<div class="label"><% tran("ddns.system"); %></div>
 									<input name="ddns_custom" size="35" maxlength="32" value="<% get_ddns_value("ddns_custom"); %>" />
@@ -224,7 +225,7 @@ addEvent(window, "unload", function() {
 									<div class="label"><% tran("share.hostname"); %></div>
 									<input name="ddns_hostname" size="35" onblur="valid_hostname(this,share.hostname)" value="<% get_ddns_value("ddns_hostname"); %>" />
 								</div>
-								<% nvlsm("ddns_enable","0 1 2 3 4 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30 31 32 33 34 35 36 37 38 39 40 41 42 43 44 45 46 47 48 49 50 51 52 53","-->"); %>
+								<% nvlsm("ddns_enable","0 1 2 3 4 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30 31 32 33 34 35 36 37 38 39 40 41 42 43 44 45 46 47 48 49 50 51 52 53 54","-->"); %>
 								<% nvsm("ddns_enable","0","<!--"); %>
 								<div class="setting">
 									<div class="label"><% tran("ddns.wanip"); %></div>
