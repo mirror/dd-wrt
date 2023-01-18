@@ -34,8 +34,22 @@
 static int request  (ddns_t       *ctx,   ddns_info_t *info, ddns_alias_t *alias);
 static int response (http_trans_t *trans, ddns_info_t *info, ddns_alias_t *alias);
 
-static ddns_system_t plugin = {
+static ddns_system_t plugin_ddc24 = {
 	.name         = "default@domaindiscount24.com",
+
+	.request      = (req_fn_t)request,
+	.response     = (rsp_fn_t)response,
+
+	.checkip_name = DYNDNS_MY_IP_SERVER,
+	.checkip_url  = DYNDNS_MY_CHECKIP_URL,
+	.checkip_ssl  = DYNDNS_MY_IP_SSL,
+
+	.server_name  = "dynamicdns.key-systems.net",
+	.server_url   =  "/update.php"
+};
+
+static ddns_system_t plugin_moniker = {
+	.name         = "default@moniker.com",
 
 	.request      = (req_fn_t)request,
 	.response     = (rsp_fn_t)response,
@@ -70,7 +84,7 @@ static int response(http_trans_t *trans, ddns_info_t *info, ddns_alias_t *alias)
 
 	DO(http_status_valid(trans->status));
 
-	if (strstr(rsp, alias->address))
+	if (strstr(rsp, "success"))
 		return 0;
 
 	return RC_DDNS_RSP_NOTOK;
@@ -78,12 +92,14 @@ static int response(http_trans_t *trans, ddns_info_t *info, ddns_alias_t *alias)
 
 PLUGIN_INIT(plugin_init)
 {
-	plugin_register(&plugin);
+	plugin_register(&plugin_ddc24);
+	plugin_register(&plugin_moniker);
 }
 
 PLUGIN_EXIT(plugin_exit)
 {
-	plugin_unregister(&plugin);
+	plugin_unregister(&plugin_ddc24);
+	plugin_unregister(&plugin_moniker);
 }
 
 /**
