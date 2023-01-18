@@ -8,4 +8,5 @@ inadyn_SOURCES += common.c	changeip.c	cloudflare.c	\
 		  yandex.c	zoneedit.c	goip.c		\
 		  desec.c	domaindiscount24.c	all-inkl.c \
 		  core-networks.c	dnsever.c	dnshome.c \
-		  dnsmadeeasy.c		dnsmax.c	mydns.c
+		  dnsmadeeasy.c		dnsmax.c	mydns.c \
+		  myonlineportal.c
