@@ -126,8 +126,8 @@ addEvent(window, "unload", function() {
 										<option value="1" <% nvsm("ddns_enable", "1", "selected"); %> >DynDNS.org</option>
 										<option value="17" <% nvsm("ddns_enable", "17", "selected"); %> >Dynu Systems</option>
 										<option value="32" <% nvsm("ddns_enable", "32", "selected"); %> >Dynv6 (IPV4))</option>
-										<option value="7" <% nvsm("ddns_enable", "7", "selected"); %> >easyDNS.com</option>
-										<option value="2" <% nvsm("ddns_enable", "2", "selected"); %> >freedns.afraid.org</option>
+										<option value="7" <% nvsm("ddns_enable", "7", "selected"); %> >EasyDNS.com</option>
+										<option value="2" <% nvsm("ddns_enable", "2", "selected"); %> >FreeDNS</option>
 										<option value="28" <% nvsm("ddns_enable", "28", "selected"); %> >FreeMyIP</option>
 										<option value="29" <% nvsm("ddns_enable", "29", "selected"); %> >Gira</option>
 										<option value="33" <% nvsm("ddns_enable", "33", "selected"); %> >Goip.de</option>
@@ -149,7 +149,7 @@ addEvent(window, "unload", function() {
 										<option value="19" <% nvsm("ddns_enable", "19", "selected"); %> >OVH</option>
 										<option value="60" <% nvsm("ddns_enable", "60", "selected"); %> >Regfish.de</option>
 										<option value="44" <% nvsm("ddns_enable", "44", "selected"); %> >Schokokeks.org</option>
-										<option value="9" <% nvsm("ddns_enable", "9", "selected"); %> >selfHOST</option>
+										<option value="9" <% nvsm("ddns_enable", "9", "selected"); %> >SelfHOST</option>
 										<option value="61" <% nvsm("ddns_enable", "61", "selected"); %> >Simply.com</option>
 										<option value="30" <% nvsm("ddns_enable", "30", "selected"); %> >Sitelutions</option>
 										<option value="13" <% nvsm("ddns_enable", "13", "selected"); %> >spDYN</option>
