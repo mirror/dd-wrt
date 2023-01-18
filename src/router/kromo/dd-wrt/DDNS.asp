@@ -147,6 +147,7 @@ addEvent(window, "unload", function() {
 										<option value="43" <% nvsm("ddns_enable", "43", "selected"); %> >OpenDNS</option>
 										<option value="59" <% nvsm("ddns_enable", "59", "selected"); %> >Oray.com</option>
 										<option value="19" <% nvsm("ddns_enable", "19", "selected"); %> >OVH</option>
+										<option value="60" <% nvsm("ddns_enable", "60", "selected"); %> >Regfish.de</option>
 										<option value="44" <% nvsm("ddns_enable", "44", "selected"); %> >Schokokeks.org</option>
 										<option value="9" <% nvsm("ddns_enable", "9", "selected"); %> >selfHOST</option>
 										<option value="30" <% nvsm("ddns_enable", "30", "selected"); %> >Sitelutions</option>
@@ -164,32 +165,38 @@ addEvent(window, "unload", function() {
 										//]]>
 										</script>
 									</select>
+								<% nvlsm("ddns_enable","0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30 31 32 33 34 35 36 37 38 39 40 41 42 43 44 45 46 47 48 49 50 51 52 53 54 55 56 57 58 59","<!--"); %>
+								<div class="setting">
+									<div class="label"><script type="text/javascript">Capture(share.token);</script></div>
+									<input name="ddns_username" size="35" maxlength="64" onblur="valid_name(this,share.token)" value="<% get_ddns_value("ddns_username"); %>" />
 								</div>
-								<% nvlsm("ddns_enable","0 5 28 11","<!--"); %>
+								<% nvlsm("ddns_enable","0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30 31 32 33 34 35 36 37 38 39 40 41 42 43 44 45 46 47 48 49 50 51 52 53 54 55 56 57 58 59","-->"); %>
+								</div>
+								<% nvlsm("ddns_enable","0 5 28 11 60","<!--"); %>
 								<div class="setting">
 									<div class="label"><script type="text/javascript"><% nvesm("ddns_enable","27","Capture(share.token);","Capture(share.usrname);"); %></script></div>
 									<input name="ddns_username" size="35" maxlength="64" onblur="valid_name(this,<% nvesm("ddns_enable","27","share.token","share.usrname"); %>)" value="<% get_ddns_value("ddns_username"); %>" />
 								</div>
-								<% nvlsm("ddns_enable","0 5 28 11","-->"); %>
-								<% nvlsm("ddns_enable","0 27 5","<!--"); %>
+								<% nvlsm("ddns_enable","0 5 28 11 60","-->"); %>
+								<% nvlsm("ddns_enable","0 27 5 60","<!--"); %>
 								<div class="setting">
 		  							<div class="label"><script type="text/javascript"><% nvelsm("ddns_enable","28","Capture(share.token);","Capture(share.passwd);"); %></script></div>
 									<input type="password" autocomplete="new-password" id="ddns_passwd" name="ddns_passwd" size="35" maxlength="64" onblur="valid_name(this,<% nvelsm("ddns_enable","28","share.token","share.passwd"); %>))" value="<% get_ddns_value("ddns_passwd"); %>" />&nbsp;&nbsp;&nbsp;
 									<input type="checkbox" name="ddns_passwd_unmask" value="0" onclick="setElementMask('ddns_passwd', this.checked)" >&nbsp;<% tran("share.unmask"); %></input>
 								</div>			
-								<% nvlsm("ddns_enable","0 27 5","-->"); %>
+								<% nvlsm("ddns_enable","0 27 5 60","-->"); %>
 								<% nvlsm("ddns_enable","0 5","<!--"); %>
 								<div class="setting">
 									<div class="label"><% tran("share.hostname"); %></div>
 									<input name="ddns_hostname" size="35" maxlength="255" onblur="valid_hostname(this,share.hostname)" value="<% get_ddns_value("ddns_hostname"); %>" />
 								</div>
 								<% nvlsm("ddns_enable","0 5","-->"); %>
-								<% nvlsm("ddns_enable","0 2 4 5 11 18 19 20 21 22 23 24 25 26 27 28 29 30 31 32 33 35 36 47 48 49 50 51 52 53 56 57 58","<!--"); %>
+								<% nvlsm("ddns_enable","0 2 4 5 11 18 19 20 21 22 23 24 25 26 27 28 29 30 31 32 33 35 36 47 48 49 50 51 52 53 56 57 58 60","<!--"); %>
 								<div class="setting">
 									<div class="label"><% tran("ddns.wildcard"); %></div>
 									<input type="checkbox" value="1" name="ddns_wildcard" <% ddns_checked("ddns_wildcard", "1"); %> />
 								</div>
-								<% nvlsm("ddns_enable","0 2 4 5 11 18 19 20 21 22 23 24 25 26 27 28 29 30 31 32 33 35 36 47 48 49 50 51 52 53 56 57 58","-->"); %>
+								<% nvlsm("ddns_enable","0 2 4 5 11 18 19 20 21 22 23 24 25 26 27 28 29 30 31 32 33 35 36 47 48 49 50 51 52 53 56 57 58 60","-->"); %>
 								<% nvlsmn6("ddns_enable","0 1 5 15 18 22 23 28 30 31 35 42 49 51 52 53 54 56 58 59","<!--"); %>
 								<div class="setting">
 									<div class="label"><% tran("management.ipv6_srv"); %></div>
@@ -208,7 +215,7 @@ addEvent(window, "unload", function() {
 								//]]>
 								</script>
 								<% nvlsmn6("ddns_enable","0 1 5 15 18 22 23 28 30 31 35 42 49 51 52 53 54 56 58 59","-->"); %>
-								<% nvlsm("ddns_enable","0 1 2 3 4 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30 31 32 33 34 35 36 37 38 39 40 41 42 43 44 45 46 47 48 49 50 51 52 53 54 55 56 57 58 59","<!--"); %>
+								<% nvlsm("ddns_enable","0 1 2 3 4 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30 31 32 33 34 35 36 37 38 39 40 41 42 43 44 45 46 47 48 49 50 51 52 53 54 55 56 57 58 59 60","<!--"); %>
 								<div class="setting">
 									<div class="label"><% tran("ddns.system"); %></div>
 									<input name="ddns_custom" size="35" maxlength="32" value="<% get_ddns_value("ddns_custom"); %>" />
@@ -230,7 +237,7 @@ addEvent(window, "unload", function() {
 									<div class="label"><% tran("share.hostname"); %></div>
 									<input name="ddns_hostname" size="35" onblur="valid_hostname(this,share.hostname)" value="<% get_ddns_value("ddns_hostname"); %>" />
 								</div>
-								<% nvlsm("ddns_enable","0 1 2 3 4 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30 31 32 33 34 35 36 37 38 39 40 41 42 43 44 45 46 47 48 49 50 51 52 53 54 55 56 57 58 59","-->"); %>
+								<% nvlsm("ddns_enable","0 1 2 3 4 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30 31 32 33 34 35 36 37 38 39 40 41 42 43 44 45 46 47 48 49 50 51 52 53 54 55 56 57 58 59 60","-->"); %>
 								<% nvsm("ddns_enable","0","<!--"); %>
 								<div class="setting">
 									<div class="label"><% tran("ddns.wanip"); %></div>
