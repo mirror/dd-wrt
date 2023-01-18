@@ -1,7 +1,6 @@
-/* Plugin for DuckDNS
+/* Plugin for regfish.de
  *
- * Copyright (C) 2010-2021  Joachim Wiberg <troglobit@gmail.com>
- * Copyright (C) 2014       Andy Padavan <andy.padavan@gmail.com>
+ * Copyright (C) 2023 Sebastian Gottschall <s.gottschall@dd-wrt.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -22,10 +21,6 @@
 
 #include "plugin.h"
 
-/*
- * For API documentation we currently only have this
- *     https://www.duckdns.org/install.jsp#linux-cron
- */
 #define REGFISH_UPDATE_IP_HTTP_REQUEST					\
 	"GET %s?"							\
 	"fqdn=%s&"							\
