@@ -1,4 +1,4 @@
-/* Plugin for mydns.jp
+/* Plugin for myonlineportal.net
  *
  * Copyright (C) 2023 Sebastian Gottschall <s.gottschall@dd-wrt.com>
  *
@@ -21,21 +21,22 @@
 
 #include "plugin.h"
 
-#define MYDNS_UPDATE_IP_REQUEST						\
+#define MYONLINEPORTAL_UPDATE_IP_REQUEST						\
 	"GET %s?"							\
-	"MID=%s&"							\
-	"PWD=%s&"							\
-	"IPV4ADDR=%s "							\
+	"username=%s&"							\
+	"password=%s&"							\
+	"hostname=%s&"							\
+	"ip=%s "							\
 	"HTTP/1.0\r\n"							\
 	"Host: %s\r\n"							\
 	"User-Agent: %s\r\n\r\n"
 
-#define MYDNS_UPDATE_IP6_REQUEST						\
+#define MYONLINEPORTAL_UPDATE_IP6_REQUEST						\
 	"GET %s?"							\
-	"MID=%s&"							\
-	"PWD=%s&"							\
-	"IPV6ADDR=%s "							\
-	"GET %s?"							\
+	"username=%s&"							\
+	"password=%s&"							\
+	"hostname=%s&"							\
+	"ip6=%s "							\
 	"HTTP/1.0\r\n"							\
 	"Host: %s\r\n"							\
 	"User-Agent: %s\r\n\r\n"
@@ -44,50 +45,50 @@ static int request  (ddns_t       *ctx,   ddns_info_t *info, ddns_alias_t *alias
 static int response (http_trans_t *trans, ddns_info_t *info, ddns_alias_t *alias);
 
 static ddns_system_t plugin = {
-	.name         = "default@mydns.jp",
+	.name         = "default@myonlineportal.net",
 
 	.request      = (req_fn_t)request,
 	.response     = (rsp_fn_t)response,
 
-	.checkip_name = DYNDNS_MY_IP_SERVER,
-	.checkip_url  = DYNDNS_MY_CHECKIP_URL,
-	.checkip_ssl  = DYNDNS_MY_IP_SSL,
+	.checkip_name = "ipv4.myonlineportal.net",
+	.checkip_url  = "/checkip",
 
-	.server_name  = "www.mydns.jp",
-	.server_url   =  "/directip.html"
+	.server_name  = "myonlineportal.net",
+	.server_url   = "/updateddns"
 };
 
 static ddns_system_t plugin_v6 = {
-	.name         = "ipv6@mydns.jp",
+	.name         = "ipv6@myonlineportal.net",
 
 	.request      = (req_fn_t)request,
 	.response     = (rsp_fn_t)response,
 
-	.checkip_name = "dns64.cloudflare-dns.com",
-	.checkip_url  = "/cdn-cgi/trace",
-	.checkip_ssl  = DDNS_CHECKIP_SSL_SUPPORTED,
+	.checkip_name = "ipv6.myonlineportal.net",
+	.checkip_url  = "/checkip",
 
-	.server_name  = "www.mydns.jp",
-	.server_url   =  "/directip.html"
+	.server_name  = "myonlineportal.net",
+	.server_url   = "/updateddns"
 };
 
 static int request(ddns_t *ctx, ddns_info_t *info, ddns_alias_t *alias)
 {
 	if (strstr(info->system->name, "ipv6")) {
 		return snprintf(ctx->request_buf, ctx->request_buflen,
-			MYDNS_UPDATE_IP6_REQUEST,
+			MYONLINEPORTAL_UPDATE_IP6_REQUEST,
 			info->server_url,
 			info->creds.username,
 			info->creds.password,
+			alias->name,
 			alias->address,
 			info->server_name.name,
 			info->user_agent);
 	} else {
 		return snprintf(ctx->request_buf, ctx->request_buflen,
-			MYDNS_UPDATE_IP_REQUEST,
+			MYONLINEPORTAL_UPDATE_IP_REQUEST,
 			info->server_url,
 			info->creds.username,
 			info->creds.password,
+			alias->name,
 			alias->address,
 			info->server_name.name,
 			info->user_agent);
@@ -102,6 +103,9 @@ static int response(http_trans_t *trans, ddns_info_t *info, ddns_alias_t *alias)
 	(void)alias;
 
 	DO(http_status_valid(trans->status));
+
+	if (strstr(rsp, "good") || strstr(rsp, "nochg"))
+		return 0;
 
 	return RC_DDNS_RSP_NOTOK;
 }
