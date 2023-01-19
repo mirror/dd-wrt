@@ -657,9 +657,9 @@ static int send_update(ddns_t *ctx, ddns_info_t *info, ddns_alias_t *alias, int 
 
 	rc = info->system->response(&trans, info, alias);
 	if (rc) {
-		logit(LOG_WARNING, "%s error in DDNS server response:",
-		      rc == RC_DDNS_RSP_RETRY_LATER || rc == RC_DDNS_RSP_TOO_FREQUENT ? "Temporary" : "Fatal");
-		logit(LOG_WARNING, "[%d %s]", trans.status, trans.status_desc);
+		logit(LOG_WARNING, "%s error in DDNS server response: %s",
+		      rc == RC_DDNS_RSP_RETRY_LATER || rc == RC_DDNS_RSP_TOO_FREQUENT ? "Temporary" : "Fatal", error_str(rc));
+//		logit(LOG_WARNING, "[%d %s]", trans.status, trans.status_desc);
 		logit(LOG_DEBUG, "%s", trans.rsp_body != trans.rsp ? trans.rsp_body : "");
 
 		/* Update failed, force update again in ctx->cmd_check_period seconds */
