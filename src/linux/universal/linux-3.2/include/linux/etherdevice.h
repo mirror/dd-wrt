@@ -203,8 +203,8 @@ static inline unsigned long zap_last_2bytes(unsigned long value)
  * Please note that alignment of addr1 & addr2 is only guaranted to be 16 bits.
  */
 
-static inline unsigned compare_ether_addr_64bits(const u8 addr1[6+2],
-						 const u8 addr2[6+2])
+static inline unsigned compare_ether_addr_64bits(const u8 *addr1,
+						 const u8 *addr2)
 {
 #ifdef CONFIG_HAVE_EFFICIENT_UNALIGNED_ACCESS
 	unsigned long fold = ((*(unsigned long *)addr1) ^
@@ -233,7 +233,7 @@ static inline unsigned compare_ether_addr_64bits(const u8 addr1[6+2],
  * the right padding.
  */
 static inline bool is_etherdev_addr(const struct net_device *dev,
-				    const u8 addr[6 + 2])
+				    const u8 *addr)
 {
 	struct netdev_hw_addr *ha;
 	int res = 1;
