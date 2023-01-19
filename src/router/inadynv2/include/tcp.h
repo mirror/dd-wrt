@@ -56,7 +56,7 @@ typedef struct {
 int tcp_construct          (tcp_sock_t *tcp);
 int tcp_destruct           (tcp_sock_t *tcp);
 
-int tcp_init               (tcp_sock_t *tcp, char *msg);
+int tcp_init               (tcp_sock_t *tcp, char *msg, int force6);
 int tcp_exit               (tcp_sock_t *tcp);
 
 int tcp_send               (tcp_sock_t *tcp, const char *buf, int len);

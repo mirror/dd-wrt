@@ -116,7 +116,7 @@ static void set_params(tcp_sock_t *tcp)
 
 }
 
-int tcp_init(tcp_sock_t *tcp, char *msg)
+int tcp_init(tcp_sock_t *tcp, char *msg, int force6)
 {
 	int rc = 0;
 
@@ -143,6 +143,9 @@ int tcp_init(tcp_sock_t *tcp, char *msg)
 
 		/* Obtain address(es) matching host/port */
 		memset(&hints, 0, sizeof(struct addrinfo));
+		if (force6)
+		hints.ai_family = AF_INET6;		/* Allow IPv4 or IPv6 */
+		else
 		hints.ai_family = AF_UNSPEC;		/* Allow IPv4 or IPv6 */
 		hints.ai_socktype = SOCK_STREAM;	/* Stream socket */
 		hints.ai_flags = AI_NUMERICSERV;	/* No service name lookup */
@@ -150,7 +153,8 @@ int tcp_init(tcp_sock_t *tcp, char *msg)
 
 		s = getaddrinfo(tcp->remote_host, port, &hints, &servinfo);
 		if (s != 0 || !servinfo) {
-			logit(LOG_WARNING, "Failed resolving hostname %s: %s", tcp->remote_host, gai_strerror(s));
+			if (!force6)
+				logit(LOG_WARNING, "Failed resolving hostname %s: %s", tcp->remote_host, gai_strerror(s));
 			rc = RC_TCP_INVALID_REMOTE_ADDR;
 			break;
 		}
@@ -159,7 +163,8 @@ int tcp_init(tcp_sock_t *tcp, char *msg)
 		while (1) {
 			sd = socket(ai->ai_family, SOCK_STREAM, 0);
 			if (sd == -1) {
-				logit(LOG_ERR, "Error creating client socket: %s", strerror(errno));
+				if (!force6)
+					logit(LOG_ERR, "Error creating client socket: %s", strerror(errno));
 				rc = RC_TCP_SOCKET_CREATE_ERROR;
 				break;
 			}
@@ -181,13 +186,15 @@ int tcp_init(tcp_sock_t *tcp, char *msg)
 
 				ai = ai->ai_next;
 				if (ai) {
-					logit(LOG_INFO, "Failed connecting to that server: %s",
-					      errno != EINPROGRESS ? strerror(errno) : "retrying ...");
+					if (!force6)
+						logit(LOG_INFO, "Failed connecting to that server: %s",
+					    		errno != EINPROGRESS ? strerror(errno) : "retrying ...");
 					close(sd);
 					continue;
 				}
 
-				logit(LOG_WARNING, "Failed connecting to %s: %s", tcp->remote_host, strerror(errno));
+				if (!force6)
+					logit(LOG_WARNING, "Failed connecting to %s: %s", tcp->remote_host, strerror(errno));
 				close(sd);
 				rc = RC_TCP_CONNECT_FAILED;
 			} else {
@@ -204,6 +211,8 @@ int tcp_init(tcp_sock_t *tcp, char *msg)
 
 	if (rc) {
 		tcp_exit(tcp);
+		if (force6)
+		    return tcp_init(tcp, msg, 0); //fallback to ipv4
 		return rc;
 	}
 
