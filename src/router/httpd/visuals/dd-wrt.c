@@ -6678,7 +6678,7 @@ EJ_VISIBLE void ej_show_dnscrypt(webs_t wp, int argc, char_t ** argv)
 {
 	char line[512];
 	int lines = 0;
-	char name[32], fname[128];
+	char name[64], fname[128];
 	websWrite(wp, "<div class=\"setting\">\n");
 	show_caption(wp, "label", "service.dns_crypt_resolv", NULL);
 	websWrite(wp, "<select name=\"dns_crypt_resolver\">\n");
