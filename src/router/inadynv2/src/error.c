@@ -22,6 +22,7 @@
 
 #include "../include/error.h"
 #include <stdlib.h>
+#include <stdio.h>
 
 typedef struct {
 	int rc;
@@ -84,7 +85,6 @@ static const char *unknown_error = "Unknown error";
 const char *error_str(int rc)
 {
 	const ERROR_NAME *it = global_error_table;
-
 	while (it->p_name) {
 		if (it->rc == rc)
 			return it->p_name;
