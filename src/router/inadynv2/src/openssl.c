@@ -146,7 +146,7 @@ static int ssl_fail(http_t *client, int rc)
 	return rc;
 }
 
-int ssl_open(http_t *client, char *msg, int force6)
+int ssl_open(http_t *client, char *msg, int force)
 {
 	const char *sn;
 	char buf[512];
@@ -155,12 +155,12 @@ int ssl_open(http_t *client, char *msg, int force6)
 	int rc;
 
 	if (!client->ssl_enabled)
-		return tcp_init(&client->tcp, msg, force6);
+		return tcp_init(&client->tcp, msg, force);
 
 	http_get_port(client, &port);
 	if (!port)
 		http_set_port(client, HTTPS_DEFAULT_PORT);
-	DO(tcp_init(&client->tcp, msg, force6));
+	DO(tcp_init(&client->tcp, msg, force));
 
 	logit(LOG_INFO, "%s, initiating HTTPS ...", msg);
 	client->ssl_ctx = SSL_CTX_new(SSLv23_client_method());
