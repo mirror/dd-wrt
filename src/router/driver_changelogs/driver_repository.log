@@ -1,4 +1,8 @@
 ------------------------------------------------------------------------
+r6889 | brainslayer | 2023-01-19 11:11:33 +0600 (Thu, 19 Jan 2023) | 1 line
+
+some gcc 12 warning fixes
+------------------------------------------------------------------------
 r6888 | brainslayer | 2023-01-11 12:59:05 +0600 (Wed, 11 Jan 2023) | 1 line
 
 remove dupcheck again, since it causes severe performance issues
