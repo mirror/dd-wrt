@@ -30,6 +30,10 @@
 #define TCP_SOCKET_MAX_PORT		65535
 #define TCP_DEFAULT_READ_CHUNK_SIZE	100
 
+#define TCP_AUTO	0
+#define TCP_FORCE_IPV4	1
+#define TCP_FORCE_IPV6	2
+
 typedef enum {
 	NO_PROXY = 0,
 	PROXY_SOCKS4,
