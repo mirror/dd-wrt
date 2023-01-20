@@ -1303,7 +1303,7 @@ void setupHostAP_ath9k(char *maininterface, int isfirst, int vapid, int aoss)
 			switch (usebw) {
 			case 40:
 				fprintf(fp, "vht_oper_chwidth=0\n");
-				fprintf(fp, "vht_oper_centr_freq_seg0_idx_freq=%d\n", cur_freq + (/2 * 5) * cur_iht));
+				fprintf(fp, "vht_oper_centr_freq_seg0_idx_freq=%d\n", cur_freq + (2 * 5) * cur_iht));
 				break;
 			case 80:
 				fprintf(fp, "vht_oper_chwidth=1\n");
