@@ -114,8 +114,8 @@ static void hostapd_reload_bss(struct hostapd_data *hapd)
 			 hapd->iconf->ieee80211ac,
 			 hapd->iconf->secondary_channel,
 			 hapd->iconf->vht_oper_chwidth,
-			 hapd->iconf->vht_oper_centr_freq_seg0_idx,
-			 hapd->iconf->vht_oper_centr_freq_seg1_idx);
+			 hapd->iconf->vht_oper_centr_freq_seg0_idx_freq ? hapd->iconf->vht_oper_centr_freq_seg0_idx_freq : hapd->iconf->vht_oper_centr_freq_seg0_idx,
+			 hapd->iconf->vht_oper_centr_freq_seg1_idx_freq ? hapd->iconf->vht_oper_centr_freq_seg1_idx_freq : hapd->iconf->vht_oper_centr_freq_seg1_idx);
 
 	if (hapd->iface->current_mode) {
 		if (hostapd_prepare_rates(hapd->iface, hapd->iface->current_mode)) {
@@ -2000,8 +2000,9 @@ static int hostapd_setup_interface_complete_sync(struct hostapd_iface *iface,
 				     hapd->iconf->ieee80211ac,
 				     hapd->iconf->secondary_channel,
 				     hapd->iconf->vht_oper_chwidth,
-				     hapd->iconf->vht_oper_centr_freq_seg0_idx,
-				     hapd->iconf->vht_oper_centr_freq_seg1_idx)) {
+				     hapd->iconf->vht_oper_centr_freq_seg0_idx_freq ? hapd->iconf->vht_oper_centr_freq_seg0_idx_freq : hapd->iconf->vht_oper_centr_freq_seg0_idx,
+				     hapd->iconf->vht_oper_centr_freq_seg1_idx_freq ? hapd->iconf->vht_oper_centr_freq_seg1_idx_freq : hapd->iconf->vht_oper_centr_freq_seg1_idx)) 
+				     {
 			wpa_printf(MSG_ERROR, "Could not set channel for "
 				   "kernel driver");
 			goto fail;
@@ -3354,8 +3355,8 @@ static int hostapd_change_config_freq(struct hostapd_data *hapd,
 				    conf->ieee80211ac,
 				    conf->secondary_channel,
 				    conf->vht_oper_chwidth,
-				    conf->vht_oper_centr_freq_seg0_idx,
-				    conf->vht_oper_centr_freq_seg1_idx,
+			 hapd->iconf->vht_oper_centr_freq_seg0_idx_freq ? hapd->iconf->vht_oper_centr_freq_seg0_idx_freq : hapd->iconf->vht_oper_centr_freq_seg0_idx,
+			 hapd->iconf->vht_oper_centr_freq_seg1_idx_freq ? hapd->iconf->vht_oper_centr_freq_seg1_idx_freq : hapd->iconf->vht_oper_centr_freq_seg1_idx,
 				    conf->vht_capab))
 		return -1;
 
@@ -3381,9 +3382,15 @@ static int hostapd_change_config_freq(struct hostapd_data *hapd,
 	conf->channel = channel;
 	conf->ieee80211n = params->ht_enabled;
 	conf->secondary_channel = params->sec_channel_offset;
-	ieee80211_freq_to_chan(params->center_freq1,
+	if (conf->vht_oper_centr_freq_seg0_idx_freq)
+	    params->center_freq1 = conf->vht_oper_centr_freq_seg0_idx_freq;
+	else
+	    ieee80211_freq_to_chan(params->center_freq1,
 			       &conf->vht_oper_centr_freq_seg0_idx);
-	ieee80211_freq_to_chan(params->center_freq2,
+	if (conf->vht_oper_centr_freq_seg1_idx_freq)
+	    params->center_freq2 = conf->vht_oper_centr_freq_seg1_idx_freq;
+	else
+	    ieee80211_freq_to_chan(params->center_freq2,
 			       &conf->vht_oper_centr_freq_seg1_idx);
 
 	/* TODO: maybe call here hostapd_config_check here? */

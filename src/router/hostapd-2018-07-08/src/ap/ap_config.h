@@ -860,6 +860,8 @@ struct hostapd_config {
 	u8 vht_oper_chwidth;
 	u8 vht_oper_centr_freq_seg0_idx;
 	u8 vht_oper_centr_freq_seg1_idx;
+	u16 vht_oper_centr_freq_seg0_idx_freq;
+	u16 vht_oper_centr_freq_seg1_idx_freq;
 	u8 ht40_plus_minus_allowed;
 
 	/* Use driver-generated interface addresses when adding multiple BSSs */
