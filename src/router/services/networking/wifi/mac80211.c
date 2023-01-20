@@ -58,11 +58,20 @@
 #define MAC80211DEBUG() syslog(LOG_DEBUG,"mac80211: %s:%d", __func__,__LINE__)
 #endif
 
+static int cur_channel;
+static int cur_channel2;
+static int cur_channeloffset;
+static int cur_iht;
 void check_cryptomod(char *prefix);
 
 void setupHostAP_ath9k(char *maininterface, int isfirst, int vapid, int aoss);
 static void setupSupplicant_ath9k(char *prefix, char *ssidoverride, int isadhoc);
 void setupHostAP_generic_ath9k(char *prefix, FILE * fp, int isrepeater, int aoss);
+
+static int cansuperchannel(char *prefix)
+{
+	return (issuperchannel() && nvram_nmatch("0", "%s_regulatory", prefix));
+}
 
 static const char *gethtmode(char *prefix)
 {
@@ -1007,6 +1016,10 @@ void setupHostAP_generic_ath9k(char *prefix, FILE * fp, int isrepeater, int aoss
 		free(caps);
 	}
 	MAC80211DEBUG();
+	cur_channel = channel;
+	cur_channel2 = channel2;
+	cur_channeloffset = channeloffset;
+	cur_iht = iht;
 	if (has_ac(prefix) && has_5ghz(prefix)) {
 		if (freq >= 4000 && (!strcmp(netmode, "mixed") ||	//
 				     !strcmp(netmode, "ac-only") || !strcmp(netmode, "acn-mixed"))) {
@@ -1271,15 +1284,38 @@ void setupHostAP_ath9k(char *maininterface, int isfirst, int vapid, int aoss)
 		usebw = 160;
 	if (nvram_match(bw, "80+80"))
 		usebw = 8080;
-	if (isfirst && has_qam256(ifname) && has_2ghz(ifname) && usebw < 80) {
+	if (isfirst && has_qam256(ifname) && has_2ghz(ifname) && (usebw < 80 || cansuperchannel(maininterface))) {
 		if (nvram_nmatch("1", "%s_turbo_qam", maininterface)) {
 			char *caps = mac80211_get_vhtcaps(maininterface, 0, 0, 0, 0, 0, 0);
 			fprintf(fp, "vht_capab=%s\n", caps);
 			fprintf(fp, "ieee80211ac=1\n");
+			switch (usebw) {
+			case 40:
+				fprintf(fp, "vht_oper_chwidth=0\n");
+				fprintf(fp, "vht_oper_centr_freq_seg0_idx=%d\n", cur_channel + (2 * cur_iht));
+				break;
+			case 80:
+				fprintf(fp, "vht_oper_chwidth=1\n");
+				fprintf(fp, "vht_oper_centr_freq_seg0_idx=%d\n", cur_channel + (cur_channeloffset * cur_iht));
+				break;
+			case 160:
+				fprintf(fp, "vht_oper_chwidth=2\n");
+				fprintf(fp, "vht_oper_centr_freq_seg0_idx=%d\n", cur_channel + (cur_channeloffset * cur_iht));
+				break;
+			case 8080:
+				fprintf(fp, "vht_oper_chwidth=3\n");
+				fprintf(fp, "vht_oper_centr_freq_seg0_idx=%d\n", cur_channel + (cur_channeloffset * cur_iht));
+				fprintf(fp, "vht_oper_centr_freq_seg1_idx=%d\n", cur_channel2);
+				break;
+			default:
+				fprintf(fp, "vht_oper_chwidth=0\n");
+				break;
+
+			}
 			free(caps);
 		}
 	}
-	if (has_qam256(ifname) && has_2ghz(ifname) && usebw < 80) {
+	if (has_qam256(ifname) && has_2ghz(ifname) && (usebw < 80 || cansuperchannel(maininterface))) {
 		if (nvram_nmatch("1", "%s_turbo_qam", maininterface)) {
 			fprintf(fp, "vendor_vht=1\n");
 		}
