@@ -85,6 +85,23 @@ static unsigned int ns_type7_clocks[4] = { 600, 800, 1000, 0 };
 #define IFMAP(a) (a)
 #endif
 
+#ifndef HAVE_SUPERCHANNEL
+int inline issuperchannel(void)
+{
+#if defined(HAVE_MAKSAT) && defined(HAVE_MR3202A)
+	return 0;
+#elif defined(HAVE_MAKSAT) && defined(HAVE_ALPHA)
+	return 0;
+#elif HAVE_MAKSAT
+	return 1;
+#else
+	return 0;
+#endif
+}
+#else
+#define issuperchannel() wp->issuperchannel
+#endif
+
 static int cansuperchannel(char *prefix)
 {
 	return (issuperchannel() && nvram_nmatch("0", "%s_regulatory", prefix));
@@ -2882,22 +2899,6 @@ EJ_VISIBLE void ej_getdefaultindex(webs_t wp, int argc, char_t ** argv)
 #endif
 }
 
-#ifndef HAVE_SUPERCHANNEL
-int inline issuperchannel(void)
-{
-#if defined(HAVE_MAKSAT) && defined(HAVE_MR3202A)
-	return 0;
-#elif defined(HAVE_MAKSAT) && defined(HAVE_ALPHA)
-	return 0;
-#elif HAVE_MAKSAT
-	return 1;
-#else
-	return 0;
-#endif
-}
-#else
-#define issuperchannel() wp->issuperchannel
-#endif
 EJ_VISIBLE void ej_show_countrylist(webs_t wp, int argc, char_t ** argv)
 {
 	if (argc < 1) {
