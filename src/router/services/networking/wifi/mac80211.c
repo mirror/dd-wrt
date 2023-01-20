@@ -1307,16 +1307,16 @@ void setupHostAP_ath9k(char *maininterface, int isfirst, int vapid, int aoss)
 				break;
 			case 80:
 				fprintf(fp, "vht_oper_chwidth=1\n");
-				fprintf(fp, "vht_oper_centr_freq_seg0_idx=%d\n", cur_freq + ((cur_channeloffset * 5) * cur_iht));
+				fprintf(fp, "vht_oper_centr_freq_seg0_idx_freq=%d\n", cur_freq + ((cur_channeloffset * 5) * cur_iht));
 				break;
 			case 160:
 				fprintf(fp, "vht_oper_chwidth=2\n");
-				fprintf(fp, "vht_oper_centr_freq_seg0_idx=%d\n", cur_freq + ((cur_channeloffset * 5) * cur_iht));
+				fprintf(fp, "vht_oper_centr_freq_seg0_idx_freq=%d\n", cur_freq + ((cur_channeloffset * 5) * cur_iht));
 				break;
 			case 8080:
 				fprintf(fp, "vht_oper_chwidth=3\n");
-				fprintf(fp, "vht_oper_centr_freq_seg0_idx=%d\n", cur_freq + ((cur_channeloffset * 5) * cur_iht));
-				fprintf(fp, "vht_oper_centr_freq_seg1_idx=%d\n", cur_freq2);
+				fprintf(fp, "vht_oper_centr_freq_seg0_idx_freq=%d\n", cur_freq + ((cur_channeloffset * 5) * cur_iht));
+				fprintf(fp, "vht_oper_centr_freq_seg1_idx_freq=%d\n", cur_freq2);
 				break;
 			default:
 				fprintf(fp, "vht_oper_chwidth=0\n");
