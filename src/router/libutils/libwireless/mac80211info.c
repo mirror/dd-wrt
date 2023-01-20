@@ -900,14 +900,12 @@ char *mac80211_get_vhtcaps(const char *interface, int shortgi, int vht80, int vh
 	char *capstring = NULL;
 	int phy;
 	int has5ghz = has_5ghz(interface) || cansuperchannel(interface);
-	fprintf(stderr, "has 5 ghz %d\n", has5ghz);
 	lock();
 	phy = mac80211_get_phyidx_by_vifname(interface);
 	if (phy == -1) {
 		unlock();
 		return strdup("");
 	}
-	fprintf(stderr, "phy %d\n", phy);
 	msg = unl_genl_msg(&unl, NL80211_CMD_GET_WIPHY, false);
 	NLA_PUT_U32(msg, NL80211_ATTR_WIPHY, phy);
 	if (unl_genl_request_single(&unl, msg, &msg) < 0) {
@@ -924,7 +922,6 @@ char *mac80211_get_vhtcaps(const char *interface, int shortgi, int vht80, int vh
 		cap = nla_get_u32(caps);
 		unsigned int bfantenna = (cap >> 13) & 0x7;
 		unsigned int sodimension = (cap >> 16) & 0x7;
-	fprintf(stderr, "caps %X\n", cap);
 #if 0
 		if (bfantenna & 4)
 			bfantenna &= 4;
