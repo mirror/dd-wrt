@@ -330,6 +330,18 @@ void eap_sta_key_mgmt(FILE * fp, char *prefix)
 #endif
 
 }
+#ifndef HAVE_SUPERCHANNEL
+int inline issuperchannel(void)
+{
+	return 0;
+}
+#endif
+
+static int cansuperchannel(char *prefix)
+{
+	return (issuperchannel() && nvram_nmatch("0", "%s_regulatory", prefix));
+}
+
 
 void addvhtcaps(char *prefix, FILE * fp)
 {
@@ -353,7 +365,7 @@ void addvhtcaps(char *prefix, FILE * fp)
 	unsigned int mask;
 	if (is_mt7615(prefix) || is_ath10k(prefix) || is_brcmfmac(prefix) || is_mt7915(prefix) || is_mt7921(prefix) || is_mt7603(prefix) || is_mt76x0(prefix) || is_mt76x2(prefix)) {
 		char *netmode = nvram_nget("%s_net_mode", prefix);
-		if (has_ac(prefix) && (!strcmp(netmode, "ac-only") || !strcmp(netmode, "acn-mixed") || !strcmp(netmode, "mixed"))) {
+		if (has_ac(prefix) && (!strcmp(netmode, "ac-only") || !strcmp(netmode, "acn-mixed") || !strcmp(netmode, "mixed") || cansuperchannel())) {
 			char shortgi[32];
 			sprintf(shortgi, "%s_shortgi", prefix);
 			char mubf[32];
