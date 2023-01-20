@@ -2096,6 +2096,10 @@ void setupSupplicant_ath9k(char *prefix, char *ssidoverride, int isadhoc)
 
 }
 
+int vhtcaps_main(int argc, char *argv[])
+{
+    fprintf(stdout, "caps = %s\n", mac80211_get_vhtcaps(argv[1], 1, 1, 1, 1, 1, 1));
+}
 extern void do_hostapd(char *fstr, char *prefix);
 void ath9k_start_supplicant(int count, char *prefix)
 {
