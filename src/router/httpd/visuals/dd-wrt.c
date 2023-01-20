@@ -102,7 +102,7 @@ int inline issuperchannel(void)
 #define issuperchannel() wp->issuperchannel
 #endif
 
-static int cansuperchannel(char *prefix)
+static int cansuperchannel(webs_t *wp, char *prefix)
 {
 	return (issuperchannel() && nvram_nmatch("0", "%s_regulatory", prefix));
 }
@@ -3412,9 +3412,9 @@ static void internal_ej_show_wireless_single(webs_t wp, char *prefix)
 			websWrite(wp, "document.write(\"<option value=\\\"40\\\" %s >\" + share.turbo + \"</option>\");\n", nvram_matchi(wl_width, 40) ? "selected=\\\"selected\\\"" : "");
 		else if (canht40)
 			websWrite(wp, "document.write(\"<option value=\\\"40\\\" %s >\" + share.ht40 + \"</option>\");\n", nvram_matchi(wl_width, 40) ? "selected=\\\"selected\\\"" : "");
-		if ((is_ath10k(prefix) || is_mvebu(prefix) || has_vht80(prefix)) && (has_5ghz(prefix) || cansuperchannel(prefix)) && nvram_nmatch("mixed", "%s_net_mode", prefix)
+		if ((is_ath10k(prefix) || is_mvebu(prefix) || has_vht80(prefix)) && (has_5ghz(prefix) || cansuperchannel(wp, prefix)) && nvram_nmatch("mixed", "%s_net_mode", prefix)
 		    || nvram_nmatch("ac-only", "%s_net_mode", prefix)
-		    || nvram_nmatch("acn-mixed", "%s_net_mode", prefix) || cansuperchannel(prefix)) {
+		    || nvram_nmatch("acn-mixed", "%s_net_mode", prefix) || cansuperchannel(wp, prefix)) {
 			if (canvht80)
 				websWrite(wp, "document.write(\"<option value=\\\"80\\\" %s >\" + share.vht80 + \"</option>\");\n", nvram_matchi(wl_width, 80) ? "selected=\\\"selected\\\"" : "");
 			if (has_vht160(prefix) && can_vht160(prefix))
@@ -4134,8 +4134,8 @@ static void internal_ej_show_wireless_single(webs_t wp, char *prefix)
 				websWrite(wp, "document.write(\"<option value=\\\"40\\\" %s >\" + share.turbo + \"</option>\");\n", nvram_matchi(wl_width, 40) ? "selected=\\\"selected\\\"" : "");
 			else if (canht40)
 				websWrite(wp, "document.write(\"<option value=\\\"40\\\" %s >\" + share.ht40 + \"</option>\");\n", nvram_matchi(wl_width, 40) ? "selected=\\\"selected\\\"" : "");
-			if ((is_ath10k(prefix) || is_mvebu(prefix) || has_vht80(prefix)) && (has_5ghz(prefix) || cansuperchannel(prefix))
-			    && (nvram_nmatch("mixed", "%s_net_mode", prefix) || nvram_nmatch("ac-only", "%s_net_mode", prefix) || nvram_nmatch("acn-mixed", "%s_net_mode", prefix) || cansuperchannel(prefix))) {
+			if ((is_ath10k(prefix) || is_mvebu(prefix) || has_vht80(prefix)) && (has_5ghz(prefix) || cansuperchannel(wp, prefix))
+			    && (nvram_nmatch("mixed", "%s_net_mode", prefix) || nvram_nmatch("ac-only", "%s_net_mode", prefix) || nvram_nmatch("acn-mixed", "%s_net_mode", prefix) || cansuperchannel(wp, prefix))) {
 				if (canvht80)
 					websWrite(wp, "document.write(\"<option value=\\\"80\\\" %s >\" + share.vht80 + \"</option>\");\n", nvram_matchi(wl_width, 80) ? "selected=\\\"selected\\\"" : "");
 				if (has_vht160(prefix) && can_vht160(prefix))
