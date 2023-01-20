@@ -356,6 +356,17 @@ void configure_single_ath9k(int count)
 	if (!strcmp(netmode, "disabled"))
 		return;
 	MAC80211DEBUG();
+	if (nvram_nmatch("1", "%s_turbo_qam", dev)) {
+		sysprintf("echo 1 > /sys/kernel/debug/ieee80211/%s/ath10k/turboqam", wif);
+		sysprintf("echo 1 > /sys/kernel/debug/ieee80211/%s/mt76/turboqam", wif);
+		sysprintf("echo 1 > /sys/kernel/debug/ieee80211/%s/brcmfmac/turboqam", wif);
+		sysprintf("echo 1 > /sys/kernel/debug/ieee80211/%s/turboqam", wif);
+	} else {
+		sysprintf("echo 0 > /sys/kernel/debug/ieee80211/%s/ath10k/turboqam", wif);
+		sysprintf("echo 0 > /sys/kernel/debug/ieee80211/%s/mt76/turboqam", wif);
+		sysprintf("echo 0 > /sys/kernel/debug/ieee80211/%s/turboqam", wif);
+		sysprintf("echo 0 > /sys/kernel/debug/ieee80211/%s/brcmfmac/turboqam", wif);
+	}
 	if (isath10k && has_fwswitch(dev)) {
 		char fwtype[32];
 		char regulatory[32];
@@ -2347,17 +2358,6 @@ void ath9k_start_supplicant(int count, char *prefix)
 	sprintf(wl_autoburst, "%s_autoburst", dev);
 	char wl_sifs_trigger_time[32];
 	sprintf(wl_sifs_trigger_time, "%s_sifs_trigger_time", dev);
-	if (nvram_nmatch("1", "%s_turbo_qam", dev)) {
-		sysprintf("echo 1 > /sys/kernel/debug/ieee80211/%s/ath10k/turboqam", wif);
-		sysprintf("echo 1 > /sys/kernel/debug/ieee80211/%s/mt76/turboqam", wif);
-		sysprintf("echo 1 > /sys/kernel/debug/ieee80211/%s/brcmfmac/turboqam", wif);
-		sysprintf("echo 1 > /sys/kernel/debug/ieee80211/%s/turboqam", wif);
-	} else {
-		sysprintf("echo 0 > /sys/kernel/debug/ieee80211/%s/ath10k/turboqam", wif);
-		sysprintf("echo 0 > /sys/kernel/debug/ieee80211/%s/mt76/turboqam", wif);
-		sysprintf("echo 0 > /sys/kernel/debug/ieee80211/%s/turboqam", wif);
-		sysprintf("echo 0 > /sys/kernel/debug/ieee80211/%s/brcmfmac/turboqam", wif);
-	}
 	if (is_ath10k(dev)) {
 		if (has_qboost(dev)) {
 			sysprintf("echo %s > /sys/kernel/debug/ieee80211/%s/ath10k/qboost_enable", nvram_default_get(wl_qboost, "0"), wif);
