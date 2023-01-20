@@ -878,6 +878,18 @@ nla_put_failure:
 	return capstring;
 }
 
+#ifndef HAVE_SUPERCHANNEL
+int inline issuperchannel(void)
+{
+	return 0;
+}
+#endif
+
+static int cansuperchannel(char *prefix)
+{
+	return (issuperchannel() && nvram_nmatch("0", "%s_regulatory", prefix));
+}
+
 char *mac80211_get_vhtcaps(const char *interface, int shortgi, int vht80, int vht160, int vht8080, int su_bf, int mu_bf)
 {
 	mac80211_init();
@@ -887,7 +899,7 @@ char *mac80211_get_vhtcaps(const char *interface, int shortgi, int vht80, int vh
 	u32 cap;
 	char *capstring = NULL;
 	int phy;
-	int has5ghz = has_5ghz(interface);
+	int has5ghz = has_5ghz(interface) || cansuperchannel();
 	lock();
 	phy = mac80211_get_phyidx_by_vifname(interface);
 	if (phy == -1) {

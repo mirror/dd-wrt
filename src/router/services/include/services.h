@@ -336,6 +336,9 @@ void start_speedchecker(void);
 void stop_speedchecker(void);
 void start_speedchecker_init(void);
 
+void start_mdns(void);
+void stop_mdns(void);
+
 void stop_pppoeserver(void);
 void start_pppoeserver(void);
 

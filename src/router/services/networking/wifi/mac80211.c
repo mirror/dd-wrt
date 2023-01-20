@@ -68,6 +68,13 @@ void setupHostAP_ath9k(char *maininterface, int isfirst, int vapid, int aoss);
 static void setupSupplicant_ath9k(char *prefix, char *ssidoverride, int isadhoc);
 void setupHostAP_generic_ath9k(char *prefix, FILE * fp, int isrepeater, int aoss);
 
+#ifndef HAVE_SUPERCHANNEL
+int inline issuperchannel(void)
+{
+	return 0;
+}
+#endif
+
 static int cansuperchannel(char *prefix)
 {
 	return (issuperchannel() && nvram_nmatch("0", "%s_regulatory", prefix));
@@ -1287,13 +1294,13 @@ void setupHostAP_ath9k(char *maininterface, int isfirst, int vapid, int aoss)
 	if (isfirst && has_qam256(ifname) && has_2ghz(ifname) && (usebw < 80 || cansuperchannel(maininterface))) {
 		if (nvram_nmatch("1", "%s_turbo_qam", maininterface)) {
 			char shortgi[32];
-			sprintf(shortgi, "%s_shortgi", prefix);
+			sprintf(shortgi, "%s_shortgi", maininterface);
 			char mubf[32];
-			sprintf(mubf, "%s_mubf", prefix);
+			sprintf(mubf, "%s_mubf", maininterface);
 			char subf[32];
-			sprintf(subf, "%s_subf", prefix);
-			caps =
-			    mac80211_get_vhtcaps(prefix, nvram_default_matchi(shortgi, 1, 1) ? 1 : 0, (usebw == 80 || usebw == 160 || usebw == 8080) ? 1 : 0, usebw == 160 ? 1 : 0, usebw == 8080 ? 1 : 0,
+			sprintf(subf, "%s_subf", maininterface);
+			char *caps =
+			    mac80211_get_vhtcaps(maininterface, nvram_default_matchi(shortgi, 1, 1) ? 1 : 0, (usebw == 80 || usebw == 160 || usebw == 8080) ? 1 : 0, usebw == 160 ? 1 : 0, usebw == 8080 ? 1 : 0,
 						 nvram_default_matchi(subf, 1, 0), nvram_default_matchi(mubf, 1, 0));
 			fprintf(fp, "vht_capab=%s\n", caps);
 			fprintf(fp, "ieee80211ac=1\n");
