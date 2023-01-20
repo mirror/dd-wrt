@@ -102,7 +102,7 @@ int inline issuperchannel(void)
 #define issuperchannel() wp->issuperchannel
 #endif
 
-static int cansuperchannel(webs_t *wp, char *prefix)
+static int cansuperchannel(webs_t wp, char *prefix)
 {
 	return (issuperchannel() && nvram_nmatch("0", "%s_regulatory", prefix));
 }
