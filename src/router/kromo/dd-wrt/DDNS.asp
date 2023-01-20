@@ -125,7 +125,7 @@ addEvent(window, "unload", function() {
 										<option value="54" <% nvsm("ddns_enable", "54", "selected"); %> >DynDNS.it</option>
 										<option value="1" <% nvsm("ddns_enable", "1", "selected"); %> >DynDNS.org</option>
 										<option value="17" <% nvsm("ddns_enable", "17", "selected"); %> >Dynu Systems</option>
-										<option value="32" <% nvsm("ddns_enable", "32", "selected"); %> >Dynv6 (IPV4))</option>
+										<option value="32" <% nvsm("ddns_enable", "32", "selected"); %> >Dynv6</option>
 										<option value="7" <% nvsm("ddns_enable", "7", "selected"); %> >EasyDNS.com</option>
 										<option value="2" <% nvsm("ddns_enable", "2", "selected"); %> >FreeDNS</option>
 										<option value="28" <% nvsm("ddns_enable", "28", "selected"); %> >FreeMyIP</option>
