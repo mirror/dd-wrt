@@ -85,6 +85,11 @@ static unsigned int ns_type7_clocks[4] = { 600, 800, 1000, 0 };
 #define IFMAP(a) (a)
 #endif
 
+static int cansuperchannel(char *prefix)
+{
+	return (issuperchannel() && nvram_nmatch("0", "%s_regulatory", prefix));
+}
+
 #if 0
 static struct timeval before, after, r;
 
@@ -662,7 +667,7 @@ EJ_VISIBLE void ej_show_openvpnuserpass(webs_t wp, int argc, char_t ** argv)
 {
 	int i;
 	char *sln = nvram_safe_get("openvpn_userpassnum");
-	if (sln == NULL || *(sln) == 0)  // check for NULL pointer (which should never happen in this case) or empty string
+	if (sln == NULL || *(sln) == 0)	// check for NULL pointer (which should never happen in this case) or empty string
 		return;
 	int userpassnum = atoi(sln);
 	if (userpassnum == 0)
@@ -674,9 +679,12 @@ EJ_VISIBLE void ej_show_openvpnuserpass(webs_t wp, int argc, char_t ** argv)
 		char *sep = strsep(&userpass, "=");
 		websWrite(wp, "<tr><td><input name=\"openvpn%d_usrname\" value=\"%s\" size=\"32\" maxlength=\"32\" onblur=\"valid_name(this,share.usrname,SPACE_NO)\" /></td>", i, sep != NULL ? sep : "");
 		sep = strsep(&userpass, " ");
-		websWrite(wp, "<td><input type=\"password\" name=\"openvpn%d_passwd\" value=\"%s\" size=\"48\" maxlength=\"64\" onmouseover=\"this.type='text'\" onmouseout=\"this.type='password'\" onblur=\"valid_name(this,share.passwd,SPACE_NO)\" /></td>", i, sep != NULL ? sep : "");
 		websWrite(wp,
-			  "<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<td class=\\\"center\\\" title=\\\"\" + sbutton.del + \"\\\"><input class=\\\"remove\\\" aria-label=\\\"\" + sbutton.del + \"\\\" type=\\\"button\\\" onclick=\\\"userpass_del_submit(this.form,%d)\\\" />\");\n//]]>\n</script>\n</td></tr>", i);
+			  "<td><input type=\"password\" name=\"openvpn%d_passwd\" value=\"%s\" size=\"48\" maxlength=\"64\" onmouseover=\"this.type='text'\" onmouseout=\"this.type='password'\" onblur=\"valid_name(this,share.passwd,SPACE_NO)\" /></td>",
+			  i, sep != NULL ? sep : "");
+		websWrite(wp,
+			  "<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<td class=\\\"center\\\" title=\\\"\" + sbutton.del + \"\\\"><input class=\\\"remove\\\" aria-label=\\\"\" + sbutton.del + \"\\\" type=\\\"button\\\" onclick=\\\"userpass_del_submit(this.form,%d)\\\" />\");\n//]]>\n</script>\n</td></tr>",
+			  i);
 	}
 	debug_free(originalpointer);
 	return;
@@ -3403,8 +3411,9 @@ static void internal_ej_show_wireless_single(webs_t wp, char *prefix)
 			websWrite(wp, "document.write(\"<option value=\\\"40\\\" %s >\" + share.turbo + \"</option>\");\n", nvram_matchi(wl_width, 40) ? "selected=\\\"selected\\\"" : "");
 		else if (canht40)
 			websWrite(wp, "document.write(\"<option value=\\\"40\\\" %s >\" + share.ht40 + \"</option>\");\n", nvram_matchi(wl_width, 40) ? "selected=\\\"selected\\\"" : "");
-		if ((is_ath10k(prefix) || is_mvebu(prefix) || has_vht80(prefix)) && has_5ghz(prefix) && nvram_nmatch("mixed", "%s_net_mode", prefix) || nvram_nmatch("ac-only", "%s_net_mode", prefix)
-		    || nvram_nmatch("acn-mixed", "%s_net_mode", prefix)) {
+		if ((is_ath10k(prefix) || is_mvebu(prefix) || has_vht80(prefix)) && (has_5ghz(prefix) || cansuperchannel()) && nvram_nmatch("mixed", "%s_net_mode", prefix)
+		    || nvram_nmatch("ac-only", "%s_net_mode", prefix)
+		    || nvram_nmatch("acn-mixed", "%s_net_mode", prefix) || cansuperchannel()) {
 			if (canvht80)
 				websWrite(wp, "document.write(\"<option value=\\\"80\\\" %s >\" + share.vht80 + \"</option>\");\n", nvram_matchi(wl_width, 80) ? "selected=\\\"selected\\\"" : "");
 			if (has_vht160(prefix) && can_vht160(prefix))
@@ -4124,8 +4133,8 @@ static void internal_ej_show_wireless_single(webs_t wp, char *prefix)
 				websWrite(wp, "document.write(\"<option value=\\\"40\\\" %s >\" + share.turbo + \"</option>\");\n", nvram_matchi(wl_width, 40) ? "selected=\\\"selected\\\"" : "");
 			else if (canht40)
 				websWrite(wp, "document.write(\"<option value=\\\"40\\\" %s >\" + share.ht40 + \"</option>\");\n", nvram_matchi(wl_width, 40) ? "selected=\\\"selected\\\"" : "");
-			if ((is_ath10k(prefix) || is_mvebu(prefix) || has_vht80(prefix)) && has_5ghz(prefix)
-			    && (nvram_nmatch("mixed", "%s_net_mode", prefix) || nvram_nmatch("ac-only", "%s_net_mode", prefix) || nvram_nmatch("acn-mixed", "%s_net_mode", prefix))) {
+			if ((is_ath10k(prefix) || is_mvebu(prefix) || has_vht80(prefix)) && (has_5ghz(prefix) || cansuperchannel())
+			    && (nvram_nmatch("mixed", "%s_net_mode", prefix) || nvram_nmatch("ac-only", "%s_net_mode", prefix) || nvram_nmatch("acn-mixed", "%s_net_mode", prefix) || cansuperchannel())) {
 				if (canvht80)
 					websWrite(wp, "document.write(\"<option value=\\\"80\\\" %s >\" + share.vht80 + \"</option>\");\n", nvram_matchi(wl_width, 80) ? "selected=\\\"selected\\\"" : "");
 				if (has_vht160(prefix) && can_vht160(prefix))
