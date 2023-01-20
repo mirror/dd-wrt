@@ -387,11 +387,13 @@ int hostapd_set_freq_params(struct hostapd_freq_params *data,
 	wpa_printf(MSG_DEBUG,"vht: %d vhtwidth: %d seg0 %d seg1 %d mode %d, freq = %d, channel = %d, ht_enable = %d vht_enable = %d, sec_channel_offset %d width %d",data->vht_enabled, vht_oper_chwidth,center_segment0,center_segment1,mode, freq, channel,ht_enabled,vht_enabled, sec_channel_offset, vht_oper_chwidth);
 	if (data->vht_enabled) switch (vht_oper_chwidth) {
 	case VHT_CHANWIDTH_USE_HT:
+		if (center_segment0 < 256) {
 		if (center_segment1 ||
 		    (center_segment0 != 0 &&
 		     5000 + center_segment0 * 5 != data->center_freq1 &&
 		     2407 + center_segment0 * 5 != data->center_freq1))
 			return -1;
+		}
 		break;
 	case VHT_CHANWIDTH_80P80MHZ:
 		if (!(vht_caps & VHT_CAP_SUPP_CHAN_WIDTH_160_80PLUS80MHZ)) {
