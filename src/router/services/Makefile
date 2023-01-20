@@ -935,6 +935,10 @@ ATH9KLDFLAGS += -L$(TOP)/libnl-tiny -lnl-tiny
 ifneq ($(CONFIG_NOWIFI),y)
 
 ATH9KCFLAGS+= $(COPTS) -DHAVE_ATH9K -I. -I$(TOP)/services/include -I$(TOP)/shared -I../httpd -I$(SRCBASE)/include.v24 -I$(TOP)/kernel_headers/$(KERNELRELEASE)/include -I$(TOP)/libnl-tiny/include -I$(SRCBASE)/
+ifeq ($(CONFIG_SUPERCHANNEL),y)
+ATH9KCFLAGS+= -DHAVE_SUPERCHANNEL
+endif
+
 ATH9KOBJS += mac80211.o site_survey_mac80211.o
 
 ATH9KFILES += networking/wifi/mac80211.c tools/site_survey_mac80211.c
