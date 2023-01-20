@@ -60,6 +60,8 @@
 
 static int cur_channel;
 static int cur_channel2;
+static int cur_freq;
+static int cur_freq2;
 static int cur_channeloffset;
 static int cur_iht;
 static char *cur_caps;
@@ -1026,6 +1028,8 @@ void setupHostAP_generic_ath9k(char *prefix, FILE * fp, int isrepeater, int aoss
 	MAC80211DEBUG();
 	cur_channel = channel;
 	cur_channel2 = channel2;
+	cur_freq = freq;
+	cur_freq2 = freq2;
 	cur_channeloffset = channeloffset;
 	cur_iht = iht;
 			char shortgi[32];
@@ -1299,20 +1303,20 @@ void setupHostAP_ath9k(char *maininterface, int isfirst, int vapid, int aoss)
 			switch (usebw) {
 			case 40:
 				fprintf(fp, "vht_oper_chwidth=0\n");
-				fprintf(fp, "vht_oper_centr_freq_seg0_idx=%d\n", cur_channel + (2 * cur_iht));
+				fprintf(fp, "vht_oper_centr_freq_seg0_idx_freq=%d\n", cur_freq + (/2 * 5) * cur_iht));
 				break;
 			case 80:
 				fprintf(fp, "vht_oper_chwidth=1\n");
-				fprintf(fp, "vht_oper_centr_freq_seg0_idx=%d\n", cur_channel + (cur_channeloffset * cur_iht));
+				fprintf(fp, "vht_oper_centr_freq_seg0_idx=%d\n", cur_freq + ((cur_channeloffset * 5) * cur_iht));
 				break;
 			case 160:
 				fprintf(fp, "vht_oper_chwidth=2\n");
-				fprintf(fp, "vht_oper_centr_freq_seg0_idx=%d\n", cur_channel + (cur_channeloffset * cur_iht));
+				fprintf(fp, "vht_oper_centr_freq_seg0_idx=%d\n", cur_freq + ((cur_channeloffset * 5) * cur_iht));
 				break;
 			case 8080:
 				fprintf(fp, "vht_oper_chwidth=3\n");
-				fprintf(fp, "vht_oper_centr_freq_seg0_idx=%d\n", cur_channel + (cur_channeloffset * cur_iht));
-				fprintf(fp, "vht_oper_centr_freq_seg1_idx=%d\n", cur_channel2);
+				fprintf(fp, "vht_oper_centr_freq_seg0_idx=%d\n", cur_freq + ((cur_channeloffset * 5) * cur_iht));
+				fprintf(fp, "vht_oper_centr_freq_seg1_idx=%d\n", cur_freq2);
 				break;
 			default:
 				fprintf(fp, "vht_oper_chwidth=0\n");
