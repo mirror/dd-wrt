@@ -3541,9 +3541,9 @@ hostapd_switch_channel_fallback(struct hostapd_iface *iface,
 	wpa_printf(MSG_DEBUG, "Restarting all CSA-related BSSes");
 
 	if (freq_params->center_freq1)
-		vht_seg0_idx = 36 + (freq_params->center_freq1 - 5180) / 5;
+		vht_seg0_idx = freq_params->center_freq1;
 	if (freq_params->center_freq2)
-		vht_seg1_idx = 36 + (freq_params->center_freq2 - 5180) / 5;
+		vht_seg1_idx = freq_params->center_freq2;
 
 	switch (freq_params->bandwidth) {
 	case 0:
@@ -3569,8 +3569,8 @@ hostapd_switch_channel_fallback(struct hostapd_iface *iface,
 	iface->freq = freq_params->freq;
 	iface->conf->channel = freq_params->channel;
 	iface->conf->secondary_channel = freq_params->sec_channel_offset;
-	iface->conf->vht_oper_centr_freq_seg0_idx = vht_seg0_idx;
-	iface->conf->vht_oper_centr_freq_seg1_idx = vht_seg1_idx;
+	iface->conf->vht_oper_centr_freq_seg0_idx_freq = vht_seg0_idx;
+	iface->conf->vht_oper_centr_freq_seg1_idx_freq = vht_seg1_idx;
 	iface->conf->vht_oper_chwidth = vht_bw;
 	iface->conf->ieee80211n = freq_params->ht_enabled;
 	iface->conf->ieee80211ac = freq_params->vht_enabled;
