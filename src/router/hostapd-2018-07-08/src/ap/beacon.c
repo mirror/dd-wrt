@@ -1434,8 +1434,8 @@ int ieee802_11_set_beacon(struct hostapd_data *hapd)
 				    iconf->ieee80211ac,
 				    iconf->secondary_channel,
 				    iconf->vht_oper_chwidth,
-				    iconf->vht_oper_centr_freq_seg0_idx,
-				    iconf->vht_oper_centr_freq_seg1_idx,
+				    iconf->vht_oper_centr_freq_seg0_idx_freq ? iconf->vht_oper_centr_freq_seg0_idx_freq : iconf->vht_oper_centr_freq_seg0_idx,
+				    iconf->vht_oper_centr_freq_seg1_idx_freq ? iconf->vht_oper_centr_freq_seg1_idx_freq : iconf->vht_oper_centr_freq_seg1_idx)) 
 				    iface->current_mode->vht_capab) == 0)
 		params.freq = &freq;
 
