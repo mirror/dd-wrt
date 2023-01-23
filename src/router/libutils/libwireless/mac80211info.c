@@ -885,9 +885,9 @@ int inline issuperchannel(void)
 }
 #endif
 
-static int cansuperchannel(char *prefix)
+static int cansuperchannel(webs_t wp, char *prefix)
 {
-	return (issuperchannel() && nvram_nmatch("0", "%s_regulatory", prefix));
+	return (issuperchannel() && nvram_nmatch("0", "%s_regulatory", prefix) && nvram_nmatch("ddwrt", "%s_fwtype", prefix));
 }
 
 char *mac80211_get_vhtcaps(const char *interface, int shortgi, int vht80, int vht160, int vht8080, int su_bf, int mu_bf)

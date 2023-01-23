@@ -78,9 +78,9 @@ int inline issuperchannel(void)
 }
 #endif
 
-static int cansuperchannel(char *prefix)
+static int cansuperchannel(webs_t wp, char *prefix)
 {
-	return (issuperchannel() && nvram_nmatch("0", "%s_regulatory", prefix));
+	return (issuperchannel() && nvram_nmatch("0", "%s_regulatory", prefix) && nvram_nmatch("ddwrt", "%s_fwtype", prefix));
 }
 
 static const char *gethtmode(char *prefix)
