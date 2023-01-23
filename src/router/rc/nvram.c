@@ -106,7 +106,7 @@ static int nvram_main(int argc, char **argv)
 	 */
 	int force = 0;
 	for (; *argv; argv++) {
-		if (!strncmp(*argv, "get", 3)) {
+		if (!strncmp(*argv, "get", 3) && strncmp(*argv, "getall", 6)) {
 			if (*++argv) {
 				if (nvram_exists(*argv))
 					puts(nvram_safe_get(*argv));
