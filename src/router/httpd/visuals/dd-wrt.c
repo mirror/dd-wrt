@@ -104,7 +104,7 @@ int inline issuperchannel(void)
 
 static int cansuperchannel(webs_t wp, char *prefix)
 {
-	return (issuperchannel() && nvram_nmatch("0", "%s_regulatory", prefix));
+	return (issuperchannel() && nvram_nmatch("0", "%s_regulatory", prefix) && nvram_nmatch("ddwrt", "%s_fwtype", prefix));
 }
 
 #if 0
