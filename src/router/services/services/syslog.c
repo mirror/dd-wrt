@@ -73,7 +73,7 @@ void start_syslog(void)
 	if (!nvram_invmatchi("syslogd_enable", 0))
 		return;
 	update_timezone();
-	if (nvram_matchi("enable_jffs2", 1) && nvram_matchi("syslogd_jffs2", 1)) {
+	if (nvram_matchi("syslogd_jffs2", 1)) {
 		mkdir("/jffs/log", 0700);
 		eval("mv", "-f", "/jffs/log/messages", "/jffs/log/messages.old");
 		FILE *fp = fopen("/jffs/log/messages","wb");
