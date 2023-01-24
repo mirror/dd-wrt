@@ -2288,9 +2288,8 @@ Need parsing to get the file data out of the POST data
 */
 	char buf[128] = { 0 };
 	FILE *fp;
-	char output[64] = { 0 };
-	char *endp_address;
-	char *endp_port;
+	char output[96] = { 0 };
+	char *endp;
 	char *wg_conf_file = websGetVar(wp, "wg_conf_file", "");
 
 	dd_loginfo("WireGuard", "WireGuard import tunnel * config file: %s\n", wg_conf_file);
@@ -2318,6 +2317,7 @@ Need parsing to get the file data out of the POST data
 		sprintf(idx, "oet%d_peers", key);
 		nvram_default_geti(idx, 0);
 		int peer = nvram_geti(idx);
+		char ka[3]="26";
 
 		/*debug
 		   dd_loginfo("WireGuard", "import_tunnel tun:%d; peer:%d", key, peer);
@@ -2345,17 +2345,29 @@ Need parsing to get the file data out of the POST data
 			if (sscanf(buf, "AllowedIPs = %[^\n]", output) == 1)	//scans until newline otherwise will scan until space
 				upload_set("aip", output);
 			if (sscanf(buf, "Endpoint = %s", output) == 1) {
-				if ((endp_address = strtok(output, ":")) != NULL) {
-					endp_port = strtok(NULL, ":");
-					upload_set("endpoint", "1");
-					upload_set("rem", endp_address);
-					upload_set("peerport", endp_port);
-
+				upload_set("endpoint", "1");
+				endp = strrchr(output, ':');	//reverse strrchr to get last : in case of IPv6
+				upload_set("peerport", endp + 1);
+				endp[0]='\0';	//terminate output string at last :
+				//remove [ and ]
+				int i, j;
+				int len = strlen(output);
+				for(i=0; i<len; i++) {
+					if(output[i] == '[' || output[i] == ']') {
+						for(j=i; j<len; j++) {
+							output[j] = output[j+1];
+						}
+					len--;
+					i--;
+					}
 				}
+				upload_set("rem", output);
 			}
-			if (sscanf(buf, "PersistentKeepalive = %s", output) == 1)
-				upload_set("ka", output);
+			if (sscanf(buf, "PersistentKeepalive = %s", output) == 1) {
+				strlcpy(ka, output, sizeof(ka));
+			}
 		}
+		upload_set("ka", ka);
 		peer++;
 		nvram_seti(idx, peer);
 		fclose(fp);
