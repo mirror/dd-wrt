@@ -1678,6 +1678,7 @@ service.pptp_chap="CHAP-Secrets";
 service.syslog_legend="System-Log";
 service.syslog_srv="Syslogd";
 service.syslog_ip="Remote Server";
+service.syslog_jffs2="Nachrichten auf jffs2 speichern";
 
 //telnet.webservices
 service.telnet_legend="Telnet";
