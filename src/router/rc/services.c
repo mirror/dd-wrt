@@ -669,7 +669,7 @@ static void handle_speedchecker(void)
 static void handle_services(void)
 {
 #ifdef HAVE_SYSLOG
-	start_service_force_f("syslog");
+	restart_f("syslog");
 #endif
 #ifdef HAVE_GPSI
 	restart_f("gps");
@@ -982,7 +982,7 @@ static void handle_filters(void)
 {
 
 #ifdef HAVE_SYSLOG
-	start_service_force_f("syslog");
+	restart_f("syslog");
 #endif
 #ifndef HAVE_MICRO
 	stop_service("cron");
