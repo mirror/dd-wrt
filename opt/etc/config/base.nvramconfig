@@ -172,6 +172,7 @@
  "sshd_keylength" "SSHD" "CHOICE" "3" "256" "384" "521" "FALSE" "0"
  "sshd_replace" "SSHD" "CHOICE" "2" "0" "1" "FALSE" "0"
  "syslogd_enable"  "Syslog"  "CHOICE" "2" "0"  "1"  "FALSE" "0"
+ "syslogd_jffs2"  "Syslog on JFFS"  "CHOICE" "2" "0"  "1"  "FALSE" "0"
  "klogd_enable"  "Kyslog"  "CHOICE" "2" "0"  "1"  "FALSE" "0"
  "syslogd_rem_ip"  "Syslog" "NULL" "TRUE" "0"
  "wshaper_enable"  "Bandwidth Mgmt"  "CHOICE" "2" "0"  "1"  "FALSE" "0"
