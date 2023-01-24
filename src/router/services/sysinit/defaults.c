@@ -2433,6 +2433,9 @@ struct nvram_param srouter_defaults[] = {
 	{ "remote_mgt_telnet", "0" },
 	{ "telnet_wanport", "23" },	/* WAN port to listen on */
 	{ "syslogd_enable", "0" },
+#ifdef HAVE_JFFS2
+	{ "syslogd_jffs2", "0" },
+#endif
 	{ "klogd_enable", "0" },
 	{ "syslogd_rem_ip", "" },
 	{ "sshd_replace", "0" },
