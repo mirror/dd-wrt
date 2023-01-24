@@ -1843,6 +1843,7 @@ service.syslog_legend="System Log";
 service.syslog_srv="Syslogd";
 service.klog="Klogd";
 service.syslog_ip="Remote Server";
+service.syslog_jffs2="Store messages on jffs2";
 
 //telnet.webservices
 service.telnet_legend="Telnet";
