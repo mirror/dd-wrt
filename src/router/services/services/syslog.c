@@ -73,11 +73,19 @@ void start_syslog(void)
 	if (!nvram_invmatchi("syslogd_enable", 0))
 		return;
 	update_timezone();
-	if (*(nvram_safe_get("syslogd_rem_ip")))
-		log_eval("syslogd", "-Z", "-L", "-R", nvram_safe_get("syslogd_rem_ip"));
-	else
-		log_eval("syslogd", "-Z", "-L");
-
+	if (nvram_matchi("enable_jffs2", 1) && nvram_matchi("syslogd_jffs2", 1)) {
+		mkdir("/jffs/log", 0700);
+		eval("mv", "-f", "/jffs/log/messages", "/jffs/log/messages.old");
+		if (*(nvram_safe_get("syslogd_rem_ip")))
+			log_eval("syslogd", "-Z", "-L", "-R", nvram_safe_get("syslogd_rem_ip"), "-O", "/jffs/log/messages");
+		else
+			log_eval("syslogd", "-Z", "-L", "-O", "/jffs/log/messages");
+	} else {
+		if (*(nvram_safe_get("syslogd_rem_ip")))
+			log_eval("syslogd", "-Z", "-L", "-R", nvram_safe_get("syslogd_rem_ip"));
+		else
+			log_eval("syslogd", "-Z", "-L");
+	}
 	if (!nvram_invmatchi("klogd_enable", 0))
 		return;
 	log_eval("klogd");
