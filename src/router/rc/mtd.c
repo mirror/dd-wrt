@@ -393,7 +393,9 @@ static int write_main(int argc, char *argv[])
 	}
 	nvram_seti("flash_active", 1);
 	sleep(1);
+	eval("service", "syslog", "stop");
 	eval("mount","-o","remount,ro","/jffs");
+	eval("service", "syslog", "start");
 
 	/* 
 	 * Examine TRX/CHK header 
