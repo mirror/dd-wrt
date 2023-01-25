@@ -49,7 +49,7 @@ u8 * hostapd_eid_vht_capabilities(struct hostapd_data *hapd, u8 *eid, u32 nsts)
 	os_memset(cap, 0, sizeof(*cap));
 	cap->vht_capabilities_info = host_to_le32(
 		hapd->iface->conf->vht_capab);
-
+	syslog(LOG_INFO, "%s: set vht cap %X\n", __func__, cap->vht_capabilities_info);
 	if (nsts != 0) {
 		u32 hapd_nsts;
 
@@ -410,6 +410,8 @@ u16 copy_sta_vendor_vht(struct hostapd_data *hapd, struct sta_info *sta,
 	sta->flags |= WLAN_STA_VHT | WLAN_STA_VENDOR_VHT;
 	os_memcpy(sta->vht_capabilities, vht_capab,
 		  sizeof(struct ieee80211_vht_capabilities));
+
+	syslog(LOG_INFO, "%s: set vht cap %X\n", __func__, sta->vht_capabilities->vht_capabilities_info);
 	return WLAN_STATUS_SUCCESS;
 
 no_capab:

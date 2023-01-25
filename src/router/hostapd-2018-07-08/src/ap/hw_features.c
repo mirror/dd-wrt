@@ -733,6 +733,7 @@ static int ieee80211ac_supported_vht_capab(struct hostapd_iface *iface)
 			}
 		}
 	}
+	syslog(LOG_INFO, "%s: set vht cap %X\n", __func__, mode->vht_capab);
 
 	return ieee80211ac_cap_check(hw, conf);
 }
