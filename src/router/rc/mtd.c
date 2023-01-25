@@ -393,6 +393,7 @@ static int write_main(int argc, char *argv[])
 	}
 	nvram_seti("flash_active", 1);
 	sleep(1);
+	eval("mount","-o","remount,ro","/jffs");
 
 	/* 
 	 * Examine TRX/CHK header 
