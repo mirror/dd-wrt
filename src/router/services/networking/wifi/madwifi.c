@@ -628,11 +628,11 @@ void setupSupplicant(char *prefix, char *ssidoverride)
 	debug = nvram_nget("%s_wpa_debug", prefix);
 	if (debug != NULL) {
 		if (!strcmp(debug, "1"))
-			background = "-Bd";
+			background = "-Bds";
 		else if (!strcmp(debug, "2"))
-			background = "-Bdd";
+			background = "-Bdds";
 		else if (!strcmp(debug, "3"))
-			background = "-Bddd";
+			background = "-Bddds";
 	}
 
 	char driver[32];
