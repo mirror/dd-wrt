@@ -393,9 +393,6 @@ static int write_main(int argc, char *argv[])
 	}
 	nvram_seti("flash_active", 1);
 	sleep(1);
-	eval("service", "syslog", "stop");
-	eval("mount","-o","remount,ro","/jffs");
-	eval("service", "syslog", "start");
 
 	/* 
 	 * Examine TRX/CHK header 
@@ -472,7 +469,6 @@ static int write_main(int argc, char *argv[])
 		goto fail;
 	}
 	sysinfo(&info);
-	eval("umount", "-r", "-f", "/jffs");
 #ifndef HAVE_CAMBRIA
 #ifdef HAVE_SNMP
 	stop_service("snmp");
@@ -500,6 +496,10 @@ static int write_main(int argc, char *argv[])
 	killall("schedulerb.sh", SIGTERM);
 	killall("proxywatchdog.sh", SIGTERM);
 #endif
+	eval("service", "syslog", "stop");
+	eval("mount","-f", "-o","remount,ro","/jffs");
+	eval("umount", "-r", "-f", "/jffs");
+	eval("service", "syslog", "start");
 	if (trx.magic != TRX_MAGIC || trx.len < sizeof(struct trx_header)) {
 		dd_logerror("flash", "%s: Bad trx header\n", path);
 		goto fail;
