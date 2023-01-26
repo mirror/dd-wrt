@@ -504,6 +504,9 @@ EJ_VISIBLE void ej_get_curchannel(webs_t wp, int argc, char_t ** argv)
 			websWrite(wp, "%d", channel);
 		}
 		websWrite(wp, " (%d MHz", freq);
+		char *vht = "HT";
+		if (has_qam256(prefix) && freq < 4000 && nvram_nmatch("1", "%s_turbo_qam", prefix))
+			vht = "VHT";
 		if (is_mac80211(prefix)) {
 			int ht = has_ht(prefix);
 			switch (interface->width) {
@@ -513,15 +516,16 @@ EJ_VISIBLE void ej_get_curchannel(webs_t wp, int argc, char_t ** argv)
 				websWrite(wp, " NOHT");
 				break;
 			case 20:
+
 				if (ht) {
 					if (width == 2)
-						websWrite(wp, " HT2.5");
+						websWrite(wp, " %s2.5", vht);
 					else if (width == 5)
-						websWrite(wp, " HT5");
+						websWrite(wp, " %s5", vht);
 					else if (width == 10)
-						websWrite(wp, " HT10");
+						websWrite(wp, " %s10", vht);
 					else
-						websWrite(wp, " HT20");
+						websWrite(wp, " %s20", vht);
 				} else {
 					/* for legacy chipsets we use the old naming */
 					if (width == 2)
@@ -537,7 +541,7 @@ EJ_VISIBLE void ej_get_curchannel(webs_t wp, int argc, char_t ** argv)
 				break;
 			case 40:
 				if (ht)
-					websWrite(wp, " HT40");
+					websWrite(wp, " %s40", vht);
 				else
 					websWrite(wp, " Turbo");	//ath5k turbo mode
 				break;
