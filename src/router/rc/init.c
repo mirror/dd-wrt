@@ -519,7 +519,7 @@ static void check_bootfails(void)
 			nvram_seti("boot_fails", failcnt);
 			if (!open) {
 				// to avoid security breaches by controling the main fuse of a building, we disable wifi by default
-				int i;
+				int i = 0;
 				while (ifcount--) {
 					nvram_nset("disabled", "wlan%d_net_mode", i);
 					i++;
