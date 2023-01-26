@@ -478,22 +478,18 @@ EJ_VISIBLE void ej_show_eop_tunnels(webs_t wp, int argc, char_t ** argv)
 					//end show Client config
 					websWrite(wp, "<div id=\"idclconfig%d_peer%d\">\n", tun, peer);
 					websWrite(wp, "<div class=\"setting\">\n");
+					snprintf(temp, sizeof(temp), "oet%d_clip%d", tun, peer);
 					{
 						show_caption(wp, "label", "eoip.wireguard_peerip", NULL);
-						websWrite(wp, "<input type=\"hidden\" name=\"oet%d_ip%d\" value=\"0.0.0.0\" />\n", tun, peer);
-						snprintf(temp, sizeof(temp), "oet%d_ip%d", tun, peer);
-						nvram_default_get(temp, "0.0.0.0");
-						show_ip(wp, NULL, temp, 1, 0, "eoip.wireguard_peerip");
+						websWrite(wp, "<input size=\"48\" maxlength=\"128\" name=\"%s\" value=\"%s\" />\n", temp, nvram_default_get(temp, "0.0.0.0/0"));
 					}
 					websWrite(wp, "</div>\n");
 
 					websWrite(wp, "<div class=\"setting\">\n");
+					snprintf(temp, sizeof(temp), "oet%d_cldns%d", tun, peer);
 					{
 						show_caption(wp, "label", "eoip.wireguard_peerdns", NULL);
-						websWrite(wp, "<input type=\"hidden\" name=\"oet%d_cldns%d\" value=\"0.0.0.0\" />\n", tun, peer);
-						snprintf(temp, sizeof(temp), "oet%d_cldns%d", tun, peer);
-						nvram_default_get(temp, "0.0.0.0");
-						show_ip(wp, NULL, temp, 1, 0, "eoip.wireguard_peerdns");
+						websWrite(wp, "<input size=\"48\" maxlength=\"128\" name=\"%s\" value=\"%s\" />\n", temp, nvram_default_get(temp, "0.0.0.0"));
 					}
 					websWrite(wp, "</div>\n");
 
@@ -501,7 +497,7 @@ EJ_VISIBLE void ej_show_eop_tunnels(webs_t wp, int argc, char_t ** argv)
 					snprintf(temp, sizeof(temp), "oet%d_clend%d", tun, peer);
 					{
 						show_caption(wp, "label", "eoip.wireguard_clend", NULL);
-						websWrite(wp, "<input size=\"20\" maxlength=\"48\" name=\"%s\" value=\"%s\" />\n", temp, nvram_safe_get(temp));
+						websWrite(wp, "<input size=\"40\" maxlength=\"48\" name=\"%s\" value=\"%s\" />\n", temp, nvram_safe_get(temp));
 					}
 					websWrite(wp, "</div>\n");
 
@@ -509,8 +505,8 @@ EJ_VISIBLE void ej_show_eop_tunnels(webs_t wp, int argc, char_t ** argv)
 					snprintf(temp, sizeof(temp), "oet%d_clka%d", tun, peer);
 					{
 						show_caption(wp, "label", "eoip.wireguard_clka", NULL);
-						websWrite(wp, "<input size=\"5\" maxlength=\"5\" name=\"%s\" class=\"num\" onblur=\"valid_range(this,0,65535,eoip.wireguard_clka)\" value=\"%s\" />\n", temp,
-							  nvram_safe_get(temp));
+						websWrite(wp, "<input size=\"5\" maxlength=\"5\" name=\"%s\" class=\"num\" onblur=\"valid_range(this,0,65535,eoip.wireguard_clka)\" value=\"%d\" />\n", temp, 
+							 nvram_default_geti(temp, 25));
 					}
 					websWrite(wp, "</div>\n");
 					websWrite(wp, "</div>\n");	// end show/hide idclconfig
