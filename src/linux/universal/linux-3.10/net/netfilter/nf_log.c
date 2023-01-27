@@ -31,6 +31,7 @@ static struct nf_logger *__find_logger(int pf, const char *str_logger)
 	return NULL;
 }
 
+#if defined(CONFIG_PRINTK)  && !defined(CONFIG_NOPRINTK)
 void nf_log_set(struct net *net, u_int8_t pf, const struct nf_logger *logger)
 {
 	const struct nf_logger *log;
@@ -129,7 +130,6 @@ void nf_log_unbind_pf(struct net *net, u_int8_t pf)
 }
 EXPORT_SYMBOL(nf_log_unbind_pf);
 
-#if defined(CONFIG_PRINTK)  && !defined(CONFIG_NOPRINTK)
 void nf_log_packet(struct net *net,
 		   u_int8_t pf,
 		   unsigned int hooknum,

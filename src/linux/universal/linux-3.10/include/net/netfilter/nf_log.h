@@ -47,6 +47,7 @@ struct nf_logger {
 };
 
 /* Function to register/unregister log function. */
+#if defined(CONFIG_PRINTK)  && !defined(CONFIG_NOPRINTK)
 int nf_log_register(u_int8_t pf, struct nf_logger *logger);
 void nf_log_unregister(struct nf_logger *logger);
 
@@ -57,6 +58,33 @@ void nf_log_unset(struct net *net, const struct nf_logger *logger);
 int nf_log_bind_pf(struct net *net, u_int8_t pf,
 		   const struct nf_logger *logger);
 void nf_log_unbind_pf(struct net *net, u_int8_t pf);
+#else
+
+static inline int nf_log_register(u_int8_t pf, struct nf_logger *logger) {
+	return 0;
+}
+static inline void nf_log_unregister(struct nf_logger *logger)
+{
+}
+
+static inline void nf_log_set(struct net *net, u_int8_t pf,
+		const struct nf_logger *logger)
+{
+}
+static inline void nf_log_unset(struct net *net, const struct nf_logger *logger)
+{
+}
+
+static inline int nf_log_bind_pf(struct net *net, u_int8_t pf,
+		   const struct nf_logger *logger)
+{
+return 0;
+}
+
+static inline void nf_log_unbind_pf(struct net *net, u_int8_t pf)
+{
+}
+#endif
 
 /* Calls the registered backend logging function */
 #if defined(CONFIG_PRINTK)  && !defined(CONFIG_NOPRINTK)
