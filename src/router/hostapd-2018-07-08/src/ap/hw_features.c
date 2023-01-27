@@ -23,6 +23,7 @@
 #include "ieee802_11.h"
 #include "beacon.h"
 #include "hw_features.h"
+#include <syslog.h>
 
 
 void hostapd_free_hw_features(struct hostapd_hw_modes *hw_features,

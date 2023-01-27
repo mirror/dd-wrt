@@ -87,10 +87,21 @@ u8 * hostapd_eid_vht_operation(struct hostapd_data *hapd, u8 *eid)
 	 * So index 42 gives center freq 5.210 GHz
 	 * which is channel 42 in 5G band
 	 */
-	oper->vht_op_info_chan_center_freq_seg0_idx =
-		hapd->iconf->vht_oper_centr_freq_seg0_idx;
-	oper->vht_op_info_chan_center_freq_seg1_idx =
-		hapd->iconf->vht_oper_centr_freq_seg1_idx;
+	if (hapd->iconf->vht_oper_centr_freq_seg0_idx_freq) {
+		oper->vht_op_info_chan_center_freq_seg0_idx = 
+			ieee80211_frequency_to_channel(hapd->iconf->vht_oper_centr_freq_seg0_idx_freq);
+	}else
+		oper->vht_op_info_chan_center_freq_seg0_idx =
+			hapd->iconf->vht_oper_centr_freq_seg0_idx;
+	}
+
+	if (hapd->iconf->vht_oper_centr_freq_seg1_idx_freq) {
+		oper->vht_op_info_chan_center_freq_seg1_idx = 
+			ieee80211_frequency_to_channel(hapd->iconf->vht_oper_centr_freq_seg1_idx_freq);
+	}else{
+		oper->vht_op_info_chan_center_freq_seg1_idx =
+			hapd->iconf->vht_oper_centr_freq_seg1_idx;
+	}
 
 	oper->vht_op_info_chwidth = hapd->iconf->vht_oper_chwidth;
 	if (hapd->iconf->vht_oper_chwidth == 2) {
