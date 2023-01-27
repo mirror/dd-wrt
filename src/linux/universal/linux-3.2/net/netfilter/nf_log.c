@@ -32,6 +32,7 @@ static struct nf_logger *__find_logger(int pf, const char *str_logger)
 	return NULL;
 }
 
+#if defined(CONFIG_PRINTK)  && !defined(CONFIG_NOPRINTK)
 /* return EEXIST if the same logger is registred, 0 on success. */
 int nf_log_register(u_int8_t pf, struct nf_logger *logger)
 {
@@ -108,7 +109,6 @@ void nf_log_unbind_pf(u_int8_t pf)
 }
 EXPORT_SYMBOL(nf_log_unbind_pf);
 
-#if defined(CONFIG_PRINTK)  && !defined(CONFIG_NOPRINTK)
 void nf_log_packet(u_int8_t pf,
 		   unsigned int hooknum,
 		   const struct sk_buff *skb,
