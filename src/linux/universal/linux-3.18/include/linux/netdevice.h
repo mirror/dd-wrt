@@ -3697,6 +3697,7 @@ static inline const char *netdev_reg_state(const struct net_device *dev)
 	return " (unknown)";
 }
 
+#if defined(CONFIG_PRINTK) && !defined(CONFIG_NOPRINTK)
 __printf(3, 4)
 void netdev_printk(const char *level, const struct net_device *dev,
 		   const char *format, ...);
@@ -3714,6 +3715,16 @@ __printf(2, 3)
 void netdev_notice(const struct net_device *dev, const char *format, ...);
 __printf(2, 3)
 void netdev_info(const struct net_device *dev, const char *format, ...);
+#else
+#define netdev_printk(level, dev, format, ...)do { } while(0)
+#define netdev_emerg(dev, format, ...)do { } while(0)
+#define netdev_alert(dev, format, ...)do { } while(0)
+#define netdev_crit(dev, format, ...)do { } while(0)
+#define netdev_err(dev, format, ...)do { } while(0)
+#define netdev_warn(dev, format, ...)do { } while(0)
+#define netdev_notice(dev, format, ...)do { } while(0)
+#define netdev_info(dev, format, ...)do { } while(0) 
+#endif
 
 #define MODULE_ALIAS_NETDEV(device) \
 	MODULE_ALIAS("netdev-" device)
@@ -3745,6 +3756,8 @@ do {								\
 	0;							\
 })
 #endif
+
+#if defined(CONFIG_PRINTK) && !defined(CONFIG_NOPRINTK)
 
 /*
  * netdev_WARN() acts like dev_printk(), but with the key difference
@@ -3783,7 +3796,22 @@ do {								\
 	netif_level(notice, priv, type, dev, fmt, ##args)
 #define netif_info(priv, type, dev, fmt, args...)		\
 	netif_level(info, priv, type, dev, fmt, ##args)
+#else
 
+#define netdev_WARN(dev, format, args...) do { } while(0)
+#define netif_printk(priv, type, level, dev, fmt, args...) do { } while(0)
+
+#define netif_level(level, priv, type, dev, fmt, args...) do { } while(0)
+
+#define netif_emerg(priv, type, dev, fmt, args...) do { } while(0)
+#define netif_alert(priv, type, dev, fmt, args...) do { } while(0)
+#define netif_crit(priv, type, dev, fmt, args...) do { } while(0)
+#define netif_err(priv, type, dev, fmt, args...) do { } while(0)
+#define netif_warn(priv, type, dev, fmt, args...) do { } while(0)
+#define netif_notice(priv, type, dev, fmt, args...) do { } while(0)
+#define netif_info(priv, type, dev, fmt, args...) do { } while(0)
+
+#endif
 #if defined(CONFIG_DYNAMIC_DEBUG)
 #define netif_dbg(priv, type, netdev, format, args...)		\
 do {								\

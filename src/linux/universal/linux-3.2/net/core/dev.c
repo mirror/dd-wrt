@@ -6391,6 +6391,7 @@ const char *netdev_drivername(const struct net_device *dev)
 	return empty;
 }
 
+#if defined(CONFIG_PRINTK) && !defined(CONFIG_NOPRINTK)
 int __netdev_printk(const char *level, const struct net_device *dev,
 			   struct va_format *vaf)
 {
@@ -6453,6 +6454,7 @@ define_netdev_printk_level(netdev_err, KERN_ERR);
 define_netdev_printk_level(netdev_warn, KERN_WARNING);
 define_netdev_printk_level(netdev_notice, KERN_NOTICE);
 define_netdev_printk_level(netdev_info, KERN_INFO);
+#endif
 
 static void __net_exit netdev_exit(struct net *net)
 {
