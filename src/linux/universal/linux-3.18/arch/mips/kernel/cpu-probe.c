@@ -190,9 +190,10 @@ static void set_isa(struct cpuinfo_mips *c, unsigned int isa)
 	}
 }
 
+#if defined(CONFIG_PRINTK)  && !defined(CONFIG_NOPRINTK)
 static char unknown_isa[] = KERN_ERR \
 	"Unsupported ISA type, c0.config0: %d.";
-
+#endif
 static unsigned int calculate_ftlb_probability(struct cpuinfo_mips *c)
 {
 

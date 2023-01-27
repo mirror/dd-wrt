@@ -58,6 +58,7 @@ void __weak panic_smp_self_stop(void)
 		cpu_relax();
 }
 
+#if defined(CONFIG_PRINTK)  && !defined(CONFIG_NOPRINTK)
 /**
  *	panic - halt the system
  *	@fmt: The text string to print
@@ -66,7 +67,7 @@ void __weak panic_smp_self_stop(void)
  *
  *	This function never returns.
  */
-void panic(const char *fmt, ...)
+void _panic(const char *fmt, ...)
 {
 	static DEFINE_SPINLOCK(panic_lock);
 	static char buf[1024];
@@ -184,9 +185,8 @@ void panic(const char *fmt, ...)
 		mdelay(PANIC_TIMER_STEP);
 	}
 }
-
-EXPORT_SYMBOL(panic);
-
+EXPORT_SYMBOL(_panic);
+#endif
 
 struct tnt {
 	u8	bit;

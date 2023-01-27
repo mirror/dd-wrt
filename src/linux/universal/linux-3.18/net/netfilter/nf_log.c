@@ -179,6 +179,7 @@ void nf_logger_put(int pf, enum nf_log_type type)
 }
 EXPORT_SYMBOL_GPL(nf_logger_put);
 
+#if defined(CONFIG_PRINTK)  && !defined(CONFIG_NOPRINTK)
 void nf_log_packet(struct net *net,
 		   u_int8_t pf,
 		   unsigned int hooknum,
@@ -207,6 +208,7 @@ void nf_log_packet(struct net *net,
 	rcu_read_unlock();
 }
 EXPORT_SYMBOL(nf_log_packet);
+#endif
 
 #define S_SIZE (1024 - (sizeof(unsigned int) + 1))
 

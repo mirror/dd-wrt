@@ -2005,9 +2005,10 @@ void set_handler(unsigned long offset, void *addr, unsigned long size)
 	local_flush_icache_range(ebase + offset, ebase + offset + size);
 }
 
+#if defined(CONFIG_PRINTK)  && !defined(CONFIG_NOPRINTK)
 static char panic_null_cerr[] =
 	"Trying to set NULL cache error exception handler";
-
+#endif
 /*
  * Install uncached CPU exception handler.
  * This is suitable only for the cache error exception which is the only

@@ -53,6 +53,7 @@ int nf_log_bind_pf(u_int8_t pf, const struct nf_logger *logger);
 void nf_log_unbind_pf(u_int8_t pf);
 
 /* Calls the registered backend logging function */
+#if defined(CONFIG_PRINTK)  && !defined(CONFIG_NOPRINTK)
 __printf(7, 8)
 void nf_log_packet(u_int8_t pf,
 		   unsigned int hooknum,
@@ -61,5 +62,7 @@ void nf_log_packet(u_int8_t pf,
 		   const struct net_device *out,
 		   const struct nf_loginfo *li,
 		   const char *fmt, ...);
-
+#else
+#define nf_log_packet(pf, hooknum, skb, in, out, li, fmt, ...) do {} while(0)
+#endif
 #endif /* _NF_LOG_H */

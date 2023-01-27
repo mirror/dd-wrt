@@ -235,8 +235,14 @@ static inline void might_fault(void) { }
 extern struct atomic_notifier_head panic_notifier_list;
 extern long (*panic_blink)(int state);
 __printf(1, 2)
-void panic(const char *fmt, ...)
+void _panic(const char *fmt, ...)
 	__noreturn __cold;
+#if defined(CONFIG_PRINTK)  && !defined(CONFIG_NOPRINTK)
+#define panic _panic
+#else
+extern void emergency_restart(void) __noreturn;
+#define panic(fmt, ...) emergency_restart()
+#endif
 extern void oops_enter(void);
 extern void oops_exit(void);
 void print_oops_end_marker(void);
