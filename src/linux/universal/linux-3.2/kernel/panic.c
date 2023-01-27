@@ -49,7 +49,7 @@ static long no_blink(int state)
 long (*panic_blink)(int state);
 EXPORT_SYMBOL(panic_blink);
 
-#if defined(CONFIG_PRINTK)  && !defined(CONFIG_NOPRINTK)
+#if  1//defined(CONFIG_PRINTK)  && !defined(CONFIG_NOPRINTK)
 /**
  *	panic - halt the system
  *	@fmt: The text string to print

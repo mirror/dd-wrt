@@ -61,12 +61,12 @@ static inline void nf_log_unregister(struct nf_logger *logger)
 {
 }
 
-static inline int nf_log_bind_pf(struct net *net, u_int8_t pf,
+static inline int nf_log_bind_pf(u_int8_t pf,
 		   const struct nf_logger *logger)
 {
 return 0;
 }
-static inline void nf_log_unbind_pf(struct net *net, u_int8_t pf);
+static inline void nf_log_unbind_pf(u_int8_t pf)
 {
 }
 #endif

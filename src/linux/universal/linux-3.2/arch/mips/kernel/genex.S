@@ -27,7 +27,7 @@
 		.set	reorder;			\
 		PTR_LA	a0,8f;				\
 		.set	noat;				\
-		PTR_LA	AT, panic;			\
+		PTR_LA	AT, _panic;			\
 		jr	AT;				\
 9:		b	9b;				\
 		.set	pop;				\

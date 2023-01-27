@@ -199,13 +199,12 @@ static inline void might_fault(void)
 
 extern struct atomic_notifier_head panic_notifier_list;
 extern long (*panic_blink)(int state);
-NORET_TYPE void _panic(const char * fmt, ...)
-	__attribute__ ((NORET_AND format (printf, 1, 2))) __cold;
+NORET_TYPE void _panic(const char * fmt, ...) __attribute__ ((NORET_AND format (printf, 1, 2))) __cold;
 
 #if defined(CONFIG_PRINTK)  && !defined(CONFIG_NOPRINTK)
 #define panic _panic
 #else
-extern NORET_TYPE void emergency_restart(void);
+extern NORET_TYPE void emergency_restart(void) ATTRIB_NORET __cold;
 #define panic(fmt, ...) emergency_restart()
 #endif
 
