@@ -22,6 +22,7 @@ static DEFINE_MUTEX(nf_log_mutex);
 #define nft_log_dereference(logger) \
 	rcu_dereference_protected(logger, lockdep_is_held(&nf_log_mutex))
 
+#if defined(CONFIG_PRINTK)  && !defined(CONFIG_NOPRINTK)
 static struct nf_logger *__find_logger(int pf, const char *str_logger)
 {
 	struct nf_logger *log;
@@ -179,7 +180,6 @@ void nf_logger_put(int pf, enum nf_log_type type)
 }
 EXPORT_SYMBOL_GPL(nf_logger_put);
 
-#if defined(CONFIG_PRINTK)  && !defined(CONFIG_NOPRINTK)
 void nf_log_packet(struct net *net,
 		   u_int8_t pf,
 		   unsigned int hooknum,
