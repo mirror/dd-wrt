@@ -1,4 +1,12 @@
 ------------------------------------------------------------------------
+r6921 | brainslayer | 2023-01-27 17:53:48 +0600 (Fri, 27 Jan 2023) | 1 line
+
+fix vht80 for special modes
+------------------------------------------------------------------------
+r6920 | brainslayer | 2023-01-26 10:42:27 +0600 (Thu, 26 Jan 2023) | 1 line
+
+mac80211: add fixes for receiving A-MSDU packets on mesh interfaces
+------------------------------------------------------------------------
 r6919 | brainslayer | 2023-01-25 23:02:48 +0600 (Wed, 25 Jan 2023) | 1 line
 
 another tryout patches for vht80
