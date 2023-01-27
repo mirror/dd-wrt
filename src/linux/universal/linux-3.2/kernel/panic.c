@@ -49,6 +49,7 @@ static long no_blink(int state)
 long (*panic_blink)(int state);
 EXPORT_SYMBOL(panic_blink);
 
+#if defined(CONFIG_PRINTK)  && !defined(CONFIG_NOPRINTK)
 /**
  *	panic - halt the system
  *	@fmt: The text string to print
@@ -57,7 +58,7 @@ EXPORT_SYMBOL(panic_blink);
  *
  *	This function never returns.
  */
-NORET_TYPE void panic(const char * fmt, ...)
+NORET_TYPE void _panic(const char * fmt, ...)
 {
 	static char buf[1024];
 	va_list args;
@@ -154,9 +155,8 @@ NORET_TYPE void panic(const char * fmt, ...)
 		mdelay(PANIC_TIMER_STEP);
 	}
 }
-
-EXPORT_SYMBOL(panic);
-
+EXPORT_SYMBOL(_panic);
+#endif
 
 struct tnt {
 	u8	bit;

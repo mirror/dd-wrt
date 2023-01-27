@@ -47,7 +47,7 @@ extern int orderly_poweroff(bool force);
  * Emergency restart, callable from an interrupt handler.
  */
 
-extern void emergency_restart(void);
+extern void emergency_restart(void) __noreturn;
 #include <asm/emergency-restart.h>
 
 #endif /* _LINUX_REBOOT_H */

@@ -108,6 +108,7 @@ void nf_log_unbind_pf(u_int8_t pf)
 }
 EXPORT_SYMBOL(nf_log_unbind_pf);
 
+#if defined(CONFIG_PRINTK)  && !defined(CONFIG_NOPRINTK)
 void nf_log_packet(u_int8_t pf,
 		   unsigned int hooknum,
 		   const struct sk_buff *skb,
@@ -131,6 +132,7 @@ void nf_log_packet(u_int8_t pf,
 	rcu_read_unlock();
 }
 EXPORT_SYMBOL(nf_log_packet);
+#endif
 
 #ifdef CONFIG_PROC_FS
 static void *seq_start(struct seq_file *seq, loff_t *pos)

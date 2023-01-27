@@ -162,8 +162,10 @@ static void __cpuinit set_isa(struct cpuinfo_mips *c, unsigned int isa)
 	}
 }
 
+#if defined(CONFIG_PRINTK)  && !defined(CONFIG_NOPRINTK)
 static char unknown_isa[] __cpuinitdata = KERN_ERR \
 	"Unsupported ISA type, c0.config0: %d.";
+#endif
 
 static inline unsigned int decode_config0(struct cpuinfo_mips *c)
 {

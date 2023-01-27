@@ -668,8 +668,10 @@ static inline void cpu_probe_legacy(struct cpuinfo_mips *c, unsigned int cpu)
 	}
 }
 
+#if defined(CONFIG_PRINTK)  && !defined(CONFIG_NOPRINTK)
 static char unknown_isa[] __cpuinitdata = KERN_ERR \
 	"Unsupported ISA type, c0.config0: %d.";
+#endif
 
 static inline unsigned int decode_config0(struct cpuinfo_mips *c)
 {
