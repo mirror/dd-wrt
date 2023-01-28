@@ -26,8 +26,8 @@ unauthorized users.  These alternative account information sources include SQL
 tables (via <code>mod_sql</code>), LDAP servers (via <code>mod_ldap</code>),
 CDB files (via <code>mod_auth_cdb</code>), and other system files (via
 the
-<a href="http://www.proftpd.org/docs/directives/linked/config_ref_AuthUserFile.html"><code>AuthUserFile</code></a> and
-<a href="http://www.proftpd.org/docs/directives/linked/config_ref_AuthGroupFile.html"><code>AuthGroupFile</code></a>
+<a href="http://www.proftpd.org/docs/modules/mod_auth_file.html#AuthUserFile"><code>AuthUserFile</code></a> and
+<a href="http://www.proftpd.org/docs/modules/mod_auth_file.html#AuthGroupFile"><code>AuthGroupFile</code></a>
 configuration directives).  The <code>proftpd</code> server can be configured
 to use multiple account information sources simultaneously as well,
 allowing for flexible support of a range of environments.
@@ -162,8 +162,7 @@ account information source, not just <code>AuthUserFile</code>s.
 If you are using the same UID/GID for your users, <i>e.g.</i> in a mass
 hosting environment, one trick you might like to do is make all of the files,
 as listed by the server, appear to be owned by the logged in user.  This is
-done using the <a href="http://www.proftpd.org/docs/directives/linked/config_ref_DirFakeUser.html"><code>DirFakeUser</code></a> and <a href="http://www.proftpd.org/docs/directives/linked/config_ref_DirFakeGroup.html"><code>DirFakeGroup</code></a> directives,
-like this:
+done using the <a href="http://www.proftpd.org/docs/modules/mod_ls.html#DirFakeUser"><code>DirFakeUser</code></a> and <a href="http://www.proftpd.org/docs/modules/mod_ls.html#DirFakeGroup"><code>DirFakeGroup</code></a> directives, like this:
 <pre>
   # make listed files appear to be owned by the logged-in user
   DirFakeUser on ~
@@ -173,13 +172,13 @@ As noted in the documentation, these directives are purely cosmetic, and in
 no way change the real ownership of files.  This may cause some confusion on
 the client side in some cases, if the user sees a file that is reported to be
 owned by them, and the permissions on the file show user access is allowed, and
-yet the client is unable to access the file.  <a href="http://www.proftpd.org/docs/directives/linked/config_ref_HideNoAccess.html"><code>HideNoAccess</code></a>
+yet the client is unable to access the file.  <a href="http://www.proftpd.org/docs/modules/mod_core.html#HideNoAccess"><code>HideNoAccess</code></a>
 can help in situations like this.
 
 <p>
 <hr>
 <font size=2><b><i>
-&copy; Copyright 2017 The ProFTPD Project<br>
+&copy; Copyright 2017-2022 The ProFTPD Project<br>
  All Rights Reserved<br>
 </i></b></font>
 <hr>

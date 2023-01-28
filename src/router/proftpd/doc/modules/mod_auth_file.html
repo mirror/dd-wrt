@@ -49,8 +49,10 @@ The currently implemented options are:
     <p>
     When this option is used, <code>mod_auth_file</code> will ignore insecure
     permissions (<i>i.e.</i> group- or world-readable) on
-    <code>AuthUserFile</code> and <code>AuthGroupFile</code> files.  <b>Note</b>
-    that this option <b>must</b> appear <em>before</em> any
+    <code>AuthUserFile</code> and <code>AuthGroupFile</code> files.
+
+    <p>
+    <b>Note</b> that this option <b>must</b> appear <em>before</em> any
     <code>AuthUserFile</code> and <code>AuthGroupFile</code> directives in
     order to function properly, for the option changes the behavior of the
     <code>mod_auth_file</code> module at <i>parse</i> time.
@@ -58,6 +60,27 @@ The currently implemented options are:
     <p>
     <b>Note</b> that this option first appeared in
     <code>proftpd-1.3.7rc1</code>.
+  </li>
+
+  <p>
+  <li><code>SyntaxCheck</code><br>
+    <p>
+    When this option is used, <code>mod_auth_file</code> will
+
+    When this option is used, <code>mod_auth_file</code> will perform syntax
+    checks on <code>AuthUserFile</code> and <code>AuthGroupFile</code> files.
+    If any of the files have syntax errors, <code>mod_auth_file</code> will
+    cause ProFTPD to fail to start up.
+
+    <p>
+    <b>Note</b> that this option <b>must</b> appear <em>before</em> any
+    <code>AuthUserFile</code> and <code>AuthGroupFile</code> directives in
+    order to function properly, for the option changes the behavior of the
+    <code>mod_auth_file</code> module at <i>parse</i> time.
+
+    <p>
+    <b>Note</b> that this option first appeared in
+    <code>proftpd-1.3.8rc1</code>.
   </li>
 </ul>
 
@@ -251,7 +274,7 @@ unsafe configuration against which <code>mod_auth_file</code> now guards.
 <p>
 <hr>
 <font size=2><b><i>
-&copy; Copyright 2002-2017 The ProFTPD Project<br>
+&copy; Copyright 2002-2021 The ProFTPD Project<br>
  All Rights Reserved<br>
 </i></b></font>
 <hr>

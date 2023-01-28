@@ -72,7 +72,7 @@ my $TESTS = {
 
   rang_retr_ok_with_sendfile => {
     order => ++$order,
-    test_class => [qw(forking)],
+    test_class => [qw(feature_sendfile forking)],
   },
 
   rang_retr_ok_no_sendfile => {
@@ -152,6 +152,7 @@ sub rang_ok {
 
     AuthUserFile => $setup->{auth_user_file},
     AuthGroupFile => $setup->{auth_group_file},
+    AuthOrder => 'mod_auth_file.c',
 
     IfModules => {
       'mod_delay.c' => {
@@ -178,6 +179,9 @@ sub rang_ok {
   defined(my $pid = fork()) or die("Can't fork: $!");
   if ($pid) {
     eval {
+      # Allow for server startup
+      sleep(1);
+
       my $client = ProFTPD::TestSuite::FTP->new('127.0.0.1', $port, 0);
       $client->login($setup->{user}, $setup->{passwd});
       $client->type('binary');
@@ -229,6 +233,7 @@ sub rang_ok_feat {
 
     AuthUserFile => $setup->{auth_user_file},
     AuthGroupFile => $setup->{auth_group_file},
+    AuthOrder => 'mod_auth_file.c',
 
     IfModules => {
       'mod_delay.c' => {
@@ -314,6 +319,7 @@ sub rang_ok_help {
 
     AuthUserFile => $setup->{auth_user_file},
     AuthGroupFile => $setup->{auth_group_file},
+    AuthOrder => 'mod_auth_file.c',
 
     IfModules => {
       'mod_delay.c' => {
@@ -399,6 +405,7 @@ sub rang_ok_reset {
 
     AuthUserFile => $setup->{auth_user_file},
     AuthGroupFile => $setup->{auth_group_file},
+    AuthOrder => 'mod_auth_file.c',
 
     IfModules => {
       'mod_delay.c' => {
@@ -425,6 +432,9 @@ sub rang_ok_reset {
   defined(my $pid = fork()) or die("Can't fork: $!");
   if ($pid) {
     eval {
+      # Allow for server startup
+      sleep(1);
+
       my $client = ProFTPD::TestSuite::FTP->new('127.0.0.1', $port, 0);
       $client->login($setup->{user}, $setup->{passwd});
       my ($resp_code, $resp_msg) = $client->rang(1, 0);
@@ -553,6 +563,7 @@ sub rang_fails_ascii {
 
     AuthUserFile => $setup->{auth_user_file},
     AuthGroupFile => $setup->{auth_group_file},
+    AuthOrder => 'mod_auth_file.c',
 
     IfModules => {
       'mod_delay.c' => {
@@ -635,6 +646,7 @@ sub rang_fails_invalid_start {
 
     AuthUserFile => $setup->{auth_user_file},
     AuthGroupFile => $setup->{auth_group_file},
+    AuthOrder => 'mod_auth_file.c',
 
     IfModules => {
       'mod_delay.c' => {
@@ -661,6 +673,9 @@ sub rang_fails_invalid_start {
   defined(my $pid = fork()) or die("Can't fork: $!");
   if ($pid) {
     eval {
+      # Allow for server startup
+      sleep(1);
+
       my $client = ProFTPD::TestSuite::FTP->new('127.0.0.1', $port, 0);
       $client->login($setup->{user}, $setup->{passwd});
       $client->type('binary');
@@ -718,6 +733,7 @@ sub rang_fails_invalid_end {
 
     AuthUserFile => $setup->{auth_user_file},
     AuthGroupFile => $setup->{auth_group_file},
+    AuthOrder => 'mod_auth_file.c',
 
     IfModules => {
       'mod_delay.c' => {
@@ -744,6 +760,9 @@ sub rang_fails_invalid_end {
   defined(my $pid = fork()) or die("Can't fork: $!");
   if ($pid) {
     eval {
+      # Allow for server startup
+      sleep(1);
+
       my $client = ProFTPD::TestSuite::FTP->new('127.0.0.1', $port, 0);
       $client->login($setup->{user}, $setup->{passwd});
       $client->type('binary');
@@ -801,6 +820,7 @@ sub rang_fails_negative_start {
 
     AuthUserFile => $setup->{auth_user_file},
     AuthGroupFile => $setup->{auth_group_file},
+    AuthOrder => 'mod_auth_file.c',
 
     IfModules => {
       'mod_delay.c' => {
@@ -827,6 +847,9 @@ sub rang_fails_negative_start {
   defined(my $pid = fork()) or die("Can't fork: $!");
   if ($pid) {
     eval {
+      # Allow for server startup
+      sleep(1);
+
       my $client = ProFTPD::TestSuite::FTP->new('127.0.0.1', $port, 0);
       $client->login($setup->{user}, $setup->{passwd});
       $client->type('binary');
@@ -884,6 +907,7 @@ sub rang_fails_negative_end {
 
     AuthUserFile => $setup->{auth_user_file},
     AuthGroupFile => $setup->{auth_group_file},
+    AuthOrder => 'mod_auth_file.c',
 
     IfModules => {
       'mod_delay.c' => {
@@ -967,6 +991,7 @@ sub rang_fails_start_after_end {
 
     AuthUserFile => $setup->{auth_user_file},
     AuthGroupFile => $setup->{auth_group_file},
+    AuthOrder => 'mod_auth_file.c',
 
     IfModules => {
       'mod_delay.c' => {
@@ -993,6 +1018,9 @@ sub rang_fails_start_after_end {
   defined(my $pid = fork()) or die("Can't fork: $!");
   if ($pid) {
     eval {
+      # Allow for server startup
+      sleep(1);
+
       my $client = ProFTPD::TestSuite::FTP->new('127.0.0.1', $port, 0);
       $client->login($setup->{user}, $setup->{passwd});
       $client->type('binary');
@@ -1051,6 +1079,14 @@ sub rang_retr_ok_with_sendfile {
       die("Can't write $test_file: $!");
     }
 
+    # Make sure that, if we're running as root, that the test file has
+    # permissions/privs set for the account we create
+    if ($< == 0) {
+      unless (chown($setup->{uid}, $setup->{gid}, $test_file)) {
+        die("Can't set owner of $test_file to $setup->{uid}/$setup->{gid}: $!");
+      }
+    }
+
   } else {
     die("Can't open $test_file: $!");
   }
@@ -1062,6 +1098,8 @@ sub rang_retr_ok_with_sendfile {
 
     AuthUserFile => $setup->{auth_user_file},
     AuthGroupFile => $setup->{auth_group_file},
+    AuthOrder => 'mod_auth_file.c',
+
     UseSendfile => 'on',
 
     IfModules => {
@@ -1089,7 +1127,12 @@ sub rang_retr_ok_with_sendfile {
   defined(my $pid = fork()) or die("Can't fork: $!");
   if ($pid) {
     eval {
-      my $client = ProFTPD::TestSuite::FTP->new('127.0.0.1', $port, 0);
+      # Allow for server startup
+      sleep(1);
+
+      my $io_timeout = 5;
+      my $client = ProFTPD::TestSuite::FTP->new('127.0.0.1', $port, 0,
+        $io_timeout, $io_timeout);
       $client->login($setup->{user}, $setup->{passwd});
       $client->type('binary');
       $client->rang(1, 3);
@@ -1101,8 +1144,9 @@ sub rang_retr_ok_with_sendfile {
       }
 
       my $buf;
-      my $len = $conn->read($buf, 1024);
-      eval { $conn->close() };
+      my $len = $conn->read($buf, 1024, $io_timeout);
+      sleep(1);
+      eval { $conn->close($io_timeout) };
 
       my $resp_code = $client->response_code();
       my $resp_msg = $client->response_msg();
@@ -1160,6 +1204,8 @@ sub rang_retr_ok_no_sendfile {
 
     AuthUserFile => $setup->{auth_user_file},
     AuthGroupFile => $setup->{auth_group_file},
+    AuthOrder => 'mod_auth_file.c',
+
     UseSendfile => 'off',
 
     IfModules => {
@@ -1187,6 +1233,9 @@ sub rang_retr_ok_no_sendfile {
   defined(my $pid = fork()) or die("Can't fork: $!");
   if ($pid) {
     eval {
+      # Allow for server startup
+      sleep(1);
+
       my $client = ProFTPD::TestSuite::FTP->new('127.0.0.1', $port, 0);
       $client->login($setup->{user}, $setup->{passwd});
       $client->type('binary');
@@ -1258,6 +1307,7 @@ sub rang_retr_ok_end_exceeds_file_size {
 
     AuthUserFile => $setup->{auth_user_file},
     AuthGroupFile => $setup->{auth_group_file},
+    AuthOrder => 'mod_auth_file.c',
 
     IfModules => {
       'mod_delay.c' => {
@@ -1355,6 +1405,7 @@ sub rang_retr_fails_bad_start {
 
     AuthUserFile => $setup->{auth_user_file},
     AuthGroupFile => $setup->{auth_group_file},
+    AuthOrder => 'mod_auth_file.c',
 
     IfModules => {
       'mod_delay.c' => {
@@ -1441,6 +1492,14 @@ sub rang_stor_ok {
       die("Can't write $test_file: $!");
     }
 
+    # Make sure that, if we're running as root, that the test file has
+    # permissions/privs set for the account we create
+    if ($< == 0) {
+      unless (chown($setup->{uid}, $setup->{gid}, $test_file)) {
+        die("Can't set owner of $test_file to $setup->{uid}/$setup->{gid}: $!");
+      }
+    }
+
   } else {
     die("Can't open $test_file: $!");
   }
@@ -1452,6 +1511,8 @@ sub rang_stor_ok {
 
     AuthUserFile => $setup->{auth_user_file},
     AuthGroupFile => $setup->{auth_group_file},
+    AuthOrder => 'mod_auth_file.c',
+
     AllowOverwrite => 'on',
     AllowStoreRestart => 'on',
 
@@ -1480,6 +1541,9 @@ sub rang_stor_ok {
   defined(my $pid = fork()) or die("Can't fork: $!");
   if ($pid) {
     eval {
+      # Allow for server startup
+      sleep(1);
+
       my $client = ProFTPD::TestSuite::FTP->new('127.0.0.1', $port, 0);
       $client->login($setup->{user}, $setup->{passwd});
       $client->type('binary');
@@ -1550,6 +1614,8 @@ sub rang_stor_ok_no_existing_file {
 
     AuthUserFile => $setup->{auth_user_file},
     AuthGroupFile => $setup->{auth_group_file},
+    AuthOrder => 'mod_auth_file.c',
+
     AllowOverwrite => 'on',
     AllowStoreRestart => 'on',
 
@@ -1647,6 +1713,8 @@ sub rang_stor_fails_bad_start {
 
     AuthUserFile => $setup->{auth_user_file},
     AuthGroupFile => $setup->{auth_group_file},
+    AuthOrder => 'mod_auth_file.c',
+
     AllowOverwrite => 'on',
     AllowStoreRestart => 'on',
 
@@ -1735,6 +1803,8 @@ sub rang_stor_fails_too_little_data {
 
     AuthUserFile => $setup->{auth_user_file},
     AuthGroupFile => $setup->{auth_group_file},
+    AuthOrder => 'mod_auth_file.c',
+
     AllowOverwrite => 'on',
     AllowStoreRestart => 'on',
 
@@ -1828,6 +1898,8 @@ sub rang_stor_fails_too_much_data {
 
     AuthUserFile => $setup->{auth_user_file},
     AuthGroupFile => $setup->{auth_group_file},
+    AuthOrder => 'mod_auth_file.c',
+
     AllowOverwrite => 'on',
     AllowStoreRestart => 'on',
 
@@ -1932,6 +2004,7 @@ sub rang_appe_fails {
 
     AuthUserFile => $setup->{auth_user_file},
     AuthGroupFile => $setup->{auth_group_file},
+    AuthOrder => 'mod_auth_file.c',
 
     IfModules => {
       'mod_delay.c' => {
@@ -2030,6 +2103,7 @@ sub rang_stou_fails {
 
     AuthUserFile => $setup->{auth_user_file},
     AuthGroupFile => $setup->{auth_group_file},
+    AuthOrder => 'mod_auth_file.c',
 
     IfModules => {
       'mod_delay.c' => {
@@ -2115,6 +2189,7 @@ sub rang_config_limit_deny {
 
     AuthUserFile => $setup->{auth_user_file},
     AuthGroupFile => $setup->{auth_group_file},
+    AuthOrder => 'mod_auth_file.c',
 
     IfModules => {
       'mod_delay.c' => {

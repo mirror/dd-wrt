@@ -165,6 +165,7 @@ sub mlsd_ok_raw_active {
 
     AuthUserFile => $setup->{auth_user_file},
     AuthGroupFile => $setup->{auth_group_file},
+    AuthOrder => 'mod_auth_file.c',
 
     IfModules => {
       'mod_delay.c' => {
@@ -313,6 +314,7 @@ sub mlsd_ok_raw_passive {
 
     AuthUserFile => $auth_user_file,
     AuthGroupFile => $auth_group_file,
+    AuthOrder => 'mod_auth_file.c',
 
     IfModules => {
       'mod_delay.c' => {
@@ -463,6 +465,7 @@ sub mlsd_fails_file {
 
     AuthUserFile => $auth_user_file,
     AuthGroupFile => $auth_group_file,
+    AuthOrder => 'mod_auth_file.c',
 
     IfModules => {
       'mod_delay.c' => {
@@ -584,6 +587,7 @@ sub mlsd_ok_cwd_dir {
 
     AuthUserFile => $auth_user_file,
     AuthGroupFile => $auth_group_file,
+    AuthOrder => 'mod_auth_file.c',
 
     IfModules => {
       'mod_delay.c' => {
@@ -723,6 +727,7 @@ sub mlsd_ok_other_dir_bug4198 {
 
     AuthUserFile => $auth_user_file,
     AuthGroupFile => $auth_group_file,
+    AuthOrder => 'mod_auth_file.c',
 
     IfModules => {
       'mod_delay.c' => {
@@ -838,6 +843,7 @@ sub mlsd_ok_chrooted_dir {
 
     AuthUserFile => $setup->{auth_user_file},
     AuthGroupFile => $setup->{auth_group_file},
+    AuthOrder => 'mod_auth_file.c',
 
     DefaultRoot => '~',
 
@@ -966,6 +972,7 @@ sub mlsd_ok_empty_dir {
 
     AuthUserFile => $auth_user_file,
     AuthGroupFile => $auth_group_file,
+    AuthOrder => 'mod_auth_file.c',
 
     IfModules => {
       'mod_delay.c' => {
@@ -1106,6 +1113,7 @@ sub mlsd_ok_no_path {
 
     AuthUserFile => $auth_user_file,
     AuthGroupFile => $auth_group_file,
+    AuthOrder => 'mod_auth_file.c',
 
     IfModules => {
       'mod_delay.c' => {
@@ -1236,6 +1244,7 @@ sub mlsd_ok_glob {
 
     AuthUserFile => $auth_user_file,
     AuthGroupFile => $auth_group_file,
+    AuthOrder => 'mod_auth_file.c',
 
     IfModules => {
       'mod_delay.c' => {
@@ -1451,6 +1460,7 @@ sub mlsd_fails_enoent {
 
     AuthUserFile => $auth_user_file,
     AuthGroupFile => $auth_group_file,
+    AuthOrder => 'mod_auth_file.c',
 
     IfModules => {
       'mod_delay.c' => {
@@ -1588,6 +1598,7 @@ sub mlsd_fails_eperm {
 
     AuthUserFile => $auth_user_file,
     AuthGroupFile => $auth_group_file,
+    AuthOrder => 'mod_auth_file.c',
 
     IfModules => {
       'mod_delay.c' => {
@@ -1722,6 +1733,7 @@ sub mlsd_ok_hidden_file {
 
     AuthUserFile => $auth_user_file,
     AuthGroupFile => $auth_group_file,
+    AuthOrder => 'mod_auth_file.c',
 
     Directory => {
       '/' => {
@@ -1862,6 +1874,7 @@ sub mlsd_ok_path_with_spaces {
 
     AuthUserFile => $auth_user_file,
     AuthGroupFile => $auth_group_file,
+    AuthOrder => 'mod_auth_file.c',
 
     IfModules => {
       'mod_delay.c' => {
@@ -1992,6 +2005,7 @@ sub mlsd_nonascii_chars_bug3032 {
 
     AuthUserFile => $auth_user_file,
     AuthGroupFile => $auth_group_file,
+    AuthOrder => 'mod_auth_file.c',
 
     IfModules => {
       'mod_delay.c' => {
@@ -2131,6 +2145,7 @@ sub mlsd_symlink_showsymlinks_off_bug3318 {
 
     AuthUserFile => $setup->{auth_user_file},
     AuthGroupFile => $setup->{auth_group_file},
+    AuthOrder => 'mod_auth_file.c',
 
     ShowSymlinks => 'off',
 
@@ -2277,6 +2292,8 @@ sub mlsd_symlink_showsymlinks_on_bug3318 {
 
     AuthUserFile => $setup->{auth_user_file},
     AuthGroupFile => $setup->{auth_group_file},
+    AuthOrder => 'mod_auth_file.c',
+
     ShowSymlinks => 'on',
 
     IfModules => {
@@ -2431,6 +2448,7 @@ sub mlsd_symlink_showsymlinks_on_chrooted_bug4219 {
 
     AuthUserFile => $setup->{auth_user_file},
     AuthGroupFile => $setup->{auth_group_file},
+    AuthOrder => 'mod_auth_file.c',
 
     DefaultRoot => '~',
     ShowSymlinks => 'on',
@@ -2587,6 +2605,7 @@ sub mlsd_symlink_showsymlinks_on_use_slink_chrooted_bug4219 {
 
     AuthUserFile => $setup->{auth_user_file},
     AuthGroupFile => $setup->{auth_group_file},
+    AuthOrder => 'mod_auth_file.c',
 
     DefaultRoot => '~',
     FactsOptions => 'UseSlink',
@@ -2755,6 +2774,7 @@ sub mlsd_symlinked_dir_bug3859 {
 
     AuthUserFile => $auth_user_file,
     AuthGroupFile => $auth_group_file,
+    AuthOrder => 'mod_auth_file.c',
 
     # Note: use the default ShowSymlinks setting
 
@@ -2923,6 +2943,7 @@ sub mlsd_symlinked_dir_showsymlinks_off_bug3859 {
 
     AuthUserFile => $auth_user_file,
     AuthGroupFile => $auth_group_file,
+    AuthOrder => 'mod_auth_file.c',
 
     ShowSymlinks => 'off',
 
@@ -3065,6 +3086,7 @@ sub mlsd_wide_dir {
 
     AuthUserFile => $setup->{auth_user_file},
     AuthGroupFile => $setup->{auth_group_file},
+    AuthOrder => 'mod_auth_file.c',
 
     IfModules => {
       'mod_delay.c' => {
@@ -3208,6 +3230,8 @@ sub mlsd_symlink_rel_path_chrooted_bug4322 {
 
     AuthUserFile => $setup->{auth_user_file},
     AuthGroupFile => $setup->{auth_group_file},
+    AuthOrder => 'mod_auth_file.c',
+
     ShowSymlinks => 'on',
     DefaultRoot => '~',
 
@@ -3350,6 +3374,8 @@ sub mlsd_symlink_rel_path_subdir_chrooted_bug4322 {
 
     AuthUserFile => $setup->{auth_user_file},
     AuthGroupFile => $setup->{auth_group_file},
+    AuthOrder => 'mod_auth_file.c',
+
     ShowSymlinks => 'on',
     DefaultRoot => '~',
 
@@ -3492,6 +3518,8 @@ sub mlsd_symlink_rel_path_subdir_cwd_chrooted_bug4322 {
 
     AuthUserFile => $setup->{auth_user_file},
     AuthGroupFile => $setup->{auth_group_file},
+    AuthOrder => 'mod_auth_file.c',
+
     ShowSymlinks => 'on',
     DefaultRoot => '~',
 

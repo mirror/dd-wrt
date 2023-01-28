@@ -1,7 +1,7 @@
 /*
  * ProFTPD - FTP server daemon
  * Copyright (c) 1997, 1998 Public Flood Software
- * Copyright (c) 2001-2019 The ProFTPD Project team
+ * Copyright (c) 2001-2020 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -87,8 +87,8 @@ int xaset_insert_end(xaset_t *set, xasetmember_t *member) {
     return -1;
   }
 
-  for (tmp = &set->xas_list; *tmp; prev = *tmp, tmp = &(*tmp)->next)
-    ;
+  for (tmp = &set->xas_list; *tmp; prev = *tmp, tmp = &(*tmp)->next) {
+  }
 
   *tmp = member;
   member->prev = prev;

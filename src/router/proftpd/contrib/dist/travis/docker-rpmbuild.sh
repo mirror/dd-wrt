@@ -1,10 +1,11 @@
 #!/bin/bash
 
 BRANCH=${TRAVIS_BRANCH:-master}
-VERSION=${PACKAGE_VERSION:-1.3.6rc5}
+VERSION=${PACKAGE_VERSION:-1.3.8rc1}
 
 # Make sure that the necessary packages/tools are installed
 yum install -y \
+  epel-release \
   gcc \
   git \
   imake \
@@ -24,7 +25,9 @@ yum install -y \
 # And these are for --with everything
 yum install -y \
   geoip-devel \
+  hiredis-devel \
   libmemcached-devel \
+  libsodium-devel \
   mysql-devel \
   openldap-devel \
   openssl-devel \
@@ -33,12 +36,7 @@ yum install -y \
   sqlite-devel \
   tcp_wrappers-devel
 
-# Install the EPEL repo, for the Redis RPMs
-yum install -y wget
-wget -q -r --no-parent -A 'epel-release-*.rpm' http://dl.fedoraproject.org/pub/epel/7/x86_64/e
-rpm -Uvh dl.fedoraproject.org/pub/epel/7/x86_64/e/epel-release-*.rpm
-yum install -y hiredis-devel
-
+# Build the RPM
 rm -fr rpm/
 mkdir rpm/
 cd rpm/

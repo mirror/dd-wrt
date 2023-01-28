@@ -2,7 +2,7 @@
  * ProFTPD - FTP server daemon
  * Copyright (c) 1997, 1998 Public Flood Software
  * Copyright (c) 1999, 2000 MacGyver aka Habeeb J. Dihu <macgyver@tos.net>
- * Copyright (c) 2001-2020 The ProFTPD Project team
+ * Copyright (c) 2001-2021 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -149,6 +149,11 @@ int main(int argc, char **argv) {
     }
 
     if (check_scoreboard_file() < 0) {
+      if (server_name != NULL) {
+        free(server_name);
+        server_name = NULL;
+      }
+
       fprintf(stderr, "%s: %s\n", util_get_scoreboard(), strerror(errno));
       fprintf(stderr, "(Perhaps you need to specify the ScoreboardFile with -f, or change\n");
       fprintf(stderr," the compile-time default directory?)\n");
@@ -161,24 +166,25 @@ int main(int argc, char **argv) {
   if (res < 0) {
     if (server_name != NULL) {
       free(server_name);
+      server_name = NULL;
     }
 
     switch (res) {
       case UTIL_SCORE_ERR_BAD_MAGIC:
         fprintf(stderr, "error opening scoreboard: bad/corrupted file\n");
-        return 1;
+        exit(1);
 
       case UTIL_SCORE_ERR_OLDER_VERSION:
         fprintf(stderr, "error opening scoreboard: bad version (too old)\n");
-        return 1;
+        exit(1);
 
       case UTIL_SCORE_ERR_NEWER_VERSION:
         fprintf(stderr, "error opening scoreboard: bad version (too new)\n");
-        return 1;
+        exit(1);
 
       default:
         fprintf(stderr, "error opening scoreboard: %s\n", strerror(errno));
-        return 1;
+        exit(1);
     }
   }
 
@@ -262,6 +268,7 @@ int main(int argc, char **argv) {
 
   if (server_name != NULL) {
     free(server_name);
+    server_name = NULL;
   }
 
   return 0;

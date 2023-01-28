@@ -1,7 +1,7 @@
 /*
  * mod_ldap - LDAP password lookup module for ProFTPD
  * Copyright (c) 1999-2013, John Morrissey <jwm@horde.net>
- * Copyright (c) 2013-2020 The ProFTPD Project
+ * Copyright (c) 2013-2021 The ProFTPD Project
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -206,7 +206,8 @@ static char *ldap_dn, *ldap_dnpass, *ldap_sasl_mechs = NULL,
             *ldap_attr_ssh_pubkey = "sshPublicKey";
 
 static int ldap_do_users = FALSE, ldap_do_groups = FALSE,
-           ldap_authbinds = TRUE, ldap_querytimeout = 0,
+           ldap_authbinds = TRUE, ldap_connecttimeout = 0,
+           ldap_querytimeout = 0,
            ldap_genhdir = FALSE, ldap_genhdir_prefix_nouname = FALSE,
            ldap_forcedefaultuid = FALSE, ldap_forcedefaultgid = FALSE,
            ldap_forcegenhdir = FALSE, ldap_protocol_version = 3,
@@ -214,6 +215,8 @@ static int ldap_do_users = FALSE, ldap_do_groups = FALSE,
            ldap_search_scope = LDAP_SCOPE_SUBTREE;
 
 static size_t ldap_dnpasslen = 0;
+
+static struct timeval ldap_connecttimeout_tv;
 
 static struct timeval ldap_querytimeout_tv;
 #define PR_LDAP_QUERY_TIMEOUT_DEFAULT		5
@@ -486,6 +489,29 @@ static int do_ldap_connect(LDAP **conn_ld, int do_bind) {
   (void) pr_log_writefile(ldap_logfd, MOD_LDAP_VERSION,
     "set LDAP protocol version to %d", version);
 
+  if (ldap_connecttimeout_tv.tv_sec > 0) {
+    ldap_connecttimeout_tv.tv_usec = 0;
+
+#if defined(LDAP_OPT_NETWORK_TIMEOUT)
+    res = ldap_set_option(*conn_ld, LDAP_OPT_NETWORK_TIMEOUT,
+      &ldap_connecttimeout_tv);
+    if (res != LDAP_OPT_SUCCESS) {
+      (void) pr_log_writefile(ldap_logfd, MOD_LDAP_VERSION,
+        "error setting network timeout option to %d: %s", ldap_connecttimeout,
+        ldap_err2string(res));
+
+    } else {
+      (void) pr_log_writefile(ldap_logfd, MOD_LDAP_VERSION,
+        "set connect timeout to %d %s", ldap_connecttimeout,
+        ldap_connecttimeout != 1 ? "secs" : "sec");
+    }
+#else
+    (void) pr_log_writefile(ldap_logfd, MOD_LDAP_VERSION,
+      "unable to set connect timeout %d due to lack of API support",
+      ldap_connecttimeout);
+#endif
+  }
+
   if (curr_server_info->use_starttls == TRUE) {
 #if defined(LDAP_OPT_X_TLS)
 # if defined(LDAP_OPT_X_TLS_CACERTFILE)
@@ -619,7 +645,6 @@ static int do_ldap_connect(LDAP **conn_ld, int do_bind) {
     pr_ldap_unbind();
     return -1;
   }
-  
 #else
   deref_ld->ld_deref = ldap_dereference;
 #endif
@@ -2686,6 +2711,25 @@ MODRET set_ldapsearchscope(cmd_rec *cmd) {
   return PR_HANDLED(cmd);
 }
 
+MODRET set_ldapconnecttimeout(cmd_rec *cmd) {
+  config_rec *c;
+  int timeout;
+
+  CHECK_ARGS(cmd, 1);
+  CHECK_CONF(cmd, CONF_ROOT|CONF_VIRTUAL|CONF_GLOBAL);
+
+  if (pr_str_get_duration(cmd->argv[1], &timeout) < 0) {
+    CONF_ERROR(cmd, pstrcat(cmd->tmp_pool, "error parsing timeout value '",
+      cmd->argv[1], "': ", strerror(errno), NULL));
+  }
+
+  c = add_config_param(cmd->argv[0], 1, NULL);
+  c->argv[0] = pcalloc(c->pool, sizeof(int));
+  *((int *) c->argv[0]) = timeout;
+
+  return PR_HANDLED(cmd);
+}
+
 MODRET set_ldapquerytimeout(cmd_rec *cmd) {
   config_rec *c;
   int timeout;
@@ -3143,6 +3187,7 @@ static void ldap_sess_reinit_ev(const void *event_data, void *user_data) {
   ldap_dnpasslen = 0;
   ldap_search_scope = LDAP_SCOPE_SUBTREE;
   ldap_sasl_mechs = NULL;
+  ldap_connecttimeout = 0;
   ldap_querytimeout = 0;
   ldap_dereference = LDAP_DEREF_NEVER;
   ldap_authbinds = TRUE;
@@ -3348,6 +3393,15 @@ static int ldap_sess_init(void) {
   c = find_config(main_server->conf, CONF_PARAM, "LDAPSearchScope", FALSE);
   if (c != NULL) {
     ldap_search_scope = *((int *) c->argv[0]);
+  }
+
+  ptr = get_param_ptr(main_server->conf, "LDAPConnectTimeout", FALSE);
+  if (ptr != NULL) {
+    ldap_connecttimeout = *((int *) ptr);
+
+    if (ldap_connecttimeout > 0) {
+      ldap_connecttimeout_tv.tv_sec = ldap_connecttimeout;
+    }
   }
 
   ptr = get_param_ptr(main_server->conf, "LDAPQueryTimeout", FALSE);
@@ -3562,6 +3616,7 @@ static conftable ldap_conftab[] = {
   { "LDAPAttr",			set_ldapattr,			NULL },
   { "LDAPAuthBinds",		set_ldapauthbinds,		NULL },
   { "LDAPBindDN",		set_ldapbinddn,			NULL },
+  { "LDAPConnectTimeout",	set_ldapconnecttimeout,		NULL },
   { "LDAPDefaultAuthScheme",	set_ldapdefaultauthscheme,	NULL },
   { "LDAPDefaultGID",		set_ldapdefaultgid,		NULL },
   { "LDAPDefaultQuota",		set_ldapdefaultquota,		NULL },

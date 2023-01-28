@@ -114,6 +114,7 @@ sub anon_limit_write {
 
     AuthUserFile => $auth_user_file,
     AuthGroupFile => $auth_group_file,
+    AuthOrder => 'mod_auth_file.c',
 
     IfModules => {
       'mod_delay.c' => {
@@ -274,6 +275,7 @@ sub anon_limit_write_changing_dirs {
 
     AuthUserFile => $auth_user_file,
     AuthGroupFile => $auth_group_file,
+    AuthOrder => 'mod_auth_file.c',
 
     IfModules => {
       'mod_delay.c' => {
@@ -465,6 +467,7 @@ EOC
 
     AuthUserFile => $auth_user_file,
     AuthGroupFile => $auth_group_file,
+    AuthOrder => 'mod_auth_file.c',
 
     AllowOverride => 'on',
 
@@ -659,6 +662,8 @@ sub anon_limit_login_dns_name {
 
     AuthUserFile => $auth_user_file,
     AuthGroupFile => $auth_group_file,
+    AuthOrder => 'mod_auth_file.c',
+
     UseReverseDNS => 'on',
 
     IfModules => {
@@ -801,6 +806,7 @@ sub anon_limit_write_allow_stor_using_abs_path {
 
     AuthUserFile => $auth_user_file,
     AuthGroupFile => $auth_group_file,
+    AuthOrder => 'mod_auth_file.c',
 
     IfModules => {
       'mod_delay.c' => {
@@ -967,6 +973,7 @@ sub anon_limit_write_allow_stor_using_rel_path {
 
     AuthUserFile => $auth_user_file,
     AuthGroupFile => $auth_group_file,
+    AuthOrder => 'mod_auth_file.c',
 
     IfModules => {
       'mod_delay.c' => {

@@ -141,6 +141,7 @@ sub stor_ok_raw_active {
 
     AuthUserFile => $setup->{auth_user_file},
     AuthGroupFile => $setup->{auth_group_file},
+    AuthOrder => 'mod_auth_file.c',
 
     IfModules => {
       'mod_delay.c' => {
@@ -227,6 +228,7 @@ sub stor_ok_raw_passive {
 
     AuthUserFile => $setup->{auth_user_file},
     AuthGroupFile => $setup->{auth_group_file},
+    AuthOrder => 'mod_auth_file.c',
 
     IfModules => {
       'mod_delay.c' => {
@@ -313,6 +315,7 @@ sub stor_ok_binary_file {
 
     AuthUserFile => $setup->{auth_user_file},
     AuthGroupFile => $setup->{auth_group_file},
+    AuthOrder => 'mod_auth_file.c',
 
     IfModules => {
       'mod_delay.c' => {
@@ -405,6 +408,7 @@ sub stor_ok_ascii_file {
 
     AuthUserFile => $setup->{auth_user_file},
     AuthGroupFile => $setup->{auth_group_file},
+    AuthOrder => 'mod_auth_file.c',
 
     IfModules => {
       'mod_delay.c' => {
@@ -499,6 +503,7 @@ sub stor_ok_ascii_file_bug4237 {
 
     AuthUserFile => $setup->{auth_user_file},
     AuthGroupFile => $setup->{auth_group_file},
+    AuthOrder => 'mod_auth_file.c',
 
     IfModules => {
       'mod_delay.c' => {
@@ -574,7 +579,7 @@ sub stor_ok_ascii_file_bug4237 {
       $expected = -s $test_file;
 
       # Take back one byte for per CR
-      my $size = length($buf) / 2;
+      $size = length($buf) / 2;
       $self->assert($expected == $size,
         test_msg("Expected size $expected, got $size"));
 
@@ -620,6 +625,7 @@ sub stor_ok_ascii_file_bug4277 {
 
     AuthUserFile => $setup->{auth_user_file},
     AuthGroupFile => $setup->{auth_group_file},
+    AuthOrder => 'mod_auth_file.c',
 
     IfModules => {
       'mod_delay.c' => {
@@ -791,6 +797,10 @@ sub stor_abs_symlink {
 
     AuthUserFile => $setup->{auth_user_file},
     AuthGroupFile => $setup->{auth_group_file},
+    AuthOrder => 'mod_auth_file.c',
+
+    AllowOverwrite => 'on',
+    TransferOptions => 'AllowSymlinkUpload',
 
     IfModules => {
       'mod_delay.c' => {
@@ -908,6 +918,7 @@ sub stor_abs_symlink_chrooted_bug4219 {
 
     AuthUserFile => $setup->{auth_user_file},
     AuthGroupFile => $setup->{auth_group_file},
+    AuthOrder => 'mod_auth_file.c',
 
     DefaultRoot => '~',
 
@@ -1032,6 +1043,10 @@ sub stor_rel_symlink {
 
     AuthUserFile => $setup->{auth_user_file},
     AuthGroupFile => $setup->{auth_group_file},
+    AuthOrder => 'mod_auth_file.c',
+
+    AllowOverwrite => 'on',
+    TransferOptions => 'AllowSymlinkUpload',
 
     IfModules => {
       'mod_delay.c' => {
@@ -1154,6 +1169,7 @@ sub stor_rel_symlink_chrooted_bug4219 {
 
     AuthUserFile => $setup->{auth_user_file},
     AuthGroupFile => $setup->{auth_group_file},
+    AuthOrder => 'mod_auth_file.c',
 
     DefaultRoot => '~',
 
@@ -1247,6 +1263,7 @@ sub stor_fails_not_reg {
 
     AuthUserFile => $setup->{auth_user_file},
     AuthGroupFile => $setup->{auth_group_file},
+    AuthOrder => 'mod_auth_file.c',
 
     AllowOverwrite => 'on',
 
@@ -1409,6 +1426,7 @@ sub stor_fails_no_path {
 
     AuthUserFile => $setup->{auth_user_file},
     AuthGroupFile => $setup->{auth_group_file},
+    AuthOrder => 'mod_auth_file.c',
 
     IfModules => {
       'mod_delay.c' => {
@@ -1503,6 +1521,7 @@ sub stor_fails_eperm {
 
     AuthUserFile => $setup->{auth_user_file},
     AuthGroupFile => $setup->{auth_group_file},
+    AuthOrder => 'mod_auth_file.c',
 
     IfModules => {
       'mod_delay.c' => {
@@ -1614,6 +1633,10 @@ sub stor_fails_abs_symlink_dir_enoent {
 
     AuthUserFile => $setup->{auth_user_file},
     AuthGroupFile => $setup->{auth_group_file},
+    AuthOrder => 'mod_auth_file.c',
+
+    AllowOverwrite => 'on',
+    TransferOptions => 'AllowSymlinkUpload',
 
     IfModules => {
       'mod_delay.c' => {
@@ -1724,6 +1747,7 @@ sub stor_fails_abs_symlink_dir_enoent_chrooted_bug4219 {
 
     AuthUserFile => $setup->{auth_user_file},
     AuthGroupFile => $setup->{auth_group_file},
+    AuthOrder => 'mod_auth_file.c',
 
     DefaultRoot => '~',
 
@@ -1851,6 +1875,10 @@ sub stor_fails_rel_symlink_dir_enoent {
 
     AuthUserFile => $setup->{auth_user_file},
     AuthGroupFile => $setup->{auth_group_file},
+    AuthOrder => 'mod_auth_file.c',
+
+    AllowOverwrite => 'on',
+    TransferOptions => 'AllowSymlinkUpload',
 
     IfModules => {
       'mod_delay.c' => {
@@ -1976,6 +2004,7 @@ sub stor_fails_rel_symlink_dir_enoent_chrooted_bug4219 {
 
     AuthUserFile => $setup->{auth_user_file},
     AuthGroupFile => $setup->{auth_group_file},
+    AuthOrder => 'mod_auth_file.c',
 
     DefaultRoot => '~',
 
@@ -2064,6 +2093,7 @@ sub stor_leading_whitespace {
 
     AuthUserFile => $setup->{auth_user_file},
     AuthGroupFile => $setup->{auth_group_file},
+    AuthOrder => 'mod_auth_file.c',
 
     IfModules => {
       'mod_delay.c' => {
@@ -2150,6 +2180,7 @@ sub stor_multiple_periods {
 
     AuthUserFile => $setup->{auth_user_file},
     AuthGroupFile => $setup->{auth_group_file},
+    AuthOrder => 'mod_auth_file.c',
 
     IfModules => {
       'mod_delay.c' => {

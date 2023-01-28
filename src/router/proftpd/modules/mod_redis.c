@@ -1,6 +1,6 @@
 /*
  * ProFTPD: mod_redis -- a module for managing Redis data
- * Copyright (c) 2017-2020 The ProFTPD Project
+ * Copyright (c) 2017-2021 The ProFTPD Project
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -31,7 +31,7 @@
 #include "json.h"
 #include "jot.h"
 
-#define MOD_REDIS_VERSION		"mod_redis/0.2.2"
+#define MOD_REDIS_VERSION		"mod_redis/0.2.3"
 
 #if PROFTPD_VERSION_NUMBER < 0x0001030605
 # error "ProFTPD 1.3.6rc5 or later required"
@@ -244,6 +244,169 @@ static int resolve_on_other(pool *p, pr_jot_ctx_t *jot_ctx, unsigned char *text,
   return 0;
 }
 
+struct redis_log_fmt_extra_ctx {
+  pool *pool;
+  cmd_rec *cmd;
+  pr_jot_ctx_t *jot_ctx;
+  pr_json_object_t *json;
+  struct redis_buffer *rb;
+};
+
+static const char *log_fmt_extra_resolve_val(pool *p, cmd_rec *cmd,
+    pr_jot_ctx_t *jot_ctx, struct redis_buffer *rb, const char *text) {
+  int res;
+  pr_jot_parsed_t *jot_parsed;
+  unsigned char parsed_buf[1024], *parsed_val;
+  size_t parsed_valsz;
+  char val_buf[1024];
+  const char *val_text = NULL;
+
+  jot_parsed = pcalloc(p, sizeof(pr_jot_parsed_t));
+  jot_parsed->bufsz = jot_parsed->buflen = sizeof(parsed_buf);
+  jot_parsed->ptr = jot_parsed->buf = parsed_buf;
+
+  jot_ctx->log = jot_parsed;
+
+  res = pr_jot_parse_logfmt(p, text, jot_ctx, pr_jot_parse_on_meta,
+    pr_jot_parse_on_unknown, pr_jot_parse_on_other, 0);
+  if (res < 0) {
+    pr_trace_msg(trace_channel, 3,
+      "error parsing RedisLogFormatExtra value '%s': %s", text,
+      strerror(errno));
+    return text;
+  }
+
+  parsed_valsz = jot_parsed->bufsz - jot_parsed->buflen;
+  parsed_val = palloc(p, parsed_valsz + 1);
+  memcpy(parsed_val, parsed_buf, parsed_valsz);
+  parsed_val[parsed_valsz] = '\0';
+
+  rb->bufsz = rb->buflen = sizeof(val_buf)-1;
+  rb->ptr = rb->buf = val_buf;
+  jot_ctx->log = rb;
+
+  res = pr_jot_resolve_logfmt(p, cmd, NULL, parsed_val, jot_ctx,
+    resolve_on_meta, NULL, resolve_on_other);
+  if (res == 0) {
+    size_t val_buflen;
+
+    val_buflen = rb->bufsz - rb->buflen;
+    val_text = pstrndup(p, val_buf, val_buflen);
+
+  } else {
+    pr_trace_msg(trace_channel, 3,
+      "error resolving RedisLogFormatExtra value '%s': %s", text,
+      strerror(errno));
+
+    val_text = text;
+  }
+
+  return val_text;
+}
+
+static int log_fmt_extra_iter_cb(const char *key, int val_type, const void *val,
+    size_t valsz, void *user_data) {
+  int res = 0;
+  pool *tmp_pool;
+  cmd_rec *cmd;
+  pr_jot_ctx_t *jot_ctx;
+  pr_json_object_t *json;
+  struct redis_log_fmt_extra_ctx *extra_ctx;
+
+  extra_ctx = user_data;
+  tmp_pool = extra_ctx->pool;
+  cmd = extra_ctx->cmd;
+  jot_ctx = extra_ctx->jot_ctx;
+  json = extra_ctx->json;
+
+  /* Skip any keys that already exist in the destination object. */
+  if (pr_json_object_exists(json, key) == TRUE) {
+    return 0;
+  }
+
+  switch (val_type) {
+    case PR_JSON_TYPE_BOOL:
+      res = pr_json_object_set_bool(tmp_pool, json, key, *((int *) val));
+      break;
+
+    case PR_JSON_TYPE_NUMBER:
+      res = pr_json_object_set_number(tmp_pool, json, key, *((double *) val));
+      break;
+
+    case PR_JSON_TYPE_NULL:
+      res = pr_json_object_set_null(tmp_pool, json, key);
+      break;
+
+    case PR_JSON_TYPE_ARRAY:
+      res = pr_json_object_set_array(tmp_pool, json, key, val);
+      break;
+
+    case PR_JSON_TYPE_OBJECT:
+      res = pr_json_object_set_object(tmp_pool, json, key, val);
+      break;
+
+    case PR_JSON_TYPE_STRING: {
+      struct redis_buffer *rb;
+      const char *val_text;
+
+      rb = extra_ctx->rb;
+
+      val_text = log_fmt_extra_resolve_val(tmp_pool, cmd, jot_ctx, rb, val);
+      res = pr_json_object_set_string(tmp_pool, json, key, val_text);
+    }
+  }
+
+  return res;
+}
+
+static pr_json_object_t *add_log_fmt_extra(pool *p, pr_json_object_t *json,
+    cmd_rec *cmd, pr_jot_ctx_t *jot_ctx, pr_json_object_t *extra_json) {
+  int res;
+  struct redis_log_fmt_extra_ctx extra_ctx;
+  struct redis_buffer *rb;
+
+  rb = pcalloc(p, sizeof(struct redis_buffer));
+
+  extra_ctx.pool = p;
+  extra_ctx.cmd = cmd;
+  extra_ctx.jot_ctx = jot_ctx;
+  extra_ctx.json = json;
+  extra_ctx.rb = rb;
+
+  res = pr_json_object_foreach(p, extra_json, log_fmt_extra_iter_cb,
+    &extra_ctx);
+  if (res < 0) {
+    pr_trace_msg(trace_channel, 3, "error adding extra log data: %s",
+      strerror(errno));
+  }
+
+  return json;
+}
+
+static pr_json_object_t *add_log_fmt_extras(pool *p, pr_json_object_t *json,
+    const char *fmt_name, cmd_rec *cmd, pr_jot_ctx_t *jot_ctx) {
+  config_rec *c;
+
+  c = find_config(CURRENT_CONF, CONF_PARAM, "RedisLogFormatExtra", FALSE);
+  while (c != NULL) {
+    const char *extra_fmt_name;
+
+    pr_signals_handle();
+
+    extra_fmt_name = c->argv[0];
+    if (strcmp(fmt_name, extra_fmt_name) == 0) {
+      pr_json_object_t *extra_json;
+
+      extra_json = c->argv[1];
+      json = add_log_fmt_extra(p, json, cmd, jot_ctx, extra_json);
+    }
+
+    c = find_config_next(c, c->next, CONF_PARAM, "RedisLogFormatExtra", FALSE);
+  }
+
+  return json;
+}
+
 static void log_event(pr_redis_t *redis, config_rec *c, cmd_rec *cmd) {
   pool *tmp_pool;
   int res;
@@ -275,6 +438,8 @@ static void log_event(pr_redis_t *redis, config_rec *c, cmd_rec *cmd) {
   res = pr_jot_resolve_logfmt(tmp_pool, cmd, jot_filters, log_fmt, jot_ctx,
     pr_jot_on_json, NULL, NULL);
   if (res == 0) {
+    json = add_log_fmt_extras(tmp_pool, json, fmt_name, cmd, jot_ctx);
+
     payload = pr_json_object_to_text(tmp_pool, json, "");
     payload_len = strlen(payload);
     pr_trace_msg(trace_channel, 8, "generated JSON payload for %s: %.*s",
@@ -366,6 +531,25 @@ static void log_events(cmd_rec *cmd) {
   }
 }
 
+static unsigned char *find_log_fmt(server_rec *s, const char *fmt_name) {
+  config_rec *c;
+  unsigned char *log_fmt = NULL;
+
+  c = find_config(s->conf, CONF_PARAM, "LogFormat", FALSE);
+  while (c != NULL) {
+    pr_signals_handle();
+
+    if (strcmp(fmt_name, c->argv[0]) == 0) {
+      log_fmt = c->argv[1];
+      break;
+    }
+
+    c = find_config_next(c, c->next, CONF_PARAM, "LogFormat", FALSE);
+  }
+
+  return log_fmt;
+}
+
 /* Configuration handlers
  */
 
@@ -403,9 +587,44 @@ MODRET set_redislog(cmd_rec *cmd) {
   return PR_HANDLED(cmd);
 }
 
+/* usage: RedisLogFormatExtra log-fmt json-object */
+MODRET set_redislogfmtextra(cmd_rec *cmd) {
+  config_rec *c;
+  char *fmt_name, *text;
+  unsigned char *log_fmt;
+  pr_json_object_t *json = NULL;
+
+  CHECK_ARGS(cmd, 2);
+  CHECK_CONF(cmd, CONF_ROOT|CONF_GLOBAL|CONF_VIRTUAL|CONF_ANON|CONF_DIR);
+
+  c = add_config_param(cmd->argv[0], 2, NULL, NULL);
+
+  fmt_name = cmd->argv[1];
+
+  /* Make sure that the given LogFormat name is known. */
+  log_fmt = find_log_fmt(cmd->server, fmt_name);
+  if (log_fmt == NULL) {
+    CONF_ERROR(cmd, pstrcat(cmd->tmp_pool, "no LogFormat '", fmt_name,
+      "' configured", NULL));
+  }
+
+  text = pstrdup(c->pool, cmd->argv[2]);
+  json = pr_json_object_from_text(c->pool, text);
+  if (json == NULL) {
+    CONF_ERROR(cmd, pstrcat(cmd->tmp_pool, "error parsing '", cmd->argv[2],
+      "' as JSON object: invalid JSON", NULL));
+  }
+
+  c->argv[0] = pstrdup(c->pool, fmt_name);
+  c->argv[1] = json;
+
+  c->flags |= CF_MERGEDOWN_MULTI;
+  return PR_HANDLED(cmd);
+}
+
 /* usage: RedisLogOnCommand "none"|commands log-fmt [key] */
 MODRET set_redislogoncommand(cmd_rec *cmd) {
-  config_rec *c, *logfmt_config;
+  config_rec *c;
   const char *fmt_name, *rules;
   unsigned char *log_fmt = NULL, *key_fmt = NULL;
   pr_jot_filters_t *jot_filters;
@@ -438,20 +657,7 @@ MODRET set_redislogoncommand(cmd_rec *cmd) {
   fmt_name = cmd->argv[2];
 
   /* Make sure that the given LogFormat name is known. */
-  logfmt_config = find_config(cmd->server->conf, CONF_PARAM, "LogFormat",
-    FALSE);
-  while (logfmt_config != NULL) {
-    pr_signals_handle();
-
-    if (strcmp(fmt_name, logfmt_config->argv[0]) == 0) {
-      log_fmt = logfmt_config->argv[1];
-      break;
-    }
-
-    logfmt_config = find_config_next(logfmt_config, logfmt_config->next,
-      CONF_PARAM, "LogFormat", FALSE);
-  }
-
+  log_fmt = find_log_fmt(cmd->server, fmt_name);
   if (log_fmt == NULL) {
     CONF_ERROR(cmd, pstrcat(cmd->tmp_pool, "no LogFormat '", fmt_name,
       "' configured", NULL));
@@ -501,7 +707,7 @@ MODRET set_redislogoncommand(cmd_rec *cmd) {
 
 /* usage: RedisLogOnEvent "none"|events log-fmt [key] */
 MODRET set_redislogonevent(cmd_rec *cmd) {
-  config_rec *c, *logfmt_config;
+  config_rec *c;
   const char *fmt_name, *rules;
   unsigned char *log_fmt = NULL, *key_fmt = NULL;
   pr_jot_filters_t *jot_filters;
@@ -535,20 +741,7 @@ MODRET set_redislogonevent(cmd_rec *cmd) {
   fmt_name = cmd->argv[2];
 
   /* Make sure that the given LogFormat name is known. */
-  logfmt_config = find_config(cmd->server->conf, CONF_PARAM, "LogFormat",
-    FALSE);
-  while (logfmt_config != NULL) {
-    pr_signals_handle();
-
-    if (strcmp(fmt_name, logfmt_config->argv[0]) == 0) {
-      log_fmt = logfmt_config->argv[1];
-      break;
-    }
-
-    logfmt_config = find_config_next(logfmt_config, logfmt_config->next,
-      CONF_PARAM, "LogFormat", FALSE);
-  }
-
+  log_fmt = find_log_fmt(cmd->server, fmt_name);
   if (log_fmt == NULL) {
     CONF_ERROR(cmd, pstrcat(cmd->tmp_pool, "no LogFormat '", fmt_name,
       "' configured", NULL));
@@ -626,12 +819,16 @@ MODRET set_redisoptions(cmd_rec *cmd) {
   return PR_HANDLED(cmd);
 }
 
-/* usage: RedisSentinel host[:port] ... [master name] */
+/* usage: RedisSentinel host[:port] ... [master name] \
+ *          [ssl:true] [ssl-ca:/path] [ssl-cert:/path] [ssl-key:/path]
+ */
 MODRET set_redissentinel(cmd_rec *cmd) {
   register unsigned int i;
   config_rec *c;
   array_header *sentinels;
-  char *master_name = NULL;
+  char *master_name = NULL, *ssl_cacert = NULL, *ssl_cert = NULL,
+    *ssl_key = NULL;
+  int use_ssl = FALSE;
 
   CHECK_ARGS(cmd, 1);
   CHECK_CONF(cmd, CONF_ROOT|CONF_VIRTUAL|CONF_GLOBAL);
@@ -645,7 +842,7 @@ MODRET set_redissentinel(cmd_rec *cmd) {
     }
   }
 
-  c = add_config_param(cmd->argv[0], 2, NULL, NULL);
+  c = add_config_param(cmd->argv[0], 6, NULL, NULL, NULL, NULL, NULL, NULL);
   sentinels = make_array(c->pool, 0, sizeof(pr_netaddr_t *));
 
   for (i = 1; i < cmd->argc; i++) {
@@ -653,6 +850,88 @@ MODRET set_redissentinel(cmd_rec *cmd) {
     size_t sentinel_len;
     int port = REDIS_SENTINEL_DEFAULT_PORT;
     pr_netaddr_t *sentinel_addr;
+
+    /* Handle the optional SSL/TLS settings, too. */
+    if (strncmp(cmd->argv[i], "ssl:", 4) == 0) {
+      const char *text;
+
+      text = cmd->argv[i];
+
+      /* Advance past the "ssl:" prefix. */
+      text += 4;
+
+      use_ssl = pr_str_is_boolean(text);
+      if (use_ssl < 0) {
+        pr_log_pri(PR_LOG_NOTICE, MOD_REDIS_VERSION
+          ": %s: use SSL '%s': %s", (char *) cmd->argv[0], text,
+          strerror(EINVAL));
+      }
+
+      continue;
+    }
+
+    if (strncmp(cmd->argv[i], "ssl-ca:", 7) == 0) {
+      char *path;
+
+      path = cmd->argv[i];
+
+      /* Advance past the "ssl-ca:" prefix. */
+      path += 7;
+
+      /* Check the file exists! */
+      if (file_exists2(cmd->tmp_pool, path) == TRUE) {
+        ssl_cacert = path;
+
+      } else {
+        pr_log_pri(PR_LOG_NOTICE, MOD_REDIS_VERSION
+          ": %s: SSL CA '%s': %s", (char *) cmd->argv[0], path,
+          strerror(ENOENT));
+      }
+
+      continue;
+    }
+
+    if (strncmp(cmd->argv[i], "ssl-cert:", 9) == 0) {
+      char *path;
+
+      path = cmd->argv[i];
+
+      /* Advance past the "ssl-cert:" prefix. */
+      path += 9;
+
+      /* Check the file exists! */
+      if (file_exists2(cmd->tmp_pool, path) == TRUE) {
+        ssl_cert = path;
+
+      } else {
+        pr_log_pri(PR_LOG_NOTICE, MOD_REDIS_VERSION
+          ": %s: SSL certificate '%s': %s", (char *) cmd->argv[0], path,
+          strerror(ENOENT));
+      }
+
+      continue;
+    }
+
+    if (strncmp(cmd->argv[i], "ssl-key:", 8) == 0) {
+      char *path;
+
+      path = cmd->argv[i];
+
+      /* Advance past the "ssl-key:" prefix. */
+      path += 8;
+
+      /* Check the file exists! */
+      if (file_exists2(cmd->tmp_pool, path) == TRUE) {
+        ssl_key = path;
+
+      } else {
+        pr_log_pri(PR_LOG_NOTICE, MOD_REDIS_VERSION
+          ": %s: SSL certificate key '%s': %s", (char *) cmd->argv[0], path,
+          strerror(ENOENT));
+      }
+
+      continue;
+    }
 
     sentinel = pstrdup(cmd->tmp_pool, cmd->argv[i]);
     sentinel_len = strlen(sentinel);
@@ -697,16 +976,25 @@ MODRET set_redissentinel(cmd_rec *cmd) {
 
   c->argv[0] = sentinels;
   c->argv[1] = pstrdup(c->pool, master_name);
+  c->argv[2] = pcalloc(c->pool, sizeof(int));
+  *((int *) c->argv[2]) = use_ssl;
+  c->argv[3] = pstrdup(c->pool, ssl_cacert);
+  c->argv[4] = pstrdup(c->pool, ssl_cert);
+  c->argv[5] = pstrdup(c->pool, ssl_key);
 
   return PR_HANDLED(cmd);
 }
 
-/* usage: RedisServer host[:port] [password] [db-index] */
+/* usage: RedisServer host[:port] [username] [password] [db-index] \
+ *          [ssl:true] [ssl-ca:/path] [ssl-cert:/path] [ssl-key:/path]
+ */
 MODRET set_redisserver(cmd_rec *cmd) {
+  register unsigned int i;
   config_rec *c;
-  char *server, *password = NULL, *db_idx = NULL, *ptr;
+  char *server, *username = NULL, *password = NULL, *db_idx = NULL, *ptr;
+  const char *ssl_cacert = NULL, *ssl_cert = NULL, *ssl_key = NULL;
   size_t server_len;
-  int ctx, port = REDIS_SERVER_DEFAULT_PORT;
+  int ctx, opts_idx = 0, port = REDIS_SERVER_DEFAULT_PORT, use_ssl = FALSE;
 
   CHECK_ARGS(cmd, 1);
   CHECK_CONF(cmd, CONF_ROOT|CONF_VIRTUAL|CONF_GLOBAL);
@@ -740,26 +1028,159 @@ MODRET set_redisserver(cmd_rec *cmd) {
     }
   }
 
-  if (cmd->argc == 3) {
-    password = cmd->argv[2];
-    if (strcmp(password, "") == 0) {
-      password = NULL;
+  /* This index tells us where to start looking for optional settings, like
+   * the SSL/TLS settings.
+   */
+  opts_idx = 2;
+
+  if (cmd->argc >= 3) {
+    char *text;
+
+    text = cmd->argv[2];
+
+    if (strchr(text, ':') == NULL &&
+        strncmp(text, "ssl", 3) != 0) {
+      username = text;
+
+      if (strcmp(username, "") == 0) {
+        username = NULL;
+      }
+
+      opts_idx = 3;
     }
   }
 
-  if (cmd->argc == 4) {
-    db_idx = cmd->argv[3];
-    if (strcmp(db_idx, "") == 0) {
-      db_idx = NULL;
+  if (cmd->argc >= 4) {
+    char *text;
+
+    text = cmd->argv[3];
+
+    if (strchr(text, ':') == NULL &&
+        strncmp(text, "ssl", 3) != 0) {
+      password = text;
+
+      if (strcmp(password, "") == 0) {
+        password = NULL;
+      }
+
+      opts_idx = 4;
     }
   }
 
-  c = add_config_param(cmd->argv[0], 4, NULL, NULL, NULL, NULL);
+  if (cmd->argc >= 5) {
+    char *text;
+
+    text = cmd->argv[4];
+
+    if (strchr(text, ':') == NULL &&
+        strncmp(text, "ssl", 3) != 0) {
+      db_idx = text;
+
+      if (strcmp(db_idx, "") == 0) {
+        db_idx = NULL;
+      }
+
+      opts_idx = 5;
+    }
+  }
+
+  /* Handle the optional SSL/TLS settings, too. */
+  for (i = opts_idx; i < cmd->argc; i++) {
+    if (strncmp(cmd->argv[i], "ssl:", 4) == 0) {
+      const char *text;
+
+      text = cmd->argv[i];
+
+      /* Advance past the "ssl:" prefix. */
+      text += 4;
+
+      use_ssl = pr_str_is_boolean(text);
+      if (use_ssl < 0) {
+        pr_log_pri(PR_LOG_NOTICE, MOD_REDIS_VERSION
+          ": %s: use SSL '%s': %s", (char *) cmd->argv[0], text,
+          strerror(EINVAL));
+      }
+
+      continue;
+    }
+
+    if (strncmp(cmd->argv[i], "ssl-ca:", 7) == 0) {
+      const char *path;
+
+      path = cmd->argv[i];
+
+      /* Advance past the "ssl-ca:" prefix. */
+      path += 7;
+
+      /* Check the file exists! */
+      if (file_exists2(cmd->tmp_pool, path) == TRUE) {
+        ssl_cacert = path;
+
+      } else {
+        pr_log_pri(PR_LOG_NOTICE, MOD_REDIS_VERSION
+          ": %s: SSL CA '%s': %s", (char *) cmd->argv[0], path,
+          strerror(ENOENT));
+      }
+
+      continue;
+    }
+
+    if (strncmp(cmd->argv[i], "ssl-cert:", 9) == 0) {
+      char *path;
+
+      path = cmd->argv[i];
+
+      /* Advance past the "ssl-cert:" prefix. */
+      path += 9;
+
+      /* Check the file exists! */
+      if (file_exists2(cmd->tmp_pool, path) == TRUE) {
+        ssl_cert = path;
+
+      } else {
+        pr_log_pri(PR_LOG_NOTICE, MOD_REDIS_VERSION
+          ": %s: SSL certificate '%s': %s", (char *) cmd->argv[0], path,
+          strerror(ENOENT));
+      }
+
+      continue;
+    }
+
+    if (strncmp(cmd->argv[i], "ssl-key:", 8) == 0) {
+      char *path;
+
+      path = cmd->argv[i];
+
+      /* Advance past the "ssl-key:" prefix. */
+      path += 8;
+
+      /* Check the file exists! */
+      if (file_exists2(cmd->tmp_pool, path) == TRUE) {
+        ssl_key = path;
+
+      } else {
+        pr_log_pri(PR_LOG_NOTICE, MOD_REDIS_VERSION
+          ": %s: SSL certificate key '%s': %s", (char *) cmd->argv[0], path,
+          strerror(ENOENT));
+      }
+
+      continue;
+    }
+  }
+
+  c = add_config_param(cmd->argv[0], 9, NULL, NULL, NULL, NULL, NULL, NULL,
+    NULL, NULL, NULL);
   c->argv[0] = pstrdup(c->pool, server);
   c->argv[1] = palloc(c->pool, sizeof(int));
   *((int *) c->argv[1]) = port;
-  c->argv[2] = pstrdup(c->pool, password);
-  c->argv[3] = pstrdup(c->pool, db_idx);
+  c->argv[2] = pstrdup(c->pool, username);
+  c->argv[3] = pstrdup(c->pool, password);
+  c->argv[4] = pstrdup(c->pool, db_idx);
+  c->argv[5] = palloc(c->pool, sizeof(int));
+  *((int *) c->argv[5]) = use_ssl;
+  c->argv[6] = pstrdup(c->pool, ssl_cacert);
+  c->argv[7] = pstrdup(c->pool, ssl_cert);
+  c->argv[8] = pstrdup(c->pool, ssl_key);
 
   ctx = (cmd->config && cmd->config->config_type != CONF_PARAM ?
     cmd->config->config_type : cmd->server->config_type ?
@@ -769,7 +1190,8 @@ MODRET set_redisserver(cmd_rec *cmd) {
     /* If we're the "server config" context, set the server now.  This
      * would let mod_redis talk to those servers for e.g. ftpdctl actions.
      */
-    (void) redis_set_server(c->argv[0], port, 0UL, c->argv[2], c->argv[3]);
+    (void) redis_set_server3(c->argv[0], port, 0UL, c->argv[2], c->argv[3],
+      c->argv[4], use_ssl, ssl_cacert, ssl_cert, ssl_key);
   }
 
   return PR_HANDLED(cmd);
@@ -1074,25 +1496,38 @@ static int redis_sess_init(void) {
   c = find_config(main_server->conf, CONF_PARAM, "RedisSentinel", FALSE);
   if (c != NULL) {
     array_header *sentinels;
-    const char *master;
+    const char *master, *ssl_cacert, *ssl_cert, *ssl_key;
+    int use_ssl;
 
     sentinels = c->argv[0];
     master = c->argv[1];
+    use_ssl = *((int *) c->argv[2]);
+    ssl_cacert = c->argv[3];
+    ssl_cert = c->argv[4];
+    ssl_key = c->argv[5];
 
-    (void) redis_set_sentinels(sentinels, master);
+    (void) redis_set_sentinels2(sentinels, master, use_ssl, ssl_cacert,
+      ssl_cert, ssl_key);
   }
 
   c = find_config(main_server->conf, CONF_PARAM, "RedisServer", FALSE);
   if (c != NULL) {
-    const char *server, *password, *db_idx;
-    int port;
+    const char *server, *username, *password, *db_idx, *ssl_cacert,
+      *ssl_cert, *ssl_key;
+    int port, use_ssl;
 
     server = c->argv[0];
     port = *((int *) c->argv[1]);
-    password = c->argv[2];
-    db_idx = c->argv[3];
+    username = c->argv[2];
+    password = c->argv[3];
+    db_idx = c->argv[4];
+    use_ssl = *((int *) c->argv[5]);
+    ssl_cacert = c->argv[6];
+    ssl_cert = c->argv[7];
+    ssl_key = c->argv[8];
 
-    (void) redis_set_server(server, port, redis_opts, password, db_idx);
+    (void) redis_set_server3(server, port, redis_opts, username, password,
+      db_idx, use_ssl, ssl_cacert, ssl_cert, ssl_key);
   }
 
   c = find_config(main_server->conf, CONF_PARAM, "RedisTimeouts", FALSE);
@@ -1117,6 +1552,7 @@ static int redis_sess_init(void) {
 static conftable redis_conftab[] = {
   { "RedisEngine",		set_redisengine,	NULL },
   { "RedisLog",			set_redislog,		NULL },
+  { "RedisLogFormatExtra",	set_redislogfmtextra,	NULL },
   { "RedisLogOnCommand",	set_redislogoncommand,	NULL },
   { "RedisLogOnEvent",		set_redislogonevent,	NULL },
   { "RedisOptions",		set_redisoptions,	NULL },

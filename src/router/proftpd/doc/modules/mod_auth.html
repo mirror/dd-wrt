@@ -755,7 +755,7 @@ home directories is "REWRITE_HOME".  Thus would you use:
 <pre>
   &lt;IfModule mod_rewrite.c&gt;
     RewriteEngine on
-    RewrlteLog /path/to/rewrite.log
+    RewriteLog /path/to/rewrite.log
 
     RewriteCondition %m REWRITE_HOME
     RewriteRule (.*) /my/new/prefix$1
@@ -876,7 +876,7 @@ from the time when the client connects to the time when the client has
 successfully authenticated.  The login timer is <b>not</b> reset when a client
 transmits data, and is only removed once a client has transmitted an
 acceptable combination of <code>USER</code>/<code>PASS</code> commands.
-The maximum allowed <em>seconds</em> value is 65535 (108 minutes).
+The maximum allowed <em>seconds</em> value is 65535 (18 hours).
 
 <p>
 See also: <a href="mod_core.html#TimeoutIdle"><code>TimeoutIdle</code></a>,
@@ -1033,7 +1033,7 @@ The <code>mod_auth</code> module is compiled by default.
 <p>
 <hr>
 <font size=2><b><i>
-&copy; Copyright 2002-2020<br>
+&copy; Copyright 2002-2021<br>
  All Rights Reserved<br>
 </i></b></font>
 <hr>

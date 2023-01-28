@@ -1,6 +1,6 @@
 /*
  * ProFTPD - FTP server daemon
- * Copyright (c) 2017-2020 The ProFTPD Project team
+ * Copyright (c) 2017-2022 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -106,6 +106,42 @@ static char *get_text(pool *p, JsonNode *json, const char *indent) {
   return text;
 }
 
+static int get_type(JsonNode *node) {
+  int type;
+
+  switch (node->tag) {
+    case JSON_NULL:
+      type = PR_JSON_TYPE_NULL;
+      break;
+
+    case JSON_BOOL:
+      type = PR_JSON_TYPE_BOOL;
+      break;
+
+    case JSON_STRING:
+      type = PR_JSON_TYPE_STRING;
+      break;
+
+    case JSON_NUMBER:
+      type = PR_JSON_TYPE_NUMBER;
+      break;
+
+    case JSON_ARRAY:
+      type = PR_JSON_TYPE_ARRAY;
+      break;
+
+    case JSON_OBJECT:
+      type = PR_JSON_TYPE_OBJECT;
+      break;
+
+    default:
+      errno = EINVAL;
+      return -1;
+  }
+
+  return type;
+}
+
 /* JSON Objects */
 
 pr_json_object_t *pr_json_object_alloc(pool *p) {
@@ -132,8 +168,6 @@ int pr_json_object_free(pr_json_object_t *json) {
   json->object = NULL;
 
   destroy_pool(json->pool);
-  json->pool = NULL;
-
   return 0;
 }
 
@@ -420,6 +454,107 @@ static int set_member(pool *p, pr_json_object_t *json, const char *key,
   return 0;
 }
 
+int pr_json_object_foreach(pool *p, const pr_json_object_t *json,
+    int (*cb)(const char *key, int val_type, const void *val, size_t valsz,
+    void *cb_data), void *user_data) {
+  JsonNode *iter;
+
+  if (p == NULL ||
+      json == NULL ||
+      cb == NULL) {
+    errno = EINVAL;
+    return -1;
+  }
+
+  for (iter = json_first_child(json->object); iter != NULL; iter = iter->next) {
+    int res, val_type, xerrno;
+    const void *val = NULL;
+    size_t valsz = 0;
+
+    pr_signals_handle();
+
+    val_type = get_type(iter);
+    if (val_type < 0) {
+      xerrno = errno;
+
+      pr_trace_msg(trace_channel, 9, "unknown value type %d in object",
+        (int) iter->tag);
+
+      errno = xerrno;
+      return -1;
+    }
+
+    switch (val_type) {
+      case PR_JSON_TYPE_BOOL:
+        val = &(iter->bool_);
+        valsz = sizeof(iter->bool_);
+        break;
+
+      case PR_JSON_TYPE_NUMBER:
+        val = &(iter->number_);
+        valsz = sizeof(iter->number_);
+        break;
+
+      case PR_JSON_TYPE_NULL:
+        val = NULL;
+        valsz = 0;
+        break;
+
+      case PR_JSON_TYPE_STRING:
+        val = iter->string_;
+        valsz = strlen(iter->string_);
+        break;
+
+      case PR_JSON_TYPE_ARRAY: {
+        pr_json_array_t *array;
+
+        (void) get_val_from_node(p, iter, JSON_ARRAY, &array);
+        if (array != NULL) {
+          val = array;
+        }
+
+        valsz = 0;
+        break;
+      }
+
+      case PR_JSON_TYPE_OBJECT: {
+        pr_json_object_t *object = NULL;
+
+        (void) get_val_from_node(p, iter, JSON_OBJECT, &object);
+        if (object != NULL) {
+          val = object;
+        }
+
+        valsz = 0;
+        break;
+      }
+    }
+
+    res = (cb)(iter->key, val_type, val, valsz, user_data);
+    xerrno = errno;
+
+    switch (val_type) {
+      case PR_JSON_TYPE_ARRAY:
+        pr_json_array_free((pr_json_array_t *) val);
+        break;
+
+      case PR_JSON_TYPE_OBJECT:
+        pr_json_object_free((pr_json_object_t *) val);
+        break;
+
+      default:
+        break;
+    }
+
+    if (res < 0) {
+      errno = xerrno;
+      return -1;
+    }
+  }
+
+  return 0;
+}
+
 int pr_json_object_get_bool(pool *p, const pr_json_object_t *json,
     const char *key, int *val) {
   if (can_get_member(p, json, key, JSON_BOOL, val) < 0) {
@@ -568,7 +703,106 @@ int pr_json_array_free(pr_json_array_t *json) {
   json->array = NULL;
 
   destroy_pool(json->pool);
-  json->pool = NULL;
+  return 0;
+}
+
+int pr_json_array_foreach(pool *p, const pr_json_array_t *json,
+    int (*cb)(int val_type, const void *val, size_t valsz, void *cb_data),
+    void *user_data) {
+  JsonNode *iter;
+
+  if (p == NULL ||
+      json == NULL ||
+      cb == NULL) {
+    errno = EINVAL;
+    return -1;
+  }
+
+  for (iter = json_first_child(json->array); iter != NULL; iter = iter->next) {
+    int res, val_type, xerrno;
+    const void *val = NULL;
+    size_t valsz = 0;
+
+    pr_signals_handle();
+
+    val_type = get_type(iter);
+    if (val_type < 0) {
+      xerrno = errno;
+
+      pr_trace_msg(trace_channel, 9, "unknown value type %d in array",
+        (int) iter->tag);
+
+      errno = xerrno;
+      return -1;
+    }
+
+    switch (val_type) {
+      case PR_JSON_TYPE_BOOL:
+        val = &(iter->bool_);
+        valsz = sizeof(iter->bool_);
+        break;
+
+      case PR_JSON_TYPE_NUMBER:
+        val = &(iter->number_);
+        valsz = sizeof(iter->number_);
+        break;
+
+      case PR_JSON_TYPE_NULL:
+        val = NULL;
+        valsz = 0;
+        break;
+
+      case PR_JSON_TYPE_STRING:
+        val = iter->string_;
+        valsz = strlen(iter->string_);
+        break;
+
+      case PR_JSON_TYPE_ARRAY: {
+        pr_json_array_t *array;
+
+        (void) get_val_from_node(p, iter, JSON_ARRAY, &array);
+        if (array != NULL) {
+          val = array;
+        }
+
+        valsz = 0;
+        break;
+      }
+
+      case PR_JSON_TYPE_OBJECT: {
+        pr_json_object_t *object = NULL;
+
+        (void) get_val_from_node(p, iter, JSON_OBJECT, &object);
+        if (object != NULL) {
+          val = object;
+        }
+
+        valsz = 0;
+        break;
+      }
+    }
+
+    res = (cb)(val_type, val, valsz, user_data);
+    xerrno = errno;
+
+    switch (val_type) {
+      case PR_JSON_TYPE_ARRAY:
+        pr_json_array_free((pr_json_array_t *) val);
+        break;
+
+      case PR_JSON_TYPE_OBJECT:
+        pr_json_object_free((pr_json_object_t *) val);
+        break;
+
+      default:
+        break;
+    }
+
+    if (res < 0) {
+      errno = xerrno;
+      return -1;
+    }
+  }
 
   return 0;
 }

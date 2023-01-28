@@ -127,6 +127,7 @@ sub rnto_ok {
 
     AuthUserFile => $setup->{auth_user_file},
     AuthGroupFile => $setup->{auth_group_file},
+    AuthOrder => 'mod_auth_file.c',
 
     IfModules => {
       'mod_delay.c' => {
@@ -242,6 +243,7 @@ sub rnto_abs_symlink {
 
     AuthUserFile => $setup->{auth_user_file},
     AuthGroupFile => $setup->{auth_group_file},
+    AuthOrder => 'mod_auth_file.c',
 
     IfModules => {
       'mod_delay.c' => {
@@ -377,6 +379,7 @@ sub rnto_rel_symlink {
 
     AuthUserFile => $setup->{auth_user_file},
     AuthGroupFile => $setup->{auth_group_file},
+    AuthOrder => 'mod_auth_file.c',
 
     IfModules => {
       'mod_delay.c' => {
@@ -505,6 +508,7 @@ sub rnto_fails_login_required {
 
     AuthUserFile => $auth_user_file,
     AuthGroupFile => $auth_group_file,
+    AuthOrder => 'mod_auth_file.c',
 
     IfModules => {
       'mod_delay.c' => {
@@ -630,6 +634,7 @@ sub rnto_fails_no_rnfr {
 
     AuthUserFile => $auth_user_file,
     AuthGroupFile => $auth_group_file,
+    AuthOrder => 'mod_auth_file.c',
 
     IfModules => {
       'mod_delay.c' => {
@@ -747,6 +752,7 @@ sub rnto_fails_enoent_no_file {
 
     AuthUserFile => $setup->{auth_user_file},
     AuthGroupFile => $setup->{auth_group_file},
+    AuthOrder => 'mod_auth_file.c',
 
     IfModules => {
       'mod_delay.c' => {
@@ -784,8 +790,8 @@ sub rnto_fails_enoent_no_file {
         die("RNTO succeeded unexpectedly");
       }
 
-      my $resp_code = $client->response_code();
-      my $resp_msg = $client->response_msg();
+      $resp_code = $client->response_code();
+      $resp_msg = $client->response_msg();
       $client->quit();
 
       my $expected = 550;
@@ -855,6 +861,7 @@ sub rnto_fails_enoent_no_dir {
 
     AuthUserFile => $setup->{auth_user_file},
     AuthGroupFile => $setup->{auth_group_file},
+    AuthOrder => 'mod_auth_file.c',
 
     IfModules => {
       'mod_delay.c' => {
@@ -979,6 +986,7 @@ sub rnto_fails_eperm {
 
     AuthUserFile => $auth_user_file,
     AuthGroupFile => $auth_group_file,
+    AuthOrder => 'mod_auth_file.c',
 
     IfModules => {
       'mod_delay.c' => {
@@ -1123,6 +1131,7 @@ sub rnto_fails_allow_overwrite {
 
     AuthUserFile => $auth_user_file,
     AuthGroupFile => $auth_group_file,
+    AuthOrder => 'mod_auth_file.c',
 
     IfModules => {
       'mod_delay.c' => {
@@ -1269,6 +1278,8 @@ sub rnto_fails_device_full_bug3354 {
 
     AuthUserFile => $auth_user_file,
     AuthGroupFile => $auth_group_file,
+    AuthOrder => 'mod_auth_file.c',
+
     AllowOverwrite => 'on',
 
     IfModules => {
@@ -1410,6 +1421,7 @@ sub rnto_symlink_bug3754 {
 
     AuthUserFile => $setup->{auth_user_file},
     AuthGroupFile => $setup->{auth_group_file},
+    AuthOrder => 'mod_auth_file.c',
 
     IfModules => {
       'mod_delay.c' => {
@@ -1544,6 +1556,7 @@ sub rnto_lowercase_issue1023 {
 
     AuthUserFile => $setup->{auth_user_file},
     AuthGroupFile => $setup->{auth_group_file},
+    AuthOrder => 'mod_auth_file.c',
 
     IfModules => {
       'mod_delay.c' => {

@@ -1,6 +1,6 @@
 /*
  * ProFTPD - FTP server daemon
- * Copyright (c) 2004-2017 The ProFTPD Project team
+ * Copyright (c) 2004-2020 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -88,10 +88,10 @@ int pr_help_add_response(cmd_rec *cmd, const char *target) {
     struct help_rec *helps = help_list->elts;
     char *outa[8], *outstr;
     char buf[9] = {'\0'};
-    int col = 0;
 
     if (target == NULL) {
       const char *server_admin = "ftp-admin";
+      int col = 0;
 
       pr_response_add(R_214,
         _("The following commands are recognized (* =>'s unimplemented):"));

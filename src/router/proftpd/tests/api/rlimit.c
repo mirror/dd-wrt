@@ -46,12 +46,12 @@ START_TEST (rlimit_core_test) {
   rlim_t curr_rlim = 0, max_rlim = 0 ;
 
   res = pr_rlimit_get_core(NULL, NULL);
-  fail_unless(res == -1, "Failed to handle null arguments");
-  fail_unless(errno == EINVAL, "Failed to set errno to EINVAL, got %s (%d)",
+  ck_assert_msg(res == -1, "Failed to handle null arguments");
+  ck_assert_msg(errno == EINVAL, "Failed to set errno to EINVAL, got %s (%d)",
     strerror(errno), errno);
 
   res = pr_rlimit_get_core(&curr_rlim, &max_rlim);
-  fail_unless(res == 0, "Failed to get core resource limits: %s",
+  ck_assert_msg(res == 0, "Failed to get core resource limits: %s",
     strerror(errno));
 
   curr_rlim = max_rlim = -1;
@@ -61,7 +61,7 @@ START_TEST (rlimit_core_test) {
    * arguments are negative.  Hence this conditional check.
    */
   if (res < 0) {
-    fail_unless(errno == EPERM, "Failed to set errno to EPERM, got %s (%d)",
+    ck_assert_msg(errno == EPERM, "Failed to set errno to EPERM, got %s (%d)",
       strerror(errno), errno);
   }
 }
@@ -72,12 +72,12 @@ START_TEST (rlimit_cpu_test) {
   rlim_t curr_rlim = 0, max_rlim = 0 ;
 
   res = pr_rlimit_get_cpu(NULL, NULL);
-  fail_unless(res == -1, "Failed to handle null arguments");
-  fail_unless(errno == EINVAL, "Failed to set errno to EINVAL, got %s (%d)",
+  ck_assert_msg(res == -1, "Failed to handle null arguments");
+  ck_assert_msg(errno == EINVAL, "Failed to set errno to EINVAL, got %s (%d)",
     strerror(errno), errno);
 
   res = pr_rlimit_get_cpu(&curr_rlim, &max_rlim);
-  fail_unless(res == 0, "Failed to get CPU resource limits: %s",
+  ck_assert_msg(res == 0, "Failed to get CPU resource limits: %s",
     strerror(errno));
 
   curr_rlim = max_rlim = -1;
@@ -87,7 +87,7 @@ START_TEST (rlimit_cpu_test) {
    * arguments are negative.  Hence this conditional check.
    */
   if (res < 0) {
-    fail_unless(errno == EPERM, "Failed to set errno to EPERM, got %s (%d)",
+    ck_assert_msg(errno == EPERM, "Failed to set errno to EPERM, got %s (%d)",
       strerror(errno), errno);
   }
 }
@@ -98,12 +98,12 @@ START_TEST (rlimit_files_test) {
   rlim_t curr_rlim = 0, max_rlim = 0 ;
 
   res = pr_rlimit_get_files(NULL, NULL);
-  fail_unless(res == -1, "Failed to handle null arguments");
-  fail_unless(errno == EINVAL, "Failed to set errno to EINVAL, got %s (%d)",
+  ck_assert_msg(res == -1, "Failed to handle null arguments");
+  ck_assert_msg(errno == EINVAL, "Failed to set errno to EINVAL, got %s (%d)",
     strerror(errno), errno);
 
   res = pr_rlimit_get_files(&curr_rlim, &max_rlim);
-  fail_unless(res == 0, "Failed to get file resource limits: %s",
+  ck_assert_msg(res == 0, "Failed to get file resource limits: %s",
     strerror(errno));
 
   curr_rlim = max_rlim = -1;
@@ -113,7 +113,7 @@ START_TEST (rlimit_files_test) {
    * arguments are negative.  Hence this conditional check.
    */
   if (res < 0) {
-    fail_unless(errno == EPERM, "Failed to set errno to EPERM, got %s (%d)",
+    ck_assert_msg(errno == EPERM, "Failed to set errno to EPERM, got %s (%d)",
       strerror(errno), errno);
   }
 }
@@ -124,12 +124,12 @@ START_TEST (rlimit_memory_test) {
   rlim_t curr_rlim = 0, max_rlim = 0 ;
 
   res = pr_rlimit_get_memory(NULL, NULL);
-  fail_unless(res == -1, "Failed to handle null arguments");
-  fail_unless(errno == EINVAL, "Failed to set errno to EINVAL, got %s (%d)",
+  ck_assert_msg(res == -1, "Failed to handle null arguments");
+  ck_assert_msg(errno == EINVAL, "Failed to set errno to EINVAL, got %s (%d)",
     strerror(errno), errno);
 
   res = pr_rlimit_get_memory(&curr_rlim, &max_rlim);
-  fail_unless(res == 0, "Failed to get memory resource limits: %s",
+  ck_assert_msg(res == 0, "Failed to get memory resource limits: %s",
     strerror(errno));
 
   curr_rlim = max_rlim = -1;
@@ -139,7 +139,7 @@ START_TEST (rlimit_memory_test) {
    * arguments are negative.  Hence this conditional check.
    */
   if (res < 0) {
-    fail_unless(errno == EPERM, "Failed to set errno to EPERM, got %s (%d)",
+    ck_assert_msg(errno == EPERM, "Failed to set errno to EPERM, got %s (%d)",
       strerror(errno), errno);
   }
 }
@@ -151,12 +151,12 @@ START_TEST (rlimit_nproc_test) {
   rlim_t curr_rlim = 0, max_rlim = 0 ;
 
   res = pr_rlimit_get_nproc(NULL, NULL);
-  fail_unless(res == -1, "Failed to handle null arguments");
-  fail_unless(errno == EINVAL, "Failed to set errno to EINVAL, got %s (%d)",
+  ck_assert_msg(res == -1, "Failed to handle null arguments");
+  ck_assert_msg(errno == EINVAL, "Failed to set errno to EINVAL, got %s (%d)",
     strerror(errno), errno);
 
   res = pr_rlimit_get_nproc(&curr_rlim, &max_rlim);
-  fail_unless(res == 0, "Failed to get nproc resource limits: %s",
+  ck_assert_msg(res == 0, "Failed to get nproc resource limits: %s",
     strerror(errno));
 
   curr_rlim = max_rlim = -1;
@@ -166,7 +166,7 @@ START_TEST (rlimit_nproc_test) {
    * arguments are negative.  Hence this conditional check.
    */
   if (res < 0) {
-    fail_unless(errno == EPERM, "Failed to set errno to EPERM, got %s (%d)",
+    ck_assert_msg(errno == EPERM, "Failed to set errno to EPERM, got %s (%d)",
       strerror(errno), errno);
   }
 }

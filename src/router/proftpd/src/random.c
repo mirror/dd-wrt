@@ -1,6 +1,6 @@
 /*
  * ProFTPD - FTP server daemon
- * Copyright (c) 2017 The ProFTPD Project team
+ * Copyright (c) 2017-2022 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -24,28 +24,30 @@
 
 #include "conf.h"
 
+/* Note: Make sure that we initialize the state for both random(3) and rand(3),
+ * as modules/code may make use of either (or both) of them; see Issue #1396.
+ */
 int pr_random_init(void) {
-#ifdef HAVE_RANDOM
+#if defined(HAVE_RANDOM)
   struct timeval tv;
 
   gettimeofday(&tv, NULL);
   srandom(getpid() ^ tv.tv_usec);
-#else
-  srand((unsigned int) (getpid() * time(NULL)));
 #endif /* HAVE_RANDOM */
 
+  srand((unsigned int) (getpid() * time(NULL)));
   return 0;
 }
 
 long pr_random_next(long min, long max) {
   long r, scaled;
 
-#ifdef HAVE_RANDOM
+#if defined(HAVE_RANDOM)
   r = random();
 #else
   r = (long) rand();
 #endif /* HAVE_RANDOM */
 
-  scaled = r % (max - min + 1) + min;
+  scaled = (r % (max - min + 1)) + min;
   return scaled;
 }

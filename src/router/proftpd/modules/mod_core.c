@@ -2,7 +2,7 @@
  * ProFTPD - FTP server daemon
  * Copyright (c) 1997, 1998 Public Flood Software
  * Copyright (c) 1999, 2000 MacGyver aka Habeeb J. Dihu <macgyver@tos.net>
- * Copyright (c) 2001-2020 The ProFTPD Project team
+ * Copyright (c) 2001-2022 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -230,6 +230,7 @@ MODRET start_ifdefine(cmd_rec *cmd) {
    */
   while (ifdefine_ctx_count && (config_line = pr_parser_read_line(buf,
       sizeof(buf))) != NULL) {
+    pr_signals_handle();
 
     if (strncasecmp(config_line, "<IfDefine", 9) == 0) {
       ifdefine_ctx_count++;
@@ -299,7 +300,8 @@ MODRET start_ifmodule(cmd_rec *cmd) {
     pr_signals_handle();
 
     /* Advance past any leading whitespace. */
-    for (bufp = config_line; *bufp && PR_ISSPACE(*bufp); bufp++);
+    for (bufp = config_line; *bufp && PR_ISSPACE(*bufp); bufp++) {
+    }
 
     if (strncasecmp(bufp, "<IfModule", 9) == 0) {
       ifmodule_ctx_count++;
@@ -322,6 +324,11 @@ MODRET start_ifmodule(cmd_rec *cmd) {
  * will be silently ignored.
  */
 MODRET end_ifmodule(cmd_rec *cmd) {
+  if (cmd->argc != 1) {
+    CONF_ERROR(cmd, pstrcat(cmd->tmp_pool, "wrong number of parameters: ",
+      cmd->arg, NULL));
+  }
+
   return PR_HANDLED(cmd);
 }
 
@@ -503,7 +510,7 @@ MODRET set_defaultaddress(cmd_rec *cmd) {
         continue;
       }
 
-#ifdef PR_USE_IPV6
+#if defined(PR_USE_IPV6)
       if (pr_netaddr_use_ipv6()) {
         char *ipbuf;
 
@@ -536,7 +543,7 @@ MODRET set_defaultaddress(cmd_rec *cmd) {
       addrs = NULL;
 
       addr = pr_netaddr_get_addr2(cmd->tmp_pool, cmd->argv[i], &addrs,
-        addr_flags);
+        addr_flags|PR_NETADDR_GET_ADDR_FL_EXCL_CACHE);
       if (addr == NULL) {
         CONF_ERROR(cmd, pstrcat(cmd->tmp_pool, "error resolving '",
           cmd->argv[i], "': ", strerror(errno), NULL));
@@ -590,7 +597,7 @@ MODRET set_servername(cmd_rec *cmd) {
   CHECK_ARGS(cmd, 1);
   CHECK_CONF(cmd, CONF_ROOT|CONF_VIRTUAL);
 
-  s->ServerName = pstrdup(s->pool,cmd->argv[1]);
+  s->ServerName = pstrdup(s->pool, cmd->argv[1]);
   return PR_HANDLED(cmd);
 }
 
@@ -598,14 +605,15 @@ MODRET set_servertype(cmd_rec *cmd) {
   CHECK_ARGS(cmd, 1);
   CHECK_CONF(cmd, CONF_ROOT);
 
-  if (strcasecmp(cmd->argv[1], "inetd") == 0)
+  if (strcasecmp(cmd->argv[1], "inetd") == 0) {
     ServerType = SERVER_INETD;
 
-  else if (strcasecmp(cmd->argv[1], "standalone") == 0)
+  } else if (strcasecmp(cmd->argv[1], "standalone") == 0) {
     ServerType = SERVER_STANDALONE;
 
-  else
+  } else {
     CONF_ERROR(cmd,"type must be either 'inetd' or 'standalone'");
+  }
 
   return PR_HANDLED(cmd);
 }
@@ -791,12 +799,12 @@ MODRET set_scoreboardscrub(cmd_rec *cmd) {
   return PR_HANDLED(cmd);
 }
 
-MODRET set_serverport(cmd_rec *cmd) {
-  server_rec *s = cmd->server;
-  int port;
+MODRET set_port(cmd_rec *cmd) {
+  config_rec *c;
+  int ctx, port;
 
   CHECK_ARGS(cmd, 1);
-  CHECK_CONF(cmd, CONF_ROOT|CONF_VIRTUAL);
+  CHECK_CONF(cmd, CONF_ROOT|CONF_VIRTUAL|CONF_GLOBAL);
 
   port = atoi(cmd->argv[1]);
   if (port < 0 ||
@@ -804,7 +812,21 @@ MODRET set_serverport(cmd_rec *cmd) {
     CONF_ERROR(cmd, "value must be between 0 and 65535");
   }
 
-  s->ServerPort = port;
+  c = add_config_param(cmd->argv[0], 1, NULL);
+  c->argv[0] = pcalloc(c->pool, sizeof(int));
+  *((int *) c->argv[0]) = port;
+
+  /* For backward compatibility, if we are in the "server config" or the
+   * <VirtualHost> context, set the port number on the vhost now, too.
+   */
+  ctx = (cmd->config && cmd->config->config_type != CONF_PARAM ?
+    cmd->config->config_type : cmd->server->config_type ?
+    cmd->server->config_type : CONF_ROOT);
+  if (ctx == CONF_ROOT ||
+      ctx == CONF_VIRTUAL) {
+    cmd->server->ServerPort = port;
+  }
+
   return PR_HANDLED(cmd);
 }
 
@@ -1122,8 +1144,9 @@ MODRET set_socketoptions(cmd_rec *cmd) {
   register unsigned int i = 0;
 
   /* Make sure we have the right number of parameters. */
-  if ((cmd->argc-1) % 2 != 0)
+  if ((cmd->argc - 1) % 2 != 0) {
    CONF_ERROR(cmd, "bad number of parameters");
+  }
 
   CHECK_CONF(cmd, CONF_ROOT|CONF_VIRTUAL);
 
@@ -1253,6 +1276,19 @@ MODRET set_socketoptions(cmd_rec *cmd) {
       /* Don't forget to increment the iterator. */
       i++;
 
+    } else if (strcasecmp(cmd->argv[i], "reuseport") == 0) {
+      int b;
+
+      b = get_boolean(cmd, i + 1);
+      if (b == -1) {
+        CONF_ERROR(cmd, "reuseport must have Boolean parameter");
+      }
+
+      cmd->server->tcp_reuse_port = b;
+
+      /* Don't forget to increment the iterator. */
+      i++;
+
     } else {
       CONF_ERROR(cmd, pstrcat(cmd->tmp_pool, ": unknown socket option: '",
         cmd->argv[i], "'", NULL));
@@ -1263,21 +1299,9 @@ MODRET set_socketoptions(cmd_rec *cmd) {
 }
 
 MODRET set_multilinerfc2228(cmd_rec *cmd) {
-  int bool;
-  config_rec *c;
-
-  CHECK_ARGS(cmd, 1);
-  CHECK_CONF(cmd, CONF_ROOT|CONF_VIRTUAL|CONF_GLOBAL);
-
-  bool = get_boolean(cmd, 1);
-  if (bool == -1) {
-    CONF_ERROR(cmd, "expected Boolean parameter");
-  }
-
-  c = add_config_param(cmd->argv[0], 1, NULL);
-  c->argv[0] = pcalloc(c->pool, sizeof(int));
-  *((int *) c->argv[0]) = bool;
- 
+  pr_log_pri(PR_LOG_WARNING,
+    "the %s directive has been deprecated, and will be removed in a future "
+    "release.  Please remove it from your config file.", (char *) cmd->argv[0]);
   return PR_HANDLED(cmd);
 }
 
@@ -1559,19 +1583,22 @@ MODRET set_group(cmd_rec *cmd) {
 MODRET set_trace(cmd_rec *cmd) {
 #ifdef PR_USE_TRACE
   register unsigned int i;
-  int per_session = FALSE;
+  int per_session = FALSE, ctx = 0;
   unsigned int idx = 1;
 
   if (cmd->argc-1 < 1) {
     CONF_ERROR(cmd, "wrong number of parameters");
   }
-  CHECK_CONF(cmd, CONF_ROOT);
+  CHECK_CONF(cmd, CONF_ROOT|CONF_VIRTUAL|CONF_GLOBAL);
+
+  ctx = (cmd->config && cmd->config->config_type != CONF_PARAM ?
+     cmd->config->config_type : cmd->server->config_type ?
+     cmd->server->config_type : CONF_ROOT);
 
   /* Look for the optional "session" keyword, which will indicate that these
    * Trace settings are to be applied to a session process only.
    */
-  if (strncmp(cmd->argv[1], "session", 8) == 0) {
-
+  if (strcasecmp(cmd->argv[1], "session") == 0) {
     /* If this is the only parameter, it's a config error. */
     if (cmd->argc == 2) {
       CONF_ERROR(cmd, "wrong number of parameters");
@@ -1581,7 +1608,16 @@ MODRET set_trace(cmd_rec *cmd) {
     idx = 2;
   }
 
-  if (!per_session) {
+  /* If this directive appears in a <VirtualHost> or <Global> context,
+   * automatically handle it as if the "session" keyword has been used.
+   */
+
+  if ((ctx & CONF_VIRTUAL) ||
+      (ctx & CONF_GLOBAL)) {
+    per_session = TRUE;
+  }
+
+  if (per_session == FALSE) {
     for (i = idx; i < cmd->argc; i++) {
       char *channel, *ptr;
       int min_level, max_level, res;
@@ -1618,7 +1654,7 @@ MODRET set_trace(cmd_rec *cmd) {
      */
 
     c = add_config_param(cmd->argv[0], 0);
-    c->argc = cmd->argc - 2;
+    c->argc = cmd->argc - idx;
     c->argv = pcalloc(c->pool, ((c->argc + 1) * sizeof(void *))); 
 
     for (i = idx; i < cmd->argc; i++) {
@@ -1647,7 +1683,8 @@ MODRET set_tracelog(cmd_rec *cmd) {
   if (cmd->argc-1 != 1) {
     CONF_ERROR(cmd, "wrong number of parameters");
   }
-  CHECK_CONF(cmd, CONF_ROOT);
+
+  CHECK_CONF(cmd, CONF_ROOT|CONF_GLOBAL);
 
   if (pr_fs_valid_path(cmd->argv[1]) < 0) {
     CONF_ERROR(cmd, "must be an absolute path");
@@ -1658,11 +1695,10 @@ MODRET set_tracelog(cmd_rec *cmd) {
     if (errno == EPERM) {
       CONF_ERROR(cmd, pstrcat(cmd->tmp_pool, "error using TraceLog '",
         trace_log, "': directory is symlink or is world-writable", NULL));
-
-    } else {
-      CONF_ERROR(cmd, pstrcat(cmd->tmp_pool, "error using TraceLog '",
-        trace_log, "': ", strerror(errno), NULL));
     }
+
+    CONF_ERROR(cmd, pstrcat(cmd->tmp_pool, "error using TraceLog '",
+      trace_log, "': ", strerror(errno), NULL));
   }
 
   return PR_HANDLED(cmd);
@@ -1878,24 +1914,23 @@ MODRET set_protocols(cmd_rec *cmd) {
   return PR_HANDLED(cmd);
 }
 
-/* usage: RegexOptions [MatchLimit limit] [MatchLimitRecursion limit]
+/* usage: RegexOptions [Engine engine] [MatchLimit limit] [MatchLimitRecursion limit]
  */
 MODRET set_regexoptions(cmd_rec *cmd) {
-  config_rec *c;
-  unsigned long match_limit = 0, match_limit_recursion = 0;
   register unsigned int i;
+  config_rec *c;
+  char *engine = NULL;
+  unsigned long match_limit = 0, match_limit_recursion = 0;
+  int npairs;
 
   if (cmd->argc < 3) {
     CONF_ERROR(cmd, "Wrong number of parameters");
+  }
 
-  } else {
-    int npairs;
-
-    /* Make sure we have an even number of args for the key/value pairs. */
-    npairs = cmd->argc - 1;
-    if (npairs % 2 != 0) {
-      CONF_ERROR(cmd, "Wrong number of parameters");
-    }
+  /* Make sure we have an even number of args for the key/value pairs. */
+  npairs = cmd->argc - 1;
+  if (npairs % 2 != 0) {
+    CONF_ERROR(cmd, "Wrong number of parameters");
   }
 
   CHECK_CONF(cmd, CONF_ROOT|CONF_VIRTUAL|CONF_GLOBAL);
@@ -1905,7 +1940,20 @@ MODRET set_regexoptions(cmd_rec *cmd) {
    */
 
   for (i = 1; i < cmd->argc; i++) {
-    if (strncmp(cmd->argv[i], "MatchLimit", 11) == 0) {
+    if (strcmp(cmd->argv[i], "Engine") == 0) {
+      engine = cmd->argv[i+1];
+
+      if (strcasecmp(engine, "POSIX") != 0 &&
+          strcasecmp(engine, "PCRE") != 0 &&
+          strcasecmp(engine, "PCRE2") != 0) {
+        CONF_ERROR(cmd, pstrcat(cmd->tmp_pool, "bad Engine value: ",
+          engine, NULL));
+      }
+
+      /* Don't forget to advance i past the value. */
+      i += 2;
+
+    } else if (strcmp(cmd->argv[i], "MatchLimit") == 0) {
       char *ptr = NULL;
 
       match_limit = strtoul(cmd->argv[i+1], &ptr, 10);
@@ -1917,7 +1965,7 @@ MODRET set_regexoptions(cmd_rec *cmd) {
       /* Don't forget to advance i past the value. */
       i += 2;
 
-    } else if (strncmp(cmd->argv[i], "MatchLimitRecursion", 20) == 0) {
+    } else if (strcmp(cmd->argv[i], "MatchLimitRecursion") == 0) {
       char *ptr = NULL;
 
       match_limit_recursion = strtoul(cmd->argv[i+1], &ptr, 10);
@@ -1935,11 +1983,14 @@ MODRET set_regexoptions(cmd_rec *cmd) {
     }
   }
 
-  c = add_config_param(cmd->argv[0], 2, NULL, NULL);
+  c = add_config_param(cmd->argv[0], 3, NULL, NULL, NULL);
   c->argv[0] = palloc(c->pool, sizeof(unsigned long));
   *((unsigned long *) c->argv[0]) = match_limit;
   c->argv[1] = palloc(c->pool, sizeof(unsigned long));
   *((unsigned long *) c->argv[1]) = match_limit_recursion;
+  if (engine != NULL) {
+    c->argv[2] = pstrdup(c->pool, engine);
+  }
 
   return PR_HANDLED(cmd);
 }
@@ -2310,7 +2361,7 @@ MODRET add_directory(cmd_rec *cmd) {
       cmd->config->config_type == CONF_ANON &&
       *dir != '/' &&
       *dir != '~') {
-    if (strncmp(dir, "*", 2) != 0) {
+    if (strcmp(dir, "*") != 0) {
       dir = pdircat(cmd->tmp_pool, "/", dir, NULL);
     }
     rootdir = cmd->config->name;
@@ -2437,13 +2488,9 @@ MODRET set_hidefiles(cmd_rec *cmd) {
    * a valid classifier was used.
    */
   if (cmd->argc-1 == 3) {
-    if (strncmp(cmd->argv[2], "user", 5) == 0 ||
-        strncmp(cmd->argv[2], "group", 6) == 0 ||
-        strncmp(cmd->argv[2], "class", 6) == 0) {
-
-      /* no-op */
-
-    } else {
+    if (strcasecmp(cmd->argv[2], "user") != 0 &&
+        strcasecmp(cmd->argv[2], "group") != 0 &&
+        strcasecmp(cmd->argv[2], "class") != 0) {
       return PR_ERROR_MSG(cmd, NULL, pstrcat(cmd->tmp_pool, cmd->argv[0],
         "unknown classifier used: '", cmd->argv[2], "'", NULL));
     }
@@ -2457,6 +2504,8 @@ MODRET set_hidefiles(cmd_rec *cmd) {
     *((unsigned char *) c->argv[1]) = negated;
     c->argv[2] = pcalloc(c->pool, sizeof(unsigned int));
     *((unsigned int *) c->argv[2]) = precedence;
+
+    c->flags |= CF_MERGEDOWN_MULTI;
 
   } else if (cmd->argc-1 == 3) {
     array_header *acl = NULL;
@@ -2510,9 +2559,10 @@ MODRET set_hidefiles(cmd_rec *cmd) {
 
     /* don't forget the terminating NULL */
     *argv = NULL;
+
+    c->flags |= CF_MERGEDOWN_MULTI;
   }
 
-  c->flags |= CF_MERGEDOWN_MULTI;
   return PR_HANDLED(cmd);
 
 #else /* no regular expression support at the moment */
@@ -2701,11 +2751,11 @@ MODRET add_anonymous(cmd_rec *cmd) {
       "in pathname", NULL));
   }
 
-  if (strncmp(dir, "/", 2) == 0) {
+  if (strcmp(dir, "/") == 0) {
     CONF_ERROR(cmd, "'/' not permitted for anonymous root directory");
   }
 
-  if (*(dir+strlen(dir)-1) != '/') {
+  if (*(dir + strlen(dir)-1) != '/') {
     dir = pstrcat(cmd->tmp_pool, dir, "/", NULL);
   }
 
@@ -2740,7 +2790,7 @@ MODRET end_anonymous(cmd_rec *cmd) {
 
 MODRET add_class(cmd_rec *cmd) {
   CHECK_ARGS(cmd, 1);
-  CHECK_CONF(cmd, CONF_ROOT);
+  CHECK_CONF(cmd, CONF_ROOT|CONF_GLOBAL);
 
   if (pr_class_open(main_server->pool, cmd->argv[1]) < 0) {
     CONF_ERROR(cmd, pstrcat(cmd->tmp_pool, "error creating <Class ",
@@ -2963,10 +3013,10 @@ MODRET set_allowdenyusergroupclass(cmd_rec *cmd) {
   /* For AllowClass/DenyClass and AllowUser/DenyUser, the default expression
    * type is "or".
    */
-  if (strncmp(cmd->argv[0], "AllowClass", 11) == 0 ||
-      strncmp(cmd->argv[0], "AllowUser", 10) == 0 ||
-      strncmp(cmd->argv[0], "DenyClass", 10) == 0 ||
-      strncmp(cmd->argv[0], "DenyUser", 9) == 0) {
+  if (strcmp(cmd->argv[0], "AllowClass") == 0 ||
+      strcmp(cmd->argv[0], "AllowUser") == 0 ||
+      strcmp(cmd->argv[0], "DenyClass") == 0 ||
+      strcmp(cmd->argv[0], "DenyUser") == 0) {
     eval_type = PR_EXPR_EVAL_OR;
 
   /* For AllowGroup and DenyGroup, the default expression type is "and". */
@@ -3086,13 +3136,15 @@ MODRET set_allowdeny(cmd_rec *cmd) {
       argv++;
       argc--;
       continue;
+    }
 
-    } else if (strcasecmp("!all", *(((char **) argv) + 1)) == 0 ||
-               strcasecmp("!none", *(((char **) argv) + 1)) == 0) {
+    if (strcasecmp("!all", *(((char **) argv) + 1)) == 0 ||
+         strcasecmp("!none", *(((char **) argv) + 1)) == 0) {
       CONF_ERROR(cmd, "the ! negation operator cannot be used with ALL/NONE");
+    }
 
-    } else if (strcasecmp("all", *(argv+1)) == 0 ||
-               strcasecmp("none", *(argv+1)) == 0) {
+    if (strcasecmp("all", *(argv+1)) == 0 ||
+        strcasecmp("none", *(argv+1)) == 0) {
       *((pr_netacl_t **) push_array(list)) =
         pr_netacl_create(c->pool, *(argv+1));
       argc = 0;
@@ -3295,7 +3347,7 @@ MODRET add_virtualhost(cmd_rec *cmd) {
   server_rec *s = NULL;
   const pr_netaddr_t *addr = NULL;
   array_header *addrs = NULL;
-  unsigned int addr_flags = PR_NETADDR_GET_ADDR_FL_INCL_DEVICE;
+  unsigned int addr_flags = PR_NETADDR_GET_ADDR_FL_INCL_DEVICE|PR_NETADDR_GET_ADDR_FL_EXCL_CACHE;
 
   if (cmd->argc-1 < 1) {
     CONF_ERROR(cmd, "wrong number of parameters");
@@ -3405,7 +3457,7 @@ MODRET end_virtualhost(cmd_rec *cmd) {
   server_rec *s = NULL, *next_s = NULL;
   const pr_netaddr_t *addr = NULL;
   const char *address = NULL;
-  unsigned int addr_flags = PR_NETADDR_GET_ADDR_FL_INCL_DEVICE;
+  unsigned int addr_flags = PR_NETADDR_GET_ADDR_FL_INCL_DEVICE|PR_NETADDR_GET_ADDR_FL_EXCL_CACHE;
 
   if (cmd->argc > 1) {
     CONF_ERROR(cmd, "wrong number of parameters");
@@ -3673,6 +3725,8 @@ MODRET core_pwd(cmd_rec *cmd) {
   if (!dir_check(cmd->tmp_pool, cmd, cmd->group, session.vwd, NULL)) {
     int xerrno = EACCES;
 
+    pr_log_debug(DEBUG7, "%s command denied by <Limit> configuration",
+      (char *) cmd->argv[0]);
     pr_response_add_err(R_550, "%s: %s", (char *) cmd->argv[0],
       strerror(xerrno));
 
@@ -3827,7 +3881,7 @@ MODRET core_pasv(cmd_rec *cmd) {
    * see Bug#3862.
    */
   proto = pr_session_get_protocol(0);
-  if (strncmp(proto, "ftps", 5) == 0) {
+  if (strcmp(proto, "ftps") == 0) {
     c = find_config(main_server->conf, CONF_PARAM, "TLSMasqueradeAddress",
       FALSE);
     if (c != NULL) {
@@ -3973,7 +4027,8 @@ MODRET core_port(cmd_rec *cmd) {
   pr_snprintf(buf, sizeof(buf), "%u.%u.%u.%u", h1, h2, h3, h4);
   buf[sizeof(buf)-1] = '\0';
 
-  port_addr = pr_netaddr_get_addr(cmd->tmp_pool, buf, NULL);
+  port_addr = pr_netaddr_get_addr2(cmd->tmp_pool, buf, NULL,
+    PR_NETADDR_GET_ADDR_FL_EXCL_CACHE);
   if (port_addr == NULL) {
     pr_log_debug(DEBUG1, "error getting sockaddr for '%s': %s", buf,
       strerror(errno)); 
@@ -3991,7 +4046,7 @@ MODRET core_port(cmd_rec *cmd) {
   listen_addr = session.c->local_addr;
 
   proto = pr_session_get_protocol(0);
-  if (strncmp(proto, "ftps", 5) == 0) {
+  if (strcmp(proto, "ftps") == 0) {
     c = find_config(main_server->conf, CONF_PARAM, "TLSMasqueradeAddress",
       FALSE);
     if (c != NULL) {
@@ -4281,8 +4336,10 @@ MODRET core_eprt(cmd_rec *cmd) {
 
       pr_netaddr_set_family(&na, AF_INET);
       sa = pr_netaddr_get_sockaddr(&na);
-      if (sa)
+      if (sa != NULL) {
         sa->sa_family = AF_INET;
+      }
+
       if (pr_inet_pton(AF_INET, argstr, pr_netaddr_get_inaddr(&na)) <= 0) {
         pr_log_debug(DEBUG2, "error converting IPv4 address '%s': %s",
           argstr, strerror(errno));
@@ -4300,8 +4357,10 @@ MODRET core_eprt(cmd_rec *cmd) {
 
       pr_netaddr_set_family(&na, AF_INET6);
       sa = pr_netaddr_get_sockaddr(&na);
-      if (sa)
+      if (sa != NULL) {
         sa->sa_family = AF_INET6;
+      }
+
       if (pr_inet_pton(AF_INET6, argstr, pr_netaddr_get_inaddr(&na)) <= 0) {
         pr_log_debug(DEBUG2, "error converting IPv6 address '%s': %s",
           argstr, strerror(errno));
@@ -4344,7 +4403,7 @@ MODRET core_eprt(cmd_rec *cmd) {
   listen_addr = session.c->local_addr;
 
   proto = pr_session_get_protocol(0);
-  if (strncmp(proto, "ftps", 5) == 0) {
+  if (strcmp(proto, "ftps") == 0) {
     c = find_config(main_server->conf, CONF_PARAM, "TLSMasqueradeAddress",
       FALSE);
     if (c != NULL) {
@@ -4565,8 +4624,9 @@ MODRET core_epsv(cmd_rec *cmd) {
 
 #ifdef PR_USE_IPV6
     case 2:
-      if (pr_netaddr_use_ipv6())
+      if (pr_netaddr_use_ipv6()) {
         break;
+      }
 #endif /* PR_USE_IPV6 */
 
     default:
@@ -4589,7 +4649,7 @@ MODRET core_epsv(cmd_rec *cmd) {
   }
 
   /* If we already have a passive listen data connection open, kill it. */
-  if (session.d) {
+  if (session.d != NULL) {
     pr_inet_close(session.d->pool, session.d);
     session.d = NULL;
   }
@@ -4679,6 +4739,10 @@ MODRET core_epsv(cmd_rec *cmd) {
    * may be true in an ideal world, but I think it more likely that current
    * clients will simply use EPSV, rather than PASV, in existing IPv4 networks.
    *
+   * Note that this also means that EPSV cannot be use for site-to-site (FXP)
+   * transfers; the EPSV response is not allowed to contain a different
+   * network address.
+   *
    * Disable the honoring of MasqueradeAddress for EPSV until this can
    * be officially determined (Bug#2369).  See also Bug#3862.
    */
@@ -4698,6 +4762,23 @@ MODRET core_epsv(cmd_rec *cmd) {
 }
 
 MODRET core_help(cmd_rec *cmd) {
+  if (!dir_check(cmd->tmp_pool, cmd, cmd->group, session.vwd, NULL)) {
+    int xerrno = EACCES;
+
+    pr_log_debug(DEBUG7, "%s command denied by <Limit> configuration",
+      (char *) cmd->argv[0]);
+
+    /* Returning 501 is the best we can do.  It would be nicer if RFC959 allowed
+     * 550 as a possible response.
+     */
+    pr_response_add_err(R_501, "%s: %s", (char *) cmd->argv[0],
+      strerror(xerrno));
+
+    pr_cmd_set_errno(cmd, xerrno);
+    errno = xerrno;
+    return PR_ERROR(cmd);
+  }
+
   if (cmd->argc == 1) {
     pr_help_add_response(cmd, NULL);
 
@@ -4705,7 +4786,7 @@ MODRET core_help(cmd_rec *cmd) {
     char *cp;
 
     for (cp = cmd->argv[1]; *cp; cp++) {
-      *cp = toupper(*cp);
+      *cp = toupper((int) *cp);
     }
 
     if (strcasecmp(cmd->argv[1], C_SITE) == 0) {
@@ -4758,6 +4839,8 @@ MODRET core_host(cmd_rec *cmd) {
   if (!dir_check(cmd->tmp_pool, cmd, cmd->group, session.cwd, NULL)) {
     int xerrno = EACCES;
 
+    pr_log_debug(DEBUG7, "%s command denied by <Limit> configuration",
+      (char *) cmd->argv[0]);
     pr_response_add_err(R_504, "%s: %s", (char *) cmd->argv[1],
       strerror(xerrno));
 
@@ -4866,8 +4949,9 @@ MODRET core_host(cmd_rec *cmd) {
      */
     pr_response_add(R_220, _("HOST command successful"));
     return PR_HANDLED(cmd);
+  }
 
-  } else if (pr_netaddr_is_v6(host) == TRUE) {
+  if (pr_netaddr_is_v6(host) == TRUE) {
     if (pr_netaddr_is_v6(local_ipstr) == TRUE) {
 
       if (found_ipv6 == FALSE) {
@@ -4942,7 +5026,7 @@ MODRET core_host(cmd_rec *cmd) {
   }
 
   if (session.rfc2228_mech != NULL &&
-      strncmp(session.rfc2228_mech, "TLS", 4) == 0) {
+      strcmp(session.rfc2228_mech, "TLS") == 0) {
     const char *sni = NULL;
 
     /* If the TLS client used the SNI extension, ensure that the SNI name
@@ -5087,11 +5171,12 @@ MODRET core_post_host(cmd_rec *cmd) {
     }
 
     /* Restore the original RegexOptions values. */
+    pr_regexp_set_engine(NULL);
     pr_regexp_set_limits(0, 0);
 
     /* Remove any configured SetEnvs. */
     c = find_config(session.prev_server->conf, CONF_PARAM, "SetEnv", FALSE);
-    while (c) {
+    while (c != NULL) {
       pr_signals_handle();
 
       if (pr_env_unset(session.pool, c->argv[0]) < 0) {
@@ -5105,12 +5190,11 @@ MODRET core_post_host(cmd_rec *cmd) {
     /* Restore original AuthOrder. */
     reset_server_auth_order();
 
-#ifdef PR_USE_TRACE
+#if defined(PR_USE_TRACE)
     /* XXX Restore original Trace settings. */
 
     /* Restore original TraceOptions settings. */
     (void) pr_trace_set_options(PR_TRACE_OPT_DEFAULT);
-
 #endif /* PR_USE_TRACE */
 
     /* Remove the variables set via pr_var_set(). */
@@ -5142,7 +5226,137 @@ MODRET core_post_host(cmd_rec *cmd) {
 }
 
 MODRET core_clnt(cmd_rec *cmd) {
+  (void) pr_table_add_dup(session.notes,
+    pstrdup(session.pool, "clnt"), cmd->arg, 0);
   pr_response_add(R_200, _("OK"));
+  return PR_HANDLED(cmd);
+}
+
+static pr_table_t *parse_client_facts(pool *p, char *text) {
+  array_header *facts;
+  pr_table_t *facts_tab = NULL;
+
+  facts = pr_str_text_to_array(p, text, ';');
+  if (facts != NULL) {
+    register unsigned int i;
+
+    facts_tab = pr_table_alloc(p, 0);
+
+    for (i = 0; i < facts->nelts; i++) {
+      char *fact, *ptr;
+      size_t fact_len;
+
+      fact = ((char **) (facts->elts))[i];
+      fact_len = strlen(fact);
+
+      if (fact_len == 0) {
+        continue;
+      }
+
+      ptr = strchr(fact, '=');
+      if (ptr == NULL) {
+        /* Ignore invalid facts. */
+        pr_log_debug(DEBUG0, "ignoring invalid client-sent CSID fact '%s'",
+          fact);
+        continue;
+      }
+
+      /* Skip any leading whitespace. */
+      while (PR_ISSPACE(*fact)) {
+        pr_signals_handle();
+        fact++;
+      }
+
+      if (strncasecmp(fact, "Name", ptr - fact) == 0) {
+        pr_log_debug(DEBUG9, "client sent CSID Name fact: '%s'", ptr+1);
+        (void) pr_table_add_dup(facts_tab, pstrdup(p, "Name"), ptr+1, 0);
+        continue;
+      }
+
+      if (strncasecmp(fact, "Version", ptr - fact) == 0) {
+        pr_log_debug(DEBUG9, "client sent CSID Version fact: '%s'", ptr+1);
+        (void) pr_table_add_dup(facts_tab, pstrdup(p, "Version"), ptr+1, 0);
+        continue;
+      }
+
+      if (strncasecmp(fact, "Vendor", ptr - fact) == 0) {
+        pr_log_debug(DEBUG9, "client sent CSID Vendor fact: '%s'", ptr+1);
+        (void) pr_table_add_dup(facts_tab, pstrdup(p, "Vendor"), ptr+1, 0);
+        continue;
+      }
+
+      /* Ignore unknown/unsupported facts. */
+      pr_log_debug(DEBUG0, "ignoring unknown client-sent CSID fact '%s'", fact);
+    }
+  }
+
+  return facts_tab;
+}
+
+MODRET core_csid(cmd_rec *cmd) {
+  config_rec *c;
+  int use_server_ident = TRUE;
+  pr_table_t *client_facts = NULL;
+  char server_text[PR_TUNABLE_BUFFER_SIZE];
+
+  /* Parse the client-provided facts.  Sadly, per IETF Draft, if there are
+   * issues parsing the client-provided text, or if the client does not provide
+   * the "required" facts, they are to be silently ignored, but not rejected.
+   */
+  client_facts = parse_client_facts(cmd->tmp_pool, cmd->arg);
+  if (client_facts != NULL &&
+      pr_table_count(client_facts) > 0) {
+    const char *key;
+    const void *val;
+    size_t valsz;
+
+    key = "Name";
+    val = pr_table_get(client_facts, key, &valsz);
+    if (val != NULL) {
+      (void) pr_table_add_dup(session.notes,
+        pstrdup(session.pool, "csid.name"), val, valsz);
+    }
+
+    key = "Version";
+    val = pr_table_get(client_facts, key, &valsz);
+    if (val != NULL) {
+      (void) pr_table_add_dup(session.notes,
+        pstrdup(session.pool, "csid.version"), val, valsz);
+    }
+
+    key = "Vendor";
+    val = pr_table_get(client_facts, key, &valsz);
+    if (val != NULL) {
+      (void) pr_table_add_dup(session.notes,
+        pstrdup(session.pool, "csid.vendor"), val, valsz);
+    }
+  }
+
+  c = find_config(main_server->conf, CONF_PARAM, "ServerIdent", FALSE);
+  if (c != NULL) {
+    use_server_ident = *((unsigned char *) c->argv[0]);
+
+    /* What if the admin has configured an explicit string via
+     * "ServerIdent on <text>"?
+     *
+     * Perhaps we ignore that custom text, on the assumption that the actual
+     * server info here is being provided to a successfully authenticated (and
+     * thus allowed) client, rather than to some random client on the Internet.
+     */
+  }
+
+  memset(server_text, '\0', sizeof(server_text));
+
+  if (use_server_ident == TRUE) {
+    (void) pr_snprintf(server_text, sizeof(server_text),
+      "name=ProFTPD;version=%s;casesensitive=1;", PROFTPD_VERSION_TEXT);
+
+  } else {
+    (void) pr_snprintf(server_text, sizeof(server_text), "%s",
+      "casesensitive=1;");
+  }
+
+  pr_response_add(R_200, "%s", server_text);
   return PR_HANDLED(cmd);
 }
 
@@ -5261,25 +5475,26 @@ MODRET core_chdir(cmd_rec *cmd, char *ndir) {
     ndir = dir_canonical_vpath(cmd->tmp_pool, ndir);
     dir = dir_realpath(cmd->tmp_pool, ndir);
 
-    if (!dir) {
+    if (dir == NULL) {
       use_cdpath = TRUE;
     }
 
-    if (!use_cdpath) {
+    if (use_cdpath == FALSE) {
       int allowed_access = TRUE;
 
       allowed_access = dir_check_full(cmd->tmp_pool, cmd, cmd->group, dir,
         NULL);
-      if (!allowed_access)
+      if (allowed_access == FALSE) {
         use_cdpath = TRUE;
+      }
     }
 
-    if (!use_cdpath &&
+    if (use_cdpath == FALSE &&
         pr_fsio_chdir_canon(ndir, 1) < 0) {
       use_cdpath = TRUE;
     }            
 
-    if (use_cdpath) {
+    if (use_cdpath == TRUE) {
       for (cdpath = find_config(main_server->conf, CONF_PARAM, "CDPath", TRUE);
           cdpath != NULL;
           cdpath = find_config_next(cdpath, cdpath->next, CONF_PARAM, "CDPath", TRUE)) {
@@ -5441,6 +5656,8 @@ MODRET core_rmd(cmd_rec *cmd) {
   if (!dir_check_canon(cmd->tmp_pool, cmd, cmd->group, dir, NULL)) {
     int xerrno = EACCES;
 
+    pr_log_debug(DEBUG8, "%s command denied by <Limit> config",
+      (char *) cmd->argv[0]);
     pr_response_add_err(R_550, "%s: %s", cmd->arg, strerror(xerrno));
 
     pr_cmd_set_errno(cmd, xerrno);
@@ -5616,6 +5833,8 @@ MODRET core_cdup(cmd_rec *cmd) {
 MODRET core_mdtm(cmd_rec *cmd) {
   char *decoded_path, *path;
   struct stat st;
+  char buf[16];
+  struct tm *tm;
 
   CHECK_CMD_MIN_ARGS(cmd, 2);
 
@@ -5648,35 +5867,29 @@ MODRET core_mdtm(cmd_rec *cmd) {
     pr_cmd_set_errno(cmd, xerrno);
     errno = xerrno;
     return PR_ERROR(cmd);
-
-  } else {
-    if (!S_ISREG(st.st_mode)) {
-      pr_response_add_err(R_550, _("%s: not a plain file"), cmd->arg);
-
-      pr_cmd_set_errno(cmd, EINVAL);
-      errno = EINVAL;
-      return PR_ERROR(cmd);
-
-    } else {
-      char buf[16];
-      struct tm *tm;
-
-      memset(buf, '\0', sizeof(buf));
-
-      tm = pr_gmtime(cmd->tmp_pool, &st.st_mtime);
-      if (tm != NULL) {
-        pr_snprintf(buf, sizeof(buf), "%04d%02d%02d%02d%02d%02d",
-          tm->tm_year+1900, tm->tm_mon+1, tm->tm_mday, tm->tm_hour,
-          tm->tm_min, tm->tm_sec);
-
-      } else {
-        pr_snprintf(buf, sizeof(buf), "00000000000000");
-      }
-
-      pr_response_add(R_213, "%s", buf);
-    }
   }
 
+  if (!S_ISREG(st.st_mode)) {
+    pr_response_add_err(R_550, _("%s: not a plain file"), cmd->arg);
+
+    pr_cmd_set_errno(cmd, EINVAL);
+    errno = EINVAL;
+    return PR_ERROR(cmd);
+  }
+
+  memset(buf, '\0', sizeof(buf));
+
+  tm = pr_gmtime(cmd->tmp_pool, &st.st_mtime);
+  if (tm != NULL) {
+    pr_snprintf(buf, sizeof(buf), "%04d%02d%02d%02d%02d%02d",
+      tm->tm_year+1900, tm->tm_mon+1, tm->tm_mday, tm->tm_hour,
+      tm->tm_min, tm->tm_sec);
+
+  } else {
+    pr_snprintf(buf, sizeof(buf), "00000000000000");
+  }
+
+  pr_response_add(R_213, "%s", buf);
   return PR_HANDLED(cmd);
 }
 
@@ -5742,20 +5955,17 @@ MODRET core_size(cmd_rec *cmd) {
     pr_cmd_set_errno(cmd, xerrno);
     errno = xerrno;
     return PR_ERROR(cmd);
-
-  } else {
-    if (!S_ISREG(st.st_mode)) {
-      pr_response_add_err(R_550, _("%s: not a regular file"), cmd->arg);
-
-      pr_cmd_set_errno(cmd, EINVAL);
-      errno = EINVAL;
-      return PR_ERROR(cmd);
-
-    } else {
-      pr_response_add(R_213, "%" PR_LU, (pr_off_t) st.st_size);
-    }
   }
 
+  if (!S_ISREG(st.st_mode)) {
+    pr_response_add_err(R_550, _("%s: not a regular file"), cmd->arg);
+
+    pr_cmd_set_errno(cmd, EINVAL);
+    errno = EINVAL;
+    return PR_ERROR(cmd);
+  }
+
+  pr_response_add(R_213, "%" PR_LU, (pr_off_t) st.st_size);
   return PR_HANDLED(cmd);
 }
 
@@ -6009,6 +6219,8 @@ MODRET core_rnto(cmd_rec *cmd) {
 
   if (!path ||
       !dir_check_canon(cmd->tmp_pool, cmd, cmd->group, path, NULL)) {
+    pr_log_debug(DEBUG8, "%s command denied by <Limit> config",
+      (char *) cmd->argv[0]);
     pr_response_add_err(R_550, _("%s: %s"), cmd->arg, strerror(EPERM));
 
     pr_cmd_set_errno(cmd, EPERM);
@@ -6131,8 +6343,9 @@ MODRET core_rnto(cmd_rec *cmd) {
 }
 
 MODRET core_rnto_cleanup(cmd_rec *cmd) {
-  if (session.xfer.p)
+  if (session.xfer.p != NULL) {
     destroy_pool(session.xfer.p);
+  }
 
   memset(&session.xfer, '\0', sizeof(session.xfer));
 
@@ -6225,6 +6438,8 @@ MODRET core_noop(cmd_rec *cmd) {
   if (!dir_check(cmd->tmp_pool, cmd, cmd->group, session.vwd, NULL)) {
     int xerrno = EPERM;
 
+    pr_log_debug(DEBUG7, "%s command denied by <Limit> configuration",
+      (char *) cmd->argv[0]);
     pr_response_add_err(R_550, "%s", strerror(xerrno));
 
     pr_cmd_set_errno(cmd, xerrno);
@@ -6461,7 +6676,7 @@ MODRET core_post_pass(cmd_rec *cmd) {
     size = *((unsigned int *) c->argv[1]);
     max_age = *((unsigned int *) c->argv[2]);
 
-    if (engine) {
+    if (engine == TRUE) {
       pr_fs_statcache_set_policy(size, max_age, 0);
 
     } else {
@@ -6470,8 +6685,7 @@ MODRET core_post_pass(cmd_rec *cmd) {
 
   } else {
     /* Set the default statcache policy. */
-    pr_fs_statcache_set_policy(PR_TUNABLE_FS_STATCACHE_SIZE,
-      PR_TUNABLE_FS_STATCACHE_MAX_AGE, 0);
+    pr_fs_statcache_set_policy(0, 0, 0);
   }
 
   /* Register an exit handler here, for clearing the statcache. */
@@ -6544,8 +6758,68 @@ static const char *core_get_xfer_bytes_str(void *data, size_t datasz) {
 /* Event handlers
  */
 
+static void core_connected_ev(const void *event_data, void *user_data) {
+  session_set_connected();
+}
+
 static void core_exit_ev(const void *event_data, void *user_data) {
   pr_fs_statcache_free();
+}
+
+static void core_postparse_ev(const void *event_data, void *user_data) {
+  server_rec *s;
+  cmd_rec *cmd;
+  int res;
+  pool *tmp_pool;
+
+  /* If the EPRT and/or EPSV commands have been denied by configuration, e.g.:
+   *
+   *  <Limit EPRT EPSV>
+   *    DenyAll
+   *  </Limit>
+   *
+   * then we will also exclude them from the FEAT response.  Some badly
+   * behaved clients will try to use EPSV (which cannot honor the
+   * MasqueradeAddress directive, needed in NAT environments), and if that
+   * fails, they fall back to using PORT (and not PASV as expected).
+   *
+   * Thus for such tricky situations, we check for <Limit> configurations for
+   * this commands; if limited, we omit them from FEAT.  This is why we need
+   * to wait until the configuration has been parsed, to do this check.
+   * See Issue#1383.
+   */
+
+  tmp_pool = make_sub_pool(permanent_pool);
+
+  cmd = pr_cmd_alloc(tmp_pool, 1, pstrdup(tmp_pool, C_EPRT), NULL);
+  res = dir_check_limits(cmd, NULL, C_EPRT, FALSE);
+  if (res == 1) {
+    pr_feat_add(C_EPRT);
+  }
+
+  destroy_pool(cmd->pool);
+  cmd = pr_cmd_alloc(tmp_pool, 1, pstrdup(tmp_pool, C_EPSV), NULL);
+  res = dir_check_limits(cmd, NULL, C_EPSV, FALSE);
+  if (res == 1) {
+    pr_feat_add(C_EPSV);
+  }
+
+  destroy_pool(cmd->pool);
+  destroy_pool(tmp_pool);
+
+  /* Since the Port directive is allowed in <Global> sections (see Issue #1418),
+   * we need to check here for the Port to use, on a per-vhost basis.
+   */
+  for (s = (server_rec *) server_list->xas_list; s; s = s->next) {
+    int *server_port;
+
+    pr_signals_handle();
+
+    server_port = get_param_ptr(s->conf, "Port", FALSE);
+    if (server_port != NULL) {
+      s->ServerPort = *server_port;
+    }
+  }
 }
 
 static void core_restart_ev(const void *event_data, void *user_data) {
@@ -6643,13 +6917,14 @@ static int core_init(void) {
    * list, to be displayed in response to a FEAT command.
    */
   pr_feat_add(C_CLNT);
-  pr_feat_add(C_EPRT);
-  pr_feat_add(C_EPSV);
+  pr_feat_add(C_CSID);
   pr_feat_add(C_MDTM);
   pr_feat_add("REST STREAM");
   pr_feat_add(C_SIZE);
   pr_feat_add(C_HOST);
 
+  pr_event_register(&core_module, "core.connected", core_connected_ev, NULL);
+  pr_event_register(&core_module, "core.postparse", core_postparse_ev, NULL);
   pr_event_register(&core_module, "core.restart", core_restart_ev, NULL);
   pr_event_register(&core_module, "core.startup", core_startup_ev, NULL);
 
@@ -6780,10 +7055,18 @@ static int core_sess_init(void) {
 
   init_auth();
 
-  c = find_config(main_server->conf, CONF_PARAM, "MultilineRFC2228", FALSE);
-  if (c != NULL) {
-    session.multiline_rfc2228 = *((int *) c->argv[0]);
+  /* Enable any TCP keepalive options on the control connection (Issue #1402).
+   * Note that ctrl conns do not have listening fds, but this function uses
+   * that fd (due to compatibility with data conns), so we temporarily assign
+   * that struct member.
+   */
+  session.c->listen_fd = session.c->wfd;
+  if (pr_inet_set_proto_keepalive(session.pool, session.c,
+      main_server->tcp_keepalive) < 0) {
+    pr_log_debug(DEBUG9, "error setting ctrl conn TCP keepalive: %s",
+      strerror(errno));
   }
+  session.c->listen_fd = -1;
 
   /* Start the idle timer. */
 
@@ -6832,21 +7115,26 @@ static int core_sess_init(void) {
   c = find_config(main_server->conf, CONF_PARAM, "RegexOptions", FALSE);
   if (c != NULL) {
     unsigned long match_limit, match_limit_recursion;
+    const char *engine = NULL;
 
     match_limit = *((unsigned long *) c->argv[0]);
     match_limit_recursion = *((unsigned long *) c->argv[1]);
+    engine = c->argv[2];
 
     pr_trace_msg("regexp", 4,
-      "using regex options: match limit = %lu, match limit recursion = %lu",
+      "using regex options: engine = %s, match limit = %lu, "
+      "match limit recursion = %lu", engine ? engine : "(default)",
       match_limit, match_limit_recursion);
 
     pr_regexp_set_limits(match_limit, match_limit_recursion);
+    pr_regexp_set_engine(engine);
   }
 
   /* Check for configured SetEnvs. */
   c = find_config(main_server->conf, CONF_PARAM, "SetEnv", FALSE);
+  while (c != NULL) {
+    pr_signals_handle();
 
-  while (c) {
     if (pr_env_set(session.pool, c->argv[0], c->argv[1]) < 0) {
       pr_log_debug(DEBUG1, "unable to set environment variable '%s': %s",
         (char *) c->argv[0], strerror(errno));
@@ -6860,8 +7148,9 @@ static int core_sess_init(void) {
 
   /* Check for configured UnsetEnvs. */
   c = find_config(main_server->conf, CONF_PARAM, "UnsetEnv", FALSE);
+  while (c != NULL) {
+    pr_signals_handle();
 
-  while (c) {
     if (pr_env_unset(session.pool, c->argv[0]) < 0) {
       pr_log_debug(DEBUG1, "unable to unset environment variable '%s': %s",
         (char *) c->argv[0], strerror(errno));
@@ -6933,14 +7222,13 @@ static int core_sess_init(void) {
     pr_timer_remove(core_scrub_timer_id, &core_module);
 
   } else if (ServerType == SERVER_INETD) {
-
     /* If we're running as 'ServerType inetd', scrub the scoreboard here.
      * For standalone ServerTypes, the scoreboard scrubber will handle
      * things itself.
      */
 
     c = find_config(main_server->conf, CONF_PARAM, "ScoreboardScrub", FALSE);
-    if (c) {
+    if (c != NULL) {
       if (*((int *) c->argv[0]) == TRUE) {
         pr_scoreboard_scrub();
       }
@@ -7121,7 +7409,7 @@ static conftable core_conftab[] = {
   { "PathAllowFilter",		set_pathallowfilter,		NULL },
   { "PathDenyFilter",		set_pathdenyfilter,		NULL },
   { "PidFile",			set_pidfile,	 		NULL },
-  { "Port",			set_serverport, 		NULL },
+  { "Port",			set_port, 			NULL },
   { "ProcessTitles",		set_processtitles,		NULL },
   { "Protocols",		set_protocols,			NULL },
   { "RegexOptions",		set_regexoptions,		NULL },
@@ -7197,6 +7485,7 @@ static cmdtable core_cmdtab[] = {
   { CMD, C_HOST, G_NONE,  core_host,	FALSE,	FALSE,	CL_AUTH },
   { POST_CMD, C_HOST, G_NONE, core_post_host, FALSE, FALSE },
   { CMD, C_CLNT, G_NONE,  core_clnt,	FALSE,	FALSE,	CL_INFO },
+  { CMD, C_CSID, G_NONE,  core_csid,	TRUE,	FALSE,	CL_INFO },
 
   { 0, NULL }
 };

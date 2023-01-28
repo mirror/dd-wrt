@@ -217,12 +217,10 @@ static void usage(void) {
 }
 
 int main(int argc, char *argv[]) {
-  unsigned char verbose = FALSE;
-  char **respargv = NULL;
-  const char *cmdopts = "hs:v";
-
   register int i = 0;
-  char *socket_file = PR_RUN_DIR "/proftpd.sock";
+  unsigned char verbose = FALSE;
+  const char *cmdopts = "hs:v";
+  char **respargv = NULL, *socket_file = PR_RUN_DIR "/proftpd.sock";
   int sockfd = -1, optc = 0, status = 0, respargc = 0;
   unsigned int reqargc = 0;
   pool *ctl_pool = NULL;
@@ -279,8 +277,10 @@ int main(int argc, char *argv[]) {
 
   /* Process the command-line args into an array_header. */
   for (i = optind; i < argc; i++) {
-    if (verbose)
+    if (verbose) {
       fprintf(stdout, "%s: adding \"%s\" to reqargv\n", program, argv[i]);
+    }
+
     *((char **) push_array(reqargv)) = pstrdup(ctl_pool, argv[i]);
     reqargc++;
   }
@@ -289,9 +289,10 @@ int main(int argc, char *argv[]) {
   *((char **) push_array(reqargv)) = NULL;
 
   /* Open a connection to the socket maintained by mod_ctrls. */
-  if (verbose)
+  if (verbose) {
     fprintf(stdout, "%s: contacting server using '%s'\n", program,
       socket_file);
+  }
 
   sockfd = pr_ctrls_connect(socket_file);
   if (sockfd < 0) {
@@ -300,8 +301,9 @@ int main(int argc, char *argv[]) {
     exit(1);
   }
 
-  if (verbose)
+  if (verbose) {
     fprintf(stdout, "%s: sending control request\n", program);
+  }
 
   if (pr_ctrls_send_msg(sockfd, 0, reqargc, (char **) reqargv->elts) < 0) {
     fprintf(stderr, "%s: error sending request: %s\n", program,
@@ -311,8 +313,9 @@ int main(int argc, char *argv[]) {
 
   /* Read and display the responses. */
 
-  if (verbose)
+  if (verbose) {
     fprintf(stdout, "%s: receiving control response\n", program);
+  }
 
   /* Manually set errno to this value, so that if an error (like a segfault)
    * occurs, the error string displayed to the user is more indicative of
@@ -320,19 +323,21 @@ int main(int argc, char *argv[]) {
    */
   errno = EPERM;
 
-  if ((respargc = pr_ctrls_recv_response(ctl_pool, sockfd, &status,
-      &respargv)) < 0) {
+  respargc = pr_ctrls_recv_response(ctl_pool, sockfd, &status, &respargv);
+  if (respargc < 0) {
     fprintf(stdout, "%s: error receiving response: %s\n", program,
       strerror(errno));
     exit(1);
   }
 
   if (respargv != NULL) {
-    for (i = 0; i < respargc; i++)
+    for (i = 0; i < respargc; i++) {
       fprintf(stdout, "%s: %s\n", program, respargv[i]);
+    }
 
-  } else
+  } else {
     fprintf(stdout, "%s: no response from server\n", program);
+  }
 
   destroy_pool(ctl_pool);
   ctl_pool = NULL;

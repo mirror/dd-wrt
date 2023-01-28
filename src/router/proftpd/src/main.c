@@ -2,7 +2,7 @@
  * ProFTPD - FTP server daemon
  * Copyright (c) 1997, 1998 Public Flood Software
  * Copyright (c) 1999, 2000 MacGyver aka Habeeb J. Dihu <macgyver@tos.net>
- * Copyright (c) 2001-2020 The ProFTPD Project team
+ * Copyright (c) 2001-2022 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -140,8 +140,9 @@ void session_exit(int pri, void *lv, int exitval, void *dummy) {
 
     PRIVS_ROOT
     pr_delete_scoreboard();
-    if (!nodaemon)
+    if (nodaemon == FALSE) {
       pr_pidfile_remove();
+    }
     PRIVS_RELINQUISH
   }
 
@@ -357,8 +358,11 @@ static int _dispatch(cmd_rec *cmd, int cmd_type, int validate, char *match) {
        * this is only necessary for performance reasons in 1.1/1.2
        */
 
-      if (!c->group || strcmp(c->group, G_WRITE) != 0)
+      if (c->group == NULL ||
+          strcmp(c->group, G_WRITE) != 0) {
         kludge_disable_umask();
+      }
+
       mr = pr_module_call(c->m, c->handler, cmd);
       kludge_enable_umask();
 
@@ -435,8 +439,9 @@ static int _dispatch(cmd_rec *cmd, int cmd_type, int validate, char *match) {
 
       method = pstrdup(cmd->pool, cmd->argv[0]);
       for (i = 0; method[i]; i++) {
-        if (method[i] == '_')
+        if (method[i] == '_') {
           method[i] = ' ';
+        }
       }
     }
 
@@ -652,7 +657,7 @@ int pr_cmd_dispatch_phase(cmd_rec *cmd, int phase, int flags) {
   pr_response_set_pool(cmd->pool);
 
   for (cp = cmd->argv[0]; *cp; cp++) {
-    *cp = toupper(*cp);
+    *cp = toupper((int) *cp);
   }
 
   if (cmd->cmd_class == 0) {
@@ -668,9 +673,10 @@ int pr_cmd_dispatch_phase(cmd_rec *cmd, int phase, int flags) {
   if (phase == 0) {
     /* First, dispatch to wildcard PRE_CMD handlers. */
     success = _dispatch(cmd, PRE_CMD, FALSE, C_ANY);
-
-    if (!success)	/* run other pre_cmd */
+    if (success == 0) {
+      /* No success yet?  Run other PRE_CMD phase handlers. */
       success = _dispatch(cmd, PRE_CMD, FALSE, NULL);
+    }
 
     if (success < 0) {
       /* Dispatch to POST_CMD_ERR handlers as well. */
@@ -694,13 +700,15 @@ int pr_cmd_dispatch_phase(cmd_rec *cmd, int phase, int flags) {
     }
 
     success = _dispatch(cmd, CMD, FALSE, C_ANY);
-    if (!success)
+    if (success == 0) {
       success = _dispatch(cmd, CMD, TRUE, NULL);
+    }
 
     if (success == 1) {
       success = _dispatch(cmd, POST_CMD, FALSE, C_ANY);
-      if (!success)
+      if (success == 0) {
         success = _dispatch(cmd, POST_CMD, FALSE, NULL);
+      }
 
       _dispatch(cmd, LOG_CMD, FALSE, C_ANY);
       _dispatch(cmd, LOG_CMD, FALSE, NULL);
@@ -716,8 +724,9 @@ int pr_cmd_dispatch_phase(cmd_rec *cmd, int phase, int flags) {
       /* Allow for non-logging command handlers to be run if CMD fails. */
 
       success = _dispatch(cmd, POST_CMD_ERR, FALSE, C_ANY);
-      if (!success)
+      if (success == 0) {
         success = _dispatch(cmd, POST_CMD_ERR, FALSE, NULL);
+      }
 
       _dispatch(cmd, LOG_CMD_ERR, FALSE, C_ANY);
       _dispatch(cmd, LOG_CMD_ERR, FALSE, NULL);
@@ -736,7 +745,7 @@ int pr_cmd_dispatch_phase(cmd_rec *cmd, int phase, int flags) {
       case POST_CMD:
       case POST_CMD_ERR:
         success = _dispatch(cmd, phase, FALSE, C_ANY);
-        if (!success) {
+        if (success == 0) {
           success = _dispatch(cmd, phase, FALSE, NULL);
           xerrno = errno;
         }
@@ -744,8 +753,9 @@ int pr_cmd_dispatch_phase(cmd_rec *cmd, int phase, int flags) {
 
       case CMD:
         success = _dispatch(cmd, phase, FALSE, C_ANY);
-        if (!success)
+        if (success == 0) {
           success = _dispatch(cmd, phase, TRUE, NULL);
+        }
         break;
 
       case LOG_CMD:
@@ -834,7 +844,7 @@ static cmd_rec *make_ftp_cmd(pool *p, char *buf, size_t buflen, int flags) {
   cmd->argc++;
 
   /* Make a copy of the command argument; we need to scan through it,
-   * looking for any CR+NUL sequences, per RFC 2460, Section 3.1.
+   * looking for any CR+NUL sequences, per RFC 2640, Section 3.1.
    *
    * Note for future readers that this scanning may cause problems for
    * commands such as ADAT, ENC, and MIC.  Per RFC 2228, the arguments for
@@ -948,153 +958,153 @@ static void cmd_loop(server_rec *server, conn_t *c) {
 }
 
 void restart_daemon(void *d1, void *d2, void *d3, void *d4) {
-  if (is_master && mpid) {
-    int maxfd;
-    fd_set childfds;
-    struct timeval restart_start, restart_finish;
-    long restart_elapsed = 0;
+  int maxfd, res, xerrno;
+  fd_set childfds;
+  struct timeval restart_start, restart_finish;
+  long restart_elapsed = 0;
 
-    pr_log_pri(PR_LOG_NOTICE, "received SIGHUP -- master server reparsing "
-      "configuration file");
-
-    gettimeofday(&restart_start, NULL);
-
-    /* Make sure none of our children haven't completed start up */
-    FD_ZERO(&childfds);
-    maxfd = -1;
-
-    maxfd = semaphore_fds(&childfds, maxfd);
-    if (maxfd > -1) {
-      pr_log_pri(PR_LOG_NOTICE, "waiting for child processes to complete "
-        "initialization");
-
-      while (maxfd != -1) {
-	int i;
-	
-	i = select(maxfd + 1, &childfds, NULL, NULL, NULL);
-
-        if (i > 0) {
-          pr_child_t *ch;
-
-          for (ch = child_get(NULL); ch; ch = child_get(ch)) {
-            if (ch->ch_pipefd != -1 &&
-               FD_ISSET(ch->ch_pipefd, &childfds)) {
-              (void) close(ch->ch_pipefd);
-              ch->ch_pipefd = -1;
-            }
-          }
-        }
-
-	FD_ZERO(&childfds);
-        maxfd = -1;
-	maxfd = semaphore_fds(&childfds, maxfd);
-      }
-    }
-
-    free_bindings();
-
-    /* Run through the list of registered restart callbacks. */
-    pr_event_generate("core.restart", NULL);
-
-    init_log();
-    init_netaddr();
-    init_class();
-    init_config();
-    init_dirtree();
-
-#ifdef PR_USE_NLS
-    encode_free();
-#endif /* PR_USE_NLS */
-
-    pr_netaddr_clear_cache();
-
-    pr_parser_prepare(NULL, NULL);
-
-    pr_event_generate("core.preparse", NULL);
-
-    PRIVS_ROOT
-    if (pr_parser_parse_file(NULL, config_filename, NULL, 0) < 0) {
-      int xerrno = errno;
-
-      PRIVS_RELINQUISH
-
-      /* Note: EPERM is used to indicate the presence of unrecognized
-       * configuration directives in the parsed file(s).
-       */
-      if (xerrno != EPERM) {
-        pr_log_pri(PR_LOG_WARNING,
-          "fatal: unable to read configuration file '%s': %s", config_filename,
-          strerror(xerrno));
-      }
-
-      pr_session_end(0);
-    }
-    PRIVS_RELINQUISH
-
-    if (pr_parser_cleanup() < 0) {
-      pr_log_pri(PR_LOG_WARNING,
-        "fatal: error processing configuration file '%s': "
-        "unclosed configuration section", config_filename);
-      pr_session_end(0);
-    }
-
-#ifdef PR_USE_NLS
-    encode_init();
-#endif /* PR_USE_NLS */
-
-    /* After configuration is complete, make sure that passwd, group
-     * aren't held open (unnecessary fds for master daemon)
-     */
-    endpwent();
-    endgrent();
-
-    if (fixup_servers(server_list) < 0) {
-      pr_log_pri(PR_LOG_WARNING,
-        "fatal: error processing configuration file '%s'", config_filename);
-      pr_session_end(0);
-    }
-
-    pr_event_generate("core.postparse", NULL);
-
-    /* Recreate the listen connection.  Can an inetd-spawned server accept
-     * and process HUP?
-     */
-    init_bindings();
-
-    gettimeofday(&restart_finish, NULL);
-
-    restart_elapsed = ((restart_finish.tv_sec - restart_start.tv_sec) * 1000L) +
-      ((restart_finish.tv_usec - restart_start.tv_usec) / 1000L);
-    pr_trace_msg("config", 12, "restart took %ld millisecs", restart_elapsed);
-      
-  } else {
-
+  if (is_master == FALSE ||
+      !mpid) {
     /* Child process -- cannot restart, log error */
     pr_log_pri(PR_LOG_ERR, "received SIGHUP, cannot restart child process");
+    return;
   }
+
+  pr_log_pri(PR_LOG_NOTICE,
+    "received SIGHUP -- master server reparsing configuration file");
+
+  gettimeofday(&restart_start, NULL);
+
+  /* Make sure none of our children haven't completed start up */
+  FD_ZERO(&childfds);
+  maxfd = -1;
+
+  maxfd = semaphore_fds(&childfds, maxfd);
+  if (maxfd > -1) {
+    pr_log_pri(PR_LOG_NOTICE, "waiting for child processes to complete "
+      "initialization");
+
+    while (maxfd != -1) {
+      int i;
+
+      i = select(maxfd + 1, &childfds, NULL, NULL, NULL);
+      if (i > 0) {
+        pr_child_t *ch;
+
+        for (ch = child_get(NULL); ch; ch = child_get(ch)) {
+          if (ch->ch_pipefd != -1 &&
+             FD_ISSET(ch->ch_pipefd, &childfds)) {
+            (void) close(ch->ch_pipefd);
+            ch->ch_pipefd = -1;
+          }
+        }
+      }
+
+      FD_ZERO(&childfds);
+      maxfd = -1;
+      maxfd = semaphore_fds(&childfds, maxfd);
+    }
+  }
+
+  free_bindings();
+
+  /* Run through the list of registered restart callbacks. */
+  pr_event_generate("core.restart", NULL);
+
+  init_log();
+  init_netaddr();
+  init_class();
+  init_config();
+  init_dirtree();
+
+#ifdef PR_USE_NLS
+  encode_free();
+#endif /* PR_USE_NLS */
+
+  pr_netaddr_clear_cache();
+  pr_parser_prepare(NULL, NULL);
+  pr_event_generate("core.preparse", NULL);
+
+  PRIVS_ROOT
+  res = pr_parser_parse_file(NULL, config_filename, NULL, 0);
+  xerrno = errno;
+  PRIVS_RELINQUISH
+
+  if (res < 0) {
+    /* Note: EPERM is used to indicate the presence of unrecognized
+     * configuration directives in the parsed file(s).
+     */
+    if (xerrno != EPERM) {
+      pr_log_pri(PR_LOG_WARNING,
+        "fatal: unable to read configuration file '%s': %s", config_filename,
+        strerror(xerrno));
+    }
+
+    pr_session_end(0);
+  }
+
+  if (pr_parser_cleanup() < 0) {
+    pr_log_pri(PR_LOG_WARNING,
+      "fatal: error processing configuration file '%s': "
+      "unclosed configuration section", config_filename);
+    pr_session_end(0);
+  }
+
+#ifdef PR_USE_NLS
+  encode_init();
+#endif /* PR_USE_NLS */
+
+  /* After configuration is complete, make sure that passwd, group
+   * aren't held open (unnecessary fds for master daemon)
+   */
+  endpwent();
+  endgrent();
+
+  if (fixup_servers(server_list) < 0) {
+    pr_log_pri(PR_LOG_WARNING,
+      "fatal: error processing configuration file '%s'", config_filename);
+    pr_session_end(0);
+  }
+
+  pr_event_generate("core.postparse", NULL);
+
+  /* Recreate the listen connection.  Can an inetd-spawned server accept
+   * and process HUP?
+   */
+  init_bindings();
+
+  gettimeofday(&restart_finish, NULL);
+
+  restart_elapsed = ((restart_finish.tv_sec - restart_start.tv_sec) * 1000L) +
+    ((restart_finish.tv_usec - restart_start.tv_usec) / 1000L);
+  pr_trace_msg("config", 12, "restart took %ld millisecs", restart_elapsed);
 }
 
 static void set_server_privs(void) {
-  uid_t server_uid, current_euid = geteuid();
-  gid_t server_gid, current_egid = getegid();
+  uid_t *uid, server_uid, current_euid;
+  gid_t *gid, server_gid, current_egid;
   unsigned char switch_server_id = FALSE;
 
-  uid_t *uid = get_param_ptr(main_server->conf, "UserID", FALSE);
-  gid_t *gid =  get_param_ptr(main_server->conf, "GroupID", FALSE);
+  current_euid = geteuid();
+  current_egid = getegid();
 
-  if (uid) {
+  uid = get_param_ptr(main_server->conf, "UserID", FALSE);
+  if (uid != NULL) {
     server_uid = *uid;
     switch_server_id = TRUE;
 
-  } else
+  } else {
     server_uid = current_euid;
+  }
 
-  if (gid) {
+  gid =  get_param_ptr(main_server->conf, "GroupID", FALSE);
+  if (gid != NULL) {
     server_gid = *gid;
     switch_server_id = TRUE;
 
-  } else
+  } else {
     server_gid = current_egid;
+  }
 
   if (switch_server_id) {
     PRIVS_ROOT
@@ -1358,14 +1368,15 @@ static void fork_server(int fd, conn_t *l, unsigned char no_fork) {
    * we are all grown up and have finished housekeeping (closing
    * former listen sockets).
    */
-  close(semfds[1]);
+  (void) close(semfds[1]);
 
   /* Now perform reverse DNS lookups. */
   if (ServerUseReverseDNS) {
     rev = pr_netaddr_set_reverse_dns(ServerUseReverseDNS);
 
-    if (conn->remote_addr)
+    if (conn->remote_addr) {
       conn->remote_name = pr_netaddr_get_dnsstr(conn->remote_addr);
+    }
 
     pr_netaddr_set_reverse_dns(rev);
   }
@@ -1483,6 +1494,8 @@ static void fork_server(int fd, conn_t *l, unsigned char no_fork) {
   if (modules_session_init() < 0) {
     pr_session_disconnect(NULL, PR_SESS_DISCONNECT_SESSION_INIT_FAILED, NULL);
   }
+
+  pr_event_generate("core.connected", conn);
 
   pr_log_debug(DEBUG4, "connected - local  : %s:%d",
     pr_netaddr_get_ipstr(session.c->local_addr), session.c->local_port);
@@ -1762,23 +1775,32 @@ static void daemon_loop(void) {
   }
 }
 
-static void daemonize(void) {
+/* Returns 1 for the background daemon process, 0 for the foreground process,
+ * and -1 if there was an error.
+ */
+static int daemonize(void) {
 #ifndef HAVE_SETSID
   int ttyfd;
 #endif
+  pid_t pid;
 
   /* Fork off and have parent exit.
    */
-  switch (fork()) {
+  pid = fork();
+  switch (pid) {
     case -1:
       perror("fork(2) error");
-      exit(1);
+      return -1;
 
     case 0:
+      /* Child process; keep going. */
       break;
 
-    default: 
-      exit(0);
+    default:
+      /* Parent process; we're done. */
+      pr_log_pri(PR_LOG_DEBUG, "forked daemon process (PID %lu)",
+        (unsigned long) pid);
+      return 0;
   }
 
 #ifdef HAVE_SETSID
@@ -1822,6 +1844,7 @@ static void daemonize(void) {
   mpid = getpid();
 
   pr_fsio_chdir("/", 0);
+  return 1;
 }
 
 static void inetd_main(void) {
@@ -1891,7 +1914,13 @@ static void standalone_main(void) {
 
   } else {
     log_stderr(FALSE);
-    daemonize();
+    res = daemonize();
+    if (res != 1) {
+      /* We're either the foreground process, or there was an error.  Either
+       * way, we're done.
+       */
+      return;
+    }
   }
 
   PRIVS_ROOT
@@ -1928,22 +1957,75 @@ static void standalone_main(void) {
 
   init_bindings();
 
-  pr_log_pri(PR_LOG_NOTICE, "ProFTPD %s (built %s) standalone mode STARTUP",
-    PROFTPD_VERSION_TEXT " " PR_STATUS, BUILD_STAMP);
-
   if (pr_pidfile_write() < 0) {
-    fprintf(stderr, "error opening PidFile '%s': %s\n", pr_pidfile_get(),
+    pr_log_pri(PR_LOG_ERR, "error writing PidFile '%s': %s", pr_pidfile_get(),
       strerror(errno));
     exit(1);
   }
 
+  pr_log_pri(PR_LOG_NOTICE, "ProFTPD %s (built %s) standalone mode STARTUP",
+    PROFTPD_VERSION_TEXT " " PR_STATUS, BUILD_STAMP);
+
   daemon_loop();
+}
+
+static int conftab_cmp(const void *a, const void *b) {
+  const conftable *tab1, *tab2;
+
+  tab1 = *((conftable **) a);
+  tab2 = *((conftable **) b);
+  return strcmp(tab1->directive, tab2->directive);
+}
+
+/* Similar to the `get_all_directives` function in src/parser.c, except
+ * that we sort the directives, and display their associated/implementing
+ * modules.
+ */
+static void list_directives(void) {
+  register unsigned int i;
+  pool *tmp_pool;
+  array_header *directives;
+  conftable *tab;
+  int idx;
+  unsigned int hash;
+
+  tmp_pool = make_sub_pool(permanent_pool);
+  directives = make_array(tmp_pool, 1, sizeof(conftable **));
+
+  idx = -1;
+  hash = 0;
+  tab = pr_stash_get_symbol2(PR_SYM_CONF, NULL, NULL, &idx, &hash);
+  while (idx != -1) {
+    pr_signals_handle();
+
+    if (tab != NULL) {
+      *((conftable **) push_array(directives)) = tab;
+
+    } else {
+      idx++;
+    }
+
+    tab = pr_stash_get_symbol2(PR_SYM_CONF, NULL, tab, &idx, &hash);
+  }
+
+  qsort((void *) directives->elts, directives->nelts, sizeof(conftable **),
+    conftab_cmp);
+
+  printf("Configuration Directives:\n");
+  for (i = 0; i < directives->nelts; i++) {
+    conftable *conftab;
+
+    conftab = ((conftable **) directives->elts)[i];
+    printf("  %s (from mod_%s)\n", conftab->directive, conftab->m->name);
+  }
+
+  destroy_pool(tmp_pool);
 }
 
 extern char *optarg;
 extern int optind, opterr, optopt;
 
-#ifdef HAVE_GETOPT_LONG
+#if defined(HAVE_GETOPT_LONG)
 static struct option opts[] = {
   { "nocollision",    0, NULL, 'N' },
   { "nodaemon",	      0, NULL, 'n' },
@@ -1964,8 +2046,54 @@ static struct option opts[] = {
 };
 #endif /* HAVE_GETOPT_LONG */
 
+/* If there is an /etc/os-release file, display its contents; see:
+ *   https://www.freedesktop.org/software/systemd/man/os-release.html
+ */
+static void show_os_release(void) {
+  const char *os_release_path = "/etc/os-release";
+  FILE *fh;
+  char *line = NULL;
+  size_t linelen = 0;
+  ssize_t nread = 0;
+
+  fh = fopen(os_release_path, "r");
+  if (fh == NULL) {
+    return;
+  }
+
+  printf("%s", "  OS/Release:\n");
+
+  nread = getline(&line, &linelen, fh);
+  while (nread >= 0) {
+    int skip_line = FALSE;
+
+    pr_signals_handle();
+
+    /* Skip any lines containing uninteresting info. */
+    if (strstr(line, "COLOR") != NULL ||
+        strstr(line, "LOGO") != NULL ||
+        strstr(line, "_URL") != NULL) {
+      skip_line = TRUE;
+    }
+
+    if (skip_line == TRUE) {
+      nread = getline(&line, &linelen, fh);
+      continue;
+    }
+
+    printf("    %s", line);
+    nread = getline(&line, &linelen, fh);
+  }
+
+  if (line != NULL) {
+    free(line);
+  }
+
+  (void) fclose(fh);
+}
+
 static void show_settings(void) {
-#ifdef HAVE_UNAME
+#if defined(HAVE_UNAME)
   int res;
   struct utsname uts;
 #endif /* !HAVE_UNAME */
@@ -1973,7 +2101,7 @@ static void show_settings(void) {
   printf("%s", "Compile-time Settings:\n");
   printf("%s", "  Version: " PROFTPD_VERSION_TEXT " " PR_STATUS "\n");
 
-#ifdef HAVE_UNAME
+#if defined(HAVE_UNAME)
   /* We use uname(2) to get the 'machine', which will tell us whether
    * we're a 32- or 64-bit machine.
    */
@@ -1988,6 +2116,8 @@ static void show_settings(void) {
 #else
   printf("%s", "  Platform: " PR_PLATFORM " [unknown]\n");
 #endif /* !HAVE_UNAME */
+
+  show_os_release();
 
   printf("%s", "  Built: " BUILD_STAMP "\n");
   printf("%s", "  Built With:\n    configure " PR_BUILD_OPTS "\n\n");
@@ -2118,6 +2248,12 @@ static void show_settings(void) {
 #else
   printf("%s", "    - PCRE support\n");
 #endif /* PR_USE_PCRE */
+
+#ifdef PR_USE_PCRE2
+  printf("%s", "    + PCRE2 support\n");
+#else
+  printf("%s", "    - PCRE2 support\n");
+#endif /* PR_USE_PCRE2 */
 
 #ifdef PR_USE_FACL
   printf("%s", "    + POSIX ACL support\n");
@@ -2268,6 +2404,9 @@ int main(int argc, char *argv[], char **envp) {
   mode_t *main_umask = NULL;
   socklen_t peerlen;
   struct sockaddr peer;
+#if defined(PR_USE_NLS) && defined(HAVE_LOCALE_H)
+  const char *env_lang = NULL, *env_locale = NULL;
+#endif
 
 #ifdef HAVE_SET_AUTH_PARAMETERS
   (void) set_auth_parameters(argc, argv);
@@ -2290,8 +2429,9 @@ int main(int argc, char *argv[], char **envp) {
   /* getpeername() fails if the fd isn't a socket */
   peerlen = sizeof(peer);
   memset(&peer, 0, peerlen);
-  if (getpeername(fileno(stdin), &peer, &peerlen) != -1)
+  if (getpeername(fileno(stdin), &peer, &peerlen) != -1) {
     log_stderr(FALSE);
+  }
 
   /* Open the syslog */
   log_opensyslog(NULL);
@@ -2471,8 +2611,7 @@ int main(int argc, char *argv[], char **envp) {
     exit(1);
   }
 
-  if (show_version &&
-      show_version == 1) {
+  if (show_version == 1) {
     printf("%s", "ProFTPD Version " PROFTPD_VERSION_TEXT "\n");
     exit(0);
   }
@@ -2501,31 +2640,37 @@ int main(int argc, char *argv[], char **envp) {
 #endif /* PR_USE_CTRLS */
 
   var_init();
-  modules_init();
 
-#ifdef PR_USE_NLS
-# ifdef HAVE_LOCALE_H
+#if defined(PR_USE_NLS)
+# if defined(HAVE_LOCALE_H)
   /* Initialize the locale based on environment variables. */
-  if (setlocale(LC_ALL, "") == NULL) {
-    const char *env_lang;
+  env_lang = pr_env_get(permanent_pool, "LANG");
 
-    env_lang = pr_env_get(permanent_pool, "LANG");
+  env_locale = setlocale(LC_ALL, "");
+  if (env_locale == NULL) {
     pr_log_pri(PR_LOG_WARNING, "warning: unknown/unsupported LANG environment "
-      "variable '%s', ignoring", env_lang);
-
-    setlocale(LC_ALL, "C");
+      "variable '%s', ignoring", env_lang != NULL ? env_lang : "(null)");
+    (void) setlocale(LC_ALL, "C");
 
   } else {
+    pr_log_debug(DEBUG9, "using '%s' locale based on LANG=%s environment "
+      "variable", env_locale, env_lang != NULL ? env_lang : "(null)");
+
     /* Make sure that LC_NUMERIC is always set to "C", so as not to interfere
      * with formatting of strings (like printing out floats in SQL query
      * strings).
      */
-    setlocale(LC_NUMERIC, "C");
+    (void) setlocale(LC_NUMERIC, "C");
   }
 # endif /* !HAVE_LOCALE_H */
 
   encode_init();
 #endif /* PR_USE_NLS */
+
+  /* Note that modules MUST be initialized AFTER the locale, so that we
+   * are consistent in handling of strings via _e.g._ tolower(3); see Bug#4466.
+   */
+  modules_init();
 
   /* Now, once the modules have had a chance to initialize themselves
    * but before the configuration stream is actually parsed, check
@@ -2568,12 +2713,18 @@ int main(int argc, char *argv[], char **envp) {
 
   pr_event_generate("core.postparse", NULL);
 
-  if (show_version == 2) {
+  if (show_version >= 2) {
     printf("ProFTPD Version: %s", PROFTPD_VERSION_TEXT " " PR_STATUS "\n");
     printf("  Scoreboard Version: %08x\n", PR_SCOREBOARD_VERSION); 
     printf("  Built: %s\n\n", BUILD_STAMP);
 
     modules_list2(NULL, PR_MODULES_LIST_FL_SHOW_VERSION);
+
+    if (show_version >= 3) {
+      printf("\n");
+      list_directives();
+    }
+
     exit(0);
   }
 

@@ -1,6 +1,6 @@
 /*
  * ProFTPD - FTP server daemon
- * Copyright (c) 2010-2017 The ProFTPD Project team
+ * Copyright (c) 2010-2022 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -75,10 +75,10 @@ static struct stash *sym_alloc(void) {
    * bytes by default) is a bit large for symbols.
    */
   sub_pool = pr_pool_create_sz(symbol_pool, PR_SYM_POOL_SIZE);
+  pr_pool_tag(sub_pool, "symbol");
 
   sym = pcalloc(sub_pool, sizeof(struct stash));
   sym->sym_pool = sub_pool; 
-  pr_pool_tag(sub_pool, "symbol");
 
   return sym;
 }
@@ -183,6 +183,10 @@ static unsigned int sym_type_hash(pr_stash_type_t sym_type, const char *name,
     size_t namelen) {
   unsigned int hash;
 
+  if (namelen == 0) {
+    return 0;
+  }
+
   /* XXX Ugly hack to support mixed cases of directives in config files. */
   if (sym_type != PR_SYM_CONF) {
     hash = symtab_hash(name, namelen);
@@ -199,6 +203,12 @@ static unsigned int sym_type_hash(pr_stash_type_t sym_type, const char *name,
 
     buf[namelen] = '\0';
     for (i = 0; i < namelen; i++) {
+      /* Note that the tolower(3) function is locale-sensitive.  This means
+       * that setlocale(3) MUST be called before we hash any of the
+       * configuration directive strings, as when modules are loading, BEFORE
+       * we process any configuration directives during parsing.  That way,
+       * we handle the text in a consistent manner for that locale (Bug#4466).
+       */
       buf[i] = tolower((int) name[i]);
     }
 

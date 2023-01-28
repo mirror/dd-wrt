@@ -1210,6 +1210,8 @@ sub test_setup {
   my $gid = shift;
   $gid = 500 unless defined($gid);
   my $home_dir = shift;
+  my $groups = shift;
+  $groups = $user unless defined($groups);
 
   my $config_file = "$tmpdir/$name.conf";
   my $pid_file = File::Spec->rel2abs("$tmpdir/$name.pid");
@@ -1238,7 +1240,22 @@ sub test_setup {
 
   auth_user_write($auth_user_file, $user, $passwd, $uid, $gid, $home_dir,
     '/bin/bash');
-  auth_group_write($auth_group_file, $group, $gid, $user);
+  auth_group_write($auth_group_file, $group, $gid, $groups);
+
+  # If we are NOT running with root privs, then the default UID/GID cannot
+  # be provided by the session.  So we will use the current UID/GID in such
+  # cases.
+  if ($< != 0) {
+    $uid = $<;
+    $gid = $(;
+
+    # If `$(` returns a space-separated list of numbers, we want to only
+    # use the first one.
+    if ($gid =~ / /) {
+      my $gids = [split(/\s+/, $gid)];
+      $gid = $gids->[0];
+    }
+  }
 
   my $setup = {
     auth_user_file => $auth_user_file,
@@ -1279,10 +1296,10 @@ sub testsuite_get_runnable_tests {
         }
       }
     }
+  }
 
-    foreach my $skip_test (@$skip_tests) {
-      delete($tests->{$skip_test});
-    }
+  foreach my $skip_test (@$skip_tests) {
+    delete($tests->{$skip_test});
   }
 
   # Special handling of any 'mod_*' test classes; if the compiled proftpd
@@ -1303,10 +1320,10 @@ sub testsuite_get_runnable_tests {
         }
       }
     }
+  }
 
-    foreach my $skip_test (@$skip_tests) {
-      delete($tests->{$skip_test});
-    }
+  foreach my $skip_test (@$skip_tests) {
+    delete($tests->{$skip_test});
   }
 
   # Special handling of the 'norootprivs' test class; unless we are running
@@ -1326,10 +1343,10 @@ sub testsuite_get_runnable_tests {
         push(@$skip_tests, $test);
       }
     }
- 
-    foreach my $skip_test (@$skip_tests) {
-      delete($tests->{$skip_test});
-    }
+  }
+
+  foreach my $skip_test (@$skip_tests) {
+    delete($tests->{$skip_test});
   }
 
   # Special handling of any 'os_*' test classes; if the machine running
@@ -1346,10 +1363,10 @@ sub testsuite_get_runnable_tests {
         }
       }
     }
+  }
 
-    foreach my $skip_test (@$skip_tests) {
-      delete($tests->{$skip_test});
-    }
+  foreach my $skip_test (@$skip_tests) {
+    delete($tests->{$skip_test});
   }
 
   # Special handling of the 'rootprivs' test class: unless we are running
@@ -1369,21 +1386,21 @@ sub testsuite_get_runnable_tests {
         push(@$skip_tests, $test);
       }
     }
- 
-    foreach my $skip_test (@$skip_tests) {
-      delete($tests->{$skip_test});
-    }
+  }
+
+  foreach my $skip_test (@$skip_tests) {
+    delete($tests->{$skip_test});
   }
 
   my $runnables = [];
 
   if (defined($ENV{PROFTPD_TEST_ENABLE_CLASS})) {
-    my $test_classes = [split(':', $ENV{PROFTPD_TEST_ENABLE_CLASS})];
+    my $enabled_classes = [split(':', $ENV{PROFTPD_TEST_ENABLE_CLASS})];
 
-    foreach my $test_class (@$test_classes) {
+    foreach my $enabled_class (@$enabled_classes) {
       foreach my $test (keys(%$tests)) {
-        foreach my $class (@{ $tests->{$test}->{test_class} }) {
-          if ($class eq $test_class) {
+        foreach my $test_class (@{ $tests->{$test}->{test_class} }) {
+          if ($test_class eq $enabled_class) {
             push(@$runnables, $test);
             last;
           }
@@ -1396,27 +1413,23 @@ sub testsuite_get_runnable_tests {
   }
 
   if (defined($ENV{PROFTPD_TEST_DISABLE_CLASS})) {
-    my $test_classes = [split(':', $ENV{PROFTPD_TEST_DISABLE_CLASS})];
+    my $disabled_classes = [split(':', $ENV{PROFTPD_TEST_DISABLE_CLASS})];
     my $new_runnables = [];
 
     foreach my $test (@$runnables) {
       my $skip_test = 0;
 
-      foreach my $test_class (@$test_classes) {
-        foreach my $class (@{ $tests->{$test}->{test_class} }) {
-          if ($class eq $test_class) {
+      foreach my $disabled_class (@$disabled_classes) {
+        foreach my $test_class (@{ $tests->{$test}->{test_class} }) {
+          if ($test_class eq $disabled_class) {
             $skip_test = 1;
             last;
           }
-
-          if ($skip_test) {
-            last;
-          }
         }
+      }
 
-        unless ($skip_test) {
-          push(@$new_runnables, $test);
-        }
+      unless ($skip_test) {
+        push(@$new_runnables, $test);
       }
     }
 
@@ -1425,6 +1438,7 @@ sub testsuite_get_runnable_tests {
 
   if (scalar(@$runnables) > 0) {
     $runnables = [sort { $tests->{$a}->{order} <=> $tests->{$b}->{order} } @$runnables];
+
   } else { 
     $runnables = [qw(testsuite_empty_test)];
   }

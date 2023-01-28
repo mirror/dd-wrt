@@ -324,6 +324,7 @@ sub rewrite_map_lowercase {
 
     AuthUserFile => $auth_user_file,
     AuthGroupFile => $auth_group_file,
+    AuthOrder => 'mod_auth_file.c',
 
     IfModules => {
       'mod_delay.c' => {
@@ -474,6 +475,7 @@ sub rewrite_map_spaces_underscores {
 
     AuthUserFile => $auth_user_file,
     AuthGroupFile => $auth_group_file,
+    AuthOrder => 'mod_auth_file.c',
 
     IfModules => {
       'mod_delay.c' => {
@@ -602,6 +604,7 @@ sub rewrite_map_whitespace_underscores {
 
     AuthUserFile => $setup->{auth_user_file},
     AuthGroupFile => $setup->{auth_group_file},
+    AuthOrder => 'mod_auth_file.c',
 
     IfModules => {
       'mod_delay.c' => {
@@ -711,6 +714,7 @@ sub rewrite_map_whitespace_trim {
 
     AuthUserFile => $setup->{auth_user_file},
     AuthGroupFile => $setup->{auth_group_file},
+    AuthOrder => 'mod_auth_file.c',
 
     IfModules => {
       'mod_delay.c' => {
@@ -765,7 +769,7 @@ sub rewrite_map_whitespace_trim {
       # Send the path with following spaces; the rewrite rules should handle it
       ($resp_code, $resp_msg) = $client->size("test.txt   ");
 
-      my $expected = 213;
+      $expected = 213;
       $self->assert($expected == $resp_code,
         test_msg("Expected response code $expected, got $resp_code"));
 
@@ -777,7 +781,7 @@ sub rewrite_map_whitespace_trim {
       # should handle it.
       ($resp_code, $resp_msg) = $client->size("    test.txt   ");
 
-      my $expected = 213;
+      $expected = 213;
       $self->assert($expected == $resp_code,
         test_msg("Expected response code $expected, got $resp_code"));
 
@@ -854,6 +858,7 @@ sub rewrite_rule_append_pid {
 
     AuthUserFile => $auth_user_file,
     AuthGroupFile => $auth_group_file,
+    AuthOrder => 'mod_auth_file.c',
 
     IfModules => {
       'mod_delay.c' => {
@@ -1002,6 +1007,7 @@ sub rewrite_bug2915 {
 
     AuthUserFile => $auth_user_file,
     AuthGroupFile => $auth_group_file,
+    AuthOrder => 'mod_auth_file.c',
 
     IfModules => {
       'mod_delay.c' => {
@@ -1136,6 +1142,7 @@ sub rewrite_bug3027 {
 
     AuthUserFile => $auth_user_file,
     AuthGroupFile => $auth_group_file,
+    AuthOrder => 'mod_auth_file.c',
 
     IfModules => {
       'mod_delay.c' => {
@@ -1281,6 +1288,7 @@ sub rewrite_bug3034 {
 
     AuthUserFile => $auth_user_file,
     AuthGroupFile => $auth_group_file,
+    AuthOrder => 'mod_auth_file.c',
 
     AllowForeignAddress => 'on',
 
@@ -1427,6 +1435,7 @@ sub rewrite_bug3169 {
 
     AuthUserFile => $auth_user_file,
     AuthGroupFile => $auth_group_file,
+    AuthOrder => 'mod_auth_file.c',
 
     AllowForeignAddress => 'on',
 
@@ -1575,6 +1584,7 @@ sub rewrite_map_unescape_bug3170 {
 
     AuthUserFile => $auth_user_file,
     AuthGroupFile => $auth_group_file,
+    AuthOrder => 'mod_auth_file.c',
 
     AllowForeignAddress => 'on',
 
@@ -1738,6 +1748,7 @@ sub rewrite_cond_env_var_failed {
 
     AuthUserFile => $auth_user_file,
     AuthGroupFile => $auth_group_file,
+    AuthOrder => 'mod_auth_file.c',
 
     IfModules => {
       'mod_delay.c' => {
@@ -1895,6 +1906,7 @@ sub rewrite_cond_env_var_ok {
 
     AuthUserFile => $auth_user_file,
     AuthGroupFile => $auth_group_file,
+    AuthOrder => 'mod_auth_file.c',
 
     SetEnv => 'PR_TEST_FOO foo',
 
@@ -2043,6 +2055,7 @@ sub rewrite_rule_env_var_failed {
 
     AuthUserFile => $auth_user_file,
     AuthGroupFile => $auth_group_file,
+    AuthOrder => 'mod_auth_file.c',
 
     IfModules => {
       'mod_delay.c' => {
@@ -2194,6 +2207,7 @@ sub rewrite_rule_env_var_ok {
 
     AuthUserFile => $auth_user_file,
     AuthGroupFile => $auth_group_file,
+    AuthOrder => 'mod_auth_file.c',
 
     SetEnv => 'PR_TEST_FOO foo',
 
@@ -2336,6 +2350,7 @@ sub rewrite_escape_rule_backref_bug3028 {
 
     AuthUserFile => $auth_user_file,
     AuthGroupFile => $auth_group_file,
+    AuthOrder => 'mod_auth_file.c',
 
     IfModules => {
       'mod_delay.c' => {
@@ -2475,6 +2490,7 @@ sub rewrite_escape_cond_backref_bug3028 {
 
     AuthUserFile => $auth_user_file,
     AuthGroupFile => $auth_group_file,
+    AuthOrder => 'mod_auth_file.c',
 
     IfModules => {
       'mod_delay.c' => {
@@ -2619,6 +2635,7 @@ sub rewrite_cond_rename_var_bug3029 {
 
     AuthUserFile => $auth_user_file,
     AuthGroupFile => $auth_group_file,
+    AuthOrder => 'mod_auth_file.c',
 
     IfModules => {
       'mod_delay.c' => {
@@ -2739,6 +2756,7 @@ sub rewrite_cond_or_flags_bug3269 {
 
     AuthUserFile => $auth_user_file,
     AuthGroupFile => $auth_group_file,
+    AuthOrder => 'mod_auth_file.c',
 
     IfModules => {
       'mod_delay.c' => {
@@ -2875,6 +2893,7 @@ sub rewrite_cond_nc_flags {
 
     AuthUserFile => $auth_user_file,
     AuthGroupFile => $auth_group_file,
+    AuthOrder => 'mod_auth_file.c',
 
     IfModules => {
       'mod_delay.c' => {
@@ -3020,6 +3039,7 @@ sub rewrite_map_fifo_bug3611 {
 
     AuthUserFile => $setup->{auth_user_file},
     AuthGroupFile => $setup->{auth_group_file},
+    AuthOrder => 'mod_auth_file.c',
 
     IfModules => {
       'mod_delay.c' => {
@@ -3168,6 +3188,7 @@ sub rewrite_rule_replaceall_backslash_with_slash {
 
     AuthUserFile => $auth_user_file,
     AuthGroupFile => $auth_group_file,
+    AuthOrder => 'mod_auth_file.c',
 
     IfModules => {
       'mod_delay.c' => {
@@ -3324,6 +3345,7 @@ sub rewrite_map_max_replace_bug3721 {
 
     AuthUserFile => $auth_user_file,
     AuthGroupFile => $auth_group_file,
+    AuthOrder => 'mod_auth_file.c',
 
     IfModules => {
       'mod_delay.c' => {
@@ -3464,6 +3486,7 @@ sub rewrite_cond_time_var_bug3673 {
 
     AuthUserFile => $setup->{auth_user_file},
     AuthGroupFile => $setup->{auth_group_file},
+    AuthOrder => 'mod_auth_file.c',
 
     IfModules => {
       'mod_delay.c' => {
@@ -3611,6 +3634,7 @@ sub rewrite_cond_time_year_var_bug3673 {
 
     AuthUserFile => $auth_user_file,
     AuthGroupFile => $auth_group_file,
+    AuthOrder => 'mod_auth_file.c',
 
     IfModules => {
       'mod_delay.c' => {
@@ -3766,6 +3790,7 @@ sub rewrite_cond_time_mon_var_bug3673 {
 
     AuthUserFile => $auth_user_file,
     AuthGroupFile => $auth_group_file,
+    AuthOrder => 'mod_auth_file.c',
 
     IfModules => {
       'mod_delay.c' => {
@@ -3921,6 +3946,7 @@ sub rewrite_cond_time_day_var_bug3673 {
 
     AuthUserFile => $auth_user_file,
     AuthGroupFile => $auth_group_file,
+    AuthOrder => 'mod_auth_file.c',
 
     IfModules => {
       'mod_delay.c' => {
@@ -4076,6 +4102,7 @@ sub rewrite_cond_time_wday_var_bug3673 {
 
     AuthUserFile => $auth_user_file,
     AuthGroupFile => $auth_group_file,
+    AuthOrder => 'mod_auth_file.c',
 
     IfModules => {
       'mod_delay.c' => {
@@ -4231,6 +4258,7 @@ sub rewrite_cond_time_hour_var_bug3673 {
 
     AuthUserFile => $auth_user_file,
     AuthGroupFile => $auth_group_file,
+    AuthOrder => 'mod_auth_file.c',
 
     IfModules => {
       'mod_delay.c' => {
@@ -4386,6 +4414,7 @@ sub rewrite_cond_time_min_var_bug3673 {
 
     AuthUserFile => $auth_user_file,
     AuthGroupFile => $auth_group_file,
+    AuthOrder => 'mod_auth_file.c',
 
     IfModules => {
       'mod_delay.c' => {
@@ -4541,6 +4570,7 @@ sub rewrite_cond_time_sec_var_bug3673 {
 
     AuthUserFile => $auth_user_file,
     AuthGroupFile => $auth_group_file,
+    AuthOrder => 'mod_auth_file.c',
 
     IfModules => {
       'mod_delay.c' => {
@@ -4695,6 +4725,7 @@ sub rewrite_rule_time_year_var_bug3673 {
 
     AuthUserFile => $auth_user_file,
     AuthGroupFile => $auth_group_file,
+    AuthOrder => 'mod_auth_file.c',
 
     IfModules => {
       'mod_delay.c' => {
@@ -4846,6 +4877,7 @@ sub rewrite_rule_time_mon_var_bug3673 {
 
     AuthUserFile => $auth_user_file,
     AuthGroupFile => $auth_group_file,
+    AuthOrder => 'mod_auth_file.c',
 
     IfModules => {
       'mod_delay.c' => {
@@ -4997,6 +5029,7 @@ sub rewrite_rule_time_day_var_bug3673 {
 
     AuthUserFile => $auth_user_file,
     AuthGroupFile => $auth_group_file,
+    AuthOrder => 'mod_auth_file.c',
 
     IfModules => {
       'mod_delay.c' => {
@@ -5148,6 +5181,7 @@ sub rewrite_rule_time_wday_var_bug3673 {
 
     AuthUserFile => $auth_user_file,
     AuthGroupFile => $auth_group_file,
+    AuthOrder => 'mod_auth_file.c',
 
     IfModules => {
       'mod_delay.c' => {
@@ -5299,6 +5333,7 @@ sub rewrite_rule_time_hour_var_bug3673 {
 
     AuthUserFile => $auth_user_file,
     AuthGroupFile => $auth_group_file,
+    AuthOrder => 'mod_auth_file.c',
 
     IfModules => {
       'mod_delay.c' => {
@@ -5450,6 +5485,7 @@ sub rewrite_rule_time_min_var_bug3673 {
 
     AuthUserFile => $auth_user_file,
     AuthGroupFile => $auth_group_file,
+    AuthOrder => 'mod_auth_file.c',
 
     IfModules => {
       'mod_delay.c' => {
@@ -5592,6 +5628,7 @@ sub rewrite_bug3767 {
 
     AuthUserFile => $auth_user_file,
     AuthGroupFile => $auth_group_file,
+    AuthOrder => 'mod_auth_file.c',
 
     IfModules => {
       'mod_delay.c' => {
@@ -5725,6 +5762,8 @@ sub rewrite_bug4017 {
 
     AuthUserFile => $auth_user_file,
     AuthGroupFile => $auth_group_file,
+    AuthOrder => 'mod_auth_file.c',
+
     DefaultRoot => '~',
 
     IfModules => {
@@ -5862,6 +5901,8 @@ sub rewrite_using_pcre_bug4017 {
 
     AuthUserFile => $auth_user_file,
     AuthGroupFile => $auth_group_file,
+    AuthOrder => 'mod_auth_file.c',
+
     DefaultRoot => '~',
 
     IfModules => {
@@ -5965,8 +6006,9 @@ sub rewrite_using_pcre_issue1300 {
 
     AuthUserFile => $setup->{auth_user_file},
     AuthGroupFile => $setup->{auth_group_file},
-    DefaultChdir => '~',
+    AuthOrder => 'mod_auth_file.c',
 
+    DefaultChdir => '~',
     DenyFilter => '\*.*/',
 
     IfModules => {

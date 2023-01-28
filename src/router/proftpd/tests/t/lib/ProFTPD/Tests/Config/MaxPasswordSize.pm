@@ -49,6 +49,7 @@ sub maxpasswordsize_ok {
 
     AuthUserFile => $setup->{auth_user_file},
     AuthGroupFile => $setup->{auth_group_file},
+    AuthOrder => 'mod_auth_file.c',
 
     MaxPasswordSize => $max_passwd_size,
 
@@ -120,6 +121,7 @@ sub maxpasswordsize_failed_too_long {
 
     AuthUserFile => $setup->{auth_user_file},
     AuthGroupFile => $setup->{auth_group_file},
+    AuthOrder => 'mod_auth_file.c',
 
     MaxPasswordSize => $max_passwd_size,
 

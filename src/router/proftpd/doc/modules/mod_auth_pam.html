@@ -223,6 +223,38 @@ only, and should be removed from any production configuration.
 <p><a name="FAQ">
 <b>Frequently Asked Questions</b><br>
 
+<p><a name="AuthPAMFailedToReleaseSession">
+<font color=red>Question</font>: I am using <code>mod_auth_pam</code>, and in
+the system logs, I see the following messages for my ProFTPD sessions:
+<pre>
+  proftpd[1654993]: pam_unix(proftpd:session): session opened for user paul by (uid=0)
+  proftpd[1654993]: pam_systemd(proftpd:session): Failed to release session: Access denied
+  proftpd[1654993]: pam_unix(proftpd:session): session closed for user paul
+</pre>
+Is this a bug?
+<p>
+<font color=blue>Answer</font>: No, it is not a bug.  It is a consequence of
+how ProFTPD manages root privileges, and (bad) assumptions made by the PAM API
+and libraries.
+
+<p>
+ProFTPD retains root privileges for a session only long enough to authenticate
+the user; this authentication <i>does</i> include opening a PAM session.  After
+authentication completes, ProFTPD drops root privileges completely by default.
+This means that when that session completes, and the <code>mod_auth_pam</code>
+module uses the PAM API to close the session, the process no longer has the
+root privileges that the underlying PAM libraries need/want, hence the
+"Access denied" error.
+
+<p>
+This log message is benign, because it only occurs when the session process
+is ending anyway.  You can change this by configuring ProFTPD to <em>not</em>
+drop root privileges after authentication -- although this is not recommended:
+<pre>
+  # Do not revoke root privileges after authentication
+  RootRevoke off
+</pre>
+
 <p><a name="AuthPAMAuthoritative">
 <font color=red>Question</font>: I need to use PAM for enforcing the
 handling of aged/expired passwords on my Unix system.  How do I make sure
@@ -246,7 +278,7 @@ authoritative.
 <p>
 <hr>
 <font size=2><b><i>
-&copy; Copyright 2017 The ProFTPD Project<br>
+&copy; Copyright 2017-2020 The ProFTPD Project<br>
  All Rights Reserved<br>
 </i></b></font>
 <hr>

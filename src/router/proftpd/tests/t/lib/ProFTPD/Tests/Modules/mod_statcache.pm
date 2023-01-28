@@ -109,6 +109,7 @@ sub statcache_file {
 
     AuthUserFile => $setup->{auth_user_file},
     AuthGroupFile => $setup->{auth_group_file},
+    AuthOrder => 'mod_auth_file.c',
 
     IfModules => {
       'mod_statcache.c' => {
@@ -327,6 +328,8 @@ sub statcache_file_chrooted {
 
     AuthUserFile => $auth_user_file,
     AuthGroupFile => $auth_group_file,
+    AuthOrder => 'mod_auth_file.c',
+
     DefaultRoot => '~',
 
     IfModules => {
@@ -547,6 +550,7 @@ sub statcache_file_tilde {
 
     AuthUserFile => $auth_user_file,
     AuthGroupFile => $auth_group_file,
+    AuthOrder => 'mod_auth_file.c',
 
     IfModules => {
       'mod_statcache.c' => {
@@ -760,6 +764,7 @@ sub statcache_dir {
 
     AuthUserFile => $auth_user_file,
     AuthGroupFile => $auth_group_file,
+    AuthOrder => 'mod_auth_file.c',
 
     IfModules => {
       'mod_statcache.c' => {
@@ -973,6 +978,8 @@ sub statcache_dir_chrooted {
 
     AuthUserFile => $auth_user_file,
     AuthGroupFile => $auth_group_file,
+    AuthOrder => 'mod_auth_file.c',
+
     DefaultRoot => '~',
 
     IfModules => {
@@ -1211,6 +1218,7 @@ sub statcache_rel_symlink_file {
 
     AuthUserFile => $auth_user_file,
     AuthGroupFile => $auth_group_file,
+    AuthOrder => 'mod_auth_file.c',
 
     IfModules => {
       'mod_statcache.c' => {
@@ -1455,6 +1463,8 @@ sub statcache_rel_symlink_file_chrooted {
 
     AuthUserFile => $auth_user_file,
     AuthGroupFile => $auth_group_file,
+    AuthOrder => 'mod_auth_file.c',
+
     DefaultRoot => '~',
 
     IfModules => {
@@ -1690,6 +1700,7 @@ sub statcache_rel_symlink_dir {
 
     AuthUserFile => $auth_user_file,
     AuthGroupFile => $auth_group_file,
+    AuthOrder => 'mod_auth_file.c',
 
     IfModules => {
       'mod_statcache.c' => {
@@ -1926,6 +1937,8 @@ sub statcache_rel_symlink_dir_chrooted {
 
     AuthUserFile => $auth_user_file,
     AuthGroupFile => $auth_group_file,
+    AuthOrder => 'mod_auth_file.c',
+
     DefaultRoot => '~',
 
     IfModules => {
@@ -2153,6 +2166,7 @@ sub statcache_config_max_age {
 
     AuthUserFile => $auth_user_file,
     AuthGroupFile => $auth_group_file,
+    AuthOrder => 'mod_auth_file.c',
 
     IfModules => {
       'mod_statcache.c' => {
@@ -2391,6 +2405,7 @@ sub statcache_config_capacity {
 
     AuthUserFile => $auth_user_file,
     AuthGroupFile => $auth_group_file,
+    AuthOrder => 'mod_auth_file.c',
 
     IfModules => {
       'mod_statcache.c' => {

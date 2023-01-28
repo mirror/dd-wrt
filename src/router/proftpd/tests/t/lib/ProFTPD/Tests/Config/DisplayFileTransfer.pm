@@ -92,6 +92,7 @@ sub displayfilexfer_abs_path {
 
     AuthUserFile => $auth_user_file,
     AuthGroupFile => $auth_group_file,
+    AuthOrder => 'mod_auth_file.c',
 
     DisplayFileTransfer => $xfer_file,
 
@@ -220,6 +221,7 @@ sub displayfilexfer_rel_path {
 
     AuthUserFile => $auth_user_file,
     AuthGroupFile => $auth_group_file,
+    AuthOrder => 'mod_auth_file.c',
 
     DisplayFileTransfer => $xfer_file,
 
@@ -369,6 +371,7 @@ sub displayfilexfer_chrooted {
 
     AuthUserFile => $auth_user_file,
     AuthGroupFile => $auth_group_file,
+    AuthOrder => 'mod_auth_file.c',
 
     DefaultRoot => '~',
     DisplayFileTransfer => $xfer_file,
@@ -495,6 +498,7 @@ sub displayfilexfer_multiline {
 
     AuthUserFile => $auth_user_file,
     AuthGroupFile => $auth_group_file,
+    AuthOrder => 'mod_auth_file.c',
 
     DisplayFileTransfer => $xfer_file,
 
@@ -597,6 +601,7 @@ sub displayfilexfer_non_path {
 
     AuthUserFile => $setup->{auth_user_file},
     AuthGroupFile => $setup->{auth_group_file},
+    AuthOrder => 'mod_auth_file.c',
 
     DisplayFileTransfer => $xfer_file,
 

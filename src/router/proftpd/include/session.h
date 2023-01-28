@@ -1,6 +1,6 @@
 /*
  * ProFTPD - FTP server daemon
- * Copyright (c) 2009-2016 The ProFTPD Project team
+ * Copyright (c) 2009-2022 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -119,5 +119,8 @@ int pr_session_set_idle(void);
 
 /* Sets the current protocol name. */
 int pr_session_set_protocol(const char *);
+
+/* Internal use only. */
+void session_set_connected(void);
 
 #endif /* PR_SESSION_H */

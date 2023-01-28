@@ -1,6 +1,6 @@
 /*
  * ProFTPD - mod_sftp 'keyboard-interactive' user authentication
- * Copyright (c) 2008-2015 TJ Saunders
+ * Copyright (c) 2008-2021 TJ Saunders
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -103,8 +103,8 @@ int sftp_auth_kbdint(struct ssh2_packet *pkt, cmd_rec *pass_cmd,
   /* XXX Is this too strict?  For PAM authentication, no -- but for S/Key or
    * one-time password authencation, maybe yes.
    */
-  if (strncmp(cipher_algo, "none", 5) == 0 ||
-      strncmp(mac_algo, "none", 5) == 0) {
+  if (strcmp(cipher_algo, "none") == 0 ||
+      strcmp(mac_algo, "none") == 0) {
 
     if (sftp_opts & SFTP_OPT_ALLOW_INSECURE_LOGIN) {
       (void) pr_log_writefile(sftp_logfd, MOD_SFTP_VERSION,

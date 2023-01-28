@@ -1,6 +1,6 @@
 /*
  * ProFTPD - FTP server daemon
- * Copyright (c) 2004-2016 The ProFTPD Project team
+ * Copyright (c) 2004-2021 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -26,6 +26,19 @@
 
 #ifndef PR_PARSER_H
 #define PR_PARSER_H
+
+typedef struct {
+  /* Parsed cmd_rec, dispatched to config handlers. */
+  cmd_rec *cmd;
+
+  /* Full line of configuration text. */
+  const char *text;
+
+  /* Source of the configuration text. */
+  const char *source_file;
+  unsigned int source_lineno;
+
+} pr_parsed_line_t;
 
 /* Prepares the parser, allocating any necessary internal resources from
  * the given pool.  If provided, parsed_servers will, after parsing is

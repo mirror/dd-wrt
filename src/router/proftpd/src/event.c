@@ -381,8 +381,6 @@ void pr_event_generate(const char *event, const void *event_data) {
   curr_event = NULL;
   curr_evl = NULL;
   curr_evh = NULL;
-
-  return;
 }
 
 void pr_event_dump(void (*dumpf)(const char *, ...)) {
@@ -417,6 +415,4 @@ void pr_event_dump(void (*dumpf)(const char *, ...)) {
       }
     }
   }
-
-  return;
 }

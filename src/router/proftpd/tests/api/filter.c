@@ -57,35 +57,35 @@ START_TEST (filter_parse_flags_test) {
   int res;
 
   res = pr_filter_parse_flags(NULL, NULL);
-  fail_unless(res < 0, "Failed to handle null arguments");
-  fail_unless(errno == EINVAL, "Failed to set errno to EINVAL");
+  ck_assert_msg(res < 0, "Failed to handle null arguments");
+  ck_assert_msg(errno == EINVAL, "Failed to set errno to EINVAL");
 
   res = pr_filter_parse_flags(p, NULL);
-  fail_unless(res < 0, "Failed to handle null arguments");
-  fail_unless(errno == EINVAL, "Failed to set errno to EINVAL");
+  ck_assert_msg(res < 0, "Failed to handle null arguments");
+  ck_assert_msg(errno == EINVAL, "Failed to set errno to EINVAL");
 
   res = pr_filter_parse_flags(NULL, flags_str);
-  fail_unless(res < 0, "Failed to handle null arguments");
-  fail_unless(errno == EINVAL, "Failed to set errno to EINVAL");
+  ck_assert_msg(res < 0, "Failed to handle null arguments");
+  ck_assert_msg(errno == EINVAL, "Failed to set errno to EINVAL");
 
   flags_str = "foo";
   res = pr_filter_parse_flags(p, flags_str);
-  fail_unless(res < 0, "Failed to handle badly formatted flags '%s'",
+  ck_assert_msg(res < 0, "Failed to handle badly formatted flags '%s'",
     flags_str);
-  fail_unless(errno == EINVAL, "Failed to set errno to EINVAL");
+  ck_assert_msg(errno == EINVAL, "Failed to set errno to EINVAL");
 
   flags_str = "[foo]";
   res = pr_filter_parse_flags(p, flags_str);
-  fail_unless(res == 0, "Expected %d, got %d", 0, res);
+  ck_assert_msg(res == 0, "Expected %d, got %d", 0, res);
 
   flags_str = "[NC]";
   res = pr_filter_parse_flags(p, flags_str);
-  fail_unless(res == REG_ICASE, "Expected REG_ICASE (%d), got %d", REG_ICASE,
+  ck_assert_msg(res == REG_ICASE, "Expected REG_ICASE (%d), got %d", REG_ICASE,
     res);
 
   flags_str = "[nocase]";
   res = pr_filter_parse_flags(p, flags_str);
-  fail_unless(res == REG_ICASE, "Expected REG_ICASE (%d), got %d", REG_ICASE,
+  ck_assert_msg(res == REG_ICASE, "Expected REG_ICASE (%d), got %d", REG_ICASE,
     res);
 }
 END_TEST
@@ -98,50 +98,50 @@ START_TEST (filter_allow_path_test) {
   const char *path = NULL;
 
   res = pr_filter_allow_path(NULL, NULL);
-  fail_unless(res < 0, "Failed to handle null arguments");
-  fail_unless(errno == EINVAL, "Failed to set errno to EINVAL");
+  ck_assert_msg(res < 0, "Failed to handle null arguments");
+  ck_assert_msg(errno == EINVAL, "Failed to set errno to EINVAL");
 
   mark_point();
   c = add_config_param_set(&set, "test", 1, "test");
-  fail_if(c == NULL, "Failed to add config param: %s", strerror(errno));
+  ck_assert_msg(c != NULL, "Failed to add config param: %s", strerror(errno));
 
   path = "/foo/bar";
   res = pr_filter_allow_path(set, path);
-  fail_unless(res == 0, "Failed to allow path '%s' with no configured filters",
+  ck_assert_msg(res == 0, "Failed to allow path '%s' with no configured filters",
     path);
 
   /* First, let's add a PathDenyFilter. */
   deny_pre = pr_regexp_alloc(NULL);
   res = pr_regexp_compile(deny_pre, "/bar$", 0);
-  fail_unless(res == 0, "Error compiling deny filter");
+  ck_assert_msg(res == 0, "Error compiling deny filter");
 
   c = add_config_param_set(&set, "PathDenyFilter", 1, deny_pre);
-  fail_if(c == NULL, "Failed to add config param: %s", strerror(errno));
+  ck_assert_msg(c != NULL, "Failed to add config param: %s", strerror(errno));
 
   mark_point();
   res = pr_filter_allow_path(set, path);
-  fail_unless(res == PR_FILTER_ERR_FAILS_DENY_FILTER,
+  ck_assert_msg(res == PR_FILTER_ERR_FAILS_DENY_FILTER,
     "Failed to reject path '%s' with matching PathDenyFilter", path);
 
   mark_point();
   path = "/foo/baz";
   res = pr_filter_allow_path(set, path);
-  fail_unless(res == 0,
+  ck_assert_msg(res == 0,
     "Failed to allow path '%s' with non-matching PathDenyFilter", path);
   pr_regexp_free(NULL, deny_pre);
 
   /* Now, let's add a PathAllowFilter. */
   allow_pre = pr_regexp_alloc(NULL);
   res = pr_regexp_compile(allow_pre, "/baz$", 0);
-  fail_unless(res == 0, "Error compiling allow filter");
+  ck_assert_msg(res == 0, "Error compiling allow filter");
 
   c = add_config_param_set(&set, "PathAllowFilter", 1, allow_pre);
-  fail_if(c == NULL, "Failed to add config param: %s", strerror(errno));
+  ck_assert_msg(c != NULL, "Failed to add config param: %s", strerror(errno));
 
   mark_point();
   path = "/foo/quxx";
   res = pr_filter_allow_path(set, path);
-  fail_unless(res == PR_FILTER_ERR_FAILS_ALLOW_FILTER,
+  ck_assert_msg(res == PR_FILTER_ERR_FAILS_ALLOW_FILTER,
     "Failed to allow path '%s' with matching PathAllowFilter", path);
   pr_regexp_free(NULL, allow_pre);
 }

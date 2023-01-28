@@ -1,7 +1,7 @@
 dnl ProFTPD - FTP server daemon
 dnl Copyright (c) 1997, 1998 Public Flood Software
 dnl Copyright (c) 1999, 2000 MacGyver aka Habeeb J. Dihu <macgyver@tos.net>
-dnl Copyright (c) 2001-2021 The ProFTPD Project team
+dnl Copyright (c) 2001-2022 The ProFTPD Project team
 dnl
 dnl This program is free software; you can redistribute it and/or modify
 dnl it under the terms of the GNU General Public License as published by
@@ -22,6 +22,7 @@ dnl Process this file with autoconf to produce a configure script.
 AC_INIT(include/conf.h)
 
 ac_core_modules="mod_core.o mod_xfer.o mod_rlimit.o mod_auth_unix.o mod_auth_file.o mod_auth.o mod_ls.o mod_log.o mod_site.o mod_delay.o mod_facts.o"
+
 ac_build_core_modules="modules/mod_core.o modules/mod_xfer.o modules/mod_rlimit.o modules/mod_auth_unix.o modules/mod_auth_file.o modules/mod_auth.o modules/mod_ls.o modules/mod_log.o modules/mod_site.o modules/mod_delay.o modules/mod_facts.o"
 
 dnl Get the OS type
@@ -87,7 +88,7 @@ if test $ac_cv_prog_gcc = no -a "$OSTYPE" = "-DHPUX10"; then
   CFLAGS="$CFLAGS -Ae"
 fi
 
-LDFLAGS="-L\$(top_srcdir)/lib -L\$(top_builddir)/lib $LDFLAGS"
+LDFLAGS="-Wl,-L\$(top_srcdir)/lib,-L\$(top_builddir)/lib $LDFLAGS"
 
 # AIX has issues with the -rdynamic linker flag.  How many different AIX
 # versions should we support here?
@@ -838,6 +839,12 @@ AC_ARG_ENABLE(ncurses,
     [disable use of ncurses (default=no)])
   ])
 
+AC_ARG_ENABLE(openssl-api-compat,
+  [AC_HELP_STRING(
+    [--disable-openssl-api-compat],
+    [disable defining OpenSSL API compatibility (default=no)])
+  ])
+
 AC_ARG_ENABLE(pcre,
   [AC_HELP_STRING(
     [--enable-pcre],
@@ -845,6 +852,10 @@ AC_ARG_ENABLE(pcre,
   )],
   [
     if test x"$enableval" = xyes ; then
+      if test x"$enable_pcre2" = xyes ; then
+        AC_MSG_ERROR([cannot support both PCRE and PCRE2 at the same time -- aborting])
+      fi
+
       AC_DEFINE(PR_USE_PCRE, 1, [Define if using PCRE support.])
       ac_build_addl_libs="$ac_build_addl_libs -lpcreposix -lpcre"
 
@@ -856,9 +867,6 @@ AC_ARG_ENABLE(pcre,
       # fiddle with CPPFLAGS, LDFLAGS
       CPPFLAGS="$CPPFLAGS $ac_build_addl_includes"
       LDFLAGS="$LDFLAGS $ac_build_addl_libdirs"
-
-      dnl Splice out -lsupp, since that library hasn't been built yet
-      LIBS=`echo "$LIBS" | sed -e 's/-lsupp//g'`;
       LIBS="$LIBS -lpcre -lpcreposix"
 
       AC_MSG_CHECKING([for PCRE's pcre_free_study])
@@ -887,7 +895,93 @@ AC_ARG_ENABLE(pcre,
         ]
       )
 
-      # restore CPPFLAGS, LDFLAGS
+      # restore CPPFLAGS, LDFLAGS, LIBS
+      CPPFLAGS="$saved_cppflags"
+      LDFLAGS="$saved_ldflags"
+      LIBS="$saved_libs"
+    fi
+  ])
+
+AC_ARG_ENABLE(pcre2,
+  [AC_HELP_STRING(
+    [--enable-pcre2],
+    [enable use of PCRE2 for POSIX regular expressions rather than the system library (default=no)],
+  )],
+  [
+    if test x"$enableval" = xyes ; then
+      if test x"$enable_pcre" = xyes ; then
+        AC_MSG_ERROR([cannot support both PCRE and PCRE2 at the same time -- aborting])
+      fi
+
+      AC_DEFINE(PR_USE_PCRE2, 1, [Define if using PCRE2 support.])
+      ac_build_addl_libs="$ac_build_addl_libs -lpcre2-posix -lpcre2-8"
+
+      # Check for other PCRE2-specific functionality here
+      saved_ldflags="$LDFLAGS"
+      saved_libs="$LIBS"
+      saved_cppflags="$CPPFLAGS"
+
+      # fiddle with CPPFLAGS, LDFLAGS
+      CPPFLAGS="$CPPFLAGS $ac_build_addl_includes"
+      LDFLAGS="$LDFLAGS $ac_build_addl_libdirs"
+      LIBS="$LIBS -lpcre2-8 -lpcre2-posix"
+
+      AC_MSG_CHECKING([for PCRE2's pcre2_jit_compile])
+      AC_TRY_LINK(
+        [ #ifdef HAVE_STDDEF_H
+          # include <stddef.h>
+          #endif
+          #ifdef HAVE_STDLIB_H
+          # include <stdlib.h>
+          #endif
+          #ifdef HAVE_SYS_TYPES_H
+          # include <sys/types.h>
+          #endif
+          #define PCRE2_CODE_UNIT_WIDTH 8
+          #include <pcre2.h>
+        ],
+        [
+          pcre2_code *code = NULL;
+          (void) pcre2_jit_compile(code, 0);
+        ],
+        [
+          AC_MSG_RESULT(yes)
+          AC_DEFINE(HAVE_PCRE2_PCRE2_JIT_COMPILE, 1, [Define if you have PCRE2's pcre2_jit_compile])
+        ],
+        [
+          AC_MSG_RESULT(no)
+        ]
+      )
+
+      AC_MSG_CHECKING([for PCRE2's POSIX wrappers])
+      AC_TRY_LINK(
+        [ #ifdef HAVE_STDDEF_H
+          # include <stddef.h>
+          #endif
+          #ifdef HAVE_STDLIB_H
+          # include <stdlib.h>
+          #endif
+          #ifdef HAVE_SYS_TYPES_H
+          # include <sys/types.h>
+          #endif
+          #define PCRE2_CODE_UNIT_WIDTH 8
+          #include <pcre2.h>
+          #include <pcre2posix.h>
+        ],
+        [
+          regex_t *re = NULL;
+          (void) pcre2_regcomp(re, NULL, 0);
+        ],
+        [
+          AC_MSG_RESULT(yes)
+          AC_DEFINE(HAVE_PCRE2_PCRE2_REGCOMP, 1, [Define if you have PCRE2's pcre2_regcomp])
+        ],
+        [
+          AC_MSG_RESULT(no)
+        ]
+      )
+
+      # restore CPPFLAGS, LDFLAGS, LIBS
       CPPFLAGS="$saved_cppflags"
       LDFLAGS="$saved_ldflags"
       LIBS="$saved_libs"
@@ -904,7 +998,7 @@ AC_ARG_ENABLE(redis,
       AC_CHECK_HEADER(hiredis/hiredis.h,
         [AC_DEFINE(HAVE_HIREDIS_HIREDIS_H, 1, [Define if hiredis.h is present.])
          AC_DEFINE(PR_USE_REDIS, 1, [Define if using Redis support.])
-      ])
+        ])
 
       # Check for the redisReconnect() function in Hiredis; earlier versions
       # did not have this.
@@ -915,9 +1009,6 @@ AC_ARG_ENABLE(redis,
       # fiddle with CPPFLAGS, LDFLAGS
       CPPFLAGS="$CPPFLAGS $ac_build_addl_includes"
       LDFLAGS="$LDFLAGS $ac_build_addl_libdirs"
-
-      dnl Splice out -lsupp, since that library hasn't been built yet
-      LIBS=`echo "$LIBS" | sed -e 's/-lsupp//g'`;
       LIBS="$LIBS -lhiredis"
 
       AC_MSG_CHECKING([for Hiredis' redisReconnect])
@@ -943,7 +1034,7 @@ AC_ARG_ENABLE(redis,
         ]
       )
 
-      # restore CPPFLAGS, LDFLAGS
+      # restore CPPFLAGS, LDFLAGS, LIBS
       CPPFLAGS="$saved_cppflags"
       LDFLAGS="$saved_ldflags"
       LIBS="$saved_libs"
@@ -973,6 +1064,9 @@ AC_ARG_ENABLE(openssl,
   ],
   [ if test x"$enableval" = xno ; then
       pr_use_openssl="no"
+
+    elif test x"$enableval" = xyes ; then
+      pr_use_openssl="yes"
     fi
   ])
 
@@ -1115,6 +1209,15 @@ AC_ARG_ENABLE(devel,
       if test `echo $enableval | grep -c coverage` = "1" ; then
         pr_devel_cflags="-DPR_DEVEL_COVERAGE --coverage $pr_devel_cflags"
         pr_devel_libs="--coverage $pr_devel_libs"
+      fi
+
+      if test `echo $enableval | grep -c fortify` = "1" ; then
+        pr_devel_cflags="-D_FORTIFY_SOURCE=2 $pr_devel_cflags"
+
+        # In order for `-D_FORTIFY_SOURCE=2` to work, we also need to
+        # disable some of the default --enable-devel flags, specifically `-O0`;
+        # we can use `-O2` instead.
+        pr_devel_cflags=`echo "$pr_devel_cflags" | sed -e 's/-O0/-O2/'`
       fi
 
       if test `echo $enableval | grep -c nodaemon` = "1" ; then
@@ -1711,7 +1814,7 @@ AC_CHECK_HEADERS(netinet/ip.h,,,
     ]
   ])
 
-AC_CHECK_HEADERS(netinet/tcp.h arpa/inet.h idna.h libintl.h)
+AC_CHECK_HEADERS(netinet/tcp.h arpa/inet.h idn2.h idna.h libintl.h)
 AC_CHECK_HEADERS(regex.h sys/stat.h errno.h sys/termios.h sys/termio.h)
 AC_CHECK_HEADERS(sys/statfs.h sys/statvfs.h sys/un.h sys/vfs.h sys/select.h)
 AC_CHECK_HEADERS(termios.h dirent.h ndir.h sys/ndir.h sys/dir.h vmsdir.h)
@@ -1744,6 +1847,12 @@ AC_TYPE_PID_T
 AC_TYPE_SIZE_T
 AC_TYPE_MODE_T
 AC_TYPE_OFF_T
+AC_CHECK_TYPE(u_int8_t,
+  [AC_DEFINE(HAVE_U_INT8_T, 1, [Define if you have the u_int8_t type])])
+AC_CHECK_TYPE(u_int16_t,
+  [AC_DEFINE(HAVE_U_INT16_T, 1, [Define if you have the u_int16_t type])])
+AC_CHECK_TYPE(u_int32_t,
+  [AC_DEFINE(HAVE_U_INT32_T, 1, [Define if you have the u_int32_t type])])
 AC_TYPE_GETGROUPS
 
 dnl Check the function signature of getgrouplist()
@@ -1942,6 +2051,30 @@ AC_TRY_LINK(
   [
     AC_MSG_RESULT(yes)
     AC_DEFINE(HAVE_ICONV, 1, [Define if you have iconv])
+  ],
+  [
+    AC_MSG_RESULT(no)
+  ]
+)
+
+AC_MSG_CHECKING([for idn2_to_ascii_8z])
+AC_TRY_COMPILE(
+  [
+    #include <sys/types.h>
+    #ifdef HAVE_IDN2_H
+    #  include <idn2.h>
+    #endif
+  ],
+  [
+    int flags = 0, res = 0;
+    const char *input = NULL;
+    char *output = NULL;
+    res = idn2_to_ascii_8z(input, &output, flags);
+  ],
+  [
+    AC_MSG_RESULT(yes)
+    AC_DEFINE(HAVE_IDN2_TO_ASCII_8Z, 1, [Define if you have idn2_to_ascii_8z])
+    MAIN_LIBS="$MAIN_LIBS -lidn2"
   ],
   [
     AC_MSG_RESULT(no)
@@ -2832,7 +2965,11 @@ if test x"$enable_nonblocking_log_open" != xno; then
   AC_DEFINE(PR_USE_NONBLOCKING_LOG_OPEN, 1, [Define if using nonblocking open of log files])
 fi
 
-if test x"$enable_ident" == xyes ; then
+if test x"$enable_openssl_api_compat" != xno; then
+  AC_DEFINE(PR_USE_OPENSSL_API_COMPAT, 1, [Define if using OPENSSL_API_COMPAT])
+fi
+
+if test x"$enable_ident" = xyes ; then
   ac_static_modules="mod_ident.o $ac_static_modules"
   ac_build_static_modules="modules/mod_ident.o $ac_build_static_modules"
 fi
@@ -2980,9 +3117,6 @@ AC_TRY_RUN(
   AC_MSG_RESULT(no); AC_DEFINE(HAVE_LU, 1, [Define if you have %lu support]),
   AC_MSG_RESULT(cross-compiling); AC_DEFINE(HAVE_LU, 1, [Define if you have %lu support])
 )
-
-dnl Add the proftpd support library
-LIBS="-lsupp $LIBS"
 
 dnl Module handling.
 ac_shared_module_dirs=
@@ -3144,9 +3278,6 @@ if test x"$pr_use_mysql" = xyes; then
   dnl Fiddle with CPPFLAGS, LDFLAGS
   CPPFLAGS="$CPPFLAGS $ac_build_addl_includes"
   LDFLAGS="$LDFLAGS $ac_build_addl_libdirs"
-
-  dnl Splice out -lsupp FROM LIBS, since that library hasn't been built yet
-  LIBS=`echo "$LIBS" | sed -e 's/-lsupp//g'`;
   LIBS="$LIBS -lm -lmysqlclient -lz"
 
   AC_MSG_CHECKING([for mysql_get_option])
@@ -3341,7 +3472,7 @@ if test x"$pr_use_mysql" = xyes; then
     ]
   )
 
-  dnl Restore CPPFLAGS, LDFLAGS
+  dnl Restore CPPFLAGS, LDFLAGS, LIBS
   CPPFLAGS="$saved_cppflags"
   LDFLAGS="$saved_ldflags"
   LIBS="$saved_libs"
@@ -3353,9 +3484,6 @@ if test x"$pr_use_openssl" = xyes; then
 
   AC_MSG_CHECKING([whether OpenSSL is compiled with FIPS support])
   saved_libs="$LIBS"
-
-  dnl Splice out -lsupp, since that library hasn't been built yet
-  LIBS=`echo "$LIBS" | sed -e 's/-lsupp//g'`;
   LIBS="$LIBS -lcrypto"
 
   AC_TRY_RUN(
@@ -3378,9 +3506,6 @@ if test x"$pr_use_openssl" = xyes; then
 
   AC_MSG_CHECKING([whether linking with OpenSSL functions succeeds])
   saved_libs="$LIBS"
-
-  dnl Splice out -lsupp, since that library hasn't been built yet
-  LIBS=`echo "$LIBS" | sed -e 's/-lsupp//g'`;
   LIBS="-lcrypto $LIBS"
 
   AC_TRY_LINK(
@@ -3418,9 +3543,6 @@ if test x"$pr_use_openssl" = xyes; then
 
       AC_MSG_CHECKING([whether linking with OpenSSL functions requires -lz])
       saved_libs="$LIBS"
-
-      dnl Splice out -lsupp, since that library hasn't been built yet
-      LIBS=`echo "$LIBS" | sed -e 's/-lsupp//g'`;
       LIBS="-lcrypto -lz $LIBS"
 
       AC_TRY_LINK(
@@ -3448,9 +3570,6 @@ if test x"$pr_use_openssl" = xyes; then
 
   AC_MSG_CHECKING([whether OpenSSL has complete ECC support])
   saved_libs="$LIBS"
-
-  dnl Splice out -lsupp, since that library hasn't been built yet
-  LIBS=`echo "$LIBS" | sed -e 's/-lsupp//g'`;
   LIBS="-lcrypto $LIBS"
 
   AC_TRY_LINK(
@@ -3481,9 +3600,6 @@ if test x"$pr_use_openssl" = xyes; then
 
   AC_MSG_CHECKING([whether OpenSSL has EVP_CipherInit_ex support])
   saved_libs="$LIBS"
-
-  dnl Splice out -lsupp, since that library hasn't been built yet
-  LIBS=`echo "$LIBS" | sed -e 's/-lsupp//g'`;
   LIBS="-lcrypto $LIBS"
 
   AC_TRY_LINK(
@@ -3505,9 +3621,6 @@ if test x"$pr_use_openssl" = xyes; then
 
   AC_MSG_CHECKING([whether OpenSSL has ALPN support])
   saved_libs="$LIBS"
-
-  dnl Splice out -lsupp, since that library hasn't been built yet
-  LIBS=`echo "$LIBS" | sed -e 's/-lsupp//g'`;
   LIBS="-lcrypto -lssl $LIBS"
 
   AC_TRY_LINK(
@@ -3536,9 +3649,6 @@ if test x"$pr_use_openssl" = xyes; then
 
   AC_MSG_CHECKING([whether OpenSSL has NPN support])
   saved_libs="$LIBS"
-
-  dnl Splice out -lsupp, since that library hasn't been built yet
-  LIBS=`echo "$LIBS" | sed -e 's/-lsupp//g'`;
   LIBS="-lcrypto -lssl $LIBS"
 
   AC_TRY_LINK(
@@ -3567,9 +3677,6 @@ if test x"$pr_use_openssl" = xyes; then
 
   AC_MSG_CHECKING([whether OpenSSL has OCSP support])
   saved_libs="$LIBS"
-
-  dnl Splice out -lsupp, since that library hasn't been built yet
-  LIBS=`echo "$LIBS" | sed -e 's/-lsupp//g'`;
   LIBS="-lcrypto -lssl $LIBS"
 
   AC_TRY_LINK(
@@ -3600,9 +3707,6 @@ if test x"$pr_use_openssl" = xyes; then
 
   AC_MSG_CHECKING([whether OpenSSL has SSL num tickets support])
   saved_libs="$LIBS"
-
-  dnl Splice out -lsupp, since that library hasn't been built yet
-  LIBS=`echo "$LIBS" | sed -e 's/-lsupp//g'`;
   LIBS="-lcrypto -lssl $LIBS"
 
   AC_TRY_LINK(
@@ -3624,9 +3728,6 @@ if test x"$pr_use_openssl" = xyes; then
 
   AC_MSG_CHECKING([whether OpenSSL has SSL read ahead support])
   saved_libs="$LIBS"
-
-  dnl Splice out -lsupp, since that library hasn't been built yet
-  LIBS=`echo "$LIBS" | sed -e 's/-lsupp//g'`;
   LIBS="-lcrypto -lssl $LIBS"
 
   AC_TRY_LINK(
@@ -3648,9 +3749,6 @@ if test x"$pr_use_openssl" = xyes; then
 
   AC_MSG_CHECKING([whether OpenSSL has SSL session ID context set support])
   saved_libs="$LIBS"
-
-  dnl Splice out -lsupp, since that library hasn't been built yet
-  LIBS=`echo "$LIBS" | sed -e 's/-lsupp//g'`;
   LIBS="-lcrypto -lssl $LIBS"
 
   AC_TRY_LINK(
@@ -3672,9 +3770,6 @@ if test x"$pr_use_openssl" = xyes; then
 
   AC_MSG_CHECKING([whether OpenSSL has SSL session ticket callback support])
   saved_libs="$LIBS"
-
-  dnl Splice out -lsupp, since that library hasn't been built yet
-  LIBS=`echo "$LIBS" | sed -e 's/-lsupp//g'`;
   LIBS="-lcrypto -lssl $LIBS"
 
   AC_TRY_LINK(
@@ -3729,6 +3824,28 @@ if test x"$pr_use_openssl" = xyes; then
   if test x"$pr_use_pthread_for_openssl" = xyes ; then
     LIBS="$LIBS -pthread"
   fi
+
+  if test x"$enable_redis" = xyes; then
+    AC_CHECK_HEADER(hiredis/hiredis_ssl.h,
+      [AC_DEFINE(HAVE_HIREDIS_HIREDIS_SSL_H, 1, [Define if hiredis_ssl.h is present.])
+      ],
+      [],
+      [
+        #ifdef HAVE_HIREDIS_HIREDIS_H
+        # include <hiredis/hiredis.h>
+        #endif
+      ]
+    )
+
+    saved_libs="$LIBS"
+    LIBS="-lcrypto -lssl $LIBS"
+    AC_CHECK_LIB(hiredis_ssl, redisInitiateSSL,
+      [AC_DEFINE(HAVE_HIREDIS_REDISINITIATESSL, 1, [Define if hiredis_ssl has redisInitiateSSL function.])
+       saved_libs="$saved_libs -lhiredis_ssl"
+      ])
+
+    LIBS="$saved_libs"
+  fi
 fi
 
 if test x"$pr_use_postgres" = xyes; then
@@ -3740,9 +3857,6 @@ if test x"$pr_use_postgres" = xyes; then
   # fiddle with CPPFLAGS, LDFLAGS
   CPPFLAGS="$CPPFLAGS $ac_build_addl_includes"
   LDFLAGS="$LDFLAGS $ac_build_addl_libdirs"
-
-  dnl Splice out -lsupp, since that library hasn't been built yet
-  LIBS=`echo "$LIBS" | sed -e 's/-lsupp//g'`;
   LIBS="$LIBS -lm -lpq"
 
   AC_MSG_CHECKING([for Postgres's PQescapeStringConn])
@@ -3828,7 +3942,7 @@ if test x"$pr_use_postgres" = xyes; then
     ]
   )
 
-  # restore CPPFLAGS, LDFLAGS
+  # restore CPPFLAGS, LDFLAGS, LIBS
   CPPFLAGS="$saved_cppflags"
   LDFLAGS="$saved_ldflags"
   LIBS="$saved_libs"
@@ -4054,11 +4168,16 @@ LIBRARIES="$ac_build_addl_libs"
 SHARED_MODULE_DIRS="$ac_shared_module_dirs"
 if test ! -z "$ac_shared_modules" ; then
   SHARED_MODULE_OBJS="$ac_shared_modules"
+  shared_module_sources=`echo "$ac_shared_modules" | sed -e "s/\.o/\.c/g"`
+  SHARED_MODULE_SRCS="$shared_modules_sources"
 else
   SHARED_MODULE_OBJS="\"\""
+  SHARED_MODULE_SRCS="\"\""
 fi
 STATIC_MODULE_DIRS="$ac_static_module_dirs"
 STATIC_MODULE_OBJS="$ac_core_modules $ac_static_modules"
+static_module_sources=`echo "$ac_core_modules $ac_static_modules" | sed -e "s/\.o/\.c/g"`
+STATIC_MODULE_SRCS="$static_module_sources"
 BUILD_SHARED_MODULE_OBJS="$ac_build_shared_modules"
 BUILD_STATIC_MODULE_ARCHIVES="$ac_build_static_module_archives"
 BUILD_STATIC_MODULE_OBJS="$ac_build_core_modules $ac_build_static_modules"
@@ -4118,6 +4237,7 @@ if test x"$devel" = xyes ; then
     dnl options.  Check if they are supported.  They will be added to
     dnl CFLAGS if supported.
     PR_CHECK_CC_OPT(Wcomment)
+    PR_CHECK_CC_OPT(Wconstant-conversion)
     PR_CHECK_CC_OPT(Wdangling-else)
     PR_CHECK_CC_OPT(Wdeclaration-after-statement)
     PR_CHECK_CC_OPT(Wduplicated-branches)
@@ -4188,8 +4308,10 @@ AC_SUBST(MODULE_LDFLAGS)
 AC_SUBST(SHARED_MODULE_DIRS)
 AC_SUBST(SHARED_MODULE_LIBS)
 AC_SUBST(SHARED_MODULE_OBJS)
+AC_SUBST(SHARED_MODULE_SRCS)
 AC_SUBST(STATIC_MODULE_DIRS)
 AC_SUBST(STATIC_MODULE_OBJS)
+AC_SUBST(STATIC_MODULE_SRCS)
 AC_SUBST(BUILD_SHARED_MODULE_OBJS)
 AC_SUBST(BUILD_STATIC_MODULE_ARCHIVES)
 AC_SUBST(BUILD_STATIC_MODULE_OBJS)

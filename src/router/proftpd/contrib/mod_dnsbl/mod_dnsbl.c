@@ -37,8 +37,6 @@
 #include <arpa/nameser.h>
 #include <resolv.h>
 
-#define DNSBL_REASON_MAX_LEN		256
-
 module dnsbl_module;
 
 static int dnsbl_engine = FALSE;

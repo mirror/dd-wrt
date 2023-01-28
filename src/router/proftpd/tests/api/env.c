@@ -46,33 +46,33 @@ START_TEST (env_get_test) {
   char *res;
 
   res = pr_env_get(NULL, NULL);
-  fail_unless(res == NULL, "Failed to handle null arguments");
-  fail_unless(errno == EINVAL, "Failed to set errno to EINVAL");
+  ck_assert_msg(res == NULL, "Failed to handle null arguments");
+  ck_assert_msg(errno == EINVAL, "Failed to set errno to EINVAL");
 
   res = pr_env_get(p, NULL);
-  fail_unless(res == NULL, "Failed to handle null arguments");
-  fail_unless(errno == EINVAL, "Failed to set errno to EINVAL");
+  ck_assert_msg(res == NULL, "Failed to handle null arguments");
+  ck_assert_msg(errno == EINVAL, "Failed to set errno to EINVAL");
 
   res = pr_env_get(NULL, key);
-  fail_unless(res == NULL, "Failed to handle null arguments");
-  fail_unless(errno == EINVAL, "Failed to set errno to EINVAL");
+  ck_assert_msg(res == NULL, "Failed to handle null arguments");
+  ck_assert_msg(errno == EINVAL, "Failed to set errno to EINVAL");
 
 #if defined(HAVE_GETENV)
   pr_env_unset(p, key);
 
   res = pr_env_get(p, key);
-  fail_unless(res == NULL, "Unexpectedly found value '%s' for key '%s'",
+  ck_assert_msg(res == NULL, "Unexpectedly found value '%s' for key '%s'",
     res, key);
 
   /* XXX PATH should always be set in the environment, right? */
   res = pr_env_get(p, "PATH");
-  fail_unless(res != NULL, "Failed to get value for 'PATH': %s",
+  ck_assert_msg(res != NULL, "Failed to get value for 'PATH': %s",
     strerror(errno));
 
 #else
   res = pr_env_get(p, key);
-  fail_unless(errno == ENOSYS, "Failed to set errno to ENOSYS");
-  fail_unless(res == NULL);
+  ck_assert_msg(errno == ENOSYS, "Failed to set errno to ENOSYS");
+  ck_assert_msg(res == NULL);
 #endif
 }
 END_TEST
@@ -83,38 +83,38 @@ START_TEST (env_set_test) {
   int res;
  
   res = pr_env_set(NULL, NULL, NULL);
-  fail_unless(res == -1, "Failed to handle null arguments");
-  fail_unless(errno == EINVAL, "Failed to set errno to EINVAL");
+  ck_assert_msg(res == -1, "Failed to handle null arguments");
+  ck_assert_msg(errno == EINVAL, "Failed to set errno to EINVAL");
 
   res = pr_env_set(p, NULL, NULL);
-  fail_unless(res == -1, "Failed to handle null arguments");
-  fail_unless(errno == EINVAL, "Failed to set errno to EINVAL");
+  ck_assert_msg(res == -1, "Failed to handle null arguments");
+  ck_assert_msg(errno == EINVAL, "Failed to set errno to EINVAL");
 
   res = pr_env_set(NULL, key, NULL);
-  fail_unless(res == -1, "Failed to handle null arguments");
-  fail_unless(errno == EINVAL, "Failed to set errno to EINVAL");
+  ck_assert_msg(res == -1, "Failed to handle null arguments");
+  ck_assert_msg(errno == EINVAL, "Failed to set errno to EINVAL");
 
   res = pr_env_set(NULL, NULL, value);
-  fail_unless(res == -1, "Failed to handle null arguments");
-  fail_unless(errno == EINVAL, "Failed to set errno to EINVAL");
+  ck_assert_msg(res == -1, "Failed to handle null arguments");
+  ck_assert_msg(errno == EINVAL, "Failed to set errno to EINVAL");
 
   res = pr_env_set(p, key, NULL);
-  fail_unless(res == -1, "Failed to handle null arguments");
-  fail_unless(errno == EINVAL, "Failed to set errno to EINVAL");
+  ck_assert_msg(res == -1, "Failed to handle null arguments");
+  ck_assert_msg(errno == EINVAL, "Failed to set errno to EINVAL");
 
   res = pr_env_set(p, NULL, value);
-  fail_unless(res == -1, "Failed to handle null arguments");
-  fail_unless(errno == EINVAL, "Failed to set errno to EINVAL");
+  ck_assert_msg(res == -1, "Failed to handle null arguments");
+  ck_assert_msg(errno == EINVAL, "Failed to set errno to EINVAL");
 
   res = pr_env_set(NULL, key, value);
-  fail_unless(res == -1, "Failed to handle null arguments");
-  fail_unless(errno == EINVAL, "Failed to set errno to EINVAL");
+  ck_assert_msg(res == -1, "Failed to handle null arguments");
+  ck_assert_msg(errno == EINVAL, "Failed to set errno to EINVAL");
 
   res = pr_env_set(p, key, value);
-  fail_unless(res == 0, "Failed to handle set '%s': %s", key, strerror(errno));
+  ck_assert_msg(res == 0, "Failed to handle set '%s': %s", key, strerror(errno));
 
   v = pr_env_get(p, key);
-  fail_unless(strcmp(v, value) == 0, "Expected '%s', got '%s'", value, v);
+  ck_assert_msg(strcmp(v, value) == 0, "Expected '%s', got '%s'", value, v);
 }
 END_TEST
 
@@ -124,33 +124,33 @@ START_TEST (env_unset_test) {
   int res;
 
   res = pr_env_unset(NULL, NULL);
-  fail_unless(res == -1, "Failed to handle null arguments");
-  fail_unless(errno == EINVAL, "Failed to set errno to EINVAL");
+  ck_assert_msg(res == -1, "Failed to handle null arguments");
+  ck_assert_msg(errno == EINVAL, "Failed to set errno to EINVAL");
 
   res = pr_env_unset(p, NULL);
-  fail_unless(res == -1, "Failed to handle null arguments");
-  fail_unless(errno == EINVAL, "Failed to set errno to EINVAL");
+  ck_assert_msg(res == -1, "Failed to handle null arguments");
+  ck_assert_msg(errno == EINVAL, "Failed to set errno to EINVAL");
 
   res = pr_env_unset(NULL, key);
-  fail_unless(res == -1, "Failed to handle null arguments");
-  fail_unless(errno == EINVAL, "Failed to set errno to EINVAL");
+  ck_assert_msg(res == -1, "Failed to handle null arguments");
+  ck_assert_msg(errno == EINVAL, "Failed to set errno to EINVAL");
 
   res = pr_env_set(p, key, value);
-  fail_unless(res == 0, "Failed to set '%s': %s", key, strerror(errno));
+  ck_assert_msg(res == 0, "Failed to set '%s': %s", key, strerror(errno));
 
   v = pr_env_get(p, key);
-  fail_unless(strcmp(v, value) == 0, "Expected '%s', got '%s'", value, v);
+  ck_assert_msg(strcmp(v, value) == 0, "Expected '%s', got '%s'", value, v);
 
 #if defined(HAVE_UNSETENV)
   res = pr_env_unset(p, key);
-  fail_unless(res == 0, "Failed to unset '%s': %s", key, strerror(errno));
+  ck_assert_msg(res == 0, "Failed to unset '%s': %s", key, strerror(errno));
 
   v = pr_env_get(p, key);
-  fail_unless(v == NULL, "Expected null, got '%s'", v);
+  ck_assert_msg(v == NULL, "Expected null, got '%s'", v);
 #else
   res = pr_env_unset(p, key);
-  fail_unless(errno == ENOSYS, "Failed to set errno to ENOSYS");
-  fail_unless(res == -1);
+  ck_assert_msg(errno == ENOSYS, "Failed to set errno to ENOSYS");
+  ck_assert_msg(res == -1);
 #endif
 }
 END_TEST

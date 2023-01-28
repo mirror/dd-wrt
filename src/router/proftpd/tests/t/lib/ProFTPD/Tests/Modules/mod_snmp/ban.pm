@@ -322,6 +322,7 @@ sub snmp_ban_v1_get_conn_info {
 
     AuthUserFile => $auth_user_file,
     AuthGroupFile => $auth_group_file,
+    AuthOrder => 'mod_auth_file.c',
 
     MaxLoginAttempts => 2,
 
@@ -581,6 +582,7 @@ sub snmp_ban_v1_get_ban_info {
 
     AuthUserFile => $auth_user_file,
     AuthGroupFile => $auth_group_file,
+    AuthOrder => 'mod_auth_file.c',
 
     MaxClientsPerHost => 1,
 

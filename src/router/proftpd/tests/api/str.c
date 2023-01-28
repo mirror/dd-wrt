@@ -1,6 +1,6 @@
 /*
  * ProFTPD - FTP server testsuite
- * Copyright (c) 2008-2017 The ProFTPD Project team
+ * Copyright (c) 2008-2021 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -48,60 +48,65 @@ START_TEST (sstrncpy_test) {
 
   len = 0;
   res = sstrncpy(NULL, NULL, len);
-  fail_unless(res == -1, "Failed to handle null arguments");
+  ck_assert_msg(res == -1, "Failed to handle null arguments");
 
   dst = "";
   res = sstrncpy(dst, "foo", 0);
-  fail_unless(res == 0, "Failed to handle zero length");
+  ck_assert_msg(res == 0, "Failed to handle zero length");
 
   dst = pcalloc(p, sz);
   memset(dst, 'A', sz);
 
   len = 1;
   res = sstrncpy(dst, NULL, len);
-  fail_unless(res == -1, "Failed to handle null arguments");
+  ck_assert_msg(res == -1, "Failed to handle null arguments");
 
   ok = "Therefore, all progress depends on the unreasonable man";
 
   mark_point();
   res = sstrncpy(ok, ok, 1);
-  fail_unless(res == 1, "Expected result 1, got %d", len, res);
+  ck_assert_msg(res == 1, "Expected result 1, got %d", res);
 
   mark_point();
   memset(dst, 'A', sz);
   len = 1;
 
   res = sstrncpy(dst, ok, len);
-  fail_unless((size_t) res <= len, "Expected result %d, got %d", len, res);
-  fail_unless(strlen(dst) == (len - 1), "Expected len %u, got len %u", len - 1,
-    strlen(dst));
-  fail_unless(dst[len-1] == '\0', "Expected NUL, got '%c'", dst[len-1]);
+  ck_assert_msg((size_t) res <= len, "Expected result %lu, got %d",
+    (unsigned long)len, res);
+  ck_assert_msg(strlen(dst) == (len - 1), "Expected len %lu, got len %lu",
+    (unsigned long)len - 1, (unsigned long)strlen(dst));
+  ck_assert_msg(dst[len-1] == '\0', "Expected NUL, got '%c'", dst[len-1]);
 
   memset(dst, 'A', sz);
   len = 7;
 
   res = sstrncpy(dst, ok, len);
-  fail_unless((size_t) res <= len, "Expected result %d, got %d", len, res);
-  fail_unless(strlen(dst) == (len - 1), "Expected len %u, got len %u", len - 1,
-    strlen(dst));
-  fail_unless(dst[len-1] == '\0', "Expected NUL, got '%c'", dst[len-1]);
+  ck_assert_msg((size_t) res <= len, "Expected result %lu, got %d",
+    (unsigned long)len, res);
+  ck_assert_msg(strlen(dst) == (len - 1), "Expected len %lu, got len %lu",
+    (unsigned long)len - 1, (unsigned long)strlen(dst));
+  ck_assert_msg(dst[len-1] == '\0', "Expected NUL, got '%c'", dst[len-1]);
 
   memset(dst, 'A', sz);
   len = sz;
 
   res = sstrncpy(dst, ok, len);
-  fail_unless((size_t) res <= len, "Expected result %d, got %d", len, res);
-  fail_unless(strlen(dst) == (len - 1), "Expected len %u, got len %u", len - 1,
-    strlen(dst));
-  fail_unless(dst[len-1] == '\0', "Expected NUL, got '%c'", dst[len-1]);
+  ck_assert_msg((size_t) res <= len, "Expected result %lu, got %d",
+    (unsigned long)len, res);
+  ck_assert_msg(strlen(dst) == (len - 1), "Expected len %lu, got len %lu",
+    (unsigned long)len - 1, (unsigned long)strlen(dst));
+  ck_assert_msg(dst[len-1] == '\0', "Expected NUL, got '%c'", dst[len-1]);
 
   memset(dst, 'A', sz);
   len = sz;
 
   res = sstrncpy(dst, "", len);
-  fail_unless((size_t) res <= len, "Expected result %d, got %d", len, res);
-  fail_unless(strlen(dst) == 0, "Expected len %u, got len %u", 0, strlen(dst));
-  fail_unless(*dst == '\0', "Expected NUL, got '%c'", *dst);
+  ck_assert_msg((size_t) res <= len, "Expected result %lu, got %d",
+    (unsigned long)len, res);
+  ck_assert_msg(strlen(dst) == 0, "Expected len %u, got len %lu", 0,
+    (unsigned long)strlen(dst));
+  ck_assert_msg(*dst == '\0', "Expected NUL, got '%c'", *dst);
 }
 END_TEST
 
@@ -110,35 +115,35 @@ START_TEST (sstrcat_test) {
   char c = 'A', src[1024], dst[1024], *res;
 
   res = sstrcat(dst, src, 0);
-  fail_unless(res == NULL, "Non-null result for zero-length strcat");
+  ck_assert_msg(res == NULL, "Non-null result for zero-length strcat");
 
   src[0] = 'f';
   src[1] = '\0';
   dst[0] = 'e';
   dst[1] = '\0';
   res = sstrcat(dst, src, 1);
-  fail_unless(res == dst, "Returned wrong destination buffer");
+  ck_assert_msg(res == dst, "Returned wrong destination buffer");
 
   /* In this case, we told sstrcat() that dst is len 1, which means that
    * sstrcat() should set dst[0] to NUL.
    */
-  fail_unless(dst[0] == 0, "Failed to terminate destination buffer");
+  ck_assert_msg(dst[0] == 0, "Failed to terminate destination buffer");
 
   src[0] = 'f';
   src[1] = '\0';
   dst[0] = 'e';
   dst[1] = '\0';
   res = sstrcat(dst, src, 2);
-  fail_unless(res == dst, "Returned wrong destination buffer");
+  ck_assert_msg(res == dst, "Returned wrong destination buffer");
 
   /* In this case, we told sstrcat() that dst is len 2, which means that
    * sstrcat() should preserve the value at 0, and set dst[1] to NUL.
    */
-  fail_unless(dst[0] == 'e',
+  ck_assert_msg(dst[0] == 'e',
     "Failed to preserve destination buffer (expected '%c' at index 0, "
     "got '%c')", 'e', dst[0]);
 
-  fail_unless(dst[1] == 0, "Failed to terminate destination buffer");
+  ck_assert_msg(dst[1] == 0, "Failed to terminate destination buffer");
 
   mark_point();
   src[0] = 'f';
@@ -146,20 +151,20 @@ START_TEST (sstrcat_test) {
   dst[0] = 'e';
   dst[1] = '\0';
   res = sstrcat(dst, src, 3);
-  fail_unless(res == dst, "Returned wrong destination buffer");
+  ck_assert_msg(res == dst, "Returned wrong destination buffer");
 
   mark_point();
-  fail_unless(dst[0] == 'e',
+  ck_assert_msg(dst[0] == 'e',
     "Failed to preserve destination buffer (expected '%c' at index 0, "
     "got '%c')", 'e', dst[0]);
 
   mark_point();
-  fail_unless(dst[1] == 'f',
+  ck_assert_msg(dst[1] == 'f',
     "Failed to copy source buffer (expected '%c' at index 1, got '%c')",
     'f', dst[1]);
 
   mark_point();
-  fail_unless(dst[2] == 0, "Failed to terminate destination buffer");
+  ck_assert_msg(dst[2] == 0, "Failed to terminate destination buffer");
 
   mark_point();
   memset(src, c, sizeof(src)-1);
@@ -175,20 +180,20 @@ START_TEST (sstrcat_test) {
   res = sstrcat(dst, src, sizeof(dst));
 
   mark_point();
-  fail_unless(res == dst, "Returned wrong destination buffer");
+  ck_assert_msg(res == dst, "Returned wrong destination buffer");
 
   mark_point();
-  fail_unless(dst[sizeof(dst)-1] == 0,
+  ck_assert_msg(dst[sizeof(dst)-1] == 0,
     "Failed to terminate destination buffer");
 
   mark_point();
-  fail_unless(strlen(dst) == (sizeof(dst)-1),
-    "Failed to copy all the data (expected len %u, got len %u)",
-    sizeof(dst)-1, strlen(dst));
+  ck_assert_msg(strlen(dst) == (sizeof(dst)-1),
+    "Failed to copy all the data (expected len %lu, got len %lu)",
+    (unsigned long)sizeof(dst)-1, (unsigned long)strlen(dst));
 
   mark_point();
   for (i = 0; i < sizeof(dst)-1; i++) {
-    fail_unless(dst[i] == c, "Copied wrong value (expected '%c', got '%c')",
+    ck_assert_msg(dst[i] == c, "Copied wrong value (expected '%c', got '%c')",
       c, dst[i]);
   }
 }
@@ -199,39 +204,39 @@ START_TEST (sreplace_test) {
   char *fmt = NULL, *ok;
 
   res = sreplace(NULL, NULL, 0);
-  fail_unless(res == NULL, "Failed to handle invalid arguments");
-  fail_unless(errno == EINVAL, "Failed to set errno to EINVAL");
+  ck_assert_msg(res == NULL, "Failed to handle invalid arguments");
+  ck_assert_msg(errno == EINVAL, "Failed to set errno to EINVAL");
 
   res = sreplace(NULL, "", 0);
-  fail_unless(res == NULL, "Failed to handle invalid arguments");
-  fail_unless(errno == EINVAL, "Failed to set errno to EINVAL");
+  ck_assert_msg(res == NULL, "Failed to handle invalid arguments");
+  ck_assert_msg(errno == EINVAL, "Failed to set errno to EINVAL");
 
   res = sreplace(p, NULL, 0);
-  fail_unless(res == NULL, "Failed to handle invalid arguments");
-  fail_unless(errno == EINVAL, "Failed to set errno to EINVAL");
+  ck_assert_msg(res == NULL, "Failed to handle invalid arguments");
+  ck_assert_msg(errno == EINVAL, "Failed to set errno to EINVAL");
 
   fmt = "%a";
   res = sreplace(p, fmt, "foo", NULL);
-  fail_unless(strcmp(res, fmt) == 0, "Expected '%s', got '%s'", fmt, res);
+  ck_assert_msg(strcmp(res, fmt) == 0, "Expected '%s', got '%s'", fmt, res);
 
   fmt = "foo %a";
   res = sreplace(p, fmt, "%b", NULL);
-  fail_unless(strcmp(res, fmt) == 0, "Expected '%s', got '%s'", fmt, res);
+  ck_assert_msg(strcmp(res, fmt) == 0, "Expected '%s', got '%s'", fmt, res);
 
   fmt = "foo %a";
   ok = "foo bar";
   res = sreplace(p, fmt, "%a", "bar", NULL);
-  fail_unless(strcmp(res, ok) == 0, "Expected '%s', got '%s'", ok, res);
+  ck_assert_msg(strcmp(res, ok) == 0, "Expected '%s', got '%s'", ok, res);
 
   fmt = "foo %a %a";
   ok = "foo bar bar";
   res = sreplace(p, fmt, "%a", "bar", NULL);
-  fail_unless(strcmp(res, ok) == 0, "Expected '%s', got '%s'", ok, res);
+  ck_assert_msg(strcmp(res, ok) == 0, "Expected '%s', got '%s'", ok, res);
 
   fmt = "foo %a %a %a %a %a %a %a %a";
   ok = "foo bar bar bar bar bar bar bar bar";
   res = sreplace(p, fmt, "%a", "bar", NULL);
-  fail_unless(strcmp(res, ok) == 0, "Expected '%s', got '%s'", ok, res);
+  ck_assert_msg(strcmp(res, ok) == 0, "Expected '%s', got '%s'", ok, res);
 
   /* sreplace() will not handle more than 8 occurrences of the same escape
    * sequence in the same line.  Make sure this happens.
@@ -239,7 +244,7 @@ START_TEST (sreplace_test) {
   fmt = "foo %a %a %a %a %a %a %a %a %a";
   ok = "foo bar bar bar bar bar bar bar bar bar";
   res = sreplace(p, fmt, "%a", "bar", NULL);
-  fail_unless(strcmp(res, fmt) == 0, "Expected '%s', got '%s'", fmt, res);
+  ck_assert_msg(strcmp(res, fmt) == 0, "Expected '%s', got '%s'", fmt, res);
 }
 END_TEST
 
@@ -255,8 +260,8 @@ START_TEST (sreplace_enospc_test) {
   fmt[bufsz] = '\0';
 
   res = sreplace(p, fmt, "%a", "foo", NULL);
-  fail_unless(res == NULL, "Failed to reject too-long buffer");
-  fail_unless(errno == ENOSPC, "Failed to set errno to ENOSPC");
+  ck_assert_msg(res == NULL, "Failed to reject too-long buffer");
+  ck_assert_msg(errno == ENOSPC, "Failed to set errno to ENOSPC");
 }
 END_TEST
 
@@ -317,7 +322,7 @@ START_TEST (sreplace_bug3614_test) {
     "%{uu}", "bar", "%{vv}", "bar", "%{ww}", "bar", "%{xx}", "bar",
     "%{yy}", "bar", "%{zz}", "bar",
     NULL);
-  fail_unless(strcmp(res, ok) == 0, "Expected '%s', got '%s'", ok, res);
+  ck_assert_msg(strcmp(res, ok) == 0, "Expected '%s', got '%s'", ok, res);
 }
 END_TEST
 
@@ -327,59 +332,59 @@ START_TEST (str_replace_test) {
   int max_replace = PR_STR_MAX_REPLACEMENTS;
 
   res = pr_str_replace(NULL, max_replace, NULL, 0);
-  fail_unless(res == NULL, "Failed to handle invalid arguments");
-  fail_unless(errno == EINVAL, "Failed to set errno to EINVAL");
+  ck_assert_msg(res == NULL, "Failed to handle invalid arguments");
+  ck_assert_msg(errno == EINVAL, "Failed to set errno to EINVAL");
 
   res = pr_str_replace(NULL, max_replace, "", 0);
-  fail_unless(res == NULL, "Failed to handle invalid arguments");
-  fail_unless(errno == EINVAL, "Failed to set errno to EINVAL");
+  ck_assert_msg(res == NULL, "Failed to handle invalid arguments");
+  ck_assert_msg(errno == EINVAL, "Failed to set errno to EINVAL");
 
   res = pr_str_replace(p, max_replace, NULL, 0);
-  fail_unless(res == NULL, "Failed to handle invalid arguments");
-  fail_unless(errno == EINVAL, "Failed to set errno to EINVAL");
+  ck_assert_msg(res == NULL, "Failed to handle invalid arguments");
+  ck_assert_msg(errno == EINVAL, "Failed to set errno to EINVAL");
 
   fmt = "%a";
   res = pr_str_replace(p, max_replace, fmt, "foo", NULL);
-  fail_unless(strcmp(res, fmt) == 0, "Expected '%s', got '%s'", fmt, res);
+  ck_assert_msg(strcmp(res, fmt) == 0, "Expected '%s', got '%s'", fmt, res);
 
   fmt = "foo %a";
   res = pr_str_replace(p, max_replace, fmt, "%b", NULL);
-  fail_unless(strcmp(res, fmt) == 0, "Expected '%s', got '%s'", fmt, res);
+  ck_assert_msg(strcmp(res, fmt) == 0, "Expected '%s', got '%s'", fmt, res);
 
   fmt = "foo %a";
   ok = "foo bar";
   res = pr_str_replace(p, max_replace, fmt, "%a", "bar", NULL);
-  fail_unless(strcmp(res, ok) == 0, "Expected '%s', got '%s'", ok, res);
+  ck_assert_msg(strcmp(res, ok) == 0, "Expected '%s', got '%s'", ok, res);
 
   fmt = "foo %a %a";
   ok = "foo bar bar";
   res = pr_str_replace(p, max_replace, fmt, "%a", "bar", NULL);
-  fail_unless(strcmp(res, ok) == 0, "Expected '%s', got '%s'", ok, res);
+  ck_assert_msg(strcmp(res, ok) == 0, "Expected '%s', got '%s'", ok, res);
 
   fmt = "foo %a %a %a %a %a %a %a %a";
   ok = "foo bar bar bar bar bar bar bar bar";
   res = pr_str_replace(p, max_replace, fmt, "%a", "bar", NULL);
-  fail_unless(strcmp(res, ok) == 0, "Expected '%s', got '%s'", ok, res);
+  ck_assert_msg(strcmp(res, ok) == 0, "Expected '%s', got '%s'", ok, res);
 
   fmt = "foo %a %a %a %a %a %a %a %a %a";
   ok = "foo bar bar bar bar bar bar bar bar bar";
   res = pr_str_replace(p, max_replace, fmt, "%a", "bar", NULL);
-  fail_unless(res == NULL, "Failed to handle too many replacements");
-  fail_unless(errno == E2BIG, "Failed to set errno to E2BIG");
+  ck_assert_msg(res == NULL, "Failed to handle too many replacements");
+  ck_assert_msg(errno == E2BIG, "Failed to set errno to E2BIG");
 }
 END_TEST
 
 START_TEST (pdircat_test) {
   char *res, *ok;
 
-  res = pdircat(NULL, 0);
-  fail_unless(res == NULL, "Failed to handle null arguments");
-  fail_unless(errno == EINVAL, "Failed to set errno to EINVAL");
+  res = pdircat(NULL, 0, NULL);
+  ck_assert_msg(res == NULL, "Failed to handle null arguments");
+  ck_assert_msg(errno == EINVAL, "Failed to set errno to EINVAL");
 
-  res = pdircat(p, 0);
-  fail_unless(res != NULL,
-    "Failed to handle empty arguments (expected '', got '%s')", res);
-  fail_unless(strcmp(res, "") == 0, "Expected '%s', got '%s'", "", res);
+  res = pdircat(p, 0, NULL);
+  ck_assert_msg(res != NULL,
+    "Failed to handle empty arguments (expected '', got NULL)");
+  ck_assert_msg(strcmp(res, "") == 0, "Expected '%s', got '%s'", "", res);
 
   /* Comments in the pdircat() function suggest that an empty string
    * should be treated as a leading slash.  However, that never got
@@ -388,60 +393,60 @@ START_TEST (pdircat_test) {
    */
   res = pdircat(p, "", NULL);
   ok = "";
-  fail_unless(strcmp(res, ok) == 0, "Expected '%s', got '%s'", ok, res);
+  ck_assert_msg(strcmp(res, ok) == 0, "Expected '%s', got '%s'", ok, res);
 
   res = pdircat(p, "foo", "bar", NULL);
   ok = "foo/bar";
-  fail_unless(strcmp(res, ok) == 0, "Expected '%s', got '%s'", ok, res);
+  ck_assert_msg(strcmp(res, ok) == 0, "Expected '%s', got '%s'", ok, res);
 
   res = pdircat(p, "", "foo", "bar", NULL);
   ok = "foo/bar";
-  fail_unless(strcmp(res, ok) == 0, "Expected '%s', got '%s'", ok, res);
+  ck_assert_msg(strcmp(res, ok) == 0, "Expected '%s', got '%s'", ok, res);
 
   res = pdircat(p, "/", "/foo/", "/bar/", NULL);
   ok = "/foo/bar/";
-  fail_unless(strcmp(res, ok) == 0, "Expected '%s', got '%s'", ok, res);
+  ck_assert_msg(strcmp(res, ok) == 0, "Expected '%s', got '%s'", ok, res);
 
   /* Sadly, pdircat() only handles single leading/trailing slashes, not
    * an arbitrary number of leading/trailing slashes.
    */
   res = pdircat(p, "//", "//foo//", "//bar//", NULL);
   ok = "///foo///bar//";
-  fail_unless(strcmp(res, ok) == 0, "Expected '%s', got '%s'", ok, res);
+  ck_assert_msg(strcmp(res, ok) == 0, "Expected '%s', got '%s'", ok, res);
 }
 END_TEST
 
 START_TEST (pstrcat_test) {
   char *res, *ok;
 
-  res = pstrcat(NULL, 0);
-  fail_unless(res == NULL, "Failed to handle null arguments");
-  fail_unless(errno == EINVAL, "Failed to set errno to EINVAL");
+  res = pstrcat(NULL, 0, NULL);
+  ck_assert_msg(res == NULL, "Failed to handle null arguments");
+  ck_assert_msg(errno == EINVAL, "Failed to set errno to EINVAL");
 
-  res = pstrcat(p, 0);
-  fail_unless(res != NULL,
-    "Failed to handle empty arguments (expected '', got '%s')", res);
-  fail_unless(strcmp(res, "") == 0, "Expected '%s', got '%s'", "", res);
+  res = pstrcat(p, 0, NULL);
+  ck_assert_msg(res != NULL,
+    "Failed to handle empty arguments (expected '', got NULL)");
+  ck_assert_msg(strcmp(res, "") == 0, "Expected '%s', got '%s'", "", res);
 
   res = pstrcat(p, "", NULL);
   ok = "";
-  fail_unless(strcmp(res, ok) == 0, "Expected '%s', got '%s'", ok, res);
+  ck_assert_msg(strcmp(res, ok) == 0, "Expected '%s', got '%s'", ok, res);
 
   res = pstrcat(p, "foo", "bar", NULL);
   ok = "foobar";
-  fail_unless(strcmp(res, ok) == 0, "Expected '%s', got '%s'", ok, res);
+  ck_assert_msg(strcmp(res, ok) == 0, "Expected '%s', got '%s'", ok, res);
 
   res = pstrcat(p, "", "foo", "bar", NULL);
   ok = "foobar";
-  fail_unless(strcmp(res, ok) == 0, "Expected '%s', got '%s'", ok, res);
+  ck_assert_msg(strcmp(res, ok) == 0, "Expected '%s', got '%s'", ok, res);
 
   res = pstrcat(p, "/", "/foo/", "/bar/", NULL);
   ok = "//foo//bar/";
-  fail_unless(strcmp(res, ok) == 0, "Expected '%s', got '%s'", ok, res);
+  ck_assert_msg(strcmp(res, ok) == 0, "Expected '%s', got '%s'", ok, res);
 
   res = pdircat(p, "//", "//foo//", NULL, "//bar//", NULL);
   ok = "///foo//";
-  fail_unless(strcmp(res, ok) == 0, "Expected '%s', got '%s'", ok, res);
+  ck_assert_msg(strcmp(res, ok) == 0, "Expected '%s', got '%s'", ok, res);
 }
 END_TEST
 
@@ -449,22 +454,22 @@ START_TEST (pstrdup_test) {
   char *res, *ok;
 
   res = pstrdup(NULL, NULL);
-  fail_unless(res == NULL, "Failed to handle null arguments");
-  fail_unless(errno == EINVAL, "Failed to set errno to EINVAL");
+  ck_assert_msg(res == NULL, "Failed to handle null arguments");
+  ck_assert_msg(errno == EINVAL, "Failed to set errno to EINVAL");
 
   res = pstrdup(p, NULL);
-  fail_unless(res == NULL, "Failed to handle null arguments");
-  fail_unless(errno == EINVAL, "Failed to set errno to EINVAL");
+  ck_assert_msg(res == NULL, "Failed to handle null arguments");
+  ck_assert_msg(errno == EINVAL, "Failed to set errno to EINVAL");
 
   res = pstrdup(NULL, "");
-  fail_unless(res == NULL, "Failed to handle null arguments");
-  fail_unless(errno == EINVAL, "Failed to set errno to EINVAL");
+  ck_assert_msg(res == NULL, "Failed to handle null arguments");
+  ck_assert_msg(errno == EINVAL, "Failed to set errno to EINVAL");
 
   res = pstrdup(p, "foo");
   ok = "foo";
-  fail_unless(strlen(res) == strlen(ok), "Expected len %u, got len %u",
-    strlen(ok), strlen(res));
-  fail_unless(strcmp(res, ok) == 0, "Expected '%s', got '%s'", ok, res);
+  ck_assert_msg(strlen(res) == strlen(ok), "Expected len %lu, got len %lu",
+    (unsigned long)strlen(ok), (unsigned long)strlen(res));
+  ck_assert_msg(strcmp(res, ok) == 0, "Expected '%s', got '%s'", ok, res);
 }
 END_TEST
 
@@ -472,34 +477,34 @@ START_TEST (pstrndup_test) {
   char *res, *ok;
 
   res = pstrndup(NULL, NULL, 0);
-  fail_unless(res == NULL, "Failed to handle null arguments");
-  fail_unless(errno == EINVAL, "Failed to set errno to EINVAL");
+  ck_assert_msg(res == NULL, "Failed to handle null arguments");
+  ck_assert_msg(errno == EINVAL, "Failed to set errno to EINVAL");
 
   res = pstrndup(p, NULL, 0);
-  fail_unless(res == NULL, "Failed to handle null arguments");
-  fail_unless(errno == EINVAL, "Failed to set errno to EINVAL");
+  ck_assert_msg(res == NULL, "Failed to handle null arguments");
+  ck_assert_msg(errno == EINVAL, "Failed to set errno to EINVAL");
 
   res = pstrndup(NULL, "", 0);
-  fail_unless(res == NULL, "Failed to handle null arguments");
-  fail_unless(errno == EINVAL, "Failed to set errno to EINVAL");
+  ck_assert_msg(res == NULL, "Failed to handle null arguments");
+  ck_assert_msg(errno == EINVAL, "Failed to set errno to EINVAL");
 
   res = pstrndup(p, "foo", 0);
   ok = "";
-  fail_unless(strlen(res) == strlen(ok), "Expected len %u, got len %u",
-    strlen(ok), strlen(res));
-  fail_unless(strcmp(res, ok) == 0, "Expected '%s', got '%s'", ok, res);
+  ck_assert_msg(strlen(res) == strlen(ok), "Expected len %lu, got len %lu",
+    (unsigned long)strlen(ok), (unsigned long)strlen(res));
+  ck_assert_msg(strcmp(res, ok) == 0, "Expected '%s', got '%s'", ok, res);
 
   res = pstrndup(p, "foo", 1);
   ok = "f";
-  fail_unless(strlen(res) == strlen(ok), "Expected len %u, got len %u",
-    strlen(ok), strlen(res));
-  fail_unless(strcmp(res, ok) == 0, "Expected '%s', got '%s'", ok, res);
+  ck_assert_msg(strlen(res) == strlen(ok), "Expected len %lu, got len %lu",
+    (unsigned long)strlen(ok), (unsigned long)strlen(res));
+  ck_assert_msg(strcmp(res, ok) == 0, "Expected '%s', got '%s'", ok, res);
 
   res = pstrndup(p, "foo", 10);
   ok = "foo";
-  fail_unless(strlen(res) == strlen(ok), "Expected len %u, got len %u",
-    strlen(ok), strlen(res));
-  fail_unless(strcmp(res, ok) == 0, "Expected '%s', got '%s'", ok, res);
+  ck_assert_msg(strlen(res) == strlen(ok), "Expected len %lu, got len %lu",
+    (unsigned long)strlen(ok), (unsigned long)strlen(res));
+  ck_assert_msg(strcmp(res, ok) == 0, "Expected '%s', got '%s'", ok, res);
 }
 END_TEST
 
@@ -507,44 +512,44 @@ START_TEST (strip_test) {
   const char *ok, *res, *str;
 
   res = pr_str_strip(NULL, NULL);
-  fail_unless(res == NULL, "Failed to handle null arguments");
-  fail_unless(errno == EINVAL, "Failed to set errno to EINVAL");
+  ck_assert_msg(res == NULL, "Failed to handle null arguments");
+  ck_assert_msg(errno == EINVAL, "Failed to set errno to EINVAL");
 
   res = pr_str_strip(p, NULL);
-  fail_unless(res == NULL, "Failed to handle null str argument");
-  fail_unless(errno == EINVAL, "Failed to set errno to EINVAL");
+  ck_assert_msg(res == NULL, "Failed to handle null str argument");
+  ck_assert_msg(errno == EINVAL, "Failed to set errno to EINVAL");
 
   res = pr_str_strip(NULL, "foo");
-  fail_unless(res == NULL, "Failed to handle null pool argument");
-  fail_unless(errno == EINVAL, "Failed to set errno to EINVAL");
+  ck_assert_msg(res == NULL, "Failed to handle null pool argument");
+  ck_assert_msg(errno == EINVAL, "Failed to set errno to EINVAL");
 
   str = pstrdup(p, "foo");
   res = pr_str_strip(p, str);
-  fail_unless(res != NULL, "Failed to strip '%s': %s", str, strerror(errno));
+  ck_assert_msg(res != NULL, "Failed to strip '%s': %s", str, strerror(errno));
 
   ok = "foo";
-  fail_unless(strcmp(res, ok) == 0, "Expected '%s', got '%s'", ok, res);
+  ck_assert_msg(strcmp(res, ok) == 0, "Expected '%s', got '%s'", ok, res);
 
   str = pstrdup(p, " \n \t foo");
   res = pr_str_strip(p, str);
-  fail_unless(res != NULL, "Failed to strip '%s': %s", str, strerror(errno));
+  ck_assert_msg(res != NULL, "Failed to strip '%s': %s", str, strerror(errno));
 
   ok = "foo";
-  fail_unless(strcmp(res, ok) == 0, "Expected '%s', got '%s'", ok, res);
+  ck_assert_msg(strcmp(res, ok) == 0, "Expected '%s', got '%s'", ok, res);
 
   str = pstrdup(p, "foo  \n \t \r");
   res = pr_str_strip(p, str);
-  fail_unless(res != NULL, "Failed to strip '%s': %s", str, strerror(errno));
+  ck_assert_msg(res != NULL, "Failed to strip '%s': %s", str, strerror(errno));
 
   ok = "foo";
-  fail_unless(strcmp(res, ok) == 0, "Expected '%s', got '%s'", ok, res);
+  ck_assert_msg(strcmp(res, ok) == 0, "Expected '%s', got '%s'", ok, res);
 
   str = pstrdup(p, "\r \n\n\t    foo  \n \t \r");
   res = pr_str_strip(p, str);
-  fail_unless(res != NULL, "Failed to strip '%s': %s", str, strerror(errno));
+  ck_assert_msg(res != NULL, "Failed to strip '%s': %s", str, strerror(errno));
 
   ok = "foo";
-  fail_unless(strcmp(res, ok) == 0, "Expected '%s', got '%s'", ok, res);
+  ck_assert_msg(strcmp(res, ok) == 0, "Expected '%s', got '%s'", ok, res);
 }
 END_TEST
 
@@ -552,43 +557,43 @@ START_TEST (strip_end_test) {
   char *ch, *ok, *res, *str;
 
   res = pr_str_strip_end(NULL, NULL);
-  fail_unless(res == NULL, "Failed to handle null arguments");
-  fail_unless(errno == EINVAL, "Failed to set errno to EINVAL");
+  ck_assert_msg(res == NULL, "Failed to handle null arguments");
+  ck_assert_msg(errno == EINVAL, "Failed to set errno to EINVAL");
 
   str = pstrdup(p, "foo");
 
   res = pr_str_strip_end(str, NULL);
-  fail_unless(res == NULL, "Failed to handle null char argument");
-  fail_unless(errno == EINVAL, "Failed to set errno to EINVAL");
+  ck_assert_msg(res == NULL, "Failed to handle null char argument");
+  ck_assert_msg(errno == EINVAL, "Failed to set errno to EINVAL");
 
   ch = "\r\n";
 
   res = pr_str_strip_end(NULL, ch);
-  fail_unless(res == NULL, "Failed to handle null str argument");
-  fail_unless(errno == EINVAL, "Failed to set errno to EINVAL");
+  ck_assert_msg(res == NULL, "Failed to handle null str argument");
+  ck_assert_msg(errno == EINVAL, "Failed to set errno to EINVAL");
 
   res = pr_str_strip_end(str, ch);
-  fail_unless(res != NULL, "Failed to strip '%s' from end of '%s': %s",
+  ck_assert_msg(res != NULL, "Failed to strip '%s' from end of '%s': %s",
     ch, str, strerror(errno));
 
   ok = "foo";
-  fail_unless(strcmp(res, ok) == 0, "Expected '%s', got '%s'", ok, res);
+  ck_assert_msg(strcmp(res, ok) == 0, "Expected '%s', got '%s'", ok, res);
 
   str = pstrdup(p, "foo\r\n");
   res = pr_str_strip_end(str, ch);
-  fail_unless(res != NULL, "Failed to strip '%s' from end of '%s': %s",
+  ck_assert_msg(res != NULL, "Failed to strip '%s' from end of '%s': %s",
     ch, str, strerror(errno));
 
   ok = "foo";
-  fail_unless(strcmp(res, ok) == 0, "Expected '%s', got '%s'", ok, res);
+  ck_assert_msg(strcmp(res, ok) == 0, "Expected '%s', got '%s'", ok, res);
 
   str = pstrdup(p, "foo\r\n\r\n\r\n");
   res = pr_str_strip_end(str, ch);
-  fail_unless(res != NULL, "Failed to strip '%s' from end of '%s': %s",
+  ck_assert_msg(res != NULL, "Failed to strip '%s' from end of '%s': %s",
     ch, str, strerror(errno));
 
   ok = "foo";
-  fail_unless(strcmp(res, ok) == 0, "Expected '%s', got '%s'", ok, res);
+  ck_assert_msg(strcmp(res, ok) == 0, "Expected '%s', got '%s'", ok, res);
 }
 END_TEST
 
@@ -596,42 +601,42 @@ START_TEST (get_token_test) {
   char *ok, *res, *str;
 
   res = pr_str_get_token(NULL, NULL);
-  fail_unless(res == NULL, "Failed to handle null arguments");
-  fail_unless(errno == EINVAL, "Failed to set errno to EINVAL");
+  ck_assert_msg(res == NULL, "Failed to handle null arguments");
+  ck_assert_msg(errno == EINVAL, "Failed to set errno to EINVAL");
 
   str = NULL;
   res = pr_str_get_token(&str, NULL);
-  fail_unless(res == NULL, "Failed to handle null str argument");
-  fail_unless(errno == EINVAL, "Failed to set errno to EINVAL");
+  ck_assert_msg(res == NULL, "Failed to handle null str argument");
+  ck_assert_msg(errno == EINVAL, "Failed to set errno to EINVAL");
 
   str = pstrdup(p, "foo,bar,baz");
   res = pr_str_get_token(&str, NULL);
-  fail_unless(res == NULL, "Failed to handle null sep argument");
-  fail_unless(errno == EINVAL, "Failed to set errno to EINVAL");
+  ck_assert_msg(res == NULL, "Failed to handle null sep argument");
+  ck_assert_msg(errno == EINVAL, "Failed to set errno to EINVAL");
 
   res = pr_str_get_token(&str, ",");
-  fail_unless(res != NULL, "Failed to get token from '%s': %s", str,
+  ck_assert_msg(res != NULL, "Failed to get token from '%s': %s", str,
     strerror(errno));
 
   ok = "foo";
-  fail_unless(strcmp(res, ok) == 0, "Expected '%s', got '%s'", ok, res);
+  ck_assert_msg(strcmp(res, ok) == 0, "Expected '%s', got '%s'", ok, res);
 
   res = pr_str_get_token(&str, ",");
-  fail_unless(res != NULL, "Failed to get token from '%s': %s", str,
+  ck_assert_msg(res != NULL, "Failed to get token from '%s': %s", str,
     strerror(errno));
 
   ok = "bar";
-  fail_unless(strcmp(res, ok) == 0, "Expected '%s', got '%s'", ok, res);
+  ck_assert_msg(strcmp(res, ok) == 0, "Expected '%s', got '%s'", ok, res);
 
   res = pr_str_get_token(&str, ",");
-  fail_unless(res != NULL, "Failed to get token from '%s': %s", str,
+  ck_assert_msg(res != NULL, "Failed to get token from '%s': %s", str,
     strerror(errno));
 
   ok = "baz";
-  fail_unless(strcmp(res, ok) == 0, "Expected '%s', got '%s'", ok, res);
+  ck_assert_msg(strcmp(res, ok) == 0, "Expected '%s', got '%s'", ok, res);
 
   res = pr_str_get_token(&str, ",");
-  fail_unless(res == NULL, "Unexpectedly got token '%s'", res);
+  ck_assert_msg(res == NULL, "Unexpectedly got token '%s'", res);
 }
 END_TEST
 
@@ -640,55 +645,55 @@ START_TEST (get_token2_test) {
   size_t len = 0, ok_len;
 
   res = pr_str_get_token2(NULL, NULL, NULL);
-  fail_unless(res == NULL, "Failed to handle null arguments");
-  fail_unless(errno == EINVAL, "Failed to set errno to EINVAL");
+  ck_assert_msg(res == NULL, "Failed to handle null arguments");
+  ck_assert_msg(errno == EINVAL, "Failed to set errno to EINVAL");
 
   str = NULL;
   res = pr_str_get_token2(&str, NULL, NULL);
-  fail_unless(res == NULL, "Failed to handle null str argument");
-  fail_unless(errno == EINVAL, "Failed to set errno to EINVAL");
+  ck_assert_msg(res == NULL, "Failed to handle null str argument");
+  ck_assert_msg(errno == EINVAL, "Failed to set errno to EINVAL");
 
   str = pstrdup(p, "foo,bar,bazz");
   res = pr_str_get_token2(&str, NULL, NULL);
-  fail_unless(res == NULL, "Failed to handle null sep argument");
-  fail_unless(errno == EINVAL, "Failed to set errno to EINVAL");
+  ck_assert_msg(res == NULL, "Failed to handle null sep argument");
+  ck_assert_msg(errno == EINVAL, "Failed to set errno to EINVAL");
 
   res = pr_str_get_token2(&str, ",", &len);
-  fail_unless(res != NULL, "Failed to get token from '%s': %s", str,
+  ck_assert_msg(res != NULL, "Failed to get token from '%s': %s", str,
     strerror(errno));
 
   ok = "foo";
   ok_len = 3;
-  fail_unless(len == ok_len, "Expected len %lu, got %lu",
+  ck_assert_msg(len == ok_len, "Expected len %lu, got %lu",
     (unsigned long) ok_len, (unsigned long) len);
-  fail_unless(strcmp(res, ok) == 0, "Expected '%s', got '%s'", ok, res);
+  ck_assert_msg(strcmp(res, ok) == 0, "Expected '%s', got '%s'", ok, res);
 
   res = pr_str_get_token2(&str, ",", &len);
-  fail_unless(res != NULL, "Failed to get token from '%s': %s", str,
+  ck_assert_msg(res != NULL, "Failed to get token from '%s': %s", str,
     strerror(errno));
 
   ok = "bar";
   ok_len = 3; 
-  fail_unless(len == ok_len, "Expected len %lu, got %lu",
+  ck_assert_msg(len == ok_len, "Expected len %lu, got %lu",
     (unsigned long) ok_len, (unsigned long) len);
-  fail_unless(strcmp(res, ok) == 0, "Expected '%s', got '%s'", ok, res);
+  ck_assert_msg(strcmp(res, ok) == 0, "Expected '%s', got '%s'", ok, res);
 
   res = pr_str_get_token2(&str, ",", &len);
-  fail_unless(res != NULL, "Failed to get token from '%s': %s", str,
+  ck_assert_msg(res != NULL, "Failed to get token from '%s': %s", str,
     strerror(errno));
 
   ok = "bazz";
   ok_len = 4; 
-  fail_unless(len == ok_len, "Expected len %lu, got %lu",
+  ck_assert_msg(len == ok_len, "Expected len %lu, got %lu",
     (unsigned long) ok_len, (unsigned long) len);
-  fail_unless(strcmp(res, ok) == 0, "Expected '%s', got '%s'", ok, res);
+  ck_assert_msg(strcmp(res, ok) == 0, "Expected '%s', got '%s'", ok, res);
 
   res = pr_str_get_token2(&str, ",", &len);
 
   ok_len = 0;
-  fail_unless(len == ok_len, "Expected len %lu, got %lu",
+  ck_assert_msg(len == ok_len, "Expected len %lu, got %lu",
     (unsigned long) ok_len, (unsigned long) len);
-  fail_unless(res == NULL, "Unexpectedly got token '%s'", res);
+  ck_assert_msg(res == NULL, "Unexpectedly got token '%s'", res);
 }
 END_TEST
 
@@ -696,80 +701,80 @@ START_TEST (get_word_test) {
   char *ok, *res, *str;
 
   res = pr_str_get_word(NULL, 0);
-  fail_unless(res == NULL, "Failed to handle null arguments");
-  fail_unless(errno == EINVAL, "Failed to set errno to EINVAL");
+  ck_assert_msg(res == NULL, "Failed to handle null arguments");
+  ck_assert_msg(errno == EINVAL, "Failed to set errno to EINVAL");
 
   str = NULL;
   res = pr_str_get_word(&str, 0);
-  fail_unless(res == NULL, "Failed to handle null str argument");
-  fail_unless(errno == EINVAL, "Failed to set errno to EINVAL");
+  ck_assert_msg(res == NULL, "Failed to handle null str argument");
+  ck_assert_msg(errno == EINVAL, "Failed to set errno to EINVAL");
 
   str = pstrdup(p, "  ");
   res = pr_str_get_word(&str, 0);
-  fail_unless(res == NULL, "Failed to handle whitespace argument");
+  ck_assert_msg(res == NULL, "Failed to handle whitespace argument");
 
   str = pstrdup(p, " foo");
   res = pr_str_get_word(&str, PR_STR_FL_PRESERVE_WHITESPACE);
-  fail_unless(res != NULL, "Failed to handle whitespace argument: %s",
+  ck_assert_msg(res != NULL, "Failed to handle whitespace argument: %s",
     strerror(errno));
 
   ok = "";
-  fail_unless(strcmp(res, ok) == 0, "Expected '%s', got '%s'", ok, res);
+  ck_assert_msg(strcmp(res, ok) == 0, "Expected '%s', got '%s'", ok, res);
 
   res = pr_str_get_word(&str, PR_STR_FL_PRESERVE_WHITESPACE);
-  fail_unless(res != NULL, "Failed to handle whitespace argument: %s",
+  ck_assert_msg(res != NULL, "Failed to handle whitespace argument: %s",
     strerror(errno));
 
   ok = "foo";
-  fail_unless(strcmp(res, ok) == 0, "Expected '%s', got '%s'", ok, res);
+  ck_assert_msg(strcmp(res, ok) == 0, "Expected '%s', got '%s'", ok, res);
 
   str = pstrdup(p, "  # foo");
   res = pr_str_get_word(&str, 0);
-  fail_unless(res == NULL, "Failed to handle commented argument");
+  ck_assert_msg(res == NULL, "Failed to handle commented argument");
 
   res = pr_str_get_word(&str, PR_STR_FL_PRESERVE_COMMENTS);
-  fail_unless(res != NULL, "Failed to handle commented argument: %s",
+  ck_assert_msg(res != NULL, "Failed to handle commented argument: %s",
     strerror(errno));
 
   ok = "#";
-  fail_unless(strcmp(res, ok) == 0, "Expected '%s', got '%s'", ok, res);
+  ck_assert_msg(strcmp(res, ok) == 0, "Expected '%s', got '%s'", ok, res);
 
   res = pr_str_get_word(&str, PR_STR_FL_PRESERVE_COMMENTS);
-  fail_unless(res != NULL, "Failed to handle commented argument: %s",
+  ck_assert_msg(res != NULL, "Failed to handle commented argument: %s",
     strerror(errno));
 
   ok = "foo";
-  fail_unless(strcmp(res, ok) == 0, "Expected '%s', got '%s'", ok, res);
+  ck_assert_msg(strcmp(res, ok) == 0, "Expected '%s', got '%s'", ok, res);
 
   /* Test multiple embedded quotes. */
   str = pstrdup(p, "foo \"bar baz\" qux \"quz norf\"");
   res = pr_str_get_word(&str, 0);
-  fail_unless(res != NULL, "Failed to handle quoted argument: %s",
+  ck_assert_msg(res != NULL, "Failed to handle quoted argument: %s",
     strerror(errno));
 
   ok = "foo";
-  fail_unless(strcmp(res, ok) == 0, "Expected '%s', got '%s'", ok, res);
+  ck_assert_msg(strcmp(res, ok) == 0, "Expected '%s', got '%s'", ok, res);
 
   res = pr_str_get_word(&str, 0);
-  fail_unless(res != NULL, "Failed to handle quoted argument: %s",
+  ck_assert_msg(res != NULL, "Failed to handle quoted argument: %s",
     strerror(errno));
 
   ok = "bar baz";
-  fail_unless(strcmp(res, ok) == 0, "Expected '%s', got '%s'", ok, res);
+  ck_assert_msg(strcmp(res, ok) == 0, "Expected '%s', got '%s'", ok, res);
 
   res = pr_str_get_word(&str, 0);
-  fail_unless(res != NULL, "Failed to handle quoted argument: %s",
+  ck_assert_msg(res != NULL, "Failed to handle quoted argument: %s",
     strerror(errno));
 
   ok = "qux";
-  fail_unless(strcmp(res, ok) == 0, "Expected '%s', got '%s'", ok, res);
+  ck_assert_msg(strcmp(res, ok) == 0, "Expected '%s', got '%s'", ok, res);
 
   res = pr_str_get_word(&str, 0);
-  fail_unless(res != NULL, "Failed to handle quoted argument: %s",
+  ck_assert_msg(res != NULL, "Failed to handle quoted argument: %s",
     strerror(errno));
 
   ok = "quz norf";
-  fail_unless(strcmp(res, ok) == 0, "Expected '%s', got '%s'", ok, res);
+  ck_assert_msg(strcmp(res, ok) == 0, "Expected '%s', got '%s'", ok, res);
 }
 END_TEST
 
@@ -795,15 +800,15 @@ START_TEST (get_word_utf8_test) {
     str = pcalloc(p, sz);
 
     nread = fread(str, sizeof(char), sz-1, fh);
-    fail_if(ferror(fh), "Error reading '%s': %s", path, strerror(errno));
-    fail_unless(nread > 0, "Expected >0 bytes read, got 0");
+    ck_assert_msg(!ferror(fh), "Error reading '%s': %s", path, strerror(errno));
+    ck_assert_msg(nread > 0, "Expected >0 bytes read, got 0");
 
     res = pr_str_get_word(&str, 0);
-      fail_unless(res != NULL, "Failed to handle UTF8 argument: %s",
+      ck_assert_msg(res != NULL, "Failed to handle UTF8 argument: %s",
       strerror(errno));
 
     ok = "foo";
-    fail_if(strcmp(res, ok) == 0, "Did NOT expect '%s'", ok);
+    ck_assert_msg(strcmp(res, ok) != 0, "Did NOT expect '%s'", ok);
 
     fclose(fh);
   }
@@ -814,37 +819,37 @@ START_TEST (is_boolean_test) {
   int res;
 
   res = pr_str_is_boolean(NULL);
-  fail_unless(res == -1, "Failed to handle null argument");
-  fail_unless(errno == EINVAL, "Failed to set errno to EINVAL (got %d)",
+  ck_assert_msg(res == -1, "Failed to handle null argument");
+  ck_assert_msg(errno == EINVAL, "Failed to set errno to EINVAL (got %d)",
     errno);
 
   res = pr_str_is_boolean("on");
-  fail_unless(res == TRUE, "Expected TRUE, got FALSE");
+  ck_assert_msg(res == TRUE, "Expected TRUE, got FALSE");
 
   res = pr_str_is_boolean("Yes");
-  fail_unless(res == TRUE, "Expected TRUE, got FALSE");
+  ck_assert_msg(res == TRUE, "Expected TRUE, got FALSE");
 
   res = pr_str_is_boolean("TrUe");
-  fail_unless(res == TRUE, "Expected TRUE, got FALSE");
+  ck_assert_msg(res == TRUE, "Expected TRUE, got FALSE");
 
   res = pr_str_is_boolean("1");
-  fail_unless(res == TRUE, "Expected TRUE, got FALSE");
+  ck_assert_msg(res == TRUE, "Expected TRUE, got FALSE");
 
   res = pr_str_is_boolean("oFF");
-  fail_unless(res == FALSE, "Expected FALSE, got TRUE");
+  ck_assert_msg(res == FALSE, "Expected FALSE, got TRUE");
 
   res = pr_str_is_boolean("no");
-  fail_unless(res == FALSE, "Expected FALSE, got TRUE");
+  ck_assert_msg(res == FALSE, "Expected FALSE, got TRUE");
 
   res = pr_str_is_boolean("false");
-  fail_unless(res == FALSE, "Expected FALSE, got TRUE");
+  ck_assert_msg(res == FALSE, "Expected FALSE, got TRUE");
 
   res = pr_str_is_boolean("0");
-  fail_unless(res == FALSE, "Expected FALSE, got TRUE");
+  ck_assert_msg(res == FALSE, "Expected FALSE, got TRUE");
 
   res = pr_str_is_boolean("foo");
-  fail_unless(res == -1, "Failed to handle null argument");
-  fail_unless(errno == EINVAL, "Failed to set errno to EINVAL (got %d)",
+  ck_assert_msg(res == -1, "Failed to handle null argument");
+  ck_assert_msg(errno == EINVAL, "Failed to set errno to EINVAL (got %d)",
     errno);
 }
 END_TEST
@@ -854,49 +859,49 @@ START_TEST (is_fnmatch_test) {
   char *str;
 
   res = pr_str_is_fnmatch(NULL);
-  fail_unless(res == FALSE, "Expected false for NULL");
+  ck_assert_msg(res == FALSE, "Expected false for NULL");
 
   str = "foo";
   res = pr_str_is_fnmatch(str);
-  fail_if(res != FALSE, "Expected false for string '%s'", str);
+  ck_assert_msg(res == FALSE, "Expected false for string '%s'", str);
 
   str = "foo?";
   res = pr_str_is_fnmatch(str);
-  fail_if(res != TRUE, "Expected true for string '%s'", str);
+  ck_assert_msg(res == TRUE, "Expected true for string '%s'", str);
 
   str = "foo*";
   res = pr_str_is_fnmatch(str);
-  fail_if(res != TRUE, "Expected true for string '%s'", str);
+  ck_assert_msg(res == TRUE, "Expected true for string '%s'", str);
 
   str = "foo[";
   res = pr_str_is_fnmatch(str);
-  fail_if(res != FALSE, "Expected false for string '%s'", str);
+  ck_assert_msg(res == FALSE, "Expected false for string '%s'", str);
 
   str = "foo]";
   res = pr_str_is_fnmatch(str);
-  fail_if(res != FALSE, "Expected false for string '%s'", str);
+  ck_assert_msg(res == FALSE, "Expected false for string '%s'", str);
 
   str = "foo[]";
   res = pr_str_is_fnmatch(str);
-  fail_if(res != TRUE, "Expected true for string '%s'", str);
+  ck_assert_msg(res == TRUE, "Expected true for string '%s'", str);
 
   /* Now the fun cases using the escape character. */
 
   str = "f\\oo";
   res = pr_str_is_fnmatch(str);
-  fail_if(res != FALSE, "Expected false for string '%s'", str);
+  ck_assert_msg(res == FALSE, "Expected false for string '%s'", str);
 
   str = "foo\\";
   res = pr_str_is_fnmatch(str);
-  fail_if(res != FALSE, "Expected false for string '%s'", str);
+  ck_assert_msg(res == FALSE, "Expected false for string '%s'", str);
 
   str = "foo\\?";
   res = pr_str_is_fnmatch(str);
-  fail_if(res != FALSE, "Expected false for string '%s'", str);
+  ck_assert_msg(res == FALSE, "Expected false for string '%s'", str);
 
   str = "foo\\??";
   res = pr_str_is_fnmatch(str);
-  fail_if(res != TRUE, "Expected true for string '%s'", str);
+  ck_assert_msg(res == TRUE, "Expected true for string '%s'", str);
 }
 END_TEST
 
@@ -906,94 +911,94 @@ START_TEST (get_nbytes_test) {
   int res;
 
   res = pr_str_get_nbytes(NULL, NULL, NULL);
-  fail_unless(res == -1, "Failed to handle null arguments");
-  fail_unless(errno == EINVAL, "Failed to set errno to EINVAL");
+  ck_assert_msg(res == -1, "Failed to handle null arguments");
+  ck_assert_msg(errno == EINVAL, "Failed to set errno to EINVAL");
 
   str = NULL;
   res = pr_str_get_nbytes(str, NULL, NULL);
-  fail_unless(res == -1, "Failed to handle null str argument");
-  fail_unless(errno == EINVAL, "Failed to set errno to EINVAL");
+  ck_assert_msg(res == -1, "Failed to handle null str argument");
+  ck_assert_msg(errno == EINVAL, "Failed to set errno to EINVAL");
 
   str = "1";
   units = "f";
   res = pr_str_get_nbytes(str, units, NULL);
-  fail_unless(res == -1, "Failed to handle bad suffix argument");
-  fail_unless(errno == EINVAL, "Failed to set errno to EINVAL");
+  ck_assert_msg(res == -1, "Failed to handle bad suffix argument");
+  ck_assert_msg(errno == EINVAL, "Failed to set errno to EINVAL");
 
   str = "a";
   units = "";
   res = pr_str_get_nbytes(str, units, NULL);
-  fail_unless(res == -1, "Failed to handle invalid str argument");
-  fail_unless(errno == EINVAL, "Failed to set errno to EINVAL");
+  ck_assert_msg(res == -1, "Failed to handle invalid str argument");
+  ck_assert_msg(errno == EINVAL, "Failed to set errno to EINVAL");
 
   str = "1 1";
   units = "";
   res = pr_str_get_nbytes(str, units, NULL);
-  fail_unless(res == -1, "Failed to handle invalid str argument");
-  fail_unless(errno == EINVAL, "Failed to set errno to EINVAL");
+  ck_assert_msg(res == -1, "Failed to handle invalid str argument");
+  ck_assert_msg(errno == EINVAL, "Failed to set errno to EINVAL");
 
   str = "1.1";
   units = "";
   res = pr_str_get_nbytes(str, units, NULL);
-  fail_unless(res == -1, "Failed to handle invalid str argument");
-  fail_unless(errno == EINVAL, "Failed to set errno to EINVAL");
+  ck_assert_msg(res == -1, "Failed to handle invalid str argument");
+  ck_assert_msg(errno == EINVAL, "Failed to set errno to EINVAL");
 
   str = "-1";
   units = "";
   res = pr_str_get_nbytes(str, units, NULL);
-  fail_unless(res == -1, "Failed to handle invalid str argument");
-  fail_unless(errno == EINVAL, "Failed to set errno to EINVAL");
+  ck_assert_msg(res == -1, "Failed to handle invalid str argument");
+  ck_assert_msg(errno == EINVAL, "Failed to set errno to EINVAL");
 
   /* XXX Test good suffix: B, KB, MB, GB, TB */
 
   str = "1";
   units = "";
   res = pr_str_get_nbytes(str, units, &nbytes);
-  fail_unless(res == 0, "Expected result 0, got %d: %s", res, strerror(errno));
-  fail_unless(nbytes == 1, "Expected nbytes = 1, got %" PR_LU,
+  ck_assert_msg(res == 0, "Expected result 0, got %d: %s", res, strerror(errno));
+  ck_assert_msg(nbytes == 1, "Expected nbytes = 1, got %" PR_LU,
     (pr_off_t) nbytes);
 
   str = "1";
   units = "B";
   res = pr_str_get_nbytes(str, units, &nbytes);
-  fail_unless(res == 0, "Expected result 0, got %d: %s", res, strerror(errno));
-  fail_unless(nbytes == 1,
+  ck_assert_msg(res == 0, "Expected result 0, got %d: %s", res, strerror(errno));
+  ck_assert_msg(nbytes == 1,
     "Expected nbytes = 1, got %" PR_LU, (pr_off_t) nbytes);
 
   str = "1";
   units = "KB";
   res = pr_str_get_nbytes(str, units, &nbytes);
-  fail_unless(res == 0, "Expected result 0, got %d: %s", res, strerror(errno));
-  fail_unless(nbytes == 1024UL,
+  ck_assert_msg(res == 0, "Expected result 0, got %d: %s", res, strerror(errno));
+  ck_assert_msg(nbytes == 1024UL,
     "Expected nbytes = 1024, got %" PR_LU, (pr_off_t) nbytes);
 
   str = "1";
   units = "MB";
   res = pr_str_get_nbytes(str, units, &nbytes);
-  fail_unless(res == 0, "Expected result 0, got %d: %s", res, strerror(errno));
-  fail_unless(nbytes == 1048576UL,
+  ck_assert_msg(res == 0, "Expected result 0, got %d: %s", res, strerror(errno));
+  ck_assert_msg(nbytes == 1048576UL,
     "Expected nbytes = 1048576, got %" PR_LU, (pr_off_t) nbytes);
 
   str = "1";
   units = "GB";
   res = pr_str_get_nbytes(str, units, &nbytes);
-  fail_unless(res == 0, "Expected result 0, got %d: %s", res, strerror(errno));
-  fail_unless(nbytes == 1073741824UL,
+  ck_assert_msg(res == 0, "Expected result 0, got %d: %s", res, strerror(errno));
+  ck_assert_msg(nbytes == 1073741824UL,
     "Expected nbytes = 1073741824, got %" PR_LU, (pr_off_t) nbytes);
 
   str = "1";
   units = "TB";
   res = pr_str_get_nbytes(str, units, &nbytes);
-  fail_unless(res == 0, "Expected result 0, got %d: %s", res, strerror(errno));
-  fail_unless(nbytes == 1099511627776UL,
+  ck_assert_msg(res == 0, "Expected result 0, got %d: %s", res, strerror(errno));
+  ck_assert_msg(nbytes == 1099511627776UL,
     "Expected nbytes = 1099511627776, got %" PR_LU, (pr_off_t) nbytes);
 
   /* This should definitely trigger the ERANGE error. */
   str = "1099511627776";
   units = "TB";
   res = pr_str_get_nbytes(str, units, &nbytes);
-  fail_unless(res == -1, "Expected ERANGE failure, succeeded unexpectedly");
-  fail_unless(errno == ERANGE, "Expected %s [%d], got %s [%d]",
+  ck_assert_msg(res == -1, "Expected ERANGE failure, succeeded unexpectedly");
+  ck_assert_msg(errno == ERANGE, "Expected %s [%d], got %s [%d]",
     strerror(ERANGE), ERANGE, strerror(errno), errno);
 }
 END_TEST
@@ -1004,196 +1009,196 @@ START_TEST (get_duration_test) {
   int res;
 
   res = pr_str_get_duration(NULL, NULL);
-  fail_unless(res == -1, "Failed to handle null arguments");
-  fail_unless(errno == EINVAL, "Failed to set errno to EINVAL");
+  ck_assert_msg(res == -1, "Failed to handle null arguments");
+  ck_assert_msg(errno == EINVAL, "Failed to set errno to EINVAL");
 
   str = "";
   res = pr_str_get_duration(str, NULL);
-  fail_unless(res == -1,
+  ck_assert_msg(res == -1,
     "Failed to handle badly formatted string '%s'", str);
-  fail_unless(errno == EINVAL, "Failed to set errno to EINVAL");
+  ck_assert_msg(errno == EINVAL, "Failed to set errno to EINVAL");
 
   str = "-1:-1:-1";
   res = pr_str_get_duration(str, NULL);
-  fail_unless(res == -1,
+  ck_assert_msg(res == -1,
     "Failed to handle badly formatted string '%s'", str);
-  fail_unless(errno == ERANGE, "Failed to set errno to ERANGE");
+  ck_assert_msg(errno == ERANGE, "Failed to set errno to ERANGE");
 
   str = "a:b:c";
   res = pr_str_get_duration(str, NULL);
-  fail_unless(res == -1,
+  ck_assert_msg(res == -1,
     "Failed to handle badly formatted string '%s'", str);
-  fail_unless(errno == EINVAL, "Failed to set errno to EINVAL");
+  ck_assert_msg(errno == EINVAL, "Failed to set errno to EINVAL");
 
   str = "111:222:333";
   res = pr_str_get_duration(str, NULL);
-  fail_unless(res == -1,
+  ck_assert_msg(res == -1,
     "Failed to handle badly formatted string '%s'", str);
-  fail_unless(errno == EINVAL, "Failed to set errno to EINVAL");
+  ck_assert_msg(errno == EINVAL, "Failed to set errno to EINVAL");
 
   /* Test well-formatted hh::mm::ss strings. */
 
   str = "00:00:00";
   expected = 0;
   res = pr_str_get_duration(str, &duration);
-  fail_unless(res == 0,
+  ck_assert_msg(res == 0,
     "Failed to parse well-formed time string '%s': %s", str, strerror(errno));
-  fail_unless(duration == expected,
+  ck_assert_msg(duration == expected,
     "Expected duration %d secs, got %d", expected, duration);
 
   str = "01:02:03";
   expected = 3723;
   res = pr_str_get_duration(str, &duration);
-  fail_unless(res == 0,
+  ck_assert_msg(res == 0,
     "Failed to parse well-formed time string '%s': %s", str, strerror(errno));
-  fail_unless(duration == expected,
+  ck_assert_msg(duration == expected,
     "Expected duration %d secs, got %d", expected, duration);
 
   str = "99:99:99";
   expected = 362439;
   res = pr_str_get_duration(str, &duration);
-  fail_unless(res == 0,
+  ck_assert_msg(res == 0,
     "Failed to parse well-formed time string '%s': %s", str, strerror(errno));
-  fail_unless(duration == expected,
+  ck_assert_msg(duration == expected,
     "Expected duration %d secs, got %d", expected, duration);
 
   /* Test bad suffixes: -1h, -1hr, 9999foo, etc */
 
   str = "-1h";
   res = pr_str_get_duration(str, NULL);
-  fail_unless(res == -1,
+  ck_assert_msg(res == -1,
     "Failed to handle badly formatted suffix string '%s'", str);
-  fail_unless(errno == ERANGE, "Failed to set errno to ERANGE");
+  ck_assert_msg(errno == ERANGE, "Failed to set errno to ERANGE");
 
   str = "-1hr";
   res = pr_str_get_duration(str, NULL);
-  fail_unless(res == -1,
+  ck_assert_msg(res == -1,
     "Failed to handle badly formatted suffix string '%s'", str);
-  fail_unless(errno == ERANGE, "Failed to set errno to ERANGE");
+  ck_assert_msg(errno == ERANGE, "Failed to set errno to ERANGE");
 
   str = "99foo";
   res = pr_str_get_duration(str, NULL);
-  fail_unless(res == -1,
+  ck_assert_msg(res == -1,
     "Failed to handle badly formatted suffix string '%s'", str);
-  fail_unless(errno == EINVAL, "Failed to set errno to EINVAL");
+  ck_assert_msg(errno == EINVAL, "Failed to set errno to EINVAL");
 
   str = "foo";
   res = pr_str_get_duration(str, NULL);
-  fail_unless(res == -1,
+  ck_assert_msg(res == -1,
     "Failed to handle badly formatted suffix string '%s'", str);
-  fail_unless(errno == EINVAL, "Failed to set errno to EINVAL");
+  ck_assert_msg(errno == EINVAL, "Failed to set errno to EINVAL");
 
   /* Test good suffices: "H"/"h"/"hr", "M"/"m"/"min", "S"/"s"/"sec" */
 
   str = "76H";
   expected = 273600;
   res = pr_str_get_duration(str, &duration);
-  fail_unless(res == 0,
+  ck_assert_msg(res == 0,
     "Failed to parse well-formed time string '%s': %s", str, strerror(errno));
-  fail_unless(duration == expected,
+  ck_assert_msg(duration == expected,
     "Expected duration %d secs, got %d", expected, duration);
 
   str = "76h";
   expected = 273600;
   res = pr_str_get_duration(str, &duration);
-  fail_unless(res == 0,
+  ck_assert_msg(res == 0,
     "Failed to parse well-formed time string '%s': %s", str, strerror(errno));
-  fail_unless(duration == expected,
+  ck_assert_msg(duration == expected,
     "Expected duration %d secs, got %d", expected, duration);
 
   str = "76Hr";
   expected = 273600;
   res = pr_str_get_duration(str, &duration);
-  fail_unless(res == 0,
+  ck_assert_msg(res == 0,
     "Failed to parse well-formed time string '%s': %s", str, strerror(errno));
-  fail_unless(duration == expected,
+  ck_assert_msg(duration == expected,
     "Expected duration %d secs, got %d", expected, duration);
 
   str = "888M";
   expected = 53280;
   res = pr_str_get_duration(str, &duration);
-  fail_unless(res == 0,
+  ck_assert_msg(res == 0,
     "Failed to parse well-formed time string '%s': %s", str, strerror(errno));
-  fail_unless(duration == expected,
+  ck_assert_msg(duration == expected,
     "Expected duration %d secs, got %d", expected, duration);
 
   str = "888m";
   expected = 53280;
   res = pr_str_get_duration(str, &duration);
-  fail_unless(res == 0,
+  ck_assert_msg(res == 0,
     "Failed to parse well-formed time string '%s': %s", str, strerror(errno));
-  fail_unless(duration == expected,
+  ck_assert_msg(duration == expected,
     "Expected duration %d secs, got %d", expected, duration);
 
   str = "888MiN";
   expected = 53280;
   res = pr_str_get_duration(str, &duration);
-  fail_unless(res == 0,
+  ck_assert_msg(res == 0,
     "Failed to parse well-formed time string '%s': %s", str, strerror(errno));
-  fail_unless(duration == expected,
+  ck_assert_msg(duration == expected,
     "Expected duration %d secs, got %d", expected, duration);
 
   str = "999S";
   expected = 999;
   res = pr_str_get_duration(str, &duration);
-  fail_unless(res == 0,
+  ck_assert_msg(res == 0,
     "Failed to parse well-formed time string '%s': %s", str, strerror(errno));
-  fail_unless(duration == expected,
+  ck_assert_msg(duration == expected,
     "Expected duration %d secs, got %d", expected, duration);
 
   str = "999s";
   expected = 999;
   res = pr_str_get_duration(str, &duration);
-  fail_unless(res == 0,
+  ck_assert_msg(res == 0,
     "Failed to parse well-formed time string '%s': %s", str, strerror(errno));
-  fail_unless(duration == expected,
+  ck_assert_msg(duration == expected,
     "Expected duration %d secs, got %d", expected, duration);
 
   str = "999sEc";
   expected = 999;
   res = pr_str_get_duration(str, &duration);
-  fail_unless(res == 0,
+  ck_assert_msg(res == 0,
     "Failed to parse well-formed time string '%s': %s", str, strerror(errno));
-  fail_unless(duration == expected,
+  ck_assert_msg(duration == expected,
     "Expected duration %d secs, got %d", expected, duration);
 
   str = "0h";
   expected = 0;
   res = pr_str_get_duration(str, &duration);
-  fail_unless(res == 0,
+  ck_assert_msg(res == 0,
     "Failed to parse well-formed time string '%s': %s", str, strerror(errno));
-  fail_unless(duration == expected,
+  ck_assert_msg(duration == expected,
     "Expected duration %d secs, got %d", expected, duration);
 
   str = "0M";
   expected = 0;
   res = pr_str_get_duration(str, &duration);
-  fail_unless(res == 0,
+  ck_assert_msg(res == 0,
     "Failed to parse well-formed time string '%s': %s", str, strerror(errno));
-  fail_unless(duration == expected,
+  ck_assert_msg(duration == expected,
     "Expected duration %d secs, got %d", expected, duration);
 
   str = "0sec";
   expected = 0;
   res = pr_str_get_duration(str, &duration);
-  fail_unless(res == 0,
+  ck_assert_msg(res == 0,
     "Failed to parse well-formed time string '%s': %s", str, strerror(errno));
-  fail_unless(duration == expected,
+  ck_assert_msg(duration == expected,
     "Expected duration %d secs, got %d", expected, duration);
 
   str = "17";
   expected = 17;
   res = pr_str_get_duration(str, &duration);
-  fail_unless(res == 0,
+  ck_assert_msg(res == 0,
     "Failed to parse well-formed time string '%s': %s", str, strerror(errno));
-  fail_unless(duration == expected,
+  ck_assert_msg(duration == expected,
     "Expected duration %d secs, got %d", expected, duration);
 
   str = "-1";
   res = pr_str_get_duration(str, NULL);
-  fail_unless(res == -1,
+  ck_assert_msg(res == -1,
     "Failed to handle badly formatted suffix string '%s'", str);
-  fail_unless(errno == ERANGE, "Failed to set errno to ERANGE");
+  ck_assert_msg(errno == ERANGE, "Failed to set errno to ERANGE");
 }
 END_TEST
 
@@ -1202,46 +1207,46 @@ START_TEST (strnrstr_test) {
   const char *s = NULL, *suffix = NULL;
 
   res = pr_strnrstr(NULL, 0, NULL, 0, flags);
-  fail_unless(res == -1, "Failed to handle null arguments");
-  fail_unless(errno == EINVAL, "Failed to set errno to EINVAL");
+  ck_assert_msg(res == -1, "Failed to handle null arguments");
+  ck_assert_msg(errno == EINVAL, "Failed to set errno to EINVAL");
 
   res = pr_strnrstr(NULL, 0, "", 0, flags);
-  fail_unless(res == -1, "Failed to handle null s");
-  fail_unless(errno == EINVAL, "Failed to set errno to EINVAL");
+  ck_assert_msg(res == -1, "Failed to handle null s");
+  ck_assert_msg(errno == EINVAL, "Failed to set errno to EINVAL");
 
   res = pr_strnrstr("", 0, NULL, 0, flags);
-  fail_unless(res == -1, "Failed to handle null suffix");
-  fail_unless(errno == EINVAL, "Failed to set errno to EINVAL");
+  ck_assert_msg(res == -1, "Failed to handle null suffix");
+  ck_assert_msg(errno == EINVAL, "Failed to set errno to EINVAL");
 
   s = suffix = "";
   res = pr_strnrstr(s, 0, suffix, 0, flags);
-  fail_unless(res == TRUE, "Expected true, got false");
+  ck_assert_msg(res == TRUE, "Expected true, got false");
 
   s = "";
   suffix = "s";
   res = pr_strnrstr(s, 0, suffix, 0, flags);
-  fail_unless(res == FALSE, "Expected false, got true");
+  ck_assert_msg(res == FALSE, "Expected false, got true");
 
   s = "food";
   suffix = "ood";
   res = pr_strnrstr(s, 0, suffix, 0, flags);
-  fail_unless(res == TRUE, "Expected true, got false");
+  ck_assert_msg(res == TRUE, "Expected true, got false");
 
   s = "food";
   suffix = "ood";
   res = pr_strnrstr(s, 4, suffix, 3, flags);
-  fail_unless(res == TRUE, "Expected true, got false");
+  ck_assert_msg(res == TRUE, "Expected true, got false");
 
   s = "FOOD";
   suffix = "ood";
   res = pr_strnrstr(s, 4, suffix, 3, flags);
-  fail_unless(res == FALSE, "Expected false, got true");
+  ck_assert_msg(res == FALSE, "Expected false, got true");
 
   flags = PR_STR_FL_IGNORE_CASE;
   s = "FOOD";
   suffix = "ood";
   res = pr_strnrstr(s, 4, suffix, 3, flags);
-  fail_unless(res == TRUE, "Expected true, got false");
+  ck_assert_msg(res == TRUE, "Expected true, got false");
 }
 END_TEST
 
@@ -1250,42 +1255,42 @@ START_TEST (bin2hex_test) {
   const unsigned char *str;
 
   res = pr_str_bin2hex(NULL, NULL, 0, 0);
-  fail_unless(res == NULL, "Failed to handle null arguments");
-  fail_unless(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
+  ck_assert_msg(res == NULL, "Failed to handle null arguments");
+  ck_assert_msg(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
     strerror(errno), errno);
 
   res = pr_str_bin2hex(p, NULL, 0, 0);
-  fail_unless(res == NULL, "Failed to handle null data argument");
-  fail_unless(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
+  ck_assert_msg(res == NULL, "Failed to handle null data argument");
+  ck_assert_msg(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
     strerror(errno), errno);
 
   /* Empty string. */
   str = (const unsigned char *) "foobar";
   expected = "";
   res = pr_str_bin2hex(p, (const unsigned char *) str, 0, 0);
-  fail_unless(res != NULL, "Failed to hexify '%s': %s", str, strerror(errno));
-  fail_unless(strcmp(res, expected) == 0, "Expected '%s', got '%s'",
+  ck_assert_msg(res != NULL, "Failed to hexify '%s': %s", str, strerror(errno));
+  ck_assert_msg(strcmp(res, expected) == 0, "Expected '%s', got '%s'",
     expected, res);
 
   /* default (lowercase) */
   expected = "666f6f626172";
   res = pr_str_bin2hex(p, str, strlen((char *) str), 0);
-  fail_unless(res != NULL, "Failed to hexify '%s': %s", str, strerror(errno));
-  fail_unless(strcmp(res, expected) == 0, "Expected '%s', got '%s'",
+  ck_assert_msg(res != NULL, "Failed to hexify '%s': %s", str, strerror(errno));
+  ck_assert_msg(strcmp(res, expected) == 0, "Expected '%s', got '%s'",
     expected, res);
 
   /* lowercase */
   expected = "666f6f626172";
   res = pr_str_bin2hex(p, str, strlen((char *) str), 0);
-  fail_unless(res != NULL, "Failed to hexify '%s': %s", str, strerror(errno));
-  fail_unless(strcmp(res, expected) == 0, "Expected '%s', got '%s'",
+  ck_assert_msg(res != NULL, "Failed to hexify '%s': %s", str, strerror(errno));
+  ck_assert_msg(strcmp(res, expected) == 0, "Expected '%s', got '%s'",
     expected, res);
 
   /* uppercase */
   expected = "666F6F626172";
   res = pr_str_bin2hex(p, str, strlen((char *) str), PR_STR_FL_HEX_USE_UC);
-  fail_unless(res != NULL, "Failed to hexify '%s': %s", str, strerror(errno));
-  fail_unless(strcmp(res, expected) == 0, "Expected '%s', got '%s'",
+  ck_assert_msg(res != NULL, "Failed to hexify '%s': %s", str, strerror(errno));
+  ck_assert_msg(strcmp(res, expected) == 0, "Expected '%s', got '%s'",
     expected, res);
 }
 END_TEST
@@ -1296,13 +1301,13 @@ START_TEST (hex2bin_test) {
   size_t expected_len, hex_len, len;
 
   res = pr_str_hex2bin(NULL, NULL, 0, NULL);
-  fail_unless(res == NULL, "Failed to handle null arguments");
-  fail_unless(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
+  ck_assert_msg(res == NULL, "Failed to handle null arguments");
+  ck_assert_msg(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
     strerror(errno), errno);
 
   res = pr_str_hex2bin(p, NULL, 0, 0);
-  fail_unless(res == NULL, "Failed to handle null data argument");
-  fail_unless(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
+  ck_assert_msg(res == NULL, "Failed to handle null data argument");
+  ck_assert_msg(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
     strerror(errno), errno);
 
   /* Empty string. */
@@ -1310,8 +1315,8 @@ START_TEST (hex2bin_test) {
   hex_len = strlen((char *) hex);
   expected = (unsigned char *) "";
   res = pr_str_hex2bin(p, hex, hex_len, &len);
-  fail_unless(res != NULL, "Failed to unhexify '%s': %s", hex, strerror(errno));
-  fail_unless(strcmp((const char *) res, (const char *) expected) == 0,
+  ck_assert_msg(res != NULL, "Failed to unhexify '%s': %s", hex, strerror(errno));
+  ck_assert_msg(strcmp((const char *) res, (const char *) expected) == 0,
     "Expected '%s', got '%s'", expected, res);
 
   hex = (const unsigned char *) "112233";
@@ -1323,10 +1328,10 @@ START_TEST (hex2bin_test) {
   expected[2] = 51;
 
   res = pr_str_hex2bin(p, (const unsigned char *) hex, hex_len, &len);
-  fail_unless(res != NULL, "Failed to unhexify '%s': %s", hex, strerror(errno));
-  fail_unless(len == expected_len, "Expected len %lu, got %lu",
-    (unsigned long) expected_len, len);
-  fail_unless(memcmp(res, expected, len) == 0,
+  ck_assert_msg(res != NULL, "Failed to unhexify '%s': %s", hex, strerror(errno));
+  ck_assert_msg(len == expected_len, "Expected len %lu, got %lu",
+    (unsigned long) expected_len, (unsigned long) len);
+  ck_assert_msg(memcmp(res, expected, len) == 0,
     "Did not receive expected unhexified data");
 
   /* lowercase */
@@ -1342,10 +1347,10 @@ START_TEST (hex2bin_test) {
   expected[5] = 'r';
 
   res = pr_str_hex2bin(p, (const unsigned char *) hex, hex_len, &len);
-  fail_unless(res != NULL, "Failed to unhexify '%s': %s", hex, strerror(errno));
-  fail_unless(len == expected_len, "Expected len %lu, got %lu",
-    (unsigned long) expected_len, len);
-  fail_unless(memcmp(res, expected, len) == 0,
+  ck_assert_msg(res != NULL, "Failed to unhexify '%s': %s", hex, strerror(errno));
+  ck_assert_msg(len == expected_len, "Expected len %lu, got %lu",
+    (unsigned long) expected_len, (unsigned long) len);
+  ck_assert_msg(memcmp(res, expected, len) == 0,
     "Did not receive expected unhexified data");
 
   /* uppercase */
@@ -1353,18 +1358,18 @@ START_TEST (hex2bin_test) {
   hex_len = strlen((char *) hex);
 
   res = pr_str_hex2bin(p, (const unsigned char *) hex, hex_len, &len);
-  fail_unless(res != NULL, "Failed to unhexify '%s': %s", hex, strerror(errno));
-  fail_unless(len == expected_len, "Expected len %lu, got %lu",
-    (unsigned long) expected_len, len);
-  fail_unless(memcmp(res, expected, len) == 0,
+  ck_assert_msg(res != NULL, "Failed to unhexify '%s': %s", hex, strerror(errno));
+  ck_assert_msg(len == expected_len, "Expected len %lu, got %lu",
+    (unsigned long) expected_len, (unsigned long) len);
+  ck_assert_msg(memcmp(res, expected, len) == 0,
     "Did not receive expected unhexified data");
 
   /* Handle known not-hex data properly. */
   hex = (const unsigned char *) "Hello, World!\n";
   hex_len = strlen((char *) hex);
   res = pr_str_hex2bin(p, hex, hex_len, &len);
-  fail_unless(res == NULL, "Successfully unhexified '%s' unexpectedly", hex);
-  fail_unless(errno == ERANGE, "Expected ERANGE (%d), got %s (%d)", ERANGE,
+  ck_assert_msg(res == NULL, "Successfully unhexified '%s' unexpectedly", hex);
+  ck_assert_msg(errno == ERANGE, "Expected ERANGE (%d), got %s (%d)", ERANGE,
     strerror(errno), errno);
 }
 END_TEST
@@ -1375,22 +1380,22 @@ START_TEST (levenshtein_test) {
 
   mark_point();
   res = pr_str_levenshtein(NULL, NULL, NULL, 0, 0, 0, 0, flags);
-  fail_unless(res < 0, "Failed to handle null pool");
-  fail_unless(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
+  ck_assert_msg(res < 0, "Failed to handle null pool");
+  ck_assert_msg(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
     strerror(errno), errno);
 
   mark_point();
   res = pr_str_levenshtein(p, NULL, NULL, 0, 0, 0, 0, flags);
-  fail_unless(res < 0, "Failed to handle null a string");
-  fail_unless(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
+  ck_assert_msg(res < 0, "Failed to handle null a string");
+  ck_assert_msg(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
     strerror(errno), errno);
 
   a = "foo";
 
   mark_point();
   res = pr_str_levenshtein(p, a, NULL, 0, 0, 0, 0, flags);
-  fail_unless(res < 0, "Failed to handle null b string");
-  fail_unless(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
+  ck_assert_msg(res < 0, "Failed to handle null b string");
+  ck_assert_msg(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
     strerror(errno), errno);
 
   expected = 0;
@@ -1398,27 +1403,27 @@ START_TEST (levenshtein_test) {
 
   mark_point();
   res = pr_str_levenshtein(p, a, b, 0, 0, 0, 0, flags);
-  fail_if(res < 0,
+  ck_assert_msg(res >= 0,
     "Failed to compute Levenshtein distance from '%s' to '%s': %s", a, b,
     strerror(errno));
-  fail_unless(expected == res, "Expected distance %d, got %d", expected, res);
+  ck_assert_msg(expected == res, "Expected distance %d, got %d", expected, res);
 
   expected = 3;
   b = "Foo";
   res = pr_str_levenshtein(p, a, b, 0, 1, 1, 1, flags);
-  fail_if(res < 0,
+  ck_assert_msg(res >= 0,
     "Failed to compute Levenshtein distance from '%s' to '%s': %s", a, b,
     strerror(errno));
-  fail_unless(expected == res, "Expected distance %d, got %d", expected, res);
+  ck_assert_msg(expected == res, "Expected distance %d, got %d", expected, res);
 
   flags = PR_STR_FL_IGNORE_CASE;
   expected = 2;
   b = "Foo";
   res = pr_str_levenshtein(p, a, b, 0, 1, 1, 1, flags);
-  fail_if(res < 0,
+  ck_assert_msg(res >= 0,
     "Failed to compute Levenshtein distance from '%s' to '%s': %s", a, b,
     strerror(errno));
-  fail_unless(expected == res, "Expected distance %d, got %d", expected, res);
+  ck_assert_msg(expected == res, "Expected distance %d, got %d", expected, res);
 }
 END_TEST
 
@@ -1428,30 +1433,30 @@ START_TEST (similars_test) {
 
   mark_point();
   res = pr_str_get_similars(NULL, NULL, NULL, 0, 0);
-  fail_unless(res == NULL, "Failed to handle null pool");
-  fail_unless(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
+  ck_assert_msg(res == NULL, "Failed to handle null pool");
+  ck_assert_msg(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
     strerror(errno), errno);
 
   mark_point();
   res = pr_str_get_similars(p, NULL, NULL, 0, 0);
-  fail_unless(res == NULL, "Failed to handle null string");
-  fail_unless(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
+  ck_assert_msg(res == NULL, "Failed to handle null string");
+  ck_assert_msg(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
     strerror(errno), errno);
 
   s = "foo";
 
   mark_point();
   res = pr_str_get_similars(p, s, NULL, 0, 0);
-  fail_unless(res == NULL, "Failed to handle null candidates");
-  fail_unless(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
+  ck_assert_msg(res == NULL, "Failed to handle null candidates");
+  ck_assert_msg(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
     strerror(errno), errno);
 
   candidates = make_array(p, 5, sizeof(const char *));
 
   mark_point();
   res = pr_str_get_similars(p, s, candidates, 0, 0);
-  fail_unless(res == NULL, "Failed to handle empty candidates");
-  fail_unless(errno == ENOENT, "Expected ENOENT (%d), got %s (%d)", ENOENT,
+  ck_assert_msg(res == NULL, "Failed to handle empty candidates");
+  ck_assert_msg(errno == ENOENT, "Expected ENOENT (%d), got %s (%d)", ENOENT,
     strerror(errno), errno);
 
   *((const char **) push_array(candidates)) = pstrdup(p, "fools");
@@ -1461,9 +1466,9 @@ START_TEST (similars_test) {
 
   mark_point();
   res = pr_str_get_similars(p, s, candidates, 0, 0);
-  fail_unless(res != NULL, "Failed to find similar strings to '%s': %s", s,
+  ck_assert_msg(res != NULL, "Failed to find similar strings to '%s': %s", s,
     strerror(errno));
-  fail_unless(res->nelts > 0, "Expected >0 similar strings, got %u",
+  ck_assert_msg(res->nelts > 0, "Expected >0 similar strings, got %u",
     res->nelts);
 
   mark_point();
@@ -1481,17 +1486,17 @@ START_TEST (similars_test) {
 
   expected = "fools";
 
-  fail_unless(strcmp(similars[0], expected) == 0,
+  ck_assert_msg(strcmp(similars[0], expected) == 0,
     "Expected similar '%s', got '%s'", expected, similars[0]);
 
-  fail_unless(strcmp(similars[1], expected) != 0,
+  ck_assert_msg(strcmp(similars[1], expected) != 0,
     "Unexpectedly got similar '%s'", similars[1]);
 
   mark_point();
   res = pr_str_get_similars(p, s, candidates, 0, PR_STR_FL_IGNORE_CASE);
-  fail_unless(res != NULL, "Failed to find similar strings to '%s': %s", s,
+  ck_assert_msg(res != NULL, "Failed to find similar strings to '%s': %s", s,
     strerror(errno));
-  fail_unless(res->nelts > 0, "Expected >0 similar strings, got %u",
+  ck_assert_msg(res->nelts > 0, "Expected >0 similar strings, got %u",
     res->nelts);
 
   mark_point();
@@ -1509,12 +1514,12 @@ START_TEST (similars_test) {
     expected = "FOO";
   }
 
-  fail_unless(strcmp(similars[0], expected) == 0,
+  ck_assert_msg(strcmp(similars[0], expected) == 0,
     "Expected similar '%s', got '%s'", expected, similars[0]);
 
   expected = "fools";
 
-  fail_unless(strcmp(similars[1], expected) == 0,
+  ck_assert_msg(strcmp(similars[1], expected) == 0,
     "Expected similar '%s', got '%s'", expected, similars[1]);
 }
 END_TEST
@@ -1523,7 +1528,7 @@ START_TEST (str2uid_test) {
   int res;
 
   res = pr_str2uid(NULL, NULL);
-  fail_unless(res == -1, "Failed to handle null arguments");
+  ck_assert_msg(res == -1, "Failed to handle null arguments");
 }
 END_TEST
 
@@ -1531,7 +1536,7 @@ START_TEST (str2gid_test) {
   int res;
 
   res = pr_str2gid(NULL, NULL);
-  fail_unless(res == -1, "Failed to handle null arguments");
+  ck_assert_msg(res == -1, "Failed to handle null arguments");
 }
 END_TEST
 
@@ -1539,10 +1544,10 @@ START_TEST (uid2str_test) {
   const char *res;
 
   res = pr_uid2str(NULL, (uid_t) 1);
-  fail_unless(strcmp(res, "1") == 0, "Expected '1', got '%s'", res);
+  ck_assert_msg(strcmp(res, "1") == 0, "Expected '1', got '%s'", res);
 
   res = pr_uid2str(NULL, (uid_t) -1);
-  fail_unless(strcmp(res, "-1") == 0, "Expected '-1', got '%s'", res);
+  ck_assert_msg(strcmp(res, "-1") == 0, "Expected '-1', got '%s'", res);
 }
 END_TEST
 
@@ -1550,10 +1555,10 @@ START_TEST (gid2str_test) {
   const char *res;
 
   res = pr_gid2str(NULL, (gid_t) 1);
-  fail_unless(strcmp(res, "1") == 0, "Expected '1', got '%s'", res);
+  ck_assert_msg(strcmp(res, "1") == 0, "Expected '1', got '%s'", res);
 
   res = pr_gid2str(NULL, (gid_t) -1);
-  fail_unless(strcmp(res, "-1") == 0, "Expected '-1', got '%s'", res);
+  ck_assert_msg(strcmp(res, "-1") == 0, "Expected '-1', got '%s'", res);
 }
 END_TEST
 
@@ -1562,27 +1567,27 @@ START_TEST (str_quote_test) {
   char *expected, *path;
 
   res = pr_str_quote(NULL, NULL);
-  fail_unless(res == NULL, "Failed to handle null arguments");
-  fail_unless(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
+  ck_assert_msg(res == NULL, "Failed to handle null arguments");
+  ck_assert_msg(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
     strerror(errno), errno);
 
   res = pr_str_quote(p, NULL);
-  fail_unless(res == NULL, "Failed to handle null path argument");
-  fail_unless(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
+  ck_assert_msg(res == NULL, "Failed to handle null path argument");
+  ck_assert_msg(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
     strerror(errno), errno);
 
   path = "/tmp/";
   expected = path;
   res = pr_str_quote(p, path);
-  fail_unless(res != NULL, "Failed to quote '%s': %s", path, strerror(errno));
-  fail_unless(strcmp(res, expected) == 0, "Expected '%s', got '%s'", expected,
+  ck_assert_msg(res != NULL, "Failed to quote '%s': %s", path, strerror(errno));
+  ck_assert_msg(strcmp(res, expected) == 0, "Expected '%s', got '%s'", expected,
     res);
 
   path = "/\"tmp\"/";
   expected = "/\"\"tmp\"\"/";
   res = pr_str_quote(p, path);
-  fail_unless(res != NULL, "Failed to quote '%s': %s", path, strerror(errno));
-  fail_unless(strcmp(res, expected) == 0, "Expected '%s', got '%s'", expected,
+  ck_assert_msg(res != NULL, "Failed to quote '%s': %s", path, strerror(errno));
+  ck_assert_msg(strcmp(res, expected) == 0, "Expected '%s', got '%s'", expected,
     res);
 }
 END_TEST
@@ -1592,27 +1597,27 @@ START_TEST (quote_dir_test) {
   char *expected, *path;
 
   res = quote_dir(NULL, NULL);
-  fail_unless(res == NULL, "Failed to handle null arguments");
-  fail_unless(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
+  ck_assert_msg(res == NULL, "Failed to handle null arguments");
+  ck_assert_msg(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
     strerror(errno), errno);
 
   res = quote_dir(p, NULL);
-  fail_unless(res == NULL, "Failed to handle null path argument");
-  fail_unless(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
+  ck_assert_msg(res == NULL, "Failed to handle null path argument");
+  ck_assert_msg(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
     strerror(errno), errno);
 
   path = "/tmp/";
   expected = path;
   res = quote_dir(p, path);
-  fail_unless(res != NULL, "Failed to quote '%s': %s", path, strerror(errno));
-  fail_unless(strcmp(res, expected) == 0, "Expected '%s', got '%s'", expected,
+  ck_assert_msg(res != NULL, "Failed to quote '%s': %s", path, strerror(errno));
+  ck_assert_msg(strcmp(res, expected) == 0, "Expected '%s', got '%s'", expected,
     res);
 
   path = "/\"tmp\"/";
   expected = "/\"\"tmp\"\"/";
   res = quote_dir(p, path);
-  fail_unless(res != NULL, "Failed to quote '%s': %s", path, strerror(errno));
-  fail_unless(strcmp(res, expected) == 0, "Expected '%s', got '%s'", expected,
+  ck_assert_msg(res != NULL, "Failed to quote '%s': %s", path, strerror(errno));
+  ck_assert_msg(strcmp(res, expected) == 0, "Expected '%s', got '%s'", expected,
     res);
 }
 END_TEST
@@ -1620,111 +1625,212 @@ END_TEST
 START_TEST (text_to_array_test) {
   register unsigned int i;
   array_header *res;
-  const char *text;
+  const char *text, *elt;
 
   mark_point();
   res = pr_str_text_to_array(NULL, NULL, ',');
-  fail_unless(res == NULL, "Failed to handle null pool");
-  fail_unless(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
+  ck_assert_msg(res == NULL, "Failed to handle null pool");
+  ck_assert_msg(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
     strerror(errno), errno);
 
   mark_point();
   res = pr_str_text_to_array(p, NULL, ',');
-  fail_unless(res == NULL, "Failed to handle null text");
-  fail_unless(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
+  ck_assert_msg(res == NULL, "Failed to handle null text");
+  ck_assert_msg(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
     strerror(errno), errno);
 
+  mark_point();
   text = "";
+  res = pr_str_text_to_array(p, text, ',');
+  ck_assert_msg(res != NULL, "Failed to handle text '%s': %s", text,
+    strerror(errno));
+  ck_assert_msg(res->nelts == 0, "Expected 0 items, got %u", res->nelts);
 
   mark_point();
-  res = pr_str_text_to_array(p, text, ',');
-  fail_unless(res != NULL, "Failed to handle text '%s': %s", text,
-    strerror(errno));
-  fail_unless(res->nelts == 0, "Expected 0 items, got %u", res->nelts);
-
   text = ",";
+  res = pr_str_text_to_array(p, text, ',');
+  ck_assert_msg(res != NULL, "Failed to handle text '%s': %s", text,
+    strerror(errno));
+  ck_assert_msg(res->nelts == 0, "Expected 0 items, got %u", res->nelts);
 
   mark_point();
-  res = pr_str_text_to_array(p, text, ',');
-  fail_unless(res != NULL, "Failed to handle text '%s': %s", text,
-    strerror(errno));
-  fail_unless(res->nelts == 0, "Expected 0 items, got %u", res->nelts);
-
   text = ",,,";
+  res = pr_str_text_to_array(p, text, ',');
+  ck_assert_msg(res != NULL, "Failed to handle text '%s': %s", text,
+    strerror(errno));
+  ck_assert_msg(res->nelts == 0, "Expected 0 items, got %u", res->nelts);
 
   mark_point();
-  res = pr_str_text_to_array(p, text, ',');
-  fail_unless(res != NULL, "Failed to handle text '%s': %s", text,
-    strerror(errno));
-  fail_unless(res->nelts == 0, "Expected 0 items, got %u", res->nelts);
-
   text = "foo";
+  res = pr_str_text_to_array(p, text, ',');
+  ck_assert_msg(res != NULL, "Failed to handle text '%s': %s", text,
+    strerror(errno));
+  ck_assert_msg(res->nelts == 1, "Expected 1 item, got %u", res->nelts);
+  elt = ((char **) res->elts)[0];
+  ck_assert_msg(elt != NULL, "Expected non-null item");
+  ck_assert_msg(strcmp(elt, text) == 0, "Expected '%s', got '%s'", text, elt);
 
   mark_point();
-  res = pr_str_text_to_array(p, text, ',');
-  fail_unless(res != NULL, "Failed to handle text '%s': %s", text,
-    strerror(errno));
-  fail_unless(res->nelts == 1, "Expected 1 item, got %u", res->nelts);
-
   text = "foo,foo,foo";
-
-  mark_point();
   res = pr_str_text_to_array(p, text, ',');
-  fail_unless(res != NULL, "Failed to handle text '%s': %s", text,
+  ck_assert_msg(res != NULL, "Failed to handle text '%s': %s", text,
     strerror(errno));
-  fail_unless(res->nelts == 3, "Expected 3 items, got %u", res->nelts);
+  ck_assert_msg(res->nelts == 3, "Expected 3 items, got %u", res->nelts);
   for (i = 0; i < res->nelts; i++) {
     char *item, *expected;
 
     item = ((char **) res->elts)[i];
-    fail_unless(item != NULL, "Expected item at index %u, got null", i);
+    ck_assert_msg(item != NULL, "Expected item at index %u, got null", i);
 
     expected = "foo";
-    fail_unless(strcmp(item, expected) == 0,
+    ck_assert_msg(strcmp(item, expected) == 0,
       "Expected '%s' at index %u, got '%s'", expected, i, item);
   }
 
+  mark_point();
   text = "foo,foo,foo,";
-
-  mark_point();
   res = pr_str_text_to_array(p, text, ',');
-  fail_unless(res != NULL, "Failed to handle text '%s': %s", text,
+  ck_assert_msg(res != NULL, "Failed to handle text '%s': %s", text,
     strerror(errno));
-  fail_unless(res->nelts == 3, "Expected 3 items, got %u", res->nelts);
+  ck_assert_msg(res->nelts == 3, "Expected 3 items, got %u", res->nelts);
   for (i = 0; i < res->nelts; i++) {
     char *item, *expected;
 
     item = ((char **) res->elts)[i];
-    fail_unless(item != NULL, "Expected item at index %u, got null", i);
-
-    if (i == 3) {
-      expected = "";
-
-    } else {
-      expected = "foo";
-    }
-
-    fail_unless(strcmp(item, expected) == 0,
-      "Expected '%s' at index %u, got '%s'", expected, i, item);
-  }
-
-  text = "foo|foo|foo";
-
-  mark_point();
-  res = pr_str_text_to_array(p, text, '|');
-  fail_unless(res != NULL, "Failed to handle text '%s': %s", text,
-    strerror(errno));
-  fail_unless(res->nelts == 3, "Expected 3 items, got %u", res->nelts);
-  for (i = 0; i < res->nelts; i++) {
-    char *item, *expected;
-
-    item = ((char **) res->elts)[i];
-    fail_unless(item != NULL, "Expected item at index %u, got null", i);
+    ck_assert_msg(item != NULL, "Expected item at index %u, got null", i);
 
     expected = "foo";
-    fail_unless(strcmp(item, expected) == 0,
+    ck_assert_msg(strcmp(item, expected) == 0,
       "Expected '%s' at index %u, got '%s'", expected, i, item);
   }
+
+  mark_point();
+  text = "foo|foo|foo";
+  res = pr_str_text_to_array(p, text, '|');
+  ck_assert_msg(res != NULL, "Failed to handle text '%s': %s", text,
+    strerror(errno));
+  ck_assert_msg(res->nelts == 3, "Expected 3 items, got %u", res->nelts);
+  for (i = 0; i < res->nelts; i++) {
+    char *item, *expected;
+
+    item = ((char **) res->elts)[i];
+    ck_assert_msg(item != NULL, "Expected item at index %u, got null", i);
+
+    expected = "foo";
+    ck_assert_msg(strcmp(item, expected) == 0,
+      "Expected '%s' at index %u, got '%s'", expected, i, item);
+  }
+
+  /* With a leading delimiter character. */
+  mark_point();
+  text = "/foo/foo/foo";
+  res = pr_str_text_to_array(p, text, '/');
+  ck_assert_msg(res != NULL, "Failed to handle text '%s': %s", text,
+    strerror(errno));
+  ck_assert_msg(res->nelts == 3, "Expected 3 items, got %u", res->nelts);
+  for (i = 0; i < res->nelts; i++) {
+    char *item, *expected;
+
+    item = ((char **) res->elts)[i];
+    ck_assert_msg(item != NULL, "Expected item at index %u, got null", i);
+
+    expected = "foo";
+    ck_assert_msg(strcmp(item, expected) == 0,
+      "Expected '%s' at index %u, got '%s'", expected, i, item);
+  }
+
+  /* With a trailing delimiter character. */
+  mark_point();
+  text = "/foo/foo/foo/";
+  res = pr_str_text_to_array(p, text, '/');
+  ck_assert_msg(res != NULL, "Failed to handle text '%s': %s", text,
+    strerror(errno));
+  ck_assert_msg(res->nelts == 3, "Expected 3 items, got %u", res->nelts);
+  for (i = 0; i < res->nelts; i++) {
+    char *item, *expected;
+
+    item = ((char **) res->elts)[i];
+    ck_assert_msg(item != NULL, "Expected item at index %u, got null", i);
+
+    expected = "foo";
+    ck_assert_msg(strcmp(item, expected) == 0,
+      "Expected '%s' at index %u, got '%s'", expected, i, item);
+  }
+
+  /* Without leading or trailing delimiter characters. */
+  mark_point();
+  text = "foo/foo/foo";
+  res = pr_str_text_to_array(p, text, '/');
+  ck_assert_msg(res != NULL, "Failed to handle text '%s': %s", text,
+    strerror(errno));
+  ck_assert_msg(res->nelts == 3, "Expected 3 items, got %u", res->nelts);
+  for (i = 0; i < res->nelts; i++) {
+    char *item, *expected;
+
+    item = ((char **) res->elts)[i];
+    ck_assert_msg(item != NULL, "Expected item at index %u, got null", i);
+
+    expected = "foo";
+    ck_assert_msg(strcmp(item, expected) == 0,
+      "Expected '%s' at index %u, got '%s'", expected, i, item);
+  }
+}
+END_TEST
+
+START_TEST (array_to_text_test) {
+  array_header *items;
+  const char *delimiter;
+  char *res, *expected;
+
+  mark_point();
+  res = pr_str_array_to_text(NULL, NULL, NULL);
+  ck_assert_msg(res == NULL, "Failed to handle null pool");
+  ck_assert_msg(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
+    strerror(errno), errno);
+
+  mark_point();
+  res = pr_str_array_to_text(p, NULL, NULL);
+  ck_assert_msg(res == NULL, "Failed to handle null items");
+  ck_assert_msg(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
+    strerror(errno), errno);
+
+  items = make_array(p, 0, sizeof(char *));
+
+  mark_point();
+  res = pr_str_array_to_text(p, items, NULL);
+  ck_assert_msg(res == NULL, "Failed to handle null delimiter");
+  ck_assert_msg(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
+    strerror(errno), errno);
+
+  delimiter = ":";
+  expected = "";
+
+  mark_point();
+  res = pr_str_array_to_text(p, items, delimiter);
+  ck_assert_msg(res != NULL, "Error converting items to text: %s",
+    strerror(errno));
+  ck_assert_msg(strcmp(res, expected) == 0, "Expected '%s', got '%s'", expected,
+    res);
+
+  *((char **) push_array(items)) = pstrdup(p, "foo");
+  expected = "foo";
+
+  mark_point();
+  res = pr_str_array_to_text(p, items, delimiter);
+  ck_assert_msg(res != NULL, "Error converting items to text: %s",
+    strerror(errno));
+  ck_assert_msg(strcmp(res, expected) == 0, "Expected '%s', got '%s'", expected,
+    res);
+
+  *((char **) push_array(items)) = pstrdup(p, "bar");
+  expected = "foo:bar";
+
+  mark_point();
+  res = pr_str_array_to_text(p, items, delimiter);
+  ck_assert_msg(res != NULL, "Error converting items to text: %s",
+    strerror(errno));
+  ck_assert_msg(strcmp(res, expected) == 0, "Expected '%s', got '%s'", expected,
+    res);
 }
 END_TEST
 
@@ -1769,6 +1875,7 @@ Suite *tests_get_str_suite(void) {
   tcase_add_test(testcase, str_quote_test);
   tcase_add_test(testcase, quote_dir_test);
   tcase_add_test(testcase, text_to_array_test);
+  tcase_add_test(testcase, array_to_text_test);
 
   suite_add_tcase(suite, testcase);
   return suite;

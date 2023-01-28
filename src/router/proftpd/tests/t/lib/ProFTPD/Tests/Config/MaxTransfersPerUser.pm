@@ -50,6 +50,8 @@ sub maxtransfersperuser_retr {
 
     AuthUserFile => $setup->{auth_user_file},
     AuthGroupFile => $setup->{auth_group_file}, 
+    AuthOrder => 'mod_auth_file.c',
+
     MaxTransfersPerUser => "RETR $max_transfers",
 
     IfModules => {
@@ -149,6 +151,8 @@ sub maxtransfersperuser_retr_custom_message {
 
     AuthUserFile => $setup->{auth_user_file},
     AuthGroupFile => $setup->{auth_group_file}, 
+    AuthOrder => 'mod_auth_file.c',
+
     MaxTransfersPerUser => "RETR $max_transfers \"Too many transfers from your user\"",
 
     IfModules => {

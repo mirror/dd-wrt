@@ -95,6 +95,7 @@ sub userowner_file {
 
     AuthUserFile => $auth_user_file,
     AuthGroupFile => $auth_group_file,
+    AuthOrder => 'mod_auth_file.c',
 
     Directory => {
       '~' => {
@@ -238,6 +239,7 @@ sub userowner_dir {
 
     AuthUserFile => $auth_user_file,
     AuthGroupFile => $auth_group_file,
+    AuthOrder => 'mod_auth_file.c',
 
     Directory => {
       '~' => {
@@ -355,6 +357,7 @@ sub userowner_failed_norootprivs {
 
     AuthUserFile => $auth_user_file,
     AuthGroupFile => $auth_group_file,
+    AuthOrder => 'mod_auth_file.c',
 
     Directory => {
       '~' => {
@@ -502,6 +505,7 @@ sub userowner_anon_mkd {
 
     AuthUserFile => $auth_user_file,
     AuthGroupFile => $auth_group_file,
+    AuthOrder => 'mod_auth_file.c',
 
     IfModules => {
       'mod_cap.c' => {

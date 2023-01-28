@@ -2,7 +2,7 @@
  * ProFTPD - FTP server daemon
  * Copyright (c) 1997, 1998 Public Flood Software
  * Copyright (c) 1999, 2000 MacGyver aka Habeeb J. Dihu <macgyver@tos.net>
- * Copyright (c) 2001-2020 The ProFTPD Project team
+ * Copyright (c) 2001-2021 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -34,6 +34,30 @@
 
 typedef struct pool_rec pool;
 
+/* Pool information */
+
+typedef struct {
+  /* Per pool */
+  int have_pool_info;
+  const char *tag;
+  const void *ptr;
+  unsigned long byte_count;
+  unsigned long block_count;
+  unsigned int subpool_count;
+  unsigned long level;
+
+  /* Free list */
+  int have_freelist_info;
+  unsigned long freelist_byte_count;
+  unsigned long freelist_block_count;
+
+  /* Total */
+  int have_total_info;
+  unsigned long total_byte_count;
+  unsigned long total_blocks_allocated;
+  unsigned long total_blocks_reused;
+} pr_pool_info_t;
+
 extern pool *permanent_pool;
 
 void init_pools(void);
@@ -52,13 +76,12 @@ void *pcallocsz(struct pool_rec *, size_t);
 void pr_pool_tag(struct pool_rec *, const char *);
 const char *pr_pool_get_tag(struct pool_rec *);
 
-#ifdef PR_USE_DEVEL
 void pr_pool_debug_memory(void (*)(const char *, ...));
+void pr_pool_debug_memory2(void (*cb)(const pr_pool_info_t *, void *),
+  void *user_data);
 
 int pr_pool_debug_set_flags(int);
 #define PR_POOL_DEBUG_FL_OOM_DUMP_POOLS	0x001
-
-#endif /* PR_USE_DEVEL */
 
 /* Array management */
 

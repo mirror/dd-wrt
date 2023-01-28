@@ -6,7 +6,7 @@ use strict;
 
 use File::Spec;
 use IO::Handle;
-use Sys::HostAddr;
+use Net::Address::IP::Local;
 
 use ProFTPD::TestSuite::FTP;
 use ProFTPD::TestSuite::Utils qw(:auth :config :running :test :testsuite);
@@ -229,6 +229,7 @@ sub host_after_login_fails {
 
     AuthUserFile => $setup->{auth_user_file},
     AuthGroupFile => $setup->{auth_group_file},
+    AuthOrder => 'mod_auth_file.c',
 
     IfModules => {
       'mod_delay.c' => {
@@ -314,6 +315,8 @@ sub host_literal_ipv6_fails_useipv6_off {
 
     AuthUserFile => $setup->{auth_user_file},
     AuthGroupFile => $setup->{auth_group_file},
+    AuthOrder => 'mod_auth_file.c',
+
     UseIPv6 => 'off',
 
     IfModules => {
@@ -400,6 +403,8 @@ sub host_literal_ipv6_with_port_fails {
 
     AuthUserFile => $setup->{auth_user_file},
     AuthGroupFile => $setup->{auth_group_file},
+    AuthOrder => 'mod_auth_file.c',
+
     UseIPv6 => 'on',
 
     IfModules => {
@@ -486,6 +491,7 @@ sub host_invalid_ipv4_fails {
 
     AuthUserFile => $setup->{auth_user_file},
     AuthGroupFile => $setup->{auth_group_file},
+    AuthOrder => 'mod_auth_file.c',
 
     IfModules => {
       'mod_delay.c' => {
@@ -571,6 +577,7 @@ sub host_ipv4_with_port_fails {
 
     AuthUserFile => $setup->{auth_user_file},
     AuthGroupFile => $setup->{auth_group_file},
+    AuthOrder => 'mod_auth_file.c',
 
     IfModules => {
       'mod_delay.c' => {
@@ -656,6 +663,7 @@ sub host_unknown_host_fails {
 
     AuthUserFile => $setup->{auth_user_file},
     AuthGroupFile => $setup->{auth_group_file},
+    AuthOrder => 'mod_auth_file.c',
 
     IfModules => {
       'mod_delay.c' => {
@@ -741,6 +749,7 @@ sub host_known_ipv4_same_host_ok {
 
     AuthUserFile => $setup->{auth_user_file},
     AuthGroupFile => $setup->{auth_group_file},
+    AuthOrder => 'mod_auth_file.c',
 
     IfModules => {
       'mod_delay.c' => {
@@ -822,6 +831,8 @@ sub host_known_ipv6_same_host_ok {
 
     AuthUserFile => $setup->{auth_user_file},
     AuthGroupFile => $setup->{auth_group_file},
+    AuthOrder => 'mod_auth_file.c',
+
     UseIPv6 => 'on',
     DefaultAddress => '::1',
 
@@ -899,17 +910,7 @@ sub host_known_ipv4_different_host_fails {
   my $tmpdir = $self->{tmpdir};
   my $setup = test_setup($tmpdir, 'cmds');
 
-  my $ipv4_addr = Sys::HostAddr->new();
-  my $v4_addrs = $ipv4_addr->addresses();
-
-  my $vhost_addr;
-  foreach my $v4_addr (@$v4_addrs) {
-    if ($v4_addr ne '127.0.0.1') {
-      $vhost_addr = $v4_addr;
-      last;
-    }
-  }
-
+  my $vhost_addr = Net::Address::IP::Local->public_ipv4;
   if (!defined($vhost_addr)) {
     print STDERR "+ Unable to find additional IPv4 addresses, skipping test\n";
     return;
@@ -922,6 +923,7 @@ sub host_known_ipv4_different_host_fails {
 
     AuthUserFile => $setup->{auth_user_file},
     AuthGroupFile => $setup->{auth_group_file},
+    AuthOrder => 'mod_auth_file.c',
 
     IfModules => {
       'mod_delay.c' => {
@@ -1015,21 +1017,7 @@ sub host_known_ipv6_different_host_fails {
   my $tmpdir = $self->{tmpdir};
   my $setup = test_setup($tmpdir, 'cmds');
 
-  my $ipv6_addr = Sys::HostAddr->new(ipv => 6);
-  my $v6_addrs = $ipv6_addr->addresses();
-
-  my $vhost_addr;
-  foreach my $v6_addr (@$v6_addrs) {
-    if ($v6_addr ne '::1') {
-      $vhost_addr = $v6_addr;
-
-      # Trim off the link-local scope, if present
-      # $vhost_addr =~ s/\%(.*)?$//;
-
-      last;
-    }
-  }
-
+  my $vhost_addr = Net::Address::IP::Local->public_ipv6;
   if (!defined($vhost_addr)) {
     print STDERR "+ Unable to find additional IPv6 addresses, skipping test\n";
     return;
@@ -1042,6 +1030,8 @@ sub host_known_ipv6_different_host_fails {
 
     AuthUserFile => $setup->{auth_user_file},
     AuthGroupFile => $setup->{auth_group_file},
+    AuthOrder => 'mod_auth_file.c',
+
     UseIPv6 => 'on',
     DefaultAddress => '::1',
 
@@ -1146,6 +1136,7 @@ sub host_known_dns_ok {
 
     AuthUserFile => $setup->{auth_user_file},
     AuthGroupFile => $setup->{auth_group_file},
+    AuthOrder => 'mod_auth_file.c',
 
     IfModules => {
       'mod_delay.c' => {
@@ -1245,6 +1236,7 @@ sub host_config_limit_denied {
 
     AuthUserFile => $setup->{auth_user_file},
     AuthGroupFile => $setup->{auth_group_file},
+    AuthOrder => 'mod_auth_file.c',
 
     IfModules => {
       'mod_delay.c' => {
@@ -1350,6 +1342,7 @@ sub host_before_feat_ok {
 
     AuthUserFile => $setup->{auth_user_file},
     AuthGroupFile => $setup->{auth_group_file},
+    AuthOrder => 'mod_auth_file.c',
 
     IfModules => {
       'mod_delay.c' => {
@@ -1477,6 +1470,7 @@ sub host_after_feat_ok {
 
     AuthUserFile => $setup->{auth_user_file},
     AuthGroupFile => $setup->{auth_group_file},
+    AuthOrder => 'mod_auth_file.c',
 
     IfModules => {
       'mod_delay.c' => {

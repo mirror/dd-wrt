@@ -1,7 +1,7 @@
 /*
  * ProFTPD: mod_ifsession -- a module supporting conditional
  *                            per-user/group/class configuration contexts.
- * Copyright (c) 2002-2016 TJ Saunders
+ * Copyright (c) 2002-2021 TJ Saunders
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -28,7 +28,7 @@
 
 #include "conf.h"
 
-#define MOD_IFSESSION_VERSION		"mod_ifsession/1.3"
+#define MOD_IFSESSION_VERSION		"mod_ifsession/1.3.1"
 
 /* Make sure the version of proftpd is as necessary. */
 #if PROFTPD_VERSION_NUMBER < 0x0001030402
@@ -842,7 +842,7 @@ MODRET ifsess_post_pass(cmd_rec *cmd) {
    */
 
   c = find_config(main_server->conf, -1, IFSESS_AUTHN_TEXT, FALSE);
-  while (c) {
+  while (c != NULL) {
     config_rec *list = NULL;
 
     pr_signals_handle();
@@ -881,7 +881,7 @@ MODRET ifsess_post_pass(cmd_rec *cmd) {
   }
 
   c = find_config(main_server->conf, -1, IFSESS_GROUP_TEXT, FALSE);
-  while (c) {
+  while (c != NULL) {
     config_rec *list = NULL;
 
     pr_signals_handle();
@@ -936,7 +936,7 @@ MODRET ifsess_post_pass(cmd_rec *cmd) {
         mergein = TRUE;
       }
 
-      if (mergein) {
+      if (mergein == TRUE) {
         pr_log_debug(DEBUG2, MOD_IFSESSION_VERSION
           ": merging <IfGroup %s> directives in", (char *) list->argv[0]);
         ifsess_dup_set(session.pool, main_server->conf, c->subset);
@@ -983,7 +983,7 @@ MODRET ifsess_post_pass(cmd_rec *cmd) {
   }
 
   c = find_config(main_server->conf, -1, IFSESS_USER_TEXT, FALSE);
-  while (c) {
+  while (c != NULL) {
     config_rec *list = NULL;
 
     pr_signals_handle();
@@ -1016,7 +1016,7 @@ MODRET ifsess_post_pass(cmd_rec *cmd) {
         mergein = TRUE;
       }
 
-      if (mergein) {
+      if (mergein == TRUE) {
         pr_log_debug(DEBUG2, MOD_IFSESSION_VERSION
           ": merging <IfUser %s> directives in", (char *) list->argv[0]);
         ifsess_dup_set(session.pool, main_server->conf, c->subset);
@@ -1055,7 +1055,7 @@ MODRET ifsess_post_pass(cmd_rec *cmd) {
 
   destroy_pool(tmp_pool);
 
-  if (ifsess_merged) {
+  if (ifsess_merged == TRUE) {
     /* Try to honor any <Limit LOGIN> sections that may have been merged in. */
     if (!login_check_limits(TOPLEVEL_CONF, FALSE, TRUE, &found)) {
       pr_log_debug(DEBUG3, MOD_IFSESSION_VERSION
@@ -1080,6 +1080,9 @@ MODRET ifsess_post_pass(cmd_rec *cmd) {
       pr_fsio_close(displaylogin_fh);
       displaylogin_fh = NULL;
     }
+
+    /* Make sure directory config pointers are set correctly (Bug #4315). */
+    dir_check_full(cmd->tmp_pool, cmd, G_NONE, session.cwd, NULL);
   }
 
   return PR_DECLINED(cmd);

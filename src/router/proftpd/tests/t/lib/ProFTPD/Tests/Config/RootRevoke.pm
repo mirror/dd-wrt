@@ -85,6 +85,7 @@ sub rootrevoke_on_active_transfer {
 
     AuthUserFile => $auth_user_file,
     AuthGroupFile => $auth_group_file,
+    AuthOrder => 'mod_auth_file.c',
 
     RootRevoke => 'on',
 
@@ -211,6 +212,7 @@ sub rootrevoke_on_active_transfer_nonpriv_port {
 
     AuthUserFile => $auth_user_file,
     AuthGroupFile => $auth_group_file,
+    AuthOrder => 'mod_auth_file.c',
 
     RootRevoke => 'on',
 
@@ -350,6 +352,7 @@ sub rootrevoke_usenoncompliantactivetransfer_active_transfer_bug3731 {
 
     AuthUserFile => $auth_user_file,
     AuthGroupFile => $auth_group_file,
+    AuthOrder => 'mod_auth_file.c',
 
     RootRevoke => 'UseNonCompliantActiveTransfer',
 

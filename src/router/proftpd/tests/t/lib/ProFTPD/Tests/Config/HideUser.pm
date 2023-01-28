@@ -102,6 +102,7 @@ sub hideuser_explicit_user {
 
     AuthUserFile => $auth_user_file,
     AuthGroupFile => $auth_group_file,
+    AuthOrder => 'mod_auth_file.c',
 
     Directory => {
       '~' => {
@@ -286,6 +287,7 @@ sub hideuser_session_user {
 
     AuthUserFile => $auth_user_file,
     AuthGroupFile => $auth_group_file,
+    AuthOrder => 'mod_auth_file.c',
 
     Directory => {
       '~' => {
@@ -474,6 +476,7 @@ sub hideuser_not_session_user {
 
     AuthUserFile => $auth_user_file,
     AuthGroupFile => $auth_group_file,
+    AuthOrder => 'mod_auth_file.c',
 
     Directory => {
       '~' => {
@@ -658,6 +661,7 @@ sub hideuser_virtual_user_bug3934 {
 
     AuthUserFile => $auth_user_file,
     AuthGroupFile => $auth_group_file,
+    AuthOrder => 'mod_auth_file.c',
 
     Directory => {
       '/' => {

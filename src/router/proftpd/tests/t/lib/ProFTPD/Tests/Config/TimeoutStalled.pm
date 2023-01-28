@@ -105,6 +105,7 @@ sub timeoutstalled_ok {
 
     AuthUserFile => $auth_user_file,
     AuthGroupFile => $auth_group_file,
+    AuthOrder => 'mod_auth_file.c',
 
     TimeoutStalled => $timeout_stalled,
 
@@ -237,6 +238,7 @@ sub timeoutstalled_exceeded_list {
 
     AuthUserFile => $auth_user_file,
     AuthGroupFile => $auth_group_file,
+    AuthOrder => 'mod_auth_file.c',
 
     TimeoutStalled => $timeout_stalled,
 
@@ -289,19 +291,15 @@ sub timeoutstalled_exceeded_list {
       my $resp_code = $client->response_code();
       my $resp_msg = $client->response_msg();
 
-      my $expected;
-
       # Perl's Net::Cmd module uses a very non-standard 599 code to
-      # indicate that the connection is closed
-      $expected = 599;
-      $self->assert($expected == $resp_code,
-        test_msg("Expected $expected, got $resp_code"));
+      # indicate that the connection is closed, depending on version.
+      $self->assert($resp_code == 421 || $resp_code == 599,
+        test_msg("Expected response code 421 or 599, got $resp_code"));
 
-      $expected = "Connection closed";
-      $self->assert($expected eq $resp_msg,
-        test_msg("Expected '$expected', got '$resp_msg'"));
+      my $expected = "Connection closed";
+      $self->assert(qr/$expected/, $resp_msg,
+        test_msg("Expected response message '$expected', got '$resp_msg'"));
     };
-
     if ($@) {
       $ex = $@;
     }
@@ -376,6 +374,7 @@ sub timeoutstalled_exceeded_nlst {
 
     AuthUserFile => $auth_user_file,
     AuthGroupFile => $auth_group_file,
+    AuthOrder => 'mod_auth_file.c',
 
     TimeoutStalled => $timeout_stalled,
 
@@ -428,19 +427,15 @@ sub timeoutstalled_exceeded_nlst {
       my $resp_code = $client->response_code();
       my $resp_msg = $client->response_msg();
 
-      my $expected;
-
       # Perl's Net::Cmd module uses a very non-standard 599 code to
-      # indicate that the connection is closed
-      $expected = 599;
-      $self->assert($expected == $resp_code,
-        test_msg("Expected $expected, got $resp_code"));
+      # indicate that the connection is closed, depending on version.
+      $self->assert($resp_code == 421 || $resp_code == 599,
+        test_msg("Expected response code 421 or 599, got $resp_code"));
 
-      $expected = "Connection closed";
-      $self->assert($expected eq $resp_msg,
-        test_msg("Expected '$expected', got '$resp_msg'"));
+      my $expected = "Connection closed";
+      $self->assert(qr/$expected/, $resp_msg,
+        test_msg("Expected response message '$expected', got '$resp_msg'"));
     };
-
     if ($@) {
       $ex = $@;
     }
@@ -515,6 +510,7 @@ sub timeoutstalled_exceeded_mlsd {
 
     AuthUserFile => $auth_user_file,
     AuthGroupFile => $auth_group_file,
+    AuthOrder => 'mod_auth_file.c',
 
     TimeoutStalled => $timeout_stalled,
 
@@ -567,19 +563,15 @@ sub timeoutstalled_exceeded_mlsd {
       my $resp_code = $client->response_code();
       my $resp_msg = $client->response_msg();
 
-      my $expected;
-
       # Perl's Net::Cmd module uses a very non-standard 599 code to
-      # indicate that the connection is closed
-      $expected = 599;
-      $self->assert($expected == $resp_code,
-        test_msg("Expected $expected, got $resp_code"));
+      # indicate that the connection is closed, depending on version.
+      $self->assert($resp_code == 421 || $resp_code == 599,
+        test_msg("Expected response code 421 or 599, got $resp_code"));
 
-      $expected = "Connection closed";
-      $self->assert($expected eq $resp_msg,
-        test_msg("Expected '$expected', got '$resp_msg'"));
+      my $expected = "Connection closed";
+      $self->assert(qr/$expected/, $resp_msg,
+        test_msg("Expected response message '$expected', got '$resp_msg'"));
     };
-
     if ($@) {
       $ex = $@;
     }
@@ -654,6 +646,7 @@ sub timeoutstalled_exceeded_retr {
 
     AuthUserFile => $auth_user_file,
     AuthGroupFile => $auth_group_file,
+    AuthOrder => 'mod_auth_file.c',
 
     TimeoutStalled => $timeout_stalled,
 
@@ -706,19 +699,15 @@ sub timeoutstalled_exceeded_retr {
       my $resp_code = $client->response_code();
       my $resp_msg = $client->response_msg();
 
-      my $expected;
-
       # Perl's Net::Cmd module uses a very non-standard 599 code to
-      # indicate that the connection is closed
-      $expected = 599;
-      $self->assert($expected == $resp_code,
-        test_msg("Expected $expected, got $resp_code"));
+      # indicate that the connection is closed, depending on version.
+      $self->assert($resp_code == 421 || $resp_code == 599,
+        test_msg("Expected response code 421 or 599, got $resp_code"));
 
-      $expected = "Connection closed";
-      $self->assert($expected eq $resp_msg,
-        test_msg("Expected '$expected', got '$resp_msg'"));
+      my $expected = "Connection closed";
+      $self->assert(qr/$expected/, $resp_msg,
+        test_msg("Expected response message '$expected', got '$resp_msg'"));
     };
-
     if ($@) {
       $ex = $@;
     }
@@ -793,6 +782,7 @@ sub timeoutstalled_exceeded_stor {
 
     AuthUserFile => $auth_user_file,
     AuthGroupFile => $auth_group_file,
+    AuthOrder => 'mod_auth_file.c',
 
     TimeoutStalled => $timeout_stalled,
 
@@ -845,19 +835,15 @@ sub timeoutstalled_exceeded_stor {
       my $resp_code = $client->response_code();
       my $resp_msg = $client->response_msg();
 
-      my $expected;
-
       # Perl's Net::Cmd module uses a very non-standard 599 code to
-      # indicate that the connection is closed
-      $expected = 599;
-      $self->assert($expected == $resp_code,
-        test_msg("Expected $expected, got $resp_code"));
+      # indicate that the connection is closed, depending on version.
+      $self->assert($resp_code == 421 || $resp_code == 599,
+        test_msg("Expected response code 421 or 599, got $resp_code"));
 
-      $expected = "Connection closed";
-      $self->assert($expected eq $resp_msg,
-        test_msg("Expected '$expected', got '$resp_msg'"));
+      my $expected = "Connection closed";
+      $self->assert(qr/$expected/, $resp_msg,
+        test_msg("Expected response message '$expected', got '$resp_msg'"));
     };
-
     if ($@) {
       $ex = $@;
     }
@@ -932,6 +918,7 @@ sub timeoutstalled_exceeded_retr_usesendfile_on {
 
     AuthUserFile => $auth_user_file,
     AuthGroupFile => $auth_group_file,
+    AuthOrder => 'mod_auth_file.c',
 
     TimeoutStalled => $timeout_stalled,
     UseSendfile => 'on',
@@ -985,19 +972,15 @@ sub timeoutstalled_exceeded_retr_usesendfile_on {
       my $resp_code = $client->response_code();
       my $resp_msg = $client->response_msg();
 
-      my $expected;
-
       # Perl's Net::Cmd module uses a very non-standard 599 code to
-      # indicate that the connection is closed
-      $expected = 599;
-      $self->assert($expected == $resp_code,
-        test_msg("Expected $expected, got $resp_code"));
+      # indicate that the connection is closed, depending on version.
+      $self->assert($resp_code == 421 || $resp_code == 599,
+        test_msg("Expected response code 421 or 599, got $resp_code"));
 
-      $expected = "Connection closed";
-      $self->assert($expected eq $resp_msg,
-        test_msg("Expected '$expected', got '$resp_msg'"));
+      my $expected = "Connection closed";
+      $self->assert(qr/$expected/, $resp_msg,
+        test_msg("Expected response message '$expected', got '$resp_msg'"));
     };
-
     if ($@) {
       $ex = $@;
     }

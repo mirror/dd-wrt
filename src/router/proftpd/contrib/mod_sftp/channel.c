@@ -1,6 +1,6 @@
 /*
  * ProFTPD - mod_sftp channels
- * Copyright (c) 2008-2017 TJ Saunders
+ * Copyright (c) 2008-2021 TJ Saunders
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -1299,11 +1299,11 @@ uint32_t sftp_channel_set_max_windowsz(uint32_t windowsz) {
   return prev_windowsz;
 }
 
-int sftp_channel_handle(struct ssh2_packet *pkt, char mesg_type) {
+int sftp_channel_handle(struct ssh2_packet *pkt, char msg_type) {
   int res;
   uint32_t channel_id;
 
-  switch (mesg_type) {
+  switch (msg_type) {
     case SFTP_SSH2_MSG_CHANNEL_OPEN: {
       res = read_channel_open(pkt, &channel_id);
       if (res < 0) {
@@ -1374,7 +1374,7 @@ int sftp_channel_handle(struct ssh2_packet *pkt, char mesg_type) {
     default:
       (void) pr_log_writefile(sftp_logfd, MOD_SFTP_VERSION,
         "expecting CHANNEL message, received %s (%d), disconnecting",
-        sftp_ssh2_packet_get_mesg_type_desc(mesg_type), mesg_type);
+        sftp_ssh2_packet_get_msg_type_desc(msg_type), msg_type);
       destroy_pool(pkt->pool);
       SFTP_DISCONNECT_CONN(SFTP_SSH2_DISCONNECT_PROTOCOL_ERROR, NULL);
   }

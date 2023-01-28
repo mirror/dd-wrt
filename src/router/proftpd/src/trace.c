@@ -1,6 +1,6 @@
 /*
  * ProFTPD - FTP server daemon
- * Copyright (c) 2006-2020 The ProFTPD Project team
+ * Copyright (c) 2006-2022 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -29,7 +29,7 @@
 
 #ifdef PR_USE_TRACE
 
-#define TRACE_BUFFER_SIZE		(PR_TUNABLE_BUFFER_SIZE * 4)
+#define TRACE_BUFFER_SIZE		(PR_TUNABLE_BUFFER_SIZE * 8)
 
 static int trace_logfd = -1;
 static unsigned long trace_opts = PR_TRACE_OPT_DEFAULT;
@@ -49,6 +49,7 @@ static const char *trace_channels[] = {
   "ctrls",
   "data",
   "delay",
+  "directory",
   "dns",
   "dso",
   "encode",
@@ -78,18 +79,16 @@ static const char *trace_channels[] = {
 static void trace_restart_ev(const void *event_data, void *user_data) {
   trace_opts = PR_TRACE_OPT_DEFAULT;
 
-  close(trace_logfd);
+  (void) close(trace_logfd);
   trace_logfd = -1;
 
-  if (trace_pool) {
+  if (trace_pool != NULL) {
     destroy_pool(trace_pool);
     trace_pool = NULL;
     trace_tab = NULL;
 
     pr_event_unregister(NULL, "core.restart", trace_restart_ev);
   }
-
-  return;
 }
 
 static int trace_write(const char *channel, int level, const char *msg,
@@ -97,7 +96,6 @@ static int trace_write(const char *channel, int level, const char *msg,
   pool *tmp_pool;
   char buf[TRACE_BUFFER_SIZE];
   size_t buflen = 0, len = 0;
-  struct tm *tm;
   int use_conn_ips = FALSE;
 
   if (trace_logfd < 0) {
@@ -109,6 +107,8 @@ static int trace_write(const char *channel, int level, const char *msg,
   pr_pool_tag(tmp_pool, "Trace message pool");
 
   if (trace_opts & PR_TRACE_OPT_USE_TIMESTAMP) {
+    struct tm *tm;
+
     if (trace_opts & PR_TRACE_OPT_USE_TIMESTAMP_MILLIS) {
       struct timeval now;
       unsigned long millis;
@@ -167,6 +167,7 @@ static int trace_write(const char *channel, int level, const char *msg,
     buflen += len;
   }
 
+  destroy_pool(tmp_pool);
   buf[sizeof(buf)-1] = '\0';
 
   if (buflen < (sizeof(buf) - 1)) {
@@ -192,7 +193,6 @@ static int trace_write(const char *channel, int level, const char *msg,
     return 0;
   }
 
-  destroy_pool(tmp_pool);
   return write(trace_logfd, buf, buflen);
 }
 
@@ -406,7 +406,6 @@ int pr_trace_set_file(const char *path) {
 }
 
 int pr_trace_set_levels(const char *channel, int min_level, int max_level) {
-
   if (channel == NULL) {
     if (trace_tab == NULL) {
       errno = EINVAL;
@@ -598,7 +597,7 @@ int pr_trace_vmsg(const char *channel, int level, const char *fmt,
   buf[sizeof(buf)-1] = '\0';
 
   if (buflen > 0 &&
-      buflen < sizeof(buf)) {
+      (size_t) buflen < sizeof(buf)) {
     buf[buflen] = '\0';
 
   } else {

@@ -1,6 +1,6 @@
 /*
  * ProFTPD - mod_sftp 'hostbased' user authentication
- * Copyright (c) 2008-2020 TJ Saunders
+ * Copyright (c) 2008-2022 TJ Saunders
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -91,32 +91,42 @@ int sftp_auth_hostbased(struct ssh2_packet *pkt, cmd_rec *pass_cmd,
     "client sent '%s' host key, FQDN %s, and remote user '%s'",
     hostkey_algo, host_fqdn, host_user);
 
-  if (strncmp(hostkey_algo, "ssh-rsa", 8) == 0) {
+  if (strcmp(hostkey_algo, "ssh-rsa") == 0) {
     pubkey_type = SFTP_KEY_RSA;
 
-#ifdef HAVE_SHA256_OPENSSL
-  } else if (strncmp(hostkey_algo, "rsa-sha2-256", 13) == 0) {
+#if defined(HAVE_SHA256_OPENSSL)
+  } else if (strcmp(hostkey_algo, "rsa-sha2-256") == 0) {
     pubkey_type = SFTP_KEY_RSA_SHA256;
 #endif /* HAVE_SHA256_OPENSSL */
 
-#ifdef HAVE_SHA512_OPENSSL
-  } else if (strncmp(hostkey_algo, "rsa-sha2-512", 13) == 0) {
+#if defined(HAVE_SHA512_OPENSSL)
+  } else if (strcmp(hostkey_algo, "rsa-sha2-512") == 0) {
     pubkey_type = SFTP_KEY_RSA_SHA512;
 #endif /* HAVE_SHA512_OPENSSL */
 
-  } else if (strncmp(hostkey_algo, "ssh-dss", 8) == 0) {
+  } else if (strcmp(hostkey_algo, "ssh-dss") == 0) {
     pubkey_type = SFTP_KEY_DSA;
 
-#ifdef PR_USE_OPENSSL_ECC
-  } else if (strncmp(hostkey_algo, "ecdsa-sha2-nistp256", 20) == 0) {
+#if defined(PR_USE_OPENSSL_ECC)
+  } else if (strcmp(hostkey_algo, "ecdsa-sha2-nistp256") == 0) {
     pubkey_type = SFTP_KEY_ECDSA_256;
 
-  } else if (strncmp(hostkey_algo, "ecdsa-sha2-nistp384", 20) == 0) {
+  } else if (strcmp(hostkey_algo, "ecdsa-sha2-nistp384") == 0) {
     pubkey_type = SFTP_KEY_ECDSA_384;
 
-  } else if (strncmp(hostkey_algo, "ecdsa-sha2-nistp521", 20) == 0) {
+  } else if (strcmp(hostkey_algo, "ecdsa-sha2-nistp521") == 0) {
     pubkey_type = SFTP_KEY_ECDSA_521;
 #endif /* PR_USE_OPENSSL_ECC */
+
+#if defined(PR_USE_SODIUM)
+  } else if (strcmp(hostkey_algo, "ssh-ed25519") == 0) {
+    pubkey_type = SFTP_KEY_ED25519;
+#endif /* PR_USE_SODIUM */
+
+#if defined(HAVE_X448_OPENSSL)
+  } else if (strcmp(hostkey_algo, "ssh-ed448") == 0) {
+    pubkey_type = SFTP_KEY_ED448;
+#endif /* HAVE_X448_OPENSSL */
 
   /* XXX Need to support X509v3 certs here */
 

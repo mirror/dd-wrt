@@ -140,6 +140,7 @@ sub usesendfile_on_ascii {
 
     AuthUserFile => $auth_user_file,
     AuthGroupFile => $auth_group_file,
+    AuthOrder => 'mod_auth_file.c',
 
     UseSendfile => 'on',
 
@@ -288,6 +289,7 @@ sub usesendfile_off_ascii {
 
     AuthUserFile => $auth_user_file,
     AuthGroupFile => $auth_group_file,
+    AuthOrder => 'mod_auth_file.c',
 
     UseSendfile => 'off',
 
@@ -436,6 +438,7 @@ sub usesendfile_on_binary {
 
     AuthUserFile => $auth_user_file,
     AuthGroupFile => $auth_group_file,
+    AuthOrder => 'mod_auth_file.c',
 
     UseSendfile => 'on',
 
@@ -585,6 +588,7 @@ sub usesendfile_off_binary {
 
     AuthUserFile => $auth_user_file,
     AuthGroupFile => $auth_group_file,
+    AuthOrder => 'mod_auth_file.c',
 
     UseSendfile => 'off',
 
@@ -735,6 +739,7 @@ sub usesendfile_on_binary_dir_bug3310 {
 
     AuthUserFile => $auth_user_file,
     AuthGroupFile => $auth_group_file,
+    AuthOrder => 'mod_auth_file.c',
 
     IfModules => {
       'mod_delay.c' => {
@@ -938,6 +943,7 @@ sub usesendfile_off_binary_dir_bug3310 {
 
     AuthUserFile => $auth_user_file,
     AuthGroupFile => $auth_group_file,
+    AuthOrder => 'mod_auth_file.c',
 
     IfModules => {
       'mod_delay.c' => {
@@ -1153,6 +1159,8 @@ sub usesendfile_on_binary_ftpaccess_bug3310 {
 
     AuthUserFile => $auth_user_file,
     AuthGroupFile => $auth_group_file,
+    AuthOrder => 'mod_auth_file.c',
+
     AllowOverride => 'on',
 
     IfModules => {
@@ -1364,6 +1372,8 @@ sub usesendfile_off_binary_ftpaccess_bug3310 {
 
     AuthUserFile => $auth_user_file,
     AuthGroupFile => $auth_group_file,
+    AuthOrder => 'mod_auth_file.c',
+
     AllowOverride => 'on',
 
     IfModules => {
@@ -1564,6 +1574,7 @@ sub usesendfile_len_binary_dir_bug3310 {
 
     AuthUserFile => $auth_user_file,
     AuthGroupFile => $auth_group_file,
+    AuthOrder => 'mod_auth_file.c',
 
     IfModules => {
       'mod_delay.c' => {
@@ -1788,6 +1799,8 @@ sub usesendfile_len_binary_ftpaccess_bug3310 {
 
     AuthUserFile => $auth_user_file,
     AuthGroupFile => $auth_group_file,
+    AuthOrder => 'mod_auth_file.c',
+
     AllowOverride => 'on',
 
     IfModules => {
@@ -2009,6 +2022,8 @@ sub usesendfile_len_ascii_ftpaccess_bug3310 {
 
     AuthUserFile => $auth_user_file,
     AuthGroupFile => $auth_group_file,
+    AuthOrder => 'mod_auth_file.c',
+
     AllowOverride => 'on',
 
     IfModules => {
@@ -2209,6 +2224,7 @@ sub usesendfile_pct_binary_dir_bug3310 {
 
     AuthUserFile => $auth_user_file,
     AuthGroupFile => $auth_group_file,
+    AuthOrder => 'mod_auth_file.c',
 
     IfModules => {
       'mod_delay.c' => {
@@ -2433,6 +2449,8 @@ sub usesendfile_pct_binary_ftpaccess_bug3310 {
 
     AuthUserFile => $auth_user_file,
     AuthGroupFile => $auth_group_file,
+    AuthOrder => 'mod_auth_file.c',
+
     AllowOverride => 'on',
 
     IfModules => {

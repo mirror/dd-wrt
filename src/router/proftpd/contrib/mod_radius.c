@@ -1,6 +1,6 @@
 /*
  * ProFTPD: mod_radius -- a module for RADIUS authentication and accounting
- * Copyright (c) 2001-2021 TJ Saunders
+ * Copyright (c) 2001-2022 TJ Saunders
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -440,9 +440,7 @@ static int radius_parse_var(char *var, int *attr_id, char **attr_default) {
      * a NULL for this portion, so that the string stored in the config_rec
      * is not actually manipulated, as is done here.
      */
-    if (var_len > 0) {
-      var[var_len-1] = '\0';
-    }
+    var[var_len-1] = '\0';
 
     if (ptr != NULL) {
       *attr_default = ++ptr;
@@ -1630,6 +1628,8 @@ static void radius_process_user_info(config_rec *c) {
    * is no practical need for this information.
    */
 
+  radius_passwd.pw_uid = -1;
+  radius_passwd.pw_gid = -1;
   radius_passwd.pw_passwd = NULL;
   radius_passwd.pw_gecos = NULL;
 
@@ -1645,7 +1645,9 @@ static void radius_process_user_info(config_rec *c) {
     char *endp = NULL, *value = NULL;
 
     radius_parse_var(param, &radius_uid_attr_id, &value);
-    radius_passwd.pw_uid = (uid_t) strtoul(value, &endp, 10);
+    if (value != NULL) {
+      radius_passwd.pw_uid = (uid_t) strtoul(value, &endp, 10);
+    }
 
     if (radius_passwd.pw_uid == (uid_t) -1) {
       (void) pr_log_writefile(radius_logfd, MOD_RADIUS_VERSION,
@@ -1660,8 +1662,8 @@ static void radius_process_user_info(config_rec *c) {
     }
 
   } else {
-
     char *endp = NULL;
+
     radius_passwd.pw_uid = (uid_t) strtoul(param, &endp, 10);
 
     if (radius_passwd.pw_uid == (uid_t) -1) {
@@ -1684,7 +1686,10 @@ static void radius_process_user_info(config_rec *c) {
     char *endp = NULL, *value = NULL;
 
     radius_parse_var(param, &radius_gid_attr_id, &value);
-    radius_passwd.pw_gid = (gid_t) strtoul(value, &endp, 10);
+
+    if (value != NULL) {
+      radius_passwd.pw_gid = (gid_t) strtoul(value, &endp, 10);
+    }
 
     if (radius_passwd.pw_gid == (gid_t) -1) {
       (void) pr_log_writefile(radius_logfd, MOD_RADIUS_VERSION,
@@ -1699,8 +1704,8 @@ static void radius_process_user_info(config_rec *c) {
     }
 
   } else {
-
     char *endp = NULL;
+
     radius_passwd.pw_gid = (gid_t) strtoul(param, &endp, 10);
 
     if (radius_passwd.pw_gid == (gid_t) -1) {
@@ -2501,9 +2506,8 @@ static radius_attrib_t *radius_get_attrib(radius_packet_t *packet,
 static radius_attrib_t *radius_get_vendor_attrib(radius_packet_t *packet,
     unsigned char type) {
   radius_attrib_t *attrib = (radius_attrib_t *) &packet->data;
-  int len = ntohs(packet->length) - RADIUS_HEADER_LEN;
 
-  while (attrib) {
+  while (attrib != NULL) {
     unsigned int vendor_id = 0;
 
     pr_signals_handle();
@@ -2516,7 +2520,6 @@ static radius_attrib_t *radius_get_vendor_attrib(radius_packet_t *packet,
     }
 
     if (attrib->type != RADIUS_VENDOR_SPECIFIC) {
-      len -= attrib->length;
       attrib = (radius_attrib_t *) ((char *) attrib + attrib->length);
       continue;
     }
@@ -2528,7 +2531,6 @@ static radius_attrib_t *radius_get_vendor_attrib(radius_packet_t *packet,
     }
 
     if (vendor_id != radius_vendor_id) {
-      len -= attrib->length;
       attrib = (radius_attrib_t *) ((char *) attrib + attrib->length);
       continue;
     }
@@ -2541,7 +2543,6 @@ static radius_attrib_t *radius_get_vendor_attrib(radius_packet_t *packet,
 
       /* Does this VSA have the type requested? */
       if (vsa->type != type) {
-        len -= attrib->length;
         attrib = (radius_attrib_t *) ((char *) attrib + attrib->length);
         continue;
       }

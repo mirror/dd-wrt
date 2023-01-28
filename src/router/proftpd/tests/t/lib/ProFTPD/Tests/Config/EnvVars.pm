@@ -65,6 +65,7 @@ sub envvar_bug2048 {
 
     AuthUserFile => $setup->{auth_user_file},
     AuthGroupFile => $setup->{auth_group_file},
+    AuthOrder => 'mod_auth_file.c',
 
     ServerIdent => 'on',
     ServerName => '%{env:PR_SERVER_NAME}',
@@ -151,6 +152,7 @@ sub envvar_bug3502 {
 
     AuthUserFile => $setup->{auth_user_file},
     AuthGroupFile => $setup->{auth_group_file},
+    AuthOrder => 'mod_auth_file.c',
 
     ServerIdent => 'on',
     ServerName => '"Green %{env:PR_SERVER_NAME}"',
@@ -236,6 +238,7 @@ sub envvar_vhost_addr {
 
     AuthUserFile => $setup->{auth_user_file},
     AuthGroupFile => $setup->{auth_group_file},
+    AuthOrder => 'mod_auth_file.c',
 
     IfModules => {
       'mod_delay.c' => {
@@ -341,6 +344,7 @@ sub envvar_multiple_vars_single_directive_issue507 {
 
     AuthUserFile => $setup->{auth_user_file},
     AuthGroupFile => $setup->{auth_group_file},
+    AuthOrder => 'mod_auth_file.c',
 
     ServerIdent => 'on',
     ServerName => '"%{env:PR_SERVER_FIRST_NAME}%{env:PR_SERVER_LAST_NAME}@%{env:PR_SERVER_DOMAIN}"',
@@ -429,6 +433,7 @@ sub envvar_global_context_issue857 {
 
     AuthUserFile => $setup->{auth_user_file},
     AuthGroupFile => $setup->{auth_group_file},
+    AuthOrder => 'mod_auth_file.c',
 
     Global => {
       ServerIdent => 'on "ProFTPD Server (%{env:PR_SERVER_NAME}) [127.0.0.1]"',

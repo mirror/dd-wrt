@@ -93,6 +93,7 @@ sub rlimitcpu_max {
 
     AuthUserFile => $auth_user_file,
     AuthGroupFile => $auth_group_file,
+    AuthOrder => 'mod_auth_file.c',
 
     RLimitCPU => 'max',
 
@@ -200,6 +201,7 @@ sub rlimitcpu_session_max {
 
     AuthUserFile => $auth_user_file,
     AuthGroupFile => $auth_group_file,
+    AuthOrder => 'mod_auth_file.c',
 
     RLimitCPU => 'session max',
 
@@ -307,6 +309,7 @@ sub rlimitcpu_session_min {
 
     AuthUserFile => $auth_user_file,
     AuthGroupFile => $auth_group_file,
+    AuthOrder => 'mod_auth_file.c',
 
     RLimitCPU => 'session 0',
 
@@ -410,6 +413,7 @@ sub rlimitcpu_daemon_max {
 
     AuthUserFile => $auth_user_file,
     AuthGroupFile => $auth_group_file,
+    AuthOrder => 'mod_auth_file.c',
 
     RLimitCPU => 'daemon max',
 
@@ -517,6 +521,7 @@ sub rlimitcpu_daemon_min {
 
     AuthUserFile => $auth_user_file,
     AuthGroupFile => $auth_group_file,
+    AuthOrder => 'mod_auth_file.c',
 
     RLimitCPU => 'daemon 0',
 

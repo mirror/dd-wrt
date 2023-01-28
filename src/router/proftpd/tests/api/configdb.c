@@ -1,6 +1,6 @@
 /*
  * ProFTPD - FTP server testsuite
- * Copyright (c) 2014-2017 The ProFTPD Project team
+ * Copyright (c) 2014-2022 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -66,6 +66,54 @@ START_TEST (config_init_config_test) {
 }
 END_TEST
 
+START_TEST (config_alloc_test) {
+  config_rec *c;
+  int config_type = CONF_PARAM;
+
+  mark_point();
+  c = pr_config_alloc(NULL, NULL, 0);
+  ck_assert_msg(c == NULL, "Failed to handle null pool");
+  ck_assert_msg(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
+    strerror(errno), errno);
+
+  mark_point();
+  c = pr_config_alloc(p, NULL, config_type);
+  ck_assert_msg(c != NULL, "Failed to handle null argument: %s", strerror(errno));
+  ck_assert_msg(c->name == NULL, "Failed to handle null name");
+  ck_assert_msg(c->config_type == config_type, "Failed to set config type");
+
+  mark_point();
+  c = pr_config_alloc(p, "foobar", config_type);
+  ck_assert_msg(c != NULL, "Failed to allocate config_rec: %s", strerror(errno));
+  ck_assert_msg(c->name != NULL, "Failed to handle name");
+  ck_assert_msg(c->config_type == config_type, "Failed to set config type");
+}
+END_TEST
+
+START_TEST (config_add_config_to_set_test) {
+  xaset_t *set;
+  config_rec *c;
+
+  mark_point();
+  c = pr_config_add_config_to_set(NULL, NULL, 0);
+  ck_assert_msg(c == NULL, "Failed to handle null set");
+  ck_assert_msg(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
+    strerror(errno), errno);
+
+  mark_point();
+  set = xaset_create(p, NULL);
+  c = pr_config_add_config_to_set(set, NULL, 0);
+  ck_assert_msg(c == NULL, "Failed to handle null set");
+  ck_assert_msg(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
+    strerror(errno), errno);
+
+  mark_point();
+  c = pr_config_alloc(p, "foobar", 0);
+  c = pr_config_add_config_to_set(set, c, 0);
+  ck_assert_msg(c != NULL, "Failed to add config to set: %s", strerror(errno));
+}
+END_TEST
+
 START_TEST (config_add_config_test) {
   int res;
   const char *name = NULL;
@@ -73,15 +121,15 @@ START_TEST (config_add_config_test) {
   server_rec *s = NULL;
 
   s = pr_parser_server_ctxt_open("127.0.0.1");
-  fail_unless(s != NULL, "Failed to open server context: %s", strerror(errno));
+  ck_assert_msg(s != NULL, "Failed to open server context: %s", strerror(errno));
 
   name = "foo";
 
   mark_point();
   c = add_config(NULL, name);
-  fail_unless(c != NULL, "Failed to add config '%s': %s", name,
+  ck_assert_msg(c != NULL, "Failed to add config '%s': %s", name,
     strerror(errno));
-  fail_unless(c->config_type == 0, "Expected config_type 0, got %d",
+  ck_assert_msg(c->config_type == 0, "Expected config_type 0, got %d",
     c->config_type);
 
   mark_point();
@@ -94,7 +142,7 @@ START_TEST (config_add_config_test) {
 
   mark_point();
   res = remove_config(s->conf, name, FALSE);
-  fail_unless(res > 0, "Failed to remove config '%s': %s", name,
+  ck_assert_msg(res > 0, "Failed to remove config '%s': %s", name,
     strerror(errno));
 }
 END_TEST
@@ -106,20 +154,20 @@ START_TEST (config_add_config_param_test) {
   server_rec *s = NULL;
 
   s = pr_parser_server_ctxt_open("127.0.0.1");
-  fail_unless(s != NULL, "Failed to open server context: %s", strerror(errno));
+  ck_assert_msg(s != NULL, "Failed to open server context: %s", strerror(errno));
  
   c = add_config_param(NULL, 0, NULL);
-  fail_unless(c == NULL, "Failed to handle null arguments");
-  fail_unless(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
+  ck_assert_msg(c == NULL, "Failed to handle null arguments");
+  ck_assert_msg(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
     strerror(errno), errno); 
 
   name = "foo";
 
   mark_point();
   c = add_config_param(name, 1, "bar");
-  fail_unless(c != NULL, "Failed to add config '%s': %s", name,
+  ck_assert_msg(c != NULL, "Failed to add config '%s': %s", name,
     strerror(errno));
-  fail_unless(c->config_type == CONF_PARAM, "Expected config_type %d, got %d",
+  ck_assert_msg(c->config_type == CONF_PARAM, "Expected config_type %d, got %d",
     CONF_PARAM, c->config_type);
 
   mark_point();
@@ -127,7 +175,7 @@ START_TEST (config_add_config_param_test) {
 
   mark_point();
   res = pr_config_remove(s->conf, name, PR_CONFIG_FL_PRESERVE_ENTRY, FALSE);
-  fail_unless(res > 0, "Failed to remove config '%s': %s", name,
+  ck_assert_msg(res > 0, "Failed to remove config '%s': %s", name,
     strerror(errno));
 }
 END_TEST
@@ -140,28 +188,28 @@ START_TEST (config_add_config_param_set_test) {
   name = "foo";
 
   c = add_config_param_set(NULL, name, 0);
-  fail_unless(c == NULL, "Failed to handle null set argument");
-  fail_unless(errno == EINVAL, "Failed to set errno to EINVAL, got %d (%s)",
+  ck_assert_msg(c == NULL, "Failed to handle null set argument");
+  ck_assert_msg(errno == EINVAL, "Failed to set errno to EINVAL, got %d (%s)",
     errno, strerror(errno));
 
   c = add_config_param_set(&set, name, 0);
-  fail_unless(c != NULL, "Failed to add config '%s' to set: %s", name,
+  ck_assert_msg(c != NULL, "Failed to add config '%s' to set: %s", name,
     strerror(errno));
-  fail_unless(c->config_type == CONF_PARAM, "Expected config_type %d, got %d",
+  ck_assert_msg(c->config_type == CONF_PARAM, "Expected config_type %d, got %d",
     CONF_PARAM, c->config_type);
-  fail_unless(c->argc == 0, "Expected argc 0, got %d", c->argc);
+  ck_assert_msg(c->argc == 0, "Expected argc 0, got %d", c->argc);
 
   c = add_config_param_set(&set, name, 2, "bar", "baz");
-  fail_unless(c != NULL, "Failed to add config '%s' to set: %s", name,
+  ck_assert_msg(c != NULL, "Failed to add config '%s' to set: %s", name,
     strerror(errno));
-  fail_unless(c->config_type == CONF_PARAM, "Expected config_type %d, got %d",
+  ck_assert_msg(c->config_type == CONF_PARAM, "Expected config_type %d, got %d",
     CONF_PARAM, c->config_type);
-  fail_unless(c->argc == 2, "Expected argc 2, got %d", c->argc);
-  fail_unless(strcmp("bar", (char *) c->argv[0]) == 0,
+  ck_assert_msg(c->argc == 2, "Expected argc 2, got %d", c->argc);
+  ck_assert_msg(strcmp("bar", (char *) c->argv[0]) == 0,
     "Expected argv[0] to be 'bar', got '%s'", (char *) c->argv[0]);
-  fail_unless(strcmp("baz", (char *) c->argv[1]) == 0,
+  ck_assert_msg(strcmp("baz", (char *) c->argv[1]) == 0,
     "Expected argv[1] to be 'baz', got '%s'", (char *) c->argv[1]);
-  fail_unless(c->argv[2] == NULL, "Expected argv[2] to be null");
+  ck_assert_msg(c->argv[2] == NULL, "Expected argv[2] to be null");
 }
 END_TEST
 
@@ -172,26 +220,26 @@ START_TEST (config_add_config_param_str_test) {
   server_rec *s = NULL;
 
   s = pr_parser_server_ctxt_open("127.0.0.1");
-  fail_unless(s != NULL, "Failed to open server context: %s", strerror(errno));
+  ck_assert_msg(s != NULL, "Failed to open server context: %s", strerror(errno));
 
   name = "foo";
 
   mark_point();
   c = add_config_param_str(name, 1, "bar");
-  fail_unless(c != NULL, "Failed to add config '%s': %s", name,
+  ck_assert_msg(c != NULL, "Failed to add config '%s': %s", name,
     strerror(errno));
-  fail_unless(c->config_type == CONF_PARAM, "Expected config_type %d, got %d",
+  ck_assert_msg(c->config_type == CONF_PARAM, "Expected config_type %d, got %d",
     CONF_PARAM, c->config_type);
 
   c2 = add_config_param_str("foo2", 1, NULL);
-  fail_unless(c2 != NULL, "Failed to add config 'foo2': %s", strerror(errno));
+  ck_assert_msg(c2 != NULL, "Failed to add config 'foo2': %s", strerror(errno));
 
   mark_point();
   pr_config_dump(NULL, s->conf, NULL);
 
   mark_point();
   res = remove_config(s->conf, name, FALSE);
-  fail_unless(res > 0, "Failed to remove config '%s': %s", name,
+  ck_assert_msg(res > 0, "Failed to remove config '%s': %s", name,
     strerror(errno));
 }
 END_TEST
@@ -203,19 +251,19 @@ START_TEST (config_add_server_config_param_str_test) {
 
   mark_point();
   c = pr_conf_add_server_config_param_str(NULL, NULL, 0);
-  fail_unless(c == NULL, "Failed to handle null arguments");
-  fail_unless(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
-    strerror(errno));
+  ck_assert_msg(c == NULL, "Failed to handle null arguments");
+  ck_assert_msg(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
+    strerror(errno), errno);
 
   mark_point();
   s = pr_parser_server_ctxt_open("127.0.0.2");
-  fail_unless(s != NULL, "Failed to open server context: %s", strerror(errno));
+  ck_assert_msg(s != NULL, "Failed to open server context: %s", strerror(errno));
 
   mark_point();
   name = "foo";
 
   c = pr_conf_add_server_config_param_str(s, name, 1, "bar");
-  fail_unless(c != NULL, "Failed to add config '%s': %s", name,
+  ck_assert_msg(c != NULL, "Failed to add config '%s': %s", name,
     strerror(errno));
 
   (void) remove_config(s->conf, name, FALSE);
@@ -229,32 +277,32 @@ START_TEST (config_add_config_set_test) {
   config_rec *c = NULL;
 
   res = remove_config(NULL, NULL, FALSE);
-  fail_unless(res == 0, "Failed to handle null arguments: %s", strerror(errno));
+  ck_assert_msg(res == 0, "Failed to handle null arguments: %s", strerror(errno));
 
   name = "foo";
 
   c = add_config_set(NULL, name);
-  fail_unless(c == NULL, "Failed to handle null set argument");
-  fail_unless(errno == EINVAL, "Failed to set errno to EINVAL, got %d (%s)",
+  ck_assert_msg(c == NULL, "Failed to handle null set argument");
+  ck_assert_msg(errno == EINVAL, "Failed to set errno to EINVAL, got %d (%s)",
     errno, strerror(errno));
 
   c = add_config_set(&set, name);
-  fail_unless(c != NULL, "Failed to add config '%s' to set: %s", name,
+  ck_assert_msg(c != NULL, "Failed to add config '%s' to set: %s", name,
     strerror(errno));
-  fail_unless(c->config_type == 0, "Expected config_type 0, got %d",
+  ck_assert_msg(c->config_type == 0, "Expected config_type 0, got %d",
     c->config_type);
 
   res = remove_config(set, name, FALSE);
-  fail_unless(res > 0, "Failed to remove config '%s': %s", name,
+  ck_assert_msg(res > 0, "Failed to remove config '%s': %s", name,
     strerror(errno));
 
   name = "bar";
   res = remove_config(set, name, FALSE);
-  fail_unless(res == 0, "Removed config '%s' unexpectedly", name,
+  ck_assert_msg(res == 0, "Removed config '%s' unexpectedly: %s", name,
     strerror(errno));
 
   c = pr_config_add_set(&set, name, flags);
-  fail_unless(c != NULL, "Failed to add config '%s' to set: %s", name,
+  ck_assert_msg(c != NULL, "Failed to add config '%s' to set: %s", name,
     strerror(errno));
 
   /* XXX Note that calling this with recurse=TRUE yields a test timeout,
@@ -268,8 +316,14 @@ START_TEST (config_add_config_set_test) {
    * Given the "shallowness" of this particular set.
    */
   res = remove_config(set, name, FALSE);
-  fail_unless(res > 0, "Failed to remove config '%s': %s", name,
+  ck_assert_msg(res > 0, "Failed to remove config '%s': %s", name,
     strerror(errno));
+}
+END_TEST
+
+START_TEST (config_dump_test) {
+  mark_point();
+  pr_config_dump(NULL, NULL, NULL);
 }
 END_TEST
 
@@ -280,26 +334,26 @@ START_TEST (config_find_config_test) {
   const char *name;
 
   c = find_config(NULL, -1, NULL, FALSE);
-  fail_unless(c == NULL, "Failed to handle null arguments");
-  fail_unless(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
+  ck_assert_msg(c == NULL, "Failed to handle null arguments");
+  ck_assert_msg(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
     strerror(errno), errno);
 
   c = find_config_next(NULL, NULL, CONF_PARAM, NULL, FALSE);
-  fail_unless(c == NULL, "Failed to handle null arguments");
-  fail_unless(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
+  ck_assert_msg(c == NULL, "Failed to handle null arguments");
+  ck_assert_msg(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
     strerror(errno), errno);
 
   mark_point();
 
   name = "foo";
   c = add_config_param_set(&set, name, 0);
-  fail_unless(c != NULL, "Failed to add config '%s': %s", name,
+  ck_assert_msg(c != NULL, "Failed to add config '%s': %s", name,
     strerror(errno));
 
   name = "bar";
   c = find_config(set, -1, name, FALSE);
-  fail_unless(c == NULL, "Failed to handle null arguments");
-  fail_unless(errno == ENOENT, "Failed to set errno to ENOENT, got %d (%s)",
+  ck_assert_msg(c == NULL, "Failed to handle null arguments");
+  ck_assert_msg(errno == ENOENT, "Failed to set errno to ENOENT, got %d (%s)",
     errno, strerror(errno));
 
   mark_point();
@@ -308,14 +362,14 @@ START_TEST (config_find_config_test) {
 
   name = "foo";
   c = find_config(set, -1, name, FALSE);
-  fail_unless(c != NULL, "Failed to find config '%s': %s", name,
+  ck_assert_msg(c != NULL, "Failed to find config '%s': %s", name,
     strerror(errno));
 
   mark_point();
 
   c = find_config_next(c, c->next, -1, name, FALSE);
-  fail_unless(c == NULL, "Found next config unexpectedly");
-  fail_unless(errno == ENOENT, "Failed to set errno to ENOENT, got %d (%s)",
+  ck_assert_msg(c == NULL, "Found next config unexpectedly");
+  ck_assert_msg(errno == ENOENT, "Failed to set errno to ENOENT, got %d (%s)",
     errno, strerror(errno));
 
   /* Now add another config, find "foo" again; this time, a 'next' should
@@ -324,37 +378,37 @@ START_TEST (config_find_config_test) {
 
   name = "foo2";
   c = add_config_param_set(&set, name, 0);
-  fail_unless(c != NULL, "Failed to add config '%s': %s", name,
+  ck_assert_msg(c != NULL, "Failed to add config '%s': %s", name,
     strerror(errno));
 
   name = NULL;
   c = find_config(set, -1, name, FALSE);
-  fail_unless(c != NULL, "Failed to find any config: %s", strerror(errno));
+  ck_assert_msg(c != NULL, "Failed to find any config: %s", strerror(errno));
 
   mark_point();
 
   c = find_config_next(c, c->next, -1, name, FALSE);
-  fail_unless(c != NULL, "Expected to find another config");
+  ck_assert_msg(c != NULL, "Expected to find another config");
 
   mark_point();
 
   name = "foo";
   res = remove_config(set, name, FALSE);
-  fail_unless(res > 0, "Failed to remove config '%s': %s", name,
+  ck_assert_msg(res > 0, "Failed to remove config '%s': %s", name,
     strerror(errno));
 
   mark_point();
 
   c = find_config(set, -1, name, FALSE);
-  fail_unless(c == NULL, "Found config '%s' unexpectedly", name);
-  fail_unless(errno == ENOENT, "Failed to set errno to ENOENT, got %d (%s)",
+  ck_assert_msg(c == NULL, "Found config '%s' unexpectedly", name);
+  ck_assert_msg(errno == ENOENT, "Failed to set errno to ENOENT, got %d (%s)",
     errno, strerror(errno));
 
   name = "other";
   c = find_config(set, -1, name, TRUE);
-  fail_unless(c == NULL, "Found config '%s' unexpectedly (recurse = true)",
+  ck_assert_msg(c == NULL, "Found config '%s' unexpectedly (recurse = true)",
     name);
-  fail_unless(errno == ENOENT, "Expected ENOENT (%d), got %s (%d)", ENOENT,
+  ck_assert_msg(errno == ENOENT, "Expected ENOENT (%d), got %s (%d)", ENOENT,
     strerror(errno), errno);
 }
 END_TEST
@@ -367,21 +421,21 @@ START_TEST (config_find_config2_test) {
   unsigned long flags = 0;
 
   c = find_config2(NULL, -1, NULL, FALSE, flags);
-  fail_unless(c == NULL, "Failed to handle null arguments");
-  fail_unless(errno == EINVAL, "Failed to set errno to EINVAL, got %d (%s)",
+  ck_assert_msg(c == NULL, "Failed to handle null arguments");
+  ck_assert_msg(errno == EINVAL, "Failed to set errno to EINVAL, got %d (%s)",
     errno, strerror(errno));
 
   mark_point();
 
   name = "foo";
   c = add_config_param_set(&set, name, 0);
-  fail_unless(c != NULL, "Failed to add config '%s': %s", name,
+  ck_assert_msg(c != NULL, "Failed to add config '%s': %s", name,
     strerror(errno));
 
   name = "bar";
   c = find_config2(set, -1, name, FALSE, flags);
-  fail_unless(c == NULL, "Failed to handle null arguments");
-  fail_unless(errno == ENOENT, "Failed to set errno to ENOENT, got %d (%s)",
+  ck_assert_msg(c == NULL, "Failed to handle null arguments");
+  ck_assert_msg(errno == ENOENT, "Failed to set errno to ENOENT, got %d (%s)",
     errno, strerror(errno));
 
   mark_point();
@@ -389,14 +443,14 @@ START_TEST (config_find_config2_test) {
   /* We expect to find "foo", but a 'next' should be empty. */
   name = "foo";
   c = find_config2(set, -1, name, FALSE, flags);
-  fail_unless(c != NULL, "Failed to find config '%s': %s", name,
+  ck_assert_msg(c != NULL, "Failed to find config '%s': %s", name,
     strerror(errno));
 
   mark_point();
 
   c = find_config_next2(c, c->next, -1, name, FALSE, flags);
-  fail_unless(c == NULL, "Found next config unexpectedly");
-  fail_unless(errno == ENOENT, "Failed to set errno to ENOENT, got %d (%s)",
+  ck_assert_msg(c == NULL, "Found next config unexpectedly");
+  ck_assert_msg(errno == ENOENT, "Failed to set errno to ENOENT, got %d (%s)",
     errno, strerror(errno));
 
   /* Now add another config, find "foo" again; this time, a 'next' should
@@ -405,30 +459,30 @@ START_TEST (config_find_config2_test) {
 
   name = "foo2";
   c = add_config_param_set(&set, name, 0);
-  fail_unless(c != NULL, "Failed to add config '%s': %s", name,
+  ck_assert_msg(c != NULL, "Failed to add config '%s': %s", name,
     strerror(errno));
 
   name = NULL;
   c = find_config2(set, -1, name, FALSE, flags);
-  fail_unless(c != NULL, "Failed to find any config: %s", strerror(errno));
+  ck_assert_msg(c != NULL, "Failed to find any config: %s", strerror(errno));
 
   mark_point();
 
   c = find_config_next2(c, c->next, -1, name, FALSE, flags);
-  fail_unless(c != NULL, "Expected to find another config");
+  ck_assert_msg(c != NULL, "Expected to find another config");
 
   mark_point();
 
   name = "foo";
   res = remove_config(set, name, FALSE);
-  fail_unless(res > 0, "Failed to remove config '%s': %s", name,
+  ck_assert_msg(res > 0, "Failed to remove config '%s': %s", name,
     strerror(errno));
 
   mark_point();
 
   c = find_config2(set, -1, name, FALSE, flags);
-  fail_unless(c == NULL, "Found config '%s' unexpectedly", name);
-  fail_unless(errno == ENOENT, "Failed to set errno to ENOENT, got %d (%s)",
+  ck_assert_msg(c == NULL, "Found config '%s' unexpectedly", name);
+  ck_assert_msg(errno == ENOENT, "Failed to set errno to ENOENT, got %d (%s)",
     errno, strerror(errno));
 }
 END_TEST
@@ -441,21 +495,21 @@ START_TEST (config_find_config2_recurse_test) {
   unsigned long flags = 0;
 
   c = find_config2(NULL, -1, NULL, TRUE, flags);
-  fail_unless(c == NULL, "Failed to handle null arguments");
-  fail_unless(errno == EINVAL, "Failed to set errno to EINVAL, got %d (%s)",
+  ck_assert_msg(c == NULL, "Failed to handle null arguments");
+  ck_assert_msg(errno == EINVAL, "Failed to set errno to EINVAL, got %d (%s)",
     errno, strerror(errno));
 
   mark_point();
 
   name = "foo";
   c = add_config_param_set(&set, name, 0);
-  fail_unless(c != NULL, "Failed to add config '%s': %s", name,
+  ck_assert_msg(c != NULL, "Failed to add config '%s': %s", name,
     strerror(errno));
 
   name = "bar";
   c = find_config2(set, -1, name, TRUE, flags);
-  fail_unless(c == NULL, "Failed to handle null arguments");
-  fail_unless(errno == ENOENT, "Failed to set errno to ENOENT, got %d (%s)",
+  ck_assert_msg(c == NULL, "Failed to handle null arguments");
+  ck_assert_msg(errno == ENOENT, "Failed to set errno to ENOENT, got %d (%s)",
     errno, strerror(errno));
 
   mark_point();
@@ -463,14 +517,14 @@ START_TEST (config_find_config2_recurse_test) {
   /* We expect to find "foo", but a 'next' should be empty. */
   name = "foo";
   c = find_config2(set, -1, name, TRUE, flags);
-  fail_unless(c != NULL, "Failed to find config '%s': %s", name,
+  ck_assert_msg(c != NULL, "Failed to find config '%s': %s", name,
     strerror(errno));
 
   mark_point();
 
   c = find_config_next2(c, c->next, -1, name, TRUE, flags);
-  fail_unless(c == NULL, "Found next config unexpectedly");
-  fail_unless(errno == ENOENT, "Failed to set errno to ENOENT, got %d (%s)",
+  ck_assert_msg(c == NULL, "Found next config unexpectedly");
+  ck_assert_msg(errno == ENOENT, "Failed to set errno to ENOENT, got %d (%s)",
     errno, strerror(errno));
 
   /* Now add another config, find "foo" again; this time, a 'next' should
@@ -479,31 +533,44 @@ START_TEST (config_find_config2_recurse_test) {
 
   name = "foo2";
   c = add_config_param_set(&set, name, 0);
-  fail_unless(c != NULL, "Failed to add config '%s': %s", name,
+  ck_assert_msg(c != NULL, "Failed to add config '%s': %s", name,
     strerror(errno));
 
   name = NULL;
   c = find_config2(set, -1, name, TRUE, flags);
-  fail_unless(c != NULL, "Failed to find any config: %s", strerror(errno));
+  ck_assert_msg(c != NULL, "Failed to find any config: %s", strerror(errno));
 
   mark_point();
 
   c = find_config_next2(c, c->next, -1, name, TRUE, flags);
-  fail_unless(c != NULL, "Expected to find another config");
+  ck_assert_msg(c != NULL, "Expected to find another config");
 
   mark_point();
 
   name = "foo";
   res = remove_config(set, name, FALSE);
-  fail_unless(res > 0, "Failed to remove config '%s': %s", name,
+  ck_assert_msg(res > 0, "Failed to remove config '%s': %s", name,
     strerror(errno));
 
   mark_point();
 
   c = find_config2(set, -1, name, TRUE, flags);
-  fail_unless(c == NULL, "Found config '%s' unexpectedly", name);
-  fail_unless(errno == ENOENT, "Failed to set errno to ENOENT, got %d (%s)",
+  ck_assert_msg(c == NULL, "Found config '%s' unexpectedly", name);
+  ck_assert_msg(errno == ENOENT, "Failed to set errno to ENOENT, got %d (%s)",
     errno, strerror(errno));
+}
+END_TEST
+
+START_TEST (config_find_config_set_top_test) {
+  config_rec *c;
+
+  mark_point();
+  c = pcalloc(p, sizeof(config_rec));
+  c->parent = pcalloc(p, sizeof(config_rec));
+  find_config_set_top(c);
+
+  mark_point();
+  find_config_set_top(NULL);
 }
 END_TEST
 
@@ -515,21 +582,21 @@ START_TEST (config_get_param_ptr_test) {
   const char *name = NULL;
 
   res = get_param_ptr(NULL, NULL, FALSE);
-  fail_unless(res == NULL, "Failed to handle null arguments");
-  fail_unless(errno == ENOENT, "Failed to set errno to ENOENT, got %d (%s)",
+  ck_assert_msg(res == NULL, "Failed to handle null arguments");
+  ck_assert_msg(errno == ENOENT, "Failed to set errno to ENOENT, got %d (%s)",
     errno, strerror(errno));
 
   mark_point();
 
   name = "foo";
   c = add_config_param_set(&set, name, 1, "bar");
-  fail_unless(c != NULL, "Failed to add config '%s': %s", name,
+  ck_assert_msg(c != NULL, "Failed to add config '%s': %s", name,
     strerror(errno));
 
   name = "bar";
   res = get_param_ptr(set, name, FALSE);
-  fail_unless(res == NULL, "Failed to handle null arguments");
-  fail_unless(errno == ENOENT, "Failed to set errno to ENOENT, got %d (%s)",
+  ck_assert_msg(res == NULL, "Failed to handle null arguments");
+  ck_assert_msg(errno == ENOENT, "Failed to set errno to ENOENT, got %d (%s)",
     errno, strerror(errno));
 
   mark_point();
@@ -541,14 +608,14 @@ START_TEST (config_get_param_ptr_test) {
 
   name = "foo";
   res = get_param_ptr(set, name, FALSE);
-  fail_unless(res != NULL, "Failed to find config '%s': %s", name,
+  ck_assert_msg(res != NULL, "Failed to find config '%s': %s", name,
     strerror(errno));
 
   mark_point();
 
   res = get_param_ptr_next(name, FALSE);
-  fail_unless(res == NULL, "Found next config unexpectedly");
-  fail_unless(errno == ENOENT, "Failed to set errno to ENOENT, got %d (%s)",
+  ck_assert_msg(res == NULL, "Found next config unexpectedly");
+  ck_assert_msg(errno == ENOENT, "Failed to set errno to ENOENT, got %d (%s)",
     errno, strerror(errno));
 
   /* Now add another config, find "foo" again; this time, a 'next' should
@@ -557,37 +624,41 @@ START_TEST (config_get_param_ptr_test) {
 
   name = "foo2";
   c = add_config_param_set(&set, name, 1, "baz");
-  fail_unless(c != NULL, "Failed to add config '%s': %s", name,
+  ck_assert_msg(c != NULL, "Failed to add config '%s': %s", name,
     strerror(errno));
 
   get_param_ptr(NULL, NULL, FALSE);
 
   name = NULL;
   res = get_param_ptr(set, name, FALSE);
-  fail_unless(res != NULL, "Failed to find any config: %s", strerror(errno));
+  ck_assert_msg(res != NULL, "Failed to find any config: %s", strerror(errno));
 
   mark_point();
+  res = get_param_ptr_next(name, FALSE);
+  ck_assert_msg(res != NULL, "Expected to find another config");
+
+  mark_point();
+  res = get_param_ptr_next("foobar", TRUE);
+  ck_assert_msg(res == NULL, "Found another config unexpectedly");
+  ck_assert_msg(errno == ENOENT, "Expected ENOENT (%d), got %s (%d)", ENOENT,
+    strerror(errno), errno);
 
   res = get_param_ptr_next(name, FALSE);
-  fail_unless(res != NULL, "Expected to find another config");
-
-  res = get_param_ptr_next(name, FALSE);
-  fail_unless(res == NULL, "Found another config unexpectedly");
-  fail_unless(errno == ENOENT, "Expected ENOENT (%d), got %s (%d)", ENOENT,
+  ck_assert_msg(res == NULL, "Found another config unexpectedly");
+  ck_assert_msg(errno == ENOENT, "Expected ENOENT (%d), got %s (%d)", ENOENT,
     strerror(errno), errno);
 
   mark_point();
 
   name = "foo";
   count = remove_config(set, name, FALSE);
-  fail_unless(count > 0, "Failed to remove config '%s': %s", name,
+  ck_assert_msg(count > 0, "Failed to remove config '%s': %s", name,
     strerror(errno));
 
   mark_point();
-
   res = get_param_ptr(set, name, FALSE);
-  fail_unless(res == NULL, "Found config '%s' unexpectedly", name);
-  fail_unless(errno == ENOENT, "Failed to set errno to ENOENT, got %d (%s)",
+  ck_assert_msg(res == NULL, "Found config '%s' unexpectedly", name);
+  ck_assert_msg(errno == ENOENT, "Failed to set errno to ENOENT, got %d (%s)",
     errno, strerror(errno));
 }
 END_TEST
@@ -597,23 +668,23 @@ START_TEST (config_set_get_id_test) {
   const char *name;
 
   res = pr_config_get_id(NULL);
-  fail_unless(res == 0, "Failed to handle null argument");
-  fail_unless(errno == EINVAL, "Failed to set errno to EINVAL, got %d (%s)",
+  ck_assert_msg(res == 0, "Failed to handle null argument");
+  ck_assert_msg(errno == EINVAL, "Failed to set errno to EINVAL, got %d (%s)",
     errno, strerror(errno));
 
   res = pr_config_set_id(NULL);
-  fail_unless(res == 0, "Failed to handle null argument");
-  fail_unless(errno == EINVAL, "Failed to set errno to EINVAL, got %d (%s)",
+  ck_assert_msg(res == 0, "Failed to handle null argument");
+  ck_assert_msg(errno == EINVAL, "Failed to set errno to EINVAL, got %d (%s)",
     errno, strerror(errno));
 
   name = "foo";
 
   id = pr_config_set_id(name);
-  fail_unless(id > 0, "Failed to set ID for config '%s': %s", name,
+  ck_assert_msg(id > 0, "Failed to set ID for config '%s': %s", name,
     strerror(errno));
 
   res = pr_config_get_id(name);
-  fail_unless(res == id, "Expected ID %u for config '%s', found %u", id,
+  ck_assert_msg(res == id, "Expected ID %u for config '%s', found %u", id,
     name, res);
 }
 END_TEST
@@ -699,15 +770,19 @@ Suite *tests_get_config_suite(void) {
   tcase_add_checked_fixture(testcase, set_up, tear_down);
 
   tcase_add_test(testcase, config_init_config_test);
+  tcase_add_test(testcase, config_alloc_test);
+  tcase_add_test(testcase, config_add_config_to_set_test);
   tcase_add_test(testcase, config_add_config_test);
   tcase_add_test(testcase, config_add_config_param_test);
   tcase_add_test(testcase, config_add_config_param_set_test);
   tcase_add_test(testcase, config_add_config_param_str_test);
   tcase_add_test(testcase, config_add_server_config_param_str_test);
   tcase_add_test(testcase, config_add_config_set_test);
+  tcase_add_test(testcase, config_dump_test);
   tcase_add_test(testcase, config_find_config_test);
   tcase_add_test(testcase, config_find_config2_test);
   tcase_add_test(testcase, config_find_config2_recurse_test);
+  tcase_add_test(testcase, config_find_config_set_top_test);
   tcase_add_test(testcase, config_get_param_ptr_test);
   tcase_add_test(testcase, config_set_get_id_test);
   tcase_add_test(testcase, config_merge_down_test);

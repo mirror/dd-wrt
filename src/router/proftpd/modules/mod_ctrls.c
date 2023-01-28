@@ -2,7 +2,7 @@
  * ProFTPD: mod_ctrls -- a module implementing the ftpdctl local socket
  *          server, as well as several utility functions for other Controls
  *          modules
- * Copyright (c) 2000-2017 TJ Saunders
+ * Copyright (c) 2000-2022 TJ Saunders
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -105,8 +105,9 @@ static int ctrls_openlog(void) {
   int logfd, res = 0, xerrno = 0;
 
   /* Sanity check */
-  if (ctrls_logname == NULL)
+  if (ctrls_logname == NULL) {
     return 0;
+  }
 
   PRIVS_ROOT
   res = pr_log_openfile(ctrls_logname, &logfd, PR_LOG_SYSTEM_MODE);
@@ -143,7 +144,7 @@ static int ctrls_openlog(void) {
 static pr_ctrls_cl_t *ctrls_new_cl(void) {
   pool *cl_pool = NULL;
 
-  if (!cl_list) {
+  if (cl_list == NULL) {
 
     /* Our first client */
     cl_pool = make_sub_pool(ctrls_pool);
@@ -221,36 +222,35 @@ static pr_ctrls_cl_t *ctrls_add_cl(int cl_fd, uid_t cl_uid, gid_t cl_gid,
 static void ctrls_del_cl(pr_ctrls_cl_t *cl) {
 
   /* Remove this ctr_cl_t from the list, and free it */
-  if (cl->cl_next)
+  if (cl->cl_next) {
     cl->cl_next->cl_prev = cl->cl_prev;
+  }
 
-  if (cl->cl_prev)
+  if (cl->cl_prev) {
     cl->cl_prev->cl_next = cl->cl_next;
 
-  else
+  } else {
     cl_list = cl->cl_next;
+  }
 
-  close(cl->cl_fd);
+  (void) close(cl->cl_fd);
   cl->cl_fd = -1;
 
   destroy_pool(cl->cl_pool);
-
   cl_listlen--;
-
-  return;
 }
 
 /* Controls socket routines
  */
 
-
 /* Iterate through any readable descriptors, reading each into appropriate
  * client objects
  */
 static void ctrls_cls_read(void) {
-  pr_ctrls_cl_t *cl = cl_list;
+  pr_ctrls_cl_t *cl;
 
-  while (cl) {
+  cl = cl_list;
+  while (cl != NULL) {
     pr_signals_handle();
 
     if (pr_ctrls_recv_request(cl) < 0) {
@@ -261,7 +261,7 @@ static void ctrls_cls_read(void) {
       } else if (errno == EINVAL) {
 
         /* Unsupported action requested */
-        if (!cl->cl_flags) {
+        if (cl->cl_flags == 0) {
           cl->cl_flags = PR_CTRLS_CL_NOACTION;
         }
 
@@ -273,7 +273,7 @@ static void ctrls_cls_read(void) {
                  errno == EWOULDBLOCK) {
 
         /* Malicious/blocked client */
-        if (!cl->cl_flags) {
+        if (cl->cl_flags == 0) {
           cl->cl_flags = PR_CTRLS_CL_BLOCKED;
         }
 
@@ -283,23 +283,30 @@ static void ctrls_cls_read(void) {
       }
 
     } else {
-      pr_ctrls_t *ctrl = *((pr_ctrls_t **) cl->cl_ctrls->elts);
-      char *request = (char *) ctrl->ctrls_action;
+      pr_ctrls_t *ctrl;
+      char *request;
+
+      ctrl = *((pr_ctrls_t **) cl->cl_ctrls->elts);
+      request = (char *) ctrl->ctrls_action;
 
       /* Request successfully read.  Flag this client as being in such a
        * state.
        */
-      if (!cl->cl_flags) {
+      if (cl->cl_flags == 0) {
         cl->cl_flags = PR_CTRLS_CL_HAVEREQ;
       }
 
-      if (ctrl->ctrls_cb_args) {
-        unsigned int reqargc = ctrl->ctrls_cb_args->nelts;
-        char **reqargv = ctrl->ctrls_cb_args->elts;
+      if (ctrl->ctrls_cb_args != NULL) {
+        unsigned int reqargc;
+        char **reqargv;
 
         /* Reconstruct the original request string from the client for
          * logging.
          */
+
+        reqargc = ctrl->ctrls_cb_args->nelts;
+        reqargv = ctrl->ctrls_cb_args->elts;
+
         while (reqargc--) {
           request = pstrcat(cl->cl_pool, request, " ", *reqargv++, NULL);
         }
@@ -312,21 +319,22 @@ static void ctrls_cls_read(void) {
 
     cl = cl->cl_next;
   }
-
-  return;
 }
 
 /* Iterate through any writable descriptors, writing out the responses to the
  * appropriate client objects
  */
 static int ctrls_cls_write(void) {
-  pr_ctrls_cl_t *cl = cl_list;
+  pr_ctrls_cl_t *cl;
 
-  while (cl) {
+  cl = cl_list;
+  while (cl != NULL) {
+    pr_ctrls_cl_t *tmp_cl;
+
     /* Necessary to keep track of the next client in the list while
      * the list is being modified.
      */
-    pr_ctrls_cl_t *tmpcl = cl->cl_next;
+    tmp_cl = cl->cl_next;
 
     pr_signals_handle();
 
@@ -427,7 +435,7 @@ static int ctrls_cls_write(void) {
 
     /* Remove the client from the list */
     ctrls_del_cl(cl);
-    cl = tmpcl;
+    cl = tmp_cl;
   }
 
   return 0;
@@ -469,22 +477,23 @@ static int ctrls_listen(const char *sock_file) {
     if (res < 0) {
       int xerrno = errno;
 
+      pr_signals_unblock();
       pr_log_pri(PR_LOG_NOTICE, MOD_CTRLS_VERSION
         ": error duplicating ctrls socket: %s", strerror(xerrno));
       (void) close(sockfd);
 
       errno = xerrno;
       return -1;
-
-    } else {
-      (void) close(sockfd);
-      sockfd = res;
     }
+
+    (void) close(sockfd);
+    sockfd = res;
   }
 
   if (fcntl(sockfd, F_SETFD, FD_CLOEXEC) < 0) {
     int xerrno = errno;
 
+    pr_signals_unblock();
     pr_log_pri(PR_LOG_WARNING,
       "unable to set CLO_EXEC on ctrls socket fd %d: %s", sockfd,
       strerror(xerrno));
@@ -588,20 +597,22 @@ static int ctrls_recv_cl_reqs(void) {
 
   /* look for any pending client connections */
   while (cl_listlen < cl_maxlistlen) {
-    int res = 0;
+    int res = 0, xerrno;
 
     pr_signals_handle();
 
-    if (ctrls_sockfd < 0)
+    if (ctrls_sockfd < 0) {
       break;
+    }
 
     FD_ZERO(&cl_rset);
     FD_SET(ctrls_sockfd, &cl_rset);
     max_fd = ctrls_sockfd + 1;
 
     res = select(max_fd + 1, &cl_rset, NULL, NULL, &timeout);
-    if (res == 0) {
+    xerrno = errno;
 
+    if (res == 0) {
       /* Go through the client list */
       ctrls_cls_read();
 
@@ -609,13 +620,15 @@ static int ctrls_recv_cl_reqs(void) {
     }
 
     if (res < 0) {
-      if (errno == EINTR) {
+      if (xerrno == EINTR) {
         pr_signals_handle();
         continue;
       }
 
       pr_ctrls_log(MOD_CTRLS_VERSION,
-        "error: unable to select on local socket: %s", strerror(errno));
+        "error: unable to select on local socket: %s", strerror(xerrno));
+
+      errno = xerrno;
       return res;
     }
  
@@ -623,19 +636,25 @@ static int ctrls_recv_cl_reqs(void) {
 
       /* Make sure the ctrl socket is non-blocking */
       if (ctrls_setnonblock(ctrls_sockfd) < 0) {
+        xerrno = errno;
+
         pr_ctrls_log(MOD_CTRLS_VERSION,
           "error: unable to set nonblocking on local socket: %s",
-          strerror(errno));
+          strerror(xerrno));
+
+        errno = xerrno;
         return -1;
       }
 
       /* Accept pending connections */
       cl_fd = pr_ctrls_accept(ctrls_sockfd, &cl_uid, &cl_gid, &cl_pid,
         ctrls_cl_freshness);
+      xerrno = errno;
+
       if (cl_fd < 0) {
-        if (errno != ETIMEDOUT) {
+        if (xerrno != ETIMEDOUT) {
           pr_ctrls_log(MOD_CTRLS_VERSION,
-            "error: unable to accept connection: %s", strerror(errno));
+            "error: unable to accept connection: %s", strerror(xerrno));
         }
 
         continue;
@@ -653,11 +672,12 @@ static int ctrls_recv_cl_reqs(void) {
         pr_ctrls_log(MOD_CTRLS_VERSION,
           "error: unable to set nonblocking on client socket: %s",
           strerror(errno));
+        (void) close(cl_fd);
         continue;
       }
 
-      if (!pr_ctrls_check_user_acl(cl_uid, &ctrls_sock_acl.acl_usrs) &&
-          !pr_ctrls_check_group_acl(cl_gid, &ctrls_sock_acl.acl_grps)) {
+      if (pr_ctrls_check_user_acl(cl_uid, &ctrls_sock_acl.acl_users) != TRUE &&
+          pr_ctrls_check_group_acl(cl_gid, &ctrls_sock_acl.acl_groups) != TRUE) {
         cl_flags = PR_CTRLS_CL_NOACCESS;
       }
 
@@ -707,11 +727,11 @@ static int ctrls_setnonblock(int sockfd) {
 }
 
 static int ctrls_timer_cb(CALLBACK_FRAME) {
-  static unsigned char first = TRUE;
+  static unsigned char first_time = TRUE;
 
   /* If the ControlsEngine is not to run, do nothing from here on out */
-  if (!ctrls_engine) {
-    close(ctrls_sockfd);
+  if (ctrls_engine == FALSE) {
+    (void) close(ctrls_sockfd);
     ctrls_sockfd = -1;
 
     if (is_master) {
@@ -722,7 +742,7 @@ static int ctrls_timer_cb(CALLBACK_FRAME) {
     return 0;
   }
 
-  if (first) {
+  if (first_time == TRUE) {
     /* Change the ownership on the socket to that configured by the admin */
     PRIVS_ROOT
     if (chown(ctrls_sock_file, ctrls_sock_uid, ctrls_sock_gid) < 0) {
@@ -732,7 +752,7 @@ static int ctrls_timer_cb(CALLBACK_FRAME) {
     }
     PRIVS_RELINQUISH
 
-    first = FALSE;
+    first_time = FALSE;
   }
 
   /* Please no alarms while doing this. */
@@ -748,7 +768,7 @@ static int ctrls_timer_cb(CALLBACK_FRAME) {
   ctrls_send_cl_resps();
 
   /* Reset controls */
-  pr_reset_ctrls();
+  pr_ctrls_reset();
 
   pr_alarms_unblock();
   return 1;
@@ -773,11 +793,10 @@ static int ctrls_handle_help(pr_ctrls_t *ctrl, int reqargc,
     return -1;
   }
 
-  if (pr_get_registered_actions(ctrl, CTRLS_GET_DESC) < 0)
+  if (pr_get_registered_actions(ctrl, CTRLS_GET_DESC) < 0) {
     pr_ctrls_add_response(ctrl, "unable to get actions: %s", strerror(errno));
 
-  else {
-
+  } else {
     /* Be nice, and sort the directives lexicographically */
     qsort(ctrl->ctrls_cb_resps->elts, ctrl->ctrls_cb_resps->nelts,
       sizeof(char *), respcmp);
@@ -795,14 +814,15 @@ static int ctrls_handle_insctrl(pr_ctrls_t *ctrl, int reqargc,
    */
 
   /* Check the insctrl ACL */
-  if (!pr_ctrls_check_acl(ctrl, ctrls_acttab, "insctrl")) {
+  if (pr_ctrls_check_acl(ctrl, ctrls_acttab, "insctrl") != TRUE) {
 
     /* Access denied */
     pr_ctrls_add_response(ctrl, "access denied");
     return -1;
   }
 
-  if (reqargc < 1 || reqargc > 2) {
+  if (reqargc < 1 ||
+      reqargc > 2) {
     pr_ctrls_add_response(ctrl, "wrong number of parameters");
     return -1;
   }
@@ -810,19 +830,22 @@ static int ctrls_handle_insctrl(pr_ctrls_t *ctrl, int reqargc,
   /* If the optional second parameter, a module name, is used, lookup
    * the module pointer matching the name.
    */
-  if (reqargc == 2)
+  if (reqargc == 2) {
     m = pr_module_get(reqargv[1]);
+  }
 
   if (pr_set_registered_actions(m, reqargv[0], FALSE, 0) < 0) {
-
-    if (errno == ENOENT)
+    if (errno == ENOENT) {
       pr_ctrls_add_response(ctrl, "no such control: '%s'", reqargv[0]);
-    else
+
+    } else {
       pr_ctrls_add_response(ctrl, "unable to enable '%s': %s", reqargv[0],
         strerror(errno));
+    }
 
-  } else
+  } else {
     pr_ctrls_add_response(ctrl, "'%s' control enabled", reqargv[0]);
+  }
 
   return 0;
 }
@@ -847,15 +870,13 @@ static int ctrls_handle_lsctrl(pr_ctrls_t *ctrl, int reqargc,
     return -1;
   }
 
-  if (pr_get_registered_actions(ctrl, CTRLS_GET_ACTION_ENABLED) < 0)
+  if (pr_get_registered_actions(ctrl, CTRLS_GET_ACTION_ENABLED) < 0) {
     pr_ctrls_add_response(ctrl, "unable to get actions: %s", strerror(errno));
 
-  else {
-
+  } else {
     /* Be nice, and sort the actions lexicographically */
     qsort(ctrl->ctrls_cb_resps->elts, ctrl->ctrls_cb_resps->nelts,
       sizeof(char *), respcmp);
-
   }
 
   return 0;
@@ -877,7 +898,8 @@ static int ctrls_handle_rmctrl(pr_ctrls_t *ctrl, int reqargc,
     return -1;
   }
 
-  if (reqargc < 1 || reqargc > 2) {
+  if (reqargc < 1 ||
+      reqargc > 2) {
     pr_ctrls_add_response(ctrl, "wrong number of parameters");
     return -1;
   }
@@ -895,8 +917,9 @@ static int ctrls_handle_rmctrl(pr_ctrls_t *ctrl, int reqargc,
   /* If the optional second parameter, a module name, is used, lookup
    * the module pointer matching the name.
    */
-  if (reqargc == 2)
+  if (reqargc == 2) {
     m = pr_module_get(reqargv[1]);
+  }
 
   if (pr_set_registered_actions(m, reqargv[0], FALSE,
       PR_CTRLS_ACT_DISABLED) < 0) {
@@ -915,14 +938,13 @@ static int ctrls_handle_rmctrl(pr_ctrls_t *ctrl, int reqargc,
       pr_ctrls_add_response(ctrl, "'%s' control disabled", reqargv[0]);
 
     } else {
-
       /* If all actions have been disabled, stop listening on the local
        * socket, and turn off this module's engine.
        */
       pr_ctrls_add_response(ctrl, "all controls disabled");
       pr_ctrls_add_response(ctrl, "restart the daemon to re-enable controls");
 
-      close(ctrls_sockfd);
+      (void) close(ctrls_sockfd);
       ctrls_sockfd = -1;
 
       ctrls_engine = FALSE;
@@ -937,7 +959,9 @@ static int ctrls_handle_rmctrl(pr_ctrls_t *ctrl, int reqargc,
 
 /* Default behavior is to deny everyone unless an ACL has been configured */
 MODRET set_ctrlsacls(cmd_rec *cmd) {
-  char *bad_action = NULL, **actions = NULL;
+  int res;
+  char **actions = NULL;
+  const char *bad_action = NULL;
 
   CHECK_ARGS(cmd, 4);
   CHECK_CONF(cmd, CONF_ROOT);
@@ -964,9 +988,9 @@ MODRET set_ctrlsacls(cmd_rec *cmd) {
     CONF_ERROR(cmd, "third parameter must be 'user' or 'group'");
   }
 
-  bad_action = pr_ctrls_set_module_acls(ctrls_acttab, ctrls_pool, actions,
-    cmd->argv[2], cmd->argv[3], cmd->argv[4]);
-  if (bad_action != NULL) {
+  res = pr_ctrls_set_module_acls2(ctrls_acttab, ctrls_pool, actions,
+    cmd->argv[2], cmd->argv[3], cmd->argv[4], &bad_action);
+  if (res < 0) {
     CONF_ERROR(cmd, pstrcat(cmd->tmp_pool, ": unknown action: '",
       bad_action, "'", NULL));
   }
@@ -1104,19 +1128,25 @@ MODRET set_ctrlssocketacl(cmd_rec *cmd) {
   pr_ctrls_init_acl(&ctrls_sock_acl);
 
   /* Check the first argument to make sure it either "allow" or "deny" */
-  if (strncmp(cmd->argv[1], "allow", 6) != 0 &&
-      strncmp(cmd->argv[1], "deny", 5) != 0) {
+  if (strcasecmp(cmd->argv[1], "allow") != 0 &&
+      strcasecmp(cmd->argv[1], "deny") != 0) {
     CONF_ERROR(cmd, "first parameter must be either 'allow' or 'deny'");
   }
 
   /* Check the second argument to see how to handle the directive */
-  if (strncmp(cmd->argv[2], "user", 5) == 0) {
-    pr_ctrls_set_user_acl(ctrls_pool, &ctrls_sock_acl.acl_usrs, cmd->argv[1],
-      cmd->argv[3]);
+  if (strcasecmp(cmd->argv[2], "user") == 0) {
+    if (pr_ctrls_set_user_acl(ctrls_pool, &ctrls_sock_acl.acl_users,
+        cmd->argv[1], cmd->argv[3]) < 0) {
+      CONF_ERROR(cmd, pstrcat(cmd->tmp_pool,
+        "error configuring user socket ACL: ", strerror(errno), NULL));
+    }
  
-  } else if (strncmp(cmd->argv[2], "group", 6) == 0) {
-    pr_ctrls_set_group_acl(ctrls_pool, &ctrls_sock_acl.acl_grps, cmd->argv[1],
-      cmd->argv[3]);
+  } else if (strcasecmp(cmd->argv[2], "group") == 0) {
+    if (pr_ctrls_set_group_acl(ctrls_pool, &ctrls_sock_acl.acl_groups,
+        cmd->argv[1], cmd->argv[3]) < 0) {
+      CONF_ERROR(cmd, pstrcat(cmd->tmp_pool,
+        "error configuring group socket ACL: ", strerror(errno), NULL));
+    }
 
   } else {
     CONF_ERROR(cmd, "second parameter must be either 'user' or 'group'");
@@ -1174,7 +1204,7 @@ static void ctrls_shutdown_ev(const void *event_data, void *user_data) {
     return;
 
   /* Close any connected clients */
-  if (cl_list) {
+  if (cl_list != NULL) {
     pr_ctrls_cl_t *cl = NULL;
 
     for (cl = cl_list; cl; cl = cl->cl_next) {
@@ -1217,7 +1247,7 @@ static void ctrls_restart_ev(const void *event_data, void *user_data) {
   pr_alarms_block();
 
   /* Close any connected clients */
-  if (cl_list) {
+  if (cl_list != NULL) {
     pr_ctrls_cl_t *cl = NULL;
 
     for (cl = cl_list; cl; cl = cl->cl_next) {
@@ -1234,13 +1264,13 @@ static void ctrls_restart_ev(const void *event_data, void *user_data) {
 
   pr_trace_msg(trace_channel, 3, "closing ctrls socket '%s' (fd %d)",
     ctrls_sock_file, ctrls_sockfd);
-  close(ctrls_sockfd);
+  (void) close(ctrls_sockfd);
   ctrls_sockfd = -1;
 
   ctrls_closelog();
 
   /* Clear the existing pool */
-  if (ctrls_pool) {
+  if (ctrls_pool != NULL) {
     destroy_pool(ctrls_pool);
 
     ctrls_logname = NULL;
@@ -1291,7 +1321,7 @@ static int ctrls_init(void) {
 
   /* Make certain the socket ACL is initialized. */
   memset(&ctrls_sock_acl, '\0', sizeof(ctrls_acl_t));
-  ctrls_sock_acl.acl_usrs.allow = ctrls_sock_acl.acl_grps.allow = FALSE;
+  ctrls_sock_acl.acl_users.allow = ctrls_sock_acl.acl_groups.allow = FALSE;
 
   pr_event_register(&ctrls_module, "core.restart", ctrls_restart_ev, NULL);
   pr_event_register(&ctrls_module, "core.shutdown", ctrls_shutdown_ev, NULL);

@@ -1,6 +1,6 @@
 /*
  * ProFTPD - FTP server daemon
- * Copyright (c) 2014-2017 The ProFTPD Project team
+ * Copyright (c) 2014-2022 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -47,17 +47,72 @@ static unsigned int config_id = 0;
 
 static const char *trace_channel = "config";
 
-/* Adds a config_rec to the specified set */
+config_rec *pr_config_alloc(pool *p, const char *name, int config_type) {
+  config_rec *c;
+
+  if (p == NULL) {
+    errno = EINVAL;
+    return NULL;
+  }
+
+  c = (config_rec *) pcalloc(p, sizeof(config_rec));
+  c->pool = p;
+  c->config_type = config_type;
+
+  if (name != NULL) {
+    c->name = pstrdup(c->pool, name);
+    c->config_id = pr_config_set_id(c->name);
+  }
+
+  return c;
+}
+
+/* Add the given config_rec to the specified set */
+config_rec *pr_config_add_config_to_set(xaset_t *set, config_rec *c,
+    int flags) {
+  config_rec *parent = NULL;
+
+  if (set == NULL ||
+      c == NULL) {
+    errno = EINVAL;
+    return NULL;
+  }
+
+  /* Find the parent set for the config_rec to be allocated. */
+  if (set->xas_list != NULL) {
+    parent = ((config_rec *) (set->xas_list))->parent;
+  }
+
+  c->set = set;
+  c->parent = parent;
+
+  if (flags & PR_CONFIG_FL_INSERT_HEAD) {
+    xaset_insert(set, (xasetmember_t *) c);
+
+  } else {
+    xaset_insert_end(set, (xasetmember_t *) c);
+  }
+
+  /* Generate an event about the added config, for any interested parties.
+   * This is useful for tracking the origins of the config tree.
+   */
+  pr_event_generate("core.added-config", c);
+
+  return c;
+}
+
+/* Adds an automatically allocated config_rec to the specified set */
 config_rec *pr_config_add_set(xaset_t **set, const char *name, int flags) {
-  pool *conf_pool = NULL, *set_pool = NULL;
-  config_rec *c, *parent = NULL;
+  pool *conf_pool = NULL;
+  config_rec *c;
 
   if (set == NULL) {
     errno = EINVAL;
     return NULL;
   }
- 
+
   if (!*set) {
+    pool *set_pool;
 
     /* Allocate a subpool from permanent_pool for the set. */
     set_pool = make_sub_pool(permanent_pool);
@@ -65,46 +120,17 @@ config_rec *pr_config_add_set(xaset_t **set, const char *name, int flags) {
 
     *set = xaset_create(set_pool, NULL);
     (*set)->pool = set_pool;
-
-    /* Now, make a subpool for the config_rec to be allocated.  The default
-     * pool size (PR_TUNABLE_NEW_POOL_SIZE, 512 by default) is a bit large
-     * for config_rec pools; use a smaller size.
-     */
-    conf_pool = pr_pool_create_sz(set_pool, 128);
-
-  } else {
-
-    /* Find the parent set for the config_rec to be allocated. */
-    if ((*set)->xas_list) {
-      parent = ((config_rec *) ((*set)->xas_list))->parent;
-    }
-
-    /* Now, make a subpool for the config_rec to be allocated.  The default
-     * pool size (PR_TUNABLE_NEW_POOL_SIZE, 512 by default) is a bit large
-     * for config_rec pools; use a smaller size.  Allocate the subpool
-     * from the parent's pool.
-     */
-    conf_pool = pr_pool_create_sz((*set)->pool, 128);
   }
 
+  /* Now, make a subpool for the config_rec to be allocated.  The default
+   * pool size (PR_TUNABLE_NEW_POOL_SIZE, 512 by default) is a bit large
+   * for config_rec pools; use a smaller size.
+   */
+  conf_pool = pr_pool_create_sz((*set)->pool, 128);
   pr_pool_tag(conf_pool, "config_rec pool");
 
-  c = (config_rec *) pcalloc(conf_pool, sizeof(config_rec));
-  c->pool = conf_pool;
-  c->set = *set;
-  c->parent = parent;
-
-  if (name) {
-    c->name = pstrdup(conf_pool, name);
-    c->config_id = pr_config_set_id(c->name);
-  }
-
-  if (flags & PR_CONFIG_FL_INSERT_HEAD) {
-    xaset_insert(*set, (xasetmember_t *) c);
-    
-  } else {
-    xaset_insert_end(*set, (xasetmember_t *) c);
-  }
+  c = pr_config_alloc(conf_pool, name, 0);
+  pr_config_add_config_to_set(*set, c, flags);
 
   return c;
 }
@@ -206,7 +232,12 @@ void pr_config_dump(void (*dumpf)(const char *, ...), xaset_t *s,
     }
 
     if (c->subset) {
-      pr_config_dump(dumpf, c->subset, pstrcat(c->pool, indent, " ", NULL));
+      pool *iter_pool;
+
+      iter_pool = make_sub_pool(c->pool);
+      pr_pool_tag(iter_pool, "config dump scratch pool");
+      pr_config_dump(dumpf, c->subset, pstrcat(iter_pool, indent, " ", NULL));
+      destroy_pool(iter_pool);
     }
   }
 }
@@ -706,30 +737,23 @@ int pr_config_remove(xaset_t *set, const char *name, int flags, int recurse) {
     found_set = c->set;
     xaset_remove(found_set, (xasetmember_t *) c);
 
-    /* If the set is empty, and has no more contained members in the xas_list,
-     * destroy the set.
-     */
-    if (!found_set->xas_list) {
+    c->set = NULL;
+    (void) pr_table_remove(config_tab, name, NULL);
 
+    if (found_set->xas_list == NULL) {
       /* First, set any pointers to the container of the set to NULL. */
-      if (c->parent &&
+      if (c->parent != NULL &&
           c->parent->subset == found_set) {
         c->parent->subset = NULL;
 
       } else if (s && s->conf == found_set) {
         s->conf = NULL;
       }
+    }
 
-      if (!(flags & PR_CONFIG_FL_PRESERVE_ENTRY)) {
-        /* Next, destroy the set's pool, which destroys the set as well. */
-        destroy_pool(found_set->pool);
-      }
-
-    } else {
-      if (!(flags & PR_CONFIG_FL_PRESERVE_ENTRY)) {
-        /* If the set was not empty, destroy only the requested config_rec. */
-        destroy_pool(c->pool);
-      }
+    if (!(flags & PR_CONFIG_FL_PRESERVE_ENTRY)) {
+      /* If the set was not empty, destroy only the requested config_rec. */
+      destroy_pool(c->pool);
     }
   }
 
@@ -833,7 +857,6 @@ config_rec *pr_conf_add_server_config_param_str(server_rec *s, const char *name,
 
 config_rec *add_config_param(const char *name, unsigned int num, ...) {
   config_rec *c;
-  void **argv;
   va_list ap;
 
   if (name == NULL) {
@@ -843,6 +866,8 @@ config_rec *add_config_param(const char *name, unsigned int num, ...) {
 
   c = pr_config_add(NULL, name, 0);
   if (c) {
+    void **argv;
+
     c->config_type = CONF_PARAM;
     c->argc = num;
     c->argv = pcalloc(c->pool, (num+1) * sizeof(void*));
@@ -934,19 +959,12 @@ void init_config(void) {
     global_config_pool = NULL;
   }
 
-  if (config_tab) {
+  if (config_tab != NULL) {
     /* Clear the existing config ID table.  This needs to happen when proftpd
      * is restarting.
      */
-    if (pr_table_empty(config_tab) < 0) {
-      pr_log_debug(DEBUG0, "error emptying config ID table: %s",
-        strerror(errno));
-    }
-
-    if (pr_table_free(config_tab) < 0) {
-      pr_log_debug(DEBUG0, "error destroying config ID table: %s",
-        strerror(errno));
-    }
+    (void) pr_table_empty(config_tab);
+    (void) pr_table_free(config_tab);
 
     config_tab = pr_table_alloc(config_tab_pool, 0);
 
@@ -957,7 +975,6 @@ void init_config(void) {
     config_id = 0;
 
   } else {
-
     config_tab_pool = make_sub_pool(permanent_pool);
     pr_pool_tag(config_tab_pool, "Config Table Pool");
     config_tab = pr_table_alloc(config_tab_pool, 0);
@@ -972,6 +989,4 @@ void init_config(void) {
     pr_log_debug(DEBUG2, "error setting config ID table max size to %u: %s",
       maxents, strerror(errno));
   }
-
-  return;
 }

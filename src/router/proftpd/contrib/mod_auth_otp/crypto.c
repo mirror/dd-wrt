@@ -1,6 +1,6 @@
 /*
  * ProFTPD - mod_auth_otp OpenSSL interface
- * Copyright (c) 2015-2018 TJ Saunders
+ * Copyright (c) 2015-2021 TJ Saunders
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -47,23 +47,14 @@ void auth_otp_crypto_free(int flags) {
       pr_module_get("mod_sql_passwd.c") == NULL &&
       pr_module_get("mod_tls.c") == NULL) {
 
+#if OPENSSL_VERSION_NUMBER < 0x10100000L
     ERR_free_strings();
-
-#if OPENSSL_VERSION_NUMBER >= 0x10000001L
-# if OPENSSL_VERSION_NUMBER >= 0x10100000L
-    /* The ERR_remove_state(0) usage is deprecated due to thread ID
-     * differences among platforms; see the OpenSSL-1.0.0c CHANGES file
-     * for details.  So for new enough OpenSSL installations, use the
-     * proper way to clear the error queue state.
-     */
-    ERR_remove_thread_state(NULL);
-# endif /* OpenSSL-1.1.x and later */
-#else
-    ERR_remove_state(0);
-#endif /* OpenSSL prior to 1.0.0-beta1 */
-
     EVP_cleanup();
     RAND_cleanup();
+# if OPENSSL_VERSION_NUMBER >= 0x10000001L
+    ERR_remove_state(0);
+# endif /* OpenSSL prior to 1.0.0-beta1 */
+#endif
   }
 }
 

@@ -1,6 +1,6 @@
 /*
  * ProFTPD - FTP server API testsuite
- * Copyright (c) 2008-2017 The ProFTPD Project team
+ * Copyright (c) 2008-2021 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -63,6 +63,7 @@ static struct testsuite_info suites[] = {
   { "inet",		tests_get_inet_suite },
   { "data",		tests_get_data_suite },
   { "ascii",		tests_get_ascii_suite },
+  { "ctrls",		tests_get_ctrls_suite },
   { "help",		tests_get_help_suite },
   { "rlimit",		tests_get_rlimit_suite },
   { "encode",		tests_get_encode_suite },
@@ -107,16 +108,17 @@ int main(int argc, char *argv[]) {
   }
 
   requested = getenv("PR_TEST_SUITE");
-  if (requested) {
+  if (requested != NULL) {
     Suite *suite;
 
     suite = tests_get_suite(requested);
-    if (suite) {
+    if (suite != NULL) {
       srunner_add_suite(runner, suite);
 
     } else {
       fprintf(stderr, "No such test suite ('%s') requested via PR_TEST_SUITE\n",
         requested);
+      srunner_free(runner);
       return EXIT_FAILURE;
     }
 
@@ -127,7 +129,7 @@ int main(int argc, char *argv[]) {
       Suite *suite;
 
       suite = (suites[i].get_suite)();
-      if (suite) {
+      if (suite != NULL) {
         srunner_add_suite(runner, suite);
       }
     }
@@ -137,8 +139,9 @@ int main(int argc, char *argv[]) {
   pr_trace_use_stderr(TRUE);
 
   requested = getenv("PR_TEST_NOFORK");
-  if (requested) {
+  if (requested != NULL) {
     srunner_set_fork_status(runner, CK_NOFORK);
+
   } else {
     requested = getenv("CK_DEFAULT_TIMEOUT");
     if (requested == NULL) {
@@ -150,8 +153,9 @@ int main(int argc, char *argv[]) {
 
   nfailed = srunner_ntests_failed(runner);
 
-  if (runner)
+  if (runner != NULL) {
     srunner_free(runner);
+  }
 
   if (nfailed != 0) {
     fprintf(stderr, "-------------------------------------------------\n");

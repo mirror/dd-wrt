@@ -1,7 +1,7 @@
 /*
  * ProFTPD: mod_tls_memcache -- a module which provides shared SSL session
  *                              and OCSP response caches using memcached servers
- * Copyright (c) 2011-2020 TJ Saunders
+ * Copyright (c) 2011-2021 TJ Saunders
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -393,7 +393,7 @@ static int sess_cache_entry_decode_json(pool *p, void *value, size_t valuesz,
   pr_json_object_t *json;
   const char *key;
   char *entry, *text;
-  double number;
+  double number = 0;
 
   entry = value;
   if (pr_json_text_validate(p, entry) == FALSE) {
@@ -968,7 +968,7 @@ static SSL_SESSION *sess_cache_get(tls_sess_cache_t *cache,
     }
   }
 
-  if (sess) {
+  if (sess != NULL) {
     return sess;
   }
 
@@ -1289,7 +1289,7 @@ static int ocsp_cache_entry_decode_json(pool *p, void *value, size_t valuesz,
   pr_json_object_t *json;
   const char *key;
   char *entry, *text;
-  double number;
+  double number = 0;
 
   entry = value;
   if (pr_json_text_validate(p, entry) == FALSE) {

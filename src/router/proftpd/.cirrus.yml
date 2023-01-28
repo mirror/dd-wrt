@@ -3,17 +3,14 @@ task:
   name: build
   freebsd_instance:
     matrix:
-      # NOTE: Currently disabled due to this error:
-      #  pkg: repository FreeBSD contains packages for wrong OS version: FreeBSD:13:amd64
-      # image_family: freebsd-13-0-snap
-      image_family: freebsd-12-1
-      image_family: freebsd-11-3-snap
+      image_family: freebsd-13-0
+      image_family: freebsd-12-2
 
   env:
     CIRRUS_CLONE_DEPTH: 10
 
   pkginstall_script:
-    - pkg update -f
+    - IGNORE_OSVERSION=yes pkg update -f
     - pkg install -y check
     - pkg install -y cyrus-sasl
     - pkg install -y gcc
@@ -25,7 +22,7 @@ task:
     - pkg install -y libmemcached
     - pkg install -y mysql57-client
     - pkg install -y ncurses
-    - pkg install -y openldap-client
+    - pkg install -y openldap26-client
     - pkg install -y openssl
     - pkg install -y pcre
     - pkg install -y postgresql10-client

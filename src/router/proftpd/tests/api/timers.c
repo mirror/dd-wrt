@@ -87,34 +87,34 @@ START_TEST (timer_add_test) {
   unsigned int ok = 0;
 
   res = pr_timer_add(-1, 0, NULL, NULL, NULL);
-  fail_unless(res == -1, "Failed to handle negative seconds");
-  fail_unless(errno == EINVAL, "Failed to set errno to EINVAL");
+  ck_assert_msg(res == -1, "Failed to handle negative seconds");
+  ck_assert_msg(errno == EINVAL, "Failed to set errno to EINVAL");
 
   res = pr_timer_add(0, 0, NULL, NULL, NULL);
-  fail_unless(res == -1, "Failed to handle null description");
-  fail_unless(errno == EINVAL, "Failed to set errno to EINVAL");
+  ck_assert_msg(res == -1, "Failed to handle null description");
+  ck_assert_msg(errno == EINVAL, "Failed to set errno to EINVAL");
 
   res = pr_timer_add(0, 0, NULL, NULL, "test");
-  fail_unless(res == -1, "Failed to handle zero count");
-  fail_unless(errno == EINVAL, "Failed to set errno to EINVAL");
+  ck_assert_msg(res == -1, "Failed to handle zero count");
+  ck_assert_msg(errno == EINVAL, "Failed to set errno to EINVAL");
 
   res = pr_timer_add(1, 0, NULL, NULL, "test");
-  fail_unless(res == -1, "Failed to handle null callback");
-  fail_unless(errno == EINVAL, "Failed to set errno to EINVAL");
+  ck_assert_msg(res == -1, "Failed to handle null callback");
+  ck_assert_msg(errno == EINVAL, "Failed to set errno to EINVAL");
 
   res = pr_timer_add(1, 0, NULL, timers_test_cb, "test");
-  fail_unless(res == 0, "Failed to allocate timer: %s", strerror(errno));
+  ck_assert_msg(res == 0, "Failed to allocate timer: %s", strerror(errno));
 
   res = pr_timer_add(1, 0, NULL, timers_test_cb, "test");
-  fail_unless(res == -1, "Failed to handle duplicate timer: %s",
+  ck_assert_msg(res == -1, "Failed to handle duplicate timer: %s",
     strerror(errno));
-  fail_unless(errno == EPERM, "Failed to set errno to EPERM");
+  ck_assert_msg(errno == EPERM, "Failed to set errno to EPERM");
 
   sleep(2);
   timers_handle_signals();
 
   ok = 1;
-  fail_unless(timer_triggered_count == ok ||
+  ck_assert_msg(timer_triggered_count == ok ||
               timer_triggered_count == (ok - 1),
     "Timer failed to fire (expected count %u, got %u)", ok,
     timer_triggered_count);
@@ -125,7 +125,7 @@ START_TEST (timer_add_test) {
    * starting with 1024, if the input timer ID is -1.
    */
   res = pr_timer_add(1, -1, NULL, timers_test_cb, "test");
-  fail_unless(res == 1024, "Failed to allocate timer: %s", strerror(errno));
+  ck_assert_msg(res == 1024, "Failed to allocate timer: %s", strerror(errno));
 
   sleep(1);
   timers_handle_signals();
@@ -135,7 +135,7 @@ START_TEST (timer_add_test) {
    */
 
   ok = 2;
-  fail_unless(timer_triggered_count == ok ||
+  ck_assert_msg(timer_triggered_count == ok ||
               timer_triggered_count == (ok + 1) ||
               timer_triggered_count == (ok - 1),
     "Timer failed to fire (expected count %u, got %u)", ok,
@@ -145,7 +145,7 @@ START_TEST (timer_add_test) {
   timers_handle_signals();
 
   ok = 3;
-  fail_unless(timer_triggered_count == ok ||
+  ck_assert_msg(timer_triggered_count == ok ||
               timer_triggered_count == (ok + 1) ||
               timer_triggered_count == (ok - 1),
     "Timer failed to fire (expected count %u, got %u)", ok,
@@ -157,20 +157,20 @@ START_TEST (timer_remove_test) {
   int res;
 
   res = pr_timer_remove(0, NULL);
-  fail_unless(res == 0, "Failed to remove timer: %s", strerror(errno));
+  ck_assert_msg(res == 0, "Failed to remove timer: %s", strerror(errno));
 
   res = pr_timer_add(1, 0, NULL, timers_test_cb, "test");
-  fail_unless(res == 0, "Failed to add timer (%d): %s", res, strerror(errno));
+  ck_assert_msg(res == 0, "Failed to add timer (%d): %s", res, strerror(errno));
 
   res = pr_timer_remove(1, NULL);
-  fail_unless(res == -1, "Failed to return -1 for non-matching timer ID");
-  fail_unless(errno == ENOENT, "Failed to set errno to ENOENT");
+  ck_assert_msg(res == -1, "Failed to return -1 for non-matching timer ID");
+  ck_assert_msg(errno == ENOENT, "Failed to set errno to ENOENT");
 
   res = pr_timer_remove(0, NULL);
-  fail_unless(res == 0, "Failed to remove timer (%d): %s", res,
+  ck_assert_msg(res == 0, "Failed to remove timer (%d): %s", res,
     strerror(errno));
 
-  fail_unless(timer_triggered_count == 0,
+  ck_assert_msg(timer_triggered_count == 0,
     "Expected trigger count of 0, got %u", timer_triggered_count);
 }
 END_TEST
@@ -184,19 +184,19 @@ START_TEST (timer_remove_multi_test) {
    * 1024.
    */
   res = pr_timer_add(3, -1, &m, timers_test_cb, "test1");
-  fail_unless(res >= 1024, "Failed to add timer (%d): %s", res,
+  ck_assert_msg(res >= 1024, "Failed to add timer (%d): %s", res,
     strerror(errno));
 
   res = pr_timer_add(3, -1, &m, timers_test_cb, "test2");
-  fail_unless(res >= 1024, "Failed to add timer (%d): %s", res,
+  ck_assert_msg(res >= 1024, "Failed to add timer (%d): %s", res,
     strerror(errno));
 
   res = pr_timer_add(3, -1, &m, timers_test_cb, "test3");
-  fail_unless(res >= 1024, "Failed to add timer (%d): %s", res,
+  ck_assert_msg(res >= 1024, "Failed to add timer (%d): %s", res,
     strerror(errno));
 
   res = pr_timer_remove(-1, &m);
-  fail_unless(res == 3, "Failed to remove timers (%d): %s", res,
+  ck_assert_msg(res == 3, "Failed to remove timers (%d): %s", res,
     strerror(errno));
 }
 END_TEST
@@ -207,33 +207,33 @@ START_TEST (timer_reset_test) {
 
   mark_point();
   res = pr_timer_reset(0, NULL);
-  fail_unless(res == -1, "Failed to handle empty timer list");
-  fail_unless(errno == EPERM, "Failed to set errno to EPERM");
+  ck_assert_msg(res == -1, "Failed to handle empty timer list");
+  ck_assert_msg(errno == EPERM, "Failed to set errno to EPERM");
 
   mark_point();
   res = pr_timer_add(2, 1, NULL, timers_test_cb, "test");
-  fail_unless(res == 1, "Failed to add timer: %s", strerror(errno));
+  ck_assert_msg(res == 1, "Failed to add timer: %s", strerror(errno));
 
   mark_point();
   res = pr_timer_reset(2, NULL);
-  fail_unless(res == 0, "Expected timer ID 1, got %d", res);
+  ck_assert_msg(res == 0, "Expected timer ID 1, got %d", res);
 
   sleep(1);
   timers_handle_signals();
 
   mark_point();
-  fail_unless(timer_triggered_count == ok,
+  ck_assert_msg(timer_triggered_count == ok,
     "Timer fired unexpectedly (expected count %u, got %u)", ok,
     timer_triggered_count);
 
   mark_point();
   res = pr_timer_reset(1, NULL);
-  fail_unless(res == 1, "Failed to reset timer");
+  ck_assert_msg(res == 1, "Failed to reset timer");
 
   sleep(1);
   timers_handle_signals();
 
-  fail_unless(timer_triggered_count == ok,
+  ck_assert_msg(timer_triggered_count == ok,
     "Timer fired unexpectedly (expected count %u, got %u)", ok,
     timer_triggered_count);
 
@@ -241,7 +241,7 @@ START_TEST (timer_reset_test) {
   timers_handle_signals();
 
   ok = 1;
-  fail_unless(timer_triggered_count == ok ||
+  ck_assert_msg(timer_triggered_count == ok ||
               timer_triggered_count == (ok - 1),
     "Timer failed to fire (expected count %u, got %u)", ok,
     timer_triggered_count);
@@ -252,18 +252,18 @@ START_TEST (timer_sleep_test) {
   int res;
 
   res = pr_timer_sleep(0);
-  fail_unless(res == -1, "Failed to handle sleep len of zero");
-  fail_unless(errno == EINVAL, "Failed to set errno to EINVAL");
+  ck_assert_msg(res == -1, "Failed to handle sleep len of zero");
+  ck_assert_msg(errno == EINVAL, "Failed to set errno to EINVAL");
 
   pr_alarms_block();
   res = pr_timer_sleep(1);
-  fail_unless(res == -1, "Failed to handle blocked alarms when sleeping");
-  fail_unless(errno == EPERM, "Failed to set errno to EPERM");
+  ck_assert_msg(res == -1, "Failed to handle blocked alarms when sleeping");
+  ck_assert_msg(errno == EPERM, "Failed to set errno to EPERM");
 
   pr_alarms_unblock();
 
   res = pr_timer_sleep(1);
-  fail_unless(res == 0, "Failed to sleep: %s", strerror(errno));
+  ck_assert_msg(res == 0, "Failed to sleep: %s", strerror(errno));
 }
 END_TEST
 
@@ -271,11 +271,11 @@ START_TEST (timer_usleep_test) {
   int res;
 
   res = pr_timer_usleep(0);
-  fail_unless(res == -1, "Failed to handle sleep len of zero");
-  fail_unless(errno == EINVAL, "Failed to set errno to EINVAL");
+  ck_assert_msg(res == -1, "Failed to handle sleep len of zero");
+  ck_assert_msg(errno == EINVAL, "Failed to set errno to EINVAL");
 
   res = pr_timer_usleep(500000);
-  fail_unless(res == 0, "Failed to sleep: %s", strerror(errno));
+  ck_assert_msg(res == 0, "Failed to sleep: %s", strerror(errno));
 }
 END_TEST
 

@@ -1,6 +1,6 @@
 /*
  * ProFTPD - mod_sftp interoperability
- * Copyright (c) 2008-2016 TJ Saunders
+ * Copyright (c) 2008-2022 TJ Saunders
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -44,7 +44,8 @@ static unsigned int default_flags =
   SFTP_SSH2_FEAT_SERVICE_IN_HOST_SIG |
   SFTP_SSH2_FEAT_SERVICE_IN_PUBKEY_SIG |
   SFTP_SSH2_FEAT_HAVE_PUBKEY_ALGO_IN_DSA_SIG |
-  SFTP_SSH2_FEAT_NO_DATA_WHILE_REKEYING;
+  SFTP_SSH2_FEAT_NO_DATA_WHILE_REKEYING |
+  SFTP_SSH2_FEAT_HOSTKEYS;
 
 struct sftp_version_pattern {
   const char *pattern;
@@ -53,6 +54,7 @@ struct sftp_version_pattern {
 };
 
 static struct sftp_version_pattern known_versions[] = {
+  { "^Cisco-1\\..*",		SFTP_SSH2_FEAT_HOSTKEYS,		NULL },
 
   { "^OpenSSH-2\\.0.*|"
     "^OpenSSH-2\\.1.*|"
@@ -76,6 +78,18 @@ static struct sftp_version_pattern known_versions[] = {
   { ".*MindTerm.*",		0,					NULL },
 
   { "^Sun_SSH_1\\.0.*",		SFTP_SSH2_FEAT_REKEYING,		NULL },
+
+  { "^TeraTerm SSH.*|"
+    "^TTSSH/1\\.5\\..*|"
+    "^TTSSH/2\\.1.*|"
+    "^TTSSH/2\\.2.*|"
+    "^TTSSH/2\\.3.*|"
+    "^TTSSH/2\\.4.*|"
+    "^TTSSH/2\\.5.*|"
+    "^TTSSH/2\\.6.*|"
+    "^TTSSH/2\\.70.*|"
+    "^TTSSH/2\\.71.*|"
+    "^TTSSH/2\\.72.*",		SFTP_SSH2_FEAT_HOSTKEYS,		NULL },
 
   { "^2\\.1\\.0.*|"
     "^2\\.1 .*",		SFTP_SSH2_FEAT_HAVE_PUBKEY_ALGO_IN_DSA_SIG|
@@ -262,7 +276,7 @@ int sftp_interop_handle_version(pool *p, const char *client_version) {
   /* Now iterate through any SFTPClientMatch rules. */
 
   c = find_config(main_server->conf, CONF_PARAM, "SFTPClientMatch", FALSE);
-  while (c) {
+  while (c != NULL) {
     int res;
     char *pattern;
     pr_regex_t *pre;
@@ -290,6 +304,10 @@ int sftp_interop_handle_version(pool *p, const char *client_version) {
        *  channelWindowSize
        *  channelPacketSize
        *  pessimisticNewkeys
+       *  sftpCiphers
+       *  sftpDigests
+       *  sftpHostKeys
+       *  sftpKeyExchanges
        *  sftpMinProtocolVersion
        *  sftpMaxProtocolVersion
        *  sftpUTF8ProtocolVersion (only if NLS support is enabled)
@@ -334,6 +352,58 @@ int sftp_interop_handle_version(pool *p, const char *client_version) {
         if (pessimistic_newkeys) {
           default_flags |= SFTP_SSH2_FEAT_PESSIMISTIC_NEWKEYS;
         } 
+      }
+
+      v = pr_table_get(tab, "sftpCiphers", NULL);
+      if (v != NULL) {
+        config_rec *ciphers;
+
+        ciphers = *((config_rec **) v);
+
+        pr_trace_msg(trace_channel, 16,
+          "setting new SSH ciphers, per SFTPClientMatch");
+
+        remove_config(main_server->conf, "SFTPCiphers", FALSE);
+        pr_config_add_config_to_set(main_server->conf, ciphers, 0);
+      }
+
+      v = pr_table_get(tab, "sftpDigests", NULL);
+      if (v != NULL) {
+        config_rec *digests;
+
+        digests = *((config_rec **) v);
+
+        pr_trace_msg(trace_channel, 16,
+          "setting new SSH digests, per SFTPClientMatch");
+
+        remove_config(main_server->conf, "SFTPDigests", FALSE);
+        pr_config_add_config_to_set(main_server->conf, digests, 0);
+      }
+
+      v = pr_table_get(tab, "sftpHostKeys", NULL);
+      if (v != NULL) {
+        config_rec *hostkeys;
+
+        hostkeys = *((config_rec **) v);
+
+        pr_trace_msg(trace_channel, 16,
+          "setting new SSH host key algorithms, per SFTPClientMatch");
+
+        remove_config(main_server->conf, "SFTPHostKeys", FALSE);
+        pr_config_add_config_to_set(main_server->conf, hostkeys, 0);
+      }
+
+      v = pr_table_get(tab, "sftpKeyExchanges", NULL);
+      if (v != NULL) {
+        config_rec *key_exchanges;
+
+        key_exchanges = *((config_rec **) v);
+
+        pr_trace_msg(trace_channel, 16,
+          "setting new SSH key exchanges, per SFTPClientMatch");
+
+        remove_config(main_server->conf, "SFTPKeyExchanges", FALSE);
+        pr_config_add_config_to_set(main_server->conf, key_exchanges, 0);
       }
 
       v = pr_table_get(tab, "sftpMinProtocolVersion", NULL);

@@ -85,6 +85,7 @@ sub useralias_ok {
 
     AuthUserFile => $auth_user_file,
     AuthGroupFile => $auth_group_file,
+    AuthOrder => 'mod_auth_file.c',
 
     UserAlias => "$alias $user",
 
@@ -182,6 +183,7 @@ sub useralias_anon_ok {
 
     AuthUserFile => $auth_user_file,
     AuthGroupFile => $auth_group_file,
+    AuthOrder => 'mod_auth_file.c',
 
     Anonymous => {
       $home_dir => {
@@ -297,6 +299,7 @@ sub useralias_with_at_symbol_ok {
 
     AuthUserFile => $auth_user_file,
     AuthGroupFile => $auth_group_file,
+    AuthOrder => 'mod_auth_file.c',
 
     UserAlias => "$alias $user",
 

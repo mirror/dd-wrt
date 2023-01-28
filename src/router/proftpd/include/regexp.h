@@ -32,25 +32,32 @@
  * code.
  */
 
-#if defined(PR_USE_PCRE)
+#if defined(PR_USE_PCRE2)
+# define PCRE2_CODE_UNIT_WIDTH	8
+# include <pcre2.h>
+# include <pcre2posix.h>
+# define PR_USE_REGEX		1
+
+#elif defined(PR_USE_PCRE)
 # include <pcre.h>
 # include <pcreposix.h>
 
 /* Make sure that we are using PCRE-7.0 or later. */
 # if defined(PCRE_MAJOR) && PCRE_MAJOR >= 7 && \
      defined(PCRE_MINOR) && PCRE_MINOR >= 0
-# define PR_USE_REGEX		1
+#  define PR_USE_REGEX		1
 # else
-# error "pcre-7.0 or later required"
+#  error "pcre-7.0 or later required"
 # endif /* PCRE-7.0 or later */
+
 #else
-# ifdef HAVE_REGEX_H
+# if defined(HAVE_REGEX_H)
 # include <regex.h>
 #   ifdef HAVE_REGCOMP
 #     define PR_USE_REGEX	1
 #   endif /* HAVE_REGCOMP */
 # endif /* HAVE_REGEX_H */
-#endif /* !PR_USE_PCRE */
+#endif /* !PR_USE_PCRE2 and !PR_USE_PCRE */
 
 typedef struct regexp_rec pr_regex_t;
 
@@ -88,6 +95,13 @@ int pr_regexp_exec(pr_regex_t *pre, const char *str, size_t nmatches,
  */
 int pr_regexp_set_limits(unsigned long match_limit,
   unsigned long match_limit_recursion);
+
+/* Set the "engine" to use for regular expressions, e.g. "POSIX" or "PCRE".
+ * The engine value is handled case-insensitively.  This is useful for treating
+ * all regular expressions as POSIX expressions, regardless of PCRE support,
+ * as when there are PCRE implementation issues.
+ */
+int pr_regexp_set_engine(const char *engine);
 
 /* For internal use only */
 void init_regexp(void);

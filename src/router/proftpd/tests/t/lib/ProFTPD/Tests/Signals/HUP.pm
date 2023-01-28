@@ -45,17 +45,12 @@ sub list_tests {
 sub hup_daemon_ok {
   my $self = shift;
   my $tmpdir = $self->{tmpdir};
-
-  my $config_file = "$tmpdir/signals.conf";
-  my $pid_file = File::Spec->rel2abs("$tmpdir/signals.pid");
-  my $scoreboard_file = File::Spec->rel2abs("$tmpdir/signals.scoreboard");
-
-  my $log_file = test_get_logfile();
+  my $setup = test_setup($tmpdir, 'signals');
 
   my $config = {
-    PidFile => $pid_file,
-    ScoreboardFile => $scoreboard_file,
-    SystemLog => $log_file,
+    PidFile => $setup->{pid_file},
+    ScoreboardFile => $setup->{scoreboard_file},
+    SystemLog => $setup->{log_file},
 
     ServerIdent => 'on foo',
 
@@ -66,48 +61,71 @@ sub hup_daemon_ok {
     },
   };
 
-  my ($port, $config_user, $config_group) = config_write($config_file, $config);
+  my ($port, $config_user, $config_group) = config_write($setup->{config_file},
+    $config);
+
+  my $ex;
 
   # Start server
-  server_start($config_file); 
-  sleep(2);
+  server_start($setup->{config_file});
 
-  my $client = ProFTPD::TestSuite::FTP->new('127.0.0.1', $port);
+  eval {
+    sleep(2);
 
-  my $resp_code = $client->response_code();
-  my $resp_msg = $client->response_msg();
+    my $client = ProFTPD::TestSuite::FTP->new('127.0.0.1', $port);
 
-  my $expected;
-    
-  $expected = 220;
-  $self->assert($expected == $resp_code,
-    test_msg("Expected $expected, got $resp_code"));
+    my $resp_code = $client->response_code();
+    my $resp_msg = $client->response_msg();
 
-  $expected = "foo";
-  $self->assert($expected eq $resp_msg,
-    test_msg("Expected '$expected', got '$resp_msg'"));
+    my $expected = 220;
+    $self->assert($expected == $resp_code,
+      test_msg("Expected response code $expected, got $resp_code"));
 
-  # Now change the config a little, and send the HUP signal
+    $expected = "foo";
+    $self->assert($expected eq $resp_msg,
+      test_msg("Expected response message '$expected', got '$resp_msg'"));
+
+    $client->quit();
+  };
+  if ($@) {
+    $ex = $@;
+  }
+
+  # Now change the config a little, and send the HUP signal.  Since we
+  # are telling the running `proftpd` process to re-read its config file,
+  # the process will continue to use its original port, even though calling
+  # `config_write()` here will try to use a different port.  And for that
+  # reason, we do NOT want to use the port value provided by this following
+  # `config_write()` invocation.
   $config->{ServerIdent} = 'on bar';
-  ($port, $config_user, $config_group) = config_write($config_file, $config);
-  server_restart($pid_file);
-  sleep(2);
+  my $next_port;
+  ($next_port, $config_user, $config_group) = config_write($setup->{config_file}, $config);
+  server_restart($setup->{pid_file});
 
-  $client = ProFTPD::TestSuite::FTP->new('127.0.0.1', $port);
+  eval {
+    sleep(2);
 
-  $resp_code = $client->response_code();
-  $resp_msg = $client->response_msg();
+    my $client = ProFTPD::TestSuite::FTP->new('127.0.0.1', $port);
 
-  $expected = 220;
-  $self->assert($expected == $resp_code,
-    test_msg("Expected $expected, got $resp_code"));
+    my $resp_code = $client->response_code();
+    my $resp_msg = $client->response_msg();
 
-  $expected = "bar";
-  $self->assert($expected eq $resp_msg,
-    test_msg("Expected '$expected', got '$resp_msg'"));
+    my $expected = 220;
+    $self->assert($expected == $resp_code,
+      test_msg("Expected response code $expected, got $resp_code"));
 
-  server_stop($pid_file);
-  unlink($log_file);
+    $expected = "bar";
+    $self->assert($expected eq $resp_msg,
+      test_msg("Expected response message '$expected', got '$resp_msg'"));
+
+    $client->quit();
+  };
+  if ($@) {
+    $ex = $@;
+  }
+
+  server_stop($setup->{pid_file});
+  test_cleanup($setup->{log_file}, $ex);
 }
 
 sub hup_directory_bug3610 {
@@ -405,6 +423,7 @@ sub hup_allowoverwrite_bug3740 {
 
     AuthUserFile => $auth_user_file,
     AuthGroupFile => $auth_group_file,
+    AuthOrder => 'mod_auth_file.c',
 
     AllowOverwrite => 'on',
  

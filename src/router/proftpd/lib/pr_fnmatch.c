@@ -54,8 +54,8 @@ char *alloca ();
 
 #define __PROFTPD_SUPPORT_LIBRARY
 
-#include <conf.h>
-#include <libsupp.h>
+#include "conf.h"
+#include "base.h"
 
 #if 0 /* Not used in ProFTPD */
 /* Enable GNU extensions in fnmatch.h.  */

@@ -21,6 +21,11 @@ my $TESTS = {
     test_class => [qw(forking)],
   },
 
+  ban_on_event_max_login_attempts_from_user => {
+    order => ++$order,
+    test_class => [qw(forking)],
+  },
+
   ban_message => {
     order => ++$order,
     test_class => [qw(forking)],
@@ -93,7 +98,10 @@ sub new {
 }
 
 sub list_tests {
-  return testsuite_get_runnable_tests($TESTS);
+#  return testsuite_get_runnable_tests($TESTS);
+  return qw(
+    ban_on_event_max_login_attempts_from_user
+  );
 }
 
 sub get_server_pid {
@@ -139,57 +147,27 @@ sub server_open_fds {
 sub ban_on_event_max_login_attempts {
   my $self = shift;
   my $tmpdir = $self->{tmpdir};
-
-  my $config_file = "$tmpdir/ban.conf";
-  my $pid_file = File::Spec->rel2abs("$tmpdir/ban.pid");
-  my $scoreboard_file = File::Spec->rel2abs("$tmpdir/ban.scoreboard");
-
-  my $log_file = test_get_logfile();
+  my $setup = test_setup($tmpdir, 'ban');
 
   my $ban_tab = File::Spec->rel2abs("$tmpdir/ban.tab");
 
-  my $auth_user_file = File::Spec->rel2abs("$tmpdir/ban.passwd");
-  my $auth_group_file = File::Spec->rel2abs("$tmpdir/ban.group");
-
-  my $user = 'proftpd';
-  my $passwd = 'test';
-  my $group = 'ftpd';
-  my $home_dir = File::Spec->rel2abs($tmpdir);
-  my $uid = 500;
-  my $gid = 500;
-  
-  # Make sure that, if we're running as root, that the home directory has
-  # permissions/privs set for the account we create
-  if ($< == 0) {
-    unless (chmod(0755, $home_dir)) {
-      die("Can't set perms on $home_dir to 0755: $!");
-    }
-
-    unless (chown($uid, $gid, $home_dir)) {
-      die("Can't set owner of $home_dir to $uid/$gid: $!");
-    }
-  }
-
-  auth_user_write($auth_user_file, $user, $passwd, $uid, $gid, $home_dir,
-    '/bin/bash');
-  auth_group_write($auth_group_file, $group, $gid, $user);
-
   my $config = {
-    PidFile => $pid_file,
-    ScoreboardFile => $scoreboard_file,
-    SystemLog => $log_file,
-    TraceLog => $log_file,
+    PidFile => $setup->{pid_file},
+    ScoreboardFile => $setup->{scoreboard_file},
+    SystemLog => $setup->{log_file},
+    TraceLog => $setup->{log_file},
     Trace => 'event:10',
 
-    AuthUserFile => $auth_user_file,
-    AuthGroupFile => $auth_group_file,
+    AuthUserFile => $setup->{auth_user_file},
+    AuthGroupFile => $setup->{auth_group_file},
+    AuthOrder => 'mod_auth_file.c',
 
     MaxLoginAttempts => 2,
 
     IfModules => {
       'mod_ban.c' => {
         BanEngine => 'on',
-        BanLog => $log_file,
+        BanLog => $setup->{log_file},
 
         # This says to ban a client which exceeds the MaxLoginAttempts
         # limit once within the last 1 minute will be banned for 5 secs
@@ -204,7 +182,8 @@ sub ban_on_event_max_login_attempts {
     },
   };
 
-  my ($port, $config_user, $config_group) = config_write($config_file, $config);
+  my ($port, $config_user, $config_group) = config_write($setup->{config_file},
+    $config);
 
   # Open pipes, for use between the parent and child processes.  Specifically,
   # the child will indicate when it's done with its test by writing a message
@@ -223,7 +202,7 @@ sub ban_on_event_max_login_attempts {
     eval {
       my $client = ProFTPD::TestSuite::FTP->new('127.0.0.1', $port);
 
-      eval { $client->login($user, 'foo') };
+      eval { $client->login($setup->{user}, 'foo') };
       unless ($@) {
         die("Login succeeded unexpectedly");
       }
@@ -235,13 +214,13 @@ sub ban_on_event_max_login_attempts {
 
       $expected = 530;
       $self->assert($expected == $resp_code,
-        test_msg("Expected $expected, got $resp_code"));
+        test_msg("Expected response code $expected, got $resp_code"));
 
       $expected = "Login incorrect.";
       $self->assert($expected eq $resp_msg,
-        test_msg("Expected '$expected', got '$resp_msg'"));
+        test_msg("Expected response message '$expected', got '$resp_msg'"));
 
-      eval { $client->login($user, 'foo') };
+      eval { $client->login($setup->{user}, 'foo') };
       unless ($@) {
         die("Login succeeded unexpectedly");
       }
@@ -251,11 +230,11 @@ sub ban_on_event_max_login_attempts {
 
       $expected = 530;
       $self->assert($expected == $resp_code,
-        test_msg("Expected $expected, got $resp_code"));
+        test_msg("Expected response code $expected, got $resp_code"));
 
       $expected = "Login incorrect.";
       $self->assert($expected eq $resp_msg,
-        test_msg("Expected '$expected', got '$resp_msg'"));
+        test_msg("Expected response message '$expected', got '$resp_msg'"));
 
       # Now try again with the correct info; we should be banned.  Note
       # that we have to create a separate connection for this.
@@ -272,7 +251,6 @@ sub ban_on_event_max_login_attempts {
       $self->assert($expected eq $conn_ex,
         test_msg("Expected '$expected', got '$conn_ex'"));
     };
-
     if ($@) {
       $ex = $@;
     }
@@ -281,7 +259,7 @@ sub ban_on_event_max_login_attempts {
     $wfh->flush();
 
   } else {
-    eval { server_wait($config_file, $rfh) };
+    eval { server_wait($setup->{config_file}, $rfh) };
     if ($@) {
       warn($@);
       exit 1;
@@ -291,18 +269,176 @@ sub ban_on_event_max_login_attempts {
   }
 
   # Stop server
-  server_stop($pid_file);
-
+  server_stop($setup->{pid_file});
   $self->assert_child_ok($pid);
 
-  if ($ex) {
-    test_append_logfile($log_file, $ex);
-    unlink($log_file);
+  test_cleanup($setup->{log_file}, $ex);
+}
 
-    die($ex);
+sub ban_on_event_max_login_attempts_from_user {
+  my $self = shift;
+  my $tmpdir = $self->{tmpdir};
+  my $setup = test_setup($tmpdir, 'ban');
+
+  my $ban_tab = File::Spec->rel2abs("$tmpdir/ban.tab");
+
+  my $config = {
+    PidFile => $setup->{pid_file},
+    ScoreboardFile => $setup->{scoreboard_file},
+    SystemLog => $setup->{log_file},
+    TraceLog => $setup->{log_file},
+    Trace => 'event:10',
+
+    AuthUserFile => $setup->{auth_user_file},
+    AuthGroupFile => $setup->{auth_group_file},
+    AuthOrder => 'mod_auth_file.c',
+
+    MaxLoginAttempts => 2,
+
+    IfModules => {
+      'mod_ban.c' => {
+        BanEngine => 'on',
+        BanLog => $setup->{log_file},
+
+        # This says to ban a client which exceeds the MaxLoginAttempts
+        # limit once within the last 1 minute will be banned for 5 secs
+        BanOnEvent => 'MaxLoginAttemptsFromUser 1/00:01:00 00:00:05',
+
+        BanTable => $ban_tab,
+      },
+
+      'mod_delay.c' => {
+        DelayEngine => 'off',
+      },
+    },
+  };
+
+  my ($port, $config_user, $config_group) = config_write($setup->{config_file},
+    $config);
+
+  # Open pipes, for use between the parent and child processes.  Specifically,
+  # the child will indicate when it's done with its test by writing a message
+  # to the parent.
+  my ($rfh, $wfh);
+  unless (pipe($rfh, $wfh)) {
+    die("Can't open pipe: $!");
   }
 
-  unlink($log_file);
+  my $ex;
+
+  # Fork child
+  $self->handle_sigchld();
+  defined(my $pid = fork()) or die("Can't fork: $!");
+  if ($pid) {
+    eval {
+      my $client = ProFTPD::TestSuite::FTP->new('127.0.0.1', $port);
+
+      eval { $client->login($setup->{user}, 'foo') };
+      unless ($@) {
+        die("Login succeeded unexpectedly");
+      }
+
+      my $resp_code = $client->response_code();
+      my $resp_msg = $client->response_msg();
+
+      my $expected;
+
+      $expected = 530;
+      $self->assert($expected == $resp_code,
+        test_msg("Expected response code $expected, got $resp_code"));
+
+      $expected = "Login incorrect.";
+      $self->assert($expected eq $resp_msg,
+        test_msg("Expected response message '$expected', got '$resp_msg'"));
+
+      eval { $client->login($setup->{user}, 'foo') };
+      unless ($@) {
+        die("Login succeeded unexpectedly");
+      }
+
+      $resp_code = $client->response_code();
+      $resp_msg = $client->response_msg();
+
+      $expected = 530;
+      $self->assert($expected == $resp_code,
+        test_msg("Expected response code $expected, got $resp_code"));
+
+      $expected = "Login incorrect.";
+      $self->assert($expected eq $resp_msg,
+        test_msg("Expected response message '$expected', got '$resp_msg'"));
+
+      # Now try again with the correct info; we should be banned.  Note
+      # that we have to create a separate connection for this.
+
+      $client = ProFTPD::TestSuite::FTP->new('127.0.0.1', $port);
+      eval { $client->login($setup->{user}, $setup->{passwd}) };
+      unless ($@) {
+        die("Login succeeded unexpectedly");
+      }
+
+      $resp_code = $client->response_code();
+      $resp_msg = $client->response_msg();
+
+      $expected = 530;
+      $self->assert($expected == $resp_code,
+        test_msg("Expected response code $expected, got $resp_code"));
+
+      $expected = "Login incorrect.";
+      $self->assert($expected eq $resp_msg,
+        test_msg("Expected response message '$expected', got '$resp_msg'"));
+      $client->quit();
+    };
+    if ($@) {
+      $ex = $@;
+    }
+
+    $wfh->print("done\n");
+    $wfh->flush();
+
+  } else {
+    eval { server_wait($setup->{config_file}, $rfh) };
+    if ($@) {
+      warn($@);
+      exit 1;
+    }
+
+    exit 0;
+  }
+
+  # Stop server
+  server_stop($setup->{pid_file});
+  $self->assert_child_ok($pid);
+
+  eval {
+    if (open(my $fh, "< $setup->{log_file}")) {
+      my $ok = 0;
+
+      while (my $line = <$fh>) {
+        chomp($line);
+
+        if ($ENV{TEST_VERBOSE}) {
+          print STDERR "# $line\n";
+        }
+
+        if ($line =~ /Login denied: user\@host .*? banned/) {
+          $ok = 1;
+          last;
+        }
+      }
+
+      close($fh);
+
+      $self->assert($ok, test_msg("Did not see expected BanLog messages"));
+
+    } else {
+      die("Can't read $setup->{log_file}: $!");
+    }
+  };
+  if ($@) {
+    $ex = $@;
+  }
+
+  test_cleanup($setup->{log_file}, $ex);
 }
 
 sub ban_message {
@@ -350,6 +486,7 @@ sub ban_message {
 
     AuthUserFile => $auth_user_file,
     AuthGroupFile => $auth_group_file,
+    AuthOrder => 'mod_auth_file.c',
 
     MaxLoginAttempts => 2,
 
@@ -517,6 +654,7 @@ sub ban_ifclass_engine_on {
 
     AuthUserFile => $auth_user_file,
     AuthGroupFile => $auth_group_file,
+    AuthOrder => 'mod_auth_file.c',
 
     MaxLoginAttempts => 2,
 
@@ -707,6 +845,7 @@ sub ban_ifclass_engine_off {
 
     AuthUserFile => $auth_user_file,
     AuthGroupFile => $auth_group_file,
+    AuthOrder => 'mod_auth_file.c',
 
     MaxLoginAttempts => 1,
 
@@ -877,6 +1016,7 @@ sub ban_max_logins_exceeded_bug3281 {
 
     AuthUserFile => $auth_user_file,
     AuthGroupFile => $auth_group_file,
+    AuthOrder => 'mod_auth_file.c',
 
     MaxLoginAttempts => 2,
 
@@ -1029,6 +1169,7 @@ sub ban_timeout_login_exceeded_bug3281 {
 
     AuthUserFile => $setup->{auth_user_file},
     AuthGroupFile => $setup->{auth_group_file},
+    AuthOrder => 'mod_auth_file.c',
 
     TimeoutLogin => $timeout_login,
 
@@ -1172,6 +1313,7 @@ sub ban_engine_vhost_bug3355 {
 
     AuthUserFile => $auth_user_file,
     AuthGroupFile => $auth_group_file,
+    AuthOrder => 'mod_auth_file.c',
 
     MaxLoginAttempts => $max_login_attempts,
 
@@ -1201,6 +1343,8 @@ sub ban_engine_vhost_bug3355 {
   Port $vhost_port
   AuthUserFile $auth_user_file
   AuthGroupFile $auth_group_file
+  AuthOrder mod_auth_file.c
+
   MaxLoginAttempts $max_login_attempts
   <IfModule mod_ban.c>
     BanEngine off
@@ -1358,6 +1502,7 @@ sub ban_unhandled_cmd {
 
     AuthUserFile => $auth_user_file,
     AuthGroupFile => $auth_group_file,
+    AuthOrder => 'mod_auth_file.c',
 
     MaxLoginAttempts => 1,
 
@@ -1539,6 +1684,7 @@ sub ban_on_event_client_connect_rate {
 
     AuthUserFile => $auth_user_file,
     AuthGroupFile => $auth_group_file,
+    AuthOrder => 'mod_auth_file.c',
 
     IfModules => {
       'mod_ban.c' => {
@@ -1706,6 +1852,7 @@ sub ban_sighup_bug3751 {
 
     AuthUserFile => $auth_user_file,
     AuthGroupFile => $auth_group_file,
+    AuthOrder => 'mod_auth_file.c',
 
     MaxLoginAttempts => 2,
 
@@ -1821,6 +1968,7 @@ sub ban_on_event_tlshandshake {
 
     AuthUserFile => $auth_user_file,
     AuthGroupFile => $auth_group_file,
+    AuthOrder => 'mod_auth_file.c',
 
     IfModules => {
       'mod_ban.c' => {
@@ -1995,6 +2143,8 @@ sub ban_on_event_rootlogin {
 
     AuthUserFile => $auth_user_file,
     AuthGroupFile => $auth_group_file,
+    AuthOrder => 'mod_auth_file.c',
+
     RootLogin => 'off',
 
     IfModules => {
@@ -2176,6 +2326,8 @@ sub ban_on_event_rootlogin_userdefined {
 
     AuthUserFile => $auth_user_file,
     AuthGroupFile => $auth_group_file,
+    AuthOrder => 'mod_auth_file.c',
+
     RootLogin => 'off',
 
     IfModules => {
@@ -2317,6 +2469,7 @@ sub ban_opt_any_server_issue1010 {
 
     AuthUserFile => $setup->{auth_user_file},
     AuthGroupFile => $setup->{auth_group_file},
+    AuthOrder => 'mod_auth_file.c',
 
     MaxLoginAttempts => 2,
 
@@ -2437,7 +2590,7 @@ EOC
         die("Connect succeeded unexpectedly");
       }
 
-      my $conn_ex = ProFTPD::TestSuite::FTP::get_connect_exception();
+      $conn_ex = ProFTPD::TestSuite::FTP::get_connect_exception();
 
       $expected = '';
       $self->assert($expected eq $conn_ex,

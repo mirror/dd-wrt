@@ -132,8 +132,8 @@ appear in the <code>TLSLog</code>:
 This means that the <code>SSL_CERT_DIR</code> environment variable, if set,
 will be used to determine the location of a CA certificate directory, to be
 used when verifying clients.  Note, though, that this directive is only
-meaningful if <code>TLSVerifyClient</code> is set to <em>on</em>; otherwise,
-no client verification occurs.
+meaningful if <code>TLSVerifyClient</code> is set to <em>on</em> or
+<em>optional</em>; otherwise, no client verification occurs.
 
 <p>
 See also: <a href="#TLSCACertificatePath"><code>TLSCACertificatePath</code></a>
@@ -288,7 +288,7 @@ Example:
 <p>
 <hr>
 <h3><a name="TLSCipherSuite">TLSCipherSuite</a></h3>
-<strong>Syntax:</strong> TLSCipherSuite <em>cipher-list</em><br>
+<strong>Syntax:</strong> TLSCipherSuite <em>[protocol] cipher-list</em><br>
 <strong>Default:</strong> DEFAULT:!ADH:!EXPORT:!DES<br>
 <strong>Context:</strong> server config, <code>&lt;VirtualHost&gt;</code>, <code>&lt;Global&gt;</code><br>
 <strong>Module:</strong> mod_tls<br>
@@ -302,6 +302,15 @@ Sets the list of SSL/TLS ciphersuites for use.  Default cipher list is
 <b>Note</b> that <code>mod_tls</code> will automatically <i>prepend</i> the
 configured <em>cipher-list</em> with "!EXPORT", in order to <i>prevent</i> the
 use of the insecure "export grade" ciphers.
+
+<p>
+If the SSL library supports TLSv1.3 (<i>e.g.</i> OpenSSL-1.1.1 and later), the
+<em>protocol specifier</em> "TLSv1.3" can be used to configure the cipher
+suites for that protocol:
+<pre>
+  # Configure TLSv1.3 ciphersuites
+  TLSCipherSuite TLSv1.3 TLS_CHACHA20_POLY1305_SHA256:TLS_AES_256_GCM_SHA384:TLS_AES_128_GCM_SHA256
+</pre>
 
 <p>
 How to put together a <em>cipher list</em> parameter:
@@ -557,7 +566,7 @@ Example:
 
 <p>
 <hr>
-<h3><a name="TLSECCertficateFile">TLSECCertficateFile</a></h3>
+<h3><a name="TLSECCertificateFile">TLSECCertificateFile</a></h3>
 <strong>Syntax:</strong> TLSECCertificateFile <em>file</em><br>
 <strong>Default:</strong> None<br>
 <strong>Context:</strong> server config, <code>&lt;VirtualHost&gt;</code>, <code>&lt;Global&gt;</code><br>
@@ -790,6 +799,7 @@ The currently implemented options are:
     initiated by <code>mod_tls</code>, via the
     <a href="#TLSRenegotiate"><code>TLSRenegotiate</code></a> directive, are
     still handled (depending on the OpenSSL version).
+  </li>
 
   <li><code>AllowDotLogin</code><br>
     <p>
@@ -826,8 +836,9 @@ The currently implemented options are:
     <code>TLSRequired on</code> or <code>TLSRequired ctrl</code> are in
     effect, it will be possible for the connecting client to send
     usernames and password <i>unprotected</i> before <code>mod_tls</code>
-    rejects the connection.  This results in a slightly weaker security
-    policy enforcement; please consider carefully if this tradeoff is
+    rejects the connection; those credentials could be intercepted and/or
+    manipulated before they reach the server.  This results in a weaker
+    security policy enforcement; please consider carefully if this tradeoff is
     acceptable for your site.
 
     <p>
@@ -847,6 +858,19 @@ The currently implemented options are:
     <p>
     <b>Note</b> that this option first appeared in
     <code>proftpd-1.3.6rc1</code>.
+  </li>
+
+  <p>
+  <li><code>AllowWeakSecurity</code>
+    <p>
+    Sets the cryptographic security level to "zero", meaning that any/all
+    ciphers and key sizes are permitted.  This option allows for operations
+    with <i>e.g.</i> CAs with weak messages digests, but is
+    <b>not recommended</b>.  Use only when necessary.
+
+    <p>
+    <b>Note</b> that this option first appeared in
+    <code>proftpd-1.3.8rc1</code>.
   </li>
 
   <p>
@@ -915,16 +939,6 @@ The currently implemented options are:
     <b>Note</b> that this option first appeared in
     <code>proftpd-1.3.6rc1</code>.
   </li>
-
-  <p>
-  <li><code>NoCertRequest</code><br>
-    <p>
-    <b>Note</b>: As of <code>proftpd-1.3.6rc2</code>, this option is deprecated
-    and thus ignored.  By default, <code>mod_tls</code> will not send the
-    <code>CertificateRequest</code> message to TLS clients during the handshake;
-    that message is only sent when client certificates will be verified
-    via the <a href="#TLSVerifyClient"><code>TLSVerifyClient</code></a>
-    directive.
 
   <p>
   <li><code>NoEmptyFragments</code><br>
@@ -1418,7 +1432,7 @@ speed up entropy gathering when the daemon starts up again.
 <strong>Compatibility:</strong> 1.2.7rc1 and later
 
 <p>
-The <code>TLSRenegotiate</code> directive is used to configure when SSL
+The <code>TLSRenegotiate</code> directive is used to configure when SSL/TLS
 renegotiations are to occur.  Renegotiations, and thus this directive, are
 only supported by <code>mod_tls</code> if the version of OpenSSL installed
 is 0.9.7 or greater.
@@ -1447,29 +1461,56 @@ the control channel after 4 hours, and on the data channel after one gigabyte
 of transferred data.  The default timeout for a renegotiation is 30 seconds.
 
 <p>
-Use <em>none</em> to disable all renegotiation requirements.
+In OpenSSL 0.9.8l and later, SSL/TLS session renegotiations are automatically
+disabled.  In order to use renegotiations as configured by the
+<code>TLSRenegotiate</code> directive, you must <i>also</i> explicitly allow
+them via:
+<pre>
+  # Allow renegotiations (not recommended; see CVE-2009-3555, CVE-2011-1473)
+  TLSOptions AllowClientRenegotiations
+</pre>
+
+<p>
+The TLSv1.3 protocol does not support renegotiations, but it <i>does</i> support
+updating the session keys, which is the primary goal/function of the
+<code>TLSRenegotiate</code> directive.  Thus using OpenSSL 1.1.1 and later,
+key updates will be requested for control and data sessions for TLSv1.3
+sessions.
+
+<p>
+Use <em>none</em> to explicitly disable all renegotiation requirements.
 
 <p>
 Examples:
 <pre>
-    # Change renegotiations to occur on control channels after 1 hour
-    TLSRenegotiate ctrl 3600
+  # Allow renegotiations
+  TLSOptions AllowClientRenegotiations
 
-    # Change renegotiations to occur on data channels after 500 MB
-    TLSRenegotiate data 512000
+  # Change renegotiations to occur on control channels after 1 hour
+  TLSRenegotiate ctrl 3600
 
-    # Change renegotiations so that they are not required, only requested
-    TLSRenegotiate required off
+  # Change renegotiations to occur on data channels after 500 MB
+  TLSRenegotiate data 512000
 
-    # Change only the timeout for renegotiations to be 5 minutes
-    TLSRenegotiate timeout 300
+  # Change renegotiations so that they are not required, only requested
+  TLSRenegotiate required off
 
-    # Change all of the above renegotiation thresholds using one directive
-    TLSRenegotiate ctrl 3600 data 512000 required off timeout 300
+  # Change only the timeout for renegotiations to be 5 minutes
+  TLSRenegotiate timeout 300
 
-    # To disable renegotiations entirely
-    TLSRenegotiate none
+  # Change all of the above renegotiation thresholds using one directive
+  TLSRenegotiate ctrl 3600 data 512000 required off timeout 300
+
+  # To disable renegotiations entirely
+  TLSRenegotiate none
 </pre>
+
+<p>
+<b>Note</b> that in ProFTPD 1.3.8rc2 and later, the <em>default</em> behavior
+of <code>TLSRenegotiate</code> changed, such that <code>mod_tls</code> will
+not request SSL/TLS renegotiations <em>at all</em> for control <i>or</i>
+data connections.  If renegotiations are <i>explicitly</i> configured via
+<code>TLSRenegotiate</code>, they will be used.
 
 <p>
 <hr>
@@ -2337,7 +2378,7 @@ in your <code>configure</code> command, <i>e.g.</i>:
 <p>
 <hr>
 <font size=2><b><i>
-&copy; Copyright 2002-2021 TJ Saunders<br>
+&copy; Copyright 2002-2022 TJ Saunders<br>
  All Rights Reserved<br>
 </i></b></font>
 <hr>

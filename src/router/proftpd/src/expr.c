@@ -78,9 +78,6 @@ array_header *pr_expr_create(pool *p, unsigned int *argc, char **argv) {
  * evaluates to TRUE.
  */
 int pr_expr_eval_class_and(char **expr) {
-  int found;
-  char *class;
-
   if (expr == NULL ||
       *expr == NULL) {
     errno = EINVAL;
@@ -88,6 +85,9 @@ int pr_expr_eval_class_and(char **expr) {
   }
 
   for (; *expr; expr++) {
+    char *class;
+    int found;
+
     class = *expr;
     found = FALSE;
 
@@ -118,9 +118,6 @@ int pr_expr_eval_class_and(char **expr) {
  * evaluates to TRUE.
  */
 int pr_expr_eval_class_or(char **expr) {
-  int found;
-  char *class;
-
   if (expr == NULL ||
       *expr == NULL) {
     errno = EINVAL;
@@ -128,6 +125,9 @@ int pr_expr_eval_class_or(char **expr) {
   }
 
   for (; *expr; expr++) {
+    char *class;
+    int found;
+
     class = *expr;
     found = FALSE;
 
@@ -136,14 +136,17 @@ int pr_expr_eval_class_or(char **expr) {
       class++;
     }
 
-    if (session.conn_class == NULL)
+    if (session.conn_class == NULL) {
       return found;
+    }
 
-    if (strcmp(session.conn_class->cls_name, class) == 0)
+    if (strcmp(session.conn_class->cls_name, class) == 0) {
       found = !found;
+    }
 
-    if (found)
+    if (found) {
       return TRUE;
+    }
   }
 
   return FALSE;
@@ -153,9 +156,6 @@ int pr_expr_eval_class_or(char **expr) {
  * evaluates to TRUE.
  */
 int pr_expr_eval_group_and(char **expr) {
-  int found;
-  char *grp;
-
   if (expr == NULL ||
       *expr == NULL) {
     errno = EINVAL;
@@ -163,6 +163,9 @@ int pr_expr_eval_group_and(char **expr) {
   }
 
   for (; *expr; expr++) {
+    char *grp;
+    int found;
+
     grp = *expr;
     found = FALSE;
 
@@ -188,8 +191,9 @@ int pr_expr_eval_group_and(char **expr) {
       }
     }
 
-    if (!found)
+    if (!found) {
       return FALSE;
+    }
   }
 
   return TRUE;
@@ -199,9 +203,6 @@ int pr_expr_eval_group_and(char **expr) {
  * evaluates to TRUE.
  */
 int pr_expr_eval_group_or(char **expr) {
-  int found;
-  char *grp;
-
   if (expr == NULL ||
       *expr == NULL) {
     errno = EINVAL;
@@ -209,6 +210,9 @@ int pr_expr_eval_group_or(char **expr) {
   }
 
   for (; *expr; expr++) {
+    char *grp;
+    int found;
+
     grp = *expr;
     found = FALSE;
 
@@ -234,8 +238,9 @@ int pr_expr_eval_group_or(char **expr) {
       }
     }
 
-    if (found)
+    if (found) {
       return TRUE;
+    }
   }
 
   return FALSE;
@@ -245,9 +250,6 @@ int pr_expr_eval_group_or(char **expr) {
  * evaluates to TRUE.
  */
 int pr_expr_eval_user_and(char **expr) {
-  int found;
-  char *user;
-
   if (expr == NULL ||
       *expr == NULL) {
     errno = EINVAL;
@@ -255,6 +257,9 @@ int pr_expr_eval_user_and(char **expr) {
   }
 
   for (; *expr; expr++) {
+    char *user;
+    int found;
+
     user = *expr;
     found = FALSE;
 
@@ -263,12 +268,14 @@ int pr_expr_eval_user_and(char **expr) {
       user++;
     }
 
-    if (session.user &&
-        strcmp(session.user, user) == 0)
+    if (session.user != NULL &&
+        strcmp(session.user, user) == 0) {
       found = !found;
+    }
 
-    if (!found) 
+    if (!found) {
       return FALSE;
+    }
   }
 
   return TRUE;
@@ -278,8 +285,6 @@ int pr_expr_eval_user_and(char **expr) {
  * evaluates to TRUE.
  */
 int pr_expr_eval_user_or(char **expr) {
-  char *user;
-
   if (expr == NULL ||
       *expr == NULL) {
     errno = EINVAL;
@@ -287,6 +292,7 @@ int pr_expr_eval_user_or(char **expr) {
   }
 
   for (; *expr; expr++) {
+    char *user;
     int found = FALSE;
 
     user = *expr;

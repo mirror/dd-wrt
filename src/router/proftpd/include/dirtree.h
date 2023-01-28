@@ -2,7 +2,7 @@
  * ProFTPD - FTP server daemon
  * Copyright (c) 1997, 1998 Public Flood Software
  * Copyright (c) 1999, 2000 MacGyver aka Habeeb J. Dihu <macgyver@tos.net>
- * Copyright (c) 2001-2017 The ProFTPD Project team
+ * Copyright (c) 2001-2021 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -68,7 +68,7 @@ typedef struct server_struc {
 
   struct tcp_keepalive *tcp_keepalive;
 
-  int tcp_mss_len;
+  int tcp_mss_len, tcp_reuse_port;
 
   /* If the tcp_rcvbuf_override/tcp_sndbuf_override flags are true, then
    * the corresponding buffer lengths are to be configured as socket options

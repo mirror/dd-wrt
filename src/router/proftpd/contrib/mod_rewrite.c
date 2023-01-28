@@ -1,6 +1,6 @@
 /*
  * ProFTPD: mod_rewrite -- a module for rewriting FTP commands
- * Copyright (c) 2001-2020 TJ Saunders
+ * Copyright (c) 2001-2022 TJ Saunders
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -27,11 +27,15 @@
 #include "conf.h"
 #include "privs.h"
 
-#ifdef HAVE_IDNA_H
+#if defined(HAVE_IDNA_H)
 # include <idna.h>
 #endif /* HAVE_IDNA_H */
 
-#define MOD_REWRITE_VERSION		"mod_rewrite/1.0"
+#if defined(HAVE_IDN2_H)
+# include <idn2.h>
+#endif /* HAVE_IDN2_H */
+
+#define MOD_REWRITE_VERSION		"mod_rewrite/1.1"
 
 /* Make sure the version of proftpd is as necessary. */
 #if PROFTPD_VERSION_NUMBER < 0x0001030701
@@ -1876,9 +1880,13 @@ static int rewrite_open_fifo(config_rec *c) {
 
   fd = open(fifo, O_RDWR|O_NONBLOCK);
   if (fd < 0) {
-    rewrite_log("rewrite_open_fifo(): unable to open FIFO '%s': %s", fifo,
-      strerror(errno));
+    int xerrno = errno;
+
     pr_signals_unblock();
+    rewrite_log("rewrite_open_fifo(): unable to open FIFO '%s': %s", fifo,
+      strerror(xerrno));
+
+    errno = xerrno;
     return -1;
   }
 
@@ -1892,6 +1900,7 @@ static int rewrite_open_fifo(config_rec *c) {
   /* Add the file descriptor into the config_rec. */
   *((int *) c->argv[3]) = fd;
 
+  pr_signals_unblock();
   return 0;
 }
 
@@ -2034,7 +2043,8 @@ static char *rewrite_map_int_utf8trans(pool *map_pool, char *key) {
   return NULL;
 }
 
-#if defined(HAVE_IDNA_H) && defined(HAVE_IDNA_TO_ASCII_8Z)
+#if (defined(HAVE_IDNA_H) && defined(HAVE_IDNA_TO_ASCII_8Z)) || \
+    (defined(HAVE_IDN2_H) && defined(HAVE_IDN2_TO_ASCII_8Z))
 static char *rewrite_map_int_idnatrans(pool *map_pool, char *key) {
   int flags = 0, res;
   char *ascii_val = NULL, *map_val = NULL;
@@ -2045,6 +2055,16 @@ static char *rewrite_map_int_idnatrans(pool *map_pool, char *key) {
     return NULL;
   }
 
+# if defined(HAVE_IDN2_H) && defined(HAVE_IDN2_TO_ASCII_8Z)
+  flags = IDN2_NFC_INPUT|IDN2_NONTRANSITIONAL;
+  res = idn2_to_ascii_8z(key, &ascii_val, flags);
+  if (res != IDN2_OK) {
+    rewrite_log("rewrite_map_int_idnatrans(): failed transforming IDN2 "
+      "'%s' to ASCII: %s", key, idn2_strerror(res));
+    return NULL;
+  }
+
+# elif defined(HAVE_IDNA_H) && defined(HAVE_IDNA_TO_ASCII_8Z)
   /* TODO: Should we enforce the use of e.g. the IDNA_USE_STD3_ASCII_RULES
    * flag?
    */
@@ -2054,13 +2074,14 @@ static char *rewrite_map_int_idnatrans(pool *map_pool, char *key) {
       "'%s' to ASCII: %s", key, idna_strerror(res));
     return NULL;
   }
+# endif /* IDNA support. */
 
   map_val = pstrdup(map_pool, ascii_val);
   free(ascii_val);
 
   return map_val;
 }
-#endif /* IDNA support */
+#endif /* IDNA or IDN2 support */
 
 /* Rewrite logging functions */
 
@@ -2068,8 +2089,9 @@ static void rewrite_openlog(void) {
   int res = 0, xerrno = 0;
 
   /* Sanity checks */
-  if (rewrite_logfd >= 0)
+  if (rewrite_logfd >= 0) {
     return;
+  }
 
   rewrite_logfile = get_param_ptr(main_server->conf, "RewriteLog", FALSE);
   if (rewrite_logfile == NULL) {
@@ -2440,7 +2462,8 @@ MODRET set_rewritemap(cmd_rec *cmd) {
       map = (void *) rewrite_map_int_utf8trans;
 
     } else if (strcmp(mapsrc, "idnatrans") == 0) {
-#if defined(HAVE_IDNA_H) && defined(HAVE_IDNA_TO_ASCII_8Z)
+#if (defined(HAVE_IDNA_H) && defined(HAVE_IDNA_TO_ASCII_8Z)) || \
+    (defined(HAVE_IDN2_H) && defined(HAVE_IDN2_TO_ASCII_8Z))
       map = (void *) rewrite_map_int_idnatrans;
 #else
       CONF_ERROR(cmd, pstrcat(cmd->tmp_pool,

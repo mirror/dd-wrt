@@ -129,6 +129,8 @@ sub sftp_ban_max_login_attempts {
 
     AuthUserFile => $auth_user_file,
     AuthGroupFile => $auth_group_file,
+    AuthOrder => 'mod_auth_file.c',
+
     MaxLoginAttempts => 1,
 
     IfModules => {
@@ -287,6 +289,7 @@ sub sftp_ban_maxcmdrate_exceeded {
 
     AuthUserFile => $auth_user_file,
     AuthGroupFile => $auth_group_file,
+    AuthOrder => 'mod_auth_file.c',
 
     MaxCommandRate => $max_cmd_rate,
 

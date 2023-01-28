@@ -103,6 +103,7 @@ sub cmdbuffersz_small {
 
     AuthUserFile => $auth_user_file,
     AuthGroupFile => $auth_group_file,
+    AuthOrder => 'mod_auth_file.c',
 
     CommandBufferSize => $cmdbufsz,
     TimeoutIdle => $idle_timeout,
@@ -234,6 +235,7 @@ sub cmdbuffersz_large {
 
     AuthUserFile => $auth_user_file,
     AuthGroupFile => $auth_group_file,
+    AuthOrder => 'mod_auth_file.c',
 
     CommandBufferSize => $cmdbufsz,
 
@@ -383,6 +385,7 @@ sub cmdbuffersz_default {
 
     AuthUserFile => $auth_user_file,
     AuthGroupFile => $auth_group_file,
+    AuthOrder => 'mod_auth_file.c',
 
     IfModules => {
       'mod_delay.c' => {

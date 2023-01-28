@@ -21,6 +21,7 @@ The <code>mod_redis</code> module enables ProFTPD support for caching data in
 <ul>
   <li><a href="#RedisEngine">RedisEngine</a>
   <li><a href="#RedisLog">RedisLog</a>
+  <li><a href="#RedisLogFormatExtra">RedisLogFormatExtra</a>
   <li><a href="#RedisLogOnCommand">RedisLogOnCommand</a>
   <li><a href="#RedisLogOnEvent">RedisLogOnEvent</a>
   <li><a href="#RedisOptions">RedisOptions</a>
@@ -64,6 +65,32 @@ unless <code>AllowLogSymlinks</code> is explicitly set to <em>on</em>
 
 <p>
 <hr>
+<h3><a name="RedisLogFormatExtra">RedisLogFormatExtra</a></h3>
+<strong>Syntax:</strong> RedisLogFormatExtra <em>format-name json-object</em><br>
+<strong>Default:</strong> None<br>
+<strong>Context:</strong> server config, <code>&lt;VirtualHost&gt;</code>, <code>&lt;Global&gt;</code>, <code>&lt;Anonymous&gt;</code>, <code>&lt;Directory&gt;</code><br>
+<strong>Module:</strong> mod_redis<br>
+<strong>Compatibility:</strong> 1.3.8rc1 and later
+
+<p>
+The <code>RedisLogFormatExtra</code> directive configures "extra" data to be
+added to the JSON logging, performed by <code>RedisLogOnCommand</code> and
+<code>RedisLogOnEvent</code>.
+
+The <em>format-name</em> parameter indicates that the <em>json-object</em> extra
+data should be added to that payload.  This allows adding of custom JSON object
+key/value pairs.
+
+Example:
+<pre>
+  LogFormat file-transfers "%h %l %u %t \"%r\" %s %b"
+
+  RedisLogOnCommand RETR,STOR file-transfers %m:ftpxfer:%u
+  RedisLogFormatExtra file-transfers {"custom_property1":"%m","custom_property2":"custom_value"}
+</pre>
+
+<p>
+<hr>
 <h3><a name="RedisLogOnCommand">RedisLogOnCommand</a></h3>
 <strong>Syntax:</strong> RedisLogOnCommand <em>"none"|commands format-name [key]</em><br>
 <strong>Default:</strong> None<br>
@@ -101,19 +128,19 @@ Example:
   LogFormat file-transfers "%h %l %u %t \"%r\" %s %b"
 
   # Only log to Redis for uploads in this directory
-  <Directory /path/to/inbox>
+  &lt;Directory /path/to/inbox&gt;
     RedisLogOnCommand APPE,STOR,STOU file-transfers
-  </Directory>
+  &lt;/Directory&gt;
 
   # Only log to Redis for downloads from this directory
-  <Directory /path/to/pub>
+  &lt;Directory /path/to/pub&gt;
     RedisLogOnCommand RETR file-transfers
-  </Directory>
+  &lt;/Directory&gt;
 
   # ...but prevent Redis logging in this subdirectory
-  <Directory /path/to/pub/subdir>
+  &lt;Directory /path/to/pub/subdir&gt;
     RedisLogOnCommand none
-  </Directory
+  &lt;/Directory&gt;
 </pre>
 
 <p>
@@ -202,7 +229,7 @@ The currently implemented options are:
 <p>
 <hr>
 <h3><a name="RedisSentinel">RedisSentinel</a></h3>
-<strong>Syntax:</strong> RedisSentinel host1 ... ["master" name]</em><br>
+<strong>Syntax:</strong> RedisSentinel <em>host1 ... ["master" name] [ssl:true] [ssl-ca:&lt;path&gt;] [ssl-cert:&lt;path&gt;] [ssl-key:&lt;path&gt;]</em><br>
 <strong>Default:</strong> None<br>
 <strong>Context:</strong> server config, <code>&lt;VirtualHost&gt;</code>, <code>&lt;Global&gt;</code><br>
 <strong>Module:</strong> mod_redis<br>
@@ -234,16 +261,34 @@ supports multiple databases, then you <b>will</b> need to use
 <code>RedisServer</code> as well:
 <pre>
   # Use this to configure our password and database
-  RedisServer 127.0.0.1:6379 redisr0cks 2
+  RedisServer 127.0.0.1:6379 redis redisr0cks 2
 
   # And use Sentinels to discover the true address/port
-  RedisSentine 1.2.3.4 5.6.7.8 9.10.11.12
+  RedisSentinel 1.2.3.4 5.6.7.8 9.10.11.12
+</pre>
+
+<p>
+In ProFTPD 1.3.8rc1 and later, it is possible to configure SSL/TLS parameters
+when connecting to Redis Sentinel.  Most of the time, all that is needed for
+the SSL/TLS session is the CA (Certificate Authority) to use, for verifying the
+certificate presented by the Redis sentine.  Thus:
+<pre>
+  RedisSentinel ... ssl:true ssl-ca:/path/to/cacert.pem
+</pre>
+If your Redis sentinel is configured to require SSL/TLS mutual authentication
+(also called "client auth"), you may need the <code>ssl-cert:</code> and
+<code>ssl-key:</code> parameters as well:
+<pre>
+  RedisSentinel ... ssl:true \
+    ssl-ca:/path/to/cacert.pem \
+    ssl-cert:/path/to/client-cert.pem \
+    ssl-key:/path/to/client-key.pem
 </pre>
 
 <p>
 <hr>
 <h3><a name="RedisServer">RedisServer</a></h3>
-<strong>Syntax:</strong> RedisServer <em>server [password] [db-index]</em><br>
+<strong>Syntax:</strong> RedisServer <em>server [username] [password] [db-index][ssl:true] [ssl-ca:&lt;path&gt;] [ssl-cert:&lt;path&gt;] [ssl-key:&lt;path&gt;]</em><br>
 <strong>Default:</strong> None<br>
 <strong>Context:</strong> server config, <code>&lt;VirtualHost&gt;</code>, <code>&lt;Global&gt;</code><br>
 <strong>Module:</strong> mod_redis<br>
@@ -269,19 +314,38 @@ Alternatively, you can configure a Unix domain socket path using <i>e.g.</i>:
 </pre>
 
 <p>
-An optional <em>password</em> parameter can be provided, for Redis servers
-which are password protected.
+Optional <em>username</em> and <em>password</em> parameters can be provided,
+for Redis servers which are password protected.
 
 <p>
 As of ProFTPD 1.3.7rc1, the optional <em>db-index</em> parameter can be
 provided, for <i>selecting</i> the server-side Redis database by index:
 <pre>
-  RedisServer 1.2.3.4:6379 passwd 2
+  RedisServer 1.2.3.4:6379 user passwd 2
 </pre>
 Connecting to a Redis server without password authentication <i>but</i> still
-selecting the database would be done using the empty string for the password:
+selecting the database would be done using the empty string for the username
+and password:
 <pre>
-  RedisServer 1.2.3.4:6379 "" 2
+  RedisServer 1.2.3.4:6379 "" "" 2
+</pre>
+
+<p>
+In ProFTPD 1.3.8rc1 and later, it is possible to configure SSL/TLS parameters
+when connecting to Redis.  Most of the time, all that is needed for the SSL/TLS
+session is the CA (Certificate Authority) to use, for verifying the certificate
+presented by the Redis server.  Thus:
+<pre>
+  RedisServer ... ssl:true ssl-ca:/path/to/cacert.pem
+</pre>
+If your Redis server is configured to require SSL/TLS mutual authentication
+(also called "client auth"), you may need the <code>ssl-cert:</code> and
+<code>ssl-key:</code> parameters as well:
+<pre>
+  RedisServer ... ssl:true \
+    ssl-ca:/path/to/cacert.pem \
+    ssl-cert:/path/to/client-cert.pem \
+    ssl-key:/path/to/client-key.pem
 </pre>
 
 <p>
@@ -639,7 +703,7 @@ needed to provide/fill in that timestamp.
 <p>
 <hr>
 <font size=2><b><i>
-&copy; Copyright 2017 The ProFTPD Project<br>
+&copy; Copyright 2017-2021 The ProFTPD Project<br>
  All Rights Reserved<br>
 </i></b></font>
 <hr>

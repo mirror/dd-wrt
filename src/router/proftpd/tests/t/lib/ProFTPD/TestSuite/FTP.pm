@@ -3,6 +3,7 @@ package ProFTPD::TestSuite::FTP;
 use strict;
 
 use Carp;
+use Net::INET6Glue::FTP;
 use Net::FTP;
 use POSIX qw(:sys_wait_h);
 
@@ -38,8 +39,21 @@ sub new {
     $opts{Debug} = 10;
   }
 
+  if (defined($conn_timeout)) {
+    $opts{Timeout} = $conn_timeout;
+  }
+
   if (defined($cmd_timeout)) {
     $opts{Timeout} = $cmd_timeout;
+  }
+
+  # Newer versions of libnet changed where/how timeouts are implemented
+  # in the base classes used by Net::FTP.  Make sure we provide the necessary
+  # timeouts that WE want.  Silly classes.
+  if ($Net::FTP::VERSION >= 3) {
+    my $callback_timeout = 3;
+    $callback_timeout = $cmd_timeout if defined($cmd_timeout);
+    $Net::Cmd::timeout = sub { $callback_timeout };
   }
 
   while (1) {
@@ -77,6 +91,20 @@ sub new {
 
   bless($self, $class);
   return $self;
+}
+
+sub read_response {
+  my $self = shift;
+
+  $self->{ftp}->response();
+
+  my $resp_code = $self->response_code();
+
+  if (wantarray()) {
+    return ($resp_code, $self->response_msg());
+  }
+
+  return $resp_code;
 }
 
 sub response_code {
@@ -1423,6 +1451,15 @@ sub quote {
       $self->response_msg());
   }
 
+  # Per RFC 959, the ABOR command expects either one or two responses.  If
+  # there is a data transfer in progress, the first response is for the
+  # aborted transfer, the second response is for the ABOR command itself.
+  #
+  # Thus we have to call response() again, for ABOR, to handle this properly.
+  if ($cmd =~ /^abor$/i) {
+    $self->{ftp}->response() if defined ${*{$self->{ftp}}}{'net_ftp_dataconn'};
+  }
+
   if ($code == 4 || $code == 5) {
     croak("Raw command '$cmd' failed: " .  $self->{ftp}->code . ' ' .
       $self->response_msg());
@@ -1431,10 +1468,9 @@ sub quote {
   my $msg = $self->response_msg();
   if (wantarray()) {
     return ($self->{ftp}->code, $msg);
-
-  } else {
-    return $msg;
   }
+
+  return $msg;
 }
 
 sub quote_raw {
@@ -1727,6 +1763,32 @@ sub clnt {
 
   if ($code == 4 || $code == 5) {
     croak("CLNT command failed: " .  $self->{ftp}->code . ' ' .
+      $self->response_msg());
+  }
+
+  my $msg = $self->response_msg();
+  if (wantarray()) {
+    return ($self->{ftp}->code, $msg);
+
+  } else {
+    return $msg;
+  }
+}
+
+sub csid {
+  my $self = shift;
+  my $info = shift;
+  $info = 'ProFTPD::TestSuite::FTP' unless defined($info);
+  my $code;
+
+  $code = $self->{ftp}->quot('CSID', $info);
+  unless ($code) {
+    croak("CSID command failed: " .  $self->{ftp}->code . ' ' .
+      $self->response_msg());
+  }
+
+  if ($code == 4 || $code == 5) {
+    croak("CSID command failed: " .  $self->{ftp}->code . ' ' .
       $self->response_msg());
   }
 

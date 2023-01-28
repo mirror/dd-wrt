@@ -51,17 +51,17 @@ START_TEST (feat_add_test) {
   const char *key;
 
   res = pr_feat_add(NULL);
-  fail_unless(res == -1, "Failed to handle null feat");
-  fail_unless(errno == EINVAL, "Failed to set errno to EINVAL");
+  ck_assert_msg(res == -1, "Failed to handle null feat");
+  ck_assert_msg(errno == EINVAL, "Failed to set errno to EINVAL");
 
   key = "foo";
 
   res = pr_feat_add(key);
-  fail_unless(res == 0, "Failed to add feat: %s", strerror(errno));
+  ck_assert_msg(res == 0, "Failed to add feat: %s", strerror(errno));
 
   res = pr_feat_add(key);
-  fail_unless(res == -1, "Failed to handle duplicate feat");
-  fail_unless(errno == EEXIST, "Failed to set errno to EEXIST");
+  ck_assert_msg(res == -1, "Failed to handle duplicate feat");
+  ck_assert_msg(errno == EEXIST, "Failed to set errno to EEXIST");
 }
 END_TEST
 
@@ -70,19 +70,19 @@ START_TEST (feat_get_test) {
   const char *res;
 
   res = pr_feat_get();
-  fail_unless(res == NULL, "Failed to handle empty feat");
-  fail_unless(errno == EPERM, "Failed to set errno to EPERM");
+  ck_assert_msg(res == NULL, "Failed to handle empty feat");
+  ck_assert_msg(errno == EPERM, "Failed to set errno to EPERM");
 
   ok = pr_feat_add("foo");
-  fail_unless(ok == 0, "Failed to add feat: %s", strerror(errno));
+  ck_assert_msg(ok == 0, "Failed to add feat: %s", strerror(errno));
 
   res = pr_feat_get();
-  fail_unless(res != NULL, "Failed to get feat: %s", strerror(errno));
-  fail_unless(strcmp(res, "foo") == 0, "Expected '%s', got '%s'", "foo", res);
+  ck_assert_msg(res != NULL, "Failed to get feat: %s", strerror(errno));
+  ck_assert_msg(strcmp(res, "foo") == 0, "Expected '%s', got '%s'", "foo", res);
 
   res = pr_feat_get();
-  fail_unless(res != NULL, "Failed to get feat: %s", strerror(errno));
-  fail_unless(strcmp(res, "foo") == 0, "Expected '%s', got '%s'", "foo", res);
+  ck_assert_msg(res != NULL, "Failed to get feat: %s", strerror(errno));
+  ck_assert_msg(strcmp(res, "foo") == 0, "Expected '%s', got '%s'", "foo", res);
 }
 END_TEST
 
@@ -91,18 +91,18 @@ START_TEST (feat_get_next_test) {
   const char *res;
 
   res = pr_feat_get_next();
-  fail_unless(res == NULL, "Failed to handle empty feat");
-  fail_unless(errno == EPERM, "Failed to set errno to EPERM");
+  ck_assert_msg(res == NULL, "Failed to handle empty feat");
+  ck_assert_msg(errno == EPERM, "Failed to set errno to EPERM");
 
   ok = pr_feat_add("foo");
-  fail_unless(ok == 0, "Failed to add feat: %s", strerror(errno));
+  ck_assert_msg(ok == 0, "Failed to add feat: %s", strerror(errno));
 
   res = pr_feat_get_next();
-  fail_unless(res != NULL, "Failed to get feat: %s", strerror(errno));
-  fail_unless(strcmp(res, "foo") == 0, "Expected '%s', got '%s'", "foo", res);
+  ck_assert_msg(res != NULL, "Failed to get feat: %s", strerror(errno));
+  ck_assert_msg(strcmp(res, "foo") == 0, "Expected '%s', got '%s'", "foo", res);
 
   res = pr_feat_get_next();
-  fail_unless(res == NULL, "Expected null, got '%s'", res);
+  ck_assert_msg(res == NULL, "Expected null, got '%s'", res);
 }
 END_TEST
 
@@ -111,23 +111,23 @@ START_TEST (feat_remove_test) {
   const char *feat;
 
   res = pr_feat_remove(NULL);
-  fail_unless(res == -1, "Failed to handle empty feat");
-  fail_unless(errno == EPERM, "Failed to set errno to EPERM");
+  ck_assert_msg(res == -1, "Failed to handle empty feat");
+  ck_assert_msg(errno == EPERM, "Failed to set errno to EPERM");
 
   feat = "foo";
   res = pr_feat_add(feat);
-  fail_unless(res == 0, "Failed to add feat: %s", strerror(errno));
+  ck_assert_msg(res == 0, "Failed to add feat: %s", strerror(errno));
 
   res = pr_feat_remove(NULL);
-  fail_unless(res == -1, "Failed to handle null feat");
-  fail_unless(errno == EINVAL, "Failed to set errno to EINVAL");
+  ck_assert_msg(res == -1, "Failed to handle null feat");
+  ck_assert_msg(errno == EINVAL, "Failed to set errno to EINVAL");
 
   res = pr_feat_remove(feat);
-  fail_unless(res == 0, "Failed to remove feat: %s", strerror(errno));
+  ck_assert_msg(res == 0, "Failed to remove feat: %s", strerror(errno));
 
   res = pr_feat_remove(feat);
-  fail_unless(res == -1, "Failed to detected removed feat");
-  fail_unless(errno == ENOENT, "Failed to set errno to ENOENT");
+  ck_assert_msg(res == -1, "Failed to detected removed feat");
+  ck_assert_msg(errno == ENOENT, "Failed to set errno to ENOENT");
 }
 END_TEST
 

@@ -1,6 +1,6 @@
 /*
  * ProFTPD - FTP server daemon
- * Copyright (c) 2004-2020 The ProFTPD Project team
+ * Copyright (c) 2004-2022 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -68,16 +68,19 @@ static struct config_src *parser_sources = NULL;
  */
 
 static struct config_src *add_config_source(pr_fh_t *fh) {
-  pool *p = pr_pool_create_sz(parser_pool, PARSER_CONFIG_SRC_POOL_SZ);
-  struct config_src *cs = pcalloc(p, sizeof(struct config_src));
+  pool *p;
+  struct config_src *cs;
 
+  p = pr_pool_create_sz(parser_pool, PARSER_CONFIG_SRC_POOL_SZ);
   pr_pool_tag(p, "configuration source pool");
-  cs->cs_next = NULL;
+
+  cs = pcalloc(p, sizeof(struct config_src));
   cs->cs_pool = p;
+  cs->cs_next = NULL;
   cs->cs_fh = fh;
   cs->cs_lineno = 0;
 
-  if (!parser_sources) {
+  if (parser_sources == NULL) {
     parser_sources = cs;
 
   } else {
@@ -164,19 +167,17 @@ static char *get_config_word(pool *p, char *word) {
 static void remove_config_source(void) {
   struct config_src *cs = parser_sources;
 
-  if (cs) {
+  if (cs != NULL) {
     parser_sources = cs->cs_next;
     destroy_pool(cs->cs_pool);
   }
-
-  return;
 }
 
 /* Public API
  */
 
 int pr_parser_cleanup(void) {
-  if (parser_pool) {
+  if (parser_pool != NULL) {
     if (parser_servstack->nelts > 1 ||
         (parser_curr_config && *parser_curr_config)) {
       errno = EPERM;
@@ -459,12 +460,33 @@ int pr_parser_parse_file(pool *p, const char *path, config_rec *start,
   buf = pcalloc(tmp_pool, bufsz + 1);
 
   while (pr_parser_read_line(buf, bufsz) != NULL) {
+    pool *parsed_pool;
+    pr_parsed_line_t *parsed_line;
+
     pr_signals_handle();
+
+    /* Note that pr_parser_parse_line modifies the contents of the buffer,
+     * so we want to make copy beforehand.
+     */
+
+    parsed_pool = make_sub_pool(tmp_pool);
+    parsed_line = pcalloc(parsed_pool, sizeof(pr_parsed_line_t));
+    parsed_line->text = pstrdup(parsed_pool, buf);
+    parsed_line->source_file = report_path;
+    parsed_line->source_lineno = cs->cs_lineno;
 
     cmd = pr_parser_parse_line(tmp_pool, buf, 0);
     if (cmd == NULL) {
+      destroy_pool(parsed_pool);
       continue;
     }
+
+    /* Generate an event about the parsed line of text, for any interested
+     * parties.
+     */
+    parsed_line->cmd = cmd;
+    pr_event_generate("core.parsed-line", parsed_line);
+    destroy_pool(parsed_pool);
 
     if (cmd->argc) {
       conftable *conftab;
@@ -510,8 +532,9 @@ int pr_parser_parse_file(pool *p, const char *path, config_rec *start,
           &cmd->stash_index, &cmd->stash_hash);
       }
 
-      if (cmd->tmp_pool) {
+      if (cmd->tmp_pool != NULL) {
         destroy_pool(cmd->tmp_pool);
+        cmd->tmp_pool = NULL;
       }
 
       if (found == FALSE) {
@@ -683,7 +706,7 @@ cmd_rec *pr_parser_parse_line(pool *p, const char *text, size_t text_len) {
     if (*(cp + cp_len-1) == '>' &&
         cmd->argc > 1) {
 
-      if (strncmp(cp, ">", 2) == 0) {
+      if (strcmp(cp, ">") == 0) {
         cmd->argv[cmd->argc-1] = NULL;
         cmd->argc--;
 
@@ -799,7 +822,8 @@ char *pr_parser_read_line(char *buf, size_t bufsz) {
     }
 
     /* Advance past any leading whitespace. */
-    for (bufp = buf; *bufp && PR_ISSPACE(*bufp); bufp++);
+    for (bufp = buf; *bufp && PR_ISSPACE(*bufp); bufp++) {
+    }
 
     /* Check for commented or blank lines at this point, and just continue on
      * to the next configuration line if found.  If not, return the
@@ -807,16 +831,14 @@ char *pr_parser_read_line(char *buf, size_t bufsz) {
      */
     if (*bufp == '#' || !*bufp) {
       continue;
-
-    } else {
-
-      /* Copy the value of bufp back into the pointer passed in
-       * and return it.
-       */
-      buf = bufp;
-
-      return buf;
     }
+
+    /* Copy the value of bufp back into the pointer passed in
+     * and return it.
+     */
+    buf = bufp;
+
+    return buf;
   }
 
   return NULL;
@@ -878,6 +900,9 @@ server_rec *pr_parser_server_ctxt_open(const char *addrstr) {
   s->config_type = CONF_VIRTUAL;
   s->sid = ++parser_sid;
   s->notes = pr_table_nalloc(p, 0, 8);
+
+  /* TCP port reuse is disabled by default. */
+  s->tcp_reuse_port = -1;
 
   /* TCP KeepAlive is enabled by default, with the system defaults. */
   s->tcp_keepalive = palloc(s->pool, sizeof(struct tcp_keepalive));
@@ -975,7 +1000,9 @@ static int parse_wildcard_config_path(pool *p, const char *path,
    * for directories within the parent.
    */
 
+  parent_path = pstrdup(tmp_pool, "/");
   component = path + 1;
+
   while (TRUE) {
     int last_component = FALSE;
     char *ptr;
@@ -997,10 +1024,6 @@ static int parse_wildcard_config_path(pool *p, const char *path,
 
       name_pattern = pstrndup(tmp_pool, component, component_len);
 
-      if (parent_path == NULL) {
-        parent_path = pstrndup(tmp_pool, "/", 1);
-      }
-
       if (ptr != NULL) {
         suffix_path = pstrdup(tmp_pool, ptr + 1);
       }
@@ -1008,15 +1031,10 @@ static int parse_wildcard_config_path(pool *p, const char *path,
       break;
     }
 
-    if (parent_path != NULL) {
-      parent_path = pdircat(tmp_pool, parent_path,
-        pstrndup(tmp_pool, component, component_len), NULL);
+    parent_path = pdircat(tmp_pool, parent_path,
+      pstrndup(tmp_pool, component, component_len), NULL);
 
-    } else {
-      parent_path = pstrndup(tmp_pool, "/", 1);
-    }
-
-    if (last_component) {
+    if (last_component == TRUE) {
       break;
     }
 
@@ -1029,6 +1047,9 @@ static int parse_wildcard_config_path(pool *p, const char *path,
     errno = ENOENT;
     return -1;
   }
+
+  pr_trace_msg(trace_channel, 19, "generated globbed name pattern '%s/%s'",
+    parent_path, name_pattern);
 
   pr_fs_clear_cache2(parent_path);
   res = pr_fsio_lstat(parent_path, &st);
@@ -1072,8 +1093,8 @@ static int parse_wildcard_config_path(pool *p, const char *path,
   while ((dent = pr_fsio_readdir(dirh)) != NULL) {
     pr_signals_handle();
 
-    if (strncmp(dent->d_name, ".", 2) == 0 ||
-        strncmp(dent->d_name, "..", 3) == 0) {
+    if (strcmp(dent->d_name, ".") == 0 ||
+        strcmp(dent->d_name, "..") == 0) {
       continue;
     }
 
@@ -1088,8 +1109,8 @@ static int parse_wildcard_config_path(pool *p, const char *path,
 
     if (pr_fnmatch(name_pattern, dent->d_name, PR_FNM_PERIOD) == 0) {
       pr_trace_msg(trace_channel, 17,
-        "matched '%s' path with wildcard pattern '%s'", dent->d_name,
-        name_pattern);
+        "matched '%s/%s' path with wildcard pattern '%s/%s'", parent_path,
+        dent->d_name, parent_path, name_pattern);
 
       *((char **) push_array(globbed_dirs)) = pdircat(tmp_pool, parent_path,
         dent->d_name, suffix_path, NULL);
@@ -1283,8 +1304,8 @@ int parse_config_path2(pool *p, const char *path, unsigned int depth) {
   while ((dent = pr_fsio_readdir(dirh)) != NULL) {
     pr_signals_handle();
 
-    if (strncmp(dent->d_name, ".", 2) == 0 ||
-        strncmp(dent->d_name, "..", 3) == 0) {
+    if (strcmp(dent->d_name, ".") == 0 ||
+        strcmp(dent->d_name, "..") == 0) {
       continue;
     }
 

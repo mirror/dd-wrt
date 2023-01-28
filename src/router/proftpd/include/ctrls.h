@@ -1,6 +1,6 @@
 /*
  * ProFTPD - FTP server daemon
- * Copyright (c) 2001-2016 The ProFTPD Project team
+ * Copyright (c) 2001-2020 The ProFTPD Project team
  *  
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -134,8 +134,7 @@ typedef struct ctrls_obj {
 #define CTRLS_GET_ACTION_ENABLED	8
 #define CTRLS_GET_DESC			9
 
-/* Controls API prototypes
- */
+/* Controls API */
 
 /* Register a control handler for the given action with the Controls layer,
  * to be available to requesting clients.  Returns the ID of the registered
@@ -162,7 +161,7 @@ int pr_ctrls_add_arg(pr_ctrls_t *ctrl, char *ctrls_arg, size_t ctrls_arglen);
  * 0 on success, -1 on failure.  Control handlers can use this function to
  * add a text response to be returned to the requesting client.
  */
-int pr_ctrls_add_response(pr_ctrls_t *ctrl, char *fmt, ...)
+int pr_ctrls_add_response(pr_ctrls_t *ctrl, const char *fmt, ...)
 #ifdef __GNUC__
        __attribute__ ((format (printf, 2, 3)));
 #else
@@ -242,7 +241,7 @@ void pr_block_ctrls(void);
 void pr_unblock_ctrls(void);
 
 /* XXX */
-int pr_check_actions(void);
+int pr_ctrls_check_actions(void);
 
 /* Iterate through the list of pr_ctrls_ts and invoke the callbacks of any
  * that match the given module and action arguments.  Returns 0 if successful,
@@ -250,10 +249,13 @@ int pr_check_actions(void);
  */
 int pr_run_ctrls(module *mod, const char *action);
 
-/* XXX */
-int pr_reset_ctrls(void);
+/* Run through the registered controls, freeing up any that are available. */
+int pr_ctrls_reset(void);
 
 /* For internal use only. */
+pr_ctrls_t *pr_ctrls_alloc(void);
+int pr_ctrls_free(pr_ctrls_t *ctrl);
 void init_ctrls(void);
+int init_ctrls2(const char *socket_path);
 
 #endif /* PR_CTRLS_H */

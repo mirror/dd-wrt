@@ -315,9 +315,10 @@ pr_netacl_t *pr_netacl_create(pool *p, char *aclstr) {
           if (acl->masklen > 128) {
             errno = EINVAL;
             return NULL;
+          }
 
-          } else if (pr_netaddr_is_v4mappedv6(acl->addr) == TRUE &&
-                     acl->masklen > 32) {
+          if (pr_netaddr_is_v4mappedv6(acl->addr) == TRUE &&
+              acl->masklen > 32) {
             /* The admin may be trying to use IPv6-style masks on IPv4-mapped
              * IPv6 addresses, which of course will not work as expected.
              * If the mask is 32 bits or more, warn the admin.
@@ -375,11 +376,10 @@ pr_netacl_t *pr_netacl_create(pool *p, char *aclstr) {
 
             netacl_type = PR_NETACL_TYPE_DNSGLOB;
             break;
-
-          } else {
-            netacl_type = PR_NETACL_TYPE_DNSGLOB;
-            break;
           }
+
+          netacl_type = PR_NETACL_TYPE_DNSGLOB;
+          break;
 #else
           netacl_type = PR_NETACL_TYPE_DNSGLOB;
           break;
@@ -508,11 +508,10 @@ pr_netacl_t *pr_netacl_create(pool *p, char *aclstr) {
 
             use_dns = TRUE;
             break;
-
-          } else {
-            use_dns = TRUE;
-            break;
           }
+
+          use_dns = TRUE;
+          break;
 #else
           use_dns = TRUE;
           break;

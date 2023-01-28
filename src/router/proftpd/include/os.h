@@ -1,6 +1,6 @@
 /*
  * ProFTPD - FTP server daemon
- * Copyright (c) 2017 The ProFTPD Project team
+ * Copyright (c) 2017-2022 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -348,5 +348,17 @@ extern char *alloca();
 #ifdef HAVE_SETGROUPENT
 # define setgrent()	setgroupent(1)
 #endif /* HAVE_SETGROUPENT */
+
+#if !defined(HAVE_U_INT8_T)
+typedef uint8_t u_int8_t;
+#endif
+
+#if !defined(HAVE_U_INT16_T)
+typedef uint16_t u_int16_t;
+#endif
+
+#if !defined(HAVE_U_INT32_T)
+typedef uint32_t u_int32_t;
+#endif
 
 #endif /* PR_OS_H */

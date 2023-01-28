@@ -1,7 +1,7 @@
 /*
  * ProFTPD: mod_ctrls -- a module implementing the ftpdctl local socket
  *                       server
- * Copyright (c) 2000-2016 The ProFTPD Project team
+ * Copyright (c) 2000-2020 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -32,7 +32,7 @@
 #include <signal.h>
 #include "conf.h"
 
-# ifdef PR_USE_CTRLS
+# if defined(PR_USE_CTRLS)
 
 /* Controls access control objects */
 
@@ -40,18 +40,18 @@ typedef struct {
   unsigned char allow;
   unsigned int nuids;
   uid_t *uids;
-} ctrls_usr_acl_t;
+} ctrls_user_acl_t;
 
 typedef struct {
   unsigned char allow;
   unsigned int ngids;
   gid_t *gids;
-} ctrls_grp_acl_t;
+} ctrls_group_acl_t;
 
 typedef struct {
   pool *acl_pool;
-  ctrls_usr_acl_t acl_usrs;
-  ctrls_grp_acl_t acl_grps;
+  ctrls_user_acl_t acl_users;
+  ctrls_group_acl_t acl_groups;
 } ctrls_acl_t;
 
 typedef struct {
@@ -61,32 +61,48 @@ typedef struct {
   int (*act_cb)(pr_ctrls_t *, int, char **);
 } ctrls_acttab_t;
 
-unsigned char pr_ctrls_check_group_acl(gid_t, const ctrls_grp_acl_t *);
-unsigned char pr_ctrls_check_user_acl(uid_t, const ctrls_usr_acl_t *);
+int pr_ctrls_check_group_acl(gid_t, const ctrls_group_acl_t *);
+int pr_ctrls_check_user_acl(uid_t, const ctrls_user_acl_t *);
 
 /* Returns TRUE if use of ctrl named by action is allowed by the user or group
  * ACL, FALSE otherwise.  The ACLs associated with the given action are
  * looked up in the given table.  The default is to deny everyone, unless an
  * ACL has been configured to allow them.
  */
-unsigned char pr_ctrls_check_acl(const pr_ctrls_t *ctrl,
+int pr_ctrls_check_acl(const pr_ctrls_t *ctrl,
   const ctrls_acttab_t *ctrls_acttab, const char *action);
 
 /* Initialize an ctrls_acl_t object. */
-void pr_ctrls_init_acl(ctrls_acl_t *acl);
+int pr_ctrls_init_acl(ctrls_acl_t *acl);
 
-char **pr_ctrls_parse_acl(pool *acl_pool, char *acl_str);
+/* Parse the comma-separated list of names in a Controls ACL into a
+ * NULL-terminated array.
+ */
+char **pr_ctrls_parse_acl(pool *acl_pool, const char *acl_text);
 
-void pr_ctrls_set_group_acl(pool *, ctrls_grp_acl_t *, const char *, char *);
-void pr_ctrls_set_user_acl(pool *, ctrls_usr_acl_t *, const char *, char *);
+int pr_ctrls_set_group_acl(pool *, ctrls_group_acl_t *, const char *, char *);
+int pr_ctrls_set_user_acl(pool *, ctrls_user_acl_t *, const char *, char *);
 
-/* Configures the ACLs for the actions implemented in a Controls module. */
+/* Configures the ACLs for the actions implemented in a Controls module.
+ *
+ * On error, the bad_action argument, if provided, will be set to the
+ * offending/unknown action.
+ */
 char *pr_ctrls_set_module_acls(ctrls_acttab_t *ctrls_acttab, pool *acl_pool,
   char **actions, const char *allow, const char *type, char *list);
+int pr_ctrls_set_module_acls2(ctrls_acttab_t *ctrls_acttab, pool *acl_pool,
+  char **actions, const char *allow, const char *type, char *list,
+  const char **bad_action);
 
-/* Unregisters a module's actions according to the configured list. */
+/* Unregisters a module's actions according to the configured list.
+ *
+ * On error, the bad_action argument, if provided, will be set to the
+ * offending/unknown action.
+ */
 char *pr_ctrls_unregister_module_actions(ctrls_acttab_t *ctrls_acttab,
   char **actions, module *mod);
+int pr_ctrls_unregister_module_actions2(ctrls_acttab_t *ctrls_acttab,
+  char **actions, module *mod, const char **bad_action);
 
 /* Set the file descriptor that the Controls API should use for logging. */
 int pr_ctrls_set_logfd(int fd);

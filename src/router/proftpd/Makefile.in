@@ -60,6 +60,12 @@ modules: include/buildstamp.h dummy
 utils: include/buildstamp.h dummy
 	cd utils/ && $(MAKE) utils
 
+clang-tidy:
+	-cd src/ && $(MAKE) clang-tidy
+	# cd lib/ && $(MAKE) clang-tidy
+	-cd modules/ && $(MAKE) clang-tidy
+	# cd utils/ && $(MAKE) clang-tidy
+
 locale: include/buildstamp.h dummy
 	test -z "$(ENABLE_NLS)" || (cd locale/ && $(MAKE) locale)
 
@@ -127,7 +133,7 @@ $(DESTDIR)$(localedir) $(DESTDIR)$(includedir) $(DESTDIR)$(includedir)/proftpd $
 		chmod 0755 $@; \
 	fi
 
-install-proftpd: proftpd$(EXEEXT) $(DESTDIR)$(includedir) $(DESTDIR)$(localstatedir) $(DESTDIR)$(sysconfdir) $(DESTDIR)$(sbindir)
+install-proftpd: $(DESTDIR)$(includedir) $(DESTDIR)$(localstatedir) $(DESTDIR)$(sysconfdir) $(DESTDIR)$(sbindir)
 	$(INSTALL_SBIN) $(top_builddir)/proftpd $(DESTDIR)$(sbindir)/proftpd
 	if [ -f $(DESTDIR)$(sbindir)/in.proftpd ] ; then \
 		rm -f $(DESTDIR)$(sbindir)/in.proftpd ; \
@@ -140,6 +146,7 @@ install-libs: $(DESTDIR)$(libdir)/proftpd
 
 install-headers: $(DESTDIR)$(includedir)/proftpd
 	$(INSTALL_MAN) $(top_builddir)/config.h $(DESTDIR)$(includedir)/proftpd/config.h
+	$(INSTALL_MAN) $(top_builddir)/Make.rules $(DESTDIR)$(includedir)/proftpd/Make.rules
 	cd include/ && $(MAKE) install
 
 install-pkgconfig: $(DESTDIR)$(pkgconfigdir)
@@ -198,7 +205,7 @@ install-man: $(DESTDIR)$(mandir) $(DESTDIR)$(mandir)/man1 $(DESTDIR)$(mandir)/ma
 
 install-all: install-proftpd install-modules install-utils install-conf install-man install-libs install-headers install-pkgconfig install-locales $(INSTALL_DEPS)
 
-install: $(BUILD_BIN) install-all
+install: install-all
 
 depend:
 	cd src/     && $(MAKE) depend

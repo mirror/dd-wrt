@@ -1,6 +1,6 @@
 /*
  * ProFTPD - FTP server daemon
- * Copyright (c) 2003-2017 The ProFTPD Project team
+ * Copyright (c) 2003-2022 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -123,7 +123,11 @@ static int create_path(pool *p, const char *path, const char *user,
 
   currpath = "/";
   while (tmppath && *tmppath) {
-    char *currdir = strsep(&tmppath, "/");
+    char *currdir;
+
+    pr_signals_handle();
+
+    currdir = strsep(&tmppath, "/");
     currpath = pdircat(p, currpath, currdir, NULL);
 
     /* If tmppath is NULL, we are creating the last part of the path, so we
@@ -136,8 +140,6 @@ static int create_path(pool *p, const char *path, const char *user,
     } else { 
       create_dir(currpath, dir_uid, dir_gid, dir_mode);
     }
-
-    pr_signals_handle();
   }
 
   pr_trace_msg(trace_channel, 5, "home directory '%s' created", path);
@@ -215,8 +217,8 @@ static int copy_dir(pool *p, const char *src_dir, const char *dst_dir,
     pr_signals_handle();
 
     /* Skip "." and ".." */
-    if (strncmp(dent->d_name, ".", 2) == 0 ||
-        strncmp(dent->d_name, "..", 3) == 0) {
+    if (strcmp(dent->d_name, ".") == 0 ||
+        strcmp(dent->d_name, "..") == 0) {
       continue;
     }
 
@@ -234,9 +236,10 @@ static int copy_dir(pool *p, const char *src_dir, const char *dst_dir,
       create_dir(dst_path, uid, gid, st.st_mode);
       copy_dir(p, src_path, dst_path, uid, gid);
       continue;
+    }
 
     /* Is this path to a regular file? */
-    } else if (S_ISREG(st.st_mode)) {
+    if (S_ISREG(st.st_mode)) {
       mode_t dst_mode = st.st_mode;
 
       /* Make sure to prevent S{U,G}ID permissions on target files. */
@@ -264,17 +267,16 @@ static int copy_dir(pool *p, const char *src_dir, const char *dst_dir,
       }
 
       continue;
+    }
 
     /* Is this path a symlink? */
-    } else if (S_ISLNK(st.st_mode)) {
+    if (S_ISLNK(st.st_mode)) {
       copy_symlink(p, src_dir, src_path, dst_dir, dst_path, uid, gid);
       continue;
+    }
 
     /* All other file types are skipped */
-    } else {
-      pr_log_debug(DEBUG3, "CreateHome: skipping skel file '%s'", src_path);
-      continue;
-    }
+    pr_log_debug(DEBUG3, "CreateHome: skipping skel file '%s'", src_path);
   }
 
   closedir(dh);

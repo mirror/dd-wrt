@@ -69,8 +69,18 @@ $(DESTDIR)$(includedir) $(DESTDIR)$(includedir)/proftpd:
 		chmod 0755 $@; \
 	fi
 
-install-headers: $(DESTDIR)$(includedir)/proftpd
+# BSD install -d doesn't work, so ...
+$(DESTDIR)$(includedir)/proftpd/$(MODULE_NAME):
+	@if [ ! -d $@ ]; then \
+		mkdir -p $@; \
+		chown $(INSTALL_USER):$(INSTALL_GROUP) $@; \
+		chmod 0755 $@; \
+	fi
+
+install-headers: $(DESTDIR)$(includedir)/proftpd $(DESTDIR)$(includedir)/proftpd/$(MODULE_NAME)
 	$(INSTALL_MAN) $(MODULE_NAME).h $(DESTDIR)$(includedir)/proftpd/$(MODULE_NAME).h
+	$(INSTALL_MAN) *.h $(DESTDIR)$(includedir)/proftpd/$(MODULE_NAME)/
+	$(RM) $(DESTDIR)$(includedir)/proftpd/$(MODULE_NAME)/$(MODULE_NAME).h
 
 install-misc:
 	$(INSTALL) -o $(INSTALL_USER) -g $(INSTALL_GROUP) -m 0644 $(top_srcdir)/dhparams.pem $(DESTDIR)$(sysconfdir)/dhparams.pem

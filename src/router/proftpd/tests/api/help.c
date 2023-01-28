@@ -85,16 +85,16 @@ START_TEST (help_add_response_test) {
   cmd_rec *cmd;
 
   res = pr_help_add_response(NULL, NULL);
-  fail_unless(res == -1, "Failed to handle null arguments");
-  fail_unless(errno == EINVAL, "Failed to set errno to EINVAL, got %s (%d)",
+  ck_assert_msg(res == -1, "Failed to handle null arguments");
+  ck_assert_msg(errno == EINVAL, "Failed to set errno to EINVAL, got %s (%d)",
     strerror(errno), errno);
 
   mark_point();
 
   cmd = pr_cmd_alloc(p, 2, C_HELP, "FOO");
   res = pr_help_add_response(cmd, NULL);
-  fail_unless(res == -1, "Failed to handle empty help list");
-  fail_unless(errno == ENOENT, "Failed to set errno to ENOENT, got %s (%d)",
+  ck_assert_msg(res == -1, "Failed to handle empty help list");
+  ck_assert_msg(errno == ENOENT, "Failed to set errno to ENOENT, got %s (%d)",
     strerror(errno), errno);
 
   mark_point();
@@ -105,36 +105,36 @@ START_TEST (help_add_response_test) {
   mark_point();
 
   res = pr_help_add_response(cmd, NULL);
-  fail_unless(res == 0, "Failed to add help response: %s", strerror(errno));
+  ck_assert_msg(res == 0, "Failed to add help response: %s", strerror(errno));
 
   mark_point();
 
   resp_code = resp_msg = NULL;
   res = pr_response_get_last(p, &resp_code, &resp_msg);
-  fail_unless(res == 0, "Failed to get last response: %s", strerror(errno));
-  fail_unless(resp_code != NULL, "Expected non-null response code");
-  fail_unless(strcmp(resp_code, R_214) == 0,
+  ck_assert_msg(res == 0, "Failed to get last response: %s", strerror(errno));
+  ck_assert_msg(resp_code != NULL, "Expected non-null response code");
+  ck_assert_msg(strcmp(resp_code, R_214) == 0,
     "Expected response code %s, got %s", R_214, resp_code);
-  fail_unless(resp_msg != NULL, "Expected non-null response message");
-  fail_unless(strcmp(resp_msg, "Direct comments to ftp-admin") == 0,
+  ck_assert_msg(resp_msg != NULL, "Expected non-null response message");
+  ck_assert_msg(strcmp(resp_msg, "Direct comments to ftp-admin") == 0,
     "Expected response message '%s', got '%s'", "Direct comments to ftp-admin",
     resp_msg);
 
   mark_point();
 
   res = pr_help_add_response(cmd, "FOO");
-  fail_unless(res == 0, "Failed to add help response: %s", strerror(errno));
+  ck_assert_msg(res == 0, "Failed to add help response: %s", strerror(errno));
 
   mark_point();
 
   resp_code = resp_msg = NULL;
   res = pr_response_get_last(p, &resp_code, &resp_msg);
-  fail_unless(res == 0, "Failed to get last response: %s", strerror(errno));
-  fail_unless(resp_code != NULL, "Expected non-null response code");
-  fail_unless(strcmp(resp_code, R_214) == 0,
+  ck_assert_msg(res == 0, "Failed to get last response: %s", strerror(errno));
+  ck_assert_msg(resp_code != NULL, "Expected non-null response code");
+  ck_assert_msg(strcmp(resp_code, R_214) == 0,
     "Expected response code %s, got %s", R_214, resp_code);
-  fail_unless(resp_msg != NULL, "Expected non-null response message");
-  fail_unless(strcmp(resp_msg, "Syntax: FOO ") == 0,
+  ck_assert_msg(resp_msg != NULL, "Expected non-null response message");
+  ck_assert_msg(strcmp(resp_msg, "Syntax: FOO ") == 0,
     "Expected response message '%s', got '%s'", "Syntax: FOO ", resp_msg);
 
   /* Now add an unimplemented command, and test that one. */
@@ -144,18 +144,18 @@ START_TEST (help_add_response_test) {
   pr_help_add("BAR", "<path>", FALSE);
 
   res = pr_help_add_response(cmd, "BAR");
-  fail_unless(res == 0, "Failed to add help response: %s", strerror(errno));
+  ck_assert_msg(res == 0, "Failed to add help response: %s", strerror(errno));
 
   mark_point();
 
   resp_code = resp_msg = NULL;
   res = pr_response_get_last(p, &resp_code, &resp_msg);
-  fail_unless(res == 0, "Failed to get last response: %s", strerror(errno));
-  fail_unless(resp_code != NULL, "Expected non-null response code");
-  fail_unless(strcmp(resp_code, R_214) == 0,
+  ck_assert_msg(res == 0, "Failed to get last response: %s", strerror(errno));
+  ck_assert_msg(resp_code != NULL, "Expected non-null response code");
+  ck_assert_msg(strcmp(resp_code, R_214) == 0,
     "Expected response code %s, got %s", R_214, resp_code);
-  fail_unless(resp_msg != NULL, "Expected non-null response message");
-  fail_unless(strcmp(resp_msg, "Syntax: BAR <path>") == 0,
+  ck_assert_msg(resp_msg != NULL, "Expected non-null response message");
+  ck_assert_msg(strcmp(resp_msg, "Syntax: BAR <path>") == 0,
     "Expected response message '%s', got '%s'", "Syntax: BAR <path>", resp_msg);
 }
 END_TEST

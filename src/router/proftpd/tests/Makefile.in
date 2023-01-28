@@ -11,6 +11,7 @@ include $(top_builddir)/Make.rules
 EXEEXT=@EXEEXT@
 
 TEST_API_DEPS=\
+  $(top_builddir)/lib/prbase.a \
   $(top_builddir)/src/pool.o \
   $(top_builddir)/src/privs.o \
   $(top_builddir)/src/str.o \
@@ -47,6 +48,7 @@ TEST_API_DEPS=\
   $(top_builddir)/src/inet.o \
   $(top_builddir)/src/data.o \
   $(top_builddir)/src/ascii.o \
+  $(top_builddir)/src/ctrls.o \
   $(top_builddir)/src/help.o \
   $(top_builddir)/src/display.o \
   $(top_builddir)/src/json.o \
@@ -90,6 +92,7 @@ TEST_API_OBJS=\
   api/inet.o \
   api/data.o \
   api/ascii.o \
+  api/ctrls.o \
   api/help.o \
   api/rlimit.o \
   api/encode.o \
@@ -145,4 +148,4 @@ check-utils:
 check: check-api running-tests
 
 clean:
-	$(LIBTOOL) --mode=clean $(RM) *.o *.gcda *.gcno api/*.o api-tests$(EXEEXT) api-tests.log
+	$(LIBTOOL) --mode=clean $(RM) *.o *.gcda *.gcno api/*.o api/*.gcda api/*.gcno api-tests$(EXEEXT) api-tests.log

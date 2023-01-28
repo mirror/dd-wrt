@@ -1,6 +1,6 @@
 /*
  * ProFTPD - FTP server daemon
- * Copyright (c) 2008-2020 The ProFTPD Project team
+ * Copyright (c) 2008-2021 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -119,6 +119,12 @@ array_header *pr_str_get_similars(pool *p, const char *s,
  * an array of each item.
  */
 array_header *pr_str_text_to_array(pool *p, const char *text, char delimiter);
+
+/* Given an array of strings, return a string delimited by a string (such
+ * as comma or pipe).
+ */
+char *pr_str_array_to_text(pool *p, const array_header *items,
+  const char *delimiter);
 
 /* Converts a string to a uid_t/gid_t, respectively. */
 int pr_str2uid(const char *, uid_t *);

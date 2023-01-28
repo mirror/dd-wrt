@@ -2,7 +2,7 @@
  * ProFTPD: mod_auth_pam -- Support for PAM-style authentication.
  * Copyright (c) 1998, 1999, 2000 Habeeb J. Dihu aka
  *   MacGyver <macgyver@tos.net>, All Rights Reserved.
- * Copyright 2000-2019 The ProFTPD Project
+ * Copyright 2000-2020 The ProFTPD Project
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -174,7 +174,7 @@ static struct pam_conv pam_conv = {
 };
 
 static void auth_pam_exit_ev(const void *event_data, void *user_data) {
-  int res = 0, disable_id_switching;
+  int res, disable_id_switching;
 
   /* Sanity check. */
   if (pamh == NULL) {

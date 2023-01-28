@@ -1,6 +1,6 @@
 /*
  * ProFTPD - mod_sftp SCP
- * Copyright (c) 2008-2020 TJ Saunders
+ * Copyright (c) 2008-2021 TJ Saunders
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -147,7 +147,7 @@ static unsigned int scp_opts = 0;
 /* Boolean flag indicating whether we need to wait for the confirmation
  * response (byte) from the client before proceeding.
  */
-static int need_confirm; 
+static int need_confirm = FALSE;
 
 static const char *trace_channel = "scp";
 
@@ -223,7 +223,7 @@ static struct scp_paths *scp_new_paths(uint32_t channel_id) {
   paths->pool = sub_pool;
   paths->channel_id = channel_id;
 
-  if (last) {
+  if (last != NULL) {
     last->next = paths;
     paths->prev = last;
 
@@ -256,7 +256,7 @@ static struct scp_session *scp_get_session(uint32_t channel_id) {
   struct scp_session *sess;
 
   sess = scp_sessions;
-  while (sess) {
+  while (sess != NULL) {
     pr_signals_handle();
 
     if (sess->channel_id == channel_id) {
@@ -1875,7 +1875,7 @@ static int send_data(pool *p, uint32_t channel_id, struct scp_path *sp,
            sftp_channel_get_windowsz(channel_id) == 0) {
       pr_signals_handle();
 
-      if (sftp_ssh2_packet_handle() < 0) {
+      if (sftp_ssh2_packet_process(sftp_pool) < 0) {
         return 1;
       }
     }
@@ -1922,7 +1922,7 @@ static int send_dir(pool *p, uint32_t channel_id, struct scp_path *sp,
     }
 
     /* Clear out any transfer-specific data. */
-    if (session.xfer.p) {
+    if (session.xfer.p != NULL) {
       destroy_pool(session.xfer.p);
     }
     memset(&session.xfer, 0, sizeof(session.xfer));
@@ -1980,7 +1980,7 @@ static int send_dir(pool *p, uint32_t channel_id, struct scp_path *sp,
       res = send_path(p, channel_id, spi);
       if (res == 1) {
         /* Clear out any transfer-specific data. */
-        if (session.xfer.p) {
+        if (session.xfer.p != NULL) {
           destroy_pool(session.xfer.p);
         }
 
@@ -1991,7 +1991,7 @@ static int send_dir(pool *p, uint32_t channel_id, struct scp_path *sp,
     }
   }
 
-  if (sp->dirh) {
+  if (sp->dirh != NULL) {
     pr_fsio_closedir(sp->dirh);
     sp->dirh = NULL;
 
@@ -2016,7 +2016,7 @@ static int send_path(pool *p, uint32_t channel_id, struct scp_path *sp) {
   struct stat st;
   cmd_rec *cmd = NULL;
 
-  if (sp->sent_data) {
+  if (sp->sent_data == TRUE) {
     /* Already sent everything for this path. */
     return 1;
   }
@@ -2252,7 +2252,7 @@ static int send_path(pool *p, uint32_t channel_id, struct scp_path *sp) {
    * that includes the file timestamps.
    */
   if ((scp_opts & SFTP_SCP_OPT_PRESERVE) &&
-      !sp->sent_timeinfo) {
+      sp->sent_timeinfo == FALSE) {
     res = send_timeinfo(p, channel_id, sp, &st);
     if (res == 1) {
       (void) pr_cmd_dispatch_phase(cmd, POST_CMD_ERR, 0);
@@ -2264,7 +2264,7 @@ static int send_path(pool *p, uint32_t channel_id, struct scp_path *sp) {
     return res;
   }
 
-  if (!sp->sent_finfo) {
+  if (sp->sent_finfo == FALSE) {
     res = send_finfo(p, channel_id, sp, &st);
     if (res == 1) {
       (void) pr_cmd_dispatch_phase(cmd, POST_CMD_ERR, 0);
@@ -2276,7 +2276,7 @@ static int send_path(pool *p, uint32_t channel_id, struct scp_path *sp) {
     return res;
   }
 
-  if (!sp->sent_data) {
+  if (sp->sent_data == FALSE) {
     pr_throttle_init(cmd);
 
     res = send_data(p, channel_id, sp, &st);
@@ -2339,7 +2339,7 @@ int sftp_scp_handle_packet(pool *p, void *ssh2, uint32_t channel_id,
 
   pr_response_set_pool(pkt->pool);
 
-  if (need_confirm) {
+  if (need_confirm == TRUE) {
     /* Handle the confirmation/response from the client. */
     if (read_confirm(pkt, &data, &datalen) < 0) {
       return 1;
@@ -2705,7 +2705,7 @@ int sftp_scp_open_session(uint32_t channel_id) {
    * channel ID.
    */
   sess = last = scp_sessions;
-  while (sess) {
+  while (sess != NULL) {
     pr_signals_handle();
 
     if (sess->channel_id == channel_id) {
@@ -2760,7 +2760,7 @@ int sftp_scp_open_session(uint32_t channel_id) {
 
   scp_destroy_paths(paths);
 
-  if (last) {
+  if (last != NULL) {
     last->next = sess;
     sess->prev = last;
 
@@ -2791,16 +2791,17 @@ int sftp_scp_close_session(uint32_t channel_id) {
 
   /* Check to see if we have an SCP session opened for this channel ID. */
   sess = scp_sessions;
-  while (sess) {
+  while (sess != NULL) {
     pr_signals_handle();
 
     if (sess->channel_id == channel_id) {
       pr_timer_remove(PR_TIMER_STALLED, ANY_MODULE);
 
-      if (sess->next)
+      if (sess->next != NULL) {
         sess->next->prev = sess->prev;
+      }
 
-      if (sess->prev) {
+      if (sess->prev != NULL) {
         sess->prev->next = sess->next;
 
       } else {

@@ -1,6 +1,6 @@
 /*
  * ProFTPD - mod_sftp 'publickey' user authentication
- * Copyright (c) 2008-2021 TJ Saunders
+ * Copyright (c) 2008-2022 TJ Saunders
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -82,7 +82,6 @@ static int send_pubkey_ok(const char *algo, const unsigned char *pubkey_data,
 int sftp_auth_publickey(struct ssh2_packet *pkt, cmd_rec *pass_cmd,
     const char *orig_user, const char *user, const char *service,
     unsigned char **buf, uint32_t *buflen, int *send_userauth_fail) {
-  register unsigned int i;
   int fp_algo_id = 0, have_signature, res;
   enum sftp_key_type_e pubkey_type;
   unsigned char *pubkey_data;
@@ -126,44 +125,48 @@ int sftp_auth_publickey(struct ssh2_packet *pkt, cmd_rec *pass_cmd,
   pr_trace_msg(trace_channel, 9, "client sent '%s' public key %s",
     pubkey_algo, have_signature ? "with signature" : "without signature");
 
-  if (strncmp(pubkey_algo, "ssh-rsa", 8) == 0) {
+  if (strcmp(pubkey_algo, "ssh-rsa") == 0) {
     pubkey_type = SFTP_KEY_RSA;
 
-#ifdef HAVE_SHA256_OPENSSL
-  } else if (strncmp(pubkey_algo, "rsa-sha2-256", 13) == 0) {
+#if defined(HAVE_SHA256_OPENSSL)
+  } else if (strcmp(pubkey_algo, "rsa-sha2-256") == 0) {
     pubkey_type = SFTP_KEY_RSA_SHA256;
 #endif /* HAVE_SHA256_OPENSSL */
 
-#ifdef HAVE_SHA512_OPENSSL
-  } else if (strncmp(pubkey_algo, "rsa-sha2-512", 13) == 0) {
+#if defined(HAVE_SHA512_OPENSSL)
+  } else if (strcmp(pubkey_algo, "rsa-sha2-512") == 0) {
     pubkey_type = SFTP_KEY_RSA_SHA512;
 #endif /* HAVE_SHA512_OPENSSL */
 
-  } else if (strncmp(pubkey_algo, "ssh-dss", 8) == 0) {
+  } else if (strcmp(pubkey_algo, "ssh-dss") == 0) {
     pubkey_type = SFTP_KEY_DSA;
 
 #if defined(PR_USE_OPENSSL_ECC)
-  } else if (strncmp(pubkey_algo, "ecdsa-sha2-nistp256", 20) == 0) {
+  } else if (strcmp(pubkey_algo, "ecdsa-sha2-nistp256") == 0) {
     pubkey_type = SFTP_KEY_ECDSA_256;
 
-  } else if (strncmp(pubkey_algo, "ecdsa-sha2-nistp384", 20) == 0) {
+  } else if (strcmp(pubkey_algo, "ecdsa-sha2-nistp384") == 0) {
     pubkey_type = SFTP_KEY_ECDSA_384;
 
-  } else if (strncmp(pubkey_algo, "ecdsa-sha2-nistp521", 20) == 0) {
+  } else if (strcmp(pubkey_algo, "ecdsa-sha2-nistp521") == 0) {
     pubkey_type = SFTP_KEY_ECDSA_521;
 #endif /* PR_USE_OPENSSL_ECC */
 
 #if defined(PR_USE_SODIUM)
-  } else if (strncmp(pubkey_algo, "ssh-ed25519", 12) == 0) {
+  } else if (strcmp(pubkey_algo, "ssh-ed25519") == 0) {
     pubkey_type = SFTP_KEY_ED25519;
 #endif /* PR_USE_SODIUM */
+
+#if defined(HAVE_X448_OPENSSL)
+  } else if (strcmp(pubkey_algo, "ssh-ed448") == 0) {
+    pubkey_type = SFTP_KEY_ED448;
+#endif /* HAVE_X448_OPENSSL */
 
   /* XXX This is where we would add support for X509 public keys, e.g.:
    *
    *  x509v3-ssh-dss
    *  x509v3-ssh-rsa
    *  x509v3-sign (older)
-   *
    */
 
   } else {
@@ -411,29 +414,33 @@ int sftp_auth_publickey(struct ssh2_packet *pkt, cmd_rec *pass_cmd,
     return 0;
   }
 
-  /* Check the key fingerprint against any previously used keys, to see if the
-   * same key is being reused.
-   */
-  for (i = 0; i < publickey_fps->nelts; i++) {
-    char *fpi;
+  if (fp != NULL) {
+    register unsigned int i;
 
-    fpi = ((char **) publickey_fps->elts)[i];
-    if (strcmp(fp, fpi) == 0) {
-      (void) pr_log_writefile(sftp_logfd, MOD_SFTP_VERSION,
-        "publickey request reused previously verified publickey "
-        "(fingerprint %s), rejecting", fp);
+    /* Check the key fingerprint against any previously used keys, to see if the
+     * same key is being reused.
+     */
+    for (i = 0; i < publickey_fps->nelts; i++) {
+      char *fpi;
 
-      pr_log_auth(PR_LOG_NOTICE, "USER %s (Login failed): public key request "
-       "reused previously verified public key (fingerprint %s)", user, fp);
+      fpi = ((char **) publickey_fps->elts)[i];
+      if (strcmp(fp, fpi) == 0) {
+        (void) pr_log_writefile(sftp_logfd, MOD_SFTP_VERSION,
+          "publickey request reused previously verified publickey "
+          "(fingerprint %s), rejecting", fp);
 
-      *send_userauth_fail = TRUE;
-      errno = EACCES;
-      return 0;
+        pr_log_auth(PR_LOG_NOTICE, "USER %s (Login failed): public key request "
+         "reused previously verified public key (fingerprint %s)", user, fp);
+
+        *send_userauth_fail = TRUE;
+        errno = EACCES;
+        return 0;
+      }
     }
-  }
 
-  /* Store the fingerprint for future checking. */
-  *((char **) push_array(publickey_fps)) = pstrdup(sftp_pool, fp);
+    /* Store the fingerprint for future checking. */
+    *((char **) push_array(publickey_fps)) = pstrdup(sftp_pool, fp);
+  }
 
   return 1;
 }

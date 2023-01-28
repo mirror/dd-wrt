@@ -88,6 +88,7 @@ sub groupowner_ok {
 
     AuthUserFile => $auth_user_file,
     AuthGroupFile => $auth_group_file,
+    AuthOrder => 'mod_auth_file.c',
 
     Directory => {
       '~' => {
@@ -210,6 +211,7 @@ sub groupowner_failed_norootprivs {
 
     AuthUserFile => $auth_user_file,
     AuthGroupFile => $auth_group_file,
+    AuthOrder => 'mod_auth_file.c',
 
     Directory => {
       '~' => {
@@ -359,6 +361,7 @@ sub groupowner_ok_suppl_group_norootprivs {
 
     AuthUserFile => $auth_user_file,
     AuthGroupFile => $auth_group_file,
+    AuthOrder => 'mod_auth_file.c',
 
     RootLogin => $root_login,
 

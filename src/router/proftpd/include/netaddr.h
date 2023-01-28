@@ -1,6 +1,6 @@
 /*
  * ProFTPD - FTP server daemon
- * Copyright (c) 2003-2017 The ProFTPD Project team
+ * Copyright (c) 2003-2021 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -276,6 +276,7 @@ const pr_netaddr_t *pr_netaddr_get_addr2(pool *, const char *, array_header **,
   unsigned int);
 #define PR_NETADDR_GET_ADDR_FL_INCL_DEVICE	0x001
 #define PR_NETADDR_GET_ADDR_FL_EXCL_DNS		0x002
+#define PR_NETADDR_GET_ADDR_FL_EXCL_CACHE	0x004
 
 /* Compare the two given pr_netaddr_ts.  In order for the comparison to
  * be accurate, the pr_netaddr_ts must be of the same family (AF_INET or

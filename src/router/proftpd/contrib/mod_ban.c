@@ -1,6 +1,6 @@
 /*
  * ProFTPD: mod_ban -- a module implementing ban lists using the Controls API
- * Copyright (c) 2004-2020 TJ Saunders
+ * Copyright (c) 2004-2022 TJ Saunders
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -99,6 +99,7 @@ struct ban_entry {
 #define BAN_TYPE_CLASS		1
 #define BAN_TYPE_HOST		2
 #define BAN_TYPE_USER		3
+#define BAN_TYPE_USER_HOST	4
 
 struct ban_list {
   struct ban_entry bl_entries[BAN_LIST_MAXSZ + BAN_LIST_HEADROOMSZ];
@@ -118,25 +119,26 @@ struct ban_event_entry {
   unsigned int bee_sid;
 };
 
-#define BAN_EV_TYPE_ANON_REJECT_PASSWORDS	1
-#define BAN_EV_TYPE_MAX_CLIENTS_PER_CLASS	2
-#define BAN_EV_TYPE_MAX_CLIENTS_PER_HOST	3
-#define BAN_EV_TYPE_MAX_CLIENTS_PER_USER	4
-#define BAN_EV_TYPE_MAX_HOSTS_PER_USER		5
-#define BAN_EV_TYPE_MAX_LOGIN_ATTEMPTS		6
-#define BAN_EV_TYPE_TIMEOUT_IDLE		7
-#define BAN_EV_TYPE_TIMEOUT_NO_TRANSFER		8
-#define BAN_EV_TYPE_MAX_CONN_PER_HOST		9
-#define BAN_EV_TYPE_CLIENT_CONNECT_RATE		10
-#define BAN_EV_TYPE_TIMEOUT_LOGIN		11
-#define BAN_EV_TYPE_LOGIN_RATE			12
-#define BAN_EV_TYPE_MAX_CMD_RATE		13
-#define BAN_EV_TYPE_UNHANDLED_CMD		14
-#define BAN_EV_TYPE_TLS_HANDSHAKE		15
-#define BAN_EV_TYPE_ROOT_LOGIN			16
-#define BAN_EV_TYPE_USER_DEFINED		17
-#define BAN_EV_TYPE_BAD_PROTOCOL		18
-#define BAN_EV_TYPE_EMPTY_PASSWORD		19
+#define BAN_EV_TYPE_ANON_REJECT_PASSWORDS		1
+#define BAN_EV_TYPE_MAX_CLIENTS_PER_CLASS		2
+#define BAN_EV_TYPE_MAX_CLIENTS_PER_HOST		3
+#define BAN_EV_TYPE_MAX_CLIENTS_PER_USER		4
+#define BAN_EV_TYPE_MAX_HOSTS_PER_USER			5
+#define BAN_EV_TYPE_MAX_LOGIN_ATTEMPTS			6
+#define BAN_EV_TYPE_TIMEOUT_IDLE			7
+#define BAN_EV_TYPE_TIMEOUT_NO_TRANSFER			8
+#define BAN_EV_TYPE_MAX_CONN_PER_HOST			9
+#define BAN_EV_TYPE_CLIENT_CONNECT_RATE			10
+#define BAN_EV_TYPE_TIMEOUT_LOGIN			11
+#define BAN_EV_TYPE_LOGIN_RATE				12
+#define BAN_EV_TYPE_MAX_CMD_RATE			13
+#define BAN_EV_TYPE_UNHANDLED_CMD			14
+#define BAN_EV_TYPE_TLS_HANDSHAKE			15
+#define BAN_EV_TYPE_ROOT_LOGIN				16
+#define BAN_EV_TYPE_USER_DEFINED			17
+#define BAN_EV_TYPE_BAD_PROTOCOL			18
+#define BAN_EV_TYPE_EMPTY_PASSWORD			19
+#define BAN_EV_TYPE_MAX_LOGIN_ATTEMPTS_FROM_USER	20
 
 struct ban_event_list {
   struct ban_event_entry bel_entries[BAN_EVENT_LIST_MAXSZ + BAN_LIST_HEADROOMSZ];
@@ -229,9 +231,10 @@ struct ban_cache_entry {
 #define BAN_CACHE_JSON_KEY_EXPIRES_TS	"expires_ts"
 #define BAN_CACHE_JSON_KEY_SERVER_ID	"server_id"
 
-#define BAN_CACHE_JSON_TYPE_USER_TEXT	"user ban"
-#define BAN_CACHE_JSON_TYPE_HOST_TEXT	"host ban"
-#define BAN_CACHE_JSON_TYPE_CLASS_TEXT	"class ban"
+#define BAN_CACHE_JSON_TYPE_USER_TEXT		"user ban"
+#define BAN_CACHE_JSON_TYPE_USER_HOST_TEXT	"user@host ban"
+#define BAN_CACHE_JSON_TYPE_HOST_TEXT		"host ban"
+#define BAN_CACHE_JSON_TYPE_CLASS_TEXT		"class ban"
 
 /* BanOptions flags */
 static unsigned long ban_opts = 0UL;
@@ -256,6 +259,7 @@ static void ban_maxcmdrate_ev(const void *, void *);
 static void ban_maxconnperhost_ev(const void *, void *);
 static void ban_maxhostsperuser_ev(const void *, void *);
 static void ban_maxloginattempts_ev(const void *, void *);
+static void ban_maxloginattemptsfromuser_ev(const void *, void *);
 static void ban_rootlogin_ev(const void *, void *);
 static void ban_timeoutidle_ev(const void *, void *);
 static void ban_timeoutlogin_ev(const void *, void *);
@@ -529,6 +533,9 @@ static int ban_cache_entry_decode_json(pool *p, void *value, size_t valuesz,
   if (strcmp(text, BAN_CACHE_JSON_TYPE_USER_TEXT) == 0) {
     bce->be_type = BAN_TYPE_USER;
 
+  } else if (strcmp(text, BAN_CACHE_JSON_TYPE_USER_HOST_TEXT) == 0) {
+    bce->be_type = BAN_TYPE_USER_HOST;
+
   } else if (strcmp(text, BAN_CACHE_JSON_TYPE_HOST_TEXT) == 0) {
     bce->be_type = BAN_TYPE_HOST;
 
@@ -702,6 +709,10 @@ static int ban_cache_entry_encode_json(pool *p, void **value, size_t *valuesz,
   switch (bce->be_type) {
     case BAN_TYPE_USER:
       ban_type = BAN_CACHE_JSON_TYPE_USER_TEXT;
+      break;
+
+    case BAN_TYPE_USER_HOST:
+      ban_type = BAN_CACHE_JSON_TYPE_USER_HOST_TEXT;
       break;
 
     case BAN_TYPE_HOST:
@@ -948,6 +959,62 @@ static int ban_lock_shm(int flags) {
 
   return 0;
 #endif /* HAVE_FLOCK */
+}
+
+static const char *ban_get_type_desc(int ban_type) {
+  const char *desc = NULL;
+
+  switch (ban_type) {
+    case BAN_TYPE_CLASS:
+      desc = "CLASS:";
+      break;
+
+    case BAN_TYPE_HOST:
+      desc = "HOST:";
+      break;
+
+    case BAN_TYPE_USER:
+      desc = "USER:";
+      break;
+
+    case BAN_TYPE_USER_HOST:
+      desc = "USER@HOST:";
+      break;
+
+    default:
+      desc = "UNKNOWN:";
+      break;
+  }
+
+  return desc;
+}
+
+static const char *ban_get_type_text(int ban_type) {
+  const char *text = NULL;
+
+  switch (ban_type) {
+    case BAN_TYPE_CLASS:
+      text = "class";
+      break;
+
+    case BAN_TYPE_HOST:
+      text = "host";
+      break;
+
+    case BAN_TYPE_USER:
+      text = "user";
+      break;
+
+    case BAN_TYPE_USER_HOST:
+      text = "user@host";
+      break;
+
+    default:
+      text = "unknown/unsupported";
+      break;
+  }
+
+  return text;
 }
 
 static int ban_disconnect_class(const char *class) {
@@ -1243,6 +1310,12 @@ static int ban_list_add(pool *p, unsigned int type, unsigned int sid,
           ban_disconnect_user(name);
           break;
 
+        case BAN_TYPE_USER_HOST:
+          pr_event_generate("mod_ban.ban-user@host",
+            ban_lists->bans.bl_entries[ban_lists->bans.bl_next_slot].be_name);
+          ban_disconnect_user(name);
+          break;
+
         case BAN_TYPE_HOST:
           pr_event_generate("mod_ban.ban-host",
             ban_lists->bans.bl_entries[ban_lists->bans.bl_next_slot].be_name);
@@ -1473,6 +1546,11 @@ static int ban_list_remove(pool *p, unsigned int type, unsigned int sid,
               ban_lists->bans.bl_entries[i].be_name);
             break;
 
+          case BAN_TYPE_USER_HOST:
+            pr_event_generate("mod_ban.permit-user@host",
+              ban_lists->bans.bl_entries[i].be_name);
+            break;
+
           case BAN_TYPE_HOST:
             pr_event_generate("mod_ban.permit-host",
               ban_lists->bans.bl_entries[i].be_name);
@@ -1540,14 +1618,11 @@ static void ban_list_expire(void) {
 
       (void) pr_log_writefile(ban_logfd, MOD_BAN_VERSION,
         "ban for %s '%s' has expired (%lu seconds ago)",
-        ban_type == BAN_TYPE_USER ? "user" : 
-          ban_type == BAN_TYPE_HOST ? "host" : "class", ban_name,
+        ban_get_type_text(ban_type), ban_name,
         (unsigned long) now - ban_lists->bans.bl_entries[i].be_expires);
 
       tmp_pool = make_sub_pool(ban_pool ? ban_pool : session.pool);
-      ban_desc = pstrcat(tmp_pool,
-        ban_type == BAN_TYPE_USER ? "USER:" :
-          ban_type == BAN_TYPE_HOST ? "HOST:" : "CLASS:", ban_name, NULL);
+      ban_desc = pstrcat(tmp_pool, ban_get_type_desc(ban_type), ban_name, NULL);
       pr_event_generate("mod_ban.ban.expired", ban_desc);
 
       ban_list_remove(tmp_pool, ban_type, 0, ban_name);
@@ -1581,6 +1656,9 @@ static const char *ban_event_entry_typestr(unsigned int type) {
 
     case BAN_EV_TYPE_MAX_LOGIN_ATTEMPTS:
       return "MaxLoginAttempts";
+
+    case BAN_EV_TYPE_MAX_LOGIN_ATTEMPTS_FROM_USER:
+      return "MaxLoginAttemptsFromUser";
 
     case BAN_EV_TYPE_TIMEOUT_IDLE:
       return "TimeoutIdle";
@@ -1889,6 +1967,44 @@ static int ban_handle_info(pr_ctrls_t *ctrl, int reqargc, char **reqargv) {
     }
 
     for (i = 0; i < BAN_LIST_MAXSZ; i++) {
+      if (ban_lists->bans.bl_entries[i].be_type == BAN_TYPE_USER_HOST) {
+        if (have_user == FALSE) {
+          pr_ctrls_add_response(ctrl, "Banned User@Hosts:");
+          have_user = TRUE;
+        }
+
+        pr_ctrls_add_response(ctrl, "  %s",
+          ban_lists->bans.bl_entries[i].be_name);
+
+        if (verbose) {
+          server_rec *s;
+
+          pr_ctrls_add_response(ctrl, "    Reason: %s",
+            ban_lists->bans.bl_entries[i].be_reason);
+
+          if (ban_lists->bans.bl_entries[i].be_expires) {
+            time_t now = time(NULL);
+            time_t then = ban_lists->bans.bl_entries[i].be_expires;
+
+            pr_ctrls_add_response(ctrl, "    Expires: %s (in %lu seconds)",
+              pr_strtime3(ctrl->ctrls_tmp_pool, then, FALSE),
+              (unsigned long) (then - now));
+
+          } else {
+            pr_ctrls_add_response(ctrl, "    Expires: never");
+          }
+
+          s = ban_get_server_by_id(ban_lists->bans.bl_entries[i].be_sid);
+          if (s != NULL) {
+            pr_ctrls_add_response(ctrl, "    <VirtualHost>: %s (%s#%u)",
+              s->ServerName, pr_netaddr_get_ipstr(s->addr),
+              s->ServerPort);
+          }
+        }
+      }
+    }
+
+    for (i = 0; i < BAN_LIST_MAXSZ; i++) {
       if (ban_lists->bans.bl_entries[i].be_type == BAN_TYPE_HOST) {
         if (have_host == FALSE) {
           if (have_user == TRUE) {
@@ -1998,6 +2114,7 @@ static int ban_handle_info(pr_ctrls_t *ctrl, int reqargc, char **reqargv) {
           case BAN_EV_TYPE_MAX_CLIENTS_PER_USER:
           case BAN_EV_TYPE_MAX_HOSTS_PER_USER:
           case BAN_EV_TYPE_MAX_LOGIN_ATTEMPTS:
+          case BAN_EV_TYPE_MAX_LOGIN_ATTEMPTS_FROM_USER:
           case BAN_EV_TYPE_TIMEOUT_IDLE:
           case BAN_EV_TYPE_TIMEOUT_LOGIN:
           case BAN_EV_TYPE_TIMEOUT_NO_TRANSFER:
@@ -2171,6 +2288,51 @@ static int ban_handle_ban(pr_ctrls_t *ctrl, int reqargc,
 
       } else {
         pr_ctrls_add_response(ctrl, "user %s already banned", reqargv[i]);
+      }
+    }
+
+    ban_lock_shm(LOCK_UN);
+
+  /* Handle 'ban user@host' requests */
+  } else if (strcmp(reqargv[0], "user@host") == 0) {
+
+    if (reqargc < 2) {
+      pr_ctrls_add_response(ctrl, "missing parameters");
+      return -1;
+    }
+
+    if (ban_lock_shm(LOCK_EX) < 0) {
+      pr_ctrls_add_response(ctrl, "error locking shm: %s", strerror(errno));
+      return -1;
+    }
+
+    /* Add each given user/host to the list */
+    for (i = optind; i < reqargc; i++) {
+
+      /* Check for duplicates. */
+      if (ban_list_exists(ctrl->ctrls_tmp_pool, BAN_TYPE_USER_HOST, sid,
+          reqargv[i], NULL) < 0) {
+
+        if (ban_lists->bans.bl_listlen < BAN_LIST_MAXSZ) {
+          const char *reason;
+
+          reason = pstrcat(ctrl->ctrls_tmp_pool, "requested by '",
+            ctrl->ctrls_cl->cl_user, "' on ",
+            pr_strtime3(ctrl->ctrls_tmp_pool, time(NULL), FALSE), NULL);
+
+          ban_list_add(ctrl->ctrls_tmp_pool, BAN_TYPE_USER_HOST, sid,
+            reqargv[i], reason, 0, NULL);
+          (void) pr_log_writefile(ban_logfd, MOD_BAN_VERSION,
+            "added '%s' to banned user@hosts list", reqargv[i]);
+          pr_ctrls_add_response(ctrl, "user@host %s banned", reqargv[i]);
+
+        } else {
+          pr_ctrls_add_response(ctrl, "maximum list size reached, unable to "
+            "ban user@host '%s'", reqargv[i]);
+        }
+
+      } else {
+        pr_ctrls_add_response(ctrl, "user@host %s already banned", reqargv[i]);
       }
     }
 
@@ -2415,6 +2577,56 @@ static int ban_handle_permit(pr_ctrls_t *ctrl, int reqargc,
 
     ban_lock_shm(LOCK_UN);
 
+  /* Handle 'permit user@host' requests */
+  } else if (strcmp(reqargv[0], "user@host") == 0) {
+
+    if (ban_lists->bans.bl_listlen == 0) {
+      pr_ctrls_add_response(ctrl, "permit request unnecessary");
+      pr_ctrls_add_response(ctrl, "no user@hosts are banned");
+      return 0;
+    }
+
+    if (ban_lock_shm(LOCK_EX) < 0) {
+      pr_ctrls_add_response(ctrl, "error locking shm: %s", strerror(errno));
+      return -1;
+    }
+
+    if (strcmp(reqargv[optind], "*") == 0) {
+
+      /* Clear the list by permitting all user@hosts. */
+      ban_list_remove(ctrl->ctrls_tmp_pool, BAN_TYPE_USER_HOST, sid, NULL);
+      pr_ctrls_add_response(ctrl, "all user@hosts permitted");
+
+    } else {
+      server_rec *s = NULL;
+
+      if (sid != 0) {
+        s = ban_get_server_by_id(sid);
+      }
+
+      /* Permit each given user@host. */
+      for (i = optind; i < reqargc; i++) {
+        if (ban_list_remove(ctrl->ctrls_tmp_pool, BAN_TYPE_USER_HOST, sid,
+            reqargv[i]) == 0) {
+          (void) pr_log_writefile(ban_logfd, MOD_BAN_VERSION,
+            "removed '%s' from ban list", reqargv[i]);
+          pr_ctrls_add_response(ctrl, "user@host '%s' permitted", reqargv[i]);
+
+        } else {
+          if (s == NULL) {
+            pr_ctrls_add_response(ctrl, "user@host '%s' not banned",
+              reqargv[i]);
+
+          } else {
+            pr_ctrls_add_response(ctrl, "user@host '%s' not banned on %s#%u",
+              reqargv[i], pr_netaddr_get_ipstr(s->addr), s->ServerPort);
+          }
+        }
+      }
+    }
+
+    ban_lock_shm(LOCK_UN);
+
   /* Handle 'permit host' requests */
   } else if (strcmp(reqargv[0], "host") == 0) {
 
@@ -2535,7 +2747,7 @@ static int ban_handle_permit(pr_ctrls_t *ctrl, int reqargc,
  */
 
 MODRET ban_pre_pass(cmd_rec *cmd) {
-  const char *user;
+  const char *user, *userhost;
   char *rule_message = NULL;
 
   if (ban_engine != TRUE) {
@@ -2555,6 +2767,17 @@ MODRET ban_pre_pass(cmd_rec *cmd) {
       &rule_message) == 0) {
     pr_log_pri(PR_LOG_NOTICE, MOD_BAN_VERSION
       ": Login denied: user '%s' banned", user);
+    ban_send_message(cmd->tmp_pool, user, rule_message);
+    return PR_ERROR_MSG(cmd, R_530, _("Login incorrect."));
+  }
+
+  /* Check banned user@host list */
+  userhost = pstrcat(cmd->tmp_pool, user, "@",
+    pr_netaddr_get_ipstr(pr_netaddr_get_sess_remote_addr()), NULL);
+  if (ban_list_exists(cmd->tmp_pool, BAN_TYPE_USER_HOST, main_server->sid,
+     userhost, &rule_message) == 0) {
+    pr_log_pri(PR_LOG_NOTICE, MOD_BAN_VERSION
+      ": Login denied: user@host '%s' banned", userhost);
     ban_send_message(cmd->tmp_pool, user, rule_message);
     return PR_ERROR_MSG(cmd, R_530, _("Login incorrect."));
   }
@@ -2729,7 +2952,7 @@ MODRET set_banengine(cmd_rec *cmd) {
 /* usage: BanLog path|"none" */
 MODRET set_banlog(cmd_rec *cmd) {
   CHECK_ARGS(cmd, 1);
-  CHECK_CONF(cmd, CONF_ROOT);
+  CHECK_CONF(cmd, CONF_ROOT|CONF_GLOBAL);
 
   if (strcasecmp(cmd->argv[1], "none") != 0 &&
       pr_fs_valid_path(cmd->argv[1]) < 0) {
@@ -2743,7 +2966,7 @@ MODRET set_banlog(cmd_rec *cmd) {
 /* usage: BanMessage message */
 MODRET set_banmessage(cmd_rec *cmd) {
   CHECK_ARGS(cmd, 1);
-  CHECK_CONF(cmd, CONF_ROOT);
+  CHECK_CONF(cmd, CONF_ROOT|CONF_GLOBAL);
 
   ban_message = pstrdup(ban_pool, cmd->argv[1]);
   return PR_HANDLED(cmd);
@@ -2756,7 +2979,7 @@ MODRET set_banonevent(cmd_rec *cmd) {
   char *tmp;
 
   CHECK_ARGS(cmd, 3);
-  CHECK_CONF(cmd, CONF_ROOT);
+  CHECK_CONF(cmd, CONF_ROOT|CONF_GLOBAL);
 
   bee = pcalloc(ban_pool, sizeof(struct ban_event_entry));
 
@@ -2867,6 +3090,11 @@ MODRET set_banonevent(cmd_rec *cmd) {
     bee->bee_type = BAN_EV_TYPE_MAX_LOGIN_ATTEMPTS;
     pr_event_register(&ban_module, "mod_auth.max-login-attempts",
       ban_maxloginattempts_ev, bee);
+
+  } else if (strcasecmp(cmd->argv[1], "MaxLoginAttemptsFromUser") == 0) {
+    bee->bee_type = BAN_EV_TYPE_MAX_LOGIN_ATTEMPTS_FROM_USER;
+    pr_event_register(&ban_module, "mod_auth.max-login-attempts",
+      ban_maxloginattemptsfromuser_ev, bee);
 
   } else if (strcasecmp(cmd->argv[1], "RootLogin") == 0) {
     bee->bee_type = BAN_EV_TYPE_ROOT_LOGIN;
@@ -3042,7 +3270,7 @@ static void ban_handle_event(unsigned int ev_type, int ban_type,
 
   bee = ban_event_list_get(ev_type, main_server->sid, src);
 
-  if (!bee &&
+  if (bee == NULL &&
       tmpl->bee_count_max > 0) {
     /* Add a new entry. */
     if (ban_event_list_add(ev_type, main_server->sid, src, tmpl->bee_count_max,
@@ -3058,7 +3286,7 @@ static void ban_handle_event(unsigned int ev_type, int ban_type,
     bee = ban_event_list_get(ev_type, main_server->sid, src);
   }
 
-  if (bee) {
+  if (bee != NULL) {
     /* Update the entry. */
     if (bee->bee_count_curr < bee->bee_count_max) {
       bee->bee_count_curr++;
@@ -3094,15 +3322,12 @@ static void ban_handle_event(unsigned int ev_type, int ban_type,
             tmpl->bee_expires, tmpl->bee_message) < 0) {
           (void) pr_log_writefile(ban_logfd, MOD_BAN_VERSION,
             "error adding %s-triggered autoban for %s '%s': %s", event,
-            ban_type == BAN_TYPE_USER ? "user" :
-              ban_type == BAN_TYPE_HOST ? "host" : "class", src,
-            strerror(errno));
+            ban_get_type_text(ban_type), src, strerror(errno));
 
         } else {
           (void) pr_log_writefile(ban_logfd, MOD_BAN_VERSION,
             "added %s-triggered autoban for %s '%s'", event,
-              ban_type == BAN_TYPE_USER ? "user" :
-                ban_type == BAN_TYPE_HOST ? "host" : "class", src);
+            ban_get_type_text(ban_type), src);
         }
 
         end_session = TRUE;
@@ -3118,6 +3343,7 @@ static void ban_handle_event(unsigned int ev_type, int ban_type,
   ban_lock_shm(LOCK_UN);
 
   if (end_session) {
+    const char *user = "(none)";
     char *ban_desc;
 
     (void) pr_log_writefile(ban_logfd, MOD_BAN_VERSION,
@@ -3128,18 +3354,27 @@ static void ban_handle_event(unsigned int ev_type, int ban_type,
     /* Generate a specific event for listeners who want to know when mod_ban
      * disconnects a client, and why.
      */
-    ban_desc = pstrcat(tmp_pool,
-      ban_type == BAN_TYPE_USER ? "USER:" :
-        ban_type == BAN_TYPE_HOST ? "HOST:" : "CLASS:", event, NULL);
+    ban_desc = pstrcat(tmp_pool, ban_get_type_desc(ban_type), event, NULL);
     pr_event_generate("mod_ban.ban.client-disconnected", ban_desc);
 
-    ban_send_message(tmp_pool,
-      ban_type == BAN_TYPE_USER ? src : "(none)", NULL);
+    if (ban_type == BAN_TYPE_USER) {
+      user = src;
+
+    } else if (ban_type == BAN_TYPE_USER_HOST) {
+      char *ptr;
+
+      user = pstrdup(tmp_pool, src);
+      ptr = strchr(user, '@');
+      if (ptr != NULL) {
+        *ptr = '\0';
+      }
+    }
+
+    ban_send_message(tmp_pool, user, NULL);
     pr_session_disconnect(&ban_module, PR_SESS_DISCONNECT_BANNED, NULL);
   }
 
   destroy_pool(tmp_pool);
-  return;
 }
 
 static void ban_anonrejectpasswords_ev(const void *event_data,
@@ -3163,8 +3398,8 @@ static void ban_anonrejectpasswords_ev(const void *event_data,
 
 static void ban_badprotocol_ev(const void *event_data, void *user_data) {
 
-  /* For this event, event_data is the client. */
-  conn_t *c = (conn_t *) event_data;
+  /* For this event, event_data is the bad command in question. */
+  conn_t *c = session.c;
   const char *ipstr;
 
   /* user_data is a template of the ban event entry. */
@@ -3326,6 +3561,35 @@ static void ban_maxloginattempts_ev(const void *event_data, void *user_data) {
     tmpl);
 }
 
+static void ban_maxloginattemptsfromuser_ev(const void *event_data,
+    void *user_data) {
+  const char *ipstr, *user, *userhost;
+  pool *tmp_pool;
+
+  /* For this event, event_data is the client. */
+  conn_t *c = (conn_t *) event_data;
+
+  /* user_data is a template of the ban event entry. */
+  struct ban_event_entry *tmpl = user_data;
+
+  if (ban_engine != TRUE) {
+    return;
+  }
+
+  user = pr_table_get(session.notes, "mod_auth.orig-user", NULL);
+  if (user == NULL) {
+    return;
+  }
+
+  tmp_pool = make_sub_pool(session.pool);
+
+  ipstr = pr_netaddr_get_ipstr(c->remote_addr);
+  userhost = pstrcat(tmp_pool, user, "@", ipstr, NULL);
+  ban_handle_event(BAN_EV_TYPE_MAX_LOGIN_ATTEMPTS_FROM_USER, BAN_TYPE_USER_HOST,
+    userhost, tmpl);
+  destroy_pool(tmp_pool);
+}
+
 #if defined(PR_SHARED_MODULE)
 static void ban_mod_unload_ev(const void *event_data, void *user_data) {
   if (strcmp("mod_ban.c", (const char *) event_data) == 0) {
@@ -3372,8 +3636,8 @@ static void ban_postparse_ev(const void *event_data, void *user_data) {
   }
 
   /* Open the BanLog. */
-  if (ban_log &&
-      strncasecmp(ban_log, "none", 5) != 0) {
+  if (ban_log != NULL &&
+      strcasecmp(ban_log, "none") != 0) {
     int res;
 
     PRIVS_ROOT

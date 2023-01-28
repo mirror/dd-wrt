@@ -89,6 +89,7 @@ sub umask_new_dir_mode {
 
     AuthUserFile => $auth_user_file,
     AuthGroupFile => $auth_group_file,
+    AuthOrder => 'mod_auth_file.c',
 
     Umask => '022 000',
 
@@ -229,6 +230,7 @@ sub umask_new_dir_mode_subdir {
 
     AuthUserFile => $auth_user_file,
     AuthGroupFile => $auth_group_file,
+    AuthOrder => 'mod_auth_file.c',
 
     Umask => '022',
 
@@ -383,6 +385,7 @@ sub umask_new_dir_mode_subdir_userowner_groupowner {
 
     AuthUserFile => $auth_user_file,
     AuthGroupFile => $auth_group_file,
+    AuthOrder => 'mod_auth_file.c',
 
     Umask => '022',
 

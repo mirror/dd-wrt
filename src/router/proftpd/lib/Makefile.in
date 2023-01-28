@@ -22,21 +22,21 @@ Makefile: Makefile.in ../config.status
 	cd ../ && ./config.status
 
 .c.o:
-	$(LIBTOOL) --mode=compile --tag=CC $(CC) $(CPPFLAGS) $(CFLAGS) -c $<
+	$(LIBTOOL) --mode=compile --tag=CC $(CC) $(CPPFLAGS) $(CFLAGS) -static -c $<
 
 libltdl: dummy
 	cd libltdl/ && $(MAKE)
 
-libsupp.a: $(LIB_OBJS)
-	$(AR) rc libsupp.a $(LIB_OBJS) $(LTOPLUGIN)
-	$(RANLIB) libsupp.a $(LTOPLUGIN)
+prbase.a: $(LIB_OBJS)
+	$(AR) rc prbase.a $(LIB_OBJS) $(LTOPLUGIN)
+	$(RANLIB) prbase.a $(LTOPLUGIN)
 
-lib: libsupp.a $(LIB_DEPS)
+lib: prbase.a $(LIB_DEPS)
 
 install:
 
 clean:
-	$(RM) *.o libsupp.a
+	$(RM) *.o *.gcda *.gcno prbase.a
 	$(LIBTOOL) --mode=clean $(RM) `echo $(LIB_OBJS) | sed 's/\.o$\/.lo/g'`
 	test -z $(LIB_DEPS) || (cd libltdl/ && $(MAKE) clean)
 

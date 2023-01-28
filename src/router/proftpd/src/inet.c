@@ -2,7 +2,7 @@
  * ProFTPD - FTP server daemon
  * Copyright (c) 1997, 1998 Public Flood Software
  * Copyright (c) 1999, 2000 MacGyver aka Habeeb J. Dihu <macgyver@tos.net>
- * Copyright (c) 2001-2021 The ProFTPD Project team
+ * Copyright (c) 2001-2022 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -74,6 +74,13 @@ int pr_inet_set_default_family(pool *p, int family) {
 int pr_inet_getservport(pool *p, const char *serv, const char *proto) {
   struct servent *servent;
 
+  (void) p;
+
+  if (serv == NULL) {
+    errno = EINVAL;
+    return -1;
+  }
+
   servent = getservbyname(serv, proto);
   if (servent == NULL) {
     return -1;
@@ -105,17 +112,17 @@ static void conn_cleanup_cb(void *cv) {
   c->instrm = c->outstrm = NULL;
 
   if (c->listen_fd != -1) {
-    close(c->listen_fd);
+    (void) close(c->listen_fd);
     c->listen_fd = -1;
   }
 
   if (c->rfd != -1) {
-    close(c->rfd);
+    (void) close(c->rfd);
     c->rfd = -1;
   }
 
   if (c->wfd != -1) {
-    close(c->wfd);
+    (void) close(c->wfd);
     c->wfd = -1;
   }
 }
@@ -257,7 +264,8 @@ static conn_t *init_conn(pool *p, int fd, const pr_netaddr_t *bind_addr,
 #if defined(SOLARIS2) || defined(FREEBSD2) || defined(FREEBSD3) || \
     defined(FREEBSD4) || defined(FREEBSD5) || defined(FREEBSD6) || \
     defined(FREEBSD7) || defined(FREEBSD8) || defined(FREEBSD9) || \
-    defined(FREEBSD10) || defined(FREEBSD11) || \
+    defined(FREEBSD10) || defined(FREEBSD11) || defined(FREEBSD12) || \
+    defined(FREEBSD13) || \
     defined(__OpenBSD__) || defined(__NetBSD__) || \
     defined(DARWIN6) || defined(DARWIN7) || defined(DARWIN8) || \
     defined(DARWIN9) || defined(DARWIN10) || defined(DARWIN11) || \
@@ -284,7 +292,8 @@ static conn_t *init_conn(pool *p, int fd, const pr_netaddr_t *bind_addr,
 #if defined(SOLARIS2) || defined(FREEBSD2) || defined(FREEBSD3) || \
     defined(FREEBSD4) || defined(FREEBSD5) || defined(FREEBSD6) || \
     defined(FREEBSD7) || defined(FREEBSD8) || defined(FREEBSD9) || \
-    defined(FREEBSD10) || defined(FREEBSD11) || \
+    defined(FREEBSD10) || defined(FREEBSD11) || defined(FREEBSD12) || \
+    defined(FREEBSD13) || \
     defined(__OpenBSD__) || defined(__NetBSD__) || \
     defined(DARWIN6) || defined(DARWIN7) || defined(DARWIN8) || \
     defined(DARWIN9) || defined(DARWIN10) || defined(DARWIN11) || \
@@ -324,6 +333,22 @@ static conn_t *init_conn(pool *p, int fd, const pr_netaddr_t *bind_addr,
         strerror(errno));
     }
 
+    /* Allow port reuse, if requested. */
+    if (main_server != NULL &&
+        main_server->tcp_reuse_port != -1) {
+      res = pr_inet_set_reuse_port(p, c, main_server->tcp_reuse_port);
+      if (res < 0) {
+        pr_trace_msg(trace_channel, 8,
+          "error setting socket fd %d reuseport = %d: %s", fd,
+          main_server->tcp_reuse_port,
+        strerror(errno));
+
+      } else {
+        pr_trace_msg(trace_channel, 8, "set socket fd %d reuseport = %d",
+          fd, main_server->tcp_reuse_port);
+      }
+    }
+
     /* Allow socket keepalive messages by default.  However, if
      * "SocketOptions keepalive off" is in effect, then explicitly
      * disable keepalives.
@@ -359,17 +384,9 @@ static conn_t *init_conn(pool *p, int fd, const pr_netaddr_t *bind_addr,
 #endif /* IP_FREEBIND */
 
     memset(&na, 0, sizeof(na));
-    if (pr_netaddr_set_family(&na, addr_family) < 0) {
-      int xerrno = errno;
+    pr_netaddr_set_family(&na, addr_family);
 
-      destroy_pool(c->pool);
-      (void) close(fd);
-
-      errno = xerrno;
-      return NULL;
-    }
-
-    if (bind_addr) {
+    if (bind_addr != NULL) {
       pr_netaddr_set_sockaddr(&na, pr_netaddr_get_sockaddr(bind_addr));
 
     } else {
@@ -610,6 +627,8 @@ conn_t *pr_inet_create_conn_portrange(pool *p, const pr_netaddr_t *bind_addr,
 
   for (attempt = 3; attempt > 0 && !c; attempt--) {
     for (i = range_len - 1; i >= 0 && !c; i--) {
+      pr_signals_handle();
+
       /* If this is the first attempt through the range, randomize
        * the order of the port numbers used.
        */
@@ -666,7 +685,6 @@ void pr_inet_close(pool *p, conn_t *c) {
 
   if (c->pool != NULL) {
     destroy_pool(c->pool);
-    c->pool = NULL;
   }
 }
 
@@ -678,7 +696,7 @@ void pr_inet_lingering_close(pool *p, conn_t *c, long linger) {
 
   (void) pr_inet_set_block(p, c);
 
-  if (c->outstrm) {
+  if (c->outstrm != NULL) {
     pr_netio_lingering_close(c->outstrm, linger);
   }
 
@@ -703,7 +721,7 @@ void pr_inet_lingering_abort(pool *p, conn_t *c, long linger) {
 
   (void) pr_inet_set_block(p, c);
 
-  if (c->instrm) {
+  if (c->instrm != NULL) {
     pr_netio_lingering_abort(c->instrm, linger);
   }
 
@@ -925,6 +943,118 @@ int pr_inet_set_proto_opts(pool *p, conn_t *c, int mss, int nodelay,
   return 0;
 }
 
+int pr_inet_set_proto_keepalive(pool *p, conn_t *c,
+    struct tcp_keepalive *tcp_keepalive) {
+  int keepalive = 1, val = -1;
+
+  if (p == NULL ||
+      c == NULL ||
+      tcp_keepalive == NULL) {
+    errno = EINVAL;
+    return -1;
+  }
+
+  if (c->listen_fd < 0) {
+    errno = EINVAL;
+    return -1;
+  }
+
+  keepalive = tcp_keepalive->keepalive_enabled;
+
+  pr_trace_msg(trace_channel, 17, "%s SO_KEEPALIVE on socket fd %d",
+    keepalive ? "enabling" : "disabling", c->listen_fd);
+  if (setsockopt(c->listen_fd, SOL_SOCKET, SO_KEEPALIVE, (void *) &keepalive,
+      sizeof(int)) < 0) {
+    pr_log_pri(PR_LOG_NOTICE, "error setting listen fd SO_KEEPALIVE: %s",
+      strerror(errno));
+    return 0;
+  }
+
+  if (keepalive == 0) {
+    return 0;
+  }
+
+  /* We only try to set the TCP keepalive specifics if SO_KEEPALIVE was
+   * enabled successfully.
+   */
+  pr_trace_msg(trace_channel, 15, "enabled SO_KEEPALIVE on socket fd %d",
+    c->listen_fd);
+
+  /* On Mac OS, the socket option is TCP_KEEPALIVE rather than
+   * TCP_KEEPIDLE.
+   */
+#if defined(TCP_KEEPIDLE) || defined(TCP_KEEPALIVE)
+  val = tcp_keepalive->keepalive_idle;
+  if (val != -1) {
+    int option_name;
+
+# if defined(TCP_KEEPALIVE)
+    option_name = TCP_KEEPALIVE;
+# else
+    option_name = TCP_KEEPIDLE;
+# endif /* TCP_KEEPALIVE or TCP_KEEPIDLE */
+
+# ifdef __DragonFly__
+    /* DragonFly BSD uses millsecs as the KEEPIDLE unit. */
+    val *= 1000;
+# endif /* DragonFly BSD */
+    if (setsockopt(c->listen_fd, IPPROTO_TCP, option_name, (void *) &val,
+        sizeof(int)) < 0) {
+      pr_log_pri(PR_LOG_NOTICE,
+        "error setting TCP_KEEPIDLE %d on fd %d: %s", val, c->listen_fd,
+       strerror(errno));
+
+    } else {
+      pr_trace_msg(trace_channel, 15,
+        "enabled TCP_KEEPIDLE %d on socket fd %d", val, c->listen_fd);
+    }
+  }
+#endif /* TCP_KEEPIDLE */
+
+#if defined(TCP_KEEPCNT)
+  val = tcp_keepalive->keepalive_count;
+  if (val != -1) {
+    if (setsockopt(c->listen_fd, IPPROTO_TCP, TCP_KEEPCNT, (void *) &val,
+        sizeof(int)) < 0) {
+      pr_log_pri(PR_LOG_NOTICE,
+        "error setting TCP_KEEPCNT %d on fd %d: %s", val, c->listen_fd,
+        strerror(errno));
+
+    } else {
+      pr_trace_msg(trace_channel, 15,
+        "enabled TCP_KEEPCNT %d on socket fd %d", val, c->listen_fd);
+    }
+  }
+#endif /* TCP_KEEPCNT */
+
+#if defined(TCP_KEEPINTVL)
+  val = tcp_keepalive->keepalive_intvl;
+  if (val != -1) {
+# ifdef __DragonFly__
+    /* DragonFly BSD uses millsecs as the KEEPINTVL unit. */
+    val *= 1000;
+# endif /* DragonFly BSD */
+    if (setsockopt(c->listen_fd, IPPROTO_TCP, TCP_KEEPINTVL, (void *) &val,
+        sizeof(int)) < 0) {
+      pr_log_pri(PR_LOG_NOTICE,
+        "error setting TCP_KEEPINTVL %d on fd %d: %s", val, c->listen_fd,
+        strerror(errno));
+
+    } else {
+      pr_trace_msg(trace_channel, 15,
+        "enabled TCP_KEEPINTVL %d on socket fd %d", val, c->listen_fd);
+    }
+  }
+#endif /* TCP_KEEPINTVL */
+
+  /* Avoid compiler warnings on platforms which do not support any
+   * of the above TCP keepalive macros.
+   */
+  (void) val;
+
+  return 0;
+}
+
 /* Set socket options on a connection.  */
 int pr_inet_set_socket_opts2(pool *p, conn_t *c, int rcvbuf, int sndbuf,
     struct tcp_keepalive *tcp_keepalive, int reuse_port) {
@@ -942,93 +1072,10 @@ int pr_inet_set_socket_opts2(pool *p, conn_t *c, int rcvbuf, int sndbuf,
    */
 
   if (c->listen_fd != -1) {
-    int keepalive = 1;
     int crcvbuf = 0, csndbuf = 0;
     socklen_t len;
 
-    if (tcp_keepalive != NULL) {
-      keepalive = tcp_keepalive->keepalive_enabled;
-    }
-
-    pr_trace_msg(trace_channel, 17, "%s SO_KEEPALIVE on socket fd %d",
-      keepalive ? "enabling" : "disabling", c->listen_fd);
-    if (setsockopt(c->listen_fd, SOL_SOCKET, SO_KEEPALIVE, (void *)
-        &keepalive, sizeof(int)) < 0) {
-      pr_log_pri(PR_LOG_NOTICE, "error setting listen fd SO_KEEPALIVE: %s",
-        strerror(errno));
-
-    } else {
-      /* We only try to set the TCP keepalive specifics if SO_KEEPALIVE was
-       * set successfully.
-       */
-      pr_trace_msg(trace_channel, 15,
-        "enabled SO_KEEPALIVE on socket fd %d", c->listen_fd);
-
-      if (tcp_keepalive != NULL) {
-        int val = 0;
-
-#if defined(TCP_KEEPIDLE)
-        val = tcp_keepalive->keepalive_idle;
-        if (val != -1) {
-# ifdef __DragonFly__
-          /* DragonFly BSD uses millsecs as the KEEPIDLE unit. */
-          val *= 1000;
-# endif /* DragonFly BSD */
-          if (setsockopt(c->listen_fd, SOL_SOCKET, TCP_KEEPIDLE, (void *)
-              &val, sizeof(int)) < 0) {
-            pr_log_pri(PR_LOG_NOTICE,
-              "error setting TCP_KEEPIDLE %d on fd %d: %s", val, c->listen_fd,
-              strerror(errno));
-
-          } else {
-            pr_trace_msg(trace_channel, 15,
-              "enabled TCP_KEEPIDLE %d on socket fd %d", val, c->listen_fd);
-          }
-        }
-#endif /* TCP_KEEPIDLE */
-
-#if defined(TCP_KEEPCNT)
-        val = tcp_keepalive->keepalive_count;
-        if (val != -1) {
-          if (setsockopt(c->listen_fd, SOL_SOCKET, TCP_KEEPCNT, (void *)
-              &val, sizeof(int)) < 0) {
-            pr_log_pri(PR_LOG_NOTICE,
-              "error setting TCP_KEEPCNT %d on fd %d: %s", val, c->listen_fd,
-              strerror(errno));
-
-          } else {
-            pr_trace_msg(trace_channel, 15,
-              "enabled TCP_KEEPCNT %d on socket fd %d", val, c->listen_fd);
-          }
-        }
-#endif /* TCP_KEEPCNT */
-
-#if defined(TCP_KEEPINTVL)
-        val = tcp_keepalive->keepalive_intvl;
-        if (val != -1) {
-# ifdef __DragonFly__
-          /* DragonFly BSD uses millsecs as the KEEPINTVL unit. */
-          val *= 1000;
-# endif /* DragonFly BSD */
-          if (setsockopt(c->listen_fd, SOL_SOCKET, TCP_KEEPINTVL, (void *)
-              &val, sizeof(int)) < 0) {
-            pr_log_pri(PR_LOG_NOTICE,
-              "error setting TCP_KEEPINTVL %d on fd %d: %s", val, c->listen_fd,
-              strerror(errno));
-
-          } else {
-            pr_trace_msg(trace_channel, 15,
-              "enabled TCP_KEEPINTVL %d on socket fd %d", val, c->listen_fd);
-          }
-        }
-#endif /* TCP_KEEPINTVL */
-
-        /* Avoid compiler warnings on platforms which do not support any
-         * of the above TCP keepalive macros.
-         */
-        (void) val;
-      }
-    }
+    (void) pr_inet_set_proto_keepalive(p, c, tcp_keepalive);
 
     if (sndbuf > 0) {
       len = sizeof(csndbuf);
@@ -1093,7 +1140,6 @@ int pr_inet_set_socket_opts2(pool *p, conn_t *c, int rcvbuf, int sndbuf,
     c->rcvbuf = (rcvbuf ? rcvbuf : crcvbuf);
   }
 
-#if defined(SO_REUSEPORT)
   if (reuse_port != -1) {
     /* Note that we only want to use this socket option if we are NOT the
      * master/parent daemon.  Otherwise, we would allow multiple daemon
@@ -1101,19 +1147,12 @@ int pr_inet_set_socket_opts2(pool *p, conn_t *c, int rcvbuf, int sndbuf,
      * and madness (see Issue #622).
      */
     if (!is_master) {
-      if (setsockopt(c->listen_fd, SOL_SOCKET, SO_REUSEPORT,
-          (void *) &reuse_port, sizeof(reuse_port)) < 0) {
-        pr_log_pri(PR_LOG_NOTICE,
-          "error setting SO_REUSEPORT on fd %d: %s", c->listen_fd,
-          strerror(errno));
-
-      } else {
+      if (pr_inet_set_reuse_port(p, c, reuse_port) == 0) {
         pr_trace_msg("data", 8,
           "set socket fd %d reuseport = %d", c->listen_fd, reuse_port);
       }
     }
   }
-#endif /* SO_REUSEPORT */
 
   return 0;
 }
@@ -1121,6 +1160,31 @@ int pr_inet_set_socket_opts2(pool *p, conn_t *c, int rcvbuf, int sndbuf,
 int pr_inet_set_socket_opts(pool *p, conn_t *c, int rcvbuf, int sndbuf,
     struct tcp_keepalive *tcp_keepalive) {
   return pr_inet_set_socket_opts2(p, c, rcvbuf, sndbuf, tcp_keepalive, -1);
+}
+
+int pr_inet_set_reuse_port(pool *p, conn_t *c, int reuse_port) {
+  int res = -1;
+
+  if (p == NULL ||
+      c == NULL ||
+      reuse_port < 0) {
+    errno = EINVAL;
+    return -1;
+  }
+
+#if defined(SO_REUSEPORT)
+  res = setsockopt(c->listen_fd, SOL_SOCKET, SO_REUSEPORT, (void *) &reuse_port,
+    sizeof(reuse_port));
+  if (res < 0) {
+    pr_log_pri(PR_LOG_NOTICE,
+      "error setting SO_REUSEPORT on fd %d: %s", c->listen_fd,
+      strerror(errno));
+  }
+#else
+  errno = ENOSYS;
+#endif /* SO_REUSEPORT */
+
+  return res;
 }
 
 #ifdef SO_OOBINLINE
@@ -1522,9 +1586,9 @@ int pr_inet_accept_nowait(pool *p, conn_t *c) {
  */
 conn_t *pr_inet_accept(pool *p, conn_t *d, conn_t *c, int rfd, int wfd,
     unsigned char resolve) {
+  config_rec *allow_foreign_addr_config = NULL;
   conn_t *res = NULL;
-  unsigned char *foreign_addr = NULL;
-  int fd = -1, allow_foreign_address = FALSE;
+  int fd = -1;
   pr_netaddr_t na;
   socklen_t nalen;
 
@@ -1540,12 +1604,9 @@ conn_t *pr_inet_accept(pool *p, conn_t *d, conn_t *c, int rfd, int wfd,
   pr_netaddr_set_family(&na, pr_netaddr_get_family(c->remote_addr));
   nalen = pr_netaddr_get_sockaddr_len(&na);
 
+  allow_foreign_addr_config = find_config(TOPLEVEL_CONF, CONF_PARAM,
+    "AllowForeignAddress", FALSE);
   d->mode = CM_ACCEPT;
-
-  foreign_addr = get_param_ptr(TOPLEVEL_CONF, "AllowForeignAddress", FALSE);
-  if (foreign_addr != NULL) {
-    allow_foreign_address = *foreign_addr;
-  }
 
   /* A directive could enforce only IPv4 or IPv6 connections here, by
    * actually using a sockaddr argument to accept(2), and checking the
@@ -1566,28 +1627,79 @@ conn_t *pr_inet_accept(pool *p, conn_t *d, conn_t *c, int rfd, int wfd,
       break;
     }
 
-    if (allow_foreign_address == FALSE) {
-      /* If foreign addresses (i.e. IP addresses that do not match the
-       * control connection's remote IP address) are not allowed, we
-       * need to see just what our remote address IS.
-       */
-      if (getpeername(fd, pr_netaddr_get_sockaddr(&na), &nalen) < 0) {
-        /* If getpeername(2) fails, should we still allow this connection?
-         * Caution (and the AllowForeignAddress setting say "no".
-         */
-        pr_log_pri(PR_LOG_DEBUG, "rejecting passive connection; "
-          "failed to get address of remote peer: %s", strerror(errno));
-        (void) close(fd);
-        continue;
-      }
+    if (allow_foreign_addr_config != NULL) {
+      int allowed;
 
-      if (pr_netaddr_cmp(&na, c->remote_addr) != 0) {
-        pr_log_pri(PR_LOG_NOTICE, "SECURITY VIOLATION: Passive connection "
-          "from foreign IP address %s rejected (does not match client "
-          "IP address %s).", pr_netaddr_get_ipstr(&na),
-          pr_netaddr_get_ipstr(c->remote_addr));
-        (void) close(fd);
-        continue;
+      allowed = *((int *) allow_foreign_addr_config->argv[0]);
+      if (allowed != TRUE) {
+        /* If foreign addresses (i.e. IP addresses that do not match the
+         * control connection's remote IP address) are not allowed, we
+         * need to see just what our remote address IS.
+         */
+
+        if (getpeername(fd, pr_netaddr_get_sockaddr(&na), &nalen) < 0) {
+          /* If getpeername(2) fails, should we still allow this connection?
+           * Caution (and the AllowForeignAddress setting) say "no".
+           */
+          pr_log_pri(PR_LOG_DEBUG, "rejecting passive connection; "
+            "failed to get address of remote peer: %s", strerror(errno));
+          (void) close(fd);
+          continue;
+        }
+
+        if (allowed == FALSE) {
+          if (pr_netaddr_cmp(&na, c->remote_addr) != 0) {
+            pr_log_pri(PR_LOG_NOTICE, "SECURITY VIOLATION: Passive connection "
+              "from foreign IP address %s rejected (does not match client "
+              "IP address %s).", pr_netaddr_get_ipstr(&na),
+              pr_netaddr_get_ipstr(c->remote_addr));
+
+            (void) close(fd);
+            d->mode = CM_ERROR;
+            d->xerrno = EACCES;
+
+            return NULL;
+          }
+
+        } else {
+          char *class_name;
+
+          /* Check the data connection remote address against BOTH the
+           * control connection remote address AND the configured <Class>.
+           */
+          class_name = allow_foreign_addr_config->argv[1];
+
+          if (pr_netaddr_cmp(&na, c->remote_addr) != 0) {
+            const pr_class_t *cls;
+
+            cls = pr_class_find(class_name);
+            if (cls != NULL) {
+              if (pr_class_satisfied(p, cls, &na) != TRUE) {
+                pr_log_debug(DEBUG8, "<Class> '%s' not satisfied by foreign "
+                  "address '%s'", class_name, pr_netaddr_get_ipstr(&na));
+
+                pr_log_pri(PR_LOG_NOTICE,
+                  "SECURITY VIOLATION: Passive connection from foreign IP "
+                  "address %s rejected (does not match <Class %s>).",
+                  pr_netaddr_get_ipstr(&na), class_name);
+
+                (void) close(fd);
+                d->mode = CM_ERROR;
+                d->xerrno = EACCES;
+                return NULL;
+              }
+
+            } else {
+              pr_log_debug(DEBUG8, "<Class> '%s' not found for filtering "
+                "AllowForeignAddress", class_name);
+            }
+
+          } else {
+            pr_log_debug(DEBUG9, "Passive connection from IP address '%s' "
+              "matches control connection address; skipping <Class> '%s'",
+              pr_netaddr_get_ipstr(&na), class_name);
+          }
+        }
       }
     }
 
@@ -1925,7 +2037,7 @@ void init_inet(void) {
   endprotoent();
 #endif
 
-  if (inet_pool) {
+  if (inet_pool != NULL) {
     destroy_pool(inet_pool);
   }
 

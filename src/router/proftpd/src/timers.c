@@ -1,7 +1,7 @@
 /*
  * ProFTPD - FTP server daemon
  * Copyright (c) 1997, 1998 Public Flood Software
- * Copyright (c) 2001-2016 The ProFTPD Project team
+ * Copyright (c) 2001-2022 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -165,6 +165,8 @@ static int process_timers(int elapsed) {
   /* Put the recycled timers back into the main timer list. */
   t = (struct timer *) recycled->xas_list;
   while (t != NULL) {
+    pr_signals_handle();
+
     xaset_remove(recycled, (xasetmember_t *) t);
     xaset_insert_sort(timers, (xasetmember_t *) t, TRUE);
     t = (struct timer *) recycled->xas_list;
@@ -255,8 +257,6 @@ static void set_sig_alarm(void) {
 }
 
 void handle_alarm(void) {
-  int new_timeout = 0;
-
   /* We need to adjust for any time that might be remaining on the alarm,
    * in case we were called in order to change alarm durations.  Note
    * that rapid-fire calling of this function will probably screw
@@ -272,7 +272,7 @@ void handle_alarm(void) {
     nalarms = 0;
 
     if (!alarms_blocked) {
-      int alarm_elapsed;
+      int alarm_elapsed, new_timeout;
       time_t now;
 
       /* Clear any pending ALRM signals. */
@@ -293,6 +293,8 @@ void handle_alarm(void) {
       alarm_pending++;
     }
   }
+
+  pr_signals_handle();
 }
 
 int pr_timer_reset(int timerno, module *mod) {
@@ -347,8 +349,9 @@ int pr_timer_remove(int timerno, module *mod) {
   int nremoved = 0;
 
   /* If there are no timers currently registered, do nothing. */
-  if (!timers)
+  if (timers == NULL) {
     return 0;
+  }
 
   pr_alarms_block();
 
@@ -416,8 +419,9 @@ int pr_timer_add(int seconds, int timerno, module *mod, callback_t cb,
     return -1;
   }
 
-  if (!timers)
+  if (timers == NULL) {
     timers = xaset_create(timer_pool, (XASET_COMPARE) timer_cmp);
+  }
 
   /* Check to see that, if specified, the timerno is not already in use. */
   if (timerno >= 0) {
@@ -429,8 +433,9 @@ int pr_timer_add(int seconds, int timerno, module *mod, callback_t cb,
     }
   }
 
-  if (!free_timers)
+  if (free_timers == NULL) {
     free_timers = xaset_create(timer_pool, NULL);
+  }
 
   /* Try to use an old timer first */
   pr_alarms_block();
@@ -469,8 +474,9 @@ int pr_timer_add(int seconds, int timerno, module *mod, callback_t cb,
    */
 
   if (_indispatch) {
-    if (!recycled)
+    if (recycled == NULL) {
       recycled = xaset_create(timer_pool, NULL);
+    }
     xaset_insert(recycled, (xasetmember_t *) t);
 
   } else {
@@ -524,14 +530,16 @@ int pr_timer_sleep(int seconds) {
 
   _sleep_sem = 0;
 
-  if (alarms_blocked || _indispatch) {
+  if (alarms_blocked ||
+      _indispatch) {
     errno = EPERM;
     return -1;
   }
 
   timerno = pr_timer_add(seconds, -1, NULL, sleep_cb, "sleep");
-  if (timerno == -1)
+  if (timerno == -1) {
     return -1;
+  }
 
   sigemptyset(&oset);
   while (!_sleep_sem) {
@@ -581,6 +589,4 @@ void timers_init(void) {
 
   timer_pool = make_sub_pool(permanent_pool);
   pr_pool_tag(timer_pool, "Timer Pool");
-
-  return;
 }

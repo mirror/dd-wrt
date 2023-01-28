@@ -2,7 +2,7 @@
  * ProFTPD - FTP server daemon
  * Copyright (c) 1997, 1998 Public Flood Software
  * Copyright (c) 1999, 2000 MacGyver aka Habeeb J. Dihu <macgyver@tos.net>
- * Copyright (c) 2001-2021 The ProFTPD Project team
+ * Copyright (c) 2001-2022 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -112,7 +112,7 @@ static int data_passive_open(const char *reason, off_t size) {
   int rev, xerrno = 0;
 
   if (reason == NULL &&
-      session.xfer.filename) {
+      session.xfer.filename != NULL) {
     reason = session.xfer.filename;
   }
 
@@ -222,7 +222,7 @@ static int data_active_open(const char *reason, off_t size) {
   }
 
   if (reason == NULL &&
-      session.xfer.filename) {
+      session.xfer.filename != NULL) {
     reason = session.xfer.filename;
   }
 
@@ -445,8 +445,9 @@ void pr_data_set_timeout(int id, int timeout) {
 void pr_data_clear_xfer_pool(void) {
   int xfer_type;
 
-  if (session.xfer.p)
+  if (session.xfer.p != NULL) {
     destroy_pool(session.xfer.p);
+  }
 
   /* Note that session.xfer.xfer_type may have been set already, e.g.
    * for STOR_UNIQUE uploads.  To support this, we need to preserve that
@@ -459,13 +460,13 @@ void pr_data_clear_xfer_pool(void) {
 }
 
 void pr_data_reset(void) {
-  if (session.d &&
-      session.d->pool) {
-    destroy_pool(session.d->pool);
-  }
-
   /* Clear any leftover state from previous transfers. */
   pr_ascii_ftp_reset();
+
+  if (session.d != NULL &&
+      session.d->pool != NULL) {
+    destroy_pool(session.d->pool);
+  }
 
   session.d = NULL;
   session.sf_flags &= (SF_ALL^(SF_ABORT|SF_POST_ABORT|SF_XFER|SF_PASSIVE|SF_ASCII_OVERRIDE|SF_EPSV_ALL));
@@ -517,6 +518,7 @@ void pr_data_init(char *filename, int direction) {
 
 int pr_data_open(char *filename, char *reason, int direction, off_t size) {
   int res = 0;
+  struct sigaction act;
 
   if (session.c == NULL) {
     errno = EINVAL;
@@ -553,7 +555,7 @@ int pr_data_open(char *filename, char *reason, int direction, off_t size) {
     session.xfer.direction = direction;
   }
 
-  if (!reason) {
+  if (reason == NULL) {
     reason = filename;
   }
 
@@ -567,89 +569,89 @@ int pr_data_open(char *filename, char *reason, int direction, off_t size) {
     res = data_active_open(reason, size);
   }
 
-  if (res >= 0) {
-    struct sigaction act;
+  if (res < 0) {
+    return res;
+  }
 
-    if (pr_netio_postopen(session.d->instrm) < 0) {
-      int xerrno;
+  if (pr_netio_postopen(session.d->instrm) < 0) {
+    int xerrno;
 
-      pr_response_add_err(R_425, _("Unable to build data connection: %s"),
-        strerror(session.d->xerrno));
-      xerrno = session.d->xerrno;
-      pr_data_close2();
+    pr_response_add_err(R_425, _("Unable to build data connection: %s"),
+      strerror(session.d->xerrno));
+    xerrno = session.d->xerrno;
+    pr_data_close2();
 
-      errno = xerrno;
-      return -1;
-    }
+    errno = xerrno;
+    return -1;
+  }
 
-    if (pr_netio_postopen(session.d->outstrm) < 0) {
-      int xerrno;
+  if (pr_netio_postopen(session.d->outstrm) < 0) {
+    int xerrno;
 
-      pr_response_add_err(R_425, _("Unable to build data connection: %s"),
-        strerror(session.d->xerrno));
-      xerrno = session.d->xerrno;
-      pr_data_close2();
+    pr_response_add_err(R_425, _("Unable to build data connection: %s"),
+      strerror(session.d->xerrno));
+    xerrno = session.d->xerrno;
+    pr_data_close2();
 
-      errno = xerrno;
-      return -1;
-    }
+    errno = xerrno;
+    return -1;
+  }
 
-    memset(&session.xfer.start_time, '\0', sizeof(session.xfer.start_time));
-    gettimeofday(&session.xfer.start_time, NULL);
+  memset(&session.xfer.start_time, '\0', sizeof(session.xfer.start_time));
+  gettimeofday(&session.xfer.start_time, NULL);
 
-    if (session.xfer.direction == PR_NETIO_IO_RD) {
-      nstrm = session.d->instrm;
+  if (session.xfer.direction == PR_NETIO_IO_RD) {
+    nstrm = session.d->instrm;
 
-    } else {
-      nstrm = session.d->outstrm;
-    }
+  } else {
+    nstrm = session.d->outstrm;
+  }
 
-    session.sf_flags |= SF_XFER;
+  session.sf_flags |= SF_XFER;
 
-    if (timeout_noxfer) {
-      pr_timer_reset(PR_TIMER_NOXFER, ANY_MODULE);
-    }
+  if (timeout_noxfer) {
+    pr_timer_reset(PR_TIMER_NOXFER, ANY_MODULE);
+  }
 
-    /* Allow aborts -- set the current NetIO stream to allow interrupted
-     * syscalls, so our SIGURG handler can interrupt it
-     */
-    pr_netio_set_poll_interval(nstrm, 1);
+  /* Allow aborts -- set the current NetIO stream to allow interrupted
+   * syscalls, so our SIGURG handler can interrupt it
+   */
+  pr_netio_set_poll_interval(nstrm, 1);
 
-    /* PORTABILITY: sigaction is used here to allow us to indicate
-     * (w/ POSIX at least) that we want SIGURG to interrupt syscalls.  Put
-     * in whatever is necessary for your arch here; probably not necessary
-     * as the only _important_ interrupted syscall is select(), which on
-     * any sensible system is interrupted.
-     */
+  /* PORTABILITY: sigaction is used here to allow us to indicate
+   * (w/ POSIX at least) that we want SIGURG to interrupt syscalls.  Put
+   * in whatever is necessary for your arch here; probably not necessary
+   * as the only _important_ interrupted syscall is select(), which on
+   * any sensible system is interrupted.
+   */
 
-    act.sa_handler = data_urgent;
-    sigemptyset(&act.sa_mask);
-    act.sa_flags = 0;
+  act.sa_handler = data_urgent;
+  sigemptyset(&act.sa_mask);
+  act.sa_flags = 0;
 #ifdef SA_INTERRUPT
-    act.sa_flags |= SA_INTERRUPT;
+  act.sa_flags |= SA_INTERRUPT;
 #endif
 
-    if (sigaction(SIGURG, &act, NULL) < 0) {
-      pr_log_pri(PR_LOG_WARNING,
-        "warning: unable to set SIGURG signal handler: %s", strerror(errno));
-    }
+  if (sigaction(SIGURG, &act, NULL) < 0) {
+    pr_log_pri(PR_LOG_WARNING,
+      "warning: unable to set SIGURG signal handler: %s", strerror(errno));
+  }
 
 #ifdef HAVE_SIGINTERRUPT
-    /* This is the BSD way of ensuring interruption.
-     * Linux uses it too (??)
-     */
-    if (siginterrupt(SIGURG, 1) < 0) {
-      pr_log_pri(PR_LOG_WARNING,
-        "warning: unable to make SIGURG interrupt system calls: %s",
-        strerror(errno));
-    }
+  /* This is the BSD way of ensuring interruption.
+   * Linux uses it too (??)
+   */
+  if (siginterrupt(SIGURG, 1) < 0) {
+    pr_log_pri(PR_LOG_WARNING,
+      "warning: unable to make SIGURG interrupt system calls: %s",
+      strerror(errno));
+  }
 #endif
 
-    /* Reset all of the timing-related variables for data transfers. */
-    pr_gettimeofday_millis(&data_start_ms);
-    data_first_byte_read = FALSE;
-    data_first_byte_written = FALSE;
-  }
+  /* Reset all of the timing-related variables for data transfers. */
+  pr_gettimeofday_millis(&data_start_ms);
+  data_first_byte_read = FALSE;
+  data_first_byte_written = FALSE;
 
   return res;
 }
@@ -726,11 +728,14 @@ void pr_data_abort(int err, int quiet) {
     true_abort ? "true" : "false");
 
   if (session.d != NULL) {
-    if (true_abort == FALSE) {
-      pr_inet_lingering_close(session.pool, session.d, timeout_linger);
+    if (true_abort) {
+      /* For "true" aborts, we also asynchronously send a 426 response
+       * message via the "lingering abort" functions.
+       */
+      pr_inet_lingering_abort(session.pool, session.d, timeout_linger);
 
     } else {
-      pr_inet_lingering_abort(session.pool, session.d, timeout_linger);
+      pr_inet_lingering_close(session.pool, session.d, timeout_linger);
     }
 
     session.d = NULL;
@@ -748,9 +753,6 @@ void pr_data_abort(int err, int quiet) {
   session.sf_flags &= (SF_ALL^(SF_XFER|SF_PASSIVE|SF_ASCII_OVERRIDE));
   pr_session_set_idle();
 
-  /* Aborts no longer necessary */
-  signal(SIGURG, SIG_IGN);
-
   if (!quiet) {
     char *respcode = R_426;
     char *msg = NULL;
@@ -759,6 +761,15 @@ void pr_data_abort(int err, int quiet) {
     switch (err) {
 
     case 0:
+#ifdef ECONNABORTED
+    case ECONNABORTED:	/* FALLTHROUGH */
+#endif
+#ifdef ECONNRESET
+    case ECONNRESET:	/* FALLTHROUGH */
+#endif
+#ifdef EPIPE
+    case EPIPE:
+#endif
       respcode = R_426;
       msg = _("Data connection closed");
       break;
@@ -768,7 +779,6 @@ void pr_data_abort(int err, int quiet) {
       respcode = R_451;
       msg = _("Unexpected streams hangup");
       break;
-
 #endif
 
 #ifdef EAGAIN
@@ -843,13 +853,10 @@ void pr_data_abort(int err, int quiet) {
 #ifdef ESPIPE
     case ESPIPE:		/* FALLTHROUGH */
 #endif
-#ifdef EPIPE
-    case EPIPE:
-#endif
-#if defined(ECOMM) || defined(EDEADLK) ||  defined(EDEADLOCK) \
-	|| defined(EXFULL) || defined(ENOSR) || defined(EPROTO) \
-	|| defined(ETIME) || defined(EIO) || defined(EFAULT) \
-	|| defined(ESPIPE) || defined(EPIPE)
+#if defined(ECOMM) || defined(EDEADLK) ||  defined(EDEADLOCK) || \
+    defined(EXFULL) || defined(ENOSR) || defined(EPROTO) || \
+    defined(ETIME) || defined(EIO) || defined(EFAULT) || \
+    defined(ESPIPE) || defined(EPIPE)
       respcode = R_451;
       break;
 #endif
@@ -872,18 +879,12 @@ void pr_data_abort(int err, int quiet) {
 #ifdef ENETRESET
     case ENETRESET:		/* FALLTHROUGH */
 #endif
-#ifdef ECONNABORTED
-    case ECONNABORTED:	/* FALLTHROUGH */
-#endif
-#ifdef ECONNRESET
-    case ECONNRESET:	/* FALLTHROUGH */
-#endif
 #ifdef ETIMEDOUT
     case ETIMEDOUT:
 #endif
-#if defined(EREMCHG) || defined(ESRMNT) ||  defined(ESTALE) \
-	|| defined(ENOLINK) || defined(ENOLCK) || defined(ENETRESET) \
-	|| defined(ECONNABORTED) || defined(ECONNRESET) || defined(ETIMEDOUT)
+#if defined(EREMCHG) || defined(ESRMNT) ||  defined(ESTALE) || \
+    defined(ENOLINK) || defined(ENOLCK) || defined(ENETRESET) || \
+    defined(ECONNABORTED) || defined(ECONNRESET) || defined(ETIMEDOUT)
       respcode = R_450;
       msg = _("Link to file server lost");
       break;
@@ -891,18 +892,20 @@ void pr_data_abort(int err, int quiet) {
     }
 
     if (msg == NULL &&
-        (msg = strerror(err)) == NULL ) {
+        (msg = strerror(err)) == NULL) {
 
       if (pr_snprintf(msgbuf, sizeof(msgbuf),
-          _("Unknown or out of range errno [%d]"), err) > 0)
-	msg = msgbuf;
+          _("Unknown or out of range errno [%d]"), err) > 0) {
+        msg = msgbuf;
+      }
     }
 
     pr_log_pri(PR_LOG_NOTICE, "notice: user %s: aborting transfer: %s",
       session.user ? session.user : "(unknown)", msg);
 
-    /* If we are aborting, then a 426 response has already been sent,
-     * and we don't want to add another to the error queue.
+    /* If we are aborting, then a 426 response has already been sent via
+     * pr_inet_lingering_abort(), and we don't want to add another to the
+     * error queue.
      */
     if (true_abort == FALSE) {
       pr_response_add_err(respcode, _("Transfer aborted. %s"), msg ? msg : "");
@@ -922,6 +925,78 @@ void pr_data_abort(int err, int quiet) {
 /* From response.c.  XXX Need to provide these symbols another way. */
 extern pr_response_t *resp_list, *resp_err_list;
 
+static int peek_is_abor_cmd(void) {
+  int fd, res;
+  fd_set rfds;
+  struct timeval tv;
+  ssize_t len;
+  char buf[5];
+
+  tv.tv_sec = 1;
+  tv.tv_usec = 0;
+
+  fd = PR_NETIO_FD(session.c->instrm);
+  pr_trace_msg(trace_channel, 20, "peeking at next data for fd %d", fd);
+
+  FD_ZERO(&rfds);
+  FD_SET(fd, &rfds);
+
+  res = select(fd + 1, &rfds, NULL, NULL, &tv);
+  while (res < 0) {
+    int xerrno = errno;
+
+    if (xerrno == EINTR) {
+      pr_signals_handle();
+      res = select(fd + 1, &rfds, NULL, NULL, &tv);
+      continue;
+    }
+
+    pr_trace_msg(trace_channel, 20,
+      "error waiting for next data on fd %d: %s", fd, strerror(xerrno));
+    return FALSE;
+  }
+
+  if (res == 0) {
+    /* Timed out. */
+    pr_trace_msg(trace_channel, 20, "timed out peeking for data on fd %d", fd);
+    return FALSE;
+  }
+
+  /* If we reach here, the peer must have sent something.  Let's see what it
+   * might be.  Chances are that we received at least 5 bytes, but to be
+   * defensive, we use MSG_WAITALL anyway.  TCP allows for sending one byte
+   * at time, if need be.  The shortest FTP command is 5 bytes, e.g. "CCC\r\n".
+   * ABOR would be 6 bytes, but we do not want to block until we see 6 bytes;
+   * we're peeking opportunistically, and optimistically.
+   */
+  memset(&buf, 0, sizeof(buf));
+  len = recv(fd, buf, sizeof(buf), MSG_PEEK|MSG_WAITALL);
+  while (len < 0) {
+    int xerrno = errno;
+
+    if (xerrno == EINTR) {
+      pr_signals_handle();
+      len = recv(fd, &buf, sizeof(buf), MSG_PEEK|MSG_WAITALL);
+      continue;
+    }
+
+    pr_trace_msg(trace_channel, 20,
+      "error peeking at next data: %s", strerror(xerrno));
+    return FALSE;
+  }
+
+  pr_trace_msg(trace_channel, 20, "peeking at %ld bytes of next data",
+    (long) len);
+  if (strncasecmp(buf, "ABOR\r", len) == 0) {
+    pr_trace_msg(trace_channel, 20, "peeked data probably 'ABOR' command");
+    return TRUE;
+  }
+
+  pr_trace_msg(trace_channel, 20, "peeked data '%.*s' not ABOR command",
+    (int) len, buf);
+  return FALSE;
+}
+
 static void poll_ctrl(void) {
   int res;
 
@@ -933,6 +1008,42 @@ static void poll_ctrl(void) {
   pr_netio_set_poll_interval(session.c->instrm, 0);
   res = pr_netio_poll(session.c->instrm);
   pr_netio_reset_poll_interval(session.c->instrm);
+
+  if (res == 0 &&
+      !(session.sf_flags & SF_ABORT)) {
+
+    /* First, we peek at the data, to see if it is an ABOR command.  Why?
+     *
+     * Consider the case where a client uses the TCP OOB mechanism and
+     * marks the ABOR command with the marker.  In that case, a SIGURG signal
+     * will have been raised, and the SF_ABORT flag set.  The actual "ABOR"
+     * data on the control connection will be read only AFTER the data transfer
+     * has been failed.  This leads the proper ordering of multiple responses
+     * (first for failed transfer, second for successful ABOR) in such cases.
+     *
+     * Now consider the case where a client does NOT use the TCP OOB mechanism,
+     * and only sends the ABOR command.  We want the same behavior in this case
+     * as for the TCP OOB case, BUT now, the SF_ABORT flag has NOT been set at
+     * this point in the flow.  Which means that we might read that "ABOR" text
+     * from the control connection _in the middle_ of the data transfer, which
+     * leads to different behavior, different ordering of responses.
+     *
+     * Thus we cheat here, and only peek at the control connection data.  IFF
+     * it is the "ABOR\r\n" text, then we set the SF_ABORT flag ourselves
+     * here, and preserve the expected semantics (Bug #4402).
+     */
+    if (peek_is_abor_cmd() == TRUE) {
+      pr_trace_msg(trace_channel, 5, "client sent 'ABOR' command during data "
+        "transfer, setting 'aborted' session flag");
+
+      session.sf_flags |= SF_ABORT;
+
+      if (nstrm != NULL) {
+        pr_netio_abort(nstrm);
+        errno = 0;
+      }
+    }
+  }
 
   if (res == 0 &&
       !(session.sf_flags & SF_ABORT)) {
@@ -969,7 +1080,7 @@ static void poll_ctrl(void) {
       char *ch;
 
       for (ch = cmd->argv[0]; *ch; ch++) {
-        *ch = toupper(*ch);
+        *ch = toupper((int) *ch);
       }
 
       cmd->cmd_id = pr_cmd_get_id(cmd->argv[0]);
@@ -1047,6 +1158,7 @@ static void poll_ctrl(void) {
         int curr_cmd_id = 0, title_len = -1;
         const char *curr_cmd = NULL, *sce_cmd = NULL, *sce_cmd_arg = NULL;
         cmd_rec *curr_cmd_rec = NULL;
+        pool *resp_pool;
 
         pr_trace_msg(trace_channel, 5,
           "client sent '%s' command during data transfer, dispatching",
@@ -1064,6 +1176,10 @@ static void poll_ctrl(void) {
         sce_cmd = pr_scoreboard_entry_get(PR_SCORE_CMD);
         sce_cmd_arg = pr_scoreboard_entry_get(PR_SCORE_CMD_ARG);
 
+        resp_list = resp_err_list = NULL;
+        resp_pool = pr_response_get_pool();
+
+        pr_response_set_pool(cmd->pool);
         pr_cmd_dispatch(cmd);
 
         pr_scoreboard_entry_update(session.pid,
@@ -1075,7 +1191,10 @@ static void poll_ctrl(void) {
           pr_proctitle_set_str(title_buf);
         }
 
+        pr_response_flush(&resp_list);
+        pr_response_set_pool(resp_pool);
         destroy_pool(cmd->pool);
+
         session.curr_cmd = curr_cmd;
         session.curr_cmd_id = curr_cmd_id;
         session.curr_cmd_rec = curr_cmd_rec;
@@ -1600,8 +1719,9 @@ pr_sendfile_t pr_data_sendfile(int retr_fd, off_t *offset, off_t count) {
 
       pr_signals_handle();
       continue;
+    }
 
-    } else if (len == -1) {
+    if (len == -1) {
       /* Linux updates offset on error, not len like BSD, fix up so
        * BSD-based code works.
        */
@@ -1702,11 +1822,9 @@ pr_sendfile_t pr_data_sendfile(int retr_fd, off_t *offset, off_t count) {
         /* If we got everything in this transaction, we're done. */
         if (len >= count) {
           break;
-
-        } else {
-          count -= len;
         }
 
+        count -= len;
         *offset += len;
 
         if (timeout_stalled) {

@@ -2,7 +2,7 @@
  * ProFTPD: mod_tls_shmcache -- a module which provides shared SSL session
  *                              and OCSP response caches using SysV shared
  *                              memory segments
- * Copyright (c) 2009-2020 TJ Saunders
+ * Copyright (c) 2009-2021 TJ Saunders
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -564,7 +564,7 @@ static struct sesscache_data *sess_cache_get_shm(pr_fh_t *fh,
     "using shm ID %d for sesscache path '%s' (%u sessions)", sesscache_shmid,
     fh->fh_path, shm_sess_max);
 
-  data->sd_entries = (struct sesscache_entry *) (data + sizeof(struct sesscache_data));
+  data->sd_entries = (struct sesscache_entry *) (data + 1);
   data->sd_listsz = shm_sess_max;
 
   return data;
@@ -606,7 +606,7 @@ static struct ocspcache_data *ocsp_cache_get_shm(pr_fh_t *fh,
     "using shm ID %d for ocspcache path '%s' (%u responses)", ocspcache_shmid,
     fh->fh_path, shm_resp_max);
 
-  data->od_entries = (struct ocspcache_entry *) (data + sizeof(struct ocspcache_data));
+  data->od_entries = (struct ocspcache_entry *) (data + 1);
   data->od_listsz = shm_resp_max;
 
   return data;

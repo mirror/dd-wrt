@@ -1,6 +1,6 @@
 /*
  * ProFTPD - FTP server daemon
- * Copyright (c) 2001-2019 The ProFTPD Project team
+ * Copyright (c) 2001-2022 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -77,10 +77,8 @@ static int read_scoreboard_header(pr_scoreboard_header_t *sch) {
   /* NOTE: reading a struct from a file using read(2) -- bad (in general).
    * Better would be to use readv(2).  Should also handle short-reads here.
    */
-  while ((res = read(scoreboard_fd, sch, sizeof(pr_scoreboard_header_t))) !=
-      sizeof(pr_scoreboard_header_t)) {
-    int rd_errno = errno;
-
+  res = read(scoreboard_fd, sch, sizeof(pr_scoreboard_header_t));
+  while (res != sizeof(pr_scoreboard_header_t)) {
     if (res == 0) {
       errno = EIO;
       return -1;
@@ -91,26 +89,33 @@ static int read_scoreboard_header(pr_scoreboard_header_t *sch) {
       continue;
     }
 
-    errno = rd_errno;
     return -1;
   }
 
   /* Note: these errors will most likely occur only for inetd-run daemons.
    * Standalone daemons erase the scoreboard on startup.
    */
- 
+
   if (sch->sch_magic != PR_SCOREBOARD_MAGIC) {
-    pr_close_scoreboard(FALSE);
+    pr_trace_msg(trace_channel, 3, "scoreboard header magic %lu (expected %lu)",
+      sch->sch_magic, (unsigned long) PR_SCOREBOARD_MAGIC);
+    (void) pr_close_scoreboard(FALSE);
     return PR_SCORE_ERR_BAD_MAGIC;
   }
 
   if (sch->sch_version < PR_SCOREBOARD_VERSION) {
-    pr_close_scoreboard(FALSE);
+    pr_trace_msg(trace_channel, 3,
+      "scoreboard header version %lu too old (expected %lu)",
+      sch->sch_version, (unsigned long) PR_SCOREBOARD_VERSION);
+    (void) pr_close_scoreboard(FALSE);
     return PR_SCORE_ERR_OLDER_VERSION;
   }
 
   if (sch->sch_version > PR_SCOREBOARD_VERSION) {
-    pr_close_scoreboard(FALSE);
+    pr_trace_msg(trace_channel, 3,
+      "scoreboard header version %lu too new (expected %lu)",
+      sch->sch_version, (unsigned long) PR_SCOREBOARD_VERSION);
+    (void) pr_close_scoreboard(FALSE);
     return PR_SCORE_ERR_NEWER_VERSION;
   }
 
@@ -122,11 +127,11 @@ static const char *get_lock_type(struct flock *lock) {
 
   switch (lock->l_type) {
     case F_RDLCK:
-      lock_type = "read";
+      lock_type = "read-lock";
       break;
 
     case F_WRLCK:
-      lock_type = "write";
+      lock_type = "write-lock";
       break;
 
     case F_UNLCK:
@@ -156,7 +161,7 @@ int pr_lock_scoreboard(int mutex_fd, int lock_type) {
     return -1;
   }
 
-  pr_trace_msg("lock", 9, "attempt #%u to %s-lock scoreboard mutex fd %d",
+  pr_trace_msg("lock", 9, "attempt #%u to %s scoreboard mutex fd %d",
     nattempts, lock_label, mutex_fd);
 
   while (fcntl(mutex_fd, F_SETLK, &lock) < 0) {
@@ -168,14 +173,14 @@ int pr_lock_scoreboard(int mutex_fd, int lock_type) {
     }
 
     pr_trace_msg("lock", 3,
-      "%s-lock (attempt #%u) of scoreboard mutex fd %d failed: %s",
-      lock_label, nattempts, mutex_fd, strerror(xerrno));
+      "%s (attempt #%u) of scoreboard mutex fd %d failed: %s", lock_label,
+      nattempts, mutex_fd, strerror(xerrno));
     if (xerrno == EACCES) {
       struct flock locker;
 
       /* Get the PID of the process blocking this lock. */
       if (fcntl(mutex_fd, F_GETLK, &locker) == 0) {
-        pr_trace_msg("lock", 3, "process ID %lu has blocking %s lock on "
+        pr_trace_msg("lock", 3, "process ID %lu has blocking %s on "
           "scoreboard mutex fd %d", (unsigned long) locker.l_pid,
           get_lock_type(&locker), mutex_fd);
       }
@@ -196,14 +201,14 @@ int pr_lock_scoreboard(int mutex_fd, int lock_type) {
 
         errno = 0;
         pr_trace_msg("lock", 9,
-          "attempt #%u to %s-lock scoreboard mutex fd %d", nattempts,
-          lock_label, mutex_fd);
+          "attempt #%u to %s scoreboard mutex fd %d", nattempts, lock_label,
+          mutex_fd);
         continue;
       }
 
-      pr_trace_msg("lock", 9, "unable to acquire %s-lock on "
-        "scoreboard mutex fd %d after %u attempts: %s", lock_label, mutex_fd,
-        nattempts, strerror(xerrno));
+      pr_trace_msg("lock", 9, "unable to acquire %s on scoreboard mutex fd %d "
+        "after %u attempts: %s", lock_label, mutex_fd, nattempts,
+        strerror(xerrno));
     }
 
     errno = xerrno;
@@ -211,7 +216,7 @@ int pr_lock_scoreboard(int mutex_fd, int lock_type) {
   }
 
   pr_trace_msg("lock", 9,
-    "%s-lock of scoreboard mutex fd %d successful after %u %s", lock_label,
+    "%s of scoreboard mutex fd %d successful after %u %s", lock_label,
     mutex_fd, nattempts, nattempts != 1 ? "attempts" : "attempt");
 
   return 0;
@@ -386,35 +391,21 @@ int pr_close_scoreboard(int keep_mutex) {
     return 0;
   }
 
-  if (scoreboard_read_locked || scoreboard_write_locked)
+  if (scoreboard_read_locked ||
+      scoreboard_write_locked) {
     unlock_scoreboard();
+  }
 
   pr_trace_msg(trace_channel, 4, "closing scoreboard fd %d", scoreboard_fd);
 
-  while (close(scoreboard_fd) < 0) {
-    if (errno == EINTR) {
-      pr_signals_handle();
-      continue;
-    }
-
-    break;
-  }
-
+  (void) close(scoreboard_fd);
   scoreboard_fd = -1;
 
-  if (!keep_mutex) {
+  if (keep_mutex == FALSE) {
     pr_trace_msg(trace_channel, 4, "closing scoreboard mutex fd %d",
       scoreboard_mutex_fd);
 
-    while (close(scoreboard_mutex_fd) < 0) {
-      if (errno == EINTR) {
-        pr_signals_handle();
-        continue;
-      }
-
-      break;
-    }
-
+    (void) close(scoreboard_mutex_fd);
     scoreboard_mutex_fd = -1;
   }
 
@@ -428,25 +419,11 @@ void pr_delete_scoreboard(void) {
   }
 
   if (scoreboard_fd > -1) {
-    while (close(scoreboard_fd) < 0) {
-      if (errno == EINTR) {
-        pr_signals_handle();
-        continue;
-      }
-
-      break;
-    }
+    (void) close(scoreboard_fd);
   }
 
   if (scoreboard_mutex_fd > -1) {
-    while (close(scoreboard_mutex_fd) < 0) {
-      if (errno == EINTR) {
-        pr_signals_handle();
-        continue;
-      }
-
-      break;
-    }
+    (void) close(scoreboard_mutex_fd);
   }
 
   scoreboard_fd = -1;
@@ -582,7 +559,7 @@ int pr_open_scoreboard(int flags) {
         continue;
       }
 
-      close(scoreboard_fd);
+      (void) close(scoreboard_fd);
       scoreboard_fd = -1;
 
       pr_trace_msg(trace_channel, 9, "error opening ScoreboardMutex '%s': %s",
@@ -608,7 +585,6 @@ int pr_open_scoreboard(int flags) {
   /* Check the header of this scoreboard file. */
   res = read_scoreboard_header(&header);
   if (res == -1) {
-
     /* If this file is newly created, it needs to have the header
      * written.
      */
@@ -629,10 +605,10 @@ int pr_open_scoreboard(int flags) {
     if (res < 0) {
       int xerrno = errno;
 
-      close(scoreboard_mutex_fd);
+      (void) close(scoreboard_mutex_fd);
       scoreboard_mutex_fd = -1;
 
-      close(scoreboard_fd);
+      (void) close(scoreboard_fd);
       scoreboard_fd = -1;
 
       errno = xerrno;
@@ -651,10 +627,10 @@ int pr_open_scoreboard(int flags) {
 
       unlock_scoreboard();
 
-      close(scoreboard_mutex_fd);
+      (void) close(scoreboard_mutex_fd);
       scoreboard_mutex_fd = -1;
 
-      close(scoreboard_fd);
+      (void) close(scoreboard_fd);
       scoreboard_fd = -1;
 
       errno = xerrno;
@@ -795,14 +771,14 @@ int pr_set_scoreboard(const char *path) {
     return 0;
   }
 
-  if (strncasecmp(path, "none", 5) == 0) {
+  if (strcasecmp(path, "none") == 0) {
     pr_trace_msg(trace_channel, 3,
       "ScoreboardFile set to '%s', disabling scoreboarding", path);
     scoreboard_engine = FALSE;
     return 0;
   }
 
-  if (strncmp(path, "/dev/null", 10) == 0) {
+  if (strcmp(path, "/dev/null") == 0) {
     pr_trace_msg(trace_channel, 3,
       "ScoreboardFile set to '%s', disabling scoreboarding", path);
     scoreboard_engine = FALSE;
@@ -858,8 +834,9 @@ int pr_scoreboard_entry_add(void) {
 
   /* Write-lock the scoreboard file. */
   PR_DEVEL_CLOCK(res = wlock_scoreboard());
-  if (res < 0)
+  if (res < 0) {
     return -1;
+  }
 
   /* No interruptions, please. */
   pr_signals_block();
@@ -886,8 +863,9 @@ int pr_scoreboard_entry_add(void) {
       found_slot = TRUE;
     }
 
-    if (found_slot)
+    if (found_slot) {
       break;
+    }
   }
 
   memset(&entry, '\0', sizeof(entry));
@@ -1254,33 +1232,33 @@ int pr_scoreboard_entry_update(pid_t pid, ...) {
         break;
 
       case PR_SCORE_CMD: {
-          char *cmdstr = NULL;
-          tmp = va_arg(ap, char *);
-          cmdstr = handle_score_str(tmp, ap);
+        char *cmdstr = NULL;
+        tmp = va_arg(ap, char *);
+        cmdstr = handle_score_str(tmp, ap);
 
-          memset(entry.sce_cmd, '\0', sizeof(entry.sce_cmd));
-          sstrncpy(entry.sce_cmd, cmdstr, sizeof(entry.sce_cmd));
-          (void) va_arg(ap, void *);
+        memset(entry.sce_cmd, '\0', sizeof(entry.sce_cmd));
+        sstrncpy(entry.sce_cmd, cmdstr, sizeof(entry.sce_cmd));
+        (void) va_arg(ap, void *);
 
-          pr_trace_msg(trace_channel, 15, "updated scoreboard entry "
-            "command to '%s'", entry.sce_cmd);
-        }
+        pr_trace_msg(trace_channel, 15, "updated scoreboard entry "
+          "command to '%s'", entry.sce_cmd);
         break;
+      }
 
       case PR_SCORE_CMD_ARG: {
-          char *argstr = NULL;
-          tmp = va_arg(ap, char *);
-          argstr = handle_score_str(tmp, ap);
+        char *argstr = NULL;
+        tmp = va_arg(ap, char *);
+        argstr = handle_score_str(tmp, ap);
 
-          memset(entry.sce_cmd_arg, '\0', sizeof(entry.sce_cmd_arg));
-          sstrncpy(entry.sce_cmd_arg, argstr,
-            str_getlen(argstr, sizeof(entry.sce_cmd_arg)-1) + 1);
-          (void) va_arg(ap, void *);
+        memset(entry.sce_cmd_arg, '\0', sizeof(entry.sce_cmd_arg));
+        sstrncpy(entry.sce_cmd_arg, argstr,
+          str_getlen(argstr, sizeof(entry.sce_cmd_arg)-1) + 1);
+        (void) va_arg(ap, void *);
 
-          pr_trace_msg(trace_channel, 15, "updated scoreboard entry "
-            "command args to '%s'", entry.sce_cmd_arg);
-        }
+        pr_trace_msg(trace_channel, 15, "updated scoreboard entry "
+          "command args to '%s'", entry.sce_cmd_arg);
         break;
+      }
 
       case PR_SCORE_SERVER_PORT:
         entry.sce_server_port = va_arg(ap, int);
@@ -1289,18 +1267,18 @@ int pr_scoreboard_entry_update(pid_t pid, ...) {
         break;
 
       case PR_SCORE_SERVER_ADDR: {
-          pr_netaddr_t *server_addr = va_arg(ap, pr_netaddr_t *);
-          int server_port = va_arg(ap, int);
+        pr_netaddr_t *server_addr = va_arg(ap, pr_netaddr_t *);
+        int server_port = va_arg(ap, int);
 
-          pr_snprintf(entry.sce_server_addr, sizeof(entry.sce_server_addr),
-            "%s:%d", server_addr ? pr_netaddr_get_ipstr(server_addr) :
-            "(unknown)", server_port);
-          entry.sce_server_addr[sizeof(entry.sce_server_addr)-1] = '\0';
+        pr_snprintf(entry.sce_server_addr, sizeof(entry.sce_server_addr),
+          "%s:%d", server_addr ? pr_netaddr_get_ipstr(server_addr) :
+          "(unknown)", server_port);
+        entry.sce_server_addr[sizeof(entry.sce_server_addr)-1] = '\0';
 
-          pr_trace_msg(trace_channel, 15, "updated scoreboard entry server "
-            "address to '%s'", entry.sce_server_addr);
-        }
+        pr_trace_msg(trace_channel, 15, "updated scoreboard entry server "
+          "address to '%s'", entry.sce_server_addr);
         break;
+      }
 
       case PR_SCORE_SERVER_LABEL:
         tmp = va_arg(ap, char *);

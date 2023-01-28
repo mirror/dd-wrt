@@ -53,6 +53,7 @@ Most often used with the \fB-d option\fP for debugging.
 .B \-q,\--quiet
 Quiet mode; don't send logging information to standard error when running
 with the \fB-n option\fP.
+Logs are directed to the configured log output (syslog or logfile) instead.
 .TP
 .B \-v,\--version
 Displays the version number of ProFTPD to stdout.

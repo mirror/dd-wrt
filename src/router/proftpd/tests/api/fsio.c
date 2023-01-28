@@ -120,22 +120,22 @@ START_TEST (fsio_sys_open_test) {
   mark_point();
   flags = O_CREAT|O_EXCL|O_RDONLY;
   fh = pr_fsio_open(NULL, flags);
-  fail_unless(fh == NULL, "Failed to handle null arguments");
-  fail_unless(errno == EINVAL, "Expected EINVAL (%d), %s (%d)", EINVAL,
+  ck_assert_msg(fh == NULL, "Failed to handle null arguments");
+  ck_assert_msg(errno == EINVAL, "Expected EINVAL (%d), %s (%d)", EINVAL,
     strerror(errno), errno);
 
   mark_point();
   flags = O_RDONLY;
   fh = pr_fsio_open(fsio_test_path, flags);
-  fail_unless(fh == NULL, "Failed to handle non-existent file '%s'",
+  ck_assert_msg(fh == NULL, "Failed to handle non-existent file '%s'",
     fsio_test_path);
-  fail_unless(errno == ENOENT, "Expected ENOENT (%d), %s (%d)", ENOENT,
+  ck_assert_msg(errno == ENOENT, "Expected ENOENT (%d), %s (%d)", ENOENT,
     strerror(errno), errno);
 
   mark_point();
   flags = O_RDONLY;
   fh = pr_fsio_open("/etc/hosts", flags);
-  fail_unless(fh != NULL, "Failed to open /etc/hosts: %s", strerror(errno));
+  ck_assert_msg(fh != NULL, "Failed to open /etc/hosts: %s", strerror(errno));
 
   (void) pr_fsio_close(fh);
 }
@@ -147,20 +147,20 @@ START_TEST (fsio_sys_open_canon_test) {
 
   flags = O_CREAT|O_EXCL|O_RDONLY;
   fh = pr_fsio_open_canon(NULL, flags);
-  fail_unless(fh == NULL, "Failed to handle null arguments");
-  fail_unless(errno == EINVAL, "Expected EINVAL (%d), %s (%d)", EINVAL,
+  ck_assert_msg(fh == NULL, "Failed to handle null arguments");
+  ck_assert_msg(errno == EINVAL, "Expected EINVAL (%d), %s (%d)", EINVAL,
     strerror(errno), errno);
 
   flags = O_RDONLY;
   fh = pr_fsio_open_canon(fsio_test_path, flags);
-  fail_unless(fh == NULL, "Failed to handle non-existent file '%s'",
+  ck_assert_msg(fh == NULL, "Failed to handle non-existent file '%s'",
     fsio_test_path);
-  fail_unless(errno == ENOENT, "Expected ENOENT (%d), %s (%d)", ENOENT,
+  ck_assert_msg(errno == ENOENT, "Expected ENOENT (%d), %s (%d)", ENOENT,
     strerror(errno), errno);
 
   flags = O_RDONLY;
   fh = pr_fsio_open_canon("/etc/hosts", flags);
-  fail_unless(fh != NULL, "Failed to open /etc/hosts: %s", strerror(errno));
+  ck_assert_msg(fh != NULL, "Failed to open /etc/hosts: %s", strerror(errno));
 
   (void) pr_fsio_close(fh);
 }
@@ -172,17 +172,17 @@ START_TEST (fsio_sys_open_chroot_guard_test) {
   const char *path;
 
   res = pr_fsio_guard_chroot(TRUE);
-  fail_unless(res == FALSE, "Expected FALSE (%d), got %d", FALSE, res);
+  ck_assert_msg(res == FALSE, "Expected FALSE (%d), got %d", FALSE, res);
 
   path = "/etc/hosts";
   flags = O_CREAT|O_RDONLY;
   fh = pr_fsio_open(path, flags);
   if (fh != NULL) {
     (void) pr_fsio_close(fh);
-    fail("open(2) of %s succeeded unexpectedly", path);
+    ck_abort_msg("open(2) of %s succeeded unexpectedly", path);
   }
 
-  fail_unless(errno == EACCES, "Expected EACCES (%d), got %s (%d)", EACCES,
+  ck_assert_msg(errno == EACCES, "Expected EACCES (%d), got %s (%d)", EACCES,
     strerror(errno), errno);
 
   path = "/&Z";
@@ -190,38 +190,38 @@ START_TEST (fsio_sys_open_chroot_guard_test) {
   fh = pr_fsio_open(path, flags);
   if (fh != NULL) {
     (void) pr_fsio_close(fh);
-    fail("open(2) of %s succeeded unexpectedly", path);
+    ck_abort_msg("open(2) of %s succeeded unexpectedly", path);
   }
 
-  fail_unless(errno == ENOENT, "Expected ENOENT (%d), got %s (%d)", ENOENT,
-    strerror(errno));
+  ck_assert_msg(errno == ENOENT, "Expected ENOENT (%d), got %s (%d)", ENOENT,
+    strerror(errno), errno);
 
   path = "/etc";
   fh = pr_fsio_open(path, flags);
   if (fh != NULL) {
     (void) pr_fsio_close(fh);
-    fail("open(2) of %s succeeded unexpectedly", path);
+    ck_abort_msg("open(2) of %s succeeded unexpectedly", path);
   }
 
-  fail_unless(errno == EACCES, "Expected EACCES (%d), got %s (%d)", EACCES,
-    strerror(errno));
+  ck_assert_msg(errno == EACCES, "Expected EACCES (%d), got %s (%d)", EACCES,
+    strerror(errno), errno);
 
   path = "/lib";
   fh = pr_fsio_open(path, flags);
   if (fh != NULL) {
     (void) pr_fsio_close(fh);
-    fail("open(2) of %s succeeded unexpectedly", path);
+    ck_abort_msg("open(2) of %s succeeded unexpectedly", path);
   }
 
-  fail_unless(errno == EACCES, "Expected EACCES (%d), got %s (%d)", EACCES,
-    strerror(errno));
+  ck_assert_msg(errno == EACCES, "Expected EACCES (%d), got %s (%d)", EACCES,
+    strerror(errno), errno);
 
   (void) pr_fsio_guard_chroot(FALSE);
 
   path = "/etc/hosts";
   flags = O_RDONLY;
   fh = pr_fsio_open(path, flags);
-  fail_unless(fh != NULL, "Failed to open '%s': %s", path, strerror(errno));
+  ck_assert_msg(fh != NULL, "Failed to open '%s': %s", path, strerror(errno));
   (void) pr_fsio_close(fh);
 }
 END_TEST
@@ -231,16 +231,16 @@ START_TEST (fsio_sys_close_test) {
   pr_fh_t *fh;
 
   res = pr_fsio_close(NULL);
-  fail_unless(res < 0, "Failed to handle null arguments");
-  fail_unless(errno == EINVAL, "Expected EINVAL (%d), got %s %d", EINVAL,
+  ck_assert_msg(res < 0, "Failed to handle null arguments");
+  ck_assert_msg(errno == EINVAL, "Expected EINVAL (%d), got %s %d", EINVAL,
     strerror(errno), errno);
 
   fh = pr_fsio_open("/etc/hosts", O_RDONLY);
-  fail_unless(fh != NULL, "Failed to open /etc/hosts: %s",
+  ck_assert_msg(fh != NULL, "Failed to open /etc/hosts: %s",
     strerror(errno));
 
   res = pr_fsio_close(fh);
-  fail_unless(res == 0, "Failed to close file handle: %s", strerror(errno));
+  ck_assert_msg(res == 0, "Failed to close file handle: %s", strerror(errno));
 }
 END_TEST
 
@@ -249,17 +249,17 @@ START_TEST (fsio_sys_unlink_test) {
   pr_fh_t *fh;
 
   res = pr_fsio_unlink(NULL);
-  fail_unless(res < 0, "Failed to handle null arguments");
-  fail_unless(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
+  ck_assert_msg(res < 0, "Failed to handle null arguments");
+  ck_assert_msg(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
     strerror(errno), errno);
 
   fh = pr_fsio_open(fsio_unlink_path, O_CREAT|O_EXCL|O_WRONLY);
-  fail_unless(fh != NULL, "Failed to open '%s': %s", fsio_unlink_path,
+  ck_assert_msg(fh != NULL, "Failed to open '%s': %s", fsio_unlink_path,
     strerror(errno));
   (void) pr_fsio_close(fh);
 
   res = pr_fsio_unlink(fsio_unlink_path);
-  fail_unless(res == 0, "Failed to unlink '%s': %s", fsio_unlink_path,
+  ck_assert_msg(res == 0, "Failed to unlink '%s': %s", fsio_unlink_path,
     strerror(errno));
 }
 END_TEST
@@ -268,18 +268,18 @@ START_TEST (fsio_sys_unlink_chroot_guard_test) {
   int res;
 
   res = pr_fsio_guard_chroot(TRUE);
-  fail_unless(res == FALSE, "Expected FALSE (%d), got %d", FALSE, res);
+  ck_assert_msg(res == FALSE, "Expected FALSE (%d), got %d", FALSE, res);
 
   res = pr_fsio_unlink("/etc/hosts");
-  fail_unless(res < 0, "Deleted /etc/hosts unexpectedly");
-  fail_unless(errno == EACCES, "Expected EACCES (%d), got %s %d", EACCES,
+  ck_assert_msg(res < 0, "Deleted /etc/hosts unexpectedly");
+  ck_assert_msg(errno == EACCES, "Expected EACCES (%d), got %s %d", EACCES,
     strerror(errno), errno);
 
   (void) pr_fsio_guard_chroot(FALSE);
 
   res = pr_fsio_unlink("/lib/foo.bar.baz");
-  fail_unless(res < 0, "Deleted /lib/foo.bar.baz unexpectedly");
-  fail_unless(errno == ENOENT, "Expected ENOENT (%d), got %s %d", ENOENT,
+  ck_assert_msg(res < 0, "Deleted /lib/foo.bar.baz unexpectedly");
+  ck_assert_msg(errno == ENOENT, "Expected ENOENT (%d), got %s %d", ENOENT,
     strerror(errno), errno);
 }
 END_TEST
@@ -290,57 +290,57 @@ START_TEST (fsio_sys_stat_test) {
   unsigned int cache_size = 3, max_age = 1, policy_flags = 0;
 
   res = pr_fsio_stat(NULL, &st);
-  fail_unless(res < 0, "Failed to handle null path");
-  fail_unless(errno == EINVAL, "Expected EINVAL, got %s (%d)", strerror(errno),
+  ck_assert_msg(res < 0, "Failed to handle null path");
+  ck_assert_msg(errno == EINVAL, "Expected EINVAL, got %s (%d)", strerror(errno),
     errno);
 
   res = pr_fsio_stat("/", NULL);
-  fail_unless(res < 0, "Failed to handle null struct stat");
-  fail_unless(errno == EINVAL, "Expected EINVAL, got %s (%d)", strerror(errno),
+  ck_assert_msg(res < 0, "Failed to handle null struct stat");
+  ck_assert_msg(errno == EINVAL, "Expected EINVAL, got %s (%d)", strerror(errno),
     errno);
 
   res = pr_fsio_stat("/", &st);
-  fail_unless(res == 0, "Unexpected stat(2) error on '/': %s",
+  ck_assert_msg(res == 0, "Unexpected stat(2) error on '/': %s",
     strerror(errno));
-  fail_unless(S_ISDIR(st.st_mode), "'/' is not a directory as expected");
+  ck_assert_msg(S_ISDIR(st.st_mode), "'/' is not a directory as expected");
 
   /* Now, do the stat(2) again, and make sure we get the same information
    * from the cache.
    */
   res = pr_fsio_stat("/", &st);
-  fail_unless(res == 0, "Unexpected stat(2) error on '/': %s",
+  ck_assert_msg(res == 0, "Unexpected stat(2) error on '/': %s",
     strerror(errno));
-  fail_unless(S_ISDIR(st.st_mode), "'/' is not a directory as expected");
+  ck_assert_msg(S_ISDIR(st.st_mode), "'/' is not a directory as expected");
 
   pr_fs_statcache_reset();
   res = pr_fs_statcache_set_policy(cache_size, max_age, policy_flags);
-  fail_unless(res == 0, "Failed to set statcache policy: %s", strerror(errno));
+  ck_assert_msg(res == 0, "Failed to set statcache policy: %s", strerror(errno));
 
   res = pr_fsio_stat("/foo/bar/baz/quxx", &st);
-  fail_unless(res < 0, "Failed to handle nonexistent path");
-  fail_unless(errno == ENOENT, "Expected ENOENT, got %s (%d)", strerror(errno),
+  ck_assert_msg(res < 0, "Failed to handle nonexistent path");
+  ck_assert_msg(errno == ENOENT, "Expected ENOENT, got %s (%d)", strerror(errno),
     errno);
 
   res = pr_fsio_stat("/foo/bar/baz/quxx", &st);
-  fail_unless(res < 0, "Failed to handle nonexistent path");
-  fail_unless(errno == ENOENT, "Expected ENOENT, got %s (%d)", strerror(errno),
+  ck_assert_msg(res < 0, "Failed to handle nonexistent path");
+  ck_assert_msg(errno == ENOENT, "Expected ENOENT, got %s (%d)", strerror(errno),
     errno);
 
   /* Now wait for longer than 1 second (our configured max age) */
   sleep(max_age + 1);
 
   res = pr_fsio_stat("/foo/bar/baz/quxx", &st);
-  fail_unless(res < 0, "Failed to handle nonexistent path");
-  fail_unless(errno == ENOENT, "Expected ENOENT, got %s (%d)", strerror(errno),
+  ck_assert_msg(res < 0, "Failed to handle nonexistent path");
+  ck_assert_msg(errno == ENOENT, "Expected ENOENT, got %s (%d)", strerror(errno),
     errno);
 
   /* Stat a symlink path */
   res = pr_fsio_symlink("/tmp", fsio_link_path);
-  fail_unless(res == 0, "Failed to create symlink to '%s': %s", fsio_link_path,
+  ck_assert_msg(res == 0, "Failed to create symlink to '%s': %s", fsio_link_path,
     strerror(errno));
 
   res = pr_fsio_stat(fsio_link_path, &st);
-  fail_unless(res == 0, "Failed to stat '%s': %s", fsio_link_path,
+  ck_assert_msg(res == 0, "Failed to stat '%s': %s", fsio_link_path,
     strerror(errno));
 
   (void) unlink(fsio_link_path);
@@ -353,16 +353,16 @@ START_TEST (fsio_sys_fstat_test) {
   struct stat st;
 
   res = pr_fsio_fstat(NULL, NULL);
-  fail_unless(res < 0, "Failed to handle null arguments");
-  fail_unless(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
+  ck_assert_msg(res < 0, "Failed to handle null arguments");
+  ck_assert_msg(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
     strerror(errno), errno);
 
   fh = pr_fsio_open("/etc/hosts", O_RDONLY);
-  fail_unless(fh != NULL, "Failed to open /etc/hosts: %s",
+  ck_assert_msg(fh != NULL, "Failed to open /etc/hosts: %s",
     strerror(errno));
 
   res = pr_fsio_fstat(fh, &st);
-  fail_unless(res == 0, "Failed to fstat /etc/hosts: %s",
+  ck_assert_msg(res == 0, "Failed to fstat /etc/hosts: %s",
     strerror(errno));
   (void) pr_fsio_close(fh);
 }
@@ -375,29 +375,29 @@ START_TEST (fsio_sys_read_test) {
   size_t buflen;
 
   res = pr_fsio_read(NULL, NULL, 0);
-  fail_unless(res < 0, "Failed to handle null arguments");
-  fail_unless(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
+  ck_assert_msg(res < 0, "Failed to handle null arguments");
+  ck_assert_msg(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
     strerror(errno), errno);
 
   fh = pr_fsio_open("/etc/hosts", O_RDONLY);
-  fail_unless(fh != NULL, "Failed to open /etc/hosts: %s",
+  ck_assert_msg(fh != NULL, "Failed to open /etc/hosts: %s",
     strerror(errno));
 
   res = pr_fsio_read(fh, NULL, 0);
-  fail_unless(res < 0, "Failed to handle null buffer");
-  fail_unless(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
+  ck_assert_msg(res < 0, "Failed to handle null buffer");
+  ck_assert_msg(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
     strerror(errno), errno);
 
   buflen = 32;
   buf = palloc(p, buflen);
 
   res = pr_fsio_read(fh, buf, 0);
-  fail_unless(res < 0, "Failed to handle zero buffer length");
-  fail_unless(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
+  ck_assert_msg(res < 0, "Failed to handle zero buffer length");
+  ck_assert_msg(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
     strerror(errno), errno);
 
   res = pr_fsio_read(fh, buf, 1);
-  fail_unless(res == 1, "Failed to read 1 byte: %s", strerror(errno));
+  ck_assert_msg(res == 1, "Failed to read 1 byte: %s", strerror(errno));
 
   (void) pr_fsio_close(fh);
 }
@@ -410,29 +410,29 @@ START_TEST (fsio_sys_pread_test) {
   size_t buflen;
 
   res = pr_fsio_pread(NULL, NULL, 0, 0);
-  fail_unless(res < 0, "Failed to handle null arguments");
-  fail_unless(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
+  ck_assert_msg(res < 0, "Failed to handle null arguments");
+  ck_assert_msg(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
     strerror(errno), errno);
 
   fh = pr_fsio_open("/etc/hosts", O_RDONLY);
-  fail_unless(fh != NULL, "Failed to open /etc/hosts: %s",
+  ck_assert_msg(fh != NULL, "Failed to open /etc/hosts: %s",
     strerror(errno));
 
   res = pr_fsio_pread(fh, NULL, 0, 0);
-  fail_unless(res < 0, "Failed to handle null buffer");
-  fail_unless(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
+  ck_assert_msg(res < 0, "Failed to handle null buffer");
+  ck_assert_msg(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
     strerror(errno), errno);
 
   buflen = 32;
   buf = palloc(p, buflen);
 
   res = pr_fsio_pread(fh, buf, 0, 0);
-  fail_unless(res < 0, "Failed to handle zero buffer length");
-  fail_unless(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
+  ck_assert_msg(res < 0, "Failed to handle zero buffer length");
+  ck_assert_msg(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
     strerror(errno), errno);
 
   res = pr_fsio_pread(fh, buf, 1, 0);
-  fail_unless(res == 1, "Failed to read 1 byte: %s", strerror(errno));
+  ck_assert_msg(res == 1, "Failed to read 1 byte: %s", strerror(errno));
 
   (void) pr_fsio_close(fh);
 }
@@ -445,17 +445,18 @@ START_TEST (fsio_sys_write_test) {
   size_t buflen;
 
   res = pr_fsio_write(NULL, NULL, 0);
-  fail_unless(res < 0, "Failed to handle null arguments");
-  fail_unless(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
+  ck_assert_msg(res < 0, "Failed to handle null arguments");
+  ck_assert_msg(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
     strerror(errno), errno);
 
   fh = pr_fsio_open(fsio_test_path, O_CREAT|O_EXCL|O_WRONLY);
-  fail_unless(fh != NULL, "Failed to open '%s': %s", strerror(errno));
+  ck_assert_msg(fh != NULL, "Failed to open '%s': %s", fsio_test_path,
+    strerror(errno));
 
   /* XXX What happens if we use NULL buffer, zero length? */
   res = pr_fsio_write(fh, NULL, 0);
-  fail_unless(res < 0, "Failed to handle null buffer");
-  fail_unless(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
+  ck_assert_msg(res < 0, "Failed to handle null buffer");
+  ck_assert_msg(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
     strerror(errno), errno);
 
   buflen = 32;
@@ -463,10 +464,10 @@ START_TEST (fsio_sys_write_test) {
   memset(buf, 'c', buflen);
 
   res = pr_fsio_write(fh, buf, 0);
-  fail_unless(res == 0, "Failed to handle zero buffer length");
+  ck_assert_msg(res == 0, "Failed to handle zero buffer length");
 
   res = pr_fsio_write(fh, buf, buflen);
-  fail_unless((size_t) res == buflen, "Failed to write %lu bytes: %s",
+  ck_assert_msg((size_t) res == buflen, "Failed to write %lu bytes: %s",
     (unsigned long) buflen, strerror(errno));
 
   (void) pr_fsio_close(fh);
@@ -481,17 +482,18 @@ START_TEST (fsio_sys_pwrite_test) {
   size_t buflen;
 
   res = pr_fsio_pwrite(NULL, NULL, 0, 0);
-  fail_unless(res < 0, "Failed to handle null arguments");
-  fail_unless(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
+  ck_assert_msg(res < 0, "Failed to handle null arguments");
+  ck_assert_msg(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
     strerror(errno), errno);
 
   fh = pr_fsio_open(fsio_test_path, O_CREAT|O_EXCL|O_WRONLY);
-  fail_unless(fh != NULL, "Failed to open '%s': %s", strerror(errno));
+  ck_assert_msg(fh != NULL, "Failed to open '%s': %s", fsio_test_path,
+    strerror(errno));
 
   /* XXX What happens if we use NULL buffer, zero length? */
   res = pr_fsio_pwrite(fh, NULL, 0, 0);
-  fail_unless(res < 0, "Failed to handle null buffer");
-  fail_unless(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
+  ck_assert_msg(res < 0, "Failed to handle null buffer");
+  ck_assert_msg(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
     strerror(errno), errno);
 
   buflen = 32;
@@ -499,10 +501,10 @@ START_TEST (fsio_sys_pwrite_test) {
   memset(buf, 'c', buflen);
 
   res = pr_fsio_pwrite(fh, buf, 0, 0);
-  fail_unless(res == 0, "Failed to handle zero buffer length");
+  ck_assert_msg(res == 0, "Failed to handle zero buffer length");
 
   res = pr_fsio_pwrite(fh, buf, buflen, 0);
-  fail_unless((size_t) res == buflen, "Failed to write %lu bytes: %s",
+  ck_assert_msg((size_t) res == buflen, "Failed to write %lu bytes: %s",
     (unsigned long) buflen, strerror(errno));
 
   (void) pr_fsio_close(fh);
@@ -515,16 +517,16 @@ START_TEST (fsio_sys_lseek_test) {
   pr_fh_t *fh;
 
   res = pr_fsio_lseek(NULL, 0, 0);
-  fail_unless(res < 0, "Failed to handle null arguments");
-  fail_unless(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
+  ck_assert_msg(res < 0, "Failed to handle null arguments");
+  ck_assert_msg(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
     strerror(errno), errno);
 
   fh = pr_fsio_open("/etc/hosts", O_RDONLY);
-  fail_unless(fh != NULL, "Failed to open /etc/hosts: %s",
+  ck_assert_msg(fh != NULL, "Failed to open /etc/hosts: %s",
     strerror(errno));
 
   res = pr_fsio_lseek(fh, 0, 0);
-  fail_unless(res == 0, "Failed to seek to byte 0: %s", strerror(errno));
+  ck_assert_msg(res == 0, "Failed to seek to byte 0: %s", strerror(errno));
 
   (void) pr_fsio_close(fh);
 }
@@ -537,41 +539,41 @@ START_TEST (fsio_sys_link_test) {
 
   target_path = link_path = NULL;
   res = pr_fsio_link(target_path, link_path);
-  fail_unless(res < 0, "Failed to handle null arguments");
-  fail_unless(errno == EINVAL, "Expected EINVAL, got %s (%d)", strerror(errno),
+  ck_assert_msg(res < 0, "Failed to handle null arguments");
+  ck_assert_msg(errno == EINVAL, "Expected EINVAL, got %s (%d)", strerror(errno),
     errno);
 
   target_path = fsio_test_path;
   link_path = NULL;
   res = pr_fsio_link(target_path, link_path);
-  fail_unless(res < 0, "Failed to handle null link_path argument");
-  fail_unless(errno == EINVAL, "Expected EINVAL, got %s (%d)", strerror(errno),
+  ck_assert_msg(res < 0, "Failed to handle null link_path argument");
+  ck_assert_msg(errno == EINVAL, "Expected EINVAL, got %s (%d)", strerror(errno),
     errno);
 
   target_path = NULL;
   link_path = fsio_link_path;
   res = pr_fsio_link(target_path, link_path);
-  fail_unless(res < 0, "Failed to handle null target_path argument");
-  fail_unless(errno == EINVAL, "Expected EINVAL, got %s (%d)", strerror(errno),
+  ck_assert_msg(res < 0, "Failed to handle null target_path argument");
+  ck_assert_msg(errno == EINVAL, "Expected EINVAL, got %s (%d)", strerror(errno),
     errno);
 
   fh = pr_fsio_open(fsio_test_path, O_CREAT|O_EXCL|O_WRONLY);
-  fail_unless(fh != NULL, "Failed to create '%s': %s", fsio_test_path,
+  ck_assert_msg(fh != NULL, "Failed to create '%s': %s", fsio_test_path,
     strerror(errno));
   (void) pr_fsio_close(fh);
 
   /* Link a file (that exists) to itself */
   link_path = target_path = fsio_test_path;
   res = pr_fsio_link(target_path, link_path);
-  fail_unless(res < 0, "Failed to handle same existing source/destination");
-  fail_unless(errno == EEXIST, "Expected EEXIST, got %s (%d)", strerror(errno),
+  ck_assert_msg(res < 0, "Failed to handle same existing source/destination");
+  ck_assert_msg(errno == EEXIST, "Expected EEXIST, got %s (%d)", strerror(errno),
     errno);
 
   /* Create expected link */
   link_path = fsio_link_path;
   target_path = fsio_test_path;
   res = pr_fsio_link(target_path, link_path);
-  fail_unless(res == 0, "Failed to create link from '%s' to '%s': %s",
+  ck_assert_msg(res == 0, "Failed to create link from '%s' to '%s': %s",
     link_path, target_path, strerror(errno));
   (void) unlink(link_path);
   (void) pr_fsio_unlink(fsio_test_path);
@@ -582,19 +584,19 @@ START_TEST (fsio_sys_link_chroot_guard_test) {
   int res;
 
   res = pr_fsio_guard_chroot(TRUE);
-  fail_unless(res == FALSE, "Expected FALSE (%d), got %d", FALSE, res);
+  ck_assert_msg(res == FALSE, "Expected FALSE (%d), got %d", FALSE, res);
 
   res = pr_fsio_link(fsio_link_path, "/etc/foo.bar.baz");
-  fail_unless(res < 0, "Linked /etc/foo.bar.baz unexpectedly");
-  fail_unless(errno == EACCES, "Expected EACCES (%d), got %s %d", EACCES,
+  ck_assert_msg(res < 0, "Linked /etc/foo.bar.baz unexpectedly");
+  ck_assert_msg(errno == EACCES, "Expected EACCES (%d), got %s %d", EACCES,
     strerror(errno), errno);
 
   (void) pr_fsio_guard_chroot(FALSE);
 
   (void) pr_fsio_unlink(fsio_link_path);
   res = pr_fsio_link(fsio_link_path, "/lib/foo/bar/baz");
-  fail_unless(res < 0, "Linked /lib/foo/bar/baz unexpectedly");
-  fail_unless(errno == ENOENT, "Expected ENOENT (%d), got %s %d", ENOENT,
+  ck_assert_msg(res < 0, "Linked /lib/foo/bar/baz unexpectedly");
+  ck_assert_msg(errno == ENOENT, "Expected ENOENT (%d), got %s %d", ENOENT,
     strerror(errno), errno);
 }
 END_TEST
@@ -605,36 +607,36 @@ START_TEST (fsio_sys_symlink_test) {
 
   target_path = link_path = NULL;
   res = pr_fsio_symlink(target_path, link_path);
-  fail_unless(res < 0, "Failed to handle null arguments");
-  fail_unless(errno == EINVAL, "Expected EINVAL, got %s (%d)", strerror(errno),
+  ck_assert_msg(res < 0, "Failed to handle null arguments");
+  ck_assert_msg(errno == EINVAL, "Expected EINVAL, got %s (%d)", strerror(errno),
     errno);
 
   target_path = "/tmp";
   link_path = NULL;
   res = pr_fsio_symlink(target_path, link_path);
-  fail_unless(res < 0, "Failed to handle null link_path argument");
-  fail_unless(errno == EINVAL, "Expected EINVAL, got %s (%d)", strerror(errno),
+  ck_assert_msg(res < 0, "Failed to handle null link_path argument");
+  ck_assert_msg(errno == EINVAL, "Expected EINVAL, got %s (%d)", strerror(errno),
     errno);
 
   target_path = NULL;
   link_path = fsio_link_path;
   res = pr_fsio_symlink(target_path, link_path);
-  fail_unless(res < 0, "Failed to handle null target_path argument");
-  fail_unless(errno == EINVAL, "Expected EINVAL, got %s (%d)", strerror(errno),
+  ck_assert_msg(res < 0, "Failed to handle null target_path argument");
+  ck_assert_msg(errno == EINVAL, "Expected EINVAL, got %s (%d)", strerror(errno),
     errno);
 
   /* Symlink a file (that exists) to itself */
   link_path = target_path = "/tmp";
   res = pr_fsio_symlink(target_path, link_path);
-  fail_unless(res < 0, "Failed to handle same existing source/destination");
-  fail_unless(errno == EEXIST, "Expected EEXIST, got %s (%d)", strerror(errno),
+  ck_assert_msg(res < 0, "Failed to handle same existing source/destination");
+  ck_assert_msg(errno == EEXIST, "Expected EEXIST, got %s (%d)", strerror(errno),
     errno);
 
   /* Create expected symlink */
   link_path = fsio_link_path;
   target_path = "/tmp";
   res = pr_fsio_symlink(target_path, link_path);
-  fail_unless(res == 0, "Failed to create symlink from '%s' to '%s': %s",
+  ck_assert_msg(res == 0, "Failed to create symlink from '%s' to '%s': %s",
     link_path, target_path, strerror(errno));
   (void) unlink(link_path);
 }
@@ -644,19 +646,19 @@ START_TEST (fsio_sys_symlink_chroot_guard_test) {
   int res;
 
   res = pr_fsio_guard_chroot(TRUE);
-  fail_unless(res == FALSE, "Expected FALSE (%d), got %d", FALSE, res);
+  ck_assert_msg(res == FALSE, "Expected FALSE (%d), got %d", FALSE, res);
 
   res = pr_fsio_symlink(fsio_link_path, "/etc/foo.bar.baz");
-  fail_unless(res < 0, "Symlinked /etc/foo.bar.baz unexpectedly");
-  fail_unless(errno == EACCES, "Expected EACCES (%d), got %s %d", EACCES,
+  ck_assert_msg(res < 0, "Symlinked /etc/foo.bar.baz unexpectedly");
+  ck_assert_msg(errno == EACCES, "Expected EACCES (%d), got %s %d", EACCES,
     strerror(errno), errno);
 
   (void) pr_fsio_guard_chroot(FALSE);
   (void) pr_fsio_unlink(fsio_link_path);
 
   res = pr_fsio_symlink(fsio_link_path, "/lib/foo/bar/baz");
-  fail_unless(res < 0, "Symlinked /lib/foo/bar/baz unexpectedly");
-  fail_unless(errno == ENOENT, "Expected ENOENT (%d), got %s %d", ENOENT,
+  ck_assert_msg(res < 0, "Symlinked /lib/foo/bar/baz unexpectedly");
+  ck_assert_msg(errno == ENOENT, "Expected ENOENT (%d), got %s %d", ENOENT,
     strerror(errno), errno);
 }
 END_TEST
@@ -667,35 +669,35 @@ START_TEST (fsio_sys_readlink_test) {
   const char *link_path, *target_path, *path;
 
   res = pr_fsio_readlink(NULL, NULL, 0);
-  fail_unless(res < 0, "Failed to handle null arguments");
-  fail_unless(errno == EINVAL, "Expected EINVAL, got %s (%d)", strerror(errno),
+  ck_assert_msg(res < 0, "Failed to handle null arguments");
+  ck_assert_msg(errno == EINVAL, "Expected EINVAL, got %s (%d)", strerror(errno),
     errno);
 
   /* Read a non-symlink file */
   path = "/";
   res = pr_fsio_readlink(path, buf, sizeof(buf)-1);
-  fail_unless(res < 0, "Failed to handle non-symlink path");
-  fail_unless(errno == EINVAL, "Expected EINVAL, got %s (%d)", strerror(errno),
+  ck_assert_msg(res < 0, "Failed to handle non-symlink path");
+  ck_assert_msg(errno == EINVAL, "Expected EINVAL, got %s (%d)", strerror(errno),
     errno);
 
   /* Read a symlink file */
   target_path = "/tmp";
   link_path = fsio_link_path;
   res = pr_fsio_symlink(target_path, link_path);
-  fail_unless(res == 0, "Failed to create symlink from '%s' to '%s': %s",
+  ck_assert_msg(res == 0, "Failed to create symlink from '%s' to '%s': %s",
     link_path, target_path, strerror(errno));
 
   memset(buf, '\0', sizeof(buf));
   res = pr_fsio_readlink(link_path, buf, sizeof(buf)-1);
-  fail_unless(res > 0, "Failed to read symlink '%s': %s", link_path,
+  ck_assert_msg(res > 0, "Failed to read symlink '%s': %s", link_path,
     strerror(errno));
   buf[res] = '\0';
-  fail_unless(strcmp(buf, target_path) == 0, "Expected '%s', got '%s'",
+  ck_assert_msg(strcmp(buf, target_path) == 0, "Expected '%s', got '%s'",
     target_path, buf);
 
   /* Read a symlink file using a zero-length buffer */
   res = pr_fsio_readlink(link_path, buf, 0);
-  fail_unless(res <= 0, "Expected length <= 0, got %d", res);
+  ck_assert_msg(res <= 0, "Expected length <= 0, got %d", res);
 
   (void) unlink(link_path);
 }
@@ -707,57 +709,57 @@ START_TEST (fsio_sys_lstat_test) {
   unsigned int cache_size = 3, max_age = 1, policy_flags = 0;
 
   res = pr_fsio_lstat(NULL, &st);
-  fail_unless(res < 0, "Failed to handle null path");
-  fail_unless(errno == EINVAL, "Expected EINVAL, got %s (%d)", strerror(errno),
+  ck_assert_msg(res < 0, "Failed to handle null path");
+  ck_assert_msg(errno == EINVAL, "Expected EINVAL, got %s (%d)", strerror(errno),
     errno);
 
   res = pr_fsio_lstat("/", NULL);
-  fail_unless(res < 0, "Failed to handle null struct stat");
-  fail_unless(errno == EINVAL, "Expected EINVAL, got %s (%d)", strerror(errno),
+  ck_assert_msg(res < 0, "Failed to handle null struct stat");
+  ck_assert_msg(errno == EINVAL, "Expected EINVAL, got %s (%d)", strerror(errno),
     errno);
 
   res = pr_fsio_lstat("/", &st);
-  fail_unless(res == 0, "Unexpected lstat(2) error on '/': %s",
+  ck_assert_msg(res == 0, "Unexpected lstat(2) error on '/': %s",
     strerror(errno));
-  fail_unless(S_ISDIR(st.st_mode), "'/' is not a directory as expected");
+  ck_assert_msg(S_ISDIR(st.st_mode), "'/' is not a directory as expected");
 
   /* Now, do the lstat(2) again, and make sure we get the same information
    * from the cache.
    */
   res = pr_fsio_lstat("/", &st);
-  fail_unless(res == 0, "Unexpected lstat(2) error on '/': %s",
+  ck_assert_msg(res == 0, "Unexpected lstat(2) error on '/': %s",
     strerror(errno));
-  fail_unless(S_ISDIR(st.st_mode), "'/' is not a directory as expected");
+  ck_assert_msg(S_ISDIR(st.st_mode), "'/' is not a directory as expected");
 
   pr_fs_statcache_reset();
   res = pr_fs_statcache_set_policy(cache_size, max_age, policy_flags);
-  fail_unless(res == 0, "Failed to set statcache policy: %s", strerror(errno));
+  ck_assert_msg(res == 0, "Failed to set statcache policy: %s", strerror(errno));
 
   res = pr_fsio_lstat("/foo/bar/baz/quxx", &st);
-  fail_unless(res < 0, "Failed to handle nonexistent path");
-  fail_unless(errno == ENOENT, "Expected ENOENT, got %s (%d)", strerror(errno),
+  ck_assert_msg(res < 0, "Failed to handle nonexistent path");
+  ck_assert_msg(errno == ENOENT, "Expected ENOENT, got %s (%d)", strerror(errno),
     errno);
 
   res = pr_fsio_lstat("/foo/bar/baz/quxx", &st);
-  fail_unless(res < 0, "Failed to handle nonexistent path");
-  fail_unless(errno == ENOENT, "Expected ENOENT, got %s (%d)", strerror(errno),
+  ck_assert_msg(res < 0, "Failed to handle nonexistent path");
+  ck_assert_msg(errno == ENOENT, "Expected ENOENT, got %s (%d)", strerror(errno),
     errno);
 
   /* Now wait for longer than 1 second (our configured max age) */
   sleep(max_age + 1);
 
   res = pr_fsio_lstat("/foo/bar/baz/quxx", &st);
-  fail_unless(res < 0, "Failed to handle nonexistent path");
-  fail_unless(errno == ENOENT, "Expected ENOENT, got %s (%d)", strerror(errno),
+  ck_assert_msg(res < 0, "Failed to handle nonexistent path");
+  ck_assert_msg(errno == ENOENT, "Expected ENOENT, got %s (%d)", strerror(errno),
     errno);
 
   /* lstat a symlink path */
   res = pr_fsio_symlink("/tmp", fsio_link_path);
-  fail_unless(res == 0, "Failed to create symlink to '%s': %s", fsio_link_path,
+  ck_assert_msg(res == 0, "Failed to create symlink to '%s': %s", fsio_link_path,
     strerror(errno));
 
   res = pr_fsio_lstat(fsio_link_path, &st);
-  fail_unless(res == 0, "Failed to lstat '%s': %s", fsio_link_path,
+  ck_assert_msg(res == 0, "Failed to lstat '%s': %s", fsio_link_path,
     strerror(errno));
 
   (void) unlink(fsio_link_path);
@@ -772,48 +774,48 @@ START_TEST (fsio_sys_access_dir_test) {
   array_header *suppl_gids;
 
   res = pr_fsio_access(NULL, X_OK, uid, gid, NULL);
-  fail_unless(res < 0, "Failed to handle null path");
-  fail_unless(errno == EINVAL, "Expected EINVAL, got %s (%d)", strerror(errno),
+  ck_assert_msg(res < 0, "Failed to handle null path");
+  ck_assert_msg(errno == EINVAL, "Expected EINVAL, got %s (%d)", strerror(errno),
     errno);
 
   res = pr_fsio_access("/baz/bar/foo", X_OK, uid, gid, NULL);
-  fail_unless(res < 0, "Failed to handle nonexistent path");
-  fail_unless(errno == ENOENT, "Expected ENOENT (%d), got %s (%d)", ENOENT,
+  ck_assert_msg(res < 0, "Failed to handle nonexistent path");
+  ck_assert_msg(errno == ENOENT, "Expected ENOENT (%d), got %s (%d)", ENOENT,
     strerror(errno), errno);
 
   /* Make the directory to check; we want it to have perms 771.*/
   perms = (mode_t) 0771;
   res = mkdir(fsio_testdir_path, perms);
-  fail_if(res < 0, "Unable to create directory '%s': %s", fsio_testdir_path,
+  ck_assert_msg(res >= 0, "Unable to create directory '%s': %s", fsio_testdir_path,
     strerror(errno));
 
   /* Use chmod(2) to ensure that the directory has the perms we want,
    * regardless of any umask settings.
    */
   res = chmod(fsio_testdir_path, perms);
-  fail_if(res < 0, "Unable to set perms %04o on directory '%s': %s", perms,
+  ck_assert_msg(res >= 0, "Unable to set perms %04o on directory '%s': %s", perms,
     fsio_testdir_path, strerror(errno));
 
   /* First, check that we ourselves can access our own directory. */
 
   pr_fs_clear_cache2(fsio_testdir_path);
   res = pr_fsio_access(fsio_testdir_path, F_OK, uid, gid, NULL);
-  fail_unless(res == 0, "Failed to check for file access on directory: %s",
+  ck_assert_msg(res == 0, "Failed to check for file access on directory: %s",
     strerror(errno));
 
   pr_fs_clear_cache2(fsio_testdir_path);
   res = pr_fsio_access(fsio_testdir_path, R_OK, uid, gid, NULL);
-  fail_unless(res == 0, "Failed to check for read access on directory: %s",
+  ck_assert_msg(res == 0, "Failed to check for read access on directory: %s",
     strerror(errno));
 
   pr_fs_clear_cache2(fsio_testdir_path);
   res = pr_fsio_access(fsio_testdir_path, W_OK, uid, gid, NULL);
-  fail_unless(res == 0, "Failed to check for write access on directory: %s",
+  ck_assert_msg(res == 0, "Failed to check for write access on directory: %s",
     strerror(errno));
 
   pr_fs_clear_cache2(fsio_testdir_path);
   res = pr_fsio_access(fsio_testdir_path, X_OK, uid, gid, NULL);
-  fail_unless(res == 0, "Failed to check for execute access on directory: %s",
+  ck_assert_msg(res == 0, "Failed to check for execute access on directory: %s",
     strerror(errno));
 
   suppl_gids = make_array(p, 1, sizeof(gid_t));
@@ -821,17 +823,17 @@ START_TEST (fsio_sys_access_dir_test) {
 
   pr_fs_clear_cache2(fsio_testdir_path);
   res = pr_fsio_access(fsio_testdir_path, X_OK, uid, gid, suppl_gids);
-  fail_unless(res == 0, "Failed to check for execute access on directory: %s",
+  ck_assert_msg(res == 0, "Failed to check for execute access on directory: %s",
     strerror(errno));
 
   pr_fs_clear_cache2(fsio_testdir_path);
   res = pr_fsio_access(fsio_testdir_path, R_OK, uid, gid, suppl_gids);
-  fail_unless(res == 0, "Failed to check for read access on directory: %s",
+  ck_assert_msg(res == 0, "Failed to check for read access on directory: %s",
     strerror(errno));
 
   pr_fs_clear_cache2(fsio_testdir_path);
   res = pr_fsio_access(fsio_testdir_path, W_OK, uid, gid, suppl_gids);
-  fail_unless(res == 0, "Failed to check for write access on directory: %s",
+  ck_assert_msg(res == 0, "Failed to check for write access on directory: %s",
     strerror(errno));
 
   if (getenv("CI") == NULL &&
@@ -848,30 +850,30 @@ START_TEST (fsio_sys_access_dir_test) {
     pr_fs_clear_cache2(fsio_testdir_path);
     res = pr_fsio_access(fsio_testdir_path, F_OK, other_uid, other_gid,
       NULL);
-    fail_unless(res == 0,
+    ck_assert_msg(res == 0,
       "Failed to check for other file access on directory: %s",
       strerror(errno));
 
     pr_fs_clear_cache2(fsio_testdir_path);
     res = pr_fsio_access(fsio_testdir_path, R_OK, other_uid, other_gid,
       NULL);
-    fail_unless(res < 0,
+    ck_assert_msg(res < 0,
       "other read access on directory succeeded unexpectedly");
-    fail_unless(errno == EACCES, "Expected EACCES, got %s (%d)",
+    ck_assert_msg(errno == EACCES, "Expected EACCES, got %s (%d)",
       strerror(errno), errno);
 
     pr_fs_clear_cache2(fsio_testdir_path);
     res = pr_fsio_access(fsio_testdir_path, W_OK, other_uid, other_gid,
       NULL);
-    fail_unless(res < 0,
+    ck_assert_msg(res < 0,
       "other write access on directory succeeded unexpectedly");
-    fail_unless(errno == EACCES, "Expected EACCES, got %s (%d)",
+    ck_assert_msg(errno == EACCES, "Expected EACCES, got %s (%d)",
       strerror(errno), errno);
 
     pr_fs_clear_cache2(fsio_testdir_path);
     res = pr_fsio_access(fsio_testdir_path, X_OK, other_uid, other_gid,
       NULL);
-    fail_unless(res == 0, "Failed to check for execute access on directory: %s",
+    ck_assert_msg(res == 0, "Failed to check for execute access on directory: %s",
       strerror(errno));
   }
 
@@ -888,36 +890,36 @@ START_TEST (fsio_sys_access_file_test) {
 
   /* Make the file to check; we want it to have perms 664.*/
   fd = open(fsio_test_path, O_CREAT|O_EXCL|O_WRONLY, S_IRUSR|S_IWUSR);
-  fail_if(fd < 0, "Unable to create file '%s': %s", fsio_test_path,
+  ck_assert_msg(fd >= 0, "Unable to create file '%s': %s", fsio_test_path,
     strerror(errno));
 
   /* Use chmod(2) to ensure that the file has the perms we want,
    * regardless of any umask settings.
    */
   res = chmod(fsio_test_path, perms);
-  fail_if(res < 0, "Unable to set perms %04o on file '%s': %s", perms,
+  ck_assert_msg(res >= 0, "Unable to set perms %04o on file '%s': %s", perms,
     fsio_test_path, strerror(errno));
 
   /* First, check that we ourselves can access our own file. */
 
   pr_fs_clear_cache2(fsio_test_path);
   res = pr_fsio_access(fsio_test_path, F_OK, uid, gid, NULL);
-  fail_unless(res == 0, "Failed to check for file access on '%s': %s",
+  ck_assert_msg(res == 0, "Failed to check for file access on '%s': %s",
     fsio_test_path, strerror(errno));
 
   pr_fs_clear_cache2(fsio_test_path);
   res = pr_fsio_access(fsio_test_path, R_OK, uid, gid, NULL);
-  fail_unless(res == 0, "Failed to check for read access on '%s': %s",
+  ck_assert_msg(res == 0, "Failed to check for read access on '%s': %s",
     fsio_test_path, strerror(errno));
 
   pr_fs_clear_cache2(fsio_test_path);
   res = pr_fsio_access(fsio_test_path, W_OK, uid, gid, NULL);
-  fail_unless(res == 0, "Failed to check for write access on '%s': %s",
+  ck_assert_msg(res == 0, "Failed to check for write access on '%s': %s",
     fsio_test_path, strerror(errno));
 
   pr_fs_clear_cache2(fsio_test_path);
   res = pr_fsio_access(fsio_test_path, X_OK, uid, gid, NULL);
-  fail_unless(res == 0, "Failed to check for execute access on '%s': %s",
+  ck_assert_msg(res == 0, "Failed to check for execute access on '%s': %s",
     fsio_test_path, strerror(errno));
 
   suppl_gids = make_array(p, 1, sizeof(gid_t));
@@ -925,17 +927,17 @@ START_TEST (fsio_sys_access_file_test) {
 
   pr_fs_clear_cache2(fsio_test_path);
   res = pr_fsio_access(fsio_test_path, X_OK, uid, gid, suppl_gids);
-  fail_unless(res == 0, "Failed to check for execute access on '%s': %s",
+  ck_assert_msg(res == 0, "Failed to check for execute access on '%s': %s",
     fsio_test_path, strerror(errno));
 
   pr_fs_clear_cache2(fsio_test_path);
   res = pr_fsio_access(fsio_test_path, R_OK, uid, gid, suppl_gids);
-  fail_unless(res == 0, "Failed to check for read access on '%s': %s",
+  ck_assert_msg(res == 0, "Failed to check for read access on '%s': %s",
     fsio_test_path, strerror(errno));
 
   pr_fs_clear_cache2(fsio_test_path);
   res = pr_fsio_access(fsio_test_path, W_OK, uid, gid, suppl_gids);
-  fail_unless(res == 0, "Failed to check for write access on '%s': %s",
+  ck_assert_msg(res == 0, "Failed to check for write access on '%s': %s",
     fsio_test_path, strerror(errno));
 
   (void) unlink(fsio_test_path);
@@ -950,41 +952,41 @@ START_TEST (fsio_sys_faccess_test) {
   pr_fh_t *fh;
 
   res = pr_fsio_faccess(NULL, F_OK, uid, gid, NULL);
-  fail_unless(res < 0, "Failed to handle null arguments");
-  fail_unless(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
+  ck_assert_msg(res < 0, "Failed to handle null arguments");
+  ck_assert_msg(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
     strerror(errno), errno);
 
   fh = pr_fsio_open(fsio_test_path, O_CREAT|O_EXCL|O_WRONLY);
-  fail_unless(fh != NULL, "Unable to create file '%s': %s", fsio_test_path,
+  ck_assert_msg(fh != NULL, "Unable to create file '%s': %s", fsio_test_path,
     strerror(errno));
 
   /* Use chmod(2) to ensure that the file has the perms we want,
    * regardless of any umask settings.
    */
   res = chmod(fsio_test_path, perms);
-  fail_if(res < 0, "Unable to set perms %04o on file '%s': %s", perms,
+  ck_assert_msg(res >= 0, "Unable to set perms %04o on file '%s': %s", perms,
     fsio_test_path, strerror(errno));
 
   /* First, check that we ourselves can access our own file. */
 
   pr_fs_clear_cache2(fsio_test_path);
   res = pr_fsio_faccess(fh, F_OK, uid, gid, NULL);
-  fail_unless(res == 0, "Failed to check for file access on '%s': %s",
+  ck_assert_msg(res == 0, "Failed to check for file access on '%s': %s",
     fsio_test_path, strerror(errno));
 
   pr_fs_clear_cache2(fsio_test_path);
   res = pr_fsio_faccess(fh, R_OK, uid, gid, NULL);
-  fail_unless(res == 0, "Failed to check for read access on '%s': %s",
+  ck_assert_msg(res == 0, "Failed to check for read access on '%s': %s",
     fsio_test_path, strerror(errno));
 
   pr_fs_clear_cache2(fsio_test_path);
   res = pr_fsio_faccess(fh, W_OK, uid, gid, NULL);
-  fail_unless(res == 0, "Failed to check for write access on '%s': %s",
+  ck_assert_msg(res == 0, "Failed to check for write access on '%s': %s",
     fsio_test_path, strerror(errno));
 
   pr_fs_clear_cache2(fsio_test_path);
   res = pr_fsio_faccess(fh, X_OK, uid, gid, NULL);
-  fail_unless(res < 0,
+  ck_assert_msg(res < 0,
     "Check for execute access on '%s' succeeded unexpectedly", fsio_test_path);
 
   (void) pr_fsio_close(fh);
@@ -998,21 +1000,21 @@ START_TEST (fsio_sys_truncate_test) {
   pr_fh_t *fh;
 
   res = pr_fsio_truncate(NULL, 0);
-  fail_unless(res < 0, "Failed to handle null arguments");
-  fail_unless(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
+  ck_assert_msg(res < 0, "Failed to handle null arguments");
+  ck_assert_msg(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
     strerror(errno), errno);
 
   res = pr_fsio_truncate(fsio_test_path, 0);
-  fail_unless(res < 0, "Truncated '%s' unexpectedly", fsio_test_path);
-  fail_unless(errno == ENOENT, "Expected ENOENT (%d), got %s (%d)", ENOENT,
+  ck_assert_msg(res < 0, "Truncated '%s' unexpectedly", fsio_test_path);
+  ck_assert_msg(errno == ENOENT, "Expected ENOENT (%d), got %s (%d)", ENOENT,
     strerror(errno), errno);
 
   fh = pr_fsio_open(fsio_test_path, O_CREAT|O_EXCL|O_WRONLY);
-  fail_unless(fh != NULL, "Failed to create '%s': %s", fsio_test_path,
+  ck_assert_msg(fh != NULL, "Failed to create '%s': %s", fsio_test_path,
     strerror(errno));
 
   res = pr_fsio_truncate(fsio_test_path, len);
-  fail_unless(res == 0, "Failed to truncate '%s': %s", fsio_test_path,
+  ck_assert_msg(res == 0, "Failed to truncate '%s': %s", fsio_test_path,
     strerror(errno));
 
   (void) pr_fsio_close(fh);
@@ -1024,18 +1026,18 @@ START_TEST (fsio_sys_truncate_chroot_guard_test) {
   int res;
 
   res = pr_fsio_guard_chroot(TRUE);
-  fail_unless(res == FALSE, "Expected FALSE (%d), got %d", FALSE, res);
+  ck_assert_msg(res == FALSE, "Expected FALSE (%d), got %d", FALSE, res);
 
   res = pr_fsio_truncate("/etc/foo.bar.baz", 0);
-  fail_unless(res < 0, "Truncated /etc/foo.bar.baz unexpectedly");
-  fail_unless(errno == EACCES, "Expected EACCES (%d), got %s %d", EACCES,
+  ck_assert_msg(res < 0, "Truncated /etc/foo.bar.baz unexpectedly");
+  ck_assert_msg(errno == EACCES, "Expected EACCES (%d), got %s %d", EACCES,
     strerror(errno), errno);
 
   (void) pr_fsio_guard_chroot(FALSE);
 
   res = pr_fsio_truncate("/lib/foo/bar/baz", 0);
-  fail_unless(res < 0, "Truncated /lib/foo/bar/baz unexpectedly");
-  fail_unless(errno == ENOENT, "Expected ENOENT (%d), got %s %d", ENOENT,
+  ck_assert_msg(res < 0, "Truncated /lib/foo/bar/baz unexpectedly");
+  ck_assert_msg(errno == ENOENT, "Expected ENOENT (%d), got %s %d", ENOENT,
     strerror(errno), errno);
 }
 END_TEST
@@ -1047,17 +1049,17 @@ START_TEST (fsio_sys_ftruncate_test) {
   pr_buffer_t *buf;
 
   res = pr_fsio_ftruncate(NULL, 0);
-  fail_unless(res < 0, "Failed to handle null arguments");
-  fail_unless(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
+  ck_assert_msg(res < 0, "Failed to handle null arguments");
+  ck_assert_msg(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
     strerror(errno), errno);
 
   fh = pr_fsio_open(fsio_test_path, O_CREAT|O_EXCL|O_WRONLY);
-  fail_unless(fh != NULL, "Failed to create '%s': %s", fsio_test_path,
+  ck_assert_msg(fh != NULL, "Failed to create '%s': %s", fsio_test_path,
     strerror(errno));
 
   mark_point();
   res = pr_fsio_ftruncate(fh, len);
-  fail_unless(res == 0, "Failed to truncate '%s': %s", fsio_test_path,
+  ck_assert_msg(res == 0, "Failed to truncate '%s': %s", fsio_test_path,
     strerror(errno));
 
   /* Attach a read buffer to the handle, make sure it is cleared. */
@@ -1069,9 +1071,9 @@ START_TEST (fsio_sys_ftruncate_test) {
 
   mark_point();
   res = pr_fsio_ftruncate(fh, len);
-  fail_unless(res == 0, "Failed to truncate '%s': %s", fsio_test_path,
+  ck_assert_msg(res == 0, "Failed to truncate '%s': %s", fsio_test_path,
     strerror(errno));
-  fail_unless(buf->remaining == buf->buflen,
+  ck_assert_msg(buf->remaining == buf->buflen,
     "Expected %lu, got %lu", (unsigned long) buf->buflen,
     (unsigned long) buf->remaining);
 
@@ -1086,21 +1088,21 @@ START_TEST (fsio_sys_chmod_test) {
   pr_fh_t *fh;
 
   res = pr_fsio_chmod(NULL, mode);
-  fail_unless(res < 0, "Failed to handle null arguments");
-  fail_unless(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
+  ck_assert_msg(res < 0, "Failed to handle null arguments");
+  ck_assert_msg(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
     strerror(errno), errno);
 
   res = pr_fsio_chmod(fsio_test_path, 0);
-  fail_unless(res < 0, "Changed perms of '%s' unexpectedly", fsio_test_path);
-  fail_unless(errno == ENOENT, "Expected ENOENT (%d), got %s (%d)", ENOENT,
+  ck_assert_msg(res < 0, "Changed perms of '%s' unexpectedly", fsio_test_path);
+  ck_assert_msg(errno == ENOENT, "Expected ENOENT (%d), got %s (%d)", ENOENT,
     strerror(errno), errno);
 
   fh = pr_fsio_open(fsio_test_path, O_CREAT|O_EXCL|O_WRONLY);
-  fail_unless(fh != NULL, "Failed to create '%s': %s", fsio_test_path,
+  ck_assert_msg(fh != NULL, "Failed to create '%s': %s", fsio_test_path,
     strerror(errno));
 
   res = pr_fsio_chmod(fsio_test_path, mode);
-  fail_unless(res == 0, "Failed to set perms of '%s': %s", fsio_test_path,
+  ck_assert_msg(res == 0, "Failed to set perms of '%s': %s", fsio_test_path,
     strerror(errno));
 
   (void) pr_fsio_close(fh);
@@ -1113,18 +1115,18 @@ START_TEST (fsio_sys_chmod_chroot_guard_test) {
   mode_t mode = 0644;
 
   res = pr_fsio_guard_chroot(TRUE);
-  fail_unless(res == FALSE, "Expected FALSE (%d), got %d", FALSE, res);
+  ck_assert_msg(res == FALSE, "Expected FALSE (%d), got %d", FALSE, res);
 
   res = pr_fsio_chmod("/etc/foo.bar.baz", mode);
-  fail_unless(res < 0, "Set mode on /etc/foo.bar.baz unexpectedly");
-  fail_unless(errno == EACCES, "Expected EACCES (%d), got %s %d", EACCES,
+  ck_assert_msg(res < 0, "Set mode on /etc/foo.bar.baz unexpectedly");
+  ck_assert_msg(errno == EACCES, "Expected EACCES (%d), got %s %d", EACCES,
     strerror(errno), errno);
 
   (void) pr_fsio_guard_chroot(FALSE);
 
   res = pr_fsio_chmod("/lib/foo/bar/baz", mode);
-  fail_unless(res < 0, "Set mode on /lib/foo/bar/baz unexpectedly");
-  fail_unless(errno == ENOENT, "Expected ENOENT (%d), got %s %d", ENOENT,
+  ck_assert_msg(res < 0, "Set mode on /lib/foo/bar/baz unexpectedly");
+  ck_assert_msg(errno == ENOENT, "Expected ENOENT (%d), got %s %d", ENOENT,
     strerror(errno), errno);
 }
 END_TEST
@@ -1135,16 +1137,16 @@ START_TEST (fsio_sys_fchmod_test) {
   pr_fh_t *fh;
 
   res = pr_fsio_fchmod(NULL, mode);
-  fail_unless(res < 0, "Failed to handle null arguments");
-  fail_unless(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
+  ck_assert_msg(res < 0, "Failed to handle null arguments");
+  ck_assert_msg(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
     strerror(errno), errno);
 
   fh = pr_fsio_open(fsio_test_path, O_CREAT|O_EXCL|O_WRONLY);
-  fail_unless(fh != NULL, "Failed to create '%s': %s", fsio_test_path,
+  ck_assert_msg(fh != NULL, "Failed to create '%s': %s", fsio_test_path,
     strerror(errno));
 
   res = pr_fsio_fchmod(fh, mode);
-  fail_unless(res == 0, "Failed to set perms of '%s': %s", fsio_test_path,
+  ck_assert_msg(res == 0, "Failed to set perms of '%s': %s", fsio_test_path,
     strerror(errno));
 
   (void) pr_fsio_close(fh);
@@ -1159,22 +1161,22 @@ START_TEST (fsio_sys_chown_test) {
   pr_fh_t *fh;
 
   res = pr_fsio_chown(NULL, uid, gid);
-  fail_unless(res < 0, "Failed to handle null arguments");
-  fail_unless(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
+  ck_assert_msg(res < 0, "Failed to handle null arguments");
+  ck_assert_msg(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
     strerror(errno), errno);
 
   res = pr_fsio_chown(fsio_test_path, uid, gid);
-  fail_unless(res < 0, "Changed ownership of '%s' unexpectedly",
+  ck_assert_msg(res < 0, "Changed ownership of '%s' unexpectedly",
     fsio_test_path);
-  fail_unless(errno == ENOENT, "Expected ENOENT (%d), got %s (%d)", ENOENT,
+  ck_assert_msg(errno == ENOENT, "Expected ENOENT (%d), got %s (%d)", ENOENT,
     strerror(errno), errno);
 
   fh = pr_fsio_open(fsio_test_path, O_CREAT|O_EXCL|O_WRONLY);
-  fail_unless(fh != NULL, "Failed to create '%s': %s", fsio_test_path,
+  ck_assert_msg(fh != NULL, "Failed to create '%s': %s", fsio_test_path,
     strerror(errno));
 
   res = pr_fsio_chown(fsio_test_path, uid, gid);
-  fail_unless(res == 0, "Failed to set ownership of '%s': %s", fsio_test_path,
+  ck_assert_msg(res == 0, "Failed to set ownership of '%s': %s", fsio_test_path,
     strerror(errno));
 
   (void) pr_fsio_close(fh);
@@ -1188,18 +1190,18 @@ START_TEST (fsio_sys_chown_chroot_guard_test) {
   gid_t gid = getgid();
 
   res = pr_fsio_guard_chroot(TRUE);
-  fail_unless(res == FALSE, "Expected FALSE (%d), got %d", FALSE, res);
+  ck_assert_msg(res == FALSE, "Expected FALSE (%d), got %d", FALSE, res);
 
   res = pr_fsio_chown("/etc/foo.bar.baz", uid, gid);
-  fail_unless(res < 0, "Set ownership on /etc/foo.bar.baz unexpectedly");
-  fail_unless(errno == EACCES, "Expected EACCES (%d), got %s %d", EACCES,
+  ck_assert_msg(res < 0, "Set ownership on /etc/foo.bar.baz unexpectedly");
+  ck_assert_msg(errno == EACCES, "Expected EACCES (%d), got %s %d", EACCES,
     strerror(errno), errno);
 
   (void) pr_fsio_guard_chroot(FALSE);
 
   res = pr_fsio_chown("/lib/foo/bar/baz", uid, gid);
-  fail_unless(res < 0, "Set ownership on /lib/foo/bar/baz unexpectedly");
-  fail_unless(errno == ENOENT, "Expected ENOENT (%d), got %s %d", ENOENT,
+  ck_assert_msg(res < 0, "Set ownership on /lib/foo/bar/baz unexpectedly");
+  ck_assert_msg(errno == ENOENT, "Expected ENOENT (%d), got %s %d", ENOENT,
     strerror(errno), errno);
 }
 END_TEST
@@ -1211,16 +1213,16 @@ START_TEST (fsio_sys_fchown_test) {
   pr_fh_t *fh;
 
   res = pr_fsio_fchown(NULL, uid, gid);
-  fail_unless(res < 0, "Failed to handle null arguments");
-  fail_unless(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
+  ck_assert_msg(res < 0, "Failed to handle null arguments");
+  ck_assert_msg(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
     strerror(errno), errno);
 
   fh = pr_fsio_open(fsio_test_path, O_CREAT|O_EXCL|O_WRONLY);
-  fail_unless(fh != NULL, "Failed to create '%s': %s", fsio_test_path,
+  ck_assert_msg(fh != NULL, "Failed to create '%s': %s", fsio_test_path,
     strerror(errno));
 
   res = pr_fsio_fchown(fh, uid, gid);
-  fail_unless(res == 0, "Failed to set ownership of '%s': %s", fsio_test_path,
+  ck_assert_msg(res == 0, "Failed to set ownership of '%s': %s", fsio_test_path,
     strerror(errno));
 
   (void) pr_fsio_close(fh);
@@ -1235,22 +1237,22 @@ START_TEST (fsio_sys_lchown_test) {
   pr_fh_t *fh;
 
   res = pr_fsio_lchown(NULL, uid, gid);
-  fail_unless(res < 0, "Failed to handle null arguments");
-  fail_unless(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
+  ck_assert_msg(res < 0, "Failed to handle null arguments");
+  ck_assert_msg(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
     strerror(errno), errno);
 
   res = pr_fsio_lchown(fsio_test_path, uid, gid);
-  fail_unless(res < 0, "Changed ownership of '%s' unexpectedly",
+  ck_assert_msg(res < 0, "Changed ownership of '%s' unexpectedly",
     fsio_test_path);
-  fail_unless(errno == ENOENT, "Expected ENOENT (%d), got %s (%d)", ENOENT,
+  ck_assert_msg(errno == ENOENT, "Expected ENOENT (%d), got %s (%d)", ENOENT,
     strerror(errno), errno);
 
   fh = pr_fsio_open(fsio_test_path, O_CREAT|O_EXCL|O_WRONLY);
-  fail_unless(fh != NULL, "Failed to create '%s': %s", fsio_test_path,
+  ck_assert_msg(fh != NULL, "Failed to create '%s': %s", fsio_test_path,
     strerror(errno));
 
   res = pr_fsio_lchown(fsio_test_path, uid, gid);
-  fail_unless(res == 0, "Failed to set ownership of '%s': %s", fsio_test_path,
+  ck_assert_msg(res == 0, "Failed to set ownership of '%s': %s", fsio_test_path,
     strerror(errno));
 
   (void) pr_fsio_close(fh);
@@ -1264,18 +1266,18 @@ START_TEST (fsio_sys_lchown_chroot_guard_test) {
   gid_t gid = getgid();
 
   res = pr_fsio_guard_chroot(TRUE);
-  fail_unless(res == FALSE, "Expected FALSE (%d), got %d", FALSE, res);
+  ck_assert_msg(res == FALSE, "Expected FALSE (%d), got %d", FALSE, res);
 
   res = pr_fsio_lchown("/etc/foo.bar.baz", uid, gid);
-  fail_unless(res < 0, "Set ownership on /etc/foo.bar.baz unexpectedly");
-  fail_unless(errno == EACCES, "Expected EACCES (%d), got %s %d", EACCES,
+  ck_assert_msg(res < 0, "Set ownership on /etc/foo.bar.baz unexpectedly");
+  ck_assert_msg(errno == EACCES, "Expected EACCES (%d), got %s %d", EACCES,
     strerror(errno), errno);
 
   (void) pr_fsio_guard_chroot(FALSE);
 
   res = pr_fsio_lchown("/lib/foo/bar/baz", uid, gid);
-  fail_unless(res < 0, "Set ownership on /lib/foo/bar/baz unexpectedly");
-  fail_unless(errno == ENOENT, "Expected ENOENT (%d), got %s %d", ENOENT,
+  ck_assert_msg(res < 0, "Set ownership on /lib/foo/bar/baz unexpectedly");
+  ck_assert_msg(errno == ENOENT, "Expected ENOENT (%d), got %s %d", ENOENT,
     strerror(errno), errno);
 }
 END_TEST
@@ -1285,27 +1287,27 @@ START_TEST (fsio_sys_rename_test) {
   pr_fh_t *fh;
 
   res = pr_fsio_rename(NULL, NULL);
-  fail_unless(res < 0, "Failed to handle null arguments");
-  fail_unless(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
+  ck_assert_msg(res < 0, "Failed to handle null arguments");
+  ck_assert_msg(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
     strerror(errno), errno);
 
   res = pr_fsio_rename(fsio_test_path, NULL);
-  fail_unless(res < 0, "Failed to handle null dst argument");
-  fail_unless(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
+  ck_assert_msg(res < 0, "Failed to handle null dst argument");
+  ck_assert_msg(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
     strerror(errno), errno);
 
   res = pr_fsio_rename(fsio_test_path, fsio_test2_path);
-  fail_unless(res < 0, "Failed to handle non-existent files");
-  fail_unless(errno == ENOENT, "Expected ENOENT (%d), got %s (%d)", ENOENT,
+  ck_assert_msg(res < 0, "Failed to handle non-existent files");
+  ck_assert_msg(errno == ENOENT, "Expected ENOENT (%d), got %s (%d)", ENOENT,
     strerror(errno), errno);
 
   fh = pr_fsio_open(fsio_test_path, O_CREAT|O_EXCL|O_WRONLY);
-  fail_unless(fh != NULL, "Failed to create '%s': %s", fsio_test_path,
+  ck_assert_msg(fh != NULL, "Failed to create '%s': %s", fsio_test_path,
     strerror(errno));
   (void) pr_fsio_close(fh);
 
   res = pr_fsio_rename(fsio_test_path, fsio_test2_path);
-  fail_unless(res == 0, "Failed to rename '%s' to '%s': %s", fsio_test_path,
+  ck_assert_msg(res == 0, "Failed to rename '%s' to '%s': %s", fsio_test_path,
     fsio_test2_path, strerror(errno));
 
   (void) pr_fsio_unlink(fsio_test_path);
@@ -1318,28 +1320,28 @@ START_TEST (fsio_sys_rename_chroot_guard_test) {
   pr_fh_t *fh;
 
   res = pr_fsio_guard_chroot(TRUE);
-  fail_unless(res == FALSE, "Expected FALSE (%d), got %d", FALSE, res);
+  ck_assert_msg(res == FALSE, "Expected FALSE (%d), got %d", FALSE, res);
 
   fh = pr_fsio_open(fsio_test_path, O_CREAT|O_EXCL|O_WRONLY);
-  fail_unless(fh != NULL, "Failed to create '%s': %s", fsio_test_path,
+  ck_assert_msg(fh != NULL, "Failed to create '%s': %s", fsio_test_path,
     strerror(errno));
   (void) pr_fsio_close(fh);
 
   res = pr_fsio_rename(fsio_test_path, "/etc/foo.bar.baz");
-  fail_unless(res < 0, "Renamed '%s' unexpectedly", fsio_test_path);
-  fail_unless(errno == EACCES, "Expected EACCES (%d), got %s (%d)", EACCES,
+  ck_assert_msg(res < 0, "Renamed '%s' unexpectedly", fsio_test_path);
+  ck_assert_msg(errno == EACCES, "Expected EACCES (%d), got %s (%d)", EACCES,
     strerror(errno), errno);
 
   res = pr_fsio_rename("/etc/foo.bar.baz", fsio_test_path);
-  fail_unless(res < 0, "Renamed '/etc/foo.bar.baz' unexpectedly");
-  fail_unless(errno == EACCES, "Expected EACCES (%d), got %s (%d)", EACCES,
+  ck_assert_msg(res < 0, "Renamed '/etc/foo.bar.baz' unexpectedly");
+  ck_assert_msg(errno == EACCES, "Expected EACCES (%d), got %s (%d)", EACCES,
     strerror(errno), errno);
 
   (void) pr_fsio_guard_chroot(FALSE);
 
   res = pr_fsio_rename("/etc/foo/bar/baz", "/lib/quxx/quzz");
-  fail_unless(res < 0, "Renamed '/etc/foo/bar/baz' unexpectedly");
-  fail_unless(errno == ENOENT, "Expected ENOENT (%d), got %s (%d)", ENOENT,
+  ck_assert_msg(res < 0, "Renamed '/etc/foo/bar/baz' unexpectedly");
+  ck_assert_msg(errno == ENOENT, "Expected ENOENT (%d), got %s (%d)", ENOENT,
     strerror(errno), errno);
 
   (void) pr_fsio_unlink(fsio_test_path);
@@ -1354,23 +1356,23 @@ START_TEST (fsio_sys_utimes_test) {
   memset(tvs, 0, sizeof(tvs));
 
   res = pr_fsio_utimes(NULL, NULL);
-  fail_unless(res < 0, "Failed to handle null arguments");
-  fail_unless(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
+  ck_assert_msg(res < 0, "Failed to handle null arguments");
+  ck_assert_msg(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
     strerror(errno), errno);
 
   res = pr_fsio_utimes(fsio_test_path, (struct timeval *) &tvs);
-  fail_unless(res < 0, "Changed times of '%s' unexpectedly", fsio_test_path);
-  fail_unless(errno == ENOENT || errno == EINVAL,
+  ck_assert_msg(res < 0, "Changed times of '%s' unexpectedly", fsio_test_path);
+  ck_assert_msg(errno == ENOENT || errno == EINVAL,
     "Expected ENOENT (%d) or EINVAL (%d), got %s (%d)", ENOENT, EINVAL,
     strerror(errno), errno);
 
   fh = pr_fsio_open(fsio_test_path, O_CREAT|O_EXCL|O_WRONLY);
-  fail_unless(fh != NULL, "Failed to create '%s': %s", fsio_test_path,
+  ck_assert_msg(fh != NULL, "Failed to create '%s': %s", fsio_test_path,
     strerror(errno));
 
   memset(&tvs, 0, sizeof(tvs));
   res = pr_fsio_utimes(fsio_test_path, (struct timeval *) &tvs);
-  fail_unless(res == 0, "Failed to set times of '%s': %s", fsio_test_path,
+  ck_assert_msg(res == 0, "Failed to set times of '%s': %s", fsio_test_path,
     strerror(errno));
 
   (void) pr_fsio_close(fh);
@@ -1385,18 +1387,18 @@ START_TEST (fsio_sys_utimes_chroot_guard_test) {
   memset(tvs, 0, sizeof(tvs));
 
   res = pr_fsio_guard_chroot(TRUE);
-  fail_unless(res == FALSE, "Expected FALSE (%d), got %d", FALSE, res);
+  ck_assert_msg(res == FALSE, "Expected FALSE (%d), got %d", FALSE, res);
  
   res = pr_fsio_utimes("/etc/foo.bar.baz", (struct timeval *) &tvs);
-  fail_unless(res < 0, "Set times on /etc/foo.bar.baz unexpectedly");
-  fail_unless(errno == EACCES, "Expected EACCES (%d), got %s %d", EACCES,
+  ck_assert_msg(res < 0, "Set times on /etc/foo.bar.baz unexpectedly");
+  ck_assert_msg(errno == EACCES, "Expected EACCES (%d), got %s %d", EACCES,
     strerror(errno), errno);
 
   (void) pr_fsio_guard_chroot(FALSE);
 
   res = pr_fsio_utimes("/lib/foo/bar/baz", (struct timeval *) &tvs);
-  fail_unless(res < 0, "Set times on /lib/foo/bar/baz unexpectedly");
-  fail_unless(errno == ENOENT || errno == EINVAL,
+  ck_assert_msg(res < 0, "Set times on /lib/foo/bar/baz unexpectedly");
+  ck_assert_msg(errno == ENOENT || errno == EINVAL,
     "Expected ENOENT (%d) or EINVAL (%d), got %s %d", ENOENT, EINVAL,
     strerror(errno), errno);
 }
@@ -1410,17 +1412,17 @@ START_TEST (fsio_sys_futimes_test) {
   memset(tvs, 0, sizeof(tvs));
 
   res = pr_fsio_futimes(NULL, NULL);
-  fail_unless(res < 0, "Failed to handle null arguments");
-  fail_unless(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
+  ck_assert_msg(res < 0, "Failed to handle null arguments");
+  ck_assert_msg(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
     strerror(errno), errno);
 
   fh = pr_fsio_open(fsio_test_path, O_CREAT|O_EXCL|O_WRONLY);
-  fail_unless(fh != NULL, "Failed to create '%s': %s", fsio_test_path,
+  ck_assert_msg(fh != NULL, "Failed to create '%s': %s", fsio_test_path,
     strerror(errno));
 
   memset(&tvs, 0, sizeof(tvs));
   res = pr_fsio_futimes(fh, (struct timeval *) &tvs);
-  fail_unless(res == 0, "Failed to set times of '%s': %s", fsio_test_path,
+  ck_assert_msg(res == 0, "Failed to set times of '%s': %s", fsio_test_path,
     strerror(errno));
 
   (void) pr_fsio_close(fh);
@@ -1433,21 +1435,21 @@ START_TEST (fsio_sys_fsync_test) {
   pr_fh_t *fh;
 
   res = pr_fsio_fsync(NULL);
-  fail_unless(res < 0, "Failed to handle null arguments");
-  fail_unless(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
+  ck_assert_msg(res < 0, "Failed to handle null arguments");
+  ck_assert_msg(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
     strerror(errno), errno);
 
   fh = pr_fsio_open(fsio_test_path, O_CREAT|O_EXCL|O_WRONLY);
-  fail_unless(fh != NULL, "Failed to open '%s': %s", fsio_test_path,
+  ck_assert_msg(fh != NULL, "Failed to open '%s': %s", fsio_test_path,
     strerror(errno));
 
   res = pr_fsio_fsync(fh);
 #ifdef HAVE_FSYNC
-  fail_unless(res == 0, "fsync of '%s' failed: %s", fsio_test_path,
+  ck_assert_msg(res == 0, "fsync of '%s' failed: %s", fsio_test_path,
     strerror(errno));
 #else
-  fail_unless(res < 0, "fsync of '%s' succeeded unexpectedly", fsio_test_path);
-  fail_unless(errno == ENOSYS, "Expected ENOSYS (%d), got %s (%d)", ENOSYS,
+  ck_assert_msg(res < 0, "fsync of '%s' succeeded unexpectedly", fsio_test_path);
+  ck_assert_msg(errno == ENOSYS, "Expected ENOSYS (%d), got %s (%d)", ENOSYS,
     strerror(errno), errno);
 #endif /* HAVE_FSYNC */
 
@@ -1462,40 +1464,40 @@ START_TEST (fsio_sys_getxattr_test) {
   unsigned long fsio_opts;
 
   res = pr_fsio_getxattr(NULL, NULL, NULL, NULL, 0);
-  fail_unless(res < 0, "Failed to handle null arguments");
-  fail_unless(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
+  ck_assert_msg(res < 0, "Failed to handle null arguments");
+  ck_assert_msg(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
     strerror(errno), errno);
 
   res = pr_fsio_getxattr(p, NULL, NULL, NULL, 0);
-  fail_unless(res < 0, "Failed to handle null path");
-  fail_unless(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
+  ck_assert_msg(res < 0, "Failed to handle null path");
+  ck_assert_msg(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
     strerror(errno), errno);
 
   path = fsio_test_path;
   res = pr_fsio_getxattr(p, path, NULL, NULL, 0);
-  fail_unless(res < 0, "Failed to handle null arguments");
-  fail_unless(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
+  ck_assert_msg(res < 0, "Failed to handle null arguments");
+  ck_assert_msg(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
     strerror(errno), errno);
 
   name = "foo.bar";
 
   fsio_opts = pr_fsio_set_options(PR_FSIO_OPT_IGNORE_XATTR);
   res = pr_fsio_getxattr(p, path, name, NULL, 0);
-  fail_unless(res < 0, "Failed to handle disabled xattr");
-  fail_unless(errno == ENOSYS, "Expected ENOSYS (%d), got %s (%d)", ENOSYS,
+  ck_assert_msg(res < 0, "Failed to handle disabled xattr");
+  ck_assert_msg(errno == ENOSYS, "Expected ENOSYS (%d), got %s (%d)", ENOSYS,
     strerror(errno), errno);
 
   (void) pr_fsio_set_options(fsio_opts);
   res = pr_fsio_getxattr(p, path, name, NULL, 0);
 #ifdef PR_USE_XATTR
-  fail_unless(res < 0, "Failed to handle nonexist attribute '%s'", name);
-  fail_unless(errno == ENOENT || errno == ENOATTR || errno == ENOTSUP,
+  ck_assert_msg(res < 0, "Failed to handle nonexist attribute '%s'", name);
+  ck_assert_msg(errno == ENOENT || errno == ENOATTR || errno == ENOTSUP,
     "Expected ENOENT (%d), ENOATTR (%d) or ENOTSUP (%d), got %s (%d)",
     ENOENT, ENOATTR, ENOTSUP, strerror(errno), errno);
 
 #else
-  fail_unless(res < 0, "Failed to handle --disable-xattr");
-  fail_unless(errno == ENOSYS, "Expected ENOSYS (%d), got %s (%d)", ENOSYS,
+  ck_assert_msg(res < 0, "Failed to handle --disable-xattr");
+  ck_assert_msg(errno == ENOSYS, "Expected ENOSYS (%d), got %s (%d)", ENOSYS,
     strerror(errno), errno);
 #endif /* PR_USE_XATTR */
 }
@@ -1507,40 +1509,40 @@ START_TEST (fsio_sys_lgetxattr_test) {
   unsigned long fsio_opts;
 
   res = pr_fsio_lgetxattr(NULL, NULL, NULL, NULL, 0);
-  fail_unless(res < 0, "Failed to handle null arguments");
-  fail_unless(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
+  ck_assert_msg(res < 0, "Failed to handle null arguments");
+  ck_assert_msg(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
     strerror(errno), errno);
 
   res = pr_fsio_lgetxattr(p, NULL, NULL, NULL, 0);
-  fail_unless(res < 0, "Failed to handle null path");
-  fail_unless(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
+  ck_assert_msg(res < 0, "Failed to handle null path");
+  ck_assert_msg(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
     strerror(errno), errno);
 
   path = fsio_test_path;
   res = pr_fsio_lgetxattr(p, path, NULL, NULL, 0);
-  fail_unless(res < 0, "Failed to handle null xattr name");
-  fail_unless(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
+  ck_assert_msg(res < 0, "Failed to handle null xattr name");
+  ck_assert_msg(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
     strerror(errno), errno);
 
   name = "foo.bar";
 
   fsio_opts = pr_fsio_set_options(PR_FSIO_OPT_IGNORE_XATTR);
   res = pr_fsio_lgetxattr(p, path, name, NULL, 0);
-  fail_unless(res < 0, "Failed to handle disabled xattr");
-  fail_unless(errno == ENOSYS, "Expected ENOSYS (%d), got %s (%d)", ENOSYS,
+  ck_assert_msg(res < 0, "Failed to handle disabled xattr");
+  ck_assert_msg(errno == ENOSYS, "Expected ENOSYS (%d), got %s (%d)", ENOSYS,
     strerror(errno), errno);
 
   pr_fsio_set_options(fsio_opts);
   res = pr_fsio_lgetxattr(p, path, name, NULL, 0);
 #ifdef PR_USE_XATTR
-  fail_unless(res < 0, "Failed to handle nonexist attribute '%s'", name);
-  fail_unless(errno == ENOENT || errno == ENOATTR || errno == ENOTSUP,
+  ck_assert_msg(res < 0, "Failed to handle nonexist attribute '%s'", name);
+  ck_assert_msg(errno == ENOENT || errno == ENOATTR || errno == ENOTSUP,
     "Expected ENOENT (%d), ENOATTR (%d) or ENOTSUP (%d), got %s (%d)",
     ENOENT, ENOATTR, ENOTSUP, strerror(errno), errno);
 
 #else
-  fail_unless(res < 0, "Failed to handle --disable-xattr");
-  fail_unless(errno == ENOSYS, "Expected ENOSYS (%d), got %s (%d)", ENOSYS,
+  ck_assert_msg(res < 0, "Failed to handle --disable-xattr");
+  ck_assert_msg(errno == ENOSYS, "Expected ENOSYS (%d), got %s (%d)", ENOSYS,
     strerror(errno), errno);
 #endif /* PR_USE_XATTR */
 }
@@ -1553,44 +1555,44 @@ START_TEST (fsio_sys_fgetxattr_test) {
   unsigned long fsio_opts;
 
   res = pr_fsio_fgetxattr(NULL, NULL, NULL, NULL, 0);
-  fail_unless(res < 0, "Failed to handle null arguments");
-  fail_unless(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
+  ck_assert_msg(res < 0, "Failed to handle null arguments");
+  ck_assert_msg(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
     strerror(errno), errno);
 
   res = pr_fsio_fgetxattr(p, NULL, NULL, NULL, 0);
-  fail_unless(res < 0, "Failed to handle null file handle");
-  fail_unless(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
+  ck_assert_msg(res < 0, "Failed to handle null file handle");
+  ck_assert_msg(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
     strerror(errno), errno);
 
   (void) unlink(fsio_test_path);
   fh = pr_fsio_open(fsio_test_path, O_CREAT|O_EXCL|O_RDWR);
-  fail_unless(fh != NULL, "Failed to open '%s': %s", fsio_test_path,
+  ck_assert_msg(fh != NULL, "Failed to open '%s': %s", fsio_test_path,
     strerror(errno));
 
   res = pr_fsio_fgetxattr(p, fh, NULL, NULL, 0);
-  fail_unless(res < 0, "Failed to handle null xattr name");
-  fail_unless(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
+  ck_assert_msg(res < 0, "Failed to handle null xattr name");
+  ck_assert_msg(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
     strerror(errno), errno);
 
   name = "foo.bar";
 
   fsio_opts = pr_fsio_set_options(PR_FSIO_OPT_IGNORE_XATTR);
   res = pr_fsio_fgetxattr(p, fh, name, NULL, 0);
-  fail_unless(res < 0, "Failed to handle disabled xattr");
-  fail_unless(errno == ENOSYS, "Expected ENOSYS (%d), got %s (%d)", ENOSYS,
+  ck_assert_msg(res < 0, "Failed to handle disabled xattr");
+  ck_assert_msg(errno == ENOSYS, "Expected ENOSYS (%d), got %s (%d)", ENOSYS,
     strerror(errno), errno);
 
   pr_fsio_set_options(fsio_opts);
   res = pr_fsio_fgetxattr(p, fh, name, NULL, 0);
 #ifdef PR_USE_XATTR
-  fail_unless(res < 0, "Failed to handle nonexist attribute '%s'", name);
-  fail_unless(errno == ENOENT || errno == ENOATTR || errno == ENOTSUP,
+  ck_assert_msg(res < 0, "Failed to handle nonexist attribute '%s'", name);
+  ck_assert_msg(errno == ENOENT || errno == ENOATTR || errno == ENOTSUP,
     "Expected ENOENT (%d), ENOATTR (%d) or ENOTSUP (%d), got %s (%d)",
     ENOENT, ENOATTR, ENOTSUP, strerror(errno), errno);
 
 #else
-  fail_unless(res < 0, "Failed to handle --disable-xattr");
-  fail_unless(errno == ENOSYS, "Expected ENOSYS (%d), got %s (%d)", ENOSYS,
+  ck_assert_msg(res < 0, "Failed to handle --disable-xattr");
+  ck_assert_msg(errno == ENOSYS, "Expected ENOSYS (%d), got %s (%d)", ENOSYS,
     strerror(errno), errno);
 #endif /* PR_USE_XATTR */
 
@@ -1607,48 +1609,48 @@ START_TEST (fsio_sys_listxattr_test) {
   unsigned long fsio_opts;
 
   res = pr_fsio_listxattr(NULL, NULL, NULL);
-  fail_unless(res < 0, "Failed to handle null arguments");
-  fail_unless(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
+  ck_assert_msg(res < 0, "Failed to handle null arguments");
+  ck_assert_msg(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
     strerror(errno), errno);
 
   res = pr_fsio_listxattr(p, NULL, NULL);
-  fail_unless(res < 0, "Failed to handle null path");
-  fail_unless(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
+  ck_assert_msg(res < 0, "Failed to handle null path");
+  ck_assert_msg(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
     strerror(errno), errno);
 
   path = fsio_test_path;
   res = pr_fsio_listxattr(p, path, NULL);
-  fail_unless(res < 0, "Failed to handle null array");
-  fail_unless(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
+  ck_assert_msg(res < 0, "Failed to handle null array");
+  ck_assert_msg(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
     strerror(errno), errno);
 
   fsio_opts = pr_fsio_set_options(PR_FSIO_OPT_IGNORE_XATTR);
   res = pr_fsio_listxattr(p, path, &names);
-  fail_unless(res < 0, "Failed to handle disabled xattr");
-  fail_unless(errno == ENOSYS, "Expected ENOSYS (%d), got %s (%d)", ENOSYS,
+  ck_assert_msg(res < 0, "Failed to handle disabled xattr");
+  ck_assert_msg(errno == ENOSYS, "Expected ENOSYS (%d), got %s (%d)", ENOSYS,
     strerror(errno), errno);
 
   pr_fsio_set_options(fsio_opts);
   res = pr_fsio_listxattr(p, path, &names);
 #ifdef PR_USE_XATTR
-  fail_unless(res < 0, "Failed to handle nonexistent path '%s'", path);
-  fail_unless(errno == ENOENT, "Expected ENOENT (%d), got %s (%d)", ENOENT,
+  ck_assert_msg(res < 0, "Failed to handle nonexistent path '%s'", path);
+  ck_assert_msg(errno == ENOENT, "Expected ENOENT (%d), got %s (%d)", ENOENT,
     strerror(errno), errno);
 
   (void) unlink(fsio_test_path);
   fh = pr_fsio_open(fsio_test_path, O_CREAT|O_EXCL|O_WRONLY);
-  fail_unless(fh != NULL, "Failed to open '%s': %s", fsio_test_path,
+  ck_assert_msg(fh != NULL, "Failed to open '%s': %s", fsio_test_path,
     strerror(errno));
   pr_fsio_close(fh);
 
   res = pr_fsio_listxattr(p, path, &names);
-  fail_if(res < 0, "Failed to list xattrs for '%s': %s", path, strerror(errno));
+  ck_assert_msg(res >= 0, "Failed to list xattrs for '%s': %s", path, strerror(errno));
 
   (void) unlink(fsio_test_path);
 #else
   (void) fh;
-  fail_unless(res < 0, "Failed to handle --disable-xattr");
-  fail_unless(errno == ENOSYS, "Expected ENOSYS (%d), got %s (%d)", ENOSYS,
+  ck_assert_msg(res < 0, "Failed to handle --disable-xattr");
+  ck_assert_msg(errno == ENOSYS, "Expected ENOSYS (%d), got %s (%d)", ENOSYS,
     strerror(errno), errno);
 #endif /* PR_USE_XATTR */
 }
@@ -1662,48 +1664,48 @@ START_TEST (fsio_sys_llistxattr_test) {
   unsigned long fsio_opts;
 
   res = pr_fsio_llistxattr(NULL, NULL, NULL);
-  fail_unless(res < 0, "Failed to handle null arguments");
-  fail_unless(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
+  ck_assert_msg(res < 0, "Failed to handle null arguments");
+  ck_assert_msg(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
     strerror(errno), errno);
 
   res = pr_fsio_llistxattr(p, NULL, NULL);
-  fail_unless(res < 0, "Failed to handle null path");
-  fail_unless(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
+  ck_assert_msg(res < 0, "Failed to handle null path");
+  ck_assert_msg(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
     strerror(errno), errno);
 
   path = fsio_test_path;
   res = pr_fsio_llistxattr(p, path, NULL);
-  fail_unless(res < 0, "Failed to handle null array");
-  fail_unless(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
+  ck_assert_msg(res < 0, "Failed to handle null array");
+  ck_assert_msg(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
     strerror(errno), errno);
 
   fsio_opts = pr_fsio_set_options(PR_FSIO_OPT_IGNORE_XATTR);
   res = pr_fsio_llistxattr(p, path, &names);
-  fail_unless(res < 0, "Failed to handle disabled xattr");
-  fail_unless(errno == ENOSYS, "Expected ENOSYS (%d), got %s (%d)", ENOSYS,
+  ck_assert_msg(res < 0, "Failed to handle disabled xattr");
+  ck_assert_msg(errno == ENOSYS, "Expected ENOSYS (%d), got %s (%d)", ENOSYS,
     strerror(errno), errno);
 
   pr_fsio_set_options(fsio_opts);
   res = pr_fsio_llistxattr(p, path, &names);
 #ifdef PR_USE_XATTR
-  fail_unless(res < 0, "Failed to handle nonexistent path '%s'", path);
-  fail_unless(errno == ENOENT, "Expected ENOENT (%d), got %s (%d)", ENOENT,
+  ck_assert_msg(res < 0, "Failed to handle nonexistent path '%s'", path);
+  ck_assert_msg(errno == ENOENT, "Expected ENOENT (%d), got %s (%d)", ENOENT,
     strerror(errno), errno);
 
   (void) unlink(fsio_test_path);
   fh = pr_fsio_open(fsio_test_path, O_CREAT|O_EXCL|O_WRONLY);
-  fail_unless(fh != NULL, "Failed to open '%s': %s", fsio_test_path,
+  ck_assert_msg(fh != NULL, "Failed to open '%s': %s", fsio_test_path,
     strerror(errno));
   pr_fsio_close(fh);
 
   res = pr_fsio_listxattr(p, path, &names);
-  fail_if(res < 0, "Failed to list xattrs for '%s': %s", path, strerror(errno));
+  ck_assert_msg(res >= 0, "Failed to list xattrs for '%s': %s", path, strerror(errno));
 
   (void) unlink(fsio_test_path);
 #else
   (void) fh;
-  fail_unless(res < 0, "Failed to handle --disable-xattr");
-  fail_unless(errno == ENOSYS, "Expected ENOSYS (%d), got %s (%d)", ENOSYS,
+  ck_assert_msg(res < 0, "Failed to handle --disable-xattr");
+  ck_assert_msg(errno == ENOSYS, "Expected ENOSYS (%d), got %s (%d)", ENOSYS,
     strerror(errno), errno);
 #endif /* PR_USE_XATTR */
 }
@@ -1716,40 +1718,40 @@ START_TEST (fsio_sys_flistxattr_test) {
   unsigned long fsio_opts;
 
   res = pr_fsio_flistxattr(NULL, NULL, NULL);
-  fail_unless(res < 0, "Failed to handle null arguments");
-  fail_unless(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
+  ck_assert_msg(res < 0, "Failed to handle null arguments");
+  ck_assert_msg(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
     strerror(errno), errno);
 
   res = pr_fsio_flistxattr(p, NULL, NULL);
-  fail_unless(res < 0, "Failed to handle null file handle");
-  fail_unless(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
+  ck_assert_msg(res < 0, "Failed to handle null file handle");
+  ck_assert_msg(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
     strerror(errno), errno);
 
   (void) unlink(fsio_test_path);
   fh = pr_fsio_open(fsio_test_path, O_CREAT|O_EXCL|O_RDWR);
-  fail_unless(fh != NULL, "Failed to open '%s': %s", fsio_test_path,
+  ck_assert_msg(fh != NULL, "Failed to open '%s': %s", fsio_test_path,
     strerror(errno));
 
   res = pr_fsio_flistxattr(p, fh, NULL);
-  fail_unless(res < 0, "Failed to handle null array");
-  fail_unless(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
+  ck_assert_msg(res < 0, "Failed to handle null array");
+  ck_assert_msg(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
     strerror(errno), errno);
 
   fsio_opts = pr_fsio_set_options(PR_FSIO_OPT_IGNORE_XATTR);
   res = pr_fsio_flistxattr(p, fh, &names);
-  fail_unless(res < 0, "Failed to handle disabled xattr");
-  fail_unless(errno == ENOSYS, "Expected ENOSYS (%d), got %s (%d)", ENOSYS,
+  ck_assert_msg(res < 0, "Failed to handle disabled xattr");
+  ck_assert_msg(errno == ENOSYS, "Expected ENOSYS (%d), got %s (%d)", ENOSYS,
     strerror(errno), errno);
 
   pr_fsio_set_options(fsio_opts);
   res = pr_fsio_flistxattr(p, fh, &names);
 #ifdef PR_USE_XATTR
-  fail_if(res < 0, "Failed to list xattrs for '%s': %s", fsio_test_path,
+  ck_assert_msg(res >= 0, "Failed to list xattrs for '%s': %s", fsio_test_path,
     strerror(errno));
 
 #else
-  fail_unless(res < 0, "Failed to handle --disable-xattr");
-  fail_unless(errno == ENOSYS, "Expected ENOSYS (%d), got %s (%d)", ENOSYS,
+  ck_assert_msg(res < 0, "Failed to handle --disable-xattr");
+  ck_assert_msg(errno == ENOSYS, "Expected ENOSYS (%d), got %s (%d)", ENOSYS,
     strerror(errno), errno);
 #endif /* PR_USE_XATTR */
 
@@ -1764,40 +1766,40 @@ START_TEST (fsio_sys_removexattr_test) {
   unsigned long fsio_opts;
 
   res = pr_fsio_removexattr(NULL, NULL, NULL);
-  fail_unless(res < 0, "Failed to handle null arguments");
-  fail_unless(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
+  ck_assert_msg(res < 0, "Failed to handle null arguments");
+  ck_assert_msg(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
     strerror(errno), errno);
 
   res = pr_fsio_removexattr(p, NULL, NULL);
-  fail_unless(res < 0, "Failed to handle null path");
-  fail_unless(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
+  ck_assert_msg(res < 0, "Failed to handle null path");
+  ck_assert_msg(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
     strerror(errno), errno);
 
   path = fsio_test_path;
   res = pr_fsio_removexattr(p, path, NULL);
-  fail_unless(res < 0, "Failed to handle null attribute name");
-  fail_unless(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
+  ck_assert_msg(res < 0, "Failed to handle null attribute name");
+  ck_assert_msg(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
     strerror(errno), errno);
 
   name = "foo.bar";
 
   fsio_opts = pr_fsio_set_options(PR_FSIO_OPT_IGNORE_XATTR);
   res = pr_fsio_removexattr(p, path, name);
-  fail_unless(res < 0, "Failed to handle disabled xattr");
-  fail_unless(errno == ENOSYS, "Expected ENOSYS (%d), got %s (%d)", ENOSYS,
+  ck_assert_msg(res < 0, "Failed to handle disabled xattr");
+  ck_assert_msg(errno == ENOSYS, "Expected ENOSYS (%d), got %s (%d)", ENOSYS,
     strerror(errno), errno);
 
   pr_fsio_set_options(fsio_opts);
   res = pr_fsio_removexattr(p, path, name);
 #ifdef PR_USE_XATTR
-  fail_unless(res < 0, "Failed to handle nonexistent attribute '%s'", name);
-  fail_unless(errno == ENOENT || errno == ENOATTR || errno == ENOTSUP,
+  ck_assert_msg(res < 0, "Failed to handle nonexistent attribute '%s'", name);
+  ck_assert_msg(errno == ENOENT || errno == ENOATTR || errno == ENOTSUP,
     "Expected ENOENT (%d), ENOATTR (%d) or ENOTSUP (%d), got %s (%d)",
     ENOENT, ENOATTR, ENOTSUP, strerror(errno), errno);
 
 #else
-  fail_unless(res < 0, "Failed to handle --disable-xattr");
-  fail_unless(errno == ENOSYS, "Expected ENOSYS (%d), got %s (%d)", ENOSYS,
+  ck_assert_msg(res < 0, "Failed to handle --disable-xattr");
+  ck_assert_msg(errno == ENOSYS, "Expected ENOSYS (%d), got %s (%d)", ENOSYS,
     strerror(errno), errno);
 #endif /* PR_USE_XATTR */
 }
@@ -1809,40 +1811,40 @@ START_TEST (fsio_sys_lremovexattr_test) {
   unsigned long fsio_opts;
 
   res = pr_fsio_lremovexattr(NULL, NULL, NULL);
-  fail_unless(res < 0, "Failed to handle null arguments");
-  fail_unless(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
+  ck_assert_msg(res < 0, "Failed to handle null arguments");
+  ck_assert_msg(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
     strerror(errno), errno);
 
   res = pr_fsio_lremovexattr(p, NULL, NULL);
-  fail_unless(res < 0, "Failed to handle null path");
-  fail_unless(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
+  ck_assert_msg(res < 0, "Failed to handle null path");
+  ck_assert_msg(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
     strerror(errno), errno);
 
   path = fsio_test_path;
   res = pr_fsio_lremovexattr(p, path, NULL);
-  fail_unless(res < 0, "Failed to handle null attribute name");
-  fail_unless(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
+  ck_assert_msg(res < 0, "Failed to handle null attribute name");
+  ck_assert_msg(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
     strerror(errno), errno);
 
   name = "foo.bar";
 
   fsio_opts = pr_fsio_set_options(PR_FSIO_OPT_IGNORE_XATTR);
   res = pr_fsio_lremovexattr(p, path, name);
-  fail_unless(res < 0, "Failed to handle disabled xattr");
-  fail_unless(errno == ENOSYS, "Expected ENOSYS (%d), got %s (%d)", ENOSYS,
+  ck_assert_msg(res < 0, "Failed to handle disabled xattr");
+  ck_assert_msg(errno == ENOSYS, "Expected ENOSYS (%d), got %s (%d)", ENOSYS,
     strerror(errno), errno);
 
   pr_fsio_set_options(fsio_opts);
   res = pr_fsio_lremovexattr(p, path, name);
 #ifdef PR_USE_XATTR
-  fail_unless(res < 0, "Failed to handle nonexistent attribute '%s'", name);
-  fail_unless(errno == ENOENT || errno == ENOATTR || errno == ENOTSUP,
+  ck_assert_msg(res < 0, "Failed to handle nonexistent attribute '%s'", name);
+  ck_assert_msg(errno == ENOENT || errno == ENOATTR || errno == ENOTSUP,
     "Expected ENOENT (%d), ENOATTR (%d) or ENOTSUP (%d), got %s (%d)",
     ENOENT, ENOATTR, ENOTSUP, strerror(errno), errno);
 
 #else
-  fail_unless(res < 0, "Failed to handle --disable-xattr");
-  fail_unless(errno == ENOSYS, "Expected ENOSYS (%d), got %s (%d)", ENOSYS,
+  ck_assert_msg(res < 0, "Failed to handle --disable-xattr");
+  ck_assert_msg(errno == ENOSYS, "Expected ENOSYS (%d), got %s (%d)", ENOSYS,
     strerror(errno), errno);
 #endif /* PR_USE_XATTR */
 }
@@ -1855,44 +1857,44 @@ START_TEST (fsio_sys_fremovexattr_test) {
   unsigned long fsio_opts;
 
   res = pr_fsio_fremovexattr(NULL, NULL, NULL);
-  fail_unless(res < 0, "Failed to handle null arguments");
-  fail_unless(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
+  ck_assert_msg(res < 0, "Failed to handle null arguments");
+  ck_assert_msg(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
     strerror(errno), errno);
 
   res = pr_fsio_fremovexattr(p, NULL, NULL);
-  fail_unless(res < 0, "Failed to handle null arguments");
-  fail_unless(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
+  ck_assert_msg(res < 0, "Failed to handle null arguments");
+  ck_assert_msg(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
     strerror(errno), errno);
 
   (void) unlink(fsio_test_path);
   fh = pr_fsio_open(fsio_test_path, O_CREAT|O_EXCL|O_RDWR);
-  fail_unless(fh != NULL, "Failed to open '%s': %s", fsio_test_path,
+  ck_assert_msg(fh != NULL, "Failed to open '%s': %s", fsio_test_path,
     strerror(errno));
 
   res = pr_fsio_fremovexattr(p, fh, NULL);
-  fail_unless(res < 0, "Failed to handle null attribute name");
-  fail_unless(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
+  ck_assert_msg(res < 0, "Failed to handle null attribute name");
+  ck_assert_msg(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
     strerror(errno), errno);
 
   name = "foo.bar";
 
   fsio_opts = pr_fsio_set_options(PR_FSIO_OPT_IGNORE_XATTR);
   res = pr_fsio_fremovexattr(p, fh, name);
-  fail_unless(res < 0, "Failed to handle disabled xattr");
-  fail_unless(errno == ENOSYS, "Expected ENOSYS (%d), got %s (%d)", ENOSYS,
+  ck_assert_msg(res < 0, "Failed to handle disabled xattr");
+  ck_assert_msg(errno == ENOSYS, "Expected ENOSYS (%d), got %s (%d)", ENOSYS,
     strerror(errno), errno);
 
   pr_fsio_set_options(fsio_opts);
   res = pr_fsio_fremovexattr(p, fh, name);
 #ifdef PR_USE_XATTR
-  fail_unless(res < 0, "Failed to handle nonexistent attribute '%s'", name);
-  fail_unless(errno == ENOENT || errno == ENOATTR || errno == ENOTSUP,
+  ck_assert_msg(res < 0, "Failed to handle nonexistent attribute '%s'", name);
+  ck_assert_msg(errno == ENOENT || errno == ENOATTR || errno == ENOTSUP,
     "Expected ENOENT (%d), ENOATTR (%d) or ENOTSUP (%d), got %s (%d)",
     ENOENT, ENOATTR, ENOTSUP, strerror(errno), errno);
 
 #else
-  fail_unless(res < 0, "Failed to handle --disable-xattr");
-  fail_unless(errno == ENOSYS, "Expected ENOSYS (%d), got %s (%d)", ENOSYS,
+  ck_assert_msg(res < 0, "Failed to handle --disable-xattr");
+  ck_assert_msg(errno == ENOSYS, "Expected ENOSYS (%d), got %s (%d)", ENOSYS,
     strerror(errno), errno);
 #endif /* PR_USE_XATTR */
 
@@ -1908,19 +1910,19 @@ START_TEST (fsio_sys_setxattr_test) {
   unsigned long fsio_opts;
 
   res = pr_fsio_setxattr(NULL, NULL, NULL, NULL, 0, 0);
-  fail_unless(res < 0, "Failed to handle null arguments");
-  fail_unless(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
+  ck_assert_msg(res < 0, "Failed to handle null arguments");
+  ck_assert_msg(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
     strerror(errno), errno);
 
   res = pr_fsio_setxattr(p, NULL, NULL, NULL, 0, 0);
-  fail_unless(res < 0, "Failed to handle null path");
-  fail_unless(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
+  ck_assert_msg(res < 0, "Failed to handle null path");
+  ck_assert_msg(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
     strerror(errno), errno);
 
   path = fsio_test_path;
   res = pr_fsio_setxattr(p, path, NULL, NULL, 0, 0);
-  fail_unless(res < 0, "Failed to handle null attribute name");
-  fail_unless(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
+  ck_assert_msg(res < 0, "Failed to handle null attribute name");
+  ck_assert_msg(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
     strerror(errno), errno);
 
   name = "foo.bar";
@@ -1928,34 +1930,34 @@ START_TEST (fsio_sys_setxattr_test) {
 
   fsio_opts = pr_fsio_set_options(PR_FSIO_OPT_IGNORE_XATTR);
   res = pr_fsio_setxattr(p, path, name, NULL, 0, flags);
-  fail_unless(res < 0, "Failed to handle disabled xattr");
-  fail_unless(errno == ENOSYS, "Expected ENOSYS (%d), got %s (%d)", ENOSYS,
+  ck_assert_msg(res < 0, "Failed to handle disabled xattr");
+  ck_assert_msg(errno == ENOSYS, "Expected ENOSYS (%d), got %s (%d)", ENOSYS,
     strerror(errno), errno);
 
   pr_fsio_set_options(fsio_opts);
   res = pr_fsio_setxattr(p, path, name, NULL, 0, flags);
 #ifdef PR_USE_XATTR
-  fail_unless(res < 0, "Failed to handle nonexistent file '%s'", path);
-  fail_unless(errno == ENOENT, "Expected ENOENT (%d), got %s (%d)", ENOENT,
+  ck_assert_msg(res < 0, "Failed to handle nonexistent file '%s'", path);
+  ck_assert_msg(errno == ENOENT, "Expected ENOENT (%d), got %s (%d)", ENOENT,
     strerror(errno), errno);
 
   (void) unlink(fsio_test_path);
   fh = pr_fsio_open(fsio_test_path, O_CREAT|O_EXCL|O_WRONLY);
-  fail_unless(fh != NULL, "Failed to open '%s': %s", fsio_test_path,
+  ck_assert_msg(fh != NULL, "Failed to open '%s': %s", fsio_test_path,
     strerror(errno));
   pr_fsio_close(fh);
 
   res = pr_fsio_setxattr(p, path, name, NULL, 0, flags);
   if (res < 0) {
-    fail_unless(errno == ENOTSUP, "Expected ENOTSUP (%d), got %s (%d)", ENOTSUP,
+    ck_assert_msg(errno == ENOTSUP, "Expected ENOTSUP (%d), got %s (%d)", ENOTSUP,
       strerror(errno), errno);
   }
 
   (void) unlink(fsio_test_path);
 #else
   (void) fh;
-  fail_unless(res < 0, "Failed to handle --disable-xattr");
-  fail_unless(errno == ENOSYS, "Expected ENOSYS (%d), got %s (%d)", ENOSYS,
+  ck_assert_msg(res < 0, "Failed to handle --disable-xattr");
+  ck_assert_msg(errno == ENOSYS, "Expected ENOSYS (%d), got %s (%d)", ENOSYS,
     strerror(errno), errno);
 #endif /* PR_USE_XATTR */
 }
@@ -1968,19 +1970,19 @@ START_TEST (fsio_sys_lsetxattr_test) {
   unsigned long fsio_opts;
 
   res = pr_fsio_lsetxattr(NULL, NULL, NULL, NULL, 0, 0);
-  fail_unless(res < 0, "Failed to handle null arguments");
-  fail_unless(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
+  ck_assert_msg(res < 0, "Failed to handle null arguments");
+  ck_assert_msg(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
     strerror(errno), errno);
 
   res = pr_fsio_lsetxattr(p, NULL, NULL, NULL, 0, 0);
-  fail_unless(res < 0, "Failed to handle null path");
-  fail_unless(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
+  ck_assert_msg(res < 0, "Failed to handle null path");
+  ck_assert_msg(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
     strerror(errno), errno);
 
   path = fsio_test_path;
   res = pr_fsio_lsetxattr(p, path, NULL, NULL, 0, 0);
-  fail_unless(res < 0, "Failed to handle null attribute name");
-  fail_unless(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
+  ck_assert_msg(res < 0, "Failed to handle null attribute name");
+  ck_assert_msg(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
     strerror(errno), errno);
 
   name = "foo.bar";
@@ -1988,34 +1990,34 @@ START_TEST (fsio_sys_lsetxattr_test) {
 
   fsio_opts = pr_fsio_set_options(PR_FSIO_OPT_IGNORE_XATTR);
   res = pr_fsio_lsetxattr(p, path, name, NULL, 0, flags);
-  fail_unless(res < 0, "Failed to handle disabled xattr");
-  fail_unless(errno == ENOSYS, "Expected ENOSYS (%d), got %s (%d)", ENOSYS,
+  ck_assert_msg(res < 0, "Failed to handle disabled xattr");
+  ck_assert_msg(errno == ENOSYS, "Expected ENOSYS (%d), got %s (%d)", ENOSYS,
     strerror(errno), errno);
 
   pr_fsio_set_options(fsio_opts);
   res = pr_fsio_lsetxattr(p, path, name, NULL, 0, flags);
 #ifdef PR_USE_XATTR
-  fail_unless(res < 0, "Failed to handle nonexistent file '%s'", path);
-  fail_unless(errno == ENOENT, "Expected ENOENT (%d), got %s (%d)", ENOENT,
+  ck_assert_msg(res < 0, "Failed to handle nonexistent file '%s'", path);
+  ck_assert_msg(errno == ENOENT, "Expected ENOENT (%d), got %s (%d)", ENOENT,
     strerror(errno), errno);
 
   (void) unlink(fsio_test_path);
   fh = pr_fsio_open(fsio_test_path, O_CREAT|O_EXCL|O_WRONLY);
-  fail_unless(fh != NULL, "Failed to open '%s': %s", fsio_test_path,
+  ck_assert_msg(fh != NULL, "Failed to open '%s': %s", fsio_test_path,
     strerror(errno));
   pr_fsio_close(fh);
 
   res = pr_fsio_lsetxattr(p, path, name, NULL, 0, flags);
   if (res < 0) {
-    fail_unless(errno == ENOTSUP, "Expected ENOTSUP (%d), got %s (%d)", ENOTSUP,
+    ck_assert_msg(errno == ENOTSUP, "Expected ENOTSUP (%d), got %s (%d)", ENOTSUP,
       strerror(errno), errno);
   }
 
   (void) unlink(fsio_test_path);
 #else
   (void) fh;
-  fail_unless(res < 0, "Failed to handle --disable-xattr");
-  fail_unless(errno == ENOSYS, "Expected ENOSYS (%d), got %s (%d)", ENOSYS,
+  ck_assert_msg(res < 0, "Failed to handle --disable-xattr");
+  ck_assert_msg(errno == ENOSYS, "Expected ENOSYS (%d), got %s (%d)", ENOSYS,
     strerror(errno), errno);
 #endif /* PR_USE_XATTR */
 }
@@ -2028,23 +2030,23 @@ START_TEST (fsio_sys_fsetxattr_test) {
   unsigned long fsio_opts;
 
   res = pr_fsio_fsetxattr(NULL, NULL, NULL, NULL, 0, 0);
-  fail_unless(res < 0, "Failed to handle null arguments");
-  fail_unless(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
+  ck_assert_msg(res < 0, "Failed to handle null arguments");
+  ck_assert_msg(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
     strerror(errno), errno);
 
   res = pr_fsio_fsetxattr(p, NULL, NULL, NULL, 0, 0);
-  fail_unless(res < 0, "Failed to handle null file handle");
-  fail_unless(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
+  ck_assert_msg(res < 0, "Failed to handle null file handle");
+  ck_assert_msg(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
     strerror(errno), errno);
 
   (void) unlink(fsio_test_path);
   fh = pr_fsio_open(fsio_test_path, O_CREAT|O_EXCL|O_RDWR);
-  fail_unless(fh != NULL, "Failed to open '%s': %s", fsio_test_path,
+  ck_assert_msg(fh != NULL, "Failed to open '%s': %s", fsio_test_path,
     strerror(errno));
 
   res = pr_fsio_fsetxattr(p, fh, NULL, NULL, 0, 0);
-  fail_unless(res < 0, "Failed to handle null attribute name");
-  fail_unless(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
+  ck_assert_msg(res < 0, "Failed to handle null attribute name");
+  ck_assert_msg(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
     strerror(errno), errno);
 
   name = "foo.bar";
@@ -2052,21 +2054,21 @@ START_TEST (fsio_sys_fsetxattr_test) {
 
   fsio_opts = pr_fsio_set_options(PR_FSIO_OPT_IGNORE_XATTR);
   res = pr_fsio_fsetxattr(p, fh, name, NULL, 0, flags);
-  fail_unless(res < 0, "Failed to handle disabled xattr");
-  fail_unless(errno == ENOSYS, "Expected ENOSYS (%d), got %s (%d)", ENOSYS,
+  ck_assert_msg(res < 0, "Failed to handle disabled xattr");
+  ck_assert_msg(errno == ENOSYS, "Expected ENOSYS (%d), got %s (%d)", ENOSYS,
     strerror(errno), errno);
 
   pr_fsio_set_options(fsio_opts);
   res = pr_fsio_fsetxattr(p, fh, name, NULL, 0, flags);
 #ifdef PR_USE_XATTR
   if (res < 0) {
-    fail_unless(errno == ENOTSUP, "Expected ENOTSUP (%d), got %s (%d)", ENOTSUP,
+    ck_assert_msg(errno == ENOTSUP, "Expected ENOTSUP (%d), got %s (%d)", ENOTSUP,
       strerror(errno), errno);
   }
 
 #else
-  fail_unless(res < 0, "Failed to handle --disable-xattr");
-  fail_unless(errno == ENOSYS, "Expected ENOSYS (%d), got %s (%d)", ENOSYS,
+  ck_assert_msg(res < 0, "Failed to handle --disable-xattr");
+  ck_assert_msg(errno == ENOSYS, "Expected ENOSYS (%d), got %s (%d)", ENOSYS,
     strerror(errno), errno);
 #endif /* PR_USE_XATTR */
 
@@ -2080,12 +2082,12 @@ START_TEST (fsio_sys_mkdir_test) {
   mode_t mode = 0755;
 
   res = pr_fsio_mkdir(NULL, mode);
-  fail_unless(res < 0, "Failed to handle null arguments");
-  fail_unless(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
+  ck_assert_msg(res < 0, "Failed to handle null arguments");
+  ck_assert_msg(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
     strerror(errno), errno);
 
   res = pr_fsio_mkdir(fsio_testdir_path, mode);
-  fail_unless(res == 0, "Failed to create '%s': %s", fsio_testdir_path,
+  ck_assert_msg(res == 0, "Failed to create '%s': %s", fsio_testdir_path,
     strerror(errno));
 
   (void) pr_fsio_rmdir(fsio_testdir_path);
@@ -2097,18 +2099,18 @@ START_TEST (fsio_sys_mkdir_chroot_guard_test) {
   mode_t mode = 0755;
 
   res = pr_fsio_guard_chroot(TRUE);
-  fail_unless(res == FALSE, "Expected FALSE (%d), got %d", FALSE, res);
+  ck_assert_msg(res == FALSE, "Expected FALSE (%d), got %d", FALSE, res);
   
   res = pr_fsio_mkdir("/etc/foo.bar.baz.d", mode);
-  fail_unless(res < 0, "Created /etc/foo.bar.baz.d unexpectedly");
-  fail_unless(errno == EACCES, "Expected EACCES (%d), got %s %d", EACCES,
+  ck_assert_msg(res < 0, "Created /etc/foo.bar.baz.d unexpectedly");
+  ck_assert_msg(errno == EACCES, "Expected EACCES (%d), got %s %d", EACCES,
     strerror(errno), errno);
 
   (void) pr_fsio_guard_chroot(FALSE);
 
   res = pr_fsio_mkdir("/lib/foo/bar/baz.d", mode);
-  fail_unless(res < 0, "Created /lib/foo/bar/baz.d unexpectedly");
-  fail_unless(errno == ENOENT, "Expected ENOENT (%d), got %s %d", ENOENT,
+  ck_assert_msg(res < 0, "Created /lib/foo/bar/baz.d unexpectedly");
+  ck_assert_msg(errno == ENOENT, "Expected ENOENT (%d), got %s %d", ENOENT,
     strerror(errno), errno);
 }
 END_TEST
@@ -2118,21 +2120,21 @@ START_TEST (fsio_sys_rmdir_test) {
   mode_t mode = 0755;
 
   res = pr_fsio_rmdir(NULL);
-  fail_unless(res < 0, "Failed to handle null arguments");
-  fail_unless(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
+  ck_assert_msg(res < 0, "Failed to handle null arguments");
+  ck_assert_msg(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
     strerror(errno), errno);
 
   res = pr_fsio_rmdir(fsio_testdir_path);
-  fail_unless(res < 0, "Failed to handle null arguments");
-  fail_unless(errno == ENOENT, "Expected ENOENT (%d), got %s (%d)", ENOENT,
+  ck_assert_msg(res < 0, "Failed to handle null arguments");
+  ck_assert_msg(errno == ENOENT, "Expected ENOENT (%d), got %s (%d)", ENOENT,
     strerror(errno), errno);
 
   res = pr_fsio_mkdir(fsio_testdir_path, mode);
-  fail_unless(res == 0, "Failed to create '%s': %s", fsio_testdir_path,
+  ck_assert_msg(res == 0, "Failed to create '%s': %s", fsio_testdir_path,
     strerror(errno));
 
   res = pr_fsio_rmdir(fsio_testdir_path);
-  fail_unless(res == 0, "Failed to remove '%s': %s", fsio_testdir_path,
+  ck_assert_msg(res == 0, "Failed to remove '%s': %s", fsio_testdir_path,
     strerror(errno));
 }
 END_TEST
@@ -2141,18 +2143,18 @@ START_TEST (fsio_sys_rmdir_chroot_guard_test) {
   int res;
 
   res = pr_fsio_guard_chroot(TRUE);
-  fail_unless(res == FALSE, "Expected FALSE (%d), got %d", FALSE, res);
+  ck_assert_msg(res == FALSE, "Expected FALSE (%d), got %d", FALSE, res);
 
   res = pr_fsio_rmdir("/etc/foo.bar.baz.d");
-  fail_unless(res < 0, "Removed /etc/foo.bar.baz.d unexpectedly");
-  fail_unless(errno == EACCES, "Expected EACCES (%d), got %s %d", EACCES,
+  ck_assert_msg(res < 0, "Removed /etc/foo.bar.baz.d unexpectedly");
+  ck_assert_msg(errno == EACCES, "Expected EACCES (%d), got %s %d", EACCES,
     strerror(errno), errno);
 
   (void) pr_fsio_guard_chroot(FALSE);
 
   res = pr_fsio_rmdir("/lib/foo/bar/baz.d");
-  fail_unless(res < 0, "Removed /lib/etc/foo.bar.baz.d unexpectedly");
-  fail_unless(errno == ENOENT, "Expected ENOENT (%d), got %s %d", ENOENT,
+  ck_assert_msg(res < 0, "Removed /lib/etc/foo.bar.baz.d unexpectedly");
+  ck_assert_msg(errno == ENOENT, "Expected ENOENT (%d), got %s %d", ENOENT,
     strerror(errno), errno);
 }
 END_TEST
@@ -2161,22 +2163,22 @@ START_TEST (fsio_sys_chdir_test) {
   int res;
 
   res = pr_fsio_chdir(NULL, FALSE);
-  fail_unless(res < 0, "Failed to handle null arguments");
-  fail_unless(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
+  ck_assert_msg(res < 0, "Failed to handle null arguments");
+  ck_assert_msg(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
     strerror(errno), errno);
 
   res = pr_fsio_chdir("/etc/hosts", FALSE);
-  fail_unless(res < 0, "Failed to handle file argument");
-  fail_unless(errno == EINVAL || errno == ENOTDIR,
+  ck_assert_msg(res < 0, "Failed to handle file argument");
+  ck_assert_msg(errno == EINVAL || errno == ENOTDIR,
     "Expected EINVAL (%d) or ENOTDIR (%d), got %s (%d)", EINVAL, ENOTDIR,
     strerror(errno), errno);
 
   res = pr_fsio_chdir("/tmp", FALSE);
-  fail_unless(res == 0, "Failed to chdir to '%s': %s", fsio_cwd,
+  ck_assert_msg(res == 0, "Failed to chdir to '%s': %s", fsio_cwd,
     strerror(errno));
 
   res = pr_fsio_chdir(fsio_cwd, FALSE);
-  fail_unless(res == 0, "Failed to chdir to '%s': %s", fsio_cwd,
+  ck_assert_msg(res == 0, "Failed to chdir to '%s': %s", fsio_cwd,
     strerror(errno));
 }
 END_TEST
@@ -2185,16 +2187,16 @@ START_TEST (fsio_sys_chdir_canon_test) {
   int res;
 
   res = pr_fsio_chdir_canon(NULL, FALSE);
-  fail_unless(res < 0, "Failed to handle null arguments");
-  fail_unless(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
+  ck_assert_msg(res < 0, "Failed to handle null arguments");
+  ck_assert_msg(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
     strerror(errno), errno);
 
   res = pr_fsio_chdir_canon("/tmp", FALSE);
-  fail_unless(res == 0, "Failed to chdir to '%s': %s", fsio_cwd,
+  ck_assert_msg(res == 0, "Failed to chdir to '%s': %s", fsio_cwd,
     strerror(errno));
 
   res = pr_fsio_chdir_canon(fsio_cwd, FALSE);
-  fail_unless(res == 0, "Failed to chdir to '%s': %s", fsio_cwd,
+  ck_assert_msg(res == 0, "Failed to chdir to '%s': %s", fsio_cwd,
     strerror(errno));
 }
 END_TEST
@@ -2203,14 +2205,14 @@ START_TEST (fsio_sys_chroot_test) {
   int res;
 
   res = pr_fsio_chroot(NULL);
-  fail_unless(res < 0, "Failed to handle null arguments");
-  fail_unless(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
+  ck_assert_msg(res < 0, "Failed to handle null arguments");
+  ck_assert_msg(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
     strerror(errno), errno);
 
   if (getuid() != 0) {
     res = pr_fsio_chroot("/tmp");
-    fail_unless(res < 0, "Failed to chroot without root privs");
-    fail_unless(errno == EPERM, "Expected EPERM (%d), got %s (%d)", EPERM,
+    ck_assert_msg(res < 0, "Failed to chroot without root privs");
+    ck_assert_msg(errno == EPERM, "Expected EPERM (%d), got %s (%d)", EPERM,
       strerror(errno), errno);
   }
 }
@@ -2222,26 +2224,26 @@ START_TEST (fsio_sys_opendir_test) {
 
   mark_point();
   res = pr_fsio_opendir(NULL);
-  fail_unless(res == NULL, "Failed to handle null arguments");
-  fail_unless(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
+  ck_assert_msg(res == NULL, "Failed to handle null arguments");
+  ck_assert_msg(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
     strerror(errno), errno); 
 
   mark_point();
   path = "/etc/hosts";
   res = pr_fsio_opendir(path);
-  fail_unless(res == NULL, "Failed to handle file argument");
-  fail_unless(errno == ENOTDIR, "Expected ENOTDIR (%d), got %s (%d)", ENOTDIR,
+  ck_assert_msg(res == NULL, "Failed to handle file argument");
+  ck_assert_msg(errno == ENOTDIR, "Expected ENOTDIR (%d), got %s (%d)", ENOTDIR,
     strerror(errno), errno);
 
   mark_point();
   path = "/tmp/";
   res = pr_fsio_opendir(path);
-  fail_unless(res != NULL, "Failed to open '%s': %s", path, strerror(errno));
+  ck_assert_msg(res != NULL, "Failed to open '%s': %s", path, strerror(errno));
 
   mark_point();
   path = "/usr/";
   res2 = pr_fsio_opendir(path);
-  fail_unless(res != NULL, "Failed to open '%s': %s", path, strerror(errno));
+  ck_assert_msg(res != NULL, "Failed to open '%s': %s", path, strerror(errno));
 
   (void) pr_fsio_closedir(res);
   (void) pr_fsio_closedir(res2);
@@ -2253,21 +2255,21 @@ START_TEST (fsio_sys_readdir_test) {
   struct dirent *dent;
 
   dent = pr_fsio_readdir(NULL);
-  fail_unless(dent == NULL, "Failed to handle null arguments");
-  fail_unless(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
+  ck_assert_msg(dent == NULL, "Failed to handle null arguments");
+  ck_assert_msg(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
     strerror(errno), errno);
 
   dent = pr_fsio_readdir("/etc/hosts");
-  fail_unless(dent == NULL, "Failed to handle file argument");
-  fail_unless(errno == ENOTDIR, "Expected ENOTDIR (%d), got %s (%d)", ENOTDIR,
+  ck_assert_msg(dent == NULL, "Failed to handle file argument");
+  ck_assert_msg(errno == ENOTDIR, "Expected ENOTDIR (%d), got %s (%d)", ENOTDIR,
     strerror(errno), errno);
 
   mark_point();
   dirh = pr_fsio_opendir("/tmp/");
-  fail_unless(dirh != NULL, "Failed to open '/tmp/': %s", strerror(errno));
+  ck_assert_msg(dirh != NULL, "Failed to open '/tmp/': %s", strerror(errno));
 
   dent = pr_fsio_readdir(dirh);
-  fail_unless(dent != NULL, "Failed to read directory entry: %s",
+  ck_assert_msg(dent != NULL, "Failed to read directory entry: %s",
     strerror(errno));
 
   (void) pr_fsio_closedir(dirh);
@@ -2279,20 +2281,20 @@ START_TEST (fsio_sys_closedir_test) {
   int res;
 
   res = pr_fsio_closedir(NULL);
-  fail_unless(res < 0, "Failed to handle null arguments");
-  fail_unless(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
+  ck_assert_msg(res < 0, "Failed to handle null arguments");
+  ck_assert_msg(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
     strerror(errno), errno);
 
   dirh = pr_fsio_opendir("/tmp/");
-  fail_unless(dirh != NULL, "Failed to open '/tmp/': %s", strerror(errno));
+  ck_assert_msg(dirh != NULL, "Failed to open '/tmp/': %s", strerror(errno));
 
   res = pr_fsio_closedir(dirh);
-  fail_unless(res == 0, "Failed to close '/tmp/': %s", strerror(errno));
+  ck_assert_msg(res == 0, "Failed to close '/tmp/': %s", strerror(errno));
 
   /* Closing an already-closed directory descriptor should fail. */
   res = pr_fsio_closedir(dirh);
-  fail_unless(res < 0, "Failed to handle already-closed directory handle");
-  fail_unless(errno == ENOTDIR, "Expected ENOTDIR (%d), got %s (%d)", ENOTDIR,
+  ck_assert_msg(res < 0, "Failed to handle already-closed directory handle");
+  ck_assert_msg(errno == ENOTDIR, "Expected ENOTDIR (%d), got %s (%d)", ENOTDIR,
     strerror(errno), errno);
 }
 END_TEST
@@ -2312,18 +2314,18 @@ START_TEST (fsio_sys_chmod_with_error_test) {
 
   mark_point();
   res = pr_fsio_chmod_with_error(NULL, fsio_test_path, 0755, NULL);
-  fail_unless(res < 0, "Failed to handle non-existent file '%s'",
+  ck_assert_msg(res < 0, "Failed to handle non-existent file '%s'",
     fsio_test_path);
-  fail_unless(errno == ENOENT, "Expected ENOENT (%d), %s (%d)", ENOENT,
+  ck_assert_msg(errno == ENOENT, "Expected ENOENT (%d), %s (%d)", ENOENT,
     strerror(errno), errno);
 
   mark_point();
   res = pr_fsio_chmod_with_error(p, fsio_test_path, 0755, &err);
-  fail_unless(res < 0, "Failed to handle non-existent file '%s'",
+  ck_assert_msg(res < 0, "Failed to handle non-existent file '%s'",
     fsio_test_path);
-  fail_unless(errno == ENOENT, "Expected ENOENT (%d), %s (%d)", ENOENT,
+  ck_assert_msg(errno == ENOENT, "Expected ENOENT (%d), %s (%d)", ENOENT,
     strerror(errno), errno);
-  fail_unless(err == NULL, "Unexpectedly populated error");
+  ck_assert_msg(err == NULL, "Unexpectedly populated error");
 
   memset(&m, 0, sizeof(m));
   m.name = "error";
@@ -2333,17 +2335,17 @@ START_TEST (fsio_sys_chmod_with_error_test) {
 
   mark_point();
   res = pr_fsio_chmod_with_error(p, fsio_test_path, 0755, &err);
-  fail_unless(res < 0, "Failed to handle non-existent file '%s'",
+  ck_assert_msg(res < 0, "Failed to handle non-existent file '%s'",
     fsio_test_path);
-  fail_unless(errno == ENOENT, "Expected ENOENT (%d), %s (%d)", ENOENT,
+  ck_assert_msg(errno == ENOENT, "Expected ENOENT (%d), %s (%d)", ENOENT,
     strerror(errno), errno);
-  fail_unless(err != NULL, "Failed to populate error");
+  ck_assert_msg(err != NULL, "Failed to populate error");
 
   expected = pstrcat(p,
     "chmod() failed with \"No such file or directory [ENOENT (",
     get_errnum(p, ENOENT), ")]\"", NULL);
   errstr = pr_error_strerror(err, PR_ERROR_FORMAT_USE_MINIMAL);
-  fail_unless(strcmp(errstr, expected) == 0, "Expected '%s', got '%s'",
+  ck_assert_msg(strcmp(errstr, expected) == 0, "Expected '%s', got '%s'",
     expected, errstr);
 
   (void) pr_error_unregister_explainer(p, &m, NULL);
@@ -2366,18 +2368,18 @@ START_TEST (fsio_sys_chown_with_error_test) {
 
   mark_point();
   res = pr_fsio_chown_with_error(NULL, fsio_test_path, 1, 1, NULL);
-  fail_unless(res < 0, "Failed to handle non-existent file '%s'",
+  ck_assert_msg(res < 0, "Failed to handle non-existent file '%s'",
     fsio_test_path);
-  fail_unless(errno == ENOENT, "Expected ENOENT (%d), %s (%d)", ENOENT,
+  ck_assert_msg(errno == ENOENT, "Expected ENOENT (%d), %s (%d)", ENOENT,
     strerror(errno), errno);
 
   mark_point();
   res = pr_fsio_chown_with_error(p, fsio_test_path, 1, 1, &err);
-  fail_unless(res < 0, "Failed to handle non-existent file '%s'",
+  ck_assert_msg(res < 0, "Failed to handle non-existent file '%s'",
     fsio_test_path);
-  fail_unless(errno == ENOENT, "Expected ENOENT (%d), %s (%d)", ENOENT,
+  ck_assert_msg(errno == ENOENT, "Expected ENOENT (%d), %s (%d)", ENOENT,
     strerror(errno), errno);
-  fail_unless(err == NULL, "Unexpectedly populated error");
+  ck_assert_msg(err == NULL, "Unexpectedly populated error");
 
   memset(&m, 0, sizeof(m));
   m.name = "error";
@@ -2387,17 +2389,17 @@ START_TEST (fsio_sys_chown_with_error_test) {
 
   mark_point();
   res = pr_fsio_chown_with_error(p, fsio_test_path, 1, 1, &err);
-  fail_unless(res < 0, "Failed to handle non-existent file '%s'",
+  ck_assert_msg(res < 0, "Failed to handle non-existent file '%s'",
     fsio_test_path);
-  fail_unless(errno == ENOENT, "Expected ENOENT (%d), %s (%d)", ENOENT,
+  ck_assert_msg(errno == ENOENT, "Expected ENOENT (%d), %s (%d)", ENOENT,
     strerror(errno), errno);
-  fail_unless(err != NULL, "Failed to populate error");
+  ck_assert_msg(err != NULL, "Failed to populate error");
 
   expected = pstrcat(p,
     "chown() failed with \"No such file or directory [ENOENT (",
     get_errnum(p, ENOENT), ")]\"", NULL);
   errstr = pr_error_strerror(err, PR_ERROR_FORMAT_USE_MINIMAL);
-  fail_unless(strcmp(errstr, expected) == 0, "Expected '%s', got '%s'",
+  ck_assert_msg(strcmp(errstr, expected) == 0, "Expected '%s', got '%s'",
     expected, errstr);
 
   (void) pr_error_unregister_explainer(p, &m, NULL);
@@ -2420,21 +2422,21 @@ START_TEST (fsio_sys_chroot_with_error_test) {
 
   mark_point();
   res = pr_fsio_chroot_with_error(NULL, fsio_testdir_path, NULL);
-  fail_unless(res < 0, "Failed to handle non-existent file '%s'",
+  ck_assert_msg(res < 0, "Failed to handle non-existent file '%s'",
     fsio_testdir_path);
-  fail_unless(errno == EPERM || errno == ENOENT,
+  ck_assert_msg(errno == EPERM || errno == ENOENT,
     "Expected EPERM (%d) or ENOENT (%d), %s (%d)", EPERM, ENOENT,
     strerror(errno), errno);
 
   mark_point();
   res = pr_fsio_chroot_with_error(p, fsio_testdir_path, &err);
   xerrno = errno;
-  fail_unless(res < 0, "Failed to handle non-existent file '%s'",
+  ck_assert_msg(res < 0, "Failed to handle non-existent file '%s'",
     fsio_testdir_path);
-  fail_unless(errno == EPERM || errno == ENOENT,
+  ck_assert_msg(errno == EPERM || errno == ENOENT,
     "Expected EPERM (%d) or ENOENT (%d), %s (%d)", EPERM, ENOENT,
     strerror(errno), errno);
-  fail_unless(err == NULL, "Unexpectedly populated error");
+  ck_assert_msg(err == NULL, "Unexpectedly populated error");
 
   memset(&m, 0, sizeof(m));
   m.name = "error";
@@ -2445,19 +2447,19 @@ START_TEST (fsio_sys_chroot_with_error_test) {
   mark_point();
   res = pr_fsio_chroot_with_error(p, fsio_testdir_path, &err);
   xerrno = errno;
-  fail_unless(res < 0, "Failed to handle non-existent file '%s'",
+  ck_assert_msg(res < 0, "Failed to handle non-existent file '%s'",
     fsio_testdir_path);
-  fail_unless(errno == EPERM || errno == ENOENT,
+  ck_assert_msg(errno == EPERM || errno == ENOENT,
     "Expected EPERM (%d) or ENOENT (%d), %s (%d)", EPERM, ENOENT,
     strerror(errno), errno);
-  fail_unless(err != NULL, "Failed to populate error");
+  ck_assert_msg(err != NULL, "Failed to populate error");
 
   expected = pstrcat(p,
     "chroot() failed with \"", strerror(xerrno), " [",
     xerrno == ENOENT ? "ENOENT" : "EPERM", " (",
     get_errnum(p, xerrno), ")]\"", NULL);
   errstr = pr_error_strerror(err, PR_ERROR_FORMAT_USE_MINIMAL);
-  fail_unless(strcmp(errstr, expected) == 0, "Expected '%s', got '%s'",
+  ck_assert_msg(strcmp(errstr, expected) == 0, "Expected '%s', got '%s'",
     expected, errstr);
 
   (void) pr_error_unregister_explainer(p, &m, NULL);
@@ -2480,16 +2482,16 @@ START_TEST (fsio_sys_close_with_error_test) {
 
   mark_point();
   res = pr_fsio_close_with_error(NULL, NULL, NULL);
-  fail_unless(res < 0, "Failed to handle null fh");
-  fail_unless(errno == EINVAL, "Expected EINVAL (%d), %s (%d)", EINVAL,
+  ck_assert_msg(res < 0, "Failed to handle null fh");
+  ck_assert_msg(errno == EINVAL, "Expected EINVAL (%d), %s (%d)", EINVAL,
     strerror(errno), errno);
 
   mark_point();
   res = pr_fsio_close_with_error(p, NULL, &err);
-  fail_unless(res < 0, "Failed to handle null fh");
-  fail_unless(errno == EINVAL, "Expected EINVAL (%d), %s (%d)", EINVAL,
+  ck_assert_msg(res < 0, "Failed to handle null fh");
+  ck_assert_msg(errno == EINVAL, "Expected EINVAL (%d), %s (%d)", EINVAL,
     strerror(errno), errno);
-  fail_unless(err == NULL, "Unexpectedly populated error");
+  ck_assert_msg(err == NULL, "Unexpectedly populated error");
 
   memset(&m, 0, sizeof(m));
   m.name = "error";
@@ -2499,16 +2501,16 @@ START_TEST (fsio_sys_close_with_error_test) {
 
   mark_point();
   res = pr_fsio_close_with_error(p, NULL, &err);
-  fail_unless(res < 0, "Failed to handle null fh");
-  fail_unless(errno == EINVAL, "Expected EINVAL (%d), %s (%d)", EINVAL,
+  ck_assert_msg(res < 0, "Failed to handle null fh");
+  ck_assert_msg(errno == EINVAL, "Expected EINVAL (%d), %s (%d)", EINVAL,
     strerror(errno), errno);
-  fail_unless(err != NULL, "Failed to populate error");
+  ck_assert_msg(err != NULL, "Failed to populate error");
 
   expected = pstrcat(p,
     "close() failed with \"Invalid argument [EINVAL (",
     get_errnum(p, EINVAL), ")]\"", NULL);
   errstr = pr_error_strerror(err, PR_ERROR_FORMAT_USE_MINIMAL);
-  fail_unless(strcmp(errstr, expected) == 0, "Expected '%s', got '%s'",
+  ck_assert_msg(strcmp(errstr, expected) == 0, "Expected '%s', got '%s'",
     expected, errstr);
 
   (void) pr_error_unregister_explainer(p, &m, NULL);
@@ -2531,16 +2533,16 @@ START_TEST (fsio_sys_fchmod_with_error_test) {
 
   mark_point();
   res = pr_fsio_fchmod_with_error(NULL, NULL, 0755, NULL);
-  fail_unless(res < 0, "Failed to handle null fh");
-  fail_unless(errno == EINVAL, "Expected EINVAL (%d), %s (%d)", EINVAL,
+  ck_assert_msg(res < 0, "Failed to handle null fh");
+  ck_assert_msg(errno == EINVAL, "Expected EINVAL (%d), %s (%d)", EINVAL,
     strerror(errno), errno);
 
   mark_point();
   res = pr_fsio_fchmod_with_error(p, NULL, 0755, &err);
-  fail_unless(res < 0, "Failed to handle null fh");
-  fail_unless(errno == EINVAL, "Expected EINVAL (%d), %s (%d)", EINVAL,
+  ck_assert_msg(res < 0, "Failed to handle null fh");
+  ck_assert_msg(errno == EINVAL, "Expected EINVAL (%d), %s (%d)", EINVAL,
     strerror(errno), errno);
-  fail_unless(err == NULL, "Unexpectedly populated error");
+  ck_assert_msg(err == NULL, "Unexpectedly populated error");
 
   memset(&m, 0, sizeof(m));
   m.name = "error";
@@ -2550,16 +2552,16 @@ START_TEST (fsio_sys_fchmod_with_error_test) {
 
   mark_point();
   res = pr_fsio_fchmod_with_error(p, NULL, 0755, &err);
-  fail_unless(res < 0, "Failed to handle null fh");
-  fail_unless(errno == EINVAL, "Expected EINVAL (%d), %s (%d)", EINVAL,
+  ck_assert_msg(res < 0, "Failed to handle null fh");
+  ck_assert_msg(errno == EINVAL, "Expected EINVAL (%d), %s (%d)", EINVAL,
     strerror(errno), errno);
-  fail_unless(err != NULL, "Failed to populate error");
+  ck_assert_msg(err != NULL, "Failed to populate error");
 
   expected = pstrcat(p,
     "fchmod() failed with \"Invalid argument [EINVAL (",
     get_errnum(p, EINVAL), ")]\"", NULL);
   errstr = pr_error_strerror(err, PR_ERROR_FORMAT_USE_MINIMAL);
-  fail_unless(strcmp(errstr, expected) == 0, "Expected '%s', got '%s'",
+  ck_assert_msg(strcmp(errstr, expected) == 0, "Expected '%s', got '%s'",
     expected, errstr);
 
   (void) pr_error_unregister_explainer(p, &m, NULL);
@@ -2582,16 +2584,16 @@ START_TEST (fsio_sys_fchown_with_error_test) {
 
   mark_point();
   res = pr_fsio_fchown_with_error(NULL, NULL, 1, 1, NULL);
-  fail_unless(res < 0, "Failed to handle null fh");
-  fail_unless(errno == EINVAL, "Expected EINVAL (%d), %s (%d)", EINVAL,
+  ck_assert_msg(res < 0, "Failed to handle null fh");
+  ck_assert_msg(errno == EINVAL, "Expected EINVAL (%d), %s (%d)", EINVAL,
     strerror(errno), errno);
 
   mark_point();
   res = pr_fsio_fchown_with_error(p, NULL, 1, 1, &err);
-  fail_unless(res < 0, "Failed to handle null fh");
-  fail_unless(errno == EINVAL, "Expected EINVAL (%d), %s (%d)", EINVAL,
+  ck_assert_msg(res < 0, "Failed to handle null fh");
+  ck_assert_msg(errno == EINVAL, "Expected EINVAL (%d), %s (%d)", EINVAL,
     strerror(errno), errno);
-  fail_unless(err == NULL, "Unexpectedly populated error");
+  ck_assert_msg(err == NULL, "Unexpectedly populated error");
 
   memset(&m, 0, sizeof(m));
   m.name = "error";
@@ -2601,16 +2603,16 @@ START_TEST (fsio_sys_fchown_with_error_test) {
 
   mark_point();
   res = pr_fsio_fchown_with_error(p, NULL, 1, 1, &err);
-  fail_unless(res < 0, "Failed to handle null fh");
-  fail_unless(errno == EINVAL, "Expected EINVAL (%d), %s (%d)", EINVAL,
+  ck_assert_msg(res < 0, "Failed to handle null fh");
+  ck_assert_msg(errno == EINVAL, "Expected EINVAL (%d), %s (%d)", EINVAL,
     strerror(errno), errno);
-  fail_unless(err != NULL, "Failed to populate error");
+  ck_assert_msg(err != NULL, "Failed to populate error");
 
   expected = pstrcat(p,
     "fchown() failed with \"Invalid argument [EINVAL (",
     get_errnum(p, EINVAL), ")]\"", NULL);
   errstr = pr_error_strerror(err, PR_ERROR_FORMAT_USE_MINIMAL);
-  fail_unless(strcmp(errstr, expected) == 0, "Expected '%s', got '%s'",
+  ck_assert_msg(strcmp(errstr, expected) == 0, "Expected '%s', got '%s'",
     expected, errstr);
 
   (void) pr_error_unregister_explainer(p, &m, NULL);
@@ -2633,18 +2635,18 @@ START_TEST (fsio_sys_lchown_with_error_test) {
 
   mark_point();
   res = pr_fsio_lchown_with_error(NULL, fsio_test_path, 1, 1, NULL);
-  fail_unless(res < 0, "Failed to handle non-existent file '%s'",
+  ck_assert_msg(res < 0, "Failed to handle non-existent file '%s'",
     fsio_test_path);
-  fail_unless(errno == ENOENT, "Expected ENOENT (%d), %s (%d)", ENOENT,
+  ck_assert_msg(errno == ENOENT, "Expected ENOENT (%d), %s (%d)", ENOENT,
     strerror(errno), errno);
 
   mark_point();
   res = pr_fsio_lchown_with_error(p, fsio_test_path, 1, 1, &err);
-  fail_unless(res < 0, "Failed to handle non-existent file '%s'",
+  ck_assert_msg(res < 0, "Failed to handle non-existent file '%s'",
     fsio_test_path);
-  fail_unless(errno == ENOENT, "Expected ENOENT (%d), %s (%d)", ENOENT,
+  ck_assert_msg(errno == ENOENT, "Expected ENOENT (%d), %s (%d)", ENOENT,
     strerror(errno), errno);
-  fail_unless(err == NULL, "Unexpectedly populated error");
+  ck_assert_msg(err == NULL, "Unexpectedly populated error");
 
   memset(&m, 0, sizeof(m));
   m.name = "error";
@@ -2654,17 +2656,17 @@ START_TEST (fsio_sys_lchown_with_error_test) {
 
   mark_point();
   res = pr_fsio_lchown_with_error(p, fsio_test_path, 1, 1, &err);
-  fail_unless(res < 0, "Failed to handle non-existent file '%s'",
+  ck_assert_msg(res < 0, "Failed to handle non-existent file '%s'",
     fsio_test_path);
-  fail_unless(errno == ENOENT, "Expected ENOENT (%d), %s (%d)", ENOENT,
+  ck_assert_msg(errno == ENOENT, "Expected ENOENT (%d), %s (%d)", ENOENT,
     strerror(errno), errno);
-  fail_unless(err != NULL, "Failed to populate error");
+  ck_assert_msg(err != NULL, "Failed to populate error");
 
   expected = pstrcat(p,
     "lchown() failed with \"No such file or directory [ENOENT (",
     get_errnum(p, ENOENT), ")]\"", NULL);
   errstr = pr_error_strerror(err, PR_ERROR_FORMAT_USE_MINIMAL);
-  fail_unless(strcmp(errstr, expected) == 0, "Expected '%s', got '%s'",
+  ck_assert_msg(strcmp(errstr, expected) == 0, "Expected '%s', got '%s'",
     expected, errstr);
 
   (void) pr_error_unregister_explainer(p, &m, NULL);
@@ -2688,18 +2690,18 @@ START_TEST (fsio_sys_lstat_with_error_test) {
 
   mark_point();
   res = pr_fsio_lstat_with_error(NULL, fsio_test_path, &st, NULL);
-  fail_unless(res < 0, "Failed to handle non-existent file '%s'",
+  ck_assert_msg(res < 0, "Failed to handle non-existent file '%s'",
     fsio_test_path);
-  fail_unless(errno == ENOENT, "Expected ENOENT (%d), %s (%d)", ENOENT,
+  ck_assert_msg(errno == ENOENT, "Expected ENOENT (%d), %s (%d)", ENOENT,
     strerror(errno), errno);
 
   mark_point();
   res = pr_fsio_lstat_with_error(p, fsio_test_path, &st, &err);
-  fail_unless(res < 0, "Failed to handle non-existent file '%s'",
+  ck_assert_msg(res < 0, "Failed to handle non-existent file '%s'",
     fsio_test_path);
-  fail_unless(errno == ENOENT, "Expected ENOENT (%d), %s (%d)", ENOENT,
+  ck_assert_msg(errno == ENOENT, "Expected ENOENT (%d), %s (%d)", ENOENT,
     strerror(errno), errno);
-  fail_unless(err == NULL, "Unexpectedly populated error");
+  ck_assert_msg(err == NULL, "Unexpectedly populated error");
 
   memset(&m, 0, sizeof(m));
   m.name = "error";
@@ -2709,17 +2711,17 @@ START_TEST (fsio_sys_lstat_with_error_test) {
 
   mark_point();
   res = pr_fsio_lstat_with_error(p, fsio_test_path, &st, &err);
-  fail_unless(res < 0, "Failed to handle non-existent file '%s'",
+  ck_assert_msg(res < 0, "Failed to handle non-existent file '%s'",
     fsio_test_path);
-  fail_unless(errno == ENOENT, "Expected ENOENT (%d), %s (%d)", ENOENT,
+  ck_assert_msg(errno == ENOENT, "Expected ENOENT (%d), %s (%d)", ENOENT,
     strerror(errno), errno);
-  fail_unless(err != NULL, "Failed to populate error");
+  ck_assert_msg(err != NULL, "Failed to populate error");
 
   expected = pstrcat(p,
     "lstat() failed with \"No such file or directory [ENOENT (",
     get_errnum(p, ENOENT), ")]\"", NULL);
   errstr = pr_error_strerror(err, PR_ERROR_FORMAT_USE_MINIMAL);
-  fail_unless(strcmp(errstr, expected) == 0, "Expected '%s', got '%s'",
+  ck_assert_msg(strcmp(errstr, expected) == 0, "Expected '%s', got '%s'",
     expected, errstr);
 
   (void) pr_error_unregister_explainer(p, &m, NULL);
@@ -2744,18 +2746,18 @@ START_TEST (fsio_sys_mkdir_with_error_test) {
 
   mark_point();
   res = pr_fsio_mkdir_with_error(NULL, path, 0755, NULL);
-  fail_unless(res < 0, "Failed to handle non-existent file '%s'",
+  ck_assert_msg(res < 0, "Failed to handle non-existent file '%s'",
     fsio_testdir_path);
-  fail_unless(errno == ENOENT, "Expected ENOENT (%d), %s (%d)", ENOENT,
+  ck_assert_msg(errno == ENOENT, "Expected ENOENT (%d), %s (%d)", ENOENT,
     strerror(errno), errno);
 
   mark_point();
   res = pr_fsio_mkdir_with_error(p, path, 0755, &err);
-  fail_unless(res < 0, "Failed to handle non-existent file '%s'",
+  ck_assert_msg(res < 0, "Failed to handle non-existent file '%s'",
     fsio_testdir_path);
-  fail_unless(errno == ENOENT, "Expected ENOENT (%d), %s (%d)", ENOENT,
+  ck_assert_msg(errno == ENOENT, "Expected ENOENT (%d), %s (%d)", ENOENT,
     strerror(errno), errno);
-  fail_unless(err == NULL, "Unexpectedly populated error");
+  ck_assert_msg(err == NULL, "Unexpectedly populated error");
 
   memset(&m, 0, sizeof(m));
   m.name = "error";
@@ -2765,17 +2767,17 @@ START_TEST (fsio_sys_mkdir_with_error_test) {
 
   mark_point();
   res = pr_fsio_mkdir_with_error(p, path, 0755, &err);
-  fail_unless(res < 0, "Failed to handle non-existent file '%s'",
+  ck_assert_msg(res < 0, "Failed to handle non-existent file '%s'",
     fsio_testdir_path);
-  fail_unless(errno == ENOENT, "Expected ENOENT (%d), %s (%d)", ENOENT,
+  ck_assert_msg(errno == ENOENT, "Expected ENOENT (%d), %s (%d)", ENOENT,
     strerror(errno), errno);
-  fail_unless(err != NULL, "Failed to populate error");
+  ck_assert_msg(err != NULL, "Failed to populate error");
 
   expected = pstrcat(p,
     "mkdir() failed with \"No such file or directory [ENOENT (",
     get_errnum(p, ENOENT), ")]\"", NULL);
   errstr = pr_error_strerror(err, PR_ERROR_FORMAT_USE_MINIMAL);
-  fail_unless(strcmp(errstr, expected) == 0, "Expected '%s', got '%s'",
+  ck_assert_msg(strcmp(errstr, expected) == 0, "Expected '%s', got '%s'",
     expected, errstr);
 
   (void) pr_error_unregister_explainer(p, &m, NULL);
@@ -2798,18 +2800,18 @@ START_TEST (fsio_sys_open_with_error_test) {
 
   mark_point();
   fh = pr_fsio_open_with_error(NULL, fsio_test_path, O_RDONLY, NULL);
-  fail_unless(fh == NULL, "Failed to handle non-existent file '%s'",
+  ck_assert_msg(fh == NULL, "Failed to handle non-existent file '%s'",
     fsio_test_path);
-  fail_unless(errno == ENOENT, "Expected ENOENT (%d), %s (%d)", ENOENT,
+  ck_assert_msg(errno == ENOENT, "Expected ENOENT (%d), %s (%d)", ENOENT,
     strerror(errno), errno);
 
   mark_point();
   fh = pr_fsio_open_with_error(p, fsio_test_path, O_RDONLY, &err);
-  fail_unless(fh == NULL, "Failed to handle non-existent file '%s'",
+  ck_assert_msg(fh == NULL, "Failed to handle non-existent file '%s'",
     fsio_test_path);
-  fail_unless(errno == ENOENT, "Expected ENOENT (%d), %s (%d)", ENOENT,
+  ck_assert_msg(errno == ENOENT, "Expected ENOENT (%d), %s (%d)", ENOENT,
     strerror(errno), errno);
-  fail_unless(err == NULL, "Unexpectedly populated error");
+  ck_assert_msg(err == NULL, "Unexpectedly populated error");
 
   memset(&m, 0, sizeof(m));
   m.name = "error";
@@ -2819,17 +2821,17 @@ START_TEST (fsio_sys_open_with_error_test) {
 
   mark_point();
   fh = pr_fsio_open_with_error(p, fsio_test_path, O_RDONLY, &err);
-  fail_unless(fh == NULL, "Failed to handle non-existent file '%s'",
+  ck_assert_msg(fh == NULL, "Failed to handle non-existent file '%s'",
     fsio_test_path);
-  fail_unless(errno == ENOENT, "Expected ENOENT (%d), %s (%d)", ENOENT,
+  ck_assert_msg(errno == ENOENT, "Expected ENOENT (%d), %s (%d)", ENOENT,
     strerror(errno), errno);
-  fail_unless(err != NULL, "Failed to populate error");
+  ck_assert_msg(err != NULL, "Failed to populate error");
 
   expected = pstrcat(p,
     "open() failed with \"No such file or directory [ENOENT (",
     get_errnum(p, ENOENT), ")]\"", NULL);
   errstr = pr_error_strerror(err, PR_ERROR_FORMAT_USE_MINIMAL);
-  fail_unless(strcmp(errstr, expected) == 0, "Expected '%s', got '%s'",
+  ck_assert_msg(strcmp(errstr, expected) == 0, "Expected '%s', got '%s'",
     expected, errstr);
 
   (void) pr_error_unregister_explainer(p, &m, NULL);
@@ -2852,16 +2854,16 @@ START_TEST (fsio_sys_read_with_error_test) {
 
   mark_point();
   res = pr_fsio_read_with_error(NULL, NULL, NULL, 0, NULL);
-  fail_unless(res < 0, "Failed to handle null fh");
-  fail_unless(errno == EINVAL, "Expected EINVAL (%d), %s (%d)", EINVAL,
+  ck_assert_msg(res < 0, "Failed to handle null fh");
+  ck_assert_msg(errno == EINVAL, "Expected EINVAL (%d), %s (%d)", EINVAL,
     strerror(errno), errno);
 
   mark_point();
   res = pr_fsio_read_with_error(p, NULL, NULL, 0, &err);
-  fail_unless(res < 0, "Failed to handle null fh");
-  fail_unless(errno == EINVAL, "Expected EINVAL (%d), %s (%d)", EINVAL,
+  ck_assert_msg(res < 0, "Failed to handle null fh");
+  ck_assert_msg(errno == EINVAL, "Expected EINVAL (%d), %s (%d)", EINVAL,
     strerror(errno), errno);
-  fail_unless(err == NULL, "Unexpectedly populated error");
+  ck_assert_msg(err == NULL, "Unexpectedly populated error");
 
   memset(&m, 0, sizeof(m));
   m.name = "error";
@@ -2871,16 +2873,16 @@ START_TEST (fsio_sys_read_with_error_test) {
 
   mark_point();
   res = pr_fsio_read_with_error(p, NULL, NULL, 0, &err);
-  fail_unless(res < 0, "Failed to handle null fh");
-  fail_unless(errno == EINVAL, "Expected EINVAL (%d), %s (%d)", EINVAL,
+  ck_assert_msg(res < 0, "Failed to handle null fh");
+  ck_assert_msg(errno == EINVAL, "Expected EINVAL (%d), %s (%d)", EINVAL,
     strerror(errno), errno);
-  fail_unless(err != NULL, "Failed to populate error");
+  ck_assert_msg(err != NULL, "Failed to populate error");
 
   expected = pstrcat(p,
     "read() failed with \"Invalid argument [EINVAL (",
     get_errnum(p, EINVAL), ")]\"", NULL);
   errstr = pr_error_strerror(err, PR_ERROR_FORMAT_USE_MINIMAL);
-  fail_unless(strcmp(errstr, expected) == 0, "Expected '%s', got '%s'",
+  ck_assert_msg(strcmp(errstr, expected) == 0, "Expected '%s', got '%s'",
     expected, errstr);
 
   (void) pr_error_unregister_explainer(p, &m, NULL);
@@ -2903,18 +2905,18 @@ START_TEST (fsio_sys_rename_with_error_test) {
 
   mark_point();
   res = pr_fsio_rename_with_error(NULL, fsio_test_path, fsio_test2_path, NULL);
-  fail_unless(res < 0, "Failed to handle non-existent file '%s'",
+  ck_assert_msg(res < 0, "Failed to handle non-existent file '%s'",
     fsio_test_path);
-  fail_unless(errno == ENOENT, "Expected ENOENT (%d), %s (%d)", ENOENT,
+  ck_assert_msg(errno == ENOENT, "Expected ENOENT (%d), %s (%d)", ENOENT,
     strerror(errno), errno);
 
   mark_point();
   res = pr_fsio_rename_with_error(p, fsio_test_path, fsio_test2_path, &err);
-  fail_unless(res < 0, "Failed to handle non-existent file '%s'",
+  ck_assert_msg(res < 0, "Failed to handle non-existent file '%s'",
     fsio_test_path);
-  fail_unless(errno == ENOENT, "Expected ENOENT (%d), %s (%d)", ENOENT,
+  ck_assert_msg(errno == ENOENT, "Expected ENOENT (%d), %s (%d)", ENOENT,
     strerror(errno), errno);
-  fail_unless(err == NULL, "Unexpectedly populated error");
+  ck_assert_msg(err == NULL, "Unexpectedly populated error");
 
   memset(&m, 0, sizeof(m));
   m.name = "error";
@@ -2924,17 +2926,17 @@ START_TEST (fsio_sys_rename_with_error_test) {
 
   mark_point();
   res = pr_fsio_rename_with_error(p, fsio_test_path, fsio_test2_path, &err);
-  fail_unless(res < 0, "Failed to handle non-existent file '%s'",
+  ck_assert_msg(res < 0, "Failed to handle non-existent file '%s'",
     fsio_test_path);
-  fail_unless(errno == ENOENT, "Expected ENOENT (%d), %s (%d)", ENOENT,
+  ck_assert_msg(errno == ENOENT, "Expected ENOENT (%d), %s (%d)", ENOENT,
     strerror(errno), errno);
-  fail_unless(err != NULL, "Failed to populate error");
+  ck_assert_msg(err != NULL, "Failed to populate error");
 
   expected = pstrcat(p,
     "rename() failed with \"No such file or directory [ENOENT (",
     get_errnum(p, ENOENT), ")]\"", NULL);
   errstr = pr_error_strerror(err, PR_ERROR_FORMAT_USE_MINIMAL);
-  fail_unless(strcmp(errstr, expected) == 0, "Expected '%s', got '%s'",
+  ck_assert_msg(strcmp(errstr, expected) == 0, "Expected '%s', got '%s'",
     expected, errstr);
 
   (void) pr_error_unregister_explainer(p, &m, NULL);
@@ -2957,11 +2959,11 @@ START_TEST (fsio_sys_rmdir_with_error_test) {
 
   mark_point();
   res = pr_fsio_rmdir_with_error(NULL, fsio_testdir_path, NULL);
-  fail_unless(res < 0, "Failed to handle non-existent file '%s'",
+  ck_assert_msg(res < 0, "Failed to handle non-existent file '%s'",
     fsio_testdir_path);
-  fail_unless(errno == ENOENT, "Expected ENOENT (%d), %s (%d)", ENOENT,
+  ck_assert_msg(errno == ENOENT, "Expected ENOENT (%d), %s (%d)", ENOENT,
     strerror(errno), errno);
-  fail_unless(err == NULL, "Unexpectedly populated error");
+  ck_assert_msg(err == NULL, "Unexpectedly populated error");
 
   memset(&m, 0, sizeof(m));
   m.name = "error";
@@ -2971,17 +2973,17 @@ START_TEST (fsio_sys_rmdir_with_error_test) {
 
   mark_point();
   res = pr_fsio_rmdir_with_error(p, fsio_testdir_path, &err);
-  fail_unless(res < 0, "Failed to handle non-existent file '%s'",
+  ck_assert_msg(res < 0, "Failed to handle non-existent file '%s'",
     fsio_testdir_path);
-  fail_unless(errno == ENOENT, "Expected ENOENT (%d), %s (%d)", ENOENT,
+  ck_assert_msg(errno == ENOENT, "Expected ENOENT (%d), %s (%d)", ENOENT,
     strerror(errno), errno);
-  fail_unless(err != NULL, "Failed to populate error");
+  ck_assert_msg(err != NULL, "Failed to populate error");
 
   expected = pstrcat(p,
     "rmdir() failed with \"No such file or directory [ENOENT (",
     get_errnum(p, ENOENT), ")]\"", NULL);
   errstr = pr_error_strerror(err, PR_ERROR_FORMAT_USE_MINIMAL);
-  fail_unless(strcmp(errstr, expected) == 0, "Expected '%s', got '%s'",
+  ck_assert_msg(strcmp(errstr, expected) == 0, "Expected '%s', got '%s'",
     expected, errstr);
 
   (void) pr_error_unregister_explainer(p, &m, NULL);
@@ -3005,18 +3007,18 @@ START_TEST (fsio_sys_stat_with_error_test) {
 
   mark_point();
   res = pr_fsio_stat_with_error(NULL, fsio_test_path, &st, NULL);
-  fail_unless(res < 0, "Failed to handle non-existent file '%s'",
+  ck_assert_msg(res < 0, "Failed to handle non-existent file '%s'",
     fsio_test_path);
-  fail_unless(errno == ENOENT, "Expected ENOENT (%d), %s (%d)", ENOENT,
+  ck_assert_msg(errno == ENOENT, "Expected ENOENT (%d), %s (%d)", ENOENT,
     strerror(errno), errno);
 
   mark_point();
   res = pr_fsio_stat_with_error(p, fsio_test_path, &st, &err);
-  fail_unless(res < 0, "Failed to handle non-existent file '%s'",
+  ck_assert_msg(res < 0, "Failed to handle non-existent file '%s'",
     fsio_test_path);
-  fail_unless(errno == ENOENT, "Expected ENOENT (%d), %s (%d)", ENOENT,
+  ck_assert_msg(errno == ENOENT, "Expected ENOENT (%d), %s (%d)", ENOENT,
     strerror(errno), errno);
-  fail_unless(err == NULL, "Unexpectedly populated error");
+  ck_assert_msg(err == NULL, "Unexpectedly populated error");
 
   memset(&m, 0, sizeof(m));
   m.name = "error";
@@ -3026,17 +3028,17 @@ START_TEST (fsio_sys_stat_with_error_test) {
 
   mark_point();
   res = pr_fsio_stat_with_error(p, fsio_test_path, &st, &err);
-  fail_unless(res < 0, "Failed to handle non-existent file '%s'",
+  ck_assert_msg(res < 0, "Failed to handle non-existent file '%s'",
     fsio_test_path);
-  fail_unless(errno == ENOENT, "Expected ENOENT (%d), %s (%d)", ENOENT,
+  ck_assert_msg(errno == ENOENT, "Expected ENOENT (%d), %s (%d)", ENOENT,
     strerror(errno), errno);
-  fail_unless(err != NULL, "Failed to populate error");
+  ck_assert_msg(err != NULL, "Failed to populate error");
 
   expected = pstrcat(p,
     "stat() failed with \"No such file or directory [ENOENT (",
     get_errnum(p, ENOENT), ")]\"", NULL);
   errstr = pr_error_strerror(err, PR_ERROR_FORMAT_USE_MINIMAL);
-  fail_unless(strcmp(errstr, expected) == 0, "Expected '%s', got '%s'",
+  ck_assert_msg(strcmp(errstr, expected) == 0, "Expected '%s', got '%s'",
     expected, errstr);
 
   (void) pr_error_unregister_explainer(p, &m, NULL);
@@ -3059,18 +3061,18 @@ START_TEST (fsio_sys_unlink_with_error_test) {
 
   mark_point();
   res = pr_fsio_unlink_with_error(NULL, fsio_test_path, NULL);
-  fail_unless(res < 0, "Failed to handle non-existent file '%s'",
+  ck_assert_msg(res < 0, "Failed to handle non-existent file '%s'",
     fsio_test_path);
-  fail_unless(errno == ENOENT, "Expected ENOENT (%d), %s (%d)", ENOENT,
+  ck_assert_msg(errno == ENOENT, "Expected ENOENT (%d), %s (%d)", ENOENT,
     strerror(errno), errno);
 
   mark_point();
   res = pr_fsio_unlink_with_error(p, fsio_test_path, &err);
-  fail_unless(res < 0, "Failed to handle non-existent file '%s'",
+  ck_assert_msg(res < 0, "Failed to handle non-existent file '%s'",
     fsio_test_path);
-  fail_unless(errno == ENOENT, "Expected ENOENT (%d), %s (%d)", ENOENT,
+  ck_assert_msg(errno == ENOENT, "Expected ENOENT (%d), %s (%d)", ENOENT,
     strerror(errno), errno);
-  fail_unless(err == NULL, "Unexpectedly populated error");
+  ck_assert_msg(err == NULL, "Unexpectedly populated error");
 
   memset(&m, 0, sizeof(m));
   m.name = "error";
@@ -3080,17 +3082,17 @@ START_TEST (fsio_sys_unlink_with_error_test) {
 
   mark_point();
   res = pr_fsio_unlink_with_error(p, fsio_test_path, &err);
-  fail_unless(res < 0, "Failed to handle non-existent file '%s'",
+  ck_assert_msg(res < 0, "Failed to handle non-existent file '%s'",
     fsio_test_path);
-  fail_unless(errno == ENOENT, "Expected ENOENT (%d), %s (%d)", ENOENT,
+  ck_assert_msg(errno == ENOENT, "Expected ENOENT (%d), %s (%d)", ENOENT,
     strerror(errno), errno);
-  fail_unless(err != NULL, "Failed to populate error");
+  ck_assert_msg(err != NULL, "Failed to populate error");
 
   expected = pstrcat(p,
     "unlink() failed with \"No such file or directory [ENOENT (",
     get_errnum(p, ENOENT), ")]\"", NULL);
   errstr = pr_error_strerror(err, PR_ERROR_FORMAT_USE_MINIMAL);
-  fail_unless(strcmp(errstr, expected) == 0, "Expected '%s', got '%s'",
+  ck_assert_msg(strcmp(errstr, expected) == 0, "Expected '%s', got '%s'",
     expected, errstr);
 
   (void) pr_error_unregister_explainer(p, &m, NULL);
@@ -3113,16 +3115,16 @@ START_TEST (fsio_sys_write_with_error_test) {
 
   mark_point();
   res = pr_fsio_write_with_error(NULL, NULL, NULL, 0, NULL);
-  fail_unless(res < 0, "Failed to handle null pool");
-  fail_unless(errno == EINVAL, "Expected EINVAL (%d), %s (%d)", EINVAL,
+  ck_assert_msg(res < 0, "Failed to handle null pool");
+  ck_assert_msg(errno == EINVAL, "Expected EINVAL (%d), %s (%d)", EINVAL,
     strerror(errno), errno);
 
   mark_point();
   res = pr_fsio_write_with_error(p, NULL, NULL, 0, &err);
-  fail_unless(res < 0, "Failed to handle null fh");
-  fail_unless(errno == EINVAL, "Expected EINVAL (%d), %s (%d)", EINVAL,
+  ck_assert_msg(res < 0, "Failed to handle null fh");
+  ck_assert_msg(errno == EINVAL, "Expected EINVAL (%d), %s (%d)", EINVAL,
     strerror(errno), errno);
-  fail_unless(err == NULL, "Unexpectedly populated error");
+  ck_assert_msg(err == NULL, "Unexpectedly populated error");
 
   memset(&m, 0, sizeof(m));
   m.name = "error";
@@ -3132,17 +3134,17 @@ START_TEST (fsio_sys_write_with_error_test) {
 
   mark_point();
   res = pr_fsio_write_with_error(p, NULL, NULL, 0, &err);
-  fail_unless(res < 0, "Failed to handle null fh");
-  fail_unless(errno == EINVAL, "Expected EINVAL (%d), %s (%d)", EINVAL,
+  ck_assert_msg(res < 0, "Failed to handle null fh");
+  ck_assert_msg(errno == EINVAL, "Expected EINVAL (%d), %s (%d)", EINVAL,
     strerror(errno), errno);
-  fail_unless(err != NULL, "Failed to populate error");
+  ck_assert_msg(err != NULL, "Failed to populate error");
 
   expected = pstrcat(p,
     "write() failed with \"Invalid argument [EINVAL (",
     get_errnum(p, EINVAL), ")]\"", NULL);
   expected = "write() failed with \"Invalid argument [EINVAL (22)]\"";
   errstr = pr_error_strerror(err, PR_ERROR_FORMAT_USE_MINIMAL);
-  fail_unless(strcmp(errstr, expected) == 0, "Expected '%s', got '%s'",
+  ck_assert_msg(strcmp(errstr, expected) == 0, "Expected '%s', got '%s'",
     expected, errstr);
 
   (void) pr_error_unregister_explainer(p, &m, NULL);
@@ -3159,47 +3161,47 @@ START_TEST (fsio_statcache_clear_cache_test) {
   pr_fs_clear_cache();
 
   res = pr_fs_clear_cache2("/testsuite");
-  fail_unless(res == 0, "Failed to clear cache: %s", strerror(errno));
+  ck_assert_msg(res == 0, "Failed to clear cache: %s", strerror(errno));
 
   res = pr_fsio_stat("/tmp", &st);
-  fail_unless(res == 0, "Failed to stat '/tmp': %s", strerror(errno));
+  ck_assert_msg(res == 0, "Failed to stat '/tmp': %s", strerror(errno));
 
   res = pr_fs_clear_cache2("/tmp");
   expected = 1;
-  fail_unless(res == expected, "Expected %d, got %d", expected, res);
+  ck_assert_msg(res == expected, "Expected %d, got %d", expected, res);
 
   res = pr_fs_clear_cache2("/testsuite");
   expected = 0;
-  fail_unless(res == expected, "Expected %d, got %d", expected, res);
+  ck_assert_msg(res == expected, "Expected %d, got %d", expected, res);
 
   res = pr_fsio_stat("/tmp", &st);
-  fail_unless(res == 0, "Failed to stat '/tmp': %s", strerror(errno));
+  ck_assert_msg(res == 0, "Failed to stat '/tmp': %s", strerror(errno));
 
   res = pr_fsio_lstat("/tmp", &st);
-  fail_unless(res == 0, "Failed to lstat '/tmp': %s", strerror(errno));
+  ck_assert_msg(res == 0, "Failed to lstat '/tmp': %s", strerror(errno));
 
   res = pr_fs_clear_cache2("/tmp");
   expected = 2;
-  fail_unless(res == expected, "Expected %d, got %d", expected, res);
+  ck_assert_msg(res == expected, "Expected %d, got %d", expected, res);
 
   res = pr_fsio_stat("/tmp", &st);
-  fail_unless(res == 0, "Failed to stat '/tmp': %s", strerror(errno));
+  ck_assert_msg(res == 0, "Failed to stat '/tmp': %s", strerror(errno));
 
   res = pr_fsio_lstat("/tmp", &st);
-  fail_unless(res == 0, "Failed to lstat '/tmp': %s", strerror(errno));
+  ck_assert_msg(res == 0, "Failed to lstat '/tmp': %s", strerror(errno));
 
   cwd = getcwd(NULL, 0);
-  fail_unless(cwd != NULL, "Failed to get cwd: %s", strerror(errno));
+  ck_assert_msg(cwd != NULL, "Failed to get cwd: %s", strerror(errno));
 
   res = pr_fs_setcwd("/");
-  fail_unless(res == 0, "Failed to set cwd to '/': %s", strerror(errno));
+  ck_assert_msg(res == 0, "Failed to set cwd to '/': %s", strerror(errno));
 
   res = pr_fs_clear_cache2("tmp");
   expected = 2;
-  fail_unless(res == expected, "Expected %d, got %d", expected, res);
+  ck_assert_msg(res == expected, "Expected %d, got %d", expected, res);
 
   res = pr_fs_setcwd(cwd);
-  fail_unless(res == 0, "Failed to set cwd to '%s': %s", cwd, strerror(errno)); 
+  ck_assert_msg(res == 0, "Failed to set cwd to '%s': %s", cwd, strerror(errno)); 
 
   free(cwd);
 }
@@ -3211,11 +3213,11 @@ START_TEST (fsio_statcache_cache_hit_test) {
 
   /* First is a cache miss...*/
   res = pr_fsio_stat("/tmp", &st);
-  fail_unless(res == 0, "Failed to stat '/tmp': %s", strerror(errno));
+  ck_assert_msg(res == 0, "Failed to stat '/tmp': %s", strerror(errno));
 
   /* This is a cache hit, hopefully. */
   res = pr_fsio_stat("/tmp", &st);
-  fail_unless(res == 0, "Failed to stat '/tmp': %s", strerror(errno));
+  ck_assert_msg(res == 0, "Failed to stat '/tmp': %s", strerror(errno));
 
   pr_fs_clear_cache();
 }
@@ -3227,14 +3229,14 @@ START_TEST (fsio_statcache_negative_cache_test) {
 
   /* First is a cache miss...*/
   res = pr_fsio_stat("/foo.bar.baz.d", &st);
-  fail_unless(res < 0, "Check of '/foo.bar.baz.d' succeeded unexpectedly");
-  fail_unless(errno == ENOENT, "Expected ENOENT (%d), got %s (%d)", ENOENT,
+  ck_assert_msg(res < 0, "Check of '/foo.bar.baz.d' succeeded unexpectedly");
+  ck_assert_msg(errno == ENOENT, "Expected ENOENT (%d), got %s (%d)", ENOENT,
     strerror(errno), errno);
 
   /* This is a cache hit, hopefully. */
   res = pr_fsio_stat("/foo.bar.baz.d", &st);
-  fail_unless(res < 0, "Check of '/foo.bar.baz.d' succeeded unexpectedly");
-  fail_unless(errno == ENOENT, "Expected ENOENT (%d), got %s (%d)", ENOENT,
+  ck_assert_msg(res < 0, "Check of '/foo.bar.baz.d' succeeded unexpectedly");
+  ck_assert_msg(errno == ENOENT, "Expected ENOENT (%d), got %s (%d)", ENOENT,
     strerror(errno), errno);
 
   pr_fs_clear_cache();
@@ -3252,7 +3254,7 @@ START_TEST (fsio_statcache_expired_test) {
   /* First is a cache miss...*/
   mark_point();
   res = pr_fsio_stat("/tmp", &st);
-  fail_unless(res == 0, "Failed to stat '/tmp': %s", strerror(errno));
+  ck_assert_msg(res == 0, "Failed to stat '/tmp': %s", strerror(errno));
 
   /* Wait for that cached data to expire...*/
   sleep(max_age + 1);
@@ -3260,8 +3262,8 @@ START_TEST (fsio_statcache_expired_test) {
   /* This is another cache miss, hopefully. */
   mark_point();
   res = pr_fsio_stat("/tmp2", &st);
-  fail_unless(res < 0, "Check of '/tmp2' succeeded unexpectedly");
-  fail_unless(errno == ENOENT, "Expected ENOENT (%d), got %s (%d)", ENOENT,
+  ck_assert_msg(res < 0, "Check of '/tmp2' succeeded unexpectedly");
+  ck_assert_msg(errno == ENOENT, "Expected ENOENT (%d), got %s (%d)", ENOENT,
     strerror(errno), errno);
 
   mark_point();
@@ -3279,17 +3281,17 @@ START_TEST (fs_create_fs_test) {
   pr_fs_t *fs;
 
   fs = pr_create_fs(NULL, NULL);
-  fail_unless(fs == NULL, "Failed to handle null arguments");
-  fail_unless(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
+  ck_assert_msg(fs == NULL, "Failed to handle null arguments");
+  ck_assert_msg(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
     strerror(errno), errno);
 
   fs = pr_create_fs(p, NULL);
-  fail_unless(fs == NULL, "Failed to handle null name");
-  fail_unless(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
+  ck_assert_msg(fs == NULL, "Failed to handle null name");
+  ck_assert_msg(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
     strerror(errno), errno);
 
   fs = pr_create_fs(p, "testsuite");
-  fail_unless(fs != NULL, "Failed to create FS: %s", strerror(errno));
+  ck_assert_msg(fs != NULL, "Failed to create FS: %s", strerror(errno));
 }
 END_TEST
 
@@ -3298,40 +3300,40 @@ START_TEST (fs_insert_fs_test) {
   int res;
 
   res = pr_insert_fs(NULL, NULL);
-  fail_unless(res < 0, "Failed to handle null arguments");
-  fail_unless(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
+  ck_assert_msg(res < 0, "Failed to handle null arguments");
+  ck_assert_msg(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
     strerror(errno), errno);
 
   fs = pr_create_fs(p, "testsuite");
-  fail_unless(fs != NULL, "Failed to create FS: %s", strerror(errno));
+  ck_assert_msg(fs != NULL, "Failed to create FS: %s", strerror(errno));
 
   res = pr_insert_fs(fs, NULL);
-  fail_unless(res < 0, "Failed to handle null path");
-  fail_unless(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
+  ck_assert_msg(res < 0, "Failed to handle null path");
+  ck_assert_msg(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
     strerror(errno), errno);
 
   res = pr_insert_fs(fs, "/testsuite");
-  fail_unless(res == TRUE, "Failed to insert FS: %s", strerror(errno));
+  ck_assert_msg(res == TRUE, "Failed to insert FS: %s", strerror(errno));
 
   res = pr_insert_fs(fs, "/testsuite");
-  fail_unless(res == FALSE, "Failed to handle duplicate paths");
-  fail_unless(errno == EEXIST, "Expected EEXIST (%d), got %s (%d)", EEXIST,
+  ck_assert_msg(res == FALSE, "Failed to handle duplicate paths");
+  ck_assert_msg(errno == EEXIST, "Expected EEXIST (%d), got %s (%d)", EEXIST,
     strerror(errno), errno);
 
   fs2 = pr_create_fs(p, "testsuite2");
-  fail_unless(fs2 != NULL, "Failed to create FS: %s", strerror(errno));
+  ck_assert_msg(fs2 != NULL, "Failed to create FS: %s", strerror(errno));
 
   res = pr_insert_fs(fs2, "/testsuite2");
-  fail_unless(res == TRUE, "Failed to insert FS: %s", strerror(errno));
+  ck_assert_msg(res == TRUE, "Failed to insert FS: %s", strerror(errno));
 
   fs2 = pr_create_fs(p, "testsuite3");
-  fail_unless(fs2 != NULL, "Failed to create FS: %s", strerror(errno));
+  ck_assert_msg(fs2 != NULL, "Failed to create FS: %s", strerror(errno));
 
   /* Push this FS on top of the previously registered path; FSes can be
    * stacked like this.
    */
   res = pr_insert_fs(fs2, "/testsuite2");
-  fail_unless(res == TRUE, "Failed to insert FS: %s", strerror(errno));
+  ck_assert_msg(res == TRUE, "Failed to insert FS: %s", strerror(errno));
 
   (void) pr_remove_fs("/testsuite");
   (void) pr_remove_fs("/testsuite2");
@@ -3344,32 +3346,32 @@ START_TEST (fs_get_fs_test) {
   int exact_match = FALSE, res;
 
   fs = pr_get_fs(NULL, NULL);
-  fail_unless(fs == NULL, "Failed to handle null arguments");
+  ck_assert_msg(fs == NULL, "Failed to handle null arguments");
 
   fs = pr_get_fs("/testsuite", &exact_match);
-  fail_unless(fs != NULL, "Failed to get FS: %s", strerror(errno));
-  fail_unless(exact_match == FALSE, "Expected FALSE, got TRUE");
+  ck_assert_msg(fs != NULL, "Failed to get FS: %s", strerror(errno));
+  ck_assert_msg(exact_match == FALSE, "Expected FALSE, got TRUE");
 
   fs2 = pr_create_fs(p, "testsuite");
-  fail_unless(fs2 != NULL, "Failed to create FS: %s", strerror(errno));
+  ck_assert_msg(fs2 != NULL, "Failed to create FS: %s", strerror(errno));
 
   res = pr_insert_fs(fs2, "/testsuite");
-  fail_unless(res == TRUE, "Failed to insert FS: %s", strerror(errno));
+  ck_assert_msg(res == TRUE, "Failed to insert FS: %s", strerror(errno));
 
   fs = pr_get_fs("/testsuite", &exact_match);
-  fail_unless(fs != NULL, "Failed to get FS: %s", strerror(errno));
-  fail_unless(exact_match == TRUE, "Expected TRUE, got FALSE");
+  ck_assert_msg(fs != NULL, "Failed to get FS: %s", strerror(errno));
+  ck_assert_msg(exact_match == TRUE, "Expected TRUE, got FALSE");
 
   fs3 = pr_create_fs(p, "testsuite2");
-  fail_unless(fs3 != NULL, "Failed to create FS: %s", strerror(errno));
+  ck_assert_msg(fs3 != NULL, "Failed to create FS: %s", strerror(errno));
 
   res = pr_insert_fs(fs3, "/testsuite2/");
-  fail_unless(res == TRUE, "Failed to insert FS: %s", strerror(errno));
+  ck_assert_msg(res == TRUE, "Failed to insert FS: %s", strerror(errno));
 
   exact_match = FALSE;
   fs = pr_get_fs("/testsuite2/foo/bar/baz", &exact_match);
-  fail_unless(fs != NULL, "Failed to get FS: %s", strerror(errno));
-  fail_unless(exact_match == FALSE, "Expected FALSE, got TRUE");
+  ck_assert_msg(fs != NULL, "Failed to get FS: %s", strerror(errno));
+  ck_assert_msg(exact_match == FALSE, "Expected FALSE, got TRUE");
 
   (void) pr_remove_fs("/testsuite2");
   (void) pr_remove_fs("/testsuite");
@@ -3381,53 +3383,53 @@ START_TEST (fs_unmount_fs_test) {
   int res;
 
   fs = pr_unmount_fs(NULL, NULL);
-  fail_unless(fs == NULL, "Failed to handle null arguments");
-  fail_unless(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
+  ck_assert_msg(fs == NULL, "Failed to handle null arguments");
+  ck_assert_msg(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
     strerror(errno), errno);
 
   fs = pr_unmount_fs("/testsuite", NULL);
-  fail_unless(fs == NULL, "Failed to handle absent FS");
-  fail_unless(errno == EACCES, "Expected EACCES (%d), got %s (%d)", EACCES,
+  ck_assert_msg(fs == NULL, "Failed to handle absent FS");
+  ck_assert_msg(errno == EACCES, "Expected EACCES (%d), got %s (%d)", EACCES,
     strerror(errno), errno);
 
   fs2 = pr_create_fs(p, "testsuite");
-  fail_unless(fs2 != NULL, "Failed to create FS: %s", strerror(errno));
+  ck_assert_msg(fs2 != NULL, "Failed to create FS: %s", strerror(errno));
 
   res = pr_insert_fs(fs2, "/testsuite");
-  fail_unless(res == TRUE, "Failed to insert FS: %s", strerror(errno));
+  ck_assert_msg(res == TRUE, "Failed to insert FS: %s", strerror(errno));
 
   fs = pr_unmount_fs("/testsuite", "foo bar");
-  fail_unless(fs == NULL, "Failed to mismatched path AND name");
-  fail_unless(errno == ENOENT, "Expected ENOENT (%d), got %s (%d)", ENOENT,
+  ck_assert_msg(fs == NULL, "Failed to mismatched path AND name");
+  ck_assert_msg(errno == ENOENT, "Expected ENOENT (%d), got %s (%d)", ENOENT,
     strerror(errno), errno);
 
   fs = pr_unmount_fs("/testsuite2", NULL);
-  fail_unless(fs == NULL, "Failed to handle nonexistent path");
-  fail_unless(errno == ENOENT, "Expected ENOENT (%d), got %s (%d)", ENOENT,
+  ck_assert_msg(fs == NULL, "Failed to handle nonexistent path");
+  ck_assert_msg(errno == ENOENT, "Expected ENOENT (%d), got %s (%d)", ENOENT,
     strerror(errno), errno);
 
   fs2 = pr_unmount_fs("/testsuite", NULL);
-  fail_unless(fs2 != NULL, "Failed to unmount '/testsuite': %s",
+  ck_assert_msg(fs2 != NULL, "Failed to unmount '/testsuite': %s",
     strerror(errno));
 
   fs2 = pr_create_fs(p, "testsuite");
-  fail_unless(fs2 != NULL, "Failed to create FS: %s", strerror(errno));
+  ck_assert_msg(fs2 != NULL, "Failed to create FS: %s", strerror(errno));
 
   res = pr_insert_fs(fs2, "/testsuite");
-  fail_unless(res == TRUE, "Failed to insert FS: %s", strerror(errno));
+  ck_assert_msg(res == TRUE, "Failed to insert FS: %s", strerror(errno));
 
   fs2 = pr_create_fs(p, "testsuite2");
-  fail_unless(fs2 != NULL, "Failed to create FS: %s", strerror(errno));
+  ck_assert_msg(fs2 != NULL, "Failed to create FS: %s", strerror(errno));
 
   res = pr_insert_fs(fs2, "/testsuite");
-  fail_unless(res == TRUE, "Failed to insert FS: %s", strerror(errno));
+  ck_assert_msg(res == TRUE, "Failed to insert FS: %s", strerror(errno));
 
   fs2 = pr_unmount_fs("/testsuite", NULL);
-  fail_unless(fs2 != NULL, "Failed to unmount '/testsuite': %s",
+  ck_assert_msg(fs2 != NULL, "Failed to unmount '/testsuite': %s",
     strerror(errno));
 
   fs2 = pr_unmount_fs("/testsuite", NULL);
-  fail_unless(fs2 != NULL, "Failed to unmount '/testsuite': %s",
+  ck_assert_msg(fs2 != NULL, "Failed to unmount '/testsuite': %s",
     strerror(errno));
 
   (void) pr_remove_fs("/testsuite");
@@ -3440,28 +3442,28 @@ START_TEST (fs_remove_fs_test) {
   int res;
 
   fs = pr_remove_fs(NULL);
-  fail_unless(fs == NULL, "Failed to handle null arguments");
-  fail_unless(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
+  ck_assert_msg(fs == NULL, "Failed to handle null arguments");
+  ck_assert_msg(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
     strerror(errno), errno);
 
   fs = pr_remove_fs("/testsuite");
-  fail_unless(fs == NULL, "Failed to handle absent FS");
-  fail_unless(errno == EACCES, "Expected EACCES (%d), got %s (%d)", EACCES,
+  ck_assert_msg(fs == NULL, "Failed to handle absent FS");
+  ck_assert_msg(errno == EACCES, "Expected EACCES (%d), got %s (%d)", EACCES,
     strerror(errno), errno);
 
   fs2 = pr_create_fs(p, "testsuite");
-  fail_unless(fs2 != NULL, "Failed to create FS: %s", strerror(errno));
+  ck_assert_msg(fs2 != NULL, "Failed to create FS: %s", strerror(errno));
 
   res = pr_insert_fs(fs2, "/testsuite");
-  fail_unless(res == TRUE, "Failed to insert FS: %s", strerror(errno));
+  ck_assert_msg(res == TRUE, "Failed to insert FS: %s", strerror(errno));
 
   fs = pr_remove_fs("/testsuite2");
-  fail_unless(fs == NULL, "Failed to handle nonexistent path");
-  fail_unless(errno == ENOENT, "Expected ENOENT (%d), got %s (%d)", ENOENT,
+  ck_assert_msg(fs == NULL, "Failed to handle nonexistent path");
+  ck_assert_msg(errno == ENOENT, "Expected ENOENT (%d), got %s (%d)", ENOENT,
     strerror(errno), errno);
 
   fs2 = pr_remove_fs("/testsuite");
-  fail_unless(fs2 != NULL, "Failed to remove '/testsuite': %s",
+  ck_assert_msg(fs2 != NULL, "Failed to remove '/testsuite': %s",
     strerror(errno));
 }
 END_TEST
@@ -3470,26 +3472,26 @@ START_TEST (fs_register_fs_test) {
   pr_fs_t *fs, *fs2;
 
   fs = pr_register_fs(NULL, NULL, NULL);
-  fail_unless(fs == NULL, "Failed to handle null arguments");
-  fail_unless(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
+  ck_assert_msg(fs == NULL, "Failed to handle null arguments");
+  ck_assert_msg(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
     strerror(errno), errno);
 
   fs = pr_register_fs(p, NULL, NULL);
-  fail_unless(fs == NULL, "Failed to handle null name");
-  fail_unless(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
+  ck_assert_msg(fs == NULL, "Failed to handle null name");
+  ck_assert_msg(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
     strerror(errno), errno);
 
   fs = pr_register_fs(p, "testsuite", NULL);
-  fail_unless(fs == NULL, "Failed to handle null path");
-  fail_unless(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
+  ck_assert_msg(fs == NULL, "Failed to handle null path");
+  ck_assert_msg(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
     strerror(errno), errno);
 
   fs = pr_register_fs(p, "testsuite", "/testsuite");
-  fail_unless(fs != NULL, "Failed to register FS: %s", strerror(errno));
+  ck_assert_msg(fs != NULL, "Failed to register FS: %s", strerror(errno));
 
   fs2 = pr_register_fs(p, "testsuite", "/testsuite");
-  fail_unless(fs2 == NULL, "Failed to handle duplicate names");
-  fail_unless(errno == EEXIST, "Expected EEXIST (%d), got %s (%d)", EEXIST,
+  ck_assert_msg(fs2 == NULL, "Failed to handle duplicate names");
+  ck_assert_msg(errno == EEXIST, "Expected EEXIST (%d), got %s (%d)", EEXIST,
     strerror(errno), errno);
 
   (void) pr_remove_fs("/testsuite");
@@ -3501,20 +3503,20 @@ START_TEST (fs_unregister_fs_test) {
   int res;
 
   res = pr_unregister_fs(NULL);
-  fail_unless(res < 0, "Failed to handle null argument");
-  fail_unless(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
+  ck_assert_msg(res < 0, "Failed to handle null argument");
+  ck_assert_msg(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
     strerror(errno), errno);
 
   res = pr_unregister_fs("/testsuite");
-  fail_unless(res < 0, "Failed to handle nonexistent path");
-  fail_unless(errno == ENOENT, "Expected ENOENT (%d), got %s (%d)", ENOENT,
+  ck_assert_msg(res < 0, "Failed to handle nonexistent path");
+  ck_assert_msg(errno == ENOENT, "Expected ENOENT (%d), got %s (%d)", ENOENT,
     strerror(errno), errno);
 
   fs = pr_register_fs(p, "testsuite", "/testsuite");
-  fail_unless(fs != NULL, "Failed to register FS: %s", strerror(errno));
+  ck_assert_msg(fs != NULL, "Failed to register FS: %s", strerror(errno));
 
   res = pr_unregister_fs("/testsuite");
-  fail_unless(res == 0, "Failed to unregister '/testsuite': %s",
+  ck_assert_msg(res == 0, "Failed to unregister '/testsuite': %s",
     strerror(errno));
 }
 END_TEST
@@ -3527,13 +3529,13 @@ START_TEST (fs_resolve_fs_map_test) {
   pr_resolve_fs_map();
 
   fs = pr_register_fs(p, "testsuite", "/testsuite");
-  fail_unless(fs != NULL, "Failed to register FS: %s", strerror(errno));
+  ck_assert_msg(fs != NULL, "Failed to register FS: %s", strerror(errno));
 
   mark_point();
   pr_resolve_fs_map();
 
   res = pr_unregister_fs("/testsuite");
-  fail_unless(res == 0, "Failed to unregister '/testsuite': %s",
+  ck_assert_msg(res == 0, "Failed to unregister '/testsuite': %s",
     strerror(errno));
 
   mark_point();
@@ -3605,7 +3607,7 @@ START_TEST (fsio_custom_chroot_test) {
   const char *path;
 
   fs = pr_register_fs(p, "custom", "/testsuite/");
-  fail_unless(fs != NULL, "Failed to register custom FS: %s", strerror(errno));
+  ck_assert_msg(fs != NULL, "Failed to register custom FS: %s", strerror(errno));
 
   fs->chroot = fsio_chroot_cb;
 
@@ -3614,7 +3616,7 @@ START_TEST (fsio_custom_chroot_test) {
 
   path = "/testsuite/foo/bar";
   res = pr_fsio_chroot(path);
-  fail_unless(res == 0, "Failed to chroot (via custom FS) to '%s': %s", path,
+  ck_assert_msg(res == 0, "Failed to chroot (via custom FS) to '%s': %s", path,
     strerror(errno));
 
   pr_unregister_fs("/testsuite");
@@ -3626,14 +3628,14 @@ START_TEST (fs_clean_path_test) {
 
   mark_point();
   pr_fs_clean_path(NULL, NULL, 0);
-  fail_unless(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
+  ck_assert_msg(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
     strerror(errno), errno);
 
   path = "/";
 
   mark_point();
   pr_fs_clean_path(path, NULL, 0);
-  fail_unless(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
+  ck_assert_msg(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
     strerror(errno), errno);
 
   res[sizeof(res)-1] = '\0';
@@ -3642,33 +3644,33 @@ START_TEST (fs_clean_path_test) {
   pr_fs_clean_path(path, res, 0);
 
   pr_fs_clean_path(path, res, sizeof(res)-1);
-  fail_unless(strcmp(res, path) == 0, "Expected cleaned path '%s', got '%s'",
+  ck_assert_msg(strcmp(res, path) == 0, "Expected cleaned path '%s', got '%s'",
     path, res);
 
   res[sizeof(res)-1] = '\0';
   path = "/test.txt";
   pr_fs_clean_path(path, res, sizeof(res)-1);
-  fail_unless(strcmp(res, path) == 0, "Expected cleaned path '%s', got '%s'",
+  ck_assert_msg(strcmp(res, path) == 0, "Expected cleaned path '%s', got '%s'",
     path, res);
 
   res[sizeof(res)-1] = '\0';
   path = "/test.txt";
   pr_fs_clean_path(path, res, sizeof(res)-1);
-  fail_unless(strcmp(res, path) == 0, "Expected cleaned path '%s', got '%s'",
+  ck_assert_msg(strcmp(res, path) == 0, "Expected cleaned path '%s', got '%s'",
     path, res);
 
   res[sizeof(res)-1] = '\0';
   path = "/./test.txt";
   pr_fs_clean_path(path, res, sizeof(res)-1);
   expected = "/test.txt";
-  fail_unless(strcmp(res, expected) == 0,
+  ck_assert_msg(strcmp(res, expected) == 0,
     "Expected cleaned path '%s', got '%s'", expected, res);
 
   res[sizeof(res)-1] = '\0';
   path = "test.txt";
   pr_fs_clean_path(path, res, sizeof(res)-1);
   expected = "/test.txt";
-  fail_unless(strcmp(res, expected) == 0,
+  ck_assert_msg(strcmp(res, expected) == 0,
     "Expected cleaned path '%s', got '%s'", path, res);
 }
 END_TEST
@@ -3679,59 +3681,59 @@ START_TEST (fs_clean_path2_test) {
 
   mark_point();
   code = pr_fs_clean_path2(NULL, NULL, 0, 0);
-  fail_unless(code < 0, "Failed to handle null path");
-  fail_unless(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
+  ck_assert_msg(code < 0, "Failed to handle null path");
+  ck_assert_msg(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
     strerror(errno), errno);
 
   path = "/";
 
   mark_point();
   code = pr_fs_clean_path2(path, NULL, 0, 0);
-  fail_unless(code < 0, "Failed to handle null buf");
-  fail_unless(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
+  ck_assert_msg(code < 0, "Failed to handle null buf");
+  ck_assert_msg(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
     strerror(errno), errno);
 
   res[sizeof(res)-1] = '\0';
 
   mark_point();
   code = pr_fs_clean_path2(path, res, 0, 0);
-  fail_unless(code == 0, "Failed to handle zero length buf: %s",
+  ck_assert_msg(code == 0, "Failed to handle zero length buf: %s",
     strerror(errno));
 
   res[sizeof(res)-1] = '\0';
   path = "test.txt";
   code = pr_fs_clean_path2(path, res, sizeof(res)-1, 0);
-  fail_unless(code == 0, "Failed to clean path '%s': %s", path,
+  ck_assert_msg(code == 0, "Failed to clean path '%s': %s", path,
     strerror(errno));
-  fail_unless(strcmp(res, path) == 0, "Expected cleaned path '%s', got '%s'",
+  ck_assert_msg(strcmp(res, path) == 0, "Expected cleaned path '%s', got '%s'",
     path, res);
 
   res[sizeof(res)-1] = '\0';
   path = "/./test.txt";
   code = pr_fs_clean_path2(path, res, sizeof(res)-1, 0);
-  fail_unless(code == 0, "Failed to clean path '%s': %s", path,
+  ck_assert_msg(code == 0, "Failed to clean path '%s': %s", path,
     strerror(errno));
   expected = "/test.txt";
-  fail_unless(strcmp(res, expected) == 0,
+  ck_assert_msg(strcmp(res, expected) == 0,
     "Expected cleaned path '%s', got '%s'", expected, res);
 
   res[sizeof(res)-1] = '\0';
   path = "test.d///test.txt";
   code = pr_fs_clean_path2(path, res, sizeof(res)-1, 0);
-  fail_unless(code == 0, "Failed to clean path '%s': %s", path,
+  ck_assert_msg(code == 0, "Failed to clean path '%s': %s", path,
     strerror(errno));
   expected = "test.d/test.txt";
-  fail_unless(strcmp(res, expected) == 0,
+  ck_assert_msg(strcmp(res, expected) == 0,
     "Expected cleaned path '%s', got '%s'", expected, res);
 
   res[sizeof(res)-1] = '\0';
   path = "/test.d///test.txt";
   code = pr_fs_clean_path2(path, res, sizeof(res)-1,
     PR_FSIO_CLEAN_PATH_FL_MAKE_ABS_PATH);
-  fail_unless(code == 0, "Failed to clean path '%s': %s", path,
+  ck_assert_msg(code == 0, "Failed to clean path '%s': %s", path,
     strerror(errno));
   expected = "/test.d/test.txt";
-  fail_unless(strcmp(res, expected) == 0,
+  ck_assert_msg(strcmp(res, expected) == 0,
     "Expected cleaned path '%s', got '%s'", expected, res);
 }
 END_TEST
@@ -3741,18 +3743,18 @@ START_TEST (fs_dircat_test) {
   int res;
 
   res = pr_fs_dircat(NULL, 0, NULL, NULL);
-  fail_unless(res == -1, "Failed to handle null arguments");
-  fail_unless(errno == EINVAL,
+  ck_assert_msg(res == -1, "Failed to handle null arguments");
+  ck_assert_msg(errno == EINVAL,
     "Failed to set errno to EINVAL for null arguments");
 
   res = pr_fs_dircat(buf, 0, "foo", "bar");
-  fail_unless(res == -1, "Failed to handle zero-length buffer");
-  fail_unless(errno == EINVAL,
+  ck_assert_msg(res == -1, "Failed to handle zero-length buffer");
+  ck_assert_msg(errno == EINVAL,
     "Failed to set errno to EINVAL for zero-length buffer");
 
   res = pr_fs_dircat(buf, -1, "foo", "bar");
-  fail_unless(res == -1, "Failed to handle negative-length buffer");
-  fail_unless(errno == EINVAL,
+  ck_assert_msg(res == -1, "Failed to handle negative-length buffer");
+  ck_assert_msg(errno == EINVAL,
     "Failed to set errno to EINVAL for negative-length buffer");
 
   a = pcalloc(p, PR_TUNABLE_PATH_MAX);
@@ -3761,56 +3763,56 @@ START_TEST (fs_dircat_test) {
   b = "foo";
 
   res = pr_fs_dircat(buf, sizeof(buf)-1, a, b);
-  fail_unless(res == -1, "Failed to handle too-long paths");
-  fail_unless(errno == ENAMETOOLONG,
+  ck_assert_msg(res == -1, "Failed to handle too-long paths");
+  ck_assert_msg(errno == ENAMETOOLONG,
     "Failed to set errno to ENAMETOOLONG for too-long paths");
 
   a = "foo";
   b = "/bar";
   ok = b;
   res = pr_fs_dircat(buf, sizeof(buf)-1, a, b);
-  fail_unless(res == 0, "Failed to concatenate abs-path path second dir");
-  fail_unless(strcmp(buf, ok) == 0, "Expected concatenated dir '%s', got '%s'",
+  ck_assert_msg(res == 0, "Failed to concatenate abs-path path second dir");
+  ck_assert_msg(strcmp(buf, ok) == 0, "Expected concatenated dir '%s', got '%s'",
     ok, buf);
  
   a = "foo";
   b = "bar";
   ok = "foo/bar";
   res = pr_fs_dircat(buf, sizeof(buf)-1, a, b);
-  fail_unless(res == 0, "Failed to concatenate two normal paths");
-  fail_unless(strcmp(buf, ok) == 0, "Expected concatenated dir '%s', got '%s'",
+  ck_assert_msg(res == 0, "Failed to concatenate two normal paths");
+  ck_assert_msg(strcmp(buf, ok) == 0, "Expected concatenated dir '%s', got '%s'",
     ok, buf);
  
   a = "foo/";
   b = "bar";
   ok = "foo/bar";
   res = pr_fs_dircat(buf, sizeof(buf)-1, a, b);
-  fail_unless(res == 0, "Failed to concatenate first dir with trailing slash");
-  fail_unless(strcmp(buf, ok) == 0, "Expected concatenated dir '%s', got '%s'",
+  ck_assert_msg(res == 0, "Failed to concatenate first dir with trailing slash");
+  ck_assert_msg(strcmp(buf, ok) == 0, "Expected concatenated dir '%s', got '%s'",
     ok, buf);
 
   a = "";
   b = "";
   ok = "/";
   res = pr_fs_dircat(buf, sizeof(buf)-1, a, b);
-  fail_unless(res == 0, "Failed to concatenate two empty paths");
-  fail_unless(strcmp(buf, ok) == 0, "Expected concatenated dir '%s', got '%s'",
+  ck_assert_msg(res == 0, "Failed to concatenate two empty paths");
+  ck_assert_msg(strcmp(buf, ok) == 0, "Expected concatenated dir '%s', got '%s'",
     ok, buf);
 
   a = "/foo";
   b = "";
   ok = "/foo/";
   res = pr_fs_dircat(buf, sizeof(buf)-1, a, b);
-  fail_unless(res == 0, "Failed to concatenate two empty paths");
-  fail_unless(strcmp(buf, ok) == 0, "Expected concatenated dir '%s', got '%s'",
+  ck_assert_msg(res == 0, "Failed to concatenate two empty paths");
+  ck_assert_msg(strcmp(buf, ok) == 0, "Expected concatenated dir '%s', got '%s'",
     ok, buf);
 
   a = "";
   b = "/bar";
   ok = "/bar/";
   res = pr_fs_dircat(buf, sizeof(buf)-1, a, b);
-  fail_unless(res == 0, "Failed to concatenate two empty paths");
-  fail_unless(strcmp(buf, ok) == 0, "Expected concatenated dir '%s', got '%s'",
+  ck_assert_msg(res == 0, "Failed to concatenate two empty paths");
+  ck_assert_msg(strcmp(buf, ok) == 0, "Expected concatenated dir '%s', got '%s'",
     ok, buf);
 }
 END_TEST
@@ -3823,19 +3825,19 @@ START_TEST (fs_setcwd_test) {
    * buffer that it is already using.
    */
   res = pr_fs_setcwd(pr_fs_getcwd());
-  fail_unless(res == 0, "Failed to set cwd to '%s': %s", pr_fs_getcwd(),
+  ck_assert_msg(res == 0, "Failed to set cwd to '%s': %s", pr_fs_getcwd(),
     strerror(errno));
 
   wd = pr_fs_getcwd();
-  fail_unless(wd != NULL, "Failed to get working directory: %s",
+  ck_assert_msg(wd != NULL, "Failed to get working directory: %s",
     strerror(errno));
-  fail_unless(strcmp(wd, fsio_cwd) == 0,
+  ck_assert_msg(strcmp(wd, fsio_cwd) == 0,
     "Expected '%s', got '%s'", fsio_cwd, wd);
 
   wd = pr_fs_getvwd();
-  fail_unless(wd != NULL, "Failed to get working directory: %s",
+  ck_assert_msg(wd != NULL, "Failed to get working directory: %s",
     strerror(errno));
-  fail_unless(strcmp(wd, "/") == 0, "Expected '/', got '%s'", wd);
+  ck_assert_msg(strcmp(wd, "/") == 0, "Expected '/', got '%s'", wd);
 }
 END_TEST
 
@@ -3844,20 +3846,20 @@ START_TEST (fs_glob_test) {
   int res;
 
   res = pr_fs_glob(NULL, 0, NULL, NULL);
-  fail_unless(res < 0, "Failed to handle null arguments");
-  fail_unless(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
+  ck_assert_msg(res < 0, "Failed to handle null arguments");
+  ck_assert_msg(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
     strerror(errno), errno);
 
   res = pr_fs_glob(NULL, 0, NULL, &pglob);
-  fail_unless(res < 0, "Failed to handle null arguments");
-  fail_unless(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
+  ck_assert_msg(res < 0, "Failed to handle null arguments");
+  ck_assert_msg(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
     strerror(errno), errno);
 
   memset(&pglob, 0, sizeof(pglob));
   res = pr_fs_glob("*", 0, NULL, &pglob);
-  fail_unless(res == 0, "Failed to glob: glob(3) returned %d: %s", res,
+  ck_assert_msg(res == 0, "Failed to glob: glob(3) returned %d: %s", res,
     strerror(errno));
-  fail_unless(pglob.gl_pathc > 0, "Expected >0, got %lu",
+  ck_assert_msg(pglob.gl_pathc > 0, "Expected >0, got %lu",
     (unsigned long) pglob.gl_pathc);
 
   mark_point();
@@ -3874,58 +3876,58 @@ START_TEST (fs_copy_file_test) {
   pr_fh_t *fh;
 
   res = pr_fs_copy_file(NULL, NULL);
-  fail_unless(res < 0, "Failed to handle null arguments");
-  fail_unless(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
+  ck_assert_msg(res < 0, "Failed to handle null arguments");
+  ck_assert_msg(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
     strerror(errno), errno);
 
   src_path = (char *) fsio_copy_src_path;
   res = pr_fs_copy_file(src_path, NULL);
-  fail_unless(res < 0, "Failed to handle null destination path");
-  fail_unless(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
+  ck_assert_msg(res < 0, "Failed to handle null destination path");
+  ck_assert_msg(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
     strerror(errno), errno);
 
   dst_path = (char *) fsio_copy_dst_path;
   res = pr_fs_copy_file(src_path, dst_path);
-  fail_unless(res < 0, "Failed to handle nonexistent source path");
-  fail_unless(errno == ENOENT, "Expected ENOENT (%d), got %s (%d)", ENOENT,
+  ck_assert_msg(res < 0, "Failed to handle nonexistent source path");
+  ck_assert_msg(errno == ENOENT, "Expected ENOENT (%d), got %s (%d)", ENOENT,
     strerror(errno), errno);
 
   res = pr_fs_copy_file("/tmp", dst_path);
-  fail_unless(res < 0, "Failed to handle directory source path");
-  fail_unless(errno == EISDIR, "Expected EISDIR (%d), got %s (%d)", EISDIR,
+  ck_assert_msg(res < 0, "Failed to handle directory source path");
+  ck_assert_msg(errno == EISDIR, "Expected EISDIR (%d), got %s (%d)", EISDIR,
     strerror(errno), errno);
 
   (void) unlink(src_path);
   fh = pr_fsio_open(src_path, O_CREAT|O_EXCL|O_WRONLY);
-  fail_unless(fh != NULL, "Failed to open '%s': %s", src_path, strerror(errno));
+  ck_assert_msg(fh != NULL, "Failed to open '%s': %s", src_path, strerror(errno));
 
   text = "Hello, World!\n";
   res = pr_fsio_write(fh, text, strlen(text));
-  fail_if(res < 0, "Failed to write '%s' to '%s': %s", text, src_path,
+  ck_assert_msg(res >= 0, "Failed to write '%s' to '%s': %s", text, src_path,
     strerror(errno));
 
   res = pr_fsio_close(fh);
-  fail_unless(res == 0, "Failed to close '%s': %s", src_path, strerror(errno));
+  ck_assert_msg(res == 0, "Failed to close '%s': %s", src_path, strerror(errno));
 
   res = pr_fs_copy_file(src_path, "/tmp");
-  fail_unless(res < 0, "Failed to handle directory destination path");
-  fail_unless(errno == EISDIR, "Expected EISDIR (%d), got %s (%d)", EISDIR,
+  ck_assert_msg(res < 0, "Failed to handle directory destination path");
+  ck_assert_msg(errno == EISDIR, "Expected EISDIR (%d), got %s (%d)", EISDIR,
     strerror(errno), errno);
 
   res = pr_fs_copy_file(src_path, "/tmp/foo/bar/baz/quxx/quzz.dat");
-  fail_unless(res < 0, "Failed to handle nonexistent destination path");
-  fail_unless(errno == ENOENT, "Expected ENOENT (%d), got %s (%d)", ENOENT,
+  ck_assert_msg(res < 0, "Failed to handle nonexistent destination path");
+  ck_assert_msg(errno == ENOENT, "Expected ENOENT (%d), got %s (%d)", ENOENT,
     strerror(errno), errno);
 
   mark_point();
   res = pr_fs_copy_file(src_path, src_path);
-  fail_unless(res == 0, "Failed to copy file to itself: %s", strerror(errno));
+  ck_assert_msg(res == 0, "Failed to copy file to itself: %s", strerror(errno));
 
   (void) unlink(dst_path);
 
   mark_point();
   res = pr_fs_copy_file(src_path, dst_path);
-  fail_unless(res == 0, "Failed to copy file: %s", strerror(errno));
+  ck_assert_msg(res == 0, "Failed to copy file: %s", strerror(errno));
 
   (void) pr_fsio_unlink(src_path);
   (void) pr_fsio_unlink(dst_path);
@@ -3950,26 +3952,26 @@ START_TEST (fs_copy_file2_test) {
   (void) unlink(dst_path);
 
   fh = pr_fsio_open(src_path, O_CREAT|O_EXCL|O_WRONLY);
-  fail_unless(fh != NULL, "Failed to open '%s': %s", src_path, strerror(errno));
+  ck_assert_msg(fh != NULL, "Failed to open '%s': %s", src_path, strerror(errno));
 
   text = "Hello, World!\n";
   res = pr_fsio_write(fh, text, strlen(text));
-  fail_if(res < 0, "Failed to write '%s' to '%s': %s", text, src_path,
+  ck_assert_msg(res >= 0, "Failed to write '%s' to '%s': %s", text, src_path,
     strerror(errno));
 
   res = pr_fsio_close(fh);
-  fail_unless(res == 0, "Failed to close '%s': %s", src_path, strerror(errno));
+  ck_assert_msg(res == 0, "Failed to close '%s': %s", src_path, strerror(errno));
 
   copy_progress_iter = 0;
 
   mark_point();
   res = pr_fs_copy_file2(src_path, dst_path, flags, copy_progress_cb);
-  fail_unless(res == 0, "Failed to copy file: %s", strerror(errno));
+  ck_assert_msg(res == 0, "Failed to copy file: %s", strerror(errno));
 
   (void) pr_fsio_unlink(src_path);
   (void) pr_fsio_unlink(dst_path);
 
-  fail_unless(copy_progress_iter > 0, "Unexpected progress callback count (%u)",
+  ck_assert_msg(copy_progress_iter > 0, "Unexpected progress callback count (%u)",
     copy_progress_iter);
 }
 END_TEST
@@ -3981,58 +3983,58 @@ START_TEST (fs_interpolate_test) {
   memset(buf, '\0', sizeof(buf));
 
   res = pr_fs_interpolate(NULL, NULL, 0);
-  fail_unless(res < 0, "Failed to handle null arguments");
-  fail_unless(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
+  ck_assert_msg(res < 0, "Failed to handle null arguments");
+  ck_assert_msg(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
     strerror(errno), errno);
 
   path = "/tmp";
   res = pr_fs_interpolate(path, NULL, 0);
-  fail_unless(res < 0, "Failed to handle null buffer");
-  fail_unless(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
+  ck_assert_msg(res < 0, "Failed to handle null buffer");
+  ck_assert_msg(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
     strerror(errno), errno);
 
   res = pr_fs_interpolate(path, buf, 0);
-  fail_unless(res < 0, "Failed to handle zero buffer length");
-  fail_unless(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
+  ck_assert_msg(res < 0, "Failed to handle zero buffer length");
+  ck_assert_msg(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
     strerror(errno), errno);
 
   res = pr_fs_interpolate(path, buf, sizeof(buf)-1);
-  fail_unless(res == 1, "Failed to interpolate path '%s': %s", path,
+  ck_assert_msg(res == 1, "Failed to interpolate path '%s': %s", path,
     strerror(errno));
-  fail_unless(strcmp(buf, path) == 0, "Expected '%s', got '%s'", path, buf);
+  ck_assert_msg(strcmp(buf, path) == 0, "Expected '%s', got '%s'", path, buf);
 
   path = "~/foo/bar/baz/quzz/quzz.d";
   res = pr_fs_interpolate(path, buf, sizeof(buf)-1);
-  fail_unless(res == 1, "Failed to interpolate path '%s': %s", path,
+  ck_assert_msg(res == 1, "Failed to interpolate path '%s': %s", path,
     strerror(errno));
-  fail_unless(strcmp(buf, path+1) == 0, "Expected '%s', got '%s'", path+1, buf);
+  ck_assert_msg(strcmp(buf, path+1) == 0, "Expected '%s', got '%s'", path+1, buf);
 
   path = "~";
   res = pr_fs_interpolate(path, buf, sizeof(buf)-1);
-  fail_unless(res == 1, "Failed to interpolate path '%s': %s", path,
+  ck_assert_msg(res == 1, "Failed to interpolate path '%s': %s", path,
     strerror(errno));
-  fail_unless(strcmp(buf, "/") == 0, "Expected '/', got '%s'", buf);
+  ck_assert_msg(strcmp(buf, "/") == 0, "Expected '/', got '%s'", buf);
 
   session.chroot_path = "/tmp";
   res = pr_fs_interpolate(path, buf, sizeof(buf)-1);
-  fail_unless(res == 1, "Failed to interpolate path '%s': %s", path,
+  ck_assert_msg(res == 1, "Failed to interpolate path '%s': %s", path,
     strerror(errno));
-  fail_unless(strcmp(buf, session.chroot_path) == 0, "Expected '%s', got '%s'",
+  ck_assert_msg(strcmp(buf, session.chroot_path) == 0, "Expected '%s', got '%s'",
     session.chroot_path, buf);
 
   session.chroot_path = NULL;
 
   path = "~foo.bar.baz.quzz";
   res = pr_fs_interpolate(path, buf, sizeof(buf)-1);
-  fail_unless(res < 0, "Interpolated '%s' unexpectedly", path);
-  fail_unless(errno == ENOENT, "Expected ENOENT (%d), got %s (%d)", ENOENT,
+  ck_assert_msg(res < 0, "Interpolated '%s' unexpectedly", path);
+  ck_assert_msg(errno == ENOENT, "Expected ENOENT (%d), got %s (%d)", ENOENT,
     strerror(errno), errno);
 
   session.user = "testsuite";
   path = "~/tmp.d/test.d/foo.d/bar.d";
   res = pr_fs_interpolate(path, buf, sizeof(buf)-1);
-  fail_unless(res < 0, "Interpolated '%s' unexpectedly", path);
-  fail_unless(errno == ENOENT, "Expected ENOENT (%d), got %s (%d)", ENOENT,
+  ck_assert_msg(res < 0, "Interpolated '%s' unexpectedly", path);
+  ck_assert_msg(errno == ENOENT, "Expected ENOENT (%d), got %s (%d)", ENOENT,
     strerror(errno), errno);
   session.user = NULL;
 }
@@ -4043,83 +4045,83 @@ START_TEST (fs_resolve_partial_test) {
   char buf[PR_TUNABLE_PATH_MAX], *path;
 
   res = pr_fs_resolve_partial(NULL, NULL, 0, op);
-  fail_unless(res < 0, "Failed to handle null arguments");
-  fail_unless(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
+  ck_assert_msg(res < 0, "Failed to handle null arguments");
+  ck_assert_msg(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
     strerror(errno), errno);
 
   path = "/tmp";
   res = pr_fs_resolve_partial(path, NULL, 0, op);
-  fail_unless(res < 0, "Failed to handle null buffer");
-  fail_unless(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
+  ck_assert_msg(res < 0, "Failed to handle null buffer");
+  ck_assert_msg(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
     strerror(errno), errno);
 
   memset(buf, '\0', sizeof(buf));
   res = pr_fs_resolve_partial(path, buf, 0, op);
-  fail_unless(res < 0, "Failed to handle zero buffer length");
-  fail_unless(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
+  ck_assert_msg(res < 0, "Failed to handle zero buffer length");
+  ck_assert_msg(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
     strerror(errno), errno);
 
   res = pr_fs_resolve_partial(path, buf, sizeof(buf)-1, op);
-  fail_unless(res == 0, "Failed to resolve '%s': %s", path, strerror(errno));
+  ck_assert_msg(res == 0, "Failed to resolve '%s': %s", path, strerror(errno));
   if (strcmp(buf, path) != 0) {
     /* Mac-specific hack */
     const char *prefix = "/private";
 
     if (strncmp(buf, prefix, strlen(prefix)) != 0) {
-      fail("Expected '%s', got '%s'", path, buf);
+      ck_abort_msg("Expected '%s', got '%s'", path, buf);
     }
   }
 
   path = "/tmp/.////./././././.";
   res = pr_fs_resolve_partial(path, buf, sizeof(buf)-1, op);
-  fail_unless(res == 0, "Failed to resolve '%s': %s", path, strerror(errno));
+  ck_assert_msg(res == 0, "Failed to resolve '%s': %s", path, strerror(errno));
   if (strcmp(buf, path) != 0) {
     /* Mac-specific hack */
     const char *prefix = "/private";
 
     if (strncmp(buf, prefix, strlen(prefix)) != 0 &&
         strcmp(buf, "/tmp/") != 0) {
-      fail("Expected '%s', got '%s'", path, buf);
+      ck_abort_msg("Expected '%s', got '%s'", path, buf);
     }
   }
 
   path = "/../../../.././..///../";
   res = pr_fs_resolve_partial(path, buf, sizeof(buf)-1, op);
-  fail_unless(res == 0, "Failed to resolve '%s': %s", path, strerror(errno));
+  ck_assert_msg(res == 0, "Failed to resolve '%s': %s", path, strerror(errno));
   if (strcmp(buf, "/") != 0) {
     /* Mac-specific hack */
     const char *prefix = "/private";
 
     if (strncmp(buf, prefix, strlen(prefix)) != 0) {
-      fail("Expected '%s', got '%s'", path, buf);
+      ck_abort_msg("Expected '%s', got '%s'", path, buf);
     }
   }
 
   path = "/tmp/.///../../..../";
   res = pr_fs_resolve_partial(path, buf, sizeof(buf)-1, op);
-  fail_unless(res < 0, "Resolved '%s' unexpectedly", path);
-  fail_unless(errno == ENOENT, "Expected ENOENT (%d), got %s (%d)", ENOENT,
+  ck_assert_msg(res < 0, "Resolved '%s' unexpectedly", path);
+  ck_assert_msg(errno == ENOENT, "Expected ENOENT (%d), got %s (%d)", ENOENT,
     strerror(errno), errno);
 
   path = "~foo/.///../../..../";
   res = pr_fs_resolve_partial(path, buf, sizeof(buf)-1, op);
-  fail_unless(res < 0, "Resolved '%s' unexpectedly", path);
-  fail_unless(errno == ENOENT, "Expected ENOENT (%d), got %s (%d)", ENOENT,
+  ck_assert_msg(res < 0, "Resolved '%s' unexpectedly", path);
+  ck_assert_msg(errno == ENOENT, "Expected ENOENT (%d), got %s (%d)", ENOENT,
     strerror(errno), errno);
 
   path = "../../..../";
   res = pr_fs_resolve_partial(path, buf, sizeof(buf)-1, op);
-  fail_unless(res < 0, "Resolved '%s' unexpectedly", path);
-  fail_unless(errno == ENOENT, "Expected ENOENT (%d), got %s (%d)", ENOENT,
+  ck_assert_msg(res < 0, "Resolved '%s' unexpectedly", path);
+  ck_assert_msg(errno == ENOENT, "Expected ENOENT (%d), got %s (%d)", ENOENT,
     strerror(errno), errno);
 
   /* Resolve a symlink path */
   res = pr_fsio_symlink("/tmp", fsio_link_path);
-  fail_unless(res == 0, "Failed to create symlink to '%s': %s", fsio_link_path,
+  ck_assert_msg(res == 0, "Failed to create symlink to '%s': %s", fsio_link_path,
     strerror(errno));
 
   res = pr_fs_resolve_partial(fsio_link_path, buf, sizeof(buf)-1, op);
-  fail_unless(res == 0, "Failed to resolve '%s': %s", fsio_link_path,
+  ck_assert_msg(res == 0, "Failed to resolve '%s': %s", fsio_link_path,
     strerror(errno));
 
   (void) unlink(fsio_link_path);
@@ -4133,40 +4135,40 @@ START_TEST (fs_resolve_path_test) {
   memset(buf, '\0', sizeof(buf));
 
   res = pr_fs_resolve_path(NULL, NULL, 0, op);
-  fail_unless(res < 0, "Failed to handle null arguments");
-  fail_unless(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
+  ck_assert_msg(res < 0, "Failed to handle null arguments");
+  ck_assert_msg(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
     strerror(errno), errno);
 
   path = "/tmp";
   res = pr_fs_resolve_path(path, NULL, 0, op);
-  fail_unless(res < 0, "Failed to handle null buffer");
-  fail_unless(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
+  ck_assert_msg(res < 0, "Failed to handle null buffer");
+  ck_assert_msg(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
     strerror(errno), errno);
 
   res = pr_fs_resolve_path(path, buf, 0, op);
-  fail_unless(res < 0, "Failed to handle zero buffer length");
-  fail_unless(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
+  ck_assert_msg(res < 0, "Failed to handle zero buffer length");
+  ck_assert_msg(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
     strerror(errno), errno);
 
   res = pr_fs_resolve_path(path, buf, sizeof(buf)-1, op);
-  fail_unless(res == 0, "Failed to resolve path '%s': %s", path,
+  ck_assert_msg(res == 0, "Failed to resolve path '%s': %s", path,
     strerror(errno));
   if (strcmp(buf, path) != 0) {
     /* Mac-specific hack */
     const char *prefix = "/private";
 
     if (strncmp(buf, prefix, strlen(prefix)) != 0) {
-      fail("Expected '%s', got '%s'", path, buf);
+      ck_abort_msg("Expected '%s', got '%s'", path, buf);
     }
   }
 
   /* Resolve a symlink path */
   res = pr_fsio_symlink("/tmp", fsio_link_path);
-  fail_unless(res == 0, "Failed to create symlink to '%s': %s", fsio_link_path,
+  ck_assert_msg(res == 0, "Failed to create symlink to '%s': %s", fsio_link_path,
     strerror(errno));
 
   res = pr_fs_resolve_path(fsio_link_path, buf, sizeof(buf)-1, op);
-  fail_unless(res == 0, "Failed to resolve '%s': %s", fsio_link_path,
+  ck_assert_msg(res == 0, "Failed to resolve '%s': %s", fsio_link_path,
     strerror(errno));
 
   (void) unlink(fsio_link_path);
@@ -4177,18 +4179,18 @@ START_TEST (fs_use_encoding_test) {
   int res;
 
   res = pr_fs_use_encoding(-1);
-  fail_unless(res < 0, "Failed to handle invalid setting");
-  fail_unless(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
+  ck_assert_msg(res < 0, "Failed to handle invalid setting");
+  ck_assert_msg(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
     strerror(errno), errno);
 
   res = pr_fs_use_encoding(TRUE);
-  fail_unless(res == TRUE, "Expected TRUE, got %d", res);
+  ck_assert_msg(res == TRUE, "Expected TRUE, got %d", res);
 
   res = pr_fs_use_encoding(FALSE);
-  fail_unless(res == TRUE, "Expected TRUE, got %d", res);
+  ck_assert_msg(res == TRUE, "Expected TRUE, got %d", res);
 
   res = pr_fs_use_encoding(TRUE);
-  fail_unless(res == FALSE, "Expected FALSE, got %d", res);
+  ck_assert_msg(res == FALSE, "Expected FALSE, got %d", res);
 }
 END_TEST
 
@@ -4198,30 +4200,30 @@ START_TEST (fs_decode_path2_test) {
   const char *path;
 
   res = pr_fs_decode_path(NULL, NULL);
-  fail_unless(res == NULL, "Failed to handle null arguments");
-  fail_unless(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
+  ck_assert_msg(res == NULL, "Failed to handle null arguments");
+  ck_assert_msg(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
     strerror(errno), errno);
 
   res = pr_fs_decode_path(p, NULL);
-  fail_unless(res == NULL, "Failed to handle null path");
-  fail_unless(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
+  ck_assert_msg(res == NULL, "Failed to handle null path");
+  ck_assert_msg(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
     strerror(errno), errno);
 
   path = "/tmp";
   res = pr_fs_decode_path2(p, path, flags);
-  fail_unless(res != NULL, "Failed to decode path '%s': %s", path,
+  ck_assert_msg(res != NULL, "Failed to decode path '%s': %s", path,
     strerror(errno));
 
   path = "/tmp";
   res = pr_fs_decode_path2(p, path, flags);
-  fail_unless(res != NULL, "Failed to decode path '%s': %s", path,
+  ck_assert_msg(res != NULL, "Failed to decode path '%s': %s", path,
     strerror(errno));
 
   /* Test a path that cannot be decoded, using junk data from the stack */
   junk[sizeof(junk)-1] = '\0';
   path = junk;
   res = pr_fs_decode_path2(p, path, flags);
-  fail_unless(res != NULL, "Failed to decode path: %s", strerror(errno));
+  ck_assert_msg(res != NULL, "Failed to decode path: %s", strerror(errno));
 
   /* XXX Use the FSIO_DECODE_FL_TELL_ERRORS flags, AND set the encode
    * policy to use PR_ENCODE_POLICY_FL_REQUIRE_VALID_ENCODING.
@@ -4234,25 +4236,25 @@ START_TEST (fs_encode_path_test) {
   const char *path;
 
   res = pr_fs_encode_path(NULL, NULL);
-  fail_unless(res == NULL, "Failed to handle null arguments");
-  fail_unless(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
+  ck_assert_msg(res == NULL, "Failed to handle null arguments");
+  ck_assert_msg(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
     strerror(errno), errno);
 
   res = pr_fs_encode_path(p, NULL);
-  fail_unless(res == NULL, "Failed to handle null path");
-  fail_unless(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
+  ck_assert_msg(res == NULL, "Failed to handle null path");
+  ck_assert_msg(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
     strerror(errno), errno);
 
   path = "/tmp";
   res = pr_fs_encode_path(p, path);
-  fail_unless(res != NULL, "Failed to encode path '%s': %s", path,
+  ck_assert_msg(res != NULL, "Failed to encode path '%s': %s", path,
     strerror(errno));
 
   /* Test a path that cannot be encoded, using junk data from the stack */
   junk[sizeof(junk)-1] = '\0';
   path = junk;
   res = pr_fs_encode_path(p, path);
-  fail_unless(res != NULL, "Failed to encode path: %s", strerror(errno));
+  ck_assert_msg(res != NULL, "Failed to encode path: %s", strerror(errno));
 }
 END_TEST
 
@@ -4262,105 +4264,120 @@ START_TEST (fs_split_path_test) {
 
   mark_point();
   res = pr_fs_split_path(NULL, NULL);
-  fail_unless(res == NULL, "Failed to handle null pool");
-  fail_unless(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
+  ck_assert_msg(res == NULL, "Failed to handle null pool");
+  ck_assert_msg(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
     strerror(errno), errno);
 
   mark_point();
   res = pr_fs_split_path(p, NULL);
-  fail_unless(res == NULL, "Failed to handle null path");
-  fail_unless(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
+  ck_assert_msg(res == NULL, "Failed to handle null path");
+  ck_assert_msg(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
     strerror(errno), errno);
 
   path = "";
 
   mark_point();
   res = pr_fs_split_path(p, path);
-  fail_unless(res == NULL, "Failed to handle empty path");
-  fail_unless(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
+  ck_assert_msg(res == NULL, "Failed to handle empty path");
+  ck_assert_msg(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
     strerror(errno), errno);
+
+  path = ".";
+
+  mark_point();
+  res = pr_fs_split_path(p, path);
+  ck_assert_msg(res != NULL, "Failed to split path '%s': %s", path,
+    strerror(errno));
+  ck_assert_msg(res->nelts == 1, "Expected 1, got %u", res->nelts);
+  elt = ((char **) res->elts)[0];
+
+  /* Note: pr_fs_split_path() cleans the path into an absolute path.  And
+   * the default "cwd" test setting is "/", so yes, this is surprising but
+   * expected.  Subject to change in the future.
+   */
+  ck_assert_msg(strcmp(elt, "/") == 0, "Expected '/', got '%s'", elt);
 
   path = "/";
 
   mark_point();
   res = pr_fs_split_path(p, path);
-  fail_unless(res != NULL, "Failed to split path '%s': %s", path,
+  ck_assert_msg(res != NULL, "Failed to split path '%s': %s", path,
     strerror(errno));
-  fail_unless(res->nelts == 1, "Expected 1, got %u", res->nelts);
+  ck_assert_msg(res->nelts == 1, "Expected 1, got %u", res->nelts);
   elt = ((char **) res->elts)[0];
-  fail_unless(strcmp(elt, "/") == 0, "Expected '/', got '%s'", elt);
+  ck_assert_msg(strcmp(elt, "/") == 0, "Expected '/', got '%s'", elt);
 
   path = "///";
 
   mark_point();
   res = pr_fs_split_path(p, path);
-  fail_unless(res != NULL, "Failed to split path '%s': %s", path,
+  ck_assert_msg(res != NULL, "Failed to split path '%s': %s", path,
     strerror(errno));
-  fail_unless(res->nelts == 1, "Expected 1, got %u", res->nelts);
+  ck_assert_msg(res->nelts == 1, "Expected 1, got %u", res->nelts);
   elt = ((char **) res->elts)[0];
-  fail_unless(strcmp(elt, "/") == 0, "Expected '/', got '%s'", elt);
+  ck_assert_msg(strcmp(elt, "/") == 0, "Expected '/', got '%s'", elt);
 
   path = "/foo/bar/baz/";
 
   mark_point();
   res = pr_fs_split_path(p, path);
-  fail_unless(res != NULL, "Failed to split path '%s': %s", path,
+  ck_assert_msg(res != NULL, "Failed to split path '%s': %s", path,
     strerror(errno));
-  fail_unless(res->nelts == 4, "Expected 4, got %u", res->nelts);
+  ck_assert_msg(res->nelts == 4, "Expected 4, got %u", res->nelts);
   elt = ((char **) res->elts)[0];
-  fail_unless(strcmp(elt, "/") == 0, "Expected '/', got '%s'", elt);
+  ck_assert_msg(strcmp(elt, "/") == 0, "Expected '/', got '%s'", elt);
   elt = ((char **) res->elts)[1];
-  fail_unless(strcmp(elt, "foo") == 0, "Expected 'foo', got '%s'", elt);
+  ck_assert_msg(strcmp(elt, "foo") == 0, "Expected 'foo', got '%s'", elt);
   elt = ((char **) res->elts)[2];
-  fail_unless(strcmp(elt, "bar") == 0, "Expected 'bar', got '%s'", elt);
+  ck_assert_msg(strcmp(elt, "bar") == 0, "Expected 'bar', got '%s'", elt);
   elt = ((char **) res->elts)[3];
-  fail_unless(strcmp(elt, "baz") == 0, "Expected 'baz', got '%s'", elt);
+  ck_assert_msg(strcmp(elt, "baz") == 0, "Expected 'baz', got '%s'", elt);
 
   path = "/foo//bar//baz//";
 
   mark_point();
   res = pr_fs_split_path(p, path);
-  fail_unless(res != NULL, "Failed to split path '%s': %s", path,
+  ck_assert_msg(res != NULL, "Failed to split path '%s': %s", path,
     strerror(errno));
-  fail_unless(res->nelts == 4, "Expected 4, got %u", res->nelts);
+  ck_assert_msg(res->nelts == 4, "Expected 4, got %u", res->nelts);
   elt = ((char **) res->elts)[0];
-  fail_unless(strcmp(elt, "/") == 0, "Expected '/', got '%s'", elt);
+  ck_assert_msg(strcmp(elt, "/") == 0, "Expected '/', got '%s'", elt);
   elt = ((char **) res->elts)[1];
-  fail_unless(strcmp(elt, "foo") == 0, "Expected 'foo', got '%s'", elt);
+  ck_assert_msg(strcmp(elt, "foo") == 0, "Expected 'foo', got '%s'", elt);
   elt = ((char **) res->elts)[2];
-  fail_unless(strcmp(elt, "bar") == 0, "Expected 'bar', got '%s'", elt);
+  ck_assert_msg(strcmp(elt, "bar") == 0, "Expected 'bar', got '%s'", elt);
   elt = ((char **) res->elts)[3];
-  fail_unless(strcmp(elt, "baz") == 0, "Expected 'baz', got '%s'", elt);
+  ck_assert_msg(strcmp(elt, "baz") == 0, "Expected 'baz', got '%s'", elt);
 
   path = "/foo/bar/baz";
 
   mark_point();
   res = pr_fs_split_path(p, path);
-  fail_unless(res != NULL, "Failed to split path '%s': %s", path,
+  ck_assert_msg(res != NULL, "Failed to split path '%s': %s", path,
     strerror(errno));
-  fail_unless(res->nelts == 4, "Expected 4, got %u", res->nelts);
+  ck_assert_msg(res->nelts == 4, "Expected 4, got %u", res->nelts);
   elt = ((char **) res->elts)[0];
-  fail_unless(strcmp(elt, "/") == 0, "Expected '/', got '%s'", elt);
+  ck_assert_msg(strcmp(elt, "/") == 0, "Expected '/', got '%s'", elt);
   elt = ((char **) res->elts)[1];
-  fail_unless(strcmp(elt, "foo") == 0, "Expected 'foo', got '%s'", elt);
+  ck_assert_msg(strcmp(elt, "foo") == 0, "Expected 'foo', got '%s'", elt);
   elt = ((char **) res->elts)[2];
-  fail_unless(strcmp(elt, "bar") == 0, "Expected 'bar', got '%s'", elt);
+  ck_assert_msg(strcmp(elt, "bar") == 0, "Expected 'bar', got '%s'", elt);
   elt = ((char **) res->elts)[3];
-  fail_unless(strcmp(elt, "baz") == 0, "Expected 'baz', got '%s'", elt);
+  ck_assert_msg(strcmp(elt, "baz") == 0, "Expected 'baz', got '%s'", elt);
 
   path = "foo/bar/baz";
 
   mark_point();
   res = pr_fs_split_path(p, path);
-  fail_unless(res != NULL, "Failed to split path '%s': %s", path,
+  ck_assert_msg(res != NULL, "Failed to split path '%s': %s", path,
     strerror(errno));
-  fail_unless(res->nelts == 3, "Expected 3, got %u", res->nelts);
+  ck_assert_msg(res->nelts == 3, "Expected 3, got %u", res->nelts);
   elt = ((char **) res->elts)[0];
-  fail_unless(strcmp(elt, "foo") == 0, "Expected 'foo', got '%s'", elt);
+  ck_assert_msg(strcmp(elt, "foo") == 0, "Expected 'foo', got '%s'", elt);
   elt = ((char **) res->elts)[1];
-  fail_unless(strcmp(elt, "bar") == 0, "Expected 'bar', got '%s'", elt);
+  ck_assert_msg(strcmp(elt, "bar") == 0, "Expected 'bar', got '%s'", elt);
   elt = ((char **) res->elts)[2];
-  fail_unless(strcmp(elt, "baz") == 0, "Expected 'baz', got '%s'", elt);
+  ck_assert_msg(strcmp(elt, "baz") == 0, "Expected 'baz', got '%s'", elt);
 }
 END_TEST
 
@@ -4370,42 +4387,42 @@ START_TEST (fs_join_path_test) {
 
   mark_point();
   path = pr_fs_join_path(NULL, NULL, 0);
-  fail_unless(path == NULL, "Failed to handle null pool");
-  fail_unless(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
+  ck_assert_msg(path == NULL, "Failed to handle null pool");
+  ck_assert_msg(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
     strerror(errno), errno);
 
   mark_point();
   path = pr_fs_join_path(p, NULL, 0);
-  fail_unless(path == NULL, "Failed to handle null components");
-  fail_unless(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
+  ck_assert_msg(path == NULL, "Failed to handle null components");
+  ck_assert_msg(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
     strerror(errno), errno);
 
   components = make_array(p, 0, sizeof(char **));
 
   mark_point();
   path = pr_fs_join_path(p, components, 0);
-  fail_unless(path == NULL, "Failed to handle empty components");
-  fail_unless(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
+  ck_assert_msg(path == NULL, "Failed to handle empty components");
+  ck_assert_msg(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
     strerror(errno), errno);
 
   *((char **) push_array(components)) = pstrdup(p, "/");
 
   mark_point();
   path = pr_fs_join_path(p, components, 0);
-  fail_unless(path == NULL, "Failed to handle empty count");
-  fail_unless(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
+  ck_assert_msg(path == NULL, "Failed to handle empty count");
+  ck_assert_msg(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
     strerror(errno), errno);
 
   mark_point();
   path = pr_fs_join_path(p, components, 3);
-  fail_unless(path == NULL, "Failed to handle invalid count");
-  fail_unless(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
+  ck_assert_msg(path == NULL, "Failed to handle invalid count");
+  ck_assert_msg(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
     strerror(errno), errno);
 
   mark_point();
   path = pr_fs_join_path(p, components, 1);
-  fail_unless(path != NULL, "Failed to join path: %s", strerror(errno));
-  fail_unless(strcmp(path, "/") == 0, "Expected '/', got '%s'", path);
+  ck_assert_msg(path != NULL, "Failed to join path: %s", strerror(errno));
+  ck_assert_msg(strcmp(path, "/") == 0, "Expected '/', got '%s'", path);
 
   *((char **) push_array(components)) = pstrdup(p, "foo");
   *((char **) push_array(components)) = pstrdup(p, "bar");
@@ -4413,15 +4430,27 @@ START_TEST (fs_join_path_test) {
 
   mark_point();
   path = pr_fs_join_path(p, components, 4);
-  fail_unless(path != NULL, "Failed to join path: %s", strerror(errno));
-  fail_unless(strcmp(path, "/foo/bar/baz") == 0,
+  ck_assert_msg(path != NULL, "Failed to join path: %s", strerror(errno));
+  ck_assert_msg(strcmp(path, "/foo/bar/baz") == 0,
     "Expected '/foo/bar/baz', got '%s'", path);
 
   mark_point();
   path = pr_fs_join_path(p, components, 3);
-  fail_unless(path != NULL, "Failed to join path: %s", strerror(errno));
-  fail_unless(strcmp(path, "/foo/bar") == 0, "Expected '/foo/bar', got '%s'",
+  ck_assert_msg(path != NULL, "Failed to join path: %s", strerror(errno));
+  ck_assert_msg(strcmp(path, "/foo/bar") == 0, "Expected '/foo/bar', got '%s'",
     path);
+
+  mark_point();
+  components = make_array(p, 0, sizeof(char **));
+
+  *((char **) push_array(components)) = pstrdup(p, "foo");
+  *((char **) push_array(components)) = pstrdup(p, "bar");
+  *((char **) push_array(components)) = pstrdup(p, "baz");
+
+  path = pr_fs_join_path(p, components, components->nelts);
+  ck_assert_msg(path != NULL, "Failed to join path: %s", strerror(errno));
+  ck_assert_msg(strcmp(path, "foo/bar/baz") == 0,
+    "Expected 'foo/bar/baz', got '%s'", path);
 }
 END_TEST
 
@@ -4439,31 +4468,31 @@ START_TEST (fs_virtual_path_test) {
   mark_point();
   memset(buf, '\0', sizeof(buf));
   pr_fs_virtual_path(path, buf, 0);
-  fail_unless(*buf == '\0', "Expected empty buffer, got '%s'", buf);
+  ck_assert_msg(*buf == '\0', "Expected empty buffer, got '%s'", buf);
 
   mark_point();
   memset(buf, '\0', sizeof(buf));
   pr_fs_virtual_path(path, buf, sizeof(buf)-1);
-  fail_unless(strcmp(buf, path) == 0, "Expected '%s', got '%s'", path, buf);
+  ck_assert_msg(strcmp(buf, path) == 0, "Expected '%s', got '%s'", path, buf);
 
   mark_point();
   memset(buf, '\0', sizeof(buf));
   path = "tmp";
   pr_fs_virtual_path(path, buf, sizeof(buf)-1);
-  fail_unless(strcmp(buf, "/tmp") == 0, "Expected '/tmp', got '%s'", path, buf);
+  ck_assert_msg(strcmp(buf, "/tmp") == 0, "Expected '/tmp', got '%s'", buf);
 
   mark_point();
   memset(buf, '\0', sizeof(buf));
   path = "/tmp/././";
   pr_fs_virtual_path(path, buf, sizeof(buf)-1);
-  fail_unless(strcmp(buf, "/tmp") == 0 || strcmp(buf, "/tmp/") == 0,
-    "Expected '/tmp', got '%s'", path, buf);
+  ck_assert_msg(strcmp(buf, "/tmp") == 0 || strcmp(buf, "/tmp/") == 0,
+    "Expected '/tmp', got '%s'", buf);
 
   mark_point();
   memset(buf, '\0', sizeof(buf));
   path = "tmp/../../";
   pr_fs_virtual_path(path, buf, sizeof(buf)-1);
-  fail_unless(strcmp(buf, "/") == 0, "Expected '/', got '%s'", path, buf);
+  ck_assert_msg(strcmp(buf, "/") == 0, "Expected '/', got '%s'", buf);
 }
 END_TEST
 
@@ -4484,18 +4513,18 @@ START_TEST (fs_get_usable_fd_test) {
 
   fd = -1;
   res = pr_fs_get_usable_fd(fd);
-  fail_unless(res < 0, "Failed to handle bad fd");
-  fail_unless(errno == EBADF || errno == EINVAL,
+  ck_assert_msg(res < 0, "Failed to handle bad fd");
+  ck_assert_msg(errno == EBADF || errno == EINVAL,
     "Expected EBADF (%d) or EINVAL (%d), got %s (%d)", EBADF, EINVAL,
     strerror(errno), errno);
 
   fd = STDERR_FILENO + 1;
   res = pr_fs_get_usable_fd(fd);
-  fail_unless(res == fd, "Expected %d, got %d", fd, res);
+  ck_assert_msg(res == fd, "Expected %d, got %d", fd, res);
 
   fd = STDERR_FILENO - 1;
   res = pr_fs_get_usable_fd(fd);
-  fail_unless(res > STDERR_FILENO, "Failed to get usable fd for %d: %s", fd,
+  ck_assert_msg(res > STDERR_FILENO, "Failed to get usable fd for %d: %s", fd,
     strerror(errno));
   (void) close(res);
 }
@@ -4505,27 +4534,27 @@ START_TEST (fs_get_usable_fd2_test) {
   int fd, res;
 
   res = pr_fs_get_usable_fd2(NULL);
-  fail_unless(res < 0, "Failed to handle null argument");
-  fail_unless(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
+  ck_assert_msg(res < 0, "Failed to handle null argument");
+  ck_assert_msg(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
     strerror(errno), errno);
 
   fd = -1;
   res = pr_fs_get_usable_fd2(&fd);
-  fail_unless(res < 0, "Failed to handle bad fd");
-  fail_unless(errno == EBADF || errno == EINVAL,
+  ck_assert_msg(res < 0, "Failed to handle bad fd");
+  ck_assert_msg(errno == EBADF || errno == EINVAL,
     "Expected EBADF (%d) or EINVAL (%d), got %s (%d)", EBADF, EINVAL,
     strerror(errno), errno);
 
   fd = STDERR_FILENO + 1;
   res = pr_fs_get_usable_fd2(&fd);
-  fail_unless(res == 0, "Failed to handle fd: %s", strerror(errno));
-  fail_unless(fd == (STDERR_FILENO + 1), "Expected %d, got %d",
+  ck_assert_msg(res == 0, "Failed to handle fd: %s", strerror(errno));
+  ck_assert_msg(fd == (STDERR_FILENO + 1), "Expected %d, got %d",
     STDERR_FILENO + 1, fd);
 
   fd = STDERR_FILENO - 1;
   res = pr_fs_get_usable_fd2(&fd);
-  fail_unless(res == 0, "Failed to handle fd: %s", strerror(errno));
-  fail_unless(fd > STDERR_FILENO, "Expected >%d, got %d", STDERR_FILENO, fd);
+  ck_assert_msg(res == 0, "Failed to handle fd: %s", strerror(errno));
+  ck_assert_msg(fd > STDERR_FILENO, "Expected >%d, got %d", STDERR_FILENO, fd);
   (void) close(fd);
 }
 END_TEST
@@ -4535,13 +4564,13 @@ START_TEST (fs_getsize_test) {
   char *path;
 
   res = pr_fs_getsize(NULL);
-  fail_unless(res == (off_t) -1, "Failed to handle null argument");
-  fail_unless(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
+  ck_assert_msg(res == (off_t) -1, "Failed to handle null argument");
+  ck_assert_msg(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
     strerror(errno), errno);
 
   path = "/tmp";
   res = pr_fs_getsize(path);
-  fail_unless(res != (off_t) -1, "Failed to get fs size for '%s': %s", path,
+  ck_assert_msg(res != (off_t) -1, "Failed to get fs size for '%s': %s", path,
     strerror(errno));
 }
 END_TEST
@@ -4552,18 +4581,18 @@ START_TEST (fs_getsize2_test) {
   off_t sz = 0;
 
   res = pr_fs_getsize2(NULL, NULL);
-  fail_unless(res < 0, "Failed to handle null arguments");
-  fail_unless(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
+  ck_assert_msg(res < 0, "Failed to handle null arguments");
+  ck_assert_msg(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
     strerror(errno), errno);
 
   path = "/tmp";
   res = pr_fs_getsize2(path, NULL);
-  fail_unless(res < 0, "Failed to handle null size argument");
-  fail_unless(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
+  ck_assert_msg(res < 0, "Failed to handle null size argument");
+  ck_assert_msg(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
     strerror(errno), errno);
 
   res = pr_fs_getsize2(path, &sz);
-  fail_unless(res == 0, "Failed to get fs size for '%s': %s", path,
+  ck_assert_msg(res == 0, "Failed to get fs size for '%s': %s", path,
     strerror(errno));
 }
 END_TEST
@@ -4574,23 +4603,23 @@ START_TEST (fs_fgetsize_test) {
 
   mark_point();
   res = pr_fs_fgetsize(fd, &fs_sz);
-  fail_unless(res < 0, "Failed to handle bad file descriptor");
-  fail_unless(errno == EBADF, "Expected EBADF (%d), got %s (%d)", EBADF,
+  ck_assert_msg(res < 0, "Failed to handle bad file descriptor");
+  ck_assert_msg(errno == EBADF, "Expected EBADF (%d), got %s (%d)", EBADF,
     strerror(errno), errno);
 
   mark_point();
   fd = 0;
   fs_sz = 0;
   res = pr_fs_fgetsize(fd, NULL);
-  fail_unless(res < 0, "Failed to handle null size argument");
-  fail_unless(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
+  ck_assert_msg(res < 0, "Failed to handle null size argument");
+  ck_assert_msg(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
     strerror(errno), errno);
 
   mark_point();
   fd = 0;
   fs_sz = 0;
   res = pr_fs_fgetsize(fd, &fs_sz);
-  fail_unless(res == 0, "Failed to get fs size for fd %d: %s", fd,
+  ck_assert_msg(res == 0, "Failed to get fs size for fd %d: %s", fd,
     strerror(errno));
 }
 END_TEST
@@ -4632,15 +4661,15 @@ START_TEST (fs_have_access_test) {
 
   mark_point();
   res = pr_fs_have_access(NULL, R_OK, 0, 0, NULL);
-  fail_unless(res < 0, "Failed to handle null stat");
-  fail_unless(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
+  ck_assert_msg(res < 0, "Failed to handle null stat");
+  ck_assert_msg(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
     strerror(errno), errno);
 
   memset(&st, 0, sizeof(struct stat));
 
   mark_point();
   res = pr_fs_have_access(&st, R_OK, 0, 0, NULL);
-  fail_unless(res == 0, "Failed to handle root access: %s", strerror(errno));
+  ck_assert_msg(res == 0, "Failed to handle root access: %s", strerror(errno));
 
   /* Use cases: no matching UID or GID; R_OK, W_OK, X_OK. */
   memset(&st, 0, sizeof(struct stat));
@@ -4649,37 +4678,37 @@ START_TEST (fs_have_access_test) {
 
   mark_point();
   res = pr_fs_have_access(&st, R_OK, uid, gid, NULL);
-  fail_unless(res < 0, "Failed to handle missing other R_OK access");
-  fail_unless(errno == EACCES, "Expected EACCES (%d), got %s (%d)", EACCES,
+  ck_assert_msg(res < 0, "Failed to handle missing other R_OK access");
+  ck_assert_msg(errno == EACCES, "Expected EACCES (%d), got %s (%d)", EACCES,
     strerror(errno), errno);
 
   mark_point();
   res = pr_fs_have_access(&st, W_OK, uid, gid, NULL);
-  fail_unless(res < 0, "Failed to handle missing other W_OK access");
-  fail_unless(errno == EACCES, "Expected EACCES (%d), got %s (%d)", EACCES,
+  ck_assert_msg(res < 0, "Failed to handle missing other W_OK access");
+  ck_assert_msg(errno == EACCES, "Expected EACCES (%d), got %s (%d)", EACCES,
     strerror(errno), errno);
 
   mark_point();
   res = pr_fs_have_access(&st, X_OK, uid, gid, NULL);
-  fail_unless(res < 0, "Failed to handle missing other X_OK access");
-  fail_unless(errno == EACCES, "Expected EACCES (%d), got %s (%d)", EACCES,
+  ck_assert_msg(res < 0, "Failed to handle missing other X_OK access");
+  ck_assert_msg(errno == EACCES, "Expected EACCES (%d), got %s (%d)", EACCES,
     strerror(errno), errno);
 
   st.st_mode = S_IFMT|S_IROTH|S_IWOTH|S_IXOTH;
 
   mark_point();
   res = pr_fs_have_access(&st, R_OK, uid, gid, NULL);
-  fail_unless(res == 0, "Failed to handle other R_OK access: %s",
+  ck_assert_msg(res == 0, "Failed to handle other R_OK access: %s",
     strerror(errno));
 
   mark_point();
   res = pr_fs_have_access(&st, W_OK, uid, gid, NULL);
-  fail_unless(res == 0, "Failed to handle other W_OK access: %s",
+  ck_assert_msg(res == 0, "Failed to handle other W_OK access: %s",
     strerror(errno));
 
   mark_point();
   res = pr_fs_have_access(&st, X_OK, uid, gid, NULL);
-  fail_unless(res == 0, "Failed to handle other X_OK access: %s",
+  ck_assert_msg(res == 0, "Failed to handle other X_OK access: %s",
     strerror(errno));
 
   /* Use cases: matching UID, not GID; R_OK, W_OK, X_OK. */
@@ -4689,37 +4718,37 @@ START_TEST (fs_have_access_test) {
 
   mark_point();
   res = pr_fs_have_access(&st, R_OK, uid, gid, NULL);
-  fail_unless(res < 0, "Failed to handle missing user R_OK access");
-  fail_unless(errno == EACCES, "Expected EACCES (%d), got %s (%d)", EACCES,
+  ck_assert_msg(res < 0, "Failed to handle missing user R_OK access");
+  ck_assert_msg(errno == EACCES, "Expected EACCES (%d), got %s (%d)", EACCES,
     strerror(errno), errno);
 
   mark_point();
   res = pr_fs_have_access(&st, W_OK, uid, gid, NULL);
-  fail_unless(res < 0, "Failed to handle missing user W_OK access");
-  fail_unless(errno == EACCES, "Expected EACCES (%d), got %s (%d)", EACCES,
+  ck_assert_msg(res < 0, "Failed to handle missing user W_OK access");
+  ck_assert_msg(errno == EACCES, "Expected EACCES (%d), got %s (%d)", EACCES,
     strerror(errno), errno);
 
   mark_point();
   res = pr_fs_have_access(&st, X_OK, uid, gid, NULL);
-  fail_unless(res < 0, "Failed to handle missing user X_OK access");
-  fail_unless(errno == EACCES, "Expected EACCES (%d), got %s (%d)", EACCES,
+  ck_assert_msg(res < 0, "Failed to handle missing user X_OK access");
+  ck_assert_msg(errno == EACCES, "Expected EACCES (%d), got %s (%d)", EACCES,
     strerror(errno), errno);
 
   st.st_mode = S_IFMT|S_IRUSR|S_IWUSR|S_IXUSR;
 
   mark_point();
   res = pr_fs_have_access(&st, R_OK, uid, gid, NULL);
-  fail_unless(res == 0, "Failed to handle user R_OK access: %s",
+  ck_assert_msg(res == 0, "Failed to handle user R_OK access: %s",
     strerror(errno));
 
   mark_point();
   res = pr_fs_have_access(&st, W_OK, uid, gid, NULL);
-  fail_unless(res == 0, "Failed to handle user W_OK access: %s",
+  ck_assert_msg(res == 0, "Failed to handle user W_OK access: %s",
     strerror(errno));
 
   mark_point();
   res = pr_fs_have_access(&st, X_OK, uid, gid, NULL);
-  fail_unless(res == 0, "Failed to handle user X_OK access: %s",
+  ck_assert_msg(res == 0, "Failed to handle user X_OK access: %s",
     strerror(errno));
 
   /* Use cases: matching GID, not UID; R_OK, W_OK, X_OK. */
@@ -4729,37 +4758,37 @@ START_TEST (fs_have_access_test) {
 
   mark_point();
   res = pr_fs_have_access(&st, R_OK, uid, gid, NULL);
-  fail_unless(res < 0, "Failed to handle missing group R_OK access");
-  fail_unless(errno == EACCES, "Expected EACCES (%d), got %s (%d)", EACCES,
+  ck_assert_msg(res < 0, "Failed to handle missing group R_OK access");
+  ck_assert_msg(errno == EACCES, "Expected EACCES (%d), got %s (%d)", EACCES,
     strerror(errno), errno);
 
   mark_point();
   res = pr_fs_have_access(&st, W_OK, uid, gid, NULL);
-  fail_unless(res < 0, "Failed to handle missing group W_OK access");
-  fail_unless(errno == EACCES, "Expected EACCES (%d), got %s (%d)", EACCES,
+  ck_assert_msg(res < 0, "Failed to handle missing group W_OK access");
+  ck_assert_msg(errno == EACCES, "Expected EACCES (%d), got %s (%d)", EACCES,
     strerror(errno), errno);
 
   mark_point();
   res = pr_fs_have_access(&st, X_OK, uid, gid, NULL);
-  fail_unless(res < 0, "Failed to handle missing group X_OK access");
-  fail_unless(errno == EACCES, "Expected EACCES (%d), got %s (%d)", EACCES,
+  ck_assert_msg(res < 0, "Failed to handle missing group X_OK access");
+  ck_assert_msg(errno == EACCES, "Expected EACCES (%d), got %s (%d)", EACCES,
     strerror(errno), errno);
 
   st.st_mode = S_IFMT|S_IRGRP|S_IWGRP|S_IXGRP;
 
   mark_point();
   res = pr_fs_have_access(&st, R_OK, uid, gid, NULL);
-  fail_unless(res == 0, "Failed to handle group R_OK access: %s",
+  ck_assert_msg(res == 0, "Failed to handle group R_OK access: %s",
     strerror(errno));
 
   mark_point();
   res = pr_fs_have_access(&st, W_OK, uid, gid, NULL);
-  fail_unless(res == 0, "Failed to handle group W_OK access: %s",
+  ck_assert_msg(res == 0, "Failed to handle group W_OK access: %s",
     strerror(errno));
 
   mark_point();
   res = pr_fs_have_access(&st, X_OK, uid, gid, NULL);
-  fail_unless(res == 0, "Failed to handle group X_OK access: %s",
+  ck_assert_msg(res == 0, "Failed to handle group X_OK access: %s",
     strerror(errno));
 
   /* Use cases: matching suppl GID, not UID; R_OK, W_OK, X_OK. */
@@ -4772,37 +4801,37 @@ START_TEST (fs_have_access_test) {
 
   mark_point();
   res = pr_fs_have_access(&st, R_OK, uid, 0, suppl_gids);
-  fail_unless(res < 0, "Failed to handle missing group R_OK access");
-  fail_unless(errno == EACCES, "Expected EACCES (%d), got %s (%d)", EACCES,
+  ck_assert_msg(res < 0, "Failed to handle missing group R_OK access");
+  ck_assert_msg(errno == EACCES, "Expected EACCES (%d), got %s (%d)", EACCES,
     strerror(errno), errno);
 
   mark_point();
   res = pr_fs_have_access(&st, W_OK, uid, 0, suppl_gids);
-  fail_unless(res < 0, "Failed to handle missing group W_OK access");
-  fail_unless(errno == EACCES, "Expected EACCES (%d), got %s (%d)", EACCES,
+  ck_assert_msg(res < 0, "Failed to handle missing group W_OK access");
+  ck_assert_msg(errno == EACCES, "Expected EACCES (%d), got %s (%d)", EACCES,
     strerror(errno), errno);
 
   mark_point();
   res = pr_fs_have_access(&st, X_OK, uid, 0, suppl_gids);
-  fail_unless(res < 0, "Failed to handle missing group X_OK access");
-  fail_unless(errno == EACCES, "Expected EACCES (%d), got %s (%d)", EACCES,
+  ck_assert_msg(res < 0, "Failed to handle missing group X_OK access");
+  ck_assert_msg(errno == EACCES, "Expected EACCES (%d), got %s (%d)", EACCES,
     strerror(errno), errno);
 
   st.st_mode = S_IFMT|S_IRGRP|S_IWGRP|S_IXGRP;
 
   mark_point();
   res = pr_fs_have_access(&st, R_OK, uid, 0, suppl_gids);
-  fail_unless(res == 0, "Failed to handle group R_OK access: %s",
+  ck_assert_msg(res == 0, "Failed to handle group R_OK access: %s",
     strerror(errno));
 
   mark_point();
   res = pr_fs_have_access(&st, W_OK, uid, 0, suppl_gids);
-  fail_unless(res == 0, "Failed to handle group W_OK access: %s",
+  ck_assert_msg(res == 0, "Failed to handle group W_OK access: %s",
     strerror(errno));
 
   mark_point();
   res = pr_fs_have_access(&st, X_OK, uid, 0, suppl_gids);
-  fail_unless(res == 0, "Failed to handle group X_OK access: %s",
+  ck_assert_msg(res == 0, "Failed to handle group X_OK access: %s",
     strerror(errno));
 }
 END_TEST
@@ -4811,12 +4840,12 @@ START_TEST (fs_is_nfs_test) {
   int res;
 
   res = pr_fs_is_nfs(NULL);
-  fail_unless(res < 0, "Failed to handle null argument");
-  fail_unless(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
+  ck_assert_msg(res < 0, "Failed to handle null argument");
+  ck_assert_msg(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
     strerror(errno), errno);
 
   res = pr_fs_is_nfs("/tmp");
-  fail_unless(res == FALSE, "Expected FALSE, got %d", res);
+  ck_assert_msg(res == FALSE, "Expected FALSE, got %d", res);
 }
 END_TEST
 
@@ -4826,28 +4855,28 @@ START_TEST (fs_valid_path_test) {
   pr_fs_t *fs;
 
   res = pr_fs_valid_path(NULL);
-  fail_unless(res < 0, "Failed to handle null arguments");
-  fail_unless(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
+  ck_assert_msg(res < 0, "Failed to handle null arguments");
+  ck_assert_msg(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
     strerror(errno), errno);
 
   path = "/";
   res = pr_fs_valid_path(path);
-  fail_unless(res == 0, "'%s' is not a valid path: %s", path, strerror(errno));
+  ck_assert_msg(res == 0, "'%s' is not a valid path: %s", path, strerror(errno));
 
   path = ":tmp";
   res = pr_fs_valid_path(path);
-  fail_unless(res < 0, "Failed to handle invalid path");
-  fail_unless(errno == ENOENT, "Expected ENOENT (%d), got %s (%d)", ENOENT,
+  ck_assert_msg(res < 0, "Failed to handle invalid path");
+  ck_assert_msg(errno == ENOENT, "Expected ENOENT (%d), got %s (%d)", ENOENT,
     strerror(errno), errno);
 
   fs = pr_register_fs(p, "testsuite", "&");
-  fail_unless(fs != NULL, "Failed to register FS: %s", strerror(errno));
+  ck_assert_msg(fs != NULL, "Failed to register FS: %s", strerror(errno));
 
   fs = pr_register_fs(p, "testsuite2", ":");
-  fail_unless(fs != NULL, "Failed to register FS: %s", strerror(errno));
+  ck_assert_msg(fs != NULL, "Failed to register FS: %s", strerror(errno));
 
   res = pr_fs_valid_path(path);
-  fail_unless(res == 0, "Failed to handle valid path: %s", strerror(errno));
+  ck_assert_msg(res == 0, "Failed to handle valid path: %s", strerror(errno));
 
   (void) pr_remove_fs("/testsuite2");
   (void) pr_remove_fs("/testsuite");
@@ -4862,43 +4891,43 @@ START_TEST (fsio_smkdir_test) {
   gid_t gid = getgid();
 
   res = pr_fsio_smkdir(NULL, NULL, mode, uid, gid);
-  fail_unless(res < 0, "Failed to handle null arguments");
-  fail_unless(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
+  ck_assert_msg(res < 0, "Failed to handle null arguments");
+  ck_assert_msg(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
     strerror(errno), errno);
 
   res = pr_fsio_smkdir(p, NULL, mode, uid, gid);
-  fail_unless(res < 0, "Failed to handle null path");
-  fail_unless(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
+  ck_assert_msg(res < 0, "Failed to handle null path");
+  ck_assert_msg(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
     strerror(errno), errno);
 
   path = fsio_testdir_path;
   res = pr_fsio_smkdir(p, path, mode, uid, gid);
-  fail_unless(res == 0, "Failed to securely create '%s': %s", fsio_testdir_path,
+  ck_assert_msg(res == 0, "Failed to securely create '%s': %s", fsio_testdir_path,
     strerror(errno));
   (void) pr_fsio_rmdir(fsio_testdir_path);
 
   res = pr_fsio_set_use_mkdtemp(-1);
-  fail_unless(res < 0, "Failed to handle invalid setting");
-  fail_unless(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
+  ck_assert_msg(res < 0, "Failed to handle invalid setting");
+  ck_assert_msg(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
     strerror(errno), errno);
 
 #ifdef HAVE_MKDTEMP
   res = pr_fsio_set_use_mkdtemp(FALSE);
-  fail_unless(res == TRUE, "Expected TRUE, got %d", res);
+  ck_assert_msg(res == TRUE, "Expected TRUE, got %d", res);
 
   res = pr_fsio_smkdir(p, path, mode, uid, gid);
-  fail_unless(res == 0, "Failed to securely create '%s': %s", fsio_testdir_path,
+  ck_assert_msg(res == 0, "Failed to securely create '%s': %s", fsio_testdir_path,
     strerror(errno));
   (void) pr_fsio_rmdir(fsio_testdir_path);
 
   res = pr_fsio_set_use_mkdtemp(TRUE);
-  fail_unless(res == FALSE, "Expected FALSE, got %d", res);
+  ck_assert_msg(res == FALSE, "Expected FALSE, got %d", res);
 #else
   res = pr_fsio_set_use_mkdtemp(TRUE);
-  fail_unless(res == FALSE, "Expected FALSE, got %d", res);
+  ck_assert_msg(res == FALSE, "Expected FALSE, got %d", res);
 
   res = pr_fsio_set_use_mkdtemp(FALSE);
-  fail_unless(res == FALSE, "Expected FALSE, got %d", res);
+  ck_assert_msg(res == FALSE, "Expected FALSE, got %d", res);
 #endif /* HAVE_MKDTEMP */
 
   (void) pr_fsio_rmdir(fsio_testdir_path);
@@ -4911,24 +4940,24 @@ START_TEST (fsio_getpipebuf_test) {
   long bufsz = 0;
 
   res = pr_fsio_getpipebuf(NULL, fd, NULL);
-  fail_unless(res == NULL, "Failed to handle null arguments");
-  fail_unless(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
+  ck_assert_msg(res == NULL, "Failed to handle null arguments");
+  ck_assert_msg(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
     strerror(errno), errno);
 
   res = pr_fsio_getpipebuf(p, fd, NULL);
-  fail_unless(res == NULL, "Failed to handle bad file descriptor");
-  fail_unless(errno == EBADF, "Expected EBADF (%d), got %s (%d)", EBADF,
+  ck_assert_msg(res == NULL, "Failed to handle bad file descriptor");
+  ck_assert_msg(errno == EBADF, "Expected EBADF (%d), got %s (%d)", EBADF,
     strerror(errno), errno);
 
   fd = 0;
   res = pr_fsio_getpipebuf(p, fd, NULL);
-  fail_unless(res != NULL, "Failed to get pipebuf for fd %d: %s", fd,
+  ck_assert_msg(res != NULL, "Failed to get pipebuf for fd %d: %s", fd,
     strerror(errno));
 
   res = pr_fsio_getpipebuf(p, fd, &bufsz);
-  fail_unless(res != NULL, "Failed to get pipebuf for fd %d: %s", fd,
+  ck_assert_msg(res != NULL, "Failed to get pipebuf for fd %d: %s", fd,
     strerror(errno));
-  fail_unless(bufsz > 0, "Expected >0, got %ld", bufsz);
+  ck_assert_msg(bufsz > 0, "Expected >0, got %ld", bufsz);
 }
 END_TEST
 
@@ -4938,36 +4967,36 @@ START_TEST (fsio_gets_test) {
   int res2;
 
   res = pr_fsio_gets(NULL, 0, NULL);
-  fail_unless(res == NULL, "Failed to handle null arguments");
-  fail_unless(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
+  ck_assert_msg(res == NULL, "Failed to handle null arguments");
+  ck_assert_msg(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
     strerror(errno), errno);
 
   res = pr_fsio_gets(buf, 0, NULL);
-  fail_unless(res == NULL, "Failed to handle null file handle");
-  fail_unless(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
+  ck_assert_msg(res == NULL, "Failed to handle null file handle");
+  ck_assert_msg(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
     strerror(errno), errno);
 
   fh = pr_fsio_open(fsio_test_path, O_CREAT|O_EXCL|O_RDWR);
-  fail_unless(fh != NULL, "Failed to open '%s': %s", fsio_test_path,
+  ck_assert_msg(fh != NULL, "Failed to open '%s': %s", fsio_test_path,
     strerror(errno));
 
   res = pr_fsio_gets(buf, 0, fh);
-  fail_unless(res == NULL, "Failed to handle zero buffer length");
-  fail_unless(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
+  ck_assert_msg(res == NULL, "Failed to handle zero buffer length");
+  ck_assert_msg(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
     strerror(errno), errno);
 
   text = "Hello, World!\n";
   res2 = pr_fsio_puts(text, fh);
-  fail_if(res2 < 0, "Error writing to '%s': %s", fsio_test_path,
+  ck_assert_msg(res2 >= 0, "Error writing to '%s': %s", fsio_test_path,
     strerror(errno));
   pr_fsio_fsync(fh);
   pr_fsio_lseek(fh, 0, SEEK_SET);
 
   memset(buf, '\0', sizeof(buf));
   res = pr_fsio_gets(buf, sizeof(buf)-1, fh);
-  fail_if(res == NULL, "Failed reading from '%s': %s", fsio_test_path,
+  ck_assert_msg(res != NULL, "Failed reading from '%s': %s", fsio_test_path,
     strerror(errno));
-  fail_unless(strcmp(res, text) == 0, "Expected '%s', got '%s'", text, res);
+  ck_assert_msg(strcmp(res, text) == 0, "Expected '%s', got '%s'", text, res);
 
   (void) pr_fsio_close(fh);
   (void) pr_fsio_unlink(fsio_test_path);
@@ -4981,35 +5010,35 @@ START_TEST (fsio_getline_test) {
   int res2;
 
   res = pr_fsio_getline(NULL, 0, NULL, NULL);
-  fail_unless(res == NULL, "Failed to handle null arguments");
-  fail_unless(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
+  ck_assert_msg(res == NULL, "Failed to handle null arguments");
+  ck_assert_msg(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
     strerror(errno), errno);
 
   res = pr_fsio_getline(buf, 0, NULL, NULL);
-  fail_unless(res == NULL, "Failed to handle file handle");
-  fail_unless(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
+  ck_assert_msg(res == NULL, "Failed to handle file handle");
+  ck_assert_msg(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
     strerror(errno), errno);
 
   fh = pr_fsio_open(fsio_test_path, O_CREAT|O_EXCL|O_RDWR);
-  fail_unless(fh != NULL, "Failed to open '%s': %s", fsio_test_path,
+  ck_assert_msg(fh != NULL, "Failed to open '%s': %s", fsio_test_path,
     strerror(errno));
 
   res = pr_fsio_getline(buf, 0, fh, NULL);
-  fail_unless(res == NULL, "Failed to handle zero buffer length");
-  fail_unless(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
+  ck_assert_msg(res == NULL, "Failed to handle zero buffer length");
+  ck_assert_msg(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
     strerror(errno), errno);
 
   res = pr_fsio_getline(buf, sizeof(buf)-1, fh, &lineno);
-  fail_unless(res == NULL, "Failed to read empty '%s' file", fsio_test_path);
+  ck_assert_msg(res == NULL, "Failed to read empty '%s' file", fsio_test_path);
 
   text = "Hello, World!\n";
   res2 = pr_fsio_puts(text, fh);
-  fail_if(res2 < 0, "Error writing to '%s': %s", fsio_test_path,
+  ck_assert_msg(res2 >= 0, "Error writing to '%s': %s", fsio_test_path,
     strerror(errno));
 
   text = "How\\\n are you?\n";
   res2 = pr_fsio_puts(text, fh);
-  fail_if(res2 < 0, "Error writing to '%s': %s", fsio_test_path,
+  ck_assert_msg(res2 >= 0, "Error writing to '%s': %s", fsio_test_path,
     strerror(errno));
 
   pr_fsio_fsync(fh);
@@ -5017,19 +5046,19 @@ START_TEST (fsio_getline_test) {
 
   memset(buf, '\0', sizeof(buf));
   res = pr_fsio_getline(buf, sizeof(buf)-1, fh, &lineno);
-  fail_if(res == NULL, "Failed to read line from '%s': %s", fsio_test_path,
+  ck_assert_msg(res != NULL, "Failed to read line from '%s': %s", fsio_test_path,
     strerror(errno));
-  fail_unless(strcmp(res, "Hello, World!\n") == 0,
+  ck_assert_msg(strcmp(res, "Hello, World!\n") == 0,
     "Expected 'Hello, World!\n', got '%s'", res);
-  fail_unless(lineno == 1, "Expected 1, got %u", lineno);
+  ck_assert_msg(lineno == 1, "Expected 1, got %u", lineno);
 
   memset(buf, '\0', sizeof(buf));
   res = pr_fsio_getline(buf, sizeof(buf)-1, fh, &lineno);
-  fail_if(res == NULL, "Failed to read line from '%s': %s", fsio_test_path,
+  ck_assert_msg(res != NULL, "Failed to read line from '%s': %s", fsio_test_path,
     strerror(errno));
-  fail_unless(strcmp(res, "How are you?\n") == 0,
+  ck_assert_msg(strcmp(res, "How are you?\n") == 0,
     "Expected 'How are you?\n', got '%s'", res);
-  fail_unless(lineno == 3, "Expected 3, got %u", lineno);
+  ck_assert_msg(lineno == 3, "Expected 3, got %u", lineno);
 
   (void) pr_fsio_close(fh);
   (void) pr_fsio_unlink(fsio_test_path);
@@ -5042,23 +5071,23 @@ START_TEST (fsio_puts_test) {
   pr_fh_t *fh;
 
   res = pr_fsio_puts(NULL, NULL);
-  fail_unless(res < 0, "Failed to handle null arguments");
-  fail_unless(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
+  ck_assert_msg(res < 0, "Failed to handle null arguments");
+  ck_assert_msg(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
     strerror(errno), errno);
 
   text = "Hello, World!\n";
   res = pr_fsio_puts(text, NULL);
-  fail_unless(res < 0, "Failed to handle null file handle");
-  fail_unless(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
+  ck_assert_msg(res < 0, "Failed to handle null file handle");
+  ck_assert_msg(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
     strerror(errno), errno);
 
   fh = pr_fsio_open(fsio_test_path, O_CREAT|O_EXCL|O_WRONLY);
-  fail_unless(fh != NULL, "Failed to open '%s': %s", fsio_test_path,
+  ck_assert_msg(fh != NULL, "Failed to open '%s': %s", fsio_test_path,
     strerror(errno));
 
   res = pr_fsio_puts(NULL, fh);
-  fail_unless(res < 0, "Failed to handle null buffer");
-  fail_unless(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
+  ck_assert_msg(res < 0, "Failed to handle null buffer");
+  ck_assert_msg(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
     strerror(errno), errno);
 
   (void) pr_fsio_close(fh);
@@ -5071,25 +5100,25 @@ START_TEST (fsio_blocking_test) {
   pr_fh_t *fh;
 
   res = pr_fsio_set_block(NULL);
-  fail_unless(res < 0, "Failed to handle null argument");
-  fail_unless(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
+  ck_assert_msg(res < 0, "Failed to handle null argument");
+  ck_assert_msg(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
     strerror(errno), errno);
 
   fh = pr_fsio_open(fsio_test_path, O_CREAT|O_EXCL|O_WRONLY);
-  fail_unless(fh != NULL, "Failed to open '%s': %s", fsio_test_path,
+  ck_assert_msg(fh != NULL, "Failed to open '%s': %s", fsio_test_path,
     strerror(errno));
 
   fd = fh->fh_fd;
   fh->fh_fd = -1;
 
   res = pr_fsio_set_block(fh);
-  fail_unless(res < 0, "Failed to handle bad file descriptor");
-  fail_unless(errno == EBADF, "Expected EBADF (%d), got %s (%d)", EBADF,
+  ck_assert_msg(res < 0, "Failed to handle bad file descriptor");
+  ck_assert_msg(errno == EBADF, "Expected EBADF (%d), got %s (%d)", EBADF,
     strerror(errno), errno);
 
   fh->fh_fd = fd;
   res = pr_fsio_set_block(fh);
-  fail_unless(res == 0, "Failed to make '%s' blocking: %s", fsio_test_path,
+  ck_assert_msg(res == 0, "Failed to make '%s' blocking: %s", fsio_test_path,
     strerror(errno));
 
   (void) pr_fsio_close(fh);

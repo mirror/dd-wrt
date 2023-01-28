@@ -69,6 +69,8 @@ sub maxclientsperclass_one {
 
     AuthUserFile => $auth_user_file,
     AuthGroupFile => $auth_group_file, 
+    AuthOrder => 'mod_auth_file.c',
+
     MaxClientsPerClass => "$class_name $max_clients",
 
     IfModules => {
@@ -191,6 +193,7 @@ sub maxclientsperclass_one_multi_conns {
 
     AuthUserFile => $auth_user_file,
     AuthGroupFile => $auth_group_file,
+    AuthOrder => 'mod_auth_file.c',
 
     MaxClientsPerClass => "$class_name $max_clients",
 

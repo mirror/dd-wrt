@@ -133,6 +133,7 @@ sub useftpusers_off_unlisted_user {
 
     AuthUserFile => $auth_user_file,
     AuthGroupFile => $auth_group_file,
+    AuthOrder => 'mod_auth_file.c',
 
     UseFtpUsers => 'off',
 
@@ -237,6 +238,7 @@ sub useftpusers_off_listed_user {
 
     AuthUserFile => $auth_user_file,
     AuthGroupFile => $auth_group_file,
+    AuthOrder => 'mod_auth_file.c',
 
     UseFtpUsers => 'off',
 
@@ -341,6 +343,7 @@ sub useftpusers_on_unlisted_user {
 
     AuthUserFile => $auth_user_file,
     AuthGroupFile => $auth_group_file,
+    AuthOrder => 'mod_auth_file.c',
 
     UseFtpUsers => 'on',
 
@@ -445,6 +448,7 @@ sub useftpusers_on_listed_user {
 
     AuthUserFile => $auth_user_file,
     AuthGroupFile => $auth_group_file,
+    AuthOrder => 'mod_auth_file.c',
 
     UseFtpUsers => 'on',
 

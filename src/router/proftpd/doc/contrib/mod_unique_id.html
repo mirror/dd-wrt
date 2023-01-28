@@ -103,22 +103,20 @@ some adjustments in other parts of your <code>proftpd.conf</code>.
 Example configuration:
 <pre>
   &lt;IfModule mod_unique_id.c&gt;
-
     # Include the unique session ID in an ExtendedLog
     LogFormat session "%{UNIQUE_ID}e %h %l %u %t \"%r\" %s %b"
     ExtendedLog /path/to/extended.log ALL session
 
     # Store the unique ID in a SQL table named 'ftpsessions'
     SQLLog PASS login
-    SQLNamedQuery login INSERT "'%{env:UNIQUE_ID}', '%u', now()" ftpsessions
-
+    SQLNamedQuery login INSERT "'%{note:UNIQUE_ID}', '%u', now()" ftpsessions
   &lt;/IfModule&gt;
 </pre>
 
 <p>
 <hr>
 <font size=2><b><i>
-&copy; Copyright 2006-2016 TJ Saunders<br>
+&copy; Copyright 2006-2020 TJ Saunders<br>
  All Rights Reserved<br>
 </i></b></font>
 <hr>

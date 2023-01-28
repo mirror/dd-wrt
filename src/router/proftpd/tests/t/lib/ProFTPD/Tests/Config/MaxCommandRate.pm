@@ -69,6 +69,7 @@ sub maxcmdrate_ok {
 
     AuthUserFile => $auth_user_file,
     AuthGroupFile => $auth_group_file,
+    AuthOrder => 'mod_auth_file.c',
 
     MaxCommandRate => $max_cmd_rate,
 
@@ -164,6 +165,7 @@ sub maxcmdrate_exceeded {
 
     AuthUserFile => $auth_user_file,
     AuthGroupFile => $auth_group_file,
+    AuthOrder => 'mod_auth_file.c',
 
     MaxCommandRate => $max_cmd_rate,
 

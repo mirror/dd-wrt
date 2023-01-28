@@ -1,6 +1,6 @@
 /*
  * ProFTPD - mod_sftp RFC4716 keystore
- * Copyright (c) 2008-2016 TJ Saunders
+ * Copyright (c) 2008-2022 TJ Saunders
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -221,13 +221,19 @@ static struct filestore_key *filestore_get_key(sftp_keystore_t *store,
   line = filestore_getline(store, p);
   while (line == NULL &&
          errno == EINVAL) {
+    pr_signals_handle();
+
     line = filestore_getline(store, p);
+  }
+
+  if (line == NULL) {
+    return NULL;
   }
 
   begin_markerlen = strlen(SFTP_SSH2_PUBKEY_BEGIN_MARKER);
   end_markerlen = strlen(SFTP_SSH2_PUBKEY_END_MARKER);
 
-  while (line) {
+  while (line != NULL) {
     pr_signals_handle();
 
     if (key == NULL &&
@@ -239,7 +245,7 @@ static struct filestore_key *filestore_get_key(sftp_keystore_t *store,
     } else if (key != NULL &&
                strncmp(line, SFTP_SSH2_PUBKEY_END_MARKER,
                  end_markerlen + 1) == 0) {
-      if (bio) {
+      if (bio != NULL) {
         BIO *b64 = NULL, *bmem = NULL;
         char chunk[1024], *data = NULL;
         int chunklen;
@@ -308,7 +314,7 @@ static struct filestore_key *filestore_get_key(sftp_keystore_t *store,
       break;
 
     } else {
-      if (key) {
+      if (key != NULL) {
         if (strstr(line, ": ") != NULL) {
           if (strncasecmp(line, "Subject: ", 9) == 0) {
             key->subject = pstrdup(p, line + 9);
@@ -326,6 +332,8 @@ static struct filestore_key *filestore_get_key(sftp_keystore_t *store,
     line = filestore_getline(store, p);
     while (line == NULL &&
            errno == EINVAL) {
+      pr_signals_handle();
+
       line = filestore_getline(store, p);
     }
   }
@@ -338,10 +346,9 @@ static int filestore_verify_host_key(sftp_keystore_t *store, pool *p,
     unsigned char *key_data, uint32_t key_len) {
   struct filestore_key *key = NULL;
   struct filestore_data *store_data = store->keystore_data;
-
   int res = -1;
 
-  if (!store_data->path) {
+  if (store_data->path == NULL) {
     errno = EPERM;
     return -1;
   }
@@ -351,7 +358,7 @@ static int filestore_verify_host_key(sftp_keystore_t *store, pool *p,
    */
 
   key = filestore_get_key(store, p);
-  while (key) {
+  while (key != NULL) {
     int ok;
 
     pr_signals_handle();
@@ -382,8 +389,12 @@ static int filestore_verify_host_key(sftp_keystore_t *store, pool *p,
   }
 
   if (pr_fsio_lseek(store_data->fh, 0, SEEK_SET) < 0) {
+    int xerrno = errno;
+
     (void) pr_log_writefile(sftp_logfd, MOD_SFTP_VERSION,
-      "error seeking to start of '%s': %s", store_data->path, strerror(errno));
+      "error seeking to start of '%s': %s", store_data->path, strerror(xerrno));
+
+    errno = xerrno;
     return -1;
   }
 
@@ -396,10 +407,9 @@ static int filestore_verify_user_key(sftp_keystore_t *store, pool *p,
   struct filestore_key *key = NULL;
   struct filestore_data *store_data = store->keystore_data;
   unsigned int count = 0;
-
   int res = -1;
 
-  if (!store_data->path) {
+  if (store_data->path == NULL) {
     errno = EPERM;
     return -1;
   }
@@ -409,7 +419,7 @@ static int filestore_verify_user_key(sftp_keystore_t *store, pool *p,
    */
 
   key = filestore_get_key(store, p);
-  while (key) {
+  while (key != NULL) {
     int ok;
 
     pr_signals_handle();
@@ -461,8 +471,12 @@ static int filestore_verify_user_key(sftp_keystore_t *store, pool *p,
   }
 
   if (pr_fsio_lseek(store_data->fh, 0, SEEK_SET) < 0) {
+    int xerrno = errno;
+
     (void) pr_log_writefile(sftp_logfd, MOD_SFTP_VERSION,
-      "error seeking to start of '%s': %s", store_data->path, strerror(errno));
+      "error seeking to start of '%s': %s", store_data->path, strerror(xerrno));
+
+    xerrno = errno;
     return -1;
   }
 
@@ -471,9 +485,10 @@ static int filestore_verify_user_key(sftp_keystore_t *store, pool *p,
 }
 
 static int filestore_close(sftp_keystore_t *store) {
-  struct filestore_data *store_data = store->keystore_data;
+  struct filestore_data *store_data;
 
-  pr_fsio_close(store_data->fh);
+  store_data = store->keystore_data;
+  (void) pr_fsio_close(store_data->fh);
   return 0;
 }
 

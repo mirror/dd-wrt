@@ -1,6 +1,6 @@
 /*
  * ProFTPD - FTP server daemon
- * Copyright (c) 2016-2017 The ProFTPD Project team
+ * Copyright (c) 2016-2020 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -364,7 +364,6 @@ void pr_error_destroy(pr_error_t *err) {
   }
 
   errno = xerrno;
-  return;
 }
 
 int pr_error_get_who(pr_error_t *err, uid_t *err_uid, gid_t *err_gid) {

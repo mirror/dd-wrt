@@ -2,7 +2,7 @@
  * ProFTPD - FTP server daemon
  * Copyright (c) 1997, 1998 Public Flood Software
  * Copyright (c) 1999, 2000 MacGyver aka Habeeb J. Dihu <macgyver@tos.net>
- * Copyright (c) 2001-2021 The ProFTPD Project team
+ * Copyright (c) 2001-2022 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -307,9 +307,10 @@ static int auth_sess_init(void) {
 
 static int do_auth(pool *p, xaset_t *conf, const char *u, char *pw) {
   char *cpw = NULL;
-  config_rec *c;
 
   if (conf != NULL) {
+    config_rec *c;
+
     c = find_config(conf, CONF_PARAM, "UserPassword", FALSE);
     while (c != NULL) {
       pr_signals_handle();
@@ -365,7 +366,7 @@ static void login_failed(pool *p, const char *user) {
   if (res < 0) {
     pr_trace_msg("auth", 3, "AIX loginfailed() error for user '%s', "
       "host '%s', tty '%s', reason %d: %s", user, host, sess_ttyname,
-      AUDIT_FAIL, strerror(errno));
+      AUDIT_FAIL, strerror(xerrno));
   }
 #endif /* HAVE_LOGINFAILED */
 }
@@ -509,7 +510,7 @@ MODRET auth_post_pass(cmd_rec *cmd) {
        *    b) an SSH protocol is not in use.
        */
       if (session.rfc2228_mech == NULL &&
-          strncmp(protocol, "SSH2", 5) != 0) {
+          strcmp(protocol, "SSH2") != 0) {
         register unsigned int i;
         int allow_ftp = FALSE;
 
@@ -518,7 +519,7 @@ MODRET auth_post_pass(cmd_rec *cmd) {
 
           proto = elts[i];
           if (proto != NULL) {
-            if (strncasecmp(proto, "ftp", 4) == 0) {
+            if (strcasecmp(proto, "ftp") == 0) {
               allow_ftp = TRUE;
               break;
             }
@@ -559,7 +560,7 @@ MODRET auth_post_pass(cmd_rec *cmd) {
     pr_signals_handle();
 
     if (c->argc == 3) {
-      if (strncmp(c->argv[1], "user", 5) == 0) {
+      if (strcasecmp(c->argv[1], "user") == 0) {
         if (pr_expr_eval_user_or((char **) &c->argv[2]) == TRUE) {
 
           if (*((unsigned int *) c->argv[1]) > ctxt_precedence) {
@@ -574,7 +575,7 @@ MODRET auth_post_pass(cmd_rec *cmd) {
           }
         }
 
-      } else if (strncmp(c->argv[1], "group", 6) == 0) {
+      } else if (strcasecmp(c->argv[1], "group") == 0) {
         if (pr_expr_eval_group_and((char **) &c->argv[2]) == TRUE) {
 
           if (*((unsigned int *) c->argv[1]) > ctxt_precedence) {
@@ -589,7 +590,7 @@ MODRET auth_post_pass(cmd_rec *cmd) {
           }
         }
 
-      } else if (strncmp(c->argv[1], "class", 6) == 0) {
+      } else if (strcasecmp(c->argv[1], "class") == 0) {
         if (session.conn_class != NULL &&
             strcmp(session.conn_class->cls_name, c->argv[2]) == 0) {
 
@@ -607,7 +608,6 @@ MODRET auth_post_pass(cmd_rec *cmd) {
       }
 
     } else {
-
       if (*((unsigned int *) c->argv[1]) > ctxt_precedence) {
 
         /* Set the context precedence. */
@@ -629,8 +629,10 @@ MODRET auth_post_pass(cmd_rec *cmd) {
    * store the returned ID in order to later remove the timer.
    */
 
-  if (have_user_timeout || have_group_timeout ||
-      have_class_timeout || have_all_timeout) {
+  if (have_user_timeout ||
+      have_group_timeout ||
+      have_class_timeout ||
+      have_all_timeout) {
     pr_log_debug(DEBUG4, "setting TimeoutSession of %d seconds for current %s",
       TimeoutSession,
       have_user_timeout ? "user" : have_group_timeout ? "group" :
@@ -792,9 +794,9 @@ static int is_symlink_path(pool *p, const char *path, size_t pathlen) {
 
   pr_fs_clear_cache2(path);
   res = pr_fsio_lstat(path, &st);
-  if (res < 0) {
-    xerrno = errno;
+  xerrno = errno;
 
+  if (res < 0) {
     pr_log_pri(PR_LOG_WARNING, "error: unable to check %s: %s", path,
       strerror(xerrno));
 
@@ -1236,9 +1238,10 @@ static int setup_env(pool *p, cmd_rec *cmd, const char *user, char *pass) {
       pr_memscrub(pass, strlen(pass));
     }
 
-    if (session.auth_mech != NULL)
+    if (session.auth_mech != NULL) {
       pr_log_debug(DEBUG2, "user '%s' authenticated by %s", user,
         session.auth_mech);
+    }
 
     switch (auth_code) {
       case PR_AUTH_OK_NO_PASS:
@@ -1311,8 +1314,9 @@ static int setup_env(pool *p, cmd_rec *cmd, const char *user, char *pass) {
     };
 
     /* Catch the case where we forgot to handle a bad auth code above. */
-    if (auth_code < 0)
+    if (auth_code < 0) {
       goto auth_failure;
+    }
 
     if (pw->pw_uid == PR_ROOT_UID) {
       pr_log_auth(PR_LOG_WARNING, "ROOT FTP login successful");
@@ -1340,11 +1344,12 @@ static int setup_env(pool *p, cmd_rec *cmd, const char *user, char *pass) {
     goto auth_failure;
   }
 
-  if (c) {
+  if (c != NULL) {
     struct group *grp = NULL;
     unsigned char *add_userdir = NULL;
     const char *u;
     char *chroot_dir;
+    int auth_code = PR_AUTH_OK;
 
     u = pr_table_get(session.notes, "mod_auth.orig-user", NULL);
     add_userdir = get_param_ptr(c->subset, "UserDirRoot", FALSE);
@@ -1469,7 +1474,7 @@ static int setup_env(pool *p, cmd_rec *cmd, const char *user, char *pass) {
       }
     }
 
-    if (session.chroot_path &&
+    if (session.chroot_path != NULL &&
         pr_fsio_access(session.chroot_path, X_OK, session.uid,
           session.gid, session.gids) != 0) {
       session.chroot_path = NULL;
@@ -1477,6 +1482,8 @@ static int setup_env(pool *p, cmd_rec *cmd, const char *user, char *pass) {
     } else {
       session.chroot_path = pstrdup(session.pool, session.chroot_path);
     }
+
+    pr_event_generate("mod_auth.authentication-code", &auth_code);
 
     /* Return all privileges back to that of the daemon, for now. */
     PRIVS_ROOT
@@ -1570,10 +1577,12 @@ static int setup_env(pool *p, cmd_rec *cmd, const char *user, char *pass) {
     homedir = dir_realpath(p, pw->pw_dir);
     PRIVS_RELINQUISH
 
-    if (homedir)
+    if (homedir != NULL) {
       sstrncpy(session.cwd, homedir, sizeof(session.cwd));
-    else
+
+    } else {
       sstrncpy(session.cwd, pw->pw_dir, sizeof(session.cwd));
+    }
   }
 
   /* Create the home directory, if need be. */
@@ -1610,8 +1619,10 @@ static int setup_env(pool *p, cmd_rec *cmd, const char *user, char *pass) {
   /* If running under an anonymous context, resolve all <Directory>
    * blocks inside it.
    */
-  if (c && c->subset)
+  if (c != NULL &&
+      c->subset != NULL) {
     resolve_anonymous_dirs(c->subset);
+  }
 
   /* Write the login to wtmp.  This must be done here because we won't
    * have access after we give up root.  This can result in falsified
@@ -1624,11 +1635,13 @@ static int setup_env(pool *p, cmd_rec *cmd, const char *user, char *pass) {
   /* Perform wtmp logging only if not turned off in <Anonymous>
    * or the current server
    */
-  if (c)
+  if (c != NULL) {
     wtmp_log = get_param_ptr(c->subset, "WtmpLog", FALSE);
+  }
 
-  if (wtmp_log == NULL)
+  if (wtmp_log == NULL) {
     wtmp_log = get_param_ptr(main_server->conf, "WtmpLog", FALSE);
+  }
 
   /* As per Bug#3482, we need to disable WtmpLog for FreeBSD 9.0, as
    * an interim measure.
@@ -1672,15 +1685,18 @@ static int setup_env(pool *p, cmd_rec *cmd, const char *user, char *pass) {
 #endif /* PR_USE_LASTLOG */
 
   /* Open any TransferLogs */
-  if (!xferlog) {
-    if (c)
+  if (xferlog == NULL) {
+    if (c != NULL) {
       xferlog = get_param_ptr(c->subset, "TransferLog", FALSE);
+    }
 
-    if (!xferlog)
+    if (xferlog == NULL) {
       xferlog = get_param_ptr(main_server->conf, "TransferLog", FALSE);
+    }
 
-    if (!xferlog)
+    if (xferlog == NULL) {
       xferlog = PR_XFERLOG_PATH;
+    }
   }
 
   if (strcasecmp(xferlog, "NONE") == 0) {
@@ -1725,18 +1741,20 @@ static int setup_env(pool *p, cmd_rec *cmd, const char *user, char *pass) {
       if (strncmp(session.cwd, defroot, strlen(defroot)) == 0) {
         char *newcwd = &session.cwd[strlen(defroot)];
 
-        if (*newcwd == '/')
+        if (*newcwd == '/') {
           newcwd++;
+        }
         session.cwd[0] = '/';
         sstrncpy(&session.cwd[1], newcwd, sizeof(session.cwd));
       }
     }
   }
 
-  if (c)
+  if (c != NULL) {
     ensure_open_passwd(p);
+  }
 
-  if (c &&
+  if (c != NULL &&
       pr_auth_chroot(session.chroot_path) == -1) {
     pr_log_pri(PR_LOG_NOTICE, "error: unable to set anonymous privileges");
     pr_response_send(R_530, _("Login incorrect."));
@@ -1796,10 +1814,13 @@ static int setup_env(pool *p, cmd_rec *cmd, const char *user, char *pass) {
     unsigned char *show_symlinks = get_param_ptr(
       c ? c->subset : main_server->conf, "ShowSymlinks", FALSE);
 
-    if (!show_symlinks || *show_symlinks == TRUE)
+    if (show_symlinks == NULL ||
+        *show_symlinks == TRUE) {
       showsymlinks = TRUE;
-    else
+
+    } else {
       showsymlinks = FALSE;
+    }
   }
 
   /* chdir to the proper directory, do this even if anonymous
@@ -1905,11 +1926,13 @@ static int setup_env(pool *p, cmd_rec *cmd, const char *user, char *pass) {
    */
   session.user = pstrdup(session.pool, session.user);
 
-  if (session.group)
+  if (session.group != NULL) {
     session.group = pstrdup(session.pool, session.group);
+  }
 
-  if (session.gids)
+  if (session.gids != NULL) {
     session.gids = copy_array(session.pool, session.gids);
+  }
 
   /* session.groups is an array of strings, so we must copy the string data
    * as well as the pointers.
@@ -1922,8 +1945,9 @@ static int setup_env(pool *p, cmd_rec *cmd, const char *user, char *pass) {
   return 1;
 
 auth_failure:
-  if (pass)
+  if (pass != NULL) {
     pr_memscrub(pass, strlen(pass));
+  }
   session.user = session.group = NULL;
   session.gids = session.groups = NULL;
   session.wtmp_log = FALSE;
@@ -1962,12 +1986,14 @@ static int auth_scan_scoreboard(void) {
     if (strcmp(score->sce_server_addr, curr_server_addr) == 0) {
       cur++;
 
-      if (strcmp(score->sce_client_addr, client_addr) == 0)
+      if (strcmp(score->sce_client_addr, client_addr) == 0) {
         hcur++;
+      }
 
       /* Only count up authenticated clients, as per the documentation. */
-      if (strncmp(score->sce_user, "(none)", 7) == 0)
+      if (strcmp(score->sce_user, "(none)") == 0) {
         continue;
+      }
 
       /* Note: the class member of the scoreboard entry will never be
        * NULL.  At most, it may be the empty string.
@@ -2010,7 +2036,7 @@ static int auth_scan_scoreboard(void) {
   c = find_config(main_server->conf, CONF_PARAM, "MaxConnectionsPerHost",
     FALSE);
 
-  if (c) {
+  if (c != NULL) {
     unsigned int *max = c->argv[0];
 
     if (*max &&
@@ -2022,8 +2048,9 @@ static int auth_scan_scoreboard(void) {
 
       pr_event_generate("mod_auth.max-connections-per-host", session.c);
 
-      if (c->argc == 2)
+      if (c->argc == 2) {
         msg = c->argv[1];
+      }
 
       memset(maxstr, '\0', sizeof(maxstr));
       pr_snprintf(maxstr, sizeof(maxstr), "%u", *max);
@@ -2113,7 +2140,7 @@ static int auth_count_scoreboard(cmd_rec *cmd, const char *user) {
             c == NULL) {
 
           /* Only count authenticated clients, as per the documentation. */
-          if (strncmp(score->sce_user, "(none)", 7) == 0) {
+          if (strcmp(score->sce_user, "(none)") == 0) {
             continue;
           }
 
@@ -2375,7 +2402,7 @@ MODRET auth_pre_user(cmd_rec *cmd) {
 MODRET auth_user(cmd_rec *cmd) {
   int nopass = FALSE;
   config_rec *c;
-  const char *denymsg = NULL, *user, *origuser;
+  const char *user, *origuser;
   unsigned char *anon_require_passwd = NULL;
 
   if (cmd->argc < 2) {
@@ -2411,22 +2438,14 @@ MODRET auth_user(cmd_rec *cmd) {
   origuser = user;
   c = pr_auth_get_anon_config(cmd->tmp_pool, &user, NULL, NULL);
 
-  /* Check for AccessDenyMsg */
-  denymsg = get_param_ptr((c ? c->subset : cmd->server->conf), "AccessDenyMsg",
-    FALSE);
-  if (denymsg != NULL) {
-    if (strstr(denymsg, "%u") != NULL) {
-      denymsg = sreplace(cmd->tmp_pool, denymsg, "%u", user, NULL);
-    }
-  }
-
   if (c != NULL) {
     anon_require_passwd = get_param_ptr(c->subset, "AnonRequirePassword",
       FALSE);
   }
 
-  if (c && user && (!anon_require_passwd || *anon_require_passwd == FALSE))
+  if (c && user && (!anon_require_passwd || *anon_require_passwd == FALSE)) {
     nopass = TRUE;
+  }
 
   session.gids = NULL;
   session.groups = NULL;
@@ -3186,9 +3205,10 @@ MODRET set_createhome(cmd_rec *cmd) {
 
     mode = strtol(cmd->argv[2], &tmp, 8);
 
-    if (tmp && *tmp)
+    if (tmp && *tmp) {
       CONF_ERROR(cmd, pstrcat(cmd->tmp_pool, ": bad mode parameter: '",
         cmd->argv[2], "'", NULL));
+    }
 
     start = 3;
   }
@@ -3236,9 +3256,10 @@ MODRET set_createhome(cmd_rec *cmd) {
 
         dirmode = strtol(cmd->argv[++i], &tmp, 8);
  
-        if (tmp && *tmp)
+        if (tmp && *tmp) {
           CONF_ERROR(cmd, pstrcat(cmd->tmp_pool, "bad mode parameter: '",
             cmd->argv[i], "'", NULL));
+        }
 
         /* Move the index past the dirmode parameter */
         i++;
@@ -3246,7 +3267,7 @@ MODRET set_createhome(cmd_rec *cmd) {
       } else if (strcasecmp(cmd->argv[i], "uid") == 0) {
 
         /* Check for a "~" parameter. */
-        if (strncmp(cmd->argv[i+1], "~", 2) != 0) {
+        if (strcmp(cmd->argv[i+1], "~") != 0) {
           uid_t uid;
 
           if (pr_str2uid(cmd->argv[++i], &uid) < 0) { 
@@ -3267,7 +3288,7 @@ MODRET set_createhome(cmd_rec *cmd) {
       } else if (strcasecmp(cmd->argv[i], "gid") == 0) {
 
         /* Check for a "~" parameter. */
-        if (strncmp(cmd->argv[i+1], "~", 2) != 0) {
+        if (strcmp(cmd->argv[i+1], "~") != 0) {
           gid_t gid;
 
           if (pr_str2gid(cmd->argv[++i], &gid) < 0) {
@@ -3380,11 +3401,12 @@ MODRET add_defaultroot(cmd_rec *cmd) {
   argv = c->argv;
   *argv++ = pstrdup(c->pool, dir);
 
-  if (argc && acl)
-    while(argc--) {
+  if (argc && acl) {
+    while (argc--) {
       *argv++ = pstrdup(c->pool, *((char **) acl->elts));
       acl->elts = ((char **) acl->elts) + 1;
     }
+  }
 
   *argv = NULL;
   return PR_HANDLED(cmd);
@@ -3426,7 +3448,7 @@ MODRET add_defaultchdir(cmd_rec *cmd) {
   *argv++ = pstrdup(c->pool, dir);
 
   if (argc && acl) {
-    while(argc--) {
+    while (argc--) {
       *argv++ = pstrdup(c->pool, *((char **) acl->elts));
       acl->elts = ((char **) acl->elts) + 1;
     }
@@ -3457,16 +3479,17 @@ MODRET set_maxclientsclass(cmd_rec *cmd) {
 
   CHECK_CONF(cmd, CONF_ROOT|CONF_VIRTUAL|CONF_GLOBAL);
 
-  if (strcasecmp(cmd->argv[2], "none") == 0)
+  if (strcasecmp(cmd->argv[2], "none") == 0) {
     max = 0;
 
-  else {
+  } else {
     char *endp = NULL;
 
     max = (int) strtol(cmd->argv[2], &endp, 10);
 
-    if ((endp && *endp) || max < 1)
+    if ((endp && *endp) || max < 1) {
       CONF_ERROR(cmd, "max must be 'none' or a number greater than 0");
+    }
   }
 
   if (cmd->argc == 4) {
@@ -3491,21 +3514,24 @@ MODRET set_maxclients(cmd_rec *cmd) {
   int max;
   config_rec *c = NULL;
 
-  if (cmd->argc < 2 || cmd->argc > 3)
+  if (cmd->argc < 2 ||
+      cmd->argc > 3) {
     CONF_ERROR(cmd, "wrong number of parameters");
+  }
 
   CHECK_CONF(cmd, CONF_ROOT|CONF_VIRTUAL|CONF_GLOBAL|CONF_ANON);
 
-  if (!strcasecmp(cmd->argv[1], "none"))
+  if (strcasecmp(cmd->argv[1], "none") == 0) {
     max = 0;
 
-  else {
+  } else {
     char *endp = NULL;
 
     max = (int) strtol(cmd->argv[1], &endp, 10);
 
-    if ((endp && *endp) || max < 1)
+    if ((endp && *endp) || max < 1) {
       CONF_ERROR(cmd, "parameter must be 'none' or a number greater than 0");
+    }
   }
 
   if (cmd->argc == 3) {
@@ -3530,21 +3556,24 @@ MODRET set_maxhostclients(cmd_rec *cmd) {
   int max;
   config_rec *c = NULL;
 
-  if (cmd->argc < 2 || cmd->argc > 3)
+  if (cmd->argc < 2 ||
+      cmd->argc > 3) {
     CONF_ERROR(cmd, "wrong number of parameters");
+  }
 
   CHECK_CONF(cmd, CONF_ROOT|CONF_VIRTUAL|CONF_GLOBAL|CONF_ANON);
 
-  if (!strcasecmp(cmd->argv[1], "none"))
+  if (strcasecmp(cmd->argv[1], "none") == 0) {
     max = 0;
 
-  else {
+  } else {
     char *endp = NULL;
 
     max = (int) strtol(cmd->argv[1], &endp, 10);
 
-    if ((endp && *endp) || max < 1)
+    if ((endp && *endp) || max < 1) {
       CONF_ERROR(cmd, "parameter must be 'none' or a number greater than 0");
+    }
   }
 
   if (cmd->argc == 3) {
@@ -3570,21 +3599,24 @@ MODRET set_maxuserclients(cmd_rec *cmd) {
   int max;
   config_rec *c = NULL;
 
-  if (cmd->argc < 2 || cmd->argc > 3)
+  if (cmd->argc < 2 ||
+      cmd->argc > 3) {
     CONF_ERROR(cmd, "wrong number of parameters");
+  }
 
   CHECK_CONF(cmd, CONF_ROOT|CONF_VIRTUAL|CONF_GLOBAL|CONF_ANON);
 
-  if (!strcasecmp(cmd->argv[1], "none"))
+  if (strcasecmp(cmd->argv[1], "none") == 0) {
     max = 0;
 
-  else {
+  } else {
     char *endp = NULL;
 
     max = (int) strtol(cmd->argv[1], &endp, 10);
 
-    if ((endp && *endp) || max < 1)
+    if ((endp && *endp) || max < 1) {
       CONF_ERROR(cmd, "parameter must be 'none' or a number greater than 0");
+    }
   }
 
   if (cmd->argc == 3) {
@@ -3609,29 +3641,33 @@ MODRET set_maxconnectsperhost(cmd_rec *cmd) {
   int max;
   config_rec *c;
 
-  if (cmd->argc < 2 || cmd->argc > 3)
+  if (cmd->argc < 2 ||
+      cmd->argc > 3) {
     CONF_ERROR(cmd, "wrong number of parameters");
+  }
 
   CHECK_CONF(cmd, CONF_ROOT|CONF_VIRTUAL|CONF_GLOBAL);
 
-  if (strcasecmp(cmd->argv[1], "none") == 0)
+  if (strcasecmp(cmd->argv[1], "none") == 0) {
     max = 0;
 
-  else {
+  } else {
     char *tmp = NULL;
 
     max = (int) strtol(cmd->argv[1], &tmp, 10);
 
-    if ((tmp && *tmp) || max < 1)
+    if ((tmp && *tmp) || max < 1) {
       CONF_ERROR(cmd, "parameter must be 'none' or a number greater than 0");
+    }
   }
 
   if (cmd->argc == 3) {
     c = add_config_param(cmd->argv[0], 2, NULL, NULL);
     c->argv[1] = pstrdup(c->pool, cmd->argv[2]);
 
-  } else
+  } else {
     c = add_config_param(cmd->argv[0], 1, NULL);
+  }
 
   c->argv[0] = pcalloc(c->pool, sizeof(unsigned int));
   *((unsigned int *) c->argv[0]) = max;
@@ -3646,19 +3682,22 @@ MODRET set_maxhostsperuser(cmd_rec *cmd) {
 
   CHECK_CONF(cmd, CONF_ROOT|CONF_VIRTUAL|CONF_GLOBAL|CONF_ANON);
 
-  if (cmd->argc < 2 || cmd->argc > 3)
+  if (cmd->argc < 2 ||
+      cmd->argc > 3) {
     CONF_ERROR(cmd, "wrong number of parameters");
+  }
 
-  if (!strcasecmp(cmd->argv[1], "none"))
+  if (strcasecmp(cmd->argv[1], "none") == 0) {
     max = 0;
 
-  else {
+  } else {
     char *endp = NULL;
 
     max = (int) strtol(cmd->argv[1], &endp, 10);
 
-    if ((endp && *endp) || max < 1)
+    if ((endp && *endp) || max < 1) {
       CONF_ERROR(cmd, "parameter must be 'none' or a number greater than 0");
+    }
   }
 
   if (cmd->argc == 3) {
@@ -3692,8 +3731,9 @@ MODRET set_maxloginattempts(cmd_rec *cmd) {
     char *endp = NULL;
     max = (int) strtol(cmd->argv[1], &endp, 10);
 
-    if ((endp && *endp) || max < 1)
+    if ((endp && *endp) || max < 1) {
       CONF_ERROR(cmd, "parameter must be 'none' or a number greater than 0");
+    }
   }
 
   c = add_config_param(cmd->argv[0], 1, NULL);
@@ -3755,8 +3795,9 @@ MODRET set_requirevalidshell(cmd_rec *cmd) {
   CHECK_CONF(cmd, CONF_ROOT|CONF_VIRTUAL|CONF_GLOBAL|CONF_ANON);
 
   bool = get_boolean(cmd, 1);
-  if (bool == -1)
+  if (bool == -1) {
     CONF_ERROR(cmd, "expected Boolean parameter");
+  }
 
   c = add_config_param(cmd->argv[0], 1, NULL);
   c->argv[0] = pcalloc(c->pool, sizeof(unsigned char));
@@ -3775,8 +3816,9 @@ MODRET set_rewritehome(cmd_rec *cmd) {
   CHECK_CONF(cmd, CONF_ROOT|CONF_VIRTUAL|CONF_GLOBAL);
 
   bool = get_boolean(cmd, 1);
-  if (bool == -1)
+  if (bool == -1) {
     CONF_ERROR(cmd, "expected Boolean parameter");
+  }
 
   c = add_config_param(cmd->argv[0], 1, NULL);
   c->argv[0] = pcalloc(c->pool, sizeof(int));
@@ -3793,8 +3835,9 @@ MODRET set_rootlogin(cmd_rec *cmd) {
   CHECK_CONF(cmd, CONF_ROOT|CONF_VIRTUAL|CONF_GLOBAL|CONF_ANON);
 
   bool = get_boolean(cmd, 1);
-  if (bool == -1)
+  if (bool == -1) {
     CONF_ERROR(cmd, "expected Boolean parameter");
+  }
 
   c = add_config_param(cmd->argv[0], 1, NULL);
   c->argv[0] = pcalloc(c->pool, sizeof(unsigned char));
@@ -3894,15 +3937,11 @@ MODRET set_timeoutsession(cmd_rec *cmd) {
   }
 
   if (cmd->argc-1 == 3) {
-    if (strncmp(cmd->argv[2], "user", 5) == 0 ||
-        strncmp(cmd->argv[2], "group", 6) == 0 ||
-        strncmp(cmd->argv[2], "class", 6) == 0) {
-
-       /* no op */
-
-     } else {
-       CONF_ERROR(cmd, pstrcat(cmd->tmp_pool, cmd->argv[0],
-         ": unknown classifier used: '", cmd->argv[2], "'", NULL));
+    if (strcasecmp(cmd->argv[2], "user") != 0 &&
+        strcasecmp(cmd->argv[2], "group") != 0 &&
+        strcasecmp(cmd->argv[2], "class") != 0) {
+      CONF_ERROR(cmd, pstrcat(cmd->tmp_pool, cmd->argv[0],
+        ": unknown classifier used: '", cmd->argv[2], "'", NULL));
     }
   }
 
@@ -3976,8 +4015,9 @@ MODRET set_useftpusers(cmd_rec *cmd) {
   CHECK_CONF(cmd, CONF_ROOT|CONF_VIRTUAL|CONF_GLOBAL|CONF_ANON);
 
   bool = get_boolean(cmd, 1);
-  if (bool == -1)
+  if (bool == -1) {
     CONF_ERROR(cmd, "expected Boolean parameter");
+  }
 
   c = add_config_param(cmd->argv[0], 1, NULL);
   c->argv[0] = pcalloc(c->pool, sizeof(unsigned char));
@@ -3989,7 +4029,7 @@ MODRET set_useftpusers(cmd_rec *cmd) {
 
 /* usage: UseLastlog on|off */
 MODRET set_uselastlog(cmd_rec *cmd) {
-#ifdef PR_USE_LASTLOG
+#if defined(PR_USE_LASTLOG)
   int bool;
   config_rec *c;
 
@@ -3997,8 +4037,9 @@ MODRET set_uselastlog(cmd_rec *cmd) {
   CHECK_CONF(cmd, CONF_ROOT|CONF_VIRTUAL|CONF_GLOBAL);
 
   bool = get_boolean(cmd, 1);
-  if (bool == -1)
+  if (bool == -1) {
     CONF_ERROR(cmd, "expected Boolean parameter");
+  }
 
   c = add_config_param(cmd->argv[0], 1, NULL);
   c->argv[0] = pcalloc(c->pool, sizeof(unsigned char));
@@ -4046,8 +4087,9 @@ MODRET set_userdirroot(cmd_rec *cmd) {
   CHECK_CONF(cmd, CONF_ANON);
 
   bool = get_boolean(cmd, 1);
-  if (bool == -1)
+  if (bool == -1) {
     CONF_ERROR(cmd, "expected Boolean parameter");
+  }
 
   c = add_config_param(cmd->argv[0], 1, NULL);
   c->argv[0] = pcalloc(c->pool, sizeof(unsigned char));
@@ -4180,4 +4222,3 @@ module auth_module = {
   /* Session initialization function */
   auth_sess_init
 };
-

@@ -90,6 +90,7 @@ sub xferlog_retr_ascii_ok {
 
     AuthUserFile => $setup->{auth_user_file},
     AuthGroupFile => $setup->{auth_group_file},
+    AuthOrder => 'mod_auth_file.c',
 
     TransferLog => $xfer_log,
 
@@ -228,6 +229,7 @@ sub xferlog_retr_binary_ok {
 
     AuthUserFile => $setup->{auth_user_file},
     AuthGroupFile => $setup->{auth_group_file},
+    AuthOrder => 'mod_auth_file.c',
 
     TransferLog => $xfer_log,
 
@@ -377,6 +379,7 @@ sub xferlog_retr_aborted {
 
     AuthUserFile => $setup->{auth_user_file},
     AuthGroupFile => $setup->{auth_group_file},
+    AuthOrder => 'mod_auth_file.c',
 
     # Have the file being downloaded be sent in 1KB chunks, to slow the
     # download down
@@ -513,6 +516,7 @@ sub xferlog_stor_ascii_ok {
 
     AuthUserFile => $setup->{auth_user_file},
     AuthGroupFile => $setup->{auth_group_file},
+    AuthOrder => 'mod_auth_file.c',
 
     TransferLog => $xfer_log,
 
@@ -651,6 +655,7 @@ sub xferlog_stor_binary_ok {
 
     AuthUserFile => $setup->{auth_user_file},
     AuthGroupFile => $setup->{auth_group_file},
+    AuthOrder => 'mod_auth_file.c',
 
     TransferLog => $xfer_log,
 
@@ -789,6 +794,7 @@ sub xferlog_stor_aborted {
 
     AuthUserFile => $setup->{auth_user_file},
     AuthGroupFile => $setup->{auth_group_file},
+    AuthOrder => 'mod_auth_file.c',
 
     TransferLog => $xfer_log,
 
@@ -949,6 +955,7 @@ sub xferlog_stor_enospc_bug3895 {
 
     AuthUserFile => $auth_user_file,
     AuthGroupFile => $auth_group_file,
+    AuthOrder => 'mod_auth_file.c',
 
     TransferLog => $xfer_log,
 
@@ -1111,6 +1118,7 @@ sub xferlog_dele_ok {
 
     AuthUserFile => $setup->{auth_user_file},
     AuthGroupFile => $setup->{auth_group_file},
+    AuthOrder => 'mod_auth_file.c',
 
     TransferLog => $xfer_log,
 
@@ -1274,6 +1282,7 @@ sub xferlog_device_full_for_log {
 
     AuthUserFile => $auth_user_file,
     AuthGroupFile => $auth_group_file,
+    AuthOrder => 'mod_auth_file.c',
 
     TransferLog => $xfer_log,
 
@@ -1386,6 +1395,7 @@ sub xferlog_device_full_for_upload {
 
     AuthUserFile => $auth_user_file,
     AuthGroupFile => $auth_group_file,
+    AuthOrder => 'mod_auth_file.c',
 
     AllowOverwrite => 'on',
     TransferLog => $xfer_log,

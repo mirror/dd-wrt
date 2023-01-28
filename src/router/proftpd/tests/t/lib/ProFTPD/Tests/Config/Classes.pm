@@ -171,6 +171,7 @@ sub class_from_all_allow {
 
     AuthUserFile => $auth_user_file,
     AuthGroupFile => $auth_group_file,
+    AuthOrder => 'mod_auth_file.c',
 
     Limit => {
       LOGIN => {
@@ -298,6 +299,7 @@ sub class_from_none_deny {
 
     AuthUserFile => $auth_user_file,
     AuthGroupFile => $auth_group_file,
+    AuthOrder => 'mod_auth_file.c',
 
     Limit => {
       LOGIN => {
@@ -429,6 +431,7 @@ sub class_from_ipaddr_allow {
 
     AuthUserFile => $auth_user_file,
     AuthGroupFile => $auth_group_file,
+    AuthOrder => 'mod_auth_file.c',
 
     Limit => {
       LOGIN => {
@@ -556,6 +559,7 @@ sub class_from_ipaddr_deny {
 
     AuthUserFile => $auth_user_file,
     AuthGroupFile => $auth_group_file,
+    AuthOrder => 'mod_auth_file.c',
 
     Limit => {
       LOGIN => {
@@ -687,6 +691,7 @@ sub class_from_negated_ipaddr_allow {
 
     AuthUserFile => $auth_user_file,
     AuthGroupFile => $auth_group_file,
+    AuthOrder => 'mod_auth_file.c',
 
     Limit => {
       LOGIN => {
@@ -814,6 +819,7 @@ sub class_from_negated_ipaddr_deny {
 
     AuthUserFile => $auth_user_file,
     AuthGroupFile => $auth_group_file,
+    AuthOrder => 'mod_auth_file.c',
 
     Limit => {
       LOGIN => {
@@ -945,6 +951,7 @@ sub class_from_netmask_allow {
 
     AuthUserFile => $auth_user_file,
     AuthGroupFile => $auth_group_file,
+    AuthOrder => 'mod_auth_file.c',
 
     Limit => {
       LOGIN => {
@@ -1072,6 +1079,7 @@ sub class_from_netmask_deny {
 
     AuthUserFile => $auth_user_file,
     AuthGroupFile => $auth_group_file,
+    AuthOrder => 'mod_auth_file.c',
 
     Limit => {
       LOGIN => {
@@ -1203,6 +1211,7 @@ sub class_from_negated_netmask_allow {
 
     AuthUserFile => $auth_user_file,
     AuthGroupFile => $auth_group_file,
+    AuthOrder => 'mod_auth_file.c',
 
     Limit => {
       LOGIN => {
@@ -1330,6 +1339,7 @@ sub class_from_negated_netmask_deny {
 
     AuthUserFile => $auth_user_file,
     AuthGroupFile => $auth_group_file,
+    AuthOrder => 'mod_auth_file.c',
 
     Limit => {
       LOGIN => {
@@ -1461,6 +1471,8 @@ sub class_from_dns_name_allow {
 
     AuthUserFile => $auth_user_file,
     AuthGroupFile => $auth_group_file,
+    AuthOrder => 'mod_auth_file.c',
+
     UseReverseDNS => 'on',
 
     Limit => {
@@ -1589,6 +1601,8 @@ sub class_from_dns_name_deny {
 
     AuthUserFile => $auth_user_file,
     AuthGroupFile => $auth_group_file,
+    AuthOrder => 'mod_auth_file.c',
+
     UseReverseDNS => 'on',
 
     Limit => {
@@ -1721,6 +1735,8 @@ sub class_from_negated_dns_name_allow {
 
     AuthUserFile => $auth_user_file,
     AuthGroupFile => $auth_group_file,
+    AuthOrder => 'mod_auth_file.c',
+
     UseReverseDNS => 'on',
 
     Limit => {
@@ -1849,6 +1865,8 @@ sub class_from_negated_dns_name_deny {
 
     AuthUserFile => $auth_user_file,
     AuthGroupFile => $auth_group_file,
+    AuthOrder => 'mod_auth_file.c',
+
     UseReverseDNS => 'on',
 
     Limit => {
@@ -1981,6 +1999,8 @@ sub class_from_dns_glob_allow {
 
     AuthUserFile => $auth_user_file,
     AuthGroupFile => $auth_group_file,
+    AuthOrder => 'mod_auth_file.c',
+
     UseReverseDNS => 'on',
 
     Limit => {
@@ -2109,6 +2129,8 @@ sub class_from_dns_glob_deny {
 
     AuthUserFile => $auth_user_file,
     AuthGroupFile => $auth_group_file,
+    AuthOrder => 'mod_auth_file.c',
+
     UseReverseDNS => 'on',
 
     Limit => {
@@ -2241,6 +2263,8 @@ sub class_from_negated_dns_glob_allow {
 
     AuthUserFile => $auth_user_file,
     AuthGroupFile => $auth_group_file,
+    AuthOrder => 'mod_auth_file.c',
+
     UseReverseDNS => 'on',
 
     Limit => {
@@ -2369,6 +2393,8 @@ sub class_from_negated_dns_glob_deny {
 
     AuthUserFile => $auth_user_file,
     AuthGroupFile => $auth_group_file,
+    AuthOrder => 'mod_auth_file.c',
+
     UseReverseDNS => 'on',
 
     Limit => {
@@ -2501,6 +2527,7 @@ sub class_satisfy_any {
 
     AuthUserFile => $auth_user_file,
     AuthGroupFile => $auth_group_file,
+    AuthOrder => 'mod_auth_file.c',
 
     Limit => {
       LOGIN => {
@@ -2635,6 +2662,8 @@ sub class_satisfy_all {
 
     AuthUserFile => $auth_user_file,
     AuthGroupFile => $auth_group_file,
+    AuthOrder => 'mod_auth_file.c',
+
     UseReverseDNS => 'on',
 
     Limit => {

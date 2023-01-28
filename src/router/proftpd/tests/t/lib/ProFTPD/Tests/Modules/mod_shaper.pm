@@ -131,6 +131,7 @@ sub shaper_sighup {
 
     AuthUserFile => $auth_user_file,
     AuthGroupFile => $auth_group_file,
+    AuthOrder => 'mod_auth_file.c',
 
     IfModules => {
       'mod_shaper.c' => {
@@ -209,6 +210,8 @@ sub shaper_queue_dos {
 
     AuthUserFile => $auth_user_file,
     AuthGroupFile => $auth_group_file,
+    AuthOrder => 'mod_auth_file.c',
+
     TimeoutIdle => $test_timeout + 10,
 
     IfModules => {
@@ -349,6 +352,7 @@ sub shaper_resumed_download_bug3928 {
 
     AuthUserFile => $auth_user_file,
     AuthGroupFile => $auth_group_file,
+    AuthOrder => 'mod_auth_file.c',
 
     AllowRetrieveRestart => 'on',
     TimeoutIdle => $test_timeout + 10,
@@ -488,6 +492,7 @@ sub shaper_sighup_shaperlog_bug4077 {
 
     AuthUserFile => $auth_user_file,
     AuthGroupFile => $auth_group_file,
+    AuthOrder => 'mod_auth_file.c',
 
     IfModules => {
       'mod_shaper.c' => {

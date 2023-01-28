@@ -790,8 +790,10 @@ ADDL_CPPFLAGS
 BUILD_STATIC_MODULE_OBJS
 BUILD_STATIC_MODULE_ARCHIVES
 BUILD_SHARED_MODULE_OBJS
+STATIC_MODULE_SRCS
 STATIC_MODULE_OBJS
 STATIC_MODULE_DIRS
+SHARED_MODULE_SRCS
 SHARED_MODULE_OBJS
 SHARED_MODULE_LIBS
 SHARED_MODULE_DIRS
@@ -963,7 +965,9 @@ enable_memcache
 enable_nls
 enable_nonblocking_log_open
 enable_ncurses
+enable_openssl_api_compat
 enable_pcre
+enable_pcre2
 enable_redis
 enable_force_setpassent
 enable_ipv6
@@ -1658,7 +1662,13 @@ Optional Features:
 
   --disable-ncurses       disable use of ncurses (default=no)
 
+  --disable-openssl-api-compat
+                          disable defining OpenSSL API compatibility
+                          (default=no)
+
   --enable-pcre           enable use of PCRE for POSIX regular expressions
+                          rather than the system library (default=no)
+  --enable-pcre2          enable use of PCRE2 for POSIX regular expressions
                           rather than the system library (default=no)
   --enable-redis          enable support for Redis (default=no)
 
@@ -3034,6 +3044,7 @@ ac_compiler_gnu=$ac_cv_c_compiler_gnu
 
 
 ac_core_modules="mod_core.o mod_xfer.o mod_rlimit.o mod_auth_unix.o mod_auth_file.o mod_auth.o mod_ls.o mod_log.o mod_site.o mod_delay.o mod_facts.o"
+
 ac_build_core_modules="modules/mod_core.o modules/mod_xfer.o modules/mod_rlimit.o modules/mod_auth_unix.o modules/mod_auth_file.o modules/mod_auth.o modules/mod_ls.o modules/mod_log.o modules/mod_site.o modules/mod_delay.o modules/mod_facts.o"
 
 ac_aux_dir=
@@ -4609,13 +4620,13 @@ if ${lt_cv_nm_interface+:} false; then :
 else
   lt_cv_nm_interface="BSD nm"
   echo "int some_variable = 0;" > conftest.$ac_ext
-  (eval echo "\"\$as_me:4612: $ac_compile\"" >&5)
+  (eval echo "\"\$as_me:4623: $ac_compile\"" >&5)
   (eval "$ac_compile" 2>conftest.err)
   cat conftest.err >&5
-  (eval echo "\"\$as_me:4615: $NM \\\"conftest.$ac_objext\\\"\"" >&5)
+  (eval echo "\"\$as_me:4626: $NM \\\"conftest.$ac_objext\\\"\"" >&5)
   (eval "$NM \"conftest.$ac_objext\"" 2>conftest.err > conftest.out)
   cat conftest.err >&5
-  (eval echo "\"\$as_me:4618: output\"" >&5)
+  (eval echo "\"\$as_me:4629: output\"" >&5)
   cat conftest.out >&5
   if $GREP 'External.*some_variable' conftest.out > /dev/null; then
     lt_cv_nm_interface="MS dumpbin"
@@ -5821,7 +5832,7 @@ ia64-*-hpux*)
   ;;
 *-*-irix6*)
   # Find out which ABI we are using.
-  echo '#line 5824 "configure"' > conftest.$ac_ext
+  echo '#line 5835 "configure"' > conftest.$ac_ext
   if { { eval echo "\"\$as_me\":${as_lineno-$LINENO}: \"$ac_compile\""; } >&5
   (eval $ac_compile) 2>&5
   ac_status=$?
@@ -7349,11 +7360,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:7352: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:7363: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>conftest.err)
    ac_status=$?
    cat conftest.err >&5
-   echo "$as_me:7356: \$? = $ac_status" >&5
+   echo "$as_me:7367: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s "$ac_outfile"; then
      # The compiler can only warn and ignore the option if not recognized
      # So say no if there are warnings other than the usual output.
@@ -7688,11 +7699,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:7691: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:7702: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>conftest.err)
    ac_status=$?
    cat conftest.err >&5
-   echo "$as_me:7695: \$? = $ac_status" >&5
+   echo "$as_me:7706: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s "$ac_outfile"; then
      # The compiler can only warn and ignore the option if not recognized
      # So say no if there are warnings other than the usual output.
@@ -7793,11 +7804,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:7796: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:7807: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>out/conftest.err)
    ac_status=$?
    cat out/conftest.err >&5
-   echo "$as_me:7800: \$? = $ac_status" >&5
+   echo "$as_me:7811: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s out/conftest2.$ac_objext
    then
      # The compiler can only warn and ignore the option if not recognized
@@ -7848,11 +7859,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:7851: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:7862: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>out/conftest.err)
    ac_status=$?
    cat out/conftest.err >&5
-   echo "$as_me:7855: \$? = $ac_status" >&5
+   echo "$as_me:7866: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s out/conftest2.$ac_objext
    then
      # The compiler can only warn and ignore the option if not recognized
@@ -10228,7 +10239,7 @@ else
   lt_dlunknown=0; lt_dlno_uscore=1; lt_dlneed_uscore=2
   lt_status=$lt_dlunknown
   cat > conftest.$ac_ext <<_LT_EOF
-#line 10231 "configure"
+#line 10242 "configure"
 #include "confdefs.h"
 
 #if HAVE_DLFCN_H
@@ -10324,7 +10335,7 @@ else
   lt_dlunknown=0; lt_dlno_uscore=1; lt_dlneed_uscore=2
   lt_status=$lt_dlunknown
   cat > conftest.$ac_ext <<_LT_EOF
-#line 10327 "configure"
+#line 10338 "configure"
 #include "confdefs.h"
 
 #if HAVE_DLFCN_H
@@ -13500,11 +13511,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:13503: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:13514: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>conftest.err)
    ac_status=$?
    cat conftest.err >&5
-   echo "$as_me:13507: \$? = $ac_status" >&5
+   echo "$as_me:13518: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s "$ac_outfile"; then
      # The compiler can only warn and ignore the option if not recognized
      # So say no if there are warnings other than the usual output.
@@ -13599,11 +13610,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:13602: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:13613: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>out/conftest.err)
    ac_status=$?
    cat out/conftest.err >&5
-   echo "$as_me:13606: \$? = $ac_status" >&5
+   echo "$as_me:13617: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s out/conftest2.$ac_objext
    then
      # The compiler can only warn and ignore the option if not recognized
@@ -13651,11 +13662,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:13654: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:13665: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>out/conftest.err)
    ac_status=$?
    cat out/conftest.err >&5
-   echo "$as_me:13658: \$? = $ac_status" >&5
+   echo "$as_me:13669: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s out/conftest2.$ac_objext
    then
      # The compiler can only warn and ignore the option if not recognized
@@ -14932,7 +14943,7 @@ if test $ac_cv_c_compiler_gnu = no -a "$OSTYPE" = "-DHPUX10"; then
   CFLAGS="$CFLAGS -Ae"
 fi
 
-LDFLAGS="-L\$(top_srcdir)/lib -L\$(top_builddir)/lib $LDFLAGS"
+LDFLAGS="-Wl,-L\$(top_srcdir)/lib,-L\$(top_builddir)/lib $LDFLAGS"
 
 # AIX has issues with the -rdynamic linker flag.  How many different AIX
 # versions should we support here?
@@ -16309,7 +16320,7 @@ else
   lt_dlunknown=0; lt_dlno_uscore=1; lt_dlneed_uscore=2
   lt_status=$lt_dlunknown
   cat > conftest.$ac_ext <<_LT_EOF
-#line 16311 "configure"
+#line 16322 "configure"
 #include "confdefs.h"
 
 #if HAVE_DLFCN_H
@@ -17225,10 +17236,20 @@ if test "${enable_ncurses+set}" = set; then :
 fi
 
 
+# Check whether --enable-openssl-api-compat was given.
+if test "${enable_openssl_api_compat+set}" = set; then :
+  enableval=$enable_openssl_api_compat;
+fi
+
+
 # Check whether --enable-pcre was given.
 if test "${enable_pcre+set}" = set; then :
   enableval=$enable_pcre;
     if test x"$enableval" = xyes ; then
+      if test x"$enable_pcre2" = xyes ; then
+        as_fn_error $? "cannot support both PCRE and PCRE2 at the same time -- aborting" "$LINENO" 5
+      fi
+
 
 $as_echo "#define PR_USE_PCRE 1" >>confdefs.h
 
@@ -17242,8 +17263,6 @@ $as_echo "#define PR_USE_PCRE 1" >>confdefs.h
       # fiddle with CPPFLAGS, LDFLAGS
       CPPFLAGS="$CPPFLAGS $ac_build_addl_includes"
       LDFLAGS="$LDFLAGS $ac_build_addl_libdirs"
-
-            LIBS=`echo "$LIBS" | sed -e 's/-lsupp//g'`;
       LIBS="$LIBS -lpcre -lpcreposix"
 
       { $as_echo "$as_me:${as_lineno-$LINENO}: checking for PCRE's pcre_free_study" >&5
@@ -17290,7 +17309,130 @@ fi
 rm -f core conftest.err conftest.$ac_objext \
     conftest$ac_exeext conftest.$ac_ext
 
-      # restore CPPFLAGS, LDFLAGS
+      # restore CPPFLAGS, LDFLAGS, LIBS
+      CPPFLAGS="$saved_cppflags"
+      LDFLAGS="$saved_ldflags"
+      LIBS="$saved_libs"
+    fi
+
+fi
+
+
+# Check whether --enable-pcre2 was given.
+if test "${enable_pcre2+set}" = set; then :
+  enableval=$enable_pcre2;
+    if test x"$enableval" = xyes ; then
+      if test x"$enable_pcre" = xyes ; then
+        as_fn_error $? "cannot support both PCRE and PCRE2 at the same time -- aborting" "$LINENO" 5
+      fi
+
+
+$as_echo "#define PR_USE_PCRE2 1" >>confdefs.h
+
+      ac_build_addl_libs="$ac_build_addl_libs -lpcre2-posix -lpcre2-8"
+
+      # Check for other PCRE2-specific functionality here
+      saved_ldflags="$LDFLAGS"
+      saved_libs="$LIBS"
+      saved_cppflags="$CPPFLAGS"
+
+      # fiddle with CPPFLAGS, LDFLAGS
+      CPPFLAGS="$CPPFLAGS $ac_build_addl_includes"
+      LDFLAGS="$LDFLAGS $ac_build_addl_libdirs"
+      LIBS="$LIBS -lpcre2-8 -lpcre2-posix"
+
+      { $as_echo "$as_me:${as_lineno-$LINENO}: checking for PCRE2's pcre2_jit_compile" >&5
+$as_echo_n "checking for PCRE2's pcre2_jit_compile... " >&6; }
+      cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+ #ifdef HAVE_STDDEF_H
+          # include <stddef.h>
+          #endif
+          #ifdef HAVE_STDLIB_H
+          # include <stdlib.h>
+          #endif
+          #ifdef HAVE_SYS_TYPES_H
+          # include <sys/types.h>
+          #endif
+          #define PCRE2_CODE_UNIT_WIDTH 8
+          #include <pcre2.h>
+
+int
+main ()
+{
+
+          pcre2_code *code = NULL;
+          (void) pcre2_jit_compile(code, 0);
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_link "$LINENO"; then :
+
+          { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+
+$as_echo "#define HAVE_PCRE2_PCRE2_JIT_COMPILE 1" >>confdefs.h
+
+
+else
+
+          { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+
+
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+
+      { $as_echo "$as_me:${as_lineno-$LINENO}: checking for PCRE2's POSIX wrappers" >&5
+$as_echo_n "checking for PCRE2's POSIX wrappers... " >&6; }
+      cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+ #ifdef HAVE_STDDEF_H
+          # include <stddef.h>
+          #endif
+          #ifdef HAVE_STDLIB_H
+          # include <stdlib.h>
+          #endif
+          #ifdef HAVE_SYS_TYPES_H
+          # include <sys/types.h>
+          #endif
+          #define PCRE2_CODE_UNIT_WIDTH 8
+          #include <pcre2.h>
+          #include <pcre2posix.h>
+
+int
+main ()
+{
+
+          regex_t *re = NULL;
+          (void) pcre2_regcomp(re, NULL, 0);
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_link "$LINENO"; then :
+
+          { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+
+$as_echo "#define HAVE_PCRE2_PCRE2_REGCOMP 1" >>confdefs.h
+
+
+else
+
+          { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+
+
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+
+      # restore CPPFLAGS, LDFLAGS, LIBS
       CPPFLAGS="$saved_cppflags"
       LDFLAGS="$saved_ldflags"
       LIBS="$saved_libs"
@@ -17324,8 +17466,6 @@ fi
       # fiddle with CPPFLAGS, LDFLAGS
       CPPFLAGS="$CPPFLAGS $ac_build_addl_includes"
       LDFLAGS="$LDFLAGS $ac_build_addl_libdirs"
-
-            LIBS=`echo "$LIBS" | sed -e 's/-lsupp//g'`;
       LIBS="$LIBS -lhiredis"
 
       { $as_echo "$as_me:${as_lineno-$LINENO}: checking for Hiredis' redisReconnect" >&5
@@ -17369,7 +17509,7 @@ fi
 rm -f core conftest.err conftest.$ac_objext \
     conftest$ac_exeext conftest.$ac_ext
 
-      # restore CPPFLAGS, LDFLAGS
+      # restore CPPFLAGS, LDFLAGS, LIBS
       CPPFLAGS="$saved_cppflags"
       LDFLAGS="$saved_ldflags"
       LIBS="$saved_libs"
@@ -17395,6 +17535,9 @@ pr_use_openssl=""
 if test "${enable_openssl+set}" = set; then :
   enableval=$enable_openssl;  if test x"$enableval" = xno ; then
       pr_use_openssl="no"
+
+    elif test x"$enableval" = xyes ; then
+      pr_use_openssl="yes"
     fi
 
 fi
@@ -17809,6 +17952,15 @@ $as_echo "no" >&6; }
       if test `echo $enableval | grep -c coverage` = "1" ; then
         pr_devel_cflags="-DPR_DEVEL_COVERAGE --coverage $pr_devel_cflags"
         pr_devel_libs="--coverage $pr_devel_libs"
+      fi
+
+      if test `echo $enableval | grep -c fortify` = "1" ; then
+        pr_devel_cflags="-D_FORTIFY_SOURCE=2 $pr_devel_cflags"
+
+        # In order for `-D_FORTIFY_SOURCE=2` to work, we also need to
+        # disable some of the default --enable-devel flags, specifically `-O0`;
+        # we can use `-O2` instead.
+        pr_devel_cflags=`echo "$pr_devel_cflags" | sed -e 's/-O0/-O2/'`
       fi
 
       if test `echo $enableval | grep -c nodaemon` = "1" ; then
@@ -19746,7 +19898,7 @@ fi
 done
 
 
-for ac_header in netinet/tcp.h arpa/inet.h idna.h libintl.h
+for ac_header in netinet/tcp.h arpa/inet.h idn2.h idna.h libintl.h
 do :
   as_ac_Header=`$as_echo "ac_cv_header_$ac_header" | $as_tr_sh`
 ac_fn_c_check_header_mongrel "$LINENO" "$ac_header" "$as_ac_Header" "$ac_includes_default"
@@ -20060,6 +20212,27 @@ else
 cat >>confdefs.h <<_ACEOF
 #define off_t long int
 _ACEOF
+
+fi
+
+ac_fn_c_check_type "$LINENO" "u_int8_t" "ac_cv_type_u_int8_t" "$ac_includes_default"
+if test "x$ac_cv_type_u_int8_t" = xyes; then :
+
+$as_echo "#define HAVE_U_INT8_T 1" >>confdefs.h
+
+fi
+
+ac_fn_c_check_type "$LINENO" "u_int16_t" "ac_cv_type_u_int16_t" "$ac_includes_default"
+if test "x$ac_cv_type_u_int16_t" = xyes; then :
+
+$as_echo "#define HAVE_U_INT16_T 1" >>confdefs.h
+
+fi
+
+ac_fn_c_check_type "$LINENO" "u_int32_t" "ac_cv_type_u_int32_t" "$ac_includes_default"
+if test "x$ac_cv_type_u_int32_t" = xyes; then :
+
+$as_echo "#define HAVE_U_INT32_T 1" >>confdefs.h
 
 fi
 
@@ -21272,6 +21445,47 @@ $as_echo "no" >&6; }
 fi
 rm -f core conftest.err conftest.$ac_objext \
     conftest$ac_exeext conftest.$ac_ext
+
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for idn2_to_ascii_8z" >&5
+$as_echo_n "checking for idn2_to_ascii_8z... " >&6; }
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+    #include <sys/types.h>
+    #ifdef HAVE_IDN2_H
+    #  include <idn2.h>
+    #endif
+
+int
+main ()
+{
+
+    int flags = 0, res = 0;
+    const char *input = NULL;
+    char *output = NULL;
+    res = idn2_to_ascii_8z(input, &output, flags);
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"; then :
+
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+
+$as_echo "#define HAVE_IDN2_TO_ASCII_8Z 1" >>confdefs.h
+
+    MAIN_LIBS="$MAIN_LIBS -lidn2"
+
+else
+
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+
+
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
 
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for idna_to_ascii_8z" >&5
 $as_echo_n "checking for idna_to_ascii_8z... " >&6; }
@@ -23456,7 +23670,13 @@ $as_echo "#define PR_USE_NONBLOCKING_LOG_OPEN 1" >>confdefs.h
 
 fi
 
-if test x"$enable_ident" == xyes ; then
+if test x"$enable_openssl_api_compat" != xno; then
+
+$as_echo "#define PR_USE_OPENSSL_API_COMPAT 1" >>confdefs.h
+
+fi
+
+if test x"$enable_ident" = xyes ; then
   ac_static_modules="mod_ident.o $ac_static_modules"
   ac_build_static_modules="modules/mod_ident.o $ac_build_static_modules"
 fi
@@ -23854,8 +24074,6 @@ rm -f core *.core core.conftest.* gmon.out bb.out conftest$ac_exeext \
 fi
 
 
-LIBS="-lsupp $LIBS"
-
 ac_shared_module_dirs=
 ac_static_module_dirs=
 
@@ -24009,8 +24227,6 @@ if test x"$pr_use_mysql" = xyes; then
 
     CPPFLAGS="$CPPFLAGS $ac_build_addl_includes"
   LDFLAGS="$LDFLAGS $ac_build_addl_libdirs"
-
-    LIBS=`echo "$LIBS" | sed -e 's/-lsupp//g'`;
   LIBS="$LIBS -lm -lmysqlclient -lz"
 
   { $as_echo "$as_me:${as_lineno-$LINENO}: checking for mysql_get_option" >&5
@@ -24343,8 +24559,6 @@ $as_echo "#define PR_USE_OPENSSL 1" >>confdefs.h
   { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether OpenSSL is compiled with FIPS support" >&5
 $as_echo_n "checking whether OpenSSL is compiled with FIPS support... " >&6; }
   saved_libs="$LIBS"
-
-    LIBS=`echo "$LIBS" | sed -e 's/-lsupp//g'`;
   LIBS="$LIBS -lcrypto"
 
   if test "$cross_compiling" = yes; then :
@@ -24384,8 +24598,6 @@ fi
   { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether linking with OpenSSL functions succeeds" >&5
 $as_echo_n "checking whether linking with OpenSSL functions succeeds... " >&6; }
   saved_libs="$LIBS"
-
-    LIBS=`echo "$LIBS" | sed -e 's/-lsupp//g'`;
   LIBS="-lcrypto $LIBS"
 
   cat confdefs.h - <<_ACEOF >conftest.$ac_ext
@@ -24452,8 +24664,6 @@ rm -f core conftest.err conftest.$ac_objext \
       { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether linking with OpenSSL functions requires -lz" >&5
 $as_echo_n "checking whether linking with OpenSSL functions requires -lz... " >&6; }
       saved_libs="$LIBS"
-
-            LIBS=`echo "$LIBS" | sed -e 's/-lsupp//g'`;
       LIBS="-lcrypto -lz $LIBS"
 
       cat confdefs.h - <<_ACEOF >conftest.$ac_ext
@@ -24500,8 +24710,6 @@ rm -f core conftest.err conftest.$ac_objext \
   { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether OpenSSL has complete ECC support" >&5
 $as_echo_n "checking whether OpenSSL has complete ECC support... " >&6; }
   saved_libs="$LIBS"
-
-    LIBS=`echo "$LIBS" | sed -e 's/-lsupp//g'`;
   LIBS="-lcrypto $LIBS"
 
   cat confdefs.h - <<_ACEOF >conftest.$ac_ext
@@ -24550,8 +24758,6 @@ rm -f core conftest.err conftest.$ac_objext \
   { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether OpenSSL has EVP_CipherInit_ex support" >&5
 $as_echo_n "checking whether OpenSSL has EVP_CipherInit_ex support... " >&6; }
   saved_libs="$LIBS"
-
-    LIBS=`echo "$LIBS" | sed -e 's/-lsupp//g'`;
   LIBS="-lcrypto $LIBS"
 
   cat confdefs.h - <<_ACEOF >conftest.$ac_ext
@@ -24591,8 +24797,6 @@ rm -f core conftest.err conftest.$ac_objext \
   { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether OpenSSL has ALPN support" >&5
 $as_echo_n "checking whether OpenSSL has ALPN support... " >&6; }
   saved_libs="$LIBS"
-
-    LIBS=`echo "$LIBS" | sed -e 's/-lsupp//g'`;
   LIBS="-lcrypto -lssl $LIBS"
 
   cat confdefs.h - <<_ACEOF >conftest.$ac_ext
@@ -24639,8 +24843,6 @@ rm -f core conftest.err conftest.$ac_objext \
   { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether OpenSSL has NPN support" >&5
 $as_echo_n "checking whether OpenSSL has NPN support... " >&6; }
   saved_libs="$LIBS"
-
-    LIBS=`echo "$LIBS" | sed -e 's/-lsupp//g'`;
   LIBS="-lcrypto -lssl $LIBS"
 
   cat confdefs.h - <<_ACEOF >conftest.$ac_ext
@@ -24687,8 +24889,6 @@ rm -f core conftest.err conftest.$ac_objext \
   { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether OpenSSL has OCSP support" >&5
 $as_echo_n "checking whether OpenSSL has OCSP support... " >&6; }
   saved_libs="$LIBS"
-
-    LIBS=`echo "$LIBS" | sed -e 's/-lsupp//g'`;
   LIBS="-lcrypto -lssl $LIBS"
 
   cat confdefs.h - <<_ACEOF >conftest.$ac_ext
@@ -24737,8 +24937,6 @@ rm -f core conftest.err conftest.$ac_objext \
   { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether OpenSSL has SSL num tickets support" >&5
 $as_echo_n "checking whether OpenSSL has SSL num tickets support... " >&6; }
   saved_libs="$LIBS"
-
-    LIBS=`echo "$LIBS" | sed -e 's/-lsupp//g'`;
   LIBS="-lcrypto -lssl $LIBS"
 
   cat confdefs.h - <<_ACEOF >conftest.$ac_ext
@@ -24778,8 +24976,6 @@ rm -f core conftest.err conftest.$ac_objext \
   { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether OpenSSL has SSL read ahead support" >&5
 $as_echo_n "checking whether OpenSSL has SSL read ahead support... " >&6; }
   saved_libs="$LIBS"
-
-    LIBS=`echo "$LIBS" | sed -e 's/-lsupp//g'`;
   LIBS="-lcrypto -lssl $LIBS"
 
   cat confdefs.h - <<_ACEOF >conftest.$ac_ext
@@ -24819,8 +25015,6 @@ rm -f core conftest.err conftest.$ac_objext \
   { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether OpenSSL has SSL session ID context set support" >&5
 $as_echo_n "checking whether OpenSSL has SSL session ID context set support... " >&6; }
   saved_libs="$LIBS"
-
-    LIBS=`echo "$LIBS" | sed -e 's/-lsupp//g'`;
   LIBS="-lcrypto -lssl $LIBS"
 
   cat confdefs.h - <<_ACEOF >conftest.$ac_ext
@@ -24860,8 +25054,6 @@ rm -f core conftest.err conftest.$ac_objext \
   { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether OpenSSL has SSL session ticket callback support" >&5
 $as_echo_n "checking whether OpenSSL has SSL session ticket callback support... " >&6; }
   saved_libs="$LIBS"
-
-    LIBS=`echo "$LIBS" | sed -e 's/-lsupp//g'`;
   LIBS="-lcrypto -lssl $LIBS"
 
   cat confdefs.h - <<_ACEOF >conftest.$ac_ext
@@ -24933,6 +25125,73 @@ rm -f core conftest.err conftest.$ac_objext \
   if test x"$pr_use_pthread_for_openssl" = xyes ; then
     LIBS="$LIBS -pthread"
   fi
+
+  if test x"$enable_redis" = xyes; then
+    ac_fn_c_check_header_compile "$LINENO" "hiredis/hiredis_ssl.h" "ac_cv_header_hiredis_hiredis_ssl_h" "
+        #ifdef HAVE_HIREDIS_HIREDIS_H
+        # include <hiredis/hiredis.h>
+        #endif
+
+
+"
+if test "x$ac_cv_header_hiredis_hiredis_ssl_h" = xyes; then :
+
+$as_echo "#define HAVE_HIREDIS_HIREDIS_SSL_H 1" >>confdefs.h
+
+
+fi
+
+
+
+    saved_libs="$LIBS"
+    LIBS="-lcrypto -lssl $LIBS"
+    { $as_echo "$as_me:${as_lineno-$LINENO}: checking for redisInitiateSSL in -lhiredis_ssl" >&5
+$as_echo_n "checking for redisInitiateSSL in -lhiredis_ssl... " >&6; }
+if ${ac_cv_lib_hiredis_ssl_redisInitiateSSL+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  ac_check_lib_save_LIBS=$LIBS
+LIBS="-lhiredis_ssl  $LIBS"
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+/* Override any GCC internal prototype to avoid an error.
+   Use char because int might match the return type of a GCC
+   builtin and then its argument prototype would still apply.  */
+#ifdef __cplusplus
+extern "C"
+#endif
+char redisInitiateSSL ();
+int
+main ()
+{
+return redisInitiateSSL ();
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_link "$LINENO"; then :
+  ac_cv_lib_hiredis_ssl_redisInitiateSSL=yes
+else
+  ac_cv_lib_hiredis_ssl_redisInitiateSSL=no
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+LIBS=$ac_check_lib_save_LIBS
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_hiredis_ssl_redisInitiateSSL" >&5
+$as_echo "$ac_cv_lib_hiredis_ssl_redisInitiateSSL" >&6; }
+if test "x$ac_cv_lib_hiredis_ssl_redisInitiateSSL" = xyes; then :
+
+$as_echo "#define HAVE_HIREDIS_REDISINITIATESSL 1" >>confdefs.h
+
+       saved_libs="$saved_libs -lhiredis_ssl"
+
+fi
+
+
+    LIBS="$saved_libs"
+  fi
 fi
 
 if test x"$pr_use_postgres" = xyes; then
@@ -24944,8 +25203,6 @@ if test x"$pr_use_postgres" = xyes; then
   # fiddle with CPPFLAGS, LDFLAGS
   CPPFLAGS="$CPPFLAGS $ac_build_addl_includes"
   LDFLAGS="$LDFLAGS $ac_build_addl_libdirs"
-
-    LIBS=`echo "$LIBS" | sed -e 's/-lsupp//g'`;
   LIBS="$LIBS -lm -lpq"
 
   { $as_echo "$as_me:${as_lineno-$LINENO}: checking for Postgres's PQescapeStringConn" >&5
@@ -25085,7 +25342,7 @@ fi
 rm -f core conftest.err conftest.$ac_objext \
     conftest$ac_exeext conftest.$ac_ext
 
-  # restore CPPFLAGS, LDFLAGS
+  # restore CPPFLAGS, LDFLAGS, LIBS
   CPPFLAGS="$saved_cppflags"
   LDFLAGS="$saved_ldflags"
   LIBS="$saved_libs"
@@ -25314,11 +25571,16 @@ LIBRARIES="$ac_build_addl_libs"
 SHARED_MODULE_DIRS="$ac_shared_module_dirs"
 if test ! -z "$ac_shared_modules" ; then
   SHARED_MODULE_OBJS="$ac_shared_modules"
+  shared_module_sources=`echo "$ac_shared_modules" | sed -e "s/\.o/\.c/g"`
+  SHARED_MODULE_SRCS="$shared_modules_sources"
 else
   SHARED_MODULE_OBJS="\"\""
+  SHARED_MODULE_SRCS="\"\""
 fi
 STATIC_MODULE_DIRS="$ac_static_module_dirs"
 STATIC_MODULE_OBJS="$ac_core_modules $ac_static_modules"
+static_module_sources=`echo "$ac_core_modules $ac_static_modules" | sed -e "s/\.o/\.c/g"`
+STATIC_MODULE_SRCS="$static_module_sources"
 BUILD_SHARED_MODULE_OBJS="$ac_build_shared_modules"
 BUILD_STATIC_MODULE_ARCHIVES="$ac_build_static_module_archives"
 BUILD_STATIC_MODULE_OBJS="$ac_build_core_modules $ac_build_static_modules"
@@ -25406,6 +25668,19 @@ $as_echo_n "checking whether ${CC-cc} accepts -Wcomment... " >&6; }
      { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
 $as_echo "yes" >&6; }
      CFLAGS="$CFLAGS -Wcomment"
+   else
+     { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+   fi
+   rm -fr conftest*
+
+    { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether ${CC-cc} accepts -Wconstant-conversion" >&5
+$as_echo_n "checking whether ${CC-cc} accepts -Wconstant-conversion... " >&6; }
+   echo 'void f(){}' > conftest.c
+   if test -z "`${CC-cc} -c -Wconstant-conversion conftest.c 2>&1`"; then
+     { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+     CFLAGS="$CFLAGS -Wconstant-conversion"
    else
      { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
 $as_echo "no" >&6; }
@@ -25718,6 +25993,8 @@ my_libs="\"$LIBRARIES $LIBS\""
 cat >>confdefs.h <<_ACEOF
 #define PR_BUILD_LIBS $my_libs
 _ACEOF
+
+
 
 
 

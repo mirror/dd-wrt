@@ -1,6 +1,6 @@
 /*
  * ProFTPD - FTP server daemon
- * Copyright (c) 2017-2020 The ProFTPD Project team
+ * Copyright (c) 2017-2021 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -312,7 +312,14 @@ int redis_set_server(const char *server, int port, unsigned long flags,
   const char *password, const char *db_idx);
 int redis_set_server2(const char *server, int port, unsigned long flags,
   const char *username, const char *password, const char *db_idx);
+int redis_set_server3(const char *server, int port, unsigned long flags,
+  const char *username, const char *password, const char *db_idx,
+  int use_ssl, const char *ssl_cacert, const char *ssl_cert,
+  const char *ssl_key);
 int redis_set_sentinels(array_header *sentinels, const char *name);
+int redis_set_sentinels2(array_header *sentinels, const char *name,
+  int use_ssl, const char *ssl_cacert, const char *ssl_cert,
+  const char *ssl_key);
 int redis_set_timeouts(unsigned long connect_millis, unsigned long io_millis);
 
 int redis_clear(void);

@@ -1,6 +1,6 @@
 /*
  * ProFTPD - mod_sftp keystores
- * Copyright (c) 2008-2016 TJ Saunders
+ * Copyright (c) 2008-2022 TJ Saunders
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -80,7 +80,7 @@ int sftp_keystore_register_store(const char *store_type,
   }
 
   store = keystore_get_store(store_type, store_ktypes);
-  if (store) {
+  if (store != NULL) {
     errno = EEXIST;
     return -1;
   }
@@ -112,15 +112,16 @@ int sftp_keystore_unregister_store(const char *store_type,
     return -1;
   }
 
-  if (store->prev) {
+  if (store->prev != NULL) {
     store->prev->next = store->next;
 
   } else {
     keystore_stores = store->next;
   }
 
-  if (store->next)
+  if (store->next != NULL) {
     store->next->prev = store->prev;
+  }
 
   store->prev = store->next = NULL;
   keystore_nstores--;
@@ -146,7 +147,7 @@ int sftp_keystore_supports_store(const char *store_type,
   struct sftp_keystore_store *store;
 
   store = keystore_get_store(store_type, store_ktype);
-  if (store) {
+  if (store != NULL) {
     return 0;
   }
 
@@ -220,25 +221,31 @@ int sftp_keystore_verify_host_key(pool *p, const char *user,
     *ptr = '\0';
 
     sks = keystore_get_store(store_type, SFTP_SSH2_HOST_KEY_STORE);
-    if (sks) {
+    if (sks != NULL) {
       sftp_keystore_t *store;
 
       store = (sks->store_open)(p, SFTP_SSH2_HOST_KEY_STORE, ptr + 1, user);
-      if (store) {
+      if (store != NULL) {
         if (store->verify_host_key != NULL) {
+          int xerrno;
+
           res = (store->verify_host_key)(store, p, user, host_fqdn, host_user,
             key_data, key_len);
+          xerrno = errno;
           (store->store_close)(store);
 
           *ptr = ':';
           if (res == 0) {
             break;
+          }
 
-          } else {
-            pr_trace_msg(trace_channel, 3,
-              "error verifying host key for host '%s', user '%s' ('%s'): %s",
-              host_fqdn, user, host_user, strerror(errno));
-            continue;
+          pr_trace_msg(trace_channel, 3,
+            "error verifying host key for host '%s', user '%s' ('%s'): %s",
+            host_fqdn, user, host_user, strerror(xerrno));
+          if (xerrno == ENOENT) {
+            pr_log_writefile(sftp_logfd, MOD_SFTP_VERSION,
+              "no matching public key found for host '%s' in '%s'; perhaps "
+              "keys are not RFC4716-formatted", host_fqdn, ptr + 1);
           }
 
         } else {
@@ -246,8 +253,9 @@ int sftp_keystore_verify_host_key(pool *p, const char *user,
           pr_trace_msg(trace_channel, 7,
             "error using SFTPAuthorizedHostKeys '%s': %s", store_type,
             strerror(ENOSYS));
-          continue;
         }
+
+        continue;
 
       } else {
         *ptr = ':';
@@ -326,24 +334,30 @@ int sftp_keystore_verify_user_key(pool *p, const char *user,
       "user '%s'", store_type, path, user);
 
     sks = keystore_get_store(store_type, SFTP_SSH2_USER_KEY_STORE);
-    if (sks) {
+    if (sks != NULL) {
       sftp_keystore_t *store;
 
       store = (sks->store_open)(p, SFTP_SSH2_USER_KEY_STORE, path, user);
-      if (store) {
+      if (store != NULL) {
         if (store->verify_user_key != NULL) {
+          int xerrno;
+
           res = (store->verify_user_key)(store, p, user, key_data, key_len);
+          xerrno = errno;
           (store->store_close)(store);
 
           *ptr = ':';
           if (res == 0) {
             break;
+          }
 
-          } else {
-            pr_trace_msg(trace_channel, 3,
-              "error verifying user key for user '%s': %s", user,
-              strerror(errno));
-            continue;
+          pr_trace_msg(trace_channel, 3,
+            "error verifying user key for user '%s': %s", user,
+            strerror(xerrno));
+          if (xerrno == ENOENT) {
+            pr_log_writefile(sftp_logfd, MOD_SFTP_VERSION,
+              "no matching public key found for user '%s' in '%s'; perhaps "
+              "keys are not RFC4716-formatted", user, path);
           }
 
         } else {
@@ -351,8 +365,9 @@ int sftp_keystore_verify_user_key(pool *p, const char *user,
           pr_trace_msg(trace_channel, 7,
             "error using SFTPAuthorizedUserKeys '%s': %s", store_type,
             strerror(ENOSYS));
-          continue;
         }
+
+        continue;
 
       } else {
         *ptr = ':';

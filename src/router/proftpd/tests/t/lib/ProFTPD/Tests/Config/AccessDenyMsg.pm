@@ -84,6 +84,7 @@ sub accessdenymsg_ok {
 
     AuthUserFile => $auth_user_file,
     AuthGroupFile => $auth_group_file,
+    AuthOrder => 'mod_auth_file.c',
 
     AccessDenyMsg => $access_deny_msg,
 
@@ -204,6 +205,7 @@ sub accessdenymsg_var_u_ok {
 
     AuthUserFile => $auth_user_file,
     AuthGroupFile => $auth_group_file,
+    AuthOrder => 'mod_auth_file.c',
 
     AccessDenyMsg => $access_deny_msg,
 
@@ -324,6 +326,7 @@ sub accessdenymsg_limit_user {
 
     AuthUserFile => $auth_user_file,
     AuthGroupFile => $auth_group_file,
+    AuthOrder => 'mod_auth_file.c',
 
     AccessDenyMsg => $access_deny_msg,
 

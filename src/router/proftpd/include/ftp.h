@@ -2,7 +2,7 @@
  * ProFTPD - FTP server daemon
  * Copyright (c) 1997, 1998 Public Flood Software
  * Copyright (c) 1999, 2000 MacGyver aka Habeeb J. Dihu <macgyver@tos.net>
- * Copyright (c) 2001-2017 The ProFTPD Project team
+ * Copyright (c) 2001-2022 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -80,6 +80,7 @@
 #define C_HOST	"HOST"		/* Request a named server */
 #define C_CLNT	"CLNT"		/* Client-offered identification */
 #define C_RANG	"RANG"		/* Range of bytes to transfer */
+#define C_CSID	"CSID"		/* Client/Server Identification */
 
 /* RFC2228 FTP Security commands */
 #define C_ADAT  "ADAT"		/* Authentication/security data */

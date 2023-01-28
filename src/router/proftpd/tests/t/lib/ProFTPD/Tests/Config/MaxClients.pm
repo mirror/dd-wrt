@@ -75,6 +75,7 @@ sub maxclients_one {
 
     AuthUserFile => $auth_user_file,
     AuthGroupFile => $auth_group_file,
+    AuthOrder => 'mod_auth_file.c',
 
     MaxClients => $max_clients,
 
@@ -176,6 +177,7 @@ sub maxclients_one_ifsess_per_user_regex {
 
     AuthUserFile => $auth_user_file,
     AuthGroupFile => $auth_group_file,
+    AuthOrder => 'mod_auth_file.c',
 
     IfModules => {
       'mod_delay.c' => {
@@ -454,6 +456,7 @@ sub maxclients_one_anon_bug4068 {
 
     AuthUserFile => $auth_user_file,
     AuthGroupFile => $auth_group_file,
+    AuthOrder => 'mod_auth_file.c',
 
     Anonymous => {
       $anon_dir => {

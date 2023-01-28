@@ -1,6 +1,6 @@
 /*
  * ProFTPD - FTP server daemon
- * Copyright (c) 2008-2017 The ProFTPD Project team
+ * Copyright (c) 2008-2022 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -125,6 +125,8 @@ static const char *str_vreplace(pool *p, unsigned int max_replaces,
     for (mptr = matches, rptr = replaces; *mptr; mptr++, rptr++) {
       size_t mlen;
 
+      pr_signals_handle();
+
       mlen = strlen(*mptr);
       rlen = strlen(*rptr);
 
@@ -245,7 +247,8 @@ char *sstrcat(char *dst, const char *src, size_t n) {
     strlcat(dst, src, n);
   
 #else
-    for (; *d && n > 1; d++, n--) ;
+    for (; *d && n > 1; d++, n--) {
+    }
 
     while (n-- > 1 && *src) {
       *d++ = *src++;
@@ -453,10 +456,12 @@ const char *pr_str_strip(pool *p, const char *str) {
   }
  
   /* First, find the non-whitespace start of the given string */
-  for (start = str; PR_ISSPACE(*start); start++);
+  for (start = str; PR_ISSPACE(*start); start++) {
+  }
  
   /* Now, find the non-whitespace end of the given string */
-  for (finish = &str[strlen(str)-1]; PR_ISSPACE(*finish); finish--);
+  for (finish = &str[strlen(str)-1]; PR_ISSPACE(*finish); finish--) {
+  }
 
   /* Include for the last byte, of course. */
   len = finish - start + 1;
@@ -882,6 +887,33 @@ array_header *pr_str_text_to_array(pool *p, const char *text, char delimiter) {
   }
 
   return items;
+}
+
+char *pr_str_array_to_text(pool *p, const array_header *items,
+    const char *delimiter) {
+  register unsigned int i;
+  char **elts, *text = "";
+
+  if (p == NULL ||
+      items == NULL ||
+      delimiter == NULL) {
+    errno = EINVAL;
+    return NULL;
+  }
+
+  if (items->nelts == 0) {
+    return pstrdup(p, "");
+  }
+
+  elts = items->elts;
+  for (i = 0; i < items->nelts; i++) {
+    char *elt;
+
+    elt = elts[i];
+    text = pstrcat(p, text, *text ? delimiter : "", elt, NULL);
+  }
+
+  return text;
 }
 
 int pr_str2uid(const char *val, uid_t *uid) {
@@ -1380,8 +1412,9 @@ int pr_str_is_fnmatch(const char *str) {
         break;
 
       case ']':
-        if (have_bracket)
+        if (have_bracket) {
           return TRUE;
+        }
         break;
 
       default:
@@ -1393,4 +1426,3 @@ int pr_str_is_fnmatch(const char *str) {
 
   return FALSE;
 }
-

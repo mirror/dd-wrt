@@ -2,7 +2,7 @@
  * ProFTPD: mod_sql -- SQL frontend
  * Copyright (c) 1998-1999 Johnie Ingram.
  * Copyright (c) 2001 Andrew Houghton.
- * Copyright (c) 2004-2020 TJ Saunders
+ * Copyright (c) 2004-2022 TJ Saunders
  *  
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -37,6 +37,11 @@
 
 #if defined(HAVE_OPENSSL) || defined(PR_USE_OPENSSL)
 # include <openssl/evp.h>
+#endif
+
+/* Define if you have the LibreSSL library.  */
+#if defined(LIBRESSL_VERSION_NUMBER)
+# define HAVE_LIBRESSL  1
 #endif
 
 /* default information for tables and fields */
@@ -1027,13 +1032,13 @@ static int sql_resolve_on_default(pool *p, pr_jot_ctx_t *jot_ctx,
         text_len = strlen(text);
         break;
 
+      case LOGFMT_META_BYTES_SENT:
       case LOGFMT_META_SECONDS:
         text = "0.0";
         text_len = strlen(text);
         break;
 
       case LOGFMT_META_BASENAME:
-      case LOGFMT_META_BYTES_SENT:
       case LOGFMT_META_CLASS:
       case LOGFMT_META_FILENAME:
       case LOGFMT_META_FILE_OFFSET:
@@ -1177,7 +1182,10 @@ static modret_t *sql_auth_openssl(cmd_rec *cmd, const char *plaintext,
   *hashvalue = '\0';
   hashvalue++;
 
+#if OPENSSL_VERSION_NUMBER < 0x10100000L || \
+    defined(HAVE_LIBRESSL)
   OpenSSL_add_all_digests();
+#endif /* OpenSSL-1.1.0 and later */
 
   md = EVP_get_digestbyname(digestname);
   if (md == NULL) {
@@ -2451,6 +2459,7 @@ static int sql_getgroups(cmd_rec *cmd) {
   }
 
   lpw.pw_uid = -1;
+  lpw.pw_gid = -1;
   lpw.pw_name = name;
 
   /* Now that we have the pointers for the lists, tweak the argc field
@@ -3818,6 +3827,7 @@ MODRET sql_auth_setpwent(cmd_rec *cmd) {
       
         /* otherwise, add it to the cache */
         lpw.pw_uid = -1;
+        lpw.pw_gid = -1;
         lpw.pw_name = username;
         sql_getpasswd(cmd, &lpw);
       }
@@ -4095,6 +4105,7 @@ MODRET sql_auth_getpwnam(cmd_rec *cmd) {
   sql_log(DEBUG_FUNC, "%s", ">>> cmd_getpwnam");
 
   lpw.pw_uid = -1;
+  lpw.pw_gid = -1;
   lpw.pw_name = cmd->argv[0];
   pw = sql_getpasswd(cmd, &lpw);
 
@@ -4206,6 +4217,7 @@ MODRET sql_auth_authenticate(cmd_rec *cmd) {
   user = (char *) mr->data;
 
   lpw.pw_uid = -1;
+  lpw.pw_gid = -1;
   lpw.pw_name = cmd->argv[0];
 
   if ((pw = sql_getpasswd(cmd, &lpw)) && 
@@ -4296,6 +4308,7 @@ MODRET sql_auth_check(cmd_rec *cmd) {
      */
 
     lpw.pw_uid = -1;
+    lpw.pw_gid = -1;
     lpw.pw_name = cmd->argv[1];
     cmap.authpasswd = sql_getpasswd(cmd, &lpw);
 
@@ -4407,6 +4420,7 @@ MODRET sql_auth_name2uid(cmd_rec *cmd) {
   sql_log(DEBUG_FUNC, "%s", ">>> cmd_name2uid");
 
   lpw.pw_uid = -1;
+  lpw.pw_gid = -1;
   lpw.pw_name = cmd->argv[0];
 
   /* check to see if we're looking up the current user */
@@ -4456,6 +4470,7 @@ MODRET sql_auth_name2gid(cmd_rec *cmd) {
 
 MODRET sql_auth_getgroups(cmd_rec *cmd) {
   int res;
+  void *val;
 
   if (!SQL_GROUPS ||
       !(cmap.engine & SQL_ENGINE_FL_AUTH)) {
@@ -4470,8 +4485,11 @@ MODRET sql_auth_getgroups(cmd_rec *cmd) {
     return PR_DECLINED(cmd); 
   }
 
+  val = palloc(cmd->tmp_pool, sizeof(int));
+  *((int *) val) = res;
+
   sql_log(DEBUG_FUNC, "%s", "<<< cmd_getgroups");
-  return mod_create_data(cmd, (void *) &res);
+  return mod_create_data(cmd, val);
 }
 
 /* XXX mod_ratio hacks. */

@@ -120,6 +120,7 @@ sub mlst_file_ok {
 
     AuthUserFile => $setup->{auth_user_file},
     AuthGroupFile => $setup->{auth_group_file},
+    AuthOrder => 'mod_auth_file.c',
 
     IfModules => {
       'mod_delay.c' => {
@@ -151,17 +152,16 @@ sub mlst_file_ok {
 
       my ($resp_code, $resp_msg) = $client->mlst('cmds.conf');
 
-      my $expected;
-
-      $expected = 250;
+      my $expected = 250;
       $self->assert($expected == $resp_code,
         test_msg("Expected response code $expected, got $resp_code"));
 
-      $expected = 'modify=\d+;perm=adfr(w)?;size=\d+;type=file;unique=\S+;UNIX.group=\d+;UNIX.mode=\d+;UNIX.owner=\d+; \/.*\/cmds\.conf$';
+      $expected = 'modify=\d+;perm=adfr(w)?;size=\d+;type=file;unique=\S+;UNIX\.group=\d+;UNIX\.groupname=\S+;UNIX\.mode=\d+;UNIX\.owner=\d+;UNIX\.ownername=\S+; \/.*\/cmds\.conf$';
       $self->assert(qr/$expected/, $resp_msg,
         test_msg("Expected response message '$expected', got '$resp_msg'"));
-    };
 
+      $client->quit();
+    };
     if ($@) {
       $ex = $@;
     }
@@ -198,6 +198,8 @@ sub mlst_file_chrooted_ok {
 
     AuthUserFile => $setup->{auth_user_file},
     AuthGroupFile => $setup->{auth_group_file},
+    AuthOrder => 'mod_auth_file.c',
+
     DefaultRoot => '~',
 
     IfModules => {
@@ -236,11 +238,12 @@ sub mlst_file_chrooted_ok {
       $self->assert($expected == $resp_code,
         test_msg("Expected response code $expected, got $resp_code"));
 
-      $expected = 'modify=\d+;perm=adfr(w)?;size=\d+;type=file;unique=\S+;UNIX.group=\d+;UNIX.mode=\d+;UNIX.owner=\d+; /cmds.conf$';
+      $expected = 'modify=\d+;perm=adfr(w)?;size=\d+;type=file;unique=\S+;UNIX\.group=\d+;UNIX\.groupname=\S+;UNIX\.mode=\d+;UNIX\.owner=\d+;UNIX\.owername=\S+; /cmds.conf$';
       $self->assert(qr/$expected/, $resp_msg,
         test_msg("Expected response message '$expected', got '$resp_msg'"));
-    };
 
+      $client->quit();
+    };
     if ($@) {
       $ex = $@;
     }
@@ -268,22 +271,7 @@ sub mlst_file_chrooted_ok {
 sub mlst_dir_ok {
   my $self = shift;
   my $tmpdir = $self->{tmpdir};
-
-  my $config_file = "$tmpdir/cmds.conf";
-  my $pid_file = File::Spec->rel2abs("$tmpdir/cmds.pid");
-  my $scoreboard_file = File::Spec->rel2abs("$tmpdir/cmds.scoreboard");
-
-  my $log_file = test_get_logfile();
-
-  my $auth_user_file = File::Spec->rel2abs("$tmpdir/cmds.passwd");
-  my $auth_group_file = File::Spec->rel2abs("$tmpdir/cmds.group");
-
-  my $user = 'proftpd';
-  my $passwd = 'test';
-  my $group = 'ftpd';
-  my $home_dir = File::Spec->rel2abs($tmpdir);
-  my $uid = 500;
-  my $gid = 500;
+  my $setup = test_setup($tmpdir, 'cmds');
 
   my $sub_dir = File::Spec->rel2abs("$tmpdir/foo");
   mkpath($sub_dir);
@@ -291,26 +279,23 @@ sub mlst_dir_ok {
   # Make sure that, if we're running as root, that the home directory has
   # permissions/privs set for the account we create
   if ($< == 0) {
-    unless (chmod(0755, $home_dir, $sub_dir)) {
-      die("Can't set perms on $home_dir, $sub_dir to 0755: $!");
+    unless (chmod(0755, $sub_dir)) {
+      die("Can't set perms on $sub_dir to 0755: $!");
     }
 
-    unless (chown($uid, $gid, $home_dir, $sub_dir)) {
-      die("Can't set owner of $home_dir, $sub_dir to $uid/$gid: $!");
+    unless (chown($setup->{uid}, $setup->{gid}, $sub_dir)) {
+      die("Can't set owner of $sub_dir to $setup->{uid}/$setup->{gid}: $!");
     }
   }
 
-  auth_user_write($auth_user_file, $user, $passwd, $uid, $gid, $home_dir,
-    '/bin/bash');
-  auth_group_write($auth_group_file, $group, $gid, $user);
-
   my $config = {
-    PidFile => $pid_file,
-    ScoreboardFile => $scoreboard_file,
-    SystemLog => $log_file,
+    PidFile => $setup->{pid_file},
+    ScoreboardFile => $setup->{scoreboard_file},
+    SystemLog => $setup->{log_file},
 
-    AuthUserFile => $auth_user_file,
-    AuthGroupFile => $auth_group_file,
+    AuthUserFile => $setup->{auth_user_file},
+    AuthGroupFile => $setup->{auth_group_file},
+    AuthOrder => 'mod_auth_file.c',
 
     IfModules => {
       'mod_delay.c' => {
@@ -319,7 +304,8 @@ sub mlst_dir_ok {
     },
   };
 
-  my ($port, $config_user, $config_group) = config_write($config_file, $config);
+  my ($port, $config_user, $config_group) = config_write($setup->{config_file},
+    $config);
 
   # Open pipes, for use between the parent and child processes.  Specifically,
   # the child will indicate when it's done with its test by writing a message
@@ -337,22 +323,20 @@ sub mlst_dir_ok {
   if ($pid) {
     eval {
       my $client = ProFTPD::TestSuite::FTP->new('127.0.0.1', $port);
-      $client->login($user, $passwd);
+      $client->login($setup->{user}, $setup->{passwd});
 
       my ($resp_code, $resp_msg) = $client->mlst($sub_dir);
 
-      my $expected;
-      $expected = 250;
+      my $expected = 250;
       $self->assert($expected == $resp_code,
         test_msg("Expected response code $expected, got $resp_code"));
 
-      $expected = ('modify=\d+;perm=flcdmpe;type=dir;unique=\S+;UNIX.group=\d+;UNIX.mode=\d+;UNIX.owner=\d+; \/.*\/foo$');
+      $expected = ('modify=\d+;perm=flcdmpe;type=dir;unique=\S+;UNIX\.group=\d+;UNIX\.groupname=\S+;UNIX\.mode=\d+;UNIX\.owner=\d+;UNIX\.ownername=\S+; \/.*\/foo$');
       $self->assert(qr/$expected/, $resp_msg,
         test_msg("Expected response message '$expected', got '$resp_msg'"));
 
       $client->quit();
     };
-
     if ($@) {
       $ex = $@;
     }
@@ -361,7 +345,7 @@ sub mlst_dir_ok {
     $wfh->flush();
 
   } else {
-    eval { server_wait($config_file, $rfh) };
+    eval { server_wait($setup->{config_file}, $rfh) };
     if ($@) {
       warn($@);
       exit 1;
@@ -371,63 +355,25 @@ sub mlst_dir_ok {
   }
 
   # Stop server
-  server_stop($pid_file);
-
+  server_stop($setup->{pid_file});
   $self->assert_child_ok($pid);
 
-  if ($ex) {
-    test_append_logfile($log_file);
-    unlink($log_file);
-
-    die($ex);
-  }
-
-  unlink($log_file);
+  test_cleanup($setup->{log_file}, $ex);
 }
 
 sub mlst_dir_cwd_bug4198 {
   my $self = shift;
   my $tmpdir = $self->{tmpdir};
-
-  my $config_file = "$tmpdir/cmds.conf";
-  my $pid_file = File::Spec->rel2abs("$tmpdir/cmds.pid");
-  my $scoreboard_file = File::Spec->rel2abs("$tmpdir/cmds.scoreboard");
-
-  my $log_file = test_get_logfile();
-
-  my $auth_user_file = File::Spec->rel2abs("$tmpdir/cmds.passwd");
-  my $auth_group_file = File::Spec->rel2abs("$tmpdir/cmds.group");
-
-  my $user = 'proftpd';
-  my $passwd = 'test';
-  my $group = 'ftpd';
-  my $home_dir = File::Spec->rel2abs($tmpdir);
-  my $uid = 500;
-  my $gid = 500;
-
-  # Make sure that, if we're running as root, that the home directory has
-  # permissions/privs set for the account we create
-  if ($< == 0) {
-    unless (chmod(0755, $home_dir)) {
-      die("Can't set perms on $home_dir to 0755: $!");
-    }
-
-    unless (chown($uid, $gid, $home_dir)) {
-      die("Can't set owner of $home_dir to $uid/$gid: $!");
-    }
-  }
-
-  auth_user_write($auth_user_file, $user, $passwd, $uid, $gid, $home_dir,
-    '/bin/bash');
-  auth_group_write($auth_group_file, $group, $gid, $user);
+  my $setup = test_setup($tmpdir, 'cmds');
 
   my $config = {
-    PidFile => $pid_file,
-    ScoreboardFile => $scoreboard_file,
-    SystemLog => $log_file,
+    PidFile => $setup->{pid_file},
+    ScoreboardFile => $setup->{scoreboard_file},
+    SystemLog => $setup->{log_file},
 
-    AuthUserFile => $auth_user_file,
-    AuthGroupFile => $auth_group_file,
+    AuthUserFile => $setup->{auth_user_file},
+    AuthGroupFile => $setup->{auth_group_file},
+    AuthOrder => 'mod_auth_file.c',
 
     IfModules => {
       'mod_delay.c' => {
@@ -436,7 +382,8 @@ sub mlst_dir_cwd_bug4198 {
     },
   };
 
-  my ($port, $config_user, $config_group) = config_write($config_file, $config);
+  my ($port, $config_user, $config_group) = config_write($setup->{config_file},
+    $config);
 
   # Open pipes, for use between the parent and child processes.  Specifically,
   # the child will indicate when it's done with its test by writing a message
@@ -454,24 +401,22 @@ sub mlst_dir_cwd_bug4198 {
   if ($pid) {
     eval {
       my $client = ProFTPD::TestSuite::FTP->new('127.0.0.1', $port);
-      $client->login($user, $passwd);
+      $client->login($setup->{user}, $setup->{passwd});
 
       my ($resp_code, $resp_msg) = $client->mlst('.');
 
-      my $expected;
-      $expected = 250;
+      my $expected = 250;
       $self->assert($expected == $resp_code,
         test_msg("Expected response code $expected, got $resp_code"));
 
       # Note that, per Bug#4198, we do NOT expect to see a type fact of
       # "cdir" here, just "dir".
-      $expected = ('modify=\d+;perm=flcdmpe;type=dir;unique=\S+;UNIX.group=\d+;UNIX.mode=\d+;UNIX.owner=\d+; \/.*$');
+      $expected = ('modify=\d+;perm=flcdmpe;type=dir;unique=\S+;UNIX\.group=\d+;UNIX\.groupname=\S+;UNIX\.mode=\d+;UNIX\.owner=\d+;UNIX\.ownername=\S+; \/.*$');
       $self->assert(qr/$expected/, $resp_msg,
         test_msg("Expected response message '$expected', got '$resp_msg'"));
 
       $client->quit();
     };
-
     if ($@) {
       $ex = $@;
     }
@@ -480,7 +425,7 @@ sub mlst_dir_cwd_bug4198 {
     $wfh->flush();
 
   } else {
-    eval { server_wait($config_file, $rfh) };
+    eval { server_wait($setup->{config_file}, $rfh) };
     if ($@) {
       warn($@);
       exit 1;
@@ -490,18 +435,10 @@ sub mlst_dir_cwd_bug4198 {
   }
 
   # Stop server
-  server_stop($pid_file);
-
+  server_stop($setup->{pid_file});
   $self->assert_child_ok($pid);
 
-  if ($ex) {
-    test_append_logfile($log_file);
-    unlink($log_file);
-
-    die($ex);
-  }
-
-  unlink($log_file);
+  test_cleanup($setup->{log_file}, $ex);
 }
 
 sub mlst_symlink_showsymlinks_off_bug3318 {
@@ -533,6 +470,8 @@ sub mlst_symlink_showsymlinks_off_bug3318 {
 
     AuthUserFile => $setup->{auth_user_file},
     AuthGroupFile => $setup->{auth_group_file},
+    AuthOrder => 'mod_auth_file.c',
+
     ShowSymlinks => 'off',
 
     IfModules => {
@@ -565,17 +504,16 @@ sub mlst_symlink_showsymlinks_off_bug3318 {
 
       my ($resp_code, $resp_msg) = $client->mlst('test.lnk');
 
-      my $expected;
-
-      $expected = 250;
+      my $expected = 250;
       $self->assert($expected == $resp_code,
         test_msg("Expected response code $expected, got $resp_code"));
 
-      $expected = 'modify=\d+;perm=adfr(w)?;size=\d+;type=file;unique=\S+;UNIX.group=\d+;UNIX.mode=\d+;UNIX.owner=\d+; \/.*\/test\.lnk$';
+      $expected = 'modify=\d+;perm=adfr(w)?;size=\d+;type=file;unique=\S+;UNIX\.group=\d+;UNIX\.groupname=\S+;UNIX\.mode=\d+;UNIX\.owner=\d+;UNIX.ownername=\S+; \/.*\/test\.lnk$';
       $self->assert(qr/$expected/, $resp_msg,
         test_msg("Expected response message '$expected', got '$resp_msg'"));
-    };
 
+      $client->quit();
+    };
     if ($@) {
       $ex = $@;
     }
@@ -629,6 +567,8 @@ sub mlst_symlink_showsymlinks_on_bug3318 {
 
     AuthUserFile => $setup->{auth_user_file},
     AuthGroupFile => $setup->{auth_group_file},
+    AuthOrder => 'mod_auth_file.c',
+
     ShowSymlinks => 'on',
 
     IfModules => {
@@ -661,17 +601,16 @@ sub mlst_symlink_showsymlinks_on_bug3318 {
 
       my ($resp_code, $resp_msg) = $client->mlst('test.lnk');
 
-      my $expected;
-
-      $expected = 250;
+      my $expected = 250;
       $self->assert($expected == $resp_code,
         test_msg("Expected response code $expected, got $resp_code"));
 
-      $expected = 'modify=\d+;perm=adfr(w)?;size=\d+;type=OS.unix=symlink;unique=\S+;UNIX.group=\d+;UNIX.mode=\d+;UNIX.owner=\d+; \/.*\/test\.txt$';
+      $expected = 'modify=\d+;perm=adfr(w)?;size=\d+;type=OS.unix=symlink;unique=\S+;UNIX\.group=\d+;UNIX\.groupname=\S+;UNIX\.mode=\d+;UNIX\.owner=\d+;UNIX\.ownername=\S+; \/.*\/test\.txt$';
       $self->assert(qr/$expected/, $resp_msg,
         test_msg("Expected response message '$expected', got '$resp_msg'"));
-    };
 
+      $client->quit();
+    };
     if ($@) {
       $ex = $@;
     }
@@ -732,6 +671,7 @@ sub mlst_symlink_showsymlinks_on_chrooted_bug4219 {
 
     AuthUserFile => $setup->{auth_user_file},
     AuthGroupFile => $setup->{auth_group_file},
+    AuthOrder => 'mod_auth_file.c',
 
     DefaultRoot => '~',
     ShowSymlinks => 'on',
@@ -766,17 +706,16 @@ sub mlst_symlink_showsymlinks_on_chrooted_bug4219 {
 
       my ($resp_code, $resp_msg) = $client->mlst('test.lnk');
 
-      my $expected;
-
-      $expected = 250;
+      my $expected = 250;
       $self->assert($expected == $resp_code,
         test_msg("Expected response code $expected, got $resp_code"));
 
-      $expected = 'modify=\d+;perm=(a)?dfr(w)?;size=\d+;type=OS.unix=symlink;unique=\S+;UNIX.group=\d+;UNIX.mode=\d+;UNIX.owner=\d+; \/test\.lnk$';
+      $expected = 'modify=\d+;perm=(a)?dfr(w)?;size=\d+;type=OS.unix=symlink;unique=\S+;UNIX\.group=\d+;UNIX\.groupname=\S+;UNIX\.mode=\d+;UNIX\.owner=\d+;UNIX\.ownername=\S+; \/test\.lnk$';
       $self->assert(qr/$expected/, $resp_msg,
         test_msg("Expected response message '$expected', got '$resp_msg'"));
-    };
 
+      $client->quit();
+    };
     if ($@) {
       $ex = $@;
     }
@@ -837,6 +776,7 @@ sub mlst_symlink_showsymlinks_on_use_slink {
 
     AuthUserFile => $setup->{auth_user_file},
     AuthGroupFile => $setup->{auth_group_file},
+    AuthOrder => 'mod_auth_file.c',
 
     FactsOptions => 'UseSlink',
     ShowSymlinks => 'on',
@@ -871,17 +811,16 @@ sub mlst_symlink_showsymlinks_on_use_slink {
 
       my ($resp_code, $resp_msg) = $client->mlst('test.lnk');
 
-      my $expected;
-
-      $expected = 250;
+      my $expected = 250;
       $self->assert($expected == $resp_code,
         test_msg("Expected response code $expected, got $resp_code"));
 
-      $expected = ' modify=\d+;perm=adfr(w)?;size=\d+;type=OS.unix=slink:' . $dst_path . ';unique=\S+;UNIX.group=\d+;UNIX.mode=\d+;UNIX.owner=\d+; \/.*\/test\.lnk$';
+      $expected = ' modify=\d+;perm=adfr(w)?;size=\d+;type=OS\.unix=slink:' . $dst_path . ';unique=\S+;UNIX\.group=\d+;UNIX\.groupname=\S+;UNIX\.mode=\d+;UNIX\.owner=\d+;UNIX\.ownername=\S+; \/.*\/test\.lnk$';
       $self->assert(qr/$expected/, $resp_msg,
         test_msg("Expected response message '$expected', got '$resp_msg'"));
-    };
 
+      $client->quit();
+    };
     if ($@) {
       $ex = $@;
     }
@@ -950,6 +889,7 @@ sub mlst_symlink_showsymlinks_on_use_slink_chrooted_bug4219 {
 
     AuthUserFile => $setup->{auth_user_file},
     AuthGroupFile => $setup->{auth_group_file},
+    AuthOrder => 'mod_auth_file.c',
 
     DefaultRoot => '~',
     FactsOptions => 'UseSlink',
@@ -985,17 +925,16 @@ sub mlst_symlink_showsymlinks_on_use_slink_chrooted_bug4219 {
 
       my ($resp_code, $resp_msg) = $client->mlst('test.lnk');
 
-      my $expected;
-
-      $expected = 250;
+      my $expected = 250;
       $self->assert($expected == $resp_code,
         test_msg("Expected response code $expected, got $resp_code"));
 
-      $expected = ' modify=\d+;perm=(a)?dfr(w)?;size=\d+;type=OS.unix=slink:\/test\.txt;unique=\S+;UNIX.group=\d+;UNIX.mode=\d+;UNIX.owner=\d+; \/test\.lnk$';
+      $expected = ' modify=\d+;perm=(a)?dfr(w)?;size=\d+;type=OS\.unix=slink:\/test\.txt;unique=\S+;UNIX\.group=\d+;UNIX\.groupname=\S+;UNIX\.mode=\d+;UNIX\.owner=\d+;UNIX\.ownername=\S+; \/test\.lnk$';
       $self->assert(qr/$expected/, $resp_msg,
         test_msg("Expected response message '$expected', got '$resp_msg'"));
-    };
 
+      $client->quit();
+    };
     if ($@) {
       $ex = $@;
     }
@@ -1023,22 +962,7 @@ sub mlst_symlink_showsymlinks_on_use_slink_chrooted_bug4219 {
 sub mlst_no_path_ok {
   my $self = shift;
   my $tmpdir = $self->{tmpdir};
-
-  my $config_file = "$tmpdir/cmds.conf";
-  my $pid_file = File::Spec->rel2abs("$tmpdir/cmds.pid");
-  my $scoreboard_file = File::Spec->rel2abs("$tmpdir/cmds.scoreboard");
-
-  my $log_file = test_get_logfile();
-
-  my $auth_user_file = File::Spec->rel2abs("$tmpdir/cmds.passwd");
-  my $auth_group_file = File::Spec->rel2abs("$tmpdir/cmds.group");
-
-  my $user = 'proftpd';
-  my $passwd = 'test';
-  my $group = 'ftpd';
-  my $home_dir = File::Spec->rel2abs($tmpdir);
-  my $uid = 500;
-  my $gid = 500;
+  my $setup = test_setup($tmpdir, 'cmds');
 
   my $sub_dir = File::Spec->rel2abs("$tmpdir/foo");
   mkpath($sub_dir);
@@ -1046,26 +970,23 @@ sub mlst_no_path_ok {
   # Make sure that, if we're running as root, that the home directory has
   # permissions/privs set for the account we create
   if ($< == 0) {
-    unless (chmod(0755, $home_dir, $sub_dir)) {
-      die("Can't set perms on $home_dir, $sub_dir to 0755: $!");
+    unless (chmod(0755, $sub_dir)) {
+      die("Can't set perms on $sub_dir to 0755: $!");
     }
 
-    unless (chown($uid, $gid, $home_dir, $sub_dir)) {
-      die("Can't set owner of $home_dir, $sub_dir to $uid/$gid: $!");
+    unless (chown($setup->{uid}, $setup->{gid}, $sub_dir)) {
+      die("Can't set owner of $sub_dir to $setup->{uid}/$setup->{gid}: $!");
     }
   }
 
-  auth_user_write($auth_user_file, $user, $passwd, $uid, $gid, $home_dir,
-    '/bin/bash');
-  auth_group_write($auth_group_file, $group, $gid, $user);
-
   my $config = {
-    PidFile => $pid_file,
-    ScoreboardFile => $scoreboard_file,
-    SystemLog => $log_file,
+    PidFile => $setup->{pid_file},
+    ScoreboardFile => $setup->{scoreboard_file},
+    SystemLog => $setup->{log_file},
 
-    AuthUserFile => $auth_user_file,
-    AuthGroupFile => $auth_group_file,
+    AuthUserFile => $setup->{auth_user_file},
+    AuthGroupFile => $setup->{auth_group_file},
+    AuthOrder => 'mod_auth_file.c',
 
     IfModules => {
       'mod_delay.c' => {
@@ -1074,7 +995,8 @@ sub mlst_no_path_ok {
     },
   };
 
-  my ($port, $config_user, $config_group) = config_write($config_file, $config);
+  my ($port, $config_user, $config_group) = config_write($setup->{config_file},
+    $config);
 
   # Open pipes, for use between the parent and child processes.  Specifically,
   # the child will indicate when it's done with its test by writing a message
@@ -1092,23 +1014,20 @@ sub mlst_no_path_ok {
   if ($pid) {
     eval {
       my $client = ProFTPD::TestSuite::FTP->new('127.0.0.1', $port);
+      $client->login($setup->{user}, $setup->{passwd});
 
-      $client->login($user, $passwd);
+      my ($resp_code, $resp_msg) = $client->mlst();
 
-      my ($resp_code, $resp_msg);
-      ($resp_code, $resp_msg) = $client->mlst();
-
-      my $expected;
-
-      $expected = 250;
+      my $expected = 250;
       $self->assert($expected == $resp_code,
-        test_msg("Expected $expected, got $resp_code"));
+        test_msg("Expected response code $expected, got $resp_code"));
 
-      $expected = ('modify=\d+;perm=flcdmpe;type=dir;unique=\S+;UNIX.group=\d+;UNIX.mode=\d+;UNIX.owner=\d+; \/(.*?)$');
+      $expected = ('modify=\d+;perm=flcdmpe;type=dir;unique=\S+;UNIX\.group=\d+;UNIX\.groupname=\S+;UNIX\.mode=\d+;UNIX\.owner=\d+;UNIX\.ownername=\S+; \/(.*?)$');
       $self->assert(qr/$expected/, $resp_msg,
         test_msg("Expected '$expected', got '$resp_msg'"));
-    };
 
+      $client->quit();
+    };
     if ($@) {
       $ex = $@;
     }
@@ -1117,7 +1036,7 @@ sub mlst_no_path_ok {
     $wfh->flush();
 
   } else {
-    eval { server_wait($config_file, $rfh) };
+    eval { server_wait($setup->{config_file}, $rfh) };
     if ($@) {
       warn($@);
       exit 1;
@@ -1127,18 +1046,10 @@ sub mlst_no_path_ok {
   }
 
   # Stop server
-  server_stop($pid_file);
-
+  server_stop($setup->{pid_file});
   $self->assert_child_ok($pid);
 
-  if ($ex) {
-    test_append_logfile($log_file);
-    unlink($log_file);
-
-    die($ex);
-  }
-
-  unlink($log_file);
+  test_cleanup($setup->{log_file}, $ex);
 }
 
 sub mlst_fails_enoent {
@@ -1186,6 +1097,7 @@ sub mlst_fails_enoent {
 
     AuthUserFile => $auth_user_file,
     AuthGroupFile => $auth_group_file,
+    AuthOrder => 'mod_auth_file.c',
 
     IfModules => {
       'mod_delay.c' => {
@@ -1322,6 +1234,7 @@ sub mlst_fails_eperm {
 
     AuthUserFile => $auth_user_file,
     AuthGroupFile => $auth_group_file,
+    AuthOrder => 'mod_auth_file.c',
 
     IfModules => {
       'mod_delay.c' => {
@@ -1457,6 +1370,7 @@ sub mlst_hidden_file_ok {
 
     AuthUserFile => $auth_user_file,
     AuthGroupFile => $auth_group_file,
+    AuthOrder => 'mod_auth_file.c',
 
     Directory => {
       '/' => {
@@ -1544,38 +1458,7 @@ sub mlst_hidden_file_ok {
 sub mlst_path_with_spaces_ok {
   my $self = shift;
   my $tmpdir = $self->{tmpdir};
-
-  my $config_file = "$tmpdir/cmds.conf";
-  my $pid_file = File::Spec->rel2abs("$tmpdir/cmds.pid");
-  my $scoreboard_file = File::Spec->rel2abs("$tmpdir/cmds.scoreboard");
-
-  my $log_file = test_get_logfile();
-
-  my $auth_user_file = File::Spec->rel2abs("$tmpdir/cmds.passwd");
-  my $auth_group_file = File::Spec->rel2abs("$tmpdir/cmds.group");
-
-  my $user = 'proftpd';
-  my $passwd = 'test';
-  my $group = 'ftpd';
-  my $home_dir = File::Spec->rel2abs($tmpdir);
-  my $uid = 500;
-  my $gid = 500;
-
-  # Make sure that, if we're running as root, that the home directory has
-  # permissions/privs set for the account we create
-  if ($< == 0) {
-    unless (chmod(0755, $home_dir)) {
-      die("Can't set perms on $home_dir to 0755: $!");
-    }
-
-    unless (chown($uid, $gid, $home_dir)) {
-      die("Can't set owner of $home_dir to $uid/$gid: $!");
-    }
-  }
-
-  auth_user_write($auth_user_file, $user, $passwd, $uid, $gid, $home_dir,
-    '/bin/bash');
-  auth_group_write($auth_group_file, $group, $gid, $user);
+  my $setup = test_setup($tmpdir, 'cmds');
 
   my $test_file = File::Spec->rel2abs("$tmpdir/foo bar");
   if (open(my $fh, "> $test_file")) {
@@ -1586,12 +1469,13 @@ sub mlst_path_with_spaces_ok {
   }
 
   my $config = {
-    PidFile => $pid_file,
-    ScoreboardFile => $scoreboard_file,
-    SystemLog => $log_file,
+    PidFile => $setup->{pid_file},
+    ScoreboardFile => $setup->{scoreboard_file},
+    SystemLog => $setup->{log_file},
 
-    AuthUserFile => $auth_user_file,
-    AuthGroupFile => $auth_group_file,
+    AuthUserFile => $setup->{auth_user_file},
+    AuthGroupFile => $setup->{auth_group_file},
+    AuthOrder => 'mod_auth_file.c',
 
     IfModules => {
       'mod_delay.c' => {
@@ -1600,7 +1484,8 @@ sub mlst_path_with_spaces_ok {
     },
   };
 
-  my ($port, $config_user, $config_group) = config_write($config_file, $config);
+  my ($port, $config_user, $config_group) = config_write($setup->{config_file},
+    $config);
 
   # Open pipes, for use between the parent and child processes.  Specifically,
   # the child will indicate when it's done with its test by writing a message
@@ -1618,23 +1503,20 @@ sub mlst_path_with_spaces_ok {
   if ($pid) {
     eval {
       my $client = ProFTPD::TestSuite::FTP->new('127.0.0.1', $port);
+      $client->login($setup->{user}, $setup->{passwd});
 
-      $client->login($user, $passwd);
+      my ($resp_code, $resp_msg) = $client->mlst('foo bar');
 
-      my ($resp_code, $resp_msg);
-      ($resp_code, $resp_msg) = $client->mlst('foo bar');
-
-      my $expected;
-
-      $expected = 250;
+      my $expected = 250;
       $self->assert($expected == $resp_code,
-        test_msg("Expected $expected, got $resp_code"));
+        test_msg("Expected response code $expected, got $resp_code"));
 
-      $expected = 'modify=\d+;perm=adfr(w)?;size=\d+;type=file;unique=\S+;UNIX.group=\d+;UNIX.mode=\d+;UNIX.owner=\d+; \/.*\/foo bar$';
+      $expected = 'modify=\d+;perm=adfr(w)?;size=\d+;type=file;unique=\S+;UNIX\.group=\d+;UNIX\.groupname=\S+;UNIX\.mode=\d+;UNIX\.owner=\d+;UNIX\.ownername=\S+; \/.*\/foo bar$';
       $self->assert(qr/$expected/, $resp_msg,
         test_msg("Expected '$expected', got '$resp_msg'"));
-    };
 
+      $client->quit();
+    };
     if ($@) {
       $ex = $@;
     }
@@ -1643,7 +1525,7 @@ sub mlst_path_with_spaces_ok {
     $wfh->flush();
 
   } else {
-    eval { server_wait($config_file, $rfh) };
+    eval { server_wait($setup->{config_file}, $rfh) };
     if ($@) {
       warn($@);
       exit 1;
@@ -1653,55 +1535,16 @@ sub mlst_path_with_spaces_ok {
   }
 
   # Stop server
-  server_stop($pid_file);
-
+  server_stop($setup->{pid_file});
   $self->assert_child_ok($pid);
 
-  if ($ex) {
-    test_append_logfile($log_file);
-    unlink($log_file);
-
-    die($ex);
-  }
-
-  unlink($log_file);
+  test_cleanup($setup->{log_file}, $ex);
 }
 
 sub mlst_nonascii_chars_bug3032 {
   my $self = shift;
   my $tmpdir = $self->{tmpdir};
-
-  my $config_file = "$tmpdir/cmds.conf";
-  my $pid_file = File::Spec->rel2abs("$tmpdir/cmds.pid");
-  my $scoreboard_file = File::Spec->rel2abs("$tmpdir/cmds.scoreboard");
-
-  my $log_file = test_get_logfile();
-
-  my $auth_user_file = File::Spec->rel2abs("$tmpdir/cmds.passwd");
-  my $auth_group_file = File::Spec->rel2abs("$tmpdir/cmds.group");
-
-  my $user = 'proftpd';
-  my $passwd = 'test';
-  my $group = 'ftpd';
-  my $home_dir = File::Spec->rel2abs($tmpdir);
-  my $uid = 500;
-  my $gid = 500;
-
-  # Make sure that, if we're running as root, that the home directory has
-  # permissions/privs set for the account we create
-  if ($< == 0) {
-    unless (chmod(0755, $home_dir)) {
-      die("Can't set perms on $home_dir to 0755: $!");
-    }
-
-    unless (chown($uid, $gid, $home_dir)) {
-      die("Can't set owner of $home_dir to $uid/$gid: $!");
-    }
-  }
-
-  auth_user_write($auth_user_file, $user, $passwd, $uid, $gid, $home_dir,
-    '/bin/bash');
-  auth_group_write($auth_group_file, $group, $gid, $user);
+  my $setup = test_setup($tmpdir, 'cmds');
 
   my $test_name = "test\b";
   my $test_file = File::Spec->rel2abs("$tmpdir/$test_name");
@@ -1713,12 +1556,13 @@ sub mlst_nonascii_chars_bug3032 {
   }
 
   my $config = {
-    PidFile => $pid_file,
-    ScoreboardFile => $scoreboard_file,
-    SystemLog => $log_file,
+    PidFile => $setup->{pid_file},
+    ScoreboardFile => $setup->{scoreboard_file},
+    SystemLog => $setup->{log_file},
 
-    AuthUserFile => $auth_user_file,
-    AuthGroupFile => $auth_group_file,
+    AuthUserFile => $setup->{auth_user_file},
+    AuthGroupFile => $setup->{auth_group_file},
+    AuthOrder => 'mod_auth_file.c',
 
     IfModules => {
       'mod_delay.c' => {
@@ -1727,7 +1571,8 @@ sub mlst_nonascii_chars_bug3032 {
     },
   };
 
-  my ($port, $config_user, $config_group) = config_write($config_file, $config);
+  my ($port, $config_user, $config_group) = config_write($setup->{config_file},
+    $config);
 
   # Open pipes, for use between the parent and child processes.  Specifically,
   # the child will indicate when it's done with its test by writing a message
@@ -1745,23 +1590,20 @@ sub mlst_nonascii_chars_bug3032 {
   if ($pid) {
     eval {
       my $client = ProFTPD::TestSuite::FTP->new('127.0.0.1', $port);
+      $client->login($setup->{user}, $setup->{passwd});
 
-      $client->login($user, $passwd);
+      my ($resp_code, $resp_msg) = $client->mlst($test_name);
 
-      my ($resp_code, $resp_msg);
-      ($resp_code, $resp_msg) = $client->mlst($test_name);
-
-      my $expected;
-
-      $expected = 250;
+      my $expected = 250;
       $self->assert($expected == $resp_code,
-        test_msg("Expected $expected, got $resp_code"));
+        test_msg("Expected response code $expected, got $resp_code"));
 
-      $expected = 'modify=\d+;perm=adfr(w)?;size=\d+;type=file;unique=\S+;UNIX.group=\d+;UNIX.mode=\d+;UNIX.owner=\d+; \/.*\/' . $test_name;
+      $expected = 'modify=\d+;perm=adfr(w)?;size=\d+;type=file;unique=\S+;UNIX\.group=\d+;UNIX\.groupname=\S+;UNIX\.mode=\d+;UNIX\.owner=\d+;UNIX\.ownername=\S+; \/.*\/' . $test_name;
       $self->assert(qr/$expected/, $resp_msg,
         test_msg("Expected '$expected', got '$resp_msg'"));
-    };
 
+      $client->quit();
+    };
     if ($@) {
       $ex = $@;
     }
@@ -1770,7 +1612,7 @@ sub mlst_nonascii_chars_bug3032 {
     $wfh->flush();
 
   } else {
-    eval { server_wait($config_file, $rfh) };
+    eval { server_wait($setup->{config_file}, $rfh) };
     if ($@) {
       warn($@);
       exit 1;
@@ -1780,62 +1622,23 @@ sub mlst_nonascii_chars_bug3032 {
   }
 
   # Stop server
-  server_stop($pid_file);
-
+  server_stop($setup->{pid_file});
   $self->assert_child_ok($pid);
 
-  if ($ex) {
-    test_append_logfile($log_file);
-    unlink($log_file);
-
-    die($ex);
-  }
-
-  unlink($log_file);
+  test_cleanup($setup->{log_file}, $ex);
 }
 
 sub mlst_greek_letters {
   my $self = shift;
   my $tmpdir = $self->{tmpdir};
-
-  my $config_file = "$tmpdir/cmds.conf";
-  my $pid_file = File::Spec->rel2abs("$tmpdir/cmds.pid");
-  my $scoreboard_file = File::Spec->rel2abs("$tmpdir/cmds.scoreboard");
-
-  my $log_file = test_get_logfile();
-
-  my $auth_user_file = File::Spec->rel2abs("$tmpdir/cmds.passwd");
-  my $auth_group_file = File::Spec->rel2abs("$tmpdir/cmds.group");
-
-  my $user = 'proftpd';
-  my $passwd = 'test';
-  my $group = 'ftpd';
-  my $home_dir = File::Spec->rel2abs($tmpdir);
-  my $uid = 500;
-  my $gid = 500;
-
-  # Make sure that, if we're running as root, that the home directory has
-  # permissions/privs set for the account we create
-  if ($< == 0) {
-    unless (chmod(0755, $home_dir)) {
-      die("Can't set perms on $home_dir to 0755: $!");
-    }
-
-    unless (chown($uid, $gid, $home_dir)) {
-      die("Can't set owner of $home_dir to $uid/$gid: $!");
-    }
-  }
-
-  auth_user_write($auth_user_file, $user, $passwd, $uid, $gid, $home_dir,
-    '/bin/bash');
-  auth_group_write($auth_group_file, $group, $gid, $user);
+  my $setup = test_setup($tmpdir, 'cmds');
 
   # See issue described at:
   #
   #  http://forums.proftpd.org/smf/index.php/topic,3808.0/all.html
 
   my $test_name = "αβγδεζηθικλμνξοπρστυφχψω";
-  my $test_file = File::Spec->rel2abs("$home_dir/$test_name");
+  my $test_file = File::Spec->rel2abs("$setup->{home_dir}/$test_name");
   if (open(my $fh, "> $test_file")) {
     close($fh);
 
@@ -1844,14 +1647,15 @@ sub mlst_greek_letters {
   }
 
   my $config = {
-    PidFile => $pid_file,
-    ScoreboardFile => $scoreboard_file,
-    SystemLog => $log_file,
-    TraceLog => $log_file,
+    PidFile => $setup->{pid_file},
+    ScoreboardFile => $setup->{scoreboard_file},
+    SystemLog => $setup->{log_file},
+    TraceLog => $setup->{log_file},
     Trace => 'command:10 response:10',
 
-    AuthUserFile => $auth_user_file,
-    AuthGroupFile => $auth_group_file,
+    AuthUserFile => $setup->{auth_user_file},
+    AuthGroupFile => $setup->{auth_group_file},
+    AuthOrder => 'mod_auth_file.c',
 
     IfModules => {
       'mod_delay.c' => {
@@ -1860,7 +1664,8 @@ sub mlst_greek_letters {
     },
   };
 
-  my ($port, $config_user, $config_group) = config_write($config_file, $config);
+  my ($port, $config_user, $config_group) = config_write($setup->{config_file},
+    $config);
 
   # Open pipes, for use between the parent and child processes.  Specifically,
   # the child will indicate when it's done with its test by writing a message
@@ -1878,23 +1683,20 @@ sub mlst_greek_letters {
   if ($pid) {
     eval {
       my $client = ProFTPD::TestSuite::FTP->new('127.0.0.1', $port);
+      $client->login($setup->{user}, $setup->{passwd});
 
-      $client->login($user, $passwd);
+      my ($resp_code, $resp_msg) = $client->mlst($test_name);
 
-      my ($resp_code, $resp_msg);
-      ($resp_code, $resp_msg) = $client->mlst($test_name);
-
-      my $expected;
-
-      $expected = 250;
+      my $expected = 250;
       $self->assert($expected == $resp_code,
-        test_msg("Expected $expected, got $resp_code"));
+        test_msg("Expected response code $expected, got $resp_code"));
 
-      $expected = 'modify=\d+;perm=adfr(w)?;size=\d+;type=file;unique=\S+;UNIX.group=\d+;UNIX.mode=\d+;UNIX.owner=\d+; \/*.*\/' . $test_name . '$';
+      $expected = 'modify=\d+;perm=adfr(w)?;size=\d+;type=file;unique=\S+;UNIX\.group=\d+;UNIX\.groupname=\S+;UNIX\.mode=\d+;UNIX\.owner=\d+;UNIX\.ownername=\S+; \/*.*\/' . $test_name . '$';
       $self->assert(qr/$expected/, $resp_msg,
         test_msg("Expected '$expected', got '$resp_msg'"));
-    };
 
+      $client->quit();
+    };
     if ($@) {
       $ex = $@;
     }
@@ -1903,7 +1705,7 @@ sub mlst_greek_letters {
     $wfh->flush();
 
   } else {
-    eval { server_wait($config_file, $rfh) };
+    eval { server_wait($setup->{config_file}, $rfh) };
     if ($@) {
       warn($@);
       exit 1;
@@ -1913,18 +1715,10 @@ sub mlst_greek_letters {
   }
 
   # Stop server
-  server_stop($pid_file);
-
+  server_stop($setup->{pid_file});
   $self->assert_child_ok($pid);
 
-  if ($ex) {
-    test_append_logfile($log_file);
-    unlink($log_file);
-
-    die($ex);
-  }
-
-  unlink($log_file);
+  test_cleanup($setup->{log_file}, $ex);
 }
 
 1;

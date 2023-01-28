@@ -3669,7 +3669,7 @@ fi
 done
 
 
-UTILS_LIBS="-lsupp -lcrypto"
+UTILS_LIBS="-lcrypto"
 
 # Check whether --enable-devel was given.
 if test "${enable_devel+set}" = set; then :
@@ -3771,8 +3771,6 @@ LIBS="$LIBS -lcrypto"
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether linking with OpenSSL functions requires -ldl" >&5
 $as_echo_n "checking whether linking with OpenSSL functions requires -ldl... " >&6; }
 saved_libs="$LIBS"
-
-LIBS=`echo "$LIBS" | sed -e 's/-lsupp//g'`;
 LIBS="-lcrypto -ldl $LIBS"
 
 cat confdefs.h - <<_ACEOF >conftest.$ac_ext
@@ -3811,8 +3809,6 @@ rm -f core conftest.err conftest.$ac_objext \
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether linking with OpenSSL functions requires -lz" >&5
 $as_echo_n "checking whether linking with OpenSSL functions requires -lz... " >&6; }
 saved_libs="$LIBS"
-
-LIBS=`echo "$LIBS" | sed -e 's/-lsupp//g'`;
 LIBS="-lcrypto -lz $LIBS"
 
 cat confdefs.h - <<_ACEOF >conftest.$ac_ext
@@ -3852,11 +3848,10 @@ fi
 rm -f core conftest.err conftest.$ac_objext \
     conftest$ac_exeext conftest.$ac_ext
 
-LIBS=`echo "$LIBS" | sed -e 's/-lsupp//g'`;
-LIBS="-lcrypto $LIBS"
-
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether OpenSSL supports SHA256" >&5
 $as_echo_n "checking whether OpenSSL supports SHA256... " >&6; }
+LIBS="-lcrypto $LIBS"
+
 cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
@@ -3893,11 +3888,10 @@ fi
 rm -f core conftest.err conftest.$ac_objext \
     conftest$ac_exeext conftest.$ac_ext
 
-LIBS=`echo "$LIBS" | sed -e 's/-lsupp//g'`;
-LIBS="-lcrypto $LIBS"
-
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether OpenSSL supports SHA512" >&5
 $as_echo_n "checking whether OpenSSL supports SHA512... " >&6; }
+LIBS="-lcrypto $LIBS"
+
 cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 

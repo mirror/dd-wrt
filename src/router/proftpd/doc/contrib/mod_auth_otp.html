@@ -134,7 +134,7 @@ behavior of <code>mod_auth_otp</code>.
 <p>
 For example:
 <pre>
-  AuthOTPOptions StandardResponse
+  AuthOTPOptions FTPStandardResponse
 </pre>
 
 <p>
@@ -149,6 +149,21 @@ The currently implemented options are:
     <pre>
       AuthOTPOptions DisplayVerificationCode
     </pre>
+  </li>
+
+  <p>
+  <li><code>FTPStandardResponse</code><br>
+    <p>
+    When <code>mod_auth_otp</code> is handling FTP sessions, it will respond
+    to a <code>USER</code> command with a response message indicating the
+    expectation of a one-time password:
+    <pre>
+      331 One-time password required for <i>user</i>
+    </pre>
+    However, this change of the response message "leaks" information about
+    the server configuration, <i>i.e.</i> that OTPs will be used.  To
+    tell <code>mod_auth_otp</code> to continue using the standard/normal
+    response message, use this option.
   </li>
 
   <p>
@@ -173,21 +188,6 @@ The currently implemented options are:
       AuthOrder mod_auth_otp.c* ...
       AuthOTPOptions RequireTableEntry StandardResponse
     </pre>
-  </li>
-
-  <p>
-  <li><code>StandardResponse</code><br>
-    <p>
-    When <code>mod_auth_otp</code> is handling FTP sessions, it will respond
-    to a <code>USER</code> command with a response message indicating the
-    expectation of a one-time password:
-    <pre>
-      331 One-time password required for <i>user</i>
-    </pre>
-    However, this change of the response message "leaks" information about
-    the server configuration, <i>i.e.</i> that OTPs will be used.  To
-    tell <code>mod_auth_otp</code> to continue using the standard/normal
-    response message, use this option.
   </li>
 </ul>
 
@@ -324,7 +324,7 @@ have been provisioned with the necessary shared key.  To prevent
 continue using the standard FTP response messages, use the following in
 your configuration for <code>mod_auth_otp</code>:
 <pre>
-  AuthOTPOptions StandardResponse
+  AuthOTPOptions FTPStandardResponse
 </pre>
 
 <p>
@@ -339,7 +339,7 @@ you would use:
 
   # Use the standard FTP response message, and fail the login if we find
   # a user that has not been provisioned.
-  AuthOTPOptions RequireTableEntry StandardResponse
+  AuthOTPOptions FTPStandardResponse RequireTableEntry
 </pre>
 
 <p>
@@ -356,8 +356,12 @@ Now, if you want <code>mod_sftp</code> to <b>only</b> try to use one-time
 passwords (or public keys), and <b>not</b> normal passwords, then you might
 use a <code>mod_sftp</code> configuration like this:
 <pre>
-  SFTPAuthMethods publickey keyboard-interactive
+  SFTPAuthMethods publickey password+keyboard-interactive
 </pre>
+If you allow the "keyboard-interactive" authentication method by itself,
+<i>and</i> the user does not have an OTP entry, then that authentication will
+fail, <b>regardless</b> of any <code>RequireTableEntry</code>
+<code>AuthOTPOption</code> configuration (or lack of).
 
 <p>
 <b>Module Load Order and <code>mod_sftp</code></b><br>
@@ -468,7 +472,7 @@ Then follow the usual steps:
 <p>
 <hr>
 <font size=2><b><i>
-&copy; Copyright 2015-2019 TJ Saunders<br>
+&copy; Copyright 2015-2022 TJ Saunders<br>
  All Rights Reserved<br>
 </i></b></font>
 <hr>

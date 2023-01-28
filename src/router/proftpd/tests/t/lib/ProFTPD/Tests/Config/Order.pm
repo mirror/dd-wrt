@@ -93,6 +93,8 @@ sub order_allowdeny_ok {
 
     AuthUserFile => $auth_user_file,
     AuthGroupFile => $auth_group_file,
+    AuthOrder => 'mod_auth_file.c',
+
     DefaultChdir => '~',
 
     Limit => {
@@ -227,6 +229,8 @@ sub order_allow_deny_ok {
 
     AuthUserFile => $auth_user_file,
     AuthGroupFile => $auth_group_file,
+    AuthOrder => 'mod_auth_file.c',
+
     DefaultChdir => '~',
 
     Limit => {
@@ -361,6 +365,8 @@ sub order_denyallow_ok {
 
     AuthUserFile => $auth_user_file,
     AuthGroupFile => $auth_group_file,
+    AuthOrder => 'mod_auth_file.c',
+
     DefaultChdir => '~',
 
     Limit => {
@@ -490,6 +496,8 @@ sub order_deny_allow_ok {
 
     AuthUserFile => $auth_user_file,
     AuthGroupFile => $auth_group_file,
+    AuthOrder => 'mod_auth_file.c',
+
     DefaultChdir => '~',
 
     Limit => {

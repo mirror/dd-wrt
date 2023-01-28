@@ -22,6 +22,7 @@ The <code>mod_ls</code> module handles the <code>LIST</code>,
   <li><a href="#DirFakeMode">DirFakeMode</a>
   <li><a href="#DirFakeUser">DirFakeUser</a>
   <li><a href="#ListOptions">ListOptions</a>
+  <li><a href="#ListStyle">ListStyle</a>
   <li><a href="#ShowSymlinks">ShowSymlinks</a>
   <li><a href="#UseGlobbing">UseGlobbing</a>
 </ul>
@@ -186,6 +187,36 @@ See also: <a href="../howto/ListOptions.html">ListOptions</a>
 
 <p>
 <hr>
+<h3><a name="ListStyle">ListStyle</a></h3>
+<strong>Syntax:</strong> ListStyle <em>Unix|Windows</em><br>
+<strong>Default:</strong> <code>ListStyle Unix</code><br>
+<strong>Context:</strong> server config, <code>&lt;VirtualHost&gt;</code>, <code>&lt;Global&gt;</code>, <code>&lt;Anonymous&gt;</code><br>
+<strong>Module:</strong> mod_ls<br>
+<strong>Compatibility:</strong> 1.3.8rc1 and later
+
+<p>
+The <code>ListStyle</code> directive can be used to emit Windows-style directory
+listings for the <code>LIST</code> command, rather than default Unix-style
+directory listings.  This is mainly to support certain FTP clients which only
+expect/support the Windows-style listings.
+
+For example, using:
+<pre>
+  ListStyle Windows
+</pre>
+leads to a directory listing like this, for the basic command-line
+<code>ftp(1)</code> Unix client:
+<pre>
+  ftp&gt; ls
+  229 Entering Extended Passive Mode (|||57644|)
+  150 Opening ASCII mode data connection for file list
+  11-30-15  07:29PM       &lt;DIR&gt;          a_folder
+  11-30-15  07:29PM                   16 file
+  226 Transfer complete
+</pre>
+
+<p>
+<hr>
 <h3><a name="ShowSymlinks">ShowSymlinks</a></h3>
 <strong>Syntax:</strong> ShowSymlinks <em>on|off</em><br>
 <strong>Default:</strong> <code>ShowSymlinks on</code><br>
@@ -250,7 +281,7 @@ this, like so:
 <hr><br>
 
 <font size=2><b><i>
-&copy; Copyright 2000-2019 The ProFTPD Project<br>
+&copy; Copyright 2000-2020 The ProFTPD Project<br>
  All Rights Reserved<br>
 </i></b></font>
 

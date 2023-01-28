@@ -175,7 +175,7 @@ commenting out all <code>mod_ban</code> directives.
 <h3><a name="BanLog">BanLog</a></h3>
 <strong>Syntax:</strong> BanLog <em>path|&quot;none&quot;</em><br>
 <strong>Default:</strong> None<br>
-<strong>Context:</strong> server config<br>
+<strong>Context:</strong> server config, <code>&lt;Global&gt;</code><br>
 <strong>Module:</strong> mod_ban<br>
 <strong>Compatibility:</strong> 1.2.10rc1 and later
 
@@ -195,7 +195,7 @@ If <em>path</em> is &quot;none&quot;, no logging will be done at all.
 <h3><a name="BanMessage">BanMessage</a></h3>
 <strong>Syntax:</strong> BanMessage <em>mesg</em><br>
 <strong>Default:</strong> None<br>
-<strong>Context:</strong> server config<br>
+<strong>Context:</strong> server config, <code>&lt;Global&gt;</code><br>
 <strong>Module:</strong> mod_ban<br>
 <strong>Compatibility:</strong> 1.2.10rc1 and later
 
@@ -220,7 +220,7 @@ Example:
 <h3><a name="BanOnEvent">BanOnEvent</a></h3>
 <strong>Syntax:</strong> BanOnEvent <em>event freq expires [mesg]</em><br>
 <strong>Default:</strong> None<br>
-<strong>Context:</strong> server config<br>
+<strong>Context:</strong> server config, <code>&lt;Global&gt;</code><br>
 <strong>Module:</strong> mod_ban<br>
 <strong>Compatibility:</strong> 1.2.10rc1 and later
 
@@ -288,6 +288,11 @@ supported events are:
   <tr>
     <td><code>MaxLoginAttempts</code></td>
     <td>Host ban</td>
+  </tr>
+
+  <tr>
+    <td><code>MaxLoginAttemptsFromUser</code></td>
+    <td>User@Host ban</td>
   </tr>
 
   <tr>
@@ -437,7 +442,7 @@ once <code>proftpd</code> is shutdown, all current ban data is lost.
 <p>
 <hr>
 <h3><a name="ban"><code>ban</code></a></h3>
-<strong>Syntax:</strong> ftpdctl ban <em>class|host|info|user [-s address#port] name1 [name2 ...]</em><br>
+<strong>Syntax:</strong> ftpdctl ban <em>class|host|info|user|user@host [-s address#port] name1 [name2 ...]</em><br>
 <strong>Purpose:</strong> Add a ban or display ban information<br>
 
 <p>
@@ -510,7 +515,7 @@ See also: <a href="#permit"><code>permit</code></a>
 <p>
 <hr>
 <h3><a name="permit"><code>permit</code></a></h3>
-<strong>Syntax:</strong> ftpdctl permit <em>class|host|user [-s address#port] name1 [name2 ...]</em><br>
+<strong>Syntax:</strong> ftpdctl permit <em>class|host|user|user@host [-s address#port] name1 [name2 ...]</em><br>
 <strong>Purpose:</strong> Permit banned clients to connect<br>
 
 <p>
@@ -741,7 +746,7 @@ login as root.  How would I do this?<br>
 <br><hr>
 
 <font size=2><b><i>
-&copy; Copyright 2004-2020 TJ Saunders<br>
+&copy; Copyright 2004-2022 TJ Saunders<br>
  All Rights Reserved<br>
 </i></b></font>
 

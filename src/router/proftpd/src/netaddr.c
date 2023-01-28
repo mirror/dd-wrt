@@ -146,8 +146,6 @@ static void netaddr_dnscache_set(const char *ip_str, const char *dns_name) {
         dns_name, ip_str);
     }
   }
-
-  return;
 }
 
 static pr_netaddr_t *netaddr_ipcache_get(pool *p, const char *name) {
@@ -464,7 +462,7 @@ int pr_netaddr_set_reverse_dns(int enable) {
 }
 
 pr_netaddr_t *pr_netaddr_alloc(pool *p) {
-  if (!p) {
+  if (p == NULL) {
     errno = EINVAL;
     return NULL;
   }
@@ -473,8 +471,9 @@ pr_netaddr_t *pr_netaddr_alloc(pool *p) {
 }
 
 void pr_netaddr_clear(pr_netaddr_t *na) {
-  if (!na)
+  if (na == NULL) {
     return;
+  }
 
   memset(na, 0, sizeof(pr_netaddr_t));
 }
@@ -510,13 +509,13 @@ pr_netaddr_t *pr_netaddr_dup(pool *p, const pr_netaddr_t *na) {
 }
 
 static pr_netaddr_t *get_addr_by_ip(pool *p, const char *name,
-    array_header **addrs) {
+    array_header **addrs, unsigned int flags) {
   struct sockaddr_in v4;
   pr_netaddr_t *na = NULL;
   int res;
 
 #ifdef PR_USE_IPV6
-  if (use_ipv6) {
+  if (use_ipv6 == TRUE) {
     struct sockaddr_in6 v6;
     memset(&v6, 0, sizeof(v6));
     v6.sin6_family = AF_INET6;
@@ -530,21 +529,23 @@ static pr_netaddr_t *get_addr_by_ip(pool *p, const char *name,
       na = (pr_netaddr_t *) pcalloc(p, sizeof(pr_netaddr_t));
       pr_netaddr_set_family(na, AF_INET6);
       pr_netaddr_set_sockaddr(na, (struct sockaddr *) &v6);
-      if (addrs) {
+      if (addrs != NULL) {
         *addrs = NULL;
       }
 
       pr_trace_msg(trace_channel, 7, "'%s' resolved to IPv6 address %s", name,
         pr_netaddr_get_ipstr(na));
 
-      if (netaddr_ipcache_set(name, na) < 0) {
-        pr_trace_msg(trace_channel, 2, "error setting '%s' in cache: %s", name,
-          strerror(errno));
-      }
+      if (!(flags & PR_NETADDR_GET_ADDR_FL_EXCL_CACHE)) {
+        if (netaddr_ipcache_set(name, na) < 0) {
+          pr_trace_msg(trace_channel, 2, "error setting '%s' in cache: %s",
+            name, strerror(errno));
+        }
 
-      if (netaddr_ipcache_set(pr_netaddr_get_ipstr(na), na) < 0) {
-        pr_trace_msg(trace_channel, 2, "error setting '%s' in cache: %s",
-          pr_netaddr_get_ipstr(na), strerror(errno));
+        if (netaddr_ipcache_set(pr_netaddr_get_ipstr(na), na) < 0) {
+          pr_trace_msg(trace_channel, 2, "error setting '%s' in cache: %s",
+            pr_netaddr_get_ipstr(na), strerror(errno));
+        }
       }
 
       return na;
@@ -564,21 +565,26 @@ static pr_netaddr_t *get_addr_by_ip(pool *p, const char *name,
     na = (pr_netaddr_t *) pcalloc(p, sizeof(pr_netaddr_t));
     pr_netaddr_set_family(na, AF_INET);
     pr_netaddr_set_sockaddr(na, (struct sockaddr *) &v4);
-    if (addrs) {
+    if (addrs != NULL) {
       *addrs = NULL;
     }
 
     pr_trace_msg(trace_channel, 7, "'%s' resolved to IPv4 address %s", name,
       pr_netaddr_get_ipstr(na));
 
-    if (netaddr_ipcache_set(name, na) < 0) {
-      pr_trace_msg(trace_channel, 2, "error setting '%s' in cache: %s", name,
-        strerror(errno));
-    }
+    if (!(flags & PR_NETADDR_GET_ADDR_FL_EXCL_DNS)) {
+      if (netaddr_ipcache_set(name, na) < 0) {
+        pr_trace_msg(trace_channel, 2, "error setting '%s' in cache: %s", name,
+          strerror(errno));
+      }
 
-    if (netaddr_ipcache_set(pr_netaddr_get_ipstr(na), na) < 0) {
-      pr_trace_msg(trace_channel, 2, "error setting '%s' in cache: %s",
-        pr_netaddr_get_ipstr(na), strerror(errno));
+      /* Avoid duplicates. */
+      if (strcmp(name, pr_netaddr_get_ipstr(na)) != 0) {
+        if (netaddr_ipcache_set(pr_netaddr_get_ipstr(na), na) < 0) {
+          pr_trace_msg(trace_channel, 2, "error setting '%s' in cache: %s",
+            pr_netaddr_get_ipstr(na), strerror(errno));
+        }
+      }
     }
 
     return na;
@@ -588,7 +594,7 @@ static pr_netaddr_t *get_addr_by_ip(pool *p, const char *name,
 }
 
 static pr_netaddr_t *get_addr_by_name(pool *p, const char *name,
-    array_header **addrs) {
+    array_header **addrs, unsigned int flags) {
   pr_netaddr_t *na = NULL;
   int res, xerrno;
   struct addrinfo hints, *info = NULL;
@@ -609,7 +615,7 @@ static pr_netaddr_t *get_addr_by_name(pool *p, const char *name,
 
     if (res != EAI_SYSTEM) {
 #ifdef PR_USE_IPV6
-      if (use_ipv6) {
+      if (use_ipv6 == TRUE) {
         pr_trace_msg(trace_channel, 7,
           "unable to resolve '%s' to an IPv4 address: %s", name,
           pr_gai_strerror(res));
@@ -705,14 +711,16 @@ static pr_netaddr_t *get_addr_by_name(pool *p, const char *name,
       info->ai_family == AF_INET ? "IPv4" : "IPv6",
       pr_netaddr_get_ipstr(na));
 
-    if (netaddr_ipcache_set(name, na) < 0) {
-      pr_trace_msg(trace_channel, 2, "error setting '%s' in cache: %s", name,
-        strerror(errno));
-    }
+    if (!(flags & PR_NETADDR_GET_ADDR_FL_EXCL_DNS)) {
+      if (netaddr_ipcache_set(name, na) < 0) {
+        pr_trace_msg(trace_channel, 2, "error setting '%s' in cache: %s", name,
+          strerror(errno));
+      }
 
-    if (netaddr_ipcache_set(pr_netaddr_get_ipstr(na), na) < 0) {
-      pr_trace_msg(trace_channel, 2, "error setting '%s' in cache: %s",
-        pr_netaddr_get_ipstr(na), strerror(errno));
+      if (netaddr_ipcache_set(pr_netaddr_get_ipstr(na), na) < 0) {
+        pr_trace_msg(trace_channel, 2, "error setting '%s' in cache: %s",
+          pr_netaddr_get_ipstr(na), strerror(errno));
+      }
     }
 
     if (addrs != NULL) {
@@ -746,7 +754,8 @@ static pr_netaddr_t *get_addr_by_name(pool *p, const char *name,
   }
 
 #ifdef PR_USE_IPV6
-  if (use_ipv6 && addrs) {
+  if (use_ipv6 == TRUE &&
+      addrs != NULL) {
     /* Do the call again, this time for IPv6 addresses.
      *
      * We make two separate getaddrinfo(3) calls, rather than one
@@ -826,7 +835,7 @@ static pr_netaddr_t *get_addr_by_name(pool *p, const char *name,
 }
 
 static pr_netaddr_t *get_addr_by_device(pool *p, const char *name,
-    array_header **addrs) {
+    array_header **addrs, unsigned int flags) {
 #ifdef HAVE_GETIFADDRS
   struct ifaddrs *ifaddr = NULL;
   pr_netaddr_t *na = NULL;
@@ -950,7 +959,7 @@ const pr_netaddr_t *pr_netaddr_get_addr2(pool *p, const char *name,
    */
   if (addrs == NULL) {
     na = netaddr_ipcache_get(p, name);
-    if (na) {
+    if (na != NULL) {
       return na;
     }
   }
@@ -965,7 +974,7 @@ const pr_netaddr_t *pr_netaddr_get_addr2(pool *p, const char *name,
    * assume that the given name is a DNS name, and we call pr_getaddrinfo().
    */
 
-  na = get_addr_by_ip(p, name, addrs);
+  na = get_addr_by_ip(p, name, addrs, flags);
   xerrno = errno;
 
   if (na != NULL) {
@@ -982,7 +991,7 @@ const pr_netaddr_t *pr_netaddr_get_addr2(pool *p, const char *name,
    */
 
   if (!(flags & PR_NETADDR_GET_ADDR_FL_EXCL_DNS)) {
-    na = get_addr_by_name(p, name, addrs);
+    na = get_addr_by_name(p, name, addrs, flags);
     xerrno = errno;
 
     if (na != NULL) {
@@ -991,7 +1000,7 @@ const pr_netaddr_t *pr_netaddr_get_addr2(pool *p, const char *name,
   }
 
   if (flags & PR_NETADDR_GET_ADDR_FL_INCL_DEVICE) {
-    na = get_addr_by_device(p, name, addrs);
+    na = get_addr_by_device(p, name, addrs, flags);
     xerrno = errno;
 
     if (na != NULL) {
@@ -1033,7 +1042,7 @@ int pr_netaddr_set_family(pr_netaddr_t *na, int family) {
 
 #ifdef PR_USE_IPV6
     case AF_INET6:
-      if (use_ipv6) {
+      if (use_ipv6 == TRUE) {
         na->na_addr.v6.sin6_family = AF_INET6;
         break;
       }
@@ -1064,8 +1073,9 @@ size_t pr_netaddr_get_sockaddr_len(const pr_netaddr_t *na) {
  
 #ifdef PR_USE_IPV6
     case AF_INET6:
-      if (use_ipv6)
+      if (use_ipv6 == TRUE) {
         return sizeof(struct sockaddr_in6);
+      }
 #endif /* PR_USE_IPV6 */   
   }
 
@@ -1103,10 +1113,11 @@ struct sockaddr *pr_netaddr_get_sockaddr(const pr_netaddr_t *na) {
     case AF_INET:
       return (struct sockaddr *) &na->na_addr.v4;
 
-#ifdef PR_USE_IPV6
+#if defined(PR_USE_IPV6)
     case AF_INET6:
-      if (use_ipv6)
+      if (use_ipv6 == TRUE) {
         return (struct sockaddr *) &na->na_addr.v6;
+      }
 #endif /* PR_USE_IPV6 */
   }
 
@@ -1127,9 +1138,9 @@ int pr_netaddr_set_sockaddr(pr_netaddr_t *na, struct sockaddr *addr) {
       memcpy(&(na->na_addr.v4), addr, sizeof(struct sockaddr_in));
       return 0;
 
-#ifdef PR_USE_IPV6
+#if defined(PR_USE_IPV6)
     case AF_INET6:
-      if (use_ipv6) {
+      if (use_ipv6 == TRUE) {
         memcpy(&(na->na_addr.v6), addr, sizeof(struct sockaddr_in6));
         return 0;
       }
@@ -1155,17 +1166,25 @@ int pr_netaddr_set_sockaddr_any(pr_netaddr_t *na) {
       na->na_addr.v4.sin_len = sizeof(struct sockaddr_in);
 #endif /* SIN_LEN */
       memcpy(&na->na_addr.v4.sin_addr, &in4addr_any, sizeof(struct in_addr));
+      if (na->na_have_ipstr) {
+        memset(na->na_ipstr, '\0', sizeof(na->na_ipstr));
+        sstrncpy(na->na_ipstr, "0.0.0.0", sizeof(na->na_ipstr));
+      }
       return 0;
     }
 
 #ifdef PR_USE_IPV6
     case AF_INET6:
-      if (use_ipv6) {
+      if (use_ipv6 == TRUE) {
         na->na_addr.v6.sin6_family = AF_INET6;
 #ifdef SIN6_LEN
         na->na_addr.v6.sin6_len = sizeof(struct sockaddr_in6);
 #endif /* SIN6_LEN */
         memcpy(&na->na_addr.v6.sin6_addr, &in6addr_any, sizeof(struct in6_addr));
+        if (na->na_have_ipstr) {
+          memset(na->na_ipstr, '\0', sizeof(na->na_ipstr));
+          sstrncpy(na->na_ipstr, "::", sizeof(na->na_ipstr));
+        }
         return 0;
       }
 #endif /* PR_USE_IPV6 */
@@ -1187,8 +1206,9 @@ void *pr_netaddr_get_inaddr(const pr_netaddr_t *na) {
 
 #ifdef PR_USE_IPV6
     case AF_INET6:
-      if (use_ipv6)
+      if (use_ipv6 == TRUE) {
         return (void *) &na->na_addr.v6.sin6_addr;
+      }
 #endif /* PR_USE_IPV6 */
   }
 
@@ -1197,7 +1217,7 @@ void *pr_netaddr_get_inaddr(const pr_netaddr_t *na) {
 }
 
 unsigned int pr_netaddr_get_port(const pr_netaddr_t *na) {
-  if (!na) {
+  if (na == NULL) {
     errno = EINVAL;
     return 0;
   }
@@ -1208,8 +1228,9 @@ unsigned int pr_netaddr_get_port(const pr_netaddr_t *na) {
 
 #ifdef PR_USE_IPV6
     case AF_INET6:
-      if (use_ipv6)
+      if (use_ipv6 == TRUE) {
         return na->na_addr.v6.sin6_port;
+      }
 #endif /* PR_USE_IPV6 */
   }
 
@@ -1348,7 +1369,7 @@ int pr_netaddr_cmp(const pr_netaddr_t *na1, const pr_netaddr_t *na2) {
             pr_netaddr_get_ipstr(a), pr_netaddr_get_ipstr(b));
         }
 
-        if (tmp_pool) {
+        if (tmp_pool != NULL) {
           destroy_pool(tmp_pool);
           tmp_pool = NULL;
         }
@@ -1358,8 +1379,9 @@ int pr_netaddr_cmp(const pr_netaddr_t *na1, const pr_netaddr_t *na2) {
 #endif /* PR_USE_IPV6 */
   }
 
-  if (tmp_pool)
+  if (tmp_pool != NULL) {
     destroy_pool(tmp_pool);
+  }
 
   errno = EPERM;
   return -1;
@@ -2440,26 +2462,27 @@ void pr_netaddr_set_sess_addrs(void) {
 }
 
 unsigned char pr_netaddr_use_ipv6(void) {
-  if (use_ipv6)
+  if (use_ipv6 == TRUE) {
     return TRUE;
+  }
 
   return FALSE;
 }
 
 void pr_netaddr_disable_ipv6(void) {
-#ifdef PR_USE_IPV6
-  use_ipv6 = 0;
+#if defined(PR_USE_IPV6)
+  use_ipv6 = FALSE;
 #endif /* PR_USE_IPV6 */
 }
 
 void pr_netaddr_enable_ipv6(void) {
-#ifdef PR_USE_IPV6
-  use_ipv6 = 1;
+#if defined(PR_USE_IPV6)
+  use_ipv6 = TRUE;
 #endif /* PR_USE_IPV6 */
 }
 
 void pr_netaddr_clear_cache(void) {
-  if (netaddr_iptab) {
+  if (netaddr_iptab != NULL) {
     pr_trace_msg(trace_channel, 5, "emptying netaddr IP cache");
     (void) pr_table_empty(netaddr_iptab);
     (void) pr_table_free(netaddr_iptab);
@@ -2468,7 +2491,7 @@ void pr_netaddr_clear_cache(void) {
     netaddr_iptab = pr_table_alloc(netaddr_pool, 0);
   }
 
-  if (netaddr_dnstab) {
+  if (netaddr_dnstab != NULL) {
     pr_trace_msg(trace_channel, 5, "emptying netaddr DNS cache");
     (void) pr_table_empty(netaddr_dnstab);
     (void) pr_table_free(netaddr_dnstab);
@@ -2491,7 +2514,7 @@ void pr_netaddr_clear_ipcache(const char *name) {
 }
 
 void init_netaddr(void) {
-  if (netaddr_pool) {
+  if (netaddr_pool != NULL) {
     pr_netaddr_clear_cache();
     destroy_pool(netaddr_pool);
     netaddr_pool = NULL;

@@ -1,6 +1,6 @@
 /*
  * ProFTPD - mod_sftp
- * Copyright (c) 2008-2020 TJ Saunders
+ * Copyright (c) 2008-2022 TJ Saunders
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -49,8 +49,20 @@
 /* Define if you have OpenSSL with crippled AES support. */
 #undef HAVE_AES_CRIPPLED_OPENSSL
 
+/* Define if you have OpenSSL with EVP_aes_128_ctr support. */
+#undef HAVE_EVP_AES_128_CTR_OPENSSL
+
+/* Define if you have OpenSSL with EVP_aes_192_ctr support. */
+#undef HAVE_EVP_AES_192_CTR_OPENSSL
+
 /* Define if you have OpenSSL with EVP_aes_256_ctr support. */
 #undef HAVE_EVP_AES_256_CTR_OPENSSL
+
+/* Define if you have OpenSSL with EVP_aes_256_gcm support. */
+#undef HAVE_EVP_AES_256_GCM_OPENSSL
+
+/* Define if you have OpenSSL with OSSL_PROVIDER_load support. */
+#undef HAVE_OSSL_PROVIDER_LOAD_OPENSSL
 
 /* Define if you have OpenSSL with SHA256 support. */
 #undef HAVE_SHA256_OPENSSL
@@ -58,7 +70,10 @@
 /* Define if you have OpenSSL with SHA512 support. */
 #undef HAVE_SHA512_OPENSSL
 
-#define MOD_SFTP_VERSION	"mod_sftp/1.0.1"
+/* Define if you have OpenSSL with X448 support. */
+#undef HAVE_X448_OPENSSL
+
+#define MOD_SFTP_VERSION	"mod_sftp/1.1.1"
 
 /* Make sure the version of proftpd is as necessary. */
 #if PROFTPD_VERSION_NUMBER < 0x0001030402
@@ -89,10 +104,13 @@
 # include <openssl/engine.h>
 # include <openssl/ocsp.h>
 #endif
-#ifdef PR_USE_OPENSSL_ECC
+#if defined(PR_USE_OPENSSL_ECC)
 # include <openssl/ec.h>
 # include <openssl/ecdh.h>
 #endif /* PR_USE_OPENSSL_ECC */
+#if defined(HAVE_OSSL_PROVIDER_LOAD_OPENSSL)
+# include <openssl/provider.h>
+#endif /* HAVE_OSSL_PROVIDER_LOAD_OPENSSL */
 
 /* Define if you have the LibreSSL library.  */
 #if defined(LIBRESSL_VERSION_NUMBER)
@@ -131,6 +149,7 @@
 #define SFTP_OPT_IGNORE_SFTP_SET_XATTRS		0x04000
 #define SFTP_OPT_INCLUDE_SFTP_TIMES		0x08000
 #define SFTP_OPT_NO_EXT_INFO			0x10000
+#define SFTP_OPT_NO_HOSTKEY_ROTATION		0x20000
 
 /* mod_sftp service flags */
 #define SFTP_SERVICE_FL_SFTP		0x0001

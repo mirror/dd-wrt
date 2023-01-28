@@ -102,7 +102,12 @@ my $TESTS = {
     test_class => [qw(forking)],
   },
 
-  wrap2_file_user_tables => {
+  wrap2_file_user_tables_not_matching_user => {
+    order => ++$order,
+    test_class => [qw(forking)],
+  },
+
+  wrap2_file_user_tables_matching_user => {
     order => ++$order,
     test_class => [qw(forking)],
   },
@@ -112,7 +117,12 @@ my $TESTS = {
     test_class => [qw(forking)],
   },
 
-  wrap2_file_group_tables => {
+  wrap2_file_group_tables_not_matching_group => {
+    order => ++$order,
+    test_class => [qw(forking)],
+  },
+
+  wrap2_file_group_tables_matching_group => {
     order => ++$order,
     test_class => [qw(forking)],
   },
@@ -147,6 +157,16 @@ my $TESTS = {
     test_class => [qw(bug forking)],
   },
 
+  wrap2_file_allow_includes_issue1133 => {
+    order => ++$order,
+    test_class => [qw(bug forking mod_wrap2)],
+  },
+
+  wrap2_file_deny_includes_issue1133 => {
+    order => ++$order,
+    test_class => [qw(bug forking mod_wrap2)],
+  },
+
 };
 
 sub new {
@@ -175,15 +195,7 @@ sub set_up {
 sub wrap2_allow_msg {
   my $self = shift;
   my $tmpdir = $self->{tmpdir};
-
-  my $config_file = "$tmpdir/wrap2.conf";
-  my $pid_file = File::Spec->rel2abs("$tmpdir/wrap2.pid");
-  my $scoreboard_file = File::Spec->rel2abs("$tmpdir/wrap2.scoreboard");
-
-  my $log_file = test_get_logfile();
-
-  my $auth_user_file = File::Spec->rel2abs("$tmpdir/wrap2.passwd");
-  my $auth_group_file = File::Spec->rel2abs("$tmpdir/wrap2.group");
+  my $setup = test_setup($tmpdir, 'wrap2');
 
   my $fh;
   my $allow_file = File::Spec->rel2abs("$tmpdir/wrap2.allow");
@@ -202,36 +214,13 @@ sub wrap2_allow_msg {
     die("Can't open $deny_file: $!");
   }
 
-  my $user = 'proftpd';
-  my $passwd = 'test';
-  my $group = 'ftpd';
-  my $home_dir = File::Spec->rel2abs($tmpdir);
-  my $uid = 500;
-  my $gid = 500;
-
-  # Make sure that, if we're running as root, that the home directory has
-  # permissions/privs set for the account we create
-  if ($< == 0) {
-    unless (chmod(0755, $home_dir)) {
-      die("Can't set perms on $home_dir to 0755: $!");
-    }
-
-    unless (chown($uid, $gid, $home_dir)) {
-      die("Can't set owner of $home_dir to $uid/$gid: $!");
-    }
-  }
-
-  auth_user_write($auth_user_file, $user, $passwd, $uid, $gid, $home_dir,
-    '/bin/bash');
-  auth_group_write($auth_group_file, $group, $gid, $user);
-
   my $config = {
-    PidFile => $pid_file,
-    ScoreboardFile => $scoreboard_file,
-    SystemLog => $log_file,
+    PidFile => $setup->{pid_file},
+    ScoreboardFile => $setup->{scoreboard_file},
+    SystemLog => $setup->{log_file},
 
-    AuthUserFile => $auth_user_file,
-    AuthGroupFile => $auth_group_file,
+    AuthUserFile => $setup->{auth_user_file},
+    AuthGroupFile => $setup->{auth_group_file},
 
     IfModules => {
       'mod_delay.c' => {
@@ -246,7 +235,8 @@ sub wrap2_allow_msg {
     },
   };
 
-  my ($port, $config_user, $config_group) = config_write($config_file, $config);
+  my ($port, $config_user, $config_group) = config_write($setup->{config_file},
+    $config);
 
   # Open pipes, for use between the parent and child processes.  Specifically,
   # the child will indicate when it's done with its test by writing a message
@@ -264,7 +254,7 @@ sub wrap2_allow_msg {
   if ($pid) {
     eval {
       my $client = ProFTPD::TestSuite::FTP->new('127.0.0.1', $port);
-      $client->login($user, $passwd);
+      $client->login($setup->{user}, $setup->{passwd});
 
       my $resp_code = $client->response_code();
       my $resp_msg = $client->response_msg(0);
@@ -275,11 +265,10 @@ sub wrap2_allow_msg {
       $self->assert($expected == $resp_code,
         test_msg("Expected response code $expected, got $resp_code"));
 
-      $expected = "User $user allowed by access rules";
+      $expected = "User $setup->{user} allowed by access rules";
       $self->assert($expected eq $resp_msg,
         test_msg("Expected response message '$expected', got '$resp_msg'"));
     };
-
     if ($@) {
       $ex = $@;
     }
@@ -288,7 +277,7 @@ sub wrap2_allow_msg {
     $wfh->flush();
 
   } else {
-    eval { server_wait($config_file, $rfh) };
+    eval { server_wait($setup->{config_file}, $rfh) };
     if ($@) {
       warn($@);
       exit 1;
@@ -298,32 +287,16 @@ sub wrap2_allow_msg {
   }
 
   # Stop server
-  server_stop($pid_file);
-
+  server_stop($setup->{pid_file});
   $self->assert_child_ok($pid);
 
-  if ($ex) {
-    test_append_logfile($log_file, $ex);
-    unlink($log_file);
-
-    die($ex);
-  }
-
-  unlink($log_file);
+  test_cleanup($setup->{log_file}, $ex);
 }
 
 sub wrap2_deny_msg {
   my $self = shift;
   my $tmpdir = $self->{tmpdir};
-
-  my $config_file = "$tmpdir/wrap2.conf";
-  my $pid_file = File::Spec->rel2abs("$tmpdir/wrap2.pid");
-  my $scoreboard_file = File::Spec->rel2abs("$tmpdir/wrap2.scoreboard");
-
-  my $log_file = test_get_logfile();
-
-  my $auth_user_file = File::Spec->rel2abs("$tmpdir/wrap2.passwd");
-  my $auth_group_file = File::Spec->rel2abs("$tmpdir/wrap2.group");
+  my $setup = test_setup($tmpdir, 'wrap2');
 
   my $fh;
   my $allow_file = File::Spec->rel2abs("$tmpdir/wrap2.allow");
@@ -346,38 +319,15 @@ sub wrap2_deny_msg {
     die("Can't open $deny_file: $!");
   }
 
-  my $user = 'proftpd';
-  my $passwd = 'test';
-  my $group = 'ftpd';
-  my $home_dir = File::Spec->rel2abs($tmpdir);
-  my $uid = 500;
-  my $gid = 500;
-
-  # Make sure that, if we're running as root, that the home directory has
-  # permissions/privs set for the account we create
-  if ($< == 0) {
-    unless (chmod(0755, $home_dir)) {
-      die("Can't set perms on $home_dir to 0755: $!");
-    }
-
-    unless (chown($uid, $gid, $home_dir)) {
-      die("Can't set owner of $home_dir to $uid/$gid: $!");
-    }
-  }
-
-  auth_user_write($auth_user_file, $user, $passwd, $uid, $gid, $home_dir,
-    '/bin/bash');
-  auth_group_write($auth_group_file, $group, $gid, $user);
-
   my $timeout_idle = 15;
 
   my $config = {
-    PidFile => $pid_file,
-    ScoreboardFile => $scoreboard_file,
-    SystemLog => $log_file,
+    PidFile => $setup->{pid_file},
+    ScoreboardFile => $setup->{scoreboard_file},
+    SystemLog => $setup->{log_file},
 
-    AuthUserFile => $auth_user_file,
-    AuthGroupFile => $auth_group_file,
+    AuthUserFile => $setup->{auth_user_file},
+    AuthGroupFile => $setup->{auth_group_file},
     TimeoutIdle => $timeout_idle,
     UseReverseDNS => 'off',
 
@@ -390,12 +340,13 @@ sub wrap2_deny_msg {
         WrapEngine => 'on',
         WrapDenyMsg => '"User %u rejected by access rules"',
         WrapTables => "file:$allow_file file:$deny_file",
-        WrapLog => $log_file,
+        WrapLog => $setup->{log_file},
       },
     },
   };
 
-  my ($port, $config_user, $config_group) = config_write($config_file, $config);
+  my ($port, $config_user, $config_group) = config_write($setup->{config_file},
+    $config);
 
   # Open pipes, for use between the parent and child processes.  Specifically,
   # the child will indicate when it's done with its test by writing a message
@@ -414,28 +365,24 @@ sub wrap2_deny_msg {
     eval {
       my $client = ProFTPD::TestSuite::FTP->new('127.0.0.1', $port);
 
-      my ($resp_code, $resp_msg);
-
-      eval { $client->login($user, $passwd) };
+      eval { $client->login($setup->{user}, $setup->{passwd}) };
       unless ($@) {
         die("Login succeeded unexpectedly");
-
-      } else {
-        $resp_code = $client->response_code();
-        $resp_msg = $client->response_msg();
       }
+
+      my $resp_code = $client->response_code();
+      my $resp_msg = $client->response_msg();
 
       my $expected;
 
       $expected = 530;
       $self->assert($expected == $resp_code,
-        test_msg("Expected $expected, got $resp_code"));
+        test_msg("Expected response code $expected, got $resp_code"));
 
-      $expected = "User $user rejected by access rules";
+      $expected = "User $setup->{user} rejected by access rules";
       $self->assert($expected eq $resp_msg,
-        test_msg("Expected '$expected', got '$resp_msg'"));
+        test_msg("Expected response message '$expected', got '$resp_msg'"));
     };
-
     if ($@) {
       $ex = $@;
     }
@@ -444,7 +391,7 @@ sub wrap2_deny_msg {
     $wfh->flush();
 
   } else {
-    eval { server_wait($config_file, $rfh, $timeout_idle + 2) };
+    eval { server_wait($setup->{config_file}, $rfh, $timeout_idle + 2) };
     if ($@) {
       warn($@);
       exit 1;
@@ -454,18 +401,10 @@ sub wrap2_deny_msg {
   }
 
   # Stop server
-  server_stop($pid_file);
-
+  server_stop($setup->{pid_file});
   $self->assert_child_ok($pid);
 
-  if ($ex) {
-    test_append_logfile($log_file, $ex);
-    unlink($log_file);
-
-    die($ex);
-  }
-
-  unlink($log_file);
+  test_cleanup($setup->{log_file}, $ex);
 }
 
 sub wrap2_engine {
@@ -616,20 +555,12 @@ sub wrap2_engine {
 sub wrap2_file_allow_table {
   my $self = shift;
   my $tmpdir = $self->{tmpdir};
-
-  my $config_file = "$tmpdir/wrap2.conf";
-  my $pid_file = File::Spec->rel2abs("$tmpdir/wrap2.pid");
-  my $scoreboard_file = File::Spec->rel2abs("$tmpdir/wrap2.scoreboard");
-
-  my $log_file = test_get_logfile();
-
-  my $auth_user_file = File::Spec->rel2abs("$tmpdir/wrap2.passwd");
-  my $auth_group_file = File::Spec->rel2abs("$tmpdir/wrap2.group");
+  my $setup = test_setup($tmpdir, 'wrap2');
 
   my $fh;
   my $allow_file = File::Spec->rel2abs("$tmpdir/wrap2.allow");
   if (open($fh, "> $allow_file")) {
-    print $fh "ALL: ALL\n";
+    print $fh "ALL: 127.0.0.1\n";
     unless (close($fh)) {
       die("Can't write $allow_file: $!");
     }
@@ -650,36 +581,15 @@ sub wrap2_file_allow_table {
     die("Can't open $deny_file: $!");
   }
 
-  my $user = 'proftpd';
-  my $passwd = 'test';
-  my $group = 'ftpd';
-  my $home_dir = File::Spec->rel2abs($tmpdir);
-  my $uid = 500;
-  my $gid = 500;
-
-  # Make sure that, if we're running as root, that the home directory has
-  # permissions/privs set for the account we create
-  if ($< == 0) {
-    unless (chmod(0755, $home_dir)) {
-      die("Can't set perms on $home_dir to 0755: $!");
-    }
-
-    unless (chown($uid, $gid, $home_dir)) {
-      die("Can't set owner of $home_dir to $uid/$gid: $!");
-    }
-  }
-
-  auth_user_write($auth_user_file, $user, $passwd, $uid, $gid, $home_dir,
-    '/bin/bash');
-  auth_group_write($auth_group_file, $group, $gid, $user);
-
   my $config = {
-    PidFile => $pid_file,
-    ScoreboardFile => $scoreboard_file,
-    SystemLog => $log_file,
+    PidFile => $setup->{pid_file},
+    ScoreboardFile => $setup->{scoreboard_file},
+    SystemLog => $setup->{log_file},
+    TraceLog => $setup->{log_file},
+    Trace => 'wrap2:20',
 
-    AuthUserFile => $auth_user_file,
-    AuthGroupFile => $auth_group_file,
+    AuthUserFile => $setup->{auth_user_file},
+    AuthGroupFile => $setup->{auth_group_file},
 
     IfModules => {
       'mod_delay.c' => {
@@ -688,12 +598,14 @@ sub wrap2_file_allow_table {
 
       'mod_wrap2.c' => {
         WrapEngine => 'on',
+        WrapLog => $setup->{log_file},
         WrapTables => "file:$allow_file file:$deny_file",
       },
     },
   };
 
-  my ($port, $config_user, $config_group) = config_write($config_file, $config);
+  my ($port, $config_user, $config_group) = config_write($setup->{config_file},
+    $config);
 
   # Open pipes, for use between the parent and child processes.  Specifically,
   # the child will indicate when it's done with its test by writing a message
@@ -711,22 +623,21 @@ sub wrap2_file_allow_table {
   if ($pid) {
     eval {
       my $client = ProFTPD::TestSuite::FTP->new('127.0.0.1', $port);
-
-      my ($resp_code, $resp_msg);
-
-      ($resp_code, $resp_msg) = $client->login($user, $passwd);
+      my ($resp_code, $resp_msg) = $client->login($setup->{user},
+        $setup->{passwd});
 
       my $expected;
 
       $expected = 230;
       $self->assert($expected == $resp_code,
-        test_msg("Expected $expected, got $resp_code"));
+        test_msg("Expected response code $expected, got $resp_code"));
 
-      $expected = "User $user logged in";
+      $expected = "User $setup->{user} logged in";
       $self->assert($expected eq $resp_msg,
-        test_msg("Expected '$expected', got '$resp_msg'"));
-    };
+        test_msg("Expected response message '$expected', got '$resp_msg'"));
 
+      $client->quit();
+    };
     if ($@) {
       $ex = $@;
     }
@@ -735,7 +646,7 @@ sub wrap2_file_allow_table {
     $wfh->flush();
 
   } else {
-    eval { server_wait($config_file, $rfh) };
+    eval { server_wait($setup->{config_file}, $rfh) };
     if ($@) {
       warn($@);
       exit 1;
@@ -745,78 +656,10 @@ sub wrap2_file_allow_table {
   }
 
   # Stop server
-  server_stop($pid_file);
-
+  server_stop($setup->{pid_file});
   $self->assert_child_ok($pid);
 
-  if ($ex) {
-    die($ex);
-  }
-
-  if (open($fh, "> $allow_file")) {
-    print $fh "ALL: 127.0.0.1\n";
-    unless (close($fh)) {
-      die("Can't write $allow_file: $!");
-    }
-
-  } else {
-    die("Can't open $allow_file: $!");
-  }
-
-  ($port, $config_user, $config_group) = config_write($config_file, $config);
-
-  # Fork child
-  $self->handle_sigchld();
-  defined($pid = fork()) or die("Can't fork: $!");
-  if ($pid) {
-    eval {
-      my $client = ProFTPD::TestSuite::FTP->new('127.0.0.1', $port);
-
-      my ($resp_code, $resp_msg);
-
-      ($resp_code, $resp_msg) = $client->login($user, $passwd);
-
-      my $expected;
-
-      $expected = 230;
-      $self->assert($expected == $resp_code,
-        test_msg("Expected $expected, got $resp_code"));
-
-      $expected = "User $user logged in";
-      $self->assert($expected eq $resp_msg,
-        test_msg("Expected '$expected', got '$resp_msg'"));
-    };
-
-    if ($@) {
-      $ex = $@;
-    }
-
-    $wfh->print("done\n");
-    $wfh->flush();
-
-  } else {
-    eval { server_wait($config_file, $rfh) };
-    if ($@) {
-      warn($@);
-      exit 1;
-    }
-
-    exit 0;
-  }
-
-  # Stop server
-  server_stop($pid_file);
-
-  $self->assert_child_ok($pid);
-
-  if ($ex) {
-    test_append_logfile($log_file, $ex);
-    unlink($log_file);
-
-    die($ex);
-  }
-
-  unlink($log_file);
+  test_cleanup($setup->{log_file}, $ex);
 }
 
 sub wrap2_file_allow_table_multi_rows_multi_entries {
@@ -1635,7 +1478,7 @@ sub wrap2_file_allow_table_user_dns_name_suffix {
     ScoreboardFile => $scoreboard_file,
     SystemLog => $log_file,
     TraceLog => $log_file,
-    Trace => 'dns:20',
+    Trace => 'dns:20 wrap2:20',
 
     AuthUserFile => $auth_user_file,
     AuthGroupFile => $auth_group_file,
@@ -1735,20 +1578,12 @@ sub wrap2_file_allow_table_user_dns_name_suffix {
 sub wrap2_file_allow_table_tilde {
   my $self = shift;
   my $tmpdir = $self->{tmpdir};
-
-  my $config_file = "$tmpdir/wrap2.conf";
-  my $pid_file = File::Spec->rel2abs("$tmpdir/wrap2.pid");
-  my $scoreboard_file = File::Spec->rel2abs("$tmpdir/wrap2.scoreboard");
-
-  my $log_file = test_get_logfile();
-
-  my $auth_user_file = File::Spec->rel2abs("$tmpdir/wrap2.passwd");
-  my $auth_group_file = File::Spec->rel2abs("$tmpdir/wrap2.group");
+  my $setup = test_setup($tmpdir, 'wrap2');
 
   my $fh;
   my $allow_file = File::Spec->rel2abs("$tmpdir/wrap2.allow");
   if (open($fh, "> $allow_file")) {
-    print $fh "ALL: ALL\n";
+    print $fh "ALL: 127.0.0.1\n";
     unless (close($fh)) {
       die("Can't write $allow_file: $!");
     }
@@ -1769,36 +1604,15 @@ sub wrap2_file_allow_table_tilde {
     die("Can't open $deny_file: $!");
   }
 
-  my $user = 'proftpd';
-  my $passwd = 'test';
-  my $group = 'ftpd';
-  my $home_dir = File::Spec->rel2abs($tmpdir);
-  my $uid = 500;
-  my $gid = 500;
-
-  # Make sure that, if we're running as root, that the home directory has
-  # permissions/privs set for the account we create
-  if ($< == 0) {
-    unless (chmod(0755, $home_dir)) {
-      die("Can't set perms on $home_dir to 0755: $!");
-    }
-
-    unless (chown($uid, $gid, $home_dir)) {
-      die("Can't set owner of $home_dir to $uid/$gid: $!");
-    }
-  }
-
-  auth_user_write($auth_user_file, $user, $passwd, $uid, $gid, $home_dir,
-    '/bin/bash');
-  auth_group_write($auth_group_file, $group, $gid, $user);
-
   my $config = {
-    PidFile => $pid_file,
-    ScoreboardFile => $scoreboard_file,
-    SystemLog => $log_file,
+    PidFile => $setup->{pid_file},
+    ScoreboardFile => $setup->{scoreboard_file},
+    SystemLog => $setup->{log_file},
+    TraceLog => $setup->{log_file},
+    Trace => 'wrap2:20',
 
-    AuthUserFile => $auth_user_file,
-    AuthGroupFile => $auth_group_file,
+    AuthUserFile => $setup->{auth_user_file},
+    AuthGroupFile => $setup->{auth_group_file},
 
     IfModules => {
       'mod_delay.c' => {
@@ -1807,12 +1621,14 @@ sub wrap2_file_allow_table_tilde {
 
       'mod_wrap2.c' => {
         WrapEngine => 'on',
+        WrapLog => $setup->{log_file},
         WrapTables => "file:~/wrap2.allow file:~/wrap2.deny",
       },
     },
   };
 
-  my ($port, $config_user, $config_group) = config_write($config_file, $config);
+  my ($port, $config_user, $config_group) = config_write($setup->{config_file},
+    $config);
 
   # Open pipes, for use between the parent and child processes.  Specifically,
   # the child will indicate when it's done with its test by writing a message
@@ -1830,22 +1646,19 @@ sub wrap2_file_allow_table_tilde {
   if ($pid) {
     eval {
       my $client = ProFTPD::TestSuite::FTP->new('127.0.0.1', $port);
-
-      my ($resp_code, $resp_msg);
-
-      ($resp_code, $resp_msg) = $client->login($user, $passwd);
+      my ($resp_code, $resp_msg) = $client->login($setup->{user},
+        $setup->{passwd});
 
       my $expected;
 
       $expected = 230;
       $self->assert($expected == $resp_code,
-        test_msg("Expected $expected, got $resp_code"));
+        test_msg("Expected response code $expected, got $resp_code"));
 
-      $expected = "User $user logged in";
+      $expected = "User $setup->{user} logged in";
       $self->assert($expected eq $resp_msg,
-        test_msg("Expected '$expected', got '$resp_msg'"));
+        test_msg("Expected response message '$expected', got '$resp_msg'"));
     };
-
     if ($@) {
       $ex = $@;
     }
@@ -1854,7 +1667,7 @@ sub wrap2_file_allow_table_tilde {
     $wfh->flush();
 
   } else {
-    eval { server_wait($config_file, $rfh) };
+    eval { server_wait($setup->{config_file}, $rfh) };
     if ($@) {
       warn($@);
       exit 1;
@@ -1864,105 +1677,21 @@ sub wrap2_file_allow_table_tilde {
   }
 
   # Stop server
-  server_stop($pid_file);
-
+  server_stop($setup->{pid_file});
   $self->assert_child_ok($pid);
 
-  if ($ex) {
-    die($ex);
-  }
-
-  if (open($fh, "> $allow_file")) {
-    print $fh "ALL: 127.0.0.1\n";
-    unless (close($fh)) {
-      die("Can't write $allow_file: $!");
-    }
-
-  } else {
-    die("Can't open $allow_file: $!");
-  }
-
-  ($port, $config_user, $config_group) = config_write($config_file, $config);
-
-  # Fork child
-  $self->handle_sigchld();
-  defined($pid = fork()) or die("Can't fork: $!");
-  if ($pid) {
-    eval {
-      my $client = ProFTPD::TestSuite::FTP->new('127.0.0.1', $port);
-
-      my ($resp_code, $resp_msg);
-
-      ($resp_code, $resp_msg) = $client->login($user, $passwd);
-
-      my $expected;
-
-      $expected = 230;
-      $self->assert($expected == $resp_code,
-        test_msg("Expected $expected, got $resp_code"));
-
-      $expected = "User $user logged in";
-      $self->assert($expected eq $resp_msg,
-        test_msg("Expected '$expected', got '$resp_msg'"));
-    };
-
-    if ($@) {
-      $ex = $@;
-    }
-
-    $wfh->print("done\n");
-    $wfh->flush();
-
-  } else {
-    eval { server_wait($config_file, $rfh) };
-    if ($@) {
-      warn($@);
-      exit 1;
-    }
-
-    exit 0;
-  }
-
-  # Stop server
-  server_stop($pid_file);
-
-  $self->assert_child_ok($pid);
-
-  if ($ex) {
-    test_append_logfile($log_file, $ex);
-    unlink($log_file);
-
-    die($ex);
-  }
-
-  unlink($log_file);
+  test_cleanup($setup->{log_file}, $ex);
 }
 
 sub wrap2_file_allow_table_var_U {
   my $self = shift;
   my $tmpdir = $self->{tmpdir};
-
-  my $config_file = "$tmpdir/wrap2.conf";
-  my $pid_file = File::Spec->rel2abs("$tmpdir/wrap2.pid");
-  my $scoreboard_file = File::Spec->rel2abs("$tmpdir/wrap2.scoreboard");
-
-  my $log_file = test_get_logfile();
-
-  my $auth_user_file = File::Spec->rel2abs("$tmpdir/wrap2.passwd");
-  my $auth_group_file = File::Spec->rel2abs("$tmpdir/wrap2.group");
-
-  my $user = 'proftpd';
-  my $passwd = 'test';
-  my $group = 'ftpd';
-  my $home_dir = File::Spec->rel2abs("$tmpdir/$user");
-  mkpath($home_dir);
-  my $uid = 500;
-  my $gid = 500;
+  my $setup = test_setup($tmpdir, 'wrap2');
 
   my $fh;
-  my $allow_file = File::Spec->rel2abs("$home_dir/wrap2.allow");
+  my $allow_file = File::Spec->rel2abs("$setup->{home_dir}/wrap2.allow");
   if (open($fh, "> $allow_file")) {
-    print $fh "ALL: ALL\n";
+    print $fh "ALL: 127.0.0.1\n";
     unless (close($fh)) {
       die("Can't write $allow_file: $!");
     }
@@ -1971,7 +1700,7 @@ sub wrap2_file_allow_table_var_U {
     die("Can't open $allow_file: $!");
   }
 
-  my $deny_file = File::Spec->rel2abs("$home_dir/wrap2.deny");
+  my $deny_file = File::Spec->rel2abs("$setup->{home_dir}/wrap2.deny");
   if (open($fh, "> $deny_file")) {
     print $fh "ALL: ALL\n";
 
@@ -1983,29 +1712,15 @@ sub wrap2_file_allow_table_var_U {
     die("Can't open $deny_file: $!");
   }
 
-  # Make sure that, if we're running as root, that the home directory has
-  # permissions/privs set for the account we create
-  if ($< == 0) {
-    unless (chmod(0755, $home_dir)) {
-      die("Can't set perms on $home_dir to 0755: $!");
-    }
-
-    unless (chown($uid, $gid, $home_dir)) {
-      die("Can't set owner of $home_dir to $uid/$gid: $!");
-    }
-  }
-
-  auth_user_write($auth_user_file, $user, $passwd, $uid, $gid, $home_dir,
-    '/bin/bash');
-  auth_group_write($auth_group_file, $group, $gid, $user);
-
   my $config = {
-    PidFile => $pid_file,
-    ScoreboardFile => $scoreboard_file,
-    SystemLog => $log_file,
+    PidFile => $setup->{pid_file},
+    ScoreboardFile => $setup->{scoreboard_file},
+    SystemLog => $setup->{log_file},
+    TraceLog => $setup->{log_file},
+    Trace => 'wrap2:20',
 
-    AuthUserFile => $auth_user_file,
-    AuthGroupFile => $auth_group_file,
+    AuthUserFile => $setup->{auth_user_file},
+    AuthGroupFile => $setup->{auth_group_file},
 
     IfModules => {
       'mod_delay.c' => {
@@ -2014,12 +1729,14 @@ sub wrap2_file_allow_table_var_U {
 
       'mod_wrap2.c' => {
         WrapEngine => 'on',
+        WrapLog => $setup->{log_file},
         WrapTables => "file:$tmpdir/%U/wrap2.allow file:$tmpdir/%U/wrap2.deny",
       },
     },
   };
 
-  my ($port, $config_user, $config_group) = config_write($config_file, $config);
+  my ($port, $config_user, $config_group) = config_write($setup->{config_file},
+    $config);
 
   # Open pipes, for use between the parent and child processes.  Specifically,
   # the child will indicate when it's done with its test by writing a message
@@ -2037,9 +1754,8 @@ sub wrap2_file_allow_table_var_U {
   if ($pid) {
     eval {
       my $client = ProFTPD::TestSuite::FTP->new('127.0.0.1', $port);
-      my ($resp_code, $resp_msg);
-
-      ($resp_code, $resp_msg) = $client->login($user, $passwd);
+      my ($resp_code, $resp_msg) = $client->login($setup->{user},
+        $setup->{passwd});
 
       my $expected;
 
@@ -2047,11 +1763,12 @@ sub wrap2_file_allow_table_var_U {
       $self->assert($expected == $resp_code,
         test_msg("Expected response code $expected, got $resp_code"));
 
-      $expected = "User $user logged in";
+      $expected = "User $setup->{user} logged in";
       $self->assert($expected eq $resp_msg,
         test_msg("Expected response message '$expected', got '$resp_msg'"));
-    };
 
+      $client->quit();
+    };
     if ($@) {
       $ex = $@;
     }
@@ -2060,7 +1777,7 @@ sub wrap2_file_allow_table_var_U {
     $wfh->flush();
 
   } else {
-    eval { server_wait($config_file, $rfh) };
+    eval { server_wait($setup->{config_file}, $rfh) };
     if ($@) {
       warn($@);
       exit 1;
@@ -2070,91 +1787,14 @@ sub wrap2_file_allow_table_var_U {
   }
 
   # Stop server
-  server_stop($pid_file);
-
+  server_stop($setup->{pid_file});
   $self->assert_child_ok($pid);
-
-  if ($ex) {
-    die($ex);
-  }
-
-  if (open($fh, "> $allow_file")) {
-    print $fh "ALL: 127.0.0.1\n";
-    unless (close($fh)) {
-      die("Can't write $allow_file: $!");
-    }
-
-  } else {
-    die("Can't open $allow_file: $!");
-  }
-
-  ($port, $config_user, $config_group) = config_write($config_file, $config);
-
-  # Fork child
-  $self->handle_sigchld();
-  defined($pid = fork()) or die("Can't fork: $!");
-  if ($pid) {
-    eval {
-      my $client = ProFTPD::TestSuite::FTP->new('127.0.0.1', $port);
-      my ($resp_code, $resp_msg);
-
-      ($resp_code, $resp_msg) = $client->login($user, $passwd);
-
-      my $expected;
-
-      $expected = 230;
-      $self->assert($expected == $resp_code,
-        test_msg("Expected response code $expected, got $resp_code"));
-
-      $expected = "User $user logged in";
-      $self->assert($expected eq $resp_msg,
-        test_msg("Expected response message '$expected', got '$resp_msg'"));
-    };
-
-    if ($@) {
-      $ex = $@;
-    }
-
-    $wfh->print("done\n");
-    $wfh->flush();
-
-  } else {
-    eval { server_wait($config_file, $rfh) };
-    if ($@) {
-      warn($@);
-      exit 1;
-    }
-
-    exit 0;
-  }
-
-  # Stop server
-  server_stop($pid_file);
-
-  $self->assert_child_ok($pid);
-
-  if ($ex) {
-    test_append_logfile($log_file, $ex);
-    unlink($log_file);
-
-    die($ex);
-  }
-
-  unlink($log_file);
 }
 
 sub wrap2_file_deny_table_ipv4_addr {
   my $self = shift;
   my $tmpdir = $self->{tmpdir};
-
-  my $config_file = "$tmpdir/wrap2.conf";
-  my $pid_file = File::Spec->rel2abs("$tmpdir/wrap2.pid");
-  my $scoreboard_file = File::Spec->rel2abs("$tmpdir/wrap2.scoreboard");
-
-  my $log_file = test_get_logfile();
-
-  my $auth_user_file = File::Spec->rel2abs("$tmpdir/wrap2.passwd");
-  my $auth_group_file = File::Spec->rel2abs("$tmpdir/wrap2.group");
+  my $setup = test_setup($tmpdir, 'wrap2');
 
   my $fh;
   my $allow_file = File::Spec->rel2abs("$tmpdir/wrap2.allow");
@@ -2169,7 +1809,7 @@ sub wrap2_file_deny_table_ipv4_addr {
 
   my $deny_file = File::Spec->rel2abs("$tmpdir/wrap2.deny");
   if (open($fh, "> $deny_file")) {
-    print $fh "ALL: ALL\n";
+    print $fh "ALL: 127.0.0.1\n";
 
     unless (close($fh)) {
       die("Can't write $deny_file: $!");
@@ -2179,36 +1819,15 @@ sub wrap2_file_deny_table_ipv4_addr {
     die("Can't open $deny_file: $!");
   }
 
-  my $user = 'proftpd';
-  my $passwd = 'test';
-  my $group = 'ftpd';
-  my $home_dir = File::Spec->rel2abs($tmpdir);
-  my $uid = 500;
-  my $gid = 500;
-
-  # Make sure that, if we're running as root, that the home directory has
-  # permissions/privs set for the account we create
-  if ($< == 0) {
-    unless (chmod(0755, $home_dir)) {
-      die("Can't set perms on $home_dir to 0755: $!");
-    }
-
-    unless (chown($uid, $gid, $home_dir)) {
-      die("Can't set owner of $home_dir to $uid/$gid: $!");
-    }
-  }
-
-  auth_user_write($auth_user_file, $user, $passwd, $uid, $gid, $home_dir,
-    '/bin/bash');
-  auth_group_write($auth_group_file, $group, $gid, $user);
-
   my $config = {
-    PidFile => $pid_file,
-    ScoreboardFile => $scoreboard_file,
-    SystemLog => $log_file,
+    PidFile => $setup->{pid_file},
+    ScoreboardFile => $setup->{scoreboard_file},
+    SystemLog => $setup->{log_file},
+    TraceLog => $setup->{log_file},
+    Trace => 'wrap2:20',
 
-    AuthUserFile => $auth_user_file,
-    AuthGroupFile => $auth_group_file,
+    AuthUserFile => $setup->{auth_user_file},
+    AuthGroupFile => $setup->{auth_group_file},
 
     IfModules => {
       'mod_delay.c' => {
@@ -2217,13 +1836,14 @@ sub wrap2_file_deny_table_ipv4_addr {
 
       'mod_wrap2.c' => {
         WrapEngine => 'on',
+        WrapLog => $setup->{log_file},
         WrapTables => "file:$allow_file file:$deny_file",
-        WrapLog => $log_file,
       },
     },
   };
 
-  my ($port, $config_user, $config_group) = config_write($config_file, $config);
+  my ($port, $config_user, $config_group) = config_write($setup->{config_file},
+    $config);
 
   # Open pipes, for use between the parent and child processes.  Specifically,
   # the child will indicate when it's done with its test by writing a message
@@ -2242,28 +1862,24 @@ sub wrap2_file_deny_table_ipv4_addr {
     eval {
       my $client = ProFTPD::TestSuite::FTP->new('127.0.0.1', $port);
 
-      my ($resp_code, $resp_msg);
-
-      eval { $client->login($user, $passwd) };
+      eval { $client->login($setup->{user}, $setup->{passwd}) };
       unless ($@) {
         die("Login succeeded unexpectedly");
-
-      } else {
-        $resp_code = $client->response_code();
-        $resp_msg = $client->response_msg();
       }
+
+      my $resp_code = $client->response_code();
+      my $resp_msg = $client->response_msg();
 
       my $expected;
 
       $expected = 530;
       $self->assert($expected == $resp_code,
-        test_msg("Expected $expected, got $resp_code"));
+        test_msg("Expected response code $expected, got $resp_code"));
 
       $expected = "Access denied";
       $self->assert($expected eq $resp_msg,
-        test_msg("Expected '$expected', got '$resp_msg'"));
+        test_msg("Expected response message '$expected', got '$resp_msg'"));
     };
-
     if ($@) {
       $ex = $@;
     }
@@ -2272,7 +1888,7 @@ sub wrap2_file_deny_table_ipv4_addr {
     $wfh->flush();
 
   } else {
-    eval { server_wait($config_file, $rfh) };
+    eval { server_wait($setup->{config_file}, $rfh) };
     if ($@) {
       warn($@);
       exit 1;
@@ -2282,99 +1898,16 @@ sub wrap2_file_deny_table_ipv4_addr {
   }
 
   # Stop server
-  server_stop($pid_file);
-
+  server_stop($setup->{pid_file});
   $self->assert_child_ok($pid);
 
-  if ($ex) {
-    die($ex);
-  }
-
-  if (open($fh, "> $deny_file")) {
-    print $fh "ALL: 127.0.0.1\n";
-    unless (close($fh)) {
-      die("Can't write $deny_file: $!");
-    }
-
-  } else {
-    die("Can't open $deny_file: $!");
-  }
-
-  ($port, $config_user, $config_group) = config_write($config_file, $config);
-
-  # Fork child
-  $self->handle_sigchld();
-  defined($pid = fork()) or die("Can't fork: $!");
-  if ($pid) {
-    eval {
-      my $client = ProFTPD::TestSuite::FTP->new('127.0.0.1', $port);
-
-      my ($resp_code, $resp_msg);
-
-      eval { $client->login($user, $passwd) };
-      unless ($@) {
-        die("Login succeeded unexpectedly");
-
-      } else {
-        $resp_code = $client->response_code();
-        $resp_msg = $client->response_msg();
-      }
-
-      my $expected;
-
-      $expected = 530;
-      $self->assert($expected == $resp_code,
-        test_msg("Expected $expected, got $resp_code"));
-
-      $expected = "Access denied";
-      $self->assert($expected eq $resp_msg,
-        test_msg("Expected '$expected', got '$resp_msg'"));
-    };
-
-    if ($@) {
-      $ex = $@;
-    }
-
-    $wfh->print("done\n");
-    $wfh->flush();
-
-  } else {
-    eval { server_wait($config_file, $rfh) };
-    if ($@) {
-      warn($@);
-      exit 1;
-    }
-
-    exit 0;
-  }
-
-  # Stop server
-  server_stop($pid_file);
-
-  $self->assert_child_ok($pid);
-
-  if ($ex) {
-    test_append_logfile($log_file, $ex);
-    unlink($log_file);
-
-    die($ex);
-  }
-
-  unlink($log_file);
+  test_cleanup($setup->{log_file}, $ex);
 }
 
 sub wrap2_file_deny_table_ipv6_addr_bug4090 {
   my $self = shift;
   my $tmpdir = $self->{tmpdir};
-
-  my $config_file = "$tmpdir/wrap2.conf";
-  my $pid_file = File::Spec->rel2abs("$tmpdir/wrap2.pid");
-  my $scoreboard_file = File::Spec->rel2abs("$tmpdir/wrap2.scoreboard");
-
-  my $log_file = test_get_logfile();
-
-  my $auth_user_file = File::Spec->rel2abs("$tmpdir/wrap2.passwd");
-  my $auth_group_file = File::Spec->rel2abs("$tmpdir/wrap2.group");
+  my $setup = test_setup($tmpdir, 'wrap2');
 
   my $fh;
   my $allow_file = File::Spec->rel2abs("$tmpdir/wrap2.allow");
@@ -2389,7 +1922,7 @@ sub wrap2_file_deny_table_ipv6_addr_bug4090 {
 
   my $deny_file = File::Spec->rel2abs("$tmpdir/wrap2.deny");
   if (open($fh, "> $deny_file")) {
-    print $fh "ALL: ALL\n";
+    print $fh "ALL: [::1]\n";
 
     unless (close($fh)) {
       die("Can't write $deny_file: $!");
@@ -2399,36 +1932,15 @@ sub wrap2_file_deny_table_ipv6_addr_bug4090 {
     die("Can't open $deny_file: $!");
   }
 
-  my $user = 'proftpd';
-  my $passwd = 'test';
-  my $group = 'ftpd';
-  my $home_dir = File::Spec->rel2abs($tmpdir);
-  my $uid = 500;
-  my $gid = 500;
-
-  # Make sure that, if we're running as root, that the home directory has
-  # permissions/privs set for the account we create
-  if ($< == 0) {
-    unless (chmod(0755, $home_dir)) {
-      die("Can't set perms on $home_dir to 0755: $!");
-    }
-
-    unless (chown($uid, $gid, $home_dir)) {
-      die("Can't set owner of $home_dir to $uid/$gid: $!");
-    }
-  }
-
-  auth_user_write($auth_user_file, $user, $passwd, $uid, $gid, $home_dir,
-    '/bin/bash');
-  auth_group_write($auth_group_file, $group, $gid, $user);
-
   my $config = {
-    PidFile => $pid_file,
-    ScoreboardFile => $scoreboard_file,
-    SystemLog => $log_file,
+    PidFile => $setup->{pid_file},
+    ScoreboardFile => $setup->{scoreboard_file},
+    SystemLog => $setup->{log_file},
+    TraceLog => $setup->{log_file},
+    Trace => 'wrap2:20',
 
-    AuthUserFile => $auth_user_file,
-    AuthGroupFile => $auth_group_file,
+    AuthUserFile => $setup->{auth_user_file},
+    AuthGroupFile => $setup->{auth_group_file},
     DefaultAddress => '::1',
     UseIPv6 => 'on',
 
@@ -2439,13 +1951,14 @@ sub wrap2_file_deny_table_ipv6_addr_bug4090 {
 
       'mod_wrap2.c' => {
         WrapEngine => 'on',
+        WrapLog => $setup->{log_file},
         WrapTables => "file:$allow_file file:$deny_file",
-        WrapLog => $log_file,
       },
     },
   };
 
-  my ($port, $config_user, $config_group) = config_write($config_file, $config);
+  my ($port, $config_user, $config_group) = config_write($setup->{config_file},
+    $config);
 
   # Open pipes, for use between the parent and child processes.  Specifically,
   # the child will indicate when it's done with its test by writing a message
@@ -2478,19 +1991,19 @@ sub wrap2_file_deny_table_ipv6_addr_bug4090 {
       my $banner = <$client>;
 
       # Send the USER command
-      my $cmd = "USER $user\r\n";
+      my $cmd = "USER $setup->{user}\r\n";
       $client->print($cmd);
       $client->flush();
 
       # Read USER response
       my $resp = <$client>;
 
-      my $expected = "331 Password required for $user\r\n";
+      my $expected = "331 Password required for $setup->{user}\r\n";
       $self->assert($expected eq $resp,
-        test_msg("Expected '$expected', got '$resp'"));
+        test_msg("Expected response '$expected', got '$resp'"));
 
       # Send the PASS command
-      $cmd = "PASS $passwd\r\n";
+      $cmd = "PASS $setup->{passwd}\r\n";
       $client->print($cmd);
       $client->flush();
 
@@ -2503,7 +2016,6 @@ sub wrap2_file_deny_table_ipv6_addr_bug4090 {
 
       $client->close();
     };
-
     if ($@) {
       $ex = $@;
     }
@@ -2512,7 +2024,7 @@ sub wrap2_file_deny_table_ipv6_addr_bug4090 {
     $wfh->flush();
 
   } else {
-    eval { server_wait($config_file, $rfh) };
+    eval { server_wait($setup->{config_file}, $rfh) };
     if ($@) {
       warn($@);
       exit 1;
@@ -2522,117 +2034,16 @@ sub wrap2_file_deny_table_ipv6_addr_bug4090 {
   }
 
   # Stop server
-  server_stop($pid_file);
-
+  server_stop($setup->{pid_file});
   $self->assert_child_ok($pid);
 
-  if ($ex) {
-    die($ex);
-  }
-
-  if (open($fh, "> $deny_file")) {
-    print $fh "ALL: [::1]\n";
-    unless (close($fh)) {
-      die("Can't write $deny_file: $!");
-    }
-
-  } else {
-    die("Can't open $deny_file: $!");
-  }
-
-  ($port, $config_user, $config_group) = config_write($config_file, $config);
-
-  # Fork child
-  $self->handle_sigchld();
-  defined($pid = fork()) or die("Can't fork: $!");
-  if ($pid) {
-    eval {
-      sleep(2);
-
-      my $client = IO::Socket::INET6->new(
-        PeerAddr => '::1',
-        PeerPort => $port,
-        Proto => 'tcp',
-        Timeout => 5,
-      );
-      unless ($client) {
-        die("Can't connect to ::1: $!");
-      }
-
-      # Read the banner
-      my $banner = <$client>;
-
-      # Send the USER command
-      my $cmd = "USER $user\r\n";
-      $client->print($cmd);
-      $client->flush();
-
-      # Read USER response
-      my $resp = <$client>;
-
-      my $expected = "331 Password required for $user\r\n";
-      $self->assert($expected eq $resp,
-        test_msg("Expected '$expected', got '$resp'"));
-
-      # Send the PASS command
-      $cmd = "PASS $passwd\r\n";
-      $client->print($cmd);
-      $client->flush();
-
-      # Read PASS response
-      $resp = <$client>;
-
-      $expected = "530 Access denied\r\n";
-      $self->assert($expected eq $resp,
-        test_msg("Expected response '$expected', got '$resp'"));
-
-      $client->close();
-    };
-
-    if ($@) {
-      $ex = $@;
-    }
-
-    $wfh->print("done\n");
-    $wfh->flush();
-
-  } else {
-    eval { server_wait($config_file, $rfh) };
-    if ($@) {
-      warn($@);
-      exit 1;
-    }
-
-    exit 0;
-  }
-
-  # Stop server
-  server_stop($pid_file);
-
-  $self->assert_child_ok($pid);
-
-  if ($ex) {
-    test_append_logfile($log_file, $ex);
-    unlink($log_file);
-
-    die($ex);
-  }
-
-  unlink($log_file);
+  test_cleanup($setup->{log_file}, $ex);
 }
 
 sub wrap2_file_deny_table_dns_name {
   my $self = shift;
   my $tmpdir = $self->{tmpdir};
-
-  my $config_file = "$tmpdir/wrap2.conf";
-  my $pid_file = File::Spec->rel2abs("$tmpdir/wrap2.pid");
-  my $scoreboard_file = File::Spec->rel2abs("$tmpdir/wrap2.scoreboard");
-
-  my $log_file = test_get_logfile();
-
-  my $auth_user_file = File::Spec->rel2abs("$tmpdir/wrap2.passwd");
-  my $auth_group_file = File::Spec->rel2abs("$tmpdir/wrap2.group");
+  my $setup = test_setup($tmpdir, 'wrap2');
 
   my $fh;
   my $allow_file = File::Spec->rel2abs("$tmpdir/wrap2.allow");
@@ -2647,7 +2058,7 @@ sub wrap2_file_deny_table_dns_name {
 
   my $deny_file = File::Spec->rel2abs("$tmpdir/wrap2.deny");
   if (open($fh, "> $deny_file")) {
-    print $fh "ALL: ALL\n";
+    print $fh "ALL:  localhost\n";
 
     unless (close($fh)) {
       die("Can't write $deny_file: $!");
@@ -2657,36 +2068,15 @@ sub wrap2_file_deny_table_dns_name {
     die("Can't open $deny_file: $!");
   }
 
-  my $user = 'proftpd';
-  my $passwd = 'test';
-  my $group = 'ftpd';
-  my $home_dir = File::Spec->rel2abs($tmpdir);
-  my $uid = 500;
-  my $gid = 500;
-
-  # Make sure that, if we're running as root, that the home directory has
-  # permissions/privs set for the account we create
-  if ($< == 0) {
-    unless (chmod(0755, $home_dir)) {
-      die("Can't set perms on $home_dir to 0755: $!");
-    }
-
-    unless (chown($uid, $gid, $home_dir)) {
-      die("Can't set owner of $home_dir to $uid/$gid: $!");
-    }
-  }
-
-  auth_user_write($auth_user_file, $user, $passwd, $uid, $gid, $home_dir,
-    '/bin/bash');
-  auth_group_write($auth_group_file, $group, $gid, $user);
-
   my $config = {
-    PidFile => $pid_file,
-    ScoreboardFile => $scoreboard_file,
-    SystemLog => $log_file,
+    PidFile => $setup->{pid_file},
+    ScoreboardFile => $setup->{scoreboard_file},
+    SystemLog => $setup->{log_file},
+    TraceLog => $setup->{log_file},
+    Trace => 'wrap2:20',
 
-    AuthUserFile => $auth_user_file,
-    AuthGroupFile => $auth_group_file,
+    AuthUserFile => $setup->{auth_user_file},
+    AuthGroupFile => $setup->{auth_group_file},
     UseReverseDNS => 'on',
 
     IfModules => {
@@ -2696,13 +2086,14 @@ sub wrap2_file_deny_table_dns_name {
 
       'mod_wrap2.c' => {
         WrapEngine => 'on',
+        WrapLog => $setup->{log_file},
         WrapTables => "file:$allow_file file:$deny_file",
-        WrapLog => $log_file,
       },
     },
   };
 
-  my ($port, $config_user, $config_group) = config_write($config_file, $config);
+  my ($port, $config_user, $config_group) = config_write($setup->{config_file},
+    $config);
 
   # Open pipes, for use between the parent and child processes.  Specifically,
   # the child will indicate when it's done with its test by writing a message
@@ -2721,28 +2112,24 @@ sub wrap2_file_deny_table_dns_name {
     eval {
       my $client = ProFTPD::TestSuite::FTP->new('127.0.0.1', $port);
 
-      my ($resp_code, $resp_msg);
-
-      eval { $client->login($user, $passwd) };
+      eval { $client->login($setup->{user}, $setup->{passwd}) };
       unless ($@) {
         die("Login succeeded unexpectedly");
-
-      } else {
-        $resp_code = $client->response_code();
-        $resp_msg = $client->response_msg();
       }
+
+      my $resp_code = $client->response_code();
+      my $resp_msg = $client->response_msg();
 
       my $expected;
 
       $expected = 530;
       $self->assert($expected == $resp_code,
-        test_msg("Expected $expected, got $resp_code"));
+        test_msg("Expected response code $expected, got $resp_code"));
 
       $expected = "Access denied";
       $self->assert($expected eq $resp_msg,
-        test_msg("Expected '$expected', got '$resp_msg'"));
+        test_msg("Expected response message '$expected', got '$resp_msg'"));
     };
-
     if ($@) {
       $ex = $@;
     }
@@ -2751,7 +2138,7 @@ sub wrap2_file_deny_table_dns_name {
     $wfh->flush();
 
   } else {
-    eval { server_wait($config_file, $rfh) };
+    eval { server_wait($setup->{config_file}, $rfh) };
     if ($@) {
       warn($@);
       exit 1;
@@ -2761,99 +2148,16 @@ sub wrap2_file_deny_table_dns_name {
   }
 
   # Stop server
-  server_stop($pid_file);
-
+  server_stop($setup->{pid_file});
   $self->assert_child_ok($pid);
 
-  if ($ex) {
-    die($ex);
-  }
-
-  if (open($fh, "> $deny_file")) {
-    print $fh "ALL:  localhost\n";
-    unless (close($fh)) {
-      die("Can't write $deny_file: $!");
-    }
-
-  } else {
-    die("Can't open $deny_file: $!");
-  }
-
-  ($port, $config_user, $config_group) = config_write($config_file, $config);
-
-  # Fork child
-  $self->handle_sigchld();
-  defined($pid = fork()) or die("Can't fork: $!");
-  if ($pid) {
-    eval {
-      my $client = ProFTPD::TestSuite::FTP->new('127.0.0.1', $port);
-
-      my ($resp_code, $resp_msg);
-
-      eval { $client->login($user, $passwd) };
-      unless ($@) {
-        die("Login succeeded unexpectedly");
-
-      } else {
-        $resp_code = $client->response_code();
-        $resp_msg = $client->response_msg();
-      }
-
-      my $expected;
-
-      $expected = 530;
-      $self->assert($expected == $resp_code,
-        test_msg("Expected $expected, got $resp_code"));
-
-      $expected = "Access denied";
-      $self->assert($expected eq $resp_msg,
-        test_msg("Expected '$expected', got '$resp_msg'"));
-    };
-
-    if ($@) {
-      $ex = $@;
-    }
-
-    $wfh->print("done\n");
-    $wfh->flush();
-
-  } else {
-    eval { server_wait($config_file, $rfh) };
-    if ($@) {
-      warn($@);
-      exit 1;
-    }
-
-    exit 0;
-  }
-
-  # Stop server
-  server_stop($pid_file);
-
-  $self->assert_child_ok($pid);
-
-  if ($ex) {
-    test_append_logfile($log_file, $ex);
-    unlink($log_file);
-
-    die($ex);
-  }
-
-  unlink($log_file);
+  test_cleanup($setup->{log_file}, $ex);
 }
 
 sub wrap2_file_deny_table_tilde {
   my $self = shift;
   my $tmpdir = $self->{tmpdir};
-
-  my $config_file = "$tmpdir/wrap2.conf";
-  my $pid_file = File::Spec->rel2abs("$tmpdir/wrap2.pid");
-  my $scoreboard_file = File::Spec->rel2abs("$tmpdir/wrap2.scoreboard");
-
-  my $log_file = test_get_logfile();
-
-  my $auth_user_file = File::Spec->rel2abs("$tmpdir/wrap2.passwd");
-  my $auth_group_file = File::Spec->rel2abs("$tmpdir/wrap2.group");
+  my $setup = test_setup($tmpdir, 'wrap2');
 
   my $fh;
   my $allow_file = File::Spec->rel2abs("$tmpdir/wrap2.allow");
@@ -2868,7 +2172,7 @@ sub wrap2_file_deny_table_tilde {
 
   my $deny_file = File::Spec->rel2abs("$tmpdir/wrap2.deny");
   if (open($fh, "> $deny_file")) {
-    print $fh "ALL: ALL\n";
+    print $fh "ALL: 127.0.0.1\n";
 
     unless (close($fh)) {
       die("Can't write $deny_file: $!");
@@ -2878,36 +2182,15 @@ sub wrap2_file_deny_table_tilde {
     die("Can't open $deny_file: $!");
   }
 
-  my $user = 'proftpd';
-  my $passwd = 'test';
-  my $group = 'ftpd';
-  my $home_dir = File::Spec->rel2abs($tmpdir);
-  my $uid = 500;
-  my $gid = 500;
-
-  # Make sure that, if we're running as root, that the home directory has
-  # permissions/privs set for the account we create
-  if ($< == 0) {
-    unless (chmod(0755, $home_dir)) {
-      die("Can't set perms on $home_dir to 0755: $!");
-    }
-
-    unless (chown($uid, $gid, $home_dir)) {
-      die("Can't set owner of $home_dir to $uid/$gid: $!");
-    }
-  }
-
-  auth_user_write($auth_user_file, $user, $passwd, $uid, $gid, $home_dir,
-    '/bin/bash');
-  auth_group_write($auth_group_file, $group, $gid, $user);
-
   my $config = {
-    PidFile => $pid_file,
-    ScoreboardFile => $scoreboard_file,
-    SystemLog => $log_file,
+    PidFile => $setup->{pid_file},
+    ScoreboardFile => $setup->{scoreboard_file},
+    SystemLog => $setup->{log_file},
+    TraceLog => $setup->{log_file},
+    Trace => 'wrap2:20',
 
-    AuthUserFile => $auth_user_file,
-    AuthGroupFile => $auth_group_file,
+    AuthUserFile => $setup->{auth_user_file},
+    AuthGroupFile => $setup->{auth_group_file},
 
     IfModules => {
       'mod_delay.c' => {
@@ -2916,13 +2199,14 @@ sub wrap2_file_deny_table_tilde {
 
       'mod_wrap2.c' => {
         WrapEngine => 'on',
+        WrapLog => $setup->{log_file},
         WrapTables => "file:~/wrap2.allow file:~/wrap2.deny",
-        WrapLog => $log_file,
       },
     },
   };
 
-  my ($port, $config_user, $config_group) = config_write($config_file, $config);
+  my ($port, $config_user, $config_group) = config_write($setup->{config_file},
+    $config);
 
   # Open pipes, for use between the parent and child processes.  Specifically,
   # the child will indicate when it's done with its test by writing a message
@@ -2941,28 +2225,24 @@ sub wrap2_file_deny_table_tilde {
     eval {
       my $client = ProFTPD::TestSuite::FTP->new('127.0.0.1', $port);
 
-      my ($resp_code, $resp_msg);
-
-      eval { $client->login($user, $passwd) };
+      eval { $client->login($setup->{user}, $setup->{passwd}) };
       unless ($@) {
         die("Login succeeded unexpectedly");
-
-      } else {
-        $resp_code = $client->response_code();
-        $resp_msg = $client->response_msg();
       }
+
+      my $resp_code = $client->response_code();
+      my $resp_msg = $client->response_msg();
 
       my $expected;
 
       $expected = 530;
       $self->assert($expected == $resp_code,
-        test_msg("Expected $expected, got $resp_code"));
+        test_msg("Expected response code $expected, got $resp_code"));
 
       $expected = "Access denied";
       $self->assert($expected eq $resp_msg,
-        test_msg("Expected '$expected', got '$resp_msg'"));
+        test_msg("Expected response message '$expected', got '$resp_msg'"));
     };
-
     if ($@) {
       $ex = $@;
     }
@@ -2971,7 +2251,7 @@ sub wrap2_file_deny_table_tilde {
     $wfh->flush();
 
   } else {
-    eval { server_wait($config_file, $rfh) };
+    eval { server_wait($setup->{config_file}, $rfh) };
     if ($@) {
       warn($@);
       exit 1;
@@ -2981,99 +2261,16 @@ sub wrap2_file_deny_table_tilde {
   }
 
   # Stop server
-  server_stop($pid_file);
-
+  server_stop($setup->{pid_file});
   $self->assert_child_ok($pid);
 
-  if ($ex) {
-    die($ex);
-  }
-
-  if (open($fh, "> $deny_file")) {
-    print $fh "ALL: 127.0.0.1\n";
-    unless (close($fh)) {
-      die("Can't write $deny_file: $!");
-    }
-
-  } else {
-    die("Can't open $deny_file: $!");
-  }
-
-  ($port, $config_user, $config_group) = config_write($config_file, $config);
-
-  # Fork child
-  $self->handle_sigchld();
-  defined($pid = fork()) or die("Can't fork: $!");
-  if ($pid) {
-    eval {
-      my $client = ProFTPD::TestSuite::FTP->new('127.0.0.1', $port);
-
-      my ($resp_code, $resp_msg);
-
-      eval { $client->login($user, $passwd) };
-      unless ($@) {
-        die("Login succeeded unexpectedly");
-
-      } else {
-        $resp_code = $client->response_code();
-        $resp_msg = $client->response_msg();
-      }
-
-      my $expected;
-
-      $expected = 530;
-      $self->assert($expected == $resp_code,
-        test_msg("Expected $expected, got $resp_code"));
-
-      $expected = "Access denied";
-      $self->assert($expected eq $resp_msg,
-        test_msg("Expected '$expected', got '$resp_msg'"));
-    };
-
-    if ($@) {
-      $ex = $@;
-    }
-
-    $wfh->print("done\n");
-    $wfh->flush();
-
-  } else {
-    eval { server_wait($config_file, $rfh) };
-    if ($@) {
-      warn($@);
-      exit 1;
-    }
-
-    exit 0;
-  }
-
-  # Stop server
-  server_stop($pid_file);
-
-  $self->assert_child_ok($pid);
-
-  if ($ex) {
-    test_append_logfile($log_file, $ex);
-    unlink($log_file);
-
-    die($ex);
-  }
-
-  unlink($log_file);
+  test_cleanup($setup->{log_file}, $ex);
 }
 
 sub wrap2_file_service_name {
   my $self = shift;
   my $tmpdir = $self->{tmpdir};
-
-  my $config_file = "$tmpdir/wrap2.conf";
-  my $pid_file = File::Spec->rel2abs("$tmpdir/wrap2.pid");
-  my $scoreboard_file = File::Spec->rel2abs("$tmpdir/wrap2.scoreboard");
-
-  my $log_file = test_get_logfile();
-
-  my $auth_user_file = File::Spec->rel2abs("$tmpdir/wrap2.passwd");
-  my $auth_group_file = File::Spec->rel2abs("$tmpdir/wrap2.group");
+  my $setup = test_setup($tmpdir, 'wrap2');
 
   my $fh;
   my $allow_file = File::Spec->rel2abs("$tmpdir/wrap2.allow");
@@ -3099,36 +2296,15 @@ sub wrap2_file_service_name {
     die("Can't open $deny_file: $!");
   }
 
-  my $user = 'proftpd';
-  my $passwd = 'test';
-  my $group = 'ftpd';
-  my $home_dir = File::Spec->rel2abs($tmpdir);
-  my $uid = 500;
-  my $gid = 500;
-
-  # Make sure that, if we're running as root, that the home directory has
-  # permissions/privs set for the account we create
-  if ($< == 0) {
-    unless (chmod(0755, $home_dir)) {
-      die("Can't set perms on $home_dir to 0755: $!");
-    }
-
-    unless (chown($uid, $gid, $home_dir)) {
-      die("Can't set owner of $home_dir to $uid/$gid: $!");
-    }
-  }
-
-  auth_user_write($auth_user_file, $user, $passwd, $uid, $gid, $home_dir,
-    '/bin/bash');
-  auth_group_write($auth_group_file, $group, $gid, $user);
-
   my $config = {
-    PidFile => $pid_file,
-    ScoreboardFile => $scoreboard_file,
-    SystemLog => $log_file,
+    PidFile => $setup->{pid_file},
+    ScoreboardFile => $setup->{scoreboard_file},
+    SystemLog => $setup->{log_file},
+    TraceLog => $setup->{log_file},
+    Trace => 'wrap2:20',
 
-    AuthUserFile => $auth_user_file,
-    AuthGroupFile => $auth_group_file,
+    AuthUserFile => $setup->{auth_user_file},
+    AuthGroupFile => $setup->{auth_group_file},
 
     IfModules => {
       'mod_delay.c' => {
@@ -3137,13 +2313,14 @@ sub wrap2_file_service_name {
 
       'mod_wrap2.c' => {
         WrapEngine => 'on',
+        WrapLog => $setup->{log_file},
         WrapTables => "file:$allow_file file:$deny_file",
-        WrapLog => $log_file,
       },
     },
   };
 
-  my ($port, $config_user, $config_group) = config_write($config_file, $config);
+  my ($port, $config_user, $config_group) = config_write($setup->{config_file},
+    $config);
 
   # Open pipes, for use between the parent and child processes.  Specifically,
   # the child will indicate when it's done with its test by writing a message
@@ -3162,28 +2339,24 @@ sub wrap2_file_service_name {
     eval {
       my $client = ProFTPD::TestSuite::FTP->new('127.0.0.1', $port);
 
-      my ($resp_code, $resp_msg);
-
-      eval { $client->login($user, $passwd) };
+      eval { $client->login($setup->{user}, $setup->{passwd}) };
       unless ($@) {
         die("Login succeeded unexpectedly");
-
-      } else {
-        $resp_code = $client->response_code();
-        $resp_msg = $client->response_msg();
       }
+
+      my $resp_code = $client->response_code();
+      my $resp_msg = $client->response_msg();
 
       my $expected;
 
       $expected = 530;
       $self->assert($expected == $resp_code,
-        test_msg("Expected $expected, got $resp_code"));
+        test_msg("Expected response code $expected, got $resp_code"));
 
       $expected = "Access denied";
       $self->assert($expected eq $resp_msg,
-        test_msg("Expected '$expected', got '$resp_msg'"));
+        test_msg("Expected response message '$expected', got '$resp_msg'"));
     };
-
     if ($@) {
       $ex = $@;
     }
@@ -3192,7 +2365,7 @@ sub wrap2_file_service_name {
     $wfh->flush();
 
   } else {
-    eval { server_wait($config_file, $rfh) };
+    eval { server_wait($setup->{config_file}, $rfh) };
     if ($@) {
       warn($@);
       exit 1;
@@ -3202,92 +2375,16 @@ sub wrap2_file_service_name {
   }
 
   # Stop server
-  server_stop($pid_file);
-
+  server_stop($setup->{pid_file});
   $self->assert_child_ok($pid);
 
-  if ($ex) {
-    die($ex);
-  }
-
-  if (open($fh, "> $allow_file")) {
-    print $fh "proftpd: 127.0.0.1\n";
-    unless (close($fh)) {
-      die("Can't write $allow_file: $!");
-    }
-
-  } else {
-    die("Can't open $allow_file: $!");
-  }
-
-  ($port, $config_user, $config_group) = config_write($config_file, $config);
-
-  # Fork child
-  $self->handle_sigchld();
-  defined($pid = fork()) or die("Can't fork: $!");
-  if ($pid) {
-    eval {
-      my $client = ProFTPD::TestSuite::FTP->new('127.0.0.1', $port);
-
-      my ($resp_code, $resp_msg);
-
-      ($resp_code, $resp_msg) = $client->login($user, $passwd);
-
-      my $expected;
-
-      $expected = 230;
-      $self->assert($expected == $resp_code,
-        test_msg("Expected $expected, got $resp_code"));
-
-      $expected = "User $user logged in";
-      $self->assert($expected eq $resp_msg,
-        test_msg("Expected '$expected', got '$resp_msg'"));
-    };
-
-    if ($@) {
-      $ex = $@;
-    }
-
-    $wfh->print("done\n");
-    $wfh->flush();
-
-  } else {
-    eval { server_wait($config_file, $rfh) };
-    if ($@) {
-      warn($@);
-      exit 1;
-    }
-
-    exit 0;
-  }
-
-  # Stop server
-  server_stop($pid_file);
-
-  $self->assert_child_ok($pid);
-
-  if ($ex) {
-    test_append_logfile($log_file, $ex);
-    unlink($log_file);
-
-    die($ex);
-  }
-
-  unlink($log_file);
+  test_cleanup($setup->{log_file}, $ex);
 }
 
-sub wrap2_file_user_tables {
+sub wrap2_file_user_tables_not_matching_user {
   my $self = shift;
   my $tmpdir = $self->{tmpdir};
-
-  my $config_file = "$tmpdir/wrap2.conf";
-  my $pid_file = File::Spec->rel2abs("$tmpdir/wrap2.pid");
-  my $scoreboard_file = File::Spec->rel2abs("$tmpdir/wrap2.scoreboard");
-
-  my $log_file = test_get_logfile();
-
-  my $auth_user_file = File::Spec->rel2abs("$tmpdir/wrap2.passwd");
-  my $auth_group_file = File::Spec->rel2abs("$tmpdir/wrap2.group");
+  my $setup = test_setup($tmpdir, 'wrap2');
 
   my $fh;
   my $allow_file = File::Spec->rel2abs("$tmpdir/wrap2.allow");
@@ -3312,36 +2409,15 @@ sub wrap2_file_user_tables {
     die("Can't open $deny_file: $!");
   }
 
-  my $user = 'proftpd';
-  my $passwd = 'test';
-  my $group = 'ftpd';
-  my $home_dir = File::Spec->rel2abs($tmpdir);
-  my $uid = 500;
-  my $gid = 500;
-
-  # Make sure that, if we're running as root, that the home directory has
-  # permissions/privs set for the account we create
-  if ($< == 0) {
-    unless (chmod(0755, $home_dir)) {
-      die("Can't set perms on $home_dir to 0755: $!");
-    }
-
-    unless (chown($uid, $gid, $home_dir)) {
-      die("Can't set owner of $home_dir to $uid/$gid: $!");
-    }
-  }
-
-  auth_user_write($auth_user_file, $user, $passwd, $uid, $gid, $home_dir,
-    '/bin/bash');
-  auth_group_write($auth_group_file, $group, $gid, $user);
-
   my $config = {
-    PidFile => $pid_file,
-    ScoreboardFile => $scoreboard_file,
-    SystemLog => $log_file,
+    PidFile => $setup->{pid_file},
+    ScoreboardFile => $setup->{scoreboard_file},
+    SystemLog => $setup->{log_file},
+    TraceLog => $setup->{log_file},
+    Trace => 'wrap2:20',
 
-    AuthUserFile => $auth_user_file,
-    AuthGroupFile => $auth_group_file,
+    AuthUserFile => $setup->{auth_user_file},
+    AuthGroupFile => $setup->{auth_group_file},
 
     IfModules => {
       'mod_delay.c' => {
@@ -3350,13 +2426,14 @@ sub wrap2_file_user_tables {
 
       'mod_wrap2.c' => {
         WrapEngine => 'on',
-        WrapUserTables => "!$user file:$allow_file file:$deny_file",
-        WrapLog => $log_file,
+        WrapLog => $setup->{log_file},
+        WrapUserTables => "!$setup->{user} file:$allow_file file:$deny_file",
       },
     },
   };
 
-  my ($port, $config_user, $config_group) = config_write($config_file, $config);
+  my ($port, $config_user, $config_group) = config_write($setup->{config_file},
+    $config);
 
   # Open pipes, for use between the parent and child processes.  Specifically,
   # the child will indicate when it's done with its test by writing a message
@@ -3374,22 +2451,21 @@ sub wrap2_file_user_tables {
   if ($pid) {
     eval {
       my $client = ProFTPD::TestSuite::FTP->new('127.0.0.1', $port);
-
-      my ($resp_code, $resp_msg);
-
-      ($resp_code, $resp_msg) = $client->login($user, $passwd);
+      my ($resp_code, $resp_msg) = $client->login($setup->{user},
+        $setup->{passwd});
 
       my $expected;
 
       $expected = 230;
       $self->assert($expected == $resp_code,
-        test_msg("Expected $expected, got $resp_code"));
+        test_msg("Expected response code $expected, got $resp_code"));
 
-      $expected = "User $user logged in";
+      $expected = "User $setup->{user} logged in";
       $self->assert($expected eq $resp_msg,
-        test_msg("Expected '$expected', got '$resp_msg'"));
-    };
+        test_msg("Expected response message '$expected', got '$resp_msg'"));
 
+      $client->quit();
+    };
     if ($@) {
       $ex = $@;
     }
@@ -3398,7 +2474,7 @@ sub wrap2_file_user_tables {
     $wfh->flush();
 
   } else {
-    eval { server_wait($config_file, $rfh) };
+    eval { server_wait($setup->{config_file}, $rfh) };
     if ($@) {
       warn($@);
       exit 1;
@@ -3408,92 +2484,16 @@ sub wrap2_file_user_tables {
   }
 
   # Stop server
-  server_stop($pid_file);
-
+  server_stop($setup->{pid_file});
   $self->assert_child_ok($pid);
 
-  if ($ex) {
-    die($ex);
-  }
-
-  # Modify the config a little
-  $config->{IfModules}->{'mod_wrap2.c'}->{WrapUserTables} = "$user file:$allow_file file:$deny_file";
-
-  ($port, $config_user, $config_group) = config_write($config_file, $config);
-
-  # Fork child
-  $self->handle_sigchld();
-  defined($pid = fork()) or die("Can't fork: $!");
-  if ($pid) {
-    eval {
-      my $client = ProFTPD::TestSuite::FTP->new('127.0.0.1', $port);
-
-      my ($resp_code, $resp_msg);
-
-      eval { $client->login($user, $passwd) };
-      unless ($@) {
-        die("Login succeeded unexpectedly");
-
-      } else {
-        $resp_code = $client->response_code();
-        $resp_msg = $client->response_msg();
-      }
-
-      my $expected;
-
-      $expected = 530;
-      $self->assert($expected == $resp_code,
-        test_msg("Expected $expected, got $resp_code"));
-
-      $expected = "Access denied";
-      $self->assert($expected eq $resp_msg,
-        test_msg("Expected '$expected', got '$resp_msg'"));
-    };
-
-    if ($@) {
-      $ex = $@;
-    }
-
-    $wfh->print("done\n");
-    $wfh->flush();
-
-  } else {
-    eval { server_wait($config_file, $rfh) };
-    if ($@) {
-      warn($@);
-      exit 1;
-    }
-
-    exit 0;
-  }
-
-  # Stop server
-  server_stop($pid_file);
-
-  $self->assert_child_ok($pid);
-
-  if ($ex) {
-    test_append_logfile($log_file, $ex);
-    unlink($log_file);
-
-    die($ex);
-  }
-
-  unlink($log_file);
+  test_cleanup($setup->{log_file}, $ex);
 }
 
-sub wrap2_file_group_tables {
+sub wrap2_file_user_tables_matching_user {
   my $self = shift;
   my $tmpdir = $self->{tmpdir};
-
-  my $config_file = "$tmpdir/wrap2.conf";
-  my $pid_file = File::Spec->rel2abs("$tmpdir/wrap2.pid");
-  my $scoreboard_file = File::Spec->rel2abs("$tmpdir/wrap2.scoreboard");
-
-  my $log_file = test_get_logfile();
-
-  my $auth_user_file = File::Spec->rel2abs("$tmpdir/wrap2.passwd");
-  my $auth_group_file = File::Spec->rel2abs("$tmpdir/wrap2.group");
+  my $setup = test_setup($tmpdir, 'wrap2');
 
   my $fh;
   my $allow_file = File::Spec->rel2abs("$tmpdir/wrap2.allow");
@@ -3518,36 +2518,15 @@ sub wrap2_file_group_tables {
     die("Can't open $deny_file: $!");
   }
 
-  my $user = 'proftpd';
-  my $passwd = 'test';
-  my $group = 'ftpd';
-  my $home_dir = File::Spec->rel2abs($tmpdir);
-  my $uid = 500;
-  my $gid = 500;
-
-  # Make sure that, if we're running as root, that the home directory has
-  # permissions/privs set for the account we create
-  if ($< == 0) {
-    unless (chmod(0755, $home_dir)) {
-      die("Can't set perms on $home_dir to 0755: $!");
-    }
-
-    unless (chown($uid, $gid, $home_dir)) {
-      die("Can't set owner of $home_dir to $uid/$gid: $!");
-    }
-  }
-
-  auth_user_write($auth_user_file, $user, $passwd, $uid, $gid, $home_dir,
-    '/bin/bash');
-  auth_group_write($auth_group_file, $group, $gid, $user);
-
   my $config = {
-    PidFile => $pid_file,
-    ScoreboardFile => $scoreboard_file,
-    SystemLog => $log_file,
+    PidFile => $setup->{pid_file},
+    ScoreboardFile => $setup->{scoreboard_file},
+    SystemLog => $setup->{log_file},
+    TraceLog => $setup->{log_file},
+    Trace => 'wrap2:20',
 
-    AuthUserFile => $auth_user_file,
-    AuthGroupFile => $auth_group_file,
+    AuthUserFile => $setup->{auth_user_file},
+    AuthGroupFile => $setup->{auth_group_file},
 
     IfModules => {
       'mod_delay.c' => {
@@ -3556,13 +2535,126 @@ sub wrap2_file_group_tables {
 
       'mod_wrap2.c' => {
         WrapEngine => 'on',
+        WrapLog => $setup->{log_file},
+        WrapUserTables => "$setup->{user} file:$allow_file file:$deny_file",
+      },
+    },
+  };
+
+  my ($port, $config_user, $config_group) = config_write($setup->{config_file},
+    $config);
+
+  # Open pipes, for use between the parent and child processes.  Specifically,
+  # the child will indicate when it's done with its test by writing a message
+  # to the parent.
+  my ($rfh, $wfh);
+  unless (pipe($rfh, $wfh)) {
+    die("Can't open pipe: $!");
+  }
+
+  my $ex;
+
+  # Fork child
+  $self->handle_sigchld();
+  defined(my $pid = fork()) or die("Can't fork: $!");
+  if ($pid) {
+    eval {
+      my $client = ProFTPD::TestSuite::FTP->new('127.0.0.1', $port);
+      eval { $client->login($setup->{user}, $setup->{passwd}) };
+      unless ($@) {
+        die("Login succeeded unexpectedly");
+      }
+
+      my $resp_code = $client->response_code();
+      my $resp_msg = $client->response_msg();
+
+      my $expected;
+
+      $expected = 530;
+      $self->assert($expected == $resp_code,
+        test_msg("Expected response code $expected, got $resp_code"));
+
+      $expected = "Access denied";
+      $self->assert($expected eq $resp_msg,
+        test_msg("Expected response message '$expected', got '$resp_msg'"));
+    };
+    if ($@) {
+      $ex = $@;
+    }
+
+    $wfh->print("done\n");
+    $wfh->flush();
+
+  } else {
+    eval { server_wait($setup->{config_file}, $rfh) };
+    if ($@) {
+      warn($@);
+      exit 1;
+    }
+
+    exit 0;
+  }
+
+  # Stop server
+  server_stop($setup->{pid_file});
+  $self->assert_child_ok($pid);
+
+  test_cleanup($setup->{log_file}, $ex);
+}
+
+sub wrap2_file_group_tables_not_matching_group {
+  my $self = shift;
+  my $tmpdir = $self->{tmpdir};
+  my $setup = test_setup($tmpdir, 'wrap2');
+
+  my $fh;
+  my $allow_file = File::Spec->rel2abs("$tmpdir/wrap2.allow");
+  if (open($fh, "> $allow_file")) {
+    unless (close($fh)) {
+      die("Can't write $allow_file: $!");
+    }
+
+  } else {
+    die("Can't open $allow_file: $!");
+  }
+
+  my $deny_file = File::Spec->rel2abs("$tmpdir/wrap2.deny");
+  if (open($fh, "> $deny_file")) {
+    print $fh "ALL: ALL\n";
+
+    unless (close($fh)) {
+      die("Can't write $deny_file: $!");
+    }
+
+  } else {
+    die("Can't open $deny_file: $!");
+  }
+
+  my $config = {
+    PidFile => $setup->{pid_file},
+    ScoreboardFile => $setup->{scoreboard_file},
+    SystemLog => $setup->{log_file},
+    TraceLog => $setup->{log_file},
+    Trace => 'wrap2:20',
+
+    AuthUserFile => $setup->{auth_user_file},
+    AuthGroupFile => $setup->{auth_group_file},
+
+    IfModules => {
+      'mod_delay.c' => {
+        DelayEngine => 'off',
+      },
+
+      'mod_wrap2.c' => {
+        WrapEngine => 'on',
+        WrapLog => $setup->{log_file},
         WrapGroupTables => "foo file:$allow_file file:$deny_file",
-        WrapLog => $log_file,
       },
     },
   };
 
-  my ($port, $config_user, $config_group) = config_write($config_file, $config);
+  my ($port, $config_user, $config_group) = config_write($setup->{config_file},
+    $config);
 
   # Open pipes, for use between the parent and child processes.  Specifically,
   # the child will indicate when it's done with its test by writing a message
@@ -3580,22 +2672,21 @@ sub wrap2_file_group_tables {
   if ($pid) {
     eval {
       my $client = ProFTPD::TestSuite::FTP->new('127.0.0.1', $port);
-
-      my ($resp_code, $resp_msg);
-
-      ($resp_code, $resp_msg) = $client->login($user, $passwd);
+      my ($resp_code, $resp_msg) = $client->login($setup->{user},
+        $setup->{passwd});
 
       my $expected;
 
       $expected = 230;
       $self->assert($expected == $resp_code,
-        test_msg("Expected $expected, got $resp_code"));
+        test_msg("Expected response code $expected, got $resp_code"));
 
-      $expected = "User $user logged in";
+      $expected = "User $setup->{user} logged in";
       $self->assert($expected eq $resp_msg,
-        test_msg("Expected '$expected', got '$resp_msg'"));
-    };
+        test_msg("Expected response message '$expected', got '$resp_msg'"));
 
+      $client->quit();
+    };
     if ($@) {
       $ex = $@;
     }
@@ -3604,7 +2695,7 @@ sub wrap2_file_group_tables {
     $wfh->flush();
 
   } else {
-    eval { server_wait($config_file, $rfh) };
+    eval { server_wait($setup->{config_file}, $rfh) };
     if ($@) {
       warn($@);
       exit 1;
@@ -3614,48 +2705,100 @@ sub wrap2_file_group_tables {
   }
 
   # Stop server
-  server_stop($pid_file);
-
+  server_stop($setup->{pid_file});
   $self->assert_child_ok($pid);
 
-  if ($ex) {
-    die($ex);
+  test_cleanup($setup->{log_file}, $ex);
+}
+
+sub wrap2_file_group_tables_matching_group {
+  my $self = shift;
+  my $tmpdir = $self->{tmpdir};
+  my $setup = test_setup($tmpdir, 'wrap2');
+
+  my $fh;
+  my $allow_file = File::Spec->rel2abs("$tmpdir/wrap2.allow");
+  if (open($fh, "> $allow_file")) {
+    unless (close($fh)) {
+      die("Can't write $allow_file: $!");
+    }
+
+  } else {
+    die("Can't open $allow_file: $!");
   }
 
-  # Modify the config a little
-  $config->{IfModules}->{'mod_wrap2.c'}->{WrapGroupTables} = "$group file:$allow_file file:$deny_file";
+  my $deny_file = File::Spec->rel2abs("$tmpdir/wrap2.deny");
+  if (open($fh, "> $deny_file")) {
+    print $fh "ALL: ALL\n";
 
-  ($port, $config_user, $config_group) = config_write($config_file, $config);
+    unless (close($fh)) {
+      die("Can't write $deny_file: $!");
+    }
+
+  } else {
+    die("Can't open $deny_file: $!");
+  }
+
+  my $config = {
+    PidFile => $setup->{pid_file},
+    ScoreboardFile => $setup->{scoreboard_file},
+    SystemLog => $setup->{log_file},
+    TraceLog => $setup->{log_file},
+    Trace => 'wrap2:20',
+
+    AuthUserFile => $setup->{auth_user_file},
+    AuthGroupFile => $setup->{auth_group_file},
+
+    IfModules => {
+      'mod_delay.c' => {
+        DelayEngine => 'off',
+      },
+
+      'mod_wrap2.c' => {
+        WrapEngine => 'on',
+        WrapLog => $setup->{log_file},
+        WrapGroupTables => "$setup->{group} file:$allow_file file:$deny_file",
+      },
+    },
+  };
+
+  my ($port, $config_user, $config_group) = config_write($setup->{config_file},
+    $config);
+
+  # Open pipes, for use between the parent and child processes.  Specifically,
+  # the child will indicate when it's done with its test by writing a message
+  # to the parent.
+  my ($rfh, $wfh);
+  unless (pipe($rfh, $wfh)) {
+    die("Can't open pipe: $!");
+  }
+
+  my $ex;
 
   # Fork child
   $self->handle_sigchld();
-  defined($pid = fork()) or die("Can't fork: $!");
+  defined(my $pid = fork()) or die("Can't fork: $!");
   if ($pid) {
     eval {
       my $client = ProFTPD::TestSuite::FTP->new('127.0.0.1', $port);
-
-      my ($resp_code, $resp_msg);
-
-      eval { $client->login($user, $passwd) };
+      eval { $client->login($setup->{user}, $setup->{passwd}) };
       unless ($@) {
         die("Login succeeded unexpectedly");
-
-      } else {
-        $resp_code = $client->response_code();
-        $resp_msg = $client->response_msg();
       }
+
+      my $resp_code = $client->response_code();
+      my $resp_msg = $client->response_msg();
 
       my $expected;
 
       $expected = 530;
       $self->assert($expected == $resp_code,
-        test_msg("Expected $expected, got $resp_code"));
+        test_msg("Expected response code $expected, got $resp_code"));
 
       $expected = "Access denied";
       $self->assert($expected eq $resp_msg,
-        test_msg("Expected '$expected', got '$resp_msg'"));
+        test_msg("Expected response message '$expected', got '$resp_msg'"));
     };
-
     if ($@) {
       $ex = $@;
     }
@@ -3664,7 +2807,7 @@ sub wrap2_file_group_tables {
     $wfh->flush();
 
   } else {
-    eval { server_wait($config_file, $rfh) };
+    eval { server_wait($setup->{config_file}, $rfh) };
     if ($@) {
       warn($@);
       exit 1;
@@ -3674,18 +2817,10 @@ sub wrap2_file_group_tables {
   }
 
   # Stop server
-  server_stop($pid_file);
-
+  server_stop($setup->{pid_file});
   $self->assert_child_ok($pid);
 
-  if ($ex) {
-    test_append_logfile($log_file, $ex);
-    unlink($log_file);
-
-    die($ex);
-  }
-
-  unlink($log_file);
+  test_cleanup($setup->{log_file}, $ex);
 }
 
 sub wrap2_file_bug3048 {
@@ -4160,20 +3295,11 @@ sub wrap2_file_user_plus_global_tables {
 sub wrap2_file_opt_check_on_connect_bug3508 {
   my $self = shift;
   my $tmpdir = $self->{tmpdir};
-
-  my $config_file = "$tmpdir/wrap2.conf";
-  my $pid_file = File::Spec->rel2abs("$tmpdir/wrap2.pid");
-  my $scoreboard_file = File::Spec->rel2abs("$tmpdir/wrap2.scoreboard");
-
-  my $log_file = test_get_logfile();
-
-  my $auth_user_file = File::Spec->rel2abs("$tmpdir/wrap2.passwd");
-  my $auth_group_file = File::Spec->rel2abs("$tmpdir/wrap2.group");
+  my $setup = test_setup($tmpdir, 'wrap2');
 
   my $fh;
   my $allow_file = File::Spec->rel2abs("$tmpdir/wrap2.allow");
   if (open($fh, "> $allow_file")) {
-    print $fh "ALL: ALL\n";
     unless (close($fh)) {
       die("Can't write $allow_file: $!");
     }
@@ -4194,36 +3320,15 @@ sub wrap2_file_opt_check_on_connect_bug3508 {
     die("Can't open $deny_file: $!");
   }
 
-  my $user = 'proftpd';
-  my $passwd = 'test';
-  my $group = 'ftpd';
-  my $home_dir = File::Spec->rel2abs($tmpdir);
-  my $uid = 500;
-  my $gid = 500;
-
-  # Make sure that, if we're running as root, that the home directory has
-  # permissions/privs set for the account we create
-  if ($< == 0) {
-    unless (chmod(0755, $home_dir)) {
-      die("Can't set perms on $home_dir to 0755: $!");
-    }
-
-    unless (chown($uid, $gid, $home_dir)) {
-      die("Can't set owner of $home_dir to $uid/$gid: $!");
-    }
-  }
-
-  auth_user_write($auth_user_file, $user, $passwd, $uid, $gid, $home_dir,
-    '/bin/bash');
-  auth_group_write($auth_group_file, $group, $gid, $user);
-
   my $config = {
-    PidFile => $pid_file,
-    ScoreboardFile => $scoreboard_file,
-    SystemLog => $log_file,
+    PidFile => $setup->{pid_file},
+    ScoreboardFile => $setup->{scoreboard_file},
+    SystemLog => $setup->{log_file},
+    TraceLog => $setup->{log_file},
+    Trace => 'wrap2:20',
 
-    AuthUserFile => $auth_user_file,
-    AuthGroupFile => $auth_group_file,
+    AuthUserFile => $setup->{auth_user_file},
+    AuthGroupFile => $setup->{auth_group_file},
 
     IfModules => {
       'mod_delay.c' => {
@@ -4232,14 +3337,15 @@ sub wrap2_file_opt_check_on_connect_bug3508 {
 
       'mod_wrap2.c' => {
         WrapEngine => 'on',
+        WrapLog => $setup->{log_file},
         WrapTables => "file:$allow_file file:$deny_file",
-        WrapLog => $log_file,
         WrapOptions => 'CheckOnConnect',
       },
     },
   };
 
-  my ($port, $config_user, $config_group) = config_write($config_file, $config);
+  my ($port, $config_user, $config_group) = config_write($setup->{config_file},
+    $config);
 
   # Open pipes, for use between the parent and child processes.  Specifically,
   # the child will indicate when it's done with its test by writing a message
@@ -4256,69 +3362,8 @@ sub wrap2_file_opt_check_on_connect_bug3508 {
   defined(my $pid = fork()) or die("Can't fork: $!");
   if ($pid) {
     eval {
-      my $client = ProFTPD::TestSuite::FTP->new('127.0.0.1', $port);
-
-      my ($resp_code, $resp_msg);
-
-      ($resp_code, $resp_msg) = $client->login($user, $passwd);
-
-      my $expected;
-
-      $expected = 230;
-      $self->assert($expected == $resp_code,
-        test_msg("Expected $expected, got $resp_code"));
-
-      $expected = "User $user logged in";
-      $self->assert($expected eq $resp_msg,
-        test_msg("Expected '$expected', got '$resp_msg'"));
-    };
-
-    if ($@) {
-      $ex = $@;
-    }
-
-    $wfh->print("done\n");
-    $wfh->flush();
-
-  } else {
-    eval { server_wait($config_file, $rfh) };
-    if ($@) {
-      warn($@);
-      exit 1;
-    }
-
-    exit 0;
-  }
-
-  # Stop server
-  server_stop($pid_file);
-
-  $self->assert_child_ok($pid);
-
-  if ($ex) {
-    die($ex);
-  }
-
-  if (open($fh, "> $allow_file")) {
-    unless (close($fh)) {
-      die("Can't write $allow_file: $!");
-    }
-
-  } else {
-    die("Can't open $allow_file: $!");
-  }
-
-  ($port, $config_user, $config_group) = config_write($config_file, $config);
-
-  # Fork child
-  $self->handle_sigchld();
-  defined($pid = fork()) or die("Can't fork: $!");
-  if ($pid) {
-    eval {
-      my $client;
-
       eval {
-        $client = ProFTPD::TestSuite::FTP->new('127.0.0.1', $port, undef, 2);
+        my $client = ProFTPD::TestSuite::FTP->new('127.0.0.1', $port, undef, 2);
       };
       unless ($@) {
         die("Connect succeeded unexpectedly");
@@ -4330,7 +3375,6 @@ sub wrap2_file_opt_check_on_connect_bug3508 {
       $self->assert($expected eq $ex,
         test_msg("Expected '$expected', got '$ex'"));
     };
-
     if ($@) {
       $ex = $@;
     }
@@ -4339,7 +3383,7 @@ sub wrap2_file_opt_check_on_connect_bug3508 {
     $wfh->flush();
 
   } else {
-    eval { server_wait($config_file, $rfh) };
+    eval { server_wait($setup->{config_file}, $rfh) };
     if ($@) {
       warn($@);
       exit 1;
@@ -4349,37 +3393,20 @@ sub wrap2_file_opt_check_on_connect_bug3508 {
   }
 
   # Stop server
-  server_stop($pid_file);
-
+  server_stop($setup->{pid_file});
   $self->assert_child_ok($pid);
 
-  if ($ex) {
-    test_append_logfile($log_file, $ex);
-    unlink($log_file);
-
-    die($ex);
-  }
-
-  unlink($log_file);
+  test_cleanup($setup->{log_file}, $ex);
 }
 
 sub wrap2_file_tilde_opt_check_on_connect_bug3508 {
   my $self = shift;
   my $tmpdir = $self->{tmpdir};
-
-  my $config_file = "$tmpdir/wrap2.conf";
-  my $pid_file = File::Spec->rel2abs("$tmpdir/wrap2.pid");
-  my $scoreboard_file = File::Spec->rel2abs("$tmpdir/wrap2.scoreboard");
-
-  my $log_file = test_get_logfile();
-
-  my $auth_user_file = File::Spec->rel2abs("$tmpdir/wrap2.passwd");
-  my $auth_group_file = File::Spec->rel2abs("$tmpdir/wrap2.group");
+  my $setup = test_setup($tmpdir, 'wrap2');
 
   my $fh;
   my $allow_file = File::Spec->rel2abs("$tmpdir/wrap2.allow");
   if (open($fh, "> $allow_file")) {
-    print $fh "ALL: ALL\n";
     unless (close($fh)) {
       die("Can't write $allow_file: $!");
     }
@@ -4400,36 +3427,15 @@ sub wrap2_file_tilde_opt_check_on_connect_bug3508 {
     die("Can't open $deny_file: $!");
   }
 
-  my $user = 'proftpd';
-  my $passwd = 'test';
-  my $group = 'ftpd';
-  my $home_dir = File::Spec->rel2abs($tmpdir);
-  my $uid = 500;
-  my $gid = 500;
-
-  # Make sure that, if we're running as root, that the home directory has
-  # permissions/privs set for the account we create
-  if ($< == 0) {
-    unless (chmod(0755, $home_dir)) {
-      die("Can't set perms on $home_dir to 0755: $!");
-    }
-
-    unless (chown($uid, $gid, $home_dir)) {
-      die("Can't set owner of $home_dir to $uid/$gid: $!");
-    }
-  }
-
-  auth_user_write($auth_user_file, $user, $passwd, $uid, $gid, $home_dir,
-    '/bin/bash');
-  auth_group_write($auth_group_file, $group, $gid, $user);
-
   my $config = {
-    PidFile => $pid_file,
-    ScoreboardFile => $scoreboard_file,
-    SystemLog => $log_file,
+    PidFile => $setup->{pid_file},
+    ScoreboardFile => $setup->{scoreboard_file},
+    SystemLog => $setup->{log_file},
+    TraceLog => $setup->{log_file},
+    Trace => 'wrap2:20',
 
-    AuthUserFile => $auth_user_file,
-    AuthGroupFile => $auth_group_file,
+    AuthUserFile => $setup->{auth_user_file},
+    AuthGroupFile => $setup->{auth_group_file},
 
     IfModules => {
       'mod_delay.c' => {
@@ -4438,14 +3444,15 @@ sub wrap2_file_tilde_opt_check_on_connect_bug3508 {
 
       'mod_wrap2.c' => {
         WrapEngine => 'on',
+        WrapLog => $setup->{log_file},
         WrapTables => "file:~/wrap2.allow file:~/wrap2.deny",
-        WrapLog => $log_file,
         WrapOptions => 'CheckOnConnect',
       },
     },
   };
 
-  my ($port, $config_user, $config_group) = config_write($config_file, $config);
+  my ($port, $config_user, $config_group) = config_write($setup->{config_file},
+    $config);
 
   # Open pipes, for use between the parent and child processes.  Specifically,
   # the child will indicate when it's done with its test by writing a message
@@ -4462,73 +3469,12 @@ sub wrap2_file_tilde_opt_check_on_connect_bug3508 {
   defined(my $pid = fork()) or die("Can't fork: $!");
   if ($pid) {
     eval {
-      my $client = ProFTPD::TestSuite::FTP->new('127.0.0.1', $port);
-
-      my ($resp_code, $resp_msg);
-
-      ($resp_code, $resp_msg) = $client->login($user, $passwd);
-
-      my $expected;
-
-      $expected = 230;
-      $self->assert($expected == $resp_code,
-        test_msg("Expected $expected, got $resp_code"));
-
-      $expected = "User $user logged in";
-      $self->assert($expected eq $resp_msg,
-        test_msg("Expected '$expected', got '$resp_msg'"));
-    };
-
-    if ($@) {
-      $ex = $@;
-    }
-
-    $wfh->print("done\n");
-    $wfh->flush();
-
-  } else {
-    eval { server_wait($config_file, $rfh) };
-    if ($@) {
-      warn($@);
-      exit 1;
-    }
-
-    exit 0;
-  }
-
-  # Stop server
-  server_stop($pid_file);
-
-  $self->assert_child_ok($pid);
-
-  if ($ex) {
-    die($ex);
-  }
-
-  if (open($fh, "> $allow_file")) {
-    unless (close($fh)) {
-      die("Can't write $allow_file: $!");
-    }
-
-  } else {
-    die("Can't open $allow_file: $!");
-  }
-
-  ($port, $config_user, $config_group) = config_write($config_file, $config);
-
-  # Fork child
-  $self->handle_sigchld();
-  defined($pid = fork()) or die("Can't fork: $!");
-  if ($pid) {
-    eval {
-
       # This SHOULD be denied, but because we used a tilde in the path to the
       # allow/deny tables, that tilde can't be resolved, thus the paths can't
       # be opened, and the connection will be allowed by default.
       my $client = ProFTPD::TestSuite::FTP->new('127.0.0.1', $port, undef, 2);
       $client->quit();
     };
-
     if ($@) {
       $ex = $@;
     }
@@ -4537,7 +3483,7 @@ sub wrap2_file_tilde_opt_check_on_connect_bug3508 {
     $wfh->flush();
 
   } else {
-    eval { server_wait($config_file, $rfh) };
+    eval { server_wait($setup->{config_file}, $rfh) };
     if ($@) {
       warn($@);
       exit 1;
@@ -4547,18 +3493,10 @@ sub wrap2_file_tilde_opt_check_on_connect_bug3508 {
   }
 
   # Stop server
-  server_stop($pid_file);
-
+  server_stop($setup->{pid_file});
   $self->assert_child_ok($pid);
 
-  if ($ex) {
-    test_append_logfile($log_file, $ex);
-    unlink($log_file);
-
-    die($ex);
-  }
-
-  unlink($log_file);
+  test_cleanup($setup->{log_file}, $ex);
 }
 
 sub wrap2_sftp_extlog_user_bug3727 {
@@ -4951,6 +3889,244 @@ sub wrap2_file_user_table_reverse_dns_bug3938 {
   }
 
   unlink($log_file);
+}
+
+sub wrap2_file_allow_includes_issue1133 {
+  my $self = shift;
+  my $tmpdir = $self->{tmpdir};
+  my $setup = test_setup($tmpdir, 'wrap2');
+
+  my $fh;
+
+  my $include_file = File::Spec->rel2abs("$tmpdir/wrap2.allow.includes");
+  if (open($fh, "> $include_file")) {
+    print $fh "foo bar\r\nbaz\nALL\n";
+    unless (close($fh)) {
+      die("Can't write $include_file: $!");
+    }
+
+  } else {
+    die("Can't open $include_file: $!");
+  }
+
+  my $allow_file = File::Spec->rel2abs("$tmpdir/wrap2.allow");
+  if (open($fh, "> $allow_file")) {
+    print $fh "proftpd: $include_file\n";
+    unless (close($fh)) {
+      die("Can't write $allow_file: $!");
+    }
+
+  } else {
+    die("Can't open $allow_file: $!");
+  }
+
+  my $deny_file = File::Spec->rel2abs("$tmpdir/wrap2.deny");
+  if (open($fh, "> $deny_file")) {
+    close($fh);
+
+  } else {
+    die("Can't open $deny_file: $!");
+  }
+
+  my $config = {
+    PidFile => $setup->{pid_file},
+    ScoreboardFile => $setup->{scoreboard_file},
+    SystemLog => $setup->{log_file},
+
+    AuthUserFile => $setup->{auth_user_file},
+    AuthGroupFile => $setup->{auth_group_file},
+
+    IfModules => {
+      'mod_delay.c' => {
+        DelayEngine => 'off',
+      },
+
+      'mod_wrap2.c' => {
+        WrapEngine => 'on',
+        WrapLog => $setup->{log_file},
+        WrapAllowMsg => '"User %u allowed by access rules"',
+        WrapTables => "file:$allow_file file:$deny_file",
+      },
+    },
+  };
+
+  my ($port, $config_user, $config_group) = config_write($setup->{config_file},
+    $config);
+
+  # Open pipes, for use between the parent and child processes.  Specifically,
+  # the child will indicate when it's done with its test by writing a message
+  # to the parent.
+  my ($rfh, $wfh);
+  unless (pipe($rfh, $wfh)) {
+    die("Can't open pipe: $!");
+  }
+
+  my $ex;
+
+  # Fork child
+  $self->handle_sigchld();
+  defined(my $pid = fork()) or die("Can't fork: $!");
+  if ($pid) {
+    eval {
+      my $client = ProFTPD::TestSuite::FTP->new('127.0.0.1', $port);
+      $client->login($setup->{user}, $setup->{passwd});
+
+      my $resp_code = $client->response_code();
+      my $resp_msg = $client->response_msg(0);
+
+      my $expected;
+
+      $expected = 230;
+      $self->assert($expected == $resp_code,
+        test_msg("Expected response code $expected, got $resp_code"));
+
+      $expected = "User $setup->{user} allowed by access rules";
+      $self->assert($expected eq $resp_msg,
+        test_msg("Expected response message '$expected', got '$resp_msg'"));
+    };
+    if ($@) {
+      $ex = $@;
+    }
+
+    $wfh->print("done\n");
+    $wfh->flush();
+
+  } else {
+    eval { server_wait($setup->{config_file}, $rfh) };
+    if ($@) {
+      warn($@);
+      exit 1;
+    }
+
+    exit 0;
+  }
+
+  # Stop server
+  server_stop($setup->{pid_file});
+  $self->assert_child_ok($pid);
+
+  test_cleanup($setup->{log_file}, $ex);
+}
+
+sub wrap2_file_deny_includes_issue1133 {
+  my $self = shift;
+  my $tmpdir = $self->{tmpdir};
+  my $setup = test_setup($tmpdir, 'wrap2');
+
+  my $fh;
+
+  my $include_file = File::Spec->rel2abs("$tmpdir/wrap2.deny.includes");
+  if (open($fh, "> $include_file")) {
+    print $fh "foo bar\r\nbaz\nALL\n";
+    unless (close($fh)) {
+      die("Can't write $include_file: $!");
+    }
+
+  } else {
+    die("Can't open $include_file: $!");
+  }
+
+  my $allow_file = File::Spec->rel2abs("$tmpdir/wrap2.allow");
+  if (open($fh, "> $allow_file")) {
+    close($fh);
+
+  } else {
+    die("Can't open $allow_file: $!");
+  }
+
+  my $deny_file = File::Spec->rel2abs("$tmpdir/wrap2.deny");
+  if (open($fh, "> $deny_file")) {
+    print $fh "proftpd: $include_file\n";
+    unless (close($fh)) {
+      die("Can't write $deny_file: $!");
+    }
+
+  } else {
+    die("Can't open $deny_file: $!");
+  }
+
+  my $config = {
+    PidFile => $setup->{pid_file},
+    ScoreboardFile => $setup->{scoreboard_file},
+    SystemLog => $setup->{log_file},
+
+    AuthUserFile => $setup->{auth_user_file},
+    AuthGroupFile => $setup->{auth_group_file},
+
+    IfModules => {
+      'mod_delay.c' => {
+        DelayEngine => 'off',
+      },
+
+      'mod_wrap2.c' => {
+        WrapEngine => 'on',
+        WrapLog => $setup->{log_file},
+        WrapDenyMsg => '"User %u rejected by access rules"',
+        WrapTables => "file:$allow_file file:$deny_file",
+      },
+    },
+  };
+
+  my ($port, $config_user, $config_group) = config_write($setup->{config_file},
+    $config);
+
+  # Open pipes, for use between the parent and child processes.  Specifically,
+  # the child will indicate when it's done with its test by writing a message
+  # to the parent.
+  my ($rfh, $wfh);
+  unless (pipe($rfh, $wfh)) {
+    die("Can't open pipe: $!");
+  }
+
+  my $ex;
+
+  # Fork child
+  $self->handle_sigchld();
+  defined(my $pid = fork()) or die("Can't fork: $!");
+  if ($pid) {
+    eval {
+      my $client = ProFTPD::TestSuite::FTP->new('127.0.0.1', $port);
+
+      eval { $client->login($setup->{user}, $setup->{passwd}) };
+      unless ($@) {
+        die("Login succeeded unexpectedly");
+      }
+
+      my $resp_code = $client->response_code();
+      my $resp_msg = $client->response_msg();
+
+      my $expected;
+
+      $expected = 530;
+      $self->assert($expected == $resp_code,
+        test_msg("Expected response code $expected, got $resp_code"));
+
+      $expected = "User $setup->{user} rejected by access rules";
+      $self->assert($expected eq $resp_msg,
+        test_msg("Expected response message '$expected', got '$resp_msg'"));
+    };
+    if ($@) {
+      $ex = $@;
+    }
+
+    $wfh->print("done\n");
+    $wfh->flush();
+
+  } else {
+    eval { server_wait($setup->{config_file}, $rfh) };
+    if ($@) {
+      warn($@);
+      exit 1;
+    }
+
+    exit 0;
+  }
+
+  # Stop server
+  server_stop($setup->{pid_file});
+  $self->assert_child_ok($pid);
+
+  test_cleanup($setup->{log_file}, $ex);
 }
 
 1;

@@ -1,6 +1,6 @@
 /*
  * ProFTPD - FTP server daemon
- * Copyright (c) 2014-2016 The ProFTPD Project team
+ * Copyright (c) 2014-2022 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -111,8 +111,11 @@ void find_config_set_top(config_rec *);
 
 int remove_config(xaset_t *set, const char *name, int recurse);
 
+config_rec *pr_config_alloc(pool *p, const char *name, int config_type);
+
 #define PR_CONFIG_FL_INSERT_HEAD	0x001
 #define PR_CONFIG_FL_PRESERVE_ENTRY	0x002
+config_rec *pr_config_add_config_to_set(xaset_t *set, config_rec *c, int flags);
 config_rec *pr_config_add_set(xaset_t **, const char *, int);
 config_rec *pr_config_add(struct server_struc *, const char *, int);
 int pr_config_remove(xaset_t *set, const char *name, int flags, int recurse);

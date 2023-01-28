@@ -84,6 +84,7 @@ sub maxstorefilesize_ok {
 
     AuthUserFile => $auth_user_file,
     AuthGroupFile => $auth_group_file,
+    AuthOrder => 'mod_auth_file.c',
 
     MaxStoreFileSize => '100 B',
 
@@ -206,6 +207,7 @@ sub maxstorefilesize_exceeded {
 
     AuthUserFile => $auth_user_file,
     AuthGroupFile => $auth_group_file,
+    AuthOrder => 'mod_auth_file.c',
 
     MaxStoreFileSize => '4 B',
 
@@ -348,6 +350,7 @@ sub maxstorefilesize_appe_bug3649 {
 
     AuthUserFile => $auth_user_file,
     AuthGroupFile => $auth_group_file,
+    AuthOrder => 'mod_auth_file.c',
 
     AllowOverwrite => 'on',
     AllowStoreRestart => 'on',
