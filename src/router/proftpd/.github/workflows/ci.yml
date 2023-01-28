@@ -17,34 +17,41 @@ jobs:
     services:
       redis:
         # Docker Hub image
-        image: redis:5-alpine
+        image: redis:6-alpine
         # Set health checks to wait until redis has started
         options: >-
           --health-cmd "redis-cli ping"
           --health-interval 10s
           --health-timeout 5s
           --health-retries 5
-        ports:
-          - 6379:6379
 
     environment: CI
 
     env:
-      PACKAGE_VERSION: 1.3.7b
+      PACKAGE_VERSION: 1.3.8rc5
       REDIS_HOST: redis
 
     strategy:
       matrix:
         compiler:
-          - gcc
           - clang
+          - gcc
+        container:
+          - almalinux:8
+          - alpine:3.14
+          - ubuntu:18.04
+
+    container: ${{ matrix.container }}
 
     steps:
       - name: Checkout source code
         uses: actions/checkout@v2
 
       - name: Whitespace check
+        if: ${{ matrix.container == 'ubuntu:18.04' }}
         run: |
+          apt-get update -qq
+          apt-get install -y git
           if [[ -n $(git diff --check HEAD^) ]]; then
             echo "You must remove whitespace before submitting a pull request"
             echo ""
@@ -52,68 +59,201 @@ jobs:
             exit 1
           fi
 
-      - name: Install packages
+      - name: Install Alpine packages
+        if: ${{ matrix.container == 'alpine:3.14' }}
         run: |
-          # Need to add other repos for e.g. libsodium
-          sudo apt-get update -qq
+          apk update
+          # for builds
+          apk add bash build-base clang compiler-rt-static gcc make zlib-dev
           # for unit tests
-          sudo apt-get install -y check
-          sudo apt-get install -y libsubunit-dev
+          apk add check check-dev subunit subunit-dev
+
           # for mod_lang
-          sudo apt-get install -y gettext
+          apk add gettext-dev
           # for xattr support
-          sudo apt-get install -y libattr1-dev
+          apk add attr-dev libattr
           # for mod_cap
-          sudo apt-get install -y libcap-dev
+          apk add libcap-dev
           # for mod_geoip
-          sudo apt-get install -y libgeoip-dev
+          apk add geoip-dev
           # for mod_ldap
-          sudo apt-get install -y libldap2-dev libsasl2-dev
-          # for mod_ldap runtime support for SCRAM
-          sudo apt-get install -y libsasl2-modules-gssapi-mit
+          apk add cyrus-sasl-dev libldap openldap-dev
+          # for mod_rewrite
+          apk add libidn2-dev
           # for memcache support
-          sudo apt-get install -y libmemcached-dev
+          apk add libmemcached-dev
           # for redis support
-          sudo apt-get install -y libhiredis-dev
+          apk add hiredis-dev hiredis-ssl
           # for mod_sql_mysql
-          sudo apt-get install -y libmysqlclient-dev
+          apk add mariadb-connector-c-dev
           # for PAM support
-          sudo apt-get install -y libpam-dev
+          apk add linux-pam-dev
           # for mod_sql_postgres
-          sudo apt-get install -y libpq-dev
+          apk add libpq postgresql-dev
           # for mod_sql_odbc
-          sudo apt-get install -y unixodbc-dev
+          apk add unixodbc-dev
           # for OpenSSL support
-          sudo apt-get install -y libssl-dev
+          apk add openssl openssl-dev
           # for Sodium support
-          sudo apt-get install -y --force-yes libsodium-dev
+          apk add libsodium-dev
           # for mod_sql_sqlite
-          sudo apt-get install -y libsqlite3-dev sqlite3
-          # for mod_wrap
-          sudo apt-get install -y libwrap0-dev
-          # for PCRE support
-          sudo apt-get install -y libpcre3-dev
+          apk add sqlite sqlite-dev
+          # NOTE: Alpine does not support mod_wrap, due to lack of tcpwrappers
+          # for PCRE2 support
+          apk add pcre2-dev
           # for ftptop
-          sudo apt-get install -y ncurses-dev
+          apk add ncurses-dev
           # for zlib support
-          sudo apt-get install -y zlib1g-dev
-          # for static code analysis
-          # - sudo apt-get install -y cppcheck
-          # - sudo apt-get install rats
-          # for integration/regression test
-          # for test code coverage
-          sudo apt-get install -y lcov
-          sudo gem install coveralls-lcov
-          # for HTML validation
-          sudo apt-get install -y tidy
-          # for clang
-          sudo apt-get install -y clang
+          apk add zlib-dev
+
           # for debugging
           clang --version
           gcc --version
           openssl version -a
 
+          # The modules to build are distro-specific
+          echo "PROFTPD_MODULES=mod_sql:mod_sql_mysql:mod_sql_odbc:mod_sql_postgres:mod_sql_sqlite:mod_sql_passwd:mod_sftp:mod_sftp_sql:mod_sftp_pam:mod_tls:mod_tls_fscache:mod_tls_shmcache:mod_tls_memcache:mod_tls_redis:mod_ban:mod_copy:mod_ctrls_admin:mod_deflate:mod_dnsbl:mod_dynmasq:mod_exec:mod_facl:mod_geoip:mod_ifversion:mod_ldap:mod_load:mod_log_forensic:mod_qos:mod_quotatab:mod_quotatab_file:mod_quotatab_ldap:mod_quotatab_radius:mod_quotatab_sql:mod_radius:mod_readme:mod_rewrite:mod_shaper:mod_site_misc:mod_snmp:mod_wrap2:mod_wrap2_file:mod_wrap2_redis:mod_wrap2_sql:mod_digest:mod_auth_otp:mod_statcache:mod_unique_id:mod_ifsession" >> $GITHUB_ENV
+
+      - name: Install RPM packages
+        if: ${{ matrix.container == 'almalinux:8' }}
+        run: |
+          # Need to add other repos for e.g. libsodium
+          yum install -y dnf-plugins-core epel-release yum-utils gcc make
+          dnf config-manager --enable epel
+          dnf config-manager --set-enabled powertools
+          # for unit tests
+          yum install -y check-devel https://cbs.centos.org/kojifiles/packages/subunit/1.4.0/1.el8/x86_64/subunit-1.4.0-1.el8.x86_64.rpm https://cbs.centos.org/kojifiles/packages/subunit/1.4.0/1.el8/x86_64/subunit-devel-1.4.0-1.el8.x86_64.rpm
+          # for mod_lang
+          yum install -y gettext-devel glibc-all-langpacks glibc-gconv-extra
+          # for xattr support
+          yum install -y libattr-devel
+          # for mod_cap
+          yum install -y libacl-devel libcap-devel
+          # for mod_geoip
+          yum install -y GeoIP-devel
+          # for mod_ldap
+          yum install -y openldap-devel cyrus-sasl-devel
+          # for mod_rewrite
+          yum install -y libidn2-devel
+          # for memcache support
+          yum install -y libmemcached-devel
+          # for redis support
+          yum install -y hiredis-devel
+          # for mod_sql_mysql
+          yum install -y mysql-devel
+          # for PAM support
+          yum install -y pam-devel
+          # for mod_sql_postgres
+          yum install -y postgresql-devel
+          # for mod_sql_odbc
+          yum install -y unixODBC-devel
+          # for OpenSSL support
+          yum install -y openssl openssl-devel
+          # for Sodium support
+          yum install -y libsodium-devel
+          # for mod_sql_sqlite
+          yum install -y sqlite-devel
+          # for mod_wrap
+          yum install -y libnsl2-devel https://pkgs.dyn.su/el8/extras/x86_64/tcp_wrappers-libs-7.6-77.el8.x86_64.rpm https://pkgs.dyn.su/el8/extras/x86_64/tcp_wrappers-devel-7.6-77.el8.x86_64.rpm
+          # for PCRE2 support
+          yum install -y pcre2-devel
+          # for ftptop
+          yum install -y ncurses-devel
+          # for zlib support
+          yum install -y zlib-devel
+          # for static code analysis
+          # - sudo yum install -y cppcheck
+          # - sudo yum install rats
+          # for integration/regression test
+          # for test code coverage
+          # for HTML validation
+          # for clang
+          yum install -y clang
+
+          # The modules to build are distro-specific
+          echo "PROFTPD_MODULES=mod_sql:mod_sql_mysql:mod_sql_odbc:mod_sql_postgres:mod_sql_sqlite:mod_sql_passwd:mod_sftp:mod_sftp_sql:mod_sftp_pam:mod_tls:mod_tls_fscache:mod_tls_shmcache:mod_tls_memcache:mod_tls_redis:mod_ban:mod_copy:mod_ctrls_admin:mod_deflate:mod_dnsbl:mod_dynmasq:mod_exec:mod_facl:mod_geoip:mod_ifversion:mod_ldap:mod_load:mod_log_forensic:mod_qos:mod_quotatab:mod_quotatab_file:mod_quotatab_ldap:mod_quotatab_radius:mod_quotatab_sql:mod_radius:mod_readme:mod_rewrite:mod_shaper:mod_site_misc:mod_snmp:mod_wrap:mod_wrap2:mod_wrap2_file:mod_wrap2_redis:mod_wrap2_sql:mod_digest:mod_auth_otp:mod_statcache:mod_unique_id:mod_ifsession" >> $GITHUB_ENV
+
+          # for debugging
+          clang --version
+          gcc --version
+          openssl version -a
+
+      - name: Install Ubuntu packages
+        if: ${{ matrix.container == 'ubuntu:18.04' }}
+        run: |
+          # Need to add other repos for e.g. libsodium
+          apt-get update -qq
+          # for builds
+          apt-get install -y clang git make
+          # for unit tests
+          apt-get install -y check libsubunit-dev
+          # for mod_lang
+          apt-get install -y gettext locales-all
+          # for xattr support
+          apt-get install -y libattr1-dev
+          # for mod_cap
+          apt-get install -y libcap-dev
+          # for mod_geoip
+          apt-get install -y libgeoip-dev
+          # for mod_ldap
+          apt-get install -y libldap2-dev libsasl2-dev
+          # for mod_ldap runtime support for SCRAM
+          apt-get install -y libsasl2-modules-gssapi-mit
+          # for mod_rewrite
+          apt-get install -y libidn2-dev
+          # for memcache support
+          apt-get install -y libmemcached-dev
+          # for redis support
+          apt-get install -y libhiredis-dev
+          # for mod_sql_mysql
+          apt-get install -y libmysqlclient-dev
+          # for PAM support
+          apt-get install -y libpam-dev
+          # for mod_sql_postgres
+          apt-get install -y libpq-dev
+          # for mod_sql_odbc
+          apt-get install -y unixodbc-dev
+          # for OpenSSL support
+          apt-get install -y libssl-dev
+          # for Sodium support
+          apt-get install -y --force-yes libsodium-dev
+          # for mod_sql_sqlite
+          apt-get install -y libsqlite3-dev sqlite3
+          # for mod_wrap
+          apt-get install -y libwrap0-dev
+          # for PCRE2 support
+          apt-get install -y libpcre2-dev libpcre2-posix0
+          # for ftptop
+          apt-get install -y ncurses-dev
+          # for zlib support
+          apt-get install -y zlib1g-dev
+
+          # for logging
+          apt-get install -y rsyslog
+          service rsyslog start
+
+          # for static code analysis
+          # - sudo apt-get install -y cppcheck
+          # - sudo apt-get install rats
+          # for integration/regression test
+          # for test code coverage
+          apt-get install -y lcov ruby
+          gem install coveralls-lcov
+
+          # for HTML validation
+          apt-get install -y tidy
+
+          # The modules to build are distro-specific
+          echo "PROFTPD_MODULES=mod_sql:mod_sql_mysql:mod_sql_odbc:mod_sql_postgres:mod_sql_sqlite:mod_sql_passwd:mod_sftp:mod_sftp_sql:mod_sftp_pam:mod_tls:mod_tls_fscache:mod_tls_shmcache:mod_tls_memcache:mod_tls_redis:mod_ban:mod_copy:mod_ctrls_admin:mod_deflate:mod_dnsbl:mod_dynmasq:mod_exec:mod_facl:mod_geoip:mod_ifversion:mod_ldap:mod_load:mod_log_forensic:mod_qos:mod_quotatab:mod_quotatab_file:mod_quotatab_ldap:mod_quotatab_radius:mod_quotatab_sql:mod_radius:mod_readme:mod_rewrite:mod_shaper:mod_site_misc:mod_snmp:mod_wrap:mod_wrap2:mod_wrap2_file:mod_wrap2_redis:mod_wrap2_sql:mod_digest:mod_auth_otp:mod_statcache:mod_unique_id:mod_ifsession" >> $GITHUB_ENV
+
+          # for debugging
+          clang --version
+          gcc --version
+          lcov --version
+          openssl version -a
+
       - name: Prepare code coverage
+        if: ${{ matrix.container == 'ubuntu:18.04' }}
         run: |
           lcov --directory . --zerocounters
 
@@ -121,49 +261,110 @@ jobs:
         env:
           CC: ${{ matrix.compiler }}
         run: |
-          ./configure LIBS="-lodbc -lm -lsubunit -lrt -pthread" --enable-devel=coverage --enable-ctrls --enable-facl --enable-memcache --enable-nls --enable-pcre --enable-redis --enable-tests --with-modules=mod_sql:mod_sql_mysql:mod_sql_odbc:mod_sql_postgres:mod_sql_sqlite:mod_sql_passwd:mod_sftp:mod_sftp_sql:mod_sftp_pam:mod_tls:mod_tls_fscache:mod_tls_shmcache:mod_tls_memcache:mod_tls_redis:mod_ban:mod_copy:mod_ctrls_admin:mod_deflate:mod_dnsbl:mod_dynmasq:mod_exec:mod_facl:mod_geoip:mod_ifversion:mod_ldap:mod_load:mod_log_forensic:mod_qos:mod_quotatab:mod_quotatab_file:mod_quotatab_ldap:mod_quotatab_radius:mod_quotatab_sql:mod_radius:mod_readme:mod_rewrite:mod_shaper:mod_site_misc:mod_snmp:mod_wrap:mod_wrap2:mod_wrap2_file:mod_wrap2_redis:mod_wrap2_sql:mod_digest:mod_auth_otp:mod_statcache:mod_unique_id:mod_ifsession
+          ./configure LIBS="-lodbc -lm -lsubunit -lrt -pthread" --enable-devel=coverage:fortify --enable-ctrls --enable-facl --enable-memcache --enable-nls --enable-pcre2 --enable-redis --enable-tests --with-modules="${{ env.PROFTPD_MODULES }}"
           make
 
       - name: Run unit tests
         env:
           CC: ${{ matrix.compiler }}
+        # Note: Skip the unit tests on Alpine, or when using clang.
+        #
+        # On recent (as of 2022-11-13) AlmaLinux with clang and the
+        # `--enable-devel=fortify` configure settings, some of the unit tests
+        # inexplicably fail.  So skip clang unit tests, for now.
+        if: ${{ matrix.compiler == 'gcc' && matrix.container != 'alpine:3.14' }}
         run: |
           make TEST_VERBOSE=1 check-api
 
-      - name: Install with static modules
+      - name: Upload code coverage
+        env:
+          COVERALLS_REPO_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        if: ${{ matrix.compiler == 'gcc' && matrix.container == 'ubuntu:18.04' }}
         run: |
-          sudo make install
+          lcov --ignore-errors gcov,source --directory . --capture --output-file all.info
+          # filter out system and test code
+          lcov --output-file coverage.info --remove all.info '*/lib/glibc-glob.c' '*/lib/ccan-json.c' '*/lib/hanson-tpl.*' '*/lib/openbsd-*' '*/lib/pr_fnmatch*'
+          # debug before upload
+          lcov --list coverage.info
+          # upload coverage info to coveralls
+          coveralls-lcov --repo-token="$COVERALLS_REPO_TOKEN" --service-name=github --service-job-id="$GITHUB_RUN_ID" --branch="$GITHUB_REF" coverage.info
+
+      - name: Install with static modules
+        env:
+          CC: ${{ matrix.compiler }}
+        run: |
+          make clean
+          ./configure LIBS="-lodbc" --enable-ctrls --enable-facl --enable-memcache --enable-nls --enable-pcre2 --enable-redis --with-modules="${{ env.PROFTPD_MODULES }}"
+          make
+          make install
+
+      - name: Run restart tests
+        env:
+          CC: ${{ matrix.compiler }}
+          PROFTPD_TEST_BIN: /usr/local/sbin/proftpd
+          PROFTPD_TEST_PIDFILE: /usr/local/var/proftpd.pid
+        # Note that the default config assumes user 'nobody', group 'nogroup',
+        # which do not exist in the default images of all distributions.
+        if: ${{ matrix.container == 'ubuntu:18.04' }}
+        run: |
+          test -e $PROFTPD_TEST_BIN
+          $PROFTPD_TEST_BIN
+          kill -0 $(cat $PROFTPD_TEST_PIDFILE)
+          kill -HUP $(cat $PROFTPD_TEST_PIDFILE)
+
+          kill -0 $(cat $PROFTPD_TEST_PIDFILE)
+          kill -HUP $(cat $PROFTPD_TEST_PIDFILE)
+
+          kill -0 $(cat $PROFTPD_TEST_PIDFILE)
+          kill -HUP $(cat $PROFTPD_TEST_PIDFILE)
+
+          kill -0 $(cat $PROFTPD_TEST_PIDFILE)
+          kill -TERM $(cat $PROFTPD_TEST_PIDFILE)
+
+          # Given the daemon a chance to clean up
+          sleep 1
+          ! test -f $PROFTPD_TEST_PIDFILE
 
       - name: Build with shared modules
         env:
           CC: ${{ matrix.compiler }}
         run: |
           make clean
-          ./configure LIBS="-lodbc -lm -lsubunit -lrt -pthread" --enable-devel --enable-ctrls --enable-dso --enable-facl --enable-memcache --enable-nls --enable-pcre --enable-tests --with-shared=mod_sql:mod_sql_mysql:mod_sql_odbc:mod_sql_postgres:mod_sql_sqlite:mod_sql_passwd:mod_sftp:mod_sftp_sql:mod_sftp_pam:mod_tls:mod_tls_fscache:mod_tls_shmcache:mod_tls_memcache:mod_ban:mod_copy:mod_ctrls_admin:mod_deflate:mod_dnsbl:mod_dynmasq:mod_exec:mod_facl:mod_geoip:mod_ifversion:mod_ldap:mod_load:mod_log_forensic:mod_qos:mod_quotatab:mod_quotatab_file:mod_quotatab_ldap:mod_quotatab_radius:mod_quotatab_sql:mod_radius:mod_readme:mod_rewrite:mod_shaper:mod_site_misc:mod_snmp:mod_wrap:mod_wrap2:mod_wrap2_file:mod_wrap2_redis:mod_wrap2_sql:mod_digest:mod_auth_otp:mod_statcache:mod_unique_id:mod_ifsession
+          ./configure LIBS="-lodbc -lm -lsubunit -lrt -pthread" --enable-devel=fortify --enable-ctrls --enable-dso --enable-facl --enable-memcache --enable-nls --enable-pcre2 --enable-tests --with-shared="${{ env.PROFTPD_MODULES }}"
           make
 
       - name: Install with shared modules
         run: |
-          sudo make install
+          make install
 
-      - name: Upload code coverage
+      # https://github.com/google/sanitizers/wiki/AddressSanitizer
+      # https://github.com/google/sanitizers/wiki/AddressSanitizerLeakSanitizer
+      # https://clang.llvm.org/docs/UndefinedBehaviorSanitizer.html
+      #
+      # NOTE: Using MemorySanitizer is desirable, but currently unusable since
+      # libcheck is not instrumented, resulting in unsuppressible false
+      # positives.
+      - name: Run unit tests under asan+lsan+ubsan
         env:
-          COVERALLS_REPO_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        if: ${{ matrix.compiler == 'gcc' }}
+          ASAN_OPTIONS: abort_on_error=1,check_initialization_order=true,debug=true,detect_invalid_pointer_pairs=2,detect_leaks=1,detect_stack_use_after_return=true,strict_string_checks=true,verbosity=0
+          CC: ${{ matrix.compiler }}
+          CFLAGS: -fsanitize=address,undefined -DPR_DEVEL_NO_POOL_FREELIST
+          LDFLAGS: -fsanitize=address,undefined
+        if: ${{ matrix.compiler == 'clang' && matrix.container == 'ubuntu:18.04' }}
         run: |
-          lcov --ignore-errors gcov,source --directory . --capture --output-file coverage.info
-          # filter out system and test code
-          lcov --remove coverage.info 'lib/glibc-glob.*' 'lib/ccan-json.*' 'lib/hanson-tpl.*' 'lib/openbsd-*' 'lib/pr_fnmatch_loop.*' 'tests/*' '/usr/*' --output-file coverage.info
-          # debug before upload
-          lcov --list coverage.info
-          # upload coverage info to coveralls
-          coveralls-lcov --repo-token="$COVERALLS_REPO_TOKEN" --service-name=github --service-job-id="$GITHUB_RUN_ID" --branch="$GITHUB_REF" coverage.info
+          make clean
+          ./configure LIBS="-lm -lsubunit -lrt -pthread" --enable-devel --enable-ctrls --enable-facl --enable-memcache --enable-nls --enable-pcre2 --enable-redis --enable-tests
+          make
+          export ASAN_SYMBOLIZER_PATH=$(readlink -f $(which llvm-symbolizer-10))
+          make check-api
 
       - name: Check Perl scripts
+        if: ${{ matrix.container == 'ubuntu:18.04' }}
         run: |
           perl -cw contrib/ftpasswd
           perl -cw contrib/ftpquota
 
       - name: Check HTML docs
+        if: ${{ matrix.container == 'ubuntu:18.04' }}
         run: |
-          for f in $(/bin/ls doc/contrib/*.html doc/howto/*.html doc/modules/*.html doc/utils/*.html); do echo "Processing $f"; tidy -errors -omit -q $f; done || exit 0
+          for f in $(/bin/ls doc/contrib/*.html doc/directives/*.html doc/howto/*.html doc/modules/*.html doc/utils/*.html); do echo "Processing $f"; tidy -errors -omit -q $f; done || exit 0

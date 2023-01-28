@@ -62,7 +62,6 @@ The <code>mod_core</code> module handles most of the core FTP commands.
   <li><a href="#MaxCommandRate">MaxCommandRate</a>
   <li><a href="#MaxConnectionRate">MaxConnectionRate</a>
   <li><a href="#MaxInstances">MaxInstances</a>
-  <li><a href="#MultilineRFC2228">MultilineRFC2228</a>
   <li><a href="#Order">Order</a>
   <li><a href="#PassivePorts">PassivePorts</a>
   <li><a href="#PathAllowFilter">PathAllowFilter</a>
@@ -559,7 +558,7 @@ to ensure that the login fails if the PAM check fails.
 <h3><a name="Class">&lt;Class&gt;</a></h3>
 <strong>Syntax:</strong> &lt;Class <em>name</em>&gt;<br>
 <strong>Default:</strong> None<br>
-<strong>Context:</strong> server config<br>
+<strong>Context:</strong> server config, <code>&lt;Global&gt;</code><br>
 <strong>Module:</strong> mod_core<br>
 <strong>Compatibility:</strong> 1.2.10rc1 and later
 
@@ -658,7 +657,7 @@ machines, which will have the same device/interface names but different IP
 addresses.
 
 <p>
-See also: <a href="VirtualHost"><code>&lt;VirtualHost&gt;</code></a>
+See also: <a href="#VirtualHost"><code>&lt;VirtualHost&gt;</code></a>
 
 <p>
 <hr>
@@ -1123,7 +1122,7 @@ See also: <a href="#DisplayChdir"><code>DisplayChdir</code></a>,
 <hr>
 <h3><a name="FSCachePolicy">FSCachePolicy</a></h3>
 <strong>Syntax:</strong> FSCachePolicy <em>on|off|size count [maxAge secs]</em><br>
-<strong>Default:</strong> None<br>
+<strong>Default:</strong> FSCachePolicy off<br>
 <strong>Context:</strong> server config, <code>&lt;VirtualHost&gt;</code>, <code>&lt;Global&gt;</code><br>
 <strong>Module:</strong> mod_core<br>
 <strong>Compatibility:</strong> 1.3.6rc1 and later
@@ -1162,8 +1161,11 @@ same directive, <i>e.g.</i>:
 </pre>
 
 <p>
-The default maximum number of entries is 3000, and the default maximum age is
-3 seconds.
+The default maximum number of entries is 3000, and the default maximum age is 3
+seconds.  To enable use of these defaults, enable the cache using:
+<pre>
+  FSCachePolicy on
+</pre>
 
 <hr>
 <h3><a name="FSOptions">FSOptions</a></h3>
@@ -1429,7 +1431,7 @@ files/directories that are hidden by other directives, such as
 Normally, files marked as "hidden" by <code>HideFiles</code>,
 <code>HideUser</code> or <code>HideGroup</code> <i>can</i> be operated on by
 all FTP commands (assuming Unix file permissions allow access); these files
-simplly do not appear in directory listings.  Additionally, even when normal
+simply do not appear in directory listings.  Additionally, even when normal
 file system permissions <i>deny</i> access, ProFTPD returns a
 "Permission denied" error to the client, indicating that the requested
 file/directory <i>does</i> exist, even if the client cannot use it.  The
@@ -1446,7 +1448,10 @@ Example:
     # Hide files/directories owned by root
     HideUser root
 
-    &lt;Limit DIRS&gt;
+    # Hide Unix dot files
+    HideFiles ^\.
+
+    &lt;Limit DIRS READ&gt;
       # Return "No such file or directory" for hidden files/directories
       IgnoreHidden on
     &lt;/Limit&gt;
@@ -1811,42 +1816,6 @@ traffic, be configured.
 
 <p>
 <hr>
-<h3><a name="MultilineRFC2228">MultilineRFC2228</a></h3>
-<strong>Syntax:</strong> MultilineRFC2228 <em>on|off</em><br>
-<strong>Default:</strong> MultilineRFC2228 off<br>
-<strong>Context:</strong> server config, <code>&lt;VirtualHost&gt;</code>, <code>&lt;Global&gt;</code><br>
-<strong>Module:</strong> mod_core<br>
-<strong>Compatibility:</strong> 1.2.0pre3 and later
-
-<p>
-By default, ProFTPD sends multi-line responses as per
-<a href="https://tools.ietf.org/html/rfc959">RFC 959</a>, <i>i.e.</i>:
-<pre>
-  200-First line
-   More lines...
-  200 Last line
-</pre>
-
-<p>
-<a href="https://tools.ietf.org/html/rfc2228">RFC 2228</a> specifies that "6xy"
-responses will be sent as follows:
-<pre>
-  600-First line
-  600-More lines...
-  600 Last line
-</pre>
-Note that RFC 2228 <b>only</b> specifies this format for response codes
-starting with '6'.
-
-<p>
-Enabling the <code>MultilineRFC2228</code> directive causes <b>all</b>
-multiline responses to be sent in this format, which <i>may</i> be more
-compatible with certain web browsers and clients.  Using this format
-multiline responses is more likely to be compatible with all clients, although
-it is not strictly RFC compliant, and is thus not enabled by default.
-
-<p>
-<hr>
 <h3><a name="Order">Order</a></h3>
 <strong>Syntax:</strong> Order <em>"allow,deny"|"deny,allow"</em><br>
 <strong>Default:</strong> Order allow,deny<br>
@@ -2064,19 +2033,18 @@ the PID of the daemon process.
 <h3><a name="Port">Port</a></h3>
 <strong>Syntax:</strong> Port <em>number</em><br>
 <strong>Default:</strong> Port 21<br>
-<strong>Context:</strong> server config, <code>&lt;VirtualHost&gt;</code><br>
+<strong>Context:</strong> server config, <code>&lt;VirtualHost&gt;</code>, <code>&lt;Global&gt;</code><br>
 <strong>Module:</strong> mod_core<br>
 <strong>Compatibility:</strong> 0.99.0 and later
 
 <p>
-The <code>Port</code> directive configures the TCP port to which
-<code>proftpd</code> will listen while running in standalone mode.  This
-directive has <em>no effect</em> when used on a server running in inetd mode;
-see <a href="#ServerType"><code>ServerType</code></a>.  The directive can be
-used in conjunction with
-<a href="#VirtualHost"><code>&lt;VirtualHost&gt;</code></a> in order to run a
-virtual server on the same IP address as the master server, but listening on a
-different port.
+The <code>Port</code> directive configures the TCP port to which ProFTPD will
+listen while running in standalone mode.  This directive has <em>no effect</em>
+when used on a server running in inetd mode; see
+<a href="#ServerType"><code>ServerType</code></a>.  The directive can be used
+in conjunction with <a href="#VirtualHost"><code>&lt;VirtualHost&gt;</code></a>
+in order to run a virtual server on the same IP address as the master server,
+but listening on a different port.
 
 <p>
 For any server, either <code>&lt;VirtualHost&gt;</code> <i>or</i> "server
@@ -2170,7 +2138,7 @@ The currently known/supported protocols include:
 <p>
 <hr>
 <h3><a name="RegexOptions">RegexOptions</a></h3>
-<strong>Syntax:</strong> RegexOptions <em>[MatchLimit limit] [MatchRecursionLimit limit]</em><br>
+<strong>Syntax:</strong> RegexOptions <em>[Engine engine] [MatchLimit limit] [MatchRecursionLimit limit]</em><br>
 <strong>Default:</strong> None<br>
 <strong>Context:</strong> server config, <code>&lt;VirtualHost&gt;</code>, <code>&lt;Global&gt;</code><br>
 <strong>Module:</strong> mod_core<br>
@@ -2194,6 +2162,22 @@ Note, however, that these limits are only used when
 <a href="http://pcre.org/">PCRE</a> support is enabled (via the
 <code>--enable-pcre</code> build-time option).  If PCRE support is <em>not</em>
 enabled, this directive has no effect.
+
+<p>
+The <em>Engine</em> parameter configures the particular implementation
+&quot;engine&quot; used for regular expressions; the value can be one of the
+following:
+<ul>
+  <li>PCRE
+  <li>PCRE2
+  <li>POSIX
+</ul>
+This is most useful for specifying that ProFTPD should handle all regular
+expressions as POSIX expressions, regardless of any PCRE support, as there may
+be issues with the PCRE implementation.
+
+<p>
+Support for the <em>Engine</em> parameter first appeared in ProFTPD 1.3.8rc2.
 
 <p>
 <hr>
@@ -2552,7 +2536,7 @@ See also: <a href="#DefaultServer"><code>DefaultServer</code></a>
 <p>
 <hr>
 <h3><a name="SocketOptions">SocketOptions</a></h3>
-<strong>Syntax:</strong> SocketOptions <em>[maxseg <i>byte-count</i>] [rcvbuf <i>byte-count</i>] [sndbuf <i>byte-count</i>] [keepalive "on"|"off"|spec]</em><br>
+<strong>Syntax:</strong> SocketOptions <em>[maxseg <i>byte-count</i>] [rcvbuf <i>byte-count</i>] [sndbuf <i>byte-count</i>] [keepalive "on"|"off"|spec] [reuseport "on"|"off"]</em><br>
 <strong>Default:</strong> None<br>
 <strong>Context:</strong> server config, <code>&lt;VirtualHost&gt;</code><br>
 <strong>Module:</strong> mod_core<br>
@@ -2617,6 +2601,16 @@ then <code>proftpd</code> will assume that the <em>keepalive</em> configuration
 is equivalent to:
 <pre>
   SocketOptions keepalive on
+</pre>
+
+<p>
+In <code>proftpd-1.3.8rc4</code>, the <code>SocketOptions</code> directive
+gained support for the <em>reuseport</em> parameter.  By default,
+<code>proftpd</code> does <b>not</b> enable the TCP "reuse port" value.
+However, this setting can be useful in very specific situations.  To enable
+TCP port reuse for the control socket, use:
+<pre>
+  SocketOptions reuseport on
 </pre>
 
 <p>
@@ -2841,7 +2835,7 @@ disconnected from the Internet, <i>etc</i>) will cause a session process to
 never exit, until manually killed.  This session process will thus linger, using
 up one of the <a href="#MaxInstances"><code>MaxInstances</code></a> as well as
 any of the other configured limits.  The maximum allowed <em>seconds</em> value
-is 65535 (108 minutes).
+is 65535 (18 hours).
 
 <p>
 See also: <a href="mod_auth.html#TimeoutLogin"><code>TimeoutLogin</code></a>,
@@ -2953,7 +2947,7 @@ See the <a href="../howto/Tracing.html">Tracing</a> howto for more information.
 <h3><a name="TraceLog">TraceLog</a></h3>
 <strong>Syntax:</strong> TraceLog <em>path</em><br>
 <strong>Default:</strong> None<br> 
-<strong>Context:</strong> server config<br>
+<strong>Context:</strong> server config, <code>&lt;Global&gt;</code><br>
 <strong>Module:</strong> mod_core<br>
 <strong>Compatibility:</strong> 1.3.1rc1 and later
 
@@ -3329,8 +3323,10 @@ supports UTF8.  What is wrong?<br>
 <font color=blue>Answer</font>: FileZilla parses the <code>FEAT</code> response
 to determine whether the FTP server supports the UTF-8 encoding.  However, the
 <i>format</i> of the <code>FEAT</code> response can confuse FileZilla's
-detection code.  For example, if your <code>proftpd.conf</code> uses:
+detection code.  For example, if your <code>proftpd.conf</code> uses
+the deprecated <code>MultilineRFC2228</code> directive:
 <pre>
+  # This directive is deprecated, and should be removed
   MultilineRFC2228 on
 </pre>
 this causes ProFTPD's <code>FEAT</code> response format to be different than
@@ -3338,16 +3334,14 @@ FileZilla expects, which can lead to the above "does not support non-ASCII
 characters" message.
 
 <p>
-The solution is to use:
-<pre>
-  MultilineRFC2228 off
-</pre>
-in your <code>proftpd.conf</code> (or simply remove that directive entirely).
+The solution is to use remove use of the deprecated
+<code>MultilineRFC2228</code> directive in your <code>proftpd.conf</code>
+(or simply remove that directive entirely).
 
 <p>
 <hr>
 <font size=2><b><i>
-&copy; Copyright 2000-2020 The ProFTPD Project<br>
+&copy; Copyright 2000-2022 The ProFTPD Project<br>
  All Rights Reserved<br>
 </i></b></font>
 <hr>

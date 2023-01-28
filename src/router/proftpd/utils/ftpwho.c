@@ -2,7 +2,7 @@
  * ProFTPD - FTP server daemon
  * Copyright (c) 1997, 1998 Public Flood Software
  * Copyright (c) 1999, 2000 MacGyver aka Habeeb J. Dihu <macgyver@tos.net>
- * Copyright (c) 2001-2020 The ProFTPD Project team
+ * Copyright (c) 2001-2021 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -411,7 +411,12 @@ int main(int argc, char **argv) {
         }
 
         fprintf(stderr, "unknown outform value: '%s'\n", optarg);
-        return 1;
+        if (server_name != NULL) {
+          free(server_name);
+          server_name = NULL;
+        }
+
+        exit(1);
 
       case 'S':
         server_name = strdup(optarg);
@@ -437,6 +442,11 @@ int main(int argc, char **argv) {
     }
 
     if (check_scoreboard_file() < 0) {
+      if (server_name != NULL) {
+        free(server_name);
+        server_name = NULL;
+      }
+
       fprintf(stderr, "%s: %s\n", util_get_scoreboard(), strerror(errno));
       fprintf(stderr, "(Perhaps you need to specify the ScoreboardFile with -f, or change\n");
       fprintf(stderr, " the compile-time default directory?)\n");
@@ -448,24 +458,25 @@ int main(int argc, char **argv) {
   if (res < 0) {
     if (server_name != NULL) {
       free(server_name);
+      server_name = NULL;
     }
 
     switch (res) {
       case -1:
         fprintf(stderr, "unable to open scoreboard: %s\n", strerror(errno));
-        return 1;
+        exit(1);
 
       case UTIL_SCORE_ERR_BAD_MAGIC:
         fprintf(stderr, "scoreboard is corrupted or old\n");
-        return 1;
+        exit(1);
 
       case UTIL_SCORE_ERR_OLDER_VERSION:
         fprintf(stderr, "scoreboard version is too old\n");
-        return 1;
+        exit(1);
 
       case UTIL_SCORE_ERR_NEWER_VERSION:
         fprintf(stderr, "scoreboard version is too new\n");
-        return 1;
+        exit(1);
     }
   }
 
@@ -729,6 +740,10 @@ int main(int argc, char **argv) {
 
       printf("Service class %-20s - %3lu user%s\n", classes[i].score_class,
         classes[i].score_count, classes[i].score_count > 1 ? "s" : "");
+
+      /* Free up the memory, now that we're done with it. */
+      free(classes[i].score_class);
+      classes[i].score_class = NULL;
     }
 
   } else {
@@ -737,6 +752,7 @@ int main(int argc, char **argv) {
 
   if (server_name != NULL) {
     free(server_name);
+    server_name = NULL;
   }
 
   return 0;

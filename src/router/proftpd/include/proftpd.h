@@ -2,7 +2,7 @@
  * ProFTPD - FTP server daemon
  * Copyright (c) 1997, 1998 Public Flood Software
  * Copyright (c) 1999, 2000 MacGyver aka Habeeb J. Dihu <macgyver@tos.net>
- * Copyright (c) 2001-2019 The ProFTPD Project team
+ * Copyright (c) 2001-2020 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -126,7 +126,6 @@ typedef struct {
   const char *proc_prefix;		/* The "prefix" of our process name */
 
   int wtmp_log;				/* Are we logging to wtmp? */
-  int multiline_rfc2228;		/* Are we using RFC2228-style multiline responses ? */
 
   struct conn_struc *c;			/* Control connection */
   struct conn_struc *d;			/* Data connection */

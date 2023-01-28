@@ -176,6 +176,8 @@ static void handle_stacktrace_signal(int signo, siginfo_t *info, void *ptr) {
   int tracesz;
 #endif /* HAVE_BACKTRACE */
 
+  (void) info;
+
   /* Call the "normal" signal handler. */
   table_handling_signal(TRUE);
 

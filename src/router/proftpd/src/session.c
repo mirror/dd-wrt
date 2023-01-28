@@ -1,6 +1,6 @@
 /*
  * ProFTPD - FTP server daemon
- * Copyright (c) 2009-2020 The ProFTPD Project team
+ * Copyright (c) 2009-2022 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -27,7 +27,11 @@
 /* From src/main.c */
 extern unsigned char is_master;
 
+static int sess_connected = FALSE;
+static const char *sess_ttyname = NULL;
+
 static void sess_cleanup(int flags) {
+  int log_sess_closed = FALSE;
 
   /* Clear the scoreboard entry. */
   if (ServerType == SERVER_STANDALONE) {
@@ -68,12 +72,12 @@ static void sess_cleanup(int flags) {
   /* These are necessary in order that cleanups associated with these pools
    * (and their subpools) are properly run.
    */
-  if (session.d) {
+  if (session.d != NULL) {
     pr_inet_close(session.pool, session.d);
     session.d = NULL;
   }
 
-  if (session.c) {
+  if (session.c != NULL) {
     pr_inet_close(session.pool, session.c);
     session.c = NULL;
   }
@@ -81,14 +85,29 @@ static void sess_cleanup(int flags) {
   /* Run all the exit handlers */
   pr_event_generate("core.exit", NULL);
 
-  if (!is_master ||
-      (ServerType == SERVER_INETD &&
-      !(flags & PR_SESS_END_FL_SYNTAX_CHECK))) {
+  if (is_master == FALSE) {
+    log_sess_closed = TRUE;
+  }
+
+  if (ServerType == SERVER_INETD &&
+      !(flags & PR_SESS_END_FL_SYNTAX_CHECK)) {
+    log_sess_closed = TRUE;
+  }
+
+  if (sess_connected == FALSE) {
+    log_sess_closed = FALSE;
+  }
+
+  if (log_sess_closed == TRUE) {
     pr_log_pri(PR_LOG_INFO, "%s session closed.",
       pr_session_get_protocol(PR_SESS_PROTO_FL_LOGOUT));
   }
 
   log_closesyslog();
+}
+
+void session_set_connected(void) {
+  sess_connected = TRUE;
 }
 
 void pr_session_disconnect(module *m, int reason_code,
@@ -231,14 +250,15 @@ const char *pr_session_get_protocol(int flags) {
   }
 
   /* Otherwise, we need to return either "FTP" or "SSH2", for consistency. */
-  if (strncmp(sess_proto, "ftp", 4) == 0 ||
-      strncmp(sess_proto, "ftps", 5) == 0) {
+  if (strcmp(sess_proto, "ftp") == 0 ||
+      strcmp(sess_proto, "ftps") == 0) {
     return "FTP";
-  
-  } else if (strncmp(sess_proto, "ssh2", 5) == 0 ||
-             strncmp(sess_proto, "sftp", 5) == 0 ||
-             strncmp(sess_proto, "scp", 4) == 0 ||
-             strncmp(sess_proto, "publickey", 10) == 0) {
+  }
+
+  if (strcmp(sess_proto, "ssh2") == 0 ||
+      strcmp(sess_proto, "sftp") == 0 ||
+      strcmp(sess_proto, "scp") == 0 ||
+      strcmp(sess_proto, "publickey") == 0) {
     return "SSH2";
   }
 
@@ -378,7 +398,7 @@ int pr_session_set_idle(void) {
   pr_scoreboard_entry_update(session.pid,
     PR_SCORE_CMD_ARG, "%s", "", NULL, NULL);
 
-  if (session.user) {
+  if (session.user != NULL) {
     user = session.user;
 
   } else {
@@ -416,8 +436,6 @@ int pr_session_set_protocol(const char *sess_proto) {
   return res;
 }
 
-static const char *sess_ttyname = NULL;
-
 const char *pr_session_get_ttyname(pool *p) {
   char ttybuf[32];
   const char *sess_proto, *tty_proto = NULL;
@@ -427,25 +445,25 @@ const char *pr_session_get_ttyname(pool *p) {
     return NULL;
   }
 
-  if (sess_ttyname) {
+  if (sess_ttyname != NULL) {
     /* Return the cached name. */
     return pstrdup(p, sess_ttyname);
   }
 
   sess_proto = pr_table_get(session.notes, "protocol", NULL);
-  if (sess_proto) {
-    if (strncmp(sess_proto, "ftp", 4) == 0 ||
-        strncmp(sess_proto, "ftps", 5) == 0) {
+  if (sess_proto != NULL) {
+    if (strcmp(sess_proto, "ftp") == 0 ||
+        strcmp(sess_proto, "ftps") == 0) {
 #if (defined(BSD) && (BSD >= 199103))
       tty_proto = "ftp";
 #else
       tty_proto = "ftpd";
 #endif
 
-    } else if (strncmp(sess_proto, "ssh2", 5) == 0 ||
-               strncmp(sess_proto, "sftp", 5) == 0 ||
-               strncmp(sess_proto, "scp", 4) == 0 ||
-               strncmp(sess_proto, "publickey", 10) == 0) {
+    } else if (strcmp(sess_proto, "ssh2") == 0 ||
+               strcmp(sess_proto, "sftp") == 0 ||
+               strcmp(sess_proto, "scp") == 0 ||
+               strcmp(sess_proto, "publickey") == 0) {
 
       /* Just use the plain "ssh" string for the tty name for these cases. */
       tty_proto = "ssh";

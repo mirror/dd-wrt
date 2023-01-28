@@ -3664,8 +3664,6 @@ fi
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether linking with OpenSSL functions requires -ldl" >&5
 $as_echo_n "checking whether linking with OpenSSL functions requires -ldl... " >&6; }
 saved_libs="$LIBS"
-
-LIBS=`echo "$LIBS" | sed -e 's/-lsupp//g'`;
 LIBS="-lcrypto -ldl $LIBS"
 
 cat confdefs.h - <<_ACEOF >conftest.$ac_ext
@@ -3703,8 +3701,6 @@ rm -f core conftest.err conftest.$ac_objext \
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether linking with OpenSSL functions requires -lz" >&5
 $as_echo_n "checking whether linking with OpenSSL functions requires -lz... " >&6; }
 saved_libs="$LIBS"
-
-LIBS=`echo "$LIBS" | sed -e 's/-lsupp//g'`;
 LIBS="-lcrypto -lz $LIBS"
 
 cat confdefs.h - <<_ACEOF >conftest.$ac_ext
@@ -3743,11 +3739,10 @@ fi
 rm -f core conftest.err conftest.$ac_objext \
     conftest$ac_exeext conftest.$ac_ext
 
-LIBS=`echo "$LIBS" | sed -e 's/-lsupp//g'`;
-LIBS="-lcrypto $LIBS"
-
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether OpenSSL has crippled AES support" >&5
 $as_echo_n "checking whether OpenSSL has crippled AES support... " >&6; }
+LIBS="-lcrypto $LIBS"
+
 cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
  #ifdef HAVE_STRING_H
@@ -3787,11 +3782,10 @@ fi
 rm -f core conftest.err conftest.$ac_objext \
     conftest$ac_exeext conftest.$ac_ext
 
-LIBS=`echo "$LIBS" | sed -e 's/-lsupp//g'`;
-LIBS="-lcrypto $LIBS"
-
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether OpenSSL supports SHA256" >&5
 $as_echo_n "checking whether OpenSSL supports SHA256... " >&6; }
+LIBS="-lcrypto $LIBS"
+
 cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
@@ -3828,11 +3822,10 @@ fi
 rm -f core conftest.err conftest.$ac_objext \
     conftest$ac_exeext conftest.$ac_ext
 
-LIBS=`echo "$LIBS" | sed -e 's/-lsupp//g'`;
-LIBS="-lcrypto $LIBS"
-
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether OpenSSL supports SHA512" >&5
 $as_echo_n "checking whether OpenSSL supports SHA512... " >&6; }
+LIBS="-lcrypto $LIBS"
+
 cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
@@ -3869,11 +3862,90 @@ fi
 rm -f core conftest.err conftest.$ac_objext \
     conftest$ac_exeext conftest.$ac_ext
 
-LIBS=`echo "$LIBS" | sed -e 's/-lsupp//g'`;
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking whether OpenSSL supports EVP_aes_128_ctr" >&5
+$as_echo_n "checking whether OpenSSL supports EVP_aes_128_ctr... " >&6; }
 LIBS="-lcrypto $LIBS"
+
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+    #include <openssl/evp.h>
+
+int
+main ()
+{
+
+    EVP_CIPHER *cipher;
+    cipher = EVP_aes_128_ctr();
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_link "$LINENO"; then :
+
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+
+$as_echo "#define HAVE_EVP_AES_128_CTR_OPENSSL 1" >>confdefs.h
+
+    LIBS="$saved_libs"
+
+else
+
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+    LIBS="$saved_libs"
+
+
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking whether OpenSSL supports EVP_aes_192_ctr" >&5
+$as_echo_n "checking whether OpenSSL supports EVP_aes_192_ctr... " >&6; }
+LIBS="-lcrypto $LIBS"
+
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+    #include <openssl/evp.h>
+
+int
+main ()
+{
+
+    EVP_CIPHER *cipher;
+    cipher = EVP_aes_192_ctr();
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_link "$LINENO"; then :
+
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+
+$as_echo "#define HAVE_EVP_AES_192_CTR_OPENSSL 1" >>confdefs.h
+
+    LIBS="$saved_libs"
+
+else
+
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+    LIBS="$saved_libs"
+
+
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
 
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether OpenSSL supports EVP_aes_256_ctr" >&5
 $as_echo_n "checking whether OpenSSL supports EVP_aes_256_ctr... " >&6; }
+LIBS="-lcrypto $LIBS"
+
 cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
@@ -3896,6 +3968,129 @@ if ac_fn_c_try_link "$LINENO"; then :
 $as_echo "yes" >&6; }
 
 $as_echo "#define HAVE_EVP_AES_256_CTR_OPENSSL 1" >>confdefs.h
+
+    LIBS="$saved_libs"
+
+else
+
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+    LIBS="$saved_libs"
+
+
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking whether OpenSSL supports EVP_aes_256_gcm" >&5
+$as_echo_n "checking whether OpenSSL supports EVP_aes_256_gcm... " >&6; }
+LIBS="-lcrypto $LIBS"
+
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+    #include <openssl/evp.h>
+
+int
+main ()
+{
+
+    EVP_CIPHER *cipher;
+    cipher = EVP_aes_256_gcm();
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_link "$LINENO"; then :
+
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+
+$as_echo "#define HAVE_EVP_AES_256_GCM_OPENSSL 1" >>confdefs.h
+
+    LIBS="$saved_libs"
+
+else
+
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+    LIBS="$saved_libs"
+
+
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking whether OpenSSL supports OSSL_PROVIDER_load" >&5
+$as_echo_n "checking whether OpenSSL supports OSSL_PROVIDER_load... " >&6; }
+LIBS="-lcrypto $LIBS"
+
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+    #include <openssl/provider.h>
+
+int
+main ()
+{
+
+    OSSL_PROVIDER *provider;
+    provider = OSSL_PROVIDER_load(NULL, "default");
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_link "$LINENO"; then :
+
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+
+$as_echo "#define HAVE_OSSL_PROVIDER_LOAD_OPENSSL 1" >>confdefs.h
+
+    LIBS="$saved_libs"
+
+else
+
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+    LIBS="$saved_libs"
+
+
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking whether OpenSSL supports X448 algorithm" >&5
+$as_echo_n "checking whether OpenSSL supports X448 algorithm... " >&6; }
+LIBS="-lcrypto $LIBS"
+
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+    #include <openssl/evp.h>
+
+int
+main ()
+{
+
+    EVP_PKEY *pkey;
+    EVP_PKEY_CTX *pctx;
+
+    pkey = EVP_PKEY_new_raw_private_key(EVP_PKEY_X448, NULL, NULL, 0);
+    pctx = EVP_PKEY_CTX_new_id(NID_X448, NULL);
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_link "$LINENO"; then :
+
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+
+$as_echo "#define HAVE_X448_OPENSSL 1" >>confdefs.h
 
     LIBS="$saved_libs"
 
@@ -5196,3 +5391,17 @@ if test -n "$ac_unrecognized_opts" && test "$enable_option_checking" != no; then
 $as_echo "$as_me: WARNING: unrecognized options: $ac_unrecognized_opts" >&2;}
 fi
 
+
+builddir=../..
+if test ! -d $builddir/include/mod_sftp ; then
+  mkdir $builddir/include/mod_sftp
+fi
+
+for h in $(ls *.h); do
+  if test ! -e $builddir/include/mod_sftp/$h ; then
+    olddir=`pwd`
+    cd $builddir/include/mod_sftp
+    ln -s ../../contrib/mod_sftp/$h .
+    cd $olddir
+  fi
+done

@@ -118,33 +118,33 @@ START_TEST (display_file_test) {
   pr_class_t *conn_class;
 
   res = pr_display_file(NULL, NULL, NULL, 0);
-  fail_unless(res < 0, "Failed to handle null arguments");
-  fail_unless(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
+  ck_assert_msg(res < 0, "Failed to handle null arguments");
+  ck_assert_msg(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
     strerror(errno), errno);
 
   path = display_test_file;
   res = pr_display_file(path, NULL, NULL, 0);
-  fail_unless(res < 0, "Failed to handle null resp_code argument");
-  fail_unless(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
+  ck_assert_msg(res < 0, "Failed to handle null resp_code argument");
+  ck_assert_msg(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
     strerror(errno), errno);
 
   mark_point();
   resp_code = R_200;
   path = "/";
   res = pr_display_file(path, NULL, resp_code, 0);
-  fail_unless(res < 0, "Failed to handle directory");
-  fail_unless(errno == EISDIR, "Expected EISDIR (%d), got %s (%d)", EISDIR,
+  ck_assert_msg(res < 0, "Failed to handle directory");
+  ck_assert_msg(errno == EISDIR, "Expected EISDIR (%d), got %s (%d)", EISDIR,
     strerror(errno), errno);
 
   mark_point();
   path = display_test_file;
   res = pr_display_file(path, NULL, resp_code, 0);
-  fail_unless(res < 0, "Failed to handle nonexistent file");
-  fail_unless(errno == ENOENT, "Expected ENOENT (%d), got %s (%d)", ENOENT,
+  ck_assert_msg(res < 0, "Failed to handle nonexistent file");
+  ck_assert_msg(errno == ENOENT, "Expected ENOENT (%d), got %s (%d)", ENOENT,
     strerror(errno), errno);
 
   res = write_file(path, display_lines, 4);
-  fail_unless(res == 0, "Failed to write display file: %s", strerror(errno));
+  ck_assert_msg(res == 0, "Failed to write display file: %s", strerror(errno));
 
   pr_response_set_pool(p);
 
@@ -155,37 +155,37 @@ START_TEST (display_file_test) {
 
   mark_point();
   res = pr_display_file(path, NULL, resp_code, 0);
-  fail_unless(res == 0, "Failed to display file: %s", strerror(errno));
+  ck_assert_msg(res == 0, "Failed to display file: %s", strerror(errno));
 
   mark_point();
   res = pr_response_get_last(p, &last_resp_code, &last_resp_msg);
-  fail_unless(res == 0, "Failed to get last response values: %s (%d)",
+  ck_assert_msg(res == 0, "Failed to get last response values: %s (%d)",
     strerror(errno), errno);
 
-  fail_unless(last_resp_code != NULL,
+  ck_assert_msg(last_resp_code != NULL,
     "Last response code is unexpectedly null");
-  fail_unless(strcmp(last_resp_code, resp_code) == 0,
+  ck_assert_msg(strcmp(last_resp_code, resp_code) == 0,
     "Expected response code '%s', got '%s'", resp_code, last_resp_code);
 
-  fail_unless(last_resp_msg != NULL,
+  ck_assert_msg(last_resp_msg != NULL,
     "Last response message is unexpectedly null");
 
   /* Send the display file NOW */
   mark_point();
   res = pr_display_file(path, NULL, resp_code, PR_DISPLAY_FL_SEND_NOW);
-  fail_unless(res == 0, "Failed to display file: %s", strerror(errno));
+  ck_assert_msg(res == 0, "Failed to display file: %s", strerror(errno));
 
   mark_point();
   res = pr_response_get_last(p, &last_resp_code, &last_resp_msg);
-  fail_unless(res == 0, "Failed to get last response values: %s (%d)",
+  ck_assert_msg(res == 0, "Failed to get last response values: %s (%d)",
     strerror(errno), errno);
 
-  fail_unless(last_resp_code != NULL,
+  ck_assert_msg(last_resp_code != NULL,
     "Last response code is unexpectedly null");
-  fail_unless(strcmp(last_resp_code, resp_code) == 0,
+  ck_assert_msg(strcmp(last_resp_code, resp_code) == 0,
     "Expected response code '%s', got '%s'", resp_code, last_resp_code);
 
-  fail_unless(last_resp_msg != NULL,
+  ck_assert_msg(last_resp_msg != NULL,
     "Last response message is unexpectedly null");
 
   /* Send the display file NOW, with no EOM */
@@ -193,30 +193,30 @@ START_TEST (display_file_test) {
   mark_point();
   res = pr_display_file(path, NULL, resp_code,
     PR_DISPLAY_FL_SEND_NOW|PR_DISPLAY_FL_NO_EOM);
-  fail_unless(res == 0, "Failed to display file: %s", strerror(errno));
+  ck_assert_msg(res == 0, "Failed to display file: %s", strerror(errno));
 
   mark_point();
   res = pr_response_get_last(p, &last_resp_code, &last_resp_msg);
-  fail_unless(res == 0, "Failed to get last response values: %s (%d)",
+  ck_assert_msg(res == 0, "Failed to get last response values: %s (%d)",
     strerror(errno), errno);
 
-  fail_unless(last_resp_code != NULL,
+  ck_assert_msg(last_resp_code != NULL,
     "Last response code is unexpectedly null");
-  fail_unless(strcmp(last_resp_code, resp_code) == 0,
+  ck_assert_msg(strcmp(last_resp_code, resp_code) == 0,
     "Expected response code '%s', got '%s'", resp_code, last_resp_code);
 
-  fail_unless(last_resp_msg != NULL,
+  ck_assert_msg(last_resp_msg != NULL,
     "Last response message is unexpectedly null");
 
   /* With MultilineRFC2228 on */
   mark_point();
   res = pr_display_file(path, NULL, resp_code,
     PR_DISPLAY_FL_SEND_NOW|PR_DISPLAY_FL_NO_EOM);
-  fail_unless(res == 0, "Failed to display file: %s", strerror(errno));
+  ck_assert_msg(res == 0, "Failed to display file: %s", strerror(errno));
 
   mark_point();
   res = pr_display_file(path, NULL, resp_code, PR_DISPLAY_FL_SEND_NOW);
-  fail_unless(res == 0, "Failed to display file: %s", strerror(errno));
+  ck_assert_msg(res == 0, "Failed to display file: %s", strerror(errno));
 
   /* With session.auth_mech */
   session.auth_mech = "testsuite";
@@ -224,11 +224,11 @@ START_TEST (display_file_test) {
   mark_point();
   res = pr_display_file(path, NULL, resp_code,
     PR_DISPLAY_FL_SEND_NOW|PR_DISPLAY_FL_NO_EOM);
-  fail_unless(res == 0, "Failed to display file: %s", strerror(errno));
+  ck_assert_msg(res == 0, "Failed to display file: %s", strerror(errno));
 
   mark_point();
   res = pr_display_file(path, NULL, resp_code, PR_DISPLAY_FL_SEND_NOW);
-  fail_unless(res == 0, "Failed to display file: %s", strerror(errno));
+  ck_assert_msg(res == 0, "Failed to display file: %s", strerror(errno));
 }
 END_TEST
 
@@ -239,22 +239,22 @@ START_TEST (display_fh_test) {
   const char *last_resp_code = NULL, *last_resp_msg = NULL;
 
   res = pr_display_fh(NULL, NULL, NULL, 0);
-  fail_unless(res < 0, "Failed to handle null arguments");
-  fail_unless(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
+  ck_assert_msg(res < 0, "Failed to handle null arguments");
+  ck_assert_msg(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
     strerror(errno), errno);
 
   (void) unlink(display_test_file);
   res = write_file(display_test_file, display_lines, 4);
-  fail_unless(res == 0, "Failed to write display file: %s", strerror(errno));
+  ck_assert_msg(res == 0, "Failed to write display file: %s", strerror(errno));
 
   path = display_test_file;
   fh = pr_fsio_open(path, O_RDONLY);
-  fail_unless(fh != NULL, "Failed to open '%s': %s", path, strerror(errno));
+  ck_assert_msg(fh != NULL, "Failed to open '%s': %s", path, strerror(errno));
 
   mark_point();
   res = pr_display_fh(fh, NULL, NULL, 0);
-  fail_unless(res < 0, "Failed to handle null resp_code argument");
-  fail_unless(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
+  ck_assert_msg(res < 0, "Failed to handle null resp_code argument");
+  ck_assert_msg(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
     strerror(errno), errno);
 
   resp_code = R_200;
@@ -262,19 +262,19 @@ START_TEST (display_fh_test) {
 
   mark_point();
   res = pr_display_fh(fh, NULL, resp_code, 0);
-  fail_unless(res == 0, "Failed to display file: %s", strerror(errno));
+  ck_assert_msg(res == 0, "Failed to display file: %s", strerror(errno));
 
   mark_point();
   res = pr_response_get_last(p, &last_resp_code, &last_resp_msg);
-  fail_unless(res == 0, "Failed to get last response values: %s (%d)",
+  ck_assert_msg(res == 0, "Failed to get last response values: %s (%d)",
     strerror(errno), errno);
 
-  fail_unless(last_resp_code != NULL,
+  ck_assert_msg(last_resp_code != NULL,
     "Last response code is unexpectedly null");
-  fail_unless(strcmp(last_resp_code, resp_code) == 0,
+  ck_assert_msg(strcmp(last_resp_code, resp_code) == 0,
     "Expected response code '%s', got '%s'", resp_code, last_resp_code);
 
-  fail_unless(last_resp_msg != NULL,
+  ck_assert_msg(last_resp_msg != NULL,
     "Last response message is unexpectedly null");
 }
 END_TEST

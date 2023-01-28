@@ -734,7 +734,7 @@ static int parse_array(const char **sp, JsonNode **out, unsigned int depth)
 	const char *s = *sp;
 	JsonNode *ret = out ? json_mkarray() : NULL;
 	JsonNode *element;
-
+	
 	depth++;
 	if (*s++ != '[')
 		goto failure;
@@ -782,7 +782,7 @@ static int parse_object(const char **sp, JsonNode **out, unsigned int depth)
 	JsonNode *ret = out ? json_mkobject() : NULL;
 	char *key;
 	JsonNode *value;
-
+	
 	depth++;
 	if (*s++ != '{')
 		goto failure;

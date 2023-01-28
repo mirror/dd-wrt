@@ -64,6 +64,7 @@ sub sysloglevel_debug {
     "DebugLevel 10",
     "AuthUserFile $setup->{auth_user_file}",
     "AuthGroupFile $setup->{auth_group_file}",
+    "AuthOrder mod_auth_file.c",
   ];
 
   my ($port, $config_user, $config_group) = config_write($setup->{config_file},
@@ -156,8 +157,10 @@ sub sysloglevel_debug_sftp {
     SystemLog => $setup->{log_file},
     SyslogLevel => 'debug',
     DebugLevel => '10',
+
     AuthUserFile => $setup->{auth_user_file},
     AuthGroupFile => $setup->{auth_group_file},
+    AuthOrder => 'mod_auth_file.c',
 
     IfModules => {
       'mod_delay.c' => {

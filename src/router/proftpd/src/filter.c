@@ -1,6 +1,6 @@
 /*
  * ProFTPD - FTP server daemon
- * Copyright (c) 2009-2014 The ProFTPD Project team
+ * Copyright (c) 2009-2020 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -87,8 +87,8 @@ int pr_filter_parse_flags(pool *p, const char *flags_str) {
   }
 
   /* Right now, we only support "[NC]", for "no case", i.e. REG_ICASE. */
-  if (strncmp(flags_str, "[NC]", 5) == 0 ||
-      strncmp(flags_str, "[nocase]", 9) == 0) {
+  if (strcmp(flags_str, "[NC]") == 0 ||
+      strcmp(flags_str, "[nocase]") == 0) {
     return REG_ICASE;
   }
 

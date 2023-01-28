@@ -88,6 +88,7 @@ sub masqaddr_pasv {
 
     AuthUserFile => $auth_user_file,
     AuthGroupFile => $auth_group_file,
+    AuthOrder => 'mod_auth_file.c',
 
     MasqueradeAddress => $masq_addr,
 
@@ -218,6 +219,7 @@ sub masqaddr_pasv_delayed_resolving_bug4104 {
 
     AuthUserFile => $auth_user_file,
     AuthGroupFile => $auth_group_file,
+    AuthOrder => 'mod_auth_file.c',
 
     MasqueradeAddress => $masq_addr,
 
@@ -317,6 +319,7 @@ sub masqaddr_empty_addr {
 
     AuthUserFile => $setup->{auth_user_file},
     AuthGroupFile => $setup->{auth_group_file},
+    AuthOrder => 'mod_auth_file.c',
 
     MasqueradeAddress => $masq_addr,
 

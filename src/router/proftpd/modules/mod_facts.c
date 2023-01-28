@@ -1,6 +1,6 @@
 /*
  * ProFTPD: mod_facts -- a module for handling "facts" [RFC3659]
- * Copyright (c) 2007-2020 The ProFTPD Project
+ * Copyright (c) 2007-2022 The ProFTPD Project
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -26,7 +26,7 @@
 #include "privs.h"
 #include "error.h"
 
-#define MOD_FACTS_VERSION		"mod_facts/0.6"
+#define MOD_FACTS_VERSION		"mod_facts/0.7"
 
 #if PROFTPD_VERSION_NUMBER < 0x0001030101
 # error "ProFTPD 1.3.1rc1 or later required"
@@ -46,6 +46,19 @@ static unsigned long facts_opts = 0;
 #define FACTS_OPT_SHOW_MEDIA_TYPE	0x00100
 #define FACTS_OPT_SHOW_UNIX_OWNER_NAME	0x00200
 #define FACTS_OPT_SHOW_UNIX_GROUP_NAME	0x00400
+
+/* By default, we show most of the facts; see FactsDefault. */
+#define FACTS_OPT_SHOW_DEFAULT \
+  FACTS_OPT_SHOW_MODIFY|\
+  FACTS_OPT_SHOW_PERM|\
+  FACTS_OPT_SHOW_SIZE|\
+  FACTS_OPT_SHOW_TYPE|\
+  FACTS_OPT_SHOW_UNIQUE|\
+  FACTS_OPT_SHOW_UNIX_GROUP|\
+  FACTS_OPT_SHOW_UNIX_GROUP_NAME|\
+  FACTS_OPT_SHOW_UNIX_MODE|\
+  FACTS_OPT_SHOW_UNIX_OWNER|\
+  FACTS_OPT_SHOW_UNIX_OWNER_NAME
 
 static unsigned long facts_mlinfo_opts = 0;
 #define FACTS_MLINFO_FL_SHOW_SYMLINKS			0x00001
@@ -68,11 +81,59 @@ struct mlinfo {
 };
 
 /* Necessary prototypes */
-static void facts_mlinfobuf_flush(void);
+static int facts_mlinfobuf_flush(void);
 static int facts_sess_init(void);
 
 /* Support functions
  */
+
+static int facts_get_show_opt(const char *fact) {
+  if (strcasecmp(fact, "modify") == 0) {
+    return FACTS_OPT_SHOW_MODIFY;
+  }
+
+  if (strcasecmp(fact, "perm") == 0) {
+    return FACTS_OPT_SHOW_PERM;
+  }
+
+  if (strcasecmp(fact, "size") == 0) {
+    return FACTS_OPT_SHOW_SIZE;
+  }
+
+  if (strcasecmp(fact, "type") == 0) {
+    return FACTS_OPT_SHOW_TYPE;
+  }
+
+  if (strcasecmp(fact, "unique") == 0) {
+    return FACTS_OPT_SHOW_UNIQUE;
+  }
+
+  if (strcasecmp(fact, "UNIX.group") == 0) {
+    return FACTS_OPT_SHOW_UNIX_GROUP;
+  }
+
+  if (strcasecmp(fact, "UNIX.groupname") == 0) {
+    return FACTS_OPT_SHOW_UNIX_GROUP_NAME;
+  }
+
+  if (strcasecmp(fact, "UNIX.mode") == 0) {
+    return FACTS_OPT_SHOW_UNIX_MODE;
+  }
+
+  if (strcasecmp(fact, "UNIX.owner") == 0) {
+    return FACTS_OPT_SHOW_UNIX_OWNER;
+  }
+
+  if (strcasecmp(fact, "UNIX.ownername") == 0) {
+    return FACTS_OPT_SHOW_UNIX_OWNER_NAME;
+  }
+
+  if (strcasecmp(fact, "media-type") == 0) {
+    return FACTS_OPT_SHOW_MEDIA_TYPE;
+  }
+
+  return -1;
+}
 
 static int facts_filters_allow_path(cmd_rec *cmd, const char *path) {
 #ifdef PR_USE_REGEX
@@ -294,7 +355,14 @@ static size_t facts_mlinfo_fmt(struct mlinfo *info, char *buf, size_t bufsz,
 
   if (!(facts_mlinfo_opts & FACTS_MLINFO_FL_NO_NAMES)) {
     if (facts_opts & FACTS_OPT_SHOW_UNIX_GROUP_NAME) {
-      len = pr_snprintf(ptr, bufsz - buflen, "UNIX.groupname=%s;", info->group);
+      const char *group;
+
+      /* In order to be compliant with RFC 3659, Section 7.4, we must ensure
+       * that the group name NOT contain the space character.
+       */
+      group = sreplace(info->pool, info->group, " ", "_", NULL);
+
+      len = pr_snprintf(ptr, bufsz - buflen, "UNIX.groupname=%s;", group);
       buflen += len;
       ptr = buf + buflen;
     }
@@ -316,7 +384,14 @@ static size_t facts_mlinfo_fmt(struct mlinfo *info, char *buf, size_t bufsz,
 
   if (!(facts_mlinfo_opts & FACTS_MLINFO_FL_NO_NAMES)) {
     if (facts_opts & FACTS_OPT_SHOW_UNIX_OWNER_NAME) {
-      len = pr_snprintf(ptr, bufsz - buflen, "UNIX.ownername=%s;", info->user);
+      const char *user;
+
+      /* In order to be compliant with RFC 3659, Section 7.4, we must ensure
+       * that the user name NOT contain the space character.
+       */
+      user = sreplace(info->pool, info->user, " ", "_", NULL);
+
+      len = pr_snprintf(ptr, bufsz - buflen, "UNIX.ownername=%s;", user);
       buflen += len;
       ptr = buf + buflen;
     }
@@ -382,7 +457,7 @@ static void facts_mlinfobuf_init(void) {
   mlinfo_buflen = 0;
 }
 
-static void facts_mlinfobuf_add(struct mlinfo *info, int flags) {
+static int facts_mlinfobuf_add(struct mlinfo *info, int flags) {
   char buf[PR_TUNABLE_BUFFER_SIZE];
   size_t buflen;
  
@@ -392,18 +467,24 @@ static void facts_mlinfobuf_add(struct mlinfo *info, int flags) {
    * mlinfo_buf.
    */
   if (buflen >= (mlinfo_bufsz - mlinfo_buflen)) {
-    (void) facts_mlinfobuf_flush();
+
+    /* This can fail, if the client closes its end abruptly. */
+    if (facts_mlinfobuf_flush() < 0) {
+      return -1;
+    }
   }
 
   sstrcat(mlinfo_bufptr, buf, mlinfo_bufsz - mlinfo_buflen);
   mlinfo_bufptr += buflen;
   mlinfo_buflen += buflen;
+
+  return 0;
 }
 
-static void facts_mlinfobuf_flush(void) {
-  if (mlinfo_buflen > 0) {
-    int res;
+static int facts_mlinfobuf_flush(void) {
+  int res = 0, xerrno = 0;
 
+  if (mlinfo_buflen > 0) {
     /* Make sure the ASCII flags are cleared from the session flags,
      * so that the pr_data_xfer() function does not try to perform
      * ASCII translation on this data.
@@ -411,21 +492,26 @@ static void facts_mlinfobuf_flush(void) {
     session.sf_flags &= ~SF_ASCII_OVERRIDE;
 
     res = pr_data_xfer(mlinfo_buf, mlinfo_buflen);
+    xerrno = errno;
+
     if (res < 0 &&
-        errno != 0) {
+        xerrno != 0) {
       pr_log_debug(DEBUG3, MOD_FACTS_VERSION
-        ": error transferring data: [%d] %s", errno, strerror(errno));
+        ": error transferring data: [%d] %s", errno, strerror(xerrno));
     }
 
     session.sf_flags |= SF_ASCII_OVERRIDE;
   }
 
   facts_mlinfobuf_init();
+
+  errno = xerrno;
+  return res;
 }
 
 static int facts_mlinfo_get(struct mlinfo *info, const char *path,
     const char *dent_name, int flags, const char *user, uid_t uid,
-    const char *group, gid_t gid, mode_t *mode) {
+    const char *group, gid_t gid, const mode_t *mode) {
   char *perm = "";
   int res;
 
@@ -792,8 +878,9 @@ static void facts_mlst_feat_remove(void) {
     feat = pr_feat_get_next();
   }
 
-  if (mlst_feat)
+  if (mlst_feat != NULL) {
     pr_feat_remove(mlst_feat);
+  }
 }
 
 static int facts_modify_mtime(pool *p, const char *path, char *timestamp) {
@@ -893,7 +980,7 @@ static int facts_modify_mtime(pool *p, const char *path, char *timestamp) {
     int xerrno = errno;
 
     pr_log_debug(DEBUG2, MOD_FACTS_VERSION
-      ": error modifying modify fact for '%s': %s", path, strerror(xerrno));
+      ": error modifying fact for '%s': %s", path, strerror(xerrno));
     errno = xerrno;
     return -1;
   }
@@ -1352,10 +1439,10 @@ MODRET facts_mlsd(cmd_rec *cmd) {
   config_rec *c;
   uid_t fake_uid = -1;
   gid_t fake_gid = -1;
-  mode_t *fake_mode = NULL;
+  const mode_t *fake_mode = NULL;
   struct mlinfo info;
   unsigned char *ptr;
-  int flags = 0;
+  int flags = 0, res, succeeded = TRUE;
   DIR *dirh;
   struct dirent *dent;
 
@@ -1449,11 +1536,11 @@ MODRET facts_mlsd(cmd_rec *cmd) {
  
   c = find_config(get_dir_ctxt(cmd->tmp_pool, (char *) best_path), CONF_PARAM,
     "DirFakeUser", FALSE);
-  if (c) {
+  if (c != NULL) {
     if (c->argc > 0) {
       fake_user = c->argv[0];
       if (fake_user != NULL &&
-          strncmp(fake_user, "~", 2) != 0) {
+          strcmp(fake_user, "~") != 0) {
         fake_uid = pr_auth_name2uid(cmd->tmp_pool, fake_user);
 
       } else {
@@ -1470,11 +1557,11 @@ MODRET facts_mlsd(cmd_rec *cmd) {
 
   c = find_config(get_dir_ctxt(cmd->tmp_pool, (char *) best_path), CONF_PARAM,
     "DirFakeGroup", FALSE);
-  if (c) {
+  if (c != NULL) {
     if (c->argc > 0) {
       fake_group = c->argv[0];
       if (fake_group != NULL &&
-          strncmp(fake_group, "~", 2) != 0) {
+          strcmp(fake_group, "~") != 0) {
         fake_gid = pr_auth_name2gid(cmd->tmp_pool, fake_group);
 
       } else {
@@ -1521,7 +1608,7 @@ MODRET facts_mlsd(cmd_rec *cmd) {
   facts_mlinfobuf_init();
 
   while ((dent = pr_fsio_readdir(dirh)) != NULL) {
-    int hidden = FALSE, res;
+    int hidden = FALSE, xerrno;
     char *rel_path, *abs_path;
 
     pr_signals_handle();
@@ -1556,8 +1643,6 @@ MODRET facts_mlsd(cmd_rec *cmd) {
     pr_pool_tag(info.pool, "MLSD facts pool");
     if (facts_mlinfo_get(&info, rel_path, dent->d_name, flags,
         fake_user, fake_uid, fake_group, fake_gid, fake_mode) < 0) {
-      pr_log_debug(DEBUG3, MOD_FACTS_VERSION
-        ": MLSD: unable to get info for '%s': %s", abs_path, strerror(errno));
       continue;
     }
 
@@ -1566,13 +1651,21 @@ MODRET facts_mlsd(cmd_rec *cmd) {
      */
     info.path = pr_fs_encode_path(info.pool, dent->d_name);
 
-    facts_mlinfobuf_add(&info, FACTS_MLINFO_FL_APPEND_CRLF);
+    res = facts_mlinfobuf_add(&info, FACTS_MLINFO_FL_APPEND_CRLF);
+    xerrno = errno;
 
     destroy_pool(info.pool);
     info.pool = NULL;
 
     if (XFER_ABORTED) {
-      pr_data_abort(0, 0);
+      pr_data_abort(0, FALSE);
+      succeeded = FALSE;
+      break;
+    }
+
+    if (res < 0) {
+      pr_data_abort(xerrno, FALSE);
+      succeeded = FALSE;
       break;
     }
   }
@@ -1581,13 +1674,28 @@ MODRET facts_mlsd(cmd_rec *cmd) {
 
   if (XFER_ABORTED) {
     pr_data_close2();
-
-  } else {
-    facts_mlinfobuf_flush();
-    pr_data_close2();
-    pr_response_add(R_226, _("Transfer complete"));
+    return PR_ERROR(cmd);
   }
 
+  if (succeeded == FALSE) {
+    return PR_ERROR(cmd);
+  }
+
+  res = facts_mlinfobuf_flush();
+  if (res < 0) {
+    int xerrno = errno;
+
+    if (session.d != NULL &&
+        session.d->outstrm != NULL) {
+      xerrno = PR_NETIO_ERRNO(session.d->outstrm);
+    }
+
+    pr_data_abort(xerrno, FALSE);
+    return PR_ERROR(cmd);
+  }
+
+  pr_data_close2();
+  pr_response_add(R_226, _("Transfer complete"));
   return PR_HANDLED(cmd);
 }
 
@@ -1597,11 +1705,11 @@ MODRET facts_mlsd_cleanup(cmd_rec *cmd) {
   proto = pr_session_get_protocol(0);
 
   /* Ignore this for SFTP connections. */
-  if (strncmp(proto, "sftp", 5) == 0) {
+  if (strcmp(proto, "sftp") == 0) {
     return PR_DECLINED(cmd);
   }
 
-  if (session.xfer.p) {
+  if (session.xfer.p != NULL) {
     destroy_pool(session.xfer.p);
   }
 
@@ -1614,7 +1722,7 @@ MODRET facts_mlst(cmd_rec *cmd) {
   config_rec *c;
   uid_t fake_uid = -1;
   gid_t fake_gid = -1;
-  mode_t *fake_mode = NULL;
+  const mode_t *fake_mode = NULL;
   unsigned char *ptr;
   const char *path, *decoded_path;
   const char *fake_user = NULL, *fake_group = NULL;
@@ -1679,11 +1787,11 @@ MODRET facts_mlst(cmd_rec *cmd) {
 
   c = find_config(get_dir_ctxt(cmd->tmp_pool, (char *) decoded_path),
     CONF_PARAM, "DirFakeUser", FALSE);
-  if (c) {
+  if (c != NULL) {
     if (c->argc > 0) {
       fake_user = c->argv[0];
       if (fake_user != NULL &&
-          strncmp(fake_user, "~", 2) != 0) {
+          strcmp(fake_user, "~") != 0) {
         fake_uid = pr_auth_name2uid(cmd->tmp_pool, fake_user);
 
       } else {
@@ -1700,11 +1808,11 @@ MODRET facts_mlst(cmd_rec *cmd) {
 
   c = find_config(get_dir_ctxt(cmd->tmp_pool, (char *) decoded_path),
     CONF_PARAM, "DirFakeGroup", FALSE);
-  if (c) {
+  if (c != NULL) {
     if (c->argc > 0) {
       fake_group = c->argv[0];
       if (fake_group != NULL &&
-          strncmp(fake_group, "~", 2) != 0) {
+          strcmp(fake_group, "~") != 0) {
         fake_gid = pr_auth_name2gid(cmd->tmp_pool, fake_group);
 
       } else {
@@ -1815,53 +1923,53 @@ MODRET facts_opts_mlst(cmd_rec *cmd) {
   facts = cmd->argv[1];
   ptr = strchr(facts, ';');
 
-  while (ptr) {
+  while (ptr != NULL) {
     pr_signals_handle();
 
     *ptr = '\0';
 
     if (strcasecmp(facts, "modify") == 0) {
-      facts_opts |= FACTS_OPT_SHOW_MODIFY;
+      facts_opts |= facts_get_show_opt(facts);
       resp_str = pstrcat(cmd->tmp_pool, resp_str, "modify;", NULL);
 
     } else if (strcasecmp(facts, "perm") == 0) {
-      facts_opts |= FACTS_OPT_SHOW_PERM;
+      facts_opts |= facts_get_show_opt(facts);
       resp_str = pstrcat(cmd->tmp_pool, resp_str, "perm;", NULL);
 
     } else if (strcasecmp(facts, "size") == 0) {
-      facts_opts |= FACTS_OPT_SHOW_SIZE;
+      facts_opts |= facts_get_show_opt(facts);
       resp_str = pstrcat(cmd->tmp_pool, resp_str, "size;", NULL);
 
     } else if (strcasecmp(facts, "type") == 0) {
-      facts_opts |= FACTS_OPT_SHOW_TYPE;
+      facts_opts |= facts_get_show_opt(facts);
       resp_str = pstrcat(cmd->tmp_pool, resp_str, "type;", NULL);
 
     } else if (strcasecmp(facts, "unique") == 0) {
-      facts_opts |= FACTS_OPT_SHOW_UNIQUE;
+      facts_opts |= facts_get_show_opt(facts);
       resp_str = pstrcat(cmd->tmp_pool, resp_str, "unique;", NULL);
 
     } else if (strcasecmp(facts, "UNIX.group") == 0) {
-      facts_opts |= FACTS_OPT_SHOW_UNIX_GROUP;
+      facts_opts |= facts_get_show_opt(facts);
       resp_str = pstrcat(cmd->tmp_pool, resp_str, "UNIX.group;", NULL);
 
     } else if (strcasecmp(facts, "UNIX.groupname") == 0) {
-      facts_opts |= FACTS_OPT_SHOW_UNIX_GROUP_NAME;
+      facts_opts |= facts_get_show_opt(facts);
       resp_str = pstrcat(cmd->tmp_pool, resp_str, "UNIX.groupname;", NULL);
 
     } else if (strcasecmp(facts, "UNIX.mode") == 0) {
-      facts_opts |= FACTS_OPT_SHOW_UNIX_MODE;
+      facts_opts |= facts_get_show_opt(facts);
       resp_str = pstrcat(cmd->tmp_pool, resp_str, "UNIX.mode;", NULL);
 
     } else if (strcasecmp(facts, "UNIX.owner") == 0) {
-      facts_opts |= FACTS_OPT_SHOW_UNIX_OWNER;
+      facts_opts |= facts_get_show_opt(facts);
       resp_str = pstrcat(cmd->tmp_pool, resp_str, "UNIX.owner;", NULL);
 
     } else if (strcasecmp(facts, "UNIX.ownername") == 0) {
-      facts_opts |= FACTS_OPT_SHOW_UNIX_OWNER_NAME;
+      facts_opts |= facts_get_show_opt(facts);
       resp_str = pstrcat(cmd->tmp_pool, resp_str, "UNIX.ownername;", NULL);
 
     } else if (strcasecmp(facts, "media-type") == 0) {
-      facts_opts |= FACTS_OPT_SHOW_MEDIA_TYPE;
+      facts_opts |= facts_get_show_opt(facts);
       resp_str = pstrcat(cmd->tmp_pool, resp_str, "media-type;", NULL);
 
     } else {
@@ -1899,6 +2007,38 @@ MODRET set_factsadvertise(cmd_rec *cmd) {
   c = add_config_param(cmd->argv[0], 1, NULL);
   c->argv[0] = pcalloc(c->pool, sizeof(int));
   *((int *) c->argv[0]) = bool;
+
+  return PR_HANDLED(cmd);
+}
+
+/* usage: FactsDefault fact1 ... factN */
+MODRET set_factsdefault(cmd_rec *cmd) {
+  register unsigned int i;
+  config_rec *c;
+  unsigned long opts = 0UL;
+
+  if (cmd->argc-1 == 0) {
+    CONF_ERROR(cmd, "wrong number of parameters");
+  }
+
+  CHECK_CONF(cmd, CONF_ROOT|CONF_VIRTUAL|CONF_GLOBAL);
+
+  c = add_config_param(cmd->argv[0], 1, NULL);
+
+  for (i = 1; i < cmd->argc; i++) {
+    int show_opt;
+
+    show_opt = facts_get_show_opt(cmd->argv[i]);
+    if (show_opt < 0) {
+      CONF_ERROR(cmd, pstrcat(cmd->tmp_pool, ": unknown fact '",
+        cmd->argv[i], "'", NULL));
+    }
+
+    opts |= show_opt;
+  }
+
+  c->argv[0] = palloc(c->pool, sizeof(unsigned long));
+  *((unsigned long *) c->argv[0]) = opts;
 
   return PR_HANDLED(cmd);
 }
@@ -1985,11 +2125,7 @@ static int facts_sess_init(void) {
   pr_event_register(&facts_module, "core.session-reinit",
     facts_sess_reinit_ev, NULL);
 
-  facts_opts = FACTS_OPT_SHOW_MODIFY|FACTS_OPT_SHOW_PERM|FACTS_OPT_SHOW_SIZE|
-    FACTS_OPT_SHOW_TYPE|FACTS_OPT_SHOW_UNIQUE|
-    FACTS_OPT_SHOW_UNIX_GROUP|FACTS_OPT_SHOW_UNIX_GROUP_NAME|
-    FACTS_OPT_SHOW_UNIX_MODE|FACTS_OPT_SHOW_UNIX_OWNER|
-    FACTS_OPT_SHOW_UNIX_OWNER_NAME;
+  facts_opts = FACTS_OPT_SHOW_DEFAULT;
 
   c = find_config(main_server->conf, CONF_PARAM, "FactsAdvertise", FALSE);
   if (c != NULL) {
@@ -1998,6 +2134,11 @@ static int facts_sess_init(void) {
 
   if (advertise == FALSE) {
     return 0;
+  }
+
+  c = find_config(main_server->conf, CONF_PARAM, "FactsDefault", FALSE);
+  if (c != NULL) {
+    facts_opts = *((unsigned long *) c->argv[0]);
   }
 
   c = find_config(main_server->conf, CONF_PARAM, "FactsOptions", FALSE);
@@ -2043,6 +2184,7 @@ static int facts_sess_init(void) {
 
 static conftable facts_conftab[] = {
   { "FactsAdvertise",	set_factsadvertise,	NULL },
+  { "FactsDefault",	set_factsdefault,	NULL },
   { "FactsOptions",	set_factsoptions,	NULL },
   { NULL }
 };

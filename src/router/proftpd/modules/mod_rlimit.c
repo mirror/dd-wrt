@@ -1,6 +1,6 @@
 /*
  * ProFTPD - FTP server daemon
- * Copyright (c) 2013-2017 The ProFTPD Project team
+ * Copyright (c) 2013-2020 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -95,8 +95,9 @@ static int get_num_bytes(const char *nbytes_str, rlim_t *nbytes) {
      */
 
     return 0;
+  }
 
-  } else if (res == 1) {
+  if (res == 1) {
     /* No units given.  Return the number of bytes as is. */
     *nbytes = inb;
     return 0;
@@ -147,7 +148,7 @@ MODRET set_rlimitcpu(cmd_rec *cmd) {
    * Otherwise, it can appear in the full range of server contexts.
    */
 
-  if (strncmp(cmd->argv[1], "daemon", 7) == 0) {
+  if (strcasecmp(cmd->argv[1], "daemon") == 0) {
     CHECK_CONF(cmd, CONF_ROOT);
 
   } else {
@@ -163,8 +164,8 @@ MODRET set_rlimitcpu(cmd_rec *cmd) {
   /* Handle the newer format, which uses "daemon" or "session" or "none"
    * as the first parameter.
    */
-  if (strncmp(cmd->argv[1], "daemon", 7) == 0 ||
-      strncmp(cmd->argv[1], "session", 8) == 0) {
+  if (strcasecmp(cmd->argv[1], "daemon") == 0 ||
+      strcasecmp(cmd->argv[1], "session") == 0) {
 
     if (strcasecmp(cmd->argv[2], "max") == 0 ||
         strcasecmp(cmd->argv[2], "unlimited") == 0) {
@@ -286,7 +287,7 @@ MODRET set_rlimitmemory(cmd_rec *cmd) {
    * Otherwise, it can appear in the full range of server contexts.
    */
 
-  if (strncmp(cmd->argv[1], "daemon", 7) == 0) {
+  if (strcasecmp(cmd->argv[1], "daemon") == 0) {
     CHECK_CONF(cmd, CONF_ROOT);
 
   } else {
@@ -303,8 +304,8 @@ MODRET set_rlimitmemory(cmd_rec *cmd) {
   /* Handle the newer format, which uses "daemon" or "session" or "none"
    * as the first parameter.
    */
-  if (strncmp(cmd->argv[1], "daemon", 7) == 0 ||
-      strncmp(cmd->argv[1], "session", 8) == 0) {
+  if (strcasecmp(cmd->argv[1], "daemon") == 0 ||
+      strcasecmp(cmd->argv[1], "session") == 0) {
 
     if (strcasecmp(cmd->argv[2], "max") == 0 ||
         strcasecmp(cmd->argv[2], "unlimited") == 0) {
@@ -344,7 +345,6 @@ MODRET set_rlimitmemory(cmd_rec *cmd) {
    * parameter.
    */
   } else {
-
     if (strcasecmp(cmd->argv[1], "max") == 0 ||
         strcasecmp(cmd->argv[1], "unlimited") == 0) {
       current = RLIM_INFINITY;
@@ -404,7 +404,7 @@ MODRET set_rlimitopenfiles(cmd_rec *cmd) {
    * Otherwise, it can appear in the full range of server contexts.
    */
 
-  if (strncmp(cmd->argv[1], "daemon", 7) == 0) {
+  if (strcasecmp(cmd->argv[1], "daemon") == 0) {
     CHECK_CONF(cmd, CONF_ROOT);
 
   } else {
@@ -420,8 +420,8 @@ MODRET set_rlimitopenfiles(cmd_rec *cmd) {
   /* Handle the newer format, which uses "daemon" or "session" or "none"
    * as the first parameter.
    */
-  if (strncmp(cmd->argv[1], "daemon", 7) == 0 ||
-      strncmp(cmd->argv[1], "session", 8) == 0) {
+  if (strcasecmp(cmd->argv[1], "daemon") == 0 ||
+      strcasecmp(cmd->argv[1], "session") == 0) {
 
     if (strcasecmp(cmd->argv[2], "max") == 0 ||
         strcasecmp(cmd->argv[2], "unlimited") == 0) {
@@ -473,7 +473,6 @@ MODRET set_rlimitopenfiles(cmd_rec *cmd) {
    * parameter.
    */
   } else {
-
     if (strcasecmp(cmd->argv[1], "max") == 0 ||
         strcasecmp(cmd->argv[1], "unlimited") == 0) {
       current = sysconf(_SC_OPEN_MAX);
@@ -593,7 +592,7 @@ static int rlimit_set_cpu(int scope) {
 
   /* Now check for the configurable resource limits */
   c = find_config(main_server->conf, CONF_PARAM, "RLimitCPU", FALSE);
-  while (c) {
+  while (c != NULL) {
     int res, use_config = FALSE, xerrno;
     rlim_t current, max;
 
@@ -602,14 +601,15 @@ static int rlimit_set_cpu(int scope) {
     if (scope == DAEMON_SCOPE) { 
       /* Does this limit apply to the daemon? */
       if (c->argc == 3 &&
-          strncmp(c->argv[0], "daemon", 7) == 0) {
+          strcasecmp(c->argv[0], "daemon") == 0) {
         use_config = TRUE;
       }
 
     } else if (scope == SESSION_SCOPE) {
       /* Does this limit apply to the session? */
       if (c->argc == 2 ||
-          (c->argc == 3 && strncmp(c->argv[0], "session", 8) == 0)) {
+          (c->argc == 3 &&
+           strcasecmp(c->argv[0], "session") == 0)) {
         use_config = TRUE;
       }
     }
@@ -653,7 +653,7 @@ static int rlimit_set_files(int scope) {
 
   /* Now check for the configurable resource limits */
   c = find_config(main_server->conf, CONF_PARAM, "RLimitOpenFiles", FALSE);
-  while (c) {
+  while (c != NULL) {
     int res, use_config = FALSE, xerrno;
     rlim_t current, max;
 
@@ -662,14 +662,15 @@ static int rlimit_set_files(int scope) {
     if (scope == DAEMON_SCOPE) { 
       /* Does this limit apply to the daemon? */
       if (c->argc == 3 &&
-          strncmp(c->argv[0], "daemon", 7) == 0) {
+          strcasecmp(c->argv[0], "daemon") == 0) {
         use_config = TRUE;
       }
 
     } else if (scope == SESSION_SCOPE) {
       /* Does this limit apply to the session? */
       if (c->argc == 2 ||
-          (c->argc == 3 && strncmp(c->argv[0], "session", 8) == 0)) {
+          (c->argc == 3 &&
+           strcasecmp(c->argv[0], "session") == 0)) {
         use_config = TRUE;
       }
     }
@@ -713,7 +714,7 @@ static int rlimit_set_memory(int scope) {
 
   /* Now check for the configurable resource limits */
   c = find_config(main_server->conf, CONF_PARAM, "RLimitMemory", FALSE);
-  while (c) {
+  while (c != NULL) {
     int res, use_config = FALSE, xerrno;
     rlim_t current, max;
 
@@ -722,14 +723,15 @@ static int rlimit_set_memory(int scope) {
     if (scope == DAEMON_SCOPE) { 
       /* Does this limit apply to the daemon? */
       if (c->argc == 3 &&
-          strncmp(c->argv[0], "daemon", 7) == 0) {
+          strcasecmp(c->argv[0], "daemon") == 0) {
         use_config = TRUE;
       }
 
     } else if (scope == SESSION_SCOPE) {
       /* Does this limit apply to the session? */
       if (c->argc == 2 ||
-          (c->argc == 3 && strncmp(c->argv[0], "session", 8) == 0)) {
+          (c->argc == 3 &&
+           strcasecmp(c->argv[0], "session") == 0)) {
         use_config = TRUE;
       }
     }

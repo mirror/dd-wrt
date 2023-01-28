@@ -120,6 +120,7 @@ sub defaultroot_rel_symlink_dir {
 
     AuthUserFile => $auth_user_file,
     AuthGroupFile => $auth_group_file,
+    AuthOrder => 'mod_auth_file.c',
 
     DefaultRoot => '~',
 
@@ -261,6 +262,7 @@ sub defaultroot_abs_symlink_dir {
 
     AuthUserFile => $auth_user_file,
     AuthGroupFile => $auth_group_file,
+    AuthOrder => 'mod_auth_file.c',
 
     DefaultRoot => '~',
 
@@ -413,6 +415,7 @@ sub defaultroot_rel_symlink_file {
 
     AuthUserFile => $auth_user_file,
     AuthGroupFile => $auth_group_file,
+    AuthOrder => 'mod_auth_file.c',
 
     DefaultRoot => '~',
 
@@ -542,6 +545,7 @@ sub defaultroot_rel_symlink_dangling {
 
     AuthUserFile => $auth_user_file,
     AuthGroupFile => $auth_group_file,
+    AuthOrder => 'mod_auth_file.c',
 
     DefaultRoot => '~',
 
@@ -659,6 +663,7 @@ sub defaultroot_allowchrootsymlinks_bug3852 {
 
     AuthUserFile => $setup->{auth_user_file},
     AuthGroupFile => $setup->{auth_group_file},
+    AuthOrder => 'mod_auth_file.c',
 
     AllowChrootSymlinks => 'off',
     DefaultRoot => '~',
@@ -773,6 +778,7 @@ sub defaultroot_allowchrootsymlinks_bug4306 {
 
     AuthUserFile => $setup->{auth_user_file},
     AuthGroupFile => $setup->{auth_group_file},
+    AuthOrder => 'mod_auth_file.c',
 
     AllowChrootSymlinks => 'off',
     DefaultRoot => '~',
@@ -786,7 +792,8 @@ sub defaultroot_allowchrootsymlinks_bug4306 {
     },
   };
 
-  my ($port, $config_user, $config_group) = config_write($setup->{config_file},
+  my $port;
+  ($port, $config_user, $config_group) = config_write($setup->{config_file},
     $config);
 
   # Open pipes, for use between the parent and child processes.  Specifically,

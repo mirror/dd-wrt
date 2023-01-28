@@ -122,6 +122,7 @@ sub cap_dac_override {
 
     AuthUserFile => $auth_user_file,
     AuthGroupFile => $auth_group_file,
+    AuthOrder => 'mod_auth_file.c',
 
     AllowOverwrite => 'on',
     RootLogin => 'on',
@@ -259,6 +260,7 @@ sub cap_dac_override_ifuser_bug3576 {
 
     AuthUserFile => $auth_user_file,
     AuthGroupFile => $auth_group_file,
+    AuthOrder => 'mod_auth_file.c',
 
     AllowOverwrite => 'on',
     RootLogin => 'on',
@@ -409,6 +411,7 @@ sub cap_rootrevoke_off_bug3839 {
 
     AuthUserFile => $auth_user_file,
     AuthGroupFile => $auth_group_file,
+    AuthOrder => 'mod_auth_file.c',
 
     AllowOverwrite => 'on',
     RootLogin => 'on',
@@ -549,6 +552,7 @@ sub cap_rootrevoke_default_bug3839 {
 
     AuthUserFile => $auth_user_file,
     AuthGroupFile => $auth_group_file,
+    AuthOrder => 'mod_auth_file.c',
 
     AllowOverwrite => 'on',
     RootLogin => 'on',
@@ -682,6 +686,7 @@ sub cap_sftp_setreuid_eagain_bug3923 {
 
     AuthUserFile => $auth_user_file,
     AuthGroupFile => $auth_group_file,
+    AuthOrder => 'mod_auth_file.c',
 
     IfModules => {
       'mod_delay.c' => {

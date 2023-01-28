@@ -19,7 +19,8 @@ SHARED_MODULE_OBJS=mod_auth_otp.lo base32.lo otp.lo crypto.lo db.lo
 UTILS_LIBS=@UTILS_LIBS@
 UTILS_OBJS=base32.o otp.o crypto.o auth-otp.o
 UTILS_API_OBJS=../../src/pool.o \
-  ../../src/str.o
+  ../../src/str.o \
+  ../../lib/prbase.a
 
 # Necessary redefinitions
 INCLUDES=-I. -I../.. -I../../include -I$(top_srcdir)/../../include @INCLUDES@
@@ -32,7 +33,7 @@ LDFLAGS=-L../../lib @LDFLAGS@
 .c.lo:
 	$(LIBTOOL) --mode=compile --tag=CC $(CC) $(CPPFLAGS) $(CFLAGS) $(SHARED_CFLAGS) -c $<
 
-shared: $(SHARED_MODULE_OBJS)
+shared: $(SHARED_MODULE_OBJS) auth-otp$(EXEEXT)
 	$(LIBTOOL) --mode=link --tag=CC $(CC) -o $(MODULE_NAME).la $(SHARED_MODULE_OBJS) -rpath $(LIBEXECDIR) $(LDFLAGS) $(SHARED_LDFLAGS) $(SHARED_MODULE_LIBS) `cat $(top_srcdir)/$(MODULE_NAME).c | grep '$$Libraries:' | sed -e 's/^.*\$$Libraries: \(.*\)\\$$/\1/'`
 
 static: $(MODULE_OBJS) auth-otp$(EXEEXT)
@@ -61,7 +62,7 @@ install-headers: $(DESTDIR)$(includedir)/proftpd
 install-man: $(DESTDIR)$(mandir) $(DESTDIR)$(mandir)/man8
 	$(INSTALL_MAN) $(top_srcdir)/auth-otp.8 $(DESTDIR)$(mandir)/man8
 
-install-utils: $(DESTDIR)$(sbindir) auth-otp$(EXEEXT)
+install-utils: $(DESTDIR)$(sbindir)
 	$(INSTALL_BIN) auth-otp$(EXEEXT) $(DESTDIR)$(sbindir)/auth-otp$(EXEEXT)
 
 clean:

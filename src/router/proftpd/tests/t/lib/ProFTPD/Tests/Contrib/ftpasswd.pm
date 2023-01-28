@@ -218,6 +218,7 @@ sub ftpasswd_lock_unlock_bug3994 {
 
     AuthUserFile => $setup->{auth_user_file},
     AuthGroupFile => $setup->{auth_group_file},
+    AuthOrder => 'mod_auth_file.c',
 
     IfModules => {
       'mod_delay.c' => {
@@ -350,6 +351,7 @@ sub ftpasswd_change_home_issue566 {
 
     AuthUserFile => $setup->{auth_user_file},
     AuthGroupFile => $setup->{auth_group_file},
+    AuthOrder => 'mod_auth_file.c',
 
     IfModules => {
       'mod_delay.c' => {
@@ -473,6 +475,7 @@ sub ftpasswd_delete_member_from_group_issue620 {
 
     AuthUserFile => $setup->{auth_user_file},
     AuthGroupFile => $setup->{auth_group_file},
+    AuthOrder => 'mod_auth_file.c',
 
     Limit => {
       LOGIN => {
@@ -593,6 +596,7 @@ sub ftpasswd_add_member_to_group_issue625 {
 
     AuthUserFile => $setup->{auth_user_file},
     AuthGroupFile => $setup->{auth_group_file},
+    AuthOrder => 'mod_auth_file.c',
 
     Limit => {
       LOGIN => {

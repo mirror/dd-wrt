@@ -1,7 +1,7 @@
 /*
  * ProFTPD: mod_auth_file - file-based authentication module that supports
  *                          restrictions on the file contents
- * Copyright (c) 2002-2021 The ProFTPD Project team
+ * Copyright (c) 2002-2022 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -83,6 +83,11 @@ static unsigned long auth_file_opts = 0UL;
  */
 #define AUTH_FILE_OPT_INSECURE_PERMS		0x0001
 
+/* Tell mod_auth_file to perform a syntax check of the configured files on
+ * startup.
+ */
+#define AUTH_FILE_OPT_SYNTAX_CHECK		0x0002
+
 static int handle_empty_salt = FALSE;
 
 static int authfile_sess_init(void);
@@ -95,6 +100,7 @@ static const char *trace_channel = "auth.file";
 /* Support routines.  Move the passwd/group functions out of lib/ into here. */
 
 #define PR_AUTH_FILE_FL_ALLOW_WORLD_READABLE		0x001
+#define PR_AUTH_FILE_FL_USE_TRACE_LOG			0x002
 
 static int af_check_parent_dir(pool *p, const char *name, const char *path) {
   struct stat st;
@@ -250,7 +256,8 @@ static char pwdbuf[PR_TUNABLE_BUFFER_SIZE];
 static char *pwdfields[NPWDFIELDS];
 static struct passwd pwent;
 
-static struct passwd *af_getpasswd(const char *buf, unsigned int lineno) {
+static struct passwd *af_parse_passwd(const char *buf, unsigned int lineno,
+    int flags) {
   register unsigned int i;
   register char *cp = NULL;
   char *ptr = NULL, *buffer = NULL;
@@ -290,27 +297,50 @@ static struct passwd *af_getpasswd(const char *buf, unsigned int lineno) {
 
   if (*fields[2] == '\0' ||
       *fields[3] == '\0') {
-    pr_trace_msg(trace_channel, 3,
-      "missing UID/GID fields for user '%.100s' (line %u), skipping",
-      pwd->pw_name, lineno);
+    if (flags & PR_AUTH_FILE_FL_USE_TRACE_LOG) {
+      pr_trace_msg(trace_channel, 3,
+        "missing UID/GID fields for user '%.100s' (line %u), skipping",
+        pwd->pw_name, lineno);
+
+    } else {
+      pr_log_pri(PR_LOG_WARNING, "AuthUserFile: missing UID/GID fields for "
+        "user '%.100s' (line %u), skipping", pwd->pw_name, lineno);
+    }
+
     return NULL;
   }
 
   ptr = NULL;
   pwd->pw_uid = strtol(fields[2], &ptr, 10);
   if (*ptr != '\0') {
-    pr_trace_msg(trace_channel, 3,
-      "non-numeric UID field '%.100s' for user '%.100s' (line %u), skipping",
-      fields[2], pwd->pw_name, lineno);
+    if (flags & PR_AUTH_FILE_FL_USE_TRACE_LOG) {
+      pr_trace_msg(trace_channel, 3,
+        "non-numeric UID field '%.100s' for user '%.100s' (line %u), skipping",
+        fields[2], pwd->pw_name, lineno);
+
+    } else {
+      pr_log_pri(PR_LOG_WARNING, "AuthUserFile: non-numeric UID field "
+        "'%.100s' for user '%.100s' (line %u), skipping", fields[2],
+        pwd->pw_name, lineno);
+    }
+
     return NULL;
   }
 
   ptr = NULL;
   pwd->pw_gid = strtol(fields[3], &ptr, 10);
   if (*ptr != '\0') {
-    pr_trace_msg(trace_channel, 3,
-      "non-numeric GID field '%.100s' for user '%.100s' (line %u), skipping",
-      fields[3], pwd->pw_name, lineno);
+    if (flags & PR_AUTH_FILE_FL_USE_TRACE_LOG) {
+      pr_trace_msg(trace_channel, 3,
+        "non-numeric GID field '%.100s' for user '%.100s' (line %u), skipping",
+        fields[3], pwd->pw_name, lineno);
+
+    } else {
+      pr_log_pri(PR_LOG_WARNING, "AuthUserFile: non-numeric GID field "
+        "'%.100s' for user '%.100s' (line %u), skipping", fields[3],
+        pwd->pw_name, lineno);
+    }
+
     return NULL;
   }
 
@@ -325,45 +355,74 @@ static struct passwd *af_getpasswd(const char *buf, unsigned int lineno) {
 #define NGRPFIELDS      4
 
 static char *grpbuf = NULL;
+static size_t grpbufsz = 0;
 static struct group grent;
 static char *grpfields[NGRPFIELDS];
 static char *members[MAXMEMBERS+1];
 
-static char *af_getgrentline(char **buf, int *buflen, pr_fh_t *fh,
+static char *af_getgrentline(char **buf, size_t *bufsz, pr_fh_t *fh,
     unsigned int *lineno) {
-  char *cp = *buf;
+  char *ptr, *res;
+  size_t original_bufsz, buflen;
 
-  while (pr_fsio_gets(cp, (*buflen) - (cp - *buf), fh) != NULL) {
+  original_bufsz = *bufsz;
+  buflen = *bufsz;
+
+  /* Try to keep our unfilled buffer zeroed out, so that strlen(3) et al
+   * work as expected.
+   */
+  memset(*buf, '\0', *bufsz);
+
+  ptr = *buf;
+  res = pr_fsio_gets(ptr, buflen, fh);
+  while (res != NULL) {
     pr_signals_handle();
 
-    (*lineno)++;
-
     /* Is this a full line? */
-    if (strchr(cp, '\n')) {
+    if (strchr(*buf, '\n') != NULL) {
+      pr_trace_msg(trace_channel, 25,
+        "found LF, returning line: '%s' (%lu bytes)", *buf,
+        (unsigned long) strlen(*buf));
+      (*lineno)++;
       return *buf;
     }
 
-    /* No -- allocate a larger buffer, doubling buflen. */
-    *buflen += *buflen;
-
+    /* No -- allocate a larger buffer.  Note that doubling the buflen
+     * each time may cause issues; fgetgrent(3) would increment the
+     * allocated buffer by the original buffer length each time.  So we
+     * do the same (Issue #1321).
+     */
     {
+      size_t new_bufsz;
       char *new_buf;
 
-      new_buf = realloc(*buf, *buflen);
+      pr_trace_msg(trace_channel, 25, "getgrentline() buffer (%lu bytes): "
+        "'%.*s'", (unsigned long) *bufsz, (int) *bufsz, *buf);
+
+      pr_trace_msg(trace_channel, 19,
+        "no LF found in group line, increasing buffer (%lu bytes) by %lu bytes",
+        (unsigned long) *bufsz, (unsigned long) original_bufsz);
+      new_bufsz = *bufsz + original_bufsz;
+
+      new_buf = realloc(*buf, new_bufsz);
       if (new_buf == NULL) {
         break;
       }
 
+      ptr = new_buf + *bufsz;
       *buf = new_buf;
+      *bufsz = new_bufsz;
+      buflen = original_bufsz;
+
+      memset(ptr, '\0', buflen);
     }
 
-    cp = *buf + (cp - *buf);
-    cp = strchr(cp, '\0');
+    res = pr_fsio_gets(ptr, buflen, fh);
   }
 
   free(*buf);
   *buf = NULL;
-  *buflen = 0;
+  *bufsz = 0;
 
   return NULL;
 }
@@ -388,17 +447,23 @@ static char **af_getgrmems(char *s) {
   return members;
 }
 
-static struct group *af_getgrp(const char *buf, unsigned int lineno) {
-  int i;
+static struct group *af_parse_grp(const char *buf, unsigned int lineno,
+    int flags) {
+  unsigned int i;
   char *cp;
 
   i = strlen(buf) + 1;
 
-  if (!grpbuf) {
-    grpbuf = malloc(i);
+  if (grpbuf == NULL) {
+    grpbufsz = i;
+    grpbuf = malloc(grpbufsz);
 
-  } else {
+  } else if (grpbufsz < (size_t) i) {
     char *new_buf;
+
+    pr_trace_msg(trace_channel, 19,
+      "parsing group line '%s' (%lu bytes), allocating %lu bytes via "
+      "realloc(3)", buf, (unsigned long) i, (unsigned long) i);
 
     new_buf = realloc(grpbuf, i);
     if (new_buf == NULL) {
@@ -406,10 +471,12 @@ static struct group *af_getgrp(const char *buf, unsigned int lineno) {
     }
 
     grpbuf = new_buf;
+    grpbufsz = i;
   }
 
-  if (!grpbuf)
+  if (grpbuf == NULL) {
     return NULL;
+  }
 
   sstrncpy(grpbuf, buf, i);
 
@@ -422,7 +489,7 @@ static struct group *af_getgrp(const char *buf, unsigned int lineno) {
     grpfields[i] = cp;
 
     cp = strchr(cp, ':');
-    if (cp) {
+    if (cp != NULL) {
       *cp++ = 0;
     }
   }
@@ -433,13 +500,38 @@ static struct group *af_getgrp(const char *buf, unsigned int lineno) {
     return NULL;
   }
 
+  grent.gr_name = grpfields[0];
+  grent.gr_passwd = grpfields[1];
+
   if (*grpfields[2] == '\0') {
+    if (flags & PR_AUTH_FILE_FL_USE_TRACE_LOG) {
+      pr_trace_msg(trace_channel, 3,
+        "missing GID field for group '%.100s' (line %u), skipping",
+        grent.gr_name, lineno);
+
+    } else {
+      pr_log_pri(PR_LOG_WARNING, "AuthGroupFile: missing GID field for "
+        "group '%.100s' (line %u), skipping", grent.gr_name, lineno);
+    }
+
     return NULL;
   }
 
-  grent.gr_name = grpfields[0];
-  grent.gr_passwd = grpfields[1];
-  grent.gr_gid = atoi(grpfields[2]);
+  cp = NULL;
+  grent.gr_gid = strtol(grpfields[2], &cp, 10);
+  if (*cp != '\0') {
+    if (flags & PR_AUTH_FILE_FL_USE_TRACE_LOG) {
+      pr_trace_msg(trace_channel, 3,
+        "non-numeric GID field '%.100s' for group '%.100s' (line %u)",
+        grpfields[2], grent.gr_name, lineno);
+
+    } else {
+      pr_log_pri(PR_LOG_WARNING, "AuthGroupFile: non-numeric GID field "
+        "'%.100s' for group '%.100s' (line %u)", grpfields[2],
+        grent.gr_name, lineno);
+    }
+  }
+
   grent.gr_mem = af_getgrmems(grpfields[3]);
 
   return &grent;
@@ -502,11 +594,10 @@ static void af_endgrent(void) {
     af_group_file->af_file_fh = NULL;
     af_group_file->af_lineno = 0;
   }
-
-  return;
 }
 
-static struct group *af_getgrent(pool *p) {
+static struct group *af_getgrent(pool *p, int flags,
+    unsigned int *bad_entry_count) {
   struct group *grp = NULL, *res = NULL;
 
   if (af_group_file == NULL ||
@@ -517,7 +608,16 @@ static struct group *af_getgrent(pool *p) {
 
   while (TRUE) {
     char *cp = NULL, *buf = NULL;
-    int buflen = PR_TUNABLE_BUFFER_SIZE;
+    size_t buflen;
+
+    buflen = PR_TUNABLE_BUFFER_SIZE;
+
+    if (af_group_file->af_file_fh->fh_iosz > 0) {
+      /* This aligns our group(5) buffer with the preferred filesystem read
+       * block size.
+       */
+      buflen = af_group_file->af_file_fh->fh_iosz;
+    }
 
     pr_signals_handle();
 
@@ -526,6 +626,10 @@ static struct group *af_getgrent(pool *p) {
       pr_log_pri(PR_LOG_ALERT, "Out of memory!");
       _exit(1);
     }
+    pr_trace_msg(trace_channel, 19,
+      "getgrent(3): allocated buffer %p (%lu bytes)", buf,
+      (unsigned long) buflen);
+
     grp = NULL;
 
     while (af_getgrentline(&buf, &buflen, af_group_file->af_file_fh,
@@ -544,10 +648,13 @@ static struct group *af_getgrent(pool *p) {
         *cp = '\0';
       }
 
-      grp = af_getgrp(buf, af_group_file->af_lineno);
-
-      /* If grp is NULL here, it's a malformed entry; keep looking. */
+      grp = af_parse_grp(buf, af_group_file->af_lineno, flags);
       if (grp == NULL) {
+        /* If grp is NULL here, it's a malformed entry; keep looking. */
+        if (bad_entry_count != NULL) {
+          (*bad_entry_count)++;
+        }
+
         continue;
       }
 
@@ -573,18 +680,22 @@ static struct group *af_getgrent(pool *p) {
 
 static struct group *af_getgrnam(pool *p, const char *name) {
   struct group *grp = NULL;
+  int flags = PR_AUTH_FILE_FL_USE_TRACE_LOG;
 
   if (af_setgrent(p) < 0) {
     return NULL;
   }
 
-  while ((grp = af_getgrent(p)) != NULL) {
+  grp = af_getgrent(p, flags, NULL);
+  while (grp != NULL) {
     pr_signals_handle();
 
     if (strcmp(name, grp->gr_name) == 0) {
       /* Found the requested group */
       break;
     }
+
+    grp = af_getgrent(p, flags, NULL);
   }
 
   return grp;
@@ -592,18 +703,22 @@ static struct group *af_getgrnam(pool *p, const char *name) {
 
 static struct group *af_getgrgid(pool *p, gid_t gid) {
   struct group *grp = NULL;
+  int flags = PR_AUTH_FILE_FL_USE_TRACE_LOG;
 
   if (af_setgrent(p) < 0) {
     return NULL;
   }
 
-  while ((grp = af_getgrent(p)) != NULL) {
+  grp = af_getgrent(p, flags, NULL);
+  while (grp != NULL) {
     pr_signals_handle();
 
     if (grp->gr_gid == gid) {
       /* Found the requested GID */
       break;
     }
+
+    grp = af_getgrent(p, flags, NULL);
   }
 
   return grp;
@@ -619,7 +734,7 @@ static int af_setgrent(pool *p) {
       pr_buffer_t *pbuf;
 
       /* If already opened, rewind */
-      pr_fsio_lseek(af_group_file->af_file_fh, 0, SEEK_SET);
+      (void) pr_fsio_lseek(af_group_file->af_file_fh, 0, SEEK_SET);
 
       /* Make sure to clear any buffers as well. */
       pbuf = af_group_file->af_file_fh->fh_buf;
@@ -628,6 +743,12 @@ static int af_setgrent(pool *p) {
         pbuf->current = pbuf->buf;
         pbuf->remaining = pbuf->buflen;
       }
+
+      if (grpbuf != NULL) {
+        free(grpbuf);
+        grpbuf = NULL;
+      }
+      grpbufsz = 0;
 
       return 0;
     }
@@ -753,11 +874,10 @@ static void af_endpwent(void) {
     af_user_file->af_file_fh = NULL;
     af_user_file->af_lineno = 0;
   }
-
-  return;
 }
 
-static struct passwd *af_getpwent(pool *p) {
+static struct passwd *af_getpwent(pool *p, int flags,
+    unsigned int *bad_entry_count) {
   struct passwd *pwd = NULL, *res = NULL;
 
   if (af_user_file == NULL ||
@@ -787,10 +907,14 @@ static struct passwd *af_getpwent(pool *p) {
       }
 
       buf[strlen(buf)-1] = '\0';
-      pwd = af_getpasswd(buf, af_user_file->af_lineno);
+      pwd = af_parse_passwd(buf, af_user_file->af_lineno, flags);
 
-      /* If pwd is NULL here, it's a malformed entry; keep looking. */
       if (pwd == NULL) {
+        /* If pwd is NULL here, it's a malformed entry; keep looking. */
+        if (bad_entry_count != NULL) {
+          (*bad_entry_count)++;
+        }
+
         memset(buf, '\0', sizeof(buf));
         continue;
       }
@@ -817,18 +941,22 @@ static struct passwd *af_getpwent(pool *p) {
 
 static struct passwd *af_getpwnam(pool *p, const char *name) {
   struct passwd *pwd = NULL;
+  int flags = PR_AUTH_FILE_FL_USE_TRACE_LOG;
 
   if (af_setpwent(p) < 0) {
     return NULL;
   }
 
-  while ((pwd = af_getpwent(p)) != NULL) {
+  pwd = af_getpwent(p, flags, NULL);
+  while (pwd != NULL) {
     pr_signals_handle();
 
     if (strcmp(name, pwd->pw_name) == 0) {
       /* Found the requested user */
       break;
     }
+
+    pwd = af_getpwent(p, flags, NULL);
   }
 
   return pwd;
@@ -841,18 +969,22 @@ static char *af_getpwpass(pool *p, const char *name) {
 
 static struct passwd *af_getpwuid(pool *p, uid_t uid) {
   struct passwd *pwd = NULL;
+  int flags = PR_AUTH_FILE_FL_USE_TRACE_LOG;
 
   if (af_setpwent(p) < 0) {
     return NULL;
   }
 
-  while ((pwd = af_getpwent(p)) != NULL) {
+  pwd = af_getpwent(p, flags, NULL);
+  while (pwd != NULL) {
     pr_signals_handle();
 
     if (pwd->pw_uid == uid) {
       /* Found the requested UID */
       break;
     }
+
+    pwd = af_getpwent(p, flags, NULL);
   }
 
   return pwd;
@@ -868,7 +1000,7 @@ static int af_setpwent(pool *p) {
       pr_buffer_t *pbuf;
 
       /* If already opened, rewind */
-      pr_fsio_lseek(af_user_file->af_file_fh, 0, SEEK_SET);
+      (void) pr_fsio_lseek(af_user_file->af_file_fh, 0, SEEK_SET);
 
       /* Make sure to clear any buffers as well. */
       pbuf = af_user_file->af_file_fh->fh_buf;
@@ -928,6 +1060,95 @@ static int af_setpwent(pool *p) {
   return -1;
 }
 
+static int af_check_group_syntax(pool *p, const char *path) {
+  int flags = 0, xerrno, res = 0;
+  struct group *grp;
+  unsigned int bad_entry_count = 0;
+
+  af_group_file = pcalloc(p, sizeof(authfile_file_t));
+  af_group_file->af_path = pstrdup(p, path);
+
+  PRIVS_ROOT
+  af_group_file->af_file_fh = pr_fsio_open(af_group_file->af_path, O_RDONLY);
+  xerrno = errno;
+  PRIVS_RELINQUISH
+
+  if (af_group_file->af_file_fh == NULL) {
+    pr_log_pri(PR_LOG_WARNING,
+      "error: unable to open AuthGroupFile file '%s': %s",
+      af_group_file->af_path, strerror(xerrno));
+    af_group_file = NULL;
+    errno = xerrno;
+    return -1;
+  }
+
+  grp = af_getgrent(p, flags, &bad_entry_count);
+  while (grp != NULL) {
+    pr_signals_handle();
+
+    grp = af_getgrent(p, flags, &bad_entry_count);
+  }
+
+  pr_fsio_close(af_group_file->af_file_fh);
+  af_group_file->af_file_fh = NULL;
+  af_group_file->af_lineno = 0;
+  af_group_file = NULL;
+
+  if (bad_entry_count > 0) {
+    pr_log_pri(PR_LOG_WARNING, "bad entries (%u) detected in AuthGroupFile %s",
+      bad_entry_count, path);
+    errno = EINVAL;
+    res = -1;
+  }
+
+  return res;
+}
+
+static int af_check_user_syntax(pool *p, const char *path) {
+  int flags = 0, xerrno, res = 0;
+  struct passwd *pwd;
+  unsigned int bad_entry_count = 0;
+
+  af_user_file = pcalloc(p, sizeof(authfile_file_t));
+  af_user_file->af_path = pstrdup(p, path);
+
+  PRIVS_ROOT
+  af_user_file->af_file_fh = pr_fsio_open(af_user_file->af_path, O_RDONLY);
+  xerrno = errno;
+  PRIVS_RELINQUISH
+
+  if (af_user_file->af_file_fh == NULL) {
+    pr_log_pri(PR_LOG_WARNING,
+      "error: unable to open AuthUserFile file '%s': %s",
+      af_user_file->af_path, strerror(xerrno));
+    af_user_file = NULL;
+    errno = xerrno;
+    return -1;
+  }
+
+  bad_entry_count = 0;
+  pwd = af_getpwent(p, flags, &bad_entry_count);
+  while (pwd != NULL) {
+    pr_signals_handle();
+
+    pwd = af_getpwent(p, flags, &bad_entry_count);
+  }
+
+  pr_fsio_close(af_user_file->af_file_fh);
+  af_user_file->af_file_fh = NULL;
+  af_user_file->af_lineno = 0;
+  af_user_file = NULL;
+
+  if (bad_entry_count > 0) {
+    pr_log_pri(PR_LOG_WARNING, "bad entries (%u) detected in AuthUserFile %s",
+      bad_entry_count, path);
+    errno = EINVAL;
+    res = -1;
+  }
+
+  return res;
+}
+
 /* Authentication handlers.
  */
 
@@ -938,8 +1159,9 @@ MODRET authfile_endpwent(cmd_rec *cmd) {
 
 MODRET authfile_getpwent(cmd_rec *cmd) {
   struct passwd *pwd = NULL;
+  int flags = PR_AUTH_FILE_FL_USE_TRACE_LOG;
 
-  pwd = af_getpwent(cmd->tmp_pool);
+  pwd = af_getpwent(cmd->tmp_pool, flags, NULL);
 
   return pwd ? mod_create_data(cmd, pwd) : PR_DECLINED(cmd);
 }
@@ -947,19 +1169,23 @@ MODRET authfile_getpwent(cmd_rec *cmd) {
 MODRET authfile_getpwnam(cmd_rec *cmd) {
   struct passwd *pwd = NULL;
   const char *name = cmd->argv[0];
+  int flags = PR_AUTH_FILE_FL_USE_TRACE_LOG;
 
   if (af_setpwent(cmd->tmp_pool) < 0) {
     return PR_DECLINED(cmd);
   }
 
   /* Ugly -- we iterate through the file.  Time-consuming. */
-  while ((pwd = af_getpwent(cmd->tmp_pool)) != NULL) {
+  pwd = af_getpwent(cmd->tmp_pool, flags, NULL);
+  while (pwd != NULL) {
     pr_signals_handle();
 
     if (strcmp(name, pwd->pw_name) == 0) {
       /* Found the requested name */
       break;
     }
+
+    pwd = af_getpwent(cmd->tmp_pool, flags, NULL);
   }
 
   return pwd ? mod_create_data(cmd, pwd) : PR_DECLINED(cmd);
@@ -1017,8 +1243,9 @@ MODRET authfile_endgrent(cmd_rec *cmd) {
 
 MODRET authfile_getgrent(cmd_rec *cmd) {
   struct group *grp = NULL;
+  int flags = PR_AUTH_FILE_FL_USE_TRACE_LOG;
 
-  grp = af_getgrent(cmd->tmp_pool);
+  grp = af_getgrent(cmd->tmp_pool, flags, NULL);
 
   return grp ? mod_create_data(cmd, grp) : PR_DECLINED(cmd);
 }
@@ -1038,19 +1265,25 @@ MODRET authfile_getgrgid(cmd_rec *cmd) {
 
 MODRET authfile_getgrnam(cmd_rec *cmd) {
   struct group *grp = NULL;
-  const char *name = cmd->argv[0];
+  const char *name;
+  int flags = PR_AUTH_FILE_FL_USE_TRACE_LOG;
 
   if (af_setgrent(cmd->tmp_pool) < 0) {
     return PR_DECLINED(cmd);
   }
 
-  while ((grp = af_getgrent(cmd->tmp_pool)) != NULL) {
+  name = cmd->argv[0];
+
+  grp = af_getgrent(cmd->tmp_pool, flags, NULL);
+  while (grp != NULL) {
     pr_signals_handle();
 
     if (strcmp(name, grp->gr_name) == 0) {
       /* Found the name requested */
       break;
     }
+
+    grp = af_getgrent(cmd->tmp_pool, flags, NULL);
   }
 
   return grp ? mod_create_data(cmd, grp) : PR_DECLINED(cmd);
@@ -1061,6 +1294,7 @@ MODRET authfile_getgroups(cmd_rec *cmd) {
   struct group *grp = NULL;
   array_header *gids = NULL, *groups = NULL;
   char *name = cmd->argv[0];
+  int flags = PR_AUTH_FILE_FL_USE_TRACE_LOG;
 
   if (name == NULL) {
     return PR_DECLINED(cmd);
@@ -1075,11 +1309,11 @@ MODRET authfile_getgroups(cmd_rec *cmd) {
   }
 
   /* Check for NULLs */
-  if (cmd->argv[1]) {
+  if (cmd->argv[1] != NULL) {
     gids = (array_header *) cmd->argv[1];
   }
 
-  if (cmd->argv[2]) {
+  if (cmd->argv[2] != NULL) {
     groups = (array_header *) cmd->argv[2];
   }
 
@@ -1090,13 +1324,16 @@ MODRET authfile_getgroups(cmd_rec *cmd) {
   }
 
   /* Populate the first group ID and name. */
-  if (gids) {
+  if (gids != NULL) {
     *((gid_t *) push_array(gids)) = pwd->pw_gid;
   }
 
-  if (groups &&
-      (grp = af_getgrgid(cmd->tmp_pool, pwd->pw_gid)) != NULL) {
-    *((char **) push_array(groups)) = pstrdup(session.pool, grp->gr_name);
+  if (groups != NULL) {
+    grp = af_getgrgid(cmd->tmp_pool, pwd->pw_gid);
+
+    if (grp != NULL) {
+      *((char **) push_array(groups)) = pstrdup(session.pool, grp->gr_name);
+    }
   }
 
   (void) af_setgrent(cmd->tmp_pool);
@@ -1104,8 +1341,9 @@ MODRET authfile_getgroups(cmd_rec *cmd) {
   /* This is where things get slow, expensive, and ugly.  Loop through
    * everything, checking to make sure we haven't already added it.
    */
-  while ((grp = af_getgrent(cmd->tmp_pool)) != NULL &&
-      grp->gr_mem) {
+  grp = af_getgrent(cmd->tmp_pool, flags, NULL);
+  while (grp != NULL &&
+         grp->gr_mem) {
     char **gr_mems = NULL;
 
     pr_signals_handle();
@@ -1117,21 +1355,26 @@ MODRET authfile_getgroups(cmd_rec *cmd) {
       if (strcmp(*gr_mems, pwd->pw_name) == 0) {
 
         /* ...add the GID and name */
-        if (gids) {
+        if (gids != NULL) {
           *((gid_t *) push_array(gids)) = grp->gr_gid;
         }
 
-        if (groups) {
+        if (groups != NULL) {
           *((char **) push_array(groups)) = pstrdup(session.pool, grp->gr_name);
         }
       }
     }
+
+    grp = af_getgrent(cmd->tmp_pool, flags, NULL);
   }
 
-  if (gids && gids->nelts > 0) {
+  if (gids != NULL &&
+      gids->nelts > 0) {
     return mod_create_data(cmd, (void *) &gids->nelts);
+  }
 
-  } else if (groups && groups->nelts > 0) {
+  if (groups != NULL &&
+      groups->nelts > 0) {
     return mod_create_data(cmd, (void *) &groups->nelts);
   }
 
@@ -1383,6 +1626,13 @@ MODRET set_authfileoptions(cmd_rec *cmd) {
        */
       auth_file_opts |= AUTH_FILE_OPT_INSECURE_PERMS;
 
+    } else if (strcmp(cmd->argv[i], "SyntaxCheck") == 0) {
+
+      /* Note that this option enables some parse-time checks, so we need
+       * to set it globally now, rather than at sess_init time.
+       */
+      auth_file_opts |= AUTH_FILE_OPT_SYNTAX_CHECK;
+
     } else {
       CONF_ERROR(cmd, pstrcat(cmd->tmp_pool, ": unknown AuthFileOption '",
         cmd->argv[i], "'", NULL));
@@ -1431,13 +1681,20 @@ MODRET set_authgroupfile(cmd_rec *cmd) {
     flags = PR_AUTH_FILE_FL_ALLOW_WORLD_READABLE;
 
     PRIVS_ROOT
-    res = af_check_file(cmd->tmp_pool, cmd->argv[0], cmd->argv[1], flags);
+    res = af_check_file(cmd->tmp_pool, cmd->argv[0], path, flags);
     xerrno = errno;
     PRIVS_RELINQUISH
 
     if (res < 0) {
       CONF_ERROR(cmd, pstrcat(cmd->tmp_pool,
         "unable to use ", path, ": ", strerror(xerrno), NULL));
+    }
+  }
+
+  if (auth_file_opts & AUTH_FILE_OPT_SYNTAX_CHECK) {
+    if (af_check_group_syntax(cmd->tmp_pool, path) < 0) {
+      CONF_ERROR(cmd, pstrcat(cmd->tmp_pool,
+        "unable to use ", path, ": ", strerror(errno), NULL));
     }
   }
 
@@ -1452,7 +1709,7 @@ MODRET set_authgroupfile(cmd_rec *cmd) {
     register unsigned int i = 0;
 
     for (i = 2; i < cmd->argc; i++) {
-      if (strncmp(cmd->argv[i], "id", 3) == 0) {
+      if (strcasecmp(cmd->argv[i], "id") == 0) {
         gid_t min, max;
         char *sep = NULL, *tmp = NULL;
 
@@ -1488,7 +1745,7 @@ MODRET set_authgroupfile(cmd_rec *cmd) {
         file->af_restricted_ids = TRUE;
 
 #ifdef PR_USE_REGEX
-      } else if (strncmp(cmd->argv[i], "name", 5) == 0) {
+      } else if (strcasecmp(cmd->argv[i], "name") == 0) {
         char *filter = cmd->argv[++i];
         pr_regex_t *pre = NULL;
         int res = 0;
@@ -1563,16 +1820,22 @@ MODRET set_authuserfile(cmd_rec *cmd) {
     flags = 0;
 
     PRIVS_ROOT
-    res = af_check_file(cmd->tmp_pool, cmd->argv[0], cmd->argv[1], flags);
+    res = af_check_file(cmd->tmp_pool, cmd->argv[0], path, flags);
     xerrno = errno;
     PRIVS_RELINQUISH
 
     if (res < 0) {
       CONF_ERROR(cmd, pstrcat(cmd->tmp_pool,
-        "unable to use ", path, ": ", strerror(errno), NULL));
+        "unable to use ", path, ": ", strerror(xerrno), NULL));
     }
   }
 
+  if (auth_file_opts & AUTH_FILE_OPT_SYNTAX_CHECK) {
+    if (af_check_user_syntax(cmd->tmp_pool, path) < 0) {
+      CONF_ERROR(cmd, pstrcat(cmd->tmp_pool,
+        "unable to use ", path, ": ", strerror(errno), NULL));
+    }
+  }
   c = add_config_param(cmd->argv[0], 1, NULL);
 
   file = pcalloc(c->pool, sizeof(authfile_file_t));
@@ -1584,7 +1847,7 @@ MODRET set_authuserfile(cmd_rec *cmd) {
     register unsigned int i = 0;
 
     for (i = 2; i < cmd->argc; i++) {
-      if (strncmp(cmd->argv[i], "id", 3) == 0) {
+      if (strcasecmp(cmd->argv[i], "id") == 0) {
         uid_t min, max;
         char *sep = NULL, *tmp = NULL;
 
@@ -1621,7 +1884,7 @@ MODRET set_authuserfile(cmd_rec *cmd) {
         file->af_restricted_ids = TRUE;
 
 #ifdef PR_USE_REGEX
-      } else if (strncmp(cmd->argv[i], "home", 5) == 0) {
+      } else if (strcasecmp(cmd->argv[i], "home") == 0) {
         char *filter = cmd->argv[++i];
         pr_regex_t *pre = NULL;
         int res = 0;
@@ -1649,7 +1912,7 @@ MODRET set_authuserfile(cmd_rec *cmd) {
         file->af_home_regex = pre;
         file->af_restricted_homes = TRUE;
 
-      } else if (strncmp(cmd->argv[i], "name", 5) == 0) {
+      } else if (strcasecmp(cmd->argv[i], "name") == 0) {
         char *filter = cmd->argv[++i];
         pr_regex_t *pre = NULL;
         int res = 0;

@@ -1,6 +1,6 @@
 /*
  * ProFTPD: mod_sftp_sql -- SQL backend module for retrieving authorized keys
- * Copyright (c) 2008-2016 TJ Saunders
+ * Copyright (c) 2008-2022 TJ Saunders
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -47,6 +47,8 @@ struct sqlstore_key {
 struct sqlstore_data {
   const char *select_query;
 };
+
+static const char *sqlstore_user = NULL;
 
 static const char *trace_channel = "ssh2";
 
@@ -141,8 +143,9 @@ static char *sqlstore_getline(pool *p, char **blob, size_t *bloblen) {
     /* Watch out for lines larger than our buffer. */
     if (linelen > sizeof(linebuf)) {
       (void) pr_log_writefile(sftp_logfd, MOD_SFTP_SQL_VERSION,
-        "line of key data (%lu bytes) exceeds buffer size, truncating; "
-        "this WILL cause authentication failures", (unsigned long) linelen);
+        "line of key data (%lu bytes) for '%s' exceeds buffer size, "
+        "truncating; this WILL cause authentication failures",
+        (unsigned long) linelen, sqlstore_user);
       linelen = sizeof(linebuf);
     }
 
@@ -162,7 +165,7 @@ static char *sqlstore_getline(pool *p, char **blob, size_t *bloblen) {
     line = pstrcat(p, line, linebuf, NULL);
     linelen = strlen(line);
 
-    if (have_line_continuation) {
+    if (have_line_continuation == TRUE) {
       continue;
     }
 
@@ -177,7 +180,8 @@ static char *sqlstore_getline(pool *p, char **blob, size_t *bloblen) {
       header_taglen = ptr - line;
       if (header_taglen > 64) {
         (void) pr_log_writefile(sftp_logfd, MOD_SFTP_SQL_VERSION,
-          "header tag too long (%u) in retrieved SQL data", header_taglen);
+          "header tag too long (%u) in retrieved SQL data for '%s'",
+          header_taglen, sqlstore_user);
         errno = EINVAL;
         return NULL;
       }
@@ -188,7 +192,8 @@ static char *sqlstore_getline(pool *p, char **blob, size_t *bloblen) {
       header_valuelen = linelen - (header_taglen + 2);
       if (header_valuelen > 1024) {
         (void) pr_log_writefile(sftp_logfd, MOD_SFTP_SQL_VERSION,
-          "header value too long (%u) in retrieved SQL data", header_valuelen);
+          "header value too long (%u) in retrieved SQL data for '%s'",
+          header_valuelen, sqlstore_user);
         errno = EINVAL;
         return NULL;
       }
@@ -233,8 +238,8 @@ static struct sqlstore_key *sqlstore_get_key_raw(pool *p, char **blob,
   if (chunklen < 0 &&
       !BIO_should_retry(bio)) {
     (void) pr_log_writefile(sftp_logfd, MOD_SFTP_SQL_VERSION,
-      "unable to base64-decode raw key data from database: %s",
-      sftp_crypto_get_errors());
+      "unable to base64-decode raw key data for '%s' from database: %s",
+      sqlstore_user, sftp_crypto_get_errors());
     BIO_free_all(bio);
     BIO_free_all(bmem);
 
@@ -332,8 +337,8 @@ static struct sqlstore_key *sqlstore_get_key_rfc4716(pool *p, char **blob,
         if (chunklen < 0 &&
             !BIO_should_retry(bio)) {
           (void) pr_log_writefile(sftp_logfd, MOD_SFTP_SQL_VERSION,
-            "unable to base64-decode RFC4716 key data from database: %s",
-          sftp_crypto_get_errors());
+            "unable to base64-decode RFC4716 key data for '%s' from "
+            "database: %s", sqlstore_user, sftp_crypto_get_errors());
           BIO_free_all(bio);
           BIO_free_all(bmem);
 
@@ -455,14 +460,14 @@ static int sqlstore_verify_key_raw(pool *p, struct sqlstore_data *store_data,
     key->key_datalen);
   if (res < 0) {
     (void) pr_log_writefile(sftp_logfd, MOD_SFTP_SQL_VERSION,
-      "error comparing client-sent host key with SQL data (row %u) from "
-      "SQLNamedQuery '%s': %s", nrow+1, store_data->select_query,
-      strerror(errno));
+      "error comparing client-sent host key for '%s' with SQL data (row %u) "
+      "from SQLNamedQuery '%s': %s", sqlstore_user, nrow+1,
+      store_data->select_query, strerror(errno));
 
   } else if (res == FALSE) {
     (void) pr_log_writefile(sftp_logfd, MOD_SFTP_SQL_VERSION,
-      "client-sent host key does not match SQL data (row %u) from "
-      "SQLNamedQuery '%s'", nrow+1, store_data->select_query);
+      "client-sent host key for '%s' does not match SQL data (row %u) from "
+      "SQLNamedQuery '%s'", sqlstore_user, nrow+1, store_data->select_query);
     res = -1;
 
   } else {
@@ -486,16 +491,16 @@ static int sqlstore_verify_key_rfc4716(pool *p,
       key->key_datalen);
     if (res < 0) {
       (void) pr_log_writefile(sftp_logfd, MOD_SFTP_SQL_VERSION,
-        "error comparing client-sent key with SQL data (row %u) from "
-        "SQLNamedQuery '%s': %s", nrow+1, store_data->select_query,
-        strerror(errno));
+        "error comparing client-sent key for '%s' with SQL data (row %u) from "
+        "SQLNamedQuery '%s': %s", sqlstore_user, nrow+1,
+        store_data->select_query, strerror(errno));
       key = sqlstore_get_key_rfc4716(p, &col_data, &col_datalen);
       continue;
 
     } else if (res == FALSE) {
       (void) pr_log_writefile(sftp_logfd, MOD_SFTP_SQL_VERSION,
-        "client-sent key does not match SQL data (row %u) from "
-        "SQLNamedQuery '%s'", nrow+1, store_data->select_query);
+        "client-sent key for '%s' does not match SQL data (row %u) from "
+        "SQLNamedQuery '%s'", sqlstore_user, nrow+1, store_data->select_query);
       key = sqlstore_get_key_rfc4716(p, &col_data, &col_datalen);
       continue;
     }
@@ -557,12 +562,11 @@ static int sqlstore_verify_host_key(sftp_keystore_t *store, pool *p,
     destroy_pool(tmp_pool);
     errno = ENOENT;
     return -1;
-
-  } else {
-    (void) pr_log_writefile(sftp_logfd, MOD_SFTP_SQL_VERSION,
-      "SQLNamedQuery '%s' returned %d %s", store_data->select_query,
-      sql_data->nelts, sql_data->nelts != 1 ? "rows" : "row");
   }
+
+  (void) pr_log_writefile(sftp_logfd, MOD_SFTP_SQL_VERSION,
+    "SQLNamedQuery '%s' returned %d %s", store_data->select_query,
+    sql_data->nelts, sql_data->nelts != 1 ? "rows" : "row");
 
   values = (char **) sql_data->elts;
   for (i = 0; i < sql_data->nelts; i++) {
@@ -572,6 +576,14 @@ static int sqlstore_verify_host_key(sftp_keystore_t *store, pool *p,
     pr_signals_handle();
 
     col_data = values[i];
+    if (col_data == NULL) {
+      (void) pr_log_writefile(sftp_logfd, MOD_SFTP_SQL_VERSION,
+        "SQLNamedQuery '%s' returned NULL data", store_data->select_query);
+      destroy_pool(tmp_pool);
+      errno = EINVAL;
+      return -1;
+    }
+
     col_datalen = strlen(values[i]);
 
     res = sqlstore_verify_key_rfc4716(p, store_data, i, col_data, col_datalen,
@@ -664,6 +676,14 @@ static int sqlstore_verify_user_key(sftp_keystore_t *store, pool *p,
     pr_signals_handle();
 
     col_data = values[i];
+    if (col_data == NULL) {
+      (void) pr_log_writefile(sftp_logfd, MOD_SFTP_SQL_VERSION,
+        "SQLNamedQuery '%s' returned NULL data", store_data->select_query);
+      destroy_pool(tmp_pool);
+      errno = EINVAL;
+      return -1;
+    }
+
     col_datalen = strlen(values[i]);
 
     res = sqlstore_verify_key_rfc4716(p, store_data, i, col_data, col_datalen,
@@ -693,7 +713,7 @@ static int sqlstore_verify_user_key(sftp_keystore_t *store, pool *p,
 }
 
 static int sqlstore_close(sftp_keystore_t *store) {
-  /* Nothing really to do here. */
+  sqlstore_user = NULL;
   return 0;
 }
 
@@ -709,6 +729,8 @@ static sftp_keystore_t *sqlstore_open(pool *parent_pool,
 
   sqlstore_pool = make_sub_pool(parent_pool);
   pr_pool_tag(sqlstore_pool, "SFTP SQL-based Keystore Pool");
+
+  sqlstore_user = pstrdup(sqlstore_pool, user);
 
   store = pcalloc(sqlstore_pool, sizeof(sftp_keystore_t));
   store->keystore_pool = sqlstore_pool;
@@ -771,13 +793,14 @@ static sftp_keystore_t *sqlstore_open(pool *parent_pool,
 
 #if defined(PR_SHARED_MODULE)
 static void sftpsql_mod_unload_ev(const void *event_data, void *user_data) {
-  if (strcmp("mod_sftp_sql.c", (const char *) event_data) == 0) {
-    /* XXX any further cleanup here */
-
-    sftp_keystore_unregister_store("sql",
-      SFTP_SSH2_HOST_KEY_STORE|SFTP_SSH2_USER_KEY_STORE);
-    pr_event_unregister(&sftp_sql_module, NULL, NULL);
+  if (strcmp("mod_sftp_sql.c", (const char *) event_data) != 0) {
+    return;
   }
+
+  sqlstore_user = NULL;
+  sftp_keystore_unregister_store("sql",
+    SFTP_SSH2_HOST_KEY_STORE|SFTP_SSH2_USER_KEY_STORE);
+  pr_event_unregister(&sftp_sql_module, NULL, NULL);
 }
 #endif /* !PR_SHARED_MODULE */
 

@@ -208,6 +208,11 @@ static void kdf(void *bufp, aes_int_key key, UINT8 ndx, int nbytes)
         aes_encryption(in_buf, out_buf, key);
         memcpy(dst_buf,out_buf,nbytes);
     }
+
+#if defined(HAVE_MEMSET_S)
+    memset_s(in_buf, sizeof(in_buf), 0, sizeof(in_buf));
+    memset_s(out_buf, sizeof(out_buf), 0, sizeof(out_buf));
+#endif /* HAVE_MEMSET_S */
 }
 
 /* The final UHASH result is XOR'd with the output of a pseudorandom
@@ -232,9 +237,13 @@ static void pdf_init(pdf_ctx *pc, aes_int_key prf_key)
     /* Initialize pdf and cache */
     memset(pc->nonce, 0, sizeof(pc->nonce));
     aes_encryption(pc->nonce, pc->cache, pc->prf_key);
+
+#if defined(HAVE_MEMSET_S)
+    memset_s(buf, sizeof(buf), 0, sizeof(buf));
+#endif /* HAVE_MEMSET_S */
 }
 
-static void pdf_gen_xor(pdf_ctx *pc, UINT8 nonce[8], UINT8 buf[8])
+static void pdf_gen_xor(pdf_ctx *pc, const UINT8 nonce[8], UINT8 buf[8])
 {
     /* 'ndx' indicates that we'll be using the 0th or 1st eight bytes
      * of the AES output. If last time around we returned the ndx-1st
@@ -249,26 +258,30 @@ static void pdf_gen_xor(pdf_ctx *pc, UINT8 nonce[8], UINT8 buf[8])
 #define LOW_BIT_MASK 0
 #endif
 
-    UINT8 tmp_nonce_lo[4];
+    union {
+        UINT8 tmp_nonce_lo[4];
+        UINT32 align;
+    } t;
 #if LOW_BIT_MASK != 0
     int ndx = nonce[7] & LOW_BIT_MASK;
 #endif
-    memcpy(tmp_nonce_lo, &(nonce[4]), sizeof(UINT32));
-    tmp_nonce_lo[3] &= ~LOW_BIT_MASK; /* zero last bit */
 
     /* ProFTPD Note: We've changed the original code where, which used explicit
      * typecasting to treat the nonce[8] as a UINT32, to memcpy(3)/memcmp(3),
      * to avoid strict aliasing gcc warnings when -O2 or higher is used.
      */
 
-    if ( (memcmp(tmp_nonce_lo, &(pc->nonce[4]), sizeof(UINT32)) != 0) ||
+    memcpy(t.tmp_nonce_lo, &(nonce[4]), sizeof(UINT32));
+    t.tmp_nonce_lo[3] &= ~LOW_BIT_MASK; /* zero last bit */
+
+    if ( (memcmp(t.tmp_nonce_lo, &(pc->nonce[4]), sizeof(UINT32)) != 0) ||
          (memcmp(nonce, pc->nonce, sizeof(UINT32)) != 0) )
     {
         memmove(pc->nonce, nonce, sizeof(UINT32));
-        memmove(&(pc->nonce[4]), tmp_nonce_lo, sizeof(UINT32));
+        memmove(&(pc->nonce[4]), t.tmp_nonce_lo, sizeof(UINT32));
         aes_encryption(pc->nonce, pc->cache, pc->prf_key);
     }
-    
+
 #if (UMAC_OUTPUT_LEN == 4)
     *((UINT32 *)buf) ^= ((UINT32 *)pc->cache)[ndx];
 #elif (UMAC_OUTPUT_LEN == 8)
@@ -332,7 +345,7 @@ typedef struct {
 
 #if (UMAC_OUTPUT_LEN == 4)
 
-static void nh_aux(void *kp, void *dp, void *hp, UINT32 dlen)
+static void nh_aux(void *kp, const void *dp, void *hp, UINT32 dlen)
 /* NH hashing primitive. Previous (partial) hash result is loaded and     
 * then stored via hp pointer. The length of the data pointed at by "dp",
 * "dlen", is guaranteed to be divisible by L1_PAD_BOUNDARY (32).  Key
@@ -342,7 +355,7 @@ static void nh_aux(void *kp, void *dp, void *hp, UINT32 dlen)
     UINT64 h;
     UWORD c = dlen / 32;
     UINT32 *k = (UINT32 *)kp;
-    UINT32 *d = (UINT32 *)dp;
+    const UINT32 *d = (const UINT32 *)dp;
     UINT32 d0,d1,d2,d3,d4,d5,d6,d7;
     UINT32 k0,k1,k2,k3,k4,k5,k6,k7;
     
@@ -367,7 +380,7 @@ static void nh_aux(void *kp, void *dp, void *hp, UINT32 dlen)
 
 #elif (UMAC_OUTPUT_LEN == 8)
 
-static void nh_aux(void *kp, void *dp, void *hp, UINT32 dlen)
+static void nh_aux(void *kp, const void *dp, void *hp, UINT32 dlen)
 /* Same as previous nh_aux, but two streams are handled in one pass,
  * reading and writing 16 bytes of hash-state per call.
  */
@@ -375,7 +388,7 @@ static void nh_aux(void *kp, void *dp, void *hp, UINT32 dlen)
   UINT64 h1,h2;
   UWORD c = dlen / 32;
   UINT32 *k = (UINT32 *)kp;
-  UINT32 *d = (UINT32 *)dp;
+  const UINT32 *d = (const UINT32 *)dp;
   UINT32 d0,d1,d2,d3,d4,d5,d6,d7;
   UINT32 k0,k1,k2,k3,k4,k5,k6,k7,
         k8,k9,k10,k11;
@@ -414,7 +427,7 @@ static void nh_aux(void *kp, void *dp, void *hp, UINT32 dlen)
 
 #elif (UMAC_OUTPUT_LEN == 12)
 
-static void nh_aux(void *kp, void *dp, void *hp, UINT32 dlen)
+static void nh_aux(void *kp, const void *dp, void *hp, UINT32 dlen)
 /* Same as previous nh_aux, but two streams are handled in one pass,
  * reading and writing 24 bytes of hash-state per call.
 */
@@ -422,7 +435,7 @@ static void nh_aux(void *kp, void *dp, void *hp, UINT32 dlen)
     UINT64 h1,h2,h3;
     UWORD c = dlen / 32;
     UINT32 *k = (UINT32 *)kp;
-    UINT32 *d = (UINT32 *)dp;
+    const UINT32 *d = (const UINT32 *)dp;
     UINT32 d0,d1,d2,d3,d4,d5,d6,d7;
     UINT32 k0,k1,k2,k3,k4,k5,k6,k7,
         k8,k9,k10,k11,k12,k13,k14,k15;
@@ -469,7 +482,7 @@ static void nh_aux(void *kp, void *dp, void *hp, UINT32 dlen)
 
 #elif (UMAC_OUTPUT_LEN == 16)
 
-static void nh_aux(void *kp, void *dp, void *hp, UINT32 dlen)
+static void nh_aux(void *kp, const void *dp, void *hp, UINT32 dlen)
 /* Same as previous nh_aux, but two streams are handled in one pass,
  * reading and writing 24 bytes of hash-state per call.
 */
@@ -477,7 +490,7 @@ static void nh_aux(void *kp, void *dp, void *hp, UINT32 dlen)
     UINT64 h1,h2,h3,h4;
     UWORD c = dlen / 32;
     UINT32 *k = (UINT32 *)kp;
-    UINT32 *d = (UINT32 *)dp;
+    const UINT32 *d = (const UINT32 *)dp;
     UINT32 d0,d1,d2,d3,d4,d5,d6,d7;
     UINT32 k0,k1,k2,k3,k4,k5,k6,k7,
         k8,k9,k10,k11,k12,k13,k14,k15,
@@ -538,7 +551,7 @@ static void nh_aux(void *kp, void *dp, void *hp, UINT32 dlen)
 
 /* ---------------------------------------------------------------------- */
 
-static void nh_transform(nh_ctx *hc, UINT8 *buf, UINT32 nbytes)
+static void nh_transform(nh_ctx *hc, const UINT8 *buf, UINT32 nbytes)
 /* This function is a wrapper for the primitive NH hash functions. It takes
  * as argument "hc" the current hash context and a buffer which must be a
  * multiple of L1_PAD_BOUNDARY. The key passed to nh_aux is offset
@@ -613,7 +626,7 @@ static void nh_init(nh_ctx *hc, aes_int_key prf_key)
 
 /* ---------------------------------------------------------------------- */
 
-static void nh_update(nh_ctx *hc, UINT8 *buf, UINT32 nbytes)
+static void nh_update(nh_ctx *hc, const UINT8 *buf, UINT32 nbytes)
 /* Incorporate nbytes of data into a nh_ctx, buffer whatever is not an    */
 /* even multiple of HASH_BUF_BYTES.                                       */
 {
@@ -708,7 +721,7 @@ static void nh_final(nh_ctx *hc, UINT8 *result)
 
 /* ---------------------------------------------------------------------- */
 
-static void nh(nh_ctx *hc, UINT8 *buf, UINT32 padded_len,
+static void nh(nh_ctx *hc, const UINT8 *buf, UINT32 padded_len,
                UINT32 unpadded_len, UINT8 *result)
 /* All-in-one nh_update() and nh_final() equivalent.
  * Assumes that padded_len is divisible by L1_PAD_BOUNDARY and result is
@@ -999,11 +1012,15 @@ static void uhash_init(uhash_ctx_t ahc, aes_int_key prf_key)
     kdf(ahc->ip_trans, prf_key, 4, STREAMS * sizeof(UINT32));
     endian_convert_if_le(ahc->ip_trans, sizeof(UINT32),
                          STREAMS * sizeof(UINT32));
+
+#if defined(HAVE_MEMSET_S)
+    memset_s(buf, sizeof(buf), 0, sizeof(buf));
+#endif /* HAVE_MEMSET_S */
 }
 
 /* ---------------------------------------------------------------------- */
 
-static int uhash_update(uhash_ctx_t ctx, unsigned char *input, long len)
+static int uhash_update(uhash_ctx_t ctx, const unsigned char *input, long len)
 /* Given len bytes of data, we parse it into L1_KEY_LEN chunks and
  * hash each one with NH, calling the polyhash on each NH output.
  */
@@ -1013,7 +1030,7 @@ static int uhash_update(uhash_ctx_t ctx, unsigned char *input, long len)
     UINT8 *nh_result = (UINT8 *)&result_buf;
     
     if (ctx->msg_len + len <= L1_KEY_LEN) {
-        nh_update(&ctx->hash, (UINT8 *)input, len);
+        nh_update(&ctx->hash, (const UINT8 *)input, len);
         ctx->msg_len += len;
     } else {
     
@@ -1028,7 +1045,7 @@ static int uhash_update(uhash_ctx_t ctx, unsigned char *input, long len)
              /* bytes to complete the current nh_block.                  */
              if (bytes_hashed) {
                  bytes_remaining = (L1_KEY_LEN - bytes_hashed);
-                 nh_update(&ctx->hash, (UINT8 *)input, bytes_remaining);
+                 nh_update(&ctx->hash, (const UINT8 *)input, bytes_remaining);
                  nh_final(&ctx->hash, nh_result);
                  ctx->msg_len += bytes_remaining;
                  poly_hash(ctx,(UINT32 *)nh_result);
@@ -1038,7 +1055,7 @@ static int uhash_update(uhash_ctx_t ctx, unsigned char *input, long len)
 
              /* Hash directly from input stream if enough bytes */
              while (len >= L1_KEY_LEN) {
-                 nh(&ctx->hash, (UINT8 *)input, L1_KEY_LEN,
+                 nh(&ctx->hash, (const UINT8 *)input, L1_KEY_LEN,
                                    L1_KEY_LEN, nh_result);
                  ctx->msg_len += L1_KEY_LEN;
                  len -= L1_KEY_LEN;
@@ -1049,7 +1066,7 @@ static int uhash_update(uhash_ctx_t ctx, unsigned char *input, long len)
 
          /* pass remaining < L1_KEY_LEN bytes of input data to NH */
          if (len) {
-             nh_update(&ctx->hash, (UINT8 *)input, len);
+             nh_update(&ctx->hash, (const UINT8 *)input, len);
              ctx->msg_len += len;
          }
      }
@@ -1138,7 +1155,7 @@ struct umac_ctx *umac_alloc(void) {
     return (ctx);
 }
 
-void umac_init(struct umac_ctx *ctx, unsigned char key[]) {
+void umac_init(struct umac_ctx *ctx, const unsigned char key[]) {
     aes_int_key prf_key;
 
     aes_key_setup(key, prf_key);
@@ -1146,7 +1163,7 @@ void umac_init(struct umac_ctx *ctx, unsigned char key[]) {
     uhash_init(&ctx->hash, prf_key);
 }
 
-struct umac_ctx *umac_new(unsigned char key[])
+struct umac_ctx *umac_new(const unsigned char key[])
 /* Dynamically allocate a umac_ctx struct, initialize variables, 
  * generate subkeys from key. Align to 16-byte boundary.
  */
@@ -1163,18 +1180,18 @@ struct umac_ctx *umac_new(unsigned char key[])
 
 /* ---------------------------------------------------------------------- */
 
-int umac_final(struct umac_ctx *ctx, unsigned char tag[], unsigned char nonce[8])
+int umac_final(struct umac_ctx *ctx, unsigned char tag[], const unsigned char nonce[8])
 /* Incorporate any pending data, pad, and generate tag */
 {
     uhash_final(&ctx->hash, (unsigned char *)tag);
-    pdf_gen_xor(&ctx->pdf, (UINT8 *)nonce, (UINT8 *)tag);
+    pdf_gen_xor(&ctx->pdf, (const UINT8 *)nonce, (UINT8 *)tag);
     
     return (1);
 }
 
 /* ---------------------------------------------------------------------- */
 
-int umac_update(struct umac_ctx *ctx, unsigned char *input, long len)
+int umac_update(struct umac_ctx *ctx, const unsigned char *input, long len)
 /* Given len bytes of data, we parse it into L1_KEY_LEN chunks and   */
 /* hash each one, calling the PDF on the hashed output whenever the hash- */
 /* output buffer is full.                                                 */

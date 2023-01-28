@@ -83,6 +83,7 @@ sub rlimitmemory_max_bug3571 {
 
     AuthUserFile => $auth_user_file,
     AuthGroupFile => $auth_group_file,
+    AuthOrder => 'mod_auth_file.c',
 
     RLimitMemory => 'max',
 
@@ -190,6 +191,7 @@ sub rlimitmemory_session_max_bug3571 {
 
     AuthUserFile => $auth_user_file,
     AuthGroupFile => $auth_group_file,
+    AuthOrder => 'mod_auth_file.c',
 
     RLimitMemory => 'session max',
 
@@ -297,6 +299,7 @@ sub rlimitmemory_daemon_max {
 
     AuthUserFile => $auth_user_file,
     AuthGroupFile => $auth_group_file,
+    AuthOrder => 'mod_auth_file.c',
 
     RLimitMemory => 'daemon max',
 

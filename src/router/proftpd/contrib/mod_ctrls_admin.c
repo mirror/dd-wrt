@@ -1,6 +1,6 @@
 /*
  * ProFTPD: mod_ctrls_admin -- a module implementing admin control handlers
- * Copyright (c) 2000-2017 TJ Saunders
+ * Copyright (c) 2000-2020 TJ Saunders
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -1557,7 +1557,9 @@ MODRET set_adminctrlsengine(cmd_rec *cmd) {
     }
 
   } else {
-    char *bad_action = NULL;
+    int res;
+    char **actions;
+    const char *bad_action = NULL;
 
     /* Parse the given string of actions into a char **.  Then iterate
      * through the acttab, checking to see if a given control is _not_ in
@@ -1567,13 +1569,14 @@ MODRET set_adminctrlsengine(cmd_rec *cmd) {
     /* We can cheat here, and use the ctrls_parse_acl() routine to
      * separate the given string...
      */
-    char **actions = ctrls_parse_acl(cmd->tmp_pool, cmd->argv[1]);
+    actions = ctrls_parse_acl(cmd->tmp_pool, cmd->argv[1]);
 
-    bad_action = pr_ctrls_unregister_module_actions(ctrls_admin_acttab, actions,
-      &ctrls_admin_module);
-    if (bad_action != NULL)
+    res = pr_ctrls_unregister_module_actions2(ctrls_admin_acttab, actions,
+      &ctrls_admin_module, &bad_action);
+    if (res < 0) {
       CONF_ERROR(cmd, pstrcat(cmd->tmp_pool, ": unknown action: '",
           bad_action, "'", NULL));
+    }
   }
 
   return PR_HANDLED(cmd);

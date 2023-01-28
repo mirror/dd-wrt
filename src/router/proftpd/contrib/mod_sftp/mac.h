@@ -1,6 +1,6 @@
 /*
  * ProFTPD - mod_sftp MAC mgmt
- * Copyright (c) 2008-2017 TJ Saunders
+ * Copyright (c) 2008-2021 TJ Saunders
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -35,18 +35,20 @@ int sftp_mac_free(void);
  * has been negotiated yet.
  */
 size_t sftp_mac_get_block_size(void);
-void sftp_mac_set_block_size(size_t);
+void sftp_mac_set_block_size(size_t blocksz);
 
 const char *sftp_mac_get_read_algo(void);
-int sftp_mac_set_read_algo(const char *);
-int sftp_mac_set_read_key(pool *, const EVP_MD *, const BIGNUM *, const char *,
-  uint32_t, int);
-int sftp_mac_read_data(struct ssh2_packet *);
+int sftp_mac_is_read_etm(void);
+int sftp_mac_set_read_algo(const char *algo);
+int sftp_mac_set_read_key(pool *p, const EVP_MD *md, const unsigned char *k,
+  uint32_t klen, const char *h, uint32_t hlen, int role);
+int sftp_mac_read_data(struct ssh2_packet *pkt);
 
 const char *sftp_mac_get_write_algo(void);
-int sftp_mac_set_write_algo(const char *);
-int sftp_mac_set_write_key(pool *, const EVP_MD *, const BIGNUM *, const char *,
-  uint32_t, int);
-int sftp_mac_write_data(struct ssh2_packet *);
+int sftp_mac_is_write_etm(void);
+int sftp_mac_set_write_algo(const char *algo);
+int sftp_mac_set_write_key(pool *p, const EVP_MD *md, const unsigned char *k,
+  uint32_t klen, const char *h, uint32_t hlen, int role);
+int sftp_mac_write_data(struct ssh2_packet *pkt);
 
 #endif /* MOD_SFTP_MAC_H */

@@ -1,7 +1,7 @@
 /*
  * ProFTPD: mod_sftp_pam -- a module which provides an SSH2
  *                          "keyboard-interactive" driver using PAM
- * Copyright (c) 2008-2017 TJ Saunders
+ * Copyright (c) 2008-2022 TJ Saunders
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -552,8 +552,8 @@ static int sftppam_driver_authenticate(sftp_kbdint_driver_t *driver,
   /* XXX Not sure why these platforms have different treatment...? */
 #if defined(SOLARIS2) || defined(HPUX10) || defined(HPUX11)
   res = pam_close_session(sftppam_pamh, 0);
-  if (sftppam_pamh) {
-    pam_end(sftppam_pamh, res);
+  if (sftppam_pamh != NULL) {
+    pam_end(sftppam_pamh, PAM_SUCCESS);
     sftppam_pamh = NULL;
   }
 #endif
@@ -687,8 +687,20 @@ static void sftppam_exit_ev(const void *event_data, void *user_data) {
         pam_strerror(sftppam_pamh, res));
     }
 
+    pr_trace_msg(trace_channel, 17, "closing PAM session");
     res = pam_close_session(sftppam_pamh, PAM_SILENT);
-    pam_end(sftppam_pamh, res);
+    if (res != PAM_SUCCESS) {
+      pr_trace_msg(trace_channel, 1, "error closing PAM session: %s",
+        pam_strerror(sftppam_pamh, res));
+    }
+
+    pr_trace_msg(trace_channel, 17, "freeing PAM handle");
+    res = pam_end(sftppam_pamh, PAM_SUCCESS);
+    if (res != PAM_SUCCESS) {
+      pr_trace_msg(trace_channel, 1, "error freeing PAM handle: %s",
+        pam_strerror(sftppam_pamh, res));
+    }
+
     sftppam_pamh = NULL;
   }
 

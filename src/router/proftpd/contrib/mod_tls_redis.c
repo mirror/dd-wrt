@@ -1,7 +1,7 @@
 /*
  * ProFTPD: mod_tls_redis -- a module which provides shared SSL session
  *                           and OCSP response caches using Redis servers
- * Copyright (c) 2017-2020 TJ Saunders
+ * Copyright (c) 2017-2021 TJ Saunders
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -316,7 +316,7 @@ static int sess_cache_entry_decode_json(pool *p, void *value, size_t valuesz,
   pr_json_object_t *json;
   const char *key;
   char *entry, *text;
-  double number;
+  double number = 0;
 
   entry = value;
   if (pr_json_text_validate(p, entry) == FALSE) {
@@ -1143,7 +1143,7 @@ static int ocsp_cache_entry_decode_json(pool *p, void *value, size_t valuesz,
   pr_json_object_t *json;
   const char *key;
   char *entry, *text;
-  double number;
+  double number = 0;
 
   entry = value;
   if (pr_json_text_validate(p, entry) == FALSE) {

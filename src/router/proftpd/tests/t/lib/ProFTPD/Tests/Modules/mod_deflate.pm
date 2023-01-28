@@ -137,6 +137,7 @@ sub deflate_opts_modez_level {
 
     AuthUserFile => $auth_user_file,
     AuthGroupFile => $auth_group_file,
+    AuthOrder => 'mod_auth_file.c',
 
     IfModules => {
       'mod_deflate.c' => {
@@ -259,6 +260,7 @@ sub deflate_feat {
 
     AuthUserFile => $auth_user_file,
     AuthGroupFile => $auth_group_file,
+    AuthOrder => 'mod_auth_file.c',
 
     IfModules => {
       'mod_deflate.c' => {
@@ -399,6 +401,8 @@ sub deflate_list {
 
     AuthUserFile => $auth_user_file,
     AuthGroupFile => $auth_group_file,
+    AuthOrder => 'mod_auth_file.c',
+
     TimeoutLinger => 1,
 
     IfModules => {
@@ -567,6 +571,8 @@ sub deflate_list_alternating_modes {
 
     AuthUserFile => $auth_user_file,
     AuthGroupFile => $auth_group_file,
+    AuthOrder => 'mod_auth_file.c',
+
     TimeoutLinger => 1,
 
     IfModules => {
@@ -754,6 +760,8 @@ sub deflate_rest {
 
     AuthUserFile => $auth_user_file,
     AuthGroupFile => $auth_group_file,
+    AuthOrder => 'mod_auth_file.c',
+
     TimeoutLinger => 1,
 
     IfModules => {
@@ -906,6 +914,8 @@ sub deflate_retr {
 
     AuthUserFile => $auth_user_file,
     AuthGroupFile => $auth_group_file,
+    AuthOrder => 'mod_auth_file.c',
+
     TimeoutLinger => 1,
 
     IfModules => {
@@ -1084,8 +1094,9 @@ sub deflate_rest_retr {
 
     AuthUserFile => $auth_user_file,
     AuthGroupFile => $auth_group_file,
-    TimeoutLinger => 1,
+    AuthOrder => 'mod_auth_file.c',
 
+    TimeoutLinger => 1,
     AllowRetrieveRestart => 'on',
 
     IfModules => {
@@ -1258,6 +1269,8 @@ sub deflate_stor {
 
     AuthUserFile => $auth_user_file,
     AuthGroupFile => $auth_group_file,
+    AuthOrder => 'mod_auth_file.c',
+
     TimeoutLinger => 1,
 
     IfModules => {
@@ -1439,6 +1452,8 @@ sub deflate_rest_stor {
 
     AuthUserFile => $auth_user_file,
     AuthGroupFile => $auth_group_file,
+    AuthOrder => 'mod_auth_file.c',
+
     TimeoutLinger => 1,
 
     AllowOverwrite => 'on',
@@ -1610,6 +1625,7 @@ sub deflate_stor_64kb_binary {
 
     AuthUserFile => $auth_user_file,
     AuthGroupFile => $auth_group_file,
+    AuthOrder => 'mod_auth_file.c',
 
     IfModules => {
       'mod_deflate.c' => {
@@ -1866,6 +1882,7 @@ sub deflate_stor_64kb_binary_chunks {
 
     AuthUserFile => $auth_user_file,
     AuthGroupFile => $auth_group_file,
+    AuthOrder => 'mod_auth_file.c',
 
     IfModules => {
       'mod_deflate.c' => {
@@ -2128,6 +2145,7 @@ sub deflate_tls_mode_z {
 
     AuthUserFile => $auth_user_file,
     AuthGroupFile => $auth_group_file,
+    AuthOrder => 'mod_auth_file.c',
 
     IfModules => {
       'mod_deflate.c' => {
@@ -2273,6 +2291,8 @@ sub deflate_netio_close_bad_cmd_sequence_bug3828 {
 
     AuthUserFile => $auth_user_file,
     AuthGroupFile => $auth_group_file,
+    AuthOrder => 'mod_auth_file.c',
+
     TimeoutLinger => 1,
 
     IfModules => {

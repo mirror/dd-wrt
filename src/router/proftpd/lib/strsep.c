@@ -21,9 +21,8 @@ Suite 500, Boston, MA 02110-1335, USA.  */
 
 #define __PROFTPD_SUPPORT_LIBRARY
 
-#include <conf.h>
-
-#include <libsupp.h>
+#include "conf.h"
+#include "base.h"
 
 #undef _LIBC
 #undef __GNU_LIBRARY__

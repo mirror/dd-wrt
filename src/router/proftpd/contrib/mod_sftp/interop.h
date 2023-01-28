@@ -1,6 +1,6 @@
 /*
  * ProFTPD - mod_sftp interoperability
- * Copyright (c) 2008-2016 TJ Saunders
+ * Copyright (c) 2008-2021 TJ Saunders
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -78,6 +78,10 @@
  * server has requested rekeying.
  */
 #define SFTP_SSH2_FEAT_NO_DATA_WHILE_REKEYING		0x0400
+
+/* For clients that support the OpenSSH "hostkeys-00@openssh.com" extensions.
+ */
+#define SFTP_SSH2_FEAT_HOSTKEYS				0x0800
 
 /* For scanners. */
 #define SFTP_SSH2_FEAT_SCANNER				0xfffe

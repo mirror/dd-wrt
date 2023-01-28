@@ -1,6 +1,6 @@
 /*
  * ProFTPD - mod_sftp sftp
- * Copyright (c) 2008-2020 TJ Saunders
+ * Copyright (c) 2008-2022 TJ Saunders
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -1989,6 +1989,51 @@ static char *fxp_strattrflags(pool *p, uint32_t flags) {
     if (flags & SSH2_FX_ATTR_MODIFYTIME) {
       str = pstrcat(p, str, *str ? ";" : "", "modify", NULL);
     }
+
+    if (flags & SSH2_FX_ATTR_OWNERGROUP) {
+      str = pstrcat(p, str, *str ? ";" : "", "UNIX.owner;UNIX.group", NULL);
+    }
+
+    if (flags & SSH2_FX_ATTR_LINK_COUNT) {
+      str = pstrcat(p, str, *str ? ";" : "", "UNIX.nlink", NULL);
+    }
+
+    /* Ignored/unimplemented */
+    if (flags & SSH2_FX_ATTR_ALLOCATION_SIZE) {
+      str = pstrcat(p, str, *str ? ";" : "", "allocation-size", NULL);
+    }
+
+    if (flags & SSH2_FX_ATTR_SUBSECOND_TIMES) {
+      str = pstrcat(p, str, *str ? ";" : "", "subsecond", NULL);
+    }
+
+    if (flags & SSH2_FX_ATTR_CREATETIME) {
+      str = pstrcat(p, str, *str ? ";" : "", "create", NULL);
+    }
+
+    if (flags & SSH2_FX_ATTR_ACL) {
+      str = pstrcat(p, str, *str ? ";" : "", "acl", NULL);
+    }
+
+    if (flags & SSH2_FX_ATTR_BITS) {
+      str = pstrcat(p, str, *str ? ";" : "", "bits", NULL);
+    }
+
+    if (flags & SSH2_FX_ATTR_TEXT_HINT) {
+      str = pstrcat(p, str, *str ? ";" : "", "text-hint", NULL);
+    }
+
+    if (flags & SSH2_FX_ATTR_MIME_TYPE) {
+      str = pstrcat(p, str, *str ? ";" : "", "mime-type", NULL);
+    }
+
+    if (flags & SSH2_FX_ATTR_UNTRANSLATED_NAME) {
+      str = pstrcat(p, str, *str ? ";" : "", "untranslated-name", NULL);
+    }
+
+    if (flags & SSH2_FX_ATTR_CTIME) {
+      str = pstrcat(p, str, *str ? ";" : "", "ctime", NULL);
+    }
   }
 
   return str;
@@ -3703,6 +3748,18 @@ static void fxp_version_add_openssh_exts(pool *p, unsigned char **buf,
     fxp_msg_write_extpair(buf, buflen, &ext);
   }
 
+  if (fxp_ext_flags & SFTP_FXP_EXT_HOMEDIR) {
+    struct fxp_extpair ext;
+
+    ext.ext_name = "home-directory";
+    ext.ext_data = (unsigned char *) "1";
+    ext.ext_datalen = 1;
+
+    pr_trace_msg(trace_channel, 11, "+ SFTP extension: %s = '%s'", ext.ext_name,
+      ext.ext_data);
+    fxp_msg_write_extpair(buf, buflen, &ext);
+  }
+
   if (fxp_ext_flags & SFTP_FXP_EXT_XATTR) {
     struct fxp_extpair ext;
 
@@ -3950,21 +4007,62 @@ static void fxp_version_add_supported2_ext(pool *p, unsigned char **buf,
 
 /* SFTP Extension handlers */
 
+/* Returns -1 on error, 0 on EOF, and 1 on successful block read. */
+static int read_file_block(pr_fh_t *fh, EVP_MD_CTX *pctx, size_t blocksz,
+    void *buf, size_t bufsz) {
+  size_t len, total_len;
+
+  total_len = blocksz;
+
+  len = bufsz;
+  if (blocksz < bufsz) {
+    len = blocksz;
+  }
+
+  while (total_len != 0) {
+    ssize_t nread;
+    int xerrno;
+
+    nread = pr_fsio_read(fh, buf, len);
+    xerrno = errno;
+
+    if (nread < 0) {
+      if (xerrno == EINTR) {
+        pr_signals_handle();
+        continue;
+      }
+
+      return -1;
+    }
+
+    if (nread == 0) {
+      /* EOF */
+      return 0;
+    }
+
+    EVP_DigestUpdate(pctx, buf, nread);
+    total_len -= nread;
+  }
+
+  return 1;
+}
+
 static int fxp_handle_ext_check_file(struct fxp_packet *fxp, char *digest_list,
     char *path, off_t offset, off_t len, uint32_t blocksz) {
+  register unsigned int i;
   unsigned char *buf, *ptr;
   char *supported_digests;
   const char *digest_name, *reason;
   uint32_t buflen, bufsz, expected_buflen, status_code;
   struct fxp_packet *resp;
-  int data_len, res, xerrno = 0;
+  int res, xerrno = 0;
   struct stat st;
   pr_fh_t *fh;
   cmd_rec *cmd;
-  unsigned long nblocks;
-  off_t range_len, total_len = 0;
+  unsigned long block_count;
+  off_t range_len;
   void *data;
-  BIO *bio;
+  size_t datasz;
 #if OPENSSL_VERSION_NUMBER < 0x10100000L || \
     defined(HAVE_LIBRESSL)
   EVP_MD_CTX md_ctx;
@@ -4179,20 +4277,21 @@ static int fxp_handle_ext_check_file(struct fxp_packet *fxp, char *digest_list,
   }
 
   if (blocksz == 0) {
-    nblocks = 1;
+    block_count = 1;
+    blocksz = range_len;
 
   } else {
-    nblocks = (unsigned long) (range_len / blocksz);
+    block_count = (unsigned long) (range_len / blocksz);
     if (range_len % blocksz != 0) {
-      nblocks++;
+      block_count++;
     }
   }
 
   pr_trace_msg(trace_channel, 15, "for check-file request on '%s', "
-    "calculate %s digest of %lu %s", path, digest_name, nblocks,
-    nblocks == 1 ? "block/checksum" : "nblocks/checksums");
+    "calculate %s digest of %lu %s", path, digest_name, block_count,
+    block_count == 1 ? "block/checksum" : "blocks/checksums");
 
-  fh = pr_fsio_open(path, O_RDONLY|O_NONBLOCK);
+  fh = pr_fsio_open(path, O_RDONLY);
   if (fh == NULL) {
     xerrno = errno;
 
@@ -4284,12 +4383,12 @@ static int fxp_handle_ext_check_file(struct fxp_packet *fxp, char *digest_list,
    * length prefix.
    */
   expected_buflen = FXP_RESPONSE_DATA_DEFAULT_SZ +
-    (nblocks * (EVP_MAX_MD_SIZE + 4));
+    (block_count * (EVP_MAX_MD_SIZE + 4));
   if (buflen < expected_buflen) {
     pr_trace_msg(trace_channel, 15, "allocated larger buffer (%lu bytes) for "
       "check-file request on '%s', %s digest, %lu %s",
-      (unsigned long) expected_buflen, path, digest_name, nblocks,
-      nblocks == 1 ? "block/checksum" : "nblocks/checksums");
+      (unsigned long) expected_buflen, path, digest_name, block_count,
+      block_count == 1 ? "block/checksum" : "blocks/checksums");
 
     buflen = bufsz = expected_buflen;
     buf = ptr = palloc(fxp->pool, bufsz);
@@ -4303,38 +4402,38 @@ static int fxp_handle_ext_check_file(struct fxp_packet *fxp, char *digest_list,
   pctx = EVP_MD_CTX_new();
 #endif /* prior to OpenSSL-1.1.0 */
 
-  bio = BIO_new(BIO_s_fd());
-  BIO_set_fd(bio, PR_FH_FD(fh), BIO_NOCLOSE);
-
   sftp_msg_write_byte(&buf, &buflen, SFTP_SSH2_FXP_EXTENDED_REPLY);
   sftp_msg_write_int(&buf, &buflen, fxp->request_id);
   sftp_msg_write_string(&buf, &buflen, digest_name);
 
   pr_trace_msg(trace_channel, 8,
     "sending response: EXTENDED_REPLY %s digest of %lu %s", digest_name,
-    nblocks, nblocks == 1 ? "block" : "blocks");
+    block_count, block_count == 1 ? "block" : "blocks");
 
-  if (blocksz == 0) {
-    data_len = st.st_blksize;
+  datasz = st.st_blksize * 4;
+  data = palloc(fxp->pool, datasz);
 
-  } else {
-    data_len = blocksz;
-  }
+  for (i = 0; i < block_count; i++) {
+    unsigned char digest[EVP_MAX_MD_SIZE];
+    unsigned int digest_len = 0;
 
-  data = palloc(fxp->pool, data_len);
-
-  while (TRUE) {
     pr_signals_handle();
+#if OPENSSL_VERSION_NUMBER < 0x10100000L || \
+    defined(HAVE_LIBRESSL)
+    EVP_MD_CTX_cleanup(pctx);
+    EVP_MD_CTX_init(pctx);
+#else
+    EVP_MD_CTX_reset(pctx);
+#endif /* prior to OpenSSL-1.1.0 */
+    EVP_DigestInit(pctx, md);
 
-    res = BIO_read(bio, data, data_len);
+    pr_trace_msg(trace_channel, 19,
+      "reading block %lu (block size %" PR_LU ") from '%s'", block_count,
+      (pr_off_t) blocksz, path);
+    res = read_file_block(fh, pctx, blocksz, data, datasz);
+    xerrno = errno;
+
     if (res < 0) {
-      if (BIO_should_read(bio)) {
-        continue;
-      }
-
-      /* error */
-      xerrno = errno;
-
       pr_fsio_close(fh);
 
       (void) pr_log_writefile(sftp_logfd, MOD_SFTP_VERSION,
@@ -4360,8 +4459,6 @@ static int fxp_handle_ext_check_file(struct fxp_packet *fxp, char *digest_list,
       resp->payload_sz = (bufsz - buflen);
 
       /* Cleanup. */
-      BIO_free(bio);
-
 #if OPENSSL_VERSION_NUMBER < 0x10100000L || \
     defined(HAVE_LIBRESSL)
       EVP_MD_CTX_cleanup(pctx);
@@ -4370,54 +4467,23 @@ static int fxp_handle_ext_check_file(struct fxp_packet *fxp, char *digest_list,
 #endif /* prior to OpenSSL-1.1.0 */
 
       return fxp_packet_write(resp);
-
-    } else if (res == 0) {
-      if (BIO_should_retry(bio) != 0) {
-        continue;
-      }
-
-      /* EOF */
-      break;
     }
 
-    if (blocksz != 0) {
-      unsigned char digest[EVP_MAX_MD_SIZE];
-      unsigned int digest_len = 0;
-
-      EVP_DigestInit(pctx, md);
-      EVP_DigestUpdate(pctx, data, res);
-      EVP_DigestFinal(pctx, digest, &digest_len);
-
-      sftp_msg_write_data(&buf, &buflen, digest, digest_len, FALSE);
-
-      total_len += res; 
-      if (len > 0 &&
-          total_len >= len) {
-        break;
-      }
-    }
-  }
-
-  if (blocksz == 0) {
-    unsigned char digest[EVP_MAX_MD_SIZE];
-    unsigned int digest_len = 0;
-
-    EVP_DigestInit(pctx, md);
-    EVP_DigestUpdate(pctx, data, res);
     EVP_DigestFinal(pctx, digest, &digest_len);
-
     sftp_msg_write_data(&buf, &buflen, digest, digest_len, FALSE);
+    pr_trace_msg(trace_channel, 19,
+      "completed block %lu (block size %" PR_LU" ) of '%s'", block_count,
+      (pr_off_t) blocksz, path);
   }
 
   /* Cleanup. */
-  BIO_free(bio);
+  pr_fsio_close(fh);
 #if OPENSSL_VERSION_NUMBER < 0x10100000L || \
     defined(HAVE_LIBRESSL)
   EVP_MD_CTX_cleanup(pctx);
 #else
   EVP_MD_CTX_free(pctx);
 #endif /* prior to OpenSSL-1.1.0 */
-  pr_fsio_close(fh);
 
   resp = fxp_packet_create(fxp->pool, fxp->channel_id);
   resp->payload = ptr;
@@ -4926,6 +4992,124 @@ static int fxp_handle_ext_hardlink(struct fxp_packet *fxp, char *src,
   resp = fxp_packet_create(fxp->pool, fxp->channel_id);
   resp->payload = ptr;
   resp->payload_sz = (bufsz - buflen);
+
+  return fxp_packet_write(resp);
+}
+
+static int fxp_handle_ext_homedir(struct fxp_packet *fxp, const char *name) {
+  int res, xerrno = 0;
+  unsigned char *buf, *ptr;
+  char *args, *path;
+  const char *reason;
+  uint32_t buflen, bufsz, status_code;
+  struct passwd *pw;
+  struct stat st;
+  struct fxp_buffer *fxb;
+  struct fxp_packet *resp;
+  cmd_rec *cmd = NULL;
+
+  args = pstrdup(fxp->pool, name);
+
+  pr_scoreboard_entry_update(session.pid,
+    PR_SCORE_CMD, "%s", "HOMEDIR", NULL, NULL);
+  pr_scoreboard_entry_update(session.pid,
+    PR_SCORE_CMD_ARG, "%s", args, NULL, NULL);
+
+  pr_proctitle_set("%s - %s: HOMEDIR %s", session.user, session.proc_prefix,
+    name);
+
+  cmd = fxp_cmd_alloc(fxp->pool, "HOMEDIR", args);
+  cmd->cmd_class = CL_MISC|CL_SFTP;
+
+  buflen = bufsz = FXP_RESPONSE_DATA_DEFAULT_SZ;
+  buf = ptr = palloc(fxp->pool, bufsz);
+
+  pw = pr_auth_getpwnam(fxp->pool, name);
+  xerrno = errno;
+
+  if (pw == NULL) {
+    status_code = fxp_errno2status(xerrno, &reason);
+
+    (void) pr_log_writefile(sftp_logfd, MOD_SFTP_VERSION,
+      "home-directory request failed: unable to determine home for '%s': %s",
+      name, strerror(xerrno));
+
+    pr_trace_msg(trace_channel, 8, "sending response: STATUS %lu '%s'",
+      (unsigned long) status_code, reason);
+
+    fxp_status_write(fxp->pool, &buf, &buflen, fxp->request_id, status_code,
+      reason, NULL);
+
+    fxp_cmd_dispatch_err(cmd);
+
+    resp = fxp_packet_create(fxp->pool, fxp->channel_id);
+    resp->payload = ptr;
+    resp->payload_sz = (bufsz - buflen);
+
+    return fxp_packet_write(resp);
+  }
+
+  path = pw->pw_dir;
+
+  pr_fs_clear_cache2(path);
+  res = pr_fsio_stat(path, &st);
+  xerrno = errno;
+
+  if (res < 0) {
+    status_code = fxp_errno2status(xerrno, &reason);
+
+    (void) pr_log_writefile(sftp_logfd, MOD_SFTP_VERSION,
+      "home-directory request failed: unable to stat '%s': %s", path,
+      strerror(xerrno));
+
+    pr_trace_msg(trace_channel, 8, "sending response: STATUS %lu '%s'",
+      (unsigned long) status_code, reason);
+
+    fxp_status_write(fxp->pool, &buf, &buflen, fxp->request_id, status_code,
+      reason, NULL);
+
+    fxp_cmd_dispatch_err(cmd);
+
+    resp = fxp_packet_create(fxp->pool, fxp->channel_id);
+    resp->payload = ptr;
+    resp->payload_sz = (bufsz - buflen);
+
+    return fxp_packet_write(resp);
+  }
+
+  /* If we are chrooted, and the chroot path matches the home directory, then
+   * we should tell the client that the home directory is just `/`.
+   *
+   * Then the question is: what if we are chrooted, but the chroot path does
+   * NOT match the user's home directory?
+   */
+  if (session.chroot_path != NULL &&
+      strcmp(session.chroot_path, path) == 0) {
+    path = pstrdup(fxp->pool, "/");
+  }
+
+  pr_trace_msg(trace_channel, 8, "sending response: NAME 1 %s %s",
+    path, fxp_strattrs(fxp->pool, &st, NULL));
+
+  sftp_msg_write_byte(&buf, &buflen, SFTP_SSH2_FXP_NAME);
+  sftp_msg_write_int(&buf, &buflen, fxp->request_id);
+  sftp_msg_write_int(&buf, &buflen, 1);
+
+  fxb = pcalloc(fxp->pool, sizeof(struct fxp_buffer));
+  fxb->bufsz = buflen = FXP_RESPONSE_NAME_DEFAULT_SZ;
+  fxb->ptr = buf = palloc(fxp->pool, fxb->bufsz);
+
+  fxb->buf = buf;
+  fxb->buflen = buflen;
+  fxp_name_write(fxp->pool, fxb, path, &st, 0, session.user, session.group);
+
+  buf = fxb->buf;
+  buflen = fxb->buflen;
+
+  fxp_cmd_dispatch(cmd);
+  resp = fxp_packet_create(fxp->pool, fxp->channel_id);
+  resp->payload = fxb->ptr;
+  resp->payload_sz = (fxb->bufsz - buflen);
 
   return fxp_packet_write(resp);
 }
@@ -6721,7 +6905,7 @@ static int fxp_handle_extended(struct fxp_packet *fxp) {
    * client is telling us its vendor information; it is not requesting that
    * we send our vendor information.
    */
-  if (strncmp(ext_request_name, "vendor-id", 10) == 0) {
+  if (strcmp(ext_request_name, "vendor-id") == 0) {
     res = fxp_handle_ext_vendor_id(fxp);
     if (res == 0) {
       fxp_cmd_dispatch(cmd);
@@ -6734,7 +6918,7 @@ static int fxp_handle_extended(struct fxp_packet *fxp) {
   }
 
   if ((fxp_ext_flags & SFTP_FXP_EXT_VERSION_SELECT) &&
-      strncmp(ext_request_name, "version-select", 15) == 0) {
+      strcmp(ext_request_name, "version-select") == 0) {
     char *version_str;
 
     version_str = sftp_msg_read_string(fxp->pool, &fxp->payload,
@@ -6752,7 +6936,7 @@ static int fxp_handle_extended(struct fxp_packet *fxp) {
   }
 
   if ((fxp_ext_flags & SFTP_FXP_EXT_CHECK_FILE) &&
-      strncmp(ext_request_name, "check-file-name", 16) == 0) {
+      strcmp(ext_request_name, "check-file-name") == 0) {
     char *path, *digest_list;
     off_t offset, len;
     uint32_t blocksz;
@@ -6777,7 +6961,7 @@ static int fxp_handle_extended(struct fxp_packet *fxp) {
   }
 
   if ((fxp_ext_flags & SFTP_FXP_EXT_CHECK_FILE) &&
-      strncmp(ext_request_name, "check-file-handle", 18) == 0) {
+      strcmp(ext_request_name, "check-file-handle") == 0) {
     char *handle, *path, *digest_list;
     off_t offset, len;
     uint32_t blocksz;
@@ -6851,7 +7035,7 @@ static int fxp_handle_extended(struct fxp_packet *fxp) {
   }
 
   if ((fxp_ext_flags & SFTP_FXP_EXT_COPY_FILE) &&
-      strncmp(ext_request_name, "copy-file", 10) == 0) {
+      strcmp(ext_request_name, "copy-file") == 0) {
     char *src, *dst;
     int overwrite;
 
@@ -6871,7 +7055,7 @@ static int fxp_handle_extended(struct fxp_packet *fxp) {
   }
 
   if ((fxp_ext_flags & SFTP_FXP_EXT_FSYNC) &&
-      strncmp(ext_request_name, "fsync@openssh.com", 18) == 0) {
+      strcmp(ext_request_name, "fsync@openssh.com") == 0) {
     const char *handle;
     struct fxp_handle *fxh;
 
@@ -6935,7 +7119,7 @@ static int fxp_handle_extended(struct fxp_packet *fxp) {
   }
 
   if ((fxp_ext_flags & SFTP_FXP_EXT_HARDLINK) &&
-      strncmp(ext_request_name, "hardlink@openssh.com", 21) == 0) {
+      strcmp(ext_request_name, "hardlink@openssh.com") == 0) {
     char *src, *dst;
 
     src = sftp_msg_read_string(fxp->pool, &fxp->payload, &fxp->payload_sz);
@@ -6957,8 +7141,28 @@ static int fxp_handle_extended(struct fxp_packet *fxp) {
     return res;
   }
 
+  if ((fxp_ext_flags & SFTP_FXP_EXT_HOMEDIR) &&
+      strcmp(ext_request_name, "home-directory") == 0) {
+    const char *name;
+
+    name = sftp_msg_read_string(fxp->pool, &fxp->payload, &fxp->payload_sz);
+    if (strcmp(name, "") == 0) {
+      name = session.user;
+    }
+
+    res = fxp_handle_ext_homedir(fxp, name);
+    if (res == 0) {
+      fxp_cmd_dispatch(cmd);
+
+    } else {
+      fxp_cmd_dispatch_err(cmd);
+    }
+
+    return res;
+  }
+
   if ((fxp_ext_flags & SFTP_FXP_EXT_POSIX_RENAME) &&
-      strncmp(ext_request_name, "posix-rename@openssh.com", 25) == 0) {
+      strcmp(ext_request_name, "posix-rename@openssh.com") == 0) {
     char *src, *dst;
 
     src = sftp_msg_read_string(fxp->pool, &fxp->payload, &fxp->payload_sz);
@@ -6982,7 +7186,7 @@ static int fxp_handle_extended(struct fxp_packet *fxp) {
 
 #ifdef HAVE_SYS_STATVFS_H
   if ((fxp_ext_flags & SFTP_FXP_EXT_SPACE_AVAIL) &&
-      strncmp(ext_request_name, "space-available", 16) == 0) {
+      strcmp(ext_request_name, "space-available") == 0) {
     char *path;
 
     path = sftp_msg_read_string(fxp->pool, &fxp->payload, &fxp->payload_sz);
@@ -6999,7 +7203,7 @@ static int fxp_handle_extended(struct fxp_packet *fxp) {
   }
 
   if ((fxp_ext_flags & SFTP_FXP_EXT_STATVFS) &&
-      strncmp(ext_request_name, "statvfs@openssh.com", 20) == 0) {
+      strcmp(ext_request_name, "statvfs@openssh.com") == 0) {
     const char *path;
 
     path = sftp_msg_read_string(fxp->pool, &fxp->payload, &fxp->payload_sz);
@@ -7016,7 +7220,7 @@ static int fxp_handle_extended(struct fxp_packet *fxp) {
   }
 
   if ((fxp_ext_flags & SFTP_FXP_EXT_STATVFS) &&
-      strncmp(ext_request_name, "fstatvfs@openssh.com", 21) == 0) {
+      strcmp(ext_request_name, "fstatvfs@openssh.com") == 0) {
     const char *handle, *path;
     struct fxp_handle *fxh;
 
@@ -7636,14 +7840,14 @@ static int fxp_handle_fstat(struct fxp_packet *fxp) {
   fake_user = get_param_ptr(get_dir_ctxt(fxp->pool, fxh->fh->fh_path),
     "DirFakeUser", FALSE);
   if (fake_user != NULL &&
-      strncmp(fake_user, "~", 2) == 0) {
+      strcmp(fake_user, "~") == 0) {
     fake_user = session.user;
   }
 
   fake_group = get_param_ptr(get_dir_ctxt(fxp->pool, fxh->fh->fh_path),
     "DirFakeGroup", FALSE);
   if (fake_group != NULL &&
-      strncmp(fake_group, "~", 2) == 0) {
+      strcmp(fake_group, "~") == 0) {
     fake_group = session.group;
   }
 
@@ -7679,13 +7883,13 @@ static int fxp_handle_fstat(struct fxp_packet *fxp) {
 static int fxp_handle_init(struct fxp_packet *fxp) {
   char version_str[16];
   unsigned char *buf, *ptr;
-  uint32_t buflen, bufsz;
+  uint32_t buflen, bufsz, client_version;
   struct fxp_packet *resp;
   cmd_rec *cmd;
   config_rec *c;
 
-  fxp_session->client_version = sftp_msg_read_int(fxp->pool, &fxp->payload,
-    &fxp->payload_sz);
+  client_version = fxp_session->client_version = sftp_msg_read_int(fxp->pool,
+    &fxp->payload, &fxp->payload_sz);
 
   memset(version_str, '\0', sizeof(version_str));
   pr_snprintf(version_str, sizeof(version_str)-1, "%lu",
@@ -7728,7 +7932,7 @@ static int fxp_handle_init(struct fxp_packet *fxp) {
     fxp_session->client_version = fxp_min_client_version;
   }
 
-#ifndef PR_USE_NLS
+#if !defined(PR_USE_NLS)
   /* If NLS supported was enabled in the proftpd build, then we can support
    * UTF8, and thus every other version of SFTP.  Otherwise, we can only
    * support up to version 3.
@@ -7740,7 +7944,20 @@ static int fxp_handle_init(struct fxp_packet *fxp) {
       (unsigned long) fxp_session->client_version);
     fxp_session->client_version = 3;
   }
-#endif
+#endif /* PR_USE_NLS */
+
+  /* If the lowest protocol version we want to support is still higher than
+   * the client-requested protocol version, then we will -- sadly -- abruptly
+   * disconnect the client.  See Issue #1200 for the reasons why.
+   */
+  if (fxp_session->client_version > client_version) {
+    (void) pr_log_writefile(sftp_logfd, MOD_SFTP_VERSION,
+      "client-requested SFTP protocol version (%lu) is lower than we can "
+      "support (%lu), disconnecting client", (unsigned long) client_version,
+      (unsigned long) fxp_session->client_version);
+    SFTP_DISCONNECT_CONN(SFTP_SSH2_DISCONNECT_PROTOCOL_VERSION_NOT_SUPPORTED,
+      "Unable to use requested SFTP protocol version");
+  }
 
   (void) pr_log_writefile(sftp_logfd, MOD_SFTP_VERSION,
     "using SFTP protocol version %lu for this session (channel ID %lu)",

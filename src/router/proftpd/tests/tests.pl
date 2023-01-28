@@ -100,6 +100,7 @@ if (scalar(@ARGV) > 0) {
     t/commands/opts.t
     t/commands/host.t
     t/commands/clnt.t
+    t/commands/csid.t
     t/commands/site/chgrp.t
     t/commands/site/chmod.t
     t/config/accessdenymsg.t
@@ -139,6 +140,7 @@ if (scalar(@ARGV) > 0) {
     t/config/hidenoaccess.t
     t/config/hideuser.t
     t/config/ifdefine.t
+    t/config/ifmodule.t
     t/config/include.t
     t/config/listoptions.t
     t/config/logoptions.t
@@ -156,13 +158,14 @@ if (scalar(@ARGV) > 0) {
     t/config/maxstorefilesize.t
     t/config/maxtransfersperhost.t
     t/config/maxtransfersperuser.t
-    t/config/multilinerfc2228.t
     t/config/order.t
     t/config/passiveports.t
     t/config/pathallowfilter.t
     t/config/pathdenyfilter.t
     t/config/pidfile.t
+    t/config/port.t
     t/config/protocols.t
+    t/config/regexoptions.t
     t/config/requirevalidshell.t
     t/config/rewritehome.t
     t/config/rlimitchroot.t
@@ -171,6 +174,7 @@ if (scalar(@ARGV) > 0) {
     t/config/rlimitopenfiles.t
     t/config/rootrevoke.t
     t/config/serveradmin.t
+    t/config/serveralias.t
     t/config/serverident.t
     t/config/setenv.t
     t/config/showsymlinks.t

@@ -1,6 +1,6 @@
 /*
  * ProFTPD: mod_dso -- support for loading/unloading modules at run-time
- * Copyright (c) 2004-2020 TJ Saunders <tj@castaglia.org>
+ * Copyright (c) 2004-2022 TJ Saunders <tj@castaglia.org>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -41,7 +41,7 @@ static pool *dso_pool = NULL;
 
 static const char *trace_channel = "dso";
 
-#ifdef PR_USE_CTRLS
+#if defined(PR_USE_CTRLS)
 static ctrls_acttab_t dso_acttab[];
 #endif
 
@@ -304,7 +304,7 @@ static int dso_unload_module(module *m) {
   return 0;
 }
 
-#ifdef PR_USE_CTRLS
+#if defined(PR_USE_CTRLS)
 static int dso_unload_module_by_name(const char *name) {
   module *m;
 
@@ -326,7 +326,7 @@ static int dso_unload_module_by_name(const char *name) {
 }
 #endif /* PR_USE_CTRLS */
 
-#ifdef PR_USE_CTRLS
+#if defined(PR_USE_CTRLS)
 /* Controls handlers
  */
 
@@ -495,7 +495,7 @@ MODRET set_loadmodule(cmd_rec *cmd) {
 
 /* usage: ModuleControlsACLs actions|all allow|deny user|group list */
 MODRET set_modulectrlsacls(cmd_rec *cmd) {
-#ifdef PR_USE_CTRLS
+#if defined(PR_USE_CTRLS)
   char *bad_action = NULL, **actions = NULL;
 
   CHECK_ARGS(cmd, 4);
@@ -657,17 +657,21 @@ MODRET set_modulepath(cmd_rec *cmd) {
 
 static void dso_restart_ev(const void *event_data, void *user_data) {
   module *m, *mi;
-#ifdef PR_USE_CTRLS
+#if defined(PR_USE_CTRLS)
   register unsigned int i = 0;
 #endif /* PR_USE_CTRLS */
 
-  if (dso_pool)
+  if (dso_pool != NULL) {
     destroy_pool(dso_pool);
+  }
 
   dso_pool = make_sub_pool(permanent_pool);
   pr_pool_tag(dso_pool, MOD_DSO_VERSION);
 
-#ifdef PR_USE_CTRLS
+  /* Reset the ModulePath (see Issue #1476). */
+  dso_module_path = PR_LIBEXEC_DIR;
+
+#if defined(PR_USE_CTRLS)
   /* Re-register the control handlers */
   for (i = 0; dso_acttab[i].act_action; i++) {
     pool *sub_pool = make_sub_pool(dso_pool);
@@ -682,7 +686,7 @@ static void dso_restart_ev(const void *event_data, void *user_data) {
 
   /* Unload all shared modules. */
   for (mi = loaded_modules; mi; mi = m) {
-#ifndef PR_USE_CTRLS
+#if !defined(PR_USE_CTRLS)
     register unsigned int i;
 #endif /* PR_USE_CTRLS */
     int is_static = FALSE;
@@ -696,7 +700,7 @@ static void dso_restart_ev(const void *event_data, void *user_data) {
       }
     }
 
-    if (!is_static) {
+    if (is_static == FALSE) {
       pr_log_debug(DEBUG7, MOD_DSO_VERSION ": unloading 'mod_%s.c'", mi->name);
       if (dso_unload_module(mi) < 0) {
         pr_log_pri(PR_LOG_NOTICE, MOD_DSO_VERSION
@@ -704,8 +708,6 @@ static void dso_restart_ev(const void *event_data, void *user_data) {
       }
     }
   }
-
-  return;
 }
 
 /* Initialization routines
@@ -723,7 +725,7 @@ static void dso_restart_ev(const void *event_data, void *user_data) {
 extern const lt_dlsymlist lt_preloaded_symbols[];
 
 static int dso_init(void) {
-#ifdef PR_USE_CTRLS
+#if defined(PR_USE_CTRLS)
   register unsigned int i = 0;
 #endif /* PR_USE_CTRLS */
 
@@ -747,7 +749,7 @@ static int dso_init(void) {
     return -1;
   }
 
-#ifdef PR_USE_CTRLS
+#if defined(PR_USE_CTRLS)
   /* Register ctrls handlers. */
   for (i = 0; dso_acttab[i].act_action; i++) {
     pool *sub_pool = make_sub_pool(dso_pool);
@@ -786,7 +788,7 @@ static int dso_sess_init(void) {
   return 0;
 }
 
-#ifdef PR_USE_CTRLS
+#if defined(PR_USE_CTRLS)
 static ctrls_acttab_t dso_acttab[] = {
   { "insmod",	"load modules",		NULL,	dso_handle_insmod },
   { "lsmod",	"list modules",		NULL, 	dso_handle_lsmod },
@@ -835,4 +837,3 @@ module dso_module = {
   /* Module version */
   MOD_DSO_VERSION
 };
-

@@ -93,6 +93,7 @@ sub rlimitopenfiles_max {
 
     AuthUserFile => $auth_user_file,
     AuthGroupFile => $auth_group_file,
+    AuthOrder => 'mod_auth_file.c',
 
     RLimitOpenFiles => 'max',
 
@@ -200,6 +201,7 @@ sub rlimitopenfiles_session_max {
 
     AuthUserFile => $auth_user_file,
     AuthGroupFile => $auth_group_file,
+    AuthOrder => 'mod_auth_file.c',
 
     RLimitOpenFiles => 'session max',
 
@@ -307,6 +309,7 @@ sub rlimitopenfiles_session_min {
 
     AuthUserFile => $auth_user_file,
     AuthGroupFile => $auth_group_file,
+    AuthOrder => 'mod_auth_file.c',
 
     RLimitOpenFiles => 'session 6',
 
@@ -419,6 +422,7 @@ sub rlimitopenfiles_daemon_max {
 
     AuthUserFile => $auth_user_file,
     AuthGroupFile => $auth_group_file,
+    AuthOrder => 'mod_auth_file.c',
 
     RLimitOpenFiles => 'daemon max',
 
@@ -526,6 +530,7 @@ sub rlimitopenfiles_daemon_min {
 
     AuthUserFile => $auth_user_file,
     AuthGroupFile => $auth_group_file,
+    AuthOrder => 'mod_auth_file.c',
 
     RLimitOpenFiles => 'daemon 3',
 

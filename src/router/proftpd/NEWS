@@ -15,41 +15,143 @@
   where `N' is the issue number.
 -----------------------------------------------------------------------------
 
-1.3.7c - Released 29-Aug-2021
+1.3.8 - Released 04-Dec-2022
 --------------------------------
+- Issue 1488 - 1.3.8rc4 failing to build mod_sftp with OpenSSL 1.1.0 due to
+  X448 check.
+- Issue 1494 - 1.3.8rc4 failing to build on Solaris due to missing type
+  declarations.
+- Issue 1500 - mod_ifsession doesn't change the effect of SFTPMaxChannels.
+- Issue 1533 - mod_tls module unexpectedly allows TLS handshake after
+  authentication in some configurations.
+- Issue 1528 - Disable FSCachePolicy by default.
+- Issue 1539 - Avoid logging "session closed" messages unless there is a
+  corresponding "session opened" log message, to avoid user confusion.
+- Issue 1550 - Implement support for the CSID FTP command.
+- Bug 4491 - unable to verify signed data: signature type 'rsa-sha2-512' does
+  not match publickey algorithm 'ssh-rsa'.
+- Issue 1560 - mod_auth_otp improperly allows keyboard-interactive logins for
+  users lacking OTP entries.
+
+1.3.8rc4 - Released 23-Jul-2022
+--------------------------------
+- Issue 1434 - mod_sftp should fail on startup when SFTP and TLS are both
+  enabled for a vhost.
+- Issue 1440 - DelayTable not properly using documented default value.  This
+  is a regression caused by the changes for Bug#4020.
+- Issue 1444 - Support customizing SSH ciphers, digests, key exchanges via
+  SFTPClientMatch.
+- Issue 1448 - Ensure that mod_sftp algorithms work properly with OpenSSL 3.x.
+- Issue 1445 - BanOnEvent BadProtocol triggers segfault.
+- Issue 1439 - SFTP "check-file" implementation computes incorrect results.
+- Issue 1457 - Implement SFTPHostKeys directive for configuring the SSH host
+  key algorithms.
+- Issue 1437 - Implement the "curve448-sha512" SSH key exchange algorithm.
+- Issue 1472 - Include directive broken when using wildcards for directory
+  components.
+- Bug 4485 - mod_sftp fails to build using OpenSSL 1.0.x: undefined reference
+  to `EVP_MD_CTX_reset'.
+- Issue 1476 - Reload after omitting explicit ModulePath value causes fatal
+  module load failures.
+
+1.3.8rc3 - Released 23-Apr-2022
+--------------------------------
+- Issue 1323 - Support SSH hostkey rotation via OpenSSH extensions.
+- Issue 1325 - NLST does not behave consistently for relative paths.
+- Bug 3759 - Support AES Galois Counter Mode (AES-GCM) in SSH.  Support for
+  the "aes128-gcm@openssh.com" and "aes256-gcm@openssh.com" ciphers has been
+  added to mod_sftp.
+- Issue 1333 - Implement an LDAPConnectTimeout directive, to configure the
+  timeout used when connecting to LDAP servers.
+- Issue 1330 - Implement OpenSSH "Encrypt-Then-MAC" (ETM) algorithm extensions.
+- Issue 1346 - Implement AllowForeignAddress class matching for passive data
+  transfers.
+- Issue 1353 - Implement support for PCRE2.
+- Bug 4466 - ProFTPD won't start with several locales.
+- Issue 1367 - Auth sources providing space-bearing user/group names cause
+  compliance issues with MLSD/MLST responses.
+- Bug 4467 - DeleteAbortedStores removes successfully transferred files
+  unexpectedly.
+- Issue 1383 - Omit EPRT/EPSV from FEAT response when denied by <Limit>
+  configuration.
+- Issue 1379 - Support uploading to symlinked files.
+- Issue 1401 - Keepalive socket options should be set using IPPROTO_TCP, not
+  SOL_SOCKET.
+- Issue 1402 - TCP keepalive SocketOptions should apply to control as well as
+  data connection.
+- Issue 1396 - ProFTPD always uses the same PassivePorts port for first
+  transfer.
+- Issue 1410 - mod_sftp needs to handle unknown SSH messages in an
+  RFC-compliant manner, ignoring rather than disconnecting.
+- Issue 1418 - Improve handling of some globally applied configuration
+  directives.
+- Issue 1369 - Name-based virtual hosts not working as expected after upgrade
+  from 1.3.7a to 1.3.7b.
+
+1.3.8rc2 - Released 29-Aug-2021
+--------------------------------
+- Bug 4401 - mod_sftp crashes when handling aes256-ctr OpenSSH-specific key
+  with some old OpenSSL versions.
 - Issue 1273 - Improve mod_tls log messages for unsupported older TLS protocol
   requests.
 - Issue 1284 - Fix memory disclosure to RADIUS servers by mod_radius.
 - Issue 1282 - Properly handle <VirtualHost> sections that use interface/device
   names.
+- Bug 4315 - mod_ifsession fails to reset directory config lookup after
+  <Directory> section merges.
+- Issue 1296 - Support <Limit> configurations for HELP command.
 - Issue 1300 - PCRE expressions with capture groups are not being handled
   properly.
 - Issue 1307 - AuthUserFile permissions check fails during SIGHUP, causing
   ProFTPD to stop.
+- Issue 1286 - Add support for the libidn2 library, over libidn, for e.g.
+  mod_rewrite mappings.
+- Bug 4443 - Changed the default behavior of mod_tls, such that TLS
+  renegotiations on control/data connections are not requested by default.
+  TLS renegotiations have a long and sordid history; many SSL/TLS libraries no
+  longer implement them, or disable them by default.
+- Issue 1319 - mod_auth_otp should honor RequireTableEntry semantics for SFTP
+  logins.
 
-1.3.7b - Released 13-Jun-2021
+1.3.8rc1 - Released 13-Jun-2021
 --------------------------------
 - Issue 1063 - FTPS data transfers using TLSv1.3 might segfault when session
   tickets cannot be decrypted.
 - Issue 1070 - Implement support for Redis 6.x AUTH semantics.
+- Issue 1068 - Define an OpenSSL API version compatibility macro, currently
+  set to OpenSSL 1.0.0 and later.
 - Bug 4405 - Memory use-after-free in mod_sftp causes unexpected
   login/authentication issues.
+- Bug 4402 - Inappropriate handling of aborted FTP data transfers causes issues
+  for some FTP clients.
+- Issue 1084 - Implement support for configuring TLSv1.3 ciphersuites.
+- Issue 1086 - Update TLSRenegotiate to work properly for TLSv1.3 sessions.
 - Issue 1079 - prxs fails to detect module-specific configure/Makefile,
   leading to unexpected module load errors.
 - Issue 1074 - TLS SNI connections to name-based VirtualHosts with
   TLSCertificateChainFile fail unexpectedly.
+- Issue 1089 - Deprecate the MultilineRFC2228 directive.
+- Issue 1067 - Generate new DH parameters for mod_tls, mod_sftp for 1.3.8.
+- Issue 1101 - Update TLS minimum supported DH parameter size to 2048.
+- Issue 811 - Support adding custom key/values to RedisLogOnCommand.
 - Issue 1106 - TLS SNI can cause mod_quotatab to crash due to null pointer
   dereferences.
 - Issue 1076 - TLS client-initiated renegotiations are supported unexpectedly.
 - Issue 1105 - Improper handling of multiple IP addresses, ServerAliases in
   <VirtualHost> sections.
-- Issue 1149 - mod_quotatab_sql failing due to SQL syntax errors.  This is
-  a regression caused by Issue #392.
+- Issue 1048 - Support using weak TLS certificates via the new AllowWeakSecurity
+  TLSOption.
+- Issue 1149 - mod_quotatab_sql failing due to SQL syntax errors.  This is a
+  regression caused by Issue #392.
 - Issue 1061 - Freeing uninitialized memory causes SFTP issues with ed25519
   keys.
 - Issue 1111 - "Corrupted MAC on input" errors using SFTP umac-64@openssh.com
   digest.
 - Issue 1171 - PassivePort randomization is broken due to SO_REUSEPORT option.
+- Issue 1072 - Support configurable certificate settings in Redis SSL/TLS
+  connections.
+- Issue 369 - Provide function for obtaining memory pool information as e.g.
+  JSON.
 - Issue 1134 - AuthUserFile-based logins, directory listings are very slow due
   to unbuffered reads.
 - Issue 1193 - Improper checking for reused TLS session for data transfers
@@ -61,22 +163,26 @@
 - Issue 1174 - ftptop segfaults when using libncursesw on Gentoo.
 - Issue 1204 - Once TLSTimeoutHandshake is reached, internal "timed out" flag
   never reset.
+- Issue 1133 - Support include files in mod_wrap2 allow/deny tables.
+- Issue 1200 - Disconnect SFTP clients that request unsupportable protocol
+  versions.
 - Issue 1207 - On Gentoo, "./configure --disable-ncurses" fails to link ftptop,
   due to "undefined reference to symbol 'stdscr'" error.
 - Issue 1212 - mod_sql_mysql needs to quote table names due to reserved MySQL
   keywords.
+- Issue 1175 - Unable to set per-user TLSOptions using mod_ifsession.
 - Issue 754 - Some mod_snmp counters were not being incremented properly.
+- Issue 548 - `make install` target should install only, not recompile any code.
 - Bug 4428 - <VirtualHost> name resolution does not include all associated
   IPv6 records.
 - Issue 1230 - Stack overflow due to unlimited recursion possible when parsing
   JSON text.
 - Issue 1232 - Unable to use %{env:FTPS} in a SQLNamedQuery.  The fix is to now
   use %{note:FTPS} instead.
-
-1.3.7a - Released 21-Jul-2020
---------------------------------
-- Issue 1055 - Fix build-time regression when using the --localstatedir
-  configure option.
+- Issue 1170 - Implement support for user/host combination bans in mod_ban.
+- Issue 1246 - mod_sftp_sql crashes (sigsegv) on NULL key.
+- Issue 1237 - ftpasswd should default to SHA256, not MD5.
+- Issue 490 - Support syntax checks on AuthUserFiles, AuthGroupFiles on startup.
 
 1.3.7 - Released 20-Jul-2020
 --------------------------------

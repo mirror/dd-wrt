@@ -178,13 +178,19 @@ static int site_misc_create_path(pool *p, const char *path) {
 static int site_misc_delete_dir(pool *p, const char *dir) {
   void *dirh;
   struct dirent *dent;
-  int res;
+  int res, xerrno;
   cmd_rec *cmd;
   pool *sub_pool;
 
   dirh = pr_fsio_opendir(dir);
-  if (dirh == NULL)
+  xerrno = errno;
+
+  if (dirh == NULL) {
+    pr_log_debug(DEBUG2, MOD_SITE_MISC_VERSION
+      ": error reading directory '%s': %s", dir, strerror(xerrno));
+    errno = xerrno;
     return -1;
+  }
 
   while ((dent = pr_fsio_readdir(dirh)) != NULL) {
     struct stat st;
@@ -192,20 +198,22 @@ static int site_misc_delete_dir(pool *p, const char *dir) {
 
     pr_signals_handle();
 
-    if (strncmp(dent->d_name, ".", 2) == 0 ||
-        strncmp(dent->d_name, "..", 3) == 0)
+    if (strcmp(dent->d_name, ".") == 0 ||
+        strcmp(dent->d_name, "..") == 0) {
       continue;
+    }
 
     file = pdircat(p, dir, dent->d_name, NULL);
 
-    if (pr_fsio_stat(file, &st) < 0)
+    if (pr_fsio_stat(file, &st) < 0) {
       continue;
-    
+    }
+
     if (S_ISDIR(st.st_mode)) {
       res = site_misc_delete_dir(p, file);
-      if (res < 0) {
-        int xerrno = errno;
+      xerrno = errno;
 
+      if (res < 0) {
         pr_fsio_closedir(dirh);
 
         errno = xerrno;
@@ -213,7 +221,6 @@ static int site_misc_delete_dir(pool *p, const char *dir) {
       }
 
     } else {
-
       /* Dispatch fake C_DELE command, e.g. for mod_quotatab */
       sub_pool = pr_pool_create_sz(p, 64);
       cmd = pr_cmd_alloc(sub_pool, 2, pstrdup(sub_pool, C_DELE),
@@ -223,9 +230,9 @@ static int site_misc_delete_dir(pool *p, const char *dir) {
 
       pr_response_block(TRUE);
       res = pr_cmd_dispatch_phase(cmd, PRE_CMD, 0);
-      if (res < 0) {
-        int xerrno = errno;
+      xerrno = errno;
 
+      if (res < 0) {
         pr_log_debug(DEBUG3, MOD_SITE_MISC_VERSION
           ": deleting file '%s' blocked by DELE handler: %s", file,
           strerror(xerrno));
@@ -243,9 +250,9 @@ static int site_misc_delete_dir(pool *p, const char *dir) {
       }
 
       res = pr_fsio_unlink(file);
-      if (res < 0) {
-        int xerrno = errno;
+      xerrno = errno;
 
+      if (res < 0) {
         pr_fsio_closedir(dirh);
 
         pr_cmd_dispatch_phase(cmd, POST_CMD_ERR, 0);
@@ -280,9 +287,9 @@ static int site_misc_delete_dir(pool *p, const char *dir) {
 
   pr_response_block(TRUE);
   res = pr_cmd_dispatch_phase(cmd, PRE_CMD, 0);
-  if (res < 0) {
-    int xerrno = errno;
+  xerrno = errno;
 
+  if (res < 0) {
     pr_log_debug(DEBUG3, MOD_SITE_MISC_VERSION
       ": removing directory '%s' blocked by RMD handler: %s", dir,
       strerror(xerrno));
@@ -300,9 +307,12 @@ static int site_misc_delete_dir(pool *p, const char *dir) {
   }
 
   res = pr_fsio_rmdir(dir);
-  if (res < 0) {
-    int xerrno = errno;
+  xerrno = errno;
 
+  if (res < 0) {
+    pr_log_debug(DEBUG3, MOD_SITE_MISC_VERSION
+      ": error removing directory '%s': %s", dir,
+      strerror(xerrno));
     pr_response_add_err(R_550, "%s: %s", cmd->arg, strerror(xerrno));
     pr_cmd_dispatch_phase(cmd, POST_CMD_ERR, 0);
     pr_cmd_dispatch_phase(cmd, LOG_CMD_ERR, 0);
@@ -330,6 +340,8 @@ static int site_misc_delete_path(pool *p, const char *path) {
 
   pr_fs_clear_cache2(path);
   if (pr_fsio_stat(path, &st) < 0) {
+    pr_log_debug(DEBUG4, MOD_SITE_MISC_VERSION
+      ": error checking path %s", path);
     return -1;
   }
 
@@ -892,6 +904,8 @@ MODRET site_misc_symlink(cmd_rec *cmd) {
     if (res < 0) {
       int xerrno = errno;
 
+      pr_log_debug(DEBUG7, MOD_SITE_MISC_VERSION
+        ": error checking '%s': %s", src, strerror(xerrno));
       pr_response_add_err(R_550, "%s: %s", cmd->arg, strerror(xerrno));
 
       errno = xerrno;
@@ -901,6 +915,8 @@ MODRET site_misc_symlink(cmd_rec *cmd) {
     if (pr_fsio_symlink(src, dst) < 0) {
       int xerrno = errno;
 
+      pr_log_debug(DEBUG2, MOD_SITE_MISC_VERSION
+        ": error symlinking '%s' to '%s': %s", src, dst, strerror(xerrno));
       pr_response_add_err(R_550, "%s: %s", cmd->arg, strerror(xerrno));
 
       errno = xerrno;
@@ -1029,6 +1045,8 @@ MODRET site_misc_utime_mtime(cmd_rec *cmd) {
   if (pr_fsio_utimes_with_root(path, tvs) < 0) {
     int xerrno = errno;
 
+    pr_log_debug(DEBUG2, MOD_SITE_MISC_VERSION
+        ": error modifying timestamps for '%s': %s", path, strerror(xerrno));
     pr_response_add_err(R_550, "%s: %s", cmd->arg, strerror(xerrno));
 
     errno = xerrno;
@@ -1211,6 +1229,8 @@ MODRET site_misc_utime_atime_mtime_ctime(cmd_rec *cmd) {
   if (pr_fsio_utimes_with_root(path, tvs) < 0) {
     int xerrno = errno;
 
+    pr_log_debug(DEBUG2, MOD_SITE_MISC_VERSION
+        ": error modifying timestamps for '%s': %s", path, strerror(xerrno));
     pr_response_add_err(R_550, "%s: %s", cmd->arg, strerror(xerrno));
 
     errno = xerrno;

@@ -75,23 +75,23 @@ START_TEST (event_register_test) {
   module m;
 
   res = pr_event_register(NULL, NULL, NULL, NULL);
-  fail_unless(res == -1, "Failed to handle null arguments");
-  fail_unless(errno == EINVAL, "Failed to set errno to EINVAL");
+  ck_assert_msg(res == -1, "Failed to handle null arguments");
+  ck_assert_msg(errno == EINVAL, "Failed to set errno to EINVAL");
 
   res = pr_event_register(NULL, event, NULL, NULL);
-  fail_unless(res == -1, "Failed to handle null callback");
-  fail_unless(errno == EINVAL, "Failed to set errno to EINVAL");
+  ck_assert_msg(res == -1, "Failed to handle null callback");
+  ck_assert_msg(errno == EINVAL, "Failed to set errno to EINVAL");
 
   res = pr_event_register(NULL, NULL, event_cb, NULL);
-  fail_unless(res == -1, "Failed to handle null event");
-  fail_unless(errno == EINVAL, "Failed to set errno to EINVAL");
+  ck_assert_msg(res == -1, "Failed to handle null event");
+  ck_assert_msg(errno == EINVAL, "Failed to set errno to EINVAL");
 
   res = pr_event_register(NULL, event, event_cb, NULL);
-  fail_unless(res == 0, "Failed to register event: %s", strerror(errno));
+  ck_assert_msg(res == 0, "Failed to register event: %s", strerror(errno));
 
   res = pr_event_register(NULL, event, event_cb, NULL);
-  fail_unless(res == -1, "Failed to handle duplicate registration");
-  fail_unless(errno == EEXIST, "Failed to set errno to EEXIST");
+  ck_assert_msg(res == -1, "Failed to handle duplicate registration");
+  ck_assert_msg(errno == EEXIST, "Failed to set errno to EEXIST");
 
   memset(&m, 0, sizeof(m));
   m.name = "testsuite";
@@ -99,11 +99,11 @@ START_TEST (event_register_test) {
   (void) pr_event_unregister(NULL, event, NULL);
 
   res = pr_event_register(&m, event, event_cb, NULL);
-  fail_unless(res == 0, "Failed to register event with module: %s",
+  ck_assert_msg(res == 0, "Failed to register event with module: %s",
     strerror(errno));
 
   res = pr_event_register(&m, event, event_cb2, NULL);
-  fail_unless(res == 0, "Failed to register event with module: %s",
+  ck_assert_msg(res == 0, "Failed to register event with module: %s",
     strerror(errno));
 
   pr_event_unregister(&m, event, event_cb2);
@@ -117,33 +117,33 @@ START_TEST (event_unregister_test) {
   const char *event = "foo";
 
   res = pr_event_unregister(NULL, NULL, NULL);
-  fail_unless(res == 0, "Failed to handle empty event lists");
+  ck_assert_msg(res == 0, "Failed to handle empty event lists");
 
   res = pr_event_register(NULL, event, event_cb, NULL);
-  fail_unless(res == 0, "Failed to register event: %s", strerror(errno));
+  ck_assert_msg(res == 0, "Failed to register event: %s", strerror(errno));
 
   res = pr_event_unregister(NULL, "bar", NULL);
-  fail_unless(res == -1, "Failed to handle unregistered event");
-  fail_unless(errno == ENOENT, "Failed to set errno to ENOENT");
+  ck_assert_msg(res == -1, "Failed to handle unregistered event");
+  ck_assert_msg(errno == ENOENT, "Failed to set errno to ENOENT");
 
   res = pr_event_unregister(NULL, event, event_cb2);
-  fail_unless(res == -1, "Failed to handle unregistered event");
-  fail_unless(errno == ENOENT, "Failed to set errno to ENOENT");
+  ck_assert_msg(res == -1, "Failed to handle unregistered event");
+  ck_assert_msg(errno == ENOENT, "Failed to set errno to ENOENT");
 
   res = pr_event_unregister(NULL, event, event_cb);
-  fail_unless(res == 0, "Failed to unregister event: %s", strerror(errno));
+  ck_assert_msg(res == 0, "Failed to unregister event: %s", strerror(errno));
 
   res = pr_event_register(NULL, event, event_cb, NULL);
-  fail_unless(res == 0, "Failed to register event: %s", strerror(errno));
+  ck_assert_msg(res == 0, "Failed to register event: %s", strerror(errno));
 
   res = pr_event_unregister(NULL, event, NULL);
-  fail_unless(res == 0, "Failed to unregister event: %s", strerror(errno));
+  ck_assert_msg(res == 0, "Failed to unregister event: %s", strerror(errno));
 
   res = pr_event_register(NULL, event, event_cb, NULL);
-  fail_unless(res == 0, "Failed to register event: %s", strerror(errno));
+  ck_assert_msg(res == 0, "Failed to register event: %s", strerror(errno));
 
   res = pr_event_unregister(NULL, NULL, NULL);
-  fail_unless(res == 0, "Failed to unregister event: %s", strerror(errno));
+  ck_assert_msg(res == 0, "Failed to unregister event: %s", strerror(errno));
 }
 END_TEST
 
@@ -152,49 +152,49 @@ START_TEST (event_listening_test) {
   int res;
 
   res = pr_event_listening(NULL);
-  fail_unless(res < 0, "Failed to handle null arguments");
-  fail_unless(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
+  ck_assert_msg(res < 0, "Failed to handle null arguments");
+  ck_assert_msg(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
     strerror(errno), errno);
 
   res = pr_event_listening(event);
-  fail_unless(res == 0, "Failed to check for '%s' listeners: %s", event,
+  ck_assert_msg(res == 0, "Failed to check for '%s' listeners: %s", event,
     strerror(errno));
 
   res = pr_event_register(NULL, event, event_cb2, NULL);
-  fail_unless(res == 0, "Failed to register event '%s: %s", event,
+  ck_assert_msg(res == 0, "Failed to register event '%s: %s", event,
     strerror(errno));
 
   res = pr_event_register(NULL, event2, event_cb2, NULL);
-  fail_unless(res == 0, "Failed to register event '%s: %s", event2,
+  ck_assert_msg(res == 0, "Failed to register event '%s: %s", event2,
     strerror(errno));
 
   res = pr_event_listening(event);
-  fail_unless(res == 1, "Expected 1 listener, got %d", res);
+  ck_assert_msg(res == 1, "Expected 1 listener, got %d", res);
 
   res = pr_event_register(NULL, event, event_cb3, NULL);
-  fail_unless(res == 0, "Failed to register event '%s: %s", event,
+  ck_assert_msg(res == 0, "Failed to register event '%s: %s", event,
     strerror(errno));
 
   res = pr_event_listening(event);
-  fail_unless(res == 2, "Expected 2 listeners, got %d", res);
+  ck_assert_msg(res == 2, "Expected 2 listeners, got %d", res);
 
   /* Unregister our listener, and make sure that the API indicates there
    * are no more listeners.
    */
   res = pr_event_unregister(NULL, event, NULL);
-  fail_unless(res == 0, "Failed to unregister event '%s': %s", event,
+  ck_assert_msg(res == 0, "Failed to unregister event '%s': %s", event,
     strerror(errno));
 
   res = pr_event_listening(event);
-  fail_unless(res == 0, "Failed to check for '%s' listeners: %s", event,
+  ck_assert_msg(res == 0, "Failed to check for '%s' listeners: %s", event,
     strerror(errno));
 
   res = pr_event_unregister(NULL, event2, NULL);
-  fail_unless(res == 0, "Failed to unregister event '%s': %s", event2,
+  ck_assert_msg(res == 0, "Failed to unregister event '%s': %s", event2,
     strerror(errno));
 
   res = pr_event_listening(event);
-  fail_unless(res == 0, "Failed to check for '%s' listeners: %s", event,
+  ck_assert_msg(res == 0, "Failed to check for '%s' listeners: %s", event,
     strerror(errno));
 }
 END_TEST
@@ -204,33 +204,33 @@ START_TEST (event_generate_test) {
   const char *event = "foo";
 
   pr_event_generate(NULL, NULL);
-  fail_unless(event_triggered == 0, "Expected triggered count %u, got %u",
+  ck_assert_msg(event_triggered == 0, "Expected triggered count %u, got %u",
     0, event_triggered);
   
   pr_event_generate(event, NULL);
-  fail_unless(event_triggered == 0, "Expected triggered count %u, got %u",
+  ck_assert_msg(event_triggered == 0, "Expected triggered count %u, got %u",
     0, event_triggered);
 
   res = pr_event_register(NULL, event, event_cb, NULL);
-  fail_unless(res == 0, "Failed to register event: %s", strerror(errno));
+  ck_assert_msg(res == 0, "Failed to register event: %s", strerror(errno));
 
   pr_event_generate("bar", NULL);
-  fail_unless(event_triggered == 0, "Expected triggered count %u, got %u",
+  ck_assert_msg(event_triggered == 0, "Expected triggered count %u, got %u",
     0, event_triggered);
 
   pr_event_generate(event, NULL);
-  fail_unless(event_triggered == 1, "Expected triggered count %u, got %u",
+  ck_assert_msg(event_triggered == 1, "Expected triggered count %u, got %u",
     1, event_triggered);
 
   pr_event_generate(event, NULL);
-  fail_unless(event_triggered == 2, "Expected triggered count %u, got %u",
+  ck_assert_msg(event_triggered == 2, "Expected triggered count %u, got %u",
     2, event_triggered);
 
   res = pr_event_unregister(NULL, NULL, NULL);
-  fail_unless(res == 0, "Failed to unregister events: %s", strerror(errno));
+  ck_assert_msg(res == 0, "Failed to unregister events: %s", strerror(errno));
 
   pr_event_generate(event, NULL);
-  fail_unless(event_triggered == 2, "Expected triggered count %u, got %u",
+  ck_assert_msg(event_triggered == 2, "Expected triggered count %u, got %u",
     2, event_triggered);
 }
 END_TEST
@@ -241,35 +241,35 @@ START_TEST (event_dump_test) {
   module m;
 
   pr_event_dump(NULL);
-  fail_unless(event_dumped == 0, "Expected dumped count of %u, got %u",
+  ck_assert_msg(event_dumped == 0, "Expected dumped count of %u, got %u",
     0, event_dumped);
 
   pr_event_dump(event_dump);
-  fail_unless(event_dumped == 0, "Expected dumped count of %u, got %u",
+  ck_assert_msg(event_dumped == 0, "Expected dumped count of %u, got %u",
     0, event_dumped);
 
   memset(&m, 0, sizeof(m));
   m.name = "testsuite";
   res = pr_event_register(&m, event, event_cb, NULL);
-  fail_unless(res == 0, "Failed to register event '%s', callback %p: %s",
+  ck_assert_msg(res == 0, "Failed to register event '%s', callback %p: %s",
     event, event_cb, strerror(errno));
 
   pr_event_dump(event_dump);
-  fail_unless(event_dumped == 1, "Expected dumped count of %u, got %u",
+  ck_assert_msg(event_dumped == 1, "Expected dumped count of %u, got %u",
     1, event_dumped);
 
   event_dumped = 0;
 
   res = pr_event_register(NULL, event, event_cb2, NULL);
-  fail_unless(res == 0, "Failed to register event '%s', callback %p: %s",
+  ck_assert_msg(res == 0, "Failed to register event '%s', callback %p: %s",
     event, event_cb2, strerror(errno));
 
   res = pr_event_register(NULL, "bar", event_cb2, NULL);
-  fail_unless(res == 0, "Failed to register event 'bar', callback %p: %s",
+  ck_assert_msg(res == 0, "Failed to register event 'bar', callback %p: %s",
     event_cb2, strerror(errno));
 
   pr_event_dump(event_dump);
-  fail_unless(event_dumped == 3, "Expected dumped count of %u, got %u",
+  ck_assert_msg(event_dumped == 3, "Expected dumped count of %u, got %u",
     3, event_dumped);
 }
 END_TEST

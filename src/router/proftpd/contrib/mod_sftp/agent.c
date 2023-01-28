@@ -1,6 +1,6 @@
 /*
  * ProFTPD - mod_sftp agent
- * Copyright (c) 2012-2020 TJ Saunders
+ * Copyright (c) 2012-2021 TJ Saunders
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -26,7 +26,7 @@
 #include "agent.h"
 #include "msg.h"
 
-const char *trace_channel = "ssh2";
+static const char *trace_channel = "ssh2";
 
 /* These values from https://tools.ietf.org/html/draft-miller-ssh-agent-04
  */

@@ -287,11 +287,10 @@ int pr_privs_relinquish(const char *file, int lineno) {
       "root privs count = %u, user privs count = %u, ignoring PRIVS_RELINQUISH",
       root_privs, user_privs);
     return 0;
-
-  } else {
-    pr_trace_msg(trace_channel, 9, "root privs count = %u, user privs "
-      "count = %u, honoring PRIVS_RELINQUISH", root_privs, user_privs);
   }
+
+  pr_trace_msg(trace_channel, 9, "root privs count = %u, user privs "
+    "count = %u, honoring PRIVS_RELINQUISH", root_privs, user_privs);
 
   pr_signals_block();
 

@@ -1507,11 +1507,11 @@ static int snmp_agent_listen(pr_netaddr_t *agent_addr) {
 static void snmp_agent_loop(array_header *sockfds, array_header *addrs) {
   fd_set listen_fds;
   struct timeval tv;
-  int fd, res;
+  int fd;
 
   while (TRUE) {
     register unsigned int i;
-    int maxfd = -1, *fds;
+    int maxfd = -1, *fds, res;
     pr_netaddr_t **agent_addrs;
 
     /* XXX Is it necessary to even have a timeout?  We could simply block
@@ -3116,7 +3116,6 @@ MODRET snmp_err_stor(cmd_rec *cmd) {
 
 MODRET snmp_log_auth(cmd_rec *cmd) {
   const char *proto;
-  int res;
 
   if (snmp_engine == FALSE) {
     return PR_DECLINED(cmd);
@@ -3135,6 +3134,8 @@ MODRET snmp_log_auth(cmd_rec *cmd) {
 
   proto = pr_session_get_protocol(0);
   if (strcmp(proto, "ftps") == 0) {
+    int res;
+
     res = snmp_db_incr_value(cmd->tmp_pool, SNMP_DB_FTPS_SESS_F_SESS_COUNT, 1);
     if (res < 0) {
       (void) pr_log_writefile(snmp_logfd, MOD_SNMP_VERSION,
@@ -3142,8 +3143,7 @@ MODRET snmp_log_auth(cmd_rec *cmd) {
         "ftps.tlsSessions.sessionCount: %s", strerror(errno));
     }
 
-    res = snmp_db_incr_value(cmd->tmp_pool, SNMP_DB_FTPS_SESS_F_SESS_TOTAL,
-      1);
+    res = snmp_db_incr_value(cmd->tmp_pool, SNMP_DB_FTPS_SESS_F_SESS_TOTAL, 1);
     if (res < 0) {
       (void) pr_log_writefile(snmp_logfd, MOD_SNMP_VERSION,
         "error incrementing SNMP database for "

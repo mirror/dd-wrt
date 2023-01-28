@@ -2,7 +2,7 @@
  * ProFTPD - FTP server daemon
  * Copyright (c) 1997, 1998 Public Flood Software
  * Copyright (c) 1999, 2000 MacGyver aka Habeeb J. Dihu <macgyver@tos.net>
- * Copyright (c) 2001-2020 The ProFTPD Project team
+ * Copyright (c) 2001-2022 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -38,7 +38,7 @@ static pr_table_t *auth_tab = NULL, *uid_tab = NULL, *user_tab = NULL,
 static xaset_t *auth_module_list = NULL;
 
 struct auth_module_elt {
-  struct auth_module_elt *prev, *next;
+  struct auth_module_elt *next, *prev;
   const char *name;
 };
 
@@ -88,32 +88,12 @@ static unsigned int gid_hash_cb(const void *key, size_t keysz) {
 static void uidcache_create(void) {
   if (uid_tab == NULL &&
       auth_pool != NULL) {
-    int ok = TRUE;
-
     uid_tab = pr_table_alloc(auth_pool, 0);
 
-    if (pr_table_ctl(uid_tab, PR_TABLE_CTL_SET_KEY_CMP,
-        (void *) uid_keycmp_cb) < 0) {
-      pr_trace_msg(trace_channel, 2,
-        "error setting key comparison callback for uidcache: %s",
-        strerror(errno));
-      ok = FALSE;
-    }
-
-    if (pr_table_ctl(uid_tab, PR_TABLE_CTL_SET_KEY_HASH,
-        (void *) uid_hash_cb) < 0) {
-      pr_trace_msg(trace_channel, 2,
-        "error setting key hash callback for uidcache: %s",
-        strerror(errno));
-      ok = FALSE;
-    }
-
-    if (!ok) {
-      pr_trace_msg(trace_channel, 2, "%s",
-        "destroying unusable uidcache table");
-      pr_table_free(uid_tab);
-      uid_tab = NULL;
-    }
+    (void) pr_table_ctl(uid_tab, PR_TABLE_CTL_SET_KEY_CMP,
+      (void *) uid_keycmp_cb);
+    (void) pr_table_ctl(uid_tab, PR_TABLE_CTL_SET_KEY_HASH,
+      (void *) uid_hash_cb);
   }
 }
 
@@ -180,32 +160,12 @@ static int uidcache_get(uid_t uid, char *name, size_t namesz) {
 static void gidcache_create(void) {
   if (gid_tab == NULL&&
       auth_pool != NULL) {
-    int ok = TRUE;
-
     gid_tab = pr_table_alloc(auth_pool, 0);
 
-    if (pr_table_ctl(gid_tab, PR_TABLE_CTL_SET_KEY_CMP,
-        (void *) gid_keycmp_cb) < 0) {
-      pr_trace_msg(trace_channel, 2,
-        "error setting key comparison callback for gidcache: %s",
-        strerror(errno));
-      ok = FALSE;
-    }
-
-    if (pr_table_ctl(gid_tab, PR_TABLE_CTL_SET_KEY_HASH,
-        (void *) gid_hash_cb) < 0) {
-      pr_trace_msg(trace_channel, 2,
-        "error setting key hash callback for gidcache: %s",
-        strerror(errno));
-      ok = FALSE;
-    }
-
-    if (!ok) {
-      pr_trace_msg(trace_channel, 2, "%s",
-        "destroying unusable gidcache table");
-      pr_table_free(gid_tab);
-      gid_tab = NULL;
-    }
+    (void) pr_table_ctl(gid_tab, PR_TABLE_CTL_SET_KEY_CMP,
+      (void *) gid_keycmp_cb);
+    (void) pr_table_ctl(gid_tab, PR_TABLE_CTL_SET_KEY_HASH,
+      (void *) gid_hash_cb);
   }
 }
 
@@ -405,7 +365,7 @@ static int groupcache_get(const char *name, gid_t *gid) {
 static cmd_rec *make_cmd(pool *cp, unsigned int argc, ...) {
   va_list args;
   cmd_rec *c;
-  pool *sub_pool;
+  pool *sub_pool, *tmp_pool;
 
   c = pcalloc(cp, sizeof(cmd_rec));
   c->argc = argc;
@@ -430,7 +390,12 @@ static cmd_rec *make_cmd(pool *cp, unsigned int argc, ...) {
 
   /* Make sure we provide pool and tmp_pool for the consumers. */
   sub_pool = make_sub_pool(cp);
-  c->pool = c->tmp_pool = sub_pool;
+  pr_pool_tag(sub_pool, "auth cmd subpool");
+  c->pool = sub_pool;
+
+  tmp_pool = make_sub_pool(c->pool);
+  pr_pool_tag(tmp_pool, "auth cmd tmp pool");
+  c->tmp_pool = tmp_pool;
 
   return c;
 }
@@ -514,12 +479,10 @@ void pr_auth_setpwent(pool *p) {
   cmd = make_cmd(p, 0);
   (void) dispatch_auth(cmd, "setpwent", NULL);
 
-  if (cmd->tmp_pool) {
+  if (cmd->tmp_pool != NULL) {
     destroy_pool(cmd->tmp_pool);
     cmd->tmp_pool = NULL;
   }
-
-  return;
 }
 
 void pr_auth_endpwent(pool *p) {
@@ -528,12 +491,12 @@ void pr_auth_endpwent(pool *p) {
   cmd = make_cmd(p, 0);
   (void) dispatch_auth(cmd, "endpwent", NULL);
 
-  if (cmd->tmp_pool) {
+  if (cmd->tmp_pool != NULL) {
     destroy_pool(cmd->tmp_pool);
     cmd->tmp_pool = NULL;
   }
 
-  if (auth_tab) {
+  if (auth_tab != NULL) {
     int item_count;
 
     item_count = pr_table_count(auth_tab);
@@ -544,8 +507,6 @@ void pr_auth_endpwent(pool *p) {
     (void) pr_table_free(auth_tab);
     auth_tab = NULL;
   }
-
-  return;
 }
 
 void pr_auth_setgrent(pool *p) {
@@ -554,12 +515,10 @@ void pr_auth_setgrent(pool *p) {
   cmd = make_cmd(p, 0);
   (void) dispatch_auth(cmd, "setgrent", NULL);
 
-  if (cmd->tmp_pool) {
+  if (cmd->tmp_pool != NULL) {
     destroy_pool(cmd->tmp_pool);
     cmd->tmp_pool = NULL;
   }
-
-  return;
 }
 
 void pr_auth_endgrent(pool *p) {
@@ -568,12 +527,10 @@ void pr_auth_endgrent(pool *p) {
   cmd = make_cmd(p, 0);
   (void) dispatch_auth(cmd, "endgrent", NULL);
 
-  if (cmd->tmp_pool) {
+  if (cmd->tmp_pool != NULL) {
     destroy_pool(cmd->tmp_pool);
     cmd->tmp_pool = NULL;
   }
-
-  return;
 }
 
 struct passwd *pr_auth_getpwent(pool *p) {
@@ -594,7 +551,7 @@ struct passwd *pr_auth_getpwent(pool *p) {
     res = mr->data;
   }
 
-  if (cmd->tmp_pool) {
+  if (cmd->tmp_pool != NULL) {
     destroy_pool(cmd->tmp_pool);
     cmd->tmp_pool = NULL;
   }
@@ -638,7 +595,7 @@ struct group *pr_auth_getgrent(pool *p) {
     res = mr->data;
   }
 
-  if (cmd->tmp_pool) {
+  if (cmd->tmp_pool != NULL) {
     destroy_pool(cmd->tmp_pool);
     cmd->tmp_pool = NULL;
   }
@@ -989,7 +946,7 @@ int pr_auth_authenticate(pool *p, const char *name, const char *pw) {
    * of modules.  This is usually only mod_auth_pam, but other modules
    * might also add themselves (e.g. mod_radius under certain conditions).
    */
-  if (auth_module_list) {
+  if (auth_module_list != NULL) {
     struct auth_module_elt *elt;
 
     for (elt = (struct auth_module_elt *) auth_module_list->xas_list; elt;
@@ -1000,7 +957,7 @@ int pr_auth_authenticate(pool *p, const char *name, const char *pw) {
         elt->name);
 
       m = pr_module_get(elt->name);
-      if (m) {
+      if (m != NULL) {
         mr = dispatch_auth(cmd, "auth", &m);
 
         if (MODRET_ISHANDLED(mr)) {
@@ -1021,6 +978,9 @@ int pr_auth_authenticate(pool *p, const char *name, const char *pw) {
         }
 
         if (MODRET_ISERROR(mr)) {
+          pr_trace_msg(trace_channel, 4,
+            "module '%s' used for authenticating user '%s'", elt->name, name);
+
           res = MODRET_ERROR(mr);
 
           if (cmd->tmp_pool) {
@@ -1162,7 +1122,7 @@ int pr_auth_check(pool *p, const char *ciphertext_passwd, const char *name,
    * of modules.  This is usually only mod_auth_pam, but other modules
    * might also add themselves (e.g. mod_radius under certain conditions).
    */
-  if (auth_module_list) {
+  if (auth_module_list != NULL) {
     struct auth_module_elt *elt;
 
     for (elt = (struct auth_module_elt *) auth_module_list->xas_list; elt;
@@ -1170,16 +1130,15 @@ int pr_auth_check(pool *p, const char *ciphertext_passwd, const char *name,
       pr_signals_handle();
 
       m = pr_module_get(elt->name);
-      if (m) {
+      if (m != NULL) {
         mr = dispatch_auth(cmd, "check", &m);
-
         if (MODRET_ISHANDLED(mr)) {
           pr_trace_msg(trace_channel, 4,
             "module '%s' used for authenticating user '%s'", elt->name, name);
 
           res = MODRET_HASDATA(mr) ? PR_AUTH_RFC2228_OK : PR_AUTH_OK;
 
-          if (cmd->tmp_pool) {
+          if (cmd->tmp_pool != NULL) {
             destroy_pool(cmd->tmp_pool);
             cmd->tmp_pool = NULL;
           }
@@ -1193,14 +1152,14 @@ int pr_auth_check(pool *p, const char *ciphertext_passwd, const char *name,
         if (MODRET_ISERROR(mr)) {
           res = MODRET_ERROR(mr);
 
-          if (cmd->tmp_pool) {
+          if (cmd->tmp_pool != NULL) {
             destroy_pool(cmd->tmp_pool);
             cmd->tmp_pool = NULL;
           }
 
           pr_trace_msg(trace_channel, 9,
-            "module '%s' returned ERROR (%s) for checking user '%s'",
-            elt->name, get_authcode_str(res), name);
+            "module '%s' returned ERROR (%d %s) for checking user '%s'",
+            elt->name, res, get_authcode_str(res), name);
           return res;
         }
 
@@ -1232,7 +1191,7 @@ int pr_auth_check(pool *p, const char *ciphertext_passwd, const char *name,
       name);
   }
 
-  if (cmd->tmp_pool) {
+  if (cmd->tmp_pool != NULL) {
     destroy_pool(cmd->tmp_pool);
     cmd->tmp_pool = NULL;
   }
@@ -1617,7 +1576,7 @@ config_rec *pr_auth_get_anon_config(pool *p, const char **login_user,
       pr_signals_handle();
 
       alias = c->argv[0];
-      if (strncmp(alias, "*", 2) == 0 ||
+      if (strcmp(alias, "*") == 0 ||
           strcmp(alias, *login_user) == 0) {
         is_alias = TRUE;
         alias_config = c;
@@ -1660,7 +1619,7 @@ config_rec *pr_auth_get_anon_config(pool *p, const char **login_user,
       config_flags);
 
     if (c != NULL &&
-        (strncmp(c->argv[0], "*", 2) == 0 ||
+        (strcmp(c->argv[0], "*") == 0 ||
          strcmp(c->argv[0], *login_user) == 0)) {
       is_alias = TRUE;
       alias_config = c;

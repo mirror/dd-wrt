@@ -133,6 +133,7 @@ sub sftp_pam_failed_login_attempts_bug3921 {
 
     AuthUserFile => $auth_user_file,
     AuthGroupFile => $auth_group_file,
+    AuthOrder => 'mod_auth_file.c',
 
     IfModules => {
       'mod_delay.c' => {
@@ -279,13 +280,6 @@ sub sftp_pam_with_sql_auth {
   my $gid = 500;
 
   my $db_file = File::Spec->rel2abs("$tmpdir/proftpd.db");
-
-  my $user = 'proftpd';
-  my $passwd = 'test';
-  my $group = 'ftpd';
-  my $home_dir = File::Spec->rel2abs($tmpdir);
-  my $uid = 500;
-  my $gid = 500;
 
   # Build up sqlite3 command to create users, groups tables and populate them
   my $db_script = File::Spec->rel2abs("$tmpdir/proftpd.sql");

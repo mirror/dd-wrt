@@ -73,6 +73,8 @@ sub maxclientsperhost_one {
 
     AuthUserFile => $auth_user_file,
     AuthGroupFile => $auth_group_file, 
+    AuthOrder => 'mod_auth_file.c',
+
     MaxClientsPerHost => $max_clients_per_host,
 
     IfModules => {
@@ -176,6 +178,7 @@ sub maxclientsperhost_one_multi_conns {
 
     AuthUserFile => $auth_user_file,
     AuthGroupFile => $auth_group_file,
+    AuthOrder => 'mod_auth_file.c',
 
     MaxClientsPerHost => $max_clients_per_host,
 
@@ -270,6 +273,7 @@ sub maxclientsperhost_anon_one_bug4326 {
 
     AuthUserFile => $setup->{auth_user_file},
     AuthGroupFile => $setup->{auth_group_file},
+    AuthOrder => 'mod_auth_file.c',
 
     IfModules => {
       'mod_delay.c' => {

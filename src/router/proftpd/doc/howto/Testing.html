@@ -233,7 +233,7 @@ I suspect that looking in that <code>config.log</code> file, you would see
 something like this:
 <pre>
   configure:20568: checking for tcase_create in -lcheck
-  configure:20603: gcc -o conftest -g2 -g -O2 -fdebug-prefix-map=/home/hille/devel/proftp/pftp_build/proftpd-dfsg=. -fstack-protector-strong -Wformat -Werror=format-security -Wall -fno-omit-frame-pointer -Werror=implicit-function-declaration -Wdate-time -D_FORTIFY_SOURCE=2 -I/usr/include/mysql -I/usr/include/postgresql -L$(top_srcdir)/lib -Wl,-z,relro -rdynamic conftest.c -lcheck  -ldl  >&5
+  configure:20603: gcc -o conftest -g2 -g -O2 -fdebug-prefix-map=/home/hille/devel/proftp/pftp_build/proftpd-dfsg=. -fstack-protector-strong -Wformat -Werror=format-security -Wall -fno-omit-frame-pointer -Werror=implicit-function-declaration -Wdate-time -D_FORTIFY_SOURCE=2 -I/usr/include/mysql -I/usr/include/postgresql -L$(top_srcdir)/lib -Wl,-z,relro -rdynamic conftest.c -lcheck  -ldl  >&amp;5
   /usr/lib/gcc/i686-linux-gnu/7/../../../i386-linux-gnu/libcheck.a(check.o): In function `tcase_create':
   (.text+0x1ce): undefined reference to `floor'
   /usr/lib/gcc/i686-linux-gnu/7/../../../i386-linux-gnu/libcheck.a(check.o): In function `tcase_set_timeout':

@@ -147,8 +147,9 @@ sub allowfilter_dele_allowed {
 
     AuthUserFile => $auth_user_file,
     AuthGroupFile => $auth_group_file,
-    DefaultChdir => '~',
+    AuthOrder => 'mod_auth_file.c',
 
+    DefaultChdir => '~',
     AllowOverwrite => 'on',
 
     IfModules => {
@@ -285,6 +286,8 @@ sub allowfilter_dele_denied {
 
     AuthUserFile => $auth_user_file,
     AuthGroupFile => $auth_group_file,
+    AuthOrder => 'mod_auth_file.c',
+
     DefaultChdir => '~',
 
     IfModules => {
@@ -422,8 +425,9 @@ sub allowfilter_mkd_allowed {
 
     AuthUserFile => $auth_user_file,
     AuthGroupFile => $auth_group_file,
-    DefaultChdir => '~',
+    AuthOrder => 'mod_auth_file.c',
 
+    DefaultChdir => '~',
     AllowOverwrite => 'on',
 
     IfModules => {
@@ -555,8 +559,9 @@ sub allowfilter_mkd_denied {
 
     AuthUserFile => $auth_user_file,
     AuthGroupFile => $auth_group_file,
-    DefaultChdir => '~',
+    AuthOrder => 'mod_auth_file.c',
 
+    DefaultChdir => '~',
     AllowOverwrite => 'on',
 
     IfModules => {
@@ -694,8 +699,9 @@ sub allowfilter_rmd_allowed {
 
     AuthUserFile => $auth_user_file,
     AuthGroupFile => $auth_group_file,
-    DefaultChdir => '~',
+    AuthOrder => 'mod_auth_file.c',
 
+    DefaultChdir => '~',
     AllowOverwrite => 'on',
 
     IfModules => {
@@ -822,8 +828,9 @@ sub allowfilter_rmd_denied {
 
     AuthUserFile => $auth_user_file,
     AuthGroupFile => $auth_group_file,
-    DefaultChdir => '~',
+    AuthOrder => 'mod_auth_file.c',
 
+    DefaultChdir => '~',
     AllowOverwrite => 'on',
 
     IfModules => {
@@ -961,8 +968,9 @@ sub allowfilter_rnfr_allowed {
 
     AuthUserFile => $auth_user_file,
     AuthGroupFile => $auth_group_file,
-    DefaultChdir => '~',
+    AuthOrder => 'mod_auth_file.c',
 
+    DefaultChdir => '~',
     AllowOverwrite => 'on',
 
     IfModules => {
@@ -1089,8 +1097,9 @@ sub allowfilter_rnfr_denied {
 
     AuthUserFile => $auth_user_file,
     AuthGroupFile => $auth_group_file,
-    DefaultChdir => '~',
+    AuthOrder => 'mod_auth_file.c',
 
+    DefaultChdir => '~',
     AllowOverwrite => 'on',
 
     IfModules => {
@@ -1229,8 +1238,9 @@ sub allowfilter_rnto_allowed {
 
     AuthUserFile => $auth_user_file,
     AuthGroupFile => $auth_group_file,
-    DefaultChdir => '~',
+    AuthOrder => 'mod_auth_file.c',
 
+    DefaultChdir => '~',
     AllowOverwrite => 'on',
 
     IfModules => {
@@ -1360,8 +1370,9 @@ sub allowfilter_rnto_denied {
 
     AuthUserFile => $auth_user_file,
     AuthGroupFile => $auth_group_file,
-    DefaultChdir => '~',
+    AuthOrder => 'mod_auth_file.c',
 
+    DefaultChdir => '~',
     AllowOverwrite => 'on',
 
     IfModules => {
@@ -1498,8 +1509,9 @@ sub allowfilter_stor_allowed {
 
     AuthUserFile => $auth_user_file,
     AuthGroupFile => $auth_group_file,
-    DefaultChdir => '~',
+    AuthOrder => 'mod_auth_file.c',
 
+    DefaultChdir => '~',
     AllowOverwrite => 'on',
 
     IfModules => {
@@ -1637,8 +1649,9 @@ sub allowfilter_stor_denied {
 
     AuthUserFile => $auth_user_file,
     AuthGroupFile => $auth_group_file,
-    DefaultChdir => '~',
+    AuthOrder => 'mod_auth_file.c',
 
+    DefaultChdir => '~',
     AllowOverwrite => 'on',
 
     IfModules => {
@@ -1774,8 +1787,9 @@ sub allowfilter_stor_denied_nocase_bug3592 {
 
     AuthUserFile => $auth_user_file,
     AuthGroupFile => $auth_group_file,
-    DefaultChdir => '~',
+    AuthOrder => 'mod_auth_file.c',
 
+    DefaultChdir => '~',
     AllowOverwrite => 'on',
 
     IfModules => {
@@ -1917,8 +1931,9 @@ sub allowfilter_stor_denied_nocase_bug3609 {
 
     AuthUserFile => $auth_user_file,
     AuthGroupFile => $auth_group_file,
-    DefaultChdir => '~',
+    AuthOrder => 'mod_auth_file.c',
 
+    DefaultChdir => '~',
     AllowOverwrite => 'on',
 
     IfModules => {

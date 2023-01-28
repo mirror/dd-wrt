@@ -1,6 +1,6 @@
 /*
  * ProFTPD - FTP server testsuite
- * Copyright (c) 2014-2021 The ProFTPD Project team
+ * Copyright (c) 2014-2022 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -46,6 +46,7 @@ static void set_up(void) {
   init_fs();
   pr_fs_statcache_set_policy(PR_TUNABLE_FS_STATCACHE_SIZE,
     PR_TUNABLE_FS_STATCACHE_MAX_AGE, 0);
+  init_stash();
   modules_init();
 
   if (getenv("TEST_VERBOSE") != NULL) {
@@ -78,14 +79,14 @@ START_TEST (parser_prepare_test) {
   xaset_t *parsed_servers = NULL;
 
   res = pr_parser_prepare(NULL, NULL);
-  fail_unless(res == 0, "Failed to handle null arguments: %s", strerror(errno));
+  ck_assert_msg(res == 0, "Failed to handle null arguments: %s", strerror(errno));
 
   res = pr_parser_prepare(p, NULL);
-  fail_unless(res == 0, "Failed to handle null parsed_servers: %s",
+  ck_assert_msg(res == 0, "Failed to handle null parsed_servers: %s",
     strerror(errno));
 
   res = pr_parser_prepare(NULL, &parsed_servers);
-  fail_unless(res == 0, "Failed to handle null pool: %s", strerror(errno));
+  ck_assert_msg(res == 0, "Failed to handle null pool: %s", strerror(errno));
 
   (void) pr_parser_cleanup();
 }
@@ -97,26 +98,26 @@ START_TEST (parser_cleanup_test) {
 
   mark_point();
   res = pr_parser_cleanup();
-  fail_unless(res == 0, "Failed to handle unprepared parser: %s",
+  ck_assert_msg(res == 0, "Failed to handle unprepared parser: %s",
     strerror(errno));
 
   pr_parser_prepare(NULL, NULL);
 
   mark_point();
   ctx = pr_parser_server_ctxt_open("127.0.0.1");
-  fail_unless(ctx != NULL, "Failed to open server context: %s",
+  ck_assert_msg(ctx != NULL, "Failed to open server context: %s",
     strerror(errno));
 
   mark_point();
   res = pr_parser_cleanup();
-  fail_unless(res < 0, "Failed to handle existing contexts");
-  fail_unless(errno == EPERM, "Expected EPERM (%d), got %s (%d)", EPERM,
+  ck_assert_msg(res < 0, "Failed to handle existing contexts");
+  ck_assert_msg(errno == EPERM, "Expected EPERM (%d), got %s (%d)", EPERM,
     strerror(errno), errno);
 
   mark_point();
   (void) pr_parser_server_ctxt_close();
   res = pr_parser_cleanup();
-  fail_unless(res == 0, "Failed to cleanup parser: %s", strerror(errno));
+  ck_assert_msg(res == 0, "Failed to cleanup parser: %s", strerror(errno));
 }
 END_TEST
 
@@ -124,28 +125,28 @@ START_TEST (parser_server_ctxt_test) {
   server_rec *ctx, *res;
 
   ctx = pr_parser_server_ctxt_get();
-  fail_unless(ctx == NULL, "Found server context unexpectedly");
-  fail_unless(errno == ENOENT, "Expected ENOENT (%d), got %s (%d)", ENOENT,
+  ck_assert_msg(ctx == NULL, "Found server context unexpectedly");
+  ck_assert_msg(errno == ENOENT, "Expected ENOENT (%d), got %s (%d)", ENOENT,
     strerror(errno), errno);
 
   pr_parser_prepare(p, NULL);
 
   mark_point();
   res = pr_parser_server_ctxt_close();
-  fail_unless(res == NULL, "Closed server context unexpectedly");
-  fail_unless(errno == EPERM, "Expected EPERM (%d), got %s (%d)", EPERM,
-    strerror(errno));
+  ck_assert_msg(res == NULL, "Closed server context unexpectedly");
+  ck_assert_msg(errno == EPERM, "Expected EPERM (%d), got %s (%d)", EPERM,
+    strerror(errno), errno);
 
   mark_point();
   res = pr_parser_server_ctxt_open("127.0.0.1");
-  fail_unless(res != NULL, "Failed to open server context: %s",
+  ck_assert_msg(res != NULL, "Failed to open server context: %s",
     strerror(errno));
 
   mark_point();
   ctx = pr_parser_server_ctxt_get();
-  fail_unless(ctx != NULL, "Failed to get current server context: %s",
+  ck_assert_msg(ctx != NULL, "Failed to get current server context: %s",
     strerror(errno));
-  fail_unless(ctx == res, "Expected server context %p, got %p", res, ctx);
+  ck_assert_msg(ctx == res, "Expected server context %p, got %p", res, ctx);
 
   mark_point();
   (void) pr_parser_server_ctxt_close();
@@ -158,29 +159,29 @@ START_TEST (parser_server_ctxt_push_test) {
   server_rec *ctx, *ctx2;
 
   res = pr_parser_server_ctxt_push(NULL);
-  fail_unless(res < 0, "Failed to handle null argument");
-  fail_unless(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
+  ck_assert_msg(res < 0, "Failed to handle null argument");
+  ck_assert_msg(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
     strerror(errno), errno);
 
   ctx = pcalloc(p, sizeof(server_rec));
 
   mark_point();
   res = pr_parser_server_ctxt_push(ctx);
-  fail_unless(res < 0, "Failed to handle unprepared parser");
-  fail_unless(errno == EPERM, "Expected EPERM (%d), got %s (%d)", EPERM,
+  ck_assert_msg(res < 0, "Failed to handle unprepared parser");
+  ck_assert_msg(errno == EPERM, "Expected EPERM (%d), got %s (%d)", EPERM,
     strerror(errno), errno);
 
   pr_parser_prepare(p, NULL);
 
   mark_point();
   res = pr_parser_server_ctxt_push(ctx);
-  fail_unless(res == 0, "Failed to push server rec: %s", strerror(errno));
+  ck_assert_msg(res == 0, "Failed to push server rec: %s", strerror(errno));
 
   mark_point();
   ctx2 = pr_parser_server_ctxt_get();
-  fail_unless(ctx2 != NULL, "Failed to get current server context: %s",
+  ck_assert_msg(ctx2 != NULL, "Failed to get current server context: %s",
     strerror(errno));
-  fail_unless(ctx2 == ctx, "Expected server context %p, got %p", ctx, ctx2);
+  ck_assert_msg(ctx2 == ctx, "Expected server context %p, got %p", ctx, ctx2);
 
   (void) pr_parser_server_ctxt_close();
   (void) pr_parser_cleanup();
@@ -192,39 +193,39 @@ START_TEST (parser_config_ctxt_test) {
   config_rec *ctx, *res;
 
   ctx = pr_parser_config_ctxt_get();
-  fail_unless(ctx == NULL, "Found config context unexpectedly");
-  fail_unless(errno == ENOENT, "Expected ENOENT (%d), got %s (%d)", ENOENT,
+  ck_assert_msg(ctx == NULL, "Found config context unexpectedly");
+  ck_assert_msg(errno == ENOENT, "Expected ENOENT (%d), got %s (%d)", ENOENT,
     strerror(errno), errno);
 
   pr_parser_prepare(p, NULL);
   pr_parser_server_ctxt_open("127.0.0.1");
 
   res = pr_parser_config_ctxt_open(NULL);
-  fail_unless(res == NULL, "Failed to handle null arguments");
-  fail_unless(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
+  ck_assert_msg(res == NULL, "Failed to handle null arguments");
+  ck_assert_msg(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
     strerror(errno), errno);
 
   mark_point();
   res = pr_parser_config_ctxt_open("<TestSuite>");
-  fail_unless(res != NULL, "Failed to open config context: %s",
+  ck_assert_msg(res != NULL, "Failed to open config context: %s",
     strerror(errno));
 
   mark_point();
   ctx = pr_parser_config_ctxt_get();
-  fail_unless(ctx != NULL, "Failed to get current config context: %s",
+  ck_assert_msg(ctx != NULL, "Failed to get current config context: %s",
     strerror(errno));
-  fail_unless(ctx == res, "Expected config context %p, got %p", res, ctx);
+  ck_assert_msg(ctx == res, "Expected config context %p, got %p", res, ctx);
 
   mark_point();
   (void) pr_parser_config_ctxt_close(&is_empty);
-  fail_unless(is_empty == TRUE, "Expected config context to be empty");
+  ck_assert_msg(is_empty == TRUE, "Expected config context to be empty");
 
   mark_point();
   res = pr_parser_config_ctxt_open("<Global>");
-  fail_unless(res != NULL, "Failed to open config context: %s",
+  ck_assert_msg(res != NULL, "Failed to open config context: %s",
     strerror(errno));
   (void) pr_parser_config_ctxt_close(&is_empty);
-  fail_unless(is_empty == TRUE, "Expected config context to be empty");
+  ck_assert_msg(is_empty == TRUE, "Expected config context to be empty");
 
   (void) pr_parser_server_ctxt_close();
   (void) pr_parser_cleanup();
@@ -236,29 +237,29 @@ START_TEST (parser_config_ctxt_push_test) {
   config_rec *ctx, *ctx2;
 
   res = pr_parser_config_ctxt_push(NULL);
-  fail_unless(res < 0, "Failed to handle null argument");
-  fail_unless(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
+  ck_assert_msg(res < 0, "Failed to handle null argument");
+  ck_assert_msg(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
     strerror(errno), errno);
 
   ctx = pcalloc(p, sizeof(config_rec));
 
   mark_point();
   res = pr_parser_config_ctxt_push(ctx);
-  fail_unless(res < 0, "Failed to handle unprepared parser");
-  fail_unless(errno == EPERM, "Expected EPERM (%d), got %s (%d)", EPERM,
+  ck_assert_msg(res < 0, "Failed to handle unprepared parser");
+  ck_assert_msg(errno == EPERM, "Expected EPERM (%d), got %s (%d)", EPERM,
     strerror(errno), errno);
 
   pr_parser_prepare(p, NULL);
 
   mark_point();
   res = pr_parser_config_ctxt_push(ctx);
-  fail_unless(res == 0, "Failed to push config rec: %s", strerror(errno));
+  ck_assert_msg(res == 0, "Failed to push config rec: %s", strerror(errno));
 
   mark_point();
   ctx2 = pr_parser_config_ctxt_get();
-  fail_unless(ctx2 != NULL, "Failed to get current config context: %s",
+  ck_assert_msg(ctx2 != NULL, "Failed to get current config context: %s",
     strerror(errno));
-  fail_unless(ctx2 == ctx, "Expected config context %p, got %p", ctx, ctx2);
+  ck_assert_msg(ctx2 == ctx, "Expected config context %p, got %p", ctx, ctx2);
 
   (void) pr_parser_config_ctxt_close(NULL);
   (void) pr_parser_cleanup();
@@ -269,10 +270,10 @@ START_TEST (parser_get_lineno_test) {
   unsigned int res;
 
   res = pr_parser_get_lineno();
-  fail_unless(res == 0, "Expected 0, got %u", res);
+  ck_assert_msg(res == 0, "Expected 0, got %u", res);
 
   res = pr_parser_get_lineno();
-  fail_unless(res == 0, "Expected 0, got %u", res);
+  ck_assert_msg(res == 0, "Expected 0, got %u", res);
 }
 END_TEST
 
@@ -280,8 +281,8 @@ START_TEST (parser_read_line_test) {
   char *res;
 
   res = pr_parser_read_line(NULL, 0);
-  fail_unless(res == NULL, "Failed to handle null arguments");
-  fail_unless(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
+  ck_assert_msg(res == NULL, "Failed to handle null arguments");
+  ck_assert_msg(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
     strerror(errno), errno);
 }
 END_TEST
@@ -293,19 +294,19 @@ START_TEST (parser_parse_line_test) {
 
   mark_point();
   cmd = pr_parser_parse_line(NULL, NULL, 0);
-  fail_unless(cmd == NULL, "Failed to handle null arguments");
-  fail_unless(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
+  ck_assert_msg(cmd == NULL, "Failed to handle null arguments");
+  ck_assert_msg(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
     strerror(errno), errno);
 
   mark_point();
   cmd = pr_parser_parse_line(p, NULL, 0);
-  fail_unless(cmd == NULL, "Failed to handle null input");
-  fail_unless(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
+  ck_assert_msg(cmd == NULL, "Failed to handle null input");
+  ck_assert_msg(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
     strerror(errno), errno);
 
   cmd = pr_parser_parse_line(p, "", 0);
-  fail_unless(cmd == NULL, "Failed to handle empty input");
-  fail_unless(errno == ENOENT, "Expected ENOENT (%d), got %s (%d)", ENOENT,
+  ck_assert_msg(cmd == NULL, "Failed to handle empty input");
+  ck_assert_msg(errno == ENOENT, "Expected ENOENT (%d), got %s (%d)", ENOENT,
     strerror(errno), errno);
 
   pr_parser_prepare(p, NULL);
@@ -313,25 +314,25 @@ START_TEST (parser_parse_line_test) {
 
   text = pstrdup(p, "FooBar");
   cmd = pr_parser_parse_line(p, text, 0);
-  fail_unless(cmd != NULL, "Failed to parse text '%s': %s", text,
+  ck_assert_msg(cmd != NULL, "Failed to parse text '%s': %s", text,
     strerror(errno));
-  fail_unless(cmd->argc == 1, "Expected 1, got %d", cmd->argc);
-  fail_unless(strcmp(cmd->argv[0], text) == 0,
+  ck_assert_msg(cmd->argc == 1, "Expected 1, got %d", cmd->argc);
+  ck_assert_msg(strcmp(cmd->argv[0], text) == 0,
     "Expected '%s', got '%s'", text, (char *) cmd->argv[0]);
   lineno = pr_parser_get_lineno();
-  fail_unless(lineno != 1, "Expected lineno 1, got %u", lineno);
+  ck_assert_msg(lineno != 1, "Expected lineno 1, got %u", lineno);
 
   text = pstrdup(p, "FooBar baz quxx");
   cmd = pr_parser_parse_line(p, text, 0);
-  fail_unless(cmd != NULL, "Failed to parse text '%s': %s", text,
+  ck_assert_msg(cmd != NULL, "Failed to parse text '%s': %s", text,
     strerror(errno));
-  fail_unless(cmd->argc == 3, "Expected 3, got %d", cmd->argc);
-  fail_unless(strcmp(cmd->argv[0], "FooBar") == 0,
+  ck_assert_msg(cmd->argc == 3, "Expected 3, got %d", cmd->argc);
+  ck_assert_msg(strcmp(cmd->argv[0], "FooBar") == 0,
     "Expected 'FooBar', got '%s'", (char *) cmd->argv[0]);
-  fail_unless(strcmp(cmd->arg, "baz quxx") == 0,
+  ck_assert_msg(strcmp(cmd->arg, "baz quxx") == 0,
     "Expected 'baz quxx', got '%s'", cmd->arg);
   lineno = pr_parser_get_lineno();
-  fail_unless(lineno != 2, "Expected lineno 2, got %u", lineno);
+  ck_assert_msg(lineno != 2, "Expected lineno 2, got %u", lineno);
 
   /* Deliberately omit the trailing '}', to test our handling of malformed
    * inputs.
@@ -339,41 +340,41 @@ START_TEST (parser_parse_line_test) {
   mark_point();
   text = pstrdup(p, "BarBaz %{env:FOO_TEST");
   cmd = pr_parser_parse_line(p, text, 0);
-  fail_unless(cmd != NULL, "Failed to parse text '%s': %s", text,
+  ck_assert_msg(cmd != NULL, "Failed to parse text '%s': %s", text,
     strerror(errno));
-  fail_unless(cmd->argc == 2, "Expected 2, got %d", cmd->argc);
-  fail_unless(strcmp(cmd->argv[0], "BarBaz") == 0,
+  ck_assert_msg(cmd->argc == 2, "Expected 2, got %d", cmd->argc);
+  ck_assert_msg(strcmp(cmd->argv[0], "BarBaz") == 0,
     "Expected 'BarBaz', got '%s'", (char *) cmd->argv[0]);
-  fail_unless(strcmp(cmd->arg, "%{env:FOO_TEST") == 0,
-    "Expected '%{env:FOO_TEST', got '%s'", cmd->arg);
+  ck_assert_msg(strcmp(cmd->arg, "%{env:FOO_TEST") == 0,
+    "Expected '%s', got '%s'", "%{env:FOO_TEST", cmd->arg);
   lineno = pr_parser_get_lineno();
-  fail_unless(lineno != 3, "Expected lineno 3, got %u", lineno);
+  ck_assert_msg(lineno != 3, "Expected lineno 3, got %u", lineno);
 
   mark_point();
   pr_env_set(p, "FOO_TEST", "BAR");
   text = pstrdup(p, "BarBaz %{env:FOO_TEST}");
   cmd = pr_parser_parse_line(p, text, 0);
-  fail_unless(cmd != NULL, "Failed to parse text '%s': %s", text,
+  ck_assert_msg(cmd != NULL, "Failed to parse text '%s': %s", text,
     strerror(errno));
-  fail_unless(cmd->argc == 2, "Expected 2, got %d", cmd->argc);
-  fail_unless(strcmp(cmd->argv[0], "BarBaz") == 0,
+  ck_assert_msg(cmd->argc == 2, "Expected 2, got %d", cmd->argc);
+  ck_assert_msg(strcmp(cmd->argv[0], "BarBaz") == 0,
     "Expected 'BarBaz', got '%s'", (char *) cmd->argv[0]);
-  fail_unless(strcmp(cmd->arg, "BAR") == 0,
+  ck_assert_msg(strcmp(cmd->arg, "BAR") == 0,
     "Expected 'BAR', got '%s'", cmd->arg);
   lineno = pr_parser_get_lineno();
-  fail_unless(lineno != 3, "Expected lineno 3, got %u", lineno);
+  ck_assert_msg(lineno != 3, "Expected lineno 3, got %u", lineno);
 
   /* This time, without the requested environment variable present. */
   pr_env_unset(p, "FOO_TEST");
   cmd = pr_parser_parse_line(p, text, 0);
-  fail_unless(cmd != NULL, "Failed to parse text '%s': %s", text,
+  ck_assert_msg(cmd != NULL, "Failed to parse text '%s': %s", text,
     strerror(errno));
-  fail_unless(cmd->argc == 1, "Expected 1, got %d", cmd->argc);
-  fail_unless(strcmp(cmd->argv[0], "BarBaz") == 0,
+  ck_assert_msg(cmd->argc == 1, "Expected 1, got %d", cmd->argc);
+  ck_assert_msg(strcmp(cmd->argv[0], "BarBaz") == 0,
     "Expected 'BarBaz', got '%s'", (char *) cmd->argv[0]);
-  fail_unless(strcmp(cmd->arg, "") == 0, "Expected '', got '%s'", cmd->arg);
+  ck_assert_msg(strcmp(cmd->arg, "") == 0, "Expected '', got '%s'", cmd->arg);
   lineno = pr_parser_get_lineno();
-  fail_unless(lineno != 3, "Expected lineno 3, got %u", lineno);
+  ck_assert_msg(lineno != 3, "Expected lineno 3, got %u", lineno);
 
   /* This time, with a single word containing multiple environment variables
    * (Issue #507).
@@ -382,15 +383,15 @@ START_TEST (parser_parse_line_test) {
   pr_env_set(p, "BAR_TEST", "baR");
   text = pstrdup(p, "BarBaz %{env:FOO_TEST}@%{env:BAR_TEST}");
   cmd = pr_parser_parse_line(p, text, 0);
-  fail_unless(cmd != NULL, "Failed to parse text '%s': %s", text,
+  ck_assert_msg(cmd != NULL, "Failed to parse text '%s': %s", text,
     strerror(errno));
-  fail_unless(cmd->argc == 2, "Expected 2, got %d", cmd->argc);
-  fail_unless(strcmp(cmd->argv[0], "BarBaz") == 0,
+  ck_assert_msg(cmd->argc == 2, "Expected 2, got %d", cmd->argc);
+  ck_assert_msg(strcmp(cmd->argv[0], "BarBaz") == 0,
     "Expected 'BarBaz', got '%s'", (char *) cmd->argv[0]);
-  fail_unless(strcmp(cmd->arg, "Foo@baR") == 0,
+  ck_assert_msg(strcmp(cmd->arg, "Foo@baR") == 0,
     "Expected 'Foo@baR', got '%s'", cmd->arg);
   lineno = pr_parser_get_lineno();
-  fail_unless(lineno != 3, "Expected lineno 3, got %u", lineno);
+  ck_assert_msg(lineno != 3, "Expected lineno 3, got %u", lineno);
 
   /* This time, with a single word containing multiple environment variables
    * where one of the variables is NOT present (Issue #857).
@@ -398,25 +399,25 @@ START_TEST (parser_parse_line_test) {
   pr_env_set(p, "FOO_TEST", "Foo");
   text = pstrdup(p, "BarBaz %{env:FOO_TEST}@%{env:BAZ_TEST}");
   cmd = pr_parser_parse_line(p, text, 0);
-  fail_unless(cmd != NULL, "Failed to parse text '%s': %s", text,
+  ck_assert_msg(cmd != NULL, "Failed to parse text '%s': %s", text,
     strerror(errno));
-  fail_unless(cmd->argc == 2, "Expected 2, got %d", cmd->argc);
-  fail_unless(strcmp(cmd->argv[0], "BarBaz") == 0,
+  ck_assert_msg(cmd->argc == 2, "Expected 2, got %d", cmd->argc);
+  ck_assert_msg(strcmp(cmd->argv[0], "BarBaz") == 0,
     "Expected 'BarBaz', got '%s'", (char *) cmd->argv[0]);
-  fail_unless(strcmp(cmd->arg, "Foo@") == 0,
+  ck_assert_msg(strcmp(cmd->arg, "Foo@") == 0,
     "Expected 'Foo@', got '%s'", cmd->arg);
   lineno = pr_parser_get_lineno();
-  fail_unless(lineno != 3, "Expected lineno 3, got %u", lineno);
+  ck_assert_msg(lineno != 3, "Expected lineno 3, got %u", lineno);
 
   text = pstrdup(p, "<FooBar baz>");
   cmd = pr_parser_parse_line(p, text, 0);
-  fail_unless(cmd != NULL, "Failed to parse text '%s': %s", text,
+  ck_assert_msg(cmd != NULL, "Failed to parse text '%s': %s", text,
     strerror(errno));
-  fail_unless(cmd->argc == 2, "Expected 2, got %d", cmd->argc);
-  fail_unless(strcmp(cmd->argv[0], "<FooBar>") == 0,
+  ck_assert_msg(cmd->argc == 2, "Expected 2, got %d", cmd->argc);
+  ck_assert_msg(strcmp(cmd->argv[0], "<FooBar>") == 0,
     "Expected '<FooBar>', got '%s'", (char *) cmd->argv[0]);
   lineno = pr_parser_get_lineno();
-  fail_unless(lineno != 5, "Expected lineno 5, got %u", lineno);
+  ck_assert_msg(lineno != 5, "Expected lineno 5, got %u", lineno);
 
   mark_point();
   (void) pr_parser_server_ctxt_close();
@@ -461,32 +462,32 @@ START_TEST (parse_config_path_test) {
 
   mark_point();
   res = parse_config_path(NULL, NULL);
-  fail_unless(res < 0, "Failed to handle null pool");
-  fail_unless(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
+  ck_assert_msg(res < 0, "Failed to handle null pool");
+  ck_assert_msg(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
     strerror(errno), errno);
 
   mark_point();
   res = parse_config_path2(p, NULL, 0);
-  fail_unless(res < 0, "Failed to handle null path");
-  fail_unless(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
+  ck_assert_msg(res < 0, "Failed to handle null path");
+  ck_assert_msg(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
     strerror(errno), errno);
 
   mark_point();
   path = "foo";
-  fail_unless(res < 0, "Failed to handle relative path");
-  fail_unless(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
+  ck_assert_msg(res < 0, "Failed to handle relative path");
+  ck_assert_msg(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
     strerror(errno), errno);
 
   mark_point();
   res = parse_config_path2(p, path, 1024);
-  fail_unless(res < 0, "Failed to handle excessive depth");
-  fail_unless(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
+  ck_assert_msg(res < 0, "Failed to handle excessive depth");
+  ck_assert_msg(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
     strerror(errno), errno);
 
   mark_point();
   res = parse_config_path2(p, path, 0);
-  fail_unless(res < 0, "Failed to handle invalid path");
-  fail_unless(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
+  ck_assert_msg(res < 0, "Failed to handle invalid path");
+  ck_assert_msg(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
     strerror(errno), errno);
 
   mark_point();
@@ -495,22 +496,22 @@ START_TEST (parse_config_path_test) {
    * thus make a more predictable directory for our testing.
    */
   res = mkdir(config_path3, 0775);
-  fail_unless(res == 0, "Failed to mkdir '%s': %s", config_path3,
+  ck_assert_msg(res == 0, "Failed to mkdir '%s': %s", config_path3,
     strerror(errno));
 
   path = config_path3;
   res = lstat(path, &st);
-  fail_unless(res == 0, "Failed lstat(2) on '%s': %s", path, strerror(errno));
+  ck_assert_msg(res == 0, "Failed lstat(2) on '%s': %s", path, strerror(errno));
 
   mark_point();
   res = parse_config_path2(p, path, 0);
   if (S_ISLNK(st.st_mode)) {
-    fail_unless(res < 0, "Failed to handle uninitialized parser");
-    fail_unless(errno == EPERM, "Expected EPERM (%d), got %s (%d)", EPERM,
+    ck_assert_msg(res < 0, "Failed to handle uninitialized parser");
+    ck_assert_msg(errno == EPERM, "Expected EPERM (%d), got %s (%d)", EPERM,
       strerror(errno), errno);
 
   } else if (S_ISDIR(st.st_mode)) {
-    fail_unless(res == 0, "Failed to handle empty directory");
+    ck_assert_msg(res == 0, "Failed to handle empty directory");
   }
 
   mark_point();
@@ -519,31 +520,31 @@ START_TEST (parse_config_path_test) {
 
   res = parse_config_path2(p, path, 0);
   if (S_ISLNK(st.st_mode)) {
-    fail_unless(res < 0, "Failed to handle directory-only path");
-    fail_unless(errno == EISDIR, "Expected EISDIR (%d), got %s (%d)", EISDIR,
+    ck_assert_msg(res < 0, "Failed to handle directory-only path");
+    ck_assert_msg(errno == EISDIR, "Expected EISDIR (%d), got %s (%d)", EISDIR,
       strerror(errno), errno);
 
   } else if (S_ISDIR(st.st_mode)) {
-    fail_unless(res == 0, "Failed to handle empty directory");
+    ck_assert_msg(res == 0, "Failed to handle empty directory");
   }
 
   res = rmdir(config_path3);
-  fail_unless(res == 0, "Failed to rmdir '%s': %s", config_path3,
+  ck_assert_msg(res == 0, "Failed to rmdir '%s': %s", config_path3,
     strerror(errno));
 
   mark_point();
   path = config_path;
   res = parse_config_path2(p, path, 0);
-  fail_unless(res < 0, "Failed to handle nonexistent file");
-  fail_unless(errno == ENOENT, "Expected ENOENT (%d), got %s (%d)", ENOENT,
+  ck_assert_msg(res < 0, "Failed to handle nonexistent file");
+  ck_assert_msg(errno == ENOENT, "Expected ENOENT (%d), got %s (%d)", ENOENT,
     strerror(errno), errno);
 
   include_opts = pr_parser_set_include_opts(PR_PARSER_INCLUDE_OPT_IGNORE_WILDCARDS);
   mark_point();
   path = "/tmp*/foo.conf";
   res = parse_config_path2(p, path, 0);
-  fail_unless(res < 0, "Failed to handle directory-only path");
-  fail_unless(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
+  ck_assert_msg(res < 0, "Failed to handle directory-only path");
+  ck_assert_msg(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
     strerror(errno), errno);
   (void) pr_parser_set_include_opts(include_opts);
 
@@ -552,81 +553,81 @@ START_TEST (parse_config_path_test) {
    * we're on a Mac.
    */
   res = lstat("/tmp", &st);
-  fail_unless(res == 0, "Failed lstat(2) on '/tmp': %s", strerror(errno));
+  ck_assert_msg(res == 0, "Failed lstat(2) on '/tmp': %s", strerror(errno));
 
   mark_point();
   path = "/tmp/prt*foo*bar*.conf";
   res = parse_config_path2(p, path, 0);
 
   if (S_ISLNK(st.st_mode)) {
-    fail_unless(res < 0, "Failed to handle nonexistent file");
-    fail_unless(errno == ENOTDIR, "Expected ENOTDIR (%d), got %s (%d)", ENOTDIR,
+    ck_assert_msg(res < 0, "Failed to handle nonexistent file");
+    ck_assert_msg(errno == ENOTDIR, "Expected ENOTDIR (%d), got %s (%d)", ENOTDIR,
       strerror(errno), errno);
 
     include_opts = pr_parser_set_include_opts(PR_PARSER_INCLUDE_OPT_ALLOW_SYMLINKS);
 
     /* By default, we ignore the case where there are no matching files. */
     res = parse_config_path2(p, path, 0);
-    fail_unless(res == 0, "Failed to handle nonexistent file: %s",
+    ck_assert_msg(res == 0, "Failed to handle nonexistent file: %s",
       strerror(errno));
 
     (void) pr_parser_set_include_opts(include_opts);
 
   } else {
     /* By default, we ignore the case where there are no matching files. */
-    fail_unless(res == 0, "Failed to handle nonexistent file: %s",
+    ck_assert_msg(res == 0, "Failed to handle nonexistent file: %s",
       strerror(errno));
   }
 
   /* Load the module's config handlers. */
   res = load_parser_module();
-  fail_unless(res == 0, "Failed to load module conftab: %s", strerror(errno));
+  ck_assert_msg(res == 0, "Failed to load module conftab: %s", strerror(errno));
 
   include_opts = pr_parser_set_include_opts(PR_PARSER_INCLUDE_OPT_ALLOW_SYMLINKS);
 
   /* Parse single file. */
   path = config_path;
   fh = pr_fsio_open(path, O_CREAT|O_EXCL|O_WRONLY);
-  fail_unless(fh != NULL, "Failed to open '%s': %s", path, strerror(errno));
+  ck_assert_msg(fh != NULL, "Failed to open '%s': %s", path, strerror(errno));
 
   text = "TestSuiteEngine on\r\n";
   res = pr_fsio_write(fh, text, strlen(text));
-  fail_if(res < 0, "Failed to write '%s': %s", text, strerror(errno));
+  ck_assert_msg(res >= 0, "Failed to write '%s': %s", text, strerror(errno));
 
   res = pr_fsio_close(fh);
-  fail_unless(res == 0, "Failed to write '%s': %s", path, strerror(errno));
+  ck_assert_msg(res == 0, "Failed to write '%s': %s", path, strerror(errno));
 
   mark_point();
   res = parse_config_path2(p, path, 0);
-  fail_if(res < 0, "Failed to parse '%s': %s", path, strerror(errno));
+  ck_assert_msg(res >= 0, "Failed to parse '%s': %s", path, strerror(errno));
 
   path = "/tmp/prt*.conf";
   res = parse_config_path2(p, path, 0);
-  fail_if(res < 0, "Failed to parse '%s': %s", path, strerror(errno));
+  ck_assert_msg(res >= 0, "Failed to parse '%s': %s", path, strerror(errno));
 
   (void) pr_parser_set_include_opts(PR_PARSER_INCLUDE_OPT_ALLOW_SYMLINKS|PR_PARSER_INCLUDE_OPT_IGNORE_TMP_FILES|PR_PARSER_INCLUDE_OPT_IGNORE_WILDCARDS);
 
   path = config_tmp_path;
   fh = pr_fsio_open(path, O_CREAT|O_EXCL|O_WRONLY);
-  fail_unless(fh != NULL, "Failed to open '%s': %s", path, strerror(errno));
+  ck_assert_msg(fh != NULL, "Failed to open '%s': %s", path, strerror(errno));
 
   text = "TestSuiteEnabled off\r\n";
   res = pr_fsio_write(fh, text, strlen(text));
-  fail_if(res < 0, "Failed to write '%s': %s", text, strerror(errno));
+  ck_assert_msg(res >= 0, "Failed to write '%s': %s", text, strerror(errno));
 
   res = pr_fsio_close(fh);
-  fail_unless(res == 0, "Failed to write '%s': %s", path, strerror(errno));
+  ck_assert_msg(res == 0, "Failed to write '%s': %s", path, strerror(errno));
 
   mark_point();
   path = "/tmp/prt*.conf*";
   res = parse_config_path2(p, path, 0);
-  fail_if(res < 0, "Failed to parse '%s': %s", path, strerror(errno));
+  ck_assert_msg(res >= 0, "Failed to parse '%s': %s", path, strerror(errno));
 
   mark_point();
   path = "/t*p/prt*.conf*";
   res = parse_config_path2(p, path, 0);
-  fail_unless(res < 0, "Failed to handle wildcard path '%s'", path);
-  fail_unless(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
+  ck_assert_msg(res < 0, "Failed to handle wildcard path '%s'", path);
+  ck_assert_msg(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
     strerror(errno), errno);
 
   (void) pr_parser_set_include_opts(PR_PARSER_INCLUDE_OPT_ALLOW_SYMLINKS|PR_PARSER_INCLUDE_OPT_IGNORE_TMP_FILES);
@@ -634,7 +635,7 @@ START_TEST (parse_config_path_test) {
   mark_point();
   path = "/t*p/prt*.conf*";
   res = parse_config_path2(p, path, 0);
-  fail_if(res < 0, "Failed to parse '%s': %s", path, strerror(errno));
+  ck_assert_msg(res >= 0, "Failed to parse '%s': %s", path, strerror(errno));
 
   (void) pr_parser_server_ctxt_close();
   (void) pr_parser_cleanup();
@@ -652,14 +653,14 @@ START_TEST (parser_parse_file_test) {
 
   mark_point();
   res = pr_parser_parse_file(NULL, NULL, NULL, 0);
-  fail_unless(res < 0, "Failed to handle null arguments");
-  fail_unless(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
+  ck_assert_msg(res < 0, "Failed to handle null arguments");
+  ck_assert_msg(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
     strerror(errno), errno);
 
   mark_point();
   res = pr_parser_parse_file(p, config_path, NULL, 0);
-  fail_unless(res < 0, "Failed to handle invalid file");
-  fail_unless(errno == EPERM, "Expected EPERM (%d), got %s (%d)", EPERM,
+  ck_assert_msg(res < 0, "Failed to handle invalid file");
+  ck_assert_msg(errno == EPERM, "Expected EPERM (%d), got %s (%d)", EPERM,
     strerror(errno), errno);
 
   pr_parser_prepare(p, NULL);
@@ -667,69 +668,69 @@ START_TEST (parser_parse_file_test) {
 
   mark_point();
   res = pr_parser_parse_file(p, config_path, NULL, 0);
-  fail_unless(res < 0, "Failed to handle invalid file");
-  fail_unless(errno == ENOENT, "Expected ENOENT (%d), got %s (%d)", ENOENT,
+  ck_assert_msg(res < 0, "Failed to handle invalid file");
+  ck_assert_msg(errno == ENOENT, "Expected ENOENT (%d), got %s (%d)", ENOENT,
     strerror(errno), errno);
 
   mark_point();
   res = pr_parser_parse_file(p, "/tmp", NULL, 0);
-  fail_unless(res < 0, "Failed to handle directory");
-  fail_unless(errno == EISDIR, "Expected EISDIR (%d), got %s (%d)", EISDIR,
+  ck_assert_msg(res < 0, "Failed to handle directory");
+  ck_assert_msg(errno == EISDIR, "Expected EISDIR (%d), got %s (%d)", EISDIR,
     strerror(errno), errno);
 
   fh = pr_fsio_open(config_path, O_CREAT|O_EXCL|O_WRONLY);
-  fail_unless(fh != NULL, "Failed to open '%s': %s", config_path,
+  ck_assert_msg(fh != NULL, "Failed to open '%s': %s", config_path,
     strerror(errno));
 
   text = "TestSuiteEngine on\r\n";
   res = pr_fsio_write(fh, text, strlen(text));
-  fail_if(res < 0, "Failed to write '%s': %s", text, strerror(errno));
+  ck_assert_msg(res >= 0, "Failed to write '%s': %s", text, strerror(errno));
 
   text = "TestSuiteEnabled on\n";
   res = pr_fsio_write(fh, text, strlen(text));
-  fail_if(res < 0, "Failed to write '%s': %s", text, strerror(errno));
+  ck_assert_msg(res >= 0, "Failed to write '%s': %s", text, strerror(errno));
 
   text = "Include ";
   res = pr_fsio_write(fh, text, strlen(text));
-  fail_if(res < 0, "Failed to write '%s': %s", text, strerror(errno));
+  ck_assert_msg(res >= 0, "Failed to write '%s': %s", text, strerror(errno));
 
   text = (char *) config_path2;
   res = pr_fsio_write(fh, text, strlen(text));
-  fail_if(res < 0, "Failed to write '%s': %s", text, strerror(errno));
+  ck_assert_msg(res >= 0, "Failed to write '%s': %s", text, strerror(errno));
 
   text = "\n";
   res = pr_fsio_write(fh, text, strlen(text));
-  fail_if(res < 0, "Failed to write '%s': %s", text, strerror(errno));
+  ck_assert_msg(res >= 0, "Failed to write '%s': %s", text, strerror(errno));
 
   res = pr_fsio_close(fh);
-  fail_unless(res == 0, "Failed to write '%s': %s", config_path,
+  ck_assert_msg(res == 0, "Failed to write '%s': %s", config_path,
     strerror(errno));
 
   fh = pr_fsio_open(config_path2, O_CREAT|O_EXCL|O_WRONLY);
-  fail_unless(fh != NULL, "Failed to open '%s': %s", config_path2,
+  ck_assert_msg(fh != NULL, "Failed to open '%s': %s", config_path2,
     strerror(errno));
 
   text = "TestSuiteOptions Bebugging\n";
   res = pr_fsio_write(fh, text, strlen(text));
-  fail_if(res < 0, "Failed to write '%s': %s", text, strerror(errno));
+  ck_assert_msg(res >= 0, "Failed to write '%s': %s", text, strerror(errno));
 
   res = pr_fsio_close(fh);
-  fail_unless(res == 0, "Failed to write '%s': %s", config_path2,
+  ck_assert_msg(res == 0, "Failed to write '%s': %s", config_path2,
     strerror(errno));
 
   mark_point();
 
   /* Load the module's config handlers. */
   res = load_parser_module();
-  fail_unless(res == 0, "Failed to load module conftab: %s", strerror(errno));
+  ck_assert_msg(res == 0, "Failed to load module conftab: %s", strerror(errno));
 
   res = pr_parser_parse_file(p, config_path, NULL, PR_PARSER_FL_DYNAMIC_CONFIG);
-  fail_unless(res == 0, "Failed to parse '%s': %s", config_path,
+  ck_assert_msg(res == 0, "Failed to parse '%s': %s", config_path,
     strerror(errno));
 
   res = pr_parser_parse_file(p, config_path, NULL, 0);
-  fail_unless(res < 0, "Parsed '%s' unexpectedly", config_path);
-  fail_unless(errno == EPERM, "Expected EPERM (%d), got %s (%d)", EPERM,
+  ck_assert_msg(res < 0, "Parsed '%s' unexpectedly", config_path);
+  ck_assert_msg(errno == EPERM, "Expected EPERM (%d), got %s (%d)", EPERM,
     strerror(errno), errno);
 
   (void) pr_parser_server_ctxt_close();

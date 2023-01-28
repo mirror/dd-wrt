@@ -86,10 +86,12 @@ static void uniqid_mod_unload_ev(const void *event_data, void *user_data) {
 #endif /* PR_SHARED_MODULE */
 
 static void uniqid_postparse_ev(const void *event_data, void *user_data) {
-  pool *tmp_pool = make_sub_pool(main_server->pool);
+  pool *tmp_pool;
   const char *host_name = NULL;
   const pr_netaddr_t *host_addr = NULL;
   void *addr_data = NULL;
+
+  tmp_pool = make_sub_pool(main_server->pool);
 
   host_name = pr_netaddr_get_localaddr_str(tmp_pool);
   if (host_name == NULL) {
@@ -110,7 +112,7 @@ static void uniqid_postparse_ev(const void *event_data, void *user_data) {
   }
 
   addr_data = pr_netaddr_get_inaddr(host_addr);
-  if (addr_data) {
+  if (addr_data != NULL) {
     /* Copy bits from addr_data up to the size of an unsigned int (32 bits,
      * ideally).  In the case of an IPv6 address, this will only use the
      * low-order bits of the entire address.  C'est la vie.
@@ -119,7 +121,6 @@ static void uniqid_postparse_ev(const void *event_data, void *user_data) {
   }
 
   destroy_pool(tmp_pool);
-  return;
 }
 
 /* Initialization functions
@@ -167,12 +168,13 @@ static int uniqid_sess_init(void) {
   unsigned char buf[id_sz];
 
   c = find_config(main_server->conf, CONF_PARAM, "UniqueIDEngine", FALSE);
-  if (c) {
+  if (c != NULL) {
     uniqid_engine = *((int *) c->argv[0]);
   }
 
-  if (!uniqid_engine)
+  if (uniqid_engine == FALSE) {
     return 0;
+  }
 
   pr_log_debug(DEBUG8, MOD_UNIQUE_ID_VERSION ": generating unique session ID");
 
@@ -190,7 +192,7 @@ static int uniqid_sess_init(void) {
   pid = htonl((unsigned int) getpid());
 
   addr_data = pr_netaddr_get_inaddr(session.c->remote_addr);
-  if (addr_data) {
+  if (addr_data != NULL) {
     /* Copy bits from addr_data up to the size of an unsigned int (32 bits,
      * ideally).  In the case of an IPv6 address, this will only use the
      * low-order bits of the entire address.  C'est la vie.
@@ -238,19 +240,22 @@ static int uniqid_sess_init(void) {
     id[j++] = base64[y[0] >> 2];
     id[j++] = base64[((y[0] & 0x03) << 4) | ((y[1] & 0xf0) >> 4)];
 
-    if (j == id_encoded_sz)
+    if (j == id_encoded_sz) {
       break;
+    }
 
     id[j++] = base64[((y[1] & 0x0f) << 2) | ((y[2] & 0xc0) >> 6)];
 
-    if (j == id_encoded_sz)
+    if (j == id_encoded_sz) {
       break;
+    }
 
     id[j++] = base64[y[2] & 0x3f];
   }
 
-  if (j >= id_encoded_sz)
+  if (j >= id_encoded_sz) {
     j = id_encoded_sz;
+  }
   id[j] = '\0';
 
   if (pr_env_set(session.pool, key, id) < 0) {

@@ -1,6 +1,6 @@
 /*
  * ProFTPD - mod_sftp packet IO
- * Copyright (c) 2008-2020 TJ Saunders
+ * Copyright (c) 2008-2021 TJ Saunders
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -31,6 +31,9 @@
 struct ssh2_packet {
   pool *pool;
 
+  /* Module that created this packet. */
+  module *m;
+
   /* Length of the packet, not including mac or packet_len field itself. */
   uint32_t packet_len;
 
@@ -42,6 +45,10 @@ struct ssh2_packet {
 
   /* Must be at least 4 bytes of padding, with a maximum of 255 bytes. */
   unsigned char *padding;
+
+  /* Additional Authenticated Data (AAD). */
+  unsigned char *aad;
+  uint32_t aad_len;
 
   /* Message Authentication Code. */
   unsigned char *mac;
@@ -62,8 +69,8 @@ struct sftp_packet {
 };
 
 struct ssh2_packet *sftp_ssh2_packet_create(pool *);
-char sftp_ssh2_packet_get_mesg_type(struct ssh2_packet *);
-const char *sftp_ssh2_packet_get_mesg_type_desc(unsigned char);
+char sftp_ssh2_packet_get_msg_type(struct ssh2_packet *);
+const char *sftp_ssh2_packet_get_msg_type_desc(unsigned char);
 
 /* Returns a struct timeval populated with the time we last received an SSH2
  * packet from the client.
@@ -92,7 +99,10 @@ int sftp_ssh2_packet_send(int, struct ssh2_packet *);
  */
 int sftp_ssh2_packet_write(int, struct ssh2_packet *);
 
-int sftp_ssh2_packet_handle(void);
+/* This function reads in an SSH2 packet from the socket, and dispatches
+ * the packet to various handlers.
+ */
+int sftp_ssh2_packet_process(pool *p);
 
 /* These specialized functions are for handling the additional message types
  * defined in RFC 4253, Section 11, e.g. during KEX.
@@ -112,5 +122,6 @@ int sftp_ssh2_packet_set_poll_timeout(int);
 int sftp_ssh2_packet_set_version(const char *);
 
 int sftp_ssh2_packet_set_client_alive(unsigned int, unsigned int);
+void sftp_ssh2_packet_set_handler(int (*handler)(void *));
 
 #endif /* MOD_SFTP_PACKET_H */

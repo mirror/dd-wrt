@@ -57,21 +57,21 @@ START_TEST (class_open_test) {
   const char *name;
 
   res = pr_class_open(NULL, NULL);
-  fail_unless(res == -1, "Failed to handle NULL arguments");
-  fail_unless(errno == EINVAL, "Failed to set errno to EINVAL");
+  ck_assert_msg(res == -1, "Failed to handle NULL arguments");
+  ck_assert_msg(errno == EINVAL, "Failed to set errno to EINVAL");
 
   res = pr_class_open(p, NULL);
-  fail_unless(res == -1, "Failed to handle NULL name argument");
-  fail_unless(errno == EINVAL, "Failed to set errno to EINVAL");
+  ck_assert_msg(res == -1, "Failed to handle NULL name argument");
+  ck_assert_msg(errno == EINVAL, "Failed to set errno to EINVAL");
 
   name = "foo";
   res = pr_class_open(NULL, name);
-  fail_unless(res == -1, "Failed to handle NULL pool argument");
-  fail_unless(errno == EINVAL, "Failed to set errno to EINVAL");
+  ck_assert_msg(res == -1, "Failed to handle NULL pool argument");
+  ck_assert_msg(errno == EINVAL, "Failed to set errno to EINVAL");
 
   res = pr_class_open(p, name);
-  fail_unless(res == 0, "Failed to open class: %s", strerror(errno));
-  fail_unless(main_server->config_type == CONF_CLASS,
+  ck_assert_msg(res == 0, "Failed to open class: %s", strerror(errno));
+  ck_assert_msg(main_server->config_type == CONF_CLASS,
     "Expected config_type of %d, got %d", CONF_CLASS, main_server->config_type);
 }
 END_TEST
@@ -81,22 +81,22 @@ START_TEST (class_add_acl_test) {
   int res;
 
   res = pr_class_add_acl(NULL);
-  fail_unless(res == -1, "Failed to handle NULL argument");
-  fail_unless(errno == EINVAL, "Failed to set errno to EINVAL");
+  ck_assert_msg(res == -1, "Failed to handle NULL argument");
+  ck_assert_msg(errno == EINVAL, "Failed to set errno to EINVAL");
 
   acl = pr_netacl_create(p, "all");
-  fail_unless(acl != NULL, "Failed to handle ACL string 'all': %s",
+  ck_assert_msg(acl != NULL, "Failed to handle ACL string 'all': %s",
     strerror(errno));
 
   res = pr_class_add_acl(acl);
-  fail_unless(res == -1, "Failed to handle unopened class");
-  fail_unless(errno == EPERM, "Failed to set errno to EPERM");
+  ck_assert_msg(res == -1, "Failed to handle unopened class");
+  ck_assert_msg(errno == EPERM, "Failed to set errno to EPERM");
 
   res = pr_class_open(p, "foo");
-  fail_unless(res == 0, "Failed to open class: %s", strerror(errno));
+  ck_assert_msg(res == 0, "Failed to open class: %s", strerror(errno));
 
   res = pr_class_add_acl(acl);
-  fail_unless(res == 0, "Failed to add ACL: %s", strerror(errno));
+  ck_assert_msg(res == 0, "Failed to add ACL: %s", strerror(errno));
 }
 END_TEST
 
@@ -107,22 +107,22 @@ START_TEST (class_add_note_test) {
   int res;
 
   res = pr_class_add_note(k, v, vsz);
-  fail_unless(res == -1, "Failed to handle NULL argument");
-  fail_unless(errno == EINVAL, "Failed to set errno to EINVAL");
+  ck_assert_msg(res == -1, "Failed to handle NULL argument");
+  ck_assert_msg(errno == EINVAL, "Failed to set errno to EINVAL");
 
   k = "KEY";
   v = "VALUE";
   vsz = 6;
 
   res = pr_class_add_note(k, v, vsz);
-  fail_unless(res == -1, "Failed to handle unopened class");
-  fail_unless(errno == EPERM, "Failed to set errno to EPERM");
+  ck_assert_msg(res == -1, "Failed to handle unopened class");
+  ck_assert_msg(errno == EPERM, "Failed to set errno to EPERM");
 
   res = pr_class_open(p, "foo");
-  fail_unless(res == 0, "Failed to open class: %s", strerror(errno));
+  ck_assert_msg(res == 0, "Failed to open class: %s", strerror(errno));
 
   res = pr_class_add_note(k, v, vsz);
-  fail_unless(res == 0, "Failed to add note: %s", strerror(errno));
+  ck_assert_msg(res == 0, "Failed to add note: %s", strerror(errno));
 }
 END_TEST
 
@@ -131,31 +131,31 @@ START_TEST (class_close_test) {
   int res;
 
   res = pr_class_close();
-  fail_unless(res == 0, "Failed to close nonexistent current class: %s",
+  ck_assert_msg(res == 0, "Failed to close nonexistent current class: %s",
     strerror(errno));
 
   res = pr_class_open(p, "foo");
-  fail_unless(res == 0, "Failed to open class: %s", strerror(errno));
+  ck_assert_msg(res == 0, "Failed to open class: %s", strerror(errno));
 
   res = pr_class_close();
-  fail_unless(res == -1, "Failed to close empty class");
-  fail_unless(errno == EINVAL, "Failed to set errno to EINVAL");
-  fail_unless(main_server->config_type == CONF_ROOT,
+  ck_assert_msg(res == -1, "Failed to close empty class");
+  ck_assert_msg(errno == EINVAL, "Failed to set errno to EINVAL");
+  ck_assert_msg(main_server->config_type == CONF_ROOT,
     "Expected config_type of %d, got %d", CONF_ROOT, main_server->config_type);
 
   res = pr_class_open(p, "foo");
-  fail_unless(res == 0, "Failed to open class: %s", strerror(errno));
+  ck_assert_msg(res == 0, "Failed to open class: %s", strerror(errno));
 
   acl = pr_netacl_create(p, "all");
-  fail_unless(acl != NULL, "Failed to handle ACL string 'all': %s",
+  ck_assert_msg(acl != NULL, "Failed to handle ACL string 'all': %s",
     strerror(errno));
 
   res = pr_class_add_acl(acl);
-  fail_unless(res == 0, "Failed to add ACL: %s", strerror(errno));
+  ck_assert_msg(res == 0, "Failed to add ACL: %s", strerror(errno));
 
   res = pr_class_close();
-  fail_unless(res == 0, "Failed to close class: %s", strerror(errno));
-  fail_unless(main_server->config_type == CONF_ROOT,
+  ck_assert_msg(res == 0, "Failed to close class: %s", strerror(errno));
+  ck_assert_msg(main_server->config_type == CONF_ROOT,
     "Expected config_type of %d, got %d", CONF_ROOT, main_server->config_type);
 }
 END_TEST
@@ -164,21 +164,21 @@ START_TEST (class_set_satisfy_test) {
   int res;
 
   res = pr_class_set_satisfy(PR_CLASS_SATISFY_ANY);
-  fail_unless(res == -1, "Failed to handle nonexistent current class");
-  fail_unless(errno == EPERM, "Failed to set errno to EPERM");
+  ck_assert_msg(res == -1, "Failed to handle nonexistent current class");
+  ck_assert_msg(errno == EPERM, "Failed to set errno to EPERM");
 
   res = pr_class_open(p, "foo");
-  fail_unless(res == 0, "Failed to open class: %s", strerror(errno));
+  ck_assert_msg(res == 0, "Failed to open class: %s", strerror(errno));
 
   res = pr_class_set_satisfy(PR_CLASS_SATISFY_ANY);
-  fail_unless(res == 0, "Failed to set SATISFY_ANY: %s", strerror(errno));
+  ck_assert_msg(res == 0, "Failed to set SATISFY_ANY: %s", strerror(errno));
 
   res = pr_class_set_satisfy(PR_CLASS_SATISFY_ALL);
-  fail_unless(res == 0, "Failed to set SATISFY_ALL: %s", strerror(errno));
+  ck_assert_msg(res == 0, "Failed to set SATISFY_ALL: %s", strerror(errno));
 
   res = pr_class_set_satisfy(-1);
-  fail_unless(res == -1, "Failed to handle bad satisfy value");
-  fail_unless(errno == EINVAL, "Failed to set errno to EINVAL");
+  ck_assert_msg(res == -1, "Failed to handle bad satisfy value");
+  ck_assert_msg(errno == EINVAL, "Failed to set errno to EINVAL");
 }
 END_TEST
 
@@ -188,32 +188,32 @@ START_TEST (class_get_test) {
   pr_netacl_t *acl;
 
   class = pr_class_get(NULL);
-  fail_unless(class == NULL, "Failed to handle empty class list");
+  ck_assert_msg(class == NULL, "Failed to handle empty class list");
 
   acl = pr_netacl_create(p, "all");
-  fail_unless(acl != NULL, "Failed to handle ACL string 'all': %s",
+  ck_assert_msg(acl != NULL, "Failed to handle ACL string 'all': %s",
     strerror(errno));
 
   res = pr_class_open(p, "foo");
-  fail_unless(res == 0, "Failed to open class: %s", strerror(errno));
+  ck_assert_msg(res == 0, "Failed to open class: %s", strerror(errno));
 
   res = pr_class_add_acl(acl);
-  fail_unless(res == 0, "Failed to add ACL: %s", strerror(errno));
+  ck_assert_msg(res == 0, "Failed to add ACL: %s", strerror(errno));
 
   class = pr_class_get(NULL);
-  fail_unless(class == NULL, "Failed to handle unclosed class in list");
+  ck_assert_msg(class == NULL, "Failed to handle unclosed class in list");
 
   res = pr_class_close();
-  fail_unless(res == 0, "Failed to close class: %s", strerror(errno));
+  ck_assert_msg(res == 0, "Failed to close class: %s", strerror(errno));
 
   class = pr_class_get(NULL);
-  fail_unless(class != NULL, "Failed to get class in list: %s",
+  ck_assert_msg(class != NULL, "Failed to get class in list: %s",
     strerror(errno));
-  fail_unless(strcmp(class->cls_name, "foo") == 0,
+  ck_assert_msg(strcmp(class->cls_name, "foo") == 0,
     "Expected '%s', got '%s'", "foo", class->cls_name);
 
   class = pr_class_get(class);
-  fail_unless(class == NULL, "Failed to return NULL for end-of-list");
+  ck_assert_msg(class == NULL, "Failed to return NULL for end-of-list");
 }
 END_TEST
 
@@ -223,37 +223,37 @@ START_TEST (class_find_test) {
   int res;
 
   class = pr_class_find(NULL);
-  fail_unless(class == NULL, "Failed to handle NULL argument");
-  fail_unless(errno == EINVAL, "Failed to set errno to EINVAL");
+  ck_assert_msg(class == NULL, "Failed to handle NULL argument");
+  ck_assert_msg(errno == EINVAL, "Failed to set errno to EINVAL");
 
   class = pr_class_find("foo");
-  fail_unless(class == NULL, "Failed to handle empty list");
-  fail_unless(errno == ENOENT, "Failed to set errno to ENOENT");
+  ck_assert_msg(class == NULL, "Failed to handle empty list");
+  ck_assert_msg(errno == ENOENT, "Failed to set errno to ENOENT");
 
   acl = pr_netacl_create(p, "all");
-  fail_unless(acl != NULL, "Failed to handle ACL string 'all': %s",
+  ck_assert_msg(acl != NULL, "Failed to handle ACL string 'all': %s",
     strerror(errno));
 
   res = pr_class_open(p, "foo");
-  fail_unless(res == 0, "Failed to open class: %s", strerror(errno));
+  ck_assert_msg(res == 0, "Failed to open class: %s", strerror(errno));
 
   res = pr_class_add_acl(acl);
-  fail_unless(res == 0, "Failed to add ACL: %s", strerror(errno));
+  ck_assert_msg(res == 0, "Failed to add ACL: %s", strerror(errno));
 
   class = pr_class_find("foo");
-  fail_unless(class == NULL, "Failed to handle empty list");
-  fail_unless(errno == ENOENT, "Failed to set errno to ENOENT");
+  ck_assert_msg(class == NULL, "Failed to handle empty list");
+  ck_assert_msg(errno == ENOENT, "Failed to set errno to ENOENT");
 
   res = pr_class_close();
-  fail_unless(res == 0, "Failed to close class: %s", strerror(errno));
+  ck_assert_msg(res == 0, "Failed to close class: %s", strerror(errno));
 
   class = pr_class_find("foo");
-  fail_unless(class != NULL, "Failed to handle class 'foo': %s",
+  ck_assert_msg(class != NULL, "Failed to handle class 'foo': %s",
     strerror(errno));
 
   class = pr_class_find("bar");
-  fail_unless(class == NULL, "Failed to handle nonexistent class");
-  fail_unless(errno == ENOENT, "Failed to set errno to ENOENT");
+  ck_assert_msg(class == NULL, "Failed to handle nonexistent class");
+  ck_assert_msg(errno == ENOENT, "Failed to set errno to ENOENT");
 }
 END_TEST
 
@@ -268,59 +268,59 @@ START_TEST (class_satisfied_test) {
 
   mark_point();
   res = pr_class_satisfied(p, NULL, NULL);
-  fail_unless(res < 0, "Failed to handle null class");
-  fail_unless(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
+  ck_assert_msg(res < 0, "Failed to handle null class");
+  ck_assert_msg(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
     strerror(errno), errno);
 
   res = pr_class_open(p, "localhost");
-  fail_unless(res == 0, "Failed to open class: %s", strerror(errno));
+  ck_assert_msg(res == 0, "Failed to open class: %s", strerror(errno));
 
   acl = pr_netacl_create(p, "127.0.0.1");
-  fail_unless(acl != NULL, "Failed to create ACL: %s", strerror(errno));
+  ck_assert_msg(acl != NULL, "Failed to create ACL: %s", strerror(errno));
 
   res = pr_class_add_acl(acl);
-  fail_unless(res == 0, "Failed to add ACL to class: %s", strerror(errno));
+  ck_assert_msg(res == 0, "Failed to add ACL to class: %s", strerror(errno));
 
   res = pr_class_close();
-  fail_unless(res == 0, "Failed to close class: %s", strerror(errno));
+  ck_assert_msg(res == 0, "Failed to close class: %s", strerror(errno));
 
   cls = pr_class_find("localhost");
-  fail_unless(cls != NULL, "Failed to find class 'localhost': %s",
+  ck_assert_msg(cls != NULL, "Failed to find class 'localhost': %s",
     strerror(errno));
 
   mark_point();
   res = pr_class_satisfied(p, cls, NULL);
-  fail_unless(res < 0, "Failed to handle null addr");
-  fail_unless(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
+  ck_assert_msg(res < 0, "Failed to handle null addr");
+  ck_assert_msg(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
     strerror(errno), errno);
 
   addr = pr_netaddr_get_addr(p, "localhost", FALSE);
-  fail_unless(addr != NULL, "Failed to get addr: %s", strerror(errno));
+  ck_assert_msg(addr != NULL, "Failed to get addr: %s", strerror(errno));
 
   mark_point();
   res = pr_class_satisfied(p, cls, addr);
-  fail_unless(res == TRUE, "Class not satisfied by address: %s",
+  ck_assert_msg(res == TRUE, "Class not satisfied by address: %s",
     strerror(errno));
 
   res = pr_class_open(p, "!localhost");
-  fail_unless(res == 0, "Failed to open class: %s", strerror(errno));
+  ck_assert_msg(res == 0, "Failed to open class: %s", strerror(errno));
 
   acl = pr_netacl_create(p, "!127.0.0.1");
-  fail_unless(acl != NULL, "Failed to create ACL: %s", strerror(errno));
+  ck_assert_msg(acl != NULL, "Failed to create ACL: %s", strerror(errno));
 
   res = pr_class_add_acl(acl);
-  fail_unless(res == 0, "Failed to add ACL to class: %s", strerror(errno));
+  ck_assert_msg(res == 0, "Failed to add ACL to class: %s", strerror(errno));
 
   res = pr_class_close();
-  fail_unless(res == 0, "Failed to close class: %s", strerror(errno));
+  ck_assert_msg(res == 0, "Failed to close class: %s", strerror(errno));
 
   cls = pr_class_find("!localhost");
-  fail_unless(cls != NULL, "Failed to find class '!localhost': %s",
+  ck_assert_msg(cls != NULL, "Failed to find class '!localhost': %s",
     strerror(errno));
 
   mark_point();
   res = pr_class_satisfied(p, cls, addr);
-  fail_unless(res == FALSE, "Class satisfied unexpectedly by address");
+  ck_assert_msg(res == FALSE, "Class satisfied unexpectedly by address");
 }
 END_TEST
 
@@ -335,77 +335,77 @@ START_TEST (class_match_addr_test) {
 
   mark_point();
   class = pr_class_match_addr(NULL);
-  fail_unless(class == NULL, "Failed to handle NULL argument");
-  fail_unless(errno == EINVAL, "Failed to set errno to EINVAL");
+  ck_assert_msg(class == NULL, "Failed to handle NULL argument");
+  ck_assert_msg(errno == EINVAL, "Failed to set errno to EINVAL");
 
   addr = pr_netaddr_get_addr(p, "localhost", FALSE);
-  fail_unless(addr != NULL, "Failed to get addr: %s", strerror(errno));
+  ck_assert_msg(addr != NULL, "Failed to get addr: %s", strerror(errno));
 
   class = pr_class_match_addr(addr);
-  fail_unless(class == NULL, "Failed to handle empty class list");
-  fail_unless(errno == ENOENT, "Failed to set errno to ENOENT");
+  ck_assert_msg(class == NULL, "Failed to handle empty class list");
+  ck_assert_msg(errno == ENOENT, "Failed to set errno to ENOENT");
 
   res = pr_class_open(p, "localhost");
-  fail_unless(res == 0, "Failed to open class: %s", strerror(errno));
+  ck_assert_msg(res == 0, "Failed to open class: %s", strerror(errno));
 
   acl = pr_netacl_create(p, "127.0.0.1");
-  fail_unless(acl != NULL, "Failed to create ACL: %s", strerror(errno));
+  ck_assert_msg(acl != NULL, "Failed to create ACL: %s", strerror(errno));
 
   res = pr_class_add_acl(acl);
-  fail_unless(res == 0, "Failed to add ACL to class: %s", strerror(errno));
+  ck_assert_msg(res == 0, "Failed to add ACL to class: %s", strerror(errno));
 
   res = pr_class_close();
-  fail_unless(res == 0, "Failed to close class: %s", strerror(errno));
+  ck_assert_msg(res == 0, "Failed to close class: %s", strerror(errno));
 
   res = pr_class_open(p, "!localhost");
-  fail_unless(res == 0, "Failed to open class: %s", strerror(errno));
+  ck_assert_msg(res == 0, "Failed to open class: %s", strerror(errno));
 
   acl = pr_netacl_create(p, "!127.0.0.1");
-  fail_unless(acl != NULL, "Failed to create ACL: %s", strerror(errno));
+  ck_assert_msg(acl != NULL, "Failed to create ACL: %s", strerror(errno));
 
   res = pr_class_add_acl(acl);
-  fail_unless(res == 0, "Failed to add ACL to class: %s", strerror(errno));
+  ck_assert_msg(res == 0, "Failed to add ACL to class: %s", strerror(errno));
 
   res = pr_class_close();
-  fail_unless(res == 0, "Failed to close class: %s", strerror(errno));
+  ck_assert_msg(res == 0, "Failed to close class: %s", strerror(errno));
 
   class = pr_class_match_addr(addr);
-  fail_unless(class != NULL, "Failed to match class for addr: %s",
+  ck_assert_msg(class != NULL, "Failed to match class for addr: %s",
     strerror(errno));
-  fail_unless(strcmp(class->cls_name, "localhost") == 0,
+  ck_assert_msg(strcmp(class->cls_name, "localhost") == 0,
     "Expected '%s', got '%s'", "localhost", class->cls_name);
 
   /* Reset the class list, add classes in a different order, and try again. */
   init_class();
 
   res = pr_class_open(p, "!localhost");
-  fail_unless(res == 0, "Failed to open class: %s", strerror(errno));
+  ck_assert_msg(res == 0, "Failed to open class: %s", strerror(errno));
 
   acl = pr_netacl_create(p, "!127.0.0.1");
-  fail_unless(acl != NULL, "Failed to create ACL: %s", strerror(errno));
+  ck_assert_msg(acl != NULL, "Failed to create ACL: %s", strerror(errno));
 
   res = pr_class_add_acl(acl);
-  fail_unless(res == 0, "Failed to add ACL to class: %s", strerror(errno));
+  ck_assert_msg(res == 0, "Failed to add ACL to class: %s", strerror(errno));
 
   res = pr_class_close();
-  fail_unless(res == 0, "Failed to close class: %s", strerror(errno));
+  ck_assert_msg(res == 0, "Failed to close class: %s", strerror(errno));
 
   res = pr_class_open(p, "localhost");
-  fail_unless(res == 0, "Failed to open class: %s", strerror(errno));
+  ck_assert_msg(res == 0, "Failed to open class: %s", strerror(errno));
 
   acl = pr_netacl_create(p, "127.0.0.1");
-  fail_unless(acl != NULL, "Failed to create ACL: %s", strerror(errno));
+  ck_assert_msg(acl != NULL, "Failed to create ACL: %s", strerror(errno));
 
   res = pr_class_add_acl(acl);
-  fail_unless(res == 0, "Failed to add ACL to class: %s", strerror(errno));
+  ck_assert_msg(res == 0, "Failed to add ACL to class: %s", strerror(errno));
 
   res = pr_class_close();
-  fail_unless(res == 0, "Failed to close class: %s", strerror(errno));
+  ck_assert_msg(res == 0, "Failed to close class: %s", strerror(errno));
 
   class = pr_class_match_addr(addr);
-  fail_unless(class != NULL, "Failed to match class for addr: %s",
+  ck_assert_msg(class != NULL, "Failed to match class for addr: %s",
     strerror(errno));
-  fail_unless(strcmp(class->cls_name, "localhost") == 0,
+  ck_assert_msg(strcmp(class->cls_name, "localhost") == 0,
     "Expected '%s', got '%s'", "localhost", class->cls_name);
 
   /* Reset the class list, and see what happens when we try to match
@@ -414,29 +414,29 @@ START_TEST (class_match_addr_test) {
   init_class();
 
   res = pr_class_open(p, "impossible");
-  fail_unless(res == 0, "Failed to open class: %s", strerror(errno));
+  ck_assert_msg(res == 0, "Failed to open class: %s", strerror(errno));
 
   acl = pr_netacl_create(p, "!127.0.0.1");
-  fail_unless(acl != NULL, "Failed to create ACL: %s", strerror(errno));
+  ck_assert_msg(acl != NULL, "Failed to create ACL: %s", strerror(errno));
 
   res = pr_class_add_acl(acl);
-  fail_unless(res == 0, "Failed to add ACL to class: %s", strerror(errno));
+  ck_assert_msg(res == 0, "Failed to add ACL to class: %s", strerror(errno));
 
   acl = pr_netacl_create(p, "127.0.0.1");
-  fail_unless(acl != NULL, "Failed to create ACL: %s", strerror(errno));
+  ck_assert_msg(acl != NULL, "Failed to create ACL: %s", strerror(errno));
 
   res = pr_class_add_acl(acl);
-  fail_unless(res == 0, "Failed to add ACL to class: %s", strerror(errno));
+  ck_assert_msg(res == 0, "Failed to add ACL to class: %s", strerror(errno));
 
   res = pr_class_set_satisfy(PR_CLASS_SATISFY_ALL);
-  fail_unless(res == 0, "Failed to set satisfy value: %s", strerror(errno));
+  ck_assert_msg(res == 0, "Failed to set satisfy value: %s", strerror(errno));
 
   res = pr_class_close();
-  fail_unless(res == 0, "Failed to close class: %s", strerror(errno));
+  ck_assert_msg(res == 0, "Failed to close class: %s", strerror(errno));
 
   class = pr_class_match_addr(addr);
-  fail_unless(class == NULL, "Unexpectedly matched class for addr");
-  fail_unless(errno == ENOENT, "Failed to set errno to ENOENT");
+  ck_assert_msg(class == NULL, "Unexpectedly matched class for addr");
+  ck_assert_msg(errno == ENOENT, "Failed to set errno to ENOENT");
 
   /* Reset the class list, add two classes with identical rules, and
    * verify that the first matching class wins.
@@ -444,88 +444,88 @@ START_TEST (class_match_addr_test) {
   init_class();
 
   res = pr_class_open(p, "first");
-  fail_unless(res == 0, "Failed to open class: %s", strerror(errno));
+  ck_assert_msg(res == 0, "Failed to open class: %s", strerror(errno));
 
   acl = pr_netacl_create(p, "127.0.0.1");
-  fail_unless(acl != NULL, "Failed to create ACL: %s", strerror(errno));
+  ck_assert_msg(acl != NULL, "Failed to create ACL: %s", strerror(errno));
 
   res = pr_class_add_acl(acl);
-  fail_unless(res == 0, "Failed to add ACL to class: %s", strerror(errno));
+  ck_assert_msg(res == 0, "Failed to add ACL to class: %s", strerror(errno));
 
   res = pr_class_close();
-  fail_unless(res == 0, "Failed to close class: %s", strerror(errno));
+  ck_assert_msg(res == 0, "Failed to close class: %s", strerror(errno));
 
   res = pr_class_open(p, "second");
-  fail_unless(res == 0, "Failed to open class: %s", strerror(errno));
+  ck_assert_msg(res == 0, "Failed to open class: %s", strerror(errno));
 
   acl = pr_netacl_create(p, "127.0.0.1");
-  fail_unless(acl != NULL, "Failed to create ACL: %s", strerror(errno));
+  ck_assert_msg(acl != NULL, "Failed to create ACL: %s", strerror(errno));
 
   res = pr_class_add_acl(acl);
-  fail_unless(res == 0, "Failed to add ACL to class: %s", strerror(errno));
+  ck_assert_msg(res == 0, "Failed to add ACL to class: %s", strerror(errno));
 
   res = pr_class_close();
-  fail_unless(res == 0, "Failed to close class: %s", strerror(errno));
+  ck_assert_msg(res == 0, "Failed to close class: %s", strerror(errno));
 
   class = pr_class_match_addr(addr);
-  fail_unless(class != NULL, "Failed to match class for addr: %s",
+  ck_assert_msg(class != NULL, "Failed to match class for addr: %s",
     strerror(errno));
-  fail_unless(strcmp(class->cls_name, "first") == 0,
+  ck_assert_msg(strcmp(class->cls_name, "first") == 0,
     "Expected '%s', got '%s'", "first", class->cls_name);
 
   init_class();
 
   res = pr_class_open(p, "second");
-  fail_unless(res == 0, "Failed to open class: %s", strerror(errno));
+  ck_assert_msg(res == 0, "Failed to open class: %s", strerror(errno));
 
   acl = pr_netacl_create(p, "127.0.0.1");
-  fail_unless(acl != NULL, "Failed to create ACL: %s", strerror(errno));
+  ck_assert_msg(acl != NULL, "Failed to create ACL: %s", strerror(errno));
 
   res = pr_class_add_acl(acl);
-  fail_unless(res == 0, "Failed to add ACL to class: %s", strerror(errno));
+  ck_assert_msg(res == 0, "Failed to add ACL to class: %s", strerror(errno));
 
   res = pr_class_close();
-  fail_unless(res == 0, "Failed to close class: %s", strerror(errno));
+  ck_assert_msg(res == 0, "Failed to close class: %s", strerror(errno));
 
   res = pr_class_open(p, "first");
-  fail_unless(res == 0, "Failed to open class: %s", strerror(errno));
+  ck_assert_msg(res == 0, "Failed to open class: %s", strerror(errno));
 
   acl = pr_netacl_create(p, "127.0.0.1");
-  fail_unless(acl != NULL, "Failed to create ACL: %s", strerror(errno));
+  ck_assert_msg(acl != NULL, "Failed to create ACL: %s", strerror(errno));
 
   res = pr_class_add_acl(acl);
-  fail_unless(res == 0, "Failed to add ACL to class: %s", strerror(errno));
+  ck_assert_msg(res == 0, "Failed to add ACL to class: %s", strerror(errno));
 
   res = pr_class_close();
-  fail_unless(res == 0, "Failed to close class: %s", strerror(errno));
+  ck_assert_msg(res == 0, "Failed to close class: %s", strerror(errno));
 
   class = pr_class_match_addr(addr);
-  fail_unless(class != NULL, "Failed to match class for addr: %s",
+  ck_assert_msg(class != NULL, "Failed to match class for addr: %s",
     strerror(errno));
-  fail_unless(strcmp(class->cls_name, "second") == 0,
+  ck_assert_msg(strcmp(class->cls_name, "second") == 0,
     "Expected '%s', got '%s'", "second", class->cls_name);
 
   init_class();
 
   res = pr_class_open(p, "match");
-  fail_unless(res == 0, "Failed to open class: %s", strerror(errno));
+  ck_assert_msg(res == 0, "Failed to open class: %s", strerror(errno));
 
   acl = pr_netacl_create(p, "127.0.0.1");
-  fail_unless(acl != NULL, "Failed to create ACL: %s", strerror(errno));
+  ck_assert_msg(acl != NULL, "Failed to create ACL: %s", strerror(errno));
 
   res = pr_class_add_acl(acl);
-  fail_unless(res == 0, "Failed to add ACL to class: %s", strerror(errno));
+  ck_assert_msg(res == 0, "Failed to add ACL to class: %s", strerror(errno));
 
   res = pr_class_set_satisfy(PR_CLASS_SATISFY_ALL);
-  fail_unless(res == 0, "Failed to set satisfy value: %s", strerror(errno));
+  ck_assert_msg(res == 0, "Failed to set satisfy value: %s", strerror(errno));
 
   res = pr_class_close();
-  fail_unless(res == 0, "Failed to close class: %s", strerror(errno));
+  ck_assert_msg(res == 0, "Failed to close class: %s", strerror(errno));
 
   class = pr_class_match_addr(addr);
-  fail_unless(class != NULL, "Failed to match class for addr: %s",
+  ck_assert_msg(class != NULL, "Failed to match class for addr: %s",
     strerror(errno));
-  fail_unless(strcmp(class->cls_name, "match") == 0,
+  ck_assert_msg(strcmp(class->cls_name, "match") == 0,
     "Expected '%s', got '%s'", "match", class->cls_name);
 
 }

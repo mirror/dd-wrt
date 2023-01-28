@@ -64,7 +64,7 @@ my $TESTS = {
   },
 
   # AuthOTPOptions tests
-  auth_otp_opt_std_response => {
+  auth_otp_opt_ftp_std_response => {
     order => ++$order,
     test_class => [qw(forking mod_auth_otp mod_sql mod_sql_sqlite)],
   },
@@ -161,7 +161,7 @@ sub auth_otp_hotp_host {
   # mod_auth_otp wants this secret to be base32-encoded, for interoperability
   # with Google Authenticator.
   require MIME::Base32;
-  MIME::Base32->import('RFC');
+  MIME::Base32->import('RFC') if $MIME::Base32::VERSION <= 1.02;
 
   my $secret = 'Sup3rS3Cr3t';
   my $base32_secret = MIME::Base32::encode($secret);
@@ -198,6 +198,7 @@ EOS
 
     AuthUserFile => $setup->{auth_user_file},
     AuthGroupFile => $setup->{auth_group_file},
+    AuthOrder => 'mod_auth_otp.c* mod_auth_file.c',
 
     DefaultServer => 'on',
     ServerName => '"Default Server"',
@@ -232,6 +233,7 @@ EOS
 
   AuthUserFile $setup->{auth_user_file}
   AuthGroupFile $setup->{auth_group_file}
+  AuthOrder mod_auth_otp.c* mod_auth_file.c
 
   <IfModule mod_delay.c>
     DelayEngine off
@@ -338,7 +340,7 @@ sub auth_otp_hotp_login {
   # mod_auth_otp wants this secret to be base32-encoded, for interoperability
   # with Google Authenticator.
   require MIME::Base32;
-  MIME::Base32->import('RFC');
+  MIME::Base32->import('RFC') if $MIME::Base32::VERSION <= 1.02;
 
   my $secret = 'Sup3rS3Cr3t';
   my $base32_secret = MIME::Base32::encode($secret);
@@ -375,6 +377,7 @@ EOS
 
     AuthUserFile => $setup->{auth_user_file},
     AuthGroupFile => $setup->{auth_group_file},
+    AuthOrder => 'mod_auth_otp.c* mod_auth_file.c',
 
     IfModules => {
       'mod_delay.c' => {
@@ -475,7 +478,7 @@ sub auth_otp_consecutive_hotp_logins {
   # mod_auth_otp wants this secret to be base32-encoded, for interoperability
   # with Google Authenticator.
   require MIME::Base32;
-  MIME::Base32->import('RFC');
+  MIME::Base32->import('RFC') if $MIME::Base32::VERSION <= 1.02;
 
   my $secret = 'Sup3rS3Cr3t';
   my $base32_secret = MIME::Base32::encode($secret);
@@ -510,6 +513,7 @@ EOS
 
     AuthUserFile => $setup->{auth_user_file},
     AuthGroupFile => $setup->{auth_group_file},
+    AuthOrder => 'mod_auth_otp.c* mod_auth_file.c',
 
     IfModules => {
       'mod_delay.c' => {
@@ -624,7 +628,7 @@ sub auth_otp_hotp_unconfigured_user {
   # mod_auth_otp wants this secret to be base32-encoded, for interoperability
   # with Google Authenticator.
   require MIME::Base32;
-  MIME::Base32->import('RFC');
+  MIME::Base32->import('RFC') if $MIME::Base32::VERSION <= 1.02;
 
   my $secret = 'Sup3rS3Cr3t';
   my $base32_secret = MIME::Base32::encode($secret);
@@ -658,6 +662,7 @@ EOS
 
     AuthUserFile => $setup->{auth_user_file},
     AuthGroupFile => $setup->{auth_group_file},
+    AuthOrder => 'mod_auth_otp.c* mod_auth_file.c',
 
     IfModules => {
       'mod_delay.c' => {
@@ -777,7 +782,7 @@ sub auth_otp_hotp_authoritative {
   # mod_auth_otp wants this secret to be base32-encoded, for interoperability
   # with Google Authenticator.
   require MIME::Base32;
-  MIME::Base32->import('RFC');
+  MIME::Base32->import('RFC') if $MIME::Base32::VERSION <= 1.02;
 
   my $secret = 'Sup3rS3Cr3t';
   my $base32_secret = MIME::Base32::encode($secret);
@@ -935,7 +940,7 @@ sub auth_otp_totp_login {
   # mod_auth_otp wants this secret to be base32-encoded, for interoperability
   # with Google Authenticator.
   require MIME::Base32;
-  MIME::Base32->import('RFC');
+  MIME::Base32->import('RFC') if $MIME::Base32::VERSION <= 1.02;
 
   my $secret = 'Sup3rS3Cr3t';
   my $base32_secret = MIME::Base32::encode($secret);
@@ -969,6 +974,7 @@ EOS
 
     AuthUserFile => $setup->{auth_user_file},
     AuthGroupFile => $setup->{auth_group_file},
+    AuthOrder => 'mod_auth_otp.c* mod_auth_file.c',
 
     IfModules => {
       'mod_delay.c' => {
@@ -1069,7 +1075,7 @@ sub auth_otp_consecutive_totp_logins {
   # mod_auth_otp wants this secret to be base32-encoded, for interoperability
   # with Google Authenticator.
   require MIME::Base32;
-  MIME::Base32->import('RFC');
+  MIME::Base32->import('RFC') if $MIME::Base32::VERSION <= 1.02;
 
   my $secret = 'Sup3rS3Cr3t';
   my $base32_secret = MIME::Base32::encode($secret);
@@ -1103,6 +1109,7 @@ EOS
 
     AuthUserFile => $setup->{auth_user_file},
     AuthGroupFile => $setup->{auth_group_file},
+    AuthOrder => 'mod_auth_otp.c* mod_auth_file.c',
 
     IfModules => {
       'mod_delay.c' => {
@@ -1227,7 +1234,7 @@ sub auth_otp_totp_unconfigured_user {
   # mod_auth_otp wants this secret to be base32-encoded, for interoperability
   # with Google Authenticator.
   require MIME::Base32;
-  MIME::Base32->import('RFC');
+  MIME::Base32->import('RFC') if $MIME::Base32::VERSION <= 1.02;
 
   my $secret = 'Sup3rS3Cr3t';
   my $base32_secret = MIME::Base32::encode($secret);
@@ -1261,6 +1268,7 @@ EOS
 
     AuthUserFile => $setup->{auth_user_file},
     AuthGroupFile => $setup->{auth_group_file},
+    AuthOrder => 'mod_auth_otp.c* mod_auth_file.c',
 
     IfModules => {
       'mod_delay.c' => {
@@ -1380,7 +1388,7 @@ sub auth_otp_totp_authoritative {
   # mod_auth_otp wants this secret to be base32-encoded, for interoperability
   # with Google Authenticator.
   require MIME::Base32;
-  MIME::Base32->import('RFC');
+  MIME::Base32->import('RFC') if $MIME::Base32::VERSION <= 1.02;
 
   my $secret = 'Sup3rS3Cr3t';
   my $base32_secret = MIME::Base32::encode($secret);
@@ -1526,7 +1534,7 @@ EOS
   test_cleanup($setup->{log_file}, $ex);
 }
 
-sub auth_otp_opt_std_response {
+sub auth_otp_opt_ftp_std_response {
   my $self = shift;
   my $tmpdir = $self->{tmpdir};
   my $setup = test_setup($tmpdir, 'auth_otp');
@@ -1539,7 +1547,7 @@ sub auth_otp_opt_std_response {
   # mod_auth_otp wants this secret to be base32-encoded, for interoperability
   # with Google Authenticator.
   require MIME::Base32;
-  MIME::Base32->import('RFC');
+  MIME::Base32->import('RFC') if $MIME::Base32::VERSION <= 1.02;
 
   my $secret = 'Sup3rS3Cr3t';
   my $base32_secret = MIME::Base32::encode($secret);
@@ -1574,6 +1582,7 @@ EOS
 
     AuthUserFile => $setup->{auth_user_file},
     AuthGroupFile => $setup->{auth_group_file},
+    AuthOrder => 'mod_auth_otp.c* mod_auth_file.c',
 
     IfModules => {
       'mod_delay.c' => {
@@ -1584,7 +1593,7 @@ EOS
         AuthOTPEngine => 'on',
         AuthOTPLog => $setup->{log_file},
         AuthOTPAlgorithm => 'hotp',
-        AuthOTPOptions => 'StandardResponse',
+        AuthOTPOptions => 'FTPStandardResponse',
 
         # Assumes default table names, column names
         AuthOTPTable => 'sql:/get-user-hotp/update-user-hotp',
@@ -1677,7 +1686,7 @@ sub auth_otp_opt_require_table_entry {
   # mod_auth_otp wants this secret to be base32-encoded, for interoperability
   # with Google Authenticator.
   require MIME::Base32;
-  MIME::Base32->import('RFC');
+  MIME::Base32->import('RFC') if $MIME::Base32::VERSION <= 1.02;
 
   my $secret = 'Sup3rS3Cr3t';
   my $base32_secret = MIME::Base32::encode($secret);
@@ -1712,6 +1721,7 @@ EOS
 
     AuthUserFile => $setup->{auth_user_file},
     AuthGroupFile => $setup->{auth_group_file},
+    AuthOrder => 'mod_auth_otp.c mod_auth_file.c',
 
     IfModules => {
       'mod_delay.c' => {
@@ -1811,7 +1821,7 @@ sub auth_otp_opt_require_table_entry_authoritative {
   # mod_auth_otp wants this secret to be base32-encoded, for interoperability
   # with Google Authenticator.
   require MIME::Base32;
-  MIME::Base32->import('RFC');
+  MIME::Base32->import('RFC') if $MIME::Base32::VERSION <= 1.02;
 
   my $secret = 'Sup3rS3Cr3t';
   my $base32_secret = MIME::Base32::encode($secret);

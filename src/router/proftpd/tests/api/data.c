@@ -1,6 +1,6 @@
 /*
  * ProFTPD - FTP server testsuite
- * Copyright (c) 2015-2020 The ProFTPD Project team
+ * Copyright (c) 2015-2022 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -37,7 +37,10 @@ static void set_up(void) {
 
   init_fs();
   init_netio();
+  init_config();
   init_dirtree();
+
+  pr_parser_prepare(p, NULL);
 
   pr_response_set_pool(p);
   (void) pr_fsio_unlink(data_test_path);
@@ -56,56 +59,75 @@ static void set_up(void) {
 }
 
 static void tear_down(void) {
+  (void) pr_fsio_unlink(data_test_path);
+
+  if (session.c != NULL) {
+    (void) pr_inet_close(p, session.c);
+  }
+
+  if (session.d != NULL &&
+      session.d != session.c) {
+    (void) pr_inet_close(p, session.d);
+  }
+
+  session.c = session.d = NULL;
+
   pr_unregister_netio(PR_NETIO_STRM_CTRL|PR_NETIO_STRM_CTRL);
   pr_unregister_netio(PR_NETIO_STRM_CTRL|PR_NETIO_STRM_DATA);
-  (void) pr_fsio_unlink(data_test_path);
 
   if (getenv("TEST_VERBOSE") != NULL) {
     pr_trace_set_levels("data", 0, 0);
   }
   pr_trace_set_levels("timing", 0, 0);
 
-  if (session.c != NULL) {
-    (void) pr_inet_close(p, session.c);
-
-    if (session.c == session.d) {
-      session.d = NULL;
-    }
-
-    session.c = NULL;
-  }
-
-  if (session.d != NULL) {
-    (void) pr_inet_close(p, session.d);
-    session.d = NULL;
-  }
-
+  pr_parser_cleanup();
   pr_response_set_pool(NULL);
 
-  if (p) {
+  if (p == NULL) {
     destroy_pool(p);
     p = session.pool = session.xfer.p = permanent_pool = NULL;
   } 
+}
+
+static int tmpfile_fd(void) {
+  int fd;
+
+  fd = open(data_test_path, O_CREAT|O_RDWR, 0600);
+  if (fd < 0) {
+    fprintf(stderr, "Error opening %s: %s\n", data_test_path, strerror(errno));
+    return -1;
+  }
+
+  (void) unlink(data_test_path);
+  return fd;
+}
+
+static int rewind_fd(int fd) {
+  if (lseek(fd, 0, SEEK_SET) == (off_t) -1) {
+    return -1;
+  }
+
+  return 0;
 }
 
 START_TEST (data_get_timeout_test) {
   int res;
 
   res = pr_data_get_timeout(-1);
-  fail_unless(res < 0, "Failed to handle invalid timeout ID");
-  fail_unless(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
+  ck_assert_msg(res < 0, "Failed to handle invalid timeout ID");
+  ck_assert_msg(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
     strerror(errno), errno);
 
   res = pr_data_get_timeout(PR_DATA_TIMEOUT_IDLE);
-  fail_unless(res == PR_TUNABLE_TIMEOUTIDLE, "Expected %d, got %d",
+  ck_assert_msg(res == PR_TUNABLE_TIMEOUTIDLE, "Expected %d, got %d",
     PR_TUNABLE_TIMEOUTIDLE, res);
 
   res = pr_data_get_timeout(PR_DATA_TIMEOUT_NO_TRANSFER);
-  fail_unless(res == PR_TUNABLE_TIMEOUTNOXFER, "Expected %d, got %d",
+  ck_assert_msg(res == PR_TUNABLE_TIMEOUTNOXFER, "Expected %d, got %d",
     PR_TUNABLE_TIMEOUTNOXFER, res);
 
   res = pr_data_get_timeout(PR_DATA_TIMEOUT_STALLED);
-  fail_unless(res == PR_TUNABLE_TIMEOUTSTALLED, "Expected %d, got %d",
+  ck_assert_msg(res == PR_TUNABLE_TIMEOUTSTALLED, "Expected %d, got %d",
     PR_TUNABLE_TIMEOUTSTALLED, res);
 }
 END_TEST
@@ -115,15 +137,15 @@ START_TEST (data_set_timeout_test) {
 
   pr_data_set_timeout(PR_DATA_TIMEOUT_IDLE, timeout);
   res = pr_data_get_timeout(PR_DATA_TIMEOUT_IDLE);
-  fail_unless(res == timeout, "Expected %d, got %d", timeout, res);
+  ck_assert_msg(res == timeout, "Expected %d, got %d", timeout, res);
 
   pr_data_set_timeout(PR_DATA_TIMEOUT_NO_TRANSFER, timeout);
   res = pr_data_get_timeout(PR_DATA_TIMEOUT_NO_TRANSFER);
-  fail_unless(res == timeout, "Expected %d, got %d", timeout, res);
+  ck_assert_msg(res == timeout, "Expected %d, got %d", timeout, res);
 
   pr_data_set_timeout(PR_DATA_TIMEOUT_STALLED, timeout);
   res = pr_data_get_timeout(PR_DATA_TIMEOUT_STALLED);
-  fail_unless(res == timeout, "Expected %d, got %d", timeout, res);
+  ck_assert_msg(res == timeout, "Expected %d, got %d", timeout, res);
 
   /* Interestingly, the linger timeout has its own function. */
   pr_data_set_linger(7L);
@@ -134,21 +156,21 @@ START_TEST (data_ignore_ascii_test) {
   int res;
 
   res = pr_data_ignore_ascii(-1);
-  fail_unless(res < 0, "Failed to handle invalid argument");
-  fail_unless(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
+  ck_assert_msg(res < 0, "Failed to handle invalid argument");
+  ck_assert_msg(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
     strerror(errno), errno);
 
   res = pr_data_ignore_ascii(TRUE);
-  fail_unless(res == FALSE, "Expected FALSE (%d), got %d", FALSE, res);
+  ck_assert_msg(res == FALSE, "Expected FALSE (%d), got %d", FALSE, res);
 
   res = pr_data_ignore_ascii(TRUE);
-  fail_unless(res == TRUE, "Expected TRUE (%d), got %d", TRUE, res);
+  ck_assert_msg(res == TRUE, "Expected TRUE (%d), got %d", TRUE, res);
 
   res = pr_data_ignore_ascii(FALSE);
-  fail_unless(res == TRUE, "Expected TRUE (%d), got %d", TRUE, res);
+  ck_assert_msg(res == TRUE, "Expected TRUE (%d), got %d", TRUE, res);
 
   res = pr_data_ignore_ascii(FALSE);
-  fail_unless(res == FALSE, "Expected FALSE (%d), got %d", FALSE, res);
+  ck_assert_msg(res == FALSE, "Expected FALSE (%d), got %d", FALSE, res);
 }
 END_TEST
 
@@ -260,61 +282,61 @@ START_TEST (data_sendfile_test) {
   }
 
   res = pr_data_sendfile(fd, NULL, 0);
-  fail_unless(res < 0, "Failed to handle null offset");
-  fail_unless(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
+  ck_assert_msg(res < 0, "Failed to handle null offset");
+  ck_assert_msg(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
     strerror(errno), errno);
 
   res = pr_data_sendfile(fd, &offset, 0);
-  fail_unless(res < 0, "Failed to handle zero count");
-  fail_unless(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
+  ck_assert_msg(res < 0, "Failed to handle zero count");
+  ck_assert_msg(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
     strerror(errno), errno);
 
   session.xfer.direction = PR_NETIO_IO_RD;
   res = pr_data_sendfile(fd, &offset, 1);
-  fail_unless(res < 0, "Failed to handle invalid transfer direction");
-  fail_unless(errno == EPERM, "Expected EPERM (%d), got %s (%d)", EPERM,
+  ck_assert_msg(res < 0, "Failed to handle invalid transfer direction");
+  ck_assert_msg(errno == EPERM, "Expected EPERM (%d), got %s (%d)", EPERM,
     strerror(errno), errno);
 
   session.xfer.direction = PR_NETIO_IO_WR;
   res = pr_data_sendfile(fd, &offset, 1);
-  fail_unless(res < 0, "Failed to handle lack of data connection");
-  fail_unless(errno == EPERM, "Expected EPERM (%d), got %s (%d)", EPERM,
+  ck_assert_msg(res < 0, "Failed to handle lack of data connection");
+  ck_assert_msg(errno == EPERM, "Expected EPERM (%d), got %s (%d)", EPERM,
     strerror(errno), errno);
 
   mark_point();
   session.d = pr_inet_create_conn(p, -1, NULL, INPORT_ANY, FALSE);
-  fail_unless(session.d != NULL, "Failed to create conn: %s", strerror(errno));
+  ck_assert_msg(session.d != NULL, "Failed to create conn: %s", strerror(errno));
 
   res = data_open_streams(session.d, PR_NETIO_STRM_DATA);
-  fail_unless(res == 0, "Failed to open streams: %s", strerror(errno));
+  ck_assert_msg(res == 0, "Failed to open streams: %s", strerror(errno));
 
   mark_point();
   res = pr_data_sendfile(fd, &offset, 1);
-  fail_unless(res < 0, "Failed to handle bad file descriptor");
-  fail_unless(errno == EBADF || errno == EINVAL,
+  ck_assert_msg(res < 0, "Failed to handle bad file descriptor");
+  ck_assert_msg(errno == EBADF || errno == EINVAL,
     "Expected EBADF (%d) or EINVAL (%d), got %s (%d)", EBADF, EINVAL,
     strerror(errno), errno);
 
   fh = pr_fsio_open(data_test_path, O_CREAT|O_EXCL|O_WRONLY);
-  fail_unless(fh != NULL, "Failed to open '%s': %s", data_test_path,
+  ck_assert_msg(fh != NULL, "Failed to open '%s': %s", data_test_path,
     strerror(errno));
 
   text = "Hello, World!\n";
   res = pr_fsio_write(fh, text, strlen(text));
-  fail_unless(res >= 0, "Failed to write to '%s': %s", data_test_path,
+  ck_assert_msg(res >= 0, "Failed to write to '%s': %s", data_test_path,
     strerror(errno));
   res = pr_fsio_close(fh);
-  fail_unless(res == 0, "Failed to close '%s': %s", data_test_path,
+  ck_assert_msg(res == 0, "Failed to close '%s': %s", data_test_path,
     strerror(errno));
 
   fd = open(data_test_path, O_RDONLY);
-  fail_unless(fd >= 0, "Failed to open '%s': %s", data_test_path,
+  ck_assert_msg(fd >= 0, "Failed to open '%s': %s", data_test_path,
     strerror(errno));
 
   mark_point();
   res = pr_data_sendfile(fd, &offset, strlen(text));
   if (res < 0) {
-    fail_unless(errno == ENOTSOCK || errno == EINVAL,
+    ck_assert_msg(errno == ENOTSOCK || errno == EINVAL,
      "Expected ENOTSOCK (%d) or EINVAL (%d), got %s (%d)", ENOTSOCK, EINVAL,
      strerror(errno), errno);
   }
@@ -335,10 +357,10 @@ START_TEST (data_init_test) {
 
   mark_point();
   pr_data_init(filename, 0);
-  fail_unless(session.xfer.direction == 0, "Expected xfer direction %d, got %d",
+  ck_assert_msg(session.xfer.direction == 0, "Expected xfer direction %d, got %d",
     0, session.xfer.direction);
-  fail_unless(session.xfer.p != NULL, "Transfer pool not created as expected");
-  fail_unless(session.xfer.filename == NULL, "Expected null filename, got %s",
+  ck_assert_msg(session.xfer.p != NULL, "Transfer pool not created as expected");
+  ck_assert_msg(session.xfer.filename == NULL, "Expected null filename, got %s",
     session.xfer.filename);
 
   filename = "test.dat";
@@ -346,24 +368,24 @@ START_TEST (data_init_test) {
 
   mark_point();
   pr_data_init(filename, rd);
-  fail_unless(session.xfer.direction == rd,
+  ck_assert_msg(session.xfer.direction == rd,
     "Expected xfer direction %d, got %d", rd, session.xfer.direction);
-  fail_unless(session.xfer.p != NULL, "Transfer pool not created as expected");
-  fail_unless(session.xfer.filename != NULL, "Missing transfer filename");
-  fail_unless(strcmp(session.xfer.filename, filename) == 0,
+  ck_assert_msg(session.xfer.p != NULL, "Transfer pool not created as expected");
+  ck_assert_msg(session.xfer.filename != NULL, "Missing transfer filename");
+  ck_assert_msg(strcmp(session.xfer.filename, filename) == 0,
     "Expected '%s', got '%s'", filename, session.xfer.filename);
 
   mark_point();
   pr_data_init("test2.dat", wr);
-  fail_unless(session.xfer.direction == wr,
+  ck_assert_msg(session.xfer.direction == wr,
     "Expected xfer direction %d, got %d", wr, session.xfer.direction);
-  fail_unless(session.xfer.p != NULL, "Transfer pool not created as expected");
-  fail_unless(session.xfer.filename != NULL, "Missing transfer filename");
+  ck_assert_msg(session.xfer.p != NULL, "Transfer pool not created as expected");
+  ck_assert_msg(session.xfer.filename != NULL, "Missing transfer filename");
 
   /* Even though we opened with a new filename, the previous filename should
    * still be there, as we didn't actually clear/reset this transfer.
    */
-  fail_unless(strcmp(session.xfer.filename, filename) == 0,
+  ck_assert_msg(strcmp(session.xfer.filename, filename) == 0,
     "Expected '%s', got '%s'", filename, session.xfer.filename);
 }
 END_TEST
@@ -374,12 +396,12 @@ START_TEST (data_open_active_test) {
 
   mark_point();
   res = pr_data_open(NULL, NULL, dir, 0);
-  fail_unless(res < 0, "Failed to handle null arguments");
-  fail_unless(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
+  ck_assert_msg(res < 0, "Failed to handle null arguments");
+  ck_assert_msg(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
     strerror(errno), errno);
 
   conn = pr_inet_create_conn(p, sockfd, NULL, port, FALSE);
-  fail_unless(conn != NULL, "Failed to create conn: %s", strerror(errno));
+  ck_assert_msg(conn != NULL, "Failed to create conn: %s", strerror(errno));
 
   /* Note: these tests REQUIRE that session.c be non-NULL */
   session.c = conn;
@@ -388,37 +410,47 @@ START_TEST (data_open_active_test) {
 
   mark_point();
   res = pr_data_open(NULL, NULL, dir, 0);
-  fail_unless(res < 0, "Failed to handle null arguments");
-  fail_unless(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
+  ck_assert_msg(res < 0, "Failed to handle null arguments");
+  ck_assert_msg(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
     strerror(errno), errno);
 
   /* Note: we also need session.c to have valid local/remote_addr, too! */
   session.c->local_addr = session.c->remote_addr = pr_netaddr_get_addr(p, "127.0.0.1", NULL);
-  fail_unless(session.c->remote_addr != NULL, "Failed to get address: %s",
+  ck_assert_msg(session.c->remote_addr != NULL, "Failed to get address: %s",
     strerror(errno));
 
   mark_point();
+  session.d = session.c;
   res = pr_data_open(NULL, NULL, dir, 0);
-  fail_unless(res < 0, "Opened active READ data connection unexpectedly");
-  fail_unless(errno == EADDRNOTAVAIL || errno == ECONNREFUSED,
+  ck_assert_msg(res < 0, "Failed to handle non-null session.d");
+  ck_assert_msg(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
+    strerror(errno), errno);
+  session.d = NULL;
+
+  mark_point();
+  session.xfer.filename = "foo";
+  res = pr_data_open(NULL, NULL, dir, 0);
+  ck_assert_msg(res < 0, "Opened active READ data connection unexpectedly");
+  ck_assert_msg(errno == EADDRNOTAVAIL || errno == ECONNREFUSED,
     "Expected EADDRNOTAVAIL (%d) or ECONNREFUSED (%d), got %s (%d)",
     EADDRNOTAVAIL, ECONNREFUSED, strerror(errno), errno);
+  session.xfer.filename = NULL;
 
   /* Open a WRITing data transfer connection...*/
   dir = PR_NETIO_IO_WR;
 
   mark_point();
   res = pr_data_open(NULL, NULL, dir, 0);
-  fail_unless(res < 0, "Opened active READ data connection unexpectedly");
-  fail_unless(errno == EADDRNOTAVAIL || errno == ECONNREFUSED,
+  ck_assert_msg(res < 0, "Opened active READ data connection unexpectedly");
+  ck_assert_msg(errno == EADDRNOTAVAIL || errno == ECONNREFUSED,
     "Expected EADDRNOTAVAIL (%d) or ECONNREFUSED (%d), got %s (%d)",
     EADDRNOTAVAIL, ECONNREFUSED, strerror(errno), errno);
 
   mark_point();
   session.xfer.p = NULL;
   res = pr_data_open(NULL, NULL, dir, 0);
-  fail_unless(res < 0, "Opened active READ data connection unexpectedly");
-  fail_unless(errno == EADDRNOTAVAIL || errno == ECONNREFUSED,
+  ck_assert_msg(res < 0, "Opened active READ data connection unexpectedly");
+  ck_assert_msg(errno == EADDRNOTAVAIL || errno == ECONNREFUSED,
     "Expected EADDRNOTAVAIL (%d) or ECONNREFUSED (%d), got %s (%d)",
     EADDRNOTAVAIL, ECONNREFUSED, strerror(errno), errno);
 
@@ -431,26 +463,106 @@ START_TEST (data_open_active_test) {
 }
 END_TEST
 
+START_TEST (data_open_active_rootrevoke_test) {
+  int dir = PR_NETIO_IO_RD, local_port, port = INPORT_ANY, sockfd = -1, res;
+  conn_t *conn;
+  config_rec *c;
+  server_rec *s;
+
+  conn = pr_inet_create_conn(p, sockfd, NULL, port, FALSE);
+  ck_assert_msg(conn != NULL, "Failed to create conn: %s", strerror(errno));
+
+  /* Note: these tests REQUIRE that session.c be non-NULL */
+  session.c = conn;
+
+  /* Note: we also need session.c to have valid local/remote_addr, too! */
+  session.c->local_addr = session.c->remote_addr = pr_netaddr_get_addr(p, "127.0.0.1", NULL);
+  ck_assert_msg(session.c->remote_addr != NULL, "Failed to get address: %s",
+    strerror(errno));
+
+  s = pr_parser_server_ctxt_open("127.0.0.1");
+  c = add_config_param("RootRevoke", 1, NULL);
+  c->argv[0] = palloc(c->pool, sizeof(int));
+  *((int *) c->argv[0]) = 1;
+
+  tests_stubs_set_main_server(s);
+
+  mark_point();
+  session.xfer.filename = "foo";
+  res = pr_data_open(NULL, NULL, dir, 0);
+  ck_assert_msg(res < 0, "Opened active READ data connection unexpectedly");
+  ck_assert_msg(errno == EADDRNOTAVAIL || errno == ECONNREFUSED,
+    "Expected EADDRNOTAVAIL (%d) or ECONNREFUSED (%d), got %s (%d)",
+    EADDRNOTAVAIL, ECONNREFUSED, strerror(errno), errno);
+  session.xfer.filename = NULL;
+
+  mark_point();
+  local_port = session.c->local_port;
+  session.c->local_port = 21;
+  session.xfer.filename = "foo";
+  res = pr_data_open(NULL, NULL, dir, 0);
+  ck_assert_msg(res < 0, "Opened active READ data connection unexpectedly");
+  ck_assert_msg(errno == EPERM, "Expected EPERM (%d), got %s (%d)", EPERM,
+    strerror(errno), errno);
+  session.c->local_port = local_port;
+  session.xfer.filename = NULL;
+
+  mark_point();
+  *((int *) c->argv[0]) = 2;
+  session.xfer.filename = "foo";
+  res = pr_data_open(NULL, NULL, dir, 0);
+  ck_assert_msg(res < 0, "Opened active READ data connection unexpectedly");
+  ck_assert_msg(errno == EADDRNOTAVAIL || errno == ECONNREFUSED,
+    "Expected EADDRNOTAVAIL (%d) or ECONNREFUSED (%d), got %s (%d)",
+    EADDRNOTAVAIL, ECONNREFUSED, strerror(errno), errno);
+  session.xfer.filename = NULL;
+
+  mark_point();
+  *((int *) c->argv[0]) = 3;
+  session.xfer.filename = "foo";
+  res = pr_data_open(NULL, NULL, dir, 0);
+  ck_assert_msg(res < 0, "Opened active READ data connection unexpectedly");
+  ck_assert_msg(errno == EADDRNOTAVAIL || errno == ECONNREFUSED,
+    "Expected EADDRNOTAVAIL (%d) or ECONNREFUSED (%d), got %s (%d)",
+    EADDRNOTAVAIL, ECONNREFUSED, strerror(errno), errno);
+  session.xfer.filename = NULL;
+
+  (void) pr_config_remove(s->conf, "RootRevoke", 0, FALSE);
+
+  (void) pr_inet_close(p, session.c);
+  session.c = NULL;
+  if (session.d != NULL) {
+    (void) pr_inet_close(p, session.d);
+    session.d = NULL;
+  }
+
+  tests_stubs_set_main_server(NULL);
+}
+END_TEST
+
 START_TEST (data_open_passive_test) {
-  int dir = PR_NETIO_IO_RD, port = INPORT_ANY, sockfd = -1, res;
+  int dir = PR_NETIO_IO_RD, fd, port = INPORT_ANY, sockfd = -1, res;
+  conn_t *data_conn;
 
   /* Set the session flags for a passive transfer data connection. */
   session.sf_flags |= SF_PASSIVE;
 
   mark_point();
   res = pr_data_open(NULL, NULL, dir, 0);
-  fail_unless(res < 0, "Failed to handle null arguments");
-  fail_unless(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
+  ck_assert_msg(res < 0, "Failed to handle null arguments");
+  ck_assert_msg(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
     strerror(errno), errno);
 
   /* Note: these tests REQUIRE that session.c be non-NULL, AND that session.d
    * be non-NULL.
    */
   session.c = pr_inet_create_conn(p, sockfd, NULL, port, FALSE);
-  fail_unless(session.c != NULL, "Failed to create conn: %s", strerror(errno));
+  ck_assert_msg(session.c != NULL, "Failed to create conn: %s",
+    strerror(errno));
 
-  session.d = pr_inet_create_conn(p, sockfd, NULL, port, FALSE);
-  fail_unless(session.d != NULL, "Failed to create conn: %s", strerror(errno));
+  session.d = data_conn = pr_inet_create_conn(p, sockfd, NULL, port, FALSE);
+  ck_assert_msg(session.d != NULL, "Failed to create conn: %s",
+    strerror(errno));
 
   /* Reset the session flags after every failed open. */
   session.sf_flags |= SF_PASSIVE;
@@ -459,38 +571,50 @@ START_TEST (data_open_passive_test) {
 
   mark_point();
   res = pr_data_open(NULL, NULL, dir, 0);
-  fail_unless(res < 0, "Failed to handle null arguments");
-  fail_unless(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
+  ck_assert_msg(res < 0, "Failed to handle null arguments");
+  ck_assert_msg(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
     strerror(errno), errno);
 
   /* Note: we also need session.c to have valid local/remote_addr, too! */
-  session.c->local_addr = session.c->remote_addr = pr_netaddr_get_addr(p, "127.0.0.1", NULL);
-  fail_unless(session.c->remote_addr != NULL, "Failed to get address: %s",
+  session.c->local_addr = session.c->remote_addr = pr_netaddr_get_addr(p,
+    "127.0.0.1", NULL);
+  ck_assert_msg(session.c->remote_addr != NULL, "Failed to get address: %s",
     strerror(errno));
 
   mark_point();
+  data_conn = pr_inet_create_conn(p, sockfd, NULL, port, FALSE);
+  fd = data_conn->listen_fd;
+  data_conn->listen_fd = dup(0);
+  session.d = data_conn;
   session.sf_flags |= SF_PASSIVE;
   res = pr_data_open(NULL, NULL, dir, 0);
-  fail_unless(res < 0, "Opened passive READ data connection unexpectedly");
-  fail_unless(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
-    strerror(errno), errno);
+  ck_assert_msg(res < 0, "Opened passive READ data connection unexpectedly");
+  ck_assert_msg(errno == ENOTSOCK, "Expected ENOTSOCK (%d), got %s (%d)",
+    ENOTSOCK, strerror(errno), errno);
+  (void) close(fd);
 
   /* Open a WRITing data transfer connection...*/
   dir = PR_NETIO_IO_WR;
 
   mark_point();
+  data_conn = pr_inet_create_conn(p, sockfd, NULL, port, FALSE);
+  fd = data_conn->listen_fd;
+  data_conn->listen_fd = dup(1);
+  session.d = data_conn;
   session.sf_flags |= SF_PASSIVE;
+  session.xfer.p = NULL;
   res = pr_data_open(NULL, NULL, dir, 0);
-  fail_unless(res < 0, "Opened passive READ data connection unexpectedly");
-  fail_unless(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
-    strerror(errno), errno);
+  ck_assert_msg(res < 0, "Opened passive WRITE data connection unexpectedly");
+  ck_assert_msg(errno == ENOTSOCK, "Expected ENOTSOCK (%d), got %s (%d)",
+    ENOTSOCK, strerror(errno), errno);
+  (void) close(fd);
 
   mark_point();
   session.sf_flags |= SF_PASSIVE;
   session.xfer.p = NULL;
   res = pr_data_open(NULL, NULL, dir, 0);
-  fail_unless(res < 0, "Opened passive READ data connection unexpectedly");
-  fail_unless(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
+  ck_assert_msg(res < 0, "Opened passive WRITE data connection unexpectedly");
+  ck_assert_msg(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
     strerror(errno), errno);
 
   (void) pr_inet_close(p, session.c);
@@ -505,38 +629,103 @@ END_TEST
 START_TEST (data_close_test) {
   session.sf_flags |= SF_PASSIVE;
   pr_data_close(TRUE);
-  fail_unless(!(session.sf_flags & SF_PASSIVE),
+  ck_assert_msg(!(session.sf_flags & SF_PASSIVE),
     "Failed to clear SF_PASSIVE session flag");
 
   session.sf_flags |= SF_PASSIVE;
   pr_data_close(FALSE);
-  fail_unless(!(session.sf_flags & SF_PASSIVE),
+  ck_assert_msg(!(session.sf_flags & SF_PASSIVE),
     "Failed to clear SF_PASSIVE session flag");
 
   session.d = pr_inet_create_conn(p, -1, NULL, INPORT_ANY, FALSE);
-  fail_unless(session.d != NULL, "Failed to create conn: %s", strerror(errno));
+  ck_assert_msg(session.d != NULL, "Failed to create conn: %s", strerror(errno));
 
   pr_data_close(TRUE);
-  fail_unless(session.d == NULL, "Failed to close session.d");
+  ck_assert_msg(session.d == NULL, "Failed to close session.d");
 }
 END_TEST
 
 START_TEST (data_abort_test) {
+  mark_point();
   session.sf_flags |= SF_PASSIVE;
   pr_data_abort(EPERM, TRUE);
-  fail_unless(!(session.sf_flags & SF_PASSIVE),
+  ck_assert_msg(!(session.sf_flags & SF_PASSIVE),
     "Failed to clear SF_PASSIVE session flag");
 
   session.sf_flags |= SF_PASSIVE;
   pr_data_abort(EPERM, FALSE);
-  fail_unless(!(session.sf_flags & SF_PASSIVE),
+  ck_assert_msg(!(session.sf_flags & SF_PASSIVE),
     "Failed to clear SF_PASSIVE session flag");
 
+  mark_point();
   session.d = pr_inet_create_conn(p, -1, NULL, INPORT_ANY, FALSE);
-  fail_unless(session.d != NULL, "Failed to create conn: %s", strerror(errno));
+  ck_assert_msg(session.d != NULL, "Failed to create conn: %s", strerror(errno));
 
   pr_data_abort(ESPIPE, FALSE);
-  fail_unless(session.d == NULL, "Failed to close session.d");
+  ck_assert_msg(session.d == NULL, "Failed to close session.d");
+
+  mark_point();
+  session.d = pr_inet_create_conn(p, -1, NULL, INPORT_ANY, FALSE);
+  ck_assert_msg(session.d != NULL, "Failed to create conn: %s", strerror(errno));
+
+  session.sf_flags = SF_ABORT;
+  pr_data_abort(EPIPE, FALSE);
+  ck_assert_msg(session.d == NULL, "Failed to close session.d");
+  session.sf_flags &= ~SF_POST_ABORT;
+
+#if defined(ENXIO)
+  mark_point();
+  session.d = pr_inet_create_conn(p, -1, NULL, INPORT_ANY, FALSE);
+  ck_assert_msg(session.d != NULL, "Failed to create conn: %s", strerror(errno));
+  pr_data_abort(ENXIO, FALSE);
+  ck_assert_msg(session.d == NULL, "Failed to close session.d");
+#endif /* ENXIO */
+
+#if defined(ENOMEM)
+  mark_point();
+  session.d = pr_inet_create_conn(p, -1, NULL, INPORT_ANY, FALSE);
+  ck_assert_msg(session.d != NULL, "Failed to create conn: %s", strerror(errno));
+  pr_data_abort(ENOMEM, FALSE);
+  ck_assert_msg(session.d == NULL, "Failed to close session.d");
+#endif /* ENOMEM */
+
+#if defined(EBUSY)
+  mark_point();
+  session.d = pr_inet_create_conn(p, -1, NULL, INPORT_ANY, FALSE);
+  ck_assert_msg(session.d != NULL, "Failed to create conn: %s", strerror(errno));
+  pr_data_abort(EBUSY, FALSE);
+  ck_assert_msg(session.d == NULL, "Failed to close session.d");
+#endif /* EBUSY */
+
+#if defined(ENOSPC)
+  mark_point();
+  session.d = pr_inet_create_conn(p, -1, NULL, INPORT_ANY, FALSE);
+  ck_assert_msg(session.d != NULL, "Failed to create conn: %s", strerror(errno));
+  pr_data_abort(ENOSPC, FALSE);
+  ck_assert_msg(session.d == NULL, "Failed to close session.d");
+#endif /* ENOSPC */
+
+#if defined(EFBIG)
+  mark_point();
+  session.d = pr_inet_create_conn(p, -1, NULL, INPORT_ANY, FALSE);
+  ck_assert_msg(session.d != NULL, "Failed to create conn: %s", strerror(errno));
+  pr_data_abort(EFBIG, FALSE);
+  ck_assert_msg(session.d == NULL, "Failed to close session.d");
+#endif /* EFBIG */
+
+#if defined(ECONNRESET)
+  mark_point();
+  session.d = pr_inet_create_conn(p, -1, NULL, INPORT_ANY, FALSE);
+  ck_assert_msg(session.d != NULL, "Failed to create conn: %s", strerror(errno));
+  pr_data_abort(ECONNRESET, FALSE);
+  ck_assert_msg(session.d == NULL, "Failed to close session.d");
+#endif /* ECONNRESET */
+
+  mark_point();
+  session.d = pr_inet_create_conn(p, -1, NULL, INPORT_ANY, FALSE);
+  ck_assert_msg(session.d != NULL, "Failed to create conn: %s", strerror(errno));
+  pr_data_abort(-5432, FALSE);
+  ck_assert_msg(session.d == NULL, "Failed to close session.d");
 }
 END_TEST
 
@@ -546,16 +735,16 @@ START_TEST (data_reset_test) {
   /* Set a session flag, make sure it's cleared properly. */
   session.sf_flags |= SF_PASSIVE;
   pr_data_reset();
-  fail_unless(session.d == NULL, "Expected NULL session.d, got %p", session.d);
-  fail_unless(!(session.sf_flags & SF_PASSIVE),
+  ck_assert_msg(session.d == NULL, "Expected NULL session.d, got %p", session.d);
+  ck_assert_msg(!(session.sf_flags & SF_PASSIVE),
     "SF_PASSIVE session flag not cleared");
 
   session.d = pr_inet_create_conn(p, -1, NULL, INPORT_ANY, FALSE);
-  fail_unless(session.d != NULL, "Failed to create conn: %s", strerror(errno));
+  ck_assert_msg(session.d != NULL, "Failed to create conn: %s", strerror(errno));
 
   pr_data_reset();
-  fail_unless(session.d == NULL, "Expected NULL session.d, got %p", session.d);
-  fail_unless(!(session.sf_flags & SF_PASSIVE),
+  ck_assert_msg(session.d == NULL, "Expected NULL session.d, got %p", session.d);
+  ck_assert_msg(!(session.sf_flags & SF_PASSIVE),
     "SF_PASSIVE session flag not cleared");
 }
 END_TEST
@@ -566,17 +755,17 @@ START_TEST (data_cleanup_test) {
   /* Set a session flag, make sure it's cleared properly. */
   session.sf_flags |= SF_PASSIVE;
   pr_data_cleanup();
-  fail_unless(session.d == NULL, "Expected NULL session.d, got %p", session.d);
-  fail_unless(session.sf_flags & SF_PASSIVE,
+  ck_assert_msg(session.d == NULL, "Expected NULL session.d, got %p", session.d);
+  ck_assert_msg(session.sf_flags & SF_PASSIVE,
     "SF_PASSIVE session flag not preserved");
-  fail_unless(session.xfer.xfer_type == STOR_DEFAULT, "Expected %d, got %d",
+  ck_assert_msg(session.xfer.xfer_type == STOR_DEFAULT, "Expected %d, got %d",
     STOR_DEFAULT, session.xfer.xfer_type);
 
   session.d = pr_inet_create_conn(p, -1, NULL, INPORT_ANY, FALSE);
-  fail_unless(session.d != NULL, "Failed to create conn: %s", strerror(errno));
+  ck_assert_msg(session.d != NULL, "Failed to create conn: %s", strerror(errno));
 
   pr_data_cleanup();
-  fail_unless(session.d == NULL, "Failed to close session.d");
+  ck_assert_msg(session.d == NULL, "Failed to close session.d");
 }
 END_TEST
 
@@ -585,15 +774,15 @@ START_TEST (data_clear_xfer_pool_test) {
 
   mark_point();
   pr_data_clear_xfer_pool();
-  fail_unless(session.xfer.p == NULL, "Failed to clear session.xfer.p");
+  ck_assert_msg(session.xfer.p == NULL, "Failed to clear session.xfer.p");
 
   session.xfer.xfer_type = xfer_type; 
   session.xfer.p = make_sub_pool(p);
 
   mark_point();
   pr_data_clear_xfer_pool();
-  fail_unless(session.xfer.p == NULL, "Failed to clear session.xfer.p");
-  fail_unless(session.xfer.xfer_type == xfer_type, "Expected %d, got %d",
+  ck_assert_msg(session.xfer.p == NULL, "Failed to clear session.xfer.p");
+  ck_assert_msg(session.xfer.xfer_type == xfer_type, "Expected %d, got %d",
     xfer_type, session.xfer.xfer_type);
 }
 END_TEST
@@ -608,27 +797,27 @@ START_TEST (data_xfer_read_binary_test) {
   pr_data_reset();
 
   res = pr_data_xfer(NULL, 0);
-  fail_unless(res < 0, "Failed to handle null arguments");
-  fail_unless(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
+  ck_assert_msg(res < 0, "Failed to handle null arguments");
+  ck_assert_msg(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
     strerror(errno), errno);
 
   bufsz = 1024;
   buf = palloc(p, bufsz);
 
   res = pr_data_xfer(buf, 0);
-  fail_unless(res < 0, "Failed to handle zero buffer length");
-  fail_unless(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
+  ck_assert_msg(res < 0, "Failed to handle zero buffer length");
+  ck_assert_msg(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
     strerror(errno), errno);
 
   mark_point();
   res = pr_data_xfer(buf, bufsz);
-  fail_unless(res < 0, "Transferred data unexpectedly");
-  fail_unless(errno == ECONNABORTED,
+  ck_assert_msg(res < 0, "Transferred data unexpectedly");
+  ck_assert_msg(errno == ECONNABORTED,
     "Expected ECONNABORTED (%d), got %s (%d)", ECONNABORTED,
     strerror(errno), errno);
 
   session.d = pr_inet_create_conn(p, -1, NULL, INPORT_ANY, FALSE);
-  fail_unless(session.d != NULL, "Failed to create conn: %s", strerror(errno));
+  ck_assert_msg(session.d != NULL, "Failed to create conn: %s", strerror(errno));
 
   /* read binary data */
   session.xfer.direction = PR_NETIO_IO_RD;
@@ -645,12 +834,12 @@ START_TEST (data_xfer_read_binary_test) {
   session.xfer.buflen = 0;
 
   res = pr_data_xfer(buf, bufsz);
-  fail_unless(res < 0, "Transferred data unexpectedly");
-  fail_unless(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
+  ck_assert_msg(res < 0, "Transferred data unexpectedly");
+  ck_assert_msg(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
     strerror(errno), errno);
 
   res = data_open_streams(session.d, PR_NETIO_STRM_DATA);
-  fail_unless(res == 0, "Failed to open streams on session.d: %s",
+  ck_assert_msg(res == 0, "Failed to open streams on session.d: %s",
     strerror(errno));
 
   mark_point();
@@ -658,14 +847,14 @@ START_TEST (data_xfer_read_binary_test) {
   session.xfer.buflen = 0;
 
   res = pr_data_xfer(buf, bufsz);
-  fail_unless((size_t) res == expected_len, "Expected %lu, got %d",
+  ck_assert_msg((size_t) res == expected_len, "Expected %lu, got %d",
     (unsigned long) expected_len, res);
 
   session.c = pr_inet_create_conn(p, -1, NULL, INPORT_ANY, FALSE);
-  fail_unless(session.c != NULL, "Failed to create conn: %s", strerror(errno));
+  ck_assert_msg(session.c != NULL, "Failed to create conn: %s", strerror(errno));
 
   res = data_open_streams(session.c, PR_NETIO_STRM_CTRL);
-  fail_unless(res == 0, "Failed to open streams on session.c: %s",
+  ck_assert_msg(res == 0, "Failed to open streams on session.c: %s",
     strerror(errno));
 
   mark_point();
@@ -673,9 +862,9 @@ START_TEST (data_xfer_read_binary_test) {
   session.xfer.buflen = 0;
 
   res = pr_data_xfer(buf, bufsz);
-  fail_unless(res == (int) expected_len, "Expected %lu, got %d",
+  ck_assert_msg(res == (int) expected_len, "Expected %lu, got %d",
     (unsigned long) expected_len, res);
-  fail_unless(session.xfer.buflen == 0,
+  ck_assert_msg(session.xfer.buflen == 0,
     "Expected session.xfer.buflen 0, got %lu",
     (unsigned long) session.xfer.buflen);
 
@@ -687,9 +876,9 @@ START_TEST (data_xfer_read_binary_test) {
   data_read_eagain = TRUE;
 
   res = pr_data_xfer(buf, bufsz);
-  fail_unless(res == (int) expected_len, "Expected %lu, got %d",
+  ck_assert_msg(res == (int) expected_len, "Expected %lu, got %d",
     (unsigned long) expected_len, res);
-  fail_unless(session.xfer.buflen == 0,
+  ck_assert_msg(session.xfer.buflen == 0,
     "Expected session.xfer.buflen 0, got %lu",
     (unsigned long) session.xfer.buflen);
 }
@@ -704,27 +893,27 @@ START_TEST (data_xfer_write_binary_test) {
   pr_data_reset();
 
   res = pr_data_xfer(NULL, 0);
-  fail_unless(res < 0, "Failed to handle null arguments");
-  fail_unless(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
+  ck_assert_msg(res < 0, "Failed to handle null arguments");
+  ck_assert_msg(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
     strerror(errno), errno);
 
   buf = "Hello, World!\n";
   buflen = strlen(buf);
 
   res = pr_data_xfer(buf, 0);
-  fail_unless(res < 0, "Failed to handle zero buffer length");
-  fail_unless(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
+  ck_assert_msg(res < 0, "Failed to handle zero buffer length");
+  ck_assert_msg(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
     strerror(errno), errno);
 
   mark_point();
   res = pr_data_xfer(buf, buflen);
-  fail_unless(res < 0, "Transferred data unexpectedly");
-  fail_unless(errno == ECONNABORTED,
+  ck_assert_msg(res < 0, "Transferred data unexpectedly");
+  ck_assert_msg(errno == ECONNABORTED,
     "Expected ECONNABORTED (%d), got %s (%d)", ECONNABORTED,
     strerror(errno), errno);
 
   session.d = pr_inet_create_conn(p, -1, NULL, INPORT_ANY, FALSE);
-  fail_unless(session.d != NULL, "Failed to create conn: %s", strerror(errno));
+  ck_assert_msg(session.d != NULL, "Failed to create conn: %s", strerror(errno));
 
   /* write binary data */
   session.xfer.direction = PR_NETIO_IO_WR;
@@ -735,31 +924,31 @@ START_TEST (data_xfer_write_binary_test) {
   mark_point();
   data_write_eagain = TRUE;
   res = pr_data_xfer(buf, buflen);
-  fail_unless(res < 0, "Transferred data unexpectedly");
-  fail_unless(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
+  ck_assert_msg(res < 0, "Transferred data unexpectedly");
+  ck_assert_msg(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
     strerror(errno), errno);
 
   res = data_open_streams(session.d, PR_NETIO_STRM_DATA);
-  fail_unless(res == 0, "Failed to open streams on session.d: %s",
+  ck_assert_msg(res == 0, "Failed to open streams on session.d: %s",
     strerror(errno));
 
   mark_point();
   res = pr_data_xfer(buf, buflen);
-  fail_unless(res == (int) buflen, "Expected %lu, got %d",
+  ck_assert_msg(res == (int) buflen, "Expected %lu, got %d",
     (unsigned long) buflen, res);
 
   session.c = pr_inet_create_conn(p, -1, NULL, INPORT_ANY, FALSE);
-  fail_unless(session.c != NULL, "Failed to create conn: %s", strerror(errno));
+  ck_assert_msg(session.c != NULL, "Failed to create conn: %s", strerror(errno));
 
   res = data_open_streams(session.c, PR_NETIO_STRM_CTRL);
-  fail_unless(res == 0, "Failed to open streams on session.c: %s",
+  ck_assert_msg(res == 0, "Failed to open streams on session.c: %s",
     strerror(errno));
 
   mark_point();
   res = pr_data_xfer(buf, buflen);
-  fail_unless(res == (int) buflen, "Expected %lu, got %d",
+  ck_assert_msg(res == (int) buflen, "Expected %lu, got %d",
     (unsigned long) buflen, res);
-  fail_unless(strncmp(session.xfer.buf, buf, buflen) == 0,
+  ck_assert_msg(strncmp(session.xfer.buf, buf, buflen) == 0,
     "Expected '%s', got '%.100s'", buf, session.xfer.buf);
 }
 END_TEST
@@ -774,27 +963,27 @@ START_TEST (data_xfer_read_ascii_test) {
   pr_data_reset();
 
   res = pr_data_xfer(NULL, 0);
-  fail_unless(res < 0, "Failed to handle null arguments");
-  fail_unless(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
+  ck_assert_msg(res < 0, "Failed to handle null arguments");
+  ck_assert_msg(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
     strerror(errno), errno);
 
   bufsz = 1024;
   buf = palloc(p, bufsz);
 
   res = pr_data_xfer(buf, 0);
-  fail_unless(res < 0, "Failed to handle zero buffer length");
-  fail_unless(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
+  ck_assert_msg(res < 0, "Failed to handle zero buffer length");
+  ck_assert_msg(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
     strerror(errno), errno);
 
   mark_point();
   res = pr_data_xfer(buf, bufsz);
-  fail_unless(res < 0, "Transferred data unexpectedly");
-  fail_unless(errno == ECONNABORTED,
+  ck_assert_msg(res < 0, "Transferred data unexpectedly");
+  ck_assert_msg(errno == ECONNABORTED,
     "Expected ECONNABORTED (%d), got %s (%d)", ECONNABORTED,
     strerror(errno), errno);
 
   session.d = pr_inet_create_conn(p, -1, NULL, INPORT_ANY, FALSE);
-  fail_unless(session.d != NULL, "Failed to create conn: %s", strerror(errno));
+  ck_assert_msg(session.d != NULL, "Failed to create conn: %s", strerror(errno));
 
   /* read ASCII data */
   session.xfer.direction = PR_NETIO_IO_RD;
@@ -817,12 +1006,12 @@ START_TEST (data_xfer_read_ascii_test) {
   res = pr_data_xfer(buf, bufsz);
   session.sf_flags &= ~SF_ASCII;
 
-  fail_unless(res < 0, "Transferred data unexpectedly");
-  fail_unless(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
+  ck_assert_msg(res < 0, "Transferred data unexpectedly");
+  ck_assert_msg(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
     strerror(errno), errno);
 
   res = data_open_streams(session.d, PR_NETIO_STRM_DATA);
-  fail_unless(res == 0, "Failed to open streams on session.d: %s",
+  ck_assert_msg(res == 0, "Failed to open streams on session.d: %s",
     strerror(errno));
 
   mark_point();
@@ -834,14 +1023,14 @@ START_TEST (data_xfer_read_ascii_test) {
   res = pr_data_xfer(buf, bufsz);
   session.sf_flags &= ~SF_ASCII;
 
-  fail_unless((size_t) res == expected_len, "Expected %lu, got %d",
+  ck_assert_msg((size_t) res == expected_len, "Expected %lu, got %d",
     (unsigned long) expected_len, res);
 
   session.c = pr_inet_create_conn(p, -1, NULL, INPORT_ANY, FALSE);
-  fail_unless(session.c != NULL, "Failed to create conn: %s", strerror(errno));
+  ck_assert_msg(session.c != NULL, "Failed to create conn: %s", strerror(errno));
 
   res = data_open_streams(session.c, PR_NETIO_STRM_CTRL);
-  fail_unless(res == 0, "Failed to open streams on session.c: %s",
+  ck_assert_msg(res == 0, "Failed to open streams on session.c: %s",
     strerror(errno));
 
   mark_point();
@@ -853,12 +1042,12 @@ START_TEST (data_xfer_read_ascii_test) {
   res = pr_data_xfer(buf, bufsz);
   session.sf_flags &= ~SF_ASCII;
 
-  fail_unless(res == (int) expected_len, "Expected %lu, got %d",
+  ck_assert_msg(res == (int) expected_len, "Expected %lu, got %d",
     (unsigned long) expected_len, res);
-  fail_unless(session.xfer.buflen == 0,
+  ck_assert_msg(session.xfer.buflen == 0,
     "Expected session.xfer.buflen 0, got %lu",
     (unsigned long) session.xfer.buflen);
-  fail_unless(strncmp(buf, expected, expected_len) == 0,
+  ck_assert_msg(memcmp(buf, expected, expected_len) == 0,
     "Expected '%s', got '%.100s'", expected, buf);
 
   mark_point();
@@ -872,12 +1061,12 @@ START_TEST (data_xfer_read_ascii_test) {
   res = pr_data_xfer(buf, bufsz);
   session.sf_flags &= ~SF_ASCII;
 
-  fail_unless(res == (int) expected_len, "Expected %lu, got %d",
+  ck_assert_msg(res == (int) expected_len, "Expected %lu, got %d",
     (unsigned long) expected_len, res);
-  fail_unless(session.xfer.buflen == 0,
+  ck_assert_msg(session.xfer.buflen == 0,
     "Expected session.xfer.buflen 0, got %lu",
     (unsigned long) session.xfer.buflen);
-  fail_unless(strncmp(buf, expected, expected_len) == 0,
+  ck_assert_msg(memcmp(buf, expected, expected_len) == 0,
     "Expected '%s', got '%.100s'", expected, buf);
 
   mark_point();
@@ -891,12 +1080,12 @@ START_TEST (data_xfer_read_ascii_test) {
   res = pr_data_xfer(buf, bufsz);
   session.sf_flags &= ~SF_ASCII;
 
-  fail_unless(res == (int) expected_len, "Expected %lu, got %d",
+  ck_assert_msg(res == (int) expected_len, "Expected %lu, got %d",
     (unsigned long) expected_len, res);
-  fail_unless(session.xfer.buflen == 0,
+  ck_assert_msg(session.xfer.buflen == 0,
     "Expected session.xfer.buflen 0, got %lu",
     (unsigned long) session.xfer.buflen);
-  fail_unless(strncmp(buf, expected, expected_len) == 0,
+  ck_assert_msg(memcmp(buf, expected, expected_len) == 0,
     "Expected '%s', got '%.100s'", expected, buf);
 
   /* Bug#4237 happened because of insufficient testing of the edge case
@@ -916,12 +1105,77 @@ START_TEST (data_xfer_read_ascii_test) {
   res = pr_data_xfer(buf, bufsz);
   session.sf_flags &= ~SF_ASCII;
 
-  fail_unless(res == (int) expected_len, "Expected %lu, got %d",
+  ck_assert_msg(res == (int) expected_len, "Expected %lu, got %d",
     (unsigned long) expected_len, res);
-  fail_unless(session.xfer.buflen == 1,
+  ck_assert_msg(session.xfer.buflen == 1,
     "Expected session.xfer.buflen 1, got %lu",
     (unsigned long) session.xfer.buflen);
-  fail_unless(strncmp(buf, expected, expected_len) == 0,
+  ck_assert_msg(memcmp(buf, expected, expected_len) == 0,
+    "Expected '%s', got '%.100s'", expected, buf);
+}
+END_TEST
+
+START_TEST (data_xfer_read_ascii_with_abor_test) {
+  int res;
+  char *buf, *expected;
+  size_t bufsz, expected_len;
+  cmd_rec *cmd;
+
+  pr_data_clear_xfer_pool();
+  pr_data_reset();
+
+  bufsz = 1024;
+  buf = palloc(p, bufsz);
+
+  session.d = pr_inet_create_conn(p, -1, NULL, INPORT_ANY, FALSE);
+  ck_assert_msg(session.d != NULL, "Failed to create conn: %s", strerror(errno));
+
+  /* read ASCII data */
+  session.xfer.direction = PR_NETIO_IO_RD;
+  session.xfer.p = make_sub_pool(p);
+  session.xfer.bufsize = 1024;
+
+  /* Note: this string comes from the data_read_cb() we register with our
+   * DATA stream callback.
+   */
+  expected = "Hello,\n World!\n";
+  expected_len = strlen(expected);
+
+  res = data_open_streams(session.d, PR_NETIO_STRM_DATA);
+  ck_assert_msg(res == 0, "Failed to open streams on session.d: %s",
+    strerror(errno));
+
+  session.c = pr_inet_create_conn(p, -1, NULL, INPORT_ANY, FALSE);
+  ck_assert_msg(session.c != NULL, "Failed to create conn: %s", strerror(errno));
+
+  res = data_open_streams(session.c, PR_NETIO_STRM_CTRL);
+  ck_assert_msg(res == 0, "Failed to open streams on session.c: %s",
+    strerror(errno));
+
+  mark_point();
+  pr_ascii_ftp_reset();
+  session.xfer.buf = pcalloc(p, session.xfer.bufsize);
+  session.xfer.buflen = 0;
+
+  mark_point();
+
+  cmd = pr_cmd_alloc(p, 1, pstrdup(p, "abor"));
+  tests_stubs_set_next_cmd(cmd);
+
+  pr_ascii_ftp_reset();
+  session.xfer.buf = pcalloc(p, session.xfer.bufsize);
+  session.xfer.buflen = 0;
+
+  session.sf_flags |= SF_ASCII;
+  res = pr_data_xfer(buf, bufsz);
+  session.sf_flags &= ~SF_ASCII;
+
+  ck_assert_msg(res == (int) expected_len, "Expected %lu, got %d",
+    (unsigned long) expected_len, res);
+  ck_assert_msg(session.xfer.buflen == 0,
+    "Expected session.xfer.buflen 0, got %lu",
+    (unsigned long) session.xfer.buflen);
+  ck_assert_msg(memcmp(buf, expected, expected_len) == 0,
     "Expected '%s', got '%.100s'", expected, buf);
 }
 END_TEST
@@ -936,8 +1190,8 @@ START_TEST (data_xfer_write_ascii_test) {
   pr_data_reset();
 
   res = pr_data_xfer(NULL, 0);
-  fail_unless(res < 0, "Failed to handle null arguments");
-  fail_unless(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
+  ck_assert_msg(res < 0, "Failed to handle null arguments");
+  ck_assert_msg(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
     strerror(errno), errno);
 
   buf = "Hello,\n World\n";
@@ -947,19 +1201,19 @@ START_TEST (data_xfer_write_ascii_test) {
   ascii_buflen = strlen(ascii_buf);
 
   res = pr_data_xfer(buf, 0);
-  fail_unless(res < 0, "Failed to handle zero buffer length");
-  fail_unless(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
+  ck_assert_msg(res < 0, "Failed to handle zero buffer length");
+  ck_assert_msg(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
     strerror(errno), errno);
 
   mark_point();
   res = pr_data_xfer(buf, buflen);
-  fail_unless(res < 0, "Transferred data unexpectedly");
-  fail_unless(errno == ECONNABORTED,
+  ck_assert_msg(res < 0, "Transferred data unexpectedly");
+  ck_assert_msg(errno == ECONNABORTED,
     "Expected ECONNABORTED (%d), got %s (%d)", ECONNABORTED,
     strerror(errno), errno);
 
   session.d = pr_inet_create_conn(p, -1, NULL, INPORT_ANY, FALSE);
-  fail_unless(session.d != NULL, "Failed to create conn: %s", strerror(errno));
+  ck_assert_msg(session.d != NULL, "Failed to create conn: %s", strerror(errno));
 
   /* write ASCII data */
   session.xfer.direction = PR_NETIO_IO_WR;
@@ -974,12 +1228,12 @@ START_TEST (data_xfer_write_ascii_test) {
   res = pr_data_xfer(buf, buflen);
   session.sf_flags &= ~SF_ASCII_OVERRIDE;
 
-  fail_unless(res < 0, "Transferred data unexpectedly");
-  fail_unless(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
+  ck_assert_msg(res < 0, "Transferred data unexpectedly");
+  ck_assert_msg(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
     strerror(errno), errno);
 
   res = data_open_streams(session.d, PR_NETIO_STRM_DATA);
-  fail_unless(res == 0, "Failed to open streams on session.d: %s",
+  ck_assert_msg(res == 0, "Failed to open streams on session.d: %s",
     strerror(errno));
 
   mark_point();
@@ -988,14 +1242,14 @@ START_TEST (data_xfer_write_ascii_test) {
   res = pr_data_xfer(buf, buflen);
   session.sf_flags &= ~SF_ASCII_OVERRIDE;
 
-  fail_unless(res == (int) buflen, "Expected %lu, got %d",
+  ck_assert_msg(res == (int) buflen, "Expected %lu, got %d",
     (unsigned long) buflen, res);
 
   session.c = pr_inet_create_conn(p, -1, NULL, INPORT_ANY, FALSE);
-  fail_unless(session.c != NULL, "Failed to create conn: %s", strerror(errno));
+  ck_assert_msg(session.c != NULL, "Failed to create conn: %s", strerror(errno));
 
   res = data_open_streams(session.c, PR_NETIO_STRM_CTRL);
-  fail_unless(res == 0, "Failed to open streams on session.c: %s",
+  ck_assert_msg(res == 0, "Failed to open streams on session.c: %s",
     strerror(errno));
 
   mark_point();
@@ -1007,9 +1261,9 @@ START_TEST (data_xfer_write_ascii_test) {
   res = pr_data_xfer(buf, buflen);
   session.sf_flags &= ~SF_ASCII_OVERRIDE;
 
-  fail_unless(res == (int) buflen, "Expected %lu, got %d",
+  ck_assert_msg(res == (int) buflen, "Expected %lu, got %d",
     (unsigned long) buflen, res);
-  fail_unless(session.xfer.buflen == ascii_buflen,
+  ck_assert_msg(session.xfer.buflen == ascii_buflen,
     "Expected session.xfer.buflen %lu, got %lu", (unsigned long) ascii_buflen,
     (unsigned long) session.xfer.buflen);
 
@@ -1024,9 +1278,9 @@ START_TEST (data_xfer_write_ascii_test) {
   res = pr_data_xfer(buf, buflen);
   session.sf_flags &= ~SF_ASCII_OVERRIDE;
 
-  fail_unless(res == (int) buflen, "Expected %lu, got %d",
+  ck_assert_msg(res == (int) buflen, "Expected %lu, got %d",
     (unsigned long) buflen, res);
-  fail_unless(session.xfer.buflen == ascii_buflen,
+  ck_assert_msg(session.xfer.buflen == ascii_buflen,
     "Expected session.xfer.buflen %lu, got %lu", (unsigned long) ascii_buflen,
     (unsigned long) session.xfer.buflen);
 
@@ -1042,9 +1296,9 @@ START_TEST (data_xfer_write_ascii_test) {
   res = pr_data_xfer(buf, buflen);
   session.sf_flags &= ~SF_ASCII_OVERRIDE;
 
-  fail_unless(res == (int) buflen, "Expected %lu, got %d",
+  ck_assert_msg(res == (int) buflen, "Expected %lu, got %d",
     (unsigned long) buflen, res);
-  fail_unless(session.xfer.buflen == ascii_buflen,
+  ck_assert_msg(session.xfer.buflen == ascii_buflen,
     "Expected session.xfer.buflen %lu, got %lu", (unsigned long) ascii_buflen,
     (unsigned long) session.xfer.buflen);
 
@@ -1057,11 +1311,139 @@ START_TEST (data_xfer_write_ascii_test) {
   res = pr_data_xfer(buf, buflen);
   session.sf_flags &= ~SF_ASCII;
 
-  fail_unless(res == (int) buflen, "Expected %lu, got %d",
+  ck_assert_msg(res == (int) buflen, "Expected %lu, got %d",
     (unsigned long) buflen, res);
-  fail_unless(session.xfer.buflen == ascii_buflen,
+  ck_assert_msg(session.xfer.buflen == ascii_buflen,
     "Expected session.xfer.buflen %lu, got %lu", (unsigned long) ascii_buflen,
     (unsigned long) session.xfer.buflen);
+}
+END_TEST
+
+START_TEST (data_xfer_write_ascii_with_abor_test) {
+  int res;
+  char *buf, *ascii_buf;
+  size_t buflen, ascii_buflen;
+  cmd_rec *cmd;
+
+  pr_data_clear_xfer_pool();
+  pr_data_reset();
+
+  buf = "Hello,\n World\n";
+  buflen = strlen(buf);
+
+  ascii_buf = "Hello,\r\n World\r\n";
+  ascii_buflen = strlen(ascii_buf);
+
+  session.d = pr_inet_create_conn(p, -1, NULL, INPORT_ANY, FALSE);
+  ck_assert_msg(session.d != NULL, "Failed to create conn: %s", strerror(errno));
+
+  /* write ASCII data */
+  session.xfer.direction = PR_NETIO_IO_WR;
+  session.xfer.p = make_sub_pool(p);
+  session.xfer.buflen = 1024;
+  session.xfer.buf = pcalloc(p, session.xfer.buflen);
+
+  res = data_open_streams(session.d, PR_NETIO_STRM_DATA);
+  ck_assert_msg(res == 0, "Failed to open streams on session.d: %s",
+    strerror(errno));
+
+  session.c = pr_inet_create_conn(p, -1, NULL, INPORT_ANY, FALSE);
+  ck_assert_msg(session.c != NULL, "Failed to create conn: %s", strerror(errno));
+
+  res = data_open_streams(session.c, PR_NETIO_STRM_CTRL);
+  ck_assert_msg(res == 0, "Failed to open streams on session.c: %s",
+    strerror(errno));
+
+  mark_point();
+
+  cmd = pr_cmd_alloc(p, 1, pstrdup(p, "abor"));
+  tests_stubs_set_next_cmd(cmd);
+
+  pr_ascii_ftp_reset();
+  session.xfer.buflen = 1024;
+  session.xfer.buf = pcalloc(p, session.xfer.buflen);
+
+  session.sf_flags |= SF_ASCII_OVERRIDE;
+  res = pr_data_xfer(buf, buflen);
+  session.sf_flags &= ~SF_ASCII_OVERRIDE;
+
+  ck_assert_msg(res == (int) buflen, "Expected %lu, got %d",
+    (unsigned long) buflen, res);
+  ck_assert_msg(session.xfer.buflen == ascii_buflen,
+    "Expected session.xfer.buflen %lu, got %lu", (unsigned long) ascii_buflen,
+    (unsigned long) session.xfer.buflen);
+}
+END_TEST
+
+START_TEST (data_xfer_peek_nonsocket_test) {
+  int fd, res, strm_fd;
+  char *buf, *expected;
+  size_t bufsz, expected_len;
+
+  pr_data_clear_xfer_pool();
+  pr_data_reset();
+
+  mark_point();
+  bufsz = 1024;
+  buf = palloc(p, bufsz);
+  session.d = pr_inet_create_conn(p, -1, NULL, INPORT_ANY, FALSE);
+  ck_assert_msg(session.d != NULL, "Failed to create conn: %s", strerror(errno));
+
+  /* read binary data */
+  session.xfer.direction = PR_NETIO_IO_RD;
+
+  /* Note: this string comes from the data_read_cb() we register with our
+   * DATA stream callback.
+   */
+  expected = "Hello,\r\n World!\r\n";
+  expected_len = strlen(expected);
+
+  session.xfer.buf = NULL;
+  session.xfer.buflen = 0;
+
+  res = data_open_streams(session.d, PR_NETIO_STRM_DATA);
+  ck_assert_msg(res == 0, "Failed to open streams on session.d: %s",
+    strerror(errno));
+
+  session.c = pr_inet_create_conn(p, -1, NULL, INPORT_ANY, FALSE);
+  ck_assert_msg(session.c != NULL, "Failed to create conn: %s", strerror(errno));
+
+  res = data_open_streams(session.c, PR_NETIO_STRM_CTRL);
+  ck_assert_msg(res == 0, "Failed to open streams on session.c: %s",
+    strerror(errno));
+
+  fd = tmpfile_fd();
+  if (fd < 0) {
+    return;
+  }
+
+  strm_fd = PR_NETIO_FD(session.c->instrm);
+  PR_NETIO_FD(session.c->instrm) = fd;
+
+  (void) write(fd, "FOO\r\n", 5);
+  rewind_fd(fd);
+
+  mark_point();
+  session.xfer.buf = NULL;
+  session.xfer.buflen = 0;
+  data_write_eagain = TRUE;
+
+  res = pr_data_xfer(buf, bufsz);
+  ck_assert_msg(res == (int) expected_len, "Expected %lu, got %d",
+    (unsigned long) expected_len, res);
+  ck_assert_msg(session.xfer.buflen == 0,
+    "Expected session.xfer.buflen 0, got %lu",
+    (unsigned long) session.xfer.buflen);
+
+  (void) close(fd);
+
+  PR_NETIO_FD(session.c->instrm) = strm_fd;
+  (void) pr_inet_close(p, session.c);
+  session.c = NULL;
+  if (session.d != NULL) {
+    (void) pr_inet_close(p, session.d);
+    session.d = NULL;
+  }
 }
 END_TEST
 
@@ -1081,6 +1463,7 @@ Suite *tests_get_data_suite(void) {
 
   tcase_add_test(testcase, data_init_test);
   tcase_add_test(testcase, data_open_active_test);
+  tcase_add_test(testcase, data_open_active_rootrevoke_test);
   tcase_add_test(testcase, data_open_passive_test);
   tcase_add_test(testcase, data_close_test);
   tcase_add_test(testcase, data_abort_test);
@@ -1090,7 +1473,15 @@ Suite *tests_get_data_suite(void) {
   tcase_add_test(testcase, data_xfer_read_binary_test);
   tcase_add_test(testcase, data_xfer_write_binary_test);
   tcase_add_test(testcase, data_xfer_read_ascii_test);
+  tcase_add_test(testcase, data_xfer_read_ascii_with_abor_test);
   tcase_add_test(testcase, data_xfer_write_ascii_test);
+  tcase_add_test(testcase, data_xfer_write_ascii_with_abor_test);
+  tcase_add_test(testcase, data_xfer_peek_nonsocket_test);
+
+  /* Allow a longer timeout on these tests, as they will need a second or
+   * two to actually run through the test itself, plus overhead.
+   */
+  tcase_set_timeout(testcase, 5);
 
   suite_add_tcase(suite, testcase);
   return suite;

@@ -1,6 +1,6 @@
 /*
  * ProFTPD - mod_sftp MACs
- * Copyright (c) 2008-2020 TJ Saunders
+ * Copyright (c) 2008-2022 TJ Saunders
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -27,6 +27,7 @@
 #include "msg.h"
 #include "packet.h"
 #include "crypto.h"
+#include "cipher.h"
 #include "mac.h"
 #include "session.h"
 #include "disconnect.h"
@@ -37,6 +38,7 @@ struct sftp_mac {
   pool *pool;
   const char *algo;
   int algo_type;
+  int is_etm;
 
   const EVP_MD *digest;
 
@@ -65,23 +67,20 @@ struct sftp_mac {
  */
 
 static struct sftp_mac read_macs[] = {
-  { NULL, NULL, 0, NULL, NULL, 0, 0, 0 },
-  { NULL, NULL, 0, NULL, NULL, 0, 0, 0 }
+  { NULL, NULL, 0, FALSE, NULL, NULL, 0, 0, 0 },
+  { NULL, NULL, 0, FALSE, NULL, NULL, 0, 0, 0 }
 };
 static HMAC_CTX *hmac_read_ctxs[2];
 static struct umac_ctx *umac_read_ctxs[2];
 
 static struct sftp_mac write_macs[] = {
-  { NULL, NULL, 0, NULL, NULL, 0, 0, 0 },
-  { NULL, NULL, 0, NULL, NULL, 0, 0, 0 }
+  { NULL, NULL, 0, FALSE, NULL, NULL, 0, 0, 0 },
+  { NULL, NULL, 0, FALSE, NULL, NULL, 0, 0, 0 }
 };
 static HMAC_CTX *hmac_write_ctxs[2];
 static struct umac_ctx *umac_write_ctxs[2];
 
 static size_t mac_blockszs[2] = { 0, 0 };
-
-/* Buffer size for reading/writing keys */
-#define SFTP_MAC_BUFSZ				4096
 
 static unsigned int read_mac_idx = 0;
 static unsigned int write_mac_idx = 0;
@@ -179,6 +178,10 @@ static void clear_mac(struct sftp_mac *mac) {
 
 static int init_mac(pool *p, struct sftp_mac *mac, HMAC_CTX *hmac_ctx,
     struct umac_ctx *umac_ctx) {
+  if (strcmp(mac->algo, "none") == 0) {
+    return 0;
+  }
+
 #if OPENSSL_VERSION_NUMBER >= 0x10100000L && \
     !defined(HAVE_LIBRESSL)
   HMAC_CTX_reset(hmac_ctx);
@@ -221,23 +224,38 @@ static int init_mac(pool *p, struct sftp_mac *mac, HMAC_CTX *hmac_ctx,
 }
 
 static int get_mac(struct ssh2_packet *pkt, struct sftp_mac *mac,
-    HMAC_CTX *hmac_ctx, struct umac_ctx *umac_ctx, int flags) {
+    HMAC_CTX *hmac_ctx, struct umac_ctx *umac_ctx, int etm_mac, int flags) {
   unsigned char *mac_data;
   unsigned char *buf, *ptr;
   uint32_t buflen, bufsz = 0, mac_len = 0;
 
   if (mac->algo_type == SFTP_MAC_ALGO_TYPE_HMAC) {
-    bufsz = (sizeof(uint32_t) * 2) + pkt->packet_len;
+    /* Always leave a little extra room in the buffer. */
+    bufsz = (sizeof(uint32_t) * 2) + pkt->packet_len + 64;
     mac_data = pcalloc(pkt->pool, EVP_MAX_MD_SIZE);
 
+    if (etm_mac == TRUE) {
+      bufsz += sftp_mac_get_block_size();
+    }
+
     buflen = bufsz;
-    ptr = buf = sftp_msg_getbuf(pkt->pool, bufsz);
+    ptr = buf = palloc(pkt->pool, bufsz);
 
     sftp_msg_write_int(&buf, &buflen, pkt->seqno);
     sftp_msg_write_int(&buf, &buflen, pkt->packet_len);
-    sftp_msg_write_byte(&buf, &buflen, pkt->padding_len);
+
+    if (etm_mac == FALSE) {
+      /* For Encrypt-Then-Mac modes, padding and its length will be part of
+       * the encrypted payload.
+       */
+      sftp_msg_write_byte(&buf, &buflen, pkt->padding_len);
+    }
+
     sftp_msg_write_data(&buf, &buflen, pkt->payload, pkt->payload_len, FALSE);
-    sftp_msg_write_data(&buf, &buflen, pkt->padding, pkt->padding_len, FALSE);
+
+    if (etm_mac == FALSE) {
+      sftp_msg_write_data(&buf, &buflen, pkt->padding, pkt->padding_len, FALSE);
+    }
 
 #if OPENSSL_VERSION_NUMBER > 0x000907000L
 # if OPENSSL_VERSION_NUMBER >= 0x10000001L
@@ -280,16 +298,31 @@ static int get_mac(struct ssh2_packet *pkt, struct sftp_mac *mac,
     unsigned char nonce[8], *nonce_ptr;
     uint32_t nonce_len = 0;
 
-    bufsz = sizeof(uint32_t) + pkt->packet_len;
+    /* Always leave a little extra room in the buffer. */
+    bufsz = sizeof(uint32_t) + pkt->packet_len + 64;
     mac_data = pcalloc(pkt->pool, EVP_MAX_MD_SIZE);
 
+    if (etm_mac == TRUE) {
+      bufsz += sftp_mac_get_block_size();
+    }
+
     buflen = bufsz;
-    ptr = buf = sftp_msg_getbuf(pkt->pool, bufsz);
+    ptr = buf = palloc(pkt->pool, bufsz);
 
     sftp_msg_write_int(&buf, &buflen, pkt->packet_len);
-    sftp_msg_write_byte(&buf, &buflen, pkt->padding_len);
+
+    if (etm_mac == FALSE) {
+      /* For Encrypt-Then-Mac modes, padding and its length will be part of
+       * the encrypted payload.
+       */
+      sftp_msg_write_byte(&buf, &buflen, pkt->padding_len);
+    }
+
     sftp_msg_write_data(&buf, &buflen, pkt->payload, pkt->payload_len, FALSE);
-    sftp_msg_write_data(&buf, &buflen, pkt->padding, pkt->padding_len, FALSE);
+
+    if (etm_mac == FALSE) {
+      sftp_msg_write_data(&buf, &buflen, pkt->padding, pkt->padding_len, FALSE);
+    }
 
     nonce_ptr = nonce;
     nonce_len = sizeof(nonce);
@@ -396,7 +429,7 @@ static int get_mac(struct ssh2_packet *pkt, struct sftp_mac *mac,
 
 static int set_mac_key(struct sftp_mac *mac, const EVP_MD *hash,
     const unsigned char *k, uint32_t klen, const char *h, uint32_t hlen,
-    char *letter, const unsigned char *id, uint32_t id_len) {
+    char letter, const unsigned char *id, uint32_t id_len) {
 #if OPENSSL_VERSION_NUMBER < 0x10100000L || \
     defined(HAVE_LIBRESSL)
   EVP_MD_CTX ctx;
@@ -409,6 +442,10 @@ static int set_mac_key(struct sftp_mac *mac, const EVP_MD *hash,
   key_sz = sftp_crypto_get_size(EVP_MD_block_size(mac->digest),
     EVP_MD_size(hash)); 
   if (key_sz == 0) {
+    if (strcmp(mac->algo, "none") == 0) {
+      return 0;
+    }
+
     (void) pr_log_writefile(sftp_logfd, MOD_SFTP_VERSION,
       "unable to determine key length for MAC '%s'", mac->algo);
     errno = EINVAL;
@@ -479,9 +516,9 @@ static int set_mac_key(struct sftp_mac *mac, const EVP_MD *hash,
 #endif
 
 #if OPENSSL_VERSION_NUMBER >= 0x000907000L
-  if (EVP_DigestUpdate(pctx, letter, sizeof(char)) != 1) {
+  if (EVP_DigestUpdate(pctx, &letter, sizeof(letter)) != 1) {
     (void) pr_log_writefile(sftp_logfd, MOD_SFTP_VERSION,
-      "error updating message digest with '%c': %s", *letter,
+      "error updating message digest with '%c': %s", letter,
       sftp_crypto_get_errors());
     free(key);
 # if OPENSSL_VERSION_NUMBER >= 0x10100000L && \
@@ -491,7 +528,7 @@ static int set_mac_key(struct sftp_mac *mac, const EVP_MD *hash,
     return -1;
   }
 #else
-  EVP_DigestUpdate(pctx, letter, sizeof(char));
+  EVP_DigestUpdate(pctx, &letter, sizeof(letter));
 #endif
 
 #if OPENSSL_VERSION_NUMBER >= 0x000907000L
@@ -652,16 +689,37 @@ void sftp_mac_set_block_size(size_t blocksz) {
 }
 
 const char *sftp_mac_get_read_algo(void) {
-  if (read_macs[read_mac_idx].key) {
+  if (read_macs[read_mac_idx].key != NULL ||
+      (read_macs[read_mac_idx].algo != NULL &&
+       strcmp(read_macs[read_mac_idx].algo, "none") == 0)) {
     return read_macs[read_mac_idx].algo;
   }
 
-  return NULL;
+  /* It is possible for there to be no MAC, as for some ciphers such as
+   * AES-GCM.  Rather than returning NULL here, we indicate this by returning
+   * a string (see Issue #1411).
+   */
+  return "implicit";
+}
+
+int sftp_mac_is_read_etm(void) {
+  if (read_macs[read_mac_idx].key) {
+    return read_macs[read_mac_idx].is_etm;
+  }
+
+  return FALSE;
 }
 
 int sftp_mac_set_read_algo(const char *algo) {
+  const char *etm_suffix;
+  size_t algo_len, etm_len;
   uint32_t mac_len;
   unsigned int idx = read_mac_idx;
+
+  /* For authenticated encryption ciphers, there is no separate MAC. */
+  if (sftp_cipher_get_read_auth_size() > 0) {
+    return 0;
+  }
 
   if (read_macs[idx].key) {
     /* If we have an existing key, it means that we are currently rekeying. */
@@ -700,11 +758,13 @@ int sftp_mac_set_read_algo(const char *algo) {
   pr_pool_tag(read_macs[idx].pool, "SFTP MAC read pool");
   read_macs[idx].algo = pstrdup(read_macs[idx].pool, algo);
 
-  if (strncmp(read_macs[idx].algo, "umac-64@openssh.com", 12) == 0) {
+  if (strcmp(read_macs[idx].algo, "umac-64@openssh.com") == 0 ||
+      strcmp(read_macs[idx].algo, "umac-64-etm@openssh.com") == 0) {
     read_macs[idx].algo_type = SFTP_MAC_ALGO_TYPE_UMAC64;
     umac_read_ctxs[idx] = umac_alloc();
 
-  } else if (strncmp(read_macs[idx].algo, "umac-128@openssh.com", 13) == 0) {
+  } else if (strcmp(read_macs[idx].algo, "umac-128@openssh.com") == 0 ||
+             strcmp(read_macs[idx].algo, "umac-128-etm@openssh.com") == 0) {
     read_macs[idx].algo_type = SFTP_MAC_ALGO_TYPE_UMAC128;
     umac_read_ctxs[idx] = umac128_alloc();
 
@@ -713,31 +773,38 @@ int sftp_mac_set_read_algo(const char *algo) {
   }
 
   read_macs[idx].mac_len = mac_len;
+
+  algo_len = strlen(algo);
+  etm_suffix = "-etm@openssh.com";
+  etm_len = strlen(etm_suffix);
+
+  if (pr_strnrstr(algo, algo_len, etm_suffix, etm_len, 0) == TRUE) {
+    read_macs[idx].is_etm = TRUE;
+  }
+
   return 0;
 }
 
-int sftp_mac_set_read_key(pool *p, const EVP_MD *hash, const BIGNUM *k,
-    const char *h, uint32_t hlen, int role) {
+int sftp_mac_set_read_key(pool *p, const EVP_MD *hash, const unsigned char *k,
+    uint32_t klen, const char *h, uint32_t hlen, int role) {
   const unsigned char *id = NULL;
-  unsigned char *buf, *ptr;
-  uint32_t buflen, bufsz, id_len;
+  uint32_t id_len;
   char letter;
   size_t blocksz;
   struct sftp_mac *mac;
   HMAC_CTX *hmac_ctx;
   struct umac_ctx *umac_ctx;
 
+  /* For authenticated encryption ciphers, there is no separate MAC. */
+  if (sftp_cipher_get_read_auth_size() > 0) {
+    return 0;
+  }
+
   switch_read_mac();
 
   mac = &(read_macs[read_mac_idx]);
   hmac_ctx = hmac_read_ctxs[read_mac_idx];
   umac_ctx = umac_read_ctxs[read_mac_idx];
-
-  bufsz = buflen = SFTP_MAC_BUFSZ;
-  ptr = buf = sftp_msg_getbuf(p, bufsz);
-
-  /* Need to use SSH2-style format of K for the key. */
-  sftp_msg_write_mpint(&buf, &buflen, k);
 
   id_len = sftp_session_get_id(&id);
 
@@ -752,7 +819,7 @@ int sftp_mac_set_read_key(pool *p, const EVP_MD *hash, const BIGNUM *k,
    * server-to-client HASH(K || H || "F" || session_id)
    */
   letter = (role == SFTP_ROLE_SERVER ? 'E' : 'F');
-  set_mac_key(mac, hash, ptr, (bufsz - buflen), h, hlen, &letter, id, id_len);
+  set_mac_key(mac, hash, k, klen, h, hlen, letter, id, id_len);
 
   if (init_mac(p, mac, hmac_ctx, umac_ctx) < 0) {
     return -1;
@@ -765,7 +832,6 @@ int sftp_mac_set_read_key(pool *p, const EVP_MD *hash, const BIGNUM *k,
     blocksz = mac->mac_len;
   }
 
-  pr_memscrub(ptr, bufsz);
   sftp_mac_set_block_size(blocksz);
   return 0;
 }
@@ -774,7 +840,14 @@ int sftp_mac_read_data(struct ssh2_packet *pkt) {
   struct sftp_mac *mac;
   HMAC_CTX *hmac_ctx;
   struct umac_ctx *umac_ctx;
-  int res;
+  int res, etm_mac = FALSE;
+
+  /* For authenticated encryption ciphers, there is no separate MAC. */
+  if (sftp_cipher_get_read_auth_size() > 0) {
+    return 0;
+  }
+
+  etm_mac = sftp_mac_is_read_etm();
 
   mac = &(read_macs[read_mac_idx]);
   hmac_ctx = hmac_read_ctxs[read_mac_idx];
@@ -787,7 +860,7 @@ int sftp_mac_read_data(struct ssh2_packet *pkt) {
     return 0;
   }
 
-  res = get_mac(pkt, mac, hmac_ctx, umac_ctx, SFTP_MAC_FL_READ_MAC);
+  res = get_mac(pkt, mac, hmac_ctx, umac_ctx, etm_mac, SFTP_MAC_FL_READ_MAC);
   if (res < 0) {
     return -1;
   }
@@ -796,16 +869,37 @@ int sftp_mac_read_data(struct ssh2_packet *pkt) {
 }
 
 const char *sftp_mac_get_write_algo(void) {
-  if (write_macs[write_mac_idx].key) {
+  if (write_macs[write_mac_idx].key != NULL ||
+      (write_macs[write_mac_idx].algo != NULL &&
+       strcmp(write_macs[write_mac_idx].algo, "none") == 0)) {
     return write_macs[write_mac_idx].algo;
   }
 
-  return NULL;
+  /* It is possible for there to be no MAC, as for some ciphers such as
+   * AES-GCM.  Rather than returning NULL here, we indicate this by returning
+   * a string (see Issue #1411).
+   */
+  return "implicit";
+}
+
+int sftp_mac_is_write_etm(void) {
+  if (write_macs[write_mac_idx].key) {
+    return write_macs[write_mac_idx].is_etm;
+  }
+
+  return FALSE;
 }
 
 int sftp_mac_set_write_algo(const char *algo) {
+  const char *etm_suffix;
+  size_t algo_len, etm_len;
   uint32_t mac_len;
   unsigned int idx = write_mac_idx;
+
+  /* For authenticated encryption ciphers, there is no separate MAC. */
+  if (sftp_cipher_get_write_auth_size() > 0) {
+    return 0;
+  }
 
   if (write_macs[idx].key) {
     /* If we have an existing key, it means that we are currently rekeying. */
@@ -844,11 +938,13 @@ int sftp_mac_set_write_algo(const char *algo) {
   pr_pool_tag(write_macs[idx].pool, "SFTP MAC write pool");
   write_macs[idx].algo = pstrdup(write_macs[idx].pool, algo);
 
-  if (strncmp(write_macs[idx].algo, "umac-64@openssh.com", 12) == 0) {
+  if (strcmp(write_macs[idx].algo, "umac-64@openssh.com") == 0 ||
+      strcmp(write_macs[idx].algo, "umac-64-etm@openssh.com") == 0) {
     write_macs[idx].algo_type = SFTP_MAC_ALGO_TYPE_UMAC64;
     umac_write_ctxs[idx] = umac_alloc();
 
-  } else if (strncmp(write_macs[idx].algo, "umac-128@openssh.com", 13) == 0) {
+  } else if (strcmp(write_macs[idx].algo, "umac-128@openssh.com") == 0 ||
+             strcmp(write_macs[idx].algo, "umac-128-etm@openssh.com") == 0) {
     write_macs[idx].algo_type = SFTP_MAC_ALGO_TYPE_UMAC128;
     umac_write_ctxs[idx] = umac128_alloc();
 
@@ -857,30 +953,37 @@ int sftp_mac_set_write_algo(const char *algo) {
   }
 
   write_macs[idx].mac_len = mac_len;
+
+  algo_len = strlen(algo);
+  etm_suffix = "-etm@openssh.com";
+  etm_len = strlen(etm_suffix);
+
+  if (pr_strnrstr(algo, algo_len, etm_suffix, etm_len, 0) == TRUE) {
+    write_macs[idx].is_etm = TRUE;
+  }
+
   return 0;
 }
 
-int sftp_mac_set_write_key(pool *p, const EVP_MD *hash, const BIGNUM *k,
-    const char *h, uint32_t hlen, int role) {
+int sftp_mac_set_write_key(pool *p, const EVP_MD *hash, const unsigned char *k,
+    uint32_t klen, const char *h, uint32_t hlen, int role) {
   const unsigned char *id = NULL;
-  unsigned char *buf, *ptr;
-  uint32_t buflen, bufsz, id_len;
+  uint32_t id_len;
   char letter;
   struct sftp_mac *mac;
   HMAC_CTX *hmac_ctx;
   struct umac_ctx *umac_ctx;
+
+  /* For authenticated encryption ciphers, there is no separate MAC. */
+  if (sftp_cipher_get_write_auth_size() > 0) {
+    return 0;
+  }
 
   switch_write_mac();
 
   mac = &(write_macs[write_mac_idx]);
   hmac_ctx = hmac_write_ctxs[write_mac_idx];
   umac_ctx = umac_write_ctxs[write_mac_idx];
-
-  bufsz = buflen = SFTP_MAC_BUFSZ;
-  ptr = buf = sftp_msg_getbuf(p, bufsz);
-
-  /* Need to use SSH2-style format of K for the key. */
-  sftp_msg_write_mpint(&buf, &buflen, k);
 
   id_len = sftp_session_get_id(&id);
 
@@ -895,13 +998,12 @@ int sftp_mac_set_write_key(pool *p, const EVP_MD *hash, const BIGNUM *k,
    * server-to-client HASH(K || H || "F" || session_id)
    */
   letter = (role == SFTP_ROLE_SERVER ? 'F' : 'E');
-  set_mac_key(mac, hash, ptr, (bufsz - buflen), h, hlen, &letter, id, id_len);
+  set_mac_key(mac, hash, k, klen, h, hlen, letter, id, id_len);
 
   if (init_mac(p, mac, hmac_ctx, umac_ctx) < 0) {
     return -1;
   }
 
-  pr_memscrub(ptr, bufsz);
   return 0;
 }
 
@@ -909,7 +1011,14 @@ int sftp_mac_write_data(struct ssh2_packet *pkt) {
   struct sftp_mac *mac;
   HMAC_CTX *hmac_ctx;
   struct umac_ctx *umac_ctx;
-  int res;
+  int res, etm_mac = FALSE;
+
+  /* For authenticated encryption ciphers, there is no separate MAC. */
+  if (sftp_cipher_get_write_auth_size() > 0) {
+    return 0;
+  }
+
+  etm_mac = sftp_mac_is_write_etm();
 
   mac = &(write_macs[write_mac_idx]);
   hmac_ctx = hmac_write_ctxs[write_mac_idx];
@@ -922,7 +1031,7 @@ int sftp_mac_write_data(struct ssh2_packet *pkt) {
     return 0;
   }
 
-  res = get_mac(pkt, mac, hmac_ctx, umac_ctx, SFTP_MAC_FL_WRITE_MAC);
+  res = get_mac(pkt, mac, hmac_ctx, umac_ctx, etm_mac, SFTP_MAC_FL_WRITE_MAC);
   if (res < 0) {
     return -1;
   }

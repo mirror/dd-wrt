@@ -73,8 +73,9 @@ sub storeuniqueprefix_ok {
 
     AuthUserFile => $auth_user_file,
     AuthGroupFile => $auth_group_file,
-    DefaultChdir => '~',
+    AuthOrder => 'mod_auth_file.c',
 
+    DefaultChdir => '~',
     AllowOverwrite => 'on',
     StoreUniquePrefix => $prefix,
 

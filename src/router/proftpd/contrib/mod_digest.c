@@ -1,7 +1,7 @@
 /*
  * ProFTPD: mod_digest - File hashing/checksumming module
  * Copyright (c) Mathias Berchtold <mb@smartftp.com>
- * Copyright (c) 2016-2019 TJ Saunders <tj@castaglia.org>
+ * Copyright (c) 2016-2022 TJ Saunders <tj@castaglia.org>
  * 
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -389,7 +389,7 @@ static const EVP_MD crc32_md = {
 #endif /* Older OpenSSLs */
 
 static const EVP_MD *EVP_crc32(void) {
-  const EVP_MD *md;
+  EVP_MD *md;
 
 #if OPENSSL_VERSION_NUMBER >= 0x10100000L && \
     !defined(HAVE_LIBRESSL)
@@ -1620,6 +1620,7 @@ static char *get_cached_digest(pool *p, unsigned long algo, const char *path,
 static int digest_cache_expiry_cb(CALLBACK_FRAME) {
   struct digest_cache_key *cache_key;
   time_t now;
+  pool *tmp_pool;
 
   if (digest_cache_keys == NULL ||
       digest_cache_keys->xas_list == NULL) {
@@ -1628,30 +1629,44 @@ static int digest_cache_expiry_cb(CALLBACK_FRAME) {
   }
 
   time(&now);
+  tmp_pool = make_sub_pool(digest_pool);
+  pr_pool_tag(tmp_pool, "Digest cache expiry pool");
 
   /* We've ordered the keys in the list by mtime.  This means that once
-   * we see keys whose mtime has not exceed the max age, we can stop iterating.
+   * we see keys whose mtime has not exceeded the max age, we can stop
+   * iterating.
    */
 
   for (cache_key = (struct digest_cache_key *) digest_cache_keys->xas_list;
        cache_key != NULL;
-       cache_key = cache_key->next) {
+       ) {
+    struct digest_cache_key *next_key;
+
+    next_key = cache_key->next;
+
     if (now > (cache_key->mtime + digest_cache_max_age)) {
-      if (remove_cached_digest(digest_pool, cache_key->algo, cache_key->path,
+      char *key_text;
+
+      key_text = pstrdup(tmp_pool, cache_key->key);
+      if (remove_cached_digest(tmp_pool, cache_key->algo, cache_key->path,
           cache_key->mtime, cache_key->start, cache_key->len) < 0) {
         pr_trace_msg(trace_channel, 12,
-          "error removing cache key '%s' from set: %s", cache_key->key,
+          "error removing cache key '%s' from set: %s", key_text,
          strerror(errno));
 
       } else {
         pr_trace_msg(trace_channel, 15,
-          "removed expired cache key '%s' from set", cache_key->key);
+          "removed expired cache key '%s' from set", key_text);
       }
 
     } else {
       break;
     }
+
+    cache_key = next_key;
   }
+
+  destroy_pool(tmp_pool);
 
   /* Always restart the timer. */
   return 1;
@@ -1871,6 +1886,8 @@ static modret_t *digest_xcmd(cmd_rec *cmd, unsigned long algo) {
   if (pr_fsio_stat(path, &st) < 0) {
     int xerrno = errno;
 
+    pr_log_debug(DEBUG8, MOD_DIGEST_VERSION
+      ": error checking %s: %s", path, strerror(xerrno));
     pr_response_add_err(R_550, "%s: %s", orig_path, strerror(xerrno));
 
     pr_cmd_set_errno(cmd, xerrno);
@@ -2035,6 +2052,8 @@ MODRET digest_hash(cmd_rec *cmd) {
   if (pr_fsio_stat(path, &st) < 0) {
     xerrno = errno;
 
+    pr_log_debug(DEBUG8, MOD_DIGEST_VERSION
+      ": error checking %s: %s", path, strerror(xerrno));
     pr_response_add_err(R_550, "%s: %s", orig_path, strerror(xerrno));
 
     pr_cmd_set_errno(cmd, xerrno);
@@ -2617,6 +2636,8 @@ MODRET digest_md5(cmd_rec *cmd) {
   if (pr_fsio_stat(path, &st) < 0) {
     xerrno = errno;
 
+    pr_log_debug(DEBUG8, MOD_DIGEST_VERSION
+      ": error checking %s: %s", path, strerror(xerrno));
     pr_response_add_err(R_550, "%s: %s", orig_path, strerror(xerrno));
 
     pr_cmd_set_errno(cmd, xerrno);

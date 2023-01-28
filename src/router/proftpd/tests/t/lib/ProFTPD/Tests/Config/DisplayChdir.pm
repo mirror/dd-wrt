@@ -99,6 +99,7 @@ sub displaychdir_singleline {
 
     AuthUserFile => $auth_user_file,
     AuthGroupFile => $auth_group_file,
+    AuthOrder => 'mod_auth_file.c',
 
     DisplayChdir => 'display.txt',
 
@@ -245,6 +246,7 @@ sub displaychdir_multiline {
 
     AuthUserFile => $auth_user_file,
     AuthGroupFile => $auth_group_file,
+    AuthOrder => 'mod_auth_file.c',
 
     DisplayChdir => 'display.txt',
 
@@ -392,6 +394,7 @@ sub displaychdir_first_chdir {
 
     AuthUserFile => $auth_user_file,
     AuthGroupFile => $auth_group_file,
+    AuthOrder => 'mod_auth_file.c',
 
     DisplayChdir => "display.txt true",
 

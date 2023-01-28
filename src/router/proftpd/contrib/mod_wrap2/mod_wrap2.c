@@ -1,6 +1,6 @@
 /*
  * ProFTPD: mod_wrap2 -- tcpwrappers-like access control
- * Copyright (c) 2000-2020 TJ Saunders
+ * Copyright (c) 2000-2021 TJ Saunders
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -107,7 +107,10 @@ typedef struct conn_info {
 #define INADDR_NONE 0xffffffff
 #endif
 
+static const char *trace_channel = "wrap2";
+
 /* Necessary prototypes. */
+static unsigned char wrap2_match_includes(const char *path, wrap2_host_t *host);
 static int wrap2_sess_init(void);
 
 /* Logging routines */
@@ -353,7 +356,6 @@ static char *wrap2_get_hostname(wrap2_host_t *host) {
       namelen = strlen(host->name); 
       if (host->name[namelen-1] == '.') {
         host->name[namelen-1] = '\0';
-        namelen--;
       }
 
       pr_netaddr_set_reverse_dns(reverse_dns);
@@ -429,10 +431,9 @@ static char *wrap2_skip_whitespace(char *str) {
 }
 
 static unsigned char wrap2_match_string(const char *tok, const char *str) {
-  size_t len = 0;
+  size_t len;
 
   if (tok[0] == '.') {
-
     /* Suffix */
     len = strlen(str) - strlen(tok);
     return (len > 0 && (strcasecmp(tok, str + len) == 0));
@@ -442,12 +443,10 @@ static unsigned char wrap2_match_string(const char *tok, const char *str) {
     return TRUE;
 
   } else if (strcasecmp(tok, "KNOWN") == 0) {
-
     /* Not unknown */
     return (strcasecmp(str, WRAP2_UNKNOWN) != 0);
 
   } else if (tok[(len = strlen(tok)) - 1] == '.') {
-
     /* Prefix */
     return (strncasecmp(tok, str, len) == 0);
   }
@@ -534,6 +533,8 @@ static unsigned char wrap2_match_host(char *tok, wrap2_host_t *host) {
 
   } else if (strcasecmp(tok, "ALL") == 0) {
     /* Matches everything */
+    wrap2_log("comparing client hostname '%s' against ALL",
+      wrap2_get_hostname(host));
     return TRUE;
 
   } else if (strcasecmp(tok, "KNOWN") == 0) {
@@ -560,7 +561,6 @@ static unsigned char wrap2_match_host(char *tok, wrap2_host_t *host) {
     return (strncasecmp(tok, ip_str, len) == 0);
 
   } else if (tok[0] == '.') {
-    register unsigned int i;
     char *primary_name;
     array_header *dns_names;
 
@@ -584,6 +584,7 @@ static unsigned char wrap2_match_host(char *tok, wrap2_host_t *host) {
       session.c->remote_addr);
     if (dns_names != NULL &&
         dns_names->nelts > 0) {
+      register unsigned int i;
       char **names;
 
       names = dns_names->elts;
@@ -661,8 +662,11 @@ static unsigned char wrap2_match_host(char *tok, wrap2_host_t *host) {
     }
 #endif /* PR_USE_IPV6 */
 
-  } else if ((mask = wrap2_strsplit(tok, '/')) != 0) {
+  } else if (*tok == '/') {
+    /* Include file */
+    return (wrap2_match_includes(tok, host));
 
+  } else if ((mask = wrap2_strsplit(tok, '/')) != 0) {
     /* Net/mask */
     return (wrap2_match_netmask(tok, mask, wrap2_get_hostaddr(host)));
 
@@ -735,13 +739,71 @@ static unsigned char wrap2_match_host(char *tok, wrap2_host_t *host) {
   return FALSE;
 }
 
+static unsigned char wrap2_match_includes(const char *path,
+    wrap2_host_t *host) {
+  pr_fh_t *fh;
+  int xerrno;
+  char buf[PR_TUNABLE_BUFFER_SIZE+1], *line;
+
+  PRIVS_ROOT
+  fh = pr_fsio_open(path, O_RDONLY);
+  xerrno = errno;
+  PRIVS_RELINQUISH
+
+  if (fh == NULL) {
+    wrap2_log("error opening include file '%s': %s", path, strerror(xerrno));
+    return FALSE;
+  }
+
+  memset(buf, '\0', sizeof(buf));
+  line = pr_fsio_getline(buf, sizeof(buf)-1, fh, NULL);
+  while (line != NULL) {
+    unsigned char match = FALSE;
+
+    pr_signals_handle();
+
+    /* If `line` itself starts with `/`, log/ignore it.  No recursive loops. */
+    if (*line != '/') {
+      char *next;
+
+      next = strsep(&line, " \t\r\n");
+      while (next != NULL) {
+        pr_signals_handle();
+
+        match = wrap2_match_host(next, host);
+        if (match) {
+          pr_fsio_close(fh);
+          return match;
+        }
+
+        next = strsep(&line, " \t\r\n");
+        while (next != NULL &&
+               *next == '\0') {
+          next = strsep(&line, " \t\r\n");
+        }
+      }
+
+    } else {
+      wrap2_log("ignoring include pattern '%s' from include file '%s'",
+        line, path);
+    }
+
+    memset(buf, '\0', sizeof(buf));
+    line = pr_fsio_getline(buf, sizeof(buf)-1, fh, NULL);
+  }
+
+  pr_fsio_close(fh);
+  return FALSE;
+}
+
 static unsigned char wrap2_match_client(char *tok, wrap2_conn_t *conn) {
   unsigned char match = FALSE;
   char *host = NULL;
 
+  pr_trace_msg(trace_channel, 9, "matching client token '%s'", tok);
+
   host = wrap2_strsplit(tok + 1, '@');
   if (host == 0) {
-
     /* Plain host */
     match = wrap2_match_host(tok, conn->client);
 
@@ -750,7 +812,6 @@ static unsigned char wrap2_match_client(char *tok, wrap2_conn_t *conn) {
     }
 
   } else {
-
     /* user@host */
     match = (wrap2_match_host(host, conn->client) &&
       wrap2_match_string(tok, wrap2_get_user(conn)));
@@ -769,21 +830,21 @@ static unsigned char wrap2_match_daemon(char *tok, wrap2_conn_t *conn) {
 
   host = wrap2_strsplit(tok + 1, '@');
   if (host == 0) {
-
     /* Plain daemon */
     match = wrap2_match_string(tok, WRAP2_GET_DAEMON(conn));
 
-    if (match)
+    if (match) {
       wrap2_log("daemon matches '%s'", tok);
+    }
 
   } else {
-
     /* daemon@host */
     match = (wrap2_match_string(tok, WRAP2_GET_DAEMON(conn)) &&
       wrap2_match_host(host, conn->server));
 
-    if (match)
+    if (match) {
       wrap2_log("daemon matches '%s@%s'", tok, host);
+    }
   }
 
   return match;
@@ -795,8 +856,9 @@ static unsigned char wrap2_match_list(array_header *list, wrap2_conn_t *conn,
   register unsigned int i;
   char **tokens = NULL;
 
-  if (list == NULL)
+  if (list == NULL) {
     return FALSE;
+  }
 
   tokens = list->elts;
 
@@ -953,8 +1015,9 @@ static int wrap2_opt_nice(char *val) {
     }
   }
 
-  if (nice(niceness) < 0)
+  if (nice(niceness) < 0) {
     wrap2_log("error handling nice option: %s", strerror(errno));
+  }
 
   return 0;
 }
@@ -963,8 +1026,9 @@ static int wrap2_opt_nice(char *val) {
 static int wrap2_opt_setenv(char *val) {
   char *value = NULL;
 
-  if (*(value = val + strcspn(val, WRAP2_WHITESPACE)))
+  if (*(value = val + strcspn(val, WRAP2_WHITESPACE))) {
     *value++ = '\0';
+  }
 
   if (pr_env_set(session.pool, wrap2_opt_trim_string(val),
       wrap2_opt_trim_string(value)) < 0) {
@@ -1063,8 +1127,9 @@ static int wrap2_handle_opts(array_header *options, wrap2_conn_t *conn) {
     wrap2_log("processing option: '%s %s'", key, value ? value : "");
 
     res = opt->func(value);
-    if (res != 0)
+    if (res != 0) {
       return res;
+    }
   }
 
   return 0;
@@ -1145,7 +1210,7 @@ static int wrap2_match_table(wrap2_table_t *tab, wrap2_conn_t *conn) {
 
 static unsigned char wrap2_allow_access(wrap2_conn_t *conn) {
   wrap2_table_t *allow_tab = NULL, *deny_tab = NULL;
-  int res = 0;
+  int res;
 
   /* If the (daemon, client) pair is matched by an entry in the allow
    * table, access is granted. Otherwise, if the (daemon, client) pair is
@@ -1157,7 +1222,6 @@ static unsigned char wrap2_allow_access(wrap2_conn_t *conn) {
   /* Open allow table. */
   allow_tab = wrap2_open_table(wrap2_allow_table);
   if (allow_tab != NULL) {
-
     /* Check the allow table. */
     wrap2_log("%s", "checking allow table rules");
     res = wrap2_match_table(allow_tab, conn);
@@ -1217,8 +1281,9 @@ static unsigned char wrap2_eval_or_expression(char **acl, array_header *creds) {
   unsigned char found = FALSE;
   char *elem = NULL, **list = NULL;
 
-  if (!acl || !*acl || !creds)
+  if (!acl || !*acl || !creds) {
     return FALSE;
+  }
 
   list = (char **) creds->elts;
 
@@ -1239,8 +1304,9 @@ static unsigned char wrap2_eval_or_expression(char **acl, array_header *creds) {
       }
     }
 
-    if (found)
+    if (found) {
       return TRUE;
+    }
   }
 
   return FALSE;
@@ -1249,12 +1315,14 @@ static unsigned char wrap2_eval_or_expression(char **acl, array_header *creds) {
 /* Boolean AND expression evaluation, returning TRUE if every element in the
  * expression matches, FALSE otherwise.
  */
-static unsigned char wrap2_eval_and_expression(char **acl, array_header *creds) {
+static unsigned char wrap2_eval_and_expression(char **acl,
+    array_header *creds) {
   unsigned char found = FALSE;
   char *elem = NULL, **list = NULL;
 
-  if (!acl || !*acl || !creds)
+  if (!acl || !*acl || !creds) {
     return FALSE;
+  }
 
   list = (char **) creds->elts;
 
@@ -1275,8 +1343,9 @@ static unsigned char wrap2_eval_and_expression(char **acl, array_header *creds) 
       }
     }
 
-    if (!found) 
+    if (!found) {
       return FALSE;
+    }
   }
 
   return TRUE;
@@ -1414,19 +1483,20 @@ MODRET set_wrapmsg(cmd_rec *cmd) {
 
 /* usage: WrapEngine on|off */
 MODRET set_wrapengine(cmd_rec *cmd) {
-  int bool = -1;
+  int engine = -1;
   config_rec *c = NULL;
 
   CHECK_ARGS(cmd, 1);
   CHECK_CONF(cmd, CONF_ROOT|CONF_VIRTUAL|CONF_GLOBAL);
 
-  bool = get_boolean(cmd, 1);
-  if (bool == -1)
+  engine = get_boolean(cmd, 1);
+  if (engine == -1) {
     CONF_ERROR(cmd, "expecting Boolean parameter");
+  }
 
   c = add_config_param(cmd->argv[0], 1, NULL);
   c->argv[0] = pcalloc(c->pool, sizeof(int));
-  *((int *) c->argv[0]) = bool;
+  *((int *) c->argv[0]) = engine;
 
   return PR_HANDLED(cmd);
 }
@@ -1463,9 +1533,9 @@ MODRET set_wrapgrouptables(cmd_rec *cmd) {
       }
     }
 
-    if (!have_registration) {
+    if (have_registration == FALSE) {
       CONF_ERROR(cmd, pstrcat(cmd->tmp_pool, "unsupported table source type: '",
-        (char *) cmd->argv[1], "'", NULL));
+        (char *) cmd->argv[i], "'", NULL));
     }
 
     *tmp = ':';
@@ -1578,12 +1648,12 @@ MODRET set_wraptables(cmd_rec *cmd) {
       }
     }
 
-    if (!have_registration) {
+    if (have_registration == FALSE) {
       CONF_ERROR(cmd, pstrcat(cmd->tmp_pool, "unsupported table source type: '",
-        cmd->argv[1], "'", NULL));
+        cmd->argv[i], "'", NULL));
     }
 
-    *tmp = ':'; 
+    *tmp = ':';
   }
 
   c = add_config_param_str(cmd->argv[0], 2, cmd->argv[1], cmd->argv[2]);
@@ -1624,9 +1694,9 @@ MODRET set_wrapusertables(cmd_rec *cmd) {
       }
     }
 
-    if (!have_registration) {
+    if (have_registration == FALSE) {
       CONF_ERROR(cmd, pstrcat(cmd->tmp_pool, "unsupported table source type: '",
-        (char *) cmd->argv[1], "'", NULL));
+        (char *) cmd->argv[i], "'", NULL));
     }
 
     *tmp = ':';

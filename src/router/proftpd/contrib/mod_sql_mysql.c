@@ -1,7 +1,7 @@
 /*
  * ProFTPD: mod_sql_mysql -- Support for connecting to MySQL databases.
  * Copyright (c) 2001 Andrew Houghton
- * Copyright (c) 2004-2021 TJ Saunders
+ * Copyright (c) 2004-2022 TJ Saunders
  *  
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -416,10 +416,10 @@ MODRET cmd_open(cmd_rec *cmd) {
   conn_entry_t *entry = NULL;
   db_conn_t *conn = NULL;
   unsigned long client_flags = CLIENT_INTERACTIVE;
-#ifdef PR_USE_NLS
+#if defined(PR_USE_NLS)
   const char *encoding = NULL;
-#endif
-#ifdef HAVE_MYSQL_MYSQL_GET_SSL_CIPHER
+#endif /* PR_USE_NLS */
+#if defined(HAVE_MYSQL_MYSQL_GET_SSL_CIPHER)
   const char *ssl_cipher = NULL;
 #endif
 
@@ -598,73 +598,76 @@ MODRET cmd_open(cmd_rec *cmd) {
 
 #if defined(PR_USE_NLS)
   encoding = pr_encode_get_encoding();
-  if (encoding != NULL) {
+  if (encoding == NULL) {
+    pr_trace_msg(trace_channel, 3, "no encoding found (%s), using 'UTF-8'",
+      strerror(errno));
+
+    encoding = "UTF-8";
+  }
 
 # if MYSQL_VERSION_ID >= 50007
-    /* Configure the connection for the current local character set.
-     *
-     * Note: the mysql_set_character_set() function appeared in MySQL 5.0.7,
-     * as per:
-     *
-     *  http://dev.mysql.com/doc/refman/5.0/en/mysql-set-character-set.html
-     *
-     * Yes, even though the variable names say "charset", we (and MySQL,
-     * though their documentation says otherwise) actually mean "encoding".
-     */
+  /* Configure the connection for the current local character set.
+   *
+   * Note: the mysql_set_character_set() function appeared in MySQL 5.0.7,
+   * as per:
+   *
+   *  http://dev.mysql.com/doc/refman/5.0/en/mysql-set-character-set.html
+   *
+   * Yes, even though the variable names say "charset", we (and MySQL,
+   * though their documentation says otherwise) actually mean "encoding".
+   */
 
-     if (strcasecmp(encoding, "UTF-8") == 0) {
+  if (strcasecmp(encoding, "UTF-8") == 0) {
 #  if MYSQL_VERSION_ID >= 50503
-       /* MySQL prefers the name "utf8mb4", not "UTF-8" */
-       encoding = pstrdup(cmd->tmp_pool, "utf8mb4");
+    /* MySQL prefers the name "utf8mb4", not "UTF-8" */
+    encoding = pstrdup(cmd->tmp_pool, "utf8mb4");
 #  else
-       /* MySQL prefers the name "utf8", not "UTF-8" */
-       encoding = pstrdup(cmd->tmp_pool, "utf8");
+    /* MySQL prefers the name "utf8", not "UTF-8" */
+    encoding = pstrdup(cmd->tmp_pool, "utf8");
 #  endif /* MySQL before 5.5.3 */
-     }
+  }
 
-    if (mysql_set_character_set(conn->mysql, encoding) != 0) {
-      /* Failing to set the character set should NOT be a fatal error.
-       * There are situations where, due to client/server mismatch, the
-       * requested character set may not be available.  Thus for now,
-       * we simply log the failure.
-       *
-       * A future improvement might be to implement fallback behavior,
-       * trying to set "older" character sets as needed.
-       */
-      sql_log(DEBUG_FUNC, MOD_SQL_MYSQL_VERSION
-        ": failed to set character set '%s': %s (%u)", encoding,
-        mysql_error(conn->mysql), mysql_errno(conn->mysql));
-    }
+  if (mysql_set_character_set(conn->mysql, encoding) != 0) {
+    /* Failing to set the character set should NOT be a fatal error.
+     * There are situations where, due to client/server mismatch, the
+     * requested character set may not be available.  Thus for now,
+     * we simply log the failure.
+     *
+     * A future improvement might be to implement fallback behavior,
+     * trying to set "older" character sets as needed.
+     */
+    sql_log(DEBUG_FUNC, MOD_SQL_MYSQL_VERSION
+      ": failed to set character set '%s': %s (%u)", encoding,
+      mysql_error(conn->mysql), mysql_errno(conn->mysql));
+  }
 
-    sql_log(DEBUG_FUNC, "MySQL connection character set now '%s' (from '%s')",
-      mysql_character_set_name(conn->mysql), pr_encode_get_encoding());
+  sql_log(DEBUG_FUNC, "MySQL connection character set now '%s' (from '%s')",
+    mysql_character_set_name(conn->mysql), encoding);
 
 # else
-    /* No mysql_set_character_set() API available.  But
-     * mysql_character_set_name() has been around for a while; we can use it
-     * to at least see whether there might be a character set discrepancy.
-     */
+  /* No mysql_set_character_set() API available.  But
+   * mysql_character_set_name() has been around for a while; we can use it
+   * to at least see whether there might be a character set discrepancy.
+   */
+  const char *local_charset = pr_encode_get_encoding();
+  const char *mysql_charset = mysql_character_set_name(conn->mysql);
 
-    const char *local_charset = pr_encode_get_encoding();
-    const char *mysql_charset = mysql_character_set_name(conn->mysql);
-
-    if (strcasecmp(mysql_charset, "utf8") == 0) {
-      mysql_charset = pstrdup(cmd->tmp_pool, "UTF-8");
-    }
-
-    if (local_charset &&
-        mysql_charset &&
-        strcasecmp(local_charset, mysql_charset) != 0) {
-      pr_log_pri(PR_LOG_ERR, MOD_SQL_MYSQL_VERSION
-        ": local character set '%s' does not match MySQL character set '%s', "
-        "SQL injection possible, shutting down", local_charset, mysql_charset);
-      sql_log(DEBUG_WARN, "local character set '%s' does not match MySQL "
-        "character set '%s', SQL injection possible, shutting down",
-        local_charset, mysql_charset);
-      pr_session_end(0);
-    }
-# endif /* older MySQL */
+  if (strcasecmp(mysql_charset, "utf8") == 0) {
+    mysql_charset = pstrdup(cmd->tmp_pool, "UTF-8");
   }
+
+  if (local_charset != NULL &&
+      mysql_charset != NULL &&
+      strcasecmp(local_charset, mysql_charset) != 0) {
+    pr_log_pri(PR_LOG_ERR, MOD_SQL_MYSQL_VERSION
+      ": local character set '%s' does not match MySQL character set '%s', "
+      "SQL injection possible, shutting down", local_charset, mysql_charset);
+    sql_log(DEBUG_WARN, "local character set '%s' does not match MySQL "
+      "character set '%s', SQL injection possible, shutting down",
+      local_charset, mysql_charset);
+    pr_session_end(0);
+  }
+# endif /* older MySQL */
 #endif /* !PR_USE_NLS */
 
   /* bump connections */

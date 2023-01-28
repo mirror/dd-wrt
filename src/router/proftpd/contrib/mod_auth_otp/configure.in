@@ -1,5 +1,5 @@
 dnl ProFTPD - mod_auth_otp
-dnl Copyright (c) 2015-2017 TJ Saunders <tj@castaglia.org>
+dnl Copyright (c) 2015-2021 TJ Saunders <tj@castaglia.org>
 dnl
 dnl This program is free software; you can redistribute it and/or modify
 dnl it under the terms of the GNU General Public License as published by
@@ -34,7 +34,7 @@ AC_HEADER_STDC
 
 AC_CHECK_HEADERS(stdlib.h unistd.h limits.h fcntl.h)
 
-UTILS_LIBS="-lsupp -lcrypto"
+UTILS_LIBS="-lcrypto"
 
 dnl Need to support/handle the --enable-devel option, to see if coverage
 dnl is being used
@@ -137,9 +137,6 @@ LIBS="$LIBS -lcrypto"
 
 AC_MSG_CHECKING([whether linking with OpenSSL functions requires -ldl])
 saved_libs="$LIBS"
-
-dnl Splice out -lsupp, since that library hasn't been built yet
-LIBS=`echo "$LIBS" | sed -e 's/-lsupp//g'`;
 LIBS="-lcrypto -ldl $LIBS"
 
 AC_TRY_LINK(
@@ -159,9 +156,6 @@ AC_TRY_LINK(
 
 AC_MSG_CHECKING([whether linking with OpenSSL functions requires -lz])
 saved_libs="$LIBS"
-
-dnl Splice out -lsupp, since that library hasn't been built yet
-LIBS=`echo "$LIBS" | sed -e 's/-lsupp//g'`;
 LIBS="-lcrypto -lz $LIBS"
 
 AC_TRY_LINK(
@@ -183,11 +177,9 @@ AC_TRY_LINK(
   ]
 )
 
-dnl Splice out -lsupp, since that library hasn't been built yet
-LIBS=`echo "$LIBS" | sed -e 's/-lsupp//g'`;
+AC_MSG_CHECKING([whether OpenSSL supports SHA256])
 LIBS="-lcrypto $LIBS"
 
-AC_MSG_CHECKING([whether OpenSSL supports SHA256])
 AC_TRY_LINK(
   [
     #include <openssl/evp.h>
@@ -207,11 +199,9 @@ AC_TRY_LINK(
   ]
 )
 
-dnl Splice out -lsupp, since that library hasn't been built yet
-LIBS=`echo "$LIBS" | sed -e 's/-lsupp//g'`;
+AC_MSG_CHECKING([whether OpenSSL supports SHA512])
 LIBS="-lcrypto $LIBS"
 
-AC_MSG_CHECKING([whether OpenSSL supports SHA512])
 AC_TRY_LINK(
   [
     #include <openssl/evp.h>

@@ -1,6 +1,6 @@
 /*
  * ProFTPD - mod_sftp message format
- * Copyright (c) 2008-2019 TJ Saunders
+ * Copyright (c) 2008-2022 TJ Saunders
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -28,7 +28,7 @@
 #include "crypto.h"
 #include "disconnect.h"
 
-#ifdef PR_USE_OPENSSL_ECC
+#if defined(PR_USE_OPENSSL_ECC)
 /* Max GFp field length = 528 bits.  SEC1 uncompressed encoding uses 2
  * bitstring points.  SEC1 specifies a 1 byte point type header.
  */
@@ -52,7 +52,7 @@ unsigned char *sftp_msg_getbuf(pool *p, size_t sz) {
 }
 
 uint32_t sftp_msg_read_byte2(pool *p, unsigned char **buf, uint32_t *buflen,
-    char *byte) {
+    unsigned char *byte) {
   (void) p;
 
   if (*buflen < sizeof(char)) {
@@ -62,15 +62,16 @@ uint32_t sftp_msg_read_byte2(pool *p, unsigned char **buf, uint32_t *buflen,
     return 0;
   }
 
-  memcpy(byte, *buf, sizeof(char));
-  (*buf) += sizeof(char);
-  (*buflen) -= sizeof(char);
+  memcpy(byte, *buf, sizeof(unsigned char));
+  (*buf) += sizeof(unsigned char);
+  (*buflen) -= sizeof(unsigned char);
 
-  return sizeof(char);
+  return sizeof(unsigned char);
 }
 
-char sftp_msg_read_byte(pool *p, unsigned char **buf, uint32_t *buflen) {
-  char byte = 0;
+unsigned char sftp_msg_read_byte(pool *p, unsigned char **buf,
+    uint32_t *buflen) {
+  unsigned char byte = 0;
   uint32_t len;
 
   len = sftp_msg_read_byte2(p, buf, buflen, &byte);
@@ -84,7 +85,7 @@ char sftp_msg_read_byte(pool *p, unsigned char **buf, uint32_t *buflen) {
 
 uint32_t sftp_msg_read_bool2(pool *p, unsigned char **buf, uint32_t *buflen,
     int *bool) {
-  char byte = 0;
+  unsigned char byte = 0;
   uint32_t len;
 
   (void) p;
@@ -233,7 +234,7 @@ uint64_t sftp_msg_read_long(pool *p, unsigned char **buf, uint32_t *buflen) {
 }
 
 uint32_t sftp_msg_read_mpint2(pool *p, unsigned char **buf, uint32_t *buflen,
-    BIGNUM **mpint) {
+    const BIGNUM **mpint) {
   unsigned char *mpint_data = NULL;
   const unsigned char *data = NULL, *ptr = NULL;
   uint32_t datalen = 0, mpint_len = 0, len = 0, total_len = 0;
@@ -294,8 +295,9 @@ uint32_t sftp_msg_read_mpint2(pool *p, unsigned char **buf, uint32_t *buflen,
   return total_len;
 }
 
-BIGNUM *sftp_msg_read_mpint(pool *p, unsigned char **buf, uint32_t *buflen) {
-  BIGNUM *mpint = NULL;
+const BIGNUM *sftp_msg_read_mpint(pool *p, unsigned char **buf,
+    uint32_t *buflen) {
+  const BIGNUM *mpint = NULL;
   uint32_t len;
 
   len = sftp_msg_read_mpint2(p, buf, buflen, &mpint);
@@ -364,7 +366,7 @@ char *sftp_msg_read_string(pool *p, unsigned char **buf, uint32_t *buflen) {
   return str;
 }
 
-#ifdef PR_USE_OPENSSL_ECC
+#if defined(PR_USE_OPENSSL_ECC)
 uint32_t sftp_msg_read_ecpoint2(pool *p, unsigned char **buf, uint32_t *buflen,
     const EC_GROUP *curve, EC_POINT **point) {
   BN_CTX *bn_ctx;
@@ -449,7 +451,8 @@ EC_POINT *sftp_msg_read_ecpoint(pool *p, unsigned char **buf, uint32_t *buflen,
 }
 #endif /* PR_USE_OPENSSL_ECC */
 
-uint32_t sftp_msg_write_byte(unsigned char **buf, uint32_t *buflen, char byte) {
+uint32_t sftp_msg_write_byte(unsigned char **buf, uint32_t *buflen,
+    unsigned char byte) {
   uint32_t len = 0;
 
   if (*buflen < sizeof(char)) {
@@ -460,7 +463,7 @@ uint32_t sftp_msg_write_byte(unsigned char **buf, uint32_t *buflen, char byte) {
     SFTP_DISCONNECT_CONN(SFTP_SSH2_DISCONNECT_BY_APPLICATION, NULL);
   }
 
-  len = sizeof(char);
+  len = sizeof(unsigned char);
 
   memcpy(*buf, &byte, len);
   (*buf) += len;
@@ -469,7 +472,8 @@ uint32_t sftp_msg_write_byte(unsigned char **buf, uint32_t *buflen, char byte) {
   return len;
 }
 
-uint32_t sftp_msg_write_bool(unsigned char **buf, uint32_t *buflen, char bool) {
+uint32_t sftp_msg_write_bool(unsigned char **buf, uint32_t *buflen,
+    unsigned char bool) {
   return sftp_msg_write_byte(buf, buflen, bool == 0 ? 0 : 1);
 }
 
@@ -623,7 +627,7 @@ uint32_t sftp_msg_write_string(unsigned char **buf, uint32_t *buflen,
     TRUE);
 }
 
-#ifdef PR_USE_OPENSSL_ECC
+#if defined(PR_USE_OPENSSL_ECC)
 uint32_t sftp_msg_write_ecpoint(unsigned char **buf, uint32_t *buflen,
     const EC_GROUP *curve, const EC_POINT *point) {
   unsigned char *data = NULL;

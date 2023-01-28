@@ -1,6 +1,6 @@
 /*
  * ProFTPD - mod_sftp keyboard-interactive driver mgmt
- * Copyright (c) 2008-2020 TJ Saunders
+ * Copyright (c) 2008-2021 TJ Saunders
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -260,7 +260,7 @@ static struct ssh2_packet *read_response_packet(pool *p) {
   /* Keep looping until we get the desired message, or we time out. */
   while (pkt == NULL) {
     int res;
-    char mesg_type;
+    char msg_type;
 
     pr_signals_handle();
 
@@ -283,9 +283,9 @@ static struct ssh2_packet *read_response_packet(pool *p) {
      * for this, and Do The Right Thing(tm).
      */
 
-    mesg_type = sftp_ssh2_packet_get_mesg_type(pkt);
+    msg_type = sftp_ssh2_packet_get_msg_type(pkt);
 
-    switch (mesg_type) {
+    switch (msg_type) {
       case SFTP_SSH2_MSG_DEBUG:
         sftp_ssh2_packet_handle_debug(pkt);
         pkt = NULL;
@@ -309,13 +309,13 @@ static struct ssh2_packet *read_response_packet(pool *p) {
       case SFTP_SSH2_MSG_USER_AUTH_INFO_RESP:
         pr_trace_msg(trace_channel, 13,
           "received expected %s message",
-          sftp_ssh2_packet_get_mesg_type_desc(mesg_type));
+          sftp_ssh2_packet_get_msg_type_desc(msg_type));
         break;
 
       default:
         (void) pr_log_writefile(sftp_logfd, MOD_SFTP_VERSION,
           "expecting USER_AUTH_INFO_RESP message, received %s (%d)",
-          sftp_ssh2_packet_get_mesg_type_desc(mesg_type), mesg_type);
+          sftp_ssh2_packet_get_msg_type_desc(msg_type), msg_type);
         destroy_pool(pkt->pool);
         errno = EPERM;
         return NULL;

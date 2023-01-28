@@ -95,6 +95,7 @@ sub systemlog_default {
 
     AuthUserFile => $auth_user_file,
     AuthGroupFile => $auth_group_file,
+    AuthOrder => 'mod_auth_file.c',
 
     TransferLog => 'none',
 
@@ -256,6 +257,7 @@ sub systemlog_with_sysloglevel_crit {
 
     AuthUserFile => $auth_user_file,
     AuthGroupFile => $auth_group_file,
+    AuthOrder => 'mod_auth_file.c',
 
     SyslogLevel => 'crit',
     TransferLog => 'none',
@@ -416,6 +418,7 @@ sub systemlog_with_debuglevel {
 
     AuthUserFile => $auth_user_file,
     AuthGroupFile => $auth_group_file,
+    AuthOrder => 'mod_auth_file.c',
 
     DebugLevel => 4,
 
@@ -559,6 +562,7 @@ sub systemlog_ifclass_matching_class_bug3832 {
 
     AuthUserFile => $auth_user_file,
     AuthGroupFile => $auth_group_file,
+    AuthOrder => 'mod_auth_file.c',
 
     IfModules => {
       'mod_delay.c' => {
@@ -715,6 +719,7 @@ sub systemlog_ifclass_not_matching_class_bug3832 {
 
     AuthUserFile => $auth_user_file,
     AuthGroupFile => $auth_group_file,
+    AuthOrder => 'mod_auth_file.c',
 
     IfModules => {
       'mod_delay.c' => {

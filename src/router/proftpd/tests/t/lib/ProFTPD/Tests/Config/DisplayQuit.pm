@@ -87,6 +87,8 @@ sub displayquit_abs_path {
 
     AuthUserFile => $auth_user_file,
     AuthGroupFile => $auth_group_file,
+    AuthOrder => 'mod_auth_file.c',
+
     DisplayQuit => $quit_file,
 
     IfModules => {
@@ -205,6 +207,8 @@ sub displayquit_rel_path {
 
     AuthUserFile => $auth_user_file,
     AuthGroupFile => $auth_group_file,
+    AuthOrder => 'mod_auth_file.c',
+
     DisplayQuit => $quit_file,
 
     IfModules => {
@@ -322,6 +326,8 @@ sub displayquit_multiline {
 
     AuthUserFile => $auth_user_file,
     AuthGroupFile => $auth_group_file,
+    AuthOrder => 'mod_auth_file.c',
+
     DisplayQuit => $quit_file,
 
     IfModules => {
@@ -412,6 +418,8 @@ sub displayquit_non_path {
 
     AuthUserFile => $setup->{auth_user_file},
     AuthGroupFile => $setup->{auth_group_file},
+    AuthOrder => 'mod_auth_file.c',
+
     DisplayQuit => $quit_file,
 
     IfModules => {

@@ -1,6 +1,6 @@
 /*
  * ProFTPD - mod_sftp SFTP
- * Copyright (c) 2008-2020 TJ Saunders
+ * Copyright (c) 2008-2022 TJ Saunders
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -74,9 +74,10 @@
 #define SFTP_FXP_EXT_FSYNC		0x0080
 #define SFTP_FXP_EXT_HARDLINK		0x0100
 #define SFTP_FXP_EXT_XATTR		0x0200
+#define SFTP_FXP_EXT_HOMEDIR		0x0400
 
 #define SFTP_FXP_EXT_DEFAULT \
-  (SFTP_FXP_EXT_CHECK_FILE|SFTP_FXP_EXT_COPY_FILE|SFTP_FXP_EXT_VERSION_SELECT|SFTP_FXP_EXT_POSIX_RENAME|SFTP_FXP_EXT_SPACE_AVAIL|SFTP_FXP_EXT_STATVFS|SFTP_FXP_EXT_FSYNC|SFTP_FXP_EXT_HARDLINK)
+  (SFTP_FXP_EXT_CHECK_FILE|SFTP_FXP_EXT_COPY_FILE|SFTP_FXP_EXT_VERSION_SELECT|SFTP_FXP_EXT_POSIX_RENAME|SFTP_FXP_EXT_SPACE_AVAIL|SFTP_FXP_EXT_STATVFS|SFTP_FXP_EXT_FSYNC|SFTP_FXP_EXT_HARDLINK|SFTP_FXP_EXT_HOMEDIR)
 
 int sftp_fxp_handle_packet(pool *, void *, uint32_t, unsigned char *, uint32_t);
 

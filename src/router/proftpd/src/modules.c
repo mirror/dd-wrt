@@ -1,7 +1,7 @@
 /*
  * ProFTPD - FTP server daemon
  * Copyright (c) 1997, 1998 Public Flood Software
- * Copyright (c) 2001-2017 The ProFTPD Project team
+ * Copyright (c) 2001-2020 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -418,8 +418,9 @@ int pr_module_unload(module *m) {
     loaded_modules = m->next;
   }
 
-  if (m->next)
+  if (m->next) {
     m->next->prev = m->prev;
+  }
 
   m->prev = m->next = NULL;
 

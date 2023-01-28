@@ -37,7 +37,7 @@
 # include <string.h>
 #endif
 
-#include "libsupp.h"
+#include "base.h"
 
 /* "safe" strncpy, saves room for \0 at end of dest, and refuses to copy
  * more than "n" bytes.  Returns the number of bytes copied, or -1 if there

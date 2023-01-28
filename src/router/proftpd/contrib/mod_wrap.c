@@ -57,18 +57,19 @@ static char *wrap_service_name = "proftpd";
  */
 static int wrap_eval_expression(char **config_expr,
     array_header *session_expr) {
-
-  unsigned char found = FALSE;
-  unsigned int i = 0;
   char *elem = NULL, **list = NULL;
 
   /* sanity check */
-  if (!config_expr || !*config_expr || !session_expr)
+  if (!config_expr || !*config_expr || !session_expr) {
     return FALSE;
+  }
 
   list = (char **) session_expr->elts;
 
   for (; *config_expr; config_expr++) {
+    register unsigned int i;
+    unsigned char found;
+
     elem = *config_expr;
     found = FALSE;
 
@@ -91,8 +92,9 @@ static int wrap_eval_expression(char **config_expr,
     }
   }
 
-  if (config_expr)
+  if (config_expr) {
     return TRUE;
+  }
 
   return FALSE;
 }

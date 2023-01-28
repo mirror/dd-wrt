@@ -48,6 +48,7 @@ sub vhost_namebased_different_ports {
 
     AuthUserFile => $setup->{auth_user_file},
     AuthGroupFile => $setup->{auth_group_file},
+    AuthOrder => 'mod_auth_file.c',
 
     ServerName => 'Real Server',
     SocketBindTight => 'off',
@@ -77,6 +78,7 @@ sub vhost_namebased_different_ports {
 
   AuthUserFile $setup->{auth_user_file}
   AuthGroupFile $setup->{auth_group_file}
+  AuthOrder mod_auth_file.c
 </VirtualHost>
 EOC
     unless (close($fh)) {

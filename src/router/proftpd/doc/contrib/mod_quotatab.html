@@ -388,7 +388,7 @@ have the ability to send arbitrary commands to the server, as the common
 
 <p>
 The email address displayed in the <code>SITE QUOTA</code> output can be
-configured via the <a href="http://www.proftpd.org/docs/directives/linked/config_ref_ServerAdmin.html"><code>ServerAdmin</code></a> directive.
+configured via the <a href="http://www.proftpd.org/docs/modules/mod_core.html#ServerAdmin"><code>ServerAdmin</code></a> directive.
 
 <p>
 <hr><br>
@@ -521,7 +521,8 @@ outside of the intended design of this module; other logging modules are
 much better suited for accounting purposes (<i>e.g.</i> <code>mod_sql</code>'s
 <code>SQLLog</code> directive).
 
-<p>
+<p><a name="QuotaLimits"></a>
+<b>Quota Limit Enforcement</b><br>
 A &quot;hard&quot; limit type means that a user's tally will <b>never</b>
 be allowed to exceed the limit; any file uploaded that exceeds the user's
 quota limit will be deleted, and the tally will not be incremented.  A
@@ -536,6 +537,18 @@ other uploads are denied (until the user deletes some files, and brings
 their tally back down below the quota limit).
 
 <p>
+<b>Note</b> that the enforcement of &quot;hard&quot; limits, by deleting the
+uploaded file, can cause unpleasant surprises for users (and site
+administrators).  In order to <b>not</b> lose large or important files because
+of hard limits, I recommend using the <a href="../modules/mod_xfer.html#HiddenStores"><code>HiddenStores</code></a> directive with your
+<code>mod_quotatab</code> configuration.  If <code>HiddenStores</code> is
+enabled, then when the hard upload limit is exceeded, it will be the temporary
+<code>HiddenStores</code> file, and <b>not</b> the destination/target file,
+that will be deleted.  This way, the quota-exceeding upload will fail, but
+users should not be surprised with unexpectedly deleted files.
+
+<p>
+<b>Quota Internals</b><br>
 If any developers wish to make use of <code>mod_quotatab</code>'s quota
 information, or to develop a new submodule, there is developer documentation
 available <a href="http://www.castaglia.org/proftpd/doc/devel-guide/advanced/Quotatab/">here</a>.
@@ -630,7 +643,7 @@ for that module.
 <p>
 <hr>
 <font size=2><b><i>
-&copy; Copyright 2000-2017 The ProFTPD Project<br>
+&copy; Copyright 2000-2021 The ProFTPD Project<br>
  All Rights Reserved<br>
 </i></b></font>
 <hr>

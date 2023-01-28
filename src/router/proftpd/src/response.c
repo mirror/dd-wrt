@@ -186,7 +186,7 @@ void pr_response_flush(pr_response_t **head) {
 
       } else {
         /* RFC2228's multiline responses are required for protected sessions. */
-	if (session.multiline_rfc2228 || session.sp_flags) {
+	if (session.sp_flags) {
           RESPONSE_WRITE_NUM_STR(session.c->outstrm, "%s-%s\r\n", last_numeric,
             resp->msg)
 
@@ -267,8 +267,8 @@ void pr_response_add_err(const char *numeric, const char *fmt, ...) {
     *head &&
     (!numeric || !(*head)->num || strcmp((*head)->num, numeric) <= 0) &&
     !(numeric && !(*head)->num && head == &resp_err_list);
-
-  head = &(*head)->next);
+    head = &(*head)->next) {
+  }
 
   resp->next = *head;
   *head = resp;
@@ -326,7 +326,8 @@ void pr_response_add(const char *numeric, const char *fmt, ...) {
     *head &&
     (!numeric || !(*head)->num || strcmp((*head)->num, numeric) <= 0) &&
     !(numeric && !(*head)->num && head == &resp_list);
-  head = &(*head)->next);
+    head = &(*head)->next) {
+  }
 
   resp->next = *head;
   *head = resp;

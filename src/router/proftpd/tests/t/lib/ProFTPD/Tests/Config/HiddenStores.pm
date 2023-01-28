@@ -121,8 +121,9 @@ sub hiddenstores_on {
 
     AuthUserFile => $auth_user_file,
     AuthGroupFile => $auth_group_file,
-    DefaultChdir => '~',
+    AuthOrder => 'mod_auth_file.c',
 
+    DefaultChdir => '~',
     HiddenStores => 'on',
 
     IfModules => {
@@ -271,8 +272,9 @@ sub hiddenstores_bug3156 {
 
     AuthUserFile => $auth_user_file,
     AuthGroupFile => $auth_group_file,
-    DefaultChdir => '~',
+    AuthOrder => 'mod_auth_file.c',
 
+    DefaultChdir => '~',
     AllowRetrieveRestart => 'on',
     HiddenStores => 'on',
 
@@ -415,8 +417,9 @@ sub hiddenstores_prefix_bug3294 {
 
     AuthUserFile => $auth_user_file,
     AuthGroupFile => $auth_group_file,
-    DefaultChdir => '~',
+    AuthOrder => 'mod_auth_file.c',
 
+    DefaultChdir => '~',
     HiddenStores => $hiddenstore_prefix,
 
     IfModules => {
@@ -556,8 +559,9 @@ sub hiddenstores_bool_prefix_bug3294 {
 
     AuthUserFile => $auth_user_file,
     AuthGroupFile => $auth_group_file,
-    DefaultChdir => '~',
+    AuthOrder => 'mod_auth_file.c',
 
+    DefaultChdir => '~',
     HiddenStores => $hiddenstore_prefix,
 
     IfModules => {
@@ -698,8 +702,9 @@ sub hiddenstores_suffix_bug3872 {
 
     AuthUserFile => $auth_user_file,
     AuthGroupFile => $auth_group_file,
-    DefaultChdir => '~',
+    AuthOrder => 'mod_auth_file.c',
 
+    DefaultChdir => '~',
     HiddenStores => "$hiddenstore_prefix $hiddenstore_suffix",
 
     IfModules => {
@@ -851,8 +856,9 @@ sub hiddenstores_pid_var_bug4062 {
 
     AuthUserFile => $auth_user_file,
     AuthGroupFile => $auth_group_file,
-    DefaultChdir => '~',
+    AuthOrder => 'mod_auth_file.c',
 
+    DefaultChdir => '~',
     HiddenStores => '.in. .%P',
 
     IfModules => {
@@ -963,8 +969,9 @@ sub hiddenstores_timeout_idle_bug4035 {
 
     AuthUserFile => $setup->{auth_user_file},
     AuthGroupFile => $setup->{auth_group_file},
-    DefaultChdir => '~',
+    AuthOrder => 'mod_auth_file.c',
 
+    DefaultChdir => '~',
     HiddenStores => 'on',
     TimeoutIdle => $timeout_idle,
 
@@ -1079,8 +1086,9 @@ sub hiddenstores_timeout_notransfer_bug4035 {
 
     AuthUserFile => $setup->{auth_user_file},
     AuthGroupFile => $setup->{auth_group_file},
-    DefaultChdir => '~',
+    AuthOrder => 'mod_auth_file.c',
 
+    DefaultChdir => '~',
     HiddenStores => 'on',
     TimeoutNoTransfer => $timeout_noxfer,
 
@@ -1193,8 +1201,9 @@ sub hiddenstores_timeout_stalled_bug4035 {
 
     AuthUserFile => $setup->{auth_user_file},
     AuthGroupFile => $setup->{auth_group_file},
-    DefaultChdir => '~',
+    AuthOrder => 'mod_auth_file.c',
 
+    DefaultChdir => '~',
     HiddenStores => 'on',
     TimeoutStalled => $timeout_stalled,
 
@@ -1312,8 +1321,9 @@ sub hiddenstores_timeout_session_bug4035 {
 
     AuthUserFile => $setup->{auth_user_file},
     AuthGroupFile => $setup->{auth_group_file},
-    DefaultChdir => '~',
+    AuthOrder => 'mod_auth_file.c',
 
+    DefaultChdir => '~',
     HiddenStores => 'on',
     TimeoutSession => $timeout_session,
 

@@ -1,6 +1,6 @@
 /*
  * ProFTPD - FTP server daemon
- * Copyright (c) 2006-2016 The ProFTPD Project team
+ * Copyright (c) 2006-2022 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -46,15 +46,18 @@ static int utf8_convert(iconv_t conv, char *inbuf, size_t *inbuflen,
   char *start = inbuf;
 
   while (inbuflen > 0) {
-    size_t nconv = iconv(conv, &inbuf, inbuflen, &outbuf, outbuflen);
+    size_t nconv;
 
+    pr_signals_handle();
+
+    nconv = iconv(conv, &inbuf, inbuflen, &outbuf, outbuflen);
     if (nconv == (size_t) -1) {
       if (errno == EINVAL) {
         memmove(start, inbuf, *inbuflen);
         continue;
+      }
 
-      } else
-        return -1;
+      return -1;
     }
 
     break;
@@ -73,12 +76,14 @@ int utf8_free(void) {
 
   /* Close the iconv handles. */
   res = iconv_close(encode_conv);
-  if (res < 0) 
+  if (res < 0) {
     return -1;
+  }
 
   res = iconv_close(decode_conv);
-  if (res < 0)
+  if (res < 0) {
     return -1;
+  }
 
   return 0;
 # else
@@ -95,7 +100,7 @@ int utf8_init(void) {
    * UCS-2.
    */
   local_charset = nl_langinfo(CODESET);
-  if (!local_charset) {
+  if (local_charset == NULL) {
     local_charset = "C";
     pr_trace_msg("utf8", 1,
       "unable to determine locale, defaulting to 'C' for UTF8 conversion");
@@ -114,12 +119,14 @@ int utf8_init(void) {
 # ifdef HAVE_ICONV
   /* Get the iconv handles. */
   encode_conv = iconv_open("UTF-8", local_charset);
-  if (encode_conv == (iconv_t) -1)
+  if (encode_conv == (iconv_t) -1) {
     return -1;
+  }
  
   decode_conv = iconv_open(local_charset, "UTF-8");
-  if (decode_conv == (iconv_t) -1)
+  if (decode_conv == (iconv_t) -1) {
     return -1;
+  }
 
   return 0;
 # else
@@ -133,7 +140,9 @@ char *pr_utf8_decode(pool *p, const char *in, size_t inlen, size_t *outlen) {
   size_t inbuflen, outbuflen;
   char *inbuf, outbuf[PR_TUNABLE_PATH_MAX*2], *res = NULL;
 
-  if (!p || !in || !outlen) {
+  if (p == NULL ||
+      in == NULL ||
+      outlen == NULL) {
     errno = EINVAL;
     return NULL;
   }
@@ -149,8 +158,9 @@ char *pr_utf8_decode(pool *p, const char *in, size_t inlen, size_t *outlen) {
 
   outbuflen = sizeof(outbuf);
 
-  if (utf8_convert(decode_conv, inbuf, &inbuflen, outbuf, &outbuflen) < 0)
+  if (utf8_convert(decode_conv, inbuf, &inbuflen, outbuf, &outbuflen) < 0) {
     return NULL;
+  }
 
   *outlen = sizeof(outbuf) - outbuflen;
   res = pcalloc(p, *outlen);
@@ -168,7 +178,9 @@ char *pr_utf8_encode(pool *p, const char *in, size_t inlen, size_t *outlen) {
   size_t inbuflen, outbuflen;
   char *inbuf, outbuf[PR_TUNABLE_PATH_MAX*2], *res;
 
-  if (!p || !in || !outlen) {
+  if (p == NULL ||
+      in == NULL ||
+      outlen == NULL) {
     errno = EINVAL;
     return NULL;
   }
@@ -184,8 +196,9 @@ char *pr_utf8_encode(pool *p, const char *in, size_t inlen, size_t *outlen) {
 
   outbuflen = sizeof(outbuf);
 
-  if (utf8_convert(encode_conv, inbuf, &inbuflen, outbuf, &outbuflen) < 0)
+  if (utf8_convert(encode_conv, inbuf, &inbuflen, outbuf, &outbuflen) < 0) {
     return NULL;
+  }
 
   *outlen = sizeof(outbuf) - outbuflen;
   res = pcalloc(p, *outlen);

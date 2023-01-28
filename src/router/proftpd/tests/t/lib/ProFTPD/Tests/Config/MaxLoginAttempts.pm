@@ -49,6 +49,7 @@ sub maxloginattempts_one {
 
     AuthUserFile => $setup->{auth_user_file},
     AuthGroupFile => $setup->{auth_group_file},
+    AuthOrder => 'mod_auth_file.c',
 
     MaxLoginAttempts => $max_logins,
 
@@ -106,9 +107,10 @@ sub maxloginattempts_one {
       $resp_code = $client->response_code();
       $resp_msg = $client->response_msg(0);
 
-      $expected = 599;
-      $self->assert($expected == $resp_code,
-        test_msg("Expected response code $expected, got $resp_code"));
+      # Perl's Net::Cmd module uses a very non-standard 599 code to
+      # indicate that the connection is closed, depending on version.
+      $self->assert($resp_code == 421 || $resp_code == 599,
+        test_msg("Expected response code 421 or 599, got $resp_code"));
     };
     if ($@) {
       $ex = $@;
@@ -189,6 +191,7 @@ sub maxloginattempts_absent {
 
     AuthUserFile => $setup->{auth_user_file},
     AuthGroupFile => $setup->{auth_group_file},
+    AuthOrder => 'mod_auth_file.c',
 
     IfModules => {
       'mod_delay.c' => {
@@ -243,9 +246,10 @@ sub maxloginattempts_absent {
       my $resp_code = $client->response_code();
       my $resp_msg = $client->response_msg(0);
 
-      my $expected = 599;
-      $self->assert($expected == $resp_code,
-        test_msg("Expected response code $expected, got $resp_code"));
+      # Perl's Net::Cmd module uses a very non-standard 599 code to
+      # indicate that the connection is closed, depending on version.
+      $self->assert($resp_code == 421 || $resp_code == 599,
+        test_msg("Expected response code 421 or 599, got $resp_code"));
     };
     if ($@) {
       $ex = $@;

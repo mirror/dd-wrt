@@ -618,6 +618,8 @@ MODRET copy_copy(cmd_rec *cmd) {
       int xerrno = EPERM;
 
       pr_cmd_set_name(cmd, cmd_name);
+      pr_log_debug(DEBUG8, "%s denied by <Limit> configuration",
+        (char *) cmd->argv[0]);
       pr_response_add_err(R_550, "%s: %s", (char *) cmd->argv[3],
         strerror(xerrno));
 
@@ -711,6 +713,8 @@ MODRET copy_cpfr(cmd_rec *cmd) {
     int xerrno = EPERM;
 
     pr_cmd_set_name(cmd, cmd_name);
+    pr_log_debug(DEBUG8, "%s denied by <Limit> configuration",
+      (char *) cmd->argv[0]);
     pr_response_add_err(R_550, "%s: %s", (char *) cmd->argv[3],
       strerror(xerrno));
 
@@ -838,6 +842,8 @@ MODRET copy_cpto(cmd_rec *cmd) {
     int xerrno = EPERM;
 
     pr_cmd_set_name(cmd, cmd_name);
+    pr_log_debug(DEBUG8, "%s denied by <Limit> configuration",
+      (char *) cmd->argv[0]);
     pr_response_add_err(R_550, "%s: %s", to, strerror(xerrno));
 
     pr_cmd_set_errno(cmd, xerrno);

@@ -53,21 +53,21 @@
 struct umac_ctx *umac_alloc(void);
 /* Dynamically allocate a umac_ctx struct. */
 
-struct umac_ctx *umac_new(unsigned char key[]);
+struct umac_ctx *umac_new(const unsigned char key[]);
 /* Dynamically allocate a umac_ctx struct, initialize variables, 
  * generate subkeys from key.
  */
 
-void umac_init(struct umac_ctx *ctx, unsigned char key[]);
+void umac_init(struct umac_ctx *ctx, const unsigned char key[]);
 /* Initialize a previously allocated umac_ctx struct. */
 
 int umac_reset(struct umac_ctx *ctx);
 /* Reset a umac_ctx to begin authenticating a new message */
 
-int umac_update(struct umac_ctx *ctx, unsigned char *input, long len);
+int umac_update(struct umac_ctx *ctx, const unsigned char *input, long len);
 /* Incorporate len bytes pointed to by input into context ctx */
 
-int umac_final(struct umac_ctx *ctx, unsigned char tag[], unsigned char nonce[8]);
+int umac_final(struct umac_ctx *ctx, unsigned char tag[], const unsigned char nonce[8]);
 /* Incorporate any pending data and the ctr value, and return tag. 
  * This function returns error code if ctr < 0. 
  */
@@ -80,11 +80,11 @@ int umac_delete(struct umac_ctx *ctx);
  * preprocessor macros to get the umac-128 implementation.
  */
 struct umac_ctx *umac128_alloc(void);
-struct umac_ctx *umac128_new(unsigned char key[]);
-void umac128_init(struct umac_ctx *ctx, unsigned char key[]);
+struct umac_ctx *umac128_new(const unsigned char key[]);
+void umac128_init(struct umac_ctx *ctx, const unsigned char key[]);
 int umac128_reset(struct umac_ctx *ctx);
-int umac128_update(struct umac_ctx *ctx, unsigned char *input, long len);
-int umac128_final(struct umac_ctx *ctx, unsigned char tag[], unsigned char nonce[8]);
+int umac128_update(struct umac_ctx *ctx, const unsigned char *input, long len);
+int umac128_final(struct umac_ctx *ctx, unsigned char tag[], const unsigned char nonce[8]);
 int umac128_delete(struct umac_ctx *ctx);
 
 #ifdef __cplusplus

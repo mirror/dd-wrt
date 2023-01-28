@@ -79,6 +79,7 @@ sub accessgrantmsg_ok {
 
     AuthUserFile => $auth_user_file,
     AuthGroupFile => $auth_group_file,
+    AuthOrder => 'mod_auth_file.c',
 
     AccessGrantMsg => $access_grant_msg,
 
@@ -193,6 +194,7 @@ sub accessgrantmsg_var_u_ok {
 
     AuthUserFile => $auth_user_file,
     AuthGroupFile => $auth_group_file,
+    AuthOrder => 'mod_auth_file.c',
 
     AccessGrantMsg => $access_grant_msg,
 

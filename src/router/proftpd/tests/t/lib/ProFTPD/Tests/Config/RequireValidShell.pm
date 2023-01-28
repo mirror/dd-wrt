@@ -125,6 +125,7 @@ sub requirevalidshell_off_valid_shell {
 
     AuthUserFile => $auth_user_file,
     AuthGroupFile => $auth_group_file,
+    AuthOrder => 'mod_auth_file.c',
 
     RequireValidShell => 'off',
 
@@ -230,6 +231,7 @@ sub requirevalidshell_off_invalid_shell {
 
     AuthUserFile => $auth_user_file,
     AuthGroupFile => $auth_group_file,
+    AuthOrder => 'mod_auth_file.c',
 
     RequireValidShell => 'off',
 
@@ -335,6 +337,7 @@ sub requirevalidshell_on_valid_shell {
 
     AuthUserFile => $auth_user_file,
     AuthGroupFile => $auth_group_file,
+    AuthOrder => 'mod_auth_file.c',
 
     RequireValidShell => 'on',
 
@@ -440,6 +443,7 @@ sub requirevalidshell_on_invalid_shell {
 
     AuthUserFile => $auth_user_file,
     AuthGroupFile => $auth_group_file,
+    AuthOrder => 'mod_auth_file.c',
 
     RequireValidShell => 'on',
 

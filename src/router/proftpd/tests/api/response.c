@@ -69,7 +69,7 @@ START_TEST (response_pool_get_test) {
   pool *res;
 
   res = pr_response_get_pool();
-  fail_unless(res == NULL, "Response pool not null as expected");
+  ck_assert_msg(res == NULL, "Response pool not null as expected");
 }
 END_TEST
 
@@ -78,7 +78,7 @@ START_TEST (response_pool_set_test) {
 
   pr_response_set_pool(p);
   res = pr_response_get_pool();
-  fail_unless(res == p, "Response pool not %p as expected", p);
+  ck_assert_msg(res == p, "Response pool not %p as expected", p);
 }
 END_TEST
 
@@ -105,15 +105,15 @@ START_TEST (response_add_test) {
   pr_response_add(NULL, "%s", resp_msg);
 
   res = pr_response_get_last(p, &last_resp_code, &last_resp_msg);
-  fail_unless(res == 0, "Failed to get last values: %d (%s)", errno,
+  ck_assert_msg(res == 0, "Failed to get last values: %d (%s)", errno,
     strerror(errno));
 
-  fail_unless(last_resp_code != NULL, "Last response code unexpectedly null");
-  fail_unless(strcmp(last_resp_code, resp_code) == 0,
+  ck_assert_msg(last_resp_code != NULL, "Last response code unexpectedly null");
+  ck_assert_msg(strcmp(last_resp_code, resp_code) == 0,
     "Expected response code '%s', got '%s'", resp_code, last_resp_code);
   
-  fail_unless(last_resp_msg != NULL, "Last response message unexpectedly null");
-  fail_unless(strcmp(last_resp_msg, resp_msg) == 0,
+  ck_assert_msg(last_resp_msg != NULL, "Last response message unexpectedly null");
+  ck_assert_msg(strcmp(last_resp_msg, resp_msg) == 0,
     "Expected response message '%s', got '%s'", resp_msg, last_resp_msg);
 }
 END_TEST
@@ -137,15 +137,15 @@ START_TEST (response_add_err_test) {
   pr_response_add_err(resp_code, "%s", resp_msg);
 
   res = pr_response_get_last(p, &last_resp_code, &last_resp_msg);
-  fail_unless(res == 0, "Failed to get last values: %d (%s)", errno,
+  ck_assert_msg(res == 0, "Failed to get last values: %d (%s)", errno,
     strerror(errno));
 
-  fail_unless(last_resp_code != NULL, "Last response code unexpectedly null");
-  fail_unless(strcmp(last_resp_code, resp_code) == 0,
+  ck_assert_msg(last_resp_code != NULL, "Last response code unexpectedly null");
+  ck_assert_msg(strcmp(last_resp_code, resp_code) == 0,
     "Expected response code '%s', got '%s'", resp_code, last_resp_code);
 
-  fail_unless(last_resp_msg != NULL, "Last response message unexpectedly null");
-  fail_unless(strcmp(last_resp_msg, resp_msg) == 0,
+  ck_assert_msg(last_resp_msg != NULL, "Last response message unexpectedly null");
+  ck_assert_msg(strcmp(last_resp_msg, resp_msg) == 0,
     "Expected response message '%s', got '%s'", resp_msg, last_resp_msg);
 }
 END_TEST
@@ -155,22 +155,22 @@ START_TEST (response_get_last_test) {
   const char *resp_code = NULL, *resp_msg = NULL;
 
   res = pr_response_get_last(NULL, NULL, NULL);
-  fail_unless(res == -1, "Failed to handle null pool");
-  fail_unless(errno == EINVAL, "Expected errno %d (%s), got %d (%s)",
+  ck_assert_msg(res == -1, "Failed to handle null pool");
+  ck_assert_msg(errno == EINVAL, "Expected errno %d (%s), got %d (%s)",
     EINVAL, strerror(EINVAL), errno, strerror(errno));
 
   res = pr_response_get_last(p, NULL, NULL);
-  fail_unless(res == -1, "Failed to handle null argument");
-  fail_unless(errno == EINVAL, "Expected errno %d (%s), got %d (%s)",
+  ck_assert_msg(res == -1, "Failed to handle null argument");
+  ck_assert_msg(errno == EINVAL, "Expected errno %d (%s), got %d (%s)",
     EINVAL, strerror(EINVAL), errno, strerror(errno));
 
   res = pr_response_get_last(p, &resp_code, &resp_msg);
-  fail_unless(res == 0, "Failed to get last values: %d (%s)", errno,
+  ck_assert_msg(res == 0, "Failed to get last values: %d (%s)", errno,
     strerror(errno));
 
-  fail_unless(resp_code == NULL,
+  ck_assert_msg(resp_code == NULL,
     "Last response code not null as expected: %s", resp_code);
-  fail_unless(resp_msg == NULL,
+  ck_assert_msg(resp_msg == NULL,
     "Last response message not null as expected: %s", resp_msg);
 }
 END_TEST
@@ -179,15 +179,15 @@ START_TEST (response_block_test) {
   int res;
 
   res = pr_response_block(-1);
-  fail_unless(res == -1, "Failed to handle invalid argument");
-  fail_unless(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)",
+  ck_assert_msg(res == -1, "Failed to handle invalid argument");
+  ck_assert_msg(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)",
     EINVAL, strerror(errno), errno);
 
   res = pr_response_block(TRUE);
-  fail_unless(res == 0, "Failed to block responses: %s", strerror(errno));
+  ck_assert_msg(res == 0, "Failed to block responses: %s", strerror(errno));
 
   res = pr_response_block(FALSE);
-  fail_unless(res == 0, "Failed to unblock responses: %s", strerror(errno));
+  ck_assert_msg(res == 0, "Failed to unblock responses: %s", strerror(errno));
 }
 END_TEST
 
@@ -196,11 +196,11 @@ START_TEST (response_blocked_test) {
 
   (void) pr_response_block(TRUE);
   res = pr_response_blocked();
-  fail_unless(res == TRUE, "Failed to detect blocked responses");
+  ck_assert_msg(res == TRUE, "Failed to detect blocked responses");
 
   (void) pr_response_block(FALSE);
   res = pr_response_blocked();
-  fail_unless(res == FALSE, "Failed to detect unblocked responses");
+  ck_assert_msg(res == FALSE, "Failed to detect unblocked responses");
 }
 END_TEST
 
@@ -257,7 +257,7 @@ START_TEST (response_flush_test) {
   netio->write = response_netio_write_cb;
 
   res = pr_register_netio(netio, PR_NETIO_STRM_CTRL);
-  fail_unless(res == 0, "Failed to register custom ctrl NetIO: %s",
+  ck_assert_msg(res == 0, "Failed to register custom ctrl NetIO: %s",
     strerror(errno));
 
   conn = pr_inet_create_conn(p, sockfd, NULL, INPORT_ANY, FALSE);
@@ -279,7 +279,7 @@ START_TEST (response_flush_test) {
   session.c = NULL;
   pr_unregister_netio(PR_NETIO_STRM_CTRL);
 
-  fail_unless(resp_nlines == 3, "Expected 3 response lines flushed, got %u",
+  ck_assert_msg(resp_nlines == 3, "Expected 3 response lines flushed, got %u",
     resp_nlines);
 }
 END_TEST
@@ -294,7 +294,7 @@ START_TEST (response_send_test) {
   netio->write = response_netio_write_cb;
 
   res = pr_register_netio(netio, PR_NETIO_STRM_CTRL);
-  fail_unless(res == 0, "Failed to register custom ctrl NetIO: %s",
+  ck_assert_msg(res == 0, "Failed to register custom ctrl NetIO: %s",
     strerror(errno));
 
   conn = pr_inet_create_conn(p, sockfd, NULL, INPORT_ANY, FALSE);
@@ -313,7 +313,7 @@ START_TEST (response_send_test) {
   session.c = NULL;
   pr_unregister_netio(PR_NETIO_STRM_CTRL);
 
-  fail_unless(resp_nlines == 1, "Expected 1 response line flushed, got %u",
+  ck_assert_msg(resp_nlines == 1, "Expected 1 response line flushed, got %u",
     resp_nlines);
 }
 END_TEST
@@ -328,7 +328,7 @@ START_TEST (response_send_async_test) {
   netio->write = response_netio_write_cb;
 
   res = pr_register_netio(netio, PR_NETIO_STRM_CTRL);
-  fail_unless(res == 0, "Failed to register custom ctrl NetIO: %s",
+  ck_assert_msg(res == 0, "Failed to register custom ctrl NetIO: %s",
     strerror(errno));
 
   conn = pr_inet_create_conn(p, sockfd, NULL, INPORT_ANY, FALSE);
@@ -347,10 +347,10 @@ START_TEST (response_send_async_test) {
   session.c = NULL;
   pr_unregister_netio(PR_NETIO_STRM_CTRL);
 
-  fail_unless(resp_nlines == 1, "Expected 1 response line flushed, got %u",
+  ck_assert_msg(resp_nlines == 1, "Expected 1 response line flushed, got %u",
     resp_nlines);
-  fail_unless(resp_line != NULL, "Expected response line");
-  fail_unless(strcmp(resp_line, "200 OK\r\n") == 0,
+  ck_assert_msg(resp_line != NULL, "Expected response line");
+  ck_assert_msg(strcmp(resp_line, "200 OK\r\n") == 0,
     "Expected '200 OK', got '%s'", resp_line);
 }
 END_TEST
@@ -365,7 +365,7 @@ START_TEST (response_send_raw_test) {
   netio->write = response_netio_write_cb;
 
   res = pr_register_netio(netio, PR_NETIO_STRM_CTRL);
-  fail_unless(res == 0, "Failed to register custom ctrl NetIO: %s",
+  ck_assert_msg(res == 0, "Failed to register custom ctrl NetIO: %s",
     strerror(errno));
 
   conn = pr_inet_create_conn(p, sockfd, NULL, INPORT_ANY, FALSE);
@@ -384,7 +384,7 @@ START_TEST (response_send_raw_test) {
   session.c = NULL;
   pr_unregister_netio(PR_NETIO_STRM_CTRL);
 
-  fail_unless(resp_nlines == 1, "Expected 1 response line flushed, got %u",
+  ck_assert_msg(resp_nlines == 1, "Expected 1 response line flushed, got %u",
     resp_nlines);
 }
 END_TEST

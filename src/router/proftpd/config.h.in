@@ -258,6 +258,15 @@
 /* The number of bytes in a gid_t.  */
 #undef SIZEOF_GID_T
 
+/* Define if you have the `u_int8_t` type defined.  */
+#undef HAVE_U_INT8_T
+
+/* Define if you have the `u_int16_t` type defined.  */
+#undef HAVE_U_INT16_T
+
+/* Define if you have the `u_int32_t` type defined.  */
+#undef HAVE_U_INT32_T
+
 /* Define if you have the authenticate function.  */
 #undef HAVE_AUTHENTICATE
 
@@ -387,6 +396,9 @@
 /* Define if you have the gmtime_r function.  */
 #undef HAVE_GMTIME_R
 
+/* Define if you have the Hiredis redisInitiateSSL function.  */
+#undef HAVE_HIREDIS_REDISINITIATESSL
+
 /* Define if you have the Hiredis redisReconnect function.  */
 #undef HAVE_HIREDIS_REDISRECONNECT
 
@@ -395,6 +407,9 @@
 
 /* Define if you have the iconv function.  */
 #undef HAVE_ICONV
+
+/* Define if you have the idn2_to_ascii_8z function.  */
+#undef HAVE_IDN2_TO_ASCII_8Z
 
 /* Define if you have the idna_to_ascii_8z function.  */
 #undef HAVE_IDNA_TO_ASCII_8Z
@@ -494,6 +509,12 @@
 
 /* Define if you have the PCRE pcre_free_study function.  */
 #undef HAVE_PCRE_PCRE_FREE_STUDY
+
+/* Define if you have the PCRE2 pcre2_jit_compile function.  */
+#undef HAVE_PCRE2_PCRE2_JIT_COMPILE
+
+/* Define if you have the PCRE2 pcre2_regcomp function.  */
+#undef HAVE_PCRE2_PCRE2_REGCOMP
 
 /* Define if you have the perm_copy_fd function.  */
 #undef HAVE_PERM_COPY_FD
@@ -684,8 +705,14 @@
 /* Define if you have the <hiredis/hiredis.h> header file.  */
 #undef HAVE_HIREDIS_HIREDIS_H
 
+/* Define if you have the <hiredis/hiredis_ssl.h> header file.  */
+#undef HAVE_HIREDIS_HIREDIS_SSL_H
+
 /* Define if you have the <iconv.h> header file.  */
 #undef HAVE_ICONV_H
+
+/* Define if you have the <idn2.h> header file.  */
+#undef HAVE_IDN2_H
 
 /* Define if you have the <idna.h> header file.  */
 #undef HAVE_IDNA_H
@@ -1107,9 +1134,6 @@
 /* Define if using nonblocking open of log files.  */
 #undef PR_USE_NONBLOCKING_LOG_OPEN
 
-/* Define if Sodiumm support, if available, should be used.  */
-#undef PR_USE_SODIUM
-
 /* Define if OpenSSL support, if available, should be used.  */
 #undef PR_USE_OPENSSL
 
@@ -1117,6 +1141,9 @@
  * if available, should be used.
  */
 #undef PR_USE_OPENSSL_ALPN
+
+/* Define if using OPENSSL_API_COMPAT.  */
+#undef PR_USE_OPENSSL_API_COMPAT
 
 /* Define if OpenSSL Elliptic Curve Cryptography (ECC) support, if available,
  * should be used.
@@ -1157,6 +1184,9 @@
 /* Define if using PCRE support.  */
 #undef PR_USE_PCRE
 
+/* Define if using PCRE2 support.  */
+#undef PR_USE_PCRE2
+
 /* Define if sendfile support, if available, should be used.  */
 #undef PR_USE_SENDFILE
 
@@ -1165,6 +1195,9 @@
 
 /* Define if using Tru64's C2 SIA authentication.  */
 #undef PR_USE_SIA
+
+/* Define if Sodiumm support, if available, should be used.  */
+#undef PR_USE_SODIUM
 
 /* Define if use of system getopt is desired.  */
 #undef PR_USE_SYSTEM_GETOPT

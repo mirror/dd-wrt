@@ -1,7 +1,7 @@
 /*
  * ProFTPD - FTP server daemon
  * Copyright (c) 1997, 1998 Public Flood Software
- * Copyright (c) 2001-2020 The ProFTPD Project team
+ * Copyright (c) 2001-2021 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -26,10 +26,6 @@
 /* "SITE" commands module for ProFTPD. */
 
 #include "conf.h"
-
-/* From mod_core.c */
-extern int core_chmod(cmd_rec *cmd, const char *path, mode_t mode);
-extern int core_chgrp(cmd_rec *cmd, const char *path, uid_t uid, gid_t gid);
 
 modret_t *site_dispatch(cmd_rec *cmd);
 
@@ -347,8 +343,9 @@ MODRET site_chmod(cmd_rec *cmd) {
             break;
         }
 
-        if (invalid)
+        if (invalid) {
           break;
+        }
 
         switch (*how) {
           case '+':
@@ -360,8 +357,9 @@ MODRET site_chmod(cmd_rec *cmd) {
             invalid++;
         }
 
-        if (invalid)
+        if (invalid) {
           break;
+        }
 
         switch (*cp) {
           case 'r':
@@ -423,10 +421,9 @@ MODRET site_chmod(cmd_rec *cmd) {
               who++;
               cp = what;
               continue;
-
-            } else {
-              cp = NULL;
             }
+
+            cp = NULL;
             break;
 
           default:
@@ -483,6 +480,22 @@ MODRET site_help(cmd_rec *cmd) {
    * syntactically correct.
    */
 
+  if (!dir_check_limits(cmd, session.dir_config, "SITE_HELP", FALSE)) {
+    int xerrno = EACCES;
+
+    pr_log_debug(DEBUG8, "SITE HELP denied by <Limit> configuration");
+
+    /* Returning 501 is the best we can do.  It would be nicer if RFC959 allowed
+     * 550 as a possible response.
+     */
+    pr_response_add_err(R_501, "%s: %s", (char *) cmd->argv[0],
+      strerror(xerrno));
+
+    pr_cmd_set_errno(cmd, xerrno);
+    errno = xerrno;
+    return PR_ERROR(cmd);
+  }
+
   if (cmd->argc == 1 || (cmd->argc == 2 &&
       ((strcasecmp(cmd->argv[0], "SITE") == 0 &&
         strcasecmp(cmd->argv[1], "HELP") == 0) ||
@@ -504,7 +517,7 @@ MODRET site_help(cmd_rec *cmd) {
 
     arg = cmd->argv[1];
     for (cp = arg; *cp; cp++) {
-      *cp = toupper(*cp);
+      *cp = toupper((int) *cp);
     }
 
     for (i = 0; _help[i].cmd; i++) {
@@ -573,9 +586,12 @@ modret_t *site_dispatch(cmd_rec *cmd) {
  */
 
 MODRET site_pre_cmd(cmd_rec *cmd) {
-  if (cmd->argc > 1 && !strcasecmp(cmd->argv[1], "help"))
+  if (cmd->argc > 1 &&
+      strcasecmp(cmd->argv[1], "help") == 0) {
     pr_response_add(R_214,
       _("The following SITE commands are recognized (* =>'s unimplemented)"));
+  }
+
   return PR_DECLINED(cmd);
 }
 
@@ -603,9 +619,10 @@ MODRET site_cmd(cmd_rec *cmd) {
 
 MODRET site_post_cmd(cmd_rec *cmd) {
   if (cmd->argc > 1 &&
-      strcasecmp(cmd->argv[1], "help") == 0)
+      strcasecmp(cmd->argv[1], "help") == 0) {
     pr_response_add(R_214, _("Direct comments to %s"),
       (cmd->server->ServerAdmin ? cmd->server->ServerAdmin : "ftp-admin"));
+  }
 
   return PR_DECLINED(cmd);
 }

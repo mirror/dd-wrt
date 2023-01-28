@@ -1,6 +1,6 @@
 /*
  * ProFTPD - FTP server testsuite
- * Copyright (c) 2015-2018 The ProFTPD Project team
+ * Copyright (c) 2015-2021 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -48,9 +48,9 @@ START_TEST (ascii_ftp_from_crlf_test) {
 
   pr_ascii_ftp_reset();
   res = pr_ascii_ftp_from_crlf(NULL, NULL, 0, NULL, NULL);
-  fail_unless(res == -1, "Failed to handle null arguments");
-  fail_unless(errno == EINVAL, "Expected EINVAL ('%s' [%d]), got '%s' [%d]",
-    strerror(errno), errno);
+  ck_assert_msg(res == -1, "Failed to handle null arguments");
+  ck_assert_msg(errno == EINVAL, "Expected EINVAL ('%s' [%d]), got '%s' [%d]",
+    strerror(EINVAL), EINVAL, strerror(errno), errno);
 
   /* Handle an empty input buffer. */
   pr_ascii_ftp_reset();
@@ -59,8 +59,8 @@ START_TEST (ascii_ftp_from_crlf_test) {
   dst = pcalloc(p, 1);
   dst_len = 0;
   res = pr_ascii_ftp_from_crlf(p, src, src_len, &dst, &dst_len);
-  fail_unless(res == 0, "Failed to handle empty input buffer");
-  fail_unless(dst_len == src_len, "Failed to set output buffer length");
+  ck_assert_msg(res == 0, "Failed to handle empty input buffer");
+  ck_assert_msg(dst_len == src_len, "Failed to set output buffer length");
 
   /* Handle an input buffer with no CRLFs. */
   pr_ascii_ftp_reset();
@@ -69,14 +69,14 @@ START_TEST (ascii_ftp_from_crlf_test) {
   dst = pcalloc(p, src_len + 1);
   dst_len = 0;
   res = pr_ascii_ftp_from_crlf(p, src, src_len, &dst, &dst_len);
-  fail_unless(res == 0, "Failed to handle input buffer with no CRLFs");
+  ck_assert_msg(res == 0, "Failed to handle input buffer with no CRLFs");
   expected = src;
   expected_len = src_len;
-  fail_unless(dst_len == expected_len,
+  ck_assert_msg(dst_len == expected_len,
     "Expected output buffer length %lu, got %lu", (unsigned long) expected_len,
     (unsigned long) dst_len);
   res = strcmp(expected, dst);
-  fail_unless(res == 0, "Expected output buffer '%s', got '%s' (%d)", expected,
+  ck_assert_msg(res == 0, "Expected output buffer '%s', got '%s' (%d)", expected,
     dst, res);
 
   /* Handle an input buffer with CRs, no LFs. */
@@ -86,13 +86,13 @@ START_TEST (ascii_ftp_from_crlf_test) {
   dst = pcalloc(p, src_len + 1);
   dst_len = 0;
   res = pr_ascii_ftp_from_crlf(p, src, src_len, &dst, &dst_len);
-  fail_unless(res == 0, "Failed to handle input buffer with CRs, no LFs");
+  ck_assert_msg(res == 0, "Failed to handle input buffer with CRs, no LFs");
   expected = src;
   expected_len = src_len;
-  fail_unless(dst_len == expected_len,
+  ck_assert_msg(dst_len == expected_len,
     "Expected output buffer length %lu, got %lu", (unsigned long) expected_len,
     (unsigned long) dst_len);
-  fail_unless(strcmp(dst, expected) == 0,
+  ck_assert_msg(strcmp(dst, expected) == 0,
     "Expected output buffer '%s', got '%s'", expected, dst);
 
   /* Handle an input buffer with LFs, no CRs. */
@@ -102,13 +102,13 @@ START_TEST (ascii_ftp_from_crlf_test) {
   dst = pcalloc(p, src_len + 1);
   dst_len = 0;
   res = pr_ascii_ftp_from_crlf(p, src, src_len, &dst, &dst_len);
-  fail_unless(res == 0, "Failed to handle input buffer with LFs, no CRs");
+  ck_assert_msg(res == 0, "Failed to handle input buffer with LFs, no CRs");
   expected = src;
   expected_len = src_len;
-  fail_unless(dst_len == expected_len,
+  ck_assert_msg(dst_len == expected_len,
     "Expected output buffer length %lu, got %lu", (unsigned long) expected_len,
     (unsigned long) dst_len);
-  fail_unless(strcmp(dst, expected) == 0,
+  ck_assert_msg(strcmp(dst, expected) == 0,
     "Expected output buffer '%s', got '%s'", expected, dst);
 
   /* Handle an input buffer with several CRLFs. */
@@ -118,13 +118,13 @@ START_TEST (ascii_ftp_from_crlf_test) {
   dst = pcalloc(p, src_len + 1);
   dst_len = 0;
   res = pr_ascii_ftp_from_crlf(p, src, src_len, &dst, &dst_len);
-  fail_unless(res == 0, "Failed to handle input buffer with CRLFs");
+  ck_assert_msg(res == 0, "Failed to handle input buffer with CRLFs");
   expected = "he\nl\nlo";
   expected_len = 7;
-  fail_unless(dst_len == expected_len,
+  ck_assert_msg(dst_len == expected_len,
     "Expected output buffer length %lu, got %lu", (unsigned long) expected_len,
     (unsigned long) dst_len);
-  fail_unless(strcmp(dst, expected) == 0,
+  ck_assert_msg(strcmp(dst, expected) == 0,
     "Expected output buffer '%s', got '%s'", expected, dst);
 
   /* Handle an input buffer ending with a CR. */
@@ -134,15 +134,15 @@ START_TEST (ascii_ftp_from_crlf_test) {
   dst = pcalloc(p, src_len + 1);
   dst_len = 0;
   res = pr_ascii_ftp_from_crlf(p, src, src_len, &dst, &dst_len);
-  fail_unless(res == 1,
+  ck_assert_msg(res == 1,
     "Failed to handle input buffer with trailing CR: expected %d, got %d", 1,
     res);
   expected = "he\nl\nlo\r";
   expected_len = 7;
-  fail_unless(dst_len == expected_len,
+  ck_assert_msg(dst_len == expected_len,
     "Expected output buffer length %lu, got %lu", (unsigned long) expected_len,
     (unsigned long) dst_len);
-  fail_unless(strcmp(dst, expected) == 0,
+  ck_assert_msg(strcmp(dst, expected) == 0,
     "Expected output buffer '%s', got '%s'", expected, dst);
 
   /* Handle an input buffer of just an LF. */
@@ -152,14 +152,14 @@ START_TEST (ascii_ftp_from_crlf_test) {
   dst = pcalloc(p, src_len + 1);
   dst_len = 0;
   res = pr_ascii_ftp_from_crlf(p, src, src_len, &dst, &dst_len);
-  fail_unless(res == 0,
+  ck_assert_msg(res == 0,
     "Failed to handle input buffer of single LF: expected %d, got %d", 0, res);
   expected = "\n";
   expected_len = 1;
-  fail_unless(dst_len == expected_len,
+  ck_assert_msg(dst_len == expected_len,
     "Expected output buffer length %lu, got %lu", (unsigned long) expected_len,
     (unsigned long) dst_len);
-  fail_unless(strcmp(dst, expected) == 0,
+  ck_assert_msg(strcmp(dst, expected) == 0,
     "Expected output buffer '%s', got '%s'", expected, dst);
 
   /* Handle an input buffer of just a CR. */
@@ -169,14 +169,14 @@ START_TEST (ascii_ftp_from_crlf_test) {
   dst = pcalloc(p, src_len + 1);
   dst_len = 0;
   res = pr_ascii_ftp_from_crlf(p, src, src_len, &dst, &dst_len);
-  fail_unless(res == 1,
+  ck_assert_msg(res == 1,
     "Failed to handle input buffer of single CR: expected %d, got %d", 1, res);
   expected = "\r";
   expected_len = 0;
-  fail_unless(dst_len == expected_len,
+  ck_assert_msg(dst_len == expected_len,
     "Expected output buffer length %lu, got %lu", (unsigned long) expected_len,
     (unsigned long) dst_len);
-  fail_unless(strcmp(dst, expected) == 0,
+  ck_assert_msg(strcmp(dst, expected) == 0,
     "Expected output buffer '%s', got '%s'", expected, dst);
 
   /* Handle an input buffer of just CRs. */
@@ -186,14 +186,14 @@ START_TEST (ascii_ftp_from_crlf_test) {
   dst = pcalloc(p, src_len + 1);
   dst_len = 0;
   res = pr_ascii_ftp_from_crlf(p, src, src_len, &dst, &dst_len);
-  fail_unless(res == 1,
+  ck_assert_msg(res == 1,
     "Failed to handle input buffer of single CR: expected %d, got %d", 3, res);
   expected = "\r\r\r";
   expected_len = 2;
-  fail_unless(dst_len == expected_len,
+  ck_assert_msg(dst_len == expected_len,
     "Expected output buffer length %lu, got %lu", (unsigned long) expected_len,
     (unsigned long) dst_len);
-  fail_unless(strcmp(dst, expected) == 0,
+  ck_assert_msg(strcmp(dst, expected) == 0,
     "Expected output buffer '%s', got '%s'", expected, dst);
 }
 END_TEST
@@ -206,9 +206,9 @@ START_TEST (ascii_ftp_to_crlf_test) {
   mark_point();
   pr_ascii_ftp_reset();
   res = pr_ascii_ftp_to_crlf(NULL, NULL, 0, NULL, NULL);
-  fail_unless(res == -1, "Failed to handle null arguments");
-  fail_unless(errno == EINVAL, "Expected EINVAL ('%s' [%d]), got '%s' [%d]",
-    strerror(errno), errno);
+  ck_assert_msg(res == -1, "Failed to handle null arguments");
+  ck_assert_msg(errno == EINVAL, "Expected EINVAL ('%s' [%d]), got '%s' [%d]",
+    strerror(EINVAL), EINVAL, strerror(errno), errno);
 
   /* Handle empty input buffer. */
   mark_point();
@@ -218,9 +218,9 @@ START_TEST (ascii_ftp_to_crlf_test) {
   dst = NULL;
   dst_len = 0;
   res = pr_ascii_ftp_to_crlf(p, src, src_len, &dst, &dst_len);
-  fail_unless(res == 0, "Failed to handle empty input buffer");
-  fail_unless(dst_len == src_len, "Failed to set output buffer length");
-  fail_unless(dst == src, "Failed to set output buffer");
+  ck_assert_msg(res == 0, "Failed to handle empty input buffer");
+  ck_assert_msg(dst_len == src_len, "Failed to set output buffer length");
+  ck_assert_msg(dst == src, "Failed to set output buffer");
 
   /* Handle input buffer with no CRLFs. */
   mark_point();
@@ -230,13 +230,13 @@ START_TEST (ascii_ftp_to_crlf_test) {
   dst = NULL;
   dst_len = 0;
   res = pr_ascii_ftp_to_crlf(p, src, src_len, &dst, &dst_len);
-  fail_unless(res == 0, "Failed to handle input buffer with no CRLFs");
+  ck_assert_msg(res == 0, "Failed to handle input buffer with no CRLFs");
   expected = src;
   expected_len = src_len;
-  fail_unless(dst_len == expected_len,
+  ck_assert_msg(dst_len == expected_len,
     "Expected output buffer length %lu, got %lu", (unsigned long) expected_len,
     (unsigned long) dst_len);
-  fail_unless(strncmp(dst, expected, dst_len) == 0,
+  ck_assert_msg(memcmp(dst, expected, dst_len) == 0,
     "Expected output buffer '%s', got '%s'", expected, dst);
   free(dst);
 
@@ -248,13 +248,13 @@ START_TEST (ascii_ftp_to_crlf_test) {
   dst = NULL;
   dst_len = 0;
   res = pr_ascii_ftp_to_crlf(p, src, src_len, &dst, &dst_len);
-  fail_unless(res == 0, "Failed to handle input buffer with CRs, no LFs");
+  ck_assert_msg(res == 0, "Failed to handle input buffer with CRs, no LFs");
   expected = src; 
   expected_len = src_len;
-  fail_unless(dst_len == expected_len,
+  ck_assert_msg(dst_len == expected_len,
     "Expected output buffer length %lu, got %lu", (unsigned long) expected_len,
     (unsigned long) dst_len);
-  fail_unless(strncmp(dst, expected, dst_len) == 0,
+  ck_assert_msg(memcmp(dst, expected, dst_len) == 0,
     "Expected output buffer '%s', got '%s'", expected, dst);
   free(dst);
 
@@ -266,13 +266,13 @@ START_TEST (ascii_ftp_to_crlf_test) {
   dst = NULL;
   dst_len = 0;
   res = pr_ascii_ftp_to_crlf(p, src, src_len, &dst, &dst_len);
-  fail_unless(res == 2, "Failed to handle input buffer with CRs, no LFs");
+  ck_assert_msg(res == 2, "Failed to handle input buffer with CRs, no LFs");
   expected = "he\r\nl\r\nlo";
   expected_len = 9;
-  fail_unless(dst_len == expected_len,
+  ck_assert_msg(dst_len == expected_len,
     "Expected output buffer length %lu, got %lu", (unsigned long) expected_len,
     (unsigned long) dst_len);
-  fail_unless(strncmp(dst, expected, dst_len) == 0,
+  ck_assert_msg(memcmp(dst, expected, dst_len) == 0,
     "Expected output buffer '%s', got '%s'", expected, dst);
   free(dst);
 
@@ -284,13 +284,13 @@ START_TEST (ascii_ftp_to_crlf_test) {
   dst = NULL;
   dst_len = 0;
   res = pr_ascii_ftp_to_crlf(p, src, src_len, &dst, &dst_len);
-  fail_unless(res == 0, "Failed to handle input buffer with CRs, no LFs");
+  ck_assert_msg(res == 0, "Failed to handle input buffer with CRs, no LFs");
   expected = src;
   expected_len = src_len;
-  fail_unless(dst_len == expected_len,
+  ck_assert_msg(dst_len == expected_len,
     "Expected output buffer length %lu, got %lu", (unsigned long) expected_len,
     (unsigned long) dst_len);
-  fail_unless(strncmp(dst, expected, dst_len) == 0,
+  ck_assert_msg(memcmp(dst, expected, dst_len) == 0,
     "Expected output buffer '%s', got '%s'", expected, dst);
   free(dst);
 
@@ -302,13 +302,13 @@ START_TEST (ascii_ftp_to_crlf_test) {
   dst = NULL;
   dst_len = 0;
   res = pr_ascii_ftp_to_crlf(p, src, src_len, &dst, &dst_len);
-  fail_unless(res == 1, "Failed to handle input buffer with leading LF");
+  ck_assert_msg(res == 1, "Failed to handle input buffer with leading LF");
   expected = "\r\nhello";
   expected_len = 7;
-  fail_unless(dst_len == expected_len,
+  ck_assert_msg(dst_len == expected_len,
     "Expected output buffer length %lu, got %lu", (unsigned long) expected_len,
     (unsigned long) dst_len);
-  fail_unless(strncmp(dst, expected, dst_len) == 0,
+  ck_assert_msg(memcmp(dst, expected, dst_len) == 0,
     "Expected output buffer '%s', got '%s'", expected, dst);
   free(dst);
 
@@ -320,13 +320,13 @@ START_TEST (ascii_ftp_to_crlf_test) {
   dst = NULL;
   dst_len = 0;
   res = pr_ascii_ftp_to_crlf(p, src, src_len, &dst, &dst_len);
-  fail_unless(res == 0, "Failed to handle input buffer with trailing CR");
+  ck_assert_msg(res == 0, "Failed to handle input buffer with trailing CR");
   expected = src;
   expected_len = src_len;
-  fail_unless(dst_len == expected_len,
+  ck_assert_msg(dst_len == expected_len,
     "Expected output buffer length %lu, got %lu", (unsigned long) expected_len,
     (unsigned long) dst_len);
-  fail_unless(strncmp(dst, expected, dst_len) == 0,
+  ck_assert_msg(memcmp(dst, expected, dst_len) == 0,
     "Expected output buffer '%s', got '%s'", expected, dst);
   free(dst);
 
@@ -336,13 +336,13 @@ START_TEST (ascii_ftp_to_crlf_test) {
   dst = NULL;
   dst_len = 0;
   res = pr_ascii_ftp_to_crlf(p, src, src_len, &dst, &dst_len);
-  fail_unless(res == 1, "Failed to handle next input buffer after trailing CR");
+  ck_assert_msg(res == 1, "Failed to handle next input buffer after trailing CR");
   expected = "\nlo\r\n";
   expected_len = 5;
-  fail_unless(dst_len == expected_len,
+  ck_assert_msg(dst_len == expected_len,
     "Expected output buffer length %lu, got %lu", (unsigned long) expected_len,
     (unsigned long) dst_len);
-  fail_unless(strncmp(dst, expected, dst_len) == 0,
+  ck_assert_msg(memcmp(dst, expected, dst_len) == 0,
     "Expected output buffer '%s', got '%s'", expected, dst);
   free(dst);
 }

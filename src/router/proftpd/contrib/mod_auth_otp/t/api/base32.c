@@ -74,8 +74,8 @@ START_TEST (base32_encode_test) {
   int res;
 
   res = auth_otp_base32_encode(p, NULL, 0, NULL, NULL);
-  fail_unless(res < 0, "Failed to handle null arguments");
-  fail_unless(errno == EINVAL, "Expected errno %s (%d), got %s (%d)",
+  ck_assert_msg(res < 0, "Failed to handle null arguments");
+  ck_assert_msg(errno == EINVAL, "Expected errno %s (%d), got %s (%d)",
     strerror(EINVAL), EINVAL, strerror(errno), errno);
 
   for (i = 0; i < expected_code_count; i++) {
@@ -86,9 +86,9 @@ START_TEST (base32_encode_test) {
     raw_len = strlen((char *) raw);
 
     res = auth_otp_base32_encode(p, raw, raw_len, &encoded, &encoded_len);
-    fail_unless(res == 0, "Failed to base32 encode '%s': %s",
+    ck_assert_msg(res == 0, "Failed to base32 encode '%s': %s",
       expected_codes[i].raw, strerror(errno));
-    fail_unless(strcmp((char *) encoded, expected_codes[i].encoded) == 0,
+    ck_assert_msg(strcmp((char *) encoded, expected_codes[i].encoded) == 0,
       "Expected '%s' for value '%s', got '%s'", expected_codes[i].encoded,
       expected_codes[i].raw, encoded);
   }
@@ -100,8 +100,8 @@ START_TEST (base32_decode_test) {
   int res;
 
   res = auth_otp_base32_decode(p, NULL, 0, NULL, NULL);
-  fail_unless(res < 0, "Failed to handle null arguments");
-  fail_unless(errno == EINVAL, "Expected errno %s (%d), got %s (%d)",
+  ck_assert_msg(res < 0, "Failed to handle null arguments");
+  ck_assert_msg(errno == EINVAL, "Expected errno %s (%d), got %s (%d)",
     strerror(EINVAL), EINVAL, strerror(errno), errno);
 
   mark_point();
@@ -114,9 +114,9 @@ START_TEST (base32_decode_test) {
     encoded_len = strlen((char *) encoded);
 
     res = auth_otp_base32_decode(p, encoded, encoded_len, &raw, &raw_len);
-    fail_unless(res == 0, "Failed to base32 decode '%s': %s",
+    ck_assert_msg(res == 0, "Failed to base32 decode '%s': %s",
       expected_codes[i].encoded, strerror(errno));
-    fail_unless(strcmp((char *) raw, expected_codes[i].raw) == 0,
+    ck_assert_msg(strcmp((char *) raw, expected_codes[i].raw) == 0,
       "Expected '%s' for value '%s', got '%s'", expected_codes[i].raw,
       expected_codes[i].encoded, raw);
   }

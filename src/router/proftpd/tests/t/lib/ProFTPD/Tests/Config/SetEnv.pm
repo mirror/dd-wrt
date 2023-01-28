@@ -84,6 +84,8 @@ sub setenv_serverroot {
     'AllowStoreRestart on',
     "AuthUserFile $auth_user_file",
     "AuthGroupFile $auth_group_file",
+    "AuthOrder mod_auth_file.c",
+
     'DefaultChdir ~',
 
     '<IfModule mod_delay.c>',

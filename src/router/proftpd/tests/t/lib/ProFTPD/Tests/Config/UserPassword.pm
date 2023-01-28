@@ -81,6 +81,7 @@ sub userpassword_ok {
 
     AuthUserFile => $auth_user_file,
     AuthGroupFile => $auth_group_file,
+    AuthOrder => 'mod_auth_file.c',
 
     UserPassword => "$user $user_pass_ciphertext",
 
@@ -188,6 +189,7 @@ sub userpassword_anon_ok {
 
     AuthUserFile => $auth_user_file,
     AuthGroupFile => $auth_group_file,
+    AuthOrder => 'mod_auth_file.c',
 
     Anonymous => {
       $anon_dir => {

@@ -1535,9 +1535,10 @@ MODRET pw_getgroups(cmd_rec *cmd) {
   if (gids != NULL &&
       gids->nelts > 0) {
     return mod_create_data(cmd, (void *) &gids->nelts);
+  }
 
-  } else if (groups != NULL &&
-             groups->nelts > 0) {
+  if (groups != NULL &&
+      groups->nelts > 0) {
     return mod_create_data(cmd, (void *) &groups->nelts);
   }
 

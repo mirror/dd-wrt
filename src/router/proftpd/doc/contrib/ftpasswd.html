@@ -189,10 +189,9 @@ usage: ftpasswd [--help] [--hash|--group|--passwd]
     --home      Home directory for the user (required)
 
     --des       Use the DES algorithm for encrypting passwords.  The default
-                is the MD5 algorithm.
+                is the SHA256 algorithm.
 
-    --md5       Use the MD5 algorithm for encrypting passwords.  This is the
-                default.
+    --md5       Use the MD5 algorithm for encrypting passwords.
 
     --name      Name of the user account (required).  If the name does not
                 exist in the specified output-file, an entry will be created
@@ -240,7 +239,8 @@ usage: ftpasswd [--help] [--hash|--group|--passwd]
                 helps to enforce different passwords for different types of
                 access.
 
-    --sha256    Use the SHA-256 algorithm for encrypting passwords.
+    --sha256    Use the SHA-256 algorithm for encrypting passwords. This is the
+                default.
 
     --sha512    Use the SHA-512 algorithm for encrypting passwords.
 
@@ -369,10 +369,22 @@ usage: ftpasswd [--help] [--hash|--group|--passwd]
                 Crypt::Cracklib module to be installed on your system.
 </pre>
 
+<p><a name="FAQ">
+<b>Frequently Asked Questions</b><br>
+<font color=red>Question</font>: I'm trying to use <code>ftpasswd</code>, but
+it fails with this error:
+<pre>
+  env: perl: No such file or directory
+</pre>
+<font color=blue>Answer</font>: <code>ftpasswd</code> is a Perl script; it
+requires that Perl be installed in order to run.  The above error message
+indicates that a <code>perl</code> executable cannot be found; you will
+need to install Perl.
+
 <p>
 <hr>
 <font size=2><b><i>
-&copy; Copyright 2000-2017 TJ Saunders<br>
+&copy; Copyright 2000-2021 TJ Saunders<br>
  All Rights Reserved<br>
 </i></b></font>
 <hr>

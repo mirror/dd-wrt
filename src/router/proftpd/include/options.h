@@ -2,7 +2,7 @@
  * ProFTPD - FTP server daemon
  * Copyright (c) 1997, 1998 Public Flood Software
  * Copyright (c) 1999, 2000 MacGyver aka Habeeb J. Dihu <macgyver@tos.net>
- * Copyright (c) 2001-2019 The ProFTPD Project team
+ * Copyright (c) 2001-2022 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -246,11 +246,11 @@
 #endif
 
 /* FS Statcache tuning. */
-#ifndef PR_TUNABLE_FS_STATCACHE_SIZE
+#if !defined(PR_TUNABLE_FS_STATCACHE_SIZE)
 # define PR_TUNABLE_FS_STATCACHE_SIZE		30000
 #endif
 
-#ifndef PR_TUNABLE_FS_STATCACHE_MAX_AGE
+#if !defined(PR_TUNABLE_FS_STATCACHE_MAX_AGE)
 # define PR_TUNABLE_FS_STATCACHE_MAX_AGE	3
 #endif
 

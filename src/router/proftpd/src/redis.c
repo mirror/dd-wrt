@@ -1,6 +1,6 @@
 /*
  * ProFTPD - FTP server daemon
- * Copyright (c) 2017-2020 The ProFTPD Project team
+ * Copyright (c) 2017-2022 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -30,6 +30,14 @@
 
 #include <hiredis/hiredis.h>
 
+#ifdef HAVE_HIREDIS_HIREDIS_SSL_H
+# include <hiredis/hiredis_ssl.h>
+#endif /* HAVE_HIREDIS_HIREDIS_SSL_H */
+
+#if defined(HAVE_HIREDIS_REDISINITIATESSL)
+# define PR_USE_REDIS_SSL
+#endif /* HAVE_HIREDIS_REDISINITIATESSL */
+
 #ifndef REDIS_CONNECT_RETRIES
 # define REDIS_CONNECT_RETRIES	10
 #endif /* REDIS_CONNECT_RETRIES */
@@ -41,6 +49,9 @@ struct redis_rec {
   pool *pool;
   module *owner;
   redisContext *ctx;
+#if defined(PR_USE_REDIS_SSL)
+  redisSSLContext *ssl_ctx;
+#endif /* PR_USE_REDIS_SSL */
   unsigned long flags;
 
   /* For tracking the number of "opens"/"closes" on a shared redis_rec,
@@ -63,10 +74,16 @@ static const char *redis_sentinel_master = NULL;
 
 static const char *redis_server = NULL;
 static int redis_port = -1;
+static int redis_use_ssl = FALSE;
 static unsigned long redis_flags = 0UL;
 static const char *redis_username = NULL;
 static const char *redis_password = NULL;
 static const char *redis_db_idx = NULL;
+#if defined(PR_USE_REDIS_SSL)
+static const char *redis_ssl_cacert = NULL;
+static const char *redis_ssl_cert = NULL;
+static const char *redis_ssl_key = NULL;
+#endif /* PR_USE_REDIS_SSL */
 
 static pr_redis_t *sess_redis = NULL;
 
@@ -330,7 +347,8 @@ static void sess_redis_cleanup(void *data) {
   sess_redis = NULL;
 }
 
-static pr_redis_t *make_redis_conn(pool *p, const char *host, int port) {
+static pr_redis_t *make_redis_conn(pool *p, const char *host, int port,
+    int use_ssl) {
   int uses_ip = TRUE, xerrno;
   pr_redis_t *redis;
   pool *sub_pool;
@@ -413,11 +431,45 @@ static pr_redis_t *make_redis_conn(pool *p, const char *host, int port) {
   redis->pool = sub_pool;
   redis->ctx = ctx;
 
+#if defined(PR_USE_REDIS_SSL)
+  if (use_ssl == TRUE) {
+    redisSSLContext *ssl_ctx;
+    redisSSLContextError ssl_ctx_err;
+
+    ssl_ctx = redisCreateSSLContext(redis_ssl_cacert, NULL,
+      redis_ssl_cert, redis_ssl_key, host, &ssl_ctx_err);
+    if (ssl_ctx == NULL) {
+      pr_trace_msg(trace_channel, 3,
+        "error creating SSL context: %s", redisSSLContextGetError(ssl_ctx_err));
+
+    } else {
+      int res;
+
+      res = redisInitiateSSLWithContext(redis->ctx, ssl_ctx);
+      if (res != REDIS_OK) {
+        pr_trace_msg(trace_channel, 3,
+          "TLS handshake error with '%s:%d': %s", host, port,
+          redis->ctx->errstr);
+
+        redisFreeSSLContext(ssl_ctx);
+        redisFree(redis->ctx);
+        destroy_pool(sub_pool);
+        errno = EIO;
+        return NULL;
+      }
+
+      pr_trace_msg(trace_channel, 17, "established TLS connection with '%s:%d'",
+        host, port);
+      redis->ssl_ctx = ssl_ctx;
+    }
+  }
+#endif /* PR_USE_REDIS_SSL */
+
   return redis;
 }
 
 static int discover_redis_master(pool *p, const char *host, int port,
-    const char *master) {
+    const char *master, int use_ssl) {
   int res = 0, xerrno = 0;
   pool *tmp_pool;
   pr_redis_t *redis;
@@ -425,7 +477,7 @@ static int discover_redis_master(pool *p, const char *host, int port,
 
   tmp_pool = make_sub_pool(p);
 
-  redis = make_redis_conn(tmp_pool, host, port);
+  redis = make_redis_conn(tmp_pool, host, port, use_ssl);
   xerrno = errno;
 
   if (redis == NULL) {
@@ -501,7 +553,7 @@ pr_redis_t *pr_redis_conn_new(pool *p, module *m, unsigned long flags) {
       port = ntohs(pr_netaddr_get_port(addr));
 
       if (discover_redis_master(p, sentinel, port,
-          redis_sentinel_master) == 0) {
+          redis_sentinel_master, redis_use_ssl) == 0) {
         pr_trace_msg(trace_channel, 17,
           "discovered Redis server %s:%d using Sentinel #%u (%s:%d)",
           redis_server, redis_port, i+1, sentinel, port);
@@ -524,7 +576,7 @@ pr_redis_t *pr_redis_conn_new(pool *p, module *m, unsigned long flags) {
     return NULL;
   }
 
-  redis = make_redis_conn(p, redis_server, redis_port);
+  redis = make_redis_conn(p, redis_server, redis_port, redis_use_ssl);
   if (redis == NULL) {
     return NULL;
   }
@@ -635,6 +687,13 @@ int pr_redis_conn_close(pr_redis_t *redis) {
       if (reply != NULL) {
         freeReplyObject(reply);
       }
+
+#if defined(PR_USE_REDIS_SSL)
+      if (redis->ssl_ctx) {
+        redisFreeSSLContext(redis->ssl_ctx);
+        redis->ssl_ctx = NULL;
+      }
+#endif /* PR_USE_REDIS_SSL */
 
       redisFree(redis->ctx);
       redis->ctx = NULL;
@@ -1081,7 +1140,7 @@ int pr_redis_hash_getall(pool *p, pr_redis_t *redis, module *m,
     int xerrno = errno;
 
     pr_trace_msg(trace_channel, 2,
-      "error entire hash using key '%s': %s", key, strerror(xerrno));
+      "error getting entire hash using key '%s': %s", key, strerror(xerrno));
 
     errno = xerrno;
     return -1;
@@ -3038,6 +3097,11 @@ int pr_redis_hash_kgetall(pool *p, pr_redis_t *redis, module *m,
             "error adding key (%lu bytes), value (%lu bytes) to hash: %s",
             (unsigned long) key_datasz, (unsigned long) value_datasz,
             strerror(errno));
+
+        } else {
+          pr_trace_msg(trace_channel, 25,
+            "added key (%lu bytes), value (%lu bytes) to hash",
+            (unsigned long) key_datasz, (unsigned long) value_datasz);
         }
       }
     }
@@ -5744,8 +5808,10 @@ int pr_redis_sentinel_get_masters(pool *p, pr_redis_t *redis,
   return res;
 }
 
-int redis_set_server2(const char *server, int port, unsigned long flags,
-    const char *username, const char *password, const char *db_idx) {
+int redis_set_server3(const char *server, int port, unsigned long flags,
+    const char *username, const char *password, const char *db_idx,
+    int use_ssl, const char *ssl_cacert, const char *ssl_cert,
+    const char *ssl_key) {
 
   if (server == NULL) {
     /* By using a port of -2 specifically, we can use this function to
@@ -5764,8 +5830,21 @@ int redis_set_server2(const char *server, int port, unsigned long flags,
   redis_username = username;
   redis_password = password;
   redis_db_idx = db_idx;
+  redis_use_ssl = use_ssl;
+
+#if defined(PR_USE_REDIS_SSL)
+  redis_ssl_cacert = ssl_cacert;
+  redis_ssl_cert = ssl_cert;
+  redis_ssl_key = ssl_key;
+#endif /* PR_USE_REDIS_SSL */
 
   return 0;
+}
+
+int redis_set_server2(const char *server, int port, unsigned long flags,
+    const char *username, const char *password, const char *db_idx) {
+  return redis_set_server3(server, port, flags, username, password, db_idx,
+    FALSE, NULL, NULL, NULL);
 }
 
 int redis_set_server(const char *server, int port, unsigned long flags,
@@ -5773,7 +5852,9 @@ int redis_set_server(const char *server, int port, unsigned long flags,
   return redis_set_server2(server, port, flags, "default", password, db_idx);
 }
 
-int redis_set_sentinels(array_header *sentinels, const char *name) {
+int redis_set_sentinels2(array_header *sentinels, const char *name,
+    int use_ssl, const char *ssl_cacert, const char *ssl_cert,
+    const char *ssl_key) {
 
   if (sentinels != NULL &&
       sentinels->nelts == 0) {
@@ -5783,8 +5864,19 @@ int redis_set_sentinels(array_header *sentinels, const char *name) {
 
   redis_sentinels = sentinels;
   redis_sentinel_master = name;
+  redis_use_ssl = use_ssl;
+
+#if defined(PR_USE_REDIS_SSL)
+  redis_ssl_cacert = ssl_cacert;
+  redis_ssl_cert = ssl_cert;
+  redis_ssl_key = ssl_key;
+#endif /* PR_USE_REDIS_SSL */
 
   return 0;
+}
+
+int redis_set_sentinels(array_header *sentinels, const char *name) {
+  return redis_set_sentinels2(sentinels, name, FALSE, NULL, NULL, NULL);
 }
 
 int redis_set_timeouts(unsigned long connect_millis, unsigned long io_millis) {
@@ -6434,7 +6526,27 @@ int redis_set_server(const char *server, int port, unsigned long flags,
   return -1;
 }
 
+int redis_set_server2(const char *server, int port, unsigned long flags,
+    const char *username, const char *password, const char *db_idx) {
+  errno = ENOSYS;
+  return -1;
+}
+
+int redis_set_server3(const char *server, int port, unsigned long flags,
+    const char *username, const char *password, const char *db_idx,
+    int use_ssl, const char *ssl_cacert, const char *ssl_cert,
+    const char *ssl_key) {
+  errno = ENOSYS;
+  return -1;
+}
+
 int redis_set_sentinels(array_header *sentinels, const char *name) {
+  errno = ENOSYS;
+  return -1;
+}
+
+int redis_set_sentinels2(array_header *sentinels, const char *name, int use_ssl,
+    const char *ssl_cacert, const char *ssl_cert, const char *ssl_key) {
   errno = ENOSYS;
   return -1;
 }

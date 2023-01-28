@@ -89,6 +89,7 @@ sub maxretrievefilesize_ok {
 
     AuthUserFile => $auth_user_file,
     AuthGroupFile => $auth_group_file,
+    AuthOrder => 'mod_auth_file.c',
 
     MaxRetrieveFileSize => '100 B',
 
@@ -221,6 +222,7 @@ sub maxretrievefilesize_exceeded {
 
     AuthUserFile => $auth_user_file,
     AuthGroupFile => $auth_group_file,
+    AuthOrder => 'mod_auth_file.c',
 
     MaxRetrieveFileSize => '4 B',
 

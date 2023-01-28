@@ -1,6 +1,6 @@
 /*
  * ProFTPD - mod_auth_otp
- * Copyright (c) 2015-2017 TJ Saunders
+ * Copyright (c) 2015-2022 TJ Saunders
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -37,7 +37,7 @@
 /* Define if you have mod_sftp support. */
 #undef HAVE_SFTP
 
-#define MOD_AUTH_OTP_VERSION	"mod_auth_otp/0.2"
+#define MOD_AUTH_OTP_VERSION	"mod_auth_otp/0.3"
 
 /* Make sure the version of proftpd is as necessary. */
 #if PROFTPD_VERSION_NUMBER < 0x0001030402

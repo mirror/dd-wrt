@@ -23,12 +23,14 @@ contrib/mod_sftp/mod_sftp.h
 contrib/mod_snmp/mod_snmp.h
 contrib/mod_wrap2/mod_wrap2.h
 include/buildstamp.h
+include/mod_sftp
 Makefile
 Make.rules
 Make.modules
 lib/libcap/_makenames
 lib/libcap/cap_names.h
 lib/libcap/cap_names.sed
+lib/libltdl/argz.h
 lib/libltdl/stamp-h1
 module-libs.txt
 modules/module_glue.c
@@ -46,6 +48,7 @@ utils/*.[0-9]
 *.la
 *.lo
 *.log
+*.mo
 *.o
 *.orig
 *.patch

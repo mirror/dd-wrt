@@ -1,6 +1,6 @@
 /*
  * ProFTPD - FTP server daemon
- * Copyright (c) 2008-2017 The ProFTPD Project team
+ * Copyright (c) 2008-2020 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -134,8 +134,7 @@ void pr_throttle_init(cmd_rec *cmd) {
     }
 
     if (c->argc > 4) {
-      if (strncmp(c->argv[4], "user", 5) == 0) {
-
+      if (strcasecmp(c->argv[4], "user") == 0) {
         if (pr_expr_eval_user_or((char **) &c->argv[5]) == TRUE &&
             *((unsigned int *) c->argv[3]) > precedence) {
 
@@ -149,8 +148,7 @@ void pr_throttle_init(cmd_rec *cmd) {
           have_group_rate = have_class_rate = FALSE;
         }
 
-      } else if (strncmp(c->argv[4], "group", 6) == 0) {
-
+      } else if (strcasecmp(c->argv[4], "group") == 0) {
         if (pr_expr_eval_group_and((char **) &c->argv[5]) == TRUE &&
             *((unsigned int *) c->argv[3]) > precedence) {
 
@@ -164,8 +162,7 @@ void pr_throttle_init(cmd_rec *cmd) {
           have_user_rate = have_class_rate = FALSE;
         }
 
-      } else if (strncmp(c->argv[4], "class", 6) == 0) {
-
+      } else if (strcasecmp(c->argv[4], "class") == 0) {
         if (pr_expr_eval_class_or((char **) &c->argv[5]) == TRUE &&
           *((unsigned int *) c->argv[3]) > precedence) {
 
@@ -181,9 +178,7 @@ void pr_throttle_init(cmd_rec *cmd) {
       }
 
     } else {
-
       if (*((unsigned int *) c->argv[3]) > precedence) {
-
         /* Set the precedence. */
         precedence = *((unsigned int *) c->argv[3]);
 
@@ -323,13 +318,10 @@ void pr_throttle_pause(off_t xferlen, int xfer_ending) {
       NULL);
 
   } else {
-
     /* Update the scoreboard. */
     pr_scoreboard_entry_update(session.pid,
       PR_SCORE_XFER_LEN, orig_xferlen,
       PR_SCORE_XFER_ELAPSED, (unsigned long) elapsed,
       NULL);
   }
-
-  return;
 }

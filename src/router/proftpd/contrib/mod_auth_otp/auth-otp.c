@@ -1,6 +1,6 @@
 /*
  * auth-otp: HOTP/TOTP tool for ProFTPD mod_auth_otp module
- * Copyright 2016 The ProFTPD Project team
+ * Copyright 2016-2021 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -262,11 +262,12 @@ int main(int argc, char **argv) {
 
   auth_otp_pool = make_sub_pool(NULL);
 
-#if OPENSSL_VERSION_NUMBER < 0x10100000L
+#if OPENSSL_VERSION_NUMBER < 0x10100000L || \
+    defined(HAVE_LIBRESSL)
   OPENSSL_config(NULL);
-#endif /* prior to OpenSSL-1.1.x */
   ERR_load_crypto_strings();
   OpenSSL_add_all_algorithms();
+#endif /* prior to OpenSSL-1.1.x */
 
   secret = generate_secret(auth_otp_pool);  
   if (secret == NULL) {
@@ -296,9 +297,11 @@ int main(int argc, char **argv) {
     fprintf(stdout, "-------------------------------------------------\n");
   }
 
+#if OPENSSL_VERSION_NUMBER < 0x10100000L
   ERR_free_strings();
   EVP_cleanup();
   RAND_cleanup();
+#endif /* prior to OpenSSL-1.1.x */
 
   destroy_pool(auth_otp_pool);
   return 0;

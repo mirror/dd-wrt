@@ -26,9 +26,14 @@ my $TESTS = {
     test_class => [qw(forking)],
   },
 
-  fxp_denied_by_class => {
+  fxp_port_denied_by_class => {
     order => ++$order,
     test_class => [qw(forking)],
+  },
+
+  fxp_pasv_denied_by_class_issue1346 => {
+    order => ++$order,
+    test_class => [qw(bug forking)],
   },
 
   fxp_allowed => {
@@ -41,9 +46,14 @@ my $TESTS = {
     test_class => [qw(forking)],
   },
 
-  fxp_allowed_by_class => {
+  fxp_port_allowed_by_class => {
     order => ++$order,
     test_class => [qw(forking)],
+  },
+
+  fxp_pasv_allowed_by_class_issue1346 => {
+    order => ++$order,
+    test_class => [qw(bug forking)],
   },
 
   fxp_allowed_2gb => {
@@ -88,6 +98,7 @@ sub fxp_denied {
 
     AuthUserFile => $setup->{auth_user_file},
     AuthGroupFile => $setup->{auth_group_file},
+    AuthOrder => 'mod_auth_file.c',
 
     AllowForeignAddress => 'off',
 
@@ -234,6 +245,7 @@ sub fxp_denied_eprt {
 
     AuthUserFile => $setup->{auth_user_file},
     AuthGroupFile => $setup->{auth_group_file},
+    AuthOrder => 'mod_auth_file.c',
 
     AllowForeignAddress => 'off',
 
@@ -353,7 +365,7 @@ sub fxp_denied_eprt {
   test_cleanup($setup->{log_file}, $ex);
 }
 
-sub fxp_denied_by_class {
+sub fxp_port_denied_by_class {
   my $self = shift;
   my $tmpdir = $self->{tmpdir};
   my $setup = test_setup($tmpdir, 'config');
@@ -381,6 +393,7 @@ sub fxp_denied_by_class {
 
     AuthUserFile => $setup->{auth_user_file},
     AuthGroupFile => $setup->{auth_group_file},
+    AuthOrder => 'mod_auth_file.c',
 
     AllowForeignAddress => $class_name,
 
@@ -519,6 +532,143 @@ EOC
   test_cleanup($setup->{log_file}, $ex);
 }
 
+sub fxp_pasv_denied_by_class_issue1346 {
+  my $self = shift;
+  my $tmpdir = $self->{tmpdir};
+  my $setup = test_setup($tmpdir, 'config');
+
+  my $class_name = 'allowed_fxp';
+
+  my $config = {
+    PidFile => $setup->{pid_file},
+    ScoreboardFile => $setup->{scoreboard_file},
+    SystemLog => $setup->{log_file},
+
+    AuthUserFile => $setup->{auth_user_file},
+    AuthGroupFile => $setup->{auth_group_file},
+    AuthOrder => 'mod_auth_file.c',
+
+    AllowForeignAddress => $class_name,
+
+    IfModules => {
+      'mod_delay.c' => {
+        DelayEngine => 'off',
+      },
+    },
+  };
+
+  my ($port, $config_user, $config_group) = config_write($setup->{config_file},
+    $config);
+
+  if (open(my $fh, ">> $setup->{config_file}")) {
+    print $fh <<EOC;
+<Class $class_name>
+  From none
+</Class>
+EOC
+    unless (close($fh)) {
+      die("Can't write $setup->{config_file}: $!");
+    }
+
+  } else {
+    die("Can't open $setup->{config_file}: $!");
+  }
+
+  # Open pipes, for use between the parent and child processes.  Specifically,
+  # the child will indicate when it's done with its test by writing a message
+  # to the parent.
+  my ($rfh, $wfh);
+  unless (pipe($rfh, $wfh)) {
+    die("Can't open pipe: $!");
+  }
+
+  my $ex;
+
+  # Fork child
+  $self->handle_sigchld();
+  defined(my $pid = fork()) or die("Can't fork: $!");
+  if ($pid) {
+    eval {
+      my $client = ProFTPD::TestSuite::FTP->new('127.0.0.1', $port, 0, 3);
+      $client->login($setup->{user}, $setup->{passwd});
+
+      # Attemping a data transfer should fail, due to the AllowForeignAddress
+      # class restriction.
+
+      my $conn = $client->list_raw();
+      unless ($conn) {
+        die("LIST failed: " . $client->response_code() . ' ' .
+          $client->response_msg());
+      }
+
+      my $buf;
+      $conn->read($buf, 8192, 30);
+      eval { $conn->close() };
+
+      my ($resp_code, $resp_msg);
+      $resp_code = $client->response_code();
+      $resp_msg = $client->response_msg();
+
+      $self->assert_transfer_ok($resp_code, $resp_msg);
+      $client->quit();
+    };
+    if ($@) {
+      $ex = $@;
+    }
+
+    $wfh->print("done\n");
+    $wfh->flush();
+
+  } else {
+    eval { server_wait($setup->{config_file}, $rfh) };
+    if ($@) {
+      warn($@);
+      exit 1;
+    }
+
+    exit 0;
+  }
+
+  # Stop server
+  server_stop($setup->{pid_file});
+  $self->assert_child_ok($pid);
+
+  eval {
+    if (open(my $fh, "< $setup->{log_file}")) {
+      my $ok = 1;
+
+      while (my $line = <$fh>) {
+        chomp($line);
+
+        if ($ENV{TEST_VERBOSE}) {
+          print STDERR "$line\n";
+        }
+
+        if ($line =~ /SECURITY VIOLATION/) {
+          $ok = 0;
+          last;
+        }
+
+        if ($line =~ /Passive connection from IP address \S+ matches control connection address; skipping <Class> '\S+'/) {
+          last;
+        }
+      }
+
+      close($fh);
+
+      $self->assert($ok, "Did not see expected log messages");
+
+    } else {
+      die("Can't read $setup->{log_file}: $!");
+    }
+  };
+  if ($@) {
+    $ex = $@;
+  }
+
+  test_cleanup($setup->{log_file}, $ex);
+}
+
 sub fxp_allowed {
   my $self = shift;
   my $tmpdir = $self->{tmpdir};
@@ -545,6 +695,7 @@ sub fxp_allowed {
 
     AuthUserFile => $setup->{auth_user_file},
     AuthGroupFile => $setup->{auth_group_file},
+    AuthOrder => 'mod_auth_file.c',
 
     AllowForeignAddress => 'on',
 
@@ -621,7 +772,7 @@ sub fxp_allowed {
         test_msg("File $dst_file does not exist as expected"));
 
       my $dst_size = -s $dst_file;
-      my $expected = -s $src_file;
+      $expected = -s $src_file;
       $self->assert($expected == $dst_size,
         test_msg("Expected file size $expected, got $dst_size"));
     };
@@ -675,6 +826,7 @@ sub fxp_allowed_eprt {
 
     AuthUserFile => $setup->{auth_user_file},
     AuthGroupFile => $setup->{auth_group_file},
+    AuthOrder => 'mod_auth_file.c',
 
     AllowForeignAddress => 'on',
 
@@ -753,7 +905,7 @@ sub fxp_allowed_eprt {
         "File $dst_file does not exist as expected");
 
       my $dst_size = -s $dst_file;
-      my $expected = -s $src_file;
+      $expected = -s $src_file;
       $self->assert($expected == $dst_size,
         "Expected file size $expected, got $dst_size");
     };
@@ -781,7 +933,7 @@ sub fxp_allowed_eprt {
   test_cleanup($setup->{log_file}, $ex);
 }
 
-sub fxp_allowed_by_class {
+sub fxp_port_allowed_by_class {
   my $self = shift;
   my $tmpdir = $self->{tmpdir};
   my $setup = test_setup($tmpdir, 'config');
@@ -809,6 +961,7 @@ sub fxp_allowed_by_class {
 
     AuthUserFile => $setup->{auth_user_file},
     AuthGroupFile => $setup->{auth_group_file},
+    AuthOrder => 'mod_auth_file.c',
 
     AllowForeignAddress => $class_name,
 
@@ -898,9 +1051,114 @@ EOC
       $self->assert(-f $dst_file, "File $dst_file does not exist as expected");
 
       my $dst_size = -s $dst_file;
-      my $expected = -s $src_file;
+      $expected = -s $src_file;
       $self->assert($expected == $dst_size,
         "Expected file size $expected, got $dst_size");
+    };
+    if ($@) {
+      $ex = $@;
+    }
+
+    $wfh->print("done\n");
+    $wfh->flush();
+
+  } else {
+    eval { server_wait($setup->{config_file}, $rfh) };
+    if ($@) {
+      warn($@);
+      exit 1;
+    }
+
+    exit 0;
+  }
+
+  # Stop server
+  server_stop($setup->{pid_file});
+  $self->assert_child_ok($pid);
+
+  test_cleanup($setup->{log_file}, $ex);
+}
+
+sub fxp_pasv_allowed_by_class_issue1346 {
+  my $self = shift;
+  my $tmpdir = $self->{tmpdir};
+  my $setup = test_setup($tmpdir, 'config');
+
+  my $class_name = 'allowed_fxp';
+
+  my $config = {
+    PidFile => $setup->{pid_file},
+    ScoreboardFile => $setup->{scoreboard_file},
+    SystemLog => $setup->{log_file},
+    TraceLog => $setup->{log_file},
+    Trace => 'class:20 inet:20',
+
+    AuthUserFile => $setup->{auth_user_file},
+    AuthGroupFile => $setup->{auth_group_file},
+    AuthOrder => 'mod_auth_file.c',
+
+    AllowForeignAddress => $class_name,
+
+    IfModules => {
+      'mod_delay.c' => {
+        DelayEngine => 'off',
+      },
+    },
+  };
+
+  my ($port, $config_user, $config_group) = config_write($setup->{config_file},
+    $config);
+
+  if (open(my $fh, ">> $setup->{config_file}")) {
+    print $fh <<EOC;
+<Class $class_name>
+  From 127.0.0.0/8
+</Class>
+EOC
+    unless (close($fh)) {
+      die("Can't write $setup->{config_file}: $!");
+    }
+
+  } else {
+    die("Can't open $setup->{config_file}: $!");
+  }
+
+  # Open pipes, for use between the parent and child processes.  Specifically,
+  # the child will indicate when it's done with its test by writing a message
+  # to the parent.
+  my ($rfh, $wfh);
+  unless (pipe($rfh, $wfh)) {
+    die("Can't open pipe: $!");
+  }
+
+  my $ex;
+
+  # Fork child
+  $self->handle_sigchld();
+  defined(my $pid = fork()) or die("Can't fork: $!");
+  if ($pid) {
+    eval {
+      my $client = ProFTPD::TestSuite::FTP->new('127.0.0.1', $port, 0, 3);
+      $client->login($setup->{user}, $setup->{passwd});
+
+      # Attemping a data transfer should succeed, due to the AllowForeignAddress
+      # class restriction.
+      my $conn = $client->list_raw();
+      unless ($conn) {
+        die("Failed to LIST: " . $client->response_code() . " " .
+          $client->response_msg());
+      }
+
+      my $buf;
+      $conn->read($buf, 8192, 30);
+      eval { $conn->close() };
+
+      my ($resp_code, $resp_msg);
+      $resp_code = $client->response_code();
+      $resp_msg = $client->response_msg();
+
+      $self->assert_transfer_ok($resp_code, $resp_msg);
+      $client->quit();
     };
     if ($@) {
       $ex = $@;
@@ -960,6 +1218,7 @@ sub fxp_allowed_2gb {
 
     AuthUserFile => $setup->{auth_user_file},
     AuthGroupFile => $setup->{auth_group_file},
+    AuthOrder => 'mod_auth_file.c',
 
     AllowForeignAddress => 'on',
 
@@ -1036,7 +1295,7 @@ sub fxp_allowed_2gb {
         test_msg("File $dst_file does not exist as expected"));
 
       my $dst_size = -s $dst_file;
-      my $expected = -s $src_file;
+      $expected = -s $src_file;
       $self->assert($expected == $dst_size,
         test_msg("Expected file size $expected, got $dst_size"));
     };

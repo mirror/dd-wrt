@@ -343,14 +343,12 @@ sub list_tests {
   #
   #  Digest-CRC
   #  Digest-MD5
-  #  Digest-SHA1
-  #  Digest-SHA256
+  #  Digest-SHA
 
   my $required = [qw(
     Digest::CRC
     Digest::MD5
-    Digest::SHA1
-    Digest::SHA256
+    Digest::SHA
   )];
 
   foreach my $req (@$required) {
@@ -398,6 +396,7 @@ sub digest_hash_feat {
 
     AuthUserFile => $setup->{auth_user_file},
     AuthGroupFile => $setup->{auth_group_file},
+    AuthOrder => 'mod_auth_file.c',
 
     IfModules => {
       'mod_delay.c' => {
@@ -495,6 +494,7 @@ sub digest_hash_opts {
 
     AuthUserFile => $setup->{auth_user_file},
     AuthGroupFile => $setup->{auth_group_file},
+    AuthOrder => 'mod_auth_file.c',
 
     IfModules => {
       'mod_delay.c' => {
@@ -671,6 +671,7 @@ sub digest_hash_crc32 {
 
     AuthUserFile => $setup->{auth_user_file},
     AuthGroupFile => $setup->{auth_group_file},
+    AuthOrder => 'mod_auth_file.c',
 
     IfModules => {
       'mod_delay.c' => {
@@ -822,6 +823,7 @@ sub digest_hash_crc32_abs_symlink {
 
     AuthUserFile => $setup->{auth_user_file},
     AuthGroupFile => $setup->{auth_group_file},
+    AuthOrder => 'mod_auth_file.c',
 
     IfModules => {
       'mod_delay.c' => {
@@ -973,6 +975,7 @@ sub digest_hash_crc32_abs_symlink_chrooted_bug4219 {
 
     AuthUserFile => $setup->{auth_user_file},
     AuthGroupFile => $setup->{auth_group_file},
+    AuthOrder => 'mod_auth_file.c',
 
     DefaultRoot => '~',
 
@@ -1130,6 +1133,7 @@ sub digest_hash_crc32_rel_symlink {
 
     AuthUserFile => $setup->{auth_user_file},
     AuthGroupFile => $setup->{auth_group_file},
+    AuthOrder => 'mod_auth_file.c',
 
     IfModules => {
       'mod_delay.c' => {
@@ -1285,6 +1289,7 @@ sub digest_hash_crc32_rel_symlink_chrooted_bug4219 {
 
     AuthUserFile => $setup->{auth_user_file},
     AuthGroupFile => $setup->{auth_group_file},
+    AuthOrder => 'mod_auth_file.c',
 
     DefaultRoot => '~',
 
@@ -1413,6 +1418,7 @@ sub digest_hash_md5 {
 
     AuthUserFile => $setup->{auth_user_file},
     AuthGroupFile => $setup->{auth_group_file},
+    AuthOrder => 'mod_auth_file.c',
 
     IfModules => {
       'mod_delay.c' => {
@@ -1444,9 +1450,9 @@ sub digest_hash_md5 {
   if ($pid) {
     eval {
       # Allow server to start up
-      sleep(1);
+      sleep(2);
 
-      my $client = ProFTPD::TestSuite::FTP->new('127.0.0.1', $port, 0, 1);
+      my $client = ProFTPD::TestSuite::FTP->new('127.0.0.1', $port, 0, 1, 30);
       $client->login($setup->{user}, $setup->{passwd});
 
       my $algo = 'MD5';
@@ -1505,7 +1511,7 @@ sub digest_hash_sha1 {
   my $tmpdir = $self->{tmpdir};
   my $setup = test_setup($tmpdir, 'digest');
 
-  require Digest::SHA1;
+  require Digest::SHA;
 
   my $test_file = File::Spec->rel2abs("$tmpdir/test.txt");
   if (open(my $fh, "> $test_file")) {
@@ -1521,7 +1527,7 @@ sub digest_hash_sha1 {
   my $expected_digest;
 
   if (open(my $fh, "< $test_file")) {
-    my $ctx = Digest::SHA1->new();
+    my $ctx = Digest::SHA->new(1);
     $ctx->addfile($fh);
     $expected_digest = lc($ctx->hexdigest);
     close($fh);
@@ -1539,6 +1545,7 @@ sub digest_hash_sha1 {
 
     AuthUserFile => $setup->{auth_user_file},
     AuthGroupFile => $setup->{auth_group_file},
+    AuthOrder => 'mod_auth_file.c',
 
     IfModules => {
       'mod_delay.c' => {
@@ -1631,7 +1638,7 @@ sub digest_hash_sha256 {
   my $tmpdir = $self->{tmpdir};
   my $setup = test_setup($tmpdir, 'digest');
 
-  require Digest::SHA256;
+  require Digest::SHA;
 
   my $test_file = File::Spec->rel2abs("$tmpdir/test.txt");
   if (open(my $fh, "> $test_file")) {
@@ -1647,8 +1654,7 @@ sub digest_hash_sha256 {
   my $expected_digest;
 
   if (open(my $fh, "< $test_file")) {
-    # Digest::SHA256 is a bit of an odd duck
-    my $ctx = Digest::SHA256::new(256);
+    my $ctx = Digest::SHA->new(256);
     $ctx->addfile($fh);
     $expected_digest = lc($ctx->hexdigest);
     $expected_digest =~ s/ //g;
@@ -1667,6 +1673,7 @@ sub digest_hash_sha256 {
 
     AuthUserFile => $setup->{auth_user_file},
     AuthGroupFile => $setup->{auth_group_file},
+    AuthOrder => 'mod_auth_file.c',
 
     IfModules => {
       'mod_delay.c' => {
@@ -1759,7 +1766,7 @@ sub digest_hash_sha512 {
   my $tmpdir = $self->{tmpdir};
   my $setup = test_setup($tmpdir, 'digest');
 
-  require Digest::SHA256;
+  require Digest::SHA;
 
   my $test_file = File::Spec->rel2abs("$tmpdir/test.txt");
   if (open(my $fh, "> $test_file")) {
@@ -1775,8 +1782,7 @@ sub digest_hash_sha512 {
   my $expected_digest;
 
   if (open(my $fh, "< $test_file")) {
-    # Digest::SHA256 is a bit of an odd duck
-    my $ctx = Digest::SHA256::new(512);
+    my $ctx = Digest::SHA->new(512);
     $ctx->addfile($fh);
     $expected_digest = lc($ctx->hexdigest);
     $expected_digest =~ s/ //g;
@@ -1795,6 +1801,7 @@ sub digest_hash_sha512 {
 
     AuthUserFile => $setup->{auth_user_file},
     AuthGroupFile => $setup->{auth_group_file},
+    AuthOrder => 'mod_auth_file.c',
 
     IfModules => {
       'mod_delay.c' => {
@@ -1898,6 +1905,7 @@ sub digest_hash_failed_not_logged_in {
 
     AuthUserFile => $setup->{auth_user_file},
     AuthGroupFile => $setup->{auth_group_file},
+    AuthOrder => 'mod_auth_file.c',
 
     IfModules => {
       'mod_delay.c' => {
@@ -2005,6 +2013,7 @@ sub digest_hash_failed_enoent {
 
     AuthUserFile => $setup->{auth_user_file},
     AuthGroupFile => $setup->{auth_group_file},
+    AuthOrder => 'mod_auth_file.c',
 
     IfModules => {
       'mod_delay.c' => {
@@ -2114,6 +2123,7 @@ sub digest_hash_failed_not_file {
 
     AuthUserFile => $setup->{auth_user_file},
     AuthGroupFile => $setup->{auth_group_file},
+    AuthOrder => 'mod_auth_file.c',
 
     IfModules => {
       'mod_delay.c' => {
@@ -2231,6 +2241,7 @@ sub digest_hash_failed_config_limit {
 
     AuthUserFile => $setup->{auth_user_file},
     AuthGroupFile => $setup->{auth_group_file},
+    AuthOrder => 'mod_auth_file.c',
 
     IfModules => {
       'mod_delay.c' => {
@@ -2352,6 +2363,7 @@ sub digest_hash_failed_blacklisted_files {
 
     AuthUserFile => $setup->{auth_user_file},
     AuthGroupFile => $setup->{auth_group_file},
+    AuthOrder => 'mod_auth_file.c',
 
     IfModules => {
       'mod_delay.c' => {
@@ -2488,6 +2500,7 @@ sub digest_xcrc {
 
     AuthUserFile => $setup->{auth_user_file},
     AuthGroupFile => $setup->{auth_group_file},
+    AuthOrder => 'mod_auth_file.c',
 
     IfModules => {
       'mod_delay.c' => {
@@ -2625,6 +2638,7 @@ sub digest_xcrc_abs_symlink {
 
     AuthUserFile => $setup->{auth_user_file},
     AuthGroupFile => $setup->{auth_group_file},
+    AuthOrder => 'mod_auth_file.c',
 
     IfModules => {
       'mod_delay.c' => {
@@ -2761,6 +2775,7 @@ sub digest_xcrc_abs_symlink_chrooted_bug4219 {
 
     AuthUserFile => $setup->{auth_user_file},
     AuthGroupFile => $setup->{auth_group_file},
+    AuthOrder => 'mod_auth_file.c',
 
     DefaultRoot => '~',
 
@@ -2903,6 +2918,7 @@ sub digest_xcrc_rel_symlink {
 
     AuthUserFile => $setup->{auth_user_file},
     AuthGroupFile => $setup->{auth_group_file},
+    AuthOrder => 'mod_auth_file.c',
 
     IfModules => {
       'mod_delay.c' => {
@@ -3043,6 +3059,7 @@ sub digest_xcrc_rel_symlink_chrooted_bug4219 {
 
     AuthUserFile => $setup->{auth_user_file},
     AuthGroupFile => $setup->{auth_group_file},
+    AuthOrder => 'mod_auth_file.c',
 
     DefaultRoot => '~',
 
@@ -3182,6 +3199,7 @@ sub digest_xcrc_2gb {
 
     AuthUserFile => $setup->{auth_user_file},
     AuthGroupFile => $setup->{auth_group_file},
+    AuthOrder => 'mod_auth_file.c',
 
     IfModules => {
       'mod_delay.c' => {
@@ -3215,7 +3233,7 @@ sub digest_xcrc_2gb {
       # Allow server to start up
       sleep(1);
 
-      my $client = ProFTPD::TestSuite::FTP->new('127.0.0.1', $port, 0, 1);
+      my $client = ProFTPD::TestSuite::FTP->new('127.0.0.1', $port, 0, 1, 30);
       $client->login($setup->{user}, $setup->{passwd});
       $client->quote('XCRC', 'test.dat');
 
@@ -3299,6 +3317,7 @@ sub digest_md5 {
 
     AuthUserFile => $setup->{auth_user_file},
     AuthGroupFile => $setup->{auth_group_file},
+    AuthOrder => 'mod_auth_file.c',
 
     IfModules => {
       'mod_delay.c' => {
@@ -3391,6 +3410,7 @@ sub digest_md5_failed_not_file {
 
     AuthUserFile => $setup->{auth_user_file},
     AuthGroupFile => $setup->{auth_group_file},
+    AuthOrder => 'mod_auth_file.c',
 
     IfModules => {
       'mod_delay.c' => {
@@ -3512,6 +3532,7 @@ sub digest_xmd5 {
 
     AuthUserFile => $setup->{auth_user_file},
     AuthGroupFile => $setup->{auth_group_file},
+    AuthOrder => 'mod_auth_file.c',
 
     IfModules => {
       'mod_delay.c' => {
@@ -3590,7 +3611,7 @@ sub digest_xsha {
   my $tmpdir = $self->{tmpdir};
   my $setup = test_setup($tmpdir, 'digest');
 
-  require Digest::SHA1;
+  require Digest::SHA;
 
   my $test_file = File::Spec->rel2abs("$tmpdir/test.txt");
   if (open(my $fh, "> $test_file")) {
@@ -3606,7 +3627,7 @@ sub digest_xsha {
   my $expected_digest;
 
   if (open(my $fh, "< $test_file")) {
-    my $ctx = Digest::SHA1->new();
+    my $ctx = Digest::SHA->new(1);
     $ctx->addfile($fh);
     $expected_digest = uc($ctx->hexdigest);
     close($fh);
@@ -3624,6 +3645,7 @@ sub digest_xsha {
 
     AuthUserFile => $setup->{auth_user_file},
     AuthGroupFile => $setup->{auth_group_file},
+    AuthOrder => 'mod_auth_file.c',
 
     IfModules => {
       'mod_delay.c' => {
@@ -3702,7 +3724,7 @@ sub digest_xsha1 {
   my $tmpdir = $self->{tmpdir};
   my $setup = test_setup($tmpdir, 'digest');
 
-  require Digest::SHA1;
+  require Digest::SHA;
 
   my $test_file = File::Spec->rel2abs("$tmpdir/test.txt");
   if (open(my $fh, "> $test_file")) {
@@ -3718,7 +3740,7 @@ sub digest_xsha1 {
   my $expected_digest;
 
   if (open(my $fh, "< $test_file")) {
-    my $ctx = Digest::SHA1->new();
+    my $ctx = Digest::SHA->new(1);
     $ctx->addfile($fh);
     $expected_digest = uc($ctx->hexdigest);
     close($fh);
@@ -3736,6 +3758,7 @@ sub digest_xsha1 {
 
     AuthUserFile => $setup->{auth_user_file},
     AuthGroupFile => $setup->{auth_group_file},
+    AuthOrder => 'mod_auth_file.c',
 
     IfModules => {
       'mod_delay.c' => {
@@ -3814,7 +3837,7 @@ sub digest_xsha256 {
   my $tmpdir = $self->{tmpdir};
   my $setup = test_setup($tmpdir, 'digest');
 
-  require Digest::SHA256;
+  require Digest::SHA;
 
   my $test_file = File::Spec->rel2abs("$tmpdir/test.txt");
   if (open(my $fh, "> $test_file")) {
@@ -3830,8 +3853,7 @@ sub digest_xsha256 {
   my $expected_digest;
 
   if (open(my $fh, "< $test_file")) {
-    # Digest::SHA256 is a bit of an odd duck...
-    my $ctx = Digest::SHA256::new(256);
+    my $ctx = Digest::SHA->new(256);
     $ctx->addfile($fh);
     $expected_digest = uc($ctx->hexdigest);
     $expected_digest =~ s/ //g;
@@ -3850,6 +3872,7 @@ sub digest_xsha256 {
 
     AuthUserFile => $setup->{auth_user_file},
     AuthGroupFile => $setup->{auth_group_file},
+    AuthOrder => 'mod_auth_file.c',
 
     IfModules => {
       'mod_delay.c' => {
@@ -3928,7 +3951,7 @@ sub digest_xsha512 {
   my $tmpdir = $self->{tmpdir};
   my $setup = test_setup($tmpdir, 'digest');
 
-  require Digest::SHA256;
+  require Digest::SHA;
 
   my $test_file = File::Spec->rel2abs("$tmpdir/test.txt");
   if (open(my $fh, "> $test_file")) {
@@ -3944,8 +3967,7 @@ sub digest_xsha512 {
   my $expected_digest;
 
   if (open(my $fh, "< $test_file")) {
-    # Digest::SHA256 is a bit of an odd duck...
-    my $ctx = Digest::SHA256::new(512);
+    my $ctx = Digest::SHA->new(512);
     $ctx->addfile($fh);
     $expected_digest = uc($ctx->hexdigest);
     $expected_digest =~ s/ //g;
@@ -3964,6 +3986,7 @@ sub digest_xsha512 {
 
     AuthUserFile => $setup->{auth_user_file},
     AuthGroupFile => $setup->{auth_group_file},
+    AuthOrder => 'mod_auth_file.c',
 
     IfModules => {
       'mod_delay.c' => {
@@ -4042,7 +4065,7 @@ sub digest_host {
   my $tmpdir = $self->{tmpdir};
   my $setup = test_setup($tmpdir, 'digest');
 
-  require Digest::SHA1;
+  require Digest::SHA;
 
   my $test_file = File::Spec->rel2abs("$tmpdir/test.txt");
   if (open(my $fh, "> $test_file")) {
@@ -4058,7 +4081,7 @@ sub digest_host {
   my $expected_digest;
 
   if (open(my $fh, "< $test_file")) {
-    my $ctx = Digest::SHA1->new();
+    my $ctx = Digest::SHA->new(1);
     $ctx->addfile($fh);
     $expected_digest = $ctx->hexdigest;
     close($fh);
@@ -4076,6 +4099,8 @@ sub digest_host {
 
     AuthUserFile => $setup->{auth_user_file},
     AuthGroupFile => $setup->{auth_group_file},
+    AuthOrder => 'mod_auth_file.c',
+
     DefaultServer => 'on',
     ServerName => '"Default Server"',
 
@@ -4273,6 +4298,7 @@ sub digest_path_offset_length {
 
     AuthUserFile => $setup->{auth_user_file},
     AuthGroupFile => $setup->{auth_group_file},
+    AuthOrder => 'mod_auth_file.c',
 
     IfModules => {
       'mod_delay.c' => {
@@ -4385,6 +4411,7 @@ sub digest_path_with_spaces {
 
     AuthUserFile => $setup->{auth_user_file},
     AuthGroupFile => $setup->{auth_group_file},
+    AuthOrder => 'mod_auth_file.c',
 
     IfModules => {
       'mod_delay.c' => {
@@ -4503,6 +4530,7 @@ sub digest_path_with_spaces_offset_length {
 
     AuthUserFile => $setup->{auth_user_file},
     AuthGroupFile => $setup->{auth_group_file},
+    AuthOrder => 'mod_auth_file.c',
 
     IfModules => {
       'mod_delay.c' => {
@@ -4616,6 +4644,7 @@ sub digest_caching {
 
     AuthUserFile => $setup->{auth_user_file},
     AuthGroupFile => $setup->{auth_group_file},
+    AuthOrder => 'mod_auth_file.c',
 
     IfModules => {
       'mod_delay.c' => {
@@ -4734,6 +4763,7 @@ sub digest_caching_max_size {
 
     AuthUserFile => $setup->{auth_user_file},
     AuthGroupFile => $setup->{auth_group_file},
+    AuthOrder => 'mod_auth_file.c',
 
     IfModules => {
       'mod_delay.c' => {
@@ -4906,6 +4936,7 @@ sub digest_caching_max_age_same_file {
 
     AuthUserFile => $setup->{auth_user_file},
     AuthGroupFile => $setup->{auth_group_file},
+    AuthOrder => 'mod_auth_file.c',
 
     IfModules => {
       'mod_delay.c' => {
@@ -5076,6 +5107,7 @@ sub digest_caching_max_age_different_file {
 
     AuthUserFile => $setup->{auth_user_file},
     AuthGroupFile => $setup->{auth_group_file},
+    AuthOrder => 'mod_auth_file.c',
 
     IfModules => {
       'mod_delay.c' => {
@@ -5110,7 +5142,7 @@ sub digest_caching_max_age_different_file {
       # Allow server to start up
       sleep(1);
 
-      my $client = ProFTPD::TestSuite::FTP->new('127.0.0.1', $port, 0, 1);
+      my $client = ProFTPD::TestSuite::FTP->new('127.0.0.1', $port, 0, 1, 30);
       $client->login($setup->{user}, $setup->{passwd});
 
       # We deliberately do this multiple times, to test the in-memory
@@ -5236,6 +5268,8 @@ sub digest_caching_retr {
 
     AuthUserFile => $setup->{auth_user_file},
     AuthGroupFile => $setup->{auth_group_file},
+    AuthOrder => 'mod_auth_file.c',
+
     UseSendfile => 'off',
 
     IfModules => {
@@ -5382,6 +5416,8 @@ sub digest_caching_rest_retr {
 
     AuthUserFile => $setup->{auth_user_file},
     AuthGroupFile => $setup->{auth_group_file},
+    AuthOrder => 'mod_auth_file.c',
+
     UseSendfile => 'off',
 
     IfModules => {
@@ -5522,6 +5558,7 @@ sub digest_caching_stor {
 
     AuthUserFile => $setup->{auth_user_file},
     AuthGroupFile => $setup->{auth_group_file},
+    AuthOrder => 'mod_auth_file.c',
 
     IfModules => {
       'mod_delay.c' => {
@@ -5650,6 +5687,7 @@ sub digest_caching_rest_stor {
 
     AuthUserFile => $setup->{auth_user_file},
     AuthGroupFile => $setup->{auth_group_file},
+    AuthOrder => 'mod_auth_file.c',
 
     IfModules => {
       'mod_delay.c' => {
@@ -5788,6 +5826,7 @@ sub digest_caching_appe {
 
     AuthUserFile => $setup->{auth_user_file},
     AuthGroupFile => $setup->{auth_group_file},
+    AuthOrder => 'mod_auth_file.c',
 
     IfModules => {
       'mod_delay.c' => {
@@ -5907,6 +5946,7 @@ sub digest_failed_not_logged_in {
 
     AuthUserFile => $setup->{auth_user_file},
     AuthGroupFile => $setup->{auth_group_file},
+    AuthOrder => 'mod_auth_file.c',
 
     IfModules => {
       'mod_delay.c' => {
@@ -5999,6 +6039,7 @@ sub digest_failed_enoent {
 
     AuthUserFile => $setup->{auth_user_file},
     AuthGroupFile => $setup->{auth_group_file},
+    AuthOrder => 'mod_auth_file.c',
 
     IfModules => {
       'mod_delay.c' => {
@@ -6095,6 +6136,7 @@ sub digest_failed_not_file {
 
     AuthUserFile => $setup->{auth_user_file},
     AuthGroupFile => $setup->{auth_group_file},
+    AuthOrder => 'mod_auth_file.c',
 
     IfModules => {
       'mod_delay.c' => {
@@ -6196,6 +6238,7 @@ sub digest_failed_blacklisted_files {
 
     AuthUserFile => $setup->{auth_user_file},
     AuthGroupFile => $setup->{auth_group_file},
+    AuthOrder => 'mod_auth_file.c',
 
     IfModules => {
       'mod_delay.c' => {
@@ -6305,6 +6348,7 @@ sub digest_failed_start_pos_invalid_number {
 
     AuthUserFile => $setup->{auth_user_file},
     AuthGroupFile => $setup->{auth_group_file},
+    AuthOrder => 'mod_auth_file.c',
 
     IfModules => {
       'mod_delay.c' => {
@@ -6410,6 +6454,7 @@ sub digest_failed_end_pos_invalid_number {
 
     AuthUserFile => $setup->{auth_user_file},
     AuthGroupFile => $setup->{auth_group_file},
+    AuthOrder => 'mod_auth_file.c',
 
     IfModules => {
       'mod_delay.c' => {
@@ -6515,6 +6560,7 @@ sub digest_failed_end_pos_too_large {
 
     AuthUserFile => $setup->{auth_user_file},
     AuthGroupFile => $setup->{auth_group_file},
+    AuthOrder => 'mod_auth_file.c',
 
     IfModules => {
       'mod_delay.c' => {
@@ -6620,6 +6666,7 @@ sub digest_failed_start_pos_after_end_pos {
 
     AuthUserFile => $setup->{auth_user_file},
     AuthGroupFile => $setup->{auth_group_file},
+    AuthOrder => 'mod_auth_file.c',
 
     IfModules => {
       'mod_delay.c' => {
@@ -6725,7 +6772,7 @@ sub digest_config_algorithms {
   my $tmpdir = $self->{tmpdir};
   my $setup = test_setup($tmpdir, 'digest');
 
-  require Digest::SHA256;
+  require Digest::SHA;
 
   my $test_file = File::Spec->rel2abs("$tmpdir/test.txt");
   if (open(my $fh, "> $test_file")) {
@@ -6741,8 +6788,7 @@ sub digest_config_algorithms {
   my $expected_digest;
 
   if (open(my $fh, "< $test_file")) {
-    # Digest::SHA256 is a bit of an odd duck
-    my $ctx = Digest::SHA256::new(256);
+    my $ctx = Digest::SHA->new(256);
     $ctx->addfile($fh);
     $expected_digest = lc($ctx->hexdigest);
     $expected_digest =~ s/ //g;
@@ -6761,6 +6807,7 @@ sub digest_config_algorithms {
 
     AuthUserFile => $setup->{auth_user_file},
     AuthGroupFile => $setup->{auth_group_file},
+    AuthOrder => 'mod_auth_file.c',
 
     IfModules => {
       'mod_delay.c' => {
@@ -6907,6 +6954,7 @@ sub digest_config_default_algo {
 
     AuthUserFile => $setup->{auth_user_file},
     AuthGroupFile => $setup->{auth_group_file},
+    AuthOrder => 'mod_auth_file.c',
 
     IfModules => {
       'mod_delay.c' => {
@@ -7015,6 +7063,7 @@ sub digest_config_engine {
 
     AuthUserFile => $setup->{auth_user_file},
     AuthGroupFile => $setup->{auth_group_file},
+    AuthOrder => 'mod_auth_file.c',
 
     IfModules => {
       'mod_delay.c' => {
@@ -7163,6 +7212,7 @@ sub digest_config_engine_per_user {
 
     AuthUserFile => $setup->{auth_user_file},
     AuthGroupFile => $setup->{auth_group_file},
+    AuthOrder => 'mod_auth_file.c',
 
     IfModules => {
       'mod_delay.c' => {
@@ -7330,6 +7380,7 @@ sub digest_config_enable {
 
     AuthUserFile => $setup->{auth_user_file},
     AuthGroupFile => $setup->{auth_group_file},
+    AuthOrder => 'mod_auth_file.c',
 
     IfModules => {
       'mod_delay.c' => {
@@ -7471,6 +7522,8 @@ EOC
 
     AuthUserFile => $setup->{auth_user_file},
     AuthGroupFile => $setup->{auth_group_file},
+    AuthOrder => 'mod_auth_file.c',
+
     AllowOverride => 'on',
 
     IfModules => {
@@ -7596,6 +7649,7 @@ sub digest_config_max_size {
 
     AuthUserFile => $setup->{auth_user_file},
     AuthGroupFile => $setup->{auth_group_file},
+    AuthOrder => 'mod_auth_file.c',
 
     IfModules => {
       'mod_delay.c' => {
@@ -7732,6 +7786,7 @@ sub digest_config_max_size_per_user {
 
     AuthUserFile => $setup->{auth_user_file},
     AuthGroupFile => $setup->{auth_group_file},
+    AuthOrder => 'mod_auth_file.c',
 
     IfModules => {
       'mod_delay.c' => {
@@ -7968,6 +8023,7 @@ EOS
 
     AuthUserFile => $setup->{auth_user_file},
     AuthGroupFile => $setup->{auth_group_file},
+    AuthOrder => 'mod_auth_file.c',
 
     UseSendfile => 'off',
 
@@ -8138,6 +8194,7 @@ EOS
 
     AuthUserFile => $setup->{auth_user_file},
     AuthGroupFile => $setup->{auth_group_file},
+    AuthOrder => 'mod_auth_file.c',
 
     IfModules => {
       'mod_delay.c' => {
@@ -8327,6 +8384,7 @@ EOS
 
     AuthUserFile => $setup->{auth_user_file},
     AuthGroupFile => $setup->{auth_group_file},
+    AuthOrder => 'mod_auth_file.c',
 
     IfModules => {
       'mod_delay.c' => {
@@ -8526,6 +8584,7 @@ EOS
 
     AuthUserFile => $setup->{auth_user_file},
     AuthGroupFile => $setup->{auth_group_file},
+    AuthOrder => 'mod_auth_file.c',
 
     IfModules => {
       'mod_delay.c' => {

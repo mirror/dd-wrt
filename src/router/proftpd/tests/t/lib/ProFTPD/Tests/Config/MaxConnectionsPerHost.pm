@@ -63,6 +63,8 @@ sub maxconnsperhost_one_multi_conns {
 
     AuthUserFile => $auth_user_file,
     AuthGroupFile => $auth_group_file, 
+    AuthOrder => 'mod_auth_file.c',
+
     MaxConnectionsPerHost => $max_conns_per_host,
     TimeoutIdle => 30,
 
@@ -169,6 +171,7 @@ sub maxclientsperhost_one_multi_conns {
 
     AuthUserFile => $auth_user_file,
     AuthGroupFile => $auth_group_file,
+    AuthOrder => 'mod_auth_file.c',
 
     MaxClientsPerHost => $max_clients_per_host,
 

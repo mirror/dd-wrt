@@ -1586,7 +1586,7 @@ sub sql_passwd_salt_file {
 
   # I used:
   #
-  #  Digest::SHA1::sha1_hex((lc("password")) . $salt);
+  #  Digest::SHA::sha1_hex((lc("password")) . $salt);
   #
   # to generate this password.
   my $passwd = '975838a6aebc87d384535df6f7226274813353aa';
@@ -1762,7 +1762,7 @@ sub sql_passwd_salt_file_trailing_newline {
 
   # I used:
   #
-  #  Digest::SHA1::sha1_hex((lc("password")) . $salt);
+  #  Digest::SHA::sha1_hex((lc("password")) . $salt);
   #
   # to generate this password.
   my $passwd = '975838a6aebc87d384535df6f7226274813353aa';
@@ -1941,7 +1941,7 @@ sub sql_passwd_salt_file_prepend {
 
   # I used:
   #
-  #  Digest::SHA1::sha1_hex($salt . lc("password"));
+  #  Digest::SHA::sha1_hex($salt . lc("password"));
   #
   # to generate this password.
   my $passwd = 'c16542a729162ec1228919a21b36775d63391b78';
@@ -3077,7 +3077,7 @@ sub sql_passwd_user_salt_name {
 
   # I used:
   #
-  #  Digest::SHA1::sha1_hex((lc("password")) . $user);
+  #  Digest::SHA::sha1_hex((lc("password")) . $user);
   #
   # to generate this password.
   my $passwd = '0934e2799b96d7f93fdfaaa13853dfa291e09cb1';
@@ -3239,7 +3239,7 @@ sub sql_passwd_user_salt_sql {
 
   # I used:
   #
-  #  Digest::SHA1::sha1_hex((lc("password")) . $salt);
+  #  Digest::SHA::sha1_hex((lc("password")) . $salt);
   #
   # to generate this password.
   my $passwd = 'cbaae8ec99dad240e86b64c66d31272b39a87e2e';
@@ -4646,7 +4646,7 @@ sub sql_passwd_sha1_encode_salt_hash_encode_password {
 
   # I used:
   #
-  #  Digest::SHA1::sha1_hex($salt . Digest::SHA1::sha1_hex($passwd))
+  #  Digest::SHA::sha1_hex($salt . Digest::SHA1::sha1_hex($passwd))
   #
   # to generate this password.
   my $db_passwd = '03cb508a6c32e33a21695ed139e6f7cb4e479a76';
@@ -5747,7 +5747,7 @@ sub sql_passwd_salt_file_with_user_salt {
 
   # I used:
   #
-  #  Digest::SHA1::sha1_hex($user_salt . (lc("password")) . $global_salt);
+  #  Digest::SHA::sha1_hex($user_salt . (lc("password")) . $global_salt);
   #
   # to generate this password.
   my $passwd = 'b939d5c8e2857d9e8d27b87939a27fb986cd41ef';
@@ -5934,7 +5934,7 @@ sub sql_passwd_user_salt_sql_base64_bug4138 {
 
   # I used:
   #
-  #  Digest::SHA1::sha1_hex((lc("password")) . $decoded_salt);
+  #  Digest::SHA::sha1_hex((lc("password")) . $decoded_salt);
   #
   # to generate this password.
   my $passwd = '39ff37588e1a56b243b00cb6479a716ef50fc980';
@@ -6105,7 +6105,7 @@ sub sql_passwd_user_salt_sql_hex_lc_bug4138 {
 
   # I used:
   #
-  #  Digest::SHA1::sha1_hex((lc("password")) . $decoded_salt);
+  #  Digest::SHA::sha1_hex((lc("password")) . $decoded_salt);
   #
   # to generate this password.
   my $passwd = '39ff37588e1a56b243b00cb6479a716ef50fc980';
@@ -6276,7 +6276,7 @@ sub sql_passwd_user_salt_sql_hex_uc_bug4138 {
 
   # I used:
   #
-  #  Digest::SHA1::sha1_hex((lc("password")) . $decoded_salt);
+  #  Digest::SHA::sha1_hex((lc("password")) . $decoded_salt);
   #
   # to generate this password.
   my $passwd = '39ff37588e1a56b243b00cb6479a716ef50fc980';
@@ -6448,7 +6448,7 @@ sub sql_passwd_salt_file_base64_bug4138 {
 
   # I used:
   #
-  #  Digest::SHA1::sha1_hex((lc("password")) . $decoded_salt);
+  #  Digest::SHA::sha1_hex((lc("password")) . $decoded_salt);
   #
   # to generate this password.
   my $passwd = '39ff37588e1a56b243b00cb6479a716ef50fc980';
@@ -6626,7 +6626,7 @@ sub sql_passwd_salt_file_hex_lc_bug4138 {
 
   # I used:
   #
-  #  Digest::SHA1::sha1_hex((lc("password")) . $decoded_salt);
+  #  Digest::SHA::sha1_hex((lc("password")) . $decoded_salt);
   #
   # to generate this password.
   my $passwd = '39ff37588e1a56b243b00cb6479a716ef50fc980';
@@ -6804,7 +6804,7 @@ sub sql_passwd_salt_file_hex_uc_bug4138 {
 
   # I used:
   #
-  #  Digest::SHA1::sha1_hex((lc("password")) . $decoded_salt);
+  #  Digest::SHA::sha1_hex((lc("password")) . $decoded_salt);
   #
   # to generate this password.
   my $passwd = '39ff37588e1a56b243b00cb6479a716ef50fc980';
@@ -9671,7 +9671,7 @@ EOS
   if ($pid) {
     eval {
       sleep(1);
-      my $client = ProFTPD::TestSuite::FTP->new('127.0.0.1', $port, 0, 1);
+      my $client = ProFTPD::TestSuite::FTP->new('127.0.0.1', $port, 0, 1, 30);
       $client->login($setup->{user}, "password");
 
       my $resp_msgs = $client->response_msgs();

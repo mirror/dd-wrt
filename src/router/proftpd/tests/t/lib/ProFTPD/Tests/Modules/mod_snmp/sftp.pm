@@ -585,6 +585,8 @@ sub snmp_sftp_v1_get_sess_counts {
 
     AuthUserFile => $auth_user_file,
     AuthGroupFile => $auth_group_file,
+    AuthOrder => 'mod_auth_file.c',
+
     TimeoutIdle => $timeout_idle + 1,
 
     IfModules => {
@@ -797,6 +799,8 @@ sub snmp_sftp_v1_get_xfer_dirlist_counts {
 
     AuthUserFile => $auth_user_file,
     AuthGroupFile => $auth_group_file,
+    AuthOrder => 'mod_auth_file.c',
+
     TimeoutIdle => $timeout_idle + 1,
 
     IfModules => {
@@ -985,6 +989,8 @@ sub snmp_sftp_v1_get_xfer_download_counts {
 
     AuthUserFile => $auth_user_file,
     AuthGroupFile => $auth_group_file,
+    AuthOrder => 'mod_auth_file.c',
+
     TimeoutIdle => $timeout_idle + 1,
 
     IfModules => {
@@ -1218,6 +1224,8 @@ sub snmp_sftp_v1_get_xfer_upload_counts {
 
     AuthUserFile => $auth_user_file,
     AuthGroupFile => $auth_group_file,
+    AuthOrder => 'mod_auth_file.c',
+
     TimeoutIdle => $timeout_idle + 1,
 
     IfModules => {

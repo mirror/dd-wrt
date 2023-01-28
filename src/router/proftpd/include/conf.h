@@ -2,7 +2,7 @@
  * ProFTPD - FTP server daemon
  * Copyright (c) 1997, 1998 Public Flood Software
  * Copyright (c) 1999, 2000 MacGyver aka Habeeb J. Dihu <macgyver@tos.net>
- * Copyright (c) 2001-2017 The ProFTPD Project team
+ * Copyright (c) 2001-2021 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -32,6 +32,14 @@
 #include "os.h"
 #include "version.h"
 
+/* Define our OpenSSL API compatibility level to 1.0.0.  Any symbols older
+ * than that will raise an error during compilation.
+ */
+#if defined(PR_USE_OPENSSL_API_COMPAT) && \
+   !defined(OPENSSL_API_COMPAT)
+# define OPENSSL_API_COMPAT		0x10000000L
+#endif
+
 /* The tunable options header needs to be included after all the system headers,
  * so that limits are picked up properly.
  */
@@ -56,6 +64,7 @@
  * not for the support library.
  */
 
+#include "base.h"
 #include "pool.h"
 #include "str.h"
 #include "ascii.h"
@@ -93,7 +102,6 @@
 #include "scoreboard.h"
 #include "data.h"
 #include "display.h"
-#include "libsupp.h"
 #include "fsio.h"
 #include "mkhome.h"
 #include "ctrls.h"

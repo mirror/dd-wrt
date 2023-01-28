@@ -2,7 +2,7 @@
  * ProFTPD - FTP server daemon
  * Copyright (c) 1997, 1998 Public Flood Software
  * Copyright (c) 1999, 2000 MacGyver aka Habeeb J. Dihu <macgyver@tos.net>
- * Copyright (c) 2001-2020 The ProFTPD Project
+ * Copyright (c) 2001-2021 The ProFTPD Project
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -51,33 +51,33 @@
 #endif
 
 /* Operation codes */
-#define FSIO_FILE_STAT		(1 << 0)
-#define FSIO_FILE_LSTAT		(1 << 1)
-#define FSIO_FILE_RENAME	(1 << 2)
-#define FSIO_FILE_UNLINK	(1 << 3)
-#define FSIO_FILE_OPEN		(1 << 4)
+#define FSIO_FILE_STAT		0x0000001
+#define FSIO_FILE_LSTAT		0x0000002
+#define FSIO_FILE_RENAME	0x0000004
+#define FSIO_FILE_UNLINK	0x0000008
+#define FSIO_FILE_OPEN		0x0000010
 /* Was FSIO_FILE_CREAT, now unused */
-#define FSIO_FILE_CLOSE		(1 << 6)
-#define FSIO_FILE_READ		(1 << 7)
-#define FSIO_FILE_WRITE		(1 << 8)
-#define FSIO_FILE_LINK		(1 << 9)
-#define FSIO_FILE_SYMLINK	(1 << 10)
-#define FSIO_FILE_READLINK	(1 << 11)
-#define FSIO_FILE_TRUNC		(1 << 12)
-#define FSIO_FILE_CHMOD		(1 << 13)
-#define FSIO_FILE_CHOWN		(1 << 14)
-#define FSIO_FILE_ACCESS	(1 << 15)
-#define FSIO_FILE_PREAD		(1 << 16)
-#define FSIO_FILE_PWRITE	(1 << 17)
-#define FSIO_FILE_UTIMES	(1 << 23)
-#define FSIO_FILE_GETXATTR	(1 << 24)
-#define FSIO_FILE_LGETXATTR	(1 << 25)
-#define FSIO_FILE_LISTXATTR	(1 << 26)
-#define FSIO_FILE_LLISTXATTR	(1 << 27)
-#define FSIO_FILE_REMOVEXATTR	(1 << 28)
-#define FSIO_FILE_LREMOVEXATTR	(1 << 29)
-#define FSIO_FILE_SETXATTR	(1 << 30)
-#define FSIO_FILE_LSETXATTR	(1 << 31)
+#define FSIO_FILE_CLOSE		0x0000040
+#define FSIO_FILE_READ		0x0000080
+#define FSIO_FILE_WRITE		0x0000100
+#define FSIO_FILE_LINK		0x0000200
+#define FSIO_FILE_SYMLINK	0x0000400
+#define FSIO_FILE_READLINK	0x0000800
+#define FSIO_FILE_TRUNC		0x0001000
+#define FSIO_FILE_CHMOD		0x0002000
+#define FSIO_FILE_CHOWN		0x0004000
+#define FSIO_FILE_ACCESS	0x0008000
+#define FSIO_FILE_PREAD		0x0010000
+#define FSIO_FILE_PWRITE	0x0020000
+#define FSIO_FILE_UTIMES	0x0040000
+#define FSIO_FILE_GETXATTR	0x0080000
+#define FSIO_FILE_LGETXATTR	0x0100000
+#define FSIO_FILE_LISTXATTR	0x0200000
+#define FSIO_FILE_LLISTXATTR	0x0400000
+#define FSIO_FILE_REMOVEXATTR	0x0800000
+#define FSIO_FILE_LREMOVEXATTR	0x1000000
+#define FSIO_FILE_SETXATTR	0x2000000
+#define FSIO_FILE_LSETXATTR	0x4000000
 
 /* Macro that defines the most common file ops */
 #define FSIO_FILE_COMMON	(FSIO_FILE_OPEN|FSIO_FILE_READ|FSIO_FILE_WRITE|\

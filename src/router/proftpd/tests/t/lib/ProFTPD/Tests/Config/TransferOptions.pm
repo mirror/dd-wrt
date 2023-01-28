@@ -60,6 +60,7 @@ sub transferoptions_ignore_ascii_download_bug4159 {
 
     AuthUserFile => $setup->{auth_user_file},
     AuthGroupFile => $setup->{auth_group_file},
+    AuthOrder => 'mod_auth_file.c',
 
     DefaultTransferMode => 'binary',
     TransferOptions => 'IgnoreASCII',
@@ -167,6 +168,7 @@ sub transferoptions_ignore_ascii_upload_bug4159 {
 
     AuthUserFile => $setup->{auth_user_file},
     AuthGroupFile => $setup->{auth_group_file},
+    AuthOrder => 'mod_auth_file.c',
 
     DefaultTransferMode => 'binary',
     TransferOptions => 'IgnoreASCII',

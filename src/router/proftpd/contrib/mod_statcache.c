@@ -1,7 +1,7 @@
 /*
  * ProFTPD: mod_statcache -- a module implementing caching of stat(2),
  *                           fstat(2), and lstat(2) calls
- * Copyright (c) 2013-2018 TJ Saunders
+ * Copyright (c) 2013-2022 TJ Saunders
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -28,7 +28,7 @@
 
 #include "conf.h"
 #include "privs.h"
-#ifdef PR_USE_CTRLS
+#if defined(PR_USE_CTRLS)
 # include "mod_ctrls.h"
 #endif /* PR_USE_CTRLS */
 
@@ -79,7 +79,7 @@ extern pid_t mpid;
 
 module statcache_module;
 
-#ifdef PR_USE_CTRLS
+#if defined(PR_USE_CTRLS)
 static ctrls_acttab_t statcache_acttab[];
 #endif
 
@@ -125,15 +125,15 @@ static pr_fh_t *statcache_tabfh = NULL;
 
 static void *statcache_table = NULL;
 static size_t statcache_tablesz = 0;
-static void *statcache_table_stats = NULL;
-static struct statcache_entry *statcache_table_data = NULL;
+static uint32_t *statcache_table_stats = NULL;
+static void *statcache_table_data = NULL;
 
 static const char *trace_channel = "statcache";
 
 static int statcache_wlock_row(int fd, uint32_t hash);
 static int statcache_unlock_row(int fd, uint32_t hash);
 
-#ifdef PR_USE_CTRLS
+#if defined(PR_USE_CTRLS)
 static int statcache_rlock_stats(int fd);
 static int statcache_rlock_table(int fd);
 static int statcache_unlock_table(int fd);
@@ -353,7 +353,7 @@ static int lock_table(int fd, int lock_type, off_t lock_len) {
   return 0;
 }
 
-#ifdef PR_USE_CTRLS
+#if defined(PR_USE_CTRLS)
 static int statcache_rlock_stats(int fd) {
   return lock_table(fd, F_RDLCK, (6 * sizeof(uint32_t)));
 }
@@ -375,85 +375,83 @@ static int statcache_unlock_stats(int fd) {
   return lock_table(fd, F_UNLCK, (6 * sizeof(uint32_t)));
 }
 
-#ifdef PR_USE_CTRLS
+#if defined(PR_USE_CTRLS)
 static uint32_t statcache_stats_get_count(void) {
-  uint32_t count = 0;
+  uint32_t *count;
 
-  /* count = statcache_table_stats + (0 * sizeof(uint32_t)) */
-  count = *((uint32_t *) statcache_table_stats);
-  return count;
+  count = statcache_table_stats;
+  return *count;
 }
 
 static uint32_t statcache_stats_get_highest(void) {
-  uint32_t highest = 0;
+  uint32_t *highest;
 
-  /* highest = statcache_table_stats + (1 * sizeof(uint32_t)) */
-  highest = *((uint32_t *) ((char *) statcache_table_stats +
-    (1 * sizeof(uint32_t))));
-  return highest;
+  highest = statcache_table_stats + 1;
+  return *highest;
 }
 
 static uint32_t statcache_stats_get_hits(void) {
-  uint32_t hits = 0;
+  uint32_t *hits;
 
-  /* hits = statcache_table_stats + (2 * sizeof(uint32_t)) */
-  hits = *((uint32_t *) ((char *) statcache_table_stats +
-    (2 * sizeof(uint32_t))));
-  return hits;
+  hits = statcache_table_stats + 2;
+  return *hits;
 }
 
 static uint32_t statcache_stats_get_misses(void) {
-  uint32_t misses = 0;
+  uint32_t *misses;
 
   /* misses = statcache_table_stats + (3 * sizeof(uint32_t)) */
-  misses = *((uint32_t *) ((char *) statcache_table_stats +
-    (3 * sizeof(uint32_t))));
-  return misses;
+  misses = statcache_table_stats + 3;
+  return *misses;
 }
 
 static uint32_t statcache_stats_get_expires(void) {
-  uint32_t expires = 0;
+  uint32_t *expires;
 
-  /* expires = statcache_table_stats + (4 * sizeof(uint32_t)) */
-  expires = *((uint32_t *) ((char *) statcache_table_stats +
-    (4 * sizeof(uint32_t))));
-  return expires;
+  expires = statcache_table_stats + 4;
+  return *expires;
 }
 
 static uint32_t statcache_stats_get_rejects(void) {
-  uint32_t rejects = 0;
+  uint32_t *rejects;
 
-  /* rejects = statcache_table_stats + (5 * sizeof(uint32_t)) */
-  rejects = *((uint32_t *) ((char *) statcache_table_stats +
-    (5 * sizeof(uint32_t))));
-  return rejects;
+  rejects = statcache_table_stats + 5;
+  return *rejects;
 }
 #endif /* PR_USE_CTRLS */
 
-static int statcache_stats_incr_count(int32_t incr) {
+static int statcache_stats_decr_count(uint32_t decr) {
+  uint32_t *count = NULL;
+
+  if (decr == 0) {
+    return 0;
+  }
+
+  count = statcache_table_stats;
+
+  /* Prevent underflow. */
+  if (*count < decr) {
+    *count = 0;
+
+  } else {
+    *count -= decr;
+  }
+
+  return 0;
+}
+
+static int statcache_stats_incr_count(uint32_t incr) {
   uint32_t *count = NULL, *highest = NULL;
 
   if (incr == 0) {
     return 0;
   }
 
-  /* count = statcache_table_stats + (0 * sizeof(uint32_t)) */
-  count = ((uint32_t *) statcache_table_stats);
+  count = statcache_table_stats;
+  highest = statcache_table_stats + 1;
 
-  /* highest = statcache_table_stats + (1 * sizeof(uint32_t)) */
-  highest = ((uint32_t *) ((char *) statcache_table_stats) +
-    (1 * sizeof(uint32_t)));
-
-  if (incr < 0) {
-    /* Prevent underflow. */
-    if (*count <= incr) {
-      *count = 0;
-
-    } else {
-      *count += incr;
-    }
-
-  } else {
+  /* Prevent overflow. */
+  if (UINT32_MAX - *count > incr) {
     *count += incr;
 
     if (*count > *highest) {
@@ -464,92 +462,68 @@ static int statcache_stats_incr_count(int32_t incr) {
   return 0;
 }
 
-static int statcache_stats_incr_hits(int32_t incr) {
+static int statcache_stats_incr_hits(uint32_t incr) {
   uint32_t *hits = NULL;
 
   if (incr == 0) {
     return 0;
   }
 
-  /* hits = statcache_table_stats + (2 * sizeof(uint32_t)) */
-  hits = ((uint32_t *) ((char *) statcache_table_stats) +
-    (2 * sizeof(uint32_t)));
+  hits = statcache_table_stats + 2;
 
-  /* Prevent underflow. */
-  if (incr < 0 &&
-      *hits <= incr) {
-    *hits = 0;
-
-  } else {
+  /* Prevent overflow. */
+  if (UINT32_MAX - *hits > incr) {
     *hits += incr;
   }
 
   return 0;
 } 
 
-static int statcache_stats_incr_misses(int32_t incr) {
+static int statcache_stats_incr_misses(uint32_t incr) {
   uint32_t *misses = NULL;
  
   if (incr == 0) {
     return 0;
   }
  
-  /* misses = statcache_table_stats + (3 * sizeof(uint32_t)) */
-  misses = ((uint32_t *) ((char *) statcache_table_stats) +
-    (3 * sizeof(uint32_t)));
+  misses = statcache_table_stats + 3;
 
-  /* Prevent underflow. */
-  if (incr < 0 &&
-      *misses <= incr) {
-    *misses = 0;
-
-  } else {
+  /* Prevent overflow. */
+  if (UINT32_MAX - *misses > incr) {
     *misses += incr;
   }
 
   return 0;
 } 
 
-static int statcache_stats_incr_expires(int32_t incr) {
+static int statcache_stats_incr_expires(uint32_t incr) {
   uint32_t *expires = NULL;
  
   if (incr == 0) {
     return 0;
   }
  
-  /* expires = statcache_table_stats + (4 * sizeof(uint32_t)) */
-  expires = ((uint32_t *) ((char *) statcache_table_stats) +
-    (4 * sizeof(uint32_t)));
+  expires = statcache_table_stats + 4;
 
-  /* Prevent underflow. */
-  if (incr < 0 &&
-      *expires <= incr) {
-    *expires = 0;
-
-  } else {
+  /* Prevent overflow. */
+  if (UINT32_MAX - *expires > incr) {
     *expires += incr;
   }
 
   return 0;
 } 
 
-static int statcache_stats_incr_rejects(int32_t incr) {
+static int statcache_stats_incr_rejects(uint32_t incr) {
   uint32_t *rejects = NULL;
 
   if (incr == 0) {
     return 0;
   }
 
-  /* rejects = statcache_table_stats + (5 * sizeof(uint32_t)) */
-  rejects = ((uint32_t *) ((char *) statcache_table_stats) +
-    (5 * sizeof(uint32_t)));
+  rejects = statcache_table_stats + 5;
 
-  /* Prevent underflow. */
-  if (incr < 0 &&
-      *rejects <= incr) {
-    *rejects = 0;
-
-  } else {
+  /* Prevent overflow. */
+  if (UINT32_MAX - *rejects > incr) {
     *rejects += incr;
   }
 
@@ -668,7 +642,7 @@ static uint32_t statcache_hash(const char *path, size_t pathlen) {
 static int statcache_table_add(int fd, const char *path, size_t pathlen,
     struct stat *st, int xerrno, uint32_t hash, unsigned char op) {
   register unsigned int i;
-  uint32_t row_idx, row_start;
+  uint32_t row_idx;
   int found_slot = FALSE, expired_entries = 0;
   time_t now;
   struct statcache_entry *sce = NULL;
@@ -682,15 +656,14 @@ static int statcache_table_add(int fd, const char *path, size_t pathlen,
   now = time(NULL);
 
   row_idx = hash % statcache_nrows;
-  row_start = (row_idx * statcache_rowlen);
 
   for (i = 0; i < STATCACHE_COLS_PER_ROW; i++) {
     uint32_t col_start;
 
     pr_signals_handle();
 
-    col_start = (row_start + (i * sizeof(struct statcache_entry)));
-    sce = (((char *) statcache_table_data) + col_start);
+    col_start = row_idx + i;
+    sce = ((struct statcache_entry *) statcache_table_data) + col_start;
     if (sce->sce_ts == 0) {
       /* Empty slot */
       found_slot = TRUE;
@@ -770,7 +743,7 @@ static int statcache_table_add(int fd, const char *path, size_t pathlen,
 
   statcache_stats_incr_count(1);
   if (expired_entries > 0) {
-    statcache_stats_incr_count(-expired_entries);
+    statcache_stats_decr_count(expired_entries);
     statcache_stats_incr_expires(expired_entries);
   }
 
@@ -786,7 +759,7 @@ static int statcache_table_get(int fd, const char *path, size_t pathlen,
     struct stat *st, int *xerrno, uint32_t hash, unsigned char op) {
   register unsigned int i;
   int expired_entries = 0, res = -1;
-  uint32_t row_idx, row_start;
+  uint32_t row_idx;
 
   if (statcache_table == NULL) {
     errno = EPERM;
@@ -794,8 +767,6 @@ static int statcache_table_get(int fd, const char *path, size_t pathlen,
   }
 
   row_idx = hash % statcache_nrows;
-  row_start = (row_idx * statcache_rowlen);
-
   /* Find the matching entry for this path. */
   for (i = 0; i < STATCACHE_COLS_PER_ROW; i++) {
     uint32_t col_start;
@@ -803,8 +774,8 @@ static int statcache_table_get(int fd, const char *path, size_t pathlen,
 
     pr_signals_handle();
 
-    col_start = (row_start + (i * sizeof(struct statcache_entry)));
-    sce = (((char *) statcache_table_data) + col_start);
+    col_start = row_idx + i;
+    sce = ((struct statcache_entry *) statcache_table_data) + col_start;
     if (sce->sce_ts > 0) {
       if (sce->sce_hash == hash) {
         /* Possible collision; check paths. */
@@ -882,7 +853,7 @@ static int statcache_table_get(int fd, const char *path, size_t pathlen,
   }
 
   if (expired_entries > 0) {
-    statcache_stats_incr_count(-expired_entries);
+    statcache_stats_decr_count(expired_entries);
     statcache_stats_incr_expires(expired_entries);
   }
 
@@ -901,7 +872,7 @@ static int statcache_table_get(int fd, const char *path, size_t pathlen,
 static int statcache_table_remove(int fd, const char *path, size_t pathlen,
     uint32_t hash) {
   register unsigned int i;
-  uint32_t row_idx, row_start;
+  uint32_t row_idx;
   int removed_entries = 0, res = -1;
 
   if (statcache_table == NULL) {
@@ -910,7 +881,6 @@ static int statcache_table_remove(int fd, const char *path, size_t pathlen,
   }
 
   row_idx = hash % statcache_nrows;
-  row_start = (row_idx * statcache_rowlen);
 
   /* Find the matching entry for this path. */
   for (i = 0; i < STATCACHE_COLS_PER_ROW; i++) {
@@ -919,8 +889,8 @@ static int statcache_table_remove(int fd, const char *path, size_t pathlen,
 
     pr_signals_handle();
 
-    col_start = (row_start + (i * sizeof(struct statcache_entry)));
-    sce = (((char *) statcache_table_data) + col_start);
+    col_start = row_idx + i;
+    sce = ((struct statcache_entry *) statcache_table_data) + col_start;
     if (sce->sce_ts > 0) {
       if (sce->sce_hash == hash) {
         /* Possible collision; check paths. */
@@ -955,7 +925,7 @@ static int statcache_table_remove(int fd, const char *path, size_t pathlen,
     }
 
     if (removed_entries > 0) {
-      statcache_stats_incr_count(-removed_entries);
+      statcache_stats_decr_count(removed_entries);
     }
 
     if (statcache_unlock_stats(fd) < 0) {
@@ -1786,7 +1756,7 @@ static int statcache_fsio_utimes(pr_fs_t *fs, const char *path,
 }
 
 static int statcache_fsio_futimes(pr_fh_t *fh, int fd, struct timeval *tvs) {
-#ifdef HAVE_FUTIMES
+#if defined(HAVE_FUTIMES)
   int res, xerrno;
 
   /* Check for an ENOSYS errno; if so, fallback to using fsio_utimes.  Some
@@ -1830,7 +1800,7 @@ static int statcache_fsio_futimes(pr_fh_t *fh, int fd, struct timeval *tvs) {
 #endif /* HAVE_FUTIMES */
 }
 
-#ifdef PR_USE_CTRLS
+#if defined(PR_USE_CTRLS)
 /* Controls handlers
  */
 
@@ -1921,7 +1891,7 @@ static int statcache_handle_statcache(pr_ctrls_t *ctrl, int reqargc,
       unsigned long row_start;
 
       pr_ctrls_add_response(ctrl, "  Row %u:", i + 1);
-      row_start = (i * statcache_rowlen);
+      row_start = i;
 
       for (j = 0; j < STATCACHE_COLS_PER_ROW; j++) {
         unsigned long col_start;
@@ -1929,8 +1899,8 @@ static int statcache_handle_statcache(pr_ctrls_t *ctrl, int reqargc,
 
         pr_signals_handle();
 
-        col_start = (row_start + (j * sizeof(struct statcache_entry)));
-        sce = (((char *) statcache_table_data) + col_start);
+        col_start = row_start + j;
+        sce = ((struct statcache_entry *) statcache_table_data) + col_start;
         if (sce->sce_ts > 0) {
           if (sce->sce_errno == 0) {
             pr_ctrls_add_response(ctrl, "    Col %u: '%s' (%u secs old)",
@@ -1995,7 +1965,7 @@ MODRET set_statcachecapacity(cmd_rec *cmd) {
 
 /* usage: StatCacheControlsACLs actions|all allow|deny user|group list */
 MODRET set_statcachectrlsacls(cmd_rec *cmd) {
-#ifdef PR_USE_CTRLS
+#if defined(PR_USE_CTRLS)
   char *bad_action = NULL, **actions = NULL;
 
   CHECK_ARGS(cmd, 4);
@@ -2168,7 +2138,7 @@ MODRET statcache_post_pass(cmd_rec *cmd) {
   return PR_DECLINED(cmd);
 }
 
-#ifdef MADV_WILLNEED
+#if defined(MADV_WILLNEED)
 MODRET statcache_pre_list(cmd_rec *cmd) {
   int res;
 
@@ -2283,7 +2253,7 @@ static void statcache_shutdown_ev(const void *event_data, void *user_data) {
 #if defined(PR_SHARED_MODULE)
 static void statcache_mod_unload_ev(const void *event_data, void *user_data) {
   if (strcmp("mod_statcache.c", (const char *) event_data) == 0) {
-#ifdef PR_USE_CTRLS
+#if defined(PR_USE_CTRLS)
     register unsigned int i;
 
     for (i = 0; statcache_acttab[i].act_action; i++) {
@@ -2409,7 +2379,7 @@ static void statcache_postparse_ev(const void *event_data, void *user_data) {
   statcache_table = table;
   statcache_tablesz = tablesz;
   statcache_table_stats = statcache_table;
-  statcache_table_data = (struct statcache_entry *) (statcache_table + (6 * sizeof(uint32_t)));
+  statcache_table_data = ((uint32_t *) statcache_table + 6);
 
   statcache_nrows = (statcache_capacity / STATCACHE_COLS_PER_ROW);
   statcache_rowlen = (STATCACHE_COLS_PER_ROW * sizeof(struct statcache_entry));
@@ -2418,7 +2388,7 @@ static void statcache_postparse_ev(const void *event_data, void *user_data) {
 }
 
 static void statcache_restart_ev(const void *event_data, void *user_data) {
-#ifdef PR_USE_CTRLS
+#if defined(PR_USE_CTRLS)
   register unsigned int i;
 #endif /* PR_USE_CTRLS */
 
@@ -2430,7 +2400,7 @@ static void statcache_restart_ev(const void *event_data, void *user_data) {
   statcache_pool = make_sub_pool(permanent_pool);
   pr_pool_tag(statcache_pool, MOD_STATCACHE_VERSION);
 
-#ifdef PR_USE_CTRLS
+#if defined(PR_USE_CTRLS)
   /* Register the control handlers */
   for (i = 0; statcache_acttab[i].act_action; i++) {
 
@@ -2455,7 +2425,7 @@ static void statcache_restart_ev(const void *event_data, void *user_data) {
  */
 
 static int statcache_init(void) {
-#ifdef PR_USE_CTRLS
+#if defined(PR_USE_CTRLS)
   register unsigned int i = 0;
 #endif /* PR_USE_CTRLS */
 
@@ -2463,7 +2433,7 @@ static int statcache_init(void) {
   statcache_pool = make_sub_pool(permanent_pool);
   pr_pool_tag(statcache_pool, MOD_STATCACHE_VERSION);
 
-#ifdef PR_USE_CTRLS
+#if defined(PR_USE_CTRLS)
   /* Register the control handlers */
   for (i = 0; statcache_acttab[i].act_action; i++) {
 
@@ -2509,8 +2479,7 @@ static int statcache_sess_init(void) {
   return 0;
 }
 
-#ifdef PR_USE_CTRLS
-
+#if defined(PR_USE_CTRLS)
 /* Controls table
  */
 static ctrls_acttab_t statcache_acttab[] = {
@@ -2536,7 +2505,7 @@ static conftable statcache_conftab[] = {
 static cmdtable statcache_cmdtab[] = {
   { POST_CMD,   C_PASS, G_NONE, statcache_post_pass,	FALSE,	FALSE },
 
-#ifdef MADV_WILLNEED
+#if defined(MADV_WILLNEED)
   /* If the necessary madvise(2) flag is present, register a PRE_CMD
    * handler for directory listings, to suggest to the kernel that
    * it read in some pages of the mmap()'d region.

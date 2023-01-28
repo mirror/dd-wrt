@@ -146,6 +146,7 @@
 ../contrib/mod_wrap2_sql.c
 ../include/ascii.h
 ../include/auth.h
+../include/base.h
 ../include/bindings.h
 ../include/buildstamp.h
 ../include/ccan-json.h
@@ -177,7 +178,6 @@
 ../include/jot.h
 ../include/json.h
 ../include/lastlog.h
-../include/libsupp.h
 ../include/log.h
 ../include/logfmt.h
 ../include/memcache.h

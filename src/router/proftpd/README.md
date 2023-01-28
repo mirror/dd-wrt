@@ -2,12 +2,13 @@
 
 ## Status
 
-[![TravisCI Build Status](https://travis-ci.org/proftpd/proftpd.svg?branch=master)](https://travis-ci.org/proftpd/proftpd)
+[![GitHub Actions CI Status](https://github.com/proftpd/proftpd/actions/workflows/ci.yml/badge.svg?branch=master)](https://github.com/proftpd/proftpd/actions/workflows/ci.yml)
+[![TravisCI Build Status](https://travis-ci.com/proftpd/proftpd.svg?branch=master)](https://travis-ci.com/proftpd/proftpd)
 [![CirrusCI Build Status](https://api.cirrus-ci.com/github/proftpd/proftpd.svg?branch=master)](https://cirrus-ci.com/github/proftpd/proftpd)
-[![Coverage Status](https://coveralls.io/repos/proftpd/proftpd/badge.svg?branch=master&service=github)](https://coveralls.io/github/proftpd/proftpd?branch=master)
+[![Coverage Status](https://coveralls.io/repos/github/proftpd/proftpd/badge.svg?branch=master)](https://coveralls.io/github/proftpd/proftpd?branch=master)
 [![Coverity Scan Status](https://scan.coverity.com/projects/198/badge.svg)](https://scan.coverity.com/projects/198)
 [![C/C++ Language Grade](https://img.shields.io/lgtm/grade/cpp/g/proftpd/proftpd.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/proftpd/proftpd/context:cpp)
-[![Release](https://img.shields.io/badge/release-1.3.7b-brightgreen)](https://github.com/proftpd/proftpd/releases/latest)
+[![Release](https://img.shields.io/badge/release-1.3.8-brightgreen)](https://github.com/proftpd/proftpd/releases/latest)
 [![License](https://img.shields.io/badge/license-GPL-brightgreen.svg)](https://img.shields.io/badge/license-GPL-brightgreen.svg)
 
 ## Introduction

@@ -69,6 +69,7 @@ sub authaliasonly_on {
 
     AuthUserFile => $setup->{auth_user_file},
     AuthGroupFile => $setup->{auth_group_file},
+    AuthOrder => 'mod_auth_file.c',
 
     UserAlias => "$alias $setup->{user}",
     AuthAliasOnly => 'on',
@@ -181,6 +182,7 @@ sub authaliasonly_off_anon_bug2070 {
 
     AuthUserFile => $auth_user_file,
     AuthGroupFile => $auth_group_file,
+    AuthOrder => 'mod_auth_file.c',
 
     IfModules => {
       'mod_delay.c' => {
@@ -321,6 +323,7 @@ sub authaliasonly_on_anon_bug3501 {
 
     AuthUserFile => $auth_user_file,
     AuthGroupFile => $auth_group_file,
+    AuthOrder => 'mod_auth_file.c',
 
     Anonymous => {
       $home_dir => {
@@ -461,6 +464,7 @@ sub authaliasonly_on_system_bug3501 {
 
     AuthUserFile => $auth_user_file,
     AuthGroupFile => $auth_group_file,
+    AuthOrder => 'mod_auth_file.c',
 
     Anonymous => {
       $home_dir => {
@@ -564,6 +568,8 @@ sub authaliasonly_on_anon_bug4255 {
 
     AuthUserFile => $setup->{auth_user_file},
     AuthGroupFile => $setup->{auth_group_file},
+    AuthOrder => 'mod_auth_file.c',
+
     AuthAliasOnly => 'on',
 
     Anonymous => {

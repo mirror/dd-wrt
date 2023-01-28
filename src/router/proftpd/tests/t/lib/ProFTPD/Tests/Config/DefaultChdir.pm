@@ -117,6 +117,7 @@ sub defaultchdir_ok {
 
     AuthUserFile => $auth_user_file,
     AuthGroupFile => $auth_group_file,
+    AuthOrder => 'mod_auth_file.c',
 
     DefaultChdir => '~/subdir',
 
@@ -240,6 +241,7 @@ sub defaultchdir_var_u {
 
     AuthUserFile => $auth_user_file,
     AuthGroupFile => $auth_group_file,
+    AuthOrder => 'mod_auth_file.c',
 
     DefaultChdir => '~/%u',
 
@@ -363,6 +365,7 @@ sub defaultchdir_with_defaultroot {
 
     AuthUserFile => $auth_user_file,
     AuthGroupFile => $auth_group_file,
+    AuthOrder => 'mod_auth_file.c',
 
     DefaultChdir => '/subdir',
     DefaultRoot => '~',
@@ -487,6 +490,7 @@ sub defaultchdir_with_defaultroot2 {
 
     AuthUserFile => $auth_user_file,
     AuthGroupFile => $auth_group_file,
+    AuthOrder => 'mod_auth_file.c',
 
     DefaultChdir => '~',
     DefaultRoot => $home_dir,
@@ -613,6 +617,7 @@ sub defaultchdir_one_env_var_bug3502 {
 
     AuthUserFile => $auth_user_file,
     AuthGroupFile => $auth_group_file,
+    AuthOrder => 'mod_auth_file.c',
 
     DefaultChdir => '~/%{env:PROFTPD_USER}',
 
@@ -739,6 +744,7 @@ sub defaultchdir_multi_env_var_bug3502 {
 
     AuthUserFile => $auth_user_file,
     AuthGroupFile => $auth_group_file,
+    AuthOrder => 'mod_auth_file.c',
 
     DefaultChdir => '~/%{env:PROFTPD_USER}/%{env:PROFTPD_USER_HOME}',
 
@@ -862,6 +868,7 @@ sub defaultchdir_empty_env_var_bug3502 {
 
     AuthUserFile => $auth_user_file,
     AuthGroupFile => $auth_group_file,
+    AuthOrder => 'mod_auth_file.c',
 
     DefaultChdir => '~/%{env:PROFTPD_USER}',
 
@@ -988,6 +995,7 @@ sub defaultchdir_user_mux_one_level {
 
     AuthUserFile => $auth_user_file,
     AuthGroupFile => $auth_group_file,
+    AuthOrder => 'mod_auth_file.c',
 
     DefaultChdir => "$home_root/%u[0]/%u/subdir",
 
@@ -1114,6 +1122,7 @@ sub defaultchdir_user_mux_three_levels {
 
     AuthUserFile => $auth_user_file,
     AuthGroupFile => $auth_group_file,
+    AuthOrder => 'mod_auth_file.c',
 
     DefaultChdir => "$home_root/%u[0]/%u[0]%u[1]/%u[0]%u[1]%u[2]/%u/subdir",
 

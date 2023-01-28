@@ -23,7 +23,7 @@ Makefile: Makefile.in ../config.status
 src: $(OBJS) $(FTPDCTL_OBJS)
 
 clean:
-	$(RM) *.o
+	$(RM) *.o *.gcda *.gcno
 
 depend:
 	$(MAKEDEPEND) $(CPPFLAGS) $(top_srcdir)/src/*.c 2>/dev/null
@@ -31,3 +31,6 @@ depend:
 
 distclean: clean
 	-$(RM) *.gcda *.gcno
+
+clang-tidy:
+	clang-tidy $(SRCS) -- $(CPPFLAGS) $(CFLAGS)

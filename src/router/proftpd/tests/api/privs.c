@@ -60,12 +60,12 @@ START_TEST (privs_set_nonroot_daemon_test) {
   int nonroot, res;
 
   res = set_nonroot_daemon(-1);
-  fail_unless(res < 0, "Failed to handle non-Boolean parameter");
-  fail_unless(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
+  ck_assert_msg(res < 0, "Failed to handle non-Boolean parameter");
+  ck_assert_msg(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
     strerror(errno), errno);
 
   nonroot = set_nonroot_daemon(TRUE);
-  fail_if(nonroot != FALSE && nonroot != TRUE,  "Expected true/false, got %d",
+  ck_assert_msg(nonroot == FALSE || nonroot == TRUE,  "Expected true/false, got %d",
     nonroot);
   set_nonroot_daemon(nonroot);
 }
@@ -76,19 +76,19 @@ START_TEST (privs_setup_test) {
 
   if (privs_uid != 0) {
     res = pr_privs_setup(privs_uid, privs_gid, __FILE__, __LINE__);
-    fail_unless(res == 0, "Failed to setup privs: %s", strerror(errno));
-    fail_unless(session.uid == privs_uid, "Expected %lu, got %lu",
+    ck_assert_msg(res == 0, "Failed to setup privs: %s", strerror(errno));
+    ck_assert_msg(session.uid == privs_uid, "Expected %lu, got %lu",
       (unsigned long) privs_uid, (unsigned long) session.uid);
-    fail_unless(session.gid == privs_gid, "Expected %lu, got %lu",
+    ck_assert_msg(session.gid == privs_gid, "Expected %lu, got %lu",
       (unsigned long) privs_gid, (unsigned long) session.gid);
 
     nonroot = set_nonroot_daemon(FALSE);
 
     res = pr_privs_setup(privs_uid, privs_gid, __FILE__, __LINE__);
-    fail_unless(res == 0, "Failed to setup privs: %s", strerror(errno));
-    fail_unless(session.uid == privs_uid, "Expected %lu, got %lu",
+    ck_assert_msg(res == 0, "Failed to setup privs: %s", strerror(errno));
+    ck_assert_msg(session.uid == privs_uid, "Expected %lu, got %lu",
       (unsigned long) privs_uid, (unsigned long) session.uid);
-    fail_unless(session.gid == privs_gid, "Expected %lu, got %lu",
+    ck_assert_msg(session.gid == privs_gid, "Expected %lu, got %lu",
       (unsigned long) privs_gid, (unsigned long) session.gid);
 
     set_nonroot_daemon(nonroot);
@@ -101,12 +101,12 @@ START_TEST (privs_root_test) {
 
   if (privs_uid != 0) {
     res = pr_privs_root(__FILE__, __LINE__);
-    fail_unless(res == 0, "Failed to set root privs: %s", strerror(errno));
+    ck_assert_msg(res == 0, "Failed to set root privs: %s", strerror(errno));
 
     nonroot = set_nonroot_daemon(FALSE);
 
     res = pr_privs_root(__FILE__, __LINE__);
-    fail_unless(res == 0, "Failed to set root privs: %s", strerror(errno));
+    ck_assert_msg(res == 0, "Failed to set root privs: %s", strerror(errno));
 
     set_nonroot_daemon(nonroot);
   }
@@ -118,12 +118,12 @@ START_TEST (privs_user_test) {
 
   if (privs_uid != 0) {
     res = pr_privs_user(__FILE__, __LINE__);
-    fail_unless(res == 0, "Failed to set user privs: %s", strerror(errno));
+    ck_assert_msg(res == 0, "Failed to set user privs: %s", strerror(errno));
 
     nonroot = set_nonroot_daemon(FALSE);
 
     res = pr_privs_user(__FILE__, __LINE__);
-    fail_unless(res == 0, "Failed to set user privs: %s", strerror(errno));
+    ck_assert_msg(res == 0, "Failed to set user privs: %s", strerror(errno));
 
     set_nonroot_daemon(nonroot);
   }
@@ -135,12 +135,12 @@ START_TEST (privs_relinquish_test) {
 
   if (privs_uid != 0) {
     res = pr_privs_relinquish(__FILE__, __LINE__);
-    fail_unless(res == 0, "Failed to relinquish privs: %s", strerror(errno));
+    ck_assert_msg(res == 0, "Failed to relinquish privs: %s", strerror(errno));
 
     nonroot = set_nonroot_daemon(FALSE);
 
     res = pr_privs_relinquish(__FILE__, __LINE__);
-    fail_unless(res == 0, "Failed to relinquish privs: %s", strerror(errno));
+    ck_assert_msg(res == 0, "Failed to relinquish privs: %s", strerror(errno));
 
     set_nonroot_daemon(nonroot);
   }
@@ -152,12 +152,12 @@ START_TEST (privs_revoke_test) {
 
   if (privs_uid != 0) {
     res = pr_privs_revoke(__FILE__, __LINE__);
-    fail_unless(res == 0, "Failed to revoke privs: %s", strerror(errno));
+    ck_assert_msg(res == 0, "Failed to revoke privs: %s", strerror(errno));
 
     nonroot = set_nonroot_daemon(FALSE);
 
     res = pr_privs_revoke(__FILE__, __LINE__);
-    fail_unless(res == 0, "Failed to revoke privs: %s", strerror(errno));
+    ck_assert_msg(res == 0, "Failed to revoke privs: %s", strerror(errno));
 
     set_nonroot_daemon(nonroot);
   }

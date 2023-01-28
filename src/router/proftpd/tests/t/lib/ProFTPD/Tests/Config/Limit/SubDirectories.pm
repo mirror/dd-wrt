@@ -84,6 +84,7 @@ sub subdirs_mkd_denied_pwd_allowed_bug3077 {
 
     AuthUserFile => $auth_user_file,
     AuthGroupFile => $auth_group_file,
+    AuthOrder => 'mod_auth_file.c',
 
     IfModules => {
       'mod_delay.c' => {
@@ -241,6 +242,7 @@ sub subdirs_mkd_denied_limit_xmkd_bug3077 {
 
     AuthUserFile => $auth_user_file,
     AuthGroupFile => $auth_group_file,
+    AuthOrder => 'mod_auth_file.c',
 
     IfModules => {
       'mod_delay.c' => {
@@ -389,6 +391,7 @@ sub subdirs_xmkd_allowed_limit_mkd_bug3077 {
 
     AuthUserFile => $auth_user_file,
     AuthGroupFile => $auth_group_file,
+    AuthOrder => 'mod_auth_file.c',
 
     IfModules => {
       'mod_delay.c' => {

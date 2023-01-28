@@ -2,7 +2,7 @@
  * ProFTPD - FTP server daemon
  * Copyright (c) 1997, 1998 Public Flood Software
  * Copyright (c) 1999, 2000 MacGyver aka Habeeb J. Dihu <macgyver@tos.net>
- * Copyright (c) 2001-2020 The ProFTPD Project team
+ * Copyright (c) 2001-2022 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -206,7 +206,7 @@ static void parse_logformat(const char *directive, char *fmt_name,
 /* Syntax: LogFormat name "format string" */
 MODRET set_logformat(cmd_rec *cmd) {
   CHECK_ARGS(cmd, 2);
-  CHECK_CONF(cmd, CONF_ROOT);
+  CHECK_CONF(cmd, CONF_ROOT|CONF_GLOBAL);
 
   if (strlen(cmd->argv[1]) == 0) {
     CONF_ERROR(cmd, "missing required name parameter");
@@ -405,7 +405,7 @@ MODRET set_serverlog(cmd_rec *cmd) {
 /* Syntax: SystemLog <filename> */
 MODRET set_systemlog(cmd_rec *cmd) {
   CHECK_ARGS(cmd, 1);
-  CHECK_CONF(cmd, CONF_ROOT);
+  CHECK_CONF(cmd, CONF_ROOT|CONF_GLOBAL);
 
   (void) add_config_param_str(cmd->argv[0], 1, cmd->argv[1]);
   return PR_HANDLED(cmd);
@@ -855,7 +855,7 @@ static void log_postparse_ev(const void *event_data, void *user_data) {
     path = c->argv[0];
     log_closesyslog();
 
-    if (strncasecmp(path, "none", 5) != 0) {
+    if (strcasecmp(path, "none") != 0) {
       int res, xerrno;
 
       path = dir_canonical_path(main_server->pool, path);
@@ -910,7 +910,6 @@ static void log_restart_ev(const void *event_data, void *user_data) {
   pr_pool_tag(log_pool, "mod_log pool");
 
   parse_logformat(NULL, "", "%h %l %u %t \"%r\" %s %b");
-  return;
 }
 
 static void log_sess_reinit_ev(const void *event_data, void *user_data) {
@@ -1226,7 +1225,7 @@ static int log_sess_init(void) {
       path = c->argv[0];
       log_closesyslog();
 
-      if (strncasecmp(path, "none", 5) != 0) {
+      if (strcasecmp(path, "none") != 0) {
         int res, xerrno;
 
         path = dir_canonical_path(main_server->pool, path);

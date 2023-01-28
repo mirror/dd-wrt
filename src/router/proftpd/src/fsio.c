@@ -2,7 +2,7 @@
  * ProFTPD - FTP server daemon
  * Copyright (c) 1997, 1998 Public Flood Software
  * Copyright (c) 1999, 2000 MacGyver aka Habeeb J. Dihu <macgyver@tos.net>
- * Copyright (c) 2001-2020 The ProFTPD Project
+ * Copyright (c) 2001-2022 The ProFTPD Project
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -166,6 +166,8 @@ static int chroot_allow_path(const char *path) {
 /* Builtin/default "progress" callback for long-running file copies. */
 static void copy_progress_cb(int nwritten) {
   int res;
+
+  (void) nwritten;
 
   copy_iter_count++;
   if ((copy_iter_count % COPY_PROGRESS_NTH_ITER) != 0) {
@@ -618,7 +620,8 @@ static array_header *parse_xattr_namelist(pool *p, char *namelist, size_t sz) {
 
     pr_signals_handle();
 
-    for (ptr2 = ptr; *ptr2; ptr2++);
+    for (ptr2 = ptr; *ptr2; ptr2++) {
+    }
     len = ptr2 - ptr;
     *((char **) push_array(names)) = pstrndup(p, ptr, len);
 
@@ -1176,11 +1179,10 @@ static int fs_cmp(const void *a, const void *b) {
     }
 
     return 1;
+  }
 
-  } else {
-    if (b == NULL) {
-      return -1;
-    }
+  if (b == NULL) {
+    return -1;
   }
 
   fsa = *((pr_fs_t **) a);
@@ -1413,7 +1415,6 @@ static int cache_stat(pr_fs_t *fs, const char *path, struct stat *st,
 
   sc = fs_statcache_get(cache_tab, cache_set, cleaned_path, path_len, now);
   if (sc != NULL) {
-
     /* Update the given struct stat pointer with the cached info */
     memcpy(st, &(sc->sc_stat), sizeof(struct stat));
 
@@ -1530,18 +1531,27 @@ static pr_fs_t *lookup_file_fs(const char *path, char **deref, int op) {
 
   /* Determine which function to use, stat() or lstat(). */
   if (op == FSIO_FILE_STAT) {
-    while (fs && fs->fs_next && !fs->stat) {
+    while (fs != NULL &&
+           fs->fs_next != NULL &&
+           fs->stat == NULL) {
       fs = fs->fs_next;
     }
 
     mystat = fs->stat;
 
   } else {
-    while (fs && fs->fs_next && !fs->lstat) {
+    while (fs != NULL &&
+           fs->fs_next != NULL &&
+           fs->lstat == NULL) {
       fs = fs->fs_next;
     }
 
     mystat = fs->lstat;
+  }
+
+  if (mystat == NULL) {
+    errno = ENOSYS;
+    return NULL;
   }
 
   res = mystat(fs, path, &st);
@@ -2198,7 +2208,6 @@ pr_fs_t *pr_register_fs(pool *p, const char *name, const char *path) {
         name, path);
 
       destroy_pool(fs->fs_pool);
-      fs->fs_pool = NULL;
 
       errno = xerrno;
       return NULL;
@@ -2441,7 +2450,6 @@ int pr_unregister_fs(const char *path) {
   fs = pr_remove_fs(path);
   if (fs != NULL) {
     destroy_pool(fs->fs_pool);
-    fs->fs_pool = NULL;
     return 0;
   }
 
@@ -2513,8 +2521,9 @@ pr_fs_t *pr_get_fs(const char *path, int *exact) {
 
       chk_fs_map = FALSE;
       return fs;
+    }
 
-    } else if (res > 0) {
+    if (res > 0) {
       if (exact != NULL) {
         *exact = FALSE;
       }
@@ -2638,7 +2647,6 @@ int pr_fs_dircat(char *buf, int buflen, const char *dir1, const char *dir2) {
   buflen -= dir1len;
 
   if (buflen > 0 &&
-      dir1len >= 1 &&
       *(_dir1 + (dir1len-1)) != '/') {
     sstrcat(ptr, "/", buflen);
     ptr += 1;
@@ -3076,7 +3084,8 @@ int pr_fs_resolve_path(const char *path, char *buf, size_t buflen, int op) {
       sstrncpy(namebuf, workpath, sizeof(namebuf));
 
       if (*namebuf) {
-        for (last = namebuf; *last; last++);
+        for (last = namebuf; *last; last++) {
+        }
         if (*--last != '/') {
           sstrcat(namebuf, "/", sizeof(namebuf)-1);
         }
@@ -3090,7 +3099,6 @@ int pr_fs_resolve_path(const char *path, char *buf, size_t buflen, int op) {
       where = ++ptr;
 
       fs = lookup_dir_fs(namebuf, op);
-
       if (fs_cache_lstat(fs, namebuf, &sbuf) == -1) {
         errno = ENOENT;
         return -1;
@@ -3268,7 +3276,8 @@ int pr_fs_clean_path2(const char *path, char *buf, size_t buflen, int flags) {
       sstrncpy(namebuf, workpath, sizeof(namebuf));
 
       if (*namebuf) {
-        for (last = namebuf; *last; last++);
+        for (last = namebuf; *last; last++) {
+        }
         if (*--last != '/') {
           sstrcat(namebuf, "/", sizeof(namebuf)-1);
         }
@@ -3316,7 +3325,7 @@ int pr_fs_use_encoding(int bool) {
 }
 
 char *pr_fs_decode_path2(pool *p, const char *path, int flags) {
-#ifdef PR_USE_NLS
+#if defined(PR_USE_NLS)
   size_t outlen;
   char *res;
 
@@ -3326,7 +3335,7 @@ char *pr_fs_decode_path2(pool *p, const char *path, int flags) {
     return NULL;
   }
 
-  if (!use_encoding) {
+  if (use_encoding == FALSE) {
     return (char *) path;
   }
 
@@ -3344,11 +3353,11 @@ char *pr_fs_decode_path2(pool *p, const char *path, int flags) {
       size_t pathlen, raw_pathlen;
 
       pathlen = strlen(path);
-      raw_pathlen = (pathlen * 5) + 1;
+      raw_pathlen = (pathlen * 8) + 1;
       raw_path = pcalloc(p, raw_pathlen + 1);
 
       for (i = 0; i < pathlen; i++) {
-        pr_snprintf((char *) (raw_path + (i * 5)), (raw_pathlen - 1) - (i * 5),
+        pr_snprintf((char *) (raw_path + (i * 8)), (raw_pathlen - 1) - (i * 8),
           "0x%02x ", (unsigned char) path[i]);
       }
 
@@ -3419,11 +3428,11 @@ char *pr_fs_encode_path(pool *p, const char *path) {
       size_t pathlen, raw_pathlen;
       
       pathlen = strlen(path);
-      raw_pathlen = (pathlen * 5) + 1;
+      raw_pathlen = (pathlen * 8) + 1;
       raw_path = pcalloc(p, raw_pathlen + 1);
 
       for (i = 0; i < pathlen; i++) {
-        pr_snprintf((char *) (raw_path + (i * 5)), (raw_pathlen - 1) - (i * 5),
+        pr_snprintf((char *) (raw_path + (i * 8)), (raw_pathlen - 1) - (i * 8),
           "0x%02x ", (unsigned char) path[i]);
       }
 
@@ -3489,11 +3498,13 @@ array_header *pr_fs_split_path(pool *p, const char *path) {
     return NULL;
   }
 
-  buflen = strlen(buf);
+  pr_trace_msg(trace_channel, 18, "splitting cleaned path '%s' (was '%s')",
+    buf, path);
 
   /* Special-case handling of just "/", since pr_str_text_to_array() will
    * "eat" that delimiter.
    */
+  buflen = strlen(buf);
   if (buflen == 1 &&
       buf[0] == '/') {
     pr_trace_msg(trace_channel, 18, "split path '%s' into 1 component", path);
@@ -3562,6 +3573,7 @@ char *pr_fs_join_path(pool *p, array_header *components, size_t count) {
   }
 
   path = ((char **) components->elts)[0];
+  path = pstrdup(p, path);
 
   for (i = 1; i < count; i++) {
     char *elt;
@@ -3635,7 +3647,10 @@ void pr_fs_virtual_path(const char *path, char *buf, size_t buflen) {
   /* main loop */
   while (fini--) {
     where = curpath;
+
     while (*where != '\0') {
+      pr_signals_handle();
+
       if (strncmp(where, ".", 2) == 0) {
         where++;
         continue;
@@ -3693,7 +3708,8 @@ void pr_fs_virtual_path(const char *path, char *buf, size_t buflen) {
       sstrncpy(namebuf, workpath, sizeof(namebuf));
 
       if (*namebuf) {
-        for (last = namebuf; *last; last++);
+        for (last = namebuf; *last; last++) {
+        }
         if (*--last != '/') {
           sstrcat(namebuf, "/", sizeof(namebuf)-1);
         }
@@ -3923,7 +3939,6 @@ static pr_fs_t *find_opendir(void *dir, int closing) {
       }
 
       destroy_pool(fsod->pool);
-      fsod->pool = NULL;
     }
   }
 
@@ -4971,7 +4986,6 @@ pr_fh_t *pr_fsio_open_canon(const char *name, int flags) {
     int xerrno = errno;
 
     destroy_pool(fh->fh_pool);
-    fh->fh_pool = NULL;
 
     errno = xerrno;
     return NULL;
@@ -5032,7 +5046,6 @@ pr_fh_t *pr_fsio_open(const char *name, int flags) {
     int xerrno = errno;
 
     destroy_pool(fh->fh_pool);
-    fh->fh_pool = NULL;
 
     errno = xerrno;
     return NULL;
@@ -5112,7 +5125,6 @@ int pr_fsio_close(pr_fh_t *fh) {
 
   if (fh->fh_pool != NULL) {
     destroy_pool(fh->fh_pool);
-    fh->fh_pool = NULL;
   }
 
   errno = xerrno;
@@ -6426,7 +6438,7 @@ int pr_fsio_chroot(const char *path) {
 
         /* Need to do this for any stacked FSs as well. */
         next = tmpfs->fs_next;
-        while (next) {
+        while (next != NULL) {
           pr_signals_handle();
 
           memmove(next->fs_path, next->fs_path + strlen(path),
@@ -6640,7 +6652,8 @@ char *pr_fsio_getline(char *buf, size_t buflen, pr_fh_t *fh,
            * Advance past any leading whitespace, to see if the first
            * non-whitespace character is the comment character.
            */
-          for (bufp = buf; *bufp && PR_ISSPACE(*bufp); bufp++);
+          for (bufp = buf; *bufp && PR_ISSPACE(*bufp); bufp++) {
+          }
 
           if (*bufp == '#') {
             continue;
@@ -6716,7 +6729,7 @@ void pr_fs_close_extra_fds(void) {
   for (i = 3; i < nfiles; i++) {
     /* This is a potentially long-running loop, so handle signals. */
     pr_signals_handle();
-    (void) close(i);
+    (void) close((int) i);
   }
 }
 
@@ -7123,8 +7136,6 @@ void pr_fs_fadvise(int fd, off_t offset, off_t len, int advice) {
       strerror(errno));
   }
 #endif
-
-  return;
 }
 
 int pr_fs_have_access(struct stat *st, int mode, uid_t uid, gid_t gid,
@@ -7330,8 +7341,6 @@ void pr_resolve_fs_map(void) {
 
   /* Resort the map */
   qsort(fs_map->elts, fs_map->nelts, sizeof(pr_fs_t *), fs_cmp);
-
-  return;
 }
 
 int init_fs(void) {

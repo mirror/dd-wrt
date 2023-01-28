@@ -96,6 +96,7 @@ sub createhome_ok {
 
     AuthUserFile => $auth_user_file,
     AuthGroupFile => $auth_group_file,
+    AuthOrder => 'mod_auth_file.c',
 
     CreateHome => 'on',
 
@@ -200,6 +201,7 @@ sub createhome_dirmode_ok {
 
     AuthUserFile => $auth_user_file,
     AuthGroupFile => $auth_group_file,
+    AuthOrder => 'mod_auth_file.c',
 
     CreateHome => 'on 711 dirmode 755',
 
@@ -319,6 +321,7 @@ sub createhome_explicit_parent_owner_ok {
 
     AuthUserFile => $auth_user_file,
     AuthGroupFile => $auth_group_file,
+    AuthOrder => 'mod_auth_file.c',
 
     CreateHome => "on 711 uid $explicit_guid gid $explicit_guid",
 
@@ -423,6 +426,7 @@ sub createhome_user_parent_owner_ok {
 
     AuthUserFile => $auth_user_file,
     AuthGroupFile => $auth_group_file,
+    AuthOrder => 'mod_auth_file.c',
 
     CreateHome => "on 711 uid ~ gid ~",
 
@@ -559,6 +563,7 @@ sub createhome_skel_ok {
 
     AuthUserFile => $auth_user_file,
     AuthGroupFile => $auth_group_file,
+    AuthOrder => 'mod_auth_file.c',
 
     CreateHome => "on skel $skel",
 
@@ -665,6 +670,7 @@ sub createhome_homegid_bug3503 {
 
     AuthUserFile => $auth_user_file,
     AuthGroupFile => $auth_group_file,
+    AuthOrder => 'mod_auth_file.c',
 
     CreateHome => "on 711 homegid $home_gid",
 
@@ -777,6 +783,7 @@ sub createhome_dirmode_uid_gid_ok {
 
     AuthUserFile => $auth_user_file,
     AuthGroupFile => $auth_group_file,
+    AuthOrder => 'mod_auth_file.c',
 
     CreateHome => "on 700 dirmode 700 uid ~ gid ~",
 
@@ -899,6 +906,7 @@ sub createhome_dirmode_uid_gid_norootprivs_bug3813 {
 
     AuthUserFile => $auth_user_file,
     AuthGroupFile => $auth_group_file,
+    AuthOrder => 'mod_auth_file.c',
 
     CreateHome => "on 700 dirmode 700 uid ~ gid ~ NoRootPrivs",
 

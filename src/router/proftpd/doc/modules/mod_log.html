@@ -191,7 +191,7 @@ See also: <a href="#AllowLogSymlinks"><code>AllowLogSymlinks</code></a>,
 <h3><a name="LogFormat">LogFormat</a></h3>
 <strong>Syntax:</strong> LogFormat <em>format-name format-string</em><br>
 <strong>Default:</strong> LogFormat default "%h %l %u %t \"%r\" %s %b"<br>
-<strong>Context:</strong> server config<br>
+<strong>Context:</strong> server config, <code>&lt;Global&gt;</code><br>
 <strong>Module:</strong> mod_log<br>
 <strong>Compatibility:</strong> 1.1.6p11 and later
 
@@ -560,12 +560,12 @@ this can be used to override a global <code>ServerLog</code> setting.
 <h3><a name="SystemLog">SystemLog</a></h3>
 <strong>Syntax:</strong> SystemLog <em>path</em>|"none"<br>
 <strong>Default:</strong> None<br>
-<strong>Context:</strong> server config<br>
+<strong>Context:</strong> server config, <code>&lt;Global&gt;</code><br>
 <strong>Module:</strong> mod_log<br>
 <strong>Compatibility:</strong> 1.1.6p11 and later
 
 <p>
-The <code>SystemLog</code> directive disables <code>proftpd</code>'s use of the
+The <code>SystemLog</code> directive disables ProFTPD's use of the
 <code>syslog</code> mechanism and instead redirects all logging output to the
 specified <em>path</em>.  The <em>path</em> should contain an absolute path,
 and should not be to a file in a nonexistent directory, in a world-writable
@@ -682,7 +682,7 @@ your log would have a line like:
 <p>
 <hr>
 <font size=2><b><i>
-&copy; Copyright 2002-2020 The ProFTPD Project<br>
+&copy; Copyright 2002-2022 The ProFTPD Project<br>
  All Rights Reserved<br>
 </i></b></font>
 

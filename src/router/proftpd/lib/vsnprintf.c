@@ -20,8 +20,8 @@
  */
 #define __PROFTPD_SUPPORT_LIBRARY
 
-#include <conf.h>
-#include <libsupp.h>
+#include "conf.h"
+#include "base.h"
 
 #include <ctype.h>
 

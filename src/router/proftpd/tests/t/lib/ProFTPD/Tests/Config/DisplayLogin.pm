@@ -87,6 +87,8 @@ sub displaylogin_abs_path {
 
     AuthUserFile => $auth_user_file,
     AuthGroupFile => $auth_group_file,
+    AuthOrder => 'mod_auth_file.c',
+
     DisplayLogin => $login_file,
 
     IfModules => {
@@ -219,6 +221,8 @@ sub displaylogin_rel_path {
 
     AuthUserFile => $auth_user_file,
     AuthGroupFile => $auth_group_file,
+    AuthOrder => 'mod_auth_file.c',
+
     DisplayLogin => $login_file,
 
     IfModules => {
@@ -335,6 +339,7 @@ sub displaylogin_absent {
 
     AuthUserFile => $auth_user_file,
     AuthGroupFile => $auth_group_file,
+    AuthOrder => 'mod_auth_file.c',
 
     IfModules => {
       'mod_delay.c' => {
@@ -449,6 +454,8 @@ sub displaylogin_multiline {
 
     AuthUserFile => $auth_user_file,
     AuthGroupFile => $auth_group_file,
+    AuthOrder => 'mod_auth_file.c',
+
     DisplayLogin => $login_file,
 
     IfModules => {

@@ -427,7 +427,7 @@ The <code>TimeoutNoTransfer</code> directive configures the maximum number of
 <em>seconds</em> a client is allowed to spend connected, after authentication,
 without issuing a data transfer command which results in a data connection
 (<i>i.e.</i> sending/receiving a file, or requesting a directory listing).
-The maximum allowed <em>seconds</em> value is 65535 (108 minutes).
+The maximum allowed <em>seconds</em> value is 65535 (18 hours).
 
 <p>
 See also: <a href="mod_core.html#TimeoutIdle"><code>TimeoutIdle</code></a>,
@@ -449,7 +449,7 @@ The <code>TimeoutStalled</code> directive sets the maximum number of
 can exist but have no actual data transferred (<i>i.e.</i> "stalled").  If the
 <em>seconds</em> parameter is set to zero, data transfers are allowed to stall
 indefinitely; <b>note</b> that this is <b>not</b> a recommended configuration.
-The maximum allowed <em>seconds</em> value is 65535 (108 minutes).
+The maximum allowed <em>seconds</em> value is 65535 (18 hours).
 
 <p>
 <hr>
@@ -467,9 +467,19 @@ transfer behaviors.
 <p>
 The currently implemented options are:
 <ul>
+  <li><code>AllowSymlinkUpload</code><br>
+    <p>
+    This option allows clients to upload files which are actually symlinks
+    on the server, rather than returning a "Not a regular file" error.
+
+    <p>
+    <b>Note</b> that this option first appeared in
+    <code>proftpd-1.3.8rc3</code>.
+  </li>
+
   <li><code>IgnoreASCII</code><br>
     <p>
-    This option causes proftpd to silently ignore any client requests to
+    This option causes ProFTPD to silently ignore any client requests to
     perform ASCII translations via the <code>TYPE</code> command.  That is,
     FTP clients can request ASCII translations, and proftpd will respond
     as the client expects, but will <b>not</b> actually perform the translation
@@ -479,6 +489,7 @@ The currently implemented options are:
     <p>
     <b>Note</b> that this option first appeared in 
     <code>proftpd-1.3.6rc1</code>.
+  </li>
 </ul>
 
 <p>
@@ -568,7 +579,7 @@ only, and should be removed from any production configuration.
 <p>
 <hr>
 <font size=2><b><i>
-&copy; Copyright 2000-2017 The ProFTPD Project<br>
+&copy; Copyright 2000-2022 The ProFTPD Project<br>
  All Rights Reserved<br>
 </i></b></font>
 <hr>

@@ -1,6 +1,6 @@
 #!/usr/bin/env perl
 # ---------------------------------------------------------------------------
-# Copyright (C) 2000-2020 TJ Saunders <tj@castaglia.org>
+# Copyright (C) 2000-2021 TJ Saunders <tj@castaglia.org>
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -83,13 +83,11 @@ version() if (defined($opts{'version'}));
 
 # Per Bug#4171, check if we are on a Linux system, AND it has the
 # /proc/sys/crypto/fips_enabled file, AND that entry says that FIPS mode is
-# enabled.  If these conditions are met, then neither DES or MD5 will work.
+# enabled.  If these conditions are met, then neither DES nor MD5 will work.
 #
 # If either --des or --md5 are specified, OR if no hash is specified, we
 # need to check.
-if ((defined($opts{'des'}) || defined($opts{'md5'})) ||
-     !defined($opts{'des'}) && !defined($opts{'md5'}) &&
-     !defined($opts{'sha256'}) && !defined($opts{'sha512'})) {
+if ((defined($opts{'des'}) || defined($opts{'md5'}))) {
   if (open(my $fh, "< /proc/sys/crypto/fips_enabled")) {
     my $fips_enabled = <$fh>;
     close($fh);
@@ -473,14 +471,14 @@ sub get_salt {
     # DES salt
     $salt = join '', ('.', '/', 0..9, 'A'..'Z', 'a'..'z')[rand 64, rand 64];
 
-  } elsif (defined($opts{'sha256'})) {
-    # SHA-256 salt (16 characters)
+  } elsif (defined($opts{'md5'})) {
+    # MD5 salt (16 characters)
     $salt = join '', (0..9, 'A'..'Z', 'a'..'z')
       [rand 62, rand 62, rand 62, rand 62,
        rand 62, rand 62, rand 62, rand 62,
        rand 62, rand 62, rand 62, rand 62,
        rand 62, rand 62, rand 62, rand 62];
-    $salt = '$5$' . $salt;
+    $salt = '$1$' . $salt;
 
   } elsif (defined($opts{'sha512'})) {
     # SHA-512 salt (16 characters)
@@ -492,13 +490,13 @@ sub get_salt {
     $salt = '$6$' . $salt;
 
   } else {
-    # MD5 salt (16 characters)
+    # SHA-256 salt (16 characters)
     $salt = join '', (0..9, 'A'..'Z', 'a'..'z')
       [rand 62, rand 62, rand 62, rand 62,
        rand 62, rand 62, rand 62, rand 62,
        rand 62, rand 62, rand 62, rand 62,
        rand 62, rand 62, rand 62, rand 62];
-    $salt = '$1$' . $salt;
+    $salt = '$5$' . $salt;
   }
 
   return $salt;
@@ -1157,16 +1155,16 @@ usage: $program [--help] [--hash|--group|--passwd]
                 members of this group.
 
     --des       Use the DES algorithm for encrypting passwords.  The default
-                is the MD5 algorithm.
+                is the SHA256 algorithm.
 
-    --md5       Use the MD5 algorithm for encrypting passwords.  This is the
-                default.
+    --md5       Use the MD5 algorithm for encrypting passwords.
 
     --name      Name of the group (required).  If the name does not exist in
                 the specified output-file, an entry will be created for them.
                 Otherwise, the given fields will be updated.
 
-    --sha256    Use the SHA-256 algorithm for encrypting passwords.
+    --sha256    Use the SHA-256 algorithm for encrypting passwords. This is the
+                default.
 
     --sha512    Use the SHA-512 algorithm for encrypting passwords.
 

@@ -1,5 +1,5 @@
 dnl ProFTPD - mod_sftp
-dnl Copyright (c) 2012-2019 TJ Saunders <tj@castaglia.org>
+dnl Copyright (c) 2012-2022 TJ Saunders <tj@castaglia.org>
 dnl
 dnl This program is free software; you can redistribute it and/or modify
 dnl it under the terms of the GNU General Public License as published by
@@ -83,9 +83,6 @@ dnl to linker errors.
 
 AC_MSG_CHECKING([whether linking with OpenSSL functions requires -ldl])
 saved_libs="$LIBS"
-
-dnl Splice out -lsupp, since that library hasn't been built yet
-LIBS=`echo "$LIBS" | sed -e 's/-lsupp//g'`;
 LIBS="-lcrypto -ldl $LIBS"
 
 AC_TRY_LINK(
@@ -104,9 +101,6 @@ AC_TRY_LINK(
 
 AC_MSG_CHECKING([whether linking with OpenSSL functions requires -lz])
 saved_libs="$LIBS"
-
-dnl Splice out -lsupp, since that library hasn't been built yet
-LIBS=`echo "$LIBS" | sed -e 's/-lsupp//g'`;
 LIBS="-lcrypto -lz $LIBS"
 
 AC_TRY_LINK(
@@ -127,11 +121,9 @@ AC_TRY_LINK(
   ]
 )
 
-dnl Splice out -lsupp, since that library hasn't been built yet
-LIBS=`echo "$LIBS" | sed -e 's/-lsupp//g'`;
+AC_MSG_CHECKING([whether OpenSSL has crippled AES support])
 LIBS="-lcrypto $LIBS"
 
-AC_MSG_CHECKING([whether OpenSSL has crippled AES support])
 AC_TRY_LINK(
   [ #ifdef HAVE_STRING_H
     # include <string.h>
@@ -154,11 +146,9 @@ AC_TRY_LINK(
   ]
 )
 
-dnl Splice out -lsupp, since that library hasn't been built yet
-LIBS=`echo "$LIBS" | sed -e 's/-lsupp//g'`;
+AC_MSG_CHECKING([whether OpenSSL supports SHA256])
 LIBS="-lcrypto $LIBS"
 
-AC_MSG_CHECKING([whether OpenSSL supports SHA256])
 AC_TRY_LINK(
   [
     #include <openssl/evp.h>
@@ -178,11 +168,9 @@ AC_TRY_LINK(
   ]
 )
 
-dnl Splice out -lsupp, since that library hasn't been built yet
-LIBS=`echo "$LIBS" | sed -e 's/-lsupp//g'`;
+AC_MSG_CHECKING([whether OpenSSL supports SHA512])
 LIBS="-lcrypto $LIBS"
 
-AC_MSG_CHECKING([whether OpenSSL supports SHA512])
 AC_TRY_LINK(
   [
     #include <openssl/evp.h>
@@ -202,11 +190,53 @@ AC_TRY_LINK(
   ]
 )
 
-dnl Splice out -lsupp, since that library hasn't been built yet
-LIBS=`echo "$LIBS" | sed -e 's/-lsupp//g'`;
+AC_MSG_CHECKING([whether OpenSSL supports EVP_aes_128_ctr])
 LIBS="-lcrypto $LIBS"
 
+AC_TRY_LINK(
+  [
+    #include <openssl/evp.h>
+  ],
+  [
+    EVP_CIPHER *cipher;
+    cipher = EVP_aes_128_ctr();
+  ],
+  [
+    AC_MSG_RESULT(yes)
+    AC_DEFINE(HAVE_EVP_AES_128_CTR_OPENSSL, 1, [OpenSSL supports EVP_aes_128_ctr])
+    LIBS="$saved_libs"
+  ],
+  [
+    AC_MSG_RESULT(no)
+    LIBS="$saved_libs"
+  ]
+)
+
+AC_MSG_CHECKING([whether OpenSSL supports EVP_aes_192_ctr])
+LIBS="-lcrypto $LIBS"
+
+AC_TRY_LINK(
+  [
+    #include <openssl/evp.h>
+  ],
+  [
+    EVP_CIPHER *cipher;
+    cipher = EVP_aes_192_ctr();
+  ],
+  [
+    AC_MSG_RESULT(yes)
+    AC_DEFINE(HAVE_EVP_AES_192_CTR_OPENSSL, 1, [OpenSSL supports EVP_aes_192_ctr])
+    LIBS="$saved_libs"
+  ],
+  [
+    AC_MSG_RESULT(no)
+    LIBS="$saved_libs"
+  ]
+)
+
 AC_MSG_CHECKING([whether OpenSSL supports EVP_aes_256_ctr])
+LIBS="-lcrypto $LIBS"
+
 AC_TRY_LINK(
   [
     #include <openssl/evp.h>
@@ -218,6 +248,75 @@ AC_TRY_LINK(
   [
     AC_MSG_RESULT(yes)
     AC_DEFINE(HAVE_EVP_AES_256_CTR_OPENSSL, 1, [OpenSSL supports EVP_aes_256_ctr])
+    LIBS="$saved_libs"
+  ],
+  [
+    AC_MSG_RESULT(no)
+    LIBS="$saved_libs"
+  ]
+)
+
+AC_MSG_CHECKING([whether OpenSSL supports EVP_aes_256_gcm])
+LIBS="-lcrypto $LIBS"
+
+AC_TRY_LINK(
+  [
+    #include <openssl/evp.h>
+  ],
+  [
+    EVP_CIPHER *cipher;
+    cipher = EVP_aes_256_gcm();
+  ],
+  [
+    AC_MSG_RESULT(yes)
+    AC_DEFINE(HAVE_EVP_AES_256_GCM_OPENSSL, 1, [OpenSSL supports EVP_aes_256_gcm])
+    LIBS="$saved_libs"
+  ],
+  [
+    AC_MSG_RESULT(no)
+    LIBS="$saved_libs"
+  ]
+)
+
+AC_MSG_CHECKING([whether OpenSSL supports OSSL_PROVIDER_load])
+LIBS="-lcrypto $LIBS"
+
+AC_TRY_LINK(
+  [
+    #include <openssl/provider.h>
+  ],
+  [
+    OSSL_PROVIDER *provider;
+    provider = OSSL_PROVIDER_load(NULL, "default");
+  ],
+  [
+    AC_MSG_RESULT(yes)
+    AC_DEFINE(HAVE_OSSL_PROVIDER_LOAD_OPENSSL, 1, [OpenSSL supports OSSL_PROVIDER_load])
+    LIBS="$saved_libs"
+  ],
+  [
+    AC_MSG_RESULT(no)
+    LIBS="$saved_libs"
+  ]
+)
+
+AC_MSG_CHECKING([whether OpenSSL supports X448 algorithm])
+LIBS="-lcrypto $LIBS"
+
+AC_TRY_LINK(
+  [
+    #include <openssl/evp.h>
+  ],
+  [
+    EVP_PKEY *pkey;
+    EVP_PKEY_CTX *pctx;
+
+    pkey = EVP_PKEY_new_raw_private_key(EVP_PKEY_X448, NULL, NULL, 0);
+    pctx = EVP_PKEY_CTX_new_id(NID_X448, NULL);
+  ],
+  [
+    AC_MSG_RESULT(yes)
+    AC_DEFINE(HAVE_X448_OPENSSL, 1, [OpenSSL supports X448 algorithm])
     LIBS="$saved_libs"
   ],
   [
@@ -238,3 +337,20 @@ AC_SUBST(MODULE_LIBS)
 
 AC_CONFIG_HEADER(mod_sftp.h)
 AC_OUTPUT(Makefile)
+
+dnl After everything has been generated, we need to ensure that our API
+dnl headers are in the include/ directory, for use by other modules' build
+dnl systems.
+builddir=../..
+if test ! -d $builddir/include/mod_sftp ; then
+  mkdir $builddir/include/mod_sftp
+fi
+
+for h in $(ls *.h); do
+  if test ! -e $builddir/include/mod_sftp/$h ; then
+    olddir=`pwd`
+    cd $builddir/include/mod_sftp
+    ln -s ../../contrib/mod_sftp/$h .
+    cd $olddir
+  fi
+done

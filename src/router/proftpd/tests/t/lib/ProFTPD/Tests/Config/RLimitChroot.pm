@@ -87,6 +87,7 @@ sub rlimitchroot_on {
 
     AuthUserFile => $auth_user_file,
     AuthGroupFile => $auth_group_file,
+    AuthOrder => 'mod_auth_file.c',
 
     DefaultRoot => '~',
     RLimitChroot => 'on',
@@ -355,6 +356,7 @@ sub rlimitchroot_off {
 
     AuthUserFile => $auth_user_file,
     AuthGroupFile => $auth_group_file,
+    AuthOrder => 'mod_auth_file.c',
 
     DefaultRoot => '~',
     RLimitChroot => 'off',
@@ -490,6 +492,7 @@ sub rlimitchroot_ifuser_off {
 
     AuthUserFile => $auth_user_file,
     AuthGroupFile => $auth_group_file,
+    AuthOrder => 'mod_auth_file.c',
 
     DefaultRoot => '~',
     RLimitChroot => 'on',

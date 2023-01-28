@@ -17,8 +17,7 @@ jobs:
     strategy:
       matrix:
         container:
-          - centos:7
-          - centos:8
+          - almalinux:8
 
     container: ${{ matrix.container }}
 
@@ -26,20 +25,13 @@ jobs:
       - name: Checkout source code
         uses: actions/checkout@v2
 
-      - name: Configure Centos 7 repos
-        if: ${{ matrix.container == 'centos:7' }}
+      - name: Configure RPM repos
+        if: ${{ matrix.container == 'almalinux:8' }}
         run: |
           # Need to add other repos for e.g. libsodium
-          yum install -y dnf-plugins-core epel-release
-          # for mod_wrap
-          yum install -y libnsl2-devel tcp_wrappers-devel
-
-      - name: Configure Centos 8 repos
-        if: ${{ matrix.container == 'centos:8' }}
-        run: |
-          # Need to add other repos for e.g. libsodium
-          yum install -y dnf-plugins-core epel-release
-          yum config-manager --set-enabled powertools
+          yum install -y dnf-plugins-core epel-release yum-utils
+          dnf config-manager --enable epel
+          dnf config-manager --set-enabled powertools
           # for mod_wrap
           yum install -y libnsl2-devel https://pkgs.dyn.su/el8/extras/x86_64/tcp_wrappers-libs-7.6-77.el8.x86_64.rpm https://pkgs.dyn.su/el8/extras/x86_64/tcp_wrappers-devel-7.6-77.el8.x86_64.rpm
 

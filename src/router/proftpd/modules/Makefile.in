@@ -59,7 +59,7 @@ install:
 	done
 
 clean:
-	$(RM) *.a *.o module_glue.c
+	$(RM) *.a *.o *.gcda *.gcno module_glue.c
 	$(LIBTOOL) --mode=clean $(RM) $(SHARED_MODULE_OBJS)
 	$(LIBTOOL) --mode=clean $(RM) `echo $(SHARED_MODULE_OBJS) | sed 's/\.la$\/.lo/g'`
 	@dirs="$(SHARED_MODULE_DIRS) $(STATIC_MODULE_DIRS)"; \
@@ -78,3 +78,7 @@ distclean: clean
 	for dir in $$dirs; do \
 		(cd $(top_builddir)/$$dir/ && $(MAKE) distclean); \
 	done
+
+clang-tidy:
+	clang-tidy $(STATIC_MODULE_SRCS) -- $(CPPFLAGS) $(CFLAGS)
+	test -z "$(SHARED_MODULE_SRCS)" || clang-tidy $(SHARED_MODULE_SRCS) -- $(CPPFLAGS) $(CFLAGS)

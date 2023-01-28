@@ -1,6 +1,6 @@
 /*
  * ProFTPD - FTP server API testsuite
- * Copyright (c) 2008-2017 The ProFTPD Project team
+ * Copyright (c) 2008-2020 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -38,6 +38,7 @@ module *loaded_modules = NULL;
 xaset_t *server_list = NULL;
 
 static cmd_rec *next_cmd = NULL;
+static const char *tests_proto = "ftp";
 
 volatile unsigned int recvd_signal_flags = 0;
 
@@ -48,6 +49,11 @@ int tests_stubs_set_next_cmd(cmd_rec *cmd) {
 
 int tests_stubs_set_main_server(server_rec *s) {
   main_server = s;
+  return 0;
+}
+
+int tests_stubs_set_protocol(const char *proto) {
+  tests_proto = proto;
   return 0;
 }
 
@@ -117,10 +123,6 @@ int pr_config_get_server_xfer_bufsz(int direction) {
   }
 
   return bufsz;
-}
-
-int pr_ctrls_unregister(module *m, const char *action) {
-  return 0;
 }
 
 void pr_log_auth(int level, const char *fmt, ...) {
@@ -198,11 +200,28 @@ int pr_log_openfile(const char *log_file, int *log_fd, mode_t log_mode) {
     }
   }
 
-  *log_fd = STDERR_FILENO;
+  *log_fd = dup(STDERR_FILENO);
   return 0;
 }
 
 void pr_log_stacktrace(int fd, const char *name) {
+}
+
+int pr_log_vwritefile(int fd, const char *ident, const char *fmt, va_list msg) {
+  (void) fd;
+
+  if (ident == NULL) {
+    errno = EINVAL;
+    return -1;
+  }
+
+  if (getenv("TEST_VERBOSE") != NULL) {
+    fprintf(stderr, "%s: ", ident);
+    vfprintf(stderr, fmt, msg);
+    fprintf(stderr, "\n");
+  }
+
+  return 0;
 }
 
 int pr_proctitle_get(char *buf, size_t buflen) {
@@ -220,6 +239,10 @@ void pr_session_disconnect(module *m, int reason_code, const char *details) {
 }
 
 const char *pr_session_get_disconnect_reason(const char **details) {
+  if (session.disconnect_reason < 0) {
+    return NULL;
+  }
+
   if (details != NULL) {
     *details = "bebugging";
   }
@@ -228,7 +251,11 @@ const char *pr_session_get_disconnect_reason(const char **details) {
 }
 
 const char *pr_session_get_protocol(int flags) {
-  return "ftp";
+  if (tests_proto == NULL) {
+    return "ftp";
+  }
+
+  return tests_proto;
 }
 
 int pr_session_set_idle(void) {

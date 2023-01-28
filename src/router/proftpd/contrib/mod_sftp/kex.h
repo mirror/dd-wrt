@@ -1,6 +1,6 @@
 /*
  * ProFTPD - mod_sftp key exchange (kex)
- * Copyright (c) 2008-2016 TJ Saunders
+ * Copyright (c) 2008-2021 TJ Saunders
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -36,6 +36,9 @@ int sftp_kex_rekey_set_interval(int);
 int sftp_kex_rekey_set_timeout(int);
 
 int sftp_kex_send_first_kexinit(void);
+
+/* Return the hostkey type used for KEX, as requested by the client. */
+enum sftp_key_type_e sftp_kex_get_hostkey_type(void);
 
 #define SFTP_KEX_DH_GROUP_MIN	1024
 #define SFTP_KEX_DH_GROUP_MAX	8192

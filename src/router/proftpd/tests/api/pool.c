@@ -1,6 +1,6 @@
 /*
  * ProFTPD - FTP server testsuite
- * Copyright (c) 2008-2020 The ProFTPD Project team
+ * Copyright (c) 2008-2021 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -84,14 +84,14 @@ START_TEST (pool_make_sub_pool_test) {
   pool *p, *sub_pool;
 
   p = make_sub_pool(NULL);
-  fail_if(p == NULL, "Failed to allocate parent pool");
+  ck_assert_msg(p != NULL, "Failed to allocate parent pool");
   destroy_pool(p);
 
   p = make_sub_pool(NULL);
-  fail_if(p == NULL, "Failed to allocate parent pool");
+  ck_assert_msg(p != NULL, "Failed to allocate parent pool");
 
   sub_pool = make_sub_pool(p);
-  fail_if(sub_pool == NULL, "Failed to allocate sub pool");
+  ck_assert_msg(sub_pool != NULL, "Failed to allocate sub pool");
 
   destroy_pool(p);
 }
@@ -102,21 +102,21 @@ START_TEST (pool_create_sz_test) {
   size_t sz;
 
   p = make_sub_pool(NULL);
-  fail_if(p == NULL, "Failed to allocate parent pool");
+  ck_assert_msg(p != NULL, "Failed to allocate parent pool");
 
   sz = 0;
   sub_pool = pr_pool_create_sz(p, sz);
-  fail_if(sub_pool == NULL, "Failed to allocate %u byte sub-pool", sz);
+  ck_assert_msg(sub_pool != NULL, "Failed to allocate %lu byte sub-pool", (unsigned long)sz);
   destroy_pool(sub_pool);
 
   sz = 1;
   sub_pool = pr_pool_create_sz(p, sz);
-  fail_if(sub_pool == NULL, "Failed to allocate %u byte sub-pool", sz);
+  ck_assert_msg(sub_pool != NULL, "Failed to allocate %lu byte sub-pool", (unsigned long)sz);
   destroy_pool(sub_pool);
 
   sz = 16382;
   sub_pool = pr_pool_create_sz(p, sz);
-  fail_if(sub_pool == NULL, "Failed to allocate %u byte sub-pool", sz);
+  ck_assert_msg(sub_pool != NULL, "Failed to allocate %lu byte sub-pool", (unsigned long)sz);
   destroy_pool(sub_pool);
 
   destroy_pool(p);
@@ -144,11 +144,11 @@ START_TEST (pool_create_sz_with_alloc_test) {
     fprintf(stdout, "pool_sz: %lu bytes (factor %u)\n", pool_sz, factors[i]);
 #endif /* PR_TEST_VERBOSE */
     sub_pool = pr_pool_create_sz(p, pool_sz);
-    fail_if(sub_pool == NULL, "Failed to allocate %u byte sub-pool", pool_sz);
+    ck_assert_msg(sub_pool != NULL, "Failed to allocate %lu byte sub-pool", (unsigned long)pool_sz);
 
     alloc_sz = (pool_sz * 2);
 #ifdef PR_TEST_VERBOSE
-    fprintf(stdout, "alloc_sz: %lu bytes (factor %u)\n", alloc_sz, factors[i]);
+    fprintf(stdout, "alloc_sz: %lu bytes (factor %u)\n", (unsigned long)alloc_sz, factors[i]);
 #endif /* PR_TEST_VERBOSE */
     data = palloc(sub_pool, alloc_sz);
 
@@ -168,7 +168,7 @@ START_TEST (pool_create_sz_with_alloc_test) {
           i + 1, j, j, data[j]);
       }
 #endif /* PR_TEST_VERBOSE */
-      fail_if(data[j] != j,
+      ck_assert_msg(data[j] == j,
         "Iteration #%u: Expected value %u at memory index %u, got %u\n", i + 1,
         j, j, data[j]);
     }
@@ -186,19 +186,19 @@ START_TEST (pool_palloc_test) {
   size_t sz;
 
   p = make_sub_pool(NULL);
-  fail_if(p == NULL, "Failed to allocate parent pool");
+  ck_assert_msg(p != NULL, "Failed to allocate parent pool");
 
   sz = 0;
   v = palloc(p, sz);
-  fail_unless(v == NULL, "Allocated %u-len memory", sz);
+  ck_assert_msg(v == NULL, "Allocated %lu-len memory", (unsigned long)sz);
 
   sz = 1;
   v = palloc(p, sz);
-  fail_if(v == NULL, "Failed to allocate %u-len memory", sz);
+  ck_assert_msg(v != NULL, "Failed to allocate %lu-len memory", (unsigned long)sz);
 
   sz = 16382;
   v = palloc(p, sz);
-  fail_if(v == NULL, "Failed to allocate %u-len memory", sz);
+  ck_assert_msg(v != NULL, "Failed to allocate %lu-len memory", (unsigned long)sz);
 
   destroy_pool(p);
 }
@@ -210,19 +210,19 @@ START_TEST (pool_pallocsz_test) {
   size_t sz;
 
   p = make_sub_pool(NULL);
-  fail_if(p == NULL, "Failed to allocate parent pool");
+  ck_assert_msg(p != NULL, "Failed to allocate parent pool");
 
   sz = 0;
   v = pallocsz(p, sz);
-  fail_unless(v == NULL, "Allocated %u-len memory", sz);
+  ck_assert_msg(v == NULL, "Allocated %lu-len memory", (unsigned long)sz);
 
   sz = 1;
   v = pallocsz(p, sz);
-  fail_if(v == NULL, "Failed to allocate %u-len memory", sz);
+  ck_assert_msg(v != NULL, "Failed to allocate %lu-len memory", (unsigned long)sz);
 
   sz = 16382;
   v = pallocsz(p, sz);
-  fail_if(v == NULL, "Failed to allocate %u-len memory", sz);
+  ck_assert_msg(v != NULL, "Failed to allocate %lu-len memory", (unsigned long)sz);
 
   destroy_pool(p);
 }
@@ -235,24 +235,24 @@ START_TEST (pool_pcalloc_test) {
   size_t sz;
 
   p = make_sub_pool(NULL);
-  fail_if(p == NULL, "Failed to allocate parent pool");
+  ck_assert_msg(p != NULL, "Failed to allocate parent pool");
 
   sz = 0;
   v = pcalloc(p, sz);
-  fail_unless(v == NULL, "Allocated %u-len memory", sz);
+  ck_assert_msg(v == NULL, "Allocated %lu-len memory", (unsigned long)sz);
 
   sz = 1;
   v = pcalloc(p, sz);
-  fail_if(v == NULL, "Failed to allocate %u-len memory", sz);
+  ck_assert_msg(v != NULL, "Failed to allocate %lu-len memory", (unsigned long)sz);
   for (i = 0; i < sz; i++) {
-    fail_unless(v[i] == 0, "Allocated non-zero memory at position %u", i);
+    ck_assert_msg(v[i] == 0, "Allocated non-zero memory at position %u", i);
   }
 
   sz = 16382;
   v = pcalloc(p, sz);
-  fail_if(v == NULL, "Failed to allocate %u-len memory", sz);
+  ck_assert_msg(v != NULL, "Failed to allocate %lu-len memory", (unsigned long)sz);
   for (i = 0; i < sz; i++) {
-    fail_unless(v[i] == 0, "Allocated non-zero memory at position %u", i);
+    ck_assert_msg(v[i] == 0, "Allocated non-zero memory at position %u", i);
   }
 
   destroy_pool(p);
@@ -265,19 +265,19 @@ START_TEST (pool_pcallocsz_test) {
   size_t sz;
 
   p = make_sub_pool(NULL);
-  fail_if(p == NULL, "Failed to allocate parent pool");
+  ck_assert_msg(p != NULL, "Failed to allocate parent pool");
 
   sz = 0;
   v = pcallocsz(p, sz);
-  fail_unless(v == NULL, "Allocated %u-len memory", sz);
+  ck_assert_msg(v == NULL, "Allocated %lu-len memory", (unsigned long)sz);
 
   sz = 1;
   v = pcallocsz(p, sz);
-  fail_if(v == NULL, "Failed to allocate %u-len memory", sz);
+  ck_assert_msg(v != NULL, "Failed to allocate %lu-len memory", (unsigned long)sz);
 
   sz = 16382;
   v = pcallocsz(p, sz);
-  fail_if(v == NULL, "Failed to allocate %u-len memory", sz);
+  ck_assert_msg(v != NULL, "Failed to allocate %lu-len memory", (unsigned long)sz);
 
   destroy_pool(p);
 }
@@ -306,26 +306,38 @@ START_TEST (pool_get_tag_test) {
   const char *res;
 
   res = pr_pool_get_tag(NULL);
-  fail_unless(res == NULL, "Failed to handle null pool");
+  ck_assert_msg(res == NULL, "Failed to handle null pool");
 
   p = make_sub_pool(permanent_pool);
 
   mark_point();
   res = pr_pool_get_tag(p);
-  fail_unless(res == NULL, "Failed to handle untagged pool");
+  ck_assert_msg(res == NULL, "Failed to handle untagged pool");
 
   mark_point();
   pr_pool_tag(p, "foo");
   res = pr_pool_get_tag(p);
-  fail_unless(res != NULL, "Failed to get pool tag: %s", strerror(errno));
-  fail_unless(strcmp(res, "foo") == 0, "Expected tag 'foo', got '%s'", res);
+  ck_assert_msg(res != NULL, "Failed to get pool tag: %s", strerror(errno));
+  ck_assert_msg(strcmp(res, "foo") == 0, "Expected tag 'foo', got '%s'", res);
 
   destroy_pool(p);
 
 }
 END_TEST
 
-#if defined(PR_USE_DEVEL)
+START_TEST (pool_debug_flags_test) {
+  int res;
+
+  res = pr_pool_debug_set_flags(-1);
+  ck_assert_msg(res < 0, "Failed to handle invalid flags");
+  ck_assert_msg(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
+    strerror(errno), errno);
+
+  res = pr_pool_debug_set_flags(0);
+  ck_assert_msg(res >= 0, "Failed to set flags: %s", strerror(errno));
+}
+END_TEST
+
 START_TEST (pool_debug_memory_test) {
   pool *p, *sub_pool;
 
@@ -353,19 +365,36 @@ START_TEST (pool_debug_memory_test) {
 }
 END_TEST
 
-START_TEST (pool_debug_flags_test) {
-  int res;
+static void test_visitf(const pr_pool_info_t *pinfo, void *user_data) {
+  ck_assert_msg(pinfo != NULL, "Expected pool info, got NULL");
+}
 
-  res = pr_pool_debug_set_flags(-1);
-  fail_unless(res < 0, "Failed to handle invalid flags");
-  fail_unless(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
-    strerror(errno), errno);
+START_TEST (pool_debug_memory2_test) {
+  pool *p, *sub_pool;
 
-  res = pr_pool_debug_set_flags(0);
-  fail_if(res < 0, "Failed to set flags: %s", strerror(errno));
+  mark_point();
+  pr_pool_debug_memory2(NULL, NULL);
+
+  mark_point();
+  p = make_sub_pool(permanent_pool);
+  pr_pool_debug_memory2(test_visitf, NULL);
+
+  mark_point();
+  destroy_pool(p);
+  pr_pool_debug_memory2(test_visitf, NULL);
+
+  mark_point();
+  p = make_sub_pool(permanent_pool);
+  sub_pool = make_sub_pool(p);
+  pr_pool_debug_memory2(test_visitf, NULL);
+
+  destroy_pool(sub_pool);
+  pr_pool_debug_memory2(test_visitf, NULL);
+
+  destroy_pool(p);
+  pr_pool_debug_memory2(test_visitf, NULL);
 }
 END_TEST
-#endif /* PR_USE_DEVEL */
 
 static unsigned int pool_cleanup_count = 0;
 
@@ -387,7 +416,7 @@ START_TEST (pool_register_cleanup_test) {
 
   register_cleanup(p, NULL, cleanup_cb, cleanup_cb);
   destroy_pool(p);
-  fail_unless(pool_cleanup_count > 0, "Expected cleanup count >0, got %u",
+  ck_assert_msg(pool_cleanup_count > 0, "Expected cleanup count >0, got %u",
     pool_cleanup_count);
 }
 END_TEST
@@ -406,7 +435,7 @@ START_TEST (pool_register_cleanup2_test) {
 
   register_cleanup2(p, NULL, cleanup_cb);
   destroy_pool(p);
-  fail_unless(pool_cleanup_count > 0, "Expected cleanup count >0, got %u",
+  ck_assert_msg(pool_cleanup_count > 0, "Expected cleanup count >0, got %u",
     pool_cleanup_count);
 }
 END_TEST
@@ -423,17 +452,17 @@ START_TEST (pool_unregister_cleanup_test) {
   p = make_sub_pool(permanent_pool);
   register_cleanup(p, NULL, cleanup_cb, cleanup_cb);
   unregister_cleanup(p, NULL, NULL);
-  fail_unless(pool_cleanup_count == 0, "Expected cleanup count 0, got %u",
+  ck_assert_msg(pool_cleanup_count == 0, "Expected cleanup count 0, got %u",
     pool_cleanup_count);
 
   pool_cleanup_count = 0;
   register_cleanup(p, NULL, cleanup_cb, cleanup_cb);
   unregister_cleanup(p, NULL, cleanup_cb);
-  fail_unless(pool_cleanup_count == 0, "Expected cleanup count >0, got %u",
+  ck_assert_msg(pool_cleanup_count == 0, "Expected cleanup count >0, got %u",
     pool_cleanup_count);
 
   destroy_pool(p);
-  fail_unless(pool_cleanup_count == 0, "Expected cleanup count >0, got %u",
+  ck_assert_msg(pool_cleanup_count == 0, "Expected cleanup count >0, got %u",
     pool_cleanup_count);
 }
 END_TEST
@@ -473,10 +502,9 @@ Suite *tests_get_pool_suite(void) {
   tcase_add_test(testcase, pool_pcallocsz_test);
   tcase_add_test(testcase, pool_tag_test);
   tcase_add_test(testcase, pool_get_tag_test);
-#if defined(PR_USE_DEVEL)
-  tcase_add_test(testcase, pool_debug_memory_test);
   tcase_add_test(testcase, pool_debug_flags_test);
-#endif /* PR_USE_DEVEL */
+  tcase_add_test(testcase, pool_debug_memory_test);
+  tcase_add_test(testcase, pool_debug_memory2_test);
   tcase_add_test(testcase, pool_register_cleanup_test);
   tcase_add_test(testcase, pool_register_cleanup2_test);
   tcase_add_test(testcase, pool_unregister_cleanup_test);

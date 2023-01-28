@@ -2,7 +2,7 @@
  * ProFTPD - FTP server daemon
  * Copyright (c) 1997, 1998 Public Flood Software
  * Copyright (c) 1999, 2000 MacGyver aka Habeeb J. Dihu <macgyver@tos.net>
- * Copyright (c) 2001-2021 The ProFTPD Project team
+ * Copyright (c) 2001-2022 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -149,8 +149,10 @@ int pr_inet_set_async(pool *, conn_t *);
 int pr_inet_set_block(pool *, conn_t *);
 int pr_inet_set_nonblock(pool *, conn_t *);
 int pr_inet_set_proto_cork(int, int);
+int pr_inet_set_proto_keepalive(pool *p, conn_t *, struct tcp_keepalive *);
 int pr_inet_set_proto_nodelay(pool *, conn_t *, int);
 int pr_inet_set_proto_opts(pool *, conn_t *, int, int, int, int);
+int pr_inet_set_reuse_port(pool *p, conn_t *conn, int reuse_port);
 int pr_inet_set_socket_opts(pool *, conn_t *, int, int, struct tcp_keepalive *);
 int pr_inet_set_socket_opts2(pool *, conn_t *, int, int, struct tcp_keepalive *,
   int);

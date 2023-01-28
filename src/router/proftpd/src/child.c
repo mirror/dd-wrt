@@ -1,6 +1,6 @@
 /*
  * ProFTPD - FTP server daemon
- * Copyright (c) 2004-2016 The ProFTPD Project team
+ * Copyright (c) 2004-2020 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -35,7 +35,7 @@ int child_add(pid_t pid, int fd) {
   pr_child_t *ch;
 
   /* If no child-tracking list has been allocated, create one. */
-  if (!child_pool) {
+  if (child_pool == NULL) {
     child_pool = make_sub_pool(permanent_pool);
     pr_pool_tag(child_pool, "Child Pool");
   }
@@ -80,7 +80,7 @@ pr_child_t *child_get(pr_child_t *ch) {
 int child_remove(pid_t pid) {
   pr_child_t *ch;
 
-  if (!child_list) {
+  if (child_list == NULL) {
     errno = EPERM;
     return -1;
   }
@@ -110,8 +110,6 @@ void child_signal(int signo) {
         signo, (unsigned long) ch->ch_pid, strerror(errno));
     }
   }
-
-  return;
 }
 
 void child_update(void) {
@@ -141,6 +139,4 @@ void child_update(void) {
     child_list = NULL;
     child_listlen = 0;
   }
-
-  return;
 }

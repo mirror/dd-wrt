@@ -1,6 +1,6 @@
 /*
  * ProFTPD - FTP server daemon
- * Copyright (c) 2001-2017 The ProFTPD Project team
+ * Copyright (c) 2001-2022 The ProFTPD Project team
  *  
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -85,21 +85,16 @@ static int ctrls_logfd = -1;
 
 /* necessary prototypes */
 static ctrls_action_t *ctrls_action_new(void);
-static pr_ctrls_t *ctrls_new(void);
 static pr_ctrls_t *ctrls_lookup_action(module *, const char *, unsigned char);
 static pr_ctrls_t *ctrls_lookup_next_action(module *, unsigned char);
 
 static pr_ctrls_t *ctrls_prepare(ctrls_action_t *act) {
   pr_ctrls_t *ctrl = NULL;
 
-  /* Sanity check */
-  if (!act)
-    return NULL;
-
   pr_block_ctrls();
 
   /* Get a blank ctrl object */
-  ctrl = ctrls_new();
+  ctrl = pr_ctrls_alloc();
 
   /* Fill in the fields from the action object. */
   ctrl->ctrls_id = act->id;
@@ -117,47 +112,6 @@ static pr_ctrls_t *ctrls_prepare(ctrls_action_t *act) {
   return ctrl;
 }
 
-static void ctrls_free(pr_ctrls_t *ctrl) {
-
-  /* Make sure that ctrls are blocked while we're doing this */
-  pr_block_ctrls();
-
-  /* Remove this object from the active list */
-  if (ctrl->ctrls_prev)
-    ctrl->ctrls_prev->ctrls_next = ctrl->ctrls_next;
-
-  else
-    ctrls_active_list = ctrl->ctrls_next;
-
-  if (ctrl->ctrls_next)
-    ctrl->ctrls_next->ctrls_prev = ctrl->ctrls_prev;
-
-  /* Clear its fields, and add it to the free list */
-  ctrl->ctrls_next = NULL;
-  ctrl->ctrls_prev = NULL;
-  ctrl->ctrls_id = 0;
-  ctrl->ctrls_module = NULL;
-  ctrl->ctrls_action = NULL;
-  ctrl->ctrls_cb = NULL;
-  ctrl->ctrls_cb_retval = 1;
-  ctrl->ctrls_flags = 0;
-
-  if (ctrl->ctrls_tmp_pool) {
-    destroy_pool(ctrl->ctrls_tmp_pool);
-    ctrl->ctrls_tmp_pool = NULL;
-  }
-
-  ctrl->ctrls_cb_args = NULL;
-  ctrl->ctrls_cb_resps = NULL;
-  ctrl->ctrls_data = NULL;
-
-  ctrl->ctrls_next = ctrls_free_list;
-  ctrls_free_list = ctrl;
-
-  pr_unblock_ctrls();
-  return;
-}
-
 static ctrls_action_t *ctrls_action_new(void) {
   ctrls_action_t *act = NULL;
   pool *sub_pool = make_sub_pool(ctrls_pool);
@@ -169,21 +123,21 @@ static ctrls_action_t *ctrls_action_new(void) {
   return act;
 }
 
-static pr_ctrls_t *ctrls_new(void) {
+pr_ctrls_t *pr_ctrls_alloc(void) {
   pr_ctrls_t *ctrl = NULL;
 
   /* Check for a free ctrl first */
-  if (ctrls_free_list) {
+  if (ctrls_free_list != NULL) {
 
     /* Take one from the top */
     ctrl = ctrls_free_list;
     ctrls_free_list = ctrls_free_list->ctrls_next;
 
-    if (ctrls_free_list)
+    if (ctrls_free_list != NULL) {
       ctrls_free_list->ctrls_prev = NULL;
+    }
 
   } else {
-
     /* Have to allocate a new one. */
     ctrl = (pr_ctrls_t *) pcalloc(ctrls_pool, sizeof(pr_ctrls_t));
 
@@ -197,20 +151,73 @@ static pr_ctrls_t *ctrls_new(void) {
   return ctrl;
 }
 
+int pr_ctrls_free(pr_ctrls_t *ctrl) {
+  if (ctrl == NULL) {
+    errno = EINVAL;
+    return -1;
+  }
+
+  /* Make sure that ctrls are blocked while we're doing this */
+  pr_block_ctrls();
+
+  /* Remove this object from the active list */
+  if (ctrl->ctrls_prev != NULL) {
+    ctrl->ctrls_prev->ctrls_next = ctrl->ctrls_next;
+
+  } else {
+    ctrls_active_list = ctrl->ctrls_next;
+  }
+
+  if (ctrl->ctrls_next != NULL) {
+    ctrl->ctrls_next->ctrls_prev = ctrl->ctrls_prev;
+  }
+
+  /* Clear its fields, and add it to the free list */
+  ctrl->ctrls_next = NULL;
+  ctrl->ctrls_prev = NULL;
+  ctrl->ctrls_id = 0;
+  ctrl->ctrls_module = NULL;
+  ctrl->ctrls_action = NULL;
+  ctrl->ctrls_cb = NULL;
+  ctrl->ctrls_cb_retval = 1;
+  ctrl->ctrls_flags = 0;
+
+  if (ctrl->ctrls_tmp_pool != NULL) {
+    destroy_pool(ctrl->ctrls_tmp_pool);
+    ctrl->ctrls_tmp_pool = NULL;
+  }
+
+  ctrl->ctrls_cb_args = NULL;
+  ctrl->ctrls_cb_resps = NULL;
+  ctrl->ctrls_data = NULL;
+
+  ctrl->ctrls_next = ctrls_free_list;
+  ctrls_free_list = ctrl;
+
+  pr_unblock_ctrls();
+  return 0;
+}
+
 static char *ctrls_sep(char **str) {
   char *ret = NULL, *dst = NULL;
   unsigned char quoted = FALSE;
 
   /* Sanity checks */
-  if (!str || !*str || !**str)
+  if (str == NULL ||
+      !*str ||
+      !**str) {
+    errno = EINVAL;
     return NULL;
+  }
 
-  while (**str && PR_ISSPACE(**str)) {
+  while (**str &&
+         PR_ISSPACE(**str)) {
     (*str)++;
   }
 
-  if (!**str)
+  if (!**str) {
     return NULL;
+  }
 
   ret = dst = *str;
 
@@ -223,18 +230,19 @@ static char *ctrls_sep(char **str) {
          (quoted ? (**str != '\"') : !PR_ISSPACE(**str))) {
 
     if (**str == '\\' && quoted) {
-
       /* Escaped char */
-      if (*((*str) + 1))
+      if (*((*str) + 1)) {
         *dst = *(++(*str));
+      }
     }
 
     *dst++ = **str;
     ++(*str);
   }
 
-  if (**str)
+  if (**str) {
     (*str)++;
+  }
   *dst = '\0';
 
   return ret;
@@ -265,7 +273,8 @@ int pr_ctrls_register(const module *mod, const char *action,
 
   /* Randomly generate a unique random ID for this object */
   while (TRUE) {
-    unsigned char have_id = FALSE;
+    int have_id = FALSE;
+
     act_id = (unsigned int) pr_random_next(1L, RAND_MAX);
 
     /* Check the list for this ID */
@@ -276,8 +285,9 @@ int pr_ctrls_register(const module *mod, const char *action,
       }
     }
 
-    if (!have_id)
+    if (have_id == FALSE) {
       break;
+    }
   }
 
   act->next = NULL;
@@ -289,7 +299,7 @@ int pr_ctrls_register(const module *mod, const char *action,
 
   /* Add this to the list of "registered" actions */
 
-  if (ctrls_action_list) {
+  if (ctrls_action_list != NULL) {
     act->next = ctrls_action_list;
     ctrls_action_list->prev = act;
   }
@@ -297,31 +307,32 @@ int pr_ctrls_register(const module *mod, const char *action,
   ctrls_action_list = act;
 
   pr_unblock_ctrls();
-
   return act_id;
 }
 
 int pr_ctrls_unregister(module *mod, const char *action) {
-  ctrls_action_t *act = NULL;
+  ctrls_action_t *act = NULL, *next_act = NULL;
   unsigned char have_action = FALSE;
 
   /* Make sure that ctrls are blocked while we're doing this */
   pr_block_ctrls();
 
-  for (act = ctrls_action_list; act; act = act->next) {
+  for (act = ctrls_action_list; act != NULL; act = next_act) {
+    next_act = act->next;
+
     if ((action == NULL || strcmp(act->action, action) == 0) &&
         (act->module == mod || mod == ANY_MODULE || mod == NULL)) {
       have_action = TRUE;
 
       /* Remove this object from the list of registered actions */
-      if (act->prev) {
+      if (act->prev != NULL) {
         act->prev->next = act->next;
 
       } else {
         ctrls_action_list = act->next;
       }
 
-      if (act->next) {
+      if (act->next != NULL) {
         act->next->prev = act->prev;
       }
 
@@ -336,7 +347,7 @@ int pr_ctrls_unregister(module *mod, const char *action) {
   
   pr_unblock_ctrls();
 
-  if (!have_action) {
+  if (have_action == FALSE) {
     errno = ENOENT;
     return -1;
   }
@@ -382,10 +393,9 @@ int pr_ctrls_add_arg(pr_ctrls_t *ctrl, char *ctrls_arg, size_t ctrls_arglen) {
 }
 
 int pr_ctrls_copy_args(pr_ctrls_t *src_ctrl, pr_ctrls_t *dst_ctrl) {
-
-  /* Sanity checks */
   if (src_ctrl == NULL ||
-      dst_ctrl == NULL) {
+      dst_ctrl == NULL ||
+      src_ctrl == dst_ctrl) {
     errno = EINVAL;
     return -1;
   }
@@ -415,9 +425,9 @@ int pr_ctrls_copy_args(pr_ctrls_t *src_ctrl, pr_ctrls_t *dst_ctrl) {
 }
 
 int pr_ctrls_copy_resps(pr_ctrls_t *src_ctrl, pr_ctrls_t *dst_ctrl) {
-
-  /* sanity checks */
-  if (!src_ctrl || !dst_ctrl) {
+  if (src_ctrl == NULL ||
+      dst_ctrl == NULL ||
+      src_ctrl == dst_ctrl) {
     errno = EINVAL;
     return -1;
   }
@@ -425,8 +435,9 @@ int pr_ctrls_copy_resps(pr_ctrls_t *src_ctrl, pr_ctrls_t *dst_ctrl) {
   /* The source ctrl must have a ctrls_cb_resps member, and the destination
    * ctrl must not have a ctrls_cb_resps member.
    */
-  if (!src_ctrl->ctrls_cb_resps || dst_ctrl->ctrls_cb_resps) {
-    errno = EINVAL;
+  if (src_ctrl->ctrls_cb_resps == NULL ||
+      dst_ctrl->ctrls_cb_resps != NULL) {
+    errno = EPERM;
     return -1;
   }
 
@@ -436,12 +447,13 @@ int pr_ctrls_copy_resps(pr_ctrls_t *src_ctrl, pr_ctrls_t *dst_ctrl) {
   return 0;
 }
 
-int pr_ctrls_add_response(pr_ctrls_t *ctrl, char *fmt, ...) {
+int pr_ctrls_add_response(pr_ctrls_t *ctrl, const char *fmt, ...) {
   char buf[PR_TUNABLE_BUFFER_SIZE] = {'\0'};
   va_list resp;
 
   /* Sanity check */
-  if (!ctrl || !fmt) {
+  if (ctrl == NULL ||
+      fmt == NULL) {
     errno = EINVAL;
     return -1;
   }
@@ -449,14 +461,15 @@ int pr_ctrls_add_response(pr_ctrls_t *ctrl, char *fmt, ...) {
   /* Make sure the pr_ctrls_t has a temporary pool, from which the responses
    * will be allocated
    */
-  if (!ctrl->ctrls_tmp_pool) {
+  if (ctrl->ctrls_tmp_pool == NULL) {
     ctrl->ctrls_tmp_pool = make_sub_pool(ctrls_pool);
     pr_pool_tag(ctrl->ctrls_tmp_pool, "ctrls tmp pool");
   }
 
-  if (!ctrl->ctrls_cb_resps)
+  if (ctrl->ctrls_cb_resps == NULL) {
     ctrl->ctrls_cb_resps = make_array(ctrl->ctrls_tmp_pool, 0,
       sizeof(char *));
+  }
 
   /* Affix the message */
   va_start(resp, fmt);
@@ -473,19 +486,25 @@ int pr_ctrls_add_response(pr_ctrls_t *ctrl, char *fmt, ...) {
 }
 
 int pr_ctrls_flush_response(pr_ctrls_t *ctrl) {
-
-  /* Sanity check */
-  if (!ctrl) {
+  if (ctrl == NULL) {
     errno = EINVAL;
     return -1;
   }
 
   /* Make sure the callback(s) added responses */
-  if (ctrl->ctrls_cb_resps) {
-    if (pr_ctrls_send_msg(ctrl->ctrls_cl->cl_fd, ctrl->ctrls_cb_retval,
-        ctrl->ctrls_cb_resps->nelts,
-        (char **) ctrl->ctrls_cb_resps->elts) < 0)
+  if (ctrl->ctrls_cb_resps != NULL) {
+    int res;
+
+    if (ctrl->ctrls_cl == NULL) {
+      errno = EPERM;
       return -1;
+    }
+
+    res = pr_ctrls_send_msg(ctrl->ctrls_cl->cl_fd, ctrl->ctrls_cb_retval,
+      ctrl->ctrls_cb_resps->nelts, (char **) ctrl->ctrls_cb_resps->elts);
+    if (res < 0) {
+      return -1;
+    }
   }
 
   return 0;
@@ -494,31 +513,28 @@ int pr_ctrls_flush_response(pr_ctrls_t *ctrl) {
 int pr_ctrls_parse_msg(pool *msg_pool, char *msg, unsigned int *msgargc,
     char ***msgargv) {
   char *tmp = msg, *str = NULL;
-  pool *tmp_pool = NULL;
   array_header *msgs = NULL;
 
   /* Sanity checks */
-  if (!msg_pool || !msgargc || !msgargv) {
+  if (msg_pool == NULL ||
+      msgargc == NULL ||
+      msgargv == NULL) {
     errno = EINVAL;
     return -1;
   }
 
-  tmp_pool = make_sub_pool(msg_pool);
-
   /* Allocate an array_header, and push each space-delimited string
-   * (respecting quotes and escapes) into the array.  Once done,
-   * destroy the array.
+   * (respecting quotes and escapes) into the array.
    */
  
-  msgs = make_array(tmp_pool, 0, sizeof(char *));
+  msgs = make_array(msg_pool, 0, sizeof(char *));
 
-  while ((str = ctrls_sep(&tmp)) != NULL)
+  while ((str = ctrls_sep(&tmp)) != NULL) {
     *((char **) push_array(msgs)) = pstrdup(msg_pool, str);
+  }
 
   *msgargc = msgs->nelts;
   *msgargv = (char **) msgs->elts;
-
-  destroy_pool(tmp_pool);
 
   return 0;
 }
@@ -531,7 +547,8 @@ int pr_ctrls_recv_request(pr_ctrls_cl_t *cl) {
   int bread, status = 0;
   register unsigned int i = 0;
 
-  if (cl == NULL) {
+  if (cl == NULL ||
+      cl->cl_ctrls == NULL) {
     errno = EINVAL;
     return -1;
   }
@@ -662,12 +679,16 @@ int pr_ctrls_recv_request(pr_ctrls_cl_t *cl) {
    */
   ctrl = ctrls_lookup_action(NULL, reqaction, TRUE);
   if (ctrl == NULL) {
+    (void) pr_trace_msg(trace_channel, 3,
+      "unknown action requested '%s', unable to receive request", reqaction);
     pr_signals_unblock();
 
     /* XXX This is where we could also add "did you mean" functionality. */
     errno = EINVAL;
     return -1;
   }
+
+  pr_trace_msg(trace_channel, 19, "known action '%s' requested", reqaction);
 
   for (i = 0; i < nreqargs; i++) {
     memset(reqarg, '\0', reqargsz);
@@ -686,12 +707,14 @@ int pr_ctrls_recv_request(pr_ctrls_cl_t *cl) {
     if (bread != sizeof(unsigned int)) {
       (void) pr_trace_msg(trace_channel, 3,
         "short read (%d of %u bytes) of reqarglen (#%u), skipping",
-        bread, i+1, (unsigned int) sizeof(unsigned int));
+        bread, (unsigned int) sizeof(unsigned int), i+1);
       continue;
     }
 
     if (reqarglen == 0) {
       /* Skip any zero-length arguments. */
+      pr_trace_msg(trace_channel, 9,
+        "zero-length reqarg (#%u), skipping", i+1);
       continue;
     }
 
@@ -711,7 +734,7 @@ int pr_ctrls_recv_request(pr_ctrls_cl_t *cl) {
     if (reqargsz < reqarglen) {
       reqargsz = reqarglen + 1;
 
-      if (!ctrl->ctrls_tmp_pool) {
+      if (ctrl->ctrls_tmp_pool == NULL) {
         ctrl->ctrls_tmp_pool = make_sub_pool(ctrls_pool);
         pr_pool_tag(ctrl->ctrls_tmp_pool, "ctrls tmp pool");
       }
@@ -733,7 +756,7 @@ int pr_ctrls_recv_request(pr_ctrls_cl_t *cl) {
     if ((size_t) bread != reqarglen) {
       (void) pr_trace_msg(trace_channel, 3,
         "short read (%d of %u bytes) of reqarg (#%u), skipping",
-        bread, i+1, reqarglen);
+        bread, reqarglen, i+1);
       continue;
     }
 
@@ -760,14 +783,7 @@ int pr_ctrls_recv_request(pr_ctrls_cl_t *cl) {
   next_ctrl = ctrls_lookup_next_action(NULL, TRUE);
 
   while (next_ctrl != NULL) {
-    if (pr_ctrls_copy_args(ctrl, next_ctrl) < 0) {
-      int xerrno = errno;
-
-      pr_signals_unblock();
-
-      errno = xerrno;
-      return -1;
-    }
+    (void) pr_ctrls_copy_args(ctrl, next_ctrl);
 
     /* Add this ctrl object to the client object. */
     *((pr_ctrls_t **) push_array(cl->cl_ctrls)) = next_ctrl;
@@ -786,6 +802,7 @@ int pr_ctrls_recv_request(pr_ctrls_cl_t *cl) {
 int pr_ctrls_recv_response(pool *resp_pool, int ctrls_sockfd,
     int *status, char ***respargv) {
   register unsigned int i = 0;
+  int res, xerrno;
   array_header *resparr = NULL;
   unsigned int respargc = 0, resparglen = 0;
   char response[PR_TUNABLE_BUFFER_SIZE] = {'\0'};
@@ -798,24 +815,57 @@ int pr_ctrls_recv_response(pool *resp_pool, int ctrls_sockfd,
     return -1;
   }
 
-  resparr = make_array(resp_pool, 0, sizeof(char *));
-
   /* No interruptions. */
   pr_signals_block();
 
   /* First, read the status, which is the return value of the control handler.
    */
-  if (read(ctrls_sockfd, status, sizeof(int)) != sizeof(int)) {
+  res = read(ctrls_sockfd, status, sizeof(int));
+  xerrno = errno;
+
+  if ((size_t) res != sizeof(int)) {
     pr_signals_unblock();
+
+    if (res < 0) {
+      (void) pr_trace_msg(trace_channel, 3,
+        "error reading %u response status bytes: %s",
+        (unsigned int) sizeof(int), strerror(xerrno));
+      errno = xerrno;
+      return -1;
+    }
+
+    (void) pr_trace_msg(trace_channel, 3,
+      "short read (%d of %u bytes) of response status, unable to receive "
+      "response", res, (unsigned int) sizeof(int));
+    errno = EPERM;
     return -1;
   }
 
+  pr_trace_msg(trace_channel, 19, "received response status: %d", *status);
+
   /* Next, read the number of responses to be received */
-  if (read(ctrls_sockfd, &respargc, sizeof(unsigned int)) !=
-      sizeof(unsigned int)) {
+  res = read(ctrls_sockfd, &respargc, sizeof(unsigned int));
+  xerrno = errno;
+
+  if ((size_t) res != sizeof(unsigned int)) {
     pr_signals_unblock();
+
+    if (res < 0) {
+      (void) pr_trace_msg(trace_channel, 3,
+        "error reading %u response argc bytes: %s",
+        (unsigned int) sizeof(unsigned int), strerror(xerrno));
+      errno = xerrno;
+      return -1;
+    }
+
+    (void) pr_trace_msg(trace_channel, 3,
+      "short read (%d of %u bytes) of response arg count, unable to receive "
+      "response", res, (unsigned int) sizeof(unsigned int));
+    errno = EPERM;
     return -1;
   }
+
+  pr_trace_msg(trace_channel, 19, "received response argc: %u", respargc);
 
   if (respargc > CTRLS_MAX_NRESPARGS) {
     (void) pr_trace_msg(trace_channel, 3,
@@ -826,18 +876,38 @@ int pr_ctrls_recv_response(pool *resp_pool, int ctrls_sockfd,
     return -1;
   }
 
+  resparr = make_array(resp_pool, 0, sizeof(char *));
+
   /* Read each response, and add it to the array */ 
   for (i = 0; i < respargc; i++) {
-    int bread = 0, blen = 0;
+    int bread = 0;
 
-    if (read(ctrls_sockfd, &resparglen,
-        sizeof(unsigned int)) != sizeof(unsigned int)) {
+    res = read(ctrls_sockfd, &resparglen, sizeof(unsigned int));
+    xerrno = errno;
+
+    if ((size_t) res != sizeof(unsigned int)) {
       pr_signals_unblock();
+
+      if (res < 0) {
+        (void) pr_trace_msg(trace_channel, 3,
+          "error reading %u response arglen bytes: %s",
+          (unsigned int) sizeof(unsigned int), strerror(xerrno));
+        errno = xerrno;
+        return -1;
+      }
+
+      (void) pr_trace_msg(trace_channel, 3,
+        "short read (%d of %u bytes) of resparglen (#%u)",
+        res, (unsigned int) sizeof(unsigned int), i+1);
+      errno = EPERM;
       return -1;
     }
 
     /* Make sure resparglen is not too big */
     if (resparglen >= sizeof(response)) {
+      (void) pr_trace_msg(trace_channel, 3,
+        "resparglen (#%u) of %u bytes exceeds max (%lu bytes), rejecting",
+        i+1, resparglen, (unsigned long) sizeof(response));
       pr_signals_unblock();
       errno = ENOMEM;
       return -1;
@@ -846,14 +916,24 @@ int pr_ctrls_recv_response(pool *resp_pool, int ctrls_sockfd,
     memset(response, '\0', sizeof(response));
 
     bread = read(ctrls_sockfd, response, resparglen);
-    while ((size_t) bread != resparglen) {
+    xerrno = errno;
+
+    if ((unsigned int) bread != resparglen) {
+      pr_signals_unblock();
+
       if (bread < 0) {
-        pr_signals_unblock(); 
+        (void) pr_trace_msg(trace_channel, 3,
+          "error reading %u response arg bytes: %s",
+          (unsigned int) resparglen, strerror(xerrno));
+        errno = xerrno;
         return -1;
       }
 
-      blen += bread;
-      bread = read(ctrls_sockfd, response + blen, resparglen - blen);
+      (void) pr_trace_msg(trace_channel, 3,
+        "short read (%d of %u bytes) of resparg (#%u)",
+        bread, (unsigned int) resparglen, i+1);
+      errno = EPERM;
+      return -1;
     }
 
     /* Always make sure the buffer is zero-terminated */
@@ -862,7 +942,7 @@ int pr_ctrls_recv_response(pool *resp_pool, int ctrls_sockfd,
     *((char **) push_array(resparr)) = pstrdup(resp_pool, response);
   }
 
-  if (respargv) {
+  if (respargv != NULL) {
     *respargv = ((char **) resparr->elts);
   }
 
@@ -870,13 +950,14 @@ int pr_ctrls_recv_response(pool *resp_pool, int ctrls_sockfd,
   return respargc;
 }
 
-int pr_ctrls_send_msg(int sockfd, int msgstatus, unsigned int msgargc,
+int pr_ctrls_send_msg(int fd, int msg_status, unsigned int msgargc,
     char **msgargv) {
+  int res, xerrno;
   register unsigned int i = 0;
   unsigned int msgarglen = 0;
 
   /* Sanity checks */
-  if (sockfd < 0) {
+  if (fd < 0) {
     errno = EINVAL;
     return -1;
   }
@@ -893,8 +974,13 @@ int pr_ctrls_send_msg(int sockfd, int msgstatus, unsigned int msgargc,
   pr_signals_block();
 
   /* Send the message status first */
-  if (write(sockfd, &msgstatus, sizeof(int)) != sizeof(int)) {
+  res = write(fd, &msg_status, sizeof(int));
+  xerrno = errno;
+
+  if ((size_t) res != sizeof(int)) {
     pr_signals_unblock();
+
+    errno = xerrno;
     return -1;
   }
 
@@ -902,19 +988,22 @@ int pr_ctrls_send_msg(int sockfd, int msgstatus, unsigned int msgargc,
    * of arguments to be sent; then send, for each argument, first the
    * length of the argument string, then the argument itself.
    */
-  if (write(sockfd, &msgargc, sizeof(unsigned int)) !=
-      sizeof(unsigned int)) {
+  res = write(fd, &msgargc, sizeof(unsigned int));
+  xerrno = errno;
+
+  if ((size_t) res != sizeof(unsigned int)) {
     pr_signals_unblock();
+
+    errno = xerrno;
     return -1;
   }
 
   for (i = 0; i < msgargc; i++) {
-    int res = 0;
-
     msgarglen = strlen(msgargv[i]);
 
     while (TRUE) {
-      res = write(sockfd, &msgarglen, sizeof(unsigned int));
+      res = write(fd, &msgarglen, sizeof(unsigned int));
+      xerrno = errno;
 
       if (res != sizeof(unsigned int)) {
         if (errno == EAGAIN) {
@@ -922,6 +1011,7 @@ int pr_ctrls_send_msg(int sockfd, int msgstatus, unsigned int msgargc,
         }
 
         pr_signals_unblock();
+        errno = xerrno;
         return -1;
       }
 
@@ -929,15 +1019,17 @@ int pr_ctrls_send_msg(int sockfd, int msgstatus, unsigned int msgargc,
     }
 
     while (TRUE) {
-      res = write(sockfd, msgargv[i], msgarglen);
+      res = write(fd, msgargv[i], msgarglen);
+      xerrno = errno;
+
       if ((size_t) res != msgarglen) {
         if (errno == EAGAIN) {
           continue;
         }
 
         pr_signals_unblock();
+        errno = xerrno;
         return -1;
-
       }
 
       break;
@@ -962,25 +1054,25 @@ static pr_ctrls_t *ctrls_lookup_action(module *mod, const char *action,
 
 static pr_ctrls_t *ctrls_lookup_next_action(module *mod,
     unsigned char skip_disabled) {
-  ctrls_action_t *act = NULL;
+  register ctrls_action_t *act = NULL;
 
   /* Sanity check */
-  if (!action_lookup_action) {
+  if (action_lookup_action == NULL) {
     errno = EINVAL;
     return NULL;
   }
 
-  if (mod != action_lookup_module)
+  if (mod != action_lookup_module) {
     return ctrls_lookup_action(mod, action_lookup_action, skip_disabled);
+  }
 
   for (act = action_lookup_next; act; act = act->next) {
-
-    if (skip_disabled && (act->flags & PR_CTRLS_ACT_DISABLED))
+    if (skip_disabled && (act->flags & PR_CTRLS_ACT_DISABLED)) {
       continue;
+    }
 
     if (strcmp(act->action, action_lookup_action) == 0 &&
         (act->module == mod || mod == ANY_MODULE || mod == NULL)) {
-
       action_lookup_next = act->next;
 
       /* Use this action object to prepare a ctrl object. */
@@ -992,45 +1084,10 @@ static pr_ctrls_t *ctrls_lookup_next_action(module *mod,
 }
 
 int pr_get_registered_actions(pr_ctrls_t *ctrl, int flags) {
-  ctrls_action_t *act = NULL;
+  register ctrls_action_t *act = NULL;
+  int count = 0;
 
-  /* Are ctrls blocked? */
-  if (ctrls_blocked) {
-    errno = EPERM;
-    return -1;
-  }
-
-  for (act = ctrls_action_list; act; act = act->next) {
-    switch (flags) {
-      case CTRLS_GET_ACTION_ALL:
-        pr_ctrls_add_response(ctrl, "%s (mod_%s.c)", act->action,
-          act->module->name);
-        break;
-
-      case CTRLS_GET_ACTION_ENABLED:
-        if (act->flags & PR_CTRLS_ACT_DISABLED)
-          break;
-        pr_ctrls_add_response(ctrl, "%s (mod_%s.c)", act->action,
-          act->module->name);
-        break;
-
-      case CTRLS_GET_DESC:
-        pr_ctrls_add_response(ctrl, "%s: %s", act->action,
-          act->desc);
-        break;
-    }
-  }
-
-  return 0;
-}
-
-int pr_set_registered_actions(module *mod, const char *action,
-    unsigned char skip_disabled, unsigned int flags) {
-  ctrls_action_t *act = NULL;
-  unsigned char have_action = FALSE;
-
-  /* Is flags a valid combination of settable flags? */
-  if (flags && flags != PR_CTRLS_ACT_DISABLED) {
+  if (ctrl == NULL) {
     errno = EINVAL;
     return -1;
   }
@@ -1042,11 +1099,73 @@ int pr_set_registered_actions(module *mod, const char *action,
   }
 
   for (act = ctrls_action_list; act; act = act->next) {
-    if (skip_disabled && (act->flags & PR_CTRLS_ACT_DISABLED))
-      continue;
+    switch (flags) {
+      case CTRLS_GET_ACTION_ALL:
+        if (act->module != NULL) {
+          pr_ctrls_add_response(ctrl, "%s (mod_%s.c)", act->action,
+            act->module->name);
 
-    if ((!action ||
-         strncmp(action, "all", 4) == 0 ||
+        } else {
+           pr_ctrls_add_response(ctrl, "%s (core)", act->action);
+        }
+
+        count++;
+        break;
+
+      case CTRLS_GET_ACTION_ENABLED:
+        if (act->flags & PR_CTRLS_ACT_DISABLED) {
+          continue;
+        }
+
+        if (act->module != NULL) {
+          pr_ctrls_add_response(ctrl, "%s (mod_%s.c)", act->action,
+            act->module->name);
+
+        } else {
+          pr_ctrls_add_response(ctrl, "%s (core)", act->action);
+        }
+
+        count++;
+        break;
+
+      case CTRLS_GET_DESC:
+        pr_ctrls_add_response(ctrl, "%s: %s", act->action,
+          act->desc);
+        count++;
+        break;
+    }
+  }
+
+  return count;
+}
+
+int pr_set_registered_actions(module *mod, const char *action,
+    unsigned char skip_disabled, unsigned int flags) {
+  register ctrls_action_t *act = NULL;
+  unsigned char have_action = FALSE;
+
+  /* Is flags a valid combination of settable flags? */
+  if (flags > 0 &&
+      flags != PR_CTRLS_ACT_SOLITARY &&
+      flags != PR_CTRLS_ACT_DISABLED &&
+      flags != (PR_CTRLS_ACT_SOLITARY|PR_CTRLS_ACT_DISABLED)) {
+    errno = EINVAL;
+    return -1;
+  }
+
+  /* Are ctrls blocked? */
+  if (ctrls_blocked) {
+    errno = EPERM;
+    return -1;
+  }
+
+  for (act = ctrls_action_list; act; act = act->next) {
+    if (skip_disabled && (act->flags & PR_CTRLS_ACT_DISABLED)) {
+      continue;
+    }
+
+    if ((action == NULL ||
+         strcmp(action, "all") == 0 ||
          strcmp(act->action, action) == 0) &&
         (act->module == mod || mod == ANY_MODULE || mod == NULL)) {
       have_action = TRUE;
@@ -1054,7 +1173,7 @@ int pr_set_registered_actions(module *mod, const char *action,
     }
   }
 
-  if (!have_action) {
+  if (have_action == FALSE) {
     errno = ENOENT;
     return -1;
   }
@@ -1064,7 +1183,7 @@ int pr_set_registered_actions(module *mod, const char *action,
 
 #if !defined(SO_PEERCRED) && !defined(HAVE_GETPEEREID) && \
     !defined(HAVE_GETPEERUCRED) && defined(LOCAL_CREDS)
-static int ctrls_connect_local_creds(int sockfd) {
+static int ctrls_connect_local_creds(int fd) {
   char buf[1] = {'\0'};
   int res;
 
@@ -1073,17 +1192,17 @@ static int ctrls_connect_local_creds(int sockfd) {
    * for us.
    */
 
-  res = write(sockfd, buf, 1);
+  res = write(fd, buf, 1);
   while (res < 0) {
     if (errno == EINTR) {
       pr_signals_handle();
 
-      res = write(sockfd, buf, 1);
+      res = write(fd, buf, 1);
       continue;
     }
 
     pr_trace_msg(trace_channel, 5,
-      "error writing credentials byte for LOCAL_CREDS to fd %d: %s", sockfd,
+      "error writing credentials byte for LOCAL_CREDS to fd %d: %s", fd,
       strerror(errno));
     return -1;
   }
@@ -1093,15 +1212,20 @@ static int ctrls_connect_local_creds(int sockfd) {
 #endif /* !SCM_CREDS */
 
 int pr_ctrls_connect(const char *socket_file) {
-  int sockfd = -1, len = 0;
+  int fd = -1, len = 0;
   struct sockaddr_un cl_sock, ctrl_sock;
+
+  if (socket_file == NULL) {
+    errno = EINVAL;
+    return -1;
+  }
 
   /* No interruptions */
   pr_signals_block();
 
   /* Create a Unix domain socket */
-  sockfd = socket(AF_UNIX, SOCK_STREAM, 0);
-  if (sockfd < 0) {
+  fd = socket(AF_UNIX, SOCK_STREAM, 0);
+  if (fd < 0) {
     int xerrno = errno;
 
     pr_signals_unblock();
@@ -1110,10 +1234,10 @@ int pr_ctrls_connect(const char *socket_file) {
     return -1;
   }
 
-  if (fcntl(sockfd, F_SETFD, FD_CLOEXEC) < 0) {
+  if (fcntl(fd, F_SETFD, FD_CLOEXEC) < 0) {
     int xerrno = errno;
 
-    (void) close(sockfd);
+    (void) close(fd);
     pr_signals_unblock();
 
     errno = xerrno;
@@ -1139,11 +1263,13 @@ int pr_ctrls_connect(const char *socket_file) {
   (void) unlink(cl_sock.sun_path);
 
   /* Make it a socket */
-  if (bind(sockfd, (struct sockaddr *) &cl_sock, len) < 0) {
+  if (bind(fd, (struct sockaddr *) &cl_sock, len) < 0) {
     int xerrno = errno;
 
+    pr_trace_msg(trace_channel, 19, "error binding local socket to '%s': %s",
+      cl_sock.sun_path, strerror(xerrno));
     (void) unlink(cl_sock.sun_path);
-    (void) close(sockfd);
+    (void) close(fd);
     pr_signals_unblock();
 
     errno = xerrno;
@@ -1154,8 +1280,10 @@ int pr_ctrls_connect(const char *socket_file) {
   if (chmod(cl_sock.sun_path, PR_CTRLS_CL_MODE) < 0) {
     int xerrno = errno;
 
+    pr_trace_msg(trace_channel, 19, "error setting local socket mode: %s",
+      strerror(xerrno));
     (void) unlink(cl_sock.sun_path);
-    (void) close(sockfd);
+    (void) close(fd);
     pr_signals_unblock();
 
     errno = xerrno;
@@ -1169,11 +1297,13 @@ int pr_ctrls_connect(const char *socket_file) {
   sstrncpy(ctrl_sock.sun_path, socket_file, sizeof(ctrl_sock.sun_path));
   len = sizeof(ctrl_sock);
 
-  if (connect(sockfd, (struct sockaddr *) &ctrl_sock, len) < 0) {
+  if (connect(fd, (struct sockaddr *) &ctrl_sock, len) < 0) {
     int xerrno = errno;
 
+    pr_trace_msg(trace_channel, 19, "error connecting to local socket '%s': %s",
+      ctrl_sock.sun_path, strerror(xerrno));
     (void) unlink(cl_sock.sun_path);
-    (void) close(sockfd);
+    (void) close(fd);
     pr_signals_unblock();
 
     errno = xerrno;
@@ -1182,11 +1312,13 @@ int pr_ctrls_connect(const char *socket_file) {
 
 #if !defined(SO_PEERCRED) && !defined(HAVE_GETPEEREID) && \
     !defined(HAVE_GETPEERUCRED) && defined(LOCAL_CREDS)
-  if (ctrls_connect_local_creds(sockfd) < 0) {
+  if (ctrls_connect_local_creds(fd) < 0) {
     int xerrno = errno;
 
+    pr_trace_msg(trace_channel, 19, "error sending creds to local socket: %s",
+      strerror(xerrno));
     (void) unlink(cl_sock.sun_path);
-    (void) close(sockfd);
+    (void) close(fd);
     pr_signals_unblock();
 
     errno = xerrno;
@@ -1195,19 +1327,19 @@ int pr_ctrls_connect(const char *socket_file) {
 #endif /* LOCAL_CREDS */
 
   pr_signals_unblock();
-  return sockfd;
+  return fd;
 }
 
 int pr_ctrls_issock_unix(mode_t sock_mode) {
 
-  if (ctrls_use_isfifo) {
-#ifdef S_ISFIFO
+  if (ctrls_use_isfifo == TRUE) {
+#if defined(S_ISFIFO)
     if (S_ISFIFO(sock_mode)) {
       return 0;
     }
 #endif /* S_ISFIFO */
   } else {
-#ifdef S_ISSOCK
+#if defined(S_ISSOCK)
     if (S_ISSOCK(sock_mode)) {
       return 0;
     }
@@ -1219,7 +1351,7 @@ int pr_ctrls_issock_unix(mode_t sock_mode) {
 }
 
 #if defined(SO_PEERCRED)
-static int ctrls_get_creds_peercred(int sockfd, uid_t *uid, gid_t *gid,
+static int ctrls_get_creds_peercred(int fd, uid_t *uid, gid_t *gid,
     pid_t *pid) {
 # if defined(HAVE_STRUCT_SOCKPEERCRED)
   struct sockpeercred cred;
@@ -1229,7 +1361,7 @@ static int ctrls_get_creds_peercred(int sockfd, uid_t *uid, gid_t *gid,
   socklen_t cred_len;
 
   cred_len = sizeof(cred);
-  if (getsockopt(sockfd, SOL_SOCKET, SO_PEERCRED, &cred, &cred_len) < 0) {
+  if (getsockopt(fd, SOL_SOCKET, SO_PEERCRED, &cred, &cred_len) < 0) {
     int xerrno = errno;
 
     pr_trace_msg(trace_channel, 2,
@@ -1240,15 +1372,15 @@ static int ctrls_get_creds_peercred(int sockfd, uid_t *uid, gid_t *gid,
     return -1;
   }
 
-  if (uid) {
+  if (uid != NULL) {
     *uid = cred.uid;
   }
 
-  if (gid) {
+  if (gid != NULL) {
     *gid = cred.gid;
   }
 
-  if (pid) {
+  if (pid != NULL) {
     *pid = cred.pid;
   }
 
@@ -1257,12 +1389,12 @@ static int ctrls_get_creds_peercred(int sockfd, uid_t *uid, gid_t *gid,
 #endif /* SO_PEERCRED */
 
 #if !defined(SO_PEERCRED) && defined(HAVE_GETPEEREID)
-static int ctrls_get_creds_peereid(int sockfd, uid_t *uid, gid_t *gid) {
-  if (getpeereid(sockfd, uid, gid) < 0) {
+static int ctrls_get_creds_peereid(int fd, uid_t *uid, gid_t *gid) {
+  if (getpeereid(fd, uid, gid) < 0) {
     int xerrno = errno;
 
     pr_trace_msg(trace_channel, 7, "error obtaining credentials using "
-      "getpeereid(2) on fd %d: %s", sockfd, strerror(xerrno));
+      "getpeereid(2) on fd %d: %s", fd, strerror(xerrno));
 
     errno = xerrno;
     return -1;
@@ -1274,24 +1406,26 @@ static int ctrls_get_creds_peereid(int sockfd, uid_t *uid, gid_t *gid) {
 
 #if !defined(SO_PEERCRED) && !defined(HAVE_GETPEEREID) && \
     defined(HAVE_GETPEERUCRED)
-static int ctrls_get_creds_peerucred(int sockfd, uid_t *uid, gid_t *gid) {
+static int ctrls_get_creds_peerucred(int fd, uid_t *uid, gid_t *gid) {
   ucred_t *cred = NULL;
 
-  if (getpeerucred(sockfd, &cred) < 0) {
+  if (getpeerucred(fd, &cred) < 0) {
     int xerrno = errno;
 
     pr_trace_msg(trace_channel, 7, "error obtaining credentials using "
-      "getpeerucred(3) on fd %d: %s", sockfd, strerror(xerrno));
+      "getpeerucred(3) on fd %d: %s", fd, strerror(xerrno));
 
     errno = xerrno;
     return -1;
   }
 
-  if (uid)
+  if (uid != NULL) {
     *uid = ucred_getruid(cred);
+  }
 
-  if (gid)
+  if (gid != NULL) {
     *gid = ucred_getrgid(cred);
+  }
 
   ucred_free(cred);
   return 0;
@@ -1300,7 +1434,7 @@ static int ctrls_get_creds_peerucred(int sockfd, uid_t *uid, gid_t *gid) {
 
 #if !defined(SO_PEERCRED) && !defined(HAVE_GETPEEREID) && \
     !defined(HAVE_GETPEERUCRED) && defined(LOCAL_CREDS)
-static int ctrls_get_creds_local(int sockfd, uid_t *uid, gid_t *gid,
+static int ctrls_get_creds_local(int fd, uid_t *uid, gid_t *gid,
     pid_t *pid) {
   int res;
   char buf[1];
@@ -1329,19 +1463,19 @@ static int ctrls_get_creds_local(int sockfd, uid_t *uid, gid_t *gid,
   msg.msg_controllen = sizeof(control);
   msg.msg_flags = 0;
 
-  res = recvmsg(sockfd, &msg, 0);
+  res = recvmsg(fd, &msg, 0);
   while (res < 0) {
     int xerrno = errno;
 
     if (xerrno == EINTR) {
       pr_signals_handle();
 
-      res = recvmsg(sockfd, &msg, 0);
+      res = recvmsg(fd, &msg, 0);
       continue;
     }
 
     pr_trace_msg(trace_channel, 6,
-      "error calling recvmsg() on fd %d: %s", sockfd, strerror(xerrno));
+      "error calling recvmsg() on fd %d: %s", fd, strerror(xerrno));
 
     errno = xerrno;
     return -1;
@@ -1359,7 +1493,7 @@ static int ctrls_get_creds_local(int sockfd, uid_t *uid, gid_t *gid,
     if (hdr->cmsg_level != SOL_SOCKET) {
       pr_trace_msg(trace_channel, 5,
         "message received via recvmsg() on fd %d was not a SOL_SOCKET message",
-        sockfd);
+        fd);
 
       errno = EINVAL;
       return -1;
@@ -1368,7 +1502,7 @@ static int ctrls_get_creds_local(int sockfd, uid_t *uid, gid_t *gid,
     if (hdr->cmsg_len < MINCREDSIZE) {
       pr_trace_msg(trace_channel, 5,
         "message received via recvmsg() on fd %d was not of proper "
-        "length (%u bytes)", sockfd, MINCREDSIZE);
+        "length (%u bytes)", fd, MINCREDSIZE);
 
       errno = EINVAL;
       return -1;
@@ -1377,7 +1511,7 @@ static int ctrls_get_creds_local(int sockfd, uid_t *uid, gid_t *gid,
     if (hdr->cmsg_type != SCM_CREDS) {
       pr_trace_msg(trace_channel, 5,
         "message received via recvmsg() on fd %d was not of type SCM_CREDS",
-        sockfd);
+        fd);
 
       errno = EINVAL;
       return -1;
@@ -1472,24 +1606,24 @@ static int ctrls_get_creds_basic(struct sockaddr_un *sock, int cl_fd,
       time_t age = stale_time - st.st_atime;
 
       pr_trace_msg(trace_channel, 3,
-         "last access time of '%s' is %lu secs old (must be less than %u secs)",
-         sock->sun_path, (unsigned long) age, max_age);
+        "last access time of '%s' is %lu secs old (must be less than %u secs)",
+        sock->sun_path, (unsigned long) age, max_age);
     }
 
     if (st.st_ctime < stale_time) {
       time_t age = stale_time - st.st_ctime;
 
       pr_trace_msg(trace_channel, 3,
-         "last change time of '%s' is %lu secs old (must be less than %u secs)",
-         sock->sun_path, (unsigned long) age, max_age);
+        "last change time of '%s' is %lu secs old (must be less than %u secs)",
+        sock->sun_path, (unsigned long) age, max_age);
     }
 
     if (st.st_mtime < stale_time) {
       time_t age = stale_time - st.st_mtime;
 
       pr_trace_msg(trace_channel, 3,
-         "last modified time of '%s' is %lu secs old (must be less than %u "
-         "secs)", sock->sun_path, (unsigned long) age, max_age);
+        "last modified time of '%s' is %lu secs old (must be less than %u "
+        "secs)", sock->sun_path, (unsigned long) age, max_age);
     }
 
     if (pr_ctrls_send_msg(cl_fd, -1, 1, &msg) < 0) {
@@ -1509,32 +1643,38 @@ static int ctrls_get_creds_basic(struct sockaddr_un *sock, int cl_fd,
   cl_pid = atol(tmp);
 
   /* Return the IDs of the caller */
-  if (uid)
+  if (uid != NULL) {
     *uid = st.st_uid;
+  }
 
-  if (gid)
+  if (gid != NULL) {
     *gid = st.st_gid;
+  }
 
-  if (pid)
+  if (pid != NULL) {
     *pid = cl_pid;
+  }
 
   return 0;
 }
 
-int pr_ctrls_accept(int sockfd, uid_t *uid, gid_t *gid, pid_t *pid,
+int pr_ctrls_accept(int fd, uid_t *uid, gid_t *gid, pid_t *pid,
     unsigned int max_age) {
   socklen_t len = 0;
   struct sockaddr_un sock;
-  int cl_fd = -1;
-  int res = -1;
+  int cl_fd = -1, res = -1, xerrno;
 
   len = sizeof(sock);
 
-  while ((cl_fd = accept(sockfd, (struct sockaddr *) &sock, &len)) < 0) {
-    int xerrno = errno;
+  cl_fd = accept(fd, (struct sockaddr *) &sock, &len);
+  xerrno = errno;
 
+  while (cl_fd < 0) {
     if (xerrno == EINTR) {
       pr_signals_handle();
+
+      cl_fd = accept(fd, (struct sockaddr *) &sock, &len);
+      xerrno = errno;
       continue;
     }
 
@@ -1569,7 +1709,6 @@ int pr_ctrls_accept(int sockfd, uid_t *uid, gid_t *gid, pid_t *pid,
   pr_trace_msg(trace_channel, 5,
     "checking client credentials using SCM_CREDS");
   res = ctrls_get_creds_local(cl_fd, uid, gid, pid);
-
 #endif
 
   /* Fallback to the Stevens method of determining connection credentials,
@@ -1579,14 +1718,14 @@ int pr_ctrls_accept(int sockfd, uid_t *uid, gid_t *gid, pid_t *pid,
     pr_trace_msg(trace_channel, 5,
       "checking client credentials using Stevens' method");
     res = ctrls_get_creds_basic(&sock, cl_fd, max_age, uid, gid, pid);
-
-    if (res < 0)
+    if (res < 0) {
       return res;
+    }
   }
 
   /* Done with the path now */
   PRIVS_ROOT
-  unlink(sock.sun_path);
+  (void) unlink(sock.sun_path);
   PRIVS_RELINQUISH
 
   return cl_fd;
@@ -1600,17 +1739,17 @@ void pr_unblock_ctrls(void) {
   ctrls_blocked = FALSE;
 }
 
-int pr_check_actions(void) {
-  ctrls_action_t *act = NULL;
+int pr_ctrls_check_actions(void) {
+  register ctrls_action_t *act = NULL;
 
   for (act = ctrls_action_list; act; act = act->next) {
-
     if (act->flags & PR_CTRLS_ACT_SOLITARY) {
       /* This is a territorial action -- only one instance allowed */
       if (ctrls_lookup_action(NULL, act->action, FALSE)) {
         pr_log_pri(PR_LOG_NOTICE,
           "duplicate controls for '%s' action not allowed",
           act->action);
+        errno = EEXIST;
         return -1;
       }
     }
@@ -1620,7 +1759,8 @@ int pr_check_actions(void) {
 }
 
 int pr_run_ctrls(module *mod, const char *action) {
-  pr_ctrls_t *ctrl = NULL;
+  register pr_ctrls_t *ctrl = NULL;
+  time_t now;
 
   /* Are ctrls blocked? */
   if (ctrls_blocked) {
@@ -1628,73 +1768,80 @@ int pr_run_ctrls(module *mod, const char *action) {
     return -1;
   }
 
+  now = time(NULL);
+
   for (ctrl = ctrls_active_list; ctrl; ctrl = ctrl->ctrls_next) {
+    if (mod != NULL &&
+        ctrl->ctrls_module != NULL &&
+        ctrl->ctrls_module != mod) {
+      pr_trace_msg(trace_channel, 19,
+        "skipping ctrl due to module mismatch: module = %p, ctrl module = %p",
+        mod, ctrl->ctrls_module);
+      continue;
+    }
 
     /* Be watchful of the various client-side flags.  Note: if
      * ctrl->ctrls_cl is ever NULL, it means there's a bug in the code.
      */
-    if (ctrl->ctrls_cl->cl_flags != PR_CTRLS_CL_HAVEREQ)
+    if (ctrl->ctrls_cl->cl_flags != PR_CTRLS_CL_HAVEREQ) {
+      pr_trace_msg(trace_channel, 19,
+        "skipping ctrl due to missing client HAVEREQ flag");
       continue;
+    }
 
     /* Has this control been disabled? */
-    if (ctrl->ctrls_flags & PR_CTRLS_ACT_DISABLED)
+    if (ctrl->ctrls_flags & PR_CTRLS_ACT_DISABLED) {
+      pr_trace_msg(trace_channel, 19,
+        "skipping ctrl due to ACT_DISABLED flag");
       continue;
+    }
 
     /* Is it time to trigger this ctrl? */
-    if (!(ctrl->ctrls_flags & PR_CTRLS_REQUESTED))
+    if (!(ctrl->ctrls_flags & PR_CTRLS_REQUESTED)) {
+      pr_trace_msg(trace_channel, 19,
+        "skipping ctrl due to missing CTRLS_REQUESTED flag");
       continue;
+    }
 
-    if (ctrl->ctrls_when > time(NULL)) {
+    if (ctrl->ctrls_when > now) {
+      pr_trace_msg(trace_channel, 19,
+        "skipping ctrl because it is still pending: now = %lu, ctrl when = %lu",
+        (unsigned long) now, (unsigned long) ctrl->ctrls_when);
       ctrl->ctrls_flags |= PR_CTRLS_PENDING;
       pr_ctrls_add_response(ctrl, "request pending");
       continue;
     }
 
-    if (action &&
+    if (action == NULL ||
         strcmp(ctrl->ctrls_action, action) == 0) {
       pr_trace_msg(trace_channel, 7, "calling '%s' control handler",
         ctrl->ctrls_action);
 
-      /* Invoke the callback, if the ctrl's action matches.  Unblock
-       * ctrls before invoking the callback, then re-block them after the
-       * callback returns.  This will allow the action handlers to use some
-       * of the Controls API functions correctly.
-       */
-      pr_unblock_ctrls();
-      ctrl->ctrls_cb_retval = ctrl->ctrls_cb(ctrl,
-        (ctrl->ctrls_cb_args ? ctrl->ctrls_cb_args->nelts : 0),
-        (ctrl->ctrls_cb_args ? (char **) ctrl->ctrls_cb_args->elts : NULL));
-      pr_block_ctrls();
+    } else {
+      continue;
+    }
 
-      if (ctrl->ctrls_cb_retval < 1) {
-        ctrl->ctrls_flags &= ~PR_CTRLS_REQUESTED;
-        ctrl->ctrls_flags &= ~PR_CTRLS_PENDING;
-        ctrl->ctrls_flags |= PR_CTRLS_HANDLED;
-      }
+    pr_unblock_ctrls();
+    ctrl->ctrls_cb_retval = ctrl->ctrls_cb(ctrl,
+      (ctrl->ctrls_cb_args ? ctrl->ctrls_cb_args->nelts : 0),
+      (ctrl->ctrls_cb_args ? (char **) ctrl->ctrls_cb_args->elts : NULL));
+    pr_block_ctrls();
 
-    } else if (!action) {
-      pr_trace_msg(trace_channel, 7, "calling '%s' control handler",
-        ctrl->ctrls_action);
+    pr_trace_msg(trace_channel, 19,
+      "ran '%s' ctrl, callback value = %d", ctrl->ctrls_action,
+      ctrl->ctrls_cb_retval);
 
-      /* If no action was given, invoke every callback */
-      pr_unblock_ctrls();
-      ctrl->ctrls_cb_retval = ctrl->ctrls_cb(ctrl,
-        (ctrl->ctrls_cb_args ? ctrl->ctrls_cb_args->nelts : 0),
-        (ctrl->ctrls_cb_args ? (char **) ctrl->ctrls_cb_args->elts : NULL));
-      pr_block_ctrls();
-
-      if (ctrl->ctrls_cb_retval < 1) {
-        ctrl->ctrls_flags &= ~PR_CTRLS_REQUESTED;
-        ctrl->ctrls_flags &= ~PR_CTRLS_PENDING;
-        ctrl->ctrls_flags |= PR_CTRLS_HANDLED;
-      }
+    if (ctrl->ctrls_cb_retval < 1) {
+      ctrl->ctrls_flags &= ~PR_CTRLS_REQUESTED;
+      ctrl->ctrls_flags &= ~PR_CTRLS_PENDING;
+      ctrl->ctrls_flags |= PR_CTRLS_HANDLED;
     }
   }
 
   return 0;
 }
 
-int pr_reset_ctrls(void) {
+int pr_ctrls_reset(void) {
   pr_ctrls_t *ctrl = NULL;
 
   /* NOTE: need a clean_ctrls() or somesuch that will, after sending any
@@ -1716,8 +1863,9 @@ int pr_reset_ctrls(void) {
    */
 
   for (ctrl = ctrls_active_list; ctrl; ctrl = ctrl->ctrls_next) {
-    if (ctrl->ctrls_cb_retval < 1)
-      ctrls_free(ctrl);
+    if (ctrl->ctrls_cb_retval < 1) {
+      pr_ctrls_free(ctrl);
+    }
   }
 
   return 0;
@@ -1729,26 +1877,31 @@ int pr_reset_ctrls(void) {
  * otherwise. Note that the default is to deny everyone, unless an ACL has
  * been configured.
  */
-unsigned char pr_ctrls_check_group_acl(gid_t cl_gid,
-    const ctrls_grp_acl_t *grp_acl) {
-  register unsigned int i = 0;
-  unsigned char res = FALSE;
+int pr_ctrls_check_group_acl(gid_t cl_gid, const ctrls_group_acl_t *group_acl) {
+  int res = FALSE;
+
+  if (group_acl == NULL) {
+    errno = EINVAL;
+    return -1;
+  }
 
   /* Note: the special condition of ngids of 1 and gids of NULL signals
    * that all groups are to be treated according to the allow member.
    */
-  if (grp_acl->gids) {
-    for (i = 0; i < grp_acl->ngids; i++) {
-      if ((grp_acl->gids)[i] == cl_gid) {
+  if (group_acl->gids != NULL) {
+    register unsigned int i = 0;
+
+    for (i = 0; i < group_acl->ngids; i++) {
+      if ((group_acl->gids)[i] == cl_gid) {
         res = TRUE;
       }
     }
 
-  } else if (grp_acl->ngids == 1) {
+  } else if (group_acl->ngids == 1) {
     res = TRUE;
   }
 
-  if (!grp_acl->allow) {
+  if (!group_acl->allow) {
     res = !res;
   }
 
@@ -1759,26 +1912,31 @@ unsigned char pr_ctrls_check_group_acl(gid_t cl_gid,
  * otherwise. Note that the default is to deny everyone, unless an ACL has
  * been configured.
  */
-unsigned char pr_ctrls_check_user_acl(uid_t cl_uid,
-    const ctrls_usr_acl_t *usr_acl) {
-  register unsigned int i = 0;
-  unsigned char res = FALSE;
+int pr_ctrls_check_user_acl(uid_t cl_uid, const ctrls_user_acl_t *user_acl) {
+  int res = FALSE;
+
+  if (user_acl == NULL) {
+    errno = EINVAL;
+    return -1;
+  }
 
   /* Note: the special condition of nuids of 1 and uids of NULL signals
    * that all users are to be treated according to the allow member.
    */
-  if (usr_acl->uids) {
-    for (i = 0; i < usr_acl->nuids; i++) {
-      if ((usr_acl->uids)[i] == cl_uid) {
+  if (user_acl->uids != NULL) {
+    register unsigned int i = 0;
+
+    for (i = 0; i < user_acl->nuids; i++) {
+      if ((user_acl->uids)[i] == cl_uid) {
         res = TRUE;
       }
     }
 
-  } else if (usr_acl->nuids == 1) {
+  } else if (user_acl->nuids == 1) {
     res = TRUE;
   }
 
-  if (!usr_acl->allow) {
+  if (!user_acl->allow) {
     res = !res;
   }
 
@@ -1786,19 +1944,31 @@ unsigned char pr_ctrls_check_user_acl(uid_t cl_uid,
 }
 
 /* Returns TRUE for allowed, FALSE for denied. */
-unsigned char pr_ctrls_check_acl(const pr_ctrls_t *ctrl,
+int pr_ctrls_check_acl(const pr_ctrls_t *ctrl,
     const ctrls_acttab_t *acttab, const char *action) {
   register unsigned int i = 0;
 
+  if (ctrl == NULL ||
+      ctrl->ctrls_cl == NULL ||
+      acttab == NULL ||
+      action == NULL) {
+    errno = EINVAL;
+    return -1;
+  }
+
   for (i = 0; acttab[i].act_action; i++) {
     if (strcmp(acttab[i].act_action, action) == 0) {
+      int user_check = FALSE, group_check = FALSE;
 
-      if (!pr_ctrls_check_user_acl(ctrl->ctrls_cl->cl_uid,
-            &(acttab[i].act_acl->acl_usrs)) &&
-          !pr_ctrls_check_group_acl(ctrl->ctrls_cl->cl_gid,
-            &(acttab[i].act_acl->acl_grps))) {
+      if (acttab[i].act_acl != NULL) {
+        user_check = pr_ctrls_check_user_acl(ctrl->ctrls_cl->cl_uid,
+          &(acttab[i].act_acl->acl_users));
+        group_check = pr_ctrls_check_group_acl(ctrl->ctrls_cl->cl_gid,
+          &(acttab[i].act_acl->acl_groups));
+      }
 
-        /* Access denied */
+      if (user_check != TRUE &&
+          group_check != TRUE) {
         return FALSE;
       }
     }
@@ -1807,28 +1977,37 @@ unsigned char pr_ctrls_check_acl(const pr_ctrls_t *ctrl,
   return TRUE;
 }
 
-void pr_ctrls_init_acl(ctrls_acl_t *acl) {
-
-  /* Sanity check */
-  if (!acl)
-    return;
+int pr_ctrls_init_acl(ctrls_acl_t *acl) {
+  if (acl == NULL) {
+    errno = EINVAL;
+    return -1;
+  }
 
   memset(acl, 0, sizeof(ctrls_acl_t));
-  acl->acl_usrs.allow = acl->acl_grps.allow = TRUE;
+  acl->acl_users.allow = acl->acl_groups.allow = TRUE;
+
+  return 0;
 }
 
 static char *ctrls_argsep(char **arg) {
   char *ret = NULL, *dst = NULL;
   char quote_mode = 0;
 
-  if (!arg || !*arg || !**arg)
+  if (arg == NULL ||
+      !*arg ||
+      !**arg) {
+    errno = EINVAL;
     return NULL;
+  }
 
-  while (**arg && PR_ISSPACE(**arg))
+  while (**arg &&
+         PR_ISSPACE(**arg)) {
     (*arg)++;
+  }
 
-  if (!**arg)
+  if (!**arg) {
     return NULL;
+  }
 
   ret = dst = *arg;
 
@@ -1841,44 +2020,49 @@ static char *ctrls_argsep(char **arg) {
       (quote_mode ? (**arg != '\"') : (!PR_ISSPACE(**arg)))) {
 
     if (**arg == '\\' && quote_mode) {
-
       /* escaped char */
-      if (*((*arg) + 1))
+      if (*((*arg) + 1)) {
         *dst = *(++(*arg));
+      }
     }
 
     *dst++ = **arg;
     ++(*arg);
   }
 
-  if (**arg)
+  if (**arg) {
     (*arg)++;
+  }
 
   *dst = '\0';
   return ret;
 }
 
-char **pr_ctrls_parse_acl(pool *acl_pool, char *acl_str) {
-  char *name = NULL, *acl_str_dup = NULL, **acl_list = NULL;
+char **pr_ctrls_parse_acl(pool *acl_pool, const char *acl_text) {
+  char *name = NULL, *acl_text_dup = NULL, **acl_list = NULL;
   array_header *acl_arr = NULL;
   pool *tmp_pool = NULL;
 
-  /* Sanity checks */
-  if (!acl_pool || !acl_str)
+  if (acl_pool == NULL ||
+      acl_text == NULL) {
+    errno = EINVAL;
     return NULL;
+  }
 
   tmp_pool = make_sub_pool(acl_pool);
-  acl_str_dup = pstrdup(tmp_pool, acl_str);
+  acl_text_dup = pstrdup(tmp_pool, acl_text);
 
   /* Allocate an array */
   acl_arr = make_array(acl_pool, 0, sizeof(char **));
 
   /* Add each name to the array */
-  while ((name = ctrls_argsep(&acl_str_dup)) != NULL) {
-    char *tmp = pstrdup(acl_pool, name);
+  while ((name = ctrls_argsep(&acl_text_dup)) != NULL) {
+    char *text;
+
+    text = pstrdup(acl_pool, name);
 
     /* Push the name into the ACL array */
-    *((char **) push_array(acl_arr)) = tmp;
+    *((char **) push_array(acl_arr)) = text;
   }
 
   /* Terminate the temp array with a NULL, as is proper. */
@@ -1891,62 +2075,64 @@ char **pr_ctrls_parse_acl(pool *acl_pool, char *acl_str) {
   return acl_list;
 }
 
-void pr_ctrls_set_group_acl(pool *grp_acl_pool, ctrls_grp_acl_t *grp_acl,
+int pr_ctrls_set_group_acl(pool *group_acl_pool, ctrls_group_acl_t *group_acl,
     const char *allow, char *grouplist) {
   char *group = NULL, **groups = NULL;
   array_header *gid_list = NULL;
   gid_t gid = 0;
   pool *tmp_pool = NULL;
 
-  if (grp_acl_pool == NULL ||
-      grp_acl == NULL ||
+  if (group_acl_pool == NULL ||
+      group_acl == NULL ||
       allow == NULL ||
       grouplist == NULL) {
-    return;
+    errno = EINVAL;
+    return -1;
   }
 
-  tmp_pool = make_sub_pool(grp_acl_pool);
+  tmp_pool = make_sub_pool(group_acl_pool);
 
-  if (strncmp(allow, "allow", 6) == 0) {
-    grp_acl->allow = TRUE;
+  if (strcasecmp(allow, "allow") == 0) {
+    group_acl->allow = TRUE;
 
   } else {
-    grp_acl->allow = FALSE;
+    group_acl->allow = FALSE;
   }
 
   /* Parse the given expression into an array, then retrieve the GID
    * for each given name.
    */
-  groups = pr_ctrls_parse_acl(grp_acl_pool, grouplist);
+  groups = pr_ctrls_parse_acl(group_acl_pool, grouplist);
 
   /* Allocate an array of gid_t's */
-  gid_list = make_array(grp_acl_pool, 0, sizeof(gid_t));
+  gid_list = make_array(group_acl_pool, 0, sizeof(gid_t));
 
   for (group = *groups; group != NULL; group = *++groups) {
 
     /* Handle a group name of "*" differently. */
-    if (strncmp(group, "*", 2) == 0) {
-      grp_acl->ngids = 1;
-      grp_acl->gids = NULL;
+    if (strcmp(group, "*") == 0) {
+      group_acl->ngids = 1;
+      group_acl->gids = NULL;
       destroy_pool(tmp_pool);
-      return;
+      return 0;
+    }
 
-    } else {
-      gid = pr_auth_name2gid(tmp_pool, group);
-      if (gid == (gid_t) -1)
-        continue;
+    gid = pr_auth_name2gid(tmp_pool, group);
+    if (gid == (gid_t) -1) {
+      continue;
     }
 
     *((gid_t *) push_array(gid_list)) = gid;
   }
 
-  grp_acl->ngids = gid_list->nelts;
-  grp_acl->gids = (gid_t *) gid_list->elts;
+  group_acl->ngids = gid_list->nelts;
+  group_acl->gids = (gid_t *) gid_list->elts;
 
   destroy_pool(tmp_pool);
+  return 0;
 }
 
-void pr_ctrls_set_user_acl(pool *usr_acl_pool, ctrls_usr_acl_t *usr_acl,
+int pr_ctrls_set_user_acl(pool *user_acl_pool, ctrls_user_acl_t *user_acl,
     const char *allow, char *userlist) {
   char *user = NULL, **users = NULL;
   array_header *uid_list = NULL;
@@ -1954,68 +2140,87 @@ void pr_ctrls_set_user_acl(pool *usr_acl_pool, ctrls_usr_acl_t *usr_acl,
   pool *tmp_pool = NULL;
 
   /* Sanity checks */
-  if (usr_acl_pool == NULL ||
-      usr_acl == NULL ||
+  if (user_acl_pool == NULL ||
+      user_acl == NULL ||
       allow == NULL ||
       userlist == NULL) {
-    return;
+    errno = EINVAL;
+    return -1;
   }
 
-  tmp_pool = make_sub_pool(usr_acl_pool);
+  tmp_pool = make_sub_pool(user_acl_pool);
 
-  if (strncmp(allow, "allow", 6) == 0) {
-    usr_acl->allow = TRUE;
+  if (strcasecmp(allow, "allow") == 0) {
+    user_acl->allow = TRUE;
 
   } else {
-    usr_acl->allow = FALSE;
+    user_acl->allow = FALSE;
   }
 
   /* Parse the given expression into an array, then retrieve the UID
    * for each given name.
    */
-  users = pr_ctrls_parse_acl(usr_acl_pool, userlist);
+  users = pr_ctrls_parse_acl(user_acl_pool, userlist);
 
   /* Allocate an array of uid_t's */
-  uid_list = make_array(usr_acl_pool, 0, sizeof(uid_t));
+  uid_list = make_array(user_acl_pool, 0, sizeof(uid_t));
 
   for (user = *users; user != NULL; user = *++users) {
 
     /* Handle a user name of "*" differently. */
-    if (strncmp(user, "*", 2) == 0) {
-      usr_acl->nuids = 1;
-      usr_acl->uids = NULL;
+    if (strcmp(user, "*") == 0) {
+      user_acl->nuids = 1;
+      user_acl->uids = NULL;
       destroy_pool(tmp_pool);
-      return;
+      return 0;
+    }
 
-    } else {
-      uid = pr_auth_name2uid(tmp_pool, user);
-      if (uid == (uid_t) -1)
-        continue;
+    uid = pr_auth_name2uid(tmp_pool, user);
+    if (uid == (uid_t) -1) {
+      continue;
     }
 
     *((uid_t *) push_array(uid_list)) = uid;
   }
 
-  usr_acl->nuids = uid_list->nelts;
-  usr_acl->uids = (uid_t *) uid_list->elts;
+  user_acl->nuids = uid_list->nelts;
+  user_acl->uids = (uid_t *) uid_list->elts;
 
   destroy_pool(tmp_pool);
+  return 0;
 }
 
-char *pr_ctrls_set_module_acls(ctrls_acttab_t *acttab, pool *acl_pool,
-    char **actions, const char *allow, const char *type, char *list) {
+int pr_ctrls_set_module_acls2(ctrls_acttab_t *acttab, pool *acl_pool,
+    char **actions, const char *allow, const char *type, char *list,
+    const char **bad_action) {
   register unsigned int i = 0;
-  unsigned char all_actions = FALSE;
+  int all_actions = FALSE;
+
+  if (acttab == NULL ||
+      acl_pool == NULL ||
+      actions == NULL ||
+      type == NULL ||
+      bad_action == NULL) {
+    errno = EINVAL;
+    return -1;
+  }
+
+  if (strcasecmp(type, "user") != 0 &&
+      strcasecmp(type, "group") != 0) {
+    errno = EINVAL;
+    return -1;
+  }
 
   /* First, sanity check the given list of actions against the actions
    * in the given table.
    */
   for (i = 0; actions[i]; i++) {
     register unsigned int j = 0;
-    unsigned char valid_action = FALSE;
+    int valid_action = FALSE;
 
-    if (strncmp(actions[i], "all", 4) == 0)
+    if (strcasecmp(actions[i], "all") == 0) {
       continue;
+    }
 
     for (j = 0; acttab[j].act_action; j++) {
       if (strcmp(actions[i], acttab[j].act_action) == 0) {
@@ -2024,48 +2229,82 @@ char *pr_ctrls_set_module_acls(ctrls_acttab_t *acttab, pool *acl_pool,
       }
     }
 
-    if (!valid_action)
-      return actions[i];
+    if (valid_action == FALSE) {
+      *bad_action = actions[i];
+      errno = EPERM;
+      return -1;
+    }
   }
 
   for (i = 0; actions[i]; i++) {
     register unsigned int j = 0;
 
-    if (!all_actions &&
-        strncmp(actions[i], "all", 4) == 0)
+    if (all_actions == FALSE &&
+        strcasecmp(actions[i], "all") == 0) {
       all_actions = TRUE;
+    }
 
     for (j = 0; acttab[j].act_action; j++) {
-      if (all_actions || strcmp(actions[i], acttab[j].act_action) == 0) {
+      int res = 0;
+
+      if (all_actions == TRUE ||
+          strcmp(actions[i], acttab[j].act_action) == 0) {
 
         /* Use the type parameter to determine whether the list is of users or
          * of groups.
          */
-        if (strncmp(type, "user", 5) == 0) {
-          pr_ctrls_set_user_acl(acl_pool, &(acttab[j].act_acl->acl_usrs),
-            allow, list);
+        if (strcasecmp(type, "user") == 0) {
+          res = pr_ctrls_set_user_acl(acl_pool,
+            &(acttab[j].act_acl->acl_users), allow, list);
 
-        } else if (strncmp(type, "group", 6) == 0) {
-          pr_ctrls_set_group_acl(acl_pool, &(acttab[j].act_acl->acl_grps),
-            allow, list);
+        } else if (strcasecmp(type, "group") == 0) {
+          res = pr_ctrls_set_group_acl(acl_pool,
+            &(acttab[j].act_acl->acl_groups), allow, list);
+        }
+
+        if (res < 0) {
+          *bad_action = actions[i];
+          return -1;
         }
       }
     }
   }
 
-  return NULL;
+  return 0;
 }
 
-char *pr_ctrls_unregister_module_actions(ctrls_acttab_t *acttab,
-    char **actions, module *mod) {
+char *pr_ctrls_set_module_acls(ctrls_acttab_t *acttab, pool *acl_pool,
+    char **actions, const char *allow, const char *type, char *list) {
+  int res;
+  char *bad_action = NULL;
+
+  res = pr_ctrls_set_module_acls2(acttab, acl_pool, actions, allow, type, list,
+    (const char **) &bad_action);
+  if (res < 0) {
+    return bad_action;
+  }
+
+  return 0;
+}
+
+int pr_ctrls_unregister_module_actions2(ctrls_acttab_t *acttab,
+    char **actions, module *mod, const char **bad_action) {
   register unsigned int i = 0;
+
+  if (acttab == NULL ||
+      actions == NULL ||
+      mod == NULL ||
+      bad_action == NULL) {
+    errno = EINVAL;
+    return -1;
+  }
 
   /* First, sanity check the given actions against the actions supported by
    * this module.
    */
   for (i = 0; actions[i]; i++) {
     register unsigned int j = 0;
-    unsigned char valid_action = FALSE;
+    int valid_action = FALSE;
 
     for (j = 0; acttab[j].act_action; j++) {
       if (strcmp(actions[i], acttab[j].act_action) == 0) {
@@ -2074,8 +2313,11 @@ char *pr_ctrls_unregister_module_actions(ctrls_acttab_t *acttab,
       }
     }
 
-    if (!valid_action)
-      return actions[i];
+    if (valid_action == FALSE) {
+      *bad_action = actions[i];
+      errno = EPERM;
+      return -1;
+    }
   }
 
   /* Next, iterate through both lists again, looking for actions of the
@@ -2083,7 +2325,7 @@ char *pr_ctrls_unregister_module_actions(ctrls_acttab_t *acttab,
    */
   for (i = 0; acttab[i].act_action; i++) {
     register unsigned int j = 0;
-    unsigned char have_action = FALSE;
+    int have_action = FALSE;
 
     for (j = 0; actions[j]; j++) {
       if (strcmp(acttab[i].act_action, actions[j]) == 0) {
@@ -2092,7 +2334,7 @@ char *pr_ctrls_unregister_module_actions(ctrls_acttab_t *acttab,
       }
     }
 
-    if (have_action) {
+    if (have_action == TRUE) {
       pr_trace_msg(trace_channel, 4, "mod_%s.c: removing '%s' control",
         mod->name, acttab[i].act_action);
       pr_ctrls_unregister(mod, acttab[i].act_action);
@@ -2100,7 +2342,21 @@ char *pr_ctrls_unregister_module_actions(ctrls_acttab_t *acttab,
     }
   }
 
-  return NULL;
+  return 0;
+}
+
+char *pr_ctrls_unregister_module_actions(ctrls_acttab_t *acttab,
+    char **actions, module *mod) {
+  int res;
+  char *bad_action = NULL;
+
+  res = pr_ctrls_unregister_module_actions2(acttab, actions, mod,
+    (const char **) &bad_action);
+  if (res < 0) {
+    return bad_action;
+  }
+
+  return 0;
 }
 
 int pr_ctrls_set_logfd(int fd) {
@@ -2118,9 +2374,13 @@ int pr_ctrls_log(const char *module_version, const char *fmt, ...) {
   va_list msg;
   int res;
 
-  /* sanity check */
-  if (ctrls_logfd < 0)
+  if (ctrls_logfd < 0) {
     return 0;
+  }
+
+  if (fmt == NULL) {
+    return 0;
+  }
 
   va_start(msg, fmt);
   res = pr_log_vwritefile(ctrls_logfd, module_version, fmt, msg);
@@ -2129,20 +2389,31 @@ int pr_ctrls_log(const char *module_version, const char *fmt, ...) {
   return res;
 }
 
+static void ctrls_cleanup_cb(void *user_data) {
+  ctrls_pool = NULL;
+  ctrls_action_list = NULL;
+  ctrls_active_list = NULL;
+  ctrls_free_list = NULL;
+
+  action_lookup_next = NULL;
+  action_lookup_action = NULL;
+  action_lookup_module = NULL;
+}
+
 /* Initialize the Controls API. */
-void init_ctrls(void) {
+int init_ctrls2(const char *socket_path) {
   struct stat st;
-  int sockfd;
+  int fd, xerrno;
   struct sockaddr_un sockun;
   size_t socklen;
-  char *sockpath = PR_RUN_DIR "/test.sock";
 
-  if (ctrls_pool) {
+  if (ctrls_pool != NULL) {
     destroy_pool(ctrls_pool);
   }
 
   ctrls_pool = make_sub_pool(permanent_pool);
   pr_pool_tag(ctrls_pool, "Controls Pool");
+  register_cleanup2(ctrls_pool, NULL, ctrls_cleanup_cb);
 
   /* Make sure all of the lists are zero'd out. */
   ctrls_action_list = NULL;
@@ -2159,60 +2430,78 @@ void init_ctrls(void) {
    * the S_ISSOCK macro.
    */
 
-  sockfd = socket(AF_UNIX, SOCK_STREAM, 0);
-  if (sockfd < 0) {
+  fd = socket(AF_UNIX, SOCK_STREAM, 0);
+  xerrno = errno;
+
+  if (fd < 0) {
     pr_log_debug(DEBUG10, "unable to create Unix domain socket: %s",
-      strerror(errno));
-    return;
+      strerror(xerrno));
+
+    errno = xerrno;
+    return -1;
   }
 
   memset(&sockun, 0, sizeof(sockun));
   sockun.sun_family = AF_UNIX;
-  sstrncpy(sockun.sun_path, sockpath, sizeof(sockun.sun_path));
+  sstrncpy(sockun.sun_path, socket_path, sizeof(sockun.sun_path));
   socklen = sizeof(struct sockaddr_un);
 
-  if (bind(sockfd, (struct sockaddr *) &sockun, socklen) < 0) {
+  if (bind(fd, (struct sockaddr *) &sockun, socklen) < 0) {
+    xerrno = errno;
+
     pr_log_debug(DEBUG10, "unable to bind to Unix domain socket at '%s': %s",
-      sockpath, strerror(errno));
-    (void) close(sockfd);
-    (void) unlink(sockpath);
-    return;
+      socket_path, strerror(xerrno));
+    (void) close(fd);
+    (void) unlink(socket_path);
+
+    errno = xerrno;
+    return -1;
   }
 
-  if (fstat(sockfd, &st) < 0) {
+  if (fstat(fd, &st) < 0) {
+    xerrno = errno;
+
     pr_log_debug(DEBUG10, "unable to stat Unix domain socket at '%s': %s",
-      sockpath, strerror(errno));
-    (void) close(sockfd);
-    (void) unlink(sockpath);
-    return;
+      socket_path, strerror(xerrno));
+    (void) close(fd);
+    (void) unlink(socket_path);
+
+    errno = xerrno;
+    return -1;
   }
 
-#ifdef S_ISFIFO
-  pr_log_debug(DEBUG10, "testing Unix domain socket using S_ISFIFO");
+#if defined(S_ISFIFO)
+  pr_trace_msg(trace_channel, 9, "testing Unix domain socket using S_ISFIFO");
   if (S_ISFIFO(st.st_mode)) {
     ctrls_use_isfifo = TRUE;
   }
 #else
   pr_log_debug(DEBUG10, "cannot test Unix domain socket using S_ISFIFO: "
     "macro undefined");
-#endif
+#endif /* S_ISFIFO */
 
-#ifdef S_ISSOCK
-  pr_log_debug(DEBUG10, "testing Unix domain socket using S_ISSOCK");
+#if defined(S_ISSOCK)
+  pr_trace_msg(trace_channel, 9, "testing Unix domain socket using S_ISSOCK");
   if (S_ISSOCK(st.st_mode)) {
     ctrls_use_isfifo = FALSE;
   }
 #else
   pr_log_debug(DEBUG10, "cannot test Unix domain socket using S_ISSOCK: "
     "macro undefined");
-#endif
+#endif /* S_ISSOCK */
 
-  pr_log_debug(DEBUG10, "using %s macro for Unix domain socket detection",
+  pr_trace_msg(trace_channel, 9,
+    "using %s macro for Unix domain socket detection",
     ctrls_use_isfifo ? "S_ISFIFO" : "S_ISSOCK");
 
-  (void) close(sockfd);
-  (void) unlink(sockpath);
-  return;
+  (void) close(fd);
+  (void) unlink(socket_path);
+  return 0;
 }
 
+void init_ctrls(void) {
+  const char *socket_path = PR_RUN_DIR "/test.sock";
+
+  (void) init_ctrls2(socket_path);
+}
 #endif /* PR_USE_CTRLS */

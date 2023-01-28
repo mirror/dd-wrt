@@ -1,6 +1,6 @@
 /*
  * ProFTPD - FTP server daemon
- * Copyright (c) 2001-2020 The ProFTPD Project team
+ * Copyright (c) 2001-2022 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -191,7 +191,7 @@ static int core_netio_poll_cb(pr_netio_stream_t *nstrm) {
   }
 
   tval.tv_sec = ((nstrm->strm_flags & PR_NETIO_SESS_INTR) ?
-    nstrm->strm_interval: 60);
+    nstrm->strm_interval : 60);
   tval.tv_usec = 0;
 
   res = select(nstrm->strm_fd + 1, rfdsp, wfdsp, NULL, &tval);
@@ -323,8 +323,6 @@ void pr_netio_abort(pr_netio_stream_t *nstrm) {
       errno = EINVAL;
       return;
   }
-
-  return;
 }
 
 int pr_netio_close(pr_netio_stream_t *nstrm) {
@@ -505,7 +503,7 @@ static int netio_lingering_close(pr_netio_stream_t *nstrm, long linger,
           default_ctrl_netio->owner_name, nstrm_mode);
         res = (default_ctrl_netio->close)(nstrm);
       }
-      return res;
+      break;
 
     case PR_NETIO_STRM_DATA:
       if (data_netio != NULL) {
@@ -518,9 +516,10 @@ static int netio_lingering_close(pr_netio_stream_t *nstrm, long linger,
           default_data_netio->owner_name, nstrm_mode);
         res = (default_data_netio->close)(nstrm);
       }
-      return res;
+      break;
 
     case PR_NETIO_STRM_OTHR:
+    default:
       if (othr_netio != NULL) {
         pr_trace_msg(trace_channel, 19, "using %s close() for other %s stream",
           othr_netio->owner_name, nstrm_mode);
@@ -531,11 +530,10 @@ static int netio_lingering_close(pr_netio_stream_t *nstrm, long linger,
           default_othr_netio->owner_name, nstrm_mode);
         res = (default_othr_netio->close)(nstrm);
       }
-      return res;
+      break;
   }
 
-  errno = EPERM;
-  return -1;
+  return res;
 }
 
 int pr_netio_lingering_abort(pr_netio_stream_t *nstrm, long linger) {
@@ -553,7 +551,7 @@ int pr_netio_lingering_abort(pr_netio_stream_t *nstrm, long linger) {
       break;
 
     default:
-      errno = EPERM;
+      errno = EINVAL;
       return -1;
   }
 
@@ -585,11 +583,10 @@ int pr_netio_lingering_abort(pr_netio_stream_t *nstrm, long linger) {
           tv.tv_sec = 0L;
           tv.tv_usec = 300000L;
           continue;
-
-        } else {
-          nstrm->strm_errno = errno;
-          return -1;
         }
+
+        nstrm->strm_errno = errno;
+        return -1;
       }
 
       break;
@@ -726,7 +723,6 @@ pr_netio_stream_t *pr_netio_open(pool *parent_pool, int strm_type, int fd,
 
     default:
       destroy_pool(nstrm->strm_pool);
-      nstrm->strm_pool = NULL;
       errno = EINVAL;
       res = NULL;
   }
@@ -821,7 +817,7 @@ int pr_netio_poll(pr_netio_stream_t *nstrm) {
     return -1;
   }
 
-  if (nstrm->strm_fd == -1) {
+  if (nstrm->strm_fd < 0) {
     errno = EBADF;
     return -1;
   }
@@ -895,7 +891,9 @@ int pr_netio_poll(pr_netio_stream_t *nstrm) {
 
         if (nstrm->strm_flags & PR_NETIO_SESS_INTR) {
           errno = nstrm->strm_errno = xerrno;
-          return -1;
+
+          /* Per SESS_INTR description in netio.h, return -2 here. */
+          return -2;
         }
 
         /* Otherwise, restart the call */
@@ -1067,7 +1065,7 @@ int pr_netio_write(pr_netio_stream_t *nstrm, char *buf, size_t buflen) {
     return -1;
   }
 
-  if (nstrm->strm_fd == -1) {
+  if (nstrm->strm_fd < 0) {
     errno = (nstrm->strm_errno ? nstrm->strm_errno : EBADF);
     return -1;
   }
@@ -1209,7 +1207,7 @@ int pr_netio_write_async(pr_netio_stream_t *nstrm, char *buf, size_t buflen) {
     return -1;
   }
 
-  if (nstrm->strm_fd == -1) {
+  if (nstrm->strm_fd < 0) {
     errno = (nstrm->strm_errno ? nstrm->strm_errno : EBADF);
     return -1;
   }
@@ -1353,7 +1351,7 @@ int pr_netio_read(pr_netio_stream_t *nstrm, char *buf, size_t buflen,
     return -1;
   }
 
-  if (nstrm->strm_fd == -1) {
+  if (nstrm->strm_fd < 0) {
     errno = (nstrm->strm_errno ? nstrm->strm_errno : EBADF);
     return -1;
   }
@@ -1550,7 +1548,7 @@ int pr_netio_shutdown(pr_netio_stream_t *nstrm, int how) {
           default_ctrl_netio->owner_name, nstrm_mode);
         res = (default_ctrl_netio->shutdown)(nstrm, how);
       }
-      return res;
+      break;
 
     case PR_NETIO_STRM_DATA:
       if (data_netio != NULL) {
@@ -1565,7 +1563,7 @@ int pr_netio_shutdown(pr_netio_stream_t *nstrm, int how) {
           default_data_netio->owner_name, nstrm_mode);
         res = (default_data_netio->shutdown)(nstrm, how);
       }
-      return res;
+      break;
 
     case PR_NETIO_STRM_OTHR:
       if (othr_netio != NULL) {
@@ -1580,10 +1578,13 @@ int pr_netio_shutdown(pr_netio_stream_t *nstrm, int how) {
           default_othr_netio->owner_name, nstrm_mode);
         res = (default_othr_netio->shutdown)(nstrm, how);
       }
-      return res;
+      break;
+
+    default:
+      errno = EINVAL;
+      return -1;
   }
 
-  errno = EPERM;
   return res;
 }
 
@@ -1686,13 +1687,13 @@ int pr_netio_telnet_gets2(char *buf, size_t bufsz,
     return -1;
   }
 
-#ifdef PR_USE_NLS
+#if defined(PR_USE_NLS)
   handle_iac = pr_encode_supports_telnet_iac();
 #endif /* PR_USE_NLS */
 
   buflen--;
 
-  if (in_nstrm->strm_buf) {
+  if (in_nstrm->strm_buf != NULL) {
     pbuf = in_nstrm->strm_buf;
 
   } else {
@@ -1737,6 +1738,9 @@ int pr_netio_telnet_gets2(char *buf, size_t bufsz,
            toread--) {
       pr_signals_handle();
 
+      /* Note that `cp` here is declared to be `unsigned char`; this is where
+       * the signedness of the bytes in the input buffer is changed to unsigned.
+       */
       cp = *pbuf->current++;
       pbuf->remaining++;
 
@@ -1778,7 +1782,7 @@ int pr_netio_telnet_gets2(char *buf, size_t bufsz,
                  * of the switch, and let that handle the writing of the
                  * current byte into the output buffer.
                  */
-                *bp++ = TELNET_IAC;
+                *bp++ = (char) TELNET_IAC;
                 buflen--;
 
                 telnet_mode = 0;
@@ -1857,7 +1861,7 @@ int pr_netio_telnet_gets2(char *buf, size_t bufsz,
     }
   }
 
-  if (!saw_newline) {
+  if (saw_newline == FALSE) {
     /* If we haven't seen a newline, then assume the client is deliberately
      * sending a too-long command, trying to exploit buffer sizes and make
      * the server make some possibly bad assumptions.
@@ -1868,7 +1872,7 @@ int pr_netio_telnet_gets2(char *buf, size_t bufsz,
     return -1;
   }
 
-  if (!properly_terminated_prev_command) {
+  if (properly_terminated_prev_command == FALSE) {
     properly_terminated_prev_command = TRUE;
     pr_log_pri(PR_LOG_NOTICE, "client sent too-long command, ignoring");
     errno = E2BIG;
@@ -1918,9 +1922,15 @@ int pr_register_netio(pr_netio_t *netio, int strm_types) {
     return 0;
   }
 
-  if (!netio->abort || !netio->close || !netio->open || !netio->poll ||
-      !netio->postopen || !netio->read || !netio->reopen ||
-      !netio->shutdown || !netio->write) {
+  if (netio->abort == NULL ||
+      netio->close == NULL ||
+      netio->open == NULL ||
+      netio->poll == NULL ||
+      netio->postopen == NULL ||
+      netio->read == NULL ||
+      netio->reopen == NULL ||
+      netio->shutdown == NULL ||
+      netio->write == NULL) {
     errno = EINVAL;
     return -1;
   }
@@ -1941,7 +1951,7 @@ int pr_register_netio(pr_netio_t *netio, int strm_types) {
 }
 
 int pr_unregister_netio(int strm_types) {
-  if (!strm_types) {
+  if (strm_types == 0) {
     errno = EINVAL;
     return -1;
   }

@@ -598,16 +598,30 @@ debugging purposes, the module also uses <a href="../howto/Tracing.html">trace l
 Thus for trace logging, to aid in debugging, you would use the following in
 your <code>proftpd.conf</code>:
 <pre>
-  TraceLog /path/to/sftp-trace.log
+  TraceLog /path/to/radius-trace.log
   Trace radius:20
 </pre>
 This trace logging can generate large files; it is intended for debugging
 use only, and should be removed from any production configuration.
 
+<p><a name="FAQ">
+<b>Frequently Asked Questions</b><br>
+
+<p><a name="SELinuxUDP">
+<font color=red>Question</font>: Why is ProFTPD trying to open UDP sockets
+that are blocked by my SELinux policies?<br>
+<font color=blue>Answer</font>: The RADIUS protocol uses UDP, and thus using
+the <code>mod_radius</code> module means that ProFTPD will open UDP sockets.
+In terms of SELinux policies, RADIUS is very similar to NIS in its use of
+UDP, and thus to allow these RADIUS UDP sockets, you can use:
+<pre>
+$ setsebool -P nis_enabled 1
+</pre>
+
 <p>
 <hr>
 <font size=2><b><i>
-&copy; Copyright 2000-2015 TJ Saunders<br>
+&copy; Copyright 2000-2021 TJ Saunders<br>
  All Rights Reserved<br>
 </i></b></font>
 <hr>

@@ -1,6 +1,6 @@
 /*
  * ProFTPD - FTP server daemon
- * Copyright (c) 2004-2017 The ProFTPD Project team
+ * Copyright (c) 2004-2022 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -1269,7 +1269,6 @@ static void unmount_facl(void) {
   fs = pr_unmount_fs("/", "facl");
   if (fs != NULL) {
     destroy_pool(fs->fs_pool);
-    fs->fs_pool = NULL;
     return;
   }
 

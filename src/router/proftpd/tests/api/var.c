@@ -63,66 +63,66 @@ START_TEST (var_set_test) {
   (void) var_free();
 
   res = pr_var_set(NULL, NULL, NULL, 0, NULL, NULL, 0);
-  fail_unless(res == -1, "Failed to handle uninitialized Var table");
-  fail_unless(errno == EPERM, "Failed to set errno to EPERM");
+  ck_assert_msg(res == -1, "Failed to handle uninitialized Var table");
+  ck_assert_msg(errno == EPERM, "Failed to set errno to EPERM");
 
   (void) var_init();
 
   res = pr_var_set(NULL, NULL, NULL, 0, NULL, NULL, 0);
-  fail_unless(res == -1, "Failed to handle null arguments");
-  fail_unless(errno == EINVAL, "Failed to set errno to EINVAL");
+  ck_assert_msg(res == -1, "Failed to handle null arguments");
+  ck_assert_msg(errno == EINVAL, "Failed to set errno to EINVAL");
 
   res = pr_var_set(p, NULL, NULL, 0, NULL, NULL, 0);
-  fail_unless(res == -1, "Failed to handle null key");
-  fail_unless(errno == EINVAL, "Failed to set errno to EINVAL");
+  ck_assert_msg(res == -1, "Failed to handle null key");
+  ck_assert_msg(errno == EINVAL, "Failed to set errno to EINVAL");
 
   key = "fo";
 
   res = pr_var_set(p, key, NULL, 0, NULL, NULL, 0);
-  fail_unless(res == -1, "Failed to handle null val");
-  fail_unless(errno == EINVAL, "Failed to set errno to EINVAL");
+  ck_assert_msg(res == -1, "Failed to handle null val");
+  ck_assert_msg(errno == EINVAL, "Failed to set errno to EINVAL");
 
   res = pr_var_set(p, key, NULL, 0, "bar", NULL, 0);
-  fail_unless(res == -1, "Failed to handle bad key name");
-  fail_unless(errno == EINVAL, "Failed to set errno to EINVAL");
+  ck_assert_msg(res == -1, "Failed to handle bad key name");
+  ck_assert_msg(errno == EINVAL, "Failed to set errno to EINVAL");
 
   key = "fooo";
 
   res = pr_var_set(p, key, NULL, 0, "bar", NULL, 0);
-  fail_unless(res == -1, "Failed to handle bad key name");
-  fail_unless(errno == EINVAL, "Failed to set errno to EINVAL");
+  ck_assert_msg(res == -1, "Failed to handle bad key name");
+  ck_assert_msg(errno == EINVAL, "Failed to set errno to EINVAL");
 
   key = "%{foo";
 
   res = pr_var_set(p, key, NULL, 0, "bar", NULL, 0);
-  fail_unless(res == -1, "Failed to handle bad key name");
-  fail_unless(errno == EINVAL, "Failed to set errno to EINVAL");
+  ck_assert_msg(res == -1, "Failed to handle bad key name");
+  ck_assert_msg(errno == EINVAL, "Failed to set errno to EINVAL");
 
   key = "%{}";
 
   res = pr_var_set(p, key, NULL, 0, "bar", NULL, 0);
-  fail_unless(res == -1, "Failed to handle bad key name");
-  fail_unless(errno == EINVAL, "Failed to set errno to EINVAL");
+  ck_assert_msg(res == -1, "Failed to handle bad key name");
+  ck_assert_msg(errno == EINVAL, "Failed to set errno to EINVAL");
 
   key = "%{foo}";
 
   res = pr_var_set(p, key, NULL, 0, "bar", NULL, 0);
-  fail_unless(res == -1, "Failed to handle unknown type");
-  fail_unless(errno == EINVAL, "Failed to set errno to EINVAL");
+  ck_assert_msg(res == -1, "Failed to handle unknown type");
+  ck_assert_msg(errno == EINVAL, "Failed to set errno to EINVAL");
 
   res = pr_var_set(p, key, NULL, PR_VAR_TYPE_STR, "bar", "bar", 0);
-  fail_unless(res == -1, "Failed to handle data with zero len");
-  fail_unless(errno == EINVAL, "Failed to set errno to EINVAL");
+  ck_assert_msg(res == -1, "Failed to handle data with zero len");
+  ck_assert_msg(errno == EINVAL, "Failed to set errno to EINVAL");
 
   res = pr_var_set(p, key, NULL, PR_VAR_TYPE_STR, "bar", NULL, 1);
-  fail_unless(res == -1, "Failed to handle null data with non-zero len");
-  fail_unless(errno == EINVAL, "Failed to set errno to EINVAL");
+  ck_assert_msg(res == -1, "Failed to handle null data with non-zero len");
+  ck_assert_msg(errno == EINVAL, "Failed to set errno to EINVAL");
 
   res = pr_var_set(p, key, NULL, PR_VAR_TYPE_STR, "bar", NULL, 0);
-  fail_unless(res == 0, "Failed to add str var: %s", strerror(errno));
+  ck_assert_msg(res == 0, "Failed to add str var: %s", strerror(errno));
 
   res = pr_var_set(p, key, "test", PR_VAR_TYPE_FUNC, var_cb, NULL, 0);
-  fail_unless(res == 0, "Failed to add cb var: %s", strerror(errno));
+  ck_assert_msg(res == 0, "Failed to add cb var: %s", strerror(errno));
 }
 END_TEST
 
@@ -133,28 +133,28 @@ START_TEST (var_delete_test) {
   (void) var_free();
 
   res = pr_var_delete(NULL);
-  fail_unless(res == -1, "Failed to handle uninitialized Var table");
-  fail_unless(errno == EPERM, "Failed to set errno to EPERM");
+  ck_assert_msg(res == -1, "Failed to handle uninitialized Var table");
+  ck_assert_msg(errno == EPERM, "Failed to set errno to EPERM");
 
   (void) var_init();
 
   res = pr_var_delete(NULL);
-  fail_unless(res == -1, "Failed to handle null key");
-  fail_unless(errno == EINVAL, "Failed to set errno to EINVAL");
+  ck_assert_msg(res == -1, "Failed to handle null key");
+  ck_assert_msg(errno == EINVAL, "Failed to set errno to EINVAL");
 
   res = pr_var_delete(key);
-  fail_unless(res == -1, "Failed to handle absent key");
-  fail_unless(errno == ENOENT, "Failed to set errno to ENOENT");
+  ck_assert_msg(res == -1, "Failed to handle absent key");
+  ck_assert_msg(errno == ENOENT, "Failed to set errno to ENOENT");
 
   res = pr_var_set(p, key, "test", PR_VAR_TYPE_STR, "bar", NULL, 0);
-  fail_unless(res == 0, "Failed to add var: %s", strerror(errno));
+  ck_assert_msg(res == 0, "Failed to add var: %s", strerror(errno));
 
   res = pr_var_delete(key);
-  fail_unless(res == 0, "Failed to delete var: %s", strerror(errno));
+  ck_assert_msg(res == 0, "Failed to delete var: %s", strerror(errno));
 
   res = pr_var_delete(key);
-  fail_unless(res == -1, "Failed to handle absent key");
-  fail_unless(errno == ENOENT, "Failed to set errno to ENOENT");
+  ck_assert_msg(res == -1, "Failed to handle absent key");
+  ck_assert_msg(errno == ENOENT, "Failed to set errno to ENOENT");
 }
 END_TEST
 
@@ -165,24 +165,24 @@ START_TEST (var_exists_test) {
   (void) var_free();
 
   res = pr_var_exists(NULL);
-  fail_unless(res == -1, "Failed to handle uninitialized Var table");
-  fail_unless(errno == EPERM, "Failed to set errno to EPERM");
+  ck_assert_msg(res == -1, "Failed to handle uninitialized Var table");
+  ck_assert_msg(errno == EPERM, "Failed to set errno to EPERM");
 
   (void) var_init();
 
   res = pr_var_exists(NULL);
-  fail_unless(res == -1, "Failed to handle null key");
-  fail_unless(errno == EINVAL, "Failed to set errno to EINVAL");
+  ck_assert_msg(res == -1, "Failed to handle null key");
+  ck_assert_msg(errno == EINVAL, "Failed to set errno to EINVAL");
 
   key = "%{foo}";
   res = pr_var_exists(key);
-  fail_unless(res == FALSE, "Failed to handle absent key");
+  ck_assert_msg(res == FALSE, "Failed to handle absent key");
 
   res = pr_var_set(p, key, NULL, PR_VAR_TYPE_STR, "bar", NULL, 0);
-  fail_unless(res == 0, "Failed to add var: %s", strerror(errno));
+  ck_assert_msg(res == 0, "Failed to add var: %s", strerror(errno));
 
   res = pr_var_exists(key);
-  fail_unless(res == TRUE, "Failed to detect present key");
+  ck_assert_msg(res == TRUE, "Failed to detect present key");
 }
 END_TEST
 
@@ -193,34 +193,34 @@ START_TEST (var_get_test) {
   (void) var_free();
 
   res = pr_var_get(NULL);
-  fail_unless(res == NULL, "Failed to handle uninitialized Var table");
-  fail_unless(errno == EPERM, "Failed to set errno to EPERM");
+  ck_assert_msg(res == NULL, "Failed to handle uninitialized Var table");
+  ck_assert_msg(errno == EPERM, "Failed to set errno to EPERM");
 
   (void) var_init();
 
   res = pr_var_get(NULL);
-  fail_unless(res == NULL, "Failed to handle null key");
-  fail_unless(errno == EINVAL, "Failed to set errno to EINVAL");
+  ck_assert_msg(res == NULL, "Failed to handle null key");
+  ck_assert_msg(errno == EINVAL, "Failed to set errno to EINVAL");
 
   key = "%{foo}";
 
   res = pr_var_get(key);
-  fail_unless(res == NULL, "Failed to absent key");
-  fail_unless(errno == ENOENT, "Failed to set errno to ENOENT");
+  ck_assert_msg(res == NULL, "Failed to absent key");
+  ck_assert_msg(errno == ENOENT, "Failed to set errno to ENOENT");
 
   ok = pr_var_set(p, key, NULL, PR_VAR_TYPE_STR, "bar", NULL, 0);
-  fail_unless(ok == 0, "Failed to add str var: %s", strerror(errno));
+  ck_assert_msg(ok == 0, "Failed to add str var: %s", strerror(errno));
 
   res = pr_var_get(key);
-  fail_unless(res != NULL, "Failed to get str var: %s", strerror(errno));
-  fail_unless(strcmp(res, "bar") == 0, "Expected '%s', got '%s'", "bar", res);
+  ck_assert_msg(res != NULL, "Failed to get str var: %s", strerror(errno));
+  ck_assert_msg(strcmp(res, "bar") == 0, "Expected '%s', got '%s'", "bar", res);
 
   ok = pr_var_set(p, key, "test", PR_VAR_TYPE_FUNC, var_cb, NULL, 0);
-  fail_unless(ok == 0, "Failed to add cb var: %s", strerror(errno));
+  ck_assert_msg(ok == 0, "Failed to add cb var: %s", strerror(errno));
 
   res = pr_var_get(key);
-  fail_unless(res != NULL, "Failed to get str var: %s", strerror(errno));
-  fail_unless(strcmp(res, "baz") == 0, "Expected '%s', got '%s'", "baz", res);
+  ck_assert_msg(res != NULL, "Failed to get str var: %s", strerror(errno));
+  ck_assert_msg(strcmp(res, "baz") == 0, "Expected '%s', got '%s'", "baz", res);
 }
 END_TEST
 
@@ -231,23 +231,23 @@ START_TEST (var_next_test) {
   (void) var_free();
 
   res = pr_var_next(NULL);
-  fail_unless(res == NULL, "Failed to handle uninitialized Var table");
-  fail_unless(errno == EPERM, "Failed to set errno to EPERM");
+  ck_assert_msg(res == NULL, "Failed to handle uninitialized Var table");
+  ck_assert_msg(errno == EPERM, "Failed to set errno to EPERM");
 
   (void) var_init();
 
   res = pr_var_next(NULL);
-  fail_unless(res == NULL, "Failed to handle empty table");
+  ck_assert_msg(res == NULL, "Failed to handle empty table");
 
   ok = pr_var_set(p, "%{foo}", NULL, PR_VAR_TYPE_STR, "bar", NULL, 0);
-  fail_unless(ok == 0, "Failed to add var: %s", strerror(errno));
+  ck_assert_msg(ok == 0, "Failed to add var: %s", strerror(errno));
 
   res = pr_var_next(&desc);
-  fail_unless(res != NULL, "Failed to get next key: %s", strerror(errno));
-  fail_unless(desc == NULL, "Expected no desc, got '%s'", desc);
+  ck_assert_msg(res != NULL, "Failed to get next key: %s", strerror(errno));
+  ck_assert_msg(desc == NULL, "Expected no desc, got '%s'", desc);
 
   res = pr_var_next(&desc);
-  fail_unless(res == NULL, "Expected no more keys, got '%s'", res);
+  ck_assert_msg(res == NULL, "Expected no more keys, got '%s'", res);
 }
 END_TEST
 
@@ -265,27 +265,27 @@ START_TEST (var_rewind_test) {
   pr_var_rewind();
 
   ok = pr_var_set(p, "%{foo}", "test", PR_VAR_TYPE_STR, "bar", NULL, 0);
-  fail_unless(ok == 0, "Failed to add var: %s", strerror(errno));
+  ck_assert_msg(ok == 0, "Failed to add var: %s", strerror(errno));
 
   res = pr_var_next(&desc);
-  fail_unless(res != NULL, "Failed to get next key: %s", strerror(errno));
-  fail_unless(desc != NULL, "Expected non-null desc");
-  fail_unless(strcmp(desc, "test") == 0, "Expected desc '%s', got '%s'",
+  ck_assert_msg(res != NULL, "Failed to get next key: %s", strerror(errno));
+  ck_assert_msg(desc != NULL, "Expected non-null desc");
+  ck_assert_msg(strcmp(desc, "test") == 0, "Expected desc '%s', got '%s'",
     "test", desc);
 
   res = pr_var_next(&desc);
-  fail_unless(res == NULL, "Expected no more keys, got '%s'", res);
+  ck_assert_msg(res == NULL, "Expected no more keys, got '%s'", res);
 
   pr_var_rewind();
 
   res = pr_var_next(&desc);
-  fail_unless(res != NULL, "Failed to get next key: %s", strerror(errno));
-  fail_unless(desc != NULL, "Expected non-null desc");
-  fail_unless(strcmp(desc, "test") == 0, "Expected desc '%s', got '%s'",
+  ck_assert_msg(res != NULL, "Failed to get next key: %s", strerror(errno));
+  ck_assert_msg(desc != NULL, "Expected non-null desc");
+  ck_assert_msg(strcmp(desc, "test") == 0, "Expected desc '%s', got '%s'",
     "test", desc);
 
   res = pr_var_next(&desc);
-  fail_unless(res == NULL, "Expected no more keys, got '%s'", res);
+  ck_assert_msg(res == NULL, "Expected no more keys, got '%s'", res);
 }
 END_TEST
 

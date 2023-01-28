@@ -69,8 +69,8 @@ START_TEST (hotp_test) {
   };
 
   res = auth_otp_hotp(p, (const unsigned char *) key, key_len, 0, NULL);
-  fail_unless(res < 0, "Failed to handle null arguments");
-  fail_unless(errno == EINVAL, "Expected errno %s (%d), got %s (%d)",
+  ck_assert_msg(res < 0, "Failed to handle null arguments");
+  ck_assert_msg(errno == EINVAL, "Expected errno %s (%d), got %s (%d)",
     strerror(EINVAL), EINVAL, strerror(errno), errno);
 
   for (i = 0; i < 10; i++) {
@@ -78,9 +78,9 @@ START_TEST (hotp_test) {
 
     res = auth_otp_hotp(p, (const unsigned char *) key, key_len,
       expected_codes[i].count, &code);
-    fail_unless(res == 0, "Failed to generate HOTP for value %lu: %s",
+    ck_assert_msg(res == 0, "Failed to generate HOTP for value %lu: %s",
       expected_codes[i].count, strerror(errno));
-    fail_unless(code == expected_codes[i].hotp,
+    ck_assert_msg(code == expected_codes[i].hotp,
       "Expected HOTP %u for value %lu, got %u", expected_codes[i].hotp,
       expected_codes[i].count, code);
   }
@@ -113,8 +113,8 @@ START_TEST (totp_sha1_test) {
   };
 
   res = auth_otp_totp(p, (const unsigned char *) key, key_len, 0, 0, NULL);
-  fail_unless(res < 0, "Failed to handle null arguments");
-  fail_unless(errno == EINVAL, "Expected errno %s (%d), got %s (%d)",
+  ck_assert_msg(res < 0, "Failed to handle null arguments");
+  ck_assert_msg(errno == EINVAL, "Expected errno %s (%d), got %s (%d)",
     strerror(EINVAL), EINVAL, strerror(errno), errno);
 
   for (i = 0; i < 5; i++) {
@@ -122,9 +122,9 @@ START_TEST (totp_sha1_test) {
 
     res = auth_otp_totp(p, (const unsigned char *) key, key_len,
       expected_codes[i].count, AUTH_OTP_ALGO_TOTP_SHA1, &code);
-    fail_unless(res == 0, "Failed to generate TOTP-SHA1 for value %lu: %s",
+    ck_assert_msg(res == 0, "Failed to generate TOTP-SHA1 for value %lu: %s",
       expected_codes[i].count, strerror(errno));
-    fail_unless(code == expected_codes[i].totp,
+    ck_assert_msg(code == expected_codes[i].totp,
       "Expected TOTP-SHA1 %u for value %lu, got %u", expected_codes[i].totp,
       expected_codes[i].count, code);
   }
@@ -160,8 +160,8 @@ START_TEST (totp_sha256_test) {
   };
 
   res = auth_otp_totp(p, (const unsigned char *) key, key_len, 0, 0, NULL);
-  fail_unless(res < 0, "Failed to handle null arguments");
-  fail_unless(errno == EINVAL, "Expected errno %s (%d), got %s (%d)",
+  ck_assert_msg(res < 0, "Failed to handle null arguments");
+  ck_assert_msg(errno == EINVAL, "Expected errno %s (%d), got %s (%d)",
     strerror(EINVAL), EINVAL, strerror(errno), errno);
 
   for (i = 0; i < 5; i++) {
@@ -169,9 +169,9 @@ START_TEST (totp_sha256_test) {
 
     res = auth_otp_totp(p, (const unsigned char *) key, key_len,
       expected_codes[i].count, AUTH_OTP_ALGO_TOTP_SHA256, &code);
-    fail_unless(res == 0, "Failed to generate TOTP-SHA256 for value %lu: %s",
+    ck_assert_msg(res == 0, "Failed to generate TOTP-SHA256 for value %lu: %s",
       expected_codes[i].count, strerror(errno));
-    fail_unless(code == expected_codes[i].totp,
+    ck_assert_msg(code == expected_codes[i].totp,
       "Expected TOTP-SHA256 %u for value %lu, got %u", expected_codes[i].totp,
       expected_codes[i].count, code);
   }
@@ -208,8 +208,8 @@ START_TEST (totp_sha512_test) {
   };
 
   res = auth_otp_totp(p, (const unsigned char *) key, key_len, 0, 0, NULL);
-  fail_unless(res < 0, "Failed to handle null arguments");
-  fail_unless(errno == EINVAL, "Expected errno %s (%d), got %s (%d)",
+  ck_assert_msg(res < 0, "Failed to handle null arguments");
+  ck_assert_msg(errno == EINVAL, "Expected errno %s (%d), got %s (%d)",
     strerror(EINVAL), EINVAL, strerror(errno), errno);
 
   for (i = 0; i < 5; i++) {
@@ -217,9 +217,9 @@ START_TEST (totp_sha512_test) {
 
     res = auth_otp_totp(p, (const unsigned char *) key, key_len,
       expected_codes[i].count, AUTH_OTP_ALGO_TOTP_SHA512, &code);
-    fail_unless(res == 0, "Failed to generate TOTP-SHA512 for value %lu: %s",
+    ck_assert_msg(res == 0, "Failed to generate TOTP-SHA512 for value %lu: %s",
       expected_codes[i].count, strerror(errno));
-    fail_unless(code == expected_codes[i].totp,
+    ck_assert_msg(code == expected_codes[i].totp,
       "Expected TOTP-SHA512 %u for value %lu, got %u", expected_codes[i].totp,
       expected_codes[i].count, code);
   }

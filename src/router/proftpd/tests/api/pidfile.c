@@ -53,23 +53,23 @@ START_TEST (pidfile_set_test) {
   const char *path;
 
   res = pr_pidfile_set(NULL);
-  fail_unless(res < 0, "Failed to handle null argument");
-  fail_unless(errno == EINVAL, "Failed to set errno to EINVAL, got %d (%s)",
+  ck_assert_msg(res < 0, "Failed to handle null argument");
+  ck_assert_msg(errno == EINVAL, "Failed to set errno to EINVAL, got %d (%s)",
     errno, strerror(errno));
 
   path = "foo";
   res = pr_pidfile_set(path);
-  fail_unless(res < 0, "Failed to handle relative path");
-  fail_unless(errno == EINVAL, "Failed to set errno to EINVAL, got %d (%s)",
+  ck_assert_msg(res < 0, "Failed to handle relative path");
+  ck_assert_msg(errno == EINVAL, "Failed to set errno to EINVAL, got %d (%s)",
     errno, strerror(errno));
 
   path = "/foo";
   res = pr_pidfile_set(path);
-  fail_unless(res == 0, "Failed to handle path '%s': %s", path,
+  ck_assert_msg(res == 0, "Failed to handle path '%s': %s", path,
     strerror(errno));
 
   path = pr_pidfile_get();
-  fail_unless(strcmp(path, "/foo") == 0, "Expected path '/foo', got '%s'",
+  ck_assert_msg(strcmp(path, "/foo") == 0, "Expected path '/foo', got '%s'",
     path);
 }
 END_TEST
@@ -78,8 +78,8 @@ START_TEST (pidfile_remove_test) {
   int res;
 
   res = pr_pidfile_remove();
-  fail_unless(res < 0, "Removed nonexistent file unexpectedly");
-  fail_unless(errno == ENOENT, "Failed to set errno to ENOENT, got %d (%s)",
+  ck_assert_msg(res < 0, "Removed nonexistent file unexpectedly");
+  ck_assert_msg(errno == ENOENT, "Failed to set errno to ENOENT, got %d (%s)",
     errno, strerror(errno));
 }
 END_TEST
@@ -88,20 +88,20 @@ START_TEST (pidfile_write_test) {
   int res;
 
   res = pr_pidfile_set(pidfile_path);
-  fail_unless(res == 0, "Failed to set path '%s': %s", pidfile_path,
+  ck_assert_msg(res == 0, "Failed to set path '%s': %s", pidfile_path,
     strerror(errno));
 
   res = pr_pidfile_write();
-  fail_unless(res == 0, "Failed to write to path '%s': %s", pidfile_path,
+  ck_assert_msg(res == 0, "Failed to write to path '%s': %s", pidfile_path,
     strerror(errno));
 
   res = pr_pidfile_remove();
-  fail_unless(res == 0, "Failed to remove path '%s': %s", pidfile_path,
+  ck_assert_msg(res == 0, "Failed to remove path '%s': %s", pidfile_path,
     strerror(errno));
 
   res = pr_pidfile_remove();
-  fail_unless(res < 0, "Removed nonexistent file unexpectedly");
-  fail_unless(errno == ENOENT, "Failed to set errno to ENOENT, got %d (%s)",
+  ck_assert_msg(res < 0, "Removed nonexistent file unexpectedly");
+  ck_assert_msg(errno == ENOENT, "Failed to set errno to ENOENT, got %d (%s)",
     errno, strerror(errno));
 }
 END_TEST
