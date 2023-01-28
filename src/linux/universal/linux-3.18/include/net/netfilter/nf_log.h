@@ -87,7 +87,7 @@ static inline int nf_log_bind_pf(struct net *net, u_int8_t pf,
 {
 return 0;
 }
-static inline void nf_log_unbind_pf(struct net *net, u_int8_t pf);
+static inline void nf_log_unbind_pf(struct net *net, u_int8_t pf)
 {
 }
 
