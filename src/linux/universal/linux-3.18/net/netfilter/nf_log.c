@@ -356,14 +356,14 @@ static const struct file_operations nflog_file_ops = {
 
 #endif /* PROC_FS */
 
-#ifdef CONFIG_SYSCTL
+#if defined(CONFIG_PRINTK)  && !defined(CONFIG_NOPRINTK) && defined(CONFIG_SYSCTL)
 static char nf_log_sysctl_fnames[NFPROTO_NUMPROTO-NFPROTO_UNSPEC][3];
 static struct ctl_table nf_log_sysctl_table[NFPROTO_NUMPROTO+1];
 
 static int nf_log_proc_dostring(struct ctl_table *table, int write,
 			 void __user *buffer, size_t *lenp, loff_t *ppos)
 {
-	const struct nf_logger *logger;
+	const struct nf_logger *logger = NULL;
 	char buf[NFLOGGER_NAME_LEN];
 	size_t size = *lenp;
 	int r = 0;
