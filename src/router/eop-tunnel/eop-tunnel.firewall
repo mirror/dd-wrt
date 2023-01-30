@@ -6,7 +6,7 @@ tunnels=$($nv get oet_tunnels)
 #WAN_IF="$(ip route | awk '/^default/{print $NF}')"
 WAN_IF=$(get_wanface)
 FW_STATE="-m state --state NEW"
-ipv6_enable=$($nv get ipv6_enable)
+ipv6_en=$($nv get ipv6_enable)
 wan_ipaddr=$($nv get wan_ipaddr)
 for i in $(seq 1 $tunnels); do
 	if [[ -e "/tmp/oet/pid/f${i}.pid" ]]; then
@@ -16,10 +16,11 @@ for i in $(seq 1 $tunnels); do
 		$ipt -D FORWARD -i oet${i} -j ACCEPT
 		$ipt -D FORWARD -o oet${i} -j ACCEPT
 		$ipt -D INPUT -i oet${i} -j ACCEPT
+		$ip6t -D INPUT -i oet${i} -j ACCEPT
 		$ipt -D INPUT -p 47 -s `$nv get oet${i}_rem` -j ACCEPT
 		$ipt -D INPUT -p 97 -s `$nv get oet${i}_rem` -j ACCEPT
 		$ipt -D INPUT -p udp --dport `$nv get oet${i}_port` -j ACCEPT
-		$ipt -t nat -D POSTROUTING -o oet${i} -j SNAT --to $($nv get oet${i}_ipaddr)
+		#$ipt -t nat -D POSTROUTING -o oet${i} -j SNAT --to $($nv get oet${i}_ipaddr) #already done via WGDELRT
 		$ipt -t nat -D POSTROUTING -o br+ -s $($nv get oet${i}_ipaddrmask) -j MASQUERADE
 		$ipt -D FORWARD -o $WAN_IF $FW_STATE -j $FW_CHAIN
 		$ipt -F $FW_CHAIN
@@ -31,13 +32,13 @@ for i in $(seq 1 $tunnels); do
 			$ipt -t mangle -D INPUT -p udp -m udp --sport `$nv get oet${i}_peerport${p}` -j WGOBFS --key `$nv get oet${i}_obfkey${p}` --unobfs >/dev/null 2>&1
 			$ipt -t mangle -D OUTPUT -p udp -m udp --dport `$nv get oet${i}_peerport${p}` -j WGOBFS --key `$nv get oet${i}_obfkey${p}` --obfs >/dev/null 2>&1
 		done
-
 		if [[ -f "$WGDELRT" ]]; then
 			(while read route; do $route; done < $WGDELRT)
 			rm $WGDELRT
 		fi
 		# remove because FW sets it by default
 		$ipt -D FORWARD -i oet${i} $FW_STATE -j ACCEPT
+		$ip6t -D FORWARD -i oet${i} -m conntrack --ctstate NEW -j ACCEPT
 		rm -f /tmp/oet/pid/f${i}.pid
 		} >/dev/null 2>&1
 	fi
@@ -77,9 +78,24 @@ for i in $(seq 1 $tunnels); do
 				$ipt -t raw -I PREROUTING ! -i oet${i} -d $(getipmask oet${i}) -m addrtype ! --src-type LOCAL -j DROP
 				#$ipt -t raw -I PREROUTING ! -i oet${i} -d $(getipmask oet${i}) -j DROP
 			fi
-			#add NAT out for DDWRT client
+			#add NAT out for WG interface
 			if [[ $($nv get oet${i}_natout) -eq 1 ]]; then
-				$ipt -t nat -I POSTROUTING -o oet${i} -j SNAT --to $($nv get oet${i}_ipaddr) >/dev/null 2>&1
+				for addrmask in $($nv get oet${i}_ipaddrmask | sed "s/,/ /g") ; do
+					addr=${addrmask%/*}
+					ip=""
+					case $addr in
+					  *.*) #IPv4
+						ip=${ipt};;
+					  *:*) #IPv6
+						ip=${ip6t};;
+					  *) #no match
+						logger -p user.err "WireGuard NAT ERROR invalid [$addr] for oet${i}"
+						continue;;
+					esac
+					echo "$ip -t nat -D POSTROUTING -o oet${i} -j SNAT --to $addr" >> $WGDELRT
+					$ip -t nat -I POSTROUTING -o oet${i} -j SNAT --to $addr >/dev/null 2>&1
+					logger -p user.info "WireGuard NAT via oet${i} for $addr enabled"
+				done
 			fi
 			#allow internet access via WAN
 			if [[ "$($nv get oet${i}_wanac)" != "0" ]]; then
@@ -87,12 +103,12 @@ for i in $(seq 1 $tunnels); do
 					case $addrmask in
 					  *.*) #IPv4
 						echo "$ipt -D POSTROUTING -t nat -s $addrmask -o $WAN_IF -j SNAT --to $wan_ipaddr" >> $WGDELRT
-						$ipt -I POSTROUTING -t nat -s $addrmask -o $WAN_IF -j SNAT --to $wan_ipaddr
+						$ipt -t nat -I POSTROUTING -s $addrmask -o $WAN_IF -j SNAT --to $wan_ipaddr
 						logger -p user.info "WireGuard IPv4 internet access for $addrmask enabled"
 						;;
 					  *:*) #IPv6
 						echo "$ip6t -D POSTROUTING -t nat -s $addrmask -o $WAN_IF -j MASQUERADE" >> $WGDELRT
-						$ip6t -I POSTROUTING -t nat -s $addrmask -o $WAN_IF -j MASQUERADE
+						$ip6t -t nat -I POSTROUTING -s $addrmask -o $WAN_IF -j MASQUERADE
 						logger -p user.info "WireGuard IPv6 internet access for $addrmask enabled"
 						;;
 					esac
@@ -135,6 +151,10 @@ for i in $(seq 1 $tunnels); do
 					logger -p user.info "WireGuard Killswitch activated for all clients!"
 					echo "$ipt -D FORWARD $IN_IF -o $WAN_IF -j REJECT" >> $WGDELRT
 					$ipt -I FORWARD $IN_IF -o $WAN_IF -j REJECT
+					if [[ $ipv6_en -eq 1 ]]; then
+						echo "$ip6t -D FORWARD $IN_IF -o $WAN_IF -j REJECT" >> $WGDELRT
+						$ip6t -I FORWARD $IN_IF -o $WAN_IF -j REJECT
+					fi
 					#todo restart SFE/CTF to cut existing connections
 					#cat /proc/net/ip_conntrack_flush 2>&1
 					#cat /proc/sys/net/netfilter/nf_conntrack_flush 2>&1
@@ -186,7 +206,7 @@ for i in $(seq 1 $tunnels); do
 				$ipt -I FORWARD -i oet${i} $FW_STATE -j ACCEPT >/dev/null 2>&1
 				$ipt -I INPUT -i oet${i} $FW_STATE -j ACCEPT >/dev/null 2>&1
 				#For IPv6
-				if [[ $ipv6_enable -eq 1 ]]; then
+				if [[ $ipv6_en -eq 1 ]]; then
 					echo "$ip6t -D INPUT -i $WAN_IF -p udp --dport $($nv get oet${i}_port) -j ACCEPT" >> $WGDELRT
 					echo "$ip6t -D FORWARD -i oet${i} $FW_STATE -j ACCEPT" >> $WGDELRT
 					echo "$ip6t -D INPUT -i oet${i} $FW_STATE -j ACCEPT" >> $WGDELRT
@@ -196,8 +216,6 @@ for i in $(seq 1 $tunnels); do
 				fi
 				logger -p user.info "WireGuard Inbound Firewall deactivated on oet${i}"
 			fi
-
-
 			#end inbound firewall
 			# todo make escape rules for destination based routing on by default
 			# use wgdpbrip_oetx but wait till file is made
