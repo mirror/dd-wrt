@@ -2371,11 +2371,7 @@ void start_restore_defaults(void)
 	// if (!nvram_match("default_init","1"))
 	{
 		for (t = srouter_defaults; t->name; t++) {
-#ifdef HAVE_ANTAIRA
-			if (restore_defaults) {
-#else
 			if (restore_defaults || !nvram_exists(t->name)) {
-#endif
 
 				for (u = linux_overrides; u && u->name; u++) {
 					if (!strcmp(t->name, u->name)) {
