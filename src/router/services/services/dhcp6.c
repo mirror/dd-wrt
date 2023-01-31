@@ -214,15 +214,15 @@ void start_dhcp6c(void)
 
 	}
 #endif
-	log_eval("dhcp6c", "-c", "/tmp/dhcp6c.conf", "-T", "LL", wan_ifname);
+	if (nvram_match("dhcp6c_norelease", "1"))
+		log_eval("dhcp6c", "-c", "/tmp/dhcp6c.conf", "-T", "LL", wan_ifname, "-n");
+	else
+		log_eval("dhcp6c", "-c", "/tmp/dhcp6c.conf", "-T", "LL", wan_ifname);
 }
 
 void stop_dhcp6c(void)
 {
-	if (nvram_match("dhcp6c_norelease", "1"))
-		stop_process_hard("dhcp6c", "daemon");
-	else
-		stop_process("dhcp6c", "daemon");
+	stop_process("dhcp6c", "daemon");
 }
 
 void start_dhcp6s(void)
