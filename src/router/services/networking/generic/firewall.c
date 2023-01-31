@@ -3130,6 +3130,10 @@ static void run_firewall6(char *vifs)
 	eval("ip6tables", "-P", "INPUT", "DROP");
 	eval("ip6tables", "-P", "FORWARD", "DROP");
 	eval("ip6tables", "-P", "OUTPUT", "ACCEPT");
+	eval("ip6tables", "-A", "INPUT", "-m", "state", "--state", "RELATED,ESTABLISHED", "-j", "ACCEPT");
+	eval("ip6tables", "-A", "INPUT", "-m", "state", "--state", "INVALID", "-j", "DROP");
+	eval("ip6tables", "-A", "FORWARD", "-m", "state", "--state", "INVALID", "-j", "DROP");
+	eval("ip6tables", "-A", "FORWARD", "-m", "state", "--state", "ESTABLISHED,RELATED", "-j", "ACCEPT");
 
 	if (remotemanage) {
 		sysprintf("ip6tables -A INPUT -i %s -p tcp --dport %d -j %s", wanface, web_lanport, "ACCEPT");
