@@ -105,11 +105,11 @@ int main(int argc, char *argv[])
 		if (!strlen(srouter_defaults[i].value)) {
 			srouter_defaults[i].value = NULL;
 			int a = 0;
+			fprintf(stderr, "name %s is empty\n", srouter_defaults[i].name);
 			for (a = i; a < len-1; a++) {
 				srouter_defaults[a].value = srouter_defaults[a + 1].value;
 				srouter_defaults[a].name = srouter_defaults[a + 1].name;
 			}
-			fprintf(stderr, "name %s is empty\n", srouter_defaults[i].name);
 			len--;
 			i--;
 			continue;
