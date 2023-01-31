@@ -2509,8 +2509,10 @@ static void filter_input(char *wanface, char *lanface, char *wanaddr, int remote
 	/*
 	 * Filter known SPI state 
 	 */
-	// removed first rule: -A INPUT -m state --state INVALID -j DROP
-	// (wolfiR)
+
+	save2file_A_input("-m state --state RELATED,ESTABLISHED -j %s", log_accept);
+	save2file_A_input("-m state --state INVALID -j DROP", log_drop);
+
 	save2file_A_input("-i lo -m state --state NEW -j ACCEPT");
 	save2file_A_input("-i %s -m state --state NEW -j %s", lanface, log_accept);
 	/*
@@ -2626,8 +2628,7 @@ static void filter_forward(char *wanface, char *lanface, char *lan_cclass, int d
 	/*
 	 * Drop the wrong state, INVALID, packets 
 	 */
-	if (!has_gateway())
-		save2file_A_forward("-m state --state INVALID -j %s", log_drop);
+	save2file_A_forward("-m state --state INVALID -j %s", log_drop);
 	foreach(var, vifs, next) {
 		if (strcmp(safe_get_wan_face(wan_if_buffer), var)
 		    && strcmp(nvram_safe_get("lan_ifname"), var)) {
