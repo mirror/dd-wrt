@@ -408,6 +408,8 @@ callback(ia)
 	}
 }
 
+extern int norelease;
+
 void
 release_all_ia(ifp)
 	struct dhcp6_if *ifp;
@@ -420,7 +422,8 @@ release_all_ia(ifp)
 		for (ia = TAILQ_FIRST(&iac->iadata); ia; ia = ia_next) {
 			ia_next = TAILQ_NEXT(ia, link);
 
-			(void)release_ia(ia);
+			if (!norelease)
+				(void)release_ia(ia);
 
 			/*
 			 * The client MUST stop using all of the addresses
