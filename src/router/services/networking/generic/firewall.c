@@ -2511,7 +2511,7 @@ static void filter_input(char *wanface, char *lanface, char *wanaddr, int remote
 	 */
 
 	save2file_A_input("-m state --state RELATED,ESTABLISHED -j %s", log_accept);
-	save2file_A_input("-m state --state INVALID -j DROP", log_drop);
+	save2file_A_input("-m state --state INVALID -j %s", log_drop);
 
 	save2file_A_input("-i lo -m state --state NEW -j ACCEPT");
 	save2file_A_input("-i %s -m state --state NEW -j %s", lanface, log_accept);
