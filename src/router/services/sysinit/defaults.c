@@ -111,6 +111,8 @@ struct nvram_param srouter_defaults[] = {
 	{ "router_style", "unfy" },
 #elif HAVE_IDEXX
 	{ "router_style", "idexx" },
+#elif HAVE_ANTAIRA
+	{ "router_style", "red" },
 #else
 	{ "router_style", "elegant" },
 #endif
@@ -131,6 +133,8 @@ struct nvram_param srouter_defaults[] = {
 	{ "time_zone", "Europe/Brussels" },
 #elif HAVE_ONNET
 	{ "time_zone", "Asia/Dubai" },
+#elif HAVE_ANTAIRA
+	{ "time_zone", "America/Los_Angeles" },
 #elif HAVE_CARLSONWIRELESS
 	{ "time_zone", "Etc/Zulu" },
 #else
@@ -355,6 +359,8 @@ struct nvram_param srouter_defaults[] = {
 	{ "wan_gateway", "0.0.0.0" },	/* WAN gateway */
 	{ "wan_dns", "" },	/* x.x.x.x x.x.x.x ... */
 #elif HAVE_SANSFIL
+	{ "wan_proto", "disabled" },	/* [static|dhcp|pppoe|disabled] */
+#elif HAVE_ANTAIRA
 	{ "wan_proto", "disabled" },	/* [static|dhcp|pppoe|disabled] */
 #elif defined(HAVE_GGEW) && defined(HAVE_NS5)
 	{ "wan_proto", "pptp" },	/* [static|dhcp|pppoe|disabled] */
@@ -1625,19 +1631,32 @@ struct nvram_param srouter_defaults[] = {
 	{ "wlan0_akm", "psk2" },
 	{ "wlan0_psk2", "1" },
 	{ "wlan0_wpa_psk", "7078227000" },	/* wlan0 encryption key */
+#elif defined(HAVE_ANTAIRA)
+	{ "wlan0_security_mode", "psk2" },
+	{ "wlan0_akm", "psk2" },
+	{ "wlan0_psk2", "1" },
+	{ "wlan0_wpa_psk", "12345678" },
+	{ "wlan0_ccmp", "1" },
+	{ "wlan1_security_mode", "psk2" },
+	{ "wlan1_akm", "psk2" },
+	{ "wlan1_psk2", "1" },
+	{ "wlan1_wpa_psk", "12345678" },
+	{ "wlan1_ccmp", "1" },
+	{ "wlan2_security_mode", "psk2" },
+	{ "wlan2_akm", "psk2" },
+	{ "wlan2_psk2", "1" },
+	{ "wlan2_wpa_psk", "12345678" },
+	{ "wlan2_ccmp", "1" },
+#else
+#ifndef HAVE_BUFFALO
+	{ "wlan1_akm", "disabled" },
+	{ "wlan1_wpa_psk", "" },	/* WPA pre-shared key */
+#elif defined(HAVE_IDEXX)
+	{ "wlan1_akm", "psk psk2" },
+	{ "wlan1_wpa_psk", "IDEXXwlan1234" },	/* WPA pre-shared key */
 #else
 	{ "wlan0_akm", "disabled" },
 	{ "wlan0_wpa_psk", "" },	/* WPA pre-shared key */
-#endif
-#endif
-#ifdef HAVE_IDEXX
-	{ "wlan0_akm", "psk psk2" },
-	{ "wlan0_psk", "1" },
-	{ "wlan0_psk2", "1" },
-	{ "wlan0_wpa_psk", "IDEXXwlan1234" },	/* wlan0 encryption key */
-	{ "wlan0.1_akm", "psk psk2" },
-	{ "wlan0.1_wpa_psk", "IDEXXguest1234" },	/* wlan0 encryption key */
-#endif
 	{ "wlan0_wpa_gtk_rekey", "3600" },	/* WPA GTK rekey interval *//* Modify */
 	{ "wlan0_radius_port", "1812" },	/* RADIUS server UDP port */
 	{ "wlan0_radius_ipaddr", "" },	/* RADIUS server IP address */
@@ -1647,14 +1666,6 @@ struct nvram_param srouter_defaults[] = {
 	{ "wlan1_radius_port", "1812" },	/* RADIUS server UDP port */
 	{ "wlan1_auth_mode", "disabled" },	/* WPA mode (disabled|radius|wpa|psk) 
 						 */
-#ifndef HAVE_BUFFALO
-	{ "wlan1_akm", "disabled" },
-	{ "wlan1_wpa_psk", "" },	/* WPA pre-shared key */
-#endif
-#ifdef HAVE_IDEXX
-	{ "wlan1_akm", "psk psk2" },
-	{ "wlan1_wpa_psk", "IDEXXwlan1234" },	/* WPA pre-shared key */
-#endif
 	{ "wlan1_radius_ipaddr", "" },	/* RADIUS server IP address */
 	{ "wlan1_radius_key", "" },	/* RADIUS shared secret */
 
@@ -1692,6 +1703,17 @@ struct nvram_param srouter_defaults[] = {
 	{ "wlan5_wpa_psk", "" },	/* WPA pre-shared key */
 	{ "wlan5_radius_ipaddr", "" },	/* RADIUS server IP address */
 	{ "wlan5_radius_key", "" },	/* RADIUS shared secret */
+#endif
+#endif
+#endif
+#ifdef HAVE_IDEXX
+	{ "wlan0_akm", "psk psk2" },
+	{ "wlan0_psk", "1" },
+	{ "wlan0_psk2", "1" },
+	{ "wlan0_wpa_psk", "IDEXXwlan1234" },	/* wlan0 encryption key */
+	{ "wlan0.1_akm", "psk psk2" },
+	{ "wlan0.1_wpa_psk", "IDEXXguest1234" },	/* wlan0 encryption key */
+#endif
 #ifdef HAVE_GGEW
 	{ "wlan0_8021xtype", "ttls" },
 	{ "wlan0_ttls8021xanon", "anonymous" },
@@ -1792,7 +1814,6 @@ struct nvram_param srouter_defaults[] = {
 	{ "wlan1_ssid", "Antaira" },
 #endif
 	{ "wlan2_ssid", "Antaira" },
-	{ "router_style", "red" },
 	{ "router_name", "Antaira" },
 	{ "radius_country", "US" },
 	{ "radius_state", "California" },
@@ -1801,24 +1822,7 @@ struct nvram_param srouter_defaults[] = {
 	{ "radius_email", "info@antaira.com" },
 	{ "radius_common", "Antaira FreeRadius Certificate" },
 	{ "radius_passphrase", "none" },
-	{ "wan_proto", "disabled" },
 	{ "wan_default", "eth0" },
-	{ "time_zone", "America/Los_Angeles" },
-	{ "wlan0_security_mode", "psk2" },
-	{ "wlan0_akm", "psk2" },
-	{ "wlan0_psk2", "1" },
-	{ "wlan0_wpa_psk", "12345678" },
-	{ "wlan0_ccmp", "1" },
-	{ "wlan1_security_mode", "psk2" },
-	{ "wlan1_akm", "psk2" },
-	{ "wlan1_psk2", "1" },
-	{ "wlan1_wpa_psk", "12345678" },
-	{ "wlan1_ccmp", "1" },
-	{ "wlan2_security_mode", "psk2" },
-	{ "wlan2_akm", "psk2" },
-	{ "wlan2_psk2", "1" },
-	{ "wlan2_wpa_psk", "12345678" },
-	{ "wlan2_ccmp", "1" },
 	{ "resetbutton_enable", "0" },
 	{ "menu_nosecurity", "1" },
 	{ "menu_noaccrestriction", "1" },
