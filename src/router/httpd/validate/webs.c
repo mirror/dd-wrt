@@ -2330,7 +2330,7 @@ Need parsing to get the file data out of the POST data
 				nvram_nset(output, "oet%d_private", key);
 			if (sscanf(buf, "ListenPort = %s", output) == 1)
 				nvram_nset(output, "oet%d_port", key);
-			if (sscanf(buf, "Address = %s", output) == 1)
+			if (sscanf(buf, "Address = %[^\n]", output) == 1)
 				nvram_nset(output, "oet%d_ipaddrmask", key);
 			if (sscanf(buf, "MTU = %s", output) == 1)
 				nvram_nset(output, "oet%d_mtu", key);
