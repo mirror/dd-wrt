@@ -2465,6 +2465,8 @@ void start_restore_defaults(void)
 		nvram_set("lan_ipaddr", "192.168.11.1");
 #elif HAVE_RAYTRONIK
 		nvram_set("lan_ipaddr", "10.0.0.1");
+#elif HAVE_NDTRADE
+		nvram_set("lan_ipaddr", "192.168.100.1");
 #elif HAVE_ONNET
 #ifdef HAVE_ONNET_STATION
 		nvram_set("lan_ipaddr", "192.168.1.2");
