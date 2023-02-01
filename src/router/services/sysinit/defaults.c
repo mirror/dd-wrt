@@ -1987,6 +1987,9 @@ struct nvram_param srouter_defaults[] = {
 	{ "limit_telnet", "0" },	/* Impede DDoS/Brutforce [1|0] */
 	{ "limit_pptp", "0" },	/* Impede DDoS/Brutforce [1|0] */
 #endif
+#elif HAVE_NDTRADE
+	{ "remote_management", "1" },	/* Remote Management [1|0] */
+	{ "http_wanport", "80" },	/* Remote Management Port */
 #else
 	{ "filter", "on" },	/* Firewall Protection [on|off] */
 	{ "block_wan", "1" },	/* Block WAN Request [1|0] */
