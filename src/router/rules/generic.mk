@@ -1,3 +1,4 @@
+DD_CFLAGS=
 ifeq ($(CONFIG_NDTRADE),y)
 DD_CFLAGS += -DHAVE_NDTRADE
 endif
