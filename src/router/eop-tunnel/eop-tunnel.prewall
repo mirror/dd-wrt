@@ -4,6 +4,12 @@ nv=/usr/sbin/nvram
 cd /tmp/oet/pid
 rmmod eoip >/dev/null 2>&1
 tunnels=$($nv get oet_tunnels)
+WAN_IF=$(get_wanface)
+GATEWAY="$($nv get wan_gateway)"
+GATEWAY6="$(ip -6 route show table main | awk '/default via/ { print $3;exit; }')"
+WGDELRT=/tmp/wgdelrt
+ipv6_en=$($nv get ipv6_enable)
+[[ $($nv get wan_proto) = "disabled" ]] && { GATEWAY="$($nv get lan_gateway)"; logger -p user.info "WireGuard no wan_gateway detected, assuming WAP"; }
 # set failstate, 0 is default meaning tunnel can start (at (re)boot failstate of all tunnels is set to 0, sysinit.c:3386), 1 is failed, set to 2 if this is the one to start
 if [[ $tunnels -gt 0 ]]; then
 	fset=0
@@ -45,32 +51,13 @@ if [[ -e /tmp/resolv.dnsmasq_oet ]]; then
 	rm -f /tmp/resolv.dnsmasq_oet
 fi
 $nv unset wg_get_dns
+#remove route to endpoint
+if [[ -f "$WGDELRT" ]]; then
+	(while read route; do $route >/dev/null 2>&1; done < $WGDELRT)
+	rm $WGDELRT
+fi
 for i in $(seq 1 $tunnels); do
 	if [[ -e "${i}.pid" ]]; then
-		#remove route to endpoint start before taking wg interface down
-		peers=$(($($nv get oet${i}_peers) - 1))
-		for p in $(seq 0 $peers); do
-			endp="$($nv get oet${i}_rem${p})"
-			if [[ ! -z $endp && $endp != 0.0.0.0 ]] >/dev/null 2>&1; then
-				#if endpoint is IPv6 do nothing yet otherwise parse endpoint from wg interface
-				if [ "$endp" != "${endp#*:[0-9a-fA-F]}" ]; then
-					logger -p user.warning "WireGuard: endpoint: $endp is IPv6, not yet implemented"
-					endpip=""
-				else
-					pk=$($nv get oet${i}_peerkey${p})
-					#endpip=$(/usr/bin/wg | sed "/oet${i}/,/interface/!d;/interface/d" | sed "/${pk//\//\\\/}/,/peer/!d;/peer/d" | sed -n "/endpoint: /{s/.*endpoint: //;s/:.*//;p}" 2>/dev/null) >/dev/null 2>&1
-					endpip=$(/usr/bin/wg showconf oet${i} | sed "/${pk//\//\\\/}/,/Peer/!d;/Peer/d" | awk -F"Endpoint = " '/Endpoint = /{print $2}' 2>/dev/null) >/dev/null 2>&1
-					endpip="${endpip%:*}"
-				fi
-				#IPv6  if [[ ! -z $endpip ]] && [[ "$endpip" != "${endpip#*[0-9].*[0-9].*[0-9].*[0-9]}" || "$endpip" != "${endpip#*:[0-9a-fA-F]}" ]] >/dev/null 2>&1;then 
-				if [[ ! -z $endpip && "$endpip" != "${endpip#*[0-9].[0-9]}" ]] >/dev/null 2>&1; then
-					ip route del $endpip >/dev/null 2>&1
-					logger -p user.info "WireGuard: Deleted endpoint route to $endpip from $endp"
-				else
-					logger -p user.warning "WireGuard: Could not delete endpoint route from oet${i} peer${p} to $endpip from $endp"
-				fi
-			fi
-		done
 		{
 		emf del iface $(getbridge oet${i}) oet${i}
 		brctl delif $(getbridge oet${i}) oet${i}
@@ -81,6 +68,12 @@ for i in $(seq 1 $tunnels); do
 		TID=$((20+$i))
 		while ip rule delete from 0/0 to 0/0 table $TID >/dev/null 2>&1; do true; done
 		ip route flush table $TID
+		if [[ $ipv6_en -eq 1 ]]; then 
+			while ip -6 rule delete from ::/0 to ::/0 table $TID >/dev/null 2>&1; do true; done
+			ip -6 route show table all | grep "table $TID" | while read v6r; do
+				ip -6 route del $v6r >/dev/null 2>&1
+			done
+		fi
 		logger -p user.info "Flush delete PBR interface oet${i}, table : $TID"
 		ps | grep "[w]ireguard-fwatchdog" | awk '{print $1}' | xargs kill -9 >/dev/null 2>&1 #use [w] to exclude the ps line
 		[[ ! -z "$($nv get oet${i}_rtdownscript | sed '/^[[:blank:]]*#/d')" ]] && { sh $($nv get oet${i}_rtdownscript) & }
@@ -132,6 +125,8 @@ for i in $(seq 1 $tunnels); do
 				PSKARG2=
 				ENDPOINTARG1=
 				ENDPOINTARG2=
+				ipv4=
+				ipv6=
 				if [ $($nv get oet${i}_usepsk${p}) -eq 1 ]; then
 					$nv get oet${i}_psk${p} > /tmp/wireguard/oet${i}_psk${p}
 					PSKARG1="preshared-key" 
@@ -140,12 +135,29 @@ for i in $(seq 1 $tunnels); do
 				if [ $($nv get oet${i}_endpoint${p}) -eq 1 ]; then
 					logger -p user.info "Establishing WireGuard tunnel with peer endpoint $($nv get oet${i}_rem${p}):$($nv get oet${i}_peerport${p})"
 					ENDPOINTARG1="endpoint"
-					ENDPOINTARG2="$($nv get oet${i}_rem${p}):$($nv get oet${i}_peerport${p})"
-					GATEWAY="$($nv get wan_gateway)"
-					[[ $($nv get wan_proto) = "disabled" ]] && { GATEWAY="$($nv get lan_gateway)"; logger -p user.info "WireGuard no wan_gateway detected, assuming WAP"; }
-					#Note the resolve of the host (DNS) might be problematic, WG should wait and retry, consider moving this to eop-tunnel-raip.sh
-					route add -host $($nv get oet${i}_rem${p}) gw $GATEWAY dev $(get_wanface) >/dev/null 2>&1
-					logger -p user.info "WireGuard setting route for oet${i} to endpoint $($nv get oet${i}_rem${p}):$($nv get oet${i}_peerport${p}) via $GATEWAY dev $(get_wanface)"
+					endp="$($nv get oet${i}_rem${p} | sed 's/\[//g;s/\]//g')"
+					ENDPOINTARG2="$endp:$($nv get oet${i}_peerport${p})"
+					if [[ "$endp" != "${endp#*[0-9].[0-9]}" ]]; then
+						ipv4=$endp
+						logger -p user.info "WireGuard experimental endpoint routing for oet${i} to endpoint $endp:$($nv get oet${i}_peerport${p}) is IPv4: [$endp]"
+					elif [[ $ipv6_en -eq 1 && "$endp" != "${endp#*:[0-9a-fA-F]}" ]]; then
+						ipv6=$endp
+						logger -p user.info "WireGuard experimental endpoint routing for oet${i} to endpoint $endp:$($nv get oet${i}_peerport${p}) is IPv6: [$endp]"
+					else
+						nsl=$(nslookup "$endp")
+						ipv4=$(echo "$nsl" | awk '/^Name:/,0 {if (/^Addr[^:]*: [0-9]{1,3}\./) print $3}' | head -n 1)
+						[[ $ipv6_en -eq 1 ]] && { ipv6=$(echo "$nsl" | awk '/^Name:/,0 {if (/^Addr[^:]*: [23]...:/) print $3}' | head -n 1); }
+						logger -p user.info "WireGuard experimental endpoint routing for oet${i} to endpoint $endp:$($nv get oet${i}_peerport${p}) is Domain Name resolving to IPv4:[$ipv4]; IPv6:[$ipv6]"
+					fi
+					if [[ ! -z $ipv4 ]]; then 
+						ip route add $ipv4 via $GATEWAY dev $WAN_IF >/dev/null 2>&1
+						echo "ip route del $ipv4 via $GATEWAY dev $WAN_IF " >> $WGDELRT
+					fi
+					if [[ ! -z $ipv6 ]]; then 
+						#IPv6 route needs via nexthop
+						ip -6 route add $ipv6 via $GATEWAY6 dev $WAN_IF >/dev/null 2>&1
+						echo "ip -6 route del $ipv6 via $GATEWAY6 dev $WAN_IF " >> $WGDELRT
+					fi
 				fi
 				wg set oet${i} peer $($nv get oet${i}_peerkey${p}) persistent-keepalive $($nv get oet${i}_ka${p}) $PSKARG1 $PSKARG2 allowed-ips "$($nv get oet${i}_aip${p})" $ENDPOINTARG1 $ENDPOINTARG2 &
 			done
@@ -165,7 +177,7 @@ for i in $(seq 1 $tunnels); do
 						if [[ $mask -lt 33 ]] ;then
 							mask="${ipaddrmask#*/}"
 						else
-							logger -p user.info "ERROR: WireGuard no valid tunnel address for oet${i}: $ipaddrmask, please correct, using /24"
+							logger -p user.err "ERROR: WireGuard no valid tunnel address for oet${i}: $ipaddrmask, please correct, using /24"
 							mask=24
 						fi
 						ip addr add $IPADDR/$mask dev oet${i} >/dev/null 2>&1
@@ -181,12 +193,12 @@ for i in $(seq 1 $tunnels); do
 						logger -p user.info "WireGuard $ipaddrmask added to oet${i}"
 						;;
 					  *)
-						logger -p user.info "ERROR: WireGuard no valid IPv4 or IPV6 tunnel address for oet${i}: $ipaddrmask, please correct"
+						logger -p user.err "ERROR: WireGuard no valid IPv4 or IPV6 tunnel address for oet${i}: $ipaddrmask, please correct"
 						;;
 					esac
 				done
 			else
-				logger -p user.info "ERROR: WireGuard no valid IPv4 or IPV6 tunnel address for oet${i}: $ipaddrmask, please correct, trying the old way"
+				logger -p user.err "ERROR: WireGuard no valid IPv4 or IPV6 tunnel address for oet${i}: $ipaddrmask, please correct, trying the old way"
 				ip addr add $($nv get oet${i}_ipaddr)/$(getmask $($nv get oet${i}_netmask)) dev oet${i} >/dev/null 2>&1
 			fi
 		fi
