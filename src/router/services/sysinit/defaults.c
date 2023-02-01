@@ -289,6 +289,8 @@ struct nvram_param srouter_defaults[] = {
 	{ "wlan0_regdomain", "MEXICO" },	/* LAN IP address */
 #elif HAVE_RAYTRONIK
 	{ "lan_ipaddr", "10.0.0.1" },	/* LAN IP address */
+#elif HAVE_NDTRADE
+	{ "lan_ipaddr", "192.168.100.1" },	/* LAN IP address */
 #elif HAVE_ONNET
 #ifdef HAVE_ONNET_STATION
 	{ "lan_ipaddr", "192.168.1.2" },
@@ -1152,6 +1154,9 @@ struct nvram_param srouter_defaults[] = {
 #elif defined(HAVE_ERC)
 	{ "wl0_ssid", "ERC" },	/* Service set ID (network name) */
 	{ "wlan0_ssid", "ERC" },	/* Service set ID (network name) */
+#elif defined(HAVE_NDTRADE)
+	{ "wlan0_ssid", "ND Trade" },	/* Service set ID (network name) */
+	{ "wlan1_ssid", "ND Trade" },	/* Service set ID (network name) */
 #elif defined(HAVE_IPR)
 	{ "wl0_ssid", "IPR" },	/* Service set ID (network name) */
 	{ "wlan0_ssid", "IPR" },	/* Service set ID (network name) */
