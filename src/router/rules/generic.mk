@@ -1,3 +1,6 @@
+ifeq ($(CONFIG_NDTRADE),y)
+DD_CFLAGS += -DHAVE_NDTRADE
+endif
 ifeq ($(CONFIG_JJAP005),y)
 DD_CFLAGS += -DHAVE_JJAP005 -DDDMACOFFSET=$(CONFIG_MACOFFSET)
 endif
@@ -72,3 +75,4 @@ endif
 ifeq ($(CONFIG_NLD),y)
 CFLAGS += -DHAVE_NLD
 endif
+
