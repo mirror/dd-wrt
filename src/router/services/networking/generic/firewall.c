@@ -3130,10 +3130,20 @@ static void run_firewall6(char *vifs)
 	eval("ip6tables", "-P", "INPUT", "DROP");
 	eval("ip6tables", "-P", "FORWARD", "DROP");
 	eval("ip6tables", "-P", "OUTPUT", "ACCEPT");
-	eval("ip6tables", "-A", "INPUT", "-m", "state", "--state", "RELATED,ESTABLISHED", "-j", "ACCEPT");
-	eval("ip6tables", "-A", "INPUT", "-m", "state", "--state", "INVALID", "-j", "DROP");
-	eval("ip6tables", "-A", "FORWARD", "-m", "state", "--state", "INVALID", "-j", "DROP");
-	eval("ip6tables", "-A", "FORWARD", "-m", "state", "--state", "ESTABLISHED,RELATED", "-j", "ACCEPT");
+	/* Filter all packets that have RH0 headers */
+	eval("ip6tables", "-A", "INPUT", "-m", "rt", "--rt-type", "0", "-j", "DROP");
+	eval("ip6tables", "-A", "FORWARD", "-m", "rt", "--rt-type", "0", "-j", "DROP");
+	eval("ip6tables", "-A", "OUTPUT", "-m", "rt", "--rt-type", "0", "-j", "DROP");
+	/* Filter INVALID packets */
+	eval("ip6tables", "-A", "INPUT", "-m", "conntrack", "--ctstate", "RELATED,ESTABLISHED", "-j", "ACCEPT");
+	eval("ip6tables", "-A", "INPUT", "-m", "conntrack", "--ctstate", "INVALID", "-j", "DROP");
+
+//	eval("ip6tables", "-A", "INPUT", "-m", "state", "--state", "RELATED,ESTABLISHED", "-j", "ACCEPT");
+//	eval("ip6tables", "-A", "INPUT", "-m", "state", "--state", "INVALID", "-j", "DROP");
+//	eval("ip6tables", "-A", "FORWARD", "-m", "state", "--state", "INVALID", "-j", "DROP");
+//	eval("ip6tables", "-A", "FORWARD", "-m", "state", "--state", "ESTABLISHED,RELATED", "-j", "ACCEPT");
+
+
 
 	if (remotemanage) {
 		sysprintf("ip6tables -A INPUT -i %s -p tcp --dport %d -j %s", wanface, web_lanport, "ACCEPT");
@@ -3149,12 +3159,6 @@ static void run_firewall6(char *vifs)
 		sysprintf("ip6tables -A INPUT -i %s -p tcp --dport 23 -j %s", wanface, "ACCEPT");
 	}
 #endif
-	/* Filter all packets that have RH0 headers */
-	eval("ip6tables", "-A", "INPUT", "-m", "rt", "--rt-type", "0", "-j", "DROP");
-	eval("ip6tables", "-A", "FORWARD", "-m", "rt", "--rt-type", "0", "-j", "DROP");
-	eval("ip6tables", "-A", "OUTPUT", "-m", "rt", "--rt-type", "0", "-j", "DROP");
-	/* Filter INVALID packets */
-	eval("ip6tables", "-A", "INPUT", "-m", "conntrack", "--ctstate", "INVALID", "-j", "DROP");
 	/* Allow loopback communication */
 	eval("ip6tables", "-A", "INPUT", "-i", "lo", "-j", "ACCEPT");
 	/* Anti-spoofing */
@@ -3163,8 +3167,9 @@ static void run_firewall6(char *vifs)
 	eval("ip6tables", "-A", "INPUT", "-i", wanface, "-s", "fc00::/7", "-j", "DROP");
 	eval("ip6tables", "-A", "FORWARD", "-i", wanface, "-s", "fc00::/7", "-j", "DROP");
 	/* Enable stateful inspection */
-	eval("ip6tables", "-A", "INPUT", "-m", "conntrack", "--ctstate", "RELATED,ESTABLISHED", "-j", "ACCEPT");
 	eval("ip6tables", "-A", "FORWARD", "-m", "conntrack", "--ctstate", "RELATED,ESTABLISHED", "-j", "ACCEPT");
+	eval("ip6tables", "-A", "FORWARD", "-m", "conntrack", "--ctstate", "INVALID", "-j", "DROP");
+
 	/* Accept DHCPv6 traffic */
 	eval("ip6tables", "-A", "INPUT", "-s", "fe80::/10", "-d", "fe80::/10", "-p", "udp", "--sport", "547", "--dport", "546", "-m", "conntrack", "--ctstate", "NEW", "-j", "ACCEPT");
 	/* Allow the localnet access us */
