@@ -112,7 +112,7 @@
 };
 
 &i2c0 {
-	hym8563@51 {
+	rtc@51 {
 		compatible = "haoyu,hym8563";
 		reg = <0x51>;
 		#clock-cells = <0>;

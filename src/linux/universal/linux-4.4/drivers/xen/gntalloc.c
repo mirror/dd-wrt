@@ -188,7 +188,7 @@ static void __del_gref(struct gntalloc_gref *gref)
 
 	if (gref->gref_id) {
 		if (gref->page) {
-			addr = (unsigned long)page_to_virt(gref->page);
+			addr = (unsigned long)lowmem_page_address(gref->page);
 			gnttab_end_foreign_access(gref->gref_id, 0, addr);
 		} else
 			gnttab_free_grant_reference(gref->gref_id);

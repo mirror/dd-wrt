@@ -2659,6 +2659,7 @@ out_free:
 	cpu_notifier_register_done();
 
 	mutex_unlock(&fcoe_config_mutex);
+	fcoe_transport_detach(&fcoe_sw_transport);
 	destroy_workqueue(fcoe_wq);
 	return rc;
 }

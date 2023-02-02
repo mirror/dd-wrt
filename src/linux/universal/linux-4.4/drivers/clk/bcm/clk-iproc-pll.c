@@ -599,6 +599,7 @@ void __init iproc_pll_clk_setup(struct device_node *node,
 	struct iproc_clk *iclk;
 	struct clk_init_data init;
 	const char *parent_name;
+	const char *clk_name;
 
 	if (WARN_ON(!pll_ctrl) || WARN_ON(!clk_ctrl))
 		return;
@@ -648,7 +649,12 @@ void __init iproc_pll_clk_setup(struct device_node *node,
 	iclk->pll = pll;
 	iclk->name = node->name;
 
-	init.name = node->name;
+	ret = of_property_read_string_index(node, "clock-output-names",
+					    0, &clk_name);
+	if (WARN_ON(ret))
+		goto err_pll_register;
+
+	init.name = clk_name;
 	init.ops = &iproc_pll_ops;
 	init.flags = 0;
 	parent_name = of_clk_get_parent_name(node, 0);
@@ -668,13 +674,11 @@ void __init iproc_pll_clk_setup(struct device_node *node,
 		goto err_pll_register;
 
 	pll->clk_data.clks[0] = clk;
+	parent_name = clk_name;
 
 	/* now initialize and register all leaf clocks */
 	for (i = 1; i < num_clks; i++) {
-		const char *clk_name;
-
 		memset(&init, 0, sizeof(init));
-		parent_name = node->name;
 
 		ret = of_property_read_string_index(node, "clock-output-names",
 						    i, &clk_name);
