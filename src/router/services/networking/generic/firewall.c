@@ -2276,6 +2276,7 @@ static void filter_input(char *wanface, char *lanface, char *wanaddr, int remote
 	 * most of what was here has been moved to the end 
 	 */
 	save2file_A_input("-m state --state RELATED,ESTABLISHED -j %s", log_accept);
+	save2file_A_input("-m state --state INVALID -j %s", log_drop);
 	if (nvram_matchi("dtag_vlan8", 1) && nvram_matchi("wan_vdsl", 1)) {
 		save2file_A_input("-i %s -j %s", nvram_safe_get("tvnicfrom"), log_accept);
 	}
@@ -2506,12 +2507,7 @@ static void filter_input(char *wanface, char *lanface, char *wanaddr, int remote
 	 */
 	if (nvram_matchi("block_ident", 0) || nvram_match("filter", "off"))
 		save2file_A_input("-i %s -p tcp --dport %d -j %s", wanface, IDENT_PORT, log_accept);
-	/*
-	 * Filter known SPI state 
-	 */
 
-	save2file_A_input("-m state --state RELATED,ESTABLISHED -j %s", log_accept);
-	save2file_A_input("-m state --state INVALID -j %s", log_drop);
 
 	save2file_A_input("-i lo -m state --state NEW -j ACCEPT");
 	save2file_A_input("-i %s -m state --state NEW -j %s", lanface, log_accept);
