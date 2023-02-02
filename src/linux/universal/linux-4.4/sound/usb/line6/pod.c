@@ -170,8 +170,9 @@ static struct line6_pcm_properties pod_pcm_properties = {
 	.bytes_per_frame = POD_BYTES_PER_FRAME
 };
 
+
 static const char pod_version_header[] = {
-	0xf2, 0x7e, 0x7f, 0x06, 0x02
+	0xf0, 0x7e, 0x7f, 0x06, 0x02
 };
 
 /* forward declarations: */

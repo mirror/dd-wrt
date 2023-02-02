@@ -52,6 +52,7 @@ typedef unsigned int pending_ring_idx_t;
 
 struct pending_tx_info {
 	struct xen_netif_tx_request req; /* tx request */
+	unsigned int extra_count;
 	/* Callback data for released SKBs. The callback is always
 	 * xenvif_zerocopy_callback, desc contains the pending_idx, which is
 	 * also an index in pending_tx_info array. It is initialized in
@@ -332,7 +333,7 @@ void xenvif_kick_thread(struct xenvif_queue *queue);
 int xenvif_dealloc_kthread(void *data);
 
 bool xenvif_have_rx_work(struct xenvif_queue *queue, bool test_kthread);
-void xenvif_rx_queue_tail(struct xenvif_queue *queue, struct sk_buff *skb);
+bool xenvif_rx_queue_tail(struct xenvif_queue *queue, struct sk_buff *skb);
 
 void xenvif_carrier_on(struct xenvif *vif);
 

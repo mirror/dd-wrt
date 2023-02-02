@@ -450,6 +450,7 @@ struct clk *rockchip_clk_register_pll(enum rockchip_pll_type pll_type,
 	return mux_clk;
 
 err_pll:
+	kfree(pll->rate_table);
 	clk_unregister(mux_clk);
 	mux_clk = pll_clk;
 err_mux:

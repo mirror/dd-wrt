@@ -560,7 +560,7 @@ struct h2c_cmd {
 			__le16 mask_lo;
 		} __packed ramask;
 	};
-};
+} __packed;
 
 struct rtl8xxxu_fileops;
 

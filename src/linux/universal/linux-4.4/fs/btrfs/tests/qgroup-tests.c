@@ -254,8 +254,10 @@ static int test_no_shared_qgroup(struct btrfs_root *root)
 	}
 
 	ret = insert_normal_tree_ref(root, 4096, 4096, 0, 5);
-	if (ret)
+	if (ret) {
+		ulist_free(old_roots);
 		return ret;
+	}
 
 	ret = btrfs_find_all_roots(&trans, fs_info, 4096, 0, &new_roots);
 	if (ret) {
@@ -287,8 +289,10 @@ static int test_no_shared_qgroup(struct btrfs_root *root)
 	}
 
 	ret = remove_extent_item(root, 4096, 4096);
-	if (ret)
+	if (ret) {
+		ulist_free(old_roots);
 		return -EINVAL;
+	}
 
 	ret = btrfs_find_all_roots(&trans, fs_info, 4096, 0, &new_roots);
 	if (ret) {
@@ -345,8 +349,10 @@ static int test_multiple_refs(struct btrfs_root *root)
 	}
 
 	ret = insert_normal_tree_ref(root, 4096, 4096, 0, 5);
-	if (ret)
+	if (ret) {
+		ulist_free(old_roots);
 		return ret;
+	}
 
 	ret = btrfs_find_all_roots(&trans, fs_info, 4096, 0, &new_roots);
 	if (ret) {
@@ -376,8 +382,10 @@ static int test_multiple_refs(struct btrfs_root *root)
 	}
 
 	ret = add_tree_ref(root, 4096, 4096, 0, 256);
-	if (ret)
+	if (ret) {
+		ulist_free(old_roots);
 		return ret;
+	}
 
 	ret = btrfs_find_all_roots(&trans, fs_info, 4096, 0, &new_roots);
 	if (ret) {
@@ -412,8 +420,10 @@ static int test_multiple_refs(struct btrfs_root *root)
 	}
 
 	ret = remove_extent_ref(root, 4096, 4096, 0, 256);
-	if (ret)
+	if (ret) {
+		ulist_free(old_roots);
 		return ret;
+	}
 
 	ret = btrfs_find_all_roots(&trans, fs_info, 4096, 0, &new_roots);
 	if (ret) {

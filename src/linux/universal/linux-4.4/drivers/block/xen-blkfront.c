@@ -1235,6 +1235,7 @@ static int blkif_completion(unsigned long *id,
 	int i = 0;
 	struct scatterlist *sg;
 	int num_sg, num_grant;
+	struct blk_shadow *s = &info->shadow[*id];
 	struct copy_from_grant data = {
 		.s = s,
 		.grant_idx = 0,

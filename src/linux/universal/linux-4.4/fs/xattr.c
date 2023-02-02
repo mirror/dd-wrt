@@ -959,7 +959,7 @@ static bool xattr_is_trusted(const char *name)
 ssize_t simple_xattr_list(struct simple_xattrs *xattrs, char *buffer,
 			  size_t size)
 {
-	bool trusted = capable(CAP_SYS_ADMIN);
+	bool trusted = ns_capable_noaudit(&init_user_ns, CAP_SYS_ADMIN);
 	struct simple_xattr *xattr;
 	size_t used = 0;
 

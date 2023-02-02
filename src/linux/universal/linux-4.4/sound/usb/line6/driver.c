@@ -281,7 +281,8 @@ static void line6_data_received(struct urb *urb)
 	for (;;) {
 		done =
 		    line6_midibuf_read(mb, line6->buffer_message,
-				       LINE6_MESSAGE_MAXLEN);
+				       LINE6_MESSAGE_MAXLEN,
+				       LINE6_MIDIBUF_READ_RX);
 
 		if (done <= 0)
 			break;
