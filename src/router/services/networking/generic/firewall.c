@@ -105,7 +105,7 @@
 #define MARK_LAN2WAN	0x100	/* For HotSpot */
 
 #ifdef FLOOD_PROTECT
-#define FLOOD_RATE		200
+#define FLOOD_RATE		"200"
 #define TARG_PASS		"limaccept"	/* limited of accepting chain 
 						 */
 #define TARG_RST		"logreject"
@@ -2508,7 +2508,6 @@ static void filter_input(char *wanface, char *lanface, char *wanaddr, int remote
 	if (nvram_matchi("block_ident", 0) || nvram_match("filter", "off"))
 		save2file_A_input("-i %s -p tcp --dport %d -j %s", wanface, IDENT_PORT, log_accept);
 
-
 	save2file_A_input("-i lo -m state --state NEW -j ACCEPT");
 	save2file_A_input("-i %s -m state --state NEW -j %s", lanface, log_accept);
 	/*
@@ -3004,8 +3003,8 @@ static void filter_table(char *wanface, char *lanface, char *wanaddr, char *lan_
 #ifdef FLOOD_PROTECT
 	if ((nvram_matchi("log_enable", 1))
 	    && (nvram_matchi("log_accepted", 1)))
-		save2file_A("logaccept -i %s -m state --state NEW -m limit --limit %d -j LOG --log-prefix \"FLOOD \" --log-tcp-sequence --log-tcp-options --log-ip-options", wanface, FLOOD_RATE);
-	save2file_A("logaccept -i %s -m state --state NEW -m limit --limit %d -j %s", wanface, FLOOD_RATE, log_drop);
+		save2file_A("logaccept -i %s -m state --state NEW -m limit --limit %s -j LOG --log-prefix \"FLOOD \" --log-tcp-sequence --log-tcp-options --log-ip-options", wanface, FLOOD_RATE);
+	save2file_A("logaccept -i %s -m state --state NEW -m limit --limit %s -j %s", wanface, FLOOD_RATE, log_drop);
 #endif
 #ifndef HAVE_MICRO
 	if ((nvram_matchi("log_enable", 1))
@@ -3042,9 +3041,9 @@ static void filter_table(char *wanface, char *lanface, char *wanaddr, char *lan_
 #ifndef HAVE_MICRO
 	if ((nvram_matchi("log_enable", 1))
 	    && (nvram_matchi("log_accepted", 1)))
-		save2file_A("limaccept -i %s -m state --state NEW -m limit --limit %d -j LOG --log-prefix \"FLOOD \" --log-tcp-sequence --log-tcp-options --log-ip-options");
+		save2file_A("limaccept -i %s -m state --state NEW -m limit --limit %s -j LOG --log-prefix \"FLOOD \" --log-tcp-sequence --log-tcp-options --log-ip-options", wanface, FLOOD_RATE);
 #endif
-	save2file_A("limaccept -i %s -m state --state NEW -m limit --limit %d -j %s\n-A limaccept -j ACCEPT", wanface, FLOOD_RATE, wanface, FLOOD_RATE, log_drop);
+	save2file_A("limaccept -i %s -m state --state NEW -m limit --limit %s -j %s\n-A limaccept -j ACCEPT", wanface, FLOOD_RATE, log_drop);
 #endif
 	save2file("COMMIT");
 }
@@ -3122,70 +3121,74 @@ static void run_firewall6(char *vifs)
 
 	eval("ip6tables", "-F");
 	eval("ip6tables", "-X");
+	eval("ip6tables", "-N", "logdrop");
+	eval("ip6tables", "-N", "logaccept");
+	eval("ip6tables", "-N", "logreject");
+#ifdef FLOOD_PROTECT
+	eval("ip6tables", "-N", "limaccept");
+#endif
 
 	/* Set default chain policies */
-	eval("ip6tables", "-P", "INPUT", "DROP");
-	eval("ip6tables", "-P", "FORWARD", "DROP");
-	eval("ip6tables", "-P", "OUTPUT", "ACCEPT");
+	eval("ip6tables", "-P", "INPUT", log_drop);
+	eval("ip6tables", "-P", "FORWARD", log_drop);
+	eval("ip6tables", "-P", "OUTPUT", log_accept);
 	/* Filter all packets that have RH0 headers */
-	eval("ip6tables", "-A", "INPUT", "-m", "rt", "--rt-type", "0", "-j", "DROP");
-	eval("ip6tables", "-A", "FORWARD", "-m", "rt", "--rt-type", "0", "-j", "DROP");
-	eval("ip6tables", "-A", "OUTPUT", "-m", "rt", "--rt-type", "0", "-j", "DROP");
+	eval("ip6tables", "-A", "INPUT", "-m", "rt", "--rt-type", "0", "-j", log_drop);
+	eval("ip6tables", "-A", "FORWARD", "-m", "rt", "--rt-type", "0", "-j", log_drop);
+	eval("ip6tables", "-A", "OUTPUT", "-m", "rt", "--rt-type", "0", "-j", log_drop);
 	/* Filter INVALID packets */
-	eval("ip6tables", "-A", "INPUT", "-m", "conntrack", "--ctstate", "RELATED,ESTABLISHED", "-j", "ACCEPT");
-	eval("ip6tables", "-A", "INPUT", "-m", "conntrack", "--ctstate", "INVALID", "-j", "DROP");
+	eval("ip6tables", "-A", "INPUT", "-m", "conntrack", "--ctstate", "RELATED,ESTABLISHED", "-j", log_accept);
+	eval("ip6tables", "-A", "INPUT", "-m", "conntrack", "--ctstate", "INVALID", "-j", log_drop);
 
-//	eval("ip6tables", "-A", "INPUT", "-m", "state", "--state", "RELATED,ESTABLISHED", "-j", "ACCEPT");
-//	eval("ip6tables", "-A", "INPUT", "-m", "state", "--state", "INVALID", "-j", "DROP");
-//	eval("ip6tables", "-A", "FORWARD", "-m", "state", "--state", "INVALID", "-j", "DROP");
-//	eval("ip6tables", "-A", "FORWARD", "-m", "state", "--state", "ESTABLISHED,RELATED", "-j", "ACCEPT");
-
-
+//      eval("ip6tables", "-A", "INPUT", "-m", "state", "--state", "RELATED,ESTABLISHED", "-j", log_accept);
+//      eval("ip6tables", "-A", "INPUT", "-m", "state", "--state", "INVALID", "-j", log_drop);
+//      eval("ip6tables", "-A", "FORWARD", "-m", "state", "--state", "INVALID", "-j", log_drop);
+//      eval("ip6tables", "-A", "FORWARD", "-m", "state", "--state", "ESTABLISHED,RELATED", "-j", log_accept);
 
 	if (remotemanage) {
-		sysprintf("ip6tables -A INPUT -i %s -p tcp --dport %d -j %s", wanface, web_lanport, "ACCEPT");
+		sysprintf("ip6tables -A INPUT -i %s -p tcp --dport %d -j %s", wanface, web_lanport, log_accept);
 	}
 #ifdef HAVE_SSHD
 	if (remotessh) {
-		sysprintf("ip6tables -A INPUT -i %s -p tcp --dport %s -j %s", wanface, nvram_safe_get("sshd_port"), "ACCEPT");
+		sysprintf("ip6tables -A INPUT -i %s -p tcp --dport %s -j %s", wanface, nvram_safe_get("sshd_port"), log_accept);
 	}
 #endif
 
 #ifdef HAVE_TELNET
 	if (remotetelnet) {
-		sysprintf("ip6tables -A INPUT -i %s -p tcp --dport 23 -j %s", wanface, "ACCEPT");
+		sysprintf("ip6tables -A INPUT -i %s -p tcp --dport 23 -j %s", wanface, log_accept);
 	}
 #endif
 	/* Allow loopback communication */
-	eval("ip6tables", "-A", "INPUT", "-i", "lo", "-j", "ACCEPT");
+	eval("ip6tables", "-A", "INPUT", "-i", "lo", "-j", log_accept);
 	/* Anti-spoofing */
-	eval("ip6tables", "-A", "INPUT", "!", "-i", "lo", "-s", "::1/128", "-j", "DROP");
-	eval("ip6tables", "-A", "FORWARD", "-s", "::1/128", "-j", "DROP");
-	eval("ip6tables", "-A", "INPUT", "-i", wanface, "-s", "fc00::/7", "-j", "DROP");
-	eval("ip6tables", "-A", "FORWARD", "-i", wanface, "-s", "fc00::/7", "-j", "DROP");
+	eval("ip6tables", "-A", "INPUT", "!", "-i", "lo", "-s", "::1/128", "-j", log_drop);
+	eval("ip6tables", "-A", "FORWARD", "-s", "::1/128", "-j", log_drop);
+	eval("ip6tables", "-A", "INPUT", "-i", wanface, "-s", "fc00::/7", "-j", log_drop);
+	eval("ip6tables", "-A", "FORWARD", "-i", wanface, "-s", "fc00::/7", "-j", log_drop);
 	/* Enable stateful inspection */
-	eval("ip6tables", "-A", "FORWARD", "-m", "conntrack", "--ctstate", "RELATED,ESTABLISHED", "-j", "ACCEPT");
-	eval("ip6tables", "-A", "FORWARD", "-m", "conntrack", "--ctstate", "INVALID", "-j", "DROP");
+	eval("ip6tables", "-A", "FORWARD", "-m", "conntrack", "--ctstate", "RELATED,ESTABLISHED", "-j", log_accept);
+	eval("ip6tables", "-A", "FORWARD", "-m", "conntrack", "--ctstate", "INVALID", "-j", log_drop);
 
 	/* Accept DHCPv6 traffic */
-	eval("ip6tables", "-A", "INPUT", "-s", "fe80::/10", "-d", "fe80::/10", "-p", "udp", "--sport", "547", "--dport", "546", "-m", "conntrack", "--ctstate", "NEW", "-j", "ACCEPT");
+	eval("ip6tables", "-A", "INPUT", "-s", "fe80::/10", "-d", "fe80::/10", "-p", "udp", "--sport", "547", "--dport", "546", "-m", "conntrack", "--ctstate", "NEW", "-j", log_accept);
 	/* Allow the localnet access us */
-	eval("ip6tables", "-A", "INPUT", "-i", nvram_safe_get("lan_ifname"), "-j", "ACCEPT");
+	eval("ip6tables", "-A", "INPUT", "-i", nvram_safe_get("lan_ifname"), "-j", log_accept);
 	/* Allow Link-Local addresses */
-	eval("ip6tables", "-A", "INPUT", "-s", "fe80::/10", "-j", "ACCEPT");
+	eval("ip6tables", "-A", "INPUT", "-s", "fe80::/10", "-j", log_accept);
 	/* Allow multicast */
-	eval("ip6tables", "-A", "INPUT", "-d", "ff00::/8", "-j", "ACCEPT");
+	eval("ip6tables", "-A", "INPUT", "-d", "ff00::/8", "-j", log_accept);
 	/* Allow forwarding on ipv6 interface */
 	/* Allow on all  out interfaces e.g. wg, openvpn etc so do not specify and out interface */
 	/* todo add this for all new in interfaces e.g. br1 etc */
-	eval("ip6tables", "-A", "FORWARD", "-m", "conntrack", "--ctstate", "NEW", "-i", nvram_safe_get("lan_ifname"), "-j", "ACCEPT");
+	eval("ip6tables", "-A", "FORWARD", "-m", "conntrack", "--ctstate", "NEW", "-i", nvram_safe_get("lan_ifname"), "-j", log_accept);
 
 	foreach(var, vifs, next) {
 		if (strcmp(wanface, var)
 		    && strcmp(nvram_safe_get("lan_ifname"), var)) {
 			if (isstandalone(var)) {
-				eval("ip6tables", "-A", "FORWARD", "-m", "conntrack", "--ctstate", "NEW", "-i", var, "-j", "ACCEPT");
-				eval("ip6tables", "-A", "INPUT", "-i", var, "-j", "ACCEPT");
+				eval("ip6tables", "-A", "FORWARD", "-m", "conntrack", "--ctstate", "NEW", "-i", var, "-j", log_accept);
+				eval("ip6tables", "-A", "INPUT", "-i", var, "-j", log_accept);
 			}
 		}
 	}
@@ -3193,89 +3196,134 @@ static void run_firewall6(char *vifs)
 	eval("ip6tables", "-t", "mangle", "-D", "FORWARD", "-p", "tcp", "-m", "tcp", "--tcp-flags", "SYN,RST", "SYN", "-j", "TCPMSS", "--clamp-mss-to-pmtu");
 	eval("ip6tables", "-t", "mangle", "-A", "FORWARD", "-p", "tcp", "-m", "tcp", "--tcp-flags", "SYN,RST", "SYN", "-j", "TCPMSS", "--clamp-mss-to-pmtu");
 	/* Permit IMCPv6 echo requests (ping) but use but ratelimit it for preventing ping flooding */
-	eval("ip6tables", "-A", "INPUT", "-p", "ipv6-icmp", "--icmpv6-type", "128", "-j", "ACCEPT", "-m", "limit", "--limit", "30/minute");
+	eval("ip6tables", "-A", "INPUT", "-p", "ipv6-icmp", "--icmpv6-type", "128", "-j", log_accept, "-m", "limit", "--limit", "30/minute");
 	/* Allow dedicated  ICMPv6 packettypes */
-	eval("ip6tables", "-A", "INPUT", "-p", "ipv6-icmp", "-m", "icmp6", "--icmpv6-type", "1", "-j", "ACCEPT");
-	eval("ip6tables", "-A", "INPUT", "-p", "ipv6-icmp", "-m", "icmp6", "--icmpv6-type", "2", "-j", "ACCEPT");
-	eval("ip6tables", "-A", "INPUT", "-p", "ipv6-icmp", "-m", "icmp6", "--icmpv6-type", "3", "-j", "ACCEPT");
-	eval("ip6tables", "-A", "INPUT", "-p", "ipv6-icmp", "-m", "icmp6", "--icmpv6-type", "4", "-j", "ACCEPT");
-	eval("ip6tables", "-A", "INPUT", "-p", "ipv6-icmp", "-m", "icmp6", "--icmpv6-type", "128", "-j", "ACCEPT");
-	eval("ip6tables", "-A", "INPUT", "-p", "ipv6-icmp", "-m", "icmp6", "--icmpv6-type", "129", "-j", "ACCEPT");
-	eval("ip6tables", "-A", "INPUT", "-p", "ipv6-icmp", "-m", "icmp6", "--icmpv6-type", "133", "-m", "hl", "--hl-eq", "255", "-j", "ACCEPT");
-	eval("ip6tables", "-A", "INPUT", "-p", "ipv6-icmp", "-m", "icmp6", "--icmpv6-type", "134", "-m", "hl", "--hl-eq", "255", "-j", "ACCEPT");
-	eval("ip6tables", "-A", "INPUT", "-p", "ipv6-icmp", "-m", "icmp6", "--icmpv6-type", "135", "-m", "hl", "--hl-eq", "255", "-j", "ACCEPT");
-	eval("ip6tables", "-A", "INPUT", "-p", "ipv6-icmp", "-m", "icmp6", "--icmpv6-type", "136", "-m", "hl", "--hl-eq", "255", "-j", "ACCEPT");
-	eval("ip6tables", "-A", "INPUT", "-p", "ipv6-icmp", "-m", "icmp6", "--icmpv6-type", "141", "-m", "hl", "--hl-eq", "255", "-j", "ACCEPT");
-	eval("ip6tables", "-A", "INPUT", "-p", "ipv6-icmp", "-m", "icmp6", "--icmpv6-type", "142", "-m", "hl", "--hl-eq", "255", "-j", "ACCEPT");
-	eval("ip6tables", "-A", "INPUT", "-s", "fe80::/10", "-p", "ipv6-icmp", "-m", "icmp6", "--icmpv6-type", "130", "-j", "ACCEPT");
-	eval("ip6tables", "-A", "INPUT", "-s", "fe80::/10", "-p", "ipv6-icmp", "-m", "icmp6", "--icmpv6-type", "131", "-j", "ACCEPT");
-	eval("ip6tables", "-A", "INPUT", "-s", "fe80::/10", "-p", "ipv6-icmp", "-m", "icmp6", "--icmpv6-type", "132", "-j", "ACCEPT");
-	eval("ip6tables", "-A", "INPUT", "-s", "fe80::/10", "-p", "ipv6-icmp", "-m", "icmp6", "--icmpv6-type", "143", "-j", "ACCEPT");
-	eval("ip6tables", "-A", "INPUT", "-p", "ipv6-icmp", "-m", "icmp6", "--icmpv6-type", "148", "-m", "hl", "--hl-eq", "255", "-j", "ACCEPT");
-	eval("ip6tables", "-A", "INPUT", "-p", "ipv6-icmp", "-m", "icmp6", "--icmpv6-type", "149", "-m", "hl", "--hl-eq", "255", "-j", "ACCEPT");
-	eval("ip6tables", "-A", "INPUT", "-s", "fe80::/10", "-p", "ipv6-icmp", "-m", "icmp6", "--icmpv6-type", "151", "-m", "hl", "--hl-eq", "1", "-j", "ACCEPT");
-	eval("ip6tables", "-A", "INPUT", "-s", "fe80::/10", "-p", "ipv6-icmp", "-m", "icmp6", "--icmpv6-type", "152", "-m", "hl", "--hl-eq", "1", "-j", "ACCEPT");
-	eval("ip6tables", "-A", "INPUT", "-s", "fe80::/10", "-p", "ipv6-icmp", "-m", "icmp6", "--icmpv6-type", "153", "-m", "hl", "--hl-eq", "1", "-j", "ACCEPT");
-	eval("ip6tables", "-A", "INPUT", "-p", "ipv6-icmp", "-m", "icmp6", "--icmpv6-type", "144", "-j", "ACCEPT");
-	eval("ip6tables", "-A", "INPUT", "-p", "ipv6-icmp", "-m", "icmp6", "--icmpv6-type", "145", "-j", "ACCEPT");
-	eval("ip6tables", "-A", "INPUT", "-p", "ipv6-icmp", "-m", "icmp6", "--icmpv6-type", "146", "-j", "ACCEPT");
-	eval("ip6tables", "-A", "INPUT", "-p", "ipv6-icmp", "-m", "icmp6", "--icmpv6-type", "147", "-j", "ACCEPT");
-	eval("ip6tables", "-A", "FORWARD", "-p", "ipv6-icmp", "-m", "icmp6", "--icmpv6-type", "1", "-j", "ACCEPT");
-	eval("ip6tables", "-A", "FORWARD", "-p", "ipv6-icmp", "-m", "icmp6", "--icmpv6-type", "2", "-j", "ACCEPT");
-	eval("ip6tables", "-A", "FORWARD", "-p", "ipv6-icmp", "-m", "icmp6", "--icmpv6-type", "3", "-j", "ACCEPT");
-	eval("ip6tables", "-A", "FORWARD", "-p", "ipv6-icmp", "-m", "icmp6", "--icmpv6-type", "4", "-j", "ACCEPT");
-	eval("ip6tables", "-A", "FORWARD", "-p", "ipv6-icmp", "-m", "icmp6", "--icmpv6-type", "128", "-j", "ACCEPT");
-	eval("ip6tables", "-A", "FORWARD", "-p", "ipv6-icmp", "-m", "icmp6", "--icmpv6-type", "129", "-j", "ACCEPT");
+	eval("ip6tables", "-A", "INPUT", "-p", "ipv6-icmp", "-m", "icmp6", "--icmpv6-type", "1", "-j", log_accept);
+	eval("ip6tables", "-A", "INPUT", "-p", "ipv6-icmp", "-m", "icmp6", "--icmpv6-type", "2", "-j", log_accept);
+	eval("ip6tables", "-A", "INPUT", "-p", "ipv6-icmp", "-m", "icmp6", "--icmpv6-type", "3", "-j", log_accept);
+	eval("ip6tables", "-A", "INPUT", "-p", "ipv6-icmp", "-m", "icmp6", "--icmpv6-type", "4", "-j", log_accept);
+	eval("ip6tables", "-A", "INPUT", "-p", "ipv6-icmp", "-m", "icmp6", "--icmpv6-type", "128", "-j", log_accept);
+	eval("ip6tables", "-A", "INPUT", "-p", "ipv6-icmp", "-m", "icmp6", "--icmpv6-type", "129", "-j", log_accept);
+	eval("ip6tables", "-A", "INPUT", "-p", "ipv6-icmp", "-m", "icmp6", "--icmpv6-type", "133", "-m", "hl", "--hl-eq", "255", "-j", log_accept);
+	eval("ip6tables", "-A", "INPUT", "-p", "ipv6-icmp", "-m", "icmp6", "--icmpv6-type", "134", "-m", "hl", "--hl-eq", "255", "-j", log_accept);
+	eval("ip6tables", "-A", "INPUT", "-p", "ipv6-icmp", "-m", "icmp6", "--icmpv6-type", "135", "-m", "hl", "--hl-eq", "255", "-j", log_accept);
+	eval("ip6tables", "-A", "INPUT", "-p", "ipv6-icmp", "-m", "icmp6", "--icmpv6-type", "136", "-m", "hl", "--hl-eq", "255", "-j", log_accept);
+	eval("ip6tables", "-A", "INPUT", "-p", "ipv6-icmp", "-m", "icmp6", "--icmpv6-type", "141", "-m", "hl", "--hl-eq", "255", "-j", log_accept);
+	eval("ip6tables", "-A", "INPUT", "-p", "ipv6-icmp", "-m", "icmp6", "--icmpv6-type", "142", "-m", "hl", "--hl-eq", "255", "-j", log_accept);
+	eval("ip6tables", "-A", "INPUT", "-s", "fe80::/10", "-p", "ipv6-icmp", "-m", "icmp6", "--icmpv6-type", "130", "-j", log_accept);
+	eval("ip6tables", "-A", "INPUT", "-s", "fe80::/10", "-p", "ipv6-icmp", "-m", "icmp6", "--icmpv6-type", "131", "-j", log_accept);
+	eval("ip6tables", "-A", "INPUT", "-s", "fe80::/10", "-p", "ipv6-icmp", "-m", "icmp6", "--icmpv6-type", "132", "-j", log_accept);
+	eval("ip6tables", "-A", "INPUT", "-s", "fe80::/10", "-p", "ipv6-icmp", "-m", "icmp6", "--icmpv6-type", "143", "-j", log_accept);
+	eval("ip6tables", "-A", "INPUT", "-p", "ipv6-icmp", "-m", "icmp6", "--icmpv6-type", "148", "-m", "hl", "--hl-eq", "255", "-j", log_accept);
+	eval("ip6tables", "-A", "INPUT", "-p", "ipv6-icmp", "-m", "icmp6", "--icmpv6-type", "149", "-m", "hl", "--hl-eq", "255", "-j", log_accept);
+	eval("ip6tables", "-A", "INPUT", "-s", "fe80::/10", "-p", "ipv6-icmp", "-m", "icmp6", "--icmpv6-type", "151", "-m", "hl", "--hl-eq", "1", "-j", log_accept);
+	eval("ip6tables", "-A", "INPUT", "-s", "fe80::/10", "-p", "ipv6-icmp", "-m", "icmp6", "--icmpv6-type", "152", "-m", "hl", "--hl-eq", "1", "-j", log_accept);
+	eval("ip6tables", "-A", "INPUT", "-s", "fe80::/10", "-p", "ipv6-icmp", "-m", "icmp6", "--icmpv6-type", "153", "-m", "hl", "--hl-eq", "1", "-j", log_accept);
+	eval("ip6tables", "-A", "INPUT", "-p", "ipv6-icmp", "-m", "icmp6", "--icmpv6-type", "144", "-j", log_accept);
+	eval("ip6tables", "-A", "INPUT", "-p", "ipv6-icmp", "-m", "icmp6", "--icmpv6-type", "145", "-j", log_accept);
+	eval("ip6tables", "-A", "INPUT", "-p", "ipv6-icmp", "-m", "icmp6", "--icmpv6-type", "146", "-j", log_accept);
+	eval("ip6tables", "-A", "INPUT", "-p", "ipv6-icmp", "-m", "icmp6", "--icmpv6-type", "147", "-j", log_accept);
+	eval("ip6tables", "-A", "FORWARD", "-p", "ipv6-icmp", "-m", "icmp6", "--icmpv6-type", "1", "-j", log_accept);
+	eval("ip6tables", "-A", "FORWARD", "-p", "ipv6-icmp", "-m", "icmp6", "--icmpv6-type", "2", "-j", log_accept);
+	eval("ip6tables", "-A", "FORWARD", "-p", "ipv6-icmp", "-m", "icmp6", "--icmpv6-type", "3", "-j", log_accept);
+	eval("ip6tables", "-A", "FORWARD", "-p", "ipv6-icmp", "-m", "icmp6", "--icmpv6-type", "4", "-j", log_accept);
+	eval("ip6tables", "-A", "FORWARD", "-p", "ipv6-icmp", "-m", "icmp6", "--icmpv6-type", "128", "-j", log_accept);
+	eval("ip6tables", "-A", "FORWARD", "-p", "ipv6-icmp", "-m", "icmp6", "--icmpv6-type", "129", "-j", log_accept);
 
 	if (nvram_match("ipv6_typ", "ipv6rd") || nvram_match("ipv6_typ", "ipv6in4") || nvram_match("ipv6_typ", "ipv6to4")) {
-		eval("iptables", "-I", "INPUT", "-p", "41", "-j", "ACCEPT");
+		eval("iptables", "-I", "INPUT", "-p", "41", "-j", log_accept);
 	}
 
 	/* accept ICMP requests from the remote tunnel endpoint */
 	if (nvram_match("ipv6_typ", "ipv6in4")) {
 		char *ip = nvram_safe_get("ipv6_tun_end_ipv4");
 		if (*ip && strcmp(ip, "0.0.0.0") != 0)
-			eval("iptables", "-I", "INPUT", "-p", "icmp", "-s", ip, "-j", "ACCEPT");
+			eval("iptables", "-I", "INPUT", "-p", "icmp", "-s", ip, "-j", log_accept);
 	}
 
 	/* // Filter off is the actual SPI firewall, but block_wan is the setting to block ping/ICMPv4
 	   // Not sure if we should block ICMPv6 at all and if we want to, we have to make a separate setting and it should be allowed by default so for now disable this
 	   if (nvram_invmatch("filter", "off"))
-	   eval("ip6tables", "-A", "INPUT", "-j", nvram_matchi("block_wan", 1) ? "DROP" : "ACCEPT");
+	   eval("ip6tables", "-A", "INPUT", "-j", nvram_matchi("block_wan", 1) ? log_drop : log_accept);
 	   else
-	   eval("ip6tables", "-A", "INPUT", "-j", "ACCEPT");
+	   eval("ip6tables", "-A", "INPUT", "-j", log_accept);
 	 */
 
 	/* Redundant
-	   eval("ip6tables", "-A", "FORWARD", "-m", "state", "--state", "RELATED,ESTABLISHED", "-j", "ACCEPT");
+	   eval("ip6tables", "-A", "FORWARD", "-m", "state", "--state", "RELATED,ESTABLISHED", "-j", log_accept);
 	 */
 
 	// if WAN is disabled we can simply allow all traffic see below
 	/*
 	   if (nvram_match("ipv6_typ", "ipv6native") || nvram_match("ipv6_typ", "ipv6pd")) {
 	   if (nvram_match("wan_proto", "disabled")) {
-	   eval("ip6tables", "-A", "FORWARD", "-o", nvram_safe_get("lan_ifname"), "-j", "ACCEPT");
+	   eval("ip6tables", "-A", "FORWARD", "-o", nvram_safe_get("lan_ifname"), "-j", log_accept);
 	   } else {
-	   eval("ip6tables", "-A", "FORWARD", "-o", wanface, "-j", "ACCEPT");
+	   eval("ip6tables", "-A", "FORWARD", "-o", wanface, "-j", log_accept);
 	   }
 	   }
 	 */
 
 	// for now do not touch this as this is for NAT64 I think
 	if (nvram_match("ipv6_typ", "ipv6in4")) {
-		eval("ip6tables", "-A", "FORWARD", "-o", "ip6tun", "-j", "ACCEPT");
+		eval("ip6tables", "-A", "FORWARD", "-o", "ip6tun", "-j", log_accept);
 	}
 
 	// Filter off is the actual SPI firewall, but block_wan is the setting to block ping/ICMPv4
 	// Not sure if we should block ICMPv6 at all and if we want to, we have to make a separate setting and it should be allowed by default so for now removed all block_wan
 	// as the default policy is DROP we need to allow everything if the firewall is off, note if WAN is disabled there is no IPv4 firewall so add nvram_match("wan_proto", "disabled") as condition
 	if (nvram_match("filter", "off") || nvram_match("wan_proto", "disabled")) {
-		eval("ip6tables", "-I", "INPUT", "-j", "ACCEPT");
-		eval("ip6tables", "-I", "FORWARD", "-j", "ACCEPT");
+		eval("ip6tables", "-I", "INPUT", "-j", log_accept);
+		eval("ip6tables", "-I", "FORWARD", "-j", log_accept);
 	} else {
-		eval("ip6tables", "-A", "INPUT", "-j", "REJECT", "--reject-with", "icmp6-adm-prohibited");
-		eval("ip6tables", "-A", "FORWARD", "-j", "REJECT", "--reject-with", "icmp6-adm-prohibited");
+		eval("ip6tables", "-A", "INPUT", "-j", log_reject, "--reject-with", "icmp6-adm-prohibited");
+		eval("ip6tables", "-A", "FORWARD", "-j", log_reject, "--reject-with", "icmp6-adm-prohibited");
 	}
+
+	/*
+	 * logaccept chain 
+	 */
+#ifdef FLOOD_PROTECT
+	if ((nvram_matchi("log_enable", 1))
+	    && (nvram_matchi("log_accepted", 1)))
+		eval("ip6tables", "logaccept", "-i", wanface, "-m", "state", "--state", "NEW", "-m", "limit", "--limit", FLOOD_RATE, "-j", "LOG", "--log-prefix", "FLOOD ", "--log-tcp-sequence", "--log-tcp-options",
+		     "--log-ip-options");
+	eval("ip6tables", "logaccept", "-i", wanface, "-m", "state", "--state", "NEW", "-m", "limit", "--limit", FLOOD_RATE, "-j", log_drop);
+#endif
+	if ((nvram_matchi("log_enable", 1))
+	    && (nvram_matchi("log_accepted", 1)))
+		eval("ip6tables", "logaccept", "-m", "state", "--state", "NEW", "-j", "LOG", "--log-prefix", "ACCEPT ", "--log-tcp-sequence", "--log-tcp-options", "--log-ip-options");
+
+	eval("ip6tables", "logaccept", "-j", "ACCEPT");
+	/*
+	 * logdrop chain 
+	 */
+	if ((nvram_matchi("log_enable", 1))
+	    && (nvram_matchi("log_dropped", 1))) {
+		eval("ip6tables", "logdrop", "-m", "state", "--state", "NEW", "-j", "LOG", "--log-prefix", "DROP ", "--log-tcp-sequence", "--log-tcp-options", "--log-ip-options");
+		if (has_gateway()) {
+			eval("ip6tables", "logdrop", "-m", "state", "--state", "INVALID", "-j", "LOG", "--log-prefix", "DROP ", "--log-tcp-sequence", "--log-tcp-options", "--log-ip-options");
+		}
+	}
+	eval("ip6tables", "logdrop", "-j", "DROP");
+	/*
+	 * logreject chain 
+	 */
+	if ((nvram_matchi("log_enable", 1))
+	    && (nvram_matchi("log_rejected", 1)))
+		eval("ip6tables", "logreject", "-j", "LOG", "--log-prefix", "WEBDROP ", "--log-tcp-sequence", "--log-tcp-options", "--log-ip-options");
+	eval("ip6tables", "logreject", "-p", "tcp", "-j", "REJECT", "--reject-with", "tcp-reset");
+#ifdef FLOOD_PROTECT
+	/*
+	 * limaccept chain 
+	 */
+	if ((nvram_matchi("log_enable", 1))
+	    && (nvram_matchi("log_accepted", 1)))
+		eval("ip6tables", "limaccept", "-i", wanface, "-m", "state", "--state", "NEW", "-m", "limit", "--limit", FLOOD_RATE, "-j", "LOG", "--log-prefix", "FLOOD ", "--log-tcp-sequence", "--log-tcp-options",
+		     "--log-ip-options");
+	eval("ip6tables", "limaccept", "-i", wanface, "-m", "state", "--state", "NEW", "-m", "limit", "--limit", FLOOD_RATE, "-j", log_drop);
+	eval("ip6tables", "-A", "limaccept", "-j", "ACCEPT");
+#endif
 
 }
 #endif
