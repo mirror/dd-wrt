@@ -3286,42 +3286,42 @@ static void run_firewall6(char *vifs)
 #ifdef FLOOD_PROTECT
 	if ((nvram_matchi("log_enable", 1))
 	    && (nvram_matchi("log_accepted", 1)))
-		eval("ip6tables", "logaccept", "-i", wanface, "-m", "state", "--state", "NEW", "-m", "limit", "--limit", FLOOD_RATE, "-j", "LOG", "--log-prefix", "FLOOD ", "--log-tcp-sequence", "--log-tcp-options",
+		eval("ip6tables", "-A", "logaccept", "-i", wanface, "-m", "state", "--state", "NEW", "-m", "limit", "--limit", FLOOD_RATE, "-j", "LOG", "--log-prefix", "FLOOD ", "--log-tcp-sequence", "--log-tcp-options",
 		     "--log-ip-options");
-	eval("ip6tables", "logaccept", "-i", wanface, "-m", "state", "--state", "NEW", "-m", "limit", "--limit", FLOOD_RATE, "-j", log_drop);
+	eval("ip6tables", "-A", "logaccept", "-i", wanface, "-m", "state", "--state", "NEW", "-m", "limit", "--limit", FLOOD_RATE, "-j", log_drop);
 #endif
 	if ((nvram_matchi("log_enable", 1))
 	    && (nvram_matchi("log_accepted", 1)))
-		eval("ip6tables", "logaccept", "-m", "state", "--state", "NEW", "-j", "LOG", "--log-prefix", "ACCEPT ", "--log-tcp-sequence", "--log-tcp-options", "--log-ip-options");
+		eval("ip6tables", "-A", "logaccept", "-m", "state", "--state", "NEW", "-j", "LOG", "--log-prefix", "ACCEPT ", "--log-tcp-sequence", "--log-tcp-options", "--log-ip-options");
 
-	eval("ip6tables", "logaccept", "-j", "ACCEPT");
+	eval("ip6tables", "-A", "logaccept", "-j", "ACCEPT");
 	/*
 	 * logdrop chain 
 	 */
 	if ((nvram_matchi("log_enable", 1))
 	    && (nvram_matchi("log_dropped", 1))) {
-		eval("ip6tables", "logdrop", "-m", "state", "--state", "NEW", "-j", "LOG", "--log-prefix", "DROP ", "--log-tcp-sequence", "--log-tcp-options", "--log-ip-options");
+		eval("ip6tables", "-A", "logdrop", "-m", "state", "--state", "NEW", "-j", "LOG", "--log-prefix", "DROP ", "--log-tcp-sequence", "--log-tcp-options", "--log-ip-options");
 		if (has_gateway()) {
-			eval("ip6tables", "logdrop", "-m", "state", "--state", "INVALID", "-j", "LOG", "--log-prefix", "DROP ", "--log-tcp-sequence", "--log-tcp-options", "--log-ip-options");
+			eval("ip6tables", "-A", "logdrop", "-m", "state", "--state", "INVALID", "-j", "LOG", "--log-prefix", "DROP ", "--log-tcp-sequence", "--log-tcp-options", "--log-ip-options");
 		}
 	}
-	eval("ip6tables", "logdrop", "-j", "DROP");
+	eval("ip6tables", "-A", "logdrop", "-j", "DROP");
 	/*
 	 * logreject chain 
 	 */
 	if ((nvram_matchi("log_enable", 1))
 	    && (nvram_matchi("log_rejected", 1)))
-		eval("ip6tables", "logreject", "-j", "LOG", "--log-prefix", "WEBDROP ", "--log-tcp-sequence", "--log-tcp-options", "--log-ip-options");
-	eval("ip6tables", "logreject", "-p", "tcp", "-j", "REJECT", "--reject-with", "tcp-reset");
+		eval("ip6tables", "-A", "logreject", "-j", "LOG", "--log-prefix", "WEBDROP ", "--log-tcp-sequence", "--log-tcp-options", "--log-ip-options");
+	eval("ip6tables", "-A", "logreject", "-p", "tcp", "-j", "REJECT", "--reject-with", "tcp-reset");
 #ifdef FLOOD_PROTECT
 	/*
 	 * limaccept chain 
 	 */
 	if ((nvram_matchi("log_enable", 1))
 	    && (nvram_matchi("log_accepted", 1)))
-		eval("ip6tables", "limaccept", "-i", wanface, "-m", "state", "--state", "NEW", "-m", "limit", "--limit", FLOOD_RATE, "-j", "LOG", "--log-prefix", "FLOOD ", "--log-tcp-sequence", "--log-tcp-options",
+		eval("ip6tables", "-A", "limaccept", "-i", wanface, "-m", "state", "--state", "NEW", "-m", "limit", "--limit", FLOOD_RATE, "-j", "LOG", "--log-prefix", "FLOOD ", "--log-tcp-sequence", "--log-tcp-options",
 		     "--log-ip-options");
-	eval("ip6tables", "limaccept", "-i", wanface, "-m", "state", "--state", "NEW", "-m", "limit", "--limit", FLOOD_RATE, "-j", log_drop);
+	eval("ip6tables", "-A", "limaccept", "-i", wanface, "-m", "state", "--state", "NEW", "-m", "limit", "--limit", FLOOD_RATE, "-j", log_drop);
 	eval("ip6tables", "-A", "limaccept", "-j", "ACCEPT");
 #endif
 
