@@ -3119,6 +3119,7 @@ static void run_firewall6(char *vifs)
 	eval("ip6tables", "-F", "INPUT");
 	eval("ip6tables", "-F", "FORWARD");
 	eval("ip6tables", "-F", "OUTPUT");
+	eval("ip6tables", "-t", "mangle", "-F");
 
 	eval("ip6tables", "-F");
 	eval("ip6tables", "-X");
