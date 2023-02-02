@@ -118,6 +118,11 @@ killall -9 wland
 killall wdswatchdog.sh
 killall schedulerb.sh
 killall proxywatchdog.sh
+service syslog stop
+mount -f -o remount,ro /jffs
+umount -r -f /jffs
+service syslog start
+
 nvram set shutdown=fast
 # disable write cache
 hdparm -W 0 ${MTDPART}
