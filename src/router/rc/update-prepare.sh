@@ -121,7 +121,6 @@ killall proxywatchdog.sh
 service syslog stop
 mount -f -o remount,ro /jffs
 umount -r -f /jffs
-service syslog start
 
 nvram set shutdown=fast
 # disable write cache
