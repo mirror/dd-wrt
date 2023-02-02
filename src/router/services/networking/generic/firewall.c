@@ -3119,7 +3119,6 @@ static void run_firewall6(char *vifs)
 	eval("ip6tables", "-F", "INPUT");
 	eval("ip6tables", "-F", "FORWARD");
 	eval("ip6tables", "-F", "OUTPUT");
-	eval("ip6tables", "-t", "mangle", "-F");
 
 	eval("ip6tables", "-F");
 	eval("ip6tables", "-X");
@@ -3191,6 +3190,7 @@ static void run_firewall6(char *vifs)
 		}
 	}
 	/* Use the technique of TCP MSS Clamping to correct weird browsers behaviour */
+	eval("ip6tables", "-t", "mangle", "-D", "FORWARD", "-p", "tcp", "-m", "tcp", "--tcp-flags", "SYN,RST", "SYN", "-j", "TCPMSS", "--clamp-mss-to-pmtu");
 	eval("ip6tables", "-t", "mangle", "-A", "FORWARD", "-p", "tcp", "-m", "tcp", "--tcp-flags", "SYN,RST", "SYN", "-j", "TCPMSS", "--clamp-mss-to-pmtu");
 	/* Permit IMCPv6 echo requests (ping) but use but ratelimit it for preventing ping flooding */
 	eval("ip6tables", "-A", "INPUT", "-p", "ipv6-icmp", "--icmpv6-type", "128", "-j", "ACCEPT", "-m", "limit", "--limit", "30/minute");
