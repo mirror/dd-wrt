@@ -2615,16 +2615,17 @@ static void filter_forward(char *wanface, char *lanface, char *lan_cclass, int d
 	if (!filter_host_url)
 		save2file_A_forward("-m state --state RELATED,ESTABLISHED -j %s", log_accept);
 
+	/*
+	 * Drop the wrong state, INVALID, packets 
+	 */
+	save2file_A_forward("-m state --state INVALID -j %s", log_drop);
+
 	save2file_A_forward("-j upnp");
 	if (nvram_matchi("dtag_vlan8", 1) && nvram_matchi("wan_vdsl", 1)) {
 		save2file_A_forward("-i %s -j %s", nvram_safe_get("tvnicfrom"), log_accept);
 		save2file_A_forward("-o %s -j %s", nvram_safe_get("tvnicfrom"), log_accept);
 	}
 
-	/*
-	 * Drop the wrong state, INVALID, packets 
-	 */
-	save2file_A_forward("-m state --state INVALID -j %s", log_drop);
 	foreach(var, vifs, next) {
 		if (strcmp(safe_get_wan_face(wan_if_buffer), var)
 		    && strcmp(nvram_safe_get("lan_ifname"), var)) {
