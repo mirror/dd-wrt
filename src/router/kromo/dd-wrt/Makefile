@@ -873,7 +873,8 @@ ifeq ($(CONFIG_ANTAIRA),y)
 endif
 
 ifeq ($(CONFIG_NDTRADE),y)
-	cp -f ndtrade/logo.png $(INSTALLDIR)/www/style/ndtrade/logo.png
+	cp -f ndtrade/logo.png $(INSTALLDIR)/www/images/logo.png
+	cp -f ndtrade/logo_about.png $(INSTALLDIR)/www/images/dd-logo.png
 endif
 
 ifneq ($(CONFIG_USB),y)
