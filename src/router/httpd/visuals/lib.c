@@ -204,6 +204,8 @@ EJ_VISIBLE void ej_get_firmware_version(webs_t wp, int argc, char_t ** argv)
 #endif
 #elif HAVE_TMK
 		websWrite(wp, "KMT-WAS 3.0 r%s (" BUILD_DATE ") std", SVN_REVISION);
+#elif HAVE_NDTRADE
+		websWrite(wp, "ND TRADE v3.0-r%s %s%s (" BUILD_DATE ")", SVN_REVISION, nvram_safe_get("dist_type"), DIST_OPT);
 #else
 		websWrite(wp, "DD-WRT v3.0-r%s %s%s (" BUILD_DATE ")", SVN_REVISION, nvram_safe_get("dist_type"), DIST_OPT);
 #endif
