@@ -71,7 +71,7 @@ for i in $(seq 1 $tunnels); do
 		if [[ $ipv6_en -eq 1 ]]; then 
 			while ip -6 rule delete from ::/0 to ::/0 table $TID >/dev/null 2>&1; do true; done
 			ip -6 route show table all | grep "table $TID" | while read v6r; do
-				ip -6 route del $v6r >/dev/null 2>&1
+				ip -6 route del ${v6r%error*} >/dev/null 2>&1
 			done
 		fi
 		logger -p user.info "Flush delete PBR interface oet${i}, table : $TID"
