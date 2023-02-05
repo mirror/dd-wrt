@@ -3129,9 +3129,9 @@ static void run_firewall6(char *vifs)
 #endif
 
 	/* Set default chain policies */
-	eval("ip6tables", "-P", "INPUT", log_drop);
-	eval("ip6tables", "-P", "FORWARD", log_drop);
-	eval("ip6tables", "-P", "OUTPUT", log_accept);
+	eval("ip6tables", "-P", "INPUT", "DROP");
+	eval("ip6tables", "-P", "FORWARD", "DROP");
+	eval("ip6tables", "-P", "OUTPUT", "ACCEPT");
 	/* Filter all packets that have RH0 headers */
 	eval("ip6tables", "-A", "INPUT", "-m", "rt", "--rt-type", "0", "-j", log_drop);
 	eval("ip6tables", "-A", "FORWARD", "-m", "rt", "--rt-type", "0", "-j", log_drop);
