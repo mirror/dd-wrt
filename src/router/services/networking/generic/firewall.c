@@ -2874,6 +2874,7 @@ static void mangle_table(char *wanface, char *wanaddr, char *vifs)
 #ifdef HAVE_PRIVOXY
 	if ((nvram_matchi("privoxy_enable", 1)) && (nvram_matchi("wshaper_enable", 1))) {
 		save2file("-I OUTPUT -p tcp --sport 8118 -j IMQ --todev 0");
+		eval_silenceip6("ip6tables", "-t", "mangle", "-D", "OUTPUT", "-p", "tcp", "--sport", "8118", "-j", "IMQ", "--todev", "0");
 		eval_silenceip6("ip6tables", "-t", "mangle", "-I", "OUTPUT", "-p", "tcp", "--sport", "8118", "-j", "IMQ", "--todev", "0");
 	}
 #endif
