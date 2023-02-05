@@ -689,7 +689,7 @@ void __init early_init_devtree(void *params)
 	 * before parsing early params (it's fine to call jump_label_init()
 	 * more than once).
 	 */
-	jump_label_init();
+//	jump_label_init();
 	parse_early_param();
 
 	/* make sure we've parsed cmdline for mem= before this */
