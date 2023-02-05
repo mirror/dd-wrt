@@ -2912,12 +2912,15 @@ static void nat_table(char *wanface, char *wanaddr, char *lan_cclass, int dmzena
 static void filter_table(char *wanface, char *lanface, char *wanaddr, char *lan_cclass, int dmzenable, int webfilter, int remotessh, int remotetelnet, int remotemanage, char *vifs)
 {
 	char wan_if_buffer[33];
+	int log_level = nvram_matchi("log_enable", "1") ? nvram_geti("log_level") : 0;
 
-	save2file("*filter\n:INPUT ACCEPT [0:0]\n:FORWARD ACCEPT [0:0]\n:OUTPUT ACCEPT [0:0]\n:logaccept - [0:0]\n:logdrop - [0:0]\n:logreject - [0:0]\n"
+	save2file("*filter\n:INPUT ACCEPT [0:0]\n:FORWARD ACCEPT [0:0]\n:OUTPUT ACCEPT [0:0]\n");
+	if (log_level > 0)
+		save2file(":logaccept - [0:0]\n:logdrop - [0:0]\n:logreject - [0:0]\n"
 #ifdef FLOOD_PROTECT
-		  ":limaccept - [0:0]"
+			  ":limaccept - [0:0]");
 #endif
-		  ":trigger_out - [0:0]\n" ":upnp - [0:0]\n" ":lan2wan - [0:0]");
+	save2file(":trigger_out - [0:0]\n" ":upnp - [0:0]\n" ":lan2wan - [0:0]");
 	int seq;
 	for (seq = 1; seq <= NR_RULES; seq++) {
 		save2file(":grp_%d - [0:0]", seq);
@@ -2933,7 +2936,7 @@ static void filter_table(char *wanface, char *lanface, char *wanaddr, char *lan_
 		if ((nvram_matchi("log_enable", 1))
 		    && (nvram_matchi("log_dropped", 1)))
 			save2file_A("logbrute -j LOG --log-prefix \"[DROP BRUTEFORCE] : \" --log-tcp-options --log-ip-options");
-		save2file_A("logbrute -j %s", log_drop);
+		save2file_A("logbrute -j DROP");
 	}
 #endif
 
@@ -3000,51 +3003,48 @@ static void filter_table(char *wanface, char *lanface, char *wanaddr, char *lan_
 	/*
 	 * logaccept chain 
 	 */
+	if (log_level > 0) {
 #ifdef FLOOD_PROTECT
-	if ((nvram_matchi("log_enable", 1))
-	    && (nvram_matchi("log_accepted", 1)))
-		save2file_A("logaccept -i %s -m state --state NEW -m limit --limit %s -j LOG --log-prefix \"FLOOD \" --log-tcp-sequence --log-tcp-options --log-ip-options", wanface, FLOOD_RATE);
-	save2file_A("logaccept -i %s -m state --state NEW -m limit --limit %s -j %s", wanface, FLOOD_RATE, log_drop);
+		if (nvram_matchi("log_accepted", 1))
+			save2file_A("logaccept -i %s -m state --state NEW -m limit --limit %s -j LOG --log-prefix \"FLOOD \" --log-tcp-sequence --log-tcp-options --log-ip-options", wanface, FLOOD_RATE);
+		save2file_A("logaccept -i %s -m state --state NEW -m limit --limit %s -j %s", wanface, FLOOD_RATE, log_drop);
 #endif
 #ifndef HAVE_MICRO
-	if ((nvram_matchi("log_enable", 1))
-	    && (nvram_matchi("log_accepted", 1)))
-		save2file_A("logaccept -m state --state NEW -j LOG --log-prefix \"ACCEPT \" --log-tcp-sequence --log-tcp-options --log-ip-options");
+		if (nvram_matchi("log_accepted", 1))
+			save2file_A("logaccept -m state --state NEW -j LOG --log-prefix \"ACCEPT \" --log-tcp-sequence --log-tcp-options --log-ip-options");
 #endif
-	save2file_A("logaccept -j ACCEPT");
-	/*
-	 * logdrop chain 
-	 */
+		save2file_A("logaccept -j ACCEPT");
+		/*
+		 * logdrop chain 
+		 */
 #ifndef HAVE_MICRO
-	if ((nvram_matchi("log_enable", 1))
-	    && (nvram_matchi("log_dropped", 1))) {
-		save2file_A("logdrop -m state --state NEW -j LOG --log-prefix \"DROP \" --log-tcp-sequence --log-tcp-options --log-ip-options");
-		if (has_gateway()) {
-			save2file_A("logdrop -m state --state INVALID -j LOG --log-prefix \"DROP \" --log-tcp-sequence --log-tcp-options --log-ip-options");
+		if (nvram_matchi("log_dropped", 1)) {
+			save2file_A("logdrop -m state --state NEW -j LOG --log-prefix \"DROP \" --log-tcp-sequence --log-tcp-options --log-ip-options");
+			if (has_gateway()) {
+				save2file_A("logdrop -m state --state INVALID -j LOG --log-prefix \"DROP \" --log-tcp-sequence --log-tcp-options --log-ip-options");
+			}
 		}
-	}
 #endif
-	save2file_A("logdrop -j DROP");
-	/*
-	 * logreject chain 
-	 */
+		save2file_A("logdrop -j DROP");
+		/*
+		 * logreject chain 
+		 */
 #ifndef HAVE_MICRO
-	if ((nvram_matchi("log_enable", 1))
-	    && (nvram_matchi("log_rejected", 1)))
-		save2file_A("logreject -j LOG --log-prefix \"WEBDROP \" --log-tcp-sequence --log-tcp-options --log-ip-options");
+		if (nvram_matchi("log_rejected", 1))
+			save2file_A("logreject -j LOG --log-prefix \"WEBDROP \" --log-tcp-sequence --log-tcp-options --log-ip-options");
 #endif
-	save2file_A("logreject -p tcp -j REJECT --reject-with tcp-reset");
+		save2file_A("logreject -p tcp -j REJECT --reject-with tcp-reset");
 #ifdef FLOOD_PROTECT
-	/*
-	 * limaccept chain 
-	 */
+		/*
+		 * limaccept chain 
+		 */
 #ifndef HAVE_MICRO
-	if ((nvram_matchi("log_enable", 1))
-	    && (nvram_matchi("log_accepted", 1)))
-		save2file_A("limaccept -i %s -m state --state NEW -m limit --limit %s -j LOG --log-prefix \"FLOOD \" --log-tcp-sequence --log-tcp-options --log-ip-options", wanface, FLOOD_RATE);
+		if (nvram_matchi("log_accepted", 1))
+			save2file_A("limaccept -i %s -m state --state NEW -m limit --limit %s -j LOG --log-prefix \"FLOOD \" --log-tcp-sequence --log-tcp-options --log-ip-options", wanface, FLOOD_RATE);
 #endif
-	save2file_A("limaccept -i %s -m state --state NEW -m limit --limit %s -j %s\n-A limaccept -j ACCEPT", wanface, FLOOD_RATE, log_drop);
+		save2file_A("limaccept -i %s -m state --state NEW -m limit --limit %s -j %s\n-A limaccept -j ACCEPT", wanface, FLOOD_RATE, log_drop);
 #endif
+	}
 	save2file("COMMIT");
 }
 
@@ -3287,7 +3287,7 @@ static void run_firewall6(char *vifs)
 	 */
 	if (log_level > 0) {
 #ifdef FLOOD_PROTECT
-	    if nvram_matchi("log_accepted", 1))
+		if (nvram_matchi("log_accepted", 1))
 			eval("ip6tables", "-A", "logaccept", "-i", wanface, "-m", "state", "--state", "NEW", "-m", "limit", "--limit", FLOOD_RATE, "-j", "LOG", "--log-prefix", "FLOOD ", "--log-tcp-sequence",
 			     "--log-tcp-options", "--log-ip-options");
 		eval("ip6tables", "-A", "logaccept", "-i", wanface, "-m", "state", "--state", "NEW", "-m", "limit", "--limit", FLOOD_RATE, "-j", log_drop);
@@ -3340,7 +3340,6 @@ void start_loadfwmodules(void)
 }
 
 #ifdef HAVE_SYSCTL_EDIT
-
 static void setsysctl(char *path, char *nvname, char *name, char *sysval, void *priv)
 {
 	long cleanup = (long)priv;
@@ -3365,15 +3364,11 @@ static void setsysctl(char *path, char *nvname, char *name, char *sysval, void *
 void start_sysctl_config(void)
 {
 	sysctl_apply((void *)0, &setsysctl);
-}
-
-void start_sysctl_cleanup(void)
+} void start_sysctl_cleanup(void)
 {
 	sysctl_apply((void *)1, &setsysctl);
 }
-
 #endif
-
 int client_bridged_enabled(void);
 
 #ifdef DEVELOPE_ENV
@@ -3727,7 +3722,6 @@ static void halt_firewall6(void)
 	//eval("ip", "-6", "addr", "flush", "scope", "global");
 }
 #endif
-
 void stop_firewall(void)
 {
 	char wan_if_buffer[33];
