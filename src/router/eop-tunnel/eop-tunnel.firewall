@@ -5,14 +5,16 @@ ip6t=/usr/sbin/ip6tables
 ACCEPT="ACCEPT"
 DROP="DROP"
 REJECT="REJECT"
-if [[ $($nv get log_level) -eq 1 ]]; then
-	DROP="logdrop"
-	REJECT="logreject"
-fi
-if [[ $($nv get log_level) -eq 2 ]]; then
-	ACCEPT="logaccept"
-	DROP="logdrop"
-	REJECT="logreject"
+if [[ $($nv get log_enable) -eq 1 ]]; then
+	if [[ $($nv get log_level) -eq 1 ]]; then
+		DROP="logdrop"
+		REJECT="logreject"
+	fi
+	if [[ $($nv get log_level) -eq 2 ]]; then
+		ACCEPT="logaccept"
+		DROP="logdrop"
+		REJECT="logreject"
+	fi
 fi
 tunnels=$($nv get oet_tunnels)
 #WAN_IF="$(ip route | awk '/^default/{print $NF}')"
