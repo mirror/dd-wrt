@@ -8,8 +8,14 @@
 #include <linux/dma-attrs.h>
 #include <asm-generic/dma-coherent.h>
 
+#ifdef CONFIG_BCM47XX
 #define BCMFASTPATH		__attribute__ ((__section__ (".text.fastpath")))
 #define BCMFASTPATH_HOST	__attribute__ ((__section__ (".text.fastpath_host")))
+#else
+#define BCMFASTPATH_HOST
+#define BCMFASTPATH
+#endif
+
 
 static inline dma_addr_t BCMFASTPATH dma_map_single_attrs(struct device *dev, void *ptr,
 					      size_t size,
