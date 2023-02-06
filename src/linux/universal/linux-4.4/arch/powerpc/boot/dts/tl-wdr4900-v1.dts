@@ -44,7 +44,6 @@
 				u-boot@0 {
 					reg = <0x0 0x0050000>;
 					label = "u-boot";
-					read-only;
 				};
 
 				dtb@50000 {
