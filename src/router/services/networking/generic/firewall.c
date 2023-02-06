@@ -2916,11 +2916,12 @@ static void filter_table(char *wanface, char *lanface, char *wanaddr, char *lan_
 	int log_level = nvram_matchi("log_enable", "1") ? nvram_geti("log_level") : 0;
 
 	save2file("*filter\n:INPUT ACCEPT [0:0]\n:FORWARD ACCEPT [0:0]\n:OUTPUT ACCEPT [0:0]\n");
-	if (log_level > 0)
-		save2file(":logaccept - [0:0]\n:logdrop - [0:0]\n:logreject - [0:0]\n"
+	if (log_level > 0) {
+		save2file(":logaccept - [0:0]\n:logdrop - [0:0]\n:logreject - [0:0]\n");
 #ifdef FLOOD_PROTECT
-			  ":limaccept - [0:0]");
+		save2file(":limaccept - [0:0]\n");
 #endif
+	}
 	save2file(":trigger_out - [0:0]\n" ":upnp - [0:0]\n" ":lan2wan - [0:0]");
 	int seq;
 	for (seq = 1; seq <= NR_RULES; seq++) {
@@ -3073,9 +3074,9 @@ void set_gprules(char *iface)
 		sprintf(gnetmask, nvram_safe_get(gvar));
 		sysprintf("iptables -I INPUT -i %s -d %s/%s -m state --state NEW -j DROP", giface, nvram_safe_get("lan_ipaddr"), nvram_safe_get("lan_netmask"));
 		sysprintf("iptables -I INPUT -i %s -d %s/255.255.255.255 -m state --state NEW -j DROP", giface, gipaddr);
-		sysprintf("iptables -I INPUT -i %s -d %s/255.255.255.255 -p udp --dport 67 -j %s", giface, gipaddr, TARG_PASS);
-		sysprintf("iptables -I INPUT -i %s -d %s/255.255.255.255 -p udp --dport 53 -j %s", giface, gipaddr, TARG_PASS);
-		sysprintf("iptables -I INPUT -i %s -d %s/255.255.255.255 -p tcp --dport 53 -j %s", giface, gipaddr, TARG_PASS);
+		sysprintf("iptables -I INPUT -i %s -d %s/255.255.255.255 -p udp --dport 67 -j %s", giface, gipaddr, "ACCEPT");
+		sysprintf("iptables -I INPUT -i %s -d %s/255.255.255.255 -p udp --dport 53 -j %s", giface, gipaddr, "ACCEPT");
+		sysprintf("iptables -I INPUT -i %s -d %s/255.255.255.255 -p tcp --dport 53 -j %s", giface, gipaddr, "ACCEPT");
 		sysprintf("iptables -I FORWARD -i %s -m state --state NEW -j %s", giface, TARG_PASS);
 		sysprintf("iptables -I FORWARD -i %s -o br0 -m state --state NEW -j DROP", giface);
 		sysprintf("iptables -I FORWARD -i br0 -o %s -m state --state NEW -j DROP", giface);
