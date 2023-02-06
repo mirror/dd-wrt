@@ -83,8 +83,10 @@
 #include <typedefs.h>
 #include <bcmdefs.h>
 #else
+#ifndef BCMFASTPATH
 #define BCMFASTPATH_HOST
 #define BCMFASTPATH
+#endif
 #endif
 
 struct kmem_cache *skbuff_head_cache __read_mostly;
