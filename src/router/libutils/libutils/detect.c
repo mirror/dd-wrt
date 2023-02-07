@@ -1498,6 +1498,13 @@ int internal_getRouterBrand()
 	nvram_default_get("wlan0_rxantenna", "7");
 	nvram_default_get("wlan0_txantenna", "7");
 	return ROUTER_BOARD_WHRHPGN;
+#elif HAVE_WR941NV6_CN
+	setRouter("TP-Link TL-WR941N-cn v6");
+	nvram_default_get("wlan0_rxantenna", "3");
+	nvram_default_get("wlan0_txantenna", "3");
+	nvram_default_get("wlan1_rxantenna", "3");
+	nvram_default_get("wlan1_txantenna", "3");
+	return ROUTER_BOARD_WHRHPGN;
 #elif HAVE_WDR3500
 	setRouter("TP-Link TL-WDR3500 v1");
 	nvram_default_get("wlan0_rxantenna", "3");
