@@ -85,6 +85,23 @@ static void set_tcp_params(void)
 	}
 }
 
+void start_hostname(void)
+{
+
+	/* 
+	 * set hostname to wan_hostname or router_name 
+	 */
+	if (*(nvram_safe_get("wan_hostname")))
+		hostname = nvram_safe_get("wan_hostname");
+	else if (*(nvram_safe_get("router_name")))
+		hostname = nvram_safe_get("router_name");
+	else
+		hostname = "dd-wrt";
+
+	sethostname(hostname, strlen(hostname));
+
+}
+
 #define getRouterName() nvram_exists(NVROUTER_ALT)?nvram_safe_get(NVROUTER_ALT):nvram_safe_get(NVROUTER)
 
 void start_post_sysinit(void)
@@ -140,17 +157,8 @@ void start_post_sysinit(void)
 	start_mkfiles();
 	char *hostname;
 
-	/* 
-	 * set hostname to wan_hostname or router_name 
-	 */
-	if (*(nvram_safe_get("wan_hostname")))
-		hostname = nvram_safe_get("wan_hostname");
-	else if (*(nvram_safe_get("router_name")))
-		hostname = nvram_safe_get("router_name");
-	else
-		hostname = "dd-wrt";
+	start_hostname();
 
-	sethostname(hostname, strlen(hostname));
 	stop_httpd();
 
 	// create loginprompt
@@ -365,7 +373,6 @@ void start_init_start(void)
 #ifdef HAVE_MADWIFI
 	start_service(stabridge);
 #endif
-
 
 #ifdef HAVE_VLANTAGGING
 	start_service(vlantagging);
