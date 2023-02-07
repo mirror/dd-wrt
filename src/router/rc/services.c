@@ -418,6 +418,7 @@ static void handle_dhcpd(void)
 static void handle_index(void)
 {
 	unlink("/tmp/ppp/log");
+	restart_f("hostname");
 
 	stop_service_force_f("wan");
 	stop_service_f("radio_timer");	//
