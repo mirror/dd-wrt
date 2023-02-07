@@ -431,9 +431,16 @@ struct iperf_test
 extern int gerror; /* error value from getaddrinfo(3), for use in internal error handling */
 
 /* UDP "connect" message and reply (textual value for Wireshark, etc. readability - legacy was numeric) */
+#include <endian.h>
+#if BYTE_ORDER == BIG_ENDIAN
+#define UDP_CONNECT_MSG 0x39383736          // "6789" - legacy value was 123456789
+#define UDP_CONNECT_REPLY 0x36373819        // "9876" - legacy value was 987654321
+#define LEGACY_UDP_CONNECT_REPLY 0xb168de3a  // Old servers may still reply with the legacy value
+#else
 #define UDP_CONNECT_MSG 0x36373839          // "6789" - legacy value was 123456789
 #define UDP_CONNECT_REPLY 0x39383736        // "9876" - legacy value was 987654321
 #define LEGACY_UDP_CONNECT_REPLY 987654321  // Old servers may still reply with the legacy value
+#endif
 
 /* In Reverse mode, maximum number of packets to wait for "accept" response - to handle out of order packets */
 #define MAX_REVERSE_OUT_OF_ORDER_PACKETS 2
