@@ -434,7 +434,7 @@ extern int gerror; /* error value from getaddrinfo(3), for use in internal error
 #include <endian.h>
 #if BYTE_ORDER == BIG_ENDIAN
 #define UDP_CONNECT_MSG 0x39383736          // "6789" - legacy value was 123456789
-#define UDP_CONNECT_REPLY 0x36373819        // "9876" - legacy value was 987654321
+#define UDP_CONNECT_REPLY 0x36373839        // "9876" - legacy value was 987654321
 #define LEGACY_UDP_CONNECT_REPLY 0xb168de3a  // Old servers may still reply with the legacy value
 #else
 #define UDP_CONNECT_MSG 0x36373839          // "6789" - legacy value was 123456789
