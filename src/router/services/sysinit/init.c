@@ -88,17 +88,20 @@ static void set_tcp_params(void)
 void start_hostname(void)
 {
 
+	char *hostname;
+	char *domain;
 	/* 
 	 * set hostname to wan_hostname or router_name 
 	 */
-	if (*(nvram_safe_get("wan_hostname")))
-		hostname = nvram_safe_get("wan_hostname");
-	else if (*(nvram_safe_get("router_name")))
+	if (*(nvram_safe_get("router_name")))
 		hostname = nvram_safe_get("router_name");
 	else
 		hostname = "dd-wrt";
 
+	domain = nvram_safe_get("wan_domain");
 	sethostname(hostname, strlen(hostname));
+	if (*domain)
+		setdomainname(domain, strlen(domain));
 
 }
 
@@ -155,7 +158,6 @@ void start_post_sysinit(void)
 #endif
 
 	start_mkfiles();
-	char *hostname;
 
 	start_hostname();
 
