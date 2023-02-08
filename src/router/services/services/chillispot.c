@@ -437,9 +437,9 @@ void hotspotsys_config(void)
 		if (!*et0)
 			strcpy(et0, nvram_safe_get("et0macaddr_safe"));
 
-		md5_begin(&MD);
-		md5_hash(et0, 17, &MD);
-		md5_end((unsigned char *)hash, &MD);
+		dd_md5_begin(&MD);
+		dd_md5_hash(et0, 17, &MD);
+		dd_md5_end((unsigned char *)hash, &MD);
 		char idkey[16];
 		int i;
 

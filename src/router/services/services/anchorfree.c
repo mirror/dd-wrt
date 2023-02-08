@@ -74,7 +74,7 @@ void deviceID(char *output)
 	doHash(&MD, "/sys/devices/platform/IXP4XX-I2C.0/i2c-adapter:i2c-0/0-0051/eeprom");
 	doHash(&MD, "/sys/devices/platform/IXP4XX-I2C.0/i2c-0/0-0051/eeprom");
 	doHash(&MD, "/dev/discs/disc0/part4");
-	md5_end((unsigned char *)key, &MD);
+	dd_md5_end((unsigned char *)key, &MD);
 	int i;
 
 	for (i = 0; i < 16; i++) {

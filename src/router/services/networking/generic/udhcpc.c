@@ -429,7 +429,7 @@ static int renew(void)
 	return 0;
 }
 
-int udhcpc_main(int argc, char **argv)
+int dhcpc_main(int argc, char **argv)
 {
 	if (check_action() != ACT_IDLE)
 		return -1;
@@ -480,7 +480,7 @@ static int bound_tv(void)
 	return 0;
 }
 
-int udhcpc_tv_main(int argc, char **argv)
+int dhcpc_tv_main(int argc, char **argv)
 {
 	if (check_action() != ACT_IDLE)
 		return -1;
