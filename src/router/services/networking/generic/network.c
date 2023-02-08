@@ -4114,7 +4114,6 @@ static const char *ipv6_router_address(struct in6_addr *in6addr, char *addr6, so
 {
 	char *p;
 	struct in6_addr addr;
-	memset(temp, 0, size(temp));
 	if (!addr6)
 	    return NULL;
 	addr6[0] = '\0';
