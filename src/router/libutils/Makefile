@@ -1621,7 +1621,9 @@ CFLAGS += $(COPTS)
 A_LIBS :=libshutils.a libutils.a libwireless.a
 C_LIBS :=libshutils.so libutils.so libwireless.so libqos.so $(ADDLIB)
 ifeq ($(CONFIG_USB),y)
+ifeq ($(CONFIG_RAID),y)
 C_LIBS +=libdisc.so
+endif
 endif
 all: $(C_LIBS) $(A_LIBS)
 
