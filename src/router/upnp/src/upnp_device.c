@@ -137,10 +137,10 @@ upnp_gen_uuid(char *uuid, char *deviceType)
 	upnp_osl_primary_lanmac((char *)mac);
 
 	/* Generate hash */
-	md5_begin(&mdContext);
-	md5_hash(mac, sizeof(mac),&mdContext);
-	md5_hash((unsigned char *)deviceType, strlen(deviceType),&mdContext);
-	md5_end(new_uuid, &mdContext);
+	dd_md5_begin(&mdContext);
+	dd_md5_hash(mac, sizeof(mac),&mdContext);
+	dd_md5_hash((unsigned char *)deviceType, strlen(deviceType),&mdContext);
+	dd_md5_end(new_uuid, &mdContext);
 
 	sprintf(uuid,
 		"%02X%02X%02X%02X-%02X%02X-%02X%02X-%02X%02X-%02X%02X%02X%02X%02X%02X",
