@@ -22,7 +22,7 @@
 /* Initialize structure containing state of computation.
  * (RFC 1321, 3.3: Step 3)
  */
-void FAST_FUNC md5_begin(md5_ctx_t * ctx)
+void FAST_FUNC dd_md5_begin(md5_ctx_t * ctx)
 {
 	ctx->A = 0x67452301;
 	ctx->B = 0xefcdab89;
@@ -369,7 +369,7 @@ static void md5_hash_block(const void *buffer, md5_ctx_t * ctx)
  * This function's internal buffer remembers previous data until it has 64
  * bytes worth to pass on.  Call md5_end() to flush this buffer. */
 
-void FAST_FUNC md5_hash(const void *buffer, uint32_t len, md5_ctx_t * ctx)
+void FAST_FUNC dd_md5_hash(const void *buffer, uint32_t len, md5_ctx_t * ctx)
 {
 	char *buf = (char *)buffer;
 
@@ -409,7 +409,7 @@ void FAST_FUNC md5_hash(const void *buffer, uint32_t len, md5_ctx_t * ctx)
  * IMPORTANT: On some systems it is required that RESBUF is correctly
  * aligned for a 32 bits value.
  */
-void *FAST_FUNC md5_end(void *resbuf, md5_ctx_t * ctx)
+void *FAST_FUNC dd_md5_end(void *resbuf, md5_ctx_t * ctx)
 {
 	char *buf = ctx->buffer;
 	int i;
@@ -450,7 +450,7 @@ char *hash_file(char *filename, char *hashbuf)
 {
 	unsigned char buf[1];
 	md5_ctx_t MD;
-	md5_begin(&MD);
+	dd_md5_begin(&MD);
 	FILE *in = fopen(filename, "rb");
 	if (in == NULL) {
 		return NULL;
@@ -467,7 +467,7 @@ char *hash_file(char *filename, char *hashbuf)
 	fclose(in);
 	if (!cnt)
 		return NULL;
-	md5_end((unsigned char *)hashbuf, &MD);
+	dd_md5_end((unsigned char *)hashbuf, &MD);
 	return hashbuf;
 }
 
@@ -493,9 +493,9 @@ char *hash_string(char *string, char *hashbuf)
 		return NULL;
 	}
 	md5_ctx_t MD;
-	md5_begin(&MD);
-	md5_hash(string, strlen(string), &MD);
-	md5_end((unsigned char *)hash, &MD);
+	dd_md5_begin(&MD);
+	dd_md5_hash(string, strlen(string), &MD);
+	dd_md5_end((unsigned char *)hash, &MD);
 	for (i = 0; i < 16; i++) {
 		unsigned int k = hash[i];
 		sprintf(hashbuf, "%s%02X", hashbuf, k & 0xff);
