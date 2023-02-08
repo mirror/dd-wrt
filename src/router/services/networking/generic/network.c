@@ -4197,7 +4197,7 @@ static void start_wan6_done(char *wan_ifname)
 		char addr6[INET6_ADDRSTRLEN];
 
 		p = ipv6_router_address(NULL, addr6, sizeof(addr6));
-		if (*p) {
+		if (p && *p) {
 			snprintf(ip, sizeof(ip), "%s/%d", p, nvram_geti("ipv6_pf_len") ? : 64);
 			eval("ip", "-6", "addr", "add", ip, "dev", nvram_safe_get("lan_ifname"));
 		}
