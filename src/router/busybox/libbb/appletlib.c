@@ -1113,7 +1113,7 @@ int main(int argc, char **argv)
 	if (applet_name[0] == '-')
 		applet_name++;
 	applet_name = bb_basename(applet_name);
-	if (!strcmp(applet_name, "services"))
+	if (!strcmp(applet_name, "service"))
 	    return services_main(argc, argv);
 
 	/* If we are a result of execv("/proc/self/exe"), fix ugly comm of "exe" */
