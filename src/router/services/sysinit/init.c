@@ -199,6 +199,8 @@ void start_post_sysinit(void)
 	fprintf(fp, "Antaira %s\nRelease: " BUILD_DATE " (SVN revision: %s)\nBoard: %s\n", DIST, SVN_REVISION, getRouterName());
 #elif HAVE_HDWIFI
 	fprintf(fp, "HDWIFI %s (c) 2023 NewMedia-NET GmbH\nRelease: " BUILD_DATE " (SVN revision: %s)\nBoard: %s\n", DIST, SVN_REVISION, getRouterName());
+#elif HAVE_NDTRADE
+	fprintf(fp, "ND TRADE %s (c) 2023 NewMedia-NET GmbH\nRelease: " BUILD_DATE " (SVN revision: %s)\nBoard: %s\n", DIST, SVN_REVISION, getRouterName());
 #else
 #ifdef DIST
 	if (*(DIST))
