@@ -2004,7 +2004,7 @@ endif
 	gcc -o genmain genmain.c
 	./genmain
 	$(CC) $(CFLAGS) $(MAD_FLAGS) $(LTO) -c -o main.o main.c  $(NOBJS) $(ATH9KOBJS) $(LDFLAGS) $(ATH9KLDFLAGS) -lshutils
-	$(CC) $(CFLAGS) $(MAD_FLAGS) -o services_main $^ main.o $(LDLTO) $(NOBJS) $(ATH9KOBJS) $(LDFLAGS) $(ATH9KLDFLAGS) -lshutils
+	$(AR) cru $(LTOPLUGIN) libservices.a $^ main.o $(NOBJS) $(ATH9KOBJS)
 	
 services.a: $(OBJS)
 	@echo "[AR] $@"

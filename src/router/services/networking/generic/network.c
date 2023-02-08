@@ -355,9 +355,9 @@ void run_dhcpc(char *wan_ifname, char *pidfile, char *script, int fork, int leas
 	char *requestip = nvram_safe_get("dhcpc_requestip");
 	int use_extra = 0;
 
-	symlink("/sbin/rc", "/tmp/udhcpc");
+	symlink("/sbin/rc", "/tmp/dhcpc");
 	if (!script)
-		script = "/tmp/udhcpc";
+		script = "/tmp/dhcpc";
 	if (!pidfile) {
 		pidfile = "/var/run/udhcpc.pid";
 		use_extra = 1;
@@ -3483,8 +3483,8 @@ void run_wan(int status)
 						eval("ifconfig", vlannic, "up");
 					}
 					nvram_set("tvnicfrom", vlannic);
-					symlink("/sbin/rc", "/tmp/udhcpc_tv");
-					run_dhcpc(vlannic, "/var/run/udhcpc_tv.pid", "/tmp/udhcpc_tv", 1, 0, 0);
+					symlink("/sbin/rc", "/tmp/dhcpc_tv");
+					run_dhcpc(vlannic, "/var/run/udhcpc_tv.pid", "/tmp/dhcpc_tv", 1, 0, 0);
 				}
 				sprintf(vlannic, "%s.0007", ifn);
 				if (!ifexists(vlannic)) {
@@ -3519,8 +3519,8 @@ void run_wan(int status)
 						eval("ifconfig", vlannic, "up");
 					}
 					nvram_set("tvnicfrom", vlannic);
-					symlink("/sbin/rc", "/tmp/udhcpc_tv");
-					run_dhcpc(vlannic, "/var/run/udhcpc_tv.pid", "/tmp/udhcpc_tv", 1, 0, 0);
+					symlink("/sbin/rc", "/tmp/dhcpc_tv");
+					run_dhcpc(vlannic, "/var/run/udhcpc_tv.pid", "/tmp/dhcpc_tv", 1, 0, 0);
 				}
 				sprintf(vlannic, "%s.0007", pppoe_wan_ifname);
 				if (!ifexists(vlannic)) {
