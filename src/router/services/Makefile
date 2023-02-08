@@ -1981,7 +1981,7 @@ install: all
 	install -d $(INSTALLDIR)/services/sbin
 	install -d $(INSTALLDIR)/services/etc
 #	install services_main $(INSTALLDIR)/services/sbin/service
-	cd $(INSTALLDIR)/sbin && ln -sf /bin/busybox service
+	cd $(INSTALLDIR)/services/sbin && ln -sf /bin/busybox service
 
 	install bin/defaults.bin $(INSTALLDIR)/services/etc
 ifeq ($(CONFIG_RT2880),y)
