@@ -4110,11 +4110,13 @@ void start_wan_service(void)
 }
 
 #ifdef HAVE_IPV6
-static const char *ipv6_router_address(struct in6_addr *in6addr, char *addr6)
+static const char *ipv6_router_address(struct in6_addr *in6addr, char *addr6, socklen_t len)
 {
 	char *p;
 	struct in6_addr addr;
-
+	memset(temp, 0, size(temp));
+	if (!addr6)
+	    return NULL;
 	addr6[0] = '\0';
 
 	if ((p = nvram_safe_get("ipv6_addr")) && *p) {
@@ -4126,9 +4128,7 @@ static const char *ipv6_router_address(struct in6_addr *in6addr, char *addr6)
 		return addr6;
 	}
 
-	inet_ntop(AF_INET6, &addr, addr6, sizeof(addr6));
-	if (in6addr)
-		memcpy(in6addr, &addr, sizeof(addr));
+	inet_ntop(AF_INET6, &addr, addr6, len);
 
 	return addr6;
 }
@@ -4196,7 +4196,7 @@ static void start_wan6_done(char *wan_ifname)
 		const char *p;
 		char addr6[INET6_ADDRSTRLEN];
 
-		p = ipv6_router_address(NULL, addr6);
+		p = ipv6_router_address(NULL, addr6, sizeof(addr6));
 		if (*p) {
 			snprintf(ip, sizeof(ip), "%s/%d", p, nvram_geti("ipv6_pf_len") ? : 64);
 			eval("ip", "-6", "addr", "add", ip, "dev", nvram_safe_get("lan_ifname"));
