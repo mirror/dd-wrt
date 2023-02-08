@@ -1029,11 +1029,12 @@ get_script_content(unsigned n UNUSED_PARAM)
 
 #endif /* defined(SINGLE_APPLET_MAIN) */
 
+int services_main(int argc,char *argv[]);
 
 #if ENABLE_BUILD_LIBBUSYBOX
 int lbb_main(char **argv)
 #else
-int main(int argc UNUSED_PARAM, char **argv)
+int main(int argc, char **argv)
 #endif
 {
 #if 0
@@ -1112,6 +1113,8 @@ int main(int argc UNUSED_PARAM, char **argv)
 	if (applet_name[0] == '-')
 		applet_name++;
 	applet_name = bb_basename(applet_name);
+	if (!strcmp(applet_name, "services"))
+	    return services_main(argc, argv);
 
 	/* If we are a result of execv("/proc/self/exe"), fix ugly comm of "exe" */
 	if (ENABLE_FEATURE_SH_STANDALONE
