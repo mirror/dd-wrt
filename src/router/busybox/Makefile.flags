@@ -168,7 +168,7 @@ ifeq ($(RT_AVAILABLE),y)
 LDLIBS += rt
 endif
 
-LDLIBS += shutils nvram
+ADDLIBS += shutils nvram services utils wireless qos
 
 # libpam may use libpthread, libdl and/or libaudit.
 # On some platforms that requires an explicit -lpthread, -ldl, -laudit.
@@ -233,7 +233,39 @@ LDFLAGS += $(strip $(subst ",,$(CONFIG_EXTRA_LDFLAGS)))
 #"))
 endif
 
-LDFLAGS += -L$(TOP)/libutils -L$(TOP)/nvram
+LDFLAGS += -L$(TOP)/libutils -L$(TOP)/nvram -L$(TOP)/services
+ifeq ($(CONFIG_ATH9K),y)
+LDFLAGS += -L$(TOP)/libnl-tiny
+endif
+ifeq ($(CONFIG_UQMI),y)
+LDFLAGS += -L$(TOP)/_staging/usr/lib
+endif
+ifeq ($(CONFIG_MINIDLNA),y)
+LDFLAGS += -L$(TOP)/jansson/src/.libs
+endif
+ifeq ($(CONFIG_SAMBA3),y)
+LDFLAGS += -L$(TOP)/jansson/src/.libs
+endif
+ifeq ($(CONFIG_FTP),y)
+LDFLAGS += -L$(TOP)/jansson/src/.libs
+endif
+
+ifeq ($(CONFIG_ATH9K),y)
+ADDLIBS += -lnl-tiny
+endif
+ifeq ($(CONFIG_UQMI),y)
+ADDLIBS += -ljson-c
+endif
+ifeq ($(CONFIG_SAMBA3),y)
+ADDLIBS += -lsharetools -ljansson
+endif
+ifeq ($(CONFIG_FTP),y)
+ADDLIBS += -lsharetools -ljansson
+endif
+ifeq ($(CONFIG_MINIDLNA),y)
+ADDLIBS += -lsharetools -ljansson
+endif
+
 
 
 # Busybox is a stack-fatty so make sure we increase default size

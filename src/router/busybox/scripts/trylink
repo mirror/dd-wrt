@@ -84,7 +84,7 @@ A_FILES="$6"
 # a real utmp library in LDLIBS, dropping it "works" but resulting binary
 # does not work properly).
 LDLIBS="$7"
-CONFIG_EXTRA_LDLIBS="$8"
+CONFIG_EXTRA_LDLIBS="$8 $9"
 
 # The --sort-section option is not supported by older versions of ld
 SORT_SECTION="-Wl,--sort-section,alignment"
