@@ -18,7 +18,7 @@
 /*
  * udhcpc scripts 
  */
-extern int udhcpc_main(int argc, char **argv);
+extern int dhcpc_main(int argc, char **argv);
 
 //extern void runStartup(char *folder, char *extension);
 
