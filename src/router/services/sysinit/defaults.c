@@ -700,6 +700,8 @@ struct nvram_param srouter_defaults[] = {
 #else
 	{ "dhcp_start", "192.168.2.30" },	/* First assignable DHCP address */
 #endif
+#elif HAVE_NDTRADE
+	{ "dhcp_start", "192.168.100.30" },	/* First assignable DHCP address */
 #else
 	{ "dhcp_start", "192.168.1.64" },	/* First assignable DHCP address */
 #endif
