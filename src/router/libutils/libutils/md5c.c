@@ -461,7 +461,7 @@ char *hash_file(char *filename, char *hashbuf)
 		if (c == EOF)
 			break;
 		buf[0] = c;
-		md5_hash(buf, 1, &MD);
+		dd_md5_hash(buf, 1, &MD);
 		cnt++;
 	}
 	fclose(in);
