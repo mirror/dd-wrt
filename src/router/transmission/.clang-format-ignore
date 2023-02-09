@@ -1,0 +1,14 @@
+# Skipped files must be justified as untracked or third-party maintained
+
+# untracked files
+.*/*
+build/*
+cmake-build-*/*
+libtransmission/version.h
+web/node_modules/*
+
+# third-party maintained projects
+third-party/*
+
+# maintained at https://github.com/sparkle-project/Sparkle
+macosx/Sparkle.framework/*

@@ -1,0 +1,69 @@
+#!/bin/sh
+#
+# Do some checking before 'git push'.
+
+# Set a stricter bash mode
+set -e
+set -u
+
+# We define _GNU_SOURCE to avoid warnings with missing prototypes.
+# C89 does not know snprintf, strdup, strndup, popen, pclose
+export CFLAGS="-std=gnu89 -pedantic -g -Wall -Wextra -Wstrict-prototypes -Wold-style-definition -Wwrite-strings -Wshadow -Wformat -Wformat-security -Wunreachable-code -Wstrict-prototypes -Wmissing-prototypes -Wold-style-definition"
+
+ASAN_FLAGS="-fsanitize=address -fno-omit-frame-pointer -fsanitize-address-use-after-scope"
+
+# measure time consumed and print it at the end of the script
+START=$(date +%s.%N)
+
+for CC in clang gcc; do
+  export CC
+  echo
+  echo "*** Testing with CC=$CC"
+
+  for options in \
+  "-Dbuiltin=libicu -Druntime=libicu" \
+  "-Dbuiltin=libidn2 -Druntime=libidn2" \
+  "-Dbuiltin=libidn -Druntime=libidn" \
+  "-Dbuiltin=no -Druntime=no"; do
+
+    # normal build+check+valgrind-check
+    echo
+    echo "  *** $options"
+    rm -rf builddir
+    meson builddir $options
+    cd builddir
+    ninja
+    for xLCALL in C tr_TR.utf8; do
+      LC_ALL=$xLCALL meson test
+      LC_ALL=$xLCALL meson test --wrap='valgrind --tool=memcheck'
+    done
+    cd ..
+
+    # UBSAN build+check
+    flags="-Db_sanitize=undefined -Db_lundef=false"
+    echo
+    echo "  *** $options $flags"
+    rm -rf builddir
+    LDFLAGS="-lubsan" meson builddir $options $flags
+    LDFLAGS="-lubsan" ninja -C builddir
+    for xLCALL in C tr_TR.utf8; do
+      LC_ALL=$xLCALL ninja test -C builddir
+    done
+
+    # ASAN build+check
+    flags="-Db_sanitize=address -Db_lundef=false"
+    echo
+    echo "  *** $options $flags"
+    rm -rf builddir
+    CFLAGS="$CFLAGS $ASAN_FLAGS" meson builddir $options $flags
+    CFLAGS="$CFLAGS $ASAN_FLAGS" ninja -C builddir
+    for xLCALL in C tr_TR.utf8; do
+      LC_ALL=$xLCALL CFLAGS="$CFLAGS $ASAN_FLAGS" ninja test -C builddir
+    done
+
+  done
+done
+
+END=$(date +%s.%N)
+echo
+echo "Duration: "$(echo "$END - $START" | bc)

@@ -25,6 +25,7 @@ and
 .Op Fl er | ep | et
 .Op Fl -exit
 .Op Fl f
+.Op Fl F Ar filter
 .Op Fl g Ar files
 .Op Fl G Ar files
 .Op Fl gsr Ar ratio
@@ -32,9 +33,11 @@ and
 .Op Fl h
 .Op Fl i
 .Op Fl ic
+.Op Fl ids
 .Op Fl if
 .Op Fl ip
 .Op Fl it
+.Op Fl j
 .Op Fl l
 .Op Fl m | M
 .Op Fl n Ar user:pass
@@ -153,6 +156,19 @@ adds a single file to the download list, and
 .Ar files
 adds multiple files to the download list,
 such as "\-g1,3-5" to add files #1, #3, #4, and #5 to the download list.
+.It Fl F Fl -filter Ar filter
+Filter selected torrents. Further commands will use only torrents that satisfy
+the filter condition.
+.D1 i - currently idle
+.D1 u - currently uploading
+.D1 d - currently downloading
+.D1 n:str - torrent name includes str
+.D1 l:label - has label
+.D1 r:ratio - Minimum upload ratio
+.D1 w - Have some unwanted files
+Prefixing the filter by "~" negates the filter.
+-F may be specified more than once, and may be preceded by -t. Only torrents
+that satisfy all the conditions are selected.
 .It Fl G Fl -no-get Ar all | file-index | files
 Mark file(s) for not downloading.
 .It Fl gsr Fl -global-seedratio Ar ratio
@@ -172,13 +188,18 @@ List the specified torrent's peers
 List the specified torrent's pieces
 .It Fl it Fl -info-trackers
 List the specified torrent's trackers
+.It Fl j Fl -json
+Return the RPC response as JSON
 .It Fl si Fl -session-info
 List session information from the server
 .It Fl st Fl -session-stats
 List statistical information from the server
 .It Fl l Fl -list
 List all torrents
-.It Fl L Fl -labels
+.It Fl ids Fl -print-ids
+Print a list of the specified torrent's ids in a format suitable as a parameter for
+.Ar -t
+.It Fl L Fl -labels Ar label1[,label2[,...]]
 Set the specified torrent's labels
 .It Fl m Fl -portmap
 Enable portmapping via NAT-PMP or UPnP
@@ -202,7 +223,7 @@ See netrc(5) for more information.
 .It Fl o Fl -dht
 Enable distributed hash table (DHT).
 .It Fl O Fl -no-dht
-Disable distribued hash table (DHT).
+Disable distributed hash table (DHT).
 .It Fl p Fl -port Ar port
 Set the
 .Ar port
@@ -237,6 +258,12 @@ Remove the current torrent(s) and delete their downloaded data.
 Reannounce the current torrent(s). This is the same as the GUI's "ask tracker for more peers" button.
 .It Fl -move
 Move the current torrents' data from their current locations to the specified directory.
+.It Fl -rename Ar newname
+Rename files or root folder of a torrent
+.It Fl -path Ar oldname
+Provide original path for the rename command
+.It Fl -unix-socket
+Connect using a Unix domain socket.
 .It Fl -find
 Tell Transmission where to look for the current torrents' data.
 .It Fl sr Fl -seedratio Ar ratio
@@ -331,6 +358,18 @@ $ transmission-remote \-l
 List all active torrents:
 .Bd -literal -offset indent
 $ transmission-remote \-tactive \-l
+.Ed
+List all torrents with label "abc":
+.Bd -literal -offset indent
+$ transmission-remote \-F l:abc \-l
+.Ed
+List all torrents with name containing "def" or with label "abc":
+.Bd -literal -offset indent
+$ transmission-remote -t $(\ transmission-remote \-F n:def \-ids )$(\ transmission-remote \-F l:abc \-ids ) \-l
+.Ed
+Rename torrent root folder from "test1/examplefile.txt" to "test2/examplefile.txt"
+.Bd -literal -offset indent
+$ transmission-remote -t1 --path test1 --rename test2
 .Ed
 Set download and upload limits to 400 kB/sec and 60 kB/sec:
 .Bd -literal -offset indent

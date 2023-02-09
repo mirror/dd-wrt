@@ -1,41 +1,69 @@
-/*
- * This file Copyright (C) 2015-2016 Mnemosyne LLC
- *
- * It may be used under the GNU GPL versions 2 or 3
- * or any future license endorsed by Mnemosyne LLC.
- *
- */
+// This file Copyright 2015-2022 Mnemosyne LLC.
+// It may be used under GPLv2 (SPDX: GPL-2.0-only), GPLv3 (SPDX: GPL-3.0-only),
+// or any future license endorsed by Mnemosyne LLC.
+// License text can be found in the licenses/ folder.
 
 #pragma once
 
-#ifdef __cplusplus
+#include <chrono>
+#include <functional>
+#include <memory>
+#include <string_view>
+
 extern "C"
 {
-#endif
+    struct event_base;
+}
 
-struct event_base;
-
-typedef struct tr_watchdir* tr_watchdir_t;
-
-typedef enum
+namespace libtransmission
 {
-    TR_WATCHDIR_ACCEPT,
-    TR_WATCHDIR_IGNORE,
-    TR_WATCHDIR_RETRY
-}
-tr_watchdir_status;
 
-typedef tr_watchdir_status (* tr_watchdir_cb)(tr_watchdir_t handle, char const* name, void* user_data);
+class TimerMaker;
 
-/* ... */
+class Watchdir
+{
+public:
+    Watchdir() = default;
+    virtual ~Watchdir() = default;
+    Watchdir(Watchdir&&) = delete;
+    Watchdir(Watchdir const&) = delete;
+    Watchdir& operator=(Watchdir&&) = delete;
+    Watchdir& operator=(Watchdir const&) = delete;
 
-tr_watchdir_t tr_watchdir_new(char const* path, tr_watchdir_cb callback, void* callback_user_data,
-    struct event_base* event_base, bool force_generic);
+    [[nodiscard]] virtual std::string_view dirname() const noexcept = 0;
 
-void tr_watchdir_free(tr_watchdir_t handle);
+    enum class Action
+    {
+        Done,
+        Retry
+    };
 
-char const* tr_watchdir_get_path(tr_watchdir_t handle);
+    using Callback = std::function<Action(std::string_view dirname, std::string_view basename)>;
 
-#ifdef __cplusplus
-}
-#endif
+    [[nodiscard]] static auto genericRescanInterval() noexcept
+    {
+        return generic_rescan_interval;
+    }
+
+    static void setGenericRescanInterval(std::chrono::milliseconds interval) noexcept
+    {
+        generic_rescan_interval = interval;
+    }
+
+    [[nodiscard]] static std::unique_ptr<Watchdir> create(
+        std::string_view dirname,
+        Callback callback,
+        libtransmission::TimerMaker& timer_maker,
+        struct event_base* evbase);
+
+    [[nodiscard]] static std::unique_ptr<Watchdir> createGeneric(
+        std::string_view dirname,
+        Callback callback,
+        libtransmission::TimerMaker& timer_maker,
+        std::chrono::milliseconds rescan_interval = generic_rescan_interval);
+
+private:
+    static inline auto generic_rescan_interval = std::chrono::milliseconds{ 1000 };
+};
+
+} // namespace libtransmission

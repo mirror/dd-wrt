@@ -1,67 +1,70 @@
-/*
- * This file Copyright (C) 2009-2015 Mnemosyne LLC
- *
- * It may be used under the GNU GPL versions 2 or 3
- * or any future license endorsed by Mnemosyne LLC.
- *
- */
+// This file Copyright © 2009-2022 Mnemosyne LLC.
+// It may be used under GPLv2 (SPDX: GPL-2.0-only), GPLv3 (SPDX: GPL-3.0-only),
+// or any future license endorsed by Mnemosyne LLC.
+// License text can be found in the licenses/ folder.
 
 #pragma once
 
 class Speed
 {
 public:
-    Speed() :
-        _Bps(0)
+    Speed() = default;
+
+    double getKBps() const;
+
+    [[nodiscard]] auto constexpr getBps() const noexcept
     {
+        return bytes_per_second_;
     }
 
-    double KBps() const;
-
-    int Bps() const
+    [[nodiscard]] auto constexpr isZero() const noexcept
     {
-        return _Bps;
-    }
-
-    bool isZero() const
-    {
-        return _Bps == 0;
+        return bytes_per_second_ == 0;
     }
 
     static Speed fromKBps(double KBps);
 
-    static Speed fromBps(int Bps)
+    [[nodiscard]] static constexpr Speed fromBps(int Bps) noexcept
     {
-        return Speed(Bps);
+        return Speed{ Bps };
     }
 
-    void setBps(int Bps)
+    void constexpr setBps(int Bps) noexcept
     {
-        _Bps = Bps;
+        bytes_per_second_ = Bps;
     }
 
-    Speed& operator +=(Speed const& that)
+    constexpr Speed& operator+=(Speed const& that) noexcept
     {
-        _Bps += that._Bps;
+        bytes_per_second_ += that.bytes_per_second_;
         return *this;
     }
 
-    Speed operator +(Speed const& that) const
+    [[nodiscard]] auto constexpr operator+(Speed const& that) const noexcept
     {
-        return Speed(_Bps + that._Bps);
+        return Speed{ getBps() + that.getBps() };
     }
 
-    bool operator <(Speed const& that) const
+    [[nodiscard]] auto constexpr operator<(Speed const& that) const noexcept
     {
-        return _Bps < that._Bps;
+        return getBps() < that.getBps();
+    }
+
+    [[nodiscard]] auto constexpr operator==(Speed const& that) const noexcept
+    {
+        return getBps() == that.getBps();
+    }
+
+    [[nodiscard]] auto constexpr operator!=(Speed const& that) const noexcept
+    {
+        return getBps() != that.getBps();
     }
 
 private:
-    Speed(int Bps) :
-        _Bps(Bps)
+    explicit constexpr Speed(int bytes_per_second) noexcept
+        : bytes_per_second_{ bytes_per_second }
     {
     }
 
-private:
-    int _Bps;
+    int bytes_per_second_ = {};
 };

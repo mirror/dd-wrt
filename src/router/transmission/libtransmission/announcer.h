@@ -1,10 +1,7 @@
-/*
- * This file Copyright (C) 2010-2014 Mnemosyne LLC
- *
- * It may be used under the GNU GPL versions 2 or 3
- * or any future license endorsed by Mnemosyne LLC.
- *
- */
+// This file Copyright © 2010-2022 Mnemosyne LLC.
+// It may be used under GPLv2 (SPDX: GPL-2.0-only), GPLv3 (SPDX: GPL-3.0-only),
+// or any future license endorsed by Mnemosyne LLC.
+// License text can be found in the licenses/ folder.
 
 #pragma once
 
@@ -12,64 +9,76 @@
 #error only libtransmission should #include this header.
 #endif
 
+#include <atomic>
+#include <cstddef> // size_t
+#include <cstdint> // uint32_t
+#include <ctime>
+#include <functional>
+#include <string_view>
+#include <vector>
+
 #include "transmission.h"
 
-struct tr_announcer;
-struct tr_torrent_tiers;
+#include "interned-string.h"
+#include "net.h"
 
-/**
- * ***  Tracker Publish / Subscribe
- * **/
+class tr_announcer;
+class tr_announcer_udp;
+struct tr_torrent_announcer;
 
-typedef enum
-{
-    TR_TRACKER_WARNING,
-    TR_TRACKER_ERROR,
-    TR_TRACKER_ERROR_CLEAR,
-    TR_TRACKER_PEERS
-}
-TrackerEventType;
+// --- Tracker Publish / Subscribe
 
 struct tr_pex;
 
-/** @brief Notification object to tell listeners about announce or scrape occurences */
-typedef struct
+/** @brief Notification object to tell listeners about announce or scrape occurrences */
+struct tr_tracker_event
 {
-    /* what type of event this is */
-    TrackerEventType messageType;
+    enum class Type
+    {
+        Error,
+        ErrorClear,
+        Counts,
+        Peers,
+        Warning,
+    };
 
-    /* for TR_TRACKER_WARNING and TR_TRACKER_ERROR */
-    char const* text;
-    char const* tracker;
+    // What type of event this is
+    Type type;
 
-    /* for TR_TRACKER_PEERS */
-    struct tr_pex const* pex;
-    size_t pexCount;
+    // for Warning and Error events
+    std::string_view text;
+    tr_interned_string announce_url;
 
-    /* [0...100] for probability a peer is a seed. calculated by the leecher/seeder ratio */
-    int8_t seedProbability;
-}
-tr_tracker_event;
+    // for Peers events
+    std::vector<tr_pex> pex;
 
-typedef void (* tr_tracker_callback)(tr_torrent* tor, tr_tracker_event const* event, void* client_data);
+    // for Peers and Counts events
+    int leechers;
+    int seeders;
+};
 
-/**
-***  Session ctor/dtor
-**/
+using tr_tracker_callback = std::function<void(tr_torrent&, tr_tracker_event const*)>;
 
-void tr_announcerInit(tr_session*);
+class tr_announcer
+{
+public:
+    [[nodiscard]] static std::unique_ptr<tr_announcer> create(
+        tr_session* session,
+        tr_announcer_udp&,
+        std::atomic<size_t>& n_pending_stops);
+    virtual ~tr_announcer() = default;
 
-void tr_announcerClose(tr_session*);
+    virtual tr_torrent_announcer* addTorrent(tr_torrent*, tr_tracker_callback callback) = 0;
+    virtual void startTorrent(tr_torrent* tor) = 0;
+    virtual void stopTorrent(tr_torrent* tor) = 0;
+    virtual void resetTorrent(tr_torrent* tor) = 0;
+    virtual void removeTorrent(tr_torrent* tor) = 0;
+    virtual void startShutdown() = 0;
+};
 
-/**
-***  For torrent customers
-**/
+std::unique_ptr<tr_announcer> tr_announcerCreate(tr_session* session);
 
-struct tr_torrent_tiers* tr_announcerAddTorrent(tr_torrent* torrent, tr_tracker_callback cb, void* cbdata);
-
-void tr_announcerResetTorrent(struct tr_announcer*, tr_torrent*);
-
-void tr_announcerRemoveTorrent(struct tr_announcer*, tr_torrent*);
+// --- For torrent customers
 
 void tr_announcerChangeMyPort(tr_torrent*);
 
@@ -77,8 +86,6 @@ bool tr_announcerCanManualAnnounce(tr_torrent const*);
 
 void tr_announcerManualAnnounce(tr_torrent*);
 
-void tr_announcerTorrentStarted(tr_torrent*);
-void tr_announcerTorrentStopped(tr_torrent*);
 void tr_announcerTorrentCompleted(tr_torrent*);
 
 enum
@@ -88,20 +95,60 @@ enum
     TR_ANN_CORRUPT
 };
 
-void tr_announcerAddBytes(tr_torrent*, int up_down_or_corrupt, uint32_t byteCount);
+void tr_announcerAddBytes(tr_torrent*, int type, uint32_t n_bytes);
 
 time_t tr_announcerNextManualAnnounce(tr_torrent const*);
 
-tr_tracker_stat* tr_announcerStats(tr_torrent const* torrent, int* setmeTrackerCount);
+tr_tracker_view tr_announcerTracker(tr_torrent const* torrent, size_t nth);
 
-void tr_announcerStatsFree(tr_tracker_stat* trackers, int trackerCount);
+size_t tr_announcerTrackerCount(tr_torrent const* tor);
 
-/***
-****
-***/
+// --- ANNOUNCE
 
-void tr_tracker_udp_upkeep(tr_session* session);
+enum tr_announce_event
+{
+    /* Note: the ordering of this enum's values is important to
+     * announcer.c's tr_tier.announce_event_priority. If changing
+     * the enum, ensure announcer.c is compatible with the change. */
+    TR_ANNOUNCE_EVENT_NONE,
+    TR_ANNOUNCE_EVENT_STARTED,
+    TR_ANNOUNCE_EVENT_COMPLETED,
+    TR_ANNOUNCE_EVENT_STOPPED,
+};
 
-void tr_tracker_udp_close(tr_session* session);
+struct tr_announce_request;
+struct tr_announce_response;
 
-bool tr_tracker_udp_is_idle(tr_session const* session);
+struct tr_scrape_request;
+struct tr_scrape_response;
+
+// --- UDP ANNOUNCER
+
+using tr_scrape_response_func = std::function<void(tr_scrape_response const&)>;
+using tr_announce_response_func = std::function<void(tr_announce_response const&)>;
+
+class tr_announcer_udp
+{
+public:
+    class Mediator
+    {
+    public:
+        virtual ~Mediator() noexcept = default;
+        virtual void sendto(void const* buf, size_t buflen, sockaddr const* addr, socklen_t addrlen) = 0;
+        [[nodiscard]] virtual std::optional<tr_address> announceIP() const = 0;
+    };
+
+    virtual ~tr_announcer_udp() noexcept = default;
+
+    [[nodiscard]] static std::unique_ptr<tr_announcer_udp> create(Mediator&);
+
+    virtual void announce(tr_announce_request const& request, tr_announce_response_func on_response) = 0;
+
+    virtual void scrape(tr_scrape_request const& request, tr_scrape_response_func on_response) = 0;
+
+    virtual void upkeep() = 0;
+
+    // @brief process an incoming udp message if it's a tracker response.
+    // @return true if msg was a tracker response; false otherwise
+    virtual bool handleMessage(uint8_t const* msg, size_t msglen) = 0;
+};

@@ -1,10 +1,7 @@
-/*
- * This file Copyright (C) 2012-2014 Mnemosyne LLC
- *
- * It may be used under the GNU GPL versions 2 or 3
- * or any future license endorsed by Mnemosyne LLC.
- *
- */
+// This file Copyright © 2012-2022 Mnemosyne LLC.
+// It may be used under GPLv2 (SPDX: GPL-2.0-only), GPLv3 (SPDX: GPL-3.0-only),
+// or any future license endorsed by Mnemosyne LLC.
+// License text can be found in the licenses/ folder.
 
 #pragma once
 
@@ -12,21 +9,32 @@
 #error only libtransmission should #include this header.
 #endif
 
-#include <inttypes.h>
-#include <time.h>
+#include <cstddef> // size_t
+#include <cstdint> // int64_t
+#include <ctime> // time_t
+#include <optional>
+#include <vector>
 
-enum
-{
-    /* defined by BEP #9 */
-    METADATA_PIECE_SIZE = (1024 * 16)
-};
+#include "transmission.h"
 
-void* tr_torrentGetMetadataPiece(tr_torrent* tor, int piece, size_t* len);
+struct tr_torrent;
+struct tr_torrent_metainfo;
 
-void tr_torrentSetMetadataPiece(tr_torrent* tor, int piece, void const* data, int len);
+// defined by BEP #9
+inline constexpr int METADATA_PIECE_SIZE = 1024 * 16;
 
-bool tr_torrentGetNextMetadataRequest(tr_torrent* tor, time_t now, int* setme);
+std::optional<std::vector<std::byte>> tr_torrentGetMetadataPiece(tr_torrent const* tor, int piece);
+
+void tr_torrentSetMetadataPiece(tr_torrent* tor, int piece, void const* data, size_t len);
+
+std::optional<int> tr_torrentGetNextMetadataRequest(tr_torrent* tor, time_t now);
 
 bool tr_torrentSetMetadataSizeHint(tr_torrent* tor, int64_t metadata_size);
 
 double tr_torrentGetMetadataPercent(tr_torrent const* tor);
+
+bool tr_torrentUseMetainfoFromFile(
+    tr_torrent* tor,
+    tr_torrent_metainfo const* metainfo,
+    char const* filename,
+    tr_error** error);

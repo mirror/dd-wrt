@@ -1,13 +1,17 @@
 [Unit]
 Description=Transmission BitTorrent Daemon
-After=network.target
+Wants=network-online.target
+After=network-online.target
 
 [Service]
 User=transmission
 Type=notify
-ExecStart=/usr/bin/transmission-daemon -f --log-error
+ExecStart=/usr/bin/transmission-daemon -f --log-level=error
 ExecReload=/bin/kill -s HUP $MAINPID
 NoNewPrivileges=true
+MemoryDenyWriteExecute=true
+ProtectSystem=true
+PrivateTmp=true
 
 [Install]
 WantedBy=multi-user.target

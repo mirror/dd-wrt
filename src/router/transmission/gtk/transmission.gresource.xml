@@ -1,13 +1,12 @@
-<?xml version="1.0" encoding="UTF-8"?> 
-<gresources> 
-  <gresource prefix="/com/transmissionbt/transmission"> 
-    <file alias="icons/logo-24.png">icons/hicolor_apps_scalable_transmission.svg</file> 
-    <file alias="icons/logo-48.png">icons/hicolor_apps_scalable_transmission.svg</file> 
-    <file>icons/lock.png</file> 
-    <file>icons/ratio.png</file> 
-    <file>icons/turtle-blue.png</file> 
-    <file>icons/turtle-grey.png</file> 
-    <file>icons/utilities.png</file> 
-    <file>transmission-ui.xml</file> 
-  </gresource> 
-</gresources> 
+<?xml version="1.0" encoding="UTF-8"?>
+<gresources>
+  <gresource prefix="/com/transmissionbt/transmission">
+    <file alias="icons/scalable/actions/lock.svg">icons/lock.svg</file>
+    <file alias="icons/scalable/actions/options-symbolic.svg">icons/options-symbolic.svg</file>
+    <file alias="icons/scalable/actions/ratio-symbolic.svg">icons/ratio-symbolic.svg</file>
+    <file alias="icons/scalable/actions/turtle-symbolic.svg">icons/turtle-symbolic.svg</file>
+    <file alias="icons/scalable/apps/transmission.svg" compressed="true" preprocess="xml-stripblanks">icons/hicolor_apps_scalable_transmission.svg</file>
+    <file compressed="true">transmission-ui.css</file>
+    <file compressed="true" preprocess="xml-stripblanks">transmission-ui.xml</file>
+  </gresource>
+</gresources>

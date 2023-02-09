@@ -1,24 +1,7 @@
-/*
-Copyright (c) 2010 by Johannes Lieder
-
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in
-all copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
-THE SOFTWARE.
-*/
+// This file Copyright © 2022 Mnemosyne LLC.
+// It may be used under GPLv2 (SPDX: GPL-2.0-only), GPLv3 (SPDX: GPL-3.0-only),
+// or any future license endorsed by Mnemosyne LLC.
+// License text can be found in the licenses/ folder.
 
 #pragma once
 
@@ -26,21 +9,52 @@ THE SOFTWARE.
 #error only libtransmission should #include this header.
 #endif
 
-int tr_lpdInit(tr_session*, tr_address*);
-void tr_lpdUninit(tr_session*);
-bool tr_lpdEnabled(tr_session const*);
-bool tr_lpdSendAnnounce(tr_torrent const*);
+#include <ctime>
+#include <memory>
+#include <string_view>
+#include <vector>
 
-/**
-* @defgroup Preproc Helper macros
-* @{
-*
-* @def lengthof
-* @brief returns the static length of a C array type
-* @note A lower case macro name is tolerable here since this definition of lengthof()
-* is intimately related to sizeof semantics.
-* Meaningful return values are only guaranteed for true array types. */
-#define lengthof(arr) (sizeof(*(arr)) > 0 ? sizeof(arr) / sizeof(*(arr)) : 0)
+#include "transmission.h"
 
-/**
-* @} */
+#include "net.h" // for tr_address, tr_port
+
+struct event_base;
+
+namespace libtransmission
+{
+class TimerMaker;
+}
+
+class tr_lpd
+{
+public:
+    class Mediator
+    {
+    public:
+        struct TorrentInfo
+        {
+            std::string_view info_hash_str;
+            tr_torrent_activity activity;
+            bool allows_lpd;
+            time_t announce_after;
+        };
+
+        virtual ~Mediator() = default;
+
+        [[nodiscard]] virtual tr_port port() const = 0;
+
+        [[nodiscard]] virtual bool allowsLPD() const = 0;
+
+        [[nodiscard]] virtual std::vector<TorrentInfo> torrents() const = 0;
+
+        [[nodiscard]] virtual libtransmission::TimerMaker& timerMaker() = 0;
+
+        virtual void setNextAnnounceTime(std::string_view info_hash_str, time_t announce_at) = 0;
+
+        // returns true if info was used
+        virtual bool onPeerFound(std::string_view info_hash_str, tr_address address, tr_port port) = 0;
+    };
+
+    virtual ~tr_lpd() = default;
+    static std::unique_ptr<tr_lpd> create(Mediator& mediator, event_base* event_base);
+};

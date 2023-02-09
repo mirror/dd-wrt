@@ -30,12 +30,18 @@ Flag the torrent as intended for use on private trackers.
 Add a comment to the torrent file.
 .It Fl s Fl -piecesize
 Set how many KiB each piece should be, overriding the preferred default
+.It Fl r Fl -source
+Set the torrent's source for private trackers
 .It Fl t Fl -tracker
 Add a tracker's
 .Ar announce URL
 to the .torrent. Most torrents will have at least one
 .Ar announce URL.
 To add more than one, use this option multiple times.
+.It Fl -anonymize
+Omit the optional "created by" and "created date" keys from the
+generated torrent which otherwise default to the Transmission version
+number and the current date.
 .El
 .Sh AUTHORS
 .An -nosplit

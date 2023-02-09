@@ -1,0 +1,33 @@
+
+/* Class = "NSTextFieldCell"; title = "Seeding Limits"; ObjectID = "22"; */
+"22.title" = "Besleme Sınırları";
+
+/* Class = "NSTextFieldCell"; title = "Transfer Bandwidth"; ObjectID = "23"; */
+"23.title" = "Aktarım Bant Genişliği";
+
+/* Class = "NSTextFieldCell"; title = "KB/s"; ObjectID = "26"; */
+"26.title" = "KB/sn";
+
+/* Class = "NSButtonCell"; title = "Limit Upload:"; ObjectID = "43"; */
+"43.title" = "Karşıya Yüklemeyi Sınırla:";
+
+/* Class = "NSButtonCell"; title = "Limit Download:"; ObjectID = "44"; */
+"44.title" = "İndirmeyi Sınırla:";
+
+/* Class = "NSTextFieldCell"; title = "minutes"; ObjectID = "98"; */
+"98.title" = "dakika";
+
+/* Class = "NSButtonCell"; title = "Status of selected files"; ObjectID = "114"; */
+"114.title" = "Seçili dosyaların durumu";
+
+/* Class = "NSButtonCell"; title = "Stop seeding at ratio:"; ObjectID = "116"; */
+"116.title" = "Şu oranda beslemeyi durdur:";
+
+/* Class = "NSButtonCell"; title = "Stop seeding when inactive for:"; ObjectID = "118"; */
+"118.title" = "Şu kadar boşta kalınca beslemeyi durdur:";
+
+/* Class = "NSButtonCell"; title = "Remaining time"; ObjectID = "130"; */
+"130.title" = "Kalan süre";
+
+/* Class = "NSTextFieldCell"; title = "KB/s"; ObjectID = "180"; */
+"180.title" = "KB/sn";

@@ -1,37 +1,23 @@
-/*
- * This file Copyright (C) 2008-2014 Mnemosyne LLC
- *
- * It may be used under the GNU GPL versions 2 or 3
- * or any future license endorsed by Mnemosyne LLC.
- *
- */
+// This file Copyright © 2008-2022 Mnemosyne LLC.
+// It may be used under GPLv2 (SPDX: GPL-2.0-only), GPLv3 (SPDX: GPL-3.0-only),
+// or any future license endorsed by Mnemosyne LLC.
+// License text can be found in the licenses/ folder.
 
 #pragma once
 
-#ifdef __cplusplus
-extern "C"
-{
-#endif
+#include <string_view>
 
 #include "transmission.h"
-#include "variant.h"
 
-/***
-****  RPC processing
-***/
+struct tr_variant;
 
-typedef void (* tr_rpc_response_func)(tr_session* session, tr_variant* response, void* user_data);
+using tr_rpc_response_func = void (*)(tr_session* session, tr_variant* response, void* user_data);
 
-/* http://www.json.org/ */
-void tr_rpc_request_exec_json(tr_session* session, tr_variant const* request, tr_rpc_response_func callback,
+/* https://www.json.org/ */
+void tr_rpc_request_exec_json(
+    tr_session* session,
+    tr_variant const* request,
+    tr_rpc_response_func callback,
     void* callback_user_data);
 
-/* see the RPC spec's "Request URI Notation" section */
-void tr_rpc_request_exec_uri(tr_session* session, void const* request_uri, size_t request_uri_len,
-    tr_rpc_response_func callback, void* callback_user_data);
-
-void tr_rpc_parse_list_str(tr_variant* setme, char const* list_str, size_t list_str_len);
-
-#ifdef __cplusplus
-}
-#endif
+void tr_rpc_parse_list_str(tr_variant* setme, std::string_view str);

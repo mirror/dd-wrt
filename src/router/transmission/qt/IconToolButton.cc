@@ -1,10 +1,7 @@
-/*
- * This file Copyright (C) 2009-2015 Mnemosyne LLC
- *
- * It may be used under the GNU GPL versions 2 or 3
- * or any future license endorsed by Mnemosyne LLC.
- *
- */
+// This file Copyright © 2009-2022 Mnemosyne LLC.
+// It may be used under GPLv2 (SPDX: GPL-2.0-only), GPLv3 (SPDX: GPL-3.0-only),
+// or any future license endorsed by Mnemosyne LLC.
+// License text can be found in the licenses/ folder.
 
 #include <QStyle>
 #include <QStyleOption>
@@ -13,8 +10,8 @@
 
 #include "IconToolButton.h"
 
-IconToolButton::IconToolButton(QWidget* parent) :
-    QToolButton(parent)
+IconToolButton::IconToolButton(QWidget* parent)
+    : QToolButton(parent)
 {
 }
 
@@ -26,7 +23,7 @@ QSize IconToolButton::sizeHint() const
     option.toolButtonStyle = Qt::ToolButtonIconOnly;
     QSize const size = style()->sizeFromContents(QStyle::CT_ToolButton, &option, iconSize(), this);
 
-    return size.expandedTo(iconSize() + QSize(8, 8));
+    return size.expandedTo(iconSize() + QSize(4, 4));
 }
 
 void IconToolButton::paintEvent(QPaintEvent* /*event*/)

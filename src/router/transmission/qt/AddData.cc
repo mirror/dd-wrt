@@ -1,62 +1,84 @@
-/*
- * This file Copyright (C) 2012-2016 Mnemosyne LLC
- *
- * It may be used under the GNU GPL versions 2 or 3
- * or any future license endorsed by Mnemosyne LLC.
- *
- */
+// This file Copyright © 2012-2022 Mnemosyne LLC.
+// It may be used under GPLv2 (SPDX: GPL-2.0-only), GPLv3 (SPDX: GPL-3.0-only),
+// or any future license endorsed by Mnemosyne LLC.
+// License text can be found in the licenses/ folder.
 
-#include <QFile>
 #include <QDir>
+#include <QFile>
 
 #include <libtransmission/transmission.h>
-#include <libtransmission/crypto-utils.h> // tr_base64_encode()
+
+#include <libtransmission/error.h>
+#include <libtransmission/torrent-metainfo.h>
+#include <libtransmission/utils.h>
+#include <libtransmission/web-utils.h>
 
 #include "AddData.h"
 #include "Utils.h"
 
+namespace
+{
+
+QString getNameFromMetainfo(QByteArray const& benc)
+{
+    auto metainfo = tr_torrent_metainfo{};
+    if (!metainfo.parseBenc({ benc.constData(), static_cast<size_t>(benc.size()) }))
+    {
+        return {};
+    }
+
+    return QString::fromStdString(metainfo.name());
+}
+
+QString getNameFromMagnet(QString const& magnet)
+{
+    auto tmp = tr_magnet_metainfo{};
+
+    if (!tmp.parseMagnet(magnet.toStdString()))
+    {
+        return magnet;
+    }
+
+    if (!std::empty(tmp.name()))
+    {
+        return QString::fromStdString(tmp.name());
+    }
+
+    return QString::fromStdString(tmp.infoHashString());
+}
+
+} // namespace
+
 int AddData::set(QString const& key)
 {
-    if (Utils::isMagnetLink(key))
+    if (auto const key_std = key.toStdString(); tr_urlIsValid(key_std))
     {
-        magnet = key;
-        type = MAGNET;
-    }
-    else if (Utils::isUriWithSupportedScheme(key))
-    {
-        url = key;
+        this->url = key;
         type = URL;
     }
     else if (QFile(key).exists())
     {
-        filename = QDir::fromNativeSeparators(key);
+        this->filename = QDir::fromNativeSeparators(key);
         type = FILENAME;
 
-        QFile file(key);
+        auto file = QFile{ key };
         file.open(QIODevice::ReadOnly);
-        metainfo = file.readAll();
+        this->metainfo = file.readAll();
         file.close();
     }
-    else if (Utils::isHexHashcode(key))
+    else if (tr_magnet_metainfo{}.parseMagnet(key_std))
     {
-        magnet = QString::fromUtf8("magnet:?xt=urn:btih:") + key;
-        type = MAGNET;
+        this->magnet = key;
+        this->type = MAGNET;
+    }
+    else if (auto const raw = QByteArray::fromBase64(key.toUtf8()); !raw.isEmpty())
+    {
+        this->metainfo.append(raw);
+        this->type = METAINFO;
     }
     else
     {
-        size_t len;
-        void* raw = tr_base64_decode(key.toUtf8().constData(), key.toUtf8().size(), &len);
-
-        if (raw != nullptr)
-        {
-            metainfo.append(static_cast<char const*>(raw), int(len));
-            tr_free(raw);
-            type = METAINFO;
-        }
-        else
-        {
-            type = NONE;
-        }
+        this->type = NONE;
     }
 
     return type;
@@ -64,56 +86,28 @@ int AddData::set(QString const& key)
 
 QByteArray AddData::toBase64() const
 {
-    QByteArray ret;
-
-    if (!metainfo.isEmpty())
-    {
-        size_t len;
-        void* b64 = tr_base64_encode(metainfo.constData(), metainfo.size(), &len);
-        ret = QByteArray(static_cast<char const*>(b64), int(len));
-        tr_free(b64);
-    }
-
-    return ret;
+    return metainfo.toBase64();
 }
 
 QString AddData::readableName() const
 {
-    QString ret;
-
     switch (type)
     {
     case FILENAME:
-        ret = filename;
-        break;
+        return filename;
 
     case MAGNET:
-        ret = magnet;
-        break;
+        return getNameFromMagnet(magnet);
 
     case URL:
-        ret = url.toString();
-        break;
+        return url.toString();
 
     case METAINFO:
-        {
-            tr_info inf;
-            tr_ctor* ctor = tr_ctorNew(nullptr);
+        return getNameFromMetainfo(metainfo);
 
-            tr_ctorSetMetainfo(ctor, reinterpret_cast<quint8 const*>(metainfo.constData()), metainfo.size());
-
-            if (tr_torrentParse(ctor, &inf) == TR_PARSE_OK)
-            {
-                ret = QString::fromUtf8(inf.name); // metainfo is required to be UTF-8
-                tr_metainfoFree(&inf);
-            }
-
-            tr_ctorFree(ctor);
-            break;
-        }
+    default: // NONE
+        return {};
     }
-
-    return ret;
 }
 
 QString AddData::readableShortName() const
@@ -121,7 +115,7 @@ QString AddData::readableShortName() const
     switch (type)
     {
     case FILENAME:
-        return QFileInfo(filename).fileName();
+        return QFileInfo(filename).baseName();
 
     case URL:
         return url.path().split(QLatin1Char('/')).last();

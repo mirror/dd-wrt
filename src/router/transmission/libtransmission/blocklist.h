@@ -1,10 +1,7 @@
-/*
- * This file Copyright (C) 2008-2014 Mnemosyne LLC
- *
- * It may be used under the GNU GPL versions 2 or 3
- * or any future license endorsed by Mnemosyne LLC.
- *
- */
+// This file Copyright © 2008-2022 Mnemosyne LLC.
+// It may be used under GPLv2 (SPDX: GPL-2.0-only), GPLv3 (SPDX: GPL-3.0-only),
+// or any future license endorsed by Mnemosyne LLC.
+// License text can be found in the licenses/ folder.
 
 #pragma once
 
@@ -12,24 +9,65 @@
 #error only libtransmission should #include this header.
 #endif
 
+#include <optional>
+#include <string>
+#include <string_view>
+#include <utility> // for std::pair
+#include <vector>
+
+#include "net.h" // for tr_address
+
 struct tr_address;
 
-typedef struct tr_blocklistFile tr_blocklistFile;
+namespace libtransmission
+{
 
-tr_blocklistFile* tr_blocklistFileNew(char const* filename, bool isEnabled);
+class Blocklist
+{
+public:
+    [[nodiscard]] static std::vector<Blocklist> loadBlocklists(std::string_view const blocklist_dir, bool const is_enabled);
 
-bool tr_blocklistFileExists(tr_blocklistFile const* b);
+    static std::optional<Blocklist> saveNew(std::string_view external_file, std::string_view bin_file, bool is_enabled);
 
-char const* tr_blocklistFileGetFilename(tr_blocklistFile const* b);
+    Blocklist() = default;
 
-int tr_blocklistFileGetRuleCount(tr_blocklistFile const* b);
+    Blocklist(std::string_view bin_file, bool is_enabled)
+        : bin_file_{ bin_file }
+        , is_enabled_{ is_enabled }
+    {
+    }
 
-void tr_blocklistFileFree(tr_blocklistFile* b);
+    [[nodiscard]] bool contains(tr_address const& addr) const;
 
-bool tr_blocklistFileIsEnabled(tr_blocklistFile* b);
+    [[nodiscard]] auto size() const
+    {
+        ensureLoaded();
 
-void tr_blocklistFileSetEnabled(tr_blocklistFile* b, bool isEnabled);
+        return std::size(rules_);
+    }
 
-bool tr_blocklistFileHasAddress(tr_blocklistFile* b, struct tr_address const* addr);
+    [[nodiscard]] constexpr bool enabled() const noexcept
+    {
+        return is_enabled_;
+    }
 
-int tr_blocklistFileSetContent(tr_blocklistFile* b, char const* filename);
+    void setEnabled(bool is_enabled) noexcept
+    {
+        is_enabled_ = is_enabled;
+    }
+
+    [[nodiscard]] constexpr auto const& binFile() const noexcept
+    {
+        return bin_file_;
+    }
+
+private:
+    void ensureLoaded() const;
+
+    mutable std::vector<std::pair<tr_address, tr_address>> rules_;
+
+    std::string bin_file_;
+    bool is_enabled_ = false;
+};
+
+} // namespace libtransmission
