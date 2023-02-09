@@ -1,3 +1,88 @@
+version 2.89
+        Fix bug introduced in 2.88 (commit fe91134b) which can result
+	in corruption of the DNS cache internal data structures and
+	logging of "cache internal error". This has only been seen
+	in one place in the wild, and it took considerable effort
+	to even generate a test case to reproduce it, but there's
+	no way to be sure it won't strike, and the effect is to break
+	the cache badly. Installations with DNSSEC enabled are more
+	likely to see the problem, but not running DNSSEC does not
+	guarantee that it won't happen. Thanks to Timo van Roermund
+	for reporting the bug and for his great efforts in chasing
+	it down.
+
+
+version 2.88
+	Fix bug in --dynamic-host when an interface has /16 IPv4
+  	address. Thanks to Mark Dietzer for spotting this.
+
+	Add --fast-dns-retry option. This gives dnsmasq the ability
+	to originate retries for upstream DNS queries itself, rather
+	than relying on the downstream client. This is most useful
+	when doing DNSSEC over unreliable upstream networks. It comes
+	with some cost in memory usage and network bandwidth.
+
+	Add --use-stale-cache option. When set, if a DNS name exists
+	in the cache, but its time-to-live has expired, dnsmasq will
+	return the data anyway. (It attempts to refresh the
+	data with an upstream query after returning the stale data.)
+	This can improve speed and reliability. It comes
+	at the expense of sometimes returning out-of-date data and
+	less efficient cache utilisation, since old data cannot be
+	flushed when its TTL expires, so the cache becomes
+	strictly least-recently-used.
+
+	Add --port-limit option which allows tuning for robustness in
+	the face of some upstream network errors. Thanks to
+	Prashant Kumar Singh, Ravi Nagayach and Mike Danilov,
+	all of Amazon Web Services, for their efforts in developing this
+	and the stale-cache and fast-retry options.
+
+	Make --hostsdir (but NOT --dhcp-hostsdir and --dhcp-optsdir)
+	handle removal of whole files or entries within files.
+	Thanks to Dominik Derigs for the initial patches for this.
+
+	Fix bug, introduced in 2.87, which could result in DNS
+	servers being removed from the configuration when reloading
+	server configuration from DBus, or re-reading /etc/resolv.conf
+	Only servers from the same source should be replaced, but some
+	servers from other sources (i.e., hard coded or another dynamic source)
+	could mysteriously disappear. Thanks to all reporting this,
+	but especially Christopher J. Madsen who reduced the problem
+	to an easily reproducible case which saved much labour in
+	finding it.
+
+	Add --no-round-robin option.
+
+	Allow domain names as well as IP addresses when specifying
+	upstream DNS servers. There are some gotchas associated with this
+	(it will mysteriously fail to work if the dnsmasq instance
+	being started is in the path from the system resolver to the DNS),
+	and a seemingly sensible configuration like
+	--server=domain.name@1.2.3.4 is unactionable if domain.name
+	only resolves to an IPv6 address). There are, however,
+	cases where is can be useful. Thanks to Dominik Derigs for
+	the patch.
+
+	Handle DS records for unsupported crypto algorithms correctly.
+	Such a DS, as long as it is validated, should allow answers
+	in the domain it attests to be returned as unvalidated, and not
+	as a validation error.
+
+	Optimise reading large numbers of --server options. When re-reading
+	upstream servers from /etc/resolv.conf or other sources that
+	can change dnsmasq tries to avoid memory fragmentation by re-using
+	existing records that are being re-read unchanged. This involves
+	seaching all the server records for each new one installed.
+	During startup this search is pointless, and can cause long
+	start times with thousands of --server options because the work
+	needed is O(n^2). Handle this case more intelligently.
+	Thanks to Ye Zhou for spotting the problem and an initial patch.
+	
+	If we detect that a DNS reply from upstream is malformed don't
+	return it to the requestor; send a SEVFAIL rcode instead.
+
+	
 version 2.87
         Allow arbitrary prefix lengths in --rev-server and
 	--domain=....,local
@@ -84,7 +169,7 @@ version 2.87
 	client facing network. Thanks to Luis Thomas for spotting this
 	and initial patch.
 
-	
+
 version 2.86
 	Handle DHCPREBIND requests in the DHCPv6 server code.
 	Thanks to Aichun Li for spotting this omission, and the initial

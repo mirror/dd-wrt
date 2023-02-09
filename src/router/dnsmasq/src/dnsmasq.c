@@ -267,6 +267,10 @@ int main (int argc, char **argv)
    
   if (daemon->max_port < daemon->min_port)
     die(_("max_port cannot be smaller than min_port"), NULL, EC_BADCONF);
+
+  if (daemon->max_port != 0 &&
+      daemon->max_port - daemon->min_port + 1 < daemon->randport_limit)
+    die(_("port_limit must not be larger than available port range"), NULL, EC_BADCONF);
   
   now = dnsmasq_time();
 
@@ -1057,19 +1061,20 @@ int main (int argc, char **argv)
   
   while (1)
     {
-      int timeout = -1;
+      int timeout = fast_retry(now);
       
       poll_reset();
       
       /* Whilst polling for the dbus, or doing a tftp transfer, wake every quarter second */
-      if (daemon->tftp_trans ||
-	  (option_bool(OPT_DBUS) && !daemon->dbus))
+      if ((daemon->tftp_trans || (option_bool(OPT_DBUS) && !daemon->dbus)) &&
+	  (timeout == -1 || timeout > 250))
 	timeout = 250;
-
+      
       /* Wake every second whilst waiting for DAD to complete */
-      else if (is_dad_listeners())
+      else if (is_dad_listeners() &&
+	       (timeout == -1 || timeout > 1000))
 	timeout = 1000;
-
+      
       set_dns_listeners();
 
 #ifdef HAVE_DBUS
@@ -2016,9 +2021,6 @@ static void check_dns_listeners(time_t now)
 	      
 	      buff = tcp_request(confd, now, &tcp_addr, netmask, auth_dns);
 	       
-	      shutdown(confd, SHUT_RDWR);
-	      close(confd);
-	      
 	      if (buff)
 		free(buff);
 	      
