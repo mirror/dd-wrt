@@ -3,7 +3,8 @@ define CMakeConfigure
 	(cd $(strip $(1)); \
 		CFLAGS="$(CFLAGS) $(EXTRA_CFLAGS) $(MIPS16_OPT) $(4)" \
 		LDFLAGS="$(5)" \
-		CXXFLAGS="$(CFLAGS) $(EXTRA_CFLAGS)  $(MIPS16_OPT)" \
+		CXXFLAGS="$(CFLAGS) $(EXTRA_CFLAGS)  $(MIPS16_OPT) $(4)" \
+		CPPFLAGS="$(CFLAGS) $(EXTRA_CFLAGS)  $(MIPS16_OPT) $(4)" \
 		cmake \
 			--debug-output \
 			-DCMAKE_SYSTEM_NAME=Linux \
@@ -27,6 +28,7 @@ define CMakeConfigure
 			-DCMAKE_INSTALL_PREFIX=/usr \
 			$(3) \
 			$(6) \
+			$(7) \
 	)
 endef
 
