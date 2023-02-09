@@ -1,17 +1,9 @@
-/*
- * This file Copyright (C) 2008-2014 Mnemosyne LLC
- *
- * It may be used under the GNU GPL versions 2 or 3
- * or any future license endorsed by Mnemosyne LLC.
- *
- */
+// This file Copyright © 2008-2022 Mnemosyne LLC.
+// It may be used under GPLv2 (SPDX: GPL-2.0-only), GPLv3 (SPDX: GPL-3.0-only),
+// or any future license endorsed by Mnemosyne LLC.
+// License text can be found in the licenses/ folder.
 
 #pragma once
-
-#ifdef __cplusplus
-extern "C"
-{
-#endif
 
 /**
  * @addtogroup utils Utilities
@@ -21,7 +13,7 @@ extern "C"
 /** @brief Similar to optind, this is the current index into argv */
 extern int tr_optind;
 
-typedef struct tr_option
+struct tr_option
 {
     int val; /* the value to return from tr_getopt() */
     char const* longName; /* --long-form */
@@ -29,8 +21,7 @@ typedef struct tr_option
     char const* shortName; /* short form */
     bool has_arg; /* 0 for no argument, 1 for argument */
     char const* argName; /* argument's description for tr_getopt_usage() */
-}
-tr_option;
+};
 
 enum
 {
@@ -44,16 +35,12 @@ enum
 };
 
 /**
- * @brief similar to getopt()
- * @return TR_GETOPT_DONE, TR_GETOPT_ERR, TR_GETOPT_UNK, or the matching tr_option's `val' field
+ * @brief similar to `getopt()`
+ * @return `TR_GETOPT_DONE`, `TR_GETOPT_ERR`, `TR_GETOPT_UNK`, or the matching `tr_option`'s `val` field
  */
-int tr_getopt(char const* summary, int argc, char const* const* argv, tr_option const* opts, char const** setme_optarg);
+int tr_getopt(char const* usage, int argc, char const* const* argv, tr_option const* opts, char const** setme_optarg);
 
-/** @brief prints the `Usage' help section to stdout */
-void tr_getopt_usage(char const* appName, char const* description, tr_option const* opts);
-
-#ifdef __cplusplus
-} /* extern "C" */
-#endif
+/** @brief prints the `Usage` help section to stdout */
+void tr_getopt_usage(char const* app_name, char const* description, tr_option const* opts);
 
 /** @} */

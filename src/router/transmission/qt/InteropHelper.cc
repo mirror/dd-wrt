@@ -1,10 +1,7 @@
-/*
- * This file Copyright (C) 2015 Mnemosyne LLC
- *
- * It may be used under the GNU GPL versions 2 or 3
- * or any future license endorsed by Mnemosyne LLC.
- *
- */
+// This file Copyright © 2015-2022 Mnemosyne LLC.
+// It may be used under GPLv2 (SPDX: GPL-2.0-only), GPLv3 (SPDX: GPL-3.0-only),
+// or any future license endorsed by Mnemosyne LLC.
+// License text can be found in the licenses/ folder.
 
 #include <QVariant>
 
@@ -12,56 +9,44 @@
 
 bool InteropHelper::isConnected() const
 {
-#ifdef ENABLE_DBUS_INTEROP
+#if defined(ENABLE_DBUS_INTEROP) && defined(ENABLE_COM_INTEROP)
 
-    if (myDbusClient.isConnected())
-    {
-        return true;
-    }
+    return dbus_client_.isConnected() || com_client_.isConnected();
 
-#endif
+#elif defined(ENABLE_DBUS_INTEROP)
 
-#ifdef ENABLE_COM_INTEROP
+    return dbus_client_.isConnected();
 
-    if (myComClient.isConnected())
-    {
-        return true;
-    }
+#elif defined(ENABLE_COM_INTEROP)
 
-#endif
+    return com_client_.isConnected();
+
+#else
 
     return false;
+
+#endif
 }
 
-bool InteropHelper::addMetainfo(QString const& metainfo)
+bool InteropHelper::addMetainfo(QString const& metainfo) const
 {
-#ifdef ENABLE_DBUS_INTEROP
+#if defined(ENABLE_DBUS_INTEROP) && defined(ENABLE_COM_INTEROP)
 
-    {
-        QVariant const response = myDbusClient.addMetainfo(metainfo);
+    return dbus_client_.addMetainfo(metainfo).toBool() || com_client_.addMetainfo(metainfo).toBool();
 
-        if (response.isValid() && response.toBool())
-        {
-            return true;
-        }
-    }
+#elif defined(ENABLE_DBUS_INTEROP)
 
-#endif
+    return dbus_client_.addMetainfo(metainfo).toBool();
 
-#ifdef ENABLE_COM_INTEROP
+#elif defined(ENABLE_COM_INTEROP)
 
-    {
-        QVariant const response = myComClient.addMetainfo(metainfo);
+    return com_client_.addMetainfo(metainfo).toBool();
 
-        if (response.isValid() && response.toBool())
-        {
-            return true;
-        }
-    }
-
-#endif
+#else
 
     return false;
+
+#endif
 }
 
 void InteropHelper::initialize()

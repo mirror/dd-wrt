@@ -8,14 +8,12 @@ For details, see http://sourceforge.net/projects/libb64
 #ifndef BASE64_DECODE_H
 #define BASE64_DECODE_H
 
+#include "cdecode.h"
+
 #include <iostream>
 
 namespace base64
 {
-	extern "C"
-	{
-		#include "cdecode.h"
-	}
 
 	struct decoder
 	{
@@ -24,16 +22,18 @@ namespace base64
 
 		decoder(int buffersize_in = BUFFERSIZE)
 		: _buffersize(buffersize_in)
-		{}
+		{
+			base64_init_decodestate(&_state);
+		}
 
 		int decode(char value_in)
 		{
 			return base64_decode_value(value_in);
 		}
 
-		int decode(const char* code_in, const int length_in, char* plaintext_out)
+		std::streamsize decode(const char* code_in, const std::streamsize length_in, char* plaintext_out)
 		{
-			return base64_decode_block(code_in, length_in, plaintext_out, &_state);
+			return base64_decode_block(code_in, static_cast<int>(length_in), plaintext_out, &_state);
 		}
 
 		void decode(std::istream& istream_in, std::ostream& ostream_in)
@@ -43,8 +43,8 @@ namespace base64
 			const int N = _buffersize;
 			char* code = new char[N];
 			char* plaintext = new char[N];
-			int codelength;
-			int plainlength;
+			std::streamsize codelength;
+			std::streamsize plainlength;
 
 			do
 			{

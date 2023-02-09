@@ -1,20 +1,17 @@
-/*
- * This file Copyright (C) 2012-2015 Mnemosyne LLC
- *
- * It may be used under the GNU GPL versions 2 or 3
- * or any future license endorsed by Mnemosyne LLC.
- *
- */
+// This file Copyright © 2012-2022 Mnemosyne LLC.
+// It may be used under GPLv2 (SPDX: GPL-2.0-only), GPLv3 (SPDX: GPL-3.0-only),
+// or any future license endorsed by Mnemosyne LLC.
+// License text can be found in the licenses/ folder.
 
 #pragma once
 
 #include <unordered_map>
 
-#include <QString>
 #include <QObject>
 #include <QPixmap>
+#include <QString>
 
-#include <Utils.h> // std::hash<QString>
+#include "Utils.h" // std::hash<QString>
 
 class QNetworkAccessManager;
 class QNetworkReply;
@@ -26,32 +23,25 @@ class FaviconCache : public QObject
 
 public:
     FaviconCache();
-    virtual ~FaviconCache();
-
-    // returns a cached pixmap, or a NULL pixmap if there's no match in the cache
-    QPixmap find(QString const& key);
-    QPixmap find(QUrl const& url) { return find(getKey(url)); }
 
     // This will emit a signal when (if) the icon becomes ready.
-    // Returns the key.
-    QString add(QUrl const& url);
+    void add(QString const& sitename, QString const& url);
 
-    static QString getDisplayName(QString const& key);
-    static QString getKey(QUrl const& url);
-    static QString getKey(QString const& displayName);
+    // returns a cached pixmap, or a nullptr pixmap if there's no match in the cache
+    QPixmap find(QString const& sitename);
+
+    static QString getDisplayName(QString const& sitename);
     static QSize getIconSize();
 
 signals:
-    void pixmapReady(QString const& key);
-
-private:
-    QString getCacheDir();
-    void ensureCacheDirHasBeenScanned();
+    void pixmapReady(QString const& sitename);
 
 private slots:
     void onRequestFinished(QNetworkReply* reply);
 
 private:
-    QNetworkAccessManager* myNAM;
-    std::unordered_map<QString, QPixmap> myPixmaps;
+    void ensureCacheDirHasBeenScanned();
+
+    QNetworkAccessManager* nam_ = {};
+    std::unordered_map<QString /*sitename*/, QPixmap> pixmaps_;
 };

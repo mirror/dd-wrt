@@ -1,0 +1,38 @@
+.TH PSL "1" "July 2016" "psl 0.13.0" "User Commands"
+.SH NAME
+psl-make-dafsa \- generate a compact and optimized DAFSA from a Public Suffix List 
+.SH SYNOPSIS
+.B psl-make-dafsa
+[\fI\,options\/\fR] \fIinfile\fR \fIoutfile\fR
+.SH DESCRIPTION
+\fBpsl-make-dafsa\fR produces C/C++ code or an
+architecture-independent binary object that represents a Deterministic
+Acyclic Finite State Automaton (DAFSA) from a textual representation
+of a Public Suffix List.  Input and output files must be specified on
+the command line.
+
+This compact representation enables optimized queries of the list,
+saving both time and space when compared to searches of human-readable
+representations.
+.SH OPTIONS
+The format of the data read and written by \fBpsl-make-dafsa\fR
+depends on options passed to it.
+.br
+.TP
+\fB\-\-output\-format=\fR[\fIcxx\fR|\fIcxx+\fR|\fIbinary\fR]
+\fBcxx\fR: (default) output is C/C++ code
+.br
+\fBcxx+\fR: output is C/C++ code plus statistical assignments (used by libpsl build process)
+.br
+\fBbinary\fR: output is an architecture-independent binary format
+.TP
+\fB\-\-encoding=\fR[\fIutf-8\fR|\fIascii\fR]
+\fButf-8\fR: (default) UTF-8 mode (output contains UTF-8 + punycode)
+.br
+\fBascii\fR: (deprecated) 7-bit ASCII mode (output contains punycode only)
+.SH SEE ALSO
+.IR https://publicsuffix.org/ ", " https://github.com/rockdaboot/libpsl
+.SH COPYRIGHT
+\fBpsl-make-dafsa\fR was was written by Olle Liljenzin as part of the Chromium project and
+has been modified by Tim Ruehsen and Daniel Kahn Gillmor.  The code
+and its documentation is governed by a BSD-style license.

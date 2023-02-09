@@ -1,0 +1,69 @@
+.TH PSL "1" "July 2016" "psl 0.13.0" "User Commands"
+.SH NAME
+psl \- Explore the Public Suffix List
+.SH SYNOPSIS
+.B psl
+[\fI\,options\/\fR] \fI\,<domains\/\fR...\fI\,>\/\fR
+.SH DESCRIPTION
+`psl' explores the Public Suffix List.  It takes a list of domains on
+the command line, or if no domains are present on the command line, it
+reads one domain per line from standard input.  It prints its results
+to standard output, with each line containing one domain followed by a
+colon, followed by the relevant information for that domain.
+.SH MODES
+The information printed per domain changes based on the selected mode.
+.br
+Available modes are:
+.TP
+\fB\-\-is\-public\-suffix\fR
+check if domains are public suffixes. [default]
+.br
+Returned data: 1 if the \fIdomain\fR is a public suffix, 0 otherwise.
+.br
+This option can be combined with \fB\-\-no\-star\-rule\fR.  It's use will
+switch off the PSL 'prevailing star rule' so that all TLDs not
+explicitly listed in the PSL will return 0 (not a public suffix).
+.TP
+\fB\-\-is\-cookie\-domain\-acceptable\fR <cookie\-domain>
+check if cookie\-domain is acceptable for domains.
+.br
+Returned data: 1 if \fIcookie-domain\fR is acceptable for the
+\fIdomain\fR, 0 otherwise.
+.TP
+\fB\-\-print\-unreg\-domain\fR
+Returned data: the longest public suffix part for each \fIdomain\fR.
+.TP
+\fB\-\-print\-reg\-domain\fR
+Returned data: the shortest private suffix part for each \fIdomain\fR.
+.SH VERSION INFORMATION
+`psl' can instead be used to report information about the version of
+the library and its built-in Public Suffix data:
+.TP
+\fB\-\-version\fR
+show library version information
+.TP
+\fB\-\-print\-info\fR
+print info about library builtin data
+.SH PUBLIC SUFFIX DATA
+By default, `psl' will use the latest available Public Suffix data.
+.br
+You can also direct it to use a different file:
+.TP
+\fB\-\-use\-latest\-data\fR
+use the latest available PSL data [default]
+.TP
+\fB\-\-use\-builtin\-data\fR
+use the builtin PSL data
+.TP
+\fB\-\-load\-psl\-file\fR <filename>
+load PSL data from file
+.SH SEE ALSO
+https://publicsuffix.org/
+https://github.com/rockdaboot/libpsl
+.SH COPYRIGHT
+libpsl and `psl' are copyright \(co 2014\-2016 Tim Ruehsen under an
+MIT-style License.
+.br
+This documentation was written by Daniel Kahn Gillmor for the Debian
+project, but may be used by others under the same license as libpsl
+itself.

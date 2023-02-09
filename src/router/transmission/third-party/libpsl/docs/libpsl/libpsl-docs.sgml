@@ -1,0 +1,66 @@
+<?xml version="1.0"?>
+<!DOCTYPE book PUBLIC "-//OASIS//DTD DocBook XML V4.3//EN"
+               "http://www.oasis-open.org/docbook/xml/4.3/docbookx.dtd"
+[
+  <!ENTITY % local.common.attrib "xmlns:xi  CDATA  #FIXED 'http://www.w3.org/2003/XInclude'">
+  <!ENTITY version SYSTEM "version.xml"> 
+]>
+<book id="index">
+  <bookinfo>
+    <title>Libpsl Reference Manual</title>
+    <releaseinfo>
+      for Libpsl &version;.
+      The latest version of this documentation can be found on-line at
+      <ulink role="online-location" url="https://github.com/rockdaboot/libpsl">GitHub</ulink>.
+    </releaseinfo>
+  </bookinfo>
+
+  <chapter id="libpsl">
+    <title>Libpsl Overview</title>
+        <para>
+          Libpsl provides functions to work with the Mozilla Public Suffix List.
+        </para>
+        <xi:include href="xml/libpsl.xml"/>
+  </chapter>
+  <index id="api-index-full">
+    <title>API Index</title>
+    <xi:include href="xml/api-index-full.xml"><xi:fallback /></xi:include>
+  </index>
+  <index id="deprecated-api-index" role="deprecated">
+    <title>Index of deprecated API</title>
+    <xi:include href="xml/api-index-deprecated.xml"><xi:fallback /></xi:include>
+  </index>
+  <index role="0.1">
+    <title>Index of symbols included in 0.1</title>
+    <xi:include href="xml/api-index-0.1.xml"><xi:fallback/></xi:include>
+  </index>
+  <index role="0.2.5">
+    <title>New symbols included in 0.2.5</title>
+    <xi:include href="xml/api-index-0.2.5.xml"><xi:fallback/></xi:include>
+  </index>
+  <index role="0.4">
+    <title>New symbols included in 0.4</title>
+    <xi:include href="xml/api-index-0.4.xml"><xi:fallback/></xi:include>
+  </index>
+  <index role="0.10.0">
+    <title>New symbols included in 0.10.0</title>
+    <xi:include href="xml/api-index-0.10.0.xml"><xi:fallback/></xi:include>
+  </index>
+  <index role="0.11.0">
+    <title>Index of symbols included in 0.11.0</title>
+    <xi:include href="xml/api-index-0.11.0.xml"><xi:fallback/></xi:include>
+  </index>
+  <index role="0.16">
+    <title>Index of symbols included in 0.16</title>
+    <xi:include href="xml/api-index-0.16.xml"><xi:fallback/></xi:include>
+  </index>
+  <index role="0.19">
+    <title>Index of symbols included in 0.19</title>
+    <xi:include href="xml/api-index-0.19.xml"><xi:fallback/></xi:include>
+  </index>
+
+
+<!--
+  <xi:include href="xml/annotation-glossary.xml"><xi:fallback /></xi:include>
+-->
+</book>

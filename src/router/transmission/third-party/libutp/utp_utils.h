@@ -1,16 +1,27 @@
-// This should return the MTU to the destination
-uint16 UTP_GetUDPMTU(const struct sockaddr *remote, socklen_t remotelen);
-// This should return the number of bytes of UDP overhead for one packet to the
-// destination, for overhead calculation only
-uint16 UTP_GetUDPOverhead(const struct sockaddr *remote, socklen_t remotelen);
-// This should return monotonically increasing milliseconds, start point does not matter
-uint32 UTP_GetMilliseconds();
-// This should return monotonically increasing microseconds, start point does not matter
-uint64 UTP_GetMicroseconds();
-// This should return a random uint32
-uint32 UTP_Random();
-// This is called every time we have a delay sample is made
-void UTP_DelaySample(const struct sockaddr *remote, int sample_ms);
-// Should return the max packet size to use when sending to the given address
-size_t UTP_GetPacketSize(const struct sockaddr *remote);
+/*
+ * Copyright (c) 2010-2013 BitTorrent, Inc.
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in
+ * all copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+ * THE SOFTWARE.
+ */
 
+uint64 utp_default_get_udp_mtu(utp_callback_arguments *args);
+uint64 utp_default_get_udp_overhead(utp_callback_arguments *args);
+uint64 utp_default_get_random(utp_callback_arguments *args);
+uint64 utp_default_get_milliseconds(utp_callback_arguments *args);
+uint64 utp_default_get_microseconds(utp_callback_arguments *args);

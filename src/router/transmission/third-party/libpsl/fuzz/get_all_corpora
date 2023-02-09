@@ -1,0 +1,18 @@
+#!/bin/sh -eu
+#
+# 
+
+if ! grep -q FUZZING_BUILD_MODE_UNSAFE_FOR_PRODUCTION Makefile; then
+  echo "The build environment hasn't been set up for fuzzing (likely for regression testing)."
+  echo "Please built regarding README.md and try again."
+  exit 1
+fi
+
+if $(grep -q '^#define WITH_LIBIDN2 1' ../config.h); then RUNTIME="_idn2";
+elif $(grep -q '^#define WITH_LIBIDN 1' ../config.h); then RUNTIME="_idn";
+elif $(grep -q '^#define WITH_LIBICU 1' ../config.h); then RUNTIME="_icu";
+else RUNTIME=""; fi
+
+for fuzzer in `ls *_fuzzer.c|cut -d'_' -f2-|cut -d'.' -f1`; do
+  ./get_ossfuzz_corpora libpsl${RUNTIME}_$fuzzer
+done

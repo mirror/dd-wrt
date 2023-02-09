@@ -1,96 +1,83 @@
-/*
- * This file Copyright (C) 2009-2015 Mnemosyne LLC
- *
- * It may be used under the GNU GPL versions 2 or 3
- * or any future license endorsed by Mnemosyne LLC.
- *
- */
+// This file Copyright © 2009-2022 Mnemosyne LLC.
+// It may be used under GPLv2 (SPDX: GPL-2.0-only), GPLv3 (SPDX: GPL-3.0-only),
+// or any future license endorsed by Mnemosyne LLC.
+// License text can be found in the licenses/ folder.
 
 #pragma once
 
 #include <cstdint>
+#include <vector>
 
 #include <QCoreApplication>
 #include <QHash>
-#include <QList>
 #include <QSet>
 #include <QString>
 #include <QVariant>
 
+#include <libtransmission/tr-macros.h>
+
 class FileTreeItem
 {
     Q_DECLARE_TR_FUNCTIONS(FileTreeItem)
-    Q_DISABLE_COPY(FileTreeItem)
+    TR_DISABLE_COPY_MOVE(FileTreeItem)
 
 public:
-/* *INDENT-OFF* */
-    enum
-    {
-        LOW = (1 << 0),
-        NORMAL = (1 << 1),
-        HIGH = (1 << 2)
-    };
-/* *INDENT-ON* */
+    static auto constexpr Low = int{ 1 << 0 };
+    static auto constexpr Normal = int{ 1 << 1 };
+    static auto constexpr High = int{ 1 << 2 };
 
-public:
-    FileTreeItem(QString const& name = QString(), int fileIndex = -1, uint64_t size = 0) :
-        myName(name),
-        myFileIndex(fileIndex),
-        myTotalSize(size),
-        myParent(nullptr),
-        myPriority(0),
-        myIsWanted(false),
-        myHaveSize(0),
-        myFirstUnhashedRow(0)
+    FileTreeItem(QString const& name = QString(), int file_index = -1, uint64_t size = 0)
+        : name_(name)
+        , total_size_(size)
+        , file_index_(file_index)
     {
     }
 
     ~FileTreeItem();
 
-public:
     void appendChild(FileTreeItem* child);
     FileTreeItem* child(QString const& filename);
 
     FileTreeItem* child(int row)
     {
-        return myChildren.at(row);
+        return children_.at(row);
     }
 
-    int childCount() const
+    [[nodiscard]] TR_CONSTEXPR20 int childCount() const noexcept
     {
-        return myChildren.size();
+        return std::size(children_);
     }
 
-    FileTreeItem* parent()
+    [[nodiscard]] constexpr auto* parent() noexcept
     {
-        return myParent;
+        return parent_;
     }
 
-    FileTreeItem const* parent() const
+    [[nodiscard]] constexpr auto const* parent() const noexcept
     {
-        return myParent;
+        return parent_;
     }
 
     int row() const;
 
-    QString const& name() const
+    [[nodiscard]] constexpr auto const& name() const noexcept
     {
-        return myName;
+        return name_;
     }
 
     QVariant data(int column, int role) const;
-    std::pair<int, int> update(QString const& name, bool want, int priority, uint64_t have, bool updateFields);
-    void setSubtreeWanted(bool, QSet<int>& fileIds);
-    void setSubtreePriority(int priority, QSet<int>& fileIds);
+    std::pair<int, int> update(QString const& name, bool want, int priority, uint64_t have, bool update_fields);
+    void setSubtreeWanted(bool, QSet<int>& file_ids);
+    void setSubtreePriority(int priority, QSet<int>& file_ids);
 
-    int fileIndex() const
+    [[nodiscard]] constexpr auto fileIndex() const noexcept
     {
-        return myFileIndex;
+        return file_index_;
     }
 
-    uint64_t totalSize() const
+    [[nodiscard]] constexpr auto totalSize() const noexcept
     {
-        return myTotalSize;
+        return total_size_;
     }
 
     QString path() const;
@@ -106,16 +93,14 @@ private:
     uint64_t size() const;
     QHash<QString, int> const& getMyChildRows();
 
-private:
-    QString myName;
-    int const myFileIndex;
-    uint64_t const myTotalSize;
-
-    FileTreeItem* myParent;
-    QList<FileTreeItem*> myChildren;
-    QHash<QString, int> myChildRows;
-    int myPriority;
-    bool myIsWanted;
-    uint64_t myHaveSize;
-    size_t myFirstUnhashedRow;
+    FileTreeItem* parent_ = {};
+    QHash<QString, int> child_rows_;
+    std::vector<FileTreeItem*> children_;
+    QString name_;
+    uint64_t const total_size_ = {};
+    uint64_t have_size_ = {};
+    int first_unhashed_row_ = {};
+    int const file_index_ = {};
+    int priority_ = {};
+    bool is_wanted_ = {};
 };

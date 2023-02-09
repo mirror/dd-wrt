@@ -1,27 +1,11 @@
-/******************************************************************************
- * Copyright (c) 2005-2019 Transmission authors and contributors
- *
- * Permission is hereby granted, free of charge, to any person obtaining a
- * copy of this software and associated documentation files (the "Software"),
- * to deal in the Software without restriction, including without limitation
- * the rights to use, copy, modify, merge, publish, distribute, sublicense,
- * and/or sell copies of the Software, and to permit persons to whom the
- * Software is furnished to do so, subject to the following conditions:
- *
- * The above copyright notice and this permission notice shall be included in
- * all copies or substantial portions of the Software.
- *
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
- * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
- * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
- * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
- * DEALINGS IN THE SOFTWARE.
- *****************************************************************************/
+// This file Copyright © 2005-2022 Transmission authors and contributors.
+// It may be used under the MIT (SPDX: MIT) license.
+// License text can be found in the licenses/ folder.
 
-#import <Cocoa/Cocoa.h>
+#import <AppKit/AppKit.h>
 #import <Quartz/Quartz.h>
+
+#import <Sparkle/SUUpdaterDelegate.h>
 
 #include <libtransmission/transmission.h>
 
@@ -29,244 +13,180 @@
 
 @class AddMagnetWindowController;
 @class AddWindowController;
-@class Badger;
-@class DragOverlayWindow;
-@class FilterBarController;
-@class InfoWindowController;
 @class MessageWindowController;
 @class PrefsController;
-@class StatusBarController;
 @class Torrent;
-@class TorrentTableView;
-@class URLSheetWindowController;
 
-typedef enum
-{
+typedef NS_ENUM(unsigned int, addType) { //
     ADD_MANUAL,
     ADD_AUTO,
     ADD_SHOW_OPTIONS,
     ADD_URL,
     ADD_CREATED
-} addType;
+};
 
-@interface Controller : NSObject <NSURLDownloadDelegate, NSUserNotificationCenterDelegate, NSPopoverDelegate, NSSharingServiceDelegate, NSSharingServicePickerDelegate, NSSoundDelegate, NSToolbarDelegate, NSWindowDelegate, QLPreviewPanelDataSource, QLPreviewPanelDelegate, VDKQueueDelegate>
-{
-    tr_session                      * fLib;
+@interface Controller
+    : NSObject<NSApplicationDelegate, NSUserNotificationCenterDelegate, NSPopoverDelegate, NSSharingServiceDelegate, NSSharingServicePickerDelegate, NSSoundDelegate, NSToolbarDelegate, NSWindowDelegate, QLPreviewPanelDataSource, QLPreviewPanelDelegate, VDKQueueDelegate, SUUpdaterDelegate>
 
-    NSMutableArray                  * fTorrents, * fDisplayedTorrents;
+- (void)openFiles:(NSArray<NSString*>*)filenames addType:(addType)type forcePath:(NSString*)path;
 
-    PrefsController                 * fPrefsController;
-    InfoWindowController            * fInfoController;
-    MessageWindowController         * fMessageController;
+- (void)askOpenConfirmed:(AddWindowController*)addController add:(BOOL)add;
+- (void)openCreatedFile:(NSNotification*)notification;
+- (void)openFilesWithDict:(NSDictionary*)dictionary;
+- (IBAction)openShowSheet:(id)sender;
 
-    NSUserDefaults                  * fDefaults;
+- (void)openMagnet:(NSString*)address;
+- (void)askOpenMagnetConfirmed:(AddMagnetWindowController*)addController add:(BOOL)add;
 
-    NSString                        * fConfigDirectory;
+- (void)invalidOpenAlert:(NSString*)filename;
+- (void)invalidOpenMagnetAlert:(NSString*)address;
+- (void)duplicateOpenAlert:(NSString*)name;
+- (void)duplicateOpenMagnetAlert:(NSString*)address transferName:(NSString*)name;
 
-    IBOutlet NSWindow               * fWindow;
-    DragOverlayWindow               * fOverlayWindow;
-    IBOutlet TorrentTableView       * fTableView;
+- (void)openURL:(NSString*)urlString;
+- (IBAction)openURLShowSheet:(id)sender;
 
-    io_connect_t                    fRootPort;
-    NSTimer                         * fTimer;
+@property(nonatomic, readonly) tr_session* sessionHandle;
 
-    VDKQueue                        * fFileWatcherQueue;
+- (IBAction)createFile:(id)sender;
 
-    IBOutlet NSMenuItem             * fOpenIgnoreDownloadFolder;
-    IBOutlet NSButton               * fActionButton, * fSpeedLimitButton, * fClearCompletedButton;
-    IBOutlet NSTextField            * fTotalTorrentsField;
+- (IBAction)resumeSelectedTorrents:(id)sender;
+- (IBAction)resumeAllTorrents:(id)sender;
+- (void)resumeTorrents:(NSArray<Torrent*>*)torrents;
 
-    StatusBarController             * fStatusBar;
+- (IBAction)resumeSelectedTorrentsNoWait:(id)sender;
+- (IBAction)resumeWaitingTorrents:(id)sender;
+- (void)resumeTorrentsNoWait:(NSArray<Torrent*>*)torrents;
 
-    FilterBarController             * fFilterBar;
-    IBOutlet NSMenuItem             * fNextFilterItem;
+- (IBAction)stopSelectedTorrents:(id)sender;
+- (IBAction)stopAllTorrents:(id)sender;
+- (void)stopTorrents:(NSArray<Torrent*>*)torrents;
 
-    IBOutlet NSMenuItem             * fNextInfoTabItem, * fPrevInfoTabItem;
+- (void)removeTorrents:(NSArray<Torrent*>*)torrents deleteData:(BOOL)deleteData;
+- (void)confirmRemoveTorrents:(NSArray<Torrent*>*)torrents deleteData:(BOOL)deleteData;
+- (IBAction)removeNoDelete:(id)sender;
+- (IBAction)removeDeleteData:(id)sender;
 
-    IBOutlet NSMenu                 * fSortMenu;
+- (IBAction)clearCompleted:(id)sender;
 
-    IBOutlet NSMenu                 * fGroupsSetMenu, * fGroupsSetContextMenu;
+- (IBAction)moveDataFilesSelected:(id)sender;
+- (void)moveDataFiles:(NSArray<Torrent*>*)torrents;
 
-    IBOutlet NSMenu                 * fShareMenu, * fShareContextMenu;
-    IBOutlet NSMenuItem             * fShareMenuItem, * fShareContextMenuItem; // remove when dropping 10.6
+- (IBAction)copyTorrentFiles:(id)sender;
+- (void)copyTorrentFileForTorrents:(NSMutableArray<Torrent*>*)torrents;
 
-    QLPreviewPanel                  * fPreviewPanel;
-    BOOL                            fQuitting;
-    BOOL                            fQuitRequested;
-    BOOL                            fPauseOnLaunch;
+- (IBAction)copyMagnetLinks:(id)sender;
 
-    Badger                          * fBadger;
+- (IBAction)revealFile:(id)sender;
 
-    NSMutableArray                  * fAutoImportedNames;
-    NSTimer                         * fAutoImportTimer;
+- (IBAction)renameSelected:(id)sender;
 
-    NSMutableDictionary             * fPendingTorrentDownloads;
+- (IBAction)announceSelectedTorrents:(id)sender;
 
-    NSMutableSet                    * fAddingTransfers;
+- (IBAction)verifySelectedTorrents:(id)sender;
+- (void)verifyTorrents:(NSArray<Torrent*>*)torrents;
 
-    NSMutableSet                    * fAddWindows;
-    URLSheetWindowController        * fUrlSheetController;
+@property(nonatomic, readonly) NSArray<Torrent*>* selectedTorrents;
 
-    BOOL                            fGlobalPopoverShown;
-    BOOL                            fSoundPlaying;
-}
+@property(nonatomic, readonly) PrefsController* prefsController;
+- (IBAction)showPreferenceWindow:(id)sender;
 
-- (void) openFiles: (NSArray *) filenames addType: (addType) type forcePath: (NSString *) path;
+- (IBAction)showAboutWindow:(id)sender;
 
-- (void) askOpenConfirmed: (AddWindowController *) addController add: (BOOL) add;
-- (void) openCreatedFile: (NSNotification *) notification;
-- (void) openFilesWithDict: (NSDictionary *) dictionary;
-- (void) openShowSheet: (id) sender;
+- (IBAction)showInfo:(id)sender;
+- (void)resetInfo;
+- (IBAction)setInfoTab:(id)sender;
 
-- (void) openMagnet: (NSString *) address;
-- (void) askOpenMagnetConfirmed: (AddMagnetWindowController *) addController add: (BOOL) add;
+@property(nonatomic, readonly) MessageWindowController* messageWindowController;
+- (IBAction)showMessageWindow:(id)sender;
+- (IBAction)showStatsWindow:(id)sender;
 
-- (void) invalidOpenAlert: (NSString *) filename;
-- (void) invalidOpenMagnetAlert: (NSString *) address;
-- (void) duplicateOpenAlert: (NSString *) name;
-- (void) duplicateOpenMagnetAlert: (NSString *) address transferName: (NSString *) name;
+- (void)updateUI;
+- (void)fullUpdateUI;
 
-- (void) openURL: (NSString *) urlString;
-- (void) openURLShowSheet: (id) sender;
+- (void)setBottomCountText:(BOOL)filtering;
 
-- (void) quitSheetDidEnd: (NSWindow *) sheet returnCode: (NSInteger) returnCode contextInfo: (void *) contextInfo;
+- (Torrent*)torrentForHash:(NSString*)hash;
 
-- (tr_session *) sessionHandle;
+- (void)torrentFinishedDownloading:(NSNotification*)notification;
+- (void)torrentRestartedDownloading:(NSNotification*)notification;
+- (void)torrentFinishedSeeding:(NSNotification*)notification;
 
-- (void) createFile: (id) sender;
+- (void)updateTorrentHistory;
 
-- (void) resumeSelectedTorrents:    (id) sender;
-- (void) resumeAllTorrents:         (id) sender;
-- (void) resumeTorrents:            (NSArray *) torrents;
+- (void)applyFilter;
 
-- (void) resumeSelectedTorrentsNoWait:  (id) sender;
-- (void) resumeWaitingTorrents:         (id) sender;
-- (void) resumeTorrentsNoWait:          (NSArray *) torrents;
+- (void)sortTorrentsAndIncludeQueueOrder:(BOOL)includeQueueOrder;
+- (void)sortTorrentsCallUpdates:(BOOL)callUpdates includeQueueOrder:(BOOL)includeQueueOrder;
+- (void)rearrangeTorrentTableArray:(NSMutableArray*)rearrangeArray
+                         forParent:(id)parent
+               withSortDescriptors:(NSArray*)descriptors
+                  beganTableUpdate:(BOOL*)beganTableUpdate;
+- (IBAction)setSort:(id)sender;
+- (IBAction)setSortByGroup:(id)sender;
+- (IBAction)setSortReverse:(id)sender;
 
-- (void) stopSelectedTorrents:      (id) sender;
-- (void) stopAllTorrents:           (id) sender;
-- (void) stopTorrents:              (NSArray *) torrents;
+- (IBAction)switchFilter:(id)sender;
 
-- (void) removeTorrents: (NSArray *) torrents deleteData: (BOOL) deleteData;
-- (void) removeSheetDidEnd: (NSWindow *) sheet returnCode: (NSInteger) returnCode
-                        contextInfo: (void *) contextInfo;
-- (void) confirmRemoveTorrents: (NSArray *) torrents deleteData: (BOOL) deleteData;
-- (void) removeNoDelete:                (id) sender;
-- (void) removeDeleteData:              (id) sender;
+- (IBAction)showGlobalPopover:(id)sender;
 
-- (void) clearCompleted: (id) sender;
+- (void)setGroup:(id)sender; //used by delegate-generated menu items
 
-- (void) moveDataFilesSelected: (id) sender;
-- (void) moveDataFiles: (NSArray *) torrents;
+- (IBAction)toggleSpeedLimit:(id)sender;
+- (IBAction)speedLimitChanged:(id)sender;
+- (void)altSpeedToggledCallbackIsLimited:(NSDictionary*)dict;
 
-- (void) copyTorrentFiles: (id) sender;
-- (void) copyTorrentFileForTorrents: (NSMutableArray *) torrents;
+- (void)changeAutoImport;
+- (void)checkAutoImportDirectory;
 
-- (void) copyMagnetLinks: (id) sender;
+- (void)beginCreateFile:(NSNotification*)notification;
 
-- (void) revealFile: (id) sender;
+- (void)sleepCallback:(natural_t)messageType argument:(void*)messageArgument;
 
-- (IBAction) renameSelected: (id) sender;
+@property(nonatomic, readonly) VDKQueue* fileWatcherQueue;
 
-- (void) announceSelectedTorrents: (id) sender;
+- (void)torrentTableViewSelectionDidChange:(NSNotification*)notification;
 
-- (void) verifySelectedTorrents: (id) sender;
-- (void) verifyTorrents: (NSArray *) torrents;
+- (IBAction)toggleSmallView:(id)sender;
+- (IBAction)togglePiecesBar:(id)sender;
+- (IBAction)toggleAvailabilityBar:(id)sender;
 
-- (NSArray *)selectedTorrents;
+- (IBAction)toggleStatusBar:(id)sender;
+- (IBAction)toggleFilterBar:(id)sender;
+- (void)focusFilterField;
 
-@property (nonatomic, readonly) PrefsController * prefsController;
-- (void) showPreferenceWindow: (id) sender;
+- (void)allToolbarClicked:(id)sender;
+- (void)selectedToolbarClicked:(id)sender;
 
-- (void) showAboutWindow: (id) sender;
+- (void)updateMainWindow;
 
-- (void) showInfo: (id) sender;
-- (void) resetInfo;
-- (void) setInfoTab: (id) sender;
+- (void)setWindowSizeToFit;
+- (void)updateForAutoSize;
+- (void)updateWindowAfterToolbarChange;
+- (void)removeStackViewHeightConstraints;
+@property(nonatomic, readonly) CGFloat minScrollViewHeightAllowed;
+@property(nonatomic, readonly) CGFloat toolbarHeight;
+@property(nonatomic, readonly) CGFloat mainWindowComponentHeight;
+@property(nonatomic, readonly) CGFloat scrollViewHeight;
+@property(nonatomic, getter=isFullScreen, readonly) BOOL fullScreen;
 
-@property (nonatomic, readonly) MessageWindowController * messageWindowController;
-- (void) showMessageWindow: (id) sender;
-- (void) showStatsWindow: (id) sender;
+- (void)updateForExpandCollapse;
 
-- (void) updateUI;
-- (void) fullUpdateUI;
+- (IBAction)showMainWindow:(id)sender;
 
-- (void) setBottomCountText: (BOOL) filtering;
+- (IBAction)toggleQuickLook:(id)sender;
 
-- (Torrent *) torrentForHash: (NSString *) hash;
+- (IBAction)linkHomepage:(id)sender;
+- (IBAction)linkForums:(id)sender;
+- (IBAction)linkGitHub:(id)sender;
+- (IBAction)linkDonate:(id)sender;
 
-- (void) torrentFinishedDownloading: (NSNotification *) notification;
-- (void) torrentRestartedDownloading: (NSNotification *) notification;
-- (void) torrentFinishedSeeding: (NSNotification *) notification;
-
-- (void) updateTorrentHistory;
-
-- (void) applyFilter;
-
-- (void) sortTorrents: (BOOL) includeQueueOrder;
-- (void) sortTorrentsCallUpdates: (BOOL) callUpdates includeQueueOrder: (BOOL) includeQueueOrder;
-- (void) rearrangeTorrentTableArray: (NSMutableArray *) rearrangeArray forParent: (id) parent withSortDescriptors: (NSArray *) descriptors beganTableUpdate: (BOOL *) beganTableUpdate;
-- (void) setSort: (id) sender;
-- (void) setSortByGroup: (id) sender;
-- (void) setSortReverse: (id) sender;
-
-- (void) switchFilter: (id) sender;
-
-- (IBAction) showGlobalPopover: (id) sender;
-
-- (void) setGroup: (id) sender; //used by delegate-generated menu items
-
-- (void) toggleSpeedLimit: (id) sender;
-- (void) speedLimitChanged: (id) sender;
-- (void) altSpeedToggledCallbackIsLimited: (NSDictionary *) dict;
-
-- (void) changeAutoImport;
-- (void) checkAutoImportDirectory;
-
-- (void) beginCreateFile: (NSNotification *) notification;
-
-- (void) sleepCallback: (natural_t) messageType argument: (void *) messageArgument;
-
-@property (nonatomic, readonly) VDKQueue * fileWatcherQueue;
-
-- (void) torrentTableViewSelectionDidChange: (NSNotification *) notification;
-
-- (void) toggleSmallView: (id) sender;
-- (void) togglePiecesBar: (id) sender;
-- (void) toggleAvailabilityBar: (id) sender;
-
-- (void) toggleStatusBar: (id) sender;
-- (void) showStatusBar: (BOOL) show animate: (BOOL) animate;
-- (void) toggleFilterBar: (id) sender;
-- (void) showFilterBar: (BOOL) show animate: (BOOL) animate;
-- (void) focusFilterField;
-
-- (void) allToolbarClicked: (id) sender;
-- (void) selectedToolbarClicked: (id) sender;
-
-- (void) setWindowSizeToFit;
-- (NSRect) sizedWindowFrame;
-- (void) updateForAutoSize;
-- (void) setWindowMinMaxToCurrent;
-- (CGFloat) minWindowContentSizeAllowed;
-
-- (void) updateForExpandCollape;
-
-- (void) showMainWindow: (id) sender;
-
-- (void) toggleQuickLook: (id) sender;
-
-- (void) linkHomepage: (id) sender;
-- (void) linkForums: (id) sender;
-- (void) linkGitHub: (id) sender;
-- (void) linkDonate: (id) sender;
-
-- (void) rpcCallback: (tr_rpc_callback_type) type forTorrentStruct: (struct tr_torrent *) torrentStruct;
-- (void) rpcAddTorrentStruct: (struct tr_torrent *) torrentStruct;
-- (void) rpcRemoveTorrent: (Torrent *) torrent deleteData: (BOOL) deleteData;
-- (void) rpcStartedStoppedTorrent: (Torrent *) torrent;
-- (void) rpcChangedTorrent: (Torrent *) torrent;
-- (void) rpcMovedTorrent: (Torrent *) torrent;
-- (void) rpcUpdateQueue;
+- (void)rpcCallback:(tr_rpc_callback_type)type forTorrentStruct:(struct tr_torrent*)torrentStruct;
+- (void)rpcAddTorrentStruct:(struct tr_torrent*)torrentStruct;
+- (void)rpcRemoveTorrent:(Torrent*)torrent deleteData:(BOOL)deleteData;
+- (void)rpcStartedStoppedTorrent:(Torrent*)torrent;
+- (void)rpcChangedTorrent:(Torrent*)torrent;
+- (void)rpcMovedTorrent:(Torrent*)torrent;
+- (void)rpcUpdateQueue;
 
 @end

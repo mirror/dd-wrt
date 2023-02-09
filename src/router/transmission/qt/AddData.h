@@ -1,12 +1,11 @@
-/*
- * This file Copyright (C) 2012-2016 Mnemosyne LLC
- *
- * It may be used under the GNU GPL versions 2 or 3
- * or any future license endorsed by Mnemosyne LLC.
- *
- */
+// This file Copyright © 2012-2022 Mnemosyne LLC.
+// It may be used under GPLv2 (SPDX: GPL-2.0-only), GPLv3 (SPDX: GPL-3.0-only),
+// or any future license endorsed by Mnemosyne LLC.
+// License text can be found in the licenses/ folder.
 
 #pragma once
+
+#include <optional>
 
 #include <QByteArray>
 #include <QString>
@@ -24,13 +23,9 @@ public:
         METAINFO
     };
 
-public:
-    AddData() :
-        type(NONE)
-    {
-    }
+    AddData() = default;
 
-    AddData(QString const& str)
+    explicit AddData(QString const& str)
     {
         set(str);
     }
@@ -41,13 +36,17 @@ public:
     QString readableName() const;
     QString readableShortName() const;
 
-    static bool isSupported(QString const& str)
+    static std::optional<AddData> create(QString const& str)
     {
-        return AddData(str).type != NONE;
+        if (auto ret = AddData{ str }; ret.type != NONE)
+        {
+            return ret;
+        }
+
+        return {};
     }
 
-public:
-    int type;
+    int type = NONE;
     QByteArray metainfo;
     QString filename;
     QString magnet;

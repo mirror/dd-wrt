@@ -1,6 +1,6 @@
 /****************************************************************************
 **
-** Copyright (C) 2009 Nokia Corporation and/or its subsidiary(-ies).
+** Copyright © 2009 Nokia Corporation and/or its subsidiary(-ies).
 ** Contact: Qt Software Information (qt-info@nokia.com)
 **
 ** This file is part of the demonstration applications of the Qt Toolkit.
@@ -45,32 +45,32 @@
 
 #include "SqueezeLabel.h"
 
-SqueezeLabel::SqueezeLabel(QString const& text, QWidget* parent) :
-    QLabel(text, parent)
+SqueezeLabel::SqueezeLabel(QString const& text, QWidget* parent)
+    : QLabel(text, parent)
 {
 }
 
-SqueezeLabel::SqueezeLabel(QWidget* parent) :
-    QLabel(parent)
+SqueezeLabel::SqueezeLabel(QWidget* parent)
+    : QLabel(parent)
 {
 }
 
-void SqueezeLabel::paintEvent(QPaintEvent* paintEvent)
+void SqueezeLabel::paintEvent(QPaintEvent* paint_event)
 {
     if (hasFocus() && (textInteractionFlags() & (Qt::TextSelectableByKeyboard | Qt::TextSelectableByMouse)) != 0)
     {
-        return QLabel::paintEvent(paintEvent);
+        return QLabel::paintEvent(paint_event);
     }
 
     QPainter painter(this);
-    QFontMetrics fm = fontMetrics();
+    QFontMetrics const fm = fontMetrics();
     QStyleOption opt;
     opt.initFrom(this);
-    QString const fullText = text();
-    QString const elidedText = fm.elidedText(fullText, Qt::ElideRight, width());
-    style()->drawItemText(&painter, contentsRect(), alignment(), opt.palette, isEnabled(), elidedText, foregroundRole());
+    auto const full_text = text();
+    auto const elided_text = fm.elidedText(full_text, Qt::ElideRight, width());
+    style()->drawItemText(&painter, contentsRect(), alignment(), opt.palette, isEnabled(), elided_text, foregroundRole());
 
 #ifndef QT_NO_TOOLTIP
-    setToolTip(fullText != elidedText ? fullText : QString());
+    setToolTip(full_text != elided_text ? full_text : QString{});
 #endif
 }

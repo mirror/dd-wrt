@@ -1,18 +1,24 @@
-/*
- * This file Copyright (C) 2008-2014 Mnemosyne LLC
- *
- * It may be used under the GNU GPL versions 2 or 3
- * or any future license endorsed by Mnemosyne LLC.
- *
- */
+// This file Copyright © 2008-2022 Mnemosyne LLC.
+// It may be used under GPLv2 (SPDX: GPL-2.0-only), GPLv3 (SPDX: GPL-3.0-only),
+// or any future license endorsed by Mnemosyne LLC.
+// License text can be found in the licenses/ folder.
 
 #pragma once
 
-#ifndef __LIBTRANSMISSION_VARIANT_MODULE__
+#ifndef LIBTRANSMISSION_VARIANT_MODULE
 #error only libtransmission/variant-*.c should #include this header.
 #endif
 
-typedef void (* VariantWalkFunc)(tr_variant const* val, void* user_data);
+#include <cstdint> // int64_t
+#include <optional>
+#include <string>
+#include <string_view>
+
+#include "transmission.h"
+
+#include "variant.h"
+
+using VariantWalkFunc = void (*)(tr_variant const* val, void* user_data);
 
 struct VariantWalkFuncs
 {
@@ -25,22 +31,18 @@ struct VariantWalkFuncs
     VariantWalkFunc containerEndFunc;
 };
 
-void tr_variantWalk(tr_variant const* top, struct VariantWalkFuncs const* walkFuncs, void* user_data, bool sort_dicts);
+void tr_variantWalk(tr_variant const* top, VariantWalkFuncs const* walk_funcs, void* user_data, bool sort_dicts);
 
-void tr_variantToBufJson(tr_variant const* top, struct evbuffer* buf, bool lean);
+[[nodiscard]] std::string tr_variantToStrJson(tr_variant const* top, bool lean);
 
-void tr_variantToBufBenc(tr_variant const* top, struct evbuffer* buf);
-
-void tr_variantInit(tr_variant* v, char type);
-
-/* source - such as a filename. Only when logging an error */
-int tr_jsonParse(char const* source, void const* vbuf, size_t len, tr_variant* setme_benc, char const** setme_end);
+[[nodiscard]] std::string tr_variantToStrBenc(tr_variant const* top);
 
 /** @brief Private function that's exposed here only for unit tests */
-int tr_bencParseInt(uint8_t const* buf, uint8_t const* bufend, uint8_t const** setme_end, int64_t* setme_val);
+[[nodiscard]] std::optional<int64_t> tr_bencParseInt(std::string_view* benc_inout);
 
 /** @brief Private function that's exposed here only for unit tests */
-int tr_bencParseStr(uint8_t const* buf, uint8_t const* bufend, uint8_t const** setme_end, uint8_t const** setme_str,
-    size_t* setme_strlen);
+[[nodiscard]] std::optional<std::string_view> tr_bencParseStr(std::string_view* benc_inout);
 
-int tr_variantParseBenc(void const* buf, void const* end, tr_variant* top, char const** setme_end);
+bool tr_variantParseBenc(tr_variant& top, int parse_opts, std::string_view benc, char const** setme_end, tr_error** error);
+
+bool tr_variantParseJson(tr_variant& setme, int opts, std::string_view json, char const** setme_end, tr_error** error);

@@ -1,0 +1,59 @@
+sudo: false
+dist: xenial
+
+language: c
+
+compiler:
+  - gcc
+  - clang-3.8
+
+branches:
+  only:
+    - master
+    - coveralls-text
+
+env:
+  - RUNTIME=libicu
+  - RUNTIME=libidn2
+  - RUNTIME=libidn
+  - RUNTIME=no
+
+addons:
+  apt:
+    packages:
+      - automake
+      - autoconf
+      - autopoint
+      - libtool
+      - gtk-doc-tools
+      - gettext
+      - libidn11-dev
+      - libidn2-0-dev
+      - libicu-dev
+      - libunistring-dev
+      - lcov
+      - clang-3.8
+      - llvm-3.8-dev
+      - llvm-dev
+      - valgrind
+
+script:
+  - set -e
+  - sed -i 's/dist-lzip//g' configure.ac
+  - ./autogen.sh
+#  CFI doesn't work out on Ubuntu 14.04 (Trusty). They don't include LLVMgold.so for clang-3.8.
+#  clang-3.4 doesn't know CFI yet.
+#  The only chance with Travis-CI is to switch to docker and use Ubuntu 16.04 or whatever.
+#  - if [[ $CC == "gcc" ]]; then CFI=""; else CFI="--enable-cfi"; fi
+  - if [[ $CC == "clang-3.8" ]]; then UBSAN="--enable-ubsan"; fi
+  - ./configure $CFI --enable-asan $UBSAN && make -j4 && make check -j4
+  - ./configure $CFI --enable-runtime=$RUNTIME --enable-builtin=libicu --enable-asan $UBSAN && make clean && make -j4 && make check -j4
+  - ./configure $CFI --enable-runtime=$RUNTIME --enable-builtin=libidn2 --enable-asan $UBSAN && make clean && make -j4 && make check -j4
+  - ./configure $CFI --enable-runtime=$RUNTIME --enable-builtin=libidn --enable-asan $UBSAN && make clean && make -j4 && make check -j4
+  - ./configure $CFI --enable-runtime=$RUNTIME --disable-builtin --enable-asan $UBSAN && make clean && make -j4 && make check -j4
+# libidn2 0.9.0 on Trusty has bugs, valgrinding the fuzz corpora fails
+# so we use libicu here
+  - if [[ $RUNTIME == "libicu" ]]; then VALGRIND="--enable-valgrind-tests"; fi
+  - ./configure --enable-runtime=$RUNTIME --enable-builtin=libicu --enable-gtk-doc $VALGRIND && make clean && make -j4 && make check -j4 || cat fuzz/*_fuzzer.log
+  - make distcheck
+  - if [[ $CC == "gcc" && $RUNTIME == "libicu" ]]; then ./.travis_coveralls.sh; fi

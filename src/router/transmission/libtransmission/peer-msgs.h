@@ -1,10 +1,7 @@
-/*
- * This file Copyright (C) 2007-2014 Mnemosyne LLC
- *
- * It may be used under the GNU GPL versions 2 or 3
- * or any future license endorsed by Mnemosyne LLC.
- *
- */
+// This file Copyright © 2007-2022 Mnemosyne LLC.
+// It may be used under GPLv2 (SPDX: GPL-2.0-only), GPLv3 (SPDX: GPL-3.0-only),
+// or any future license endorsed by Mnemosyne LLC.
+// License text can be found in the licenses/ folder.
 
 #pragma once
 
@@ -12,63 +9,83 @@
 #error only libtransmission should #include this header.
 #endif
 
-#include <inttypes.h>
-#include "peer-common.h"
+#include <atomic>
+#include <cstdint> // int8_t
+#include <cstddef> // size_t
+#include <ctime> // time_t
+#include <memory>
+#include <utility>
 
+#include "bitfield.h"
+#include "peer-common.h"
+#include "torrent.h"
+
+class tr_peer;
+class tr_peerIo;
 struct tr_address;
-struct tr_bitfield;
-struct tr_peer;
-struct tr_peerIo;
-struct tr_torrent;
 
 /**
  * @addtogroup peers Peers
  * @{
  */
 
-typedef struct tr_peerMsgs tr_peerMsgs;
+class tr_peerMsgs : public tr_peer
+{
+public:
+    tr_peerMsgs(tr_torrent const* tor, peer_atom* atom_in)
+        : tr_peer{ tor, atom_in }
+        , have_{ tor->pieceCount() }
+    {
+        ++n_peers;
+    }
 
-#define PEER_MSGS(o) (tr_peerMsgsCast(o))
+    virtual ~tr_peerMsgs() override;
 
-bool tr_isPeerMsgs(void const* msgs);
+    [[nodiscard]] static size_t size() noexcept
+    {
+        return n_peers.load();
+    }
 
-tr_peerMsgs* tr_peerMsgsCast(void* msgs);
+    [[nodiscard]] virtual bool is_peer_choked() const noexcept = 0;
+    [[nodiscard]] virtual bool is_peer_interested() const noexcept = 0;
+    [[nodiscard]] virtual bool is_client_choked() const noexcept = 0;
+    [[nodiscard]] virtual bool is_client_interested() const noexcept = 0;
 
-tr_peerMsgs* tr_peerMsgsNew(struct tr_torrent* torrent, struct tr_peerIo* io, tr_peer_callback callback, void* callback_data);
+    [[nodiscard]] virtual bool is_utp_connection() const noexcept = 0;
+    [[nodiscard]] virtual bool is_encrypted() const = 0;
+    [[nodiscard]] virtual bool is_incoming_connection() const = 0;
 
-bool tr_peerMsgsIsPeerChoked(tr_peerMsgs const* msgs);
+    [[nodiscard]] virtual bool is_active(tr_direction direction) const = 0;
+    virtual void update_active(tr_direction direction) = 0;
 
-bool tr_peerMsgsIsPeerInterested(tr_peerMsgs const* msgs);
+    [[nodiscard]] virtual std::pair<tr_address, tr_port> socketAddress() const = 0;
 
-bool tr_peerMsgsIsClientChoked(tr_peerMsgs const* msgs);
+    virtual void cancel_block_request(tr_block_index_t block) = 0;
 
-bool tr_peerMsgsIsClientInterested(tr_peerMsgs const* msgs);
+    virtual void set_choke(bool peer_is_choked) = 0;
+    virtual void set_interested(bool client_is_interested) = 0;
 
-bool tr_peerMsgsIsActive(tr_peerMsgs const* msgs, tr_direction direction);
+    virtual void pulse() = 0;
 
-void tr_peerMsgsUpdateActive(tr_peerMsgs* msgs, tr_direction direction);
+    virtual void onTorrentGotMetainfo() = 0;
 
-time_t tr_peerMsgsGetConnectionAge(tr_peerMsgs const* msgs);
+    virtual void on_piece_completed(tr_piece_index_t) = 0;
 
-bool tr_peerMsgsIsUtpConnection(tr_peerMsgs const* msgs);
+    /// The client name. This is the app name derived from the `v` string in LTEP's handshake dictionary
+    tr_interned_string client;
 
-bool tr_peerMsgsIsEncrypted(tr_peerMsgs const* msgs);
+protected:
+    tr_bitfield have_;
 
-bool tr_peerMsgsIsIncomingConnection(tr_peerMsgs const* msgs);
+private:
+    static inline auto n_peers = std::atomic<size_t>{};
+};
 
-void tr_peerMsgsSetChoke(tr_peerMsgs* msgs, bool peerIsChoked);
-
-bool tr_peerMsgsIsReadingBlock(tr_peerMsgs const* msgs, tr_block_index_t block);
-
-void tr_peerMsgsSetInterested(tr_peerMsgs* msgs, bool clientIsInterested);
-
-void tr_peerMsgsHave(tr_peerMsgs* msgs, uint32_t pieceIndex);
-
-void tr_peerMsgsPulse(tr_peerMsgs* msgs);
-
-void tr_peerMsgsCancel(tr_peerMsgs* msgs, tr_block_index_t block);
-
-size_t tr_generateAllowedSet(tr_piece_index_t* setmePieces, size_t desiredSetSize, size_t pieceCount, uint8_t const* infohash,
-    struct tr_address const* addr);
+tr_peerMsgs* tr_peerMsgsNew(
+    tr_torrent* torrent,
+    peer_atom* atom,
+    std::shared_ptr<tr_peerIo> io,
+    tr_peer_callback callback,
+    void* callback_data);
 
 /* @} */

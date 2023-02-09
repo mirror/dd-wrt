@@ -1,15 +1,3 @@
-/* Add torrent -> info
-   Create torrent -> info
-   Drag overlay -> torrents
-   Inspector -> selected torrents */
-"%@ files" = "%@ filer";
-
-/* Prefs -> blocklist -> message */
-"%@ IP address rules in list" = "%@ IP-adresseregler i listen";
-
-/* Inspector -> selected torrents */
-"%@ magnetized transfers" = "%@ magnetiseret overførsler";
-
 /* file size string
    Inspector -> Files tab -> file status string
    Status bar transfer count */
@@ -18,95 +6,89 @@
 /* Torrent -> progress string */
 "%@ of torrent metadata retrieved" = "%@ af torrent-filens metadata er modtaget";
 
-/* time remaining string */
-"%@ remaining" = "%@ tilbage";
-
 /* Add torrent -> info
    Inspector -> Activity tab -> progress
    Torrent -> progress string */
 "%@ selected" = "%@ valgt";
 
-/* stats window -> times opened */
-"%@ times" = "%@ gange";
-
-/* Drag overlay -> torrents */
-"%@ Torrent Files" = "%@ Torrent-filer";
-
-/* Inspector -> selected torrents */
-"%@ Torrents Selected" = "%@ Torrents valgt";
-
 /* Inspector -> selected torrents
    stats total */
 "%@ total" = "%@ samlet";
 
-/* Filter Bar Button -> tool tip
-   Status bar transfer count
-   Torrent table -> group row -> tooltip */
-"%@ transfers" = "%@ overførsler";
-
 /* Inspector -> Activity tab -> have */
 "%@ verified" = "%@ kontrolleret";
 
-/* Inspector -> Peers tab -> peers */
-"%d cache" = "%d cache";
-
-/* Inspector -> Peers tab -> peers */
-"%d Connected" = "%d forbundet";
-
-/* Inspector -> Peers tab -> peers */
-"%d DHT" = "%d DHT";
-
-/* Dock item - Downloading */
-"%d Downloading" = "%d Henter";
-
-/* Inspector -> Peers tab -> peers */
-"%d incoming" = "%d indkommende";
-
 /* Action menu -> upload/download limit
    Status Bar -> speed tooltip */
-"%d KB/s" = "%d KB/s";
-
-/* Inspector -> Peers tab -> peers */
-"%d local discovery" = "%d lokal opdagelse";
-
-/* Inspector -> Peers tab -> peers */
-"%d LTEP" = "%d LTEP";
+"%ld KB/s" = "%ld KB/s";
 
 /* Info options -> global setting */
-"%d minutes" = "%d minutter";
+"%ld minutes" = "%ld minutter";
+
+/* stats window -> times opened */
+"%llu times" = "%llu gange";
 
 /* Inspector -> Peers tab -> peers */
-"%d PEX" = "%d PEX";
+"%lu cache" = "%lu cache";
 
-/* Create torrent -> info */
-"%d pieces, %@ each" = "%1$d stykker, %2$@ hver";
+/* Inspector -> Peers tab -> peers */
+"%lu Connected" = "%lu forbundet";
+
+/* Inspector -> Peers tab -> peers */
+"%lu DHT" = "%lu DHT";
+
+/* Dock item - Downloading */
+"%lu Downloading" = "%lu Henter";
+
+/* Add torrent -> info
+   Create torrent -> info
+   Drag overlay -> torrents
+   Inspector -> selected torrents */
+"%lu files" = "%lu filer";
+
+/* Inspector -> Peers tab -> peers */
+"%lu incoming" = "%lu indkommende";
+
+/* Prefs -> blocklist -> message */
+"%lu IP address rules in list" = "%lu IP-adresseregler i listen";
+
+/* Inspector -> Peers tab -> peers */
+"%lu local discovery" = "%lu lokal opdagelse";
+
+/* Inspector -> Peers tab -> peers */
+"%lu LTEP" = "%lu LTEP";
+
+/* Inspector -> selected torrents */
+"%lu magnetized transfers" = "%lu magnetiseret overførsler";
+
+/* Inspector -> Peers tab -> peers */
+"%lu PEX" = "%lu PEX";
 
 /* Dock item - Seeding */
-"%d Seeding" = "%d Deler";
+"%lu Seeding" = "%lu Deler";
+
+/* Drag overlay -> torrents */
+"%lu Torrent Files" = "%lu Torrent-filer";
+
+/* Inspector -> selected torrents */
+"%lu Torrents Selected" = "%lu Torrents valgt";
 
 /* Inspector -> Peers tab -> peers */
-"%d tracker" = "%d tracker";
+"%lu tracker" = "%lu tracker";
+
+/* Filter Bar Button -> tool tip
+   Status bar transfer count
+   Torrent table -> group row -> tooltip */
+"%lu transfers" = "%lu overførsler";
 
 /* Torrent -> status string */
-"%d web seeds" = "%d webseeds";
+"%lu web seeds" = "%lu webseeds";
 
-/* time string */
-"%u days" = "%u dage";
+/* Create torrent -> info */
+"%u pieces, %@ each" = "%1$u stykker, %2$@ hver";
 
-/* time string */
-"%u hr" = "%u t";
-
-/* time string */
-"%u min" = "%u min";
-
-/* time string */
-"%u sec" = "%u sek";
-
-/* time string */
-"%u years" = "%u år";
-
-/* time string */
-"1 day" = "1 dag";
+/* Inspector -> Peers tab -> peers */
+"1 Connected" = "1 forbundet";
 
 /* Add torrent -> info
    Create torrent -> info
@@ -130,9 +112,6 @@
    Status bar transfer count
    Torrent table -> group row -> tooltip */
 "1 transfer" = "1 overførsel";
-
-/* time string */
-"1 year" = "1 år";
 
 /* Open invalid alert -> title */
 "\"%@\" is not a valid torrent file." = "\"%@\" er ikke en gyldig torrent-fil.";
@@ -183,9 +162,6 @@
    Groups -> Button */
 "All Groups" = "Alle grupper";
 
-/* Create torrent -> failed -> warning */
-"An unknown error has occurred." = "Der opstod en ukendt fejl.";
-
 /* Tracker last announce */
 "Announce error" = "Annonceringsfejl";
 
@@ -211,16 +187,16 @@
 "Are you sure you want to quit?" = "Er du sikker på, at du vil afslutte?";
 
 /* Remove completed confirm panel -> title */
-"Are you sure you want to remove %@ completed transfers from the transfer list?" = "Er du sikker på, at du vil fjerne %@ færdige overførsler fra listen?";
-
-/* Removal confirm panel -> title */
-"Are you sure you want to remove %@ transfers from the transfer list and trash the data files?" = "Er du sikker på, at du vil fjerne %@ overførsler fra listen og flytte data til papirkurven?";
-
-/* Removal confirm panel -> title */
-"Are you sure you want to remove %@ transfers from the transfer list?" = "Er du sikker på, at du vil fjerne %@ overførsler fra listen?";
+"Are you sure you want to remove %lu completed transfers from the transfer list?" = "Er du sikker på, at du vil fjerne %lu færdige overførsler fra listen?";
 
 /* Remove trackers alert -> title */
-"Are you sure you want to remove %d trackers?" = "Er du sikker på, at du vil fjerne %d trackere?";
+"Are you sure you want to remove %lu trackers?" = "Er du sikker på, at du vil fjerne %lu trackere?";
+
+/* Removal confirm panel -> title */
+"Are you sure you want to remove %lu transfers from the transfer list and trash the data files?" = "Er du sikker på, at du vil fjerne %lu overførsler fra listen og flytte data til papirkurven?";
+
+/* Removal confirm panel -> title */
+"Are you sure you want to remove %lu transfers from the transfer list?" = "Er du sikker på, at du vil fjerne %lu overførsler fra listen?";
 
 /* Removal confirm panel -> title */
 "Are you sure you want to remove \"%@\" from the transfer list and trash the data file?" = "Er du sikker på, at du vil fjerne \"%@\" fra listen og flytte data til papirkurven?";
@@ -283,12 +259,6 @@
 /* Torrent file copy alert -> title */
 "Copy of \"%@\" Cannot Be Created" = "En kopi af \"%@\" kan ikke oprettes";
 
-/* Create torrent -> failed -> warning */
-"Could not read \"%s\": %s." = "Kunne ikke læse \"%1$s\": %2$s.";
-
-/* Create torrent -> failed -> warning */
-"Could not write \"%s\": %s." = "Kunne ikke skrive \"%1$s\": %2$s.";
-
 /* Create toolbar item -> label
    Create torrent -> blank address -> button */
 "Create" = "Opret";
@@ -325,11 +295,12 @@
 /* inspector -> peer table -> header
    inspector -> web seed table -> header
    status bar -> status label
+   Torrent -> status image
    Torrent -> status string */
 "DL" = "DL";
 
 /* Inspector -> Peers tab -> peers */
-"DL from %d" = "DL fra %d";
+"DL from %lu" = "DL fra %lu";
 
 /* Torrent disk space alert -> button */
 "Do not check disk space again" = "Tjek ikke diskpladsen fremover";
@@ -377,10 +348,10 @@
 "Downloading blocklist" = "Downloader blockeringsliste";
 
 /* Torrent -> status string */
-"Downloading from %d of %d peers" = "Henter fra %1$d af %2$d modparter";
+"Downloading from %lu of %lu peers" = "Henter fra %1$lu af %2$lu modparter";
 
 /* Torrent -> status string */
-"Downloading from %d of 1 peer" = "Henter fra %d af 1 modpart";
+"Downloading from %lu of 1 peer" = "Henter fra %lu af 1 modpart";
 
 /* inspector -> peer table -> header tool tip */
 "Downloading From Peer" = "Henter fra modpart";
@@ -394,7 +365,8 @@
 /* inspector -> peer table -> header tool tip */
 "Encrypted Connection" = "Krypteret forbindelse";
 
-/* Message window -> level
+/* Filter Bar -> filter button
+   Message window -> level
    Message window -> level string
    Torrent -> status string */
 "Error" = "Fejl";
@@ -429,9 +401,6 @@
 /* Inspector -> Peers tab -> table row tooltip */
 "From: tracker" = "Fra: tracker";
 
-/* File size - gigabytes */
-"GB" = "GB";
-
 /* Transfer speed (gigabytes per second) */
 "GB/s" = "GB/s";
 
@@ -449,7 +418,7 @@
 "Global upload limit" = "Generel upload begrænsning";
 
 /* Tracker last announce */
-"got %d peers" = "fik %d modparter";
+"got %lu peers" = "fik %lu modparter";
 
 /* Tracker last announce */
 "got 1 peer" = "fik 1 modpart";
@@ -506,9 +475,6 @@
 /* Download not a torrent -> message */
 "It appears that the file \"%@\" from %@ is not a torrent file." = "Det lader til at filen \"%1$@\" fra %2$@ ikke er en torrent-fil.";
 
-/* File size - kilobytes */
-"KB" = "KB";
-
 /* Transfer speed (kilobytes per second) */
 "KB/s" = "KB/s";
 
@@ -528,7 +494,7 @@
 "License" = "Licens";
 
 /* torrent action menu -> upload/download limit */
-"Limit (%d KB/s)" = "Begræns (%d KB/s)";
+"Limit (%ld KB/s)" = "Begræns (%ld KB/s)";
 
 /* Save log alert panel -> title */
 "Log Could Not Be Saved" = "Log filen kunne ikke gemmes";
@@ -545,9 +511,6 @@
 /* Inspector -> selected torrents
    Torrent -> progress string */
 "Magnetized transfer" = "Magnetiseret overførsel";
-
-/* File size - megabytes */
-"MB" = "MB";
 
 /* Transfer speed (megabytes per second) */
 "MB/s" = "MB/s";
@@ -722,6 +685,9 @@
 /* Preferences -> Network -> port status */
 "Port is open" = "Port åben";
 
+/* No comment provided by engineer. */
+"PrefWindowSize" = "640";
+
 /* File Outline -> Menu
    file table -> header tool tip */
 "Priority" = "Prioritet";
@@ -763,11 +729,9 @@
    Legal alert -> button */
 "Quit" = "Slut";
 
-/* Dock Badger -> quit */
-"Quitting" = "Afslutter";
-
 /* Stats window -> label
    status bar -> status label
+   Torrent -> status image
    Torrent -> status string
    Torrent table -> group row -> tooltip */
 "Ratio" = "Delingsforhold";
@@ -857,10 +821,10 @@
 "Seeding Complete" = "Deling fuldført";
 
 /* Torrent -> status string */
-"Seeding to %d of %d peers" = "Deler til %1$d af %2$d modparter";
+"Seeding to %1$lu of %2$lu peers" = "Deler til %1$lu af %2$lu modparter";
 
 /* Torrent -> status string */
-"Seeding to %d of 1 peer" = "Deler til %d af 1 modpart";
+"Seeding to %u of 1 peer" = "Deler til %u af 1 modpart";
 
 /* Create torrent -> location sheet -> button
    Create torrent -> select file
@@ -879,7 +843,7 @@
 "Select the name and location for the torrent file." = "Vælg navn og placering til torrent-filen.";
 
 /* Move torrent -> select destination folder */
-"Select the new folder for %d data files." = "Vælg ny mappe til %d data filer.";
+"Select the new folder for %lu data files." = "Vælg ny mappe til %lu data filer.";
 
 /* Move torrent -> select destination folder */
 "Select the new folder for \"%@\"." = "Vælg ny mappe til \"%@\".";
@@ -946,9 +910,6 @@
 /* Donation beg -> title */
 "Support open-source indie software" = "Støt open source programmer";
 
-/* File size - terabytes */
-"TB" = "TB";
-
 /* Transfer speed (terabytes per second) */
 "TB/s" = "TB/s";
 
@@ -993,13 +954,13 @@
 "The transfer will not contact trackers for peers, and will have to rely solely on non-tracker peer discovery methods such as PEX and DHT to download and seed." = "Overførslen vil ikke kontakte trackere for at få forbindelser og vil udelukkende benytte ikke-tracker modpartsopdagelse såsom PEX og DHT til download og deling.";
 
 /* Removal confirm panel -> message part 1 */
-"There are %@ active transfers." = "Der er %@ aktive overførsler.";
-
-/* Removal confirm panel -> message part 1 */
-"There are %@ transfers (%@ active)." = "Der er %1$@ overførsler (%2$@ er aktive).";
+"There are %1$lu transfers (%2$lu active)." = "Der er %1$lu overførsler (%2$lu er aktive).";
 
 /* Confirm Quit panel -> message */
-"There are %d active transfers that will be paused on quit. The transfers will automatically resume on the next launch." = "Der er %d aktive overførsler som pauses ved afslutning. Overførslerne genoptages automatisk, næste gang programmet startes.";
+"There are %lu active transfers that will be paused on quit. The transfers will automatically resume on the next launch." = "Der er %lu aktive overførsler som pauses ved afslutning. Overførslerne genoptages automatisk, næste gang programmet startes.";
+
+/* Removal confirm panel -> message part 1 */
+"There are %lu active transfers." = "Der er %lu aktive overførsler.";
 
 /* Create torrent -> blank address -> title */
 "There are no tracker addresses." = "Der er ingen tracker adresser.";
@@ -1032,7 +993,7 @@
 "This will clear the global statistics displayed by Transmission. Individual transfer statistics will not be affected." = "Dette vil rydde statistikker vist af Transmission. Individuelle overførselsstatistikker påvirkes ikke.";
 
 /* Inspector -> tracker table */
-"Tier %d" = "Liste %d";
+"Tier %ld" = "Liste %ld";
 
 /* Filter toolbar item -> palette label */
 "Toggle Filter" = "Vis/skjul filterlinje";
@@ -1067,6 +1028,9 @@
 
 /* Status Bar -> status menu */
 "Total Transfer" = "Samlet overførsel";
+
+/* Message window -> level */
+"Trace" = "Sporing";
 
 /* Filter Bar -> filter menu */
 "Tracker" = "Tracker";
@@ -1104,11 +1068,12 @@
 
 /* inspector -> peer table -> header
    status bar -> status label
+   Torrent -> status image
    Torrent -> status string */
 "UL" = "UL";
 
 /* Inspector -> Peers tab -> peers */
-"UL to %d" = "UL til %d";
+"UL to %lu" = "UL til %lu";
 
 /* File Outline -> Menu */
 "Uncheck Selected" = "Fravælg valgte";
@@ -1142,6 +1107,10 @@
 
 /* Torrent -> status string */
 "Waiting to seed" = "Afventer deling";
+
+/* Message window -> level
+   Message window -> level string */
+"Warning" = "Advarsel";
 
 /* Drag overlay -> url */
 "Web Address" = "Webadresse";

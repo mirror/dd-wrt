@@ -1,10 +1,7 @@
-/*
- * This file Copyright (C) 2010-2014 Mnemosyne LLC
- *
- * It may be used under the GNU GPL versions 2 or 3
- * or any future license endorsed by Mnemosyne LLC.
- *
- */
+// This file Copyright 2010-2022 Mnemosyne LLC.
+// It may be used under GPLv2 (SPDX: GPL-2.0-only), GPLv3 (SPDX: GPL-3.0-only),
+// or any future license endorsed by Mnemosyne LLC.
+// License text can be found in the licenses/ folder.
 
 #pragma once
 
@@ -12,45 +9,61 @@
 #error only libtransmission should #include this header.
 #endif
 
+#include <array>
+#include <cstddef> // for size_t
+#include <cstdint> // for uint32_t
+#include <ctime> // for time_t
+
 /**
- * A generic short-term memory object that remembers how many times
- * something happened over the last N seconds.
- *
- * For example, it could count how many are bytes transferred
- * to estimate the speed over the last N seconds.
+ * A short-term memory object that remembers how many times something
+ * happened over the last Seconds seconds. `tr_peer` uses it to count
+ * how many bytes transferred to estimate the speed over the last
+ * Seconds seconds.
  */
-
-enum
+template<typename SizeType, std::size_t Seconds = 60>
+class tr_recentHistory
 {
-    TR_RECENT_HISTORY_PERIOD_SEC = 60
-};
-
-typedef struct tr_recentHistory
-{
-    /* these are PRIVATE IMPLEMENTATION details included for composition only.
-     * Don't access these directly! */
-
-    int newest;
-
-    struct
+public:
+    /**
+     * @brief add a counter to the recent history object.
+     * @param when the current time in sec, such as from tr_time()
+     * @param n how many items to add to the history's counter
+     */
+    constexpr void add(time_t now, SizeType n)
     {
-        unsigned int n;
-        time_t date;
+        if (timestamps_[newest_] != now)
+        {
+            newest_ = (newest_ + 1) % Seconds;
+            timestamps_[newest_] = now;
+            count_[newest_] = {};
+        }
+
+        count_[newest_] += n;
     }
-    slices[TR_RECENT_HISTORY_PERIOD_SEC];
-}
-tr_recentHistory;
 
-/**
- * @brief add a counter to the recent history object.
- * @param when the current time in sec, such as from tr_time()
- * @param n how many items to add to the history's counter
- */
-void tr_historyAdd(tr_recentHistory*, time_t when, unsigned int n);
+    /**
+     * @brief count how many events have occurred in the last N seconds.
+     * @param when the current time in sec, such as from tr_time()
+     * @param seconds how many seconds to count back through.
+     */
+    [[nodiscard]] constexpr SizeType count(time_t now, unsigned int age_sec) const
+    {
+        auto sum = SizeType{};
+        time_t const oldest = now - age_sec;
 
-/**
- * @brief count how many events have occurred in the last N seconds.
- * @param when the current time in sec, such as from tr_time()
- * @param seconds how many seconds to count back through.
- */
-unsigned int tr_historyGet(tr_recentHistory const*, time_t when, unsigned int seconds);
+        for (std::size_t i = 0; i < Seconds; ++i)
+        {
+            if (timestamps_[i] >= oldest)
+            {
+                sum += count_[i];
+            }
+        }
+
+        return sum;
+    }
+
+private:
+    std::array<time_t, Seconds> timestamps_ = {};
+    std::array<SizeType, Seconds> count_ = {};
+    uint32_t newest_ = 0;
+};
