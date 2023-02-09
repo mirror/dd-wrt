@@ -1,0 +1,54 @@
+
+/* Class = "NSTextFieldCell"; title = "Download to:"; ObjectID = "15"; */
+"15.title" = "Şuraya indir:";
+
+/* Class = "NSButtonCell"; title = "Change…"; ObjectID = "16"; */
+"16.title" = "Değiştir...";
+
+/* Class = "NSButtonCell"; title = "Start when added"; ObjectID = "18"; */
+"18.title" = "İndirmeyi başlat";
+
+/* Class = "NSButtonCell"; title = "Add"; ObjectID = "20"; */
+"20.title" = "Ekle";
+
+/* Class = "NSButtonCell"; title = "Cancel"; ObjectID = "22"; */
+"22.title" = "Vazgeç";
+
+/* Class = "NSTextFieldCell"; title = "Group:"; ObjectID = "41"; */
+"41.title" = "Öbek:";
+
+/* Class = "NSTableColumn"; headerCell.title = "Rank"; ObjectID = "47"; */
+"47.headerCell.title" = "Önem";
+
+/* Class = "NSTableColumn"; headerCell.title = "DL"; ObjectID = "48"; */
+"48.headerCell.title" = "İN";
+
+/* Class = "NSTableColumn"; headerCell.title = "Name"; ObjectID = "49"; */
+"49.headerCell.title" = "Ad";
+
+/* Class = "NSButtonCell"; title = "Trash torrent file"; ObjectID = "59"; */
+"59.title" = "Torrent dosyasını sil";
+
+/* Class = "NSButtonCell"; title = "Verify Local Data"; ObjectID = "66"; */
+"66.title" = "Yerel Veriyi Denetle";
+
+/* Class = "NSMenuItem"; title = "Low"; ObjectID = "88"; */
+"88.title" = "Düşük";
+
+/* Class = "NSMenuItem"; title = "Normal"; ObjectID = "89"; */
+"89.title" = "Olağan";
+
+/* Class = "NSMenuItem"; title = "High"; ObjectID = "90"; */
+"90.title" = "Yüksek";
+
+/* Class = "NSTextFieldCell"; title = "Priority:"; ObjectID = "91"; */
+"91.title" = "Öncelik:";
+
+/* Class = "NSButtonCell"; title = "All"; ObjectID = "104"; */
+"104.title" = "Tümü";
+
+/* Class = "NSButtonCell"; title = "None"; ObjectID = "105"; */
+"105.title" = "Hiçbiri";
+
+/* Class = "NSSearchFieldCell"; placeholderString = "Filter"; ObjectID = "113"; */
+"113.placeholderString" = "Süz";
