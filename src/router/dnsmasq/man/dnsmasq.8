@@ -60,7 +60,8 @@ in alphabetical order.
 .TP
 .B --hostsdir=<path>
 Read all the hosts files contained in the directory. New or changed files
-are read automatically. See \fB--dhcp-hostsdir\fP for details.
+are read automatically and modified and deleted files have removed records
+automatically deleted.
 .TP
 .B \-E, --expand-hosts
 Add the domain to simple names (without a period) in /etc/hosts
@@ -104,6 +105,16 @@ Dnsmasq limits the value of this option to one hour, unless recompiled.
 .TP
 .B --auth-ttl=<time>
 Set the TTL value returned in answers from the authoritative server.
+.TP
+.B --fast-dns-retry=[<initial retry delay in ms>[,<time to continue retries in ms>]]
+Under normal circumstances, dnsmasq relies on DNS clients to do retries; it
+does not generate timeouts itself. Setting this option
+instructs dnsmasq to generate its own retries starting after a delay
+which defaults to 1000ms. If the second parameter is given this controls
+how long the retries will continue for
+otherwise this defaults to 10000ms. Retries are repeated with exponential
+backoff. Using this option increases memory usage and
+network bandwidth.
 .TP
 .B \-k, --keep-in-foreground
 Do not go into the background at startup but otherwise run as
@@ -180,7 +191,15 @@ specific UDP port <query_port> instead of using random ports. NOTE
 that using this option will make dnsmasq less secure against DNS
 spoofing attacks but it may be faster and use less resources.  Setting this option
 to zero makes dnsmasq use a single port allocated to it by the
-OS: this was the default behaviour in versions prior to 2.43. 
+OS: this was the default behaviour in versions prior to 2.43.
+.TP
+.B --port-limit=<#ports>
+By default, when sending a query via random ports to multiple upstream servers or
+retrying a query dnsmasq will use a single random port for all the tries/retries.
+This option allows a larger number of ports to be used, which can increase robustness
+in certain network configurations. Note that increasing this to more than
+two or three can have security and resource implications and should only
+be done with understanding of those.
 .TP
 .B --min-port=<port>
 Do not use ports less than that given as source for outbound DNS
@@ -443,8 +462,8 @@ Tells dnsmasq to never forward A or AAAA queries for plain names, without dots
 or domain parts, to upstream nameservers. If the name is not known
 from /etc/hosts or DHCP then a "not found" answer is returned.
 .TP
-.B \-S, --local, --server=[/[<domain>]/[domain/]][<ipaddr>[#<port>]][@<interface>][@<source-ip>[#<port>]]
-Specify IP address of upstream servers directly. Setting this flag does
+.B \-S, --local, --server=[/[<domain>]/[domain/]][<server>[#<port>]][@<interface>][@<source-ip>[#<port>]]
+Specify upstream servers directly. Setting this flag does
 not suppress reading of /etc/resolv.conf, use \fB--no-resolv\fP to do that. If one or more
 optional domains are given, that server is used only for those domains
 and they are queried only using the specified server. This is
@@ -512,8 +531,14 @@ The query-port flag is ignored for any servers which have a
 source address specified but the port may be specified directly as
 part of the source address. Forcing queries to an interface is not
 implemented on all platforms supported by dnsmasq.
+
+Upstream servers may be specified with a hostname rather than an IP address.
+In this case, dnsmasq will try to use the system resolver to get the IP address
+of a server during startup. If name resolution fails, starting dnsmasq fails, too.
+If the system's configuration is such that the system resolver sends DNS queries
+through the dnsmasq instance which is starting up then this will time-out and fail.
 .TP
-.B --rev-server=<ip-address>[/<prefix-len>][,<ipaddr>][#<port>][@<interface>][@<source-ip>[#<port>]]
+.B --rev-server=<ip-address>[/<prefix-len>][,<server>][#<port>][@<interface>][@<source-ip>[#<port>]]
 This is functionally the same as 
 .B --server, 
 but provides some syntactic sugar to make specifying address-to-name queries easier. For example
@@ -796,6 +821,19 @@ Set the size of dnsmasq's cache. The default is 150 names. Setting the cache siz
 Disable negative caching. Negative caching allows dnsmasq to remember
 "no such domain" answers from upstream nameservers and answer
 identical queries without forwarding them again. 
+.TP
+.B --no-round-robin
+Dnsmasq normally permutes the order of A or AAAA records for the same
+name on successive queries, for load-balancing. This turns off that
+behaviour, so that the records are always returned in the order
+that they are received from upstream.
+.TP
+.B --use-stale-cache[=<max TTL excess in s>]
+When set, if a DNS name exists in the cache, but its time-to-live has expired, dnsmasq will return the data anyway. (It attempts to refresh the
+data with an upstream query after returning the stale data.) This can improve speed and reliability. It comes at the expense
+of sometimes returning out-of-date data and less efficient cache utilisation, since old data cannot be flushed when its TTL expires, so the cache becomes
+mostly least-recently-used. To mitigate issues caused by massively outdated DNS replies, the maximum overaging of cached records can be specified in seconds
+(defaulting to not serve anything older than one day). Setting the TTL excess time to zero will serve stale cache data regardless how long it has expired.
 .TP
 .B \-0, --dns-forward-max=<queries>
 Set the maximum number of concurrent DNS queries. The default value is
@@ -1129,7 +1167,8 @@ given in a
 .B --dhcp-host
 option, but aliases are possible by using CNAMEs. (See 
 .B --cname
-).
+). Note that /etc/hosts is NOT used when the DNS server side of dnsmasq
+is disabled by setting the DNS server port to zero.
 
 More than one
 .B --dhcp-host
@@ -2176,6 +2215,20 @@ exit 0
 
 and /share/ads-domains.gz containing a compressed
 list of ad server domains will save disk space with large ad-server blocklists.
+.TP
+.B --no-ident
+Do not respond to class CHAOS and type TXT in domain bind queries.
+
+Without this option being set, the cache statistics are also available in the
+DNS as answers to queries of class CHAOS and type TXT in domain bind. The domain
+names are cachesize.bind, insertions.bind, evictions.bind, misses.bind,
+hits.bind, auth.bind and servers.bind unless disabled at compile-time. An
+example command to query this, using the
+.B dig
+utility would be
+
+dig +short chaos txt cachesize.bind
+
 .SH CONFIG FILE
 At startup, dnsmasq reads
 .I /etc/dnsmasq.conf,
@@ -2225,15 +2278,6 @@ resulted in an error. In
 mode or when full logging is enabled (\fB--log-queries\fP), a complete dump of the
 contents of the cache is made. 
 
-The cache statistics are also available in the DNS as answers to 
-queries of class CHAOS and type TXT in domain bind. The domain names are cachesize.bind, insertions.bind, evictions.bind, 
-misses.bind, hits.bind, auth.bind and servers.bind. An example command to query this, using the 
-.B dig
-utility would be
-
-dig +short chaos txt cachesize.bind
-
-.PP 
 When it receives SIGUSR2 and it is logging direct to a file (see
 .B --log-facility
 ) 
