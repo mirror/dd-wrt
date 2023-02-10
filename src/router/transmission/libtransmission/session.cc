@@ -500,7 +500,7 @@ bool tr_sessionLoadSettings(tr_variant* dict, char const* config_dir, char const
     auto success = bool{};
     auto filename = tr_pathbuf{};
     get_settings_filename(filename, config_dir, app_name);
-    if (tr_sys_path_exists(filename))
+    if (!tr_sys_path_exists(filename))
     {
         success = true;
     }
