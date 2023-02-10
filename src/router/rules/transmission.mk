@@ -8,7 +8,7 @@ TRANSMISSION_CMAKE_OPTIONS=-DOPENSSL_CRYPTO_LIBRARY=$(TOP)/openssl/libcrypto.so 
 
 TRANSMISSION_STAGING_DIR=$(TOP)/_staging/usr
 TRANSMISSION_EXTRA_CFLAGS=$(COPTS) $(MIPS16_OPT) -I$(TOP) -I $(TOP)/openssl/include -L $(TOP)/openssl -lcrypto -DNEED_PRINTF
-TRANSMISSION_EXTRA_LDFLAGS=-L$(TOP)/openssl -lcrypto -lssl -L$(TOP)/ncurses/lib -L$(TOP)/zlib -lz
+TRANSMISSION_EXTRA_LDFLAGS=-L$(TOP)/openssl -lcrypto -lssl -L$(TOP)/ncurses/lib -L$(TOP)/zlib -lz -latomic
 
 
 transmission: libevent curl zlib
