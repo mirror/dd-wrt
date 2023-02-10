@@ -88,15 +88,16 @@ static struct config_val config[] = {
 	{ "ratio-limit", "2", 0, 0 },
 	{ "ratio-limit-enabled", "false", 0, 0 },
 	{ "rename-partial-files", "true", 0, 0 },
+	{ "rpc-authentication-required", "true", 0, 0 },
 	{ "rpc-bind-address", "0.0.0.0", 0, 0 },
 	{ "rpc-enabled", "true", 0, 0 },
 	{ "rpc-host-whitelist", "", 0, 0 },
 	{ "rpc-host-whitelist-enabled", "true", 0, 0 },
 	{ "rpc-password", "{572778e48a0d0f5104d970ed9fc69f6f98f03fd6ozr1fmao", 0, 0 },
 	{ "rpc-port", "9091", 0, 0 },
+	{ "rpc-socket-mode", "0750", 0, 0 },	
 	{ "rpc-url", "/transmission/", 0, 0 },
 	{ "rpc-username", "transmission", 0, 0 },
-	{ "rpc-authentication-required", "true", 0, 0 },
 	{ "rpc-whitelist", "127.0.0.1", 0, 0 },
 	{ "rpc-whitelist-enabled", "true", 0, 0 },
 	{ "scrape-paused-torrents-enabled", "true", 0, 0 },
@@ -109,8 +110,10 @@ static struct config_val config[] = {
 	{ "speed-limit-up", "100", 0, 0 },
 	{ "speed-limit-up-enabled", "false", 0, 0 },
 	{ "start-added-torrents", "true", 0, 0 },
+	{ "tcp-enabled", "true", 0, 0 },
+	{ "torrent-added-verify-mode", "fast", 0, 0 },
 	{ "trash-original-torrent-files", "false", 0, 0 },
-	{ "umask", "18", 0, 0 },
+	{ "umask", "022", 0, 0 },
 	{ "upload-limit", "100", 0, 0 },
 	{ "upload-limit-enabled", "0", 0, 0 },
 	{ "upload-slots-per-torrent", "14", 0, 0 },
@@ -124,6 +127,8 @@ static int isnum(char *str)
 	int len = strlen(str);
 	int i;
 	if (!len)
+		return 0;
+	if (str[0] == '0')
 		return 0;
 	for (i = 0; i < len; i++) {
 		if (!isdigit(str[i]))
