@@ -38,12 +38,12 @@ static void handle_procdeps(void)
 	int state = 1;
 	if (deps_func) {
 		deps = deps_func();
-		dd_debug(DEBUG_SERVICE, "%s_deps exists, check nvram params %s\n", functiontable[function], deps);
+		dd_debug(DEBUG_SERVICE, "%s_deps exists, check nvram params %s\n", functiontable[function].name, deps);
 		state = nvram_states(deps);
 	}
 
 	if (proc_func && state == 0) {
-		dd_debug(DEBUG_SERVICE, "%s_proc exists, check process\n", functiontable[function]);
+		dd_debug(DEBUG_SERVICE, "%s_proc exists, check process\n", functiontable[function].name);
 		char *proc = proc_func();
 		int pid = pidof(proc);
 		if (pid == -1) {
