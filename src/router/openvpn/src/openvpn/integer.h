@@ -5,7 +5,7 @@
  *             packet encryption, packet authentication, and
  *             packet compression.
  *
- *  Copyright (C) 2002-2023 OpenVPN Inc <sales@openvpn.net>
+ *  Copyright (C) 2002-2022 OpenVPN Inc <sales@openvpn.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License version 2
@@ -39,31 +39,6 @@
 /*
  * min/max functions
  */
-static inline unsigned int
-max_uint(unsigned int x, unsigned int y)
-{
-    if (x > y)
-    {
-        return x;
-    }
-    else
-    {
-        return y;
-    }
-}
-
-static inline unsigned int
-min_uint(unsigned int x, unsigned int y)
-{
-    if (x < y)
-    {
-        return x;
-    }
-    else
-    {
-        return y;
-    }
-}
 
 static inline int
 max_int(int x, int y)
@@ -183,15 +158,6 @@ index_verify(int index, int size, const char *file, int line)
             line);
     }
     return index;
-}
-
-/**
- * Rounds down num to the nearest multiple of multiple
- */
-static inline unsigned int
-round_down_uint(unsigned int num, unsigned int multiple)
-{
-    return (num / multiple) * multiple;
 }
 
 #endif /* ifndef INTEGER_H */

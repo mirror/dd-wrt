@@ -5,7 +5,7 @@
  *             packet encryption, packet authentication, and
  *             packet compression.
  *
- *  Copyright (C) 2002-2023 OpenVPN Inc <sales@openvpn.net>
+ *  Copyright (C) 2002-2022 OpenVPN Inc <sales@openvpn.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License version 2
@@ -27,6 +27,8 @@
 /*
  * Handle both multicast and broadcast functions.
  */
+
+#if P2MP
 
 /* define this to enable special test mode */
 /*#define MBUF_TEST*/
@@ -109,4 +111,5 @@ mbuf_peek(struct mbuf_set *ms)
     }
 }
 
+#endif /* if P2MP */
 #endif /* ifndef MBUF_H */
