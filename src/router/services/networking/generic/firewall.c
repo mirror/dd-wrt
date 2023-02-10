@@ -2617,7 +2617,8 @@ static void filter_forward(char *wanface, char *lanface, char *lan_cclass, int d
 	/*
 	 * Drop the wrong state, INVALID, packets 
 	 */
-	save2file_A_forward("-m state --state INVALID -j %s", log_drop);
+	//save2file_A_forward("-m state --state INVALID -j %s", log_drop);
+	save2file_A_forward("! -s %s -o %s -p tcp -m state --state INVALID -j %s", nvram_safe_get("wan_ipaddr"), wanface, log_drop);
 
 	save2file_A_forward("-j upnp");
 	if (nvram_matchi("dtag_vlan8", 1) && nvram_matchi("wan_vdsl", 1)) {
