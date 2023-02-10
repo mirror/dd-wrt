@@ -5,7 +5,7 @@
  *             packet encryption, packet authentication, and
  *             packet compression.
  *
- *  Copyright (C) 2002-2023 OpenVPN Inc <sales@openvpn.net>
+ *  Copyright (C) 2002-2022 OpenVPN Inc <sales@openvpn.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License version 2
@@ -184,7 +184,10 @@ buf_assign(struct buffer *dest, const struct buffer *src)
 void
 free_buf(struct buffer *buf)
 {
-    free(buf->data);
+    if (buf->data)
+    {
+        free(buf->data);
+    }
     CLEAR(*buf);
 }
 
@@ -273,7 +276,7 @@ buf_puts(struct buffer *buf, const char *str)
     int cap = buf_forward_capacity(buf);
     if (cap > 0)
     {
-        strncpynt((char *)ptr, str, cap);
+        strncpynt((char *)ptr,str, cap);
         *(buf->data + buf->capacity - 1) = 0; /* windows vsnprintf needs this */
         buf->len += (int) strlen((char *)ptr);
         ret = true;
@@ -409,39 +412,6 @@ gc_malloc(size_t size, bool clear, struct gc_arena *a)
     if (clear)
 #endif
     memset(ret, 0, size);
-    return ret;
-}
-
-void *
-gc_realloc(void *ptr, size_t size, struct gc_arena *a)
-{
-    void *ret = realloc(ptr, size);
-    check_malloc_return(ret);
-    if (a)
-    {
-        if (ptr && ptr != ret)
-        {
-            /* find the old entry and modify it if realloc changed
-             * the pointer */
-            struct gc_entry_special *e = NULL;
-            for (e = a->list_special; e != NULL; e = e->next)
-            {
-                if (e->addr == ptr)
-                {
-                    break;
-                }
-            }
-            ASSERT(e);
-            ASSERT(e->addr == ptr);
-            e->addr = ret;
-        }
-        else if (!ptr)
-        {
-            /* sets e->addr to newptr */
-            gc_addspecial(ret, free, a);
-        }
-    }
-
     return ret;
 }
 
@@ -671,7 +641,7 @@ rm_trailing_chars(char *str, const char *what_to_delete)
     bool modified;
     do
     {
-        const size_t len = strlen(str);
+        const int len = strlen(str);
         modified = false;
         if (len > 0)
         {
@@ -697,7 +667,7 @@ string_alloc(const char *str, struct gc_arena *gc)
 {
     if (str)
     {
-        const size_t n = strlen(str) + 1;
+        const int n = strlen(str) + 1;
         char *ret;
 
         if (gc)
@@ -823,7 +793,7 @@ string_alloc_buf(const char *str, struct gc_arena *gc)
 bool
 buf_string_match_head_str(const struct buffer *src, const char *match)
 {
-    const size_t size = strlen(match);
+    const int size = strlen(match);
     if (size < 0 || size > src->len)
     {
         return false;
@@ -836,7 +806,7 @@ buf_string_compare_advance(struct buffer *src, const char *match)
 {
     if (buf_string_match_head_str(src, match))
     {
-        buf_advance(src, (int)strlen(match));
+        buf_advance(src, strlen(match));
         return true;
     }
     else
@@ -1204,10 +1174,11 @@ valign4(const struct buffer *buf, const char *file, const int line)
  * struct buffer_list
  */
 struct buffer_list *
-buffer_list_new(void)
+buffer_list_new(const int max_size)
 {
     struct buffer_list *ret;
     ALLOC_OBJ_CLEAR(ret, struct buffer_list);
+    ret->max_size = max_size;
     ret->size = 0;
     return ret;
 }
@@ -1252,7 +1223,7 @@ buffer_list_push(struct buffer_list *ol, const char *str)
         struct buffer_entry *e = buffer_list_push_data(ol, str, len+1);
         if (e)
         {
-            e->buf.len = (int)len; /* Don't count trailing '\0' as part of length */
+            e->buf.len = len; /* Don't count trailing '\0' as part of length */
         }
     }
 }
@@ -1261,7 +1232,7 @@ struct buffer_entry *
 buffer_list_push_data(struct buffer_list *ol, const void *data, size_t size)
 {
     struct buffer_entry *e = NULL;
-    if (data)
+    if (data && (!ol->max_size || ol->size < ol->max_size))
     {
         ALLOC_OBJ_CLEAR(e, struct buffer_entry);
 
@@ -1301,7 +1272,7 @@ void
 buffer_list_aggregate_separator(struct buffer_list *bl, const size_t max_len,
                                 const char *sep)
 {
-    const size_t sep_len = strlen(sep);
+    const int sep_len = strlen(sep);
     struct buffer_entry *more = bl->head;
     size_t size = 0;
     int count = 0;
@@ -1391,7 +1362,7 @@ buffer_list_file(const char *fn, int max_line_len)
         char *line = (char *) malloc(max_line_len);
         if (line)
         {
-            bl = buffer_list_new();
+            bl = buffer_list_new(0);
             while (fgets(line, max_line_len, fp) != NULL)
             {
                 buffer_list_push(bl, line);
@@ -1408,7 +1379,7 @@ buffer_read_from_file(const char *filename, struct gc_arena *gc)
 {
     struct buffer ret = { 0 };
 
-    platform_stat_t file_stat = { 0 };
+    platform_stat_t file_stat = {0};
     if (platform_stat(filename, &file_stat) < 0)
     {
         return ret;
@@ -1422,13 +1393,13 @@ buffer_read_from_file(const char *filename, struct gc_arena *gc)
 
     const size_t size = file_stat.st_size;
     ret = alloc_buf_gc(size + 1, gc); /* space for trailing \0 */
-    size_t read_size = fread(BPTR(&ret), 1, size, fp);
-    if (read_size == 0)
+    ssize_t read_size = fread(BPTR(&ret), 1, size, fp);
+    if (read_size < 0)
     {
         free_buf_gc(&ret, gc);
         goto cleanup;
     }
-    ASSERT(buf_inc_len(&ret, (int)read_size));
+    ASSERT(buf_inc_len(&ret, read_size));
     buf_null_terminate(&ret);
 
 cleanup:

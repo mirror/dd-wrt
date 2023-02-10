@@ -5,7 +5,7 @@
  *             packet encryption, packet authentication, and
  *             packet compression.
  *
- *  Copyright (C) 2002-2023 OpenVPN Inc <sales@openvpn.net>
+ *  Copyright (C) 2002-2022 OpenVPN Inc <sales@openvpn.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License version 2
@@ -39,7 +39,6 @@
 #include "mtcp.h"
 #include "perf.h"
 #include "vlan.h"
-#include "reflect_filter.h"
 
 #define MULTI_PREFIX_MAX_LENGTH 256
 
@@ -99,9 +98,7 @@ struct client_connect_defer_state
  * server-mode.
  */
 struct multi_instance {
-    struct schedule_entry se;  /* this must be the first element of the structure,
-                                * We cast between this and schedule_entry so the
-                                * beginning of the struct must be identical */
+    struct schedule_entry se;  /* this must be the first element of the structure */
     struct gc_arena gc;
     bool halt;
     int refcount;
@@ -126,7 +123,7 @@ struct multi_instance {
 
     bool did_real_hash;
     bool did_iter;
-#ifdef ENABLE_MANAGEMENT
+#ifdef MANAGEMENT_DEF_AUTH
     bool did_cid_hash;
     struct buffer_list *cc_config;
 #endif
@@ -153,6 +150,14 @@ struct multi_instance {
  * server-mode.
  */
 struct multi_context {
+#define MC_UNDEF                      0
+#define MC_SINGLE_THREADED            (1<<0)
+#define MC_MULTI_THREADED_MASTER      (1<<1)
+#define MC_MULTI_THREADED_WORKER      (1<<2)
+#define MC_MULTI_THREADED_SCHEDULER   (1<<3)
+#define MC_WORK_THREAD                (MC_MULTI_THREADED_WORKER|MC_MULTI_THREADED_SCHEDULER)
+    int thread_mode;
+
     struct multi_instance **instances;  /**< Array of multi_instances. An instance can be
                                          * accessed using peer-id as an index. */
 
@@ -171,7 +176,6 @@ struct multi_context {
                                  *   as external transport. */
     struct ifconfig_pool *ifconfig_pool;
     struct frequency_limit *new_connection_limiter;
-    struct initial_packet_rate_limit *initial_rate_limiter;
     struct mroute_helper *route_helper;
     struct multi_reap *reaper;
     struct mroute_addr local;
@@ -181,7 +185,7 @@ struct multi_context {
     int status_file_version;
     int n_clients; /* current number of authenticated clients */
 
-#ifdef ENABLE_MANAGEMENT
+#ifdef MANAGEMENT_DEF_AUTH
     struct hash *cid_hash;
     unsigned long cid_counter;
 #endif
@@ -194,9 +198,6 @@ struct multi_context {
 
     struct context top;         /**< Storage structure for process-wide
                                  *   configuration. */
-
-    struct buffer hmac_reply;
-    struct link_socket_actual *hmac_reply_dest;
 
     /*
      * Timer object for stale route check
@@ -260,11 +261,11 @@ const char *multi_instance_string(const struct multi_instance *mi, bool null, st
  * Called by mtcp.c, mudp.c, or other (to be written) protocol drivers
  */
 
-void multi_init(struct multi_context *m, struct context *t, bool tcp_mode);
+void multi_init(struct multi_context *m, struct context *t, bool tcp_mode, int thread_mode);
 
 void multi_uninit(struct multi_context *m);
 
-void multi_top_init(struct multi_context *m, struct context *top);
+void multi_top_init(struct multi_context *m, const struct context *top);
 
 void multi_top_free(struct multi_context *m);
 
@@ -314,16 +315,6 @@ void multi_process_float(struct multi_context *m, struct multi_instance *mi);
  */
 bool multi_process_post(struct multi_context *m, struct multi_instance *mi, const unsigned int flags);
 
-/**
- * Process an incoming DCO message (from kernel space).
- *
- * @param m            - The single \c multi_context structur.e
- *
- * @return
- *  - True, if the message was received correctly.
- *  - False, if there was an error while reading the message.
- */
-bool multi_process_incoming_dco(struct multi_context *m);
 
 /**************************************************************************/
 /**
@@ -693,15 +684,5 @@ multi_set_pending(struct multi_context *m, struct multi_instance *mi)
 {
     m->pending = mi;
 }
-/**
- * Assigns a peer-id to a a client and adds the instance to the
- * the instances array of the \c multi_context structure.
- *
- * @param m            - The single \c multi_context structure.
- * @param mi           - The \c multi_instance of the VPN tunnel to be
- *                       postprocessed.
- */
-void multi_assign_peer_id(struct multi_context *m, struct multi_instance *mi);
-
 
 #endif /* MULTI_H */

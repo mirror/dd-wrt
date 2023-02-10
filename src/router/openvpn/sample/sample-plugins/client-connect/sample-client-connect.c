@@ -5,7 +5,7 @@
  *             packet encryption, packet authentication, and
  *             packet compression.
  *
- *  Copyright (C) 2002-2023 OpenVPN Inc <sales@openvpn.net>
+ *  Copyright (C) 2002-2022 OpenVPN Inc <sales@openvpn.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License version 2
@@ -173,7 +173,10 @@ openvpn_plugin_open_v3(const int v3structver,
     return OPENVPN_PLUGIN_FUNC_SUCCESS;
 
 error:
-    free(context);
+    if (context)
+    {
+        free(context);
+    }
     return OPENVPN_PLUGIN_FUNC_ERROR;
 }
 
@@ -210,7 +213,7 @@ write_cc_options_file(const char *name, const char **envp)
         return OPENVPN_PLUGIN_FUNC_SUCCESS;
     }
 
-    FILE *fp = fopen(name, "w");
+    FILE *fp = fopen(name,"w");
     if (!fp)
     {
         plugin_log(PLOG_ERR, MODULE, "fopen('%s') failed", name);
