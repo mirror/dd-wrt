@@ -1105,16 +1105,22 @@ int main(int argc, char **argv)
 #else
 
 	lbb_prepare("busybox" IF_FEATURE_INDIVIDUAL(, argv));
+	int sub = 0;
 # if !ENABLE_BUSYBOX
-	if (argv[1] && is_prefixed_with(bb_basename(argv[0]), "busybox"))
+	if (argv[1] && is_prefixed_with(bb_basename(argv[0]), "busybox")) {
+		fprintf(stderr, "increment argv\n");
 		argv++;
+		sub++;
+	}
 # endif
 	applet_name = argv[0];
 	if (applet_name[0] == '-')
 		applet_name++;
 	applet_name = bb_basename(applet_name);
-	if (!strcmp(applet_name, "service"))
+	if (!strcmp(applet_name, "service")) {
+	    argc-=sub;
 	    return services_main(argc, argv);
+	}
 
 	/* If we are a result of execv("/proc/self/exe"), fix ugly comm of "exe" */
 	if (ENABLE_FEATURE_SH_STANDALONE
