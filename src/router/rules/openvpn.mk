@@ -32,6 +32,7 @@ CONFIGURE_ARGS_OVPN += \
 	--enable-password-save \
 	--enable-management \
 	--enable-lzo \
+	--disable-lz4 \
 	--enable-fragment \
 	--enable-server \
 	--enable-multihome \
@@ -60,6 +61,7 @@ CONFIGURE_ARGS_WOLFSSL += \
 	--enable-password-save \
 	--enable-management \
 	--enable-lzo \
+	--disable-lz4 \
 	--enable-fragment \
 	--enable-server \
 	--enable-multihome \
@@ -101,7 +103,7 @@ openvpn-conf: openssl wolfssl
 	mkdir -p openvpn/openssl
 	mkdir -p openvpn/wolfssl
 	-cd $(OVPN)/openssl && ../configure $(CONFIGURE_ARGS_OVPN)
-	cd $(OVPN)/wolfssl && ../configure $(CONFIGURE_ARGS_WOLFSSL)
+	-cd $(OVPN)/wolfssl && ../configure $(CONFIGURE_ARGS_WOLFSSL)
 
 
 openvpn-configure: lzo openvpn-conf-prep openvpn-conf
