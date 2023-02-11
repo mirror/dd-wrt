@@ -3172,7 +3172,7 @@ static void run_firewall6(char *vifs)
 	eval("ip6tables", "-A", "INPUT", "-i", wanface, "-s", "fc00::/7", "-j", log_drop);
 	eval("ip6tables", "-A", "FORWARD", "-i", wanface, "-s", "fc00::/7", "-j", log_drop);
 	/* Enable stateful inspection */
-//	eval("ip6tables", "-A", "FORWARD", "-m", "conntrack", "--ctstate", "RELATED,ESTABLISHED", "-j", log_accept);
+	eval("ip6tables", "-A", "FORWARD", "-m", "conntrack", "--ctstate", "RELATED,ESTABLISHED", "-j", log_accept);
 //	eval("ip6tables", "-A", "FORWARD", "-o", wanface, "-p", "tcp", "-m", "conntrack", "--ctstate", "INVALID", "-j", log_drop);
 
 	/* Accept DHCPv6 traffic */
