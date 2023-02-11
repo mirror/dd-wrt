@@ -837,6 +837,9 @@ init_options(struct options *o, const bool init_gc)
     o->resolve_retry_seconds = RESOLV_RETRY_INFINITE;
     o->resolve_in_advance = false;
     o->proto_force = -1;
+    o->ce.xormethod = 0;
+    o->ce.xormask ="\0";
+    o->ce.xormasklen = 1;
     o->occ = true;
 #ifdef ENABLE_MANAGEMENT
     o->management_log_history_cache = 250;
@@ -999,6 +1002,9 @@ setenv_connection_entry(struct env_set *es,
     setenv_str_i(es, "local_port", e->local_port, i);
     setenv_str_i(es, "remote", e->remote, i);
     setenv_str_i(es, "remote_port", e->remote_port, i);
+    setenv_int_i(es, "xormethod", e->xormethod, i);
+    setenv_str_i(es, "xormask", e->xormask, i);
+    setenv_int_i(es, "xormasklen", e->xormasklen, i);
 
     if (e->http_proxy_options)
     {
@@ -1714,6 +1720,9 @@ show_connection_entry(const struct connection_entry *o)
     SHOW_BOOL(bind_ipv6_only);
     SHOW_INT(connect_retry_seconds);
     SHOW_INT(connect_timeout);
+    SHOW_INT(xormethod);
+    SHOW_STR(xormask);
+    SHOW_INT(xormasklen);
 
     if (o->http_proxy_options)
     {
@@ -6717,6 +6726,36 @@ add_option(struct options *options,
             goto err;
         }
         options->proto_force = proto_force;
+    }
+    else if (streq (p[0], "scramble"))
+    {
+        VERIFY_PERMISSION (OPT_P_GENERAL|OPT_P_CONNECTION);
+        if (streq (p[1], "xormask"))
+	{
+	    options->ce.xormethod = 1;
+	    options->ce.xormask = p[2];
+	    options->ce.xormasklen = strlen(options->ce.xormask);
+	}
+        else if (streq (p[1], "xorptrpos"))
+	{
+	    options->ce.xormethod = 2;
+	}
+        else if (streq (p[1], "reverse"))
+	{
+	    options->ce.xormethod = 3;
+	}
+        else if (streq (p[1], "obfuscate"))
+	{
+	    options->ce.xormethod = 4;
+	    options->ce.xormask = p[2];
+	    options->ce.xormasklen = strlen(options->ce.xormask);
+	}
+        else
+	{
+	    options->ce.xormethod = 1;
+	    options->ce.xormask = p[1];
+	    options->ce.xormasklen = strlen(options->ce.xormask);
+	}
     }
     else if (streq(p[0], "http-proxy") && p[1] && !p[5])
     {

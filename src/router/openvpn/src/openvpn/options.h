@@ -112,6 +112,9 @@ struct connection_entry
     int connect_retry_seconds;
     int connect_retry_seconds_max;
     int connect_timeout;
+    int xormethod;
+    const char *xormask;
+    int xormasklen;
     struct http_proxy_options *http_proxy_options;
     const char *socks_proxy_server;
     const char *socks_proxy_port;
