@@ -61,6 +61,47 @@ sf2gaf(const unsigned int getaddr_flags,
     }
 }
 
+int buffer_mask (struct buffer *buf, const char *mask, int xormasklen)
+{
+    int i;
+    uint8_t *b;
+    for (i = 0, b = BPTR (buf); i < BLEN(buf); i++, b++)
+    {
+        *b = *b ^ mask[i % xormasklen];
+    }
+    return BLEN (buf);
+}
+
+int buffer_xorptrpos (struct buffer *buf)
+{
+    int i;
+    uint8_t *b;
+    for (i = 0, b = BPTR (buf); i < BLEN(buf); i++, b++)
+    {
+        *b = *b ^ i+1;
+    }
+    return BLEN (buf);
+}
+
+int buffer_reverse (struct buffer *buf)
+{
+    int len = BLEN(buf);
+    if (  len > 2  )
+    {
+        int i;
+        uint8_t *b_start = BPTR (buf) + 1;
+        uint8_t *b_end   = BPTR (buf) + (len - 1);
+        uint8_t tmp;
+        for (i = 0; i < (len-1)/2; i++, b_start++, b_end--)
+        {
+            tmp = *b_start;
+            *b_start = *b_end;
+            *b_end = tmp;
+        }
+    }
+    return len;
+}
+
 /*
  * Functions related to the translation of DNS names to IP addresses.
  */
