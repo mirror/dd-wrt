@@ -87,7 +87,9 @@ ifeq ($(CONFIG_MMS344),y)
 endif
 endif
 ifeq ($(CONFIG_NOMESSAGE),y)
+ifneq ($(CONFIG_ATH10K),y)
   BUILDFLAGS += -DCONFIG_NOPRINTK
+endif
 endif
 ifeq ($(ARCHITECTURE),ap83)
   BUILDFLAGS += -DCONFIG_ATHEROS_AR71XX
