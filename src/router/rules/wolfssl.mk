@@ -9,6 +9,8 @@ wolfssl-configure:
 	cd wolfssl/minimal && ../configure --prefix=/usr --libdir=/usr/lib --host=$(ARCH)-linux --enable-opensslextra --disable-shared --enable-fastmath --enable-static -disable-errorstrings --disable-oldtls --disable-sha --enable-lowresource --disable-md5 --disable-rc4 --disable-poly1305 --disable-chacha --enable-ecc --disable-sslv3 --disable-tls13 --disable-des3 --enable-md4 --enable-stunnel --enable-session-ticket --enable-cmac CFLAGS="$(COPTS) $(MIPS16_OPT) $(LTO) -ffunction-sections -fdata-sections -Wl,--gc-sections" \
 	    AR_FLAGS="cru $(LTOPLUGIN)" \
 	    RANLIB="$(ARCH)-linux-ranlib $(LTOPLUGIN)"
+	$(MAKE) -j 4 -C wolfssl/minimal
+	$(MAKE) -j 4 -C wolfssl/standard
 
 wolfssl:
 ifeq ($(CONFIG_WOLFSSLMIN),y)
