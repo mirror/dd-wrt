@@ -18,7 +18,7 @@
 
     \sa wc_FreeDsaKey
 */
-WOLFSSL_API int wc_InitDsaKey(DsaKey* key);
+int wc_InitDsaKey(DsaKey* key);
 
 /*!
     \ingroup DSA
@@ -39,7 +39,7 @@ WOLFSSL_API int wc_InitDsaKey(DsaKey* key);
 
     \sa wc_FreeDsaKey
 */
-WOLFSSL_API void wc_FreeDsaKey(DsaKey* key);
+void wc_FreeDsaKey(DsaKey* key);
 
 /*!
     \ingroup DSA
@@ -96,7 +96,7 @@ WOLFSSL_API void wc_FreeDsaKey(DsaKey* key);
 
     \sa wc_DsaVerify
 */
-WOLFSSL_API int wc_DsaSign(const byte* digest, byte* out,
+int wc_DsaSign(const byte* digest, byte* out,
                            DsaKey* key, WC_RNG* rng);
 
 /*!
@@ -159,7 +159,7 @@ WOLFSSL_API int wc_DsaSign(const byte* digest, byte* out,
 
     \sa wc_DsaSign
 */
-WOLFSSL_API int wc_DsaVerify(const byte* digest, const byte* sig,
+int wc_DsaVerify(const byte* digest, const byte* sig,
                              DsaKey* key, int* answer);
 
 /*!
@@ -199,8 +199,8 @@ WOLFSSL_API int wc_DsaVerify(const byte* digest, const byte* sig,
     \sa wc_InitDsaKey
     \sa wc_DsaPrivateKeyDecode
 */
-WOLFSSL_API int wc_DsaPublicKeyDecode(const byte* input, word32* inOutIdx,
-                                      DsaKey*, word32);
+int wc_DsaPublicKeyDecode(const byte* input, word32* inOutIdx,
+                                      DsaKey* key, word32 inSz);
 
 /*!
     \ingroup DSA
@@ -240,8 +240,8 @@ WOLFSSL_API int wc_DsaPublicKeyDecode(const byte* input, word32* inOutIdx,
     \sa wc_InitDsaKey
     \sa wc_DsaPublicKeyDecode
 */
-WOLFSSL_API int wc_DsaPrivateKeyDecode(const byte* input, word32* inOutIdx,
-                                       DsaKey*, word32);
+int wc_DsaPrivateKeyDecode(const byte* input, word32* inOutIdx,
+                                       DsaKey* key, word32 inSz);
 
 /*!
     \ingroup DSA
@@ -261,7 +261,7 @@ WOLFSSL_API int wc_DsaPrivateKeyDecode(const byte* input, word32* inOutIdx,
     _Example_
     \code
     DsaKey key;
-    WC_WC_RNG rng;
+    WC_RNG rng;
     int derSz;
     int bufferSize = // Sufficient buffer size;
     byte der[bufferSize];
@@ -276,7 +276,7 @@ WOLFSSL_API int wc_DsaPrivateKeyDecode(const byte* input, word32* inOutIdx,
     \sa wc_FreeDsaKey
     \sa wc_MakeDsaKey
 */
-WOLFSSL_API int wc_DsaKeyToDer(DsaKey* key, byte* output, word32 inLen);
+int wc_DsaKeyToDer(DsaKey* key, byte* output, word32 inLen);
 
 /*!
     \ingroup DSA
@@ -293,7 +293,7 @@ WOLFSSL_API int wc_DsaKeyToDer(DsaKey* key, byte* output, word32 inLen);
 
     _Example_
     \code
-    WC_WC_RNG rng;
+    WC_RNG rng;
     DsaKey dsa;
     wc_InitRng(&rng);
     wc_InitDsa(&dsa);
@@ -307,7 +307,7 @@ WOLFSSL_API int wc_DsaKeyToDer(DsaKey* key, byte* output, word32 inLen);
     \sa wc_FreeDsaKey
     \sa wc_DsaSign
 */
-WOLFSSL_API int wc_MakeDsaKey(WC_RNG *rng, DsaKey *dsa);
+int wc_MakeDsaKey(WC_RNG *rng, DsaKey *dsa);
 
 /*!
     \ingroup DSA
@@ -326,7 +326,7 @@ WOLFSSL_API int wc_MakeDsaKey(WC_RNG *rng, DsaKey *dsa);
     _Example_
     \code
     DsaKey key;
-    WC_WC_RNG rng;
+    WC_RNG rng;
     wc_InitDsaKey(&key);
     wc_InitRng(&rng);
     if(wc_MakeDsaParameters(&rng, 1024, &genKey) != 0)
@@ -339,4 +339,4 @@ WOLFSSL_API int wc_MakeDsaKey(WC_RNG *rng, DsaKey *dsa);
     \sa wc_DsaKeyToDer
     \sa wc_InitDsaKey
 */
-WOLFSSL_API int wc_MakeDsaParameters(WC_RNG *rng, int modulus_size, DsaKey *dsa);
+int wc_MakeDsaParameters(WC_RNG *rng, int modulus_size, DsaKey *dsa);

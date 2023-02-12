@@ -1,6 +1,6 @@
 /* sctp-server.c
  *
- * Copyright (C) 2006-2020 wolfSSL Inc.
+ * Copyright (C) 2006-2022 wolfSSL Inc.
  *
  * This file is part of wolfSSL.
  *
@@ -36,8 +36,10 @@
 #include <unistd.h>
 #endif /* WOLFSSL_SCTP */
 
-int main()
+int main(int argc, char **argv)
 {
+    (void)argc;
+    (void)argv;
 #ifdef WOLFSSL_SCTP
     int sd = socket(PF_INET, SOCK_STREAM, IPPROTO_SCTP);
 

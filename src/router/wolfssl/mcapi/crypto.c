@@ -1,6 +1,6 @@
 /* crypto.c
  *
- * Copyright (C) 2006-2020 wolfSSL Inc.
+ * Copyright (C) 2006-2022 wolfSSL Inc.
  *
  * This file is part of wolfSSL.
  *
@@ -24,14 +24,14 @@
 #ifdef HAVE_CONFIG_H
     #include "config.h"
 #endif
+#include <wolfssl/wolfcrypt/settings.h>
+
 #ifdef MICROCHIP_MPLAB_HARMONY
     #include "system_config.h"
     #include "crypto/crypto.h"
 #else
     #include "crypto.h"
 #endif
-
-#include <wolfssl/wolfcrypt/settings.h>
 
 #include <wolfssl/wolfcrypt/md5.h>
 #include <wolfssl/wolfcrypt/sha.h>

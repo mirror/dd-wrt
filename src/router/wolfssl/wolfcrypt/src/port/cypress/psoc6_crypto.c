@@ -1,6 +1,6 @@
 /* psoc6_crypto.c
  *
- * Copyright (C) 2006-2020 wolfSSL Inc.
+ * Copyright (C) 2006-2022 wolfSSL Inc.
  *
  * This file is part of wolfSSL.
  *
@@ -32,7 +32,7 @@
 #endif
 
 #if defined(WOLFSSL_PSOC6_CRYPTO)
-#ifdef WOLFSSL_SP_MATH
+#if defined(WOLFSSL_SP_MATH) || defined(WOLFSSL_SP_MATH_ALL)
     struct sp_int;
     #define MATH_INT_T struct sp_int
 #elif defined(USE_FAST_MATH)
@@ -71,6 +71,13 @@ int wc_InitSha512(wc_Sha512* sha)
     if (res != CY_CRYPTO_SUCCESS)
        return (int)res;
     return (int) Cy_Crypto_Core_Sha_Start(crypto_base, &sha->hash_state);
+}
+
+int wc_InitSha512_ex(wc_Sha512* sha, void *heap, int devid)
+{
+    (void)heap;
+    (void)devid;
+    return wc_InitSha512(sha);
 }
 
 int wc_Sha512Update(wc_Sha512* sha, const byte* in, word32 sz)

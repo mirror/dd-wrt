@@ -1,6 +1,6 @@
 /* user_settings.h
  *
- * Copyright (C) 2006-2020 wolfSSL Inc.
+ * Copyright (C) 2006-2022 wolfSSL Inc.
  *
  * This file is part of wolfSSL.
  *
@@ -18,6 +18,25 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1335, USA
  */
+#undef WOLFSSL_ESPIDF
+#undef WOLFSSL_ESPWROOM32
+#undef WOLFSSL_ESPWROOM32SE
+#undef WOLFSSL_ESPWROOM32
+#undef WOLFSSL_ESP8266
+
+#define WOLFSSL_ESPIDF
+
+/*
+ * choose ONE of these Espressif chips to define:
+ *
+ * WOLFSSL_ESPWROOM32
+ * WOLFSSL_ESPWROOM32SE
+ * WOLFSSL_ESP8266
+ */
+
+#define WOLFSSL_ESPWROOM32
+
+/* #define DEBUG_WOLFSSL_VERBOSE */
 
 #define BENCH_EMBEDDED
 #define USE_CERT_BUFFERS_2048
@@ -71,7 +90,7 @@
     /* Define USE_FAST_MATH and SMALL_STACK                        */
     #define ESP32_USE_RSA_PRIMITIVE
     /* threshold for performance adjustment for hw primitive use   */
-    /* X bits of G^X mod P greater than                            */ 
+    /* X bits of G^X mod P greater than                            */
     #define EPS_RSA_EXPT_XBTIS           36
     /* X and Y of X * Y mod P greater than                         */
     #define ESP_RSA_MULM_BITS            2000
@@ -93,3 +112,6 @@
 /* #define NO_WOLFSSL_ESP32WROOM32_CRYPT_HASH*/
 /* #define NO_WOLFSSL_ESP32WROOM32_CRYPT_AES */
 /* #define NO_WOLFSSL_ESP32WROOM32_CRYPT_RSA_PRI */
+
+/* adjust wait-timeout count if you see timeout in rsa hw acceleration */
+#define ESP_RSA_TIMEOUT_CNT    0x249F00

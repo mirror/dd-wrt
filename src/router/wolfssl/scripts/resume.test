@@ -1,9 +1,14 @@
-#!/bin/sh
+#!/bin/bash
 
 #resume.test
 
 # if we can, isolate the network namespace to eliminate port collisions.
-if [ "${AM_BWRAPPED-}" != "yes" ]; then
+if [[ -n "$NETWORK_UNSHARE_HELPER" ]]; then
+     if [[ -z "$NETWORK_UNSHARE_HELPER_CALLED" ]]; then
+         export NETWORK_UNSHARE_HELPER_CALLED=yes
+         exec "$NETWORK_UNSHARE_HELPER" "$0" "$@" || exit $?
+     fi
+elif [ "${AM_BWRAPPED-}" != "yes" ]; then
     bwrap_path="$(command -v bwrap)"
     if [ -n "$bwrap_path" ]; then
         export AM_BWRAPPED=yes
@@ -29,9 +34,9 @@ ready_file=`pwd`/wolfssl_resume_ready$$
 echo "ready file $ready_file"
 
 remove_ready_file() {
-    if test -e $ready_file; then
+    if test -e "$ready_file"; then
         echo -e "removing existing ready file"
-    rm $ready_file
+    rm "$ready_file"
     fi
 }
 
@@ -50,7 +55,7 @@ do_cleanup() {
 do_trap() {
     echo "got trap"
     do_cleanup
-    exit -1
+    exit 1
 }
 
 do_test() {
@@ -69,16 +74,17 @@ do_test() {
     esac
 
     remove_ready_file
-    ./examples/server/server -r -R $ready_file -p $resume_port &
+    echo "./examples/server/server -r -R \"$ready_file\" -p $resume_port"
+    ./examples/server/server -r -R "$ready_file" -p $resume_port &
     server_pid=$!
 
-    while [ ! -s $ready_file -a "$counter" -lt 20 ]; do
+    while [ ! -s "$ready_file" -a "$counter" -lt 20 ]; do
         echo -e "waiting for ready file..."
         sleep 0.1
         counter=$((counter+ 1))
     done
 
-    if test -e $ready_file; then
+    if test -e "$ready_file"; then
         echo -e "found ready file, starting client..."
     else
         echo -e "NO ready file ending test..."
@@ -90,8 +96,9 @@ do_test() {
     sleep 0.1
 
     # get created port 0 ephemeral port
-    resume_port=`cat $ready_file`
+    resume_port=`cat "$ready_file"`
 
+    echo "./examples/client/client $1 -r -p $resume_port"
     capture_out=$(./examples/client/client $1 -r -p $resume_port 2>&1)
     client_result=$?
 

@@ -1,6 +1,6 @@
 /* rsa.c
  *
- * Copyright (C) 2006-2020 wolfSSL Inc.
+ * Copyright (C) 2006-2022 wolfSSL Inc.
  *
  * This file is part of wolfSSL.
  *
@@ -1644,7 +1644,7 @@ int wc_RsaSSL_Sign(const byte* in, word32 inLen, byte* out, word32 outLen,
 {
     int sz, pSz, qSz;
     IppStatus ret;
-    word32 outSz = outLen;
+    word32 outSz;
 
     IppsMontState* pMont = NULL;
     IppsMontState* qMont = NULL;
@@ -2769,6 +2769,13 @@ int wc_RsaKeyToPublicDer(RsaKey* key, byte* output, word32 inLen)
     return SetRsaPublicKey(output, key, inLen, 1);
 }
 
+/* Returns public DER version of the RSA key. If with_header is 0 then only a
+ * seq + n + e is returned in ASN.1 DER format */
+int wc_RsaKeyToPublicDer_ex(RsaKey* key, byte* output, word32 inLen,
+    int with_header)
+{
+    return SetRsaPublicKey(output, key, inLen, with_header);
+}
 
 #endif /* WOLFSSL_KEY_GEN || OPENSSL_EXTRA */
 

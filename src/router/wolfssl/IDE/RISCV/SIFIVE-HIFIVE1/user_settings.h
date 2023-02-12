@@ -1,6 +1,6 @@
 /* user_settings.h
  *
- * Copyright (C) 2020 wolfSSL Inc.
+ * Copyright (C) 2006-2022 wolfSSL Inc.
  *
  * This file is part of wolfSSL.
  *
@@ -557,12 +557,6 @@ extern "C" {
 
 #undef  NO_OLD_TLS
 #define NO_OLD_TLS
-
-#undef  NO_HC128
-#define NO_HC128
-
-#undef  NO_RABBIT
-#define NO_RABBIT
 
 #undef  NO_PSK
 #define NO_PSK

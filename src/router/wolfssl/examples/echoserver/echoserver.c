@@ -1,6 +1,6 @@
 /* echoserver.c
  *
- * Copyright (C) 2006-2020 wolfSSL Inc.
+ * Copyright (C) 2006-2022 wolfSSL Inc.
  *
  * This file is part of wolfSSL.
  *
@@ -71,11 +71,11 @@ static void SignalReady(void* args, word16 port)
     /* signal ready to tcp_accept */
     func_args* server_args = (func_args*)args;
     tcp_ready* ready = server_args->signal;
-    pthread_mutex_lock(&ready->mutex);
+    PTHREAD_CHECK_RET(pthread_mutex_lock(&ready->mutex));
     ready->ready = 1;
     ready->port = port;
-    pthread_cond_signal(&ready->cond);
-    pthread_mutex_unlock(&ready->mutex);
+    PTHREAD_CHECK_RET(pthread_cond_signal(&ready->cond));
+    PTHREAD_CHECK_RET(pthread_mutex_unlock(&ready->mutex));
 #endif
     (void)args;
     (void)port;
@@ -98,6 +98,9 @@ THREAD_RETURN CYASSL_THREAD echoserver_test(void* args)
     int    argc = ((func_args*)args)->argc;
     char** argv = ((func_args*)args)->argv;
     char   buffer[CYASSL_MAX_ERROR_SZ];
+#ifdef HAVE_TEST_SESSION_TICKET
+    MyTicketCtx myTicketCtx;
+#endif
 
 #ifdef ECHO_OUT
     FILE* fout = stdout;
@@ -145,10 +148,13 @@ THREAD_RETURN CYASSL_THREAD echoserver_test(void* args)
     tcp_listen(&sockfd, &port, useAnyAddr, doDTLS, 0);
 
 #if defined(CYASSL_DTLS)
+    #ifdef WOLFSSL_DTLS13
+    method = wolfDTLSv1_3_server_method();
+    #elif !defined(WOLFSSL_NO_TLS12)
     method  = CyaDTLSv1_2_server_method();
+    #endif
 #elif !defined(NO_TLS)
-    #if (defined(WOLFSSL_TLS13) && defined(WOLFSSL_SNIFFER)) || \
-        defined(HAVE_NTRU)
+    #if defined(WOLFSSL_TLS13) && defined(WOLFSSL_SNIFFER)
     method = CyaTLSv1_2_server_method();
     #else
     method = CyaSSLv23_server_method();
@@ -165,27 +171,17 @@ THREAD_RETURN CYASSL_THREAD echoserver_test(void* args)
     CyaSSL_CTX_set_default_passwd_cb(ctx, PasswordCallBack);
 #endif
 
-#if defined(HAVE_SESSION_TICKET) && defined(WOLFSSL_NO_DEF_TICKET_ENC_CB) && \
-    ((defined(HAVE_CHACHA) && defined(HAVE_POLY1305)) || defined(HAVE_AESGCM))
+#ifdef HAVE_TEST_SESSION_TICKET
     if (TicketInit() != 0)
         err_sys("unable to setup Session Ticket Key context");
     wolfSSL_CTX_set_TicketEncCb(ctx, myTicketEncCb);
+    XMEMSET(&myTicketCtx, 0, sizeof(myTicketCtx));
+    wolfSSL_CTX_set_TicketEncCtx(ctx, &myTicketCtx);
 #endif
 
 #ifndef NO_FILESYSTEM
     if (doPSK == 0) {
-    #if defined(HAVE_NTRU) && defined(WOLFSSL_STATIC_RSA)
-        /* ntru */
-        if (CyaSSL_CTX_use_certificate_file(ctx, ntruCertFile, WOLFSSL_FILETYPE_PEM)
-                != WOLFSSL_SUCCESS)
-            err_sys("can't load ntru cert file, "
-                    "Please run from wolfSSL home dir");
-
-        if (CyaSSL_CTX_use_NTRUPrivateKey_file(ctx, ntruKeyFile)
-                != WOLFSSL_SUCCESS)
-            err_sys("can't load ntru key file, "
-                    "Please run from wolfSSL home dir");
-    #elif defined(HAVE_ECC) && !defined(CYASSL_SNIFFER)
+    #if defined(HAVE_ECC) && !defined(CYASSL_SNIFFER)
         /* ecc */
         if (CyaSSL_CTX_use_certificate_file(ctx, eccCertFile, WOLFSSL_FILETYPE_PEM)
                 != WOLFSSL_SUCCESS)
@@ -249,7 +245,7 @@ THREAD_RETURN CYASSL_THREAD echoserver_test(void* args)
 
 #if defined(CYASSL_SNIFFER)
     /* Only set if not running testsuite */
-    if (XSTRSTR(argv[0], "testsuite") != 0) {
+    if (XSTRSTR(argv[0], "testsuite") == NULL) {
         /* don't use EDH, can't sniff tmp keys */
         CyaSSL_CTX_set_cipher_list(ctx, "AES256-SHA");
     }
@@ -291,9 +287,9 @@ THREAD_RETURN CYASSL_THREAD echoserver_test(void* args)
 #ifdef WOLFSSL_ASYNC_CRYPT
     ret = wolfAsync_DevOpen(&devId);
     if (ret < 0) {
-        printf("Async device open failed\nRunning without async\n");
+        fprintf(stderr, "Async device open failed\nRunning without async\n");
     }
-    wolfSSL_CTX_UseAsync(ctx, devId);
+    wolfSSL_CTX_SetDevId(ctx, devId);
 #endif /* WOLFSSL_ASYNC_CRYPT */
 
     SignalReady(args, port);
@@ -354,9 +350,9 @@ THREAD_RETURN CYASSL_THREAD echoserver_test(void* args)
             }
         } while (err == WC_PENDING_E);
         if (ret != WOLFSSL_SUCCESS) {
-            printf("SSL_accept error = %d, %s\n", err,
+            fprintf(stderr, "SSL_accept error = %d, %s\n", err,
                 CyaSSL_ERR_error_string(err, buffer));
-            printf("SSL_accept failed\n");
+            fprintf(stderr, "SSL_accept failed\n");
             CyaSSL_free(ssl);
             CloseSocket(clientfd);
             continue;
@@ -368,7 +364,7 @@ THREAD_RETURN CYASSL_THREAD echoserver_test(void* args)
 #ifdef HAVE_WRITE_DUP
         write_ssl = wolfSSL_write_dup(ssl);
         if (write_ssl == NULL) {
-            printf("wolfSSL_write_dup failed\n");
+            fprintf(stderr, "wolfSSL_write_dup failed\n");
             CyaSSL_free(ssl);
             CloseSocket(clientfd);
             continue;
@@ -393,7 +389,7 @@ THREAD_RETURN CYASSL_THREAD echoserver_test(void* args)
             } while (err == WC_PENDING_E);
             if (ret <= 0) {
                 if (err != WOLFSSL_ERROR_WANT_READ && err != WOLFSSL_ERROR_ZERO_RETURN){
-                    printf("SSL_read echo error %d, %s!\n", err,
+                    fprintf(stderr, "SSL_read echo error %d, %s!\n", err,
                         CyaSSL_ERR_error_string(err, buffer));
                 }
                 break;
@@ -455,7 +451,7 @@ THREAD_RETURN CYASSL_THREAD echoserver_test(void* args)
                     }
                 } while (err == WC_PENDING_E);
                 if (ret != echoSz) {
-                    printf("SSL_write get error = %d, %s\n", err,
+                    fprintf(stderr, "SSL_write get error = %d, %s\n", err,
                         CyaSSL_ERR_error_string(err, buffer));
                     err_sys("SSL_write get failed");
                 }
@@ -464,7 +460,7 @@ THREAD_RETURN CYASSL_THREAD echoserver_test(void* args)
             command[echoSz] = 0;
 
         #ifdef ECHO_OUT
-            fputs(command, fout);
+            LIBCALL_CHECK_RET(fputs(command, fout));
         #endif
 
             do {
@@ -482,7 +478,7 @@ THREAD_RETURN CYASSL_THREAD echoserver_test(void* args)
             } while (err == WC_PENDING_E);
 
             if (ret != echoSz) {
-                printf("SSL_write echo error = %d, %s\n", err,
+                fprintf(stderr, "SSL_write echo error = %d, %s\n", err,
                         CyaSSL_ERR_error_string(err, buffer));
                 err_sys("SSL_write echo failed");
             }
@@ -520,8 +516,7 @@ THREAD_RETURN CYASSL_THREAD echoserver_test(void* args)
     fdCloseSession(Task_self());
 #endif
 
-#if defined(HAVE_SESSION_TICKET) && defined(WOLFSSL_NO_DEF_TICKET_ENC_CB) && \
-    ((defined(HAVE_CHACHA) && defined(HAVE_POLY1305)) || defined(HAVE_AESGCM))
+#ifdef HAVE_TEST_SESSION_TICKET
     TicketCleanup();
 #endif
 

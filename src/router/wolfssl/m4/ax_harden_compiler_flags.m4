@@ -119,7 +119,6 @@
       AX_APPEND_COMPILE_FLAGS([-Wno-pragmas],,[$ax_append_compile_cflags_extra])
 
       AX_APPEND_COMPILE_FLAGS([-Wall],,[$ax_append_compile_cflags_extra])
-      AX_APPEND_COMPILE_FLAGS([-Wno-strict-aliasing],,[$ax_append_compile_cflags_extra])
       AX_APPEND_COMPILE_FLAGS([-Wextra],,[$ax_append_compile_cflags_extra])
       AX_APPEND_COMPILE_FLAGS([-Wunknown-pragmas],,[$ax_append_compile_cflags_extra])
       AX_APPEND_COMPILE_FLAGS([-Wthis-test-should-fail],,[$ax_append_compile_cflags_extra])
@@ -145,7 +144,7 @@
       AX_APPEND_COMPILE_FLAGS([-Woverride-init],,[$ax_append_compile_cflags_extra])
       AX_APPEND_COMPILE_FLAGS([-Wpointer-arith],,[$ax_append_compile_cflags_extra])
       AX_APPEND_COMPILE_FLAGS([-Wpointer-sign],,[$ax_append_compile_cflags_extra])
-      AX_APPEND_COMPILE_FLAGS([-Wredundant-decls],,[$ax_append_compile_cflags_extra])
+dnl      AX_APPEND_COMPILE_FLAGS([-Wredundant-decls],,[$ax_append_compile_cflags_extra])
       AX_APPEND_COMPILE_FLAGS([-Wshadow],,[$ax_append_compile_cflags_extra])
       AX_APPEND_COMPILE_FLAGS([-Wshorten-64-to-32],,[$ax_append_compile_cflags_extra])
       AX_APPEND_COMPILE_FLAGS([-Wsign-compare],,[$ax_append_compile_cflags_extra])
@@ -188,7 +187,6 @@
         ])
 
       AX_APPEND_COMPILE_FLAGS([-Wall],,[$ax_append_compile_cxxflags_extra])
-      AX_APPEND_COMPILE_FLAGS([-Wno-strict-aliasing],,[$ax_append_compile_cxxflags_extra])
       AX_APPEND_COMPILE_FLAGS([-Wextra],,[$ax_append_compile_cxxflags_extra])
       AX_APPEND_COMPILE_FLAGS([-Wunknown-pragmas],,[$ax_append_compile_cxxflags_extra])
       AX_APPEND_COMPILE_FLAGS([-Wthis-test-should-fail],,[$ax_append_compile_cxxflags_extra])
@@ -208,7 +206,7 @@
       AX_APPEND_COMPILE_FLAGS([-Wnormalized=id],,[$ax_append_compile_cxxflags_extra])
       AX_APPEND_COMPILE_FLAGS([-Woverloaded-virtual],,[$ax_append_compile_cxxflags_extra])
       AX_APPEND_COMPILE_FLAGS([-Wpointer-arith],,[$ax_append_compile_cxxflags_extra])
-      AX_APPEND_COMPILE_FLAGS([-Wredundant-decls],,[$ax_append_compile_cxxflags_extra])
+dnl      AX_APPEND_COMPILE_FLAGS([-Wredundant-decls],,[$ax_append_compile_cxxflags_extra])
       AX_APPEND_COMPILE_FLAGS([-Wshadow],,[$ax_append_compile_cxxflags_extra])
       AX_APPEND_COMPILE_FLAGS([-Wshorten-64-to-32],,[$ax_append_compile_cxxflags_extra])
       AX_APPEND_COMPILE_FLAGS([-Wsign-compare],,[$ax_append_compile_cxxflags_extra])

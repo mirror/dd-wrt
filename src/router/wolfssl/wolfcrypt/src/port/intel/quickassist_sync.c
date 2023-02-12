@@ -1,8 +1,8 @@
 /* quickassist_sync.c
  *
- * Copyright (C) 2006-2020 wolfSSL Inc.
+ * Copyright (C) 2006-2022 wolfSSL Inc.
  *
- * This file is part of wolfSSL. (formerly known as CyaSSL)
+ * This file is part of wolfSSL.
  *
  * wolfSSL is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -16,7 +16,7 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1335, USA
  */
 
 #ifdef HAVE_CONFIG_H
@@ -1781,6 +1781,10 @@ void* wc_CryptoCb_IntelQaRealloc(void *ptr, size_t size, void* heap, int type
 
             /* for non-NUMA, treat as normal REALLOC */
             if (newIsNuma == 0 && ptrIsNuma == 0) {
+                allocNew = 1;
+            }
+            /* confirm input is aligned, otherwise allocate new */
+            else if (((size_t)ptr % WOLF_HEADER_ALIGN) != 0) {
                 allocNew = 1;
             }
             /* if matching NUMA type and size fits, use existing */

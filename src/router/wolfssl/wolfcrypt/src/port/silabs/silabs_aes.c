@@ -1,6 +1,6 @@
 /* silabs_aes.c
  *
- * Copyright (C) 2006-2020 wolfSSL Inc.
+ * Copyright (C) 2006-2022 wolfSSL Inc.
  *
  * This file is part of wolfSSL.
  *
@@ -48,7 +48,7 @@ int wc_AesSetKey(Aes* aes, const byte* userKey, word32 keylen,
         return BUFFER_E;
     }
 
-    XMEMSET(aes, 0, sizeof(aes));
+    XMEMSET(aes, 0, sizeof(*aes));
 
     if (keylen > sizeof(aes->key)) {
         return BAD_FUNC_ARG;

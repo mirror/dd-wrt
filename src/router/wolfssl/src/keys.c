@@ -1,6 +1,6 @@
 /* keys.c
  *
- * Copyright (C) 2006-2020 wolfSSL Inc.
+ * Copyright (C) 2006-2022 wolfSSL Inc.
  *
  * This file is part of wolfSSL.
  *
@@ -38,10 +38,10 @@
     #endif
 #endif
 
-#if defined(WOLFSSL_RENESAS_TSIP_TLS) && \
-    !defined(NO_WOLFSSL_RENESAS_TSIP_TLS_SESSION)
- int tsip_useable(const WOLFSSL *ssl);
+#if defined(WOLFSSL_RENESAS_SCEPROTECT) || defined(WOLFSSL_RENESAS_TSIP_TLS)
+#include <wolfssl/wolfcrypt/port/Renesas/renesas_cmn.h>
 #endif
+
 int SetCipherSpecs(WOLFSSL* ssl)
 {
 #ifndef NO_WOLFSSL_CLIENT
@@ -49,6 +49,7 @@ int SetCipherSpecs(WOLFSSL* ssl)
         /* server side verified before SetCipherSpecs call */
         if (VerifyClientSuite(ssl) != 1) {
             WOLFSSL_MSG("SetCipherSpecs() client has an unusable suite");
+            WOLFSSL_ERROR_VERBOSE(UNSUPPORTED_SUITE);
             return UNSUPPORTED_SUITE;
         }
     }
@@ -306,7 +307,13 @@ int SetCipherSpecs(WOLFSSL* ssl)
         ssl->specs.static_ecdh           = 0;
         ssl->specs.key_size              = DES3_KEY_SIZE;
         ssl->specs.block_size            = DES_BLOCK_SIZE;
+/* DES_IV_SIZE is incorrectly 16 in FIPS v2. It should be 8, same as the
+ * block size. */
+#if defined(HAVE_FIPS) && defined(HAVE_FIPS_VERSION) && (HAVE_FIPS_VERSION == 2)
+        ssl->specs.iv_size               = DES_BLOCK_SIZE;
+#else
         ssl->specs.iv_size               = DES_IV_SIZE;
+#endif
 
         break;
 #endif
@@ -468,7 +475,11 @@ int SetCipherSpecs(WOLFSSL* ssl)
         ssl->specs.static_ecdh           = 0;
         ssl->specs.key_size              = DES3_KEY_SIZE;
         ssl->specs.block_size            = DES_BLOCK_SIZE;
+#if defined(HAVE_FIPS) && defined(HAVE_FIPS_VERSION) && (HAVE_FIPS_VERSION == 2)
+        ssl->specs.iv_size               = DES_BLOCK_SIZE;
+#else
         ssl->specs.iv_size               = DES_IV_SIZE;
+#endif
 
         break;
 #endif
@@ -732,7 +743,11 @@ int SetCipherSpecs(WOLFSSL* ssl)
         ssl->specs.static_ecdh           = 1;
         ssl->specs.key_size              = DES3_KEY_SIZE;
         ssl->specs.block_size            = DES_BLOCK_SIZE;
+#if defined(HAVE_FIPS) && defined(HAVE_FIPS_VERSION) && (HAVE_FIPS_VERSION == 2)
+        ssl->specs.iv_size               = DES_BLOCK_SIZE;
+#else
         ssl->specs.iv_size               = DES_IV_SIZE;
+#endif
 
         break;
 #endif
@@ -766,7 +781,11 @@ int SetCipherSpecs(WOLFSSL* ssl)
         ssl->specs.static_ecdh           = 1;
         ssl->specs.key_size              = DES3_KEY_SIZE;
         ssl->specs.block_size            = DES_BLOCK_SIZE;
+#if defined(HAVE_FIPS) && defined(HAVE_FIPS_VERSION) && (HAVE_FIPS_VERSION == 2)
+        ssl->specs.iv_size               = DES_BLOCK_SIZE;
+#else
         ssl->specs.iv_size               = DES_IV_SIZE;
+#endif
 
         break;
 #endif
@@ -1203,12 +1222,46 @@ int SetCipherSpecs(WOLFSSL* ssl)
             break;
     #endif
 #endif /* WOLFSSL_TLS13 */
+        default:
+            break;
         }
     }
 
+    if (ssl->options.cipherSuite0 == ECDHE_PSK_BYTE) {
+
+    switch (ssl->options.cipherSuite) {
+
+#if defined(HAVE_ECC) || defined(HAVE_CURVE25519) || defined(HAVE_CURVE448)
+#ifdef BUILD_TLS_ECDHE_PSK_WITH_AES_128_GCM_SHA256
+    case TLS_ECDHE_PSK_WITH_AES_128_GCM_SHA256 :
+        ssl->specs.bulk_cipher_algorithm = wolfssl_aes_gcm;
+        ssl->specs.cipher_type           = aead;
+        ssl->specs.mac_algorithm         = sha256_mac;
+        ssl->specs.kea                   = ecdhe_psk_kea;
+        ssl->specs.sig_algo              = anonymous_sa_algo;
+        ssl->specs.hash_size             = WC_SHA256_DIGEST_SIZE;
+        ssl->specs.pad_size              = PAD_SHA;
+        ssl->specs.static_ecdh           = 0;
+        ssl->specs.key_size              = AES_128_KEY_SIZE;
+        ssl->specs.block_size            = AES_BLOCK_SIZE;
+        ssl->specs.iv_size               = AESGCM_IMP_IV_SZ;
+        ssl->specs.aead_mac_size         = AES_GCM_AUTH_SZ;
+
+        ssl->options.usingPSK_cipher     = 1;
+        break;
+#endif
+#endif
+
+    default:
+        break;
+    }
+    }
+
+
     if (ssl->options.cipherSuite0 != ECC_BYTE &&
-            ssl->options.cipherSuite0 != CHACHA_BYTE &&
-            ssl->options.cipherSuite0 != TLS13_BYTE) {   /* normal suites */
+        ssl->options.cipherSuite0 != ECDHE_PSK_BYTE &&
+        ssl->options.cipherSuite0 != CHACHA_BYTE &&
+        ssl->options.cipherSuite0 != TLS13_BYTE) {   /* normal suites */
     switch (ssl->options.cipherSuite) {
 
 #ifdef BUILD_SSL_RSA_WITH_RC4_128_SHA
@@ -1217,23 +1270,6 @@ int SetCipherSpecs(WOLFSSL* ssl)
         ssl->specs.cipher_type           = stream;
         ssl->specs.mac_algorithm         = sha_mac;
         ssl->specs.kea                   = rsa_kea;
-        ssl->specs.sig_algo              = rsa_sa_algo;
-        ssl->specs.hash_size             = WC_SHA_DIGEST_SIZE;
-        ssl->specs.pad_size              = PAD_SHA;
-        ssl->specs.static_ecdh           = 0;
-        ssl->specs.key_size              = RC4_KEY_SIZE;
-        ssl->specs.iv_size               = 0;
-        ssl->specs.block_size            = 0;
-
-        break;
-#endif
-
-#ifdef BUILD_TLS_NTRU_RSA_WITH_RC4_128_SHA
-    case TLS_NTRU_RSA_WITH_RC4_128_SHA :
-        ssl->specs.bulk_cipher_algorithm = wolfssl_rc4;
-        ssl->specs.cipher_type           = stream;
-        ssl->specs.mac_algorithm         = sha_mac;
-        ssl->specs.kea                   = ntru_kea;
         ssl->specs.sig_algo              = rsa_sa_algo;
         ssl->specs.hash_size             = WC_SHA_DIGEST_SIZE;
         ssl->specs.pad_size              = PAD_SHA;
@@ -1274,24 +1310,11 @@ int SetCipherSpecs(WOLFSSL* ssl)
         ssl->specs.static_ecdh           = 0;
         ssl->specs.key_size              = DES3_KEY_SIZE;
         ssl->specs.block_size            = DES_BLOCK_SIZE;
+#if defined(HAVE_FIPS) && defined(HAVE_FIPS_VERSION) && (HAVE_FIPS_VERSION == 2)
+        ssl->specs.iv_size               = DES_BLOCK_SIZE;
+#else
         ssl->specs.iv_size               = DES_IV_SIZE;
-
-        break;
 #endif
-
-#ifdef BUILD_TLS_NTRU_RSA_WITH_3DES_EDE_CBC_SHA
-    case TLS_NTRU_RSA_WITH_3DES_EDE_CBC_SHA :
-        ssl->specs.bulk_cipher_algorithm = wolfssl_triple_des;
-        ssl->specs.cipher_type           = block;
-        ssl->specs.mac_algorithm         = sha_mac;
-        ssl->specs.kea                   = ntru_kea;
-        ssl->specs.sig_algo              = rsa_sa_algo;
-        ssl->specs.hash_size             = WC_SHA_DIGEST_SIZE;
-        ssl->specs.pad_size              = PAD_SHA;
-        ssl->specs.static_ecdh           = 0;
-        ssl->specs.key_size              = DES3_KEY_SIZE;
-        ssl->specs.block_size            = DES_BLOCK_SIZE;
-        ssl->specs.iv_size               = DES_IV_SIZE;
 
         break;
 #endif
@@ -1381,23 +1404,6 @@ int SetCipherSpecs(WOLFSSL* ssl)
         break;
 #endif
 
-#ifdef BUILD_TLS_NTRU_RSA_WITH_AES_128_CBC_SHA
-    case TLS_NTRU_RSA_WITH_AES_128_CBC_SHA :
-        ssl->specs.bulk_cipher_algorithm = wolfssl_aes;
-        ssl->specs.cipher_type           = block;
-        ssl->specs.mac_algorithm         = sha_mac;
-        ssl->specs.kea                   = ntru_kea;
-        ssl->specs.sig_algo              = rsa_sa_algo;
-        ssl->specs.hash_size             = WC_SHA_DIGEST_SIZE;
-        ssl->specs.pad_size              = PAD_SHA;
-        ssl->specs.static_ecdh           = 0;
-        ssl->specs.key_size              = AES_128_KEY_SIZE;
-        ssl->specs.block_size            = AES_BLOCK_SIZE;
-        ssl->specs.iv_size               = AES_IV_SIZE;
-
-        break;
-#endif
-
 #ifdef BUILD_TLS_RSA_WITH_AES_256_CBC_SHA
     case TLS_RSA_WITH_AES_256_CBC_SHA :
         ssl->specs.bulk_cipher_algorithm = wolfssl_aes;
@@ -1423,23 +1429,6 @@ int SetCipherSpecs(WOLFSSL* ssl)
         ssl->specs.kea                   = rsa_kea;
         ssl->specs.sig_algo              = rsa_sa_algo;
         ssl->specs.hash_size             = WC_SHA256_DIGEST_SIZE;
-        ssl->specs.pad_size              = PAD_SHA;
-        ssl->specs.static_ecdh           = 0;
-        ssl->specs.key_size              = AES_256_KEY_SIZE;
-        ssl->specs.block_size            = AES_BLOCK_SIZE;
-        ssl->specs.iv_size               = AES_IV_SIZE;
-
-        break;
-#endif
-
-#ifdef BUILD_TLS_NTRU_RSA_WITH_AES_256_CBC_SHA
-    case TLS_NTRU_RSA_WITH_AES_256_CBC_SHA :
-        ssl->specs.bulk_cipher_algorithm = wolfssl_aes;
-        ssl->specs.cipher_type           = block;
-        ssl->specs.mac_algorithm         = sha_mac;
-        ssl->specs.kea                   = ntru_kea;
-        ssl->specs.sig_algo              = rsa_sa_algo;
-        ssl->specs.hash_size             = WC_SHA_DIGEST_SIZE;
         ssl->specs.pad_size              = PAD_SHA;
         ssl->specs.static_ecdh           = 0;
         ssl->specs.key_size              = AES_256_KEY_SIZE;
@@ -1827,57 +1816,6 @@ int SetCipherSpecs(WOLFSSL* ssl)
         break;
 #endif
 
-#ifdef BUILD_TLS_RSA_WITH_HC_128_MD5
-    case TLS_RSA_WITH_HC_128_MD5 :
-        ssl->specs.bulk_cipher_algorithm = wolfssl_hc128;
-        ssl->specs.cipher_type           = stream;
-        ssl->specs.mac_algorithm         = md5_mac;
-        ssl->specs.kea                   = rsa_kea;
-        ssl->specs.sig_algo              = rsa_sa_algo;
-        ssl->specs.hash_size             = WC_MD5_DIGEST_SIZE;
-        ssl->specs.pad_size              = PAD_MD5;
-        ssl->specs.static_ecdh           = 0;
-        ssl->specs.key_size              = HC_128_KEY_SIZE;
-        ssl->specs.block_size            = 0;
-        ssl->specs.iv_size               = HC_128_IV_SIZE;
-
-        break;
-#endif
-
-#ifdef BUILD_TLS_RSA_WITH_HC_128_SHA
-        case TLS_RSA_WITH_HC_128_SHA :
-            ssl->specs.bulk_cipher_algorithm = wolfssl_hc128;
-            ssl->specs.cipher_type           = stream;
-            ssl->specs.mac_algorithm         = sha_mac;
-            ssl->specs.kea                   = rsa_kea;
-            ssl->specs.sig_algo              = rsa_sa_algo;
-            ssl->specs.hash_size             = WC_SHA_DIGEST_SIZE;
-            ssl->specs.pad_size              = PAD_SHA;
-            ssl->specs.static_ecdh           = 0;
-            ssl->specs.key_size              = HC_128_KEY_SIZE;
-            ssl->specs.block_size            = 0;
-            ssl->specs.iv_size               = HC_128_IV_SIZE;
-
-            break;
-#endif
-
-#ifdef BUILD_TLS_RSA_WITH_RABBIT_SHA
-    case TLS_RSA_WITH_RABBIT_SHA :
-        ssl->specs.bulk_cipher_algorithm = wolfssl_rabbit;
-        ssl->specs.cipher_type           = stream;
-        ssl->specs.mac_algorithm         = sha_mac;
-        ssl->specs.kea                   = rsa_kea;
-        ssl->specs.sig_algo              = rsa_sa_algo;
-        ssl->specs.hash_size             = WC_SHA_DIGEST_SIZE;
-        ssl->specs.pad_size              = PAD_SHA;
-        ssl->specs.static_ecdh           = 0;
-        ssl->specs.key_size              = RABBIT_KEY_SIZE;
-        ssl->specs.block_size            = 0;
-        ssl->specs.iv_size               = RABBIT_IV_SIZE;
-
-        break;
-#endif
-
 #ifdef BUILD_TLS_RSA_WITH_AES_128_GCM_SHA256
     case TLS_RSA_WITH_AES_128_GCM_SHA256 :
         ssl->specs.bulk_cipher_algorithm = wolfssl_aes_gcm;
@@ -2104,23 +2042,6 @@ int SetCipherSpecs(WOLFSSL* ssl)
         break;
 #endif
 
-#ifdef BUILD_SSL_RSA_WITH_IDEA_CBC_SHA
-        case SSL_RSA_WITH_IDEA_CBC_SHA :
-            ssl->specs.bulk_cipher_algorithm = wolfssl_idea;
-            ssl->specs.cipher_type           = block;
-            ssl->specs.mac_algorithm         = sha_mac;
-            ssl->specs.kea                   = rsa_kea;
-            ssl->specs.sig_algo              = rsa_sa_algo;
-            ssl->specs.hash_size             = WC_SHA_DIGEST_SIZE;
-            ssl->specs.pad_size              = PAD_SHA;
-            ssl->specs.static_ecdh           = 0;
-            ssl->specs.key_size              = IDEA_KEY_SIZE;
-            ssl->specs.block_size            = IDEA_BLOCK_SIZE;
-            ssl->specs.iv_size               = IDEA_IV_SIZE;
-
-            break;
-#endif
-
 #ifdef BUILD_WDM_WITH_NULL_SHA256
         case WDM_WITH_NULL_SHA256 :
             ssl->specs.bulk_cipher_algorithm = wolfssl_cipher_null;
@@ -2136,24 +2057,40 @@ int SetCipherSpecs(WOLFSSL* ssl)
 
     default:
         WOLFSSL_MSG("Unsupported cipher suite, SetCipherSpecs");
+        WOLFSSL_ERROR_VERBOSE(UNSUPPORTED_SUITE);
         return UNSUPPORTED_SUITE;
     }  /* switch */
     }  /* if ECC / Normal suites else */
 
     /* set TLS if it hasn't been turned off */
-    if (ssl->version.major == 3 && ssl->version.minor >= 1) {
+    if (ssl->version.major == SSLv3_MAJOR &&
+            ssl->version.minor >= TLSv1_MINOR) {
 #ifndef NO_TLS
         ssl->options.tls = 1;
     #if !defined(WOLFSSL_NO_TLS12) && !defined(WOLFSSL_AEAD_ONLY)
+        #if !defined(WOLFSSL_RENESAS_SCEPROTECT) && \
+            !defined(WOLFSSL_RENESAS_TSIP_TLS)
         ssl->hmac = TLS_hmac;
+        #else
+        ssl->hmac = Renesas_cmn_TLS_hmac;
+        #endif
     #endif
-        if (ssl->version.minor >= 2) {
+        if (ssl->version.minor >= TLSv1_1_MINOR) {
             ssl->options.tls1_1 = 1;
-            if (ssl->version.minor >= 4)
+            if (ssl->version.minor >= TLSv1_3_MINOR)
                 ssl->options.tls1_3 = 1;
         }
 #endif
     }
+
+#ifdef WOLFSSL_DTLS13
+    if (ssl->options.dtls &&
+        ssl->version.major == DTLS_MAJOR &&
+        ssl->version.minor <= DTLSv1_3_MINOR) {
+            ssl->options.tls = 1;
+            ssl->options.tls1_3 = 1;
+    }
+#endif /* WOLFSSL_DTLS13 */
 
 #if defined(HAVE_ENCRYPT_THEN_MAC) && !defined(WOLFSSL_AEAD_ONLY)
     if (IsAtLeastTLSv1_3(ssl->version) || ssl->specs.cipher_type != block)
@@ -2162,8 +2099,18 @@ int SetCipherSpecs(WOLFSSL* ssl)
 
 #if defined(WOLFSSL_DTLS) && !defined(WOLFSSL_AEAD_ONLY)
     if (ssl->options.dtls)
+        #if !defined(WOLFSSL_RENESAS_SCEPROTECT) && \
+            !defined(WOLFSSL_RENESAS_TSIP_TLS)
         ssl->hmac = TLS_hmac;
+        #else
+        ssl->hmac = Renesas_cmn_TLS_hmac;
+        #endif
 #endif
+
+    if (ssl->specs.sig_algo == anonymous_sa_algo) {
+        /* CLIENT/SERVER: No peer authentication to be performed. */
+        ssl->options.peerAuthGood = 1;
+    }
 
     return 0;
 }
@@ -2271,8 +2218,8 @@ static int SetKeys(Ciphers* enc, Ciphers* dec, Keys* keys, CipherSpecs* specs,
 #endif /* BUILD_ARC4 */
 
 
-#if defined(HAVE_CHACHA) && defined(HAVE_POLY1305)
-    /* Check that the max implicit iv size is suffecient */
+#if defined(HAVE_CHACHA) && defined(HAVE_POLY1305) && !defined(NO_CHAPOL_AEAD)
+    /* Check that the max implicit iv size is sufficient */
     #if (AEAD_MAX_IMP_SZ < 12) /* CHACHA20_IMP_IV_SZ */
         #error AEAD_MAX_IMP_SZ is too small for ChaCha20
     #endif
@@ -2287,11 +2234,21 @@ static int SetKeys(Ciphers* enc, Ciphers* dec, Keys* keys, CipherSpecs* specs,
                     (ChaCha*)XMALLOC(sizeof(ChaCha), heap, DYNAMIC_TYPE_CIPHER);
         if (enc && enc->chacha == NULL)
             return MEMORY_E;
+    #ifdef WOLFSSL_CHECK_MEM_ZERO
+        if (enc) {
+            wc_MemZero_Add("SSL keys enc chacha", enc->chacha, sizeof(ChaCha));
+        }
+    #endif
         if (dec && dec->chacha == NULL)
             dec->chacha =
                     (ChaCha*)XMALLOC(sizeof(ChaCha), heap, DYNAMIC_TYPE_CIPHER);
         if (dec && dec->chacha == NULL)
             return MEMORY_E;
+    #ifdef WOLFSSL_CHECK_MEM_ZERO
+        if (dec) {
+            wc_MemZero_Add("SSL keys dec chacha", dec->chacha, sizeof(ChaCha));
+        }
+    #endif
         if (side == WOLFSSL_CLIENT_END) {
             if (enc) {
                 chachaRet = wc_Chacha_SetKey(enc->chacha, keys->client_write_key,
@@ -2331,105 +2288,6 @@ static int SetKeys(Ciphers* enc, Ciphers* dec, Keys* keys, CipherSpecs* specs,
             dec->setup = 1;
     }
 #endif /* HAVE_CHACHA && HAVE_POLY1305 */
-
-
-#ifdef HAVE_HC128
-    /* check that buffer sizes are sufficient */
-    #if (MAX_WRITE_IV_SZ < 16) /* HC_128_IV_SIZE */
-        #error MAX_WRITE_IV_SZ too small for HC128
-    #endif
-
-    if (specs->bulk_cipher_algorithm == wolfssl_hc128) {
-        int hcRet;
-        if (enc && enc->hc128 == NULL)
-            enc->hc128 =
-                      (HC128*)XMALLOC(sizeof(HC128), heap, DYNAMIC_TYPE_CIPHER);
-        if (enc && enc->hc128 == NULL)
-            return MEMORY_E;
-        if (dec && dec->hc128 == NULL)
-            dec->hc128 =
-                      (HC128*)XMALLOC(sizeof(HC128), heap, DYNAMIC_TYPE_CIPHER);
-        if (dec && dec->hc128 == NULL)
-            return MEMORY_E;
-        if (side == WOLFSSL_CLIENT_END) {
-            if (enc) {
-                hcRet = wc_Hc128_SetKey(enc->hc128, keys->client_write_key,
-                                     keys->client_write_IV);
-                if (hcRet != 0) return hcRet;
-            }
-            if (dec) {
-                hcRet = wc_Hc128_SetKey(dec->hc128, keys->server_write_key,
-                                     keys->server_write_IV);
-                if (hcRet != 0) return hcRet;
-            }
-        }
-        else {
-            if (enc) {
-                hcRet = wc_Hc128_SetKey(enc->hc128, keys->server_write_key,
-                                     keys->server_write_IV);
-                if (hcRet != 0) return hcRet;
-            }
-            if (dec) {
-                hcRet = wc_Hc128_SetKey(dec->hc128, keys->client_write_key,
-                                     keys->client_write_IV);
-                if (hcRet != 0) return hcRet;
-            }
-        }
-        if (enc)
-            enc->setup = 1;
-        if (dec)
-            dec->setup = 1;
-    }
-#endif /* HAVE_HC128 */
-
-#ifdef BUILD_RABBIT
-    /* check that buffer sizes are sufficient */
-    #if (MAX_WRITE_IV_SZ < 8) /* RABBIT_IV_SIZE */
-        #error MAX_WRITE_IV_SZ too small for RABBIT
-    #endif
-
-    if (specs->bulk_cipher_algorithm == wolfssl_rabbit) {
-        int rabRet;
-        if (enc && enc->rabbit == NULL)
-            enc->rabbit =
-                    (Rabbit*)XMALLOC(sizeof(Rabbit), heap, DYNAMIC_TYPE_CIPHER);
-        if (enc && enc->rabbit == NULL)
-            return MEMORY_E;
-        if (dec && dec->rabbit == NULL)
-            dec->rabbit =
-                    (Rabbit*)XMALLOC(sizeof(Rabbit), heap, DYNAMIC_TYPE_CIPHER);
-        if (dec && dec->rabbit == NULL)
-            return MEMORY_E;
-        if (side == WOLFSSL_CLIENT_END) {
-            if (enc) {
-                rabRet = wc_RabbitSetKey(enc->rabbit, keys->client_write_key,
-                                      keys->client_write_IV);
-                if (rabRet != 0) return rabRet;
-            }
-            if (dec) {
-                rabRet = wc_RabbitSetKey(dec->rabbit, keys->server_write_key,
-                                      keys->server_write_IV);
-                if (rabRet != 0) return rabRet;
-            }
-        }
-        else {
-            if (enc) {
-                rabRet = wc_RabbitSetKey(enc->rabbit, keys->server_write_key,
-                                      keys->server_write_IV);
-                if (rabRet != 0) return rabRet;
-            }
-            if (dec) {
-                rabRet = wc_RabbitSetKey(dec->rabbit, keys->client_write_key,
-                                      keys->client_write_IV);
-                if (rabRet != 0) return rabRet;
-            }
-        }
-        if (enc)
-            enc->setup = 1;
-        if (dec)
-            dec->setup = 1;
-    }
-#endif /* BUILD_RABBIT */
 
 #ifdef BUILD_DES3
     /* check that buffer sizes are sufficient */
@@ -2509,17 +2367,25 @@ static int SetKeys(Ciphers* enc, Ciphers* dec, Keys* keys, CipherSpecs* specs,
         int aesRet = 0;
 
         if (enc) {
-            if (enc->aes == NULL)
+            if (enc->aes == NULL) {
                 enc->aes = (Aes*)XMALLOC(sizeof(Aes), heap, DYNAMIC_TYPE_CIPHER);
-            if (enc->aes == NULL)
-                return MEMORY_E;
+                if (enc->aes == NULL)
+                    return MEMORY_E;
+            } else {
+                wc_AesFree(enc->aes);
+            }
+
             XMEMSET(enc->aes, 0, sizeof(Aes));
         }
         if (dec) {
-            if (dec->aes == NULL)
+            if (dec->aes == NULL) {
                 dec->aes = (Aes*)XMALLOC(sizeof(Aes), heap, DYNAMIC_TYPE_CIPHER);
-            if (dec->aes == NULL)
-                return MEMORY_E;
+                if (dec->aes == NULL)
+                    return MEMORY_E;
+            } else {
+                wc_AesFree(dec->aes);
+            }
+
             XMEMSET(dec->aes, 0, sizeof(Aes));
         }
         if (enc) {
@@ -2586,17 +2452,25 @@ static int SetKeys(Ciphers* enc, Ciphers* dec, Keys* keys, CipherSpecs* specs,
         int gcmRet;
 
         if (enc) {
-            if (enc->aes == NULL)
+            if (enc->aes == NULL) {
                 enc->aes = (Aes*)XMALLOC(sizeof(Aes), heap, DYNAMIC_TYPE_CIPHER);
-            if (enc->aes == NULL)
-                return MEMORY_E;
+                if (enc->aes == NULL)
+                    return MEMORY_E;
+            } else {
+                wc_AesFree(enc->aes);
+            }
+
             XMEMSET(enc->aes, 0, sizeof(Aes));
         }
         if (dec) {
-            if (dec->aes == NULL)
+            if (dec->aes == NULL) {
                 dec->aes = (Aes*)XMALLOC(sizeof(Aes), heap, DYNAMIC_TYPE_CIPHER);
-            if (dec->aes == NULL)
-                return MEMORY_E;
+                if (dec->aes == NULL)
+                    return MEMORY_E;
+            } else {
+                wc_AesFree(dec->aes);
+            }
+
             XMEMSET(dec->aes, 0, sizeof(Aes));
         }
 
@@ -2686,17 +2560,24 @@ static int SetKeys(Ciphers* enc, Ciphers* dec, Keys* keys, CipherSpecs* specs,
         int CcmRet;
 
         if (enc) {
-            if (enc->aes == NULL)
+            if (enc->aes == NULL) {
                 enc->aes = (Aes*)XMALLOC(sizeof(Aes), heap, DYNAMIC_TYPE_CIPHER);
-            if (enc->aes == NULL)
-                return MEMORY_E;
+                if (enc->aes == NULL)
+                    return MEMORY_E;
+            } else {
+                wc_AesFree(enc->aes);
+            }
+
             XMEMSET(enc->aes, 0, sizeof(Aes));
         }
         if (dec) {
-            if (dec->aes == NULL)
+            if (dec->aes == NULL) {
                 dec->aes = (Aes*)XMALLOC(sizeof(Aes), heap, DYNAMIC_TYPE_CIPHER);
-            if (dec->aes == NULL)
+                if (dec->aes == NULL)
                 return MEMORY_E;
+            } else {
+                wc_AesFree(dec->aes);
+            }
             XMEMSET(dec->aes, 0, sizeof(Aes));
         }
 
@@ -2830,60 +2711,6 @@ static int SetKeys(Ciphers* enc, Ciphers* dec, Keys* keys, CipherSpecs* specs,
     }
 #endif /* HAVE_CAMELLIA */
 
-#ifdef HAVE_IDEA
-    /* check that buffer sizes are sufficient */
-    #if (MAX_WRITE_IV_SZ < 8) /* IDEA_IV_SIZE */
-        #error MAX_WRITE_IV_SZ too small for IDEA
-    #endif
-
-    if (specs->bulk_cipher_algorithm == wolfssl_idea) {
-        int ideaRet;
-
-        if (enc && enc->idea == NULL)
-            enc->idea = (Idea*)XMALLOC(sizeof(Idea), heap, DYNAMIC_TYPE_CIPHER);
-        if (enc && enc->idea == NULL)
-            return MEMORY_E;
-
-        if (dec && dec->idea == NULL)
-            dec->idea = (Idea*)XMALLOC(sizeof(Idea), heap, DYNAMIC_TYPE_CIPHER);
-        if (dec && dec->idea == NULL)
-            return MEMORY_E;
-
-        if (side == WOLFSSL_CLIENT_END) {
-            if (enc) {
-                ideaRet = wc_IdeaSetKey(enc->idea, keys->client_write_key,
-                                        specs->key_size, keys->client_write_IV,
-                                        IDEA_ENCRYPTION);
-                if (ideaRet != 0) return ideaRet;
-            }
-            if (dec) {
-                ideaRet = wc_IdeaSetKey(dec->idea, keys->server_write_key,
-                                        specs->key_size, keys->server_write_IV,
-                                        IDEA_DECRYPTION);
-                if (ideaRet != 0) return ideaRet;
-            }
-        }
-        else {
-            if (enc) {
-                ideaRet = wc_IdeaSetKey(enc->idea, keys->server_write_key,
-                                        specs->key_size, keys->server_write_IV,
-                                        IDEA_ENCRYPTION);
-                if (ideaRet != 0) return ideaRet;
-            }
-            if (dec) {
-                ideaRet = wc_IdeaSetKey(dec->idea, keys->client_write_key,
-                                        specs->key_size, keys->client_write_IV,
-                                        IDEA_DECRYPTION);
-                if (ideaRet != 0) return ideaRet;
-            }
-        }
-        if (enc)
-            enc->setup = 1;
-        if (dec)
-            dec->setup = 1;
-    }
-#endif /* HAVE_IDEA */
-
 #ifdef HAVE_NULL_CIPHER
     if (specs->bulk_cipher_algorithm == wolfssl_cipher_null) {
     #ifdef WOLFSSL_TLS13
@@ -3007,6 +2834,10 @@ static int SetAuthKeys(OneTimeAuth* authentication, Keys* keys,
                 (Poly1305*)XMALLOC(sizeof(Poly1305), heap, DYNAMIC_TYPE_CIPHER);
         if (authentication && authentication->poly1305 == NULL)
             return MEMORY_E;
+    #ifdef WOLFSSL_CHECK_MEM_ZERO
+        wc_MemZero_Add("SSL auth keys poly1305", authentication->poly1305,
+            sizeof(Poly1305));
+    #endif
         if (authentication)
             authentication->setup = 1;
 #endif
@@ -3069,7 +2900,8 @@ int SetKeysSide(WOLFSSL* ssl, enum encrypt_side side)
     (void)copy;
 
 #ifdef HAVE_SECURE_RENEGOTIATION
-    if (ssl->secure_renegotiation && ssl->secure_renegotiation->cache_status) {
+    if (ssl->secure_renegotiation &&
+            ssl->secure_renegotiation->cache_status != SCR_CACHE_NULL) {
         keys = &ssl->secure_renegotiation->tmp_keys;
 #ifdef WOLFSSL_DTLS
         /* For DTLS, copy is done in StoreKeys */
@@ -3084,10 +2916,10 @@ int SetKeysSide(WOLFSSL* ssl, enum encrypt_side side)
 #ifdef WOLFSSL_DEBUG_TLS
             WOLFSSL_MSG("Provisioning ENCRYPT key");
             if (ssl->options.side == WOLFSSL_CLIENT_END) {
-                WOLFSSL_BUFFER(ssl->keys.client_write_key, ssl->specs.key_size);
+                WOLFSSL_BUFFER(keys->client_write_key, ssl->specs.key_size);
             }
             else {
-                WOLFSSL_BUFFER(ssl->keys.server_write_key, ssl->specs.key_size);
+                WOLFSSL_BUFFER(keys->server_write_key, ssl->specs.key_size);
             }
 #endif
             wc_encrypt = &ssl->encrypt;
@@ -3097,10 +2929,10 @@ int SetKeysSide(WOLFSSL* ssl, enum encrypt_side side)
 #ifdef WOLFSSL_DEBUG_TLS
             WOLFSSL_MSG("Provisioning DECRYPT key");
             if (ssl->options.side == WOLFSSL_CLIENT_END) {
-                WOLFSSL_BUFFER(ssl->keys.server_write_key, ssl->specs.key_size);
+                WOLFSSL_BUFFER(keys->server_write_key, ssl->specs.key_size);
             }
             else {
-                WOLFSSL_BUFFER(ssl->keys.client_write_key, ssl->specs.key_size);
+                WOLFSSL_BUFFER(keys->client_write_key, ssl->specs.key_size);
             }
 #endif
             wc_decrypt = &ssl->decrypt;
@@ -3110,17 +2942,17 @@ int SetKeysSide(WOLFSSL* ssl, enum encrypt_side side)
 #ifdef WOLFSSL_DEBUG_TLS
             WOLFSSL_MSG("Provisioning ENCRYPT key");
             if (ssl->options.side == WOLFSSL_CLIENT_END) {
-                WOLFSSL_BUFFER(ssl->keys.client_write_key, ssl->specs.key_size);
+                WOLFSSL_BUFFER(keys->client_write_key, ssl->specs.key_size);
             }
             else {
-                WOLFSSL_BUFFER(ssl->keys.server_write_key, ssl->specs.key_size);
+                WOLFSSL_BUFFER(keys->server_write_key, ssl->specs.key_size);
             }
             WOLFSSL_MSG("Provisioning DECRYPT key");
             if (ssl->options.side == WOLFSSL_CLIENT_END) {
-                WOLFSSL_BUFFER(ssl->keys.server_write_key, ssl->specs.key_size);
+                WOLFSSL_BUFFER(keys->server_write_key, ssl->specs.key_size);
             }
             else {
-                WOLFSSL_BUFFER(ssl->keys.client_write_key, ssl->specs.key_size);
+                WOLFSSL_BUFFER(keys->client_write_key, ssl->specs.key_size);
             }
 #endif
             wc_encrypt = &ssl->encrypt;
@@ -3139,19 +2971,32 @@ int SetKeysSide(WOLFSSL* ssl, enum encrypt_side side)
     }
 #endif
 
-#if defined(WOLFSSL_RENESAS_TSIP_TLS) && \
-    !defined(NO_WOLFSSL_RENESAS_TSIP_TLS_SESSION)
-    /* check if keys for TSIP has been created */
-    if (tsip_useable(ssl) == 1)
-        ret = 0;
-    else
+#if !defined(NO_CERTS) && defined(HAVE_PK_CALLBACKS)
+    ret = PROTOCOLCB_UNAVAILABLE;
+    if (ssl->ctx->EncryptKeysCb) {
+        void* ctx = wolfSSL_GetEncryptKeysCtx(ssl);
+        ret = ssl->ctx->EncryptKeysCb(ssl, ctx);
+    }
+    if (!ssl->ctx->EncryptKeysCb || ret == PROTOCOLCB_UNAVAILABLE)
 #endif
-    ret = SetKeys(wc_encrypt, wc_decrypt, keys, &ssl->specs, ssl->options.side,
-                  ssl->heap, ssl->devId, ssl->rng, ssl->options.tls1_3);
+    {
+        ret = SetKeys(wc_encrypt, wc_decrypt, keys, &ssl->specs, ssl->options.side,
+                      ssl->heap, ssl->devId, ssl->rng, ssl->options.tls1_3);
+    }
+
+#ifdef WOLFSSL_DTLS13
+    if (ret == 0 && ssl->options.dtls && IsAtLeastTLSv1_3(ssl->version))
+        ret = Dtls13SetRecordNumberKeys(ssl, side);
+#endif /* WOLFSSL_DTLS13 */
+#ifdef WOLFSSL_QUIC
+    if (ret == 0 && WOLFSSL_IS_QUIC(ssl)) {
+        ret = wolfSSL_quic_keys_active(ssl, side);
+    }
+#endif /* WOLFSSL_QUIC */
 
 #ifdef HAVE_SECURE_RENEGOTIATION
 #ifdef WOLFSSL_DTLS
-    if (ret == 0 && ssl->options.dtls) {
+    if (ret == 0 && ssl->options.dtls && !ssl->options.tls1_3) {
         if (wc_encrypt)
             wc_encrypt->src = keys == &ssl->keys ? KEYS : SCR;
         if (wc_decrypt)
@@ -3161,6 +3006,12 @@ int SetKeysSide(WOLFSSL* ssl, enum encrypt_side side)
 
     if (copy) {
         int clientCopy = 0;
+
+        /* Sanity check that keys == ssl->secure_renegotiation->tmp_keys.
+         * Otherwise the memcpy calls would copy overlapping memory
+         * and cause UB. Fail early. */
+        if (keys == &ssl->keys)
+            return BAD_FUNC_ARG;
 
         if (ssl->options.side == WOLFSSL_CLIENT_END && wc_encrypt)
             clientCopy = 1;
@@ -3548,6 +3399,10 @@ static int MakeSslMasterSecret(WOLFSSL* ssl)
     wc_Sha sha[1];
 #endif
 
+    if (ssl->arrays->preMasterSecret == NULL) {
+        return BAD_FUNC_ARG;
+    }
+
 #ifdef SHOW_SECRETS
     {
         word32 j;
@@ -3659,53 +3514,10 @@ static int MakeSslMasterSecret(WOLFSSL* ssl)
 int MakeMasterSecret(WOLFSSL* ssl)
 {
     /* append secret to premaster : premaster | SerSi | CliSi */
-#ifdef HAVE_QSH
-    word32 offset = 0;
-
-    if (ssl->peerQSHKeyPresent) {
-        offset += ssl->arrays->preMasterSz;
-        ssl->arrays->preMasterSz += ssl->QSH_secret->CliSi->length +
-                                                 ssl->QSH_secret->SerSi->length;
-        /* test and set flag if QSH has been used */
-        if (ssl->QSH_secret->CliSi->length > 0 ||
-                ssl->QSH_secret->SerSi->length > 0)
-            ssl->isQSH = 1;
-
-        /* append secrets to the premaster */
-        if (ssl->QSH_secret->SerSi != NULL) {
-            XMEMCPY(ssl->arrays->preMasterSecret + offset,
-                ssl->QSH_secret->SerSi->buffer, ssl->QSH_secret->SerSi->length);
-        }
-        offset += ssl->QSH_secret->SerSi->length;
-        if (ssl->QSH_secret->CliSi != NULL) {
-            XMEMCPY(ssl->arrays->preMasterSecret + offset,
-                ssl->QSH_secret->CliSi->buffer, ssl->QSH_secret->CliSi->length);
-        }
-
-        /* show secret SerSi and CliSi */
-        #ifdef SHOW_SECRETS
-        {
-            word32 j;
-            printf("QSH generated secret material\n");
-            printf("SerSi        : ");
-            for (j = 0; j < ssl->QSH_secret->SerSi->length; j++) {
-                printf("%02x", ssl->QSH_secret->SerSi->buffer[j]);
-            }
-            printf("\n");
-            printf("CliSi        : ");
-            for (j = 0; j < ssl->QSH_secret->CliSi->length; j++) {
-                printf("%02x", ssl->QSH_secret->CliSi->buffer[j]);
-            }
-            printf("\n");
-        }
-        #endif
-    }
-#endif
-
 #ifndef NO_OLD_TLS
     if (ssl->options.tls) return MakeTlsMasterSecret(ssl);
     return MakeSslMasterSecret(ssl);
-#elif !defined(WOLFSSL_NO_TLS12)
+#elif !defined(WOLFSSL_NO_TLS12) && !defined(NO_TLS)
     return MakeTlsMasterSecret(ssl);
 #else
     (void)ssl;

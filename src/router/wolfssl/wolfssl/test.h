@@ -1,4 +1,29 @@
-/* test.h */
+/* test.h
+ *
+ * Copyright (C) 2006-2022 wolfSSL Inc.
+ *
+ * This file is part of wolfSSL.
+ *
+ * wolfSSL is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
+ *
+ * wolfSSL is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1335, USA
+ */
+/*!
+    \file ../wolfssl/test.h
+    \brief Header file containing test inline functions
+*/
+
+/* Testing functions */
 
 #ifndef wolfSSL_TEST_H
 #define wolfSSL_TEST_H
@@ -12,14 +37,15 @@
 #endif
 #include <assert.h>
 #include <ctype.h>
+#ifdef HAVE_ERRNO_H
+    #include <errno.h>
+#endif
 #include <wolfssl/wolfcrypt/types.h>
-#include <wolfssl/wolfcrypt/error-crypt.h>
+#include <wolfssl/error-ssl.h>
 #include <wolfssl/wolfcrypt/random.h>
 #include <wolfssl/wolfcrypt/mem_track.h>
-#if defined(SHOW_CERTS) && \
-    (defined(OPENSSL_EXTRA) || defined(OPENSSL_EXTRA_X509_SMALL))
-    #include <wolfssl/wolfcrypt/asn.h> /* for domain component NID value */
-#endif
+#include <wolfssl/wolfio.h>
+#include <wolfssl/wolfcrypt/asn.h>
 
 #ifdef ATOMIC_USER
     #include <wolfssl/wolfcrypt/aes.h>
@@ -27,7 +53,6 @@
     #include <wolfssl/wolfcrypt/hmac.h>
 #endif
 #ifdef HAVE_PK_CALLBACKS
-    #include <wolfssl/wolfcrypt/asn.h>
     #ifndef NO_RSA
         #include <wolfssl/wolfcrypt/rsa.h>
     #endif
@@ -70,7 +95,7 @@
     static unsigned long wolfSSL_inet_addr(const char *cp)
     {
         unsigned int a[4] ; unsigned long ret ;
-        sscanf(cp, "%d.%d.%d.%d", &a[0], &a[1], &a[2], &a[3]) ;
+        sscanf(cp, "%u.%u.%u.%u", &a[0], &a[1], &a[2], &a[3]) ;
         ret = ((a[3]<<24) + (a[2]<<16) + (a[1]<<8) + a[0]) ;
         return(ret) ;
     }
@@ -104,7 +129,11 @@
     #include <sys/types.h>
     #include <netinet/in.h>
     #include <fcntl.h>
-    #include <sys/time.h>
+    #ifdef WOLFSSL_VXWORKS_6_x
+        #include <time.h>
+    #else
+        #include <sys/time.h>
+    #endif
     #include <netdb.h>
     #include <pthread.h>
     #define SOCKET_T int
@@ -114,7 +143,6 @@
     #include <net/socket.h>
     #define SOCKET_T int
     #define SOL_SOCKET 1
-    #define SO_REUSEADDR 201
     #define WOLFSSL_USE_GETADDRINFO
 
     static unsigned long inet_addr(const char *cp)
@@ -132,6 +160,16 @@
         ret = ((a[3]<<24) + (a[2]<<16) + (a[1]<<8) + a[0]) ;
         return(ret) ;
     }
+#elif defined(NETOS)
+    #include <string.h>
+    #include <sys/types.h>
+    struct hostent {
+        char* h_name;        /* official name of host */
+        char** h_aliases;    /* alias list */
+        int h_addrtype;      /* host address type */
+        int h_length;        /* length of address */
+        char** h_addr_list;  /* list of addresses from the name server */
+    };
 #else
     #include <string.h>
     #include <sys/types.h>
@@ -160,8 +198,9 @@
     #define SNPRINTF snprintf
 
     #define XSELECT_WAIT(x,y) do { \
-        struct timeval tv = {(x),(y)}; \
-        select(0, NULL, NULL, NULL, &tv); \
+        struct timeval tv = {((x) + ((y) / 1000000)),((y) % 1000000)}; \
+        if ((select(0, NULL, NULL, NULL, &tv) < 0) && (errno != EINTR)) \
+            err_sys("select for XSELECT_WAIT failed."); \
     } while (0)
     #define XSLEEP_US(u) XSELECT_WAIT(0,u)
     #define XSLEEP_MS(m) XSELECT_WAIT(0,(m)*1000)
@@ -238,46 +277,93 @@
     #endif
 #endif
 
+#ifndef MY_EX_USAGE
+#define MY_EX_USAGE 2
+#endif
 
+#ifndef EXIT_FAILURE
+#define EXIT_FAILURE 1
+#endif
 
-#ifdef SINGLE_THREADED
-    typedef unsigned int  THREAD_RETURN;
-    typedef void*         THREAD_TYPE;
-    #define WOLFSSL_THREAD
-#else
-    #if defined(_POSIX_THREADS) && !defined(__MINGW32__)
-        typedef void*         THREAD_RETURN;
-        typedef pthread_t     THREAD_TYPE;
-        #define WOLFSSL_THREAD
-        #define INFINITE -1
-        #define WAIT_OBJECT_0 0L
-    #elif defined(WOLFSSL_MDK_ARM)|| defined(WOLFSSL_KEIL_TCP_NET) || defined(FREESCALE_MQX)
-        typedef unsigned int  THREAD_RETURN;
-        typedef int           THREAD_TYPE;
-        #define WOLFSSL_THREAD
-    #elif defined(WOLFSSL_TIRTOS)
-        typedef void          THREAD_RETURN;
-        typedef Task_Handle   THREAD_TYPE;
-        #define WOLFSSL_THREAD
-    #elif defined(WOLFSSL_ZEPHYR)
-        typedef void            THREAD_RETURN;
-        typedef struct k_thread THREAD_TYPE;
-        #define WOLFSSL_THREAD
-    #else
-        typedef unsigned int  THREAD_RETURN;
-        typedef intptr_t      THREAD_TYPE;
-        #define WOLFSSL_THREAD __stdcall
+#if defined(WOLFSSL_FORCE_MALLOC_FAIL_TEST) || defined(WOLFSSL_ZEPHYR)
+    #ifndef EXIT_SUCCESS
+        #define EXIT_SUCCESS   0
     #endif
-#endif
-
-
-#ifdef TEST_IPV6
-    typedef struct sockaddr_in6 SOCKADDR_IN_T;
-    #define AF_INET_V    AF_INET6
+    #define XEXIT(rc)   return rc
+    #define XEXIT_T(rc) return (THREAD_RETURN)rc
 #else
-    typedef struct sockaddr_in  SOCKADDR_IN_T;
-    #define AF_INET_V    AF_INET
+    #define XEXIT(rc)   exit((int)(rc))
+    #define XEXIT_T(rc) exit((int)(rc))
 #endif
+
+static WC_INLINE
+#if defined(WOLFSSL_FORCE_MALLOC_FAIL_TEST) || defined(WOLFSSL_ZEPHYR)
+THREAD_RETURN
+#else
+WC_NORETURN void
+#endif
+err_sys(const char* msg)
+{
+#if !defined(__GNUC__)
+    /* scan-build (which pretends to be gnuc) can get confused and think the
+     * msg pointer can be null even when hardcoded and then it won't exit,
+     * making null pointer checks above the err_sys() call useless.
+     * We could just always exit() but some compilers will complain about no
+     * possible return, with gcc we know the attribute to handle that with
+     * WC_NORETURN. */
+    if (msg)
+#endif
+    {
+        fprintf(stderr, "wolfSSL error: %s\n", msg);
+    }
+    XEXIT_T(EXIT_FAILURE);
+}
+
+static WC_INLINE
+#if defined(WOLFSSL_FORCE_MALLOC_FAIL_TEST) || defined(WOLFSSL_ZEPHYR)
+THREAD_RETURN
+#else
+WC_NORETURN void
+#endif
+err_sys_with_errno(const char* msg)
+{
+#if !defined(__GNUC__)
+    /* scan-build (which pretends to be gnuc) can get confused and think the
+     * msg pointer can be null even when hardcoded and then it won't exit,
+     * making null pointer checks above the err_sys() call useless.
+     * We could just always exit() but some compilers will complain about no
+     * possible return, with gcc we know the attribute to handle that with
+     * WC_NORETURN. */
+    if (msg)
+#endif
+    {
+#if defined(HAVE_STRING_H) && defined(HAVE_ERRNO_H)
+        fprintf(stderr, "wolfSSL error: %s: %s\n", msg, strerror(errno));
+#else
+        fprintf(stderr, "wolfSSL error: %s\n", msg);
+#endif
+    }
+    XEXIT_T(EXIT_FAILURE);
+}
+
+#define LIBCALL_CHECK_RET(...) do {                                  \
+        int _libcall_ret = (__VA_ARGS__);                            \
+        if (_libcall_ret < 0) {                                      \
+            fprintf(stderr, "%s L%d error %d for \"%s\"\n",          \
+                    __FILE__, __LINE__, errno, #__VA_ARGS__);        \
+            err_sys("library/system call failed");                   \
+        }                                                            \
+    } while(0)
+
+#define PTHREAD_CHECK_RET(...) do {                                  \
+        int _pthread_ret = (__VA_ARGS__);                            \
+        if (_pthread_ret != 0) {                                     \
+            errno = _pthread_ret;                                    \
+            fprintf(stderr, "%s L%d error %d for \"%s\"\n",          \
+                    __FILE__, __LINE__, _pthread_ret, #__VA_ARGS__); \
+            err_sys("pthread call failed");                          \
+        }                                                            \
+    } while(0)
 
 
 #ifndef WOLFSSL_NO_TLS12
@@ -319,73 +405,121 @@
     #endif
 #endif
 
+#ifndef DEFAULT_TIMEOUT_SEC
+#define DEFAULT_TIMEOUT_SEC 2
+#endif
+
 /* all certs relative to wolfSSL home directory now */
 #if defined(WOLFSSL_NO_CURRDIR) || defined(WOLFSSL_MDK_SHELL)
 #define caCertFile        "certs/ca-cert.pem"
 #define eccCertFile       "certs/server-ecc.pem"
 #define eccKeyFile        "certs/ecc-key.pem"
+#define eccKeyPubFile     "certs/ecc-keyPub.pem"
 #define eccRsaCertFile    "certs/server-ecc-rsa.pem"
 #define svrCertFile       "certs/server-cert.pem"
 #define svrKeyFile        "certs/server-key.pem"
+#define svrKeyPubFile     "certs/server-keyPub.pem"
 #define cliCertFile       "certs/client-cert.pem"
 #define cliCertDerFile    "certs/client-cert.der"
 #define cliCertFileExt    "certs/client-cert-ext.pem"
 #define cliCertDerFileExt "certs/client-cert-ext.der"
 #define cliKeyFile        "certs/client-key.pem"
-#define ntruCertFile      "certs/ntru-cert.pem"
-#define ntruKeyFile       "certs/ntru-key.raw"
+#define cliKeyPubFile     "certs/client-keyPub.pem"
 #define dhParamFile       "certs/dh2048.pem"
 #define cliEccKeyFile     "certs/ecc-client-key.pem"
+#define cliEccKeyPubFile  "certs/ecc-client-keyPub.pem"
 #define cliEccCertFile    "certs/client-ecc-cert.pem"
 #define caEccCertFile     "certs/ca-ecc-cert.pem"
 #define crlPemDir         "certs/crl"
 #define edCertFile        "certs/ed25519/server-ed25519-cert.pem"
 #define edKeyFile         "certs/ed25519/server-ed25519-priv.pem"
+#define edKeyPubFile      "certs/ed25519/server-ed25519-key.pem"
 #define cliEdCertFile     "certs/ed25519/client-ed25519.pem"
 #define cliEdKeyFile      "certs/ed25519/client-ed25519-priv.pem"
+#define cliEdKeyPubFile   "certs/ed25519/client-ed25519-key.pem"
 #define caEdCertFile      "certs/ed25519/ca-ed25519.pem"
 #define ed448CertFile     "certs/ed448/server-ed448-cert.pem"
 #define ed448KeyFile      "certs/ed448/server-ed448-priv.pem"
 #define cliEd448CertFile  "certs/ed448/client-ed448.pem"
 #define cliEd448KeyFile   "certs/ed448/client-ed448-priv.pem"
 #define caEd448CertFile   "certs/ed448/ca-ed448.pem"
+#define caCertFolder      "certs/"
 #ifdef HAVE_WNR
     /* Whitewood netRandom default config file */
     #define wnrConfig     "wnr-example.conf"
 #endif
+#elif defined(NETOS) && defined(HAVE_FIPS)
+    /* These defines specify the file system volume and root directory used by
+     * the FTP server used in the only supported NETOS FIPS solution (at this
+     * time), these can be tailored in the event a future FIPS solution is added
+     * for an alternate NETOS use-case */
+    #define FS_VOLUME1     "FLASH0"
+    #define FS_VOLUME1_DIR FS_VOLUME1 "/"
+    #define caCertFile     FS_VOLUME1_DIR "certs/ca-cert.pem"
+    #define eccCertFile    FS_VOLUME1_DIR "certs/server-ecc.pem"
+    #define eccKeyFile     FS_VOLUME1_DIR "certs/ecc-key.pem"
+    #define svrCertFile    FS_VOLUME1_DIR "certs/server-cert.pem"
+    #define svrKeyFile     FS_VOLUME1_DIR "certs/server-key.pem"
+    #define cliCertFile    FS_VOLUME1_DIR "certs/client-cert.pem"
+    #define cliKeyFile     FS_VOLUME1_DIR "certs/client-key.pem"
+    #define ntruCertFile   FS_VOLUME1_DIR "certs/ntru-cert.pem"
+    #define ntruKeyFile    FS_VOLUME1_DIR "certs/ntru-key.raw"
+    #define dhParamFile    FS_VOLUME1_DIR "certs/dh2048.pem"
+    #define cliEccKeyFile  FS_VOLUME1_DIR "certs/ecc-client-key.pem"
+    #define cliEccCertFile FS_VOLUME1_DIR "certs/client-ecc-cert.pem"
+    #define caEccCertFile  FS_VOLUME1_DIR "certs/ca-ecc-cert/pem"
+    #define crlPemDir      FS_VOLUME1_DIR "certs/crl"
+    #ifdef HAVE_WNR
+        /* Whitewood netRandom default config file */
+        #define wnrConfig  "wnr-example.conf"
+    #endif
 #else
 #define caCertFile        "./certs/ca-cert.pem"
 #define eccCertFile       "./certs/server-ecc.pem"
 #define eccKeyFile        "./certs/ecc-key.pem"
+#define eccKeyPubFile     "./certs/ecc-keyPub.pem"
 #define eccRsaCertFile    "./certs/server-ecc-rsa.pem"
 #define svrCertFile       "./certs/server-cert.pem"
 #define svrKeyFile        "./certs/server-key.pem"
+#define svrKeyPubFile     "./certs/server-keyPub.pem"
 #define cliCertFile       "./certs/client-cert.pem"
 #define cliCertDerFile    "./certs/client-cert.der"
 #define cliCertFileExt    "./certs/client-cert-ext.pem"
 #define cliCertDerFileExt "./certs/client-cert-ext.der"
 #define cliKeyFile        "./certs/client-key.pem"
-#define ntruCertFile      "./certs/ntru-cert.pem"
-#define ntruKeyFile       "./certs/ntru-key.raw"
+#define cliKeyPubFile     "./certs/client-keyPub.pem"
 #define dhParamFile       "./certs/dh2048.pem"
 #define cliEccKeyFile     "./certs/ecc-client-key.pem"
+#define cliEccKeyPubFile  "./certs/ecc-client-keyPub.pem"
 #define cliEccCertFile    "./certs/client-ecc-cert.pem"
 #define caEccCertFile     "./certs/ca-ecc-cert.pem"
 #define crlPemDir         "./certs/crl"
 #define edCertFile        "./certs/ed25519/server-ed25519-cert.pem"
 #define edKeyFile         "./certs/ed25519/server-ed25519-priv.pem"
+#define edKeyPubFile      "./certs/ed25519/server-ed25519-key.pem"
 #define cliEdCertFile     "./certs/ed25519/client-ed25519.pem"
 #define cliEdKeyFile      "./certs/ed25519/client-ed25519-priv.pem"
+#define cliEdKeyPubFile   "./certs/ed25519/client-ed25519-key.pem"
 #define caEdCertFile      "./certs/ed25519/ca-ed25519.pem"
 #define ed448CertFile     "./certs/ed448/server-ed448-cert.pem"
 #define ed448KeyFile      "./certs/ed448/server-ed448-priv.pem"
 #define cliEd448CertFile  "./certs/ed448/client-ed448.pem"
 #define cliEd448KeyFile   "./certs/ed448/client-ed448-priv.pem"
 #define caEd448CertFile   "./certs/ed448/ca-ed448.pem"
+#define caCertFolder      "./certs/"
 #ifdef HAVE_WNR
     /* Whitewood netRandom default config file */
     #define wnrConfig     "./wnr-example.conf"
 #endif
+#endif
+
+
+#ifdef TEST_IPV6
+    typedef struct sockaddr_in6 SOCKADDR_IN_T;
+    #define AF_INET_V    AF_INET6
+#else
+    typedef struct sockaddr_in  SOCKADDR_IN_T;
+    #define AF_INET_V    AF_INET
 #endif
 
 typedef struct tcp_ready {
@@ -396,8 +530,10 @@ typedef struct tcp_ready {
     pthread_mutex_t mutex;
     pthread_cond_t  cond;
 #endif
+#ifdef NETOS
+    TX_MUTEX mutex;
+#endif
 } tcp_ready;
-
 
 static WC_INLINE void InitTcpReady(tcp_ready* ready)
 {
@@ -406,19 +542,26 @@ static WC_INLINE void InitTcpReady(tcp_ready* ready)
     ready->srfName = NULL;
 #ifdef SINGLE_THREADED
 #elif defined(_POSIX_THREADS) && !defined(__MINGW32__)
-    pthread_mutex_init(&ready->mutex, 0);
-    pthread_cond_init(&ready->cond, 0);
+    PTHREAD_CHECK_RET(pthread_mutex_init(&ready->mutex, 0));
+    PTHREAD_CHECK_RET(pthread_cond_init(&ready->cond, 0));
+#elif defined(NETOS)
+    tx_mutex_create(&ready->mutex, "wolfSSL Lock", TX_INHERIT);
 #endif
 }
 
+#ifdef NETOS
+    struct hostent* gethostbyname(const char* name);
+#endif
 
 static WC_INLINE void FreeTcpReady(tcp_ready* ready)
 {
 #ifdef SINGLE_THREADED
     (void)ready;
 #elif defined(_POSIX_THREADS) && !defined(__MINGW32__)
-    pthread_mutex_destroy(&ready->mutex);
-    pthread_cond_destroy(&ready->cond);
+    PTHREAD_CHECK_RET(pthread_mutex_destroy(&ready->mutex));
+    PTHREAD_CHECK_RET(pthread_cond_destroy(&ready->cond));
+#elif defined(NETOS)
+    tx_mutex_delete(&ready->mutex);
 #else
     (void)ready;
 #endif
@@ -434,8 +577,31 @@ typedef struct callback_functions {
     ssl_callback ssl_ready;
     ssl_callback on_result;
     WOLFSSL_CTX* ctx;
+    const char* caPemFile;
+    const char* certPemFile;
+    const char* keyPemFile;
+#ifdef WOLFSSL_STATIC_MEMORY
+    byte*               mem;
+    word32              memSz;
+    wolfSSL_method_func method_ex;
+#endif
+    int devId;
+    int return_code;
+    int last_err;
     unsigned char isSharedCtx:1;
+    unsigned char loadToSSL:1;
+    unsigned char ticNoInit:1;
+    unsigned char doUdp:1;
 } callback_functions;
+
+#if defined(WOLFSSL_SRTP) && !defined(SINGLE_THREADED) && defined(_POSIX_THREADS)
+typedef struct srtp_test_helper {
+    pthread_mutex_t mutex;
+    pthread_cond_t  cond;
+    uint8_t* server_srtp_ekm;
+    size_t   server_srtp_ekm_size;
+} srtp_test_helper;
+#endif
 
 typedef struct func_args {
     int    argc;
@@ -443,12 +609,18 @@ typedef struct func_args {
     int    return_code;
     tcp_ready* signal;
     callback_functions *callbacks;
+#if defined(WOLFSSL_SRTP) && !defined(SINGLE_THREADED) && defined(_POSIX_THREADS)
+    srtp_test_helper* srtp_helper;
+#endif
 } func_args;
 
+#ifdef NETOS
+    int dc_log_printf(char* format, ...);
+    #undef printf
+    #define printf dc_log_printf
+#endif
 
-
-
-void wait_tcp_ready(func_args*);
+void wait_tcp_ready(func_args* args);
 
 #ifdef WOLFSSL_ZEPHYR
 typedef void THREAD_FUNC(void*, void*, void*);
@@ -456,8 +628,11 @@ typedef void THREAD_FUNC(void*, void*, void*);
 typedef THREAD_RETURN WOLFSSL_THREAD THREAD_FUNC(void*);
 #endif
 
-void start_thread(THREAD_FUNC, func_args*, THREAD_TYPE*);
-void join_thread(THREAD_TYPE);
+void start_thread(THREAD_FUNC fun, func_args* args, THREAD_TYPE* thread);
+void join_thread(THREAD_TYPE thread);
+
+void test_wolfSSL_client_server_nofail(callback_functions* client_cb,
+                                       callback_functions* server_cb);
 
 /* wolfSSL */
 #ifndef TEST_IPV6
@@ -468,82 +643,77 @@ void join_thread(THREAD_TYPE);
 static const word16      wolfSSLPort = 11111;
 
 
-
-#ifndef MY_EX_USAGE
-#define MY_EX_USAGE 2
-#endif
-
-#ifndef EXIT_FAILURE
-#define EXIT_FAILURE 1
-#endif
-
-#if defined(WOLFSSL_FORCE_MALLOC_FAIL_TEST) || defined(WOLFSSL_ZEPHYR)
-    #ifndef EXIT_SUCCESS
-        #define EXIT_SUCCESS   0
-    #endif
-    #define XEXIT(rc)   return rc
-    #define XEXIT_T(rc) return (THREAD_RETURN)rc
-#else
-    #define XEXIT(rc)   exit((int)(rc))
-    #define XEXIT_T(rc) exit((int)(rc))
-#endif
-
-
-static WC_INLINE
-#if defined(WOLFSSL_FORCE_MALLOC_FAIL_TEST) || defined(WOLFSSL_ZEPHYR)
-THREAD_RETURN
-#else
-WC_NORETURN void
-#endif
-err_sys(const char* msg)
-{
-#if !defined(__GNUC__)
-    /* scan-build (which pretends to be gnuc) can get confused and think the
-     * msg pointer can be null even when hardcoded and then it won't exit,
-     * making null pointer checks above the err_sys() call useless.
-     * We could just always exit() but some compilers will complain about no
-     * possible return, with gcc we know the attribute to handle that with
-     * WC_NORETURN. */
-    if (msg)
-#endif
-    {
-        printf("wolfSSL error: %s\n", msg);
-
-        XEXIT_T(EXIT_FAILURE);
-    }
-}
-
-static WC_INLINE
-#if defined(WOLFSSL_FORCE_MALLOC_FAIL_TEST) || defined(WOLFSSL_ZEPHYR)
-THREAD_RETURN
-#else
-WC_NORETURN void
-#endif
-err_sys_with_errno(const char* msg)
-{
-#if !defined(__GNUC__)
-    /* scan-build (which pretends to be gnuc) can get confused and think the
-     * msg pointer can be null even when hardcoded and then it won't exit,
-     * making null pointer checks above the err_sys() call useless.
-     * We could just always exit() but some compilers will complain about no
-     * possible return, with gcc we know the attribute to handle that with
-     * WC_NORETURN. */
-    if (msg)
-#endif
-    {
-#if defined(HAVE_STRING_H) && defined(HAVE_ERRNO_H)
-        printf("wolfSSL error: %s: %s\n", msg, strerror(errno));
-#else
-        printf("wolfSSL error: %s\n", msg);
-#endif
-
-        XEXIT_T(EXIT_FAILURE);
-    }
-}
-
-
 extern int   myoptind;
 extern char* myoptarg;
+
+#if defined(WOLFSSL_SRTP) && !defined(SINGLE_THREADED) && defined(_POSIX_THREADS)
+
+static WC_INLINE void srtp_helper_init(srtp_test_helper *srtp)
+{
+    srtp->server_srtp_ekm_size = 0;
+    srtp->server_srtp_ekm = NULL;
+
+    PTHREAD_CHECK_RET(pthread_mutex_init(&srtp->mutex, 0));
+    PTHREAD_CHECK_RET(pthread_cond_init(&srtp->cond, 0));
+}
+
+/**
+ * strp_helper_get_ekm() - get exported key material of other peer
+ * @srtp: srtp_test_helper struct shared with other peer [in]
+ * @ekm: where to store the shared buffer pointer [out]
+ * @size: size of the shared buffer returned [out]
+ *
+ * This function wait that the other peer calls strp_helper_set_ekm() and then
+ * store the buffer pointer/size in @ekm and @size.
+ */
+static WC_INLINE void srtp_helper_get_ekm(srtp_test_helper *srtp,
+                                          uint8_t **ekm, size_t *size)
+{
+    PTHREAD_CHECK_RET(pthread_mutex_lock(&srtp->mutex));
+
+    if (srtp->server_srtp_ekm == NULL)
+        PTHREAD_CHECK_RET(pthread_cond_wait(&srtp->cond, &srtp->mutex));
+
+    *ekm = srtp->server_srtp_ekm;
+    *size = srtp->server_srtp_ekm_size;
+
+    /* reset */
+    srtp->server_srtp_ekm = NULL;
+    srtp->server_srtp_ekm_size = 0;
+
+    PTHREAD_CHECK_RET(pthread_mutex_unlock(&srtp->mutex));
+}
+
+/**
+ * strp_helper_set_ekm() - set exported key material of other peer
+ * @srtp: srtp_test_helper struct shared with other peer [in]
+ * @ekm: pointer to the shared buffer [in]
+ * @size: size of the shared buffer [in]
+ *
+ * This function set the @ekm and wakes up a peer waiting in
+ * srtp_helper_get_ekm().
+ *
+ * used in client_srtp_test()/server_srtp_test()
+ */
+static WC_INLINE void srtp_helper_set_ekm(srtp_test_helper *srtp,
+                                          uint8_t *ekm, size_t size)
+{
+    PTHREAD_CHECK_RET(pthread_mutex_lock(&srtp->mutex));
+
+    srtp->server_srtp_ekm_size = size;
+    srtp->server_srtp_ekm = ekm;
+    PTHREAD_CHECK_RET(pthread_cond_signal(&srtp->cond));
+
+    PTHREAD_CHECK_RET(pthread_mutex_unlock(&srtp->mutex));
+}
+
+static WC_INLINE void srtp_helper_free(srtp_test_helper *srtp)
+{
+    PTHREAD_CHECK_RET(pthread_mutex_destroy(&srtp->mutex));
+    PTHREAD_CHECK_RET(pthread_cond_destroy(&srtp->cond));
+}
+
+#endif /* WOLFSSL_SRTP && !SINGLE_THREADED && POSIX_THREADS */
 
 /**
  *
@@ -563,7 +733,7 @@ static WC_INLINE int mygetopt(int argc, char** argv, const char* optstring)
     char  c;
     char* cp;
 
-    /* Added sanity check becuase scan-build complains argv[myoptind] access 
+    /* Added sanity check because scan-build complains argv[myoptind] access
      * results in a null pointer dereference. */
     if (argv == NULL)  {
         myoptarg = NULL;
@@ -640,6 +810,135 @@ static WC_INLINE int mygetopt(int argc, char** argv, const char* optstring)
     return c;
 }
 
+struct mygetopt_long_config {
+    const char *name;
+    int takes_arg; /* 0=no arg, 1=required arg, 2=optional arg */
+    int value;
+};
+
+/**
+ *
+ * @param argc Number of argv strings
+ * @param argv Array of string arguments
+ * @param optstring String containing the supported alphanumeric arguments.
+ *                  A ':' following a character means that it requires a
+ *                  value in myoptarg to be set. A ';' means that the
+ *                  myoptarg is optional. myoptarg is set to "" if not
+ *                  present.
+ * @return Option letter in argument
+ */
+static WC_INLINE int mygetopt_long(int argc, char** argv, const char* optstring,
+    const struct mygetopt_long_config *longopts, int *longindex)
+{
+    static char* next = NULL;
+
+    int  c;
+    char* cp;
+
+    /* Added sanity check because scan-build complains argv[myoptind] access
+     * results in a null pointer dereference. */
+    if (argv == NULL)  {
+        myoptarg = NULL;
+        return -1;
+    }
+
+    if (myoptind == 0)
+        next = NULL;   /* we're starting new/over */
+
+    if (next == NULL || *next == '\0') {
+        if (myoptind == 0)
+            myoptind++;
+
+        if (myoptind >= argc || argv[myoptind] == NULL ||
+                argv[myoptind][0] != '-' || argv[myoptind][1] == '\0') {
+            myoptarg = NULL;
+            if (myoptind < argc)
+                myoptarg = argv[myoptind];
+
+            return -1;
+        }
+
+        if (strcmp(argv[myoptind], "--") == 0) {
+            myoptind++;
+            myoptarg = NULL;
+
+            if (myoptind < argc)
+                myoptarg = argv[myoptind];
+
+            return -1;
+        }
+
+        if (strncmp(argv[myoptind], "--", 2) == 0) {
+            const struct mygetopt_long_config *i;
+            c = -1;
+            myoptarg = NULL;
+            for (i = longopts; i->name; ++i) {
+                if (! strcmp(argv[myoptind] + 2, i->name)) {
+                    c = i->value;
+                    myoptind++;
+                    if (longindex)
+                        *longindex = (int)((size_t)(i - longopts) / sizeof i[0]);
+                    if (i->takes_arg) {
+                        if (myoptind < argc) {
+                            if (i->takes_arg == 1 || argv[myoptind][0] != '-') {
+                                myoptarg = argv[myoptind];
+                                myoptind++;
+                            }
+                        } else if (i->takes_arg != 2) {
+                            return -1;
+                        }
+                    }
+                    break;
+                }
+            }
+
+            return c;
+        }
+
+        next = argv[myoptind];
+        next++;                  /* skip - */
+        myoptind++;
+    }
+
+    c  = (int)(unsigned char)*next++;
+    /* The C++ strchr can return a different value */
+    cp = (char*)strchr(optstring, c);
+
+    if (cp == NULL || c == ':' || c == ';')
+        return '?';
+
+    cp++;
+
+    if (*cp == ':') {
+        if (*next != '\0') {
+            myoptarg = next;
+            next     = NULL;
+        }
+        else if (myoptind < argc) {
+            myoptarg = argv[myoptind];
+            myoptind++;
+        }
+        else
+            return '?';
+    }
+    else if (*cp == ';') {
+        myoptarg = (char*)"";
+        if (*next != '\0') {
+            myoptarg = next;
+            next     = NULL;
+        }
+        else if (myoptind < argc) {
+            /* Check if next argument is not a parameter argument */
+            if (argv[myoptind] && argv[myoptind][0] != '-') {
+                myoptarg = argv[myoptind];
+                myoptind++;
+            }
+        }
+    }
+
+    return c;
+}
+
 
 #ifdef WOLFSSL_ENCRYPTED_KEYS
 
@@ -659,11 +958,12 @@ static WC_INLINE int PasswordCallBack(char* passwd, int sz, int rw, void* userda
 
 #endif
 
-static const char* client_showpeer_msg[][8] = {
+static const char* client_showpeer_msg[][9] = {
     /* English */
     {
         "SSL version is",
         "SSL cipher suite is",
+        "SSL signature algorithm is",
         "SSL curve name is",
         "SSL DH size is",
         "SSL reused session",
@@ -676,6 +976,7 @@ static const char* client_showpeer_msg[][8] = {
     {
         "SSL バージョンは",
         "SSL 暗号スイートは",
+        "SSL signature algorithm is",
         "SSL 曲線名は",
         "SSL DH サイズは",
         "SSL 再利用セッション",
@@ -722,7 +1023,7 @@ static WC_INLINE void ShowX509Ex(WOLFSSL_X509* x509, const char* hdr,
     const char** words = client_showx509_msg[lng_index];
 
     if (x509 == NULL) {
-        printf("%s No Cert\n", hdr);
+        fprintf(stderr, "%s No Cert\n", hdr);
         return;
     }
 
@@ -756,7 +1057,7 @@ static WC_INLINE void ShowX509Ex(WOLFSSL_X509* x509, const char* hdr,
 #if defined(SHOW_CERTS) && defined(OPENSSL_EXTRA)
     {
         WOLFSSL_BIO* bio;
-        char buf[256]; /* should be size of ASN_NAME_MAX */
+        char buf[WC_ASN_NAME_MAX];
         int  textSz;
 
         /* print out domain component if certificate has it */
@@ -803,7 +1104,7 @@ static WC_INLINE void ShowX509Chain(WOLFSSL_X509_CHAIN* chain, int count,
         if (chainX509)
             ShowX509(chainX509, hdr);
         else
-            printf("get_chain_X509 failed\n");
+            fprintf(stderr, "get_chain_X509 failed\n");
         wolfSSL_FreeX509(chainX509);
     }
 }
@@ -823,12 +1124,15 @@ static WC_INLINE void showPeerEx(WOLFSSL* ssl, int lng_index)
 #ifndef NO_DH
     int bits;
 #endif
+#ifdef OPENSSL_EXTRA
+    int nid;
+#endif
 #ifdef KEEP_PEER_CERT
     WOLFSSL_X509* peer = wolfSSL_get_peer_certificate(ssl);
     if (peer)
         ShowX509Ex(peer, words[6], lng_index);
     else
-        printf("peer has no cert!\n");
+        fprintf(stderr, "peer has no cert!\n");
     wolfSSL_FreeX509(peer);
 #endif
 #if defined(SHOW_CERTS) && defined(KEEP_OUR_CERT) && \
@@ -839,26 +1143,26 @@ static WC_INLINE void showPeerEx(WOLFSSL* ssl, int lng_index)
     printf("%s %s\n", words[0], wolfSSL_get_version(ssl));
 
     cipher = wolfSSL_get_current_cipher(ssl);
-#ifdef HAVE_QSH
-    printf("%s %s%s\n", words[1], (wolfSSL_isQSH(ssl))? "QSH:": "",
-            wolfSSL_CIPHER_get_name(cipher));
-#else
     printf("%s %s\n", words[1], wolfSSL_CIPHER_get_name(cipher));
+#ifdef OPENSSL_EXTRA
+    if (wolfSSL_get_signature_nid(ssl, &nid) == WOLFSSL_SUCCESS) {
+        printf("%s %s\n", words[2], OBJ_nid2sn(nid));
+    }
 #endif
 #if defined(HAVE_ECC) || defined(HAVE_CURVE25519) || defined(HAVE_CURVE448) || \
                                                                  !defined(NO_DH)
     if ((name = wolfSSL_get_curve_name(ssl)) != NULL)
-        printf("%s %s\n", words[2], name);
+        printf("%s %s\n", words[3], name);
 #endif
 #ifndef NO_DH
     else if ((bits = wolfSSL_GetDhKey_Sz(ssl)) > 0)
-        printf("%s %d bits\n", words[3], bits);
+        printf("%s %d bits\n", words[4], bits);
 #endif
     if (wolfSSL_session_reused(ssl))
-        printf("%s\n", words[4]);
+        printf("%s\n", words[5]);
 #ifdef WOLFSSL_ALT_CERT_CHAINS
     if (wolfSSL_is_peer_alt_cert_chain(ssl))
-        printf("%s\n", words[5]);
+        printf("%s\n", words[6]);
 #endif
 
 #if defined(SHOW_CERTS) && defined(SESSION_CERTS) && \
@@ -893,15 +1197,70 @@ static WC_INLINE void build_addr(SOCKADDR_IN_T* addr, const char* peer,
     (void)udp;
     (void)sctp;
 
-    if (addr == NULL)
+    if (addr == NULL) {
         err_sys("invalid argument to build_addr, addr is NULL");
+        return;
+    }
 
     XMEMSET(addr, 0, sizeof(SOCKADDR_IN_T));
 
 #ifndef TEST_IPV6
     /* peer could be in human readable form */
     if ( ((size_t)peer != INADDR_ANY) && isalpha((int)peer[0])) {
-    #ifndef WOLFSSL_USE_GETADDRINFO
+    #ifdef WOLFSSL_USE_POPEN_HOST
+        char host_ipaddr[4] = { 127, 0, 0, 1 };
+        int found = 1;
+
+        if ((XSTRCMP(peer, "localhost") != 0) &&
+            (XSTRCMP(peer, "127.0.0.1") != 0)) {
+            FILE* fp;
+            char host_out[100];
+            char cmd[100];
+
+            XSTRNCPY(cmd, "host ", 6);
+            XSTRNCAT(cmd, peer, 99 - XSTRLEN(cmd));
+            found = 0;
+            fp = popen(cmd, "r");
+            if (fp != NULL) {
+                while (fgets(host_out, sizeof(host_out), fp) != NULL) {
+                    int i;
+                    int j = 0;
+                    for (j = 0; host_out[j] != '\0'; j++) {
+                        if ((host_out[j] >= '0') && (host_out[j] <= '9')) {
+                            break;
+                        }
+                    }
+                    found = (host_out[j] >= '0') && (host_out[j] <= '9');
+                    if (!found) {
+                        continue;
+                    }
+
+                    for (i = 0; i < 4; i++) {
+                        host_ipaddr[i] = atoi(host_out + j);
+                        while ((host_out[j] >= '0') && (host_out[j] <= '9')) {
+                            j++;
+                        }
+                        if (host_out[j] == '.') {
+                            j++;
+                            found &= (i != 3);
+                        }
+                        else {
+                            found &= (i == 3);
+                            break;
+                        }
+                    }
+                    if (found) {
+                        break;
+                    }
+                }
+                pclose(fp);
+            }
+        }
+        if (found) {
+            XMEMCPY(&addr->sin_addr.s_addr, host_ipaddr, sizeof(host_ipaddr));
+            useLookup = 1;
+        }
+    #elif !defined(WOLFSSL_USE_GETADDRINFO)
         #if defined(WOLFSSL_MDK_ARM) || defined(WOLFSSL_KEIL_TCP_NET)
             int err;
             struct hostent* entry = gethostbyname(peer, &err);
@@ -922,7 +1281,7 @@ static WC_INLINE void build_addr(SOCKADDR_IN_T* addr, const char* peer,
         struct zsock_addrinfo hints, *addrInfo;
         char portStr[6];
         XSNPRINTF(portStr, sizeof(portStr), "%d", port);
-        memset(&hints, 0, sizeof(hints));
+        XMEMSET(&hints, 0, sizeof(hints));
         hints.ai_family = AF_UNSPEC;
         hints.ai_socktype = udp ? SOCK_DGRAM : SOCK_STREAM;
         hints.ai_protocol = udp ? IPPROTO_UDP : IPPROTO_TCP;
@@ -957,7 +1316,7 @@ static WC_INLINE void build_addr(SOCKADDR_IN_T* addr, const char* peer,
         addr->sin6_addr = in6addr_any;
     }
     else {
-        #if defined(HAVE_GETADDRINFO) || defined(WOLF_C99)
+        #if defined(HAVE_GETADDRINFO)
             struct addrinfo  hints;
             struct addrinfo* answer = NULL;
             int    ret;
@@ -981,7 +1340,7 @@ static WC_INLINE void build_addr(SOCKADDR_IN_T* addr, const char* peer,
                 hints.ai_protocol = IPPROTO_TCP;
             }
 
-            SNPRINTF(strPort, sizeof(strPort), "%d", port);
+            (void)SNPRINTF(strPort, sizeof(strPort), "%d", port);
             strPort[79] = '\0';
 
             ret = getaddrinfo(peer, strPort, &hints, &answer);
@@ -1028,6 +1387,8 @@ static WC_INLINE void tcp_socket(SOCKET_T* sockfd, int udp, int sctp)
 #elif defined(WOLFSSL_MDK_ARM) || defined (WOLFSSL_TIRTOS) ||\
                         defined(WOLFSSL_KEIL_TCP_NET) || defined(WOLFSSL_ZEPHYR)
     /* nothing to define */
+#elif defined(NETOS)
+    /* TODO: signal(SIGPIPE, SIG_IGN); */
 #else  /* no S_NOSIGPIPE */
     signal(SIGPIPE, SIG_IGN);
 #endif /* S_NOSIGPIPE */
@@ -1045,6 +1406,442 @@ static WC_INLINE void tcp_socket(SOCKET_T* sockfd, int udp, int sctp)
 #endif  /* USE_WINDOWS_API */
 }
 
+#if defined(WOLFSSL_WOLFSENTRY_HOOKS) && defined(WOLFSENTRY_H)
+
+#include <wolfsentry/wolfsentry_util.h>
+
+#if !defined(NO_FILESYSTEM) && !defined(WOLFSENTRY_NO_JSON)
+#include <wolfsentry/wolfsentry_json.h>
+#endif
+
+struct wolfsentry_data {
+    WOLFSENTRY_SOCKADDR(128) remote;
+    WOLFSENTRY_SOCKADDR(128) local;
+    wolfsentry_route_flags_t flags;
+    void *heap;
+    int alloctype;
+};
+
+static void free_wolfsentry_data(struct wolfsentry_data *data) {
+    XFREE(data, data->heap, data->alloctype);
+}
+
+static struct wolfsentry_context *wolfsentry = NULL;
+
+static int wolfsentry_data_index = -1;
+
+static WC_INLINE int wolfsentry_store_endpoints(
+    WOLFSSL *ssl,
+    SOCKADDR_IN_T *remote,
+    SOCKADDR_IN_T *local,
+    int proto,
+    wolfsentry_route_flags_t flags,
+    struct wolfsentry_data **wolfsentry_data_out)
+{
+    struct wolfsentry_data *wolfsentry_data = (struct wolfsentry_data *)XMALLOC(
+        sizeof *wolfsentry_data, NULL, DYNAMIC_TYPE_SOCKADDR);
+    if (wolfsentry_data == NULL)
+        return WOLFSSL_FAILURE;
+
+    wolfsentry_data->heap = NULL;
+    wolfsentry_data->alloctype = DYNAMIC_TYPE_SOCKADDR;
+
+#ifdef TEST_IPV6
+    if ((sizeof wolfsentry_data->remote.addr < sizeof remote->sin6_addr) ||
+        (sizeof wolfsentry_data->local.addr < sizeof local->sin6_addr))
+        return WOLFSSL_FAILURE;
+    wolfsentry_data->remote.sa_family = wolfsentry_data->local.sa_family = remote->sin6_family;
+    wolfsentry_data->remote.sa_port = ntohs(remote->sin6_port);
+    wolfsentry_data->local.sa_port = ntohs(local->sin6_port);
+    if (WOLFSENTRY_MASKIN_BITS(flags, WOLFSENTRY_ROUTE_FLAG_SA_REMOTE_ADDR_WILDCARD)) {
+        wolfsentry_data->remote.addr_len = 0;
+        XMEMSET(wolfsentry_data->remote.addr, 0, sizeof remote->sin6_addr);
+    } else {
+        wolfsentry_data->remote.addr_len = sizeof remote->sin6_addr * BITS_PER_BYTE;
+        XMEMCPY(wolfsentry_data->remote.addr, &remote->sin6_addr, sizeof remote->sin6_addr);
+    }
+    if (WOLFSENTRY_MASKIN_BITS(flags, WOLFSENTRY_ROUTE_FLAG_SA_LOCAL_ADDR_WILDCARD)) {
+        wolfsentry_data->local.addr_len = 0;
+        XMEMSET(wolfsentry_data->local.addr, 0, sizeof local->sin6_addr);
+    } else {
+        wolfsentry_data->local.addr_len = sizeof local->sin6_addr * BITS_PER_BYTE;
+        XMEMCPY(wolfsentry_data->local.addr, &local->sin6_addr, sizeof local->sin6_addr);
+    }
+#else
+    if ((sizeof wolfsentry_data->remote.addr < sizeof remote->sin_addr) ||
+        (sizeof wolfsentry_data->local.addr < sizeof local->sin_addr))
+        return WOLFSSL_FAILURE;
+    wolfsentry_data->remote.sa_family = wolfsentry_data->local.sa_family = remote->sin_family;
+    wolfsentry_data->remote.sa_port = ntohs(remote->sin_port);
+    wolfsentry_data->local.sa_port = ntohs(local->sin_port);
+    if (WOLFSENTRY_MASKIN_BITS(flags, WOLFSENTRY_ROUTE_FLAG_SA_REMOTE_ADDR_WILDCARD)) {
+        wolfsentry_data->remote.addr_len = 0;
+        XMEMSET(wolfsentry_data->remote.addr, 0, sizeof remote->sin_addr);
+    } else {
+        wolfsentry_data->remote.addr_len = sizeof remote->sin_addr * BITS_PER_BYTE;
+        XMEMCPY(wolfsentry_data->remote.addr, &remote->sin_addr, sizeof remote->sin_addr);
+    }
+    if (WOLFSENTRY_MASKIN_BITS(flags, WOLFSENTRY_ROUTE_FLAG_SA_LOCAL_ADDR_WILDCARD)) {
+        wolfsentry_data->local.addr_len = 0;
+        XMEMSET(wolfsentry_data->local.addr, 0, sizeof local->sin_addr);
+    } else {
+        wolfsentry_data->local.addr_len = sizeof local->sin_addr * BITS_PER_BYTE;
+        XMEMCPY(wolfsentry_data->local.addr, &local->sin_addr, sizeof local->sin_addr);
+    }
+#endif
+    wolfsentry_data->remote.sa_proto = wolfsentry_data->local.sa_proto = proto;
+    wolfsentry_data->remote.interface = wolfsentry_data->local.interface = 0;
+    wolfsentry_data->flags = flags;
+
+    if (wolfSSL_set_ex_data_with_cleanup(
+            ssl, wolfsentry_data_index, wolfsentry_data,
+            (wolfSSL_ex_data_cleanup_routine_t)free_wolfsentry_data) !=
+        WOLFSSL_SUCCESS) {
+        free_wolfsentry_data(wolfsentry_data);
+        return WOLFSSL_FAILURE;
+    }
+
+    if (wolfsentry_data_out != NULL)
+        *wolfsentry_data_out = wolfsentry_data;
+
+    return WOLFSSL_SUCCESS;
+}
+
+static int wolfSentry_NetworkFilterCallback(
+    WOLFSSL *ssl,
+    struct wolfsentry_context *_wolfsentry,
+    wolfSSL_netfilter_decision_t *decision)
+{
+    struct wolfsentry_data *data;
+    char inet_ntop_buf[INET6_ADDRSTRLEN], inet_ntop_buf2[INET6_ADDRSTRLEN];
+    wolfsentry_errcode_t ret;
+    wolfsentry_action_res_t action_results;
+
+    if ((data = wolfSSL_get_ex_data(ssl, wolfsentry_data_index)) == NULL)
+        return WOLFSSL_FAILURE;
+
+    ret = wolfsentry_route_event_dispatch(
+        _wolfsentry,
+        (const struct wolfsentry_sockaddr *)&data->remote,
+        (const struct wolfsentry_sockaddr *)&data->local,
+        data->flags,
+        NULL /* event_label */,
+        0 /* event_label_len */,
+        NULL /* caller_context */,
+        NULL /* id */,
+        NULL /* inexact_matches */,
+        &action_results);
+
+    if (ret >= 0) {
+        if (WOLFSENTRY_MASKIN_BITS(action_results, WOLFSENTRY_ACTION_RES_REJECT))
+            *decision = WOLFSSL_NETFILTER_REJECT;
+        else if (WOLFSENTRY_MASKIN_BITS(action_results, WOLFSENTRY_ACTION_RES_ACCEPT))
+            *decision = WOLFSSL_NETFILTER_ACCEPT;
+        else
+            *decision = WOLFSSL_NETFILTER_PASS;
+    } else {
+        fprintf(stderr, "wolfsentry_route_event_dispatch error "
+               WOLFSENTRY_ERROR_FMT "\n", WOLFSENTRY_ERROR_FMT_ARGS(ret));
+        *decision = WOLFSSL_NETFILTER_PASS;
+    }
+
+    printf("wolfSentry got network filter callback: family=%d proto=%d rport=%d"
+           " lport=%d raddr=%s laddr=%s interface=%d; decision=%d (%s)\n",
+           data->remote.sa_family,
+           data->remote.sa_proto,
+           data->remote.sa_port,
+           data->local.sa_port,
+           inet_ntop(data->remote.sa_family, data->remote.addr, inet_ntop_buf,
+                     sizeof inet_ntop_buf),
+           inet_ntop(data->local.sa_family, data->local.addr, inet_ntop_buf2,
+                     sizeof inet_ntop_buf2),
+           data->remote.interface,
+           *decision,
+           *decision == WOLFSSL_NETFILTER_REJECT ? "REJECT" :
+           *decision == WOLFSSL_NETFILTER_ACCEPT ? "ACCEPT" :
+           *decision == WOLFSSL_NETFILTER_PASS ? "PASS" :
+           "???");
+
+    return WOLFSSL_SUCCESS;
+}
+
+static int wolfsentry_setup(
+    struct wolfsentry_context **_wolfsentry,
+    const char *_wolfsentry_config_path,
+    wolfsentry_route_flags_t route_flags)
+{
+    wolfsentry_errcode_t ret;
+    ret =  wolfsentry_init(NULL /* hpi */, NULL /* default config */,
+                           _wolfsentry);
+    if (ret < 0) {
+        fprintf(stderr, "wolfsentry_init() returned " WOLFSENTRY_ERROR_FMT "\n",
+                WOLFSENTRY_ERROR_FMT_ARGS(ret));
+        err_sys("unable to initialize wolfSentry");
+    }
+
+    if (wolfsentry_data_index < 0)
+        wolfsentry_data_index = wolfSSL_get_ex_new_index(0, NULL, NULL, NULL,
+                                                         NULL);
+
+#if !defined(NO_FILESYSTEM) && !defined(WOLFSENTRY_NO_JSON)
+    if (_wolfsentry_config_path != NULL) {
+        unsigned char buf[512];
+        char err_buf[512];
+        struct wolfsentry_json_process_state *jps;
+
+        FILE *f = fopen(_wolfsentry_config_path, "r");
+
+        if (f == NULL) {
+            fprintf(stderr, "fopen(%s): %s\n",_wolfsentry_config_path,strerror(errno));
+            err_sys("unable to open wolfSentry config file");
+        }
+
+        if ((ret = wolfsentry_config_json_init(
+                 *_wolfsentry,
+                 WOLFSENTRY_CONFIG_LOAD_FLAG_NONE,
+                 &jps)) < 0) {
+            fprintf(stderr, "wolfsentry_config_json_init() returned "
+                    WOLFSENTRY_ERROR_FMT "\n",
+                    WOLFSENTRY_ERROR_FMT_ARGS(ret));
+            err_sys("error while initializing wolfSentry config parser");
+        }
+
+        for (;;) {
+            size_t n = fread(buf, 1, sizeof buf, f);
+            if ((n < sizeof buf) && ferror(f)) {
+                fprintf(stderr,"fread(%s): %s\n",_wolfsentry_config_path, strerror(errno));
+                err_sys("error while reading wolfSentry config file");
+            }
+
+            ret = wolfsentry_config_json_feed(jps, buf, n, err_buf, sizeof err_buf);
+            if (ret < 0) {
+                fprintf(stderr, "%.*s\n", (int)sizeof err_buf, err_buf);
+                err_sys("error while loading wolfSentry config file");
+            }
+            if ((n < sizeof buf) && feof(f))
+                break;
+        }
+        fclose(f);
+
+        if ((ret = wolfsentry_config_json_fini(&jps, err_buf, sizeof err_buf)) < 0) {
+            fprintf(stderr, "%.*s\n", (int)sizeof err_buf, err_buf);
+            err_sys("error while loading wolfSentry config file");
+        }
+
+    } else
+#endif /* !NO_FILESYSTEM && !WOLFSENTRY_NO_JSON */
+    {
+        struct wolfsentry_route_table *table;
+
+        if ((ret = wolfsentry_route_get_main_table(*_wolfsentry,
+                                                                &table)) < 0)
+            fprintf(stderr, "wolfsentry_route_get_main_table() returned "
+                    WOLFSENTRY_ERROR_FMT "\n",
+                    WOLFSENTRY_ERROR_FMT_ARGS(ret));
+
+        if (ret < 0)
+            return ret;
+
+        if (WOLFSENTRY_MASKIN_BITS(route_flags, WOLFSENTRY_ROUTE_FLAG_DIRECTION_OUT)) {
+            WOLFSENTRY_SOCKADDR(128) remote, local;
+            wolfsentry_ent_id_t id;
+            wolfsentry_action_res_t action_results;
+
+            if ((ret = wolfsentry_route_table_default_policy_set(
+                     *_wolfsentry, table,
+                     WOLFSENTRY_ACTION_RES_ACCEPT))
+                < 0) {
+                fprintf(stderr,
+                        "wolfsentry_route_table_default_policy_set() returned "
+                        WOLFSENTRY_ERROR_FMT "\n",
+                        WOLFSENTRY_ERROR_FMT_ARGS(ret));
+                return ret;
+            }
+
+            XMEMSET(&remote, 0, sizeof remote);
+            XMEMSET(&local, 0, sizeof local);
+#ifdef TEST_IPV6
+            remote.sa_family = local.sa_family = AF_INET6;
+            remote.addr_len = 128;
+            XMEMCPY(remote.addr, "\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\001", 16);
+#else
+            remote.sa_family = local.sa_family = AF_INET;
+            remote.addr_len = 32;
+            XMEMCPY(remote.addr, "\177\000\000\001", 4);
+#endif
+
+            if ((ret = wolfsentry_route_insert
+                 (*_wolfsentry, NULL /* caller_context */,
+                  (const struct wolfsentry_sockaddr *)&remote,
+                  (const struct wolfsentry_sockaddr *)&local,
+                  route_flags                                    |
+                  WOLFSENTRY_ROUTE_FLAG_GREENLISTED              |
+                  WOLFSENTRY_ROUTE_FLAG_PARENT_EVENT_WILDCARD    |
+                  WOLFSENTRY_ROUTE_FLAG_REMOTE_INTERFACE_WILDCARD|
+                  WOLFSENTRY_ROUTE_FLAG_LOCAL_INTERFACE_WILDCARD |
+                  WOLFSENTRY_ROUTE_FLAG_SA_LOCAL_ADDR_WILDCARD   |
+                  WOLFSENTRY_ROUTE_FLAG_SA_PROTO_WILDCARD        |
+                  WOLFSENTRY_ROUTE_FLAG_SA_REMOTE_PORT_WILDCARD  |
+                  WOLFSENTRY_ROUTE_FLAG_SA_LOCAL_PORT_WILDCARD,
+                  0 /* event_label_len */, 0 /* event_label */, &id,
+                  &action_results)) < 0) {
+                fprintf(stderr, "wolfsentry_route_insert() returned "
+                        WOLFSENTRY_ERROR_FMT "\n",
+                        WOLFSENTRY_ERROR_FMT_ARGS(ret));
+                return ret;
+            }
+        } else if (WOLFSENTRY_MASKIN_BITS(route_flags, WOLFSENTRY_ROUTE_FLAG_DIRECTION_IN)) {
+            WOLFSENTRY_SOCKADDR(128) remote, local;
+            wolfsentry_ent_id_t id;
+            wolfsentry_action_res_t action_results;
+
+            if ((ret = wolfsentry_route_table_default_policy_set(
+                     *_wolfsentry, table,
+                     WOLFSENTRY_ACTION_RES_REJECT|WOLFSENTRY_ACTION_RES_STOP))
+                < 0) {
+                fprintf(stderr,
+                        "wolfsentry_route_table_default_policy_set() returned "
+                        WOLFSENTRY_ERROR_FMT "\n",
+                        WOLFSENTRY_ERROR_FMT_ARGS(ret));
+                return ret;
+            }
+
+            XMEMSET(&remote, 0, sizeof remote);
+            XMEMSET(&local, 0, sizeof local);
+#ifdef TEST_IPV6
+            remote.sa_family = local.sa_family = AF_INET6;
+            remote.addr_len = 128;
+            XMEMCPY(remote.addr, "\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\001", 16);
+#else
+            remote.sa_family = local.sa_family = AF_INET;
+            remote.addr_len = 32;
+            XMEMCPY(remote.addr, "\177\000\000\001", 4);
+#endif
+
+            if ((ret = wolfsentry_route_insert
+                 (*_wolfsentry, NULL /* caller_context */,
+                  (const struct wolfsentry_sockaddr *)&remote, (const struct wolfsentry_sockaddr *)&local,
+                  route_flags                                    |
+                  WOLFSENTRY_ROUTE_FLAG_GREENLISTED              |
+                  WOLFSENTRY_ROUTE_FLAG_PARENT_EVENT_WILDCARD    |
+                  WOLFSENTRY_ROUTE_FLAG_REMOTE_INTERFACE_WILDCARD|
+                  WOLFSENTRY_ROUTE_FLAG_LOCAL_INTERFACE_WILDCARD |
+                  WOLFSENTRY_ROUTE_FLAG_SA_LOCAL_ADDR_WILDCARD   |
+                  WOLFSENTRY_ROUTE_FLAG_SA_PROTO_WILDCARD        |
+                  WOLFSENTRY_ROUTE_FLAG_SA_REMOTE_PORT_WILDCARD  |
+                  WOLFSENTRY_ROUTE_FLAG_SA_LOCAL_PORT_WILDCARD,
+                  0 /* event_label_len */, 0 /* event_label */, &id,
+                  &action_results)) < 0) {
+                fprintf(stderr, "wolfsentry_route_insert() returned "
+                        WOLFSENTRY_ERROR_FMT "\n",
+                        WOLFSENTRY_ERROR_FMT_ARGS(ret));
+                return ret;
+            }
+        }
+    }
+
+    return 0;
+}
+
+static WC_INLINE int tcp_connect_with_wolfSentry(
+    SOCKET_T* sockfd,
+    const char* ip,
+    word16 port,
+    int udp,
+    int sctp,
+    WOLFSSL* ssl,
+    struct wolfsentry_context *_wolfsentry)
+{
+    SOCKADDR_IN_T remote_addr;
+    struct wolfsentry_data *wolfsentry_data;
+    char inet_ntop_buf[INET6_ADDRSTRLEN], inet_ntop_buf2[INET6_ADDRSTRLEN];
+    wolfsentry_errcode_t ret;
+    wolfsentry_action_res_t action_results;
+    wolfSSL_netfilter_decision_t decision;
+
+    build_addr(&remote_addr, ip, port, udp, sctp);
+
+    {
+        SOCKADDR_IN_T local_addr;
+#ifdef TEST_IPV6
+        local_addr.sin6_port = 0;
+#else
+        local_addr.sin_port = 0;
+#endif
+        ((struct sockaddr *)&local_addr)->sa_family = ((struct sockaddr *)&remote_addr)->sa_family;
+
+        if (wolfsentry_store_endpoints(
+                ssl, &remote_addr, &local_addr,
+                udp ? IPPROTO_UDP : IPPROTO_TCP,
+                WOLFSENTRY_ROUTE_FLAG_DIRECTION_OUT|
+                WOLFSENTRY_ROUTE_FLAG_SA_LOCAL_ADDR_WILDCARD|
+                WOLFSENTRY_ROUTE_FLAG_SA_LOCAL_PORT_WILDCARD, &wolfsentry_data) != WOLFSSL_SUCCESS)
+            return WOLFSSL_FAILURE;
+    }
+
+    ret = wolfsentry_route_event_dispatch(
+        _wolfsentry,
+        (const struct wolfsentry_sockaddr *)&wolfsentry_data->remote,
+        (const struct wolfsentry_sockaddr *)&wolfsentry_data->local,
+        wolfsentry_data->flags,
+        NULL /* event_label */,
+        0    /* event_label_len */,
+        NULL /* caller_context */,
+        NULL /* id */,
+        NULL /* inexact_matches */,
+        &action_results);
+
+    if (ret < 0) {
+        fprintf(stderr, "wolfsentry_route_event_dispatch error "
+               WOLFSENTRY_ERROR_FMT "\n", WOLFSENTRY_ERROR_FMT_ARGS(ret));
+        decision = WOLFSSL_NETFILTER_PASS;
+    } else {
+        if (WOLFSENTRY_MASKIN_BITS(action_results, WOLFSENTRY_ACTION_RES_REJECT))
+            decision = WOLFSSL_NETFILTER_REJECT;
+        else if (WOLFSENTRY_MASKIN_BITS(action_results, WOLFSENTRY_ACTION_RES_ACCEPT))
+            decision = WOLFSSL_NETFILTER_ACCEPT;
+        else
+            decision = WOLFSSL_NETFILTER_PASS;
+    }
+
+    printf("wolfSentry callin from tcp_connect_with_wolfSentry: family=%d proto=%d rport=%d"
+           " lport=%d raddr=%s laddr=%s interface=%d; decision=%d (%s)\n",
+           wolfsentry_data->remote.sa_family,
+           wolfsentry_data->remote.sa_proto,
+           wolfsentry_data->remote.sa_port,
+           wolfsentry_data->local.sa_port,
+           inet_ntop(wolfsentry_data->remote.sa_family, wolfsentry_data->remote.addr, inet_ntop_buf,
+                     sizeof inet_ntop_buf),
+           inet_ntop(wolfsentry_data->local.sa_family, wolfsentry_data->local.addr, inet_ntop_buf2,
+                     sizeof inet_ntop_buf2),
+           wolfsentry_data->remote.interface,
+           decision,
+           decision == WOLFSSL_NETFILTER_REJECT ? "REJECT" :
+           decision == WOLFSSL_NETFILTER_ACCEPT ? "ACCEPT" :
+           decision == WOLFSSL_NETFILTER_PASS ?   "PASS" :
+           "???");
+
+    if (decision == WOLFSSL_NETFILTER_REJECT)
+        return SOCKET_FILTERED_E;
+
+    if (udp) {
+        wolfSSL_dtls_set_peer(ssl, &remote_addr, sizeof(remote_addr));
+    }
+    tcp_socket(sockfd, udp, sctp);
+
+    if (!udp) {
+        if (connect(*sockfd, (const struct sockaddr*)&remote_addr, sizeof(remote_addr)) != 0)
+            err_sys_with_errno("tcp connect failed");
+    }
+
+    return WOLFSSL_SUCCESS;
+}
+
+#define tcp_connect(sockfd, ip, port, udp, sctp, ssl) \
+    tcp_connect_with_wolfSentry(sockfd, ip, port, udp, sctp, ssl, wolfsentry)
+
+#else /* !WOLFSSL_WOLFSENTRY_HOOKS */
+
 static WC_INLINE void tcp_connect(SOCKET_T* sockfd, const char* ip, word16 port,
                                int udp, int sctp, WOLFSSL* ssl)
 {
@@ -1061,10 +1858,14 @@ static WC_INLINE void tcp_connect(SOCKET_T* sockfd, const char* ip, word16 port,
     }
 }
 
+#endif /* WOLFSSL_WOLFSENTRY_HOOKS */
 
-static WC_INLINE void udp_connect(SOCKET_T* sockfd, void* addr, int addrSz)
+
+static WC_INLINE void udp_connect(SOCKET_T* sockfd, const char* ip, word16 port)
 {
-    if (connect(*sockfd, (const struct sockaddr*)addr, addrSz) != 0)
+    SOCKADDR_IN_T addr;
+    build_addr(&addr, ip, port, 1, 0);
+    if (connect(*sockfd, (const struct sockaddr*)&addr, sizeof(addr)) != 0)
         err_sys_with_errno("tcp connect failed");
 }
 
@@ -1258,7 +2059,7 @@ static WC_INLINE void udp_accept(SOCKET_T* sockfd, SOCKET_T* clientfd,
     if (bind(*sockfd, (const struct sockaddr*)&addr, sizeof(addr)) != 0)
         err_sys_with_errno("tcp bind failed");
 
-    #if (defined(NO_MAIN_DRIVER) && !defined(USE_WINDOWS_API)) && !defined(WOLFSSL_TIRTOS)
+    #if !defined(USE_WINDOWS_API) && !defined(WOLFSSL_TIRTOS)
         if (port == 0) {
             socklen_t len = sizeof(addr);
             if (getsockname(*sockfd, (struct sockaddr*)&addr, &len) == 0) {
@@ -1271,34 +2072,42 @@ static WC_INLINE void udp_accept(SOCKET_T* sockfd, SOCKET_T* clientfd,
         }
     #endif
 
-#if defined(_POSIX_THREADS) && defined(NO_MAIN_DRIVER) && !defined(__MINGW32__)
-    /* signal ready to accept data */
-    {
-    tcp_ready* ready = args->signal;
-    pthread_mutex_lock(&ready->mutex);
-    ready->ready = 1;
-    ready->port = port;
-    pthread_cond_signal(&ready->cond);
-    pthread_mutex_unlock(&ready->mutex);
-    }
+    if (args != NULL && args->signal != NULL) {
+#if defined(_POSIX_THREADS) && !defined(__MINGW32__)
+        /* signal ready to accept data */
+        tcp_ready* ready = args->signal;
+        PTHREAD_CHECK_RET(pthread_mutex_lock(&ready->mutex));
+        ready->ready = 1;
+        ready->port = port;
+        PTHREAD_CHECK_RET(pthread_cond_signal(&ready->cond));
+        PTHREAD_CHECK_RET(pthread_mutex_unlock(&ready->mutex));
 #elif defined (WOLFSSL_TIRTOS)
-    /* Need mutex? */
-    tcp_ready* ready = args->signal;
-    ready->ready = 1;
-    ready->port = port;
+        /* Need mutex? */
+        tcp_ready* ready = args->signal;
+        ready->ready = 1;
+        ready->port = port;
+#elif defined(NETOS)
+        tcp_ready* ready = args->signal;
+        (void)tx_mutex_get(&ready->mutex, TX_WAIT_FOREVER);
+        ready->ready = 1;
+        ready->port = port;
+        (void)tx_mutex_put(&ready->mutex);
 #else
-    (void)port;
+        (void)port;
 #endif
+    }
+    else {
+        fprintf(stderr, "args or args->signal was NULL. Not setting ready info.");
+    }
 
     *clientfd = *sockfd;
 }
 
 static WC_INLINE void tcp_accept(SOCKET_T* sockfd, SOCKET_T* clientfd,
                               func_args* args, word16 port, int useAnyAddr,
-                              int udp, int sctp, int ready_file, int do_listen)
+                              int udp, int sctp, int ready_file, int do_listen,
+                              SOCKADDR_IN_T *client_addr, socklen_t *client_len)
 {
-    SOCKADDR_IN_T client_addr;
-    socklen_t client_len = sizeof(client_addr);
     tcp_ready* ready = NULL;
 
     (void) ready; /* Account for case when "ready" is not used */
@@ -1316,11 +2125,11 @@ static WC_INLINE void tcp_accept(SOCKET_T* sockfd, SOCKET_T* clientfd,
         if (args)
             ready = args->signal;
         if (ready) {
-            pthread_mutex_lock(&ready->mutex);
+            PTHREAD_CHECK_RET(pthread_mutex_lock(&ready->mutex));
             ready->ready = 1;
             ready->port = port;
-            pthread_cond_signal(&ready->cond);
-            pthread_mutex_unlock(&ready->mutex);
+            PTHREAD_CHECK_RET(pthread_cond_signal(&ready->cond));
+            PTHREAD_CHECK_RET(pthread_mutex_unlock(&ready->mutex));
         }
     #elif defined (WOLFSSL_TIRTOS)
         /* Need mutex? */
@@ -1330,11 +2139,22 @@ static WC_INLINE void tcp_accept(SOCKET_T* sockfd, SOCKET_T* clientfd,
             ready->ready = 1;
             ready->port = port;
         }
+    #elif defined(NETOS)
+        /* signal ready to tcp_accept */
+        if (args)
+            ready = args->signal;
+        if (ready) {
+            (void)tx_mutex_get(&ready->mutex, TX_WAIT_FOREVER);
+            ready->ready = 1;
+            ready->port = port;
+            (void)tx_mutex_put(&ready->mutex);
+        }
     #endif
 
         if (ready_file) {
-        #if !defined(NO_FILESYSTEM) || defined(FORCE_BUFFER_TEST)
-            XFILE srf = NULL;
+        #if !defined(NO_FILESYSTEM) || defined(FORCE_BUFFER_TEST) && \
+            !defined(NETOS)
+            XFILE srf = (XFILE)NULL;
             if (args)
                 ready = args->signal;
 
@@ -1347,7 +2167,7 @@ static WC_INLINE void tcp_accept(SOCKET_T* sockfd, SOCKET_T* clientfd,
                        -p 0 to server on supported platforms with -R ready_file
                        client can then wait for existence of ready_file and see
                        which port the server is listening on. */
-                    fprintf(srf, "%d\n", (int)port);
+                    LIBCALL_CHECK_RET(fprintf(srf, "%d\n", (int)port));
                     fclose(srf);
                 }
             }
@@ -1355,8 +2175,8 @@ static WC_INLINE void tcp_accept(SOCKET_T* sockfd, SOCKET_T* clientfd,
         }
     }
 
-    *clientfd = accept(*sockfd, (struct sockaddr*)&client_addr,
-                      (ACCEPT_THIRD_T)&client_len);
+    *clientfd = accept(*sockfd, (struct sockaddr*)client_addr,
+                      (ACCEPT_THIRD_T)client_len);
     if(WOLFSSL_SOCKET_IS_INVALID(*clientfd)) {
         err_sys_with_errno("tcp accept failed");
     }
@@ -1433,7 +2253,7 @@ static WC_INLINE unsigned int my_psk_server_cb(WOLFSSL* ssl, const char* identit
     (void)key_max_len;
 
     /* see internal.h MAX_PSK_ID_LEN for PSK identity limit */
-    if (XSTRNCMP(identity, kIdentityStr, XSTRLEN(kIdentityStr)) != 0)
+    if (XSTRCMP(identity, kIdentityStr) != 0)
         return 0;
 
     if (wolfSSL_GetVersion(ssl) < WOLFSSL_TLSV1_3) {
@@ -1460,7 +2280,7 @@ static WC_INLINE unsigned int my_psk_server_cb(WOLFSSL* ssl, const char* identit
     }
 }
 
-
+#ifdef WOLFSSL_TLS13
 static WC_INLINE unsigned int my_psk_client_tls13_cb(WOLFSSL* ssl,
         const char* hint, char* identity, unsigned int id_max_len,
         unsigned char* key, unsigned int key_max_len, const char** ciphersuite)
@@ -1494,14 +2314,18 @@ static WC_INLINE unsigned int my_psk_server_tls13_cb(WOLFSSL* ssl,
 {
     int i;
     int b = 0x01;
+    int kIdLen = (int)XSTRLEN(kIdentityStr);
     const char* userCipher = (const char*)wolfSSL_get_psk_callback_ctx(ssl);
 
     (void)ssl;
     (void)key_max_len;
 
     /* see internal.h MAX_PSK_ID_LEN for PSK identity limit */
-    if (XSTRNCMP(identity, kIdentityStr, XSTRLEN(kIdentityStr)) != 0)
+    if (XSTRNCMP(identity, kIdentityStr, kIdLen) != 0)
         return 0;
+    if (identity[kIdLen] != '\0') {
+        userCipher = wolfSSL_get_cipher_name_by_hash(ssl, identity + kIdLen);
+    }
 
     for (i = 0; i < 32; i++, b += 0x22) {
         if (b >= 0x100)
@@ -1510,6 +2334,112 @@ static WC_INLINE unsigned int my_psk_server_tls13_cb(WOLFSSL* ssl,
     }
 
     *ciphersuite = userCipher ? userCipher : "TLS13-AES128-GCM-SHA256";
+
+    return 32;   /* length of key in octets or 0 for error */
+}
+#endif
+
+#if defined(OPENSSL_ALL) && !defined(NO_CERTS) && \
+       !defined(NO_FILESYSTEM)
+static unsigned char local_psk[32];
+#endif
+static WC_INLINE int my_psk_use_session_cb(WOLFSSL* ssl,
+            const WOLFSSL_EVP_MD* md, const unsigned char **id,
+            size_t* idlen,  WOLFSSL_SESSION **sess)
+{
+#if defined(OPENSSL_ALL) && !defined(NO_CERTS) && \
+       !defined(NO_FILESYSTEM)
+    int i;
+    int b = 0x01;
+    WOLFSSL_SESSION* lsess;
+    char buf[256];
+    const char* cipher_id = "TLS13-AES128-GCM-SHA256";
+    const SSL_CIPHER* cipher = NULL;
+    STACK_OF(SSL_CIPHER) *supportedCiphers = NULL;
+    int numCiphers = 0;
+    (void)ssl;
+    (void)md;
+
+    printf("use psk session callback \n");
+
+    lsess = SSL_SESSION_new();
+    if (lsess == NULL) {
+        return 0;
+    }
+    supportedCiphers = SSL_get_ciphers(ssl);
+    numCiphers = sk_num(supportedCiphers);
+
+    for (i = 0; i < numCiphers; ++i) {
+
+        if ((cipher = (const WOLFSSL_CIPHER*)sk_value(supportedCiphers, i))) {
+            SSL_CIPHER_description(cipher, buf, sizeof(buf));
+        }
+
+        if (XMEMCMP(cipher_id, buf, XSTRLEN(cipher_id)) == 0) {
+            break;
+        }
+    }
+
+    if (i != numCiphers) {
+        SSL_SESSION_set_cipher(lsess, cipher);
+            for (i = 0; i < 32; i++, b += 0x22) {
+            if (b >= 0x100)
+                b = 0x01;
+            local_psk[i] = b;
+        }
+
+        *id = local_psk;
+        *idlen = 32;
+        *sess = lsess;
+
+        return 1;
+    }
+    else {
+        *id = NULL;
+        *idlen = 0;
+        *sess = NULL;
+        SSL_SESSION_free(lsess);
+        return 0;
+    }
+#else
+    (void)ssl;
+    (void)md;
+    (void)id;
+    (void)idlen;
+    (void)sess;
+
+    return 0;
+#endif
+}
+
+static WC_INLINE unsigned int my_psk_client_cs_cb(WOLFSSL* ssl,
+        const char* hint, char* identity, unsigned int id_max_len,
+        unsigned char* key, unsigned int key_max_len, const char* ciphersuite)
+{
+    int i;
+    int b = 0x01;
+
+    (void)ssl;
+    (void)hint;
+    (void)key_max_len;
+
+#ifdef WOLFSSL_PSK_MULTI_ID_PER_CS
+    /* Multiple calls for each cipher suite. First identity byte indicates the
+     * number of identites seen so far for cipher suite. */
+    if (identity[0] != 0) {
+        return 0;
+    }
+#endif
+
+    /* see internal.h MAX_PSK_ID_LEN for PSK identity limit */
+    XSTRNCPY(identity, kIdentityStr, id_max_len);
+    XSTRNCAT(identity, ciphersuite + XSTRLEN(ciphersuite) - 6, id_max_len);
+
+    for (i = 0; i < 32; i++, b += 0x22) {
+        if (b >= 0x100)
+            b = 0x01;
+        key[i] = b;
+    }
 
     return 32;   /* length of key in octets or 0 for error */
 }
@@ -1550,12 +2480,15 @@ static WC_INLINE unsigned int my_psk_server_tls13_cb(WOLFSSL* ssl,
 #else
 
 #if !defined(WOLFSSL_MDK_ARM) && !defined(WOLFSSL_KEIL_TCP_NET) && !defined(WOLFSSL_CHIBIOS)
-    #include <sys/time.h>
+    #ifndef NETOS
+        #include <sys/time.h>
+    #endif
 
     static WC_INLINE double current_time(int reset)
     {
         struct timeval tv;
-        gettimeofday(&tv, 0);
+        if (gettimeofday(&tv, NULL) < 0)
+            err_sys_with_errno("gettimeofday");
         (void)reset;
 
         return (double)tv.tv_sec + (double)tv.tv_usec / 1000000;
@@ -1565,6 +2498,26 @@ static WC_INLINE unsigned int my_psk_server_tls13_cb(WOLFSSL* ssl,
 #endif
 #endif /* USE_WINDOWS_API */
 
+#ifdef WOLFSSL_CALLBACKS
+/* only for debug use! */
+static WC_INLINE void msgDebugCb(int write_p, int version, int content_type,
+    const void *buf, size_t len, WOLFSSL *ssl, void *arg)
+{
+    size_t z;
+    byte* pt;
+
+    printf("Version %02X, content type = %d\n", version, content_type);
+    printf("%s ", (write_p)? "WRITING" : "READING");
+    pt = (byte*)buf;
+    printf("DATA [%zu]: ", len);
+    for (z = 0; z < len; z++)
+        printf("%02X", pt[z]);
+    printf("\n");
+
+    (void)arg;
+    (void)ssl;
+}
+#endif /* WOLFSSL_CALLBACKS */
 
 #if defined(HAVE_OCSP) && defined(WOLFSSL_NONBLOCK_OCSP)
 static WC_INLINE int OCSPIOCb(void* ioCtx, const char* url, int urlSz,
@@ -1597,13 +2550,14 @@ static WC_INLINE int OCSPIOCb(void* ioCtx, const char* url, int urlSz,
 
 static WC_INLINE void OCSPRespFreeCb(void* ioCtx, unsigned char* response)
 {
-    return EmbedOcspRespFree(ioCtx, response);
+    EmbedOcspRespFree(ioCtx, response);
 }
 #endif
 
 #if !defined(NO_CERTS)
     #if !defined(NO_FILESYSTEM) || \
-        (defined(NO_FILESYSTEM) && defined(FORCE_BUFFER_TEST))
+        (defined(NO_FILESYSTEM) && defined(FORCE_BUFFER_TEST)) && \
+        !defined(NETOS)
 
     /* reads file size, allocates buffer, reads into buffer, returns buffer */
     static WC_INLINE int load_file(const char* fname, byte** buf, size_t* bufLen)
@@ -1622,11 +2576,11 @@ static WC_INLINE void OCSPRespFreeCb(void* ioCtx, unsigned char* response)
         /* open file (read-only binary) */
         lFile = XFOPEN(fname, "rb");
         if (!lFile) {
-            printf("Error loading %s\n", fname);
+            fprintf(stderr, "Error loading %s\n", fname);
             return BAD_PATH_ERROR;
         }
 
-        fseek(lFile, 0, SEEK_END);
+        LIBCALL_CHECK_RET(fseek(lFile, 0, SEEK_END));
         fileSz = (int)ftell(lFile);
         rewind(lFile);
         if (fileSz  > 0) {
@@ -1634,7 +2588,8 @@ static WC_INLINE void OCSPRespFreeCb(void* ioCtx, unsigned char* response)
             *buf = (byte*)malloc(*bufLen);
             if (*buf == NULL) {
                 ret = MEMORY_E;
-                printf("Error allocating %lu bytes\n", (unsigned long)*bufLen);
+                fprintf(stderr,
+                        "Error allocating %lu bytes\n", (unsigned long)*bufLen);
             }
             else {
                 size_t readLen = fread(*buf, *bufLen, 1, lFile);
@@ -1785,7 +2740,7 @@ static THREAD_LS_T int myVerifyAction = VERIFY_OVERRIDE_ERROR;
  * --enable-opensslextra is defined because it sets WOLFSSL_ALWAYS_VERIFY_CB and
  * WOLFSSL_VERIFY_CB_ALL_CERTS.
  * Normal cases of the verify callback only occur on certificate failures when the
- * wolfSSL_set_verify(ssl, SSL_VERIFY_PEER, myVerifyCb); is called
+ * wolfSSL_set_verify(ssl, SSL_VERIFY_PEER, myVerify); is called
 */
 
 static WC_INLINE int myVerify(int preverify, WOLFSSL_X509_STORE_CTX* store)
@@ -1800,7 +2755,6 @@ static WC_INLINE int myVerify(int preverify, WOLFSSL_X509_STORE_CTX* store)
     int i = 0;
 #endif
 #endif
-    (void)preverify;
 
     /* Verify Callback Arguments:
      * preverify:           1=Verify Okay, 0=Failure
@@ -1817,7 +2771,7 @@ static WC_INLINE int myVerify(int preverify, WOLFSSL_X509_STORE_CTX* store)
         will be discarded (only with SESSION_CERTS)
      */
 
-    printf("In verification callback, error = %d, %s\n", store->error,
+    fprintf(stderr, "In verification callback, error = %d, %s\n", store->error,
                                  wolfSSL_ERR_error_string(store->error, buffer));
 #if defined(OPENSSL_EXTRA) || defined(OPENSSL_EXTRA_X509_SMALL)
     peer = store->current_cert;
@@ -1828,6 +2782,14 @@ static WC_INLINE int myVerify(int preverify, WOLFSSL_X509_STORE_CTX* store)
                                       wolfSSL_X509_get_subject_name(peer), 0, 0);
         printf("\tPeer's cert info:\n issuer : %s\n subject: %s\n", issuer,
                                                                   subject);
+
+#if defined(OPENSSL_ALL) || defined(WOLFSSL_QT)
+        /* preverify needs to be self-signer error for Qt compat.
+         * Should be ASN_SELF_SIGNED_E */
+        if (XSTRCMP(issuer, subject) == 0 && preverify == ASN_NO_SIGNER_E)
+            return 0;
+#endif
+
         XFREE(subject, 0, DYNAMIC_TYPE_OPENSSL);
         XFREE(issuer,  0, DYNAMIC_TYPE_OPENSSL);
 #if defined(SHOW_CERTS) && !defined(NO_FILESYSTEM)
@@ -1845,12 +2807,12 @@ static WC_INLINE int myVerify(int preverify, WOLFSSL_X509_STORE_CTX* store)
                     wolfSSL_BIO_free(bio);
                 }
             }
-            wolfSSL_sk_X509_free(sk);
+            wolfSSL_sk_X509_pop_free(sk, NULL);
         }
 #endif
     }
     else
-        printf("\tPeer has no cert!\n");
+        fprintf(stderr, "\tPeer has no cert!\n");
 #else
     printf("\tPeer certs: %d\n", store->totalCerts);
     #ifdef SHOW_CERTS
@@ -1870,7 +2832,7 @@ static WC_INLINE int myVerify(int preverify, WOLFSSL_X509_STORE_CTX* store)
         return 0; /* test failure case */
     }
 
-    if (myVerifyAction == VERIFY_OVERRIDE_DATE_ERR && 
+    if (myVerifyAction == VERIFY_OVERRIDE_DATE_ERR &&
         (store->error == ASN_BEFORE_DATE_E || store->error == ASN_AFTER_DATE_E)) {
         printf("Overriding cert date error as example for bad clock testing\n");
         return 1;
@@ -1889,8 +2851,8 @@ static WC_INLINE int myVerify(int preverify, WOLFSSL_X509_STORE_CTX* store)
 
 #ifdef HAVE_EXT_CACHE
 
-static WC_INLINE WOLFSSL_SESSION* mySessGetCb(WOLFSSL* ssl, unsigned char* id,
-    int id_len, int* copy)
+static WC_INLINE WOLFSSL_SESSION* mySessGetCb(WOLFSSL* ssl,
+        const unsigned char* id, int id_len, int* copy)
 {
     (void)ssl;
     (void)id;
@@ -2005,17 +2967,20 @@ static WC_INLINE void CaCb(unsigned char* der, int sz, int type)
 
     static WC_INLINE int ChangeToWolfRoot(void)
     {
-        #if !defined(NO_FILESYSTEM) || defined(FORCE_BUFFER_TEST)
+        #if !defined(NO_FILESYSTEM) || defined(FORCE_BUFFER_TEST) && \
+            !defined(NETOS)
             int depth, res;
             XFILE keyFile;
             for(depth = 0; depth <= MAX_WOLF_ROOT_DEPTH; depth++) {
-                keyFile = XFOPEN(ntruKeyFile, "rb");
+                keyFile = XFOPEN(dhParamFile, "rb");
                 if (keyFile != NULL) {
                     fclose(keyFile);
                     return depth;
                 }
             #ifdef USE_WINDOWS_API
                 res = SetCurrentDirectoryA("..\\");
+            #elif defined(NETOS)
+                return 0;
             #else
                 res = chdir("../");
             #endif
@@ -2033,327 +2998,6 @@ static WC_INLINE void CaCb(unsigned char* der, int sz, int type)
     }
 #endif /* !defined(WOLFSSL_MDK_ARM) && !defined(WOLFSSL_KEIL_FS) && !defined(WOLFSSL_TIRTOS) */
 
-#ifdef HAVE_STACK_SIZE
-
-typedef THREAD_RETURN WOLFSSL_THREAD (*thread_func)(void* args);
-#define STACK_CHECK_VAL 0x01
-
-struct stack_size_debug_context {
-  unsigned char *myStack;
-  size_t stackSize;
-#ifdef HAVE_STACK_SIZE_VERBOSE
-  size_t *stackSizeHWM_ptr;
-  thread_func fn;
-  void *args;
-#endif
-};
-
-#ifdef HAVE_STACK_SIZE_VERBOSE
-
-/* per-subtest stack high water mark tracking.
- *
- * enable with
- *
- * ./configure --enable-stacksize=verbose [...]
- */
-
-static THREAD_RETURN debug_stack_size_verbose_shim(struct stack_size_debug_context *shim_args) {
-  StackSizeCheck_myStack = shim_args->myStack;
-  StackSizeCheck_stackSize = shim_args->stackSize;
-  StackSizeCheck_stackSizeHWM_ptr = shim_args->stackSizeHWM_ptr;
-  return shim_args->fn(shim_args->args);
-}
-
-static WC_INLINE int StackSizeSetOffset(const char *funcname, void *p)
-{
-    if (StackSizeCheck_myStack == NULL)
-        return -BAD_FUNC_ARG;
-
-    StackSizeCheck_stackOffsetPointer = p;
-
-    printf("setting stack relative offset reference mark in %s to +%lu\n",
-        funcname, (unsigned long)((char*)(StackSizeCheck_myStack +
-                                  StackSizeCheck_stackSize) - (char *)p));
-
-    return 0;
-}
-
-static WC_INLINE ssize_t StackSizeHWM(void)
-{
-    size_t i;
-    ssize_t used;
-
-    if (StackSizeCheck_myStack == NULL)
-        return -BAD_FUNC_ARG;
-
-    for (i = 0; i < StackSizeCheck_stackSize; i++) {
-        if (StackSizeCheck_myStack[i] != STACK_CHECK_VAL) {
-            break;
-        }
-    }
-
-    used = StackSizeCheck_stackSize - i;
-    if ((ssize_t)*StackSizeCheck_stackSizeHWM_ptr < used)
-      *StackSizeCheck_stackSizeHWM_ptr = used;
-
-    return used;
-}
-
-static WC_INLINE ssize_t StackSizeHWM_OffsetCorrected(void)
-{
-    ssize_t used = StackSizeHWM();
-    if (used < 0)
-        return used;
-    if (StackSizeCheck_stackOffsetPointer)
-        used -= (ssize_t)(((char *)StackSizeCheck_myStack + StackSizeCheck_stackSize) - (char *)StackSizeCheck_stackOffsetPointer);
-    return used;
-}
-
-static
-#ifdef __GNUC__
-__attribute__((unused)) __attribute__((noinline))
-#endif
-int StackSizeHWMReset(void)
-{
-    volatile ssize_t i;
-
-    if (StackSizeCheck_myStack == NULL)
-        return -BAD_FUNC_ARG;
-
-    for (i = (ssize_t)((char *)&i - (char *)StackSizeCheck_myStack) - (ssize_t)sizeof i - 1; i >= 0; --i)
-    {
-        StackSizeCheck_myStack[i] = STACK_CHECK_VAL;
-    }
-
-    return 0;
-}
-
-#define STACK_SIZE_CHECKPOINT(...) ({  \
-    ssize_t HWM = StackSizeHWM_OffsetCorrected();    \
-    __VA_ARGS__;                                     \
-    printf("    relative stack peak usage = %ld bytes\n", HWM);  \
-    StackSizeHWMReset();                             \
-    })
-
-#define STACK_SIZE_CHECKPOINT_WITH_MAX_CHECK(max, ...) ({  \
-    ssize_t HWM = StackSizeHWM_OffsetCorrected();    \
-    int _ret;                                        \
-    __VA_ARGS__;                                     \
-    printf("    relative stack peak usage = %ld bytes\n", HWM);  \
-    _ret = StackSizeHWMReset();                      \
-    if ((max >= 0) && (HWM > (ssize_t)(max))) {      \
-        printf("    relative stack usage at %s L%d exceeds designated max %ld bytes.\n", __FILE__, __LINE__, (ssize_t)(max)); \
-        _ret = -1;                                   \
-    }                                                \
-    _ret;                                            \
-    })
-
-
-#ifdef __GNUC__
-#define STACK_SIZE_INIT() (void)StackSizeSetOffset(__FUNCTION__, __builtin_frame_address(0))
-#endif
-
-#endif /* HAVE_STACK_SIZE_VERBOSE */
-
-static WC_INLINE int StackSizeCheck(func_args* args, thread_func tf)
-{
-    size_t         i;
-    int            ret;
-    void*          status;
-    unsigned char* myStack = NULL;
-    size_t         stackSize = 1024*1024;
-    pthread_attr_t myAttr;
-    pthread_t      threadId;
-#ifdef HAVE_STACK_SIZE_VERBOSE
-    struct stack_size_debug_context shim_args;
-#endif
-
-#ifdef PTHREAD_STACK_MIN
-    if (stackSize < PTHREAD_STACK_MIN)
-        stackSize = PTHREAD_STACK_MIN;
-#endif
-
-    ret = posix_memalign((void**)&myStack, sysconf(_SC_PAGESIZE), stackSize);
-    if (ret != 0 || myStack == NULL)
-        err_sys_with_errno("posix_memalign failed\n");
-
-    XMEMSET(myStack, STACK_CHECK_VAL, stackSize);
-
-    ret = pthread_attr_init(&myAttr);
-    if (ret != 0)
-        err_sys("attr_init failed");
-
-    ret = pthread_attr_setstack(&myAttr, myStack, stackSize);
-    if (ret != 0)
-        err_sys("attr_setstackaddr failed");
-
-#ifdef HAVE_STACK_SIZE_VERBOSE
-    StackSizeCheck_stackSizeHWM = 0;
-    shim_args.myStack = myStack;
-    shim_args.stackSize = stackSize;
-    shim_args.stackSizeHWM_ptr = &StackSizeCheck_stackSizeHWM;
-    shim_args.fn = tf;
-    shim_args.args = args;
-    ret = pthread_create(&threadId, &myAttr, (thread_func)debug_stack_size_verbose_shim, (void *)&shim_args);
-#else
-    ret = pthread_create(&threadId, &myAttr, tf, args);
-#endif
-    if (ret != 0) {
-        perror("pthread_create failed");
-        exit(EXIT_FAILURE);
-    }
-
-    ret = pthread_join(threadId, &status);
-    if (ret != 0)
-        err_sys("pthread_join failed");
-
-    for (i = 0; i < stackSize; i++) {
-        if (myStack[i] != STACK_CHECK_VAL) {
-            break;
-        }
-    }
-
-    free(myStack);
-#ifdef HAVE_STACK_SIZE_VERBOSE
-    printf("stack used = %lu\n", StackSizeCheck_stackSizeHWM > (stackSize - i)
-        ? (unsigned long)StackSizeCheck_stackSizeHWM
-        : (unsigned long)(stackSize - i));
-#else
-    {
-      size_t used = stackSize - i;
-      printf("stack used = %lu\n", (unsigned long)used);
-    }
-#endif
-
-    return (int)((size_t)status);
-}
-
-static WC_INLINE int StackSizeCheck_launch(func_args* args, thread_func tf, pthread_t *threadId, void **stack_context)
-{
-    int ret;
-    unsigned char* myStack = NULL;
-    size_t stackSize = 1024*1024;
-    pthread_attr_t myAttr;
-
-#ifdef PTHREAD_STACK_MIN
-    if (stackSize < PTHREAD_STACK_MIN)
-        stackSize = PTHREAD_STACK_MIN;
-#endif
-
-    struct stack_size_debug_context *shim_args = (struct stack_size_debug_context *)malloc(sizeof *shim_args);
-    if (! shim_args) {
-        perror("malloc");
-        exit(EXIT_FAILURE);
-    }
-
-    ret = posix_memalign((void**)&myStack, sysconf(_SC_PAGESIZE), stackSize);
-    if (ret != 0 || myStack == NULL)
-        err_sys_with_errno("posix_memalign failed\n");
-
-    XMEMSET(myStack, STACK_CHECK_VAL, stackSize);
-
-    ret = pthread_attr_init(&myAttr);
-    if (ret != 0)
-        err_sys("attr_init failed");
-
-    ret = pthread_attr_setstack(&myAttr, myStack, stackSize);
-    if (ret != 0)
-        err_sys("attr_setstackaddr failed");
-
-    shim_args->myStack = myStack;
-    shim_args->stackSize = stackSize;
-#ifdef HAVE_STACK_SIZE_VERBOSE
-    shim_args->stackSizeHWM_ptr = &StackSizeCheck_stackSizeHWM;
-    shim_args->fn = tf;
-    shim_args->args = args;
-    ret = pthread_create(threadId, &myAttr, (thread_func)debug_stack_size_verbose_shim, (void *)shim_args);
-#else
-    ret = pthread_create(threadId, &myAttr, tf, args);
-#endif
-    if (ret != 0) {
-        fprintf(stderr,"pthread_create failed: %s",strerror(ret));
-        exit(EXIT_FAILURE);
-    }
-
-    *stack_context = (void *)shim_args;
-
-    return 0;
-}
-
-static WC_INLINE int StackSizeCheck_reap(pthread_t threadId, void *stack_context)
-{
-    struct stack_size_debug_context *shim_args = (struct stack_size_debug_context *)stack_context;
-    size_t i;
-    void *status;
-    int ret = pthread_join(threadId, &status);
-    if (ret != 0)
-        err_sys("pthread_join failed");
-
-    for (i = 0; i < shim_args->stackSize; i++) {
-        if (shim_args->myStack[i] != STACK_CHECK_VAL) {
-            break;
-        }
-    }
-
-    free(shim_args->myStack);
-#ifdef HAVE_STACK_SIZE_VERBOSE
-    printf("stack used = %lu\n",
-        *shim_args->stackSizeHWM_ptr > (shim_args->stackSize - i)
-        ? (unsigned long)*shim_args->stackSizeHWM_ptr
-        : (unsigned long)(shim_args->stackSize - i));
-#else
-    {
-      size_t used = shim_args->stackSize - i;
-      printf("stack used = %lu\n", (unsigned long)used);
-    }
-#endif
-    free(shim_args);
-
-    return (int)((size_t)status);
-}
-
-
-#endif /* HAVE_STACK_SIZE */
-
-#ifndef STACK_SIZE_CHECKPOINT
-#define STACK_SIZE_CHECKPOINT(...) (__VA_ARGS__)
-#endif
-#ifndef STACK_SIZE_INIT
-#define STACK_SIZE_INIT()
-#endif
-
-#ifdef STACK_TRAP
-
-/* good settings
-   --enable-debug --disable-shared C_EXTRA_FLAGS="-DUSER_TIME -DTFM_TIMING_RESISTANT -DPOSITIVE_EXP_ONLY -DSTACK_TRAP"
-
-*/
-
-#ifdef HAVE_STACK_SIZE
-    /* client only for now, setrlimit will fail if pthread_create() called */
-    /* STACK_SIZE does pthread_create() on client */
-    #error "can't use STACK_TRAP with STACK_SIZE, setrlimit will fail"
-#endif /* HAVE_STACK_SIZE */
-
-static WC_INLINE void StackTrap(void)
-{
-    struct rlimit  rl;
-    if (getrlimit(RLIMIT_STACK, &rl) != 0)
-        err_sys_with_errno("getrlimit failed");
-    printf("rlim_cur = %llu\n", rl.rlim_cur);
-    rl.rlim_cur = 1024*21;  /* adjust trap size here */
-    if (setrlimit(RLIMIT_STACK, &rl) != 0)
-        err_sys_with_errno("setrlimit failed");
-}
-
-#else /* STACK_TRAP */
-
-static WC_INLINE void StackTrap(void)
-{
-}
-
-#endif /* STACK_TRAP */
-
 
 #if defined(ATOMIC_USER) && !defined(WOLFSSL_AEAD_ONLY)
 
@@ -2370,7 +3014,7 @@ typedef struct AtomicDecCtx {
     Aes  aes;                /* for aes example */
 } AtomicDecCtx;
 
-
+#if !defined(NO_HMAC) && !defined(NO_AES) && defined(HAVE_AES_CBC)
 static WC_INLINE int myMacEncryptCb(WOLFSSL* ssl, unsigned char* macOut,
        const unsigned char* macIn, unsigned int macInSz, int macContent,
        int macVerify, unsigned char* encOut, const unsigned char* encIn,
@@ -2431,7 +3075,7 @@ static WC_INLINE int myMacEncryptCb(WOLFSSL* ssl, unsigned char* macOut,
 
         ret = wc_AesSetKey(&encCtx->aes, key, keyLen, iv, AES_ENCRYPTION);
         if (ret != 0) {
-            printf("AesSetKey failed in myMacEncryptCb\n");
+            fprintf(stderr, "AesSetKey failed in myMacEncryptCb\n");
             return ret;
         }
         encCtx->keySetup = 1;
@@ -2440,7 +3084,6 @@ static WC_INLINE int myMacEncryptCb(WOLFSSL* ssl, unsigned char* macOut,
     /* encrypt */
     return wc_AesCbcEncrypt(&encCtx->aes, encOut, encIn, encSz);
 }
-
 
 static WC_INLINE int myDecryptVerifyCb(WOLFSSL* ssl,
        unsigned char* decOut, const unsigned char* decIn,
@@ -2488,7 +3131,7 @@ static WC_INLINE int myDecryptVerifyCb(WOLFSSL* ssl,
 
         ret = wc_AesSetKey(&decCtx->aes, key, keyLen, iv, AES_DECRYPTION);
         if (ret != 0) {
-            printf("AesSetKey failed in myDecryptVerifyCb\n");
+            fprintf(stderr, "AesSetKey failed in myDecryptVerifyCb\n");
             return ret;
         }
         decCtx->keySetup = 1;
@@ -2542,7 +3185,7 @@ static WC_INLINE int myDecryptVerifyCb(WOLFSSL* ssl,
     return ret;
 }
 
-#if defined(HAVE_ENCRYPT_THEN_MAC)
+#ifdef HAVE_ENCRYPT_THEN_MAC
 
 static WC_INLINE int myEncryptMacCb(WOLFSSL* ssl, unsigned char* macOut,
        int content, int macVerify, unsigned char* encOut,
@@ -2582,7 +3225,7 @@ static WC_INLINE int myEncryptMacCb(WOLFSSL* ssl, unsigned char* macOut,
 
         ret = wc_AesSetKey(&encCtx->aes, key, keyLen, iv, AES_ENCRYPTION);
         if (ret != 0) {
-            printf("AesSetKey failed in myMacEncryptCb\n");
+            fprintf(stderr, "AesSetKey failed in myMacEncryptCb\n");
             return ret;
         }
         encCtx->keySetup = 1;
@@ -2680,7 +3323,7 @@ static WC_INLINE int myVerifyDecryptCb(WOLFSSL* ssl,
 
         ret = wc_AesSetKey(&decCtx->aes, key, keyLen, iv, AES_DECRYPTION);
         if (ret != 0) {
-            printf("AesSetKey failed in myDecryptVerifyCb\n");
+            fprintf(stderr, "AesSetKey failed in myDecryptVerifyCb\n");
             return ret;
         }
         decCtx->keySetup = 1;
@@ -2696,7 +3339,8 @@ static WC_INLINE int myVerifyDecryptCb(WOLFSSL* ssl,
     return 0;
 }
 
-#endif
+#endif /* HAVE_ENCRYPT_THEN_MAC */
+#endif /* !NO_HMAC && !NO_AES && HAVE_AES_CBC */
 
 
 static WC_INLINE void SetupAtomicUser(WOLFSSL_CTX* ctx, WOLFSSL* ssl)
@@ -2716,18 +3360,23 @@ static WC_INLINE void SetupAtomicUser(WOLFSSL_CTX* ctx, WOLFSSL* ssl)
     }
     XMEMSET(decCtx, 0, sizeof(AtomicDecCtx));
 
+#if !defined(NO_HMAC) && !defined(NO_AES) && defined(HAVE_AES_CBC)
     wolfSSL_CTX_SetMacEncryptCb(ctx, myMacEncryptCb);
     wolfSSL_SetMacEncryptCtx(ssl, encCtx);
 
     wolfSSL_CTX_SetDecryptVerifyCb(ctx, myDecryptVerifyCb);
     wolfSSL_SetDecryptVerifyCtx(ssl, decCtx);
 
-#if defined(HAVE_ENCRYPT_THEN_MAC)
+    #ifdef HAVE_ENCRYPT_THEN_MAC
     wolfSSL_CTX_SetEncryptMacCb(ctx, myEncryptMacCb);
     wolfSSL_SetEncryptMacCtx(ssl, encCtx);
 
     wolfSSL_CTX_SetVerifyDecryptCb(ctx, myVerifyDecryptCb);
     wolfSSL_SetVerifyDecryptCtx(ssl, decCtx);
+    #endif
+#else
+    (void)ctx;
+    (void)ssl;
 #endif
 }
 
@@ -2739,8 +3388,16 @@ static WC_INLINE void FreeAtomicUser(WOLFSSL* ssl)
 
     /* Encrypt-Then-MAC callbacks use same contexts. */
 
+    if (encCtx != NULL) {
+        if (encCtx->keySetup  == 1)
+            wc_AesFree(&encCtx->aes);
+        free(encCtx);
+    }
+    if (decCtx != NULL) {
+        if (decCtx->keySetup  == 1)
+            wc_AesFree(&decCtx->aes);
     free(decCtx);
-    free(encCtx);
+    }
 }
 
 #endif /* ATOMIC_USER */
@@ -2769,6 +3426,22 @@ static WC_INLINE int wolfSSL_PrintStats(WOLFSSL_MEM_STATS* stats)
 
     return 1;
 }
+
+static WC_INLINE int wolfSSL_PrintStatsConn(WOLFSSL_MEM_CONN_STATS* stats)
+{
+    if (stats == NULL) {
+        return 0;
+    }
+
+    fprintf(stderr, "peak connection memory = %d\n", stats->peakMem);
+    fprintf(stderr, "current memory in use  = %d\n", stats->curMem);
+    fprintf(stderr, "peak connection allocs = %d\n", stats->peakAlloc);
+    fprintf(stderr, "current connection allocs = %d\n",stats->curAlloc);
+    fprintf(stderr, "total connection allocs   = %d\n", stats->totalAlloc);
+    fprintf(stderr, "total connection frees    = %d\n\n", stats->totalFr);
+
+    return 1;
+}
 #endif /* WOLFSSL_STATIC_MEMORY */
 
 #ifdef HAVE_PK_CALLBACKS
@@ -2778,22 +3451,18 @@ typedef struct PkCbInfo {
 #ifdef TEST_PK_PRIVKEY
     union {
     #ifdef HAVE_ECC
+        /* only ECC PK callback with TLS v1.2 needs this */
         ecc_key ecc;
     #endif
-    #ifdef HAVE_CURVE25519
-        curve25519_key curve;
-    #endif
-    #ifdef HAVE_CURVE448
-        curve448_key curve;
-    #endif
     } keyGen;
+    int hasKeyGen;
 #endif
 } PkCbInfo;
 
 #if defined(DEBUG_PK_CB) || defined(TEST_PK_PRIVKEY)
-    #define WOLFSSL_PKMSG(_f_, ...) printf(_f_, ##__VA_ARGS__)
+    #define WOLFSSL_PKMSG(...) printf(__VA_ARGS__)
 #else
-    #define WOLFSSL_PKMSG(_f_, ...)
+    #define WOLFSSL_PKMSG(...)
 #endif
 
 #ifdef HAVE_ECC
@@ -2802,14 +3471,11 @@ static WC_INLINE int myEccKeyGen(WOLFSSL* ssl, ecc_key* key, word32 keySz,
     int ecc_curve, void* ctx)
 {
     int       ret;
-    WC_RNG    rng;
     PkCbInfo* cbInfo = (PkCbInfo*)ctx;
     ecc_key*  new_key;
-#ifdef TEST_PK_PRIVKEY
-    byte qx[MAX_ECC_BYTES], qy[MAX_ECC_BYTES];
-    word32 qxLen = sizeof(qx), qyLen = sizeof(qy);
 
-    new_key = &cbInfo->keyGen.ecc;
+#ifdef TEST_PK_PRIVKEY
+    new_key = cbInfo ? &cbInfo->keyGen.ecc : key;
 #else
     new_key = key;
 #endif
@@ -2817,19 +3483,20 @@ static WC_INLINE int myEccKeyGen(WOLFSSL* ssl, ecc_key* key, word32 keySz,
     (void)ssl;
     (void)cbInfo;
 
-    WOLFSSL_PKMSG("PK ECC KeyGen: keySz %d, Curve ID %d\n", keySz, ecc_curve);
-
-    ret = wc_InitRng(&rng);
-    if (ret != 0)
-        return ret;
+    WOLFSSL_PKMSG("PK ECC KeyGen: keySz %u, Curve ID %d\n", keySz, ecc_curve);
 
     ret = wc_ecc_init(new_key);
     if (ret == 0) {
+        WC_RNG *rng = wolfSSL_GetRNG(ssl);
+
         /* create new key */
-        ret = wc_ecc_make_key_ex(&rng, keySz, new_key, ecc_curve);
+        ret = wc_ecc_make_key_ex(rng, keySz, new_key, ecc_curve);
 
     #ifdef TEST_PK_PRIVKEY
-        if (ret == 0) {
+        if (ret == 0 && new_key != key) {
+            byte qx[MAX_ECC_BYTES], qy[MAX_ECC_BYTES];
+            word32 qxLen = sizeof(qx), qyLen = sizeof(qy);
+
             /* extract public portion from new key into `key` arg */
             ret = wc_ecc_export_public_raw(new_key, qx, &qxLen, qy, &qyLen);
             if (ret == 0) {
@@ -2839,12 +3506,13 @@ static WC_INLINE int myEccKeyGen(WOLFSSL* ssl, ecc_key* key, word32 keySz,
             (void)qxLen;
             (void)qyLen;
         }
+        if (ret == 0 && cbInfo != NULL) {
+            cbInfo->hasKeyGen = 1;
+        }
     #endif
     }
 
     WOLFSSL_PKMSG("PK ECC KeyGen: ret %d\n", ret);
-
-    wc_FreeRng(&rng);
 
     return ret;
 }
@@ -2853,7 +3521,6 @@ static WC_INLINE int myEccSign(WOLFSSL* ssl, const byte* in, word32 inSz,
         byte* out, word32* outSz, const byte* key, word32 keySz, void* ctx)
 {
     int       ret;
-    WC_RNG    rng;
     word32    idx = 0;
     ecc_key   myKey;
     byte*     keyBuf = (byte*)key;
@@ -2862,7 +3529,7 @@ static WC_INLINE int myEccSign(WOLFSSL* ssl, const byte* in, word32 inSz,
     (void)ssl;
     (void)cbInfo;
 
-    WOLFSSL_PKMSG("PK ECC Sign: inSz %d, keySz %d\n", inSz, keySz);
+    WOLFSSL_PKMSG("PK ECC Sign: inSz %u, keySz %u\n", inSz, keySz);
 
 #ifdef TEST_PK_PRIVKEY
     ret = load_key_file(cbInfo->ourKey, &keyBuf, &keySz);
@@ -2870,26 +3537,23 @@ static WC_INLINE int myEccSign(WOLFSSL* ssl, const byte* in, word32 inSz,
         return ret;
 #endif
 
-    ret = wc_InitRng(&rng);
-    if (ret != 0)
-        return ret;
-
     ret = wc_ecc_init(&myKey);
     if (ret == 0) {
         ret = wc_EccPrivateKeyDecode(keyBuf, &idx, &myKey, keySz);
         if (ret == 0) {
+            WC_RNG *rng = wolfSSL_GetRNG(ssl);
+
             WOLFSSL_PKMSG("PK ECC Sign: Curve ID %d\n", myKey.dp->id);
-            ret = wc_ecc_sign_hash(in, inSz, out, outSz, &rng, &myKey);
+            ret = wc_ecc_sign_hash(in, inSz, out, outSz, rng, &myKey);
         }
         wc_ecc_free(&myKey);
     }
-    wc_FreeRng(&rng);
 
 #ifdef TEST_PK_PRIVKEY
     free(keyBuf);
 #endif
 
-    WOLFSSL_PKMSG("PK ECC Sign: ret %d outSz %d\n", ret, *outSz);
+    WOLFSSL_PKMSG("PK ECC Sign: ret %d outSz %u\n", ret, *outSz);
 
     return ret;
 }
@@ -2907,7 +3571,7 @@ static WC_INLINE int myEccVerify(WOLFSSL* ssl, const byte* sig, word32 sigSz,
     (void)ssl;
     (void)cbInfo;
 
-    WOLFSSL_PKMSG("PK ECC Verify: sigSz %d, hashSz %d, keySz %d\n", sigSz, hashSz, keySz);
+    WOLFSSL_PKMSG("PK ECC Verify: sigSz %u, hashSz %u, keySz %u\n", sigSz, hashSz, keySz);
 
     ret = wc_ecc_init(&myKey);
     if (ret == 0) {
@@ -2946,29 +3610,27 @@ static WC_INLINE int myEccSharedSecret(WOLFSSL* ssl, ecc_key* otherKey,
 
     /* for client: create and export public key */
     if (side == WOLFSSL_CLIENT_END) {
-        WC_RNG rng;
-
+    #ifdef TEST_PK_PRIVKEY
+        privKey = cbInfo ? &cbInfo->keyGen.ecc : &tmpKey;
+    #else
         privKey = &tmpKey;
+    #endif
         pubKey = otherKey;
 
-        ret = wc_InitRng(&rng);
-        if (ret == 0) {
-            ret = wc_ecc_make_key_ex(&rng, 0, privKey, otherKey->dp->id);
-        #ifdef WOLFSSL_ASYNC_CRYPT
-            if (ret == WC_PENDING_E) {
-                ret = wc_AsyncWait(ret, &privKey->asyncDev, WC_ASYNC_FLAG_NONE);
-            }
-        #endif
-            if (ret == 0)
+        /* TLS v1.2 and older we must generate a key here for the client ony.
+         * TLS v1.3 calls key gen early with key share */
+        if (wolfSSL_GetVersion(ssl) < WOLFSSL_TLSV1_3) {
+            ret = myEccKeyGen(ssl, privKey, 0, otherKey->dp->id, ctx);
+            if (ret == 0) {
                 ret = wc_ecc_export_x963(privKey, pubKeyDer, pubKeySz);
-            wc_FreeRng(&rng);
+            }
         }
     }
 
     /* for server: import public key */
     else if (side == WOLFSSL_SERVER_END) {
     #ifdef TEST_PK_PRIVKEY
-        privKey = &cbInfo->keyGen.ecc;
+        privKey = cbInfo ? &cbInfo->keyGen.ecc : otherKey;
     #else
         privKey = otherKey;
     #endif
@@ -2978,6 +3640,10 @@ static WC_INLINE int myEccSharedSecret(WOLFSSL* ssl, ecc_key* otherKey,
             otherKey->dp->id);
     }
     else {
+        ret = BAD_FUNC_ARG;
+    }
+
+    if (privKey == NULL || pubKey == NULL) {
         ret = BAD_FUNC_ARG;
     }
 
@@ -3000,19 +3666,66 @@ static WC_INLINE int myEccSharedSecret(WOLFSSL* ssl, ecc_key* otherKey,
     }
 
 #ifdef TEST_PK_PRIVKEY
-    if (side == WOLFSSL_SERVER_END) {
+    if (cbInfo && cbInfo->hasKeyGen) {
         wc_ecc_free(&cbInfo->keyGen.ecc);
+        cbInfo->hasKeyGen = 0;
     }
 #endif
 
     wc_ecc_free(&tmpKey);
 
-    WOLFSSL_PKMSG("PK ECC PMS: ret %d, PubKeySz %d, OutLen %d\n", ret, *pubKeySz, *outlen);
+    WOLFSSL_PKMSG("PK ECC PMS: ret %d, PubKeySz %u, OutLen %u\n", ret, *pubKeySz, *outlen);
 
     return ret;
 }
 
-#ifdef HAVE_ED25519
+#endif /* HAVE_ECC */
+
+#ifdef HAVE_HKDF
+static WC_INLINE int myHkdfExtract(byte* prk, const byte* salt, word32 saltLen,
+       byte* ikm, word32 ikmLen, int digest, void* ctx)
+{
+    int ret;
+    int len = 0;
+
+    switch (digest) {
+#ifndef NO_SHA256
+        case WC_SHA256:
+            len = WC_SHA256_DIGEST_SIZE;
+            break;
+#endif
+
+#ifdef WOLFSSL_SHA384
+        case WC_SHA384:
+            len = WC_SHA384_DIGEST_SIZE;
+            break;
+#endif
+
+#ifdef WOLFSSL_TLS13_SHA512
+        case WC_SHA512:
+            len = WC_SHA512_DIGEST_SIZE;
+            break;
+#endif
+        default:
+            return BAD_FUNC_ARG;
+    }
+
+    /* When length is 0 then use zeroed data of digest length. */
+    if (ikmLen == 0) {
+        ikmLen = len;
+        XMEMSET(ikm, 0, len);
+    }
+
+    (void)ctx;
+    ret = wc_HKDF_Extract(digest, salt, saltLen, ikm, ikmLen, prk);
+    WOLFSSL_PKMSG("PK HKDF Extract: ret %d saltLen %d ikmLen %d\n", ret, saltLen,
+            ikmLen);
+    return ret;
+}
+#endif /* HAVE_HKDF */
+
+#if defined(HAVE_ED25519) && defined(HAVE_ED25519_KEY_IMPORT)
+#ifdef HAVE_ED25519_SIGN
 static WC_INLINE int myEd25519Sign(WOLFSSL* ssl, const byte* in, word32 inSz,
         byte* out, word32* outSz, const byte* key, word32 keySz, void* ctx)
 {
@@ -3036,8 +3749,13 @@ static WC_INLINE int myEd25519Sign(WOLFSSL* ssl, const byte* in, word32 inSz,
     ret = wc_ed25519_init(&myKey);
     if (ret == 0) {
         ret = wc_Ed25519PrivateKeyDecode(keyBuf, &idx, &myKey, keySz);
-        if (ret == 0)
+        if (ret == 0) {
+            ret = wc_ed25519_make_public(&myKey, myKey.p, ED25519_PUB_KEY_SIZE);
+        }
+        if (ret == 0) {
+            myKey.pubKeySet = 1;
             ret = wc_ed25519_sign_msg(in, inSz, out, outSz, &myKey);
+        }
         wc_ed25519_free(&myKey);
     }
 
@@ -3049,8 +3767,10 @@ static WC_INLINE int myEd25519Sign(WOLFSSL* ssl, const byte* in, word32 inSz,
 
     return ret;
 }
+#endif /* HAVE_ED25519_SIGN */
 
 
+#ifdef HAVE_ED25519_VERIFY
 static WC_INLINE int myEd25519Verify(WOLFSSL* ssl, const byte* sig, word32 sigSz,
         const byte* msg, word32 msgSz, const byte* key, word32 keySz,
         int* result, void* ctx)
@@ -3077,7 +3797,8 @@ static WC_INLINE int myEd25519Verify(WOLFSSL* ssl, const byte* sig, word32 sigSz
 
     return ret;
 }
-#endif /* HAVE_ED25519 */
+#endif /* HAVE_ED25519_VERIFY */
+#endif /* HAVE_ED25519 && HAVE_ED25519_KEY_IMPORT */
 
 #ifdef HAVE_CURVE25519
 static WC_INLINE int myX25519KeyGen(WOLFSSL* ssl, curve25519_key* key,
@@ -3090,7 +3811,7 @@ static WC_INLINE int myX25519KeyGen(WOLFSSL* ssl, curve25519_key* key,
     (void)ssl;
     (void)cbInfo;
 
-    WOLFSSL_PKMSG("PK 25519 KeyGen: keySz %d\n", keySz);
+    WOLFSSL_PKMSG("PK 25519 KeyGen: keySz %u\n", keySz);
 
     ret = wc_InitRng(&rng);
     if (ret != 0)
@@ -3165,14 +3886,15 @@ static WC_INLINE int myX25519SharedSecret(WOLFSSL* ssl, curve25519_key* otherKey
 
     wc_curve25519_free(&tmpKey);
 
-    WOLFSSL_PKMSG("PK 25519 PMS: ret %d, pubKeySz %d, outLen %d\n",
+    WOLFSSL_PKMSG("PK 25519 PMS: ret %d, pubKeySz %u, outLen %u\n",
         ret, *pubKeySz, *outlen);
 
     return ret;
 }
 #endif /* HAVE_CURVE25519 */
 
-#ifdef HAVE_ED448
+#if defined(HAVE_ED448) && defined(HAVE_ED448_KEY_IMPORT)
+#ifdef HAVE_ED448_SIGN
 static WC_INLINE int myEd448Sign(WOLFSSL* ssl, const byte* in, word32 inSz,
         byte* out, word32* outSz, const byte* key, word32 keySz, void* ctx)
 {
@@ -3185,7 +3907,7 @@ static WC_INLINE int myEd448Sign(WOLFSSL* ssl, const byte* in, word32 inSz,
     (void)ssl;
     (void)cbInfo;
 
-    WOLFSSL_PKMSG("PK 448 Sign: inSz %d, keySz %d\n", inSz, keySz);
+    WOLFSSL_PKMSG("PK 448 Sign: inSz %u, keySz %u\n", inSz, keySz);
 
 #ifdef TEST_PK_PRIVKEY
     ret = load_key_file(cbInfo->ourKey, &keyBuf, &keySz);
@@ -3196,8 +3918,13 @@ static WC_INLINE int myEd448Sign(WOLFSSL* ssl, const byte* in, word32 inSz,
     ret = wc_ed448_init(&myKey);
     if (ret == 0) {
         ret = wc_Ed448PrivateKeyDecode(keyBuf, &idx, &myKey, keySz);
-        if (ret == 0)
+        if (ret == 0) {
+            ret = wc_ed448_make_public(&myKey, myKey.p, ED448_PUB_KEY_SIZE);
+        }
+        if (ret == 0) {
+            myKey.pubKeySet = 1;
             ret = wc_ed448_sign_msg(in, inSz, out, outSz, &myKey, NULL, 0);
+        }
         wc_ed448_free(&myKey);
     }
 
@@ -3205,12 +3932,14 @@ static WC_INLINE int myEd448Sign(WOLFSSL* ssl, const byte* in, word32 inSz,
     free(keyBuf);
 #endif
 
-    WOLFSSL_PKMSG("PK 448 Sign: ret %d, outSz %d\n", ret, *outSz);
+    WOLFSSL_PKMSG("PK 448 Sign: ret %d, outSz %u\n", ret, *outSz);
 
     return ret;
 }
+#endif /* HAVE_ED448_SIGN */
 
 
+#ifdef HAVE_ED448_VERIFY
 static WC_INLINE int myEd448Verify(WOLFSSL* ssl, const byte* sig, word32 sigSz,
         const byte* msg, word32 msgSz, const byte* key, word32 keySz,
         int* result, void* ctx)
@@ -3222,7 +3951,7 @@ static WC_INLINE int myEd448Verify(WOLFSSL* ssl, const byte* sig, word32 sigSz,
     (void)ssl;
     (void)cbInfo;
 
-    WOLFSSL_PKMSG("PK 448 Verify: sigSz %d, msgSz %d, keySz %d\n", sigSz, msgSz,
+    WOLFSSL_PKMSG("PK 448 Verify: sigSz %u, msgSz %u, keySz %u\n", sigSz, msgSz,
                   keySz);
 
     ret = wc_ed448_init(&myKey);
@@ -3239,7 +3968,8 @@ static WC_INLINE int myEd448Verify(WOLFSSL* ssl, const byte* sig, word32 sigSz,
 
     return ret;
 }
-#endif /* HAVE_ED448 */
+#endif /* HAVE_ED448_VERIFY */
+#endif /* HAVE_ED448 && HAVE_ED448_KEY_IMPORT */
 
 #ifdef HAVE_CURVE448
 static WC_INLINE int myX448KeyGen(WOLFSSL* ssl, curve448_key* key,
@@ -3252,7 +3982,7 @@ static WC_INLINE int myX448KeyGen(WOLFSSL* ssl, curve448_key* key,
     (void)ssl;
     (void)cbInfo;
 
-    WOLFSSL_PKMSG("PK 448 KeyGen: keySz %d\n", keySz);
+    WOLFSSL_PKMSG("PK 448 KeyGen: keySz %u\n", keySz);
 
     ret = wc_InitRng(&rng);
     if (ret != 0)
@@ -3327,14 +4057,12 @@ static WC_INLINE int myX448SharedSecret(WOLFSSL* ssl, curve448_key* otherKey,
 
     wc_curve448_free(&tmpKey);
 
-    WOLFSSL_PKMSG("PK 448 PMS: ret %d, pubKeySz %d, outLen %d\n",
+    WOLFSSL_PKMSG("PK 448 PMS: ret %d, pubKeySz %u, outLen %u\n",
         ret, *pubKeySz, *outlen);
 
     return ret;
 }
 #endif /* HAVE_CURVE448 */
-
-#endif /* HAVE_ECC */
 
 #ifndef NO_DH
 static WC_INLINE int myDhCallback(WOLFSSL* ssl, struct DhKey* key,
@@ -3352,11 +4080,11 @@ static WC_INLINE int myDhCallback(WOLFSSL* ssl, struct DhKey* key,
     /* return 0 on success */
     ret = wc_DhAgree(key, out, outlen, priv, privSz, pubKeyDer, pubKeySz);
 
-    WOLFSSL_PKMSG("PK ED Agree: ret %d, privSz %d, pubKeySz %d, outlen %d\n",
+    WOLFSSL_PKMSG("PK ED Agree: ret %d, privSz %u, pubKeySz %u, outlen %u\n",
         ret, privSz, pubKeySz, *outlen);
 
     return ret;
-};
+}
 
 #endif /* !NO_DH */
 
@@ -3375,7 +4103,7 @@ static WC_INLINE int myRsaSign(WOLFSSL* ssl, const byte* in, word32 inSz,
     (void)ssl;
     (void)cbInfo;
 
-    WOLFSSL_PKMSG("PK RSA Sign: inSz %d, keySz %d\n", inSz, keySz);
+    WOLFSSL_PKMSG("PK RSA Sign: inSz %u, keySz %u\n", inSz, keySz);
 
 #ifdef TEST_PK_PRIVKEY
     ret = load_key_file(cbInfo->ourKey, &keyBuf, &keySz);
@@ -3404,7 +4132,7 @@ static WC_INLINE int myRsaSign(WOLFSSL* ssl, const byte* in, word32 inSz,
     free(keyBuf);
 #endif
 
-    WOLFSSL_PKMSG("PK RSA Sign: ret %d, outSz %d\n", ret, *outSz);
+    WOLFSSL_PKMSG("PK RSA Sign: ret %d, outSz %u\n", ret, *outSz);
 
     return ret;
 }
@@ -3421,7 +4149,7 @@ static WC_INLINE int myRsaVerify(WOLFSSL* ssl, byte* sig, word32 sigSz,
     (void)ssl;
     (void)cbInfo;
 
-    WOLFSSL_PKMSG("PK RSA Verify: sigSz %d, keySz %d\n", sigSz, keySz);
+    WOLFSSL_PKMSG("PK RSA Verify: sigSz %u, keySz %u\n", sigSz, keySz);
 
     ret = wc_InitRsaKey(&myKey, NULL);
     if (ret == 0) {
@@ -3448,7 +4176,7 @@ static WC_INLINE int myRsaSignCheck(WOLFSSL* ssl, byte* sig, word32 sigSz,
     (void)ssl;
     (void)cbInfo;
 
-    WOLFSSL_PKMSG("PK RSA SignCheck: sigSz %d, keySz %d\n", sigSz, keySz);
+    WOLFSSL_PKMSG("PK RSA SignCheck: sigSz %u, keySz %u\n", sigSz, keySz);
 
 #ifdef TEST_PK_PRIVKEY
     ret = load_key_file(cbInfo->ourKey, &keyBuf, &keySz);
@@ -3488,7 +4216,7 @@ static WC_INLINE int myRsaPssSign(WOLFSSL* ssl, const byte* in, word32 inSz,
     (void)ssl;
     (void)cbInfo;
 
-    WOLFSSL_PKMSG("PK RSA PSS Sign: inSz %d, hash %d, mgf %d, keySz %d\n",
+    WOLFSSL_PKMSG("PK RSA PSS Sign: inSz %u, hash %d, mgf %d, keySz %u\n",
         inSz, hash, mgf, keySz);
 
 #ifdef TEST_PK_PRIVKEY
@@ -3538,7 +4266,7 @@ static WC_INLINE int myRsaPssSign(WOLFSSL* ssl, const byte* in, word32 inSz,
     free(keyBuf);
 #endif
 
-    WOLFSSL_PKMSG("PK RSA PSS Sign: ret %d, outSz %d\n", ret, *outSz);
+    WOLFSSL_PKMSG("PK RSA PSS Sign: ret %d, outSz %u\n", ret, *outSz);
 
     return ret;
 }
@@ -3556,7 +4284,7 @@ static WC_INLINE int myRsaPssVerify(WOLFSSL* ssl, byte* sig, word32 sigSz,
     (void)ssl;
     (void)cbInfo;
 
-    WOLFSSL_PKMSG("PK RSA PSS Verify: sigSz %d, hash %d, mgf %d, keySz %d\n",
+    WOLFSSL_PKMSG("PK RSA PSS Verify: sigSz %u, hash %d, mgf %d, keySz %u\n",
         sigSz, hash, mgf, keySz);
 
     switch (hash) {
@@ -3605,7 +4333,7 @@ static WC_INLINE int myRsaPssSignCheck(WOLFSSL* ssl, byte* sig, word32 sigSz,
     (void)ssl;
     (void)cbInfo;
 
-    WOLFSSL_PKMSG("PK RSA PSS SignCheck: sigSz %d, hash %d, mgf %d, keySz %d\n",
+    WOLFSSL_PKMSG("PK RSA PSS SignCheck: sigSz %u, hash %d, mgf %d, keySz %u\n",
         sigSz, hash, mgf, keySz);
 
 #ifdef TEST_PK_PRIVKEY
@@ -3666,7 +4394,7 @@ static WC_INLINE int myRsaEnc(WOLFSSL* ssl, const byte* in, word32 inSz,
     (void)ssl;
     (void)cbInfo;
 
-    WOLFSSL_PKMSG("PK RSA Enc: inSz %d, keySz %d\n", inSz, keySz);
+    WOLFSSL_PKMSG("PK RSA Enc: inSz %u, keySz %u\n", inSz, keySz);
 
     ret = wc_InitRng(&rng);
     if (ret != 0)
@@ -3686,7 +4414,7 @@ static WC_INLINE int myRsaEnc(WOLFSSL* ssl, const byte* in, word32 inSz,
     }
     wc_FreeRng(&rng);
 
-    WOLFSSL_PKMSG("PK RSA Enc: ret %d, outSz %d\n", ret, *outSz);
+    WOLFSSL_PKMSG("PK RSA Enc: ret %d, outSz %u\n", ret, *outSz);
 
     return ret;
 }
@@ -3704,7 +4432,7 @@ static WC_INLINE int myRsaDec(WOLFSSL* ssl, byte* in, word32 inSz,
     (void)ssl;
     (void)cbInfo;
 
-    WOLFSSL_PKMSG("PK RSA Dec: inSz %d, keySz %d\n", inSz, keySz);
+    WOLFSSL_PKMSG("PK RSA Dec: inSz %u, keySz %u\n", inSz, keySz);
 
 #ifdef TEST_PK_PRIVKEY
     ret = load_key_file(cbInfo->ourKey, &keyBuf, &keySz);
@@ -3739,6 +4467,119 @@ static WC_INLINE int myRsaDec(WOLFSSL* ssl, byte* in, word32 inSz,
 
 #endif /* NO_RSA */
 
+static WC_INLINE int myGenMaster(WOLFSSL* ssl, void* ctx)
+{
+    int       ret;
+    PkCbInfo* cbInfo = (PkCbInfo*)ctx;
+
+    (void)ssl;
+    (void)cbInfo;
+
+    WOLFSSL_PKMSG("Gen Master");
+    /* fall through to original routine */
+    ret = PROTOCOLCB_UNAVAILABLE;
+    WOLFSSL_PKMSG("Gen Master: ret %d\n", ret);
+
+    return ret;
+}
+
+static WC_INLINE int myGenPreMaster(WOLFSSL* ssl, byte *premaster,
+                                                  word32 preSz, void* ctx)
+{
+    int       ret;
+    PkCbInfo* cbInfo = (PkCbInfo*)ctx;
+
+    (void) ssl;
+    (void) cbInfo;
+    (void) premaster;
+    (void) preSz;
+
+    WOLFSSL_PKMSG("Gen Pre-Master Cb");
+    /* fall through to original routine */
+    ret = PROTOCOLCB_UNAVAILABLE;
+    WOLFSSL_PKMSG("Gen Pre-Master Cb: ret %d\n", ret);
+
+    return ret;
+}
+
+static WC_INLINE int myGenSessionKey(WOLFSSL* ssl, void* ctx)
+{
+    int       ret;
+    PkCbInfo* cbInfo = (PkCbInfo*)ctx;
+
+    (void)ssl;
+    (void)cbInfo;
+
+    WOLFSSL_PKMSG("Gen Master Cb");
+    /* fall through to original routine */
+    ret = PROTOCOLCB_UNAVAILABLE;
+    WOLFSSL_PKMSG("Gen Master Cb: ret %d\n", ret);
+
+    return ret;
+}
+
+static WC_INLINE int mySetEncryptKeys(WOLFSSL* ssl, void* ctx)
+{
+    int       ret;
+    PkCbInfo* cbInfo = (PkCbInfo*)ctx;
+
+    (void)ssl;
+    (void)cbInfo;
+
+    WOLFSSL_PKMSG("Set Encrypt Keys Cb");
+    /* fall through to original routine */
+    ret = PROTOCOLCB_UNAVAILABLE;
+    WOLFSSL_PKMSG("Set Encrypt Keys Cb: ret %d\n", ret);
+
+    return ret;
+}
+
+#if !defined(WOLFSSL_NO_TLS12) && !defined(WOLFSSL_AEAD_ONLY)
+static WC_INLINE int myVerifyMac(WOLFSSL *ssl, const byte* message,
+                    word32 messageSz, word32 macSz, word32 content, void* ctx)
+{
+    int       ret;
+    PkCbInfo* cbInfo = (PkCbInfo*)ctx;
+
+    (void)ssl;
+    (void)message;
+    (void)messageSz;
+    (void)macSz;
+    (void)content;
+    (void)cbInfo;
+
+    WOLFSSL_PKMSG("Verify Mac Cb");
+    /* fall through to original routine */
+    ret = PROTOCOLCB_UNAVAILABLE;
+    WOLFSSL_PKMSG("Verify Mac Cb: ret %d\n", ret);
+
+    return ret;
+}
+#endif
+
+static WC_INLINE int myTlsFinished(WOLFSSL* ssl,
+                            const byte *side,
+                            const byte *handshake_hash, word32 hashSz,
+                            byte *hashes, void* ctx)
+{
+    int       ret;
+    PkCbInfo* cbInfo = (PkCbInfo*)ctx;
+
+    (void)ssl;
+    (void)cbInfo;
+    (void)side;
+    (void)handshake_hash;
+    (void)hashSz;
+    (void)hashes;
+
+    WOLFSSL_PKMSG("Tls Finished Cb");
+    /* fall through to original routine */
+    ret = PROTOCOLCB_UNAVAILABLE;
+    WOLFSSL_PKMSG("Tls Finished Cb: ret %d\n", ret);
+
+    return ret;
+}
+
 static WC_INLINE void SetupPkCallbacks(WOLFSSL_CTX* ctx)
 {
     (void)ctx;
@@ -3749,20 +4590,31 @@ static WC_INLINE void SetupPkCallbacks(WOLFSSL_CTX* ctx)
         wolfSSL_CTX_SetEccVerifyCb(ctx, myEccVerify);
         wolfSSL_CTX_SetEccSharedSecretCb(ctx, myEccSharedSecret);
     #endif /* HAVE_ECC */
+    #ifdef HAVE_HKDF
+        wolfSSL_CTX_SetHKDFExtractCb(ctx, myHkdfExtract);
+    #endif /* HAVE_HKDF */
     #ifndef NO_DH
         wolfSSL_CTX_SetDhAgreeCb(ctx, myDhCallback);
     #endif
-    #ifdef HAVE_ED25519
+    #if defined(HAVE_ED25519) && defined(HAVE_ED25519_KEY_IMPORT)
+        #ifdef HAVE_ED25519_SIGN
         wolfSSL_CTX_SetEd25519SignCb(ctx, myEd25519Sign);
+        #endif
+        #ifdef HAVE_ED25519_VERIFY
         wolfSSL_CTX_SetEd25519VerifyCb(ctx, myEd25519Verify);
+        #endif
     #endif
     #ifdef HAVE_CURVE25519
         wolfSSL_CTX_SetX25519KeyGenCb(ctx, myX25519KeyGen);
         wolfSSL_CTX_SetX25519SharedSecretCb(ctx, myX25519SharedSecret);
     #endif
-    #ifdef HAVE_ED448
+    #if defined(HAVE_ED448) && defined(HAVE_ED448_KEY_IMPORT)
+        #if defined(HAVE_ED448_SIGN)
         wolfSSL_CTX_SetEd448SignCb(ctx, myEd448Sign);
+        #endif
+        #if defined(HAVE_ED448_VERIFY)
         wolfSSL_CTX_SetEd448VerifyCb(ctx, myEd448Verify);
+        #endif
     #endif
     #ifdef HAVE_CURVE448
         wolfSSL_CTX_SetX448KeyGenCb(ctx, myX448KeyGen);
@@ -3780,6 +4632,19 @@ static WC_INLINE void SetupPkCallbacks(WOLFSSL_CTX* ctx)
         wolfSSL_CTX_SetRsaEncCb(ctx, myRsaEnc);
         wolfSSL_CTX_SetRsaDecCb(ctx, myRsaDec);
     #endif /* NO_RSA */
+
+    #ifndef NO_CERTS
+    wolfSSL_CTX_SetGenMasterSecretCb(ctx, myGenMaster);
+    wolfSSL_CTX_SetGenPreMasterCb(ctx, myGenPreMaster);
+    wolfSSL_CTX_SetGenSessionKeyCb(ctx, myGenSessionKey);
+    wolfSSL_CTX_SetEncryptKeysCb(ctx, mySetEncryptKeys);
+
+    #if !defined(WOLFSSL_NO_TLS12) && !defined(WOLFSSL_AEAD_ONLY)
+    wolfSSL_CTX_SetVerifyMacCb(ctx, myVerifyMac);
+    #endif
+
+    wolfSSL_CTX_SetTlsFinishedCb(ctx, myTlsFinished);
+    #endif /* NO_CERTS */
 }
 
 static WC_INLINE void SetupPkCallbackContexts(WOLFSSL* ssl, void* myCtx)
@@ -3790,6 +4655,9 @@ static WC_INLINE void SetupPkCallbackContexts(WOLFSSL* ssl, void* myCtx)
         wolfSSL_SetEccVerifyCtx(ssl, myCtx);
         wolfSSL_SetEccSharedSecretCtx(ssl, myCtx);
     #endif /* HAVE_ECC */
+    #ifdef HAVE_HKDF
+        wolfSSL_SetHKDFExtractCtx(ssl, myCtx);
+    #endif /* HAVE_HKDF */
     #ifndef NO_DH
         wolfSSL_SetDhAgreeCtx(ssl, myCtx);
     #endif
@@ -3819,10 +4687,24 @@ static WC_INLINE void SetupPkCallbackContexts(WOLFSSL* ssl, void* myCtx)
         wolfSSL_SetRsaEncCtx(ssl, myCtx);
         wolfSSL_SetRsaDecCtx(ssl, myCtx);
     #endif /* NO_RSA */
+
+    #ifndef NO_CERTS
+    wolfSSL_SetGenMasterSecretCtx(ssl, myCtx);
+    wolfSSL_SetGenPreMasterCtx(ssl, myCtx);
+    wolfSSL_SetGenSessionKeyCtx(ssl, myCtx);
+    wolfSSL_SetEncryptKeysCtx(ssl, myCtx);
+
+    #if !defined(WOLFSSL_NO_TLS12) && !defined(WOLFSSL_AEAD_ONLY)
+    wolfSSL_SetVerifyMacCtx(ssl, myCtx);
+    #endif
+
+    wolfSSL_SetTlsFinishedCtx(ssl, myCtx);
+    #endif
 }
 
 #endif /* HAVE_PK_CALLBACKS */
 
+#ifdef USE_WOLFSSL_IO
 static WC_INLINE int SimulateWantWriteIOSendCb(WOLFSSL *ssl, char *buf, int sz, void *ctx)
 {
     static int wantWriteFlag = 1;
@@ -3865,6 +4747,7 @@ static WC_INLINE int SimulateWantWriteIOSendCb(WOLFSSL *ssl, char *buf, int sz, 
         return WOLFSSL_CBIO_ERR_WANT_WRITE;
     }
 }
+#endif /* USE_WOLFSSL_IO */
 
 #if defined(__hpux__) || defined(__MINGW32__) || defined (WOLFSSL_TIRTOS) \
                       || defined(_MSC_VER)
@@ -3900,23 +4783,23 @@ static WC_INLINE const char* mymktemp(char *tempfn, int len, int num)
     static const char alphanum[] = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ"
                                    "abcdefghijklmnopqrstuvwxyz";
     WC_RNG rng;
-    byte   out;
+    byte   out = 0;
 
     if (tempfn == NULL || len < 1 || num < 1 || len <= num) {
-        printf("Bad input\n");
+        fprintf(stderr, "Bad input\n");
         return NULL;
     }
 
     size = len - 1;
 
     if (wc_InitRng(&rng) != 0) {
-        printf("InitRng failed\n");
+        fprintf(stderr, "InitRng failed\n");
         return NULL;
     }
 
     for (x = size; x > size - num; x--) {
         if (wc_RNG_GenerateBlock(&rng,(byte*)&out, sizeof(out)) != 0) {
-            printf("RNG_GenerateBlock failed\n");
+            fprintf(stderr, "RNG_GenerateBlock failed\n");
             return NULL;
         }
         tempfn[x] = alphanum[out % (sizeof(alphanum) - 1)];
@@ -3935,6 +4818,8 @@ static WC_INLINE const char* mymktemp(char *tempfn, int len, int num)
     ((defined(HAVE_CHACHA) && defined(HAVE_POLY1305)) || \
       defined(HAVE_AESGCM))
 
+#define HAVE_TEST_SESSION_TICKET
+
 #if defined(HAVE_CHACHA) && defined(HAVE_POLY1305)
     #include <wolfssl/wolfcrypt/chacha20_poly1305.h>
     #define WOLFSSL_TICKET_KEY_SZ CHACHA20_POLY1305_AEAD_KEYSIZE
@@ -3944,130 +4829,183 @@ static WC_INLINE const char* mymktemp(char *tempfn, int len, int num)
     #define WOLFSSL_TICKET_KEY_SZ AES_256_KEY_SIZE
 #endif
 
-    typedef struct key_ctx {
-        byte name[WOLFSSL_TICKET_NAME_SZ]; /* name for this context */
-        byte key[WOLFSSL_TICKET_KEY_SZ];   /* cipher key */
-    } key_ctx;
+typedef struct key_ctx {
+    byte name[WOLFSSL_TICKET_NAME_SZ]; /* name for this context */
+    byte key[WOLFSSL_TICKET_KEY_SZ];   /* cipher key */
+} key_ctx;
 
-    static THREAD_LS_T key_ctx myKey_ctx;
-    static THREAD_LS_T WC_RNG myKey_rng;
+static THREAD_LS_T key_ctx myKey_ctx;
+static THREAD_LS_T WC_RNG myKey_rng;
 
-    static WC_INLINE int TicketInit(void)
-    {
-        int ret = wc_InitRng(&myKey_rng);
-        if (ret != 0) return ret;
+static WC_INLINE int TicketInit(void)
+{
+    int ret = wc_InitRng(&myKey_rng);
+    if (ret == 0) {
+        ret = wc_RNG_GenerateBlock(&myKey_rng, myKey_ctx.key,
+            sizeof(myKey_ctx.key));
+    }
+    if (ret == 0) {
+        ret = wc_RNG_GenerateBlock(&myKey_rng, myKey_ctx.name,
+            sizeof(myKey_ctx.name));
+    }
+    return ret;
+}
 
-        ret = wc_RNG_GenerateBlock(&myKey_rng, myKey_ctx.key, sizeof(myKey_ctx.key));
-        if (ret != 0) return ret;
+static WC_INLINE void TicketCleanup(void)
+{
+    wc_FreeRng(&myKey_rng);
+}
 
-        ret = wc_RNG_GenerateBlock(&myKey_rng, myKey_ctx.name,sizeof(myKey_ctx.name));
-        if (ret != 0) return ret;
+typedef enum MyTicketState {
+    MY_TICKET_STATE_NONE,
+    MY_TICKET_STATE_INIT,
+    MY_TICKET_STATE_RNG,
+    MY_TICKET_STATE_CIPHER_SETUP,
+    MY_TICKET_STATE_CIPHER,
+    MY_TICKET_STATE_FINAL
+} MyTicketState;
+typedef struct MyTicketCtx {
+    MyTicketState state;
+    byte aad[WOLFSSL_TICKET_NAME_SZ + WOLFSSL_TICKET_IV_SZ + 2];
+#if defined(HAVE_CHACHA) && defined(HAVE_POLY1305)
+    /* chahca20/poly1305 */
+#elif defined(HAVE_AESGCM)
+    Aes aes;
+#endif
+} MyTicketCtx;
 
-        return 0;
+static WC_INLINE int myTicketEncCb(WOLFSSL* ssl,
+                            byte key_name[WOLFSSL_TICKET_NAME_SZ],
+                            byte iv[WOLFSSL_TICKET_IV_SZ],
+                            byte mac[WOLFSSL_TICKET_MAC_SZ],
+                            int enc, byte* ticket, int inLen, int* outLen,
+                            void* userCtx)
+{
+    int ret = 0;
+    MyTicketCtx tickCtx_lcl;
+    MyTicketCtx* tickCtx = (MyTicketCtx*)userCtx;
+
+    (void)ssl;
+
+    if (tickCtx == NULL) {
+        /* for test cases where userCtx is not set use local stack for context */
+        XMEMSET(&tickCtx_lcl, 0, sizeof(tickCtx_lcl));
+        tickCtx = &tickCtx_lcl;
     }
 
-    static WC_INLINE void TicketCleanup(void)
+    switch (tickCtx->state) {
+    case MY_TICKET_STATE_NONE:
+    case MY_TICKET_STATE_INIT:
     {
-        wc_FreeRng(&myKey_rng);
-    }
-
-    static WC_INLINE int myTicketEncCb(WOLFSSL* ssl,
-                             byte key_name[WOLFSSL_TICKET_NAME_SZ],
-                             byte iv[WOLFSSL_TICKET_IV_SZ],
-                             byte mac[WOLFSSL_TICKET_MAC_SZ],
-                             int enc, byte* ticket, int inLen, int* outLen,
-                             void* userCtx)
-    {
-        int ret;
-        word16 sLen = XHTONS(inLen);
-        byte aad[WOLFSSL_TICKET_NAME_SZ + WOLFSSL_TICKET_IV_SZ + 2];
-        int  aadSz = WOLFSSL_TICKET_NAME_SZ + WOLFSSL_TICKET_IV_SZ + 2;
-        byte* tmp = aad;
-    #if defined(HAVE_CHACHA) && defined(HAVE_POLY1305)
-        /* chahca20/poly1305 */
-    #elif defined(HAVE_AESGCM)
-        Aes aes;
-    #endif
-
-        (void)ssl;
-        (void)userCtx;
-
         /* encrypt */
         if (enc) {
             XMEMCPY(key_name, myKey_ctx.name, WOLFSSL_TICKET_NAME_SZ);
-
+        }
+        else {
+            /* see if we know this key */
+            if (XMEMCMP(key_name, myKey_ctx.name, WOLFSSL_TICKET_NAME_SZ) != 0) {
+                printf("client presented unknown ticket key name %s\n", key_name);
+                return WOLFSSL_TICKET_RET_FATAL;
+            }
+        }
+        tickCtx->state = MY_TICKET_STATE_RNG;
+    }
+    FALL_THROUGH;
+    case MY_TICKET_STATE_RNG:
+    {
+        if (enc) {
             ret = wc_RNG_GenerateBlock(&myKey_rng, iv, WOLFSSL_TICKET_IV_SZ);
-            if (ret != 0) return WOLFSSL_TICKET_RET_REJECT;
+            if (ret != 0)
+                break;
+        }
+        tickCtx->state = MY_TICKET_STATE_CIPHER_SETUP;
+    }
+    FALL_THROUGH;
+    case MY_TICKET_STATE_CIPHER_SETUP:
+    {
+        byte* tmp = tickCtx->aad;
+        word16 sLen = XHTONS(inLen);
 
-            /* build aad from key name, iv, and length */
-            XMEMCPY(tmp, key_name, WOLFSSL_TICKET_NAME_SZ);
-            tmp += WOLFSSL_TICKET_NAME_SZ;
-            XMEMCPY(tmp, iv, WOLFSSL_TICKET_IV_SZ);
-            tmp += WOLFSSL_TICKET_IV_SZ;
-            XMEMCPY(tmp, &sLen, sizeof(sLen));
+        /* build aad from key name, iv, and length */
+        XMEMCPY(tmp, key_name, WOLFSSL_TICKET_NAME_SZ);
+        tmp += WOLFSSL_TICKET_NAME_SZ;
+        XMEMCPY(tmp, iv, WOLFSSL_TICKET_IV_SZ);
+        tmp += WOLFSSL_TICKET_IV_SZ;
+        XMEMCPY(tmp, &sLen, sizeof(sLen));
 
+    #if defined(HAVE_CHACHA) && defined(HAVE_POLY1305)
+    #elif defined(HAVE_AESGCM)
+        ret = wc_AesInit(&tickCtx->aes, NULL, INVALID_DEVID);
+        if (ret == 0) {
+            ret = wc_AesGcmSetKey(&tickCtx->aes, myKey_ctx.key,
+                sizeof(myKey_ctx.key));
+        }
+        if (ret != 0)
+            break;
+    #endif
+        tickCtx->state = MY_TICKET_STATE_CIPHER;
+    }
+    FALL_THROUGH;
+    case MY_TICKET_STATE_CIPHER:
+    {
+        int aadSz = (int)sizeof(tickCtx->aad);
+
+        /* encrypt */
+        if (enc) {
         #if defined(HAVE_CHACHA) && defined(HAVE_POLY1305)
             ret = wc_ChaCha20Poly1305_Encrypt(myKey_ctx.key, iv,
-                                              aad, aadSz,
+                                              tickCtx->aad, aadSz,
                                               ticket, inLen,
                                               ticket,
                                               mac);
         #elif defined(HAVE_AESGCM)
-            ret = wc_AesInit(&aes, NULL, INVALID_DEVID);
-            if (ret != 0) return WOLFSSL_TICKET_RET_REJECT;
-
-            ret = wc_AesGcmSetKey(&aes, myKey_ctx.key, sizeof(myKey_ctx.key));
-            if (ret == 0) {
-                ret = wc_AesGcmEncrypt(&aes, ticket, ticket, inLen,
-                                       iv, GCM_NONCE_MID_SZ, mac, AES_BLOCK_SIZE,
-                                       aad, aadSz);
-            }
-            wc_AesFree(&aes);
+            ret = wc_AesGcmEncrypt(&tickCtx->aes, ticket, ticket, inLen,
+                                   iv, GCM_NONCE_MID_SZ, mac, AES_BLOCK_SIZE,
+                                   tickCtx->aad, aadSz);
         #endif
-            
-            if (ret != 0) return WOLFSSL_TICKET_RET_REJECT;
-            *outLen = inLen;  /* no padding in this mode */
         }
         /* decrypt */
         else {
-            /* see if we know this key */
-            if (XMEMCMP(key_name, myKey_ctx.name, WOLFSSL_TICKET_NAME_SZ) != 0){
-                printf("client presented unknown ticket key name %s\n", key_name);
-                return WOLFSSL_TICKET_RET_FATAL;
-            }
-
-            /* build aad from key name, iv, and length */
-            XMEMCPY(tmp, key_name, WOLFSSL_TICKET_NAME_SZ);
-            tmp += WOLFSSL_TICKET_NAME_SZ;
-            XMEMCPY(tmp, iv, WOLFSSL_TICKET_IV_SZ);
-            tmp += WOLFSSL_TICKET_IV_SZ;
-            XMEMCPY(tmp, &sLen, sizeof(sLen));
-
         #if defined(HAVE_CHACHA) && defined(HAVE_POLY1305)
             ret = wc_ChaCha20Poly1305_Decrypt(myKey_ctx.key, iv,
-                                              aad, aadSz,
+                                              tickCtx->aad, aadSz,
                                               ticket, inLen,
                                               mac,
                                               ticket);
         #elif defined(HAVE_AESGCM)
-            ret = wc_AesInit(&aes, NULL, INVALID_DEVID);
-            if (ret != 0) return WOLFSSL_TICKET_RET_REJECT;
-
-            ret = wc_AesGcmSetKey(&aes, myKey_ctx.key, sizeof(myKey_ctx.key));
-            if (ret == 0) {
-                ret = wc_AesGcmDecrypt(&aes, ticket, ticket, inLen,
-                                        iv, GCM_NONCE_MID_SZ, mac, AES_BLOCK_SIZE,
-                                        aad, aadSz);
-            }
-            wc_AesFree(&aes);
+            ret = wc_AesGcmDecrypt(&tickCtx->aes, ticket, ticket, inLen,
+                                   iv, GCM_NONCE_MID_SZ, mac, AES_BLOCK_SIZE,
+                                   tickCtx->aad, aadSz);
         #endif
-
-            if (ret != 0) return WOLFSSL_TICKET_RET_REJECT;
-            *outLen = inLen;  /* no padding in this mode */
         }
-
-        return WOLFSSL_TICKET_RET_OK;
+        if (ret != 0) {
+            break;
+        }
+        tickCtx->state = MY_TICKET_STATE_FINAL;
     }
+    FALL_THROUGH;
+    case MY_TICKET_STATE_FINAL:
+        *outLen = inLen;  /* no padding in this mode */
+        break;
+    } /* switch */
+
+#ifdef WOLFSSL_ASYNC_CRYPT
+    if (ret == WC_PENDING_E) {
+        return ret;
+    }
+#endif
+
+    /* cleanup */
+#if defined(HAVE_CHACHA) && defined(HAVE_POLY1305)
+#elif defined(HAVE_AESGCM)
+    wc_AesFree(&tickCtx->aes);
+#endif
+
+    /* reset context */
+    XMEMSET(tickCtx, 0, sizeof(MyTicketCtx));
+
+    return (ret == 0) ? WOLFSSL_TICKET_RET_OK : WOLFSSL_TICKET_RET_REJECT;
+}
 
 #endif /* HAVE_SESSION_TICKET && ((HAVE_CHACHA && HAVE_POLY1305) || HAVE_AESGCM) */
 
@@ -4087,5 +5025,270 @@ static WC_INLINE word16 GetRandomPort(void)
     (void)rng; /* for WC_NO_RNG case */
     return port;
 }
+
+#ifdef WOLFSSL_EARLY_DATA
+static WC_INLINE void EarlyDataStatus(WOLFSSL* ssl)
+{
+    int earlyData_status;
+#ifdef OPENSSL_EXTRA
+    earlyData_status = SSL_get_early_data_status(ssl);
+#else
+    earlyData_status = wolfSSL_get_early_data_status(ssl);
+#endif
+    if (earlyData_status < 0) return;
+
+    printf("Early Data was ");
+
+    switch(earlyData_status) {
+        case WOLFSSL_EARLY_DATA_NOT_SENT:
+                printf("not sent.\n");
+                break;
+        case WOLFSSL_EARLY_DATA_REJECTED:
+                printf("rejected.\n");
+                break;
+        case WOLFSSL_EARLY_DATA_ACCEPTED:
+                printf("accepted\n");
+                break;
+        default:
+                printf("unknown...\n");
+    }
+}
+#endif /* WOLFSSL_EARLY_DATA */
+
+#if defined(HAVE_SESSION_TICKET) || defined (WOLFSSL_DTLS13)
+static WC_INLINE int process_handshake_messages(WOLFSSL* ssl, int blocking,
+    int* zero_return)
+{
+    int timeout = DEFAULT_TIMEOUT_SEC;
+    char foo[1];
+    int ret = 0;
+    int dtls;
+
+    if (zero_return == NULL || ssl == NULL)
+        return -1;
+
+    dtls = wolfSSL_dtls(ssl);
+    (void)dtls;
+    *zero_return = 0;
+
+    if (!blocking) {
+#ifdef WOLFSSL_DTLS
+        if (dtls) {
+            timeout = wolfSSL_dtls_get_current_timeout(ssl);
+
+#ifdef WOLFSSL_DTLS13
+            if (timeout > 4 && wolfSSL_dtls13_use_quick_timeout(ssl))
+                timeout /= 4;
+#endif /* WOLFSSL_DTLS13 */
+        }
+#endif /* WOLFSSL_DTLS */
+
+        ret = tcp_select(wolfSSL_get_fd(ssl), timeout);
+        if (ret == TEST_ERROR_READY) {
+            err_sys("tcp_select error");
+            return -1;
+        }
+
+        if (ret == TEST_TIMEOUT) {
+#ifdef WOLFSSL_DTLS
+            if (dtls) {
+                ret = wolfSSL_dtls_got_timeout(ssl);
+                if (ret != WOLFSSL_SUCCESS && !wolfSSL_want_write(ssl) &&
+                    !wolfSSL_want_read(ssl)) {
+                    err_sys("got timeout error");
+                    return -1;
+                }
+            }
+#endif /* WOLFSSL_DTLS */
+            /* do the peek to detect if the peer closed the connection*/
+        }
+    }
+
+    ret = wolfSSL_peek(ssl, foo, 0);
+    if (ret < 0 && !wolfSSL_want_read(ssl) && !wolfSSL_want_write(ssl)) {
+        ret = wolfSSL_get_error(ssl, ret);
+        if (ret == WOLFSSL_ERROR_ZERO_RETURN)
+            *zero_return = 1;
+        return -1;
+    }
+
+    return 0;
+}
+#endif /* HAVE_SESSION_TICKET || WOLFSSL_DTLS13 */
+
+static WC_INLINE void printBuffer(const byte *buf, int size)
+{
+    int i;
+    for (i = 0; i < size; i++)
+        printf("%x", buf[i]);
+}
+
+#if !defined(NO_FILESYSTEM) && defined(OPENSSL_EXTRA) && \
+    defined(DEBUG_UNIT_TEST_CERTS)
+void DEBUG_WRITE_CERT_X509(WOLFSSL_X509* x509, const char* fileName);
+void DEBUG_WRITE_DER(const byte* der, int derSz, const char* fileName);
+#endif
+
+#define DTLS_CID_BUFFER_SIZE 256
+
+#if defined(WOLFSSL_TICKET_NONCE_MALLOC) && defined(HAVE_SESSION_TICKET)       \
+    && defined(WOLFSSL_TLS13) &&                                               \
+    (!defined(HAVE_FIPS) || (defined(FIPS_VERSION_GE) && FIPS_VERSION_GE(5,3)))\
+    ||                                                                         \
+    (defined(WOLFSSL_DTLS) && !defined(WOLFSSL_NO_TLS12) &&                    \
+     !defined(NO_WOLFSSL_CLIENT) && !defined(NO_WOLFSSL_SERVER))
+#define TEST_MEMIO_BUF_SZ (64 * 1024)
+struct test_memio_ctx
+{
+    byte c_buff[TEST_MEMIO_BUF_SZ];
+    int c_len;
+    byte s_buff[TEST_MEMIO_BUF_SZ];
+    int s_len;
+};
+
+static WC_INLINE int test_memio_write_cb(WOLFSSL *ssl, char *data, int sz,
+    void *ctx)
+{
+    struct test_memio_ctx *test_ctx;
+    byte *buf;
+    int *len;
+
+    test_ctx = (struct test_memio_ctx*)ctx;
+
+    if (wolfSSL_GetSide(ssl) == WOLFSSL_SERVER_END) {
+        buf = test_ctx->c_buff;
+        len = &test_ctx->c_len;
+    }
+    else {
+        buf = test_ctx->s_buff;
+        len = &test_ctx->s_len;
+    }
+
+    if ((unsigned)(*len + sz) > TEST_MEMIO_BUF_SZ)
+            return WOLFSSL_CBIO_ERR_WANT_READ;
+
+    XMEMCPY(buf + *len, data, sz);
+    *len += sz;
+
+    return sz;
+}
+
+static WC_INLINE int test_memio_read_cb(WOLFSSL *ssl, char *data, int sz,
+    void *ctx)
+{
+    struct test_memio_ctx *test_ctx;
+    int read_sz;
+    byte *buf;
+    int *len;
+
+    test_ctx = (struct test_memio_ctx*)ctx;
+
+    if (wolfSSL_GetSide(ssl) == WOLFSSL_SERVER_END) {
+        buf = test_ctx->s_buff;
+        len = &test_ctx->s_len;
+    }
+    else {
+        buf = test_ctx->c_buff;
+        len = &test_ctx->c_len;
+    }
+
+    if (*len == 0)
+        return WOLFSSL_CBIO_ERR_WANT_READ;
+
+    read_sz = sz < *len ? sz : *len;
+
+    XMEMCPY(data, buf, read_sz);
+    XMEMMOVE(buf, buf + read_sz, *len - read_sz);
+
+    *len -= read_sz;
+
+    return read_sz;
+}
+
+static WC_INLINE int test_memio_do_handshake(WOLFSSL *ssl_c, WOLFSSL *ssl_s,
+    int max_rounds, int *rounds)
+{
+    byte handshake_complete = 0, hs_c = 0, hs_s = 0;
+    int ret, err;
+
+    if (rounds != NULL)
+        *rounds = 0;
+    while (!handshake_complete && max_rounds > 0) {
+        if (!hs_c) {
+            ret = wolfSSL_connect(ssl_c);
+            if (ret == WOLFSSL_SUCCESS) {
+                hs_c = 1;
+            }
+            else {
+                err = wolfSSL_get_error(ssl_c, ret);
+                if (err != WOLFSSL_ERROR_WANT_READ &&
+                    err != WOLFSSL_ERROR_WANT_WRITE)
+                    return -1;
+            }
+        }
+        if (!hs_s) {
+            ret = wolfSSL_accept(ssl_s);
+            if (ret == WOLFSSL_SUCCESS) {
+                hs_s = 1;
+            }
+            else {
+                err = wolfSSL_get_error(ssl_c, ret);
+                if (err != WOLFSSL_ERROR_WANT_READ &&
+                    err != WOLFSSL_ERROR_WANT_WRITE)
+                    return -1;
+            }
+        }
+        handshake_complete = hs_c && hs_s;
+        max_rounds--;
+        if (rounds != NULL)
+            *rounds = *rounds + 1;
+    }
+
+    if (!handshake_complete)
+        return -1;
+
+    return 0;
+}
+
+static WC_INLINE int test_memio_setup(struct test_memio_ctx *ctx,
+    WOLFSSL_CTX **ctx_c, WOLFSSL_CTX **ctx_s, WOLFSSL **ssl_c, WOLFSSL **ssl_s,
+    method_provider method_c, method_provider method_s)
+{
+    int ret;
+
+    *ctx_c = wolfSSL_CTX_new(method_c());
+    *ctx_s = wolfSSL_CTX_new(method_s());
+    if (*ctx_c == NULL || *ctx_s == NULL)
+        return -1;
+
+    ret = wolfSSL_CTX_use_PrivateKey_file(*ctx_s, svrKeyFile,
+        WOLFSSL_FILETYPE_PEM);
+    if (ret != WOLFSSL_SUCCESS)
+        return- -1;
+
+    ret = wolfSSL_CTX_use_certificate_file(*ctx_s, svrCertFile,
+                                           WOLFSSL_FILETYPE_PEM);
+    if (ret != WOLFSSL_SUCCESS)
+        return -1;
+    ret = wolfSSL_CTX_load_verify_locations(*ctx_c, caCertFile, 0);
+    if (ret != WOLFSSL_SUCCESS)
+        return -1;
+    wolfSSL_SetIORecv(*ctx_c, test_memio_read_cb);
+    wolfSSL_SetIOSend(*ctx_c, test_memio_write_cb);
+    wolfSSL_SetIORecv(*ctx_s, test_memio_read_cb);
+    wolfSSL_SetIOSend(*ctx_s, test_memio_write_cb);
+
+    *ssl_c = wolfSSL_new(*ctx_c);
+    *ssl_s = wolfSSL_new(*ctx_s);
+    if (*ssl_c == NULL || *ssl_s == NULL)
+        return -1;
+
+    wolfSSL_SetIOWriteCtx(*ssl_c, ctx);
+    wolfSSL_SetIOReadCtx(*ssl_c, ctx);
+    wolfSSL_SetIOWriteCtx(*ssl_s, ctx);
+    wolfSSL_SetIOReadCtx(*ssl_s, ctx);
+    return 0;
+}
+#endif
 
 #endif /* wolfSSL_TEST_H */

@@ -1,6 +1,6 @@
 /* sctp-server-dtls.c
  *
- * Copyright (C) 2006-2020 wolfSSL Inc.
+ * Copyright (C) 2006-2022 wolfSSL Inc.
  *
  * This file is part of wolfSSL.
  *
@@ -49,8 +49,10 @@ static int err_sys(const char* msg)
 }
 #endif /* WOLFSSL_SCTP && WOLFSSL_DTLS */
 
-int main()
+int main(int argc, char **argv)
 {
+    (void)argc;
+    (void)argv;
 #if defined(WOLFSSL_SCTP) && defined(WOLFSSL_DTLS)
     int sd = socket(PF_INET, SOCK_STREAM, IPPROTO_SCTP);
 

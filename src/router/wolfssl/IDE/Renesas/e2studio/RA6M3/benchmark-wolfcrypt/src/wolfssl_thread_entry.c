@@ -1,6 +1,6 @@
 /* wolfssl_thread_entry.c
  *
- * Copyright (C) 2006-2020 wolfSSL Inc.
+ * Copyright (C) 2006-2022 wolfSSL Inc.
  *
  * This file is part of wolfSSL.
  *
@@ -19,8 +19,9 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1335, USA
  */
 #include <wolfssl/wolfcrypt/settings.h>
-#include "wolfcrypt/benchmark/benchmark.h"
 #include "common/util.h"
+
+int benchmark_test(void *args);
 
 void wolfssl_thread_entry(void *pvParameters) {
     FSP_PARAMETER_NOT_USED(pvParameters);

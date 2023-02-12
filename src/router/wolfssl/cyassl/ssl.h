@@ -1,6 +1,6 @@
 /* ssl.h
  *
- * Copyright (C) 2006-2020 wolfSSL Inc.
+ * Copyright (C) 2006-2022 wolfSSL Inc.
  *
  * This file is part of wolfSSL.
  *
@@ -448,7 +448,6 @@
 #define CyaSSL_CTX_use_certificate_file     wolfSSL_CTX_use_certificate_file
 #define CyaSSL_CTX_use_PrivateKey_buffer    wolfSSL_CTX_use_PrivateKey_buffer
 #define CyaSSL_CTX_use_certificate_buffer   wolfSSL_CTX_use_certificate_buffer
-#define CyaSSL_CTX_use_NTRUPrivateKey_file  wolfSSL_CTX_use_NTRUPrivateKey_file
 #define CyaSSL_use_certificate_chain_buffer wolfSSL_use_certificate_chain_buffer
 #define CyaSSL_CTX_der_load_verify_locations    \
                                             wolfSSL_CTX_der_load_verify_locations
@@ -701,7 +700,9 @@
  * wrapper around macros until they are changed in cyassl code
  * needs investigation in regards to macros in fips
  */
-#define NO_WOLFSSL_ALLOC_ALIGN NO_CYASSL_ALLOC_ALIGN /* @TODO */
+#ifdef NO_CYASSL_ALLOC_ALIGN
+#define NO_WOLFSSL_ALLOC_ALIGN NO_CYASSL_ALLOC_ALIGN
+#endif
 
 
 /* examples/client/client.h */

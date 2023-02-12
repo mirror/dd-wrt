@@ -41,7 +41,7 @@
     \code
     ecc_key key;
     wc_ecc_init(&key);
-    WC_WC_RNG rng;
+    WC_RNG rng;
     wc_InitRng(&rng);
     wc_ecc_make_key(&rng, 32, &key); // initialize 32 byte ecc key
     \endcode
@@ -49,7 +49,7 @@
     \sa wc_ecc_init
     \sa wc_ecc_shared_secret
 */
-WOLFSSL_API
+
 int wc_ecc_make_key(WC_RNG* rng, int keysize, ecc_key* key);
 
 /*!
@@ -95,7 +95,7 @@ int wc_ecc_make_key(WC_RNG* rng, int keysize, ecc_key* key);
     \code
     ecc_key key;
     int ret;
-    WC_WC_RNG rng;
+    WC_RNG rng;
     wc_ecc_init(&key);
     wc_InitRng(&rng);
     int curveId = ECC_SECP521R1;
@@ -110,7 +110,7 @@ int wc_ecc_make_key(WC_RNG* rng, int keysize, ecc_key* key);
     \sa wc_ecc_make_key
     \sa wc_ecc_get_curve_size_from_id
 */
-WOLFSSL_API
+
 int wc_ecc_make_key_ex(WC_RNG* rng, int keysize, ecc_key* key, int curve_id);
 
 /*!
@@ -127,7 +127,7 @@ int wc_ecc_make_key_ex(WC_RNG* rng, int keysize, ecc_key* key, int curve_id);
     _Example_
     \code
     ecc_key key;
-    WC_WC_RNG rng;
+    WC_RNG rng;
     int check_result;
     wc_ecc_init(&key);
     wc_InitRng(&rng);
@@ -146,7 +146,7 @@ int wc_ecc_make_key_ex(WC_RNG* rng, int keysize, ecc_key* key, int curve_id);
 
     \sa wc_ecc_point_is_at_infinity
 */
-WOLFSSL_API
+
 int wc_ecc_check_key(ecc_key* key);
 
 /*!
@@ -167,7 +167,7 @@ int wc_ecc_check_key(ecc_key* key);
     \sa wc_ecc_key_new
     \sa wc_ecc_init_ex
 */
-WOLFSSL_API
+
 void wc_ecc_key_free(ecc_key* key);
 
 /*!
@@ -223,7 +223,7 @@ void wc_ecc_key_free(ecc_key* key);
     _Example_
     \code
     ecc_key priv, pub;
-    WC_WC_RNG rng;
+    WC_RNG rng;
     byte secret[1024]; // can hold 1024 byte shared secret key
     word32 secretSz = sizeof(secret);
     int ret;
@@ -242,7 +242,7 @@ void wc_ecc_key_free(ecc_key* key);
     \sa wc_ecc_init
     \sa wc_ecc_make_key
 */
-WOLFSSL_API
+
 int wc_ecc_shared_secret(ecc_key* private_key, ecc_key* public_key, byte* out,
                       word32* outlen);
 
@@ -288,7 +288,7 @@ int wc_ecc_shared_secret(ecc_key* private_key, ecc_key* public_key, byte* out,
 
     \sa wc_ecc_verify_hash_ex
 */
-WOLFSSL_API
+
 int wc_ecc_shared_secret_ex(ecc_key* private_key, ecc_point* point,
                              byte* out, word32 *outlen);
 
@@ -340,7 +340,7 @@ int wc_ecc_shared_secret_ex(ecc_key* private_key, ecc_point* point,
     _Example_
     \code
     ecc_key key;
-    WC_WC_RNG rng;
+    WC_RNG rng;
     int ret, sigSz;
 
     byte sig[512]; // will hold generated signature
@@ -357,7 +357,7 @@ int wc_ecc_shared_secret_ex(ecc_key* private_key, ecc_point* point,
 
     \sa wc_ecc_verify_hash
 */
-WOLFSSL_API
+
 int wc_ecc_sign_hash(const byte* in, word32 inlen, byte* out, word32 *outlen,
                      WC_RNG* rng, ecc_key* key);
 
@@ -406,7 +406,7 @@ int wc_ecc_sign_hash(const byte* in, word32 inlen, byte* out, word32 *outlen,
     _Example_
     \code
     ecc_key key;
-    WC_WC_WC_RNG rng;
+    WC_RNG rng;
     int ret, sigSz;
     mp_int r; // destination for r component of signature.
     mp_int s; // destination for s component of signature.
@@ -428,7 +428,7 @@ int wc_ecc_sign_hash(const byte* in, word32 inlen, byte* out, word32 *outlen,
 
     \sa wc_ecc_verify_hash_ex
 */
-WOLFSSL_API
+
 int wc_ecc_sign_hash_ex(const byte* in, word32 inlen, WC_RNG* rng,
                         ecc_key* key, mp_int *r, mp_int *s);
 
@@ -496,7 +496,7 @@ int wc_ecc_sign_hash_ex(const byte* in, word32 inlen, WC_RNG* rng,
     \sa wc_ecc_sign_hash
     \sa wc_ecc_verify_hash_ex
 */
-WOLFSSL_API
+
 int wc_ecc_verify_hash(const byte* sig, word32 siglen, const byte* hash,
                     word32 hashlen, int* stat, ecc_key* key);
 
@@ -505,7 +505,7 @@ int wc_ecc_verify_hash(const byte* sig, word32 siglen, const byte* hash,
 
     \brief Verify an ECC signature.  Result is written to stat.
     1 is valid, 0 is invalid.
-Note: Do not use the return value to test for valid.  Only use stat.
+    Note: Do not use the return value to test for valid.  Only use stat.
 
     \return MP_OKAY If successful (even if the signature is not valid)
     \return ECC_BAD_ARG_E Returns if arguments are null or if
@@ -535,7 +535,7 @@ Note: Do not use the return value to test for valid.  Only use stat.
 
     \sa wc_ecc_verify_hash
 */
-WOLFSSL_API
+
 int wc_ecc_verify_hash_ex(mp_int *r, mp_int *s, const byte* hash,
                           word32 hashlen, int* stat, ecc_key* key);
 
@@ -559,7 +559,7 @@ int wc_ecc_verify_hash_ex(mp_int *r, mp_int *s, const byte* hash,
     \sa wc_ecc_make_key
     \sa wc_ecc_free
 */
-WOLFSSL_API
+
 int wc_ecc_init(ecc_key* key);
 
 /*!
@@ -585,7 +585,7 @@ int wc_ecc_init(ecc_key* key);
     \sa wc_ecc_free
     \sa wc_ecc_init
 */
-WOLFSSL_API
+
 int wc_ecc_init_ex(ecc_key* key, void* heap, int devId);
 
 /*!
@@ -607,7 +607,7 @@ int wc_ecc_init_ex(ecc_key* key, void* heap, int devId);
     \sa wc_ecc_key_free
     \sa wc_ecc_init
 */
-WOLFSSL_API
+
 ecc_key* wc_ecc_key_new(void* heap);
 
 /*!
@@ -628,7 +628,7 @@ ecc_key* wc_ecc_key_new(void* heap);
 
     \sa wc_ecc_init
 */
-WOLFSSL_API
+
 int wc_ecc_free(ecc_key* key);
 
 /*!
@@ -636,7 +636,8 @@ int wc_ecc_free(ecc_key* key);
 
     \brief This function frees the fixed-point cache, which can be used
     with ecc to speed up computation times. To use this functionality,
-    FP_ECC (fixed-point ecc), should be defined.
+    FP_ECC (fixed-point ecc), should be defined. Threaded applications should
+    call this function before exiting the thread.
 
     \return none No returns.
 
@@ -653,7 +654,7 @@ int wc_ecc_free(ecc_key* key);
 
     \sa wc_ecc_free
 */
-WOLFSSL_API
+
 void wc_ecc_fp_free(void);
 
 /*!
@@ -669,7 +670,7 @@ void wc_ecc_fp_free(void);
     _Example_
     \code
     ecc_key key;
-    WC_WC_RNG rng;
+    WC_RNG rng;
     int is_valid;
     wc_ecc_init(&key);
     wc_InitRng(&rng);
@@ -687,7 +688,7 @@ void wc_ecc_fp_free(void);
 
     \sa none
 */
-WOLFSSL_API
+
 int wc_ecc_is_valid_idx(int n);
 
 /*!
@@ -715,7 +716,7 @@ int wc_ecc_is_valid_idx(int n);
     \sa wc_ecc_cmp_point
     \sa wc_ecc_copy_point
 */
-WOLFSSL_API
+
 ecc_point* wc_ecc_new_point(void);
 
 /*!
@@ -743,7 +744,7 @@ ecc_point* wc_ecc_new_point(void);
     \sa wc_ecc_cmp_point
     \sa wc_ecc_copy_point
 */
-WOLFSSL_API
+
 void wc_ecc_del_point(ecc_point* p);
 
 /*!
@@ -776,7 +777,7 @@ void wc_ecc_del_point(ecc_point* p);
     \sa wc_ecc_cmp_point
     \sa wc_ecc_del_point
 */
-WOLFSSL_API
+
 int wc_ecc_copy_point(ecc_point* p, ecc_point *r);
 
 /*!
@@ -819,7 +820,7 @@ int wc_ecc_copy_point(ecc_point* p, ecc_point *r);
     \sa wc_ecc_del_point
     \sa wc_ecc_copy_point
 */
-WOLFSSL_API
+
 int wc_ecc_cmp_point(ecc_point* a, ecc_point *b);
 
 /*!
@@ -860,7 +861,7 @@ int wc_ecc_cmp_point(ecc_point* a, ecc_point *b);
     \sa wc_ecc_cmp_point
     \sa wc_ecc_copy_point
 */
-WOLFSSL_API
+
 int wc_ecc_point_is_at_infinity(ecc_point *p);
 
 /*!
@@ -894,7 +895,7 @@ int wc_ecc_point_is_at_infinity(ecc_point *p);
 
     \sa none
 */
-WOLFSSL_API
+
 int wc_ecc_mulmod(mp_int* k, ecc_point *G, ecc_point *R,
                   mp_int* a, mp_int* modulus, int map);
 
@@ -960,8 +961,8 @@ int wc_ecc_mulmod(mp_int* k, ecc_point *G, ecc_point *R,
     \sa wc_ecc_export_x963_ex
     \sa wc_ecc_import_x963
 */
-WOLFSSL_API
-int wc_ecc_export_x963(ecc_key*, byte* out, word32* outLen);
+
+int wc_ecc_export_x963(ecc_key* key, byte* out, word32* outLen);
 
 /*!
     \ingroup ECC
@@ -1031,8 +1032,8 @@ int wc_ecc_export_x963(ecc_key*, byte* out, word32* outLen);
     \sa wc_ecc_export_x963
     \sa wc_ecc_import_x963
 */
-WOLFSSL_API
-int wc_ecc_export_x963_ex(ecc_key*, byte* out, word32* outLen, int compressed);
+
+int wc_ecc_export_x963_ex(ecc_key* key, byte* out, word32* outLen, int compressed);
 
 /*!
     \ingroup ECC
@@ -1094,7 +1095,7 @@ int wc_ecc_export_x963_ex(ecc_key*, byte* out, word32* outLen, int compressed);
     \sa wc_ecc_export_x963
     \sa wc_ecc_import_private_key
 */
-WOLFSSL_API
+
 int wc_ecc_import_x963(const byte* in, word32 inLen, ecc_key* key);
 
 /*!
@@ -1107,7 +1108,7 @@ int wc_ecc_import_x963(const byte* in, word32 inLen, ecc_key* key);
     through the HAVE_COMP_KEY option.
 
     \return 0 Returned on successfully importing the ecc_key
-NOT_COMPILED_IN Returned if the HAVE_COMP_KEY was not enabled at compile
+    NOT_COMPILED_IN Returned if the HAVE_COMP_KEY was not enabled at compile
     time, but the key is stored in compressed format
     \return ECC_BAD_ARG_E Returned if in or key evaluate to NULL, or the
     inLen is even (according to the x9.63 standard, the key must be odd)
@@ -1163,7 +1164,7 @@ NOT_COMPILED_IN Returned if the HAVE_COMP_KEY was not enabled at compile
     \sa wc_ecc_export_x963
     \sa wc_ecc_import_private_key
 */
-WOLFSSL_API
+
 int wc_ecc_import_private_key(const byte* priv, word32 privSz, const byte* pub,
                            word32 pubSz, ecc_key* key);
 
@@ -1229,7 +1230,7 @@ int wc_ecc_import_private_key(const byte* priv, word32 privSz, const byte* pub,
     \sa wc_ecc_sign_hash
     \sa wc_ecc_sig_size
 */
-WOLFSSL_API
+
 int wc_ecc_rs_to_sig(const char* r, const char* s, byte* out, word32* outlen);
 
 /*!
@@ -1294,7 +1295,7 @@ int wc_ecc_rs_to_sig(const char* r, const char* s, byte* out, word32* outlen);
 
     \sa wc_ecc_import_private_key
 */
-WOLFSSL_API
+
 int wc_ecc_import_raw(ecc_key* key, const char* qx, const char* qy,
                    const char* d, const char* curveName);
 
@@ -1357,7 +1358,7 @@ int wc_ecc_import_raw(ecc_key* key, const char* qx, const char* qy,
 
     \sa wc_ecc_import_private_key
 */
-WOLFSSL_API
+
 int wc_ecc_export_private_only(ecc_key* key, byte* out, word32* outLen);
 
 /*!
@@ -1389,7 +1390,7 @@ int wc_ecc_export_private_only(ecc_key* key, byte* out, word32* outLen);
 
     \sa wc_ecc_import_point_der
 */
-WOLFSSL_API
+
 int wc_ecc_export_point_der(const int curve_idx, ecc_point* point,
                             byte* out, word32* outLen);
 
@@ -1421,7 +1422,7 @@ int wc_ecc_export_point_der(const int curve_idx, ecc_point* point,
 
     \sa wc_ecc_export_point_der
 */
-WOLFSSL_API
+
 int wc_ecc_import_point_der(byte* in, word32 inLen, const int curve_idx,
                             ecc_point* point);
 
@@ -1449,7 +1450,7 @@ int wc_ecc_import_point_der(byte* in, word32 inLen, const int curve_idx,
 
     \sa wc_ecc_make_key
 */
-WOLFSSL_API
+
 int wc_ecc_size(ecc_key* key);
 
 /*!
@@ -1475,7 +1476,7 @@ int wc_ecc_size(ecc_key* key);
     \sa wc_ecc_sign_hash
     \sa wc_ecc_sig_size
 */
-WOLFSSL_API
+
 int wc_ecc_sig_size_calc(int sz);
 
 
@@ -1508,7 +1509,7 @@ int wc_ecc_sig_size_calc(int sz);
     \sa wc_ecc_sign_hash
     \sa wc_ecc_sig_size_calc
 */
-WOLFSSL_API
+
 int wc_ecc_sig_size(ecc_key* key);
 
 
@@ -1530,7 +1531,7 @@ int wc_ecc_sig_size(ecc_key* key);
     _Example_
     \code
     ecEncCtx* ctx;
-    WC_WC_RNG rng;
+    WC_RNG rng;
     wc_InitRng(&rng);
     ctx = wc_ecc_ctx_new(REQ_RESP_CLIENT, &rng);
     if(ctx == NULL) {
@@ -1539,9 +1540,10 @@ int wc_ecc_sig_size(ecc_key* key);
     \endcode
 
     \sa wc_ecc_encrypt
+    \sa wc_ecc_encrypt_ex
     \sa wc_ecc_decrypt
 */
-WOLFSSL_API
+
 ecEncCtx* wc_ecc_ctx_new(int flags, WC_RNG* rng);
 
 /*!
@@ -1557,7 +1559,7 @@ ecEncCtx* wc_ecc_ctx_new(int flags, WC_RNG* rng);
     _Example_
     \code
     ecEncCtx* ctx;
-    WC_WC_RNG rng;
+    WC_RNG rng;
     wc_InitRng(&rng);
     ctx = wc_ecc_ctx_new(REQ_RESP_CLIENT, &rng);
     // do secure communication
@@ -1567,7 +1569,7 @@ ecEncCtx* wc_ecc_ctx_new(int flags, WC_RNG* rng);
 
     \sa wc_ecc_ctx_new
 */
-WOLFSSL_API
+
 void wc_ecc_ctx_free(ecEncCtx*);
 
 /*!
@@ -1587,7 +1589,7 @@ void wc_ecc_ctx_free(ecEncCtx*);
     _Example_
     \code
     ecEncCtx* ctx;
-    WC_WC_RNG rng;
+    WC_RNG rng;
     wc_InitRng(&rng);
     ctx = wc_ecc_ctx_new(REQ_RESP_CLIENT, &rng);
     // do secure communication
@@ -1598,8 +1600,40 @@ void wc_ecc_ctx_free(ecEncCtx*);
 
     \sa wc_ecc_ctx_new
 */
-WOLFSSL_API
-int wc_ecc_ctx_reset(ecEncCtx*, WC_RNG*);  /* reset for use again w/o alloc/free */
+
+int wc_ecc_ctx_reset(ecEncCtx* ctx, WC_RNG* rng);  /* reset for use again w/o alloc/free */
+
+/*!
+    \ingroup ECC
+
+    \brief This function can optionally be called after
+    wc_ecc_ctx_new. It sets the encryption, KDF, and MAC algorithms
+    into an ecEncCtx object.
+
+    \return 0 Returned upon successfully setting the information
+    for the ecEncCtx object.
+    \return BAD_FUNC_ARG Returned if the given ecEncCtx object is
+    NULL.
+
+    \param ctx pointer to the ecEncCtx for which to set the info
+    \param encAlgo encryption algorithm to use.
+    \param kdfAlgo KDF algorithm to use.
+    \param macAlgo MAC algorithm to use.
+
+    _Example_
+    \code
+    ecEncCtx* ctx;
+    // initialize ctx
+    if(wc_ecc_ctx_set_algo(&ctx, ecAES_128_CTR, ecHKDF_SHA256, ecHMAC_SHA256))) {
+	    // error setting info
+    }
+    \endcode
+
+    \sa wc_ecc_ctx_new
+*/
+
+int wc_ecc_ctx_set_algo(ecEncCtx* ctx, byte encAlgo, byte kdfAlgo,
+    byte macAlgo);
 
 /*!
     \ingroup ECC
@@ -1619,7 +1653,7 @@ int wc_ecc_ctx_reset(ecEncCtx*, WC_RNG*);  /* reset for use again w/o alloc/free
     _Example_
     \code
     ecEncCtx* ctx;
-    WC_WC_RNG rng;
+    WC_RNG rng;
     const byte* salt;
     wc_InitRng(&rng);
     ctx = wc_ecc_ctx_new(REQ_RESP_CLIENT, &rng);
@@ -1631,8 +1665,9 @@ int wc_ecc_ctx_reset(ecEncCtx*, WC_RNG*);  /* reset for use again w/o alloc/free
 
     \sa wc_ecc_ctx_new
     \sa wc_ecc_ctx_set_peer_salt
+    \sa wc_ecc_ctx_set_kdf_salt
 */
-WOLFSSL_API
+
 const byte* wc_ecc_ctx_get_own_salt(ecEncCtx*);
 
 /*!
@@ -1655,7 +1690,7 @@ const byte* wc_ecc_ctx_get_own_salt(ecEncCtx*);
     _Example_
     \code
     ecEncCtx* cliCtx, srvCtx;
-    WC_WC_RNG rng;
+    WC_RNG rng;
     const byte* cliSalt, srvSalt;
     int ret;
 
@@ -1669,9 +1704,45 @@ const byte* wc_ecc_ctx_get_own_salt(ecEncCtx*);
     \endcode
 
     \sa wc_ecc_ctx_get_own_salt
+    \sa wc_ecc_ctx_set_kdf_salt
 */
-WOLFSSL_API
-int wc_ecc_ctx_set_peer_salt(ecEncCtx*, const byte* salt);
+
+int wc_ecc_ctx_set_peer_salt(ecEncCtx* ctx, const byte* salt);
+
+/*!
+    \ingroup ECC
+
+    \brief This function sets the salt pointer and length to use with KDF
+    into the ecEncCtx object.
+
+    \return 0 Returned upon successfully setting the salt for the
+    ecEncCtx object.
+    \return BAD_FUNC_ARG Returned if the given ecEncCtx object is NULL
+    or if the given salt is NULL and length is not NULL.
+
+    \param ctx pointer to the ecEncCtx for which to set the salt
+    \param salt pointer to salt buffer
+    \param len length salt in bytes
+
+    _Example_
+    \code
+    ecEncCtx* srvCtx;
+    WC_RNG rng;
+    byte cliSalt[] = { fixed salt data };
+    word32 cliSaltLen = (word32)sizeof(cliSalt);
+    int ret;
+
+    wc_InitRng(&rng);
+    cliCtx = wc_ecc_ctx_new(REQ_RESP_SERVER, &rng);
+
+    ret = wc_ecc_ctx_set_kdf_salt(&cliCtx, cliSalt, cliSaltLen);
+    \endcode
+
+    \sa wc_ecc_ctx_get_own_salt
+    \sa wc_ecc_ctx_get_peer_salt
+*/
+
+int wc_ecc_ctx_set_kdf_salt(ecEncCtx* ctx, const byte* salt, word32 len);
 
 /*!
     \ingroup ECC
@@ -1701,8 +1772,8 @@ int wc_ecc_ctx_set_peer_salt(ecEncCtx*, const byte* salt);
 
     \sa wc_ecc_ctx_new
 */
-WOLFSSL_API
-int wc_ecc_ctx_set_info(ecEncCtx*, const byte* info, int sz);
+
+int wc_ecc_ctx_set_info(ecEncCtx* ctx, const byte* info, int sz);
 
 /*!
     \ingroup ECC
@@ -1759,11 +1830,76 @@ int wc_ecc_ctx_set_info(ecEncCtx*, const byte* info, int sz);
     }
     \endcode
 
+    \sa wc_ecc_encrypt_ex
     \sa wc_ecc_decrypt
 */
-WOLFSSL_API
+
 int wc_ecc_encrypt(ecc_key* privKey, ecc_key* pubKey, const byte* msg,
                 word32 msgSz, byte* out, word32* outSz, ecEncCtx* ctx);
+
+/*!
+    \ingroup ECC
+
+    \brief This function encrypts the given input message from msg
+    to out. This function takes an optional ctx object as parameter.
+    When supplied, encryption proceeds based on the ecEncCtx's
+    encAlgo, kdfAlgo, and macAlgo. If ctx is not supplied, processing
+    completes with the default algorithms, ecAES_128_CBC,
+    ecHKDF_SHA256 and ecHMAC_SHA256. This function requires that
+    the messages are padded according to the encryption type specified by ctx.
+
+    \return 0 Returned upon successfully encrypting the input message
+    \return BAD_FUNC_ARG Returned if privKey, pubKey, msg, msgSz, out,
+    or outSz are NULL, or the ctx object specifies an unsupported
+    encryption type
+    \return BAD_ENC_STATE_E Returned if the ctx object given is in a
+    state that is not appropriate for encryption
+    \return BUFFER_E Returned if the supplied output buffer is too
+    small to store the encrypted ciphertext
+    \return MEMORY_E Returned if there is an error allocating memory
+    for the shared secret key
+
+    \param privKey pointer to the ecc_key object containing the
+    private key to use for encryption
+    \param pubKey pointer to the ecc_key object containing the public
+    key of the peer with whom one wishes to communicate
+    \param msg pointer to the buffer holding the message to encrypt
+    \param msgSz size of the buffer to encrypt
+    \param out pointer to the buffer in which to store the encrypted
+    ciphertext
+    \param outSz pointer to a word32 object containing the available
+    size in the out buffer. Upon successfully encrypting the message,
+    holds the number of bytes written to the output buffer
+    \param ctx Optional: pointer to an ecEncCtx object specifying different
+    encryption algorithms to use
+    \param compressed Public key field is to be output in compressed format.
+
+    _Example_
+    \code
+    byte msg[] = { initialize with msg to encrypt. Ensure padded to block size };
+    byte out[sizeof(msg)];
+    word32 outSz = sizeof(out);
+    int ret;
+    ecc_key cli, serv;
+    // initialize cli with private key
+    // initialize serv with received public key
+
+    ecEncCtx* cliCtx, servCtx;
+    // initialize cliCtx and servCtx
+    // exchange salts
+    ret = wc_ecc_encrypt_ex(&cli, &serv, msg, sizeof(msg), out, &outSz, cliCtx,
+        1);
+    if(ret != 0) {
+    	// error encrypting message
+    }
+    \endcode
+
+    \sa wc_ecc_encrypt
+    \sa wc_ecc_decrypt
+*/
+
+int wc_ecc_encrypt_ex(ecc_key* privKey, ecc_key* pubKey, const byte* msg,
+    word32 msgSz, byte* out, word32* outSz, ecEncCtx* ctx, int compressed);
 
 /*!
     \ingroup ECC
@@ -1822,8 +1958,9 @@ int wc_ecc_encrypt(ecc_key* privKey, ecc_key* pubKey, const byte* msg,
     \endcode
 
     \sa wc_ecc_encrypt
+    \sa wc_ecc_encrypt_ex
 */
-WOLFSSL_API
+
 int wc_ecc_decrypt(ecc_key* privKey, ecc_key* pubKey, const byte* msg,
                 word32 msgSz, byte* out, word32* outSz, ecEncCtx* ctx);
 
@@ -1868,4 +2005,4 @@ int wc_ecc_decrypt(ecc_key* privKey, ecc_key* pubKey, const byte* msg,
     }
     \endcode
 */
-WOLFSSL_API int wc_ecc_set_nonblock(ecc_key *key, ecc_nb_ctx_t* ctx);
+int wc_ecc_set_nonblock(ecc_key *key, ecc_nb_ctx_t* ctx);

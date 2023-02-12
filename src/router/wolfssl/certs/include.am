@@ -11,7 +11,10 @@ EXTRA_DIST += \
 	     certs/client-key.pem \
 	     certs/client-uri-cert.pem \
 	     certs/client-relative-uri.pem \
+	     certs/client-crl-dist.pem \
+	     certs/client-crl-dist.der \
 	     certs/ecc-key.pem \
+		 certs/ecc-keyPub.pem \
 	     certs/ecc-privkey.pem \
 	     certs/ecc-privkeyPkcs8.der \
 	     certs/ecc-privkeyPkcs8.pem \
@@ -24,7 +27,6 @@ EXTRA_DIST += \
 	     certs/ecc-client-keyPub.pem \
 	     certs/client-ecc-cert.pem \
 	     certs/client-ca.pem \
-	     certs/ntru-cert.pem \
 	     certs/dh2048.pem \
 	     certs/server-cert.pem \
 	     certs/server-ecc.pem \
@@ -33,6 +35,7 @@ EXTRA_DIST += \
 	     certs/server-ecc-rsa.pem \
 	     certs/server-keyEnc.pem \
 	     certs/server-key.pem \
+		 certs/server-keyPub.pem \
 	     certs/server-keyPkcs8.der \
 	     certs/server-keyPkcs8Enc12.pem \
 	     certs/server-keyPkcs8Enc2.pem \
@@ -47,6 +50,7 @@ EXTRA_DIST += \
 	     certs/test-servercert.p12 \
 	     certs/test-servercert-rc2.p12 \
 	     certs/ecc-rsa-server.p12 \
+	     certs/dsaparams.der \
 	     certs/dsaparams.pem \
 	     certs/ecc-privOnlyKey.pem \
 	     certs/ecc-privOnlyCert.pem \
@@ -56,7 +60,12 @@ EXTRA_DIST += \
 	     certs/csr.attr.der \
 	     certs/csr.dsa.pem \
 	     certs/csr.signed.der \
-	     certs/csr.ext.der
+	     certs/csr.ext.der \
+	     certs/entity-no-ca-bool-cert.pem \
+	     certs/entity-no-ca-bool-key.pem \
+	     certs/x942dh2048.pem \
+	     certs/fpki-cert.der \
+	     certs/rid-cert.der
 
 EXTRA_DIST += \
 	     certs/ca-key.der \
@@ -65,14 +74,17 @@ EXTRA_DIST += \
 	     certs/client-key.der \
 	     certs/client-ecc-cert.der \
 	     certs/client-keyPub.der \
+	     certs/client-keyPub.pem \
 	     certs/dh2048.der \
 	     certs/dh3072.der \
 	     certs/dh4096.der \
+	     certs/dh-pubkey-2048.der \
 	     certs/rsa2048.der \
 	     certs/rsa-pub-2048.pem \
 	     certs/rsa3072.der \
 	     certs/dsa2048.der \
 	     certs/dsa3072.der \
+	     certs/dsa-pubkey-2048.der \
 	     certs/ecc-client-key.der \
 	     certs/ecc-client-keyPub.der \
 	     certs/ecc-key.der \
@@ -102,8 +114,6 @@ EXTRA_DIST += \
 
 dist_doc_DATA+= certs/taoCert.txt
 
-EXTRA_DIST+= certs/ntru-key.raw
-
 include certs/1024/include.am
 include certs/3072/include.am
 include certs/4096/include.am
@@ -118,4 +128,8 @@ include certs/statickeys/include.am
 include certs/test/include.am
 include certs/test-pathlen/include.am
 include certs/intermediate/include.am
+include certs/falcon/include.am
+include certs/rsapss/include.am
+include certs/dilithium/include.am
+include certs/sphincs/include.am
 

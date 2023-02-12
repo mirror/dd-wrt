@@ -1,6 +1,6 @@
 /* poly1305.c
  *
- * Copyright (C) 2006-2020 wolfSSL Inc.
+ * Copyright (C) 2006-2022 wolfSSL Inc.
  *
  * This file is part of wolfSSL.
  *
@@ -55,7 +55,7 @@ and Daniel J. Bernstein
     #pragma warning(disable: 4127)
 #endif
 
-#ifdef USE_INTEL_SPEEDUP
+#if defined(WOLFSSL_X86_64_BUILD) && defined(USE_INTEL_SPEEDUP)
     #include <emmintrin.h>
     #include <immintrin.h>
 
@@ -77,12 +77,13 @@ and Daniel J. Bernstein
     #endif
 #endif
 
-#ifdef USE_INTEL_SPEEDUP
+#if defined(WOLFSSL_X86_64_BUILD) && defined(USE_INTEL_SPEEDUP)
 static word32 intel_flags = 0;
 static word32 cpu_flags_set = 0;
 #endif
 
-#if defined(USE_INTEL_SPEEDUP) || defined(POLY130564)
+#if (defined(WOLFSSL_X86_64_BUILD) && defined(USE_INTEL_SPEEDUP)) || \
+        defined(POLY130564)
     #if defined(_MSC_VER)
         #define POLY1305_NOINLINE __declspec(noinline)
     #elif defined(__GNUC__)
@@ -109,20 +110,20 @@ static word32 cpu_flags_set = 0;
 
     #elif defined(__GNUC__)
         #if defined(__SIZEOF_INT128__)
-            typedef unsigned __int128 word128;
+            PEDANTIC_EXTENSION typedef unsigned __int128 word128;
         #else
             typedef unsigned word128 __attribute__((mode(TI)));
         #endif
 
-        #define MUL(out, x, y) out = ((word128)x * y)
-        #define ADD(out, in) out += in
-        #define ADDLO(out, in) out += in
-        #define SHR(in, shift) (word64)(in >> (shift))
+        #define MUL(out, x, y) out = ((word128)(x) * (y))
+        #define ADD(out, in) (out) += (in)
+        #define ADDLO(out, in) (out) += (in)
+        #define SHR(in, shift) (word64)((in) >> (shift))
         #define LO(in) (word64)(in)
     #endif
 #endif
 
-#ifdef USE_INTEL_SPEEDUP
+#if defined(WOLFSSL_X86_64_BUILD) && defined(USE_INTEL_SPEEDUP)
 #ifdef __cplusplus
     extern "C" {
 #endif
@@ -262,14 +263,15 @@ static WC_INLINE void u32tole64(const word32 inLe32, byte outLe64[8])
 This local function operates on a message with a given number of bytes
 with a given ctx pointer to a Poly1305 structure.
 */
-static void poly1305_blocks(Poly1305* ctx, const unsigned char *m,
+static int poly1305_blocks(Poly1305* ctx, const unsigned char *m,
                      size_t bytes)
 {
-#ifdef USE_INTEL_SPEEDUP
+#if defined(WOLFSSL_X86_64_BUILD) && defined(USE_INTEL_SPEEDUP)
     /* AVX2 is handled in wc_Poly1305Update. */
-    SAVE_VECTOR_REGISTERS();
+    SAVE_VECTOR_REGISTERS(return _svr_ret;);
     poly1305_blocks_avx(ctx, m, bytes);
     RESTORE_VECTOR_REGISTERS();
+    return 0;
 #elif defined(POLY130564)
     const word64 hibit = (ctx->finished) ? 0 : ((word64)1 << 40); /* 1 << 128 */
     word64 r0,r1,r2;
@@ -319,6 +321,8 @@ static void poly1305_blocks(Poly1305* ctx, const unsigned char *m,
     ctx->h[0] = h0;
     ctx->h[1] = h1;
     ctx->h[2] = h2;
+
+    return 0;
 
 #else /* if not 64 bit then use 32 bit */
     const word32 hibit = (ctx->finished) ? 0 : ((word32)1 << 24); /* 1 << 128 */
@@ -385,6 +389,8 @@ static void poly1305_blocks(Poly1305* ctx, const unsigned char *m,
     ctx->h[3] = h3;
     ctx->h[4] = h4;
 
+    return 0;
+
 #endif /* end of 64 bit cpu blocks or 32 bit cpu */
 }
 
@@ -392,15 +398,16 @@ static void poly1305_blocks(Poly1305* ctx, const unsigned char *m,
 This local function is used for the last call when a message with a given
 number of bytes is less than the block size.
 */
-static void poly1305_block(Poly1305* ctx, const unsigned char *m)
+static int poly1305_block(Poly1305* ctx, const unsigned char *m)
 {
-#ifdef USE_INTEL_SPEEDUP
+#if defined(WOLFSSL_X86_64_BUILD) && defined(USE_INTEL_SPEEDUP)
     /* No call to poly1305_block when AVX2, AVX2 does 4 blocks at a time. */
-    SAVE_VECTOR_REGISTERS();
+    SAVE_VECTOR_REGISTERS(return _svr_ret;);
     poly1305_block_avx(ctx, m);
     RESTORE_VECTOR_REGISTERS();
+    return 0;
 #else
-    poly1305_blocks(ctx, m, POLY1305_BLOCK_SIZE);
+    return poly1305_blocks(ctx, m, POLY1305_BLOCK_SIZE);
 #endif
 }
 #endif /* !defined(WOLFSSL_ARMASM) || !defined(__aarch64__) */
@@ -408,7 +415,8 @@ static void poly1305_block(Poly1305* ctx, const unsigned char *m)
 #if !defined(WOLFSSL_ARMASM) || !defined(__aarch64__)
 int wc_Poly1305SetKey(Poly1305* ctx, const byte* key, word32 keySz)
 {
-#if defined(POLY130564) && !defined(USE_INTEL_SPEEDUP)
+#if defined(POLY130564) && \
+    !(defined(WOLFSSL_X86_64_BUILD) && defined(USE_INTEL_SPEEDUP))
     word64 t0,t1;
 #endif
 
@@ -429,12 +437,12 @@ int wc_Poly1305SetKey(Poly1305* ctx, const byte* key, word32 keySz)
     if (keySz != 32 || ctx == NULL)
         return BAD_FUNC_ARG;
 
-#ifdef USE_INTEL_SPEEDUP
+#if defined(WOLFSSL_X86_64_BUILD) && defined(USE_INTEL_SPEEDUP)
     if (!cpu_flags_set) {
         intel_flags = cpuid_get_flags();
         cpu_flags_set = 1;
     }
-    SAVE_VECTOR_REGISTERS();
+    SAVE_VECTOR_REGISTERS(return _svr_ret;);
     #ifdef HAVE_INTEL_AVX2
     if (IS_INTEL_AVX2(intel_flags))
         poly1305_setkey_avx2(ctx, key);
@@ -496,7 +504,7 @@ int wc_Poly1305SetKey(Poly1305* ctx, const byte* key, word32 keySz)
 
 int wc_Poly1305Final(Poly1305* ctx, byte* mac)
 {
-#ifdef USE_INTEL_SPEEDUP
+#if defined(WOLFSSL_X86_64_BUILD) && defined(USE_INTEL_SPEEDUP)
 #elif defined(POLY130564)
 
     word64 h0,h1,h2,c;
@@ -515,8 +523,8 @@ int wc_Poly1305Final(Poly1305* ctx, byte* mac)
     if (ctx == NULL || mac == NULL)
         return BAD_FUNC_ARG;
 
-#ifdef USE_INTEL_SPEEDUP
-    SAVE_VECTOR_REGISTERS();
+#if defined(WOLFSSL_X86_64_BUILD) && defined(USE_INTEL_SPEEDUP)
+    SAVE_VECTOR_REGISTERS(return _svr_ret;);
     #ifdef HAVE_INTEL_AVX2
     if (IS_INTEL_AVX2(intel_flags))
         poly1305_final_avx2(ctx, mac);
@@ -701,10 +709,13 @@ int wc_Poly1305Update(Poly1305* ctx, const byte* m, word32 bytes)
     printf("\n");
 #endif
 
-#ifdef USE_INTEL_SPEEDUP
+#if defined(WOLFSSL_X86_64_BUILD) && defined(USE_INTEL_SPEEDUP)
     #ifdef HAVE_INTEL_AVX2
     if (IS_INTEL_AVX2(intel_flags)) {
+        SAVE_VECTOR_REGISTERS(return _svr_ret;);
+
         /* handle leftover */
+
         if (ctx->leftover) {
             size_t want = sizeof(ctx->buffer) - ctx->leftover;
             if (want > bytes)
@@ -715,16 +726,16 @@ int wc_Poly1305Update(Poly1305* ctx, const byte* m, word32 bytes)
             bytes -= (word32)want;
             m += want;
             ctx->leftover += want;
-            if (ctx->leftover < sizeof(ctx->buffer))
+            if (ctx->leftover < sizeof(ctx->buffer)) {
+                RESTORE_VECTOR_REGISTERS();
                 return 0;
+            }
 
-            SAVE_VECTOR_REGISTERS();
             if (!ctx->started)
                 poly1305_calc_powers_avx2(ctx);
             poly1305_blocks_avx2(ctx, ctx->buffer, sizeof(ctx->buffer));
             ctx->leftover = 0;
-        } else
-            SAVE_VECTOR_REGISTERS();
+        }
 
         /* process full blocks */
         if (bytes >= sizeof(ctx->buffer)) {
@@ -768,7 +779,14 @@ int wc_Poly1305Update(Poly1305* ctx, const byte* m, word32 bytes)
         /* process full blocks */
         if (bytes >= POLY1305_BLOCK_SIZE) {
             size_t want = (bytes & ~(POLY1305_BLOCK_SIZE - 1));
+#if !defined(WOLFSSL_ARMASM) || !defined(__aarch64__)
+            int ret;
+            ret = poly1305_blocks(ctx, m, want);
+            if (ret != 0)
+                return ret;
+#else
             poly1305_blocks(ctx, m, want);
+#endif
             m += want;
             bytes -= (word32)want;
         }
@@ -804,8 +822,8 @@ int wc_Poly1305_Pad(Poly1305* ctx, word32 lenToPad)
     XMEMSET(padding, 0, sizeof(padding));
 
     /* Pad length to 16 bytes */
-    paddingLen = -(int)lenToPad & (WC_POLY1305_PAD_SZ - 1);
-    if (paddingLen > 0) {
+    paddingLen = (-(int)lenToPad) & (WC_POLY1305_PAD_SZ - 1);
+    if ((paddingLen > 0) && (paddingLen < WC_POLY1305_PAD_SZ)) {
         ret = wc_Poly1305Update(ctx, padding, paddingLen);
     }
     return ret;
@@ -870,8 +888,8 @@ int wc_Poly1305_EncodeSizes64(Poly1305* ctx, word64 aadSz, word64 dataSz)
     tagSz      : Size of input tag buffer (must be at least
                  WC_POLY1305_MAC_SZ(16))
  */
-int wc_Poly1305_MAC(Poly1305* ctx, byte* additional, word32 addSz,
-                    byte* input, word32 sz, byte* tag, word32 tagSz)
+int wc_Poly1305_MAC(Poly1305* ctx, const byte* additional, word32 addSz,
+                    const byte* input, word32 sz, byte* tag, word32 tagSz)
 {
     int ret;
 

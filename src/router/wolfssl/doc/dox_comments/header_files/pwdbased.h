@@ -24,17 +24,17 @@
     \param iterations number of times to process the hash
     \param kLen desired length of the derived key. Should not be longer
     than the digest size of the hash chosen
-    \param hashType the hashing algorithm to use. Valid choices are MD5 and SHA
+    \param hashType the hashing algorithm to use. Valid choices are WC_MD5 and WC_SHA
 
     _Example_
     \code
     int ret;
-    byte key[MD5_DIGEST_SIZE];
+    byte key[WC_MD5_DIGEST_SIZE];
     byte pass[] = { }; // initialize with password
     byte salt[] = { }; // initialize with salt
 
     ret = wc_PBKDF1(key, pass, sizeof(pass), salt, sizeof(salt), 1000,
-    sizeof(key), MD5);
+    sizeof(key), WC_MD5);
     if ( ret != 0 ) {
     	// error deriving key from password
     }
@@ -43,7 +43,7 @@
     \sa wc_PBKDF2
     \sa wc_PKCS12_PBKDF
 */
-WOLFSSL_API int wc_PBKDF1(byte* output, const byte* passwd, int pLen,
+int wc_PBKDF1(byte* output, const byte* passwd, int pLen,
                       const byte* salt, int sLen, int iterations, int kLen,
                       int typeH);
 
@@ -53,8 +53,9 @@ WOLFSSL_API int wc_PBKDF1(byte* output, const byte* passwd, int pLen,
     \brief This function implements the Password Based Key Derivation
     Function 2 (PBKDF2), converting an input password with a concatenated
     salt into a more secure key, which it stores in output. It allows the user
-    to select any of the supported HMAC hash functions, including: MD5, SHA,
-    SHA256, SHA384, SHA512, and BLAKE2B
+    to select any of the supported HMAC hash functions, including: WC_MD5,
+    WC_SHA, WC_SHA256, WC_SHA384, WC_SHA512, WC_SHA3_224, WC_SHA3_256,
+    WC_SHA3_384 or WC_SHA3_512
 
     \return 0 Returned on successfully deriving a key from the input password
     \return BAD_FUNC_ARG Returned if there is an invalid hash type given or
@@ -72,8 +73,9 @@ WOLFSSL_API int wc_PBKDF1(byte* output, const byte* passwd, int pLen,
     \param sLen length of the salt
     \param iterations number of times to process the hash
     \param kLen desired length of the derived key
-    \param hashType the hashing algorithm to use. Valid choices are: MD5,
-    SHA, SHA256, SHA384, SHA512, and BLAKE2B
+    \param hashType the hashing algorithm to use. Valid choices are: WC_MD5,
+    WC_SHA, WC_SHA256, WC_SHA384, WC_SHA512, WC_SHA3_224, WC_SHA3_256,
+    WC_SHA3_384 or WC_SHA3_512
 
     _Example_
     \code
@@ -83,7 +85,7 @@ WOLFSSL_API int wc_PBKDF1(byte* output, const byte* passwd, int pLen,
     byte salt[] = { }; // initialize with salt
 
     ret = wc_PBKDF2(key, pass, sizeof(pass), salt, sizeof(salt), 2048, sizeof(key),
-    SHA512);
+    WC_SHA512);
     if ( ret != 0 ) {
     	// error deriving key from password
     }
@@ -92,7 +94,7 @@ WOLFSSL_API int wc_PBKDF1(byte* output, const byte* passwd, int pLen,
     \sa wc_PBKDF1
     \sa wc_PKCS12_PBKDF
 */
-WOLFSSL_API int wc_PBKDF2(byte* output, const byte* passwd, int pLen,
+int wc_PBKDF2(byte* output, const byte* passwd, int pLen,
                       const byte* salt, int sLen, int iterations, int kLen,
                       int typeH);
 
@@ -103,7 +105,8 @@ WOLFSSL_API int wc_PBKDF2(byte* output, const byte* passwd, int pLen,
     (PBKDF) described in RFC 7292 Appendix B. This function converts an input
     password with a concatenated salt into a more secure key, which it stores
     in output. It allows the user to select any of the supported HMAC hash
-    functions, including: MD5, SHA, SHA256, SHA384, SHA512, and BLAKE2B.
+    functions, including: WC_MD5, WC_SHA, WC_SHA256, WC_SHA384, WC_SHA512,
+    WC_SHA3_224, WC_SHA3_256, WC_SHA3_384 or WC_SHA3_512
 
     \return 0 Returned on successfully deriving a key from the input password
     \return BAD_FUNC_ARG Returned if there is an invalid hash type given,
@@ -135,9 +138,10 @@ WOLFSSL_API int wc_PBKDF2(byte* output, const byte* passwd, int pLen,
     \param sLen length of the salt
     \param iterations number of times to process the hash
     \param kLen desired length of the derived key
-    \param hashType the hashing algorithm to use. Valid choices are: MD5,
-    SHA, SHA256, SHA384, SHA512, and BLAKE2B
-    \param id this is a byte indetifier indicating the purpose of key
+    \param hashType the hashing algorithm to use. Valid choices are: WC_MD5,
+    WC_SHA, WC_SHA256, WC_SHA384, WC_SHA512, WC_SHA3_224, WC_SHA3_256,
+    WC_SHA3_384 or WC_SHA3_512
+    \param id this is a byte identifier indicating the purpose of key
     generation. It is used to diversify the key output, and should be
     assigned as follows: ID=1: pseudorandom bits are to be used as key
     material for performing encryption or decryption. ID=2: pseudorandom
@@ -152,7 +156,7 @@ WOLFSSL_API int wc_PBKDF2(byte* output, const byte* passwd, int pLen,
     byte salt[] = { }; // initialize with salt
 
     ret = wc_PKCS512_PBKDF(key, pass, sizeof(pass), salt, sizeof(salt), 2048,
-    sizeof(key), SHA512, 1);
+    sizeof(key), WC_SHA512, 1);
     if ( ret != 0 ) {
     	// error deriving key from password
     }
@@ -161,6 +165,6 @@ WOLFSSL_API int wc_PBKDF2(byte* output, const byte* passwd, int pLen,
     \sa wc_PBKDF1
     \sa wc_PBKDF2
 */
-WOLFSSL_API int wc_PKCS12_PBKDF(byte* output, const byte* passwd, int pLen,
+int wc_PKCS12_PBKDF(byte* output, const byte* passwd, int pLen,
                             const byte* salt, int sLen, int iterations,
                             int kLen, int typeH, int purpose);

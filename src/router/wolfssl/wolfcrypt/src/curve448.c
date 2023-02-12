@@ -1,6 +1,6 @@
 /* curve448.c
  *
- * Copyright (C) 2006-2020 wolfSSL Inc.
+ * Copyright (C) 2006-2022 wolfSSL Inc.
  *
  * This file is part of wolfSSL.
  *
@@ -42,6 +42,28 @@
     #include <wolfcrypt/src/misc.c>
 #endif
 
+int wc_curve448_make_pub(int public_size, byte* pub, int private_size,
+    const byte* priv)
+{
+    int ret;
+    unsigned char basepoint[CURVE448_KEY_SIZE] = {5};
+
+    if ((pub == NULL) || (priv == NULL)) {
+        return ECC_BAD_ARG_E;
+    }
+    if ((public_size  != CURVE448_PUB_KEY_SIZE) ||
+        (private_size != CURVE448_KEY_SIZE)) {
+        return ECC_BAD_ARG_E;
+    }
+
+    fe448_init();
+
+    /* compute public key */
+    ret = curve448(pub, priv, basepoint);
+
+    return ret;
+}
+
 
 /* Make a new curve448 private/public key.
  *
@@ -54,7 +76,6 @@
  */
 int wc_curve448_make_key(WC_RNG* rng, int keysize, curve448_key* key)
 {
-    unsigned char basepoint[CURVE448_KEY_SIZE] = {5};
     int  ret = 0;
 
     if ((key == NULL) || (rng == NULL)) {
@@ -67,21 +88,25 @@ int wc_curve448_make_key(WC_RNG* rng, int keysize, curve448_key* key)
     }
 
     if (ret == 0) {
-        fe448_init();
-
         /* random number for private key */
         ret = wc_RNG_GenerateBlock(rng, key->k, keysize);
     }
     if (ret == 0) {
-        /* Clamp the private key */
+        key->privSet = 1;
+
+        /* clamp private */
         key->k[0] &= 0xfc;
         key->k[CURVE448_KEY_SIZE-1] |= 0x80;
 
-        /* compute public key */
-        ret = curve448(key->p, key->k, basepoint);
-        if (ret != 0) {
-            ForceZero(key->k, keysize);
-            ForceZero(key->p, keysize);
+        /* compute public */
+        ret = wc_curve448_make_pub((int)sizeof(key->p), key->p,
+                                   (int)sizeof(key->k), key->k);
+        if (ret == 0) {
+            key->pubSet = 1;
+        }
+        else {
+            ForceZero(key->k, sizeof(key->k));
+            XMEMSET(key->p, 0, sizeof(key->p));
         }
     }
 
@@ -137,10 +162,25 @@ int wc_curve448_shared_secret_ex(curve448_key* private_key,
                         (outLen == NULL) || (*outLen < CURVE448_PUB_KEY_SIZE)) {
         ret = BAD_FUNC_ARG;
     }
+    /* make sure we have a populated private and public key */
+    if (ret == 0 && (!private_key->privSet || !public_key->pubSet)) {
+        ret = ECC_BAD_ARG_E;
+    }
 
     if (ret == 0) {
         ret = curve448(o, private_key->k, public_key->p);
     }
+#ifdef WOLFSSL_ECDHX_SHARED_NOT_ZERO
+    if (ret == 0) {
+        byte t = 0;
+        for (i = 0; i < CURVE448_PUB_KEY_SIZE; i++) {
+            t |= o[i];
+        }
+        if (t == 0) {
+            ret = ECC_OUT_OF_RANGE_E;
+        }
+    }
+#endif
     if (ret == 0) {
         if (endian == EC448_BIG_ENDIAN) {
             /* put shared secret key in Big Endian format */
@@ -208,8 +248,15 @@ int wc_curve448_export_public_ex(curve448_key* key, byte* out, word32* outLen,
         ret = ECC_BAD_ARG_E;
     }
     if (ret == 0) {
+        /* calculate public if missing */
+        if (!key->pubSet) {
+            ret = wc_curve448_make_pub((int)sizeof(key->p), key->p,
+                                       (int)sizeof(key->k), key->k);
+            key->pubSet = (ret == 0);
+        }
+    }
+    if (ret == 0) {
         *outLen = CURVE448_PUB_KEY_SIZE;
-
         if (endian == EC448_BIG_ENDIAN) {
             /* read keys in Big Endian format */
             for (i = 0; i < CURVE448_PUB_KEY_SIZE; i++) {
@@ -278,6 +325,7 @@ int wc_curve448_import_public_ex(const byte* in, word32 inLen,
         }
         else
             XMEMCPY(key->p, in, inLen);
+        key->pubSet = 1;
     }
 
     return ret;
@@ -316,7 +364,7 @@ int wc_curve448_check_public(const byte* pub, word32 pubSz, int endian)
     if (ret == 0) {
         if (endian == EC448_LITTLE_ENDIAN) {
             /* Check for value of zero or one */
-            for (i = pubSz - 1; i > 0; i--) {
+            for (i = CURVE448_PUB_KEY_SIZE - 1; i > 0; i--) {
                 if (pub[i] != 0) {
                     break;
                 }
@@ -324,16 +372,55 @@ int wc_curve448_check_public(const byte* pub, word32 pubSz, int endian)
             if ((i == 0) && (pub[0] == 0 || pub[0] == 1)) {
                 return ECC_BAD_ARG_E;
             }
+            /* Check for order-1 or higher */
+            for (i = CURVE448_PUB_KEY_SIZE - 1; i > 28; i--) {
+                if (pub[i] != 0xff) {
+                    break;
+                }
+            }
+            if ((i == 28) && (pub[i] == 0xff)) {
+                return ECC_BAD_ARG_E;
+            }
+            if ((i == 28) && (pub[i] == 0xfe)) {
+                for (--i; i > 0; i--) {
+                    if (pub[i] != 0xff) {
+                        break;
+                    }
+                }
+                if ((i == 0) && (pub[i] >= 0xfe)) {
+                    return ECC_BAD_ARG_E;
+                }
+            }
         }
         else {
             /* Check for value of zero or one */
-            for (i = 0; i < pubSz-1; i++) {
+            for (i = 0; i < CURVE448_PUB_KEY_SIZE-1; i++) {
                 if (pub[i] != 0) {
                     break;
                 }
             }
-            if ((i == pubSz - 1) && (pub[i] == 0 || pub[i] == 1)) {
+            if ((i == CURVE448_PUB_KEY_SIZE - 1) &&
+                (pub[i] == 0 || pub[i] == 1)) {
                 ret = ECC_BAD_ARG_E;
+            }
+            /* Check for order-1 or higher */
+            for (i = 0; i < 27; i++) {
+                if (pub[i] != 0xff) {
+                    break;
+                }
+            }
+            if ((i == 27) && (pub[i] == 0xff)) {
+                return ECC_BAD_ARG_E;
+            }
+            if ((i == 27) && (pub[i] == 0xfe)) {
+                for (++i; i < CURVE448_PUB_KEY_SIZE - 1; i--) {
+                    if (pub[i] != 0xff) {
+                        break;
+                    }
+                }
+                if ((i == CURVE448_PUB_KEY_SIZE) && (pub[i] >= 0xfe)) {
+                    return ECC_BAD_ARG_E;
+                }
             }
         }
     }
@@ -569,6 +656,8 @@ int wc_curve448_import_private_ex(const byte* priv, word32 privSz,
         /* Clamp the key */
         key->k[0] &= 0xfc;
         key->k[CURVE448_KEY_SIZE-1] |= 0x80;
+
+        key->privSet = 1;
     }
 
     return ret;
@@ -595,6 +684,10 @@ int wc_curve448_init(curve448_key* key)
         XMEMSET(key, 0, sizeof(*key));
 
         fe448_init();
+
+    #ifdef WOLFSSL_CHECK_MEM_ZERO
+        wc_MemZero_Add("wc_curve448_init key->k", &key->k, CURVE448_KEY_SIZE);
+    #endif
     }
 
     return ret;
@@ -607,10 +700,15 @@ int wc_curve448_init(curve448_key* key)
  */
 void wc_curve448_free(curve448_key* key)
 {
-   if (key != NULL) {
-       ForceZero(key->p, sizeof(key->p));
-       ForceZero(key->k, sizeof(key->k));
-   }
+    if (key != NULL) {
+        ForceZero(key->k, sizeof(key->k));
+        XMEMSET(key->p, 0, sizeof(key->p));
+        key->pubSet = 0;
+        key->privSet = 0;
+    #ifdef WOLFSSL_CHECK_MEM_ZERO
+        wc_MemZero_Check(key, sizeof(curve448_key));
+    #endif
+    }
 }
 
 
