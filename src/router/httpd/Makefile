@@ -1432,16 +1432,19 @@ endif
 
 ifneq ($(CONFIG_MATRIXSSL),y)
 ifeq ($(CONFIG_WOLFSSL),y)
-CFLAGS += -I$(TOP)/wolfssl/wolfssl/openssl/    -I$(TOP)/wolfssl -I$(TOP)/wolfssl/wolfssl $(LTOMIN)
 
 ifeq ($(CONFIG_WOLFSSLMIN),y)
+CFLAGS += -I$(TOP)/wolfssl -I$(TOP)/wolfssl/minimal  -I$(TOP)/wolfssl/minimal/wolfssl
 SSLLDFLAGS += $(LDLTO) -L$(TOP)/wolfssl/minimal/src/.libs -lwolfssl -lm 
 else
+CFLAGS += -I$(TOP)/wolfssl -I$(TOP)/wolfssl/standard -I$(TOP)/wolfssl/standard/wolfssl
 SSLLDFLAGS += $(LDLTO) -L$(TOP)/wolfssl/standard/src/.libs -lwolfssl -lm 
 endif
+CFLAGS += -I$(TOP)/wolfssl/wolfssl $(LTOMIN)
 CFLAGS += -DHAVE_OPENSSL
 CFLAGS += -DHAVE_HTTPS
 CFLAGS += -DHAVE_WOLFSSL
+CFLAGS += -DOPENSSL_EXTRA
 
 else
 ifeq ($(CONFIG_OPENSSL),y)
