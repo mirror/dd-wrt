@@ -2273,8 +2273,10 @@ enum {
                   | WOLFSSL_OP_TLS_ROLLBACK_BUG),
 };
 
-#if 1// defined(OPENSSL_EXTRA) || defined(OPENSSL_EXTRA_X509_SMALL) || \
-    //defined(HAVE_WEBSERVER)
+#if 1 
+    /* defined(OPENSSL_EXTRA) || defined(OPENSSL_EXTRA_X509_SMALL) || \
+     defined(HAVE_WEBSERVER)
+     */
 /* for compatibility these must be macros */
 
 #define SSL_OP_MICROSOFT_SESS_ID_BUG            WOLFSSL_OP_MICROSOFT_SESS_ID_BUG
