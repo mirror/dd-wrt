@@ -27,6 +27,7 @@ rpm/spec
 stamp-h
 cyassl/options.h
 wolfssl/options.h
+.build_params
 libtool.m4
 aclocal.m4
 aminclude.am
@@ -207,14 +208,6 @@ TAGS
 support/cyassl.pc
 support/wolfssl.pc
 cyassl/ctaocrypt/stamp-h1
-swig/_cyassl.so
-swig/_wolfssl.so
-swig/cyassl.py
-swig/wolfssl.py
-swig/cyassl.pyc
-swig/wolfssl.pyc
-swig/cyassl_wrap.c
-swig/wolfssl_wrap.c
 stamp-h1
 clang_output_*
 internal.plist
@@ -230,15 +223,18 @@ IDE/MDK-ARM/LPC43xx/LPC43xx/
 *.gcno
 *.gcda
 *.gcov
+*.dgcov
 !linuxkm/Makefile
 /Kbuild
 linuxkm/*.ko
+linuxkm/*.ko.signed
 linuxkm/Module.symvers
 linuxkm/built-in.a
 linuxkm/modules.order
 linuxkm/wolfcrypt
 linuxkm/libwolfssl.mod
 linuxkm/libwolfssl.mod.c
+linuxkm/libwolfssl.lds
 linuxkm/module_exports.c
 linuxkm/linuxkm/get_thread_size
 
@@ -326,6 +322,10 @@ IDE/HEXIWEAR/wolfSSL_HW/Debug
 # Linux-SGX
 IDE/LINUX-SGX/*.a
 
+IDE/iotsafe/*.map
+IDE/iotsafe/*.elf
+IDE/iotsafe/*.bin
+
 # Binaries
 wolfcrypt/src/port/intel/qat_test
 /mplabx/wolfssl.X/dist/default/
@@ -355,6 +355,33 @@ IDE/XCODE/Index
 /IDE/Renesas/e2studio/Projects/test/*.launch
 /IDE/Renesas/e2studio/Projects/test/*.scfg
 
+/IDE/Renesas/e2studio/RX65N/GR-ROSE/.metadata
+/IDE/Renesas/e2studio/RX65N/GR-ROSE/smc/src
+/IDE/Renesas/e2studio/RX65N/GR-ROSE/smc/trash
+/IDE/Renesas/e2studio/RX65N/GR-ROSE/test/src/smc_gen
+/IDE/Renesas/e2studio/RX65N/GR-ROSE/test/generate
+
+/IDE/Renesas/e2studio/RX65N/RSK/.metadata
+/IDE/Renesas/e2studio/RX65N/RSK/smc/src
+/IDE/Renesas/e2studio/RX65N/RSK/smc/trash
+/IDE/Renesas/e2studio/RX65N/RSK/test/src/smc_gen
+/IDE/Renesas/e2studio/RX65N/RSK/test/generate
+
+/IDE/Renesas/e2studio/RX72N/EnvisionKit/.metadata
+/IDE/Renesas/e2studio/RX72N/EnvisionKit/smc/src
+/IDE/Renesas/e2studio/RX72N/EnvisionKit/smc/trash
+/IDE/Renesas/e2studio/RX72N/EnvisionKit/test/src/smc_gen
+/IDE/Renesas/e2studio/RX72N/EnvisionKit/test/generate
+
+# QNX CAAM
+/IDE/QNX/example-server/server-tls
+/IDE/QNX/example-client/client-tls
+/IDE/QNX/example-cmac/cmac-test
+/IDE/QNX/CAAM-DRIVER/wolfCrypt
+
+# Xilinx
+/IDE/XilinxSDK/data
+
 # Emacs
 *~
 
@@ -362,3 +389,28 @@ IDE/XCODE/Index
 CMakeFiles/
 CMakeCache.txt
 cmake_install.cmake
+
+# GDB Settings
+\.gdbinit
+
+# Pycharm and other IDEs
+\.idea
+
+# FIPS
+XXX-fips-test
+
+# ASYNC
+async
+
+# Generated user_settings_asm.h.
+user_settings_asm.h
+
+# VisualGD
+**/.visualgdb
+
+# Espressif sdk config default should be saved in sdkconfig.defaults
+# we won't track the actual working sdkconfig files
+/IDE/Espressif/**/sdkconfig
+
+# auto-created CMake backups
+**/CMakeLists.txt.old

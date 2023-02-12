@@ -1,6 +1,6 @@
 /* afalg_aes.c
  *
- * Copyright (C) 2006-2020 wolfSSL Inc.
+ * Copyright (C) 2006-2022 wolfSSL Inc.
  *
  * This file is part of wolfSSL.
  *
@@ -301,19 +301,15 @@ static int wc_Afalg_AesDirect(Aes* aes, byte* out, const byte* in, word32 sz)
 
 
 #if defined(WOLFSSL_AES_DIRECT) && defined(WOLFSSL_AFALG)
-void wc_AesEncryptDirect(Aes* aes, byte* out, const byte* in)
+int wc_AesEncryptDirect(Aes* aes, byte* out, const byte* in)
 {
-    if (wc_Afalg_AesDirect(aes, out, in, AES_BLOCK_SIZE) != 0) {
-        WOLFSSL_MSG("Error with AES encrypt direct call");
-    }
+    return wc_Afalg_AesDirect(aes, out, in, AES_BLOCK_SIZE);
 }
 
 
-void wc_AesDecryptDirect(Aes* aes, byte* out, const byte* in)
+int wc_AesDecryptDirect(Aes* aes, byte* out, const byte* in)
 {
-    if (wc_Afalg_AesDirect(aes, out, in, AES_BLOCK_SIZE) != 0) {
-        WOLFSSL_MSG("Error with AES decrypt direct call");
-    }
+    return wc_Afalg_AesDirect(aes, out, in, AES_BLOCK_SIZE);
 }
 
 
@@ -538,8 +534,12 @@ int wc_AesGcmEncrypt(Aes* aes, byte* out, const byte* in, word32 sz,
         return BAD_FUNC_ARG;
     }
 
-    if (ivSz != WC_SYSTEM_AESGCM_IV || authTagSz > WOLFSSL_MAX_AUTH_TAG_SZ) {
-        WOLFSSL_MSG("IV/AAD size not supported on system");
+    if (ivSz != WC_SYSTEM_AESGCM_IV) {
+        WOLFSSL_MSG("IV size not supported on system");
+        return BAD_FUNC_ARG;
+    }
+    if (authTagSz > WOLFSSL_MAX_AUTH_TAG_SZ) {
+        WOLFSSL_MSG("Authentication tag size not supported on system");
         return BAD_FUNC_ARG;
     }
 
@@ -565,7 +565,6 @@ int wc_AesGcmEncrypt(Aes* aes, byte* out, const byte* in, word32 sz,
         ret = setsockopt(aes->alFd, SOL_ALG, ALG_SET_AEAD_AUTHSIZE, NULL,
                 authTagSz);
         if (ret != 0) {
-        perror("set tag");
             WOLFSSL_MSG("Unable to set AF_ALG tag size ");
             return WC_AFALG_SOCK_E;
         }
@@ -589,7 +588,7 @@ int wc_AesGcmEncrypt(Aes* aes, byte* out, const byte* in, word32 sz,
     #ifndef NO_WOLFSSL_ALLOC_ALIGN
         byte* tmp = NULL;
     #endif
-        if ((wolfssl_word)in % WOLFSSL_XILINX_ALIGN) {
+        if ((wc_ptr_t)in % WOLFSSL_XILINX_ALIGN) {
         #ifndef NO_WOLFSSL_ALLOC_ALIGN
             byte* tmp_align;
             tmp = (byte*)XMALLOC(sz + WOLFSSL_XILINX_ALIGN +
@@ -636,7 +635,9 @@ int wc_AesGcmEncrypt(Aes* aes, byte* out, const byte* in, word32 sz,
         XMEMCPY(initalCounter, iv, ivSz);
         initalCounter[AES_BLOCK_SIZE - 1] = 1;
         GHASH(aes, authIn, authInSz, out, sz, authTag, authTagSz);
-        wc_AesEncryptDirect(aes, scratch, initalCounter);
+        ret = wc_AesEncryptDirect(aes, scratch, initalCounter);
+        if (ret < 0)
+            return ret;
         xorbuf(authTag, scratch, authTagSz);
     }
 #else
@@ -723,8 +724,12 @@ int wc_AesGcmDecrypt(Aes* aes, byte* out, const byte* in, word32 sz,
         return BAD_FUNC_ARG;
     }
 
-    if (ivSz != WC_SYSTEM_AESGCM_IV || authTagSz > WOLFSSL_MAX_AUTH_TAG_SZ) {
-        WOLFSSL_MSG("IV/AAD size not supported on system");
+    if (ivSz != WC_SYSTEM_AESGCM_IV) {
+        WOLFSSL_MSG("IV size not supported on system");
+        return BAD_FUNC_ARG;
+    }
+    if (authTagSz > WOLFSSL_MAX_AUTH_TAG_SZ) {
+        WOLFSSL_MSG("Authentication tag size not supported on system");
         return BAD_FUNC_ARG;
     }
 
@@ -779,7 +784,9 @@ int wc_AesGcmDecrypt(Aes* aes, byte* out, const byte* in, word32 sz,
         initalCounter[AES_BLOCK_SIZE - 1] = 1;
         tag = buf;
         GHASH(aes, NULL, 0, in, sz, tag, AES_BLOCK_SIZE);
-        wc_AesEncryptDirect(aes, scratch, initalCounter);
+        ret = wc_AesEncryptDirect(aes, scratch, initalCounter);
+        if (ret < 0)
+            return ret;
         xorbuf(tag, scratch, AES_BLOCK_SIZE);
         if (ret != 0) {
             return AES_GCM_AUTH_E;
@@ -788,7 +795,7 @@ int wc_AesGcmDecrypt(Aes* aes, byte* out, const byte* in, word32 sz,
 
     /* it is assumed that in buffer size is large enough to hold TAG */
     XMEMCPY((byte*)in + sz, tag, AES_BLOCK_SIZE);
-    if ((wolfssl_word)in % WOLFSSL_XILINX_ALIGN) {
+    if ((wc_ptr_t)in % WOLFSSL_XILINX_ALIGN) {
     #ifndef NO_WOLFSSL_ALLOC_ALIGN
         byte* tmp_align;
         tmp = (byte*)XMALLOC(sz + WOLFSSL_XILINX_ALIGN +
@@ -829,7 +836,9 @@ int wc_AesGcmDecrypt(Aes* aes, byte* out, const byte* in, word32 sz,
     /* check on tag */
     if (authIn != NULL && authInSz > 0) {
         GHASH(aes, authIn, authInSz, in, sz, tag, AES_BLOCK_SIZE);
-        wc_AesEncryptDirect(aes, scratch, initalCounter);
+        ret = wc_AesEncryptDirect(aes, scratch, initalCounter);
+        if (ret < 0)
+            return ret;
         xorbuf(tag, scratch, AES_BLOCK_SIZE);
         if (ConstantCompare(tag, authTag, authTagSz) != 0) {
             return AES_GCM_AUTH_E;

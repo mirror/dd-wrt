@@ -1,6 +1,6 @@
 /* unit.c API unit tests driver
  *
- * Copyright (C) 2006-2020 wolfSSL Inc.
+ * Copyright (C) 2006-2022 wolfSSL Inc.
  *
  * This file is part of wolfSSL.
  *
@@ -35,15 +35,17 @@
 #ifndef WOLFSSL_PASSTHRU_ERR
 #define Fail(description, result) do {                                         \
     printf("\nERROR - %s line %d failed with:", __FILE__, __LINE__);           \
-    printf("\n    expected: "); printf description;                            \
-    printf("\n    result:   "); printf result; printf("\n\n");                 \
+    fputs("\n    expected: ", stdout); printf description;                     \
+    fputs("\n    result:   ", stdout); printf result; fputs("\n\n", stdout);   \
+    fflush(stdout);                                                            \
     XABORT();                                                                  \
 } while(0)
 #else
-#define Fail(description, result) do {                               \
-    printf("\nERROR - %s line %d failed with:", __FILE__, __LINE__); \
-    printf("\n    expected: ");printf description;                   \
-    printf("\n    result:   "); printf result; printf("\n\n");       \
+#define Fail(description, result) do {                                         \
+    printf("\nERROR - %s line %d failed with:", __FILE__, __LINE__);           \
+    fputs("\n    expected: ", stdout); printf description;                     \
+    fputs("\n    result:   ", stdout); printf result; fputs("\n\n", stdout);   \
+    fflush(stdout);                                                            \
 } while (0)
 #endif
 
@@ -54,15 +56,13 @@
 #define AssertNotNull(x) Assert( (x), ("%s is not null", #x), (#x " => NULL"))
 
 #define AssertNull(x) do {                                                     \
-    void* _x = (void *) (x);                                                   \
-                                                                               \
+    PEDANTIC_EXTENSION void* _x = (void*)(x);                                  \
     Assert(!_x, ("%s is null", #x), (#x " => %p", _x));                        \
 } while(0)
 
 #define AssertInt(x, y, op, er) do {                                           \
-    int _x = (int)x;                                                                \
-    int _y = (int)y;                                                                \
-                                                                               \
+    int _x = (int)(x);                                                         \
+    int _y = (int)(y);                                                         \
     Assert(_x op _y, ("%s " #op " %s", #x, #y), ("%d " #er " %d", _x, _y));    \
 } while(0)
 
@@ -74,10 +74,9 @@
 #define AssertIntLE(x, y) AssertInt(x, y, <=,  >)
 
 #define AssertStr(x, y, op, er) do {                                           \
-    const char* _x = x;                                                        \
-    const char* _y = y;                                                        \
-    int   _z = (_x && _y) ? strcmp(_x, _y) : -1;                               \
-                                                                               \
+    const char* _x = (const char*)(x);                                         \
+    const char* _y = (const char*)(y);                                         \
+    int         _z = (_x && _y) ? strcmp(_x, _y) : -1;                         \
     Assert(_z op 0, ("%s " #op " %s", #x, #y),                                 \
                                             ("\"%s\" " #er " \"%s\"", _x, _y));\
 } while(0)
@@ -90,9 +89,17 @@
 #define AssertStrLE(x, y) AssertStr(x, y, <=,  >)
 
 #define AssertPtr(x, y, op, er) do {                                           \
-    void* _x = (void*)x;                                                       \
-    void* _y = (void*)y;                                                       \
+    PRAGMA_GCC_DIAG_PUSH;                                                      \
+      /* remarkably, without this inhibition, */                               \
+      /* the _Pragma()s make the declarations warn. */                         \
+    PRAGMA_GCC("GCC diagnostic ignored \"-Wdeclaration-after-statement\"");    \
+      /* inhibit "ISO C forbids conversion of function pointer */              \
+      /* to object pointer type [-Werror=pedantic]" */                         \
+    PRAGMA_GCC("GCC diagnostic ignored \"-Wpedantic\"");                       \
+    void* _x = (void*)(x);                                                     \
+    void* _y = (void*)(y);                                                     \
     Assert(_x op _y, ("%s " #op " %s", #x, #y), ("%p " #er " %p", _x, _y));    \
+    PRAGMA_GCC_DIAG_POP;                                                       \
 } while(0)
 
 #define AssertPtrEq(x, y) AssertPtr(x, y, ==, !=)
@@ -103,10 +110,16 @@
 #define AssertPtrLE(x, y) AssertPtr(x, y, <=,  >)
 
 
+void ApiTest_PrintTestCases(void);
+int ApiTest_RunIdx(int idx);
+int ApiTest_RunName(char* name);
 void ApiTest(void);
+
 int  SuiteTest(int argc, char** argv);
 int  HashTest(void);
 void SrpTest(void);
+int w64wrapper_test(void);
+int QuicTest(void);
 
 
 #endif /* CyaSSL_UNIT_H */

@@ -67,6 +67,8 @@ my @fileList_2048 = (
         [ "./certs/client-keyPub.der", "client_keypub_der_2048" ],
         [ "./certs/client-cert.der", "client_cert_der_2048" ],
         [ "./certs/dh2048.der", "dh_key_der_2048" ],
+        [ "./certs/dh-pubkey-2048.der", "dh_pub_key_der_2048" ],
+        [ "./certs/dsa-pubkey-2048.der", "dsa_pub_key_der_2048" ],
         [ "./certs/dsa2048.der", "dsa_key_der_2048" ],
         [ "./certs/rsa2048.der", "rsa_key_der_2048" ],
         [ "./certs/ca-key.der", "ca_key_der_2048" ],
@@ -96,6 +98,36 @@ my @fileList_4096 = (
         [ "./certs/dh4096.der", "dh_key_der_4096" ],
         );
 
+#Falcon Post-Quantum Keys
+#Used with HAVE_PQC
+my @fileList_falcon = (
+        ["certs/falcon/bench_falcon_level1_key.der", "bench_falcon_level1_key" ],
+        ["certs/falcon/bench_falcon_level5_key.der", "bench_falcon_level5_key" ],
+        );
+
+#Dilithium Post-Quantum Keys
+#Used with HAVE_PQC
+my @fileList_dilithium = (
+        ["certs/dilithium/bench_dilithium_level2_key.der", "bench_dilithium_level2_key" ],
+        ["certs/dilithium/bench_dilithium_level3_key.der", "bench_dilithium_level3_key" ],
+        ["certs/dilithium/bench_dilithium_level5_key.der", "bench_dilithium_level5_key" ],
+        ["certs/dilithium/bench_dilithium_aes_level2_key.der", "bench_dilithium_aes_level2_key" ],
+        ["certs/dilithium/bench_dilithium_aes_level3_key.der", "bench_dilithium_aes_level3_key" ],
+        ["certs/dilithium/bench_dilithium_aes_level5_key.der", "bench_dilithium_aes_level5_key" ],
+        );
+
+#Sphincs+ Post-Quantum Keys
+#Used with HAVE_PQC
+my @fileList_sphincs = (
+        ["certs/sphincs/bench_sphincs_fast_level1_key.der", "bench_sphincs_fast_level1_key" ],
+        ["certs/sphincs/bench_sphincs_fast_level3_key.der", "bench_sphincs_fast_level3_key" ],
+        ["certs/sphincs/bench_sphincs_fast_level5_key.der", "bench_sphincs_fast_level5_key" ],
+        ["certs/sphincs/bench_sphincs_small_level1_key.der", "bench_sphincs_small_level1_key" ],
+        ["certs/sphincs/bench_sphincs_small_level3_key.der", "bench_sphincs_small_level3_key" ],
+        ["certs/sphincs/bench_sphincs_small_level5_key.der", "bench_sphincs_small_level5_key" ],
+        );
+
+
 # ----------------------------------------------------------------------------
 
 my $num_ecc = @fileList_ecc;
@@ -104,6 +136,9 @@ my $num_1024 = @fileList_1024;
 my $num_2048 = @fileList_2048;
 my $num_3072 = @fileList_3072;
 my $num_4096 = @fileList_4096;
+my $num_falcon = @fileList_falcon;
+my $num_dilithium = @fileList_dilithium;
+my $num_sphincs = @fileList_sphincs;
 
 # open our output file, "+>" creates and/or truncates
 open OUT_FILE, "+>", $outputFile  or die $!;
@@ -111,7 +146,6 @@ open OUT_FILE, "+>", $outputFile  or die $!;
 print OUT_FILE "/* certs_test.h */\n\n";
 print OUT_FILE "#ifndef WOLFSSL_CERTS_TEST_H\n";
 print OUT_FILE "#define WOLFSSL_CERTS_TEST_H\n\n";
-
 
 # convert and print 1024-bit cert/keys
 print OUT_FILE "#ifdef USE_CERT_BUFFERS_1024\n\n";
@@ -184,6 +218,56 @@ for (my $i = 0; $i < $num_4096; $i++) {
 
 print OUT_FILE "#endif /* USE_CERT_BUFFERS_4096 */\n\n";
 
+# convert and print falcon keys
+print OUT_FILE "#if defined(HAVE_PQC) && defined(HAVE_FALCON)\n\n";
+for (my $i = 0; $i < $num_falcon; $i++) {
+
+    my $fname = $fileList_falcon[$i][0];
+    my $sname = $fileList_falcon[$i][1];
+
+    print OUT_FILE "/* $fname */\n";
+    print OUT_FILE "static const unsigned char $sname\[] =\n";
+    print OUT_FILE "{\n";
+    file_to_hex($fname);
+    print OUT_FILE "};\n";
+    print OUT_FILE "static const int sizeof_$sname = sizeof($sname);\n\n";
+}
+
+print OUT_FILE "#endif /* HAVE_PQC && HAVE_FALCON */\n\n";
+
+# convert and print dilithium keys
+print OUT_FILE "#if defined (HAVE_PQC) && defined(HAVE_DILITHIUM)\n\n";
+for (my $i = 0; $i < $num_dilithium; $i++) {
+
+    my $fname = $fileList_dilithium[$i][0];
+    my $sname = $fileList_dilithium[$i][1];
+
+    print OUT_FILE "/* $fname */\n";
+    print OUT_FILE "static const unsigned char $sname\[] =\n";
+    print OUT_FILE "{\n";
+    file_to_hex($fname);
+    print OUT_FILE "};\n";
+    print OUT_FILE "static const int sizeof_$sname = sizeof($sname);\n\n";
+}
+
+print OUT_FILE "#endif /* HAVE_PQC && HAVE_DILITHIUM */\n\n";
+
+# convert and print sphincs keys
+print OUT_FILE "#if defined(HAVE_PQC) && defined(HAVE_SPHINCS)\n\n";
+for (my $i = 0; $i < $num_sphincs; $i++) {
+
+    my $fname = $fileList_sphincs[$i][0];
+    my $sname = $fileList_sphincs[$i][1];
+
+    print OUT_FILE "/* $fname */\n";
+    print OUT_FILE "static const unsigned char $sname\[] =\n";
+    print OUT_FILE "{\n";
+    file_to_hex($fname);
+    print OUT_FILE "};\n";
+    print OUT_FILE "static const int sizeof_$sname = sizeof($sname);\n\n";
+}
+
+print OUT_FILE "#endif /* HAVE_PQC && HAVE_SPHINCS */\n\n";
 
 # convert and print 256-bit cert/keys
 print OUT_FILE "#if defined(HAVE_ECC) && defined(USE_CERT_BUFFERS_256)\n\n";

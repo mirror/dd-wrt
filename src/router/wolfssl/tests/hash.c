@@ -1,6 +1,6 @@
 /* hash.c has unit tests
  *
- * Copyright (C) 2006-2020 wolfSSL Inc.
+ * Copyright (C) 2006-2022 wolfSSL Inc.
  *
  * This file is part of wolfSSL.
  *
@@ -130,7 +130,8 @@ int HashTest(void)
 #endif
 
 #ifndef NO_HMAC
-    #ifndef NO_MD5
+    #if !defined(NO_MD5) && !(defined(HAVE_FIPS) && defined(HAVE_FIPS_VERSION) \
+                              && (HAVE_FIPS_VERSION >= 5))
         if ( (ret = hmac_md5_test()) ) {
             printf( "   HMAC-MD5 test failed!\n");
             return ret;

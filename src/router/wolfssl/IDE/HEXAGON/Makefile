@@ -1,6 +1,6 @@
 # Makefile
 #
-# Copyright (C) 2006-2020 wolfSSL Inc.
+# Copyright (C) 2006-2022 wolfSSL Inc.
 #
 # This file is part of wolfSSL.
 #
@@ -81,7 +81,6 @@ libwolfssl_C_SRCS += \
 	../../wolfcrypt/src/chacha20_poly1305 \
 	../../wolfcrypt/src/pwdbased \
 	../../wolfcrypt/src/chacha \
-	../../wolfcrypt/src/rabbit \
 	../../wolfcrypt/src/cmac \
 	../../wolfcrypt/src/random \
 	../../wolfcrypt/src/coding \
@@ -117,11 +116,9 @@ libwolfssl_C_SRCS += \
 	../../wolfcrypt/src/wc_encrypt \
 	../../wolfcrypt/src/hash \
 	../../wolfcrypt/src/wc_pkcs11 \
-	../../wolfcrypt/src/hc128 \
 	../../wolfcrypt/src/wc_port \
 	../../wolfcrypt/src/hmac \
 	../../wolfcrypt/src/wolfcrypt_first \
-	../../wolfcrypt/src/idea \
 	../../wolfcrypt/src/wolfcrypt_last \
 	../../wolfcrypt/src/wolfevent \
 	../../wolfcrypt/src/logging \

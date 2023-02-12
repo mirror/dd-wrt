@@ -1,6 +1,6 @@
 /* benchmark_main.c
  *
- * Copyright (C) 2006-2020 wolfSSL Inc.
+ * Copyright (C) 2006-2022 wolfSSL Inc.
  *
  * This file is part of wolfSSL.
  *
@@ -28,6 +28,7 @@
 #include <wolfssl/wolfcrypt/wc_port.h>
 #include <wolfcrypt/benchmark/benchmark.h>
 #include <stdio.h>
+#include "hw.h" /* Needed for 'delay_us' prototype */
 
 typedef struct func_args {
     int    argc;

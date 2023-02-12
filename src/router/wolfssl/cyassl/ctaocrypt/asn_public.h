@@ -1,6 +1,6 @@
 /* asn_public.h
  *
- * Copyright (C) 2006-2020 wolfSSL Inc.
+ * Copyright (C) 2006-2022 wolfSSL Inc.
  *
  * This file is part of wolfSSL.
  *
@@ -54,10 +54,6 @@
     #define SetSubjectBuffer  wc_SetSubjectBuffer
     #define SetAltNamesBuffer wc_SetAltNamesBuffer
     #define SetDatesBuffer    wc_SetDatesBuffer
-
-    #ifdef HAVE_NTRU
-        #define MakeNtruCert wc_MakeNtruCert
-    #endif
 
 #endif /* WOLFSSL_CERT_GEN */
 

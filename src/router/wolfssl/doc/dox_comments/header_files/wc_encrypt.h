@@ -42,7 +42,7 @@
     \sa wc_AesCbcEncrypt
     \sa wc_AesCbcDecrypt
 */
-WOLFSSL_API int  wc_AesCbcDecryptWithKey(byte* out, const byte* in, word32 inSz,
+int  wc_AesCbcDecryptWithKey(byte* out, const byte* in, word32 inSz,
                                          const byte* key, word32 keySz,
                                          const byte* iv);
 
@@ -84,7 +84,7 @@ WOLFSSL_API int  wc_AesCbcDecryptWithKey(byte* out, const byte* in, word32 inSz,
 
     \sa wc_Des_CbcDecrypt
 */
-WOLFSSL_API int  wc_Des_CbcDecryptWithKey(byte* out,
+int  wc_Des_CbcDecryptWithKey(byte* out,
                                           const byte* in, word32 sz,
                                           const byte* key, const byte* iv);
 
@@ -123,7 +123,7 @@ WOLFSSL_API int  wc_Des_CbcDecryptWithKey(byte* out,
     \sa wc_Des_CbcDecryptWithKey
     \sa wc_Des_CbcEncrypt
 */
-WOLFSSL_API int  wc_Des_CbcEncryptWithKey(byte* out,
+int  wc_Des_CbcEncryptWithKey(byte* out,
                                           const byte* in, word32 sz,
                                           const byte* key, const byte* iv);
 
@@ -141,7 +141,7 @@ WOLFSSL_API int  wc_Des_CbcEncryptWithKey(byte* out,
     a Des structure.
     \return <0 Returned on any error during encryption.
 
-    \parma out Final encrypted data
+    \param out Final encrypted data
     \param in Data to be encrypted, must be padded to Des block size.
     \param sz Size of input buffer.
     \param key Pointer to the key to use for encryption.
@@ -165,7 +165,7 @@ WOLFSSL_API int  wc_Des_CbcEncryptWithKey(byte* out,
     \sa wc_Des_CbcEncryptWithKey
     \sa wc_Des_CbcDecryptWithKey
 */
-WOLFSSL_API int  wc_Des3_CbcEncryptWithKey(byte* out,
+int  wc_Des3_CbcEncryptWithKey(byte* out,
                                            const byte* in, word32 sz,
                                            const byte* key, const byte* iv);
 
@@ -207,6 +207,6 @@ WOLFSSL_API int  wc_Des3_CbcEncryptWithKey(byte* out,
 
     \sa wc_Des3_CbcDecrypt
 */
-WOLFSSL_API int  wc_Des3_CbcDecryptWithKey(byte* out,
+int  wc_Des3_CbcDecryptWithKey(byte* out,
                                            const byte* in, word32 sz,
                                            const byte* key, const byte* iv);

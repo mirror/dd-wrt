@@ -1,6 +1,6 @@
 /* wolfmath.c
  *
- * Copyright (C) 2006-2020 wolfSSL Inc.
+ * Copyright (C) 2006-2022 wolfSSL Inc.
  *
  * This file is part of wolfSSL.
  *
@@ -54,7 +54,7 @@
 
     /* all off / all on pointer addresses for constant calculations */
     /* ecc.c uses same table */
-    const wolfssl_word wc_off_on_addr[2] =
+    const wc_ptr_t wc_off_on_addr[2] =
     {
     #if defined(WC_64BIT_CPU)
         W64LIT(0x0000000000000000),
@@ -71,7 +71,27 @@
 #endif
 
 
-int get_digit_count(mp_int* a)
+/* reverse an array, used for radix code */
+void mp_reverse (unsigned char *s, int len)
+{
+    int ix, iy;
+    unsigned char t;
+
+    if (s == NULL)
+        return;
+
+    ix = 0;
+    iy = len - 1;
+    while (ix < iy) {
+        t = s[ix];
+        s[ix] = s[iy];
+        s[iy] = t;
+        ++ix;
+        --iy;
+    }
+}
+
+int get_digit_count(const mp_int* a)
 {
     if (a == NULL)
         return 0;
@@ -79,7 +99,7 @@ int get_digit_count(mp_int* a)
     return a->used;
 }
 
-mp_digit get_digit(mp_int* a, int n)
+mp_digit get_digit(const mp_int* a, int n)
 {
     if (a == NULL)
         return 0;
@@ -142,12 +162,12 @@ int get_rand_digit(WC_RNG* rng, mp_digit* d)
     return wc_RNG_GenerateBlock(rng, (byte*)d, sizeof(mp_digit));
 }
 
-#ifdef WC_RSA_BLINDING
+#if defined(WC_RSA_BLINDING) || defined(WOLFCRYPT_HAVE_SAKKE)
 int mp_rand(mp_int* a, int digits, WC_RNG* rng)
 {
     int ret = 0;
     int cnt = digits * sizeof(mp_digit);
-#if !defined(USE_FAST_MATH) && !defined(WOLFSSL_SP_MATH)
+#ifdef USE_INTEGER_HEAP_MATH
     int i;
 #endif
 
@@ -158,14 +178,14 @@ int mp_rand(mp_int* a, int digits, WC_RNG* rng)
         ret = BAD_FUNC_ARG;
     }
 
-#if !defined(USE_FAST_MATH) && !defined(WOLFSSL_SP_MATH)
+#ifdef USE_INTEGER_HEAP_MATH
     /* allocate space for digits */
     if (ret == MP_OKAY) {
         ret = mp_set_bit(a, digits * DIGIT_BIT - 1);
     }
 #else
 #if defined(WOLFSSL_SP_MATH) || defined(WOLFSSL_SP_MATH_ALL)
-    if ((ret == MP_OKAY) && (digits > SP_INT_DIGITS))
+    if ((ret == MP_OKAY) && (digits > a->size))
 #else
     if ((ret == MP_OKAY) && (digits > FP_SIZE))
 #endif
@@ -181,7 +201,7 @@ int mp_rand(mp_int* a, int digits, WC_RNG* rng)
         ret = wc_RNG_GenerateBlock(rng, (byte*)a->dp, cnt);
     }
     if (ret == MP_OKAY) {
-#if !defined(USE_FAST_MATH) && !defined(WOLFSSL_SP_MATH)
+#ifdef USE_INTEGER_HEAP_MATH
         /* Mask down each digit to only bits used */
         for (i = 0; i < a->used; i++) {
             a->dp[i] &= MP_MASK;
@@ -190,7 +210,7 @@ int mp_rand(mp_int* a, int digits, WC_RNG* rng)
         /* ensure top digit is not zero */
         while ((ret == MP_OKAY) && (a->dp[a->used - 1] == 0)) {
             ret = get_rand_digit(rng, &a->dp[a->used - 1]);
-#if !defined(USE_FAST_MATH) && !defined(WOLFSSL_SP_MATH)
+#ifdef USE_INTEGER_HEAP_MATH
             a->dp[a->used - 1] &= MP_MASK;
 #endif
         }
@@ -198,7 +218,7 @@ int mp_rand(mp_int* a, int digits, WC_RNG* rng)
 
     return ret;
 }
-#endif /* WC_RSA_BLINDING */
+#endif /* WC_RSA_BLINDING || WOLFCRYPT_HAVE_SAKKE */
 #endif
 
 #if defined(HAVE_ECC) || defined(WOLFSSL_EXPORT_INT)
@@ -210,26 +230,37 @@ int wc_export_int(mp_int* mp, byte* buf, word32* len, word32 keySz,
 {
     int err;
 
-    if (mp == NULL)
+    if (mp == NULL || buf == NULL || len == NULL)
         return BAD_FUNC_ARG;
 
-    /* check buffer size */
-    if (*len < keySz) {
-        *len = keySz;
-        return BUFFER_E;
-    }
-
-    *len = keySz;
-    XMEMSET(buf, 0, *len);
-
     if (encType == WC_TYPE_HEX_STR) {
+        /* for WC_TYPE_HEX_STR the keySz is not used.
+         * The size is computed via mp_radix_size and checked with len input */
     #ifdef WC_MP_TO_RADIX
-        err = mp_tohex(mp, (char*)buf);
+        int size = 0;
+        err = mp_radix_size(mp, MP_RADIX_HEX, &size);
+        if (err == MP_OKAY) {
+            /* make sure we can fit result */
+            if (*len < (word32)size) {
+                *len = (word32)size;
+                return BUFFER_E;
+            }
+            *len = (word32)size;
+            err = mp_tohex(mp, (char*)buf);
+        }
     #else
         err = NOT_COMPILED_IN;
     #endif
     }
     else {
+        /* for WC_TYPE_UNSIGNED_BIN keySz is used to zero pad.
+         * The key size is always returned as the size */
+        if (*len < keySz) {
+            *len = keySz;
+            return BUFFER_E;
+        }
+        *len = keySz;
+        XMEMSET(buf, 0, *len);
         err = mp_to_unsigned_bin(mp, buf + (keySz - mp_unsigned_bin_size(mp)));
     }
 
@@ -333,7 +364,7 @@ void wc_bigint_free(WC_BIGINT* a)
 
 /* sz: make sure the buffer is at least that size and zero padded.
  *     A `sz == 0` will use the size of `src`.
- *     The calulcates sz is stored into dst->len in `wc_bigint_alloc`.
+ *     The calculated sz is stored into dst->len in `wc_bigint_alloc`.
  */
 int wc_mp_to_bigint_sz(mp_int* src, WC_BIGINT* dst, word32 sz)
 {
@@ -350,8 +381,7 @@ int wc_mp_to_bigint_sz(mp_int* src, WC_BIGINT* dst, word32 sz)
 
     /* make sure destination is allocated and large enough */
     err = wc_bigint_alloc(dst, sz);
-    if (err == MP_OKAY) {
-
+    if (err == MP_OKAY && sz > 0) {
         /* leading zero pad */
         y = sz - x;
         XMEMSET(dst->buf, 0, y);

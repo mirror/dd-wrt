@@ -1,6 +1,6 @@
 /* settings.h
  *
- * Copyright (C) 2006-2020 wolfSSL Inc.
+ * Copyright (C) 2006-2022 wolfSSL Inc.
  *
  * This file is part of wolfSSL.
  *
@@ -191,7 +191,6 @@
     #define NO_SHA512
     #define NO_DH
     #define NO_DSA
-    #define NO_HC128
     #define HAVE_ECC
     #define NO_SESSION_CACHE
     #define CYASSL_CMSIS_RTOS
@@ -285,9 +284,6 @@
     #ifndef NO_DSA
         #define NO_DSA
     #endif
-    #ifndef NO_HC128
-        #define NO_HC128
-    #endif
 
     #ifndef SINGLE_THREADED
         #include "FreeRTOS.h"
@@ -354,9 +350,6 @@
 
 #ifdef CYASSL_GAME_BUILD
     #define SIZEOF_LONG_LONG 8
-    #if defined(__PPU) || defined(__XENON)
-        #define BIG_ENDIAN_ORDER
-    #endif
 #endif
 
 #ifdef CYASSL_LSR
@@ -367,10 +360,8 @@
     #define NO_SHA512
     #define NO_DH
     #define NO_DSA
-    #define NO_HC128
     #define NO_DEV_RANDOM
     #define NO_CYASSL_DIR
-    #define NO_RABBIT
     #ifndef NO_FILESYSTEM
         #define LSR_FS
         #include "inc/hw_types.h"
@@ -409,7 +400,6 @@
     #define SIZEOF_LONG_LONG 8
     #define NO_WRITEV
     #define NO_DEV_RANDOM
-    #define NO_RABBIT
     #define NO_CYASSL_DIR
     #define USE_FAST_MATH
     #define TFM_TIMING_RESISTANT
@@ -433,7 +423,6 @@
     #define SIZEOF_LONG_LONG 8
     #define NO_DEV_RANDOM
     #define NO_CYASSL_DIR
-    #define NO_RABBIT
     #define STM32F2_RNG
     #define STM32F2_CRYPTO
     #define KEIL_INTRINSICS
@@ -534,9 +523,9 @@
     #endif
 
     #if (SSL_CFG_3DES_EN == DEF_ENABLED)
-        #undef  NO_DES
+        #undef  NO_DES3
     #else
-        #define NO_DES
+        #define NO_DES3
     #endif
 
     #if (SSL_CFG_AES_EN == DEF_ENABLED)
@@ -549,18 +538,6 @@
         #undef  NO_RC4
     #else
         #define NO_RC4
-    #endif
-
-    #if (SSL_CFG_RABBIT_EN == DEF_ENABLED)
-        #undef  NO_RABBIT
-    #else
-        #define NO_RABBIT
-    #endif
-
-    #if (SSL_CFG_HC128_EN == DEF_ENABLED)
-        #undef  NO_HC128
-    #else
-        #define NO_HC128
     #endif
 
     #if (CPU_CFG_ENDIAN_TYPE == CPU_ENDIAN_TYPE_BIG)

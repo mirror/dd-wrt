@@ -12,11 +12,9 @@ ca=certs/external/ca-globalsign-root.pem
 [ ! -x ./examples/client/client ] && printf '\n\n%s\n' "Client doesn't exist" \
                                   && exit 1
 
-./examples/client/client -v 3 2>&1 | grep -- 'Bad SSL version'
-if [ $? -eq 0 ]; then
-    echo "TLS 1.2 or lower required"
-    echo "Skipped"
-    exit 0
+if ! ./examples/client/client -V | grep -q 3; then
+    echo 'skipping ocsp.test because TLS1.2 is not available.' 1>&2
+    exit 77
 fi
 
 GL_UNREACHABLE=0
@@ -26,16 +24,21 @@ OUTPUT=$(eval "./examples/client/client -S check")
 if [ "$OUTPUT" = "SNI is: ON" ]; then
     printf '\n\n%s\n\n' "SNI is on, proceed with globalsign test"
 
-    # is our desired server there?
-    ${SCRIPT_DIR}/ping.test $server 2
-    RESULT=$?
-    if [ $RESULT -ne 0 ]; then
-        GL_UNREACHABLE=1
+    if [ "$AM_BWRAPPED" != "yes" ]; then
+        # is our desired server there?
+        "${SCRIPT_DIR}/ping.test" $server 2
+        RESULT=$?
+        if [ $RESULT -ne 0 ]; then
+            GL_UNREACHABLE=1
+        fi
+    else
+        RESULT=0
     fi
 
     if [ $RESULT -eq 0 ]; then
         # client test against the server
-        ./examples/client/client -X -C -h $server -p 443 -A $ca -g -o -N -v d -S $server
+        echo "./examples/client/client -X -C -h $server -p 443 -A \"$ca\" -g -o -N -v d -S $server"
+        ./examples/client/client -X -C -h $server -p 443 -A "$ca" -g -o -N -v d -S $server
         GL_RESULT=$?
         [ $GL_RESULT -ne 0 ] && printf '\n\n%s\n' "Client connection failed"
     else
@@ -49,12 +52,18 @@ fi
 server=www.google.com
 ca=${SCRIPT_DIR}/../certs/external/ca-google-root.pem
 
-# is our desired server there?
-${SCRIPT_DIR}/ping.test $server 2
-RESULT=$?
+if [ "$AM_BWRAPPED" != "yes" ]; then
+    # is our desired server there?
+    ${SCRIPT_DIR}/ping.test $server 2
+    RESULT=$?
+else
+    RESULT=0
+fi
+
 if [ $RESULT -eq 0 ]; then
     # client test against the server
-    ./examples/client/client -X -C -h $server -p 443 -A $ca -g -o -N
+    echo "./examples/client/client -X -C -h $server -p 443 -A \"$ca\" -g -o -N"
+    ./examples/client/client -X -C -h $server -p 443 -A "$ca" -g -o -N
     GR_RESULT=$?
     [ $GR_RESULT -ne 0 ] && printf '\n\n%s\n' "Client connection failed"
 else

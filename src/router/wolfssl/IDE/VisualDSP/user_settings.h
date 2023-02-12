@@ -1,6 +1,6 @@
 /* user_settings.h
  *
- * Copyright (C) 2006-2021 wolfSSL Inc.
+ * Copyright (C) 2006-2022 wolfSSL Inc.
  *
  * This file is part of wolfSSL.
  *
@@ -350,9 +350,6 @@ extern "C" {
 #undef WOLFSSL_SHA3
 #if 1
     #define WOLFSSL_SHA3
-    #ifdef HAVE_FIPS
-        #define WOLFSSL_NO_SHAKE256
-    #endif
 #endif
 
 /* MD5 */
@@ -637,12 +634,6 @@ extern "C" {
 
 #undef  NO_OLD_TLS
 //#define NO_OLD_TLS
-
-#undef  NO_HC128
-#define NO_HC128
-
-#undef  NO_RABBIT
-#define NO_RABBIT
 
 #undef  NO_PSK
 #define NO_PSK

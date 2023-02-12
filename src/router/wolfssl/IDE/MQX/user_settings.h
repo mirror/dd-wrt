@@ -34,8 +34,6 @@
 #define WC_RSA_PSS
 #define WOLFSSL_BASE64_ENCODE
 #define NO_RC4
-#define NO_HC128
-#define NO_RABBIT
 #define WOLFSSL_SHA224
 #define WOLFSSL_SHA3
 #define WOLFSSL_SHAKE256
@@ -54,7 +52,7 @@
 #define USE_FAST_MATH
 #define WC_NO_ASYNC_THREADING
 #define HAVE_DH_DEFAULT_PARAMS
-#define NO_DES
+#define NO_DES3
 #define WOLFSSL_DH_CONST
 
 /* MQX */

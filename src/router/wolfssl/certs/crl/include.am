@@ -3,6 +3,7 @@
 #
 
 EXTRA_DIST += \
+	     certs/crl/hash_pem/0fdb2da4.r0 \
 	     certs/crl/crl.pem \
 	     certs/crl/cliCrl.pem \
 	     certs/crl/eccSrvCRL.pem \
@@ -10,7 +11,9 @@ EXTRA_DIST += \
 	     certs/crl/crl2.pem \
 	     certs/crl/caEccCrl.pem \
 	     certs/crl/caEcc384Crl.pem \
-	     certs/crl/wolfssl.cnf
+	     certs/crl/wolfssl.cnf \
+	     certs/crl/crl.der \
+	     certs/crl/crl2.der
 
 EXTRA_DIST += \
 	     certs/crl/crl.revoked

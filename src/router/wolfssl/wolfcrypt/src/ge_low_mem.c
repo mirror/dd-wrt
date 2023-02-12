@@ -1,6 +1,6 @@
 /* ge_low_mem.c
  *
- * Copyright (C) 2006-2020 wolfSSL Inc.
+ * Copyright (C) 2006-2022 wolfSSL Inc.
  *
  * This file is part of wolfSSL.
  *
@@ -176,7 +176,7 @@ static void barrett_reduce(word32* r, word32 x[64])
 }
 
 
-void sc_reduce(unsigned char x[64])
+void sc_reduce(unsigned char *x)
 {
   int i;
   word32 t[64];

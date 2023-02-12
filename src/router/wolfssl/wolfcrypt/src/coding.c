@@ -1,6 +1,6 @@
 /* coding.c
  *
- * Copyright (C) 2006-2020 wolfSSL Inc.
+ * Copyright (C) 2006-2022 wolfSSL Inc.
  *
  * This file is part of wolfSSL.
  *
@@ -113,26 +113,44 @@ static WC_INLINE byte Base64_Char2Val(byte c)
 }
 #endif
 
-static WC_INLINE int Base64_SkipNewline(const byte* in, word32 *inLen, word32 *outJ)
+int Base64_SkipNewline(const byte* in, word32 *inLen,
+  word32 *outJ)
 {
     word32 len = *inLen;
     word32 j = *outJ;
-    if (len && (in[j] == ' ' || in[j] == '\r' || in[j] == '\n')) {
-        byte endLine = in[j++];
+    byte curChar;
+
+    if (len == 0) {
+        return BUFFER_E;
+    }
+    curChar = in[j];
+
+    while (len > 1 && curChar == ' ') {
+        /* skip whitespace in the middle or end of line */
+        curChar = in[++j];
         len--;
-        while (len && endLine == ' ') {   /* allow trailing whitespace */
-            endLine = in[j++];
-            len--;
-        }
-        if (endLine == '\r') {
+    }
+    if (len && (curChar == '\r' || curChar == '\n')) {
+        j++;
+        len--;
+        if (curChar == '\r') {
             if (len) {
-                endLine = in[j++];
+                curChar = in[j++];
                 len--;
             }
         }
-        if (endLine != '\n') {
+        if (curChar != '\n') {
             WOLFSSL_MSG("Bad end of line in Base64 Decode");
             return ASN_INPUT_E;
+        }
+
+        if (len) {
+            curChar = in[j];
+        }
+    }
+    while (len && curChar == ' ') {
+        if (--len > 0) {
+            curChar = in[++j];
         }
     }
     if (!len) {
@@ -545,7 +563,7 @@ int Base16_Encode(const byte* in, word32 inLen, byte* out, word32* outLen)
     if (in == NULL || out == NULL || outLen == NULL)
         return BAD_FUNC_ARG;
 
-    if (*outLen < (2 * inLen + 1))
+    if (*outLen < (2 * inLen))
         return BAD_FUNC_ARG;
 
     for (i = 0; i < inLen; i++) {
@@ -566,8 +584,9 @@ int Base16_Encode(const byte* in, word32 inLen, byte* out, word32* outLen)
         out[outIdx++] = lb;
     }
 
-    /* force 0 at this end */
-    out[outIdx++] = 0;
+    /* If the output buffer has a room for an extra byte, add a null terminator */
+    if (*outLen > outIdx)
+        out[outIdx++]= '\0';
 
     *outLen = outIdx;
     return 0;

@@ -1,6 +1,6 @@
 /* sha256.c
  *
- * Copyright (C) 2006-2020 wolfSSL Inc.
+ * Copyright (C) 2006-2022 wolfSSL Inc.
  *
  * This file is part of wolfSSL.
  *
@@ -19,7 +19,12 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1335, USA
  */
 
-/* For more info on the algorithm, see https://tools.ietf.org/html/rfc6234 */
+/* For more info on the algorithm, see https://tools.ietf.org/html/rfc6234
+ *
+ * For more information on NIST FIPS PUB 180-4, see
+ * https://nvlpubs.nist.gov/nistpubs/FIPS/NIST.FIPS.180-4.pdf
+ */
+
 /*
 
 DESCRIPTION
@@ -28,12 +33,17 @@ SHA-256 performs processing on message blocks to produce a final hash digest
 output. It can be used to hash a message, M, having a length of L bits,
 where 0 <= L < 2^64.
 
+Note that in some cases, hardware acceleration may be enabled, depending
+on the specific device platform.
+
 */
+
 #ifdef HAVE_CONFIG_H
     #include <config.h>
 #endif
 
 #include <wolfssl/wolfcrypt/settings.h>
+#include <wolfssl/wolfcrypt/types.h>
 
 /*
  * SHA256 Build Options:
@@ -55,9 +65,7 @@ where 0 <= L < 2^64.
 
 #if !defined(NO_SHA256) && !defined(WOLFSSL_ARMASM)
 
-#if defined(HAVE_FIPS) && \
-	defined(HAVE_FIPS_VERSION) && (HAVE_FIPS_VERSION >= 2)
-
+#if defined(HAVE_FIPS) && defined(HAVE_FIPS_VERSION) && (HAVE_FIPS_VERSION >= 2)
     /* set NO_WRAPPERS before headers, use direct internal f()s not wrappers */
     #define FIPS_NO_WRAPPERS
 
@@ -74,6 +82,20 @@ where 0 <= L < 2^64.
 
 #ifdef WOLF_CRYPTO_CB
     #include <wolfssl/wolfcrypt/cryptocb.h>
+#endif
+
+/* determine if we are using Espressif SHA hardware acceleration */
+#undef WOLFSSL_USE_ESP32WROOM32_CRYPT_HASH_HW
+#if defined(WOLFSSL_ESP32WROOM32_CRYPT) && \
+    !defined(NO_WOLFSSL_ESP32WROOM32_CRYPT_HASH)
+    /* define a single keyword for simplicity & readability
+     *
+     * by default the HW acceleration is on for ESP32-WROOM32
+     * but individual components can be turned off.
+     */
+    #define WOLFSSL_USE_ESP32WROOM32_CRYPT_HASH_HW
+#else
+    #undef WOLFSSL_USE_ESP32WROOM32_CRYPT_HASH_HW
 #endif
 
 /* fips wrapper calls, user can call direct */
@@ -130,8 +152,6 @@ where 0 <= L < 2^64.
 #elif defined(WOLFSSL_CRYPTOCELL)
     /* wc_port.c includes wolfcrypt/src/port/arm/cryptoCellHash.c */
 
-#elif defined(WOLFSSL_IMXRT_DCP)
-
 #elif defined(WOLFSSL_PSOC6_CRYPTO)
 
 
@@ -149,10 +169,12 @@ where 0 <= L < 2^64.
 #ifdef WOLFSSL_DEVCRYPTO_HASH
     #include <wolfssl/wolfcrypt/port/devcrypto/wc_devcrypto.h>
 #endif
+#if defined(WOLFSSL_SE050) && defined(WOLFSSL_SE050_HASH)
+    #include <wolfssl/wolfcrypt/port/nxp/se050_port.h>
+#endif
 
 
-
-#if defined(USE_INTEL_SPEEDUP)
+#if defined(WOLFSSL_X86_64_BUILD) && defined(USE_INTEL_SPEEDUP)
     #if defined(__GNUC__) && ((__GNUC__ < 4) || \
                               (__GNUC__ == 4 && __GNUC_MINOR__ <= 8))
         #undef  NO_AVX2_SUPPORT
@@ -169,7 +191,10 @@ where 0 <= L < 2^64.
     #ifndef NO_AVX2_SUPPORT
         #define HAVE_INTEL_AVX2
     #endif
-#endif /* USE_INTEL_SPEEDUP */
+#else
+    #undef HAVE_INTEL_AVX1
+    #undef HAVE_INTEL_AVX2
+#endif /* WOLFSSL_X86_64_BUILD && USE_INTEL_SPEEDUP */
 
 #if defined(HAVE_INTEL_AVX2)
     #define HAVE_INTEL_RORX
@@ -177,11 +202,16 @@ where 0 <= L < 2^64.
 
 
 #if !defined(WOLFSSL_PIC32MZ_HASH) && !defined(STM32_HASH_SHA2) && \
-    (!defined(WOLFSSL_IMX6_CAAM) || defined(NO_IMX6_CAAM_HASH)) && \
+    (!defined(WOLFSSL_IMX6_CAAM) || defined(NO_IMX6_CAAM_HASH) || \
+     defined(WOLFSSL_QNX_CAAM)) && \
     !defined(WOLFSSL_AFALG_HASH) && !defined(WOLFSSL_DEVCRYPTO_HASH) && \
     (!defined(WOLFSSL_ESP32WROOM32_CRYPT) || defined(NO_WOLFSSL_ESP32WROOM32_CRYPT_HASH)) && \
-    (!defined(WOLFSSL_RENESAS_TSIP_CRYPT) || defined(NO_WOLFSSL_RENESAS_TSIP_HASH)) && \
-    !defined(WOLFSSL_PSOC6_CRYPTO) && !defined(WOLFSSL_IMXRT_DCP) && !defined(WOLFSSL_SILABS_SE_ACCEL)
+    (!defined(WOLFSSL_RENESAS_TSIP_CRYPT) || defined(NO_WOLFSSL_RENESAS_TSIP_CRYPT_HASH)) && \
+    !defined(WOLFSSL_PSOC6_CRYPTO) && !defined(WOLFSSL_IMXRT_DCP) && !defined(WOLFSSL_SILABS_SE_ACCEL) && \
+    !defined(WOLFSSL_KCAPI_HASH) && !defined(WOLFSSL_SE050_HASH) && \
+    (!defined(WOLFSSL_RENESAS_SCEPROTECT) || defined(NO_WOLFSSL_RENESAS_SCEPROTECT_HASH)) && \
+    (!defined(WOLFSSL_HAVE_PSA) || defined(WOLFSSL_PSA_NO_HASH))
+
 
 
 static int InitSha256(wc_Sha256* sha256)
@@ -204,8 +234,21 @@ static int InitSha256(wc_Sha256* sha256)
     sha256->buffLen = 0;
     sha256->loLen   = 0;
     sha256->hiLen   = 0;
-#if defined(WOLFSSL_HASH_FLAGS) || defined(WOLF_CRYPTO_CB)
+#ifdef WOLFSSL_HASH_FLAGS
     sha256->flags = 0;
+#endif
+#ifdef WOLFSSL_HASH_KEEP
+    sha256->msg  = NULL;
+    sha256->len  = 0;
+    sha256->used = 0;
+#endif
+
+#ifdef WOLF_CRYPTO_CB
+    sha256->devId = wc_CryptoCb_DefaultDevID();
+#endif
+
+#ifdef WOLFSSL_MAXQ10XX_CRYPTO
+    XMEMSET(&sha256->maxq_ctx, 0, sizeof(sha256->maxq_ctx));
 #endif
 
     return ret;
@@ -214,8 +257,8 @@ static int InitSha256(wc_Sha256* sha256)
 
 
 /* Hardware Acceleration */
-#if defined(USE_INTEL_SPEEDUP) && (defined(HAVE_INTEL_AVX1) || \
-                                                       defined(HAVE_INTEL_AVX2))
+#if defined(WOLFSSL_X86_64_BUILD) && defined(USE_INTEL_SPEEDUP) && \
+                          (defined(HAVE_INTEL_AVX1) || defined(HAVE_INTEL_AVX2))
 
     /* in case intel instructions aren't available, plus we need the K[] global */
     #define NEED_SOFT_SHA256
@@ -317,22 +360,14 @@ static int InitSha256(wc_Sha256* sha256)
 
     static WC_INLINE int inline_XTRANSFORM(wc_Sha256* S, const byte* D) {
         int ret;
-        if (Transform_Sha256_is_vectorized)
-            SAVE_VECTOR_REGISTERS();
         ret = (*Transform_Sha256_p)(S, D);
-        if (Transform_Sha256_is_vectorized)
-            RESTORE_VECTOR_REGISTERS();
         return ret;
     }
 #define XTRANSFORM(...) inline_XTRANSFORM(__VA_ARGS__)
 
     static WC_INLINE int inline_XTRANSFORM_LEN(wc_Sha256* S, const byte* D, word32 L) {
         int ret;
-        if (Transform_Sha256_is_vectorized)
-            SAVE_VECTOR_REGISTERS();
         ret = (*Transform_Sha256_Len_p)(S, D, L);
-        if (Transform_Sha256_is_vectorized)
-            RESTORE_VECTOR_REGISTERS();
         return ret;
     }
 #define XTRANSFORM_LEN(...) inline_XTRANSFORM_LEN(__VA_ARGS__)
@@ -388,6 +423,7 @@ static int InitSha256(wc_Sha256* sha256)
         transform_check = 1;
     }
 
+#if !defined(WOLFSSL_KCAPI_HASH)
     int wc_InitSha256_ex(wc_Sha256* sha256, void* heap, int devId)
     {
         int ret = 0;
@@ -397,6 +433,7 @@ static int InitSha256(wc_Sha256* sha256)
         sha256->heap = heap;
     #ifdef WOLF_CRYPTO_CB
         sha256->devId = devId;
+        sha256->devCtx = NULL;
     #endif
     #ifdef WOLFSSL_SMALL_STACK_CACHE
         sha256->W = NULL;
@@ -418,6 +455,7 @@ static int InitSha256(wc_Sha256* sha256)
 
         return ret;
     }
+#endif /* !WOLFSSL_KCAPI_HASH */
 
 #elif defined(FREESCALE_LTC_SHA)
     int wc_InitSha256_ex(wc_Sha256* sha256, void* heap, int devId)
@@ -461,7 +499,7 @@ static int InitSha256(wc_Sha256* sha256)
     #ifdef FREESCALE_MMCAU_CLASSIC_SHA
         cau_sha256_initialize_output(sha256->digest);
     #else
-        MMCAU_SHA256_InitializeOutput((word32*)sha256->digest);
+        MMCAU_SHA256_InitializeOutput((uint32_t*)sha256->digest);
     #endif
         wolfSSL_CryptHwMutexUnLock();
 
@@ -482,7 +520,7 @@ static int InitSha256(wc_Sha256* sha256)
     #ifdef FREESCALE_MMCAU_CLASSIC_SHA
             cau_sha256_hash_n((byte*)data, 1, sha256->digest);
     #else
-            MMCAU_SHA256_HashN((byte*)data, 1, sha256->digest);
+            MMCAU_SHA256_HashN((byte*)data, 1, (uint32_t*)sha256->digest);
     #endif
             wolfSSL_CryptHwMutexUnLock();
         }
@@ -495,7 +533,7 @@ static int InitSha256(wc_Sha256* sha256)
         int ret = wolfSSL_CryptHwMutexLock();
         if (ret == 0) {
         #if defined(WC_HASH_DATA_ALIGNMENT) && WC_HASH_DATA_ALIGNMENT > 0
-            if ((size_t)data % WC_HASH_DATA_ALIGNMENT) {
+            if ((wc_ptr_t)data % WC_HASH_DATA_ALIGNMENT) {
                 /* data pointer is NOT aligned,
                  * so copy and perform one block at a time */
                 byte* local = (byte*)sha256->buffer;
@@ -504,7 +542,7 @@ static int InitSha256(wc_Sha256* sha256)
                 #ifdef FREESCALE_MMCAU_CLASSIC_SHA
                     cau_sha256_hash_n(local, 1, sha256->digest);
                 #else
-                    MMCAU_SHA256_HashN(local, 1, sha256->digest);
+                    MMCAU_SHA256_HashN(local, 1, (uint32_t*)sha256->digest);
                 #endif
                     data += WC_SHA256_BLOCK_SIZE;
                     len  -= WC_SHA256_BLOCK_SIZE;
@@ -518,7 +556,7 @@ static int InitSha256(wc_Sha256* sha256)
                 sha256->digest);
     #else
             MMCAU_SHA256_HashN((byte*)data, len/WC_SHA256_BLOCK_SIZE,
-                sha256->digest);
+                (uint32_t*)sha256->digest);
     #endif
             }
             wolfSSL_CryptHwMutexUnLock();
@@ -557,7 +595,7 @@ static int InitSha256(wc_Sha256* sha256)
         ret = wolfSSL_CryptHwMutexLock();
         if (ret == 0) {
             ret = wc_Stm32_Hash_Update(&sha256->stmCtx,
-                HASH_AlgoSelection_SHA256, data, len);
+                HASH_AlgoSelection_SHA256, data, len, WC_SHA256_BLOCK_SIZE);
             wolfSSL_CryptHwMutexUnLock();
         }
         return ret;
@@ -583,8 +621,41 @@ static int InitSha256(wc_Sha256* sha256)
         return ret;
     }
 
-#elif defined(WOLFSSL_IMX6_CAAM) && !defined(NO_IMX6_CAAM_HASH)
+#elif defined(WOLFSSL_IMX6_CAAM) && !defined(NO_IMX6_CAAM_HASH) && \
+    !defined(WOLFSSL_QNX_CAAM)
     /* functions defined in wolfcrypt/src/port/caam/caam_sha256.c */
+
+#elif defined(WOLFSSL_SE050) && defined(WOLFSSL_SE050_HASH)
+
+    int wc_InitSha256_ex(wc_Sha256* sha256, void* heap, int devId)
+    {
+        if (sha256 == NULL) {
+            return BAD_FUNC_ARG;
+        }
+        (void)devId;
+
+        return se050_hash_init(&sha256->se050Ctx, heap);
+    }
+
+    int wc_Sha256Update(wc_Sha256* sha256, const byte* data, word32 len)
+    {
+        return se050_hash_update(&sha256->se050Ctx, data, len);
+    }
+
+    int wc_Sha256Final(wc_Sha256* sha256, byte* hash)
+    {
+        int ret = 0;
+        ret = se050_hash_final(&sha256->se050Ctx, hash, WC_SHA256_DIGEST_SIZE,
+                               kAlgorithm_SSS_SHA256);
+        return ret;
+    }
+    int wc_Sha256FinalRaw(wc_Sha256* sha256, byte* hash)
+    {
+        int ret = 0;
+        ret = se050_hash_final(&sha256->se050Ctx, hash, WC_SHA256_DIGEST_SIZE,
+                               kAlgorithm_SSS_SHA256);
+        return ret;
+    }
 
 #elif defined(WOLFSSL_AFALG_HASH)
     /* implemented in wolfcrypt/src/port/af_alg/afalg_hash.c */
@@ -649,14 +720,17 @@ static int InitSha256(wc_Sha256* sha256)
         return ret;
     }
 
-#elif defined(WOLFSSL_ESP32WROOM32_CRYPT) && \
-    !defined(NO_WOLFSSL_ESP32WROOM32_CRYPT_HASH)
+#elif defined(WOLFSSL_USE_ESP32WROOM32_CRYPT_HASH_HW)
 
+    /* HW may fail since there's only one, so we still need SW */
     #define NEED_SOFT_SHA256
 
+    /*
+     * soft SHA needs initialization digest, but HW does not.
+     */
     static int InitSha256(wc_Sha256* sha256)
     {
-        int ret = 0;
+        int ret = 0; /* zero = success */
 
         if (sha256 == NULL)
             return BAD_FUNC_ARG;
@@ -680,8 +754,9 @@ static int InitSha256(wc_Sha256* sha256)
         sha256->ctx.sha_type = SHA2_256;
         if(sha256->ctx.mode == ESP32_SHA_HW) {
             /* release hw */
-            esp_sha_hw_unlock();
+            esp_sha_hw_unlock(&(sha256->ctx));
         }
+
         /* always set mode as INIT
         *  whether using HW or SW is determined at first call of update()
         */
@@ -689,9 +764,13 @@ static int InitSha256(wc_Sha256* sha256)
 
         return ret;
     }
+
+    /*
+     * wolfCrypt InitSha256 external wrapper
+     */
     int wc_InitSha256_ex(wc_Sha256* sha256, void* heap, int devId)
     {
-        int ret = 0;
+        int ret = 0; /* zero = success */
 
         if (sha256 == NULL)
             return BAD_FUNC_ARG;
@@ -699,6 +778,7 @@ static int InitSha256(wc_Sha256* sha256)
         XMEMSET(sha256, 0, sizeof(wc_Sha256));
         sha256->ctx.mode = ESP32_SHA_INIT;
         sha256->ctx.isfirstblock = 1;
+        sha256->ctx.lockDepth = 0; /* we'll keep track of our own lock depth */
         (void)devId;
 
         ret = InitSha256(sha256);
@@ -711,6 +791,11 @@ static int InitSha256(wc_Sha256* sha256)
 
     /* implemented in wolfcrypt/src/port/Renesas/renesas_tsip_sha.c */
 
+#elif defined(WOLFSSL_RENESAS_SCEPROTECT) && \
+    !defined(NO_WOLFSSL_RENESAS_SCEPROTECT_HASH)
+
+    /* implemented in wolfcrypt/src/port/Renesas/renesas_sce_sha.c */
+
 #elif defined(WOLFSSL_PSOC6_CRYPTO)
 
     /* implemented in wolfcrypt/src/port/cypress/psoc6_crypto.c */
@@ -722,6 +807,12 @@ static int InitSha256(wc_Sha256* sha256)
 #elif defined(WOLFSSL_SILABS_SE_ACCEL)
     /* implemented in wolfcrypt/src/port/silabs/silabs_hash.c */
 
+#elif defined(WOLFSSL_KCAPI_HASH)
+    /* implemented in wolfcrypt/src/port/kcapi/kcapi_hash.c */
+
+#elif defined(WOLFSSL_HAVE_PSA) && !defined(WOLFSSL_PSA_NO_HASH)
+    /* implemented in wolfcrypt/src/port/psa/psa_hash.c */
+
 #else
     #define NEED_SOFT_SHA256
 
@@ -730,6 +821,9 @@ static int InitSha256(wc_Sha256* sha256)
         int ret = 0;
         if (sha256 == NULL)
             return BAD_FUNC_ARG;
+        ret = InitSha256(sha256);
+        if (ret != 0)
+            return ret;
 
         sha256->heap = heap;
     #ifdef WOLF_CRYPTO_CB
@@ -739,10 +833,6 @@ static int InitSha256(wc_Sha256* sha256)
     #ifdef WOLFSSL_SMALL_STACK_CACHE
         sha256->W = NULL;
     #endif
-
-        ret = InitSha256(sha256);
-        if (ret != 0)
-            return ret;
 
     #if defined(WOLFSSL_ASYNC_CRYPT) && defined(WC_ASYNC_ENABLE_SHA256)
         ret = wolfAsync_DevCtxInit(&sha256->asyncDev,
@@ -792,14 +882,14 @@ static int InitSha256(wc_Sha256* sha256)
     #define Gamma0(x)       (S(x, 7)  ^ S(x, 18) ^ R(x, 3))
     #define Gamma1(x)       (S(x, 17) ^ S(x, 19) ^ R(x, 10))
 
-    #define a(i) S[(0-i) & 7]
-    #define b(i) S[(1-i) & 7]
-    #define c(i) S[(2-i) & 7]
-    #define d(i) S[(3-i) & 7]
-    #define e(i) S[(4-i) & 7]
-    #define f(i) S[(5-i) & 7]
-    #define g(i) S[(6-i) & 7]
-    #define h(i) S[(7-i) & 7]
+    #define a(i) S[(0-(i)) & 7]
+    #define b(i) S[(1-(i)) & 7]
+    #define c(i) S[(2-(i)) & 7]
+    #define d(i) S[(3-(i)) & 7]
+    #define e(i) S[(4-(i)) & 7]
+    #define f(i) S[(5-(i)) & 7]
+    #define g(i) S[(6-(i)) & 7]
+    #define h(i) S[(7-(i)) & 7]
 
     #ifndef XTRANSFORM
          #define XTRANSFORM(S, D)         Transform_Sha256((S),(D))
@@ -807,7 +897,7 @@ static int InitSha256(wc_Sha256* sha256)
 
 #ifndef SHA256_MANY_REGISTERS
     #define RND(j) \
-         t0 = h(j) + Sigma1(e(j)) + Ch(e(j), f(j), g(j)) + K[i+j] + W[i+j]; \
+         t0 = h(j) + Sigma1(e(j)) + Ch(e(j), f(j), g(j)) + K[i+(j)] + W[i+(j)]; \
          t1 = Sigma0(a(j)) + Maj(a(j), b(j), c(j)); \
          d(j) += t0; \
          h(j)  = t0 + t1
@@ -841,7 +931,7 @@ static int InitSha256(wc_Sha256* sha256)
             S[i] = sha256->digest[i];
 
         for (i = 0; i < 16; i++)
-            W[i] = *((word32*)&data[i*sizeof(word32)]);
+            W[i] = *((const word32*)&data[i*sizeof(word32)]);
 
         for (i = 16; i < WC_SHA256_BLOCK_SIZE; i++)
             W[i] = Gamma1(W[i-2]) + W[i-7] + Gamma0(W[i-15]) + W[i-16];
@@ -986,7 +1076,8 @@ static int InitSha256(wc_Sha256* sha256)
 
             if (sha256->buffLen == WC_SHA256_BLOCK_SIZE) {
             #if defined(LITTLE_ENDIAN_ORDER) && !defined(FREESCALE_MMCAU_SHA)
-                #if defined(USE_INTEL_SPEEDUP) && \
+                #if defined(WOLFSSL_X86_64_BUILD) && \
+                          defined(USE_INTEL_SPEEDUP) && \
                           (defined(HAVE_INTEL_AVX1) || defined(HAVE_INTEL_AVX2))
                 if (!IS_INTEL_AVX1(intel_flags) && !IS_INTEL_AVX2(intel_flags))
                 #endif
@@ -996,14 +1087,16 @@ static int InitSha256(wc_Sha256* sha256)
                 }
             #endif
 
-            #if defined(WOLFSSL_ESP32WROOM32_CRYPT) && \
-                !defined(NO_WOLFSSL_ESP32WROOM32_CRYPT_HASH)
-                if (sha256->ctx.mode == ESP32_SHA_INIT){
+            #if defined(WOLFSSL_USE_ESP32WROOM32_CRYPT_HASH_HW)
+                if (sha256->ctx.mode == ESP32_SHA_INIT ||
+                    sha256->ctx.mode == ESP32_SHA_FAIL_NEED_UNROLL) {
                     esp_sha_try_hw_lock(&sha256->ctx);
                 }
-                if (sha256->ctx.mode == ESP32_SHA_SW){
+
+                if (sha256->ctx.mode == ESP32_SHA_SW) {
                     ret = XTRANSFORM(sha256, (const byte*)local);
-                } else {
+                }
+                else {
                     esp_sha256_process(sha256, (const byte*)local);
                 }
             #else
@@ -1019,7 +1112,7 @@ static int InitSha256(wc_Sha256* sha256)
 
         /* process blocks */
     #ifdef XTRANSFORM_LEN
-        #if defined(USE_INTEL_SPEEDUP) && \
+        #if defined(WOLFSSL_X86_64_BUILD) && defined(USE_INTEL_SPEEDUP) && \
                           (defined(HAVE_INTEL_AVX1) || defined(HAVE_INTEL_AVX2))
         if (Transform_Sha256_Len_p != NULL)
         #endif
@@ -1035,13 +1128,14 @@ static int InitSha256(wc_Sha256* sha256)
                 len  -= blocksLen;
             }
         }
-        #if defined(USE_INTEL_SPEEDUP) && \
+        #if defined(WOLFSSL_X86_64_BUILD) && defined(USE_INTEL_SPEEDUP) && \
                           (defined(HAVE_INTEL_AVX1) || defined(HAVE_INTEL_AVX2))
         else
         #endif
     #endif /* XTRANSFORM_LEN */
-    #if !defined(XTRANSFORM_LEN) || (defined(USE_INTEL_SPEEDUP) && \
-                         (defined(HAVE_INTEL_AVX1) || defined(HAVE_INTEL_AVX2)))
+    #if !defined(XTRANSFORM_LEN) || \
+        (defined(WOLFSSL_X86_64_BUILD) && defined(USE_INTEL_SPEEDUP) && \
+         (defined(HAVE_INTEL_AVX1) || defined(HAVE_INTEL_AVX2)))
         {
             while (len >= WC_SHA256_BLOCK_SIZE) {
                 word32* local32 = sha256->buffer;
@@ -1049,9 +1143,10 @@ static int InitSha256(wc_Sha256* sha256)
                 /* Intel transform function requires use of sha256->buffer */
                 /* Little Endian requires byte swap, so can't use data directly */
             #if defined(WC_HASH_DATA_ALIGNMENT) && !defined(LITTLE_ENDIAN_ORDER) && \
-                !(defined(USE_INTEL_SPEEDUP) && \
+                !(defined(WOLFSSL_X86_64_BUILD) && \
+                         defined(USE_INTEL_SPEEDUP) && \
                          (defined(HAVE_INTEL_AVX1) || defined(HAVE_INTEL_AVX2)))
-                if (((size_t)data % WC_HASH_DATA_ALIGNMENT) == 0) {
+                if (((wc_ptr_t)data % WC_HASH_DATA_ALIGNMENT) == 0) {
                     local32 = (word32*)data;
                 }
                 else
@@ -1064,7 +1159,8 @@ static int InitSha256(wc_Sha256* sha256)
                 len  -= WC_SHA256_BLOCK_SIZE;
 
             #if defined(LITTLE_ENDIAN_ORDER) && !defined(FREESCALE_MMCAU_SHA)
-                #if defined(USE_INTEL_SPEEDUP) && \
+                #if defined(WOLFSSL_X86_64_BUILD) && \
+                          defined(USE_INTEL_SPEEDUP) && \
                           (defined(HAVE_INTEL_AVX1) || defined(HAVE_INTEL_AVX2))
                 if (!IS_INTEL_AVX1(intel_flags) && !IS_INTEL_AVX2(intel_flags))
                 #endif
@@ -1073,17 +1169,17 @@ static int InitSha256(wc_Sha256* sha256)
                 }
             #endif
 
-            #if defined(WOLFSSL_ESP32WROOM32_CRYPT) && \
-                !defined(NO_WOLFSSL_ESP32WROOM32_CRYPT_HASH)
+            #if defined(WOLFSSL_USE_ESP32WROOM32_CRYPT_HASH_HW)
                 if (sha256->ctx.mode == ESP32_SHA_INIT){
                     esp_sha_try_hw_lock(&sha256->ctx);
                 }
-                if (sha256->ctx.mode == ESP32_SHA_SW){
+                if (sha256->ctx.mode == ESP32_SHA_SW) {
                     ret = XTRANSFORM(sha256, (const byte*)local32);
-                } else {
+                }
+                else {
                     esp_sha256_process(sha256, (const byte*)local32);
                 }
-            #else
+#else
                 ret = XTRANSFORM(sha256, (const byte*)local32);
             #endif
 
@@ -1102,6 +1198,10 @@ static int InitSha256(wc_Sha256* sha256)
         return ret;
     }
 
+#if defined(WOLFSSL_KCAPI_HASH)
+    /* implemented in wolfcrypt/src/port/kcapi/kcapi_hash.c */
+
+#else
     int wc_Sha256Update(wc_Sha256* sha256, const byte* data, word32 len)
     {
         if (sha256 == NULL || (data == NULL && len > 0)) {
@@ -1131,6 +1231,7 @@ static int InitSha256(wc_Sha256* sha256)
 
         return Sha256Update(sha256, data, len);
     }
+#endif
 
     static WC_INLINE int Sha256Final(wc_Sha256* sha256)
     {
@@ -1152,7 +1253,7 @@ static int InitSha256(wc_Sha256* sha256)
             sha256->buffLen += WC_SHA256_BLOCK_SIZE - sha256->buffLen;
 
         #if defined(LITTLE_ENDIAN_ORDER) && !defined(FREESCALE_MMCAU_SHA)
-            #if defined(USE_INTEL_SPEEDUP) && \
+            #if defined(WOLFSSL_X86_64_BUILD) && defined(USE_INTEL_SPEEDUP) && \
                           (defined(HAVE_INTEL_AVX1) || defined(HAVE_INTEL_AVX2))
             if (!IS_INTEL_AVX1(intel_flags) && !IS_INTEL_AVX2(intel_flags))
             #endif
@@ -1162,14 +1263,14 @@ static int InitSha256(wc_Sha256* sha256)
             }
         #endif
 
-        #if defined(WOLFSSL_ESP32WROOM32_CRYPT) && \
-             !defined(NO_WOLFSSL_ESP32WROOM32_CRYPT_HASH)
+        #if defined(WOLFSSL_USE_ESP32WROOM32_CRYPT_HASH_HW)
             if (sha256->ctx.mode == ESP32_SHA_INIT) {
                 esp_sha_try_hw_lock(&sha256->ctx);
             }
             if (sha256->ctx.mode == ESP32_SHA_SW) {
                 ret = XTRANSFORM(sha256, (const byte*)local);
-            } else {
+            }
+            else {
                 ret = esp_sha256_process(sha256, (const byte*)local);
             }
         #else
@@ -1190,7 +1291,7 @@ static int InitSha256(wc_Sha256* sha256)
 
         /* store lengths */
     #if defined(LITTLE_ENDIAN_ORDER) && !defined(FREESCALE_MMCAU_SHA)
-        #if defined(USE_INTEL_SPEEDUP) && \
+        #if defined(WOLFSSL_X86_64_BUILD) && defined(USE_INTEL_SPEEDUP) && \
                           (defined(HAVE_INTEL_AVX1) || defined(HAVE_INTEL_AVX2))
         if (!IS_INTEL_AVX1(intel_flags) && !IS_INTEL_AVX2(intel_flags))
         #endif
@@ -1204,10 +1305,11 @@ static int InitSha256(wc_Sha256* sha256)
         XMEMCPY(&local[WC_SHA256_PAD_SIZE + sizeof(word32)], &sha256->loLen,
                 sizeof(word32));
 
-    #if defined(FREESCALE_MMCAU_SHA) || (defined(USE_INTEL_SPEEDUP) && \
+    #if defined(FREESCALE_MMCAU_SHA) || \
+        (defined(WOLFSSL_X86_64_BUILD) && defined(USE_INTEL_SPEEDUP) && \
                          (defined(HAVE_INTEL_AVX1) || defined(HAVE_INTEL_AVX2)))
         /* Kinetis requires only these bytes reversed */
-        #if defined(USE_INTEL_SPEEDUP) && \
+        #if defined(WOLFSSL_X86_64_BUILD) && defined(USE_INTEL_SPEEDUP) && \
                           (defined(HAVE_INTEL_AVX1) || defined(HAVE_INTEL_AVX2))
         if (IS_INTEL_AVX1(intel_flags) || IS_INTEL_AVX2(intel_flags))
         #endif
@@ -1219,14 +1321,14 @@ static int InitSha256(wc_Sha256* sha256)
         }
     #endif
 
-    #if defined(WOLFSSL_ESP32WROOM32_CRYPT) && \
-         !defined(NO_WOLFSSL_ESP32WROOM32_CRYPT_HASH)
+    #if defined(WOLFSSL_USE_ESP32WROOM32_CRYPT_HASH_HW)
         if (sha256->ctx.mode == ESP32_SHA_INIT) {
             esp_sha_try_hw_lock(&sha256->ctx);
         }
         if (sha256->ctx.mode == ESP32_SHA_SW) {
             ret = XTRANSFORM(sha256, (const byte*)local);
-        } else {
+        }
+        else {
             ret = esp_sha256_digest_process(sha256, 1);
         }
     #else
@@ -1235,6 +1337,8 @@ static int InitSha256(wc_Sha256* sha256)
 
         return ret;
     }
+
+#if !defined(WOLFSSL_KCAPI_HASH)
 
     int wc_Sha256FinalRaw(wc_Sha256* sha256, byte* hash)
     {
@@ -1295,6 +1399,21 @@ static int InitSha256(wc_Sha256* sha256)
         return InitSha256(sha256);  /* reset state */
     }
 
+#endif /* !WOLFSSL_KCAPI_HASH */
+
+    #if defined(OPENSSL_EXTRA)
+/* Apply SHA256 transformation to the data                */
+/* @param sha  a pointer to wc_Sha256 structure           */
+/* @param data data to be applied SHA256 transformation   */
+/* @return 0 on successful, otherwise non-zero on failure */
+    int wc_Sha256Transform(wc_Sha256* sha, const unsigned char* data)
+    {
+        if (sha == NULL || data == NULL) {
+            return BAD_FUNC_ARG;
+        }
+        return (Transform_Sha256(sha, data));
+    }
+    #endif
 #endif /* XTRANSFORM */
 
 #ifdef WOLFSSL_SHA224
@@ -1307,7 +1426,6 @@ static int InitSha256(wc_Sha256* sha256)
     {
         if (sha224 == NULL)
             return BAD_FUNC_ARG;
-
         (void)devId;
         (void)heap;
 
@@ -1327,7 +1445,7 @@ static int InitSha256(wc_Sha256* sha256)
         ret = wolfSSL_CryptHwMutexLock();
         if (ret == 0) {
             ret = wc_Stm32_Hash_Update(&sha224->stmCtx,
-                HASH_AlgoSelection_SHA224, data, len);
+                HASH_AlgoSelection_SHA224, data, len, WC_SHA224_BLOCK_SIZE);
             wolfSSL_CryptHwMutexUnLock();
         }
         return ret;
@@ -1352,8 +1470,34 @@ static int InitSha256(wc_Sha256* sha256)
 
         return ret;
     }
+#elif defined(WOLFSSL_SE050) && defined(WOLFSSL_SE050_HASH)
 
-#elif defined(WOLFSSL_IMX6_CAAM) && !defined(NO_IMX6_CAAM_HASH)
+    int wc_InitSha224_ex(wc_Sha224* sha224, void* heap, int devId)
+    {
+        if (sha224 == NULL) {
+            return BAD_FUNC_ARG;
+        }
+        (void)devId;
+
+        return se050_hash_init(&sha224->se050Ctx, heap);
+    }
+
+    int wc_Sha224Update(wc_Sha224* sha224, const byte* data, word32 len)
+    {
+        return se050_hash_update(&sha224->se050Ctx, data, len);
+    }
+
+    int wc_Sha224Final(wc_Sha224* sha224, byte* hash)
+    {
+        int ret = 0;
+        ret = se050_hash_final(&sha224->se050Ctx, hash, WC_SHA224_DIGEST_SIZE,
+                               kAlgorithm_SSS_SHA224);
+        (void)wc_InitSha224(sha224);
+        return ret;
+    }
+
+#elif defined(WOLFSSL_IMX6_CAAM) && !defined(NO_IMX6_CAAM_HASH) && \
+    !defined(WOLFSSL_QNX_CAAM)
     /* functions defined in wolfcrypt/src/port/caam/caam_sha256.c */
 
 #elif defined(WOLFSSL_AFALG_HASH)
@@ -1364,6 +1508,12 @@ static int InitSha256(wc_Sha256* sha256)
 
 #elif defined(WOLFSSL_SILABS_SE_ACCEL)
     /* implemented in wolfcrypt/src/port/silabs/silabs_hash.c */
+
+#elif defined(WOLFSSL_KCAPI_HASH) && !defined(WOLFSSL_NO_KCAPI_SHA224)
+    /* implemented in wolfcrypt/src/port/kcapi/kcapi_hash.c */
+
+#elif defined(WOLFSSL_HAVE_PSA) && !defined(WOLFSSL_PSA_NO_HASH)
+    /* implemented in wolfcrypt/src/port/psa/psa_hash.c */
 
 #else
 
@@ -1391,14 +1541,20 @@ static int InitSha256(wc_Sha256* sha256)
         sha224->loLen   = 0;
         sha224->hiLen   = 0;
 
-    #if defined(USE_INTEL_SPEEDUP) && \
+    #if defined(WOLFSSL_X86_64_BUILD) && defined(USE_INTEL_SPEEDUP) && \
                           (defined(HAVE_INTEL_AVX1) || defined(HAVE_INTEL_AVX2))
         /* choose best Transform function under this runtime environment */
         Sha256_SetTransform();
     #endif
-    #if defined(WOLFSSL_HASH_FLAGS) || defined(WOLF_CRYPTO_CB)
+    #ifdef WOLFSSL_HASH_FLAGS
         sha224->flags = 0;
     #endif
+    #ifdef WOLFSSL_HASH_KEEP
+        sha224->msg  = NULL;
+        sha224->len  = 0;
+        sha224->used = 0;
+    #endif
+
 
         return ret;
     }
@@ -1485,8 +1641,16 @@ static int InitSha256(wc_Sha256* sha256)
 
     int wc_InitSha224(wc_Sha224* sha224)
     {
-        return wc_InitSha224_ex(sha224, NULL, INVALID_DEVID);
+        int devId = INVALID_DEVID;
+
+    #ifdef WOLF_CRYPTO_CB
+        devId = wc_CryptoCb_DefaultDevID();
+    #endif
+        return wc_InitSha224_ex(sha224, NULL, devId);
     }
+
+#if !defined(WOLFSSL_HAVE_PSA) || defined(WOLFSSL_PSA_NO_HASH)
+    /* implemented in wolfcrypt/src/port/psa/psa_hash.c */
 
     void wc_Sha224Free(wc_Sha224* sha224)
     {
@@ -1507,14 +1671,26 @@ static int InitSha256(wc_Sha256* sha256)
     #ifdef WOLFSSL_PIC32MZ_HASH
         wc_Sha256Pic32Free(sha224);
     #endif
+    #if defined(WOLFSSL_KCAPI_HASH)
+        KcapiHashFree(&sha224->kcapi);
+    #endif
     }
 #endif /* WOLFSSL_SHA224 */
+#endif /* !defined(WOLFSSL_HAVE_PSA) || defined(WOLFSSL_PSA_NO_HASH) */
 
 
 int wc_InitSha256(wc_Sha256* sha256)
 {
-    return wc_InitSha256_ex(sha256, NULL, INVALID_DEVID);
+    int devId = INVALID_DEVID;
+
+#ifdef WOLF_CRYPTO_CB
+    devId = wc_CryptoCb_DefaultDevID();
+#endif
+    return wc_InitSha256_ex(sha256, NULL, devId);
 }
+
+#if !defined(WOLFSSL_HAVE_PSA) || defined(WOLFSSL_PSA_NO_HASH)
+    /* implemented in wolfcrypt/src/port/psa/psa_hash.c */
 
 void wc_Sha256Free(wc_Sha256* sha256)
 {
@@ -1550,16 +1726,68 @@ void wc_Sha256Free(wc_Sha256* sha256)
 #if (defined(WOLFSSL_AFALG_HASH) && defined(WOLFSSL_AFALG_HASH_KEEP)) || \
     (defined(WOLFSSL_DEVCRYPTO_HASH) && defined(WOLFSSL_DEVCRYPTO_HASH_KEEP)) || \
     (defined(WOLFSSL_RENESAS_TSIP_CRYPT) && \
-    !defined(NO_WOLFSSL_RENESAS_TSIP_CRYPT_HASH))
+    !defined(NO_WOLFSSL_RENESAS_TSIP_CRYPT_HASH)) || \
+    (defined(WOLFSSL_RENESAS_SCEPROTECT) && \
+    !defined(NO_WOLFSSL_RENESAS_SCEPROTECT_HASH)) || \
+    defined(WOLFSSL_HASH_KEEP)
+
     if (sha256->msg != NULL) {
         XFREE(sha256->msg, sha256->heap, DYNAMIC_TYPE_TMP_BUFFER);
         sha256->msg = NULL;
     }
 #endif
+#if defined(WOLFSSL_SE050) && defined(WOLFSSL_SE050_HASH)
+    se050_hash_free(&sha256->se050Ctx);
+#endif
+#if defined(WOLFSSL_KCAPI_HASH)
+    KcapiHashFree(&sha256->kcapi);
+#endif
 #ifdef WOLFSSL_IMXRT_DCP
     DCPSha256Free(sha256);
 #endif
+#ifdef WOLFSSL_MAXQ10XX_CRYPTO
+    wc_MAXQ10XX_Sha256Free(sha256);
+#endif
+
+/* Espressif embedded hardware acceleration specific: */
+#if defined(WOLFSSL_USE_ESP32WROOM32_CRYPT_HASH_HW)
+    if (sha256->ctx.lockDepth > 0) {
+        /* probably due to unclean shutdown, error, or other problem.
+         *
+         * if you find yourself here, code needs to be cleaned up to
+         * properly release hardware. this init is only for handling
+         * the unexpected. by the time free is called, the hardware
+         * should have already been released (lockDepth = 0)
+         */
+        InitSha256(sha256); /* unlock mutex, set mode to ESP32_SHA_INIT */
+        ESP_LOGV("sha256", "Alert: hardware unlock needed in wc_Sha256Free.");
+    }
+    else {
+        ESP_LOGV("sha256", "Hardware unlock not needed in wc_Sha256Free.");
+    }
+#endif
 }
+
+#endif /* !defined(WOLFSSL_HAVE_PSA) || defined(WOLFSSL_PSA_NO_HASH) */
+#ifdef WOLFSSL_HASH_KEEP
+/* Some hardware have issues with update, this function stores the data to be
+ * hashed into an array. Once ready, the Final operation is called on all of the
+ * data to be hashed at once.
+ * returns 0 on success
+ */
+int wc_Sha256_Grow(wc_Sha256* sha256, const byte* in, int inSz)
+{
+    return _wc_Hash_Grow(&(sha256->msg), &(sha256->used), &(sha256->len), in,
+                        inSz, sha256->heap);
+}
+#ifdef WOLFSSL_SHA224
+int wc_Sha224_Grow(wc_Sha224* sha224, const byte* in, int inSz)
+{
+    return _wc_Hash_Grow(&(sha224->msg), &(sha224->used), &(sha224->len), in,
+                        inSz, sha224->heap);
+}
+#endif /* WOLFSSL_SHA224 */
+#endif /* WOLFSSL_HASH_KEEP */
 
 #endif /* !WOLFSSL_TI_HASH */
 #endif /* HAVE_FIPS */
@@ -1567,21 +1795,47 @@ void wc_Sha256Free(wc_Sha256* sha256)
 
 #ifndef WOLFSSL_TI_HASH
 #ifdef WOLFSSL_SHA224
+
+#if defined(WOLFSSL_KCAPI_HASH) && !defined(WOLFSSL_NO_KCAPI_SHA224)
+    /* implemented in wolfcrypt/src/port/kcapi/kcapi_hash.c */
+#elif defined(WOLFSSL_HAVE_PSA) && !defined(WOLFSSL_PSA_NO_HASH)
+    /* implemented in wolfcrypt/src/port/psa/psa_hash.c */
+
+#else
+
     int wc_Sha224GetHash(wc_Sha224* sha224, byte* hash)
     {
         int ret;
-        wc_Sha224 tmpSha224;
+    #ifdef WOLFSSL_SMALL_STACK
+        wc_Sha224* tmpSha224;
+    #else
+        wc_Sha224  tmpSha224[1];
+    #endif
 
-        if (sha224 == NULL || hash == NULL)
+        if (sha224 == NULL || hash == NULL) {
             return BAD_FUNC_ARG;
-
-        ret = wc_Sha224Copy(sha224, &tmpSha224);
-        if (ret == 0) {
-            ret = wc_Sha224Final(&tmpSha224, hash);
-            wc_Sha224Free(&tmpSha224);
         }
+
+    #ifdef WOLFSSL_SMALL_STACK
+        tmpSha224 = (wc_Sha224*)XMALLOC(sizeof(wc_Sha224), NULL,
+            DYNAMIC_TYPE_TMP_BUFFER);
+        if (tmpSha224 == NULL) {
+            return MEMORY_E;
+        }
+    #endif
+
+        ret = wc_Sha224Copy(sha224, tmpSha224);
+        if (ret == 0) {
+            ret = wc_Sha224Final(tmpSha224, hash);
+            wc_Sha224Free(tmpSha224);
+        }
+
+    #ifdef WOLFSSL_SMALL_STACK
+        XFREE(tmpSha224, NULL, DYNAMIC_TYPE_TMP_BUFFER);
+    #endif
         return ret;
     }
+
     int wc_Sha224Copy(wc_Sha224* src, wc_Sha224* dst)
     {
         int ret = 0;
@@ -1599,17 +1853,28 @@ void wc_Sha256Free(wc_Sha256* sha256)
         dst->silabsCtx.hash_ctx.hash_type_ctx = &(dst->silabsCtx.hash_type_ctx);
     #endif
 
-    #ifdef WOLFSSL_ASYNC_CRYPT
+    #if defined(WOLFSSL_ASYNC_CRYPT) && defined(WC_ASYNC_ENABLE_SHA224)
         ret = wolfAsync_DevCopy(&src->asyncDev, &dst->asyncDev);
     #endif
-    #if defined(WOLFSSL_HASH_FLAGS) || defined(WOLF_CRYPTO_CB)
+    #ifdef WOLFSSL_HASH_FLAGS
         dst->flags |= WC_HASH_FLAG_ISCOPY;
+    #endif
+    #if defined(WOLFSSL_HASH_KEEP)
+        if (src->msg != NULL) {
+            dst->msg = (byte*)XMALLOC(src->len, dst->heap,
+                                      DYNAMIC_TYPE_TMP_BUFFER);
+            if (dst->msg == NULL)
+                return MEMORY_E;
+            XMEMCPY(dst->msg, src->msg, src->len);
+        }
     #endif
 
         return ret;
     }
 
-#if defined(WOLFSSL_HASH_FLAGS) || defined(WOLF_CRYPTO_CB)
+#endif /* WOLFSSL_KCAPI_HASH && !WOLFSSL_NO_KCAPI_SHA224 */
+
+#ifdef WOLFSSL_HASH_FLAGS
     int wc_Sha224SetFlags(wc_Sha224* sha224, word32 flags)
     {
         if (sha224) {
@@ -1638,40 +1903,75 @@ void wc_Sha256Free(wc_Sha256* sha256)
     !defined(NO_WOLFSSL_RENESAS_TSIP_CRYPT_HASH)
 
     /* implemented in wolfcrypt/src/port/Renesas/renesas_tsip_sha.c */
+
+#elif defined(WOLFSSL_RENESAS_SCEPROTECT) && \
+    !defined(NO_WOLFSSL_RENESAS_SCEPROTECT_HASH)
+
+    /* implemented in wolfcrypt/src/port/Renesas/renesas_sce_sha.c */
+
 #elif defined(WOLFSSL_PSOC6_CRYPTO)
     /* implemented in wolfcrypt/src/port/cypress/psoc6_crypto.c */
 #elif defined(WOLFSSL_IMXRT_DCP)
     /* implemented in wolfcrypt/src/port/nxp/dcp_port.c */
+#elif defined(WOLFSSL_KCAPI_HASH)
+    /* implemented in wolfcrypt/src/port/kcapi/kcapi_hash.c */
+
+#elif defined(WOLFSSL_HAVE_PSA) && !defined(WOLFSSL_PSA_NO_HASH)
+    /* implemented in wolfcrypt/src/port/psa/psa_hash.c */
+
 #else
 
 int wc_Sha256GetHash(wc_Sha256* sha256, byte* hash)
 {
     int ret;
-    wc_Sha256 tmpSha256;
+#ifdef WOLFSSL_SMALL_STACK
+    wc_Sha256* tmpSha256;
+#else
+    wc_Sha256  tmpSha256[1];
+#endif
 
-    if (sha256 == NULL || hash == NULL)
+    if (sha256 == NULL || hash == NULL) {
         return BAD_FUNC_ARG;
+    }
 
-#if  defined(WOLFSSL_ESP32WROOM32_CRYPT) && \
-    !defined(NO_WOLFSSL_ESP32WROOM32_CRYPT_HASH)
-    if(sha256->ctx.mode == ESP32_SHA_INIT){
+#ifdef WOLFSSL_SMALL_STACK
+    tmpSha256 = (wc_Sha256*)XMALLOC(sizeof(wc_Sha256), NULL,
+        DYNAMIC_TYPE_TMP_BUFFER);
+    if (tmpSha256 == NULL) {
+        return MEMORY_E;
+    }
+#endif
+
+#if defined(WOLFSSL_USE_ESP32WROOM32_CRYPT_HASH_HW)
+    /* ESP32 hardware can only handle only 1 active hardware hashing
+     * at a time. If the mutex lock is acquired the first time then
+     * that Sha256 instance has exclusive access to hardware. The
+     * final or free needs to release the mutex. Operations that
+     * do not get the lock fallback to software based Sha256 */
+
+    if (sha256->ctx.mode == ESP32_SHA_INIT) {
         esp_sha_try_hw_lock(&sha256->ctx);
     }
-    if(sha256->ctx.mode == ESP32_SHA_HW)
-    {
+    if (sha256->ctx.mode == ESP32_SHA_HW) {
         esp_sha256_digest_process(sha256, 0);
     }
 #endif
-    ret = wc_Sha256Copy(sha256, &tmpSha256);
+
+    ret = wc_Sha256Copy(sha256, tmpSha256);
     if (ret == 0) {
-        ret = wc_Sha256Final(&tmpSha256, hash);
-#if  defined(WOLFSSL_ESP32WROOM32_CRYPT) && \
-    !defined(NO_WOLFSSL_ESP32WROOM32_CRYPT_HASH)
+        ret = wc_Sha256Final(tmpSha256, hash);
+
+    #if defined(WOLFSSL_USE_ESP32WROOM32_CRYPT_HASH_HW)
         sha256->ctx.mode = ESP32_SHA_SW;
+    #endif
+
+        wc_Sha256Free(tmpSha256);
+    }
+
+#ifdef WOLFSSL_SMALL_STACK
+    XFREE(tmpSha256, NULL, DYNAMIC_TYPE_TMP_BUFFER);
 #endif
 
-        wc_Sha256Free(&tmpSha256);
-    }
     return ret;
 }
 int wc_Sha256Copy(wc_Sha256* src, wc_Sha256* dst)
@@ -1682,6 +1982,11 @@ int wc_Sha256Copy(wc_Sha256* src, wc_Sha256* dst)
         return BAD_FUNC_ARG;
 
     XMEMCPY(dst, src, sizeof(wc_Sha256));
+
+#ifdef WOLFSSL_MAXQ10XX_CRYPTO
+    wc_MAXQ10XX_Sha256Copy(src);
+#endif
+
 #ifdef WOLFSSL_SMALL_STACK_CACHE
     dst->W = NULL;
 #endif
@@ -1691,27 +1996,37 @@ int wc_Sha256Copy(wc_Sha256* src, wc_Sha256* dst)
     dst->silabsCtx.hash_ctx.hash_type_ctx = &(dst->silabsCtx.hash_type_ctx);
 #endif
 
-#ifdef WOLFSSL_ASYNC_CRYPT
+#if defined(WOLFSSL_ASYNC_CRYPT) && defined(WC_ASYNC_ENABLE_SHA256)
     ret = wolfAsync_DevCopy(&src->asyncDev, &dst->asyncDev);
 #endif
 #ifdef WOLFSSL_PIC32MZ_HASH
     ret = wc_Pic32HashCopy(&src->cache, &dst->cache);
 #endif
-#if  defined(WOLFSSL_ESP32WROOM32_CRYPT) && \
-    !defined(NO_WOLFSSL_ESP32WROOM32_CRYPT_HASH)
-     dst->ctx.mode = src->ctx.mode;
-     dst->ctx.isfirstblock = src->ctx.isfirstblock;
-     dst->ctx.sha_type = src->ctx.sha_type;
+
+#if defined(WOLFSSL_USE_ESP32WROOM32_CRYPT_HASH_HW)
+    dst->ctx.mode         = src->ctx.mode;
+    dst->ctx.isfirstblock = src->ctx.isfirstblock;
+    dst->ctx.sha_type     = src->ctx.sha_type;
+    dst->ctx.lockDepth    = src->ctx.lockDepth;
 #endif
-#if defined(WOLFSSL_HASH_FLAGS) || defined(WOLF_CRYPTO_CB)
+
+#ifdef WOLFSSL_HASH_FLAGS
      dst->flags |= WC_HASH_FLAG_ISCOPY;
+#endif
+#if defined(WOLFSSL_HASH_KEEP)
+    if (src->msg != NULL) {
+        dst->msg = (byte*)XMALLOC(src->len, dst->heap, DYNAMIC_TYPE_TMP_BUFFER);
+        if (dst->msg == NULL)
+            return MEMORY_E;
+        XMEMCPY(dst->msg, src->msg, src->len);
+    }
 #endif
 
     return ret;
 }
 #endif
 
-#if defined(WOLFSSL_HASH_FLAGS) || defined(WOLF_CRYPTO_CB)
+#ifdef WOLFSSL_HASH_FLAGS
 int wc_Sha256SetFlags(wc_Sha256* sha256, word32 flags)
 {
     if (sha256) {
