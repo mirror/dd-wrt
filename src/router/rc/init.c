@@ -287,7 +287,7 @@ void shutdown_system(void)
 		dd_loginfo("init", "Sending SIGTERM to all processes\n");
 		kill(-1, SIGTERM);
 #ifdef HAVE_TRANSMISSION
-		dd_loginfo("init", "Waitng some seconds to give programs time to flush\n");
+		dd_loginfo("init", "Waiting some seconds to give programs time to flush\n");
 		sleep(10);
 #endif
 		sync();
