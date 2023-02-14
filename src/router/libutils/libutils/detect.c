@@ -1092,6 +1092,18 @@ int internal_getRouterBrand()
 			setRouter("Dlink DIR-878 A1");
 			return ROUTER_DIR882;
 		}
+		fseek(fp, 32, SEEK_SET);
+		char sign[32];
+		fread(&sign, 32, 1, fp);
+		fclose(fp);
+		if (!memcmp(sign, "DIR_882", 7)) {
+			setRouter("Dlink DIR-882 R1");
+			return ROUTER_DIR882;
+		}
+		if (!memcmp(sign, "DIR_878", 7)) {
+			setRouter("Dlink DIR-878 R1");
+			return ROUTER_DIR882;
+		}
 	}
 	setRouter("Dlink DIR-860L B1");
 	return ROUTER_DIR860LB1;
