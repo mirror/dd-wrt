@@ -22,8 +22,8 @@ PHP 8.2 UPGRADE NOTES
 - Date:
   . DateTime::createFromImmutable() now has a tentative return type of static,
     previously it was DateTime.
-  . DateTimeImmutable::createFromMutable() now has a tentative return type of static,
-    previously it was DateTimeImmutable.
+  . DateTimeImmutable::createFromMutable() now has a tentative return type of
+    static, previously it was DateTimeImmutable.
 
 - ODBC:
   . The ODBC extension now escapes the username and password for the case when
@@ -134,10 +134,14 @@ PHP 8.2 UPGRADE NOTES
     RFC: https://wiki.php.net/rfc/rng_extension
     RFC: https://wiki.php.net/rfc/random_extension_improvement
 
-
 ========================================
 3. Changes in SAPI modules
 ========================================
+
+- FPM:
+  . If setting user by its UID without setting a group, then the group is no
+    longer set to 0 (root) but instead to the user assigned groups like it is
+    when setting user by name.
 
 ========================================
 4. Deprecated Functionality
@@ -219,6 +223,10 @@ PHP 8.2 UPGRADE NOTES
     widened to iterable from Iterator, allowing arrays to be passed.
     RFC: https://wiki.php.net/rfc/iterator_xyz_accept_array
 
+- Standard
+  . unserialize() now performs a stricter validation of the structure of serialized
+    objects.
+
 - XML
   . xml_parser_set_option() now actually returns false when attempting to set a
     negative tag start. Previously it returned true while emitting an E_WARNING.
@@ -229,6 +237,9 @@ PHP 8.2 UPGRADE NOTES
 
 - Curl:
   . curl_upkeep() (libcurl >= 7.62.0)
+
+- IMAP:
+  . imap_is_open() (Only as of PHP 8.2.1)
 
 - mysqli:
   . mysqli_execute_query()
@@ -284,9 +295,11 @@ PHP 8.2 UPGRADE NOTES
     unserialization yielded unusable objects or failed.
 
 - mysqli:
-  . The support for libmysql has been removed. It's no longer possible to compile
-    mysqli with libmysql and all relevant functionality has been removed.
-  . The reconnect property of mysqli_driver has been removed. It was supported only by libmysql.
+  . The support for libmysql has been removed. It's no longer possible to
+    compile mysqli with libmysql and all relevant functionality has been
+    removed.
+  . The reconnect property of mysqli_driver has been removed. It was supported
+    only by libmysql.
   . The INI directive mysqli.reconnect has been removed.
   . The constant MYSQLI_IS_MARIADB has been deprecated.
 

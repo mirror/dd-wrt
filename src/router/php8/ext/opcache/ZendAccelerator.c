@@ -3983,7 +3983,7 @@ static void preload_link(void)
 			if (ce->type == ZEND_INTERNAL_CLASS) {
 				break;
 			}
-			if (!(ce->ce_flags & ZEND_ACC_CONSTANTS_UPDATED)) {
+			if ((ce->ce_flags & ZEND_ACC_LINKED) && !(ce->ce_flags & ZEND_ACC_CONSTANTS_UPDATED)) {
 				if (!(ce->ce_flags & ZEND_ACC_TRAIT)) { /* don't update traits */
 					CG(in_compilation) = true; /* prevent autoloading */
 					if (preload_try_resolve_constants(ce)) {
@@ -4412,6 +4412,8 @@ static int accel_preload(const char *config, bool in_child)
 
 		if (PG(auto_globals_jit)) {
 			ping_auto_globals_mask = zend_accel_get_auto_globals();
+		} else {
+			ping_auto_globals_mask = 0;
 		}
 
 		if (EG(zend_constants)) {
