@@ -88,9 +88,9 @@ for i in $(seq 1 $tunnels); do
 			WGDELRT="/tmp/wgdelrt_oet${i}"
 			if [ $($nv get oet${i}_mit) -eq 1 ]; then
 				insmod xt_addrtype >/dev/null 2>&1
-				echo "$ipt -t raw -D PREROUTING ! -i oet${i} -d $(getipmask oet${i}) -m addrtype ! --src-type LOCAL -j $DROP" >> $WGDELRT
-				$ipt -t raw -I PREROUTING ! -i oet${i} -d $(getipmask oet${i}) -m addrtype ! --src-type LOCAL -j $DROP
-				#$ipt -t raw -I PREROUTING ! -i oet${i} -d $(getipmask oet${i}) -j $DROP
+				echo "$ipt -t raw -D PREROUTING ! -i oet${i} -d $(getipmask oet${i}) -m addrtype ! --src-type LOCAL -j DROP" >> $WGDELRT
+				$ipt -t raw -I PREROUTING ! -i oet${i} -d $(getipmask oet${i}) -m addrtype ! --src-type LOCAL -j DROP
+				#$ipt -t raw -I PREROUTING ! -i oet${i} -d $(getipmask oet${i}) -j DROP
 			fi
 			#add NAT out for WG interface
 			if [[ $($nv get oet${i}_natout) -eq 1 ]]; then
