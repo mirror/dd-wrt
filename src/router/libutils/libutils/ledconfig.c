@@ -305,9 +305,6 @@ static void getledconfig(struct ledconfig *cfg)
 //              cfg->disconnected_gpio = 0xf;
 //              cfg->power_gpio = GPIO_LOW | 0x5;
 //              cfg->diag_gpio = 0x5;
-#elif HAVE_DW02_412H
-//              cfg->disconnected_gpio = 22;
-//              cfg->connected_gpio = GPIO_LOW | 22;
 #elif HAVE_RAMBUTAN
 //              cfg->disconnected_gpio = 0xf;
 //              cfg->power_gpio = GPIO_LOW | 0x5;
@@ -655,6 +652,12 @@ static void getledconfig(struct ledconfig *cfg)
 		cfg->ses_gpio = GPIO_LOW | 0x5;	//correct state missing
 		cfg->usb_gpio = GPIO_LOW | 0x8;
 //              cfg->sec0_gpio = GPIO_LOW | 0x4;
+		break;
+#elif HAVE_DW02_412H
+	case ROUTER_BOARD_WHRHPGN:
+//              cfg->disconnected_gpio = 22;
+		cfg->connected_gpio = GPIO_LOW | 0x16;
+		cfg->wlan_gpio = GPIO_LOW | 0x0d;
 		break;
 #elif HAVE_PERU
 	case ROUTER_BOARD_WHRHPGN:
