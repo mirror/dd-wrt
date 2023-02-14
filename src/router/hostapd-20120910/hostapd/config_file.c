@@ -2581,6 +2581,8 @@ static int hostapd_config_fill(struct hostapd_config *conf,
 		{
 			conf->vht_oper_centr_freq_seg0_idx = atoi(pos);
 #endif /* CONFIG_IEEE80211AC */
+		} else if (os_strcmp(buf, "no_country_ie") == 0) {
+			conf->no_country_ie = atoi(pos);
 		} else if (os_strcmp(buf, "max_listen_interval") == 0) {
 			bss->max_listen_interval = atoi(pos);
 		} else if (os_strcmp(buf, "disable_pmksa_caching") == 0) {
