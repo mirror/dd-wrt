@@ -467,6 +467,7 @@ struct hostapd_bss_config {
 struct hostapd_config {
 	struct hostapd_bss_config *bss, *last_bss;
 	size_t num_bss;
+	int no_country_ie;
 
 	u16 beacon_int;
 	int rts_threshold;
