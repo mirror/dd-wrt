@@ -779,6 +779,7 @@ struct spatial_reuse {
  */
 struct hostapd_config {
 	struct hostapd_bss_config **bss, *last_bss;
+	int no_country_ie;
 	size_t num_bss;
 
 	u16 beacon_int;
