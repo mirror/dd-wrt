@@ -86,10 +86,14 @@ static void deconfigure_single(int count)
 	char wifivifs[16];
 	sprintf(wifivifs, "wlan%d_vifs", count);
 	sprintf(dev, "wlan%d", count);
-	if (!strncmp(dev, "wlan0", 4))
+	if (!strncmp(dev, "wlan0", 4)) {
 		led_control(LED_SEC0, LED_OFF);
-	if (!strncmp(dev, "wlan1", 4))
+		led_control(LED_WLAN0, LED_OFF);
+	}
+	if (!strncmp(dev, "wlan1", 4)) {
 		led_control(LED_SEC1, LED_OFF);
+		led_control(LED_WLAN1, LED_OFF);
+	}
 
 	char vifs[128];
 	if (is_mac80211(dev)) {
@@ -330,6 +334,7 @@ void eap_sta_key_mgmt(FILE * fp, char *prefix)
 #endif
 
 }
+
 #ifndef HAVE_SUPERCHANNEL
 int inline issuperchannel(void)
 {
@@ -364,7 +369,7 @@ void addvhtcaps(char *prefix, FILE * fp)
 	unsigned int mask;
 	if (is_mt7615(prefix) || is_ath10k(prefix) || is_brcmfmac(prefix) || is_mt7915(prefix) || is_mt7921(prefix) || is_mt7603(prefix) || is_mt76x0(prefix) || is_mt76x2(prefix)) {
 		char *netmode = nvram_nget("%s_net_mode", prefix);
-		if (has_ac(prefix) && (!strcmp(netmode, "ac-only") || !strcmp(netmode, "acn-mixed") || !strcmp(netmode, "mixed") || (cansuperchannel(prefix) && nvram_nmatch("1", "%s_turbo_qam",prefix)))) {
+		if (has_ac(prefix) && (!strcmp(netmode, "ac-only") || !strcmp(netmode, "acn-mixed") || !strcmp(netmode, "mixed") || (cansuperchannel(prefix) && nvram_nmatch("1", "%s_turbo_qam", prefix)))) {
 			char shortgi[32];
 			sprintf(shortgi, "%s_shortgi", prefix);
 			char mubf[32];
