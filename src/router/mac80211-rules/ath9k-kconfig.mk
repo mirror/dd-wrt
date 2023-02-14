@@ -78,6 +78,9 @@ ifeq ($(CONFIG_ATH5K),y)
 endif
 endif
 
+ifeq ($(CONFIG_ATH5K_AHB),y)
+  BUILDFLAGS += -DCONFIG_NOPRINTK
+endif
 ifeq ($(CONFIG_ONNET),y)
   BUILDFLAGS += -DHAVE_ONNET
 ifeq ($(CONFIG_XD3200),y)
@@ -270,8 +273,6 @@ ifeq ($(CONFIG_ATH5K_PCI),y)
 endif
 ifeq ($(CONFIG_ATH5K_AHB),y)
 	echo "CPTCFG_ATH5K_AHB=y" >>$(MAC80211_PATH)/.config_temp
-	BUILDFLAGS += -DCONFIG_NOPRINTK
-	
 endif
 endif
 ifeq ($(CONFIG_ATH10KUSB),y)
