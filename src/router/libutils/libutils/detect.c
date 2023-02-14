@@ -1083,7 +1083,6 @@ int internal_getRouterBrand()
 		fseek(fp, 64, SEEK_SET);
 		char sign[32];
 		fread(&sign, 32, 1, fp);
-		fclose(fp);
 		if (!memcmp(sign, "DIR-882", 7)) {
 			setRouter("Dlink DIR-882 A1");
 			return ROUTER_DIR882;
@@ -1093,7 +1092,6 @@ int internal_getRouterBrand()
 			return ROUTER_DIR882;
 		}
 		fseek(fp, 32, SEEK_SET);
-		char sign[32];
 		fread(&sign, 32, 1, fp);
 		fclose(fp);
 		if (!memcmp(sign, "DIR_882", 7)) {
