@@ -393,6 +393,9 @@ ifeq ($(CONFIG_DIR860),y)
 ifeq ($(CONFIG_DIR882),y)
 	$(ARCH)-linux-uclibc-cpp -nostdinc -x assembler-with-cpp -I$(LINUXDIR)/arch/mips/boot/dts -I$(LINUXDIR)/arch/mips/boot/dts/include -I$(LINUXDIR)/include -undef -D__DTS__ -o $(LINUXDIR)/dts/DIR-882.dtb.tmp $(LINUXDIR)/dts/DIR-882.dts
 	$(LINUXDIR)/scripts/dtc/dtc -i $(LINUXDIR)/dts/ -O dtb -o $(LINUXDIR)/dts/MT7620a.dtb $(LINUXDIR)/dts/DIR-882.dtb.tmp
+
+	$(ARCH)-linux-uclibc-cpp -nostdinc -x assembler-with-cpp -I$(LINUXDIR)/arch/mips/boot/dts -I$(LINUXDIR)/arch/mips/boot/dts/include -I$(LINUXDIR)/include -undef -D__DTS__ -o $(LINUXDIR)/dts/DIR-882-R1.dtb.tmp $(LINUXDIR)/dts/DIR-882-R1.dts
+	$(LINUXDIR)/scripts/dtc/dtc -i $(LINUXDIR)/dts/ -O dtb -o $(LINUXDIR)/dts/MT7620a-R1.dtb $(LINUXDIR)/dts/DIR-882-R1.dtb.tmp
 else
 	$(ARCH)-linux-uclibc-cpp -nostdinc -x assembler-with-cpp -I$(LINUXDIR)/arch/mips/boot/dts -I$(LINUXDIR)/arch/mips/boot/dts/include -I$(LINUXDIR)/include -undef -D__DTS__ -o $(LINUXDIR)/dts/DIR-860.dtb.tmp $(LINUXDIR)/dts/DIR-860.dts
 	$(LINUXDIR)/scripts/dtc/dtc -i $(LINUXDIR)/dts/ -O dtb -o $(LINUXDIR)/dts/MT7620a.dtb $(LINUXDIR)/dts/DIR-860.dtb.tmp
@@ -448,6 +451,10 @@ ifeq ($(CONFIG_R6800),y)
 	patch-dtb $(LINUXDIR)/vmlinux-r6220 $(LINUXDIR)/dts/MT7620a_6220.dtb
 	patch-dtb $(LINUXDIR)/vmlinux-wac124 $(LINUXDIR)/dts/MT7620a_124.dtb
 	patch-dtb $(LINUXDIR)/vmlinux-3700 $(LINUXDIR)/dts/MT7620a_3700.dtb
+endif
+ifeq ($(CONFIG_DIR882),y)
+	cp $(LINUXDIR)/vmlinux-mt7620 $(LINUXDIR)/vmlinux-mt7620-r1
+	patch-dtb $(LINUXDIR)/vmlinux-mt7620-r1 $(LINUXDIR)/dts/MT7620a-R1.dtb
 endif
 	patch-dtb $(LINUXDIR)/vmlinux-mt7620 $(LINUXDIR)/dts/MT7620a.dtb
 #	$(call CompressLzma,$(KDIR)/vmlinux-$(1)$(3),$(KDIR)/vmlinux-$(1)$(3).bin.lzma)
@@ -806,6 +813,7 @@ endif
 	$(LINUXDIR)/scripts/squashfs/mksquashfs4 $(ARCH)-uclibc/target $(ARCH)-uclibc/root.fs -comp xz -nopad  -root-owned -noappend -b 262144
 #	$(LINUXDIR)/scripts/squashfs/mksquashfs-lzma $(ARCH)-uclibc/target $(ARCH)-uclibc/root.fs -noappend -root-owned -le -nopad
 	dd if=mipsel-uclibc/root-mt7621_dir882.uimage of=mipsel-uclibc/aligned-mt7621_dir882.uimage bs=65536 conv=sync
+	dd if=mipsel-uclibc/root-mt7621_dir882-r1.uimage of=mipsel-uclibc/aligned-mt7621_dir882-r1.uimage bs=65536 conv=sync
 	dd if=mipsel-uclibc/root-mt7621_dir878.uimage of=mipsel-uclibc/aligned-mt7621_dir878.uimage bs=65536 conv=sync
 #	cp mipsel-uclibc/root-mt7621_dir882.uimage mipsel-uclibc/aligned-mt7621_dir882.uimage
 #	cp mipsel-uclibc/root-mt7621_dir878.uimage mipsel-uclibc/aligned-mt7621_dir878.uimage
@@ -816,6 +824,11 @@ endif
 
 	cat mipsel-uclibc/root.fs  >> mipsel-uclibc/aligned-mt7621_dir882.uimage
 	./tools/trx_n -m 40000000 -o mipsel-uclibc/dir882-a1-webflash.bin mipsel-uclibc/aligned-mt7621_dir882.uimage
+
+	cat mipsel-uclibc/root.fs  >> mipsel-uclibc/aligned-mt7621_dir882-r1.uimage
+	./tools/sign_dlink_ru/sign_dlink_ru mipsel-uclibc/aligned-mt7621_dir882-r1.uimage 57c5375741c30ca9ebcb36713db4ba51 ab0dff19af8842cdb70a86b4b68d23f7
+	mv mipsel-uclibc/aligned-mt7621_dir882-r1.uimage.new mipsel-uclibc/aligned-mt7621_dir882-r1.uimage
+	./tools/trx_n -m 40000000 -o mipsel-uclibc/dir882-r1-webflash.bin mipsel-uclibc/aligned-mt7621_dir882-r1.uimage
 
 
 ifeq ($(CONFIG_MT7620),y)
