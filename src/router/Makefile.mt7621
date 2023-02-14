@@ -814,6 +814,7 @@ endif
 #	$(LINUXDIR)/scripts/squashfs/mksquashfs-lzma $(ARCH)-uclibc/target $(ARCH)-uclibc/root.fs -noappend -root-owned -le -nopad
 	dd if=mipsel-uclibc/root-mt7621_dir882.uimage of=mipsel-uclibc/aligned-mt7621_dir882.uimage bs=65536 conv=sync
 	dd if=mipsel-uclibc/root-mt7621_dir882-r1.uimage of=mipsel-uclibc/aligned-mt7621_dir882-r1.uimage bs=65536 conv=sync
+	dd if=mipsel-uclibc/root-mt7621_dir878-r1.uimage of=mipsel-uclibc/aligned-mt7621_dir878-r1.uimage bs=65536 conv=sync
 	dd if=mipsel-uclibc/root-mt7621_dir878.uimage of=mipsel-uclibc/aligned-mt7621_dir878.uimage bs=65536 conv=sync
 #	cp mipsel-uclibc/root-mt7621_dir882.uimage mipsel-uclibc/aligned-mt7621_dir882.uimage
 #	cp mipsel-uclibc/root-mt7621_dir878.uimage mipsel-uclibc/aligned-mt7621_dir878.uimage
@@ -826,9 +827,14 @@ endif
 	./tools/trx_n -m 40000000 -o mipsel-uclibc/dir882-a1-webflash.bin mipsel-uclibc/aligned-mt7621_dir882.uimage
 
 	cat mipsel-uclibc/root.fs  >> mipsel-uclibc/aligned-mt7621_dir882-r1.uimage
+	cat mipsel-uclibc/root.fs  >> mipsel-uclibc/aligned-mt7621_dir878-r1.uimage
 	./tools/sign_dlink_ru/sign_dlink_ru mipsel-uclibc/aligned-mt7621_dir882-r1.uimage 57c5375741c30ca9ebcb36713db4ba51 ab0dff19af8842cdb70a86b4b68d23f7
+	./tools/sign_dlink_ru/sign_dlink_ru mipsel-uclibc/aligned-mt7621_dir878-r1.uimage 57c5375741c30ca9ebcb36713db4ba51 ab0dff19af8842cdb70a86b4b68d23f7
+
 	mv mipsel-uclibc/aligned-mt7621_dir882-r1.uimage.new mipsel-uclibc/aligned-mt7621_dir882-r1.uimage
+	mv mipsel-uclibc/aligned-mt7621_dir878-r1.uimage.new mipsel-uclibc/aligned-mt7621_dir878-r1.uimage
 	./tools/trx_n -m 40000000 -o mipsel-uclibc/dir882-r1-webflash.bin mipsel-uclibc/aligned-mt7621_dir882-r1.uimage
+	./tools/trx_n -m 40000000 -o mipsel-uclibc/dir878-r1-webflash.bin mipsel-uclibc/aligned-mt7621_dir878-r1.uimage
 
 
 ifeq ($(CONFIG_MT7620),y)
