@@ -728,6 +728,8 @@ void start_sysinit(void)
 
 	eval("ledtool", "1", "4");	//buzzer
 	eval("ledtool", "5", "0");	//diag ~5sec
+#elif HAVE_DW02_412H
+// 	don't use setWirelessLed since we only have one LED for two distinct radio's
 #elif !defined(HAVE_WR810N) && !defined(HAVE_LIMA) && !defined(HAVE_RAMBUTAN)
 
 #ifdef HAVE_WNDR3700V4
