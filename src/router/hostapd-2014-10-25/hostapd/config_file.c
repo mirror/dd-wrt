@@ -2612,6 +2612,8 @@ static int hostapd_config_fill(struct hostapd_config *conf,
 				   line, buf);
 			return 1;
 		}
+	} else if (os_strcmp(buf, "no_country_ie") == 0) {
+		conf->no_country_ie = atoi(pos);
 #ifndef CONFIG_NO_VLAN
 	} else if (os_strcmp(buf, "dynamic_vlan") == 0) {
 		bss->ssid.dynamic_vlan = atoi(pos);
@@ -2731,8 +2733,6 @@ static int hostapd_config_fill(struct hostapd_config *conf,
 		}
 	} else if (os_strcmp(buf, "require_vht") == 0) {
 		conf->require_vht = atoi(pos);
-	} else if (os_strcmp(buf, "no_country_ie") == 0) {
-		conf->no_country_ie = atoi(pos);
 	} else if (os_strcmp(buf, "vht_oper_chwidth") == 0) {
 		conf->vht_oper_chwidth = atoi(pos);
 	} else if (os_strcmp(buf, "vht_oper_centr_freq_seg0_idx") == 0) {
