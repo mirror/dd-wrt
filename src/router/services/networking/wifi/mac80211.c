@@ -353,8 +353,21 @@ void configure_single_ath9k(int count)
 	cprintf("configure base interface %d / %s\n", count, dev);
 	sprintf(net, "%s_net_mode", dev);
 	char *netmode = nvram_default_get(net, "mixed");
-	if (!strcmp(netmode, "disabled"))
+	if (!strncmp(dev, "wlan0", 4)) {
+		led_control(LED_WLAN0, LED_OFF);
+	}
+	if (!strncmp(dev, "wlan1", 4)) {
+		led_control(LED_WLAN1, LED_OFF);
+	}
+	if (!strcmp(netmode, "disabled")) {
 		return;
+	}
+	if (!strncmp(dev, "wlan0", 4)) {
+		led_control(LED_WLAN0, LED_ON);
+	}
+	if (!strncmp(dev, "wlan1", 4)) {
+		led_control(LED_WLAN1, LED_ON);
+	}
 	MAC80211DEBUG();
 	if (nvram_nmatch("1", "%s_turbo_qam", dev)) {
 		sysprintf("echo 1 > /sys/kernel/debug/ieee80211/%s/ath10k/turboqam", wif);
@@ -1043,15 +1056,15 @@ void setupHostAP_generic_ath9k(char *prefix, FILE * fp, int isrepeater, int aoss
 	cur_freq2 = freq2;
 	cur_channeloffset = channeloffset;
 	cur_iht = iht;
-			char shortgi[32];
-			sprintf(shortgi, "%s_shortgi", prefix);
-			char mubf[32];
-			sprintf(mubf, "%s_mubf", prefix);
-			char subf[32];
-			sprintf(subf, "%s_subf", prefix);
-			caps =
-			    mac80211_get_vhtcaps(prefix, nvram_default_matchi(shortgi, 1, 1) ? 1 : 0, (usebw == 80 || usebw == 160 || usebw == 8080) ? 1 : 0, usebw == 160 ? 1 : 0, usebw == 8080 ? 1 : 0,
-						 nvram_default_matchi(subf, 1, 0), nvram_default_matchi(mubf, 1, 0));
+	char shortgi[32];
+	sprintf(shortgi, "%s_shortgi", prefix);
+	char mubf[32];
+	sprintf(mubf, "%s_mubf", prefix);
+	char subf[32];
+	sprintf(subf, "%s_subf", prefix);
+	caps =
+	    mac80211_get_vhtcaps(prefix, nvram_default_matchi(shortgi, 1, 1) ? 1 : 0, (usebw == 80 || usebw == 160 || usebw == 8080) ? 1 : 0, usebw == 160 ? 1 : 0, usebw == 8080 ? 1 : 0,
+				 nvram_default_matchi(subf, 1, 0), nvram_default_matchi(mubf, 1, 0));
 	cur_caps = caps;
 	if (has_ac(prefix) && has_5ghz(prefix)) {
 		if (freq >= 4000 && (!strcmp(netmode, "mixed") ||	//
@@ -2104,7 +2117,7 @@ void setupSupplicant_ath9k(char *prefix, char *ssidoverride, int isadhoc)
 
 int vhtcaps_main(int argc, char *argv[])
 {
-char *maininterface = argv[1];
+	char *maininterface = argv[1];
 
 	char bw[32];
 	sprintf(bw, "%s_channelbw", maininterface);
@@ -2123,17 +2136,17 @@ char *maininterface = argv[1];
 		usebw = 160;
 	if (nvram_match(bw, "80+80"))
 		usebw = 8080;
-			char shortgi[32];
-			sprintf(shortgi, "%s_shortgi", maininterface);
-			char mubf[32];
-			sprintf(mubf, "%s_mubf", maininterface);
-			char subf[32];
-			sprintf(subf, "%s_subf", maininterface);
-			char *caps =
-			    mac80211_get_vhtcaps(maininterface, nvram_default_matchi(shortgi, 1, 1) ? 1 : 0, (usebw == 80 || usebw == 160 || usebw == 8080) ? 1 : 0, usebw == 160 ? 1 : 0, usebw == 8080 ? 1 : 0,
-						 nvram_default_matchi(subf, 1, 0), nvram_default_matchi(mubf, 1, 0));
-    fprintf(stdout, "%s: caps = %s\n", argv[0], caps);
+	char shortgi[32];
+	sprintf(shortgi, "%s_shortgi", maininterface);
+	char mubf[32];
+	sprintf(mubf, "%s_mubf", maininterface);
+	char subf[32];
+	sprintf(subf, "%s_subf", maininterface);
+	char *caps = mac80211_get_vhtcaps(maininterface, nvram_default_matchi(shortgi, 1, 1) ? 1 : 0, (usebw == 80 || usebw == 160 || usebw == 8080) ? 1 : 0, usebw == 160 ? 1 : 0, usebw == 8080 ? 1 : 0,
+					  nvram_default_matchi(subf, 1, 0), nvram_default_matchi(mubf, 1, 0));
+	fprintf(stdout, "%s: caps = %s\n", argv[0], caps);
 }
+
 extern void do_hostapd(char *fstr, char *prefix);
 void ath9k_start_supplicant(int count, char *prefix)
 {
