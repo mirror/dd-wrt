@@ -1084,10 +1084,12 @@ int internal_getRouterBrand()
 		char sign[32];
 		fread(&sign, 32, 1, fp);
 		if (!memcmp(sign, "DIR-882", 7)) {
+			fclose(fp);
 			setRouter("Dlink DIR-882 A1");
 			return ROUTER_DIR882;
 		}
 		if (!memcmp(sign, "DIR-878", 7)) {
+			fclose(fp);
 			setRouter("Dlink DIR-878 A1");
 			return ROUTER_DIR882;
 		}
