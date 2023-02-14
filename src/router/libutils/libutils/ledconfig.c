@@ -301,14 +301,6 @@ static void getledconfig(struct ledconfig *cfg)
 #ifdef HAVE_DAP2230
 		cfg->diag_gpio = 0xb;
 		cfg->power_gpio = GPIO_LOW | 0xb;
-#elif HAVE_LIMA
-//              cfg->disconnected_gpio = 0xf;
-//              cfg->power_gpio = GPIO_LOW | 0x5;
-//              cfg->diag_gpio = 0x5;
-#elif HAVE_RAMBUTAN
-//              cfg->disconnected_gpio = 0xf;
-//              cfg->power_gpio = GPIO_LOW | 0x5;
-//              cfg->diag_gpio = 0x5;
 #elif HAVE_WR940V6
 		cfg->diag_gpio = 0xf;
 #elif HAVE_WR940V4
@@ -663,6 +655,18 @@ static void getledconfig(struct ledconfig *cfg)
 	case ROUTER_BOARD_WHRHPGN:
 		cfg->diag_gpio = 0xc;
 		cfg->beeper_gpio = 0x4;
+		break;
+#elif HAVE_LIMA
+	case ROUTER_BOARD_WHRHPGN:
+//              cfg->disconnected_gpio = 0xf;
+//              cfg->power_gpio = GPIO_LOW | 0x5;
+//              cfg->diag_gpio = 0x5;
+		break;
+#elif HAVE_RAMBUTAN
+	case ROUTER_BOARD_WHRHPGN:
+//              cfg->disconnected_gpio = 0xf;
+//              cfg->power_gpio = GPIO_LOW | 0x5;
+//              cfg->diag_gpio = 0x5;
 		break;
 #elif HAVE_WNR2000
 	case ROUTER_BOARD_WHRHPGN:
