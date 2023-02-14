@@ -236,7 +236,9 @@ static u8 * hostapd_eid_country(struct hostapd_data *hapd, u8 *eid,
 	if (!hapd->iconf->ieee80211d || max_len < 6 ||
 	    hapd->iface->current_mode == NULL)
 		return eid;
-
+	if (hapd->iconf->no_country_ie)
+		return eid;
+		
 	*pos++ = WLAN_EID_COUNTRY;
 	pos++; /* length will be set later */
 	os_memcpy(pos, hapd->iconf->country, 3); /* e.g., 'US ' */
@@ -433,6 +435,7 @@ static u8 * hostapd_gen_probe_resp(struct hostapd_data *hapd,
 	/* DS Params */
 	pos = hostapd_eid_ds_params(hapd, pos);
 
+	
 	pos = hostapd_eid_country(hapd, pos, epos - pos);
 
 	/* Power Constraint element */
