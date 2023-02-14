@@ -307,8 +307,7 @@ static void getledconfig(struct ledconfig *cfg)
 		cfg->disconnected_gpio = 0xf;
 		cfg->power_gpio = GPIO_LOW | 0x5;
 		cfg->diag_gpio = 0x5;
-
-#elif HAVE_WR941V
+#elif HAVE_WR941V6
 		cfg->disconnected_gpio = 0xf;
 		cfg->power_gpio = GPIO_LOW | 0x12;
 		cfg->diag_gpio = 0x12;
