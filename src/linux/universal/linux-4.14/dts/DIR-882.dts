@@ -4,7 +4,7 @@
 
 / {
 	compatible = "ralink,mt7621-eval-board", "ralink,mt7621-soc";
-	model = "Dlink DIR882 A1";
+	model = "Dlink DIR882 R1";
 
 	memory@0 {
 		device_type = "memory";
