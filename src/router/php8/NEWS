@@ -1,5 +1,146 @@
 PHP                                                                        NEWS
 |||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
+14 Feb 2023, PHP 8.2.3
+
+- Core:
+  . Fixed bug #81744 (Password_verify() always return true with some hash).
+    (CVE-2023-0567) (Tim Düsterhus)
+  . Fixed bug #81746 (1-byte array overrun in common path resolve code).
+    (CVE-2023-0568) (Niels Dossche)
+
+- FPM:
+  . Fixed bug GHSA-54hq-v5wp-fqgv (DOS vulnerability when parsing multipart
+    request body). (CVE-2023-0662) (Jakub Zelenka)
+
+02 Feb 2023, PHP 8.2.2
+
+- Core:
+  . Fixed bug GH-10200 (zif_get_object_vars:
+    Assertion `!(((__ht)->u.flags & (1<<2)) != 0)' failed). (nielsdos)
+  . Fix GH-10251 (Assertion `(flag & (1<<3)) == 0' failed). (nielsdos)
+  . Fix GH-10240 (Assertion failure when adding more than 2**30 elements to an
+    unpacked array). (Arnaud)
+  . Fix GH-9735 (Fiber stack variables do not participate in cycle collector).
+    (Arnaud)
+  . Fix GH-9675 (Broken run_time_cache init for internal enum methods).
+    (Petar Obradović, Bob)
+
+- FPM:
+  . Fixed bug #77106 (Missing separator in FPM FastCGI errors). (Jakub Zelenka)
+  . Fixed bug GH-9981 (FPM does not reset fastcgi.error_header).
+    (Jakub Zelenka)
+  . Fixed bug #68591 (Configuration test does not perform UID lookups).
+    (Jakub Zelenka)
+  . Fixed memory leak when running FPM config test. (Jakub Zelenka)
+  . Fixed bug #67244 (Wrong owner:group for listening unix socket).
+    (Jakub Zelenka)
+
+- Hash:
+  . Handle exceptions from __toString in XXH3's initialization (nielsdos)
+
+- LDAP:
+  . Fixed bug GH-10112 (LDAP\Connection::__construct() refers to ldap_create()).
+    (cmb)
+
+- Opcache:
+  . Fix inverted bailout value in zend_runtime_jit() (Max Kellermann).
+  . Fix access to uninitialized variable in accel_preload(). (nielsdos)
+  . Fix zend_jit_find_trace() crashes. (Max Kellermann)
+  . Added missing lock for EXIT_INVALIDATE in zend_jit_trace_exit. (Max Kellermann)
+
+- Phar:
+  . Fix wrong flags check for compression method in phar_object.c (nielsdos)
+
+- PHPDBG:
+  . Fix undefined behaviour in phpdbg_load_module_or_extension(). (nielsdos)
+  . Fix NULL pointer dereference in phpdbg_create_conditional_breal(). (nielsdos)
+  . Fix GH-9710: phpdbg memory leaks by option "-h" (nielsdos)
+  . Fix phpdbg segmentation fault in case of malformed input (nielsdos)
+
+- Posix:
+  . Fix memory leak in posix_ttyname() (girgias)
+
+- Random:
+  . Fixed bug GH-10247 (Theoretical file descriptor leak for /dev/urandom). (timwolla)
+
+- Standard:
+  . Fix GH-10187 (Segfault in stripslashes() with arm64). (nielsdos)
+  . Fixed bug GH-10214 (Incomplete validation of object syntax during
+    unserialize()). (timwolla)
+  . Fix substr_replace with slots in repl_ht being UNDEF. (nielsdos)
+
+- XMLWriter
+  . Fix missing check for xmlTextWriterEndElement (nielsdos)
+
+05 Jan 2023, PHP 8.2.1
+
+- Core:
+  . Fixed bug GH-9905 (constant() behaves inconsistent when class is undefined).
+    (cmb)
+  . Fixed bug GH-9918 (License information for xxHash is not included in
+    README.REDIST.BINS file). (Akama Hitoshi)
+  . Fixed bug GH-9890 (OpenSSL legacy providers not available on Windows). (cmb)
+  . Fixed bug GH-9650 (Can't initialize heap: [0x000001e7]). (Michael Voříšek)
+  . Fixed potentially undefined behavior in Windows ftok(3) emulation. (cmb)
+  . Fixed GH-9769 (Misleading error message for unpacking of objects). (jhdxr)
+
+- Apache:
+  . Fixed bug GH-9949 (Partial content on incomplete POST request). (cmb)
+
+- FPM:
+  . Fixed bug GH-9959 (Solaris port event mechanism is still broken after bug
+    #66694). (Petr Sumbera)
+  . Fixed bug #68207 (Setting fastcgi.error_header can result in a WARNING).
+    (Jakub Zelenka)
+  . Fixed bug #80669 (FPM numeric user fails to set groups). (Jakub Zelenka)
+  . Fixed bug GH-8517 (Random crash of FPM master process in
+    fpm_stdio_child_said). (Jakub Zelenka)
+
+- Imap:
+  . Fixed bug GH-10051 (IMAP: there's no way to check if a IMAP\Connection is
+    still open). (Girgias)
+
+- MBString:
+  . Fixed bug GH-9535 (The behavior of mb_strcut in mbstring has been changed in
+    PHP8.1). (Nathan Freeman)
+
+- Opcache:
+  . Fixed bug GH-9968 (Segmentation Fault during OPCache Preload).
+    (Arnaud, michdingpayc)
+
+- OpenSSL:
+  . Fixed bug GH-9997 (OpenSSL engine clean up segfault). (Jakub Zelenka)
+  . Fixed bug GH-9064 (PHP fails to build if openssl was built with --no-ec).
+    (Jakub Zelenka)
+  . Fixed bug GH-10000 (OpenSSL test failures when OpenSSL compiled with
+    no-dsa). (Jakub Zelenka)
+
+- Pcntl:
+  . Fixed bug GH-9298 (Signal handler called after rshutdown leads to crash).
+    (Erki Aring)
+
+- PDO_Firebird:
+  . Fixed bug GH-9971 (Incorrect NUMERIC value returned from PDO_Firebird).
+    (cmb)
+
+- PDO/SQLite:
+  . Fixed bug #81740 (PDO::quote() may return unquoted string). (CVE-2022-31631)
+    (cmb)
+
+- Session:
+  . Fixed GH-9932 (session name silently fails with . and [). (David Carlier)
+
+- SPL:
+  . Fixed GH-9883 (SplFileObject::__toString() reads next line). (Girgias)
+  . Fixed GH-10011 (Trampoline autoloader will get reregistered and cannot be
+    unregistered). (Girgias)
+
+- SQLite3:
+  . Fixed bug #81742 (open_basedir bypass in SQLite3 by using file URI). (cmb)
+
+- TSRM:
+  . Fixed Windows shmget() wrt. IPC_PRIVATE. (Tyson Andre)
+
 08 Dec 2022, PHP 8.2.0
 
 - CLI:
@@ -82,8 +223,6 @@ PHP                                                                        NEWS
     promotion. (kooldev)
   . Fixed bug GH-9750 (Generator memory leak when interrupted during argument
     evaluation. (Arnaud)
-  . Move observer_declared_function_notify until after pass_two(). (Bob)
-  . Do not report MINIT stage internal class aliases in extensions. (Bob)
 
 - Curl:
   . Added support for CURLOPT_XFERINFOFUNCTION. (David Carlier)
@@ -158,6 +297,7 @@ PHP                                                                        NEWS
 - Hash:
   . Fixed bug #81738: buffer overflow in hash_update() on long parameter.
     (CVE-2022-37454) (nicky at mouha dot be)
+  . Fixed bug GH-10077: Fix compilation on RHEL 7 ppc64le. (Mattias Ellert)
 
 - Intl:
   . Update all grandfathered language tags with preferred values
@@ -205,9 +345,10 @@ PHP                                                                        NEWS
   . Fixed bug GH-9259 (opcache.interned_strings_buffer setting integer
     overflow). (Arnaud)
   . Added indirect call reduction for jit on x86 architectures. (wxue1)
+
+- OPcache:
   . Fixed bug GH-9164 (Segfault in zend_accel_class_hash_copy).
     (Arnaud, Sergei Turchanov)
-  . Fix opcache preload with observers enabled. (Bob)
 
 - OpenSSL:
   . Discard poll calls on socket when no timeout/non blocking/MSG_DONTWAIT. (Max Kellermann)
@@ -366,8 +507,6 @@ PHP                                                                        NEWS
     (cmb)
   . Revert "Fixed parse_url(): can not recognize port without scheme."
     (andypost)
-  . Fix crash reading module_entry after DL_UNLOAD() when module already
-    loaded. (Bob)
 
 - Streams:
   . Set IP_BIND_ADDRESS_NO_PORT if available when connecting to remote host.

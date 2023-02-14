@@ -23,7 +23,7 @@
    +----------------------------------------------------------------------+
  */
 
-/* $Id: 81306bb90efdd493191ff9cf8fcece78022a17be $ */
+/* $Id: e7cc6a7f28c525cc1ab5a3191e2438b4fbd1e478 $ */
 
 /* Temporary variables while this file is being refactored. */
 /** @var ?JUnit */
@@ -611,7 +611,7 @@ function main(): void
                     $show_progress = false;
                     break;
                 case '--version':
-                    echo '$Id: 81306bb90efdd493191ff9cf8fcece78022a17be $' . "\n";
+                    echo '$Id: e7cc6a7f28c525cc1ab5a3191e2438b4fbd1e478 $' . "\n";
                     exit(1);
 
                 default:
@@ -1503,6 +1503,10 @@ escape:
                 if ($i === false) {
                     kill_children($workerProcs);
                     error("Could not find worker stdout in array of worker stdouts, THIS SHOULD NOT HAPPEN.");
+                }
+                if (feof($workerSock)) {
+                    kill_children($workerProcs);
+                    error("Worker $i died unexpectedly");
                 }
                 while (false !== ($rawMessage = fgets($workerSock))) {
                     // work around fgets truncating things

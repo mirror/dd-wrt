@@ -10,7 +10,7 @@ Grammar
 
     1 input: command
     2      | input "# (pound sign)" command
-    3      | ε
+    3      | %empty
 
     4 command: parameters
     5        | full_expression
@@ -36,7 +36,7 @@ Grammar
    23          | "identifier (command or function name)"
 
    24 req_id: "request id (-r %d)"
-   25       | ε
+   25       | %empty
 
    26 full_expression: "eval" req_id "input (input string or data)"
    27                | "shell" req_id "input (input string or data)"

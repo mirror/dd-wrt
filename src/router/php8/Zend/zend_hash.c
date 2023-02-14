@@ -166,6 +166,8 @@ static zend_always_inline void zend_hash_real_init_mixed_ex(HashTable *ht)
 	void *data;
 	uint32_t nSize = ht->nTableSize;
 
+	ZEND_ASSERT(HT_SIZE_TO_MASK(nSize));
+
 	if (UNEXPECTED(GC_FLAGS(ht) & IS_ARRAY_PERSISTENT)) {
 		data = pemalloc(HT_SIZE_EX(nSize, HT_SIZE_TO_MASK(nSize)), 1);
 	} else if (EXPECTED(nSize == HT_MIN_SIZE)) {
@@ -338,6 +340,8 @@ ZEND_API void ZEND_FASTCALL zend_hash_packed_to_hash(HashTable *ht)
 	uint32_t i;
 	uint32_t nSize = ht->nTableSize;
 
+	ZEND_ASSERT(HT_SIZE_TO_MASK(nSize));
+
 	HT_ASSERT_RC1(ht);
 	HT_FLAGS(ht) &= ~HASH_FLAG_PACKED;
 	new_data = pemalloc(HT_SIZE_EX(nSize, HT_SIZE_TO_MASK(nSize)), GC_FLAGS(ht) & IS_ARRAY_PERSISTENT);
@@ -380,7 +384,11 @@ ZEND_API void ZEND_FASTCALL zend_hash_to_packed(HashTable *ht)
 ZEND_API void ZEND_FASTCALL zend_hash_extend(HashTable *ht, uint32_t nSize, bool packed)
 {
 	HT_ASSERT_RC1(ht);
+
 	if (nSize == 0) return;
+
+	ZEND_ASSERT(HT_SIZE_TO_MASK(nSize));
+
 	if (UNEXPECTED(HT_FLAGS(ht) & HASH_FLAG_UNINITIALIZED)) {
 		if (nSize > ht->nTableSize) {
 			ht->nTableSize = zend_hash_check_size(nSize);
@@ -658,15 +666,14 @@ ZEND_API void ZEND_FASTCALL zend_hash_iterators_advance(HashTable *ht, HashPosit
 /* Hash must be known and precomputed before */
 static zend_always_inline Bucket *zend_hash_find_bucket(const HashTable *ht, const zend_string *key)
 {
-	zend_ulong key_hash = ZSTR_H(key);
 	uint32_t nIndex;
 	uint32_t idx;
 	Bucket *p, *arData;
 
-	ZEND_ASSERT(key_hash != 0 && "Hash must be known");
+	ZEND_ASSERT(ZSTR_H(key) != 0 && "Hash must be known");
 
 	arData = ht->arData;
-	nIndex = key_hash | ht->nTableMask;
+	nIndex = ZSTR_H(key) | ht->nTableMask;
 	idx = HT_HASH_EX(arData, nIndex);
 
 	if (UNEXPECTED(idx == HT_INVALID_IDX)) {
@@ -678,7 +685,7 @@ static zend_always_inline Bucket *zend_hash_find_bucket(const HashTable *ht, con
 	}
 
 	while (1) {
-		if (p->h == key_hash &&
+		if (p->h == ZSTR_H(key) &&
 		    EXPECTED(p->key) &&
 		    zend_string_equal_content(p->key, key)) {
 			return p;
@@ -1227,6 +1234,8 @@ static void ZEND_FASTCALL zend_hash_do_resize(HashTable *ht)
 		void *new_data, *old_data = HT_GET_DATA_ADDR(ht);
 		uint32_t nSize = ht->nTableSize + ht->nTableSize;
 		Bucket *old_buckets = ht->arData;
+
+		ZEND_ASSERT(HT_SIZE_TO_MASK(nSize));
 
 		ht->nTableSize = nSize;
 		new_data = pemalloc(HT_SIZE_EX(nSize, HT_SIZE_TO_MASK(nSize)), GC_FLAGS(ht) & IS_ARRAY_PERSISTENT);
