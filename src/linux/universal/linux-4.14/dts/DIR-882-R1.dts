@@ -1,0 +1,102 @@
+/dts-v1/;
+
+#include "mt7621.dtsi"
+
+/ {
+	compatible = "ralink,mt7621-eval-board", "ralink,mt7621-soc";
+	model = "Dlink DIR882 A1";
+
+	memory@0 {
+		device_type = "memory";
+		reg = <0x0 0x8000000>;
+	};
+	
+	chosen {
+		bootargs = "console=ttyS0,57600";
+	};
+
+};
+
+&spi0 {
+	status = "okay";
+	m25p80@0 {
+		compatible = "jedec,spi-nor";
+		reg = <0>;
+		spi-max-frequency = <10000000>;
+
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			partition@0 {
+				label = "u-boot";
+				reg = <0x0 0x30000>;
+			};
+
+			partition@30000 {
+				label = "u-boot-env";
+				reg = <0x30000 0x4000>;
+			};
+
+			factory: partition@40000 {
+				label = "factory";
+				reg = <0x40000 0x10000>;
+			};
+			partition@50000 {
+				compatible = "denx,uimage";
+				label = "linux";
+				reg = <0x50000 0xfb0000>;
+			};
+
+			partition@ff00000 {
+				label = "nvram";
+				reg = <0xff0000 0x10000>;
+			};
+			partition@0000000 {
+				label = "fullflash";
+				reg = <0x000000 0x1000000>;
+			};
+
+		};
+	};
+};
+
+
+&pcie {
+	status = "okay";
+};
+
+&pcie1 {
+	mt76@0,0 {
+		reg = <0x0000 0 0 0 0>;
+		mediatek,file = "/etc/wlan/MT7615_5G_EEPROM.bin";
+		mtd-mac-address = <&factory 0x8004>;
+		mediatek,disable_2ghz = <1>;
+		ieee80211-freq-limit = <5000000 6000000>;
+	};
+};
+
+&pcie0 {
+	mt76@0,0 {
+		reg = <0x0000 0 0 0 0>;
+		mediatek,file = "/etc/wlan/MT7615_2G_EEPROM.bin";
+		mtd-mac-address = <&factory 0x4>;
+		mediatek,disable_5ghz = <1>;
+		ieee80211-freq-limit = <2400000 2500000>;
+	};
+};
+
+&pinctrl {
+	state_default: pinctrl0 {
+		gpio {
+			ralink,group = "i2c", "uart2", "uart3", "rgmii2", "sdhci";
+			ralink,function = "gpio";
+		};
+	};
+};
+
+&xhci {
+	status = "okay";
+};
+
