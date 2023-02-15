@@ -1,4 +1,20 @@
 ------------------------------------------------------------------------
+r6991 | brainslayer | 2023-02-15 16:07:09 +0600 (Wed, 15 Feb 2023) | 1 line
+
+decrease stack usage in qca fw
+------------------------------------------------------------------------
+r6990 | brainslayer | 2023-02-15 16:01:02 +0600 (Wed, 15 Feb 2023) | 1 line
+
+decrease stack usage in qca fw
+------------------------------------------------------------------------
+r6989 | brainslayer | 2023-02-15 15:54:57 +0600 (Wed, 15 Feb 2023) | 1 line
+
+clear fw flag bits before reloading
+------------------------------------------------------------------------
+r6988 | brainslayer | 2023-02-15 14:46:06 +0600 (Wed, 15 Feb 2023) | 1 line
+
+clean fw feature bitflags before reloading
+------------------------------------------------------------------------
 r6987 | brainslayer | 2023-02-15 13:22:02 +0600 (Wed, 15 Feb 2023) | 1 line
 
 work on stack corruption issues in fw
