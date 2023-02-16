@@ -482,9 +482,11 @@ sitnl_route_save(struct nlmsghdr *n, void *arg)
                 break;
 
             /* route table */
+#ifdef RTA_TABLE
             case RTA_TABLE:
                 table = *(unsigned int *)RTA_DATA(rta);
                 break;
+#endif
         }
 
         rta = RTA_NEXT(rta, len);
