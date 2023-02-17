@@ -2914,7 +2914,7 @@ static void nat_table(char *wanface, char *wanaddr, char *lan_cclass, int dmzena
 static void filter_table(char *wanface, char *lanface, char *wanaddr, char *lan_cclass, int dmzenable, int webfilter, int remotessh, int remotetelnet, int remotemanage, char *vifs)
 {
 	char wan_if_buffer[33];
-	int log_level = nvram_matchi("log_enable", "1") ? nvram_geti("log_level") : 0;
+	int log_level = nvram_matchi("log_enable", 1) ? nvram_geti("log_level") : 0;
 
 	save2file("*filter\n:INPUT ACCEPT [0:0]\n:FORWARD ACCEPT [0:0]\n:OUTPUT ACCEPT [0:0]\n");
 	if (log_level > 0) {
@@ -3098,7 +3098,7 @@ static void run_firewall6(char *vifs)
 	char *wanface = safe_get_wan_face(wan_if_buffer);
 	if (nvram_matchi("ipv6_enable", 0))
 		return;
-	int log_level = nvram_matchi("log_enable", "1") ? nvram_geti("log_level") : 0;
+	int log_level = nvram_matchi("log_enable", 1) ? nvram_geti("log_level") : 0;
 
 	if (nvram_matchi("remote_management", 1) && nvram_invmatch("http_wanport", "") && nvram_invmatchi("http_wanport", 0))
 		remotemanage = 1;
@@ -3488,7 +3488,7 @@ void start_firewall(void)
 	 * Determine LOG level 
 	 */
 	DEBUG("start firewall()........1\n");
-	log_level = nvram_matchi("log_enable", "1") ? nvram_geti("log_level") : 0;
+	log_level = nvram_matchi("log_enable", 1) ? nvram_geti("log_level") : 0;
 	// sprintf(log_drop, "%s", (log_level & 1) ? "logdrop" : "DROP");
 	// sprintf(log_accept, "%s", (log_level & 2) ? "logaccept" : TARG_PASS);
 	// sprintf(log_reject, "%s", (log_level & 1) ? "logreject" : TARG_RST);
