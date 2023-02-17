@@ -1,4 +1,20 @@
 ------------------------------------------------------------------------
+r7016 | brainslayer | 2023-02-17 17:44:43 +0600 (Fri, 17 Feb 2023) | 1 line
+
+sync version numbers and port calibration solition to newer chipsets
+------------------------------------------------------------------------
+r7015 | brainslayer | 2023-02-17 17:26:12 +0600 (Fri, 17 Feb 2023) | 1 line
+
+fixup undefined calibration data ranges
+------------------------------------------------------------------------
+r7014 | brainslayer | 2023-02-17 17:08:29 +0600 (Fri, 17 Feb 2023) | 1 line
+
+set ack power
+------------------------------------------------------------------------
+r7013 | brainslayer | 2023-02-17 16:43:52 +0600 (Fri, 17 Feb 2023) | 1 line
+
+minimum power for undefined calibration data
+------------------------------------------------------------------------
 r7012 | brainslayer | 2023-02-17 15:55:10 +0600 (Fri, 17 Feb 2023) | 1 line
 
 tryout power correction hack
