@@ -274,7 +274,7 @@ addEvent(window, "unload", function() {
 									<select name="log_level">
 										<script type="text/javascript">
 										//<![CDATA[
-										document.write("<option value=\"0\" <% nvsjs("log_level", "0"); %> >" + share.low + "</option>");
+										document.write("<option value=\"0\" <% nvsjs("log_level", "0"); %> >" + share.disabled + "</option>");
 										document.write("<option value=\"1\" <% nvsjs("log_level", "1"); %> >" + share.medium + "</option>");
 										document.write("<option value=\"2\" <% nvsjs("log_level", "2"); %> >" + share.high + "</option>");
 										//]]>
