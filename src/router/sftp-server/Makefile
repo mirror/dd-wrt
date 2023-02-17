@@ -10,11 +10,11 @@ PATHS= -DSSHDIR=\"$(sysconfdir)\" \
 	-D_PATH_PRIVSEP_CHROOT_DIR=\"$(PRIVSEP_PATH)\" \
 	-DSSH_RAND_HELPER=\"$(RAND_HELPER)\"
 
-LDFLAGS=-L. -Lopenbsd-compat/ $(MIPS16_OPT) -ffunction-sections -fdata-sections -Wl,--gc-sections
+LDFLAGS=$(LDLTO) -L. -Lopenbsd-compat/ $(MIPS16_OPT) -ffunction-sections -fdata-sections -Wl,--gc-sections
 
-CFLAGS=$(COPTS) -Wall -Wpointer-arith -Wuninitialized -Wsign-compare -Wno-pointer-sign -Wformat-security -fno-builtin-memset -std=gnu99  -I$(TOP)/openssl/include $(MIPS16_OPT) -ffunction-sections -fdata-sections -Wl,--gc-sections
+CFLAGS=$(COPTS) $(LTO) -Wall -Wpointer-arith -Wuninitialized -Wsign-compare -Wno-pointer-sign -Wformat-security -fno-builtin-memset -std=gnu99  -I$(TOP)/openssl/include $(MIPS16_OPT) -ffunction-sections -fdata-sections -Wl,--gc-sections
 
-CPPFLAGS=-I. -I$(srcdir)  $(PATHS) -DHAVE_CONFIG_H
+CPPFLAGS=$(COPTS) $(LTO) -I. -I$(srcdir)  $(PATHS) -DHAVE_CONFIG_H
 #LIBS=-lresolv
 
 
@@ -33,7 +33,7 @@ always:
 
 
 libssh.a: $(LIBSSH_OBJS)
-	$(AR) rv $@ $(LIBSSH_OBJS)
+	$(AR) rv $(LTOPLUGIN) $@ $(LIBSSH_OBJS)
 
 sftp-server: $(LIBCOMPAT) libssh.a sftp.o sftp-common.o sftp-server.o sftp-server-main.o
 	$(CC) -o $@ sftp-server.o sftp-common.o sftp-server-main.o $(LDFLAGS) -lssh -lopenbsd-compat

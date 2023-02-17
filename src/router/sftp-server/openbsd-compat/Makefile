@@ -8,13 +8,13 @@ top_srcdir=..
 
 #CC=$gcc
 #LD=gcc
-CFLAGS=$(COPTS) -Wall -Wpointer-arith -Wuninitialized -Wsign-compare -Wno-pointer-sign -Wformat-security -fno-builtin-memset -std=gnu99 -I$(TOP)/openssl/include $(MIPS16_OPT) -ffunction-sections -fdata-sections -Wl,--gc-sections
+CFLAGS=$(COPTS) $(LTO) -Wall -Wpointer-arith -Wuninitialized -Wsign-compare -Wno-pointer-sign -Wformat-security -fno-builtin-memset -std=gnu99 -I$(TOP)/openssl/include $(MIPS16_OPT) -ffunction-sections -fdata-sections -Wl,--gc-sections
 CPPFLAGS=-I. -I.. -I$(srcdir) -I$(srcdir)/..  -DHAVE_CONFIG_H
 LIBS=-lcrypto -lutil -lz -lnsl  -lcrypt -lresolv -lresolv
 AR=/usr/bin/ar
-RANLIB=ranlib
+RANLIB=ranlib $(LTOPLUGIN)
 INSTALL=/usr/bin/install -c
-LDFLAGS=-L.
+LDFLAGS=-L. $(LDLTO)
 
 OPENBSD=getopt.o strmode.o vis.o strtonum.o
 
@@ -32,7 +32,7 @@ $(OPENBSD): ../config.h
 $(PORTS): ../config.h
 
 libopenbsd-compat.a:  $(COMPAT) $(OPENBSD) $(PORTS)
-	$(AR) rv $@ $(COMPAT) $(OPENBSD) $(PORTS)
+	$(AR) rv $(LTOPLUGIN) $@ $(COMPAT) $(OPENBSD) $(PORTS)
 	$(RANLIB) $@
 
 clean:
