@@ -439,7 +439,6 @@ check_PROGRAMS = test_blkdev$(EXEEXT) test_buffer$(EXEEXT) \
 @BUILD_WALL_TRUE@am__append_162 = wall
 @BUILD_WALL_TRUE@am__append_163 = term-utils/wall.1
 @BUILD_WALL_TRUE@am__append_164 = term-utils/wall.1.adoc
-@BUILD_WALL_TRUE@@MAKEINSTALL_DO_CHOWN_TRUE@@USE_TTY_GROUP_TRUE@am__append_165 = install-exec-hook-wall
 @BUILD_WRITE_TRUE@am__append_166 = write
 @BUILD_WRITE_TRUE@am__append_167 = term-utils/write.1
 @BUILD_WRITE_TRUE@am__append_168 = term-utils/write.1.adoc
@@ -16771,9 +16770,6 @@ LIB_FUZZING_ENGINE ?= -fsanitize=fuzzer
 
 @BUILD_LIBFDISK_TRUE@uninstall-hook-libfdisk:
 @BUILD_LIBFDISK_TRUE@	rm -f $(DESTDIR)$(libdir)/libfdisk.so*
-@BUILD_WALL_TRUE@@MAKEINSTALL_DO_CHOWN_TRUE@@USE_TTY_GROUP_TRUE@install-exec-hook-wall::
-@BUILD_WALL_TRUE@@MAKEINSTALL_DO_CHOWN_TRUE@@USE_TTY_GROUP_TRUE@	chgrp tty $(DESTDIR)$(usrbin_execdir)/wall
-@BUILD_WALL_TRUE@@MAKEINSTALL_DO_CHOWN_TRUE@@USE_TTY_GROUP_TRUE@	chmod g+s $(DESTDIR)$(usrbin_execdir)/wall
 
 @BUILD_WRITE_TRUE@@MAKEINSTALL_DO_CHOWN_TRUE@@USE_TTY_GROUP_TRUE@install-exec-hook-write::
 @BUILD_WRITE_TRUE@@MAKEINSTALL_DO_CHOWN_TRUE@@USE_TTY_GROUP_TRUE@	chgrp tty $(DESTDIR)$(usrbin_execdir)/write
