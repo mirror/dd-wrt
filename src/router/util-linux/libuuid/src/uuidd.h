@@ -35,7 +35,7 @@
 #ifndef _UUID_UUIDD_H
 #define _UUID_UUIDD_H
 
-#define UUIDD_DIR		_PATH_LOCALSTATEDIR "/uuidd"
+#define UUIDD_DIR		_PATH_RUNSTATEDIR "/uuidd"
 #define UUIDD_SOCKET_PATH	UUIDD_DIR "/request"
 #define UUIDD_PIDFILE_PATH	UUIDD_DIR "/uuidd.pid"
 #define UUIDD_PATH		"/usr/sbin/uuidd"
@@ -49,6 +49,6 @@
 #define UUIDD_MAX_OP			UUIDD_OP_BULK_RANDOM_UUID
 
 extern int __uuid_generate_time(uuid_t out, int *num);
-extern void __uuid_generate_random(uuid_t out, int *num);
+extern int __uuid_generate_random(uuid_t out, int *num);
 
 #endif /* _UUID_UUID_H */
