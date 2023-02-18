@@ -34,7 +34,7 @@
 #include <unistd.h>
 #include <errno.h>
 
-#include <uuid/uuid.h>
+#include <uuid.h>
 
 #include "junction.h"
 #include "xlog.h"

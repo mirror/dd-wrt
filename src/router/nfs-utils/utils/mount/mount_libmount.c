@@ -31,7 +31,7 @@
 #include <getopt.h>
 #include <libgen.h>
 
-#include <libmount/libmount.h>
+#include <libmount.h>
 
 #include "nls.h"
 #include "mount_config.h"
