@@ -4,6 +4,7 @@ nfs-utils-configure: libtirpc lvm2 keyutils krb5 libevent
 		--enable-fast-install \
 		--with-sysroot=yes \
 		--libdir=/usr/lib \
+		--libexecdir=/usr/libexec \
 		--with-tirpcinclude=$(TOP)/libtirpc/tirpc --host=$(ARCH)-linux \
 		--with-rpcgen=internal \
 		--disable-caps \
