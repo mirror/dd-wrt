@@ -1,15 +1,27 @@
 nfs-utils-configure: libtirpc lvm2 keyutils krb5 libevent
 	cd nfs-utils && ./autogen.sh
-	cd nfs-utils && ./configure --enable-fast-install --with-sysroot=yes --libdir=/usr/lib --with-tirpcinclude=$(TOP)/libtirpc/tirpc --host=$(ARCH)-linux \
-		--with-rpcgen=internal --disable-uuid --disable-gssapi --disable-static --prefix=/usr \
-		--enable-gss --disable-nfsdcltrack --disable-nfsdcld \
+	cd nfs-utils && ./configure \
+		--enable-fast-install \
+		--with-sysroot=yes \
+		--libdir=/usr/lib \
+		--with-tirpcinclude=$(TOP)/libtirpc/tirpc --host=$(ARCH)-linux \
+		--with-rpcgen=internal \
+		--disable-caps \
+		--disable-uuid \
+		--disable-gssapi \
+		--disable-static \
+		--prefix=/usr \
+		--enable-gss \
+		--disable-nfsdcltrack \
+		--disable-nfsdcld \
 		--with-krb5=yes \
 		KRBCFLAGS="-I$(TOP)/krb5/src/include" \
 		KRBLDFLAGS="-L$(TOP)/krb5/src/lib" \
 		KRBLIBS="-lkrb5 -lk5crypto -lkrb5support -lcom_err" \
 		GSSKRB_LIBS="-lgssapi_krb5 -lgssrpc" \
-		CFLAGS="$(COPTS) $(MIPS16_OPT) -DNEED_PRINTF -fcommon -I$(TOP)/libevent -I$(TOP)/libevent/include -I$(TOP)/libtirpc -I$(TOP)/libtirpc/tirpc -I$(TOP)/lvm2/libdm  -I$(TOP)/keyutils -D_GNU_SOURCE" \
-		LDFLAGS="-L$(TOP)/libtirpc/src/.libs  -L$(TOP)/libevent/.libs -L$(TOP)/lvm2/libdm/ioctl -L$(TOP)/keyutils -L$(TOP)/krb5/src/lib" \
+		CFLAGS="$(COPTS) $(MIPS16_OPT) -DNEED_PRINTF -fcommon -I$(TOP)/libevent -I$(TOP)/libevent/include -I$(TOP)/libtirpc -I$(TOP)/libtirpc/tirpc -I$(TOP)/lvm2/libdm  -I$(TOP)/keyutils -I$(TOP)/util-linux/libuuid/src -I$(TOP)/util-linux/libmount/src -D_GNU_SOURCE" \
+		LDFLAGS="-L$(TOP)/libtirpc/src/.libs  -L$(TOP)/libevent/.libs -L$(TOP)/lvm2/libdm/ioctl -L$(TOP)/keyutils -L$(TOP)/krb5/src/lib -L$(TOP)/util-linux/.libs/" \
+
 
 nfs-utils: libtirpc lvm2 keyutils krb5
 	install -D nfs-utils/config/nfs.webnas httpd/ej_temp/04nfs.webnas
