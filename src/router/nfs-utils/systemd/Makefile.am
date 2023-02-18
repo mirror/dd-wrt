@@ -2,6 +2,8 @@
 
 MAINTAINERCLEANFILES = Makefile.in
 
+modprobe_files = 50-nfs.conf
+
 unit_files =  \
     nfs-client.target \
     rpc_pipefs.target \
@@ -12,12 +14,20 @@ unit_files =  \
     rpc-statd-notify.service \
     rpc-statd.service \
     \
-    proc-fs-nfsd.mount \
+    proc-fs-nfsd.mount
+
+rpc_pipefs_mount_file = \
     var-lib-nfs-rpc_pipefs.mount
 
 if CONFIG_NFSV4
 unit_files += \
     nfs-idmapd.service
+endif
+
+if CONFIG_NFSV4SERVER
+unit_files += \
+    nfsv4-exportd.service \
+    nfsv4-server.service
 endif
 
 if CONFIG_NFSV41
@@ -43,10 +53,9 @@ endif
 
 man5_MANS	= nfs.conf.man
 man7_MANS	= nfs.systemd.man
-EXTRA_DIST = $(unit_files) $(man5_MANS) $(man7_MANS)
+EXTRA_DIST = $(unit_files) $(modprobe_files) $(man5_MANS) $(man7_MANS)
 
-unit_dir = /usr/lib/systemd/system
-generator_dir = /usr/lib/systemd/system-generators
+generator_dir = $(unitdir)/../system-generators
 
 EXTRA_PROGRAMS	= nfs-server-generator rpc-pipefs-generator
 genexecdir = $(generator_dir)
@@ -66,7 +75,14 @@ rpc_pipefs_generator_LDADD = ../support/nfs/libnfs.la
 
 if INSTALL_SYSTEMD
 genexec_PROGRAMS = nfs-server-generator rpc-pipefs-generator
-install-data-hook: $(unit_files)
+install-data-hook: $(unit_files) $(modprobe_files)
 	mkdir -p $(DESTDIR)/$(unitdir)
 	cp $(unit_files) $(DESTDIR)/$(unitdir)
+	cp $(rpc_pipefs_mount_file) $(DESTDIR)/$(unitdir)/$(rpc_pipefsmount)
+else
+install-data-hook: $(modprobe_files)
+endif
+if INSTALL_MODPROBEDIR
+	mkdir -p $(DESTDIR)$(modprobedir)
+	cp $(modprobe_files) $(DESTDIR)$(modprobedir)
 endif

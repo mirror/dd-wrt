@@ -85,6 +85,7 @@ int xlstat(const char *pathname, struct stat *statbuf)
 		return 0;
 	else if (errno != ENOSYS)
 		return -1;
+	errno = 0;
 	return fstatat(AT_FDCWD, pathname, statbuf, AT_NO_AUTOMOUNT |
 			AT_SYMLINK_NOFOLLOW);
 }
@@ -95,6 +96,7 @@ int xstat(const char *pathname, struct stat *statbuf)
 		return 0;
 	else if (errno != ENOSYS)
 		return -1;
+	errno = 0;
 	return fstatat(AT_FDCWD, pathname, statbuf, AT_NO_AUTOMOUNT);
 }
 

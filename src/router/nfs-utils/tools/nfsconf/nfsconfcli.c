@@ -11,6 +11,7 @@
 typedef enum {
 	MODE_NONE,
 	MODE_GET,
+	MODE_ENTRY,
 	MODE_ISSET,
 	MODE_DUMP,
 	MODE_SET,
@@ -30,6 +31,8 @@ static void usage(const char *name)
 	fprintf(stderr, "      Outputs the configuration to the named file\n");
 	fprintf(stderr, "  --get [--arg subsection] {section} {tag}\n");
 	fprintf(stderr, "      Output one specific config value\n");
+	fprintf(stderr, "  --entry [--arg subsection] {section} {tag}\n");
+	fprintf(stderr, "      Output the uninterpreted config entry\n");
 	fprintf(stderr, "  --isset [--arg subsection] {section} {tag}\n");
 	fprintf(stderr, "      Return code indicates if config value is present\n");
 	fprintf(stderr, "  --set [--arg subsection] {section} {tag} {value}\n");
@@ -55,6 +58,7 @@ int main(int argc, char **argv)
 		int index = 0;
 		struct option long_options[] = {
 			{"get",		no_argument, 0, 'g' },
+			{"entry",	no_argument, 0, 'e' },
 			{"set",		no_argument, 0, 's' },
 			{"unset",	no_argument, 0, 'u' },
 			{"arg",	  required_argument, 0, 'a' },
@@ -66,7 +70,7 @@ int main(int argc, char **argv)
 			{NULL,			  0, 0, 0 }
 		};
 
-		c = getopt_long(argc, argv, "gsua:id::f:vm:", long_options, &index);
+		c = getopt_long(argc, argv, "gesua:id::f:vm:", long_options, &index);
 		if (c == -1) break;
 
 		switch (c) {
@@ -85,6 +89,9 @@ int main(int argc, char **argv)
 				break;
 			case 'g':
 				mode = MODE_GET;
+				break;
+			case 'e':
+				mode = MODE_ENTRY;
 				break;
 			case 's':
 				mode = MODE_SET;
@@ -167,8 +174,8 @@ int main(int argc, char **argv)
 		if (dumpfile)
 			fclose(out);
 	} else
-	/* --iset and --get share a lot of code */
-	if (mode == MODE_GET || mode == MODE_ISSET) {
+	/* --isset and --get share a lot of code */
+	if (mode == MODE_GET || mode == MODE_ISSET || mode == MODE_ENTRY) {
 		char * section = NULL;
 		char * tag = NULL;
 		const char * val;
@@ -186,14 +193,17 @@ int main(int argc, char **argv)
 		tag = argv[optind++];
 
 		/* retrieve the specified tags value */
-		val = conf_get_section(section, arg, tag);
+		if (mode == MODE_ENTRY)
+			val = conf_get_entry(section, arg, tag);
+		else
+			val = conf_get_section(section, arg, tag);
 		if (val != NULL) {
 			/* ret=0, success, mode --get wants to output the value as well */
-			if (mode == MODE_GET)
+			if (mode != MODE_ISSET)
 				printf("%s\n", val);
 		} else {
 			/* ret=1, no value found, tell the user if they asked */
-			if (mode == MODE_GET && verbose)
+			if (mode != MODE_ISSET && verbose)
 				fprintf(stderr, "Tag '%s' not found\n", tag);
 			ret = 1;
 		}

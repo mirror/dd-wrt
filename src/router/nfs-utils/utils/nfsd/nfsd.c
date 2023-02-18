@@ -56,6 +56,13 @@ static struct option longopts[] =
 	{ NULL, 0, 0, 0 }
 };
 
+inline static void 
+read_nfsd_conf(void)
+{
+	conf_init_file(NFS_CONFFILE); 
+	xlog_set_debug("nfsd");
+}
+
 int
 main(int argc, char **argv)
 {
@@ -81,8 +88,8 @@ main(int argc, char **argv)
 	xlog_syslog(0);
 	xlog_stderr(1);
 
-	conf_init_file(NFS_CONFFILE); 
-	xlog_from_conffile("nfsd");
+	/* Read in config setting */
+	read_nfsd_conf();
 
 	nfssvc_get_minormask(&minormask);
 
@@ -162,7 +169,7 @@ main(int argc, char **argv)
 		}
 	}
 
-	while ((c = getopt_long(argc, argv, "dH:hN:V:p:P:stTituUrG:L:", longopts, NULL)) != EOF) {
+	while ((c = getopt_long(argc, argv, "dH:hN:V:p:P:stTuUrG:L:", longopts, NULL)) != EOF) {
 		switch(c) {
 		case 'd':
 			xlog_config(D_ALL, 1);
@@ -219,7 +226,6 @@ main(int argc, char **argv)
 				}
 				/* FALLTHRU */
 			case 3:
-			case 2:
 				NFSCTL_VERUNSET(versbits, c);
 				break;
 			default:
@@ -244,7 +250,6 @@ main(int argc, char **argv)
 					minorvers = minorversset = minormask;
 				/* FALLTHRU */
 			case 3:
-			case 2:
 				NFSCTL_VERSET(versbits, c);
 				break;
 			default:

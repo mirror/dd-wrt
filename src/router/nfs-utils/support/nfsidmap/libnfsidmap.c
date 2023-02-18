@@ -89,6 +89,10 @@ gid_t nobody_gid = (gid_t)-1;
 #define NFS4DNSTXTREC "_nfsv4idmapdomain"
 #endif
 
+#ifndef NS_MAXMSG
+#define NS_MAXMSG 65535
+#endif
+
 /* Default logging fuction */
 static void default_logger(const char *fmt, ...)
 {
@@ -233,24 +237,40 @@ static int load_translation_plugin(char *method, struct mapping_plugin *plgn)
 {
 	void *dl = NULL;
 	struct trans_func *trans = NULL;
-	libnfsidmap_plugin_init_t init_func;
+	libnfsidmap_plugin_init_t init_func = NULL;
 	char plgname[128];
 	int ret = 0;
 
-	snprintf(plgname, sizeof(plgname), "%s/%s.so", PATH_PLUGINS, method);
+	/* Look for library using search path first to allow overriding */
+	snprintf(plgname, sizeof(plgname), "%s.so", method);
 
 	dl = dlopen(plgname, RTLD_NOW | RTLD_LOCAL);
-	if (dl == NULL) {
-		IDMAP_LOG(1, ("libnfsidmap: Unable to load plugin: %s",
-			  dlerror()));
-		return -1;
+	if (dl != NULL) {
+		/* Is it really one of our libraries */
+		init_func = (libnfsidmap_plugin_init_t) dlsym(dl, PLUGIN_INIT_FUNC);
+		if (init_func == NULL) {
+			dlclose(dl);
+			dl = NULL;
+		}
 	}
-	init_func = (libnfsidmap_plugin_init_t) dlsym(dl, PLUGIN_INIT_FUNC);
-	if (init_func == NULL) {
-		IDMAP_LOG(1, ("libnfsidmap: Unable to get init function: %s",
-			  dlerror()));
-		dlclose(dl);
-		return -1;
+
+	if (dl == NULL) {
+		/* Fallback to hard-coded path */
+		snprintf(plgname, sizeof(plgname), "%s/%s.so", PATH_PLUGINS, method);
+
+		dl = dlopen(plgname, RTLD_NOW | RTLD_LOCAL);
+		if (dl == NULL) {
+			IDMAP_LOG(1, ("libnfsidmap: Unable to load plugin: %s: %s",
+				  plgname, dlerror()));
+			return -1;
+		}
+		init_func = (libnfsidmap_plugin_init_t) dlsym(dl, PLUGIN_INIT_FUNC);
+		if (init_func == NULL) {
+			IDMAP_LOG(1, ("libnfsidmap: Unable to get init function: %s: %s",
+				  plgname, dlerror()));
+			dlclose(dl);
+			return -1;
+		}
 	}
 	trans = init_func();
 	if (trans == NULL) {
@@ -490,6 +510,19 @@ out:
 		conf_free_list(nfs4_methods);
 
 	return ret ? -ENOENT: 0;
+}
+
+void nfs4_term_name_mapping(void)
+{
+	if (nfs4_plugins)
+		unload_plugins(nfs4_plugins);
+	if (gss_plugins)
+		unload_plugins(gss_plugins);
+
+	nfs4_plugins = gss_plugins = NULL;
+
+	free_local_realms();
+	conf_cleanup();
 }
 
 int

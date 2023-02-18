@@ -28,8 +28,6 @@
 
 extern int reverse_resolve;
 
-extern struct state_paths rmtab;
-
 /* If new path is a link do not destroy it but place the
  * file where the link points.
  */
@@ -235,6 +233,9 @@ mountlist_list(void)
 			m->ml_directory = strdup(rep->r_path);
 
 			if (m->ml_hostname == NULL || m->ml_directory == NULL) {
+				free(m->ml_hostname);
+				free(m->ml_directory);
+				free(m);
 				mountlist_freeall(mlist);
 				mlist = NULL;
 				xlog(L_ERROR, "%s: memory allocation failed",

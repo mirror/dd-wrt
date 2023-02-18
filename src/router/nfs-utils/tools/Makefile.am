@@ -9,9 +9,9 @@ endif
 OPTDIRS += nfsconf
 
 if CONFIG_NFSDCLD
-OPTDIRS += clddb-tool
+OPTDIRS += nfsdclddb
 endif
 
-SUBDIRS = locktest rpcdebug nlmtest mountstats nfs-iostat $(OPTDIRS)
+SUBDIRS = locktest rpcdebug nlmtest mountstats nfs-iostat rpcctl nfsdclnts nfsrahead $(OPTDIRS)
 
 MAINTAINERCLEANFILES = Makefile.in

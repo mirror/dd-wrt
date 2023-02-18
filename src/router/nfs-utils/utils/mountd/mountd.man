@@ -13,24 +13,24 @@ The
 .B rpc.mountd
 daemon implements the server side of the NFS MOUNT protocol,
 an NFS side protocol used by NFS version 2 [RFC1094] and NFS version 3 [RFC1813].
+It also responds to requests from the Linux kernel to authenticate
+clients and provides details of access permissions.
 .PP
-An NFS server maintains a table of local physical file systems
-that are accessible to NFS clients.
-Each file system in this table is referred to as an
-.IR "exported file system" ,
-or
-.IR export ,
-for short.
-.PP
-Each file system in the export table has an access control list.
-.B rpc.mountd
-uses these access control lists to determine
-whether an NFS client is permitted to access a given file system.
-For details on how to manage your NFS server's export table, see the
-.BR exports (5)
-and
-.BR exportfs (8)
-man pages.
+The NFS server
+.RI ( nfsd )
+maintains a cache of authentication and authorization information which
+is used to identify the source of each request, and then what access
+permissions that source has to any local filesystem.  When required
+information is not found in the cache, the server sends a request to
+.B mountd
+to fill in the missing information.  Mountd uses a table of information
+stored in
+.B /var/lib/nfs/etab
+and maintained by
+.BR exportfs (8),
+possibly based on the contents of 
+.BR exports (5),
+to respond to each request.
 .SS Mounting exported NFS File Systems
 The NFS MOUNT protocol has several procedures.
 The most important of these are
@@ -78,10 +78,68 @@ A client may continue accessing an export even after invoking UMNT.
 If the client reboots without sending a UMNT request, stale entries
 remain for that client in
 .IR /var/lib/nfs/rmtab .
+.SS Mounting File Systems with NFSv4
+Version 4 (and later) of NFS does not use a separate NFS MOUNT
+protocol.  Instead mounting is performed using regular NFS requests
+handled by the NFS server in the Linux kernel
+.RI ( nfsd ).
+Consequently
+.I /var/lib/nfs/rmtab
+is not updated to reflect any NFSv4 activity.
 .SH OPTIONS
 .TP
 .B \-d kind " or " \-\-debug kind
 Turn on debugging. Valid kinds are: all, auth, call, general and parse.
+.TP
+.BR \-l " or " \-\-log\-auth
+Enable logging of responses to authentication and access requests from
+nfsd.  Each response is then cached by the kernel for 30 minutes (or as set by
+.B \-\-ttl
+below), and will be refreshed after 15 minutes (half the ttl time) if
+the relevant client remains active.
+Note that
+.B -l
+is equivalent to
+.B "-d auth"
+and so can be enabled in
+.B /etc/nfs.conf
+with
+.B "\[dq]debug = auth\[dq]"
+in the
+.B "[mountd]"
+section.
+.IP
+.B rpc.mountd
+will always log authentication responses to MOUNT requests when NFSv3 is
+used, but to get similar logs for NFSv4, this option is required.
+.TP
+.BR \-i " or " \-\-cache\-use\-ipaddr
+Normally each client IP address is matched against each host identifier
+(name, wildcard, netgroup etc) found in
+.B /etc/exports
+and a combined identity is formed from all matching identifiers.
+Often many clients will map to the same combined identity so performing
+this mapping reduces the number of distinct access details that the
+kernel needs to store.
+Specifying the
+.B \-i
+option suppresses this mapping so that access to each filesystem is
+requested and cached separately for each client IP address.  Doing this
+can increase the burden of updating the cache slightly, but can make the
+log messages produced by the
+.B -l
+option easier to read.
+.TP
+.B \-T " or " \-\-ttl
+Provide a time-to-live (TTL) for cached information given to the kernel.
+The kernel will normally request an update if the information is needed
+after half of this time has expired.  Increasing the provided number,
+which is in seconds, reduces the rate of cache update requests, and this
+is particularly noticeable when these requests are logged with
+.BR \-l .
+However increasing also means that changes to hostname to address
+mappings can take longer to be noticed.
+The default TTL is 1800 (30 minutes).
 .TP
 .B \-F " or " \-\-foreground
 Run in foreground (do not daemonize)
@@ -213,9 +271,11 @@ Values recognized in the
 .B [mountd]
 section include
 .BR manage-gids ,
+.BR cache\-use\-ipaddr ,
 .BR descriptors ,
 .BR port ,
 .BR threads ,
+.BR ttl ,
 .BR reverse-lookup ", and"
 .BR state-directory-path ,
 .B ha-callout
@@ -226,10 +286,9 @@ The values recognized in the
 section include
 .BR TCP ,
 .BR UDP ,
-.BR vers2 ,
 .BR vers3 ", and"
 .B vers4
-which each have same same meaning as given by
+which each have the same meaning as given by
 .BR rpc.nfsd (8).
 
 .SH TCP_WRAPPERS SUPPORT
@@ -295,5 +354,9 @@ table of clients accessing server's exports
 RFC 1094 - "NFS: Network File System Protocol Specification"
 .br
 RFC 1813 - "NFS Version 3 Protocol Specification"
+.br
+RFC 7530 - "Network File System (NFS) Version 4 Protocol"
+.br
+RFC 8881 - "Network File System (NFS) Version 4 Minor Version 1 Protocol"
 .SH AUTHOR
 Olaf Kirch, H. J. Lu, G. Allan Morris III, and a host of others.

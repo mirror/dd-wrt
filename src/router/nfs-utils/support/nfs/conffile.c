@@ -52,9 +52,13 @@
 #include <libgen.h>
 #include <sys/file.h>
 #include <time.h>
+#include <dirent.h>
 
 #include "conffile.h"
 #include "xlog.h"
+
+#define CONF_FILE_EXT ".conf"
+#define CONF_FILE_EXT_LEN ((int) (sizeof(CONF_FILE_EXT) - 1))
 
 #pragma GCC visibility push(hidden)
 
@@ -129,6 +133,39 @@ conf_hash(const char *s)
 }
 
 /*
+ * free all the component parts of a conf_binding struct
+ */
+static void free_confbind(struct conf_binding *cb)
+{
+	if (!cb)
+		return;
+	if (cb->section)
+		free(cb->section);
+	if (cb->arg)
+		free(cb->arg);
+	if (cb->tag)
+		free(cb->tag);
+	if (cb->value)
+		free(cb->value);
+	free(cb);
+}
+
+static void free_conftrans(struct conf_trans *ct)
+{
+	if (!ct)
+		return;
+	if (ct->section)
+		free(ct->section);
+	if (ct->arg)
+		free(ct->arg);
+	if (ct->tag)
+		free(ct->tag);
+	if (ct->value)
+		free(ct->value);
+	free(ct);
+}
+
+/*
  * Insert a tag-value combination from LINE (the equal sign is at POS)
  */
 static int
@@ -143,11 +180,7 @@ conf_remove_now(const char *section, const char *tag)
 				&& strcasecmp(cb->tag, tag) == 0) {
 			LIST_REMOVE(cb, link);
 			xlog(LOG_INFO,"[%s]:%s->%s removed", section, tag, cb->value);
-			free(cb->section);
-			free(cb->arg);
-			free(cb->tag);
-			free(cb->value);
-			free(cb);
+			free_confbind(cb);
 			return 0;
 		}
 	}
@@ -167,11 +200,7 @@ conf_remove_section_now(const char *section)
 			unseen = 0;
 			LIST_REMOVE(cb, link);
 			xlog(LOG_INFO, "[%s]:%s->%s removed", section, cb->tag, cb->value);
-			free(cb->section);
-			free(cb->arg);
-			free(cb->tag);
-			free(cb->value);
-			free(cb);
+			free_confbind(cb);
 			}
 		}
 	return unseen;
@@ -429,9 +458,9 @@ conf_parse_line(int trans, char *line, const char *filename, int lineno, char **
 
 		subconf = conf_readfile(relpath);
 		if (subconf == NULL) {
-			xlog_warn("config error at %s:%d: "
-				"error loading included config",
-				  filename, lineno);
+			if (!optional)
+				xlog_warn("config error at %s:%d: error loading included config",
+					  filename, lineno);
 			if (relpath)
 				free(relpath);
 			return;
@@ -456,7 +485,7 @@ conf_parse_line(int trans, char *line, const char *filename, int lineno, char **
 		free(subconf);
 	} else {
 		/* XXX Perhaps should we not ignore errors?  */
-		conf_set(trans, *section, *subsection, line, val, 0, 0);
+		conf_set(trans, *section, *subsection, line, val, 1, 0);
 	}
 }
 
@@ -567,16 +596,36 @@ static void conf_free_bindings(void)
 		for (; cb; cb = next) {
 			next = LIST_NEXT(cb, link);
 			LIST_REMOVE(cb, link);
-			free(cb->section);
-			free(cb->arg);
-			free(cb->tag);
-			free(cb->value);
-			free(cb);
+			free_confbind(cb);
 		}
 		LIST_INIT(&conf_bindings[i]);
 	}
 }
 
+static int
+conf_load_files(int trans, const char *conf_file)
+{
+	char *conf_data;
+	char *section = NULL;
+	char *subsection = NULL;
+
+	conf_data = conf_readfile(conf_file);
+	if (conf_data == NULL)
+		return 1;
+
+	/* Load default configuration values.  */
+	conf_load_defaults();
+
+	/* Parse config contents into the transaction queue */
+	conf_parse(trans, conf_data, &section, &subsection, conf_file);
+	if (section) 
+		free(section);
+	if (subsection) 
+		free(subsection);
+	free(conf_data);
+
+	return 0;
+}
 /* Open the config file and map it into our address space, then parse it.  */
 static int
 conf_load_file(const char *conf_file)
@@ -609,18 +658,129 @@ conf_load_file(const char *conf_file)
 	return 0;
 }
 
+static void 
+conf_init_dir(const char *conf_file)
+{
+	struct dirent **namelist = NULL;
+	char *dname, fname[PATH_MAX], *cname;
+	int n = 0, nfiles = 0, i, fname_len, dname_len;
+	int trans, rv, path_len;
+
+	dname = malloc(strlen(conf_file) + 3);
+	if (dname == NULL) {
+		xlog(L_WARNING, "conf_init_dir: malloc: %s", strerror(errno));
+		return;	
+	}
+	sprintf(dname, "%s.d", conf_file);
+
+	n = scandir(dname, &namelist, NULL, versionsort);
+	if (n < 0) {
+		if (errno != ENOENT) {
+			xlog(L_WARNING, "conf_init_dir: scandir %s: %s", 
+				dname, strerror(errno));
+		}
+		free(dname);
+		return;
+	} else if (n == 0) {
+		free(dname);
+		return;
+	}
+
+	trans = conf_begin();
+	dname_len = strlen(dname);
+	for (i = 0; i < n; i++ ) {
+		struct dirent *d = namelist[i];
+
+	 	switch (d->d_type) {
+			case DT_UNKNOWN:
+			case DT_REG:
+			case DT_LNK:
+				break;
+			default:
+				continue;
+		}
+		if (*d->d_name == '.')
+			continue;
+		
+		fname_len = strlen(d->d_name);
+		path_len = (fname_len + dname_len);
+		if (!fname_len || path_len > PATH_MAX) {
+			xlog(L_WARNING, "conf_init_dir: Too long file name: %s in %s", 
+				d->d_name, dname);
+			continue; 
+		}
+
+		/*
+		 * Check the naming of the file. Only process files
+		 * that end with CONF_FILE_EXT
+		 */
+		if (fname_len <= CONF_FILE_EXT_LEN) {
+			xlog(D_GENERAL, "conf_init_dir: %s: name too short", 
+				d->d_name);
+			continue;
+		}
+		cname = (d->d_name + (fname_len - CONF_FILE_EXT_LEN));
+		if (strcmp(cname, CONF_FILE_EXT) != 0) {
+			xlog(D_GENERAL, "conf_init_dir: %s: invalid file extension", 
+				d->d_name);
+			continue;
+		}
+
+		rv = snprintf(fname, PATH_MAX, "%s/%s", dname, d->d_name);
+		if (rv < path_len) {
+			xlog(L_WARNING, "conf_init_dir: file name: %s/%s too short", 
+				d->d_name, dname);
+			continue;
+		}
+
+		if (conf_load_files(trans, fname))
+			continue;
+		nfiles++;
+	}
+
+	if (nfiles) {
+		/* Apply the configuration values */
+		conf_end(trans, 1);
+	}
+	for (i = 0; i < n; i++)
+		free(namelist[i]);
+	free(namelist);
+	free(dname);
+	
+	return;
+}
+
 int
 conf_init_file(const char *conf_file)
 {
 	unsigned int i;
+	int ret;
 
 	for (i = 0; i < sizeof conf_bindings / sizeof conf_bindings[0]; i++)
 		LIST_INIT (&conf_bindings[i]);
 
 	TAILQ_INIT (&conf_trans_queue);
 
-	if (conf_file == NULL) conf_file=NFS_CONFFILE;
-	return conf_load_file(conf_file);
+	if (conf_file == NULL) 
+		conf_file=NFS_CONFFILE;
+
+	/*
+	 * First parse the give config file 
+	 * then parse the config.conf.d directory 
+	 * (if it exists)
+	 *
+	 */
+	ret = conf_load_file(conf_file);
+
+	/*
+	 * When the same variable is set in both files
+	 * the conf.d file will override the config file.
+	 * This allows automated admin systems to
+	 * have the final say.
+	 */
+	conf_init_dir(conf_file);
+
+	return ret;
 }
 
 /*
@@ -635,11 +795,7 @@ conf_cleanup(void)
 	for (node = TAILQ_FIRST(&conf_trans_queue); node; node = next) {
 		next = TAILQ_NEXT(node, link);
 		TAILQ_REMOVE (&conf_trans_queue, node, link);
-		if (node->section) free(node->section);
-		if (node->arg) free(node->arg);
-		if (node->tag) free(node->tag);
-		if (node->value) free(node->value);
-		free (node);
+		free_conftrans(node);
 	}
 	TAILQ_INIT(&conf_trans_queue);
 }
@@ -733,6 +889,29 @@ conf_get_str_with_def(const char *section, const char *tag, char *def)
 	if (!result)
 		return def;
 	return result;
+}
+
+/*
+ * Retrieve an entry without interpreting its contents
+ */
+char *
+conf_get_entry(const char *section, const char *arg, const char *tag)
+{
+	struct conf_binding *cb;
+
+	cb = LIST_FIRST (&conf_bindings[conf_hash (section)]);
+	for (; cb; cb = LIST_NEXT (cb, link)) {
+		if (strcasecmp(section, cb->section) != 0)
+			continue;
+		if (arg && (cb->arg == NULL || strcasecmp(arg, cb->arg) != 0))
+			continue;
+		if (!arg && cb->arg)
+			continue;
+		if (strcasecmp(tag, cb->tag) != 0)
+			continue;
+		return cb->value;
+	}
+	return 0;
 }
 
 /*
@@ -1005,14 +1184,7 @@ conf_set(int transaction, const char *section, const char *arg,
 	return 0;
 
 fail:
-	if (node->tag)
-		free(node->tag);
-	if (node->arg)
-		free(node->arg);
-	if (node->section)
-		free(node->section);
-	if (node)
-		free(node);
+	free_conftrans(node);
 	return 1;
 }
 
@@ -1038,10 +1210,7 @@ conf_remove(int transaction, const char *section, const char *tag)
 	return 0;
 
 fail:
-	if (node && node->section)
-		free (node->section);
-	if (node)
-		free (node);
+	free_conftrans(node);
 	return 1;
 }
 
@@ -1062,8 +1231,7 @@ conf_remove_section(int transaction, const char *section)
 	return 0;
 
 fail:
-	if (node)
-		free(node);
+	free_conftrans(node);
 	return 1;
 }
 
@@ -1094,15 +1262,7 @@ conf_end(int transaction, int commit)
 				}
 			}
 			TAILQ_REMOVE (&conf_trans_queue, node, link);
-			if (node->section)
-				free(node->section);
-			if (node->arg)
-				free(node->arg);
-			if (node->tag)
-				free(node->tag);
-			if (node->value)
-				free(node->value);
-			free (node);
+			free_conftrans(node);
 		}
 	}
 	return 0;

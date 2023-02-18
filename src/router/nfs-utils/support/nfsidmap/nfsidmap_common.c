@@ -34,12 +34,21 @@ static char * toupper_str(char *s)
         return s;
 }
 
+static struct conf_list *local_realms = NULL;
+
+void free_local_realms(void)
+{
+	if (local_realms) {
+		conf_free_list(local_realms);
+		local_realms = NULL;
+	}
+}
+
 /* Get list of "local equivalent" realms.  Meaning the list of realms
  * where john@REALM.A is considered the same user as john@REALM.B
  * If not specified, default to upper-case of local domain name */
 struct conf_list *get_local_realms(void)
 {
-	static struct conf_list *local_realms = NULL;
 	if (local_realms) return local_realms;
 
 	local_realms = conf_get_list("General", "Local-Realms");

@@ -24,13 +24,13 @@ the NFSv4 kernel client and server, to which it communicates via
 upcalls, by translating user and group IDs to names, and vice versa.
 .Pp
 The system derives the
-.I user
+.Em user
 part of the string by performing a password or group lookup.
 The lookup mechanism is configured in
 .Pa /etc/idmapd.conf
 .Pp
 By default, the
-.I domain
+.Em domain
 part of the string is the system's DNS domain name.
 It can also be specified in
 .Pa /etc/idmapd.conf

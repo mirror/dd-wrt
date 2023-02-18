@@ -60,9 +60,4 @@ bool ipaddr_client_matches(nfs_export *exp, struct addrinfo *ai);
 bool namelist_client_matches(nfs_export *exp, char *dom);
 bool client_matches(nfs_export *exp, char *dom, struct addrinfo *ai);
 
-static inline bool is_ipaddr_client(char *dom)
-{
-	return dom[0] == '$';
-}
-
 #endif /* MOUNTD_H */

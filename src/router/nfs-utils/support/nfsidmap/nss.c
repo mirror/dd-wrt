@@ -365,10 +365,8 @@ static int _nss_name_to_gid(char *name, gid_t *gid, int dostrip)
 out_buf:
 	free(buf);
 out_name:
-	if (dostrip)
-		free(localname);
-	if (get_reformat_group())
-		free(ref_name);
+	free(localname);
+	free(ref_name);
 out:
 	return err;
 }
@@ -464,6 +462,17 @@ static int nss_plugin_init(void)
 {
 	if (nfsidmap_conf_path)
 		conf_init_file(nfsidmap_conf_path);
+	return 0;
+}
+
+/*
+ * Called by dlclose(). See dlopen(3) man page
+ */
+__attribute__((destructor))
+static int nss_plugin_term(void)
+{
+	free_local_realms();
+	conf_cleanup();
 	return 0;
 }
 

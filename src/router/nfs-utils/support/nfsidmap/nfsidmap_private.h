@@ -37,6 +37,7 @@
 #include "conffile.h"
 
 struct conf_list *get_local_realms(void);
+void free_local_realms(void);
 int get_nostrip(void);
 int get_reformat_group(void);
 

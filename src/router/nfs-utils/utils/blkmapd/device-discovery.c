@@ -63,8 +63,8 @@
 #define EVENT_SIZE (sizeof(struct inotify_event))
 #define EVENT_BUFSIZE (1024 * EVENT_SIZE)
 
-#define RPCPIPE_DIR	"/var/lib/nfs/rpc_pipefs"
-#define PID_FILE	"/var/run/blkmapd.pid"
+#define RPCPIPE_DIR	NFS_STATEDIR "/rpc_pipefs"
+#define PID_FILE	"/run/blkmapd.pid"
 
 #define CONF_SAVE(w, f) do {			\
 	char *p = f;				\

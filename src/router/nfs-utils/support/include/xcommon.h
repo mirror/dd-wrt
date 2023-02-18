@@ -7,7 +7,7 @@
  */
 
 #ifndef _XMALLOC_H
-#define _MALLOC_H
+#define _XMALLOC_H
 
 #ifdef HAVE_CONFIG_H
 #include <config.h>

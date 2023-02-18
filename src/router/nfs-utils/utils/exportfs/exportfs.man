@@ -167,9 +167,11 @@ When a list is given, the members should be comma-separated.
 .B exportfs
 will also recognize the
 .B state-directory-path
-value from the
+value from both the 
 .B [mountd]
-section.
+section and the
+.B [exportd]
+section
 
 .SH DISCUSSION
 .SS Exporting Directories
@@ -327,6 +329,7 @@ table of clients accessing server's exports
 .BR exports (5),
 .BR nfs.conf (5),
 .BR rpc.mountd (8),
+.BR exportd (8),
 .BR netgroup (5)
 .SH AUTHORS
 Olaf Kirch <okir@monad.swb.de>

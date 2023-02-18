@@ -5,6 +5,8 @@
 #include <errno.h>
 #include <sys/types.h>
 #include <sys/stat.h>
+#include <sys/vfs.h>
+#include <fcntl.h>
 #include <limits.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -13,6 +15,7 @@
 #include "xmalloc.h"
 #include "xlog.h"
 #include "xstat.h"
+#include "nfslib.h"
 #include "nfsd_path.h"
 #include "workqueue.h"
 
@@ -107,6 +110,7 @@ nfsd_setup_workqueue(void)
 
 	if (!rootdir)
 		return;
+
 	nfsd_wq = xthread_workqueue_alloc();
 	if (!nfsd_wq)
 		return;
@@ -178,6 +182,48 @@ nfsd_path_lstat(const char *pathname, struct stat *statbuf)
 	if (!nfsd_wq)
 		return xlstat(pathname, statbuf);
 	return nfsd_run_stat(nfsd_wq, nfsd_lstatfunc, pathname, statbuf);
+}
+
+struct nfsd_statfs64_data {
+	const char *pathname;
+	struct statfs64 *statbuf;
+	int ret;
+	int err;
+};
+
+static void
+nfsd_statfs64func(void *data)
+{
+	struct nfsd_statfs64_data *d = data;
+
+	d->ret = statfs64(d->pathname, d->statbuf);
+	if (d->ret < 0)
+		d->err = errno;
+}
+
+static int
+nfsd_run_statfs64(struct xthread_workqueue *wq,
+		  const char *pathname,
+		  struct statfs64 *statbuf)
+{
+	struct nfsd_statfs64_data data = {
+		pathname,
+		statbuf,
+		0,
+		0
+	};
+	xthread_work_run_sync(wq, nfsd_statfs64func, &data);
+	if (data.ret < 0)
+		errno = data.err;
+	return data.ret;
+}
+
+int
+nfsd_path_statfs64(const char *pathname, struct statfs64 *statbuf)
+{
+	if (!nfsd_wq)
+		return statfs64(pathname, statbuf);
+	return nfsd_run_statfs64(nfsd_wq, pathname, statbuf);
 }
 
 struct nfsd_realpath_data {
@@ -297,3 +343,67 @@ nfsd_path_write(int fd, const char *buf, size_t len)
 		return write(fd, buf, len);
 	return nfsd_run_write(nfsd_wq, fd, buf, len);
 }
+
+#if defined(HAVE_NAME_TO_HANDLE_AT)
+struct nfsd_handle_data {
+	int fd;
+	const char *path;
+	struct file_handle *fh;
+	int *mount_id;
+	int flags;
+	int ret;
+	int err;
+};
+
+static void
+nfsd_name_to_handle_func(void *data)
+{
+	struct nfsd_handle_data *d = data;
+
+	d->ret = name_to_handle_at(d->fd, d->path,
+			d->fh, d->mount_id, d->flags);
+	if (d->ret < 0)
+		d->err = errno;
+}
+
+static int
+nfsd_run_name_to_handle_at(struct xthread_workqueue *wq,
+		int fd, const char *path, struct file_handle *fh,
+		int *mount_id, int flags)
+{
+	struct nfsd_handle_data data = {
+		fd,
+		path,
+		fh,
+		mount_id,
+		flags,
+		0,
+		0
+	};
+
+	xthread_work_run_sync(wq, nfsd_name_to_handle_func, &data);
+	if (data.ret < 0)
+		errno = data.err;
+	return data.ret;
+}
+
+int
+nfsd_name_to_handle_at(int fd, const char *path, struct file_handle *fh,
+		int *mount_id, int flags)
+{
+	if (!nfsd_wq)
+		return name_to_handle_at(fd, path, fh, mount_id, flags);
+
+	return nfsd_run_name_to_handle_at(nfsd_wq, fd, path, fh,
+			mount_id, flags);
+}
+#else
+int
+nfsd_name_to_handle_at(int UNUSED(fd), const char *UNUSED(path),
+		struct file_handle *UNUSED(fh),
+		int *UNUSED(mount_id), int UNUSED(flags))
+{
+	errno = ENOSYS;
+	return -1;
+}
+#endif

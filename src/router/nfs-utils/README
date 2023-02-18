@@ -34,7 +34,7 @@ To install binaries and documenation, run this command:
 
 Getting nfs-utils for the first time:
 
-	git clone git://linux-nfs.org/nfs-utils
+	git clone git://git.linux-nfs.org/~steved/nfs-utils.git
 
 Updating to the latest head after you've already got it.
 

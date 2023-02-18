@@ -37,11 +37,11 @@
 #include <stdio.h>
 #include <ctype.h>
 #include <string.h>
-#include <libintl.h>
 #include "rpc_scan.h"
 #include "rpc_parse.h"
 #include "rpc_util.h"
 #include "proto.h"
+#include "nls.h"
 
 #ifndef _
 #define _(String) gettext (String)

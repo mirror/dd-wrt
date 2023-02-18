@@ -21,8 +21,9 @@
 
 . ./test-lib.sh
 
-# This test needs root privileges
+# This test needs root privileges and /dev/log
 check_root
+check_dev_log
 
 start_statd
 if [ $? -ne 0 ]; then

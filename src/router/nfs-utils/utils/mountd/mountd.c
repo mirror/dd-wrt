@@ -31,6 +31,7 @@
 #include "pseudoflavors.h"
 #include "nfsd_path.h"
 #include "nfslib.h"
+#include "export.h"
 
 extern void my_svc_run(void);
 
@@ -41,9 +42,6 @@ static struct nfs_fh_len *get_rootfh(struct svc_req *, dirpath *, nfs_export **,
 int reverse_resolve = 0;
 int manage_gids;
 int use_ipaddr = -1;
-
-struct state_paths etab;
-struct state_paths rmtab;
 
 /* PRC: a high-availability callout program can be specified with -H
  * When this is done, the program will receive callouts whenever clients
@@ -74,8 +72,12 @@ static struct option longopts[] =
 	{ "reverse-lookup", 0, 0, 'r' },
 	{ "manage-gids", 0, 0, 'g' },
 	{ "no-udp", 0, 0, 'u' },
+	{ "log-auth", 0, 0, 'l'},
+	{ "cache-use-ipaddr", 0, 0, 'i'},
+	{ "ttl", 1, 0, 'T'},
 	{ NULL, 0, 0, 0 }
 };
+static char shortopts[] = "o:nFd:p:P:hH:N:V:vurs:t:gliT:";
 
 #define NFSVERSBIT(vers)	(0x1 << (vers - 1))
 #define NFSVERSBIT_ALL		(NFSVERSBIT(2) | NFSVERSBIT(3) | NFSVERSBIT(4))
@@ -661,37 +663,27 @@ get_exportlist(void)
 	return elist;
 }
 
-int
-main(int argc, char **argv)
+int	vers;
+int	port = 0;
+int	descriptors = 0;
+
+inline static void 
+read_mountd_conf(char **argv)
 {
-	char	*progname;
 	char	*s;
-	unsigned int listeners = 0;
-	int	foreground = 0;
-	int	port = 0;
-	int	descriptors = 0;
-	int	c;
-	int	vers;
-	struct sigaction sa;
-	struct rlimit rlim;
-
-	/* Set the basename */
-	if ((progname = strrchr(argv[0], '/')) != NULL)
-		progname++;
-	else
-		progname = argv[0];
-
-	/* Initialize logging. */
-	xlog_open(progname);
+	int	ttl;
 
 	conf_init_file(NFS_CONFFILE);
-	xlog_from_conffile("mountd");
+
+	xlog_set_debug("mountd");
 	manage_gids = conf_get_bool("mountd", "manage-gids", manage_gids);
 	descriptors = conf_get_num("mountd", "descriptors", descriptors);
 	port = conf_get_num("mountd", "port", port);
 	num_threads = conf_get_num("mountd", "threads", num_threads);
 	reverse_resolve = conf_get_bool("mountd", "reverse-lookup", reverse_resolve);
 	ha_callout_prog = conf_get_str("mountd", "ha-callout");
+	if (conf_get_bool("mountd", "cache-use-ipaddr", 0))
+		use_ipaddr = 2;
 
 	s = conf_get_str("mountd", "state-directory-path");
 	if (s && !state_setup_basedir(argv[0], s))
@@ -715,10 +707,37 @@ main(int argc, char **argv)
 			NFSCTL_VERUNSET(nfs_version, vers);
 	}
 
+	ttl = conf_get_num("mountd", "ttl", default_ttl);
+	if (ttl > 0)
+		default_ttl = ttl;
+}
+
+int
+main(int argc, char **argv)
+{
+	char	*progname;
+	unsigned int listeners = 0;
+	int	foreground = 0;
+	int	c;
+	int	ttl;
+	struct sigaction sa;
+	struct rlimit rlim;
+
+	/* Set the basename */
+	if ((progname = strrchr(argv[0], '/')) != NULL)
+		progname++;
+	else
+		progname = argv[0];
+
+	/* Initialize logging. */
+	xlog_open(progname);
+
+	/* Read in config setting */
+	read_mountd_conf(argv);
 
 	/* Parse the command line options and arguments. */
 	opterr = 0;
-	while ((c = getopt_long(argc, argv, "o:nFd:p:P:hH:N:V:vurs:t:g", longopts, NULL)) != EOF)
+	while ((c = getopt_long(argc, argv, shortopts, longopts, NULL)) != EOF)
 		switch (c) {
 		case 'g':
 			manage_gids = 1;
@@ -788,6 +807,21 @@ main(int argc, char **argv)
 			exit(0);
 		case 'u':
 			NFSCTL_UDPUNSET(_rpcprotobits);
+			break;
+		case 'l':
+			xlog_sconfig("auth", 1);
+			break;
+		case 'i':
+			use_ipaddr = 2;
+			break;
+		case 'T':
+			ttl = atoi(optarg);
+			if (ttl <= 0) {
+				fprintf(stderr, "%s: bad ttl number of seconds: %s\n",
+					argv[0], optarg);
+				usage(argv[0], 1);
+			}
+			default_ttl = ttl;
 			break;
 		case 0:
 			break;
@@ -888,6 +922,7 @@ main(int argc, char **argv)
 	nfsd_path_init();
 	/* Open files now to avoid sharing descriptors among forked processes */
 	cache_open();
+	v4clients_init();
 
 	xlog(L_NOTICE, "Version " VERSION " starting");
 	my_svc_run();
@@ -904,6 +939,7 @@ usage(const char *prog, int n)
 {
 	fprintf(stderr,
 "Usage: %s [-F|--foreground] [-h|--help] [-v|--version] [-d kind|--debug kind]\n"
+"	[-l|--log-auth] [-i|--cache-use-ipaddr] [-T|--ttl ttl]\n"
 "	[-o num|--descriptors num]\n"
 "	[-p|--port port] [-V version|--nfs-version version]\n"
 "	[-N version|--no-nfs-version version] [-n|--no-tcp]\n"

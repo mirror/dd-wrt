@@ -1,0 +1,12 @@
+[Unit]
+Description=NFSv4 Mount Daemon
+DefaultDependencies=no
+Requires=proc-fs-nfsd.mount
+Wants=network-online.target
+After=proc-fs-nfsd.mount
+After=network-online.target local-fs.target
+BindsTo=nfsv4-server.service
+
+[Service]
+Type=forking
+ExecStart=/usr/sbin/nfsv4.exportd

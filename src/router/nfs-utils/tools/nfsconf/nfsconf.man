@@ -11,6 +11,12 @@ nfsconf \- Query various NFS configuration settings
 .IR infile.conf ]
 .RI [ outfile ]
 .P
+.B nfsconf \-\-entry
+.RB [ \-\-arg  
+.IR subsection]
+.IR section
+.IR tag
+.P
 .B nfsconf \-\-get
 .RB [ \-v | \-\-verbose ]
 .RB [ \-f | \-\-file
@@ -58,6 +64,8 @@ from a range of nfs-utils configuration files.
 The following modes are available:
 .IP "\fB\-d, \-\-dump\fP"
 Output an alphabetically sorted dump of the current configuration in conf file format. Accepts an optional filename in which to write the output.
+.IP "\fB\-e, \-\-entry\fP"
+retrieve the config entry rather than its current expanded value
 .IP "\fB\-i, \-\-isset\fP"
 Test if a specific tag has a value set.
 .IP "\fB\-g, \-\-get\fP"
@@ -75,7 +83,7 @@ Increase verbosity and print debugging information.
 .B \-f, \-\-file \fIinfile\fR
 Select a different config file to operate upon, default is
 .I /etc/nfs.conf
-.SS Options only valid in \fB\-\-get\fR and \fB\-\-isset\fR modes.
+.SS Options only valid in \fB\-\-entry\fR and \fB\-\-get\fR and \fB\-\-isset\fR modes.
 .TP
 .B \-a, \-\-arg \fIsubsection\fR
 Select a specific sub-section

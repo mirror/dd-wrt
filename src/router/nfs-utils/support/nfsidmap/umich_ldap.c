@@ -31,6 +31,7 @@
  * NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
+#include "config.h"
 
 #include <sys/types.h>
 #include <sys/socket.h>
@@ -43,6 +44,15 @@
 #include <limits.h>
 #include <pwd.h>
 #include <err.h>
+#ifdef HAVE_GSSAPI_GSSAPI_KRB5_H
+#include <gssapi/gssapi_krb5.h>
+#endif /* HAVE_GSSAPI_GSSAPI_KRB5_H */
+#ifdef HAVE_SASL_H
+#include <sasl.h>
+#endif /* HAVE_SASL_H */
+#ifdef HAVE_SASL_SASL_H
+#include <sasl/sasl.h>
+#endif /* HAVE_SASL_SASL_H */
 /* We are using deprecated functions, get the prototypes... */
 #define LDAP_DEPRECATED 1
 #include <ldap.h>
@@ -105,6 +115,14 @@ struct umich_ldap_info {
 				   looking up user groups */
 	int ldap_timeout;	/* Timeout in seconds for searches
 				   by ldap_search_st */
+	int follow_referrals;	/* whether to follow ldap referrals */
+	char *sasl_mech;	/* sasl mech to be used */
+	char *sasl_realm;	/* SASL realm for SASL authentication */
+	char *sasl_authcid;	/* authentication identity to be used  */
+	char *sasl_authzid;	/* authorization identity to be used */
+	char *sasl_secprops;	/* Cyrus SASL security properties. */
+	int sasl_canonicalize;	/* canonicalize LDAP server host name */
+	char *sasl_krb5_ccname;	/* krb5 ticket cache */
 };
 
 /* GLOBAL data */
@@ -122,6 +140,14 @@ static struct umich_ldap_info ldap_info = {
 	.tls_reqcert = LDAP_OPT_X_TLS_HARD,
 	.memberof_for_groups = 0,
 	.ldap_timeout = DEFAULT_UMICH_SEARCH_TIMEOUT,
+	.follow_referrals = 1,
+	.sasl_mech = NULL,
+	.sasl_realm = NULL,
+	.sasl_authcid = NULL,
+	.sasl_authzid = NULL,
+	.sasl_secprops = NULL,
+	.sasl_canonicalize = -1, /* leave to the LDAP lib */
+	.sasl_krb5_ccname = NULL,
 };
 
 static struct ldap_map_names ldap_map = {
@@ -137,6 +163,119 @@ static struct ldap_map_names ldap_map = {
 	.GSS_principal_attr = NULL,
 	.NFSv4_grouplist_filter = NULL,
 };
+
+#ifdef ENABLE_LDAP_SASL
+
+/**
+ * Set the path of the krb5 ticket cache
+ * use gss_krb5_ccache_name if available else set the env var
+ */
+static int set_krb5_ccname(const char *krb5_ccache_name)
+{
+	int retval = 0;
+#ifdef HAVE_GSS_KRB5_CCACHE_NAME
+	OM_uint32 status;
+
+	if (gss_krb5_ccache_name(&status, krb5_ccache_name, NULL) !=
+		GSS_S_COMPLETE) {
+		IDMAP_LOG(5,
+		  ("Failed to set creds cache for kerberos, minor_status(%d)",
+		   status));
+		retval = status;
+		goto out;
+	}
+#else /* HAVE_GSS_KRB5_CCACHE_NAME */
+	char *env;
+	int buflen = 0;
+
+	buflen = strlen("KRB5CCNAME=") + strlen(krb5_ccache_name) + 1;
+	env = malloc(buflen);
+	if (env == NULL) {
+		retval = ENOMEM;
+		goto out;
+	}
+	snprintf(env, buflen, "KRB5CCNAME=%s", krb5_ccache_name);
+	if (putenv(env) != 0) {
+		retval = errno;
+		IDMAP_LOG(5, ("Failed to set creds cache for kerberos, err(%d)",
+			      retval));
+	}
+#endif /* else HAVE_GSS_KRB5_CCACHE_NAME */
+out:
+	return retval;
+}
+
+/**
+ * SASL interact callback
+ */
+static int sasl_interact_cb(__attribute__((unused)) LDAP * ld,
+		__attribute__((unused)) unsigned int flags, void *defaults,
+		void *ctx)
+{
+	struct umich_ldap_info *linfo = defaults;
+	sasl_interact_t *interact = ctx;
+
+	while (interact->id != SASL_CB_LIST_END) {
+		switch (interact->id) {
+		case SASL_CB_AUTHNAME:
+			if (linfo->sasl_authcid == NULL ||
+			    linfo->sasl_authcid[0] == '\0') {
+				IDMAP_LOG(2, ("SASL_CB_AUTHNAME asked in "
+					    "callback but not found in conf"));
+			} else {
+				IDMAP_LOG(5,
+					  ("Setting SASL_CB_AUTHNAME to %s",
+					   linfo->sasl_authcid));
+				interact->result = linfo->sasl_authcid;
+				interact->len = strlen(linfo->sasl_authcid);
+			}
+			break;
+		case SASL_CB_PASS:
+			if (linfo->passwd == NULL || linfo->passwd[0] == '\0') {
+				IDMAP_LOG(2, ("SASL_CB_PASS asked in callback "
+					      "but not found in conf"));
+			} else {
+				IDMAP_LOG(5,
+					  ("Setting SASL_CB_PASS to ***"));
+				interact->result = linfo->passwd;
+				interact->len = strlen(linfo->passwd);
+			}
+			break;
+		case SASL_CB_GETREALM:
+			if (linfo->sasl_realm == NULL ||
+			    linfo->sasl_realm[0] == '\0') {
+				IDMAP_LOG(2, ("SASL_CB_GETREALM asked in "
+					    "callback but not found in conf"));
+			} else {
+				IDMAP_LOG(5,
+					  ("Setting SASL_CB_GETREALM to %s",
+					   linfo->sasl_realm));
+				interact->result = linfo->sasl_realm;
+				interact->len = strlen(linfo->sasl_realm);
+			}
+			break;
+		case SASL_CB_USER:
+			if (linfo->sasl_authzid == NULL ||
+			    linfo->sasl_authzid[0] == '\0') {
+				IDMAP_LOG(2, ("SASL_CB_USER asked in callback "
+					      "but not found in conf"));
+			} else {
+				IDMAP_LOG(5, ("Setting SASL_CB_USER to %s",
+					      linfo->sasl_authzid));
+				interact->result = linfo->sasl_authzid;
+				interact->len = strlen(linfo->sasl_authzid);
+			}
+			break;
+		default:
+			IDMAP_LOG(2, ("Undefined value requested %d",
+				      interact->id));
+			break;
+		}
+		interact++;
+	}
+	return LDAP_SUCCESS;
+}
+#endif /* ENABLE_LDAP_SASL */
 
 /* Local routines */
 
@@ -209,6 +348,15 @@ ldap_init_and_bind(LDAP **pld,
 		ldap_set_option(ld, LDAP_OPT_SIZELIMIT, (void *)sizelimit);
 	}
 
+	lerr = ldap_set_option(ld, LDAP_OPT_REFERRALS,
+			linfo->follow_referrals ? (void *)LDAP_OPT_ON :
+						  (void *)LDAP_OPT_OFF);
+	if (lerr != LDAP_SUCCESS) {
+		IDMAP_LOG(2, ("ldap_init_and_bind: setting LDAP_OPT_REFERRALS "
+			      "failed: %s (%d)", ldap_err2string(lerr), lerr));
+		goto out;
+	}
+
 	/* Set option to to use SSL/TLS if requested */
 	if (linfo->use_ssl) {
 		int tls_type = LDAP_OPT_X_TLS_HARD;
@@ -244,7 +392,57 @@ ldap_init_and_bind(LDAP **pld,
 	/* If we have a DN (and password) attempt an authenticated bind */
 	if (linfo->user_dn) {
 retry_bind:
+#ifdef ENABLE_LDAP_SASL
+		if (linfo->sasl_mech != NULL && linfo->sasl_mech[0] != '\0') {
+		/* use sasl bind */
+			if (linfo->sasl_canonicalize != -1) {
+				lerr = ldap_set_option(ld,
+						LDAP_OPT_X_SASL_NOCANON,
+						linfo->sasl_canonicalize ?
+						  LDAP_OPT_OFF : LDAP_OPT_ON);
+				if (lerr != LDAP_SUCCESS) {
+					IDMAP_LOG(2, ("ldap_init_and_bind: "
+						    "setting sasl_canonicalize"
+						    " failed: %s (%d)",
+						    ldap_err2string(lerr),
+						    lerr));
+					goto out;
+				}
+			}
+			if (linfo->sasl_secprops != NULL &&
+			    linfo->sasl_secprops[0] != '\0') {
+				lerr = ldap_set_option(ld,
+						LDAP_OPT_X_SASL_SECPROPS,
+						(void *) linfo->sasl_secprops);
+				if (lerr != LDAP_SUCCESS) {
+					IDMAP_LOG(2, ("ldap_init_and_bind: "
+						      "setting sasl_secprops"
+						      " failed: %s (%d)",
+						      ldap_err2string(lerr),
+						      lerr));
+					goto out;
+				}
+			}
+			if (linfo->sasl_krb5_ccname != NULL &&
+			    linfo->sasl_krb5_ccname[0] != '\0') {
+				lerr = set_krb5_ccname(linfo->sasl_krb5_ccname);
+				if (lerr != 0) {
+					IDMAP_LOG(2,
+						("ldap_init_and_bind: Failed "
+						 "to set krb5 ticket cache, "
+						 "err=%d", lerr));
+				}
+			}
+			lerr = ldap_sasl_interactive_bind_s(ld, linfo->user_dn,
+				linfo->sasl_mech, NULL, NULL, LDAP_SASL_QUIET,
+				sasl_interact_cb, linfo);
+		} else {
+			lerr = ldap_simple_bind_s(ld, linfo->user_dn,
+						  linfo->passwd);
+		}
+#else /* ENABLE_LDAP_SASL */
 		lerr = ldap_simple_bind_s(ld, linfo->user_dn, linfo->passwd);
+#endif /* else ENABLE_LDAP_SASL */
 		if (lerr) {
 			char *errmsg;
 			if (lerr == LDAP_PROTOCOL_ERROR) {
@@ -267,10 +465,22 @@ retry_bind:
 				}
 				goto retry_bind;
 			}
-			IDMAP_LOG(2, ("ldap_init_and_bind: ldap_simple_bind_s "
+#ifdef ENABLE_LDAP_SASL
+			IDMAP_LOG(2, ("ldap_init_and_bind: %s "
+				  "to [%s] as user '%s': %s (%d)",
+				  (linfo->sasl_mech != NULL &&
+				   linfo->sasl_mech[0] != '\0') ?
+				   "ldap_sasl_interactive_bind_s" :
+				   "ldap_simple_bind_s",
+				  server_url, linfo->user_dn,
+				  ldap_err2string(lerr), lerr));
+#else /* ENABLE_LDAP_SASL */
+			IDMAP_LOG(2, ("ldap_init_and_bind: ldap_simple_bind_s"
 				  "to [%s] as user '%s': %s (%d)",
 				  server_url, linfo->user_dn,
 				  ldap_err2string(lerr), lerr));
+
+#endif /* else ENABLE_LDAP_SASL */
 			if ((ldap_get_option(ld, LDAP_OPT_ERROR_STRING, &errmsg) == LDAP_SUCCESS)
 					&& (errmsg != NULL)&& (*errmsg != '\0')) {
 				IDMAP_LOG(2, ("ldap_init_and_bind: "
@@ -433,6 +643,7 @@ umich_name_to_ids(char *name, int idtype, uid_t *uid, gid_t *gid,
 				goto out_memfree;
 			}
 			*uid = tmp_uid;
+			err = 0;
 		} else if (strcasecmp(attr_res, ldap_map.NFSv4_gid_attr) == 0) {
 			tmp_g = strtoul(*idstr, (char **)NULL, 10);
 			tmp_gid = tmp_g;
@@ -446,6 +657,7 @@ umich_name_to_ids(char *name, int idtype, uid_t *uid, gid_t *gid,
 				goto out_memfree;
 			}
 			*gid = tmp_gid;
+			err = 0;
 		} else {
 			IDMAP_LOG(0, ("umich_name_to_ids: received attr "
 				"'%s' ???", attr_res));
@@ -457,7 +669,6 @@ umich_name_to_ids(char *name, int idtype, uid_t *uid, gid_t *gid,
 		ldap_value_free(idstr);
 	}
 
-	err = 0;
 out_memfree:
 	ber_free(ber, 0);
 out_unbind:
@@ -1111,7 +1322,7 @@ out_err:
 static int
 umichldap_init(void)
 {
-	char *tssl, *canonicalize, *memberof, *cert_req;
+	char *tssl, *canonicalize, *memberof, *cert_req, *follow_referrals;
 	char missing_msg[128] = "";
 	char *server_in, *canon_name;
 
@@ -1155,6 +1366,40 @@ umichldap_init(void)
 				      (ldap_info.use_ssl) ?
 				      LDAPS_PORT : LDAP_PORT);
 
+	ldap_info.sasl_mech = conf_get_str(LDAP_SECTION, "LDAP_sasl_mech");
+	ldap_info.sasl_realm = conf_get_str(LDAP_SECTION, "LDAP_sasl_realm");
+	ldap_info.sasl_authcid = conf_get_str(LDAP_SECTION,
+					      "LDAP_sasl_authcid");
+	ldap_info.sasl_authzid = conf_get_str(LDAP_SECTION,
+					      "LDAP_sasl_authzid");
+	ldap_info.sasl_secprops = conf_get_str(LDAP_SECTION,
+					       "LDAP_sasl_secprops");
+
+	/* If it is not set let the ldap lib work with the lib default */
+	canonicalize = conf_get_str_with_def(LDAP_SECTION,
+					     "LDAP_sasl_canonicalize", "undef");
+	if ((strcasecmp(canonicalize, "true") == 0) ||
+	    (strcasecmp(canonicalize, "on") == 0) ||
+	    (strcasecmp(canonicalize, "yes") == 0)) {
+		ldap_info.sasl_canonicalize = 1;
+	} else if ((strcasecmp(canonicalize, "false") == 0) ||
+	    (strcasecmp(canonicalize, "off") == 0) ||
+	    (strcasecmp(canonicalize, "no") == 0)) {
+		ldap_info.sasl_canonicalize = 0;
+	}
+	ldap_info.sasl_krb5_ccname = conf_get_str(LDAP_SECTION,
+						  "LDAP_sasl_krb5_ccname");
+
+	follow_referrals = conf_get_str_with_def(LDAP_SECTION,
+						 "LDAP_follow_referrals",
+						 "true");
+	if ((strcasecmp(follow_referrals, "true") == 0) ||
+	    (strcasecmp(follow_referrals, "on") == 0) ||
+	    (strcasecmp(follow_referrals, "yes") == 0))
+		ldap_info.follow_referrals = 1;
+	else
+		ldap_info.follow_referrals = 0;
+
 	/* Verify required information is supplied */
 	if (server_in == NULL || strlen(server_in) == 0)
 		strncat(missing_msg, "LDAP_server ", sizeof(missing_msg)-1);
@@ -1167,7 +1412,8 @@ umichldap_init(void)
 	}
 
 	ldap_info.server = server_in;
-	canonicalize = conf_get_str_with_def(LDAP_SECTION, "LDAP_canonicalize_name", "yes");
+	canonicalize = conf_get_str_with_def(LDAP_SECTION,
+					     "LDAP_canonicalize_name", "yes");
 	if ((strcasecmp(canonicalize, "true") == 0) ||
 	    (strcasecmp(canonicalize, "on") == 0) ||
 	    (strcasecmp(canonicalize, "yes") == 0)) {
@@ -1296,6 +1542,30 @@ umichldap_init(void)
 		  ldap_info.tls_reqcert));
 	IDMAP_LOG(1, ("umichldap_init: use_memberof_for_groups : %s",
 		  ldap_info.memberof_for_groups ? "yes" : "no"));
+	IDMAP_LOG(1, ("umichldap_init: sasl_mech: %s",
+		  (ldap_info.sasl_mech && strlen(ldap_info.sasl_mech) != 0) ?
+		  ldap_info.sasl_mech : "<not-supplied>"));
+	IDMAP_LOG(1, ("umichldap_init: sasl_realm: %s",
+		  (ldap_info.sasl_realm && strlen(ldap_info.sasl_realm) != 0) ?
+		  ldap_info.sasl_realm : "<not-supplied>"));
+	IDMAP_LOG(1, ("umichldap_init: sasl_authcid: %s",
+		  (ldap_info.sasl_authcid &&
+		   strlen(ldap_info.sasl_authcid) != 0) ?
+		  ldap_info.sasl_authcid : "<not-supplied>"));
+	IDMAP_LOG(1, ("umichldap_init: sasl_authzid: %s",
+		  (ldap_info.sasl_authzid &&
+		   strlen(ldap_info.sasl_authzid) != 0) ?
+		  ldap_info.sasl_authzid : "<not-supplied>"));
+	IDMAP_LOG(1, ("umichldap_init: sasl_secprops: %s",
+		  (ldap_info.sasl_secprops &&
+		   strlen(ldap_info.sasl_secprops) != 0) ?
+		  ldap_info.sasl_secprops : "<not-supplied>"));
+	IDMAP_LOG(1, ("umichldap_init: sasl_canonicalize: %d",
+		      ldap_info.sasl_canonicalize));
+	IDMAP_LOG(1, ("umichldap_init: sasl_krb5_ccname: %s",
+		      ldap_info.sasl_krb5_ccname));
+	IDMAP_LOG(1, ("umichldap_init: follow_referrals: %s",
+		  ldap_info.follow_referrals ? "yes" : "no"));
 
 	IDMAP_LOG(1, ("umichldap_init: NFSv4_person_objectclass : %s",
 		  ldap_map.NFSv4_person_objcls));

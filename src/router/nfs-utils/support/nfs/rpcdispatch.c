@@ -26,12 +26,13 @@ rpc_dispatch(struct svc_req *rqstp, SVCXPRT *transp,
 			void *argp, void *resp)
 {
 	struct rpc_dentry	*dent;
+	int rq_vers = (int)rqstp->rq_vers;
 
-	if (((int)rqstp->rq_vers) > nvers) {
+	if (rq_vers < 1 || rq_vers > nvers) {
 		svcerr_progvers(transp, 1, nvers);
 		return;
 	}
-	dtable += (rqstp->rq_vers - 1);
+	dtable += (rq_vers - 1);
 	if (rqstp->rq_proc > dtable->nproc) {
 		svcerr_noproc(transp);
 		return;

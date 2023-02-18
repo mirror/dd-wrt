@@ -34,5 +34,6 @@
 void initerr(char *progname, int verbosity, int fg);
 void printerr(int priority, char *format, ...);
 int get_verbosity(void);
+char * sec2time(int);
 
 #endif /* _ERR_UTIL_H_ */

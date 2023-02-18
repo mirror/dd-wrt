@@ -1,0 +1,67 @@
+.\"
+.\" rpcctl(8)
+.\"
+.TH rpcctl 8 "15 Feb 2022"
+.SH NAME
+rpcctl \- Displays SunRPC connection information
+.SH SYNOPSIS
+.nf
+.BR rpcctl " [ \fB\-h \fR| \fB\-\-help \fR] { \fBclient \fR| \fBswitch \fR| \fBxprt \fR}"
+.P
+.BR "rpcctl client" " \fR[ \fB\-h \fR| \fB\-\-help \fR] { \fBshow \fR}"
+.BR "rpcctl client show " "\fR[ \fB\-h \f| \fB\-\-help \fR] [ \fIXPRT \fR]"
+.P
+.BR "rpcctl switch" " \fR[ \fB\-h \fR| \fB\-\-help \fR] { \fBset \fR| \fBshow \fR}"
+.BR "rpcctl switch set" " \fR[ \fB\-h \fR| \fB\-\-help \fR] \fISWITCH \fBdstaddr \fINEWADDR"
+.BR "rpcctl switch show" " \fR[ \fB\-h \fR| \fB\-\-help \fR] [ \fISWITCH \fR]"
+.P
+.BR "rpcctl xprt" " \fR[ \fB\-h \fR| \fB\-\-help \fR] { \fBremove \fR| \fBset \fR| \fBshow \fR}"
+.BR "rpcctl xprt remove" " \fR[ \fB\-h \fR| \fB\-\-help \fR] \fIXPRT"
+.BR "rpcctl xprt set" " \fR[ \fB\-h \fR| \fB\-\-help \fR] \fIXPRT \fR{ \fBdstaddr \fINEWADDR \fR| \fBoffline \fR| \fBonline \fR}"
+.BR "rpcctl xprt show" " \fR[ \fB\-h \fR| \fB\-\-help \fR] [ \fIXPRT \fR]"
+.fi
+.SH DESCRIPTION
+.RB "The " rpcctl " command displays information collected in the SunRPC sysfs files about the system's SunRPC objects.
+.P
+.SS rpcctl client \fR- \fBCommands operating on RPC clients
+.IP "\fBshow \fR[ \fICLIENT \fR] \fB(default)"
+Show detailed information about the RPC clients on this system.
+If \fICLIENT \fRwas provided, then only show information about a single RPC client.
+.P
+.SS rpcctl switch \fR- \fBCommands operating on groups of transports
+.IP "\fBset \fISWITCH \fBdstaddr \fINEWADDR"
+Change the destination address of all transports in the \fISWITCH \fRto \fINEWADDR\fR.
+\fINEWADDR \fRcan be an IP address, DNS name, or anything else resolvable by \fBgethostbyname\fR(3).
+.IP "\fBshow \fR[ \fISWITCH \fR] \fB(default)"
+Show detailed information about groups of transports on this system.
+If \fISWITCH \fRwas provided, then only show information about a single transport group.
+.P
+.SS rpcctl xprt \fR- \fBCommands operating on individual transports
+.IP "\fBremove \fIXPRT"
+Removes the specified \fIXPRT \fRfrom the system.
+Note that "main" transports cannot be removed.
+.P
+.IP "\fBset \fIXPRT \fBdstaddr \fINEWADDR"
+Change the destination address of the specified \fIXPRT \fR to \fINEWADDR\fR.
+\fINEWADDR \fRcan be an IP address, DNS name, or anything else resolvable by \fBgethostbyname\fR(3).
+.P
+.IP "\fBset \fIXPRT \fBoffline"
+Sets the specified \fIXPRT\fR's state to offline.
+.P
+.IP "\fBset \fIXPRT \fBonline"
+Sets the specified \fIXPRT\fR's state to online.
+.IP "\fBshow \fR[ \fIXPRT \fR] \fB(default)"
+Show detailed information about this system's transports.
+If \fIXPRT \fRwas provided, then only show information about a single transport.
+.SH EXAMPLES
+.IP "\fBrpcctl switch show switch-2"
+Show details about the RPC switch named "switch-2".
+.IP "\fBrpcctl xprt remove xprt-4"
+Remove the xprt named "xprt-4" from the system.
+.IP "\fBrpcctl xprt set xprt-3 dstaddr https://linux-nfs.org
+Change the dstaddr of the xprt named "xprt-3" to point to linux-nfs.org
+.SH DIRECTORY
+.TP
+.B /sys/kernel/sunrpc/
+.SH AUTHOR
+Anna Schumaker <Anna.Schumaker@Netapp.com>

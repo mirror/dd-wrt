@@ -27,7 +27,7 @@ can mount all NFS file system versions.  Under earlier Linux kernel versions,
 .BR mount.nfs4
 must be used for mounting NFSv4 file systems while
 .BR mount.nfs
-must be used for NFSv3 and v2.
+must be used for NFSv3.
 
 .SH OPTIONS
 .TP

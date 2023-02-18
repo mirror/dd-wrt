@@ -129,6 +129,26 @@ but on the server, this will resolve to the path
 .BR /my/root/filesystem .
 
 .TP
+.B exportd
+Recognized values:
+.BR threads ,
+.BR cache-use-upaddr ,
+.BR ttl ,
+.BR state-directory-path
+
+See
+.BR exportd (8)
+for details.
+
+Note that setting 
+.B "\[dq]debug = auth\[dq]"
+for
+.B exportd
+is equivalent to providing the
+.B \-\-log\-auth
+option.
+
+.TP
 .B nfsdcltrack
 Recognized values:
 .BR storagedir .
@@ -151,7 +171,6 @@ Recognized values:
 .BR lease-time ,
 .BR udp ,
 .BR tcp ,
-.BR vers2 ,
 .BR vers3 ,
 .BR vers4 ,
 .BR vers4.0 ,
@@ -178,6 +197,8 @@ Recognized values:
 .BR port ,
 .BR threads ,
 .BR reverse-lookup ,
+.BR cache-use-upaddr ,
+.BR ttl ,
 .BR state-directory-path ,
 .BR ha-callout .
 
@@ -186,6 +207,14 @@ These, together with the protocol and version values in the
 section, are used to configure mountd.  See
 .BR rpc.mountd (8)
 for details.
+
+Note that setting 
+.B "\[dq]debug = auth\[dq]"
+for
+.B mountd
+is equivalent to providing the
+.B \-\-log\-auth
+option.
 
 The
 .B state-directory-path
@@ -243,7 +272,8 @@ Recognized values:
 .BR rpc-timeout ,
 .BR keytab-file ,
 .BR cred-cache-directory ,
-.BR preferred-realm .
+.BR preferred-realm ,
+.BR set-home .
 
 See
 .BR rpc.gssd (8)
@@ -264,8 +294,27 @@ Only
 .B debug=
 is recognized.
 
+.TP
+.B nfsrahead
+Recognized values:
+.BR nfs ,
+.BR nfsv4 ,
+.BR default .
+
+See
+.BR nfsrahead (5)
+for deatils.
+
 .SH FILES
+.TP 10n
 .I /etc/nfs.conf
+Default NFS client configuration file
+.TP 10n
+.I /etc/nfs.conf.d
+When this directory exists and files ending 
+with ".conf" exist, those files will be
+used to set configuration variables. These
+files will override variables set in /etc/nfs.conf
 .SH SEE ALSO
 .BR nfsdcltrack (8),
 .BR rpc.nfsd (8),

@@ -26,7 +26,7 @@
 
 struct cld_client {
 	int			cl_fd;
-	struct event		cl_event;
+	struct event		*cl_event;
 	union {
 		struct cld_msg		cl_msg;
 #if UPCALL_VERSION >= 2

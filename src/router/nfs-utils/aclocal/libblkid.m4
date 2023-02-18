@@ -5,15 +5,14 @@ AC_DEFUN([AC_BLKID_VERS], [
    [
     saved_LIBS="$LIBS"
     LIBS=-lblkid
-    AC_TRY_RUN([
+    AC_RUN_IFELSE([AC_LANG_SOURCE([[
 	#include <blkid/blkid.h>
 	int main()
 	{
 		int vers = blkid_get_library_version(0, 0);
 		return vers >= 140 ? 0 : 1;
 	}
-       ], [libblkid_cv_is_recent=yes], [libblkid_cv_is_recent=no],
-       [libblkid_cv_is_recent=unknown])
+       ]])],[libblkid_cv_is_recent=yes],[libblkid_cv_is_recent=no],[libblkid_cv_is_recent=unknown])
     LIBS="$saved_LIBS"])
   AC_MSG_RESULT($libblkid_cv_is_recent)
 ])dnl

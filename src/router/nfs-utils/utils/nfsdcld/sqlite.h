@@ -34,4 +34,5 @@ int sqlite_iterate_recovery(int (*cb)(struct cld_client *clnt), struct cld_clien
 int sqlite_delete_cltrack_records(void);
 int sqlite_first_time_done(void);
 
+void sqlite_shutdown(void);
 #endif /* _SQLITE_H */

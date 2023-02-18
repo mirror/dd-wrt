@@ -10,9 +10,11 @@
 #include <config.h>
 #endif
 
+#include <unistd.h>
 #include <string.h>
 #include <sys/types.h>
 #include <sys/param.h>
+#include <fcntl.h>
 #include <netinet/in.h>
 #include <limits.h>
 #include <stdlib.h>
@@ -419,4 +421,31 @@ export_hash(char *str)
 	unsigned int num = strtoint(str);
 
 	return num % HASH_TABLE_SIZE;
+}
+
+int export_test(struct exportent *eep, int with_fsid)
+{
+	char *path = eep->e_path;
+	int flags = eep->e_flags | (with_fsid ? NFSEXP_FSID : 0);
+	/* beside max path, buf size should take protocol str into account */
+	char buf[NFS_MAXPATHLEN+1+64] = { 0 };
+	char *bp = buf;
+	int len = sizeof(buf);
+	int fd, n;
+
+	n = snprintf(buf, len, "-test-client- ");
+	bp += n;
+	len -= n;
+	qword_add(&bp, &len, path);
+	if (len < 1)
+		return 0;
+	snprintf(bp, len, " 3 %d 65534 65534 0\n", flags);
+	fd = open("/proc/net/rpc/nfsd.export/channel", O_WRONLY);
+	if (fd < 0)
+		return 0;
+	n = nfsd_path_write(fd, buf, strlen(buf));
+	close(fd);
+	if (n < 0)
+		return 0;
+	return 1;
 }

@@ -47,6 +47,8 @@ struct flav_info flav_map[] = {
 
 const int flav_map_size = sizeof(flav_map)/sizeof(flav_map[0]);
 
+int default_ttl = 30 * 60;
+
 static char	*efname = NULL;
 static XFILE	*efp = NULL;
 static int	first;
@@ -100,7 +102,7 @@ static void init_exportent (struct exportent *ee, int fromkernel)
 	ee->e_nsquids = 0;
 	ee->e_nsqgids = 0;
 	ee->e_uuid = NULL;
-	ee->e_ttl = DEFAULT_TTL;
+	ee->e_ttl = default_ttl;
 }
 
 struct exportent *
@@ -247,23 +249,28 @@ void secinfo_show(FILE *fp, struct exportent *ep)
 	}
 }
 
+static void
+fprintpath(FILE *fp, const char *path)
+{
+	int i;
+	for (i=0; path[i]; i++)
+		if (iscntrl(path[i]) || path[i] == '"' || path[i] == '\\' || path[i] == '#' || isspace(path[i]))
+			fprintf(fp, "\\%03o", path[i]);
+		else
+			fprintf(fp, "%c", path[i]);
+}
+
 void
 putexportent(struct exportent *ep)
 {
 	FILE	*fp;
 	int	*id, i;
-	char	*esc=ep->e_path;
 
 	if (!efp)
 		return;
 
 	fp = efp->x_fp;
-	for (i=0; esc[i]; i++)
-	        if (iscntrl(esc[i]) || esc[i] == '"' || esc[i] == '\\' || esc[i] == '#' || isspace(esc[i]))
-			fprintf(fp, "\\%03o", esc[i]);
-		else
-			fprintf(fp, "%c", esc[i]);
-
+	fprintpath(fp, ep->e_path);
 	fprintf(fp, "\t%s(", ep->e_hostname);
 	fprintf(fp, "%s,", (ep->e_flags & NFSEXP_READONLY)? "ro" : "rw");
 	fprintf(fp, "%ssync,", (ep->e_flags & NFSEXP_ASYNC)? "a" : "");
@@ -302,10 +309,14 @@ putexportent(struct exportent *ep)
 	case FSLOC_NONE:
 		break;
 	case FSLOC_REFER:
-		fprintf(fp, "refer=%s,", ep->e_fslocdata);
+		fprintf(fp, "refer=");
+		fprintpath(fp, ep->e_fslocdata);
+		fprintf(fp, ",");
 		break;
 	case FSLOC_REPLICA:
-		fprintf(fp, "replicas=%s,", ep->e_fslocdata);
+		fprintf(fp, "replicas=");
+		fprintpath(fp, ep->e_fslocdata);
+		fprintf(fp, ",");
 		break;
 #ifdef DEBUG
 	case FSLOC_STUB:
@@ -829,6 +840,7 @@ struct export_features *get_export_features(void)
 	close(fd);
 	if (c == -1)
 		goto err;
+	buf[c] = 0;
 	c = sscanf(buf, "%x %x", &ef.flags, &ef.secinfo_flags);
 	if (c != 2)
 		goto err;

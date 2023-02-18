@@ -8,7 +8,7 @@
 rpc.gssd \- RPCSEC_GSS daemon
 .SH SYNOPSIS
 .B rpc.gssd
-.RB [ \-DfMnlvr ]
+.RB [ \-DfMnlvrHC ]
 .RB [ \-k
 .IR keytab ]
 .RB [ \-p
@@ -16,6 +16,10 @@ rpc.gssd \- RPCSEC_GSS daemon
 .RB [ \-d
 .IR ccachedir ]
 .RB [ \-t
+.IR timeout ]
+.RB [ \-T
+.IR timeout ]
+.RB [ \-U
 .IR timeout ]
 .RB [ \-R
 .IR realm ]
@@ -45,22 +49,20 @@ is known as a
 .BR kerberos (1)
 for more on principals).
 .P
-For certain operations, a credential is required
-which represents no user,
-is otherwise unprivileged,
-and is always available.
-This is referred to as a
+Certain operations require a credential that
+represents no particular user
+or
+represents the host itself.
+This kind of credential is called a
 .IR "machine credential" .
 .P
-Machine credentials are typically established using a
-.IR "service principal" ,
-whose encrypted password, called its
-.IR key ,
-is stored in a file, called a
-.IR keytab ,
-to avoid requiring a user prompt.
-A machine credential effectively does not expire because the system
-can renew it as needed without user intervention.
+A host establishes its machine credential using a
+.I "service principal"
+whose encrypted password is stored in a local file known as a
+.IR keytab .
+A machine credential remains effective
+without user intervention
+as long as the host can renew it.
 .P
 Once obtained, credentials are typically stored in local temporary files
 with well-known pathnames.
@@ -93,30 +95,12 @@ See the description of the
 .B -d
 option for details.
 .SS Machine Credentials
-A user credential is established by a user and
-is then shared with the kernel and
-.BR rpc.gssd .
-A machine credential is established by
 .B rpc.gssd
-for the kernel when there is no user.
-Therefore
-.B rpc.gssd
-must already have the materials on hand to establish this credential
-without requiring user intervention.
-.P
-.B rpc.gssd
-searches the local system's keytab for a principal and key to use
-to establish the machine credential.
-By default,
-.B rpc.gssd
-assumes the file
-.I /etc/krb5.keytab
-contains principals and keys that can be used to obtain machine credentials.
-.P
-.B rpc.gssd
-searches in the following order for a principal to use.
-The first matching credential is used.
-For the search, <hostname> and <REALM> are replaced with the local
+searches the default keytab,
+.IR /etc/krb5.keytab ,
+in the following order for a principal and password to use
+when establishing the machine credential.
+For the search, rpc.gssd replaces <hostname> and <REALM> with the local
 system's hostname and Kerberos realm.
 .sp
    <HOSTNAME>$@<REALM>
@@ -133,15 +117,20 @@ system's hostname and Kerberos realm.
 .br
    host/<anyname>@<REALM>
 .sp
-The <anyname> entries match on the service name and realm, but ignore the hostname.
-These can be used if a principal matching the local host's name is not found.
+rpc.gssd selects one of the <anyname> entries if it does not find
+a service principal matching the local hostname,
+e.g. if DHCP assigns the local hostname dynamically.
+The <anyname> facility enables the use of the same keytab on multiple systems.
+However, using the same service principal to establish a machine credential
+on multiple hosts can create unwanted security exposures
+and is therefore not recommended.
 .P
-Note that the first principal in the search order is a user principal
+Note that <HOSTNAME>$@<REALM> is a user principal
 that enables Kerberized NFS when the local system is joined
 to an Active Directory domain using Samba.
-A password for this principal must be provided in the local system's keytab.
+The keytab provides the password for this principal.
 .P
-You can specify another keytab by using the
+You can specify a different keytab by using the
 .B -k
 option if
 .I /etc/krb5.keytab
@@ -290,13 +279,35 @@ seconds, which allows changing Kerberos tickets and identities frequently.
 The default is no explicit timeout, which means the kernel context will live
 the lifetime of the Kerberos service ticket used in its creation.
 .TP
-.B -T timeout
+.BI "-T " timeout
 Timeout, in seconds, to create an RPC connection with a server while
 establishing an authenticated gss context for a user.
 The default timeout is set to 5 seconds.
 If you get messages like "WARNING: can't create tcp rpc_clnt to server
 %servername% for user with uid %uid%: RPC: Remote system error -
 Connection timed out", you should consider an increase of this timeout.
+.TP
+.BI "-U " timeout
+Timeout, in seconds, for upcall threads.  Threads executing longer than
+.I timeout
+seconds will cause an error message to be logged.  The default
+.I timeout
+is 30 seconds.  The minimum is 5 seconds.  The maximum is 600 seconds.
+.TP
+.B -C
+In addition to logging an error message for threads that have timed out,
+the thread will be canceled and an error of -ETIMEDOUT will be reported
+to the kernel.
+.TP
+.B -H
+Avoids setting $HOME to "/". This allows rpc.gssd to read per user k5identity
+files versus trying to read /.k5identity for each user.
+
+If
+.B \-H
+is not set, rpc.gssd will use the first match found in
+/var/kerberos/krb5/user/$EUID/client.keytab and will not use a principal based on
+host and/or service parameters listed in $HOME/.k5identity.
 .SH CONFIGURATION FILE
 Many of the options that can be set on the command line can also be
 controlled through values set in the
@@ -337,11 +348,11 @@ Equivalent to
 .TP
 .B context-timeout
 Equivalent to
-.BR -T .
+.BR -t .
 .TP
 .B rpc-timeout
 Equivalent to
-.BR -t .
+.BR -T .
 .TP
 .B keytab-file
 Equivalent to
@@ -354,6 +365,24 @@ Equivalent to
 .B preferred-realm
 Equivalent to
 .BR -R .
+.TP
+.B upcall-timeout
+Equivalent to
+.BR -U .
+.TP
+.B cancel-timed-out-upcalls
+Setting to
+.B true
+is equivalent to providing the
+.B -C
+flag.
+.TP
+.B set-home
+Setting to
+.B false
+is equivalent to providing the
+.B -H
+flag.
 .P
 In addtion, the following value is recognized from the
 .B [general]

@@ -67,7 +67,6 @@ gssd_CFLAGS = \
 svcgssd_SOURCES = \
 	$(COMMON_SRCS) \
 	svcgssd.c \
-	svcgssd_main_loop.c \
 	svcgssd_mech2file.c \
 	svcgssd_proc.c \
 	svcgssd_krb5.c \
@@ -78,6 +77,7 @@ svcgssd_SOURCES = \
 svcgssd_LDADD = \
 	../../support/nfs/libnfs.la \
 	../../support/nfsidmap/libnfsidmap.la \
+	$(LIBEVENT) \
 	$(RPCSECGSS_LIBS) \
 	$(KRBLIBS) $(GSSAPI_LIBS) $(LIBTIRPC)
 

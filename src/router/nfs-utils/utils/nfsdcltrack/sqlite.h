@@ -26,7 +26,7 @@ int sqlite_insert_client(const unsigned char *clname, const size_t namelen,
 int sqlite_remove_client(const unsigned char *clname, const size_t namelen);
 int sqlite_check_client(const unsigned char *clname, const size_t namelen,
 				const bool has_session);
-int sqlite_remove_unreclaimed(const time_t grace_start);
+int sqlite_remove_unreclaimed(const uint64_t grace_start);
 int sqlite_query_reclaiming(const time_t grace_start);
 
 #endif /* _SQLITE_H */

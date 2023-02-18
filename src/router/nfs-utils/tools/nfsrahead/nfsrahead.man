@@ -1,0 +1,72 @@
+.\" Manpage for nfsrahead.
+.nh
+.ad l
+.TH man 5 "08 Mar 2022" "1.0" "nfsrahead man page"
+.SH NAME
+
+nfsrahead \- Configure the readahead for NFS mounts
+
+.SH SYNOPSIS
+
+nfsrahead [-F] [-d] <device>
+
+.SH DESCRIPTION
+
+\fInfsrahead\fR is a tool intended to be used with udev to set the \fIread_ahead_kb\fR parameter of NFS mounts, according to the configuration file (see \fICONFIGURATION\fR). \fIdevice\fR is the device number for the NFS backing device as provided by the kernel.
+
+.SH OPTIONS
+.TP
+.B -F
+Send messages to 
+.I stderr 
+instead of
+.I syslog
+
+.TP
+.B -d
+Increase the debugging level.
+
+.SH CONFIGURATION
+.I nfsrahead
+is configured in
+.IR /etc/nfs.conf ,
+in the section titled
+.IR nfsrahead .
+It accepts the following configurations.
+
+.TP
+.B nfs=<value>
+The readahead value applied to NFSv3 mounts.
+
+.TP
+.B nfs4=<value>
+The readahead value applied to NFSv4 mounts.
+
+.TP
+.B default=<value>
+The default configuration when none of the configurations above is set.
+
+.SH EXAMPLE CONFIGURATION
+[nfsrahead]
+.br
+nfs=15000              # readahead of 15000 for NFSv3 mounts
+.br
+nfs4=16000             # readahead of 16000 for NFSv4 mounts
+.br
+default=128            # default is 128
+
+.SH SEE ALSO
+
+.BR mount.nfs (8),
+.BR nfs (5),
+.BR nfs.conf (5),
+.BR udev (7),
+.BR bcc-readahead (8)
+
+.SH BUGS
+
+No known bugs.
+
+.SH AUTHOR
+
+Thiago Rafael Becker <trbecker@gmail.com>

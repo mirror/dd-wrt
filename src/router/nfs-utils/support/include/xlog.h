@@ -51,7 +51,7 @@ void			xlog_stderr(int on);
 void			xlog_syslog(int on);
 void			xlog_config(int fac, int on);
 void			xlog_sconfig(char *, int on);
-void			xlog_from_conffile(char *);
+void			xlog_set_debug(char *);
 int			xlog_enabled(int fac);
 void			xlog(int fac, const char *fmt, ...) XLOG_FORMAT((printf, 2, 3));
 void			xlog_warn(const char *fmt, ...) XLOG_FORMAT((printf, 1, 2));

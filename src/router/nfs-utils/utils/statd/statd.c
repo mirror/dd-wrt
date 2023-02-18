@@ -161,7 +161,7 @@ usage(void)
 	fprintf(stderr,"      -H                   Specify a high-availability callout program.\n");
 }
 
-static const char *pidfile = "/var/run/rpc.statd.pid";
+static const char *pidfile = "/run/rpc.statd.pid";
 
 int pidfd = -1;
 static void create_pidfile(void)
@@ -243,12 +243,12 @@ int port = 0, out_port = 0;
 int nlm_udp = 0, nlm_tcp = 0;
 
 inline static void 
-read_nfsconf(char **argv)
+read_statd_conf(char **argv)
 {
 	char *s;
 
 	conf_init_file(NFS_CONFFILE);
-	xlog_from_conffile("statd");
+	xlog_set_debug("statd");
 
 	out_port = conf_get_num("statd", "outgoing-port", out_port);
 	port = conf_get_num("statd", "port", port);
@@ -306,8 +306,8 @@ int main (int argc, char **argv)
 	/* Set hostname */
 	MY_NAME = NULL;
 
-	/* Read nfs.conf */
-	read_nfsconf(argv);
+	/* Read in config setting */
+	read_statd_conf(argv);
 
 	/* Process command line switches */
 	while ((arg = getopt_long(argc, argv, "h?vVFNH:dn:p:o:P:LT:U:", longopts, NULL)) != EOF) {
