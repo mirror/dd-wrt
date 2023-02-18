@@ -1,4 +1,4 @@
-add_library(libb64
+add_library(libb64 ${LIBB64_LIBRARY_TYPE}
     ../include/b64/cencode.h
     ../include/b64/cdecode.h
     ../include/b64/ccommon.h

@@ -208,7 +208,7 @@ uint64 callback_on_accept(utp_callback_arguments *a)
 
 uint64 callback_on_error(utp_callback_arguments *a)
 {
-	fprintf(stderr, "Error: %s\n", utp_error_code_names[a->u1.error_code]);
+	fprintf(stderr, "Error: %s\n", utp_error_code_names[a->error_code]);
 	utp_close(s);
 	s = NULL;
 	quit_flag = 1;
@@ -218,10 +218,10 @@ uint64 callback_on_error(utp_callback_arguments *a)
 
 uint64 callback_on_state_change(utp_callback_arguments *a)
 {
-	debug("state %d: %s\n", a->u1.state, utp_state_names[a->u1.state]);
+	debug("state %d: %s\n", a->state, utp_state_names[a->state]);
 	utp_socket_stats *stats;
 
-	switch (a->u1.state) {
+	switch (a->state) {
 		case UTP_STATE_CONNECT:
 		case UTP_STATE_WRITABLE:
 			write_data();
@@ -261,7 +261,7 @@ uint64 callback_on_state_change(utp_callback_arguments *a)
 
 uint64 callback_sendto(utp_callback_arguments *a)
 {
-	struct sockaddr_in *sin = (struct sockaddr_in *) a->u1.address;
+	struct sockaddr_in *sin = (struct sockaddr_in *) a->address;
 
 	debug("sendto: %zd byte packet to %s:%d%s\n", a->len, inet_ntoa(sin->sin_addr), ntohs(sin->sin_port),
 				(a->flags & UTP_UDP_DONTFRAG) ? "  (DF bit requested, but not yet implemented)" : "");
@@ -269,7 +269,7 @@ uint64 callback_sendto(utp_callback_arguments *a)
 	if (o_debug >= 3)
 		hexdump(a->buf, a->len);
 
-	sendto(fd, a->buf, a->len, 0, a->u1.address, a->u2.address_len);
+	sendto(fd, a->buf, a->len, 0, a->address, a->address_len);
 	return 0;
 }
 

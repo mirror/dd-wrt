@@ -110,12 +110,12 @@ typedef struct {
 		int sample_ms;
 		int error_code;
 		int state;
-	} u1;
+	};
 
 	union {
 		socklen_t address_len;
 		int type;
-	} u2;
+	};
 } utp_callback_arguments;
 
 typedef uint64 utp_callback_t(utp_callback_arguments *);

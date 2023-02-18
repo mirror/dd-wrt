@@ -31,8 +31,8 @@ int utp_call_on_firewall(utp_context *ctx, const struct sockaddr *address, sockl
 	args.callback_type = UTP_ON_FIREWALL;
 	args.context = ctx;
 	args.socket = NULL;
-	args.u1.address = address;
-	args.u2.address_len = address_len;
+	args.address = address;
+	args.address_len = address_len;
 	return (int)ctx->callbacks[UTP_ON_FIREWALL](&args);
 }
 
@@ -43,8 +43,8 @@ void utp_call_on_accept(utp_context *ctx, utp_socket *socket, const struct socka
 	args.callback_type = UTP_ON_ACCEPT;
 	args.context = ctx;
 	args.socket = socket;
-	args.u1.address = address;
-	args.u2.address_len = address_len;
+	args.address = address;
+	args.address_len = address_len;
 	ctx->callbacks[UTP_ON_ACCEPT](&args);
 }
 
@@ -65,7 +65,7 @@ void utp_call_on_error(utp_context *ctx, utp_socket *socket, int error_code)
 	args.callback_type = UTP_ON_ERROR;
 	args.context = ctx;
 	args.socket = socket;
-	args.u1.error_code = error_code;
+	args.error_code = error_code;
 	ctx->callbacks[UTP_ON_ERROR](&args);
 }
 
@@ -88,9 +88,9 @@ void utp_call_on_overhead_statistics(utp_context *ctx, utp_socket *socket, int s
 	args.callback_type = UTP_ON_OVERHEAD_STATISTICS;
 	args.context = ctx;
 	args.socket = socket;
-	args.u1.send = send;
+	args.send = send;
 	args.len = len;
-	args.u2.type = type;
+	args.type = type;
 	ctx->callbacks[UTP_ON_OVERHEAD_STATISTICS](&args);
 }
 
@@ -101,7 +101,7 @@ void utp_call_on_delay_sample(utp_context *ctx, utp_socket *socket, int sample_m
 	args.callback_type = UTP_ON_DELAY_SAMPLE;
 	args.context = ctx;
 	args.socket = socket;
-	args.u1.sample_ms = sample_ms;
+	args.sample_ms = sample_ms;
 	ctx->callbacks[UTP_ON_DELAY_SAMPLE](&args);
 }
 
@@ -112,7 +112,7 @@ void utp_call_on_state_change(utp_context *ctx, utp_socket *socket, int state)
 	args.callback_type = UTP_ON_STATE_CHANGE;
 	args.context = ctx;
 	args.socket = socket;
-	args.u1.state = state;
+	args.state = state;
 	ctx->callbacks[UTP_ON_STATE_CHANGE](&args);
 }
 
@@ -123,8 +123,8 @@ uint16 utp_call_get_udp_mtu(utp_context *ctx, utp_socket *socket, const struct s
 	args.callback_type = UTP_GET_UDP_MTU;
 	args.context = ctx;
 	args.socket = socket;
-	args.u1.address = address;
-	args.u2.address_len = address_len;
+	args.address = address;
+	args.address_len = address_len;
 	return (uint16)ctx->callbacks[UTP_GET_UDP_MTU](&args);
 }
 
@@ -135,8 +135,8 @@ uint16 utp_call_get_udp_overhead(utp_context *ctx, utp_socket *socket, const str
 	args.callback_type = UTP_GET_UDP_OVERHEAD;
 	args.context = ctx;
 	args.socket = socket;
-	args.u1.address = address;
-	args.u2.address_len = address_len;
+	args.address = address;
+	args.address_len = address_len;
 	return (uint16)ctx->callbacks[UTP_GET_UDP_OVERHEAD](&args);
 }
 
@@ -200,8 +200,8 @@ void utp_call_sendto(utp_context *ctx, utp_socket *socket, const byte *buf, size
 	args.socket = socket;
 	args.buf = buf;
 	args.len = len;
-	args.u1.address = address;
-	args.u2.address_len = address_len;
+	args.address = address;
+	args.address_len = address_len;
 	args.flags = flags;
 	ctx->callbacks[UTP_SENDTO](&args);
 }
